@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.274 2007/02/02 12:44:37 drh Exp $
+** $Id: expr.c,v 1.275 2007/02/07 13:09:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -176,9 +176,20 @@ static int binaryCompareP1(Expr *pExpr1, Expr *pExpr2, int jumpIfNull){
 ** type.
 */
 static CollSeq* binaryCompareCollSeq(Parse *pParse, Expr *pLeft, Expr *pRight){
-  CollSeq *pColl = sqlite3ExprCollSeq(pParse, pLeft);
-  if( !pColl ){
-    pColl = sqlite3ExprCollSeq(pParse, pRight);
+  CollSeq *pColl;
+  assert( pLeft );
+  assert( pRight );
+  if( pLeft->flags & EP_ExpCollate ){
+    assert( pLeft->pColl );
+    pColl = pLeft->pColl;
+  }else if( pRight->flags & EP_ExpCollate ){
+    assert( pRight->pColl );
+    pColl = pRight->pColl;
+  }else{
+    pColl = sqlite3ExprCollSeq(pParse, pLeft);
+    if( !pColl ){
+      pColl = sqlite3ExprCollSeq(pParse, pRight);
+    }
   }
   return pColl;
 }
