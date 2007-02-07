@@ -1353,25 +1353,31 @@ static char *string_dup(const char *s){
 }
 
 /* Format a string, replacing each occurrence of the % character with
- * zName.  This may be more convenient than sqlite_mprintf()
+ * zDb.zName.  This may be more convenient than sqlite_mprintf()
  * when one string is used repeatedly in a format string.
  * The caller must free() the returned string. */
-static char *string_format(const char *zFormat, const char *zName){
+static char *string_format(const char *zFormat,
+                           const char *zDb, const char *zName){
   const char *p;
   size_t len = 0;
+  size_t nDb = strlen(zDb);
   size_t nName = strlen(zName);
+  size_t nFullTableName = nDb+1+nName;
   char *result;
   char *r;
 
   /* first compute length needed */
   for(p = zFormat ; *p ; ++p){
-    len += (*p=='%' ? nName : 1);
+    len += (*p=='%' ? nFullTableName : 1);
   }
   len += 1;  /* for null terminator */
 
   r = result = malloc(len);
   for(p = zFormat; *p; ++p){
     if( *p=='%' ){
+      memcpy(r, zDb, nDb);
+      r += nDb;
+      *r++ = '.';
       memcpy(r, zName, nName);
       r += nName;
     } else {
@@ -1383,8 +1389,9 @@ static char *string_format(const char *zFormat, const char *zName){
   return result;
 }
 
-static int sql_exec(sqlite3 *db, const char *zName, const char *zFormat){
-  char *zCommand = string_format(zFormat, zName);
+static int sql_exec(sqlite3 *db, const char *zDb, const char *zName,
+                    const char *zFormat){
+  char *zCommand = string_format(zFormat, zDb, zName);
   int rc;
   TRACE(("FTS2 sql: %s\n", zCommand));
   rc = sqlite3_exec(db, zCommand, NULL, 0, NULL);
@@ -1392,9 +1399,9 @@ static int sql_exec(sqlite3 *db, const char *zName, const char *zFormat){
   return rc;
 }
 
-static int sql_prepare(sqlite3 *db, const char *zName, sqlite3_stmt **ppStmt,
-                const char *zFormat){
-  char *zCommand = string_format(zFormat, zName);
+static int sql_prepare(sqlite3 *db, const char *zDb, const char *zName,
+                       sqlite3_stmt **ppStmt, const char *zFormat){
+  char *zCommand = string_format(zFormat, zDb, zName);
   int rc;
   TRACE(("FTS2 prepare: %s\n", zCommand));
   rc = sqlite3_prepare(db, zCommand, -1, ppStmt, NULL);
@@ -1543,6 +1550,7 @@ static const char *const fulltext_zStatement[MAX_STMT] = {
 struct fulltext_vtab {
   sqlite3_vtab base;               /* Base class used by SQLite core */
   sqlite3 *db;                     /* The database connection */
+  const char *zDb;                 /* logical database name */
   const char *zName;               /* virtual table name */
   int nColumn;                     /* number of columns in virtual table */
   char **azColumn;                 /* column names.  malloced */
@@ -1642,7 +1650,7 @@ static int sql_get_statement(fulltext_vtab *v, fulltext_statement iStmt,
       default:
         zStmt = fulltext_zStatement[iStmt];
     }
-    rc = sql_prepare(v->db, v->zName, &v->pFulltextStatements[iStmt],
+    rc = sql_prepare(v->db, v->zDb, v->zName, &v->pFulltextStatements[iStmt],
                          zStmt);
     if( zStmt != fulltext_zStatement[iStmt]) free((void *) zStmt);
     if( rc!=SQLITE_OK ) return rc;
@@ -1716,7 +1724,7 @@ static int sql_get_leaf_statement(fulltext_vtab *v, int idx,
                                   sqlite3_stmt **ppStmt){
   assert( idx>=0 && idx<MERGE_COUNT );
   if( v->pLeafSelectStmts[idx]==NULL ){
-    int rc = sql_prepare(v->db, v->zName, &v->pLeafSelectStmts[idx],
+    int rc = sql_prepare(v->db, v->zDb, v->zName, &v->pLeafSelectStmts[idx],
                          LEAF_SELECT);
     if( rc!=SQLITE_OK ) return rc;
   }else{
@@ -2334,6 +2342,7 @@ static int startsWith(const char *s, const char *t){
 ** and use by fulltextConnect and fulltextCreate.
 */
 typedef struct TableSpec {
+  const char *zDb;         /* Logical database name */
   const char *zName;       /* Name of the full-text index */
   int nColumn;             /* Number of columns to be indexed */
   char **azColumn;         /* Original names of columns to be indexed */
@@ -2396,6 +2405,7 @@ static int parseSpec(TableSpec *pSpec, int argc, const char *const*argv,
   /* Identify the column names and the tokenizer and delimiter arguments
   ** in the argv[][] array.
   */
+  pSpec->zDb = azArg[1];
   pSpec->zName = azArg[2];
   pSpec->nColumn = 0;
   pSpec->azColumn = azArg;
@@ -2496,6 +2506,7 @@ static int constructVtab(
   CLEAR(v);
   /* sqlite will initialize v->base */
   v->db = db;
+  v->zDb = spec->zDb;       /* Freed when azColumn is freed */
   v->zName = spec->zName;   /* Freed when azColumn is freed */
   v->nColumn = spec->nColumn;
   v->azContentColumn = spec->azContentColumn;
@@ -2583,14 +2594,15 @@ static int fulltextCreate(sqlite3 *db, void *pAux,
   append(&schema, "CREATE TABLE %_content(");
   appendList(&schema, spec.nColumn, spec.azContentColumn);
   append(&schema, ")");
-  rc = sql_exec(db, spec.zName, stringBufferData(&schema));
+  rc = sql_exec(db, spec.zDb, spec.zName, stringBufferData(&schema));
   stringBufferDestroy(&schema);
   if( rc!=SQLITE_OK ) goto out;
 
-  rc = sql_exec(db, spec.zName, "create table %_segments(block blob);");
+  rc = sql_exec(db, spec.zDb, spec.zName,
+                "create table %_segments(block blob);");
   if( rc!=SQLITE_OK ) goto out;
 
-  rc = sql_exec(db, spec.zName,
+  rc = sql_exec(db, spec.zDb, spec.zName,
                 "create table %_segdir("
                 "  level integer,"
                 "  idx integer,"
@@ -2655,7 +2667,7 @@ static int fulltextDestroy(sqlite3_vtab *pVTab){
   int rc;
 
   TRACE(("FTS2 Destroy %p\n", pVTab));
-  rc = sql_exec(v->db, v->zName,
+  rc = sql_exec(v->db, v->zDb, v->zName,
                 "drop table if exists %_content;"
                 "drop table if exists %_segments;"
                 "drop table if exists %_segdir;"
@@ -3419,7 +3431,7 @@ static int fulltextFilter(
   zSql = sqlite3_mprintf("select rowid, * from %%_content %s",
                           idxNum==QUERY_GENERIC ? "" : "where rowid=?");
   sqlite3_finalize(c->pStmt);
-  rc = sql_prepare(v->db, v->zName, &c->pStmt, zSql);
+  rc = sql_prepare(v->db, v->zDb, v->zName, &c->pStmt, zSql);
   sqlite3_free(zSql);
   if( rc!=SQLITE_OK ) return rc;
 
