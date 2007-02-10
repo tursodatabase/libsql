@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.334 2007/01/27 02:24:55 drh Exp $
+** $Id: btree.c,v 1.335 2007/02/10 19:22:36 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -5890,6 +5890,7 @@ int sqlite3BtreePageDump(Btree *p, int pgno, int recursive){
 **   aResult[7] =  Header size in bytes
 **   aResult[8] =  Local payload size
 **   aResult[9] =  Parent page number
+**   aResult[10]=  Page number of the first overflow page
 **
 ** This routine is used for testing and debugging only.
 */
@@ -5937,6 +5938,11 @@ int sqlite3BtreeCursorInfo(BtCursor *pCur, int *aResult, int upCnt){
     aResult[9] = 0;
   }else{
     aResult[9] = pPage->pParent->pgno;
+  }
+  if( tmpCur.info.iOverflow ){
+    aResult[10] = get4byte(&tmpCur.info.pCell[tmpCur.info.iOverflow]);
+  }else{
+    aResult[10] = 0;
   }
   releaseTempCursor(&tmpCur);
   return SQLITE_OK;

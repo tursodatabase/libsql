@@ -26,6 +26,10 @@ if {[file size $file_to_analyze]<512} {
   exit 1
 }
 
+# Maximum distance between pages before we consider it a "gap"
+#
+set MAXGAP 3
+
 # Open the database
 #
 sqlite3 db [lindex $argv 0]
@@ -53,7 +57,8 @@ set tabledef\
    ovfl_pages int,   -- Number of overflow pages used
    int_unused int,   -- Number of unused bytes on interior pages
    leaf_unused int,  -- Number of unused bytes on primary pages
-   ovfl_unused int   -- Number of unused bytes on overflow pages
+   ovfl_unused int,  -- Number of unused bytes on overflow pages
+   gap_cnt int       -- Number of gaps in the page layout
 );}
 mem eval $tabledef
 
@@ -105,7 +110,8 @@ proc cursor_info {arrayvar csr {up 0}} {
                 a(payload_bytes) \
                 a(header_bytes) \
                 a(local_payload_bytes) \
-                a(parent) ] [btree_cursor_info $csr $up] {}
+                a(parent) \
+                a(first_ovfl) ] [btree_cursor_info $csr $up] break
 }
 
 # Determine the page-size of the database. This global variable is used
@@ -145,6 +151,8 @@ foreach {name rootpage} [db eval $sql] {
   set ovfl_pages $wideZero           ;# Number of overflow pages used
   set leaf_pages $wideZero           ;# Number of leaf pages
   set int_pages $wideZero            ;# Number of interior pages
+  set gap_cnt 0                      ;# Number of holes in the page sequence
+  set prev_pgno 0                    ;# Last page number seen
 
   # As the btree is traversed, the array variable $seen($pgno) is set to 1
   # the first time page $pgno is encountered.
@@ -180,6 +188,9 @@ foreach {name rootpage} [db eval $sql] {
       set n [expr {int(ceil($ovfl/($pageSize-4.0)))}]
       incr ovfl_pages $n
       incr unused_ovfl [expr {$n*($pageSize-4) - $ovfl}]
+      set pglist [btree_ovfl_info $DB $csr]
+    } else {
+      set pglist {}
     }
 
     # If this is the first table entry analyzed for the page, then update
@@ -191,6 +202,7 @@ foreach {name rootpage} [db eval $sql] {
       set seen($ci(page_no)) 1
       incr leaf_pages
       incr unused_leaf $ci(page_freebytes)
+      set pglist "$ci(page_no) $pglist"
 
       # Now check if the page has a parent that has not been analyzed. If
       # so, update the $int_pages, $cnt_int_entry and $unused_int statistics
@@ -210,7 +222,19 @@ foreach {name rootpage} [db eval $sql] {
         incr int_pages
         incr cnt_int_entry $ci(page_entries)
         incr unused_int $ci(page_freebytes)
+
+        # parent pages come before their first child
+        set pglist "$ci(page_no) $pglist"
       }
+    }
+
+    # Check the page list for fragmentation
+    #
+    foreach pg $pglist {
+      if {($pg<$prev_pgno || $pg>$prev_pgno+$MAXGAP) && $prev_pgno>0} {
+        incr gap_cnt
+      }
+      set prev_pgno $pg
     }
   }
   btree_close_cursor $csr
@@ -250,6 +274,7 @@ foreach {name rootpage} [db eval $sql] {
   append sql ",$unused_int"
   append sql ",$unused_leaf"
   append sql ",$unused_ovfl"
+  append sql ",$gap_cnt"
   append sql );
   mem eval $sql
 }
@@ -279,6 +304,8 @@ foreach {name tbl_name rootpage} [db eval $sql] {
   set mx_payload $wideZero           ;# Maximum payload size
   set ovfl_pages $wideZero           ;# Number of overflow pages used
   set leaf_pages $wideZero           ;# Number of leaf pages
+  set gap_cnt 0                      ;# Number of holes in the page sequence
+  set prev_pgno 0                    ;# Last page number seen
 
   # As the btree is traversed, the array variable $seen($pgno) is set to 1
   # the first time page $pgno is encountered.
@@ -324,6 +351,11 @@ foreach {name tbl_name rootpage} [db eval $sql] {
       set seen($ci(page_no)) 1
       incr leaf_pages
       incr unused_leaf $ci(page_freebytes)
+      set pg $ci(page_no)
+      if {$prev_pgno>0 && ($prev_pgno<$pg-$MAXGAP || $prev_pgno>$pg)} {
+        incr gap_cnt
+      }
+      set prev_pgno $ci(page_no)
     }
   }
   btree_close_cursor $csr
@@ -355,6 +387,7 @@ foreach {name tbl_name rootpage} [db eval $sql] {
   append sql ",0"
   append sql ",$unused_leaf"
   append sql ",$unused_ovfl"
+  append sql ",$gap_cnt"
   append sql );
   mem eval $sql
 }
@@ -420,7 +453,8 @@ proc subreport {title where} {
       int(sum(ovfl_pages)) AS ovfl_pages,
       int(sum(leaf_unused)) AS leaf_unused,
       int(sum(int_unused)) AS int_unused,
-      int(sum(ovfl_unused)) AS ovfl_unused
+      int(sum(ovfl_unused)) AS ovfl_unused,
+      int(sum(gap_cnt)) AS gap_cnt
     FROM space_used WHERE $where" {} {}
 
   # Output the sub-report title, nicely decorated with * characters.
@@ -450,6 +484,7 @@ proc subreport {title where} {
   set total_unused [expr {$ovfl_unused+$int_unused+$leaf_unused}]
   set avg_payload [divide $payload $nleaf]
   set avg_unused [divide $total_unused $nleaf]
+  set fragmentation [percent $gap_cnt $total_pages {fragmentation}]
   if {$int_pages>0} {
     # TODO: Is this formula correct?
     set nTab [mem eval "
@@ -475,6 +510,9 @@ proc subreport {title where} {
   statline {Average unused bytes per entry} $avg_unused
   if {[info exists avg_fanout]} {
     statline {Average fanout} $avg_fanout
+  }
+  if {$total_pages>1} {
+    statline {Fragmentation} $fragmentation
   }
   statline {Maximum payload per entry} $mx_payload
   statline {Entries that use overflow} $ovfl_cnt $ovfl_cnt_percent
