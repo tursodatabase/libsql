@@ -231,7 +231,7 @@ foreach {name rootpage} [db eval $sql] {
     # Check the page list for fragmentation
     #
     foreach pg $pglist {
-      if {($pg<$prev_pgno || $pg>$prev_pgno+$MAXGAP) && $prev_pgno>0} {
+      if {$pg!=$prev_pgno+1 && $prev_pgno>0} {
         incr gap_cnt
       }
       set prev_pgno $pg
@@ -352,7 +352,7 @@ foreach {name tbl_name rootpage} [db eval $sql] {
       incr leaf_pages
       incr unused_leaf $ci(page_freebytes)
       set pg $ci(page_no)
-      if {$prev_pgno>0 && ($prev_pgno<$pg-$MAXGAP || $prev_pgno>$pg)} {
+      if {$prev_pgno>0 && $pg!=$prev_pgno+1} {
         incr gap_cnt
       }
       set prev_pgno $ci(page_no)
@@ -484,7 +484,6 @@ proc subreport {title where} {
   set total_unused [expr {$ovfl_unused+$int_unused+$leaf_unused}]
   set avg_payload [divide $payload $nleaf]
   set avg_unused [divide $total_unused $nleaf]
-  set fragmentation [percent $gap_cnt $total_pages {fragmentation}]
   if {$int_pages>0} {
     # TODO: Is this formula correct?
     set nTab [mem eval "
@@ -512,6 +511,7 @@ proc subreport {title where} {
     statline {Average fanout} $avg_fanout
   }
   if {$total_pages>1} {
+    set fragmentation [percent $gap_cnt [expr {$total_pages-1}] {fragmentation}]
     statline {Fragmentation} $fragmentation
   }
   statline {Maximum payload per entry} $mx_payload
