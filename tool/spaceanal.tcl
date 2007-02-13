@@ -769,6 +769,14 @@ Average unused bytes per entry
     category on a per-entry basis.  This is the number of unused bytes on
     all pages divided by the number of entries.
 
+Fragmentation
+
+    The percentage of pages in the table or index that are not
+    consecutive in the disk file.  Many filesystems are optimized
+    for sequential file access so smaller fragmentation numbers 
+    sometimes result in faster queries, especially for larger
+    database files that do not fit in the disk cache.
+
 Maximum payload per entry
 
     The largest payload size of any entry.
