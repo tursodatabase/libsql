@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.23 2006/10/08 18:56:57 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.24 2007/02/13 14:11:46 drh Exp $}
 source common.tcl
 header {SQLite Download Page}
 
@@ -69,7 +69,13 @@ Product sqlite-V3.so.gz {
 
 Product fts1-V3.so.gz {
   A precompiled 
-  <a href="http://www.sqlite.org/cvstrac/wiki?p=FtsOne">FTS Module</a> 
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=FtsOne">FTS1 Module</a> 
+  for Linux.
+}
+
+Product fts2-V3.so.gz {
+  A precompiled 
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=FtsTwo">FTS2 Module</a> 
   for Linux.
 }
 
@@ -106,7 +112,13 @@ Product sqlitedll-V3.zip {
 
 Product fts1dll-V3.zip {
   A precompiled 
-  <a href="http://www.sqlite.org/cvstrac/wiki?p=FtsOne">FTS Module</a> 
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=FtsOne">FTS1 Module</a> 
+  for win32.
+}
+
+Product fts2dll-V3.zip {
+  A precompiled 
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=FtsTwo">FTS2 Module</a> 
   for win32.
 }
 
