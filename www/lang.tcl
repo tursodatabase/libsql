@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.121 2007/02/01 23:02:46 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.122 2007/02/13 02:03:25 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1271,8 +1271,9 @@ all arguments are NULL then NULL is returned.  There must be at least
 </tr>
 
 <tr>
+<td valign="top" align="right">
 <a name="globFunc"></a>
-<td valign="top" align="right">glob(<i>X</i>,<i>Y</i>)</td>
+glob(<i>X</i>,<i>Y</i>)</td>
 <td valign="top">This function is used to implement the
 "<b>X GLOB Y</b>" syntax of SQLite.  The
 <a href="capi3ref.html#sqlite3_create_function">sqlite3_create_function()</a> 
@@ -1289,7 +1290,9 @@ both arguments are NULL then NULL is returned. This behaves the same as
 </tr>
 
 <tr>
-<td valign="top" align="right">hex(<i>X</i>)</td>
+<td valign="top" align="right">
+<a name="hexFunc">
+hex(<i>X</i>)</td>
 <td valign="top">The argument is interpreted as a BLOB.  The result
 is a hexadecimal rendering of the content of that blob.</td>
 </tr>
@@ -1309,8 +1312,9 @@ characters is returned, not the number of bytes.</td>
 </tr>
 
 <tr>
+<td valign="top" align="right">
 <a name="likeFunc"></a>
-<td valign="top" align="right">like(<i>X</i>,<i>Y</i> [,<i>Z</i>])</td>
+like(<i>X</i>,<i>Y</i> [,<i>Z</i>])</td>
 <td valign="top">
 This function is used to implement the "<b>X LIKE Y [ESCAPE Z]</b>"
 syntax of SQL. If the optional ESCAPE clause is present, then the
@@ -1386,7 +1390,9 @@ between -9223372036854775808 and +9223372036854775807.</td>
 </tr>
 
 <tr>
-<td valign="top" align="right">randomblob(<i>N</i>)</td>
+<td valign="top" align="right">
+<a name="randomblobFunc">
+randomblob(<i>N</i>)</td>
 <td valign="top">Return a <i>N</i>-byte blob containing pseudo-random bytes.
 <i>N</i> should be a postive integer.</td>
 </tr>

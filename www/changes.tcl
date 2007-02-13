@@ -25,6 +25,26 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2007 February 13 (3.3.13)} {
+<li>Add a "fragmentation" measurement in the output of sqlite3_analyzer.</li>
+<li>Add the COLLATE operator used to explicitly set the collating sequence
+used by an expression.  This feature is considered experimental pending
+additional testing.</li>
+<li>Allow up to 64 tables in a join - the old limit was 32.</li>
+<li>Added two new experimental functions:
+<a href="lang_expr.html#randomblobFunc">randomBlob()</a> and
+<a href="lang_expr.html#hexFunc">hex()</a>.
+Their intended use is to facilitate generating 
+<a href="http://en.wikipedia.org/wiki/UUID">UUIDs</a>.</li>
+<li>Fix a problem where
+<a href="pragma.html#pragma_count_changes">PRAGMA count_changes</a> was
+causing incorrect results for updates on tables with triggers</li>
+<li>Fix a bug in the ORDER BY clause optimizer for joins where the
+left-most table in the join is constrained by a UNIQUE index.</li>
+<li>Fixed a bug in the "copy" method of the TCL interface.</li>
+<li>Bug fixes in fts1 and fts2 modules.</li>
+}
+
 chng {2007 January 27 (3.3.12)} {
 <li>Fix another bug in the IS NULL optimization that was added in
 version 3.3.9.</li>

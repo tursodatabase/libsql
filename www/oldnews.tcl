@@ -10,6 +10,27 @@ proc newsitem {date title text} {
 }
 
 
+newsitem {2007-Jan-4} {Version 3.3.9} {
+  Version 3.3.9 fixes bugs that can lead to database corruption under
+  obscure and difficult to reproduce circumstances.  See
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=DatabaseCorruption">
+  DatabaseCorruption</a> in the
+  <a href="http://www.sqlite.org/cvstrac/wiki">wiki</a> for details.
+  This release also adds the new
+  <a href="capi3ref.html#sqlite3_prepare_v2">sqlite3_prepare_v2()</a>
+  API and includes important bug fixes in the command-line
+  shell and enhancements to the query optimizer.  Upgrading is
+  recommended.
+}
+
+newsitem {2006-Oct-9} {Version 3.3.8} {
+  Version 3.3.8 adds support for full-text search using the 
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=FtsOne">FTS1
+  module.</a>  There are also minor bug fixes.  Upgrade only if
+  you want to try out the new full-text search capabilities or if
+  you are having problems with 3.3.7.
+}
+
 newsitem {2006-Aug-12} {Version 3.3.7} {
   Version 3.3.7 includes support for loadable extensions and virtual
   tables.  But both features are still considered "beta" and their
@@ -381,4 +402,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.18 2007/01/22 13:06:03 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.19 2007/02/13 02:03:25 drh Exp $}
