@@ -35,7 +35,7 @@ additional testing.</li>
 <a href="lang_expr.html#randomblobFunc">randomBlob()</a> and
 <a href="lang_expr.html#hexFunc">hex()</a>.
 Their intended use is to facilitate generating 
-<a href="http://en.wikipedia.org/wiki/Globally_Unique_Identifier">GUIDs</a>.
+<a href="http://en.wikipedia.org/wiki/UUID">UUIDs</a>.
 </li>
 <li>Fix a problem where
 <a href="pragma.html#pragma_count_changes">PRAGMA count_changes</a> was
