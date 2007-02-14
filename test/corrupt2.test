@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt2.test,v 1.2 2005/01/22 03:39:39 danielk1977 Exp $
+# $Id: corrupt2.test,v 1.3 2007/02/14 12:32:13 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,7 +33,7 @@ do_test corrupt2-1.2 {
   file delete -force corrupt.db
   file delete -force corrupt.db-journal
   copy_file test.db corrupt.db
-  set f [open corrupt.db a]
+  set f [open corrupt.db RDWR]
   seek $f 8 start
   puts $f blah
   close $f
@@ -51,7 +51,7 @@ do_test corrupt2-1.3 {
   file delete -force corrupt.db
   file delete -force corrupt.db-journal
   copy_file test.db corrupt.db
-  set f [open corrupt.db a]
+  set f [open corrupt.db RDWR]
   fconfigure $f -encoding binary
   seek $f 16 start
   puts -nonewline $f "\x00\xFF"
@@ -70,7 +70,7 @@ do_test corrupt2-1.4 {
   file delete -force corrupt.db
   file delete -force corrupt.db-journal
   copy_file test.db corrupt.db
-  set f [open corrupt.db a]
+  set f [open corrupt.db RDWR]
   fconfigure $f -encoding binary
   seek $f 101 start
   puts -nonewline $f "\xFF\xFF"
@@ -89,7 +89,7 @@ do_test corrupt2-1.5 {
   file delete -force corrupt.db
   file delete -force corrupt.db-journal
   copy_file test.db corrupt.db
-  set f [open corrupt.db a]
+  set f [open corrupt.db RDWR]
   fconfigure $f -encoding binary
   seek $f 101 start
   puts -nonewline $f "\x00\xC8"
@@ -106,4 +106,3 @@ do_test corrupt2-1.5 {
 db2 close
 
 finish_test
-

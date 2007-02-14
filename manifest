@@ -1,5 +1,5 @@
-C Use\sOP_VColumn\sinstead\sof\sOP_Column\swhen\squerying\svirtual\stables\sfor\svalues\sto\ssave\sin\saggregate\scontext\srecords.\s#2230.\s(CVS\s3644)
-D 2007-02-14T09:19:36
+C In\sthe\scorrupt2.test\sscript,\nchange\suses\sof\s(open\s...\sa)\sto\s(open\s...\sRDWR)\sto\swork\saround\ninconsistencies\sin\sbehavior\sacross\svarious\splatforms.\s(CVS\s3645)
+D 2007-02-14T12:32:13
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -181,7 +181,7 @@ F test/collate6.test 6c9470d1606ee3e564675b229653e320c49ec638
 F test/colmeta.test 6505c73ab58796afcb7c89ba9f429d573fbc6e53
 F test/conflict.test 8a59399f61a14296a9bfed02e0570590a8a79cba
 F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
-F test/corrupt2.test 88342570828f2b8cbbd8369eff3891f5c0bdd5ba
+F test/corrupt2.test bf57d744ab00c5822996dc75eedb742ceadb2b0d
 F test/crash.test 5f5f155393c5685b3842fef79b6fbafa55197d75
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test 63cc718e1d209b10c6b7be8ce72b11addb9f1e04
@@ -432,7 +432,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9f56a878cbbc715262b3a48ee696148dbd7bf1d2
-R 3bcc628e20e838b5d5987694cda2fbe9
-U danielk1977
-Z fb0e16af78c5a0c7a2b4eab04562998c
+P cb78f7cb0f0bf0c799a929fd6ea30f25e2a7b5d0
+R 0484330afad208636dcf973b7b15d967
+U drh
+Z b7d746395662a0a377c1023b5244d08a
