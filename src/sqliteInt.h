@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.536 2007/02/13 12:49:24 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.537 2007/02/14 09:19:36 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -922,6 +922,7 @@ struct AggInfo {
   ExprList *pGroupBy;     /* The group by clause */
   int nSortingColumn;     /* Number of columns in the sorting index */
   struct AggInfo_col {    /* For each column used in source tables */
+    Table *pTab;             /* Source table */
     int iTable;              /* Cursor number of the source table */
     int iColumn;             /* Column number within the source table */
     int iSorterColumn;       /* Column number in the sorting index */

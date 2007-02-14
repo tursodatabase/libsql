@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.588 2007/01/27 13:37:22 drh Exp $
+** $Id: vdbe.c,v 1.589 2007/02/14 09:19:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1936,6 +1936,9 @@ case OP_Column: {
   ** which is the number of records.
   */
   pC = p->apCsr[p1];
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  assert( pC->pVtabCursor==0 );
+#endif
   assert( pC!=0 );
   if( pC->pCursor!=0 ){
     /* The record is stored in a B-Tree */
