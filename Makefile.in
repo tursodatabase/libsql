@@ -26,7 +26,7 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = @TARGET_CC@ @TARGET_CFLAGS@ -I. -I${TOP}/src
+TCC = @CC@ @CFLAGS@ -I. -I${TOP}/src
 
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
 # Omitting the define will cause extra debugging code to be inserted and
@@ -63,7 +63,7 @@ LIBPTHREAD=@TARGET_THREAD_LIB@
 TCC += -DSQLITE_THREAD_OVERRIDE_LOCK=@THREADSOVERRIDELOCKS@
 
 # The fdatasync library
-TLIBS = @TARGET_LIBS@
+TLIBS = @LIBS@
 
 # Flags controlling use of the in memory btree implementation
 #
@@ -107,7 +107,7 @@ LIBTOOL = ./libtool
 ALLOWRELEASE = @ALLOWRELEASE@
 
 # libtool compile/link/install
-LTCOMPILE = $(LIBTOOL) --mode=compile $(TCC)
+LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC)
 LTLINK = $(LIBTOOL) --mode=link $(TCC)
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 
