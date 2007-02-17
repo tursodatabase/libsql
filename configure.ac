@@ -116,7 +116,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.26 $
+# $Revision: 1.27 $
 
 #########
 # Programs needed
@@ -592,16 +592,68 @@ AC_SUBST(HAVE_TCL)
 # Figure out what C libraries are required to compile programs
 # that use "readline()" library.
 #
-if test "$config_TARGET_READLINE_LIBS" != ""; then
-  TARGET_READLINE_LIBS="$config_TARGET_READLINE_LIBS"
-else
-  CC=$TARGET_CC
-  LIBS=""
-  AC_SEARCH_LIBS(tgetent, [readline ncurses curses termcap])
-  AC_CHECK_LIB([readline], [readline])
-  TARGET_READLINE_LIBS="$LIBS"
+TARGET_READLINE_LIBS=""
+TARGET_READLINE_INC=""
+TARGET_HAVE_READLINE=0
+AC_ARG_ENABLE([readline],
+	[AC_HELP_STRING([--disable-readline],[disable readline support [default=detect]])],
+	[with_readline=$enableval],
+	[with_readline=auto])
+
+if test x"$with_readline" != xno; then
+	found="yes"
+
+	AC_ARG_WITH([readline-lib],
+		[AC_HELP_STRING([--with-readline-lib],[specify readline library])],
+		[with_readline_lib=$withval],
+		[with_readline_lib="auto"])
+	if test "x$with_readline_lib" = xauto; then
+		save_LIBS="$LIBS"
+		LIBS=""
+		AC_SEARCH_LIBS(tgetent, [readline ncurses curses termcap], [term_LIBS="$LIBS"], [term_LIBS=""])
+		AC_CHECK_LIB([readline], [readline], [TARGET_READLINE_LIBS="-lreadline"], [found="no"])
+		TARGET_READLINE_LIBS="$TARGET_READLINE_LIBS $term_LIBS"
+		LIBS="$save_LIBS"
+	else
+		TARGET_READLINE_LIBS="$with_readline_lib"
+	fi
+
+	AC_ARG_WITH([readline-inc],
+		[AC_HELP_STRING([--with-readline-inc],[specify readline include paths])],
+		[with_readline_inc=$withval],
+		[with_readline_inc="auto"])
+	if test "x$with_readline_inc" = xauto; then
+		AC_CHECK_HEADER(readline.h, [found="yes"], [
+			found="no"
+			if test "$cross_compiling" != yes; then
+				for dir in /usr /usr/local /usr/local/readline /usr/contrib /mingw; do
+					for subdir in include include/readline; do
+						AC_CHECK_FILE($dir/$subdir/readline.h, found=yes)
+						if test "$found" = "yes"; then
+							TARGET_READLINE_INC="-I$dir/$subdir"
+							break
+						fi
+					done
+					test "$found" = "yes" && break
+				done
+			fi
+		])
+	else
+		TARGET_READLINE_INC="$with_readline_inc"
+	fi
+
+	if test x"$found" = xno; then
+		TARGET_READLINE_LIBS=""
+		TARGET_READLINE_INC=""
+		TARGET_HAVE_READLINE=0
+	else
+		TARGET_HAVE_READLINE=1
+	fi
 fi
+
 AC_SUBST(TARGET_READLINE_LIBS)
+AC_SUBST(TARGET_READLINE_INC)
+AC_SUBST(TARGET_HAVE_READLINE)
 
 ##########
 # Figure out what C libraries are required to compile programs
@@ -611,47 +663,6 @@ CC=$TARGET_CC
 LIBS=$TARGET_LIBS
 AC_SEARCH_LIBS(fdatasync, [rt])
 TARGET_LIBS="$LIBS"
-
-##########
-# Figure out where to get the READLINE header files.
-#
-AC_MSG_CHECKING([readline header files])
-found=no
-if test "$config_TARGET_READLINE_INC" != ""; then
-  TARGET_READLINE_INC=$config_TARGET_READLINE_INC
-  found=yes
-fi
-if test "$found" = "yes"; then
-  AC_MSG_RESULT($TARGET_READLINE_INC)
-else
-  AC_MSG_RESULT(not specified: still searching...)
-  AC_CHECK_HEADER(readline.h, [found=yes])
-fi
-if test "$found" = "no"; then
-  for dir in /usr /usr/local /usr/local/readline /usr/contrib /mingw; do
-    AC_CHECK_FILE($dir/include/readline.h, found=yes)
-    if test "$found" = "yes"; then
-      TARGET_READLINE_INC="-I$dir/include"
-      break
-    fi
-    AC_CHECK_FILE($dir/include/readline/readline.h, found=yes)
-    if test "$found" = "yes"; then
-      TARGET_READLINE_INC="-I$dir/include/readline"
-      break
-    fi
-  done
-fi
-if test "$found" = "yes"; then
-  if test "$TARGET_READLINE_LIBS" = ""; then
-    TARGET_HAVE_READLINE=0
-  else
-    TARGET_HAVE_READLINE=1
-  fi
-else
-  TARGET_HAVE_READLINE=0
-fi
-AC_SUBST(TARGET_READLINE_INC)
-AC_SUBST(TARGET_HAVE_READLINE)
 
 #########
 # check for debug enabled
