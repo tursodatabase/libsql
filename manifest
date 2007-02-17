@@ -1,5 +1,5 @@
-C make\sthe\sreadline\schecks\smore\sflexible\sand\shandle\scross-compiling\slogic\s(CVS\s3646)
-D 2007-02-17T14:28:26
+C punt\scustom\shandling\sof\scross-compile\slogic\sand\smove\stowards\sthe\sstandard\sautotool\sway\sof\sthings\s(CVS\s3647)
+D 2007-02-17T14:31:55
 F Makefile.in 7fa74bf4359aa899da5586e394d17735f221315f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -13,7 +13,7 @@ F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess 2103e94b15dc57112d7b9ee152c6fac5288895b4
 F config.sub 9bf686ec001ae7bc53f5b3563c90c62d4c6d48be
 F configure 6be7b37dd811c43f59c119aa5a713f688a2184c4 x
-F configure.ac cd93d44498e1a81fdd4392a2ef6e8ffcf5f97497
+F configure.ac 761416b9da483b7145148574a7b3135b5b6e8c48
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -432,7 +432,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 50e86b0368ae0268e7f07e44a746e13ad86a3b8b
-R 71daed3249be50835edd41036f362c90
+P 4626c84bae1a11d3cdad4901b19caf44406bd62a
+R 9d68abc3d237b6c09be38b129898b045
 U vapier
-Z 1245fecfea91b4e94d0050f9d1849947
+Z 7ab6c01b5259613db4c4f0995145d059
