@@ -92,7 +92,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.28 $
+# $Revision: 1.29 $
 
 #########
 # Programs needed
@@ -549,10 +549,7 @@ AC_SUBST(TARGET_HAVE_READLINE)
 # Figure out what C libraries are required to compile programs
 # that use "fdatasync()" function.
 #
-CC=$TARGET_CC
-LIBS=$TARGET_LIBS
 AC_SEARCH_LIBS(fdatasync, [rt])
-TARGET_LIBS="$LIBS"
 
 #########
 # check for debug enabled

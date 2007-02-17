@@ -1,5 +1,5 @@
-C regenerate\s(CVS\s3648)
-D 2007-02-17T14:46:31
+C merge\sthe\ssecond\sportion\sof\sthe\scross-compile\scleanup\s(CVS\s3649)
+D 2007-02-17T14:59:18
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -12,8 +12,8 @@ F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F config.guess dba2d1300ec8f8cd00c6fb44b9edde21c14e960c
 F config.sub 9a842e7c332ed65cef3f2c20354e06dc998b2796
-F configure 58a8bb1d3f66a4d1b9a79b17ec57d7fd367201be x
-F configure.ac 761416b9da483b7145148574a7b3135b5b6e8c48
+F configure ab703ac4004675e630857a92d1ef5bd40cf8fad0 x
+F configure.ac 95788619c4905e335a3e0f232f5e24348a61cf46
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -432,7 +432,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9817b433da36c78513ca278ae28e8ca8ce1cf00b
-R 3f444116bafd652ec832ed2ff115e219
+P 20ac0f364059feba5ad95dbe82db30a9aa86be78
+R 33a5f120e889adb0be5eff452bbd7b62
 U vapier
-Z 09028ff8b19b176f2951e7a09396bb32
+Z e798eb714e8ab7efa77096072c058760

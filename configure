@@ -1931,7 +1931,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.41 $
+# $Revision: 1.42 $
 
 #########
 # Programs needed
@@ -19747,8 +19747,6 @@ fi
 # Figure out what C libraries are required to compile programs
 # that use "fdatasync()" function.
 #
-CC=$TARGET_CC
-LIBS=$TARGET_LIBS
 { echo "$as_me:$LINENO: checking for library containing fdatasync" >&5
 echo $ECHO_N "checking for library containing fdatasync... $ECHO_C" >&6; }
 if test "${ac_cv_search_fdatasync+set}" = set; then
@@ -19832,7 +19830,6 @@ if test "$ac_res" != no; then
 
 fi
 
-TARGET_LIBS="$LIBS"
 
 #########
 # check for debug enabled
