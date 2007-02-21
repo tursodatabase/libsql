@@ -1,5 +1,5 @@
-C Enhance\sthe\sdocumentation\sto\sclarify\sthat\sSQLite\sis\snot\sreentrant\sthrough\nthe\sauthorization\scallback\sfunction.\s\sTicket\s#2242.\s(CVS\s3650)
-D 2007-02-20T15:21:05
+C Add\scomments\sto\sthe\stop\sof\skeywordhash.h.\s(CVS\s3651)
+D 2007-02-21T16:44:33
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -366,7 +366,7 @@ F tool/lempar.c fdc1672e97f72f72e76553038501da40fec9d251
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
-F tool/mkkeywordhash.c 966af86ab29e2d152eebd40dfd9c8f45b3f0716b
+F tool/mkkeywordhash.c eb7cd7244b9725e9e77270d0572de8b22a96e83a
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/omittest.tcl e6b3d6a1285f9813bc1dea53bb522b4b72774710
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -432,7 +432,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 309f2de62f34160fa24a5e1a3de0d653aabfb52b
-R ec1e53d4484168716399300b8217329e
+P b18a758a8fbd4b286ae3475af26f290d8cd583f0
+R 566ea5b1e0dfed2e2d241f4a3621febf
 U drh
-Z bf338e8653240f5646718738c1dd0f1f
+Z 7bc0929710516af4b73ecceb079cfb42
