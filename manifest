@@ -1,5 +1,5 @@
-C Modify\sthe\sfix\sfor\s#2244\sto\savoid\susing\sa\svdbe\slabel.\s(CVS\s3653)
-D 2007-02-21T17:04:04
+C Make\sthe\sdepth\sof\sthe\spushdown\sautomaton\sstack\sgenerated\sby\slemon\nchangable\sat\scompile-time\susing\s-DYYSTACKDEPTH=<number>.\s(CVS\s3654)
+D 2007-02-22T23:06:59
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -361,7 +361,7 @@ F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
 F test/where4.test 3fcf53c5ea7af1db3980b3293c2a45b56605f26a
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/lemon.c 2938bec507110397c937bd8a03b0c9596a709a04
+F tool/lemon.c d3dff81e31c459dd18784d024a759b7229f66297
 F tool/lempar.c fdc1672e97f72f72e76553038501da40fec9d251
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -432,7 +432,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 43bf797842f00a104f5c5619ad3215edddfc641b
-R c98a6ecd250228f4326f4bbc32c56b31
-U danielk1977
-Z afaec059014192314ed20a993672dd47
+P f7ce74b22ab739b8c8599cdc605aa9da1f5b5be5
+R eed8267df9851eb89060f21e07f7cf8b
+U drh
+Z 9a9d4aeea5abd29c79f8c5b59b919879
