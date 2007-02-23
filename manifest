@@ -1,5 +1,5 @@
-C Make\sthe\sdepth\sof\sthe\spushdown\sautomaton\sstack\sgenerated\sby\slemon\nchangable\sat\scompile-time\susing\s-DYYSTACKDEPTH=<number>.\s(CVS\s3654)
-D 2007-02-22T23:06:59
+C Fix\stypos\sin\stest\snaming\s(was\susing\s'e'\sinstead\sof\s'f').\s(CVS\s3655)
+D 2007-02-23T00:14:06
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -205,7 +205,7 @@ F test/fts1b.test 5d8a01aefbecc8b7442b36c94c05eb7a845462d5
 F test/fts1c.test 85a525ce7428907469b4cce13d5563ce542ce64c
 F test/fts1d.test a73deace5c18df4a549b12908bade4f05dcf1a2f
 F test/fts1e.test 77244843e925560b5a0b70069c3e7ab62f181ed2
-F test/fts1f.test cdab90834a7627a26fed2f75d2f451650fb31fad
+F test/fts1f.test 2d6cb10d8b7a4e6edc321bbdb3982f1f48774714
 F test/fts1i.test 6bfe08cdfdced063a39a50c8601da65e6274d879
 F test/fts1j.test e4c0ffcd0ba2adce09c6b7b43ffd0749b5fda5c7
 F test/fts1porter.test d86e9c3e0c7f8ff95add6582b4b585fb4e02b96d
@@ -214,7 +214,7 @@ F test/fts2b.test 964abc0236c849c07ca1ae496bb25c268ae94816
 F test/fts2c.test ffb5a35230ac72c4354535c547965ce6824537c0
 F test/fts2d.test b7eaa671ca9a16997f3e5b158ee777ae21052b0b
 F test/fts2e.test 2da13dbc2d009105f42196845c1e1ce136c03d38
-F test/fts2f.test b5f2dde48199d79e859f59d3d857c17dd62a0129
+F test/fts2f.test cf84096235991709c1e61caa389632aa0a4f976d
 F test/fts2g.test c69a8ab43ec77d123976ba6cf9422d647ae63032
 F test/fts2h.test 223af921323b409d4b5b18ff4e51619541b174bb
 F test/fts2i.test 1b22451d1f13f7c509baec620dc3a4a754885dd6
@@ -432,7 +432,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f7ce74b22ab739b8c8599cdc605aa9da1f5b5be5
-R eed8267df9851eb89060f21e07f7cf8b
-U drh
-Z 9a9d4aeea5abd29c79f8c5b59b919879
+P d8845ac1fbf8c3f483d47c35f908817ea37128ec
+R de64fb8cd0d6cb407730f343a5bbbd5e
+U shess
+Z f8e3df05d8b0f0ac4236ebfa09ee3629
