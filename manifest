@@ -1,5 +1,5 @@
-C Fix\stypos\sin\stest\snaming\s(was\susing\s'e'\sinstead\sof\s'f').\s(CVS\s3655)
-D 2007-02-23T00:14:06
+C Clarify\sthe\sdocumentation\son\show\scomparisons\soccur\sin\san\sIN\soperator.\r\nFix\sthe\scomparison\soperators\swhen\sboth\ssides\sof\san\sIN\soperator\sare\r\nexpressions\s(ticket\s#2248).\r\nChanges\sto\smain.mk\sfor\sadding\sFTS2\sinto\sthe\sstandard\sbuild\salso\r\ngot\smixed\sin\swith\sthis\scheck-in\sby\smistake.\s(CVS\s3656)
+D 2007-02-23T03:00:45
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -42,7 +42,7 @@ F ext/fts2/fts2_tokenizer.h 4c5ffe31d63622869eb6eec1503df7f6996fd1bd
 F ext/fts2/fts2_tokenizer1.c b26f0d2fae967fbe5722f82d08506d35f10ac4e7
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 22acd3d279ec40ba6959af643ba25975fcfbdcc7
+F main.mk cdb182b8940da62384f8cd0c527a3d32d5216aa1
 F mkdll.sh cbc7d92d02f9317a3d24ab55bb727275417260ca
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -65,7 +65,7 @@ F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 393c73fc027597e008dcd81454544659e978b05c
 F src/delete.c 151d08386bf9c9e7f92f6b9106c71efec2def184
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c a7c2369b2ba300aac4fadaf61e14c1dabaaf5d34
+F src/expr.c 24d52bd600aa5769ce60c6263275f8013ea5eb87
 F src/func.c b7e1e220a6795ecae7649815145ea5f8644dfa5f
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
@@ -336,7 +336,7 @@ F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
 F test/trigger7.test 0afa870be2ce1b132cdb85b17a4a4ef45aa8cece
 F test/trigger8.test 3a09275aa2214fdff56f731b1e775d8dfee4408a
 F test/types.test 98e7a631bddf0806204358b452b02d0e319318a6
-F test/types2.test 202b1afacdb80eddbb5fb5fab6207daaf5b4dfe1
+F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test ea0ddf793ad5cd17c3b029dd8f48473059f873b6
 F test/unique.test 0253c4227a5dc533e312202ce21ecfad18058d18
 F test/update.test 7669ca789d62c258b678e8aa7a22a57eac10f2cf
@@ -396,7 +396,7 @@ F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
 F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl 58b9586cac0d5914387cfc170bfd80f999dde469
-F www/datatype3.tcl cec3949b77a1593e89a43272a0a9cdcb1937045a
+F www/datatype3.tcl 61baf9328eaba3d20eb7d8351a1eacfced8d4383
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
 F www/different.tcl 8b76ae88bf73e38097b7936e198df4f89baf587c
 F www/direct1b.gif 32b48b764244817b6b591898dc52a04299a7b8a7
@@ -432,7 +432,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d8845ac1fbf8c3f483d47c35f908817ea37128ec
-R de64fb8cd0d6cb407730f343a5bbbd5e
-U shess
-Z f8e3df05d8b0f0ac4236ebfa09ee3629
+P 16cb00adeb3b68220ba2567b86b230bbbf2a0330
+R 8a25a5e663e2db06c8559f7592894f39
+U drh
+Z fea7b5a99e3b60f2d1d6571464477514

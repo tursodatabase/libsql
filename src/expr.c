@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.276 2007/02/14 09:19:36 danielk1977 Exp $
+** $Id: expr.c,v 1.277 2007/02/23 03:00:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -131,7 +131,7 @@ static char comparisonAffinity(Expr *pExpr){
     aff = sqlite3CompareAffinity(pExpr->pSelect->pEList->a[0].pExpr, aff);
   }
   else if( !aff ){
-    aff = SQLITE_AFF_NUMERIC;
+    aff = SQLITE_AFF_NONE;
   }
   return aff;
 }

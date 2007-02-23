@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.14 2006/05/23 23:22:29 drh Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.15 2007/02/23 03:00:46 drh Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -225,8 +225,12 @@ similar manner to "a = b"). For example if 'b' is a column value
 and 'a' is an expression, then the affinity of 'b' is applied to 'a'
 before any comparisons take place.</P>
 
-<P>SQLite treats the expression "a IN (x, y, z)" as equivalent to "a = z OR
-a = y OR a = z".
+<P>SQLite treats the expression "a IN (x, y, z)" as equivalent to "a = +x OR
+a = +y OR a = +z".  The values to the right of the IN operator (the "x", "y",
+and "z" values in this example) are considered to be expressions, even if they
+happen to be column values.  If the value of the left of the IN operator is
+a column, then the affinity of that column is used.  If the value is an
+expression then no conversions occur.
 </P>
 
 <h4>3.1 Comparison Example</h4>

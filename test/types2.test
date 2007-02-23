@@ -12,7 +12,7 @@
 # of this file is testing the interaction of manifest types, type affinity
 # and comparison expressions.
 #
-# $Id: types2.test,v 1.6 2006/05/23 23:22:29 drh Exp $
+# $Id: types2.test,v 1.7 2007/02/23 03:00:45 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -204,7 +204,7 @@ ifcapable subquery {
   test_bool types2-5.2 {} {10 IN ('10.0', 20)} 0
   test_bool types2-5.3 {} {'10' IN ('10.0', 20)} 0
   test_bool types2-5.4 {} {10 IN (10.0, 20)} 1
-  test_bool types2-5.5 {} {'10.0' IN (10, 20)} 1
+  test_bool types2-5.5 {} {'10.0' IN (10, 20)} 0
   
   # Compare literals against a column with TEXT affinity
   test_bool types2-5.6 {t1='10.0'} {t1 IN (10.0, 20)} 1
@@ -229,6 +229,33 @@ ifcapable subquery {
   test_bool types2-5.21 {o1='10.0'} {o1 IN (10, 20, '10.0')} 1
   test_bool types2-5.22 {o1='10'} {o1 IN (10.0, 20, '10')} 1
   test_bool types2-5.23 {o1=10} {n1 IN (20, '10', 10)} 1
+
+  # Ticket #2248:  Comparisons of strings literals that look like
+  # numbers.
+  test_bool types2-5.24 {} {'1' IN ('1')} 1
+  test_bool types2-5.25 {} {'2' IN (2)} 0
+  test_bool types2-5.26 {} {3 IN ('3')} 0
+  test_bool types2-5.27 {} {4 IN (4)} 1
+
+  # The affinity of columns on the right side of IN(...) is ignored.
+  # All values in the expression list are treated as ordinary expressions,
+  # even if they are columns with affinity.
+  test_bool types2-5.30 {t1='10'} {10 IN (5,t1,'abc')} 0
+  test_bool types2-5.31 {t1='10'} {10 IN ('abc',t1,5)} 0
+  test_bool types2-5.32 {t1='010'} {10 IN (5,t1,'abc')} 0
+  test_bool types2-5.33 {t1='010'} {10 IN ('abc',t1,5)} 0
+  test_bool types2-5.34 {t1='10'} {'10' IN (5,t1,'abc')} 1
+  test_bool types2-5.35 {t1='10'} {'10' IN ('abc',t1,5)} 1
+  test_bool types2-5.36 {t1='010'} {'10' IN (5,t1,'abc')} 0
+  test_bool types2-5.37 {t1='010'} {'10' IN ('abc',t1,5)} 0
+  
+  # Columns on both the left and right of IN(...).  Only the column
+  # on the left matters.  The all values on the right are treated like
+  # expressions.
+  test_bool types2-5.40 {t1='10',n1=10} {t1 IN (5,n1,11)} 1
+  test_bool types2-5.41 {t1='010',n1=10} {t1 IN (5,n1,11)} 0
+  test_bool types2-5.42 {t1='10',n1=10} {n1 IN (5,t1,11)} 1
+  test_bool types2-5.43 {t1='010',n1=10} {n1 IN (5,t1,11)} 1
 }
 
 # Tests named types2-6.* use the same infrastructure as the types2-2.*
