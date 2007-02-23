@@ -12,7 +12,7 @@
 # focus of this file is testing the use of indices in WHERE clauses
 # based on recent changes to the optimizer.
 #
-# $Id: where2.test,v 1.10 2006/11/06 15:10:06 drh Exp $
+# $Id: where2.test,v 1.11 2007/02/23 23:13:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -219,9 +219,14 @@ ifcapable subquery {
 #
 set ::idx {}
 ifcapable subquery {set ::idx i1w}
-do_test where2-6.1 {
+do_test where2-6.1.1 {
   queryplan {
     SELECT * FROM t1 WHERE w=99 OR w=100 ORDER BY +w
+  }
+} [list 99 6 10000 10006 100 6 10201 10207 sort t1 $::idx]
+do_test where2-6.1.2 {
+  queryplan {
+    SELECT * FROM t1 WHERE 99=w OR 100=w ORDER BY +w
   }
 } [list 99 6 10000 10006 100 6 10201 10207 sort t1 $::idx]
 do_test where2-6.2 {
@@ -257,6 +262,126 @@ do_test where2-6.6 {
      ORDER BY +b.w
   }
 } [list 1 0 4 4 2 1 9 10 sort a i1w b $::idx]
+
+# Ticket #2249.  Make sure the OR optimization is not attempted if
+# comparisons between columns of different affinities are needed.
+#
+do_test where2-6.7 {
+  execsql {
+    CREATE TABLE t2249a(a TEXT UNIQUE);
+    CREATE TABLE t2249b(b INTEGER);
+    INSERT INTO t2249a VALUES('0123');
+    INSERT INTO t2249b VALUES(123);
+  }
+  queryplan {
+    -- Because a is type TEXT and b is type INTEGER, both a and b
+    -- will attempt to convert to NUMERIC before the comparison.
+    -- They will thus compare equal.
+    --
+    SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=b;
+  }
+} {123 0123 nosort t2249b {} t2249a {}}
+do_test where2-6.9 {
+  queryplan {
+    -- The + operator removes affinity from the rhs.  No conversions
+    -- occur and the comparison is false.  The result is an empty set.
+    --
+    SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=+b;
+  }
+} {nosort t2249b {} {} sqlite_autoindex_t2249a_1}
+do_test where2-6.9.2 {
+  # The same thing but with the expression flipped around.
+  queryplan {
+    SELECT * FROM t2249b CROSS JOIN t2249a WHERE +b=a
+  }
+} {nosort t2249b {} {} sqlite_autoindex_t2249a_1}
+do_test where2-6.10 {
+  queryplan {
+    -- Use + on both sides of the comparison to disable indices
+    -- completely.  Make sure we get the same result.
+    --
+    SELECT * FROM t2249b CROSS JOIN t2249a WHERE +a=+b;
+  }
+} {nosort t2249b {} t2249a {}}
+do_test where2-6.11 {
+  # This will not attempt the OR optimization because of the a=b
+  # comparison.
+  queryplan {
+    SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=b OR a='hello';
+  }
+} {123 0123 nosort t2249b {} t2249a {}}
+do_test where2-6.11.2 {
+  # Permutations of the expression terms.
+  queryplan {
+    SELECT * FROM t2249b CROSS JOIN t2249a WHERE b=a OR a='hello';
+  }
+} {123 0123 nosort t2249b {} t2249a {}}
+do_test where2-6.11.3 {
+  # Permutations of the expression terms.
+  queryplan {
+    SELECT * FROM t2249b CROSS JOIN t2249a WHERE 'hello'=a OR b=a;
+  }
+} {123 0123 nosort t2249b {} t2249a {}}
+do_test where2-6.11.4 {
+  # Permutations of the expression terms.
+  queryplan {
+    SELECT * FROM t2249b CROSS JOIN t2249a WHERE a='hello' OR b=a;
+  }
+} {123 0123 nosort t2249b {} t2249a {}}
+do_test where2-6.12 {
+  # In this case, the +b disables the affinity conflict and allows
+  # the OR optimization to be used again.  The result is now an empty
+  # set, the same as in where2-6.9.
+  queryplan {
+    SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=+b OR a='hello';
+  }
+} {nosort t2249b {} {} sqlite_autoindex_t2249a_1}
+do_test where2-6.12.2 {
+  # In this case, the +b disables the affinity conflict and allows
+  # the OR optimization to be used again.  The result is now an empty
+  # set, the same as in where2-6.9.
+  queryplan {
+    SELECT * FROM t2249b CROSS JOIN t2249a WHERE a='hello' OR +b=a;
+  }
+} {nosort t2249b {} {} sqlite_autoindex_t2249a_1}
+do_test where2-6.12.3 {
+  # In this case, the +b disables the affinity conflict and allows
+  # the OR optimization to be used again.  The result is now an empty
+  # set, the same as in where2-6.9.
+  queryplan {
+    SELECT * FROM t2249b CROSS JOIN t2249a WHERE +b=a OR a='hello';
+  }
+} {nosort t2249b {} {} sqlite_autoindex_t2249a_1}
+do_test where2-6.13 {
+  # The addition of +a on the second term disabled the OR optimization.
+  # But we should still get the same empty-set result as in where2-6.9.
+  queryplan {
+    SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=+b OR +a='hello';
+  }
+} {nosort t2249b {} t2249a {}}
+
+# Variations on the order of terms in a WHERE clause in order
+# to make sure the OR optimizer can recognize them all.
+do_test where2-6.20 {
+  queryplan {
+    SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE x.a=y.a
+  }
+} {0123 0123 nosort x {} {} sqlite_autoindex_t2249a_1}
+do_test where2-6.21 {
+  queryplan {
+    SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE x.a=y.a OR y.a='hello'
+  }
+} {0123 0123 nosort x {} {} sqlite_autoindex_t2249a_1}
+do_test where2-6.22 {
+  queryplan {
+    SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE y.a=x.a OR y.a='hello'
+  }
+} {0123 0123 nosort x {} {} sqlite_autoindex_t2249a_1}
+do_test where2-6.23 {
+  queryplan {
+    SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE y.a='hello' OR x.a=y.a
+  }
+} {0123 0123 nosort x {} {} sqlite_autoindex_t2249a_1}
 
 # Unique queries (queries that are guaranteed to return only a single
 # row of result) do not call the sorter.  But all tables must give

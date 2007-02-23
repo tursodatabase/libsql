@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.237 2007/02/06 13:26:33 drh Exp $
+** $Id: where.c,v 1.238 2007/02/23 23:13:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -582,6 +582,92 @@ static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
   pDerived->iRightJoinTable = pBase->iRightJoinTable;
 }
 
+#if !defined(SQLITE_OMIT_OR_OPTIMIZATION) && !defined(SQLITE_OMIT_SUBQUERY)
+/*
+** Return TRUE if the given term of an OR clause can be converted
+** into an IN clause.  The iCursor and iColumn define the left-hand
+** side of the IN clause.
+**
+** The context is that we have multiple OR-connected equality terms
+** like this:
+**
+**           a=<expr1> OR  a=<expr2> OR b=<expr3>  OR ...
+**
+** The pOrTerm input to this routine corresponds to a single term of
+** this OR clause.  In order for the term to be a condidate for
+** conversion to an IN operator, the following must be true:
+**
+**     *  The left-hand side of the term must be the column which
+**        is identified by iCursor and iColumn.
+**
+**     *  If the right-hand side is also a column, then the affinities
+**        of both right and left sides must be such that no type
+**        conversions are required on the right.  (Ticket #2249)
+**
+** If both of these conditions are true, then return true.  Otherwise
+** return false.
+*/
+static int orTermIsOptCandidate(WhereTerm *pOrTerm, int iCursor, int iColumn){
+  int affLeft, affRight;
+  assert( pOrTerm->eOperator==WO_EQ );
+  if( pOrTerm->leftCursor!=iCursor ){
+    return 0;
+  }
+  if( pOrTerm->leftColumn!=iColumn ){
+    return 0;
+  }
+  affRight = sqlite3ExprAffinity(pOrTerm->pExpr->pRight);
+  if( affRight==0 ){
+    return 1;
+  }
+  affLeft = sqlite3ExprAffinity(pOrTerm->pExpr->pLeft);
+  if( affRight!=affLeft ){
+    return 0;
+  }
+  return 1;
+}
+
+/*
+** Return true if the given term of an OR clause can be ignored during
+** a check to make sure all OR terms are candidates for optimization.
+** In other words, return true if a call to the orTermIsOptCandidate()
+** above returned false but it is not necessary to disqualify the
+** optimization.
+**
+** Suppose the original OR phrase was this:
+**
+**           a=4  OR  a=11  OR  a=b
+**
+** During analysis, the third term gets flipped around and duplicate
+** so that we are left with this:
+**
+**           a=4  OR  a=11  OR  a=b  OR  b=a
+**
+** Since the last two terms are duplicates, only one of them
+** has to qualify in order for the whole phrase to qualify.  When
+** this routine is called, we know that pOrTerm did not qualify.
+** This routine merely checks to see if pOrTerm has a duplicate that
+** might qualify.  If there is a duplicate that has not yet been
+** disqualified, then return true.  If there are no duplicates, or
+** the duplicate has also been disqualifed, return false.
+*/
+static int orTermHasOkDuplicate(WhereClause *pOr, WhereTerm *pOrTerm){
+  if( pOrTerm->flags & TERM_COPIED ){
+    /* This is the original term.  The duplicate is to the left had
+    ** has not yet been analyzed and thus has not yet been disqualified. */
+    return 1;
+  }
+  if( (pOrTerm->flags & TERM_VIRTUAL)!=0
+     && (pOr->a[pOrTerm->iParent].flags & TERM_OR_OK)!=0 ){
+    /* This is a duplicate term.  The original qualified so this one
+    ** does not have to. */
+    return 1;
+  }
+  /* This is either a singleton term or else it is a duplicate for
+  ** which the original did not qualify.  Either way we are done for. */
+  return 0;
+}
+#endif /* !SQLITE_OMIT_OR_OPTIMIZATION && !SQLITE_OMIT_SUBQUERY */
 
 /*
 ** The input to this routine is an WhereTerm structure with only the
@@ -716,9 +802,10 @@ static void exprAnalyze(
     whereClauseInit(&sOr, pWC->pParse, pMaskSet);
     whereSplit(&sOr, pExpr, TK_OR);
     exprAnalyzeAll(pSrc, &sOr);
-    assert( sOr.nTerm>0 );
+    assert( sOr.nTerm>=2 );
     j = 0;
     do{
+      assert( j<sOr.nTerm );
       iColumn = sOr.a[j].leftColumn;
       iCursor = sOr.a[j].leftCursor;
       ok = iCursor>=0;
@@ -726,17 +813,15 @@ static void exprAnalyze(
         if( pOrTerm->eOperator!=WO_EQ ){
           goto or_not_possible;
         }
-        if( pOrTerm->leftCursor==iCursor && pOrTerm->leftColumn==iColumn ){
+        if( orTermIsOptCandidate(pOrTerm, iCursor, iColumn) ){
           pOrTerm->flags |= TERM_OR_OK;
-        }else if( (pOrTerm->flags & TERM_COPIED)!=0 ||
-                    ((pOrTerm->flags & TERM_VIRTUAL)!=0 &&
-                     (sOr.a[pOrTerm->iParent].flags & TERM_OR_OK)!=0) ){
+        }else if( orTermHasOkDuplicate(&sOr, pOrTerm) ){
           pOrTerm->flags &= ~TERM_OR_OK;
         }else{
           ok = 0;
         }
       }
-    }while( !ok && (sOr.a[j++].flags & TERM_COPIED)!=0 && j<sOr.nTerm );
+    }while( !ok && (sOr.a[j++].flags & TERM_COPIED)!=0 && j<2 );
     if( ok ){
       ExprList *pList = 0;
       Expr *pNew, *pDup;
