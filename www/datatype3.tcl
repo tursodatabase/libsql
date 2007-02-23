@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.15 2007/02/23 03:00:46 drh Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.16 2007/02/23 14:20:38 drh Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -167,6 +167,7 @@ INSERT INTO t1 VALUES(500.0, 500.0, 500.0, 500.0);
 </PRE>
 </blockquote>
 
+<a name="comparisons">
 <h3>3. Comparison Expressions</h3>
 
 <P>Like SQLite version 2, version 3
@@ -196,16 +197,18 @@ two values being compared, according to the following rules:</P>
 classes (INTEGER and REAL) and TEXT before performing a comparison.
 For binary comparisons, this is done in the cases enumerated below.
 The term "expression" used in the bullet points below means any
-SQL scalar expression or literal other than a column value.</P>
+SQL scalar expression or literal other than a column value.  Note that
+if X and Y.Z are a column names, then +X and +Y.Z are considered
+expressions.</P>
 <UL>
 	<LI><P>When a column value is compared to the result of an
 	expression, the affinity of the column is applied to the result of
 	the expression before the comparison takes place.</P>
 
 	<LI><P>When two column values are compared, if one column has
-	INTEGER or NUMERIC affinity and the other does not, the NUMERIC
-	affinity is applied to any values with storage class TEXT extracted
-	from the non-NUMERIC column.</P>
+	INTEGER or REAL or NUMERIC affinity and the other does not, 
+        then NUMERIC affinity is applied to any values with storage
+        class TEXT extracted from the non-NUMERIC column.</P>
 
 	<LI><P>When the results of two expressions are compared, no
         conversions occur.  The results are compared as is.  If a string
