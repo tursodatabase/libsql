@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.279 2007/02/24 13:53:05 drh Exp $
+** $Id: expr.c,v 1.280 2007/02/24 15:29:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2187,6 +2187,16 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
 /*
 ** Do a deep comparison of two expression trees.  Return TRUE (non-zero)
 ** if they are identical and return FALSE if they differ in any way.
+**
+** Sometimes this routine will return FALSE even if the two expressions
+** really are equivalent.  If we cannot prove that the expressions are
+** identical, we return FALSE just to be safe.  So if this routine
+** returns false, then you do not really know for certain if the two
+** expressions are the same.  But if you get a TRUE return, then you
+** can be sure the expressions are the same.  In the places where
+** this routine is used, it does not hurt to get an extra FALSE - that
+** just might result in some slightly slower code.  But returning
+** an incorrect TRUE could lead to a malfunction.
 */
 int sqlite3ExprCompare(Expr *pA, Expr *pB){
   int i;
