@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.175 2007/02/24 13:53:05 drh Exp $
+** $Id: insert.c,v 1.176 2007/02/24 15:18:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1462,7 +1462,7 @@ static int xferOptimization(
       return 0;    /* pDestIdx has no corresponding index in pSrc */
     }
   }
-  if( !sqlite3ExprCompare(pSrc->pCheck, pDest->pCheck) ){
+  if( pDest->pCheck && !sqlite3ExprCompare(pSrc->pCheck, pDest->pCheck) ){
     return 0;   /* Tables have different CHECK constraints.  Ticket #2252 */
   }
 
