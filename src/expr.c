@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.277 2007/02/23 03:00:45 drh Exp $
+** $Id: expr.c,v 1.278 2007/02/24 11:52:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1518,6 +1518,31 @@ static void codeInteger(Vdbe *v, const char *z, int n){
   }
 }
 
+
+/*
+** Generate code that will extract the iColumn-th column from
+** table pTab and push that column value on the stack.  There
+** is an open cursor to pTab in iTable.  If iColumn<0 then
+** code is generated that extracts the rowid.
+*/
+void sqlite3ExprCodeGetColumn(Vdbe *v, Table *pTab, int iColumn, int iTable){
+  if( iColumn<0 ){
+    int op = (pTab && IsVirtual(pTab)) ? OP_VRowid : OP_Rowid;
+    sqlite3VdbeAddOp(v, op, iTable, 0);
+  }else if( pTab==0 ){
+    sqlite3VdbeAddOp(v, OP_Column, iTable, iColumn);
+  }else{
+    int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
+    sqlite3VdbeAddOp(v, op, iTable, iColumn);
+    sqlite3ColumnDefault(v, pTab, iColumn);
+#ifndef SQLITE_OMIT_FLOATING_POINT
+    if( pTab->aCol[iColumn].affinity==SQLITE_AFF_REAL ){
+      sqlite3VdbeAddOp(v, OP_RealAffinity, 0, 0);
+    }
+#endif
+  }
+}
+
 /*
 ** Generate code into the current Vdbe to evaluate the given
 ** expression and leave the result on the top of stack.
@@ -1558,21 +1583,8 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
         /* This only happens when coding check constraints */
         assert( pParse->ckOffset>0 );
         sqlite3VdbeAddOp(v, OP_Dup, pParse->ckOffset-pExpr->iColumn-1, 1);
-      }else if( pExpr->iColumn>=0 ){
-        Table *pTab = pExpr->pTab;
-        int iCol = pExpr->iColumn;
-        int op = (pTab && IsVirtual(pTab)) ? OP_VColumn : OP_Column;
-        sqlite3VdbeAddOp(v, op, pExpr->iTable, iCol);
-        sqlite3ColumnDefault(v, pTab, iCol);
-#ifndef SQLITE_OMIT_FLOATING_POINT
-        if( pTab && pTab->aCol[iCol].affinity==SQLITE_AFF_REAL ){
-          sqlite3VdbeAddOp(v, OP_RealAffinity, 0, 0);
-        }
-#endif
       }else{
-        Table *pTab = pExpr->pTab;
-        int op = (pTab && IsVirtual(pTab)) ? OP_VRowid : OP_Rowid;
-        sqlite3VdbeAddOp(v, op, pExpr->iTable, 0);
+        sqlite3ExprCodeGetColumn(v, pExpr->pTab, pExpr->iColumn, pExpr->iTable);
       }
       break;
     }

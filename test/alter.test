@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.17 2006/02/09 02:56:03 drh Exp $
+# $Id: alter.test,v 1.18 2007/02/24 11:52:55 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -629,6 +629,25 @@ do_test alter-7.1 {
     SELECT typeof(a), a, typeof(b), b FROM t1;
   }
 } {text 1 integer 2}
+
+# Make sure that when a column is added by ALTER TABLE ADD COLUMN and has
+# a default value that the default value is used by aggregate functions.
+#
+do_test alter-8.1 {
+  execsql {
+    CREATE TABLE t2(a INTEGER);
+    INSERT INTO t2 VALUES(1);
+    INSERT INTO t2 VALUES(1);
+    INSERT INTO t2 VALUES(2);
+    ALTER TABLE t2 ADD COLUMN b INTEGER DEFAULT 9;
+    SELECT sum(b) FROM t2;
+  }
+} {27}
+do_test alter-8.2 {
+  execsql {
+    SELECT a, sum(b) FROM t2 GROUP BY a;
+  }
+} {1 18 2 9}
 
 
 finish_test

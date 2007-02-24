@@ -1,5 +1,5 @@
-C Disable\sthe\sOR\soptimization\sif\sit\swould\sconflict\swith\scolumn\naffinity\scoercions.\s\sTicket\s#2249.\s\sAdditional\scleanup\sand\stesting\nof\sthe\sOR\soptimization.\s(CVS\s3658)
-D 2007-02-23T23:13:34
+C Make\ssure\sthat\sinteger\svalues\sare\sconverted\sto\sreal\swhen\spulled\sfrom\na\sREAL\stable\scolumn\sby\sGROUP\sBY.\s\sTicket\s#2251.\s\sAlso\smake\ssure\sdefault\nvalues\sare\scorrectly\sexpanded.\s\sThere\smay\sbe\sother\splaces\sin\sthe\scode\nwhere\sthis\sissue\scomes\sup\s-\swe\sneed\sto\slook\sfurther.\s(CVS\s3659)
+D 2007-02-24T11:52:53
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -65,7 +65,7 @@ F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 393c73fc027597e008dcd81454544659e978b05c
 F src/delete.c 151d08386bf9c9e7f92f6b9106c71efec2def184
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 24d52bd600aa5769ce60c6263275f8013ea5eb87
+F src/expr.c 7815bdb27152e0b9025a089608403f7fa5d279ec
 F src/func.c b7e1e220a6795ecae7649815145ea5f8644dfa5f
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
@@ -92,12 +92,12 @@ F src/pragma.c 5091300911670ddaa552bfa12c45cbca1bb7e7d6
 F src/prepare.c 484389c6811415b8f23d259ac9c029613e1c72c3
 F src/printf.c aade23a789d7cc88b397ec0d33a0a01a33a7a9c1
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
-F src/select.c 05081fdfdb5f6a1397079097e02f9a76a9ce4019
+F src/select.c 7808a4079c3756ac946ee8c43c7e61f06134cb2e
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d13ca007cd18192c07a668aeddcdd6a9fe639be9
 F src/sqlite.h.in 6b7383baf76070214f6381f603328ca9b22a7fae
 F src/sqlite3ext.h 011c75fd6459a61454514af07c7a4f1f5c767f27
-F src/sqliteInt.h f70998732d5fc3f9517e48606faf0e2417d08014
+F src/sqliteInt.h cc9f729ca211a11a9d735b66a5f6c968a143e472
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c cd2b3b86ab07c0e0779f6c6e71e72c6c7dc1e704
 F src/test1.c cb314bfa3e9251b545fa3669ec80a8c8a0a86310
@@ -133,7 +133,7 @@ F src/where.c d4a10cf428e5bf855e8a7f6c6a95119ca93489f0
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test b62fcd122052efaff1b0979aefa2dd65cfc8ee52
-F test/alter.test 29234396d738966d512dcb0d71c137a2315d38d7
+F test/alter.test a2cc30e844cb3b5d203416962f56f78fc11b1978
 F test/alter2.test 8b2d81eae944471d473de99ab25ba6d9cda73cd3
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
 F test/altermalloc.test 19323e0f452834044c27a54c6e78554d706de7ba
@@ -284,7 +284,7 @@ F test/schema.test 8a2ae440fb15f5798a68059e8746402f3137be46
 F test/schema2.test d815923e57e90b8c60ddf5e0d8fd65075e94f57f
 F test/select1.test fa4e941da0a38961635d903530bd292dc149a8e8
 F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
-F test/select3.test 33c78663e6b1b41220dcec4eb6affb1a05001ffe
+F test/select3.test 2d473f45c57c0526833e045fca0537badec0dd04
 F test/select4.test 305ba0a6e97efc5544def5e5cb49b54e1bf87fd9
 F test/select5.test 0b47058d3e916c1fc9fe81f44b438e02bade21ce
 F test/select6.test 399f14b9ba37b768afe5d2cd8c12e4f340a69db8
@@ -432,7 +432,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 4692a85edbe27d512f1830b8fb3e2b05b92a0cb5
-R dc63788d974b701458838d84fc2750a6
+P 908daaa9ab86e0bd1da6d0807d6aaba240c3cee0
+R eee73bc2a03f9bdc2ebbcd27a41cf46b
 U drh
-Z 5d96385345b08fab32c52067bf0a8a92
+Z 81fcb798214e4a4eaf239b3e14455f12

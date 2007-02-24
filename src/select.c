@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.327 2007/02/14 09:19:36 danielk1977 Exp $
+** $Id: select.c,v 1.328 2007/02/24 11:52:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3144,13 +3144,7 @@ int sqlite3Select(
         for(i=0; i<sAggInfo.nColumn; i++){
           struct AggInfo_col *pCol = &sAggInfo.aCol[i];
           if( pCol->iSorterColumn<j ) continue;
-          if( pCol->iColumn<0 ){
-            sqlite3VdbeAddOp(v, OP_Rowid, pCol->iTable, 0);
-          }else{
-            Table *pTab = pCol->pTab;
-            int op = (pTab && IsVirtual(pTab)) ? OP_VColumn : OP_Column;
-            sqlite3VdbeAddOp(v, op, pCol->iTable, pCol->iColumn);
-          }
+          sqlite3ExprCodeGetColumn(v, pCol->pTab, pCol->iColumn, pCol->iTable);
           j++;
         }
         sqlite3VdbeAddOp(v, OP_MakeRecord, j, 0);

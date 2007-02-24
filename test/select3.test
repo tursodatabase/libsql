@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.19 2006/04/11 14:16:22 drh Exp $
+# $Id: select3.test,v 1.20 2007/02/24 11:52:55 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -235,5 +235,28 @@ do_test select3-7.2 {
   }
 } {{} {}}
 
+# If a table column is of type REAL but we are storing integer values
+# in it, the values are stored as integers to take up less space.  The
+# values are converted by to REAL as they are read out of the table.
+# Make sure the GROUP BY clause does this conversion correctly.
+# Ticket #2251.
+#
+do_test select3-8.1 {
+  execsql {
+    CREATE TABLE A (
+      A1 DOUBLE,
+      A2 VARCHAR COLLATE NOCASE,
+      A3 DOUBLE
+    );
+    INSERT INTO A VALUES(39136,'ABC',1201900000);
+    INSERT INTO A VALUES(39136,'ABC',1207000000);
+    SELECT typeof(sum(a3)) FROM a;
+  }
+} {real}
+do_test select3-8.2 {
+  execsql {
+    SELECT typeof(sum(a3)) FROM a GROUP BY a1;
+  }
+} {real}
 
 finish_test
