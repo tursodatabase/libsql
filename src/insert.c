@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.173 2007/02/13 15:01:11 drh Exp $
+** $Id: insert.c,v 1.174 2007/02/24 13:23:52 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1305,7 +1305,7 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
 ** This optimization is only attempted if
 **
 **    (1)  tab1 and tab2 have identical schemas including all the
-**         same indices
+**         same indices and constraints
 **
 **    (2)  tab1 and tab2 are different tables
 **
@@ -1382,18 +1382,15 @@ static int xferOptimization(
   if( pSelect->pOrderBy ){
     return 0;   /* SELECT may not have an ORDER BY clause */
   }
-  if( pSelect->pHaving ){
-    return 0;   /* SELECT may not have a HAVING clause */
-  }
+  /* Do not need to test for a HAVING clause.  If HAVING is present but
+  ** there is no ORDER BY, we will get an error. */
   if( pSelect->pGroupBy ){
     return 0;   /* SELECT may not have a GROUP BY clause */
   }
   if( pSelect->pLimit ){
     return 0;   /* SELECT may not have a LIMIT clause */
   }
-  if( pSelect->pOffset ){
-    return 0;   /* SELECT may not have an OFFSET clause */
-  }
+  assert( pSelect->pOffset==0 );  /* Must be so if pLimit==0 */
   if( pSelect->pPrior ){
     return 0;   /* SELECT may not be a compound query */
   }
@@ -1454,6 +1451,9 @@ static int xferOptimization(
     if( pSrcIdx==0 ){
       return 0;    /* pDestIdx has no corresponding index in pSrc */
     }
+  }
+  if( !sqlite3ExprCompare(pSrc->pCheck, pDest->pCheck) ){
+    return 0;   /* Tables have different CHECK constraints.  Ticket #2252 */
   }
 
   /* If we get this far, it means either:

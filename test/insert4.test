@@ -1,0 +1,75 @@
+# 2007 January 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing corner cases of the INSERT statement.
+#
+# $Id: insert4.test,v 1.1 2007/02/24 13:23:53 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Ticket #2252.  Make sure the an INSERT from identical tables
+# does not violate constraints.
+#
+do_test insert4-1.1 {
+  execsql {
+    CREATE TABLE t1(a int, b int, check(b>a));
+    CREATE TABLE t2(x int, y int);
+    INSERT INTO t2 VALUES(9,1);
+  }
+  catchsql {
+    INSERT INTO t1 SELECT * FROM t2;
+  }
+} {1 {constraint failed}}
+do_test insert4-1.2 {
+  execsql {
+    SELECT * FROM t1;
+  }
+} {}
+
+# Other coverage tests for the INSERT transfer optimization.
+#
+do_test insert4-2.1 {
+  execsql {
+    INSERT INTO t1 SELECT 4, 8;
+    SELECT * FROM t1;
+  }
+} {4 8}
+do_test insert4-2.2.1 {
+  execsql {
+    CREATE TABLE t3(a int, b int);
+    INSERT INTO t2 SELECT y, x FROM t2;
+    INSERT INTO t3 SELECT * FROM t2 LIMIT 1;
+    SELECT * FROM t3;
+  }
+} {9 1}
+do_test insert4-2.2.2 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 SELECT * FROM t2 LIMIT 1;
+    SELECT * FROM t1;
+  }
+} {1 {constraint failed}}
+do_test insert4-2.3.1 {
+  execsql {
+    DELETE FROM t3;
+    INSERT INTO t3 SELECT DISTINCT * FROM t2;
+    SELECT * FROM t3;
+  }
+} {9 1 1 9}
+do_test insert4-2.3.2 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 SELECT DISTINCT * FROM t2;
+  }
+} {1 {constraint failed}}
+
+finish_test

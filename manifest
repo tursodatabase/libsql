@@ -1,5 +1,5 @@
-C Make\ssure\sthat\sinteger\svalues\sare\sconverted\sto\sreal\swhen\spulled\sfrom\na\sREAL\stable\scolumn\sby\sGROUP\sBY.\s\sTicket\s#2251.\s\sAlso\smake\ssure\sdefault\nvalues\sare\scorrectly\sexpanded.\s\sThere\smay\sbe\sother\splaces\sin\sthe\scode\nwhere\sthis\sissue\scomes\sup\s-\swe\sneed\sto\slook\sfurther.\s(CVS\s3659)
-D 2007-02-24T11:52:53
+C Make\ssure\sthe\sINSERT\sxfer\soptimization\sdoes\snot\strigger\sif\sthe\sCHECK\nconstraints\son\sthe\stwo\stables\sare\snot\sidentical.\s\sTicket\s#2252.\s(CVS\s3660)
+D 2007-02-24T13:23:52
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -69,7 +69,7 @@ F src/expr.c 7815bdb27152e0b9025a089608403f7fa5d279ec
 F src/func.c b7e1e220a6795ecae7649815145ea5f8644dfa5f
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
-F src/insert.c c7cb4894ec15ae1c66a33f3e7df9761794604241
+F src/insert.c e1398c4167299704b30a037bbab6194137f34049
 F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c bbfdbf452c71b6f2723375478a365788498ec3cd
 F src/main.c 33c32014da3a1471e8869d2eba32b2c4314c39ce
@@ -92,7 +92,7 @@ F src/pragma.c 5091300911670ddaa552bfa12c45cbca1bb7e7d6
 F src/prepare.c 484389c6811415b8f23d259ac9c029613e1c72c3
 F src/printf.c aade23a789d7cc88b397ec0d33a0a01a33a7a9c1
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
-F src/select.c 7808a4079c3756ac946ee8c43c7e61f06134cb2e
+F src/select.c 6a090150d6866a94f719eda57e58207105f4a26d
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d13ca007cd18192c07a668aeddcdd6a9fe639be9
 F src/sqlite.h.in 6b7383baf76070214f6381f603328ca9b22a7fae
@@ -228,6 +228,7 @@ F test/index3.test f66718cd92ce1216819d47e6a156755e4b2c4ca1
 F test/insert.test 42e26d9192f36859938765e6817fb957cf19532b
 F test/insert2.test 5a20e1ace5fa0800b58d28284212290189b49aed
 F test/insert3.test 09a532d5b6f3a788d91be0d4d368462f522685d1
+F test/insert4.test d733a33437657cc31d65b70249e46f464f886a4a
 F test/interrupt.test c38b7f7c17914f0cd6a119beed5d03bc3f47f9eb
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/ioerr.test 565f1a47c6af6bb75dc0ff633213cec63470c19c
@@ -432,7 +433,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 908daaa9ab86e0bd1da6d0807d6aaba240c3cee0
-R eee73bc2a03f9bdc2ebbcd27a41cf46b
+P e11bbf174c5a2fa75e3d1dd450c8b2a18f40e4da
+R 0e22889d42f0395ba317d6639c075c27
 U drh
-Z 81fcb798214e4a4eaf239b3e14455f12
+Z da32718baf840d5b2e61d121b53eedac
