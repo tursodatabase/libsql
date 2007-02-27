@@ -1001,6 +1001,7 @@ int sqlite3UnixIsDirWritable(char *zBuf){
 static int seekAndRead(unixFile *id, void *pBuf, int cnt){
   int got;
   i64 newOffset;
+  TIMER_START;
 #ifdef USE_PREAD
   got = pread(id->h, pBuf, cnt, id->offset);
 #else
@@ -1010,6 +1011,8 @@ static int seekAndRead(unixFile *id, void *pBuf, int cnt){
   }
   got = read(id->h, pBuf, cnt);
 #endif
+  TIMER_END;
+  TRACE5("READ    %-3d %5d %7lld %d\n", id->h, got, id->offset, TIMER_ELAPSED);
   if( got>0 ){
     id->offset += got;
   }
@@ -1024,12 +1027,7 @@ static int seekAndRead(unixFile *id, void *pBuf, int cnt){
 static int unixRead(OsFile *id, void *pBuf, int amt){
   int got;
   assert( id );
-  TIMER_START;
   got = seekAndRead((unixFile*)id, pBuf, amt);
-  TIMER_END;
-  TRACE5("READ    %-3d %5d %7d %d\n", ((unixFile*)id)->h, got,
-          last_page, TIMER_ELAPSED);
-  SEEK(0);
   SimulateIOError( got = -1 );
   if( got==amt ){
     return SQLITE_OK;
@@ -1048,6 +1046,7 @@ static int unixRead(OsFile *id, void *pBuf, int amt){
 static int seekAndWrite(unixFile *id, const void *pBuf, int cnt){
   int got;
   i64 newOffset;
+  TIMER_START;
 #ifdef USE_PREAD
   got = pwrite(id->h, pBuf, cnt, id->offset);
 #else
@@ -1057,6 +1056,8 @@ static int seekAndWrite(unixFile *id, const void *pBuf, int cnt){
   }
   got = write(id->h, pBuf, cnt);
 #endif
+  TIMER_END;
+  TRACE5("WRITE   %-3d %5d %7lld %d\n", id->h, got, id->offset, TIMER_ELAPSED);
   if( got>0 ){
     id->offset += got;
   }
@@ -1072,15 +1073,10 @@ static int unixWrite(OsFile *id, const void *pBuf, int amt){
   int wrote = 0;
   assert( id );
   assert( amt>0 );
-  TIMER_START;
   while( amt>0 && (wrote = seekAndWrite((unixFile*)id, pBuf, amt))>0 ){
     amt -= wrote;
     pBuf = &((char*)pBuf)[wrote];
   }
-  TIMER_END;
-  TRACE5("WRITE   %-3d %5d %7d %d\n", ((unixFile*)id)->h, wrote,
-          last_page, TIMER_ELAPSED);
-  SEEK(0);
   SimulateIOError(( wrote=(-1), amt=1 ));
   SimulateDiskfullError(( wrote=0, amt=1 ));
   if( amt>0 ){
@@ -1098,7 +1094,6 @@ static int unixWrite(OsFile *id, const void *pBuf, int amt){
 */
 static int unixSeek(OsFile *id, i64 offset){
   assert( id );
-  SEEK(offset/1024 + 1);
 #ifdef SQLITE_TEST
   if( offset ) SimulateDiskfullError(return SQLITE_FULL);
 #endif
