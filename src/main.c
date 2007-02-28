@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.360 2006/12/19 18:57:11 drh Exp $
+** $Id: main.c,v 1.361 2007/02/28 04:47:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -32,6 +32,14 @@ const int sqlite3one = 1;
 const char sqlite3_version[] = SQLITE_VERSION;
 const char *sqlite3_libversion(void){ return sqlite3_version; }
 int sqlite3_libversion_number(void){ return SQLITE_VERSION_NUMBER; }
+
+/*
+** If the following function pointer is not NULL and if
+** SQLITE_ENABLE_IOTRACE is enabled, then messages describing
+** I/O active are written using this function.  These messages
+** are intended for debugging activity only.
+*/
+void (*sqlite3_io_trace)(const char*, ...) = 0;
 
 /*
 ** This is the default collating function named "BINARY" which is always

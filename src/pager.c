@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.282 2007/01/05 02:00:47 drh Exp $
+** @(#) $Id: pager.c,v 1.283 2007/02/28 04:47:27 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -662,12 +662,14 @@ static int writeJournalHdr(Pager *pPager){
   put32bits(&zHeader[sizeof(aJournalMagic)+8], pPager->dbSize);
   /* The assumed sector size for this process */
   put32bits(&zHeader[sizeof(aJournalMagic)+12], pPager->sectorSize);
+  IOTRACE(("JHDR %p %lld %d\n", pPager, pPager->journalHdr, sizeof(zHeader)))
   rc = sqlite3OsWrite(pPager->jfd, zHeader, sizeof(zHeader));
 
   /* The journal header has been written successfully. Seek the journal
   ** file descriptor to the end of the journal header sector.
   */
   if( rc==SQLITE_OK ){
+    IOTRACE(("JTAIL %p %lld\n", pPager, pPager->journalOff-1))
     rc = sqlite3OsSeek(pPager->jfd, pPager->journalOff-1);
     if( rc==SQLITE_OK ){
       rc = sqlite3OsWrite(pPager->jfd, "\000", 1);
@@ -861,6 +863,7 @@ static void pager_unlock(Pager *pPager){
   if( !MEMDB ){
     sqlite3OsUnlock(pPager->fd, NO_LOCK);
     pPager->dbSize = -1;
+    IOTRACE(("UNLOCK %p\n", pPager))
   }
   pPager->state = PAGER_UNLOCK;
   assert( pPager->pAll==0 );
@@ -1688,6 +1691,7 @@ int sqlite3pager_open(
   }
 
   TRACE3("OPEN %d %s\n", FILEHANDLEID(fd), zFullPathname);
+  IOTRACE(("OPEN %p %s\n", pPager, zFullPathname))
   pPager->zFilename = (char*)&pPager[1];
   pPager->zDirectory = &pPager->zFilename[nameLen+1];
   pPager->zJournal = &pPager->zDirectory[nameLen+1];
@@ -1825,6 +1829,7 @@ int sqlite3pager_read_fileheader(Pager *pPager, int N, unsigned char *pDest){
     disable_simulated_io_errors();
     sqlite3OsSeek(pPager->fd, 0);
     enable_simulated_io_errors();
+    IOTRACE(("DBHDR %p 0 %d\n", pPager, N))
     rc = sqlite3OsRead(pPager->fd, pDest, N);
     if( rc==SQLITE_IOERR_SHORT_READ ){
       rc = SQLITE_OK;
@@ -2007,6 +2012,7 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
     }while( rc==SQLITE_BUSY && sqlite3InvokeBusyHandler(pPager->pBusyHandler) );
     if( rc==SQLITE_OK ){
       pPager->state = locktype;
+      IOTRACE(("LOCK %p %d\n", pPager, locktype))
     }
   }
   return rc;
@@ -2080,6 +2086,7 @@ int sqlite3pager_close(Pager *pPager){
   pager_reset(pPager);
   enable_simulated_io_errors();
   TRACE2("CLOSE %d\n", PAGERID(pPager));
+  IOTRACE(("CLOSE %p\n", pPager))
   assert( pPager->errCode || (pPager->journalOpen==0 && pPager->stmtOpen==0) );
   if( pPager->journalOpen ){
     sqlite3OsClose(&pPager->jfd);
@@ -2226,12 +2233,15 @@ static int syncJournal(Pager *pPager){
         */
         if( pPager->fullSync ){
           TRACE2("SYNC journal of %d\n", PAGERID(pPager));
+          IOTRACE(("JSYNC %p\n", pPager))
           rc = sqlite3OsSync(pPager->jfd, 0);
           if( rc!=0 ) return rc;
         }
         rc = sqlite3OsSeek(pPager->jfd,
                            pPager->journalHdr + sizeof(aJournalMagic));
         if( rc ) return rc;
+        IOTRACE(("JHDR %p %lld %d\n", pPager,
+                  pPager->journalHdr + sizeof(aJournalMagic), 4))
         rc = write32bits(pPager->jfd, pPager->nRec);
         if( rc ) return rc;
 
@@ -2239,6 +2249,7 @@ static int syncJournal(Pager *pPager){
         if( rc ) return rc;
       }
       TRACE2("SYNC journal of %d\n", PAGERID(pPager));
+      IOTRACE(("JSYNC %d\n", pPager))
       rc = sqlite3OsSync(pPager->jfd, pPager->full_fsync);
       if( rc!=0 ) return rc;
       pPager->journalStarted = 1;
@@ -2377,6 +2388,7 @@ static int pager_write_pagelist(PgHdr *pList){
     if( pList->pgno<=pPager->dbSize ){
       char *pData = CODEC2(pPager, PGHDR_TO_DATA(pList), pList->pgno, 6);
       TRACE3("STORE %d page %d\n", PAGERID(pPager), pList->pgno);
+      IOTRACE(("PGOUT %p %d\n", pPager, pList->pgno))
       rc = sqlite3OsWrite(pPager->fd, pData, pPager->pageSize);
       TEST_INCR(pPager->nWrite);
     }
@@ -2780,6 +2792,7 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
         rc = sqlite3OsRead(pPager->fd, PGHDR_TO_DATA(pPg),
                               pPager->pageSize);
       }
+      IOTRACE(("PGIN %p %d\n", pPager, pgno))
       TRACE3("FETCH %d page %d\n", PAGERID(pPager), pPg->pgno);
       CODEC1(pPager, PGHDR_TO_DATA(pPg), pPg->pgno, 3);
       if( rc!=SQLITE_OK && rc!=SQLITE_IOERR_SHORT_READ ){
@@ -3151,6 +3164,8 @@ int sqlite3pager_write(void *pData){
           szPg = pPager->pageSize+8;
           put32bits(pData2, pPg->pgno);
           rc = sqlite3OsWrite(pPager->jfd, pData2, szPg);
+          IOTRACE(("JOUT %p %d %lld %d\n", pPager, pPg->pgno,
+                   pPager->journalOff, szPg))
           pPager->journalOff += szPg;
           TRACE4("JOURNAL %d page %d needSync=%d\n",
                   PAGERID(pPager), pPg->pgno, pPg->needSync);
@@ -3304,6 +3319,7 @@ void sqlite3pager_dont_write(Pager *pPager, Pgno pgno){
       */
     }else{
       TRACE3("DONT_WRITE page %d of %d\n", pgno, PAGERID(pPager));
+      IOTRACE(("CLEAN %p %d\n", pPager, pgno))
       makeClean(pPg);
 #ifdef SQLITE_CHECK_PAGES
       pPg->pageHash = pager_pagehash(pPg);
@@ -3334,6 +3350,7 @@ void sqlite3pager_dont_rollback(void *pData){
       page_add_to_stmt_list(pPg);
     }
     TRACE3("DONT_ROLLBACK page %d of %d\n", pPg->pgno, PAGERID(pPager));
+    IOTRACE(("GARBAGE %p %d\n", pPager, pPg->pgno))
   }
   if( pPager->stmtInUse && !pPg->inStmt && (int)pPg->pgno<=pPager->stmtSize ){
     assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
@@ -3787,6 +3804,7 @@ int sqlite3pager_sync(Pager *pPager, const char *zMaster, Pgno nTrunc){
     if( !pPager->noSync ){
       rc = sqlite3OsSync(pPager->fd, 0);
     }
+    IOTRACE(("DBSYNC %p\n", pPager))
 
     pPager->state = PAGER_SYNCED;
   }else if( MEMDB && nTrunc!=0 ){
@@ -3825,6 +3843,7 @@ int sqlite3pager_movepage(Pager *pPager, void *pData, Pgno pgno){
 
   TRACE5("MOVE %d page %d (needSync=%d) moves to %d\n", 
       PAGERID(pPager), pPg->pgno, pPg->needSync, pgno);
+  IOTRACE(("MOVE %p %d %d\n", pPager, pPg->pgno, pgno))
 
   if( pPg->needSync ){
     needSyncPgno = pPg->pgno;

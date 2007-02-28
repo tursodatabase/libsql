@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.538 2007/02/24 11:52:55 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.539 2007/02/28 04:47:27 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1896,5 +1896,17 @@ int sqlite3Reprepare(Vdbe*);
 #ifdef SQLITE_SSE
 #include "sseInt.h"
 #endif
+
+/*
+** If the SQLITE_ENABLE IOTRACE exists then the global variable
+** sqlite3_io_trace is a pointer to a printf-like routine used to
+** print I/O tracing messages. 
+*/
+#ifdef SQLITE_ENABLE_IOTRACE
+# define IOTRACE(A)  if( sqlite3_io_trace ){ sqlite3_io_trace A; }
+#else
+# define IOTRACE(A)
+#endif
+extern void (*sqlite3_io_trace)(const char*,...);
 
 #endif
