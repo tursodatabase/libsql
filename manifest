@@ -1,5 +1,5 @@
-C Add\sthe\sundocumented\sand\sexperimental\sI/O\stracing\sinterface.\s\sThis\ninterface\sis\slikely\sto\schange\sand\smay\sbe\scompletely\sabandoned\sin\sthe\nnear\sfuture.\s(CVS\s3665)
-D 2007-02-28T04:47:27
+C Work\saround\sincompatibilities\sin\sthe\swindows\sprintf()\sroutine\swithin\sthe\nnew\sI/O\stracing\slogic.\s(CVS\s3666)
+D 2007-02-28T06:14:25
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -94,7 +94,7 @@ F src/printf.c aade23a789d7cc88b397ec0d33a0a01a33a7a9c1
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c 6a090150d6866a94f719eda57e58207105f4a26d
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c a7df003f26fac3b4024d7147d8d56e93329ee96e
+F src/shell.c 3ae4654560e91220a95738a73d135d91d937cda1
 F src/sqlite.h.in 6b7383baf76070214f6381f603328ca9b22a7fae
 F src/sqlite3ext.h 011c75fd6459a61454514af07c7a4f1f5c767f27
 F src/sqliteInt.h dad7a8f74ba26b7293015fd6be2823c18c02a9cb
@@ -434,7 +434,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 3ad96dbe09b99bd5f623de0de3072a25e9e2bc17
-R ade257ac6814a758e96651f4bfa01c2d
+P 007ca283892a66dd8b9e0dfece4f75d0d08a4300
+R cf017ca1cb5ded2a8aadc6e2b1cddf75
 U drh
-Z 6ecb44f9119dd3f2c6ea27b1aef2521e
+Z 39fa240d594ae5c6d590ad2446288b77

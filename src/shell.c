@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.159 2007/02/28 04:47:27 drh Exp $
+** $Id: shell.c,v 1.160 2007/02/28 06:14:25 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -111,10 +111,13 @@ static FILE *iotrace = 0;
 */
 static void iotracePrintf(const char *zFormat, ...){
   va_list ap;
+  char *z;
   if( iotrace==0 ) return;
   va_start(ap, zFormat);
-  vfprintf(iotrace, zFormat, ap);
+  z = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
+  fprintf(iotrace, "%s", z);
+  sqlite3_free(z);
 }
 
 
