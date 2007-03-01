@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.283 2007/02/28 04:47:27 drh Exp $
+** @(#) $Id: pager.c,v 1.284 2007/03/01 00:29:14 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2507,6 +2507,7 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   ** be marked as alwaysRollback from here on out.
   */
   if( pPg->alwaysRollback ){
+    IOTRACE(("ALWAYS_ROLLBACK %p\n", pPager))
     pPager->alwaysRollback = 1;
   }
 

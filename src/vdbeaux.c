@@ -774,6 +774,37 @@ void sqlite3VdbePrintSql(Vdbe *p){
 #endif
 }
 
+#if !defined(SQLITE_OMIT_TRACE) && defined(SQLITE_ENABLE_IOTRACE)
+/*
+** Print an IOTRACE message showing SQL content.
+*/
+void sqlite3VdbeIOTraceSql(Vdbe *p){
+  int nOp = p->nOp;
+  VdbeOp *pOp;
+  if( sqlite3_io_trace==0 ) return;
+  if( nOp<1 ) return;
+  pOp = &p->aOp[nOp-1];
+  if( pOp->opcode==OP_Noop && pOp->p3!=0 ){
+    char *z = sqlite3StrDup(pOp->p3);
+    int i, j;
+    for(i=0; isspace(z[i]); i++){}
+    for(j=0; z[i]; i++){
+      if( isspace(z[i]) ){
+        if( z[i-1]!=' ' ){
+          z[j++] = ' ';
+        }
+      }else{
+        z[j++] = z[i];
+      }
+    }
+    z[j] = 0;
+    sqlite3_io_trace("SQL %s\n", z);
+    sqliteFree(z);
+  }
+}
+#endif /* !SQLITE_OMIT_TRACE && SQLITE_ENABLE_IOTRACE */
+
+
 /*
 ** Prepare a virtual machine for execution.  This involves things such
 ** as allocating stack space and initializing the program counter.

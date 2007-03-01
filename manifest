@@ -1,5 +1,5 @@
-C Work\saround\sincompatibilities\sin\sthe\swindows\sprintf()\sroutine\swithin\sthe\nnew\sI/O\stracing\slogic.\s(CVS\s3666)
-D 2007-02-28T06:14:25
+C Additional\sI/O\sTracing\ssupport.\s(CVS\s3667)
+D 2007-03-01T00:29:14
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -85,7 +85,7 @@ F src/os_unix.c abdb0f7b8e3f078b8b48d4c0b8c801693046774d
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 8736cf3a49fd651a6538857480f302807d57814c
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c e1ef884e2be3f24fb5048be36cd82d328d54102f
+F src/pager.c 5d3a127c93489c93e59dfbb1be2b29e39e135f68
 F src/pager.h 2e6d42f4ae004ae748a037b8468112b851c447a7
 F src/parse.y bcfe366c1fd61cfc40e5344eb69a31997a821af0
 F src/pragma.c 5091300911670ddaa552bfa12c45cbca1bb7e7d6
@@ -97,7 +97,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 3ae4654560e91220a95738a73d135d91d937cda1
 F src/sqlite.h.in 6b7383baf76070214f6381f603328ca9b22a7fae
 F src/sqlite3ext.h 011c75fd6459a61454514af07c7a4f1f5c767f27
-F src/sqliteInt.h dad7a8f74ba26b7293015fd6be2823c18c02a9cb
+F src/sqliteInt.h b02f76c9ed9fd7c64961d1ba190ac06cc0010fd9
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c cd2b3b86ab07c0e0779f6c6e71e72c6c7dc1e704
 F src/test1.c b4ff8f82f84d2ccdf07a2db5acae7b47c12f60d7
@@ -121,11 +121,11 @@ F src/update.c 876b3142b8db9ce6ddf8374a2ced65e576acabc7
 F src/utf.c 67ecb1032bc0b42c105e88d65ef9d9f626eb0e1f
 F src/util.c 91d4cb189476906639ae611927d939691d1365f6
 F src/vacuum.c b4569b08aaa5afb141af3f76d0315745db4e9e4b
-F src/vdbe.c 21bde8cca95beb4a5553c8bfbff720db0556199e
+F src/vdbe.c 596199e4be890af66e0fe69473f1c74c2e998e06
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h 13ba07121cf534d5b80130d2f5eb0a4937a36bba
 F src/vdbeapi.c 2d1e6843af8705a1172e54a418d2a3d5febd1dd7
-F src/vdbeaux.c c5324d62f51529bccc5be3b04bac2e4eeae1569a
+F src/vdbeaux.c 666f0753f7d70b6a092c7f2074ae8cf1f9755cfc
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c ff2424bee9eaf7c61d1f28bc0e711bebddebd653
 F src/vtab.c 7fbda947e28cbe7adb3ba752a76ca9ef29936750
@@ -434,7 +434,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 007ca283892a66dd8b9e0dfece4f75d0d08a4300
-R cf017ca1cb5ded2a8aadc6e2b1cddf75
+P ceb3a07f559b5160232c8bce5446f4d0e8aab92b
+R e9cd14f8a6d13c6a36f5d4e653e66f76
 U drh
-Z 39fa240d594ae5c6d590ad2446288b77
+Z 70a3474aa82c02f5559fadb91faca6d9
