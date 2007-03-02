@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.540 2007/03/01 00:29:14 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.541 2007/03/02 06:24:19 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1904,10 +1904,10 @@ int sqlite3Reprepare(Vdbe*);
 */
 #ifdef SQLITE_ENABLE_IOTRACE
 # define IOTRACE(A)  if( sqlite3_io_trace ){ sqlite3_io_trace A; }
-  void sqlite3VdbeIOTrace(Vdbe*);
+  void sqlite3VdbeIOTraceSql(Vdbe*);
 #else
 # define IOTRACE(A)
-# define sqlite3VdbeIOTrace(X)
+# define sqlite3VdbeIOTraceSql(X)
 #endif
 extern void (*sqlite3_io_trace)(const char*,...);
 

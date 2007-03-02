@@ -157,6 +157,7 @@ TESTSRC = \
   $(TOP)/src/btree.c \
   $(TOP)/src/date.c \
   $(TOP)/src/func.c \
+  $(TOP)/src/insert.c \
   $(TOP)/src/main.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_os2.c \

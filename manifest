@@ -1,5 +1,5 @@
-C Additional\sI/O\sTracing\ssupport.\s(CVS\s3667)
-D 2007-03-01T00:29:14
+C Minor\sfixes\sso\sthat\stestfixture\sbuilds\swithout\sIO\stracing\senabled.\s(CVS\s3668)
+D 2007-03-02T06:24:19
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -42,7 +42,7 @@ F ext/fts2/fts2_tokenizer.h 4c5ffe31d63622869eb6eec1503df7f6996fd1bd
 F ext/fts2/fts2_tokenizer1.c b26f0d2fae967fbe5722f82d08506d35f10ac4e7
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk cdb182b8940da62384f8cd0c527a3d32d5216aa1
+F main.mk 0347b7c277fab2aa579a8d84f3ba975407e8fba4
 F mkdll.sh cbc7d92d02f9317a3d24ab55bb727275417260ca
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -97,7 +97,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 3ae4654560e91220a95738a73d135d91d937cda1
 F src/sqlite.h.in 6b7383baf76070214f6381f603328ca9b22a7fae
 F src/sqlite3ext.h 011c75fd6459a61454514af07c7a4f1f5c767f27
-F src/sqliteInt.h b02f76c9ed9fd7c64961d1ba190ac06cc0010fd9
+F src/sqliteInt.h 50ea4ff5df788c7ea66a9183ece84bb972a06014
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c cd2b3b86ab07c0e0779f6c6e71e72c6c7dc1e704
 F src/test1.c b4ff8f82f84d2ccdf07a2db5acae7b47c12f60d7
@@ -434,7 +434,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P ceb3a07f559b5160232c8bce5446f4d0e8aab92b
-R e9cd14f8a6d13c6a36f5d4e653e66f76
-U drh
-Z 70a3474aa82c02f5559fadb91faca6d9
+P ed915f579a8e5b75681a9a6012b5041500cad36c
+R 52a2b249c17574a33bd5070b3c0cd9e3
+U danielk1977
+Z d2a702d7474659fbf8106d226e7f424b
