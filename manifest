@@ -1,5 +1,5 @@
-C Minor\sfixes\sso\sthat\stestfixture\sbuilds\swithout\sIO\stracing\senabled.\s(CVS\s3668)
-D 2007-03-02T06:24:19
+C Disable\sthe\s"SELECT\smax(rowid)\s..."\soptimization\sfor\svirtual\stables.\sTicket\s#2250.\s(CVS\s3669)
+D 2007-03-02T07:27:00
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -92,7 +92,7 @@ F src/pragma.c 5091300911670ddaa552bfa12c45cbca1bb7e7d6
 F src/prepare.c 484389c6811415b8f23d259ac9c029613e1c72c3
 F src/printf.c aade23a789d7cc88b397ec0d33a0a01a33a7a9c1
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
-F src/select.c 6a090150d6866a94f719eda57e58207105f4a26d
+F src/select.c 4d68a0d7f98fb59bcedd0be69750e0445b05899c
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 3ae4654560e91220a95738a73d135d91d937cda1
 F src/sqlite.h.in 6b7383baf76070214f6381f603328ca9b22a7fae
@@ -355,6 +355,7 @@ F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
 F test/vtab5.test 9fb8f335651afe8f870011e2f68e5b00c5ad03cd
 F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
 F test/vtab7.test 5f9ef9fb84733e928d5d0267c821072561b198d5
+F test/vtab8.test 31b61c3caeb18c9166483b53c9fc911dd0bf08ff
 F test/vtab9.test 87afba55339b0c255e9697fbfb5bfb6120505d9d
 F test/vtab_err.test 224cc80ad700797c48b9cd2c1e0bd7a8517d8609
 F test/where.test 1d020f50c77f37b2dbab9766ca959e6e3278ecdb
@@ -434,7 +435,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P ed915f579a8e5b75681a9a6012b5041500cad36c
-R 52a2b249c17574a33bd5070b3c0cd9e3
+P 8d3829cdb35f41bc7a2e6f945e9aa83987513104
+R a8c74ef4df5791aca2f931fcffb9fa89
 U danielk1977
-Z d2a702d7474659fbf8106d226e7f424b
+Z 81b4e3cb66e26f39332d05ca445f394b
