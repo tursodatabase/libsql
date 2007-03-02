@@ -12,7 +12,7 @@
 # focus of this file inserting into virtual tables from a SELECT
 # statement.
 #
-# $Id: vtab8.test,v 1.1 2007/03/02 07:27:01 danielk1977 Exp $
+# $Id: vtab8.test,v 1.2 2007/03/02 08:12:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -57,8 +57,7 @@ do_test vtab1-2250-2 {
   }
 } {1 1}
 
-# See ticket #2260 (note: this test doesn't trigger the bug yet - it's a
-# work in progress).
+# See ticket #2260.
 #
 do_test vtab1.2260-1 {
   execsql {

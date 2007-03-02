@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.40 2007/02/21 16:52:12 danielk1977 Exp $
+# $Id: vtab1.test,v 1.41 2007/03/02 08:12:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -890,28 +890,6 @@ do_test vtab1.11-5 {
   }
 } {{2 1} {2 2}}
  
-# See ticket #2244
-#
-do_test vtab1.2244-1 {
-  execsql {
-    CREATE TABLE t2244(a, b);
-    CREATE VIRTUAL TABLE t2244e USING echo(t2244);
-    INSERT INTO t2244 VALUES('AA', 'BB');
-    INSERT INTO t2244 VALUES('CC', 'DD');
-    SELECT rowid, * FROM t2244e;
-  }
-} {1 AA BB 2 CC DD}
-do_test vtab1.2244-2 {
-  execsql {
-    SELECT * FROM t2244e WHERE rowid = 10;
-  }
-} {}
-do_test vtab1.2244-3 {
-  execsql {
-    UPDATE t2244e SET a = 'hello world' WHERE 0;
-    SELECT rowid, * FROM t2244e;
-  }
-} {1 AA BB 2 CC DD}
 
 unset -nocomplain echo_module_begin_fail
 finish_test

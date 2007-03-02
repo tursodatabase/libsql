@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.238 2007/02/23 23:13:34 drh Exp $
+** $Id: where.c,v 1.239 2007/03/02 08:12:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1357,6 +1357,7 @@ static double bestVirtualIndex(
     rc = sqlite3SafetyOn(pParse->db);
   }
   *(int*)&pIdxInfo->nOrderBy = nOrderBy;
+
   return pIdxInfo->estimatedCost;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -2043,6 +2044,14 @@ WhereInfo *sqlite3WhereBegin(
         }
         pIdx = 0;
         nEq = 0;
+        if( (SQLITE_BIG_DBL/2.0)<cost ){
+          /* The cost is not allowed to be larger than SQLITE_BIG_DBL (the
+          ** inital value of lowestCost in this loop. If it is, then
+          ** the (cost<lowestCost) test below will never be true and
+          ** pLevel->pBestIdx never set.
+          */ 
+          cost = (SQLITE_BIG_DBL/2.0);
+        }
       }else 
 #endif
       {

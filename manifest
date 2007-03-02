@@ -1,5 +1,5 @@
-C Disable\sthe\s"SELECT\smax(rowid)\s..."\soptimization\sfor\svirtual\stables.\sTicket\s#2250.\s(CVS\s3669)
-D 2007-03-02T07:27:00
+C Handle\sthe\scase\swhere\sthe\sestimated\scost\sof\sa\svirtual\stable\sscan\sis\slarger\sthan\sSQLITE_BIG_DBL.\sTicket\s#2253.\s(CVS\s3670)
+D 2007-03-02T08:12:22
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -129,7 +129,7 @@ F src/vdbeaux.c 666f0753f7d70b6a092c7f2074ae8cf1f9755cfc
 F src/vdbefifo.c 9efb94c8c3f4c979ebd0028219483f88e57584f5
 F src/vdbemem.c ff2424bee9eaf7c61d1f28bc0e711bebddebd653
 F src/vtab.c 7fbda947e28cbe7adb3ba752a76ca9ef29936750
-F src/where.c d4a10cf428e5bf855e8a7f6c6a95119ca93489f0
+F src/where.c 1242dd545ffa7be8b2f539984d5f458ec731a937
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test b62fcd122052efaff1b0979aefa2dd65cfc8ee52
@@ -348,14 +348,14 @@ F test/vacuum.test cf839fc3ff24d601057319bbb5c700ce9c8e0fb0
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 852bd4101e6d171c46ad682eb5c5faf662b2eba4
-F test/vtab1.test bbfeb479bc851993403d7f08cf071b34d0e3b4c2
+F test/vtab1.test 92410029a2679c8751635ecaa023cf54bc5ab4eb
 F test/vtab2.test 94bb3bf691ac10e34cf7dad46b1cf94b861d513c
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
 F test/vtab5.test 9fb8f335651afe8f870011e2f68e5b00c5ad03cd
 F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
 F test/vtab7.test 5f9ef9fb84733e928d5d0267c821072561b198d5
-F test/vtab8.test 31b61c3caeb18c9166483b53c9fc911dd0bf08ff
+F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test 87afba55339b0c255e9697fbfb5bfb6120505d9d
 F test/vtab_err.test 224cc80ad700797c48b9cd2c1e0bd7a8517d8609
 F test/where.test 1d020f50c77f37b2dbab9766ca959e6e3278ecdb
@@ -435,7 +435,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 8d3829cdb35f41bc7a2e6f945e9aa83987513104
-R a8c74ef4df5791aca2f931fcffb9fa89
+P ddb4d0af5770c7030fe6e92119972c9508724b9a
+R 35703e5b3fc1d8c9b1249f60db5a29c1
 U danielk1977
-Z 81b4e3cb66e26f39332d05ca445f394b
+Z cc77ee9ae5f32f8281d9b31d7adeb8f2
