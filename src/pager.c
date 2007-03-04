@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.284 2007/03/01 00:29:14 drh Exp $
+** @(#) $Id: pager.c,v 1.285 2007/03/04 13:15:28 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2625,8 +2625,13 @@ int sqlite3pager_release_memory(int nReq){
 ** has to go to disk, and could also playback an old journal if necessary.
 ** Since _lookup() never goes to disk, it never has to deal with locks
 ** or journal files.
+**
+** If clrFlag is false, the page contents are actually read from disk.
+** If clfFlag is true, it means the page is about to be erased and
+** rewritten without first being read so there is no point it doing
+** the disk I/O.
 */
-int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
+int sqlite3pager_acquire(Pager *pPager, Pgno pgno, void **ppPage, int clrFlag){
   PgHdr *pPg;
   int rc;
 
@@ -2784,7 +2789,9 @@ int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage){
     /* Populate the page with data, either by reading from the database
     ** file, or by setting the entire page to zero.
     */
-    if( sqlite3pager_pagecount(pPager)<(int)pgno || MEMDB ){
+    if( sqlite3pager_pagecount(pPager)<(int)pgno || MEMDB
+         || (clrFlag && !pPager->alwaysRollback) 
+    ){
       memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
     }else{
       assert( MEMDB==0 );

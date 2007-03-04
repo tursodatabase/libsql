@@ -13,7 +13,7 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.52 2006/11/06 21:20:26 drh Exp $
+** @(#) $Id: pager.h,v 1.53 2007/03/04 13:15:28 drh Exp $
 */
 
 #ifndef _PAGER_H_
@@ -78,7 +78,8 @@ int sqlite3pager_set_pagesize(Pager*, int);
 int sqlite3pager_read_fileheader(Pager*, int, unsigned char*);
 void sqlite3pager_set_cachesize(Pager*, int);
 int sqlite3pager_close(Pager *pPager);
-int sqlite3pager_get(Pager *pPager, Pgno pgno, void **ppPage);
+int sqlite3pager_acquire(Pager *pPager, Pgno pgno, void **ppPage, int clrFlag);
+#define sqlite3pager_get(A,B,C) sqlite3pager_acquire(A,B,C,0)
 void *sqlite3pager_lookup(Pager *pPager, Pgno pgno);
 int sqlite3pager_ref(void*);
 int sqlite3pager_unref(void*);
