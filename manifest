@@ -1,5 +1,5 @@
-C Fixes\sto\sthe\soverflow-chain\soptization\sof\s(3672).\s(CVS\s3674)
-D 2007-03-06T15:53:44
+C Catch\san\sout-of-memory\scondition\sin\svacuum\scode.\s(Bug\sin\s(3373)).\s(CVS\s3675)
+D 2007-03-06T16:03:56
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -120,7 +120,7 @@ F src/trigger.c 8c55d31876013ed4e97ee7ce24478fbe00db49bb
 F src/update.c 876b3142b8db9ce6ddf8374a2ced65e576acabc7
 F src/utf.c 67ecb1032bc0b42c105e88d65ef9d9f626eb0e1f
 F src/util.c 91d4cb189476906639ae611927d939691d1365f6
-F src/vacuum.c b4569b08aaa5afb141af3f76d0315745db4e9e4b
+F src/vacuum.c 327c6ffa38935163db7c1e256ff5f788e901b318
 F src/vdbe.c 596199e4be890af66e0fe69473f1c74c2e998e06
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h 13ba07121cf534d5b80130d2f5eb0a4937a36bba
@@ -435,7 +435,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P dfe1dffa4515ed6494055887d351863fe0cdb87f
-R d2acbced061dbbf26fe53e64388781c3
-U drh
-Z 244e63934da04ffe6f36fb683b60298b
+P d6986d1e7cba1d114fa06c5560ffc6bb1feb7389
+R c16e20d8f67a08a215ee8c71d404c60c
+U danielk1977
+Z 12839403eb12ec38912c51a8e61dab13
