@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.337 2007/03/06 11:42:19 drh Exp $
+** $Id: btree.c,v 1.338 2007/03/06 15:53:44 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -365,6 +365,7 @@ struct CellInfo {
   u8 *pCell;     /* Pointer to the start of cell content */
   i64 nKey;      /* The key for INTKEY tables, or number of bytes in key */
   u32 nData;     /* Number of bytes of data */
+  u32 nPayload;  /* Total amount of payload */
   u16 nHeader;   /* Size of the cell content header in bytes */
   u16 nLocal;    /* Amount of payload held locally */
   u16 iOverflow; /* Offset to overflow page number.  Zero if no overflow */
@@ -944,6 +945,7 @@ static void parseCellPtr(
     pInfo->nKey = x;
     nPayload += x;
   }
+  pInfo->nPayload = nPayload;
   pInfo->nHeader = n;
   if( nPayload<=pPage->maxLocal ){
     /* This is the (easy) common case where the entire payload fits
@@ -1020,6 +1022,7 @@ static int ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell){
   if( pCell ){
     CellInfo info;
     parseCellPtr(pPage, pCell, &info);
+    assert( (info.nData+(pPage->intKey?0:info.nKey))==info.nPayload );
     if( (info.nData+(pPage->intKey?0:info.nKey))>info.nLocal ){
       Pgno ovfl = get4byte(&pCell[info.iOverflow]);
       return ptrmapPut(pPage->pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno);
@@ -3876,30 +3879,29 @@ static int clearCell(MemPage *pPage, unsigned char *pCell){
   int rc;
   int nOvfl;
   int ovflPageSize;
-  int nPayload;
 
   parseCellPtr(pPage, pCell, &info);
   if( info.iOverflow==0 ){
     return SQLITE_OK;  /* No overflow pages. Return without doing anything */
   }
   ovflPgno = get4byte(&pCell[info.iOverflow]);
-  nPayload = pPage->intKey ? info.nData : info.nKey;
   ovflPageSize = pBt->usableSize - 4;
-  nOvfl = (nPayload - info.nLocal + ovflPageSize - 1)/ovflPageSize;
-  while( ovflPgno!=0 ){
+  nOvfl = (info.nPayload - info.nLocal + ovflPageSize - 1)/ovflPageSize;
+  assert( ovflPgno==0 || nOvfl>0 );
+  while( nOvfl-- ){
     MemPage *pOvfl;
-    nOvfl--;
-    if( ovflPgno>sqlite3pager_pagecount(pBt->pPager) ){
+    if( ovflPgno==0 || ovflPgno>sqlite3pager_pagecount(pBt->pPager) ){
       return SQLITE_CORRUPT_BKPT;
     }
-    rc = getPage(pBt, ovflPgno, &pOvfl, nOvfl==0);
+    rc = getPage(pBt, ovflPgno, &pOvfl, 0);
     if( rc ) return rc;
-    ovflPgno = get4byte(pOvfl->aData);
+    if( nOvfl ){
+      ovflPgno = get4byte(pOvfl->aData);
+    }
     rc = freePage(pOvfl);
     sqlite3pager_unref(pOvfl->aData);
     if( rc ) return rc;
   }
-  assert( nOvfl==0 );
   return SQLITE_OK;
 }
 
@@ -4196,6 +4198,7 @@ static int insertCell(
       */
       CellInfo info;
       parseCellPtr(pPage, pCell, &info);
+      assert( (info.nData+(pPage->intKey?0:info.nKey))==info.nPayload );
       if( (info.nData+(pPage->intKey?0:info.nKey))>info.nLocal ){
         Pgno pgnoOvfl = get4byte(&pCell[info.iOverflow]);
         int rc = ptrmapPut(pPage->pBt, pgnoOvfl, PTRMAP_OVERFLOW1, pPage->pgno);
@@ -6201,6 +6204,7 @@ static int checkTreePage(
     parseCellPtr(pPage, pCell, &info);
     sz = info.nData;
     if( !pPage->intKey ) sz += info.nKey;
+    assert( sz==info.nPayload );
     if( sz>info.nLocal ){
       int nPage = (sz - info.nLocal + usableSize - 5)/(usableSize - 4);
       Pgno pgnoOvfl = get4byte(&pCell[info.iOverflow]);
