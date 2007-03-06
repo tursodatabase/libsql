@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.336 2007/03/04 13:15:28 drh Exp $
+** $Id: btree.c,v 1.337 2007/03/06 11:42:19 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1394,6 +1394,9 @@ static int getPage(BtShared *pBt, Pgno pgno, MemPage **ppPage, int clrFlag){
   pPage->pgno = pgno;
   pPage->hdrOffset = pPage->pgno==1 ? 100 : 0;
   *ppPage = pPage;
+  if( clrFlag ){
+    sqlite3pager_dont_rollback(aData);
+  }
   return SQLITE_OK;
 }
 
@@ -3736,7 +3739,6 @@ static int allocatePage(
           put4byte(&aData[4], k-1);
           rc = getPage(pBt, *pPgno, ppPage, 1);
           if( rc==SQLITE_OK ){
-            sqlite3pager_dont_rollback((*ppPage)->aData);
             rc = sqlite3pager_write((*ppPage)->aData);
             if( rc!=SQLITE_OK ){
               releasePage(*ppPage);
@@ -3872,24 +3874,32 @@ static int clearCell(MemPage *pPage, unsigned char *pCell){
   CellInfo info;
   Pgno ovflPgno;
   int rc;
+  int nOvfl;
+  int ovflPageSize;
+  int nPayload;
 
   parseCellPtr(pPage, pCell, &info);
   if( info.iOverflow==0 ){
     return SQLITE_OK;  /* No overflow pages. Return without doing anything */
   }
   ovflPgno = get4byte(&pCell[info.iOverflow]);
+  nPayload = pPage->intKey ? info.nData : info.nKey;
+  ovflPageSize = pBt->usableSize - 4;
+  nOvfl = (nPayload - info.nLocal + ovflPageSize - 1)/ovflPageSize;
   while( ovflPgno!=0 ){
     MemPage *pOvfl;
+    nOvfl--;
     if( ovflPgno>sqlite3pager_pagecount(pBt->pPager) ){
       return SQLITE_CORRUPT_BKPT;
     }
-    rc = getPage(pBt, ovflPgno, &pOvfl, 0);
+    rc = getPage(pBt, ovflPgno, &pOvfl, nOvfl==0);
     if( rc ) return rc;
     ovflPgno = get4byte(pOvfl->aData);
     rc = freePage(pOvfl);
     sqlite3pager_unref(pOvfl->aData);
     if( rc ) return rc;
   }
+  assert( nOvfl==0 );
   return SQLITE_OK;
 }
 
