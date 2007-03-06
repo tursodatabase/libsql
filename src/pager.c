@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.285 2007/03/04 13:15:28 drh Exp $
+** @(#) $Id: pager.c,v 1.286 2007/03/06 13:46:00 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -284,6 +284,7 @@ struct Pager {
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   Pager *pNext;               /* Linked list of pagers in this thread */
 #endif
+  char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
 };
 
 /*
@@ -998,17 +999,17 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   PgHdr *pPg;                   /* An existing page in the cache */
   Pgno pgno;                    /* The page number of a page in journal */
   u32 cksum;                    /* Checksum used for sanity checking */
-  u8 aData[SQLITE_MAX_PAGE_SIZE];  /* Temp storage for a page */
+  u8 *aData = (u8 *)pPager->pTmpSpace;   /* Temp storage for a page */
 
   /* useCksum should be true for the main journal and false for
   ** statement journals.  Verify that this is always the case
   */
   assert( jfd == (useCksum ? pPager->jfd : pPager->stfd) );
-
+  assert( aData );
 
   rc = read32bits(jfd, &pgno);
   if( rc!=SQLITE_OK ) return rc;
-  rc = sqlite3OsRead(jfd, &aData, pPager->pageSize);
+  rc = sqlite3OsRead(jfd, aData, pPager->pageSize);
   if( rc!=SQLITE_OK ) return rc;
   pPager->journalOff += pPager->pageSize + 4;
 
@@ -1187,7 +1188,7 @@ static int pager_reload_cache(Pager *pPager){
   PgHdr *pPg;
   int rc = SQLITE_OK;
   for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
-    char zBuf[SQLITE_MAX_PAGE_SIZE];
+    char *zBuf = pPager->pTmpSpace;        /* Temp storage for one page */
     if( !pPg->dirty ) continue;
     if( (int)pPg->pgno <= pPager->origDbSize ){
       rc = sqlite3OsSeek(pPager->fd, pPager->pageSize*(i64)(pPg->pgno-1));
@@ -1676,14 +1677,18 @@ int sqlite3pager_open(
   if( zFullPathname ){
     nameLen = strlen(zFullPathname);
     pPager = sqliteMalloc( sizeof(*pPager) + nameLen*3 + 30 );
+    if( pPager && rc==SQLITE_OK ){
+      pPager->pTmpSpace = (char *)sqliteMallocRaw(SQLITE_DEFAULT_PAGE_SIZE);
+    }
   }
+
 
   /* If an error occured in either of the blocks above, free the memory 
   ** pointed to by zFullPathname, free the Pager structure and close the 
   ** file. Since the pager is not allocated there is no need to set 
   ** any Pager.errMask variables.
   */
-  if( !pPager || !zFullPathname || rc!=SQLITE_OK ){
+  if( !pPager || !zFullPathname || !pPager->pTmpSpace || rc!=SQLITE_OK ){
     sqlite3OsClose(&fd);
     sqliteFree(zFullPathname);
     sqliteFree(pPager);
@@ -1780,6 +1785,7 @@ int sqlite3pager_set_pagesize(Pager *pPager, int pageSize){
   assert( pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE );
   if( !pPager->memDb ){
     pPager->pageSize = pageSize;
+    sqlite3ReallocOrFree((void **)&pPager->pTmpSpace, pageSize);
   }
   return pPager->pageSize;
 }
@@ -2115,6 +2121,7 @@ int sqlite3pager_close(Pager *pPager){
   }
 #endif
   sqliteFree(pPager->aHash);
+  sqliteFree(pPager->pTmpSpace);
   sqliteFree(pPager);
   return SQLITE_OK;
 }
