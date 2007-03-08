@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.122 2007/02/13 02:03:25 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.123 2007/03/08 12:23:34 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1865,9 +1865,11 @@ is auto-vacuum mode, enabled using the
 #
 set keyword_list [lsort {
    ABORT*
+   ADD
    AFTER*
    ALL
    ALTER
+   ANALYZE*
    AND
    AS
    ASC*
@@ -1879,6 +1881,7 @@ set keyword_list [lsort {
    BY
    CASCADE*
    CASE
+   CAST*
    CHECK
    COLLATE
    COMMIT
@@ -1913,6 +1916,7 @@ set keyword_list [lsort {
    GLOB*
    GROUP
    HAVING
+   IF*
    IGNORE*
    IMMEDIATE*
    IN
@@ -1941,8 +1945,10 @@ set keyword_list [lsort {
    OR
    ORDER
    OUTER
+   PLAN*
    PRAGMA*
    PRIMARY
+   QUERY*
    RAISE*
    REFERENCES
    REINDEX*
@@ -1969,6 +1975,7 @@ set keyword_list [lsort {
    VACUUM*
    VALUES
    VIEW*
+   VIRTUAL*
    WHEN
    WHERE
 }]
@@ -1979,10 +1986,11 @@ Section {SQLite keywords} keywords
 
 puts {
 <p>The SQL standard specifies a huge number of keywords which may not
-be used as the names of tables, indices, columns, or databases.  The
-list is so long that few people can remember them all.  For most SQL
-code, your safest bet is to never use any English language word as the
-name of a user-defined object.</p>
+be used as the names of tables, indices, columns, databases, user-defined
+functions, collations, virtual table modules, or any other named object.
+The list of keywords is so long that few people can remember them all.
+For most SQL code, your safest bet is to never use any English language
+word as the name of a user-defined object.</p>
 
 <p>If you want to use a keyword as a name, you need to quote it.  There
 are three ways of quoting keywords in SQLite:</p>
@@ -2009,14 +2017,16 @@ are three ways of quoting keywords in SQLite:</p>
 
 <p>Quoted keywords are unaesthetic.
 To help you avoid them, SQLite allows many keywords to be used unquoted
-as the names of databases, tables, indices, triggers, views, and/or columns.
+as the names of databases, tables, indices, triggers, views, columns,
+user-defined functions, collations, attached databases, and virtual
+function modules.
 In the list of keywords that follows, those that can be used as identifiers
 are shown in an italic font.  Keywords that must be quoted in order to be
 used as identifiers are shown in bold.</p>
 
 <p>
 SQLite adds new keywords from time to time when it take on new features.
-So to prevent you code from being broken by future enhancements, you should
+So to prevent your code from being broken by future enhancements, you should
 normally quote any indentifier that is an English language word, even if
 you do not have to.
 </p>
