@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.124 2007/03/09 14:40:59 danielk1977 Exp $}
+set rcsid {$Id: lang.tcl,v 1.125 2007/03/09 14:43:25 danielk1977 Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -87,8 +87,6 @@ puts {</ul></p>
 
 <p>Details on the implementation of each command are provided in
 the sequel.</p>
-
-<h1 class="pdf_section">SQLite Commands</h1>
 }
 
 proc Operator {name} {
@@ -106,7 +104,6 @@ proc Example {text} {
 
 proc Section {name label} {
   global outputdir
-
 
   if {[string length $outputdir]!=0} {
     if {[llength [info commands puts_standard]]>0} {
