@@ -1,5 +1,5 @@
-C Change\sthe\sdocumentation\sto\sbe\smore\sspecific\sabout\sthe\srestriction\son\nthe\suse\sof\skeywords.\s\sTicket\s#2264.\s(CVS\s3676)
-D 2007-03-08T12:23:34
+C Add\sa\sfew\s"class"\sattributes\sto\sthe\shtml\sgenerated\sby\slang.tcl\sto\ssupport\sconversion\sto\spdf.\s(CVS\s3677)
+D 2007-03-09T14:40:59
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -393,7 +393,7 @@ F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
 F www/capi3ref.tcl 4e0df9c41ebc669a7d7e9b81b410d1f907d20e78
 F www/changes.tcl dba0e1f40192f79c7a887fa3efa56e6fdd54f85a
-F www/common.tcl 14d121c28532ad20c3e349caa4db708b0b822083
+F www/common.tcl c24da36fe05f72b44f84dba08e020f924a605eac
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
@@ -413,7 +413,7 @@ F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
 F www/index.tcl 688cf1280232f4964d8d07fda65e166a4b2e16cc
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
-F www/lang.tcl f76b1853bf5ac5677f9381c4ce9ab0c3c2519b26
+F www/lang.tcl 0e74378b42d7293f03a263b3ff47a7b549fd5a24
 F www/lockingv3.tcl f59b19d6c8920a931f096699d6faaf61c05db55f
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
@@ -435,7 +435,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 302ec768579e2f7c17a33749e685289a041aeb11
-R 7749edec062d6de6cf82b3267f875132
-U drh
-Z 527bcee1d1ae23e7c72be8880f2bc02b
+P d03d480544e1f782ca796e4cfb83ff6894ed9147
+R eb4acfbeb94b21158adba0355928518d
+U danielk1977
+Z 11704b93b183fd2016ac7d986e353ae6

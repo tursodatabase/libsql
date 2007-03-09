@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.123 2007/03/08 12:23:34 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.124 2007/03/09 14:40:59 danielk1977 Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -12,7 +12,7 @@ if {[llength $argv]>0} {
 
 header {Query Language Understood by SQLite}
 puts {
-<h1>SQL As Understood By SQLite</h1>
+<h1 class="pdf_section">SQL As Understood By SQLite</h1>
 
 <p>The SQLite library understands most of the standard SQL
 language.  But it does <a href="omitted.html">omit some features</a>
@@ -31,7 +31,7 @@ by SQLite.  Many low-level productions are omitted.  For detailed information
 on the language that SQLite understands, refer to the source code and
 the grammar file "parse.y".</p>
 
-
+<div class="pdf_ignore">
 <p>SQLite implements the follow syntax:</p>
 <p><ul>
 }
@@ -83,9 +83,12 @@ foreach {section} [lsort -index 0 -dictionary {
   puts "<li><a href=\"[slink $s_tag]\">$s_title</a></li>"
 }
 puts {</ul></p>
+</div>
 
 <p>Details on the implementation of each command are provided in
 the sequel.</p>
+
+<h1 class="pdf_section">SQLite Commands</h1>
 }
 
 proc Operator {name} {
@@ -103,6 +106,7 @@ proc Example {text} {
 
 proc Section {name label} {
   global outputdir
+
 
   if {[string length $outputdir]!=0} {
     if {[llength [info commands puts_standard]]>0} {
@@ -1094,7 +1098,7 @@ Parameters can take several forms:
 </p
 
 <blockquote>
-<table>
+<table class="pdf_functions">
 <tr>
 <td align="right" valign="top"><b>?</b><i>NNN</i></td><td width="20"></td>
 <td>A question mark followed by a number <i>NNN</i> holds a spot for the
@@ -1257,7 +1261,7 @@ functions may be written in C and added to the database engine using
 the <a href="capi3ref.html#cfunc">sqlite3_create_function()</a>
 API.</p>
 
-<table border=0 cellpadding=10>
+<table border=0 cellpadding=10 class="pdf_functions">
 <tr>
 <td valign="top" align="right" width=120>abs(<i>X</i>)</td>
 <td valign="top">Return the absolute value of argument <i>X</i>.</td>
@@ -1470,7 +1474,7 @@ of distinct values of column X instead of the total number of non-null
 values in column X.
 </p>
 
-<table border=0 cellpadding=10>
+<table border=0 cellpadding=10 class="pdf_functions">
 <tr>
 <td valign="top" align="right" width=120>avg(<i>X</i>)</td>
 <td valign="top">Return the average value of all non-NULL <i>X</i> within a
@@ -1982,7 +1986,9 @@ set keyword_list [lsort {
 
 
 
-Section {SQLite keywords} keywords
+puts {<DIV class="pdf_section">}
+Section {SQLite Keywords} keywords 
+puts {</DIV>}
 
 puts {
 <p>The SQL standard specifies a huge number of keywords which may not
@@ -1997,7 +2003,7 @@ are three ways of quoting keywords in SQLite:</p>
 
 <p>
 <blockquote>
-<table>
+<table class="pdf_functions">
 <tr>	<td valign="top"><b>'keyword'</b></td><td width="20"></td>
 	<td>A keyword in single quotes is interpreted as a literal string
         if it occurs in a context where a string literal is allowed, otherwise
@@ -2036,7 +2042,7 @@ The following are the keywords currently recognized by SQLite:
 </p>
 
 <blockquote>
-<table width="100%">
+<table width="100%" class="pdf_keywords">
 <tr>
 <td align="left" valign="top" width="20%">
 }
@@ -2070,7 +2076,7 @@ puts {
 system objects.  They can be used as an identifier for a different 
 type of object.</p>
 
-<blockquote><b>
+<blockquote class="pdf_keywords"><b>
   _ROWID_<br>
   MAIN<br>
   OID<br>
@@ -2082,7 +2088,9 @@ type of object.</p>
 </b></blockquote>
 }
 
+puts {<DIV class="pdf_ignore">}
 footer $rcsid
 if {[string length $outputdir]} {
   footer $rcsid
 }
+puts {</DIV>}
