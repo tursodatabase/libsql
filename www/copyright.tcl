@@ -1,4 +1,4 @@
-set rcsid {$Id: copyright.tcl,v 1.5 2007/03/10 20:47:50 drh Exp $}
+set rcsid {$Id: copyright.tcl,v 1.6 2007/03/10 20:50:18 drh Exp $}
 source common.tcl
 header {SQLite Copyright}
 puts {
@@ -69,7 +69,7 @@ for obtaining a license include:
 
 <p>
 If you feel like you really have to purchase a license for SQLite,
-<a href="http://www.hwaci.com/">Hwaci</a>, the company that employees 
+<a href="http://www.hwaci.com/">Hwaci</a>, the company that employs 
 the architect and principal developers of SQLite, will sell you
 one.
 Please contact:
