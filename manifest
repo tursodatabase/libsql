@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sthe\scopyright.html\swebpage.\s\sTicket\s#2267\s(CVS\s3680)
-D 2007-03-10T18:30:31
+C Amplify\sand\sclarify\sreasons\sfor\swanting\sto\sget\sa\slicense\sto\suse\nSQLite.\s(CVS\s3681)
+D 2007-03-10T20:47:50
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -399,7 +399,7 @@ F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
 F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
-F www/copyright.tcl 58e232cb6f1955614a7284c1c7ce1344b29f9999
+F www/copyright.tcl 13d888c97167fc0148e5277c3a5d8c3b3ec2e6c4
 F www/datatype3.tcl eca9badcfe2a898d64ebda88e804eb6ac7c4626c
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
 F www/different.tcl 8b76ae88bf73e38097b7936e198df4f89baf587c
@@ -436,7 +436,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6ce39f30063bbee3271a428f284235b0a84b9229
-R f9c5b29c2495a128a4ddda7545995362
+P 74a4bfce46534330cb749ce2337ef39d51d693e7
+R dc84658c4d396a2221ca5895f3dcf7e8
 U drh
-Z 819635a1fbbc6f74af629c06eb84c956
+Z 18c3de78da40ab1239bed0ca8c4408ab

@@ -1,4 +1,4 @@
-set rcsid {$Id: copyright.tcl,v 1.4 2007/03/10 18:30:31 drh Exp $}
+set rcsid {$Id: copyright.tcl,v 1.5 2007/03/10 20:47:50 drh Exp $}
 source common.tcl
 header {SQLite Copyright}
 puts {
@@ -46,16 +46,33 @@ on file.  So the SQLite code base is clean and is
 uncontaminated with licensed code from other projects.
 </p>
 
-<h2>Obtaining A License To Use SQLite</h2>
+<h2>Obtaining An Explicit License To Use SQLite</h2>
 
 <p>
-If you are using SQLite in a jurisdiction that does not recognize
-the public domain, or if your legal department is uncomfortable with
-the concept of the public domain, you can purchase a license to use
-and distribute SQLite from <a href="http://www.hwaci.com/">Hwaci</a>,
-the company that employees the architect and principal developers
-of SQLite.  For additional information on how to purchase a license
-to use SQLite, please contact:
+Even though SQLite is in the public domain and does not require
+a license, some users want to obtain a license anyway.  Some reasons
+for obtaining a license include:
+</p>
+
+<ul>
+<li> You are using SQLite in a jurisdiction that does not recognize
+     the public domain.  </li>
+<li> You are using SQLite in a jurisdiction that does not recognize
+     the right of an author to dedicate their work to the public
+     domain. </li>
+<li> You want to hold a tangible legal document
+     as evidence that you have the legal right to use and distribute
+     SQLite. </li>
+<li> Your legal department tells you that you have to purchase a license.
+     </li>
+</ul>
+
+<p>
+If you feel like you really have to purchase a license for SQLite,
+<a href="http://www.hwaci.com/">Hwaci</a>, the company that employees 
+the architect and principal developers of SQLite, will sell you
+one.
+Please contact:
 </p>
 
 <blockquote>
