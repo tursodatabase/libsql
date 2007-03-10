@@ -1,5 +1,5 @@
-C Remove\sextra\sheading\saccidentally\sadded\sto\slang.tcl\sby\s(3677).\s(CVS\s3678)
-D 2007-03-09T14:43:25
+C Updates\sto\sthe\scopyright.html\spage\sto\saddress\sconcerns\ssome\susers\shave\nSQLite\shave\sabout\scopyright\sissues.\s\sA\slinks\sto\sthe\swikipedia\sarticle\non\spublic\sdomain\sand\sa\spublic\sdomain\sicon.\s(CVS\s3679)
+D 2007-03-10T13:47:01
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -10,6 +10,7 @@ F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
 F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
+F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F config.guess dba2d1300ec8f8cd00c6fb44b9edde21c14e960c
 F config.sub 9a842e7c332ed65cef3f2c20354e06dc998b2796
 F configure ab703ac4004675e630857a92d1ef5bd40cf8fad0 x
@@ -393,12 +394,12 @@ F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
 F www/capi3ref.tcl 4e0df9c41ebc669a7d7e9b81b410d1f907d20e78
 F www/changes.tcl dba0e1f40192f79c7a887fa3efa56e6fdd54f85a
-F www/common.tcl c24da36fe05f72b44f84dba08e020f924a605eac
+F www/common.tcl 2b793e5c31486c8a01dd27dc0a631ad93704438e
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
 F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
-F www/copyright.tcl 58b9586cac0d5914387cfc170bfd80f999dde469
+F www/copyright.tcl 38bf3248ddec394fbb2327cd8f62d45fe130632d
 F www/datatype3.tcl eca9badcfe2a898d64ebda88e804eb6ac7c4626c
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
 F www/different.tcl 8b76ae88bf73e38097b7936e198df4f89baf587c
@@ -435,7 +436,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 485c52ddc0f3c24f624825904cea3566f83f0e68
-R de462052d6c0a8132c7bafb857bd1ab8
-U danielk1977
-Z d0eb621ba2fe935e1d480543f6582333
+P 570533c1ef4640670227481cf72b782d320a65ba
+R a4cad54b75eacd0bcdf064f417d955e4
+U drh
+Z cac8e2e33e4728fc4ecfcc0eac6ef804

@@ -26,7 +26,7 @@ proc header {txt} {
 <li><a href="download.html">download</a></li>
 <li><a href="faq.html">faq</a></li>
 <li><a href="index.html">home</a></li>
-<li><a href="support.html">mailing&nbsp;list</a></li>
+<li><a href="copyright.html">license</a></li>
 <li><a href="index.html">news</a></li>
 </ul>
 </td>

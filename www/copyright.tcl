@@ -1,21 +1,75 @@
-set rcsid {$Id: copyright.tcl,v 1.2 2006/05/03 23:39:37 drh Exp $}
+set rcsid {$Id: copyright.tcl,v 1.3 2007/03/10 13:47:01 drh Exp $}
 source common.tcl
 header {SQLite Copyright}
 puts {
 <h2>SQLite Copyright</h2>
 
+<table align="right" vspace="0" hspace="10" border="1" cellpadding="20">
+<tr><td align="center">
+<img src="nocopy.gif"><br>
+SQLite is in the<br>
+<a href="http://en.wikipedia.org/wiki/Public_Domain">Public Domain</a>
+</td></tr>
+</table>
+
 <p>
-The original author of SQLite has dedicated the code to the public domain.
+All of the deliverable code in SQLite has been dedicated to the
+<a href="http://en.wikipedia.org/wiki/Public_Domain">public domain</a>
+by the authors.
+All code authors, and representatives of the companies they work for,
+have signed affidavits dedicating their contributions to
+the public domain and originals of
+those signed affidavits are stored in a firesafe at the main offices
+of <a href="http://www.hwaci.com">Hwaci</a>.
 Anyone is free to copy, modify, publish, use, compile, sell, or distribute
 the original SQLite code, either in source code form or as a compiled binary,
 for any purpose, commercial or non-commercial, and by any means.
 </p>
 
+<p>
+The previous paragraph applies to the deliverable code in SQLite - 
+those parts of the SQLite library that you actually bundle and
+ship with a larger application.  Portions of the documentation and
+some code used as part of the build process might fall under
+other licenses.  The details here are unclear.  We do not worry
+about the licensing of the documentation and build code so much
+because none of these things are part of the core deliverable
+SQLite library.
+</p>
+
+<p>
+All of the deliverable code in SQLite has been written from scratch.
+No code has been taken from other projects or from the open
+internet.  Every line of code can be traced back to its original
+author, and all of those authors have public domain dedications
+on file.  So the SQLite code base is clean and is
+uncontaminated with licensed code from other projects.
+</p>
+
+<h2>Obtaining A License To Use SQLite</h2>
+
+<p>
+If you are using SQLite in a jurisdiction that does not recognize
+the public domain, or if your legal department is uncomfortable with
+the concept of the public domain, you can purchase a license to use
+and distribute SQLite from <a href="http://www.hwaci.com/">Hwaci</a>,
+the company that employees the architect and principal developers
+of SQLite.  For additional information on how to purchase a license
+to use SQLite, please contact:
+</p>
+
+<blockquote>
+D. Richard Hipp <br />
+Hwaci - Applied Software Research <br />
+704.948.4565 <br />
+<a href="mailto:drh@hwaci.com">drh@hwaci.com</a>
+</blockquote>
+
 <h2>Contributed Code</h2>
 
 <p>
 In order to keep SQLite complete free and unencumbered by copyright,
-other contributors to the SQLite code base are asked to likewise dedicate
+all new contributors to the SQLite code base are asked dedicate
 their contributions to the public domain.
 If you want to send a patch or enhancement for possible inclusion in the
 SQLite source tree, please accompany the patch with the following statement:
@@ -30,8 +84,7 @@ perpetuity of all present and future rights this code under copyright law.
 </i></blockquote>
 
 <p>
-Regrettably, as of 2003 October 20,
-we will no longer be able to accept patches or changes to 
+We are not able to accept patches or changes to 
 SQLite that are not accompanied by a statement such as the above.
 In addition, if you make
 changes or enhancements as an employee, then a simple statement such as the
@@ -50,10 +103,7 @@ USA
 A template copyright release is available
 in <a href="copyright-release.pdf">PDF</a> or
 <a href="copyright-release.html">HTML</a>.
-You can use this release to make future changes.  If you have contributed
-changes or enhancements to SQLite in the past, and have not already done
-so, you are invited to complete and sign a copy of the template and mail
-it to the address above.
+You can use this release to make future changes. 
 </p>
 }
 footer $rcsid
