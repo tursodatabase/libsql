@@ -1,5 +1,5 @@
-C Fix\sanother\stypo\sin\scopyright.html\s(CVS\s3682)
-D 2007-03-10T20:50:18
+C Clarify\sthe\suse\sof\sloop\svariables\sin\sa\sexpr.c.\s(CVS\s3683)
+D 2007-03-12T23:48:53
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -66,7 +66,7 @@ F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 393c73fc027597e008dcd81454544659e978b05c
 F src/delete.c 151d08386bf9c9e7f92f6b9106c71efec2def184
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 824f026e74d1287212bad75c8a2858c349229e03
+F src/expr.c b5c65202c7ada4b1ec24f0f010bb73c92ab44e6d
 F src/func.c b7e1e220a6795ecae7649815145ea5f8644dfa5f
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
@@ -436,7 +436,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 05bae0204d2387201be4783a11d54b220a4a40e8
-R baf307440744185627f48bb51d1a2e44
+P 92f158643cc3f9fa913ed80e4eef325c33e4bf06
+R 1bcc6f326261ba45e04467f3466527d7
 U drh
-Z 96ceb7fe1d5f73a83c3d252b3752c753
+Z 77e39bddd91d33e7ddb2cdeef6f6f6cf
