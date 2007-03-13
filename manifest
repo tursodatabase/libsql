@@ -1,5 +1,5 @@
-C Clarify\sthe\suse\sof\sloop\svariables\sin\sa\sexpr.c.\s(CVS\s3683)
-D 2007-03-12T23:48:53
+C Do\snot\scrash\swhen\sa\scorrupt\sdatabase\scontains\stwo\sindices\swith\sthe\ssame\sname.\s(CVS\s3684)
+D 2007-03-13T16:32:25
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -60,7 +60,7 @@ F src/attach.c b11eb4d5d3fb99a10a626956bccc7215f6b68b16
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
 F src/btree.c f5c1b3d88ad62ab4682de37229168a00b87fc948
 F src/btree.h 066444ee25bd6e6accb997bfd2cf5ace14dbcd00
-F src/build.c 6bd68dc730b01c1727738f8e4b5c730eb0ddb421
+F src/build.c f6b2616b60b19520b93cd26f21f76a8d2fbadc49
 F src/callback.c 31d22b4919c7645cbcbb1591ce2453e8c677c558
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 393c73fc027597e008dcd81454544659e978b05c
@@ -182,7 +182,7 @@ F test/collate6.test 6c9470d1606ee3e564675b229653e320c49ec638
 F test/colmeta.test 6505c73ab58796afcb7c89ba9f429d573fbc6e53
 F test/conflict.test 8a59399f61a14296a9bfed02e0570590a8a79cba
 F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
-F test/corrupt2.test bf57d744ab00c5822996dc75eedb742ceadb2b0d
+F test/corrupt2.test 572f8df0303d0ce63ddad5c5c9101a83a345ae46
 F test/crash.test 5f5f155393c5685b3842fef79b6fbafa55197d75
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test 63cc718e1d209b10c6b7be8ce72b11addb9f1e04
@@ -436,7 +436,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 92f158643cc3f9fa913ed80e4eef325c33e4bf06
-R 1bcc6f326261ba45e04467f3466527d7
-U drh
-Z 77e39bddd91d33e7ddb2cdeef6f6f6cf
+P e20e76f6d8578f4faab0b101b6d4deb2a8987454
+R 9273c66be575d7182b4b1faa7a816ce7
+U danielk1977
+Z 7529e5f446ae1176d63e7d8f55ccdbb4

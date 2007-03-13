@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt2.test,v 1.3 2007/02/14 12:32:13 drh Exp $
+# $Id: corrupt2.test,v 1.4 2007/03/13 16:32:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -103,6 +103,33 @@ do_test corrupt2-1.5 {
     SELECT * FROM sqlite_master;
   } db2
 } {1 {database disk image is malformed}}
+db2 close
+
+# Corrupt a database by having 2 indices of the same name:
+do_test corrupt2-2.1 {
+
+  file delete -force corrupt.db
+  file delete -force corrupt.db-journal
+  copy_file test.db corrupt.db
+
+  sqlite3 db2 corrupt.db 
+  execsql {
+    CREATE INDEX a1 ON abc(a);
+    CREATE INDEX a2 ON abc(b);
+    PRAGMA writable_schema = 1;
+    UPDATE sqlite_master 
+      SET name = 'a3', sql = 'CREATE INDEX a3' || substr(sql, 16, 10000)
+      WHERE type = 'index';
+    PRAGMA writable_schema = 0;
+  } db2
+
+  db2 close
+  sqlite3 db2 corrupt.db 
+  catchsql {
+    SELECT * FROM sqlite_master;
+  } db2
+} {1 {malformed database schema - index a3 already exists}}
+
 db2 close
 
 finish_test

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.413 2007/02/02 12:44:37 drh Exp $
+** $Id: build.c,v 1.414 2007/03/13 16:32:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2357,17 +2357,17 @@ void sqlite3CreateIndex(
     }
     if( !db->init.busy ){
       if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) goto exit_create_index;
+      if( sqlite3FindTable(db, zName, 0)!=0 ){
+        sqlite3ErrorMsg(pParse, "there is already a table named %s", zName);
+        goto exit_create_index;
+      }
+    }
       if( sqlite3FindIndex(db, zName, pDb->zName)!=0 ){
         if( !ifNotExist ){
           sqlite3ErrorMsg(pParse, "index %s already exists", zName);
         }
         goto exit_create_index;
       }
-      if( sqlite3FindTable(db, zName, 0)!=0 ){
-        sqlite3ErrorMsg(pParse, "there is already a table named %s", zName);
-        goto exit_create_index;
-      }
-    }
   }else{
     char zBuf[30];
     int n;
