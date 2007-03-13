@@ -5,7 +5,7 @@ set rcsid {$Id: }
 source common.tcl
 header {File Locking And Concurrency In SQLite Version 3}
 
-proc HEADING {level title} {
+proc HEADING {level title {label {}}} {
   global pnum
   incr pnum($level)
   foreach i [array names pnum] {
@@ -16,6 +16,9 @@ proc HEADING {level title} {
   set n $pnum(1).$pnum(2)
   for {set i 3} {$i<=$level} {incr i} {
     append n .$pnum($i)
+  }
+  if {$label!=""} {
+    puts "<a name=\"$label\">"
   }
   puts "<h$h>$n $title</h$h>"
 }
@@ -42,7 +45,7 @@ of SQLite version 3.
 </p>
 }
 
-HEADING 1 {Overview}
+HEADING 1 {Overview} overview
 
 puts {
 <p>
@@ -81,7 +84,7 @@ word "process" is written you may substitute the word "thread" without
 changing the truth of the statement.</p>
 }
 
-HEADING 1 {Locking}
+HEADING 1 {Locking} locking
 
 puts {
 <p>
@@ -149,7 +152,7 @@ does not track PENDING locks.
 </p>
 }
 
-HEADING 1 {The Rollback Journal}
+HEADING 1 {The Rollback Journal} rollback
 
 puts {
 <p>Any time a process wants to make a changes to a database file, it
@@ -213,7 +216,7 @@ preceding rules will be repeated in bullets:
 </ul>
 }
 
-HEADING 2 {Dealing with hot journals}
+HEADING 2 {Dealing with hot journals} hot_journals
 
 puts {
 <p>
@@ -257,7 +260,7 @@ read from the database file.  Once all reading has completed, the
 SHARED lock is dropped.</p>
 }
 
-HEADING 2 {Deleting stale master journals}
+HEADING 2 {Deleting stale master journals} stale_master_journals
 
 puts {
 <p>A stale master journal is a master journal that is no longer being
@@ -274,7 +277,7 @@ or refer to other master journals or no master journal at all, then the
 master journal we are testing is stale and can be safely deleted.</p>
 }
 
-HEADING 1 {Writing to a database file}
+HEADING 1 {Writing to a database file} writing
 
 puts {
 <p>To write to a database, a process must first acquire a SHARED lock
@@ -401,7 +404,7 @@ commit sequence is used, as follows:</p>
 </ol>
 }
 
-HEADING 2 {Writer starvation}
+HEADING 2 {Writer starvation} writer_starvation
 
 puts {
 <p>In SQLite version 2, if many processes are reading from the database,
@@ -420,7 +423,7 @@ eventually complete, all SHARED locks will eventually clear and the
 writer will be given a chance to make its changes.</p>
 }
 
-HEADING 1 {How To Corrupt Your Database Files}
+HEADING 1 {How To Corrupt Your Database Files} how_to_corrupt
 
 puts {
 <p>The pager module is robust but it is not completely failsafe.
@@ -515,7 +518,7 @@ after a power failure.
 </p>
 }
 
-HEADING 1 {Transaction Control At The SQL Level}
+HEADING 1 {Transaction Control At The SQL Level} transaction_control
 
 puts {
 <p>
