@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.127 2007/01/27 02:24:56 drh Exp $
+** $Id: pragma.c,v 1.128 2007/03/14 15:37:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -157,7 +157,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "ignore_check_constraints", SQLITE_IgnoreChecks  },
 #endif
     /* The following is VERY experimental */
-    { "writable_schema",          SQLITE_WriteSchema   },
+    { "writable_schema",          SQLITE_WriteSchema|SQLITE_RecoveryMode },
     { "omit_readlock",            SQLITE_NoReadlock    },
 
     /* TODO: Maybe it shouldn't be possible to change the ReadUncommitted

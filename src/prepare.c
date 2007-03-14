@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.43 2007/01/09 14:01:13 drh Exp $
+** $Id: prepare.c,v 1.44 2007/03/14 15:37:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -310,10 +310,17 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     rc = SQLITE_NOMEM;
     sqlite3ResetInternalSchema(db, 0);
   }
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK || (db->flags&SQLITE_RecoveryMode)){
+    /* Black magic: If the SQLITE_RecoveryMode flag is set, then consider
+    ** the schema loaded, even if errors occured. In this situation the 
+    ** current sqlite3_prepare() operation will fail, but the following one
+    ** will attempt to compile the supplied statement against whatever subset
+    ** of the schema was loaded before the error occured. The primary
+    ** purpose of this is to allow access to the sqlite_master table
+    ** even when it's contents have been corrupted.
+    */
     DbSetProperty(db, iDb, DB_SchemaLoaded);
-  }else{
-    sqlite3ResetInternalSchema(db, iDb);
+    rc = SQLITE_OK;
   }
   return rc;
 }

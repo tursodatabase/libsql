@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.541 2007/03/02 06:24:19 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.542 2007/03/14 15:37:04 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -544,6 +544,8 @@ struct sqlite3 {
 #define SQLITE_LegacyFileFmt  0x00008000  /* Create new databases in format 1 */
 #define SQLITE_FullFSync      0x00010000  /* Use full fsync on the backend */
 #define SQLITE_LoadExtension  0x00020000  /* Enable load_extension */
+
+#define SQLITE_RecoveryMode   0x00040000  /* Ignore schema errors */
 
 /*
 ** Possible values for the sqlite.magic field.
