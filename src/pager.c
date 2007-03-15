@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.286 2007/03/06 13:46:00 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.287 2007/03/15 01:16:48 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1569,17 +1569,19 @@ int sqlite3_opentemp_count = 0;
 #endif
 
 /*
-** Open a temporary file.  Write the name of the file into zFile
-** (zFile must be at least SQLITE_TEMPNAME_SIZE bytes long.)  Write
-** the file descriptor into *fd.  Return SQLITE_OK on success or some
+** Open a temporary file. 
+**
+** Write the file descriptor into *fd.  Return SQLITE_OK on success or some
 ** other error code if we fail.
 **
 ** The OS will automatically delete the temporary file when it is
 ** closed.
 */
-static int sqlite3pager_opentemp(char *zFile, OsFile **pFd){
+static int sqlite3pager_opentemp(OsFile **pFd){
   int cnt = 8;
   int rc;
+  char zFile[SQLITE_TEMPNAME_SIZE];
+
 #ifdef SQLITE_TEST
   sqlite3_opentemp_count++;  /* Used for testing and analysis only */
 #endif
@@ -1662,7 +1664,8 @@ int sqlite3pager_open(
       }
     }
   }else{
-    rc = sqlite3pager_opentemp(zTemp, &fd);
+    rc = sqlite3pager_opentemp(&fd);
+    sqlite3OsTempFileName(zTemp);
     zFilename = zTemp;
     zFullPathname = sqlite3OsFullPathname(zFilename);
     if( rc==SQLITE_OK ){
@@ -3559,7 +3562,6 @@ int *sqlite3pager_stats(Pager *pPager){
 */
 int sqlite3pager_stmt_begin(Pager *pPager){
   int rc;
-  char zTemp[SQLITE_TEMPNAME_SIZE];
   assert( !pPager->stmtInUse );
   assert( pPager->state>=PAGER_SHARED );
   assert( pPager->dbSize>=0 );
@@ -3589,7 +3591,7 @@ int sqlite3pager_stmt_begin(Pager *pPager){
   pPager->stmtHdrOff = 0;
   pPager->stmtCksum = pPager->cksumInit;
   if( !pPager->stmtOpen ){
-    rc = sqlite3pager_opentemp(zTemp, &pPager->stfd);
+    rc = sqlite3pager_opentemp(&pPager->stfd);
     if( rc ) goto stmt_begin_failed;
     pPager->stmtOpen = 1;
     pPager->stmtNRec = 0;

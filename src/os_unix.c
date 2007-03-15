@@ -864,7 +864,7 @@ int sqlite3UnixOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   assert( 0==*pId );
   h = open(zFilename,
                 O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW|O_LARGEFILE|O_BINARY,
-                SQLITE_DEFAULT_FILE_PERMISSIONS);
+                delFlag ? 0600 : SQLITE_DEFAULT_FILE_PERMISSIONS);
   if( h<0 ){
     return SQLITE_CANTOPEN;
   }
