@@ -94,7 +94,7 @@ int sqlite3_io_error_persist = 0;
 int sqlite3_diskfull_pending = 0;
 int sqlite3_diskfull = 0;
 #define SimulateIOError(CODE)  \
-   if( sqlite3_io_error_pending ) \
+  if( sqlite3_io_error_pending || sqlite3_io_error_hit ) \
      if( sqlite3_io_error_pending-- == 1 \
          || (sqlite3_io_error_persist && sqlite3_io_error_hit) ) \
                 { local_ioerr(); CODE; }
@@ -106,6 +106,7 @@ static void local_ioerr(){
      if( sqlite3_diskfull_pending == 1 ){ \
        local_ioerr(); \
        sqlite3_diskfull = 1; \
+       sqlite3_io_error_hit = 1; \
        CODE; \
      }else{ \
        sqlite3_diskfull_pending--; \

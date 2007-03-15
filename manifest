@@ -1,5 +1,5 @@
-C Infrastructure\sto\smake\ssimulated\sI/O\serrors\spersistent\sinstead\sof\ntransient.\s(CVS\s3689)
-D 2007-03-15T12:17:43
+C Fix\sthe\spager\sso\sthat\sit\shandles\spersistent\sI/O\serrors\scorrectly.\nUpdate\sthe\stesting\sinfrastructure\sso\sthat\sit\stests\sfor\spersistent\nI/O\serrors\sinstead\sof\sjust\stransient\serrors.\s(CVS\s3690)
+D 2007-03-15T12:51:16
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -77,7 +77,7 @@ F src/main.c af8922e0205cf618392de2836c9efad71786d0d6
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
 F src/os.h 17fc73165cb7436aa79492d2dff754baec74fcb9
-F src/os_common.h 4ee94e3ba305cf92488fa7e54e5c98fb03fa7ddc
+F src/os_common.h 970899e83de0ba177d6fbdf9d700457fa3c6df8c
 F src/os_os2.c 8ee8207fe218a1acf3a31d59753e165e5c23bb95
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
@@ -86,7 +86,7 @@ F src/os_unix.c a3b26ad8270aea899f9d65fd2e6a176b05d2ef8f
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 8736cf3a49fd651a6538857480f302807d57814c
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 999194d214872e5c04a50700778571cc2238d1c0
+F src/pager.c ccca82d0f6644b95fd4f985d7049f1505443f048
 F src/pager.h 8881591ca23d1e5fd83c95fa8317245fbcf64227
 F src/parse.y bcfe366c1fd61cfc40e5344eb69a31997a821af0
 F src/pragma.c b52dcf2fbb46f3266f9d00b88054c684df3af2e7
@@ -193,7 +193,7 @@ F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
 F test/descidx1.test 2177c4ad55edcf56ad5f4c6490f307d7774e8a10
 F test/descidx2.test eb3a2882ec58aa6e1e8131d9bb54436e5b4a3ce2
 F test/descidx3.test 3a55b8d73bc3e9ad084e0da7fec781cf0d2a0356
-F test/diskfull.test d828d72adfc9e2d1a194d25996718c1989152cf9
+F test/diskfull.test 2321eae64325102e1c5fb2f92a99c5c1f94bb95a
 F test/distinctagg.test 2b89d1c5220d966a30ba4b40430338669301188b
 F test/enc.test 7a03417a1051fe8bc6c7641cf4c8c3f7e0066d52
 F test/enc2.test 45710bacfa9df29720bc84c067dfdf8c8ddfb797
@@ -436,7 +436,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 760ebf8076b9cedb614bdc88c72d871c30cc7b94
-R a54dd85814a4f198d27a7b3bc55243a7
+P 1a53f531ecd51938fab37a59b7088d89d8f8569d
+R 3660727ee8d0612f6e273df51bd49941
 U drh
-Z da48ce4b728b6695aadd7e57b610d24b
+Z 7fe43a32146926ecb006444cd47d8efc
