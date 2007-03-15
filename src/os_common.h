@@ -90,13 +90,16 @@ static unsigned int elapse;
 #ifdef SQLITE_TEST
 int sqlite3_io_error_hit = 0;
 int sqlite3_io_error_pending = 0;
+int sqlite3_io_error_persist = 0;
 int sqlite3_diskfull_pending = 0;
 int sqlite3_diskfull = 0;
 #define SimulateIOError(CODE)  \
    if( sqlite3_io_error_pending ) \
-     if( sqlite3_io_error_pending-- == 1 ){ local_ioerr(); CODE; }
+     if( sqlite3_io_error_pending-- == 1 \
+         || (sqlite3_io_error_persist && sqlite3_io_error_hit) ) \
+                { local_ioerr(); CODE; }
 static void local_ioerr(){
-  sqlite3_io_error_hit = 1;  /* Really just a place to set a breakpoint */
+  sqlite3_io_error_hit = 1;
 }
 #define SimulateDiskfullError(CODE) \
    if( sqlite3_diskfull_pending ){ \

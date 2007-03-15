@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.29 2007/01/04 14:58:14 drh Exp $
+# $Id: ioerr.test,v 1.30 2007/03/15 12:17:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -45,9 +45,6 @@ do_ioerr_test ioerr-1 -erc 1 -sqlprep {
   SELECT * FROM t1;
   DELETE FROM t1 WHERE a<100;
 } -exclude [expr [string match [execsql {pragma auto_vacuum}] 1] ? 4 : 0]
-
-finish_test
-return
 
 # Test for IO errors during a VACUUM. 
 #
@@ -258,6 +255,15 @@ do_ioerr_test ioerr-10 -tclprep {
   if {$msg != "column a is not unique"} {
     error $msg
   }
+}
+
+# Assertion fault bug reported by alex dimitrov.
+#
+do_ioerr_test ioerr-11 -erc 1 -sqlprep {
+   CREATE TABLE A(Id INTEGER, Name TEXT);
+   INSERT INTO A(Id, Name) VALUES(1, 'Name');
+} -sqlbody {
+   UPDATE A SET Id = 2, Name = 'Name2' WHERE Id = 1;
 }
 
 finish_test

@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.72 2007/01/04 14:58:14 drh Exp $
+# $Id: tester.tcl,v 1.73 2007/03/15 12:17:43 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -342,6 +342,7 @@ proc crashsql {crashdelay crashfile sql} {
 #     -sqlbody          TCL script to run with IO error simulation.
 #     -exclude          List of 'N' values not to test.
 #     -erc              Use extended result codes
+#     -persist          Make simulated I/O errors persistent
 #     -start            Value of 'N' to begin with (default 1)
 #
 #     -cksum            Boolean. If true, test that the database does
@@ -353,6 +354,7 @@ proc do_ioerr_test {testname args} {
   set ::ioerropts(-cksum) 0
   set ::ioerropts(-erc) 0
   set ::ioerropts(-count) 100000000
+  set ::ioerropts(-persist) 1
   array set ::ioerropts $args
 
   set ::go 1
@@ -392,6 +394,7 @@ proc do_ioerr_test {testname args} {
   
     # Set the Nth IO error to fail.
     do_test $testname.$n.2 [subst {
+      set ::sqlite_io_error_persist $::ioerropts(-persist)
       set ::sqlite_io_error_pending $n
     }] $n
   
