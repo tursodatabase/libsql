@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.590 2007/03/01 00:29:14 drh Exp $
+** $Id: vdbe.c,v 1.591 2007/03/15 12:05:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3504,9 +3504,9 @@ case OP_RowData: {
       pTos->z = z;
     }
     if( pC->isIndex ){
-      sqlite3BtreeKey(pCrsr, 0, n, pTos->z);
+      rc = sqlite3BtreeKey(pCrsr, 0, n, pTos->z);
     }else{
-      sqlite3BtreeData(pCrsr, 0, n, pTos->z);
+      rc = sqlite3BtreeData(pCrsr, 0, n, pTos->z);
     }
   }else if( pC->pseudoTable ){
     pTos->n = pC->nData;
