@@ -1,5 +1,5 @@
-C Fix\sthe\spager\sso\sthat\sit\shandles\spersistent\sI/O\serrors\scorrectly.\nUpdate\sthe\stesting\sinfrastructure\sso\sthat\sit\stests\sfor\spersistent\nI/O\serrors\sinstead\sof\sjust\stransient\serrors.\s(CVS\s3690)
-D 2007-03-15T12:51:16
+C Check\sfor\smultiple\scalls\sto\ssqlite3FailedMalloc().\sIgnore\sthe\ssecond\sand\ssubsequent\scalls.\s(CVS\s3691)
+D 2007-03-15T15:33:32
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -120,7 +120,7 @@ F src/tokenize.c bb1732ef2b6fc2143f93ff28a45d3dcb04c1d396
 F src/trigger.c 8c55d31876013ed4e97ee7ce24478fbe00db49bb
 F src/update.c 876b3142b8db9ce6ddf8374a2ced65e576acabc7
 F src/utf.c 67ecb1032bc0b42c105e88d65ef9d9f626eb0e1f
-F src/util.c 91d4cb189476906639ae611927d939691d1365f6
+F src/util.c 5fd552a3e810bb284c7721dc9ae936636db511f4
 F src/vacuum.c 327c6ffa38935163db7c1e256ff5f788e901b318
 F src/vdbe.c 19e244e554e5df3f49d4e15233527753fadbcc4d
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
@@ -436,7 +436,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 1a53f531ecd51938fab37a59b7088d89d8f8569d
-R 3660727ee8d0612f6e273df51bd49941
-U drh
-Z 7fe43a32146926ecb006444cd47d8efc
+P ea8507a796c65041f7e720edea89f919fca1a028
+R 5d29b4be7fb44760716828c670d395c7
+U danielk1977
+Z 0e4277c09968dc77bec9f859c249a52e

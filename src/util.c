@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.193 2006/09/15 07:28:51 drh Exp $
+** $Id: util.c,v 1.194 2007/03/15 15:33:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1461,9 +1461,11 @@ int sqlite3MallocFailed(){
 ** Set the "malloc has failed" condition to true for this thread.
 */
 void sqlite3FailedMalloc(){
-  sqlite3OsEnterMutex();
-  assert( mallocHasFailed==0 );
-  mallocHasFailed = 1;
+  if( !sqlite3MallocFailed() ){
+    sqlite3OsEnterMutex();
+    assert( mallocHasFailed==0 );
+    mallocHasFailed = 1;
+  }
 }
 
 #ifdef SQLITE_MEMDEBUG
