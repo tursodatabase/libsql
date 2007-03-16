@@ -70,7 +70,9 @@ static int porterCreate(
   sqlite3_tokenizer **ppTokenizer
 ){
   porter_tokenizer *t;
-  t = (porter_tokenizer *) calloc(sizeof(porter_tokenizer), 1);
+  t = (porter_tokenizer *) calloc(sizeof(*t), 1);
+  if( t==NULL ) return SQLITE_NOMEM;
+
   *ppTokenizer = &t->base;
   return SQLITE_OK;
 }
@@ -96,7 +98,9 @@ static int porterOpen(
 ){
   porter_tokenizer_cursor *c;
 
-  c = (porter_tokenizer_cursor *) malloc(sizeof(porter_tokenizer_cursor));
+  c = (porter_tokenizer_cursor *) malloc(sizeof(*c));
+  if( c==NULL ) return SQLITE_NOMEM;
+
   c->zInput = zInput;
   if( zInput==0 ){
     c->nInput = 0;
@@ -605,6 +609,7 @@ static int porterNext(
       if( n>c->nAllocated ){
         c->nAllocated = n+20;
         c->zToken = realloc(c->zToken, c->nAllocated);
+        if( c->zToken==NULL ) return SQLITE_NOMEM;
       }
       porter_stemmer(&z[iStartOffset], n, c->zToken, pnBytes);
       *pzToken = c->zToken;
