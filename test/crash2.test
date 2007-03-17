@@ -1,0 +1,64 @@
+# 2001 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# The focus of this file is testing the ability of the database to
+# uses its rollback journal to recover intact (no database corruption)
+# from a power failure during the middle of a COMMIT. Even more
+# specifically, the tests in this file verify this functionality
+# for storage mediums with various sector sizes.
+#
+# $Id: crash2.test,v 1.1 2007/03/17 10:28:05 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !crashtest {
+  finish_test
+  return
+}
+
+# This test is designed to check that the crash-test infrastructure
+# can create files that do not consist of an integer number of
+# simulated disk blocks (i.e. 3KB file using 2KB disk blocks).
+#
+do_test crash2-1.1 {
+  crashsql -delay 500 -file test.db -blocksize 2048 {
+    BEGIN;
+    CREATE TABLE abc AS SELECT 1 AS a, 2 AS b, 3 AS c;
+    CREATE TABLE def AS SELECT 1 AS d, 2 AS e, 3 AS f;
+    COMMIT;
+  }
+  file size test.db
+} {3072}
+
+for {set ii 0} {$ii < 5} {incr ii} {
+
+  # Simple test using the database created above: Create a new
+  # table so that page 1 and page 4 are modified. Using a
+  # block-size of 2048 and page-size of 1024, this means
+  # pages 2 and 3 must also be saved in the journal to avoid
+  # risking corruption.
+  #
+  # The loop is so that this test can be run with a couple
+  # of different seeds for the random number generator.
+  #
+  do_test crash2-1.2.$ii {
+    crashsql -file test.db -blocksize 2048 "
+      [string repeat {SELECT random();} $ii]
+      CREATE TABLE hij(h, i, j);
+    "
+    db eval {PRAGMA integrity_check}
+  } {ok}
+}
+
+finish_test
+
