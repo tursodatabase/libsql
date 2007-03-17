@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.58 2007/03/17 13:27:56 drh Exp $
+# $Id: func.test,v 1.59 2007/03/17 17:52:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -440,7 +440,6 @@ do_test func-12.7 {
 # Test that the auxdata API for scalar functions works. This test uses
 # a special user-defined function only available in test builds,
 # test_auxdata(). Function test_auxdata() takes any number of arguments.
-btree_breakpoint
 do_test func-13.1 {
   execsql {
     SELECT test_auxdata('hello world');
@@ -772,6 +771,55 @@ do_test func-21.8 {
   }
 } {0123456789012345678901234567890123456789012345678901234567890123456789}
 
-
+# Tests for the TRIM, LTRIM and RTRIM functions.
+#
+do_test func-22.1 {
+  catchsql {SELECT trim(1,2,3)}
+} {1 {wrong number of arguments to function trim()}}
+do_test func-22.2 {
+  catchsql {SELECT ltrim(1,2,3)}
+} {1 {wrong number of arguments to function ltrim()}}
+do_test func-22.3 {
+  catchsql {SELECT rtrim(1,2,3)}
+} {1 {wrong number of arguments to function rtrim()}}
+do_test func-22.4 {
+  execsql {SELECT trim('  hi  ');}
+} {hi}
+do_test func-22.5 {
+  execsql {SELECT ltrim('  hi  ');}
+} {{hi  }}
+do_test func-22.6 {
+  execsql {SELECT rtrim('  hi  ');}
+} {{  hi}}
+do_test func-22.7 {
+  execsql {SELECT trim('  hi  ','xyz');}
+} {{  hi  }}
+do_test func-22.8 {
+  execsql {SELECT ltrim('  hi  ','xyz');}
+} {{  hi  }}
+do_test func-22.9 {
+  execsql {SELECT rtrim('  hi  ','xyz');}
+} {{  hi  }}
+do_test func-22.10 {
+  execsql {SELECT trim('xyxzy  hi  zzzy','xyz');}
+} {{  hi  }}
+do_test func-22.11 {
+  execsql {SELECT ltrim('xyxzy  hi  zzzy','xyz');}
+} {{  hi  zzzy}}
+do_test func-22.12 {
+  execsql {SELECT rtrim('xyxzy  hi  zzzy','xyz');}
+} {{xyxzy  hi  }}
+do_test func-22.13 {
+  execsql {SELECT trim('  hi  ','');}
+} {{  hi  }}
+do_test func-22.20 {
+  execsql {SELECT typeof(trim(NULL));}
+} {null}
+do_test func-22.21 {
+  execsql {SELECT typeof(trim(NULL,'xyz'));}
+} {null}
+do_test func-22.22 {
+  execsql {SELECT typeof(trim('hello',NULL));}
+} {null}
 
 finish_test
