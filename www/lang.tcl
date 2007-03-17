@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.125 2007/03/09 14:43:25 danielk1977 Exp $}
+set rcsid {$Id: lang.tcl,v 1.126 2007/03/17 18:22:58 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1315,7 +1315,8 @@ characters is returned, not the number of bytes.</td>
 <tr>
 <td valign="top" align="right">
 <a name="likeFunc"></a>
-like(<i>X</i>,<i>Y</i> [,<i>Z</i>])</td>
+like(<i>X</i>,<i>Y</i>)<br>
+like(<i>X</i>,<i>Y</i>,<i>Z</i>)</td>
 <td valign="top">
 This function is used to implement the "<b>X LIKE Y [ESCAPE Z]</b>"
 syntax of SQL. If the optional ESCAPE clause is present, then the
@@ -1348,6 +1349,16 @@ converted to lower case.  The C library <b>tolower()</b> routine is used
 for the conversion, which means that this function might not
 work correctly on UTF-8 characters.</td>
 </tr>
+
+<tr>
+<td valign="top" align="right">
+<a name="ltrimFunc">
+ltrim(<i>X</i>)<br>ltrim(<i>X</i>,<i>Y</i>)</td>
+<td valign="top">Return a string formed by removing any and all
+characters that appear in <i>Y</i> from the left side of <i>X</i>.
+If the <i>Y</i> argument is omitted, spaces are removed.</td>
+</tr>
+
 
 <tr>
 <td valign="top" align="right">max(<i>X</i>,<i>Y</i>,...)</td>
@@ -1392,6 +1403,15 @@ between -9223372036854775808 and +9223372036854775807.</td>
 
 <tr>
 <td valign="top" align="right">
+<a name="replaceFunc">
+replace(<i>X</i>,<i>Y</i>,<i>Z</i>)</td>
+<td valign="top">Return a string formed by substituting string <i>Z</i> for
+every occurrance of string <i>Y</i> in string <i>X</i>.  The BINARY
+collating sequence is used for comparisons.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">
 <a name="randomblobFunc">
 randomblob(<i>N</i>)</td>
 <td valign="top">Return a <i>N</i>-byte blob containing pseudo-random bytes.
@@ -1403,6 +1423,15 @@ randomblob(<i>N</i>)</td>
 <td valign="top">Round off the number <i>X</i> to <i>Y</i> digits to the
 right of the decimal point.  If the <i>Y</i> argument is omitted, 0 is 
 assumed.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">
+<a name="rtrimFunc">
+rtrim(<i>X</i>)<br>rtrim(<i>X</i>,<i>Y</i>)</td>
+<td valign="top">Return a string formed by removing any and all
+characters that appear in <i>Y</i> from the right side of <i>X</i>.
+If the <i>Y</i> argument is omitted, spaces are removed.</td>
 </tr>
 
 <tr>
@@ -1429,6 +1458,16 @@ the the first character of the substring is found by counting from the
 right rather than the left.  If SQLite is configured to support UTF-8,
 then characters indices refer to actual UTF-8 characters, not bytes.</td>
 </tr>
+
+<tr>
+<td valign="top" align="right">
+<a name="trimFunc">
+trim(<i>X</i>)<br>trim(<i>X</i>,<i>Y</i>)</td>
+<td valign="top">Return a string formed by removing any and all
+characters that appear in <i>Y</i> from both ends of <i>X</i>.
+If the <i>Y</i> argument is omitted, spaces are removed.</td>
+</tr>
+
 
 <tr>
 <td valign="top" align="right">typeof(<i>X</i>)</td>

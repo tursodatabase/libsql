@@ -1,5 +1,5 @@
-C Added\sTRIM,\sLTRIM,\sand\sRTRIM\sfunctions.\s(CVS\s3698)
-D 2007-03-17T17:52:42
+C Add\sdocumentation\sof\sthe\sREPLACE,\sTRIM,\sLTRIM,\sand\sRTRIM\sfunctions.\s(CVS\s3699)
+D 2007-03-17T18:22:58
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -415,7 +415,7 @@ F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
 F www/index.tcl 688cf1280232f4964d8d07fda65e166a4b2e16cc
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
-F www/lang.tcl cf204b6da4cf4ce2d47868092091a4cb7a9f8530
+F www/lang.tcl d449e4dc2518e334baf73fdececeafff041510b5
 F www/lockingv3.tcl e52345bd20323bef6146bfce18ae0829b2b7c87d
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
@@ -437,7 +437,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P c2fe746ea782f84e850aaf3af7f5536b027a19a1
-R 56fe7aceb3f39a745b09a268ce41fa61
+P 6fe13eeade4fc7099fbda1e6520640927c08debc
+R e59c456a15c824af13e66ea80698a647
 U drh
-Z 1b019529be28ae82cd90d8e8442d2374
+Z 83430ba34df4fa316ba8687bbb9080e3
