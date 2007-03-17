@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.414 2007/03/13 16:32:25 danielk1977 Exp $
+** $Id: build.c,v 1.415 2007/03/17 10:26:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2362,12 +2362,12 @@ void sqlite3CreateIndex(
         goto exit_create_index;
       }
     }
-      if( sqlite3FindIndex(db, zName, pDb->zName)!=0 ){
-        if( !ifNotExist ){
-          sqlite3ErrorMsg(pParse, "index %s already exists", zName);
-        }
-        goto exit_create_index;
+    if( sqlite3FindIndex(db, zName, pDb->zName)!=0 ){
+      if( !ifNotExist ){
+        sqlite3ErrorMsg(pParse, "index %s already exists", zName);
       }
+      goto exit_create_index;
+    }
   }else{
     char zBuf[30];
     int n;

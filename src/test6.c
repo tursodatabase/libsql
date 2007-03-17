@@ -38,9 +38,9 @@ struct crashFile {
 };
 
 /*
-** Size of a simulated disk block
+** Size of a simulated disk block. Default is 512 bytes.
 */
-#define BLOCKSIZE 512
+static int BLOCKSIZE = 512;
 #define BLOCK_OFFSET(x) ((x) * BLOCKSIZE)
 
 
@@ -59,6 +59,11 @@ static int iCrashDelay = 0;
 static char zCrashFile[500];
 
 /*
+** A list of all open files.
+*/
+static crashFile *pAllFiles = 0;
+
+/*
 ** Set the value of the two crash parameters.
 */
 static void setCrashParams(int iDelay, char const *zFile){
@@ -66,6 +71,16 @@ static void setCrashParams(int iDelay, char const *zFile){
   assert( strlen(zFile)<sizeof(zCrashFile) );
   strcpy(zCrashFile, zFile);
   iCrashDelay = iDelay;
+  sqlite3OsLeaveMutex();
+}
+
+/*
+** Set the value of the simulated disk block size.
+*/
+static void setBlocksize(int iBlockSize){
+  sqlite3OsEnterMutex();
+  assert( !pAllFiles );
+  BLOCKSIZE = iBlockSize;
   sqlite3OsLeaveMutex();
 }
 
@@ -93,11 +108,6 @@ static int crashRequired(char const *zPath){
   sqlite3OsLeaveMutex();
   return r;
 }
-
-/*
-** A list of all open files.
-*/
-static crashFile *pAllFiles = 0;
 
 /* Forward reference */
 static void initFile(OsFile **pId, char const *zName, OsFile *pBase);
@@ -510,7 +520,7 @@ static void initFile(OsFile **pId, char const *zName, OsFile *pBase){
 
 
 /*
-** tclcmd:   sqlite_crashparams DELAY CRASHFILE
+** tclcmd:   sqlite_crashparams DELAY CRASHFILE ?BLOCKSIZE?
 **
 ** This procedure implements a TCL command that enables crash testing
 ** in testfixture.  Once enabled, crash testing cannot be disabled.
@@ -521,20 +531,31 @@ static int crashParamsObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int delay;
+  int iDelay;
   const char *zFile;
   int nFile;
-  if( objc!=3 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DELAY CRASHFILE");
+
+  if( objc!=3 && objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DELAY CRASHFILE ?BLOCKSIZE?");
     return TCL_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[1], &delay) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[1], &iDelay) ) return TCL_ERROR;
   zFile = Tcl_GetStringFromObj(objv[2], &nFile);
   if( nFile>=sizeof(zCrashFile)-1 ){
     Tcl_AppendResult(interp, "crash file name too big", 0);
     return TCL_ERROR;
   }
-  setCrashParams(delay, zFile);
+  setCrashParams(iDelay, zFile);
+  if( objc==4 ){
+    int iBlockSize = 0;
+    if( Tcl_GetIntFromObj(interp, objv[3], &iBlockSize) ) return TCL_ERROR;
+    if( pAllFiles ){
+      char *zErr = "Cannot modify blocksize after opening files";
+      Tcl_SetResult(interp, zErr, TCL_STATIC);
+      return TCL_ERROR;
+    }
+    setBlocksize(iBlockSize);
+  }
   sqlite3CrashTestEnable = 1;
   return TCL_OK;
 }

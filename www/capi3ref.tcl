@@ -1,8 +1,8 @@
-set rcsid {$Id: capi3ref.tcl,v 1.52 2007/02/20 15:21:05 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.53 2007/03/17 10:26:59 danielk1977 Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
-<h2>C/C++ Interface For SQLite Version 3</h2>
+<h2 class=pdf_section>C/C++ Interface For SQLite Version 3</h2>
 }
 
 proc api {name prototype desc {notused x}} {
@@ -1722,6 +1722,7 @@ foreach name [lsort [array names name_to_idx]] {
 #parray name_to_idx
 #parray sname
 incr n -1
+puts "<DIV class=pdf_ignore>"
 puts {<table width="100%" cellpadding="5"><tr>}
 set nrow [expr {($n+2)/3}]
 set i 0
@@ -1740,6 +1741,7 @@ for {set j 0} {$j<3} {incr j} {
 }
 puts "</table>"
 puts "<!-- $n entries.  $nrow rows in 3 columns -->"
+puts "</DIV>"
 
 proc resolve_name {ignore_list name} {
   global name_to_idx
@@ -1756,7 +1758,7 @@ foreach name [lsort [array names name_to_idx]] {
   set done($i) 1
   foreach {namelist prototype desc} [lindex $apilist $i] break
   foreach name $namelist {
-    puts "<a name=\"$name\">"
+    puts "<a name=\"$name\"></a>"
   }
   puts "<p><hr></p>"
   puts "<blockquote><pre>"
@@ -1773,4 +1775,6 @@ foreach name [lsort [array names name_to_idx]] {
   puts "<p>$d3</p>"
 }
 
+puts "<DIV class=pdf_ignore>"
 footer $rcsid
+puts "</DIV>"

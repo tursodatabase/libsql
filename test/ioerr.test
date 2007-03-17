@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.30 2007/03/15 12:17:43 drh Exp $
+# $Id: ioerr.test,v 1.31 2007/03/17 10:26:59 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -141,7 +141,7 @@ ifcapable crashtest {
         CREATE TABLE tx(a, b);
         CREATE TABLE aux.ty(a, b);
       }
-      set rc [crashsql 2 test2.db-journal {
+      set rc [crashsql -delay 2 -file test2.db-journal {
         ATTACH 'test2.db' as aux;
         PRAGMA cache_size = 10;
         BEGIN;

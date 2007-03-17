@@ -13,11 +13,11 @@
 # The focus of this file is testing the ability of the database to
 # uses its rollback journal to recover intact (no database corruption)
 # from a power failure during the middle of a COMMIT.  The OS interface
-# modules are overloaded in a separate instance of testfixture using
-# the modified I/O routines found in test6.c.  These routines allow us
-# to simulate the kind of file damage that occurs after a power failure.
+# modules are overloaded using the modified I/O routines found in test6.c.  
+# These routines allow us to simulate the kind of file damage that 
+# occurs after a power failure.
 #
-# $Id: crash.test,v 1.22 2007/03/17 07:22:43 danielk1977 Exp $
+# $Id: crash.test,v 1.23 2007/03/17 10:26:59 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -68,7 +68,7 @@ do_test crash-1.1 {
   expr 0
 } {0}
 do_test crash-1.2 {
-  crashsql 1 test.db-journal {
+  crashsql -delay 1 -file test.db-journal {
     DELETE FROM abc WHERE a = 1;
   }
 } {1 {child process exited abnormally}}
@@ -76,7 +76,7 @@ do_test crash-1.3 {
   signature
 } $::sig
 do_test crash-1.4 {
-  crashsql 1 test.db {
+  crashsql -delay 1 -file test.db {
     DELETE FROM abc WHERE a = 1;
   }
 } {1 {child process exited abnormally}}
@@ -84,7 +84,7 @@ do_test crash-1.5 {
   signature
 } $::sig
 do_test crash-1.6 {
-  crashsql 2 test.db-journal {
+  crashsql -delay 2 -file test.db-journal {
     DELETE FROM abc WHERE a = 1;
   }
 } {1 {child process exited abnormally}}
@@ -95,7 +95,7 @@ do_test crash-1.7 {
 } {0 {1 2 3 4 5 6}}
 
 do_test crash-1.8 {
-  crashsql 3 test.db-journal {
+  crashsql -delay 3 -file test.db-journal {
     DELETE FROM abc WHERE a = 1;
   }
 } {0 {}}
@@ -105,7 +105,7 @@ do_test crash-1.9 {
   }
 } {0 {4 5 6}}
 do_test crash-1.10 {
-  crashsql 2 test.db {
+  crashsql -delay 2 -file test.db {
     DELETE FROM abc WHERE a = 4;
   }
 } {0 {}}
@@ -143,7 +143,7 @@ do_test crash-2.2 {
   expr ([file size test.db] / 1024)>16
 } {1}
 do_test crash-2.3 {
-  crashsql 2 test.db-journal {
+  crashsql -delay 2 -file test.db-journal {
     DELETE FROM abc WHERE a < 800;
   }
 } {1 {child process exited abnormally}}
@@ -151,7 +151,7 @@ do_test crash-2.4 {
   signature
 } $sig
 do_test crash-2.5 {
-  crashsql 1 test.db {
+  crashsql -delay 1 -file test.db {
     DELETE FROM abc WHERE a<800;
   }
 } {1 {child process exited abnormally}}
@@ -185,7 +185,7 @@ do_test crash-3.0 {
 for {set i 1} {$i < $repeats} {incr i} {
   set sig [signature]
   do_test crash-3.$i.1 {
-     crashsql [expr $i%5 + 1] test.db-journal "
+     crashsql -delay [expr $i%5 + 1] -file test.db-journal "
        BEGIN;
        SELECT random() FROM abc LIMIT $i;
        INSERT INTO abc VALUES(randstr(10,10), 0, 0);
@@ -224,7 +224,7 @@ for {set i 1} {$i<$repeats} {incr i} {
   set sig [signature]
   set sig2 [signature2]
   do_test crash-4.1.$i.1 {
-     set c [crashsql $i test.db-journal "
+     set c [crashsql -delay $i -file test.db-journal "
        ATTACH 'test2.db' AS aux;
        BEGIN;
        SELECT random() FROM abc LIMIT $i;
@@ -249,7 +249,7 @@ while {[incr i]} {
   set sig2 [signature2]
   set ::fin 0
   do_test crash-4.2.$i.1 {
-     set c [crashsql $i test2.db-journal "
+     set c [crashsql -delay $i -file test2.db-journal "
        ATTACH 'test2.db' AS aux;
        BEGIN;
        SELECT random() FROM abc LIMIT $i;
@@ -277,7 +277,7 @@ for {set i 1} {$i < 5} {incr i} {
   set sig [signature]
   set sig2 [signature2]
   do_test crash-4.3.$i.1 {
-     crashsql 1 test.db-mj* "
+     crashsql -delay 1 -file test.db-mj* "
        ATTACH 'test2.db' AS aux;
        BEGIN;
        SELECT random() FROM abc LIMIT $i;
@@ -340,7 +340,7 @@ do_test crash-5.3 {
 # database file and the journal file does not contain trustworthy rollback
 # data for this page.
 #
-  crashsql 1 test.db-journal {
+  crashsql -delay 1 -file test.db-journal {
     BEGIN;                                             -- 1
     DELETE FROM abc WHERE oid = 1;                     -- 2
     INSERT INTO abc VALUES(randstr(1500,1500), 0, 0);  -- 3
@@ -361,7 +361,7 @@ do_test crash-5.5 {
 # journal file before truncation in an auto-vacuum database.
 #
 do_test crash-6.1 {
-  crashsql 1 test.db {
+  crashsql -delay 1 -file test.db {
     DROP TABLE abc;
   }
 } {1 {child process exited abnormally}}
@@ -374,7 +374,7 @@ do_test crash-6.2 {
 # corrupted slightly so that the corruption has to be detected by the
 # checksum.
 do_test crash-7.1 {
-  crashsql 1 test.db {
+  crashsql -delay 1 -file test.db {
     ATTACH 'test2.db' AS aux;
     BEGIN;
     INSERT INTO abc VALUES(randstr(1500,1500), 0, 0);

@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.36 2006/10/18 23:26:39 drh Exp $
+# $Id: malloc.test,v 1.37 2007/03/17 10:26:59 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -359,7 +359,7 @@ do_malloc_test 12 -tclbody {
 # transaction.
 ifcapable crashtest {
   do_malloc_test 13 -tclprep {
-    set rc [crashsql 1 test2.db {
+    set rc [crashsql -delay 1 -file test2.db {
       ATTACH 'test2.db' as aux;
       PRAGMA cache_size = 10;
       BEGIN;
