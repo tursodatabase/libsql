@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.136 2007/01/29 17:58:28 drh Exp $
+** $Id: func.c,v 1.137 2007/03/17 13:27:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -669,6 +669,65 @@ static void hexFunc(
   sqlite3_result_text(context, zHex, n*2, sqlite3_free);
 }
 
+/*
+** The replace() function.  Three arguments are all strings: call
+** them A, B, and C. The result is also a string which is derived
+** from A by replacing every occurance of B with C.  The match
+** must be exact.  Collating sequences are not used.
+*/
+static void replaceFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const unsigned char *zStr;        /* The input string A */
+  const unsigned char *zPattern;    /* The pattern string B */
+  const unsigned char *zRep;        /* The replacement string C */
+  unsigned char *zOut;              /* The output */
+  int nStr;                /* Size of zStr */
+  int nPattern;            /* Size of zPattern */
+  int nRep;                /* Size of zRep */
+  int nOut;                /* Maximum size of zOut */
+  int loopLimit;           /* Last zStr[] that might match zPattern[] */
+  int i, j;                /* Loop counters */
+
+  assert( argc==3 );
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ||
+      sqlite3_value_type(argv[1])==SQLITE_NULL ||
+      sqlite3_value_type(argv[2])==SQLITE_NULL ){
+    return;
+  }
+  nStr = sqlite3_value_bytes(argv[0]);
+  zStr = sqlite3_value_text(argv[0]);
+  nPattern = sqlite3_value_bytes(argv[1]);
+  zPattern = sqlite3_value_text(argv[1]);
+  nRep = sqlite3_value_bytes(argv[2]);
+  zRep = sqlite3_value_text(argv[2]);
+  if( nPattern>=nRep ){
+    nOut = nStr;
+  }else{
+    nOut = (nStr/nPattern + 1)*nRep;
+  }
+  zOut = sqlite3_malloc(nOut+1);
+  if( zOut==0 ) return;
+  loopLimit = nStr - nPattern;  
+  for(i=j=0; i<=loopLimit; i++){
+    if( zStr[i]!=zPattern[0] || memcmp(&zStr[i], zPattern, nPattern) ){
+      zOut[j++] = zStr[i];
+    }else{
+      memcpy(&zOut[j], zRep, nRep);
+      j += nRep;
+      i += nPattern-1;
+    }
+  }
+  memcpy(&zOut[j], &zStr[i], nStr-i);
+  j += nStr - i;
+  assert( j<=nOut );
+  zOut[j] = 0;
+  sqlite3_result_text(context, (char*)zOut, j, sqlite3_free);
+}
+
+
 #ifdef SQLITE_SOUNDEX
 /*
 ** Compute the soundex encoding of a word.
@@ -1081,8 +1140,9 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "sqlite_version",     0, 0, SQLITE_UTF8,    0, versionFunc},
     { "quote",              1, 0, SQLITE_UTF8,    0, quoteFunc  },
     { "last_insert_rowid",  0, 1, SQLITE_UTF8,    0, last_insert_rowid },
-    { "changes",            0, 1, SQLITE_UTF8,    0, changes    },
-    { "total_changes",      0, 1, SQLITE_UTF8,    0, total_changes },
+    { "changes",            0, 1, SQLITE_UTF8,    0, changes           },
+    { "total_changes",      0, 1, SQLITE_UTF8,    0, total_changes     },
+    { "replace",            3, 0, SQLITE_UTF8,    0, replaceFunc       },
 #ifdef SQLITE_SOUNDEX
     { "soundex",            1, 0, SQLITE_UTF8, 0, soundexFunc},
 #endif
