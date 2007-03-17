@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.73 2007/03/15 12:17:43 drh Exp $
+# $Id: tester.tcl,v 1.74 2007/03/17 07:22:43 danielk1977 Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -317,8 +317,16 @@ proc crashsql {crashdelay crashfile sql} {
 
   set f [open crash.tcl w]
   puts $f "sqlite3_crashparams $crashdelay $cfile"
+  puts $f "set sqlite_pending_byte $::sqlite_pending_byte"
   puts $f "sqlite3 db test.db"
-  puts $f "db eval {pragma cache_size = 10}"
+
+  # This block sets the cache size of the main database to 10
+  # pages. This is done in case the build is configured to omit
+  # "PRAGMA cache_size".
+  puts $f {db eval {SELECT * FROM sqlite_master;}}
+  puts $f {set bt [btree_from_db db]}
+  puts $f {btree_set_cache_size $bt 10}
+
   puts $f "db eval {"
   puts $f   "$sql"
   puts $f "}"

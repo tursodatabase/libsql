@@ -17,7 +17,7 @@
 # the modified I/O routines found in test6.c.  These routines allow us
 # to simulate the kind of file damage that occurs after a power failure.
 #
-# $Id: crash.test,v 1.21 2006/01/06 14:32:20 drh Exp $
+# $Id: crash.test,v 1.22 2007/03/17 07:22:43 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -29,45 +29,6 @@ ifcapable !crashtest {
 
 # set repeats 100
 set repeats 10
-
-# This proc execs a seperate process that crashes midway through executing
-# the SQL script $sql on database test.db.
-#
-# The crash occurs during a sync() of file $crashfile. When the crash
-# occurs a random subset of all unsynced writes made by the process are
-# written into the files on disk. Argument $crashdelay indicates the
-# number of file syncs to wait before crashing.
-#
-# The return value is a list of two elements. The first element is a
-# boolean, indicating whether or not the process actually crashed or
-# reported some other error. The second element in the returned list is the
-# error message. This is "child process exited abnormally" if the crash
-# occured.
-proc crashsql {crashdelay crashfile sql} {
-  set cfile [file join [pwd] $crashfile]
-
-  set f [open crash.tcl w]
-  puts $f "sqlite3_crashparams $crashdelay $cfile"
-  puts $f "set sqlite_pending_byte $::sqlite_pending_byte"
-  puts $f {sqlite3 db test.db}
-
-  # This block sets the cache size of the main database to 10
-  # pages. This is done in case the build is configured to omit
-  # "PRAGMA cache_size".
-  puts $f {db eval {SELECT * FROM sqlite_master;}}
-  puts $f {set bt [btree_from_db db]}
-  puts $f {btree_set_cache_size $bt 10}
-
-  puts $f "db eval {"
-  puts $f   "$sql"
-  puts $f "}"
-  close $f
-
-  set r [catch {
-    exec [info nameofexec] crash.tcl >@stdout
-  } msg]
-  lappend r $msg
-}
 
 # The following procedure computes a "signature" for table "abc".  If
 # abc changes in any way, the signature should change.  
