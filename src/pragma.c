@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.128 2007/03/14 15:37:04 danielk1977 Exp $
+** $Id: pragma.c,v 1.129 2007/03/19 17:44:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -941,7 +941,7 @@ void sqlite3Pragma(
       if( pBt==0 || (pPager = sqlite3BtreePager(pBt))==0 ){
         sqlite3VdbeOp3(v, OP_String8, 0, 0, "closed", P3_STATIC);
       }else{
-        int j = sqlite3pager_lockstate(pPager);
+        int j = sqlite3PagerLockstate(pPager);
         sqlite3VdbeOp3(v, OP_String8, 0, 0, 
             (j>=0 && j<=4) ? azLockName[j] : "unknown", P3_STATIC);
       }

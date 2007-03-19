@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.70 2007/02/10 19:22:36 drh Exp $
+** $Id: test3.c,v 1.71 2007/03/19 17:44:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -511,7 +511,7 @@ static int btree_pager_stats(
     return TCL_ERROR;
   }
   pBt = sqlite3TextToPtr(argv[1]);
-  a = sqlite3pager_stats(sqlite3BtreePager(pBt));
+  a = sqlite3PagerStats(sqlite3BtreePager(pBt));
   for(i=0; i<11; i++){
     static char *zName[] = {
       "ref", "page", "max", "size", "state", "err",
@@ -545,7 +545,7 @@ static int btree_pager_ref_dump(
   }
   pBt = sqlite3TextToPtr(argv[1]);
 #ifdef SQLITE_DEBUG
-  sqlite3pager_refdump(sqlite3BtreePager(pBt));
+  sqlite3PagerRefdump(sqlite3BtreePager(pBt));
 #endif
   return TCL_OK;
 }
@@ -1282,15 +1282,17 @@ static int btree_ovfl_info(
   n = (n + dataSize - 1)/dataSize;
   pgno = (u32)aResult[10];
   while( pgno && n-- ){
+    DbPage *pDbPage;
     sprintf(zElem, "%d", pgno);
     Tcl_DStringAppendElement(&str, zElem);
-    if( sqlite3pager_get(pPager, pgno, &pPage)!=SQLITE_OK ){
+    if( sqlite3PagerGet(pPager, pgno, &pDbPage)!=SQLITE_OK ){
       Tcl_DStringFree(&str);
       Tcl_AppendResult(interp, "unable to get page ", zElem, 0);
       return TCL_ERROR;
     }
+    pPage = sqlite3PagerGetData(pDbPage);
     pgno = get4byte((unsigned char*)pPage);
-    sqlite3pager_unref(pPage);
+    sqlite3PagerUnref(pDbPage);
   }
   Tcl_DStringResult(interp, &str);
   return SQLITE_OK;

@@ -1,5 +1,5 @@
-C Add\ssome\stest\scases\ssimulating\scrashes\swith\svarious\sstorage\smedium\ssector\ssizes.\s(CVS\s3704)
-D 2007-03-19T15:04:54
+C Modify\sthe\sinterface\sto\sthe\spager\ssub-system\sin\spreparation\sfor\sperforming\sIO\sin\sblocks\sbased\son\ssector-size,\snot\sdatabase\spage-size.\s(CVS\s3705)
+D 2007-03-19T17:44:27
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -58,7 +58,7 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c fd286a9140a2df84b1482f052b67ff5fad9569a1
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c f5278b44929198098ed382101ce97b58ceacb5cd
+F src/btree.c 4d94251b59fa33c888efc43881729f7d297899a4
 F src/btree.h 066444ee25bd6e6accb997bfd2cf5ace14dbcd00
 F src/build.c f2edc786b5bf165a7d0949ed3a5872455a610c0e
 F src/callback.c 31d22b4919c7645cbcbb1591ce2453e8c677c558
@@ -86,10 +86,10 @@ F src/os_unix.c 33ee7c1483fbd4d67cf5638c87622c277442b744
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c f3ca3e08167eb3382781b840e787809eccb626dc
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 3688e882a10a693cbdc9303426d3a52b8f48ccd5
-F src/pager.h 8881591ca23d1e5fd83c95fa8317245fbcf64227
+F src/pager.c dec2b25851190ab2d5b7d44065fae625c566dda5
+F src/pager.h 9f6b5ef42c761deec8a9b1966b32e9a9dc89a631
 F src/parse.y bcfe366c1fd61cfc40e5344eb69a31997a821af0
-F src/pragma.c b52dcf2fbb46f3266f9d00b88054c684df3af2e7
+F src/pragma.c a3fe1dacdbf320ad99d4125a60a5bce8f1808bc8
 F src/prepare.c 4e075fe28591b7d4ffbf818fb88a7e19bbe98065
 F src/printf.c aade23a789d7cc88b397ec0d33a0a01a33a7a9c1
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
@@ -102,8 +102,8 @@ F src/sqliteInt.h 6e3ac7a1a8f51e24ce4784236aa957e9bd11217f
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c cd2b3b86ab07c0e0779f6c6e71e72c6c7dc1e704
 F src/test1.c b4ff8f82f84d2ccdf07a2db5acae7b47c12f60d7
-F src/test2.c 59085c04e22a22bed9f1078ab318adc34c1229f3
-F src/test3.c ed494a126221c4b9f66f8f0445554ad749764709
+F src/test2.c dc48c84ce68b3bc2f2d01871d709f20dc77003b0
+F src/test3.c f78f1d83d8c50926fa080abbf8769b9d47ed623e
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 5957d249d437e4db74045ce2f1f661648d94bf94
@@ -120,7 +120,7 @@ F src/tokenize.c bb1732ef2b6fc2143f93ff28a45d3dcb04c1d396
 F src/trigger.c 8c55d31876013ed4e97ee7ce24478fbe00db49bb
 F src/update.c 876b3142b8db9ce6ddf8374a2ced65e576acabc7
 F src/utf.c 67ecb1032bc0b42c105e88d65ef9d9f626eb0e1f
-F src/util.c 5fd552a3e810bb284c7721dc9ae936636db511f4
+F src/util.c f6d739fc25026cecb59ac98344a1f12fcbee074f
 F src/vacuum.c 327c6ffa38935163db7c1e256ff5f788e901b318
 F src/vdbe.c 19e244e554e5df3f49d4e15233527753fadbcc4d
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
@@ -437,7 +437,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9f62ef1ec385d9f1a1913439dc4c2d710373f12a
-R 784c351e0fe2c19f26c03e7b8875efc3
+P c3c5f658cf9c69b6e81e63fbde5dd0a854be9fc7
+R 8bc9543d27c6957ab236f6b14f2fea11
 U danielk1977
-Z bcc4c2f06f6fc376240bcf364d3a6431
+Z 733a417800b51f433ae2631c0b87c550
