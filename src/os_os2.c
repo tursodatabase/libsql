@@ -751,6 +751,7 @@ static const IoMethod sqlite3Os2IoMethod = {
   os2Unlock,
   os2LockState,
   os2CheckReservedLock,
+  osGenericSectorSize,
 };
 
 /*

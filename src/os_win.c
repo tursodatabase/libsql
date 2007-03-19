@@ -1473,6 +1473,7 @@ static const IoMethod sqlite3WinIoMethod = {
   winUnlock,
   winLockState,
   winCheckReservedLock,
+  osGenericSectorSize,
 };
 
 /*

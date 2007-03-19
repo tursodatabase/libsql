@@ -650,6 +650,13 @@ static int asyncCheckReservedLock(OsFile *id){
   return rc>SHARED_LOCK;
 }
 
+static int asyncSectorSize(OsFile *id){
+  /* TODO: This is tricky to implement, as this backend might not have
+  ** an open file handle at this point.
+  */
+  return 512;
+}
+
 /* 
 ** This is broken. But sqlite3OsLockState() is only used for testing anyway.
 */
@@ -697,7 +704,8 @@ static int asyncOpenFile(
     asyncLock,
     asyncUnlock,
     asyncLockState,
-    asyncCheckReservedLock
+    asyncCheckReservedLock,
+    asyncSectorSize,
   };
 
   if( openForWriting && SQLITE_ASYNC_TWO_FILEHANDLES ){

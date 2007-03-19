@@ -479,6 +479,13 @@ int crashFileHandle(OsFile *id){
 }
 
 /*
+** Return the simulated file-system sector size.
+*/
+int crashSectorSize(OsFile *id){
+  return BLOCKSIZE;
+}
+
+/*
 ** This vector defines all the methods that can operate on an OsFile
 ** for the crash tester.
 */
@@ -497,6 +504,7 @@ static const IoMethod crashIoMethod = {
   crashUnlock,
   crashLockState,
   crashCheckReservedLock,
+  crashSectorSize,
 };
 
 

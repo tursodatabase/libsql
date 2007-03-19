@@ -2355,6 +2355,7 @@ static const IoMethod sqlite3UnixIoMethod = {
   unixUnlock,
   unixLockState,
   unixCheckReservedLock,
+  osGenericSectorSize,
 };
 
 #ifdef SQLITE_ENABLE_LOCKING_STYLE
@@ -2377,6 +2378,7 @@ static const IoMethod sqlite3AFPLockingUnixIoMethod = {
     afpUnixUnlock,
     unixLockState,
     afpUnixCheckReservedLock,
+    osGenericSectorSize,
 };
 
 /*
@@ -2398,6 +2400,7 @@ static const IoMethod sqlite3FlockLockingUnixIoMethod = {
     flockUnixUnlock,
     unixLockState,
     flockUnixCheckReservedLock,
+    osGenericSectorSize,
 };
 
 /*
@@ -2419,6 +2422,7 @@ static const IoMethod sqlite3DotlockLockingUnixIoMethod = {
     dotlockUnixUnlock,
     unixLockState,
     dotlockUnixCheckReservedLock,
+    osGenericSectorSize,
 };
 
 /*
@@ -2440,6 +2444,7 @@ static const IoMethod sqlite3NolockLockingUnixIoMethod = {
   nolockUnixUnlock,
   unixLockState,
   nolockUnixCheckReservedLock,
+  osGenericSectorSize,
 };
 
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */

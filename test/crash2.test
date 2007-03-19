@@ -16,7 +16,7 @@
 # specifically, the tests in this file verify this functionality
 # for storage mediums with various sector sizes.
 #
-# $Id: crash2.test,v 1.1 2007/03/17 10:28:05 danielk1977 Exp $
+# $Id: crash2.test,v 1.2 2007/03/19 05:54:50 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

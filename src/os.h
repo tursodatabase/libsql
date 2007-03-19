@@ -216,6 +216,7 @@ struct IoMethod {
   int (*xUnlock)(OsFile*, int);
   int (*xLockState)(OsFile *id);
   int (*xCheckReservedLock)(OsFile *id);
+  int (*xSectorSize)(OsFile *id);
 };
 
 /*
@@ -346,6 +347,7 @@ int sqlite3OsFileExists(const char*);
 char *sqlite3OsFullPathname(const char*);
 int sqlite3OsIsDirWritable(char*);
 int sqlite3OsSyncDirectory(const char*);
+int sqlite3OsSectorSize(OsFile *id);
 int sqlite3OsTempFileName(char*);
 int sqlite3OsRandomSeed(char*);
 int sqlite3OsSleep(int ms);

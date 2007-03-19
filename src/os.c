@@ -75,6 +75,9 @@ int sqlite3OsLockState(OsFile *id){
 int sqlite3OsCheckReservedLock(OsFile *id){
   return id->pMethod->xCheckReservedLock(id);
 }
+int sqlite3OsSectorSize(OsFile *id){
+  return id->pMethod->xSectorSize(id);
+}
 
 #ifdef SQLITE_ENABLE_REDEF_IO
 /*

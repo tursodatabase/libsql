@@ -190,3 +190,14 @@ void sqlite3GenericFree(void *p){
 /* Never actually used, but needed for the linker */
 int sqlite3GenericAllocationSize(void *p){ return 0; }
 #endif
+
+/*
+** The default size of a disk sector
+*/
+#ifndef PAGER_SECTOR_SIZE
+# define PAGER_SECTOR_SIZE 512
+#endif
+static int osGenericSectorSize(OsFile *id){
+  return PAGER_SECTOR_SIZE;
+}
+

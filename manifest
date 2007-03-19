@@ -1,5 +1,5 @@
-C Add\sdocumentation\sof\sthe\sREPLACE,\sTRIM,\sLTRIM,\sand\sRTRIM\sfunctions.\s(CVS\s3699)
-D 2007-03-17T18:22:58
+C Add\snew\sOS\sfile\smethod\sto\sreturn\sthe\ssector-size\sof\sthe\sunderlying\sstorage:\ssqlite3OsSectorSize()\s(CVS\s3700)
+D 2007-03-19T05:54:49
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -75,18 +75,18 @@ F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c bbfdbf452c71b6f2723375478a365788498ec3cd
 F src/main.c af8922e0205cf618392de2836c9efad71786d0d6
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
-F src/os.c 59f05de8c5777c34876607114a2fbe55ae578235
-F src/os.h 17fc73165cb7436aa79492d2dff754baec74fcb9
-F src/os_common.h 970899e83de0ba177d6fbdf9d700457fa3c6df8c
-F src/os_os2.c 8ee8207fe218a1acf3a31d59753e165e5c23bb95
+F src/os.c 6df3e9c23eaa982d3e66ef770ad2519de5dd4d97
+F src/os.h ec780b3561d0bb887d13f193a1a889872c44a236
+F src/os_common.h aa3ef56941dcaf480b6f055a615674fe4909edbc
+F src/os_os2.c 175101ffc2142c3fc7962ed7a171806f28f95363
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c a3b26ad8270aea899f9d65fd2e6a176b05d2ef8f
+F src/os_unix.c 33ee7c1483fbd4d67cf5638c87622c277442b744
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 8736cf3a49fd651a6538857480f302807d57814c
+F src/os_win.c f3ca3e08167eb3382781b840e787809eccb626dc
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c ccca82d0f6644b95fd4f985d7049f1505443f048
+F src/pager.c 097923484be9edfb238920ad61583ad98ef3bbb3
 F src/pager.h 8881591ca23d1e5fd83c95fa8317245fbcf64227
 F src/parse.y bcfe366c1fd61cfc40e5344eb69a31997a821af0
 F src/pragma.c b52dcf2fbb46f3266f9d00b88054c684df3af2e7
@@ -106,10 +106,10 @@ F src/test2.c 59085c04e22a22bed9f1078ab318adc34c1229f3
 F src/test3.c ed494a126221c4b9f66f8f0445554ad749764709
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
-F src/test6.c edbd903a4886c171f199048af58c3aa5b2a86712
+F src/test6.c 5957d249d437e4db74045ce2f1f661648d94bf94
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
 F src/test8.c 628ec89f9fbf3bfb9c58a503d845a0719595d0ad
-F src/test_async.c e3deaedd4d86a56391b81808fde9e44fbd92f1d3
+F src/test_async.c 33eb896746b512078a83cd5424de37445bb30de2
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
@@ -184,7 +184,7 @@ F test/conflict.test 8a59399f61a14296a9bfed02e0570590a8a79cba
 F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
 F test/corrupt2.test 572f8df0303d0ce63ddad5c5c9101a83a345ae46
 F test/crash.test 167eb4652eccbedb199b6f21850346c3f5d779fb
-F test/crash2.test 10be14f91865c6959db6764a7dd478c6561bf4c1
+F test/crash2.test 18bbb71c41de2b7892562679f3cdb72b86d4cd27
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/date.test 63cc718e1d209b10c6b7be8ce72b11addb9f1e04
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
@@ -437,7 +437,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6fe13eeade4fc7099fbda1e6520640927c08debc
-R e59c456a15c824af13e66ea80698a647
-U drh
-Z 83430ba34df4fa316ba8687bbb9080e3
+P d42c9636205a1a649cffcaeabff2b9b32016db31
+R aace24c3ad1a66792ced6daa5ca6df05
+U danielk1977
+Z a82901bb045246e4e447c22d214c62f4

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.288 2007/03/15 12:51:16 drh Exp $
+** @(#) $Id: pager.c,v 1.289 2007/03/19 05:54:49 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -347,13 +347,6 @@ static const unsigned char aJournalMagic[] = {
 # define MEMDB 0
 #else
 # define MEMDB pPager->memDb
-#endif
-
-/*
-** The default size of a disk sector
-*/
-#ifndef PAGER_SECTOR_SIZE
-# define PAGER_SECTOR_SIZE 512
 #endif
 
 /*
@@ -1394,7 +1387,7 @@ end_playback:
   ** back a journal created by a process with a different PAGER_SECTOR_SIZE
   ** value. Reset it to the correct value for this process.
   */
-  pPager->sectorSize = PAGER_SECTOR_SIZE;
+  pPager->sectorSize = sqlite3OsSectorSize(pPager->fd);
   return rc;
 }
 
@@ -1738,7 +1731,10 @@ int sqlite3pager_open(
   /* pPager->pFirstSynced = 0; */
   /* pPager->pLast = 0; */
   pPager->nExtra = FORCE_ALIGNMENT(nExtra);
-  pPager->sectorSize = PAGER_SECTOR_SIZE;
+  assert(fd||memDb);
+  if( !memDb ){
+    pPager->sectorSize = sqlite3OsSectorSize(fd);
+  }
   /* pPager->pBusyHandler = 0; */
   /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
   *ppPager = pPager;
