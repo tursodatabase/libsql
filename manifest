@@ -1,5 +1,5 @@
-C Add\snew\sOS\sfile\smethod\sto\sreturn\sthe\ssector-size\sof\sthe\sunderlying\sstorage:\ssqlite3OsSectorSize()\s(CVS\s3700)
-D 2007-03-19T05:54:49
+C Changes\sto\ssupport\smedium\ssector\ssizes\slarger\sthan\sthe\sdatabase\spage\ssize.\s(CVS\s3701)
+D 2007-03-19T11:25:20
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -58,7 +58,7 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 7d2b7ab9a9c2fd6e55700f69064dfdd3e36d7a8a
 F src/attach.c fd286a9140a2df84b1482f052b67ff5fad9569a1
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c f5c1b3d88ad62ab4682de37229168a00b87fc948
+F src/btree.c 4336ada77332acb947af6d382f0f3648ea9d8b6c
 F src/btree.h 066444ee25bd6e6accb997bfd2cf5ace14dbcd00
 F src/build.c f2edc786b5bf165a7d0949ed3a5872455a610c0e
 F src/callback.c 31d22b4919c7645cbcbb1591ce2453e8c677c558
@@ -86,7 +86,7 @@ F src/os_unix.c 33ee7c1483fbd4d67cf5638c87622c277442b744
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c f3ca3e08167eb3382781b840e787809eccb626dc
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 097923484be9edfb238920ad61583ad98ef3bbb3
+F src/pager.c c276e9de4e77d1c3d72367a7e207fa82e0e74af3
 F src/pager.h 8881591ca23d1e5fd83c95fa8317245fbcf64227
 F src/parse.y bcfe366c1fd61cfc40e5344eb69a31997a821af0
 F src/pragma.c b52dcf2fbb46f3266f9d00b88054c684df3af2e7
@@ -437,7 +437,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d42c9636205a1a649cffcaeabff2b9b32016db31
-R aace24c3ad1a66792ced6daa5ca6df05
+P 5752d84d374205e011d49b0221d6237967fe0743
+R 35e0cdc81bf64a560c8bcc30c7e3b7e8
 U danielk1977
-Z a82901bb045246e4e447c22d214c62f4
+Z 835c96473334a1bbc531e7fce3e63932

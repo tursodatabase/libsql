@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.338 2007/03/06 15:53:44 drh Exp $
+** $Id: btree.c,v 1.339 2007/03/19 11:25:20 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4031,8 +4031,8 @@ static int reparentPage(BtShared *pBt, Pgno pgno, MemPage *pNewParent, int idx){
   aData = sqlite3pager_lookup(pBt->pPager, pgno);
   if( aData ){
     pThis = (MemPage*)&aData[pBt->pageSize];
-    assert( pThis->aData==aData );
     if( pThis->isInit ){
+      assert( pThis->aData==aData );
       if( pThis->pParent!=pNewParent ){
         if( pThis->pParent ) sqlite3pager_unref(pThis->pParent->aData);
         pThis->pParent = pNewParent;

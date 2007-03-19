@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.289 2007/03/19 05:54:49 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.290 2007/03/19 11:25:20 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -285,6 +285,7 @@ struct Pager {
   Pager *pNext;               /* Linked list of pagers in this thread */
 #endif
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
+  int doNotSync;
 };
 
 /*
@@ -628,14 +629,16 @@ static int seekJournalHdr(Pager *pPager){
 */
 static int writeJournalHdr(Pager *pPager){
   char zHeader[sizeof(aJournalMagic)+16];
+  int rc;
 
-  int rc = seekJournalHdr(pPager);
+  if( pPager->stmtHdrOff==0 ){
+    pPager->stmtHdrOff = pPager->journalOff;
+  }
+
+  rc = seekJournalHdr(pPager);
   if( rc ) return rc;
 
   pPager->journalHdr = pPager->journalOff;
-  if( pPager->stmtHdrOff==0 ){
-    pPager->stmtHdrOff = pPager->journalHdr;
-  }
   pPager->journalOff += JOURNAL_HDR_SZ(pPager);
 
   /* FIX ME: 
@@ -1422,8 +1425,9 @@ static int pager_stmt_playback(Pager *pPager){
   }
 #endif
 
-  /* Set hdrOff to be the offset to the first journal header written
-  ** this statement transaction, or the end of the file if no journal
+  /* Set hdrOff to be the offset just after the end of the last journal
+  ** page written before the first journal-header for this statement
+  ** transaction was written, or the end of the file if no journal
   ** header was written.
   */
   hdrOff = pPager->stmtHdrOff;
@@ -1471,8 +1475,7 @@ static int pager_stmt_playback(Pager *pPager){
   }
   pPager->journalOff = pPager->stmtJSize;
   pPager->cksumInit = pPager->stmtCksum;
-  assert( JOURNAL_HDR_SZ(pPager)<(pPager->pageSize+8) );
-  while( pPager->journalOff <= (hdrOff-(pPager->pageSize+8)) ){
+  while( pPager->journalOff < hdrOff ){
     rc = pager_playback_one_page(pPager, pPager->jfd, 1);
     assert( rc!=SQLITE_DONE );
     if( rc!=SQLITE_OK ) goto end_stmt_playback;
@@ -2479,6 +2482,7 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
       */
       pPager->nRec = 0;
       assert( pPager->journalOff > 0 );
+      assert( pPager->doNotSync==0 );
       rc = writeJournalHdr(pPager);
       if( rc!=0 ){
         return rc;
@@ -2731,7 +2735,9 @@ int sqlite3pager_acquire(Pager *pPager, Pgno pgno, void **ppPage, int clrFlag){
     /* The requested page is not in the page cache. */
     int h;
     TEST_INCR(pPager->nMiss);
-    if( pPager->nPage<pPager->mxPage || pPager->pFirst==0 || MEMDB ){
+    if( pPager->nPage<pPager->mxPage || pPager->pFirst==0 || MEMDB ||
+        (pPager->pFirstSynced==0 && pPager->doNotSync)
+    ){
       /* Create a new page */
       if( pPager->nPage>=pPager->nHash ){
         pager_resize_hash_table(pPager,
@@ -3104,7 +3110,7 @@ static void makeClean(PgHdr *pPg){
 ** is a call to sqlite3pager_commit() or sqlite3pager_rollback() to
 ** reset.
 */
-int sqlite3pager_write(void *pData){
+static int pager_write(void *pData){
   PgHdr *pPg = DATA_TO_PGHDR(pData);
   Pager *pPager = pPg->pPager;
   int rc = SQLITE_OK;
@@ -3254,6 +3260,77 @@ int sqlite3pager_write(void *pData){
     if( !MEMDB && pPager->dbSize==PENDING_BYTE/pPager->pageSize ){
       pPager->dbSize++;
     }
+  }
+  return rc;
+}
+
+/*
+** This function is used to mark a data-page as writable. It uses 
+** pager_write() to open a journal file (if it is not already open)
+** and write the page *pData to the journal.
+**
+** The difference between this function and pager_write() is that this
+** function also deals with the special case where 2 or more pages
+** fit on a single disk sector. In this case all co-resident pages
+** must have been written to the journal file before returning.
+*/
+int sqlite3pager_write(void *pData){
+  int rc = SQLITE_OK;
+
+  PgHdr *pPg = DATA_TO_PGHDR(pData);
+  Pager *pPager = pPg->pPager;
+  Pgno nPagePerSector = (pPager->sectorSize/pPager->pageSize);
+
+  if( !MEMDB && nPagePerSector>1 ){
+    Pgno nPageCount;          /* Total number of pages in database file */
+    Pgno pg1;                 /* First page of the sector pPg is located on. */
+    int nPage;                /* Number of pages starting at pg1 to journal */
+    int ii;
+
+    /* Set the doNotSync flag to 1. This is because we cannot allow a journal
+    ** header to be written between the pages journaled by this function.
+    */
+    assert( pPager->doNotSync==0 );
+    pPager->doNotSync = 1;
+
+    /* This trick assumes that both the page-size and sector-size are
+    ** an integer power of 2. It sets variable pg1 to the identifier
+    ** of the first page of the sector pPg is located on.
+    */
+    pg1 = ((pPg->pgno-1) & ~(nPagePerSector-1)) + 1;
+
+    nPageCount = sqlite3pager_pagecount(pPager);
+    if( pPg->pgno>nPageCount ){
+      nPage = (pPg->pgno - pg1)+1;
+    }else if( (pg1+nPagePerSector-1)>nPageCount ){
+      nPage = nPageCount+1-pg1;
+    }else{
+      nPage = nPagePerSector;
+    }
+    assert(nPage>0);
+    assert(pg1<=pPg->pgno);
+    assert((pg1+nPage)>pPg->pgno);
+
+    for(ii=0; ii<nPage && rc==SQLITE_OK; ii++){
+      Pgno pg = pg1+ii;
+      if( !pPager->aInJournal || pg==pPg->pgno || 
+          pg>pPager->origDbSize || !(pPager->aInJournal[pg/8]&(1<<(pg&7)))
+      ) {
+        if( pg!=PAGER_MJ_PGNO(pPager) ){
+          void *pPage;
+          rc = sqlite3pager_get(pPager, pg, &pPage);
+          if( rc==SQLITE_OK ){
+            rc = pager_write(pPage);
+            sqlite3pager_unref(pPage);
+          }
+        }
+      }
+    }
+
+    assert( pPager->doNotSync==1 );
+    pPager->doNotSync = 0;
+  }else{
+    rc = pager_write(pData);
   }
   return rc;
 }
