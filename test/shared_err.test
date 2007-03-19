@@ -13,7 +13,7 @@
 # cache context. What happens to connection B if one connection A encounters
 # an IO-error whilst reading or writing the file-system?
 #
-# $Id: shared_err.test,v 1.9 2006/01/24 16:37:59 danielk1977 Exp $
+# $Id: shared_err.test,v 1.10 2007/03/19 13:53:38 danielk1977 Exp $
 
 proc skip {args} {}
 
@@ -27,7 +27,6 @@ ifcapable !shared_cache||!subquery {
   return
 }
 set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
-
 
 # Todo: This is a copy of the [do_malloc_test] proc in malloc.test
 # It would be better if these were consolidated.
@@ -256,15 +255,49 @@ do_ioerr_test shared_ioerr-3 -tclprep {
     COMMIT;
   }
 } -cleanup {
+  set ::steprc  [sqlite3_step $::STMT]
+  set ::column  [sqlite3_column_text $::STMT 0]
+  set ::finalrc [sqlite3_finalize $::STMT]
+
+  # There are three possible outcomes here (assuming persistent IO errors):
+  #
+  # 1. If the [sqlite3_step] did not require any IO (required pages in
+  #    the cache), then the next row ("002...") may be retrieved 
+  #    successfully.
+  #
+  # 2. If the [sqlite3_step] does require IO, then [sqlite3_step] returns
+  #    SQLITE_ERROR and [sqlite3_finalize] returns IOERR.
+  #
+  # 3. If, after the initial IO error, SQLite tried to rollback the
+  #    active transaction and a second IO error was encountered, then
+  #    statement $::STMT will have been aborted. This means [sqlite3_stmt]
+  #    returns SQLITE_ABORT, and the statement cursor does not move. i.e.
+  #    [sqlite3_column] still returns the current row ("001...") and
+  #    [sqlite3_finalize] returns SQLITE_OK.
+  #
+
   do_test shared_ioerr-3.$n.cleanup.1 {
-    sqlite3_step $::STMT
-  } {SQLITE_ROW}
+    expr {
+      $::steprc eq "SQLITE_ROW" || 
+      $::steprc eq "SQLITE_ERROR" ||
+      $::steprc eq "SQLITE_ABORT" 
+    }
+  } {1}
   do_test shared_ioerr-3.$n.cleanup.2 {
-    sqlite3_column_text $::STMT 0
-  } {002.002.002.002.002}
+    expr {
+      ($::steprc eq "SQLITE_ROW" && $::column eq "002.002.002.002.002") ||
+      ($::steprc eq "SQLITE_ERROR" && $::column eq "") ||
+      ($::steprc eq "SQLITE_ABORT" && $::column eq "001.001.001.001.001") 
+    }
+  } {1}
   do_test shared_ioerr-3.$n.cleanup.3 {
-    sqlite3_finalize $::STMT
-  } {SQLITE_OK}
+    expr {
+      ($::steprc eq "SQLITE_ROW" && $::finalrc eq "SQLITE_OK") ||
+      ($::steprc eq "SQLITE_ERROR" && $::finalrc eq "SQLITE_IOERR") ||
+      ($::steprc eq "SQLITE_ABORT" && $::finalrc eq "SQLITE_OK")
+    }
+  } {1}
+
 # db2 eval {select * from sqlite_master}
   db2 close
 }

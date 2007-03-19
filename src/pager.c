@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.290 2007/03/19 11:25:20 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.291 2007/03/19 13:53:38 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -880,6 +880,7 @@ static void pager_reset(Pager *pPager){
     pNext = pPg->pNextAll;
     sqliteFree(pPg);
   }
+  pPager->pStmt = 0;
   pPager->pFirst = 0;
   pPager->pFirstSynced = 0;
   pPager->pLast = 0;

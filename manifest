@@ -1,5 +1,5 @@
-C Fix\sa\scomment\sin\sbtree.c\s(CVS\s3702)
-D 2007-03-19T11:54:10
+C Fix\ssome\sproblems\swith\stest\scases\sin\sshared_err.test.\sAlso\sa\sreal\sbug\scausing\sa\ssegfault\safter\san\sIO\serror\sin\spager.c.\s(CVS\s3703)
+D 2007-03-19T13:53:38
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,7 +86,7 @@ F src/os_unix.c 33ee7c1483fbd4d67cf5638c87622c277442b744
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c f3ca3e08167eb3382781b840e787809eccb626dc
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c c276e9de4e77d1c3d72367a7e207fa82e0e74af3
+F src/pager.c 3688e882a10a693cbdc9303426d3a52b8f48ccd5
 F src/pager.h 8881591ca23d1e5fd83c95fa8317245fbcf64227
 F src/parse.y bcfe366c1fd61cfc40e5344eb69a31997a821af0
 F src/pragma.c b52dcf2fbb46f3266f9d00b88054c684df3af2e7
@@ -296,7 +296,7 @@ F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
 F test/shared.test 0ed247941236788c255b3b29b5a82d5ca71b6432
 F test/shared2.test 8b48f8d33494413ef4cf250110d89403e2bf6b23
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
-F test/shared_err.test 299a9180a6376b2089e8e0d469f383fe91bfa4ff
+F test/shared_err.test 841f7341eb07ed97c713bf89960a4e9199717193
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 4d6719b252fe90dc52f663a6b2a24cf6472ceac9
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
@@ -437,7 +437,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 3a3e8eb25d8e04cfccc5c0513ed04efcc25d3dbf
-R a297b1419430310b47806366b750440a
-U drh
-Z 55992e8d0ba687290ede6e38f8418c27
+P 05700c11a9e5177a437d2240e72fb61ea47b973b
+R 5b98dd2b31d3223324e5610c7e38647f
+U danielk1977
+Z e38c1767e7ac582db2f50d60881eead5
