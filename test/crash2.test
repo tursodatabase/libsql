@@ -16,7 +16,7 @@
 # specifically, the tests in this file verify this functionality
 # for storage mediums with various sector sizes.
 #
-# $Id: crash2.test,v 1.2 2007/03/19 05:54:50 danielk1977 Exp $
+# $Id: crash2.test,v 1.3 2007/03/19 15:04:54 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -59,6 +59,66 @@ for {set ii 0} {$ii < 5} {incr ii} {
     db eval {PRAGMA integrity_check}
   } {ok}
 }
+
+proc signature {} {
+  return [db eval {SELECT count(*), md5sum(a), md5sum(b), md5sum(c) FROM abc}]
+}
+
+# Test case for crashing during journal sync with simulated
+# sector-size values from 1024 to 8192.
+#
+do_test crash2-2.0 {
+  execsql BEGIN
+  for {set n 0} {$n < 1000} {incr n} {
+    execsql "INSERT INTO abc VALUES($n, [expr 2*$n], [expr 3*$n])"
+  }
+  execsql {
+    INSERT INTO abc SELECT * FROM abc;
+    INSERT INTO abc SELECT * FROM abc;
+    INSERT INTO abc SELECT * FROM abc;
+    INSERT INTO abc SELECT * FROM abc;
+    INSERT INTO abc SELECT * FROM abc;
+  }
+  execsql COMMIT
+  expr ([file size test.db] / 1024) > 450
+} {1}
+for {set i 1} {$i < 30} {incr i} {
+  set sig [signature]
+  set sector [expr 1024 * 1<<($i%4)]
+  do_test crash-2.$i.1 {
+     crashsql -blocksize $sector -delay [expr $i%5 + 1] -file test.db-journal "
+       BEGIN;
+       SELECT random() FROM abc LIMIT $i;
+       INSERT INTO abc SELECT randstr(10,10), 0, 0 FROM abc WHERE random()%2==0;
+       DELETE FROM abc WHERE random()%2!=0;
+       COMMIT;
+     "
+  } {1 {child process exited abnormally}}
+  do_test crash-2.$i.2 {
+    signature
+  } $sig
+} 
+
+
+# Test case for crashing during database sync with simulated
+# sector-size values from 1024 to 8192.
+#
+for {set i 1} {$i < 10} {incr i} {
+  set sig [signature]
+  set sector [expr 1024 * 1<<($i%4)]
+  do_test crash-3.$i.1 {
+     crashsql -blocksize $sector -file test.db "
+       BEGIN;
+       SELECT random() FROM abc LIMIT $i;
+       INSERT INTO abc SELECT randstr(10,10), 0, 0 FROM abc WHERE random()%2==0;
+       DELETE FROM abc WHERE random()%2!=0;
+       COMMIT;
+     "
+  } {1 {child process exited abnormally}}
+  do_test crash-3.$i.2 {
+    signature
+  } $sig
+} 
 
 finish_test
 
