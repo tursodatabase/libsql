@@ -942,18 +942,44 @@ static void plwInit(PLWriter *pWriter, sqlite_int64 iDocid, DocListType iType){
   dataBufferInit(&pWriter->b, 0);
   plwReset(pWriter, iDocid, iType);
 }
-static PLWriter *plwNew(sqlite_int64 iDocid, DocListType iType){
-  PLWriter *pWriter = malloc(sizeof(PLWriter));
-  plwInit(pWriter, iDocid, iType);
-  return pWriter;
-}
 static void plwDestroy(PLWriter *pWriter){
   dataBufferDestroy(&pWriter->b);
   SCRAMBLE(pWriter);
 }
-static void plwDelete(PLWriter *pWriter){
-  plwDestroy(pWriter);
-  free(pWriter);
+
+/*******************************************************************/
+/* DLCollector wraps PLWriter and DLWriter to provide a
+** dynamically-allocated doclist area to use during tokenization.
+**
+** dlcNew - malloc up and initialize a collector.
+** dlcDelete - destroy a collector and all contained items.
+** dlcAddPos - append position and offset information.
+** dlcAddDoclist - add the collected doclist to the given buffer.
+*/
+typedef struct DLCollector {
+  PLWriter plw;
+} DLCollector;
+
+static void dlcAddDoclist(DLCollector *pCollector, DataBuffer *b){
+  DLWriter dlw;
+  dlwInit(&dlw, pCollector->plw.iType, b);
+  plwDlwAdd(&pCollector->plw, &dlw);
+  dlwDestroy(&dlw);
+}
+static void dlcAddPos(DLCollector *pCollector, int iColumn, int iPos,
+                      int iStartOffset, int iEndOffset){
+  plwAdd(&pCollector->plw, iColumn, iPos, iStartOffset, iEndOffset);
+}
+
+static DLCollector *dlcNew(sqlite_int64 iDocid, DocListType iType){
+  DLCollector *pCollector = malloc(sizeof(DLCollector));
+  plwInit(&pCollector->plw, iDocid, iType);
+  return pCollector;
+}
+static void dlcDelete(DLCollector *pCollector){
+  plwDestroy(&pCollector->plw);
+  SCRAMBLE(pCollector);
+  free(pCollector);
 }
 
 
@@ -3533,7 +3559,7 @@ static int buildTerms(fulltext_vtab *v, fts2Hash *terms, sqlite_int64 iDocid,
                                                &pToken, &nTokenBytes,
                                                &iStartOffset, &iEndOffset,
                                                &iPosition) ){
-    PLWriter *p;
+    DLCollector *p;
 
     /* Positions can't be negative; we use -1 as a terminator internally. */
     if( iPosition<0 ){
@@ -3543,11 +3569,11 @@ static int buildTerms(fulltext_vtab *v, fts2Hash *terms, sqlite_int64 iDocid,
 
     p = fts2HashFind(terms, pToken, nTokenBytes);
     if( p==NULL ){
-      p = plwNew(iDocid, DL_DEFAULT);
+      p = dlcNew(iDocid, DL_DEFAULT);
       fts2HashInsert(terms, pToken, nTokenBytes, p);
     }
     if( iColumn>=0 ){
-      plwAdd(p, iColumn, iPosition, iStartOffset, iEndOffset);
+      dlcAddPos(p, iColumn, iPosition, iStartOffset, iEndOffset);
     }
   }
 
@@ -5045,7 +5071,7 @@ static int termSelect(fulltext_vtab *v, int iColumn,
 typedef struct TermData {
   const char *pTerm;
   int nTerm;
-  PLWriter *pWriter;
+  DLCollector *pCollector;
 } TermData;
 
 /* Orders TermData elements in strcmp fashion ( <0 for less-than, 0
@@ -5081,7 +5107,7 @@ static int writeZeroSegment(fulltext_vtab *v, fts2Hash *pTerms){
     assert( i<n );
     pData[i].pTerm = fts2HashKey(e);
     pData[i].nTerm = fts2HashKeysize(e);
-    pData[i].pWriter = fts2HashData(e);
+    pData[i].pCollector = fts2HashData(e);
   }
   assert( i==n );
 
@@ -5096,19 +5122,16 @@ static int writeZeroSegment(fulltext_vtab *v, fts2Hash *pTerms){
   leafWriterInit(0, idx, &writer);
   dataBufferInit(&dl, 0);
   for(i=0; i<n; i++){
-    DLWriter dlw;
     dataBufferReset(&dl);
-    dlwInit(&dlw, DL_DEFAULT, &dl);
-    plwDlwAdd(pData[i].pWriter, &dlw);
+    dlcAddDoclist(pData[i].pCollector, &dl);
     rc = leafWriterStep(v, &writer,
                         pData[i].pTerm, pData[i].nTerm, dl.pData, dl.nData);
-    dlwDestroy(&dlw);
     if( rc!=SQLITE_OK ) goto err;
   }
-  dataBufferDestroy(&dl);
   rc = leafWriterFinalize(v, &writer);
 
  err:
+  dataBufferDestroy(&dl);
   free(pData);
   leafWriterDestroy(&writer);
   return rc;
@@ -5158,7 +5181,7 @@ static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
 
   /* clean up */
   for(e=fts2HashFirst(&terms); e; e=fts2HashNext(e)){
-    plwDelete(fts2HashData(e));
+    dlcDelete(fts2HashData(e));
   }
   fts2HashClear(&terms);
 
