@@ -114,7 +114,7 @@ static void asyncTrace(const char *zFormat, ...){
   z = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   fprintf(stderr, "[%d] %s", (int)pthread_self(), z);
-  free(z);
+  sqlite3_free(z);
 }
 
 /*
