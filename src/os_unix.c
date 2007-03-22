@@ -1002,8 +1002,10 @@ static int seekAndRead(unixFile *id, void *pBuf, int cnt){
   int got;
   i64 newOffset;
   TIMER_START;
-#ifdef USE_PREAD
+#if defined(USE_PREAD)
   got = pread(id->h, pBuf, cnt, id->offset);
+#elif defined(USE_PREAD64)
+  got = pread64(id->h, pBuf, cnt, id->offset);
 #else
   newOffset = lseek(id->h, id->offset, SEEK_SET);
   if( newOffset!=id->offset ){
@@ -1047,8 +1049,10 @@ static int seekAndWrite(unixFile *id, const void *pBuf, int cnt){
   int got;
   i64 newOffset;
   TIMER_START;
-#ifdef USE_PREAD
+#if defined(USE_PREAD)
   got = pwrite(id->h, pBuf, cnt, id->offset);
+#elif defined(USE_PREAD64)
+  got = pwrite64(id->h, pBuf, cnt, id->offset);
 #else
   newOffset = lseek(id->h, id->offset, SEEK_SET);
   if( newOffset!=id->offset ){
