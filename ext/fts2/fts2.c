@@ -690,6 +690,7 @@ static void docListValidate(DocListType iType, const char *pData, int nData,
 ** dlwDestroy - clear the writer's memory.  Does not free buffer.
 ** dlwAppend - append raw doclist data to buffer.
 ** dlwAdd - construct doclist element and append to buffer.
+**    Only apply dlwAdd() to DL_DOCIDS doclists (else use PLWriter).
 */
 typedef struct DLWriter {
   DocListType iType;
@@ -751,24 +752,14 @@ static void dlwAppend(DLWriter *pWriter,
   }
   pWriter->iPrevDocid = iLastDocid;
 }
-static void dlwAdd(DLWriter *pWriter, sqlite_int64 iDocid,
-                   const char *pPosList, int nPosList){
+static void dlwAdd(DLWriter *pWriter, sqlite_int64 iDocid){
   char c[VARINT_MAX];
   int n = putVarint(c, iDocid-pWriter->iPrevDocid);
 
   assert( pWriter->iPrevDocid<iDocid );
-  assert( pPosList==0 || pWriter->iType>DL_DOCIDS );
+  assert( pWriter->iType==DL_DOCIDS );
 
   dataBufferAppend(pWriter->b, c, n);
-
-  if( pWriter->iType>DL_DOCIDS ){
-    n = putVarint(c, 0);
-    if( nPosList>0 ){
-      dataBufferAppend2(pWriter->b, pPosList, nPosList, c, n);
-    }else{
-      dataBufferAppend(pWriter->b, c, n);
-    }
-  }
   pWriter->iPrevDocid = iDocid;
 }
 
@@ -854,11 +845,10 @@ static void plrStep(PLReader *pReader){
   pReader->nData -= n;
 }
 
-static void plrInit(PLReader *pReader, DocListType iType,
-                    const char *pData, int nData){
-  pReader->pData = pData;
-  pReader->nData = nData;
-  pReader->iType = iType;
+static void plrInit(PLReader *pReader, DLReader *pDLReader){
+  pReader->pData = dlrPosData(pDLReader);
+  pReader->nData = dlrPosDataLen(pDLReader);
+  pReader->iType = pDLReader->iType;
   pReader->iColumn = 0;
   pReader->iPosition = 0;
   pReader->iStartOffset = 0;
@@ -872,34 +862,38 @@ static void plrDestroy(PLReader *pReader){
 /*******************************************************************/
 /* PLWriter is used in constructing a document's position list.  As a
 ** convenience, if iType is DL_DOCIDS, PLWriter becomes a no-op.
+** PLWriter writes to the associated DLWriter's buffer.
 **
 ** plwInit - init for writing a document's poslist.
-** plwReset - reset the writer for a new document.
 ** plwDestroy - clear a writer.
-** plwNew - malloc storage and initialize it.
-** plwDelete - clear and free storage.
-** plwDlwAdd - append the docid and poslist to a doclist writer.
 ** plwAdd - append position and offset information.
+** plwTerminate - add any necessary doclist terminator.
+**
+** Calling plwAdd() after plwTerminate() may result in a corrupt
+** doclist.
 */
-/* TODO(shess) PLWriter is used in two ways.  fulltextUpdate() uses it
-** in construction of a new doclist.  docListTrim() and mergePosList()
-** use it when trimming.  In the former case, it wants to own the
-** DataBuffer, in the latter it's possible it could encode into a
-** pre-existing DataBuffer.
+/* TODO(shess) Until we've written the second item, we can cache the
+** first item's information.  Then we'd have three states:
+**
+** - initialized with docid, no positions.
+** - docid and one position.
+** - docid and multiple positions.
+**
+** Only the last state needs to actually write to dlw->b, which would
+** be an improvement in the DLCollector case.
 */
 typedef struct PLWriter {
-  DataBuffer b;
+  DLWriter *dlw;
 
-  sqlite_int64 iDocid;
-  DocListType iType;
   int iColumn;    /* the last column written */
   int iPos;       /* the last position written */
   int iOffset;    /* the last start offset written */
 } PLWriter;
 
-static void plwDlwAdd(PLWriter *pWriter, DLWriter *dlWriter){
-  dlwAdd(dlWriter, pWriter->iDocid, pWriter->b.pData, pWriter->b.nData);
-}
+/* TODO(shess) In the case where the parent is reading these values
+** from a PLReader, we could optimize to a copy if that PLReader has
+** the same type as pWriter.
+*/
 static void plwAdd(PLWriter *pWriter, int iColumn, int iPos,
                    int iStartOffset, int iEndOffset){
   /* Worst-case space for POS_COLUMN, iColumn, iPosDelta,
@@ -908,7 +902,10 @@ static void plwAdd(PLWriter *pWriter, int iColumn, int iPos,
   char c[5*VARINT_MAX];
   int n = 0;
 
-  if( pWriter->iType==DL_DOCIDS ) return;
+  /* Ban plwAdd() after plwTerminate(). */
+  assert( pWriter->iPos!=-1 );
+
+  if( pWriter->dlw->iType==DL_DOCIDS ) return;
 
   if( iColumn!=pWriter->iColumn ){
     n += putVarint(c+n, POS_COLUMN);
@@ -920,30 +917,50 @@ static void plwAdd(PLWriter *pWriter, int iColumn, int iPos,
   assert( iPos>=pWriter->iPos );
   n += putVarint(c+n, POS_BASE+(iPos-pWriter->iPos));
   pWriter->iPos = iPos;
-  if( pWriter->iType==DL_POSITIONS_OFFSETS ){
+  if( pWriter->dlw->iType==DL_POSITIONS_OFFSETS ){
     assert( iStartOffset>=pWriter->iOffset );
     n += putVarint(c+n, iStartOffset-pWriter->iOffset);
     pWriter->iOffset = iStartOffset;
     assert( iEndOffset>=iStartOffset );
     n += putVarint(c+n, iEndOffset-iStartOffset);
   }
-  dataBufferAppend(&pWriter->b, c, n);
+  dataBufferAppend(pWriter->dlw->b, c, n);
 }
-static void plwReset(PLWriter *pWriter,
-                     sqlite_int64 iDocid, DocListType iType){
-  dataBufferReset(&pWriter->b);
-  pWriter->iDocid = iDocid;
-  pWriter->iType = iType;
+static void plwInit(PLWriter *pWriter, DLWriter *dlw, sqlite_int64 iDocid){
+  char c[VARINT_MAX];
+  int n;
+
+  pWriter->dlw = dlw;
+
+  assert( iDocid>pWriter->dlw->iPrevDocid );
+  n = putVarint(c, iDocid-pWriter->dlw->iPrevDocid);
+  dataBufferAppend(pWriter->dlw->b, c, n);
+  pWriter->dlw->iPrevDocid = iDocid;
+
   pWriter->iColumn = 0;
   pWriter->iPos = 0;
   pWriter->iOffset = 0;
 }
-static void plwInit(PLWriter *pWriter, sqlite_int64 iDocid, DocListType iType){
-  dataBufferInit(&pWriter->b, 0);
-  plwReset(pWriter, iDocid, iType);
+/* TODO(shess) Should plwDestroy() also terminate the doclist?  But
+** then plwDestroy() would no longer be just a destructor, it would
+** also be doing work, which isn't consistent with the overall idiom.
+** Another option would be for plwAdd() to always append any necessary
+** terminator, so that the output is always correct.  But that would
+** add incremental work to the common case with the only benefit being
+** API elegance.  Punt for now.
+*/
+static void plwTerminate(PLWriter *pWriter){
+  if( pWriter->dlw->iType>DL_DOCIDS ){
+    char c[VARINT_MAX];
+    int n = putVarint(c, POS_END);
+    dataBufferAppend(pWriter->dlw->b, c, n);
+  }
+#ifndef NDEBUG
+  /* Mark as terminated for assert in plwAdd(). */
+  pWriter->iPos = -1;
+#endif
 }
 static void plwDestroy(PLWriter *pWriter){
-  dataBufferDestroy(&pWriter->b);
   SCRAMBLE(pWriter);
 }
 
@@ -957,14 +974,27 @@ static void plwDestroy(PLWriter *pWriter){
 ** dlcAddDoclist - add the collected doclist to the given buffer.
 */
 typedef struct DLCollector {
+  DataBuffer b;
+  DLWriter dlw;
   PLWriter plw;
 } DLCollector;
 
+/* TODO(shess) This could also be done by calling plwTerminate() and
+** dataBufferAppend().  I tried that, expecting nominal performance
+** differences, but it seemed to pretty reliably be worth 1% to code
+** it this way.  I suspect it's the incremental malloc overhead (some
+** percentage of the plwTerminate() calls will cause a realloc), so
+** this might be worth revisiting if the DataBuffer implementation
+** changes.
+*/
 static void dlcAddDoclist(DLCollector *pCollector, DataBuffer *b){
-  DLWriter dlw;
-  dlwInit(&dlw, pCollector->plw.iType, b);
-  plwDlwAdd(&pCollector->plw, &dlw);
-  dlwDestroy(&dlw);
+  if( pCollector->dlw.iType>DL_DOCIDS ){
+    char c[VARINT_MAX];
+    int n = putVarint(c, POS_END);
+    dataBufferAppend2(b, pCollector->b.pData, pCollector->b.nData, c, n);
+  }else{
+    dataBufferAppend(b, pCollector->b.pData, pCollector->b.nData);
+  }
 }
 static void dlcAddPos(DLCollector *pCollector, int iColumn, int iPos,
                       int iStartOffset, int iEndOffset){
@@ -973,11 +1003,15 @@ static void dlcAddPos(DLCollector *pCollector, int iColumn, int iPos,
 
 static DLCollector *dlcNew(sqlite_int64 iDocid, DocListType iType){
   DLCollector *pCollector = malloc(sizeof(DLCollector));
-  plwInit(&pCollector->plw, iDocid, iType);
+  dataBufferInit(&pCollector->b, 0);
+  dlwInit(&pCollector->dlw, iType, &pCollector->b);
+  plwInit(&pCollector->plw, &pCollector->dlw, iDocid);
   return pCollector;
 }
 static void dlcDelete(DLCollector *pCollector){
   plwDestroy(&pCollector->plw);
+  dlwDestroy(&pCollector->dlw);
+  dataBufferDestroy(&pCollector->b);
   SCRAMBLE(pCollector);
   free(pCollector);
 }
@@ -985,43 +1019,50 @@ static void dlcDelete(DLCollector *pCollector){
 
 /* Copy the doclist data of iType in pData/nData into *out, trimming
 ** unnecessary data as we go.  Only columns matching iColumn are
-** copied, all columns copied if iColimn is -1.  Elements with no
+** copied, all columns copied if iColumn is -1.  Elements with no
 ** matching columns are dropped.  The output is an iOutType doclist.
+*/
+/* NOTE(shess) This code is only valid after all doclists are merged.
+** If this is run before merges, then doclist items which represent
+** deletion will be trimmed, and will thus not effect a deletion
+** during the merge.
 */
 static void docListTrim(DocListType iType, const char *pData, int nData,
                         int iColumn, DocListType iOutType, DataBuffer *out){
   DLReader dlReader;
   DLWriter dlWriter;
-  PLWriter plWriter;
 
   assert( iOutType<=iType );
 
   dlrInit(&dlReader, iType, pData, nData);
   dlwInit(&dlWriter, iOutType, out);
-  plwInit(&plWriter, 0, iOutType);
 
   while( !dlrAtEnd(&dlReader) ){
     PLReader plReader;
+    PLWriter plWriter;
     int match = 0;
 
-    plrInit(&plReader, dlReader.iType,
-            dlrPosData(&dlReader), dlrPosDataLen(&dlReader));
-    plwReset(&plWriter, dlrDocid(&dlReader), iOutType);
+    plrInit(&plReader, &dlReader);
 
     while( !plrAtEnd(&plReader) ){
       if( iColumn==-1 || plrColumn(&plReader)==iColumn ){
-        match = 1;
+        if( !match ){
+          plwInit(&plWriter, &dlWriter, dlrDocid(&dlReader));
+          match = 1;
+        }
         plwAdd(&plWriter, plrColumn(&plReader), plrPosition(&plReader),
                plrStartOffset(&plReader), plrEndOffset(&plReader));
       }
       plrStep(&plReader);
     }
-    if( match ) plwDlwAdd(&plWriter, &dlWriter);
+    if( match ){
+      plwTerminate(&plWriter);
+      plwDestroy(&plWriter);
+    }
 
     plrDestroy(&plReader);
     dlrStep(&dlReader);
   }
-  plwDestroy(&plWriter);
   dlwDestroy(&dlWriter);
   dlrDestroy(&dlReader);
 }
@@ -1172,9 +1213,8 @@ static void mergePosList(DLReader *pLeft, DLReader *pRight, DLWriter *pOut){
   assert( dlrDocid(pLeft)==dlrDocid(pRight) );
   assert( pOut->iType!=DL_POSITIONS_OFFSETS );
 
-  plrInit(&left, pLeft->iType, dlrPosData(pLeft), dlrPosDataLen(pLeft));
-  plrInit(&right, pRight->iType, dlrPosData(pRight), dlrPosDataLen(pRight));
-  plwInit(&writer, dlrDocid(pLeft), pOut->iType);
+  plrInit(&left, pLeft);
+  plrInit(&right, pRight);
 
   while( !plrAtEnd(&left) && !plrAtEnd(&right) ){
     if( plrColumn(&left)<plrColumn(&right) ){
@@ -1186,23 +1226,23 @@ static void mergePosList(DLReader *pLeft, DLReader *pRight, DLWriter *pOut){
     }else if( plrPosition(&left)+1>plrPosition(&right) ){
       plrStep(&right);
     }else{
-      match = 1;
+      if( !match ){
+        plwInit(&writer, pOut, dlrDocid(pLeft));
+        match = 1;
+      }
       plwAdd(&writer, plrColumn(&right), plrPosition(&right), 0, 0);
       plrStep(&left);
       plrStep(&right);
     }
   }
 
-  /* TODO(shess) We could remember the output position, encode the
-  ** docid, then encode the poslist directly into the output.  If no
-  ** match, we back out to the stored output position.  This would
-  ** also reduce the malloc count.
-  */
-  if( match ) plwDlwAdd(&writer, pOut);
+  if( match ){
+    plwTerminate(&writer);
+    plwDestroy(&writer);
+  }
 
   plrDestroy(&left);
   plrDestroy(&right);
-  plwDestroy(&writer);
 }
 
 /* We have two doclists with positions:  pLeft and pRight.
@@ -1272,7 +1312,7 @@ static void docListAndMerge(
     }else if( dlrDocid(&right)<dlrDocid(&left) ){
       dlrStep(&right);
     }else{
-      dlwAdd(&writer, dlrDocid(&left), 0, 0);
+      dlwAdd(&writer, dlrDocid(&left));
       dlrStep(&left);
       dlrStep(&right);
     }
@@ -1310,13 +1350,13 @@ static void docListOrMerge(
 
   while( !dlrAtEnd(&left) || !dlrAtEnd(&right) ){
     if( dlrAtEnd(&right) || dlrDocid(&left)<dlrDocid(&right) ){
-      dlwAdd(&writer, dlrDocid(&left), 0, 0);
+      dlwAdd(&writer, dlrDocid(&left));
       dlrStep(&left);
     }else if( dlrAtEnd(&left) || dlrDocid(&right)<dlrDocid(&left) ){
-      dlwAdd(&writer, dlrDocid(&right), 0, 0);
+      dlwAdd(&writer, dlrDocid(&right));
       dlrStep(&right);
     }else{
-      dlwAdd(&writer, dlrDocid(&left), 0, 0);
+      dlwAdd(&writer, dlrDocid(&left));
       dlrStep(&left);
       dlrStep(&right);
     }
@@ -1354,7 +1394,7 @@ static void docListExceptMerge(
       dlrStep(&right);
     }
     if( dlrAtEnd(&right) || dlrDocid(&left)<dlrDocid(&right) ){
-      dlwAdd(&writer, dlrDocid(&left), 0, 0);
+      dlwAdd(&writer, dlrDocid(&left));
     }
     dlrStep(&left);
   }
