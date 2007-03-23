@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager.test,v 1.25 2006/01/23 15:25:48 danielk1977 Exp $
+# $Id: pager.test,v 1.26 2007/03/23 18:12:07 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -103,9 +103,13 @@ do_test pager-2.8 {
 do_test pager-2.9 {
   page_unref $::g1
 } {}
+
+# Update 24/03/2007: Even though the ref-count has dropped to zero, the
+# pager-cache still contains some pages. Previously, it was always true
+# that if there were no references to a pager it was empty.
 do_test pager-2.10 {
   pager_stats $::p1
-} {ref 0 page 0 max 10 size -1 state 0 err 0 hit 0 miss 1 ovfl 0}
+} {ref 0 page 1 max 10 size -1 state 0 err 0 hit 0 miss 1 ovfl 0}
 do_test pager-2.11 {
   set ::g1 [page_get $::p1 1]
   expr {$::g1!=0}
@@ -115,7 +119,7 @@ do_test pager-2.12 {
 } {1}
 do_test pager-2.13 {
   pager_stats $::p1
-} {ref 1 page 1 max 10 size 0 state 1 err 0 hit 0 miss 2 ovfl 0}
+} {ref 1 page 2 max 10 size 0 state 1 err 0 hit 1 miss 2 ovfl 0}
 do_test pager-2.14 {
   set v [catch {
     page_write $::g1 "Page-One"
@@ -124,7 +128,7 @@ do_test pager-2.14 {
 } {0 {}}
 do_test pager-2.15 {
   pager_stats $::p1
-} {ref 1 page 1 max 10 size 1 state 2 err 0 hit 0 miss 2 ovfl 0}
+} {ref 1 page 2 max 10 size 1 state 2 err 0 hit 1 miss 2 ovfl 0}
 do_test pager-2.16 {
   page_read $::g1
 } {Page-One}
@@ -136,19 +140,19 @@ do_test pager-2.17 {
 } {0 {}}
 do_test pager-2.20 {
   pager_stats $::p1
-} {ref 1 page 1 max 10 size -1 state 1 err 0 hit 1 miss 2 ovfl 0}
+} {ref 1 page 2 max 10 size -1 state 1 err 0 hit 2 miss 2 ovfl 0}
 do_test pager-2.19 {
   pager_pagecount $::p1
 } {1}
 do_test pager-2.21 {
   pager_stats $::p1
-} {ref 1 page 1 max 10 size 1 state 1 err 0 hit 1 miss 2 ovfl 0}
+} {ref 1 page 2 max 10 size 1 state 1 err 0 hit 2 miss 2 ovfl 0}
 do_test pager-2.22 {
   page_unref $::g1
 } {}
 do_test pager-2.23 {
   pager_stats $::p1
-} {ref 0 page 0 max 10 size -1 state 0 err 0 hit 1 miss 2 ovfl 0}
+} {ref 0 page 2 max 10 size -1 state 0 err 0 hit 2 miss 2 ovfl 0}
 do_test pager-2.24 {
   set v [catch {
     page_get $::p1 1
@@ -412,10 +416,10 @@ ifcapable memorydb {
     for {set i 1} {$i<5} {incr i} {
       set p [page_get $::p2 $i]
       page_write $p "Page $i"
-      page_unref $p
       pager_commit $::p2
+      page_unref $p
     }
-    pager_truncate $::p2 3
+    # pager_truncate $::p2 3
   } {}
   do_test pager-4.6.4 {
     pager_close $::p2

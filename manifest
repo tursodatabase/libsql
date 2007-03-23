@@ -1,5 +1,5 @@
-C Add\sa\scomment\sto\sthe\sOsSectorSize()\sfunction.\s(CVS\s3710)
-D 2007-03-23T10:08:39
+C Discard\sthe\scontents\sof\sthe\spager-cache\sonly\swhen\sthe\schange-counter\sindicates\sthat\sit\sis\sstale.\s(CVS\s3711)
+D 2007-03-23T18:12:07
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,7 +86,7 @@ F src/os_unix.c 4642f23ed0c1ae0f1440db1d2b4231348af69360
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 1d1d0989b0f235751504292c2f28e81044be0d70
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c dec2b25851190ab2d5b7d44065fae625c566dda5
+F src/pager.c da3c5e90b2c99bdba6129f568102c24cbd438452
 F src/pager.h 9f6b5ef42c761deec8a9b1966b32e9a9dc89a631
 F src/parse.y bcfe366c1fd61cfc40e5344eb69a31997a821af0
 F src/pragma.c a3fe1dacdbf320ad99d4125a60a5bce8f1808bc8
@@ -270,8 +270,8 @@ F test/misc6.test 3de55ec5cadf466ada587173faa5d6a4790a8bb7
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
-F test/pager.test 6ee95e90ee8295e376e39a6c6566ef6df993601a
-F test/pager2.test 49c0f57c7da0b060f0486b85fdd074025caa694e
+F test/pager.test ceeef3caac4bf2046c6c06827f1a87dc1dec30f3
+F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
 F test/pragma.test 91739ef06ab9ecf91e90d25951858caba71d6fe7
@@ -437,7 +437,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 177cd92910d01c97eb3133a59fad417edbb1aa92
-R a47ce4776623e0598aaf36f17e96e9f0
+P 0fd9983a98d8d61654f252f1708a4d7232a96b53
+R ec284a76fe569250a4f6f20542fb07fe
 U danielk1977
-Z 7cc396a55ca909ea4a46a72e6fbe0bfd
+Z c13a7ab87a49cb94c1a31349a8579dca
