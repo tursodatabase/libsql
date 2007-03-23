@@ -197,7 +197,4 @@ int sqlite3GenericAllocationSize(void *p){ return 0; }
 #ifndef PAGER_SECTOR_SIZE
 # define PAGER_SECTOR_SIZE 512
 #endif
-static int osGenericSectorSize(OsFile *id){
-  return PAGER_SECTOR_SIZE;
-}
 

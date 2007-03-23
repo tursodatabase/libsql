@@ -1455,6 +1455,20 @@ static int winLockState(OsFile *id){
 }
 
 /*
+** Return the sector size in bytes of the underlying block device for
+** the specified file. This is almost always 512 bytes, but may be
+** larger for some devices.
+**
+** SQLite code assumes this function cannot fail. It also assumes that
+** if two files are created in the same file-system directory (i.e.
+** a database and it's journal file) that the sector size will be the
+** same for both.
+*/
+static int winSectorSize(OsFile *id){
+  return PAGER_SECTOR_SIZE;
+}
+
+/*
 ** This vector defines all the methods that can operate on an OsFile
 ** for win32.
 */
@@ -1473,7 +1487,7 @@ static const IoMethod sqlite3WinIoMethod = {
   winUnlock,
   winLockState,
   winCheckReservedLock,
-  osGenericSectorSize,
+  winSectorSize,
 };
 
 /*

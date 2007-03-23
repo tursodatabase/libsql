@@ -2341,6 +2341,20 @@ static int unixLockState(OsFile *id){
 }
 
 /*
+** Return the sector size in bytes of the underlying block device for
+** the specified file. This is almost always 512 bytes, but may be
+** larger for some devices.
+**
+** SQLite code assumes this function cannot fail. It also assumes that
+** if two files are created in the same file-system directory (i.e.
+** a database and it's journal file) that the sector size will be the
+** same for both.
+*/
+static int unixSectorSize(OsFile *id){
+  return PAGER_SECTOR_SIZE;
+}
+
+/*
 ** This vector defines all the methods that can operate on an OsFile
 ** for unix.
 */
@@ -2359,7 +2373,7 @@ static const IoMethod sqlite3UnixIoMethod = {
   unixUnlock,
   unixLockState,
   unixCheckReservedLock,
-  osGenericSectorSize,
+  unixSectorSize,
 };
 
 #ifdef SQLITE_ENABLE_LOCKING_STYLE
@@ -2382,7 +2396,7 @@ static const IoMethod sqlite3AFPLockingUnixIoMethod = {
     afpUnixUnlock,
     unixLockState,
     afpUnixCheckReservedLock,
-    osGenericSectorSize,
+    unixSectorSize,
 };
 
 /*
@@ -2404,7 +2418,7 @@ static const IoMethod sqlite3FlockLockingUnixIoMethod = {
     flockUnixUnlock,
     unixLockState,
     flockUnixCheckReservedLock,
-    osGenericSectorSize,
+    unixSectorSize,
 };
 
 /*
@@ -2426,7 +2440,7 @@ static const IoMethod sqlite3DotlockLockingUnixIoMethod = {
     dotlockUnixUnlock,
     unixLockState,
     dotlockUnixCheckReservedLock,
-    osGenericSectorSize,
+    unixSectorSize,
 };
 
 /*
@@ -2448,7 +2462,7 @@ static const IoMethod sqlite3NolockLockingUnixIoMethod = {
   nolockUnixUnlock,
   unixLockState,
   nolockUnixCheckReservedLock,
-  osGenericSectorSize,
+  unixSectorSize,
 };
 
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
