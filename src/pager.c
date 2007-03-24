@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.293 2007/03/23 18:12:07 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.294 2007/03/24 16:45:05 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -285,8 +285,10 @@ struct Pager {
   Pager *pNext;               /* Linked list of pagers in this thread */
 #endif
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
-  int doNotSync;              /* While true, do not spill the cache */
   u32 iChangeCount;           /* Db change-counter for which cache is valid */
+  u8 doNotSync;               /* Boolean. While true, do not spill the cache */
+  u8 exclusiveMode;           /* Boolean. True if locking_mode==EXCLUSIVE */
+  u8 changeCountDone;         /* Set after incrementing the change-counter */
 };
 
 /*
@@ -854,12 +856,15 @@ static PgHdr *pager_lookup(Pager *pPager, Pgno pgno){
 ** Unlock the database file.
 */
 static void pager_unlock(Pager *pPager){
-  if( !MEMDB ){
-    sqlite3OsUnlock(pPager->fd, NO_LOCK);
-    pPager->dbSize = -1;
-    IOTRACE(("UNLOCK %p\n", pPager))
+  if( !pPager->exclusiveMode ){
+    if( !MEMDB ){
+      sqlite3OsUnlock(pPager->fd, NO_LOCK);
+      pPager->dbSize = -1;
+      IOTRACE(("UNLOCK %p\n", pPager))
+    }
+    pPager->state = PAGER_UNLOCK;
+    pPager->changeCountDone = 0;
   }
-  pPager->state = PAGER_UNLOCK;
 }
 
 /*
@@ -873,7 +878,6 @@ static void pagerUnlockAndRollback(Pager *pPager){
     sqlite3PagerRollback(pPager);
   }
   pager_unlock(pPager);
-  assert( pPager->errCode || (pPager->journalOpen==0 && pPager->stmtOpen==0) );
 }
 
 
@@ -903,28 +907,6 @@ static void pager_reset(Pager *pPager){
 }
 
 /*
-** This function resets the various pager flags to their initial
-** state but does not discard the cached content.
-*/
-static void pagerSoftReset(Pager *pPager){
-  PgHdr *pPg;
-
-  assert(pPager->pStmt==0);
-  assert(pPager->nRef==0);
-  assert(pPager->pFirstSynced==pPager->pFirst);
-  assert(pPager->aInJournal==0);
-
-  for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
-    assert( pPg->nRef==0 );
-    pPg->inJournal = 0;
-    pPg->inStmt = 0;
-    pPg->dirty = 0;
-    pPg->needSync = 0;
-    pPg->alwaysRollback = 0;
-  }
-}
-
-/*
 ** When this routine is called, the pager has the journal file open and
 ** a RESERVED or EXCLUSIVE lock on the database.  This routine releases
 ** the database lock and acquires a SHARED lock in its place.  The journal
@@ -936,7 +918,7 @@ static void pagerSoftReset(Pager *pPager){
 */
 static int pager_unwritelock(Pager *pPager){
   PgHdr *pPg;
-  int rc;
+  int rc = SQLITE_OK;
   assert( !MEMDB );
   if( pPager->state<PAGER_RESERVED ){
     return SQLITE_OK;
@@ -947,15 +929,22 @@ static int pager_unwritelock(Pager *pPager){
     pPager->stmtOpen = 0;
   }
   if( pPager->journalOpen ){
-    sqlite3OsClose(&pPager->jfd);
-    pPager->journalOpen = 0;
-    sqlite3OsDelete(pPager->zJournal);
+    if( pPager->exclusiveMode ){
+      sqlite3OsTruncate(pPager->jfd, 0);
+      sqlite3OsSeek(pPager->jfd, 0);
+      pPager->journalOff = 0;
+    }else{
+      sqlite3OsClose(&pPager->jfd);
+      pPager->journalOpen = 0;
+      sqlite3OsDelete(pPager->zJournal);
+    }
     sqliteFree( pPager->aInJournal );
     pPager->aInJournal = 0;
     for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
       pPg->inJournal = 0;
       pPg->dirty = 0;
       pPg->needSync = 0;
+      pPg->alwaysRollback = 0;
 #ifdef SQLITE_CHECK_PAGES
       pPg->pageHash = pager_pagehash(pPg);
 #endif
@@ -967,9 +956,18 @@ static int pager_unwritelock(Pager *pPager){
     assert( pPager->aInJournal==0 );
     assert( pPager->dirtyCache==0 || pPager->useJournal==0 );
   }
-  rc = sqlite3OsUnlock(pPager->fd, SHARED_LOCK);
-  pPager->state = PAGER_SHARED;
-  pPager->origDbSize = 0;
+  if( !pPager->exclusiveMode ){
+    rc = sqlite3OsUnlock(pPager->fd, SHARED_LOCK);
+    pPager->state = PAGER_SHARED;
+    pPager->origDbSize = 0;
+  }else{
+    sqlite3PagerPagecount(pPager);
+    pPager->origDbSize = pPager->dbSize;
+    pPager->aInJournal = sqliteMalloc( pPager->dbSize/8 + 1 );
+    if( !pPager->aInJournal ){
+      rc = SQLITE_NOMEM;
+    }
+  }
   pPager->setMaster = 0;
   pPager->needSync = 0;
   pPager->pFirstSynced = pPager->pFirst;
@@ -1109,6 +1107,11 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
     pPg->pageHash = pager_pagehash(pPg);
 #endif
     CODEC1(pPager, pData, pPg->pgno, 3);
+
+    /* If this was page 1, then restore the value of Pager.iChangeCount */
+    if( pgno==1 ){
+      pPager->iChangeCount = retrieve32bits(pPg, 24);
+    }
   }
   return rc;
 }
@@ -1199,6 +1202,7 @@ delmaster_out:
   return rc;
 }
 
+#if 0
 /*
 ** Make every page in the cache agree with what is on disk.  In other words,
 ** reread the disk to reset the state of the cache.
@@ -1242,6 +1246,7 @@ static int pager_reload_cache(Pager *pPager){
   pPager->pDirty = 0;
   return rc;
 }
+#endif
 
 /*
 ** Truncate the main file of the given pager to the number of pages
@@ -2126,6 +2131,7 @@ int sqlite3PagerClose(Pager *pPager){
 
   disable_simulated_io_errors();
   pPager->errCode = 0;
+  pPager->exclusiveMode = 0;
   pager_reset(pPager);
   pagerUnlockAndRollback(pPager);
   enable_simulated_io_errors();
@@ -2734,8 +2740,6 @@ static int pagerSharedLock(Pager *pPager){
           pPager->nRef--;
           if( iChangeCount!=pPager->iChangeCount ){
             pager_reset(pPager);
-          }else{
-            pagerSoftReset(pPager);
           }
           pPager->iChangeCount = iChangeCount;
         }
@@ -3610,6 +3614,8 @@ int sqlite3PagerRollback(Pager *pPager){
       PgHistory *pHist;
       assert( !p->alwaysRollback );
       if( !p->dirty ){
+        assert( p->inJournal==0 );
+        assert( p->inStmt==0 );
         assert( !((PgHistory *)PGHDR_TO_HIST(p, pPager))->pOrig );
         assert( !((PgHistory *)PGHDR_TO_HIST(p, pPager))->pStmt );
         continue;
@@ -3890,6 +3896,7 @@ static int pager_incr_changecounter(Pager *pPager){
 
   /* Release the page reference. */
   sqlite3PagerUnref(pPgHdr);
+  pPager->changeCountDone = 1;
   return SQLITE_OK;
 }
 
@@ -4096,6 +4103,23 @@ void *sqlite3PagerGetData(DbPage *pPg){
 void *sqlite3PagerGetExtra(DbPage *pPg){
   Pager *pPager = pPg->pPager;
   return (pPager?PGHDR_TO_EXTRA(pPg, pPager):0);
+}
+
+/*
+** Get/set the locking-mode for this pager. Parameter eMode must be one
+** of PAGER_LOCKINGMODE_QUERY, PAGER_LOCKINGMODE_NORMAL or 
+** PAGER_LOCKINGMODE_EXCLUSIVE. If the parameter is not _QUERY, then
+** the locking-mode is set to the value specified.
+**
+** The returned value is either PAGER_LOCKINGMODE_NORMAL or
+** PAGER_LOCKINGMODE_EXCLUSIVE, indicating the current (possibly updated)
+** locking-mode.
+*/
+int sqlite3PagerLockingMode(Pager *pPager, int eMode){
+  if( eMode>=0 ){
+    pPager->exclusiveMode = eMode;
+  }
+  return (int)pPager->exclusiveMode;
 }
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)

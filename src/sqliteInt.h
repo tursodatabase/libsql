@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.542 2007/03/14 15:37:04 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.543 2007/03/24 16:45:05 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -510,6 +510,7 @@ struct sqlite3 {
 #ifdef SQLITE_SSE
   sqlite3_stmt *pFetch;         /* Used by SSE to fetch stored statements */
 #endif
+  u8 dfltLockMode;              /* Default locking-mode for attached dbs */
 };
 
 /*

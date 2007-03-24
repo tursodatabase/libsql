@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.32 2006/06/20 11:01:09 danielk1977 Exp $
+# $Id: trans.test,v 1.33 2007/03/24 16:45:05 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -815,6 +815,7 @@ do_test trans-9.1 {
   }
   db close
   sqlite3 db test.db
+  # execsql { PRAGMA locking_mode = exclusive; }
   execsql {
     BEGIN;
     CREATE TABLE t3(x TEXT);

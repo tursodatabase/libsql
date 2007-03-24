@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.54 2007/03/15 15:35:29 danielk1977 Exp $
+** $Id: attach.c,v 1.55 2007/03/24 16:45:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -133,6 +133,7 @@ static void attachFunc(
         "attached databases must use the same text encoding as main database");
       goto attach_error;
     }
+    sqlite3PagerLockingMode(sqlite3BtreePager(aNew->pBt), db->dfltLockMode);
   }
   aNew->zName = sqliteStrDup(zName);
   aNew->safety_level = 3;

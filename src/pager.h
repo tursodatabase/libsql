@@ -13,7 +13,7 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.54 2007/03/19 17:44:27 danielk1977 Exp $
+** @(#) $Id: pager.h,v 1.55 2007/03/24 16:45:05 danielk1977 Exp $
 */
 
 #ifndef _PAGER_H_
@@ -69,6 +69,12 @@ typedef struct PgHdr DbPage;
 #define PAGER_OMIT_JOURNAL  0x0001    /* Do not use a rollback journal */
 #define PAGER_NO_READLOCK   0x0002    /* Omit readlocks on readonly files */
 
+/*
+** Valid values for the second argument to sqlite3PagerLockingMode().
+*/
+#define PAGER_LOCKINGMODE_QUERY      -1
+#define PAGER_LOCKINGMODE_NORMAL      0
+#define PAGER_LOCKINGMODE_EXCLUSIVE   1
 
 /*
 ** See source code comments for a detailed description of the following
@@ -119,6 +125,7 @@ int sqlite3PagerReleaseMemory(int);
 
 void *sqlite3PagerGetData(DbPage *); 
 void *sqlite3PagerGetExtra(DbPage *); 
+int sqlite3PagerLockingMode(Pager *, int);
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
 int sqlite3PagerLockstate(Pager*);

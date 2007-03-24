@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.129 2007/03/19 17:44:28 danielk1977 Exp $
+** $Id: pragma.c,v 1.130 2007/03/24 16:45:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -60,6 +60,17 @@ static int getSafetyLevel(const char *z){
 */
 static int getBoolean(const char *z){
   return getSafetyLevel(z)&1;
+}
+
+/*
+** Interpret the given string as a locking mode value.
+*/
+static int getLockingMode(const char *z){
+  if( z ){
+    if( 0==sqlite3StrICmp(z, "exclusive") ) return PAGER_LOCKINGMODE_EXCLUSIVE;
+    if( 0==sqlite3StrICmp(z, "normal") ) return PAGER_LOCKINGMODE_NORMAL;
+  }
+  return PAGER_LOCKINGMODE_QUERY;
 }
 
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
@@ -314,6 +325,53 @@ void sqlite3Pragma(
     }else{
       sqlite3BtreeSetPageSize(pBt, atoi(zRight), -1);
     }
+  }else
+
+  /*
+  **  PRAGMA [database.]locking_mode
+  **  PRAGMA [database.]locking_mode = (normal|exclusive)
+  */
+  if( sqlite3StrICmp(zLeft,"locking_mode")==0 ){
+    const char *zRet = "normal";
+    int eMode = getLockingMode(zRight);
+
+    if( pId2->n==0 && eMode==PAGER_LOCKINGMODE_QUERY ){
+      /* Simple "PRAGMA locking_mode;" statement. This is a query for
+      ** the current default locking mode (which may be different to
+      ** the locking-mode of the main database).
+      */
+      eMode = db->dfltLockMode;
+    }else{
+      Pager *pPager;
+      if( pId2->n==0 ){
+        /* This indicates that no database name was specified as part
+        ** of the PRAGMA command. In this case the locking-mode must be
+        ** set on all attached databases, as well as the main db file.
+        **
+        ** Also, the sqlite3.dfltLockMode variable is set so that
+        ** any subsequently attached databases also use the specified
+        ** locking mode.
+        */
+        int ii;
+        assert(pDb==&db->aDb[0]);
+        for(ii=2; ii<db->nDb; ii++){
+          pPager = sqlite3BtreePager(db->aDb[ii].pBt);
+          sqlite3PagerLockingMode(pPager, eMode);
+        }
+        db->dfltLockMode = eMode;
+      }
+      pPager = sqlite3BtreePager(pDb->pBt);
+      eMode = sqlite3PagerLockingMode(pPager, eMode);
+    }
+
+    assert(eMode==PAGER_LOCKINGMODE_NORMAL||eMode==PAGER_LOCKINGMODE_EXCLUSIVE);
+    if( eMode==PAGER_LOCKINGMODE_EXCLUSIVE ){
+      zRet = "exclusive";
+    }
+    sqlite3VdbeSetNumCols(v, 1);
+    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "locking_mode", P3_STATIC);
+    sqlite3VdbeOp3(v, OP_String8, 0, 0, zRet, 0);
+    sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
   }else
 #endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
