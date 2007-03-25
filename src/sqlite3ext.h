@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.8 2007/01/09 14:37:18 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.9 2007/03/25 19:08:47 drh Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -144,6 +144,8 @@ struct sqlite3_api_routines {
   int  (*value_type)(sqlite3_value*);
   char * (*vmprintf)(const char*,va_list);
   int (*overload_function)(sqlite3*, const char *zFuncName, int nArg);
+  int  (*prepare_v2)(sqlite3*,const char*,int,sqlite3_stmt**,const char**);
+  int  (*prepare16_v2)(sqlite3*,const void*,int,sqlite3_stmt**,const void**);
 };
 
 /*
@@ -232,6 +234,8 @@ struct sqlite3_api_routines {
 #define sqlite3_open16                 sqlite3_api->open16
 #define sqlite3_prepare                sqlite3_api->prepare
 #define sqlite3_prepare16              sqlite3_api->prepare16
+#define sqlite3_prepare_v2             sqlite3_api->prepare_v2
+#define sqlite3_prepare16_v2           sqlite3_api->prepare16_v2
 #define sqlite3_profile                sqlite3_api->profile
 #define sqlite3_progress_handler       sqlite3_api->progress_handler
 #define sqlite3_realloc                sqlite3_api->realloc
