@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.341 2007/03/19 17:44:27 danielk1977 Exp $
+** $Id: btree.c,v 1.342 2007/03/26 22:05:01 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2269,7 +2269,7 @@ static int relocatePage(
 }
 
 /* Forward declaration required by autoVacuumCommit(). */
-static int allocatePage(BtShared *, MemPage **, Pgno *, Pgno, u8);
+static int allocateBtreePage(BtShared *, MemPage **, Pgno *, Pgno, u8);
 
 /*
 ** This routine is called prior to sqlite3PagerCommit when a transaction
@@ -2359,14 +2359,14 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *nTrunc){
 
     /* Find the next page in the free-list that is not already at the end 
     ** of the file. A page can be pulled off the free list using the 
-    ** allocatePage() routine.
+    ** allocateBtreePage() routine.
     */
     do{
       if( pFreeMemPage ){
         releasePage(pFreeMemPage);
         pFreeMemPage = 0;
       }
-      rc = allocatePage(pBt, &pFreeMemPage, &iFreePage, 0, 0);
+      rc = allocateBtreePage(pBt, &pFreeMemPage, &iFreePage, 0, 0);
       if( rc!=SQLITE_OK ){
         releasePage(pDbMemPage);
         goto autovacuum_out;
@@ -3567,7 +3567,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
 ** anywhere on the free-list, then it is guarenteed to be returned. This
 ** is only used by auto-vacuum databases when allocating a new table.
 */
-static int allocatePage(
+static int allocateBtreePage(
   BtShared *pBt, 
   MemPage **ppPage, 
   Pgno *pPgno, 
@@ -3974,7 +3974,7 @@ static int fillInCell(
 #ifndef SQLITE_OMIT_AUTOVACUUM
       Pgno pgnoPtrmap = pgnoOvfl; /* Overflow page pointer-map entry page */
 #endif
-      rc = allocatePage(pBt, &pOvfl, &pgnoOvfl, pgnoOvfl, 0);
+      rc = allocateBtreePage(pBt, &pOvfl, &pgnoOvfl, pgnoOvfl, 0);
 #ifndef SQLITE_OMIT_AUTOVACUUM
       /* If the database supports auto-vacuum, and the second or subsequent
       ** overflow page is being allocated, add an entry to the pointer-map
@@ -4306,7 +4306,7 @@ static int balance_quick(MemPage *pPage, MemPage *pParent){
   /* Allocate a new page. Insert the overflow cell from pPage
   ** into it. Then remove the overflow cell from pPage.
   */
-  rc = allocatePage(pBt, &pNew, &pgnoNew, 0, 0);
+  rc = allocateBtreePage(pBt, &pNew, &pgnoNew, 0, 0);
   if( rc!=SQLITE_OK ){
     return rc;
   }
@@ -4750,7 +4750,7 @@ static int balance_nonroot(MemPage *pPage){
       if( rc ) goto balance_cleanup;
     }else{
       assert( i>0 );
-      rc = allocatePage(pBt, &pNew, &pgnoNew[i], pgnoNew[i-1], 0);
+      rc = allocateBtreePage(pBt, &pNew, &pgnoNew[i], pgnoNew[i-1], 0);
       if( rc ) goto balance_cleanup;
       apNew[i] = pNew;
     }
@@ -5071,7 +5071,7 @@ static int balance_deeper(MemPage *pPage){
   assert( pPage->pParent==0 );
   assert( pPage->nOverflow>0 );
   pBt = pPage->pBt;
-  rc = allocatePage(pBt, &pChild, &pgnoChild, pPage->pgno, 0);
+  rc = allocateBtreePage(pBt, &pChild, &pgnoChild, pPage->pgno, 0);
   if( rc ) return rc;
   assert( sqlite3PagerIswriteable(pChild->pDbPage) );
   usableSize = pBt->usableSize;
@@ -5407,7 +5407,7 @@ int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags){
   }
 
 #ifdef SQLITE_OMIT_AUTOVACUUM
-  rc = allocatePage(pBt, &pRoot, &pgnoRoot, 1, 0);
+  rc = allocateBtreePage(pBt, &pRoot, &pgnoRoot, 1, 0);
   if( rc ) return rc;
 #else
   if( pBt->autoVacuum ){
@@ -5435,7 +5435,7 @@ int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags){
     ** be moved to the allocated page (unless the allocated page happens
     ** to reside at pgnoRoot).
     */
-    rc = allocatePage(pBt, &pPageMove, &pgnoMove, pgnoRoot, 1);
+    rc = allocateBtreePage(pBt, &pPageMove, &pgnoMove, pgnoRoot, 1);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -5492,7 +5492,7 @@ int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags){
     }
 
   }else{
-    rc = allocatePage(pBt, &pRoot, &pgnoRoot, 1, 0);
+    rc = allocateBtreePage(pBt, &pRoot, &pgnoRoot, 1, 0);
     if( rc ) return rc;
   }
 #endif

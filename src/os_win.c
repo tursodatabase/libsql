@@ -612,7 +612,7 @@ int sqlite3WinDelete(const char *zFilename){
 #endif
   }
   sqliteFree(zConverted);
-  TRACE2("DELETE \"%s\"\n", zFilename);
+  OSTRACE2("DELETE \"%s\"\n", zFilename);
   return rc!=0 ? SQLITE_OK : SQLITE_IOERR;
 }
 
@@ -738,7 +738,7 @@ int sqlite3WinOpenReadWrite(
 #if OS_WINCE
   f.zDeleteOnClose = 0;
 #endif
-  TRACE3("OPEN R/W %d \"%s\"\n", h, zFilename);
+  OSTRACE3("OPEN R/W %d \"%s\"\n", h, zFilename);
   return allocateWinFile(&f, pId);
 }
 
@@ -819,7 +819,7 @@ int sqlite3WinOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
     return SQLITE_CANTOPEN;
   }
   f.h = h;
-  TRACE3("OPEN EX %d \"%s\"\n", h, zFilename);
+  OSTRACE3("OPEN EX %d \"%s\"\n", h, zFilename);
   return allocateWinFile(&f, pId);
 }
 
@@ -870,7 +870,7 @@ int sqlite3WinOpenReadOnly(const char *zFilename, OsFile **pId){
   f.zDeleteOnClose = 0;
   f.hMutex = NULL;
 #endif
-  TRACE3("OPEN RO %d \"%s\"\n", h, zFilename);
+  OSTRACE3("OPEN RO %d \"%s\"\n", h, zFilename);
   return allocateWinFile(&f, pId);
 }
 
@@ -955,7 +955,7 @@ int sqlite3WinTempFileName(char *zBuf){
     zBuf[j] = 0;
     if( !sqlite3OsFileExists(zBuf) ) break;
   }
-  TRACE2("TEMP FILENAME: %s\n", zBuf);
+  OSTRACE2("TEMP FILENAME: %s\n", zBuf);
   return SQLITE_OK; 
 }
 
@@ -975,7 +975,7 @@ static int winClose(OsFile **pId){
   int rc = 1;
   if( pId && (pFile = (winFile*)*pId)!=0 ){
     int rc, cnt = 0;
-    TRACE2("CLOSE %d\n", pFile->h);
+    OSTRACE2("CLOSE %d\n", pFile->h);
     do{
       rc = CloseHandle(pFile->h);
     }while( rc==0 && cnt++ < MX_CLOSE_ATTEMPT && (Sleep(100), 1) );
@@ -1002,7 +1002,7 @@ static int winRead(OsFile *id, void *pBuf, int amt){
   DWORD got;
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_READ);
-  TRACE3("READ %d lock=%d\n", ((winFile*)id)->h, ((winFile*)id)->locktype);
+  OSTRACE3("READ %d lock=%d\n", ((winFile*)id)->h, ((winFile*)id)->locktype);
   if( !ReadFile(((winFile*)id)->h, pBuf, amt, &got, 0) ){
     return SQLITE_IOERR_READ;
   }
@@ -1024,7 +1024,7 @@ static int winWrite(OsFile *id, const void *pBuf, int amt){
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_READ);
   SimulateDiskfullError(return SQLITE_FULL);
-  TRACE3("WRITE %d lock=%d\n", ((winFile*)id)->h, ((winFile*)id)->locktype);
+  OSTRACE3("WRITE %d lock=%d\n", ((winFile*)id)->h, ((winFile*)id)->locktype);
   assert( amt>0 );
   while( amt>0 && (rc = WriteFile(((winFile*)id)->h, pBuf, amt, &wrote, 0))!=0
          && wrote>0 ){
@@ -1057,7 +1057,7 @@ static int winSeek(OsFile *id, i64 offset){
 #endif
   SEEK(offset/1024 + 1);
   rc = SetFilePointer(((winFile*)id)->h, lowerBits, &upperBits, FILE_BEGIN);
-  TRACE3("SEEK %d %lld\n", ((winFile*)id)->h, offset);
+  OSTRACE3("SEEK %d %lld\n", ((winFile*)id)->h, offset);
   if( rc==INVALID_SET_FILE_POINTER && GetLastError()!=NO_ERROR ){
     return SQLITE_FULL;
   }
@@ -1069,7 +1069,7 @@ static int winSeek(OsFile *id, i64 offset){
 */
 static int winSync(OsFile *id, int dataOnly){
   assert( id!=0 );
-  TRACE3("SYNC %d lock=%d\n", ((winFile*)id)->h, ((winFile*)id)->locktype);
+  OSTRACE3("SYNC %d lock=%d\n", ((winFile*)id)->h, ((winFile*)id)->locktype);
   if( FlushFileBuffers(((winFile*)id)->h) ){
     return SQLITE_OK;
   }else{
@@ -1092,7 +1092,7 @@ int sqlite3WinSyncDirectory(const char *zDirname){
 static int winTruncate(OsFile *id, i64 nByte){
   LONG upperBits = nByte>>32;
   assert( id!=0 );
-  TRACE3("TRUNCATE %d %lld\n", ((winFile*)id)->h, nByte);
+  OSTRACE3("TRUNCATE %d %lld\n", ((winFile*)id)->h, nByte);
   SimulateIOError(return SQLITE_IOERR_TRUNCATE);
   SetFilePointer(((winFile*)id)->h, nByte, &upperBits, FILE_BEGIN);
   SetEndOfFile(((winFile*)id)->h);
@@ -1220,7 +1220,7 @@ static int winLock(OsFile *id, int locktype){
   winFile *pFile = (winFile*)id;
 
   assert( pFile!=0 );
-  TRACE5("LOCK %d %d was %d(%d)\n",
+  OSTRACE5("LOCK %d %d was %d(%d)\n",
           pFile->h, locktype, pFile->locktype, pFile->sharedLockByte);
 
   /* If there is already a lock of this type or more restrictive on the
@@ -1250,7 +1250,7 @@ static int winLock(OsFile *id, int locktype){
       /* Try 3 times to get the pending lock.  The pending lock might be
       ** held by another reader process who will release it momentarily.
       */
-      TRACE2("could not get a PENDING lock. cnt=%d\n", cnt);
+      OSTRACE2("could not get a PENDING lock. cnt=%d\n", cnt);
       Sleep(1);
     }
     gotPendingLock = res;
@@ -1288,12 +1288,12 @@ static int winLock(OsFile *id, int locktype){
   if( locktype==EXCLUSIVE_LOCK && res ){
     assert( pFile->locktype>=SHARED_LOCK );
     res = unlockReadLock(pFile);
-    TRACE2("unreadlock = %d\n", res);
+    OSTRACE2("unreadlock = %d\n", res);
     res = LockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
     if( res ){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
-      TRACE2("error-code = %d\n", GetLastError());
+      OSTRACE2("error-code = %d\n", GetLastError());
     }
   }
 
@@ -1310,7 +1310,7 @@ static int winLock(OsFile *id, int locktype){
   if( res ){
     rc = SQLITE_OK;
   }else{
-    TRACE4("LOCK FAILED %d trying for %d but got %d\n", pFile->h,
+    OSTRACE4("LOCK FAILED %d trying for %d but got %d\n", pFile->h,
            locktype, newLocktype);
     rc = SQLITE_BUSY;
   }
@@ -1329,14 +1329,14 @@ static int winCheckReservedLock(OsFile *id){
   assert( pFile!=0 );
   if( pFile->locktype>=RESERVED_LOCK ){
     rc = 1;
-    TRACE3("TEST WR-LOCK %d %d (local)\n", pFile->h, rc);
+    OSTRACE3("TEST WR-LOCK %d %d (local)\n", pFile->h, rc);
   }else{
     rc = LockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
     if( rc ){
       UnlockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
     }
     rc = !rc;
-    TRACE3("TEST WR-LOCK %d %d (remote)\n", pFile->h, rc);
+    OSTRACE3("TEST WR-LOCK %d %d (remote)\n", pFile->h, rc);
   }
   return rc;
 }
@@ -1358,7 +1358,7 @@ static int winUnlock(OsFile *id, int locktype){
   winFile *pFile = (winFile*)id;
   assert( pFile!=0 );
   assert( locktype<=SHARED_LOCK );
-  TRACE5("UNLOCK %d to %d was %d(%d)\n", pFile->h, locktype,
+  OSTRACE5("UNLOCK %d to %d was %d(%d)\n", pFile->h, locktype,
           pFile->locktype, pFile->sharedLockByte);
   type = pFile->locktype;
   if( type>=EXCLUSIVE_LOCK ){

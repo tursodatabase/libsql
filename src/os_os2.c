@@ -62,7 +62,7 @@ int sqlite3Os2Delete( const char *zFilename ){
   APIRET rc = NO_ERROR;
 
   rc = DosDelete( (PSZ)zFilename );
-  TRACE2( "DELETE \"%s\"\n", zFilename );
+  OSTRACE2( "DELETE \"%s\"\n", zFilename );
   return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
 }
 
@@ -127,7 +127,7 @@ int sqlite3Os2OpenReadWrite(
   f.delOnClose = 0;
   f.pathToDel = NULL;
   OpenCounter(+1);
-  TRACE3( "OPEN R/W %d \"%s\"\n", hf, zFilename );
+  OSTRACE3( "OPEN R/W %d \"%s\"\n", hf, zFilename );
   return allocateOs2File( &f, pld );
 }
 
@@ -167,7 +167,7 @@ int sqlite3Os2OpenExclusive( const char *zFilename, OsFile **pld, int delFlag ){
   f.pathToDel = delFlag ? sqlite3OsFullPathname( zFilename ) : NULL;
   OpenCounter( +1 );
   if( delFlag ) DosForceDelete( sqlite3OsFullPathname( zFilename ) );
-  TRACE3( "OPEN EX %d \"%s\"\n", hf, sqlite3OsFullPathname ( zFilename ) );
+  OSTRACE3( "OPEN EX %d \"%s\"\n", hf, sqlite3OsFullPathname ( zFilename ) );
   return allocateOs2File( &f, pld );
 }
 
@@ -197,7 +197,7 @@ int sqlite3Os2OpenReadOnly( const char *zFilename, OsFile **pld ){
   f.delOnClose = 0;
   f.pathToDel = NULL;
   OpenCounter( +1 );
-  TRACE3( "OPEN RO %d \"%s\"\n", hf, zFilename );
+  OSTRACE3( "OPEN RO %d \"%s\"\n", hf, zFilename );
   return allocateOs2File( &f, pld );
 }
 
@@ -261,7 +261,7 @@ int sqlite3Os2TempFileName( char *zBuf ){
       zBuf[j] = 0;
       if( !sqlite3OsFileExists( zBuf ) ) break;
   }
-  TRACE2( "TEMP FILENAME: %s\n", zBuf );
+  OSTRACE2( "TEMP FILENAME: %s\n", zBuf );
   return SQLITE_OK;
 }
 
@@ -272,7 +272,7 @@ int os2Close( OsFile **pld ){
   os2File *pFile;
   APIRET rc = NO_ERROR;
   if( pld && (pFile = (os2File*)*pld) != 0 ){
-    TRACE2( "CLOSE %d\n", pFile->h );
+    OSTRACE2( "CLOSE %d\n", pFile->h );
     rc = DosClose( pFile->h );
     pFile->locktype = NO_LOCK;
     if( pFile->delOnClose != 0 ){
@@ -294,7 +294,7 @@ int os2Read( OsFile *id, void *pBuf, int amt ){
   ULONG got;
   assert( id!=0 );
   SimulateIOError( return SQLITE_IOERR );
-  TRACE3( "READ %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
+  OSTRACE3( "READ %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
   DosRead( ((os2File*)id)->h, pBuf, amt, &got );
   if (got == (ULONG)amt)
     return SQLITE_OK;
@@ -316,7 +316,7 @@ int os2Write( OsFile *id, const void *pBuf, int amt ){
   assert( id!=0 );
   SimulateIOError( return SQLITE_IOERR );
   SimulateDiskfullError( return SQLITE_FULL );
-  TRACE3( "WRITE %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
+  OSTRACE3( "WRITE %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
   while( amt > 0 &&
       (rc = DosWrite( ((os2File*)id)->h, (PVOID)pBuf, amt, &wrote )) && wrote > 0 ){
       amt -= wrote;
@@ -334,7 +334,7 @@ int os2Seek( OsFile *id, i64 offset ){
   ULONG filePointer = 0L;
   assert( id!=0 );
   rc = DosSetFilePtr( ((os2File*)id)->h, offset, FILE_BEGIN, &filePointer );
-  TRACE3( "SEEK %d %lld\n", ((os2File*)id)->h, offset );
+  OSTRACE3( "SEEK %d %lld\n", ((os2File*)id)->h, offset );
   return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
 }
 
@@ -343,7 +343,7 @@ int os2Seek( OsFile *id, i64 offset ){
 */
 int os2Sync( OsFile *id, int dataOnly ){
   assert( id!=0 );
-  TRACE3( "SYNC %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
+  OSTRACE3( "SYNC %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
   return DosResetBuffer( ((os2File*)id)->h ) == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
 }
 
@@ -363,7 +363,7 @@ int os2Truncate( OsFile *id, i64 nByte ){
   APIRET rc = NO_ERROR;
   ULONG upperBits = nByte>>32;
   assert( id!=0 );
-  TRACE3( "TRUNCATE %d %lld\n", ((os2File*)id)->h, nByte );
+  OSTRACE3( "TRUNCATE %d %lld\n", ((os2File*)id)->h, nByte );
   SimulateIOError( return SQLITE_IOERR );
   rc = DosSetFilePtr( ((os2File*)id)->h, nByte, FILE_BEGIN, &upperBits );
   if( rc != NO_ERROR ){
@@ -478,7 +478,7 @@ int os2Lock( OsFile *id, int locktype ){
   memset(&LockArea, 0, sizeof(LockArea));
   memset(&UnlockArea, 0, sizeof(UnlockArea));
   assert( pFile!=0 );
-  TRACE4( "LOCK %d %d was %d\n", pFile->h, locktype, pFile->locktype );
+  OSTRACE4( "LOCK %d %d was %d\n", pFile->h, locktype, pFile->locktype );
 
   /* If there is already a lock of this type or more restrictive on the
   ** OsFile, do nothing. Don't use the end_lock: exit path, as
@@ -513,7 +513,7 @@ int os2Lock( OsFile *id, int locktype ){
       /* Try 3 times to get the pending lock.  The pending lock might be
       ** held by another reader process who will release it momentarily.
       */
-      TRACE2( "could not get a PENDING lock. cnt=%d\n", cnt );
+      OSTRACE2( "could not get a PENDING lock. cnt=%d\n", cnt );
       DosSleep(1);
     }
     gotPendingLock = res;
@@ -555,7 +555,7 @@ int os2Lock( OsFile *id, int locktype ){
   if( locktype==EXCLUSIVE_LOCK && res ){
     assert( pFile->locktype>=SHARED_LOCK );
     res = unlockReadLock(pFile);
-    TRACE2( "unreadlock = %d\n", res );
+    OSTRACE2( "unreadlock = %d\n", res );
     LockArea.lOffset = SHARED_FIRST;
     LockArea.lRange = SHARED_SIZE;
     UnlockArea.lOffset = 0L;
@@ -564,7 +564,7 @@ int os2Lock( OsFile *id, int locktype ){
     if( res == NO_ERROR ){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
-      TRACE2( "error-code = %d\n", res );
+      OSTRACE2( "error-code = %d\n", res );
     }
   }
 
@@ -585,7 +585,7 @@ int os2Lock( OsFile *id, int locktype ){
   if( res == NO_ERROR ){
     rc = SQLITE_OK;
   }else{
-    TRACE4( "LOCK FAILED %d trying for %d but got %d\n", pFile->h,
+    OSTRACE4( "LOCK FAILED %d trying for %d but got %d\n", pFile->h,
            locktype, newLocktype );
     rc = SQLITE_BUSY;
   }
@@ -604,7 +604,7 @@ int os2CheckReservedLock( OsFile *id ){
   assert( pFile!=0 );
   if( pFile->locktype>=RESERVED_LOCK ){
     rc = 1;
-    TRACE3( "TEST WR-LOCK %d %d (local)\n", pFile->h, rc );
+    OSTRACE3( "TEST WR-LOCK %d %d (local)\n", pFile->h, rc );
   }else{
     FILELOCK  LockArea,
               UnlockArea;
@@ -622,7 +622,7 @@ int os2CheckReservedLock( OsFile *id ){
       UnlockArea.lRange = 1L;
       rc = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
     }
-    TRACE3( "TEST WR-LOCK %d %d (remote)\n", pFile->h, rc );
+    OSTRACE3( "TEST WR-LOCK %d %d (remote)\n", pFile->h, rc );
   }
   return rc;
 }
@@ -648,7 +648,7 @@ int os2Unlock( OsFile *id, int locktype ){
   memset(&UnlockArea, 0, sizeof(UnlockArea));
   assert( pFile!=0 );
   assert( locktype<=SHARED_LOCK );
-  TRACE4( "UNLOCK %d to %d was %d\n", pFile->h, locktype, pFile->locktype );
+  OSTRACE4( "UNLOCK %d to %d was %d\n", pFile->h, locktype, pFile->locktype );
   type = pFile->locktype;
   if( type>=EXCLUSIVE_LOCK ){
     LockArea.lOffset = 0L;

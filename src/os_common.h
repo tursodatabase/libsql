@@ -40,23 +40,24 @@ int sqlite3_os_trace = 0;
 #ifdef SQLITE_DEBUG
 static int last_page = 0;
 #define SEEK(X)           last_page=(X)
-#define TRACE1(X)         if( sqlite3_os_trace ) sqlite3DebugPrintf(X)
-#define TRACE2(X,Y)       if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y)
-#define TRACE3(X,Y,Z)     if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z)
-#define TRACE4(X,Y,Z,A)   if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z,A)
-#define TRACE5(X,Y,Z,A,B) if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z,A,B)
-#define TRACE6(X,Y,Z,A,B,C) if(sqlite3_os_trace) sqlite3DebugPrintf(X,Y,Z,A,B,C)
-#define TRACE7(X,Y,Z,A,B,C,D) \
+#define OSTRACE1(X)         if( sqlite3_os_trace ) sqlite3DebugPrintf(X)
+#define OSTRACE2(X,Y)       if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y)
+#define OSTRACE3(X,Y,Z)     if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z)
+#define OSTRACE4(X,Y,Z,A)   if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z,A)
+#define OSTRACE5(X,Y,Z,A,B) if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z,A,B)
+#define OSTRACE6(X,Y,Z,A,B,C) \
+    if(sqlite3_os_trace) sqlite3DebugPrintf(X,Y,Z,A,B,C)
+#define OSTRACE7(X,Y,Z,A,B,C,D) \
     if(sqlite3_os_trace) sqlite3DebugPrintf(X,Y,Z,A,B,C,D)
 #else
 #define SEEK(X)
-#define TRACE1(X)
-#define TRACE2(X,Y)
-#define TRACE3(X,Y,Z)
-#define TRACE4(X,Y,Z,A)
-#define TRACE5(X,Y,Z,A,B)
-#define TRACE6(X,Y,Z,A,B,C)
-#define TRACE7(X,Y,Z,A,B,C,D)
+#define OSTRACE1(X)
+#define OSTRACE2(X,Y)
+#define OSTRACE3(X,Y,Z)
+#define OSTRACE4(X,Y,Z,A)
+#define OSTRACE5(X,Y,Z,A,B)
+#define OSTRACE6(X,Y,Z,A,B,C)
+#define OSTRACE7(X,Y,Z,A,B,C,D)
 #endif
 
 /*
@@ -197,4 +198,3 @@ int sqlite3GenericAllocationSize(void *p){ return 0; }
 #ifndef PAGER_SECTOR_SIZE
 # define PAGER_SECTOR_SIZE 512
 #endif
-

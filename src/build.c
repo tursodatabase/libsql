@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.415 2007/03/17 10:26:59 danielk1977 Exp $
+** $Id: build.c,v 1.416 2007/03/26 22:05:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -82,7 +82,7 @@ void sqlite3TableLock(
   }
 
   nBytes = sizeof(TableLock) * (pParse->nTableLock+1);
-  sqliteReallocOrFree((void **)&pParse->aTableLock, nBytes);
+  sqliteReallocOrFree(&pParse->aTableLock, nBytes);
   if( pParse->aTableLock ){
     p = &pParse->aTableLock[pParse->nTableLock++];
     p->iDb = iDb;
@@ -2804,21 +2804,22 @@ exit_drop_index:
 ** szEntry is the sizeof of a single array entry.  initSize is the 
 ** number of array entries allocated on the initial allocation.
 */
-int sqlite3ArrayAllocate(void **ppArray, int szEntry, int initSize){
+int sqlite3ArrayAllocate(void *ppArray, int szEntry, int initSize){
   char *p;
-  int *an = (int*)&ppArray[1];
+  void **pp = (void**)ppArray;
+  int *an = (int*)&pp[1];
   if( an[0]>=an[1] ){
     void *pNew;
     int newSize;
     newSize = an[1]*2 + initSize;
-    pNew = sqliteRealloc(*ppArray, newSize*szEntry);
+    pNew = sqliteRealloc(*pp, newSize*szEntry);
     if( pNew==0 ){
       return -1;
     }
     an[1] = newSize;
-    *ppArray = pNew;
+    *pp = pNew;
   }
-  p = *ppArray;
+  p = *pp;
   memset(&p[an[0]*szEntry], 0, szEntry);
   return an[0]++;
 }
@@ -2836,7 +2837,7 @@ IdList *sqlite3IdListAppend(IdList *pList, Token *pToken){
     if( pList==0 ) return 0;
     pList->nAlloc = 0;
   }
-  i = sqlite3ArrayAllocate((void**)&pList->a, sizeof(pList->a[0]), 5);
+  i = sqlite3ArrayAllocate(&pList->a, sizeof(pList->a[0]), 5);
   if( i<0 ){
     sqlite3IdListDelete(pList);
     return 0;

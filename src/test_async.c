@@ -106,7 +106,7 @@ typedef struct AsyncFile AsyncFile;
 
 /* Enable for debugging */
 static int sqlite3async_trace = 0;
-# define TRACE(X) if( sqlite3async_trace ) asyncTrace X
+# define ASYNC_TRACE(X) if( sqlite3async_trace ) asyncTrace X
 static void asyncTrace(const char *zFormat, ...){
   char *z;
   va_list ap;
@@ -364,7 +364,7 @@ static void addAsyncWrite(AsyncWrite *pWrite){
     async.pQueueFirst = pWrite;
   }
   async.pQueueLast = pWrite;
-  TRACE(("PUSH %p (%s %s %d)\n", pWrite, azOpcodeName[pWrite->op],
+  ASYNC_TRACE(("PUSH %p (%s %s %d)\n", pWrite, azOpcodeName[pWrite->op],
          pWrite->pFile ? pWrite->pFile->zName : "-", pWrite->iOffset));
 
   if( pWrite->op==ASYNC_CLOSE ){
@@ -520,7 +520,7 @@ static int asyncRead(OsFile *id, void *obuf, int amt){
     nRead = MIN(filesize - pFile->iOffset, amt);
     if( nRead>0 ){
       rc = sqlite3OsRead(pBase, obuf, nRead);
-      TRACE(("READ %s %d bytes at %d\n", pFile->zName, nRead, pFile->iOffset));
+      ASYNC_TRACE(("READ %s %d bytes at %d\n", pFile->zName, nRead, pFile->iOffset));
     }
   }
 
@@ -540,7 +540,7 @@ static int asyncRead(OsFile *id, void *obuf, int amt){
 
         if( nCopy>0 ){
           memcpy(&((char *)obuf)[iBeginOut], &p->zBuf[iBeginIn], nCopy);
-          TRACE(("OVERREAD %d bytes at %d\n", nCopy, iBeginOut+iOffset));
+          ASYNC_TRACE(("OVERREAD %d bytes at %d\n", nCopy, iBeginOut+iOffset));
         }
       }
     }
@@ -626,7 +626,7 @@ static int asyncFileHandle(OsFile *id){
 */
 static int asyncLock(OsFile *id, int lockType){
   AsyncFile *pFile = (AsyncFile*)id;
-  TRACE(("LOCK %d (%s)\n", lockType, pFile->zName));
+  ASYNC_TRACE(("LOCK %d (%s)\n", lockType, pFile->zName));
   pthread_mutex_lock(&async.lockMutex);
   sqlite3HashInsert(&async.aLock, pFile->zName, pFile->nName, (void*)lockType);
   pthread_mutex_unlock(&async.lockMutex);
@@ -646,7 +646,7 @@ static int asyncCheckReservedLock(OsFile *id){
   pthread_mutex_lock(&async.lockMutex);
   rc = (int)sqlite3HashFind(&async.aLock, pFile->zName, pFile->nName);
   pthread_mutex_unlock(&async.lockMutex);
-  TRACE(("CHECK-LOCK %d (%s)\n", rc, pFile->zName));
+  ASYNC_TRACE(("CHECK-LOCK %d (%s)\n", rc, pFile->zName));
   return rc>SHARED_LOCK;
 }
 
@@ -826,7 +826,7 @@ static int asyncFileExists(const char *z){
     }
   }
 
-  TRACE(("EXISTS: %s = %d\n", z, ret));
+  ASYNC_TRACE(("EXISTS: %s = %d\n", z, ret));
   pthread_mutex_unlock(&async.queueMutex);
   return ret;
 }
@@ -916,9 +916,9 @@ static void *asyncWriterThread(void *NotUsed){
         pthread_mutex_unlock(&async.queueMutex);
         break;
       }else{
-        TRACE(("IDLE\n"));
+        ASYNC_TRACE(("IDLE\n"));
         pthread_cond_wait(&async.queueSignal, &async.queueMutex);
-        TRACE(("WAKEUP\n"));
+        ASYNC_TRACE(("WAKEUP\n"));
       }
     }
     if( p==0 ) break;
@@ -967,7 +967,7 @@ static void *asyncWriterThread(void *NotUsed){
 
       case ASYNC_WRITE:
         assert( pBase );
-        TRACE(("WRITE %s %d bytes at %d\n",
+        ASYNC_TRACE(("WRITE %s %d bytes at %d\n",
                 p->pFile->zName, p->nByte, p->iOffset));
         rc = sqlite3OsSeek(pBase, p->iOffset);
         if( rc==SQLITE_OK ){
@@ -977,18 +977,18 @@ static void *asyncWriterThread(void *NotUsed){
 
       case ASYNC_SYNC:
         assert( pBase );
-        TRACE(("SYNC %s\n", p->pFile->zName));
+        ASYNC_TRACE(("SYNC %s\n", p->pFile->zName));
         rc = sqlite3OsSync(pBase, p->nByte);
         break;
 
       case ASYNC_TRUNCATE:
         assert( pBase );
-        TRACE(("TRUNCATE %s to %d bytes\n", p->pFile->zName, p->iOffset));
+        ASYNC_TRACE(("TRUNCATE %s to %d bytes\n", p->pFile->zName, p->iOffset));
         rc = sqlite3OsTruncate(pBase, p->iOffset);
         break;
 
       case ASYNC_CLOSE:
-        TRACE(("CLOSE %s\n", p->pFile->zName));
+        ASYNC_TRACE(("CLOSE %s\n", p->pFile->zName));
         sqlite3OsClose(&p->pFile->pBaseWrite);
         sqlite3OsClose(&p->pFile->pBaseRead);
         sqlite3OsFree(p->pFile);
@@ -996,23 +996,23 @@ static void *asyncWriterThread(void *NotUsed){
 
       case ASYNC_OPENDIRECTORY:
         assert( pBase );
-        TRACE(("OPENDIR %s\n", p->zBuf));
+        ASYNC_TRACE(("OPENDIR %s\n", p->zBuf));
         sqlite3OsOpenDirectory(pBase, p->zBuf);
         break;
 
       case ASYNC_SETFULLSYNC:
         assert( pBase );
-        TRACE(("SETFULLSYNC %s %d\n", p->pFile->zName, p->nByte));
+        ASYNC_TRACE(("SETFULLSYNC %s %d\n", p->pFile->zName, p->nByte));
         sqlite3OsSetFullSync(pBase, p->nByte);
         break;
 
       case ASYNC_DELETE:
-        TRACE(("DELETE %s\n", p->zBuf));
+        ASYNC_TRACE(("DELETE %s\n", p->zBuf));
         rc = xOrigDelete(p->zBuf);
         break;
 
       case ASYNC_SYNCDIRECTORY:
-        TRACE(("SYNCDIR %s\n", p->zBuf));
+        ASYNC_TRACE(("SYNCDIR %s\n", p->zBuf));
         rc = xOrigSyncDirectory(p->zBuf);
         break;
 
@@ -1020,7 +1020,7 @@ static void *asyncWriterThread(void *NotUsed){
         AsyncFile *pFile = p->pFile;
         int delFlag = ((p->iOffset)?1:0);
         OsFile *pBase = 0;
-        TRACE(("OPEN %s delFlag=%d\n", p->zBuf, delFlag));
+        ASYNC_TRACE(("OPEN %s delFlag=%d\n", p->zBuf, delFlag));
         assert(pFile->pBaseRead==0 && pFile->pBaseWrite==0);
         rc = xOrigOpenExclusive(p->zBuf, &pBase, delFlag);
         assert( holdingMutex==0 );
@@ -1043,7 +1043,7 @@ static void *asyncWriterThread(void *NotUsed){
       pthread_mutex_lock(&async.queueMutex);
       holdingMutex = 1;
     }
-    /* TRACE(("UNLINK %p\n", p)); */
+    /* ASYNC_TRACE(("UNLINK %p\n", p)); */
     if( p==async.pQueueLast ){
       async.pQueueLast = 0;
     }
@@ -1236,14 +1236,14 @@ static int testAsyncWait(
     sched_yield();
   }
   if( cnt>=0 ){
-    TRACE(("WAIT\n"));
+    ASYNC_TRACE(("WAIT\n"));
     pthread_mutex_lock(&async.queueMutex);
     pthread_cond_broadcast(&async.queueSignal);
     pthread_mutex_unlock(&async.queueMutex);
     pthread_mutex_lock(&async.writerMutex);
     pthread_mutex_unlock(&async.writerMutex);
   }else{
-    TRACE(("NO-WAIT\n"));
+    ASYNC_TRACE(("NO-WAIT\n"));
   }
   return TCL_OK;
 }

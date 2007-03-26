@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.591 2007/03/15 12:05:36 danielk1977 Exp $
+** $Id: vdbe.c,v 1.592 2007/03/26 22:05:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4236,7 +4236,7 @@ case OP_ContextPush: {        /* no-push */
   /* FIX ME: This should be allocated as part of the vdbe at compile-time */
   if( i>=p->contextStackDepth ){
     p->contextStackDepth = i+1;
-    sqliteReallocOrFree((void**)&p->contextStack, sizeof(Context)*(i+1));
+    sqliteReallocOrFree(&p->contextStack, sizeof(Context)*(i+1));
     if( p->contextStack==0 ) goto no_mem;
   }
   pContext = &p->contextStack[i];

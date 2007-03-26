@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.195 2007/03/19 17:44:28 danielk1977 Exp $
+** $Id: util.c,v 1.196 2007/03/26 22:05:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -661,12 +661,13 @@ void *sqlite3Malloc(int n, int doMemManage){
   }
   return p;
 }
-void sqlite3ReallocOrFree(void **pp, int n){
-  void *p = sqlite3Realloc(*pp, n);
+void sqlite3ReallocOrFree(void *pp, int n){
+  char **x = (char**)pp;
+  void *p = sqlite3Realloc(*x, n);
   if( !p ){
-    sqlite3FreeX(*pp);
+    sqlite3FreeX(*x);
   }
-  *pp = p;
+  *x = p;
 }
 
 /*
@@ -1384,11 +1385,11 @@ void *sqlite3TextToPtr(const char *z){
     z++;
   }
   if( sizeof(p)==sizeof(v) ){
-    p = *(void**)&v;
+    memcpy(&p, &v, sizeof(p));
   }else{
     assert( sizeof(p)==sizeof(v2) );
     v2 = (u32)v;
-    p = *(void**)&v2;
+    memcpy(&p, &v2, sizeof(p));
   }
   return p;
 }

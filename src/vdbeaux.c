@@ -195,8 +195,7 @@ int sqlite3VdbeMakeLabel(Vdbe *p){
   assert( p->magic==VDBE_MAGIC_INIT );
   if( i>=p->nLabelAlloc ){
     p->nLabelAlloc = p->nLabelAlloc*2 + 10;
-    sqliteReallocOrFree((void**)&p->aLabel,
-                          p->nLabelAlloc*sizeof(p->aLabel[0]));
+    sqliteReallocOrFree(&p->aLabel, p->nLabelAlloc*sizeof(p->aLabel[0]));
   }
   if( p->aLabel ){
     p->aLabel[i] = -1;
@@ -723,7 +722,7 @@ int sqlite3VdbeList(
     pMem++;
 
     pMem->flags = MEM_Static|MEM_Str|MEM_Term;
-    pMem->z = sqlite3OpcodeNames[pOp->opcode];  /* Opcode */
+    pMem->z = (char*)sqlite3OpcodeNames[pOp->opcode];  /* Opcode */
     assert( pMem->z!=0 );
     pMem->n = strlen(pMem->z);
     pMem->type = SQLITE_TEXT;
@@ -1785,9 +1784,10 @@ int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem, int file_format){
     u64 v;
     int i;
     if( serial_type==7 ){
-      v = *(u64*)&pMem->r;
+      assert( sizeof(v)==sizeof(pMem->r) );
+      memcpy(&v, &pMem->r, sizeof(v));
     }else{
-      v = *(u64*)&pMem->i;
+      v = pMem->i;
     }
     len = i = sqlite3VdbeSerialTypeLen(serial_type);
     while( i-- ){
@@ -1861,7 +1861,8 @@ int sqlite3VdbeSerialGet(
       ** byte order.  The byte order differs on some (broken) architectures.
       */
       static const u64 t1 = ((u64)0x3ff00000)<<32;
-      assert( 1.0==*(double*)&t1 );
+      static const double r1 = 1.0;
+      assert( sizeof(r1)==sizeof(t1) && memcmp(&r1, &t1, sizeof(r1))==0 );
 #endif
 
       x = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
@@ -1871,7 +1872,9 @@ int sqlite3VdbeSerialGet(
         pMem->i = *(i64*)&x;
         pMem->flags = MEM_Int;
       }else{
-        pMem->r = *(double*)&x;
+        assert( sizeof(x)==8 && sizeof(pMem->r)==8 );
+        memcpy(&pMem->r, &x, sizeof(x));
+        /* pMem->r = *(double*)&x; */
         pMem->flags = MEM_Real;
       }
       return 8;

@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.239 2007/03/02 08:12:22 danielk1977 Exp $
+** $Id: where.c,v 1.240 2007/03/26 22:05:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -35,9 +35,9 @@
 */
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
 int sqlite3_where_trace = 0;
-# define TRACE(X)  if(sqlite3_where_trace) sqlite3DebugPrintf X
+# define WHERETRACE(X)  if(sqlite3_where_trace) sqlite3DebugPrintf X
 #else
-# define TRACE(X)
+# define WHERETRACE(X)
 #endif
 
 /* Forward reference
@@ -1209,7 +1209,7 @@ static double bestVirtualIndex(
   if( pIdxInfo==0 ){
     WhereTerm *pTerm;
     int nTerm;
-    TRACE(("Recomputing index info for %s...\n", pTab->zName));
+    WHERETRACE(("Recomputing index info for %s...\n", pTab->zName));
 
     /* Count the number of possible WHERE clause constraints referring
     ** to this virtual table */
@@ -1342,7 +1342,7 @@ static double bestVirtualIndex(
   }
 
   sqlite3SafetyOff(pParse->db);
-  TRACE(("xBestIndex for %s\n", pTab->zName));
+  WHERETRACE(("xBestIndex for %s\n", pTab->zName));
   TRACE_IDX_INPUTS(pIdxInfo);
   rc = pTab->pVtab->pModule->xBestIndex(pTab->pVtab, pIdxInfo);
   TRACE_IDX_OUTPUTS(pIdxInfo);
@@ -1403,7 +1403,7 @@ static double bestIndex(
   int eqTermMask;             /* Mask of valid equality operators */
   double cost;                /* Cost of using pProbe */
 
-  TRACE(("bestIndex: tbl=%s notReady=%x\n", pSrc->pTab->zName, notReady));
+  WHERETRACE(("bestIndex: tbl=%s notReady=%x\n", pSrc->pTab->zName, notReady));
   lowestCost = SQLITE_BIG_DBL;
   pProbe = pSrc->pTab->pIndex;
 
@@ -1434,7 +1434,7 @@ static double bestIndex(
       ** a single row is generated, output is always in sorted order */
       *pFlags = WHERE_ROWID_EQ | WHERE_UNIQUE;
       *pnEq = 1;
-      TRACE(("... best is rowid\n"));
+      WHERETRACE(("... best is rowid\n"));
       return 0.0;
     }else if( (pExpr = pTerm->pExpr)->pList!=0 ){
       /* Rowid IN (LIST): cost is NlogN where N is the number of list
@@ -1447,14 +1447,14 @@ static double bestIndex(
       ** that value so make a wild guess. */
       lowestCost = 200;
     }
-    TRACE(("... rowid IN cost: %.9g\n", lowestCost));
+    WHERETRACE(("... rowid IN cost: %.9g\n", lowestCost));
   }
 
   /* Estimate the cost of a table scan.  If we do not know how many
   ** entries are in the table, use 1 million as a guess.
   */
   cost = pProbe ? pProbe->aiRowEst[0] : 1000000;
-  TRACE(("... table scan base cost: %.9g\n", cost));
+  WHERETRACE(("... table scan base cost: %.9g\n", cost));
   flags = WHERE_ROWID_RANGE;
 
   /* Check for constraints on a range of rowids in a table scan.
@@ -1469,7 +1469,7 @@ static double bestIndex(
       flags |= WHERE_BTM_LIMIT;
       cost /= 3;  /* Guess that rowid>EXPR eliminates two-thirds of rows */
     }
-    TRACE(("... rowid range reduces cost to %.9g\n", cost));
+    WHERETRACE(("... rowid range reduces cost to %.9g\n", cost));
   }else{
     flags = 0;
   }
@@ -1484,7 +1484,7 @@ static double bestIndex(
       }
     }else{
       cost += cost*estLog(cost);
-      TRACE(("... sorting increases cost to %.9g\n", cost));
+      WHERETRACE(("... sorting increases cost to %.9g\n", cost));
     }
   }
   if( cost<lowestCost ){
@@ -1509,7 +1509,7 @@ static double bestIndex(
     int i;                       /* Loop counter */
     double inMultiplier = 1;
 
-    TRACE(("... index %s:\n", pProbe->zName));
+    WHERETRACE(("... index %s:\n", pProbe->zName));
 
     /* Count the number of columns in the index that are satisfied
     ** by x=EXPR constraints or x IN (...) constraints.
@@ -1536,7 +1536,7 @@ static double bestIndex(
          && nEq==pProbe->nColumn ){
       flags |= WHERE_UNIQUE;
     }
-    TRACE(("...... nEq=%d inMult=%.9g cost=%.9g\n", nEq, inMultiplier, cost));
+    WHERETRACE(("...... nEq=%d inMult=%.9g cost=%.9g\n", nEq, inMultiplier, cost));
 
     /* Look for range constraints
     */
@@ -1553,7 +1553,7 @@ static double bestIndex(
           flags |= WHERE_BTM_LIMIT;
           cost /= 3;
         }
-        TRACE(("...... range reduces cost to %.9g\n", cost));
+        WHERETRACE(("...... range reduces cost to %.9g\n", cost));
       }
     }
 
@@ -1571,7 +1571,7 @@ static double bestIndex(
         }
       }else{
         cost += cost*estLog(cost);
-        TRACE(("...... orderby increases cost to %.9g\n", cost));
+        WHERETRACE(("...... orderby increases cost to %.9g\n", cost));
       }
     }
 
@@ -1591,7 +1591,7 @@ static double bestIndex(
       if( m==0 ){
         flags |= WHERE_IDX_ONLY;
         cost /= 2;
-        TRACE(("...... idx-only reduces cost to %.9g\n", cost));
+        WHERETRACE(("...... idx-only reduces cost to %.9g\n", cost));
       }
     }
 
@@ -1609,7 +1609,7 @@ static double bestIndex(
   /* Report the best result
   */
   *ppIndex = bestIdx;
-  TRACE(("best index is %s, cost=%.9g, flags=%x, nEq=%d\n",
+  WHERETRACE(("best index is %s, cost=%.9g, flags=%x, nEq=%d\n",
         bestIdx ? bestIdx->zName : "(none)", lowestCost, bestFlags, bestNEq));
   *pFlags = bestFlags | eqTermMask;
   *pnEq = bestNEq;
@@ -1707,8 +1707,8 @@ static void codeEqualityTerm(
     sqlite3VdbeAddOp(v, OP_Rewind, iTab, 0);
     VdbeComment((v, "# %.*s", pX->span.n, pX->span.z));
     pLevel->nIn++;
-    sqliteReallocOrFree((void**)&pLevel->aInLoop,
-                                 sizeof(pLevel->aInLoop[0])*2*pLevel->nIn);
+    sqliteReallocOrFree(&pLevel->aInLoop,
+                        sizeof(pLevel->aInLoop[0])*2*pLevel->nIn);
     aIn = pLevel->aInLoop;
     if( aIn ){
       aIn += pLevel->nIn*2 - 2;
@@ -2003,7 +2003,7 @@ WhereInfo *sqlite3WhereBegin(
   pTabItem = pTabList->a;
   pLevel = pWInfo->a;
   andFlags = ~0;
-  TRACE(("*** Optimizer Start ***\n"));
+  WHERETRACE(("*** Optimizer Start ***\n"));
   for(i=iFrom=0, pLevel=pWInfo->a; i<pTabList->nSrc; i++, pLevel++){
     Index *pIdx;                /* Index for FROM table at pTabItem */
     int flags;                  /* Flags asssociated with pIdx */
@@ -2071,7 +2071,7 @@ WhereInfo *sqlite3WhereBegin(
       }
       if( doNotReorder ) break;
     }
-    TRACE(("*** Optimizer choose table %d for loop %d\n", bestJ,
+    WHERETRACE(("*** Optimizer choose table %d for loop %d\n", bestJ,
            pLevel-pWInfo->a));
     if( (bestFlags & WHERE_ORDERBY)!=0 ){
       *ppOrderBy = 0;
@@ -2090,7 +2090,7 @@ WhereInfo *sqlite3WhereBegin(
     notReady &= ~getMask(&maskSet, pTabList->a[bestJ].iCursor);
     pLevel->iFrom = bestJ;
   }
-  TRACE(("*** Optimizer Finished ***\n"));
+  WHERETRACE(("*** Optimizer Finished ***\n"));
 
   /* If the total query only selects a single row, then the ORDER BY
   ** clause is irrelevant.

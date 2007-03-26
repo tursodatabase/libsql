@@ -195,7 +195,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
   int rc = SQLITE_OK;
   if( pFunc && pFunc->xFinalize ){
     sqlite3_context ctx;
-    assert( (pMem->flags & MEM_Null)!=0 || pFunc==*(FuncDef**)&pMem->i );
+    assert( (pMem->flags & MEM_Null)!=0 || pFunc==pMem->pDef );
     ctx.s.flags = MEM_Null;
     ctx.s.z = pMem->zShort;
     ctx.pMem = pMem;
@@ -225,7 +225,7 @@ void sqlite3VdbeMemRelease(Mem *p){
   if( p->flags & (MEM_Dyn|MEM_Agg) ){
     if( p->xDel ){
       if( p->flags & MEM_Agg ){
-        sqlite3VdbeMemFinalize(p, *(FuncDef**)&p->i);
+        sqlite3VdbeMemFinalize(p, p->pDef);
         assert( (p->flags & MEM_Agg)==0 );
         sqlite3VdbeMemRelease(p);
       }else{

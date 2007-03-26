@@ -248,7 +248,7 @@ objects: $(LIBOBJ_ORIG)
 target_source:	$(SRC)
 	rm -rf tsrc
 	mkdir tsrc
-	cp $(SRC) tsrc
+	cp $(SRC) $(TOP)/src/*.h tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
 
 # Rules to build the LEMON compiler generator

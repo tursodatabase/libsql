@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.71 2007/03/19 17:44:28 danielk1977 Exp $
+** $Id: test3.c,v 1.72 2007/03/26 22:05:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -1229,7 +1229,7 @@ static int btree_cursor_info(
 /*
 ** Copied from btree.c:
 */
-static u32 get4byte(unsigned char *p){
+static u32 t4Get4byte(unsigned char *p){
   return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
 }
 
@@ -1291,7 +1291,7 @@ static int btree_ovfl_info(
       return TCL_ERROR;
     }
     pPage = sqlite3PagerGetData(pDbPage);
-    pgno = get4byte((unsigned char*)pPage);
+    pgno = t4Get4byte((unsigned char*)pPage);
     sqlite3PagerUnref(pDbPage);
   }
   Tcl_DStringResult(interp, &str);
