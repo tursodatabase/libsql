@@ -8,9 +8,11 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-# This file implements regression tests for SQLite library.
+# This file implements regression tests for SQLite library. The focus
+# of these tests is exclusive access mode (i.e. the thing activated by 
+# "PRAGMA locking_mode = EXCLUSIVE").
 #
-# $Id: exclusive.test,v 1.2 2007/03/26 08:05:12 danielk1977 Exp $
+# $Id: exclusive.test,v 1.3 2007/03/26 10:27:19 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

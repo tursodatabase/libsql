@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.295 2007/03/26 08:05:12 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.296 2007/03/26 10:27:19 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -927,7 +927,7 @@ static int pager_unwritelock(Pager *pPager){
   }
   sqlite3PagerStmtCommit(pPager);
   if( pPager->stmtOpen && !pPager->exclusiveMode ){
-    if( pPager->exclusiveMode ){
+    if( !pPager->exclusiveMode ){
       sqlite3OsClose(&pPager->stfd);
       pPager->stmtOpen = 0;
     }else{
@@ -3897,23 +3897,25 @@ static int pager_incr_changecounter(Pager *pPager){
   u32 change_counter;
   int rc;
 
-  /* Open page 1 of the file for writing. */
-  rc = sqlite3PagerGet(pPager, 1, &pPgHdr);
-  if( rc!=SQLITE_OK ) return rc;
-  rc = sqlite3PagerWrite(pPgHdr);
-  if( rc!=SQLITE_OK ) return rc;
-
-  /* Read the current value at byte 24. */
-  change_counter = retrieve32bits(pPgHdr, 24);
-
-  /* Increment the value just read and write it back to byte 24. */
-  change_counter++;
-  put32bits(((char*)PGHDR_TO_DATA(pPgHdr))+24, change_counter);
-  pPager->iChangeCount = change_counter;
-
-  /* Release the page reference. */
-  sqlite3PagerUnref(pPgHdr);
-  pPager->changeCountDone = 1;
+  if( !pPager->changeCountDone ){
+    /* Open page 1 of the file for writing. */
+    rc = sqlite3PagerGet(pPager, 1, &pPgHdr);
+    if( rc!=SQLITE_OK ) return rc;
+    rc = sqlite3PagerWrite(pPgHdr);
+    if( rc!=SQLITE_OK ) return rc;
+  
+    /* Read the current value at byte 24. */
+    change_counter = retrieve32bits(pPgHdr, 24);
+  
+    /* Increment the value just read and write it back to byte 24. */
+    change_counter++;
+    put32bits(((char*)PGHDR_TO_DATA(pPgHdr))+24, change_counter);
+    pPager->iChangeCount = change_counter;
+  
+    /* Release the page reference. */
+    sqlite3PagerUnref(pPgHdr);
+    pPager->changeCountDone = 1;
+  }
   return SQLITE_OK;
 }
 
