@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.298 2007/03/26 13:48:13 drh Exp $
+** @(#) $Id: pager.c,v 1.299 2007/03/26 15:46:01 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1825,7 +1825,8 @@ void sqlite3PagerSetReiniter(Pager *pPager, void (*xReinit)(DbPage*,int)){
 */
 int sqlite3PagerSetPagesize(Pager *pPager, int pageSize){
   assert( pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE );
-  if( !pPager->memDb ){
+  if( !pPager->memDb && pPager->nRef==0 ){
+    pager_reset(pPager);
     pPager->pageSize = pageSize;
     sqlite3ReallocOrFree((void **)&pPager->pTmpSpace, pageSize);
   }
