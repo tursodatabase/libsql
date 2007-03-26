@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: exclusive.test,v 1.1 2007/03/24 16:45:05 danielk1977 Exp $
+# $Id: exclusive.test,v 1.2 2007/03/26 08:05:12 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -274,7 +274,7 @@ do_test exclusive-3.4 {
     ROLLBACK;
     SELECT * FROM abc;
   }
-} {1 2 3}
+} {A B C}
 do_test exclusive-3.5 {
   filestate test.db-journal
 } {1 0}
@@ -285,6 +285,11 @@ do_test exclusive-3.6 {
   }
   filestate test.db-journal
 } {0 0}
+
+#----------------------------------------------------------------------
+# Tests exclusive-4.X - test that rollback works correctly when
+# in exclusive-access mode.
+#
 
 # The following procedure computes a "signature" for table "t3".  If
 # T3 changes in any way, the signature should change.  
@@ -297,13 +302,9 @@ proc signature {} {
   return [db eval {SELECT count(*), md5sum(x) FROM t3}]
 }
 
-if 0 {
-
 do_test exclusive-4.0 {
-  execsql { PRAGMA default_cache_size=10; }
-  db close
-  sqlite3 db test.db
   execsql { PRAGMA locking_mode = exclusive; }
+  execsql { PRAGMA default_cache_size = 10; }
   execsql {
     BEGIN;
     CREATE TABLE t3(x TEXT);
@@ -313,28 +314,110 @@ do_test exclusive-4.0 {
     INSERT INTO t3 SELECT randstr(10,400) FROM t3;
     INSERT INTO t3 SELECT randstr(10,400) FROM t3;
     INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
     COMMIT;
-    SELECT count(*) FROM t3;
   }
-} {1024}
-set sig [signature]
+  execsql {SELECT count(*) FROM t3;}
+} {32}
+
+set ::X [signature]
 do_test exclusive-4.1 {
   execsql {
     BEGIN;
     DELETE FROM t3 WHERE random()%10!=0;
     INSERT INTO t3 SELECT randstr(10,10)||x FROM t3;
     INSERT INTO t3 SELECT randstr(10,10)||x FROM t3;
+    SELECT count(*) FROM t3;
     ROLLBACK;
   }
   signature
-} $sig
+} $::X
 
-}
+do_test exclusive-4.2 {
+  execsql {
+    BEGIN;
+    DELETE FROM t3 WHERE random()%10!=0;
+    INSERT INTO t3 SELECT randstr(10,10)||x FROM t3;
+    DELETE FROM t3 WHERE random()%10!=0;
+    INSERT INTO t3 SELECT randstr(10,10)||x FROM t3;
+    ROLLBACK;
+  }
+  signature
+} $::X
+
+do_test exclusive-4.3 {
+  execsql {
+    INSERT INTO t3 SELECT randstr(10,400) FROM t3 WHERE random()%10==0;
+  }
+} {}
+
+do_test exclusive-4.4 {
+  catch {set ::X [signature]}
+} {0}
+do_test exclusive-4.5 {
+  execsql {
+    PRAGMA locking_mode = NORMAL;
+    DROP TABLE t3;
+    DROP TABLE abc;
+  }
+} {normal}
+
+#----------------------------------------------------------------------
+# Tests exclusive-5.X - test that statement journals are truncated
+# instead of deleted when in exclusive access mode.
+#
+#set sqlite_os_trace 1
+do_test exclusive-5.0 {
+  execsql {
+    CREATE TABLE abc(a UNIQUE, b UNIQUE, c UNIQUE);
+    BEGIN;
+    INSERT INTO abc VALUES(1, 2, 3);
+    INSERT INTO abc SELECT a+1, b+1, c+1 FROM abc;
+  }
+} {}
+do_test exclusive-5.1 {
+  # Three files are open: The db, journal and statement-journal.
+  set sqlite_open_file_count
+} {3}
+do_test exclusive-5.2 {
+  execsql {
+    COMMIT;
+  }
+  # One file open: the db.
+  set sqlite_open_file_count
+} {1}
+do_test exclusive-5.3 {
+  execsql {
+    PRAGMA locking_mode = exclusive;
+    BEGIN;
+    INSERT INTO abc VALUES(5, 6, 7);
+  }
+  # Two files open: the db and journal.
+  set sqlite_open_file_count
+} {2}
+do_test exclusive-5.4 {
+  execsql {
+    INSERT INTO abc SELECT a+10, b+10, c+10 FROM abc;
+  }
+  # Three files are open: The db, journal and statement-journal.
+  set sqlite_open_file_count
+} {3}
+do_test exclusive-5.5 {
+  execsql {
+    COMMIT;
+  }
+  # Three files are still open: The db, journal and statement-journal.
+  set sqlite_open_file_count
+} {3}
+do_test exclusive-5.6 {
+  execsql {
+    PRAGMA locking_mode = normal;
+    SELECT * FROM abc;
+  }
+} {normal 1 2 3 2 3 4 5 6 7 11 12 13 12 13 14 15 16 17}
+do_test exclusive-5.7 {
+  # Just the db open.
+  set sqlite_open_file_count
+} {1}
 
 finish_test
 
