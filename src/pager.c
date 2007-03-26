@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.296 2007/03/26 10:27:19 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.297 2007/03/26 12:26:27 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -874,6 +874,7 @@ static void pager_unlock(Pager *pPager){
 */
 static void pagerUnlockAndRollback(Pager *p){
   if( p->errCode ) return;
+  assert( p->state>=PAGER_RESERVED || p->journalOpen==0 );
   if( p->state>=PAGER_RESERVED ){
     sqlite3PagerRollback(p);
   }
@@ -2722,6 +2723,9 @@ static int pagerSharedLock(Pager *pPager){
         if( rc!=SQLITE_OK ){
           return pager_error(pPager, rc);
         }
+        assert(pPager->state==PAGER_SHARED || 
+            (pPager->exclusiveMode && pPager->state>PAGER_SHARED)
+        );
       }
 
       if( pPager->pAll ){
@@ -2747,7 +2751,10 @@ static int pagerSharedLock(Pager *pPager){
         }
       }
     }
-    pPager->state = PAGER_SHARED;
+    assert( pPager->exclusiveMode || pPager->state<=PAGER_SHARED );
+    if( pPager->state==PAGER_UNLOCK ){
+      pPager->state = PAGER_SHARED;
+    }
   }
 
   return rc;

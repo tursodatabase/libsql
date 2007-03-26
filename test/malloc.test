@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.37 2007/03/17 10:26:59 danielk1977 Exp $
+# $Id: malloc.test,v 1.38 2007/03/26 12:26:27 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -334,6 +334,7 @@ do_malloc_test 9 -sqlprep {
 do_malloc_test 10 -sqlprep {
   CREATE TABLE abc(a, b, c);
 } -tclbody {
+  db close
   sqlite3 db2 test.db
   db2 eval {SELECT * FROM sqlite_master}
   db2 close
@@ -353,7 +354,7 @@ do_malloc_test 12 -tclbody {
   append sql16 "\00\00"
   set ::STMT [sqlite3_prepare16 $::DB $sql16 -1 DUMMY]
   sqlite3_finalize $::STMT
-} 
+}
 
 # Test malloc errors when replaying two hot journals from a 2-file 
 # transaction.
