@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.49 2007/03/26 12:26:27 danielk1977 Exp $
+# $Id: quick.test,v 1.50 2007/03/26 13:48:14 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -53,6 +53,7 @@ set EXCLUDE {
   misuse.test
   quick.test
   speed1.test
+  speed2.test
 
   autovacuum_crash.test
   btree8.test

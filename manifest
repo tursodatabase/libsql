@@ -1,5 +1,5 @@
-C Run\ssome\smalloc()\stests\swith\sexclusive-access\smode.\s(CVS\s3717)
-D 2007-03-26T12:26:27
+C Avoid\sunnecessary\scalls\sto\spager_unwritelock()\swhen\sin\sexclusive-access\smode.\nAdd\sthe\sspeed2.test\sscript\sto\sthe\stest\ssuite.\s(CVS\s3718)
+D 2007-03-26T13:48:13
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,7 +86,7 @@ F src/os_unix.c 4642f23ed0c1ae0f1440db1d2b4231348af69360
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 1d1d0989b0f235751504292c2f28e81044be0d70
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 75019bab2ddafdd443413c38f489c15d18b95ea2
+F src/pager.c d9b188cbe6bc502c328115181ae9426256c49058
 F src/pager.h 3c16500c25051536e43fb19e246e58fc7cb51d9f
 F src/parse.y bcfe366c1fd61cfc40e5344eb69a31997a821af0
 F src/pragma.c 9cb8b94e7d38ba35a86037bd517d07ba9870b4b2
@@ -279,7 +279,7 @@ F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
 F test/pragma.test 91739ef06ab9ecf91e90d25951858caba71d6fe7
 F test/printf.test cdd8e20dd901382a385afcbaa777b9377815c2ad
 F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
-F test/quick.test 8c0496cfb3ad91811eca779a5fcaccb8e32fcbda
+F test/quick.test c3eb0c3e37f165eed629cf806f43b4e4e1a3213e
 F test/quote.test 5891f2338980916cf7415484b4ce785294044adb
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
 F test/rollback.test 673cd8c44c685ad54987fe7f0eeba84efa09685d
@@ -300,7 +300,8 @@ F test/shared2.test 8b48f8d33494413ef4cf250110d89403e2bf6b23
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
 F test/shared_err.test 841f7341eb07ed97c713bf89960a4e9199717193
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
-F test/speed1.test 4d6719b252fe90dc52f663a6b2a24cf6472ceac9
+F test/speed1.test a30faa084ded813ce8ca0a7319198d65f70d0374
+F test/speed2.test 7928c454cea00f779f91c2157830bb78d690f976
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
@@ -439,7 +440,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 72cb2e1a73cd09d32900bb473377f66ff55058fb
-R 8b15b348ec37132c30876a8baf03451e
-U danielk1977
-Z e3775c0c7c4664bdb34c4c33b61b1f75
+P 127454903764daff17390941a002f527ee2ffc87
+R f8f17a5fd0fcfb4206d3e1d9fe29a001
+U drh
+Z 58bc375fdd0e58a8cbf0d31d7e7ab70d

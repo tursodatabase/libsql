@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.297 2007/03/26 12:26:27 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.298 2007/03/26 13:48:13 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3014,7 +3014,7 @@ int sqlite3PagerUnref(DbPage *pPg){
     */
     pPager->nRef--;
     assert( pPager->nRef>=0 );
-    if( pPager->nRef==0 ){
+    if( pPager->nRef==0 && !pPager->exclusiveMode ){
       pagerUnlockAndRollback(pPager);
     }
   }
