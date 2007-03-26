@@ -11,11 +11,14 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is measuring executing speed.
 #
-# $Id: speed2.test,v 1.1 2007/03/26 13:48:14 drh Exp $
+# $Id: speed2.test,v 1.2 2007/03/26 16:30:16 drh Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Set a uniform random seed
+expr srand(0)
 
 set sqlout [open speed1.txt w]
 proc tracesql {sql} {

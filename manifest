@@ -1,5 +1,5 @@
-C Run\ssome\smalloc()\stests\swith\sexclusive-access\smode.\s(CVS\s3720)
-D 2007-03-26T16:13:59
+C Set\sthe\ssame\srandom\sseed\sfor\sthe\sspeed\stests.\s(CVS\s3721)
+D 2007-03-26T16:30:16
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -301,8 +301,8 @@ F test/shared2.test 8b48f8d33494413ef4cf250110d89403e2bf6b23
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
 F test/shared_err.test 841f7341eb07ed97c713bf89960a4e9199717193
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
-F test/speed1.test a30faa084ded813ce8ca0a7319198d65f70d0374
-F test/speed2.test 7928c454cea00f779f91c2157830bb78d690f976
+F test/speed1.test 0ab227eae013d064f2205adcb9ee6f3c325b5bf4
+F test/speed2.test a6a9e3598cd957045e94385bebdfc64d0d57359e
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
@@ -441,7 +441,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e4209f7193d160709b0d8b5cd358df5649a97dc0
-R d6089bae50157e190b0888bc4ee1e4a7
-U danielk1977
-Z 0b13e768ea28ec8d66c37ace7677a338
+P 9ebba469023723652c4dbba3d9982a64a1fb144f
+R 4f9a6299d562fcef1dac77609454085b
+U drh
+Z 20ca486e31ef83b440eceaa1aeb2c1c7
