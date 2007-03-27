@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.361 2007/02/28 04:47:27 drh Exp $
+** $Id: main.c,v 1.362 2007/03/27 22:24:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -884,6 +884,9 @@ static int openDatabase(
   db->flags |= SQLITE_ShortColNames
 #if SQLITE_DEFAULT_FILE_FORMAT<4
                  | SQLITE_LegacyFileFmt
+#endif
+#ifdef SQLITE_ENABLE_LOAD_EXTENSION
+                 | SQLITE_LoadExtension
 #endif
       ;
   sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 0);
