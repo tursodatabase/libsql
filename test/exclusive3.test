@@ -12,7 +12,7 @@
 # This file runs the tests in the file ioerr.test with auto-vacuum enabled
 # databases.
 #
-# $Id: exclusive3.test,v 1.1 2007/03/26 16:13:59 danielk1977 Exp $
+# $Id: exclusive3.test,v 1.2 2007/03/27 16:19:52 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -47,7 +47,7 @@ proc do_test {args} {
 #source $testdir/select2.test
 
 source $testdir/malloc.test
-#source $testdir/ioerr.test
+source $testdir/ioerr.test
 
 
 rename sqlite3 ""

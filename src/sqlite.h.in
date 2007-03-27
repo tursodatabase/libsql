@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.198 2007/01/26 00:51:44 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.199 2007/03/27 16:19:52 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -230,6 +230,7 @@ int sqlite3_exec(
 #define SQLITE_IOERR_FSTAT         (SQLITE_IOERR | (7<<8))
 #define SQLITE_IOERR_UNLOCK        (SQLITE_IOERR | (8<<8))
 #define SQLITE_IOERR_RDLOCK        (SQLITE_IOERR | (9<<8))
+#define SQLITE_IOERR_DELETE        (SQLITE_IOERR | (10<<8))
 
 /*
 ** Enable or disable the extended result codes.

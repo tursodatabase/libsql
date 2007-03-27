@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.68 2007/03/27 14:44:51 drh Exp $
+** $Id: vacuum.c,v 1.69 2007/03/27 16:19:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -83,13 +83,11 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   char *zSql = 0;         /* SQL statements */
   int saved_flags;        /* Saved value of the db->flags */
   Db *pDb = 0;            /* Database to detach at end of vacuum */
-  char zTemp[SQLITE_TEMPNAME_SIZE+20];  /* Name of the TEMP file */
 
   /* Save the current value of the write-schema flag before setting it. */
   saved_flags = db->flags;
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
 
-  sqlite3OsTempFileName(zTemp);
   if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, "cannot VACUUM from within a transaction", 
        (char*)0);
@@ -106,14 +104,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   **
   ** An optimisation would be to use a non-journaled pager.
   */
-  zSql = sqlite3MPrintf("ATTACH '%q' AS vacuum_db;", zTemp);
-  if( !zSql ){
-    rc = SQLITE_NOMEM;
-    goto end_of_vacuum;
-  }
+  zSql = "ATTACH '' AS vacuum_db;";
   rc = execSql(db, zSql);
-  sqliteFree(zSql);
-  zSql = 0;
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   pDb = &db->aDb[db->nDb-1];
   assert( strcmp(db->aDb[db->nDb-1].zName,"vacuum_db")==0 );
@@ -263,10 +255,6 @@ end_of_vacuum:
     pDb->pSchema = 0;
   }
 
-  sqlite3OsDelete(zTemp);
-  strcat(zTemp, "-journal");
-  sqlite3OsDelete(zTemp);
-  sqliteFree( zSql );
   sqlite3ResetInternalSchema(db, 0);
 
   return rc;

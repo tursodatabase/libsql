@@ -596,6 +596,7 @@ int sqlite3WinDelete(const char *zFilename){
   if( zConverted==0 ){
     return SQLITE_NOMEM;
   }
+  SimulateIOError(return SQLITE_IOERR_DELETE);
   if( isNT() ){
     do{
       rc = DeleteFileW(zConverted);

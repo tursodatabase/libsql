@@ -783,6 +783,7 @@ static int transferOwnership(unixFile *pFile){
 ** Delete the named file
 */
 int sqlite3UnixDelete(const char *zFilename){
+  SimulateIOError(return SQLITE_IOERR_DELETE);
   unlink(zFilename);
   return SQLITE_OK;
 }

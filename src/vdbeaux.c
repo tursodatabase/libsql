@@ -1094,14 +1094,18 @@ static int vdbeCommit(sqlite3 *db){
       }
     }
 
-    /* Do the commit only if all databases successfully synced */
-    if( rc==SQLITE_OK ){
-      for(i=0; i<db->nDb; i++){
-        Btree *pBt = db->aDb[i].pBt;
-        if( pBt ){
-          sqlite3BtreeCommit(pBt);
-        }
+    /* Do the commit only if all databases successfully synced.
+    ** If one of the BtreeCommit() calls fails, this indicates an IO error
+    ** while deleting or truncating a journal file. It is unlikely, but
+    ** could happen. In this case abandon processing and return the error.
+    */
+    for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
+      Btree *pBt = db->aDb[i].pBt;
+      if( pBt ){
+        rc = sqlite3BtreeCommit(pBt);
       }
+    }
+    if( rc==SQLITE_OK ){
       sqlite3VtabCommit(db);
     }
   }
@@ -1225,12 +1229,15 @@ static int vdbeCommit(sqlite3 *db){
     ** but some stray 'cold' journals may be lying around. Returning an
     ** error code won't help matters.
     */
+    disable_simulated_io_errors();
     for(i=0; i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
         sqlite3BtreeCommit(pBt);
       }
     }
+    enable_simulated_io_errors();
+
     sqlite3VtabCommit(db);
   }
 #endif
