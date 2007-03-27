@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.342 2007/03/26 22:05:01 drh Exp $
+** $Id: btree.c,v 1.343 2007/03/27 14:05:23 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -22,13 +22,13 @@
 ** entries and N+1 pointers to subpages.
 **
 **   ----------------------------------------------------------------
-**   |  Ptr(0) | Key(0) | Ptr(1) | Key(1) | ... | Key(N) | Ptr(N+1) |
+**   |  Ptr(0) | Key(0) | Ptr(1) | Key(1) | ... | Key(N-1) | Ptr(N) |
 **   ----------------------------------------------------------------
 **
 ** All of the keys on the page that Ptr(0) points to have values less
 ** than Key(0).  All of the keys on page Ptr(1) and its subpages have
 ** values greater than Key(0) and less than Key(1).  All of the keys
-** on Ptr(N+1) and its subpages have values greater than Key(N).  And
+** on Ptr(N) and its subpages have values greater than Key(N-1).  And
 ** so forth.
 **
 ** Finding a particular key requires reading O(log(M)) pages from the 
@@ -41,7 +41,7 @@
 ** page.  If the payload is larger than the preset amount then surplus
 ** bytes are stored on overflow pages.  The payload for an entry
 ** and the preceding pointer are combined to form a "Cell".  Each 
-** page has a small header which contains the Ptr(N+1) pointer and other
+** page has a small header which contains the Ptr(N) pointer and other
 ** information such as the size of key and data.
 **
 ** FORMAT DETAILS
@@ -123,7 +123,7 @@
 **      3       2      number of cells on this page
 **      5       2      first byte of the cell content area
 **      7       1      number of fragmented free bytes
-**      8       4      Right child (the Ptr(N+1) value).  Omitted on leaves.
+**      8       4      Right child (the Ptr(N) value).  Omitted on leaves.
 **
 ** The flags define the format of this btree page.  The leaf flag means that
 ** this page has no children.  The zerodata flag means that this page carries
