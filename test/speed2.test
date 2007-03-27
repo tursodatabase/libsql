@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is measuring executing speed.
 #
-# $Id: speed2.test,v 1.2 2007/03/26 16:30:16 drh Exp $
+# $Id: speed2.test,v 1.3 2007/03/27 12:04:06 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -20,7 +20,7 @@ source $testdir/tester.tcl
 # Set a uniform random seed
 expr srand(0)
 
-set sqlout [open speed1.txt w]
+set sqlout [open speed2.txt w]
 proc tracesql {sql} {
   puts $::sqlout $sql\;
 }
@@ -62,7 +62,7 @@ proc number_name {n} {
 
 # Create a database schema.
 #
-do_test speed1-1.0 {
+do_test speed2-1.0 {
   execsql {
     PRAGMA page_size=1024;
     PRAGMA cache_size=8192;
@@ -86,7 +86,7 @@ for {set i 1} {$i<=50000} {incr i} {
   append sql "INSERT INTO t1 VALUES($i,$r,'[number_name $r]');\n"
 }
 db eval BEGIN
-speed_trial speed1-insert1 50000 row $sql
+speed_trial speed2-insert1 50000 row $sql
 db eval COMMIT
 
 # 50000 INSERTs on an indexed table
@@ -97,7 +97,7 @@ for {set i 1} {$i<=50000} {incr i} {
   append sql "INSERT INTO t2 VALUES($i,$r,'[number_name $r]');\n"
 }
 db eval BEGIN
-speed_trial speed1-insert2 50000 row $sql
+speed_trial speed2-insert2 50000 row $sql
 db eval COMMIT
 
 
@@ -111,7 +111,7 @@ for {set i 0} {$i<50} {incr i} {
   set upr [expr {($i+10)*100}]
   append sql "SELECT count(*), avg(b) FROM t1 WHERE b>=$lwr AND b<$upr;"
 }
-speed_trial speed1-select1 [expr {50*50000}] row $sql
+speed_trial speed2-select1 [expr {50*50000}] row $sql
 
 # 50 SELECTs on an LIKE comparison.  There is no index so a full
 # table scan is required.
@@ -121,12 +121,12 @@ for {set i 0} {$i<50} {incr i} {
   append sql \
     "SELECT count(*), avg(b) FROM t1 WHERE c LIKE '%[number_name $i]%';"
 }
-speed_trial speed1-select2 [expr {50*50000}] row $sql
+speed_trial speed2-select2 [expr {50*50000}] row $sql
 
 # Create indices
 #
 db eval BEGIN
-speed_trial speed1-createidx 150000 row {
+speed_trial speed2-createidx 150000 row {
   CREATE INDEX i1a ON t1(a);
   CREATE INDEX i1b ON t1(b);
   CREATE INDEX i1c ON t1(c);
@@ -142,7 +142,7 @@ for {set i 0} {$i<5000} {incr i} {
   set upr [expr {($i+10)*100}]
   append sql "SELECT count(*), avg(b) FROM t1 WHERE b>=$lwr AND b<$upr;"
 }
-speed_trial speed1-select3 5000 stmt $sql
+speed_trial speed2-select3 5000 stmt $sql
 
 # 100000 random SELECTs against rowid.
 #
@@ -151,7 +151,7 @@ for {set i 1} {$i<=100000} {incr i} {
   set id [expr {int(rand()*50000)+1}]
   append sql "SELECT c=='hi' FROM t1 WHERE rowid=$id;\n"
 }
-speed_trial speed1-select4 100000 row $sql
+speed_trial speed2-select4 100000 row $sql
 
 # 100000 random SELECTs against a unique indexed column.
 #
@@ -160,7 +160,7 @@ for {set i 1} {$i<=100000} {incr i} {
   set id [expr {int(rand()*50000)+1}]
   append sql "SELECT c FROM t1 WHERE a=$id;"
 }
-speed_trial speed1-select5 100000 row $sql
+speed_trial speed2-select5 100000 row $sql
 
 # 50000 random SELECTs against an indexed column text column
 #
@@ -168,10 +168,10 @@ set sql {}
 db eval {SELECT c FROM t1 ORDER BY random() LIMIT 50000} {
   append sql "SELECT c FROM t1 WHERE c='$c';"
 }
-speed_trial speed1-select6 50000 row $sql
+speed_trial speed2-select6 50000 row $sql
 
 # Vacuum
-speed_trial speed1-vacuum 100000 row VACUUM
+speed_trial speed2-vacuum 100000 row VACUUM
 
 # 5000 updates of ranges where the field being compared is indexed.
 #
@@ -182,7 +182,7 @@ for {set i 0} {$i<5000} {incr i} {
   append sql "UPDATE t1 SET b=b*2 WHERE a>=$lwr AND a<$upr;"
 }
 db eval BEGIN
-speed_trial speed1-update1 5000 stmt $sql
+speed_trial speed2-update1 5000 stmt $sql
 db eval COMMIT
 
 # 50000 single-row updates.  An index is used to find the row quickly.
@@ -193,12 +193,12 @@ for {set i 0} {$i<50000} {incr i} {
   append sql "UPDATE t1 SET b=$r WHERE a=$i;"
 }
 db eval BEGIN
-speed_trial speed1-update2 50000 row $sql
+speed_trial speed2-update2 50000 row $sql
 db eval COMMIT
 
 # 1 big text update that touches every row in the table.
 #
-speed_trial speed1-update3 50000 row {
+speed_trial speed2-update3 50000 row {
   UPDATE t1 SET c=a;
 }
 
@@ -211,29 +211,29 @@ for {set i 1} {$i<=50000} {incr i} {
   append sql "UPDATE t1 SET c='[number_name $r]' WHERE a=$i;"
 }
 db eval BEGIN
-speed_trial speed1-update4 50000 row $sql
+speed_trial speed2-update4 50000 row $sql
 db eval COMMIT
 
 # Delete all content in a table.
 #
-speed_trial speed1-delete1 50000 row {DELETE FROM t1}
+speed_trial speed2-delete1 50000 row {DELETE FROM t1}
 
 # Copy one table into another
 #
-speed_trial speed1-copy1 50000 row {INSERT INTO t1 SELECT * FROM t2}
+speed_trial speed2-copy1 50000 row {INSERT INTO t1 SELECT * FROM t2}
 
 # Delete all content in a table, one row at a time.
 #
-speed_trial speed1-delete2 50000 row {DELETE FROM t1 WHERE 1}
+speed_trial speed2-delete2 50000 row {DELETE FROM t1 WHERE 1}
 
 # Refill the table yet again
 #
-speed_trial speed1-copy2 50000 row {INSERT INTO t1 SELECT * FROM t2}
+speed_trial speed2-copy2 50000 row {INSERT INTO t1 SELECT * FROM t2}
 
 # Drop the table and recreate it without its indices.
 #
 db eval BEGIN
-speed_trial speed1-drop1 50000 row {
+speed_trial speed2-drop1 50000 row {
    DROP TABLE t1;
    CREATE TABLE t1(a INTEGER, b INTEGER, c TEXT);
 }
@@ -242,32 +242,32 @@ db eval COMMIT
 # Refill the table yet again.  This copy should be faster because
 # there are no indices to deal with.
 #
-speed_trial speed1-copy3 50000 row {INSERT INTO t1 SELECT * FROM t2}
+speed_trial speed2-copy3 50000 row {INSERT INTO t1 SELECT * FROM t2}
 
 # Select 20000 rows from the table at random.
 #
-speed_trial speed1-random1 50000 row {
+speed_trial speed2-random1 50000 row {
   SELECT rowid FROM t1 ORDER BY random() LIMIT 20000
 }
 
 # Delete 20000 random rows from the table.
 #
-speed_trial speed1-random-del1 20000 row {
+speed_trial speed2-random-del1 20000 row {
   DELETE FROM t1 WHERE rowid IN
     (SELECT rowid FROM t1 ORDER BY random() LIMIT 20000)
 }
-do_test speed1-1.1 {
+do_test speed2-1.1 {
   db one {SELECT count(*) FROM t1}
 } 30000
 
     
 # Delete 20000 more rows at random from the table.
 #
-speed_trial speed1-random-del2 20000 row {
+speed_trial speed2-random-del2 20000 row {
   DELETE FROM t1 WHERE rowid IN
     (SELECT rowid FROM t1 ORDER BY random() LIMIT 20000)
 }
-do_test speed1-1.2 {
+do_test speed2-1.2 {
   db one {SELECT count(*) FROM t1}
 } 10000
 

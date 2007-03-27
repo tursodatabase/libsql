@@ -1,5 +1,5 @@
-C Modify\ssources\sto\sthat\sthey\scan\sbe\scombined\sinto\sa\ssingle\ssqlite3.c\ssource\nfile.\s\sEliminate\sall\stype-pruned\spointer\swarnings.\s(CVS\s3722)
-D 2007-03-26T22:05:01
+C Get\sthe\s-DSQLITE_OMIT_XFER_OPT\soption\sworking.\s\sRun\sspeed\stests\son\sa\sfull\nregression.\s\sAdd\sthe\sscript\sfor\sgenerating\ssqlite3.c.\s(CVS\s3723)
+D 2007-03-27T12:04:05
 F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -70,7 +70,7 @@ F src/expr.c 971dd206ec0fa82d9fd1abb587a40df226f98966
 F src/func.c 94372fe3cf26b81d4dcdc15f98ff240c37c8c708
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
-F src/insert.c 72cb64b698796f2005c0158e098124d9490868bb
+F src/insert.c 9dbb62ba053769de20cf6b4ac73ceeb81ffc24f3
 F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c c186ad5c9e8a0aaa73d0caf5f604d112e45e8b89
 F src/main.c af8922e0205cf618392de2836c9efad71786d0d6
@@ -133,7 +133,7 @@ F src/vtab.c 7fbda947e28cbe7adb3ba752a76ca9ef29936750
 F src/where.c 0825fabc1a185af1567dc82e63683cd9b47d9e22
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
-F test/all.test 7da67663cb5af0c95ecd4805d888459023fb8cfd
+F test/all.test 60267b055e82de4fb8b841eabb014bc2f836a4eb
 F test/alter.test a2cc30e844cb3b5d203416962f56f78fc11b1978
 F test/alter2.test 8b2d81eae944471d473de99ab25ba6d9cda73cd3
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
@@ -302,7 +302,7 @@ F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
 F test/shared_err.test 841f7341eb07ed97c713bf89960a4e9199717193
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 0ab227eae013d064f2205adcb9ee6f3c325b5bf4
-F test/speed2.test a6a9e3598cd957045e94385bebdfc64d0d57359e
+F test/speed2.test 31296ea46516ad6093e39f8622a4cbcc766923ec
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 2d13fb7f450db3595adcdd24079a0dd1d2d6abc2
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
@@ -377,6 +377,7 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c eb7cd7244b9725e9e77270d0572de8b22a96e83a
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
+F tool/mksqlite3c.tcl ca566a1482d187433f3aea97a83a1ca9fb6af071
 F tool/omittest.tcl e6b3d6a1285f9813bc1dea53bb522b4b72774710
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
@@ -441,7 +442,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 8fe317054982969ad539cdbf1b996b97d86ec4f2
-R c60b5a581f8ad645c254d239aa450c65
+P 0b832e218ec12b0eb559e407d80aba6709e2ea85
+R 76a8b8a54e51e640933974bfc36cdc29
 U drh
-Z d6b37215b7fed9fea082ff01114bbc2c
+Z 06e3558004d52759f1e96dadb9b6ab93
