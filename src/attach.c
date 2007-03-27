@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.56 2007/03/27 14:44:51 drh Exp $
+** $Id: attach.c,v 1.57 2007/03/27 21:47:07 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -141,7 +141,7 @@ static void attachFunc(
 
 #if SQLITE_HAS_CODEC
   {
-    extern int sqlite3CodecAttach(sqlite3*, int, void*, int);
+    extern int sqlite3CodecAttach(sqlite3*, int, const void*, int);
     extern void sqlite3CodecGetKey(sqlite3*, int, void**, int*);
     int nKey;
     char *zKey;
