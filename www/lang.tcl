@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.126 2007/03/17 18:22:58 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.127 2007/03/27 15:00:31 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1889,15 +1889,23 @@ The VACUUM command cleans
 the main database by copying its contents to a temporary database file and 
 reloading the original database file from the copy.  This eliminates 
 free pages,  aligns table data to be contiguous, and otherwise cleans 
-up the database file structure. It is not possible to perform the same
-process on an attached database file.</p>
+up the database file structure.</p>
 
-<p>This command will fail if there is an active transaction.  This 
-command has no effect on an in-memory database.</p>
+<p>VACUUM only works on the main database.
+It is not possible to VACUUM an attached database file.</p>
+
+<p>The VACUUM command will fail if there is an active transaction.
+The VACUUM command is a no-op for in-memory databases.</p>
 
 <p>As of SQLite version 3.1, an alternative to using the VACUUM command
 is auto-vacuum mode, enabled using the 
-<a href="pragma.html#pragma_auto_vacuum">auto_vacuum pragma</a>.</p>
+<a href="pragma.html#pragma_auto_vacuum">auto_vacuum pragma</a>.
+When auto-vacuum is enabled for a database, large deletes cause
+the size of the database file to shrink.  However, auto-vacuum
+also causes excess fragmentation of the database file.  And auto-vacuum
+does not compact partially filled pages of the database as VACUUM
+does.
+</p>
 }
 
 # A list of keywords.  A asterisk occurs after the keyword if it is on
