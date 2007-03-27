@@ -14,13 +14,13 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.67 2007/03/06 16:03:56 danielk1977 Exp $
+** $Id: vacuum.c,v 1.68 2007/03/27 14:44:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 #include "os.h"
 
-#ifndef SQLITE_OMIT_VACUUM
+#if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
 /*
 ** Execute zSql on database db. Return an error code.
 */
@@ -271,4 +271,4 @@ end_of_vacuum:
 
   return rc;
 }
-#endif  /* SQLITE_OMIT_VACUUM */
+#endif  /* SQLITE_OMIT_VACUUM && SQLITE_OMIT_ATTACH */

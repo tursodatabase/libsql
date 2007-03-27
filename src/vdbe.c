@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.593 2007/03/27 13:36:37 drh Exp $
+** $Id: vdbe.c,v 1.594 2007/03/27 14:44:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4511,7 +4511,7 @@ case OP_AggFinal: {        /* no-push */
 }
 
 
-#ifndef SQLITE_OMIT_VACUUM
+#if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
 /* Opcode: Vacuum * * *
 **
 ** Vacuum the entire database.  This opcode will cause other virtual

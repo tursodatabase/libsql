@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.215 2007/02/02 12:44:37 drh Exp $
+** @(#) $Id: parse.y,v 1.216 2007/03/27 14:44:51 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -890,8 +890,10 @@ cmd ::= DROP INDEX ifexists(E) fullname(X).   {sqlite3DropIndex(pParse, X, E);}
 ///////////////////////////// The VACUUM command /////////////////////////////
 //
 %ifndef SQLITE_OMIT_VACUUM
+%ifndef SQLITE_OMIT_ATTACH
 cmd ::= VACUUM.                {sqlite3Vacuum(pParse);}
 cmd ::= VACUUM nm.             {sqlite3Vacuum(pParse);}
+%endif  SQLITE_OMIT_ATTACH
 %endif  SQLITE_OMIT_VACUUM
 
 ///////////////////////////// The PRAGMA command /////////////////////////////
@@ -1018,9 +1020,14 @@ cmd ::= DROP TRIGGER ifexists(NOERR) fullname(X). {
 %endif  !SQLITE_OMIT_TRIGGER
 
 //////////////////////// ATTACH DATABASE file AS name /////////////////////////
+%ifndef SQLITE_OMIT_ATTACH
 cmd ::= ATTACH database_kw_opt expr(F) AS expr(D) key_opt(K). {
   sqlite3Attach(pParse, F, D, K);
 }
+cmd ::= DETACH database_kw_opt expr(D). {
+  sqlite3Detach(pParse, D);
+}
+
 %type key_opt {Expr *}
 %destructor key_opt {sqlite3ExprDelete($$);}
 key_opt(A) ::= .                     { A = 0; }
@@ -1028,11 +1035,7 @@ key_opt(A) ::= KEY expr(X).          { A = X; }
 
 database_kw_opt ::= DATABASE.
 database_kw_opt ::= .
-
-//////////////////////// DETACH DATABASE name /////////////////////////////////
-cmd ::= DETACH database_kw_opt expr(D). {
-  sqlite3Detach(pParse, D);
-}
+%endif SQLITE_OMIT_ATTACH
 
 ////////////////////////// REINDEX collation //////////////////////////////////
 %ifndef SQLITE_OMIT_REINDEX
