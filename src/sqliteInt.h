@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.544 2007/03/26 22:05:02 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.545 2007/03/27 13:36:37 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1567,7 +1567,7 @@ void *sqlite3Realloc(void*,int);
 char *sqlite3StrDup(const char*);
 char *sqlite3StrNDup(const char*, int);
 # define sqlite3CheckMemory(a,b)
-void sqlite3ReallocOrFree(void*,int);
+void *sqlite3ReallocOrFree(void*,int);
 void sqlite3FreeX(void*);
 void *sqlite3MallocX(int);
 int sqlite3AllocSize(void *);
@@ -1624,7 +1624,7 @@ void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int,int);
 void sqlite3DropTable(Parse*, SrcList*, int, int);
 void sqlite3DeleteTable(sqlite3*, Table*);
 void sqlite3Insert(Parse*, SrcList*, ExprList*, Select*, IdList*, int);
-int sqlite3ArrayAllocate(void*,int,int);
+void *sqlite3ArrayAllocate(void*,int,int,int*,int*,int*);
 IdList *sqlite3IdListAppend(IdList*, Token*);
 int sqlite3IdListIndex(IdList*,const char*);
 SrcList *sqlite3SrcListAppend(SrcList*, Token*, Token*);

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.416 2007/03/26 22:05:01 drh Exp $
+** $Id: build.c,v 1.417 2007/03/27 13:36:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -82,7 +82,7 @@ void sqlite3TableLock(
   }
 
   nBytes = sizeof(TableLock) * (pParse->nTableLock+1);
-  sqliteReallocOrFree(&pParse->aTableLock, nBytes);
+  pParse->aTableLock = sqliteReallocOrFree(pParse->aTableLock, nBytes);
   if( pParse->aTableLock ){
     p = &pParse->aTableLock[pParse->nTableLock++];
     p->iDb = iDb;
@@ -2783,45 +2783,46 @@ exit_drop_index:
 }
 
 /*
-** ppArray points into a structure where there is an array pointer
-** followed by two integers. The first integer is the
-** number of elements in the structure array.  The second integer
-** is the number of allocated slots in the array.
+** pArray is a pointer to an array of objects.  Each object in the
+** array is szEntry bytes in size.  This routine allocates a new
+** object on the end of the array.
 **
-** In other words, the structure looks something like this:
+** *pnEntry is the number of entries already in use.  *pnAlloc is
+** the previously allocated size of the array.  initSize is the
+** suggested initial array size allocation.
 **
-**        struct Example1 {
-**          struct subElem *aEntry;
-**          int nEntry;
-**          int nAlloc;
-**        }
+** The index of the new entry is returned in *pIdx.
 **
-** The pnEntry parameter points to the equivalent of Example1.nEntry.
-**
-** This routine allocates a new slot in the array, zeros it out,
-** and returns its index.  If malloc fails a negative number is returned.
-**
-** szEntry is the sizeof of a single array entry.  initSize is the 
-** number of array entries allocated on the initial allocation.
+** This routine returns a pointer to the array of objects.  This
+** might be the same as the pArray parameter or it might be a different
+** pointer if the array was resized.
 */
-int sqlite3ArrayAllocate(void *ppArray, int szEntry, int initSize){
-  char *p;
-  void **pp = (void**)ppArray;
-  int *an = (int*)&pp[1];
-  if( an[0]>=an[1] ){
+void *sqlite3ArrayAllocate(
+  void *pArray,     /* Array of objects.  Might be reallocated */
+  int szEntry,      /* Size of each object in the array */
+  int initSize,     /* Suggested initial allocation, in elements */
+  int *pnEntry,     /* Number of objects currently in use */
+  int *pnAlloc,     /* Current size of the allocation, in elements */
+  int *pIdx         /* Write the index of a new slot here */
+){
+  char *z;
+  if( *pnEntry >= *pnAlloc ){
     void *pNew;
     int newSize;
-    newSize = an[1]*2 + initSize;
-    pNew = sqliteRealloc(*pp, newSize*szEntry);
+    newSize = (*pnAlloc)*2 + initSize;
+    pNew = sqliteRealloc(pArray, newSize*szEntry);
     if( pNew==0 ){
-      return -1;
+      *pIdx = -1;
+      return pArray;
     }
-    an[1] = newSize;
-    *pp = pNew;
+    *pnAlloc = newSize;
+    pArray = pNew;
   }
-  p = *pp;
-  memset(&p[an[0]*szEntry], 0, szEntry);
-  return an[0]++;
+  z = (char*)pArray;
+  memset(&z[*pnEntry * szEntry], 0, szEntry);
+  *pIdx = *pnEntry;
+  ++*pnEntry;
+  return pArray;
 }
 
 /*
@@ -2837,7 +2838,14 @@ IdList *sqlite3IdListAppend(IdList *pList, Token *pToken){
     if( pList==0 ) return 0;
     pList->nAlloc = 0;
   }
-  i = sqlite3ArrayAllocate(&pList->a, sizeof(pList->a[0]), 5);
+  pList->a = sqlite3ArrayAllocate(
+      pList->a,
+      sizeof(pList->a[0]),
+      5,
+      &pList->nId,
+      &pList->nAlloc,
+      &i
+  );
   if( i<0 ){
     sqlite3IdListDelete(pList);
     return 0;
