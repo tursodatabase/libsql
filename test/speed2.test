@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is measuring executing speed.
 #
-# $Id: speed2.test,v 1.3 2007/03/27 12:04:06 drh Exp $
+# $Id: speed2.test,v 1.4 2007/03/28 18:04:10 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -111,7 +111,7 @@ for {set i 0} {$i<50} {incr i} {
   set upr [expr {($i+10)*100}]
   append sql "SELECT count(*), avg(b) FROM t1 WHERE b>=$lwr AND b<$upr;"
 }
-speed_trial speed2-select1 [expr {50*50000}] row $sql
+speed_trial speed2-select1a [expr {50*50000}] row $sql
 
 # 50 SELECTs on an LIKE comparison.  There is no index so a full
 # table scan is required.
@@ -121,7 +121,31 @@ for {set i 0} {$i<50} {incr i} {
   append sql \
     "SELECT count(*), avg(b) FROM t1 WHERE c LIKE '%[number_name $i]%';"
 }
-speed_trial speed2-select2 [expr {50*50000}] row $sql
+speed_trial speed2-select2a [expr {50*50000}] row $sql
+
+# Vacuum
+speed_trial speed2-vacuum1 100000 row VACUUM
+
+# 50 SELECTs on an integer comparison.  There is no index so
+# a full table scan is required.
+#
+set sql {}
+for {set i 0} {$i<50} {incr i} {
+  set lwr [expr {$i*100}]
+  set upr [expr {($i+10)*100}]
+  append sql "SELECT count(*), avg(b) FROM t1 WHERE b>=$lwr AND b<$upr;"
+}
+speed_trial speed2-select1b [expr {50*50000}] row $sql
+
+# 50 SELECTs on an LIKE comparison.  There is no index so a full
+# table scan is required.
+#
+set sql {}
+for {set i 0} {$i<50} {incr i} {
+  append sql \
+    "SELECT count(*), avg(b) FROM t1 WHERE c LIKE '%[number_name $i]%';"
+}
+speed_trial speed2-select2b [expr {50*50000}] row $sql
 
 # Create indices
 #
@@ -142,7 +166,7 @@ for {set i 0} {$i<5000} {incr i} {
   set upr [expr {($i+10)*100}]
   append sql "SELECT count(*), avg(b) FROM t1 WHERE b>=$lwr AND b<$upr;"
 }
-speed_trial speed2-select3 5000 stmt $sql
+speed_trial speed2-select3a 5000 stmt $sql
 
 # 100000 random SELECTs against rowid.
 #
@@ -151,7 +175,7 @@ for {set i 1} {$i<=100000} {incr i} {
   set id [expr {int(rand()*50000)+1}]
   append sql "SELECT c=='hi' FROM t1 WHERE rowid=$id;\n"
 }
-speed_trial speed2-select4 100000 row $sql
+speed_trial speed2-select4a 100000 row $sql
 
 # 100000 random SELECTs against a unique indexed column.
 #
@@ -160,7 +184,7 @@ for {set i 1} {$i<=100000} {incr i} {
   set id [expr {int(rand()*50000)+1}]
   append sql "SELECT c FROM t1 WHERE a=$id;"
 }
-speed_trial speed2-select5 100000 row $sql
+speed_trial speed2-select5a 100000 row $sql
 
 # 50000 random SELECTs against an indexed column text column
 #
@@ -168,10 +192,48 @@ set sql {}
 db eval {SELECT c FROM t1 ORDER BY random() LIMIT 50000} {
   append sql "SELECT c FROM t1 WHERE c='$c';"
 }
-speed_trial speed2-select6 50000 row $sql
+speed_trial speed2-select6a 50000 row $sql
 
 # Vacuum
-speed_trial speed2-vacuum 100000 row VACUUM
+speed_trial speed2-vacuum2 100000 row VACUUM
+
+
+# 5000 SELECTs on an integer comparison where the integer is
+# indexed.
+#
+set sql {}
+for {set i 0} {$i<5000} {incr i} {
+  set lwr [expr {$i*100}]
+  set upr [expr {($i+10)*100}]
+  append sql "SELECT count(*), avg(b) FROM t1 WHERE b>=$lwr AND b<$upr;"
+}
+speed_trial speed2-select3b 5000 stmt $sql
+
+# 100000 random SELECTs against rowid.
+#
+set sql {}
+for {set i 1} {$i<=100000} {incr i} {
+  set id [expr {int(rand()*50000)+1}]
+  append sql "SELECT c=='hi' FROM t1 WHERE rowid=$id;\n"
+}
+speed_trial speed2-select4b 100000 row $sql
+
+# 100000 random SELECTs against a unique indexed column.
+#
+set sql {}
+for {set i 1} {$i<=100000} {incr i} {
+  set id [expr {int(rand()*50000)+1}]
+  append sql "SELECT c FROM t1 WHERE a=$id;"
+}
+speed_trial speed2-select5b 100000 row $sql
+
+# 50000 random SELECTs against an indexed column text column
+#
+set sql {}
+db eval {SELECT c FROM t1 ORDER BY random() LIMIT 50000} {
+  append sql "SELECT c FROM t1 WHERE c='$c';"
+}
+speed_trial speed2-select6b 50000 row $sql
 
 # 5000 updates of ranges where the field being compared is indexed.
 #

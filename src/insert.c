@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.177 2007/03/27 12:04:05 drh Exp $
+** $Id: insert.c,v 1.178 2007/03/28 18:04:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1498,16 +1498,20 @@ static int xferOptimization(
   }
   sqlite3OpenTable(pParse, iSrc, iDbSrc, pSrc, OP_OpenRead);
   emptySrcTest = sqlite3VdbeAddOp(v, OP_Rewind, iSrc, 0);
-  memRowid = pParse->nMem++;
-  sqlite3VdbeAddOp(v, OP_Rowid, iSrc, 0);
-  sqlite3VdbeAddOp(v, OP_MemStore, memRowid, 1);
-  addr1 = sqlite3VdbeAddOp(v, OP_Rowid, iSrc, 0);
-  sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
-  addr2 = sqlite3VdbeAddOp(v, OP_NotExists, iDest, 0);
-  sqlite3VdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, onError, 
-                    "PRIMARY KEY must be unique", P3_STATIC);
-  sqlite3VdbeJumpHere(v, addr2);
-  autoIncStep(pParse, counterMem);
+  if( pDest->iPKey>=0 ){
+    memRowid = pParse->nMem++;
+    sqlite3VdbeAddOp(v, OP_Rowid, iSrc, 0);
+    sqlite3VdbeAddOp(v, OP_MemStore, memRowid, 1);
+    addr1 = sqlite3VdbeAddOp(v, OP_Rowid, iSrc, 0);
+    sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
+    addr2 = sqlite3VdbeAddOp(v, OP_NotExists, iDest, 0);
+    sqlite3VdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, onError, 
+                      "PRIMARY KEY must be unique", P3_STATIC);
+    sqlite3VdbeJumpHere(v, addr2);
+    autoIncStep(pParse, counterMem);
+  }else{
+    addr1 = sqlite3VdbeAddOp(v, OP_Rowid, iSrc, 0);
+  }
   sqlite3VdbeAddOp(v, OP_RowData, iSrc, 0);
   sqlite3VdbeOp3(v, OP_Insert, iDest, OPFLAG_NCHANGE|OPFLAG_LASTROWID,
                     pDest->zName, 0);
