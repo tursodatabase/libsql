@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.303 2007/03/27 17:37:32 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.304 2007/03/28 01:59:34 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3060,6 +3060,9 @@ static int pager_open_journal(Pager *pPager){
   pPager->setMaster = 0;
   pPager->journalHdr = 0;
   if( rc!=SQLITE_OK ){
+    if( rc==SQLITE_NOMEM ){
+      sqlite3OsDelete(pPager->zJournal);
+    }
     goto failed_to_open_journal;
   }
   sqlite3OsSetFullSync(pPager->jfd, pPager->full_fsync);
@@ -3092,6 +3095,7 @@ static int pager_open_journal(Pager *pPager){
 failed_to_open_journal:
   sqliteFree(pPager->aInJournal);
   pPager->aInJournal = 0;
+#if 0
   if( rc==SQLITE_NOMEM ){
     /* If this was a malloc() failure, then we will not be closing the pager
     ** file. So delete any journal file we may have just created. Otherwise,
@@ -3100,8 +3104,11 @@ failed_to_open_journal:
     */
     /* sqlite3OsDelete(pPager->zJournal); */
   }else{
-    pager_reset(pPager);
+    /* If we reset the pager here, we will delete pages out from under
+    ** various cursors and will ultimately segfault. */
+    /* pager_reset(pPager); */
   }
+#endif
   return rc;
 }
 
