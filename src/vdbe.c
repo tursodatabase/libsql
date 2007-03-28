@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.594 2007/03/27 14:44:51 drh Exp $
+** $Id: vdbe.c,v 1.595 2007/03/28 14:30:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3677,7 +3677,9 @@ case OP_Next: {        /* no-push */
   CHECK_FOR_INTERRUPT;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
-  assert( pC!=0 );
+  if( pC==0 ){
+    break;  /* See ticket #2273 */
+  }
   if( (pCrsr = pC->pCursor)!=0 ){
     int res;
     if( pC->nullRow ){

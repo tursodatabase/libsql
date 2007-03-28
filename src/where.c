@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.241 2007/03/27 13:36:37 drh Exp $
+** $Id: where.c,v 1.242 2007/03/28 14:30:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1687,7 +1687,6 @@ static void buildIndexProbe(
 static void codeEqualityTerm(
   Parse *pParse,      /* The parsing context */
   WhereTerm *pTerm,   /* The term of the WHERE clause to be coded */
-  int brk,            /* Jump here to abandon the loop */
   WhereLevel *pLevel  /* When level of the FROM clause we are working on */
 ){
   Expr *pX = pTerm->pExpr;
@@ -1699,21 +1698,25 @@ static void codeEqualityTerm(
 #ifndef SQLITE_OMIT_SUBQUERY
   }else{
     int iTab;
-    int *aIn;
+    struct InLoop *pIn;
 
     assert( pX->op==TK_IN );
     sqlite3CodeSubselect(pParse, pX);
     iTab = pX->iTable;
     sqlite3VdbeAddOp(v, OP_Rewind, iTab, 0);
     VdbeComment((v, "# %.*s", pX->span.n, pX->span.z));
+    if( pLevel->nIn==0 ){
+      pLevel->nxt = sqlite3VdbeMakeLabel(v);
+    }
     pLevel->nIn++;
     pLevel->aInLoop = sqliteReallocOrFree(pLevel->aInLoop,
-                                    sizeof(pLevel->aInLoop[0])*2*pLevel->nIn);
-    aIn = pLevel->aInLoop;
-    if( aIn ){
-      aIn += pLevel->nIn*2 - 2;
-      aIn[0] = iTab;
-      aIn[1] = sqlite3VdbeAddOp(v, OP_Column, iTab, 0);
+                                    sizeof(pLevel->aInLoop[0])*pLevel->nIn);
+    pIn = pLevel->aInLoop;
+    if( pIn ){
+      pIn += pLevel->nIn - 1;
+      pIn->iCur = iTab;
+      pIn->topAddr = sqlite3VdbeAddOp(v, OP_Column, iTab, 0);
+      sqlite3VdbeAddOp(v, OP_IsNull, -1, 0);
     }else{
       pLevel->nIn = 0;
     }
@@ -1749,8 +1752,7 @@ static void codeAllEqualityTerms(
   Parse *pParse,        /* Parsing context */
   WhereLevel *pLevel,   /* Which nested loop of the FROM we are coding */
   WhereClause *pWC,     /* The WHERE clause */
-  Bitmask notReady,     /* Which parts of FROM have not yet been coded */
-  int brk               /* Jump here to end the loop */
+  Bitmask notReady      /* Which parts of FROM have not yet been coded */
 ){
   int nEq = pLevel->nEq;        /* The number of == or IN constraints to code */
   int termsInMem = 0;           /* If true, store value in mem[] cells */
@@ -1779,9 +1781,9 @@ static void codeAllEqualityTerms(
     pTerm = findTerm(pWC, iCur, k, notReady, pLevel->flags, pIdx);
     if( pTerm==0 ) break;
     assert( (pTerm->flags & TERM_CODED)==0 );
-    codeEqualityTerm(pParse, pTerm, brk, pLevel);
-    if( (pTerm->eOperator & WO_ISNULL)==0 ){
-      sqlite3VdbeAddOp(v, OP_IsNull, termsInMem ? -1 : -(j+1), brk);
+    codeEqualityTerm(pParse, pTerm, pLevel);
+    if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
+      sqlite3VdbeAddOp(v, OP_IsNull, termsInMem ? -1 : -(j+1), pLevel->brk);
     }
     if( termsInMem ){
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem+j+1, 1);
@@ -2184,6 +2186,7 @@ WhereInfo *sqlite3WhereBegin(
     int j;
     int iCur = pTabItem->iCursor;  /* The VDBE cursor for the table */
     Index *pIdx;       /* The index we will be using */
+    int nxt;           /* Where to jump to continue with the next IN case */
     int iIdxCur;       /* The VDBE cursor for the index */
     int omitTable;     /* True if we use the index only */
     int bRev;          /* True if we need to scan in reverse order */
@@ -2199,8 +2202,13 @@ WhereInfo *sqlite3WhereBegin(
     ** for the current loop.  Jump to brk to break out of a loop.
     ** Jump to cont to go immediately to the next iteration of the
     ** loop.
+    **
+    ** When there is an IN operator, we also have a "nxt" label that
+    ** means to continue with the next IN value combination.  When
+    ** there are no IN operators in the constraints, the "nxt" label
+    ** is the same as "brk".
     */
-    brk = pLevel->brk = sqlite3VdbeMakeLabel(v);
+    brk = pLevel->brk = pLevel->nxt = sqlite3VdbeMakeLabel(v);
     cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
 
     /* If this is the right table of a LEFT OUTER JOIN, allocate and
@@ -2266,9 +2274,10 @@ WhereInfo *sqlite3WhereBegin(
       assert( pTerm->pExpr!=0 );
       assert( pTerm->leftCursor==iCur );
       assert( omitTable==0 );
-      codeEqualityTerm(pParse, pTerm, brk, pLevel);
-      sqlite3VdbeAddOp(v, OP_MustBeInt, 1, brk);
-      sqlite3VdbeAddOp(v, OP_NotExists, iCur, brk);
+      codeEqualityTerm(pParse, pTerm, pLevel);
+      nxt = pLevel->nxt;
+      sqlite3VdbeAddOp(v, OP_MustBeInt, 1, nxt);
+      sqlite3VdbeAddOp(v, OP_NotExists, iCur, nxt);
       VdbeComment((v, "pk"));
       pLevel->op = OP_Noop;
     }else if( pLevel->flags & WHERE_ROWID_RANGE ){
@@ -2347,7 +2356,7 @@ WhereInfo *sqlite3WhereBegin(
       /* Generate code to evaluate all constraint terms using == or IN
       ** and level the values of those terms on the stack.
       */
-      codeAllEqualityTerms(pParse, pLevel, &wc, notReady, brk);
+      codeAllEqualityTerms(pParse, pLevel, &wc, notReady);
 
       /* Duplicate the equality term values because they will all be
       ** used twice: once to make the termination key and once to make the
@@ -2378,6 +2387,7 @@ WhereInfo *sqlite3WhereBegin(
       ** 2002-Dec-04: On a reverse-order scan, the so-called "termination"
       ** key computed here really ends up being the start key.
       */
+      nxt = pLevel->nxt;
       if( topLimit ){
         Expr *pX;
         int k = pIdx->aiColumn[j];
@@ -2386,7 +2396,7 @@ WhereInfo *sqlite3WhereBegin(
         pX = pTerm->pExpr;
         assert( (pTerm->flags & TERM_CODED)==0 );
         sqlite3ExprCode(pParse, pX->pRight);
-        sqlite3VdbeAddOp(v, OP_IsNull, -(nEq+1), brk);
+        sqlite3VdbeAddOp(v, OP_IsNull, -(nEq+1), nxt);
         topEq = pTerm->eOperator & (WO_LE|WO_GE);
         disableTerm(pLevel, pTerm);
         testOp = OP_IdxGE;
@@ -2400,7 +2410,7 @@ WhereInfo *sqlite3WhereBegin(
         buildIndexProbe(v, nCol, pIdx);
         if( bRev ){
           int op = topEq ? OP_MoveLe : OP_MoveLt;
-          sqlite3VdbeAddOp(v, op, iIdxCur, brk);
+          sqlite3VdbeAddOp(v, op, iIdxCur, nxt);
         }else{
           sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 1);
         }
@@ -2425,7 +2435,7 @@ WhereInfo *sqlite3WhereBegin(
         pX = pTerm->pExpr;
         assert( (pTerm->flags & TERM_CODED)==0 );
         sqlite3ExprCode(pParse, pX->pRight);
-        sqlite3VdbeAddOp(v, OP_IsNull, -(nEq+1), brk);
+        sqlite3VdbeAddOp(v, OP_IsNull, -(nEq+1), nxt);
         btmEq = pTerm->eOperator & (WO_LE|WO_GE);
         disableTerm(pLevel, pTerm);
       }else{
@@ -2440,7 +2450,7 @@ WhereInfo *sqlite3WhereBegin(
           testOp = OP_IdxLT;
         }else{
           int op = btmEq ? OP_MoveGe : OP_MoveGt;
-          sqlite3VdbeAddOp(v, op, iIdxCur, brk);
+          sqlite3VdbeAddOp(v, op, iIdxCur, nxt);
         }
       }else if( bRev ){
         testOp = OP_Noop;
@@ -2455,7 +2465,7 @@ WhereInfo *sqlite3WhereBegin(
       start = sqlite3VdbeCurrentAddr(v);
       if( testOp!=OP_Noop ){
         sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
-        sqlite3VdbeAddOp(v, testOp, iIdxCur, brk);
+        sqlite3VdbeAddOp(v, testOp, iIdxCur, nxt);
         if( (topEq && !bRev) || (!btmEq && bRev) ){
           sqlite3VdbeChangeP3(v, -1, "+", P3_STATIC);
         }
@@ -2484,7 +2494,8 @@ WhereInfo *sqlite3WhereBegin(
       /* Generate code to evaluate all constraint terms using == or IN
       ** and leave the values of those terms on the stack.
       */
-      codeAllEqualityTerms(pParse, pLevel, &wc, notReady, brk);
+      codeAllEqualityTerms(pParse, pLevel, &wc, notReady);
+      nxt = pLevel->nxt;
 
       /* Generate a single key that will be used to both start and terminate
       ** the search
@@ -2493,21 +2504,21 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3VdbeAddOp(v, OP_MemStore, pLevel->iMem, 0);
 
       /* Generate code (1) to move to the first matching element of the table.
-      ** Then generate code (2) that jumps to "brk" after the cursor is past
+      ** Then generate code (2) that jumps to "nxt" after the cursor is past
       ** the last matching element of the table.  The code (1) is executed
       ** once to initialize the search, the code (2) is executed before each
       ** iteration of the scan to see if the scan has finished. */
       if( bRev ){
         /* Scan in reverse order */
-        sqlite3VdbeAddOp(v, OP_MoveLe, iIdxCur, brk);
+        sqlite3VdbeAddOp(v, OP_MoveLe, iIdxCur, nxt);
         start = sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
-        sqlite3VdbeAddOp(v, OP_IdxLT, iIdxCur, brk);
+        sqlite3VdbeAddOp(v, OP_IdxLT, iIdxCur, nxt);
         pLevel->op = OP_Prev;
       }else{
         /* Scan in the forward order */
-        sqlite3VdbeAddOp(v, OP_MoveGe, iIdxCur, brk);
+        sqlite3VdbeAddOp(v, OP_MoveGe, iIdxCur, nxt);
         start = sqlite3VdbeAddOp(v, OP_MemLoad, pLevel->iMem, 0);
-        sqlite3VdbeOp3(v, OP_IdxGE, iIdxCur, brk, "+", P3_STATIC);
+        sqlite3VdbeOp3(v, OP_IdxGE, iIdxCur, nxt, "+", P3_STATIC);
         pLevel->op = OP_Next;
       }
       if( !omitTable ){
@@ -2640,16 +2651,18 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     if( pLevel->op!=OP_Noop ){
       sqlite3VdbeAddOp(v, pLevel->op, pLevel->p1, pLevel->p2);
     }
-    sqlite3VdbeResolveLabel(v, pLevel->brk);
     if( pLevel->nIn ){
-      int *a;
+      struct InLoop *pIn;
       int j;
-      for(j=pLevel->nIn, a=&pLevel->aInLoop[j*2-2]; j>0; j--, a-=2){
-        sqlite3VdbeAddOp(v, OP_Next, a[0], a[1]);
-        sqlite3VdbeJumpHere(v, a[1]-1);
+      sqlite3VdbeResolveLabel(v, pLevel->nxt);
+      for(j=pLevel->nIn, pIn=&pLevel->aInLoop[j-1]; j>0; j--, pIn--){
+        sqlite3VdbeJumpHere(v, pIn->topAddr+1);
+        sqlite3VdbeAddOp(v, OP_Next, pIn->iCur, pIn->topAddr);
+        sqlite3VdbeJumpHere(v, pIn->topAddr-1);
       }
       sqliteFree(pLevel->aInLoop);
     }
+    sqlite3VdbeResolveLabel(v, pLevel->brk);
     if( pLevel->iLeftJoin ){
       int addr;
       addr = sqlite3VdbeAddOp(v, OP_IfMemPos, pLevel->iLeftJoin, 0);

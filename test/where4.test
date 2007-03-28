@@ -15,7 +15,7 @@
 # that IS NULL phrases are correctly optimized.  But you can never
 # have too many tests, so some other tests are thrown in as well.
 #
-# $Id: where4.test,v 1.2 2007/01/25 16:56:08 drh Exp $
+# $Id: where4.test,v 1.3 2007/03/28 14:30:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -173,7 +173,60 @@ do_test where4-4.4 {
       WHERE t1.col1 IS NULL;
   }
 } {}
-    
+
+# Ticket #2273.  Problems with IN operators and NULLs.
+#
+do_test where4-5.1 {
+  execsql {
+    CREATE TABLE t4(x,y,z,PRIMARY KEY(x,y));
+  }
+  execsql {
+    SELECT *
+      FROM t2 LEFT JOIN t4 b1
+              LEFT JOIN t4 b2 ON b2.x=b1.x AND b2.y IN (b1.y);
+  }
+} {1 {} {} {} {} {} {} 2 {} {} {} {} {} {} 3 {} {} {} {} {} {}}
+do_test where4-5.2 {
+  execsql {
+    INSERT INTO t4 VALUES(1,1,11);
+    INSERT INTO t4 VALUES(1,2,12);
+    INSERT INTO t4 VALUES(1,3,13);
+    INSERT INTO t4 VALUES(2,2,22);
+    SELECT rowid FROM t4 WHERE x IN (1,9,2,5) AND y IN (1,3,NULL,2) AND z!=13;
+  }
+} {1 2 4}
+do_test where4-5.3 {
+  execsql {
+    SELECT rowid FROM t4 WHERE x IN (1,9,NULL,2) AND y IN (1,3,2) AND z!=13;
+  }
+} {1 2 4}
+do_test where4-6.1 {
+  execsql {
+    CREATE TABLE t5(a,b,c,d,e,f,UNIQUE(a,b,c,d,e,f));
+    INSERT INTO t5 VALUES(1,1,1,1,1,11111);
+    INSERT INTO t5 VALUES(2,2,2,2,2,22222);
+    INSERT INTO t5 VALUES(1,2,3,4,5,12345);
+    INSERT INTO t5 VALUES(2,3,4,5,6,23456);
+  }
+  execsql {
+    SELECT rowid FROM t5
+     WHERE a IN (1,9,2) AND b=2 AND c IN (1,2,3,4) AND d>0
+  }
+} {3 2}
+do_test where4-6.2 {
+  execsql {
+    SELECT rowid FROM t5
+     WHERE a IN (1,NULL,2) AND b=2 AND c IN (1,2,3,4) AND d>0
+  }
+} {3 2}
+do_test where4-7.1 {
+  execsql {
+    CREATE TABLE t6(y,z,PRIMARY KEY(y,z));
+  }
+  execsql {
+    SELECT * FROM t6 WHERE y=NULL AND z IN ('hello');
+  }
+} {}
 
 integrity_check {where4-99.0}
 

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.545 2007/03/27 13:36:37 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.546 2007/03/28 14:30:07 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1160,12 +1160,16 @@ struct WhereLevel {
   int iTabCur;          /* The VDBE cursor used to access the table */
   int iIdxCur;          /* The VDBE cursor used to acesss pIdx */
   int brk;              /* Jump here to break out of the loop */
+  int nxt;              /* Jump here to start the next IN combination */
   int cont;             /* Jump here to continue with the next loop cycle */
   int top;              /* First instruction of interior of the loop */
   int op, p1, p2;       /* Opcode used to terminate the loop */
   int nEq;              /* Number of == or IN constraints on this loop */
   int nIn;              /* Number of IN operators constraining this loop */
-  int *aInLoop;         /* Loop terminators for IN operators */
+  struct InLoop {
+    int iCur;              /* The VDBE cursor used by this IN operator */
+    int topAddr;           /* Top of the IN loop */
+  } *aInLoop;           /* Information about each nested IN operator */
   sqlite3_index_info *pBestIdx;  /* Index information for this level */
 
   /* The following field is really not part of the current level.  But
