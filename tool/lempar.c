@@ -668,10 +668,12 @@ void Parse(
   /* (re)initialize the parser, if necessary */
   yypParser = (yyParser*)yyp;
   if( yypParser->yyidx<0 ){
+#if YYSTACKDEPTH<=0
     if( yypParser->yystksz <=0 ){
       yyStackOverflow(yypParser);
       return;
     }
+#endif
     yypParser->yyidx = 0;
     yypParser->yyerrcnt = -1;
     yypParser->yystack[0].stateno = 0;
