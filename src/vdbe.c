@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.595 2007/03/28 14:30:07 drh Exp $
+** $Id: vdbe.c,v 1.596 2007/03/29 05:51:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2834,7 +2834,7 @@ case OP_MoveGt: {       /* no-push */
         pTos--;
         break;
       }
-      rc = sqlite3BtreeMoveto(pC->pCursor, 0, (u64)iKey, &res);
+      rc = sqlite3BtreeMoveto(pC->pCursor, 0, (u64)iKey, 0, &res);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
       }
@@ -2843,7 +2843,7 @@ case OP_MoveGt: {       /* no-push */
     }else{
       assert( pTos->flags & MEM_Blob );
       /* Stringify(pTos, encoding); */
-      rc = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
+      rc = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, 0, &res);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
       }
@@ -2950,7 +2950,7 @@ case OP_Found: {        /* no-push */
     int res, rx;
     assert( pC->isTable==0 );
     Stringify(pTos, encoding);
-    rx = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, &res);
+    rx = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, 0, &res);
     alreadyExists = rx==SQLITE_OK && res==0;
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
@@ -3028,7 +3028,7 @@ case OP_IsUnique: {        /* no-push */
     */
     assert( pCx->deferredMoveto==0 );
     pCx->cacheStatus = CACHE_STALE;
-    rc = sqlite3BtreeMoveto(pCrsr, zKey, len, &res);
+    rc = sqlite3BtreeMoveto(pCrsr, zKey, len, 0, &res);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
@@ -3098,7 +3098,7 @@ case OP_NotExists: {        /* no-push */
     assert( pTos->flags & MEM_Int );
     assert( p->apCsr[i]->isTable );
     iKey = intToKey(pTos->i);
-    rc = sqlite3BtreeMoveto(pCrsr, 0, iKey, &res);
+    rc = sqlite3BtreeMoveto(pCrsr, 0, iKey, 0,&res);
     pC->lastRowid = pTos->i;
     pC->rowidIsValid = res==0;
     pC->nullRow = 0;
@@ -3270,7 +3270,7 @@ case OP_NewRowid: {
         }
         if( v==0 ) continue;
         x = intToKey(v);
-        rx = sqlite3BtreeMoveto(pC->pCursor, 0, (u64)x, &res);
+        rx = sqlite3BtreeMoveto(pC->pCursor, 0, (u64)x, 0, &res);
         cnt++;
       }while( cnt<1000 && rx==SQLITE_OK && res==0 );
       db->priorNewRowid = v;
@@ -3350,7 +3350,9 @@ case OP_Insert: {         /* no-push */
       }
       pC->nullRow = 0;
     }else{
-      rc = sqlite3BtreeInsert(pC->pCursor, 0, iKey, pTos->z, pTos->n);
+      rc = sqlite3BtreeInsert(pC->pCursor, 0, iKey,
+                              pTos->z, pTos->n,
+                              pOp->p2 & OPFLAG_APPEND);
     }
     
     pC->rowidIsValid = 0;
@@ -3704,11 +3706,14 @@ case OP_Next: {        /* no-push */
   break;
 }
 
-/* Opcode: IdxInsert P1 * *
+/* Opcode: IdxInsert P1 P2 *
 **
 ** The top of the stack holds a SQL index key made using either the
 ** MakeIdxRec or MakeRecord instructions.  This opcode writes that key
 ** into the index P1.  Data for the entry is nil.
+**
+** P2 is a flag that provides a hint to the b-tree layer that this
+** insert is likely to be an append.
 **
 ** This instruction only works for indices.  The equivalent instruction
 ** for tables is OP_Insert.
@@ -3721,12 +3726,11 @@ case OP_IdxInsert: {        /* no-push */
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
   assert( pTos->flags & MEM_Blob );
-  assert( pOp->p2==0 );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int nKey = pTos->n;
     const char *zKey = pTos->z;
     assert( pC->isTable==0 );
-    rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0);
+    rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, pOp->p2);
     assert( pC->deferredMoveto==0 );
     pC->cacheStatus = CACHE_STALE;
   }
@@ -3751,7 +3755,7 @@ case OP_IdxDelete: {        /* no-push */
   assert( p->apCsr[i]!=0 );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int res;
-    rc = sqlite3BtreeMoveto(pCrsr, pTos->z, pTos->n, &res);
+    rc = sqlite3BtreeMoveto(pCrsr, pTos->z, pTos->n, 0, &res);
     if( rc==SQLITE_OK && res==0 ){
       rc = sqlite3BtreeDelete(pCrsr);
     }

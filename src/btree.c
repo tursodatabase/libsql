@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.344 2007/03/29 04:43:26 drh Exp $
+** $Id: btree.c,v 1.345 2007/03/29 05:51:49 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -728,7 +728,7 @@ static int restoreOrClearCursorPositionX(BtCursor *pCur, int doSeek){
   assert( pCur->eState==CURSOR_REQUIRESEEK );
   pCur->eState = CURSOR_INVALID;
   if( doSeek ){
-    rc = sqlite3BtreeMoveto(pCur, pCur->pKey, pCur->nKey, &pCur->skip);
+    rc = sqlite3BtreeMoveto(pCur, pCur->pKey, pCur->nKey, 0, &pCur->skip);
   }
   if( rc==SQLITE_OK ){
     sqliteFree(pCur->pKey);
@@ -3303,7 +3303,13 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 **     *pRes>0      The cursor is left pointing at an entry that
 **                  is larger than pKey.
 */
-int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
+int sqlite3BtreeMoveto(
+  BtCursor *pCur,        /* The cursor to be moved */
+  const void *pKey,      /* The key content for indices.  Not used by tables */
+  i64 nKey,              /* Size of pKey.  Or the key for tables */
+  int biasRight,         /* If true, bias the search to the high end */
+  int *pRes              /* Search result flag */
+){
   int rc;
   rc = moveToRoot(pCur);
   if( rc ) return rc;
@@ -3324,7 +3330,11 @@ int sqlite3BtreeMoveto(BtCursor *pCur, const void *pKey, i64 nKey, int *pRes){
     if( !pPage->intKey && pKey==0 ){
       return SQLITE_CORRUPT_BKPT;
     }
-    pCur->idx = upr;
+    if( biasRight ){
+      pCur->idx = upr;
+    }else{
+      pCur->idx = (upr+lwr)/2;
+    }
     if( lwr<=upr ) for(;;){
       void *pCellKey;
       i64 nCellKey;
@@ -5182,7 +5192,8 @@ static int checkReadLocks(Btree *pBtree, Pgno pgnoRoot, BtCursor *pExclude){
 int sqlite3BtreeInsert(
   BtCursor *pCur,                /* Insert data into the table of this cursor */
   const void *pKey, i64 nKey,    /* The key of the new record */
-  const void *pData, int nData   /* The data of the new record */
+  const void *pData, int nData,  /* The data of the new record */
+  int appendBias                 /* True if this is likely an append */
 ){
   int rc;
   int loc;
@@ -5208,7 +5219,7 @@ int sqlite3BtreeInsert(
   restoreOrClearCursorPosition(pCur, 0);
   if( 
     SQLITE_OK!=(rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur)) ||
-    SQLITE_OK!=(rc = sqlite3BtreeMoveto(pCur, pKey, nKey, &loc))
+    SQLITE_OK!=(rc = sqlite3BtreeMoveto(pCur, pKey, nKey, appendBias, &loc))
   ){
     return rc;
   }

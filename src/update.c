@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.136 2007/02/21 17:04:04 danielk1977 Exp $
+** $Id: update.c,v 1.137 2007/03/29 05:51:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -465,7 +465,7 @@ void sqlite3Update(
 
     /* Create the new index entries and the new record.
     */
-    sqlite3CompleteInsertion(pParse, pTab, iCur, aIdxUsed, chngRowid, 1, -1);
+    sqlite3CompleteInsertion(pParse, pTab, iCur, aIdxUsed, chngRowid, 1, -1, 0);
   }
 
   /* Increment the row counter 

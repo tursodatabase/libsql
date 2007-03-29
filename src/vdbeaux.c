@@ -1663,10 +1663,10 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
 #endif
     assert( p->isTable );
     if( p->isTable ){
-      rc = sqlite3BtreeMoveto(p->pCursor, 0, p->movetoTarget, &res);
+      rc = sqlite3BtreeMoveto(p->pCursor, 0, p->movetoTarget, 0, &res);
     }else{
       rc = sqlite3BtreeMoveto(p->pCursor,(char*)&p->movetoTarget,
-                              sizeof(i64),&res);
+                              sizeof(i64), 0, &res);
     }
     if( rc ) return rc;
     *p->pIncrKey = 0;
