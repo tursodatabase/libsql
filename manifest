@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_clear_bindings()\sAPI\sto\sthe\sloadable\sextension\sinterface.\nTicket\s#2135.\s(CVS\s3752)
-D 2007-03-29T18:46:01
+C Fix\sto\stoken\sdestructors\sin\sLemon.\s\sThis\sdoes\snot\simpact\sSQLite.\s\sTicket\s#2175.\s(CVS\s3753)
+D 2007-03-29T20:13:53
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -375,7 +375,7 @@ F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
 F test/where4.test b68496500bff496e83e76ae4ffb493b99064eac6
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/lemon.c 3ac82886bff8096379fa4bfe5ea188e242bbaa47
+F tool/lemon.c c8c8b25ab1ac8156b3ad83ba4ea1bf00d5e07f5a
 F tool/lempar.c 707cc8d6085075e7e7c8d33c716f0bb7f9180dee
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0229cba69698ab4b44f8583ef50a87c49422f8ec
-R 0602cf32177054f5c95ce51ab6e483d7
+P 3111b43ec333f3342f9609bf441160040f3d1501
+R c72df6846ce8cb719dc4f7dfcd4ac498
 U drh
-Z 95f3027619ab780219cc0e5271954b20
+Z 3611f69426c7b55a3a9f2aa24567568b
