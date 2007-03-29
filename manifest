@@ -1,5 +1,5 @@
-C Add\sa\scouple\sof\stest\scases\sto\simprove\scoverage\stesting.\s(CVS\s3747)
-D 2007-03-29T17:07:53
+C Avoid\scalling\sOsDelete()\son\sjournal\sfiles\swhen\sthey\sare\sopened\sfor\stemporary\sdatabases.\sFix\sfor\s#2255.\s(CVS\s3748)
+D 2007-03-29T17:28:15
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,7 +86,7 @@ F src/os_unix.c 0d91b28d57c0885fe97fb9020fd1091578066b5b
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 84c02837a6ec216a07e83a1d10d5a01c417bb489
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 1a881105a207af5526851fdc6bf57f020cbcbb88
+F src/pager.c 9a6eefc192e3922c27bc0b18914b45dc9c348ffb
 F src/pager.h f1b17bf848b3dce5d9afb2701186d3c9a8826f8c
 F src/parse.y 207ab04273ae13aa4a729b96008d294d5f334ab3
 F src/pragma.c 9cb8b94e7d38ba35a86037bd517d07ba9870b4b2
@@ -109,7 +109,7 @@ F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 5957d249d437e4db74045ce2f1f661648d94bf94
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
 F src/test8.c 628ec89f9fbf3bfb9c58a503d845a0719595d0ad
-F src/test9.c ba1c39ce4301673653c31a4a31c2ba634dc04ac4
+F src/test9.c cb1a7b5a4a918bb0552fd0101fd3f88d85904cd2
 F src/test_async.c 9d326ceda4306bcab252b8f7e8e480ed45d7ccb6
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
@@ -446,7 +446,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f6c3abdc6c5e916e5366ba28fb1cd06ca3554303
-R 510e38c64873ba345896fd1daf2242a2
+P 0b22ce3637f87c453084c5bd994b6b19a0b014c0
+R 2ce4cb24cdac809fb310981214060097
 U danielk1977
-Z f759617c0297932d47953cae5b14ea24
+Z 3b8a362b924d1b973dfb32cc84cc10b1

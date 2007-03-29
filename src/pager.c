@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.304 2007/03/28 01:59:34 drh Exp $
+** @(#) $Id: pager.c,v 1.305 2007/03/29 17:28:15 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -941,7 +941,17 @@ static int pager_unwritelock(Pager *pPager){
     }else{
       sqlite3OsClose(&pPager->jfd);
       pPager->journalOpen = 0;
-      rc = sqlite3OsDelete(pPager->zJournal);
+      /* If this is a temporary pager file, then the journal file should
+      ** have been configured as delete-on-close. Otherwise, it should still
+      ** be in the file system. This pager still holds a RESERVED or greater
+      ** lock on the database file, so there is no chance another process
+      ** could create or remove a journal file.
+      */
+      assert( sqlite3OsFileExists(pPager->zJournal) || pPager->tempFile );
+      assert( !sqlite3OsFileExists(pPager->zJournal) || !pPager->tempFile );
+      if( !pPager->tempFile ){
+        rc = sqlite3OsDelete(pPager->zJournal);
+      }
     }
     sqliteFree( pPager->aInJournal );
     pPager->aInJournal = 0;
@@ -2714,6 +2724,7 @@ static int pagerSharedLock(Pager *pPager){
         rc = SQLITE_BUSY;
         if( sqlite3OsFileExists(pPager->zJournal) ){
           int ro;
+          assert( !pPager->tempFile );
           rc = sqlite3OsOpenReadWrite(pPager->zJournal, &pPager->jfd, &ro);
           if( ro ){
             rc = SQLITE_BUSY;

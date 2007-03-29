@@ -14,7 +14,7 @@
 ** for completeness. Test code is written in C for these cases
 ** as there is not much point in binding to Tcl.
 **
-** $Id: test9.c,v 1.1 2007/03/29 12:24:17 danielk1977 Exp $
+** $Id: test9.c,v 1.2 2007/03/29 17:28:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -31,7 +31,6 @@ static int c_collation_test(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  void *p;
   const char *zErrFunction = "N/A";
   sqlite3 *db;
 
@@ -76,8 +75,6 @@ static int c_realloc_test(
   void *p;
   const char *zErrFunction = "N/A";
 
-  sqlite3 *db;
-  int rc;
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
     return TCL_ERROR;
