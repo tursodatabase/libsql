@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.60 2007/01/08 16:19:07 drh Exp $
+** $Id: date.c,v 1.61 2007/03/29 17:57:21 drh Exp $
 **
 ** NOTES:
 **
@@ -827,7 +827,7 @@ static void strftimeFunc(
         case 'f': {
           double s = x.s;
           if( s>59.999 ) s = 59.999;
-          sqlite3_snprintf(7, &z[j],"%02.3f", s);
+          sqlite3_snprintf(7, &z[j],"%06.3f", s);
           j += strlen(&z[j]);
           break;
         }

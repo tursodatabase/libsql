@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.19 2007/01/08 16:19:07 drh Exp $
+# $Id: date.test,v 1.20 2007/03/29 17:57:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -149,6 +149,12 @@ proc repeat {n txt} {
 datetest 3.16 "strftime('[repeat 200 %Y]','2003-10-31')" [repeat 200 2003]
 datetest 3.17 "strftime('[repeat 200 abc%m123]','2003-10-31')" \
     [repeat 200 abc10123]
+
+# Ticket #2276.  Make sure leading zeros are inserted where appropriate.
+#
+datetest 3.20 \
+   {strftime('%d/%f/%H/%W/%j/%m/%M/%S/%Y','0421-01-02 03:04:05.006')} \
+   02/05.006/03/00/002/01/04/05/0421
 
 set sqlite_current_time 1157124367
 datetest 4.1 {date('now')} {2006-09-01}

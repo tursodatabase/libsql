@@ -1,5 +1,5 @@
-C Avoid\scalling\sOsDelete()\son\sjournal\sfiles\swhen\sthey\sare\sopened\sfor\stemporary\sdatabases.\sFix\sfor\s#2255.\s(CVS\s3748)
-D 2007-03-29T17:28:15
+C Make\ssure\sthe\sstrftime()\sdate\sconversions\sput\sin\sleading\szeros\scorrectly.\nTicket\s#2276.\s(CVS\s3749)
+D 2007-03-29T17:57:21
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F src/btree.h 540dcbbf83435b77d4b6ef87f909c6cecad4dac9
 F src/build.c ad3374b5409554e504300f77e1fbc6b4c106a57f
 F src/callback.c 31d22b4919c7645cbcbb1591ce2453e8c677c558
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
-F src/date.c 393c73fc027597e008dcd81454544659e978b05c
+F src/date.c c4930ef6afc2e9de12d51f800a8f750fac5ddb42
 F src/delete.c 151d08386bf9c9e7f92f6b9106c71efec2def184
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c a8740c24af3f39f2d502be1a1c640c96435eaac0
@@ -187,7 +187,7 @@ F test/corrupt2.test 572f8df0303d0ce63ddad5c5c9101a83a345ae46
 F test/crash.test 167eb4652eccbedb199b6f21850346c3f5d779fb
 F test/crash2.test ccc7d5f202aeadc3c13003829e6bb6561129f419
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
-F test/date.test 63cc718e1d209b10c6b7be8ce72b11addb9f1e04
+F test/date.test bc3c390d55744649c086d5a090a1b5f00eab10a9
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test 525a6953bc3978780cae35f3eaf1027cf4ce887d
 F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
@@ -446,7 +446,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0b22ce3637f87c453084c5bd994b6b19a0b014c0
-R 2ce4cb24cdac809fb310981214060097
-U danielk1977
-Z 3b8a362b924d1b973dfb32cc84cc10b1
+P e746832f5f3e1c58e6f6456866156824d23dd846
+R b1788f4ccc3dadea73c4b05cf92a2f56
+U drh
+Z 5aae4929118467f5ff5f8ba730683d13
