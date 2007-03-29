@@ -1466,7 +1466,7 @@ static int winLockState(OsFile *id){
 ** same for both.
 */
 static int winSectorSize(OsFile *id){
-  return PAGER_SECTOR_SIZE;
+  return SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
 /*

@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sstrftime()\sdate\sconversions\sput\sin\sleading\szeros\scorrectly.\nTicket\s#2276.\s(CVS\s3749)
-D 2007-03-29T17:57:21
+C Change\sthe\sname\sof\sPAGER_SECTOR_SIZE\sto\sSQLITE_DEFAULT_SECTOR_SIZE.\s\sMake\nthe\snew\sOS-layer\sinterface\sroutine\sfor\sfinding\ssector\ssize\soptional.\s(CVS\s3750)
+D 2007-03-29T18:19:52
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -75,18 +75,18 @@ F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c c186ad5c9e8a0aaa73d0caf5f604d112e45e8b89
 F src/main.c 3ca92e8f2397da413c39f5a102e5675f5c5fa78a
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
-F src/os.c 6df3e9c23eaa982d3e66ef770ad2519de5dd4d97
-F src/os.h ec780b3561d0bb887d13f193a1a889872c44a236
+F src/os.c 5a194b9b9a10dc66543d4ca22bc0db40c5cc5ef1
+F src/os.h 506acdfd0a63802434ceacdbfd7c006e5d90fc53
 F src/os_common.h c86e8cbd6150ca06d46b09ec02ff5fc5d4b05285
-F src/os_os2.c cb2c4f6d28810b5cee682d8df92352464d5c9d95
+F src/os_os2.c 313ece302183dfd83c4f281e1972656b7e6b672e
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 0d91b28d57c0885fe97fb9020fd1091578066b5b
+F src/os_unix.c 5f7ee6c930084bcae48fd2caf4f73011d2c0795b
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 84c02837a6ec216a07e83a1d10d5a01c417bb489
+F src/os_win.c d6cb36287a13a75cbf0b7084399c7884a96c4340
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 9a6eefc192e3922c27bc0b18914b45dc9c348ffb
+F src/pager.c b89ea0f592e499ee6d6cda10b84688f8e47a05ba
 F src/pager.h f1b17bf848b3dce5d9afb2701186d3c9a8826f8c
 F src/parse.y 207ab04273ae13aa4a729b96008d294d5f334ab3
 F src/pragma.c 9cb8b94e7d38ba35a86037bd517d07ba9870b4b2
@@ -446,7 +446,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e746832f5f3e1c58e6f6456866156824d23dd846
-R b1788f4ccc3dadea73c4b05cf92a2f56
+P e853067ec4db3eedfb4adcdd4172de2c55b9ac58
+R c174f33cfef400e7eb98f05642ec2e46
 U drh
-Z 5aae4929118467f5ff5f8ba730683d13
+Z 0685979faafd6228f2942fefc0f3e17a

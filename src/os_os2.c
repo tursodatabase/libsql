@@ -743,7 +743,7 @@ static int os2LockState( OsFile *id ){
 ** same for both.
 */
 static int os2SectorSize(OsFile *id){
-  return PAGER_SECTOR_SIZE;
+  return SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
 /*

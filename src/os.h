@@ -74,6 +74,13 @@
 #endif
 
 /*
+** The default size of a disk sector
+*/
+#ifndef SQLITE_DEFAULT_SECTOR_SIZE
+# define SQLITE_DEFAULT_SECTOR_SIZE 512
+#endif
+
+/*
 ** Temporary files are named starting with this prefix followed by 16 random
 ** alphanumeric characters, and no file extension. They are stored in the
 ** OS's standard temporary file directory, and are deleted prior to exit.

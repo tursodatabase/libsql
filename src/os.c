@@ -76,7 +76,8 @@ int sqlite3OsCheckReservedLock(OsFile *id){
   return id->pMethod->xCheckReservedLock(id);
 }
 int sqlite3OsSectorSize(OsFile *id){
-  return id->pMethod->xSectorSize(id);
+  int (*xSectorSize)(OsFile*) = id->pMethod->xSectorSize;
+  return xSectorSize ? xSectorSize(id) : SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
 #ifdef SQLITE_ENABLE_REDEF_IO

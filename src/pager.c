@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.305 2007/03/29 17:28:15 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.306 2007/03/29 18:19:52 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1436,7 +1436,7 @@ end_playback:
   }
 
   /* The Pager.sectorSize variable may have been updated while rolling
-  ** back a journal created by a process with a different PAGER_SECTOR_SIZE
+  ** back a journal created by a process with a different sector size
   ** value. Reset it to the correct value for this process.
   */
   pPager->sectorSize = sqlite3OsSectorSize(pPager->fd);

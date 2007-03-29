@@ -2353,7 +2353,7 @@ static int unixLockState(OsFile *id){
 ** same for both.
 */
 static int unixSectorSize(OsFile *id){
-  return PAGER_SECTOR_SIZE;
+  return SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
 /*
