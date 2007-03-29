@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.38 2007/03/26 12:26:27 danielk1977 Exp $
+# $Id: malloc.test,v 1.39 2007/03/29 17:07:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -544,6 +544,12 @@ do_malloc_test 20 -tclprep {
   ATTACH DATABASE 'test2.db' AS t2;
   SELECT * FROM t1;
   DETACH DATABASE t2;
+} 
+
+# Test malloc failure whilst installing a foriegn key.
+#
+do_malloc_test 21 -sqlbody {
+  CREATE TABLE abc(a, b, c, FOREIGN KEY(a) REFERENCES abc(b))
 } 
 
 

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.1 2007/03/29 12:19:12 danielk1977 Exp $
+# $Id: misc7.test,v 1.2 2007/03/29 17:07:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -27,4 +27,75 @@ do_test misc7-3 {
   c_collation_test
 } {}
 
+# Try to open a directory:
+#
+do_test misc7-4 {
+  file delete mydir
+  file mkdir mydir
+  set rc [catch {
+    sqlite3 db2 ./mydir
+  } msg]
+  list $rc $msg
+} {1 {unable to open database file}}
+
+# Try to open a file with a directory where it's journal file should be.
+#
+do_test misc7-5 {
+  file delete mydir
+  file mkdir mydir-journal
+  sqlite3 db2 ./mydir
+  catchsql {
+    CREATE TABLE abc(a, b, c);
+  } db2
+} {1 {unable to open database file}}
+db2 close
+
+#--------------------------------------------------------------------
+# The following tests, misc7-6.* test the libraries behaviour when
+# it cannot open a file. To force this condition, we use up all the
+# file-descriptors before running sqlite. This probably only works
+# on unix.
+#
+
+proc use_up_files {} {
+  set ret [list]
+  catch {
+    while 1 { lappend ret [open test.db] }
+  }
+  return $ret
+}
+
+execsql { CREATE TABLE abc(a PRIMARY KEY, b, c); }
+db close
+set fd_list [use_up_files]
+
+set ::go 1
+set ::n 1
+while {$::go} {
+  catch {db close}
+  do_test misc7-6.$::n {
+    set rc [catch {
+      sqlite db test.db
+      db eval {
+        BEGIN;
+        INSERT INTO abc VALUES(1, 2, 3);
+        INSERT INTO abc VALUES(2, 3, 4);
+        INSERT INTO abc SELECT a+2, b, c FROM abc;
+        COMMIT;
+      }
+    } msg]
+    if {$rc == 0} {set ::go 0}
+
+    expr {$rc == 0 || ($rc == 1 && $msg eq "unable to open database file")}
+  } 1
+
+  close [lindex $fd_list 0]
+  set fd_list [lrange $fd_list 1 end]
+  incr ::n
+}
+foreach fd $fd_list {
+  close $fd
+}
+
 finish_test
+
