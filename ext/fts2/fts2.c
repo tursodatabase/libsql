@@ -304,6 +304,25 @@ SQLITE_EXTENSION_INIT1
 # define TRACE(A)
 #endif
 
+/* It is not safe to call isspace(), tolower(), or isalnum() on
+** hi-bit-set characters.  This is the same solution used in the
+** tokenizer.
+*/
+/* TODO(shess) The snippet-generation code should be using the
+** tokenizer-generated tokens rather than doing its own local
+** tokenization.
+*/
+/* TODO(shess) Is __isascii() a portable version of (c&0x80)==0? */
+static int safe_isspace(char c){
+  return (c&0x80)==0 ? isspace(c) : 0;
+}
+static int safe_tolower(char c){
+  return (c&0x80)==0 ? tolower(c) : c;
+}
+static int safe_isalnum(char c){
+  return (c&0x80)==0 ? isalnum(c) : 0;
+}
+
 typedef enum DocListType {
   DL_DOCIDS,              /* docids only */
   DL_POSITIONS,           /* docids + positions */
@@ -504,7 +523,7 @@ static void appendList(StringBuffer *sb, int nString, char **azString){
 
 static int endsInWhiteSpace(StringBuffer *p){
   return stringBufferLength(p)>0 &&
-    isspace(stringBufferData(p)[stringBufferLength(p)-1]);
+    safe_isspace(stringBufferData(p)[stringBufferLength(p)-1]);
 }
 
 /* If the StringBuffer ends in something other than white space, add a
@@ -2194,7 +2213,7 @@ static int getToken(const char *z, int *tokenType){
       return 0;
     }
     case ' ': case '\t': case '\n': case '\f': case '\r': {
-      for(i=1; isspace(z[i]); i++){}
+      for(i=1; safe_isspace(z[i]); i++){}
       *tokenType = TOKEN_SPACE;
       return i;
     }
@@ -2346,7 +2365,7 @@ static void tokenListToIdList(char **azIn){
   int i, j;
   if( azIn ){
     for(i=0, j=-1; azIn[i]; i++){
-      if( isalnum(azIn[i][0]) || azIn[i][1] ){
+      if( safe_isalnum(azIn[i][0]) || azIn[i][1] ){
         dequoteString(azIn[i]);
         if( j>=0 ){
           azIn[j] = azIn[i];
@@ -2395,11 +2414,11 @@ static char *firstToken(char *zIn, char **pzTail){
 ** s[] is t[].
 */
 static int startsWith(const char *s, const char *t){
-  while( isspace(*s) ){ s++; }
+  while( safe_isspace(*s) ){ s++; }
   while( *t ){
-    if( tolower(*s++)!=tolower(*t++) ) return 0;
+    if( safe_tolower(*s++)!=safe_tolower(*t++) ) return 0;
   }
-  return *s!='_' && !isalnum(*s);
+  return *s!='_' && !safe_isalnum(*s);
 }
 
 /*
@@ -2511,7 +2530,7 @@ static int parseSpec(TableSpec *pSpec, int argc, const char *const*argv,
     char *p;
     pSpec->azContentColumn[i] = sqlite3_mprintf("c%d%s", i, azArg[i]);
     for (p = pSpec->azContentColumn[i]; *p ; ++p) {
-      if( !isalnum(*p) ) *p = '_';
+      if( !safe_isalnum(*p) ) *p = '_';
     }
   }
 
@@ -2971,10 +2990,10 @@ static int wordBoundary(
     }
   }
   for(i=1; i<=10; i++){
-    if( isspace(zDoc[iBreak-i]) ){
+    if( safe_isspace(zDoc[iBreak-i]) ){
       return iBreak - i + 1;
     }
-    if( isspace(zDoc[iBreak+i]) ){
+    if( safe_isspace(zDoc[iBreak+i]) ){
       return iBreak + i + 1;
     }
   }
