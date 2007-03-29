@@ -457,7 +457,7 @@ static int lockTrace(int fd, int op, struct flock *p){
   sqlite3DebugPrintf("fcntl %d %d %s %s %d %d %d %d\n",
      threadid, fd, zOpName, zType, (int)p->l_start, (int)p->l_len,
      (int)p->l_pid, s);
-  if( s && op==F_SETLK && (p->l_type==F_RDLCK || p->l_type==F_WRLCK) ){
+  if( s==(-1) && op==F_SETLK && (p->l_type==F_RDLCK || p->l_type==F_WRLCK) ){
     struct flock l2;
     l2 = *p;
     fcntl(fd, F_GETLK, &l2);
@@ -1484,7 +1484,7 @@ static int unixLock(OsFile *id, int locktype){
     lock.l_type = (locktype==SHARED_LOCK?F_RDLCK:F_WRLCK);
     lock.l_start = PENDING_BYTE;
     s = fcntl(pFile->h, F_SETLK, &lock);
-    if( s ){
+    if( s==(-1) ){
       rc = (errno==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
       goto end_lock;
     }
@@ -1511,7 +1511,7 @@ static int unixLock(OsFile *id, int locktype){
       rc = SQLITE_IOERR_UNLOCK;  /* This should never happen */
       goto end_lock;
     }
-    if( s ){
+    if( s==(-1) ){
       rc = (errno==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
     }else{
       pFile->locktype = SHARED_LOCK;
@@ -1541,7 +1541,7 @@ static int unixLock(OsFile *id, int locktype){
         assert(0);
     }
     s = fcntl(pFile->h, F_SETLK, &lock);
-    if( s ){
+    if( s==(-1) ){
       rc = (errno==EINVAL) ? SQLITE_NOLFS : SQLITE_BUSY;
     }
   }
@@ -1595,7 +1595,7 @@ static int unixUnlock(OsFile *id, int locktype){
       lock.l_whence = SEEK_SET;
       lock.l_start = SHARED_FIRST;
       lock.l_len = SHARED_SIZE;
-      if( fcntl(pFile->h, F_SETLK, &lock)!=0 ){
+      if( fcntl(pFile->h, F_SETLK, &lock)==(-1) ){
         /* This should never happen */
         rc = SQLITE_IOERR_RDLOCK;
       }
@@ -1604,7 +1604,7 @@ static int unixUnlock(OsFile *id, int locktype){
     lock.l_whence = SEEK_SET;
     lock.l_start = PENDING_BYTE;
     lock.l_len = 2L;  assert( PENDING_BYTE+1==RESERVED_BYTE );
-    if( fcntl(pFile->h, F_SETLK, &lock)==0 ){
+    if( fcntl(pFile->h, F_SETLK, &lock)!=(-1) ){
       pLock->locktype = SHARED_LOCK;
     }else{
       rc = SQLITE_IOERR_UNLOCK;  /* This should never happen */
@@ -1622,7 +1622,7 @@ static int unixUnlock(OsFile *id, int locktype){
       lock.l_type = F_UNLCK;
       lock.l_whence = SEEK_SET;
       lock.l_start = lock.l_len = 0L;
-      if( fcntl(pFile->h, F_SETLK, &lock)==0 ){
+      if( fcntl(pFile->h, F_SETLK, &lock)!=(-1) ){
         pLock->locktype = NO_LOCK;
       }else{
         rc = SQLITE_IOERR_UNLOCK;  /* This should never happen */

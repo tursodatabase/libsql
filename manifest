@@ -1,5 +1,5 @@
-C Fix\sto\stoken\sdestructors\sin\sLemon.\s\sThis\sdoes\snot\simpact\sSQLite.\s\sTicket\s#2175.\s(CVS\s3753)
-D 2007-03-29T20:13:53
+C Assume\sany\sreturn\scode\sfrom\sfcntl()\sother\sthan\s-1\sis\ssuccess.\s\sFormerly\swe\nonly\sassumed\sthat\s0\swas\ssuccess.\s\sTicket\s#2173.\s(CVS\s3754)
+D 2007-03-29T20:19:59
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -82,7 +82,7 @@ F src/os_os2.c 313ece302183dfd83c4f281e1972656b7e6b672e
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 5f7ee6c930084bcae48fd2caf4f73011d2c0795b
+F src/os_unix.c fe0c0175036a5fb40124480771895ba524efa132
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c d6cb36287a13a75cbf0b7084399c7884a96c4340
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 3111b43ec333f3342f9609bf441160040f3d1501
-R c72df6846ce8cb719dc4f7dfcd4ac498
+P 6195af49828bf04b61d24f116339780d3eb926a1
+R 79d0ea3ee011e976af26b5841e567527
 U drh
-Z 3611f69426c7b55a3a9f2aa24567568b
+Z debf887eb36a11345fb4f0356547effd
