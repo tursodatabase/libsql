@@ -991,6 +991,7 @@ static void plwDestroy(PLWriter *pWriter){
 ** dlcDelete - destroy a collector and all contained items.
 ** dlcAddPos - append position and offset information.
 ** dlcAddDoclist - add the collected doclist to the given buffer.
+** dlcNext - terminate the current document and open another.
 */
 typedef struct DLCollector {
   DataBuffer b;
@@ -1014,6 +1015,11 @@ static void dlcAddDoclist(DLCollector *pCollector, DataBuffer *b){
   }else{
     dataBufferAppend(b, pCollector->b.pData, pCollector->b.nData);
   }
+}
+static void dlcNext(DLCollector *pCollector, sqlite_int64 iDocid){
+  plwTerminate(&pCollector->plw);
+  plwDestroy(&pCollector->plw);
+  plwInit(&pCollector->plw, &pCollector->dlw, iDocid);
 }
 static void dlcAddPos(DLCollector *pCollector, int iColumn, int iPos,
                       int iStartOffset, int iEndOffset){
@@ -1654,6 +1660,21 @@ struct fulltext_vtab {
   /* The statement used to prepare pLeafSelectStmts. */
 #define LEAF_SELECT \
   "select block from %_segments where rowid between ? and ? order by rowid"
+
+  /* These buffer pending index updates during transactions.
+  ** nPendingData estimates the memory size of the pending data.  It
+  ** doesn't include the hash-bucket overhead, nor any malloc
+  ** overhead.  When nPendingData exceeds kPendingThreshold, the
+  ** buffer is flushed even before the transaction closes.
+  ** pendingTerms stores the data, and is only valid when nPendingData
+  ** is >=0 (nPendingData<0 means pendingTerms has not been
+  ** initialized).  iPrevDocid is the last docid written, used to make
+  ** certain we're inserting in sorted order.
+  */
+  int nPendingData;
+#define kPendingThreshold (1*1024*1024)
+  sqlite_int64 iPrevDocid;
+  fts2Hash pendingTerms;
 };
 
 /*
@@ -2133,6 +2154,14 @@ static int segdir_delete(fulltext_vtab *v, int iLevel){
   return sql_single_step_statement(v, SEGDIR_DELETE_STMT, &s);
 }
 
+/* TODO(shess) clearPendingTerms() is far down the file because
+** writeZeroSegment() is far down the file because LeafWriter is far
+** down the file.  Consider refactoring the code to move the non-vtab
+** code above the vtab code so that we don't need this forward
+** reference.
+*/
+static int clearPendingTerms(fulltext_vtab *v);
+
 /*
 ** Free the memory used to contain a fulltext_vtab structure.
 */
@@ -2158,7 +2187,9 @@ static void fulltext_vtab_destroy(fulltext_vtab *v){
     v->pTokenizer->pModule->xDestroy(v->pTokenizer);
     v->pTokenizer = NULL;
   }
-  
+
+  clearPendingTerms(v);
+
   free(v->azColumn);
   for(i = 0; i < v->nColumn; ++i) {
     sqlite3_free(v->azContentColumn[i]);
@@ -2631,6 +2662,9 @@ static int constructVtab(
   if( rc!=SQLITE_OK ) goto err;
 
   memset(v->pFulltextStatements, 0, sizeof(v->pFulltextStatements));
+
+  /* Indicate that the buffer is not live. */
+  v->nPendingData = -1;
 
   *ppVTab = &v->base;
   TRACE(("FTS2 Connect %p\n", v));
@@ -3208,6 +3242,9 @@ static int docListOfTerm(
   /* No phrase search if no position info. */
   assert( pQTerm->nPhrase==0 || DL_DEFAULT!=DL_DOCIDS );
 
+  /* This code should never be called with buffered updates. */
+  assert( v->nPendingData<0 );
+
   dataBufferInit(&left, 0);
   rc = termSelect(v, iColumn, pQTerm->pTerm, pQTerm->nTerm,
                   0<pQTerm->nPhrase ? DL_POSITIONS : DL_DOCIDS, &left);
@@ -3380,6 +3417,9 @@ static int parseQuery(
   return SQLITE_OK;
 }
 
+/* TODO(shess) Refactor the code to remove this forward decl. */
+static int flushPendingTerms(fulltext_vtab *v);
+
 /* Perform a full-text query using the search expression in
 ** zInput[0..nInput-1].  Return a list of matching documents
 ** in pResult.
@@ -3399,6 +3439,18 @@ static int fulltextQuery(
   DataBuffer left, right, or, new;
   int nNot = 0;
   QueryTerm *aTerm;
+
+  /* TODO(shess) Instead of flushing pendingTerms, we could query for
+  ** the relevant term and merge the doclist into what we receive from
+  ** the database.  Wait and see if this is a common issue, first.
+  **
+  ** A good reason not to flush is to not generate update-related
+  ** error codes from here.
+  */
+
+  /* Flush any buffered updates before executing the query. */
+  rc = flushPendingTerms(v);
+  if( rc!=SQLITE_OK ) return rc;
 
   /* TODO(shess) I think that the queryClear() calls below are not
   ** necessary, because fulltextClose() already clears the query.
@@ -3598,10 +3650,11 @@ static int fulltextRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   return SQLITE_OK;
 }
 
-/* Add all terms in [zText] to the given hash table.  If [iColumn] > 0,
- * we also store positions and offsets in the hash table using the given
- * column number. */
-static int buildTerms(fulltext_vtab *v, fts2Hash *terms, sqlite_int64 iDocid,
+/* Add all terms in [zText] to pendingTerms table.  If [iColumn] > 0,
+** we also store positions and offsets in the hash table using that
+** column number.
+*/
+static int buildTerms(fulltext_vtab *v, sqlite_int64 iDocid,
                       const char *zText, int iColumn){
   sqlite3_tokenizer *pTokenizer = v->pTokenizer;
   sqlite3_tokenizer_cursor *pCursor;
@@ -3619,6 +3672,7 @@ static int buildTerms(fulltext_vtab *v, fts2Hash *terms, sqlite_int64 iDocid,
                                                &iStartOffset, &iEndOffset,
                                                &iPosition) ){
     DLCollector *p;
+    int nData;                   /* Size of doclist before our update. */
 
     /* Positions can't be negative; we use -1 as a terminator internally. */
     if( iPosition<0 ){
@@ -3626,14 +3680,24 @@ static int buildTerms(fulltext_vtab *v, fts2Hash *terms, sqlite_int64 iDocid,
       return SQLITE_ERROR;
     }
 
-    p = fts2HashFind(terms, pToken, nTokenBytes);
+    p = fts2HashFind(&v->pendingTerms, pToken, nTokenBytes);
     if( p==NULL ){
+      nData = 0;
       p = dlcNew(iDocid, DL_DEFAULT);
-      fts2HashInsert(terms, pToken, nTokenBytes, p);
+      fts2HashInsert(&v->pendingTerms, pToken, nTokenBytes, p);
+
+      /* Overhead for our hash table entry, the key, and the value. */
+      v->nPendingData += sizeof(struct fts2HashElem)+sizeof(*p)+nTokenBytes;
+    }else{
+      nData = p->b.nData;
+      if( p->dlw.iPrevDocid!=iDocid ) dlcNext(p, iDocid);
     }
     if( iColumn>=0 ){
       dlcAddPos(p, iColumn, iPosition, iStartOffset, iEndOffset);
     }
+
+    /* Accumulate data added by dlcNew or dlcNext, and dlcAddPos. */
+    v->nPendingData += p->b.nData-nData;
   }
 
   /* TODO(shess) Check return?  Should this be able to cause errors at
@@ -3645,21 +3709,22 @@ static int buildTerms(fulltext_vtab *v, fts2Hash *terms, sqlite_int64 iDocid,
   return rc;
 }
 
-/* Add doclists for all terms in [pValues] to the hash table [terms]. */
-static int insertTerms(fulltext_vtab *v, fts2Hash *terms, sqlite_int64 iRowid,
-                sqlite3_value **pValues){
+/* Add doclists for all terms in [pValues] to pendingTerms table. */
+static int insertTerms(fulltext_vtab *v, sqlite_int64 iRowid,
+                       sqlite3_value **pValues){
   int i;
   for(i = 0; i < v->nColumn ; ++i){
     char *zText = (char*)sqlite3_value_text(pValues[i]);
-    int rc = buildTerms(v, terms, iRowid, zText, i);
+    int rc = buildTerms(v, iRowid, zText, i);
     if( rc!=SQLITE_OK ) return rc;
   }
   return SQLITE_OK;
 }
 
-/* Add empty doclists for all terms in the given row's content to the hash
- * table [pTerms]. */
-static int deleteTerms(fulltext_vtab *v, fts2Hash *pTerms, sqlite_int64 iRowid){
+/* Add empty doclists for all terms in the given row's content to
+** pendingTerms.
+*/
+static int deleteTerms(fulltext_vtab *v, sqlite_int64 iRowid){
   const char **pValues;
   int i, rc;
 
@@ -3670,7 +3735,7 @@ static int deleteTerms(fulltext_vtab *v, fts2Hash *pTerms, sqlite_int64 iRowid){
   if( rc!=SQLITE_OK ) return rc;
 
   for(i = 0 ; i < v->nColumn; ++i) {
-    rc = buildTerms(v, pTerms, iRowid, pValues[i], -1);
+    rc = buildTerms(v, iRowid, pValues[i], -1);
     if( rc!=SQLITE_OK ) break;
   }
 
@@ -3678,41 +3743,58 @@ static int deleteTerms(fulltext_vtab *v, fts2Hash *pTerms, sqlite_int64 iRowid){
   return SQLITE_OK;
 }
 
+/* TODO(shess) Refactor the code to remove this forward decl. */
+static int initPendingTerms(fulltext_vtab *v, sqlite_int64 iDocid);
+
 /* Insert a row into the %_content table; set *piRowid to be the ID of the
- * new row.  Fill [pTerms] with new doclists for the %_term table. */
+** new row.  Add doclists for terms to pendingTerms.
+*/
 static int index_insert(fulltext_vtab *v, sqlite3_value *pRequestRowid,
-                        sqlite3_value **pValues,
-                        sqlite_int64 *piRowid, fts2Hash *pTerms){
+                        sqlite3_value **pValues, sqlite_int64 *piRowid){
   int rc;
 
   rc = content_insert(v, pRequestRowid, pValues);  /* execute an SQL INSERT */
   if( rc!=SQLITE_OK ) return rc;
+
   *piRowid = sqlite3_last_insert_rowid(v->db);
-  return insertTerms(v, pTerms, *piRowid, pValues);
+  rc = initPendingTerms(v, *piRowid);
+  if( rc!=SQLITE_OK ) return rc;
+
+  return insertTerms(v, *piRowid, pValues);
 }
 
-/* Delete a row from the %_content table; fill [pTerms] with empty doclists
- * to be written to the %_term table. */
-static int index_delete(fulltext_vtab *v, sqlite_int64 iRow, fts2Hash *pTerms){
-  int rc = deleteTerms(v, pTerms, iRow);
+/* Delete a row from the %_content table; add empty doclists for terms
+** to pendingTerms.
+*/
+static int index_delete(fulltext_vtab *v, sqlite_int64 iRow){
+  int rc = initPendingTerms(v, iRow);
   if( rc!=SQLITE_OK ) return rc;
+
+  rc = deleteTerms(v, iRow);
+  if( rc!=SQLITE_OK ) return rc;
+
   return content_delete(v, iRow);  /* execute an SQL DELETE */
 }
 
-/* Update a row in the %_content table; fill [pTerms] with new doclists for the
- * %_term table. */
+/* Update a row in the %_content table; add delete doclists to
+** pendingTerms for old terms not in the new data, add insert doclists
+** to pendingTerms for terms in the new data.
+*/
 static int index_update(fulltext_vtab *v, sqlite_int64 iRow,
-                        sqlite3_value **pValues, fts2Hash *pTerms){
+                        sqlite3_value **pValues){
+  int rc = initPendingTerms(v, iRow);
+  if( rc!=SQLITE_OK ) return rc;
+
   /* Generate an empty doclist for each term that previously appeared in this
    * row. */
-  int rc = deleteTerms(v, pTerms, iRow);
+  rc = deleteTerms(v, iRow);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = content_update(v, pValues, iRow);  /* execute an SQL UPDATE */
   if( rc!=SQLITE_OK ) return rc;
 
   /* Now add positions for terms which appear in the updated row. */
-  return insertTerms(v, pTerms, iRow, pValues);
+  return insertTerms(v, iRow, pValues);
 }
 
 /*******************************************************************/
@@ -4996,6 +5078,9 @@ static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
   assert( nData>1 );
   assert( *pData=='\0' );
 
+  /* This code should never be called with buffered updates. */
+  assert( v->nPendingData<0 );
+
   leafReaderInit(pData, nData, &reader);
   while( !leafReaderAtEnd(&reader) ){
     int c = leafReaderTermCmp(&reader, pTerm, nTerm);
@@ -5033,6 +5118,9 @@ static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
   sqlite3_stmt *s = NULL;
 
   assert( nData>1 );
+
+  /* This code should never be called with buffered updates. */
+  assert( v->nPendingData<0 );
 
   /* Process data as an interior node until we reach a leaf. */
   while( *pData!='\0' ){
@@ -5095,6 +5183,9 @@ static int termSelect(fulltext_vtab *v, int iColumn,
   sqlite3_stmt *s;
   int rc = sql_get_statement(v, SEGDIR_SELECT_ALL_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
+
+  /* This code should never be called with buffered updates. */
+  assert( v->nPendingData<0 );
 
   dataBufferInit(&doclist, 0);
 
@@ -5196,21 +5287,64 @@ static int writeZeroSegment(fulltext_vtab *v, fts2Hash *pTerms){
   return rc;
 }
 
+/* If pendingTerms has data, free it. */
+static int clearPendingTerms(fulltext_vtab *v){
+  if( v->nPendingData>=0 ){
+    fts2HashElem *e;
+    for(e=fts2HashFirst(&v->pendingTerms); e; e=fts2HashNext(e)){
+      dlcDelete(fts2HashData(e));
+    }
+    fts2HashClear(&v->pendingTerms);
+    v->nPendingData = -1;
+  }
+  return SQLITE_OK;
+}
+
+/* If pendingTerms has data, flush it to a level-zero segment, and
+** free it.
+*/
+static int flushPendingTerms(fulltext_vtab *v){
+  if( v->nPendingData>=0 ){
+    int rc = writeZeroSegment(v, &v->pendingTerms);
+    clearPendingTerms(v);
+    return rc;
+  }
+  return SQLITE_OK;
+}
+
+/* If pendingTerms is "too big", or docid is out of order, flush it.
+** Regardless, be certain that pendingTerms is initialized for use.
+*/
+static int initPendingTerms(fulltext_vtab *v, sqlite_int64 iDocid){
+  /* TODO(shess) Explore whether partially flushing the buffer on
+  ** forced-flush would provide better performance.  I suspect that if
+  ** we ordered the doclists by size and flushed the largest until the
+  ** buffer was half empty, that would let the less frequent terms
+  ** generate longer doclists.
+  */
+  if( iDocid<=v->iPrevDocid || v->nPendingData>kPendingThreshold ){
+    int rc = flushPendingTerms(v);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+  if( v->nPendingData<0 ){
+    fts2HashInit(&v->pendingTerms, FTS2_HASH_STRING, 1);
+    v->nPendingData = 0;
+  }
+  v->iPrevDocid = iDocid;
+  return SQLITE_OK;
+}
+
 /* This function implements the xUpdate callback; it's the top-level entry
  * point for inserting, deleting or updating a row in a full-text table. */
 static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
                    sqlite_int64 *pRowid){
   fulltext_vtab *v = (fulltext_vtab *) pVtab;
-  fts2Hash terms;   /* maps term string -> PosList */
   int rc;
-  fts2HashElem *e;
 
   TRACE(("FTS2 Update %p\n", pVtab));
-  
-  fts2HashInit(&terms, FTS2_HASH_STRING, 1);
 
   if( nArg<2 ){
-    rc = index_delete(v, sqlite3_value_int64(ppArg[0]), &terms);
+    rc = index_delete(v, sqlite3_value_int64(ppArg[0]));
   } else if( sqlite3_value_type(ppArg[0]) != SQLITE_NULL ){
     /* An update:
      * ppArg[0] = old rowid
@@ -5224,7 +5358,7 @@ static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
       rc = SQLITE_ERROR;  /* we don't allow changing the rowid */
     } else {
       assert( nArg==2+v->nColumn+1);
-      rc = index_update(v, rowid, &ppArg[2], &terms);
+      rc = index_update(v, rowid, &ppArg[2]);
     }
   } else {
     /* An insert:
@@ -5233,18 +5367,40 @@ static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
      * ppArg[2+v->nColumn] = value for magic column (we ignore this)
      */
     assert( nArg==2+v->nColumn+1);
-    rc = index_insert(v, ppArg[1], &ppArg[2], pRowid, &terms);
+    rc = index_insert(v, ppArg[1], &ppArg[2], pRowid);
   }
-
-  if( rc==SQLITE_OK ) rc = writeZeroSegment(v, &terms);
-
-  /* clean up */
-  for(e=fts2HashFirst(&terms); e; e=fts2HashNext(e)){
-    dlcDelete(fts2HashData(e));
-  }
-  fts2HashClear(&terms);
 
   return rc;
+}
+
+static int fulltextSync(sqlite3_vtab *pVtab){
+  TRACE(("FTS2 xSync()\n"));
+  return flushPendingTerms((fulltext_vtab *)pVtab);
+}
+
+static int fulltextBegin(sqlite3_vtab *pVtab){
+  fulltext_vtab *v = (fulltext_vtab *) pVtab;
+  TRACE(("FTS2 xBegin()\n"));
+
+  /* Any buffered updates should have been cleared by the previous
+  ** transaction.
+  */
+  assert( v->nPendingData<0 );
+  return clearPendingTerms(v);
+}
+
+static int fulltextCommit(sqlite3_vtab *pVtab){
+  fulltext_vtab *v = (fulltext_vtab *) pVtab;
+  TRACE(("FTS2 xCommit()\n"));
+
+  /* Buffered updates should have been cleared by fulltextSync(). */
+  assert( v->nPendingData<0 );
+  return clearPendingTerms(v);
+}
+
+static int fulltextRollback(sqlite3_vtab *pVtab){
+  TRACE(("FTS2 xRollback()\n"));
+  return clearPendingTerms((fulltext_vtab *)pVtab);
 }
 
 /*
@@ -5340,10 +5496,10 @@ static const sqlite3_module fulltextModule = {
   /* xColumn       */ fulltextColumn,
   /* xRowid        */ fulltextRowid,
   /* xUpdate       */ fulltextUpdate,
-  /* xBegin        */ 0, 
-  /* xSync         */ 0,
-  /* xCommit       */ 0,
-  /* xRollback     */ 0,
+  /* xBegin        */ fulltextBegin,
+  /* xSync         */ fulltextSync,
+  /* xCommit       */ fulltextCommit,
+  /* xRollback     */ fulltextRollback,
   /* xFindFunction */ fulltextFindFunction,
 };
 

@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sPAGER_SECTOR_SIZE\sto\sSQLITE_DEFAULT_SECTOR_SIZE.\s\sMake\nthe\snew\sOS-layer\sinterface\sroutine\sfor\sfinding\ssector\ssize\soptional.\s(CVS\s3750)
-D 2007-03-29T18:19:52
+C Buffer\supdates\sper-transaction\srather\sthan\sper-update.\s\sIf\slots\sof\nupdates\shappen\swithin\sa\ssingle\stransaction,\sthere\swas\sa\slot\sof\swasted\nencode/decode\soverhead\sdue\sto\ssegment\smerges.\s\sThis\scode\sbuffers\nupdates\sin\smemory\sand\swrites\sout\slarger\slevel-0\ssegments.\s\sIt\sonly\nworks\swhen\sdocuments\sare\spresented\sin\sascending\sorder\sby\sdocid.\nComparing\sa\stest\sset\srunning\s100\sdocuments\sper\stransaction,\sthe\stotal\nruntime\sis\scut\salmost\sin\shalf.\s(CVS\s3751)
+D 2007-03-29T18:41:04
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 2e3cb46d28b0dd17b2ad3b48409618ace73caec6
+F ext/fts2/fts2.c 8d69d6e4b48b0de4350e10c9c76649c638e35997
 F ext/fts2/fts2.h bbdab26d34f91974d5b9ade8b7836c140a7c4ce1
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -226,6 +226,7 @@ F test/fts2g.test c69a8ab43ec77d123976ba6cf9422d647ae63032
 F test/fts2h.test 223af921323b409d4b5b18ff4e51619541b174bb
 F test/fts2i.test 1b22451d1f13f7c509baec620dc3a4a754885dd6
 F test/fts2j.test f68d7611f76309bc8b94170f3740d9fbbc061d9b
+F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/func.test 019d706b2458dfdf239c74cc31143446de1ee44a
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
@@ -446,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e853067ec4db3eedfb4adcdd4172de2c55b9ac58
-R c174f33cfef400e7eb98f05642ec2e46
-U drh
-Z 0685979faafd6228f2942fefc0f3e17a
+P 0fb9af1d6e20bf25511c6d2097937cc11137776e
+R d919a3e5d99f3240c3cbaae5d6308d75
+U shess
+Z 095670ff47cc53d2ea62c92ebf93d308
