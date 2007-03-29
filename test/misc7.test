@@ -1,0 +1,30 @@
+# 2006 September 4
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# $Id: misc7.test,v 1.1 2007/03/29 12:19:12 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_test misc7-1 {
+  c_misuse_test
+} {}
+
+do_test misc7-2 {
+  c_realloc_test
+} {}
+
+do_test misc7-3 {
+  c_collation_test
+} {}
+
+finish_test

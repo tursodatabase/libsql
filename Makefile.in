@@ -218,6 +218,7 @@ TESTSRC = \
   $(TOP)/src/test6.c \
   $(TOP)/src/test7.c \
   $(TOP)/src/test8.c \
+  $(TOP)/src/test9.c \
   $(TOP)/src/test_autoext.c \
   $(TOP)/src/test_async.c \
   $(TOP)/src/test_md5.c \

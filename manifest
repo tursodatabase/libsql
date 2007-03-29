@@ -1,6 +1,6 @@
-C Change\sBtreeMoveto\sso\sthat\sit\scan\sbe\sbiased\sto\sthe\sright\sor\sto\sthe\scenter.\nUse\sa\sright\sbias\swhen\sappending\sand\sa\scenter\sbias\swhen\ssearching.\s\sThis\ngives\sabout\sa\s15%\sreduction\sin\scalls\sto\ssqlite3VdbeRecordCompare.\s(CVS\s3741)
-D 2007-03-29T05:51:49
-F Makefile.in 1fe3d0b46e40fd684e1e61f8e8056cefed16de9f
+C Explicitly\stest\ssome\serror\scases\sthat\sup\suntil\snow\shave\snot\sbeen\schecked.\s(CVS\s3742)
+D 2007-03-29T12:19:12
+F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION e31cc83750f9f93f8c53236f6618cb876fdd9d1a
@@ -43,7 +43,7 @@ F ext/fts2/fts2_tokenizer.h 4c5ffe31d63622869eb6eec1503df7f6996fd1bd
 F ext/fts2/fts2_tokenizer1.c 6067f2f710bc7e91c0688b7b11be1027777553e0
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk f91734b3f783589fd617e73e00e847ad9f04b636
+F main.mk 0bf049ca7589932f1fdd074d71f0f6621a63e972
 F mkdll.sh cbc7d92d02f9317a3d24ab55bb727275417260ca
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -100,7 +100,7 @@ F src/sqlite.h.in 02d1159bc8f7387008df9766c79038fce8a9d3a7
 F src/sqlite3ext.h 832e13de075d920e2c76584e2b7af1054bb212df
 F src/sqliteInt.h c8d0e5ce27a862836de70fc3eadc1e65cea7e3d8
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
-F src/tclsqlite.c cd2b3b86ab07c0e0779f6c6e71e72c6c7dc1e704
+F src/tclsqlite.c a8d1166319db5d505b25ac6a9820162afe63fc8a
 F src/test1.c 439bba8da10fbc61c731019cf2894e6057578878
 F src/test2.c dc48c84ce68b3bc2f2d01871d709f20dc77003b0
 F src/test3.c 65f92247cf8592854e9bf5115b3fb711f8b33280
@@ -270,6 +270,7 @@ F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
 F test/misc5.test c7d2d2a5a20dc37d3605a8067f0df5af2240122e
 F test/misc6.test 3de55ec5cadf466ada587173faa5d6a4790a8bb7
+F test/misc7.test 9b3bd914a863809a95f9cb66ce320327e9aaee79
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
@@ -442,7 +443,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a9877f616b24737152627841fcbd80cc28426f1e
-R 63136fc2c62ce921e31331d55ad9708c
-U drh
-Z ae6ac3fd2b6690aaaa258fb90ac6d9d8
+P ad4a6b1a91bcefd8a4c75e8dc99c1153c72c31a3
+R e9b410d1b1f8ee8dc2faf517d9c114ed
+U danielk1977
+Z d48e5c7352b07b65203e408c728b3bfc
