@@ -44,7 +44,8 @@
 **                       This is typically a union of many types, one of
 **                       which is ParseTOKENTYPE.  The entry in the union
 **                       for base tokens is called "yy0".
-**    YYSTACKDEPTH       is the maximum depth of the parser's stack.
+**    YYSTACKDEPTH       is the maximum depth of the parser's stack.  If
+**                       zero the stack is dynamically sized using realloc()
 **    ParseARG_SDECL     A static variable declaration for the %extra_argument
 **    ParseARG_PDECL     A parameter declaration for the %extra_argument
 **    ParseARG_STORE     Code to store %extra_argument into yypParser
@@ -152,7 +153,12 @@ struct yyParser {
   int yyidx;                    /* Index of top element in stack */
   int yyerrcnt;                 /* Shifts left before out of the error */
   ParseARG_SDECL                /* A place to hold %extra_argument */
+#if YYSTACKDEPTH<=0
+  int yystksz;                  /* Current side of the stack */
+  yyStackEntry *yystack;        /* The parser's stack */
+#else
   yyStackEntry yystack[YYSTACKDEPTH];  /* The parser's stack */
+#endif
 };
 typedef struct yyParser yyParser;
 
@@ -220,6 +226,29 @@ const char *ParseTokenName(int tokenType){
 #endif
 }
 
+#if YYSTACKDEPTH<=0
+/*
+** Try to increase the size of the parser stack.
+*/
+static void yyGrowStack(yyParser *p){
+  int newSize;
+  yyStackEntry *pNew;
+
+  newSize = p->yystksz*2 + 100;
+  pNew = realloc(p->yystack, newSize*sizeof(pNew[0]));
+  if( pNew ){
+    p->yystack = pNew;
+    p->yystksz = newSize;
+#ifndef NDEBUG
+    if( yyTraceFILE ){
+      fprintf(yyTraceFILE,"%sStack grows to %d entries!\n",
+              yyTracePrompt, p->yystksz);
+    }
+#endif
+  }
+}
+#endif
+
 /* 
 ** This function allocates a new parser.
 ** The only argument is a pointer to a function which works like
@@ -237,6 +266,9 @@ void *ParseAlloc(void *(*mallocProc)(size_t)){
   pParser = (yyParser*)(*mallocProc)( (size_t)sizeof(yyParser) );
   if( pParser ){
     pParser->yyidx = -1;
+#if YYSTACKDEPTH<=0
+    yyGrowStack(pParser);
+#endif
   }
   return pParser;
 }
@@ -308,6 +340,9 @@ void ParseFree(
   yyParser *pParser = (yyParser*)p;
   if( pParser==0 ) return;
   while( pParser->yyidx>=0 ) yy_pop_parser_stack(pParser);
+#if YYSTACKDEPTH<=0
+  free(pParser->yystack);
+#endif
   (*freeProc)((void*)pParser);
 }
 
@@ -400,6 +435,24 @@ static int yy_find_reduce_action(
 }
 
 /*
+** The following routine is called if the stack overflows.
+*/
+static void yyStackOverflow(yyParser *yypParser){
+   ParseARG_FETCH;
+   yypParser->yyidx--;
+#ifndef NDEBUG
+   if( yyTraceFILE ){
+     fprintf(yyTraceFILE,"%sStack Overflow!\n",yyTracePrompt);
+   }
+#endif
+   while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
+   /* Here code is inserted which will execute if the parser
+   ** stack every overflows */
+%%
+   ParseARG_STORE; /* Suppress warning about unused %extra_argument var */
+}
+
+/*
 ** Perform a shift action.
 */
 static void yy_shift(
@@ -410,21 +463,20 @@ static void yy_shift(
 ){
   yyStackEntry *yytos;
   yypParser->yyidx++;
+#if YYSTACKDEPTH>0 
   if( yypParser->yyidx>=YYSTACKDEPTH ){
-     ParseARG_FETCH;
-     yypParser->yyidx--;
-#ifndef NDEBUG
-     if( yyTraceFILE ){
-       fprintf(yyTraceFILE,"%sStack Overflow!\n",yyTracePrompt);
-     }
-#endif
-     while( yypParser->yyidx>=0 ) yy_pop_parser_stack(yypParser);
-     /* Here code is inserted which will execute if the parser
-     ** stack every overflows */
-%%
-     ParseARG_STORE; /* Suppress warning about unused %extra_argument var */
-     return;
+    yyStackOverflow(yypParser);
+    return;
   }
+#else
+  if( yypParser->yyidx>=yypParser->yystksz ){
+    yyGrowStack(yypParser);
+    if( yypParser->yyidx>=yypParser->yystksz ){
+      yyStackOverflow(yypParser);
+      return;
+    }
+  }
+#endif
   yytos = &yypParser->yystack[yypParser->yyidx];
   yytos->stateno = yyNewState;
   yytos->major = yyMajor;
@@ -616,7 +668,10 @@ void Parse(
   /* (re)initialize the parser, if necessary */
   yypParser = (yyParser*)yyp;
   if( yypParser->yyidx<0 ){
-    /* if( yymajor==0 ) return; // not sure why this was here... */
+    if( yypParser->yystksz <=0 ){
+      yyStackOverflow(yypParser);
+      return;
+    }
     yypParser->yyidx = 0;
     yypParser->yyerrcnt = -1;
     yypParser->yystack[0].stateno = 0;

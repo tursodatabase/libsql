@@ -3514,13 +3514,6 @@ int mhflag;     /* Output in makeheaders format if true */
   print_stack_union(out,lemp,&lineno,mhflag);
   fprintf(out, "#ifndef YYSTACKDEPTH\n"); lineno++;
   if( lemp->stacksize ){
-    if( atoi(lemp->stacksize)<=0 ){
-      ErrorMsg(lemp->filename,0,
-"Illegal stack size: [%s].  The stack size should be an integer constant.",
-        lemp->stacksize);
-      lemp->errorcnt++;
-      lemp->stacksize = "100";
-    }
     fprintf(out,"#define YYSTACKDEPTH %s\n",lemp->stacksize);  lineno++;
   }else{
     fprintf(out,"#define YYSTACKDEPTH 100\n");  lineno++;
