@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.9 2007/03/25 19:08:47 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.10 2007/03/29 18:46:01 drh Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -142,10 +142,11 @@ struct sqlite3_api_routines {
   const void * (*value_text16be)(sqlite3_value*);
   const void * (*value_text16le)(sqlite3_value*);
   int  (*value_type)(sqlite3_value*);
-  char * (*vmprintf)(const char*,va_list);
+  char *(*vmprintf)(const char*,va_list);
   int (*overload_function)(sqlite3*, const char *zFuncName, int nArg);
-  int  (*prepare_v2)(sqlite3*,const char*,int,sqlite3_stmt**,const char**);
-  int  (*prepare16_v2)(sqlite3*,const void*,int,sqlite3_stmt**,const void**);
+  int (*prepare_v2)(sqlite3*,const char*,int,sqlite3_stmt**,const char**);
+  int (*prepare16_v2)(sqlite3*,const void*,int,sqlite3_stmt**,const void**);
+  int (*clear_bindings)(sqlite3_stmt*);
 };
 
 /*
@@ -278,6 +279,9 @@ struct sqlite3_api_routines {
 #define sqlite3_value_type             sqlite3_api->value_type
 #define sqlite3_vmprintf               sqlite3_api->vmprintf
 #define sqlite3_overload_function      sqlite3_api->overload_function
+#define sqlite3_prepare_v2             sqlite3_api->prepare_v2
+#define sqlite3_prepare16_v2           sqlite3_api->prepare16_v2
+#define sqlite3_clear_bindings         sqlite3_api->clear_bindings
 #endif /* SQLITE_CORE */
 
 #define SQLITE_EXTENSION_INIT1     const sqlite3_api_routines *sqlite3_api;

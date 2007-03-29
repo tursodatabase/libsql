@@ -235,6 +235,7 @@ const sqlite3_api_routines sqlite3_apis = {
   */
   sqlite3_prepare_v2,
   sqlite3_prepare16_v2,
+  sqlite3_clear_bindings,
 };
 
 /*

@@ -1,5 +1,5 @@
-C Buffer\supdates\sper-transaction\srather\sthan\sper-update.\s\sIf\slots\sof\nupdates\shappen\swithin\sa\ssingle\stransaction,\sthere\swas\sa\slot\sof\swasted\nencode/decode\soverhead\sdue\sto\ssegment\smerges.\s\sThis\scode\sbuffers\nupdates\sin\smemory\sand\swrites\sout\slarger\slevel-0\ssegments.\s\sIt\sonly\nworks\swhen\sdocuments\sare\spresented\sin\sascending\sorder\sby\sdocid.\nComparing\sa\stest\sset\srunning\s100\sdocuments\sper\stransaction,\sthe\stotal\nruntime\sis\scut\salmost\sin\shalf.\s(CVS\s3751)
-D 2007-03-29T18:41:04
+C Add\sthe\ssqlite3_clear_bindings()\sAPI\sto\sthe\sloadable\sextension\sinterface.\nTicket\s#2135.\s(CVS\s3752)
+D 2007-03-29T18:46:01
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -72,7 +72,7 @@ F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c aa61e77807becb8b6c3ffcf53be98d20b0e6f107
 F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
-F src/loadext.c c186ad5c9e8a0aaa73d0caf5f604d112e45e8b89
+F src/loadext.c 146fb9b9dc6133e763888d710205c32ebf8eeca2
 F src/main.c 3ca92e8f2397da413c39f5a102e5675f5c5fa78a
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 5a194b9b9a10dc66543d4ca22bc0db40c5cc5ef1
@@ -97,7 +97,7 @@ F src/select.c 30af458c6a0a4a283c67b56c70ff0712b67d42ae
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 3ae4654560e91220a95738a73d135d91d937cda1
 F src/sqlite.h.in 02d1159bc8f7387008df9766c79038fce8a9d3a7
-F src/sqlite3ext.h 832e13de075d920e2c76584e2b7af1054bb212df
+F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h c8d0e5ce27a862836de70fc3eadc1e65cea7e3d8
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c a8d1166319db5d505b25ac6a9820162afe63fc8a
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0fb9af1d6e20bf25511c6d2097937cc11137776e
-R d919a3e5d99f3240c3cbaae5d6308d75
-U shess
-Z 095670ff47cc53d2ea62c92ebf93d308
+P 0229cba69698ab4b44f8583ef50a87c49422f8ec
+R 0602cf32177054f5c95ce51ab6e483d7
+U drh
+Z 95f3027619ab780219cc0e5271954b20
