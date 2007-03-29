@@ -1,5 +1,5 @@
-C Explicitly\stest\ssome\serror\scases\sthat\sup\suntil\snow\shave\snot\sbeen\schecked.\s(CVS\s3743)
-D 2007-03-29T12:24:17
+C Fix\sa\sbug\sin\sXFER\soptimization\sintroduced\sby\scheck-in\s(3736).\s(CVS\s3744)
+D 2007-03-29T13:35:36
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -70,7 +70,7 @@ F src/expr.c a8740c24af3f39f2d502be1a1c640c96435eaac0
 F src/func.c 94372fe3cf26b81d4dcdc15f98ff240c37c8c708
 F src/hash.c 449f3d6620193aa557f5d86cbc5cc6b87702b185
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
-F src/insert.c bdd1e2b48fede8ed1c25ca32747b9050bcbe2594
+F src/insert.c aa61e77807becb8b6c3ffcf53be98d20b0e6f107
 F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c c186ad5c9e8a0aaa73d0caf5f604d112e45e8b89
 F src/main.c ed005bbc1d94670c8d9e2b93d446bd493119c44c
@@ -444,7 +444,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P f26b014109b1b20367044c5d3fcb347af73d07aa
-R 05e6a5fcf08315b0a9bf7ee42168681e
-U danielk1977
-Z 03aaa5fc945d2c2de509f107c57e4b90
+P 0b7bd9c315501743e2364ecccefeeba326d5df51
+R f835600d7a31bbad1e89e4ca703027c6
+U drh
+Z 99dd3cdc6da74be6f4ae843c87cb0d89
