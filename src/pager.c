@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.307 2007/03/30 14:06:34 drh Exp $
+** @(#) $Id: pager.c,v 1.308 2007/03/30 14:46:01 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3707,6 +3707,7 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
     pPg = pager_get_all_dirty_pages(pPager);
     rc = pager_write_pagelist(pPg);
     if( rc!=SQLITE_OK ) goto sync_exit;
+    pPager->pDirty = 0;
 
     /* Sync the database file. */
     if( !pPager->noSync ){
@@ -3766,18 +3767,9 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
     pPager->state = PAGER_SHARED;
     return SQLITE_OK;
   }
-  if( pPager->dirtyCache==0 ){
-    /* Exit early (without doing the time-consuming sqlite3OsSync() calls)
-    ** if there have been no changes to the database file. */
-    assert( pPager->needSync==0 );
-    rc = pager_end_transaction(pPager);
-  }else{
-    assert( pPager->journalOpen );
-    rc = sqlite3PagerCommitPhaseOne(pPager, 0, 0);
-    if( rc==SQLITE_OK ){
-      rc = pager_end_transaction(pPager);
-    }
-  }
+  assert( pPager->journalOpen || !pPager->dirtyCache );
+  assert( pPager->state==PAGER_SYNCED || !pPager->dirtyCache );
+  rc = pager_end_transaction(pPager);
   return pager_error(pPager, rc);
 }
 

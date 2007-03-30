@@ -1,5 +1,5 @@
-C Refactoring\sthe\sbtree\sand\spager\sroutines\sinto\sdistinct\stwo-phase\scommit\nroutines.\s\sWe've\salways\sdone\sa\stwo-phase\scommit\s-\sthis\schange\sis\sjust\nmaking\sthat\smore\sapparent\sin\sthe\scode.\s(CVS\s3762)
-D 2007-03-30T14:06:34
+C Tease\sapart\sthe\stwo\sphases\sof\spager\scommit.\s(CVS\s3763)
+D 2007-03-30T14:46:01
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,7 +86,7 @@ F src/os_unix.c 4291be23eec73d1ec04010ae702364b781b5f773
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c3a8403ea28bbb89d6507fa984c5919bd3fe7539
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c f9131543cc602202de8a436ca9207e4c28b3f41e
+F src/pager.c 08e997b91657fd82dc19c1d06f965eeaaa2de7f5
 F src/pager.h e79a24cf200b8771366217f5bca414f5b7823f42
 F src/parse.y 207ab04273ae13aa4a729b96008d294d5f334ab3
 F src/pragma.c 8fd4f98822007a8d2c34e235ad3c35f1d77b3e51
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 70c8c7e2ce5213778e63c200a6637849920deea6
-R a5a112b3409ee86a088223323643c5e6
+P 66b3ad09ea657d25d48cb75ec2671ea2dc1b6005
+R 87f3fb17b92b06ba0363d652e2c2e851
 U drh
-Z 49017f06f92594291d8addf7b78eb7c9
+Z a7a4533761023a234a1b0962226a7a23
