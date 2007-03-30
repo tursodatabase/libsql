@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.131 2007/03/30 11:12:08 drh Exp $
+** $Id: pragma.c,v 1.132 2007/03/30 17:11:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -100,7 +100,7 @@ static int getTempStore(const char *z){
 static int invalidateTempStorage(Parse *pParse){
   sqlite3 *db = pParse->db;
   if( db->aDb[1].pBt!=0 ){
-    if( db->flags & SQLITE_InTrans ){
+    if( !db->autoCommit ){
       sqlite3ErrorMsg(pParse, "temporary storage cannot be changed "
         "from within a transaction");
       return SQLITE_ERROR;

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.6 2007/03/30 14:56:35 danielk1977 Exp $
+# $Id: misc7.test,v 1.7 2007/03/30 17:11:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -65,37 +65,48 @@ proc use_up_files {} {
   return $ret
 }
 
+proc do_fileopen_test {prefix sql} {
+  set fd_list [use_up_files]
+  set ::go 1
+  set ::n 1
+  set ::sql $sql
+  while {$::go} {
+    catch {db close}
+    do_test ${prefix}.${::n} {
+      set rc [catch {
+        sqlite db test.db
+        db eval $::sql
+      } msg]
+      if {$rc == 0} {set ::go 0}
+  
+      expr {$rc == 0 || ($rc == 1 && [string first unable $msg]==0)}
+    } 1
+  
+    close [lindex $fd_list 0]
+    set fd_list [lrange $fd_list 1 end]
+    incr ::n
+  }
+  foreach fd $fd_list {
+    close $fd
+  }
+  db close
+}
+
 execsql { CREATE TABLE abc(a PRIMARY KEY, b, c); }
 db close
-set fd_list [use_up_files]
-set ::go 1
-set ::n 1
-while {$::go} {
-  catch {db close}
-  do_test misc7-6.$::n {
-    set rc [catch {
-      sqlite db test.db
-      db eval {
-        BEGIN;
-        INSERT INTO abc VALUES(1, 2, 3);
-        INSERT INTO abc VALUES(2, 3, 4);
-        INSERT INTO abc SELECT a+2, b, c FROM abc;
-        COMMIT;
-      }
-    } msg]
-    if {$rc == 0} {set ::go 0}
 
-    expr {$rc == 0 || ($rc == 1 && $msg eq "unable to open database file")}
-  } 1
+do_fileopen_test misc7-6.1 {
+  BEGIN;
+  INSERT INTO abc VALUES(1, 2, 3);
+  INSERT INTO abc VALUES(2, 3, 4);
+  INSERT INTO abc SELECT a+2, b, c FROM abc;
+  COMMIT;
+}
 
-  close [lindex $fd_list 0]
-  set fd_list [lrange $fd_list 1 end]
-  incr ::n
+do_fileopen_test misc7-6.2 {
+  PRAGMA temp.cache_size = 1000;
 }
-foreach fd $fd_list {
-  close $fd
-}
-db close
+
 #
 # End of tests for out-of-file-descriptors condition.
 #--------------------------------------------------------------------
@@ -105,7 +116,7 @@ sqlite3 db test.db
 # Test that the sqlite3_busy_timeout call seems to delay approximately
 # the right amount of time.
 #
-do_test misc7-6 {
+do_test misc7-7.0 {
   sqlite3 db2 test.db
   sqlite3_busy_timeout [sqlite3_connection_pointer db] 2000
   execsql {
@@ -216,5 +227,25 @@ ifcapable vtab {
   unset ::echo_module_cost
 }
 
+db close
+file delete -force test.db
+file delete -force test.db-journal
+sqlite3 db test.db
+
+ifcapable explain {
+  do_test misc7-14 {
+    execsql {
+      CREATE TABLE abc(a PRIMARY KEY, b, c);
+    }
+    execsql {
+      EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE rowid = 1;
+    }
+  } {0 0 {TABLE abc AS t2 USING PRIMARY KEY}}
+  do_test misc7-15 {
+    execsql {
+      EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE a = 1;
+    }
+  } {0 0 {TABLE abc AS t2 WITH INDEX sqlite_autoindex_abc_1}}
+}
 
 finish_test

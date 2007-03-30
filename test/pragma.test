@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.51 2007/01/27 14:26:07 drh Exp $
+# $Id: pragma.test,v 1.52 2007/03/30 17:11:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -854,6 +854,46 @@ do_test pragma-9.10 {
     SELECT * FROM temp_store_directory_test;
   "
 } {1 {no such table: temp_store_directory_test}}
+
+do_test pragma-9.11 {
+  execsql {
+    PRAGMA temp_store = 0;
+    PRAGMA temp_store;
+  }
+} {0}
+do_test pragma-9.12 {
+  execsql {
+    PRAGMA temp_store = 1;
+    PRAGMA temp_store;
+  }
+} {1}
+do_test pragma-9.13 {
+  execsql {
+    PRAGMA temp_store = 2;
+    PRAGMA temp_store;
+  }
+} {2}
+do_test pragma-9.14 {
+  execsql {
+    PRAGMA temp_store = 3;
+    PRAGMA temp_store;
+  }
+} {0}
+breakpoint
+do_test pragma-9.15 {
+  catchsql {
+    BEGIN EXCLUSIVE;
+    CREATE TEMP TABLE temp_table(t);
+    INSERT INTO temp_table VALUES('valuable data');
+    PRAGMA temp_store = 1;
+  }
+} {1 {temporary storage cannot be changed from within a transaction}}
+do_test pragma-9.16 {
+  execsql {
+    SELECT * FROM temp_table;
+    COMMIT;
+  }
+} {{valuable data}}
 } ;# ifcapable pager_pragmas
 
 ifcapable trigger {
