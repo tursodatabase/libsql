@@ -390,7 +390,11 @@ TriggerStep *sqlite3TriggerUpdateStep(
   int orconf           /* The conflict algorithm. (OE_Abort, OE_Ignore, etc) */
 ){
   TriggerStep *pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
-  if( pTriggerStep==0 ) return 0;
+  if( pTriggerStep==0 ){
+     sqlite3ExprListDelete(pEList);
+     sqlite3ExprDelete(pWhere);
+     return 0;
+  }
 
   pTriggerStep->op = TK_UPDATE;
   pTriggerStep->target  = *pTableName;
