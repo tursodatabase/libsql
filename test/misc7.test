@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.4 2007/03/30 09:13:14 danielk1977 Exp $
+# $Id: misc7.test,v 1.5 2007/03/30 13:01:32 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -100,13 +100,13 @@ db close
 # End of tests for out-of-file-descriptors condition.
 #--------------------------------------------------------------------
 
+sqlite3 db test.db
 #--------------------------------------------------------------------
 # Test that the sqlite3_busy_timeout call seems to delay approximately
 # the right amount of time.
 #
 do_test misc7-6 {
   sqlite3 db2 test.db
-  sqlite3 db test.db
   sqlite3_busy_timeout [sqlite3_connection_pointer db] 2000
   execsql {
     BEGIN EXCLUSIVE;
@@ -116,13 +116,16 @@ do_test misc7-6 {
   # a busy-timeout of 2000 milliseconds. So check that trying to
   # access the database using connection db delays for at least 1500 ms.
   #
-  set c1 [clock clicks -milliseconds]
-  catchsql {
-    SELECT * FROM sqlite_master;
-  } db
-  expr {([clock clicks -milliseconds]-$c1) > 1500 ? 1 : 0}
-} {1}
+  set tm [time {
+    set result [catchsql {
+        SELECT * FROM sqlite_master;
+      } db]
+  }]
+  set delay [lindex $tm 0]  ;# In microseconds
+  lappend result [expr {$delay>1500000 && $delay<3000000}]
+} {1 {database is locked} 1}
 db2 close
+
 
 #--------------------------------------------------------------------
 # Test that nothing goes horribly wrong when attaching a database
@@ -166,7 +169,6 @@ do_test misc7-9 {
 ifcapable vtab {
   do_test misc7-10 {
     register_echo_module [sqlite3_connection_pointer db]
-    set sqlite_where_trace 1
     execsql {
       CREATE VIRTUAL TABLE t1 USING echo(abc);
       SELECT a FROM t1 WHERE a = 1 ORDER BY b;
