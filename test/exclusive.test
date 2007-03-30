@@ -12,7 +12,7 @@
 # of these tests is exclusive access mode (i.e. the thing activated by 
 # "PRAGMA locking_mode = EXCLUSIVE").
 #
-# $Id: exclusive.test,v 1.3 2007/03/26 10:27:19 danielk1977 Exp $
+# $Id: exclusive.test,v 1.4 2007/03/30 16:01:55 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -36,8 +36,9 @@ do_test exclusive-1.0 {
   execsql {
     pragma locking_mode;
     pragma main.locking_mode;
+    pragma temp.locking_mode;
   } 
-} {normal normal}
+} {normal normal exclusive}
 do_test exclusive-1.1 {
   execsql {
     pragma locking_mode = exclusive;
@@ -47,8 +48,9 @@ do_test exclusive-1.2 {
   execsql {
     pragma locking_mode;
     pragma main.locking_mode;
+    pragma temp.locking_mode;
   } 
-} {exclusive exclusive}
+} {exclusive exclusive exclusive}
 do_test exclusive-1.3 {
   execsql {
     pragma locking_mode = normal;
@@ -58,8 +60,9 @@ do_test exclusive-1.4 {
   execsql {
     pragma locking_mode;
     pragma main.locking_mode;
+    pragma temp.locking_mode;
   } 
-} {normal normal}
+} {normal normal exclusive}
 do_test exclusive-1.5 {
   execsql {
     pragma locking_mode = invalid;
@@ -69,8 +72,9 @@ do_test exclusive-1.6 {
   execsql {
     pragma locking_mode;
     pragma main.locking_mode;
+    pragma temp.locking_mode;
   } 
-} {normal normal}
+} {normal normal exclusive}
 do_test exclusive-1.7 {
   execsql {
     pragma locking_mode = exclusive;
@@ -87,9 +91,10 @@ do_test exclusive-1.8 {
   }
   execsql {
     pragma main.locking_mode;
+    pragma temp.locking_mode;
     pragma aux.locking_mode;
   }
-} {normal exclusive}
+} {normal exclusive exclusive}
 do_test exclusive-1.9 {
   execsql {
     pragma locking_mode;
@@ -121,21 +126,23 @@ do_test exclusive-1.12 {
   }
   execsql {
     pragma main.locking_mode;
+    pragma temp.locking_mode;
     pragma aux.locking_mode;
     pragma aux2.locking_mode;
   }
-} {normal normal normal}
+} {normal exclusive normal normal}
 do_test exclusive-1.13 {
   execsql {
     ATTACH 'test4.db' as aux3;
   }
   execsql {
     pragma main.locking_mode;
+    pragma temp.locking_mode;
     pragma aux.locking_mode;
     pragma aux2.locking_mode;
     pragma aux3.locking_mode;
   }
-} {normal normal normal normal}
+} {normal exclusive normal normal normal}
 
 do_test exclusive-1.99 {
   execsql {
@@ -367,7 +374,14 @@ do_test exclusive-4.5 {
 # Tests exclusive-5.X - test that statement journals are truncated
 # instead of deleted when in exclusive access mode.
 #
-#set sqlite_os_trace 1
+
+# Close and reopen the database so that the temp database is no
+# longer active.
+#
+db close
+sqlite db test.db
+
+
 do_test exclusive-5.0 {
   execsql {
     CREATE TABLE abc(a UNIQUE, b UNIQUE, c UNIQUE);
@@ -422,4 +436,3 @@ do_test exclusive-5.7 {
 } {1}
 
 finish_test
-

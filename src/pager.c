@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.308 2007/03/30 14:46:01 drh Exp $
+** @(#) $Id: pager.c,v 1.309 2007/03/30 16:01:55 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -85,21 +85,24 @@
 **   PAGER_SYNCED        The pager moves to this state from PAGER_EXCLUSIVE
 **                       after all dirty pages have been written to the
 **                       database file and the file has been synced to
-**                       disk. All that remains to do is to remove the
-**                       journal file and the transaction will be
-**                       committed.
+**                       disk. All that remains to do is to remove or
+**                       truncate the journal file and the transaction 
+**                       will be committed.
 **
 ** The page cache comes up in PAGER_UNLOCK.  The first time a
 ** sqlite3PagerGet() occurs, the state transitions to PAGER_SHARED.
 ** After all pages have been released using sqlite_page_unref(),
 ** the state transitions back to PAGER_UNLOCK.  The first time
 ** that sqlite3PagerWrite() is called, the state transitions to
-** PAGER_RESERVED.  (Note that sqlite_page_write() can only be
+** PAGER_RESERVED.  (Note that sqlite3PagerWrite() can only be
 ** called on an outstanding page which means that the pager must
 ** be in PAGER_SHARED before it transitions to PAGER_RESERVED.)
-** The transition to PAGER_EXCLUSIVE occurs when before any changes
-** are made to the database file.  After an sqlite3PagerRollback()
-** or sqlite_pager_commit(), the state goes back to PAGER_SHARED.
+** PAGER_RESERVED means that there is an open rollback journal.
+** The transition to PAGER_EXCLUSIVE occurs before any changes
+** are made to the database file, though writes to the rollback
+** journal occurs with just PAGER_RESERVED.  After an sqlite3PagerRollback()
+** or sqlite3PagerCommitPhaseTwo(), the state can go back to PAGER_SHARED,
+** or it can stay at PAGER_EXCLUSIVE if we are in exclusive access mode.
 */
 #define PAGER_UNLOCK      0
 #define PAGER_SHARED      1   /* same as SHARED_LOCK */
@@ -1781,6 +1784,10 @@ int sqlite3PagerOpen(
   /* pPager->state = PAGER_UNLOCK; */
   /* pPager->errMask = 0; */
   pPager->tempFile = tempFile;
+  assert( tempFile==PAGER_LOCKINGMODE_NORMAL 
+          || tempFile==PAGER_LOCKINGMODE_EXCLUSIVE );
+  assert( PAGER_LOCKINGMODE_EXCLUSIVE==1 );
+  pPager->exclusiveMode = tempFile; 
   pPager->memDb = memDb;
   pPager->readOnly = readOnly;
   /* pPager->needSync = 0; */
@@ -3192,12 +3199,13 @@ int sqlite3PagerBegin(DbPage *pPg, int exFlag){
     */
     assert( pPager->nRec==0 );
     assert( pPager->origDbSize==0 );
+    assert( pPager->aInJournal==0 );
     sqlite3PagerPagecount(pPager);
-    pPager->origDbSize = pPager->dbSize;
     pPager->aInJournal = sqliteMalloc( pPager->dbSize/8 + 1 );
     if( !pPager->aInJournal ){
       rc = SQLITE_NOMEM;
     }else{
+      pPager->origDbSize = pPager->dbSize;
       rc = writeJournalHdr(pPager);
     }
   }
@@ -4173,7 +4181,12 @@ void *sqlite3PagerGetExtra(DbPage *pPg){
 ** locking-mode.
 */
 int sqlite3PagerLockingMode(Pager *pPager, int eMode){
-  if( eMode>=0 ){
+  assert( eMode==PAGER_LOCKINGMODE_QUERY
+            || eMode==PAGER_LOCKINGMODE_NORMAL
+            || eMode==PAGER_LOCKINGMODE_EXCLUSIVE );
+  assert( PAGER_LOCKINGMODE_QUERY<0 );
+  assert( PAGER_LOCKINGMODE_NORMAL>=0 && PAGER_LOCKINGMODE_EXCLUSIVE>=0 );
+  if( eMode>=0 && !pPager->tempFile ){
     pPager->exclusiveMode = eMode;
   }
   return (int)pPager->exclusiveMode;
