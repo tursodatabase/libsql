@@ -437,7 +437,7 @@ static int yy_find_reduce_action(
 /*
 ** The following routine is called if the stack overflows.
 */
-static void yyStackOverflow(yyParser *yypParser){
+static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
    ParseARG_FETCH;
    yypParser->yyidx--;
 #ifndef NDEBUG
@@ -465,14 +465,14 @@ static void yy_shift(
   yypParser->yyidx++;
 #if YYSTACKDEPTH>0 
   if( yypParser->yyidx>=YYSTACKDEPTH ){
-    yyStackOverflow(yypParser);
+    yyStackOverflow(yypParser, yypMinor);
     return;
   }
 #else
   if( yypParser->yyidx>=yypParser->yystksz ){
     yyGrowStack(yypParser);
     if( yypParser->yyidx>=yypParser->yystksz ){
-      yyStackOverflow(yypParser);
+      yyStackOverflow(yypParser, yypMinor);
       return;
     }
   }
@@ -670,7 +670,8 @@ void Parse(
   if( yypParser->yyidx<0 ){
 #if YYSTACKDEPTH<=0
     if( yypParser->yystksz <=0 ){
-      yyStackOverflow(yypParser);
+      memset(&yyminorunion, 0, sizeof(yyminorunion));
+      yyStackOverflow(yypParser, &yyminorunion);
       return;
     }
 #endif
