@@ -1205,11 +1205,11 @@ static int vdbeCommit(sqlite3 *db){
     ** transaction files are deleted.
     */
     rc = sqlite3OsDelete(zMaster);
+    sqliteFree(zMaster);
+    zMaster = 0;
     if( rc ){
       return rc;
     }
-    sqliteFree(zMaster);
-    zMaster = 0;
     rc = sqlite3OsSyncDirectory(zMainFile);
     if( rc!=SQLITE_OK ){
       /* This is not good. The master journal file has been deleted, but
