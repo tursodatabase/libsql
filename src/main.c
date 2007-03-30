@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.364 2007/03/30 07:10:51 danielk1977 Exp $
+** $Id: main.c,v 1.365 2007/03/30 11:29:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -40,6 +40,16 @@ int sqlite3_libversion_number(void){ return SQLITE_VERSION_NUMBER; }
 ** are intended for debugging activity only.
 */
 void (*sqlite3_io_trace)(const char*, ...) = 0;
+
+/*
+** If the following global variable points to a string which is the
+** name of a directory, then that directory will be used to store
+** temporary files.
+**
+** See also the "PRAGMA temp_store_directory" SQL command.
+*/
+char *sqlite3_temp_directory = 0;
+
 
 /*
 ** This is the default collating function named "BINARY" which is always

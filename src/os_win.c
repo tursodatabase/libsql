@@ -899,13 +899,6 @@ static int winOpenDirectory(
 }
 
 /*
-** If the following global variable points to a string which is the
-** name of a directory, then that directory will be used to store
-** temporary files.
-*/
-char *sqlite3_temp_directory = 0;
-
-/*
 ** Create a temporary file name in zBuf.  zBuf must be big enough to
 ** hold at least SQLITE_TEMPNAME_SIZE characters.
 */

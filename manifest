@@ -1,5 +1,5 @@
-C Remove\sthe\sanonymous\sunion\sfrom\sthe\ssqlite3_value\sstructure\ssince\ssome\ncompilers\sare\sunable\sto\sdeal\swith\sit.\s(CVS\s3758)
-D 2007-03-30T11:23:45
+C Move\sthe\ssqlite3_temp_directory\sglobal\svariable\sout\sof\sthe\sOS\sporting\slayer\nand\sinto\smain.c\sso\sthat\sit\sis\smore\saccessible\sto\snon-standard\sOS\sporting\nlayers.\s(CVS\s3759)
+D 2007-03-30T11:29:32
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -73,18 +73,18 @@ F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c aa61e77807becb8b6c3ffcf53be98d20b0e6f107
 F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c 146fb9b9dc6133e763888d710205c32ebf8eeca2
-F src/main.c d3b86042d836c75768f5271ce1a9cc0cb620e69b
+F src/main.c e9ea17d6f16f658bf987dc660309d44771725e63
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 5a194b9b9a10dc66543d4ca22bc0db40c5cc5ef1
 F src/os.h 506acdfd0a63802434ceacdbfd7c006e5d90fc53
 F src/os_common.h c86e8cbd6150ca06d46b09ec02ff5fc5d4b05285
-F src/os_os2.c 313ece302183dfd83c4f281e1972656b7e6b672e
+F src/os_os2.c 2ce97909b926a598823f97338027dbec1dcf4165
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c fe0c0175036a5fb40124480771895ba524efa132
+F src/os_unix.c 4291be23eec73d1ec04010ae702364b781b5f773
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c d6cb36287a13a75cbf0b7084399c7884a96c4340
+F src/os_win.c c3a8403ea28bbb89d6507fa984c5919bd3fe7539
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c b89ea0f592e499ee6d6cda10b84688f8e47a05ba
 F src/pager.h f1b17bf848b3dce5d9afb2701186d3c9a8826f8c
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9a7d7e31908e9bac14a68bbc2fb4e1ca593ea234
-R 96b0eb3d9aac4cea00de02819c2dff8c
+P 6b995259bc974519379dee55c1ef00d28c76bf21
+R 5b7c741ec32530c9ec18095b66d7e19a
 U drh
-Z 42c64bfd0c87e235823de57a2239ca19
+Z 89a60eae512cacdc8a4d047378901d44
