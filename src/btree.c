@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.345 2007/03/29 05:51:49 drh Exp $
+** $Id: btree.c,v 1.346 2007/03/30 11:12:08 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2409,6 +2409,14 @@ autovacuum_out:
 
 /*
 ** Commit the transaction currently in progress.
+**
+** This routine implements the second phase of a 2-phase commit.  The
+** sqlite3BtreeSync() routine does the first phase and should be invoked
+** prior to calling this routine.  The sqlite3BtreeSync() routine did
+** all the work of writing information out to disk and flushing the
+** contents so that they are written onto the disk platter.  All this
+** routine has to do is delete or truncate the rollback journal
+** (which causes the transaction to commit) and drop locks.
 **
 ** This will release the write lock on the database file.  If there
 ** are no active cursors, it also releases the read lock.
@@ -6515,6 +6523,18 @@ int sqlite3BtreeIsInReadTrans(Btree *p){
 }
 
 /*
+** This routine does the first phase of a 2-phase commit.  This routine
+** causes a rollback journal to be created (if it does not already exist)
+** and populated with enough information so that if a power loss occurs
+** the database can be restored to its original state by playing back
+** the journal.  Then the contents of the journal are flushed out to
+** the disk.  After the journal is safely on oxide, the changes to the
+** database are written into the database file and flushed to oxide.
+** At the end of this call, the rollback journal still exists on the
+** disk and we are still holding all locks, so the transaction has not
+** committed.  See sqlite3BtreeCommit() for the second phase of the
+** commit process.
+**
 ** This call is a no-op if no write-transaction is currently active on pBt.
 **
 ** Otherwise, sync the database file for the btree pBt. zMaster points to
