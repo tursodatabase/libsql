@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.310 2007/03/30 17:18:51 drh Exp $
+** @(#) $Id: pager.c,v 1.311 2007/03/30 20:43:42 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -215,7 +215,7 @@ struct PgHistory {
 /*
 ** A open page cache is an instance of the following structure.
 **
-** Pager.errCode may be set to SQLITE_IOERR, SQLITE_CORRUPT, SQLITE_PROTOCOL
+** Pager.errCode may be set to SQLITE_IOERR, SQLITE_CORRUPT, or
 ** or SQLITE_FULL. Once one of the first three errors occurs, it persists
 ** and is returned as the result of every major pager API call.  The
 ** SQLITE_FULL return code is slightly different. It persists only until the
@@ -475,7 +475,7 @@ static u32 retrieve32bits(PgHdr *p, int offset){
 ** second the error-code about to be returned by a pager API function. 
 ** The value returned is a copy of the second argument to this function. 
 **
-** If the second argument is SQLITE_IOERR, SQLITE_CORRUPT or SQLITE_PROTOCOL,
+** If the second argument is SQLITE_IOERR, SQLITE_CORRUPT, or SQLITE_FULL
 ** the error becomes persistent. All subsequent API calls on this Pager
 ** will immediately return the same error code.
 */
@@ -485,8 +485,7 @@ static int pager_error(Pager *pPager, int rc){
   if(
     rc2==SQLITE_FULL ||
     rc2==SQLITE_IOERR ||
-    rc2==SQLITE_CORRUPT ||
-    rc2==SQLITE_PROTOCOL
+    rc2==SQLITE_CORRUPT
   ){
     pPager->errCode = rc;
   }
@@ -3790,7 +3789,7 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
 ** The journal is deleted.
 **
 ** This routine cannot fail unless some other process is not following
-** the correct locking protocol (SQLITE_PROTOCOL) or unless some other
+** the correct locking protocol or unless some other
 ** process is writing trash into the journal file (SQLITE_CORRUPT) or
 ** unless a prior malloc() failed (SQLITE_NOMEM).  Appropriate error
 ** codes are returned for all these occasions.  Otherwise,

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.347 2007/03/30 14:06:34 drh Exp $
+** $Id: btree.c,v 1.348 2007/03/30 20:43:41 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -1840,8 +1840,7 @@ int sqlite3BtreeGetAutoVacuum(Btree *p){
 ** SQLITE_OK is returned on success.  If the file is not a
 ** well-formed database file, then SQLITE_CORRUPT is returned.
 ** SQLITE_BUSY is returned if the database is locked.  SQLITE_NOMEM
-** is returned if we run out of memory.  SQLITE_PROTOCOL is returned
-** if there is a locking protocol violation.
+** is returned if we run out of memory. 
 */
 static int lockBtree(BtShared *pBt){
   int rc, pageSize;

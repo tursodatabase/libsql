@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sthat\soccurs\safter\sa\smalloc\sfailure\sin\strigger\sparsing.\s(CVS\s3772)
-D 2007-03-30T20:40:34
+C Remove\svestiges\sof\sthe\sSQLITE_PROTOCOL\serror.\s(CVS\s3773)
+D 2007-03-30T20:43:41
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -58,7 +58,7 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 4bbf5ddf9680587c6d4917e02e378b6037be3651
 F src/attach.c a16ada4a4654a0d126b8223ec9494ebb81bc5c3c
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c 931d8d6eb3e669d6e42305dce3f196bf071a53b6
+F src/btree.c ef4a874b7b45dbfd26753088084594c39f3a1703
 F src/btree.h 9b2cc0d113c0bc2d37d244b9a394d56948c9acbf
 F src/build.c ad3374b5409554e504300f77e1fbc6b4c106a57f
 F src/callback.c 31d22b4919c7645cbcbb1591ce2453e8c677c558
@@ -73,7 +73,7 @@ F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c aa61e77807becb8b6c3ffcf53be98d20b0e6f107
 F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c 146fb9b9dc6133e763888d710205c32ebf8eeca2
-F src/main.c e9ea17d6f16f658bf987dc660309d44771725e63
+F src/main.c a02581f5076a49f18f67b00fdc4c7ae338adc679
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 5a194b9b9a10dc66543d4ca22bc0db40c5cc5ef1
 F src/os.h 506acdfd0a63802434ceacdbfd7c006e5d90fc53
@@ -86,7 +86,7 @@ F src/os_unix.c 4291be23eec73d1ec04010ae702364b781b5f773
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c3a8403ea28bbb89d6507fa984c5919bd3fe7539
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 15118c2b519e4969e77d356b9d4ed6ca5839b196
+F src/pager.c 70de94d2681ea8f677fead0e21fcc39efb6bebb5
 F src/pager.h e79a24cf200b8771366217f5bca414f5b7823f42
 F src/parse.y 207ab04273ae13aa4a729b96008d294d5f334ab3
 F src/pragma.c 3b992b5b2640d6ae25cef05aa6a42cd1d6c43234
@@ -96,7 +96,7 @@ F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c 30af458c6a0a4a283c67b56c70ff0712b67d42ae
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 3ae4654560e91220a95738a73d135d91d937cda1
-F src/sqlite.h.in 02d1159bc8f7387008df9766c79038fce8a9d3a7
+F src/sqlite.h.in e429f66f9245c7f8675db24b230c950b8672ad1c
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h c8d0e5ce27a862836de70fc3eadc1e65cea7e3d8
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 28c7ed1eb799203a569cdae97da974b347f39579
-R a0905c32cd90b0b80a1bc1360611ccd5
+P 407a85e69b7a1229218a5ce9a9e31255c7070294
+R 8cc4fbe4ed28e5ec8da4461ea49f7b7b
 U drh
-Z bf54325597d09c764d008fa62cbdee79
+Z 50a277b3c966fe2fc239035aa22b6aaf

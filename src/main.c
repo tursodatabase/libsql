@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.365 2007/03/30 11:29:32 drh Exp $
+** $Id: main.c,v 1.366 2007/03/30 20:43:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -260,7 +260,6 @@ const char *sqlite3ErrStr(int rc){
     case SQLITE_CORRUPT:    z = "database disk image is malformed";      break;
     case SQLITE_FULL:       z = "database or disk is full";              break;
     case SQLITE_CANTOPEN:   z = "unable to open database file";          break;
-    case SQLITE_PROTOCOL:   z = "database locking protocol failure";     break;
     case SQLITE_EMPTY:      z = "table contains no data";                break;
     case SQLITE_SCHEMA:     z = "database schema has changed";           break;
     case SQLITE_CONSTRAINT: z = "constraint failed";                     break;
