@@ -719,7 +719,7 @@ int sqlite3VdbeList(
     Mem *pMem = p->aStack;
     pMem->flags = MEM_Int;
     pMem->type = SQLITE_INTEGER;
-    pMem->i = i;                                /* Program counter */
+    pMem->u.i = i;                                /* Program counter */
     pMem++;
 
     pMem->flags = MEM_Static|MEM_Str|MEM_Term;
@@ -731,12 +731,12 @@ int sqlite3VdbeList(
     pMem++;
 
     pMem->flags = MEM_Int;
-    pMem->i = pOp->p1;                          /* P1 */
+    pMem->u.i = pOp->p1;                          /* P1 */
     pMem->type = SQLITE_INTEGER;
     pMem++;
 
     pMem->flags = MEM_Int;
-    pMem->i = pOp->p2;                          /* P2 */
+    pMem->u.i = pOp->p2;                          /* P2 */
     pMem->type = SQLITE_INTEGER;
     pMem++;
 
@@ -1739,7 +1739,7 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
   if( flags&MEM_Int ){
     /* Figure out whether to use 1, 2, 4, 6 or 8 bytes. */
 #   define MAX_6BYTE ((((i64)0x00001000)<<32)-1)
-    i64 i = pMem->i;
+    i64 i = pMem->u.i;
     u64 u;
     if( file_format>=4 && (i&1)==i ){
       return 8+i;
@@ -1795,7 +1795,7 @@ int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem, int file_format){
       assert( sizeof(v)==sizeof(pMem->r) );
       memcpy(&v, &pMem->r, sizeof(v));
     }else{
-      v = pMem->i;
+      v = pMem->u.i;
     }
     len = i = sqlite3VdbeSerialTypeLen(serial_type);
     while( i-- ){
@@ -1833,22 +1833,22 @@ int sqlite3VdbeSerialGet(
       break;
     }
     case 1: { /* 1-byte signed integer */
-      pMem->i = (signed char)buf[0];
+      pMem->u.i = (signed char)buf[0];
       pMem->flags = MEM_Int;
       return 1;
     }
     case 2: { /* 2-byte signed integer */
-      pMem->i = (((signed char)buf[0])<<8) | buf[1];
+      pMem->u.i = (((signed char)buf[0])<<8) | buf[1];
       pMem->flags = MEM_Int;
       return 2;
     }
     case 3: { /* 3-byte signed integer */
-      pMem->i = (((signed char)buf[0])<<16) | (buf[1]<<8) | buf[2];
+      pMem->u.i = (((signed char)buf[0])<<16) | (buf[1]<<8) | buf[2];
       pMem->flags = MEM_Int;
       return 3;
     }
     case 4: { /* 4-byte signed integer */
-      pMem->i = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
+      pMem->u.i = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
       pMem->flags = MEM_Int;
       return 4;
     }
@@ -1856,7 +1856,7 @@ int sqlite3VdbeSerialGet(
       u64 x = (((signed char)buf[0])<<8) | buf[1];
       u32 y = (buf[2]<<24) | (buf[3]<<16) | (buf[4]<<8) | buf[5];
       x = (x<<32) | y;
-      pMem->i = *(i64*)&x;
+      pMem->u.i = *(i64*)&x;
       pMem->flags = MEM_Int;
       return 6;
     }
@@ -1877,7 +1877,7 @@ int sqlite3VdbeSerialGet(
       y = (buf[4]<<24) | (buf[5]<<16) | (buf[6]<<8) | buf[7];
       x = (x<<32) | y;
       if( serial_type==6 ){
-        pMem->i = *(i64*)&x;
+        pMem->u.i = *(i64*)&x;
         pMem->flags = MEM_Int;
       }else{
         assert( sizeof(x)==8 && sizeof(pMem->r)==8 );
@@ -1889,7 +1889,7 @@ int sqlite3VdbeSerialGet(
     }
     case 8:    /* Integer 0 */
     case 9: {  /* Integer 1 */
-      pMem->i = serial_type-8;
+      pMem->u.i = serial_type-8;
       pMem->flags = MEM_Int;
       return 0;
     }
@@ -2045,7 +2045,7 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   sqlite3GetVarint32((u8*)&m.z[szHdr-1], &typeRowid);
   lenRowid = sqlite3VdbeSerialTypeLen(typeRowid);
   sqlite3VdbeSerialGet((u8*)&m.z[m.n-lenRowid], typeRowid, &v);
-  *rowid = v.i;
+  *rowid = v.u.i;
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
 }

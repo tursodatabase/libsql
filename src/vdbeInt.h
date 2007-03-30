@@ -127,8 +127,8 @@ typedef struct Cursor Cursor;
 struct Mem {
   union {
     i64 i;              /* Integer value. Or FuncDef* when flags==MEM_Agg */
-    FuncDef *pDef;
-  };
+    FuncDef *pDef;      /* Used only when flags==MEM_Agg */
+  } u;
   double r;           /* Real value */
   char *z;            /* String or BLOB value */
   int n;              /* Number of characters in string value, including '\0' */

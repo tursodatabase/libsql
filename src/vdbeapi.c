@@ -341,7 +341,7 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
     }else{
       pMem->flags = MEM_Agg;
       pMem->xDel = sqlite3FreeX;
-      pMem->pDef = p->pFunc;
+      pMem->u.pDef = p->pFunc;
       if( nByte<=NBFS ){
         pMem->z = pMem->zShort;
         memset(pMem->z, 0, nByte);
