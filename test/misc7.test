@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.5 2007/03/30 13:01:32 drh Exp $
+# $Id: misc7.test,v 1.6 2007/03/30 14:56:35 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -164,9 +164,13 @@ do_test misc7-9 {
 } {}
 
 #--------------------------------------------------------------------
-# Improve reported coverage by running some debugging code:
+# Improve coverage for vtab code.
 #
 ifcapable vtab {
+  # Run some debug code to improve reported coverage
+  #
+
+  # set sqlite_where_trace 1
   do_test misc7-10 {
     register_echo_module [sqlite3_connection_pointer db]
     execsql {
@@ -174,6 +178,43 @@ ifcapable vtab {
       SELECT a FROM t1 WHERE a = 1 ORDER BY b;
     }
   } {1}
+  set sqlite_where_trace 0
+
+  # Specify an ORDER BY clause that cannot be indexed.
+  do_test misc7-11 {
+    execsql {
+      SELECT t1.a, t2.a FROM t1, t1 AS t2 ORDER BY 2 LIMIT 1;
+    }
+  } {1 1}
+
+  # The whole point of this is to test an error code other than
+  # SQLITE_NOMEM from the vtab xBestIndex callback.
+  #
+  do_ioerr_test misc7-12 -tclprep {
+    sqlite3 db2 test.db
+    register_echo_module [sqlite3_connection_pointer db2]
+    db2 eval {
+      CREATE TABLE abc(a PRIMARY KEY, b, c);
+      INSERT INTO abc VALUES(1, 2, 3);
+      CREATE VIRTUAL TABLE t1 USING echo(abc);
+    }
+    db2 close
+  } -tclbody {
+    register_echo_module [sqlite3_connection_pointer db]
+    execsql {SELECT * FROM t1 WHERE a = 1;}
+  } 
+
+  # The case where the virtual table module returns a very large number
+  # as the cost of a scan (greater than SQLITE_BIG_DOUBLE in the code).
+  #
+  do_test misc7-13 {
+    sqlite3 db test.db
+    register_echo_module [sqlite3_connection_pointer db]
+    set ::echo_module_cost 2.0e+99
+    execsql {SELECT * FROM t1 WHERE a = 1;}
+  } {1 2 3}
+  unset ::echo_module_cost
 }
+
 
 finish_test

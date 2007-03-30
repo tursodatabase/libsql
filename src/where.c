@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.243 2007/03/30 09:13:14 danielk1977 Exp $
+** $Id: where.c,v 1.244 2007/03/30 14:56:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1832,6 +1832,10 @@ static void whereInfoFree(WhereInfo *pWInfo){
       sqlite3_index_info *pInfo = pWInfo->a[i].pIdxInfo;
       if( pInfo ){
         if( pInfo->needToFreeIdxStr ){
+          /* Coverage: Don't think this can be reached. By the time this
+          ** function is called, the index-strings have been passed
+          ** to the vdbe layer for deletion.
+          */
           sqlite3_free(pInfo->idxStr);
         }
         sqliteFree(pInfo);

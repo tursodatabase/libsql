@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.44 2007/01/03 23:37:29 drh Exp $
+** $Id: test8.c,v 1.45 2007/03/30 14:56:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -27,12 +27,13 @@ typedef struct echo_vtab echo_vtab;
 typedef struct echo_cursor echo_cursor;
 
 /*
-** The test module defined in this file uses two global Tcl variables to
+** The test module defined in this file uses four global Tcl variables to
 ** commicate with test-scripts:
 **
 **     $::echo_module
 **     $::echo_module_sync_fail
 **     $::echo_module_begin_fail
+**     $::echo_module_cost
 **
 ** The variable ::echo_module is a list. Each time one of the following
 ** methods is called, one or more elements are appended to the list.
@@ -627,27 +628,35 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   const char *zSep = "WHERE";
   echo_vtab *pVtab = (echo_vtab *)tab;
   sqlite3_stmt *pStmt = 0;
+  Tcl_Interp *interp = pVtab->interp;
 
   int nRow;
   int useIdx = 0;
   int rc = SQLITE_OK;
+  int useCost = 0;
+  double cost;
 
   /* Determine the number of rows in the table and store this value in local
   ** variable nRow. The 'estimated-cost' of the scan will be the number of
   ** rows in the table for a linear scan, or the log (base 2) of the 
   ** number of rows if the proposed scan uses an index.  
   */
-  zQuery = sqlite3_mprintf("SELECT count(*) FROM %Q", pVtab->zTableName);
-  rc = sqlite3_prepare(pVtab->db, zQuery, -1, &pStmt, 0);
-  sqlite3_free(zQuery);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-  sqlite3_step(pStmt);
-  nRow = sqlite3_column_int(pStmt, 0);
-  rc = sqlite3_finalize(pStmt);
-  if( rc!=SQLITE_OK ){
-    return rc;
+  if( Tcl_GetVar(interp, "echo_module_cost", TCL_GLOBAL_ONLY) ){
+    cost = atof(Tcl_GetVar(interp, "echo_module_cost", TCL_GLOBAL_ONLY));
+    useCost = 1;
+  } else {
+    zQuery = sqlite3_mprintf("SELECT count(*) FROM %Q", pVtab->zTableName);
+    rc = sqlite3_prepare(pVtab->db, zQuery, -1, &pStmt, 0);
+    sqlite3_free(zQuery);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+    sqlite3_step(pStmt);
+    nRow = sqlite3_column_int(pStmt, 0);
+    rc = sqlite3_finalize(pStmt);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
   }
 
   zQuery = sqlite3_mprintf("SELECT rowid, * FROM %Q", pVtab->zTableName);
@@ -717,7 +726,9 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   pIdxInfo->idxNum = hashString(zQuery);
   pIdxInfo->idxStr = zQuery;
   pIdxInfo->needToFreeIdxStr = 1;
-  if( useIdx ){
+  if (useCost) {
+    pIdxInfo->estimatedCost = cost;
+  } else if( useIdx ){
     /* Approximation of log2(nRow). */
     for( ii=0; ii<(sizeof(int)*8); ii++ ){
       if( nRow & (1<<ii) ){

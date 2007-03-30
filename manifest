@@ -1,5 +1,5 @@
-C Tease\sapart\sthe\stwo\sphases\sof\spager\scommit.\s(CVS\s3763)
-D 2007-03-30T14:46:01
+C Coverage\simprovements\sfor\swhere.c.\s(CVS\s3764)
+D 2007-03-30T14:56:35
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -108,7 +108,7 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 5957d249d437e4db74045ce2f1f661648d94bf94
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c 628ec89f9fbf3bfb9c58a503d845a0719595d0ad
+F src/test8.c 2af036d73b5ebf1b74d19f36b1b1ab22e1d99df1
 F src/test9.c cb1a7b5a4a918bb0552fd0101fd3f88d85904cd2
 F src/test_async.c 9d326ceda4306bcab252b8f7e8e480ed45d7ccb6
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
@@ -131,7 +131,7 @@ F src/vdbeaux.c 5efa6d0f6096f213fbdffa0b1bf0a4c8ae40d145
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c d3696b4b0e5f32272659816cdfa2348c650b1ba0
 F src/vtab.c 7fbda947e28cbe7adb3ba752a76ca9ef29936750
-F src/where.c b5f8e2a0b0758b631c236aef3c7ed9c3b197eae8
+F src/where.c 881cfd88a97dd9bdb366e5349a25a19ea89f40a1
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test 60267b055e82de4fb8b841eabb014bc2f836a4eb
@@ -274,7 +274,7 @@ F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
 F test/misc5.test c7d2d2a5a20dc37d3605a8067f0df5af2240122e
 F test/misc6.test 3de55ec5cadf466ada587173faa5d6a4790a8bb7
-F test/misc7.test c111c5cce45e2e7e7eada41675f9e42cfb4414e0
+F test/misc7.test 54b131b86086d018e805f40916755c5d08c0eb2e
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
@@ -359,7 +359,7 @@ F test/vacuum.test cf839fc3ff24d601057319bbb5c700ce9c8e0fb0
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 852bd4101e6d171c46ad682eb5c5faf662b2eba4
-F test/vtab1.test 92410029a2679c8751635ecaa023cf54bc5ab4eb
+F test/vtab1.test bf129928444f1fe3d992894f6e0b4c6d4a534d49
 F test/vtab2.test 94bb3bf691ac10e34cf7dad46b1cf94b861d513c
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 66b3ad09ea657d25d48cb75ec2671ea2dc1b6005
-R 87f3fb17b92b06ba0363d652e2c2e851
-U drh
-Z a7a4533761023a234a1b0962226a7a23
+P e5f17078a28b6a47d6943d40c526390c36258392
+R b56988b2a4f41fbf2d60eaa052f1ee98
+U danielk1977
+Z 4da0a0b65fb898aa87e0c0cc367ade9b
