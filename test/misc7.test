@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.7 2007/03/30 17:11:13 danielk1977 Exp $
+# $Id: misc7.test,v 1.8 2007/03/30 18:21:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -247,5 +247,53 @@ ifcapable explain {
     }
   } {0 0 {TABLE abc AS t2 WITH INDEX sqlite_autoindex_abc_1}}
 }
+
+db close
+file delete -force test.db
+file delete -force test.db-journal
+sqlite3 db test.db
+
+#--------------------------------------------------------------------
+# This is all to force the pager_remove_from_stmt_list() function
+# (inside pager.c) to remove a pager from the middle of the
+# statement-list.
+#
+do_test misc7-15.1 {
+  execsql {
+    PRAGMA cache_size = 10;
+    BEGIN;
+    CREATE TABLE abc(a PRIMARY KEY, b, c);
+    INSERT INTO abc 
+    VALUES(randstr(100,100), randstr(100,100), randstr(100,100));
+    INSERT INTO abc SELECT 
+            randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+    INSERT INTO abc SELECT 
+            randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+    INSERT INTO abc SELECT 
+            randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+    INSERT INTO abc SELECT 
+            randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+    INSERT INTO abc SELECT 
+            randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+    INSERT INTO abc SELECT 
+            randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+    INSERT INTO abc SELECT 
+            randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+    INSERT INTO abc SELECT 
+            randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+    COMMIT;
+  }
+  expr {[file size test.db]>10240}
+} {1}
+do_test misc7-15.2 {
+  execsql {
+    DELETE FROM abc WHERE rowid > 12;
+    INSERT INTO abc SELECT 
+            randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+  }
+} {}
+
+
+
 
 finish_test

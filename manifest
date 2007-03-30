@@ -1,5 +1,5 @@
-C Remove\sasserts\son\sthe\sexisting\sof\sjournal\sfiles\sin\spager\s-\sasserts\sthat\nare\snot\svalid\sfor\scertain\skinds\sof\ssimulated\sI/O\serrors\sor\sfor\sasync\sI/O.\s(CVS\s3769)
-D 2007-03-30T17:18:51
+C Coverage\stesting\sfor\sa\sfew\slines\sin\spager.c.\s(CVS\s3770)
+D 2007-03-30T18:21:53
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -274,7 +274,7 @@ F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
 F test/misc5.test c7d2d2a5a20dc37d3605a8067f0df5af2240122e
 F test/misc6.test 3de55ec5cadf466ada587173faa5d6a4790a8bb7
-F test/misc7.test 92c5d9ea7f860ec1ecd0a18c343c7f684db6b04a
+F test/misc7.test 6f59801b47e042e353a71d282f697782baac2f9d
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P cd6ca078e3402f06836b6b510a4a431f576f7219
-R a1829a1a4c7480d97a0c0b316a97e2e2
-U drh
-Z 8885ea3dc8b09d44dda50207da9f7451
+P f5fad52a97a16faddc2701ea0e05a301974eda1a
+R d7b8a8d5ad13f6c53ffa624952731df2
+U danielk1977
+Z 82a1f92ad94ed1831ca10d2592c97005
