@@ -10,11 +10,11 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: memleak.test,v 1.9 2005/03/16 12:15:22 danielk1977 Exp $
+# $Id: memleak.test,v 1.10 2007/03/30 17:17:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-rename finish_test really_finish_test
+rename finish_test memleak_finish_test
 proc finish_test {} {
   catch {db close}
   memleak_check
@@ -38,6 +38,8 @@ set EXCLUDE {
   misuse.test
   memleak.test
   btree2.test
+  async.test
+  async2.test
   trans.test
   crash.test
   autovacuum_crash.test
@@ -85,7 +87,7 @@ foreach testfile $FILELIST {
     puts " Ok"
   }
 }
-really_finish_test
+memleak_finish_test
 
 # Run the malloc tests and the misuse test after memory leak detection.
 # Both tests leak memory.
@@ -93,4 +95,4 @@ really_finish_test
 #catch {source $testdir/misuse.test}
 #catch {source $testdir/malloc.test}
 
-really_finish_test
+memleak_finish_test
