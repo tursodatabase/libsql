@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.346 2007/03/30 11:12:08 drh Exp $
+** $Id: btree.c,v 1.347 2007/03/30 14:06:34 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2408,6 +2408,50 @@ autovacuum_out:
 #endif
 
 /*
+** This routine does the first phase of a two-phase commit.  This routine
+** causes a rollback journal to be created (if it does not already exist)
+** and populated with enough information so that if a power loss occurs
+** the database can be restored to its original state by playing back
+** the journal.  Then the contents of the journal are flushed out to
+** the disk.  After the journal is safely on oxide, the changes to the
+** database are written into the database file and flushed to oxide.
+** At the end of this call, the rollback journal still exists on the
+** disk and we are still holding all locks, so the transaction has not
+** committed.  See sqlite3BtreeCommit() for the second phase of the
+** commit process.
+**
+** This call is a no-op if no write-transaction is currently active on pBt.
+**
+** Otherwise, sync the database file for the btree pBt. zMaster points to
+** the name of a master journal file that should be written into the
+** individual journal file, or is NULL, indicating no master journal file 
+** (single database transaction).
+**
+** When this is called, the master journal should already have been
+** created, populated with this journal pointer and synced to disk.
+**
+** Once this is routine has returned, the only thing required to commit
+** the write-transaction for this database file is to delete the journal.
+*/
+int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
+  int rc = SQLITE_OK;
+  if( p->inTrans==TRANS_WRITE ){
+    BtShared *pBt = p->pBt;
+    Pgno nTrunc = 0;
+#ifndef SQLITE_OMIT_AUTOVACUUM
+    if( pBt->autoVacuum ){
+      rc = autoVacuumCommit(pBt, &nTrunc); 
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+    }
+#endif
+    rc = sqlite3PagerCommitPhaseOne(pBt->pPager, zMaster, nTrunc);
+  }
+  return rc;
+}
+
+/*
 ** Commit the transaction currently in progress.
 **
 ** This routine implements the second phase of a 2-phase commit.  The
@@ -2421,7 +2465,7 @@ autovacuum_out:
 ** This will release the write lock on the database file.  If there
 ** are no active cursors, it also releases the read lock.
 */
-int sqlite3BtreeCommit(Btree *p){
+int sqlite3BtreeCommitPhaseTwo(Btree *p){
   BtShared *pBt = p->pBt;
 
   btreeIntegrity(p);
@@ -2433,7 +2477,7 @@ int sqlite3BtreeCommit(Btree *p){
     int rc;
     assert( pBt->inTransaction==TRANS_WRITE );
     assert( pBt->nTransaction>0 );
-    rc = sqlite3PagerCommit(pBt->pPager);
+    rc = sqlite3PagerCommitPhaseTwo(pBt->pPager);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -2462,6 +2506,18 @@ int sqlite3BtreeCommit(Btree *p){
 
   btreeIntegrity(p);
   return SQLITE_OK;
+}
+
+/*
+** Do both phases of a commit.
+*/
+int sqlite3BtreeCommit(Btree *p){
+  int rc;
+  rc = sqlite3BtreeCommitPhaseOne(p, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3BtreeCommitPhaseTwo(p);
+  }
+  return rc;
 }
 
 #ifndef NDEBUG
@@ -6520,50 +6576,6 @@ int sqlite3BtreeIsInStmt(Btree *p){
 */
 int sqlite3BtreeIsInReadTrans(Btree *p){
   return (p && (p->inTrans!=TRANS_NONE));
-}
-
-/*
-** This routine does the first phase of a 2-phase commit.  This routine
-** causes a rollback journal to be created (if it does not already exist)
-** and populated with enough information so that if a power loss occurs
-** the database can be restored to its original state by playing back
-** the journal.  Then the contents of the journal are flushed out to
-** the disk.  After the journal is safely on oxide, the changes to the
-** database are written into the database file and flushed to oxide.
-** At the end of this call, the rollback journal still exists on the
-** disk and we are still holding all locks, so the transaction has not
-** committed.  See sqlite3BtreeCommit() for the second phase of the
-** commit process.
-**
-** This call is a no-op if no write-transaction is currently active on pBt.
-**
-** Otherwise, sync the database file for the btree pBt. zMaster points to
-** the name of a master journal file that should be written into the
-** individual journal file, or is NULL, indicating no master journal file 
-** (single database transaction).
-**
-** When this is called, the master journal should already have been
-** created, populated with this journal pointer and synced to disk.
-**
-** Once this is routine has returned, the only thing required to commit
-** the write-transaction for this database file is to delete the journal.
-*/
-int sqlite3BtreeSync(Btree *p, const char *zMaster){
-  int rc = SQLITE_OK;
-  if( p->inTrans==TRANS_WRITE ){
-    BtShared *pBt = p->pBt;
-    Pgno nTrunc = 0;
-#ifndef SQLITE_OMIT_AUTOVACUUM
-    if( pBt->autoVacuum ){
-      rc = autoVacuumCommit(pBt, &nTrunc); 
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
-    }
-#endif
-    rc = sqlite3PagerSync(pBt->pPager, zMaster, nTrunc);
-  }
-  return rc;
 }
 
 /*

@@ -1,5 +1,5 @@
-C Make\syypMinor\savailable\sto\sthe\sstack\soverflow\scallbacks\sin\slemon\ngenerated\sparsers.\s\sThis\sdoes\snot\seffect\sSQLite.\s(CVS\s3761)
-D 2007-03-30T13:35:06
+C Refactoring\sthe\sbtree\sand\spager\sroutines\sinto\sdistinct\stwo-phase\scommit\nroutines.\s\sWe've\salways\sdone\sa\stwo-phase\scommit\s-\sthis\schange\sis\sjust\nmaking\sthat\smore\sapparent\sin\sthe\scode.\s(CVS\s3762)
+D 2007-03-30T14:06:34
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -58,8 +58,8 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 4bbf5ddf9680587c6d4917e02e378b6037be3651
 F src/attach.c a16ada4a4654a0d126b8223ec9494ebb81bc5c3c
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c 9b41229e7ff4b0fe8556763ce2b466a90aaaa6a4
-F src/btree.h 540dcbbf83435b77d4b6ef87f909c6cecad4dac9
+F src/btree.c 931d8d6eb3e669d6e42305dce3f196bf071a53b6
+F src/btree.h 9b2cc0d113c0bc2d37d244b9a394d56948c9acbf
 F src/build.c ad3374b5409554e504300f77e1fbc6b4c106a57f
 F src/callback.c 31d22b4919c7645cbcbb1591ce2453e8c677c558
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
@@ -86,8 +86,8 @@ F src/os_unix.c 4291be23eec73d1ec04010ae702364b781b5f773
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c3a8403ea28bbb89d6507fa984c5919bd3fe7539
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c b89ea0f592e499ee6d6cda10b84688f8e47a05ba
-F src/pager.h f1b17bf848b3dce5d9afb2701186d3c9a8826f8c
+F src/pager.c f9131543cc602202de8a436ca9207e4c28b3f41e
+F src/pager.h e79a24cf200b8771366217f5bca414f5b7823f42
 F src/parse.y 207ab04273ae13aa4a729b96008d294d5f334ab3
 F src/pragma.c 8fd4f98822007a8d2c34e235ad3c35f1d77b3e51
 F src/prepare.c 37207b2b2ccb41d379b01dd62231686bcc48ef1f
@@ -102,7 +102,7 @@ F src/sqliteInt.h c8d0e5ce27a862836de70fc3eadc1e65cea7e3d8
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c a8d1166319db5d505b25ac6a9820162afe63fc8a
 F src/test1.c 439bba8da10fbc61c731019cf2894e6057578878
-F src/test2.c dc48c84ce68b3bc2f2d01871d709f20dc77003b0
+F src/test2.c 710a7252e22a8c690136a2b609e90fdad2697f35
 F src/test3.c 65f92247cf8592854e9bf5115b3fb711f8b33280
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
@@ -127,7 +127,7 @@ F src/vdbe.c d5a4fc1e18af2a2873d022450c4a776f6c17bac3
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h 4b19fd8febad3fd14c4c97adaefc06754d323132
 F src/vdbeapi.c 7ac14f2e3b2283dcd35f5edefd31a8342cff783c
-F src/vdbeaux.c d768c22c8aa0fbf9bf1408b4fc9ed0b38b1146ca
+F src/vdbeaux.c 5efa6d0f6096f213fbdffa0b1bf0a4c8ae40d145
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c d3696b4b0e5f32272659816cdfa2348c650b1ba0
 F src/vtab.c 7fbda947e28cbe7adb3ba752a76ca9ef29936750
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 339941d83ae397d69084f41483afb1ea44d44967
-R b47b2f2fe5cfddcd0105ea435c37f3d5
+P 70c8c7e2ce5213778e63c200a6637849920deea6
+R a5a112b3409ee86a088223323643c5e6
 U drh
-Z 511499bbee13f7559f6a7e8fb29eeb3d
+Z 49017f06f92594291d8addf7b78eb7c9

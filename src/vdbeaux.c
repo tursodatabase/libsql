@@ -1090,19 +1090,19 @@ static int vdbeCommit(sqlite3 *db){
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
-        rc = sqlite3BtreeSync(pBt, 0);
+        rc = sqlite3BtreeCommitPhaseOne(pBt, 0);
       }
     }
 
-    /* Do the commit only if all databases successfully synced.
-    ** If one of the BtreeCommit() calls fails, this indicates an IO error
-    ** while deleting or truncating a journal file. It is unlikely, but
-    ** could happen. In this case abandon processing and return the error.
+    /* Do the commit only if all databases successfully complete phase 1. 
+    ** If one of the BtreeCommitPhaseOne() calls fails, this indicates an
+    ** IO error while deleting or truncating a journal file. It is unlikely,
+    ** but could happen. In this case abandon processing and return the error.
     */
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
-        rc = sqlite3BtreeCommit(pBt);
+        rc = sqlite3BtreeCommitPhaseTwo(pBt);
       }
     }
     if( rc==SQLITE_OK ){
@@ -1182,16 +1182,16 @@ static int vdbeCommit(sqlite3 *db){
     ** sets the master journal pointer in each individual journal. If
     ** an error occurs here, do not delete the master journal file.
     **
-    ** If the error occurs during the first call to sqlite3BtreeSync(),
-    ** then there is a chance that the master journal file will be
-    ** orphaned. But we cannot delete it, in case the master journal
-    ** file name was written into the journal file before the failure
-    ** occured.
+    ** If the error occurs during the first call to
+    ** sqlite3BtreeCommitPhaseOne(), then there is a chance that the
+    ** master journal file will be orphaned. But we cannot delete it,
+    ** in case the master journal file name was written into the journal
+    ** file before the failure occured.
     */
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt && sqlite3BtreeIsInTrans(pBt) ){
-        rc = sqlite3BtreeSync(pBt, zMaster);
+        rc = sqlite3BtreeCommitPhaseOne(pBt, zMaster);
       }
     }
     sqlite3OsClose(&master);
@@ -1223,17 +1223,17 @@ static int vdbeCommit(sqlite3 *db){
     }
 
     /* All files and directories have already been synced, so the following
-    ** calls to sqlite3BtreeCommit() are only closing files and deleting
-    ** journals. If something goes wrong while this is happening we don't
-    ** really care. The integrity of the transaction is already guaranteed,
-    ** but some stray 'cold' journals may be lying around. Returning an
-    ** error code won't help matters.
+    ** calls to sqlite3BtreeCommitPhaseTwo() are only closing files and
+    ** deleting or truncating journals. If something goes wrong while
+    ** this is happening we don't really care. The integrity of the
+    ** transaction is already guaranteed, but some stray 'cold' journals
+    ** may be lying around. Returning an error code won't help matters.
     */
     disable_simulated_io_errors();
     for(i=0; i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
-        sqlite3BtreeCommit(pBt);
+        sqlite3BtreeCommitPhaseTwo(pBt);
       }
     }
     enable_simulated_io_errors();
