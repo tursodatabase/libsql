@@ -1,5 +1,5 @@
-C Assume\sany\sreturn\scode\sfrom\sfcntl()\sother\sthan\s-1\sis\ssuccess.\s\sFormerly\swe\nonly\sassumed\sthat\s0\swas\ssuccess.\s\sTicket\s#2173.\s(CVS\s3754)
-D 2007-03-29T20:19:59
+C Extra\stest\scases\sto\simprove\scoverage\sof\smain.c.\s(CVS\s3755)
+D 2007-03-30T07:10:51
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -73,7 +73,7 @@ F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c aa61e77807becb8b6c3ffcf53be98d20b0e6f107
 F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c 146fb9b9dc6133e763888d710205c32ebf8eeca2
-F src/main.c 3ca92e8f2397da413c39f5a102e5675f5c5fa78a
+F src/main.c d3b86042d836c75768f5271ce1a9cc0cb620e69b
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 5a194b9b9a10dc66543d4ca22bc0db40c5cc5ef1
 F src/os.h 506acdfd0a63802434ceacdbfd7c006e5d90fc53
@@ -257,7 +257,7 @@ F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/main.test e7212ce1023957c7209778cc87fa932bd79ba89a
-F test/malloc.test 2c39d97c8db5fdc06bb105122a59721f4ea9ac49
+F test/malloc.test d868a6b98b07928b00bca3d9874daf6885c86150
 F test/malloc2.test 4ed7d719542c4570dec9c2ebe2bbdf3a9f3b0d05
 F test/malloc3.test e965954b6f808876a63d3101fd70370320b509a7
 F test/malloc4.test 59cd02f71b363302a04c4e77b97c0a1572eaa210
@@ -274,7 +274,7 @@ F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
 F test/misc5.test c7d2d2a5a20dc37d3605a8067f0df5af2240122e
 F test/misc6.test 3de55ec5cadf466ada587173faa5d6a4790a8bb7
-F test/misc7.test bc52702ade3d18d94af193b487ce86b2e4704dc1
+F test/misc7.test ac433b389f5b3ffadc3cdcb370a3cd25450aeb40
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6195af49828bf04b61d24f116339780d3eb926a1
-R 79d0ea3ee011e976af26b5841e567527
-U drh
-Z debf887eb36a11345fb4f0356547effd
+P 8d0073c0e8408558dae39f789ac3fa2622b52365
+R 7ca43c6504a732741e356d1f89f80cf3
+U danielk1977
+Z f78f3efcdc29e953179129897cb3e69b

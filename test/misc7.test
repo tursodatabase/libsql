@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.2 2007/03/29 17:07:53 danielk1977 Exp $
+# $Id: misc7.test,v 1.3 2007/03/30 07:10:52 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -68,7 +68,6 @@ proc use_up_files {} {
 execsql { CREATE TABLE abc(a PRIMARY KEY, b, c); }
 db close
 set fd_list [use_up_files]
-
 set ::go 1
 set ::n 1
 while {$::go} {
@@ -96,6 +95,59 @@ while {$::go} {
 foreach fd $fd_list {
   close $fd
 }
+db close
+#
+# End of tests for out-of-file-descriptors condition.
+#--------------------------------------------------------------------
+
+#--------------------------------------------------------------------
+# Test that the sqlite3_busy_timeout call seems to delay approximately
+# the right amount of time.
+#
+do_test misc7-6 {
+  sqlite3 db2 test.db
+  sqlite3 db test.db
+  sqlite3_busy_timeout [sqlite3_connection_pointer db] 2000
+  execsql {
+    BEGIN EXCLUSIVE;
+  } db2
+
+  # Now db2 has an exclusive lock on the database file, and db has
+  # a busy-timeout of 2000 milliseconds. So check that trying to
+  # access the database using connection db delays for at least 1500 ms.
+  #
+  set c1 [clock clicks -milliseconds]
+  catchsql {
+    SELECT * FROM sqlite_master;
+  } db
+  expr {([clock clicks -milliseconds]-$c1) > 1500 ? 1 : 0}
+} {1}
+db2 close
+
+#--------------------------------------------------------------------
+# Test that nothing goes horribly wrong when attaching a database
+# after the omit_readlock pragma has been exercised.
+#
+do_test misc7-7 {
+  file delete -force test2.db
+  file delete -force test2.db-journal
+  execsql {
+    PRAGMA omit_readlock = 1;
+    ATTACH 'test2.db' AS aux;
+    CREATE TABLE aux.hello(world);
+    SELECT name FROM aux.sqlite_master;
+  }
+} {hello}
+
+# Test malloc failure whilst installing a foriegn key.
+#
+ifcapable utf16 {
+  do_test misc7-8 {
+    encoding convertfrom unicode [sqlite3_errmsg16 0x00000000]
+  } {out of memory}
+}
+
+
 
 finish_test
 

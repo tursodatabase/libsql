@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.363 2007/03/29 15:00:53 danielk1977 Exp $
+** $Id: main.c,v 1.364 2007/03/30 07:10:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -136,6 +136,9 @@ int sqlite3_close(sqlite3 *db){
   ** cannot be opened for some reason. So this routine needs to run in
   ** that case. But maybe there should be an extra magic value for the
   ** "failed to open" state.
+  **
+  ** TODO: Coverage tests do not test the case where this condition is
+  ** true. It's hard to see how to cause it without messing with threads.
   */
   if( db->magic!=SQLITE_MAGIC_CLOSED && sqlite3SafetyOn(db) ){
     /* printf("DID NOT CLOSE\n"); fflush(stdout); */
