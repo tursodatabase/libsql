@@ -1,4 +1,4 @@
-C Coverage\simprovements\sfor\swhere.c.\s(CVS\s3764)
+C Coverage\simprovements\sfor\swhere.c.\s(CVS\s3765)
 D 2007-03-30T14:56:35
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e5f17078a28b6a47d6943d40c526390c36258392
+P 7e0aa964129612e2bad6fa45139d124f19cacd48
 R b56988b2a4f41fbf2d60eaa052f1ee98
 U danielk1977
-Z 4da0a0b65fb898aa87e0c0cc367ade9b
+Z fce1180f998fc1408b89d9fcea97a6fe
