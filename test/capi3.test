@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.47 2007/01/03 23:37:29 drh Exp $
+# $Id: capi3.test,v 1.48 2007/03/30 20:46:13 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -721,7 +721,6 @@ SQLITE_IOERR      {disk I/O error} \
 SQLITE_CORRUPT    {database disk image is malformed} \
 SQLITE_FULL       {database or disk is full} \
 SQLITE_CANTOPEN   {unable to open database file} \
-SQLITE_PROTOCOL   {database locking protocol failure} \
 SQLITE_EMPTY      {table contains no data} \
 SQLITE_SCHEMA     {database schema has changed} \
 SQLITE_CONSTRAINT {constraint failed} \

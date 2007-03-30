@@ -1,5 +1,5 @@
-C Remove\svestiges\sof\sthe\sSQLITE_PROTOCOL\serror.\s(CVS\s3773)
-D 2007-03-30T20:43:41
+C Remove\svestiges\sof\sSQLITE_PROTOCOL\sfrom\sthe\stest\sscripts.\s(CVS\s3774)
+D 2007-03-30T20:46:13
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -169,9 +169,9 @@ F test/btree7.test a6d3b842db22af97dd14b989e90a2fd96066b72f
 F test/btree8.test fadc112bcbd6a0c622d34c813fc8a648eacf8804
 F test/busy.test 0271c854738e23ad76e10d4096a698e5af29d211
 F test/capi2.test 7ecc9b342cc9ec27b53bbf95724cf2e5874fd496
-F test/capi3.test 4063c4be79fb00704154a1e459a38364de9162a9
+F test/capi3.test 1675323145d128e5942a9faffcfd5cf4e219a33f
 F test/capi3b.test 5f0bc94b104e11086b1103b20277e1910f59c7f4
-F test/capi3c.test 5961df13666c994890ffd44f0143cf92897d18dc
+F test/capi3c.test 96e35164739c6fe3357fa36f0fe74bc23abc8ef7
 F test/cast.test f88e7b6946e9a467cf4bb142d92bb65a83747fc2
 F test/check.test e5ea0c1a06c10e81e3434ca029e2c4a562f2b673
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 407a85e69b7a1229218a5ce9a9e31255c7070294
-R 8cc4fbe4ed28e5ec8da4461ea49f7b7b
+P 6dfd4a12a8a03c204505e7a211e179b7dd47e4fb
+R cd89aee12e7576c3bbdb55074c8863c4
 U drh
-Z 50a277b3c966fe2fc239035aa22b6aaf
+Z 436dad38c6888f4d3dbec8cb0d762646
