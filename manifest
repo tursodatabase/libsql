@@ -1,5 +1,5 @@
-C More\scoverage\sfor\spager.c.\s(CVS\s3778)
-D 2007-03-31T10:00:48
+C The\sXFER\soptimization\sworks\sif\sthe\starget\stable\slacks\san\sinteger\sprimary\nkey\sand\sis\snot\sempty\sas\slong\sas\sit\shas\sno\sindices.\s\sIt\salways\shas\sand\ncontinues\sto\swork\sif\sthe\starget\stable\swas\sempty.\s(CVS\s3779)
+D 2007-03-31T13:00:26
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -70,7 +70,7 @@ F src/expr.c a8740c24af3f39f2d502be1a1c640c96435eaac0
 F src/func.c 94372fe3cf26b81d4dcdc15f98ff240c37c8c708
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
-F src/insert.c aa61e77807becb8b6c3ffcf53be98d20b0e6f107
+F src/insert.c 664e4ccabc6393dc3be08ce2c47ccfea4b049e15
 F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c 146fb9b9dc6133e763888d710205c32ebf8eeca2
 F src/main.c a02581f5076a49f18f67b00fdc4c7ae338adc679
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 2aae1964572f4d4d1eae090a997e0bd9a82a69b2
-R b247f1fbf3d4ee87e5ed24496e82da0b
-U danielk1977
-Z d6a6a23d64b55f3f47e9a0fdb32d08db
+P 665b119a241a5a95f236b3ace1b25fc18ae6f0a3
+R 9f121d7e35408502111509abe72bb20f
+U drh
+Z b33e1fa0faf5f5d21de224dfc99146bc

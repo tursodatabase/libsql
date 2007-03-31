@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.181 2007/03/29 13:35:36 drh Exp $
+** $Id: insert.c,v 1.182 2007/03/31 13:00:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1504,10 +1504,11 @@ static int xferOptimization(
   iDest = pParse->nTab++;
   counterMem = autoIncBegin(pParse, iDbDest, pDest);
   sqlite3OpenTable(pParse, iDest, iDbDest, pDest, OP_OpenWrite);
-  if( pDest->iPKey<0 ){
-    /* The tables do not have an INTEGER PRIMARY KEY so that
-    ** transfer optimization is only allowed if the destination
-    ** table is initially empty
+  if( pDest->iPKey<0 && pDest->pIndex!=0 ){
+    /* If tables do not have an INTEGER PRIMARY KEY and there
+    ** are indices to be copied and the destination is not empty,
+    ** we have to disallow the transfer optimization because the
+    ** the rowids might change which will mess up indexing.
     */
     addr1 = sqlite3VdbeAddOp(v, OP_Rewind, iDest, 0);
     emptyDestTest = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
@@ -1522,15 +1523,18 @@ static int xferOptimization(
     memRowid = pParse->nMem++;
     sqlite3VdbeAddOp(v, OP_MemStore, memRowid, pDest->iPKey>=0);
   }
-  addr1 = sqlite3VdbeAddOp(v, OP_Rowid, iSrc, 0);
   if( pDest->iPKey>=0 ){
+    addr1 = sqlite3VdbeAddOp(v, OP_Rowid, iSrc, 0);
     sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
     addr2 = sqlite3VdbeAddOp(v, OP_NotExists, iDest, 0);
     sqlite3VdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, onError, 
                       "PRIMARY KEY must be unique", P3_STATIC);
     sqlite3VdbeJumpHere(v, addr2);
     autoIncStep(pParse, counterMem);
+  }else if( pDest->pIndex==0 ){
+    addr1 = sqlite3VdbeAddOp(v, OP_NewRowid, iDest, 0);
   }else{
+    addr1 = sqlite3VdbeAddOp(v, OP_Rowid, iSrc, 0);
     assert( pDest->autoInc==0 );
   }
   sqlite3VdbeAddOp(v, OP_RowData, iSrc, 0);
