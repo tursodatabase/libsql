@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.231 2007/03/27 14:44:51 drh Exp $
+** $Id: test1.c,v 1.232 2007/03/31 15:02:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -929,6 +929,40 @@ static int sqlite3_mprintf_str(
     if( Tcl_GetInt(interp, argv[i], &a[i-2]) ) return TCL_ERROR;
   }
   z = sqlite3_mprintf(argv[1], a[0], a[1], argc>4 ? argv[4] : NULL);
+  Tcl_AppendResult(interp, z, 0);
+  sqlite3_free(z);
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_snprintf_str INTEGER FORMAT INTEGER INTEGER STRING
+**
+** Call mprintf with two integer arguments and one string argument
+*/
+static int sqlite3_snprintf_str(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  int a[3], i;
+  int n;
+  char *z;
+  if( argc<5 || argc>6 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " INT FORMAT INT INT ?STRING?\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
+  if( n<0 ){
+    Tcl_AppendResult(interp, "N must be non-negative", 0);
+    return TCL_ERROR;
+  }
+  for(i=3; i<5; i++){
+    if( Tcl_GetInt(interp, argv[i], &a[i-3]) ) return TCL_ERROR;
+  }
+  z = sqlite3_malloc( n+1 );
+  sqlite3_snprintf(n, z, argv[2], a[0], a[1], argc>4 ? argv[5] : NULL);
   Tcl_AppendResult(interp, z, 0);
   sqlite3_free(z);
   return TCL_OK;
@@ -4086,6 +4120,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_mprintf_int",           (Tcl_CmdProc*)sqlite3_mprintf_int    },
      { "sqlite3_mprintf_int64",         (Tcl_CmdProc*)sqlite3_mprintf_int64  },
      { "sqlite3_mprintf_str",           (Tcl_CmdProc*)sqlite3_mprintf_str    },
+     { "sqlite3_snprintf_str",          (Tcl_CmdProc*)sqlite3_snprintf_str   },
      { "sqlite3_mprintf_stronly",       (Tcl_CmdProc*)sqlite3_mprintf_stronly},
      { "sqlite3_mprintf_double",        (Tcl_CmdProc*)sqlite3_mprintf_double },
      { "sqlite3_mprintf_scaled",        (Tcl_CmdProc*)sqlite3_mprintf_scaled },

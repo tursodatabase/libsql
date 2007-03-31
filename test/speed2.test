@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is measuring executing speed.
 #
-# $Id: speed2.test,v 1.4 2007/03/28 18:04:10 drh Exp $
+# $Id: speed2.test,v 1.5 2007/03/31 15:02:50 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -66,7 +66,7 @@ do_test speed2-1.0 {
   execsql {
     PRAGMA page_size=1024;
     PRAGMA cache_size=8192;
-    PRAGMA locking_mode=EXCLUSIVE;
+--    PRAGMA locking_mode=EXCLUSIVE;
     CREATE TABLE t1(a INTEGER, b INTEGER, c TEXT);
     CREATE TABLE t2(a INTEGER, b INTEGER, c TEXT);
     CREATE INDEX i2a ON t2(a);

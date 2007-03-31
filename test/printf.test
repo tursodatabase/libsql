@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.21 2006/03/19 13:00:25 drh Exp $
+# $Id: printf.test,v 1.22 2007/03/31 15:02:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -93,6 +93,33 @@ do_test printf-3.5 {
 do_test printf-3.6 {
   sqlite3_mprintf_str {%d %d A String: (%-30s)} 1 2 {This is the string}
 } [format {%d %d A String: (%-30s)} 1 2 {This is the string}]
+do_test snprintf-3.11 {
+  sqlite3_snprintf_str 2 {x%d %d %s} 10 10 {This is the string}
+} {x}
+do_test snprintf-3.12 {
+  sqlite3_snprintf_str 3 {x%d %d %s} 10 10 {This is the string}
+} {x1}
+do_test snprintf-3.13 {
+  sqlite3_snprintf_str 4 {x%d %d %s} 10 10 {This is the string}
+} {x10}
+do_test snprintf-3.14 {
+  sqlite3_snprintf_str 5 {x%d %d %s} 10 10 {This is the string}
+} {x10 }
+do_test snprintf-3.15 {
+  sqlite3_snprintf_str 6 {x%d %d %s} 10 10 {This is the string}
+} {x10 1}
+do_test snprintf-3.16 {
+  sqlite3_snprintf_str 7 {x%d %d %s} 10 10 {This is the string}
+} {x10 10}
+do_test snprintf-3.17 {
+  sqlite3_snprintf_str 8 {x%d %d %s} 10 10 {This is the string}
+} {x10 10 }
+do_test snprintf-3.18 {
+  sqlite3_snprintf_str 9 {x%d %d %s} 10 10 {This is the string}
+} {x10 10 T}
+do_test snprintf-3.19 {
+  sqlite3_snprintf_str 100 {x%d %d %s} 10 10 {This is the string}
+} {x10 10 This is the string}
 
 do_test printf-4.1 {
   sqlite3_mprintf_str {%d %d A quoted string: '%q'} 1 2 {Hi Y'all}
@@ -237,6 +264,9 @@ do_test printf-14.1 {
 do_test printf-14.2 {
   sqlite3_mprintf_n_test {xyzzy}
 } 5
+do_test printf-14.3 {
+  sqlite3_mprintf_str {abc-%T-123} 0 0 {not used}
+} {abc-}
 
 
 finish_test
