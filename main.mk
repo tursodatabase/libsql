@@ -249,8 +249,11 @@ objects: $(LIBOBJ_ORIG)
 target_source:	$(SRC)
 	rm -rf tsrc
 	mkdir tsrc
-	cp $(SRC) $(TOP)/src/*.h tsrc
+	cp -f $(SRC) $(TOP)/src/*.h tsrc 2>/dev/null
 	rm tsrc/sqlite.h.in tsrc/parse.y
+
+sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
+	tclsh $(TOP)/tool/mksqlite3c.tcl
 
 # Rules to build the LEMON compiler generator
 #
