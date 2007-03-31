@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.43 2006/10/19 01:58:44 drh Exp $
+** $Id: utf.c,v 1.44 2007/03/31 15:28:00 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -61,6 +61,12 @@
 #include "sqliteInt.h"
 #include <assert.h>
 #include "vdbeInt.h"
+
+/*
+** The following constant value is used by the SQLITE_BIGENDIAN and
+** SQLITE_LITTLEENDIAN macros.
+*/
+const int sqlite3one = 1;
 
 /*
 ** This table maps from the first byte of a UTF-8 character to the number

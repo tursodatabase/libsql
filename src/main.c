@@ -14,17 +14,11 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.366 2007/03/30 20:43:42 drh Exp $
+** $Id: main.c,v 1.367 2007/03/31 15:28:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
 #include <ctype.h>
-
-/*
-** The following constant value is used by the SQLITE_BIGENDIAN and
-** SQLITE_LITTLEENDIAN macros.
-*/
-const int sqlite3one = 1;
 
 /*
 ** The version of the library
