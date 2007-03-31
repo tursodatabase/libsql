@@ -413,7 +413,10 @@ TriggerStep *sqlite3TriggerUpdateStep(
 */
 TriggerStep *sqlite3TriggerDeleteStep(Token *pTableName, Expr *pWhere){
   TriggerStep *pTriggerStep = sqliteMalloc(sizeof(TriggerStep));
-  if( pTriggerStep==0 ) return 0;
+  if( pTriggerStep==0 ){
+    sqlite3ExprDelete(pWhere);
+    return 0;
+  }
 
   pTriggerStep->op = TK_DELETE;
   pTriggerStep->target  = *pTableName;
