@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.197 2007/03/27 13:36:37 drh Exp $
+** $Id: util.c,v 1.198 2007/03/31 22:33:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1133,6 +1133,13 @@ int sqlite3FitsIn64Bits(const char *zNum){
 ** Return an error (non-zero) if the magic was not SQLITE_MAGIC_OPEN
 ** when this routine is called.
 **
+** This routine is called when entering an SQLite API.  The SQLITE_MAGIC_OPEN
+** value indicates that the database connection passed into the API is
+** open and is not being used by another thread.  By changing the value
+** to SQLITE_MAGIC_BUSY we indicate that the connection is in use.
+** sqlite3SafetyOff() below will change the value back to SQLITE_MAGIC_OPEN
+** when the API exits. 
+**
 ** This routine is a attempt to detect if two threads use the
 ** same sqlite* pointer at the same time.  There is a race 
 ** condition so it is possible that the error is not detected.
@@ -1166,11 +1173,11 @@ int sqlite3SafetyOff(sqlite3 *db){
   if( db->magic==SQLITE_MAGIC_BUSY ){
     db->magic = SQLITE_MAGIC_OPEN;
     return 0;
-  }else if( db->magic==SQLITE_MAGIC_OPEN ){
+  }else {
     db->magic = SQLITE_MAGIC_ERROR;
     db->u1.isInterrupted = 1;
+    return 1;
   }
-  return 1;
 }
 
 /*

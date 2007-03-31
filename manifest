@@ -1,5 +1,5 @@
-C Add\sthe\samalgamation\sgenerator\sto\sthe\smakefile.\s(CVS\s3783)
-D 2007-03-31T22:29:05
+C Remove\sunreachable\scode\sfrom\sutil.c.\s(CVS\s3784)
+D 2007-03-31T22:33:48
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -121,7 +121,7 @@ F src/tokenize.c bb1732ef2b6fc2143f93ff28a45d3dcb04c1d396
 F src/trigger.c b3c22b727049fceb96efa5f9f7d325fd853acc22
 F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c e64a48bc21aa973eb622dd47da87d56a4cdcf528
-F src/util.c 8e8180ee5597f2474c1da311ff3c464b6966c0f1
+F src/util.c 0102b6257c94b0a3734fb613a4c0ffd16f73ef2a
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
 F src/vdbe.c 87e31f0790ac8a5aad7b7fcd5b97948943fccba3
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 6a3d6142d8be18bf2a9913f0329bcce48867304b
-R 8f9be996e31b89d4cd4e62ba5ca94214
+P a0f3c960fa3e958e12bc488451ee2d637562909b
+R 2baee240a9b5b31699a0341f39d57beb
 U drh
-Z 4d11376f6943f83b5517f075c03b85dd
+Z da59ec94aad32c9572e6cb7f5170d256
