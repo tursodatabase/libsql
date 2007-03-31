@@ -105,6 +105,8 @@ proc copy_file {filename} {
 # inlining opportunities.
 #
 foreach file {
+   os.c
+
    printf.c
    random.c
    utf.c
@@ -112,7 +114,6 @@ foreach file {
    hash.c
    opcodes.c
 
-   os.c
    os_os2.c
    os_unix.c
    os_win.c
