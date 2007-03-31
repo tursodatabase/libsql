@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.8 2007/03/30 18:21:53 danielk1977 Exp $
+# $Id: misc7.test,v 1.9 2007/03/31 10:00:49 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -292,6 +292,40 @@ do_test misc7-15.2 {
             randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
   }
 } {}
+
+db close
+file delete -force test.db
+file delete -force test.db-journal
+sqlite3 db test.db
+
+do_ioerr_test misc7-16 -sqlprep {
+   PRAGMA cache_size = 10;
+   PRAGMA default_cache_size = 10;
+   CREATE TABLE t3(a, b, UNIQUE(a, b));
+   INSERT INTO t3 VALUES( randstr(100, 100), randstr(100, 100) );
+   INSERT INTO t3 SELECT randstr(100, 100), randstr(100, 100) FROM t3;
+   INSERT INTO t3 SELECT randstr(100, 100), randstr(100, 100) FROM t3;
+   INSERT INTO t3 SELECT randstr(100, 100), randstr(100, 100) FROM t3;
+   INSERT INTO t3 SELECT randstr(100, 100), randstr(100, 100) FROM t3;
+   INSERT INTO t3 SELECT randstr(100, 100), randstr(100, 100) FROM t3;
+   UPDATE t3 
+   SET b = 'hello world'
+   WHERE rowid >= (SELECT max(rowid)-1 FROM t3);
+} -tclbody {
+  set rc [catch {db eval {
+    BEGIN;
+      PRAGMA cache_size = 10;
+      INSERT INTO t3 VALUES( randstr(100, 100), randstr(100, 100) );
+      UPDATE t3 SET a = b;
+    COMMIT;
+  }} msg]
+
+  if {!$rc || ($rc && [string first "columns" $msg]==0)} {
+    set msg
+  } else {
+    error $msg
+  }
+}
 
 
 

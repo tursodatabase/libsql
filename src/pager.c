@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.311 2007/03/30 20:43:42 drh Exp $
+** @(#) $Id: pager.c,v 1.312 2007/03/31 10:00:48 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -606,6 +606,7 @@ static int readMasterJournal(OsFile *pJrnl, char **pzMaster){
 ** 
 */
 static int seekJournalHdr(Pager *pPager){
+  int rc;
   i64 offset = 0;
   i64 c = pPager->journalOff;
   if( c ){
@@ -1673,7 +1674,7 @@ int sqlite3PagerOpen(
   Pager *pPager = 0;
   char *zFullPathname = 0;
   int nameLen;  /* Compiler is wrong. This is always initialized before use */
-  OsFile *fd;
+  OsFile *fd = 0;
   int rc = SQLITE_OK;
   int i;
   int tempFile = 0;
@@ -1694,15 +1695,13 @@ int sqlite3PagerOpen(
   assert( pTsd );
 #endif
 
-  /* If malloc() has already failed return SQLITE_NOMEM. Before even
-  ** testing for this, set *ppPager to NULL so the caller knows the pager
-  ** structure was never allocated. 
+  /* We used to test if malloc() had already failed before proceeding. 
+  ** But the way this function is used in SQLite means that can never
+  ** happen. Furthermore, if the malloc-failed flag is already set, 
+  ** either the call to sqliteStrDup() or sqliteMalloc() below will
+  ** fail shortly and SQLITE_NOMEM returned anyway.
   */
   *ppPager = 0;
-  if( sqlite3MallocFailed() ){
-    return SQLITE_NOMEM;
-  }
-  memset(&fd, 0, sizeof(fd));
 
   /* Open the pager file and set zFullPathname to point at malloc()ed 
   ** memory containing the complete filename (i.e. including the directory).
@@ -2686,6 +2685,10 @@ int sqlite3PagerReleaseMemory(int nReq){
 ** This function is called to obtain the shared lock required before
 ** data may be read from the pager cache. If the shared lock has already
 ** been obtained, this function is a no-op.
+**
+** Immediately after obtaining the shared lock (if required), this function
+** checks for a hot-journal file. If one is found, an emergency rollback
+** is performed immediately.
 */
 static int pagerSharedLock(Pager *pPager){
   int rc = SQLITE_OK;

@@ -12,7 +12,7 @@
 # focus of this file is testing for correct handling of disk full
 # errors.
 # 
-# $Id: diskfull.test,v 1.4 2007/03/15 12:51:17 drh Exp $
+# $Id: diskfull.test,v 1.5 2007/03/31 10:00:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -53,27 +53,64 @@ set sqlite_diskfull_pending 0
 set sqlite_io_error_hit 0
 integrity_check diskfull-1.6
 
-set go 1
-set i 0
-while {$go} {
-  incr i
-  do_test diskfull-2.$i.1 {
-    set sqlite_diskfull_pending $i
-    set sqlite_diskfull 0
-    set r [catchsql {VACUUM}]
-    if {!$sqlite_diskfull} {
-      set r {1 {database or disk is full}}
-      set go 0
-    }
-    if {$r=="1 {disk I/O error}"} {
-      set r {1 {database or disk is full}}
-    }
-    set r
-  } {1 {database or disk is full}}
-  set sqlite_diskfull_pending 0
-  db close
-  sqlite3 db test.db
-  integrity_check diskfull-2.$i.2
+proc do_diskfull_test {prefix sql} {
+  set ::go 1
+  set ::sql $sql
+  set ::i 52
+  while {$::go} {
+    incr ::i
+    do_test ${prefix}.$::i.1 {
+      set ::sqlite_diskfull_pending $::i
+      set ::sqlite_diskfull 0
+      set r [catchsql $::sql]
+      if {!$::sqlite_diskfull} {
+        set r {1 {database or disk is full}}
+        set ::go 0
+      }
+      if {$r=="1 {disk I/O error}"} {
+        set r {1 {database or disk is full}}
+      }
+      set r
+    } {1 {database or disk is full}}
+    set ::sqlite_diskfull_pending 0
+    db close
+    sqlite3 db test.db
+    integrity_check ${prefix}.$::i.2
+  }
 }
 
+do_diskfull_test diskfull-2 VACUUM
+
+# db close
+# file delete -force test.db
+# file delete -force test.db-journal
+# sqlite3 db test.db
+# 
+# do_test diskfull-3.1 {
+#   execsql {
+#     PRAGMA default_cache_size = 10;
+#     CREATE TABLE t3(a, b, UNIQUE(a, b));
+#     INSERT INTO t3 VALUES( randstr(100, 100), randstr(100, 100) );
+#     INSERT INTO t3 SELECT randstr(100, 100), randstr(100, 100) FROM t3;
+#     INSERT INTO t3 SELECT randstr(100, 100), randstr(100, 100) FROM t3;
+#     INSERT INTO t3 SELECT randstr(100, 100), randstr(100, 100) FROM t3;
+#     INSERT INTO t3 SELECT randstr(100, 100), randstr(100, 100) FROM t3;
+#     INSERT INTO t3 SELECT randstr(100, 100), randstr(100, 100) FROM t3;
+#     INSERT INTO t3 SELECT randstr(100, 100), randstr(100, 100) FROM t3;
+#     INSERT INTO t3 SELECT randstr(100, 100), randstr(100, 100) FROM t3;
+#     UPDATE t3 
+#     SET b = (SELECT a FROM t3 WHERE rowid = (SELECT max(rowid)-1 FROM t3))
+#     WHERE rowid = (SELECT max(rowid) FROM t3);
+#     PRAGMA cache_size;
+#   }
+# } {10}
+# breakpoint
+# do_diskfull_test diskfull-3.2 {
+#   BEGIN;
+#     INSERT INTO t3 VALUES( randstr(100, 100), randstr(100, 100) );
+#     UPDATE t3 SET a = b;
+#   COMMIT;
+# }
+
 finish_test
+
