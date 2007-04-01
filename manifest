@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\soutput\sof\sthe\sspeed\stests.\s(CVS\s3785)
-D 2007-03-31T22:34:16
+C Fix\stypos\sin\sthe\samalgamation\sbuilder\sscript.\s(CVS\s3786)
+D 2007-04-01T01:57:42
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -382,7 +382,7 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c 520d0016eaac0d783ea8ffb7f91d150d0bf06e81
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl 59f5db8e291dd83f92be379c97f2c00b844ca3b8
+F tool/mksqlite3c.tcl 85514e8a74425a614eb83766a8adacf89eef005c
 F tool/omittest.tcl e6b3d6a1285f9813bc1dea53bb522b4b72774710
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 82b7a6f05c737f6ad4a21f354e55ec268fa1b032
-R badcf1e5ee65ad276d676073effd0995
+P 1a4d8024b06488f17831b5d3d47e41c5f1134800
+R 645b1ff40eaa14a65ea4dcdd574c143b
 U drh
-Z c3b0df404bc6aeead004fa0f8974a7b5
+Z ac4a4f9a80a9d14304bd93958a58f137

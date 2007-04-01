@@ -44,7 +44,7 @@ set out [open sqlite3.c w]
 set today [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S UTC" -gmt 1]
 puts $out [subst \
 {/******************************************************************************
-** This file is a amalgamation of many separate C source files from SQLite
+** This file is an amalgamation of many separate C source files from SQLite
 ** version $VERSION.  By combining all the individual C code files into this 
 ** single large file, the entire code can be compiled as a one translation
 ** unit.  This allows many compilers to do optimizations that would not be
@@ -56,11 +56,11 @@ puts $out [subst \
 ** programs, you need this file and the "sqlite3.h" header file that defines
 ** the programming interface to the SQLite library.  (If you do not have 
 ** the "sqlite3.h" header file at hand, you will find a copy in the first
-** $cnt lines past the header of this amalgamation.)  Additional code
-** files may be needed if you want a wrapper to interface SQLite with your
-** choice of programming language.  The code for the "sqlite3" command-line
-** shell is also in a separate file.  This file contains only code for the
-** core SQLite library.
+** $cnt lines past this header comment.)  Additional code files may be
+** needed if you want a wrapper to interface SQLite with your choice of
+** programming language.  The code for the "sqlite3" command-line shell
+** is also in a separate file.  This file contains only code for the core
+** SQLite library.
 **
 ** This amalgamation was generated on $today.
 */}]
