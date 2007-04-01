@@ -59,7 +59,10 @@
 ** If we are to be thread-safe, include the pthreads header and define
 ** the SQLITE_UNIX_THREADS macro.
 */
-#if defined(THREADSAFE) && THREADSAFE
+#ifndef THREADSAFE
+# define THREADSAFE 1
+#endif
+#if THREADSAFE
 # include <pthread.h>
 # define SQLITE_UNIX_THREADS 1
 #endif

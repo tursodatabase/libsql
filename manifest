@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sthe\samalgamation\sbuilder\sscript.\s(CVS\s3786)
-D 2007-04-01T01:57:42
+C Make\sunix\sbuilds\sthreadsafe\sby\sdefault.\s(CVS\s3787)
+D 2007-04-01T18:46:19
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -82,7 +82,7 @@ F src/os_os2.c 2ce97909b926a598823f97338027dbec1dcf4165
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 4291be23eec73d1ec04010ae702364b781b5f773
+F src/os_unix.c 5e3cbef7efc5f8481c2242fb2cad3577dcbfb8f9
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c3a8403ea28bbb89d6507fa984c5919bd3fe7539
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 1a4d8024b06488f17831b5d3d47e41c5f1134800
-R 645b1ff40eaa14a65ea4dcdd574c143b
+P a5070a2d11b4dad550a889d5fc005302208b6d75
+R a9d9872807c3c8809d1d420db21f68d7
 U drh
-Z ac4a4f9a80a9d14304bd93958a58f137
+Z 410804ccf938e00b1fc895783b26c1d2
