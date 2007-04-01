@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.312 2007/03/31 10:00:48 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.313 2007/04/01 23:49:52 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -606,7 +606,6 @@ static int readMasterJournal(OsFile *pJrnl, char **pzMaster){
 ** 
 */
 static int seekJournalHdr(Pager *pPager){
-  int rc;
   i64 offset = 0;
   i64 c = pPager->journalOff;
   if( c ){

@@ -1049,7 +1049,6 @@ static int winSeek(OsFile *id, i64 offset){
 #ifdef SQLITE_TEST
   if( offset ) SimulateDiskfullError(return SQLITE_FULL);
 #endif
-  SEEK(offset/1024 + 1);
   rc = SetFilePointer(((winFile*)id)->h, lowerBits, &upperBits, FILE_BEGIN);
   OSTRACE3("SEEK %d %lld\n", ((winFile*)id)->h, offset);
   if( rc==INVALID_SET_FILE_POINTER && GetLastError()!=NO_ERROR ){

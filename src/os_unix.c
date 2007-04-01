@@ -2486,6 +2486,7 @@ static int allocateUnixFile(
   unixFile f;
   int rc;
 
+  memset(&f, 0, sizeof(f));
   lockingStyle = sqlite3DetectLockingStyle(zFilename, h);
   if ( lockingStyle == posixLockingStyle ) {
     sqlite3OsEnterMutex();
@@ -2505,9 +2506,6 @@ static int allocateUnixFile(
     unlink(zFilename);
   }
   f.dirfd = -1;
-  f.fullSync = 0;
-  f.locktype = 0;
-  f.offset = 0;
   f.h = h;
   SET_THREADID(&f);
   pNew = sqlite3ThreadSafeMalloc( sizeof(unixFile) );
@@ -2574,6 +2572,7 @@ static int allocateUnixFile(
   unixFile f;
   int rc;
 
+  memset(&f, 0, sizeof(f));
   sqlite3OsEnterMutex();
   rc = findLockInfo(h, &f.pLock, &f.pOpen);
   sqlite3OsLeaveMutex();
@@ -2586,9 +2585,6 @@ static int allocateUnixFile(
   }
   OSTRACE3("OPEN    %-3d %s\n", h, zFilename);
   f.dirfd = -1;
-  f.fullSync = 0;
-  f.locktype = 0;
-  f.offset = 0;
   f.h = h;
   SET_THREADID(&f);
   pNew = sqlite3ThreadSafeMalloc( sizeof(unixFile) );

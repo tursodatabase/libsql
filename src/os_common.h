@@ -38,8 +38,6 @@ unsigned int sqlite3_pending_byte = 0x40000000;
 
 int sqlite3_os_trace = 0;
 #ifdef SQLITE_DEBUG
-static int last_page = 0;
-#define SEEK(X)           last_page=(X)
 #define OSTRACE1(X)         if( sqlite3_os_trace ) sqlite3DebugPrintf(X)
 #define OSTRACE2(X,Y)       if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y)
 #define OSTRACE3(X,Y,Z)     if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z)
@@ -50,7 +48,6 @@ static int last_page = 0;
 #define OSTRACE7(X,Y,Z,A,B,C,D) \
     if(sqlite3_os_trace) sqlite3DebugPrintf(X,Y,Z,A,B,C,D)
 #else
-#define SEEK(X)
 #define OSTRACE1(X)
 #define OSTRACE2(X,Y)
 #define OSTRACE3(X,Y,Z)

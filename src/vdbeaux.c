@@ -2026,7 +2026,7 @@ int sqlite3VdbeIdxRowidLen(const u8 *aKey){
 ** Return SQLITE_OK if everything works, or an error code otherwise.
 */
 int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
-  i64 nCellKey;
+  i64 nCellKey = 0;
   int rc;
   u32 szHdr;        /* Size of the header */
   u32 typeRowid;    /* Serial type of the rowid */
@@ -2065,7 +2065,7 @@ int sqlite3VdbeIdxKeyCompare(
   int nKey, const u8 *pKey,   /* The key to compare */
   int *res                    /* Write the comparison result here */
 ){
-  i64 nCellKey;
+  i64 nCellKey = 0;
   int rc;
   BtCursor *pCur = pC->pCursor;
   int lenRowid;

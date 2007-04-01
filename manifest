@@ -1,5 +1,5 @@
-C Make\sunix\sbuilds\sthreadsafe\sby\sdefault.\s(CVS\s3787)
-D 2007-04-01T18:46:19
+C Fix\ssome\swarnings\sabout\sunused\sand\suninitialized\svariables.\s(CVS\s3788)
+D 2007-04-01T23:49:52
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -70,30 +70,30 @@ F src/expr.c a8740c24af3f39f2d502be1a1c640c96435eaac0
 F src/func.c 94372fe3cf26b81d4dcdc15f98ff240c37c8c708
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
-F src/insert.c 664e4ccabc6393dc3be08ce2c47ccfea4b049e15
+F src/insert.c 967be8c143d64c904ba4e6f66760824898a75e3c
 F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c 146fb9b9dc6133e763888d710205c32ebf8eeca2
 F src/main.c a0e10c0888bdf40b7a10f11bc2581b1da3a9077a
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 5a194b9b9a10dc66543d4ca22bc0db40c5cc5ef1
 F src/os.h 506acdfd0a63802434ceacdbfd7c006e5d90fc53
-F src/os_common.h c86e8cbd6150ca06d46b09ec02ff5fc5d4b05285
+F src/os_common.h 0969285cc1e0b1ccc7a2cd7ce8eb144176ce3369
 F src/os_os2.c 2ce97909b926a598823f97338027dbec1dcf4165
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 5e3cbef7efc5f8481c2242fb2cad3577dcbfb8f9
+F src/os_unix.c ccb003fb9fadc032924d3efb3fa8cc69fd9e176b
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c c3a8403ea28bbb89d6507fa984c5919bd3fe7539
+F src/os_win.c c9a99524d6b2bdec636264cad1b67553925e3309
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 5d07eba846ef4f2067e6640d3f941dbf7668b8f6
+F src/pager.c 84072e9b5f370752176e5f7575557496bf239bc3
 F src/pager.h e79a24cf200b8771366217f5bca414f5b7823f42
 F src/parse.y 207ab04273ae13aa4a729b96008d294d5f334ab3
 F src/pragma.c 3b992b5b2640d6ae25cef05aa6a42cd1d6c43234
 F src/prepare.c 37207b2b2ccb41d379b01dd62231686bcc48ef1f
 F src/printf.c 0c6f40648770831341ac45ab32423a80b4c87f05
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
-F src/select.c 30af458c6a0a4a283c67b56c70ff0712b67d42ae
+F src/select.c 41b1997441ee314e681e981346d328665263bc44
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 3ae4654560e91220a95738a73d135d91d937cda1
 F src/sqlite.h.in e429f66f9245c7f8675db24b230c950b8672ad1c
@@ -127,9 +127,9 @@ F src/vdbe.c 87e31f0790ac8a5aad7b7fcd5b97948943fccba3
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h 4b19fd8febad3fd14c4c97adaefc06754d323132
 F src/vdbeapi.c 7ac14f2e3b2283dcd35f5edefd31a8342cff783c
-F src/vdbeaux.c a77bf70260ac1802dccf1076088700cc51d81fa3
+F src/vdbeaux.c 464df6616ea25b2f750b714f9bc2df45aa5e9f6e
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
-F src/vdbemem.c d3696b4b0e5f32272659816cdfa2348c650b1ba0
+F src/vdbemem.c 981a113405bd9b80aeb71fe246a2f01708e8a8f7
 F src/vtab.c 7fbda947e28cbe7adb3ba752a76ca9ef29936750
 F src/where.c 25e0dbb96c6980d11cc756c2b4abdfda80cd67a5
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
@@ -447,7 +447,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P a5070a2d11b4dad550a889d5fc005302208b6d75
-R a9d9872807c3c8809d1d420db21f68d7
+P ddfc3b2df0b37be66fc55bb216cdcb6ba67aa7fd
+R 6aaccc938ac434f31b7ba1499b082549
 U drh
-Z 410804ccf938e00b1fc895783b26c1d2
+Z 1690edfe26c670d8db633c5c98f82e61
