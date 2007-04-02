@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.232 2007/03/31 15:02:49 drh Exp $
+** $Id: test1.c,v 1.233 2007/04/02 12:29:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4072,6 +4072,13 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "vtab", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "vtab", "1", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_DEFAULT_FILE_FORMAT
+  Tcl_ObjSetVar2(interp, 
+      Tcl_NewStringObj("sqlite_default_file_format", -1), 0, 
+      Tcl_NewIntObj(SQLITE_DEFAULT_FILE_FORMAT), TCL_GLOBAL_ONLY
+  );
 #endif
 }
 
