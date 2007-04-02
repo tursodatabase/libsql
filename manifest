@@ -1,5 +1,5 @@
-C Cover\san\sextra\scase\sin\ssqlite3PagerMovepage().\s(CVS\s3796)
-D 2007-04-02T14:19:16
+C Update\sthe\sbuild\sscripts\sand\sthe\shomepage\sin\spreparation\sfor\sversion\s3.3.14.\s(CVS\s3797)
+D 2007-04-02T15:04:34
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -44,11 +44,11 @@ F ext/fts2/fts2_tokenizer1.c 6067f2f710bc7e91c0688b7b11be1027777553e0
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
 F main.mk 49c1b97b57d2a0091fbecee6feb9a992661ff05a
-F mkdll.sh cbc7d92d02f9317a3d24ab55bb727275417260ca
+F mkdll.sh ed62756baf44babf562a7843588790c02fee2106
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
 F mkso.sh 24bde4c09e6fe80f718db3c31c068f45e13a2f2c
-F publish.sh 0803a2952107454d3eaf2e239bd6699951ecfbab
+F publish.sh 8ef26af8417ddd03d471779e9c14764b3abe7706
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
@@ -424,7 +424,7 @@ F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bbb8af1ee494a71031acac4c8d8c51535f23b9df
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 688cf1280232f4964d8d07fda65e166a4b2e16cc
+F www/index.tcl ac28cf2f1130bedf970f990546d0ec79d2e9fbfc
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl dc4dedf00d2d6c46a17a962f850fc82086accb5c
 F www/lockingv3.tcl e52345bd20323bef6146bfce18ae0829b2b7c87d
@@ -448,7 +448,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P c036db6251ca4671fc3388a4f37955c18adeca1d
-R b312892bc4400eb87f0210f0a4ec2915
-U danielk1977
-Z 42486ade40db0dea35717849aebedc28
+P 7313688bd03141381067c36800edf1621a2ea05e
+R 83120205a98e03024248d114ac0707a7
+U drh
+Z e1fb66c85dcd79e9a1eb2aceb9090af2
