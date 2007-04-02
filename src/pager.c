@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.314 2007/04/02 05:07:47 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.315 2007/04/02 11:08:59 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2760,6 +2760,7 @@ static int pagerSharedLock(Pager *pPager){
           rc = sqlite3OsOpenReadWrite(pPager->zJournal, &pPager->jfd, &ro);
           if( ro ){
             rc = SQLITE_BUSY;
+            sqlite3OsClose(&pPager->jfd);
           }
         }
         if( rc!=SQLITE_OK ){
@@ -2800,6 +2801,11 @@ static int pagerSharedLock(Pager *pPager){
         if( pPage1 ){
           unlinkPage(pPage1);
 
+          /* Make sure the former page 1 is right at the start of the
+          ** free-list. This triggers a special case in pagerAllocatePage()
+          ** to re-use this page even if the total number of pages in
+          ** the cache is less than Pager.mxPage.
+          */
           assert( pPager->pFirst==pPager->pFirstSynced );
           pPage1->pNextFree = pPager->pFirst;
           if( pPager->pFirst ){
@@ -2810,7 +2816,6 @@ static int pagerSharedLock(Pager *pPager){
           }
           pPager->pFirst = pPage1;
           pPager->pFirstSynced = pPage1;
-
         }
 
         assert( !pager_lookup(pPager, 1) );

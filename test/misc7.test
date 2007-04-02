@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.10 2007/04/02 05:07:48 danielk1977 Exp $
+# $Id: misc7.test,v 1.11 2007/04/02 11:08:59 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -329,6 +329,13 @@ do_ioerr_test misc7-16 -sqlprep {
 }
 
 sqlite3 db test.db
+
+do_test misc7-16.X {
+  execsql {
+    SELECT count(*) FROM t3;
+  }
+} {32}
+
 set sqlite_pager_n_sort_bucket 4
 do_test misc7-17 {
   execsql {
@@ -338,5 +345,35 @@ do_test misc7-17 {
   }
 } {ok ok}
 set sqlite_pager_n_sort_bucket 0
+
+#----------------------------------------------------------------------
+# Test the situation where a hot-journal is discovered but write-access
+# to it is denied. This should return SQLITE_BUSY.
+#
+do_test misc7-17.1 {
+  execsql {
+    BEGIN;
+    DELETE FROM t3 WHERE (oid%3)==0;
+  }
+  copy_file test.db bak.db
+  copy_file test.db-journal bak.db-journal
+  execsql {
+    COMMIT;
+  }
+
+  copy_file bak.db test.db
+  copy_file bak.db-journal test.db-journal
+  file attributes test.db-journal -permissions r--------
+
+  catchsql {
+    SELECT count(*) FROM t3;
+  }
+} {1 {database is locked}}
+do_test misc7-17.2 {
+  file attributes test.db-journal -permissions rw-------
+  catchsql {
+    SELECT count(*) FROM t3;
+  }
+} {0 28}
 
 finish_test

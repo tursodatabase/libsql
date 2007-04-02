@@ -1,5 +1,5 @@
-C Fix\sa\sresource\sleak\sintroduced\sby\sthe\schange-counter\soptimisation.\sAlso\sadd\ssome\stest\scoverage.\s(CVS\s3790)
-D 2007-04-02T05:07:47
+C Correctly\shandle\sthe\sobscure\scase\sof\sa\sread-only\shot-journal\sfile.\s(CVS\s3791)
+D 2007-04-02T11:08:59
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,7 +86,7 @@ F src/os_unix.c ccb003fb9fadc032924d3efb3fa8cc69fd9e176b
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c9a99524d6b2bdec636264cad1b67553925e3309
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c a73e3b06cf315bfa70d34d9d311d3395693eef87
+F src/pager.c 0583079cb746f96702b7351b0cda346be4c02da8
 F src/pager.h e79a24cf200b8771366217f5bca414f5b7823f42
 F src/parse.y 207ab04273ae13aa4a729b96008d294d5f334ab3
 F src/pragma.c 3b992b5b2640d6ae25cef05aa6a42cd1d6c43234
@@ -275,7 +275,7 @@ F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
 F test/misc5.test c7d2d2a5a20dc37d3605a8067f0df5af2240122e
 F test/misc6.test 3de55ec5cadf466ada587173faa5d6a4790a8bb7
-F test/misc7.test db026378fd83c9a318a9b5f5db5c17725db450d9
+F test/misc7.test 2b7af7cbed8da4676730c14a6db0c28011067447
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
@@ -448,7 +448,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P d9f6fdb72b29354921e6de40df5ed4f86b158a01
-R ac656430c79d0852aed9fac02cb5a8d8
+P ba0538a4977aefd6645554f1989f0a98b540b9cd
+R fe59b9bdc90ed7270cae7cde15f7b2a0
 U danielk1977
-Z 6f28f4d19e867b11a92da6fb2f139223
+Z 614d37969660406bc4f5f28fc9575c7e
