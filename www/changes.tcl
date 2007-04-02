@@ -25,6 +25,48 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2007 April 2 (3.3.14)} {
+<li>Fix a <a href="http://www.sqlite.org/cvstrac/tktview?tn=2273">bug</a>
+    in 3.3.13 that could cause a segfault when the IN operator
+    is used one one term of a two-column index and the right-hand side of
+    the IN operator contains a NULL.</li>
+<li>Added a new OS interface method for determining the sector size
+    of underlying media:  sqlite3OsSectorSize().</li>
+<li>A new algorithm for statements of the form
+    INSERT INTO <i>table1</i> SELECT * FROM <i>table2</i>
+    is faster and reduces fragmentation.  VACUUM uses statements of
+    this form and thus runs faster and defragments better.</li>
+<li>Performance enhancements through reductions in disk I/O:
+<ul>
+<li>Do not read the last page of an overflow chain when
+    deleting the row - just add that page to the freelist.</li>
+<li>Do not store pages being deleted in the 
+    rollback journal.</li>
+<li>Do not read in the (meaningless) content of
+    pages extracted from the freelist.</li>
+<li>Do not flush the page cache (and thus avoiding
+    a cache refill) unless another process changes the underlying
+    database file.</li>
+<li>Truncate rather than delete the rollback journal when committing
+    a transaction in exclusive access mode, or when committing the TEMP
+    database.</li>
+</ul></li>
+<li>Added support for exclusive access mode using
+    <a href="pragma.html#pragma_locking_mode">
+    "PRAGMA locking_mode=EXCLUSIVE"</a></li>
+<li>Use heap space instead of stack space for large buffers in the
+    pager - useful on embedded platforms with  stack-space
+    limitations.</li>
+<li>Add a makefile target "sqlite3.c" that builds an amalgamation containing
+    the core SQLite library C code in a single file.</li>
+<li>Get the library working correctly when compiled 
+    with GCC option "-fstrict-aliasing".</li>
+<li>Removed the vestigal SQLITE_PROTOCOL error.</li>
+<li>Improvements to test coverage, other minor bugs fixed,
+    memory leaks plugged,
+    code refactored and/or recommented in places for easier reading.</li>
+}
+
 chng {2007 February 13 (3.3.13)} {
 <li>Add a "fragmentation" measurement in the output of sqlite3_analyzer.</li>
 <li>Add the COLLATE operator used to explicitly set the collating sequence

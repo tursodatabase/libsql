@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.21 2007/03/26 08:41:13 danielk1977 Exp $}
+set rcsid {$Id: pragma.tcl,v 1.22 2007/04/02 00:53:19 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -247,20 +247,38 @@ puts {
     database connection never releases file-locks. The first time the
     database is read in EXCLUSIVE mode, a shared lock is obtained and 
     held. The first time the database is written, an exclusive lock is
-    obtained and held.
+    obtained and held.</p>
 
     <p>Database locks obtained by a connection in EXCLUSIVE mode may be
     released either by closing the database connection, or by setting the
     locking-mode back to NORMAL using this pragma and then accessing the
     database file (for read or write). Simply setting the locking-mode to
-    NORMAL is not enough, locks not be released until the next time
-    the database file is accessed.
+    NORMAL is not enough - locks are not be released until the next time
+    the database file is accessed.</p>
 
     <p>There are two reasons to set the locking-mode to EXCLUSIVE. One
     is if the application actually wants to prevent other processes from
     accessing the database file. The other is that a small number of
     filesystem operations are saved by optimizations enabled in this
-    mode. This may be significant in embedded environments.
+    mode. This may be significant in embedded environments.</p>
+
+    <p>When the locking_mode pragma specifies a particular database,
+    for example:</p>
+
+    <blockquote>
+PRAGMA <b>main.</b>locking_mode=EXCLUSIVE;
+    </blockquote>
+
+    <p>Then the locking mode applies only to the named database.  If no
+    database name qualifier preceeds the "locking_mode" keyword then
+    the locking mode is applied to all databases, including any new
+    databases added by subsequent <a href="lang_attach.html">ATTACH</a>
+    commands.</p>
+
+   <p>The "temp" database (in which TEMP tables and indices are stored)
+   always uses exclusive locking mode.  The locking mode of temp cannot
+   be changed.  All other databases use the normal locking mode by default
+   and are effected by this pragma.</p>
 </li>
 
 <a name="pragma_page_size"></a>
