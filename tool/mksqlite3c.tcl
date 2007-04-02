@@ -148,6 +148,7 @@ proc copy_file {filename} {
 foreach file {
    sqlite3.h
 
+   date.c
    os.c
 
    printf.c
@@ -179,7 +180,6 @@ foreach file {
    build.c
    callback.c
    complete.c
-   date.c
    delete.c
    func.c
    insert.c
