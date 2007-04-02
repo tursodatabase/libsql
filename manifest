@@ -1,5 +1,5 @@
-C If\spreprocessor\smacro\sOS_OTHER\sis\sdefined,\sthen\signore\sOS_UNIX,\sOS_WIN,\sand\nOS_OS2.\s\sThis\smakes\sit\seasier\sto\sadd\sproprietary\sbackends..\s(CVS\s3801)
-D 2007-04-02T16:45:13
+C Add\sa\sdifferent\sform\sof\sI/O\stests.\sSo\sfar\shas\sfailed\sto\sexpose\snew\sbugs.\s(CVS\s3802)
+D 2007-04-02T16:46:23
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -242,6 +242,7 @@ F test/insert4.test 0bb119fea2868afdcf78e4e3e3bfed27bbdb2430
 F test/interrupt.test c38b7f7c17914f0cd6a119beed5d03bc3f47f9eb
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/ioerr.test 491d42c49bbec598966d26b01ed7901f55e5ee2d
+F test/ioerr2.test 5f672f7f37a424bb1e02bee4fdedfa319a95da29
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -448,7 +449,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 93a41510f02dc5649dbbc22c4e4fbee545bd76d8
-R e5f04671943867fead15e12170770e3b
-U drh
-Z ae555aac32c377d06fe2669a353b0839
+P 4fdafd3f583b1ec4aa7fb6a9b5de2f52a375832b
+R 6309f43590fc7c56f04de013101b9327
+U danielk1977
+Z d779504ae78400a04fd1f5a591901d17
