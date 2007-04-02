@@ -1,5 +1,5 @@
-C In\sthe\samalgamation,\sput\sdate.c\sbefore\sos.c\sso\sthat\sthe\stime_t\stypedef\ncan\sbe\scorrectly\sresolved\sby\swindows\scompilers.\s(CVS\s3793)
-D 2007-04-02T12:22:45
+C Cover\sa\scorrupt-db\scase\sin\spager.c.\s(CVS\s3794)
+D 2007-04-02T12:28:28
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -275,7 +275,7 @@ F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
 F test/misc5.test c7d2d2a5a20dc37d3605a8067f0df5af2240122e
 F test/misc6.test 3de55ec5cadf466ada587173faa5d6a4790a8bb7
-F test/misc7.test 2b7af7cbed8da4676730c14a6db0c28011067447
+F test/misc7.test 292c9ec0245d3602e9d36555efa0a1a8c9df9c54
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
@@ -448,7 +448,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 22e10cc24e4407feb276abfa8cc9964f20c6e54a
-R 42c2a9ca309cb4860ceac1f3ae68c7dd
-U drh
-Z 73b20471719a288f5e4588a1c14d182d
+P 9c5697c70fa850ea700e8cc0c918791a1628ab10
+R 9b1809ceca03b195edbbb02502310315
+U danielk1977
+Z c0810418df79ee0e5e1bc5f565ea0ade
