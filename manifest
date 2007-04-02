@@ -1,5 +1,5 @@
-C Provide\sa\scompile-time\soption\sto\senable\sexclusive\saccess\smode\sby\sdefault.\s(CVS\s3800)
-D 2007-04-02T16:40:38
+C If\spreprocessor\smacro\sOS_OTHER\sis\sdefined,\sthen\signore\sOS_UNIX,\sOS_WIN,\sand\nOS_OS2.\s\sThis\smakes\sit\seasier\sto\sadd\sproprietary\sbackends..\s(CVS\s3801)
+D 2007-04-02T16:45:13
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -76,7 +76,7 @@ F src/loadext.c 146fb9b9dc6133e763888d710205c32ebf8eeca2
 F src/main.c c8915777ae8e50823d01eefe2b674ef68c32bf61
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 5a194b9b9a10dc66543d4ca22bc0db40c5cc5ef1
-F src/os.h 506acdfd0a63802434ceacdbfd7c006e5d90fc53
+F src/os.h 21db538bb674d53baa960ea8ec2332f1af799ed6
 F src/os_common.h 0969285cc1e0b1ccc7a2cd7ce8eb144176ce3369
 F src/os_os2.c 2ce97909b926a598823f97338027dbec1dcf4165
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
@@ -448,7 +448,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 3dbf4f98accf3f4fd78e39448e68dd3bd85bdf10
-R f121e7eab0d071612c64ab91244e1f52
+P 93a41510f02dc5649dbbc22c4e4fbee545bd76d8
+R e5f04671943867fead15e12170770e3b
 U drh
-Z 1be9147233a73478c7c6e0dc5f9d9075
+Z ae555aac32c377d06fe2669a353b0839

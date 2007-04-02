@@ -21,6 +21,18 @@
 ** Figure out if we are dealing with Unix, Windows, or some other
 ** operating system.
 */
+#if defined(OS_OTHER)
+# if OS_OTHER==1
+#   undef OS_UNIX
+#   define OS_UNIX 0
+#   undef OS_WIN
+#   define OS_WIN 0
+#   undef OS_OS2
+#   define OS_OS2 0
+# else
+#   undef OS_OTHER
+# endif
+#endif
 #if !defined(OS_UNIX) && !defined(OS_OTHER)
 # define OS_OTHER 0
 # ifndef OS_WIN
