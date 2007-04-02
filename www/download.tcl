@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the download.html file.
 #
-set rcsid {$Id: download.tcl,v 1.24 2007/02/13 14:11:46 drh Exp $}
+set rcsid {$Id: download.tcl,v 1.25 2007/04/02 15:29:33 drh Exp $}
 source common.tcl
 header {SQLite Download Page}
 
@@ -140,8 +140,6 @@ Product {sqlite-source-V3.zip} {
   Unlike the tarballs below, all of the preprocessing and automatic
   code generation has already been done on these C source code, so they
   can be processed directly with any ordinary C compiler.
-  This file is provided as a service to
-  MS-Windows users who lack the build support infrastructure of Unix.
 }
 
 Product {sqlite-V3-tea.tar.gz} {

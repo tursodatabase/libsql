@@ -1,5 +1,5 @@
-C Update\sthe\sbuild\sscripts\sand\sthe\shomepage\sin\spreparation\sfor\sversion\s3.3.14.\s(CVS\s3797)
-D 2007-04-02T15:04:34
+C Changes\sto\sthe\sdownload\spage.\s(CVS\s3798)
+D 2007-04-02T15:29:33
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -417,7 +417,7 @@ F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
 F www/different.tcl 8b76ae88bf73e38097b7936e198df4f89baf587c
 F www/direct1b.gif 32b48b764244817b6b591898dc52a04299a7b8a7
 F www/docs.tcl 09eeac4e565789a67abc63f166a9ae7f3050454d
-F www/download.tcl e5fada67969043a1572531ec899ac2b77fd3c9af
+F www/download.tcl 764b7ff75433e47369741c6f3451b1e05d90d24b
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 705c986e40775cc3d92a1676dcbb55f00f0459c5
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
@@ -448,7 +448,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 7313688bd03141381067c36800edf1621a2ea05e
-R 83120205a98e03024248d114ac0707a7
+P a154224b329423aef622be539f6e7dfb76dc4c21
+R 9e549534d4b92b068678e93873ec8db9
 U drh
-Z e1fb66c85dcd79e9a1eb2aceb9090af2
+Z c67d59fe25021e6096582f3c115a0ed8
