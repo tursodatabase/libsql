@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.315 2007/04/02 11:08:59 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.316 2007/04/02 11:22:22 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -942,26 +942,15 @@ static int pager_end_transaction(Pager *pPager){
     pPager->stmtOpen = 0;
   }
   if( pPager->journalOpen ){
-    if( pPager->exclusiveMode ){
-      rc = sqlite3OsTruncate(pPager->jfd, 0);
+    if( pPager->exclusiveMode 
+          && (rc = sqlite3OsTruncate(pPager->jfd, 0))==SQLITE_OK ){;
       sqlite3OsSeek(pPager->jfd, 0);
       pPager->journalOff = 0;
       pPager->journalStarted = 0;
     }else{
       sqlite3OsClose(&pPager->jfd);
       pPager->journalOpen = 0;
-      /* If this is a temporary pager file, then the journal file should
-      ** have been configured as delete-on-close. Otherwise, it should still
-      ** be in the file system. This pager still holds a RESERVED or greater
-      ** lock on the database file, so there is no chance another process
-      ** could create or remove a journal file.
-      **
-      ** These asserts are not valid for asynchronous I/O such as is found
-      ** in async.test
-      */
-      /*assert( sqlite3OsFileExists(pPager->zJournal) || pPager->tempFile );*/
-      /*assert( !sqlite3OsFileExists(pPager->zJournal) || !pPager->tempFile );*/
-      if( !pPager->tempFile ){
+      if( rc==SQLITE_OK ){
         rc = sqlite3OsDelete(pPager->zJournal);
       }
     }
@@ -3188,20 +3177,6 @@ static int pager_open_journal(Pager *pPager){
 failed_to_open_journal:
   sqliteFree(pPager->aInJournal);
   pPager->aInJournal = 0;
-#if 0
-  if( rc==SQLITE_NOMEM ){
-    /* If this was a malloc() failure, then we will not be closing the pager
-    ** file. So delete any journal file we may have just created. Otherwise,
-    ** the system will get confused, we have a read-lock on the file and a
-    ** mysterious journal has appeared in the filesystem.
-    */
-    /* sqlite3OsDelete(pPager->zJournal); */
-  }else{
-    /* If we reset the pager here, we will delete pages out from under
-    ** various cursors and will ultimately segfault. */
-    /* pager_reset(pPager); */
-  }
-#endif
   return rc;
 }
 
