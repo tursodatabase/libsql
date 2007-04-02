@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.367 2007/03/31 15:28:00 drh Exp $
+** $Id: main.c,v 1.368 2007/04/02 16:40:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -975,6 +975,16 @@ static int openDatabase(
     extern int sqlite3Fts2Init(sqlite3*);
     sqlite3Fts2Init(db);
   }
+#endif
+
+  /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
+  ** mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking
+  ** mode.  Doing nothing at all also makes NORMAL the default.
+  */
+#ifdef SQLITE_DEFAULT_LOCKING_MODE
+  db->dfltLockMode = SQLITE_DEFAULT_LOCKING_MODE;
+  sqlite3PagerLockingMode(sqlite3BtreePager(db->aDb[0].pBt),
+                          SQLITE_DEFAULT_LOCKING_MODE);
 #endif
 
 opendb_out:

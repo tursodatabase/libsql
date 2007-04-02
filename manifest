@@ -1,5 +1,5 @@
-C Version\s3.3.14\s(CVS\s3799)
-D 2007-04-02T15:31:49
+C Provide\sa\scompile-time\soption\sto\senable\sexclusive\saccess\smode\sby\sdefault.\s(CVS\s3800)
+D 2007-04-02T16:40:38
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -73,7 +73,7 @@ F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 967be8c143d64c904ba4e6f66760824898a75e3c
 F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c 146fb9b9dc6133e763888d710205c32ebf8eeca2
-F src/main.c a0e10c0888bdf40b7a10f11bc2581b1da3a9077a
+F src/main.c c8915777ae8e50823d01eefe2b674ef68c32bf61
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 5a194b9b9a10dc66543d4ca22bc0db40c5cc5ef1
 F src/os.h 506acdfd0a63802434ceacdbfd7c006e5d90fc53
@@ -448,7 +448,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P de8055bcd678034b1ba1fe40d46a7fb60ee598f8
-R 9e549534d4b92b068678e93873ec8db9
+P 3dbf4f98accf3f4fd78e39448e68dd3bd85bdf10
+R f121e7eab0d071612c64ab91244e1f52
 U drh
-Z c501cf2c6f0a706a351656d6b5884f30
+Z 1be9147233a73478c7c6e0dc5f9d9075
