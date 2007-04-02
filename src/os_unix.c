@@ -2909,8 +2909,7 @@ int sqlite3UnixCurrentTime(double *prNow){
   *prNow = t/86400.0 + 2440587.5;
 #else
   struct timeval sNow;
-  struct timezone sTz;  /* Not used */
-  gettimeofday(&sNow, &sTz);
+  gettimeofday(&sNow, 0);
   *prNow = 2440587.5 + sNow.tv_sec/86400.0 + sNow.tv_usec/86400000000.0;
 #endif
 #ifdef SQLITE_TEST
