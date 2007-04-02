@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.313 2007/04/01 23:49:52 drh Exp $
+** @(#) $Id: pager.c,v 1.314 2007/04/02 05:07:47 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2389,9 +2389,16 @@ static PgHdr *merge_pagelist(PgHdr *pA, PgHdr *pB){
 ** connected by pDirty pointers.  The pPrevDirty pointers are
 ** corrupted by this sort.
 */
-#define N_SORT_BUCKET 25
+#define N_SORT_BUCKET_ALLOC 25
+#define N_SORT_BUCKET       25
+#ifdef SQLITE_TEST
+  int sqlite3_pager_n_sort_bucket = 0;
+  #undef N_SORT_BUCKET
+  #define N_SORT_BUCKET \
+   (sqlite3_pager_n_sort_bucket?sqlite3_pager_n_sort_bucket:N_SORT_BUCKET_ALLOC)
+#endif
 static PgHdr *sort_pagelist(PgHdr *pIn){
-  PgHdr *a[N_SORT_BUCKET], *p;
+  PgHdr *a[N_SORT_BUCKET_ALLOC], *p;
   int i;
   memset(a, 0, sizeof(a));
   while( pIn ){
@@ -2408,6 +2415,11 @@ static PgHdr *sort_pagelist(PgHdr *pIn){
       }
     }
     if( i==N_SORT_BUCKET-1 ){
+      /* Coverage: To get here, there need to be 2^(N_SORT_BUCKET) 
+      ** elements in the input list. This is possible, but impractical.
+      ** Testing this line is the point of global variable
+      ** sqlite3_pager_n_sort_bucket.
+      */
       a[i] = merge_pagelist(a[i], p);
     }
   }
@@ -2591,7 +2603,9 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   /* Unlink the old page from the free list and the hash table
   */
   unlinkPage(pPg);
-  TEST_INCR(pPager->nOvfl);
+  if( pPg && pPg->pgno!=0 ){
+    TEST_INCR(pPager->nOvfl);
+  }
 
   *ppPg = pPg;
   return SQLITE_OK;
@@ -2771,9 +2785,32 @@ static int pagerSharedLock(Pager *pPager){
       }
 
       if( pPager->pAll ){
+        /* The shared-lock has just been acquired on the database file
+        ** and there are already pages in the cache (from a previous
+        ** read or write transaction). If the value of the change-counter
+        ** stored in Pager.iChangeCount matches that found on page 1 of
+        ** the database file, then no database changes have occured since
+        ** the cache was last valid and it is safe to retain the cached
+        ** pages. Otherwise, if Pager.iChangeCount does not match the
+        ** change-counter on page 1 of the file, the current cache contents
+        ** must be discarded.
+        */
+
         PgHdr *pPage1 = pager_lookup(pPager, 1);
         if( pPage1 ){
-          unlinkHashChain(pPager, pPage1);
+          unlinkPage(pPage1);
+
+          assert( pPager->pFirst==pPager->pFirstSynced );
+          pPage1->pNextFree = pPager->pFirst;
+          if( pPager->pFirst ){
+            pPager->pFirst->pPrevFree = pPage1;
+          }else{
+            assert( !pPager->pLast );
+            pPager->pLast = pPage1;
+          }
+          pPager->pFirst = pPage1;
+          pPager->pFirstSynced = pPage1;
+
         }
 
         assert( !pager_lookup(pPager, 1) );
@@ -2799,6 +2836,60 @@ static int pagerSharedLock(Pager *pPager){
     }
   }
 
+  return rc;
+}
+
+/*
+** Allocate or recycle space for a single page.
+*/
+static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
+  int rc = SQLITE_OK;
+  PgHdr *pPg;
+
+  if( !(pPager->pFirstSynced && pPager->pFirstSynced->pgno==0) && (
+      pPager->nPage<pPager->mxPage || pPager->pFirst==0 || MEMDB ||
+      (pPager->pFirstSynced==0 && pPager->doNotSync)
+  ) ){
+    /* Create a new page */
+    if( pPager->nPage>=pPager->nHash ){
+      pager_resize_hash_table(pPager,
+         pPager->nHash<256 ? 256 : pPager->nHash*2);
+      if( pPager->nHash==0 ){
+        rc = SQLITE_NOMEM;
+        goto pager_allocate_out;
+      }
+    }
+    pPg = sqliteMallocRaw( sizeof(*pPg) + pPager->pageSize
+                            + sizeof(u32) + pPager->nExtra
+                            + MEMDB*sizeof(PgHistory) );
+    if( pPg==0 ){
+      rc = SQLITE_NOMEM;
+      goto pager_allocate_out;
+    }
+    memset(pPg, 0, sizeof(*pPg));
+    if( MEMDB ){
+      memset(PGHDR_TO_HIST(pPg, pPager), 0, sizeof(PgHistory));
+    }
+    pPg->pPager = pPager;
+    pPg->pNextAll = pPager->pAll;
+    pPager->pAll = pPg;
+    pPager->nPage++;
+    if( pPager->nPage>pPager->nMaxPage ){
+      assert( pPager->nMaxPage==(pPager->nPage-1) );
+      pPager->nMaxPage++;
+    }
+  }else{
+    /* Recycle an existing page with a zero ref-count. */
+    rc = pager_recycle(pPager, 1, &pPg);
+    if( rc!=SQLITE_OK ){
+      goto pager_allocate_out;
+    }
+    assert( pPager->state>=SHARED_LOCK );
+    assert(pPg);
+  }
+  *ppPg = pPg;
+
+pager_allocate_out:
   return rc;
 }
 
@@ -2867,43 +2958,11 @@ int sqlite3PagerAcquire(Pager *pPager, Pgno pgno, DbPage **ppPage, int clrFlag){
     int nMax;
     int h;
     TEST_INCR(pPager->nMiss);
-    if( pPager->nPage<pPager->mxPage || pPager->pFirst==0 || MEMDB ||
-        (pPager->pFirstSynced==0 && pPager->doNotSync)
-    ){
-      /* Create a new page */
-      if( pPager->nPage>=pPager->nHash ){
-        pager_resize_hash_table(pPager,
-           pPager->nHash<256 ? 256 : pPager->nHash*2);
-        if( pPager->nHash==0 ){
-          return SQLITE_NOMEM;
-        }
-      }
-      pPg = sqliteMallocRaw( sizeof(*pPg) + pPager->pageSize
-                              + sizeof(u32) + pPager->nExtra
-                              + MEMDB*sizeof(PgHistory) );
-      if( pPg==0 ){
-        return SQLITE_NOMEM;
-      }
-      memset(pPg, 0, sizeof(*pPg));
-      if( MEMDB ){
-        memset(PGHDR_TO_HIST(pPg, pPager), 0, sizeof(PgHistory));
-      }
-      pPg->pPager = pPager;
-      pPg->pNextAll = pPager->pAll;
-      pPager->pAll = pPg;
-      pPager->nPage++;
-      if( pPager->nPage>pPager->nMaxPage ){
-        assert( pPager->nMaxPage==(pPager->nPage-1) );
-        pPager->nMaxPage++;
-      }
-    }else{
-      rc = pager_recycle(pPager, 1, &pPg);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
-      assert( pPager->state>=SHARED_LOCK );
-      assert(pPg);
+    rc = pagerAllocatePage(pPager, &pPg);
+    if( rc!=SQLITE_OK ){
+      return rc;
     }
+
     pPg->pgno = pgno;
     if( pPager->aInJournal && (int)pgno<=pPager->origDbSize ){
       sqlite3CheckMemory(pPager->aInJournal, pgno/8);

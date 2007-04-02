@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.349 2007/03/31 02:36:44 drh Exp $
+** $Id: btree.c,v 1.350 2007/04/02 05:07:47 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2280,8 +2280,13 @@ static int allocateBtreePage(BtShared *, MemPage **, Pgno *, Pgno, u8);
 /*
 ** This routine is called prior to sqlite3PagerCommit when a transaction
 ** is commited for an auto-vacuum database.
+**
+** If SQLITE_OK is returned, then *pnTrunc is set to the number of pages
+** the database file should be truncated to during the commit process. 
+** i.e. the database has been reorganized so that only the first *pnTrunc
+** pages are in use.
 */
-static int autoVacuumCommit(BtShared *pBt, Pgno *nTrunc){
+static int autoVacuumCommit(BtShared *pBt, Pgno *pnTrunc){
   Pager *pPager = pBt->pPager;
   Pgno nFreeList;            /* Number of pages remaining on the free-list. */
   int nPtrMap;               /* Number of pointer-map pages deallocated */
@@ -2310,7 +2315,7 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *nTrunc){
   */
   nFreeList = get4byte(&pBt->pPage1->aData[36]);
   if( nFreeList==0 ){
-    *nTrunc = 0;
+    *pnTrunc = 0;
     return SQLITE_OK;
   }
 
@@ -2401,7 +2406,7 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *nTrunc){
   if( rc!=SQLITE_OK ) goto autovacuum_out;
   put4byte(&pBt->pPage1->aData[32], 0);
   put4byte(&pBt->pPage1->aData[36], 0);
-  *nTrunc = finSize;
+  *pnTrunc = finSize;
   assert( finSize!=PENDING_BYTE_PAGE(pBt) );
 
 autovacuum_out:

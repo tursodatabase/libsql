@@ -1,5 +1,5 @@
-C Update\sthe\sversion\snumber\sand\schange\scomments\sin\spreparation\sfor\sthe\nrelease\sof\s3.3.14.\s(CVS\s3789)
-D 2007-04-02T00:53:19
+C Fix\sa\sresource\sleak\sintroduced\sby\sthe\schange-counter\soptimisation.\sAlso\sadd\ssome\stest\scoverage.\s(CVS\s3790)
+D 2007-04-02T05:07:47
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -58,7 +58,7 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 4bbf5ddf9680587c6d4917e02e378b6037be3651
 F src/attach.c a16ada4a4654a0d126b8223ec9494ebb81bc5c3c
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c 052d0306d66768ad4d5a54609d4464bdc2a17839
+F src/btree.c 48fa58f2d71edeab4a7d08157abe50a0b7a0e489
 F src/btree.h 9b2cc0d113c0bc2d37d244b9a394d56948c9acbf
 F src/build.c ad3374b5409554e504300f77e1fbc6b4c106a57f
 F src/callback.c 31d22b4919c7645cbcbb1591ce2453e8c677c558
@@ -86,7 +86,7 @@ F src/os_unix.c ccb003fb9fadc032924d3efb3fa8cc69fd9e176b
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c9a99524d6b2bdec636264cad1b67553925e3309
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 84072e9b5f370752176e5f7575557496bf239bc3
+F src/pager.c a73e3b06cf315bfa70d34d9d311d3395693eef87
 F src/pager.h e79a24cf200b8771366217f5bca414f5b7823f42
 F src/parse.y 207ab04273ae13aa4a729b96008d294d5f334ab3
 F src/pragma.c 3b992b5b2640d6ae25cef05aa6a42cd1d6c43234
@@ -102,7 +102,7 @@ F src/sqliteInt.h 09384eb30d6740e3e9d0c9379432e254fdb390d9
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c a8d1166319db5d505b25ac6a9820162afe63fc8a
 F src/test1.c 0f94df69cd8832799aafaf58f7e28b4527225a3e
-F src/test2.c 710a7252e22a8c690136a2b609e90fdad2697f35
+F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 65f92247cf8592854e9bf5115b3fb711f8b33280
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
@@ -168,6 +168,7 @@ F test/btree6.test a5ede6bfbbb2ec8b27e62813612c0f28e8f3e027
 F test/btree7.test a6d3b842db22af97dd14b989e90a2fd96066b72f
 F test/btree8.test fadc112bcbd6a0c622d34c813fc8a648eacf8804
 F test/busy.test 0271c854738e23ad76e10d4096a698e5af29d211
+F test/cache.test 02cd1d1b0e7ad59cf24b85d49d77705e33aa5224
 F test/capi2.test 7ecc9b342cc9ec27b53bbf95724cf2e5874fd496
 F test/capi3.test 1675323145d128e5942a9faffcfd5cf4e219a33f
 F test/capi3b.test 5f0bc94b104e11086b1103b20277e1910f59c7f4
@@ -261,7 +262,7 @@ F test/malloc.test d868a6b98b07928b00bca3d9874daf6885c86150
 F test/malloc2.test 4ed7d719542c4570dec9c2ebe2bbdf3a9f3b0d05
 F test/malloc3.test e965954b6f808876a63d3101fd70370320b509a7
 F test/malloc4.test 59cd02f71b363302a04c4e77b97c0a1572eaa210
-F test/malloc5.test 7425272e263325fda7d32cb55706e52b5c09e7e0
+F test/malloc5.test 17a32bd72073741d539bb2a1307d712a316b89da
 F test/malloc6.test 025ae0b78542e0ddd000d23f79d93e9be9ba0f15
 F test/malloc7.test 1cf52834509eac7ebeb92105dacd4669f9ca9869
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
@@ -274,11 +275,11 @@ F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
 F test/misc5.test c7d2d2a5a20dc37d3605a8067f0df5af2240122e
 F test/misc6.test 3de55ec5cadf466ada587173faa5d6a4790a8bb7
-F test/misc7.test 8663e29f1a57c55321d4e6a8b2b9203d33254c69
+F test/misc7.test db026378fd83c9a318a9b5f5db5c17725db450d9
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
-F test/pager.test ceeef3caac4bf2046c6c06827f1a87dc1dec30f3
+F test/pager.test 3e12bef9c8512adb3f5db13d5745dc68fb4b92fc
 F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
@@ -447,7 +448,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 18aec1ddfb08b74f0ef9cf1215eac7af71449db3
-R 1ba2c076c76000f21aa292bb0a8f72c4
-U drh
-Z ab035ae84bd6530ffbee25f61451be81
+P d9f6fdb72b29354921e6de40df5ed4f86b158a01
+R ac656430c79d0852aed9fac02cb5a8d8
+U danielk1977
+Z 6f28f4d19e867b11a92da6fb2f139223

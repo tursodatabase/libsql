@@ -12,7 +12,7 @@
 # This file contains test cases focused on the two memory-management APIs, 
 # sqlite3_soft_heap_limit() and sqlite3_release_memory().
 #
-# $Id: malloc5.test,v 1.7 2006/01/19 08:43:32 danielk1977 Exp $
+# $Id: malloc5.test,v 1.8 2007/04/02 05:07:48 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -85,6 +85,7 @@ do_test malloc5-1.4 {
 do_test malloc5-1.5 {
   # Manipulate the cache so that it contains two unused pages. One requires 
   # a journal-sync to free, the other does not.
+  db2 close
   execsql {
     SELECT * FROM abc;
     CREATE TABLE def(d, e, f);
@@ -95,6 +96,7 @@ do_test malloc5-1.6 {
   # Database should not be locked this time. The above test case only
   # requested 500 bytes of memory, which can be obtained by freeing the page
   # that does not require an fsync().
+  sqlite3 db2 test.db
   catchsql {
     SELECT * FROM abc;
   } db2
@@ -102,9 +104,11 @@ do_test malloc5-1.6 {
 do_test malloc5-1.7 {
   # Release another 500 bytes of memory. This time we require a sync(), 
   # so the database file will be locked afterwards.
+  db2 close
   sqlite3_release_memory 500
 } $::pgalloc
 do_test malloc5-1.8 {
+  sqlite3 db2 test.db
   catchsql {
     SELECT * FROM abc;
   } db2
