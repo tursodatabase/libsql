@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.24 2006/08/12 12:33:15 drh Exp $
+# $Id: autovacuum.test,v 1.25 2007/04/02 14:19:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -578,5 +578,56 @@ do_test autovacuum-6.1 {
 } {ok ok ok}
 
 }
+
+#---------------------------------------------------------------------
+# Test cases autovacuum-7.X test the case where a page must be moved
+# and the destination location collides with at least one other
+# entry in the page hash-table (internal to the pager.c module. 
+#
+do_test autovacuum-7.1 {
+  db close
+  file delete -force test.db
+  file delete -force test.db-journal
+  sqlite3 db test.db
+
+  execsql {
+    PRAGMA auto_vacuum=1;
+    CREATE TABLE t1(a, b, PRIMARY KEY(a, b));
+    INSERT INTO t1 VALUES(randstr(400,400),randstr(400,400));
+    INSERT INTO t1 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 2
+    INSERT INTO t1 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 4
+    INSERT INTO t1 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 8
+    INSERT INTO t1 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 16
+    INSERT INTO t1 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 32
+  }
+
+  expr {[file size test.db] / 1024}
+} {73}
+
+do_test autovacuum-7.2 {
+  execsql {
+    CREATE TABLE t2(a, b, PRIMARY KEY(a, b));
+    INSERT INTO t2 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 2
+    CREATE TABLE t3(a, b, PRIMARY KEY(a, b));
+    INSERT INTO t3 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 2
+    CREATE TABLE t4(a, b, PRIMARY KEY(a, b));
+    INSERT INTO t4 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 2
+    CREATE TABLE t5(a, b, PRIMARY KEY(a, b));
+    INSERT INTO t5 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 2
+  }
+  expr {[file size test.db] / 1024}
+} {354}
+
+do_test autovacuum-7.3 {
+  db close
+  sqlite3 db test.db
+  execsql {
+    BEGIN;
+    DELETE FROM t4;
+    COMMIT;
+    SELECT count(*) FROM t1;
+  }
+  expr {[file size test.db] / 1024}
+} {286}
 
 finish_test

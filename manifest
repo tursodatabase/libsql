@@ -1,5 +1,5 @@
-C Fix\sfor\s#2281.\sThis\swas\sa\sproblem\swith\sthe\stest-case\sonly.\s(CVS\s3795)
-D 2007-04-02T12:29:01
+C Cover\san\sextra\scase\sin\ssqlite3PagerMovepage().\s(CVS\s3796)
+D 2007-04-02T14:19:16
 F Makefile.in 2f2c3bf69faf0ae7b8e8af4f94f1986849034530
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -134,7 +134,7 @@ F src/vtab.c 7fbda947e28cbe7adb3ba752a76ca9ef29936750
 F src/where.c 25e0dbb96c6980d11cc756c2b4abdfda80cd67a5
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
-F test/all.test 60267b055e82de4fb8b841eabb014bc2f836a4eb
+F test/all.test 6a03095322e93427a3677ce5daaa20f45640d1f0
 F test/alter.test a2cc30e844cb3b5d203416962f56f78fc11b1978
 F test/alter2.test 33fb74e0470455ed6903f8d6e63256c7402cebb1
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
@@ -149,7 +149,7 @@ F test/attachmalloc.test 03eeddd06e685ddbe975efd51824e4941847e5f4
 F test/auth.test 66923137cf78475f5671b5e6e6274935e055aea0
 F test/auth2.test 8da06f0ffcfd98154dda78e0f3b35a6503c27b64
 F test/autoinc.test 60005a676e3e4e17dfa9dbd08aa0b76587ff97e3
-F test/autovacuum.test 5f5d843ff856b7dcfdf3f36b7e1acb04895047ce
+F test/autovacuum.test 05f528c3bf98d086df7d86fddeb9d85037254913
 F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
 F test/autovacuum_ioerr.test c46a76869cb6eddbbb40b419b2b6c4c001766b1f
 F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
@@ -448,7 +448,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 84077fa1602756339a262bc4ab51b6b487edc637
-R b4a7c87e67bebc1d353d9c4afaced009
+P c036db6251ca4671fc3388a4f37955c18adeca1d
+R b312892bc4400eb87f0210f0a4ec2915
 U danielk1977
-Z 56dcad87d661517797c12a6081958287
+Z 42486ade40db0dea35717849aebedc28

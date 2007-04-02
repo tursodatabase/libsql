@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.38 2007/03/27 12:04:06 drh Exp $
+# $Id: all.test,v 1.39 2007/04/02 14:19:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -121,6 +121,7 @@ if {$LeakList!=""} {
 #
 if {$::tcl_platform(platform)=="unix"} {
   source $testdir/crash.test
+  source $testdir/crash2.test
   ifcapable !default_autovacuum {
     source $testdir/autovacuum_crash.test
   }
