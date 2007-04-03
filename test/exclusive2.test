@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: exclusive2.test,v 1.1 2007/03/26 10:27:19 danielk1977 Exp $
+# $Id: exclusive2.test,v 1.2 2007/04/03 16:13:52 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -29,7 +29,8 @@ proc pagerChangeCounter {filename {new ""}} {
     set b [expr {($new&0x00FF0000)>>16}]
     set c [expr {($new&0x0000FF00)>>8}]
     set d [expr {($new&0x000000FF)}]
-    puts $fd [binary format cccc $a $b $c $d]
+    puts -nonewline $fd [binary format cccc $a $b $c $d]
+    flush $fd
   }
 
   seek $fd 24
@@ -157,6 +158,7 @@ do_test exclusive2-2.4 {
   set fd [open test.db a]
   seek $fd 1024
   puts -nonewline $fd [string repeat [binary format c 0] 10000]
+  flush $fd
   t1sig
 } $::sig
 
