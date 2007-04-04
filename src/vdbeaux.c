@@ -1662,12 +1662,7 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
     extern int sqlite3_search_count;
 #endif
     assert( p->isTable );
-    if( p->isTable ){
-      rc = sqlite3BtreeMoveto(p->pCursor, 0, p->movetoTarget, 0, &res);
-    }else{
-      rc = sqlite3BtreeMoveto(p->pCursor,(char*)&p->movetoTarget,
-                              sizeof(i64), 0, &res);
-    }
+    rc = sqlite3BtreeMoveto(p->pCursor, 0, p->movetoTarget, 0, &res);
     if( rc ) return rc;
     *p->pIncrKey = 0;
     p->lastRowid = keyToInt(p->movetoTarget);
@@ -1760,10 +1755,8 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
     assert( n>=0 );
     return ((n*2) + 13);
   }
-  if( flags&MEM_Blob ){
-    return (pMem->n*2 + 12);
-  }
-  return 0;
+  assert( (flags & MEM_Blob)!=0 );
+  return (pMem->n*2 + 12);
 }
 
 /*
