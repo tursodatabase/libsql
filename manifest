@@ -1,6 +1,6 @@
-C New\stestfixture\scommand:\ssqlite3_pager_refcounts.\s\sReturns\sa\slist\sof\nintegers\swhich\sis\sthe\spager\srefcount\sfor\seach\spager\sin\sthe\sdatabase.\s(CVS\s3815)
-D 2007-04-05T17:36:19
-F Makefile.in 29fbf08ce0989973bfed0b5a052a6bdf3e60fd0a
+C Add\sa\starget\sto\sthe\sautoconf-generated\smakefile\sfor\samalgamation.\s(CVS\s3816)
+D 2007-04-05T18:34:58
+F Makefile.in a9bd493360a2b17e5214b69d8c32dd6cdaceaf55
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION ebbd5a08dc4d7f984b7e0f2dd3d5d78001119117
@@ -450,7 +450,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 9dc4100eff71be579480ce7939c7da712d28f0ae
-R 1e9ee6a288a346a81a2a6440f57fab41
+P 7338e68e0fd9263236f12f8911cb8293747dd1a4
+R 2236cb31ece453878263b0b9238a99b5
 U drh
-Z 64a2ccb10f8f58e5172c3a04cbfd5df5
+Z a8b4f2b06486c0a181a8a4d0cf0b24c8
