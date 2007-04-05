@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.233 2007/04/02 12:29:01 danielk1977 Exp $
+** $Id: test1.c,v 1.234 2007/04/05 17:36:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3751,6 +3751,44 @@ static int test_thread_cleanup(
 
 
 /*
+** Usage:   sqlite3_pager_refcounts  DB
+**
+** Return a list of numbers when are the PagerRefcount for each
+** pager on each database.
+*/
+static int test_pager_refcounts(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int i;
+  int v, *a;
+  Tcl_Obj *pResult;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " <STMT>", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  pResult = Tcl_NewObj();
+  for(i=0; i<db->nDb; i++){
+    if( db->aDb[i].pBt==0 ){
+      v = -1;
+    }else{
+      a = sqlite3PagerStats(sqlite3BtreePager(db->aDb[i].pBt));
+      v = a[0];
+    }
+    Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(v));
+  }
+  Tcl_SetObjResult(interp, pResult);
+  return TCL_OK;
+}
+
+
+/*
 ** This routine sets entries in the global ::sqlite_options() array variable
 ** according to the compile-time configuration of the database.  Test
 ** procedures use this to determine when tests should be omitted.
@@ -4202,6 +4240,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_clear_tsd_memdebug",    test_clear_tsd_memdebug, 0},
      { "sqlite3_tsd_release",           test_tsd_release,        0},
      { "sqlite3_thread_cleanup",        test_thread_cleanup,     0},
+     { "sqlite3_pager_refcounts",       test_pager_refcounts,    0},
 
      { "sqlite3_load_extension",        test_load_extension,     0},
      { "sqlite3_enable_load_extension", test_enable_load,        0},

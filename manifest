@@ -1,5 +1,5 @@
-C Always\struncate\sthe\spager\scache\swhen\struncating\sthe\sdatabase\sfile.\sAlso\sreorganize\sthe\scode\sto\scheck\sthe\schange-counter\safter\sfirst\sobtaining\sa\sshared\slock.\s(CVS\s3814)
-D 2007-04-05T17:15:53
+C New\stestfixture\scommand:\ssqlite3_pager_refcounts.\s\sReturns\sa\slist\sof\nintegers\swhich\sis\sthe\spager\srefcount\sfor\seach\spager\sin\sthe\sdatabase.\s(CVS\s3815)
+D 2007-04-05T17:36:19
 F Makefile.in 29fbf08ce0989973bfed0b5a052a6bdf3e60fd0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -101,7 +101,7 @@ F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h f09f449f266f71b236844e540bfce10e455ba6ab
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c a8d1166319db5d505b25ac6a9820162afe63fc8a
-F src/test1.c 018c5fa3d98ac4ef364f671ef3752b793585f2fe
+F src/test1.c 6021cbcede9bfab986ade678efa7226180f3edff
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 65f92247cf8592854e9bf5115b3fb711f8b33280
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -450,7 +450,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 97c5159816e211d9c71aa68db7c5e01df535d6a4
-R 3fc0ad20eb98e5c7a10bce0fbefb439e
-U danielk1977
-Z 9f9e23b7682ec7bf9ad2d8fa486a39d9
+P 9dc4100eff71be579480ce7939c7da712d28f0ae
+R 1e9ee6a288a346a81a2a6440f57fab41
+U drh
+Z 64a2ccb10f8f58e5172c3a04cbfd5df5
