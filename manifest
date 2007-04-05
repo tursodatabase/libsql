@@ -1,5 +1,5 @@
-C Use\sthe\sMEMDB\smacro\sinstead\sof\sOMIT_MEMORYDB\sin\spager_recycle().\s(CVS\s3813)
-D 2007-04-05T14:29:43
+C Always\struncate\sthe\spager\scache\swhen\struncating\sthe\sdatabase\sfile.\sAlso\sreorganize\sthe\scode\sto\scheck\sthe\schange-counter\safter\sfirst\sobtaining\sa\sshared\slock.\s(CVS\s3814)
+D 2007-04-05T17:15:53
 F Makefile.in 29fbf08ce0989973bfed0b5a052a6bdf3e60fd0a
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,7 +86,7 @@ F src/os_unix.c 13c6f73a7b0c2c6c131c97ea26274db101b594cd
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c9a99524d6b2bdec636264cad1b67553925e3309
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 6c70842fe6621968be7d87143032640b7bc7f3f8
+F src/pager.c 642f804b20a71933fb83b13a1ce93cb4dd1390f7
 F src/pager.h e79a24cf200b8771366217f5bca414f5b7823f42
 F src/parse.y 207ab04273ae13aa4a729b96008d294d5f334ab3
 F src/pragma.c 3b992b5b2640d6ae25cef05aa6a42cd1d6c43234
@@ -196,7 +196,7 @@ F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
 F test/descidx1.test 2177c4ad55edcf56ad5f4c6490f307d7774e8a10
 F test/descidx2.test eb3a2882ec58aa6e1e8131d9bb54436e5b4a3ce2
 F test/descidx3.test 3a55b8d73bc3e9ad084e0da7fec781cf0d2a0356
-F test/diskfull.test f592f37d9ee9d32155e0d30e4e35ec4a28c9ee93
+F test/diskfull.test a91fa95a8729b71fdac4738a49755f70b48c61f3
 F test/distinctagg.test 2b89d1c5220d966a30ba4b40430338669301188b
 F test/enc.test 7a03417a1051fe8bc6c7641cf4c8c3f7e0066d52
 F test/enc2.test 45710bacfa9df29720bc84c067dfdf8c8ddfb797
@@ -280,7 +280,7 @@ F test/misc7.test 292c9ec0245d3602e9d36555efa0a1a8c9df9c54
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
-F test/pager.test 3e12bef9c8512adb3f5db13d5745dc68fb4b92fc
+F test/pager.test 6c644725db2a79528f67a6f3472b9c9ddee17f05
 F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pagesize.test 05c74ea49f790734ec1e9ab765d9bf1cce79b8f2
@@ -450,7 +450,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P c20f7563c0ffa1df47df5464f1f1cc4703ffa9b4
-R 208747f649a24ee705a02097c6e213aa
+P 97c5159816e211d9c71aa68db7c5e01df535d6a4
+R 3fc0ad20eb98e5c7a10bce0fbefb439e
 U danielk1977
-Z 977a9e0a2f802e57fc1f9452318b947c
+Z 9f9e23b7682ec7bf9ad2d8fa486a39d9

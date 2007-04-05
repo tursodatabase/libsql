@@ -12,7 +12,7 @@
 # focus of this file is testing for correct handling of disk full
 # errors.
 # 
-# $Id: diskfull.test,v 1.5 2007/03/31 10:00:48 danielk1977 Exp $
+# $Id: diskfull.test,v 1.6 2007/04/05 17:15:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -56,7 +56,7 @@ integrity_check diskfull-1.6
 proc do_diskfull_test {prefix sql} {
   set ::go 1
   set ::sql $sql
-  set ::i 52
+  set ::i 1
   while {$::go} {
     incr ::i
     do_test ${prefix}.$::i.1 {

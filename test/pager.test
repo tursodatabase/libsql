@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager.test,v 1.27 2007/04/02 05:07:48 danielk1977 Exp $
+# $Id: pager.test,v 1.28 2007/04/05 17:15:53 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -119,7 +119,7 @@ do_test pager-2.12 {
 } {1}
 do_test pager-2.13 {
   pager_stats $::p1
-} {ref 1 page 1 max 10 size 0 state 1 err 0 hit 1 miss 2 ovfl 0}
+} {ref 1 page 1 max 10 size 0 state 1 err 0 hit 1 miss 1 ovfl 0}
 do_test pager-2.14 {
   set v [catch {
     page_write $::g1 "Page-One"
@@ -128,7 +128,7 @@ do_test pager-2.14 {
 } {0 {}}
 do_test pager-2.15 {
   pager_stats $::p1
-} {ref 1 page 1 max 10 size 1 state 2 err 0 hit 1 miss 2 ovfl 0}
+} {ref 1 page 1 max 10 size 1 state 2 err 0 hit 1 miss 1 ovfl 0}
 do_test pager-2.16 {
   page_read $::g1
 } {Page-One}
@@ -140,19 +140,19 @@ do_test pager-2.17 {
 } {0 {}}
 do_test pager-2.20 {
   pager_stats $::p1
-} {ref 1 page 1 max 10 size -1 state 1 err 0 hit 2 miss 2 ovfl 0}
+} {ref 1 page 1 max 10 size -1 state 1 err 0 hit 2 miss 1 ovfl 0}
 do_test pager-2.19 {
   pager_pagecount $::p1
 } {1}
 do_test pager-2.21 {
   pager_stats $::p1
-} {ref 1 page 1 max 10 size 1 state 1 err 0 hit 2 miss 2 ovfl 0}
+} {ref 1 page 1 max 10 size 1 state 1 err 0 hit 2 miss 1 ovfl 0}
 do_test pager-2.22 {
   page_unref $::g1
 } {}
 do_test pager-2.23 {
   pager_stats $::p1
-} {ref 0 page 1 max 10 size -1 state 0 err 0 hit 2 miss 2 ovfl 0}
+} {ref 0 page 1 max 10 size -1 state 0 err 0 hit 2 miss 1 ovfl 0}
 do_test pager-2.24 {
   set v [catch {
     page_get $::p1 1

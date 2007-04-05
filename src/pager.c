@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.322 2007/04/05 14:29:43 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.323 2007/04/05 17:15:53 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -889,7 +889,7 @@ static void pagerUnlockAndRollback(Pager *p){
 
 
 /*
-** Unlock the database and clear the in-memory cache.  This routine
+** Clear the in-memory cache.  This routine
 ** sets the state of the pager back to what it was when it was first
 ** opened.  Any outstanding pages are invalidated and subsequent attempts
 ** to access those pages will likely result in a coredump.
@@ -1265,13 +1265,22 @@ static int pager_reload_cache(Pager *pPager){
 }
 #endif
 
+static void pager_truncate_cache(Pager *pPager);
+
 /*
 ** Truncate the main file of the given pager to the number of pages
-** indicated.
+** indicated. Also truncate the cached representation of the file.
 */
 static int pager_truncate(Pager *pPager, int nPage){
-  assert( pPager->state>=PAGER_EXCLUSIVE );
-  return sqlite3OsTruncate(pPager->fd, pPager->pageSize*(i64)nPage);
+  int rc = SQLITE_OK;
+  if( pPager->state>=PAGER_EXCLUSIVE ){
+    rc = sqlite3OsTruncate(pPager->fd, pPager->pageSize*(i64)nPage);
+  }
+  if( rc==SQLITE_OK ){
+    pPager->dbSize = nPage;
+    pager_truncate_cache(pPager);
+  }
+  return rc;
 }
 
 /*
@@ -1398,14 +1407,11 @@ static int pager_playback(Pager *pPager, int isHot){
     /* If this is the first header read from the journal, truncate the
     ** database file back to it's original size.
     */
-    if( pPager->state>=PAGER_EXCLUSIVE && 
-        pPager->journalOff==JOURNAL_HDR_SZ(pPager) ){
-      assert( pPager->origDbSize==0 || pPager->origDbSize==mxPg );
+    if( pPager->journalOff==JOURNAL_HDR_SZ(pPager) ){
       rc = pager_truncate(pPager, mxPg);
       if( rc!=SQLITE_OK ){
         goto end_playback;
       }
-      pPager->dbSize = mxPg;
     }
 
     /* Copy original pages out of the journal and back into the database file.
@@ -1492,11 +1498,8 @@ static int pager_stmt_playback(Pager *pPager){
   
   /* Truncate the database back to its original size.
   */
-  if( pPager->state>=PAGER_EXCLUSIVE ){
-    rc = pager_truncate(pPager, pPager->stmtSize);
-  }
+  rc = pager_truncate(pPager, pPager->stmtSize);
   assert( pPager->state>=PAGER_SHARED );
-  pPager->dbSize = pPager->stmtSize;
 
   /* Figure out how many records are in the statement journal.
   */
@@ -2020,13 +2023,19 @@ static void unlinkPage(PgHdr *pPg){
   unlinkHashChain(pPager, pPg);
 }
 
-#ifndef SQLITE_OMIT_MEMORYDB
 /*
-** This routine is used to truncate an in-memory database.  Delete
-** all pages whose pgno is larger than pPager->dbSize and is unreferenced.
+** This routine is used to truncate the cache when a database
+** is truncated.  Drop from the cache all pages whose pgno is
+** larger than pPager->dbSize and is unreferenced.
+**
 ** Referenced pages larger than pPager->dbSize are zeroed.
+**
+** Actually, at the point this routine is called, it would be
+** an error to have a referenced page.  But rather than delete
+** that page and guarantee a subsequent segfault, it seems better
+** to zero it and hope that we error out sanely.
 */
-static void memoryTruncate(Pager *pPager){
+static void pager_truncate_cache(Pager *pPager){
   PgHdr *pPg;
   PgHdr **ppPg;
   int dbSize = pPager->dbSize;
@@ -2047,9 +2056,6 @@ static void memoryTruncate(Pager *pPager){
     }
   }
 }
-#else
-#define memoryTruncate(p)
-#endif
 
 /*
 ** Try to obtain a lock on a file.  Invoke the busy callback if the lock
@@ -2100,7 +2106,7 @@ int sqlite3PagerTruncate(Pager *pPager, Pgno nPage){
   }
   if( MEMDB ){
     pPager->dbSize = nPage;
-    memoryTruncate(pPager);
+    pager_truncate_cache(pPager);
     return SQLITE_OK;
   }
   rc = syncJournal(pPager);
@@ -2115,9 +2121,6 @@ int sqlite3PagerTruncate(Pager *pPager, Pgno nPage){
   }
 
   rc = pager_truncate(pPager, nPage);
-  if( rc==SQLITE_OK ){
-    pPager->dbSize = nPage;
-  }
   return rc;
 }
 
@@ -2690,6 +2693,24 @@ int sqlite3PagerReleaseMemory(int nReq){
 #endif /* SQLITE_ENABLE_MEMORY_MANAGEMENT */
 
 /*
+** Read the content of page pPg out of the database file.
+*/
+static int readDbPage(Pager *pPager, PgHdr *pPg, Pgno pgno){
+  int rc;
+  assert( MEMDB==0 );
+  rc = sqlite3OsSeek(pPager->fd, (pgno-1)*(i64)pPager->pageSize);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3OsRead(pPager->fd, PGHDR_TO_DATA(pPg),
+                          pPager->pageSize);
+  }
+  IOTRACE(("PGIN %p %d\n", pPager, pgno))
+  PAGERTRACE3("FETCH %d page %d\n", PAGERID(pPager), pPg->pgno);
+  CODEC1(pPager, PGHDR_TO_DATA(pPg), pPg->pgno, 3);
+  return rc;
+}
+
+
+/*
 ** This function is called to obtain the shared lock required before
 ** data may be read from the pager cache. If the shared lock has already
 ** been obtained, this function is a no-op.
@@ -2792,42 +2813,29 @@ static int pagerSharedLock(Pager *pPager){
         ** change-counter on page 1 of the file, the current cache contents
         ** must be discarded.
         */
+        u8 zC[4];
+        u32 iChangeCounter = 0;
+        sqlite3PagerPagecount(pPager);
 
-        PgHdr *pPage1 = pager_lookup(pPager, 1);
-        if( pPage1 ){
-          unlinkPage(pPage1);
-
-          /* Make sure the former page 1 is right at the start of the
-          ** free-list. This triggers a special case in pagerAllocatePage()
-          ** to re-use this page even if the total number of pages in
-          ** the cache is less than Pager.mxPage.
-          */
-          assert( pPager->pFirst==pPager->pFirstSynced );
-          pPage1->pNextFree = pPager->pFirst;
-          if( pPager->pFirst ){
-            pPager->pFirst->pPrevFree = pPage1;
-          }else{
-            assert( !pPager->pLast );
-            pPager->pLast = pPage1;
-          }
-          pPager->pFirst = pPage1;
-          pPager->pFirstSynced = pPage1;
+        if( pPager->errCode ){
+          return pPager->errCode;
         }
 
-        assert( !pager_lookup(pPager, 1) );
-        rc = sqlite3PagerAcquire(pPager, 1, &pPage1, 0);
-        if( rc==SQLITE_OK ){
-	  /* The change-counter is stored at offset 24. See also
-          ** pager_incr_changecounter().
-          */
-          u32 iChangeCount = retrieve32bits(pPage1, 24);
-          pPager->nRef++;
-          sqlite3PagerUnref(pPage1);
-          pPager->nRef--;
-          if( iChangeCount!=pPager->iChangeCount ){
-            pager_reset(pPager);
+        if( pPager->dbSize>0 ){
+          /* Read the 4-byte change counter directly from the file. */
+          rc = sqlite3OsSeek(pPager->fd, 24);
+          if( rc!=SQLITE_OK ){
+            return rc;
           }
-          pPager->iChangeCount = iChangeCount;
+          rc = sqlite3OsRead(pPager->fd, zC, 4);
+          if( rc!=SQLITE_OK ){
+            return rc;
+          }
+          iChangeCounter = (zC[0]<<24) + (zC[1]<<16) + (zC[2]<<8) + zC[3];
+        }
+
+        if( iChangeCounter!=pPager->iChangeCount ){
+          pager_reset(pPager);
         }
       }
     }
@@ -2841,17 +2849,48 @@ static int pagerSharedLock(Pager *pPager){
 }
 
 /*
-** Allocate or recycle space for a single page.
+** Allocate a PgHdr object.   Either create a new one or reuse
+** an existing one that is not otherwise in use.
+**
+** A new PgHdr structure is created if any of the following are
+** true:
+**
+**     (1)  We have not exceeded our maximum allocated cache size
+**          as set by the "PRAGMA cache_size" command.
+**
+**     (2)  There are no unused PgHdr objects available at this time.
+**
+**     (3)  This is an in-memory database.
+**
+**     (4)  There are no PgHdr objects that do not require a journal
+**          file sync and a sync of the journal file is currently
+**          prohibited.
+**
+** Otherwise, reuse an existing PgHdr.  In other words, reuse an
+** existing PgHdr if all of the following are true:
+**
+**     (1)  We have reached or exceeded the maximum cache size
+**          allowed by "PRAGMA cache_size".
+**
+**     (2)  There is a PgHdr available with PgHdr->nRef==0
+**
+**     (3)  We are not in an in-memory database
+**
+**     (4)  Either there is an available PgHdr that does not need
+**          to be synced to disk or else disk syncing is currently
+**          allowed.
 */
 static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
   int rc = SQLITE_OK;
   PgHdr *pPg;
 
-  if( MEMDB || (!(pPager->pFirstSynced && pPager->pFirstSynced->pgno==0) && (
-      pPager->nPage<pPager->mxPage || pPager->pFirst==0 || 
-      (pPager->pFirstSynced==0 && pPager->doNotSync)
-  )) ){
-    /* Create a new page */
+  /* Create a new PgHdr if any of the four conditions defined 
+  ** above is met: */
+  if( pPager->nPage<pPager->mxPage
+   || pPager->pFirst==0 
+   || MEMDB
+   || (pPager->pFirstSynced==0 && pPager->doNotSync)
+  ){
     if( pPager->nPage>=pPager->nHash ){
       pager_resize_hash_table(pPager,
          pPager->nHash<256 ? 256 : pPager->nHash*2);
@@ -3001,15 +3040,7 @@ int sqlite3PagerAcquire(Pager *pPager, Pgno pgno, DbPage **ppPage, int clrFlag){
     if( nMax<(int)pgno || MEMDB || (clrFlag && !pPager->alwaysRollback) ){
       memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
     }else{
-      assert( MEMDB==0 );
-      rc = sqlite3OsSeek(pPager->fd, (pgno-1)*(i64)pPager->pageSize);
-      if( rc==SQLITE_OK ){
-        rc = sqlite3OsRead(pPager->fd, PGHDR_TO_DATA(pPg),
-                              pPager->pageSize);
-      }
-      IOTRACE(("PGIN %p %d\n", pPager, pgno))
-      PAGERTRACE3("FETCH %d page %d\n", PAGERID(pPager), pPg->pgno);
-      CODEC1(pPager, PGHDR_TO_DATA(pPg), pPg->pgno, 3);
+      rc = readDbPage(pPager, pPg, pgno);
       if( rc!=SQLITE_OK && rc!=SQLITE_IOERR_SHORT_READ ){
         pPg->pgno = 0;
         sqlite3PagerUnref(pPg);
@@ -3035,20 +3066,6 @@ int sqlite3PagerAcquire(Pager *pPager, Pgno pgno, DbPage **ppPage, int clrFlag){
   }else{
     /* The requested page is in the page cache. */
     assert(pPager->nRef>0 || pgno==1);
-    if( pgno>sqlite3PagerPagecount(pPager) ){
-      /* This can happen after a truncation in exclusive mode. The pager
-      ** cache contains pages that are located after the end of the 
-      ** database file. Zero such pages before returning. Not doing this 
-      ** was causing the problem reported in ticket #2285.
-      */
-      if( pPager->errCode ){
-        /* This case catches an IO error in sqlite3PagerPagecount(). If
-        ** the error occured, PagerPagecount() returned 0.
-        */
-        return pPager->errCode;
-      }
-      memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
-    }
     TEST_INCR(pPager->nHit);
     page_ref(pPg);
   }
@@ -3891,7 +3908,7 @@ int sqlite3PagerRollback(Pager *pPager){
     pPager->pDirty = 0;
     pPager->pStmt = 0;
     pPager->dbSize = pPager->origDbSize;
-    memoryTruncate(pPager);
+    pager_truncate_cache(pPager);
     pPager->stmtInUse = 0;
     pPager->state = PAGER_SHARED;
     return SQLITE_OK;
@@ -3918,6 +3935,7 @@ int sqlite3PagerRollback(Pager *pPager){
   }else{
     rc = pager_playback(pPager, 0);
   }
+  /* pager_reset(pPager); */
   pPager->dbSize = -1;
 
   /* If an error occurs during a ROLLBACK, we can no longer trust the pager
@@ -4067,7 +4085,7 @@ int sqlite3PagerStmtRollback(Pager *pPager){
         }
       }
       pPager->dbSize = pPager->stmtSize;
-      memoryTruncate(pPager);
+      pager_truncate_cache(pPager);
       rc = SQLITE_OK;
     }else{
       rc = pager_stmt_playback(pPager);
