@@ -447,9 +447,12 @@ struct sqlite3OsVtbl {
 #endif
 
 
-#ifdef _SQLITE_OS_C_
+#if defined(_SQLITE_OS_C_) || defined(SQLITE_AMALGAMATION)
   /*
   ** The os.c file implements the global virtual function table.
+  ** We have to put this file here because the initializers
+  ** (ex: sqlite3OsRandomSeed) are macros that are about to be
+  ** redefined.
   */
   struct sqlite3OsVtbl sqlite3Os = {
     IF_DISKIO( sqlite3OsOpenReadWrite ),

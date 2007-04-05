@@ -40,31 +40,13 @@ close $in
 # Open the output file and write a header comment at the beginning
 # of the file.
 #
-set out [open sqlite3.c w]
+set out [open sqlite3internal.h w]
 set today [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S UTC" -gmt 1]
 puts $out [subst \
 {/******************************************************************************
-** This file is an amalgamation of many separate C source files from SQLite
-** version $VERSION.  By combining all the individual C code files into this 
-** single large file, the entire code can be compiled as a one translation
-** unit.  This allows many compilers to do optimizations that would not be
-** possible if the files were compiled separately.  Performance improvements
-** of 5% are more are commonly seen when SQLite is compiled as a single
-** translation unit.
-**
-** This file is all you need to compile SQLite.  To use SQLite in other
-** programs, you need this file and the "sqlite3.h" header file that defines
-** the programming interface to the SQLite library.  (If you do not have 
-** the "sqlite3.h" header file at hand, you will find a copy in the first
-** $cnt lines past this header comment.)  Additional code files may be
-** needed if you want a wrapper to interface SQLite with your choice of
-** programming language.  The code for the "sqlite3" command-line shell
-** is also in a separate file.  This file contains only code for the core
-** SQLite library.
-**
-** This amalgamation was generated on $today.
-*/
-#define SQLITE_AMALGAMATION 1}]
+** This file is an amalgamation of many private header files from SQLite
+** version $VERSION. 
+*/}]
 
 # These are the header files used by SQLite.  The first time any of these 
 # files are seen in a #include statement in the C code, include the complete
@@ -88,7 +70,6 @@ foreach hdr {
 } {
   set available_hdr($hdr) 1
 }
-set available_hdr(sqlite3.h) 0
 
 # 78 stars used for comment formatting.
 set s78 \
@@ -118,9 +99,6 @@ proc copy_file {filename} {
     if {[regexp {^#\s*include\s+["<]([^">]+)[">]} $line all hdr]} {
       if {[info exists available_hdr($hdr)]} {
         if {$available_hdr($hdr)} {
-          if {$hdr!="os_common.h"} {
-            set available_hdr($hdr) 0
-          }
           section_comment "Include $hdr in the middle of $tail"
           copy_file tsrc/$hdr
           section_comment "Continuing where we left off in $tail"
@@ -147,89 +125,19 @@ proc copy_file {filename} {
 # inlining opportunities.
 #
 foreach file {
+   sqliteInt.h
    sqlite3.h
-
-   date.c
-   os.c
-
-   printf.c
-   random.c
-   utf.c
-   util.c
-   hash.c
-   opcodes.c
-
-   os_os2.c
-   os_unix.c
-   os_win.c
-
-   pager.c
-   
-   btree.c
-
-   vdbefifo.c
-   vdbemem.c
-   vdbeaux.c
-   vdbeapi.c
-   vdbe.c
-
-   expr.c
-   alter.c
-   analyze.c
-   attach.c
-   auth.c
-   build.c
-   callback.c
-   complete.c
-   delete.c
-   func.c
-   insert.c
-   legacy.c
-   loadext.c
-   pragma.c
-   prepare.c
-   select.c
-   table.c
-   trigger.c
-   update.c
-   vacuum.c
-   vtab.c
-   where.c
-
-   parse.c
-
-   tokenize.c
-
-   main.c
+   btree.h
+   hash.h
+   os.h
+   pager.h
+   parse.h
+   sqlite3ext.h
+   vdbe.h
 } {
-  copy_file tsrc/$file
-}
-
-if 0 {
-puts $out "#ifdef SQLITE_TEST"
-foreach file {
-   test1.c
-   test2.c
-   test3.c
-   test4.c
-   test5.c
-   test6.c
-   test7.c
-   test8.c
-   test_async.c
-   test_autoext.c
-   test_loadext.c
-   test_md5.c
-   test_schema.c
-   test_server.c
-   test_tclvar.c
-} {
-  copy_file ../sqlite/src/$file
-}
-puts $out "#endif /* SQLITE_TEST */"
-puts $out "#ifdef SQLITE_TCL"
-copy_file ../sqlite/src/tclsqlite.c
-puts $out "#endif /* SQLITE_TCL */"
+  if {$available_hdr($file)} {
+    copy_file tsrc/$file
+  }
 }
 
 close $out

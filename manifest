@@ -1,5 +1,5 @@
-C Add\sa\starget\sto\sthe\sautoconf-generated\smakefile\sfor\samalgamation.\s(CVS\s3816)
-D 2007-04-05T18:34:58
+C Fix\sthe\samalgamation\sso\sthat\sit\sworks\swith\s-DSQLITE_ENABLE_REDEF_IO.\s\sChange\ntclsqlite.c\sso\sthat\sit\scan\sbe\sappended\sto\sthe\samalgamation.\s\sCreate\sa\snew\namalgamation\sof\sheader\sfiles\sfor\suse\sby\sprojects\sthat\swant\sto\sredefine\stheir\nown\sI/O\sinterface\susing\s-DSQLITE_ENABLE_REDEF_IO.\s(CVS\s3817)
+D 2007-04-05T21:58:33
 F Makefile.in a9bd493360a2b17e5214b69d8c32dd6cdaceaf55
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -43,7 +43,7 @@ F ext/fts2/fts2_tokenizer.h 4c5ffe31d63622869eb6eec1503df7f6996fd1bd
 F ext/fts2/fts2_tokenizer1.c 6067f2f710bc7e91c0688b7b11be1027777553e0
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 49c1b97b57d2a0091fbecee6feb9a992661ff05a
+F main.mk 2c20b3501860b36115c477a95a7f9355c755cf3b
 F mkdll.sh ed62756baf44babf562a7843588790c02fee2106
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -75,8 +75,8 @@ F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c 146fb9b9dc6133e763888d710205c32ebf8eeca2
 F src/main.c c8915777ae8e50823d01eefe2b674ef68c32bf61
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
-F src/os.c 5a194b9b9a10dc66543d4ca22bc0db40c5cc5ef1
-F src/os.h 21db538bb674d53baa960ea8ec2332f1af799ed6
+F src/os.c 4650e98aadd27abfe1698ff58edf6893c58d4881
+F src/os.h 9240adf088fd55732f8926f9017601ba3430ead8
 F src/os_common.h 0969285cc1e0b1ccc7a2cd7ce8eb144176ce3369
 F src/os_os2.c 2ce97909b926a598823f97338027dbec1dcf4165
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
@@ -100,7 +100,7 @@ F src/sqlite.h.in e429f66f9245c7f8675db24b230c950b8672ad1c
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h f09f449f266f71b236844e540bfce10e455ba6ab
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
-F src/tclsqlite.c a8d1166319db5d505b25ac6a9820162afe63fc8a
+F src/tclsqlite.c 58fd67ba2c5a6ca816ad110029b6cb2a44a3c707
 F src/test1.c 6021cbcede9bfab986ade678efa7226180f3edff
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 65f92247cf8592854e9bf5115b3fb711f8b33280
@@ -385,7 +385,8 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c 520d0016eaac0d783ea8ffb7f91d150d0bf06e81
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl ea7a08c3a87e47031bcefccde4e641914d013a99
+F tool/mksqlite3c.tcl 2d204fc271b2e2a2139e360527dd845385c4dffa
+F tool/mksqlite3internalh.tcl a85bb0c812db1a060e6e6dfab4e4c817f53d194b
 F tool/omittest.tcl e6b3d6a1285f9813bc1dea53bb522b4b72774710
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
@@ -450,7 +451,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 7338e68e0fd9263236f12f8911cb8293747dd1a4
-R 2236cb31ece453878263b0b9238a99b5
+P 204e7d38aeb40d126b80a869958ca79cd0902d83
+R 33250e136d9f0af3693e864db67d12e7
 U drh
-Z a8b4f2b06486c0a181a8a4d0cf0b24c8
+Z d3104f68e1b1c0abe9a9e14724db1ec1

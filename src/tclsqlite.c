@@ -9,19 +9,25 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** A TCL Interface to SQLite
+** A TCL Interface to SQLite.  Append this file to sqlite3.c and
+** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.177 2007/03/29 12:19:12 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.178 2007/04/05 21:58:33 drh Exp $
 */
-#ifndef NO_TCL     /* Omit this whole file if TCL is unavailable */
-
-#include "sqliteInt.h"
-#include "hash.h"
 #include "tcl.h"
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <ctype.h>
+
+/*
+** Some additional include files are needed if this file is not
+** appended to the amalgamation.
+*/
+#ifndef SQLITE_AMALGAMATION
+# include "sqliteInt.h"
+# include "hash.h"
+# include <stdlib.h>
+# include <string.h>
+# include <assert.h>
+# include <ctype.h>
+#endif
 
 /*
  * Windows needs to know which symbols to export.  Unix does not.
@@ -2256,5 +2262,3 @@ int TCLSH_MAIN(int argc, char **argv){
   return 0;
 }
 #endif /* TCLSH */
-
-#endif /* !defined(NO_TCL) */
