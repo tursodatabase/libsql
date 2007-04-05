@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.321 2007/04/05 13:12:14 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.322 2007/04/05 14:29:43 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2615,7 +2615,6 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 int sqlite3PagerReleaseMemory(int nReq){
   const ThreadData *pTsdro = sqlite3ThreadDataReadOnly();
-  Pager *p;
   int nReleased = 0;
   int i;
 
@@ -2637,21 +2636,20 @@ int sqlite3PagerReleaseMemory(int nReq){
   for(i=0; i<=1; i++){
 
     /* Loop through all the SQLite pagers opened by the current thread. */
-    for(p=pTsdro->pPager; p && (nReq<0 || nReleased<nReq); p=p->pNext){
+    Pager *pPager = pTsdro->pPager;
+    for( ; pPager && (nReq<0 || nReleased<nReq); pPager=pPager->pNext){
       PgHdr *pPg;
       int rc;
 
-#ifndef SQLITE_OMIT_MEMORYDB
-      if( p->memDb ){
+      if( MEMDB ){
         continue;
       }
-#endif
 
       /* For each pager, try to free as many pages as possible (without 
       ** calling fsync() if this is the first iteration of the outermost 
       ** loop).
       */
-      while( SQLITE_OK==(rc = pager_recycle(p, i, &pPg)) && pPg) {
+      while( SQLITE_OK==(rc = pager_recycle(pPager, i, &pPg)) && pPg) {
         /* We've found a page to free. At this point the page has been 
         ** removed from the page hash-table, free-list and synced-list 
         ** (pFirstSynced). It is still in the all pages (pAll) list. 
@@ -2663,10 +2661,10 @@ int sqlite3PagerReleaseMemory(int nReq){
         PgHdr *pTmp;
         assert( pPg );
         page_remove_from_stmt_list(pPg);
-        if( pPg==p->pAll ){
-           p->pAll = pPg->pNextAll;
+        if( pPg==pPager->pAll ){
+           pPager->pAll = pPg->pNextAll;
         }else{
-          for( pTmp=p->pAll; pTmp->pNextAll!=pPg; pTmp=pTmp->pNextAll ){}
+          for( pTmp=pPager->pAll; pTmp->pNextAll!=pPg; pTmp=pTmp->pNextAll ){}
           pTmp->pNextAll = pPg->pNextAll;
         }
         nReleased += sqliteAllocSize(pPg);
@@ -2681,8 +2679,8 @@ int sqlite3PagerReleaseMemory(int nReq){
         ** of a shared pager cache) of the pager for which the error occured.
         */
         assert( (rc&0xff)==SQLITE_IOERR || rc==SQLITE_FULL );
-        assert( p->state>=PAGER_RESERVED );
-        pager_error(p, rc);
+        assert( pPager->state>=PAGER_RESERVED );
+        pager_error(pPager, rc);
       }
     }
   }
