@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.316 2007/04/02 11:22:22 drh Exp $
+** @(#) $Id: pager.c,v 1.317 2007/04/05 05:46:14 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3028,6 +3028,14 @@ int sqlite3PagerAcquire(Pager *pPager, Pgno pgno, DbPage **ppPage, int clrFlag){
   }else{
     /* The requested page is in the page cache. */
     assert(pPager->nRef>0 || pgno==1);
+    if( pgno>sqlite3PagerPagecount(pPager) ){
+      /* This can happen after a truncation in exclusive mode. The pager
+      ** cache contains pages that are located after the end of the 
+      ** database file. Zero such pages before returning. Not doing this 
+      ** was causing the problem reported in ticket #2285.
+      */
+      memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
+    }
     TEST_INCR(pPager->nHit);
     page_ref(pPg);
   }
