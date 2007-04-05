@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.317 2007/04/05 05:46:14 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.318 2007/04/05 08:40:32 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3034,6 +3034,12 @@ int sqlite3PagerAcquire(Pager *pPager, Pgno pgno, DbPage **ppPage, int clrFlag){
       ** database file. Zero such pages before returning. Not doing this 
       ** was causing the problem reported in ticket #2285.
       */
+      if( pPager->errCode ){
+        /* This case catches an IO error in sqlite3PagerPagecount(). If
+        ** the error occured, PagerPagecount() returned 0.
+        */
+        return pPager->errCode;
+      }
       memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
     }
     TEST_INCR(pPager->nHit);
