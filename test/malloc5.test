@@ -12,7 +12,7 @@
 # This file contains test cases focused on the two memory-management APIs, 
 # sqlite3_soft_heap_limit() and sqlite3_release_memory().
 #
-# $Id: malloc5.test,v 1.8 2007/04/02 05:07:48 danielk1977 Exp $
+# $Id: malloc5.test,v 1.9 2007/04/05 13:12:14 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -221,7 +221,40 @@ do_test malloc5-4.3 {
 
 # Restore the soft heap limit.
 sqlite3_soft_heap_limit $::soft_limit
-finish_test
 
+# Test that there are no problems calling sqlite3_release_memory when
+# there are open in-memory databases.
+#
+# At one point these tests would cause a seg-fault.
+#
+do_test malloc5-5.1 {
+  db close
+  sqlite3 db :memory:
+  execsql {
+    BEGIN;
+    CREATE TABLE abc(a, b, c);
+    INSERT INTO abc VALUES('abcdefghi', 1234567890, NULL);
+    INSERT INTO abc SELECT * FROM abc;
+    INSERT INTO abc SELECT * FROM abc;
+    INSERT INTO abc SELECT * FROM abc;
+    INSERT INTO abc SELECT * FROM abc;
+    INSERT INTO abc SELECT * FROM abc;
+    INSERT INTO abc SELECT * FROM abc;
+    INSERT INTO abc SELECT * FROM abc;
+  }
+  sqlite3_release_memory
+} 0
+do_test malloc5-5.1 {
+  sqlite3_soft_heap_limit 5000
+  execsql {
+    COMMIT;
+    PRAGMA temp_store = memory;
+    SELECT * FROM abc ORDER BY a;
+  }
+  expr 1
+} {1}
+
+sqlite3_soft_heap_limit $::soft_limit
+finish_test
 catch {db close}
 

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.320 2007/04/05 11:54:43 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.321 2007/04/05 13:12:14 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2525,6 +2525,8 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   PgHdr *pPg;
   *ppPg = 0;
 
+  assert(!MEMDB);
+
   /* Find a page to recycle.  Try to locate a page that does not
   ** require us to do an fsync() on the journal.
   */
@@ -2568,7 +2570,6 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   if( pPg->dirty ){
     int rc;
     assert( pPg->needSync==0 );
-    assert( !MEMDB );
     makeClean(pPg);
     pPg->dirty = 1;
     pPg->pDirty = 0;
@@ -2639,6 +2640,12 @@ int sqlite3PagerReleaseMemory(int nReq){
     for(p=pTsdro->pPager; p && (nReq<0 || nReleased<nReq); p=p->pNext){
       PgHdr *pPg;
       int rc;
+
+#ifndef SQLITE_OMIT_MEMORYDB
+      if( p->memDb ){
+        continue;
+      }
+#endif
 
       /* For each pager, try to free as many pages as possible (without 
       ** calling fsync() if this is the first iteration of the outermost 
@@ -2842,10 +2849,10 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
   int rc = SQLITE_OK;
   PgHdr *pPg;
 
-  if( !(pPager->pFirstSynced && pPager->pFirstSynced->pgno==0) && (
-      pPager->nPage<pPager->mxPage || pPager->pFirst==0 || MEMDB ||
+  if( MEMDB || (!(pPager->pFirstSynced && pPager->pFirstSynced->pgno==0) && (
+      pPager->nPage<pPager->mxPage || pPager->pFirst==0 || 
       (pPager->pFirstSynced==0 && pPager->doNotSync)
-  ) ){
+  )) ){
     /* Create a new page */
     if( pPager->nPage>=pPager->nHash ){
       pager_resize_hash_table(pPager,
