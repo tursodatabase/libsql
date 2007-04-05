@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT statement.
 #
-# $Id: insert.test,v 1.30 2006/06/11 23:41:56 drh Exp $
+# $Id: insert.test,v 1.31 2007/04/05 11:25:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -362,6 +362,29 @@ ifcapable subquery&&compound {
   } {}
 }
 
+# Make sure the rowid cache in the VDBE is reset correctly when
+# an explicit rowid is given.
+#
+do_test insert-9.1 {
+  execsql {
+    CREATE TABLE t5(x);
+    INSERT INTO t5 VALUES(1);
+    INSERT INTO t5 VALUES(2);
+    INSERT INTO t5 VALUES(3);
+    INSERT INTO t5(rowid, x) SELECT nullif(x*2+10,14), x+100 FROM t5;
+    SELECT rowid, x FROM t5;
+  }
+} {1 1 2 2 3 3 12 101 13 102 16 103}
+do_test insert-9.2 {
+  execsql {
+    CREATE TABLE t6(x INTEGER PRIMARY KEY, y);
+    INSERT INTO t6 VALUES(1,1);
+    INSERT INTO t6 VALUES(2,2);
+    INSERT INTO t6 VALUES(3,3);
+    INSERT INTO t6 SELECT nullif(y*2+10,14), y+100 FROM t6;
+    SELECT x, y FROM t6;
+  }
+} {1 1 2 2 3 3 12 101 13 102 16 103}
 
 integrity_check insert-99.0
 

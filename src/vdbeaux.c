@@ -757,11 +757,11 @@ int sqlite3VdbeList(
 }
 #endif /* SQLITE_OMIT_EXPLAIN */
 
+#ifdef SQLITE_DEBUG
 /*
 ** Print the SQL that was used to generate a VDBE program.
 */
 void sqlite3VdbePrintSql(Vdbe *p){
-#ifdef SQLITE_DEBUG
   int nOp = p->nOp;
   VdbeOp *pOp;
   if( nOp<1 ) return;
@@ -771,8 +771,8 @@ void sqlite3VdbePrintSql(Vdbe *p){
     while( isspace(*(u8*)z) ) z++;
     printf("SQL: [%s]\n", z);
   }
-#endif
 }
+#endif
 
 #if !defined(SQLITE_OMIT_TRACE) && defined(SQLITE_ENABLE_IOTRACE)
 /*
@@ -1508,10 +1508,6 @@ void sqlite3VdbeResetStepResult(Vdbe *p){
 */
 int sqlite3VdbeReset(Vdbe *p){
   sqlite3 *db;
-  if( p->magic!=VDBE_MAGIC_RUN && p->magic!=VDBE_MAGIC_HALT ){
-    sqlite3Error(p->db, SQLITE_MISUSE, 0);
-    return SQLITE_MISUSE;
-  }
   db = p->db;
 
   /* If the VM did not run to completion or if it encountered an

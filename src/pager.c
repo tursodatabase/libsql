@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.318 2007/04/05 08:40:32 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.319 2007/04/05 11:25:58 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -278,13 +278,15 @@ struct Pager {
   i64 stmtJSize;              /* Size of journal at stmt_begin() */
   int sectorSize;             /* Assumed sector size during rollback */
 #ifdef SQLITE_TEST
-  int nHit, nMiss, nOvfl;     /* Cache hits, missing, and LRU overflows */
-  int nRead,nWrite;           /* Database pages read/written */
+  int nHit, nMiss;            /* Cache hits and missing */
+  int nRead, nWrite;          /* Database pages read/written */
 #endif
   void (*xDestructor)(DbPage*,int); /* Call this routine when freeing pages */
   void (*xReiniter)(DbPage*,int);   /* Call this routine when reloading pages */
+#ifdef SQLITE_HAS_CODEC
   void *(*xCodec)(void*,void*,Pgno,int); /* Routine for en/decoding data */
   void *pCodecArg;            /* First argument to xCodec() */
+#endif
   int nHash;                  /* Size of the pager hash table */
   PgHdr **aHash;              /* Hash table to map page number to PgHdr */
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
@@ -374,7 +376,7 @@ static const unsigned char aJournalMagic[] = {
 /*
 ** Enable reference count tracking (for debugging) here:
 */
-#ifdef SQLITE_TEST
+#ifdef SQLITE_DEBUG
   int pager3_refinfo_enable = 0;
   static void pager_refinfo(PgHdr *p){
     static int cnt = 0;
@@ -1857,9 +1859,6 @@ int sqlite3PagerSetPagesize(Pager *pPager, int pageSize){
 extern int sqlite3_io_error_pending;
 extern int sqlite3_io_error_hit;
 static int saved_cnt;
-void clear_simulated_io_error(){
-  sqlite3_io_error_hit = 0;
-}
 void disable_simulated_io_errors(void){
   saved_cnt = sqlite3_io_error_pending;
   sqlite3_io_error_pending = -1;
@@ -1868,7 +1867,6 @@ void enable_simulated_io_errors(void){
   sqlite3_io_error_pending = saved_cnt;
 }
 #else
-# define clear_simulated_io_error()
 # define disable_simulated_io_errors()
 # define enable_simulated_io_errors()
 #endif
@@ -2592,9 +2590,7 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   /* Unlink the old page from the free list and the hash table
   */
   unlinkPage(pPg);
-  if( pPg && pPg->pgno!=0 ){
-    TEST_INCR(pPager->nOvfl);
-  }
+  assert( pPg->pgno==0 );
 
   *ppPg = pPg;
   return SQLITE_OK;
@@ -3948,7 +3944,7 @@ int *sqlite3PagerStats(Pager *pPager){
   a[5] = pPager->errCode;
   a[6] = pPager->nHit;
   a[7] = pPager->nMiss;
-  a[8] = pPager->nOvfl;
+  a[8] = 0;  /* Used to be pPager->nOvfl */
   a[9] = pPager->nRead;
   a[10] = pPager->nWrite;
   return a;
@@ -4101,6 +4097,7 @@ int sqlite3PagerNosync(Pager *pPager){
   return pPager->noSync;
 }
 
+#ifdef SQLITE_HAS_CODEC
 /*
 ** Set the codec for this pager
 */
@@ -4112,6 +4109,7 @@ void sqlite3PagerSetCodec(
   pPager->xCodec = xCodec;
   pPager->pCodecArg = pCodecArg;
 }
+#endif
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*

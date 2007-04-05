@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.418 2007/03/29 05:51:49 drh Exp $
+** $Id: build.c,v 1.419 2007/04/05 11:25:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -439,17 +439,6 @@ void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
     memcpy(db->aDbStatic, db->aDb, 2*sizeof(db->aDb[0]));
     sqliteFree(db->aDb);
     db->aDb = db->aDbStatic;
-  }
-}
-
-/*
-** This routine is called whenever a rollback occurs.  If there were
-** schema changes during the transaction, then we have to reset the
-** internal hash tables and reload them from disk.
-*/
-void sqlite3RollbackInternalChanges(sqlite3 *db){
-  if( db->flags & SQLITE_InternChanges ){
-    sqlite3ResetInternalSchema(db, 0);
   }
 }
 
