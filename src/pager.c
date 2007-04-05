@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.319 2007/04/05 11:25:58 drh Exp $
+** @(#) $Id: pager.c,v 1.320 2007/04/05 11:54:43 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1153,6 +1153,7 @@ static int pager_delmaster(const char *zMaster){
   ** is running this routine also. Not that it makes too much difference.
   */
   rc = sqlite3OsOpenReadOnly(zMaster, &master);
+  assert( rc!=SQLITE_OK || master );
   if( rc!=SQLITE_OK ) goto delmaster_out;
   master_open = 1;
   rc = sqlite3OsFileSize(master, &nMasterJournal);
@@ -1184,6 +1185,7 @@ static int pager_delmaster(const char *zMaster){
         int c;
 
         rc = sqlite3OsOpenReadOnly(zJournal, &journal);
+        assert( rc!=SQLITE_OK || journal );
         if( rc!=SQLITE_OK ){
           goto delmaster_out;
         }
@@ -1637,6 +1639,7 @@ static int sqlite3PagerOpentemp(OsFile **pFd){
     cnt--;
     sqlite3OsTempFileName(zFile);
     rc = sqlite3OsOpenExclusive(zFile, pFd, 1);
+    assert( rc!=SQLITE_OK || *pFd );
   }while( cnt>0 && rc!=SQLITE_OK && rc!=SQLITE_NOMEM );
   return rc;
 }
@@ -1707,6 +1710,7 @@ int sqlite3PagerOpen(
       zFullPathname = sqlite3OsFullPathname(zFilename);
       if( zFullPathname ){
         rc = sqlite3OsOpenReadWrite(zFullPathname, &fd, &readOnly);
+        assert( rc!=SQLITE_OK || fd );
       }
     }
   }else{
@@ -2564,6 +2568,7 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   if( pPg->dirty ){
     int rc;
     assert( pPg->needSync==0 );
+    assert( !MEMDB );
     makeClean(pPg);
     pPg->dirty = 1;
     pPg->pDirty = 0;
@@ -2743,6 +2748,7 @@ static int pagerSharedLock(Pager *pPager){
           int ro;
           assert( !pPager->tempFile );
           rc = sqlite3OsOpenReadWrite(pPager->zJournal, &pPager->jfd, &ro);
+          assert( rc!=SQLITE_OK || pPager->jfd );
           if( ro ){
             rc = SQLITE_BUSY;
             sqlite3OsClose(&pPager->jfd);
@@ -3148,6 +3154,7 @@ static int pager_open_journal(Pager *pPager){
   }
   rc = sqlite3OsOpenExclusive(pPager->zJournal, &pPager->jfd,
                                  pPager->tempFile);
+  assert( rc!=SQLITE_OK || pPager->jfd );
   pPager->journalOff = 0;
   pPager->setMaster = 0;
   pPager->journalHdr = 0;
