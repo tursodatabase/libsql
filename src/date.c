@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.61 2007/03/29 17:57:21 drh Exp $
+** $Id: date.c,v 1.62 2007/04/06 02:32:34 drh Exp $
 **
 ** NOTES:
 **
@@ -577,7 +577,7 @@ static int parseModifier(const char *zMod, DateTime *p){
     case '8':
     case '9': {
       n = getValue(z, &r);
-      if( n<=0 ) break;
+      assert( n>=1 );
       if( z[n]==':' ){
         /* A modifier of the form (+|-)HH:MM:SS.FFF adds (or subtracts) the
         ** specified number of hours, minutes, seconds, and fractional seconds

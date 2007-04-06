@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.198 2007/03/31 22:33:48 drh Exp $
+** $Id: util.c,v 1.199 2007/04/06 02:32:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -751,7 +751,7 @@ void sqlite3SetString(char **pz, ...){
   const char *z;
   char *zResult;
 
-  if( pz==0 ) return;
+  assert( pz!=0 );
   nByte = 1;
   va_start(ap, pz);
   while( (z = va_arg(ap, const char*))!=0 ){

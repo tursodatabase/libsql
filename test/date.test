@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.20 2007/03/29 17:57:21 drh Exp $
+# $Id: date.test,v 1.21 2007/04/06 02:32:35 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -61,11 +61,21 @@ datetest 1.24 {julianday('2001-01-01 12:00:00 bogus')} NULL
 datetest 1.25 {julianday('2001-01-01 bogus')} NULL
 datetest 1.26 {julianday('2001-01-01 12:60:00')} NULL
 datetest 1.27 {julianday('2001-01-01 12:59:60')} NULL
+datetest 1.28 {julianday('2001-00-01')} NULL
+datetest 1.29 {julianday('2001-01-00')} NULL
 
 datetest 2.1 datetime(0,'unixepoch') {1970-01-01 00:00:00}
+datetest 2.1b datetime(0,'unixepoc') NULL
+datetest 2.1c datetime(0,'unixepochx') NULL
+datetest 2.1d datetime('2003-10-22','unixepoch') NULL
 datetest 2.2 datetime(946684800,'unixepoch') {2000-01-01 00:00:00}
 datetest 2.3 {date('2003-10-22','weekday 0')} 2003-10-26
 datetest 2.4 {date('2003-10-22','weekday 1')} 2003-10-27
+datetest 2.4a {date('2003-10-22','weekday  1')} 2003-10-27
+datetest 2.4b {date('2003-10-22','weekday  1x')} 2003-10-27
+datetest 2.4c {date('2003-10-22','weekday  -1')} NULL
+datetest 2.4d {date('2003-10-22','weakday  1x')} NULL
+datetest 2.4e {date('2003-10-22','weekday ')} NULL
 datetest 2.5 {date('2003-10-22','weekday 2')} 2003-10-28
 datetest 2.6 {date('2003-10-22','weekday 3')} 2003-10-22
 datetest 2.7 {date('2003-10-22','weekday 4')} 2003-10-23
@@ -80,6 +90,8 @@ datetest 2.14 {datetime('2003-10-22 12:34','start of year')} \
    {2003-01-01 00:00:00}
 datetest 2.15 {datetime('2003-10-22 12:34','start of day')} \
    {2003-10-22 00:00:00}
+datetest 2.15a {datetime('2003-10-22 12:34','start of')} NULL
+datetest 2.15b {datetime('2003-10-22 12:34','start of bogus')} NULL
 datetest 2.16 time('12:34:56.43') 12:34:56
 datetest 2.17 {datetime('2003-10-22 12:34','1 day')} {2003-10-23 12:34:00}
 datetest 2.18 {datetime('2003-10-22 12:34','+1 day')} {2003-10-23 12:34:00}
@@ -97,6 +109,17 @@ datetest 2.27 {datetime('2003-10-22 12:34','-1.25 hours')} \
 datetest 2.28 {datetime('2003-10-22 12:34','11.25 seconds')} \
   {2003-10-22 12:34:11}
 datetest 2.29 {datetime('2003-10-22 12:24','+5 bogus')} NULL
+datetest 2.30 {datetime('2003-10-22 12:24','+++')} NULL
+datetest 2.31 {datetime('2003-10-22 12:24','+12.3e4 femtoseconds')} NULL
+datetest 2.32 {datetime('2003-10-22 12:24','+12.3e4 uS')} NULL
+datetest 2.33 {datetime('2003-10-22 12:24','+1 abc')} NULL
+datetest 2.34 {datetime('2003-10-22 12:24','+1 abcd')} NULL
+datetest 2.35 {datetime('2003-10-22 12:24','+1 abcde')} NULL
+datetest 2.36 {datetime('2003-10-22 12:24','+1 abcdef')} NULL
+datetest 2.37 {datetime('2003-10-22 12:24','+1 abcdefg')} NULL
+datetest 2.38 {datetime('2003-10-22 12:24','+1 abcdefgh')} NULL
+datetest 2.39 {datetime('2003-10-22 12:24','+1 abcdefghi')} NULL
+datetest 2.40 {datetime()} NULL
 
 
 datetest 3.1 {strftime('%d','2003-10-31 12:34:56.432')} 31
@@ -165,6 +188,8 @@ datetest 5.2 {datetime('1994-04-16 14:00:00 -05:15')} {1994-04-16 19:15:00}
 datetest 5.3 {datetime('1994-04-16 05:00:00 +08:30')} {1994-04-15 20:30:00}
 datetest 5.4 {datetime('1994-04-16 14:00:00 -11:55')} {1994-04-17 01:55:00}
 datetest 5.5 {datetime('1994-04-16 14:00:00 -11:60')} NULL
+datetest 5.4 {datetime('1994-04-16 14:00:00 -11:55  ')} {1994-04-17 01:55:00}
+datetest 5.4 {datetime('1994-04-16 14:00:00 -11:55 x')} NULL
 
 # localtime->utc and utc->localtime conversions.  These tests only work
 # if the localtime is in the US Eastern Time (the time in Charlotte, NC
@@ -204,6 +229,8 @@ if {$tzoffset==4} {
   set sqlite_current_time \
      [db eval {SELECT strftime('%s','2000-07-01 12:34:56')}]
   datetest 6.16 {datetime('now','localtime')} {2000-07-01 08:34:56}
+  datetest 6.17 {datetime('now','localtimex')} NULL
+  datetest 6.18 {datetime('now','localtim')} NULL
   set sqlite_current_time 0
 }
 
@@ -250,6 +277,7 @@ datetest 8.16 {datetime('now','-5 years')} {1998-10-22 12:34:00}
 datetest 8.17 {datetime('now','+10.5 minutes')} {2003-10-22 12:44:30}
 datetest 8.18 {datetime('now','-1.25 hours')} {2003-10-22 11:19:00}
 datetest 8.19 {datetime('now','11.25 seconds')} {2003-10-22 12:34:11}
+datetest 8.90 {datetime('now','abcdefghijklmnopqrstuvwyxzABCDEFGHIJLMNOP')} NULL
 set sqlite_current_time 0
 
 # Negative years work.  Example:  '-4713-11-26' is JD 1.5.
