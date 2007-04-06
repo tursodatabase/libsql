@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.350 2007/04/02 05:07:47 danielk1977 Exp $
+** $Id: btree.c,v 1.351 2007/04/06 01:03:33 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3520,6 +3520,14 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   if( rc!=SQLITE_OK ){
     return rc;
   }
+#endif 
+  assert( pRes!=0 );
+  pPage = pCur->pPage;
+  if( CURSOR_INVALID==pCur->eState ){
+    *pRes = 1;
+    return SQLITE_OK;
+  }
+#ifndef SQLITE_OMIT_SHARED_CACHE
   if( pCur->skip>0 ){
     pCur->skip = 0;
     *pRes = 0;
@@ -3528,12 +3536,6 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   pCur->skip = 0;
 #endif 
 
-  assert( pRes!=0 );
-  pPage = pCur->pPage;
-  if( CURSOR_INVALID==pCur->eState ){
-    *pRes = 1;
-    return SQLITE_OK;
-  }
   assert( pPage->isInit );
   assert( pCur->idx<pPage->nCell );
 
@@ -3588,6 +3590,12 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   if( rc!=SQLITE_OK ){
     return rc;
   }
+#endif
+  if( CURSOR_INVALID==pCur->eState ){
+    *pRes = 1;
+    return SQLITE_OK;
+  }
+#ifndef SQLITE_OMIT_SHARED_CACHE
   if( pCur->skip<0 ){
     pCur->skip = 0;
     *pRes = 0;
@@ -3595,11 +3603,6 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   }
   pCur->skip = 0;
 #endif
-
-  if( CURSOR_INVALID==pCur->eState ){
-    *pRes = 1;
-    return SQLITE_OK;
-  }
 
   pPage = pCur->pPage;
   assert( pPage->isInit );
