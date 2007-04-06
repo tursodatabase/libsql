@@ -11,10 +11,15 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is extension loading.
 #
-# $Id: loadext.test,v 1.8 2006/08/23 20:07:22 drh Exp $
+# $Id: loadext.test,v 1.9 2007/04/06 21:42:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !load_ext {
+  finish_test
+  return
+}
 
 # The name of the test extension varies by operating system.
 #

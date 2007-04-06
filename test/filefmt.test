@@ -12,7 +12,7 @@
 #
 # This file implements tests to verify database file format.
 #
-# $Id: filefmt.test,v 1.1 2007/04/06 15:02:14 drh Exp $
+# $Id: filefmt.test,v 1.2 2007/04/06 21:42:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -53,10 +53,13 @@ do_test filefmt-1.4 {
 #
 ifcapable pager_pragmas {
   foreach pagesize {512 1024 2048 4096 8192 16384 32768} {
+     if {[info exists SQLITE_MAX_PAGE_SIZE]
+          && $pagesize>$SQLITE_MAX_PAGE_SIZE} continue
      do_test filefmt-1.5.$pagesize.1 {
        db close
        file delete -force test.db
        sqlite3 db test.db
+       db eval "PRAGMA auto_vacuum=OFF"
        db eval "PRAGMA page_size=$pagesize"
        db eval {CREATE TABLE t1(x)}
        file size test.db

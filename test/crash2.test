@@ -16,7 +16,7 @@
 # specifically, the tests in this file verify this functionality
 # for storage mediums with various sector sizes.
 #
-# $Id: crash2.test,v 1.3 2007/03/19 15:04:54 danielk1977 Exp $
+# $Id: crash2.test,v 1.4 2007/04/06 21:42:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,6 +32,7 @@ ifcapable !crashtest {
 #
 do_test crash2-1.1 {
   crashsql -delay 500 -file test.db -blocksize 2048 {
+    PRAGMA auto_vacuum=OFF;
     BEGIN;
     CREATE TABLE abc AS SELECT 1 AS a, 2 AS b, 3 AS c;
     CREATE TABLE def AS SELECT 1 AS d, 2 AS e, 3 AS f;
@@ -121,4 +122,3 @@ for {set i 1} {$i < 10} {incr i} {
 } 
 
 finish_test
-

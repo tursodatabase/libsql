@@ -12,7 +12,7 @@
 # of these tests is exclusive access mode (i.e. the thing activated by 
 # "PRAGMA locking_mode = EXCLUSIVE").
 #
-# $Id: exclusive.test,v 1.4 2007/03/30 16:01:55 drh Exp $
+# $Id: exclusive.test,v 1.5 2007/04/06 21:42:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -29,6 +29,15 @@ file delete -force test3.db
 file delete -force test4.db-journal
 file delete -force test4.db
 
+# The locking mode for the TEMP table is always "exclusive" for
+# on-disk tables and "normal" for in-memory tables.
+#
+if {[info exists TEMP_STORE] && $TEMP_STORE>=2} {
+  set temp_mode normal
+} else {
+  set temp_mode exclusive
+}
+
 #----------------------------------------------------------------------
 # Test cases exclusive-1.X test the PRAGMA logic.
 #
@@ -38,7 +47,7 @@ do_test exclusive-1.0 {
     pragma main.locking_mode;
     pragma temp.locking_mode;
   } 
-} {normal normal exclusive}
+} [list normal normal $temp_mode]
 do_test exclusive-1.1 {
   execsql {
     pragma locking_mode = exclusive;
@@ -50,7 +59,7 @@ do_test exclusive-1.2 {
     pragma main.locking_mode;
     pragma temp.locking_mode;
   } 
-} {exclusive exclusive exclusive}
+} [list exclusive exclusive $temp_mode]
 do_test exclusive-1.3 {
   execsql {
     pragma locking_mode = normal;
@@ -62,7 +71,7 @@ do_test exclusive-1.4 {
     pragma main.locking_mode;
     pragma temp.locking_mode;
   } 
-} {normal normal exclusive}
+} [list normal normal $temp_mode]
 do_test exclusive-1.5 {
   execsql {
     pragma locking_mode = invalid;
@@ -74,7 +83,7 @@ do_test exclusive-1.6 {
     pragma main.locking_mode;
     pragma temp.locking_mode;
   } 
-} {normal normal exclusive}
+} [list normal normal $temp_mode]
 do_test exclusive-1.7 {
   execsql {
     pragma locking_mode = exclusive;
@@ -94,7 +103,7 @@ do_test exclusive-1.8 {
     pragma temp.locking_mode;
     pragma aux.locking_mode;
   }
-} {normal exclusive exclusive}
+} [list normal $temp_mode exclusive]
 do_test exclusive-1.9 {
   execsql {
     pragma locking_mode;
@@ -130,7 +139,7 @@ do_test exclusive-1.12 {
     pragma aux.locking_mode;
     pragma aux2.locking_mode;
   }
-} {normal exclusive normal normal}
+} [list normal $temp_mode normal normal]
 do_test exclusive-1.13 {
   execsql {
     ATTACH 'test4.db' as aux3;
@@ -142,7 +151,7 @@ do_test exclusive-1.13 {
     pragma aux2.locking_mode;
     pragma aux3.locking_mode;
   }
-} {normal exclusive normal normal normal}
+} [list normal $temp_mode normal normal normal]
 
 do_test exclusive-1.99 {
   execsql {

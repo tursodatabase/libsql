@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt3.test,v 1.1 2007/04/06 15:02:14 drh Exp $
+# $Id: corrupt3.test,v 1.2 2007/04/06 21:42:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -30,6 +30,7 @@ ifcapable !pager_pragmas {
 do_test corrupt3-1.1 {
   set bigstring [string repeat 0123456789 200]
   execsql {
+    PRAGMA auto_vacuum=OFF;
     PRAGMA page_size=1024;
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES($bigstring);

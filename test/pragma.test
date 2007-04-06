@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.52 2007/03/30 17:11:13 danielk1977 Exp $
+# $Id: pragma.test,v 1.53 2007/04/06 21:42:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -46,14 +46,17 @@ file delete test.db test.db-journal
 file delete test3.db test3.db-journal
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
 
+
 ifcapable pager_pragmas {
+set DFLT_CACHE_SZ [db one {PRAGMA default_cache_size}]
+set TEMP_CACHE_SZ [db one {PRAGMA temp.default_cache_size}]
 do_test pragma-1.1 {
   execsql {
     PRAGMA cache_size;
     PRAGMA default_cache_size;
     PRAGMA synchronous;
   }
-} {2000 2000 2}
+} [list $DFLT_CACHE_SZ $DFLT_CACHE_SZ 2]
 do_test pragma-1.2 {
   execsql {
     PRAGMA synchronous=OFF;
@@ -62,7 +65,7 @@ do_test pragma-1.2 {
     PRAGMA default_cache_size;
     PRAGMA synchronous;
   }
-} {1234 2000 0}
+} [list 1234 $DFLT_CACHE_SZ 0]
 do_test pragma-1.3 {
   db close
   sqlite3 db test.db
@@ -71,7 +74,7 @@ do_test pragma-1.3 {
     PRAGMA default_cache_size;
     PRAGMA synchronous;
   }
-} {2000 2000 2}
+} [list $DFLT_CACHE_SZ $DFLT_CACHE_SZ 2]
 do_test pragma-1.4 {
   execsql {
     PRAGMA synchronous=OFF;
@@ -79,7 +82,7 @@ do_test pragma-1.4 {
     PRAGMA default_cache_size;
     PRAGMA synchronous;
   }
-} {2000 2000 0}
+} [list $DFLT_CACHE_SZ $DFLT_CACHE_SZ 0]
 do_test pragma-1.5 {
   execsql {
     PRAGMA cache_size=4321;
@@ -87,7 +90,7 @@ do_test pragma-1.5 {
     PRAGMA default_cache_size;
     PRAGMA synchronous;
   }
-} {4321 2000 0}
+} [list 4321 $DFLT_CACHE_SZ 0]
 do_test pragma-1.6 {
   execsql {
     PRAGMA synchronous=ON;
@@ -95,7 +98,7 @@ do_test pragma-1.6 {
     PRAGMA default_cache_size;
     PRAGMA synchronous;
   }
-} {4321 2000 1}
+} [list 4321 $DFLT_CACHE_SZ 1]
 do_test pragma-1.7 {
   db close
   sqlite3 db test.db
@@ -104,7 +107,7 @@ do_test pragma-1.7 {
     PRAGMA default_cache_size;
     PRAGMA synchronous;
   }
-} {2000 2000 2}
+} [list $DFLT_CACHE_SZ $DFLT_CACHE_SZ 2]
 do_test pragma-1.8 {
   execsql {
     PRAGMA default_cache_size=123;
@@ -237,7 +240,11 @@ do_test pragma-2.4 {
 # These tests won't work if the database is encrypted
 #
 do_test pragma-3.1 {
+  db close
+  file delete -force test.db test.db-journal
+  sqlite3 db test.db
   execsql {
+    PRAGMA auto_vacuum=OFF;
     BEGIN;
     CREATE TABLE t2(a,b,c);
     CREATE INDEX i2 ON t2(a);
@@ -401,17 +408,18 @@ do_test pragma-3.99 {
 ifcapable pager_pragmas {
 do_test pragma-4.1 {
   execsql {
+    ATTACH 'test2.db' AS aux;
     pragma aux.cache_size;
     pragma aux.default_cache_size;
   } 
-} {2000 2000}
+} [list $DFLT_CACHE_SZ $DFLT_CACHE_SZ]
 do_test pragma-4.2 {
   execsql {
     pragma aux.cache_size = 50;
     pragma aux.cache_size;
     pragma aux.default_cache_size;
   } 
-} {50 2000}
+} [list 50 $DFLT_CACHE_SZ]
 do_test pragma-4.3 {
   execsql {
     pragma aux.default_cache_size = 456;
@@ -424,7 +432,7 @@ do_test pragma-4.4 {
     pragma cache_size;
     pragma default_cache_size;
   } 
-} {123 123}
+} [list $DFLT_CACHE_SZ $DFLT_CACHE_SZ]
 do_test pragma-4.5 {
   execsql {
     DETACH aux;
@@ -432,7 +440,7 @@ do_test pragma-4.5 {
     pragma aux.cache_size;
     pragma aux.default_cache_size;
   } 
-} {2000 2000}
+} [list $DFLT_CACHE_SZ $DFLT_CACHE_SZ]
 do_test pragma-4.6 {
   execsql {
     DETACH aux;
@@ -837,24 +845,25 @@ do_test pragma-9.8 {
     PRAGMA temp_store_directory='';
   }
 } {}
-ifcapable tempdb {
-  do_test pragma-9.9 {
-    execsql { 
-      PRAGMA temp_store_directory;
-      PRAGMA temp_store=FILE;
-      CREATE TEMP TABLE temp_store_directory_test(a integer);
-      INSERT INTO temp_store_directory_test values (2);
-      SELECT * FROM temp_store_directory_test;
-    }
-  } {2}
-}
-do_test pragma-9.10 {
-  catchsql "
-    PRAGMA temp_store_directory='$pwd';
-    SELECT * FROM temp_store_directory_test;
-  "
-} {1 {no such table: temp_store_directory_test}}
-
+if {![info exists TEMP_STORE] || $TEMP_STORE<=1} {
+  ifcapable tempdb {
+    do_test pragma-9.9 {
+      execsql { 
+        PRAGMA temp_store_directory;
+        PRAGMA temp_store=FILE;
+        CREATE TEMP TABLE temp_store_directory_test(a integer);
+        INSERT INTO temp_store_directory_test values (2);
+        SELECT * FROM temp_store_directory_test;
+      }
+    } {2}
+    do_test pragma-9.10 {
+      catchsql "
+        PRAGMA temp_store_directory='$pwd';
+        SELECT * FROM temp_store_directory_test;
+      "
+    } {1 {no such table: temp_store_directory_test}}
+  }
+}  
 do_test pragma-9.11 {
   execsql {
     PRAGMA temp_store = 0;

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.
 # This file implements tests for the page_size PRAGMA.
 #
-# $Id: pagesize.test,v 1.11 2006/01/17 09:35:02 danielk1977 Exp $
+# $Id: pagesize.test,v 1.12 2007/04/06 21:42:22 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -55,26 +55,29 @@ do_test pagesize-1.5 {
     PRAGMA page_size;
   }
 } 512
-do_test pagesize-1.6 {
-  execsql {
-    PRAGMA page_size=8192;
-    PRAGMA page_size;
-  }
-} 8192
-do_test pagesize-1.7 {
-  execsql {
-    PRAGMA page_size=65537;
-    PRAGMA page_size;
-  }
-} 8192
-do_test pagesize-1.8 {
-  execsql {
-    PRAGMA page_size=1234;
-    PRAGMA page_size
-  }
-} 8192
-
+if {![info exists SQLITE_MAX_PAGE_SIZE] || $SQLITE_MAX_PAGE_SIZE>=8192} {
+  do_test pagesize-1.6 {
+    execsql {
+      PRAGMA page_size=8192;
+      PRAGMA page_size;
+    }
+  } 8192
+  do_test pagesize-1.7 {
+    execsql {
+      PRAGMA page_size=65537;
+      PRAGMA page_size;
+    }
+  } 8192
+  do_test pagesize-1.8 {
+    execsql {
+      PRAGMA page_size=1234;
+      PRAGMA page_size
+    }
+  } 8192
+}  
 foreach PGSZ {512 2048 4096 8192} {
+  if {[info exists SQLITE_MAX_PAGE_SIZE]
+           && $SQLITE_MAX_PAGE_SIZE<$PGSZ} continue
   ifcapable memorydb {
     do_test pagesize-2.$PGSZ.0 {
       db close

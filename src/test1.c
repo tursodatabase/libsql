@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.234 2007/04/05 17:36:19 drh Exp $
+** $Id: test1.c,v 1.235 2007/04/06 21:42:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3979,6 +3979,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "like_opt", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_OMIT_LOAD_EXTENSION
+  Tcl_SetVar2(interp, "sqlite_options", "load_ext", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "load_ext", "1", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_MEMORYDB
   Tcl_SetVar2(interp, "sqlite_options", "memorydb", "0", TCL_GLOBAL_ONLY);
 #else
@@ -4116,6 +4122,18 @@ static void set_options(Tcl_Interp *interp){
   Tcl_ObjSetVar2(interp, 
       Tcl_NewStringObj("sqlite_default_file_format", -1), 0, 
       Tcl_NewIntObj(SQLITE_DEFAULT_FILE_FORMAT), TCL_GLOBAL_ONLY
+  );
+#endif
+#ifdef SQLITE_MAX_PAGE_SIZE
+  Tcl_ObjSetVar2(interp, 
+      Tcl_NewStringObj("SQLITE_MAX_PAGE_SIZE", -1), 0, 
+      Tcl_NewIntObj(SQLITE_MAX_PAGE_SIZE), TCL_GLOBAL_ONLY
+  );
+#endif
+#ifdef TEMP_STORE
+  Tcl_ObjSetVar2(interp, 
+      Tcl_NewStringObj("TEMP_STORE", -1), 0, 
+      Tcl_NewIntObj(TEMP_STORE), TCL_GLOBAL_ONLY
   );
 #endif
 }
