@@ -919,11 +919,7 @@ static int unixOpenDirectory(
   const char *zDirname
 ){
   unixFile *pFile = (unixFile*)id;
-  if( pFile==0 ){
-    /* Do not open the directory if the corresponding file is not already
-    ** open. */
-    return SQLITE_CANTOPEN;
-  }
+  assert( pFile!=0 );
   SET_THREADID(pFile);
   assert( pFile->dirfd<0 );
   pFile->dirfd = open(zDirname, O_RDONLY|O_BINARY, 0);
@@ -1000,10 +996,13 @@ static int seekAndRead(unixFile *id, void *pBuf, int cnt){
   TIMER_START;
 #if defined(USE_PREAD)
   got = pread(id->h, pBuf, cnt, id->offset);
+  SimulateIOError( got = -1 );
 #elif defined(USE_PREAD64)
   got = pread64(id->h, pBuf, cnt, id->offset);
+  SimulateIOError( got = -1 );
 #else
   newOffset = lseek(id->h, id->offset, SEEK_SET);
+  SimulateIOError( newOffset-- );
   if( newOffset!=id->offset ){
     return -1;
   }
@@ -1026,7 +1025,6 @@ static int unixRead(OsFile *id, void *pBuf, int amt){
   int got;
   assert( id );
   got = seekAndRead((unixFile*)id, pBuf, amt);
-  SimulateIOError( got = -1 );
   if( got==amt ){
     return SQLITE_OK;
   }else if( got<0 ){

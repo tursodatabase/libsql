@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.323 2007/04/05 17:15:53 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.324 2007/04/06 18:23:18 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2508,8 +2508,12 @@ static PgHdr *pager_get_all_dirty_pages(Pager *pPager){
 */
 static int hasHotJournal(Pager *pPager){
   if( !pPager->useJournal ) return 0;
-  if( !sqlite3OsFileExists(pPager->zJournal) ) return 0;
-  if( sqlite3OsCheckReservedLock(pPager->fd) ) return 0;
+  if( !sqlite3OsFileExists(pPager->zJournal) ){
+    return 0;
+  }
+  if( sqlite3OsCheckReservedLock(pPager->fd) ){
+    return 0;
+  }
   if( sqlite3PagerPagecount(pPager)==0 ){
     sqlite3OsDelete(pPager->zJournal);
     return 0;

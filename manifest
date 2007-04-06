@@ -1,5 +1,5 @@
-C Binary\sfile\sI/O\sinfrastructure\sadded\sand\sused\sto\sincrease\stest\scoverage\nfor\sdetection\sof\scorrupt\sdatabase\sfiles.\s(CVS\s3822)
-D 2007-04-06T15:02:13
+C Additional\scoverage\stesting.\s(CVS\s3823)
+D 2007-04-06T18:23:18
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -82,11 +82,11 @@ F src/os_os2.c 2ce97909b926a598823f97338027dbec1dcf4165
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 13c6f73a7b0c2c6c131c97ea26274db101b594cd
+F src/os_unix.c 426b4c03c304ad78746d65d9ba101e0b72e18e23
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c9a99524d6b2bdec636264cad1b67553925e3309
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 642f804b20a71933fb83b13a1ce93cb4dd1390f7
+F src/pager.c e1ee86ae8d09c84bcd91900ade250776d83e3c72
 F src/pager.h e79a24cf200b8771366217f5bca414f5b7823f42
 F src/parse.y b6cfbadb6d5b21b5087d30698ee5af0ebb098767
 F src/pragma.c 3b992b5b2640d6ae25cef05aa6a42cd1d6c43234
@@ -261,6 +261,7 @@ F test/loadext2.test 4472af96306b127b378a1b2026fe15ed5863f9cf
 F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
+F test/lock4.test c0a56659708bc45d134a18116bf01dd9ff765408
 F test/main.test e7212ce1023957c7209778cc87fa932bd79ba89a
 F test/malloc.test d868a6b98b07928b00bca3d9874daf6885c86150
 F test/malloc2.test 4ed7d719542c4570dec9c2ebe2bbdf3a9f3b0d05
@@ -382,7 +383,7 @@ F test/where4.test b68496500bff496e83e76ae4ffb493b99064eac6
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/lemon.c c8c8b25ab1ac8156b3ad83ba4ea1bf00d5e07f5a
-F tool/lempar.c 20851553530657c766dfb1358b0d443ed2d9c26f
+F tool/lempar.c 8f998bf8d08e2123149c2cc5d0597cd5d5d1abdd
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
@@ -454,7 +455,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 8e2559b4da6329d7c21925d0850f7f91a3731975
-R bf361c806ccd54df8932ace1ba12eaf6
+P 479b3d965b19c3ec4cb72542718751debf8ff75c
+R c44625c6b92ea887ac4e549d47a5b6a4
 U drh
-Z e15d206887ea8f19e691b97bb3aee05c
+Z 81bb1941e9b9712f600f3f1f2f806f0c
