@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.127 2007/03/27 15:00:31 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.128 2007/04/06 11:26:00 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -658,7 +658,7 @@ UPDATE OF <column-list>
 }
 
 Syntax {trigger-action} {
-[ FOR EACH ROW | FOR EACH STATEMENT ] [ WHEN <expression> ] 
+[ FOR EACH ROW ] [ WHEN <expression> ] 
 BEGIN 
   <trigger-step> ; [ <trigger-step> ; ]*
 END
@@ -2008,7 +2008,6 @@ set keyword_list [lsort {
    ROW*
    SELECT
    SET
-   STATEMENT*
    TABLE
    TEMP*
    TEMPORARY*

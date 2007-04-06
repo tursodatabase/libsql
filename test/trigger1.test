@@ -55,6 +55,13 @@ ifcapable tempdb {
 execsql {
     CREATE TABLE t1(a);
 }
+do_test trigger1-1.1.3 {
+  catchsql {
+     CREATE TRIGGER trig UPDATE ON t1 FOR EACH STATEMENT BEGIN
+        SELECT * FROM sqlite_master;
+     END;
+  }
+} {1 {near "STATEMENT": syntax error}}
 execsql {
 	CREATE TRIGGER tr1 INSERT ON t1 BEGIN
 	  INSERT INTO t1 values(1);
