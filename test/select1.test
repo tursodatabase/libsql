@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.51 2006/04/11 14:16:22 drh Exp $
+# $Id: select1.test,v 1.52 2007/04/06 15:02:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -546,6 +546,11 @@ do_test select1-7.8 {
   }} msg]
   lappend v $msg
 } {1 {near ";": syntax error}}
+do_test select1-7.9 {
+  catchsql {
+     SELECT f1 FROM test1 LIMIT 5+3 OFFSET 11 ORDER BY f2;
+  }
+} {1 {near "ORDER": syntax error}}
 
 do_test select1-8.1 {
   execsql {SELECT f1 FROM test1 WHERE 4.3+2.4 OR 1 ORDER BY f1}

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.217 2007/04/06 11:26:00 drh Exp $
+** @(#) $Id: parse.y,v 1.218 2007/04/06 15:02:14 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -542,10 +542,18 @@ having_opt(A) ::= .                {A = 0;}
 having_opt(A) ::= HAVING expr(X).  {A = X;}
 
 %type limit_opt {struct LimitVal}
-%destructor limit_opt {
-  sqlite3ExprDelete($$.pLimit);
-  sqlite3ExprDelete($$.pOffset);
-}
+
+// The destructor for limit_opt will never fire in the current grammar.
+// The limit_opt non-terminal only occurs at the end of a single production
+// rule for SELECT statements.  As soon as the rule that create the 
+// limit_opt non-terminal reduces, the SELECT statement rule will also
+// reduce.  So there is never a limit_opt non-terminal on the stack 
+// except as a transient.  So there is never anything to destroy.
+//
+//%destructor limit_opt {
+//  sqlite3ExprDelete($$.pLimit);
+//  sqlite3ExprDelete($$.pOffset);
+//}
 limit_opt(A) ::= .                     {A.pLimit = 0; A.pOffset = 0;}
 limit_opt(A) ::= LIMIT expr(X).        {A.pLimit = X; A.pOffset = 0;}
 limit_opt(A) ::= LIMIT expr(X) OFFSET expr(Y). 
