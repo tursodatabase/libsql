@@ -13,7 +13,7 @@
 # cache context. What happens to connection B if one connection A encounters
 # an IO-error whilst reading or writing the file-system?
 #
-# $Id: shared_err.test,v 1.10 2007/03/19 13:53:38 danielk1977 Exp $
+# $Id: shared_err.test,v 1.11 2007/04/06 01:04:40 drh Exp $
 
 proc skip {args} {}
 
@@ -291,6 +291,86 @@ do_ioerr_test shared_ioerr-3 -tclprep {
     }
   } {1}
   do_test shared_ioerr-3.$n.cleanup.3 {
+    expr {
+      ($::steprc eq "SQLITE_ROW" && $::finalrc eq "SQLITE_OK") ||
+      ($::steprc eq "SQLITE_ERROR" && $::finalrc eq "SQLITE_IOERR") ||
+      ($::steprc eq "SQLITE_ABORT" && $::finalrc eq "SQLITE_OK")
+    }
+  } {1}
+
+# db2 eval {select * from sqlite_master}
+  db2 close
+}
+
+# This is a repeat of the previous test except that this time we
+# are doing a reverse-order scan of the table when the cursor is
+# "saved".
+# 
+do_ioerr_test shared_ioerr-3rev -tclprep {
+  sqlite3 db2 test.db
+  execsql {
+    PRAGMA read_uncommitted = 1;
+    PRAGMA cache_size = 10;
+    BEGIN;
+    CREATE TABLE t1(a, b, UNIQUE(a, b));
+  } db2
+  for {set i 0} {$i < 200} {incr i} {
+    set a [string range [string repeat "[format %03d $i]." 5] 0 end-1]
+
+    set b [string repeat $i 2000]
+    execsql {INSERT INTO t1 VALUES($a, $b)} db2
+  }
+  execsql {COMMIT} db2
+  set ::DB2 [sqlite3_connection_pointer db2]
+  set ::STMT [sqlite3_prepare $::DB2 \
+           "SELECT a FROM t1 ORDER BY a DESC" -1 DUMMY]
+  sqlite3_step $::STMT       ;# Cursor points at 199.199.199.199.199
+  sqlite3_step $::STMT       ;# Cursor points at 198.198.198.198.198
+
+} -tclbody {
+  execsql {
+    BEGIN;
+    INSERT INTO t1 VALUES('201.201.201.201.201', NULL);
+    UPDATE t1 SET a = '202.202.202.202.202' WHERE a LIKE '201%';
+    COMMIT;
+  }
+} -cleanup {
+  set ::steprc  [sqlite3_step $::STMT]
+  set ::column  [sqlite3_column_text $::STMT 0]
+  set ::finalrc [sqlite3_finalize $::STMT]
+
+  # There are three possible outcomes here (assuming persistent IO errors):
+  #
+  # 1. If the [sqlite3_step] did not require any IO (required pages in
+  #    the cache), then the next row ("002...") may be retrieved 
+  #    successfully.
+  #
+  # 2. If the [sqlite3_step] does require IO, then [sqlite3_step] returns
+  #    SQLITE_ERROR and [sqlite3_finalize] returns IOERR.
+  #
+  # 3. If, after the initial IO error, SQLite tried to rollback the
+  #    active transaction and a second IO error was encountered, then
+  #    statement $::STMT will have been aborted. This means [sqlite3_stmt]
+  #    returns SQLITE_ABORT, and the statement cursor does not move. i.e.
+  #    [sqlite3_column] still returns the current row ("001...") and
+  #    [sqlite3_finalize] returns SQLITE_OK.
+  #
+
+  do_test shared_ioerr-3rev.$n.cleanup.1 {
+    expr {
+      $::steprc eq "SQLITE_ROW" || 
+      $::steprc eq "SQLITE_ERROR" ||
+      $::steprc eq "SQLITE_ABORT" 
+    }
+  } {1}
+  do_test shared_ioerr-3rev.$n.cleanup.2 {
+    expr {
+      ($::steprc eq "SQLITE_ROW" && $::column eq "197.197.197.197.197") ||
+      ($::steprc eq "SQLITE_ERROR" && $::column eq "") ||
+      ($::steprc eq "SQLITE_ABORT" && $::column eq "198.198.198.198.198") 
+    }
+  } {1}
+  do_test shared_ioerr-3rev.$n.cleanup.3 {
     expr {
       ($::steprc eq "SQLITE_ROW" && $::finalrc eq "SQLITE_OK") ||
       ($::steprc eq "SQLITE_ERROR" && $::finalrc eq "SQLITE_IOERR") ||

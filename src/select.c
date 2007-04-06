@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.332 2007/04/01 23:49:52 drh Exp $
+** $Id: select.c,v 1.333 2007/04/06 01:04:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3297,7 +3297,7 @@ select_end:
   return rc;
 }
 
-#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
+#if defined(SQLITE_DEBUG)
 /*
 *******************************************************************************
 ** The following code is used for testing and debugging only.  The code

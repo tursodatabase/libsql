@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.245 2007/03/31 01:34:45 drh Exp $
+** $Id: where.c,v 1.246 2007/04/06 01:04:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1138,8 +1138,7 @@ static double estLog(double N){
 ** SQLITE_TEST or SQLITE_DEBUG are defined, then these routines
 ** are no-ops.
 */
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && \
-        (defined(SQLITE_TEST) || defined(SQLITE_DEBUG))
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_DEBUG)
 static void TRACE_IDX_INPUTS(sqlite3_index_info *p){
   int i;
   if( !sqlite3_where_trace ) return;
