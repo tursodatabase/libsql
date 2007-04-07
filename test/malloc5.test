@@ -12,7 +12,7 @@
 # This file contains test cases focused on the two memory-management APIs, 
 # sqlite3_soft_heap_limit() and sqlite3_release_memory().
 #
-# $Id: malloc5.test,v 1.9 2007/04/05 13:12:14 danielk1977 Exp $
+# $Id: malloc5.test,v 1.10 2007/04/07 17:44:28 drh Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -49,6 +49,7 @@ do_test malloc5-1.1 {
   # the sqlite_master root (page 1) is never freed because the btree layer
   # retains a reference to it for the entire transaction. 
   execsql {
+    PRAGMA auto_vacuum=OFF;
     BEGIN;
     CREATE TABLE abc(a, b, c);
   }
@@ -257,4 +258,3 @@ do_test malloc5-5.1 {
 sqlite3_soft_heap_limit $::soft_limit
 finish_test
 catch {db close}
-
