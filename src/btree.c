@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.352 2007/04/06 15:02:14 drh Exp $
+** $Id: btree.c,v 1.353 2007/04/07 15:03:17 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -5530,10 +5530,18 @@ int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags){
     }
 
     if( pgnoMove!=pgnoRoot ){
+      /* pgnoRoot is the page that will be used for the root-page of
+      ** the new table (assuming an error did not occur). But we were
+      ** allocated pgnoMove. If required (i.e. if it was not allocated
+      ** by extending the file), the current page at position pgnoMove
+      ** is already journaled.
+      */
       u8 eType;
       Pgno iPtrPage;
 
       releasePage(pPageMove);
+
+      /* Move the page currently at pgnoRoot to pgnoMove. */
       rc = getPage(pBt, pgnoRoot, &pRoot, 0);
       if( rc!=SQLITE_OK ){
         return rc;
@@ -5552,6 +5560,8 @@ int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags){
       }
       rc = relocatePage(pBt, pRoot, eType, iPtrPage, pgnoMove);
       releasePage(pRoot);
+
+      /* Obtain the page at pgnoRoot */
       if( rc!=SQLITE_OK ){
         return rc;
       }

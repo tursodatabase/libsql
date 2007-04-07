@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.324 2007/04/06 18:23:18 drh Exp $
+** @(#) $Id: pager.c,v 1.325 2007/04/07 15:03:17 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -158,9 +158,7 @@ struct PgHdr {
   PgHdr *pNextHash, *pPrevHash;  /* Hash collision chain for PgHdr.pgno */
   PgHdr *pNextFree, *pPrevFree;  /* Freelist of pages where nRef==0 */
   PgHdr *pNextAll;               /* A list of all pages */
-  PgHdr *pNextStmt, *pPrevStmt;  /* List of pages in the statement journal */
   u8 inJournal;                  /* TRUE if has been written to journal */
-  u8 inStmt;                     /* TRUE if in the statement subjournal */
   u8 dirty;                      /* TRUE if we need to write back changes */
   u8 needSync;                   /* Sync journal before writing this page */
   u8 alwaysRollback;             /* Disable DontRollback() for this page */
@@ -189,6 +187,8 @@ typedef struct PgHistory PgHistory;
 struct PgHistory {
   u8 *pOrig;     /* Original page text.  Restore to this on a full rollback */
   u8 *pStmt;     /* Text as it was at the beginning of the current statement */
+  PgHdr *pNextStmt, *pPrevStmt;  /* List of pages in the statement journal */
+  u8 inStmt;                     /* TRUE if in the statement subjournal */
 };
 
 /*
@@ -392,6 +392,21 @@ static const unsigned char aJournalMagic[] = {
 # define REFINFO(X)
 #endif
 
+/*
+** Return true if page *pPg has already been written to the statement
+** journal (or statement snapshot has been created, if *pPg is part
+** of an in-memory database).
+*/
+static int pageInStatement(PgHdr *pPg){
+  Pager *pPager = pPg->pPager;
+  if( MEMDB ){
+    return PGHDR_TO_HIST(pPg, pPager)->inStmt;
+  }else{
+    Pgno pgno = pPg->pgno;
+    u8 *a = pPager->aInStmt;
+    return (a && (int)pgno<=pPager->stmtSize && (a[pgno/8] & (1<<(pgno&7))));
+  }
+}
 
 /*
 ** Change the size of the pager hash table to N.  N must be a power
@@ -814,32 +829,17 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
 */
 static void page_add_to_stmt_list(PgHdr *pPg){
   Pager *pPager = pPg->pPager;
-  if( pPg->inStmt ) return;
-  assert( pPg->pPrevStmt==0 && pPg->pNextStmt==0 );
-  pPg->pPrevStmt = 0;
-  if( pPager->pStmt ){
-    pPager->pStmt->pPrevStmt = pPg;
+  PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
+  assert( MEMDB );
+  if( !pHist->inStmt ){
+    assert( pHist->pPrevStmt==0 && pHist->pNextStmt==0 );
+    if( pPager->pStmt ){
+      PGHDR_TO_HIST(pPager->pStmt, pPager)->pPrevStmt = pPg;
+    }
+    pHist->pNextStmt = pPager->pStmt;
+    pPager->pStmt = pPg;
+    pHist->inStmt = 1;
   }
-  pPg->pNextStmt = pPager->pStmt;
-  pPager->pStmt = pPg;
-  pPg->inStmt = 1;
-}
-static void page_remove_from_stmt_list(PgHdr *pPg){
-  if( !pPg->inStmt ) return;
-  if( pPg->pPrevStmt ){
-    assert( pPg->pPrevStmt->pNextStmt==pPg );
-    pPg->pPrevStmt->pNextStmt = pPg->pNextStmt;
-  }else{
-    assert( pPg->pPager->pStmt==pPg );
-    pPg->pPager->pStmt = pPg->pNextStmt;
-  }
-  if( pPg->pNextStmt ){
-    assert( pPg->pNextStmt->pPrevStmt==pPg );
-    pPg->pNextStmt->pPrevStmt = pPg->pPrevStmt;
-  }
-  pPg->pNextStmt = 0;
-  pPg->pPrevStmt = 0;
-  pPg->inStmt = 0;
 }
 
 /*
@@ -2667,7 +2667,6 @@ int sqlite3PagerReleaseMemory(int nReq){
         */
         PgHdr *pTmp;
         assert( pPg );
-        page_remove_from_stmt_list(pPg);
         if( pPg==pPager->pAll ){
            pPager->pAll = pPg->pNextAll;
         }else{
@@ -3008,6 +3007,7 @@ int sqlite3PagerAcquire(Pager *pPager, Pgno pgno, DbPage **ppPage, int clrFlag){
     }
 
     pPg->pgno = pgno;
+    assert( !MEMDB || pgno>pPager->stmtSize );
     if( pPager->aInJournal && (int)pgno<=pPager->origDbSize ){
       sqlite3CheckMemory(pPager->aInJournal, pgno/8);
       assert( pPager->journalOpen );
@@ -3017,12 +3017,7 @@ int sqlite3PagerAcquire(Pager *pPager, Pgno pgno, DbPage **ppPage, int clrFlag){
       pPg->inJournal = 0;
       pPg->needSync = 0;
     }
-    if( pPager->aInStmt && (int)pgno<=pPager->stmtSize
-             && (pPager->aInStmt[pgno/8] & (1<<(pgno&7)))!=0 ){
-      page_add_to_stmt_list(pPg);
-    }else{
-      page_remove_from_stmt_list(pPg);
-    }
+
     makeClean(pPg);
     pPg->nRef = 1;
     REFINFO(pPg);
@@ -3374,7 +3369,7 @@ static int pager_write(PgHdr *pPg){
   ** to the journal then we can return right away.
   */
   makeDirty(pPg);
-  if( pPg->inJournal && (pPg->inStmt || pPager->stmtInUse==0) ){
+  if( pPg->inJournal && (pageInStatement(pPg) || pPager->stmtInUse==0) ){
     pPager->dirtyCache = 1;
   }else{
 
@@ -3449,7 +3444,6 @@ static int pager_write(PgHdr *pPg){
           pPg->needSync = !pPager->noSync;
           if( pPager->stmtInUse ){
             pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-            page_add_to_stmt_list(pPg);
           }
         }
       }else{
@@ -3468,7 +3462,10 @@ static int pager_write(PgHdr *pPg){
     ** the statement journal format differs from the standard journal format
     ** in that it omits the checksums and the header.
     */
-    if( pPager->stmtInUse && !pPg->inStmt && (int)pPg->pgno<=pPager->stmtSize ){
+    if( pPager->stmtInUse 
+     && !pageInStatement(pPg) 
+     && (int)pPg->pgno<=pPager->stmtSize 
+    ){
       assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
       if( MEMDB ){
         PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
@@ -3478,6 +3475,7 @@ static int pager_write(PgHdr *pPg){
           memcpy(pHist->pStmt, PGHDR_TO_DATA(pPg), pPager->pageSize);
         }
         PAGERTRACE3("STMT-JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno);
+        page_add_to_stmt_list(pPg);
       }else{
         char *pData2 = CODEC2(pPager, pData, pPg->pgno, 7)-4;
         put32bits(pData2, pPg->pgno);
@@ -3490,7 +3488,6 @@ static int pager_write(PgHdr *pPg){
         assert( pPager->aInStmt!=0 );
         pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
       }
-      page_add_to_stmt_list(pPg);
     }
   }
 
@@ -3681,16 +3678,17 @@ void sqlite3PagerDontRollback(DbPage *pPg){
     pPg->inJournal = 1;
     if( pPager->stmtInUse ){
       pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-      page_add_to_stmt_list(pPg);
     }
     PAGERTRACE3("DONT_ROLLBACK page %d of %d\n", pPg->pgno, PAGERID(pPager));
     IOTRACE(("GARBAGE %p %d\n", pPager, pPg->pgno))
   }
-  if( pPager->stmtInUse && !pPg->inStmt && (int)pPg->pgno<=pPager->stmtSize ){
+  if( pPager->stmtInUse 
+   && !pageInStatement(pPg) 
+   && (int)pPg->pgno<=pPager->stmtSize 
+  ){
     assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
     assert( pPager->aInStmt!=0 );
     pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-    page_add_to_stmt_list(pPg);
   }
 }
 
@@ -3840,12 +3838,13 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   if( MEMDB ){
     pPg = pager_get_all_dirty_pages(pPager);
     while( pPg ){
-      clearHistory(PGHDR_TO_HIST(pPg, pPager));
+      PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
+      clearHistory(pHist);
       pPg->dirty = 0;
       pPg->inJournal = 0;
-      pPg->inStmt = 0;
+      pHist->inStmt = 0;
       pPg->needSync = 0;
-      pPg->pPrevStmt = pPg->pNextStmt = 0;
+      pHist->pPrevStmt = pHist->pNextStmt = 0;
       pPg = pPg->pDirty;
     }
     pPager->pDirty = 0;
@@ -3903,8 +3902,8 @@ int sqlite3PagerRollback(Pager *pPager){
       clearHistory(pHist);
       p->dirty = 0;
       p->inJournal = 0;
-      p->inStmt = 0;
-      p->pPrevStmt = p->pNextStmt = 0;
+      pHist->inStmt = 0;
+      pHist->pPrevStmt = pHist->pNextStmt = 0;
       if( pPager->xReiniter ){
         pPager->xReiniter(p, pPager->pageSize);
       }
@@ -4051,14 +4050,13 @@ int sqlite3PagerStmtCommit(Pager *pPager){
       /* sqlite3OsTruncate(pPager->stfd, 0); */
       sqliteFree( pPager->aInStmt );
       pPager->aInStmt = 0;
-    }
-    for(pPg=pPager->pStmt; pPg; pPg=pNext){
-      pNext = pPg->pNextStmt;
-      assert( pPg->inStmt );
-      pPg->inStmt = 0;
-      pPg->pPrevStmt = pPg->pNextStmt = 0;
-      if( MEMDB ){
+    }else{
+      for(pPg=pPager->pStmt; pPg; pPg=pNext){
         PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
+        pNext = pHist->pNextStmt;
+        assert( pHist->inStmt );
+        pHist->inStmt = 0;
+        pHist->pPrevStmt = pHist->pNextStmt = 0;
         sqliteFree(pHist->pStmt);
         pHist->pStmt = 0;
       }
@@ -4080,8 +4078,9 @@ int sqlite3PagerStmtRollback(Pager *pPager){
     PAGERTRACE2("STMT-ROLLBACK %d\n", PAGERID(pPager));
     if( MEMDB ){
       PgHdr *pPg;
-      for(pPg=pPager->pStmt; pPg; pPg=pPg->pNextStmt){
-        PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
+      PgHistory *pHist;
+      for(pPg=pPager->pStmt; pPg; pPg=pHist->pNextStmt){
+        pHist = PGHDR_TO_HIST(pPg, pPager);
         if( pHist->pStmt ){
           memcpy(PGHDR_TO_DATA(pPg), pHist->pStmt, pPager->pageSize);
           sqliteFree(pHist->pStmt);
