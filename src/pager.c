@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.325 2007/04/07 15:03:17 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.326 2007/04/09 11:20:54 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1115,8 +1115,8 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
     /* assert( pPg->nRef==0 || pPg->pgno==1 ); */
     pData = PGHDR_TO_DATA(pPg);
     memcpy(pData, aData, pPager->pageSize);
-    if( pPager->xDestructor ){  /*** FIX ME:  Should this be xReinit? ***/
-      pPager->xDestructor(pPg, pPager->pageSize);
+    if( pPager->xReiniter ){
+      pPager->xReiniter(pPg, pPager->pageSize);
     }
 #ifdef SQLITE_CHECK_PAGES
     pPg->pageHash = pager_pagehash(pPg);

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks between competing processes.
 #
-# $Id: lock2.test,v 1.6 2005/09/17 16:48:19 drh Exp $
+# $Id: lock2.test,v 1.7 2007/04/09 11:20:54 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -22,7 +22,11 @@ source $testdir/tester.tcl
 # 'testfixture' to execute a command. The child testfixture process is shut
 # down by closing the channel.
 proc launch_testfixture {} {
-  set chan [open "|[file join . testfixture] tf_main.tcl" r+]
+  set prg [info nameofexec]
+  if {$prg eq ""} {
+    set prg [file join . testfixture]
+  }
+  set chan [open "|$prg tf_main.tcl" r+]
   fconfigure $chan -buffering line
   return $chan
 }

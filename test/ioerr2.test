@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr2.test,v 1.1 2007/04/02 16:46:23 danielk1977 Exp $
+# $Id: ioerr2.test,v 1.2 2007/04/09 11:20:54 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -51,7 +51,9 @@ proc check_db {testname} {
     db close
     sqlite3 db test.db
   } else {
-    if {$rc} {error $msg}
+    if {$rc || $msg ne "ok"} {
+      error $msg
+    }
     catch {execsql ROLLBACK}
   }
 
@@ -76,6 +78,7 @@ set sql {
   ROLLBACK;
 }
 
+breakpoint
 foreach bPersist [list 0 1] {
   set ::go 1
   for {set ::N 1} {$::go} {incr ::N} {

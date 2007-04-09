@@ -1,5 +1,5 @@
-C Work\saround\sbuggy\sTCL\simplementations\sin\sthe\sexclusive2\stest\sfile.\s\sTicket\s#2287\s(CVS\s3827)
-D 2007-04-08T16:52:22
+C Have\sthe\spager\scall\sxReiniter()\sinstead\sof\sxDestructor()\sto\srestore\sbtree\slevel\sstate\safter\srolling\sback\sa\spage.\s(CVS\s3828)
+D 2007-04-09T11:20:54
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,7 +86,7 @@ F src/os_unix.c 426b4c03c304ad78746d65d9ba101e0b72e18e23
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c9a99524d6b2bdec636264cad1b67553925e3309
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c d0bd990ade9062ec1884a4c4e138f464e18e9250
+F src/pager.c 655073dd7b32eade2f10f69e1d51fece380d45e1
 F src/pager.h e79a24cf200b8771366217f5bca414f5b7823f42
 F src/parse.y b6cfbadb6d5b21b5087d30698ee5af0ebb098767
 F src/pragma.c 3b992b5b2640d6ae25cef05aa6a42cd1d6c43234
@@ -245,7 +245,7 @@ F test/insert4.test 0bb119fea2868afdcf78e4e3e3bfed27bbdb2430
 F test/interrupt.test c38b7f7c17914f0cd6a119beed5d03bc3f47f9eb
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/ioerr.test 491d42c49bbec598966d26b01ed7901f55e5ee2d
-F test/ioerr2.test 5f672f7f37a424bb1e02bee4fdedfa319a95da29
+F test/ioerr2.test d37de99aa6e96ad55c3503b6365346e019c5ed6e
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -259,7 +259,7 @@ F test/limit.test 2a87b9cb2165abb49ca0ddcf5cb43cf24074581f
 F test/loadext.test 9ab2cb0226329c1a62dd45d204be95158a872201
 F test/loadext2.test 95ca7e2cb03fd3e068de97c3a2fe58dbdfd769e1
 F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
-F test/lock2.test d83ba79d3c4fffdb5b926c7d8ca7a36c34288a55
+F test/lock2.test b95915eb4b6f8420acb30c68170d8f0ed9364efe
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 49e22396b9be6e047b3d35469f233be79153c9d5
 F test/main.test e7212ce1023957c7209778cc87fa932bd79ba89a
@@ -455,7 +455,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 105a7efb090a5619e82a7e2931d4d3e080e6465a
-R 08904a3aa0378c7ab8cc818bba8998f1
-U drh
-Z 677eb1d566591904a5e664d515483f3c
+P 5424fcc5f82e864e0a85a71e0ae39209200386c6
+R 27ca5f36da384c7469144b8aa517ce6b
+U danielk1977
+Z dce029906fcde6f3be2aa17f46e3fa64
