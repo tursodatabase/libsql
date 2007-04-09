@@ -1,9 +1,9 @@
-C Fix\san\sobscure\spager\srefcnt\sleak\sthat\soccurs\sfollowing\sa\stransient\sI/O\nerror.\s(CVS\s3829)
-D 2007-04-09T12:45:03
+C Perparations\sfor\sthe\srelease\sof\s3.3.15.\s(CVS\s3830)
+D 2007-04-09T13:18:47
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
-F VERSION ebbd5a08dc4d7f984b7e0f2dd3d5d78001119117
+F VERSION f404379ac80b392704b9e35623554fbee85bf33d
 F aclocal.m4 d20ba55930a05197b484809fba1d2b603f4e67a6
 F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -412,7 +412,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
 F www/capi3ref.tcl 24fc13e145bdc07a77051d944534a97a957267ab
-F www/changes.tcl 7f1a3f6fbb7cc2bd0bf49af0bcbb02a316700a79
+F www/changes.tcl 91b7c26fa6872ccc85fb60d7a8554c06f5439246
 F www/common.tcl 2b793e5c31486c8a01dd27dc0a631ad93704438e
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -424,20 +424,20 @@ F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
 F www/different.tcl 8b76ae88bf73e38097b7936e198df4f89baf587c
 F www/direct1b.gif 32b48b764244817b6b591898dc52a04299a7b8a7
 F www/docs.tcl 09eeac4e565789a67abc63f166a9ae7f3050454d
-F www/download.tcl 764b7ff75433e47369741c6f3451b1e05d90d24b
+F www/download.tcl af64b2815046b43010163dcc961811b30395d6a8
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 705c986e40775cc3d92a1676dcbb55f00f0459c5
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bbb8af1ee494a71031acac4c8d8c51535f23b9df
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl ac28cf2f1130bedf970f990546d0ec79d2e9fbfc
+F www/index.tcl 5e24f010bc398ec0381cdd5372f0e43a2d503995
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl 26a38c36ec6686aee0e46eeac90acb3aae373537
 F www/lockingv3.tcl e52345bd20323bef6146bfce18ae0829b2b7c87d
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
-F www/oldnews.tcl 32688aa238d455f080501201a25001cbf45f2bb0
+F www/oldnews.tcl 3ab579af86125f6047cf65f06a7a61b5b41e2312
 F www/omitted.tcl ee6b46f83d513b2187869740da829a700e1a355e
 F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
@@ -455,7 +455,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 4e8941333ef053442877a2a696a2c68d403c7f4d
-R 28730f6b46e2731a59a5f5532af95ebe
+P ce6f56ece8eab743d20cd2c0a84b4a266c4da2ff
+R ebeca99d359cd7d447985d5d230701cd
 U drh
-Z d3bb3944bdcc85b73a9d94fa04080f58
+Z a808f38c9891308bb0dc5f15b5169e9e

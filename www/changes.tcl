@@ -25,6 +25,18 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2007 April 9 (3.3.15)} {
+<li>Fix a bug introduced in 3.3.14 that caused a rollback of
+    CREATE TEMP TABLE to leave the database connection wedged.</li>
+<li>Fix a bug that caused an extra NULL row to be returned when
+    a descending query was interrupted by a change to the database.</li>
+<li>The FOR EACH STATEMENT clause on a trigger now causes a syntax
+    error.  It used to be silently ignored.</li>
+<li>Fix an obscure and relatively harmless problem that might have caused
+    a resource leak following an I/O error.</li>
+<li>Many improvements to the test suite.  Test coverage now exceeded 98%</li>
+}
+
 chng {2007 April 2 (3.3.14)} {
 <li>Fix a <a href="http://www.sqlite.org/cvstrac/tktview?tn=2273">bug</a>
     in 3.3.13 that could cause a segfault when the IN operator

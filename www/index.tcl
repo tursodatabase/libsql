@@ -42,7 +42,7 @@ Features include:
     Bindings for many other languages 
     <a href="http://www.sqlite.org/cvstrac/wiki?p=SqliteWrappers">
     available separately.</a></li>
-<li>Well-commented source code with over 97% test coverage.</li>
+<li>Well-commented source code with over 98% test coverage.</li>
 <li>Available as a 
     <a href="http://www.sqlite.org/cvstrac/wiki?p=TheAmalgamation">
     single ANSI-C source-code file</a> that you can easily drop into
@@ -73,6 +73,11 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2007-Apr-09} {Version 3.3.15} {
+  An annoying bug introduced in 3.3.14 has been fixed.  There are
+  also many enhancements to the test suite.  
+}
+
 newsitem {2007-Apr-02} {Version 3.3.14} {
   This version focuses on performance improvements.  If you recompile
   <a href="http://www.sqlite.org/cvstrac/wiki?p=TheAmalgamation">
@@ -99,18 +104,8 @@ newsitem {2007-Jan-27} {Version 3.3.12} {
   PRAGMA integrity_check</a> has been enhanced.
 }
 
-newsitem {2007-Jan-22} {Version 3.3.11} {
-  Version 3.3.11 fixes for a few more problems in version 3.3.9 that
-  version 3.3.10 failed to catch.  Upgrading is recommended.
-}
-
-newsitem {2007-Jan-9} {Version 3.3.10} {
-  Version 3.3.10 fixes several bugs that were introduced by the previous
-  release.  Upgrading is recommended.
-}
-
 puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.151 2007/04/02 15:04:34 drh Exp $}
+footer {$Id: index.tcl,v 1.152 2007/04/09 13:18:47 drh Exp $}
