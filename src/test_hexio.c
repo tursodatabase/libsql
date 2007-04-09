@@ -17,7 +17,7 @@
 ** with historical versions of the "binary" command.  So it seems
 ** easier and safer to build our own mechanism.
 **
-** $Id: test_hexio.c,v 1.1 2007/04/06 15:02:14 drh Exp $
+** $Id: test_hexio.c,v 1.2 2007/04/09 20:30:11 drh Exp $
 */
 #include "tcl.h"
 #include <stdlib.h>
@@ -223,7 +223,7 @@ static int hexio_get_int(
     memcpy(aNum, aOut, 4);
   }else{
     memset(aNum, 0, sizeof(aNum));
-    memcpy(&aNum[4-nOut], aOut, 4-nOut);
+    memcpy(&aNum[4-nOut], aOut, nOut);
   }
   free(aOut);
   val = (aNum[0]<<24) | (aNum[1]<<16) | (aNum[2]<<8) | aNum[3];
