@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.235 2007/04/06 21:42:22 drh Exp $
+** $Id: test1.c,v 1.236 2007/04/09 12:45:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3753,8 +3753,8 @@ static int test_thread_cleanup(
 /*
 ** Usage:   sqlite3_pager_refcounts  DB
 **
-** Return a list of numbers when are the PagerRefcount for each
-** pager on each database.
+** Return a list of numbers which are the PagerRefcount for all
+** pagers on each database connection.
 */
 static int test_pager_refcounts(
   void * clientData,
@@ -3769,7 +3769,7 @@ static int test_pager_refcounts(
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " <STMT>", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;

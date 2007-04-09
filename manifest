@@ -1,5 +1,5 @@
-C Have\sthe\spager\scall\sxReiniter()\sinstead\sof\sxDestructor()\sto\srestore\sbtree\slevel\sstate\safter\srolling\sback\sa\spage.\s(CVS\s3828)
-D 2007-04-09T11:20:54
+C Fix\san\sobscure\spager\srefcnt\sleak\sthat\soccurs\sfollowing\sa\stransient\sI/O\nerror.\s(CVS\s3829)
+D 2007-04-09T12:45:03
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -58,7 +58,7 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 4bbf5ddf9680587c6d4917e02e378b6037be3651
 F src/attach.c a16ada4a4654a0d126b8223ec9494ebb81bc5c3c
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c ea98c5549ef0b3d13e0d22e0d043fd07df972096
+F src/btree.c 7adc16a10b42d3a3c39e64af85b748c68156f6b2
 F src/btree.h 9b2cc0d113c0bc2d37d244b9a394d56948c9acbf
 F src/build.c 7c2efa468f0c404ef5aa648d43c383318390937f
 F src/callback.c 31d22b4919c7645cbcbb1591ce2453e8c677c558
@@ -101,7 +101,7 @@ F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 347160d30eb61210417f1086aeb57d7d3e2a8191
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c ec69eb9ad56d03fbf7570ca1ca5ea947d1ec4b6f
-F src/test1.c 35ad59fa1eca03489e53de1d611aaeb99df432bc
+F src/test1.c 9f85126e66a9a1ec463b609cd0221c151a723e2c
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 65f92247cf8592854e9bf5115b3fb711f8b33280
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -245,7 +245,7 @@ F test/insert4.test 0bb119fea2868afdcf78e4e3e3bfed27bbdb2430
 F test/interrupt.test c38b7f7c17914f0cd6a119beed5d03bc3f47f9eb
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/ioerr.test 491d42c49bbec598966d26b01ed7901f55e5ee2d
-F test/ioerr2.test d37de99aa6e96ad55c3503b6365346e019c5ed6e
+F test/ioerr2.test 23c5f19304625d48c12775ee4a23d54e125c47cb
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -455,7 +455,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 5424fcc5f82e864e0a85a71e0ae39209200386c6
-R 27ca5f36da384c7469144b8aa517ce6b
-U danielk1977
-Z dce029906fcde6f3be2aa17f46e3fa64
+P 4e8941333ef053442877a2a696a2c68d403c7f4d
+R 28730f6b46e2731a59a5f5532af95ebe
+U drh
+Z d3bb3944bdcc85b73a9d94fa04080f58

@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr2.test,v 1.2 2007/04/09 11:20:54 danielk1977 Exp $
+# $Id: ioerr2.test,v 1.3 2007/04/09 12:45:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -50,6 +50,7 @@ proc check_db {testname} {
   if {$rc && $msg eq "disk I/O error"} {
     db close
     sqlite3 db test.db
+    set refcnt 0
   } else {
     if {$rc || $msg ne "ok"} {
       error $msg
@@ -62,6 +63,9 @@ proc check_db {testname} {
   set ck [execsql {SELECT md5sum(a, b) FROM t1}]
   do_test ${testname}.cksum [list set ck $ck] $::cksum
   integrity_check ${testname}.integrity
+  do_test ${testname}.refcnt {
+    lindex [sqlite3_pager_refcounts db] 0
+  } 0
 }
 
 check_db ioerr2-2
