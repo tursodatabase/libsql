@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.53 2007/03/17 10:26:59 danielk1977 Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.54 2007/04/10 13:51:19 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -429,6 +429,18 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
 <tr><td> BLOB </td><td>    TEXT </td><td>  Add a \\000 terminator if needed</td></tr>
 </table>
 </blockquote>
+
+  Note that when type conversions occur, pointers returned by prior
+  calls to sqlite3_column_blob(), sqlite3_column_text(), and/or
+  sqlite3_column_text16() may be invalidated.  So, for example, if
+  you initially call sqlite3_column_text() and get back a pointer to
+  a UTF-8 string, then you call sqlite3_column_text16(), after the
+  call to sqlite3_column_text16() the pointer returned by the prior
+  call to sqlite3_column_text() will likely point to deallocated memory.
+  Attempting to use the original pointer might lead to heap corruption
+  or a segfault.  Note also that calls  to sqlite3_column_bytes()
+  and sqlite3_column_bytes16() can also cause type conversion that
+  and deallocate prior buffers.  Use these routines carefully.
 }
 
 api {} {

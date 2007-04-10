@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.138 2007/03/17 17:52:42 drh Exp $
+** $Id: func.c,v 1.139 2007/04/10 13:51:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -656,8 +656,8 @@ static void hexFunc(
   const unsigned char *pBlob;
   char *zHex, *z;
   assert( argc==1 );
-  pBlob = sqlite3_value_blob(argv[0]);
   n = sqlite3_value_bytes(argv[0]);
+  pBlob = sqlite3_value_blob(argv[0]);
   z = zHex = sqlite3_malloc(n*2 + 1);
   if( zHex==0 ) return;
   for(i=0; i<n; i++, pBlob++){
