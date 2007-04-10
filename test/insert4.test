@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT transfer optimization.
 #
-# $Id: insert4.test,v 1.3 2007/02/24 15:18:50 drh Exp $
+# $Id: insert4.test,v 1.4 2007/04/10 18:17:55 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -226,5 +226,17 @@ xfer_check insert4-3.22 1 {1 9} \
     {a int, b int} \
     {x integer, b int}
 
+
+# Ticket #2291.
+#
+do_test insert4-4.1 {
+  execsql {
+    CREATE TABLE t4(a, b, PRIMARY KEY(a,b));
+    INSERT INTO t4 VALUES(NULL,0);
+    INSERT INTO t4 VALUES(NULL,1);
+    INSERT INTO t4 VALUES(NULL,1);
+    VACUUM;   
+  }
+} {}
 
 finish_test

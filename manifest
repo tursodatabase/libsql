@@ -1,5 +1,5 @@
-C Be\scareful\snot\sto\suse\sthe\sresult\sof\ssqlite3_value_blob()\safter\schanging\nthe\srepresentation\sof\san\sobject.\s\sTicket\s#2290.\s(CVS\s3834)
-D 2007-04-10T13:51:18
+C Preliminary\sfix\sfor\sticket\s#2291.\s\sThis\sfixes\sthe\simmediate\sproblem.\s\sBut\nwe\sreally\sneed\sto\swrite\smore\stests\sfor\sthe\sxfer\soptimization\sin\sorder\sto\nlook\sfor\sother\srelated\sproblems\sbefore\sclosing\sthis\sticket.\s(CVS\s3835)
+D 2007-04-10T18:17:55
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -70,7 +70,7 @@ F src/expr.c a8740c24af3f39f2d502be1a1c640c96435eaac0
 F src/func.c 007d957c057bb42b0d37aa6ad4be0e1c67a8871b
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
-F src/insert.c 967be8c143d64c904ba4e6f66760824898a75e3c
+F src/insert.c f3cd178575bd2a4b65a9a1313f391e1f78221ca3
 F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
 F src/loadext.c 146fb9b9dc6133e763888d710205c32ebf8eeca2
 F src/main.c c8915777ae8e50823d01eefe2b674ef68c32bf61
@@ -243,7 +243,7 @@ F test/index3.test f66718cd92ce1216819d47e6a156755e4b2c4ca1
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 5a20e1ace5fa0800b58d28284212290189b49aed
 F test/insert3.test 09a532d5b6f3a788d91be0d4d368462f522685d1
-F test/insert4.test 0bb119fea2868afdcf78e4e3e3bfed27bbdb2430
+F test/insert4.test c5af4d3d123329aa13e8b4fb265a2f143a43d0cd
 F test/interrupt.test c38b7f7c17914f0cd6a119beed5d03bc3f47f9eb
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/ioerr.test 491d42c49bbec598966d26b01ed7901f55e5ee2d
@@ -457,7 +457,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 81be7290a4db7b74a533aaf95c7389eb4bde6a88
-R 2b4707c8870f2a324132e4edcdf8905d
+P e14374e4e6f14a90ecb53c2e7c86908a220c6d68
+R f289180cefc2c2db5021e660d1bbcc38
 U drh
-Z 24df7c4f8c69db5a5c90263a033c10d0
+Z 390c704b66783e56774a93432326a3cd
