@@ -1,5 +1,5 @@
-C Preliminary\sfix\sfor\sticket\s#2291.\s\sThis\sfixes\sthe\simmediate\sproblem.\s\sBut\nwe\sreally\sneed\sto\swrite\smore\stests\sfor\sthe\sxfer\soptimization\sin\sorder\sto\nlook\sfor\sother\srelated\sproblems\sbefore\sclosing\sthis\sticket.\s(CVS\s3835)
-D 2007-04-10T18:17:55
+C Blind\scheck-in\sof\schanges\sto\sfix\s#2294\s-\sI\shave\sno\sability\sto\stest.\r\nGentle\swince\susers:\splease\stest\sthis\schange\sand\sif\sit\sworks\sleave\sa\sremark\r\non\sthe\s#2294\sticket.\s\sTnx.\s(CVS\s3836)
+D 2007-04-11T17:54:03
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -84,7 +84,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 426b4c03c304ad78746d65d9ba101e0b72e18e23
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c c9a99524d6b2bdec636264cad1b67553925e3309
+F src/os_win.c e94903c7dc1c0599c8ddce42efa0b6928068ddc5
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 655073dd7b32eade2f10f69e1d51fece380d45e1
 F src/pager.h e79a24cf200b8771366217f5bca414f5b7823f42
@@ -457,7 +457,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P e14374e4e6f14a90ecb53c2e7c86908a220c6d68
-R f289180cefc2c2db5021e660d1bbcc38
+P 34fec312fd1aeabb04e07d6aa061991775c7b8a1
+R d1534c540b5ae78307739707a6abdcd3
 U drh
-Z 390c704b66783e56774a93432326a3cd
+Z 17f9de9f818eaf8a3c214b1aa054fe86
