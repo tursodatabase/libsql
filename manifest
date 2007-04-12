@@ -1,5 +1,5 @@
-C Get\sthe\scolumn\saffinities\sright\swhen\sprocessing\san\sIN\soperator\swhere\nthe\sright-hand\sside\sis\sa\ssubquery\swith\san\sORDER\sBY\sclause.\s\sTicket\s#2295.\nThis\sbug\shas\slikely\sbeen\spresent\ssince\sversion\s3.0.0\sand\sit\shas\sjust\snow\nbeen\snoticed,\sso\sit\sseems\sto\sbe\sa\sobscure\scase.\s(CVS\s3837)
-D 2007-04-12T03:54:39
+C Changes\stoward\sfixes\sfor\stickets\s#2296\sand\s#2291.\s(CVS\s3838)
+D 2007-04-12T21:25:02
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -93,7 +93,7 @@ F src/pragma.c 3b992b5b2640d6ae25cef05aa6a42cd1d6c43234
 F src/prepare.c 37207b2b2ccb41d379b01dd62231686bcc48ef1f
 F src/printf.c 0c6f40648770831341ac45ab32423a80b4c87f05
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
-F src/select.c e61a72f8eadd6810ee05febaab392f86f1aa4917
+F src/select.c bd1742051f3418c2f035371e0dcea741c1907842
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 3ae4654560e91220a95738a73d135d91d937cda1
 F src/sqlite.h.in e429f66f9245c7f8675db24b230c950b8672ad1c
@@ -243,7 +243,7 @@ F test/index3.test f66718cd92ce1216819d47e6a156755e4b2c4ca1
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 5a20e1ace5fa0800b58d28284212290189b49aed
 F test/insert3.test 09a532d5b6f3a788d91be0d4d368462f522685d1
-F test/insert4.test c5af4d3d123329aa13e8b4fb265a2f143a43d0cd
+F test/insert4.test 1e27f0a3e5670d5f03c1636f699aa44270945bca
 F test/interrupt.test c38b7f7c17914f0cd6a119beed5d03bc3f47f9eb
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/ioerr.test 491d42c49bbec598966d26b01ed7901f55e5ee2d
@@ -457,7 +457,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P ca56c3e2250eda0b312ab6f801b0fd95fb136bfa
-R 77eaaca444233c69514bd1ca325ca11d
+P 4062ddf3c7f4fd150292304fa33ca76dc35571a1
+R c4a1410422b835866a41c3cffa966fab
 U drh
-Z 836278c790cb182e1d81cabb92bdc290
+Z ee14464e551b6f16d7f21d5424a51d91

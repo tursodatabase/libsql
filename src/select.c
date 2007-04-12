@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.334 2007/04/12 03:54:39 drh Exp $
+** $Id: select.c,v 1.335 2007/04/12 21:25:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2591,11 +2591,14 @@ int sqlite3SelectResolve(
   */
   sNC.pEList = p->pEList;
   if( sqlite3ExprResolveNames(&sNC, p->pWhere) ||
-      sqlite3ExprResolveNames(&sNC, p->pHaving) ||
-      processOrderGroupBy(&sNC, p->pOrderBy, "ORDER") ||
-      processOrderGroupBy(&sNC, pGroupBy, "GROUP")
-  ){
+     sqlite3ExprResolveNames(&sNC, p->pHaving) ){
     return SQLITE_ERROR;
+  }
+  if( p->pPrior==0 ){
+    if( processOrderGroupBy(&sNC, p->pOrderBy, "ORDER") ||
+        processOrderGroupBy(&sNC, pGroupBy, "GROUP") ){
+      return SQLITE_ERROR;
+    }
   }
 
   /* Make sure the GROUP BY clause does not contain aggregate functions.
