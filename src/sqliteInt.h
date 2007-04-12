@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.550 2007/04/06 11:26:00 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.551 2007/04/12 03:54:39 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1266,6 +1266,7 @@ struct Select {
   u8 isAgg;              /* True if this is an aggregate query */
   u8 usesEphm;           /* True if uses an OpenEphemeral opcode */
   u8 disallowOrderBy;    /* Do not allow an ORDER BY to be attached if TRUE */
+  char affinity;         /* MakeRecord with this affinity for SRT_Set */
   SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */
   ExprList *pGroupBy;    /* The GROUP BY clause */

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.333 2007/04/06 01:04:40 drh Exp $
+** $Id: select.c,v 1.334 2007/04/12 03:54:39 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -553,6 +553,7 @@ static int selectInnerLoop(
       sqlite3VdbeAddOp(v, OP_NotNull, -1, addr1+3);
       sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
       addr2 = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+      p->affinity = sqlite3CompareAffinity(pEList->a[0].pExpr,(iParm>>16)&0xff);
       if( pOrderBy ){
         /* At first glance you would think we could optimize out the
         ** ORDER BY in this case since the order of entries in the set
@@ -560,9 +561,7 @@ static int selectInnerLoop(
         ** case the order does matter */
         pushOntoSorter(pParse, pOrderBy, p);
       }else{
-        char affinity = (iParm>>16)&0xFF;
-        affinity = sqlite3CompareAffinity(pEList->a[0].pExpr, affinity);
-        sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &affinity, 1);
+        sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &p->affinity, 1);
         sqlite3VdbeAddOp(v, OP_IdxInsert, (iParm&0x0000FFFF), 0);
       }
       sqlite3VdbeJumpHere(v, addr2);
@@ -723,7 +722,7 @@ static void generateSortTail(
       sqlite3VdbeAddOp(v, OP_NotNull, -1, sqlite3VdbeCurrentAddr(v)+3);
       sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
       sqlite3VdbeAddOp(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+3);
-      sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, "c", P3_STATIC);
+      sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &p->affinity, 1);
       sqlite3VdbeAddOp(v, OP_IdxInsert, (iParm&0x0000FFFF), 0);
       break;
     }

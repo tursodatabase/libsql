@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that are part of
 # expressions.
 #
-# $Id: subselect.test,v 1.13 2005/09/08 10:37:01 drh Exp $
+# $Id: subselect.test,v 1.14 2007/04/12 03:54:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -174,5 +174,29 @@ do_test subselect-3.10 {
        (SELECT x FROM t3 ORDER BY x DESC LIMIT 1 OFFSET 2);
   }
 } {4}
+
+# Ticket #2295.
+# Make sure type affinities work correctly on subqueries with
+# an ORDER BY clause.
+#
+do_test subselect-4.1 {
+  execsql {
+    CREATE TABLE t4(a TEXT, b TEXT);
+    INSERT INTO t4 VALUES('a','1');
+    INSERT INTO t4 VALUES('b','2');
+    INSERT INTO t4 VALUES('c','3');
+    SELECT a FROM t4 WHERE b IN (SELECT b FROM t4 ORDER BY b);
+  }
+} {a b c}
+do_test subselect-4.2 {
+  execsql {
+    SELECT a FROM t4 WHERE b IN (SELECT b FROM t4 ORDER BY b LIMIT 1);
+  }
+} {a}
+do_test subselect-4.3 {
+  execsql {
+    SELECT a FROM t4 WHERE b IN (SELECT b FROM t4 ORDER BY b DESC LIMIT 1);
+  }
+} {c}
 
 finish_test
