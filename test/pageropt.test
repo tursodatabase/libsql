@@ -12,7 +12,7 @@
 # The focus of the tests in this file are to verify that the
 # pager optimizations implemented in version 3.3.14 work.
 #
-# $Id: pageropt.test,v 1.1 2007/04/13 02:14:30 drh Exp $
+# $Id: pageropt.test,v 1.2 2007/04/13 03:23:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -133,6 +133,68 @@ do_test pageropt-2.3 {
     INSERT INTO t1 VALUES(randomblob(1500));
   }
 } {0 4 3 0}
+
+# Note the new optimization that when pulling the very last page off of the
+# freelist we do not read the content of that page.
+#
+do_test pageropt-2.4 {
+  pagercount_sql {
+    INSERT INTO t1 VALUES(randomblob(1500));
+  }
+} {0 5 3 0}
+
+# Appending a large quantity of data does not involve writing much
+# to the journal file.
+#
+do_test pageropt-3.1 {
+  pagercount_sql {
+    INSERT INTO t2 SELECT * FROM t1;
+  }
+} {1 7 2 0}
+
+# Once again, we do not need to read the last page of an overflow chain
+# while deleting.
+#
+do_test pageropt-3.2 {
+  pagercount_sql {
+    DROP TABLE t2;
+  }
+} {0 2 3 0}
+do_test pageropt-3.3 {
+  pagercount_sql {
+    DELETE FROM t1;
+  }
+} {0 3 3 0}
+
+# There are now 11 pages on the freelist.  Move them all into an
+# overflow chain by inserting a single large record.  Starting from
+# a cold cache, only page 1, the root page of table t1, and the trunk
+# of the freelist need to be read (3 pages).  And only those three
+# pages need to be journalled.  But 13 pages need to be written:
+# page1, the root page of table t1, and an 11 page overflow chain.
+#
+do_test pageropt-4.1 {
+  db close
+  sqlite3 db test.db
+  pagercount_sql {
+    INSERT INTO t1 VALUES(randomblob(11300))
+  }
+} {3 13 3 0}
+
+# Now we delete that big entries starting from a cold cache and an
+# empty freelist.  The first 10 of the 11 pages overflow chain have
+# to be read, together with page1 and the root of the t1 table.  12
+# reads total.  But only page1, the t1 root, and the trunk of the
+# freelist need to be journalled and written back.
+#
+do_test pageroot-4.2 {
+  db close
+  sqlite3 db test.db
+  pagercount_sql {
+    DELETE FROM t1
+  }
+} {12 3 3 0}
+
 
 catch {db2 close}
 finish_test

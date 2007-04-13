@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.77 2007/03/31 22:34:16 drh Exp $
+# $Id: tester.tcl,v 1.78 2007/04/13 03:23:21 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -119,6 +119,7 @@ proc do_test {name cmd expected} {
   } else {
     puts " Ok"
   }
+  flush stdout
 }
 
 # Run an SQL script.  

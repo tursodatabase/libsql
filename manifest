@@ -1,5 +1,5 @@
-C Fix\smultiple\sperformance\sregressions\s(ticket\s#2298\samong\sthem)\r\nand\sadd\stests\sto\smake\ssure\sthey\sdo\snot\scome\sback.\s(CVS\s3839)
-D 2007-04-13T02:14:30
+C Additional\stests\sdesigned\sto\sdetect\sfuture\sperformance\sregressions.\s(CVS\s3840)
+D 2007-04-13T03:23:21
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -289,7 +289,7 @@ F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
 F test/pager.test 6c644725db2a79528f67a6f3472b9c9ddee17f05
 F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
-F test/pageropt.test 05d2a3cf1934bb215ecf084a93243a42fe0f8b94
+F test/pageropt.test b4b38eb3cf76be2be444326856248898bb0e3fc9
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
 F test/pragma.test fecb7085f58d9fb5172a5c0b63fd3b25c7bfb414
 F test/printf.test 483b9fe75ffae1fb27328bdce5560b452ba83577
@@ -324,7 +324,7 @@ F test/table.test feea6a3eb08cf166f570255eea5447e42ef82498
 F test/tableapi.test 036575a98dcce7c92e9f39056839bbad8a715412
 F test/tclsqlite.test 51334389283c74bcbe28645a73159b17e239e9f3
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
-F test/tester.tcl dda002daff1618f2ef0b451eff221581ca54afde
+F test/tester.tcl 0fb5d0b93b05c41a1efcd3010fc6cf66f620a42e
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
@@ -458,7 +458,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P 0dd3e2e47b09156838edfa4dea0d82f9cf22d94d
-R 2a770dc94eebbe8757f249788620bf30
+P 32bb2d5859906b4fb0f6083eedd7f3a81b9cf5e2
+R f21c4290ab1b521d34c9501951f30b4e
 U drh
-Z a0fae9ba10e5c203140db1181856fb83
+Z 50dc4d00733590998717efbb4db67cac
