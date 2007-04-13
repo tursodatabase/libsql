@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr2.test,v 1.3 2007/04/09 12:45:03 drh Exp $
+# $Id: ioerr2.test,v 1.4 2007/04/13 02:14:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -82,7 +82,19 @@ set sql {
   ROLLBACK;
 }
 
-breakpoint
+foreach bPersist [list 0 1] {
+  set ::go 1
+  for {set ::N 1} {$::go} {incr ::N} {
+    db close
+    sqlite3 db test.db
+    set ::sqlite_io_error_hit 0
+    set ::sqlite_io_error_persist $bPersist
+    set ::sqlite_io_error_pending $::N
+
+    foreach {::go res} [catchsql $sql] {}
+    check_db ioerr2-3.$bPersist.$::N
+  }
+}
 foreach bPersist [list 0 1] {
   set ::go 1
   for {set ::N 1} {$::go} {incr ::N} {
@@ -91,7 +103,7 @@ foreach bPersist [list 0 1] {
     set ::sqlite_io_error_pending $::N
 
     foreach {::go res} [catchsql $sql] {}
-    check_db ioerr2-3.$bPersist.$::N
+    check_db ioerr2-3.[expr {$bPersist+2}].$::N
   }
 }
 
