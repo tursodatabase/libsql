@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.335 2007/04/12 21:25:02 drh Exp $
+** $Id: select.c,v 1.336 2007/04/13 16:06:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1401,8 +1401,11 @@ static int matchOrderbyToColumn(
   }
   pEList = pSelect->pEList;
   for(i=0; i<pOrderBy->nExpr; i++){
+    struct ExprList_item *pItem;
     Expr *pE = pOrderBy->a[i].pExpr;
     int iCol = -1;
+    char *zLabel;
+
     if( pOrderBy->a[i].done ) continue;
     if( sqlite3ExprIsInteger(pE, &iCol) ){
       if( iCol<=0 || iCol>pEList->nExpr ){
@@ -1415,20 +1418,21 @@ static int matchOrderbyToColumn(
       if( !mustComplete ) continue;
       iCol--;
     }
-    for(j=0; iCol<0 && j<pEList->nExpr; j++){
-      if( pEList->a[j].zName && (pE->op==TK_ID || pE->op==TK_STRING) ){
-        char *zName, *zLabel;
-        zName = pEList->a[j].zName;
-        zLabel = sqlite3NameFromToken(&pE->token);
-        assert( zLabel!=0 );
-        if( sqlite3StrICmp(zName, zLabel)==0 ){ 
-          iCol = j;
+    if( iCol<0 && (zLabel = sqlite3NameFromToken(&pE->token))!=0 ){
+      for(j=0, pItem=pEList->a; j<pEList->nExpr; j++, pItem++){
+        char *zName;
+        if( pItem->zName ){
+          zName = sqlite3StrDup(pItem->zName);
+        }else{
+          zName = sqlite3NameFromToken(&pItem->pExpr->token);
         }
-        sqliteFree(zLabel);
+        if( zName && sqlite3StrICmp(zName, zLabel)==0 ){
+          iCol = j;
+          break;
+        }
+        sqliteFree(zName);
       }
-      if( iCol<0 && sqlite3ExprCompare(pE, pEList->a[j].pExpr) ){
-        iCol = j;
-      }
+      sqliteFree(zLabel);
     }
     if( iCol>=0 ){
       pE->op = TK_COLUMN;
@@ -1436,8 +1440,7 @@ static int matchOrderbyToColumn(
       pE->iTable = iTable;
       pE->iAgg = -1;
       pOrderBy->a[i].done = 1;
-    }
-    if( iCol<0 && mustComplete ){
+    }else if( mustComplete ){
       sqlite3ErrorMsg(pParse,
         "ORDER BY term number %d does not match any result column", i+1);
       nErr++;

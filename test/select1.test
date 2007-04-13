@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.52 2007/04/06 15:02:14 drh Exp $
+# $Id: select1.test,v 1.53 2007/04/13 16:06:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -495,7 +495,45 @@ do_test select1-6.11 {
     ORDER BY f2+100;
   }} msg]
   lappend v $msg
-} {0 {f1 11 f1 33 f1 122 f1 144}}
+} {1 {ORDER BY term number 1 does not match any result column}}
+
+# Ticket #2296
+do_test select1-6.20 {
+   execsql {
+     CREATE TABLE t6(a TEXT, b TEXT);
+     INSERT INTO t6 VALUES('a','0');
+     INSERT INTO t6 VALUES('b','1');
+     INSERT INTO t6 VALUES('c','2');
+     INSERT INTO t6 VALUES('d','3');
+     SELECT a FROM t6 WHERE b IN 
+        (SELECT b FROM t6 WHERE a<='b' UNION SELECT '3' AS x
+                 ORDER BY 1 LIMIT 1)
+   }
+} {a}
+do_test select1-6.21 {
+   execsql {
+     SELECT a FROM t6 WHERE b IN 
+        (SELECT b FROM t6 WHERE a<='b' UNION SELECT '3' AS x
+                 ORDER BY 1 DESC LIMIT 1)
+   }
+} {d}
+do_test select1-6.22 {
+   execsql {
+     SELECT a FROM t6 WHERE b IN 
+        (SELECT b FROM t6 WHERE a<='b' UNION SELECT '3' AS x
+                 ORDER BY b LIMIT 2)
+     ORDER BY a;
+   }
+} {a b}
+do_test select1-6.23 {
+   execsql {
+     SELECT a FROM t6 WHERE b IN 
+        (SELECT b FROM t6 WHERE a<='b' UNION SELECT '3' AS x
+                 ORDER BY x DESC LIMIT 2)
+     ORDER BY a;
+   }
+} {b d}
+
 } ;#ifcapable compound
 
 do_test select1-7.1 {
