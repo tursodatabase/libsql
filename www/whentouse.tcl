@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the goals.html file.
 #
-set rcsid {$Id: whentouse.tcl,v 1.6 2005/08/16 14:44:49 drh Exp $}
+set rcsid {$Id: whentouse.tcl,v 1.7 2007/04/14 12:04:39 drh Exp $}
 source common.tcl
 header {Appropriate Uses For SQLite}
 
@@ -221,7 +221,9 @@ engine instead of SQLite.</p>
 before any write operation that is not within an explicit BEGIN...COMMIT)
 the engine has to allocate a bitmap of dirty pages in the disk file to
 help it manage its rollback journal.  SQLite needs 256 bytes of RAM for
-every 1MB of database.  For smaller databases, the amount of memory
+every 1MiB of database (assuming a 1024-byte page size: less memory is
+used with larger page sizes, of course).  
+For smaller databases, the amount of memory
 required is not a problem, but when database begin to grow into the
 multi-gigabyte range, the size of the bitmap can get quite large.  If
 you need to store and modify more than a few dozen GB of data, you should
