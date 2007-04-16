@@ -1,0 +1,62 @@
+# 2007 April 16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file tests interactions between the virtual table and
+# shared-schema functionality.
+#
+# $Id: vtab_shared.test,v 1.1 2007/04/16 15:49:42 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !vtab||!shared_cache {
+  finish_test
+  return
+}
+
+db close
+sqlite3_enable_shared_cache 1
+sqlite3 db test.db
+
+do_test vtab_shared-1.0 {
+  register_echo_module [sqlite3_connection_pointer db]
+  catchsql {
+    CREATE TABLE t0(a, b, c);
+    CREATE VIRTUAL TABLE t1 USING echo(t0);
+  }
+} {1 {Cannot use virtual tables in shared-cache mode}}
+
+db close
+sqlite3_enable_shared_cache 0
+sqlite3 db test.db
+
+do_test vtab_shared-1.1 {
+  register_echo_module [sqlite3_connection_pointer db]
+  catchsql {
+    CREATE VIRTUAL TABLE t1 USING echo(t0);
+  }
+} {0 {}}
+
+db close
+sqlite3_enable_shared_cache 1
+sqlite3 db test.db
+
+do_test vtab_shared-1.2 {
+  register_echo_module [sqlite3_connection_pointer db]
+  catchsql {
+    SELECT * FROM t1;
+  }
+} [list 1 \
+  {malformed database schema - Cannot use virtual tables in shared-cache mode}]
+
+db close
+sqlite3_enable_shared_cache 0
+finish_test
+
