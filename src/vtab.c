@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.39 2007/01/09 14:01:14 drh Exp $
+** $Id: vtab.c,v 1.40 2007/04/16 15:06:26 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -56,10 +56,18 @@ void sqlite3VtabLock(sqlite3_vtab *pVtab){
 ** Unlock a virtual table.  When the last lock is removed,
 ** disconnect the virtual table.
 */
-void sqlite3VtabUnlock(sqlite3_vtab *pVtab){
+void sqlite3VtabUnlock(sqlite3 *db, sqlite3_vtab *pVtab){
   pVtab->nRef--;
+  assert(db);
+  assert(!sqlite3SafetyCheck(db));
   if( pVtab->nRef==0 ){
-    pVtab->pModule->xDisconnect(pVtab);
+    if( db->magic==SQLITE_MAGIC_BUSY ){
+      sqlite3SafetyOff(db);
+      pVtab->pModule->xDisconnect(pVtab);
+      sqlite3SafetyOn(db);
+    } else {
+      pVtab->pModule->xDisconnect(pVtab);
+    }
   }
 }
 
@@ -72,7 +80,7 @@ void sqlite3VtabClear(Table *p){
   sqlite3_vtab *pVtab = p->pVtab;
   if( pVtab ){
     assert( p->pMod && p->pMod->pModule );
-    sqlite3VtabUnlock(pVtab);
+    sqlite3VtabUnlock(p->pSchema->db, pVtab);
     p->pVtab = 0;
   }
   if( p->azModuleArg ){
@@ -248,6 +256,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
       assert( pTab==pOld );  /* Malloc must have failed inside HashInsert() */
       return;
     }
+    pSchema->db = pParse->db;
     pParse->pNewTable = 0;
   }
 }
@@ -465,7 +474,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   sParse.declareVtab = 0;
 
   sqlite3_finalize((sqlite3_stmt*)sParse.pVdbe);
-  sqlite3DeleteTable(0, sParse.pNewTable);
+  sqlite3DeleteTable(sParse.pNewTable);
   sParse.pNewTable = 0;
   db->pVTab = 0;
 
@@ -518,7 +527,7 @@ static void callFinaliser(sqlite3 *db, int offset){
     int (*x)(sqlite3_vtab *);
     x = *(int (**)(sqlite3_vtab *))((char *)pVtab->pModule + offset);
     if( x ) x(pVtab);
-    sqlite3VtabUnlock(pVtab);
+    sqlite3VtabUnlock(db, pVtab);
   }
   sqliteFree(db->aVTrans);
   db->nVTrans = 0;

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.125 2007/01/26 19:31:01 drh Exp $
+** $Id: tokenize.c,v 1.126 2007/04/16 15:06:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -495,7 +495,7 @@ abort_parse:
     ** structure built up in pParse->pNewTable. The calling code (see vtab.c)
     ** will take responsibility for freeing the Table structure.
     */
-    sqlite3DeleteTable(pParse->db, pParse->pNewTable);
+    sqlite3DeleteTable(pParse->pNewTable);
   }
 
   sqlite3DeleteTrigger(pParse->pNewTrigger);
