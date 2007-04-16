@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.328 2007/04/13 04:01:59 drh Exp $
+** @(#) $Id: pager.c,v 1.329 2007/04/16 15:02:19 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -294,7 +294,7 @@ struct Pager {
   Pager *pNext;               /* Linked list of pagers in this thread */
 #endif
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
-  u32 iChangeCount;           /* Db change-counter for which cache is valid */
+  char dbFileVers[16];        /* Changes whenever database file changes */
 };
 
 /*
@@ -1131,12 +1131,14 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
 #ifdef SQLITE_CHECK_PAGES
     pPg->pageHash = pager_pagehash(pPg);
 #endif
-    CODEC1(pPager, pData, pPg->pgno, 3);
-
-    /* If this was page 1, then restore the value of Pager.iChangeCount */
+    /* If this was page 1, then restore the value of Pager.dbFileVers.
+    ** Do this before any decoding. */
     if( pgno==1 ){
-      pPager->iChangeCount = retrieve32bits(pPg, 24);
+      memcpy(&pPager->dbFileVers, &((u8*)pData)[24],sizeof(pPager->dbFileVers));
     }
+
+    /* Decode the page just read from disk */
+    CODEC1(pPager, pData, pPg->pgno, 3);
   }
   return rc;
 }
@@ -2441,6 +2443,9 @@ static int pager_write_pagelist(PgHdr *pList){
       rc = sqlite3OsWrite(pPager->fd, pData, pPager->pageSize);
       PAGER_INCR(sqlite3_pager_writedb_count);
       PAGER_INCR(pPager->nWrite);
+      if( pList->pgno==1 ){
+        memcpy(&pPager->dbFileVers, &pData[24], sizeof(pPager->dbFileVers));
+      }
     }
 #ifndef NDEBUG
     else{
@@ -2680,6 +2685,10 @@ static int readDbPage(Pager *pPager, PgHdr *pPg, Pgno pgno){
   PAGER_INCR(pPager->nRead);
   IOTRACE(("PGIN %p %d\n", pPager, pgno));
   PAGERTRACE3("FETCH %d page %d\n", PAGERID(pPager), pPg->pgno);
+  if( pgno==1 ){
+    memcpy(&pPager->dbFileVers, &((u8*)PGHDR_TO_DATA(pPg))[24],
+                                              sizeof(pPager->dbFileVers));
+  }
   CODEC1(pPager, PGHDR_TO_DATA(pPg), pPg->pgno, 3);
   return rc;
 }
@@ -2780,16 +2789,21 @@ static int pagerSharedLock(Pager *pPager){
       if( pPager->pAll ){
         /* The shared-lock has just been acquired on the database file
         ** and there are already pages in the cache (from a previous
-        ** read or write transaction). If the value of the change-counter
-        ** stored in Pager.iChangeCount matches that found on page 1 of
-        ** the database file, then no database changes have occured since
-        ** the cache was last valid and it is safe to retain the cached
-        ** pages. Otherwise, if Pager.iChangeCount does not match the
-        ** change-counter on page 1 of the file, the current cache contents
-        ** must be discarded.
+        ** read or write transaction).  Check to see if the database
+        ** has been modified.  If the database has changed, flush the
+        ** cache.
+        **
+        ** Database changes is detected by looking at 15 bytes beginning
+        ** at offset 24 into the file.  The first 4 of these 16 bytes are
+        ** a 32-bit counter that is incremented with each change.  The
+        ** other bytes change randomly with each file change when
+        ** a codec is in use.
+        ** 
+        ** There is a vanishingly small chance that a change will not be 
+        ** deteched.  The chance of an undetected change is so small that
+        ** it can be neglected.
         */
-        u8 zC[4];
-        u32 iChangeCounter = 0;
+        char dbFileVers[sizeof(pPager->dbFileVers)];
         sqlite3PagerPagecount(pPager);
 
         if( pPager->errCode ){
@@ -2797,21 +2811,20 @@ static int pagerSharedLock(Pager *pPager){
         }
 
         if( pPager->dbSize>0 ){
-          /* Read the 4-byte change counter directly from the file. */
           rc = sqlite3OsSeek(pPager->fd, 24);
           if( rc!=SQLITE_OK ){
             return rc;
           }
-          rc = sqlite3OsRead(pPager->fd, zC, 4);
+          rc = sqlite3OsRead(pPager->fd, &dbFileVers, sizeof(dbFileVers));
           if( rc!=SQLITE_OK ){
             return rc;
           }
-          iChangeCounter = (zC[0]<<24) + (zC[1]<<16) + (zC[2]<<8) + zC[3];
+        }else{
+          memset(dbFileVers, 0, sizeof(dbFileVers));
         }
 
-        if( iChangeCounter!=pPager->iChangeCount ){
+        if( memcmp(pPager->dbFileVers, dbFileVers, sizeof(dbFileVers))!=0 ){
           pager_reset(pPager);
-          pPager->iChangeCount = iChangeCounter;
         }
       }
     }
@@ -3028,10 +3041,6 @@ int sqlite3PagerAcquire(
         sqlite3PagerUnref(pPg);
         return rc;
       }
-    }
-    /* If this was page 1, then restore the value of Pager.iChangeCount */
-    if( pgno==1 ){
-      pPager->iChangeCount = retrieve32bits(pPg, 24);
     }
 
     /* Link the page into the page hash table */
@@ -3722,7 +3731,6 @@ static int pager_incr_changecounter(Pager *pPager){
     /* Increment the value just read and write it back to byte 24. */
     change_counter++;
     put32bits(((char*)PGHDR_TO_DATA(pPgHdr))+24, change_counter);
-    pPager->iChangeCount = change_counter;
   
     /* Release the page reference. */
     sqlite3PagerUnref(pPgHdr);

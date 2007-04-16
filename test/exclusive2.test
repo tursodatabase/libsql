@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: exclusive2.test,v 1.3 2007/04/08 16:52:22 drh Exp $
+# $Id: exclusive2.test,v 1.4 2007/04/16 15:02:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -56,8 +56,9 @@ do_test exclusive2-1.0 {
 # The following tests - exclusive2-1.X - check that:
 #
 # 1-3:   Build a database with connection 1, calculate a signature.
-# 4-9:   Modify the database using a second connection, then reset
-#        the pager change-counter to the value it had before the modifications.
+# 4-9:   Modify the database using a second connection in a way that
+#        does not modify the freelist, then reset the pager change-counter
+#        to the value it had before the modifications.
 # 8:     Check that using the first connection, the database signature
 #        is still the same. This is because it uses the in-memory cache.
 #        It can't tell the db has changed because we reset the change-counter.
@@ -69,14 +70,14 @@ do_test exclusive2-1.0 {
 do_test exclusive2-1.1 {
   execsql {
     BEGIN;
-    CREATE TABLE t1(a UNIQUE);
-    INSERT INTO t1 VALUES(randstr(10, 400));
-    INSERT INTO t1 VALUES(randstr(10, 400));
-    INSERT INTO t1 SELECT randstr(10, 400) FROM t1;
-    INSERT INTO t1 SELECT randstr(10, 400) FROM t1;
-    INSERT INTO t1 SELECT randstr(10, 400) FROM t1;
-    INSERT INTO t1 SELECT randstr(10, 400) FROM t1;
-    INSERT INTO t1 SELECT randstr(10, 400) FROM t1;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1(a) VALUES(randstr(10, 400));
+    INSERT INTO t1(a) VALUES(randstr(10, 400));
+    INSERT INTO t1(a) SELECT randstr(10, 400) FROM t1;
+    INSERT INTO t1(a) SELECT randstr(10, 400) FROM t1;
+    INSERT INTO t1(a) SELECT randstr(10, 400) FROM t1;
+    INSERT INTO t1(a) SELECT randstr(10, 400) FROM t1;
+    INSERT INTO t1(a) SELECT randstr(10, 400) FROM t1;
     COMMIT;
     SELECT count(*) FROM t1;
   }
@@ -94,7 +95,7 @@ do_test exclusive2-1.4 {
 } $::sig
 do_test exclusive2-1.5 {
   execsql {
-    DELETE FROM t1;
+    UPDATE t1 SET b=a, a=NULL;
   } db2
   expr {[t1sig db2] eq $::sig}
 } 0
@@ -135,13 +136,14 @@ do_test exclusive2-2.1 {
   execsql {PRAGMA locking_mode = exclusive;}
   execsql {
     BEGIN;
-    INSERT INTO t1 VALUES(randstr(10, 400));
-    INSERT INTO t1 VALUES(randstr(10, 400));
-    INSERT INTO t1 SELECT randstr(10, 400) FROM t1;
-    INSERT INTO t1 SELECT randstr(10, 400) FROM t1;
-    INSERT INTO t1 SELECT randstr(10, 400) FROM t1;
-    INSERT INTO t1 SELECT randstr(10, 400) FROM t1;
-    INSERT INTO t1 SELECT randstr(10, 400) FROM t1;
+    DELETE FROM t1;
+    INSERT INTO t1(a) VALUES(randstr(10, 400));
+    INSERT INTO t1(a) VALUES(randstr(10, 400));
+    INSERT INTO t1(a) SELECT randstr(10, 400) FROM t1;
+    INSERT INTO t1(a) SELECT randstr(10, 400) FROM t1;
+    INSERT INTO t1(a) SELECT randstr(10, 400) FROM t1;
+    INSERT INTO t1(a) SELECT randstr(10, 400) FROM t1;
+    INSERT INTO t1(a) SELECT randstr(10, 400) FROM t1;
     COMMIT;
     SELECT count(*) FROM t1;
   }
