@@ -10,12 +10,14 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.39 2007/04/02 14:19:16 danielk1977 Exp $
+# $Id: all.test,v 1.40 2007/04/16 17:07:55 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 rename finish_test really_finish_test
-proc finish_test {} {memleak_check}
+proc finish_test {} {
+  memleak_check
+}
 
 if {[file exists ./sqlite_test_count]} {
   set COUNT [exec cat ./sqlite_test_count]
@@ -90,6 +92,13 @@ for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
       puts "$tail did not close all files: $sqlite_open_file_count"
       incr nErr
       lappend ::failList $tail
+      set sqlite_open_file_count 0
+    }
+    if {$::sqlite3_tsd_count} {
+      puts "Thread-specific data leak: $::sqlite3_tsd_count instances"
+      incr nErr
+      lappend ::failList $tail
+      set ::sqlite3_tsd_count 0
     }
   }
   if {[info exists Leak]} {
