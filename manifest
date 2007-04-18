@@ -1,5 +1,5 @@
-C Version\s3.3.16\s(CVS\s3853)
-D 2007-04-18T15:33:53
+C The\ssqlite3_step()\sroutine\sreports\sSQLITE_ERROR\safter\sa\scommit\sfailure,\nnot\sSQLITE_DONE.\s\sThis\sfix\sonly\seffects\sthe\slegacy\ssqlite3_prepare()\ninterface.\s\sIt\salready\sworked\scorrectly\swith\ssqlite3_prepare_v2().\s(CVS\s3854)
+D 2007-04-18T16:45:24
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -124,7 +124,7 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c e64a48bc21aa973eb622dd47da87d56a4cdcf528
 F src/util.c b6344325378e75b9e18175d8b6aed1723d73dad9
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c cf7808e8db2e5d1547e898ce29531295183ede6e
+F src/vdbe.c 814dab208a156250bc5e77f827f4e0c8ad734820
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h 4b19fd8febad3fd14c4c97adaefc06754d323132
 F src/vdbeapi.c 1fca7ff056d03f131caa6b1296bb221da65ed7f4
@@ -459,7 +459,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 24683f1d29c5d312d6cabe2dde52d7c0424f629a
-R 82ca28b3f62eedfa7335fb3cb839a54b
+P 8c6b5adb5c9e0322098e15a162e80a98259d7f60
+R 20d68457fc0935c09f9220d0a08efe2a
 U drh
-Z 5411fa1ab4f1b89fab1507d7350e97c0
+Z 198442dca52a2a4365d24ace578f3316
