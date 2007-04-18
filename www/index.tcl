@@ -73,6 +73,12 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2007-Apr-18} {Version 3.3.16} {
+  Performance improvements added in 3.3.14 but mistakenly turned off
+  in 3.3.15 have been reinstated.  A bug has been fixed that prevented 
+  VACUUM from running if a NULL value was in a UNIQUE column.
+}
+
 newsitem {2007-Apr-09} {Version 3.3.15} {
   An annoying bug introduced in 3.3.14 has been fixed.  There are
   also many enhancements to the test suite.  
@@ -108,4 +114,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.152 2007/04/09 13:18:47 drh Exp $}
+footer {$Id: index.tcl,v 1.153 2007/04/18 13:49:37 drh Exp $}

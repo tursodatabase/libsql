@@ -25,6 +25,18 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2007 April 18 (3.3.16)} {
+<li>Fix a bug that caused VACUUM to fail if NULLs appeared in a
+    UNIQUE column.</li>
+<li>Reinstate performance improvements that were added in 3.3.14
+    but regressed in 3.3.15.</li>
+<li>Fix problems with the handling of ORDER BY expressions on
+    compound SELECT statements in subqueries.</li>
+<li>Fix a potential segfault when destroying locks on WinCE in
+    a multi-threaded environment.</li>
+<li>Documentation updates.</li>
+}
+
 chng {2007 April 9 (3.3.15)} {
 <li>Fix a bug introduced in 3.3.14 that caused a rollback of
     CREATE TEMP TABLE to leave the database connection wedged.</li>
