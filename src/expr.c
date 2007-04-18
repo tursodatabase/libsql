@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.284 2007/04/13 16:06:33 drh Exp $
+** $Id: expr.c,v 1.285 2007/04/18 17:07:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -237,12 +237,12 @@ Expr *sqlite3Expr(int op, Expr *pLeft, Expr *pRight, const Token *pToken){
   }else if( pLeft ){
     if( pRight ){
       sqlite3ExprSpan(pNew, &pLeft->span, &pRight->span);
-      if( pRight->flags && EP_ExpCollate ){
+      if( pRight->flags & EP_ExpCollate ){
         pNew->flags |= EP_ExpCollate;
         pNew->pColl = pRight->pColl;
       }
     }
-    if( pLeft->flags && EP_ExpCollate ){
+    if( pLeft->flags & EP_ExpCollate ){
       pNew->flags |= EP_ExpCollate;
       pNew->pColl = pLeft->pColl;
     }
