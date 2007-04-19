@@ -1,5 +1,5 @@
-C Get\sthe\sbuild\sworking\swith\sSQLITE_OMIT_SHARED_CACHE.\s\sTicket\s#2307.\s(CVS\s3857)
-D 2007-04-19T00:24:34
+C Fix\sa\sbug\swhereby\ssqlite3_prepare_v2()\scould\sreturn\sboth\san\sout-of-memory\serror\sand\sa\svalid\sstatement\shandle.\s(CVS\s3858)
+D 2007-04-19T11:09:01
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -90,7 +90,7 @@ F src/pager.c 33c632ce9c228d87f14879a139fa123d43e4bf25
 F src/pager.h d652ddf092d2318d00e41f8539760fe8e57c157c
 F src/parse.y b6cfbadb6d5b21b5087d30698ee5af0ebb098767
 F src/pragma.c 3b992b5b2640d6ae25cef05aa6a42cd1d6c43234
-F src/prepare.c 37207b2b2ccb41d379b01dd62231686bcc48ef1f
+F src/prepare.c 4cb9c9eb926e8baf5652ca4b4f2416f53f5b5370
 F src/printf.c 0c6f40648770831341ac45ab32423a80b4c87f05
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c b914abca0ba28893e7fb7c7fb97a05e240e2ce8b
@@ -101,7 +101,7 @@ F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 047af0e4c38bbb8652836f72adc9e9199c51a1ba
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c ec69eb9ad56d03fbf7570ca1ca5ea947d1ec4b6f
-F src/test1.c b96f80e68cd50e10e10cda8bb762152bae52a8d2
+F src/test1.c 3a7810d1ff8829268bd52a91c4f29d66f693e431
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 65f92247cf8592854e9bf5115b3fb711f8b33280
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -265,7 +265,7 @@ F test/lock2.test b95915eb4b6f8420acb30c68170d8f0ed9364efe
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 49e22396b9be6e047b3d35469f233be79153c9d5
 F test/main.test e7212ce1023957c7209778cc87fa932bd79ba89a
-F test/malloc.test d868a6b98b07928b00bca3d9874daf6885c86150
+F test/malloc.test c468c018eecba78d1832cb9aaa23a7f824f07179
 F test/malloc2.test 4ed7d719542c4570dec9c2ebe2bbdf3a9f3b0d05
 F test/malloc3.test e965954b6f808876a63d3101fd70370320b509a7
 F test/malloc4.test 59cd02f71b363302a04c4e77b97c0a1572eaa210
@@ -378,7 +378,7 @@ F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
 F test/vtab7.test 5f9ef9fb84733e928d5d0267c821072561b198d5
 F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
-F test/vtab_err.test 224cc80ad700797c48b9cd2c1e0bd7a8517d8609
+F test/vtab_err.test 9eabf98b26838fed8bac4aea986580be0a2bd52e
 F test/vtab_shared.test d631d1f820c38c18939d53aab1fc35db5f0a8094
 F test/where.test 1d020f50c77f37b2dbab9766ca959e6e3278ecdb
 F test/where2.test 3249d426b3fc7a106713d784e1628307fc308d2e
@@ -459,7 +459,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7f9f0444ed1a85ed682b604fded535bff5be1535
-R d187fdd647c1916ac20a959baddf7f62
-U drh
-Z 0e43a1980a04cbafd526518137be335c
+P b623538c559498b858fd9088faf0f3457b024968
+R 34a9c9622b6327def09bfe5f09cfc0a2
+U danielk1977
+Z bae87dbb6b82dc5bb5cdcc29876b1ea7

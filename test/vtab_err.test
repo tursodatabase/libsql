@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: vtab_err.test,v 1.4 2007/01/02 18:41:58 drh Exp $
+# $Id: vtab_err.test,v 1.5 2007/04/19 11:09:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -145,7 +145,6 @@ do_ioerr_test vtab_err-1 -tclprep {
     INSERT INTO e SELECT a||'x', b, c FROM r2;
   COMMIT;
 }
-
 
 do_malloc_test vtab_err-2 -tclprep {
   register_echo_module [sqlite3_connection_pointer db]

@@ -14,7 +14,7 @@
 # special feature is used to see what happens in the library if a malloc
 # were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.40 2007/03/30 07:10:52 danielk1977 Exp $
+# $Id: malloc.test,v 1.41 2007/04/19 11:09:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -551,6 +551,23 @@ do_malloc_test 20 -tclprep {
 do_malloc_test 21 -sqlbody {
   CREATE TABLE abc(a, b, c, FOREIGN KEY(a) REFERENCES abc(b))
 } 
+
+# Test malloc failure in an sqlite3_prepare_v2() call.
+#
+do_malloc_test 22 -tclbody {
+  set ::STMT ""
+  set r [catch {
+    set ::STMT [
+      sqlite3_prepare_v2 $::DB "SELECT * FROM sqlite_master" -1 DUMMY
+    ]
+  } msg]
+  if {$r} {error [string range $msg 4 end]}
+} -cleanup {
+  if {$::STMT ne ""} {
+    sqlite3_finalize $::STMT
+    set ::STMT ""
+  }
+}
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {
