@@ -1,5 +1,5 @@
-C Fix\sa\sbug\swhereby\ssqlite3_prepare_v2()\scould\sreturn\sboth\san\sout-of-memory\serror\sand\sa\svalid\sstatement\shandle.\s(CVS\s3858)
-D 2007-04-19T11:09:01
+C Comment\schanges\sin\sthe\sioerr\stests.\s\sNo\schanges\sto\scode.\s(CVS\s3859)
+D 2007-04-19T12:30:54
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -324,7 +324,7 @@ F test/table.test feea6a3eb08cf166f570255eea5447e42ef82498
 F test/tableapi.test 036575a98dcce7c92e9f39056839bbad8a715412
 F test/tclsqlite.test 51334389283c74bcbe28645a73159b17e239e9f3
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
-F test/tester.tcl 0fb5d0b93b05c41a1efcd3010fc6cf66f620a42e
+F test/tester.tcl effe3dae968afd8bb27c8792883788eeba821942
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
@@ -459,7 +459,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b623538c559498b858fd9088faf0f3457b024968
-R 34a9c9622b6327def09bfe5f09cfc0a2
-U danielk1977
-Z bae87dbb6b82dc5bb5cdcc29876b1ea7
+P 8795d11c3c5bb39d34bc5194621ce97097a320e7
+R 881cddcd5870bcd2cccfc66d1e72ef6f
+U drh
+Z 698c62f2beadbeaf34d69daba13ce366

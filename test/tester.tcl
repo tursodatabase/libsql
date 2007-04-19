@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.78 2007/04/13 03:23:21 drh Exp $
+# $Id: tester.tcl,v 1.79 2007/04/19 12:30:54 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -453,26 +453,33 @@ proc do_ioerr_test {testname args} {
     # a result of the script, the Nth will fail.
     do_test $testname.$n.3 {
       set r [catch $::ioerrorbody msg]
-      # puts rc=[sqlite3_errcode $::DB]
       set rc [sqlite3_errcode $::DB]
       if {$::ioerropts(-erc)} {
-        # In extended result mode, all IOERRs are qualified 
+        # If we are in extended result code mode, make sure all of the
+        # IOERRs we get back really do have their extended code values.
+        # If an extended result code is returned, the sqlite3_errcode
+        # TCLcommand will return a string of the form:  SQLITE_IOERR+nnnn
+        # where nnnn is a number
         if {[regexp {^SQLITE_IOERR} $rc] && ![regexp {IOERR\+\d} $rc]} {
           return $rc
         }
       } else {
-        # Not in extended result mode, no errors are qualified
+        # If we are not in extended result code mode, make sure no
+        # extended error codes are returned.
         if {[regexp {\+\d} $rc]} {
           return $rc
         }
       }
+      # The test repeats as long as $::go is true.  
       set ::go [expr {$::sqlite_io_error_pending<=0}]
       set s [expr $::sqlite_io_error_hit==0]
       set ::sqlite_io_error_hit 0
-      # puts "$::sqlite_io_error_pending $r $msg"
-      # puts "r=$r s=$s go=$::go msg=\"$msg\""
+
+      # One of two things must have happened. either
+      #   1.  We never hit the IO error and the SQL returned OK
+      #   2.  An IO error was hit and the SQL failed
+      #
       expr { ($s && !$r && !$::go) || (!$s && $r && $::go) }
-      # expr {$::sqlite_io_error_pending>0 || $r!=0}
     } {1}
 
     # If an IO error occured, then the checksum of the database should
