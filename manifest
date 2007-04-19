@@ -1,5 +1,5 @@
-C Better\sfix\sthan\s(3860)\sfor\sthe\ssame\sproblem.\s(3860)\scould\sleave\sfile-handles\sopen\sin\ssome\scircumstances.\s(CVS\s3861)
-D 2007-04-19T14:48:37
+C Fix\sbug\sin\sfts2\shandling\sof\sOR\squeries.\s\sWhen\sone\sdoclist\sends\sbefore\nthe\sother,\sthe\scode\spotentially\stries\sto\sread\spast\sthe\send\sof\sthe\ndoclist.\s\shttp://www.sqlite.org/cvstrac/tktview?tn=2309\s(CVS\s3862)
+D 2007-04-19T18:36:32
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c acfce1c936d50615f21b63b71f6e86730da64a8c
+F ext/fts2/fts2.c dd35df80f4b99181d610302c5a4ac71406a02fe0
 F ext/fts2/fts2.h bbdab26d34f91974d5b9ade8b7836c140a7c4ce1
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -227,7 +227,7 @@ F test/fts2c.test ffb5a35230ac72c4354535c547965ce6824537c0
 F test/fts2d.test b7eaa671ca9a16997f3e5b158ee777ae21052b0b
 F test/fts2e.test 2da13dbc2d009105f42196845c1e1ce136c03d38
 F test/fts2f.test cf84096235991709c1e61caa389632aa0a4f976d
-F test/fts2g.test c69a8ab43ec77d123976ba6cf9422d647ae63032
+F test/fts2g.test 2638452a2ea809ae30e98acc3c063fe54c381d0a
 F test/fts2h.test 223af921323b409d4b5b18ff4e51619541b174bb
 F test/fts2i.test 1b22451d1f13f7c509baec620dc3a4a754885dd6
 F test/fts2j.test f68d7611f76309bc8b94170f3740d9fbbc061d9b
@@ -459,7 +459,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d1afdd8c9c756409275c116e662fc1e04bbe829e
-R e0ac378b1e04524ec63414232c30004b
-U danielk1977
-Z 48ec2de0834caf9ea891bc39f546937e
+P 5ad645339b2a3a280651447dceda67645ff8e96d
+R 5fff061f297d6b4e1ba7e515635fa7f0
+U shess
+Z d55534ed741d514c5d3c3f8f87370bea

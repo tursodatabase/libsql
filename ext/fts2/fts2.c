@@ -1374,10 +1374,16 @@ static void docListOrMerge(
   dlwInit(&writer, DL_DOCIDS, pOut);
 
   while( !dlrAtEnd(&left) || !dlrAtEnd(&right) ){
-    if( dlrAtEnd(&right) || dlrDocid(&left)<dlrDocid(&right) ){
+    if( dlrAtEnd(&right) ){
       dlwAdd(&writer, dlrDocid(&left));
       dlrStep(&left);
-    }else if( dlrAtEnd(&left) || dlrDocid(&right)<dlrDocid(&left) ){
+    }else if( dlrAtEnd(&left) ){
+      dlwAdd(&writer, dlrDocid(&right));
+      dlrStep(&right);
+    }else if( dlrDocid(&left)<dlrDocid(&right) ){
+      dlwAdd(&writer, dlrDocid(&left));
+      dlrStep(&left);
+    }else if( dlrDocid(&right)<dlrDocid(&left) ){
       dlwAdd(&writer, dlrDocid(&right));
       dlrStep(&right);
     }else{

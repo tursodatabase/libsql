@@ -7,7 +7,7 @@
 # of this script is testing handling of edge cases for various doclist
 # merging functions in the FTS2 module query logic.
 #
-# $Id: fts2g.test,v 1.1 2006/10/25 20:27:40 shess Exp $
+# $Id: fts2g.test,v 1.2 2007/04/19 18:36:32 shess Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -22,6 +22,7 @@ ifcapable !fts2 {
 db eval {
   CREATE VIRTUAL TABLE t1 USING fts2(content);
   INSERT INTO t1 (rowid, content) VALUES(1, 'this is a test');
+  INSERT INTO t1 (rowid, content) VALUES(2, 'also a test');
 }
 
 # No hits at all.  Returns empty doclists from termSelect().
@@ -73,5 +74,14 @@ do_test fts2g-1.9 {
 do_test fts2g-1.10 {
   catchsql {SELECT rowid FROM t1 WHERE t1 MATCH '-this -something'}
 } {1 {SQL logic error or missing database}}
+
+# Test that docListOrMerge() correctly handles reaching the end of one
+# doclist before it reaches the end of the other.
+do_test fts2g-1.11 {
+  execsql {SELECT rowid FROM t1 WHERE t1 MATCH 'this OR also'}
+} {1 2}
+do_test fts2g-1.12 {
+  execsql {SELECT rowid FROM t1 WHERE t1 MATCH 'also OR this'}
+} {1 2}
 
 finish_test
