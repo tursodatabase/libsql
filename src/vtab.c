@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.43 2007/04/19 00:24:35 drh Exp $
+** $Id: vtab.c,v 1.44 2007/04/19 14:28:09 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -533,7 +533,7 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab)
 */
 static void callFinaliser(sqlite3 *db, int offset){
   int i;
-  for(i=0; i<db->nVTrans && db->aVTrans[i]; i++){
+  for(i=0; i<db->nVTrans && db->aVTrans && db->aVTrans[i]; i++){
     sqlite3_vtab *pVtab = db->aVTrans[i];
     int (*x)(sqlite3_vtab *);
     x = *(int (**)(sqlite3_vtab *))((char *)pVtab->pModule + offset);
