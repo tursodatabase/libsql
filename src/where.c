@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.246 2007/04/06 01:04:40 drh Exp $
+** $Id: where.c,v 1.247 2007/04/20 12:22:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -24,11 +24,6 @@
 ** The number of bits in a Bitmask.  "BMS" means "BitMask Size".
 */
 #define BMS  (sizeof(Bitmask)*8)
-
-/*
-** Determine the number of elements in an array.
-*/
-#define ARRAYSIZE(X)  (sizeof(X)/sizeof(X[0]))
 
 /*
 ** Trace output macros
@@ -195,7 +190,7 @@ static void whereClauseInit(
   pWC->pParse = pParse;
   pWC->pMaskSet = pMaskSet;
   pWC->nTerm = 0;
-  pWC->nSlot = ARRAYSIZE(pWC->aStatic);
+  pWC->nSlot = ArraySize(pWC->aStatic);
   pWC->a = pWC->aStatic;
 }
 
@@ -310,7 +305,7 @@ static Bitmask getMask(ExprMaskSet *pMaskSet, int iCursor){
 ** array will never overflow.
 */
 static void createMask(ExprMaskSet *pMaskSet, int iCursor){
-  assert( pMaskSet->n < ARRAYSIZE(pMaskSet->ix) );
+  assert( pMaskSet->n < ArraySize(pMaskSet->ix) );
   pMaskSet->ix[pMaskSet->n++] = iCursor;
 }
 
