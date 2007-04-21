@@ -48,7 +48,7 @@ typedef struct simple_tokenizer_cursor {
 /* Forward declaration */
 static const sqlite3_tokenizer_module simpleTokenizerModule;
 
-static int isDelim(simple_tokenizer *t, unsigned char c){
+static int simpleDelim(simple_tokenizer *t, unsigned char c){
   return c<0x80 && t->delim[c];
 }
 
@@ -164,13 +164,13 @@ static int simpleNext(
     int iStartOffset;
 
     /* Scan past delimiter characters */
-    while( c->iOffset<c->nBytes && isDelim(t, p[c->iOffset]) ){
+    while( c->iOffset<c->nBytes && simpleDelim(t, p[c->iOffset]) ){
       c->iOffset++;
     }
 
     /* Count non-delimiter characters. */
     iStartOffset = c->iOffset;
-    while( c->iOffset<c->nBytes && !isDelim(t, p[c->iOffset]) ){
+    while( c->iOffset<c->nBytes && !simpleDelim(t, p[c->iOffset]) ){
       c->iOffset++;
     }
 

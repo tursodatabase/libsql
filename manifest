@@ -1,5 +1,5 @@
-C Remove\sthe\sARRAYSIZE\smacro\sfrom\swhere.c\sto\savoid\sa\sname\sconflict\swith\nmicrosoft\sheader\sfiles.\s\sTicket\s#2311\s(CVS\s3863)
-D 2007-04-20T12:22:02
+C Add\sthe\sability\sto\sturn\sthe\sFTS2\smodule\sinto\san\samalgamation.\s(CVS\s3864)
+D 2007-04-21T16:37:49
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -35,12 +35,13 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts2/fts2.c dd35df80f4b99181d610302c5a4ac71406a02fe0
-F ext/fts2/fts2.h bbdab26d34f91974d5b9ade8b7836c140a7c4ce1
+F ext/fts2/fts2.h 591916a822cfb6426518fdbf6069359119bc46eb
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
-F ext/fts2/fts2_porter.c df529ee9b70f21ebb9c5affd3c7669ee615accc7
+F ext/fts2/fts2_porter.c 991a45463553c7318063fe7773368a6c0f39e35d
 F ext/fts2/fts2_tokenizer.h 4c5ffe31d63622869eb6eec1503df7f6996fd1bd
-F ext/fts2/fts2_tokenizer1.c 6067f2f710bc7e91c0688b7b11be1027777553e0
+F ext/fts2/fts2_tokenizer1.c 5c979fe8815f95396beb22b627571da895a025af
+F ext/fts2/mkfts2amal.tcl 2a9ec76b0760fe7f3669dca5bc0d60728bc1c977
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
 F main.mk dd14eeac33ac5e6c062f43e79876948f1d64908b
@@ -459,7 +460,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P dfac6082e8ffc52a85c4906107a7fc0e1aa9df82
-R 70a329ef96824c4ac0f20c0e9d368dfe
+P 9389a15f35f854c88440e365d85b48af3ff76b00
+R 2cbc78e0dd70ca0f7d6672765f8b0a98
 U drh
-Z 1b6107bb1679b972c0e210e23338040a
+Z 36d5b444e4309d5378f3e0773c4a5bc8

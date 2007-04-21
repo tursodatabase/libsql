@@ -564,7 +564,7 @@ static void porter_stemmer(const char *zIn, int nIn, char *zOut, int *pnOut){
 ** part of a token.  In other words, delimiters all must have
 ** values of 0x7f or lower.
 */
-static const char isIdChar[] = {
+static const char porterIdChar[] = {
 /* x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,  /* 3x */
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 4x */
@@ -572,8 +572,7 @@ static const char isIdChar[] = {
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 6x */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  /* 7x */
 };
-#define idChar(C)  (((ch=C)&0x80)!=0 || (ch>0x2f && isIdChar[ch-0x30]))
-#define isDelim(C) (((ch=C)&0x80)==0 && (ch<0x30 || !isIdChar[ch-0x30]))
+#define isDelim(C) (((ch=C)&0x80)==0 && (ch<0x30 || !porterIdChar[ch-0x30]))
 
 /*
 ** Extract the next token from a tokenization cursor.  The cursor must
