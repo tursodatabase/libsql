@@ -14,7 +14,7 @@
 ** for completeness. Test code is written in C for these cases
 ** as there is not much point in binding to Tcl.
 **
-** $Id: test9.c,v 1.2 2007/03/29 17:28:15 danielk1977 Exp $
+** $Id: test9.c,v 1.3 2007/04/23 23:56:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -132,11 +132,13 @@ static int c_misuse_test(
   }
   sqlite3_close(db);
 
+#ifndef SQLITE_OMIT_UTF16
   rc = sqlite3_collation_needed16(db, 0, 0);
   if( rc!=SQLITE_MISUSE ){
     zErrFunction = "sqlite3_collation_needed16";
     goto error_out;
   }
+#endif
 
   rc = sqlite3_collation_needed(db, 0, 0);
   if( rc!=SQLITE_MISUSE ){
@@ -168,11 +170,13 @@ static int c_misuse_test(
     goto error_out;
   }
 
+#ifndef SQLITE_OMIT_UTF16
   rc = sqlite3_prepare16(db, 0, 0, 0, 0);
   if( rc!=SQLITE_MISUSE ){
     zErrFunction = "sqlite3_prepare16";
     goto error_out;
   }
+#endif
 
   return TCL_OK;
 
@@ -202,4 +206,3 @@ int Sqlitetest9_Init(Tcl_Interp *interp){
   }
   return TCL_OK;
 }
-

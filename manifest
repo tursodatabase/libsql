@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sturn\sthe\sFTS2\smodule\sinto\san\samalgamation.\s(CVS\s3864)
-D 2007-04-21T16:37:49
+C Get\sthe\sbuild\sworking\swith\s-DSQLITE_OMIT_UTF16=1.\s\sTicket\s#2314.\s(CVS\s3865)
+D 2007-04-23T23:56:31
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -73,7 +73,7 @@ F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 413cc06990cb3c401e64e596776c1e43934f8841
 F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
-F src/loadext.c 146fb9b9dc6133e763888d710205c32ebf8eeca2
+F src/loadext.c afe4f4755dc49c36ef505748bbdddecb9f1d02a2
 F src/main.c e6eb036c3580ba9116fedfe4a8b58ed63d5abb37
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 4650e98aadd27abfe1698ff58edf6893c58d4881
@@ -102,7 +102,7 @@ F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 047af0e4c38bbb8652836f72adc9e9199c51a1ba
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c ec69eb9ad56d03fbf7570ca1ca5ea947d1ec4b6f
-F src/test1.c 3a7810d1ff8829268bd52a91c4f29d66f693e431
+F src/test1.c 53b7eb5cba0012f592b5860f6ad3b5a3f887eb1e
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 65f92247cf8592854e9bf5115b3fb711f8b33280
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -110,7 +110,7 @@ F src/test5.c 7162f8526affb771c4ed256826eee7bb9eca265f
 F src/test6.c 5957d249d437e4db74045ce2f1f661648d94bf94
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
 F src/test8.c c3c4aeea4e3d70966306d6eca1b77ce7eee2f059
-F src/test9.c cb1a7b5a4a918bb0552fd0101fd3f88d85904cd2
+F src/test9.c c0f38f7795cc51d37db6c63874d90f40f10d0f0e
 F src/test_async.c 9d326ceda4306bcab252b8f7e8e480ed45d7ccb6
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_hexio.c 32204b5ce281ebc85f789c69c4ec725129e7e7f5
@@ -282,7 +282,7 @@ F test/misc2.test d35faf7df27750d25ab656ca92dceebbd89f7368
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
 F test/misc5.test c7d2d2a5a20dc37d3605a8067f0df5af2240122e
-F test/misc6.test 3de55ec5cadf466ada587173faa5d6a4790a8bb7
+F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 292c9ec0245d3602e9d36555efa0a1a8c9df9c54
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
@@ -460,7 +460,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9389a15f35f854c88440e365d85b48af3ff76b00
-R 2cbc78e0dd70ca0f7d6672765f8b0a98
+P 94374654ccabb391f5dcccfc88176ca677c5804e
+R d7b272e26c6d36664b64086fdb9d371b
 U drh
-Z 36d5b444e4309d5378f3e0773c4a5bc8
+Z baebe6d339241fecad908b7b83716212
