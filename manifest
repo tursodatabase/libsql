@@ -1,5 +1,5 @@
-C When\sthe\swrite_version\sflag\sin\sthe\sdatabase\sheader\sis\slarger\sthan\swhat\nthe\slibrary\sunderstands,\smake\sthe\sdatabase\sread-only.\s\sThe\sold\sbehavior\nwas\sto\smake\sthe\sdatabase\sunreadable.\s(CVS\s3866)
-D 2007-04-24T17:27:51
+C This\sfixes\sa\smissed\scase\sin\scheck-in\s(3866).\s\sDo\snot\sapply\spatch\s(3866)\nwithout\salso\sapplying\sthis\spatch.\s(CVS\s3867)
+D 2007-04-24T17:35:59
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,7 +59,7 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 4bbf5ddf9680587c6d4917e02e378b6037be3651
 F src/attach.c a16ada4a4654a0d126b8223ec9494ebb81bc5c3c
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c 16119ce57ff10217f15b0b4c86d176ee5335a94f
+F src/btree.c 960bf64baa4d2bdb96019698e60d0b7763bf4e7e
 F src/btree.h 9b2cc0d113c0bc2d37d244b9a394d56948c9acbf
 F src/build.c 1880da163d9aa404016242b8b76d69907f682cd8
 F src/callback.c 6414ed32d55859d0f65067aa5b88d2da27b3af9e
@@ -461,7 +461,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 25c1c7aaa8ef203120c2c242cf72ce4750f78abd
-R 3fc076971d716b426bc268b75c0ef34b
+P 10648e99929b4f640855433b6e47702687039286
+R 4b2e73d3422347a28e8e5f64cd7f6cea
 U drh
-Z 82843ae5ccf4a2ae39514c6de28aac15
+Z 112fde8b94983dbcbb4344618f4db27e
