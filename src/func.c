@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.139 2007/04/10 13:51:18 drh Exp $
+** $Id: func.c,v 1.140 2007/04/25 18:23:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -102,6 +102,7 @@ static void lengthFunc(
     }
     case SQLITE_TEXT: {
       const unsigned char *z = sqlite3_value_text(argv[0]);
+      if( z==0 ) return;
       for(len=0; *z; z++){ if( (0xc0&*z)!=0x80 ) len++; }
       sqlite3_result_int(context, len);
       break;
@@ -212,30 +213,38 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 ** Implementation of the upper() and lower() SQL functions.
 */
 static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  unsigned char *z;
+  char *z1;
+  const char *z2;
   int i;
   if( argc<1 || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
-  z = sqliteMalloc(sqlite3_value_bytes(argv[0])+1);
-  if( z==0 ) return;
-  strcpy((char*)z, (char*)sqlite3_value_text(argv[0]));
-  for(i=0; z[i]; i++){
-    z[i] = toupper(z[i]);
+  z2 = (char*)sqlite3_value_text(argv[0]);
+  if( z2 ){
+    z1 = sqlite3_malloc(sqlite3_value_bytes(argv[0])+1);
+    if( z1 ){
+      strcpy(z1, z2);
+      for(i=0; z1[i]; i++){
+        z1[i] = toupper(z1[i]);
+      }
+      sqlite3_result_text(context, z1, -1, sqlite3_free);
+    }
   }
-  sqlite3_result_text(context, (char*)z, -1, SQLITE_TRANSIENT);
-  sqliteFree(z);
 }
 static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  unsigned char *z;
+  char *z1;
+  const char *z2;
   int i;
   if( argc<1 || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
-  z = sqliteMalloc(sqlite3_value_bytes(argv[0])+1);
-  if( z==0 ) return;
-  strcpy((char*)z, (char*)sqlite3_value_text(argv[0]));
-  for(i=0; z[i]; i++){
-    z[i] = tolower(z[i]);
+  z2 = (char*)sqlite3_value_text(argv[0]);
+  if( z2 ){
+    z1 = sqlite3_malloc(sqlite3_value_bytes(argv[0])+1);
+    if( z1 ){
+      strcpy(z1, z2);
+      for(i=0; z1[i]; i++){
+        z1[i] = tolower(z1[i]);
+      }
+      sqlite3_result_text(context, z1, -1, sqlite3_free);
+    }
   }
-  sqlite3_result_text(context, (char*)z, -1, SQLITE_TRANSIENT);
-  sqliteFree(z);
 }
 
 /*
@@ -523,6 +532,7 @@ static void likeFunc(
     ** Otherwise, return an error.
     */
     const unsigned char *zEsc = sqlite3_value_text(argv[2]);
+    if( zEsc==0 ) return;
     if( sqlite3utf8CharLen((char*)zEsc, -1)!=1 ){
       sqlite3_result_error(context, 
           "ESCAPE expression must be a single character", -1);
@@ -625,6 +635,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       const unsigned char *zArg = sqlite3_value_text(argv[0]);
       char *z;
 
+      if( zArg==0 ) return;
       for(i=n=0; zArg[i]; i++){ if( zArg[i]=='\'' ) n++; }
       z = sqliteMalloc( i+n+3 );
       if( z==0 ) return;
@@ -692,16 +703,14 @@ static void replaceFunc(
   int i, j;                /* Loop counters */
 
   assert( argc==3 );
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ||
-      sqlite3_value_type(argv[1])==SQLITE_NULL ||
-      sqlite3_value_type(argv[2])==SQLITE_NULL ){
-    return;
-  }
   zStr = sqlite3_value_text(argv[0]);
+  if( zStr==0 ) return;
   nStr = sqlite3_value_bytes(argv[0]);
   zPattern = sqlite3_value_text(argv[1]);
+  if( zPattern==0 ) return;
   nPattern = sqlite3_value_bytes(argv[1]);
   zRep = sqlite3_value_text(argv[2]);
+  if( zRep==0 ) return;
   nRep = sqlite3_value_bytes(argv[2]);
   if( nPattern>=nRep ){
     nOut = nStr;
@@ -746,14 +755,13 @@ static void trimFunc(
     return;
   }
   zIn = sqlite3_value_text(argv[0]);
+  if( zIn==0 ) return;
   nIn = sqlite3_value_bytes(argv[0]);
   if( argc==1 ){
     static const unsigned char zSpace[] = " ";
     zCharSet = zSpace;
-  }else if( sqlite3_value_type(argv[1])==SQLITE_NULL ){
+  }else if( (zCharSet = sqlite3_value_text(argv[1]))==0 ){
     return;
-  }else{
-    zCharSet = sqlite3_value_text(argv[1]);
   }
   cFirst = zCharSet[0];
   if( cFirst ){
@@ -834,14 +842,16 @@ static void soundexFunc(
 */
 static void loadExt(sqlite3_context *context, int argc, sqlite3_value **argv){
   const char *zFile = (const char *)sqlite3_value_text(argv[0]);
-  const char *zProc = 0;
+  const char *zProc;
   sqlite3 *db = sqlite3_user_data(context);
   char *zErrMsg = 0;
 
   if( argc==2 ){
     zProc = (const char *)sqlite3_value_text(argv[1]);
+  }else{
+    zProc = 0;
   }
-  if( sqlite3_load_extension(db, zFile, zProc, &zErrMsg) ){
+  if( zFile && sqlite3_load_extension(db, zFile, zProc, &zErrMsg) ){
     sqlite3_result_error(context, zErrMsg, -1);
     sqlite3_free(zErrMsg);
   }

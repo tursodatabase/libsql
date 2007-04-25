@@ -443,7 +443,7 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   Vdbe *pVm = (Vdbe *)pStmt;
   int vals = sqlite3_data_count(pStmt);
   if( i>=vals || i<0 ){
-    static const Mem nullMem = {{0}, 0.0, "", 0, MEM_Null, MEM_Null };
+    static const Mem nullMem = {{0}, 0.0, "", 0, MEM_Null, SQLITE_NULL };
     sqlite3Error(pVm->db, SQLITE_RANGE, 0);
     return (Mem*)&nullMem;
   }
