@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\ssqlite3_changes()\sfunction\sreported\son\sthe\smailing\slist.\s(CVS\s3868)
-D 2007-04-25T11:28:17
+C Fix\sduplicate\stest\sIDs\sin\sthe\stest\ssuite.\s\sNo\schanges\sto\scode.\s\sTicket\s#2319.\s(CVS\s3869)
+D 2007-04-25T11:32:30
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -296,11 +296,11 @@ F test/pragma.test fecb7085f58d9fb5172a5c0b63fd3b25c7bfb414
 F test/printf.test 483b9fe75ffae1fb27328bdce5560b452ba83577
 F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
 F test/quick.test 8e7ffe36a1c920cdcce5d641646abde2dafd764b
-F test/quote.test 5891f2338980916cf7415484b4ce785294044adb
+F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
 F test/rollback.test 673cd8c44c685ad54987fe7f0eeba84efa09685d
-F test/rowid.test 040a3bef06f970c45f5fcd14b2355f7f4d62f0cf
+F test/rowid.test d125991eea1ffdea800d48471afd8fc4acc10b01
 F test/safety.test 4a06934e45d03b8b50ebcd8d174eb0367d2fd851
 F test/schema.test 8a2ae440fb15f5798a68059e8746402f3137be46
 F test/schema2.test d815923e57e90b8c60ddf5e0d8fd65075e94f57f
@@ -461,7 +461,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 66c2fa0836089f360b1c3343df84b73e8d89b293
-R 23403ea0bdbf03680fe80c6ec0cf09d6
+P 58ea768c3e9905bd9db137f1b31dd3dd6c6001d0
+R e2bcc2c07dea4e60709213385f449985
 U drh
-Z 33611da03c9f76c4de7e7351acda8930
+Z 90ff2f6bb123a5d937582a0b8446f326

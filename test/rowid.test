@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.18 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: rowid.test,v 1.19 2007/04/25 11:32:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -80,7 +80,7 @@ do_test rowid-1.9 {
   set v2 [list 1 $x2rowid(1) 3 $x2rowid(3)]
   expr {$v==$v2}
 } {1}
-do_test rowid-1.9 {
+do_test rowid-1.10 {
   global x2rowid
   set v [execsql {SELECT x, _rowid_ FROM t1 order by x}]
   set v2 [list 1 $x2rowid(1) 3 $x2rowid(3)]
