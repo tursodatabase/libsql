@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: legacy.c,v 1.16 2006/09/15 07:28:50 drh Exp $
+** $Id: legacy.c,v 1.17 2007/04/25 11:28:17 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -44,7 +44,6 @@ int sqlite3_exec(
   char **azCols = 0;
 
   int nRetry = 0;
-  int nChange = 0;
   int nCallback;
 
   if( zSql==0 ) return SQLITE_OK;
@@ -64,7 +63,6 @@ int sqlite3_exec(
       continue;
     }
 
-    db->nChange += nChange;
     nCallback = 0;
 
     nCol = sqlite3_column_count(pStmt);
@@ -101,9 +99,6 @@ int sqlite3_exec(
       if( rc!=SQLITE_ROW ){
         rc = sqlite3_finalize(pStmt);
         pStmt = 0;
-        if( db->pVdbe==0 ){
-          nChange = db->nChange;
-        }
         if( rc!=SQLITE_SCHEMA ){
           nRetry = 0;
           zSql = zLeftover;

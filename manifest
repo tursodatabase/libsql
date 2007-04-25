@@ -1,5 +1,5 @@
-C This\sfixes\sa\smissed\scase\sin\scheck-in\s(3866).\s\sDo\snot\sapply\spatch\s(3866)\nwithout\salso\sapplying\sthis\spatch.\s(CVS\s3867)
-D 2007-04-24T17:35:59
+C Fix\sa\sbug\sin\sthe\ssqlite3_changes()\sfunction\sreported\son\sthe\smailing\slist.\s(CVS\s3868)
+D 2007-04-25T11:28:17
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -72,7 +72,7 @@ F src/func.c 007d957c057bb42b0d37aa6ad4be0e1c67a8871b
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 413cc06990cb3c401e64e596776c1e43934f8841
-F src/legacy.c 2631df6a861f830d6b1c0fe92b9fdd745b2c0cd6
+F src/legacy.c c05a599a37f703ed1e66fdb5df60c2db65f29e71
 F src/loadext.c afe4f4755dc49c36ef505748bbdddecb9f1d02a2
 F src/main.c e6eb036c3580ba9116fedfe4a8b58ed63d5abb37
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
@@ -256,7 +256,7 @@ F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 2646825693a6e066ea89b498176d4a68df45ab68
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
-F test/laststmtchanges.test 19a6d0c11f7a31dc45465b495f7b845a62cbec17
+F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
 F test/like.test 5f7d76574752a9101cac13372c8a85999d0d91e6
 F test/limit.test 2a87b9cb2165abb49ca0ddcf5cb43cf24074581f
 F test/loadext.test 9ab2cb0226329c1a62dd45d204be95158a872201
@@ -461,7 +461,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 10648e99929b4f640855433b6e47702687039286
-R 4b2e73d3422347a28e8e5f64cd7f6cea
+P 66c2fa0836089f360b1c3343df84b73e8d89b293
+R 23403ea0bdbf03680fe80c6ec0cf09d6
 U drh
-Z 112fde8b94983dbcbb4344618f4db27e
+Z 33611da03c9f76c4de7e7351acda8930
