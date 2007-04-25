@@ -25,6 +25,13 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2007 April 25 (3.3.17)} {
+<li>When the "write_version" value of the database header is larger than
+    what the library understands, make the database read-only instead of
+    unreadable.</li>
+<li>Other minor bug fixes</li>
+}
+
 chng {2007 April 18 (3.3.16)} {
 <li>Fix a bug that caused VACUUM to fail if NULLs appeared in a
     UNIQUE column.</li>
