@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: exclusive2.test,v 1.4 2007/04/16 15:02:20 drh Exp $
+# $Id: exclusive2.test,v 1.5 2007/04/25 12:06:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -161,6 +161,7 @@ do_test exclusive2-2.4 {
   seek $fd 1024
   puts -nonewline $fd [string repeat [binary format c 0] 10000]
   flush $fd
+  close $fd
   t1sig
 } $::sig
 
