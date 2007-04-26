@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.74 2007/03/30 14:06:34 drh Exp $
+** @(#) $Id: btree.h,v 1.75 2007/04/26 14:42:36 danielk1977 Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -30,6 +30,10 @@
 #ifndef SQLITE_DEFAULT_AUTOVACUUM
   #define SQLITE_DEFAULT_AUTOVACUUM 0
 #endif
+
+#define BTREE_AUTOVACUUM_NONE 0        /* Do not do auto-vacuum */
+#define BTREE_AUTOVACUUM_FULL 1        /* Do full auto-vacuum */
+#define BTREE_AUTOVACUUM_INCR 2        /* Incremental vacuum */
 
 /*
 ** Forward declarations of structure
@@ -86,6 +90,8 @@ const char *sqlite3BtreeGetFilename(Btree *);
 const char *sqlite3BtreeGetDirname(Btree *);
 const char *sqlite3BtreeGetJournalname(Btree *);
 int sqlite3BtreeCopyFile(Btree *, Btree *);
+
+int sqlite3BtreeIncrVacuum(Btree *);
 
 /* The flags parameter to sqlite3BtreeCreateTable can be the bitwise OR
 ** of the following flags:

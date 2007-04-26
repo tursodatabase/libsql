@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.421 2007/04/18 14:47:24 danielk1977 Exp $
+** $Id: build.c,v 1.422 2007/04/26 14:42:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3349,3 +3349,20 @@ KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
   }
   return pKey;
 }
+
+#ifndef SQLITE_OMIT_AUTOVACUUM
+/*
+** This is called to compile a statement of the form "INCREMENTAL VACUUM".
+*/
+void sqlite3IncrVacuum(Parse *pParse){
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  if( v ){
+    int addr;
+    sqlite3BeginWriteOperation(pParse, 0, 0);
+    addr = sqlite3VdbeCurrentAddr(v);
+    sqlite3VdbeAddOp(v, OP_IncrVacuum, 0, addr+3);
+    sqlite3VdbeAddOp(v, OP_Callback, 0, 0);
+    sqlite3VdbeAddOp(v, OP_Goto, 0, addr);
+  }
+}
+#endif /* #ifndef SQLITE_OMIT_AUTOVACUUM */

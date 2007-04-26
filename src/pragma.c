@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.132 2007/03/30 17:11:13 danielk1977 Exp $
+** $Id: pragma.c,v 1.133 2007/04/26 14:42:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -72,6 +72,23 @@ static int getLockingMode(const char *z){
   }
   return PAGER_LOCKINGMODE_QUERY;
 }
+
+#ifndef SQLITE_OMIT_AUTOVACUUM
+/*
+** Interpret the given string as an auto-vacuum mode value.
+**
+** The following strings, "none", "full" and "incremental" are 
+** acceptable, as are their numeric equivalents: 0, 1 and 2 respectively.
+*/
+static int getAutoVacuum(const char *z){
+  int i;
+  if( 0==sqlite3StrICmp(z, "none") ) return BTREE_AUTOVACUUM_NONE;
+  if( 0==sqlite3StrICmp(z, "full") ) return BTREE_AUTOVACUUM_FULL;
+  if( 0==sqlite3StrICmp(z, "incremental") ) return BTREE_AUTOVACUUM_INCR;
+  i = atoi(z);
+  return ((i>=0&&i<=2)?i:0);
+}
+#endif /* ifndef SQLITE_OMIT_AUTOVACUUM */
 
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
 /*
@@ -389,7 +406,10 @@ void sqlite3Pragma(
           pBt ? sqlite3BtreeGetAutoVacuum(pBt) : SQLITE_DEFAULT_AUTOVACUUM;
       returnSingleInt(pParse, "auto_vacuum", auto_vacuum);
     }else{
-      sqlite3BtreeSetAutoVacuum(pBt, getBoolean(zRight));
+      int eAuto = getAutoVacuum(zRight);
+      if( eAuto>=0 ){
+        sqlite3BtreeSetAutoVacuum(pBt, eAuto);
+      }
     }
   }else
 #endif
