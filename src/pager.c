@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.329 2007/04/16 15:02:19 drh Exp $
+** @(#) $Id: pager.c,v 1.330 2007/04/26 12:11:28 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2923,12 +2923,31 @@ pager_allocate_out:
 }
 
 /*
+** Make sure we have the content for a page.  If the page was
+** previously acquired with noContent==1, then the content was
+** just initialized to zeros instead of being read from disk.
+** But now we need the real data off of disk.  So make sure we
+** have it.  Read it in if we do not have it already.
+*/
+static int pager_get_content(PgHdr *pPg){
+  if( pPg->needRead ){
+    int rc = readDbPage(pPg->pPager, pPg, pPg->pgno);
+    if( rc==SQLITE_OK ){
+      pPg->needRead = 0;
+    }else{
+      return rc;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Acquire a page.
 **
 ** A read lock on the disk file is obtained when the first page is acquired. 
 ** This read lock is dropped when the last page is released.
 **
-** A _get works for any page number greater than 0.  If the database
+** This routine works for any page number greater than 0.  If the database
 ** file is smaller than the requested page, then no actual disk
 ** read occurs and the memory image of the page is initialized to
 ** all zeros.  The extra data appended to a page is always initialized
@@ -2937,12 +2956,12 @@ pager_allocate_out:
 ** The acquisition might fail for several reasons.  In all cases,
 ** an appropriate error code is returned and *ppPage is set to NULL.
 **
-** See also sqlite3PagerLookup().  Both this routine and _lookup() attempt
+** See also sqlite3PagerLookup().  Both this routine and Lookup() attempt
 ** to find a page in the in-memory cache first.  If the page is not already
-** in memory, this routine goes to disk to read it in whereas _lookup()
+** in memory, this routine goes to disk to read it in whereas Lookup()
 ** just returns 0.  This routine acquires a read-lock the first time it
 ** has to go to disk, and could also playback an old journal if necessary.
-** Since _lookup() never goes to disk, it never has to deal with locks
+** Since Lookup() never goes to disk, it never has to deal with locks
 ** or journal files.
 **
 ** If noContent is false, the page contents are actually read from disk.
@@ -2950,8 +2969,9 @@ pager_allocate_out:
 ** of the page at this time, so do not do a disk read.  Just fill in the
 ** page content with zeros.  But mark the fact that we have not read the
 ** content by setting the PgHdr.needRead flag.  Later on, if 
-** sqlite3PagerWrite() is called on this page, that means that the
-** content is needed and the disk read should occur at that point.
+** sqlite3PagerWrite() is called on this page or if this routine is
+** called again with noContent==0, that means that the content is needed
+** and the disk read should occur at that point.
 */
 int sqlite3PagerAcquire(
   Pager *pPager,      /* The pager open on the database file */
@@ -3060,6 +3080,12 @@ int sqlite3PagerAcquire(
     /* The requested page is in the page cache. */
     assert(pPager->nRef>0 || pgno==1);
     PAGER_INCR(pPager->nHit);
+    if( !noContent ){
+      rc = pager_get_content(pPg);
+      if( rc ){
+        return rc;
+      }
+    }
     page_ref(pPg);
   }
   *ppPage = pPg;
@@ -3367,13 +3393,9 @@ static int pager_write(PgHdr *pPg){
   ** can be stored in the rollback journal.  So do the read at this
   ** time.
   */
-  if( pPg->needRead ){
-    rc = readDbPage(pPager, pPg, pPg->pgno);
-    if( rc==SQLITE_OK ){
-      pPg->needRead = 0;
-    }else{
-      return rc;
-    }
+  rc = pager_get_content(pPg);
+  if( rc ){
+    return rc;
   }
 
   /* Mark the page as dirty.  If the page has already been written
