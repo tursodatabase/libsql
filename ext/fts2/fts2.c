@@ -1634,7 +1634,8 @@ static const char *const fulltext_zStatement[MAX_STMT] = {
   "select min(start_block), max(end_block) from %_segdir "
   " where level = ? and start_block <> 0",
   /* SEGDIR_DELETE */ "delete from %_segdir where level = ?",
-  /* SEGDIR_SELECT_ALL */ "select root from %_segdir order by level desc, idx",
+  /* SEGDIR_SELECT_ALL */
+  "select root, leaves_end_block from %_segdir order by level desc, idx",
 };
 
 /*
@@ -4807,6 +4808,23 @@ static int leavesReaderAtEnd(LeavesReader *pReader){
   return pReader->eof;
 }
 
+/* loadSegmentLeaves() may not read all the way to SQLITE_DONE, thus
+** leaving the statement handle open, which locks the table.
+*/
+/* TODO(shess) This "solution" is not satisfactory.  Really, there
+** should be check-in function for all statement handles which
+** arranges to call sqlite3_reset().  This most likely will require
+** modification to control flow all over the place, though, so for now
+** just punt.
+**
+** Note the the current system assumes that segment merges will run to
+** completion, which is why this particular probably hasn't arisen in
+** this case.  Probably a brittle assumption.
+*/
+static int leavesReaderReset(LeavesReader *pReader){
+  return sqlite3_reset(pReader->pStmt);
+}
+
 static void leavesReaderDestroy(LeavesReader *pReader){
   leafReaderDestroy(&pReader->leafReader);
   dataBufferDestroy(&pReader->rootData);
@@ -5133,6 +5151,25 @@ static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
   if( rc!=SQLITE_OK ) return rc;
 
   rc = loadSegmentLeavesInt(v, &reader, pTerm, nTerm, out);
+  leavesReaderReset(&reader);
+  leavesReaderDestroy(&reader);
+  return rc;
+}
+
+/* Call loadSegmentLeavesInt() with the leaf nodes from iStartLeaf to
+** iEndLeaf (inclusive) as input, and merge the resulting doclist into
+** out.
+*/
+static int loadSegmentLeaves(fulltext_vtab *v,
+                             sqlite_int64 iStartLeaf, sqlite_int64 iEndLeaf,
+                             const char *pTerm, int nTerm,
+                             DataBuffer *out){
+  LeavesReader reader;
+  int rc = leavesReaderInit(v, 0, iStartLeaf, iEndLeaf, NULL, 0, &reader);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = loadSegmentLeavesInt(v, &reader, pTerm, nTerm, out);
+  leavesReaderReset(&reader);
   leavesReaderDestroy(&reader);
   return rc;
 }
@@ -5143,9 +5180,9 @@ static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
 ** than there are terms (that block contains terms >= the last
 ** interior-node term).
 */
-static void getNextChild(const char *pData, int nData,
-                         const char *pTerm, int nTerm,
-                         sqlite_int64 *piBlockid){
+static void getChildContaining(const char *pData, int nData,
+                               const char *pTerm, int nTerm,
+                               sqlite_int64 *piBlockid){
   InteriorReader reader;
 
   assert( nData>1 );
@@ -5161,53 +5198,74 @@ static void getNextChild(const char *pData, int nData,
   interiorReaderDestroy(&reader);
 }
 
+/* Read block at iBlockid and pass it with other params to
+** getChildContaining().
+*/
+static int loadAndGetChildContaining(fulltext_vtab *v, sqlite_int64 iBlockid,
+                                     const char *pTerm, int nTerm,
+                                     sqlite_int64 *piBlockid){
+  sqlite3_stmt *s = NULL;
+  int rc;
+
+  assert( iBlockid!=0 );
+  assert( pTerm!=NULL );
+  assert( nTerm!=0 );        /* TODO(shess) Why not allow this? */
+  assert( piBlockid!=NULL );
+
+  rc = sql_get_statement(v, BLOCK_SELECT_STMT, &s);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = sqlite3_bind_int64(s, 1, iBlockid);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = sql_step_statement(v, BLOCK_SELECT_STMT, &s);
+  if( rc==SQLITE_DONE ) return SQLITE_ERROR;
+  if( rc!=SQLITE_ROW ) return rc;
+
+  getChildContaining(sqlite3_column_blob(s, 0), sqlite3_column_bytes(s, 0),
+                     pTerm, nTerm, piBlockid);
+
+  /* We expect only one row.  We must execute another sqlite3_step()
+   * to complete the iteration; otherwise the table will remain
+   * locked. */
+  rc = sqlite3_step(s);
+  if( rc==SQLITE_ROW ) return SQLITE_ERROR;
+  if( rc!=SQLITE_DONE ) return rc;
+
+  return SQLITE_OK;
+}
+
 /* Traverse the tree represented by pData[nData] looking for
 ** pTerm[nTerm], merging its doclist over *out if found (any duplicate
 ** doclists read from the segment rooted at pData will overwrite those
 ** in *out).
 */
 static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
+                       sqlite_int64 iLeavesEnd,
                        const char *pTerm, int nTerm, DataBuffer *out){
-  int rc;
-  sqlite3_stmt *s = NULL;
-
   assert( nData>1 );
 
   /* This code should never be called with buffered updates. */
   assert( v->nPendingData<0 );
 
-  /* Process data as an interior node until we reach a leaf. */
-  while( *pData!='\0' ){
+  /* Special case where root is a leaf. */
+  if( *pData=='\0' ){
+    return loadSegmentLeaf(v, pData, nData, pTerm, nTerm, out);
+  }else{
+    int rc;
     sqlite_int64 iBlockid;
-    getNextChild(pData, nData, pTerm, nTerm, &iBlockid);
 
-    rc = sql_get_statement(v, BLOCK_SELECT_STMT, &s);
-    if( rc!=SQLITE_OK ) return rc;
+    /* Process pData as an interior node, then loop down the tree
+    ** until we find a leaf node to scan for the term.
+    */
+    getChildContaining(pData, nData, pTerm, nTerm, &iBlockid);
+    while( iBlockid>iLeavesEnd ){
+      rc = loadAndGetChildContaining(v, iBlockid, pTerm, nTerm, &iBlockid);
+      if( rc!=SQLITE_OK ) return rc;
+    }
 
-    rc = sqlite3_bind_int64(s, 1, iBlockid);
-    if( rc!=SQLITE_OK ) return rc;
-
-    rc = sql_step_statement(v, BLOCK_SELECT_STMT, &s);
-    if( rc==SQLITE_DONE ) return SQLITE_ERROR;
-    if( rc!=SQLITE_ROW ) return rc;
-
-    pData = sqlite3_column_blob(s, 0);
-    nData = sqlite3_column_bytes(s, 0);
+    return loadSegmentLeaves(v, iBlockid, iBlockid, pTerm, nTerm, out);
   }
-
-  rc = loadSegmentLeaf(v, pData, nData, pTerm, nTerm, out);
-  if( rc!=SQLITE_OK ) return rc;
-
-  /* If we selected a child node, we need to finish that select. */
-  if( s!=NULL ){
-    /* We expect only one row.  We must execute another sqlite3_step()
-     * to complete the iteration; otherwise the table will remain
-     * locked. */
-    rc = sqlite3_step(s);
-    if( rc==SQLITE_ROW ) return SQLITE_ERROR;
-    if( rc!=SQLITE_DONE ) return rc;
-  }
-  return SQLITE_OK;
 }
 
 /* Scan the database and merge together the posting lists for the term
@@ -5230,8 +5288,10 @@ static int termSelect(fulltext_vtab *v, int iColumn,
   ** elements for given docids overwrite older elements.
   */
   while( (rc=sql_step_statement(v, SEGDIR_SELECT_ALL_STMT, &s))==SQLITE_ROW ){
-    rc = loadSegment(v, sqlite3_column_blob(s, 0), sqlite3_column_bytes(s, 0),
-                     pTerm, nTerm, &doclist);
+    const char *pData = sqlite3_column_blob(s, 0);
+    const int nData = sqlite3_column_bytes(s, 0);
+    const sqlite_int64 iLeavesEnd = sqlite3_column_int64(s, 1);
+    rc = loadSegment(v, pData, nData, iLeavesEnd, pTerm, nTerm, &doclist);
     if( rc!=SQLITE_OK ) goto err;
   }
   if( rc==SQLITE_DONE ){
