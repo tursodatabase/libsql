@@ -5137,6 +5137,30 @@ static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
   return rc;
 }
 
+/* Taking pData/nData as an interior node, find the child node which
+** could include pTerm/nTerm.  Note that the interior node terms
+** logically come between the blocks, so there is one more blockid
+** than there are terms (that block contains terms >= the last
+** interior-node term).
+*/
+static void getNextChild(const char *pData, int nData,
+                         const char *pTerm, int nTerm,
+                         sqlite_int64 *piBlockid){
+  InteriorReader reader;
+
+  assert( nData>1 );
+  assert( *pData!='\0' );
+  interiorReaderInit(pData, nData, &reader);
+
+  while( !interiorReaderAtEnd(&reader) ){
+    if( interiorReaderTermCmp(&reader, pTerm, nTerm)>0 ) break;
+    interiorReaderStep(&reader);
+  }
+  *piBlockid = interiorReaderCurrentBlockid(&reader);
+
+  interiorReaderDestroy(&reader);
+}
+
 /* Traverse the tree represented by pData[nData] looking for
 ** pTerm[nTerm], merging its doclist over *out if found (any duplicate
 ** doclists read from the segment rooted at pData will overwrite those
@@ -5155,24 +5179,7 @@ static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
   /* Process data as an interior node until we reach a leaf. */
   while( *pData!='\0' ){
     sqlite_int64 iBlockid;
-    InteriorReader reader;
-
-    /* Scan the node data until we find a term greater than our term.
-    ** Our target child will be in the blockid under that term, or in
-    ** the last blockid in the node if we never find such a term.
-    */
-    interiorReaderInit(pData, nData, &reader);
-    while( !interiorReaderAtEnd(&reader) ){
-      if( interiorReaderTermCmp(&reader, pTerm, nTerm)>0 ) break;
-      interiorReaderStep(&reader);
-    }
-
-    /* Grab the child blockid before calling sql_get_statement(),
-    ** because sql_get_statement() may reset our data out from under
-    ** us.
-    */
-    iBlockid = interiorReaderCurrentBlockid(&reader);
-    interiorReaderDestroy(&reader);
+    getNextChild(pData, nData, pTerm, nTerm, &iBlockid);
 
     rc = sql_get_statement(v, BLOCK_SELECT_STMT, &s);
     if( rc!=SQLITE_OK ) return rc;

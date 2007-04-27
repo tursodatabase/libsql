@@ -1,5 +1,5 @@
-C Refactor\sfts2\sloadSegmentLeaf()\sin\spreparation\sfor\sprefix-searching.\nPrefix-searching\swill\swant\sto\saccumulate\sdata\sacross\smultiple\sleaves\nin\sthe\ssegment,\susing\sLeavesReader\sinstead\sof\sLeafReader\sis\sthe\sfirst\nstep\sin\sthat\sdirection.\s(CVS\s3881)
-D 2007-04-27T21:02:00
+C Lift\scode\sto\straverse\sinterior\snodes\sout\sof\sloadSegment().\nRefactoring\stowards\sprefix\ssearching.\s(CVS\s3882)
+D 2007-04-27T21:24:18
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 430ef1093f23691604fb6648c280159bc4465d74
+F ext/fts2/fts2.c c1e7528d9f49f1c982bb0b75f262b115a508d140
 F ext/fts2/fts2.h 591916a822cfb6426518fdbf6069359119bc46eb
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -464,7 +464,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e92bd97a3726bbb7978489e2994747127c4aefcf
-R 5fb6880a5d72930ca95c09c7065e68ee
+P 22ffdae4b6f3d0ea584dafa5268af7aa6fdcdc6e
+R dce6a390ff9ccb534e4d5743da453b5a
 U shess
-Z b6beaad154ccbe5f20864433f88b3cb0
+Z 3d1f65a5bd747e5ae2188d3aea41ae85
