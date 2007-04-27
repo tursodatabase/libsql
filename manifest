@@ -1,5 +1,5 @@
-C The\sreplace()\sfunction\sshould\sreturn\sNULL\sif\sthe\ssecond\sargument\sis\san\nempty\sstring.\s\sTicket\s#2324.\s(CVS\s3877)
-D 2007-04-27T01:18:03
+C Modifications\sto\sbtree\sintegrity\scheck\sso\sthat\sit\scan\sbe\srun\sinside\sa\stransaction\safter\san\sincr\svacuum.\s(CVS\s3878)
+D 2007-04-27T07:05:44
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,7 +59,7 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 4bbf5ddf9680587c6d4917e02e378b6037be3651
 F src/attach.c a16ada4a4654a0d126b8223ec9494ebb81bc5c3c
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c d08db3a8207bf884bd891829cab84c5e4cf18d99
+F src/btree.c 1e9261de4b663992604f089e6dbad6807e140b84
 F src/btree.h 4c0b5855cef3e4e6627358aa69541d21a2015947
 F src/build.c 02e01ec7907c7d947ab3041fda0e81eaed05db42
 F src/callback.c 6414ed32d55859d0f65067aa5b88d2da27b3af9e
@@ -238,7 +238,7 @@ F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/func.test d66c42af501a77bd9b36c3d675d844b04db04765
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
-F test/incrvacuum.test ee05edff95770f211fab28132291c175cd282e0c
+F test/incrvacuum.test 6c14f0492f00437ebf8275eac0a80f97799d99d4
 F test/index.test e65df12bed94b2903ee89987115e1578687e9266
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test f66718cd92ce1216819d47e6a156755e4b2c4ca1
@@ -463,7 +463,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f6a6d2b8872c05089810b1e095f39011f3035408
-R 6f143466ef3a026d3b533ab40fb9e7d5
-U drh
-Z 760fc2fbeee76e7c0e692c114576d572
+P e6a0c90dd9b4f7efe2153dd0c899b6e3d9846bd8
+R 3e1e2e05e5e9e264674bc6629d08b7ad
+U danielk1977
+Z 1d29f050695ac44aa0f3dcac643e125b

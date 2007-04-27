@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the incremental vacuum feature.
 #
-# $Id: incrvacuum.test,v 1.1 2007/04/26 14:42:36 danielk1977 Exp $
+# $Id: incrvacuum.test,v 1.2 2007/04/27 07:05:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -144,7 +144,9 @@ do_test incrvacuum-3.4 {
 } {3}
 
 #---------------------------------------------------------------------
-# Try to run a simple incremental vacuum.
+# Try to run a very simple incremental vacuum. Also verify that 
+# INCREMENTAL VACUUM is a harmless no-op against a database that
+# does not support auto-vacuum.
 #
 do_test incrvacuum-4.1 {
   set ::str [string repeat 1234567890 110]
@@ -169,6 +171,144 @@ do_test incrvacuum-4.3 {
   }
   list [expr {[file size test.db] / 1024}] $::nStep
 } {3 2}
+
+#---------------------------------------------------------------------
+# The following tests - incrvacuum-5.* - test incremental vacuum
+# from within a transaction.
+#
+do_test incrvacuum-5.1.1 {
+  expr {[file size test.db] / 1024}
+} {3}
+do_test incrvacuum-5.1.2 {
+  execsql {
+    BEGIN;
+    DROP TABLE tbl2;
+    INCREMENTAL VACUUM;
+    COMMIT;
+  }
+  expr {[file size test.db] / 1024}
+} {1}
+
+do_test incrvacuum-5.2.1 {
+  set ::str [string repeat abcdefghij 110]
+  execsql {
+    BEGIN;
+    CREATE TABLE tbl1(a);
+    INSERT INTO tbl1 VALUES($::str);
+    INCREMENTAL VACUUM;                 -- this is a no-op.
+    COMMIT;
+  }
+  expr {[file size test.db] / 1024}
+} {4}
+do_test incrvacuum-5.2.2 {
+  set ::str [string repeat abcdefghij 110]
+  execsql {
+    BEGIN;
+    INSERT INTO tbl1 VALUES($::str);
+    INSERT INTO tbl1 SELECT * FROM tbl1;
+    DELETE FROM tbl1 WHERE oid%2;        -- Put 2 overflow pages on free-list.
+    COMMIT;
+  }
+  expr {[file size test.db] / 1024}
+} {7}
+do_test incrvacuum-5.2.3 {
+  execsql {
+    BEGIN;
+    INCREMENTAL VACUUM;                  -- Vacuum up the two pages.
+    CREATE TABLE tbl2(b);                -- Use one free page as a table root.
+    INSERT INTO tbl2 VALUES('a nice string');
+    COMMIT;
+  }
+  expr {[file size test.db] / 1024}
+} {6}
+do_test incrvacuum-5.2.4 {
+  execsql {
+    SELECT * FROM tbl2;
+  }
+} {{a nice string}}
+
+set TestScriptList [list {
+  BEGIN;
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(a, b);
+  CREATE INDEX t1_i ON t1(a);
+  CREATE INDEX t2_i ON t2(a);
+} {
+  INSERT INTO t1 VALUES($::str1, $::str2);
+  INSERT INTO t1 VALUES($::str1||$::str2, $::str2||$::str1);
+  INSERT INTO t2 SELECT b, a FROM t1;
+  INSERT INTO t2 SELECT a, b FROM t1;
+  INSERT INTO t1 SELECT b, a FROM t2;
+  UPDATE t2 SET b = '';
+  INCREMENTAL VACUUM;
+} {
+  UPDATE t2 SET b = (SELECT b FROM t1 WHERE t1.oid = t2.oid);
+  INCREMENTAL VACUUM;
+} {
+  CREATE TABLE t3(a, b);
+  INSERT INTO t3 SELECT * FROM t2;
+  DROP TABLE t2;
+  INCREMENTAL VACUUM;
+} {
+  CREATE INDEX t3_i ON t3(a);
+  COMMIT;
+}]
+
+file delete -force test1.db test1.db-journal
+file delete -force test2.db test2.db-journal
+
+
+proc compare_dbs {A B tname} {
+  set tbl_list [execsql {
+    SELECT tbl_name FROM sqlite_master WHERE type = 'table'
+  } $A]
+
+  do_test ${tname}.1 [subst {
+    execsql {
+      SELECT tbl_name FROM sqlite_master WHERE type = 'table'
+    } $B
+  }] $tbl_list
+
+  set tn 1
+  foreach tbl $tbl_list {
+    set control [execsql "SELECT * FROM $tbl" $A]
+    do_test ${tname}.[incr tn] [subst {
+      execsql "SELECT * FROM $tbl" $B
+    }] $control
+  }
+}
+
+set ::str1 [string repeat abcdefghij 130]
+set ::str2 [string repeat 1234567890 105]
+sqlite3 db1 test1.db
+sqlite3 db2 test2.db
+execsql { PRAGMA auto_vacuum = 'none' } db1
+execsql { PRAGMA auto_vacuum = 'incremental' } db2
+
+set tn 1
+foreach sql $::TestScriptList {
+  execsql $sql db1
+  execsql $sql db2
+
+  compare_dbs db1 db2 incrvacuum-5.3.${tn}
+  do_test incrvacuum-5.3.${tn}.integrity {
+    execsql {
+      PRAGMA integrity_check;
+    } db2
+  } {ok}
+  incr tn
+}
+
+
+db1 close
+db2 close
+
+
+#---------------------------------------------------------------------
+# TODO: The following tests - incrvacuum-6.* - test that rolling back 
+# a transaction that contains an incremental vacuum operation 
+# works Ok.
+#
 
 finish_test
 

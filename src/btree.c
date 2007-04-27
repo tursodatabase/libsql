@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.359 2007/04/26 14:42:35 danielk1977 Exp $
+** $Id: btree.c,v 1.360 2007/04/27 07:05:44 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2427,19 +2427,21 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *pnTrunc){
   int nRef = sqlite3PagerRefcount(pPager);
 #endif
 
-  if( PTRMAP_ISPAGE(pBt, sqlite3PagerPagecount(pPager)) ){
-    return SQLITE_CORRUPT_BKPT;
-  }
-
   assert(pBt->autoVacuum);
   if( !pBt->incrVacuum ){
     Pgno nFin = 0;
+
+
 
     if( pBt->nTrunc==0 ){
       Pgno nFree;
       Pgno nPtrmap;
       const int pgsz = pBt->pageSize;
       Pgno nOrig = sqlite3PagerPagecount(pBt->pPager);
+
+      if( PTRMAP_ISPAGE(pBt, nOrig) ){
+        return SQLITE_CORRUPT_BKPT;
+      }
       if( nOrig==PENDING_BYTE_PAGE(pBt) ){
         nOrig--;
       }
@@ -6507,6 +6509,11 @@ char *sqlite3BtreeIntegrityCheck(
   sCheck.mxErr = mxErr;
   sCheck.nErr = 0;
   *pnErr = 0;
+#ifndef SQLITE_OMIT_AUTOVACUUM
+  if( pBt->nTrunc!=0 ){
+    sCheck.nPage = pBt->nTrunc;
+  }
+#endif
   if( sCheck.nPage==0 ){
     unlockBtreeIfUnused(pBt);
     return 0;
