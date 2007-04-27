@@ -5079,43 +5079,62 @@ static int segmentMerge(fulltext_vtab *v, int iLevel){
   return rc;
 }
 
-/* Read pData[nData] as a leaf node, and if the doclist for
-** pTerm[nTerm] is present, merge it over *out (any duplicate doclists
-** read from pData will overwrite those in *out).
+/* Scan pReader for pTerm/nTerm, and merge the term's doclist over
+** *out (any doclists with duplicate docids overwrite those in *out).
+** Internal function for loadSegmentLeaf().
 */
-static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
-                           const char *pTerm, int nTerm, DataBuffer *out){
-  LeafReader reader;
-  assert( nData>1 );
-  assert( *pData=='\0' );
+static int loadSegmentLeavesInt(fulltext_vtab *v, LeavesReader *pReader,
+                                const char *pTerm, int nTerm, DataBuffer *out){
+  assert( nTerm>0 );
 
-  /* This code should never be called with buffered updates. */
-  assert( v->nPendingData<0 );
-
-  leafReaderInit(pData, nData, &reader);
-  while( !leafReaderAtEnd(&reader) ){
-    int c = leafReaderTermCmp(&reader, pTerm, nTerm);
+  /* Process while the prefix matches. */
+  while( !leavesReaderAtEnd(pReader) ){
+    /* TODO(shess) Really want leavesReaderTermCmp(), but that name is
+    ** already taken to compare the terms of two LeavesReaders.  Think
+    ** on a better name.  [Meanwhile, break encapsulation rather than
+    ** use a confusing name.]
+    */
+    int rc, c = leafReaderTermCmp(&pReader->leafReader, pTerm, nTerm);
     if( c==0 ){
+      const char *pData = leavesReaderData(pReader);
+      int nData = leavesReaderDataBytes(pReader);
       if( out->nData==0 ){
-        dataBufferReplace(out,
-                          leafReaderData(&reader), leafReaderDataBytes(&reader));
+        dataBufferReplace(out, pData, nData);
       }else{
         DLReader readers[2];
         DataBuffer result;
         dlrInit(&readers[0], DL_DEFAULT, out->pData, out->nData);
-        dlrInit(&readers[1], DL_DEFAULT,
-                leafReaderData(&reader), leafReaderDataBytes(&reader));
-        dataBufferInit(&result, out->nData+leafReaderDataBytes(&reader));
+        dlrInit(&readers[1], DL_DEFAULT, pData, nData);
+        dataBufferInit(&result, out->nData+nData);
         docListMerge(&result, readers, 2);
         dataBufferDestroy(out);
         *out = result;
+        dlrDestroy(&readers[0]);
+        dlrDestroy(&readers[1]);
       }
-    }
-    if( c>=0 ) break;
-    leafReaderStep(&reader);
+     }
+    if( c>=0 ) break;      /* Past any possible matches. */
+
+    rc = leavesReaderStep(v, pReader);
+    if( rc!=SQLITE_OK ) return rc;
   }
-  leafReaderDestroy(&reader);
   return SQLITE_OK;
+}
+
+/* Call loadSegmentLeavesInt() with pData/nData as input. */
+static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
+                           const char *pTerm, int nTerm, DataBuffer *out){
+  LeavesReader reader;
+  int rc;
+
+  assert( nData>1 );
+  assert( *pData=='\0' );
+  rc = leavesReaderInit(v, 0, 0, 0, pData, nData, &reader);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = loadSegmentLeavesInt(v, &reader, pTerm, nTerm, out);
+  leavesReaderDestroy(&reader);
+  return rc;
 }
 
 /* Traverse the tree represented by pData[nData] looking for
