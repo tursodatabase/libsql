@@ -1,5 +1,5 @@
-C Add\slargely\suntested\scode\sfor\sthe\sincremental\svacuum\sfunction.\s(CVS\s3876)
-D 2007-04-26T14:42:35
+C The\sreplace()\sfunction\sshould\sreturn\sNULL\sif\sthe\ssecond\sargument\sis\san\nempty\sstring.\s\sTicket\s#2324.\s(CVS\s3877)
+D 2007-04-27T01:18:03
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -68,7 +68,7 @@ F src/date.c 94a6777df13d2aaacd19de080d9e8d3444364133
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 2f0f9f89efe9170e5e6ca5d5e93a9d5896fff5ac
-F src/func.c acb2c5055629ae3eebd71868af10fe425ef05f06
+F src/func.c b989aa0ecc66a6d48b46f297299d52f12d84bce9
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 413cc06990cb3c401e64e596776c1e43934f8841
@@ -235,7 +235,7 @@ F test/fts2j.test f68d7611f76309bc8b94170f3740d9fbbc061d9b
 F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
-F test/func.test 865febfd5b968f62b85c841c6a305b20346f7f44
+F test/func.test d66c42af501a77bd9b36c3d675d844b04db04765
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
 F test/incrvacuum.test ee05edff95770f211fab28132291c175cd282e0c
@@ -463,7 +463,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d0745a43b6e037d16e1ec38c7c4d961a80d1ef48
-R 9a772b637e3a7b43df139e14c80416c0
-U danielk1977
-Z d70505e165a313929d975eb44dd8ca1a
+P f6a6d2b8872c05089810b1e095f39011f3035408
+R 6f143466ef3a026d3b533ab40fb9e7d5
+U drh
+Z 760fc2fbeee76e7c0e692c114576d572
