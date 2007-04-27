@@ -37,6 +37,9 @@ int sqlite3_expired(sqlite3_stmt *pStmt){
 const void *sqlite3_value_blob(sqlite3_value *pVal){
   Mem *p = (Mem*)pVal;
   if( p->flags & (MEM_Blob|MEM_Str) ){
+    if( (p->flags & MEM_Term)==0 ){
+      p->flags &= ~MEM_Str;
+    }
     return p->z;
   }else{
     return sqlite3_value_text(pVal);

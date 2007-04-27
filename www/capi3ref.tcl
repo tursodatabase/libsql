@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.55 2007/04/16 15:35:24 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.56 2007/04/27 17:16:22 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -432,15 +432,51 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
 
   Note that when type conversions occur, pointers returned by prior
   calls to sqlite3_column_blob(), sqlite3_column_text(), and/or
-  sqlite3_column_text16() may be invalidated.  So, for example, if
-  you initially call sqlite3_column_text() and get back a pointer to
-  a UTF-8 string, then you call sqlite3_column_text16(), after the
-  call to sqlite3_column_text16() the pointer returned by the prior
-  call to sqlite3_column_text() will likely point to deallocated memory.
-  Attempting to use the original pointer might lead to heap corruption
-  or a segfault.  Note also that calls  to sqlite3_column_bytes()
-  and sqlite3_column_bytes16() can also cause type conversion that
-  and deallocate prior buffers.  Use these routines carefully.
+  sqlite3_column_text16() may be invalidated. 
+  Type conversions and pointer invalidations might occur
+  in the following cases:
+
+  <ul>
+  <li><p>
+  The initial content is a BLOB and sqlite3_column_text() 
+  or sqlite3_column_text16()
+  is called.  A zero-terminator might need to be added to the string.
+  </p></li>
+  <li><p>
+  The initial content is UTF-8 text and sqlite3_column_bytes16() or
+  sqlite3_column_text16() is called.  The content must be converted to UTF-16.
+  </p></li>
+  <li><p>
+  The initial content is UTF-16 text and sqlite3_column_bytes() or
+  sqlite3_column_text() is called.  The content must be converted to UTF-8.
+  </p></li>
+  </ul>
+
+  Conversions between UTF-16be and UTF-16le 
+  are always done in place and do
+  not invalidate a prior pointer, though of course the content of the buffer
+  that the prior pointer points to will have been modified.  Other kinds
+  of conversion are done in place when it is possible, but sometime it is
+  not possible and in those cases prior pointers are invalidated.  
+
+  The safest and easiest to remember policy is this: assume that any
+  result from
+  <ul>
+  <li>sqlite3_column_blob(),</li>
+  <li>sqlite3_column_text(), or</li>
+  <li>sqlite3_column_text16()</li>
+  </ul>
+  is invalided by subsequent calls to 
+  <ul>
+  <li>sqlite3_column_bytes(),</li>
+  <li>sqlite3_column_bytes16(),</li>
+  <li>sqlite3_column_text(), or</li>
+  <li>sqlite3_column_text16().</li>
+  </ul>
+  This means that you should always call sqlite3_column_bytes() or
+  sqlite3_column_bytes16() <u>before</u> calling sqlite3_column_blob(),
+  sqlite3_column_text(), or sqlite3_column_text16().
+
 }
 
 api {} {
@@ -1491,6 +1527,12 @@ int sqlite3_value_type(sqlite3_value*);
 
  See the documentation under sqlite3_column_blob for additional
  information.
+
+ Please pay particular attention to the fact that the pointer that
+ is returned from sqlite3_value_blob(), sqlite3_value_text(), or
+ sqlite3_value_text16() can be invalidated by a subsequent call to
+ sqlite3_value_bytes(), sqlite3_value_bytes16(), sqlite_value_text(),
+ or sqlite3_value_text16().  
 }
 
 api {} {

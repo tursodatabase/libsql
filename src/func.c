@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.141 2007/04/27 01:18:03 drh Exp $
+** $Id: func.c,v 1.142 2007/04/27 17:16:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -215,11 +215,12 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   char *z1;
   const char *z2;
-  int i;
+  int i, n;
   if( argc<1 || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
+  n = sqlite3_value_bytes(argv[0]);
   z2 = (char*)sqlite3_value_text(argv[0]);
   if( z2 ){
-    z1 = sqlite3_malloc(sqlite3_value_bytes(argv[0])+1);
+    z1 = sqlite3_malloc(n+1);
     if( z1 ){
       strcpy(z1, z2);
       for(i=0; z1[i]; i++){
@@ -232,11 +233,12 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   char *z1;
   const char *z2;
-  int i;
+  int i, n;
   if( argc<1 || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
+  n = sqlite3_value_bytes(argv[0]);
   z2 = (char*)sqlite3_value_text(argv[0]);
   if( z2 ){
-    z1 = sqlite3_malloc(sqlite3_value_bytes(argv[0])+1);
+    z1 = sqlite3_malloc(n+1);
     if( z1 ){
       strcpy(z1, z2);
       for(i=0; z1[i]; i++){
@@ -703,15 +705,15 @@ static void replaceFunc(
   int i, j;                /* Loop counters */
 
   assert( argc==3 );
+  nStr = sqlite3_value_bytes(argv[0]);
   zStr = sqlite3_value_text(argv[0]);
   if( zStr==0 ) return;
-  nStr = sqlite3_value_bytes(argv[0]);
+  nPattern = sqlite3_value_bytes(argv[1]);
   zPattern = sqlite3_value_text(argv[1]);
   if( zPattern==0 || zPattern[0]==0 ) return;
-  nPattern = sqlite3_value_bytes(argv[1]);
+  nRep = sqlite3_value_bytes(argv[2]);
   zRep = sqlite3_value_text(argv[2]);
   if( zRep==0 ) return;
-  nRep = sqlite3_value_bytes(argv[2]);
   if( nPattern>=nRep ){
     nOut = nStr;
   }else{
@@ -754,9 +756,9 @@ static void trimFunc(
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
     return;
   }
+  nIn = sqlite3_value_bytes(argv[0]);
   zIn = sqlite3_value_text(argv[0]);
   if( zIn==0 ) return;
-  nIn = sqlite3_value_bytes(argv[0]);
   if( argc==1 ){
     static const unsigned char zSpace[] = " ";
     zCharSet = zSpace;

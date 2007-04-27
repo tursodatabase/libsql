@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3.tcl,v 1.9 2005/03/11 04:39:58 drh Exp $}
+set rcsid {$Id: capi3.tcl,v 1.10 2007/04/27 17:16:22 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 
@@ -322,6 +322,56 @@ Finally, sqlite3_column_double() return floating point data.
 It is not necessary to retrieve data in the format specify by
 sqlite3_column_type().  If a different format is requested, the data
 is converted automatically.
+</p>
+
+<p>
+Data format conversions can invalidate the pointer returned by
+prior calls to sqlite3_column_blob(), sqlite3_column_text(), and/or
+sqlite3_column_text16().  Pointers might be invalided in the following
+cases:
+</p>
+<ul>
+<li><p>
+The initial content is a BLOB and sqlite3_column_text() 
+or sqlite3_column_text16()
+is called.  A zero-terminator might need to be added to the string.
+</p></li>
+<li><p>
+The initial content is UTF-8 text and sqlite3_column_bytes16() or
+sqlite3_column_text16() is called.  The content must be converted to UTF-16.
+</p></li>
+<li><p>
+The initial content is UTF-16 text and sqlite3_column_bytes() or
+sqlite3_column_text() is called.  The content must be converted to UTF-8.
+</p></li>
+</ul>
+<p>
+Note that conversions between UTF-16be and UTF-16le 
+are always done in place and do
+not invalidate a prior pointer, though of course the content of the buffer
+that the prior pointer points to will have been modified.  Other kinds
+of conversion are done in place when it is possible, but sometime it is
+not possible and in those cases prior pointers are invalidated.  
+</p>
+
+<p>
+The safest and easiest to remember policy is this: assume that any
+result from
+<ul>
+<li>sqlite3_column_blob(),</li>
+<li>sqlite3_column_text(), or</li>
+<li>sqlite3_column_text16()</li>
+</ul>
+is invalided by subsequent calls to 
+<ul>
+<li>sqlite3_column_bytes(),</li>
+<li>sqlite3_column_bytes16(),</li>
+<li>sqlite3_column_text(), or</li>
+<li>sqlite3_column_text16().</li>
+</ul>
+This means that you should always call sqlite3_column_bytes() or
+sqlite3_column_bytes16() <u>before</u> calling sqlite3_column_blob(),
+sqlite3_column_text(), or sqlite3_column_text16().
 </p>
 
 <h4>2.3 User-defined functions</h4>

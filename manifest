@@ -1,5 +1,5 @@
-C Extra\stests\sfor\sincremental\svacuum.\s(CVS\s3879)
-D 2007-04-27T07:55:38
+C Make\ssure\ssqlite3_value_bytes()\sdoes\snot\sreformat\sthe\scontent\safter\sa\ncall\sto\ssqlite3_value_blob().\s\sAdd\sdocumentation\sto\sexplain\sthis\shazard.\nAdd\smany\snew\stests.\s\sTicket\s#2321.\s(CVS\s3880)
+D 2007-04-27T17:16:20
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -68,7 +68,7 @@ F src/date.c 94a6777df13d2aaacd19de080d9e8d3444364133
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 2f0f9f89efe9170e5e6ca5d5e93a9d5896fff5ac
-F src/func.c b989aa0ecc66a6d48b46f297299d52f12d84bce9
+F src/func.c 89d8547a9cb1c5ad8e0b86b3d74de56e5254254b
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 413cc06990cb3c401e64e596776c1e43934f8841
@@ -102,7 +102,7 @@ F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 0b14d0eae083aafca0562d2261a404e5e5abc5f0
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c ec69eb9ad56d03fbf7570ca1ca5ea947d1ec4b6f
-F src/test1.c 53b7eb5cba0012f592b5860f6ad3b5a3f887eb1e
+F src/test1.c f1271d41719d05348e6dc39722260e17b8d7ddc1
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 65f92247cf8592854e9bf5115b3fb711f8b33280
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -128,7 +128,7 @@ F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
 F src/vdbe.c a3cf3792fdbd382f756eb7eb50006b2f3f8d4283
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h 4b19fd8febad3fd14c4c97adaefc06754d323132
-F src/vdbeapi.c 245263aa2d70d87b1201753cddc881996f219843
+F src/vdbeapi.c 37fc2818bec64b361af73f3935699107bab0e625
 F src/vdbeaux.c ef59545f53f90394283f2fd003375d3ebbf0bd6e
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c 981a113405bd9b80aeb71fe246a2f01708e8a8f7
@@ -297,6 +297,7 @@ F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
 F test/pragma.test fecb7085f58d9fb5172a5c0b63fd3b25c7bfb414
 F test/printf.test 483b9fe75ffae1fb27328bdce5560b452ba83577
 F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
+F test/ptrchng.test 1c712dd6516e1377471744fa765e41c79a357da6
 F test/quick.test 8e7ffe36a1c920cdcce5d641646abde2dafd764b
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
@@ -418,8 +419,8 @@ F www/arch2b.fig d22a2c9642d584b89d4088b1e51e2bb0f7c04bed
 F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
-F www/capi3.tcl 7a7cc225fe02eb7ab861a6019b08baa0014409e1
-F www/capi3ref.tcl 80178d2697e97236c208a2a6a507e82d121acc71
+F www/capi3.tcl 88884dd743039d1a95aa57f4a5eb369de7744716
+F www/capi3ref.tcl 0d742d6bd59bc51bbb4be014e7ea47e97786d318
 F www/changes.tcl 550300b0ff00fc1b872f7802b2d5a1e7587d3e58
 F www/common.tcl 2b793e5c31486c8a01dd27dc0a631ad93704438e
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
@@ -463,7 +464,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4d4180d6474d8d74460fb9333580b9b60c89f353
-R cb55629cd4ed6b5c3bd0582e6bc3a138
-U danielk1977
-Z f3e9134088bb4d98704fded975f43270
+P 40ba6493e9e8ba135552a2a0943ab499713ac001
+R ae6e82023418585801b4f01168703216
+U drh
+Z e4fdef4577a3571a48a38a52b01018a7

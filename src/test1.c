@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.239 2007/04/23 23:56:31 drh Exp $
+** $Id: test1.c,v 1.240 2007/04/27 17:16:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -557,8 +557,9 @@ static void t1_ifnullFunc(
   int i;
   for(i=0; i<argc; i++){
     if( SQLITE_NULL!=sqlite3_value_type(argv[i]) ){
+      int n = sqlite3_value_bytes(argv[i]);
       sqlite3_result_text(context, (char*)sqlite3_value_text(argv[i]),
-          sqlite3_value_bytes(argv[i]), SQLITE_TRANSIENT);
+          n, SQLITE_TRANSIENT);
       break;
     }
   }
@@ -708,6 +709,81 @@ static void tkt2213Function(
 }
 
 /*
+** The following SQL function takes 4 arguments.  The 2nd and
+** 4th argument must be one of these strings:  'text', 'text16',
+** or 'blob' corresponding to API functions
+**
+**      sqlite3_value_text()
+**      sqlite3_value_text16()
+**      sqlite3_value_blob()
+**
+** The third argument is a string, either 'bytes' or 'bytes16' or 'noop',
+** corresponding to APIs:
+**
+**      sqlite3_value_bytes()
+**      sqlite3_value_bytes16()
+**      noop
+**
+** The APIs designated by the 2nd through 4th arguments are applied
+** to the first argument in order.  If the pointers returned by the
+** second and fourth are different, this routine returns 1.  Otherwise,
+** this routine returns 0.
+**
+** This function is used to test to see when returned pointers from
+** the _text(), _text16() and _blob() APIs become invalidated.
+*/
+static void ptrChngFunction(
+  sqlite3_context *context, 
+  int argc,  
+  sqlite3_value **argv
+){
+  const void *p1, *p2;
+  const char *zCmd;
+  if( argc!=4 ) return;
+  zCmd = (const char*)sqlite3_value_text(argv[1]);
+  if( zCmd==0 ) return;
+  if( strcmp(zCmd,"text")==0 ){
+    p1 = (const void*)sqlite3_value_text(argv[0]);
+#ifndef SQLITE_OMIT_UTF16
+  }else if( strcmp(zCmd, "text16")==0 ){
+    p1 = (const void*)sqlite3_value_text16(argv[0]);
+#endif
+  }else if( strcmp(zCmd, "blob")==0 ){
+    p1 = (const void*)sqlite3_value_blob(argv[0]);
+  }else{
+    return;
+  }
+  zCmd = (const char*)sqlite3_value_text(argv[2]);
+  if( zCmd==0 ) return;
+  if( strcmp(zCmd,"bytes")==0 ){
+    sqlite3_value_bytes(argv[0]);
+#ifndef SQLITE_OMIT_UTF16
+  }else if( strcmp(zCmd, "bytes16")==0 ){
+    sqlite3_value_bytes16(argv[0]);
+#endif
+  }else if( strcmp(zCmd, "noop")==0 ){
+    /* do nothing */
+  }else{
+    return;
+  }
+  zCmd = (const char*)sqlite3_value_text(argv[3]);
+  if( zCmd==0 ) return;
+  if( strcmp(zCmd,"text")==0 ){
+    p2 = (const void*)sqlite3_value_text(argv[0]);
+#ifndef SQLITE_OMIT_UTF16
+  }else if( strcmp(zCmd, "text16")==0 ){
+    p2 = (const void*)sqlite3_value_text16(argv[0]);
+#endif
+  }else if( strcmp(zCmd, "blob")==0 ){
+    p2 = (const void*)sqlite3_value_blob(argv[0]);
+  }else{
+    return;
+  }
+  sqlite3_result_int(context, p1!=p2);
+}
+
+
+/*
 ** Usage:  sqlite_test_create_function DB
 **
 ** Call the sqlite3_create_function API on the given database in order
@@ -753,6 +829,10 @@ static int test_create_function(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "tkt2213func", 1, SQLITE_ANY, 0, 
           tkt2213Function, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "pointer_change", 4, SQLITE_ANY, 0, 
+          ptrChngFunction, 0, 0);
   }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -3129,8 +3209,8 @@ static int test_column_blob(
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
 
-  pBlob = sqlite3_column_blob(pStmt, col);
   len = sqlite3_column_bytes(pStmt, col);
+  pBlob = sqlite3_column_blob(pStmt, col);
   Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pBlob, len));
   return TCL_OK;
 }
