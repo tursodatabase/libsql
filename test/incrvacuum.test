@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the incremental vacuum feature.
 #
-# $Id: incrvacuum.test,v 1.2 2007/04/27 07:05:44 danielk1977 Exp $
+# $Id: incrvacuum.test,v 1.3 2007/04/27 07:55:38 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -226,7 +226,22 @@ do_test incrvacuum-5.2.4 {
     SELECT * FROM tbl2;
   }
 } {{a nice string}}
+do_test incrvacuum-5.2.5 {
+  execsql {
+    DROP TABLE tbl1;
+    DROP TABLE tbl2;
+    INCREMENTAL VACUUM;
+  }
+  expr {[file size test.db] / 1024}
+} {1}
 
+
+# Test cases incrvacuum-5.3.* use the following list as input data.
+# Two new databases are opened, one with incremental vacuum enabled,
+# the other with no auto-vacuum completely disabled. After executing
+# each element of the following list on both databases, test that
+# the integrity-check passes and the contents of each are identical.
+# 
 set TestScriptList [list {
   BEGIN;
   CREATE TABLE t1(a, b);
@@ -252,12 +267,19 @@ set TestScriptList [list {
 } {
   CREATE INDEX t3_i ON t3(a);
   COMMIT;
-}]
+} {
+  BEGIN;
+  DROP INDEX t3_i;
+  INCREMENTAL VACUUM;
+  INSERT INTO t3 VALUES('hello', 'world');
+  ROLLBACK;
+} {
+  INSERT INTO t3 VALUES('hello', 'world');
+}
+]
 
-file delete -force test1.db test1.db-journal
-file delete -force test2.db test2.db-journal
-
-
+# Compare the contents of databases $A and $B.
+#
 proc compare_dbs {A B tname} {
   set tbl_list [execsql {
     SELECT tbl_name FROM sqlite_master WHERE type = 'table'
@@ -280,6 +302,8 @@ proc compare_dbs {A B tname} {
 
 set ::str1 [string repeat abcdefghij 130]
 set ::str2 [string repeat 1234567890 105]
+
+file delete -force test1.db test1.db-journal test2.db test2.db-journal
 sqlite3 db1 test1.db
 sqlite3 db2 test2.db
 execsql { PRAGMA auto_vacuum = 'none' } db1
@@ -291,24 +315,116 @@ foreach sql $::TestScriptList {
   execsql $sql db2
 
   compare_dbs db1 db2 incrvacuum-5.3.${tn}
-  do_test incrvacuum-5.3.${tn}.integrity {
-    execsql {
-      PRAGMA integrity_check;
-    } db2
+  do_test incrvacuum-5.3.${tn}.integrity1 {
+    execsql { PRAGMA integrity_check; } db1
+  } {ok}
+  do_test incrvacuum-5.3.${tn}.integrity2 {
+    execsql { PRAGMA integrity_check; } db2
   } {ok}
   incr tn
 }
-
-
 db1 close
 db2 close
-
+#
+# End of test cases 5.3.*
 
 #---------------------------------------------------------------------
-# TODO: The following tests - incrvacuum-6.* - test that rolling back 
-# a transaction that contains an incremental vacuum operation 
-# works Ok.
+# The following tests - incrvacuum-6.* - test running incremental 
+# vacuum while another statement (a read) is being executed.
 #
+for {set jj 0} {$jj < 10} {incr jj} {
+  # Build some test data. Two tables are created in an empty
+  # database. tbl1 data is a contiguous block starting at page 5 (pages
+  # 3 and 4 are the table roots). tbl2 is a contiguous block starting 
+  # right after tbl1.
+  #
+  # Then drop tbl1 so that when an incr vacuum is run the pages
+  # of tbl2 have to be moved to fill the gap.
+  #
+  do_test incrvacuum-6.${jj}.1 {
+    execsql {
+      DROP TABLE IF EXISTS tbl1;
+      DROP TABLE IF EXISTS tbl2;
+      INCREMENTAL VACUUM;
+      CREATE TABLE tbl1(a, b);
+      CREATE TABLE tbl2(a, b);
+      BEGIN;
+    }
+    for {set ii 0} {$ii < 1000} {incr ii} {
+      db eval {INSERT INTO tbl1 VALUES($ii, $ii || $ii)}
+    }
+    execsql {
+      INSERT INTO tbl2 SELECT * FROM tbl1;
+      COMMIT;
+      DROP TABLE tbl1;
+    }
+    expr {[file size test.db] / 1024}
+  } {36}
+
+  # Run a linear scan query on tbl2. After reading ($jj*100) rows, 
+  # run the incremental vacuum to shrink the database.
+  #
+  do_test incrvacuum-6.${jj}.2 {
+    set ::nRow 0
+    db eval {SELECT a FROM tbl2} {} {
+      if {$a == [expr $jj*100]} {
+        db eval {INCREMENTAL VACUUM}
+      }
+      incr ::nRow
+    }
+    list [expr {[file size test.db] / 1024}] $nRow
+  } {19 1000}
+}
+
+#---------------------------------------------------------------------
+# This test - incrvacuum-7.* - is to check that the database can be
+# written in the middle of an incremental vacuum.
+#
+set ::iWrite 1
+while 1 {
+  do_test incrvacuum-7.${::iWrite}.1 {
+    execsql {
+      DROP TABLE IF EXISTS tbl1;
+      DROP TABLE IF EXISTS tbl2;
+      INCREMENTAL VACUUM;
+      CREATE TABLE tbl1(a, b);
+      CREATE TABLE tbl2(a, b);
+      BEGIN;
+    }
+    for {set ii 0} {$ii < 1000} {incr ii} {
+      db eval {INSERT INTO tbl1 VALUES($ii, $ii || $ii)}
+    }
+    execsql {
+      INSERT INTO tbl2 SELECT * FROM tbl1;
+      COMMIT;
+      DROP TABLE tbl1;
+    }
+    expr {[file size test.db] / 1024}
+  } {36}
+
+  do_test incrvacuum-7.${::iWrite}.2 {
+    set ::nRow 0
+    db eval {INCREMENTAL VACUUM} {
+      incr ::nRow
+      if {$::nRow == $::iWrite} {
+        db eval {
+          CREATE TABLE tbl1(a, b);
+          INSERT INTO tbl1 VALUES('hello', 'world');
+        }
+      }
+    }
+    list [expr {[file size test.db] / 1024}]
+  } {20}
+
+  do_test incrvacuum-7.${::iWrite}.3 {
+    execsql {
+      SELECT * FROM tbl1;
+    }
+  } {hello world}
+
+  if {$::nRow == $::iWrite} break
+  incr ::iWrite
+}
 
 finish_test
 

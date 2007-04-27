@@ -1,5 +1,5 @@
-C Modifications\sto\sbtree\sintegrity\scheck\sso\sthat\sit\scan\sbe\srun\sinside\sa\stransaction\safter\san\sincr\svacuum.\s(CVS\s3878)
-D 2007-04-27T07:05:44
+C Extra\stests\sfor\sincremental\svacuum.\s(CVS\s3879)
+D 2007-04-27T07:55:38
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -238,7 +238,7 @@ F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/func.test d66c42af501a77bd9b36c3d675d844b04db04765
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
-F test/incrvacuum.test 6c14f0492f00437ebf8275eac0a80f97799d99d4
+F test/incrvacuum.test fc5e88ac32095fb65ea11b739bc4e310c4852ef4
 F test/index.test e65df12bed94b2903ee89987115e1578687e9266
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test f66718cd92ce1216819d47e6a156755e4b2c4ca1
@@ -463,7 +463,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e6a0c90dd9b4f7efe2153dd0c899b6e3d9846bd8
-R 3e1e2e05e5e9e264674bc6629d08b7ad
+P 4d4180d6474d8d74460fb9333580b9b60c89f353
+R cb55629cd4ed6b5c3bd0582e6bc3a138
 U danielk1977
-Z 1d29f050695ac44aa0f3dcac643e125b
+Z f3e9134088bb4d98704fded975f43270
