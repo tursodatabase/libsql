@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.142 2007/04/27 17:16:20 drh Exp $
+** $Id: func.c,v 1.143 2007/04/27 21:59:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -750,9 +750,12 @@ static void trimFunc(
   const unsigned char *zIn;         /* Input string */
   const unsigned char *zCharSet;    /* Set of characters to trim */
   int nIn;                          /* Number of bytes in input */
-  int flags;
-  int i;
-  unsigned char cFirst, cNext;
+  int flags;                        /* 1: trimleft  2: trimright  3: trim */
+  int i;                            /* Loop counter */
+  unsigned char *aLen;              /* Length of each character in zCharSet */
+  const unsigned char **azChar;     /* Individual characters in zCharSet */
+  int nChar;                        /* Number of characters in zCharSet */
+
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
     return;
   }
@@ -760,28 +763,59 @@ static void trimFunc(
   zIn = sqlite3_value_text(argv[0]);
   if( zIn==0 ) return;
   if( argc==1 ){
-    static const unsigned char zSpace[] = " ";
-    zCharSet = zSpace;
+    static const unsigned char lenOne[] = { 1 };
+    static const char *azOne[] = { " " };
+    nChar = 1;
+    aLen = (unsigned char*)lenOne;
+    azChar = (const unsigned char**)azOne;
+    zCharSet = 0;
   }else if( (zCharSet = sqlite3_value_text(argv[1]))==0 ){
     return;
+  }else{
+    const unsigned char *z;
+    for(z=zCharSet, nChar=0; *z; nChar++){
+      sqliteNextChar(z);
+    }
+    if( nChar>0 ){
+      azChar = sqlite3_malloc( nChar*(sizeof(char*)+1) );
+      if( azChar==0 ){
+        return;
+      }
+      aLen = (unsigned char*)&azChar[nChar];
+      for(z=zCharSet, nChar=0; *z; nChar++){
+        azChar[nChar] = z;
+        sqliteNextChar(z);
+        aLen[nChar] = z - azChar[nChar];
+      }
+    }
   }
-  cFirst = zCharSet[0];
-  if( cFirst ){
+  if( nChar>0 ){
     flags = (int)sqlite3_user_data(context);
     if( flags & 1 ){
-      for(; nIn>0; nIn--, zIn++){
-        if( cFirst==zIn[0] ) continue;
-        for(i=1; zCharSet[i] && zCharSet[i]!=zIn[0]; i++){}
-        if( zCharSet[i]==0 ) break;
+      while( nIn>0 ){
+        int len;
+        for(i=0; i<nChar; i++){
+          len = aLen[i];
+          if( memcmp(zIn, azChar[i], len)==0 ) break;
+        }
+        if( i>=nChar ) break;
+        zIn += len;
+        nIn -= len;
       }
     }
     if( flags & 2 ){
-      for(; nIn>0; nIn--){
-        cNext = zIn[nIn-1];
-        if( cFirst==cNext ) continue;
-        for(i=1; zCharSet[i] && zCharSet[i]!=cNext; i++){}
-        if( zCharSet[i]==0 ) break;
+      while( nIn>0 ){
+        int len;
+        for(i=0; i<nChar; i++){
+          len = aLen[i];
+          if( len<=nIn && memcmp(&zIn[nIn-len],azChar[i],len)==0 ) break;
+        }
+        if( i>=nChar ) break;
+        nIn -= len;
       }
+    }
+    if( zCharSet ){
+      sqlite3_free(azChar);
     }
   }
   sqlite3_result_text(context, (char*)zIn, nIn, SQLITE_TRANSIENT);
