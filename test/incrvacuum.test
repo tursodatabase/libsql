@@ -11,7 +11,10 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the incremental vacuum feature.
 #
-# $Id: incrvacuum.test,v 1.3 2007/04/27 07:55:38 danielk1977 Exp $
+# Note: There are also some tests for incremental vacuum and IO 
+# errors in incrvacuum_ioerr.test.
+#
+# $Id: incrvacuum.test,v 1.4 2007/04/28 15:47:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

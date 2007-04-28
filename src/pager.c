@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.330 2007/04/26 12:11:28 drh Exp $
+** @(#) $Id: pager.c,v 1.331 2007/04/28 15:47:44 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3061,6 +3061,7 @@ int sqlite3PagerAcquire(
         sqlite3PagerUnref(pPg);
         return rc;
       }
+      pPg->needRead = 0;
     }
 
     /* Link the page into the page hash table */
@@ -4210,6 +4211,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
       PAGERID(pPager), pPg->pgno, pPg->needSync, pgno);
   IOTRACE(("MOVE %p %d %d\n", pPager, pPg->pgno, pgno))
 
+  pager_get_content(pPg);
   if( pPg->needSync ){
     needSyncPgno = pPg->pgno;
     assert( pPg->inJournal );

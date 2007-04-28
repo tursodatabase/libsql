@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.360 2007/04/27 07:05:44 danielk1977 Exp $
+** $Id: btree.c,v 1.361 2007/04/28 15:47:44 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -2366,6 +2366,13 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin){
         return rc;
       }
 
+      /* If nFin is zero, this loop runs exactly once and page pLastPg
+      ** is swapped with the first free page pulled off the free list.
+      **
+      ** On the other hand, if nFin is greater than zero, then keep
+      ** looping until a free-page located within the first nFin pages
+      ** of the file is found.
+      */
       do {
         MemPage *pFreePg;
         rc = allocateBtreePage(pBt, &pFreePg, &iFreePg, 0, 0);
@@ -2376,7 +2383,11 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin){
         releasePage(pFreePg);
       }while( nFin!=0 && iFreePg>nFin );
       assert( iFreePg<iLastPg );
-
+      
+      rc = sqlite3PagerWrite(pLastPg->pDbPage);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      } 
       rc = relocatePage(pBt, pLastPg, eType, iPtrPage, iFreePg);
       releasePage(pLastPg);
       if( rc!=SQLITE_OK ){
@@ -2430,8 +2441,6 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *pnTrunc){
   assert(pBt->autoVacuum);
   if( !pBt->incrVacuum ){
     Pgno nFin = 0;
-
-
 
     if( pBt->nTrunc==0 ){
       Pgno nFree;

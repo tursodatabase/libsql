@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: autovacuum_ioerr2.test,v 1.5 2005/01/29 09:14:05 danielk1977 Exp $
+# $Id: autovacuum_ioerr2.test,v 1.6 2007/04/28 15:47:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -114,6 +114,19 @@ ifcapable subquery {
         (select max(oid) from abc);
     COMMIT;
   }
+}
+
+do_ioerr_test autovacuum-ioerr2-1 -sqlprep {
+  PRAGMA auto_vacuum = 1;
+  CREATE TABLE abc(a);
+  INSERT INTO abc VALUES(randstr(1500,1500));
+} -sqlbody {
+  CREATE TABLE abc2(a);
+  BEGIN;
+  DELETE FROM abc;
+  INSERT INTO abc VALUES(randstr(1500,1500));
+  CREATE TABLE abc3(a);
+  COMMIT;
 }
 
 finish_test
