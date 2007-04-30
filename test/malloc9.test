@@ -1,4 +1,4 @@
-# 2007 April 25
+# 2007 April 30
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -9,9 +9,9 @@
 #
 #***********************************************************************
 # This file contains additional out-of-memory checks (see malloc.tcl)
-# added to expose a bug in out-of-memory handling for sqlite3_value_text()
+# added to expose a bug in out-of-memory handling for sqlite3_prepare().
 #
-# $Id: malloc8.test,v 1.2 2007/04/30 21:39:16 drh Exp $
+# $Id: malloc9.test,v 1.1 2007/04/30 21:39:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -54,10 +54,12 @@ proc do_malloc_test {tn args} {
 
   set ::go 1
   for {set ::n 1} {$::go && $::n < 50000} {incr ::n} {
-    do_test malloc8-$tn.$::n {
+    do_test malloc9-$tn.$::n {
 
       sqlite_malloc_fail 0
       catch {db close}
+      catch {file delete -force test.db}
+      catch {file delete -force test.db-journal}
       sqlite3 db test.db
       set ::DB [sqlite3_connection_pointer db]
 
@@ -100,7 +102,7 @@ proc do_malloc_test {tn args} {
           set v {1 1}
         }
       } else {
-        set v2 [expr {$msg=="" || $msg=="out of memory"}]
+        set v2 [expr {$msg=="" || [regexp {out of memory} $msg]}]
         if {!$v2} {puts "\nError message returned: $msg"}
         lappend v $v2
       }
@@ -113,39 +115,21 @@ proc do_malloc_test {tn args} {
   unset ::mallocopts
 }
 
-# The setup is a database with UTF-16 encoding that contains a single
-# large string.  We will be running lots of queries against this 
-# database.  Because we will be extracting the string as UTF-8, there
-# is a type conversion that occurs and thus an opportunity for malloc()
-# to fail and for sqlite3_value_text() to return 0 even though
-# sqlite3_value_type() returns SQLITE_TEXT.
-#
-db close
-file delete -force test.db test.db-journal
-sqlite3 db test.db
-db eval {
-  PRAGMA encoding='UTF-16';
-  CREATE TABLE t1(a);
-  INSERT INTO t1 
-  VALUES('0123456789aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ');
-}
 
-
-do_malloc_test 1 -sqlbody {
-  SELECT lower(a), upper(a), quote(a), trim(a), trim('x',a) FROM t1;
-}
-do_malloc_test 2 -sqlbody {
-  SELECT replace(a,'x','y'), replace('x',a,'y'), replace('x','y',a)
-    FROM t1;
-}
-do_malloc_test 3 -sqlbody {
-  SELECT length(a), substr(a, 4, 4) FROM t1;
-}
-do_malloc_test 4 -sqlbody {
-  SELECT julianday(a,a) FROM t1;
-}
-do_malloc_test 5 -sqlbody {
-  SELECT 1 FROM t1 WHERE a LIKE 'hello' ESCAPE NULL;
+do_malloc_test 1 -tclprep {
+  set sql {CREATE TABLE t1(x)}
+  set sqlbytes [string length $sql]
+  append sql {; INSERT INTO t1 VALUES(1)}
+} -tclbody {
+  if {[catch {sqlite3_prepare db $sql $sqlbytes TAIL} STMT]} {
+    set msg $STMT
+    set STMT {}
+    error $msg
+  }
+} -cleanup {
+  if {$STMT!=""} {
+    sqlite3_finalize $STMT
+  }
 }
 
 # Ensure that no file descriptors were leaked.

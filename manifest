@@ -1,5 +1,5 @@
-C Lift\sdocListMerge()\scall\sout\sof\sloadSegmentLeavesInt()\sfor\sprefix\nsearch.\s\sDoclists\sfrom\smultiple\sprefix\smatches\swill\sneed\sa\sunion\smerge\nfunction,\swhich\swill\shave\sto\slogically\shappen\sacross\sa\ssegment\sbefore\ndoclists\sare\smerged\sbetween\ssegments.\s(CVS\s3887)
-D 2007-04-30T17:52:52
+C Fix\sa\spotential\ssegfault\sfollowing\sa\smalloc()\sfailure\sduring\sa\scall\nto\ssqlite3_prepare()\swhere\sthe\snBytes\sparameter\sis\spositive\sbut\sless\sthan\nthe\slength\sof\sthe\sinput\sSQL\sstring.\s(CVS\s3888)
+D 2007-04-30T21:39:16
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -91,7 +91,7 @@ F src/pager.c 48b1ebe8c9bcd8a9544ebef13c85547f28e8bb6b
 F src/pager.h d652ddf092d2318d00e41f8539760fe8e57c157c
 F src/parse.y a3940369e12c69c4968aa580cdc74cf73a664980
 F src/pragma.c 4fdefc03c3fd0ee87f8aad82bf80ba9bf1cdf416
-F src/prepare.c 4cb9c9eb926e8baf5652ca4b4f2416f53f5b5370
+F src/prepare.c 03277063bc4f5860efbf23548fa0123ac0f6eaec
 F src/printf.c 0c6f40648770831341ac45ab32423a80b4c87f05
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c b914abca0ba28893e7fb7c7fb97a05e240e2ce8b
@@ -275,7 +275,8 @@ F test/malloc4.test 59cd02f71b363302a04c4e77b97c0a1572eaa210
 F test/malloc5.test f228cb7101ae403327824d327a1f5651d83ef0f2
 F test/malloc6.test 025ae0b78542e0ddd000d23f79d93e9be9ba0f15
 F test/malloc7.test 1cf52834509eac7ebeb92105dacd4669f9ca9869
-F test/malloc8.test ede3231e1d9359b3c618357e49cb1c62267382e7
+F test/malloc8.test c46bb15d03370a6740be49cb6cb5403ce711ff19
+F test/malloc9.test 8381041fd89c31fba60c8a1a1c776bb022108572
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
@@ -465,7 +466,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8cccec68bd9073b2b19d3d31cf0b77b0ce76172e
-R 7069672da6b54cde9af80d1ef9e46049
-U shess
-Z 8a2908873a8cd6c0a742806cb3215c42
+P 7ddb82668906e33e2d6a796f2da1795032e036d5
+R 6c84bdbf40bcc10c544725efed0e51c5
+U drh
+Z dbcc6f5007a9724aa47f910a6b885e46
