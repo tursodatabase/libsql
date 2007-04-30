@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.361 2007/04/28 15:47:44 danielk1977 Exp $
+** $Id: btree.c,v 1.362 2007/04/30 16:55:01 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4047,6 +4047,60 @@ static int freePage(MemPage *pPage){
 }
 
 /*
+** Get a MemPage structure for overflow page number ovfl. If it
+** is not zero, the page number of the overflow page following the
+** one retrieved is written to *pPgnoNext.
+**
+** If it is possible to figure out the page-number of the next
+** overflow page without reading the data of page ovfl, then 
+** sqlite3PagerAcquire() is passed the "noContent" flag when
+** page ovfl is retrieved.
+*/
+static int getOverflowPage(
+  BtShared *pBt, 
+  Pgno ovfl, 
+  MemPage **ppPage, 
+  Pgno *pPgnoNext
+){
+  Pgno next = 0;
+  int rc;
+
+  if( !pPgnoNext ){
+    return getPage(pBt, ovfl, ppPage, 1);
+  }
+
+#ifndef SQLITE_OMIT_AUTOVACUUM
+  if( pBt->autoVacuum ){
+    Pgno pgno;
+    Pgno iGuess = ovfl+1;
+    u8 eType;
+
+    while( PTRMAP_ISPAGE(pBt, iGuess) || iGuess==PENDING_BYTE_PAGE(pBt) ){
+      iGuess++;
+    }
+
+    if( iGuess<sqlite3PagerPagecount(pBt->pPager) ){
+      rc = ptrmapGet(pBt, iGuess, &eType, &pgno);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+      if( eType==PTRMAP_OVERFLOW2 && pgno==ovfl ){
+        next = iGuess;
+      }
+    }
+  }
+#endif
+
+  rc = getPage(pBt, ovfl, ppPage, 0);
+  if( rc==SQLITE_OK ){
+    assert(next==0 || next==get4byte((*ppPage)->aData));
+    next = get4byte((*ppPage)->aData);
+  }
+  *pPgnoNext = next;
+  return rc;
+}
+
+/*
 ** Free any overflow pages associated with the given Cell.
 */
 static int clearCell(MemPage *pPage, unsigned char *pCell){
@@ -4070,11 +4124,9 @@ static int clearCell(MemPage *pPage, unsigned char *pCell){
     if( ovflPgno==0 || ovflPgno>sqlite3PagerPagecount(pBt->pPager) ){
       return SQLITE_CORRUPT_BKPT;
     }
-    rc = getPage(pBt, ovflPgno, &pOvfl, nOvfl==0);
+
+    rc = getOverflowPage(pBt, ovflPgno, &pOvfl, (nOvfl==0)?0:&ovflPgno);
     if( rc ) return rc;
-    if( nOvfl ){
-      ovflPgno = get4byte(pOvfl->aData);
-    }
     rc = freePage(pOvfl);
     sqlite3PagerUnref(pOvfl->pDbPage);
     if( rc ) return rc;
