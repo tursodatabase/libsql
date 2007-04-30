@@ -5116,21 +5116,9 @@ static int loadSegmentLeavesInt(fulltext_vtab *v, LeavesReader *pReader,
     if( c==0 ){
       const char *pData = leavesReaderData(pReader);
       int nData = leavesReaderDataBytes(pReader);
-      if( out->nData==0 ){
-        dataBufferReplace(out, pData, nData);
-      }else{
-        DLReader readers[2];
-        DataBuffer result;
-        dlrInit(&readers[0], DL_DEFAULT, out->pData, out->nData);
-        dlrInit(&readers[1], DL_DEFAULT, pData, nData);
-        dataBufferInit(&result, out->nData+nData);
-        docListMerge(&result, readers, 2);
-        dataBufferDestroy(out);
-        *out = result;
-        dlrDestroy(&readers[0]);
-        dlrDestroy(&readers[1]);
-      }
-     }
+      assert( out->nData==0 );
+      dataBufferReplace(out, pData, nData);
+    }
     if( c>=0 ) break;      /* Past any possible matches. */
 
     rc = leavesReaderStep(v, pReader);
@@ -5236,18 +5224,12 @@ static int loadAndGetChildContaining(fulltext_vtab *v, sqlite_int64 iBlockid,
 }
 
 /* Traverse the tree represented by pData[nData] looking for
-** pTerm[nTerm], merging its doclist over *out if found (any duplicate
-** doclists read from the segment rooted at pData will overwrite those
-** in *out).
+** pTerm[nTerm], placing its doclist into *out.  This is internal to
+** loadSegment() to make error-handling cleaner.
 */
-static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
-                       sqlite_int64 iLeavesEnd,
-                       const char *pTerm, int nTerm, DataBuffer *out){
-  assert( nData>1 );
-
-  /* This code should never be called with buffered updates. */
-  assert( v->nPendingData<0 );
-
+static int loadSegmentInt(fulltext_vtab *v, const char *pData, int nData,
+                          sqlite_int64 iLeavesEnd,
+                          const char *pTerm, int nTerm, DataBuffer *out){
   /* Special case where root is a leaf. */
   if( *pData=='\0' ){
     return loadSegmentLeaf(v, pData, nData, pTerm, nTerm, out);
@@ -5266,6 +5248,50 @@ static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
 
     return loadSegmentLeaves(v, iBlockid, iBlockid, pTerm, nTerm, out);
   }
+}
+
+/* Call loadSegmentInt() to collect the doclist for pTerm/nTerm, then
+** merge its doclist over *out (any duplicate doclists read from the
+** segment rooted at pData will overwrite those in *out).
+*/
+/* NOTE(shess) Previous code passed out down to sub-routines for use
+** in docListMerge().  This version deoptimizes things slightly, but
+** prefix searches require a different merge function entirely.
+*/
+static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
+                       sqlite_int64 iLeavesEnd,
+                       const char *pTerm, int nTerm, DataBuffer *out){
+  DataBuffer result;
+  int rc;
+
+  assert( nData>1 );
+
+  /* This code should never be called with buffered updates. */
+  assert( v->nPendingData<0 );
+
+  dataBufferInit(&result, 0);
+  rc = loadSegmentInt(v, pData, nData, iLeavesEnd, pTerm, nTerm, &result);
+  if( rc==SQLITE_OK && result.nData>0 ){
+    if( out->nData==0 ){
+      DataBuffer tmp = *out;
+      *out = result;
+      result = tmp;
+    }else{
+      DataBuffer merged;
+      DLReader readers[2];
+
+      dlrInit(&readers[0], DL_DEFAULT, out->pData, out->nData);
+      dlrInit(&readers[1], DL_DEFAULT, result.pData, result.nData);
+      dataBufferInit(&merged, out->nData+result.nData);
+      docListMerge(&merged, readers, 2);
+      dataBufferDestroy(out);
+      *out = merged;
+      dlrDestroy(&readers[0]);
+      dlrDestroy(&readers[1]);
+    }
+  }
+  dataBufferDestroy(&result);
+  return rc;
 }
 
 /* Scan the database and merge together the posting lists for the term
