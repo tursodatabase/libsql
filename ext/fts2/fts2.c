@@ -1520,6 +1520,7 @@ typedef struct QueryTerm {
   short int iColumn; /* Column of the index that must match this term */
   signed char isOr;  /* this term is preceded by "OR" */
   signed char isNot; /* this term is preceded by "-" */
+  signed char isPrefix; /* this term is followed by "*" */
   char *pTerm;       /* text of the term.  '\000' terminated.  malloced */
   int nTerm;         /* Number of bytes in pTerm[] */
 } QueryTerm;
@@ -3232,7 +3233,7 @@ static int fulltextNext(sqlite3_vtab_cursor *pCursor){
 ** docListOfTerm().
 */
 static int termSelect(fulltext_vtab *v, int iColumn,
-                      const char *pTerm, int nTerm,
+                      const char *pTerm, int nTerm, int isPrefix,
                       DocListType iType, DataBuffer *out);
 
 /* Return a DocList corresponding to the query term *pTerm.  If *pTerm
@@ -3258,13 +3259,13 @@ static int docListOfTerm(
   assert( v->nPendingData<0 );
 
   dataBufferInit(&left, 0);
-  rc = termSelect(v, iColumn, pQTerm->pTerm, pQTerm->nTerm,
+  rc = termSelect(v, iColumn, pQTerm->pTerm, pQTerm->nTerm, pQTerm->isPrefix,
                   0<pQTerm->nPhrase ? DL_POSITIONS : DL_DOCIDS, &left);
   if( rc ) return rc;
   for(i=1; i<=pQTerm->nPhrase && left.nData>0; i++){
     dataBufferInit(&right, 0);
     rc = termSelect(v, iColumn, pQTerm[i].pTerm, pQTerm[i].nTerm,
-                    DL_POSITIONS, &right);
+                    pQTerm[i].isPrefix, DL_POSITIONS, &right);
     if( rc ){
       dataBufferDestroy(&left);
       return rc;
@@ -3297,6 +3298,7 @@ static void queryAdd(Query *q, const char *pTerm, int nTerm){
   t->pTerm[nTerm] = 0;
   t->nTerm = nTerm;
   t->isOr = q->nextIsOr;
+  t->isPrefix = 0;
   q->nextIsOr = 0;
   t->iColumn = q->nextColumn;
   q->nextColumn = q->dfltColumn;
@@ -4182,10 +4184,10 @@ static void interiorReaderStep(InteriorReader *pReader){
 }
 
 /* Compare the current term to pTerm[nTerm], returning strcmp-style
-** results.
+** results.  If isPrefix, equality means equal through nTerm bytes.
 */
 static int interiorReaderTermCmp(InteriorReader *pReader,
-                                 const char *pTerm, int nTerm){
+                                 const char *pTerm, int nTerm, int isPrefix){
   const char *pReaderTerm = interiorReaderTerm(pReader);
   int nReaderTerm = interiorReaderTermBytes(pReader);
   int c, n = nReaderTerm<nTerm ? nReaderTerm : nTerm;
@@ -4198,6 +4200,7 @@ static int interiorReaderTermCmp(InteriorReader *pReader,
 
   c = memcmp(pReaderTerm, pTerm, n);
   if( c!=0 ) return c;
+  if( isPrefix && n==nTerm ) return 0;
   return nReaderTerm - nTerm;
 }
 
@@ -5150,10 +5153,12 @@ static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
 */
 static int loadSegmentLeaves(fulltext_vtab *v,
                              sqlite_int64 iStartLeaf, sqlite_int64 iEndLeaf,
-                             const char *pTerm, int nTerm,
-                             DataBuffer *out){
+                             const char *pTerm, int nTerm, DataBuffer *out){
+  int rc;
   LeavesReader reader;
-  int rc = leavesReaderInit(v, 0, iStartLeaf, iEndLeaf, NULL, 0, &reader);
+
+  assert( iStartLeaf<=iEndLeaf );
+  rc = leavesReaderInit(v, 0, iStartLeaf, iEndLeaf, NULL, 0, &reader);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = loadSegmentLeavesInt(v, &reader, pTerm, nTerm, out);
@@ -5162,43 +5167,63 @@ static int loadSegmentLeaves(fulltext_vtab *v,
   return rc;
 }
 
-/* Taking pData/nData as an interior node, find the child node which
-** could include pTerm/nTerm.  Note that the interior node terms
-** logically come between the blocks, so there is one more blockid
-** than there are terms (that block contains terms >= the last
-** interior-node term).
+/* Taking pData/nData as an interior node, find the sequence of child
+** nodes which could include pTerm/nTerm/isPrefix.  Note that the
+** interior node terms logically come between the blocks, so there is
+** one more blockid than there are terms (that block contains terms >=
+** the last interior-node term).
 */
-static void getChildContaining(const char *pData, int nData,
-                               const char *pTerm, int nTerm,
-                               sqlite_int64 *piBlockid){
+static void getChildrenContaining(const char *pData, int nData,
+                                  const char *pTerm, int nTerm, int isPrefix,
+                                  sqlite_int64 *piStartChild,
+                                  sqlite_int64 *piEndChild){
   InteriorReader reader;
 
   assert( nData>1 );
   assert( *pData!='\0' );
   interiorReaderInit(pData, nData, &reader);
 
+  /* Scan for the first child which could contain pTerm/nTerm. */
   while( !interiorReaderAtEnd(&reader) ){
-    if( interiorReaderTermCmp(&reader, pTerm, nTerm)>0 ) break;
+    if( interiorReaderTermCmp(&reader, pTerm, nTerm, 0)>0 ) break;
     interiorReaderStep(&reader);
   }
-  *piBlockid = interiorReaderCurrentBlockid(&reader);
+  *piStartChild = interiorReaderCurrentBlockid(&reader);
+
+  /* Keep scanning to find a term greater than our term, using prefix
+  ** comparison if indicated.  If isPrefix is false, this will be the
+  ** same blockid as the starting block.
+  */
+  while( !interiorReaderAtEnd(&reader) ){
+    if( interiorReaderTermCmp(&reader, pTerm, nTerm, isPrefix)>0 ) break;
+    interiorReaderStep(&reader);
+  }
+  *piEndChild = interiorReaderCurrentBlockid(&reader);
 
   interiorReaderDestroy(&reader);
+
+  /* Children must ascend, and if !prefix, both must be the same. */
+  assert( *piEndChild>=*piStartChild );
+  assert( isPrefix || *piStartChild==*piEndChild );
 }
 
 /* Read block at iBlockid and pass it with other params to
-** getChildContaining().
+** getChildrenContaining().
 */
-static int loadAndGetChildContaining(fulltext_vtab *v, sqlite_int64 iBlockid,
-                                     const char *pTerm, int nTerm,
-                                     sqlite_int64 *piBlockid){
+static int loadAndGetChildrenContaining(
+  fulltext_vtab *v,
+  sqlite_int64 iBlockid,
+  const char *pTerm, int nTerm, int isPrefix,
+  sqlite_int64 *piStartChild, sqlite_int64 *piEndChild
+){
   sqlite3_stmt *s = NULL;
   int rc;
 
   assert( iBlockid!=0 );
   assert( pTerm!=NULL );
   assert( nTerm!=0 );        /* TODO(shess) Why not allow this? */
-  assert( piBlockid!=NULL );
+  assert( piStartChild!=NULL );
+  assert( piEndChild!=NULL );
 
   rc = sql_get_statement(v, BLOCK_SELECT_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
@@ -5210,8 +5235,8 @@ static int loadAndGetChildContaining(fulltext_vtab *v, sqlite_int64 iBlockid,
   if( rc==SQLITE_DONE ) return SQLITE_ERROR;
   if( rc!=SQLITE_ROW ) return rc;
 
-  getChildContaining(sqlite3_column_blob(s, 0), sqlite3_column_bytes(s, 0),
-                     pTerm, nTerm, piBlockid);
+  getChildrenContaining(sqlite3_column_blob(s, 0), sqlite3_column_bytes(s, 0),
+                        pTerm, nTerm, isPrefix, piStartChild, piEndChild);
 
   /* We expect only one row.  We must execute another sqlite3_step()
    * to complete the iteration; otherwise the table will remain
@@ -5229,24 +5254,44 @@ static int loadAndGetChildContaining(fulltext_vtab *v, sqlite_int64 iBlockid,
 */
 static int loadSegmentInt(fulltext_vtab *v, const char *pData, int nData,
                           sqlite_int64 iLeavesEnd,
-                          const char *pTerm, int nTerm, DataBuffer *out){
+                          const char *pTerm, int nTerm, int isPrefix,
+                          DataBuffer *out){
   /* Special case where root is a leaf. */
   if( *pData=='\0' ){
+    assert( !isPrefix );   /* TODO(shess) Add prefix support. */
     return loadSegmentLeaf(v, pData, nData, pTerm, nTerm, out);
   }else{
     int rc;
-    sqlite_int64 iBlockid;
+    sqlite_int64 iStartChild, iEndChild;
 
     /* Process pData as an interior node, then loop down the tree
-    ** until we find a leaf node to scan for the term.
+    ** until we find the set of leaf nodes to scan for the term.
     */
-    getChildContaining(pData, nData, pTerm, nTerm, &iBlockid);
-    while( iBlockid>iLeavesEnd ){
-      rc = loadAndGetChildContaining(v, iBlockid, pTerm, nTerm, &iBlockid);
+    getChildrenContaining(pData, nData, pTerm, nTerm, isPrefix,
+                          &iStartChild, &iEndChild);
+    while( iStartChild>iLeavesEnd ){
+      sqlite_int64 iNextStart, iNextEnd;
+      rc = loadAndGetChildrenContaining(v, iStartChild, pTerm, nTerm, isPrefix,
+                                        &iNextStart, &iNextEnd);
       if( rc!=SQLITE_OK ) return rc;
-    }
 
-    return loadSegmentLeaves(v, iBlockid, iBlockid, pTerm, nTerm, out);
+      /* If we've branched, follow the end branch, too. */
+      if( iStartChild!=iEndChild ){
+        sqlite_int64 iDummy;
+        rc = loadAndGetChildrenContaining(v, iEndChild, pTerm, nTerm, isPrefix,
+                                          &iDummy, &iNextEnd);
+        if( rc!=SQLITE_OK ) return rc;
+      }
+
+      assert( iNextStart<=iNextEnd );
+      iStartChild = iNextStart;
+      iEndChild = iNextEnd;
+    }
+    assert( iStartChild<=iLeavesEnd );
+    assert( iEndChild<=iLeavesEnd );
+
+    assert( !isPrefix );   /* TODO(shess) Add prefix support. */
+    return loadSegmentLeaves(v, iStartChild, iEndChild, pTerm, nTerm, out);
   }
 }
 
@@ -5260,7 +5305,8 @@ static int loadSegmentInt(fulltext_vtab *v, const char *pData, int nData,
 */
 static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
                        sqlite_int64 iLeavesEnd,
-                       const char *pTerm, int nTerm, DataBuffer *out){
+                       const char *pTerm, int nTerm, int isPrefix,
+                       DataBuffer *out){
   DataBuffer result;
   int rc;
 
@@ -5270,7 +5316,8 @@ static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
   assert( v->nPendingData<0 );
 
   dataBufferInit(&result, 0);
-  rc = loadSegmentInt(v, pData, nData, iLeavesEnd, pTerm, nTerm, &result);
+  rc = loadSegmentInt(v, pData, nData, iLeavesEnd,
+                      pTerm, nTerm, isPrefix, &result);
   if( rc==SQLITE_OK && result.nData>0 ){
     if( out->nData==0 ){
       DataBuffer tmp = *out;
@@ -5298,7 +5345,7 @@ static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
 ** into *out.
 */
 static int termSelect(fulltext_vtab *v, int iColumn,
-                      const char *pTerm, int nTerm,
+                      const char *pTerm, int nTerm, int isPrefix,
                       DocListType iType, DataBuffer *out){
   DataBuffer doclist;
   sqlite3_stmt *s;
@@ -5317,7 +5364,8 @@ static int termSelect(fulltext_vtab *v, int iColumn,
     const char *pData = sqlite3_column_blob(s, 0);
     const int nData = sqlite3_column_bytes(s, 0);
     const sqlite_int64 iLeavesEnd = sqlite3_column_int64(s, 1);
-    rc = loadSegment(v, pData, nData, iLeavesEnd, pTerm, nTerm, &doclist);
+    rc = loadSegment(v, pData, nData, iLeavesEnd, pTerm, nTerm, isPrefix,
+                     &doclist);
     if( rc!=SQLITE_OK ) goto err;
   }
   if( rc==SQLITE_DONE ){
