@@ -708,6 +708,7 @@ static void docListValidate(DocListType iType, const char *pData, int nData,
 ** dlwInit - initialize to write a given type doclistto a buffer.
 ** dlwDestroy - clear the writer's memory.  Does not free buffer.
 ** dlwAppend - append raw doclist data to buffer.
+** dlwCopy - copy next doclist from reader to writer.
 ** dlwAdd - construct doclist element and append to buffer.
 **    Only apply dlwAdd() to DL_DOCIDS doclists (else use PLWriter).
 */
@@ -770,6 +771,10 @@ static void dlwAppend(DLWriter *pWriter,
     dataBufferAppend(pWriter->b, c, nFirstNew);
   }
   pWriter->iPrevDocid = iLastDocid;
+}
+static void dlwCopy(DLWriter *pWriter, DLReader *pReader){
+  dlwAppend(pWriter, dlrDocData(pReader), dlrDocDataBytes(pReader),
+            dlrDocid(pReader), dlrDocid(pReader));
 }
 static void dlwAdd(DLWriter *pWriter, sqlite_int64 iDocid){
   char c[VARINT_MAX];
@@ -886,6 +891,7 @@ static void plrDestroy(PLReader *pReader){
 ** plwInit - init for writing a document's poslist.
 ** plwDestroy - clear a writer.
 ** plwAdd - append position and offset information.
+** plwCopy - copy next position's data from reader to writer.
 ** plwTerminate - add any necessary doclist terminator.
 **
 ** Calling plwAdd() after plwTerminate() may result in a corrupt
@@ -944,6 +950,10 @@ static void plwAdd(PLWriter *pWriter, int iColumn, int iPos,
     n += putVarint(c+n, iEndOffset-iStartOffset);
   }
   dataBufferAppend(pWriter->dlw->b, c, n);
+}
+static void plwCopy(PLWriter *pWriter, PLReader *pReader){
+  plwAdd(pWriter, plrColumn(pReader), plrPosition(pReader),
+         plrStartOffset(pReader), plrEndOffset(pReader));
 }
 static void plwInit(PLWriter *pWriter, DLWriter *dlw, sqlite_int64 iDocid){
   char c[VARINT_MAX];
@@ -1218,6 +1228,122 @@ static void docListMerge(DataBuffer *out,
   dlwDestroy(&writer);
 }
 
+/* Helper function for posListUnion().  Compares the current position
+** between left and right, returning as standard C idiom of <0 if
+** left<right, >0 if left>right, and 0 if left==right.  "End" always
+** compares greater.
+*/
+static int posListCmp(PLReader *pLeft, PLReader *pRight){
+  assert( pLeft->iType==pRight->iType );
+  if( pLeft->iType==DL_DOCIDS ) return 0;
+
+  if( plrAtEnd(pLeft) ) return plrAtEnd(pRight) ? 0 : 1;
+  if( plrAtEnd(pRight) ) return -1;
+
+  if( plrColumn(pLeft)<plrColumn(pRight) ) return -1;
+  if( plrColumn(pLeft)>plrColumn(pRight) ) return 1;
+
+  if( plrPosition(pLeft)<plrPosition(pRight) ) return -1;
+  if( plrPosition(pLeft)>plrPosition(pRight) ) return 1;
+  if( pLeft->iType==DL_POSITIONS ) return 0;
+
+  if( plrStartOffset(pLeft)<plrStartOffset(pRight) ) return -1;
+  if( plrStartOffset(pLeft)>plrStartOffset(pRight) ) return 1;
+
+  if( plrEndOffset(pLeft)<plrEndOffset(pRight) ) return -1;
+  if( plrEndOffset(pLeft)>plrEndOffset(pRight) ) return 1;
+
+  return 0;
+}
+
+/* Write the union of position lists in pLeft and pRight to pOut.
+** "Union" in this case meaning "All unique position tuples".  Should
+** work with any doclist type, though both inputs and the output
+** should be the same type.
+*/
+static void posListUnion(DLReader *pLeft, DLReader *pRight, DLWriter *pOut){
+  PLReader left, right;
+  PLWriter writer;
+
+  assert( dlrDocid(pLeft)==dlrDocid(pRight) );
+  assert( pLeft->iType==pRight->iType );
+  assert( pLeft->iType==pOut->iType );
+
+  plrInit(&left, pLeft);
+  plrInit(&right, pRight);
+  plwInit(&writer, pOut, dlrDocid(pLeft));
+
+  while( !plrAtEnd(&left) || !plrAtEnd(&right) ){
+    int c = posListCmp(&left, &right);
+    if( c<0 ){
+      plwCopy(&writer, &left);
+      plrStep(&left);
+    }else if( c>0 ){
+      plwCopy(&writer, &right);
+      plrStep(&right);
+    }else{
+      plwCopy(&writer, &left);
+      plrStep(&left);
+      plrStep(&right);
+    }
+  }
+
+  plwTerminate(&writer);
+  plwDestroy(&writer);
+  plrDestroy(&left);
+  plrDestroy(&right);
+}
+
+/* Write the union of doclists in pLeft and pRight to pOut.  For
+** docids in common between the inputs, the union of the position
+** lists is written.  Inputs and outputs are always type DL_DEFAULT.
+*/
+static void docListUnion(
+  const char *pLeft, int nLeft,
+  const char *pRight, int nRight,
+  DataBuffer *pOut      /* Write the combined doclist here */
+){
+  DLReader left, right;
+  DLWriter writer;
+
+  if( nLeft==0 ){
+    dataBufferAppend(pOut, pRight, nRight);
+    return;
+  }
+  if( nRight==0 ){
+    dataBufferAppend(pOut, pLeft, nLeft);
+    return;
+  }
+
+  dlrInit(&left, DL_DEFAULT, pLeft, nLeft);
+  dlrInit(&right, DL_DEFAULT, pRight, nRight);
+  dlwInit(&writer, DL_DEFAULT, pOut);
+
+  while( !dlrAtEnd(&left) || !dlrAtEnd(&right) ){
+    if( dlrAtEnd(&right) ){
+      dlwCopy(&writer, &left);
+      dlrStep(&left);
+    }else if( dlrAtEnd(&left) ){
+      dlwCopy(&writer, &right);
+      dlrStep(&right);
+    }else if( dlrDocid(&left)<dlrDocid(&right) ){
+      dlwCopy(&writer, &left);
+      dlrStep(&left);
+    }else if( dlrDocid(&left)>dlrDocid(&right) ){
+      dlwCopy(&writer, &right);
+      dlrStep(&right);
+    }else{
+      posListUnion(&left, &right, &writer);
+      dlrStep(&left);
+      dlrStep(&right);
+    }
+  }
+
+  dlrDestroy(&left);
+  dlrDestroy(&right);
+  dlwDestroy(&writer);
+}
+
 /* pLeft and pRight are DLReaders positioned to the same docid.
 **
 ** If there are no instances in pLeft or pRight where the position
@@ -1230,7 +1356,8 @@ static void docListMerge(DataBuffer *out,
 ** include the positions from pRight that are one more than a
 ** position in pLeft.  In other words:  pRight.iPos==pLeft.iPos+1.
 */
-static void mergePosList(DLReader *pLeft, DLReader *pRight, DLWriter *pOut){
+static void posListPhraseMerge(DLReader *pLeft, DLReader *pRight,
+                               DLWriter *pOut){
   PLReader left, right;
   PLWriter writer;
   int match = 0;
@@ -1302,7 +1429,7 @@ static void docListPhraseMerge(
     }else if( dlrDocid(&right)<dlrDocid(&left) ){
       dlrStep(&right);
     }else{
-      mergePosList(&left, &right, &writer);
+      posListPhraseMerge(&left, &right, &writer);
       dlrStep(&left);
       dlrStep(&right);
     }
@@ -4757,9 +4884,11 @@ static void leafReaderStep(LeafReader *pReader){
   }
 }
 
-/* strcmp-style comparison of pReader's current term against pTerm. */
+/* strcmp-style comparison of pReader's current term against pTerm.
+** If isPrefix, equality means equal through nTerm bytes.
+*/
 static int leafReaderTermCmp(LeafReader *pReader,
-                             const char *pTerm, int nTerm){
+                             const char *pTerm, int nTerm, int isPrefix){
   int c, n = pReader->term.nData<nTerm ? pReader->term.nData : nTerm;
   if( n==0 ){
     if( pReader->term.nData>0 ) return -1;
@@ -4769,6 +4898,7 @@ static int leafReaderTermCmp(LeafReader *pReader,
 
   c = memcmp(pReader->term.pData, pTerm, n);
   if( c!=0 ) return c;
+  if( isPrefix && n==nTerm ) return 0;
   return pReader->term.nData - nTerm;
 }
 
@@ -4916,7 +5046,8 @@ static int leavesReaderTermCmp(LeavesReader *lr1, LeavesReader *lr2){
   if( leavesReaderAtEnd(lr2) ) return -1;
 
   return leafReaderTermCmp(&lr1->leafReader,
-                           leavesReaderTerm(lr2), leavesReaderTermBytes(lr2));
+                           leavesReaderTerm(lr2), leavesReaderTermBytes(lr2),
+                           0);
 }
 
 /* Similar to leavesReaderTermCmp(), with additional ordering by idx
@@ -5105,7 +5236,8 @@ static int segmentMerge(fulltext_vtab *v, int iLevel){
 ** Internal function for loadSegmentLeaf().
 */
 static int loadSegmentLeavesInt(fulltext_vtab *v, LeavesReader *pReader,
-                                const char *pTerm, int nTerm, DataBuffer *out){
+                                const char *pTerm, int nTerm, int isPrefix,
+                                DataBuffer *out){
   assert( nTerm>0 );
 
   /* Process while the prefix matches. */
@@ -5115,14 +5247,25 @@ static int loadSegmentLeavesInt(fulltext_vtab *v, LeavesReader *pReader,
     ** on a better name.  [Meanwhile, break encapsulation rather than
     ** use a confusing name.]
     */
-    int rc, c = leafReaderTermCmp(&pReader->leafReader, pTerm, nTerm);
+    int rc;
+    int c = leafReaderTermCmp(&pReader->leafReader, pTerm, nTerm, isPrefix);
     if( c==0 ){
       const char *pData = leavesReaderData(pReader);
       int nData = leavesReaderDataBytes(pReader);
-      assert( out->nData==0 );
-      dataBufferReplace(out, pData, nData);
+      if( out->nData==0 ){
+        dataBufferReplace(out, pData, nData);
+      }else{
+        DataBuffer result;
+        dataBufferInit(&result, out->nData+nData);
+        docListUnion(out->pData, out->nData, pData, nData, &result);
+        dataBufferDestroy(out);
+        *out = result;
+        /* TODO(shess) Rather than destroy out, we could retain it for
+        ** later reuse.
+        */
+      }
     }
-    if( c>=0 ) break;      /* Past any possible matches. */
+    if( c>0 ) break;      /* Past any possible matches. */
 
     rc = leavesReaderStep(v, pReader);
     if( rc!=SQLITE_OK ) return rc;
@@ -5132,7 +5275,8 @@ static int loadSegmentLeavesInt(fulltext_vtab *v, LeavesReader *pReader,
 
 /* Call loadSegmentLeavesInt() with pData/nData as input. */
 static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
-                           const char *pTerm, int nTerm, DataBuffer *out){
+                           const char *pTerm, int nTerm, int isPrefix,
+                           DataBuffer *out){
   LeavesReader reader;
   int rc;
 
@@ -5141,7 +5285,7 @@ static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
   rc = leavesReaderInit(v, 0, 0, 0, pData, nData, &reader);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = loadSegmentLeavesInt(v, &reader, pTerm, nTerm, out);
+  rc = loadSegmentLeavesInt(v, &reader, pTerm, nTerm, isPrefix, out);
   leavesReaderReset(&reader);
   leavesReaderDestroy(&reader);
   return rc;
@@ -5153,7 +5297,8 @@ static int loadSegmentLeaf(fulltext_vtab *v, const char *pData, int nData,
 */
 static int loadSegmentLeaves(fulltext_vtab *v,
                              sqlite_int64 iStartLeaf, sqlite_int64 iEndLeaf,
-                             const char *pTerm, int nTerm, DataBuffer *out){
+                             const char *pTerm, int nTerm, int isPrefix,
+                             DataBuffer *out){
   int rc;
   LeavesReader reader;
 
@@ -5161,7 +5306,7 @@ static int loadSegmentLeaves(fulltext_vtab *v,
   rc = leavesReaderInit(v, 0, iStartLeaf, iEndLeaf, NULL, 0, &reader);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = loadSegmentLeavesInt(v, &reader, pTerm, nTerm, out);
+  rc = loadSegmentLeavesInt(v, &reader, pTerm, nTerm, isPrefix, out);
   leavesReaderReset(&reader);
   leavesReaderDestroy(&reader);
   return rc;
@@ -5258,8 +5403,7 @@ static int loadSegmentInt(fulltext_vtab *v, const char *pData, int nData,
                           DataBuffer *out){
   /* Special case where root is a leaf. */
   if( *pData=='\0' ){
-    assert( !isPrefix );   /* TODO(shess) Add prefix support. */
-    return loadSegmentLeaf(v, pData, nData, pTerm, nTerm, out);
+    return loadSegmentLeaf(v, pData, nData, pTerm, nTerm, isPrefix, out);
   }else{
     int rc;
     sqlite_int64 iStartChild, iEndChild;
@@ -5290,18 +5434,14 @@ static int loadSegmentInt(fulltext_vtab *v, const char *pData, int nData,
     assert( iStartChild<=iLeavesEnd );
     assert( iEndChild<=iLeavesEnd );
 
-    assert( !isPrefix );   /* TODO(shess) Add prefix support. */
-    return loadSegmentLeaves(v, iStartChild, iEndChild, pTerm, nTerm, out);
+    return loadSegmentLeaves(v, iStartChild, iEndChild,
+                             pTerm, nTerm, isPrefix, out);
   }
 }
 
 /* Call loadSegmentInt() to collect the doclist for pTerm/nTerm, then
 ** merge its doclist over *out (any duplicate doclists read from the
 ** segment rooted at pData will overwrite those in *out).
-*/
-/* NOTE(shess) Previous code passed out down to sub-routines for use
-** in docListMerge().  This version deoptimizes things slightly, but
-** prefix searches require a different merge function entirely.
 */
 static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
                        sqlite_int64 iLeavesEnd,

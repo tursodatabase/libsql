@@ -1,5 +1,5 @@
-C The\spager\stakes\sthe\ssector\ssize\sto\sbe\sthe\slarger\sof\sthe\ssector\ssize\nreported\sby\ssqlite3OsSectorSize()\sand\sthe\spage\ssize.\s(CVS\s3890)
-D 2007-05-01T16:59:49
+C Modify\sloadSegmentLeavesInt()\sto\scorrectly\shandle\sprefix\ssearching.\nThe\snew\sfunction\sdocListUnion()\sis\sused\sto\saccumulate\sa\sunion\sof\sthe\nhits\sfor\sthe\smatching\sterms,\swhich\swill\sbe\smerged\sacross\ssegments\nusing\sdocListMerge().\s(CVS\s3891)
+D 2007-05-01T17:14:59
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c c750b2db623587021a402631a7aa582d81852c44
+F ext/fts2/fts2.c a6762b7a6cc173eb83a0aa9506c1b7be66f00786
 F ext/fts2/fts2.h 591916a822cfb6426518fdbf6069359119bc46eb
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -466,7 +466,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P cae844a01a1d87ffb00bba8b4e7b62a92e633aa9
-R 195e13614b6e5b993d99e293e129cc37
-U drh
-Z e4fd6258dd404077dd1b05dd5e45d3e2
+P e5e6af55ccc5c1a8a9206b42f1dd7bf547cb97ca
+R 2c25fe5630cee9d287b5318018624ff2
+U shess
+Z bcafc47e1cdd98b2861c3ec5b23e7e20
