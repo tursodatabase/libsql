@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.331 2007/04/28 15:47:44 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.332 2007/05/01 16:59:49 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1251,6 +1251,19 @@ static int pager_truncate(Pager *pPager, int nPage){
 }
 
 /*
+** Set the sectorSize for the given pager.
+**
+** The sector size is the larger of the sector size reported
+** by sqlite3OsSectorSize() and the pageSize.
+*/
+static void setSectorSize(Pager *pPager){
+  pPager->sectorSize = sqlite3OsSectorSize(pPager->fd);
+  if( pPager->sectorSize<pPager->pageSize ){
+    pPager->sectorSize = pPager->pageSize;
+  }
+}
+
+/*
 ** Playback the journal and thus restore the database file to
 ** the state it was in before we started making changes.  
 **
@@ -1417,7 +1430,7 @@ end_playback:
   ** back a journal created by a process with a different sector size
   ** value. Reset it to the correct value for this process.
   */
-  pPager->sectorSize = sqlite3OsSectorSize(pPager->fd);
+  setSectorSize(pPager);
   return rc;
 }
 
@@ -1764,7 +1777,7 @@ int sqlite3PagerOpen(
   pPager->nExtra = FORCE_ALIGNMENT(nExtra);
   assert(fd||memDb);
   if( !memDb ){
-    pPager->sectorSize = sqlite3OsSectorSize(fd);
+    setSectorSize(pPager);
   }
   /* pPager->pBusyHandler = 0; */
   /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
