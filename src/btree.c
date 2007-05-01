@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.362 2007/04/30 16:55:01 danielk1977 Exp $
+** $Id: btree.c,v 1.363 2007/05/01 17:49:49 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -6806,6 +6806,61 @@ int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
   if( rc==SQLITE_OK ){
     rc = lockTable(p, iTab, lockType);
   }
+  return rc;
+}
+#endif
+
+#ifndef SQLITE_OMIT_INCRBLOB
+/*
+** Argument pCsr must be a cursor opened for writing on an 
+** INTKEY table currently pointing at a valid table entry. 
+** This function modifies the data stored as part of that entry.
+** Only the data content may only be modified, it is not possible
+** to change the length of the data stored.
+*/
+int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, const void *z){
+  /* TODO: The following is only a stop-gap implementation. It needs
+  ** to be made efficient using the optimistic overflow page trick. 
+  ** Similar changes need to be made to sqlite3BtreeData().
+  */
+  i64 iKey;
+  int rc;
+
+  int nCopy;
+  u32 nData;
+  char *zData;
+
+  rc = sqlite3BtreeKeySize(pCsr, &iKey);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+
+  rc = sqlite3BtreeDataSize(pCsr, &nData);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+
+  zData = sqliteMalloc(nData);
+  if( !zData ){
+    return SQLITE_NOMEM;
+  }
+
+  rc = sqlite3BtreeData(pCsr, 0, nData, (void *)zData);
+  if( rc!=SQLITE_OK ){
+    sqliteFree(zData);
+    return rc;
+  }
+
+  nCopy = amt;
+  if( nCopy>(nData-offset) ){
+    nCopy = nData-offset;
+  }
+  if( nCopy>0 ){
+    memcpy(&zData[offset], z, amt);
+    rc = sqlite3BtreeInsert(pCsr, 0, iKey, zData, nData, 0);
+  }
+
+  sqliteFree(zData);
   return rc;
 }
 #endif

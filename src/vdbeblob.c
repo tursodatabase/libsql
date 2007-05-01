@@ -1,0 +1,235 @@
+/*
+** 2007 May 1
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
+** $Id: vdbeblob.c,v 1.1 2007/05/01 17:49:49 danielk1977 Exp $
+*/
+
+#include "sqliteInt.h"
+#include "vdbeInt.h"
+
+#ifndef SQLITE_OMIT_INCRBLOB
+
+/*
+** Valid sqlite3_blob* handles point to Incrblob structures.
+*/
+typedef struct Incrblob Incrblob;
+
+struct Incrblob {
+  int flags;              /* Copy of "flags" passed to sqlite3_blob_open() */
+  int nByte;              /* Size of open blob, in bytes */
+  int iOffset;            /* Byte offset of blob in cursor data */
+  BtCursor *pCsr;         /* Cursor pointing at blob row */
+  sqlite3_stmt *pStmt;    /* Statement holding cursor open */
+};
+
+/*
+** Open a blob handle.
+*/
+int sqlite3_blob_open(
+  sqlite3* db,
+  const char *zDb,
+  const char *zTable,
+  const char *zColumn,
+  sqlite_int64 iRow,
+  int flags,              /* True -> read/write access, false -> read-only */
+  sqlite3_blob **ppBlob
+){
+  int rc = SQLITE_OK;
+  int nAttempt = 0;
+  int iCol;               /* Index of zColumn in row-record */
+
+  /* This VDBE program seeks a btree cursor to the identified 
+  ** db/table/row entry. The reason for using a vdbe program instead
+  ** of writing code to use the b-tree layer directly is that the
+  ** vdbe program will take advantage of the various transaction,
+  ** locking and error handling infrastructure built into the vdbe.
+  **
+  ** After seeking the cursor, the vdbe executes an OP_Callback.
+  ** Code external to the Vdbe then "borrows" the b-tree cursor and
+  ** uses it to implement the blob_read(), blob_write() and 
+  ** blob_bytes() functions.
+  **
+  ** The sqlite3_blob_close() function finalizes the vdbe program,
+  ** which closes the b-tree cursor and (possibly) commits the 
+  ** transaction.
+  */
+  static const VdbeOpList openBlob[] = {
+    {OP_Transaction, 0, 0, 0},     /* 0: Start a transaction */
+    {OP_VerifyCookie, 0, 0, 0},    /* 1: Check the schema cookie */
+    {OP_Integer, 0, 0, 0},         /* 2: Database number */
+
+    /* One of the following two instructions is replaced by an
+    ** OP_Noop before exection.
+    */
+    {OP_OpenRead, 0, 0, 0},        /* 3: Open cursor 0 for reading */
+    {OP_OpenWrite, 0, 0, 0},       /* 4: Open cursor 0 for read/write */
+    {OP_SetNumColumns, 0, 0, 0},   /* 5: Num cols for cursor */
+
+    {OP_Variable, 1, 0, 0},        /* 6: Push the rowid to the stack */
+    {OP_NotExists, 0, 10, 0},      /* 7: Seek the cursor */
+    {OP_Column, 0, 0, 0},          /* 8  */
+    {OP_Callback, 0, 0, 0},        /* 9  */
+    {OP_Close, 0, 0, 0},           /* 10 */
+    {OP_Halt, 0, 0, 0},            /* 11 */
+  };
+
+  Vdbe *v = 0;
+
+  do {
+    Parse sParse;
+    Table *pTab;
+
+    memset(&sParse, 0, sizeof(Parse));
+    sParse.db = db;
+
+    pTab = sqlite3LocateTable(&sParse, zTable, zDb);
+    if( !pTab ){
+      sqlite3Error(db, sParse.rc, "%s", sParse.zErrMsg);
+      sqliteFree(sParse.zErrMsg);
+      rc = sParse.rc;
+      goto blob_open_out;
+    }
+
+    /* Now search pTab for the exact column. */
+    for(iCol=0; iCol < pTab->nCol; iCol++) {
+      if( sqlite3StrICmp(pTab->aCol[iCol].zName, zColumn)==0 ){
+        break;
+      }
+    }
+    if( iCol==pTab->nCol ){
+      sqlite3Error(db, SQLITE_ERROR, "no such column: %s", zColumn);
+      sqliteFree(sParse.zErrMsg);
+      rc = SQLITE_ERROR;
+      goto blob_open_out;
+    }
+
+    v = sqlite3VdbeCreate(db);
+    if( v ){
+      int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+      sqlite3VdbeAddOpList(v, sizeof(openBlob)/sizeof(VdbeOpList), openBlob);
+
+      /* Configure the OP_Transaction */
+      sqlite3VdbeChangeP1(v, 0, iDb);
+      sqlite3VdbeChangeP2(v, 0, (flags ? 1 : 0));
+
+      /* Configure the OP_VerifyCookie */
+      sqlite3VdbeChangeP1(v, 1, iDb);
+      sqlite3VdbeChangeP2(v, 1, pTab->pSchema->schema_cookie);
+
+      /* Configure the db number pushed onto the stack */
+      sqlite3VdbeChangeP1(v, 2, iDb);
+
+      /* Remove either the OP_OpenWrite or OpenRead. Set the P2 parameter
+      ** of the other to pTab->tnum. 
+      */
+      sqlite3VdbeChangeToNoop(v, (flags ? 3 : 4), 1);
+      sqlite3VdbeChangeP2(v, (flags ? 4 : 3), pTab->tnum);
+
+      /* Configure the OP_SetNumColumns. Configure the cursor to
+      ** think that the table has one more column than it really
+      ** does. An OP_Column to retrieve this imaginary column will
+      ** always return an SQL NULL. This is useful because it means
+      ** we can invoke OP_Column to fill in the vdbe cursors type 
+      ** and offset cache without causing any IO.
+      */
+      sqlite3VdbeChangeP2(v, 5, pTab->nCol+1);
+      sqlite3VdbeMakeReady(v, 1, 0, 1, 0);
+    }
+
+    sqlite3_bind_int64((sqlite3_stmt *)v, 1, iRow);
+    rc = sqlite3_step((sqlite3_stmt *)v);
+    if( rc!=SQLITE_ROW ){
+      nAttempt++;
+      rc = sqlite3_finalize((sqlite3_stmt *)v);
+      v = 0;
+    }
+  } while( nAttempt<5 && rc==SQLITE_SCHEMA );
+
+  if( rc==SQLITE_ROW ){
+    /* The row-record has been opened successfully. Check that the
+    ** column in question contains text or a blob. If it contains
+    ** text, it is up to the caller to get the encoding right.
+    */
+    Incrblob *pBlob;
+    u32 type = v->apCsr[0]->aType[iCol];
+
+    if( type<12 ){
+      rc = SQLITE_ERROR;
+      goto blob_open_out;
+    }
+    pBlob = (Incrblob *)sqliteMalloc(sizeof(Incrblob));
+    if( sqlite3MallocFailed() ){
+      sqliteFree(pBlob);
+      goto blob_open_out;
+    }
+    pBlob->flags = flags;
+    pBlob->pCsr =  v->apCsr[0]->pCursor;
+    pBlob->pStmt = (sqlite3_stmt *)v;
+    pBlob->iOffset = v->apCsr[0]->aOffset[iCol];
+    pBlob->nByte = sqlite3VdbeSerialTypeLen(type);
+    *ppBlob = (sqlite3_blob *)pBlob;
+    rc = SQLITE_OK;
+  }else{
+    if( rc==SQLITE_DONE ){
+      rc = SQLITE_ERROR;
+    }
+  }
+
+blob_open_out:
+  if( rc!=SQLITE_OK || sqlite3MallocFailed() ){
+    sqlite3_finalize((sqlite3_stmt *)v);
+  }
+  sqlite3Error(db, rc, "");
+  return sqlite3ApiExit(db, rc);
+}
+
+/*
+** Close a blob handle.
+*/
+int sqlite3_blob_close(sqlite3_blob *pBlob){
+  Incrblob *p = (Incrblob *)pBlob;
+  sqlite3_finalize(p->pStmt);
+  sqliteFree(p);
+  return SQLITE_OK;
+}
+
+/*
+** Read data from a blob handle.
+*/
+int sqlite3_blob_read(sqlite3_blob *pBlob, void *z, int n, int iOffset){
+  Incrblob *p = (Incrblob *)pBlob;
+  if( (iOffset+n)>p->nByte ){
+    return SQLITE_ERROR;
+  }
+  return sqlite3BtreeData(p->pCsr, iOffset+p->iOffset, n, z);
+}
+
+/*
+** Write data to a blob handle.
+*/
+int sqlite3_blob_write(sqlite3_blob *pBlob, const void *z, int n, int iOffset){
+  Incrblob *p = (Incrblob *)pBlob;
+  if( (iOffset+n)>p->nByte ){
+    return SQLITE_ERROR;
+  }
+  return sqlite3BtreePutData(p->pCsr, iOffset+p->iOffset, n, z);
+}
+
+/*
+** Query a blob handle for the size of the data.
+*/
+int sqlite3_blob_bytes(sqlite3_blob *pBlob){
+  Incrblob *p = (Incrblob *)pBlob;
+  return p->nByte;
+}
+
+#endif /* #ifndef SQLITE_OMIT_INCRBLOB */

@@ -62,7 +62,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o btree.o build.o \
          pager.o parse.o pragma.o prepare.o printf.o random.o \
          select.o table.o tclsqlite.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
-         vdbe.o vdbeapi.o vdbeaux.o vdbefifo.o vdbemem.o \
+         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbefifo.o vdbemem.o \
          where.o utf.o legacy.o vtab.o
 
 # All of the source code files.
@@ -115,6 +115,7 @@ SRC = \
   $(TOP)/src/vdbe.h \
   $(TOP)/src/vdbeapi.c \
   $(TOP)/src/vdbeaux.c \
+  $(TOP)/src/vdbeblob.c \
   $(TOP)/src/vdbefifo.c \
   $(TOP)/src/vdbemem.c \
   $(TOP)/src/vdbeInt.h \
@@ -409,6 +410,9 @@ vdbeapi.o:	$(TOP)/src/vdbeapi.c $(VDBEHDR) $(HDR)
 
 vdbeaux.o:	$(TOP)/src/vdbeaux.c $(VDBEHDR) $(HDR)
 	$(TCCX) -c $(TOP)/src/vdbeaux.c
+
+vdbeblob.o:	$(TOP)/src/vdbeblob.c $(VDBEHDR) $(HDR)
+	$(TCCX) -c $(TOP)/src/vdbeblob.c
 
 vdbefifo.o:	$(TOP)/src/vdbefifo.c $(VDBEHDR) $(HDR)
 	$(TCCX) -c $(TOP)/src/vdbefifo.c

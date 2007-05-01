@@ -1,0 +1,53 @@
+# 2007 May 1
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: incrblob.test,v 1.1 2007/05/01 17:49:49 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_test incrblob-1.1 {
+  execsql {
+    CREATE TABLE blobs(k PRIMARY KEY, v BLOB);
+    INSERT INTO blobs VALUES('one', X'0102030405060708090A');
+    INSERT INTO blobs VALUES('two', X'0A090807060504030201');
+  }
+} {}
+
+do_test incrblob-1.2.1 {
+  set ::blob [db incrblob blobs v 1]
+} {incrblob_1}
+do_test incrblob-1.2.2 {
+  binary scan [read $::blob] c* data
+  set data
+} {1 2 3 4 5 6 7 8 9 10}
+do_test incrblob-1.2.3 {
+  seek $::blob 0
+  puts -nonewline $::blob "1234567890"
+  flush $::blob
+} {}
+do_test incrblob-1.2.4 {
+  seek $::blob 0
+  binary scan [read $::blob] c* data
+  set data
+} {49 50 51 52 53 54 55 56 57 48}
+do_test incrblob-1.2.5 {
+  close $::blob
+} {}
+do_test incrblob-1.2.6 {
+  execsql {
+    SELECT v FROM blobs WHERE rowid = 1;
+  }
+} {1234567890}
+
+finish_test
+
+

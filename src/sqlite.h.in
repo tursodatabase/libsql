@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.201 2007/03/30 20:43:42 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.202 2007/05/01 17:49:49 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1870,6 +1870,24 @@ int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
 **
 ****** EXPERIMENTAL - subject to change without notice **************
 */
+
+typedef struct sqlite3_blob sqlite3_blob;
+
+int sqlite3_blob_open(
+  sqlite3*,
+  const char *zDb,
+  const char *zTable,
+  const char *zColumn,
+  sqlite_int64 iRow,
+  int flags,
+  sqlite3_blob **ppBlob
+);
+
+int sqlite3_blob_close(sqlite3_blob *);
+
+int sqlite3_blob_read(sqlite3_blob *, void *z, int n, int iOffset);
+int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
+int sqlite3_blob_bytes(sqlite3_blob *);
 
 /*
 ** Undo the hack that converts floating point types to integer for
