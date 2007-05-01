@@ -3056,8 +3056,10 @@ static void snippetOffsetsOfColumn(
       int iCol;
       iCol = aTerm[i].iColumn;
       if( iCol>=0 && iCol<nColumn && iCol!=iColumn ) continue;
-      if( aTerm[i].nTerm!=nToken ) continue;
-      if( memcmp(aTerm[i].pTerm, zToken, nToken) ) continue;
+      if( aTerm[i].nTerm>nToken ) continue;
+      if( !aTerm[i].isPrefix && aTerm[i].nTerm<nToken ) continue;
+      assert( aTerm[i].nTerm<=nToken );
+      if( memcmp(aTerm[i].pTerm, zToken, aTerm[i].nTerm) ) continue;
       if( aTerm[i].iPhrase>1 && (prevMatch & (1<<i))==0 ) continue;
       match |= 1<<i;
       if( i==nTerm-1 || aTerm[i+1].iPhrase==1 ){
@@ -3499,6 +3501,9 @@ static int tokenizeSegment(
     queryAdd(pQuery, pToken, nToken);
     if( !inPhrase && iBegin>0 && pSegment[iBegin-1]=='-' ){
       pQuery->pTerms[pQuery->nTerms-1].isNot = 1;
+    }
+    if( iEnd<nSegment && pSegment[iEnd]=='*' ){
+      pQuery->pTerms[pQuery->nTerms-1].isPrefix = 1;
     }
     pQuery->pTerms[pQuery->nTerms-1].iPhrase = nTerm;
     if( inPhrase ){

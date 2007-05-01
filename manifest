@@ -1,5 +1,5 @@
-C First\sapproximation\sof\sincremental\sblob\sIO\sAPI.\s(CVS\s3892)
-D 2007-05-01T17:49:49
+C Enable\sprefix-search\sin\squery-parsing\sand\ssnippet\sgeneration.\s\sIf\sthe\ncharacter\simmediately\safter\sthe\send\sof\sa\sterm\sis\s'*',\sthat\sterm\sis\nmarked\sfor\sprefix\smatching.\s\sModify\sterm\scomparison\sin\nsnippetOffsetsOfColumn()\sto\srespect\sisPrefix.\s\sfts2n.test\sruns\sprefix\nsearching\sthrough\ssome\sobvious\stest\scases.\s(CVS\s3893)
+D 2007-05-01T18:25:53
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -34,7 +34,7 @@ F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c a6762b7a6cc173eb83a0aa9506c1b7be66f00786
+F ext/fts2/fts2.c 9e1f5942fc063f2d6778bc44372eba9b2b43eebd
 F ext/fts2/fts2.h 591916a822cfb6426518fdbf6069359119bc46eb
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -236,6 +236,7 @@ F test/fts2j.test f68d7611f76309bc8b94170f3740d9fbbc061d9b
 F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
+F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test 8a3bc8e8365dc0053c826923c0f738645f50f2f5
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -468,7 +469,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 72c796307338c2751a91c30f6fb16989afbf3816
-R 30bd64cea77836fbaf98d3678ccdaa09
-U danielk1977
-Z 5cdc2c295a9fcd37c90d369f1b123096
+P c444836e7b690c16dd6acff571c613a23beb42dc
+R 15961852c9b829c1a838faae38aeed43
+U shess
+Z c808046b1e2602c778234ecda5713f7c
