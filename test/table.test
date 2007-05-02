@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.46 2006/09/01 15:49:06 drh Exp $
+# $Id: table.test,v 1.47 2007/05/02 17:54:56 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -590,6 +590,10 @@ set sqlite_current_time 0
 # auto-vacuum mode the btree-layer may need to move the root-pages of 
 # a table for which there is an open cursor.
 #
+# 2007-05-02:  A open btree cursor no longer blocks CREATE TABLE.
+# But DROP TABLE is still prohibited because we do not want to
+# delete a table out from under a running query.
+#
 
 # db eval {
 #   pragma vdbe_trace = 0;
@@ -605,13 +609,7 @@ do_test table-14.1 {
     } msg
   ]
   set result [list $rc $msg]
-} {1 {database table is locked}}
-
-do_test table-14.2 {
-  execsql {
-    CREATE TABLE t9(a, b, c)
-  }
-} {}
+} {0 {}}
 
 # Try to drop a table from within a callback:
 do_test table-14.3 {

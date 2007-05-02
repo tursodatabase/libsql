@@ -13,7 +13,7 @@
 # This file tests the various conditions under which an SQLITE_SCHEMA
 # error should be returned.
 #
-# $Id: schema.test,v 1.5 2005/12/06 12:53:01 danielk1977 Exp $
+# $Id: schema.test,v 1.6 2007/05/02 17:54:56 drh Exp $
 
 #---------------------------------------------------------------------
 # When any of the following types of SQL statements or actions are 
@@ -259,6 +259,10 @@ ifcapable view {
 # btree cursors open on the same database file it does not corrupt
 # the sqlite_master table.
 #
+# 2007-05-02: These tests have been overcome by events.  Open btree
+# cursors no longer block CREATE TABLE.  But there is no reason not
+# to keep the tests in the test suite.
+#
 do_test schema-10.1 {
   execsql {
     INSERT INTO abc VALUES(1, 2, 3);
@@ -271,7 +275,7 @@ do_test schema-10.2 {
   catchsql {
     CREATE TABLE t2(a, b, c);
   }
-} {1 {database table is locked}}
+} {0 {}}
 do_test schema-10.3 {
   sqlite3_finalize $::STMT
 } {SQLITE_OK}
@@ -330,4 +334,3 @@ do_test schema-11.8 {
 } {SQLITE_OK}
 
 finish_test
-

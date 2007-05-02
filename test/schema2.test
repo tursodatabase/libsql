@@ -14,7 +14,7 @@
 # error should be returned.  This is a copy of schema.test that
 # has been altered to use sqlite3_prepare_v2 instead of sqlite3_prepare
 #
-# $Id: schema2.test,v 1.1 2006/11/09 00:24:55 drh Exp $
+# $Id: schema2.test,v 1.2 2007/05/02 17:54:56 drh Exp $
 
 #---------------------------------------------------------------------
 # When any of the following types of SQL statements or actions are 
@@ -261,6 +261,10 @@ ifcapable view {
 # btree cursors open on the same database file it does not corrupt
 # the sqlite_master table.
 #
+# 2007-05-02: These tests have been overcome by events.  Open btree
+# cursors no longer block CREATE TABLE.  But there is no reason not
+# to keep the tests in the test suite.
+#
 do_test schema2-10.1 {
   execsql {
     INSERT INTO abc VALUES(1, 2, 3);
@@ -273,7 +277,7 @@ do_test schema2-10.2 {
   catchsql {
     CREATE TABLE t2(a, b, c);
   }
-} {1 {database table is locked}}
+} {0 {}}
 do_test schema2-10.3 {
   sqlite3_finalize $::STMT
 } {SQLITE_OK}

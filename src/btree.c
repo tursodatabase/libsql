@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.367 2007/05/02 17:48:46 danielk1977 Exp $
+** $Id: btree.c,v 1.368 2007/05/02 17:54:56 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -5754,15 +5754,6 @@ int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags){
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
   assert( !pBt->readOnly );
-
-  /* It is illegal to create a table if any cursors are open on the
-  ** database. This is because in auto-vacuum mode the backend may
-  ** need to move a database page to make room for the new root-page.
-  ** If an open cursor was using the page a problem would occur.
-  */
-  if( pBt->pCursor ){
-    return SQLITE_LOCKED;
-  }
 
 #ifdef SQLITE_OMIT_AUTOVACUUM
   rc = allocateBtreePage(pBt, &pRoot, &pgnoRoot, 1, 0);
