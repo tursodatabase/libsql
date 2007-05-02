@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\szero-blobs\sto\sthe\sOP_MakeRecord\sopcode.\r\nFirst\stest\scases\sof\szeroblob\sfunctionality.\s(CVS\s3897)
-D 2007-05-02T13:30:27
+C Fix\san\sinvalid\sUTF8\sencoding\sin\sthe\stests\sfor\sthe\strim\sfunction.\s(CVS\s3898)
+D 2007-05-02T15:36:02
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -238,7 +238,7 @@ F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
-F test/func.test 8a3bc8e8365dc0053c826923c0f738645f50f2f5
+F test/func.test 6727c7729472ae52b5acd86e802f89aa350ba50f
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
 F test/incrblob.test 09db22f90137dc4f449cf6c7f8e554156fb68fd2
@@ -471,7 +471,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 93a3bf71d576096f4b5a3db256ca6f9b5521d137
-R fa4803e6928e32943334bc2c675198a5
+P e6d560ddeeb48fb0cbd9f5a10612280b055baef7
+R 15848809be73f4e08f83f1fd795bb746
 U drh
-Z ea8ec33f5bc91d3f655c1cd7ff5d5d75
+Z f28dc40a5ade2da68f7833936614ab80
