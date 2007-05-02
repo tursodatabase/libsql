@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.366 2007/05/02 16:48:37 danielk1977 Exp $
+** $Id: btree.c,v 1.367 2007/05/02 17:48:46 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3139,20 +3139,28 @@ static int getOverflowPage(
 
 
 /*
-** Read payload information from the entry that the pCur cursor is
-** pointing to.  Begin reading the payload at "offset" and read
-** a total of "amt" bytes.  Put the result in zBuf.
+** This function is used to read or overwrite payload information
+** for the entry that the pCur cursor is pointing to. If the eOp
+** parameter is 0, this is a read operation (data copied into
+** buffer pBuf). If it is non-zero, a write (data copied from
+** buffer pBuf).
+**
+** A total of "amt" bytes are read or written beginning at "offset".
+** Data is read to or from the buffer pBuf.
 **
 ** This routine does not make a distinction between key and data.
-** It just reads bytes from the payload area.  Data might appear
-** on the main page or be scattered out on multiple overflow pages.
+** It just reads or writes bytes from the payload area.  Data might 
+** appear on the main page or be scattered out on multiple overflow 
+** pages.
 */
-static int getPayload(
+#define getPayload(a,b,c,d,e) accessPayload(a,b,c,d,e,0)
+static int accessPayload(
   BtCursor *pCur,      /* Cursor pointing to entry to read from */
   int offset,          /* Begin reading this far into payload */
   int amt,             /* Read this many bytes */
   unsigned char *pBuf, /* Write the bytes into this buffer */ 
-  int skipKey          /* offset begins at data if this is true */
+  int skipKey,         /* offset begins at data if this is true */
+  int eOp              /* zero to read. non-zero to write. */
 ){
   unsigned char *aPayload;
   Pgno nextPage;
@@ -3187,7 +3195,17 @@ static int getPayload(
     if( a+offset>pCur->info.nLocal ){
       a = pCur->info.nLocal - offset;
     }
-    memcpy(pBuf, &aPayload[offset], a);
+    if( eOp ){
+      /* A write operation. */
+      rc = sqlite3PagerWrite(pPage->pDbPage);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+      memcpy(&aPayload[offset], pBuf, a);
+    }else{
+      /* A read operation */
+      memcpy(pBuf, &aPayload[offset], a);
+    }
     if( a==amt ){
       return SQLITE_OK;
     }
@@ -3232,8 +3250,8 @@ static int getPayload(
         }
 #endif
       }else{
-        /* Need to read this page properly, to obtain data to copy into
-        ** the caller's buffer.
+        /* Need to read this page properly. It contains some of the
+        ** range of data that is being read (eOp==0) or written (eOp!=0).
         */
         DbPage *pDbPage;
         int a = amt;
@@ -3246,7 +3264,18 @@ static int getPayload(
         if( a + offset > ovflSize ){
           a = ovflSize - offset;
         }
-        memcpy(pBuf, &aPayload[offset+4], a);
+        if( eOp ){
+          /* A write operation. */
+          rc = sqlite3PagerWrite(pPage->pDbPage);
+          if( rc!=SQLITE_OK ){
+            sqlite3PagerUnref(pDbPage);
+            return rc;
+          }
+          memcpy(&aPayload[offset+4], pBuf, a);
+        }else{
+          /* A read operation */
+          memcpy(pBuf, &aPayload[offset+4], a);
+        }
         offset = 0;
         amt -= a;
         pBuf += a;
@@ -6942,7 +6971,7 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, const void *z){
   **   (d) the cursor points at a valid row of an intKey table.
   */
   if( pBt->inTransaction!=TRANS_WRITE ){
-    /* Must start a transaction before doing an insert */
+    /* Must start a transaction before writing to a blob */
     return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }
   assert( !pBt->readOnly );
@@ -6956,94 +6985,7 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, const void *z){
     return SQLITE_ERROR;
   }
 
-  /* Parse the cell-info. Check that the cell-data area is large
-  ** enough for the proposed write operation.
-  */
-  getCellInfo(pCsr);
-  pInfo = &pCsr->info;
-  if( pInfo->nData<(offset+amt) ){
-    return SQLITE_ERROR;
-  }
-  ovflSize = pBt->usableSize - 4;
-
-  assert(pCsr->cacheOverflow);
-  if( !pCsr->aOverflow ){
-    int nOverflow = (pInfo->nPayload - pInfo->nLocal + ovflSize - 1)/ovflSize;
-    pCsr->aOverflow = (Pgno *)sqliteMalloc(sizeof(Pgno)*nOverflow);
-    if( nOverflow && !pCsr->aOverflow ){
-      return SQLITE_NOMEM;
-    }
-  }
-
-  if( pInfo->nLocal>iOffset ){
-    /* In this case data must be written to the b-tree page. */
-    int iWrite = pInfo->nLocal - offset;
-    if( iWrite>iRem ){
-      iWrite = iRem;
-    }
-    rc = sqlite3PagerWrite(pCsr->pPage->pDbPage);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-    memcpy(&pInfo->pCell[iOffset+pInfo->nHeader], zRem, iWrite);
-
-    zRem += iWrite;
-    iRem -= iWrite;
-  }
-  iOffset = ((iOffset<pInfo->nLocal)?0:(iOffset-pInfo->nLocal));
-
-  assert(pInfo->iOverflow>0 || iRem==0);
-  if( iRem>0 ){
-    if( pCsr->aOverflow[iOffset/ovflSize] ){
-      iIdx = iOffset/ovflSize;
-      iOvfl = pCsr->aOverflow[iIdx];
-      iOffset = iOffset%ovflSize;
-    }else{
-      iOvfl = get4byte(&pInfo->pCell[pInfo->iOverflow]);
-    }
-    for(iIdx++; iRem>0; iIdx++){
-      if( iOffset>ovflSize ){
-        /* The only reason to read this page is to obtain the page
-        ** number for the next page in the overflow chain. So try
-        ** the getOverflowPage() shortcut.  */
-        rc = getOverflowPage(pBt, iOvfl, 0, &iOvfl);
-        if( rc!=SQLITE_OK ){
-          return rc;
-        }
-        iOffset -= ovflSize;
-        pCsr->aOverflow[iIdx] = iOvfl;
-      }else{
-        int iWrite = ovflSize - iOffset;
-        DbPage *pOvfl;          /* The overflow page. */
-        u8 *aData;              /* Page data */
-  
-        rc = sqlite3PagerGet(pBt->pPager, iOvfl, &pOvfl);
-        if( rc!=SQLITE_OK ){
-          return rc;
-        }
-        rc = sqlite3PagerWrite(pOvfl);
-        if( rc!=SQLITE_OK ){
-          sqlite3PagerUnref(pOvfl);
-          return rc;
-        }
-  
-        aData = sqlite3PagerGetData(pOvfl);
-        iOvfl = get4byte(aData);
-        pCsr->aOverflow[iIdx] = iOvfl;
-        if( iWrite>iRem ){
-          iWrite = iRem;
-        }
-        memcpy(&aData[iOffset+4], zRem, iWrite);
-        sqlite3PagerUnref(pOvfl);
-  
-        zRem += iWrite;
-        iRem -= iWrite;
-        iOffset = ((iOffset<ovflSize)?0:(iOffset-ovflSize));
-      }
-    }
-  }
-
-  return SQLITE_OK;
+  return accessPayload(pCsr, offset, amt, (unsigned char *)z, 0, 1);
 }
 
 /* 
