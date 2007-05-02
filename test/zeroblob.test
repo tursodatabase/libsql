@@ -1,0 +1,58 @@
+# 2007 May 02
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing of the zero-filled blob functionality
+# including the sqlite3_bind_zeroblob(), sqlite3_result_zeroblob(),
+# and the built-in zeroblob() SQL function.
+#
+# $Id: zeroblob.test,v 1.1 2007/05/02 13:30:27 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create the database
+#
+do_test zeroblob-1.1 {
+  execsql {
+    CREATE TABLE t1(a,b,c,d);
+    INSERT INTO t1 VALUES(1,2,3,zeroblob(10000));
+    SELECT count(*) FROM t1;
+  }
+} {1}
+do_test zeroblob-1.2 {
+  execsql {
+    SELECT length(d) FROM t1
+  }
+} {10000}
+do_test zeroblob-1.3 {
+  execsql {
+    INSERT INTO t1 VALUES(2,3,zeroblob(10000),4);
+    SELECT count(*) FROM t1;
+  }
+} {2}
+do_test zeroblob-1.4 {
+  execsql {
+    SELECT length(c), length(d) FROM t1
+  }
+} {1 10000 10000 1}
+do_test zeroblob-1.5 {
+  execsql {
+    INSERT INTO t1 VALUES(3,4,zeroblob(10000),zeroblob(10000));
+    SELECT count(*) FROM t1;
+  }
+} {3}
+do_test zeroblob-1.6 {
+  execsql {
+    SELECT length(c), length(d) FROM t1
+  }
+} {1 10000 10000 1 10000 10000}
+
+finish_test

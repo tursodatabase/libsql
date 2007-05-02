@@ -1,5 +1,5 @@
-C Use\sthe\spointer-map\spages\sto\smake\sthe\sincremental\sblob\sAPI\smore\sefficient.\s(CVS\s3896)
-D 2007-05-02T13:16:30
+C Add\ssupport\sfor\szero-blobs\sto\sthe\sOP_MakeRecord\sopcode.\r\nFirst\stest\scases\sof\szeroblob\sfunctionality.\s(CVS\s3897)
+D 2007-05-02T13:30:27
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -125,14 +125,14 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c e64a48bc21aa973eb622dd47da87d56a4cdcf528
 F src/util.c b6344325378e75b9e18175d8b6aed1723d73dad9
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c 8cc851ca1d6d849586eb0c5359c492685c285c97
+F src/vdbe.c bb1baa9a357b14f28ddfd0a896f60c6ef82dfd33
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
-F src/vdbeInt.h 10ff7c35f790d48f51317af4e5833d4d4cb5da34
+F src/vdbeInt.h cb02cbbceddf3b40d49012e9f41576f17bcbec97
 F src/vdbeapi.c 37d793559390bec8a00c556f651f21b5f9e589af
-F src/vdbeaux.c ef59545f53f90394283f2fd003375d3ebbf0bd6e
+F src/vdbeaux.c 8c7f22e22d1ea578971f5a3fcd3a56a6882ced64
 F src/vdbeblob.c 6d3128c71d5a6b8db627ea3052ed5aaaaf26e672
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
-F src/vdbemem.c 02ffe06f967a23a66b72e48a1773153b417fad04
+F src/vdbemem.c ba98f8572ec4609846b368fa7580db178022f1bb
 F src/vtab.c 89a0d5f39c1beba65a77fdb4d507b831fc5e6baf
 F src/where.c 0f17b7bed2ce50ba450e8f436d5ec8b420c4ab3f
 F tclinstaller.tcl 046e3624671962dc50f0481d7c25b38ef803eb42
@@ -395,6 +395,7 @@ F test/where.test 1d020f50c77f37b2dbab9766ca959e6e3278ecdb
 F test/where2.test 3249d426b3fc7a106713d784e1628307fc308d2e
 F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
 F test/where4.test b68496500bff496e83e76ae4ffb493b99064eac6
+F test/zeroblob.test 76efa0e1b8116037e009b38a060033ea77526437
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/lemon.c c8c8b25ab1ac8156b3ad83ba4ea1bf00d5e07f5a
@@ -470,7 +471,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6f4f8ba7ec15f214f36fa78e593dd4522ab717f5
-R 89ce3536d9d902e9d75a561e20ef3775
-U danielk1977
-Z 5170bc200f54fb706f822cc7c0bea383
+P 93a3bf71d576096f4b5a3db256ca6f9b5521d137
+R fa4803e6928e32943334bc2c675198a5
+U drh
+Z ea8ec33f5bc91d3f655c1cd7ff5d5d75

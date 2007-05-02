@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.603 2007/05/02 01:34:32 drh Exp $
+** $Id: vdbe.c,v 1.604 2007/05/02 13:30:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -311,7 +311,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
     zCsr += sprintf(zCsr, "%c", c);
     zCsr += sprintf(zCsr, "%d[", pMem->n);
     for(i=0; i<16 && i<pMem->n; i++){
-      zCsr += sprintf(zCsr, "%02X ", ((int)pMem->z[i] & 0xFF));
+      zCsr += sprintf(zCsr, "%02X", ((int)pMem->z[i] & 0xFF));
     }
     for(i=0; i<16 && i<pMem->n; i++){
       char z = pMem->z[i];
@@ -320,6 +320,9 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
     }
 
     zCsr += sprintf(zCsr, "]");
+    if( f & MEM_Zero ){
+      zCsr += sprintf(zCsr,"+%lldz",pMem->u.i);
+    }
     *zCsr = '\0';
   }else if( f & MEM_Str ){
     int j, k;
@@ -2185,25 +2188,25 @@ case OP_MakeRecord: {
   ** hdr-size field is also a varint which is the offset from the beginning
   ** of the record to data0.
   */
-  unsigned char *zNewRecord;
-  unsigned char *zCsr;
-  Mem *pRec;
-  Mem *pRowid = 0;
+  u8 *zNewRecord;        /* A buffer to hold the data for the new record */
+  Mem *pRec;             /* The new record */
+  Mem *pRowid = 0;       /* Rowid appended to the new record */
   int nData = 0;         /* Number of bytes of data space */
   int nHdr = 0;          /* Number of bytes of header space */
-  int nByte = 0;         /* Space required for this record */
+  int nByte = 0;         /* Data space required for this record */
+  int nZero = 0;         /* Number of zero bytes at the end of the record */
   int nVarint;           /* Number of bytes in a varint */
   u32 serial_type;       /* Type field */
   int containsNull = 0;  /* True if any of the data fields are NULL */
-  char zTemp[NBFS];      /* Space to hold small records */
-  Mem *pData0;
-
+  Mem *pData0;           /* Bottom of the stack */
   int leaveOnStack;      /* If true, leave the entries on the stack */
   int nField;            /* Number of fields in the record */
   int jumpIfNull;        /* Jump here if non-zero and any entries are NULL. */
   int addRowid;          /* True to append a rowid column at the end */
   char *zAffinity;       /* The affinity string for the record */
   int file_format;       /* File format to use for encoding */
+  int i;                 /* Space used in zNewRecord[] */
+  char zTemp[NBFS];      /* Space to hold small records */
 
   leaveOnStack = ((pOp->p1<0)?1:0);
   nField = pOp->p1 * (leaveOnStack?-1:1);
@@ -2229,11 +2232,19 @@ case OP_MakeRecord: {
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     nData += sqlite3VdbeSerialTypeLen(serial_type);
     nHdr += sqlite3VarintLen(serial_type);
+    if( pRec->flags & MEM_Zero ){
+      /* Only pure zero-filled BLOBs can be input to this Opcode.
+      ** We do not allow blobs with a prefix and a zero-filled tail. */
+      assert( pRec->n==0 );
+      nZero += pRec->u.i;
+    }else{
+      nZero = 0;
+    }
   }
 
-  /* If we have to append a varint rowid to this record, set 'rowid'
+  /* If we have to append a varint rowid to this record, set pRowid
   ** to the value of the rowid and increase nByte by the amount of space
-  ** required to store it and the 0x00 seperator byte.
+  ** required to store it.
   */
   if( addRowid ){
     pRowid = &pTos[0-nField];
@@ -2242,6 +2253,7 @@ case OP_MakeRecord: {
     serial_type = sqlite3VdbeSerialType(pRowid, 0);
     nData += sqlite3VdbeSerialTypeLen(serial_type);
     nHdr += sqlite3VarintLen(serial_type);
+    nZero = 0;
   }
 
   /* Add the initial header varint and total the size */
@@ -2249,7 +2261,7 @@ case OP_MakeRecord: {
   if( nVarint<sqlite3VarintLen(nHdr) ){
     nHdr++;
   }
-  nByte = nHdr+nData;
+  nByte = nHdr+nData-nZero;
 
   /* Allocate space for the new record. */
   if( nByte>sizeof(zTemp) ){
@@ -2262,22 +2274,21 @@ case OP_MakeRecord: {
   }
 
   /* Write the record */
-  zCsr = zNewRecord;
-  zCsr += sqlite3PutVarint(zCsr, nHdr);
+  i = sqlite3PutVarint(zNewRecord, nHdr);
   for(pRec=pData0; pRec<=pTos; pRec++){
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
-    zCsr += sqlite3PutVarint(zCsr, serial_type);      /* serial type */
+    i += sqlite3PutVarint(&zNewRecord[i], serial_type);      /* serial type */
   }
   if( addRowid ){
-    zCsr += sqlite3PutVarint(zCsr, sqlite3VdbeSerialType(pRowid, 0));
+    i += sqlite3PutVarint(&zNewRecord[i], sqlite3VdbeSerialType(pRowid, 0));
   }
-  for(pRec=pData0; pRec<=pTos; pRec++){
-    zCsr += sqlite3VdbeSerialPut(zCsr, pRec, file_format);  /* serial data */
+  for(pRec=pData0; pRec<=pTos; pRec++){  /* serial data */
+    i += sqlite3VdbeSerialPut(&zNewRecord[i], nByte-i, pRec, file_format);
   }
   if( addRowid ){
-    zCsr += sqlite3VdbeSerialPut(zCsr, pRowid, 0);
+    i += sqlite3VdbeSerialPut(&zNewRecord[i], nByte-i, pRowid, 0);
   }
-  assert( zCsr==(zNewRecord+nByte) );
+  assert( i==nByte );
 
   /* Pop entries off the stack if required. Push the new record on. */
   if( !leaveOnStack ){
@@ -2295,6 +2306,10 @@ case OP_MakeRecord: {
     pTos->z = (char*)zNewRecord;
     pTos->flags = MEM_Blob | MEM_Dyn;
     pTos->xDel = 0;
+  }
+  if( nZero ){
+    pTos->u.i = nZero;
+    pTos->flags |= MEM_Zero;
   }
   pTos->enc = SQLITE_UTF8;  /* In case the blob is ever converted to text */
 
@@ -4997,7 +5012,7 @@ default: {
         }else if( pTos[i].flags & MEM_Real ){
           fprintf(p->trace, " r:%g", pTos[i].r);
         }else{
-          char zBuf[100];
+          char zBuf[200];
           sqlite3VdbeMemPrettyPrint(&pTos[i], zBuf);
           fprintf(p->trace, " ");
           fprintf(p->trace, "%s", zBuf);

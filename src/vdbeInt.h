@@ -133,8 +133,8 @@ struct Mem {
   char *z;            /* String or BLOB value */
   int n;              /* Number of characters in string value, including '\0' */
   u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
-  u8  type;           /* One of MEM_Null, MEM_Str, etc. */
-  u8  enc;            /* TEXT_Utf8, TEXT_Utf16le, or TEXT_Utf16be */
+  u8  type;           /* One of SQLITE_NULL, SQLITE_TEXT, SQLITE_INTEGER, etc */
+  u8  enc;            /* SQLITE_UTF8, SQLITE_UTF16BE, SQLITE_UTF16LE */
   void (*xDel)(void *);  /* If not null, call this function to delete Mem.z */
   char zShort[NBFS];  /* Space for short strings */
 };
@@ -364,7 +364,7 @@ void sqlite3VdbePrintSql(Vdbe*);
 #endif
 int sqlite3VdbeSerialTypeLen(u32);
 u32 sqlite3VdbeSerialType(Mem*, int);
-int sqlite3VdbeSerialPut(unsigned char*, Mem*, int);
+int sqlite3VdbeSerialPut(unsigned char*, int, Mem*, int);
 int sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
 void sqlite3VdbeDeleteAuxData(VdbeFunc*, int);
 

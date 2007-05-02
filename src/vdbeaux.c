@@ -1722,6 +1722,7 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
 */
 u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
   int flags = pMem->flags;
+  int n;
 
   if( flags&MEM_Null ){
     return 0;
@@ -1745,13 +1746,13 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
   if( flags&MEM_Real ){
     return 7;
   }
-  if( flags&MEM_Str ){
-    int n = pMem->n;
-    assert( n>=0 );
-    return ((n*2) + 13);
+  assert( flags&(MEM_Str|MEM_Blob) );
+  n = pMem->n;
+  if( flags & MEM_Zero ){
+    n += pMem->u.i;
   }
-  assert( (flags & MEM_Blob)!=0 );
-  return (pMem->n*2 + 12);
+  assert( n>=0 );
+  return ((n*2) + 12 + ((flags&MEM_Str)!=0));
 }
 
 /*
@@ -1770,8 +1771,21 @@ int sqlite3VdbeSerialTypeLen(u32 serial_type){
 ** Write the serialized data blob for the value stored in pMem into 
 ** buf. It is assumed that the caller has allocated sufficient space.
 ** Return the number of bytes written.
+**
+** nBuf is the amount of space left in buf[].  nBuf must always be
+** large enough to hold the entire field.  Except, if the field is
+** a blob with a zero-filled tail, then buf[] might be just the right
+** size to hold everything except for the zero-filled tail.  If buf[]
+** is only big enough to hold the non-zero prefix, then only write that
+** prefix into buf[].  But if buf[] is large enough to hold both the
+** prefix and the tail then write the prefix and set the tail to all
+** zeros.
+**
+** Return the number of bytes actually written into buf[].  The number
+** of bytes in the zero-filled tail is included in the return value only
+** if those bytes were zeroed in buf[].
 */ 
-int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem, int file_format){
+int sqlite3VdbeSerialPut(u8 *buf, int nBuf, Mem *pMem, int file_format){
   u32 serial_type = sqlite3VdbeSerialType(pMem, file_format);
   int len;
 
@@ -1786,6 +1800,7 @@ int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem, int file_format){
       v = pMem->u.i;
     }
     len = i = sqlite3VdbeSerialTypeLen(serial_type);
+    assert( len<=nBuf );
     while( i-- ){
       buf[i] = (v&0xFF);
       v >>= 8;
@@ -1795,8 +1810,18 @@ int sqlite3VdbeSerialPut(unsigned char *buf, Mem *pMem, int file_format){
 
   /* String or blob */
   if( serial_type>=12 ){
-    len = sqlite3VdbeSerialTypeLen(serial_type);
+    assert( pMem->n + ((pMem->flags & MEM_Zero)?pMem->u.i:0)
+             == sqlite3VdbeSerialTypeLen(serial_type) );
+    assert( pMem->n<=nBuf );
+    len = pMem->n;
     memcpy(buf, pMem->z, len);
+    if( pMem->flags & MEM_Zero ){
+      len += pMem->u.i;
+      if( len>nBuf ){
+        len = nBuf;
+      }
+      memset(&buf[pMem->n], 0, len-pMem->n);
+    }
     return len;
   }
 

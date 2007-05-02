@@ -84,21 +84,22 @@ int sqlite3VdbeMemDynamicify(Mem *pMem){
 }
 
 /*
-** If the given Mem* is a zero-filled blob, turn it into an ordinary
+** If the given Mem* has a zero-filled tail, turn it into an ordinary
 ** blob stored in dynamically allocated space.
 */
 int sqlite3VdbeMemExpandBlob(Mem *pMem){
   if( pMem->flags & MEM_Zero ){
     char *pNew;
     assert( (pMem->flags & MEM_Blob)!=0 );
-    pNew = sqliteMalloc(pMem->n+pMem->u.i+1);
+    pNew = sqliteMalloc(pMem->n+pMem->u.i);
     if( pNew==0 ){ 
       return SQLITE_NOMEM;
     }
     memcpy(pNew, pMem->z, pMem->n);
-    memset(&pNew[pMem->n], 0, pMem->u.i+1);
+    memset(&pNew[pMem->n], 0, pMem->u.i);
     sqlite3VdbeMemRelease(pMem);
     pMem->z = pNew;
+    pMem->n += pMem->u.i;
     pMem->u.i = 0;
     pMem->flags &= MEM_Zero|MEM_Static|MEM_Ephem|MEM_Short;
     pMem->flags |= MEM_Term|MEM_Dyn;
@@ -380,10 +381,11 @@ void sqlite3VdbeMemSetNull(Mem *pMem){
 */
 void sqlite3VdbeMemSetZeroBlob(Mem *pMem, int n){
   sqlite3VdbeMemRelease(pMem);
-  pMem->flags = MEM_Blob|MEM_Zero;
+  pMem->flags = MEM_Blob|MEM_Zero|MEM_Short;
   pMem->type = SQLITE_BLOB;
   pMem->n = 0;
   pMem->u.i = n;
+  pMem->z = pMem->zShort;
 }
 
 /*
@@ -742,7 +744,7 @@ void sqlite3VdbeMemSanity(Mem *pMem){
     int x = flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short);
     assert( x!=0 );            /* Strings must define a string subtype */
     assert( (x & (x-1))==0 );  /* Only one string subtype can be defined */
-    assert( pMem->z!=0 || x==MEM_Zero );      /* Strings must have a value */
+    assert( pMem->z!=0 );      /* Strings must have a value */
     /* Mem.z points to Mem.zShort iff the subtype is MEM_Short */
     assert( (x & MEM_Short)==0 || pMem->z==pMem->zShort );
     assert( (x & MEM_Short)!=0 || pMem->z!=pMem->zShort );
