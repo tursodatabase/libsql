@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.604 2007/05/02 13:30:27 drh Exp $
+** $Id: vdbe.c,v 1.605 2007/05/02 16:51:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -82,6 +82,17 @@ int sqlite3_interrupt_count = 0;
 */
 #ifdef SQLITE_TEST
 int sqlite3_sort_count = 0;
+#endif
+
+/*
+** The next global variable records the size of the largest MEM_Blob
+** or MEM_Str that has appeared on the VDBE stack.  The test procedures
+** use this information to make sure that the zero-blob functionality
+** is working correctly.   This variable has no function other than to
+** help verify the correct operation of the library.
+*/
+#ifdef SQLITE_TEST
+int sqlite3_max_blobsize = 0;
 #endif
 
 /*
@@ -1633,6 +1644,8 @@ case OP_Ge: {             /* same as TK_GE, no-push */
   }
 
   assert( pOp->p3type==P3_COLLSEQ || pOp->p3==0 );
+  sqlite3VdbeMemExpandBlob(pNos);
+  sqlite3VdbeMemExpandBlob(pTos);
   res = sqlite3MemCompare(pNos, pTos, (CollSeq*)pOp->p3);
   switch( pOp->opcode ){
     case OP_Eq:    res = res==0;     break;
@@ -2223,6 +2236,7 @@ case OP_MakeRecord: {
   ** out how much space is required for the new record.
   */
   for(pRec=pData0; pRec<=pTos; pRec++){
+    int len;
     if( zAffinity ){
       applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
     }
@@ -2230,14 +2244,15 @@ case OP_MakeRecord: {
       containsNull = 1;
     }
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
-    nData += sqlite3VdbeSerialTypeLen(serial_type);
+    len = sqlite3VdbeSerialTypeLen(serial_type);
+    nData += len;
     nHdr += sqlite3VarintLen(serial_type);
     if( pRec->flags & MEM_Zero ){
       /* Only pure zero-filled BLOBs can be input to this Opcode.
       ** We do not allow blobs with a prefix and a zero-filled tail. */
       assert( pRec->n==0 );
       nZero += pRec->u.i;
-    }else{
+    }else if( len ){
       nZero = 0;
     }
   }
@@ -2877,7 +2892,7 @@ case OP_MoveGt: {       /* no-push */
       pC->rowidIsValid = res==0;
     }else{
       assert( pTos->flags & MEM_Blob );
-      /* Stringify(pTos, encoding); */
+      sqlite3VdbeMemExpandBlob(pTos);
       rc = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, 0, &res);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
@@ -2984,6 +2999,7 @@ case OP_Found: {        /* no-push */
   if( (pC = p->apCsr[i])->pCursor!=0 ){
     int res, rx;
     assert( pC->isTable==0 );
+    assert( pTos->flags & MEM_Blob );
     Stringify(pTos, encoding);
     rx = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, 0, &res);
     alreadyExists = rx==SQLITE_OK && res==0;
@@ -3051,6 +3067,7 @@ case OP_IsUnique: {        /* no-push */
 
     /* Make sure K is a string and make zKey point to K
     */
+    assert( pNos->flags & MEM_Blob );
     Stringify(pNos, encoding);
     zKey = pNos->z;
     nKey = pNos->n;
@@ -3902,9 +3919,9 @@ case OP_IdxGE: {        /* no-push */
   if( (pC = p->apCsr[i])->pCursor!=0 ){
     int res;
  
-    assert( pTos->flags & MEM_Blob );  /* Created using OP_Make*Key */
-    Stringify(pTos, encoding);
+    assert( pTos->flags & MEM_Blob );  /* Created using OP_MakeRecord */
     assert( pC->deferredMoveto==0 );
+    sqlite3VdbeMemExpandBlob(pTos);
     *pC->pIncrKey = pOp->p3!=0;
     assert( pOp->p3==0 || pOp->opcode!=OP_IdxGT );
     rc = sqlite3VdbeIdxKeyCompare(pC, pTos->n, (u8*)pTos->z, &res);
@@ -4982,6 +4999,16 @@ default: {
     }
 #endif
 
+#ifdef SQLITE_TEST
+    /* Keep track of the size of the largest BLOB or STR that has appeared
+    ** on the top of the VDBE stack.
+    */
+    if( pTos>=p->aStack && (pTos->flags & (MEM_Blob|MEM_Str))!=0
+         && pTos->n>sqlite3_max_blobsize ){
+      sqlite3_max_blobsize = pTos->n;
+    }
+#endif
+
     /* The following code adds nothing to the actual functionality
     ** of the program.  It is only here for testing and debugging.
     ** On the other hand, it does burn CPU cycles every time through
@@ -4998,6 +5025,7 @@ default: {
     }
     assert( pc>=-1 && pc<p->nOp );
 #ifdef SQLITE_DEBUG
+
     /* Code for tracing the vdbe stack. */
     if( p->trace && pTos>=p->aStack ){
       int i;

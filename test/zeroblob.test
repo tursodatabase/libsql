@@ -13,46 +13,107 @@
 # including the sqlite3_bind_zeroblob(), sqlite3_result_zeroblob(),
 # and the built-in zeroblob() SQL function.
 #
-# $Id: zeroblob.test,v 1.1 2007/05/02 13:30:27 drh Exp $
+# $Id: zeroblob.test,v 1.2 2007/05/02 16:51:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-# Create the database
+# When zeroblob() is used for the last field of a column, then the
+# content of the zeroblob is never instantiated on the VDBE stack.
+# But it does get inserted into the database correctly.
 #
 do_test zeroblob-1.1 {
   execsql {
     CREATE TABLE t1(a,b,c,d);
-    INSERT INTO t1 VALUES(1,2,3,zeroblob(10000));
-    SELECT count(*) FROM t1;
   }
-} {1}
+  set ::sqlite3_max_blobsize 0
+  execsql {
+    INSERT INTO t1 VALUES(2,3,4,zeroblob(10000));
+  }
+  set ::sqlite3_max_blobsize
+} {10}
 do_test zeroblob-1.2 {
   execsql {
     SELECT length(d) FROM t1
   }
 } {10000}
+
+# If a non-NULL column follows the zeroblob, then the content of
+# the zeroblob must be instantiated.
+#
 do_test zeroblob-1.3 {
+  set ::sqlite3_max_blobsize 0
   execsql {
-    INSERT INTO t1 VALUES(2,3,zeroblob(10000),4);
-    SELECT count(*) FROM t1;
+    INSERT INTO t1 VALUES(3,4,zeroblob(10000),5);
   }
-} {2}
+  set ::sqlite3_max_blobsize
+} {10010}
 do_test zeroblob-1.4 {
   execsql {
     SELECT length(c), length(d) FROM t1
   }
 } {1 10000 10000 1}
+
+# Multiple zeroblobs can appear at the end of record.  No instantiation
+# of the blob content occurs on the stack.
+#
 do_test zeroblob-1.5 {
+  set ::sqlite3_max_blobsize 0
   execsql {
-    INSERT INTO t1 VALUES(3,4,zeroblob(10000),zeroblob(10000));
-    SELECT count(*) FROM t1;
+    INSERT INTO t1 VALUES(4,5,zeroblob(10000),zeroblob(10000));
   }
-} {3}
+  set ::sqlite3_max_blobsize
+} {11}
 do_test zeroblob-1.6 {
   execsql {
     SELECT length(c), length(d) FROM t1
   }
 } {1 10000 10000 1 10000 10000}
+
+# NULLs can follow the zeroblob() or be intermixed with zeroblobs and
+# no instantiation of the zeroblobs occurs on the stack.
+#
+do_test zeroblob-1.7 {
+  set ::sqlite3_max_blobsize 0
+  execsql {
+    INSERT INTO t1 VALUES(5,zeroblob(10000),NULL,zeroblob(10000));
+  }
+  set ::sqlite3_max_blobsize
+} {10}
+do_test zeroblob-1.8 {
+  execsql {
+    SELECT length(b), length(d) FROM t1 WHERE a=5
+  }
+} {10000 10000}
+
+# Comparisons against zeroblobs work.
+#
+do_test zeroblob-2.1 {
+  execsql {
+    SELECT a FROM t1 WHERE b=zeroblob(10000)
+  }
+} {5}
+
+# Comparisons against zeroblobs work even when indexed.
+#
+do_test zeroblob-2.2 {
+  execsql {
+    CREATE INDEX i1_1 ON t1(b);
+    SELECT a FROM t1 WHERE b=zeroblob(10000);
+  }
+} {5}
+
+# DISTINCT works for zeroblobs
+#
+do_test zeroblob-3.1 {
+  execsql {
+    SELECT count(DISTINCT a) FROM (
+      SELECT x'00000000000000000000' AS a
+      UNION ALL
+      SELECT zeroblob(10) AS a
+    )
+  }
+} {1}
+  
 
 finish_test

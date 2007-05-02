@@ -1,5 +1,5 @@
-C Cache\sthe\slocation\sof\soverflow\spages\sin\scursors\sused\sfor\sincremental\sblob\sIO.\s(CVS\s3899)
-D 2007-05-02T16:48:37
+C More\sfixes\sand\simprovements\sto\sthe\szeroblob()\smechanism.\s(CVS\s3900)
+D 2007-05-02T16:51:59
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -102,7 +102,7 @@ F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 0b14d0eae083aafca0562d2261a404e5e5abc5f0
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c 23082fa8affdf3ae73937ca0755754fc562674bc
-F src/test1.c bf70db366aa28b813810f63fc48fec424034502d
+F src/test1.c 29a39fdde51f4612082ecf3f5af54dac93766f87
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 946ea9d1a8c928656e3c70f0a2fcb8e733a15e86
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -125,7 +125,7 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c e64a48bc21aa973eb622dd47da87d56a4cdcf528
 F src/util.c b6344325378e75b9e18175d8b6aed1723d73dad9
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c bb1baa9a357b14f28ddfd0a896f60c6ef82dfd33
+F src/vdbe.c a4abf744b5376372a9be30f02ab4b231f353cab1
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h cb02cbbceddf3b40d49012e9f41576f17bcbec97
 F src/vdbeapi.c 37d793559390bec8a00c556f651f21b5f9e589af
@@ -395,7 +395,7 @@ F test/where.test 1d020f50c77f37b2dbab9766ca959e6e3278ecdb
 F test/where2.test 3249d426b3fc7a106713d784e1628307fc308d2e
 F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
 F test/where4.test b68496500bff496e83e76ae4ffb493b99064eac6
-F test/zeroblob.test 76efa0e1b8116037e009b38a060033ea77526437
+F test/zeroblob.test 547d46fd17a574d4d6f1dcea5fce4c4929e165bc
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/lemon.c c8c8b25ab1ac8156b3ad83ba4ea1bf00d5e07f5a
@@ -471,7 +471,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4dbbfff4a7d4be197aac19c80400dafe10dd5e58
-R c0b16184c9579452ff42a74fabe3dca1
-U danielk1977
-Z 7dadee4977fc90359d0189698014dc76
+P 349f1ea7895f06c40affc985a13aa6686dfdea07
+R c40994429188bdd3545336b5231dc204
+U drh
+Z 278e5bf758bcf3f514d6f2d4595a443f
