@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.365 2007/05/02 13:16:30 danielk1977 Exp $
+** $Id: btree.c,v 1.366 2007/05/02 16:48:37 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -394,6 +394,10 @@ struct BtCursor {
   void *pKey;      /* Saved key that was cursor's last known position */
   i64 nKey;        /* Size of pKey, or last integer key */
   int skip;        /* (skip<0) -> Prev() is a no-op. (skip>0) -> Next() is */
+#ifndef SQLITE_OMIT_INCRBLOB
+  u8 cacheOverflow;         /* True to use aOverflow */
+  Pgno *aOverflow;          /* Cache of overflow page locations */
+#endif
 };
 
 /*
@@ -690,6 +694,12 @@ static int saveCursorPosition(BtCursor *pCur){
     pCur->pPage = 0;
     pCur->eState = CURSOR_REQUIRESEEK;
   }
+
+#ifndef SQLITE_OMIT_INCRBLOB
+  /* Delete the cache of overflow page numbers. */
+  sqliteFree(pCur->aOverflow);
+  pCur->aOverflow = 0;
+#endif
 
   return rc;
 }
@@ -2413,13 +2423,20 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin){
 */
 int sqlite3BtreeIncrVacuum(Btree *p){
   BtShared *pBt = p->pBt;
+  BtCursor *pCur;
 
   assert( pBt->inTransaction==TRANS_WRITE && p->inTrans==TRANS_WRITE );
   if( !pBt->autoVacuum ){
     return SQLITE_DONE;
   }
-
-  return incrVacuumStep(p->pBt, 0);
+#ifndef SQLITE_OMIT_INCRBLOB
+  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
+    /* Delete the cache of overflow page numbers. */
+    sqliteFree(pCur->aOverflow);
+    pCur->aOverflow = 0;
+  }
+#endif
+  return incrVacuumStep(pBt, 0);
 }
 
 /*
@@ -2436,6 +2453,15 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *pnTrunc){
   Pager *pPager = pBt->pPager;
 #ifndef NDEBUG
   int nRef = sqlite3PagerRefcount(pPager);
+#endif
+
+#ifndef SQLITE_OMIT_INCRBLOB
+  BtCursor *pCur;
+  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
+    /* Delete the cache of overflow page numbers. */
+    sqliteFree(pCur->aOverflow);
+    pCur->aOverflow = 0;
+  }
 #endif
 
   assert(pBt->autoVacuum);
@@ -2933,6 +2959,9 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
   }
   releasePage(pCur->pPage);
   unlockBtreeIfUnused(pBt);
+#ifndef SQLITE_OMIT_INCRBLOB
+  sqliteFree(pCur->aOverflow);
+#endif
   sqliteFree(pCur);
   return SQLITE_OK;
 }
@@ -3132,6 +3161,7 @@ static int getPayload(
   BtShared *pBt;
   int ovflSize;
   u32 nKey;
+  int iIdx = 0;
 
   assert( pCur!=0 && pCur->pPage!=0 );
   assert( pCur->eState==CURSOR_VALID );
@@ -3170,7 +3200,21 @@ static int getPayload(
   ovflSize = pBt->usableSize - 4;
   if( amt>0 ){
     nextPage = get4byte(&aPayload[pCur->info.nLocal]);
-    while( amt>0 && nextPage ){
+#ifndef SQLITE_OMIT_INCRBLOB
+    if( pCur->cacheOverflow && !pCur->aOverflow ){
+      int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
+      pCur->aOverflow = (Pgno *)sqliteMalloc(sizeof(Pgno)*nOvfl);
+      if( nOvfl && !pCur->aOverflow ){
+        return SQLITE_NOMEM;
+      }
+    }
+    if( pCur->aOverflow && pCur->aOverflow[offset/ovflSize] ){
+      iIdx = (offset/ovflSize);
+      nextPage = pCur->aOverflow[iIdx];
+      offset = (offset%ovflSize);
+    }
+#endif
+    for(iIdx++; amt>0 && nextPage; iIdx++){
       if( offset>=ovflSize ){
         /* The only reason to read this page is to obtain the page
         ** number for the next page in the overflow chain. So try
@@ -3181,6 +3225,12 @@ static int getPayload(
           return rc;
         }
         offset -= ovflSize;
+#ifndef SQLITE_OMIT_INCRBLOB
+        if( pCur->aOverflow ){
+          assert(nextPage);
+          pCur->aOverflow[iIdx] = nextPage;
+        }
+#endif
       }else{
         /* Need to read this page properly, to obtain data to copy into
         ** the caller's buffer.
@@ -3201,6 +3251,11 @@ static int getPayload(
         amt -= a;
         pBuf += a;
         sqlite3PagerUnref(pDbPage);
+#ifndef SQLITE_OMIT_INCRBLOB
+        if( pCur->aOverflow && nextPage ){
+          pCur->aOverflow[iIdx] = nextPage;
+        }
+#endif
       }
     }
   }
@@ -6874,6 +6929,7 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, const void *z){
   u8 *zRem = (u8 *)z;    /* Pointer to data not yet written */
   u32 iOffset = offset;  /* Offset from traversal point to start of write */
 
+  Pgno iIdx = 0;         /* Index of overflow page in pCsr->aOverflow */
   Pgno iOvfl;            /* Page number for next overflow page */
   int ovflSize;          /* Bytes of data per overflow page. */
 
@@ -6908,6 +6964,16 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, const void *z){
   if( pInfo->nData<(offset+amt) ){
     return SQLITE_ERROR;
   }
+  ovflSize = pBt->usableSize - 4;
+
+  assert(pCsr->cacheOverflow);
+  if( !pCsr->aOverflow ){
+    int nOverflow = (pInfo->nPayload - pInfo->nLocal + ovflSize - 1)/ovflSize;
+    pCsr->aOverflow = (Pgno *)sqliteMalloc(sizeof(Pgno)*nOverflow);
+    if( nOverflow && !pCsr->aOverflow ){
+      return SQLITE_NOMEM;
+    }
+  }
 
   if( pInfo->nLocal>iOffset ){
     /* In this case data must be written to the b-tree page. */
@@ -6926,49 +6992,68 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, const void *z){
   }
   iOffset = ((iOffset<pInfo->nLocal)?0:(iOffset-pInfo->nLocal));
 
-  ovflSize = pBt->usableSize - 4;
   assert(pInfo->iOverflow>0 || iRem==0);
-  iOvfl = get4byte(&pInfo->pCell[pInfo->iOverflow]);
-  while( iRem>0 ){
-    if( iOffset>ovflSize ){
-      /* The only reason to read this page is to obtain the page
-      ** number for the next page in the overflow chain. So try
-      ** the getOverflowPage() shortcut.  */
-      rc = getOverflowPage(pBt, iOvfl, 0, &iOvfl);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
-      iOffset -= ovflSize;
+  if( iRem>0 ){
+    if( pCsr->aOverflow[iOffset/ovflSize] ){
+      iIdx = iOffset/ovflSize;
+      iOvfl = pCsr->aOverflow[iIdx];
+      iOffset = iOffset%ovflSize;
     }else{
-      int iWrite = ovflSize - iOffset;
-      DbPage *pOvfl;          /* The overflow page. */
-      u8 *aData;              /* Page data */
-
-      rc = sqlite3PagerGet(pBt->pPager, iOvfl, &pOvfl);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
-      rc = sqlite3PagerWrite(pOvfl);
-      if( rc!=SQLITE_OK ){
+      iOvfl = get4byte(&pInfo->pCell[pInfo->iOverflow]);
+    }
+    for(iIdx++; iRem>0; iIdx++){
+      if( iOffset>ovflSize ){
+        /* The only reason to read this page is to obtain the page
+        ** number for the next page in the overflow chain. So try
+        ** the getOverflowPage() shortcut.  */
+        rc = getOverflowPage(pBt, iOvfl, 0, &iOvfl);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        iOffset -= ovflSize;
+        pCsr->aOverflow[iIdx] = iOvfl;
+      }else{
+        int iWrite = ovflSize - iOffset;
+        DbPage *pOvfl;          /* The overflow page. */
+        u8 *aData;              /* Page data */
+  
+        rc = sqlite3PagerGet(pBt->pPager, iOvfl, &pOvfl);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        rc = sqlite3PagerWrite(pOvfl);
+        if( rc!=SQLITE_OK ){
+          sqlite3PagerUnref(pOvfl);
+          return rc;
+        }
+  
+        aData = sqlite3PagerGetData(pOvfl);
+        iOvfl = get4byte(aData);
+        pCsr->aOverflow[iIdx] = iOvfl;
+        if( iWrite>iRem ){
+          iWrite = iRem;
+        }
+        memcpy(&aData[iOffset+4], zRem, iWrite);
         sqlite3PagerUnref(pOvfl);
-        return rc;
+  
+        zRem += iWrite;
+        iRem -= iWrite;
+        iOffset = ((iOffset<ovflSize)?0:(iOffset-ovflSize));
       }
-
-      aData = sqlite3PagerGetData(pOvfl);
-      iOvfl = get4byte(aData);
-      if( iWrite>iRem ){
-        iWrite = iRem;
-      }
-      memcpy(&aData[iOffset+4], zRem, iWrite);
-      sqlite3PagerUnref(pOvfl);
-
-      zRem += iWrite;
-      iRem -= iWrite;
-      iOffset = ((iOffset<ovflSize)?0:(iOffset-ovflSize));
     }
   }
 
   return SQLITE_OK;
+}
+
+/* 
+** Set a flag on this cursor to cache the locations of pages from the 
+** overflow list for the current row.
+*/
+void sqlite3BtreeCacheOverflow(BtCursor *pCur){
+  assert(!pCur->cacheOverflow);
+  assert(!pCur->aOverflow);
+  pCur->cacheOverflow = 1;
 }
 #endif
 

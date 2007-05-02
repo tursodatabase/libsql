@@ -1,5 +1,5 @@
-C Fix\san\sinvalid\sUTF8\sencoding\sin\sthe\stests\sfor\sthe\strim\sfunction.\s(CVS\s3898)
-D 2007-05-02T15:36:02
+C Cache\sthe\slocation\sof\soverflow\spages\sin\scursors\sused\sfor\sincremental\sblob\sIO.\s(CVS\s3899)
+D 2007-05-02T16:48:37
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,8 +59,8 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 4bbf5ddf9680587c6d4917e02e378b6037be3651
 F src/attach.c a16ada4a4654a0d126b8223ec9494ebb81bc5c3c
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c 0b2c181ea3ee23b5daef6f89d07a8a60d0f6370f
-F src/btree.h b2ef1ccc337fd37c58c8c17189a237aea341fb48
+F src/btree.c 4efb50fa388aa1678eb9cce5e5fc6fa8247406b2
+F src/btree.h 2c187d60cf76d74c2b4767294d6b5fa267037ff0
 F src/build.c 02e01ec7907c7d947ab3041fda0e81eaed05db42
 F src/callback.c 6414ed32d55859d0f65067aa5b88d2da27b3af9e
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
@@ -130,7 +130,7 @@ F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h cb02cbbceddf3b40d49012e9f41576f17bcbec97
 F src/vdbeapi.c 37d793559390bec8a00c556f651f21b5f9e589af
 F src/vdbeaux.c 8c7f22e22d1ea578971f5a3fcd3a56a6882ced64
-F src/vdbeblob.c 6d3128c71d5a6b8db627ea3052ed5aaaaf26e672
+F src/vdbeblob.c 396148feb5917e666edfb643f259f185051351b4
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c ba98f8572ec4609846b368fa7580db178022f1bb
 F src/vtab.c 89a0d5f39c1beba65a77fdb4d507b831fc5e6baf
@@ -471,7 +471,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e6d560ddeeb48fb0cbd9f5a10612280b055baef7
-R 15848809be73f4e08f83f1fd795bb746
-U drh
-Z f28dc40a5ade2da68f7833936614ab80
+P 4dbbfff4a7d4be197aac19c80400dafe10dd5e58
+R c0b16184c9579452ff42a74fabe3dca1
+U danielk1977
+Z 7dadee4977fc90359d0189698014dc76

@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: vdbeblob.c,v 1.1 2007/05/01 17:49:49 danielk1977 Exp $
+** $Id: vdbeblob.c,v 1.2 2007/05/02 16:48:37 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -173,6 +173,7 @@ int sqlite3_blob_open(
     }
     pBlob->flags = flags;
     pBlob->pCsr =  v->apCsr[0]->pCursor;
+    sqlite3BtreeCacheOverflow(pBlob->pCsr);
     pBlob->pStmt = (sqlite3_stmt *)v;
     pBlob->iOffset = v->apCsr[0]->aOffset[iCol];
     pBlob->nByte = sqlite3VdbeSerialTypeLen(type);
