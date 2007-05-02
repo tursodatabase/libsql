@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.1 2007/05/01 17:49:49 danielk1977 Exp $
+# $Id: incrblob.test,v 1.2 2007/05/02 13:16:31 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -48,6 +48,35 @@ do_test incrblob-1.2.6 {
   }
 } {1234567890}
 
-finish_test
+#--------------------------------------------------------------------
+# Test cases incrblob-2.X check that it is possible to read and write
+# regions of a blob that lie on overflow pages.
+do_test incrblob-2.1 {
+  set ::str "[string repeat . 10000]"
+  execsql {
+    INSERT INTO blobs(rowid, k, v) VALUES(3, 'three', $::str);
+  }
+} {}
 
+do_test incrblob-2.2 {
+  set ::blob [db incrblob blobs v 3]
+  seek $::blob 8500
+  read $::blob 10
+} {..........}
+
+do_test incrblob-2.3 {
+  seek $::blob 8500
+  puts -nonewline $::blob 1234567890
+} {}
+
+do_test incrblob-2.4 {
+  seek $::blob 8496
+  read $::blob 10
+} {....123456}
+
+do_test incrblob-2.10 {
+  close $::blob
+} {}
+
+finish_test
 

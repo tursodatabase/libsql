@@ -1,5 +1,5 @@
-C Fix\ssome\scompiler\swarnings.\s\sAdd\sthe\s(untested)\szeroblob()\sSQL\sfunction.\s(CVS\s3895)
-D 2007-05-02T02:08:29
+C Use\sthe\spointer-map\spages\sto\smake\sthe\sincremental\sblob\sAPI\smore\sefficient.\s(CVS\s3896)
+D 2007-05-02T13:16:30
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,7 +59,7 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 4bbf5ddf9680587c6d4917e02e378b6037be3651
 F src/attach.c a16ada4a4654a0d126b8223ec9494ebb81bc5c3c
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c 4e0735d1826a8cefb5ee25aa9615d43860881f10
+F src/btree.c 0b2c181ea3ee23b5daef6f89d07a8a60d0f6370f
 F src/btree.h b2ef1ccc337fd37c58c8c17189a237aea341fb48
 F src/build.c 02e01ec7907c7d947ab3041fda0e81eaed05db42
 F src/callback.c 6414ed32d55859d0f65067aa5b88d2da27b3af9e
@@ -101,7 +101,7 @@ F src/sqlite.h.in 1e053c58fd4df28c38ffdca2443b16d5f76f6f1e
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 0b14d0eae083aafca0562d2261a404e5e5abc5f0
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
-F src/tclsqlite.c 82f7be1e8015ef224e2a9410a8f98dd6f61d64e9
+F src/tclsqlite.c 23082fa8affdf3ae73937ca0755754fc562674bc
 F src/test1.c bf70db366aa28b813810f63fc48fec424034502d
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 946ea9d1a8c928656e3c70f0a2fcb8e733a15e86
@@ -241,7 +241,7 @@ F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test 8a3bc8e8365dc0053c826923c0f738645f50f2f5
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
-F test/incrblob.test 86708ae039f564535e4200ac0e61dab5a6d6f18e
+F test/incrblob.test 09db22f90137dc4f449cf6c7f8e554156fb68fd2
 F test/incrvacuum.test a4c9022d7b26b10495616cc5a255f11afb683be8
 F test/incrvacuum_ioerr.test 0ebc382bcc2036ec58cf49cc5ffada45f75d907b
 F test/index.test e65df12bed94b2903ee89987115e1578687e9266
@@ -470,7 +470,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7a01836dde45098796693bc6cb6045c4059adf1a
-R 05e0b3dbc6feb6e7c7aca220b80c8909
-U drh
-Z cffc5ba75c4a156de15690c278520f4f
+P 6f4f8ba7ec15f214f36fa78e593dd4522ab717f5
+R 89ce3536d9d902e9d75a561e20ef3775
+U danielk1977
+Z 5170bc200f54fb706f822cc7c0bea383

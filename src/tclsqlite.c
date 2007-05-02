@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.180 2007/05/01 17:49:49 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.181 2007/05/02 13:16:31 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -89,6 +89,8 @@ struct SqlPreparedStmt {
   char zSql[1];            /* Text of the SQL statement */
 };
 
+typedef struct IncrblobChannel IncrblobChannel;
+
 /*
 ** There is one instance of this structure for each SQLite database
 ** that has been opened by the SQLite TCL interface.
@@ -114,13 +116,37 @@ struct SqliteDb {
   SqlPreparedStmt *stmtLast; /* Last statement in the list */
   int maxStmt;               /* The next maximum number of stmtList */
   int nStmt;                 /* Number of statements in stmtList */
+  IncrblobChannel *pIncrblob;/* Linked list of open incrblob channels */
 };
 
-typedef struct IncrblobChannel IncrblobChannel;
 struct IncrblobChannel {
-  sqlite3_blob *pBlob;
-  int iSeek;              /* Current seek offset */
+  SqliteDb *pDb;            /* Associated database connection */
+  sqlite3_blob *pBlob;      /* sqlite3 blob handle */
+  int iSeek;                /* Current seek offset */
+
+  Tcl_Channel channel;      /* Channel identifier */
+  IncrblobChannel *pNext;   /* Linked list of all open incrblob channels */
+  IncrblobChannel *pPrev;   /* Linked list of all open incrblob channels */
 };
+
+/*
+** Close all incrblob channels opened using database connection pDb.
+** This is called when shutting down the database connection.
+*/
+static void closeIncrblobChannels(SqliteDb *pDb){
+  IncrblobChannel *p;
+  IncrblobChannel *pNext;
+
+  for(p=pDb->pIncrblob; p; p=pNext){
+    pNext = p->pNext;
+
+    /* Note: Calling unregister here call Tcl_Close on the incrblob channel, 
+    ** which deletes the IncrblobChannel structure at *p. So do not
+    ** call Tcl_Free() here.
+    */
+    Tcl_UnregisterChannel(pDb->interp, p->channel);
+  }
+}
 
 /*
 ** Close an incremental blob channel.
@@ -128,6 +154,18 @@ struct IncrblobChannel {
 static int incrblobClose(ClientData instanceData, Tcl_Interp *interp){
   IncrblobChannel *p = (IncrblobChannel *)instanceData;
   sqlite3_blob_close(p->pBlob);
+
+  /* Remove the channel from the SqliteDb.pIncrblob list. */
+  if( p->pNext ){
+    p->pNext->pPrev = p->pPrev;
+  }
+  if( p->pPrev ){
+    p->pPrev->pNext = p->pNext;
+  }
+  if( p->pDb->pIncrblob==p ){
+    p->pDb->pIncrblob = p->pNext;
+  }
+
   Tcl_Free((char *)p);
   return TCL_OK;
 }
@@ -164,6 +202,9 @@ static int incrblobInput(
   return nRead;
 }
 
+/*
+** Write data to an incremental blob channel.
+*/
 static int incrblobOutput(
   ClientData instanceData, 
   CONST char *buf, 
@@ -263,7 +304,6 @@ static int createIncrblobChannel(
   IncrblobChannel *p;
   sqlite3_blob *pBlob;
   int rc;
-  Tcl_Channel channel;
   int flags = TCL_READABLE|TCL_WRITABLE;
 
   /* This variable is used to name the channels: "incrblob_[incr count]" */
@@ -281,10 +321,19 @@ static int createIncrblobChannel(
   p->pBlob = pBlob;
 
   sprintf(zChannel, "incrblob_%d", ++count);
-  channel = Tcl_CreateChannel(&IncrblobChannelType, zChannel, p, flags);
-  Tcl_RegisterChannel(interp, channel);
+  p->channel = Tcl_CreateChannel(&IncrblobChannelType, zChannel, p, flags);
+  Tcl_RegisterChannel(interp, p->channel);
 
-  Tcl_SetResult(interp, (char *)Tcl_GetChannelName(channel), TCL_VOLATILE);
+  /* Link the new channel into the SqliteDb.pIncrblob list. */
+  p->pNext = pDb->pIncrblob;
+  p->pPrev = 0;
+  if( p->pNext ){
+    p->pNext->pPrev = p;
+  }
+  pDb->pIncrblob = p;
+  p->pDb = pDb;
+
+  Tcl_SetResult(interp, (char *)Tcl_GetChannelName(p->channel), TCL_VOLATILE);
   return TCL_OK;
 }
 
@@ -363,6 +412,7 @@ static void flushStmtCache( SqliteDb *pDb ){
 static void DbDeleteCmd(void *db){
   SqliteDb *pDb = (SqliteDb*)db;
   flushStmtCache(pDb);
+  closeIncrblobChannels(pDb);
   sqlite3_close(pDb->db);
   while( pDb->pFunc ){
     SqlFunc *pFunc = pDb->pFunc;
