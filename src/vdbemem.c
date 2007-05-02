@@ -60,12 +60,14 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 ** Return SQLITE_OK on success or SQLITE_NOMEM if malloc fails.
 */
 int sqlite3VdbeMemDynamicify(Mem *pMem){
-  int n = pMem->n;
+  int n;
   u8 *z;
+  sqlite3VdbeMemExpandBlob(pMem);
   if( (pMem->flags & (MEM_Ephem|MEM_Static|MEM_Short))==0 ){
     return SQLITE_OK;
   }
   assert( (pMem->flags & MEM_Dyn)==0 );
+  n = pMem->n;
   assert( pMem->flags & (MEM_Str|MEM_Blob) );
   z = sqliteMallocRaw( n+2 );
   if( z==0 ){
@@ -82,6 +84,30 @@ int sqlite3VdbeMemDynamicify(Mem *pMem){
 }
 
 /*
+** If the given Mem* is a zero-filled blob, turn it into an ordinary
+** blob stored in dynamically allocated space.
+*/
+int sqlite3VdbeMemExpandBlob(Mem *pMem){
+  if( pMem->flags & MEM_Zero ){
+    char *pNew;
+    assert( (pMem->flags & MEM_Blob)!=0 );
+    pNew = sqliteMalloc(pMem->n+pMem->u.i+1);
+    if( pNew==0 ){ 
+      return SQLITE_NOMEM;
+    }
+    memcpy(pNew, pMem->z, pMem->n);
+    memset(&pNew[pMem->n], 0, pMem->u.i+1);
+    sqlite3VdbeMemRelease(pMem);
+    pMem->z = pNew;
+    pMem->u.i = 0;
+    pMem->flags &= MEM_Zero|MEM_Static|MEM_Ephem|MEM_Short;
+    pMem->flags |= MEM_Term|MEM_Dyn;
+  }
+  return SQLITE_OK;
+}
+
+
+/*
 ** Make the given Mem object either MEM_Short or MEM_Dyn so that bytes
 ** of the Mem.z[] array can be modified.
 **
@@ -90,6 +116,7 @@ int sqlite3VdbeMemDynamicify(Mem *pMem){
 int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   int n;
   u8 *z;
+  sqlite3VdbeMemExpandBlob(pMem);
   if( (pMem->flags & (MEM_Ephem|MEM_Static))==0 ){
     return SQLITE_OK;
   }
@@ -345,6 +372,18 @@ void sqlite3VdbeMemSetNull(Mem *pMem){
   pMem->flags = MEM_Null;
   pMem->type = SQLITE_NULL;
   pMem->n = 0;
+}
+
+/*
+** Delete any previous value and set the value to be a BLOB of length
+** n containing all zeros.
+*/
+void sqlite3VdbeMemSetZeroBlob(Mem *pMem, int n){
+  sqlite3VdbeMemRelease(pMem);
+  pMem->flags = MEM_Blob|MEM_Zero;
+  pMem->type = SQLITE_BLOB;
+  pMem->n = 0;
+  pMem->u.i = n;
 }
 
 /*
@@ -699,14 +738,14 @@ int sqlite3VdbeMemFromBtree(
 void sqlite3VdbeMemSanity(Mem *pMem){
   int flags = pMem->flags;
   assert( flags!=0 );  /* Must define some type */
-  if( pMem->flags & (MEM_Str|MEM_Blob) ){
-    int x = pMem->flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short);
+  if( flags & (MEM_Str|MEM_Blob) ){
+    int x = flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short);
     assert( x!=0 );            /* Strings must define a string subtype */
     assert( (x & (x-1))==0 );  /* Only one string subtype can be defined */
-    assert( pMem->z!=0 );      /* Strings must have a value */
+    assert( pMem->z!=0 || x==MEM_Zero );      /* Strings must have a value */
     /* Mem.z points to Mem.zShort iff the subtype is MEM_Short */
-    assert( (pMem->flags & MEM_Short)==0 || pMem->z==pMem->zShort );
-    assert( (pMem->flags & MEM_Short)!=0 || pMem->z!=pMem->zShort );
+    assert( (x & MEM_Short)==0 || pMem->z==pMem->zShort );
+    assert( (x & MEM_Short)!=0 || pMem->z!=pMem->zShort );
     /* No destructor unless there is MEM_Dyn */
     assert( pMem->xDel==0 || (pMem->flags & MEM_Dyn)!=0 );
 
@@ -759,6 +798,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   }
   assert( (MEM_Blob>>3) == MEM_Str );
   pVal->flags |= (pVal->flags & MEM_Blob)>>3;
+  sqlite3VdbeMemExpandBlob(pVal);
   if( pVal->flags&MEM_Str ){
     sqlite3VdbeChangeEncoding(pVal, enc & ~SQLITE_UTF16_ALIGNED);
     if( (enc & SQLITE_UTF16_ALIGNED)!=0 && 1==(1&(int)pVal->z) ){
@@ -888,7 +928,11 @@ void sqlite3ValueFree(sqlite3_value *v){
 int sqlite3ValueBytes(sqlite3_value *pVal, u8 enc){
   Mem *p = (Mem*)pVal;
   if( (p->flags & MEM_Blob)!=0 || sqlite3ValueText(pVal, enc) ){
-    return p->n;
+    if( p->flags & MEM_Zero ){
+      return p->n+p->u.i;
+    }else{
+      return p->n;
+    }
   }
   return 0;
 }

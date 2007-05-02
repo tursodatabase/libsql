@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.73 2007/03/29 05:51:49 drh Exp $
+** $Id: test3.c,v 1.74 2007/05/02 01:34:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -750,7 +750,7 @@ static int btree_delete(
 }
 
 /*
-** Usage:   btree_insert ID KEY DATA
+** Usage:   btree_insert ID KEY DATA ?NZERO?
 **
 ** Create a new entry with the given key and data.  If an entry already
 ** exists with the same key the old entry is overwritten.
@@ -763,19 +763,25 @@ static int btree_insert(
 ){
   BtCursor *pCur;
   int rc;
+  int nZero;
 
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "ID KEY DATA");
+  if( objc!=4 && objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "ID KEY DATA ?NZERO?");
     return TCL_ERROR;
   }
   pCur = sqlite3TextToPtr(Tcl_GetString(objv[1]));
+  if( objc==5 ){
+    if( Tcl_GetIntFromObj(interp, objv[4], &nZero) ) return TCL_ERROR;
+  }else{
+    nZero = 0;
+  }
   if( sqlite3BtreeFlags(pCur) & BTREE_INTKEY ){
     i64 iKey;
     int len;
     unsigned char *pBuf;
     if( Tcl_GetWideIntFromObj(interp, objv[2], &iKey) ) return TCL_ERROR;
     pBuf = Tcl_GetByteArrayFromObj(objv[3], &len);
-    rc = sqlite3BtreeInsert(pCur, 0, iKey, pBuf, len, 0);
+    rc = sqlite3BtreeInsert(pCur, 0, iKey, pBuf, len, nZero, 0);
   }else{
     int keylen;
     int dlen;
@@ -783,7 +789,7 @@ static int btree_insert(
     unsigned char *pDBuf;
     pKBuf = Tcl_GetByteArrayFromObj(objv[2], &keylen);
     pDBuf = Tcl_GetByteArrayFromObj(objv[3], &dlen);
-    rc = sqlite3BtreeInsert(pCur, pKBuf, keylen, pDBuf, dlen, 0);
+    rc = sqlite3BtreeInsert(pCur, pKBuf, keylen, pDBuf, dlen, nZero, 0);
   }
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.240 2007/04/27 17:16:20 drh Exp $
+** $Id: test1.c,v 1.241 2007/05/02 01:34:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2258,6 +2258,43 @@ static int test_breakpoint(
 }
 
 /*
+** Usage:   sqlite3_bind_zeroblob  STMT IDX N
+**
+** Test the sqlite3_bind_zeroblob interface.  STMT is a prepared statement.
+** IDX is the index of a wildcard in the prepared statement.  This command
+** binds a N-byte zero-filled BLOB to the wildcard.
+*/
+static int test_bind_zeroblob(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int idx;
+  int n;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " STMT N VALUE", 0);
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &n) ) return TCL_ERROR;
+
+  rc = sqlite3_bind_zeroblob(pStmt, idx, n);
+  if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
+  if( rc!=SQLITE_OK ){
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
+/*
 ** Usage:   sqlite3_bind_int  STMT N VALUE
 **
 ** Test the sqlite3_bind_int interface.  STMT is a prepared statement.
@@ -4361,6 +4398,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   } aObjCmd[] = {
      { "sqlite3_connection_pointer",    get_sqlite_pointer, 0 },
      { "sqlite3_bind_int",              test_bind_int,      0 },
+     { "sqlite3_bind_zeroblob",         test_bind_zeroblob, 0 },
      { "sqlite3_bind_int64",            test_bind_int64,    0 },
      { "sqlite3_bind_double",           test_bind_double,   0 },
      { "sqlite3_bind_null",             test_bind_null     ,0 },

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.602 2007/04/26 14:42:36 danielk1977 Exp $
+** $Id: vdbe.c,v 1.603 2007/05/02 01:34:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -3372,8 +3372,14 @@ case OP_Insert: {         /* no-push */
       }
       pC->nullRow = 0;
     }else{
+      int nZero;
+      if( pTos->flags & MEM_Zero ){
+        nZero = pTos->u.i;
+      }else{
+        nZero = 0;
+      }
       rc = sqlite3BtreeInsert(pC->pCursor, 0, iKey,
-                              pTos->z, pTos->n,
+                              pTos->z, pTos->n, nZero,
                               pOp->p2 & OPFLAG_APPEND);
     }
     
@@ -3752,7 +3758,7 @@ case OP_IdxInsert: {        /* no-push */
     int nKey = pTos->n;
     const char *zKey = pTos->z;
     assert( pC->isTable==0 );
-    rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, pOp->p2);
+    rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, 0, pOp->p2);
     assert( pC->deferredMoveto==0 );
     pC->cacheStatus = CACHE_STALE;
   }

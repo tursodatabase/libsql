@@ -172,6 +172,7 @@ typedef struct Mem Mem;
 #define MEM_Ephem     0x0100   /* Mem.z points to an ephemeral string */
 #define MEM_Short     0x0200   /* Mem.z points to Mem.zShort */
 #define MEM_Agg       0x0400   /* Mem.z points to an agg function context */
+#define MEM_Zero      0x0800   /* Mem.i contains count of 0s appended to blob */
 
 
 /* A VdbeFunc is just a FuncDef (defined in sqliteInt.h) that contains
@@ -385,6 +386,7 @@ int sqlite3VdbeMemSetStr(Mem*, const char*, int, u8, void(*)(void*));
 void sqlite3VdbeMemSetInt64(Mem*, i64);
 void sqlite3VdbeMemSetDouble(Mem*, double);
 void sqlite3VdbeMemSetNull(Mem*);
+void sqlite3VdbeMemSetZeroBlob(Mem*,int);
 int sqlite3VdbeMemMakeWriteable(Mem*);
 int sqlite3VdbeMemDynamicify(Mem*);
 int sqlite3VdbeMemStringify(Mem*, int);

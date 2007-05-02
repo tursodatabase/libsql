@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.363 2007/05/01 17:49:49 danielk1977 Exp $
+** $Id: btree.c,v 1.364 2007/05/02 01:34:31 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -4151,6 +4151,7 @@ static int fillInCell(
   unsigned char *pCell,          /* Complete text of the cell */
   const void *pKey, i64 nKey,    /* The key */
   const void *pData,int nData,   /* The data */
+  int nZero,                     /* Extra zero bytes to append to pData */
   int *pnSize                    /* Write cell size here */
 ){
   int nPayload;
@@ -4172,18 +4173,18 @@ static int fillInCell(
     nHeader += 4;
   }
   if( pPage->hasData ){
-    nHeader += putVarint(&pCell[nHeader], nData);
+    nHeader += putVarint(&pCell[nHeader], nData+nZero);
   }else{
-    nData = 0;
+    nData = nZero = 0;
   }
   nHeader += putVarint(&pCell[nHeader], *(u64*)&nKey);
   parseCellPtr(pPage, pCell, &info);
   assert( info.nHeader==nHeader );
   assert( info.nKey==nKey );
-  assert( info.nData==nData );
+  assert( info.nData==nData+nZero );
   
   /* Fill in the payload */
-  nPayload = nData;
+  nPayload = nData + nZero;
   if( pPage->intKey ){
     pSrc = pData;
     nSrc = nData;
@@ -4228,9 +4229,13 @@ static int fillInCell(
     }
     n = nPayload;
     if( n>spaceLeft ) n = spaceLeft;
-    if( n>nSrc ) n = nSrc;
-    assert( pSrc );
-    memcpy(pPayload, pSrc, n);
+    if( nSrc>0 ){
+      if( n>nSrc ) n = nSrc;
+      assert( pSrc );
+      memcpy(pPayload, pSrc, n);
+    }else{
+      memset(pPayload, 0, n);
+    }
     nPayload -= n;
     pPayload += n;
     pSrc += n;
@@ -4555,7 +4560,7 @@ static int balance_quick(MemPage *pPage, MemPage *pParent){
   */
   assert( pPage->nCell>0 );
   parseCellPtr(pPage, findCell(pPage, pPage->nCell-1), &info);
-  rc = fillInCell(pParent, parentCell, 0, info.nKey, 0, 0, &parentSize);
+  rc = fillInCell(pParent, parentCell, 0, info.nKey, 0, 0, 0, &parentSize);
   if( rc!=SQLITE_OK ){
     return rc;
   }
@@ -5101,7 +5106,7 @@ static int balance_nonroot(MemPage *pPage){
         j--;
         parseCellPtr(pNew, apCell[j], &info);
         pCell = &aSpace[iSpace];
-        fillInCell(pParent, pCell, 0, info.nKey, 0, 0, &sz);
+        fillInCell(pParent, pCell, 0, info.nKey, 0, 0, 0, &sz);
         iSpace += sz;
         assert( iSpace<=pBt->pageSize*5 );
         pTemp = 0;
@@ -5415,6 +5420,7 @@ int sqlite3BtreeInsert(
   BtCursor *pCur,                /* Insert data into the table of this cursor */
   const void *pKey, i64 nKey,    /* The key of the new record */
   const void *pData, int nData,  /* The data of the new record */
+  int nZero,                     /* Number of extra 0 bytes to append to data */
   int appendBias                 /* True if this is likely an append */
 ){
   int rc;
@@ -5457,7 +5463,7 @@ int sqlite3BtreeInsert(
   if( rc ) return rc;
   newCell = sqliteMallocRaw( MX_CELL_SIZE(pBt) );
   if( newCell==0 ) return SQLITE_NOMEM;
-  rc = fillInCell(pPage, newCell, pKey, nKey, pData, nData, &szNew);
+  rc = fillInCell(pPage, newCell, pKey, nKey, pData, nData, nZero, &szNew);
   if( rc ) goto end_insert;
   assert( szNew==cellSizePtr(pPage, newCell) );
   assert( szNew<=MX_CELL_SIZE(pBt) );
@@ -6857,7 +6863,7 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, const void *z){
   }
   if( nCopy>0 ){
     memcpy(&zData[offset], z, amt);
-    rc = sqlite3BtreeInsert(pCsr, 0, iKey, zData, nData, 0);
+    rc = sqlite3BtreeInsert(pCsr, 0, iKey, zData, nData, 0, 0);
   }
 
   sqliteFree(zData);

@@ -37,6 +37,7 @@ int sqlite3_expired(sqlite3_stmt *pStmt){
 const void *sqlite3_value_blob(sqlite3_value *pVal){
   Mem *p = (Mem*)pVal;
   if( p->flags & (MEM_Blob|MEM_Str) ){
+    sqlite3VdbeMemExpandBlob(p);
     if( (p->flags & MEM_Term)==0 ){
       p->flags &= ~MEM_Str;
     }
@@ -150,6 +151,9 @@ void sqlite3_result_text16le(
 #endif /* SQLITE_OMIT_UTF16 */
 void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
   sqlite3VdbeMemCopy(&pCtx->s, pValue);
+}
+void sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
+  sqlite3VdbeMemSetZeroBlob(&pCtx->s, n);
 }
 
 
@@ -787,6 +791,15 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
     sqlite3VdbeMemCopy(&p->aVar[i-1], pValue);
+  }
+  return rc;
+}
+int sqlite3_bind_zeroblob(sqlite3_stmt *pStmt, int i, int n){
+  int rc;
+  Vdbe *p = (Vdbe *)pStmt;
+  rc = vdbeUnbind(p, i);
+  if( rc==SQLITE_OK ){
+    sqlite3VdbeMemSetZeroBlob(&p->aVar[i-1], n);
   }
   return rc;
 }
