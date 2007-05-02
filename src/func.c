@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.143 2007/04/27 21:59:53 drh Exp $
+** $Id: func.c,v 1.144 2007/05/02 02:08:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -683,6 +683,20 @@ static void hexFunc(
 }
 
 /*
+** The zeroblob(N) function returns a zero-filled blob of size N bytes.
+*/
+static void zeroblobFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int n;
+  assert( argc==1 );
+  n = sqlite3_value_int(argv[0]);
+  sqlite3_result_zeroblob(context, n);
+}
+
+/*
 ** The replace() function.  Three arguments are all strings: call
 ** them A, B, and C. The result is also a string which is derived
 ** from A by replacing every occurance of B with C.  The match
@@ -764,10 +778,10 @@ static void trimFunc(
   if( zIn==0 ) return;
   if( argc==1 ){
     static const unsigned char lenOne[] = { 1 };
-    static const char *azOne[] = { " " };
+    static const unsigned char *azOne[] = { (u8*)" " };
     nChar = 1;
-    aLen = (unsigned char*)lenOne;
-    azChar = (const unsigned char**)azOne;
+    aLen = (u8*)lenOne;
+    azChar = azOne;
     zCharSet = 0;
   }else if( (zCharSet = sqlite3_value_text(argv[1]))==0 ){
     return;
@@ -1244,6 +1258,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "rtrim",              2, 2, SQLITE_UTF8,    0, trimFunc          },
     { "trim",               1, 3, SQLITE_UTF8,    0, trimFunc          },
     { "trim",               2, 3, SQLITE_UTF8,    0, trimFunc          },
+    { "zeroblob",           1, 0, SQLITE_UTF8,    0, zeroblobFunc      },
 #ifdef SQLITE_SOUNDEX
     { "soundex",            1, 0, SQLITE_UTF8,    0, soundexFunc},
 #endif

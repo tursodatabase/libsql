@@ -1,5 +1,5 @@
-C Begin\sadding\sthe\szeroblob\sAPI\sto\ssupport\sincremental\sblob\si/o.\s(CVS\s3894)
-D 2007-05-02T01:34:31
+C Fix\ssome\scompiler\swarnings.\s\sAdd\sthe\s(untested)\szeroblob()\sSQL\sfunction.\s(CVS\s3895)
+D 2007-05-02T02:08:29
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -68,7 +68,7 @@ F src/date.c 94a6777df13d2aaacd19de080d9e8d3444364133
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 2f0f9f89efe9170e5e6ca5d5e93a9d5896fff5ac
-F src/func.c b40a6320fa12530602ffd9535c8f97f934f0e69c
+F src/func.c a4bc09fe4fdf3cbab8840ae8d8b76ca1f338de22
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 413cc06990cb3c401e64e596776c1e43934f8841
@@ -127,7 +127,7 @@ F src/util.c b6344325378e75b9e18175d8b6aed1723d73dad9
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
 F src/vdbe.c 8cc851ca1d6d849586eb0c5359c492685c285c97
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
-F src/vdbeInt.h 016c808478bce04e071c38fa506e05763e8a54b9
+F src/vdbeInt.h 10ff7c35f790d48f51317af4e5833d4d4cb5da34
 F src/vdbeapi.c 37d793559390bec8a00c556f651f21b5f9e589af
 F src/vdbeaux.c ef59545f53f90394283f2fd003375d3ebbf0bd6e
 F src/vdbeblob.c 6d3128c71d5a6b8db627ea3052ed5aaaaf26e672
@@ -470,7 +470,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7c4c65924035d9f260f6b64eb92c5c6cf6c04b7b
-R ab7ef76e7fb4aa900cb531034d51122a
+P 7a01836dde45098796693bc6cb6045c4059adf1a
+R 05e0b3dbc6feb6e7c7aca220b80c8909
 U drh
-Z 29f62b2ce72d241a227558f749482713
+Z cffc5ba75c4a156de15690c278520f4f
