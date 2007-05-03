@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.369 2007/05/03 11:43:33 danielk1977 Exp $
+** $Id: btree.c,v 1.370 2007/05/03 13:11:32 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3266,7 +3266,7 @@ static int accessPayload(
         }
         if( eOp ){
           /* A write operation. */
-          rc = sqlite3PagerWrite(pPage->pDbPage);
+          rc = sqlite3PagerWrite(pDbPage);
           if( rc!=SQLITE_OK ){
             sqlite3PagerUnref(pDbPage);
             return rc;

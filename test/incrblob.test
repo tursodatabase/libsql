@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.3 2007/05/03 11:43:35 danielk1977 Exp $
+# $Id: incrblob.test,v 1.4 2007/05/03 13:11:32 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -79,7 +79,12 @@ do_test incrblob-1.3.10 {
 
 
 #------------------------------------------------------------------------
-# incrblob-2.*: Test seeking in an incremental blob can use ptrmap pages.
+# incrblob-2.*: Test that the following operations use ptrmap pages:
+#
+#     * Reading near the end of a blob,
+#     * Writing near the end of a blob (TODO),
+#     * SELECT a column value that is located on an overflow page (TODO).
+#
 #
 proc nRead {db} {
   set bt [btree_from_db $db]
@@ -131,7 +136,7 @@ foreach AutoVacuumMode [list 0 1] {
     nRead db
   } [expr $AutoVacuumMode ? 4 : 30]
 
-  do_test incrblob-2.3 {
+  do_test incrblob-2.$AutoVacuumMode.3 {
     string range [db one {SELECT v FROM blobs}] end-19 end
   } $::fragment
 }
