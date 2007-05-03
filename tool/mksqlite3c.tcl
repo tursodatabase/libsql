@@ -172,6 +172,7 @@ foreach file {
    vdbeaux.c
    vdbeapi.c
    vdbe.c
+   vdbeblob.c
 
    expr.c
    alter.c
