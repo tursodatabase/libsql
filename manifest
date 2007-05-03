@@ -1,5 +1,5 @@
-C Get\sthe\samalgamation\sbuilder\sworking\swith\sincremental\sI/O.\s(CVS\s3908)
-D 2007-05-03T16:55:32
+C Improvements\sto\sI/O\stracing\soutput.\s\sRequire\s-DSQLITE_ENABLE_IOTRACE\swhen\ncompiling\sshell.c\sin\sorder\sto\slink\sin\sthe\sI/O\stracing\scapability.\s(CVS\s3909)
+D 2007-05-03T17:18:37
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -87,7 +87,7 @@ F src/os_unix.c 426b4c03c304ad78746d65d9ba101e0b72e18e23
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c e94903c7dc1c0599c8ddce42efa0b6928068ddc5
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 23da15e142d77ae068b50c432c7d363902fbbab3
+F src/pager.c 22bd6df426881401eaa19734f6d7c69ccb0bc505
 F src/pager.h d652ddf092d2318d00e41f8539760fe8e57c157c
 F src/parse.y a3940369e12c69c4968aa580cdc74cf73a664980
 F src/pragma.c 4fdefc03c3fd0ee87f8aad82bf80ba9bf1cdf416
@@ -96,7 +96,7 @@ F src/printf.c 0c6f40648770831341ac45ab32423a80b4c87f05
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c 3c8f3bc7fd823abb8af30ec89ba6bcc515923fa1
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 3ae4654560e91220a95738a73d135d91d937cda1
+F src/shell.c 762c81655da0f01067514924a5ba8f47a47ada1d
 F src/sqlite.h.in a666300976897eced975b448f722a722b362c6b1
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 0b14d0eae083aafca0562d2261a404e5e5abc5f0
@@ -473,7 +473,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e12c522383bd40af375a52d2e68612c4dc7fd4db
-R c3f970866b48c475a20693729022e6b0
+P 92b53601657be3f1be70873b2960cd97b97f72a1
+R 2fb024d0ffb855b54c72bde6978aacd6
 U drh
-Z 93d0cf2ef7c7221a7f678ccc2eb37d7a
+Z f0fb6fb797fd898d24e13ec3e7829264
