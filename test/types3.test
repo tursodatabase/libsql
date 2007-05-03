@@ -12,7 +12,7 @@
 # of this file is testing the interaction of SQLite manifest types
 # with Tcl dual-representations.
 #
-# $Id: types3.test,v 1.5 2006/01/17 09:35:03 danielk1977 Exp $
+# $Id: types3.test,v 1.6 2007/05/03 16:31:26 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -27,7 +27,7 @@ do_test types3-1.1 {
 
 # A variable with an integer representation comes in as INTEGER
 do_test types3-1.2 {
-  set V [expr {1+2}]
+  set V [expr {int(1+2)}]
   concat [tcl_variable_type V] [execsql {SELECT typeof(:V)}]
 } {int integer}
 do_test types3-1.3 {

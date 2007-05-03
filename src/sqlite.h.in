@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.203 2007/05/02 01:34:31 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.204 2007/05/03 16:31:26 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1873,8 +1873,29 @@ int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
 ****** EXPERIMENTAL - subject to change without notice **************
 */
 
+/*
+** An instance of the following opaque structure is used to 
+** represent an open blob handle.
+*/
 typedef struct sqlite3_blob sqlite3_blob;
 
+/*
+** Open a handle to the blob located in row iRow,, column zColumn, 
+** table zTable in database zDb. i.e. the same blob that would
+** be selected by:
+**
+**     "SELECT zColumn FROM zDb.zTable WHERE rowid = iRow;
+**
+** If the flags parameter is non-zero, the blob is opened for 
+** read and write access. If it is zero, the blob is opened for read 
+** access.
+**
+** On success, SQLITE_OK is returned and the new blob-handle is
+** written to *ppBlob. Otherwise an error code is returned and 
+** any value written to *ppBlob should not be used by the caller.
+** This function sets the database-handle error code and message
+** accessible via sqlite3_errcode() and sqlite3_errmsg().
+*/
 int sqlite3_blob_open(
   sqlite3*,
   const char *zDb,
@@ -1885,11 +1906,45 @@ int sqlite3_blob_open(
   sqlite3_blob **ppBlob
 );
 
+/*
+** Close an open blob handle.
+*/
 int sqlite3_blob_close(sqlite3_blob *);
 
-int sqlite3_blob_read(sqlite3_blob *, void *z, int n, int iOffset);
-int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
+/*
+** Return the size in bytes of the blob accessible via the open 
+** blob-handle passed as an argument.
+*/
 int sqlite3_blob_bytes(sqlite3_blob *);
+
+/*
+** This function is used to read data from an open blob-handle into
+** a caller supplied buffer. n bytes of data are copied into buffer
+** z from the open blob, starting at offset iOffset.
+**
+** On success, SQLITE_OK is returned. Otherwise, an SQLite error 
+** code.
+*/
+int sqlite3_blob_read(sqlite3_blob *, void *z, int n, int iOffset);
+
+/*
+** This function is used to write data from an open blob-handle into
+** a user supplied buffer. n bytes of data are copied from the buffer
+** pointed to by z into the open blob, starting at offset iOffset.
+**
+** If the blob-handle passed as the first argument was not opened for
+** writing (the flags parameter to sqlite3_blob_open was zero), this
+** function returns SQLITE_READONLY.
+**
+** This function may only modify the contents of the blob, it is
+** not possible to increase the size of a blob using this API. If
+** offset iOffset is less than n bytes from the end of the blob, 
+** SQLITE_ERROR is returned and no data is written.
+**
+** On success, SQLITE_OK is returned. Otherwise, an SQLite error 
+** code. If an error occurs, this function sets the 
+*/
+int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
 
 /*
 ** Undo the hack that converts floating point types to integer for

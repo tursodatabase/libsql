@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: vdbeblob.c,v 1.3 2007/05/03 11:43:33 danielk1977 Exp $
+** $Id: vdbeblob.c,v 1.4 2007/05/03 16:31:26 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -43,7 +43,6 @@ int sqlite3_blob_open(
   int flags,              /* True -> read/write access, false -> read-only */
   sqlite3_blob **ppBlob
 ){
-  int rc = SQLITE_OK;
   int nAttempt = 0;
   int iCol;               /* Index of zColumn in row-record */
 
@@ -83,6 +82,8 @@ int sqlite3_blob_open(
   };
 
   Vdbe *v = 0;
+  int rc = SQLITE_OK;
+  char zErr[128] = {0};
 
   do {
     Parse sParse;
@@ -98,9 +99,12 @@ int sqlite3_blob_open(
 
     pTab = sqlite3LocateTable(&sParse, zTable, zDb);
     if( !pTab ){
-      sqlite3Error(db, sParse.rc, "%s", sParse.zErrMsg);
+      if( sParse.zErrMsg ){
+        sqlite3_snprintf(sizeof(zErr), zErr, "%s", sParse.zErrMsg);
+        zErr[sizeof(zErr)-1] = '\0';
+      }
       sqliteFree(sParse.zErrMsg);
-      rc = sParse.rc;
+      rc = SQLITE_ERROR;
       sqlite3SafetyOff(db);
       goto blob_open_out;
     }
@@ -112,8 +116,7 @@ int sqlite3_blob_open(
       }
     }
     if( iCol==pTab->nCol ){
-      sqlite3Error(db, SQLITE_ERROR, "no such column: %s", zColumn);
-      sqliteFree(sParse.zErrMsg);
+      sprintf(zErr, "no such column: \"%s\"", zColumn);
       rc = SQLITE_ERROR;
       sqlite3SafetyOff(db);
       goto blob_open_out;
@@ -162,6 +165,7 @@ int sqlite3_blob_open(
     if( rc!=SQLITE_ROW ){
       nAttempt++;
       rc = sqlite3_finalize((sqlite3_stmt *)v);
+      sprintf(zErr, "no such rowid: %lld", iRow);
       v = 0;
     }
   } while( nAttempt<5 && rc==SQLITE_SCHEMA );
@@ -191,17 +195,15 @@ int sqlite3_blob_open(
     pBlob->nByte = sqlite3VdbeSerialTypeLen(type);
     *ppBlob = (sqlite3_blob *)pBlob;
     rc = SQLITE_OK;
-  }else{
-    if( rc==SQLITE_DONE ){
-      rc = SQLITE_ERROR;
-    }
+  }else if( rc==SQLITE_OK ){
+    rc = SQLITE_ERROR;
   }
 
 blob_open_out:
   if( rc!=SQLITE_OK || sqlite3MallocFailed() ){
     sqlite3_finalize((sqlite3_stmt *)v);
   }
-  sqlite3Error(db, rc, "");
+  sqlite3Error(db, rc, zErr);
   return sqlite3ApiExit(db, rc);
 }
 

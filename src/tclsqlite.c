@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.181 2007/05/02 13:16:31 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.182 2007/05/03 16:31:26 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -299,18 +299,20 @@ static int createIncrblobChannel(
   const char *zDb,
   const char *zTable, 
   const char *zColumn, 
-  sqlite_int64 iRow
+  sqlite_int64 iRow,
+  int isReadonly
 ){
   IncrblobChannel *p;
+  sqlite3 *db = pDb->db;
   sqlite3_blob *pBlob;
   int rc;
-  int flags = TCL_READABLE|TCL_WRITABLE;
+  int flags = TCL_READABLE|(isReadonly ? 0 : TCL_WRITABLE);
 
   /* This variable is used to name the channels: "incrblob_[incr count]" */
   static int count = 0;
   char zChannel[64];
 
-  rc = sqlite3_blob_open(pDb->db, zDb, zTable, zColumn, iRow, 1, &pBlob);
+  rc = sqlite3_blob_open(db, zDb, zTable, zColumn, iRow, !isReadonly, &pBlob);
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, (char *)sqlite3_errmsg(pDb->db), TCL_VOLATILE);
     return TCL_ERROR;
@@ -1849,20 +1851,26 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
 
   /*
-  **     $db incrblob ?DB? TABLE COLUMN ROWID
+  **     $db incrblob ?-readonly? ?DB? TABLE COLUMN ROWID
   */
   case DB_INCRBLOB: {
+    int isReadonly = 0;
     const char *zDb = "main";
     const char *zTable;
     const char *zColumn;
     sqlite_int64 iRow;
 
-    if( objc!=5 && objc!=6 ){
-      Tcl_WrongNumArgs(interp, 2, objv, "?DB? TABLE ROWID");
+    /* Check for the -readonly option */
+    if( objc>3 && strcmp(Tcl_GetString(objv[2]), "-readonly")==0 ){
+      isReadonly = 1;
+    }
+
+    if( objc!=(5+isReadonly) && objc!=(6+isReadonly) ){
+      Tcl_WrongNumArgs(interp, 2, objv, "?-readonly? ?DB? TABLE COLUMN ROWID");
       return TCL_ERROR;
     }
 
-    if( objc==6 ){
+    if( objc==(6+isReadonly) ){
       zDb = Tcl_GetString(objv[2]);
     }
     zTable = Tcl_GetString(objv[objc-3]);
@@ -1870,7 +1878,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     rc = Tcl_GetWideIntFromObj(interp, objv[objc-1], &iRow);
 
     if( rc==TCL_OK ){
-      rc = createIncrblobChannel(interp, pDb, zDb, zTable, zColumn, iRow);
+      rc = createIncrblobChannel(
+          interp, pDb, zDb, zTable, zColumn, iRow, isReadonly
+      );
     }
     break;
   }

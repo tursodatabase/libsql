@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: tkt2332.test,v 1.1 2007/05/03 13:11:32 danielk1977 Exp $
+# $Id: tkt2332.test,v 1.2 2007/05/03 16:31:26 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -55,5 +55,8 @@ foreach Len [list 10000 100000 1000000] {
 
   incr ::iKey
 }
+
+# Free memory:
+unset ::blobstr
 
 finish_test
