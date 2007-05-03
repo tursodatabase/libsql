@@ -9,7 +9,8 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.2 2007/05/02 13:16:31 danielk1977 Exp $
+# $Id: incrblob.test,v 1.3 2007/05/03 11:43:35 danielk1977 Exp $
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -49,34 +50,90 @@ do_test incrblob-1.2.6 {
 } {1234567890}
 
 #--------------------------------------------------------------------
-# Test cases incrblob-2.X check that it is possible to read and write
+# Test cases incrblob-1.3.X check that it is possible to read and write
 # regions of a blob that lie on overflow pages.
-do_test incrblob-2.1 {
+#
+do_test incrblob-1.3.1 {
   set ::str "[string repeat . 10000]"
   execsql {
     INSERT INTO blobs(rowid, k, v) VALUES(3, 'three', $::str);
   }
 } {}
 
-do_test incrblob-2.2 {
+do_test incrblob-1.3.2 {
   set ::blob [db incrblob blobs v 3]
   seek $::blob 8500
   read $::blob 10
 } {..........}
-
-do_test incrblob-2.3 {
+do_test incrblob-1.3.3 {
   seek $::blob 8500
   puts -nonewline $::blob 1234567890
 } {}
-
-do_test incrblob-2.4 {
+do_test incrblob-1.3.4 {
   seek $::blob 8496
   read $::blob 10
 } {....123456}
-
-do_test incrblob-2.10 {
+do_test incrblob-1.3.10 {
   close $::blob
 } {}
 
-finish_test
 
+#------------------------------------------------------------------------
+# incrblob-2.*: Test seeking in an incremental blob can use ptrmap pages.
+#
+proc nRead {db} {
+  set bt [btree_from_db $db]
+  array set stats [btree_pager_stats $bt]
+  return $stats(read)
+}
+
+foreach AutoVacuumMode [list 0 1] {
+
+  db close
+  file delete -force test.db test.db-journal
+
+  sqlite3 db test.db
+  execsql "PRAGMA auto_vacuum = $AutoVacuumMode"
+
+  do_test incrblob-2.$AutoVacuumMode.1 {
+    set ::str [string repeat abcdefghij 2900]
+    execsql {
+      BEGIN;
+      CREATE TABLE blobs(k PRIMARY KEY, v BLOB);
+      DELETE FROM blobs;
+      INSERT INTO blobs VALUES('one', $::str || randstr(500,500));
+      COMMIT;
+    }
+    expr [file size test.db]/1024
+  } [expr 31 + $AutoVacuumMode]
+
+  do_test incrblob-2.$AutoVacuumMode.2 {
+    execsql {
+      PRAGMA auto_vacuum;
+    }
+  } $AutoVacuumMode
+
+  do_test incrblob-2.$AutoVacuumMode.3 {
+    # Open and close the db to make sure the page cache is empty.
+    db close
+    sqlite3 db test.db
+  
+    # Read the last 20 bytes of the blob via a blob handle.
+    set ::blob [db incrblob blobs v 1]
+    seek $::blob -20 end
+    set ::fragment [read $::blob]
+    close $::blob
+  
+    # If the database is not in auto-vacuum mode, the whole of
+    # the overflow-chain must be scanned. In auto-vacuum mode,
+    # sqlite uses the ptrmap pages to avoid reading the other pages.
+    #
+    nRead db
+  } [expr $AutoVacuumMode ? 4 : 30]
+
+  do_test incrblob-2.3 {
+    string range [db one {SELECT v FROM blobs}] end-19 end
+  } $::fragment
+}
+
+finish_test

@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: vdbeblob.c,v 1.2 2007/05/02 16:48:37 danielk1977 Exp $
+** $Id: vdbeblob.c,v 1.3 2007/05/03 11:43:33 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -91,11 +91,17 @@ int sqlite3_blob_open(
     memset(&sParse, 0, sizeof(Parse));
     sParse.db = db;
 
+    rc = sqlite3SafetyOn(db);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+
     pTab = sqlite3LocateTable(&sParse, zTable, zDb);
     if( !pTab ){
       sqlite3Error(db, sParse.rc, "%s", sParse.zErrMsg);
       sqliteFree(sParse.zErrMsg);
       rc = sParse.rc;
+      sqlite3SafetyOff(db);
       goto blob_open_out;
     }
 
@@ -109,6 +115,7 @@ int sqlite3_blob_open(
       sqlite3Error(db, SQLITE_ERROR, "no such column: %s", zColumn);
       sqliteFree(sParse.zErrMsg);
       rc = SQLITE_ERROR;
+      sqlite3SafetyOff(db);
       goto blob_open_out;
     }
 
@@ -143,6 +150,11 @@ int sqlite3_blob_open(
       */
       sqlite3VdbeChangeP2(v, 5, pTab->nCol+1);
       sqlite3VdbeMakeReady(v, 1, 0, 1, 0);
+    }
+
+    rc = sqlite3SafetyOff(db);
+    if( rc!=SQLITE_OK ){
+      return rc;
     }
 
     sqlite3_bind_int64((sqlite3_stmt *)v, 1, iRow);
