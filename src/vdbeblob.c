@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: vdbeblob.c,v 1.4 2007/05/03 16:31:26 danielk1977 Exp $
+** $Id: vdbeblob.c,v 1.5 2007/05/03 18:14:10 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -101,7 +101,6 @@ int sqlite3_blob_open(
     if( !pTab ){
       if( sParse.zErrMsg ){
         sqlite3_snprintf(sizeof(zErr), zErr, "%s", sParse.zErrMsg);
-        zErr[sizeof(zErr)-1] = '\0';
       }
       sqliteFree(sParse.zErrMsg);
       rc = SQLITE_ERROR;
@@ -116,10 +115,29 @@ int sqlite3_blob_open(
       }
     }
     if( iCol==pTab->nCol ){
-      sprintf(zErr, "no such column: \"%s\"", zColumn);
+      sqlite3_snprintf(sizeof(zErr), zErr, "no such column: \"%s\"", zColumn);
       rc = SQLITE_ERROR;
       sqlite3SafetyOff(db);
       goto blob_open_out;
+    }
+
+    /* If the value is being opened for writing, check that the
+    ** column is not indexed. It is against the rules to open an
+    ** indexed column for writing.
+    */
+    if( flags ){
+      Index *pIdx;
+      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+        int j;
+        for(j=0; j<pIdx->nColumn; j++){
+          if( pIdx->aiColumn[j]==iCol ){
+            strcpy(zErr, "cannot open indexed column for writing");
+            rc = SQLITE_ERROR;
+            sqlite3SafetyOff(db);
+            goto blob_open_out;
+          }
+        }
+      }
     }
 
     v = sqlite3VdbeCreate(db);
@@ -138,8 +156,8 @@ int sqlite3_blob_open(
       /* Configure the db number pushed onto the stack */
       sqlite3VdbeChangeP1(v, 2, iDb);
 
-      /* Remove either the OP_OpenWrite or OpenRead. Set the P2 parameter
-      ** of the other to pTab->tnum. 
+      /* Remove either the OP_OpenWrite or OpenRead. Set the P2 
+      ** parameter of the other to pTab->tnum. 
       */
       sqlite3VdbeChangeToNoop(v, (flags ? 3 : 4), 1);
       sqlite3VdbeChangeP2(v, (flags ? 4 : 3), pTab->tnum);
@@ -165,7 +183,7 @@ int sqlite3_blob_open(
     if( rc!=SQLITE_ROW ){
       nAttempt++;
       rc = sqlite3_finalize((sqlite3_stmt *)v);
-      sprintf(zErr, "no such rowid: %lld", iRow);
+      sqlite3_snprintf(sizeof(zErr), zErr, sqlite3_errmsg(db));
       v = 0;
     }
   } while( nAttempt<5 && rc==SQLITE_SCHEMA );
@@ -179,6 +197,9 @@ int sqlite3_blob_open(
     u32 type = v->apCsr[0]->aType[iCol];
 
     if( type<12 ){
+      sqlite3_snprintf(sizeof(zErr), zErr, "cannot open value of type %s",
+          type==0?"null": type==7?"real": "integer"
+      );
       rc = SQLITE_ERROR;
       goto blob_open_out;
     }
@@ -196,6 +217,7 @@ int sqlite3_blob_open(
     *ppBlob = (sqlite3_blob *)pBlob;
     rc = SQLITE_OK;
   }else if( rc==SQLITE_OK ){
+    sqlite3_snprintf(sizeof(zErr), zErr, "no such rowid: %lld", iRow);
     rc = SQLITE_ERROR;
   }
 
@@ -203,6 +225,7 @@ blob_open_out:
   if( rc!=SQLITE_OK || sqlite3MallocFailed() ){
     sqlite3_finalize((sqlite3_stmt *)v);
   }
+  zErr[sizeof(zErr)-1] = '\0';
   sqlite3Error(db, rc, zErr);
   return sqlite3ApiExit(db, rc);
 }

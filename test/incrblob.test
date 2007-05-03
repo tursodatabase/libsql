@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.5 2007/05/03 16:31:26 danielk1977 Exp $
+# $Id: incrblob.test,v 1.6 2007/05/03 18:14:10 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -208,6 +208,7 @@ do_test incrblob-3.2 {
   set rc [catch {
     puts -nonewline $::blob "helloworld"
   } msg]
+  close $::blob
   list $rc $msg
 } "1 {channel \"$::blob\" wasn't opened for writing}"
 
@@ -221,27 +222,31 @@ do_test incrblob-3.2 {
 #     4.3 - Attempt to open a table that does not exist.
 #     4.4 - Attempt to open a database that does not exist.
 #
+#     4.5 - Attempt to open an integer
+#     4.6 - Attempt to open a real value
+#     4.7 - Attempt to open an SQL null
+#
+#     4.8 - Attempt to open an indexed column for writing
+#     4.9 - Attempt to open an indexed column for reading (this works)
+#
 do_test incrblob-4.1 {
   set rc [catch {
     set ::blob [db incrblob blobs v 2]
   } msg ] 
   list $rc $msg
 } {1 {no such rowid: 2}}
-
 do_test incrblob-4.2 {
   set rc [catch {
     set ::blob [db incrblob blobs blue 1]
   } msg ] 
   list $rc $msg
 } {1 {no such column: "blue"}}
-
 do_test incrblob-4.3 {
   set rc [catch {
     set ::blob [db incrblob nosuchtable blue 1]
-  } msg ] 
+  } msg ]
   list $rc $msg
 } {1 {no such table: main.nosuchtable}}
-
 do_test incrblob-4.4 {
   set rc [catch {
     set ::blob [db incrblob nosuchdb blobs v 1]
@@ -249,5 +254,167 @@ do_test incrblob-4.4 {
   list $rc $msg
 } {1 {no such table: nosuchdb.blobs}}
 
-finish_test
+do_test incrblob-4.5 {
+  set rc [catch {
+    set ::blob [db incrblob blobs i 1]
+  } msg ] 
+  list $rc $msg
+} {1 {cannot open value of type integer}}
+do_test incrblob-4.6 {
+  execsql {
+    INSERT INTO blobs(k, v, i) VALUES(123, 567.765, NULL);
+  }
+  set rc [catch {
+    set ::blob [db incrblob blobs v 2]
+  } msg ] 
+  list $rc $msg
+} {1 {cannot open value of type real}}
+do_test incrblob-4.7 {
+  set rc [catch {
+    set ::blob [db incrblob blobs i 2]
+  } msg ] 
+  list $rc $msg
+} {1 {cannot open value of type null}}
 
+do_test incrblob-4.8 {
+  execsql {
+    INSERT INTO blobs(k, v, i) VALUES(X'010203040506070809', 'hello', 'world');
+  }
+  set rc [catch {
+    set ::blob [db incrblob blobs k 3]
+  } msg ] 
+  list $rc $msg
+} {1 {cannot open indexed column for writing}}
+
+do_test incrblob-4.9.1 {
+  set rc [catch {
+    set ::blob [db incrblob -readonly blobs k 3]
+  } msg]
+} {0}
+do_test incrblob-4.9.2 {
+  binary scan [read $::blob] c* c
+  close $::blob
+  set c
+} {1 2 3 4 5 6 7 8 9}
+
+#------------------------------------------------------------------------
+# incrblob-5.*: 
+#
+#     Test that opening a blob in an attached database works.
+#
+do_test incrblob-5.1 {
+  file delete -force test2.db test2.db-journal
+  set ::size [expr [file size [info script]]]
+  execsql {
+    ATTACH 'test2.db' AS aux;
+    CREATE TABLE aux.files(name, text);
+    INSERT INTO aux.files VALUES('this one', zeroblob($::size));
+  }
+  set fd  [db incrblob aux files text 1]
+  set fd2 [open [info script]]
+  puts -nonewline $fd [read $fd2]
+  close $fd
+  close $fd2
+  set ::text [db one {select text from aux.files}]
+  string length $::text
+} [file size [info script]]
+do_test incrblob-5.2 {
+  set fd2 [open [info script]]
+  set ::data [read $fd2]
+  close $fd2
+  set ::data
+} $::text
+
+# free memory
+unset ::data
+unset ::text
+
+#------------------------------------------------------------------------
+# incrblob-6.*: 
+#
+#     Test that opening a blob for write-access is impossible if
+#     another connection has the database RESERVED lock.
+#
+#     Then test that blob writes that take place inside of a
+#     transaction are not visible to external connections until
+#     after the transaction is commited and the blob channel 
+#     closed.
+#
+do_test incrblob-6.1 {
+  sqlite3 db2 test.db
+  execsql {
+    BEGIN;
+    INSERT INTO blobs(k, v, i) VALUES('a', 'different', 'connection');
+  } db2
+} {}
+do_test incrblob-6.2 {
+  execsql {
+    SELECT rowid FROM blobs
+  }
+} {1 2 3}
+do_test incrblob-6.3 {
+  set rc [catch {
+    db incrblob blobs v 1
+  } msg]
+  list $rc $msg
+} {1 {database is locked}}
+do_test incrblob-6.4 {
+  set rc [catch {
+    db incrblob blobs v 3
+  } msg]
+  list $rc $msg
+} {1 {database is locked}}
+do_test incrblob-6.5 {
+  set ::blob [db incrblob -readonly blobs v 3]
+  read $::blob
+} {hello}
+do_test incrblob-6.6 {
+  close $::blob
+} {}
+
+do_test incrblob-6.7 {
+  set ::blob [db2 incrblob blobs i 4]
+  gets $::blob
+} {connection}
+do_test incrblob-6.8 {
+  tell $::blob
+} {10}
+breakpoint
+do_test incrblob-6.9 {
+  seek $::blob 0
+  puts -nonewline $::blob "invocation"
+  flush $::blob
+} {}
+
+# At this point rollback or commit should be illegal (because 
+# there is an open blob channel).
+do_test incrblob-6.10 {
+  catchsql {
+    ROLLBACK;
+  } db2
+} {1 {cannot rollback transaction - SQL statements in progress}}
+do_test incrblob-6.11 {
+  catchsql {
+    COMMIT;
+  } db2
+} {1 {cannot commit transaction - SQL statements in progress}}
+
+do_test incrblob-6.12 {
+  execsql {
+    SELECT * FROM blobs WHERE rowid = 4;
+  }
+} {}
+do_test incrblob-6.13 {
+  close $::blob
+  execsql {
+    COMMIT;
+  } db2
+} {}
+do_test incrblob-6.14 {
+  execsql {
+    SELECT * FROM blobs WHERE rowid = 4;
+  }
+} {a different invocation}
+db2 close
+
+finish_test

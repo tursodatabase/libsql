@@ -1,5 +1,5 @@
-C Improvements\sto\sI/O\stracing\soutput.\s\sRequire\s-DSQLITE_ENABLE_IOTRACE\swhen\ncompiling\sshell.c\sin\sorder\sto\slink\sin\sthe\sI/O\stracing\scapability.\s(CVS\s3909)
-D 2007-05-03T17:18:37
+C Test\ssome\smore\sincremental\sIO\serror\scases.\s(CVS\s3910)
+D 2007-05-03T18:14:10
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -130,7 +130,7 @@ F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h cb02cbbceddf3b40d49012e9f41576f17bcbec97
 F src/vdbeapi.c 37d793559390bec8a00c556f651f21b5f9e589af
 F src/vdbeaux.c 8c7f22e22d1ea578971f5a3fcd3a56a6882ced64
-F src/vdbeblob.c 74fe0c7fc149a80715be7e3a33ed0e545d5e33e1
+F src/vdbeblob.c ed2f9b46cc2de8de97d2a4a4ec466c5914d68333
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c ba98f8572ec4609846b368fa7580db178022f1bb
 F src/vtab.c 89a0d5f39c1beba65a77fdb4d507b831fc5e6baf
@@ -242,7 +242,7 @@ F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test 6727c7729472ae52b5acd86e802f89aa350ba50f
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
-F test/incrblob.test 9f6f5c23716d6c9386d1011cff732399900750df
+F test/incrblob.test 5cf5a7693c6cde33eef361d94c00c7bdbc30f563
 F test/incrvacuum.test 2173bc075c7b3b96ccf228d737dd4f5c29500dc4
 F test/incrvacuum_ioerr.test 0ebc382bcc2036ec58cf49cc5ffada45f75d907b
 F test/index.test e65df12bed94b2903ee89987115e1578687e9266
@@ -473,7 +473,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 92b53601657be3f1be70873b2960cd97b97f72a1
-R 2fb024d0ffb855b54c72bde6978aacd6
-U drh
-Z f0fb6fb797fd898d24e13ec3e7829264
+P 8a43e1676fdd29903e0b3f9d3b05d217d42962b8
+R f2daf03cbf23d5e395cd82f06da9d675
+U danielk1977
+Z 8d660e54025b30b52414bf1578df31ed
