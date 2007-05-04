@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.371 2007/05/04 08:32:14 danielk1977 Exp $
+** $Id: btree.c,v 1.372 2007/05/04 12:05:56 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -656,6 +656,30 @@ static void unlockAllTables(Btree *p){
 
 static void releasePage(MemPage *pPage);  /* Forward reference */
 
+#ifndef SQLITE_OMIT_INCRBLOB
+/*
+** Invalidate the overflow page-list cache for cursor pCur, if any.
+*/
+static void invalidateOverflowCache(BtCursor *pCur){
+  sqliteFree(pCur->aOverflow);
+  pCur->aOverflow = 0;
+}
+
+/*
+** Invalidate the overflow page-list cache for all cursors opened
+** on the shared btree structure pBt.
+*/
+static void invalidateAllOverflowCache(BtShared *pBt){
+  BtCursor *p;
+  for(p=pBt->pCursor; p; p=p->pNext){
+    invalidateOverflowCache(p);
+  }
+}
+#else
+  #define invalidateOverflowCache(x)
+  #define invalidateAllOverflowCache(x)
+#endif
+
 /*
 ** Save the current cursor position in the variables BtCursor.nKey 
 ** and BtCursor.pKey. The cursor's state is set to CURSOR_REQUIRESEEK.
@@ -695,12 +719,7 @@ static int saveCursorPosition(BtCursor *pCur){
     pCur->eState = CURSOR_REQUIRESEEK;
   }
 
-#ifndef SQLITE_OMIT_INCRBLOB
-  /* Delete the cache of overflow page numbers. */
-  sqliteFree(pCur->aOverflow);
-  pCur->aOverflow = 0;
-#endif
-
+  invalidateOverflowCache(pCur);
   return rc;
 }
 
@@ -2423,19 +2442,11 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin){
 */
 int sqlite3BtreeIncrVacuum(Btree *p){
   BtShared *pBt = p->pBt;
-  BtCursor *pCur;
-
   assert( pBt->inTransaction==TRANS_WRITE && p->inTrans==TRANS_WRITE );
   if( !pBt->autoVacuum ){
     return SQLITE_DONE;
   }
-#ifndef SQLITE_OMIT_INCRBLOB
-  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-    /* Delete the cache of overflow page numbers. */
-    sqliteFree(pCur->aOverflow);
-    pCur->aOverflow = 0;
-  }
-#endif
+  invalidateAllOverflowCache(pBt);
   return incrVacuumStep(pBt, 0);
 }
 
@@ -2455,15 +2466,7 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *pnTrunc){
   int nRef = sqlite3PagerRefcount(pPager);
 #endif
 
-#ifndef SQLITE_OMIT_INCRBLOB
-  BtCursor *pCur;
-  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-    /* Delete the cache of overflow page numbers. */
-    sqliteFree(pCur->aOverflow);
-    pCur->aOverflow = 0;
-  }
-#endif
-
+  invalidateAllOverflowCache(pBt);
   assert(pBt->autoVacuum);
   if( !pBt->incrVacuum ){
     Pgno nFin = 0;
@@ -2959,9 +2962,7 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
   }
   releasePage(pCur->pPage);
   unlockBtreeIfUnused(pBt);
-#ifndef SQLITE_OMIT_INCRBLOB
-  sqliteFree(pCur->aOverflow);
-#endif
+  invalidateOverflowCache(pCur);
   sqliteFree(pCur);
   return SQLITE_OK;
 }
@@ -5801,18 +5802,12 @@ int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags){
     Pgno pgnoMove;      /* Move a page here to make room for the root-page */
     MemPage *pPageMove; /* The page to move to. */
 
-#ifndef SQLITE_OMIT_INCRBLOB
     /* Creating a new table may probably require moving an existing database
     ** to make room for the new tables root page. In case this page turns
     ** out to be an overflow page, delete all overflow page-map caches
     ** held by open cursors.
     */
-    BtCursor *pCur;
-    for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-      sqliteFree(pCur->aOverflow);
-      pCur->aOverflow = 0;
-    }
-#endif
+    invalidateAllOverflowCache(pBt);
 
     /* Read the value of meta[3] from the database to determine where the
     ** root page of the new table should go. meta[3] is the largest root-page

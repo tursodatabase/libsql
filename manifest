@@ -1,5 +1,5 @@
-C Fix\sa\sformatting\serrror\sin\sI/O\slogging.\s(CVS\s3914)
-D 2007-05-04T12:01:03
+C Test\scases\sand\scorrections\sto\sIO\sand\smalloc()\serror\shandling\sin\sincremental\sblob\sIO\sfunctions.\s(CVS\s3915)
+D 2007-05-04T12:05:56
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,7 +59,7 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 4bbf5ddf9680587c6d4917e02e378b6037be3651
 F src/attach.c a16ada4a4654a0d126b8223ec9494ebb81bc5c3c
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c b88c9265e323b9a55290c39f9712e44050a6162c
+F src/btree.c a47fe8172eb62468f78a2fe4904d2e6b050038fb
 F src/btree.h 2c187d60cf76d74c2b4767294d6b5fa267037ff0
 F src/build.c 02e01ec7907c7d947ab3041fda0e81eaed05db42
 F src/callback.c 6414ed32d55859d0f65067aa5b88d2da27b3af9e
@@ -101,7 +101,7 @@ F src/sqlite.h.in a666300976897eced975b448f722a722b362c6b1
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 5a8c0221a4f11998f46aa76364a9559af8d7c1f7
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
-F src/tclsqlite.c dde509871614d17f8ab5f3b4bc496b0af07280c7
+F src/tclsqlite.c 0906902b96e4b292ba98499dd380e22d3322f817
 F src/test1.c 29a39fdde51f4612082ecf3f5af54dac93766f87
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 946ea9d1a8c928656e3c70f0a2fcb8e733a15e86
@@ -129,8 +129,8 @@ F src/vdbe.c a4abf744b5376372a9be30f02ab4b231f353cab1
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h cb02cbbceddf3b40d49012e9f41576f17bcbec97
 F src/vdbeapi.c 37d793559390bec8a00c556f651f21b5f9e589af
-F src/vdbeaux.c 51acaab4275b5fddc7af5e7d1d2594044216ac46
-F src/vdbeblob.c ed2f9b46cc2de8de97d2a4a4ec466c5914d68333
+F src/vdbeaux.c 966d166f9d4079552c7cb48855afe8c1aa331556
+F src/vdbeblob.c 58b3f68f6bc18b58aeab3a31cff083cb4127292f
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c ba98f8572ec4609846b368fa7580db178022f1bb
 F src/vtab.c 89a0d5f39c1beba65a77fdb4d507b831fc5e6baf
@@ -243,6 +243,7 @@ F test/func.test 6727c7729472ae52b5acd86e802f89aa350ba50f
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
 F test/incrblob.test 5cf5a7693c6cde33eef361d94c00c7bdbc30f563
+F test/incrblob_err.test 9f78c159279c992fa5ce49c06f50b680fc470520
 F test/incrvacuum.test 2173bc075c7b3b96ccf228d737dd4f5c29500dc4
 F test/incrvacuum_ioerr.test 0ebc382bcc2036ec58cf49cc5ffada45f75d907b
 F test/index.test e65df12bed94b2903ee89987115e1578687e9266
@@ -336,7 +337,7 @@ F test/table.test dbdfd06aef054ad5aed8e57a782137d57d5c5528
 F test/tableapi.test 036575a98dcce7c92e9f39056839bbad8a715412
 F test/tclsqlite.test 726c301d35a2c1f4181fb772a607f785dd9e284e
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
-F test/tester.tcl dcebe3c5bf15f3b4ba015b4b2237030c1e384941
+F test/tester.tcl 9382df472e0e86cbfddc44ab8c8cc02497bc9c8a
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
@@ -473,7 +474,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2a178d0c7950c9d403c0bc43c2043de945fb24e0
-R 2c92eb8d26a624968d9428e7829962d0
-U drh
-Z f76b8b0273f8e85ef3b644774d94b3bf
+P 2d37687a08a7b6b3a7f77f55a7c2e29a1f8731a8
+R 631ed7d60317b63e0f0649096fcada2a
+U danielk1977
+Z dfc7741fad7b57c2866d720631f3b47d

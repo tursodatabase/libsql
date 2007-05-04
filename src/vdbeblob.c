@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: vdbeblob.c,v 1.5 2007/05/03 18:14:10 danielk1977 Exp $
+** $Id: vdbeblob.c,v 1.6 2007/05/04 12:05:56 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -170,12 +170,14 @@ int sqlite3_blob_open(
       ** and offset cache without causing any IO.
       */
       sqlite3VdbeChangeP2(v, 5, pTab->nCol+1);
-      sqlite3VdbeMakeReady(v, 1, 0, 1, 0);
+      if( !sqlite3MallocFailed() ){
+        sqlite3VdbeMakeReady(v, 1, 0, 1, 0);
+      }
     }
 
     rc = sqlite3SafetyOff(db);
-    if( rc!=SQLITE_OK ){
-      return rc;
+    if( rc!=SQLITE_OK || sqlite3MallocFailed() ){
+      goto blob_open_out;
     }
 
     sqlite3_bind_int64((sqlite3_stmt *)v, 1, iRow);
@@ -222,11 +224,11 @@ int sqlite3_blob_open(
   }
 
 blob_open_out:
+  zErr[sizeof(zErr)-1] = '\0';
   if( rc!=SQLITE_OK || sqlite3MallocFailed() ){
     sqlite3_finalize((sqlite3_stmt *)v);
   }
-  zErr[sizeof(zErr)-1] = '\0';
-  sqlite3Error(db, rc, zErr);
+  sqlite3Error(db, rc, (rc==SQLITE_OK?0:zErr));
   return sqlite3ApiExit(db, rc);
 }
 
@@ -235,31 +237,37 @@ blob_open_out:
 */
 int sqlite3_blob_close(sqlite3_blob *pBlob){
   Incrblob *p = (Incrblob *)pBlob;
-  sqlite3_finalize(p->pStmt);
+  sqlite3_stmt *pStmt = p->pStmt;
   sqliteFree(p);
-  return SQLITE_OK;
+  return sqlite3_finalize(pStmt);
 }
 
 /*
 ** Read data from a blob handle.
 */
 int sqlite3_blob_read(sqlite3_blob *pBlob, void *z, int n, int iOffset){
+  int rc = SQLITE_ERROR;
   Incrblob *p = (Incrblob *)pBlob;
-  if( (iOffset+n)>p->nByte ){
-    return SQLITE_ERROR;
+  Vdbe *v = (Vdbe *)(p->pStmt);
+  if( (iOffset+n)<=p->nByte ){
+    rc = sqlite3BtreeData(p->pCsr, iOffset+p->iOffset, n, z);
   }
-  return sqlite3BtreeData(p->pCsr, iOffset+p->iOffset, n, z);
+  v->rc = rc;
+  return sqlite3ApiExit(v->db, v->rc);
 }
 
 /*
 ** Write data to a blob handle.
 */
 int sqlite3_blob_write(sqlite3_blob *pBlob, const void *z, int n, int iOffset){
+  int rc = SQLITE_ERROR;
   Incrblob *p = (Incrblob *)pBlob;
-  if( (iOffset+n)>p->nByte ){
-    return SQLITE_ERROR;
+  Vdbe *v = (Vdbe *)(p->pStmt);
+  if( (iOffset+n)<=p->nByte ){
+    rc = sqlite3BtreePutData(p->pCsr, iOffset+p->iOffset, n, z);
   }
-  return sqlite3BtreePutData(p->pCsr, iOffset+p->iOffset, n, z);
+  v->rc = rc;
+  return sqlite3ApiExit(v->db, v->rc);
 }
 
 /*

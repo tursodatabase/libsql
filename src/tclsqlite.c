@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.182 2007/05/03 16:31:26 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.183 2007/05/04 12:05:56 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -153,7 +153,8 @@ static void closeIncrblobChannels(SqliteDb *pDb){
 */
 static int incrblobClose(ClientData instanceData, Tcl_Interp *interp){
   IncrblobChannel *p = (IncrblobChannel *)instanceData;
-  sqlite3_blob_close(p->pBlob);
+  int rc = sqlite3_blob_close(p->pBlob);
+  sqlite3 *db = p->pDb->db;
 
   /* Remove the channel from the SqliteDb.pIncrblob list. */
   if( p->pNext ){
@@ -166,7 +167,13 @@ static int incrblobClose(ClientData instanceData, Tcl_Interp *interp){
     p->pDb->pIncrblob = p->pNext;
   }
 
+  /* Free the IncrblobChannel structure */
   Tcl_Free((char *)p);
+
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, (char *)sqlite3_errmsg(db), TCL_VOLATILE);
+    return TCL_ERROR;
+  }
   return TCL_OK;
 }
 

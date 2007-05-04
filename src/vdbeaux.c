@@ -464,12 +464,14 @@ static void freeP3(int p3type, void *p3){
 ** Change N opcodes starting at addr to No-ops.
 */
 void sqlite3VdbeChangeToNoop(Vdbe *p, int addr, int N){
-  VdbeOp *pOp = &p->aOp[addr];
-  while( N-- ){
-    freeP3(pOp->p3type, pOp->p3);
-    memset(pOp, 0, sizeof(pOp[0]));
-    pOp->opcode = OP_Noop;
-    pOp++;
+  if( p && p->aOp ){
+    VdbeOp *pOp = &p->aOp[addr];
+    while( N-- ){
+      freeP3(pOp->p3type, pOp->p3);
+      memset(pOp, 0, sizeof(pOp[0]));
+      pOp->opcode = OP_Noop;
+      pOp++;
+    }
   }
 }
 
