@@ -9,11 +9,16 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.8 2007/05/04 18:36:46 danielk1977 Exp $
+# $Id: incrblob.test,v 1.9 2007/05/04 19:03:03 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable {!autovacuum || !pragma || !incrblob} {
+  finish_test
+  return
+}
 
 do_test incrblob-1.1 {
   execsql {

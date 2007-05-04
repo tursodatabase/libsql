@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.374 2007/05/04 18:36:45 danielk1977 Exp $
+** $Id: btree.c,v 1.375 2007/05/04 19:03:03 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -765,9 +765,11 @@ static void clearCursorPosition(BtCursor *pCur){
 static int restoreOrClearCursorPositionX(BtCursor *pCur){
   int rc;
   assert( pCur->eState==CURSOR_REQUIRESEEK );
+#ifndef SQLITE_OMIT_INCRBLOB
   if( pCur->isIncrblobHandle ){
     return SQLITE_ABORT;
   }
+#endif
   pCur->eState = CURSOR_INVALID;
   rc = sqlite3BtreeMoveto(pCur, pCur->pKey, pCur->nKey, 0, &pCur->skip);
   if( rc==SQLITE_OK ){

@@ -9,11 +9,16 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob_err.test,v 1.1 2007/05/04 12:05:56 danielk1977 Exp $
+# $Id: incrblob_err.test,v 1.2 2007/05/04 19:03:03 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable {!incrblob} {
+  finish_test
+  return
+}
 
 # Usage: do_malloc_test <test number> <options...>
 #
