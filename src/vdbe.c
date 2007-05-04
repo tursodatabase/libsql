@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.606 2007/05/04 13:15:56 drh Exp $
+** $Id: vdbe.c,v 1.607 2007/05/04 18:30:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4600,14 +4600,17 @@ case OP_Vacuum: {        /* no-push */
 #endif
 
 #if !defined(SQLITE_OMIT_AUTOVACUUM)
-/* Opcode: IncrVacuum * P2 *
+/* Opcode: IncrVacuum P1 P2 *
 **
 ** Perform a single step of the incremental vacuum procedure on
-** the main database. If the vacuum has finished, jump to instruction
+** the P1 database. If the vacuum has finished, jump to instruction
 ** P2. Otherwise, fall through to the next instruction.
 */
 case OP_IncrVacuum: {        /* no-push */
-  Btree *pBt = db->aDb[0].pBt;
+  Btree *pBt;
+
+  assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  pBt = db->aDb[pOp->p1].pBt;
   rc = sqlite3BtreeIncrVacuum(pBt);
   if( rc==SQLITE_DONE ){
     pc = pOp->p2 - 1;

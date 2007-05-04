@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: incrvacuum_ioerr.test,v 1.1 2007/04/28 15:47:45 danielk1977 Exp $
+# $Id: incrvacuum_ioerr.test,v 1.2 2007/05/04 18:30:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -35,7 +35,7 @@ do_ioerr_test incrvacuum-ioerr-1 -cksum 1 -sqlprep {
   BEGIN;
   CREATE TABLE abc2(a);
   DELETE FROM abc;
-  INCREMENTAL VACUUM;
+  PRAGMA incremental_vacuum;
   COMMIT;
 }
 
@@ -74,17 +74,16 @@ do_ioerr_test incrvacuum-ioerr-2 -start 1 -cksum 1 -tclprep {
   db eval COMMIT
 } -sqlbody {
   BEGIN;
-  INCREMENTAL VACUUM;
+  PRAGMA incremental_vacuum;
   DELETE FROM abc WHERE (oid%3)==0;
-  INCREMENTAL VACUUM;
+  PRAGMA incremental_vacuum;
   INSERT INTO abc SELECT a || '1234567890' FROM abc WHERE oid%2;
-  INCREMENTAL VACUUM;
+  PRAGMA incremental_vacuum;
   CREATE INDEX abc_i ON abc(a);
   DELETE FROM abc WHERE (oid%2)==0;
-  INCREMENTAL VACUUM;
+  PRAGMA incremental_vacuum;
   DROP INDEX abc_i;
-  INCREMENTAL VACUUM;
+  PRAGMA incremental_vacuum;
   COMMIT;
 }
 finish_test
-

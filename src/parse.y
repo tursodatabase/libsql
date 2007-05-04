@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.221 2007/05/04 16:14:38 drh Exp $
+** @(#) $Id: parse.y,v 1.222 2007/05/04 18:30:41 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -174,7 +174,7 @@ id(A) ::= ID(X).         {A = X;}
 %fallback ID
   ABORT AFTER ANALYZE ASC ATTACH BEFORE BEGIN CASCADE CAST CONFLICT
   DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
-  INCREMENTAL IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH PLAN
+  IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE REPLACE RESTRICT ROW
   TEMP TRIGGER VACUUM VIEW VIRTUAL
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
@@ -902,11 +902,6 @@ cmd ::= VACUUM.                {sqlite3Vacuum(pParse);}
 cmd ::= VACUUM nm.             {sqlite3Vacuum(pParse);}
 %endif  SQLITE_OMIT_ATTACH
 %endif  SQLITE_OMIT_VACUUM
-
-%ifndef  SQLITE_OMIT_AUTOVACUUM
-cmd ::= INCREMENTAL VACUUM.              {sqlite3IncrVacuum(pParse, 0);}
-cmd ::= INCREMENTAL VACUUM INTEGER(X).   {sqlite3IncrVacuum(pParse, &X);}
-%endif
 
 ///////////////////////////// The PRAGMA command /////////////////////////////
 //

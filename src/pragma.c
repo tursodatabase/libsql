@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.133 2007/04/26 14:42:36 danielk1977 Exp $
+** $Id: pragma.c,v 1.134 2007/05/04 18:30:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -411,6 +411,27 @@ void sqlite3Pragma(
         sqlite3BtreeSetAutoVacuum(pBt, eAuto);
       }
     }
+  }else
+#endif
+
+  /*
+  **  PRAGMA [database.]incremental_vacuum(N)
+  **
+  ** Do N steps of incremental vacuuming on a database.
+  */
+#ifndef SQLITE_OMIT_AUTOVACUUM
+  if( sqlite3StrICmp(zLeft,"incremental_vacuum")==0 ){
+    int iLimit, addr;
+    if( zRight==0 || !sqlite3GetInt32(zRight, &iLimit) || iLimit<=0 ){
+      iLimit = 0x7fffffff;
+    }
+    sqlite3BeginWriteOperation(pParse, 0, iDb);
+    sqlite3VdbeAddOp(v, OP_MemInt, iLimit, 0);
+    addr = sqlite3VdbeAddOp(v, OP_IncrVacuum, iDb, 0);
+    sqlite3VdbeAddOp(v, OP_Callback, 0, 0);
+    sqlite3VdbeAddOp(v, OP_MemIncr, -1, 0);
+    sqlite3VdbeAddOp(v, OP_IfMemPos, 0, addr);
+    sqlite3VdbeJumpHere(v, addr);
   }else
 #endif
 

@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.5 2007/05/02 17:54:56 drh Exp $
+# $Id: incrvacuum.test,v 1.6 2007/05/04 18:30:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -155,7 +155,7 @@ do_test incrvacuum-3.4 {
 
 #---------------------------------------------------------------------
 # Try to run a very simple incremental vacuum. Also verify that 
-# INCREMENTAL VACUUM is a harmless no-op against a database that
+# PRAGMA incremental_vacuum is a harmless no-op against a database that
 # does not support auto-vacuum.
 #
 do_test incrvacuum-4.1 {
@@ -176,7 +176,7 @@ do_test incrvacuum-4.2 {
 } {5}
 do_test incrvacuum-4.3 {
   set ::nStep 0
-  db eval {INCREMENTAL VACUUM} {
+  db eval {pragma incremental_vacuum(10)} {
     incr ::nStep
   }
   list [expr {[file size test.db] / 1024}] $::nStep
@@ -193,7 +193,7 @@ do_test incrvacuum-5.1.2 {
   execsql {
     BEGIN;
     DROP TABLE tbl2;
-    INCREMENTAL VACUUM;
+    PRAGMA incremental_vacuum;
     COMMIT;
   }
   expr {[file size test.db] / 1024}
@@ -205,7 +205,7 @@ do_test incrvacuum-5.2.1 {
     BEGIN;
     CREATE TABLE tbl1(a);
     INSERT INTO tbl1 VALUES($::str);
-    INCREMENTAL VACUUM;                 -- this is a no-op.
+    PRAGMA incremental_vacuum;                 -- this is a no-op.
     COMMIT;
   }
   expr {[file size test.db] / 1024}
@@ -224,7 +224,7 @@ do_test incrvacuum-5.2.2 {
 do_test incrvacuum-5.2.3 {
   execsql {
     BEGIN;
-    INCREMENTAL VACUUM;                  -- Vacuum up the two pages.
+    PRAGMA incremental_vacuum;           -- Vacuum up the two pages.
     CREATE TABLE tbl2(b);                -- Use one free page as a table root.
     INSERT INTO tbl2 VALUES('a nice string');
     COMMIT;
@@ -240,7 +240,7 @@ do_test incrvacuum-5.2.5 {
   execsql {
     DROP TABLE tbl1;
     DROP TABLE tbl2;
-    INCREMENTAL VACUUM;
+    PRAGMA incremental_vacuum;
   }
   expr {[file size test.db] / 1024}
 } {1}
@@ -265,22 +265,22 @@ set TestScriptList [list {
   INSERT INTO t2 SELECT a, b FROM t1;
   INSERT INTO t1 SELECT b, a FROM t2;
   UPDATE t2 SET b = '';
-  INCREMENTAL VACUUM;
+  PRAGMA incremental_vacuum;
 } {
   UPDATE t2 SET b = (SELECT b FROM t1 WHERE t1.oid = t2.oid);
-  INCREMENTAL VACUUM;
+  PRAGMA incremental_vacuum;
 } {
   CREATE TABLE t3(a, b);
   INSERT INTO t3 SELECT * FROM t2;
   DROP TABLE t2;
-  INCREMENTAL VACUUM;
+  PRAGMA incremental_vacuum;
 } {
   CREATE INDEX t3_i ON t3(a);
   COMMIT;
 } {
   BEGIN;
   DROP INDEX t3_i;
-  INCREMENTAL VACUUM;
+  PRAGMA incremental_vacuum;
   INSERT INTO t3 VALUES('hello', 'world');
   ROLLBACK;
 } {
@@ -355,7 +355,7 @@ for {set jj 0} {$jj < 10} {incr jj} {
     execsql {
       DROP TABLE IF EXISTS tbl1;
       DROP TABLE IF EXISTS tbl2;
-      INCREMENTAL VACUUM;
+      PRAGMA incremental_vacuum;
       CREATE TABLE tbl1(a, b);
       CREATE TABLE tbl2(a, b);
       BEGIN;
@@ -378,7 +378,7 @@ for {set jj 0} {$jj < 10} {incr jj} {
     set ::nRow 0
     db eval {SELECT a FROM tbl2} {} {
       if {$a == [expr $jj*100]} {
-        db eval {INCREMENTAL VACUUM}
+        db eval {PRAGMA incremental_vacuum}
       }
       incr ::nRow
     }
@@ -396,7 +396,7 @@ while 1 {
     execsql {
       DROP TABLE IF EXISTS tbl1;
       DROP TABLE IF EXISTS tbl2;
-      INCREMENTAL VACUUM;
+      PRAGMA incremental_vacuum;
       CREATE TABLE tbl1(a, b);
       CREATE TABLE tbl2(a, b);
       BEGIN;
@@ -414,7 +414,7 @@ while 1 {
 
   do_test incrvacuum-7.${::iWrite}.2 {
     set ::nRow 0
-    db eval {INCREMENTAL VACUUM} {
+    db eval {PRAGMA incremental_vacuum} {
       incr ::nRow
       if {$::nRow == $::iWrite} {
         db eval {
