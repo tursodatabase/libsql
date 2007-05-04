@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.220 2007/05/04 14:14:45 drh Exp $
+** @(#) $Id: parse.y,v 1.221 2007/05/04 16:14:38 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -904,7 +904,8 @@ cmd ::= VACUUM nm.             {sqlite3Vacuum(pParse);}
 %endif  SQLITE_OMIT_VACUUM
 
 %ifndef  SQLITE_OMIT_AUTOVACUUM
-cmd ::= INCREMENTAL VACUUM.    {sqlite3IncrVacuum(pParse);}
+cmd ::= INCREMENTAL VACUUM.              {sqlite3IncrVacuum(pParse, 0);}
+cmd ::= INCREMENTAL VACUUM INTEGER(X).   {sqlite3IncrVacuum(pParse, &X);}
 %endif
 
 ///////////////////////////// The PRAGMA command /////////////////////////////
