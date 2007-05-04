@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.22 2007/04/02 00:53:19 drh Exp $}
+set rcsid {$Id: pragma.tcl,v 1.23 2007/05/04 19:16:30 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -71,26 +71,50 @@ Section {Pragmas to modify library operation} modify
 puts {
 <ul>
 <a name="pragma_auto_vacuum"></a>
-<li><p><b>PRAGMA auto_vacuum;
-       <br>PRAGMA auto_vacuum = </b><i>0 | 1</i><b>;</b></p>
-    <p> Query or set the auto-vacuum flag in the database.</p>
+<li><p><b>PRAGMA auto_vacuum;<br>
+          PRAGMA auto_vacuum = </b>
+            <i>0 | none | 1 | full | 2 | incremental</i><b>;</b></p>
+    <p>Query or set the auto-vacuum flag in the database.</p>
 
-    <p>Normally, when a transaction that deletes data from a database is
+    <p>Normally, (that is to say when auto_vacuum is 0 or "none")
+    when a transaction that deletes data from a database is
     committed, the database file remains the same size. Unused database file 
-    pages are marked as such and reused later on, when data is inserted into 
-    the database. In this mode the <a href="lang_vacuum.html">VACUUM</a>
-    command is used to reclaim unused space.</p>
+    pages are added to a "freelist" are reused for subsequent inserts.  The
+    database file does not shrink.
+    In this mode the <a href="lang_vacuum.html">VACUUM</a>
+    command can be used to reclaim unused space.</p>
 
-    <p>When the auto-vacuum flag is set, the database file shrinks when a
-    transaction that deletes data is committed (The VACUUM command is not
-    useful in a database with the auto-vacuum flag set). To support this
-    functionality the database stores extra information internally, resulting
-    in slightly larger database files than would otherwise be possible.</p>
+    <p>When the auto-vacuum flag is 1 (full), the freelist pages are
+    moved to the end of the file and the file is truncated to remove
+    the freelist pages at every commit.
+    Note, however, that auto-vacuum only truncates the freelist pages
+    from the file.  Auto-vacuum does not defragment the database nor
+    repack individual database pages the way that the
+    <a href="lang_vacuum.html">VACUUM</a> command does.  In fact, because
+    it moves pages around within the file, auto-vacuum can actually
+    make fragmentation worse.</p>
 
-    <p>It is only possible to modify the value of the auto-vacuum flag before
-    any tables have been created in the database. No error message is 
-    returned if an attempt to modify the auto-vacuum flag is made after
-    one or more tables have been created.
+    <p>Auto-vacuuming is only possible if the database stores some
+    additional information that allows each database page to be
+    traced backwards to its referer.  Therefore, auto-vacuuming must
+    be turned on before any tables are created.  It is not possible
+    to enable or disable auto-vacuum after a table has been created.</p>
+
+    <p>When the value of auto-vacuum is 2 (incremental) then the additional
+    information needed to do autovacuuming is stored in the database file
+    but autovacuuming does not occur automatically at each commit as it
+    does with auto_vacuum==full.  In incremental mode, the separate
+    <a href="#pragma_incremental_vacuum">incremental_vacuum</a> pragma must
+    be invoked to cause the vacuum to occur.  The incremental vacuum mode
+    is not persistent.  It must be set anew with each new database 
+    connection.  When a database with incremental vacuum is closed and
+    reopened, it comes up in auto_vacuum==full mode until explicitly
+    changed to incremental mode using this pragma.</p>
+
+    <p>The database connection can be changed between full and incremental
+    autovacuum mode at will.  However, the connection cannot be changed
+    in and out of the "none" mode after any table has been created in the
+    database.
     </p></li>
 
 <a name="pragma_cache_size"></a>
@@ -220,6 +244,28 @@ puts {
     writing (2006-02-10) only Mac OS X supports F_FULLFSYNC.
     </p>
 </li>
+
+<a name="pragma_incremental_vacuum"></a>
+<li><p><b>PRAGMA incremental_vacuum</b><i>(N)</i><b>;</b></p>
+    <p>The incremental_vacuum pragma causes up to <i>N</i> pages to
+    be removed from the freelist.  The database file is truncated by
+    the same amount.  The incremental_vacuum pragma has no effect if
+    the database is not in
+    <a href="#pragma_auto_vacuum">auto_vacuum==incremental</a> mode
+    or if there are no pages on the freelist.  If there are fewer than
+    <i>N</i> pages on the freelist, then the entire freelist is cleared.</p>
+
+    <p>As of version 3.3.18 (the first version that supports
+    incremental_vacuum) this feature is still experimental.  Possible
+    future changes include enhancing incremental vacuum to do
+    defragmentation and node repacking just as the full-blown
+    <a href="lang_vacuum.html">VACUUM</a> command does.  And
+    incremental vacuum may be promoted from a pragma to a separate
+    SQL command, or perhaps some variation on the VACUUM command.
+    Programmers are cautioned to not become enamored with the
+    current syntax or functionality as it is likely to change.</p>
+</li>
+
 
 <a name="pragma_legacy_file_format"></a>
 <li><p><b>PRAGMA legacy_file_format;

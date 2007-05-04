@@ -1,5 +1,5 @@
-C Fix\scompilation\sand\stesting\swith\sOMIT_INCRBLOB\sdefined.\s(CVS\s3923)
-D 2007-05-04T19:03:03
+C Add\sdocumentation\son\sthe\sincremental\svacuum\sfeature.\s(CVS\s3924)
+D 2007-05-04T19:16:30
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -463,7 +463,7 @@ F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
 F www/optoverview.tcl 815df406a38c9f69b27d37e8f7ede004c6d9f19e
-F www/pragma.tcl efbd34cedda8235e236840e1a2bc09e1d4ac39c5
+F www/pragma.tcl 9e5a48dc564fc2c4a1d38501402e6b45c4d3870b
 F www/quickstart.tcl 8708a4ca83fbf55c66af1782992626f20c3df095
 F www/shared.gif 265bae80c5b311c5a86e47662821076ffaf5c6ea
 F www/sharedcache.tcl 3ebec81110e606af6fd65a3c4c19562cb173b29c
@@ -475,7 +475,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4516416b4d38679ea7d259155f241e54c4c58d7d
-R 3a3e75f1d75264be225ca608ee3178bb
-U danielk1977
-Z 0f0ffb43c67c217f676998f8fff22a56
+P a0f8adc692839d0645daf0630533a87b0543f6e8
+R 2ab54f3f4a04566149d9fc08dd42a530
+U drh
+Z d993c75ec553297a4f21ca68fdcc08cc
