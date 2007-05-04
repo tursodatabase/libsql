@@ -1768,6 +1768,32 @@ int sqlite3VdbeSerialTypeLen(u32 serial_type){
 }
 
 /*
+** If we are on an architecture with mixed-endian floating 
+*** points (ex: ARM7) then swap the lower 4 bytes with the 
+** upper 4 bytes.  Return the result.
+**
+** For most (sane) architectures, this is a no-op.
+*/
+#ifdef SQLITE_MIXED_ENDIAN_64BIT_FLOAT
+static double floatSwap(double in){
+  union {
+    double r;
+    u32 i[2];
+  } u;
+  u32 t;
+
+  u.r = in;
+  t = u.i[0];
+  u.i[0] = u.i[1];
+  u.i[1] = t;
+  return u.r;
+}
+# define swapMixedEndianFloat(X)  X = floatSwap(X)
+#else
+# define swapMixedEndianFloat(X)
+#endif
+
+/*
 ** Write the serialized data blob for the value stored in pMem into 
 ** buf. It is assumed that the caller has allocated sufficient space.
 ** Return the number of bytes written.
@@ -1795,6 +1821,7 @@ int sqlite3VdbeSerialPut(u8 *buf, int nBuf, Mem *pMem, int file_format){
     int i;
     if( serial_type==7 ){
       assert( sizeof(v)==sizeof(pMem->r) );
+      swapMixedEndianFloat(pMem->r);
       memcpy(&v, &pMem->r, sizeof(v));
     }else{
       v = pMem->u.i;
@@ -1879,11 +1906,15 @@ int sqlite3VdbeSerialGet(
       u32 y;
 #if !defined(NDEBUG) && !defined(SQLITE_OMIT_FLOATING_POINT)
       /* Verify that integers and floating point values use the same
-      ** byte order.  The byte order differs on some (broken) architectures.
+      ** byte order.  Or, that if SQLITE_MIXED_ENDIAN_64BIT_FLOAT is
+      ** defined that 64-bit floating point values really are mixed
+      ** endian.
       */
       static const u64 t1 = ((u64)0x3ff00000)<<32;
       static const double r1 = 1.0;
-      assert( sizeof(r1)==sizeof(t1) && memcmp(&r1, &t1, sizeof(r1))==0 );
+      double r2 = r1;
+      swapMixedEndianFloat(r2);
+      assert( sizeof(r2)==sizeof(t1) && memcmp(&r2, &t1, sizeof(r1))==0 );
 #endif
 
       x = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
@@ -1895,7 +1926,7 @@ int sqlite3VdbeSerialGet(
       }else{
         assert( sizeof(x)==8 && sizeof(pMem->r)==8 );
         memcpy(&pMem->r, &x, sizeof(x));
-        /* pMem->r = *(double*)&x; */
+        swapMixedEndianFloat(pMem->r);
         pMem->flags = MEM_Real;
       }
       return 8;

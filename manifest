@@ -1,5 +1,5 @@
-C Rework\saccessPayload()\sfunction\sfor\sclarity.\s(CVS\s3912)
-D 2007-05-04T08:32:14
+C Add\scompile-time\soption\s-DSQLITE_MIXED_ENDIAN_64BIT_FLOAT=1\sthat\suses\nmixed-endian\sdoubles.\s\sThis\sis\sneeded\son\sARM7\sto\smake\sdatabase\sfile\nformats\scompatible\swith\sall\sother\sprocessors.\s\sTickets\s#2278\sand\s#2335.\s(CVS\s3913)
+D 2007-05-04T11:59:32
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -99,7 +99,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 762c81655da0f01067514924a5ba8f47a47ada1d
 F src/sqlite.h.in a666300976897eced975b448f722a722b362c6b1
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
-F src/sqliteInt.h 0b14d0eae083aafca0562d2261a404e5e5abc5f0
+F src/sqliteInt.h 5a8c0221a4f11998f46aa76364a9559af8d7c1f7
 F src/table.c 6d0da66dde26ee75614ed8f584a1996467088d06
 F src/tclsqlite.c dde509871614d17f8ab5f3b4bc496b0af07280c7
 F src/test1.c 29a39fdde51f4612082ecf3f5af54dac93766f87
@@ -129,7 +129,7 @@ F src/vdbe.c a4abf744b5376372a9be30f02ab4b231f353cab1
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h cb02cbbceddf3b40d49012e9f41576f17bcbec97
 F src/vdbeapi.c 37d793559390bec8a00c556f651f21b5f9e589af
-F src/vdbeaux.c 8c7f22e22d1ea578971f5a3fcd3a56a6882ced64
+F src/vdbeaux.c 51acaab4275b5fddc7af5e7d1d2594044216ac46
 F src/vdbeblob.c ed2f9b46cc2de8de97d2a4a4ec466c5914d68333
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c ba98f8572ec4609846b368fa7580db178022f1bb
@@ -473,7 +473,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e54a49e264ecd54083587f8d3b17cce4c811fddc
-R 6675084e0bd9661ee80adf52bdde8264
-U danielk1977
-Z cda47f0f1385e7692b319bbdf6df8c16
+P 42d07c70ec1eb6dd9619c97d753c9d2824aeae32
+R f96d594e26c58bcc8fee62b7bf4c7bdc
+U drh
+Z 47fadba21691b4be40e7c985b1254595
