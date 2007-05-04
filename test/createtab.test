@@ -12,14 +12,20 @@
 # focus of this file is testing that it is OK to create new tables
 # and indices while creating existing tables and indices.
 #
-# $Id: createtab.test,v 1.1 2007/05/02 17:54:56 drh Exp $
+# $Id: createtab.test,v 1.2 2007/05/04 14:36:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable autovacuum {
+  set upperBound 2
+} else {
+  set upperBound 0
+}
+
 # Run these tests for all possible values of autovacuum.
 #
-for {set av 0} {$av<=2} {incr av} {
+for {set av 0} {$av<=$upperBound} {incr av} {
   db close
   file delete -force test.db test.db-journal
   sqlite3 db test.db

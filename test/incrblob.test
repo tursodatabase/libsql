@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.6 2007/05/03 18:14:10 danielk1977 Exp $
+# $Id: incrblob.test,v 1.7 2007/05/04 14:36:22 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -101,6 +101,12 @@ proc nWrite {db} {
 
 foreach AutoVacuumMode [list 0 1] {
 
+  if {$AutoVacuumMode>0} {
+    ifcapable !autovacuum {
+      break
+    }
+  }
+
   db close
   file delete -force test.db test.db-journal
 
@@ -119,11 +125,13 @@ foreach AutoVacuumMode [list 0 1] {
     expr [file size test.db]/1024
   } [expr 31 + $AutoVacuumMode]
 
-  do_test incrblob-2.$AutoVacuumMode.2 {
-    execsql {
-      PRAGMA auto_vacuum;
-    }
-  } $AutoVacuumMode
+  ifcapable autovacuum {
+    do_test incrblob-2.$AutoVacuumMode.2 {
+      execsql {
+        PRAGMA auto_vacuum;
+      }
+    } $AutoVacuumMode
+  }
 
   do_test incrblob-2.$AutoVacuumMode.3 {
     # Open and close the db to make sure the page cache is empty.

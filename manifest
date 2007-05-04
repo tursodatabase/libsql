@@ -1,5 +1,5 @@
-C Make\s"incremental"\sa\sfallback\stoken\sso\sthat\syou\scan\sset\n"auto_vacuum=incremental"\nwithout\shaving\sto\squote\sthe\s"incremental".\s(CVS\s3917)
-D 2007-05-04T14:14:45
+C Get\stests\sworking\swith\sSQLITE_OMIT_AUTOVACUUM=1.\s(CVS\s3918)
+D 2007-05-04T14:36:22
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -193,7 +193,7 @@ F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/crash.test 167eb4652eccbedb199b6f21850346c3f5d779fb
 F test/crash2.test 423c6ec404d15b7d7d0e40aef0a26740cce6075f
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
-F test/createtab.test 9f122ca39bae0decf59416779d4d7d1eeb26e18f
+F test/createtab.test b562aba1a65be49935fc43a04e90766e39231804
 F test/date.test 4834d022b2fa5982cafed20938f7523a7475e4cd
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test 525a6953bc3978780cae35f3eaf1027cf4ce887d
@@ -213,7 +213,7 @@ F test/exclusive3.test 0e49c35b7e7cb8e7280b4ce3f0359d30b207d2ff
 F test/expr.test ab21e2fc3613595131efd7d8bbca4b95ed5cc608
 F test/filefmt.test 053b622009fbbb74dd37921ffad374d852c13cd8
 F test/fkey1.test dcb4f28eb22d5141f15161d6bdca9a4f58c95729
-F test/format4.test bf3bed3b13c63abfb3cfec232597a319a31d0bcc
+F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
 F test/fts1b.test 5d8a01aefbecc8b7442b36c94c05eb7a845462d5
 F test/fts1c.test 85a525ce7428907469b4cce13d5563ce542ce64c
@@ -242,7 +242,7 @@ F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test 6727c7729472ae52b5acd86e802f89aa350ba50f
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
-F test/incrblob.test 5cf5a7693c6cde33eef361d94c00c7bdbc30f563
+F test/incrblob.test ebfee15334f33dae682d3161acff9c4d169d4672
 F test/incrblob_err.test 9f78c159279c992fa5ce49c06f50b680fc470520
 F test/incrvacuum.test 2173bc075c7b3b96ccf228d737dd4f5c29500dc4
 F test/incrvacuum_ioerr.test 0ebc382bcc2036ec58cf49cc5ffada45f75d907b
@@ -348,7 +348,7 @@ F test/tkt1444.test a9d72f9e942708bd82dde6c707da61c489e213e9
 F test/tkt1449.test 93584a449752d52b07d2cfc280a69842b6e16ed5
 F test/tkt1473.test 9d000af3e11a4450d4c596f5e58b4b0d24eb0f8b
 F test/tkt1501.test 2064f98e00871848af4b2f517e46c1a7fb2e32db
-F test/tkt1512.test ec9a6d9f874a61b50e9fd62ef7947adef6c947ce
+F test/tkt1512.test a1df1f66caf0b9122d6220c15dcee230298c2c2f
 F test/tkt1514.test baa587a69fa2e8d575ebdaf1460f711281dcba49
 F test/tkt1536.test 83ff7a7b6e248016f8d682d4f7a4ae114070d466
 F test/tkt1537.test e3a14332de9770be8ff14bd15c19a49cbec10808
@@ -474,7 +474,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ba4845b32bdf38e623c4f7246e6e327715bbba4b
-R 107050d6ec18fe294b30eefda49659d6
+P 9d7a2e2bb41e7baed2cdcf199cb04d7aef19c010
+R 6f7220eaa2a5bebdd0c32a725c034b6c
 U drh
-Z ebc583540cd904d117787236616c109a
+Z 7cb97d159316a6b06274bb5cc230bd07

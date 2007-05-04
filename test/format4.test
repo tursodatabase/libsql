@@ -22,9 +22,14 @@ db eval {PRAGMA legacy_file_format=OFF}
 # The size of the database depends on whether or not autovacuum
 # is enabled.
 #
-if {[db one {PRAGMA auto_vacuum}]} {
-  set small 3072
-  set large 5120
+ifcapable autovacuum {
+  if {[db one {PRAGMA auto_vacuum}]} {
+    set small 3072
+    set large 5120
+  } else {
+    set small 2048
+    set large 4096
+  }
 } else {
   set small 2048
   set large 4096
