@@ -1,5 +1,5 @@
-C Add\scompile-time\soption\s-DSQLITE_MIXED_ENDIAN_64BIT_FLOAT=1\sthat\suses\nmixed-endian\sdoubles.\s\sThis\sis\sneeded\son\sARM7\sto\smake\sdatabase\sfile\nformats\scompatible\swith\sall\sother\sprocessors.\s\sTickets\s#2278\sand\s#2335.\s(CVS\s3913)
-D 2007-05-04T11:59:32
+C Fix\sa\sformatting\serrror\sin\sI/O\slogging.\s(CVS\s3914)
+D 2007-05-04T12:01:03
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -87,7 +87,7 @@ F src/os_unix.c 426b4c03c304ad78746d65d9ba101e0b72e18e23
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c e94903c7dc1c0599c8ddce42efa0b6928068ddc5
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 22bd6df426881401eaa19734f6d7c69ccb0bc505
+F src/pager.c 680e42a6e0306f43b3e52127324a7bcc8d3ce65b
 F src/pager.h d652ddf092d2318d00e41f8539760fe8e57c157c
 F src/parse.y a3940369e12c69c4968aa580cdc74cf73a664980
 F src/pragma.c 4fdefc03c3fd0ee87f8aad82bf80ba9bf1cdf416
@@ -473,7 +473,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 42d07c70ec1eb6dd9619c97d753c9d2824aeae32
-R f96d594e26c58bcc8fee62b7bf4c7bdc
+P 2a178d0c7950c9d403c0bc43c2043de945fb24e0
+R 2c92eb8d26a624968d9428e7829962d0
 U drh
-Z 47fadba21691b4be40e7c985b1254595
+Z f76b8b0273f8e85ef3b644774d94b3bf
