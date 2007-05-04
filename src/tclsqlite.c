@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.183 2007/05/04 12:05:56 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.184 2007/05/04 13:15:56 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -329,7 +329,7 @@ static int createIncrblobChannel(
   p->iSeek = 0;
   p->pBlob = pBlob;
 
-  sprintf(zChannel, "incrblob_%d", ++count);
+  sqlite3_snprintf(sizeof(zChannel), zChannel, "incrblob_%d", ++count);
   p->channel = Tcl_CreateChannel(&IncrblobChannelType, zChannel, p, flags);
   Tcl_RegisterChannel(interp, p->channel);
 
@@ -470,7 +470,7 @@ static int DbBusyHandler(void *cd, int nTries){
   int rc;
   char zVal[30];
 
-  sprintf(zVal, "%d", nTries);
+  sqlite3_snprintf(sizeof(zVal), zVal, "%d", nTries);
   rc = Tcl_VarEval(pDb->interp, pDb->zBusy, " ", zVal, (char*)0);
   if( rc!=TCL_OK || atoi(Tcl_GetStringResult(pDb->interp)) ){
     return 0;
@@ -979,7 +979,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       zAuth = Tcl_GetStringFromObj(objv[2], &len);
       if( zAuth && len>0 ){
         pDb->zAuth = Tcl_Alloc( len + 1 );
-        strcpy(pDb->zAuth, zAuth);
+        memcpy(pDb->zAuth, zAuth, len+1);
       }else{
         pDb->zAuth = 0;
       }
@@ -1016,7 +1016,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       zBusy = Tcl_GetStringFromObj(objv[2], &len);
       if( zBusy && len>0 ){
         pDb->zBusy = Tcl_Alloc( len + 1 );
-        strcpy(pDb->zBusy, zBusy);
+        memcpy(pDb->zBusy, zBusy, len+1);
       }else{
         pDb->zBusy = 0;
       }
@@ -1128,7 +1128,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     pCollate->pNext = pDb->pCollate;
     pCollate->zScript = (char*)&pCollate[1];
     pDb->pCollate = pCollate;
-    strcpy(pCollate->zScript, zScript);
+    memcpy(pCollate->zScript, zScript, nScript+1);
     if( sqlite3_create_collation(pDb->db, zName, SQLITE_UTF8, 
         pCollate, tclSqlCollate) ){
       Tcl_SetResult(interp, (char *)sqlite3_errmsg(pDb->db), TCL_VOLATILE);
@@ -1181,7 +1181,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       zCommit = Tcl_GetStringFromObj(objv[2], &len);
       if( zCommit && len>0 ){
         pDb->zCommit = Tcl_Alloc( len + 1 );
-        strcpy(pDb->zCommit, zCommit);
+        memcpy(pDb->zCommit, zCommit, len+1);
       }else{
         pDb->zCommit = 0;
       }
@@ -1359,9 +1359,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }
       if( i+1!=nCol ){
         char *zErr;
-        zErr = malloc(200 + strlen(zFile));
+        int nErr = strlen(zFile) + 200;
+        zErr = malloc(nErr);
         if( zErr ){
-          sprintf(zErr,
+          sqlite3_snprintf(nErr, zErr,
              "Error: %s line %d: expected %d columns of data but found %d",
              zFile, lineno, nCol, i+1);
           Tcl_AppendResult(interp, zErr, 0);
@@ -1399,7 +1400,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       rc = TCL_OK;
     }else{
       /* failure, append lineno where failed */
-      sprintf(zLineNum,"%d",lineno);
+      sqlite3_snprintf(sizeof(zLineNum), zLineNum,"%d",lineno);
       Tcl_AppendResult(interp,", failed while processing line: ",zLineNum,0);
       rc = TCL_ERROR;
     }
@@ -1979,7 +1980,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       zProgress = Tcl_GetStringFromObj(objv[3], &len);
       if( zProgress && len>0 ){
         pDb->zProgress = Tcl_Alloc( len + 1 );
-        strcpy(pDb->zProgress, zProgress);
+        memcpy(pDb->zProgress, zProgress, len+1);
       }else{
         pDb->zProgress = 0;
       }
@@ -2021,7 +2022,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       zProfile = Tcl_GetStringFromObj(objv[2], &len);
       if( zProfile && len>0 ){
         pDb->zProfile = Tcl_Alloc( len + 1 );
-        strcpy(pDb->zProfile, zProfile);
+        memcpy(pDb->zProfile, zProfile, len+1);
       }else{
         pDb->zProfile = 0;
       }
@@ -2116,7 +2117,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       zTrace = Tcl_GetStringFromObj(objv[2], &len);
       if( zTrace && len>0 ){
         pDb->zTrace = Tcl_Alloc( len + 1 );
-        strcpy(pDb->zTrace, zTrace);
+        memcpy(pDb->zTrace, zTrace, len+1);
       }else{
         pDb->zTrace = 0;
       }

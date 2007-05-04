@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.185 2007/04/18 14:24:33 danielk1977 Exp $
+** $Id: insert.c,v 1.186 2007/05/04 13:15:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1122,25 +1122,26 @@ void sqlite3GenerateConstraintChecks(
       case OE_Fail: {
         int j, n1, n2;
         char zErrMsg[200];
-        strcpy(zErrMsg, pIdx->nColumn>1 ? "columns " : "column ");
+        sqlite3_snprintf(sizeof(zErrMsg), zErrMsg,
+                         pIdx->nColumn>1 ? "columns " : "column ");
         n1 = strlen(zErrMsg);
         for(j=0; j<pIdx->nColumn && n1<sizeof(zErrMsg)-30; j++){
           char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
           n2 = strlen(zCol);
           if( j>0 ){
-            strcpy(&zErrMsg[n1], ", ");
+            sqlite3_snprintf(sizeof(zErrMsg)-n1, &zErrMsg[n1], ", ");
             n1 += 2;
           }
           if( n1+n2>sizeof(zErrMsg)-30 ){
-            strcpy(&zErrMsg[n1], "...");
+            sqlite3_snprintf(sizeof(zErrMsg)-n1, &zErrMsg[n1], "...");
             n1 += 3;
             break;
           }else{
-            strcpy(&zErrMsg[n1], zCol);
+            sqlite3_snprintf(sizeof(zErrMsg)-n1, &zErrMsg[n1], "%s", zCol);
             n1 += n2;
           }
         }
-        strcpy(&zErrMsg[n1], 
+        sqlite3_snprintf(sizeof(zErrMsg)-n1, &zErrMsg[n1], 
             pIdx->nColumn>1 ? " are not unique" : " is not unique");
         sqlite3VdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, onError, zErrMsg, 0);
         break;

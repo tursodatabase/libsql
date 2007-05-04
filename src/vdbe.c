@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.605 2007/05/02 16:51:59 drh Exp $
+** $Id: vdbe.c,v 1.606 2007/05/04 13:15:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -319,10 +319,13 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
       c = 's';
     }
 
-    zCsr += sprintf(zCsr, "%c", c);
-    zCsr += sprintf(zCsr, "%d[", pMem->n);
+    sqlite3_snprintf(100, zCsr, "%c", c);
+    zCsr += strlen(zCsr);
+    sqlite3_snprintf(100, zCsr, "%d[", pMem->n);
+    zCsr += strlen(zCsr);
     for(i=0; i<16 && i<pMem->n; i++){
-      zCsr += sprintf(zCsr, "%02X", ((int)pMem->z[i] & 0xFF));
+      sqlite3_snprintf(100, zCsr, "%02X", ((int)pMem->z[i] & 0xFF));
+      zCsr += strlen(zCsr);
     }
     for(i=0; i<16 && i<pMem->n; i++){
       char z = pMem->z[i];
@@ -330,9 +333,11 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
       else *zCsr++ = z;
     }
 
-    zCsr += sprintf(zCsr, "]");
+    sqlite3_snprintf(100, zCsr, "]");
+    zCsr += strlen(zCsr);
     if( f & MEM_Zero ){
-      zCsr += sprintf(zCsr,"+%lldz",pMem->u.i);
+      sqlite3_snprintf(100, zCsr,"+%lldz",pMem->u.i);
+      zCsr += strlen(zCsr);
     }
     *zCsr = '\0';
   }else if( f & MEM_Str ){
@@ -351,7 +356,8 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
       zBuf[1] = 's';
     }
     k = 2;
-    k += sprintf(&zBuf[k], "%d", pMem->n);
+    sqlite3_snprintf(100, &zBuf[k], "%d", pMem->n);
+    k += strlen(&zBuf[k]);
     zBuf[k++] = '[';
     for(j=0; j<15 && j<pMem->n; j++){
       u8 c = pMem->z[j];
@@ -362,7 +368,8 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
       }
     }
     zBuf[k++] = ']';
-    k += sprintf(&zBuf[k], encnames[pMem->enc]);
+    sqlite3_snprintf(100,&zBuf[k], encnames[pMem->enc]);
+    k += strlen(&zBuf[k]);
     zBuf[k++] = 0;
   }
 }

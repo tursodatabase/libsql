@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.422 2007/04/26 14:42:36 danielk1977 Exp $
+** $Id: build.c,v 1.423 2007/05/04 13:15:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1322,22 +1322,24 @@ static char *createTableStmt(Table *p, int isTemp){
   n += 35 + 6*p->nCol;
   zStmt = sqliteMallocRaw( n );
   if( zStmt==0 ) return 0;
-  strcpy(zStmt, !OMIT_TEMPDB&&isTemp ? "CREATE TEMP TABLE ":"CREATE TABLE ");
+  sqlite3_snprintf(n, zStmt,
+                  !OMIT_TEMPDB&&isTemp ? "CREATE TEMP TABLE ":"CREATE TABLE ");
   k = strlen(zStmt);
   identPut(zStmt, &k, p->zName);
   zStmt[k++] = '(';
   for(pCol=p->aCol, i=0; i<p->nCol; i++, pCol++){
-    strcpy(&zStmt[k], zSep);
+    sqlite3_snprintf(n-k, &zStmt[k], zSep);
     k += strlen(&zStmt[k]);
     zSep = zSep2;
     identPut(zStmt, &k, pCol->zName);
     if( (z = pCol->zType)!=0 ){
       zStmt[k++] = ' ';
-      strcpy(&zStmt[k], z);
+      assert( strlen(z)+k+1<=n );
+      sqlite3_snprintf(n-k, &zStmt[k], "%s", z);
       k += strlen(z);
     }
   }
-  strcpy(&zStmt[k], zEnd);
+  sqlite3_snprintf(n-k, &zStmt[k], "%s", zEnd);
   return zStmt;
 }
 
@@ -2355,7 +2357,7 @@ void sqlite3CreateIndex(
     int n;
     Index *pLoop;
     for(pLoop=pTab->pIndex, n=1; pLoop; pLoop=pLoop->pNext, n++){}
-    sprintf(zBuf,"_%d",n);
+    sqlite3_snprintf(sizeof(zBuf),zBuf,"_%d",n);
     zName = 0;
     sqlite3SetString(&zName, "sqlite_autoindex_", pTab->zName, zBuf, (char*)0);
     if( zName==0 ) goto exit_create_index;
@@ -2420,7 +2422,7 @@ void sqlite3CreateIndex(
   pIndex->aSortOrder = (u8 *)(&pIndex->aiRowEst[nCol+1]);
   pIndex->zName = (char *)(&pIndex->aSortOrder[nCol]);
   zExtra = (char *)(&pIndex->zName[nName+1]);
-  strcpy(pIndex->zName, zName);
+  memcpy(pIndex->zName, zName, nName+1);
   pIndex->pTable = pTab;
   pIndex->nColumn = pList->nExpr;
   pIndex->onError = onError;
@@ -2463,7 +2465,7 @@ void sqlite3CreateIndex(
     if( pListItem->pExpr ){
       assert( pListItem->pExpr->pColl );
       zColl = zExtra;
-      strcpy(zExtra, pListItem->pExpr->pColl->zName);
+      sqlite3_snprintf(nExtra, zExtra, "%s", pListItem->pExpr->pColl->zName);
       zExtra += (strlen(zColl) + 1);
     }else{
       zColl = pTab->aCol[j].zColl;

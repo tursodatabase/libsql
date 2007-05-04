@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.247 2007/04/20 12:22:02 drh Exp $
+** $Id: where.c,v 1.248 2007/05/04 13:15:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2605,24 +2605,24 @@ WhereInfo *sqlite3WhereBegin(
     n = strlen(z);
     if( n+nQPlan < sizeof(sqlite3_query_plan)-10 ){
       if( pLevel->flags & WHERE_IDX_ONLY ){
-        strcpy(&sqlite3_query_plan[nQPlan], "{}");
+        memcpy(&sqlite3_query_plan[nQPlan], "{}", 2);
         nQPlan += 2;
       }else{
-        strcpy(&sqlite3_query_plan[nQPlan], z);
+        memcpy(&sqlite3_query_plan[nQPlan], z, n);
         nQPlan += n;
       }
       sqlite3_query_plan[nQPlan++] = ' ';
     }
     if( pLevel->flags & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE) ){
-      strcpy(&sqlite3_query_plan[nQPlan], "* ");
+      memcpy(&sqlite3_query_plan[nQPlan], "* ", 2);
       nQPlan += 2;
     }else if( pLevel->pIdx==0 ){
-      strcpy(&sqlite3_query_plan[nQPlan], "{} ");
+      memcpy(&sqlite3_query_plan[nQPlan], "{} ", 3);
       nQPlan += 3;
     }else{
       n = strlen(pLevel->pIdx->zName);
       if( n+nQPlan < sizeof(sqlite3_query_plan)-2 ){
-        strcpy(&sqlite3_query_plan[nQPlan], pLevel->pIdx->zName);
+        memcpy(&sqlite3_query_plan[nQPlan], pLevel->pIdx->zName, n);
         nQPlan += n;
         sqlite3_query_plan[nQPlan++] = ' ';
       }

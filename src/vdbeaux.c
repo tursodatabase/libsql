@@ -589,24 +589,24 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
     case P3_KEYINFO: {
       int i, j;
       KeyInfo *pKeyInfo = (KeyInfo*)pOp->p3;
-      sprintf(zTemp, "keyinfo(%d", pKeyInfo->nField);
+      sqlite3_snprintf(nTemp, zTemp, "keyinfo(%d", pKeyInfo->nField);
       i = strlen(zTemp);
       for(j=0; j<pKeyInfo->nField; j++){
         CollSeq *pColl = pKeyInfo->aColl[j];
         if( pColl ){
           int n = strlen(pColl->zName);
           if( i+n>nTemp-6 ){
-            strcpy(&zTemp[i],",...");
+            memcpy(&zTemp[i],",...",4);
             break;
           }
           zTemp[i++] = ',';
           if( pKeyInfo->aSortOrder && pKeyInfo->aSortOrder[j] ){
             zTemp[i++] = '-';
           }
-          strcpy(&zTemp[i], pColl->zName);
+          memcpy(&zTemp[i], pColl->zName,n+1);
           i += n;
         }else if( i+4<nTemp-6 ){
-          strcpy(&zTemp[i],",nil");
+          memcpy(&zTemp[i],",nil",4);
           i += 4;
         }
       }
@@ -618,7 +618,7 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
     }
     case P3_COLLSEQ: {
       CollSeq *pColl = (CollSeq*)pOp->p3;
-      sprintf(zTemp, "collseq(%.20s)", pColl->zName);
+      sqlite3_snprintf(nTemp, zTemp, "collseq(%.20s)", pColl->zName);
       zP3 = zTemp;
       break;
     }

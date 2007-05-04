@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.199 2007/04/06 02:32:34 drh Exp $
+** $Id: util.c,v 1.200 2007/05/04 13:15:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -424,7 +424,7 @@ int sqlite3OutstandingMallocs(Tcl_Interp *interp){
     z = &zAlloc[TESTALLOC_OFFSET_STACK(p)];
     for(i=0; i<TESTALLOC_STACKFRAMES; i++){
       char zHex[128];
-      sprintf(zHex, "%p", ((void **)z)[i]);
+      sqlite3_snprintf(sizeof(zHex), zHex, "%p", ((void **)z)[i]);
       Tcl_ListObjAppendElement(0, pStack, Tcl_NewStringObj(zHex, -1));
     }
 
@@ -722,9 +722,11 @@ int sqlite3AllocSize(void *p){
 */
 char *sqlite3StrDup(const char *z){
   char *zNew;
+  int n;
   if( z==0 ) return 0;
-  zNew = sqlite3MallocRaw(strlen(z)+1, 1);
-  if( zNew ) strcpy(zNew, z);
+  n = strlen(z)+1;
+  zNew = sqlite3MallocRaw(n, 1);
+  if( zNew ) memcpy(zNew, z, n);
   return zNew;
 }
 char *sqlite3StrNDup(const char *z, int n){
@@ -766,9 +768,11 @@ void sqlite3SetString(char **pz, ...){
   *zResult = 0;
   va_start(ap, pz);
   while( (z = va_arg(ap, const char*))!=0 ){
-    strcpy(zResult, z);
-    zResult += strlen(zResult);
+    int n = strlen(z);
+    memcpy(zResult, z, n);
+    zResult += n;
   }
+  zResult[0] = 0;
   va_end(ap);
 }
 

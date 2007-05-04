@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.57 2007/03/27 21:47:07 drh Exp $
+** $Id: attach.c,v 1.58 2007/05/04 13:15:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -90,7 +90,8 @@ static void attachFunc(
     goto attach_error;
   }
   if( !db->autoCommit ){
-    strcpy(zErr, "cannot ATTACH database within transaction");
+    sqlite3_snprintf(sizeof(zErr), zErr,
+                     "cannot ATTACH database within transaction");
     goto attach_error;
   }
   for(i=0; i<db->nDb; i++){
@@ -130,7 +131,7 @@ static void attachFunc(
     if( !aNew->pSchema ){
       rc = SQLITE_NOMEM;
     }else if( aNew->pSchema->file_format && aNew->pSchema->enc!=ENC(db) ){
-      strcpy(zErr, 
+      sqlite3_snprintf(sizeof(zErr), zErr, 
         "attached databases must use the same text encoding as main database");
       goto attach_error;
     }
@@ -246,7 +247,8 @@ static void detachFunc(
     goto detach_error;
   }
   if( !db->autoCommit ){
-    strcpy(zErr, "cannot DETACH database within transaction");
+    sqlite3_snprintf(sizeof(zErr), zErr,
+                     "cannot DETACH database within transaction");
     goto detach_error;
   }
   if( sqlite3BtreeIsInReadTrans(pDb->pBt) ){

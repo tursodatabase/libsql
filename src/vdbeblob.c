@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: vdbeblob.c,v 1.6 2007/05/04 12:05:56 danielk1977 Exp $
+** $Id: vdbeblob.c,v 1.7 2007/05/04 13:15:57 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -83,8 +83,9 @@ int sqlite3_blob_open(
 
   Vdbe *v = 0;
   int rc = SQLITE_OK;
-  char zErr[128] = {0};
+  char zErr[128];
 
+  zErr[0] = 0;
   do {
     Parse sParse;
     Table *pTab;
@@ -131,7 +132,8 @@ int sqlite3_blob_open(
         int j;
         for(j=0; j<pIdx->nColumn; j++){
           if( pIdx->aiColumn[j]==iCol ){
-            strcpy(zErr, "cannot open indexed column for writing");
+            sqlite3_snprintf(sizeof(zErr), zErr,
+                             "cannot open indexed column for writing");
             rc = SQLITE_ERROR;
             sqlite3SafetyOff(db);
             goto blob_open_out;

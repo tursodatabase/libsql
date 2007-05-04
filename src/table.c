@@ -92,9 +92,10 @@ static int sqlite3_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
       if( argv[i]==0 ){
         z = 0;
       }else{
-        z = sqlite3_malloc( strlen(argv[i])+1 );
+        int n = strlen(argv[i])+1;
+        z = sqlite3_malloc( n );
         if( z==0 ) goto malloc_failed;
-        strcpy(z, argv[i]);
+        memcpy(z, argv[i], n);
       }
       p->azResult[p->nData++] = z;
     }

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.372 2007/05/04 12:05:56 danielk1977 Exp $
+** $Id: btree.c,v 1.373 2007/05/04 13:15:56 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -6237,7 +6237,7 @@ static int btreePageDump(BtShared *pBt, int pgno, int recursive, MemPage *pParen
     pCell = &data[addr];
     parseCellPtr(pPage, pCell, &info);
     sz = info.nSize;
-    sprintf(range,"%d..%d", addr, addr+sz-1);
+    sqlite3_snprintf(sizeof(range),range,"%d..%d", addr, addr+sz-1);
     if( pPage->leaf ){
       child = 0;
     }else{
@@ -6264,7 +6264,7 @@ static int btreePageDump(BtShared *pBt, int pgno, int recursive, MemPage *pParen
   idx = get2byte(&data[hdr+1]);
   while( idx>0 && idx<pPage->pBt->usableSize ){
     int sz = get2byte(&data[idx+2]);
-    sprintf(range,"%d..%d", idx, idx+sz-1);
+    sqlite3_snprintf(sizeof(range),range,"%d..%d", idx, idx+sz-1);
     nFree += sz;
     sqlite3DebugPrintf("freeblock %2d: i=%-10s size=%-4d total=%d\n",
        i, range, sz, nFree);
@@ -6579,7 +6579,7 @@ static int checkTreePage(
   char zContext[100];
   char *hit;
 
-  sprintf(zContext, "Page %d: ", iPage);
+  sqlite3_snprintf(sizeof(zContext), zContext, "Page %d: ", iPage);
 
   /* Check that the page exists
   */
@@ -6608,7 +6608,8 @@ static int checkTreePage(
 
     /* Check payload overflow pages
     */
-    sprintf(zContext, "On tree page %d cell %d: ", iPage, i);
+    sqlite3_snprintf(sizeof(zContext), zContext,
+             "On tree page %d cell %d: ", iPage, i);
     pCell = findCell(pPage,i);
     parseCellPtr(pPage, pCell, &info);
     sz = info.nData;
@@ -6643,7 +6644,8 @@ static int checkTreePage(
   }
   if( !pPage->leaf ){
     pgno = get4byte(&pPage->aData[pPage->hdrOffset+8]);
-    sprintf(zContext, "On page %d at right child: ", iPage);
+    sqlite3_snprintf(sizeof(zContext), zContext, 
+                     "On page %d at right child: ", iPage);
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
       checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage, 0);

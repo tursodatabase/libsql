@@ -959,7 +959,7 @@ int sqlite3UnixTempFileName(char *zBuf){
     break;
   }
   do{
-    sprintf(zBuf, "%s/"TEMP_FILE_PREFIX, zDir);
+    sqlite3_snprintf(SQLITE_TEMPNAME_SIZE, zBuf, "%s/"TEMP_FILE_PREFIX, zDir);
     j = strlen(zBuf);
     sqlite3Randomness(15, &zBuf[j]);
     for(i=0; i<15; i++, j++){
@@ -2518,33 +2518,40 @@ static int allocateUnixFile(
   }else{
     *pNew = f;
     switch(lockingStyle) {
-      case afpLockingStyle:
+      case afpLockingStyle: {
         /* afp locking uses the file path so it needs to be included in
         ** the afpLockingContext */
+        int nFilename;
         pNew->pMethod = &sqlite3AFPLockingUnixIoMethod;
         pNew->lockingContext = 
           sqlite3ThreadSafeMalloc(sizeof(afpLockingContext));
+        nFilename = strlen(zFilename)+1;
         ((afpLockingContext *)pNew->lockingContext)->filePath = 
-          sqlite3ThreadSafeMalloc(strlen(zFilename) + 1);
-        strcpy(((afpLockingContext *)pNew->lockingContext)->filePath, 
-               zFilename);
+          sqlite3ThreadSafeMalloc(nFilename);
+        memcpy(((afpLockingContext *)pNew->lockingContext)->filePath, 
+               zFilename, nFilename);
         srandomdev();
         break;
+      }
       case flockLockingStyle:
         /* flock locking doesn't need additional lockingContext information */
         pNew->pMethod = &sqlite3FlockLockingUnixIoMethod;
         break;
-      case dotlockLockingStyle:
+      case dotlockLockingStyle: {
         /* dotlock locking uses the file path so it needs to be included in
          ** the dotlockLockingContext */
+        int nFilename;
         pNew->pMethod = &sqlite3DotlockLockingUnixIoMethod;
         pNew->lockingContext = sqlite3ThreadSafeMalloc(
           sizeof(dotlockLockingContext));
+        nFilename = strlen(zFilename) + 6;
         ((dotlockLockingContext *)pNew->lockingContext)->lockPath = 
-            sqlite3ThreadSafeMalloc(strlen(zFilename) + strlen(".lock") + 1);
-        sprintf(((dotlockLockingContext *)pNew->lockingContext)->lockPath, 
+            sqlite3ThreadSafeMalloc( nFilename );
+        sqlite3_snprintf(nFilename, 
+                ((dotlockLockingContext *)pNew->lockingContext)->lockPath, 
                 "%s.lock", zFilename);
         break;
+      }
       case posixLockingStyle:
         /* posix locking doesn't need additional lockingContext information */
         pNew->pMethod = &sqlite3UnixIoMethod;
