@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.370 2007/05/03 13:11:32 danielk1977 Exp $
+** $Id: btree.c,v 1.371 2007/05/04 08:32:14 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -3137,6 +3137,37 @@ static int getOverflowPage(
   return rc;
 }
 
+/*
+** Copy data from a buffer to a page, or from a page to a buffer.
+**
+** pPayload is a pointer to data stored on database page pDbPage.
+** If argument eOp is false, then nByte bytes of data are copied
+** from pPayload to the buffer pointed at by pBuf. If eOp is true,
+** then sqlite3PagerWrite() is called on pDbPage and nByte bytes
+** of data are copied from the buffer pBuf to pPayload.
+**
+** SQLITE_OK is returned on success, otherwise an error code.
+*/
+static int copyPayload(
+  void *pPayload,           /* Pointer to page data */
+  void *pBuf,               /* Pointer to buffer */
+  int nByte,                /* Number of bytes to copy */
+  int eOp,                  /* 0 -> copy from page, 1 -> copy to page */
+  DbPage *pDbPage           /* Page containing pPayload */
+){
+  if( eOp ){
+    /* Copy data from buffer to page (a write operation) */
+    int rc = sqlite3PagerWrite(pDbPage);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+    memcpy(pPayload, pBuf, nByte);
+  }else{
+    /* Copy data from page to buffer (a read operation) */
+    memcpy(pBuf, pPayload, nByte);
+  }
+  return SQLITE_OK;
+}
 
 /*
 ** This function is used to read or overwrite payload information
@@ -3152,6 +3183,21 @@ static int getOverflowPage(
 ** It just reads or writes bytes from the payload area.  Data might 
 ** appear on the main page or be scattered out on multiple overflow 
 ** pages.
+**
+** If the BtCursor.cacheOverflow flag is set, and the current
+** cursor entry uses one or more overflow pages, this function
+** allocates space for and lazily popluates the overflow page-list 
+** cache array (BtCursor.aOverflow). Subsequent calls use this
+** cache to make seeking to the supplied offset more efficient.
+**
+** Once an overflow page-list cache has been allocated, it may be
+** invalidated if some other cursor writes to the same table, or if
+** the cursor is moved to a different row. Additionally, in auto-vacuum
+** mode, the following events may invalidate an overflow page-list cache.
+**
+**   * An incremental vacuum,
+**   * A commit in auto_vacuum="full" mode,
+**   * Creating a table (may require moving an overflow page).
 */
 #define getPayload(a,b,c,d,e) accessPayload(a,b,c,d,e,0)
 static int accessPayload(
@@ -3163,92 +3209,101 @@ static int accessPayload(
   int eOp              /* zero to read. non-zero to write. */
 ){
   unsigned char *aPayload;
-  Pgno nextPage;
-  int rc;
-  MemPage *pPage;
-  BtShared *pBt;
-  int ovflSize;
+  int rc = SQLITE_OK;
   u32 nKey;
   int iIdx = 0;
+  MemPage *pPage = pCur->pPage;        /* Btree page of current cursor entry */
+  BtShared *pBt = pCur->pBtree->pBt;   /* Btree this cursor belongs to */
 
-  assert( pCur!=0 && pCur->pPage!=0 );
+  assert( pPage );
   assert( pCur->eState==CURSOR_VALID );
-  pBt = pCur->pBtree->pBt;
-  pPage = pCur->pPage;
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
+  assert( offset>=0 );
+
   getCellInfo(pCur);
   aPayload = pCur->info.pCell + pCur->info.nHeader;
-  if( pPage->intKey ){
-    nKey = 0;
-  }else{
-    nKey = pCur->info.nKey;
-  }
-  assert( offset>=0 );
+  nKey = (pPage->intKey ? 0 : pCur->info.nKey);
+
   if( skipKey ){
     offset += nKey;
   }
   if( offset+amt > nKey+pCur->info.nData ){
+    /* Trying to read or write past the end of the data is an error */
     return SQLITE_ERROR;
   }
+
+  /* Check if data must be read/written to/from the btree page itself. */
   if( offset<pCur->info.nLocal ){
     int a = amt;
     if( a+offset>pCur->info.nLocal ){
       a = pCur->info.nLocal - offset;
     }
-    if( eOp ){
-      /* A write operation. */
-      rc = sqlite3PagerWrite(pPage->pDbPage);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
-      memcpy(&aPayload[offset], pBuf, a);
-    }else{
-      /* A read operation */
-      memcpy(pBuf, &aPayload[offset], a);
-    }
-    if( a==amt ){
-      return SQLITE_OK;
-    }
+    rc = copyPayload(&aPayload[offset], pBuf, a, eOp, pPage->pDbPage);
     offset = 0;
     pBuf += a;
     amt -= a;
   }else{
     offset -= pCur->info.nLocal;
   }
-  ovflSize = pBt->usableSize - 4;
-  if( amt>0 ){
+
+  if( rc==SQLITE_OK && amt>0 ){
+    const int ovflSize = pBt->usableSize - 4;  /* Bytes content per ovfl page */
+    Pgno nextPage;
+
     nextPage = get4byte(&aPayload[pCur->info.nLocal]);
+
 #ifndef SQLITE_OMIT_INCRBLOB
+    /* If the cacheOverflow flag is set and the BtCursor.aOverflow[]
+    ** has not been allocated, allocate it now. The array is sized at
+    ** one entry for each overflow page in the overflow chain. The
+    ** page number of the first overflow page is stored in aOverflow[0],
+    ** etc. A value of 0 in the aOverflow[] array means "not yet known"
+    ** (the cache is lazily populated).
+    */
     if( pCur->cacheOverflow && !pCur->aOverflow ){
       int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
       pCur->aOverflow = (Pgno *)sqliteMalloc(sizeof(Pgno)*nOvfl);
       if( nOvfl && !pCur->aOverflow ){
-        return SQLITE_NOMEM;
+        rc = SQLITE_NOMEM;
       }
     }
+
+    /* If the overflow page-list cache has been allocated and the
+    ** entry for the first required overflow page is valid, skip
+    ** directly to it.
+    */
     if( pCur->aOverflow && pCur->aOverflow[offset/ovflSize] ){
       iIdx = (offset/ovflSize);
       nextPage = pCur->aOverflow[iIdx];
       offset = (offset%ovflSize);
     }
 #endif
-    for(iIdx++; amt>0 && nextPage; iIdx++){
+
+    for( ; rc==SQLITE_OK && amt>0 && nextPage; iIdx++){
+
+#ifndef SQLITE_OMIT_INCRBLOB
+      /* If required, populate the overflow page-list cache. */
+      if( pCur->aOverflow ){
+        assert(!pCur->aOverflow[iIdx] || pCur->aOverflow[iIdx]==nextPage);
+        pCur->aOverflow[iIdx] = nextPage;
+      }
+#endif
+
       if( offset>=ovflSize ){
         /* The only reason to read this page is to obtain the page
-        ** number for the next page in the overflow chain. So try
-        ** the getOverflowPage() shortcut.
+        ** number for the next page in the overflow chain. The page
+	** data is not required. So first try to lookup the overflow
+	** page-list cache, if any, then fall back to the getOverflowPage()
+        ** function.
         */
-        rc = getOverflowPage(pBt, nextPage, 0, &nextPage);
-        if( rc!=SQLITE_OK ){
-          return rc;
-        }
-        offset -= ovflSize;
 #ifndef SQLITE_OMIT_INCRBLOB
-        if( pCur->aOverflow ){
-          assert(nextPage);
-          pCur->aOverflow[iIdx] = nextPage;
-        }
+        if( pCur->aOverflow && pCur->aOverflow[iIdx+1] ){
+          nextPage = pCur->aOverflow[iIdx+1];
+        } else 
 #endif
+          rc = getOverflowPage(pBt, nextPage, 0, &nextPage);
+        assert(rc==SQLITE_OK || nextPage==0);
+        offset -= ovflSize;
       }else{
         /* Need to read this page properly. It contains some of the
         ** range of data that is being read (eOp==0) or written (eOp!=0).
@@ -3256,43 +3311,26 @@ static int accessPayload(
         DbPage *pDbPage;
         int a = amt;
         rc = sqlite3PagerGet(pBt->pPager, nextPage, &pDbPage);
-        if( rc!=0 ){
-          return rc;
-        }
-        aPayload = sqlite3PagerGetData(pDbPage);
-        nextPage = get4byte(aPayload);
-        if( a + offset > ovflSize ){
-          a = ovflSize - offset;
-        }
-        if( eOp ){
-          /* A write operation. */
-          rc = sqlite3PagerWrite(pDbPage);
-          if( rc!=SQLITE_OK ){
-            sqlite3PagerUnref(pDbPage);
-            return rc;
+        if( rc==SQLITE_OK ){
+          aPayload = sqlite3PagerGetData(pDbPage);
+          nextPage = get4byte(aPayload);
+          if( a + offset > ovflSize ){
+            a = ovflSize - offset;
           }
-          memcpy(&aPayload[offset+4], pBuf, a);
-        }else{
-          /* A read operation */
-          memcpy(pBuf, &aPayload[offset+4], a);
+          rc = copyPayload(&aPayload[offset+4], pBuf, a, eOp, pDbPage);
+          sqlite3PagerUnref(pDbPage);
+          offset = 0;
+          amt -= a;
+          pBuf += a;
         }
-        offset = 0;
-        amt -= a;
-        pBuf += a;
-        sqlite3PagerUnref(pDbPage);
-#ifndef SQLITE_OMIT_INCRBLOB
-        if( pCur->aOverflow && nextPage ){
-          pCur->aOverflow[iIdx] = nextPage;
-        }
-#endif
       }
     }
   }
 
-  if( amt>0 ){
+  if( rc==SQLITE_OK && amt>0 ){
     return SQLITE_CORRUPT_BKPT;
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -6983,7 +7021,13 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, const void *z){
 
 /* 
 ** Set a flag on this cursor to cache the locations of pages from the 
-** overflow list for the current row.
+** overflow list for the current row. This is used by cursors opened
+** for incremental blob IO only.
+**
+** This function sets a flag only. The actual page location cache
+** (stored in BtCursor.aOverflow[]) is allocated and used by function
+** accessPayload() (the worker function for sqlite3BtreeData() and
+** sqlite3BtreePutData()).
 */
 void sqlite3BtreeCacheOverflow(BtCursor *pCur){
   assert(!pCur->cacheOverflow);
