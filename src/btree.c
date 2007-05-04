@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.373 2007/05/04 13:15:56 drh Exp $
+** $Id: btree.c,v 1.374 2007/05/04 18:36:45 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -395,7 +395,7 @@ struct BtCursor {
   i64 nKey;        /* Size of pKey, or last integer key */
   int skip;        /* (skip<0) -> Prev() is a no-op. (skip>0) -> Next() is */
 #ifndef SQLITE_OMIT_INCRBLOB
-  u8 cacheOverflow;         /* True to use aOverflow */
+  u8 isIncrblobHandle;      /* True if this cursor is an incr. io handle */
   Pgno *aOverflow;          /* Cache of overflow page locations */
 #endif
 };
@@ -765,6 +765,9 @@ static void clearCursorPosition(BtCursor *pCur){
 static int restoreOrClearCursorPositionX(BtCursor *pCur){
   int rc;
   assert( pCur->eState==CURSOR_REQUIRESEEK );
+  if( pCur->isIncrblobHandle ){
+    return SQLITE_ABORT;
+  }
   pCur->eState = CURSOR_INVALID;
   rc = sqlite3BtreeMoveto(pCur, pCur->pKey, pCur->nKey, 0, &pCur->skip);
   if( rc==SQLITE_OK ){
@@ -3185,7 +3188,7 @@ static int copyPayload(
 ** appear on the main page or be scattered out on multiple overflow 
 ** pages.
 **
-** If the BtCursor.cacheOverflow flag is set, and the current
+** If the BtCursor.isIncrblobHandle flag is set, and the current
 ** cursor entry uses one or more overflow pages, this function
 ** allocates space for and lazily popluates the overflow page-list 
 ** cache array (BtCursor.aOverflow). Subsequent calls use this
@@ -3254,14 +3257,14 @@ static int accessPayload(
     nextPage = get4byte(&aPayload[pCur->info.nLocal]);
 
 #ifndef SQLITE_OMIT_INCRBLOB
-    /* If the cacheOverflow flag is set and the BtCursor.aOverflow[]
+    /* If the isIncrblobHandle flag is set and the BtCursor.aOverflow[]
     ** has not been allocated, allocate it now. The array is sized at
     ** one entry for each overflow page in the overflow chain. The
     ** page number of the first overflow page is stored in aOverflow[0],
     ** etc. A value of 0 in the aOverflow[] array means "not yet known"
     ** (the cache is lazily populated).
     */
-    if( pCur->cacheOverflow && !pCur->aOverflow ){
+    if( pCur->isIncrblobHandle && !pCur->aOverflow ){
       int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
       pCur->aOverflow = (Pgno *)sqliteMalloc(sizeof(Pgno)*nOvfl);
       if( nOvfl && !pCur->aOverflow ){
@@ -6989,23 +6992,23 @@ int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
 ** Only the data content may only be modified, it is not possible
 ** to change the length of the data stored.
 */
-int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, const void *z){
+int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
   BtShared *pBt = pCsr->pBtree->pBt;
 
+  assert(pCsr->isIncrblobHandle);
+  if( pCsr->eState==CURSOR_REQUIRESEEK ){
+    return SQLITE_ABORT;
+  }
+
   /* Check some preconditions: 
-  **   (a) a write-transaction is open, 
-  **   (b) the cursor is open for writing,
-  **   (c) there is no read-lock on the table being modified and
-  **   (d) the cursor points at a valid row of an intKey table.
+  **   (a) the cursor is open for writing,
+  **   (b) there is no read-lock on the table being modified and
+  **   (c) the cursor points at a valid row of an intKey table.
   */
-  if( pBt->inTransaction!=TRANS_WRITE ){
-    /* Must start a transaction before writing to a blob */
-    return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
-  }
-  assert( !pBt->readOnly );
   if( !pCsr->wrFlag ){
-    return SQLITE_PERM;   /* Cursor not open for writing */
+    return SQLITE_READONLY;
   }
+  assert( !pBt->readOnly && pBt->inTransaction==TRANS_WRITE );
   if( checkReadLocks(pCsr->pBtree, pCsr->pgnoRoot, pCsr) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
@@ -7027,9 +7030,9 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, const void *z){
 ** sqlite3BtreePutData()).
 */
 void sqlite3BtreeCacheOverflow(BtCursor *pCur){
-  assert(!pCur->cacheOverflow);
+  assert(!pCur->isIncrblobHandle);
   assert(!pCur->aOverflow);
-  pCur->cacheOverflow = 1;
+  pCur->isIncrblobHandle = 1;
 }
 #endif
 

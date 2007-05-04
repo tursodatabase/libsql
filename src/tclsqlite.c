@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.184 2007/05/04 13:15:56 drh Exp $
+** $Id: tclsqlite.c,v 1.185 2007/05/04 18:36:45 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -120,10 +120,9 @@ struct SqliteDb {
 };
 
 struct IncrblobChannel {
-  SqliteDb *pDb;            /* Associated database connection */
   sqlite3_blob *pBlob;      /* sqlite3 blob handle */
+  SqliteDb *pDb;            /* Associated database connection */
   int iSeek;                /* Current seek offset */
-
   Tcl_Channel channel;      /* Channel identifier */
   IncrblobChannel *pNext;   /* Linked list of all open incrblob channels */
   IncrblobChannel *pPrev;   /* Linked list of all open incrblob channels */

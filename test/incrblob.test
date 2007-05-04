@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.7 2007/05/04 14:36:22 drh Exp $
+# $Id: incrblob.test,v 1.8 2007/05/04 18:36:46 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -202,10 +202,6 @@ foreach AutoVacuumMode [list 0 1] {
 #
 # Test the outcome of trying to write to a read-only blob handle.
 #
-# TODO: The following test only tests the tcl interface, not the
-# underlying sqlite3 interface. Need to find some other method
-# to call sqlite3_blob_write() on a readonly handle...
-#
 do_test incrblob-3.1 {
   set ::blob [db incrblob -readonly blobs v 1]
   seek $::blob -40 end
@@ -219,6 +215,19 @@ do_test incrblob-3.2 {
   close $::blob
   list $rc $msg
 } "1 {channel \"$::blob\" wasn't opened for writing}"
+
+do_test incrblob-3.3 {
+  set ::blob [db incrblob -readonly blobs v 1]
+  seek $::blob -40 end
+  read $::blob 20
+} "1234567890abcdefghij"
+do_test incrblob-3.4 {
+  set rc [catch {
+    sqlite3_blob_write $::blob 20 "qwertyuioplkjhgfds" 
+  } msg]
+  list $rc $msg
+} {1 SQLITE_READONLY}
+catch {close $::blob}
 
 #------------------------------------------------------------------------
 # incrblob-4.*: 
@@ -387,7 +396,6 @@ do_test incrblob-6.7 {
 do_test incrblob-6.8 {
   tell $::blob
 } {10}
-breakpoint
 do_test incrblob-6.9 {
   seek $::blob 0
   puts -nonewline $::blob "invocation"
@@ -425,4 +433,124 @@ do_test incrblob-6.14 {
 } {a different invocation}
 db2 close
 
+#-----------------------------------------------------------------------
+# The following tests verify the behaviour of the incremental IO
+# APIs in the following cases:
+#
+#     7.1 A row that containing an open blob is modified.
+#
+#     7.2 A CREATE TABLE requires that an overflow page that is part
+#         of an open blob is moved.
+#
+#     7.3 An INCREMENTAL VACUUM moves an overflow page that is part
+#         of an open blob.
+#
+# In the first case above, correct behaviour is for all subsequent
+# read/write operations on the blob-handle to return SQLITE_ABORT.
+# More accurately, blob-handles are invalidated whenever the table
+# they belong to is written to.
+#
+# The second two cases have no external effect. They are testing
+# that the internal cache of overflow page numbers is correctly
+# invalidated.
+#
+do_test incrblob-7.1.0 {
+  execsql {
+    BEGIN;
+    DROP TABLE blobs;
+    CREATE TABLE t1 (a, b, c, d BLOB);
+    INSERT INTO t1(a, b, c, d) VALUES(1, 2, 3, 4);
+    COMMIT;
+  }
+} {}
+
+foreach {tn arg} {1 "" 2 -readonly} {
+
+  execsql {
+    UPDATE t1 SET d = zeroblob(10000);
+  }
+
+  do_test incrblob-7.1.$tn.1 {
+    set ::b [eval db incrblob $arg t1 d 1]
+    binary scan [sqlite3_blob_read $::b 5000 5] c* c
+    set c
+  } {0 0 0 0 0}
+  do_test incrblob-7.1.$tn.2 {
+    execsql {
+      UPDATE t1 SET d = 15;
+    }
+  } {}
+  do_test incrblob-7.1.$tn.3 {
+    set rc [catch { sqlite3_blob_read $::b 5000 5 } msg]
+    list $rc $msg
+  } {1 SQLITE_ABORT}
+  do_test incrblob-7.1.$tn.4 {
+    execsql {
+      SELECT d FROM t1;
+    }
+  } {15}
+  do_test incrblob-7.1.$tn.5 {
+    set rc [catch { close $::b } msg]
+    list $rc $msg
+  } {0 {}}
+  do_test incrblob-7.1.$tn.6 {
+    execsql {
+      SELECT d FROM t1;
+    }
+  } {15}
+
+}
+
+set fd [open [info script]]
+set ::data [read $fd]
+close $fd
+
+db close
+file delete -force test.db test.db-journal
+sqlite3 db test.db
+
+do_test incrblob-7.2.1 {
+  execsql {
+    PRAGMA auto_vacuum = "incremental";
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);        -- root@page3
+    INSERT INTO t1 VALUES(123, $::data);
+  }
+  set ::b [db incrblob -readonly t1 b 123]
+  read $::b
+} $::data
+do_test incrblob-7.2.2 {
+  execsql {
+    CREATE TABLE t2(a INTEGER PRIMARY KEY, b);        -- root@page4
+  }
+  seek $::b 0
+  read $::b
+} $::data
+do_test incrblob-7.2.3 {
+  close $::b
+  execsql {
+    SELECT rootpage FROM sqlite_master;
+  }
+} {3 4}
+
+set ::otherdata "[string range $::data 0 1000][string range $::data 1001 end]"
+do_test incrblob-7.3.1 {
+  execsql {
+    INSERT INTO t2 VALUES(456, $::otherdata);
+  }
+  set ::b [db incrblob -readonly t2 b 456]
+  read $::b
+} $::otherdata
+do_test incrblob-7.3.2 {
+  expr [file size test.db]/1024
+} 30
+do_test incrblob-7.3.3 {
+  execsql {
+    DELETE FROM t1 WHERE a = 123;
+    INCREMENTAL VACUUM;
+  }
+  seek $::b 0
+  read $::b
+} $::otherdata
+
 finish_test
+

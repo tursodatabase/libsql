@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.242 2007/05/02 16:51:59 drh Exp $
+** $Id: test1.c,v 1.243 2007/05/04 18:36:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1465,6 +1465,99 @@ static int test_table_column_metadata(
 }
 #endif
 
+#ifndef SQLITE_OMIT_INCRBLOB
+
+/*
+** sqlite3_blob_read  CHANNEL OFFSET N
+*/
+static int test_blob_read(
+  ClientData clientData, /* Not used */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  Tcl_Channel channel;
+  ClientData instanceData;
+  sqlite3_blob *pBlob;
+  int notUsed;
+  int nByte;
+  int iOffset;
+  unsigned char *zBuf;
+  int rc;
+  
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "CHANNEL OFFSET N");
+    return TCL_ERROR;
+  }
+
+  channel = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), &notUsed);
+  if( !channel
+   || TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &iOffset)
+   || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &nByte)
+   || nByte<0 || iOffset<0
+  ){ 
+    return TCL_ERROR;
+  }
+
+  instanceData = Tcl_GetChannelInstanceData(channel);
+  pBlob = *((sqlite3_blob **)instanceData);
+
+  zBuf = (unsigned char *)Tcl_Alloc(nByte);
+  rc = sqlite3_blob_read(pBlob, zBuf, nByte, iOffset);
+  if( rc==SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(zBuf, nByte));
+  }else{
+    Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  }
+  Tcl_Free((char *)zBuf);
+
+  return (rc==SQLITE_OK ? TCL_OK : TCL_ERROR);
+}
+
+/*
+** sqlite3_blob_write CHANNEL OFFSET DATA
+*/
+static int test_blob_write(
+  ClientData clientData, /* Not used */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  Tcl_Channel channel;
+  ClientData instanceData;
+  sqlite3_blob *pBlob;
+  int notUsed;
+  int iOffset;
+  int rc;
+
+  unsigned char *zBuf;
+  int nBuf;
+  
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "CHANNEL OFFSET DATA");
+    return TCL_ERROR;
+  }
+
+  channel = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), &notUsed);
+  if( !channel
+   || TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &iOffset)
+   || iOffset<0
+  ){ 
+    return TCL_ERROR;
+  }
+
+  instanceData = Tcl_GetChannelInstanceData(channel);
+  pBlob = *((sqlite3_blob **)instanceData);
+
+  zBuf = Tcl_GetByteArrayFromObj(objv[3], &nBuf);
+  rc = sqlite3_blob_write(pBlob, zBuf, nBuf, iOffset);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  }
+
+  return (rc==SQLITE_OK ? TCL_OK : TCL_ERROR);
+}
+#endif
 
 /*
 ** Usage: sqlite3_load_extension DB-HANDLE FILE ?PROC?
@@ -4500,6 +4593,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_libversion_number", test_libversion_number, 0  },
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
      { "sqlite3_table_column_metadata", test_table_column_metadata, 0  },
+#endif
+#ifndef SQLITE_OMIT_INCRBLOB
+     { "sqlite3_blob_read",  test_blob_read, 0  },
+     { "sqlite3_blob_write", test_blob_write, 0  },
 #endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;

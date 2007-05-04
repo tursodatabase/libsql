@@ -1,5 +1,5 @@
-C Change\sincremental\svacuum\sto\sbe\striggered\sby\sa\spragma\srather\sthan\sa\scommand.\nWe\shave\sa\slot\sto\slearn\sabout\sthis\syet\sand\swe\sdo\snot\swant\sto\spaint\sourselves\ninto\sa\scorner\sby\scommiting\sto\sspecific\ssyntax\stoo\searly.\s(CVS\s3921)
-D 2007-05-04T18:30:41
+C Test\sinteraction\sof\sincremental\sio\sand\sother\sdatabase\swrites.\s(CVS\s3922)
+D 2007-05-04T18:36:45
 F Makefile.in 8cab54f7c9f5af8f22fd97ddf1ecfd1e1860de62
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -59,8 +59,8 @@ F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
 F src/analyze.c 4bbf5ddf9680587c6d4917e02e378b6037be3651
 F src/attach.c f088f8155541ff75542239ec40cf05f3d81390ba
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
-F src/btree.c ebf16f19fc9e732c93b98083c4dfdbadad247e5c
-F src/btree.h 2c187d60cf76d74c2b4767294d6b5fa267037ff0
+F src/btree.c d01ab360ec71e6207f121a117c77275d225645cd
+F src/btree.h a9cd72b05a14f6be22e057daf954ae548d2bcbe4
 F src/build.c 0dd6f0d0a5d304be91374f4c7228a3e9b00ff7f1
 F src/callback.c 6414ed32d55859d0f65067aa5b88d2da27b3af9e
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
@@ -101,8 +101,8 @@ F src/sqlite.h.in a666300976897eced975b448f722a722b362c6b1
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 93ac1a9f1c8facfd861cf548845d2abc36039670
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
-F src/tclsqlite.c cd87bbaffd115ded71b4b9c03be7b5b213c4ba7a
-F src/test1.c 29a39fdde51f4612082ecf3f5af54dac93766f87
+F src/tclsqlite.c c0d9a818a379ae92ffb958a678ec71e714c5e8f6
+F src/test1.c 38858dc8a799c67073d7ed1605bb484e403731b6
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 946ea9d1a8c928656e3c70f0a2fcb8e733a15e86
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -130,7 +130,7 @@ F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h cb02cbbceddf3b40d49012e9f41576f17bcbec97
 F src/vdbeapi.c 37d793559390bec8a00c556f651f21b5f9e589af
 F src/vdbeaux.c c432e17fef6efaf102d507e979cee4e47f6ceac4
-F src/vdbeblob.c 2944bca84a40c093d442a06ad7835cb00a6b1c0a
+F src/vdbeblob.c 6a25e9bbb874a7dcee4cf8f37d8dd635c129002e
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c ba98f8572ec4609846b368fa7580db178022f1bb
 F src/vtab.c c5ebebf615b2f29499fbe97a584c4bb342632aa0
@@ -242,7 +242,7 @@ F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test 6727c7729472ae52b5acd86e802f89aa350ba50f
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
-F test/incrblob.test ebfee15334f33dae682d3161acff9c4d169d4672
+F test/incrblob.test 9738ec487d7a9145d78622f5dc2cb628e2b3d62f
 F test/incrblob_err.test 9f78c159279c992fa5ce49c06f50b680fc470520
 F test/incrvacuum.test f490c8ae86f2ecca622425d02e27d3119058cb21
 F test/incrvacuum2.test a1457ad2441e49e99fbc4d74f9575dd9f7ddbde3
@@ -475,7 +475,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 681216767d7fabfccb0b12f6a81b18b6d1c252bf
-R 95c89ba898130ee0ba9ae5e0f60736ff
-U drh
-Z f926a6c2de5eba8d75508bc0c0193258
+P b13e497a326697ab42b429993a1eee7df3c0c3eb
+R 5900469fc0ef1860ae4674fa42817b8c
+U danielk1977
+Z 2fca248797e4ad3afe6f7db2e895bdb5

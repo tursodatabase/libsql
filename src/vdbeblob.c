@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: vdbeblob.c,v 1.7 2007/05/04 13:15:57 drh Exp $
+** $Id: vdbeblob.c,v 1.8 2007/05/04 18:36:45 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -244,32 +244,56 @@ int sqlite3_blob_close(sqlite3_blob *pBlob){
   return sqlite3_finalize(pStmt);
 }
 
+
+int blobReadWrite(
+  sqlite3_blob *pBlob, 
+  void *z, 
+  int n, 
+  int iOffset, 
+  int (*xCall)(BtCursor*, u32, u32, void*)
+){
+  int rc;
+  Incrblob *p = (Incrblob *)pBlob;
+  Vdbe *v = (Vdbe *)(p->pStmt);
+  sqlite3 *db;  
+
+  /* If there is no statement handle, then the blob-handle has
+  ** already been invalidated. Return SQLITE_ABORT in this case.
+  */
+  if( !v ) return SQLITE_ABORT;
+
+  /* Request is out of range. Return a transient error. */
+  if( (iOffset+n)>p->nByte ){
+    return SQLITE_ERROR;
+  }
+
+  /* Call either BtreeData() or BtreePutData(). If SQLITE_ABORT is
+  ** returned, clean-up the statement handle.
+  */
+  db = v->db;
+  rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
+  if( rc==SQLITE_ABORT ){
+    sqlite3VdbeFinalize(v);
+    p->pStmt = 0;
+  }else{
+    v->rc = rc;
+  }
+
+  return sqlite3ApiExit(db, rc);
+}
+
 /*
 ** Read data from a blob handle.
 */
 int sqlite3_blob_read(sqlite3_blob *pBlob, void *z, int n, int iOffset){
-  int rc = SQLITE_ERROR;
-  Incrblob *p = (Incrblob *)pBlob;
-  Vdbe *v = (Vdbe *)(p->pStmt);
-  if( (iOffset+n)<=p->nByte ){
-    rc = sqlite3BtreeData(p->pCsr, iOffset+p->iOffset, n, z);
-  }
-  v->rc = rc;
-  return sqlite3ApiExit(v->db, v->rc);
+  return blobReadWrite(pBlob, z, n, iOffset, sqlite3BtreeData);
 }
 
 /*
 ** Write data to a blob handle.
 */
 int sqlite3_blob_write(sqlite3_blob *pBlob, const void *z, int n, int iOffset){
-  int rc = SQLITE_ERROR;
-  Incrblob *p = (Incrblob *)pBlob;
-  Vdbe *v = (Vdbe *)(p->pStmt);
-  if( (iOffset+n)<=p->nByte ){
-    rc = sqlite3BtreePutData(p->pCsr, iOffset+p->iOffset, n, z);
-  }
-  v->rc = rc;
-  return sqlite3ApiExit(v->db, v->rc);
+  return blobReadWrite(pBlob, (void *)z, n, iOffset, sqlite3BtreePutData);
 }
 
 /*
