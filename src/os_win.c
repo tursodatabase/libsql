@@ -946,7 +946,8 @@ int sqlite3WinTempFileName(char *zBuf){
   for(i=strlen(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
   zTempPath[i] = 0;
   for(;;){
-    sqlite3_snprintf(sizeof(zBuf), zBuf, "%s\\"TEMP_FILE_PREFIX, zTempPath);
+    sqlite3_snprintf(SQLITE_TEMPNAME_SIZE, zBuf,
+                     "%s\\"TEMP_FILE_PREFIX, zTempPath);
     j = strlen(zBuf);
     sqlite3Randomness(15, &zBuf[j]);
     for(i=0; i<15; i++, j++){
