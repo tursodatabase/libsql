@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.79 2007/05/04 18:36:45 danielk1977 Exp $
+** @(#) $Id: btree.h,v 1.80 2007/05/05 18:49:53 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -148,12 +148,7 @@ void sqlite3BtreeCacheOverflow(BtCursor *);
 #ifdef SQLITE_TEST
 int sqlite3BtreeCursorInfo(BtCursor*, int*, int);
 void sqlite3BtreeCursorList(Btree*);
-#endif
-
-#ifdef SQLITE_DEBUG
 int sqlite3BtreePageDump(Btree*, int, int recursive);
-#else
-#define sqlite3BtreePageDump(X,Y,Z) SQLITE_OK
 #endif
 
 #endif /* _BTREE_H_ */
