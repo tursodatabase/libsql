@@ -10,7 +10,9 @@
 **
 *************************************************************************
 **
-** $Id: vdbeblob.c,v 1.8 2007/05/04 18:36:45 danielk1977 Exp $
+** This file contains code used to implement incremental BLOB I/O.
+**
+** $Id: vdbeblob.c,v 1.9 2007/05/05 18:39:25 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -22,7 +24,6 @@
 ** Valid sqlite3_blob* handles point to Incrblob structures.
 */
 typedef struct Incrblob Incrblob;
-
 struct Incrblob {
   int flags;              /* Copy of "flags" passed to sqlite3_blob_open() */
   int nByte;              /* Size of open blob, in bytes */
@@ -35,13 +36,13 @@ struct Incrblob {
 ** Open a blob handle.
 */
 int sqlite3_blob_open(
-  sqlite3* db,
-  const char *zDb,
-  const char *zTable,
-  const char *zColumn,
-  sqlite_int64 iRow,
+  sqlite3* db,            /* The database connection */
+  const char *zDb,        /* The attached database containing the blob */
+  const char *zTable,     /* The table containing the blob */
+  const char *zColumn,    /* The column containing the blob */
+  sqlite_int64 iRow,      /* The row containing the glob */
   int flags,              /* True -> read/write access, false -> read-only */
-  sqlite3_blob **ppBlob
+  sqlite3_blob **ppBlob   /* Handle for accessing the blob returned here */
 ){
   int nAttempt = 0;
   int iCol;               /* Index of zColumn in row-record */
@@ -235,7 +236,8 @@ blob_open_out:
 }
 
 /*
-** Close a blob handle.
+** Close a blob handle that was previously created using
+** sqlite3_blob_open().
 */
 int sqlite3_blob_close(sqlite3_blob *pBlob){
   Incrblob *p = (Incrblob *)pBlob;

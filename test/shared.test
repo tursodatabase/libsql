@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.23 2007/04/05 11:25:59 drh Exp $
+# $Id: shared.test,v 1.24 2007/05/05 18:39:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -848,9 +848,9 @@ do_test shared-$av.11.8 {
   }
   set res
 } {1 4 {} 7}
-if {[llength [info command sqlite_shared_cache_report]]==1} {
+if {[llength [info command sqlite3_shared_cache_report]]==1} {
   do_test shared-$av.11.9 {
-    sqlite_shared_cache_report 
+    sqlite3_shared_cache_report 
   } [list [file normalize test.db] 2]
 }
 
