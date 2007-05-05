@@ -58,7 +58,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 LIBOBJ+= alter.o analyze.o attach.o auth.o btree.o build.o \
          callback.o complete.o date.o delete.o \
          expr.o func.o hash.o insert.o loadext.o \
-         main.o opcodes.o os.o os_os2.o os_unix.o os_win.o \
+         main.o malloc.o opcodes.o os.o os_os2.o os_unix.o os_win.o \
          pager.o parse.o pragma.o prepare.o printf.o random.o \
          select.o table.o tclsqlite.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
@@ -87,6 +87,7 @@ SRC = \
   $(TOP)/src/legacy.c \
   $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
+  $(TOP)/src/malloc.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
@@ -160,6 +161,7 @@ TESTSRC = \
   $(TOP)/src/func.c \
   $(TOP)/src/insert.c \
   $(TOP)/src/main.c \
+  $(TOP)/src/malloc.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
@@ -194,6 +196,7 @@ TESTSRC = \
 HDR = \
    sqlite3.h  \
    $(TOP)/src/btree.h \
+   $(TOP)/src/btreeInt.h \
    $(TOP)/src/hash.h \
    opcodes.h \
    $(TOP)/src/os.h \
@@ -318,6 +321,9 @@ loadext.o:	$(TOP)/src/loadext.c $(HDR)
 
 main.o:	$(TOP)/src/main.c $(HDR)
 	$(TCCX) -c $(TOP)/src/main.c
+
+malloc.o:	$(TOP)/src/malloc.c $(HDR)
+	$(TCCX) -c $(TOP)/src/malloc.c
 
 pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 	$(TCCX) -c $(TOP)/src/pager.c

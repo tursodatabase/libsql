@@ -123,7 +123,7 @@ TCC += -DSQLITE_OMIT_LOAD_EXTENSION=1
 LIBOBJ = alter.lo analyze.lo attach.lo auth.lo btree.lo build.lo \
          callback.lo complete.lo date.lo \
          delete.lo expr.lo func.lo hash.lo insert.lo loadext.lo \
-         main.lo opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
+         main.lo malloc.lo opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
          pager.lo parse.lo pragma.lo prepare.lo printf.lo random.lo \
          select.lo table.lo tokenize.lo trigger.lo update.lo \
          util.lo vacuum.lo \
@@ -152,6 +152,7 @@ SRC = \
   $(TOP)/src/legacy.c \
   $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
+  $(TOP)/src/mallo.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
@@ -204,6 +205,7 @@ TESTSRC = \
   $(TOP)/src/date.c \
   $(TOP)/src/func.c \
   $(TOP)/src/insert.c \
+  $(TOP)/src/malloc.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
@@ -238,6 +240,7 @@ TESTSRC = \
 HDR = \
    sqlite3.h  \
    $(TOP)/src/btree.h \
+   $(TOP)/src/btreeInt.h \
    $(TOP)/src/hash.h \
    opcodes.h \
    $(TOP)/src/os.h \
@@ -365,6 +368,9 @@ loadext.lo:	$(TOP)/src/loadext.c $(HDR)
 
 main.lo:	$(TOP)/src/main.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/main.c
+
+malloc.lo:	$(TOP)/src/malloc.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/malloc.c
 
 pager.lo:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 	$(LTCOMPILE) -c $(TOP)/src/pager.c

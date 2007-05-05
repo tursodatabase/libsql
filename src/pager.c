@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.335 2007/05/04 13:15:56 drh Exp $
+** @(#) $Id: pager.c,v 1.336 2007/05/05 11:48:54 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -458,7 +458,7 @@ static int read32bits(OsFile *fd, u32 *pRes){
   unsigned char ac[4];
   int rc = sqlite3OsRead(fd, ac, sizeof(ac));
   if( rc==SQLITE_OK ){
-    *pRes = (ac[0]<<24) | (ac[1]<<16) | (ac[2]<<8) | ac[3];
+    *pRes = sqlite3Get4byte(ac);
   }
   return rc;
 }
@@ -466,12 +466,7 @@ static int read32bits(OsFile *fd, u32 *pRes){
 /*
 ** Write a 32-bit integer into a string buffer in big-endian byte order.
 */
-static void put32bits(char *ac, u32 val){
-  ac[0] = (val>>24) & 0xff;
-  ac[1] = (val>>16) & 0xff;
-  ac[2] = (val>>8) & 0xff;
-  ac[3] = val & 0xff;
-}
+#define put32bits(A,B)  sqlite3Put4byte((u8*)A,B)
 
 /*
 ** Write a 32-bit integer into the given file descriptor.  Return SQLITE_OK
@@ -490,7 +485,7 @@ static int write32bits(OsFile *fd, u32 val){
 static u32 retrieve32bits(PgHdr *p, int offset){
   unsigned char *ac;
   ac = &((unsigned char*)PGHDR_TO_DATA(p))[offset];
-  return (ac[0]<<24) | (ac[1]<<16) | (ac[2]<<8) | ac[3];
+  return sqlite3Get4byte(ac);
 }
 
 

@@ -72,6 +72,7 @@ puts $out [subst \
 #
 foreach hdr {
    btree.h
+   btreeInt.h
    hash.h
    keywordhash.h
    opcodes.h
@@ -152,6 +153,7 @@ foreach file {
    date.c
    os.c
 
+   malloc.c
    printf.c
    random.c
    utf.c
