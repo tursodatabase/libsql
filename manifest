@@ -1,4 +1,4 @@
-C Refactoring.\s\sSplit\sbtreeInt.h\soff\sfrom\sbtree.c.\s\sSplit\smalloc.c\soff\sfrom\nutil.c.\s\sExpect\smuch\smore\sto\sfollow.\s(CVS\s3925)
+C Refactoring.\s\sSplit\sbtreeInt.h\soff\sfrom\sbtree.c.\s\sSplit\smalloc.c\soff\sfrom\nutil.c.\s\sExpect\smuch\smore\sto\sfollow.\s(CVS\s3926)
 D 2007-05-05T11:48:53
 F Makefile.in 80d63bf2c61619ae0e29795948ec19e79f91acc3
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
@@ -477,7 +477,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b3e2cdaed3638f033437b5561705cb253449c392
+P 16041116aaaa2d52a289aa02a24bef579ba60896
 R f966d62a9229ee8e5f7295776797e7fa
 U drh
-Z 93ccb6a5bb856df574c55be8b837f833
+Z 72b63b85651355f7325768fd841ffcca
