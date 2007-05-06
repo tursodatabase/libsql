@@ -1,4 +1,4 @@
-set rcsid {$Id: copyright.tcl,v 1.6 2007/03/10 20:50:18 drh Exp $}
+set rcsid {$Id: copyright.tcl,v 1.7 2007/05/06 21:20:43 drh Exp $}
 source common.tcl
 header {SQLite Copyright}
 puts {
@@ -97,7 +97,7 @@ The author or authors of this code dedicate any and all copyright interest
 in this code to the public domain.  We make this dedication for the benefit
 of the public at large and to the detriment of our heirs and successors.
 We intend this dedication to be an overt act of relinquishment in
-perpetuity of all present and future rights this code under copyright law.
+perpetuity of all present and future rights to this code under copyright law.
 </i></blockquote>
 
 <p>
