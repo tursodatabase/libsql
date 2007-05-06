@@ -1,5 +1,5 @@
-C Add\sthe\sstart\sof\sthe\sICU\sextension.\s(CVS\s3931)
-D 2007-05-06T16:04:12
+C Do\snot\sflatten\ssubqueries\sthat\sare\spart\sof\sa\scompound\sSELECT\sand\swhich\r\nhave\sboth\san\sORDER\sBY\sand\sa\sLIMIT\sclause.\s\sTicket\s#2339.\s(CVS\s3932)
+D 2007-05-06T20:04:25
 F Makefile.in ea8888bdcf53313d26576fcabcb6d0a10ecd35cd
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -98,7 +98,7 @@ F src/pragma.c 3f16c1274bc25afb630b61a3630ea19a2fd0b5dc
 F src/prepare.c 03277063bc4f5860efbf23548fa0123ac0f6eaec
 F src/printf.c 0c6f40648770831341ac45ab32423a80b4c87f05
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
-F src/select.c e6a2546de63cd9cdad2499e224f8535743b99f1a
+F src/select.c a306d03fc7d8365055bef70c3563e8fca897460f
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
 F src/sqlite.h.in a666300976897eced975b448f722a722b362c6b1
@@ -368,6 +368,7 @@ F test/tkt2213.test 8cf7c446e1fcd0627fffe7fc19046eb24ac7333b
 F test/tkt2251.test 3f0549213386ed911715665a908ff2bb7a871002
 F test/tkt2285.test c618085f0c13ec3347e607f83c34ada0721b4bfa
 F test/tkt2332.test cb1bb0ed1ae6a3b9ff412520ed4a496745f4ffa5
+F test/tkt2339.test 7016415bda86af1406a27260ac46f44885617606
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test 3fe1b9e03b523482eee2b869858c5c1eca7b218b
 F test/trigger1.test b361161cf20614024cc1e52ea0bdec250776b2ae
@@ -480,7 +481,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 25cfa7740a0899511d9200d99c2617c45ff00f32
-R 404e1ba474e37ae2a0e69793ca2f91cc
-U danielk1977
-Z 18a7c2474aed82907ffca52bb141507e
+P f473e8526770b6a332dfde3e1fd1ddf8df493e9a
+R 21e848c0f101c93214bfc30bc6b1f9ee
+U drh
+Z 693622110cd5648bc06ead4f26037afd
