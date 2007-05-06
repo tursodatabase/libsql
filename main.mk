@@ -65,6 +65,8 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o btree.o build.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbefifo.o vdbemem.o \
          where.o utf.o legacy.o vtab.o
 
+LIBOBJ += icu.o
+
 # All of the source code files.
 #
 SRC = \
@@ -141,6 +143,8 @@ SRC += \
   $(TOP)/ext/fts2/fts2_porter.c \
   $(TOP)/ext/fts2/fts2_tokenizer.h \
   $(TOP)/ext/fts2/fts2_tokenizer1.c
+SRC += \
+  $(TOP)/ext/icu/icu.c
 
 # Generated source code files
 #
@@ -310,6 +314,9 @@ func.o:	$(TOP)/src/func.c $(HDR)
 
 hash.o:	$(TOP)/src/hash.c $(HDR)
 	$(TCCX) -c $(TOP)/src/hash.c
+
+icu.o:	$(TOP)/ext/icu/icu.c $(HDR)
+	$(TCCX) -c $(TOP)/ext/icu/icu.c
 
 insert.o:	$(TOP)/src/insert.c $(HDR)
 	$(TCCX) -c $(TOP)/src/insert.c

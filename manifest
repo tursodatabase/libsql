@@ -1,5 +1,5 @@
-C Add\s"Powered\sBy\sSQLite"\slogo\scontributed\sby\sAlberto\sSimoes.\s(CVS\s3930)
-D 2007-05-05T22:45:01
+C Add\sthe\sstart\sof\sthe\sICU\sextension.\s(CVS\s3931)
+D 2007-05-06T16:04:12
 F Makefile.in ea8888bdcf53313d26576fcabcb6d0a10ecd35cd
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -43,9 +43,10 @@ F ext/fts2/fts2_porter.c 991a45463553c7318063fe7773368a6c0f39e35d
 F ext/fts2/fts2_tokenizer.h 4c5ffe31d63622869eb6eec1503df7f6996fd1bd
 F ext/fts2/fts2_tokenizer1.c 5c979fe8815f95396beb22b627571da895a025af
 F ext/fts2/mkfts2amal.tcl 2a9ec76b0760fe7f3669dca5bc0d60728bc1c977
+F ext/icu/icu.c 17ad2387c27133b5fcf7037687d5ff346f4a1da7
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk a7522a769f2fe70c9bebd6bd8a36bed79be0e5cb
+F main.mk 6298bd3fcbc590fe05354f7d962c57ac202d7bcd
 F mkdll.sh ed62756baf44babf562a7843588790c02fee2106
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -76,7 +77,7 @@ F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c e595ca26805dfb3a9ebaabc28e7947c479f3b14d
 F src/legacy.c 388c71ad7fbcd898ba1bcbfc98a3ac954bfa5d01
 F src/loadext.c afe4f4755dc49c36ef505748bbdddecb9f1d02a2
-F src/main.c e6eb036c3580ba9116fedfe4a8b58ed63d5abb37
+F src/main.c 2e11ec21dd11008a339b1d6d61aeb9b51992b2cf
 F src/malloc.c b89e31258a85158d15795bf87ae3ba007e56329b
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 4650e98aadd27abfe1698ff58edf6893c58d4881
@@ -105,7 +106,7 @@ F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 3ffe2f9c801575e315451e7d2831c4a90a165aa8
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
 F src/tclsqlite.c f3414b2d6bc37e6760b49c9abd3504ff69f4441b
-F src/test1.c 515a91ed7ee95a6fa5b40873aa4f5aa9c858080e
+F src/test1.c 17e8402b4b567317b4e49923658d1f5874eaee5f
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 946ea9d1a8c928656e3c70f0a2fcb8e733a15e86
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -479,7 +480,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P bece7a6bae3a52da03c25b577e15a648eb91805a
-R e9cef941050626d3869bdb65d6d0f240
-U drh
-Z 860115faaebbc6372d09fd94f2e033c9
+P 25cfa7740a0899511d9200d99c2617c45ff00f32
+R 404e1ba474e37ae2a0e69793ca2f91cc
+U danielk1977
+Z 18a7c2474aed82907ffca52bb141507e
