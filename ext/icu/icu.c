@@ -46,6 +46,12 @@ static void xFree(void *p){
 }
 
 /*
+** LIKE operator.
+**
+** http://unicode.org/reports/tr21/tr21-5.html#Caseless_Matching
+*/
+
+/*
 ** Function to delete compiled regexp objects. Registered as
 ** a destructor function with sqlite3_set_auxdata().
 */
@@ -151,6 +157,8 @@ static void icuRegexpFunc(sqlite3_context *p, int nArg, sqlite3_value **apArg){
 **
 **     lower('I', 'en_us') -> 'i'
 **     lower('I', 'tr_tr') -> 'ı' (small dotless i)
+**
+** http://www.icu-project.org/userguide/posix.html#case_mappings
 */
 static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
   const UChar *zInput;
@@ -193,13 +201,11 @@ static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
 ** Register the ICU extension functions with database db.
 */
 int sqlite3IcuInit(sqlite3 *db){
-  int rc;
-  int ii;
   struct IcuScalar {
-    const char *zName;
-    int nArg;
-    int enc;
-    void *pContext;
+    const char *zName;                        /* Function name */
+    int nArg;                                 /* Number of arguments */
+    int enc;                                  /* Optimal text encoding */
+    void *pContext;                           /* sqlite3_user_data() context */
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } scalars[] = {
     {"regexp", 2, SQLITE_ANY,          0, icuRegexpFunc},
@@ -209,20 +215,23 @@ int sqlite3IcuInit(sqlite3 *db){
     {"upper",  1, SQLITE_UTF16, (void*)1, icuCaseFunc16},
     {"upper",  2, SQLITE_UTF16, (void*)1, icuCaseFunc16},
 
-    {"lower",  1, SQLITE_UTF8,        0, icuCaseFunc16},
-    {"lower",  2, SQLITE_UTF8,        0, icuCaseFunc16},
-    {"upper",  1, SQLITE_UTF8, (void*)1, icuCaseFunc16},
-    {"upper",  2, SQLITE_UTF8, (void*)1, icuCaseFunc16},
+    {"lower",  1, SQLITE_UTF8,         0, icuCaseFunc16},
+    {"lower",  2, SQLITE_UTF8,         0, icuCaseFunc16},
+    {"upper",  1, SQLITE_UTF8,  (void*)1, icuCaseFunc16},
+    {"upper",  2, SQLITE_UTF8,  (void*)1, icuCaseFunc16},
   };
 
-  for(ii=0; ii<(sizeof(scalars)/sizeof(struct IcuScalar)); ii++){
-    struct IcuScalar *p = &scalars[ii];
+  int rc = SQLITE_OK;
+  int i;
+
+  for(i=0; rc==SQLITE_OK && i<(sizeof(scalars)/sizeof(struct IcuScalar)); i++){
+    struct IcuScalar *p = &scalars[i];
     rc = sqlite3_create_function(
         db, p->zName, p->nArg, p->enc, p->pContext, p->xFunc, 0, 0
     );
   }
 
-  return SQLITE_OK;
+  return rc;
 }
 
 #if !SQLITE_CORE

@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.9 2007/05/04 19:03:03 danielk1977 Exp $
+# $Id: incrblob.test,v 1.10 2007/05/07 09:32:45 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -551,7 +551,7 @@ do_test incrblob-7.3.2 {
 do_test incrblob-7.3.3 {
   execsql {
     DELETE FROM t1 WHERE a = 123;
-    INCREMENTAL VACUUM;
+    PRAGMA INCREMENTAL_VACUUM(0);
   }
   seek $::b 0
   read $::b

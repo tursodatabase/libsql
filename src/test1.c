@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.247 2007/05/06 16:04:12 danielk1977 Exp $
+** $Id: test1.c,v 1.248 2007/05/07 09:32:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1508,6 +1508,18 @@ static int test_table_column_metadata(
 
 /*
 ** sqlite3_blob_read  CHANNEL OFFSET N
+**
+**   This command is used to test the sqlite3_blob_read() in ways that
+**   the Tcl channel interface does not. The first argument should
+**   be the name of a valid channel created by the [incrblob] method
+**   of a database handle. This function calls sqlite3_blob_read()
+**   to read N bytes from offset OFFSET from the underlying SQLite
+**   blob handle.
+**
+**   On success, a byte-array object containing the read data is 
+**   returned. On failure, the interpreter result is set to the
+**   text representation of the returned error code (i.e. "SQLITE_NOMEM")
+**   and a Tcl exception is thrown.
 */
 static int test_blob_read(
   ClientData clientData, /* Not used */
@@ -1555,6 +1567,17 @@ static int test_blob_read(
 
 /*
 ** sqlite3_blob_write CHANNEL OFFSET DATA
+**
+**   This command is used to test the sqlite3_blob_write() in ways that
+**   the Tcl channel interface does not. The first argument should
+**   be the name of a valid channel created by the [incrblob] method
+**   of a database handle. This function calls sqlite3_blob_write()
+**   to write the DATA byte-array to the underlying SQLite blob handle.
+**   at offset OFFSET.
+**
+**   On success, an empty string is returned. On failure, the interpreter
+**   result is set to the text representation of the returned error code 
+**   (i.e. "SQLITE_NOMEM") and a Tcl exception is thrown.
 */
 static int test_blob_write(
   ClientData clientData, /* Not used */
@@ -1597,6 +1620,82 @@ static int test_blob_write(
   return (rc==SQLITE_OK ? TCL_OK : TCL_ERROR);
 }
 #endif
+
+/*
+** Usage: sqlite3_create_collation_x DB-HANDLE NAME CMP-PROC DEL-PROC
+**
+**   This Tcl proc is used for testing the experimental
+**   sqlite3_create_collation_x() interface.
+*/
+struct TestCollationX {
+  Tcl_Interp *interp;
+  Tcl_Obj *pCmp;
+  Tcl_Obj *pDel;
+};
+typedef struct TestCollationX TestCollationX;
+static void testCreateCollationDel(void *pCtx){
+  TestCollationX *p = (TestCollationX *)pCtx;
+
+  int rc = Tcl_EvalObjEx(p->interp, p->pDel, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
+  if( rc!=TCL_OK ){
+    Tcl_BackgroundError(p->interp);
+  }
+
+  Tcl_DecrRefCount(p->pCmp);
+  Tcl_DecrRefCount(p->pDel);
+  sqlite3_free((void *)p);
+}
+static int testCreateCollationCmp(
+  void *pCtx,
+  int nLeft,
+  const void *zLeft,
+  int nRight,
+  const void *zRight
+){
+  TestCollationX *p = (TestCollationX *)pCtx;
+  Tcl_Obj *pScript = Tcl_DuplicateObj(p->pCmp);
+  int iRes = 0;
+
+  Tcl_IncrRefCount(pScript);
+  Tcl_ListObjAppendElement(0, pScript, Tcl_NewStringObj((char *)zLeft, nLeft));
+  Tcl_ListObjAppendElement(0, pScript, Tcl_NewStringObj((char *)zRight,nRight));
+
+  if( TCL_OK!=Tcl_EvalObjEx(p->interp, pScript, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL)
+   || TCL_OK!=Tcl_GetIntFromObj(p->interp, Tcl_GetObjResult(p->interp), &iRes)
+  ){
+    Tcl_BackgroundError(p->interp);
+  }
+  Tcl_DecrRefCount(pScript);
+
+  return iRes;
+}
+static int test_create_collation_x(
+  ClientData clientData, /* Not used */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  TestCollationX *p;
+  sqlite3 *db;
+
+  if( objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB-HANDLE NAME CMP-PROC DEL-PROC");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+
+  p = (TestCollationX *)sqlite3_malloc(sizeof(TestCollationX));
+  p->pCmp = objv[3];
+  p->pDel = objv[4];
+  p->interp = interp;
+  Tcl_IncrRefCount(p->pCmp);
+  Tcl_IncrRefCount(p->pDel);
+
+  sqlite3_create_collation_x(db, Tcl_GetString(objv[2]), SQLITE_UTF8, 
+      (void *)p, testCreateCollationCmp, testCreateCollationDel
+  );
+  return TCL_OK;
+}
 
 /*
 ** Usage: sqlite3_load_extension DB-HANDLE FILE ?PROC?
@@ -4617,8 +4716,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 {"sqlite3_column_origin_name16", test_stmt_utf16, sqlite3_column_origin_name16},
 #endif
 #endif
-     { "sqlite3_global_recover",    test_global_recover, 0   },
-     { "working_64bit_int",         working_64bit_int,   0   },
+     { "sqlite3_create_collation_x", test_create_collation_x, 0 },
+     { "sqlite3_global_recover",     test_global_recover, 0   },
+     { "working_64bit_int",          working_64bit_int,   0   },
 
      /* Functions from os.h */
 #ifndef SQLITE_OMIT_DISKIO

@@ -1,5 +1,5 @@
-C Fix\smissing\sword\sin\sthe\scopyright.html\sweb\spage.\s(CVS\s3933)
-D 2007-05-06T21:20:43
+C Add\sthe\sexperimental\screate_collation_x()\sapi.\s(CVS\s3934)
+D 2007-05-07T09:32:45
 F Makefile.in ea8888bdcf53313d26576fcabcb6d0a10ecd35cd
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -43,7 +43,7 @@ F ext/fts2/fts2_porter.c 991a45463553c7318063fe7773368a6c0f39e35d
 F ext/fts2/fts2_tokenizer.h 4c5ffe31d63622869eb6eec1503df7f6996fd1bd
 F ext/fts2/fts2_tokenizer1.c 5c979fe8815f95396beb22b627571da895a025af
 F ext/fts2/mkfts2amal.tcl 2a9ec76b0760fe7f3669dca5bc0d60728bc1c977
-F ext/icu/icu.c 17ad2387c27133b5fcf7037687d5ff346f4a1da7
+F ext/icu/icu.c a30999ba467749ed6232d02cc8c4b5a0e62cd727
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
 F main.mk 6298bd3fcbc590fe05354f7d962c57ac202d7bcd
@@ -65,7 +65,7 @@ F src/btree.c 6d3db6416c71f678a4dd4719ce6d754ad5927c46
 F src/btree.h 845543b5a53d5d8a80ea14aeeb521276602317b7
 F src/btreeInt.h cb3c0e9eb842d06079a62cdf3492c90c5db7ba75
 F src/build.c 0dd6f0d0a5d304be91374f4c7228a3e9b00ff7f1
-F src/callback.c 6414ed32d55859d0f65067aa5b88d2da27b3af9e
+F src/callback.c 9c12535669a638f90a67e10440b99c7b93c0fbf4
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c c34a9c86ffd6da4cb3903ea038d977ec539d07e2
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
@@ -77,7 +77,7 @@ F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c e595ca26805dfb3a9ebaabc28e7947c479f3b14d
 F src/legacy.c 388c71ad7fbcd898ba1bcbfc98a3ac954bfa5d01
 F src/loadext.c afe4f4755dc49c36ef505748bbdddecb9f1d02a2
-F src/main.c 2e11ec21dd11008a339b1d6d61aeb9b51992b2cf
+F src/main.c ada896b9554aa71e717a6ab237ab0eff63a1e1e4
 F src/malloc.c b89e31258a85158d15795bf87ae3ba007e56329b
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 4650e98aadd27abfe1698ff58edf6893c58d4881
@@ -101,12 +101,12 @@ F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c a306d03fc7d8365055bef70c3563e8fca897460f
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
-F src/sqlite.h.in a666300976897eced975b448f722a722b362c6b1
+F src/sqlite.h.in e9b82a9e6e24e279d4e9d239535fbdae464b5594
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
-F src/sqliteInt.h 3ffe2f9c801575e315451e7d2831c4a90a165aa8
+F src/sqliteInt.h 5e1cf645ef1bf8b43c5d020adbeed43746df24ed
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
 F src/tclsqlite.c f3414b2d6bc37e6760b49c9abd3504ff69f4441b
-F src/test1.c 17e8402b4b567317b4e49923658d1f5874eaee5f
+F src/test1.c a91c84e903e3a59ad3bf6c10bd5b93e74d631ea2
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 946ea9d1a8c928656e3c70f0a2fcb8e733a15e86
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -247,7 +247,7 @@ F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test 6727c7729472ae52b5acd86e802f89aa350ba50f
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
-F test/incrblob.test 9fd59c5f8460d036188b22688f6c20d5b39e78e6
+F test/incrblob.test 7f82ae497364612aa17a37f77f12e01e2bee9f20
 F test/incrblob_err.test 9dae0762ba4d73b516d176d091c6b2b16f625953
 F test/incrvacuum.test f490c8ae86f2ecca622425d02e27d3119058cb21
 F test/incrvacuum2.test a1457ad2441e49e99fbc4d74f9575dd9f7ddbde3
@@ -481,7 +481,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9600a998043c6dd1d5ecb03d1ee9a9273910243d
-R d5b5efe0e3f18ed8a6801bd7106e316f
-U drh
-Z a53400e87a52148d7645178e850caa33
+P 2d1348dda2cbdf958a15267432063f359550c303
+R cb3c4e9539473867932a2c5f74528890
+U danielk1977
+Z eaa2b3011ed3cbd2140fcff678e040f6

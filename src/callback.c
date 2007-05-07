@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.17 2007/04/16 15:06:25 danielk1977 Exp $
+** $Id: callback.c,v 1.18 2007/05/07 09:32:45 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -63,6 +63,7 @@ static int synthCollSeq(sqlite3 *db, CollSeq *pColl){
     pColl2 = sqlite3FindCollSeq(db, aEnc[i], z, n, 0);
     if( pColl2->xCmp!=0 ){
       memcpy(pColl, pColl2, sizeof(CollSeq));
+      pColl->xDel = 0;         /* Do not copy the destructor */
       return SQLITE_OK;
     }
   }
