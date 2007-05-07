@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.56 2007/04/27 17:16:22 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.57 2007/05/07 11:24:31 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -1133,6 +1133,33 @@ char *sqlite3_vmprintf(const char*, va_list);
  should always use %q instead of %s when inserting text into a string 
  literal.
 } {}
+
+api {} {
+char *sqlite3_snprintf(int bufSize, char *buf, const char *zFormat, ...);
+} {
+  This routine works like "sprintf()", writing a formatted string into
+  the buf[].  However, no more than bufSize characters will be written
+  into buf[].  This routine returns a pointer to buf[].  If bufSize is
+  greater than zero, then buf[] is guaranteed to be zero-terminated.
+
+  This routine uses the same extended formatting options as
+  sqlite3_mprintf() and sqlite3_vmprintf().
+
+  Note these differences with the snprintf() function found in many
+  standard libraries:  (1)  sqlite3_snprintf() returns a pointer to the
+  buffer rather than the number of characters written.  (It would,
+  arguably, be more useful to return the number of characters written,
+  but we discovered that after the interface had been published and
+  are unwilling to break backwards compatibility.)  (2)  The order
+  of the bufSize and buf parameter is reversed from snprintf().  
+  And (3) sqlite3_snprintf() always writes a zero-terminator if bufSize
+  is positive.  
+
+  Please do not use the return value of this routine.  We may
+  decide to make the minor compatibility break and change this routine
+  to return the number of characters written rather than a pointer to
+  the buffer in a future minor version increment.
+}
 
 api {} {
 int sqlite3_open(

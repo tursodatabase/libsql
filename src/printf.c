@@ -837,6 +837,10 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
   char *z;
   va_list ap;
 
+  if( n<=0 ){
+    return zBuf;
+  }
+  zBuf[0] = 0;
   va_start(ap,zFormat);
   z = base_vprintf(0, 0, zBuf, n, zFormat, ap);
   va_end(ap);
