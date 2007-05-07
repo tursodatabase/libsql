@@ -1,5 +1,5 @@
-C Add\sa\sversion\sof\sthe\sLIKE\soperator\sto\sthe\sicu\sextension.\sRequires\soptimisation.\s(CVS\s3939)
-D 2007-05-07T16:58:02
+C Fix\san\sNULL\sderef\sin\sthe\srandomblob()\sfunction\sfollowing\sa\smalloc\sfailure.\s(CVS\s3940)
+D 2007-05-07T19:31:16
 F Makefile.in ab0f3cb6b34aa8ccec0bb57e6696fd4bd6b34a8f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -71,7 +71,7 @@ F src/date.c c34a9c86ffd6da4cb3903ea038d977ec539d07e2
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 2f0f9f89efe9170e5e6ca5d5e93a9d5896fff5ac
-F src/func.c 9445a7e20cfc1a04aa5e8c982b36e39cef851ff9
+F src/func.c af70f33e3f68aec76c9357c3f128265eb86a3304
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c e595ca26805dfb3a9ebaabc28e7947c479f3b14d
@@ -289,7 +289,7 @@ F test/malloc4.test 59cd02f71b363302a04c4e77b97c0a1572eaa210
 F test/malloc5.test f228cb7101ae403327824d327a1f5651d83ef0f2
 F test/malloc6.test 025ae0b78542e0ddd000d23f79d93e9be9ba0f15
 F test/malloc7.test 1cf52834509eac7ebeb92105dacd4669f9ca9869
-F test/malloc8.test c46bb15d03370a6740be49cb6cb5403ce711ff19
+F test/malloc8.test e4054ca2a87ab1d42255bec009b177ba20b5a487
 F test/malloc9.test 8381041fd89c31fba60c8a1a1c776bb022108572
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
@@ -483,7 +483,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ddc4e4797ff902692c4f0d86ec5f4e94cc7f0741
-R c3baf3c645e55d9b878c7a05ae7a30bb
-U danielk1977
-Z a53ea51c5cda49495951728b7ccf7458
+P 3e96105c1f084a4ab4dad4de6f4759e43fc497f7
+R 4b470de41a52b7c4c5d55622dfae106c
+U drh
+Z e869803811f5c9e61a3f370a5ec07ccf
