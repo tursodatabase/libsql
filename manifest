@@ -1,5 +1,5 @@
-C Change\ssqlite3_snprintf()\sso\sthat\sit\sdoes\snot\swrite\sa\szero-terminator\sif\nthe\sbuffer\ssize\sargument\sis\sless\sthan\s1.\s\sTicket\s#2341.\s\sAdded\sdocumentation\nabout\sthe\ssqlite3_snprintf()\sfunction.\s(CVS\s3935)
-D 2007-05-07T11:24:30
+C Add\sinterface\sto\sconfigure\sSQLite\sto\suse\sICU\scollation\sfunctions.\s(CVS\s3936)
+D 2007-05-07T11:53:14
 F Makefile.in ea8888bdcf53313d26576fcabcb6d0a10ecd35cd
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -43,7 +43,7 @@ F ext/fts2/fts2_porter.c 991a45463553c7318063fe7773368a6c0f39e35d
 F ext/fts2/fts2_tokenizer.h 4c5ffe31d63622869eb6eec1503df7f6996fd1bd
 F ext/fts2/fts2_tokenizer1.c 5c979fe8815f95396beb22b627571da895a025af
 F ext/fts2/mkfts2amal.tcl 2a9ec76b0760fe7f3669dca5bc0d60728bc1c977
-F ext/icu/icu.c a30999ba467749ed6232d02cc8c4b5a0e62cd727
+F ext/icu/icu.c 509ac3d8afea8af6835edb9d96a52a80dd56c152
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
 F main.mk 09c19ae05ac9e5654d5fd866a980b21ad9df8f30
@@ -246,6 +246,7 @@ F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test 6727c7729472ae52b5acd86e802f89aa350ba50f
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
+F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
 F test/incrblob.test 7f82ae497364612aa17a37f77f12e01e2bee9f20
 F test/incrblob_err.test 9dae0762ba4d73b516d176d091c6b2b16f625953
@@ -481,7 +482,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ff49d48f2f025898a0f4ace1fc227e1d367ea89f
-R d693f630962da031deefd4769c7a8268
-U drh
-Z ff527a494f455c458a9191e7c78f4220
+P f3ae4ac5fe0bfa2f91e76a6def86c444e51fe80b
+R 20cd23ff512d65479e7ed637ec43cb14
+U danielk1977
+Z 04087bd460c94ac099a97176e3a307b1
