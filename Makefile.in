@@ -152,7 +152,7 @@ SRC = \
   $(TOP)/src/legacy.c \
   $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
-  $(TOP)/src/mallo.c \
+  $(TOP)/src/malloc.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
