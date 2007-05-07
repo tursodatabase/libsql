@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.205 2007/05/07 09:32:45 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.206 2007/05/07 14:58:53 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1281,14 +1281,30 @@ int sqlite3_create_collation16(
 
 /*
 ****** EXPERIMENTAL - subject to change without notice **************
+**
+** The following experimental API is identical to the
+** sqlite3_create_collation() function described above except that it
+** allows a destructor callback function - xDestroy - for the new
+** collation sequence to be specified. If this function returns
+** successfully, the destructor function will be invoked exactly once
+** by SQLite when one of the following occurs:
+**
+**   * The collation sequence is overidden by a subsequent call
+**     to create_collation(), create_collation16() or 
+**     create_collation_v2(), or
+**
+**   * The database handle is closed.
+**
+** The argument passed to the destructor function is a copy of
+** the void* pointer passed as the 4th argument to this function.
 */
-int sqlite3_create_collation_x(
+int sqlite3_create_collation_v2(
   sqlite3*, 
   const char *zName, 
   int eTextRep, 
   void*,
   int(*xCompare)(void*,int,const void*,int,const void*),
-  void(*xDel)(void*)
+  void(*xDestroy)(void*)
 );
 
 /*

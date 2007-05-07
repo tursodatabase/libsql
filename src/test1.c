@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.249 2007/05/07 11:24:30 drh Exp $
+** $Id: test1.c,v 1.250 2007/05/07 14:58:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1649,10 +1649,10 @@ static int test_blob_write(
 #endif
 
 /*
-** Usage: sqlite3_create_collation_x DB-HANDLE NAME CMP-PROC DEL-PROC
+** Usage: sqlite3_create_collation_v2 DB-HANDLE NAME CMP-PROC DEL-PROC
 **
 **   This Tcl proc is used for testing the experimental
-**   sqlite3_create_collation_x() interface.
+**   sqlite3_create_collation_v2() interface.
 */
 struct TestCollationX {
   Tcl_Interp *interp;
@@ -1696,7 +1696,7 @@ static int testCreateCollationCmp(
 
   return iRes;
 }
-static int test_create_collation_x(
+static int test_create_collation_v2(
   ClientData clientData, /* Not used */
   Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
   int objc,              /* Number of arguments */
@@ -1718,7 +1718,7 @@ static int test_create_collation_x(
   Tcl_IncrRefCount(p->pCmp);
   Tcl_IncrRefCount(p->pDel);
 
-  sqlite3_create_collation_x(db, Tcl_GetString(objv[2]), SQLITE_UTF8, 
+  sqlite3_create_collation_v2(db, Tcl_GetString(objv[2]), SQLITE_UTF8, 
       (void *)p, testCreateCollationCmp, testCreateCollationDel
   );
   return TCL_OK;
@@ -4744,7 +4744,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 {"sqlite3_column_origin_name16", test_stmt_utf16, sqlite3_column_origin_name16},
 #endif
 #endif
-     { "sqlite3_create_collation_x", test_create_collation_x, 0 },
+     { "sqlite3_create_collation_v2", test_create_collation_v2, 0 },
      { "sqlite3_global_recover",     test_global_recover, 0   },
      { "working_64bit_int",          working_64bit_int,   0   },
 

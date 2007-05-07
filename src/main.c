@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.372 2007/05/07 09:32:45 danielk1977 Exp $
+** $Id: main.c,v 1.373 2007/05/07 14:58:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1141,7 +1141,7 @@ int sqlite3_create_collation(
 /*
 ** Register a new collation sequence with the database handle db.
 */
-int sqlite3_create_collation_x(
+int sqlite3_create_collation_v2(
   sqlite3* db, 
   const char *zName, 
   int enc, 
