@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\screate_collation_x()\sto\screate_collation_v2().\sAlso\sadd\ssome\stests\sfor\sit.\s(CVS\s3938)
-D 2007-05-07T14:58:53
+C Add\sa\sversion\sof\sthe\sLIKE\soperator\sto\sthe\sicu\sextension.\sRequires\soptimisation.\s(CVS\s3939)
+D 2007-05-07T16:58:02
 F Makefile.in ab0f3cb6b34aa8ccec0bb57e6696fd4bd6b34a8f
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -43,7 +43,7 @@ F ext/fts2/fts2_porter.c 991a45463553c7318063fe7773368a6c0f39e35d
 F ext/fts2/fts2_tokenizer.h 4c5ffe31d63622869eb6eec1503df7f6996fd1bd
 F ext/fts2/fts2_tokenizer1.c 5c979fe8815f95396beb22b627571da895a025af
 F ext/fts2/mkfts2amal.tcl 2a9ec76b0760fe7f3669dca5bc0d60728bc1c977
-F ext/icu/icu.c 509ac3d8afea8af6835edb9d96a52a80dd56c152
+F ext/icu/icu.c 6b47f5bbaf32bce03112282ecca1f54bec969e42
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
 F main.mk 09c19ae05ac9e5654d5fd866a980b21ad9df8f30
@@ -245,7 +245,7 @@ F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
-F test/func.test 6727c7729472ae52b5acd86e802f89aa350ba50f
+F test/func.test 5e32fe07bf4113ce2923df28af78c76702f6cd92
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -483,7 +483,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P db51f59a7bb7530f919858e2c51057839f6c9f4d
-R 27185812931e7f9d41fbfd4819a22118
+P ddc4e4797ff902692c4f0d86ec5f4e94cc7f0741
+R c3baf3c645e55d9b878c7a05ae7a30bb
 U danielk1977
-Z ae7686d308deffcdeb3aacd0475a723f
+Z a53ea51c5cda49495951728b7ccf7458

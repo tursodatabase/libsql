@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.63 2007/05/02 15:36:02 drh Exp $
+# $Id: func.test,v 1.64 2007/05/07 16:58:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -220,9 +220,11 @@ do_test func-5.2 {
 do_test func-5.3 {
   execsql {SELECT upper(a), lower(a) FROM t2}
 } {1 1 {} {} 345 345 {} {} 67890 67890}
-do_test func-5.4 {
-  catchsql {SELECT upper(a,5) FROM t2}
-} {1 {wrong number of arguments to function upper()}}
+ifcapable !icu {
+  do_test func-5.4 {
+    catchsql {SELECT upper(a,5) FROM t2}
+  } {1 {wrong number of arguments to function upper()}}
+}
 do_test func-5.5 {
   catchsql {SELECT upper(*) FROM t2}
 } {1 {wrong number of arguments to function upper()}}

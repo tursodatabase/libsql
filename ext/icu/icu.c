@@ -5,13 +5,13 @@
 ** for handling unicode data) and SQLite. The integration uses 
 ** ICU to provide the following to SQLite:
 **
+**   * An implementation of the SQL regexp() function (and hence REGEXP
+**     operator) using the ICU uregex_XX() APIs.
+**
 **   * Implementations of the SQL scalar upper() and lower() 
-**     functions for case mapping, 
+**     functions for case mapping.
 **
 **   * Collation sequences
-**
-**   * Implementation of the SQL regexp() function (and hence REGEXP
-**     operator) using the ICU uregex_XX() APIs.
 **
 **   * LIKE
 */
@@ -47,10 +47,130 @@ static void xFree(void *p){
 }
 
 /*
-** LIKE operator.
-**
-** http://unicode.org/reports/tr21/tr21-5.html#Caseless_Matching
+** Compare two UTF-8 strings for equality where the first string is
+** a "LIKE" expression. Return true (1) if they are the same and 
+** false (0) if they are different.
 */
+static int icuLikeCompare(
+  const uint8_t *zPattern,   /* The UTF-8 LIKE pattern */
+  const uint8_t *zString,    /* The UTF-8 string to compare against */
+  const UChar32 uEsc         /* The escape character */
+){
+  static const int MATCH_ONE = (UChar32)'_';
+  static const int MATCH_ALL = (UChar32)'%';
+
+  int iPattern = 0;       /* Current byte index in zPattern */
+  int iString = 0;        /* Current byte index in zString */
+
+  int prevEscape = 0;     /* True if the previous character was uEsc */
+
+  while( zPattern[iPattern]!=0 ){
+
+    /* Read (and consume) the next character from the input pattern. */
+    UChar32 uPattern;
+    U8_NEXT_UNSAFE(zPattern, iPattern, uPattern);
+    assert(uPattern!=0);
+
+    /* There are now 4 possibilities:
+    **
+    **     1. uPattern is an unescaped match-all character "%",
+    **     2. uPattern is an unescaped match-one character "_",
+    **     3. uPattern is an unescaped escape character, or
+    **     4. uPattern is to be handled as an ordinary character
+    */
+    if( !prevEscape && uPattern==MATCH_ALL ){
+      /* Case 1. */
+      uint8_t c;
+
+      /* Skip any MATCH_ALL or MATCH_ONE characters that follow a
+      ** MATCH_ALL. For each MATCH_ONE, skip one character in the 
+      ** test string.
+      */
+      while( (c=zPattern[iPattern]) == MATCH_ALL || c == MATCH_ONE ){
+        if( c==MATCH_ONE ){
+          if( zString[iString]==0 ) return 0;
+          U8_FWD_1_UNSAFE(zString, iString);
+        }
+        iPattern++;
+      }
+
+      if( zPattern[iPattern]==0 ) return 1;
+
+      while( zString[iString] ){
+        if( icuLikeCompare(&zPattern[iPattern], &zString[iString], uEsc) ){
+          return 1;
+        }
+        U8_FWD_1_UNSAFE(zString, iString);
+      }
+      return 0;
+
+    }else if( !prevEscape && uPattern==MATCH_ONE ){
+      /* Case 2. */
+      if( zString[iString]==0 ) return 0;
+      U8_FWD_1_UNSAFE(zString, iString);
+
+    }else if( !prevEscape && uPattern==uEsc){
+      /* Case 3. */
+      prevEscape = 1;
+
+    }else{
+      /* Case 4. */
+      UChar32 uString;
+      U8_NEXT_UNSAFE(zString, iString, uString);
+      uString = u_foldCase(uString, U_FOLD_CASE_DEFAULT);
+      uPattern = u_foldCase(uPattern, U_FOLD_CASE_DEFAULT);
+      if( uString!=uPattern ){
+        return 0;
+      }
+      prevEscape = 0;
+    }
+  }
+
+  return zString[iString]==0;
+}
+
+/*
+** Implementation of the like() SQL function.  This function implements
+** the build-in LIKE operator.  The first argument to the function is the
+** pattern and the second argument is the string.  So, the SQL statements:
+**
+**       A LIKE B
+**
+** is implemented as like(B, A). If there is an escape character E, 
+**
+**       A LIKE B ESCAPE E
+**
+** is mapped to like(B, A, E).
+*/
+static void icuLikeFunc(
+  sqlite3_context *context, 
+  int argc, 
+  sqlite3_value **argv
+){
+  const unsigned char *zA = sqlite3_value_text(argv[0]);
+  const unsigned char *zB = sqlite3_value_text(argv[1]);
+  UChar32 uEsc = 0;
+
+  if( argc==3 ){
+    /* The escape character string must consist of a single UTF-8 character.
+    ** Otherwise, return an error.
+    */
+    int nE= sqlite3_value_bytes(argv[2]);
+    const unsigned char *zE = sqlite3_value_text(argv[2]);
+    int i = 0;
+    if( zE==0 ) return;
+    U8_NEXT(zE, i, nE, uEsc);
+    if( i!=nE){
+      sqlite3_result_error(context, 
+          "ESCAPE expression must be a single character", -1);
+      return;
+    }
+  }
+
+  if( zA && zB ){
+    sqlite3_result_int(context, icuLikeCompare(zA, zB, uEsc));
+  }
+}
 
 /*
 ** This function is called when an ICU function called from within
@@ -194,6 +314,9 @@ static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
   }
 
   zInput = sqlite3_value_text16(apArg[0]);
+  if( !zInput ){
+    return;
+  }
   nInput = sqlite3_value_bytes16(apArg[0]);
 
   nOutput = nInput * 2 + 2;
@@ -244,7 +367,7 @@ static int icuCollationColl(
     case UCOL_GREATER: return +1;
     case UCOL_EQUAL:   return 0;
   }
-  assert(!"Bad return value from ucol_strcoll()");
+  assert(!"Unexpected return value from ucol_strcoll()");
   return 0;
 }
 
@@ -288,7 +411,7 @@ static void icuLoadCollation(
   }
   assert(p);
 
-  rc = sqlite3_create_collation_x(db, zName, SQLITE_UTF16, (void *)pUCollator, 
+  rc = sqlite3_create_collation_v2(db, zName, SQLITE_UTF16, (void *)pUCollator, 
       icuCollationColl, icuCollationDel
   );
   if( rc!=SQLITE_OK ){
@@ -308,7 +431,7 @@ int sqlite3IcuInit(sqlite3 *db){
     void *pContext;                           /* sqlite3_user_data() context */
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } scalars[] = {
-    {"regexp", 2, SQLITE_ANY,          0, icuRegexpFunc},
+    {"regexp",-1, SQLITE_ANY,          0, icuRegexpFunc},
 
     {"lower",  1, SQLITE_UTF16,        0, icuCaseFunc16},
     {"lower",  2, SQLITE_UTF16,        0, icuCaseFunc16},
@@ -319,6 +442,9 @@ int sqlite3IcuInit(sqlite3 *db){
     {"lower",  2, SQLITE_UTF8,         0, icuCaseFunc16},
     {"upper",  1, SQLITE_UTF8,  (void*)1, icuCaseFunc16},
     {"upper",  2, SQLITE_UTF8,  (void*)1, icuCaseFunc16},
+
+    {"like",   2, SQLITE_UTF8,         0, icuLikeFunc},
+    {"like",   3, SQLITE_UTF8,         0, icuLikeFunc},
 
     {"icu_load_collation",  2, SQLITE_UTF8, (void*)db, icuLoadCollation},
   };
