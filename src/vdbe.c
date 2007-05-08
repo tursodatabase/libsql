@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.611 2007/05/08 20:37:40 drh Exp $
+** $Id: vdbe.c,v 1.612 2007/05/08 20:59:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -5074,8 +5074,8 @@ default: {
       assert( !sqlite3VdbeMemTooBig(pTos) );
     }
     assert( pc>=-1 && pc<p->nOp );
-#ifdef SQLITE_DEBUG
 
+#ifdef SQLITE_DEBUG
     /* Code for tracing the vdbe stack. */
     if( p->trace && pTos>=p->aStack ){
       int i;

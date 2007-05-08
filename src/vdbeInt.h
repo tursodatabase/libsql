@@ -288,7 +288,6 @@ struct Context {
 struct Vdbe {
   sqlite3 *db;        /* The whole database */
   Vdbe *pPrev,*pNext; /* Linked list of VDBEs with the same Vdbe.db */
-  FILE *trace;        /* Write an execution trace here, if not NULL */
   int nOp;            /* Number of instructions in the program */
   int nOpAlloc;       /* Number of slots allocated for aOp[] */
   Op *aOp;            /* Space to hold the virtual machine's program */
@@ -336,6 +335,9 @@ struct Vdbe {
   i64 startTime;          /* Time when query started - used for profiling */
   int nSql;             /* Number of bytes in zSql */
   char *zSql;           /* Text of the SQL statement that generated this */
+#ifdef SQLITE_DEBUG
+  FILE *trace;        /* Write an execution trace here, if not NULL */
+#endif
 #ifdef SQLITE_SSE
   int fetchId;          /* Statement number used by sqlite3_fetch_statement */
   int lru;              /* Counter used for LRU cache replacement */

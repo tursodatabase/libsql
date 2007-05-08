@@ -88,12 +88,14 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   pB->nSql = nTmp;
 }
 
+#ifdef SQLITE_DEBUG
 /*
 ** Turn tracing on or off
 */
 void sqlite3VdbeTrace(Vdbe *p, FILE *trace){
   p->trace = trace;
 }
+#endif
 
 /*
 ** Resize the Vdbe.aOp array so that it contains at least N
