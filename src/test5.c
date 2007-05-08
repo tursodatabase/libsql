@@ -15,7 +15,7 @@
 ** is used for testing the SQLite routines for converting between
 ** the various supported unicode encodings.
 **
-** $Id: test5.c,v 1.15 2005/12/09 20:21:59 drh Exp $
+** $Id: test5.c,v 1.16 2007/05/08 20:37:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -180,10 +180,10 @@ static int test_translate(
 /*
 ** Usage: translate_selftest
 **
-** Call sqlite3utfSelfTest() to run the internal tests for unicode
+** Call sqlite3UtfSelfTest() to run the internal tests for unicode
 ** translation. If there is a problem an assert() will fail.
 **/
-void sqlite3utfSelfTest();
+void sqlite3UtfSelfTest();
 static int test_translate_selftest(
   void * clientData,
   Tcl_Interp *interp,
@@ -191,7 +191,7 @@ static int test_translate_selftest(
   Tcl_Obj *CONST objv[]
 ){
 #ifndef SQLITE_OMIT_UTF16
-  sqlite3utfSelfTest();
+  sqlite3UtfSelfTest();
 #endif
   return SQLITE_OK;
 }

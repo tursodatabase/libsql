@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.44 2007/03/31 15:28:00 drh Exp $
+** $Id: utf.c,v 1.45 2007/05/08 20:37:40 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -53,9 +53,9 @@
 **
 ** sqlite3VdbeMemTranslate() - Translate the encoding used by a Mem* string.
 ** sqlite3VdbeMemHandleBom() - Handle byte-order-marks in UTF16 Mem* strings.
-** sqlite3utf16ByteLen()     - Calculate byte-length of a void* UTF16 string.
-** sqlite3utf8CharLen()      - Calculate char-length of a char* UTF8 string.
-** sqlite3utf8LikeCompare()  - Do a LIKE match given two UTF8 char* strings.
+** sqlite3Utf16ByteLen()     - Calculate byte-length of a void* UTF16 string.
+** sqlite3Utf8CharLen()      - Calculate char-length of a char* UTF8 string.
+** sqlite3Utf8LikeCompare()  - Do a LIKE match given two UTF8 char* strings.
 **
 */
 #include "sqliteInt.h"
@@ -457,7 +457,7 @@ int sqlite3VdbeMemHandleBom(Mem *pMem){
 ** number of unicode characters in the first nByte of pZ (or up to 
 ** the first 0x00, whichever comes first).
 */
-int sqlite3utf8CharLen(const char *z, int nByte){
+int sqlite3Utf8CharLen(const char *z, int nByte){
   int r = 0;
   const char *zTerm;
   if( nByte>=0 ){
@@ -481,7 +481,7 @@ int sqlite3utf8CharLen(const char *z, int nByte){
 **
 ** NULL is returned if there is an allocation error.
 */
-char *sqlite3utf16to8(const void *z, int nByte){
+char *sqlite3Utf16to8(const void *z, int nByte){
   Mem m;
   memset(&m, 0, sizeof(m));
   sqlite3VdbeMemSetStr(&m, z, nByte, SQLITE_UTF16NATIVE, SQLITE_STATIC);
@@ -498,7 +498,7 @@ char *sqlite3utf16to8(const void *z, int nByte){
 ** then return the number of bytes in the first nChar unicode characters
 ** in pZ (or up until the first pair of 0x00 bytes, whichever comes first).
 */
-int sqlite3utf16ByteLen(const void *zIn, int nChar){
+int sqlite3Utf16ByteLen(const void *zIn, int nChar){
   unsigned int c = 1;
   char const *z = zIn;
   int n = 0;
@@ -528,7 +528,7 @@ int sqlite3utf16ByteLen(const void *zIn, int nChar){
 /*
 ** UTF-16 implementation of the substr()
 */
-void sqlite3utf16Substr(
+void sqlite3Utf16Substr(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
@@ -579,7 +579,7 @@ void sqlite3utf16Substr(
 ** It checks that the primitives for serializing and deserializing
 ** characters in each encoding are inverses of each other.
 */
-void sqlite3utfSelfTest(){
+void sqlite3UtfSelfTest(){
   unsigned int i, t;
   unsigned char zBuf[20];
   unsigned char *z;

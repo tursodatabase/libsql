@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.427 2007/05/08 13:58:27 drh Exp $
+** $Id: build.c,v 1.428 2007/05/08 20:37:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1566,7 +1566,7 @@ void sqlite3EndTable(
         pCons = pEnd;
       }
       nName = (const char *)pCons->z - zName;
-      p->addColOffset = 13 + sqlite3utf8CharLen(zName, nName);
+      p->addColOffset = 13 + sqlite3Utf8CharLen(zName, nName);
     }
 #endif
   }

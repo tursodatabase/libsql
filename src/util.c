@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.201 2007/05/05 11:48:54 drh Exp $
+** $Id: util.c,v 1.202 2007/05/08 20:37:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -292,7 +292,7 @@ int sqlite3AtoF(const char *z, double *pResult){
   *pResult = sign<0 ? -v1 : v1;
   return z - zBegin;
 #else
-  return sqlite3atoi64(z, pResult);
+  return sqlite3Atoi64(z, pResult);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 }
 
@@ -307,7 +307,7 @@ int sqlite3AtoF(const char *z, double *pResult){
 ** 32-bit numbers.  At that time, it was much faster than the
 ** atoi() library routine in RedHat 7.2.
 */
-int sqlite3atoi64(const char *zNum, i64 *pNum){
+int sqlite3Atoi64(const char *zNum, i64 *pNum){
   i64 v = 0;
   int neg;
   int i, c;

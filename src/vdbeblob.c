@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.9 2007/05/05 18:39:25 drh Exp $
+** $Id: vdbeblob.c,v 1.10 2007/05/08 20:37:40 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -247,7 +247,7 @@ int sqlite3_blob_close(sqlite3_blob *pBlob){
 }
 
 
-int blobReadWrite(
+static int blobReadWrite(
   sqlite3_blob *pBlob, 
   void *z, 
   int n, 

@@ -290,7 +290,7 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
       return 0;
     }
     assert( pMem->z );
-    sqlite3atoi64(pMem->z, &value);
+    sqlite3Atoi64(pMem->z, &value);
     return value;
   }else{
     return 0;
@@ -538,7 +538,7 @@ int sqlite3VdbeMemSetStr(
     case SQLITE_UTF16BE:
       pMem->flags |= MEM_Str;
       if( pMem->n<0 ){
-        pMem->n = sqlite3utf16ByteLen(pMem->z,-1);
+        pMem->n = sqlite3Utf16ByteLen(pMem->z,-1);
         pMem->flags |= MEM_Term;
       }
       if( sqlite3VdbeMemHandleBom(pMem) ){
@@ -841,7 +841,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
 /*
 ** Create a new sqlite3_value object.
 */
-sqlite3_value* sqlite3ValueNew(void){
+sqlite3_value *sqlite3ValueNew(void){
   Mem *p = sqliteMalloc(sizeof(*p));
   if( p ){
     p->flags = MEM_Null;

@@ -75,7 +75,7 @@ foreach hdr {
    btreeInt.h
    hash.h
    keywordhash.h
-   limit.h
+   limits.h
    opcodes.h
    os_common.h
    os.h
@@ -115,6 +115,11 @@ proc copy_file {filename} {
   set tail [file tail $filename]
   section_comment "Begin file $tail"
   set in [open $filename r]
+  if {[file extension $filename]==".h"} {
+    set declpattern {^ *[a-zA-Z][a-zA-Z_0-9 ]+ \*?sqlite3[A-Z][a-zA-Z0-9]+\(}
+  } else {
+    set declpattern {^[a-zA-Z][a-zA-Z_0-9 ]+ \*?sqlite3[A-Z][a-zA-Z0-9]+\(}
+  }
   while {![eof $in]} {
     set line [gets $in]
     if {[regexp {^#\s*include\s+["<]([^">]+)[">]} $line all hdr]} {
@@ -135,6 +140,9 @@ proc copy_file {filename} {
       puts $out "#if 0"
     } elseif {[regexp {^#line} $line]} {
       # Skip #line directives.
+    } elseif {[regexp $declpattern $line] && ![regexp {^static} $line]} {
+      # Add the "static" keyword before internal functions.
+      puts $out "static $line"
     } else {
       puts $out $line
     }

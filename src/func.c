@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.151 2007/05/08 15:46:18 drh Exp $
+** $Id: func.c,v 1.152 2007/05/08 20:37:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -555,7 +555,7 @@ static void likeFunc(
     */
     const unsigned char *zEsc = sqlite3_value_text(argv[2]);
     if( zEsc==0 ) return;
-    if( sqlite3utf8CharLen((char*)zEsc, -1)!=1 ){
+    if( sqlite3Utf8CharLen((char*)zEsc, -1)!=1 ){
       sqlite3_result_error(context, 
           "ESCAPE expression must be a single character", -1);
       return;
@@ -1275,7 +1275,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "length",             1, 0, SQLITE_UTF8,    0, lengthFunc },
     { "substr",             3, 0, SQLITE_UTF8,    0, substrFunc },
 #ifndef SQLITE_OMIT_UTF16
-    { "substr",             3, 0, SQLITE_UTF16LE, 0, sqlite3utf16Substr },
+    { "substr",             3, 0, SQLITE_UTF16LE, 0, sqlite3Utf16Substr },
 #endif
     { "abs",                1, 0, SQLITE_UTF8,    0, absFunc    },
     { "round",              1, 0, SQLITE_UTF8,    0, roundFunc  },
