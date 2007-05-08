@@ -156,6 +156,11 @@ void sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
   sqlite3VdbeMemSetZeroBlob(&pCtx->s, n);
 }
 
+/* Force an SQLITE_TOOBIG error. */
+void sqlite3_result_error_toobig(sqlite3_context *pCtx){
+  sqlite3VdbeMemSetZeroBlob(&pCtx->s, SQLITE_MAX_LENGTH+1);
+}
+
 
 /*
 ** Execute the statement pStmt, either until a row of data is ready, the

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.207 2007/05/08 01:08:49 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.208 2007/05/08 15:15:02 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1224,6 +1224,7 @@ void sqlite3_result_text16le(sqlite3_context*, const void*, int,void(*)(void*));
 void sqlite3_result_text16be(sqlite3_context*, const void*, int,void(*)(void*));
 void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 void sqlite3_result_zeroblob(sqlite3_context*, int n);
+void sqlite3_result_error_toobig(sqlite3_context*);
 
 /*
 ** These are the allowed values for the eTextRep argument to

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.148 2007/05/08 14:39:04 danielk1977 Exp $
+** $Id: func.c,v 1.149 2007/05/08 15:15:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -301,7 +301,7 @@ static void randomBlob(
     n = 1;
   }
   if( n>SQLITE_MAX_LENGTH ){
-    sqlite3_result_error(context, "randomblob() too large", -1);
+    sqlite3_result_error_toobig(context);
     return;
   }
   p = sqliteMalloc(n);
@@ -624,7 +624,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       char const *zBlob = sqlite3_value_blob(argv[0]);
 
       if( 2*nBlob+4>SQLITE_MAX_LENGTH ){
-        sqlite3_result_error(context, "BLOB too big to quote", -1);
+        sqlite3_result_error_toobig(context);
         return;
       }
       zText = (char *)sqliteMalloc((2*nBlob)+4); 
@@ -654,7 +654,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       if( zArg==0 ) return;
       for(i=0, n=0; zArg[i]; i++){ if( zArg[i]=='\'' ) n++; }
       if( i+n+3>SQLITE_MAX_LENGTH ){
-        sqlite3_result_error(context, "string too big to quote", -1);
+        sqlite3_result_error_toobig(context);
         return;
       }
       z = sqliteMalloc( i+n+3 );
@@ -689,7 +689,7 @@ static void hexFunc(
   assert( argc==1 );
   n = sqlite3_value_bytes(argv[0]);
   if( n*2+1>SQLITE_MAX_LENGTH ){
-    sqlite3_result_error(context, "BLOB too big to convert to hex", -1);
+    sqlite3_result_error_toobig(context);
     return;
   }
   pBlob = sqlite3_value_blob(argv[0]);
@@ -764,7 +764,7 @@ static void replaceFunc(
       zOut[j++] = zStr[i];
     }else{
       if( (j+nRep+loopLimit-i)>SQLITE_MAX_LENGTH ){
-        sqlite3_result_error(context, "replace() is too large", -1);
+        sqlite3_result_error_toobig(context);
         sqlite3_free(zOut);
         return;
       }
