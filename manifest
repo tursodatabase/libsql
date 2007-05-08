@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\ssqllimits1.test.\s(CVS\s3952)
-D 2007-05-08T15:59:06
+C Add\sa\stest\scase\sthat\suses\sa\strigger\sto\sinsert\smany\srows\sto\ssqllimits1.test.\s(CVS\s3953)
+D 2007-05-08T16:13:45
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -340,7 +340,7 @@ F test/shared_err.test cc528f6e78665787e93d9ce3a782a2ce5179d821
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
-F test/sqllimits1.test 180c2bc1a13ae67adca747c333eba3211409abf3
+F test/sqllimits1.test b88ffc18cf8a4bcb6608cacaa692ede4b7511a2a
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
@@ -486,7 +486,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0cf518ceebda8e7421d054813f97cc447d292344
-R ddfeace665d99b6082fb9407968ef94f
+P c8974603976ebc02edbc9ab271e87e57f8eb365e
+R 14fd5bdefc5c8b6717aa13ebe2e75f62
 U danielk1977
-Z f31fe2890398ab75828f21106fdbea89
+Z f532c476b7aaba8d810fc10e1b62322d

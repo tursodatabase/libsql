@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.1 2007/05/08 15:59:06 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.2 2007/05/08 16:13:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -44,7 +44,7 @@ do_test sqllimits-1.4 {
 } {1 {string or blob too big}}
 
 #--------------------------------------------------------------------
-# Test cases sqllimits-1.* test that the SQLITE_MAX_SQL limit
+# Test cases sqllimits-2.* test that the SQLITE_MAX_SQL limit
 # is enforced.
 #
 do_test sqllimits-2.1 {
@@ -52,6 +52,91 @@ do_test sqllimits-2.1 {
   append sql [string repeat " AND 1==1" 200000]
   catchsql $sql
 } {1 {String or BLOB exceeded size limit}}
+
+#--------------------------------------------------------------------
+# Test cases sqllimits-3.* test that the limit set using the
+# max_page_count pragma.
+#
+do_test sqllimits-3.1 {
+  execsql {
+    PRAGMA max_page_count = 1000;
+  }
+} {1000}
+do_test sqllimits-3.2 {
+  execsql {
+    CREATE TABLE trig (a INTEGER, b INTEGER);
+  }
+
+  # Set up a tree of triggers to fire when a row is inserted
+  # into table "trig".
+  #
+  # INSERT -> insert_b -> update_b -> insert_a -> update_a      (chain 1)
+  #                    -> update_a -> insert_a -> update_b      (chain 2)
+  #        -> insert_a -> update_b -> insert_b -> update_a      (chain 3)
+  #                    -> update_a -> insert_b -> update_b      (chain 4)
+  #
+  # Table starts with N rows.
+  #
+  #   Chain 1: insert_b (update N rows)
+  #              -> update_b (insert 1 rows)
+  #                -> insert_a (update N rows)
+  #                  -> update_a (insert 1 rows)
+  #
+  # chains 2, 3 and 4 are similar. Each inserts more than N^2 rows, where
+  # N is the number of rows at the conclusion of the previous chain.
+  #
+  # Therefore, a single insert adds (N^16 plus some) rows to the database.
+  # A really long loop...
+  #     
+  execsql {
+    CREATE TRIGGER update_b BEFORE UPDATE ON trig
+      FOR EACH ROW BEGIN
+        INSERT INTO trig VALUES (65, 'update_b');
+      END;
+
+    CREATE TRIGGER update_a AFTER UPDATE ON trig
+      FOR EACH ROW BEGIN
+        INSERT INTO trig VALUES (65, 'update_a');
+      END;
+
+    CREATE TRIGGER insert_b BEFORE INSERT ON trig
+      FOR EACH ROW BEGIN
+        UPDATE trig SET a = 1;
+      END;
+
+    CREATE TRIGGER insert_a AFTER INSERT ON trig
+      FOR EACH ROW BEGIN
+        UPDATE trig SET a = 1;
+      END;
+  }
+} {}
+
+do_test sqllimits1-3.3 {
+  execsql {
+    INSERT INTO trig VALUES (1,1); 
+  }
+} {}
+
+do_test sqllimits1-3.4 {
+  execsql {
+    SELECT COUNT(*) FROM trig;
+  }
+} {7}
+
+# This tries to insert so many rows it fills up the database (limited
+# to 1MB, so not that noteworthy an achievement).
+#
+do_test sqllimits1-3.5 {
+  catchsql {
+    INSERT INTO trig VALUES (1,10);
+  }
+} {1 {database or disk is full}}
+
+do_test sqllimits1-3.6 {
+  catchsql {
+    SELECT COUNT(*) FROM trig;
+  }
+} {0 7}
 
 finish_test
 
