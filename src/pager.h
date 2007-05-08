@@ -13,7 +13,7 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.60 2007/05/08 14:51:37 drh Exp $
+** @(#) $Id: pager.h,v 1.61 2007/05/08 21:45:28 drh Exp $
 */
 
 #ifndef _PAGER_H_
@@ -69,9 +69,7 @@ int sqlite3PagerAcquire(Pager *pPager, Pgno pgno, DbPage **ppPage, int clrFlag);
 DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno);
 int sqlite3PagerRef(DbPage*);
 int sqlite3PagerUnref(DbPage*);
-Pgno sqlite3PagerPagenumber(DbPage*);
 int sqlite3PagerWrite(DbPage*);
-int sqlite3PagerIswriteable(DbPage*);
 int sqlite3PagerOverwrite(Pager *pPager, Pgno pgno, void*);
 int sqlite3PagerPagecount(Pager*);
 int sqlite3PagerTruncate(Pager*,Pgno);
@@ -86,29 +84,37 @@ int sqlite3PagerStmtRollback(Pager*);
 void sqlite3PagerDontRollback(DbPage*);
 void sqlite3PagerDontWrite(DbPage*);
 int sqlite3PagerRefcount(Pager*);
-int *sqlite3PagerStats(Pager*);
 void sqlite3PagerSetSafetyLevel(Pager*,int,int);
 const char *sqlite3PagerFilename(Pager*);
 const char *sqlite3PagerDirname(Pager*);
 const char *sqlite3PagerJournalname(Pager*);
 int sqlite3PagerNosync(Pager*);
-int sqlite3PagerRename(Pager*, const char *zNewName);
-void sqlite3PagerSetCodec(Pager*,void*(*)(void*,void*,Pgno,int),void*);
 int sqlite3PagerMovepage(Pager*,DbPage*,Pgno);
-int sqlite3PagerReset(Pager*);
-int sqlite3PagerReleaseMemory(int);
-
 void *sqlite3PagerGetData(DbPage *); 
 void *sqlite3PagerGetExtra(DbPage *); 
 int sqlite3PagerLockingMode(Pager *, int);
 
+#if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
+  int sqlite3PagerReleaseMemory(int);
+#endif
+
+#ifdef SQLITE_HAS_CODEC
+  void sqlite3PagerSetCodec(Pager*,void*(*)(void*,void*,Pgno,int),void*);
+#endif
+
+#if !defined(NDEBUG) || defined(SQLITE_TEST)
+  Pgno sqlite3PagerPagenumber(DbPage*);
+  int sqlite3PagerIswriteable(DbPage*);
+#endif
+
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
-int sqlite3PagerLockstate(Pager*);
+  int sqlite3PagerLockstate(Pager*);
 #endif
 
 #ifdef SQLITE_TEST
-void sqlite3PagerRefdump(Pager*);
-int pager3_refinfo_enable;
+  int *sqlite3PagerStats(Pager*);
+  void sqlite3PagerRefdump(Pager*);
+  int pager3_refinfo_enable;
 #endif
 
 #ifdef SQLITE_TEST

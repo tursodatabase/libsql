@@ -361,9 +361,6 @@ int sqlite3VdbeCursorMoveto(Cursor*);
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
 void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif
-#ifdef SQLITE_DEBUG
-void sqlite3VdbePrintSql(Vdbe*);
-#endif
 int sqlite3VdbeSerialTypeLen(u32);
 u32 sqlite3VdbeSerialType(Mem*, int);
 int sqlite3VdbeSerialPut(unsigned char*, int, Mem*, int);
@@ -404,11 +401,14 @@ int sqlite3VdbeMemFromBtree(BtCursor*,int,int,int,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
 int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 #ifndef NDEBUG
-void sqlite3VdbeMemSanity(Mem*);
-int sqlite3VdbeOpcodeNoPush(u8);
+  void sqlite3VdbeMemSanity(Mem*);
+  int sqlite3VdbeOpcodeNoPush(u8);
 #endif
 int sqlite3VdbeMemTranslate(Mem*, u8);
-void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf);
+#ifdef SQLITE_DEBUG
+  void sqlite3VdbePrintSql(Vdbe*);
+  void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf);
+#endif
 int sqlite3VdbeMemHandleBom(Mem *pMem);
 void sqlite3VdbeFifoInit(Fifo*);
 int sqlite3VdbeFifoPush(Fifo*, i64);

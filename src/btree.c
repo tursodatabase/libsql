@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.378 2007/05/08 14:51:37 drh Exp $
+** $Id: btree.c,v 1.379 2007/05/08 21:45:27 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2408,20 +2408,6 @@ create_cursor_exception:
   unlockBtreeIfUnused(pBt);
   return rc;
 }
-
-#if 0  /* Not Used */
-/*
-** Change the value of the comparison function used by a cursor.
-*/
-void sqlite3BtreeSetCompare(
-  BtCursor *pCur,     /* The cursor to whose comparison function is changed */
-  int(*xCmp)(void*,int,const void*,int,const void*), /* New comparison func */
-  void *pArg          /* First argument to xCmp() */
-){
-  pCur->xCompare = xCmp ? xCmp : dfltCompare;
-  pCur->pArg = pArg;
-}
-#endif
 
 /*
 ** Close a cursor.  The read lock on the database file is released
@@ -6262,7 +6248,6 @@ int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
 ** to change the length of the data stored.
 */
 int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
-  BtShared *pBt = pCsr->pBtree->pBt;
 
   assert(pCsr->isIncrblobHandle);
   if( pCsr->eState==CURSOR_REQUIRESEEK ){
@@ -6277,7 +6262,8 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
   if( !pCsr->wrFlag ){
     return SQLITE_READONLY;
   }
-  assert( !pBt->readOnly && pBt->inTransaction==TRANS_WRITE );
+  assert( !pCsr->pBtree->pBt->readOnly 
+          && pCsr->pBtree->pBt->inTransaction==TRANS_WRITE );
   if( checkReadLocks(pCsr->pBtree, pCsr->pgnoRoot, pCsr) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }

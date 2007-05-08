@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.337 2007/05/08 14:51:37 drh Exp $
+** @(#) $Id: pager.c,v 1.338 2007/05/08 21:45:28 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2186,12 +2186,14 @@ int sqlite3PagerClose(Pager *pPager){
   return SQLITE_OK;
 }
 
+#if !defined(NDEBUG) || defined(SQLITE_TEST)
 /*
 ** Return the page number for the given page data.
 */
 Pgno sqlite3PagerPagenumber(DbPage *p){
   return p->pgno;
 }
+#endif
 
 /*
 ** The page_ref() function increments the reference count for a page.
@@ -2618,7 +2620,7 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
 ** free as much memory as possible. The return value is the total number 
 ** of bytes of memory released.
 */
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+#if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
 int sqlite3PagerReleaseMemory(int nReq){
   const ThreadData *pTsdro = sqlite3ThreadDataReadOnly();
   int nReleased = 0;
@@ -2694,7 +2696,7 @@ int sqlite3PagerReleaseMemory(int nReq){
 
   return nReleased;
 }
-#endif /* SQLITE_ENABLE_MEMORY_MANAGEMENT */
+#endif /* SQLITE_ENABLE_MEMORY_MANAGEMENT && !SQLITE_OMIT_DISKIO */
 
 /*
 ** Read the content of page pPg out of the database file.

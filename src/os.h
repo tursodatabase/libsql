@@ -352,11 +352,9 @@ int sqlite3OsSeek(OsFile*, i64 offset);
 int sqlite3OsTruncate(OsFile*, i64 size);
 int sqlite3OsSync(OsFile*, int);
 void sqlite3OsSetFullSync(OsFile *id, int setting);
-int sqlite3OsFileHandle(OsFile *id);
 int sqlite3OsFileSize(OsFile*, i64 *pSize);
 int sqlite3OsLock(OsFile*, int);
 int sqlite3OsUnlock(OsFile*, int);
-int sqlite3OsLockState(OsFile *id);
 int sqlite3OsCheckReservedLock(OsFile *id);
 int sqlite3OsOpenReadWrite(const char*, OsFile**, int*);
 int sqlite3OsOpenExclusive(const char*, OsFile**, int);
@@ -382,6 +380,11 @@ int sqlite3OsAllocationSize(void *);
 void *sqlite3OsDlopen(const char*);
 void *sqlite3OsDlsym(void*, const char*);
 int sqlite3OsDlclose(void*);
+
+#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
+  int sqlite3OsFileHandle(OsFile *id);
+  int sqlite3OsLockState(OsFile *id);
+#endif
 
 /*
 ** If the SQLITE_ENABLE_REDEF_IO macro is defined, then the OS-layer
