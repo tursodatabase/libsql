@@ -54,8 +54,10 @@ puts $out [subst \
 #
 foreach hdr {
    btree.h
+   btreeInt.h
    hash.h
    keywordhash.h
+   limits.h
    opcodes.h
    os_common.h
    os.h

@@ -75,6 +75,7 @@ foreach hdr {
    btreeInt.h
    hash.h
    keywordhash.h
+   limit.h
    opcodes.h
    os_common.h
    os.h

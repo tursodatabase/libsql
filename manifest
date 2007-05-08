@@ -1,5 +1,5 @@
-C Add\sa\sfew\smore\stests\sto\ssqllimit1.test.\s(CVS\s3954)
-D 2007-05-08T17:54:44
+C Update\sthe\samalgamation\sbuilder\sfor\sthe\slatest\schanges.\s(CVS\s3955)
+D 2007-05-08T17:59:42
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -420,8 +420,8 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c fe15d1cbc61c2b0375634b6d8c1ef24520799ea0
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl 3664556f06f7e4acd81552195ea2a9f16b887dcc
-F tool/mksqlite3internalh.tcl a85bb0c812db1a060e6e6dfab4e4c817f53d194b
+F tool/mksqlite3c.tcl b5048f0ed110530e79b25813474fde07f9d20906
+F tool/mksqlite3internalh.tcl 09152fdc0c5fd779a3ac5759a043f08d2f609248
 F tool/omittest.tcl e6b3d6a1285f9813bc1dea53bb522b4b72774710
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
@@ -486,7 +486,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6368222558d00f968b49f862bfe672573e86fbcf
-R 541b5ed0a61fd6eb94981d0681be1b3d
-U danielk1977
-Z 321f5051478036089eb587718ff52d9f
+P eeee6b71e5643511320cbe15bafa170cfd02877f
+R 01b9b636a7a301d253d538f5cdf5ad59
+U drh
+Z eb1e3110c9caaf6d8ddbfd28c7a99cd5
