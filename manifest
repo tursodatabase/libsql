@@ -1,5 +1,5 @@
-C Remove\scompiler\swarnings\sin\sthe\samalgamation.\s(CVS\s3960)
-D 2007-05-08T21:45:27
+C Remove\sa\skeyword\sfrom\sthe\sheader\scomment\sin\sdate.c\s(CVS\s3961)
+D 2007-05-08T21:56:00
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -67,7 +67,7 @@ F src/btreeInt.h cb3c0e9eb842d06079a62cdf3492c90c5db7ba75
 F src/build.c 5789303291d40a1d37bfede83c1c769be22c88ab
 F src/callback.c 9c12535669a638f90a67e10440b99c7b93c0fbf4
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
-F src/date.c 263ef5b81b4ffdd80e8a830645798967bbbcfd05
+F src/date.c 6049db7d5a8fdf2c677ff7d58fa31d4f6593c988
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c eb91a54d0c2a3bebfcf91deda95508a188c2ed63
@@ -486,7 +486,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5a0fe9854849bf3f04008a5dbb7a74e7d0d815ca
-R 514aafdea0c68aae06a8c21333d9a874
+P c5754530c6b1a8151c558f33d27fed70c95a988b
+R b5f8e28bbaf447fb3e0fb1a48ce02db9
 U drh
-Z 3e5e3cb17c97a7cf9ceda09dec5ad25f
+Z 0e6336c72c0c38d732834ceb058795ef
