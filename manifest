@@ -1,5 +1,5 @@
-C Do\snot\scrash\sin\sthe\sinternal\sfunctions\ssqlite_rename_table()\sor\ssqlite_rename_trigger()\sif\sthey\sare\ssomehow\spassed\sunexpected\sinput.\s(CVS\s3944)
-D 2007-05-08T12:37:46
+C Avoid\sevaluating\s(INT_MIN/-1)\swith\s32\sbit\ssigned\snumbers.\sIt\scan\scause\sSIGFPE.\s(CVS\s3945)
+D 2007-05-08T13:57:34
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -132,7 +132,7 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c e64a48bc21aa973eb622dd47da87d56a4cdcf528
 F src/util.c 5eff5cec4ae43490ca3fb97f10a25aac1a5f9b55
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c c942cb1882954e029e9788e07b709d12fba7ea47
+F src/vdbe.c 07f70528ed4e51753e4416ed4faac33696e65c04
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
 F src/vdbeInt.h 77a17f1a8bcbbb660bf4515c78d74280b4e8be5c
 F src/vdbeapi.c 37d793559390bec8a00c556f651f21b5f9e589af
@@ -218,7 +218,7 @@ F test/enc3.test 890508efff6677345e93bf2a8adb0489b30df030
 F test/exclusive.test 5bc520ba366ae3d242420af025ab64d465b04706
 F test/exclusive2.test f9738964b01e0bc4d4e5e270e347ca162da51799
 F test/exclusive3.test 0e49c35b7e7cb8e7280b4ce3f0359d30b207d2ff
-F test/expr.test ab21e2fc3613595131efd7d8bbca4b95ed5cc608
+F test/expr.test a0b2bb93da2b191e93b34ee048cc03e0b2d8b6a0
 F test/filefmt.test 053b622009fbbb74dd37921ffad374d852c13cd8
 F test/fkey1.test dcb4f28eb22d5141f15161d6bdca9a4f58c95729
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -485,7 +485,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 031a5915b68ec6827fee38b8b9dc74a9e0e09302
-R 684f1105a6244bfeb0b37e4504ad2edd
+P c2f90b465e37ea49c9e44415f6461e4f636bb64f
+R 8a94e2639bae1ad4438acf25d1621598
 U danielk1977
-Z 3385e5fd0a6de2c3ae5f8b125538d83d
+Z 56e204849a8e4b3c180ad14c5310ff41
