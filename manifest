@@ -1,5 +1,5 @@
-C Begin\sadding\scode\sto\sexplicitly\slimit\sthe\ssize\sof\sstrings\sand\sblobs.\s(CVS\s3943)
-D 2007-05-08T12:12:17
+C Do\snot\scrash\sin\sthe\sinternal\sfunctions\ssqlite_rename_table()\sor\ssqlite_rename_trigger()\sif\sthey\sare\ssomehow\spassed\sunexpected\sinput.\s(CVS\s3944)
+D 2007-05-08T12:37:46
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -57,7 +57,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
-F src/alter.c 2c79ec40f65e33deaf90ca493422c74586e481a3
+F src/alter.c ca8fc4a3c7359379598dc12589b65c32eb88defd
 F src/analyze.c 4bbf5ddf9680587c6d4917e02e378b6037be3651
 F src/attach.c a674f72b5e4a02b81d0ae7e6e14c1a2f48e36491
 F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
@@ -145,7 +145,7 @@ F src/where.c f3920748cc650fc25ac916215500bdb90dee568e
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test a8dca528354b70a52f130e1bb33dedc6848862a1
-F test/alter.test 6a956625399c83392671da690f44257a4ccf058b
+F test/alter.test 088d82f140b7fcf0be2f712c826dd70387470aef
 F test/alter2.test 50c3f554b8236d179d72511c0a4f23c5eb7f2af3
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
 F test/altermalloc.test 19323e0f452834044c27a54c6e78554d706de7ba
@@ -485,7 +485,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 47d1678d2d795196e51b7f0f185198f2b338636b
-R b785353f241f93b7ecd6b37b57a11d53
-U drh
-Z 4ce6f9af2bdc06bd49e2cf4b9fd38709
+P 031a5915b68ec6827fee38b8b9dc74a9e0e09302
+R 684f1105a6244bfeb0b37e4504ad2edd
+U danielk1977
+Z 3385e5fd0a6de2c3ae5f8b125538d83d
