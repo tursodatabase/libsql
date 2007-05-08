@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.426 2007/05/08 01:08:49 drh Exp $
+** $Id: build.c,v 1.427 2007/05/08 13:58:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -910,6 +910,10 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   char *z;
   Column *pCol;
   if( (p = pParse->pNewTable)==0 ) return;
+  if( p->nCol+1>SQLITE_MAX_COLUMN ){
+    sqlite3ErrorMsg(pParse, "too many columns on %s", p->zName);
+    return;
+  }
   z = sqlite3NameFromToken(pName);
   if( z==0 ) return;
   for(i=0; i<p->nCol; i++){

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.48 2007/05/08 01:08:49 drh Exp $
+** $Id: prepare.c,v 1.49 2007/05/08 13:58:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -490,7 +490,11 @@ int sqlite3Prepare(
   memset(&sParse, 0, sizeof(sParse));
   sParse.db = db;
   if( nBytes>=0 && zSql[nBytes]!=0 ){
-    char *zSqlCopy = sqlite3StrNDup(zSql, nBytes);
+    char *zSqlCopy;
+    if( nBytes>SQLITE_MAX_SQL_LENGTH ){
+      return SQLITE_TOOBIG;
+    }
+    zSqlCopy = sqlite3StrNDup(zSql, nBytes);
     if( zSqlCopy ){
       sqlite3RunParser(&sParse, zSqlCopy, &zErrMsg);
       sqliteFree(zSqlCopy);

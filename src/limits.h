@@ -12,7 +12,7 @@
 ** 
 ** This file defines various limits of what SQLite can process.
 **
-** @(#) $Id: limits.h,v 1.1 2007/05/08 01:08:49 drh Exp $
+** @(#) $Id: limits.h,v 1.2 2007/05/08 13:58:28 drh Exp $
 */
 
 /*
@@ -44,7 +44,7 @@
 ** dozen values in any of the other situations described above.
 */
 #ifndef SQLITE_MAX_COLUMN
-# define SQLITE_MAX_COLUMN 1000
+# define SQLITE_MAX_COLUMN 2000
 #endif
 
 /*

@@ -1,5 +1,5 @@
-C Avoid\sevaluating\s(INT_MIN/-1)\swith\s32\sbit\ssigned\snumbers.\sIt\scan\scause\sSIGFPE.\s(CVS\s3945)
-D 2007-05-08T13:57:34
+C Add\smore\scode\sto\senforce\sthe\slimits\sspecified\sin\slimits.h.\s(CVS\s3946)
+D 2007-05-08T13:58:27
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -64,7 +64,7 @@ F src/auth.c 902f4722661c796b97f007d9606bd7529c02597f
 F src/btree.c 6d3db6416c71f678a4dd4719ce6d754ad5927c46
 F src/btree.h 845543b5a53d5d8a80ea14aeeb521276602317b7
 F src/btreeInt.h cb3c0e9eb842d06079a62cdf3492c90c5db7ba75
-F src/build.c 94022eb081e10aa00149762ca5e0ed639673cedf
+F src/build.c 5a60e2e4a21fa8cbdf9e01a95e6d5ca44ff4a2b9
 F src/callback.c 9c12535669a638f90a67e10440b99c7b93c0fbf4
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c c34a9c86ffd6da4cb3903ea038d977ec539d07e2
@@ -76,7 +76,7 @@ F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c e595ca26805dfb3a9ebaabc28e7947c479f3b14d
 F src/legacy.c 388c71ad7fbcd898ba1bcbfc98a3ac954bfa5d01
-F src/limits.h 74b7f201cf75d0cffcfc40757de0e4caeeb1fca1
+F src/limits.h 7275e16d02c0164177e466a1438e174cc1936f8d
 F src/loadext.c afe4f4755dc49c36ef505748bbdddecb9f1d02a2
 F src/main.c 35b340716319e88817493172aa63abe8be13b543
 F src/malloc.c b89e31258a85158d15795bf87ae3ba007e56329b
@@ -94,12 +94,12 @@ F src/os_win.c 3b6169038101d06c54b4f04662bfd44b6cf2f289
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 9c9a9df78636f4b9c8e18f90e93337a1231aaef7
 F src/pager.h 236e4065b3ca066e8e3edd43fbdd00e2c71a55d5
-F src/parse.y a5bdc301e970ceb3826b56a84898b8966d5353f8
+F src/parse.y efbca804082366871a11f5f272c17672186961d2
 F src/pragma.c f426fef6b045dec23b1cf2f28397122a50fde109
-F src/prepare.c b35a6f23608264f1f0c4a5339b15d3b9361f0b85
+F src/prepare.c c932f4398c3bf66fa366ad676c6f7e8ac5eaf7f6
 F src/printf.c 67de0dcb40ef3297f4a047b434b81585c0f7062d
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
-F src/select.c a306d03fc7d8365055bef70c3563e8fca897460f
+F src/select.c 114e7ebaa2e41d83687f0c7c5f53daa7e7af8d3a
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
 F src/sqlite.h.in 8e00b44bf4e049df5b1520230c311bd39e264a49
@@ -126,7 +126,7 @@ F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_schema.c ced72140a3a25c148975428e170ec1850d3c3a7d
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/test_tclvar.c 315e77c17f128ff8c06b38c08617fd07c825a95b
-F src/tokenize.c 7d611fc942ca0b12514eea2e1fbb148a65af23f2
+F src/tokenize.c be3524e7f626340032108f40eecd6f6eb39b4b73
 F src/trigger.c 420192efe3e6f03addf7897c60c3c8bf913d3493
 F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c e64a48bc21aa973eb622dd47da87d56a4cdcf528
@@ -485,7 +485,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c2f90b465e37ea49c9e44415f6461e4f636bb64f
-R 8a94e2639bae1ad4438acf25d1621598
-U danielk1977
-Z 56e204849a8e4b3c180ad14c5310ff41
+P 2f186e916c982cde557e0bc1b925b10e6d58f8a1
+R 66a21423994186eccfb2c3232e9829a5
+U drh
+Z b93bfcd0453e2fb25e098403e201422f

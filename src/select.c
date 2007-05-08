@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.341 2007/05/06 20:04:25 drh Exp $
+** $Id: select.c,v 1.342 2007/05/08 13:58:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1359,6 +1359,10 @@ static int prepSelectStmt(Parse *pParse, Select *p){
     sqlite3ExprListDelete(pEList);
     p->pEList = pNew;
   }
+  if( p->pEList && p->pEList->nExpr>SQLITE_MAX_COLUMN ){
+    sqlite3ErrorMsg(pParse, "too many columns in result set");
+    rc = SQLITE_ERROR;
+  }
   return rc;
 }
 
@@ -2500,6 +2504,10 @@ static int processOrderGroupBy(
   assert( pEList );
 
   if( pOrderBy==0 ) return 0;
+  if( pOrderBy->nExpr>SQLITE_MAX_COLUMN ){
+    sqlite3ErrorMsg(pParse, "too many terms in %s BY clause", zType);
+    return 1;
+  }
   for(i=0; i<pOrderBy->nExpr; i++){
     int iCol;
     Expr *pE = pOrderBy->a[i].pExpr;
