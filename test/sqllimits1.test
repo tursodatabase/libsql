@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.2 2007/05/08 16:13:45 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.3 2007/05/08 17:54:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -63,9 +63,7 @@ do_test sqllimits-3.1 {
   }
 } {1000}
 do_test sqllimits-3.2 {
-  execsql {
-    CREATE TABLE trig (a INTEGER, b INTEGER);
-  }
+  execsql { CREATE TABLE trig (a INTEGER, b INTEGER); }
 
   # Set up a tree of triggers to fire when a row is inserted
   # into table "trig".
@@ -138,5 +136,60 @@ do_test sqllimits1-3.6 {
   }
 } {0 7}
 
+
+#--------------------------------------------------------------------
+# Test cases sqllimits1-4.* test the SQLITE_MAX_COLUMN limit.
+#
+do_test sqllimits-1.4.1 {
+  set cols [list]
+  for {set i 0} {$i <= $SQLITE_MAX_COLUMN} {incr i} {
+    lappend cols "c$i"
+  }
+  catchsql "CREATE TABLE t([join $cols ,])" 
+} {1 {too many columns on t}}
+
+do_test sqllimits-1.4.2 {
+  set cols [list]
+  for {set i 0} {$i <= $SQLITE_MAX_COLUMN} {incr i} {
+    lappend cols "sql AS sql$i"
+  }
+  catchsql "SELECT [join $cols ,] FROM sqlite_master"
+} {1 {too many columns in result set}}
+
+do_test sqllimits-1.4.3 {
+  set cols [list]
+  for {set i 0} {$i <= $SQLITE_MAX_COLUMN} {incr i} {
+    lappend cols "sql AS sql$i"
+  }
+  catchsql "SELECT sql4 FROM (SELECT [join $cols ,] FROM sqlite_master)"
+} {1 {too many columns in result set}}
+
+do_test sqllimits-1.4.4 {
+  set cols [list]
+  for {set i 0} {$i <= $SQLITE_MAX_COLUMN} {incr i} {
+    lappend cols c
+  }
+  set sql1 "CREATE TABLE t1(c);"
+  set sql2 "CREATE INDEX i1 ON t1([join $cols ,]);"
+  catchsql "$sql1 ; $sql2"
+} {1 {too many columns in index}}
+
+do_test sqllimits-1.4.5 {
+  catchsql "SELECT * FROM t1 GROUP BY [join $cols ,]"
+} {1 {too many terms in GROUP BY clause}}
+
+do_test sqllimits-1.4.6 {
+  catchsql "SELECT * FROM t1 ORDER BY [join $cols ,]"
+} {1 {too many terms in ORDER BY clause}}
+
+do_test sqllimits-1.4.7 {
+  set cols [list]
+  for {set i 0} {$i <= $SQLITE_MAX_COLUMN} {incr i} {
+    lappend cols "c = 1"
+  }
+  catchsql "UPDATE t1 SET [join $cols ,];"
+} {1 {too many columns in set list}}
+
 finish_test
+
 

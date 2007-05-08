@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.223 2007/05/08 13:58:28 drh Exp $
+** @(#) $Id: parse.y,v 1.224 2007/05/08 17:54:44 danielk1977 Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -573,8 +573,10 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
-cmd ::= UPDATE orconf(R) fullname(X) SET setlist(Y) where_opt(Z).
-    {sqlite3Update(pParse,X,Y,Z,R);}
+cmd ::= UPDATE orconf(R) fullname(X) SET setlist(Y) where_opt(Z).  {
+  sqlite3ExprListCheckLength(pParse,Y,SQLITE_MAX_COLUMN,"set list"); 
+  sqlite3Update(pParse,X,Y,Z,R);
+}
 
 %type setlist {ExprList*}
 %destructor setlist {sqlite3ExprListDelete($$);}
@@ -878,6 +880,7 @@ idxlist(A) ::= idxlist(X) COMMA idxitem(Y) collate(C) sortorder(Z).  {
     if( p ) p->pColl = sqlite3LocateCollSeq(pParse, (char*)C.z, C.n);
   }
   A = sqlite3ExprListAppend(X, p, &Y);
+  sqlite3ExprListCheckLength(pParse, A, SQLITE_MAX_COLUMN, "index");
   if( A ) A->a[A->nExpr-1].sortOrder = Z;
 }
 idxlist(A) ::= idxitem(Y) collate(C) sortorder(Z). {
@@ -887,6 +890,7 @@ idxlist(A) ::= idxitem(Y) collate(C) sortorder(Z). {
     if( p ) p->pColl = sqlite3LocateCollSeq(pParse, (char*)C.z, C.n);
   }
   A = sqlite3ExprListAppend(0, p, &Y);
+  sqlite3ExprListCheckLength(pParse, A, SQLITE_MAX_COLUMN, "index");
   if( A ) A->a[A->nExpr-1].sortOrder = Z;
 }
 idxitem(A) ::= nm(X).              {A = X;}
