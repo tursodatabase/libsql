@@ -26,7 +26,7 @@ echo "VERSIONS: $VERS $VERSW"
 #
 make clean
 make sqlite3.c
-gcc -O2 -Itsrc sqlite3.c tsrc/shell.c -o sqlite3 -ldl -lpthread
+gcc -Os -Itsrc sqlite3.c tsrc/shell.c -o sqlite3 -ldl -lpthread
 strip sqlite3
 mv sqlite3 sqlite3-$VERS.bin
 gzip sqlite3-$VERS.bin
@@ -35,10 +35,16 @@ mv sqlite3-$VERS.bin.gz doc
 
 # Build a source archive useful for windows.
 #
+make target_source
+cd tsrc
+rm fts*
+rm -f ../doc/sqlite-source-$VERSW.zip
+zip ../doc/sqlite-source-$VERSW.zip *
+cd ..
 make sqlite3.c
 cp tsrc/sqlite3.h .
 pwd
-zip doc/sqlite-source-$VERSW.zip sqlite3.c sqlite3.h
+zip doc/sqlite-amalgamation-$VERSW.zip sqlite3.c sqlite3.h
 
 # Build the sqlite.so and tclsqlite.so shared libraries
 # under Linux
@@ -46,13 +52,13 @@ zip doc/sqlite-source-$VERSW.zip sqlite3.c sqlite3.h
 make sqlite3.c
 TCLDIR=/home/drh/tcltk/846/linux/846linux
 TCLSTUBLIB=$TCLDIR/libtclstub8.4g.a
-gcc -O2 -shared -Itsrc sqlite3.c tsrc/tclsqlite.c $TCLSTUBLIB -o tclsqlite3.so
+gcc -Os -shared -Itsrc sqlite3.c tsrc/tclsqlite.c $TCLSTUBLIB -o tclsqlite3.so
 strip tclsqlite3.so
 chmod 644 tclsqlite3.so
 mv tclsqlite3.so tclsqlite-$VERS.so
 gzip tclsqlite-$VERS.so
 mv tclsqlite-$VERS.so.gz doc
-gcc -O2 -shared -Itsrc sqlite3.c -o sqlite3.so
+gcc -Os -shared -Itsrc sqlite3.c -o sqlite3.so
 strip sqlite3.so
 chmod 644 sqlite3.so
 mv sqlite3.so sqlite-$VERS.so
@@ -72,7 +78,7 @@ zip doc/sqlitedll-$VERSW.zip sqlite3.dll sqlite3.def
 #
 make target_source
 OPTS='-DSTATIC_BUILD=1 -DNDEBUG=1'
-i386-mingw32msvc-gcc -O2 $OPTS -Itsrc -I$TCLDIR sqlite3.c tsrc/shell.c \
+i386-mingw32msvc-gcc -Os $OPTS -Itsrc -I$TCLDIR sqlite3.c tsrc/shell.c \
       -o sqlite3.exe
 zip doc/sqlite-$VERSW.zip sqlite3.exe
 
