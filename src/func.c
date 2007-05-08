@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.150 2007/05/08 15:34:48 drh Exp $
+** $Id: func.c,v 1.151 2007/05/08 15:46:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -748,7 +748,7 @@ static void replaceFunc(
   int nStr;                /* Size of zStr */
   int nPattern;            /* Size of zPattern */
   int nRep;                /* Size of zRep */
-  int nOut;                /* Maximum size of zOut */
+  i64 nOut;                /* Maximum size of zOut */
   int loopLimit;           /* Last zStr[] that might match zPattern[] */
   int i, j;                /* Loop counters */
 
@@ -762,22 +762,25 @@ static void replaceFunc(
   nRep = sqlite3_value_bytes(argv[2]);
   zRep = sqlite3_value_text(argv[2]);
   if( zRep==0 ) return;
-  if( nPattern>=nRep ){
-    nOut = nStr;
-  }else{
-    i64 nOut64 = (i64)(nStr/nPattern + 1) * (i64)nRep;
-    nOut = ((nOut64>SQLITE_MAX_LENGTH) ? SQLITE_MAX_LENGTH : nOut64);
+  nOut = nStr + 1;
+  assert( nOut<SQLITE_MAX_LENGTH );
+  zOut = sqlite3_malloc((int)nOut);
+  if( zOut==0 ){
+    return;
   }
-  zOut = sqlite3_malloc(nOut+1);
-  if( zOut==0 ) return;
   loopLimit = nStr - nPattern;  
   for(i=j=0; i<=loopLimit; i++){
     if( zStr[i]!=zPattern[0] || memcmp(&zStr[i], zPattern, nPattern) ){
       zOut[j++] = zStr[i];
     }else{
-      if( (j+nRep+loopLimit-i)>SQLITE_MAX_LENGTH ){
+      nOut += nRep - nPattern;
+      if( nOut>=SQLITE_MAX_LENGTH ){
         sqlite3_result_error_toobig(context);
         sqlite3_free(zOut);
+        return;
+      }
+      zOut = sqlite3_realloc(zOut, (int)nOut);
+      if( zOut==0 ){
         return;
       }
       memcpy(&zOut[j], zRep, nRep);
@@ -785,6 +788,7 @@ static void replaceFunc(
       i += nPattern-1;
     }
   }
+  assert( j+nStr-i+1==nOut );
   memcpy(&zOut[j], &zStr[i], nStr-i);
   j += nStr - i;
   assert( j<=nOut );

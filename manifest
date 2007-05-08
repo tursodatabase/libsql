@@ -1,5 +1,5 @@
-C Limit\sthe\slength\sof\sthe\spatterns\son\sLIKE\sand\sGLOB\sto\savoid\sproblems\swith\ndeep\srecursion\sand\sN^2\sbehavior.\s(CVS\s3950)
-D 2007-05-08T15:34:48
+C Do\snot\sallocate\sso\smuch\ssurplus\smemory\sin\sthe\simplementation\sof\sthe\nreplace()\sfunction.\s(CVS\s3951)
+D 2007-05-08T15:46:18
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -71,7 +71,7 @@ F src/date.c 263ef5b81b4ffdd80e8a830645798967bbbcfd05
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 2f0f9f89efe9170e5e6ca5d5e93a9d5896fff5ac
-F src/func.c 21a7e73009510e90f09759b5097481c68ca8dcd3
+F src/func.c 1598afc91529eed0307e9581f852779efbc8d12d
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c e595ca26805dfb3a9ebaabc28e7947c479f3b14d
@@ -485,7 +485,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 17c4235c492f746867c1d2b8621043b93f8aa10e
-R 0a41035fc5149b0f6c2804cac4e2cff2
+P 42e6c826998e69462462b0787d3650246d36f3b5
+R 1e9068e3e524fdba724ca45c93150d52
 U drh
-Z a17f2a395ca2369e7d20c7284dc12ad3
+Z 4f1deed1abb3d0cd324c190974c006a2
