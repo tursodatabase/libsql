@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.147 2007/05/08 12:12:17 drh Exp $
+** $Id: func.c,v 1.148 2007/05/08 14:39:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -753,7 +753,8 @@ static void replaceFunc(
   if( nPattern>=nRep ){
     nOut = nStr;
   }else{
-    nOut = (nStr/nPattern + 1)*nRep;
+    i64 nOut64 = (i64)(nStr/nPattern + 1) * (i64)nRep;
+    nOut = ((nOut64>SQLITE_MAX_LENGTH) ? SQLITE_MAX_LENGTH : nOut64);
   }
   zOut = sqlite3_malloc(nOut+1);
   if( zOut==0 ) return;
@@ -762,6 +763,11 @@ static void replaceFunc(
     if( zStr[i]!=zPattern[0] || memcmp(&zStr[i], zPattern, nPattern) ){
       zOut[j++] = zStr[i];
     }else{
+      if( (j+nRep+loopLimit-i)>SQLITE_MAX_LENGTH ){
+        sqlite3_result_error(context, "replace() is too large", -1);
+        sqlite3_free(zOut);
+        return;
+      }
       memcpy(&zOut[j], zRep, nRep);
       j += nRep;
       i += nPattern-1;

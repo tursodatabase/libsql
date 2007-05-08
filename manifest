@@ -1,5 +1,5 @@
-C Add\smore\scode\sto\senforce\sthe\slimits\sspecified\sin\slimits.h.\s(CVS\s3946)
-D 2007-05-08T13:58:27
+C Fix\sa\spotential\sbuffer\soverrun\sin\sthe\sreplace()\sfunction.\s(CVS\s3947)
+D 2007-05-08T14:39:04
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -71,7 +71,7 @@ F src/date.c c34a9c86ffd6da4cb3903ea038d977ec539d07e2
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 2f0f9f89efe9170e5e6ca5d5e93a9d5896fff5ac
-F src/func.c 755a8c58cd05d290fa2388bd471f8781afe2c1c7
+F src/func.c 72801217dadcbee33a0fda48c02b89db5b5da659
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c e595ca26805dfb3a9ebaabc28e7947c479f3b14d
@@ -247,7 +247,7 @@ F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
-F test/func.test 5e32fe07bf4113ce2923df28af78c76702f6cd92
+F test/func.test 6f230b25b235cc1afcc7bd5a41baf7317018a8d1
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -485,7 +485,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2f186e916c982cde557e0bc1b925b10e6d58f8a1
-R 66a21423994186eccfb2c3232e9829a5
-U drh
-Z b93bfcd0453e2fb25e098403e201422f
+P c59d436095b5258d7132a432c0cb6cd5a7990d85
+R e45c28784fb5fd22f2c0e733c939e615
+U danielk1977
+Z 3a097658130cbbee5c196715fa819c73

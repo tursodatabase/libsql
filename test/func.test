@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.64 2007/05/07 16:58:02 danielk1977 Exp $
+# $Id: func.test,v 1.65 2007/05/08 14:39:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -333,6 +333,7 @@ do_test func-9.11 {
 do_test func-9.12 {
   execsql {SELECT hex(replace('abcdefg','','12'))}
 } {{}}
+breakpoint
 do_test func-9.13 {
   execsql {SELECT hex(replace('aabcdefg','a','aaa'))}
 } {616161616161626364656667}
@@ -781,6 +782,16 @@ do_test func-21.8 {
     SELECT replace("aaaaaaa", "a", "0123456789");
   }
 } {0123456789012345678901234567890123456789012345678901234567890123456789}
+
+do_test func-21.9 {
+  # Attempt to exploit a buffer-overflow that at one time existed 
+  # in the REPLACE function. 
+  set ::str "[string repeat A 29998]CC[string repeat A 35537]"
+  set ::rep [string repeat B 65536]
+  execsql {
+    SELECT LENGTH(REPLACE($::str, 'C', $::rep));
+  }
+} [expr 29998 + 2*65536 + 35537]
 
 # Tests for the TRIM, LTRIM and RTRIM functions.
 #
