@@ -411,6 +411,21 @@ void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
 }
 
 /*
+** Return true if the Mem object contains a TEXT or BLOB that is
+** too large - whose size exceeds SQLITE_MAX_LENGTH.
+*/
+int sqlite3VdbeMemTooBig(Mem *p){
+  if( p->flags & (MEM_Str|MEM_Blob) ){
+    int n = p->n;
+    if( p->flags & MEM_Zero ){
+      n += p->u.i;
+    }
+    return n>SQLITE_MAX_LENGTH;
+  }
+  return 0; 
+}
+
+/*
 ** Make an shallow copy of pFrom into pTo.  Prior contents of
 ** pTo are overwritten.  The pFrom->z field is not duplicated.  If
 ** pFrom->z is used, then pTo->z points to the same thing as pFrom->z

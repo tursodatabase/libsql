@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.608 2007/05/08 01:08:49 drh Exp $
+** $Id: vdbe.c,v 1.609 2007/05/08 12:12:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -737,6 +737,8 @@ case OP_String8: {         /* same as TK_STRING */
   assert( pOp->p3!=0 );
   pOp->opcode = OP_String;
   pOp->p1 = strlen(pOp->p3);
+  assert( SQLITE_MAX_SQL_LENGTH < SQLITE_MAX_LENGTH );
+  assert( pOp->p1 < SQLITE_MAX_LENGTH );
 
 #ifndef SQLITE_OMIT_UTF16
   if( encoding!=SQLITE_UTF8 ){
@@ -752,6 +754,7 @@ case OP_String8: {         /* same as TK_STRING */
     pOp->p3type = P3_DYNAMIC;
     pOp->p3 = pTos->z;
     pOp->p1 = pTos->n;
+    assert( pOp->p1 < SQLITE_MAX_LENGTH ); /* Due to SQLITE_MAX_SQL_LENGTH */
     break;
   }
 #endif
@@ -763,6 +766,7 @@ case OP_String8: {         /* same as TK_STRING */
 ** The string value P3 of length P1 (bytes) is pushed onto the stack.
 */
 case OP_String: {
+  assert( pOp->p1 < SQLITE_MAX_LENGTH ); /* Due to SQLITE_MAX_SQL_LENGTH */
   pTos++;
   assert( pOp->p3!=0 );
   pTos->flags = MEM_Str|MEM_Static|MEM_Term;
@@ -796,6 +800,8 @@ case OP_Null: {
 case OP_HexBlob: {            /* same as TK_BLOB */
   pOp->opcode = OP_Blob;
   pOp->p1 = strlen(pOp->p3)/2;
+  assert( SQLITE_MAX_SQL_LENGTH < SQLITE_MAX_LENGTH );
+  assert( pOp->p1 < SQLITE_MAX_LENGTH );
   if( pOp->p1 ){
     char *zBlob = sqlite3HexToBlob(pOp->p3);
     if( !zBlob ) goto no_mem;
@@ -826,6 +832,7 @@ case OP_HexBlob: {            /* same as TK_BLOB */
 */
 case OP_Blob: {
   pTos++;
+  assert( pOp->p1 < SQLITE_MAX_LENGTH ); /* Due to SQLITE_MAX_SQL_LENGTH */
   sqlite3VdbeMemSetStr(pTos, pOp->p3, pOp->p1, 0, 0);
   break;
 }
@@ -842,8 +849,13 @@ case OP_Blob: {
 */
 case OP_Variable: {
   int j = pOp->p1 - 1;
+  Mem *pVar;
   assert( j>=0 && j<p->nVar );
 
+  pVar = &p->aVar[j];
+  if( sqlite3VdbeMemTooBig(pVar) ){
+    goto too_big;
+  }
   pTos++;
   sqlite3VdbeMemShallowCopy(pTos, &p->aVar[j], MEM_Static);
   break;
@@ -998,7 +1010,7 @@ case OP_Callback: {            /* no-push */
 */
 case OP_Concat: {           /* same as TK_CONCAT */
   char *zNew;
-  int nByte;
+  i64 nByte;
   int nField;
   int i, j;
   Mem *pTerm;
@@ -1031,6 +1043,9 @@ case OP_Concat: {           /* same as TK_CONCAT */
     /* Otherwise malloc() space for the result and concatenate all the
     ** stack values.
     */
+    if( nByte+2>SQLITE_MAX_LENGTH ){
+      goto too_big;
+    }
     zNew = sqliteMallocRaw( nByte+2 );
     if( zNew==0 ) goto no_mem;
     j = 0;
@@ -1274,6 +1289,9 @@ case OP_Function: {
   pTos++;
   pTos->flags = 0;
   sqlite3VdbeMemMove(pTos, &ctx.s);
+  if( sqlite3VdbeMemTooBig(pTos) ){
+    goto too_big;
+  }
   break;
 }
 
@@ -2003,6 +2021,9 @@ case OP_Column: {
     assert( pTos->flags==MEM_Null );
     break;
   }
+  if( payloadSize>SQLITE_MAX_LENGTH ){
+    goto too_big;
+  }
 
   assert( p2<nField );
 
@@ -2211,9 +2232,9 @@ case OP_MakeRecord: {
   u8 *zNewRecord;        /* A buffer to hold the data for the new record */
   Mem *pRec;             /* The new record */
   Mem *pRowid = 0;       /* Rowid appended to the new record */
-  int nData = 0;         /* Number of bytes of data space */
+  u64 nData = 0;         /* Number of bytes of data space */
   int nHdr = 0;          /* Number of bytes of header space */
-  int nByte = 0;         /* Data space required for this record */
+  u64 nByte = 0;         /* Data space required for this record */
   int nZero = 0;         /* Number of zero bytes at the end of the record */
   int nVarint;           /* Number of bytes in a varint */
   u32 serial_type;       /* Type field */
@@ -2284,6 +2305,9 @@ case OP_MakeRecord: {
     nHdr++;
   }
   nByte = nHdr+nData-nZero;
+  if( nByte>SQLITE_MAX_LENGTH ){
+    goto too_big;
+  }
 
   /* Allocate space for the new record. */
   if( nByte>sizeof(zTemp) ){
@@ -3557,9 +3581,15 @@ case OP_RowData: {
       i64 n64;
       assert( !pC->isTable );
       sqlite3BtreeKeySize(pCrsr, &n64);
+      if( n64>SQLITE_MAX_LENGTH ){
+        goto too_big;
+      }
       n = n64;
     }else{
       sqlite3BtreeDataSize(pCrsr, &n);
+    }
+    if( n>SQLITE_MAX_LENGTH ){
+      goto too_big;
     }
     pTos->n = n;
     if( n<=NBFS ){
@@ -3579,6 +3609,7 @@ case OP_RowData: {
     }
   }else if( pC->pseudoTable ){
     pTos->n = pC->nData;
+    assert( pC->nData<=SQLITE_MAX_LENGTH );
     pTos->z = pC->pData;
     pTos->flags = MEM_Blob|MEM_Ephem;
   }else{
@@ -4580,6 +4611,9 @@ case OP_AggFinal: {        /* no-push */
   if( rc==SQLITE_ERROR ){
     sqlite3SetString(&p->zErrMsg, sqlite3_value_text(pMem), (char*)0);
   }
+  if( sqlite3VdbeMemTooBig(pMem) ){
+    goto too_big;
+  }
   break;
 }
 
@@ -4872,7 +4906,12 @@ case OP_VColumn: {
     pTos->flags = 0;
     sqlite3VdbeMemMove(pTos, &sContext.s);
 
-    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
+    if( sqlite3SafetyOn(db) ){
+      goto abort_due_to_misuse;
+    }
+    if( sqlite3VdbeMemTooBig(pTos) ){
+      goto too_big;
+    }
   }
   
   break;
@@ -5032,6 +5071,7 @@ default: {
     */
     if( pTos>=p->aStack && pTos->flags ){
       sqlite3VdbeMemSanity(pTos);
+      assert( !sqlite3VdbeMemTooBig(pTos) );
     }
     assert( pc>=-1 && pc<p->nOp );
 #ifdef SQLITE_DEBUG
@@ -5075,6 +5115,14 @@ vdbe_halt:
   sqlite3VdbeHalt(p);
   p->pTos = pTos;
   return rc;
+
+  /* Jump to here if a string or blob larger than SQLITE_MAX_LENGTH
+  ** is encountered.
+  */
+too_big:
+  sqlite3SetString(&p->zErrMsg, "string or blob too big", (char*)0);
+  rc = SQLITE_TOOBIG;
+  goto vdbe_halt;
 
   /* Jump to here if a malloc() fails.  It's hard to get a malloc()
   ** to fail on a modern VM computer, so this code is untested.

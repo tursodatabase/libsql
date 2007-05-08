@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.374 2007/05/08 01:08:49 drh Exp $
+** $Id: main.c,v 1.375 2007/05/08 12:12:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -270,6 +270,7 @@ const char *sqlite3ErrStr(int rc){
     case SQLITE_CANTOPEN:   z = "unable to open database file";          break;
     case SQLITE_EMPTY:      z = "table contains no data";                break;
     case SQLITE_SCHEMA:     z = "database schema has changed";           break;
+    case SQLITE_TOOBIG:     z = "String or BLOB exceeded size limit";    break;
     case SQLITE_CONSTRAINT: z = "constraint failed";                     break;
     case SQLITE_MISMATCH:   z = "datatype mismatch";                     break;
     case SQLITE_MISUSE:     z = "library routine called out of sequence";break;

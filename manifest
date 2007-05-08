@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\stest\slogic\sintroduced\sby\scheck-in\s(3928).\s(CVS\s3942)
-D 2007-05-08T11:27:16
+C Begin\sadding\scode\sto\sexplicitly\slimit\sthe\ssize\sof\sstrings\sand\sblobs.\s(CVS\s3943)
+D 2007-05-08T12:12:17
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -71,14 +71,14 @@ F src/date.c c34a9c86ffd6da4cb3903ea038d977ec539d07e2
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 2f0f9f89efe9170e5e6ca5d5e93a9d5896fff5ac
-F src/func.c af70f33e3f68aec76c9357c3f128265eb86a3304
+F src/func.c 755a8c58cd05d290fa2388bd471f8781afe2c1c7
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c e595ca26805dfb3a9ebaabc28e7947c479f3b14d
 F src/legacy.c 388c71ad7fbcd898ba1bcbfc98a3ac954bfa5d01
 F src/limits.h 74b7f201cf75d0cffcfc40757de0e4caeeb1fca1
 F src/loadext.c afe4f4755dc49c36ef505748bbdddecb9f1d02a2
-F src/main.c 00e01d7912e40b81546f4e6ddf7bda54b430dbd1
+F src/main.c 35b340716319e88817493172aa63abe8be13b543
 F src/malloc.c b89e31258a85158d15795bf87ae3ba007e56329b
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 4650e98aadd27abfe1698ff58edf6893c58d4881
@@ -132,14 +132,14 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c e64a48bc21aa973eb622dd47da87d56a4cdcf528
 F src/util.c 5eff5cec4ae43490ca3fb97f10a25aac1a5f9b55
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c a839d32a1b95d994cfcf3545d4b6c3d9ec6d4ce6
+F src/vdbe.c c942cb1882954e029e9788e07b709d12fba7ea47
 F src/vdbe.h 0025259af1939fb264a545816c69e4b5b8d52691
-F src/vdbeInt.h cb02cbbceddf3b40d49012e9f41576f17bcbec97
+F src/vdbeInt.h 77a17f1a8bcbbb660bf4515c78d74280b4e8be5c
 F src/vdbeapi.c 37d793559390bec8a00c556f651f21b5f9e589af
 F src/vdbeaux.c c432e17fef6efaf102d507e979cee4e47f6ceac4
 F src/vdbeblob.c 57127dc9fd01f3fded2eab30b5842f5f96b1c42b
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
-F src/vdbemem.c ba98f8572ec4609846b368fa7580db178022f1bb
+F src/vdbemem.c 44b71bf94b88a75b638ceed402e85a58053bbb64
 F src/vtab.c c5ebebf615b2f29499fbe97a584c4bb342632aa0
 F src/where.c f3920748cc650fc25ac916215500bdb90dee568e
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -485,7 +485,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 93b623b232a43f78d2c90bfa2389dd5b28ad7280
-R f8306b3bcfa5052b18e3cea33a102c6a
+P 47d1678d2d795196e51b7f0f185198f2b338636b
+R b785353f241f93b7ecd6b37b57a11d53
 U drh
-Z daa5ba85be62426bc10ead0ba639c7a9
+Z 4ce6f9af2bdc06bd49e2cf4b9fd38709

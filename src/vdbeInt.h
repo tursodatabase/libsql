@@ -378,6 +378,7 @@ int sqlite3VdbeExec(Vdbe*);
 int sqlite3VdbeList(Vdbe*);
 int sqlite3VdbeHalt(Vdbe*);
 int sqlite3VdbeChangeEncoding(Mem *, int);
+int sqlite3VdbeMemTooBig(Mem*);
 int sqlite3VdbeMemCopy(Mem*, const Mem*);
 void sqlite3VdbeMemShallowCopy(Mem*, const Mem*, int);
 int sqlite3VdbeMemMove(Mem*, Mem*);

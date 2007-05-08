@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.146 2007/05/07 19:31:16 drh Exp $
+** $Id: func.c,v 1.147 2007/05/08 12:12:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -156,7 +156,8 @@ static void substrFunc(
   const unsigned char *z;
   const unsigned char *z2;
   int i;
-  int p1, p2, len;
+  int len;
+  i64 p1, p2;
 
   assert( argc==3 );
   z = sqlite3_value_text(argv[0]);
@@ -296,7 +297,13 @@ static void randomBlob(
   unsigned char *p;
   assert( argc==1 );
   n = sqlite3_value_int(argv[0]);
-  if( n<1 ) n = 1;
+  if( n<1 ){
+    n = 1;
+  }
+  if( n>SQLITE_MAX_LENGTH ){
+    sqlite3_result_error(context, "randomblob() too large", -1);
+    return;
+  }
   p = sqliteMalloc(n);
   if( p ){
     sqlite3Randomness(n, p);
@@ -616,6 +623,10 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       int nBlob = sqlite3_value_bytes(argv[0]);
       char const *zBlob = sqlite3_value_blob(argv[0]);
 
+      if( 2*nBlob+4>SQLITE_MAX_LENGTH ){
+        sqlite3_result_error(context, "BLOB too big to quote", -1);
+        return;
+      }
       zText = (char *)sqliteMalloc((2*nBlob)+4); 
       if( !zText ){
         sqlite3_result_error(context, "out of memory", -1);
@@ -635,12 +646,17 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       break;
     }
     case SQLITE_TEXT: {
-      int i,j,n;
+      int i,j;
+      u64 n;
       const unsigned char *zArg = sqlite3_value_text(argv[0]);
       char *z;
 
       if( zArg==0 ) return;
-      for(i=n=0; zArg[i]; i++){ if( zArg[i]=='\'' ) n++; }
+      for(i=0, n=0; zArg[i]; i++){ if( zArg[i]=='\'' ) n++; }
+      if( i+n+3>SQLITE_MAX_LENGTH ){
+        sqlite3_result_error(context, "string too big to quote", -1);
+        return;
+      }
       z = sqliteMalloc( i+n+3 );
       if( z==0 ) return;
       z[0] = '\'';
@@ -672,6 +688,10 @@ static void hexFunc(
   char *zHex, *z;
   assert( argc==1 );
   n = sqlite3_value_bytes(argv[0]);
+  if( n*2+1>SQLITE_MAX_LENGTH ){
+    sqlite3_result_error(context, "BLOB too big to convert to hex", -1);
+    return;
+  }
   pBlob = sqlite3_value_blob(argv[0]);
   z = zHex = sqlite3_malloc(n*2 + 1);
   if( zHex==0 ) return;
