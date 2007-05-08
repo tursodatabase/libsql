@@ -1,0 +1,57 @@
+# 2007 May 8
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains tests to verify that the limits defined in
+# sqlite source file limits.h are enforced.
+#
+# $Id: sqllimits1.test,v 1.1 2007/05/08 15:59:06 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+#--------------------------------------------------------------------
+# Test cases sqllimits-1.* test that the SQLITE_MAX_LENGTH limit
+# is enforced.
+#
+do_test sqllimits-1.1 {
+  catchsql { SELECT randomblob(2147483647) }
+} {1 {string or blob too big}}
+
+# Large, but allowable, blob-size.
+#
+set ::LARGESIZE [expr $SQLITE_MAX_LENGTH - 1] 
+
+do_test sqllimits-1.2 {
+  catchsql { SELECT LENGTH(randomblob($::LARGESIZE)) }
+} "0 $::LARGESIZE"
+
+do_test sqllimits-1.3 {
+  catchsql { SELECT quote(randomblob($::LARGESIZE)) }
+} {1 {string or blob too big}}
+
+do_test sqllimits-1.4 {
+  set ::str [string repeat A 65537]
+  set ::rep [string repeat B 65537]
+  catchsql { SELECT replace($::str, 'A', $::rep) }
+} {1 {string or blob too big}}
+
+#--------------------------------------------------------------------
+# Test cases sqllimits-1.* test that the SQLITE_MAX_SQL limit
+# is enforced.
+#
+do_test sqllimits-2.1 {
+  set    sql "SELECT 1 WHERE 1==1"
+  append sql [string repeat " AND 1==1" 200000]
+  catchsql $sql
+} {1 {String or BLOB exceeded size limit}}
+
+finish_test
+
