@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.425 2007/05/04 18:30:41 drh Exp $
+** $Id: build.c,v 1.426 2007/05/08 01:08:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3093,7 +3093,8 @@ void sqlite3RollbackTransaction(Parse *pParse){
 int sqlite3OpenTempDatabase(Parse *pParse){
   sqlite3 *db = pParse->db;
   if( db->aDb[1].pBt==0 && !pParse->explain ){
-    int rc = sqlite3BtreeFactory(db, 0, 0, MAX_PAGES, &db->aDb[1].pBt);
+    int rc = sqlite3BtreeFactory(db, 0, 0, SQLITE_DEFAULT_CACHE_SIZE,
+                                 &db->aDb[1].pBt);
     if( rc!=SQLITE_OK ){
       sqlite3ErrorMsg(pParse, "unable to open a temporary database "
         "file for storing temporary tables");
@@ -3150,7 +3151,7 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   if( iDb>=0 ){
     assert( iDb<db->nDb );
     assert( db->aDb[iDb].pBt!=0 || iDb==1 );
-    assert( iDb<MAX_ATTACHED+2 );
+    assert( iDb<SQLITE_MAX_ATTACHED+2 );
     mask = 1<<iDb;
     if( (pParse->cookieMask & mask)==0 ){
       pParse->cookieMask |= mask;

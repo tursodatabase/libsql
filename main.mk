@@ -181,6 +181,7 @@ TESTSRC = \
   $(TOP)/src/test_autoext.c \
   $(TOP)/src/test_async.c \
   $(TOP)/src/test_btree.c \
+  $(TOP)/src/test_config.c \
   $(TOP)/src/test_hexio.c \
   $(TOP)/src/test_md5.c \
   $(TOP)/src/test_schema.c \
@@ -199,6 +200,7 @@ HDR = \
    $(TOP)/src/btree.h \
    $(TOP)/src/btreeInt.h \
    $(TOP)/src/hash.h \
+   $(TOP)/src/limits.h \
    opcodes.h \
    $(TOP)/src/os.h \
    $(TOP)/src/os_common.h \

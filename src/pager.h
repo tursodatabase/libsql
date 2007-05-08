@@ -13,37 +13,11 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.58 2007/04/13 02:14:30 drh Exp $
+** @(#) $Id: pager.h,v 1.59 2007/05/08 01:08:49 drh Exp $
 */
 
 #ifndef _PAGER_H_
 #define _PAGER_H_
-
-/*
-** The default size of a database page.
-*/
-#ifndef SQLITE_DEFAULT_PAGE_SIZE
-# define SQLITE_DEFAULT_PAGE_SIZE 1024
-#endif
-
-/* Maximum page size.  The upper bound on this value is 32768.  This a limit
-** imposed by necessity of storing the value in a 2-byte unsigned integer
-** and the fact that the page size must be a power of 2.
-**
-** This value is used to initialize certain arrays on the stack at
-** various places in the code.  On embedded machines where stack space
-** is limited and the flexibility of having large pages is not needed,
-** it makes good sense to reduce the maximum page size to something more
-** reasonable, like 1024.
-*/
-#ifndef SQLITE_MAX_PAGE_SIZE
-# define SQLITE_MAX_PAGE_SIZE 32768
-#endif
-
-/*
-** Maximum number of pages in one database.
-*/
-#define SQLITE_MAX_PAGE 1073741823
 
 /*
 ** The type used to represent a page number.  The first page in a file

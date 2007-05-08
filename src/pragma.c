@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.134 2007/05/04 18:30:41 drh Exp $
+** $Id: pragma.c,v 1.135 2007/05/08 01:08:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -309,7 +309,7 @@ void sqlite3Pragma(
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "cache_size", P3_STATIC);
       addr = sqlite3VdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
       sqlite3VdbeChangeP1(v, addr, iDb);
-      sqlite3VdbeChangeP1(v, addr+5, MAX_PAGES);
+      sqlite3VdbeChangeP1(v, addr+5, SQLITE_DEFAULT_CACHE_SIZE);
     }else{
       int size = atoi(zRight);
       if( size<0 ) size = -size;

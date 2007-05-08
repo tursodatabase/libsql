@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.373 2007/05/07 14:58:53 danielk1977 Exp $
+** $Id: main.c,v 1.374 2007/05/08 01:08:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -964,7 +964,8 @@ static int openDatabase(
   }
 
   /* Open the backend database driver */
-  rc = sqlite3BtreeFactory(db, zFilename, 0, MAX_PAGES, &db->aDb[0].pBt);
+  rc = sqlite3BtreeFactory(db, zFilename, 0, SQLITE_DEFAULT_CACHE_SIZE,
+                           &db->aDb[0].pBt);
   if( rc!=SQLITE_OK ){
     sqlite3Error(db, rc, 0);
     db->magic = SQLITE_MAGIC_CLOSED;

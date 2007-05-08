@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter2.test,v 1.7 2007/04/02 12:29:01 danielk1977 Exp $
+# $Id: alter2.test,v 1.8 2007/05/08 01:08:49 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -258,7 +258,7 @@ do_test alter2-4.5 {
 # Check that executing VACUUM on a file with file-format version 2
 # resets the file format to 1.
 #
-set default_file_format [expr $sqlite_default_file_format==4 ? 4 : 1]
+set default_file_format [expr $SQLITE_DEFAULT_FILE_FORMAT==4 ? 4 : 1]
 do_test alter2-5.1 {
   set_file_format 2
   get_file_format
