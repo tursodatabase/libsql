@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.135 2007/05/08 01:08:49 drh Exp $
+** $Id: pragma.c,v 1.136 2007/05/08 14:51:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -342,6 +342,27 @@ void sqlite3Pragma(
     }else{
       sqlite3BtreeSetPageSize(pBt, atoi(zRight), -1);
     }
+  }else
+
+  /*
+  **  PRAGMA [database.]max_page_count
+  **  PRAGMA [database.]max_page_count=N
+  **
+  ** The first form reports the current setting for the
+  ** maximum number of pages in the database file.  The 
+  ** second form attempts to change this setting.  Both
+  ** forms return the current setting.
+  */
+  if( sqlite3StrICmp(zLeft,"max_page_count")==0 ){
+    Btree *pBt = pDb->pBt;
+    int newMax = 0;
+    if( zRight ){
+      newMax = atoi(zRight);
+    }
+    if( pBt ){
+      newMax = sqlite3BtreeMaxPageCount(pBt, newMax);
+    }
+    returnSingleInt(pParse, "max_page_count", newMax);
   }else
 
   /*

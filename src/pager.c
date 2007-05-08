@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.336 2007/05/05 11:48:54 drh Exp $
+** @(#) $Id: pager.c,v 1.337 2007/05/08 14:51:37 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -256,9 +256,9 @@ struct Pager {
   int nExtra;                 /* Add this many bytes to each in-memory page */
   int pageSize;               /* Number of bytes in a page */
   int nPage;                  /* Total number of in-memory pages */
-  int nMaxPage;               /* High water mark of nPage */
   int nRef;                   /* Number of in-memory pages with PgHdr.nRef>0 */
   int mxPage;                 /* Maximum number of pages to hold in cache */
+  Pgno mxPgno;                /* Maximum allowed size of the database */
   u8 *aInJournal;             /* One bit for each page in the database file */
   u8 *aInStmt;                /* One bit for each page in the database */
   char *zFilename;            /* Name of the database file */
@@ -1751,8 +1751,8 @@ int sqlite3PagerOpen(
   /* pPager->stmtSize = 0; */
   /* pPager->stmtJSize = 0; */
   /* pPager->nPage = 0; */
-  /* pPager->nMaxPage = 0; */
   pPager->mxPage = 100;
+  pPager->mxPgno = SQLITE_MAX_PAGE_COUNT;
   assert( PAGER_UNLOCK==0 );
   /* pPager->state = PAGER_UNLOCK; */
   /* pPager->errMask = 0; */
@@ -1827,6 +1827,21 @@ int sqlite3PagerSetPagesize(Pager *pPager, int pageSize){
     pPager->pTmpSpace = sqlite3ReallocOrFree(pPager->pTmpSpace, pageSize);
   }
   return pPager->pageSize;
+}
+
+/*
+** Attempt to set the maximum database page count if mxPage is positive. 
+** Make no changes if mxPage is zero or negative.  And never reduce the
+** maximum page count below the current size of the database.
+**
+** Regardless of mxPage, return the current maximum page count.
+*/
+int sqlite3PagerMaxPageCount(Pager *pPager, int mxPage){
+  if( mxPage>0 ){
+    pPager->mxPgno = mxPage;
+  }
+  sqlite3PagerPagecount(pPager);
+  return pPager->mxPgno;
 }
 
 /*
@@ -1913,6 +1928,9 @@ int sqlite3PagerPagecount(Pager *pPager){
   }
   if( n==(PENDING_BYTE/pPager->pageSize) ){
     n++;
+  }
+  if( n>pPager->mxPgno ){
+    pPager->mxPgno = n;
   }
   return n;
 }
@@ -2912,10 +2930,6 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
     pPg->pNextAll = pPager->pAll;
     pPager->pAll = pPg;
     pPager->nPage++;
-    if( pPager->nPage>pPager->nMaxPage ){
-      assert( pPager->nMaxPage==(pPager->nPage-1) );
-      pPager->nMaxPage++;
-    }
   }else{
     /* Recycle an existing page with a zero ref-count. */
     rc = pager_recycle(pPager, 1, &pPg);
@@ -3060,6 +3074,9 @@ int sqlite3PagerAcquire(
     ** file, or by setting the entire page to zero.
     */
     if( nMax<(int)pgno || MEMDB || (noContent && !pPager->alwaysRollback) ){
+      if( pgno>pPager->mxPgno ){
+        return SQLITE_FULL;
+      }
       memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);
       pPg->needRead = noContent && !pPager->alwaysRollback;
       IOTRACE(("ZERO %p %d\n", pPager, pgno));

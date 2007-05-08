@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.23 2007/05/04 19:16:30 drh Exp $}
+set rcsid {$Id: pragma.tcl,v 1.24 2007/05/08 14:51:37 drh Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -336,6 +336,16 @@ PRAGMA <b>main.</b>locking_mode=EXCLUSIVE;
     than or equal to 8192. The upper limit may be modified by setting
     the value of macro SQLITE_MAX_PAGE_SIZE during compilation.  The
     maximum upper bound is 32768.
+    </p>
+</li>
+
+<a name="pragma_max_page_count"></a>
+<li><p><b>PRAGMA max_page_count;
+       <br>PRAGMA max_page_count = </b><i>N</i><b>;</b></p>
+    <p>Query or set the maximum number of pages in the database file.
+    Both forms of the pragma return the maximum page count.  The second
+    form attempts to modify the maximum page count.  The maximum page
+    count cannot be reduced below the current database size.
     </p>
 </li>
 

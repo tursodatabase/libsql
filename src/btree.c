@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.377 2007/05/05 18:39:25 drh Exp $
+** $Id: btree.c,v 1.378 2007/05/08 14:51:37 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1331,6 +1331,15 @@ int sqlite3BtreeGetPageSize(Btree *p){
 }
 int sqlite3BtreeGetReserve(Btree *p){
   return p->pBt->pageSize - p->pBt->usableSize;
+}
+
+/*
+** Set the maximum page count for a database if mxPage is positive.
+** No changes are made if mxPage is 0 or negative.
+** Regardless of the value of mxPage, return the maximum page count.
+*/
+int sqlite3BtreeMaxPageCount(Btree *p, int mxPage){
+  return sqlite3PagerMaxPageCount(p->pBt->pPager, mxPage);
 }
 #endif /* !defined(SQLITE_OMIT_PAGER_PRAGMAS) || !defined(SQLITE_OMIT_VACUUM) */
 

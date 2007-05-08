@@ -12,7 +12,7 @@
 ** 
 ** This file defines various limits of what SQLite can process.
 **
-** @(#) $Id: limits.h,v 1.2 2007/05/08 13:58:28 drh Exp $
+** @(#) $Id: limits.h,v 1.3 2007/05/08 14:51:37 drh Exp $
 */
 
 /*
@@ -126,6 +126,10 @@
 
 /*
 ** Maximum number of pages in one database file.
+**
+** This is really just the default value for the max_page_count pragma.
+** This value can be lowered (or raised) at run-time using that the
+** max_page_count macro.
 */
 #ifndef SQLITE_MAX_PAGE_COUNT
 # define SQLITE_MAX_PAGE_COUNT 1073741823
