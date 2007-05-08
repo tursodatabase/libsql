@@ -1,5 +1,5 @@
-C Begin\simplementing\sa\snew\ssystem\sof\supper\sbounds\son\sthe\scapabilities\nof\sSQLite.\s\sBy\sclearly\sdefining\sthe\supper\sbounds,\swe\smake\sthose\nupper\sbounds\sexplicitly\stestable.\s\sThis\scheck-in\sis\sjust\sinfrastructure.\nThe\supper\sbounds\sare\snot\syet\senforced.\s(CVS\s3941)
-D 2007-05-08T01:08:49
+C Fix\sa\sbug\sin\sthe\stest\slogic\sintroduced\sby\scheck-in\s(3928).\s(CVS\s3942)
+D 2007-05-08T11:27:16
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -118,7 +118,7 @@ F src/test8.c c3c4aeea4e3d70966306d6eca1b77ce7eee2f059
 F src/test9.c c0f38f7795cc51d37db6c63874d90f40f10d0f0e
 F src/test_async.c 9d326ceda4306bcab252b8f7e8e480ed45d7ccb6
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
-F src/test_btree.c 893030a3c49ea36e9b15b01f1609727dfb11c81e
+F src/test_btree.c 882d59acad48bab3b1fe3daf3645059b590cfc79
 F src/test_config.c 8a66329b3f2fbb17d8ce00716eb611fa49f0887e
 F src/test_hexio.c 32204b5ce281ebc85f789c69c4ec725129e7e7f5
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
@@ -485,7 +485,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 011e7db253f9a60c19977215eab1687930f15637
-R faa0278e71cd09a73d2214e06a4fda94
+P 93b623b232a43f78d2c90bfa2389dd5b28ad7280
+R f8306b3bcfa5052b18e3cea33a102c6a
 U drh
-Z c1e9d01494d36f3a8240dd080ff3a867
+Z daa5ba85be62426bc10ead0ba639c7a9
