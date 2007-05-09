@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.1 2007/05/08 01:08:49 drh Exp $
+** $Id: test_config.c,v 1.2 2007/05/09 08:24:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -377,6 +377,11 @@ static void set_options(Tcl_Interp *interp){
            (char*)&sqlite_max_column, TCL_LINK_INT|TCL_LINK_READ_ONLY);
   }
   {
+    static int sqlite_max_sql_length = SQLITE_MAX_SQL_LENGTH;
+    Tcl_LinkVar(interp, "SQLITE_MAX_SQL_LENGTH",
+           (char*)&sqlite_max_sql_length, TCL_LINK_INT|TCL_LINK_READ_ONLY);
+  }
+  {
     static int sqlite_max_expr_length = SQLITE_MAX_EXPR_LENGTH;
     Tcl_LinkVar(interp, "SQLITE_MAX_EXPR_LENGTH",
            (char*)&sqlite_max_expr_length, TCL_LINK_INT|TCL_LINK_READ_ONLY);
@@ -431,6 +436,11 @@ static void set_options(Tcl_Interp *interp){
     static int sqlite_default_file_format = SQLITE_DEFAULT_FILE_FORMAT;
     Tcl_LinkVar(interp, "SQLITE_DEFAULT_FILE_FORMAT",
            (char*)&sqlite_default_file_format, TCL_LINK_INT|TCL_LINK_READ_ONLY);
+  }
+  {
+    static int sqlite_max_like_pattern = SQLITE_MAX_LIKE_PATTERN_LENGTH;
+    Tcl_LinkVar(interp, "SQLITE_MAX_LIKE_PATTERN_LENGTH",
+           (char*)&sqlite_max_like_pattern, TCL_LINK_INT|TCL_LINK_READ_ONLY);
   }
 }
 

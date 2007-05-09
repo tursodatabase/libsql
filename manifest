@@ -1,5 +1,5 @@
-C Remove\sa\skeyword\sfrom\sthe\sheader\scomment\sin\sdate.c\s(CVS\s3961)
-D 2007-05-08T21:56:00
+C Fix\senforcement\sof\sthe\sLIKE_PATTERN\slimit.\s(CVS\s3962)
+D 2007-05-09T08:24:44
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -71,7 +71,7 @@ F src/date.c 6049db7d5a8fdf2c677ff7d58fa31d4f6593c988
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c eb91a54d0c2a3bebfcf91deda95508a188c2ed63
-F src/func.c 1fccb0372041188f4240350553164704e8aebeb4
+F src/func.c 6282d2025d8e0db80b43783a4778cbb04e98f2f6
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c e595ca26805dfb3a9ebaabc28e7947c479f3b14d
@@ -119,7 +119,7 @@ F src/test9.c c0f38f7795cc51d37db6c63874d90f40f10d0f0e
 F src/test_async.c 9d326ceda4306bcab252b8f7e8e480ed45d7ccb6
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c 882d59acad48bab3b1fe3daf3645059b590cfc79
-F src/test_config.c 8a66329b3f2fbb17d8ce00716eb611fa49f0887e
+F src/test_config.c c267103cac3733a0d14a0b8d3fa8c22b22fb468a
 F src/test_hexio.c 32204b5ce281ebc85f789c69c4ec725129e7e7f5
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
@@ -340,7 +340,7 @@ F test/shared_err.test cc528f6e78665787e93d9ce3a782a2ce5179d821
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
-F test/sqllimits1.test 02a33a7f6c0064be4e5133327975ce5e69342a4f
+F test/sqllimits1.test 7fff0aaf860bdd65ba9c45969f1d17ca4f6c9a8c
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
@@ -486,7 +486,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c5754530c6b1a8151c558f33d27fed70c95a988b
-R b5f8e28bbaf447fb3e0fb1a48ce02db9
-U drh
-Z 0e6336c72c0c38d732834ceb058795ef
+P 03349ec0be208fd8701d94515a2ed13129cb8422
+R f2e9dd7272549bf53a2372232b2e3902
+U danielk1977
+Z ddbbd47818532a8c09b0749d1c22ef8a

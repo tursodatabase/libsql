@@ -12,10 +12,29 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.3 2007/05/08 17:54:44 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.4 2007/05/09 08:24:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Test organization:
+#
+#     sqllimits-1.*:  SQLITE_MAX_LENGTH
+#     sqllimits-2.*:  SQLITE_MAX_SQL_LENGTH
+#     sqllimits-3.*:  SQLITE_MAX_PAGE_COUNT
+#     sqllimits-4.*:  SQLITE_MAX_COLUMN
+#
+# Todo:
+#
+#     sqllimits-5.*:   SQLITE_MAX_EXPR_LENGTH           (sqlite todo)
+#     sqllimits-6.*:   SQLITE_MAX_VDBE_OP               (sqlite todo)
+#     sqllimits-7.*:   SQLITE_MAX_FUNCTION_ARG  
+#     sqllimits-8.*:   SQLITE_MAX_ATTACHED
+#     sqllimits-9.*:   SQLITE_MAX_VARIABLE_NUMBER
+#     sqllimits-10.*:  SQLITE_MAX_PAGE_SIZE
+#     sqllimits-11.*:  SQLITE_MAX_PAGE_COUNT
+#     sqllimits-12.*:  SQLITE_MAX_LIKE_PATTERN_LENGTH
+#
 
 #--------------------------------------------------------------------
 # Test cases sqllimits-1.* test that the SQLITE_MAX_LENGTH limit
@@ -44,12 +63,13 @@ do_test sqllimits-1.4 {
 } {1 {string or blob too big}}
 
 #--------------------------------------------------------------------
-# Test cases sqllimits-2.* test that the SQLITE_MAX_SQL limit
+# Test cases sqllimits-2.* test that the SQLITE_MAX_SQL_LENGTH limit
 # is enforced.
 #
 do_test sqllimits-2.1 {
   set    sql "SELECT 1 WHERE 1==1"
-  append sql [string repeat " AND 1==1" 200000]
+  set N [expr {$::SQLITE_MAX_SQL_LENGTH / [string length " AND 1==1"]}]
+  append sql [string repeat " AND 1==1" $N]
   catchsql $sql
 } {1 {String or BLOB exceeded size limit}}
 
@@ -141,6 +161,7 @@ do_test sqllimits1-3.6 {
 # Test cases sqllimits1-4.* test the SQLITE_MAX_COLUMN limit.
 #
 do_test sqllimits-1.4.1 {
+  # Columns in a table.
   set cols [list]
   for {set i 0} {$i <= $SQLITE_MAX_COLUMN} {incr i} {
     lappend cols "c$i"
@@ -149,6 +170,7 @@ do_test sqllimits-1.4.1 {
 } {1 {too many columns on t}}
 
 do_test sqllimits-1.4.2 {
+  # Columns in the result-set of a SELECT.
   set cols [list]
   for {set i 0} {$i <= $SQLITE_MAX_COLUMN} {incr i} {
     lappend cols "sql AS sql$i"
@@ -157,6 +179,7 @@ do_test sqllimits-1.4.2 {
 } {1 {too many columns in result set}}
 
 do_test sqllimits-1.4.3 {
+  # Columns in the result-set of a sub-SELECT.
   set cols [list]
   for {set i 0} {$i <= $SQLITE_MAX_COLUMN} {incr i} {
     lappend cols "sql AS sql$i"
@@ -165,6 +188,7 @@ do_test sqllimits-1.4.3 {
 } {1 {too many columns in result set}}
 
 do_test sqllimits-1.4.4 {
+  # Columns in an index.
   set cols [list]
   for {set i 0} {$i <= $SQLITE_MAX_COLUMN} {incr i} {
     lappend cols c
@@ -175,20 +199,76 @@ do_test sqllimits-1.4.4 {
 } {1 {too many columns in index}}
 
 do_test sqllimits-1.4.5 {
+  # Columns in a GROUP BY clause.
   catchsql "SELECT * FROM t1 GROUP BY [join $cols ,]"
 } {1 {too many terms in GROUP BY clause}}
 
 do_test sqllimits-1.4.6 {
+  # Columns in an ORDER BY clause.
   catchsql "SELECT * FROM t1 ORDER BY [join $cols ,]"
 } {1 {too many terms in ORDER BY clause}}
 
 do_test sqllimits-1.4.7 {
+  # Assignments in an UPDATE statement.
   set cols [list]
   for {set i 0} {$i <= $SQLITE_MAX_COLUMN} {incr i} {
     lappend cols "c = 1"
   }
   catchsql "UPDATE t1 SET [join $cols ,];"
 } {1 {too many columns in set list}}
+
+do_test sqllimits-1.4.8 {
+  # Columns in a view definition:
+  set cols [list]
+  for {set i 0} {$i <= $SQLITE_MAX_COLUMN} {incr i} {
+    lappend cols "c$i"
+  }
+  catchsql "CREATE VIEW v1 AS SELECT [join $cols ,] FROM t1;"
+} {1 {too many columns in result set}}
+
+do_test sqllimits-1.4.9 {
+  # Columns in a view definition (testing * expansion):
+  set cols [list]
+  for {set i 0} {$i < $SQLITE_MAX_COLUMN} {incr i} {
+    lappend cols "c$i"
+  }
+  catchsql "CREATE TABLE t2([join $cols ,])"
+  catchsql "CREATE VIEW v1 AS SELECT *, c1 AS o FROM t2;"
+} {1 {too many columns in result set}}
+
+#--------------------------------------------------------------------
+# These tests - sqllimits-5.* - test that the SQLITE_MAX_EXPR_LENGTH
+# limit is enforced. The limit refers to the number of terms in 
+# the expression.
+#
+
+#--------------------------------------------------------------------
+# Test cases sqllimits-12.* verify that the 
+# SQLITE_MAX_LIKE_PATTERN_LENGTH limit is enforced. This limit only
+# applies to the built-in LIKE operator, supplying an external 
+# implementation by overriding the like() scalar function bypasses
+# this limitation.
+#
+# These tests check that the limit is not incorrectly applied to
+# the left-hand-side of the LIKE operator (the string being tested
+# against the pattern).
+#
+do_test sqllimits-1.12.1 {
+  set max $::SQLITE_MAX_LIKE_PATTERN_LENGTH
+  set ::pattern [string repeat "A%" [expr $max/2]]
+  set ::string  [string repeat "A" [expr {$max*2}]]
+  execsql {
+    SELECT $::string LIKE $::pattern;
+  }
+} {1}
+do_test sqllimits-1.12.2 {
+  set max $::SQLITE_MAX_LIKE_PATTERN_LENGTH
+  set ::pattern [string repeat "A%" [expr {($max/2) + 1}]]
+  set ::string  [string repeat "A" [expr {$max*2}]]
+  catchsql {
+    SELECT $::string LIKE $::pattern;
+  }
+} {1 {LIKE or GLOB pattern too complex}}
 
 finish_test
 
