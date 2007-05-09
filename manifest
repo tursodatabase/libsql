@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment.\s\sTicket\s#2348.\s(CVS\s3966)
-D 2007-05-09T20:35:31
+C Make\ssure\scompound\squeries\sinside\sa\ssubquery\sonly\sreturn\sa\ssingle\sresult\ncolumn.\s\sTicket\s#2347.\s(CVS\s3967)
+D 2007-05-09T22:56:39
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -99,7 +99,7 @@ F src/pragma.c 0703152b9edd6601eea95e1d474b3bc2962d7920
 F src/prepare.c 87c23644986b5e41a58bc76f05abebd899e00089
 F src/printf.c 67de0dcb40ef3297f4a047b434b81585c0f7062d
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
-F src/select.c 114e7ebaa2e41d83687f0c7c5f53daa7e7af8d3a
+F src/select.c 87bcf7406ab55baec791c49f8926def7bb1c07e2
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
 F src/sqlite.h.in 664b8702c27dc742584788823c548491ac8935d6
@@ -331,7 +331,7 @@ F test/select3.test 2d473f45c57c0526833e045fca0537badec0dd04
 F test/select4.test 305ba0a6e97efc5544def5e5cb49b54e1bf87fd9
 F test/select5.test 0b47058d3e916c1fc9fe81f44b438e02bade21ce
 F test/select6.test 399f14b9ba37b768afe5d2cd8c12e4f340a69db8
-F test/select7.test 95697d8e8355ef7538e2fe768da16838bbd0fcde
+F test/select7.test ea2af8688973c6cf801c6db137f74fde54a8777f
 F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
 F test/shared.test 5c39f216ce85d723eda5875804bbf5ef8a03fcfc
 F test/shared2.test 8b48f8d33494413ef4cf250110d89403e2bf6b23
@@ -486,7 +486,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0c91dc9ee0c5d441a7789b631476515260cb887f
-R 46e17a3ab70f103cc105842211d40f7b
+P c0dbac46301039246afd4bebb71dd8184fc5c0c7
+R ce1d9a31f5642fc3adec7a89c841905a
 U drh
-Z 79e08606393f6895398b258e63ee3fab
+Z f08cc8911b7b4f7d10aa7482cf6b823e

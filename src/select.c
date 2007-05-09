@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.342 2007/05/08 13:58:28 drh Exp $
+** $Id: select.c,v 1.343 2007/05/09 22:56:39 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -434,6 +434,21 @@ static void codeDistinct(
   sqlite3VdbeAddOp(v, OP_IdxInsert, iTab, 0);
 }
 
+/*
+** Generate an error message when a SELECT is used within a subexpression
+** (example:  "a IN (SELECT * FROM table)") but it has more than 1 result
+** column.  We do this in a subroutine because the error occurs in multiple
+** places.
+*/
+static int checkForMultiColumnSelectError(Parse *pParse, int eDest, int nExpr){
+  if( nExpr>1 && (eDest==SRT_Mem || eDest==SRT_Set) ){
+    sqlite3ErrorMsg(pParse, "only a single result allowed for "
+       "a SELECT that is part of an expression");
+    return 1;
+  }else{
+    return 0;
+  }
+}
 
 /*
 ** This routine generates the code for the inside of the inner loop
@@ -495,6 +510,10 @@ static int selectInnerLoop(
     if( pOrderBy==0 ){
       codeOffset(v, p, iContinue, nColumn);
     }
+  }
+
+  if( checkForMultiColumnSelectError(pParse, eDest, pEList->nExpr) ){
+    return 0;
   }
 
   switch( eDest ){
@@ -2889,9 +2908,7 @@ int sqlite3Select(
   ** only a single column may be output.
   */
 #ifndef SQLITE_OMIT_SUBQUERY
-  if( (eDest==SRT_Mem || eDest==SRT_Set) && pEList->nExpr>1 ){
-    sqlite3ErrorMsg(pParse, "only a single result allowed for "
-       "a SELECT that is part of an expression");
+  if( checkForMultiColumnSelectError(pParse, eDest, pEList->nExpr) ){
     goto select_end;
   }
 #endif

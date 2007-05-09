@@ -10,7 +10,7 @@
 # focus of this file is testing compute SELECT statements and nested
 # views.
 #
-# $Id: select7.test,v 1.8 2006/10/13 15:34:17 drh Exp $
+# $Id: select7.test,v 1.9 2007/05/09 22:56:39 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -103,7 +103,36 @@ ifcapable {subquery && compound} {
       );
     }
   } {2 3}
+}
 
+# ticket #2347
+#
+ifcapable {subquery && compound} {
+  do_test select7-5.1 {
+    catchsql {
+      CREATE TABLE t2(a,b);
+      SELECT 5 IN (SELECT a,b FROM t2);
+    }
+  } [list 1 \
+     {only a single result allowed for a SELECT that is part of an expression}]
+  do_test select7-5.2 {
+    catchsql {
+      SELECT 5 IN (SELECT * FROM t2);
+    }
+  } [list 1 \
+     {only a single result allowed for a SELECT that is part of an expression}]
+  do_test select7-5.3 {
+    catchsql {
+      SELECT 5 IN (SELECT a,b FROM t2 UNION SELECT b,a FROM t2);
+    }
+  } [list 1 \
+     {only a single result allowed for a SELECT that is part of an expression}]
+  do_test select7-5.4 {
+    catchsql {
+      SELECT 5 IN (SELECT * FROM t2 UNION SELECT * FROM t2);
+    }
+  } [list 1 \
+     {only a single result allowed for a SELECT that is part of an expression}]
 }
 
 finish_test
