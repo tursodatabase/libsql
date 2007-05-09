@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.4 2007/05/09 08:24:44 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.5 2007/05/09 11:37:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -24,16 +24,17 @@ source $testdir/tester.tcl
 #     sqllimits-3.*:  SQLITE_MAX_PAGE_COUNT
 #     sqllimits-4.*:  SQLITE_MAX_COLUMN
 #
-# Todo:
 #
-#     sqllimits-5.*:   SQLITE_MAX_EXPR_LENGTH           (sqlite todo)
-#     sqllimits-6.*:   SQLITE_MAX_VDBE_OP               (sqlite todo)
 #     sqllimits-7.*:   SQLITE_MAX_FUNCTION_ARG  
 #     sqllimits-8.*:   SQLITE_MAX_ATTACHED
 #     sqllimits-9.*:   SQLITE_MAX_VARIABLE_NUMBER
 #     sqllimits-10.*:  SQLITE_MAX_PAGE_SIZE
-#     sqllimits-11.*:  SQLITE_MAX_PAGE_COUNT
-#     sqllimits-12.*:  SQLITE_MAX_LIKE_PATTERN_LENGTH
+#     sqllimits-11.*:  SQLITE_MAX_LIKE_PATTERN_LENGTH
+#
+# Todo:
+#
+#     sqllimits-5.*:   SQLITE_MAX_EXPR_LENGTH           (sqlite todo)
+#     sqllimits-6.*:   SQLITE_MAX_VDBE_OP               (sqlite todo)
 #
 
 #--------------------------------------------------------------------
@@ -241,9 +242,115 @@ do_test sqllimits-1.4.9 {
 # limit is enforced. The limit refers to the number of terms in 
 # the expression.
 #
+# TODO
 
 #--------------------------------------------------------------------
-# Test cases sqllimits-12.* verify that the 
+# Test cases sqllimits-6.* test that the SQLITE_MAX_VDBE_OP
+# limit works as expected. The limit refers to the number of opcodes
+# in a single VDBE program.
+#
+# TODO
+
+#--------------------------------------------------------------------
+# Test the SQLITE_MAX_FUNCTION_ARG limit works. Test case names
+# match the pattern "sqllimits-7.*".
+#
+do_test sqllimits-1.7.1 {
+  set max $::SQLITE_MAX_FUNCTION_ARG
+  set vals [list]
+  for {set i 0} {$i < $SQLITE_MAX_FUNCTION_ARG} {incr i} {
+    lappend vals $i
+  }
+  catchsql "SELECT max([join $vals ,])"
+} "0 [expr {$::SQLITE_MAX_FUNCTION_ARG - 1}]"
+do_test sqllimits-1.7.2 {
+  set max $::SQLITE_MAX_FUNCTION_ARG
+  set vals [list]
+  for {set i 0} {$i <= $SQLITE_MAX_FUNCTION_ARG} {incr i} {
+    lappend vals $i
+  }
+  catchsql "SELECT max([join $vals ,])"
+} {1 {too many arguments on function max}}
+
+# Test that it is SQLite, and not the implementation of the
+# user function that is throwing the error.
+proc myfunc {args} {error "I don't like to be called!"}
+do_test sqllimits-1.7.2 {
+  db function myfunc myfunc
+  set max $::SQLITE_MAX_FUNCTION_ARG
+  set vals [list]
+  for {set i 0} {$i <= $SQLITE_MAX_FUNCTION_ARG} {incr i} {
+    lappend vals $i
+  }
+  catchsql "SELECT myfunc([join $vals ,])"
+} {1 {too many arguments on function myfunc}}
+
+#--------------------------------------------------------------------
+# Test cases sqllimits-8.*: Test the SQLITE_MAX_ATTACHED limit.
+#
+# TODO
+do_test sqllimits-1.8.1 {
+  set max $::SQLITE_MAX_ATTACHED
+  for {set i 0} {$i < ($max)} {incr i} {
+    execsql "ATTACH 'test${i}.db' AS aux${i}"
+  }
+  catchsql "ATTACH 'test${i}.db' AS aux${i}"
+} "1 {too many attached databases - max $::SQLITE_MAX_ATTACHED}"
+do_test sqllimits-1.8.2 {
+  set max $::SQLITE_MAX_ATTACHED
+  for {set i 0} {$i < ($max)} {incr i} {
+    execsql "DETACH aux${i}"
+  }
+} {}
+
+#--------------------------------------------------------------------
+# Test cases sqllimits-9.*: Check that the SQLITE_MAX_VARIABLE_NUMBER 
+# limit works.
+#
+do_test sqllimits-1.9.1 {
+  set max $::SQLITE_MAX_VARIABLE_NUMBER
+  catchsql "SELECT ?[expr {$max+1}] FROM t1"
+} "1 {variable number must be between ?1 and ?$::SQLITE_MAX_VARIABLE_NUMBER}"
+do_test sqllimits-1.9.2 {
+  set max $::SQLITE_MAX_VARIABLE_NUMBER
+  set vals [list]
+  for {set i 0} {$i < ($max+3)} {incr i} {
+    lappend vals ?
+  }
+  catchsql "SELECT [join $vals ,] FROM t1"
+} "1 {too many SQL variables}"
+
+
+#--------------------------------------------------------------------
+# sqllimits-10.*:  Test the SQLITE_MAX_PAGE_SIZE define is enforced. 
+# This is probably tested elsewhere too (pagerX.test). Attempts
+# to raise the page size above this limit are silently ignored.
+#
+do_test sqllimits-1.10.1 {
+  db close
+  file delete -force test.db test.db-journal
+  sqlite3 db test.db
+  set max $::SQLITE_MAX_PAGE_SIZE
+  catchsql "PRAGMA page_size = [expr {$max*2}]"
+} {0 {}}
+do_test sqllimits-1.10.2 {
+  catchsql "PRAGMA page_size"
+} {0 1024}
+do_test sqllimits-1.10.3 {
+  set max $::SQLITE_MAX_PAGE_SIZE
+  catchsql "PRAGMA page_size = $max"
+} {0 {}}
+do_test sqllimits-1.10.4 {
+  execsql "pragma page_size"
+} $::SQLITE_MAX_PAGE_SIZE
+do_test sqllimits-1.10.5 {
+  set max $::SQLITE_MAX_PAGE_SIZE
+  execsql "pragma page_size = [expr {$max - 5}]"
+  execsql "pragma page_size"
+} $::SQLITE_MAX_PAGE_SIZE
+
+#--------------------------------------------------------------------
+# Test cases sqllimits-11.* verify that the 
 # SQLITE_MAX_LIKE_PATTERN_LENGTH limit is enforced. This limit only
 # applies to the built-in LIKE operator, supplying an external 
 # implementation by overriding the like() scalar function bypasses
@@ -253,7 +360,7 @@ do_test sqllimits-1.4.9 {
 # the left-hand-side of the LIKE operator (the string being tested
 # against the pattern).
 #
-do_test sqllimits-1.12.1 {
+do_test sqllimits-1.11.1 {
   set max $::SQLITE_MAX_LIKE_PATTERN_LENGTH
   set ::pattern [string repeat "A%" [expr $max/2]]
   set ::string  [string repeat "A" [expr {$max*2}]]
@@ -261,7 +368,7 @@ do_test sqllimits-1.12.1 {
     SELECT $::string LIKE $::pattern;
   }
 } {1}
-do_test sqllimits-1.12.2 {
+do_test sqllimits-1.11.2 {
   set max $::SQLITE_MAX_LIKE_PATTERN_LENGTH
   set ::pattern [string repeat "A%" [expr {($max/2) + 1}]]
   set ::string  [string repeat "A" [expr {$max*2}]]

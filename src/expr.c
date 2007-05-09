@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.287 2007/05/08 18:04:46 danielk1977 Exp $
+** $Id: expr.c,v 1.288 2007/05/09 11:37:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -413,6 +413,9 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
       }
     }
   } 
+  if( !pParse->nErr && pParse->nVar>SQLITE_MAX_VARIABLE_NUMBER ){
+    sqlite3ErrorMsg(pParse, "too many SQL variables");
+  }
 }
 
 /*

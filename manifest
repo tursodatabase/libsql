@@ -1,5 +1,5 @@
-C Fix\senforcement\sof\sthe\sLIKE_PATTERN\slimit.\s(CVS\s3962)
-D 2007-05-09T08:24:44
+C Add\sfurther\stest\scases\sfor\scompile\stime\slimits.\s(CVS\s3963)
+D 2007-05-09T11:37:23
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -70,7 +70,7 @@ F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 6049db7d5a8fdf2c677ff7d58fa31d4f6593c988
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c eb91a54d0c2a3bebfcf91deda95508a188c2ed63
+F src/expr.c 1f3c365fc5aa2a03395cf470346f3646382469c2
 F src/func.c 6282d2025d8e0db80b43783a4778cbb04e98f2f6
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
@@ -119,7 +119,7 @@ F src/test9.c c0f38f7795cc51d37db6c63874d90f40f10d0f0e
 F src/test_async.c 9d326ceda4306bcab252b8f7e8e480ed45d7ccb6
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c 882d59acad48bab3b1fe3daf3645059b590cfc79
-F src/test_config.c c267103cac3733a0d14a0b8d3fa8c22b22fb468a
+F src/test_config.c 4c1db31befcbf6206766bbbb429d0e6a1254cdc7
 F src/test_hexio.c 32204b5ce281ebc85f789c69c4ec725129e7e7f5
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
@@ -167,7 +167,7 @@ F test/avtrans.test b77740800de0d2cdcf394ef94d2d61225a1941d8
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test ebc9ce9216e08bead63734ab816d0f27858f3b80
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test 941a424e7722dd8994c2d503b28d00e6a8f87f23
+F test/bind.test b2c9938805a78adbe5953dbaaee1d6f9afce370b
 F test/bindxfer.test b9a57f66dbd317feeefa28bd65b6576f1592ee98
 F test/blob.test 28c3b25150684ee3d108bb78cfb67a472deef2f0
 F test/btree.test 8b6168980efdd194289798f19d4c81434f6d3a66
@@ -340,7 +340,7 @@ F test/shared_err.test cc528f6e78665787e93d9ce3a782a2ce5179d821
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
-F test/sqllimits1.test 7fff0aaf860bdd65ba9c45969f1d17ca4f6c9a8c
+F test/sqllimits1.test f06a5574698513b3d3e48892b36bc0549ef87295
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
@@ -486,7 +486,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 03349ec0be208fd8701d94515a2ed13129cb8422
-R f2e9dd7272549bf53a2372232b2e3902
+P 8819617b7cf7ccd64bf6bb4ba208f37126964ec2
+R 54a1b89c49a017368635873118232ab3
 U danielk1977
-Z ddbbd47818532a8c09b0749d1c22ef8a
+Z 4e9b895f8f222ff1332fffb6b3691a1c

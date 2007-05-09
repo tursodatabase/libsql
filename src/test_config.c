@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.2 2007/05/09 08:24:44 danielk1977 Exp $
+** $Id: test_config.c,v 1.3 2007/05/09 11:37:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -441,6 +441,11 @@ static void set_options(Tcl_Interp *interp){
     static int sqlite_max_like_pattern = SQLITE_MAX_LIKE_PATTERN_LENGTH;
     Tcl_LinkVar(interp, "SQLITE_MAX_LIKE_PATTERN_LENGTH",
            (char*)&sqlite_max_like_pattern, TCL_LINK_INT|TCL_LINK_READ_ONLY);
+  }
+  {
+    static int sqlite_max_attached = SQLITE_MAX_ATTACHED;
+    Tcl_LinkVar(interp, "SQLITE_MAX_ATTACHED",
+           (char*)&sqlite_max_attached, TCL_LINK_INT|TCL_LINK_READ_ONLY);
   }
 }
 
