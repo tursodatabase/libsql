@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.339 2007/05/09 15:56:40 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.340 2007/05/09 20:35:31 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2828,7 +2828,7 @@ static int pagerSharedLock(Pager *pPager){
         ** a codec is in use.
         ** 
         ** There is a vanishingly small chance that a change will not be 
-        ** deteched.  The chance of an undetected change is so small that
+        ** detected.  The chance of an undetected change is so small that
         ** it can be neglected.
         */
         char dbFileVers[sizeof(pPager->dbFileVers)];
