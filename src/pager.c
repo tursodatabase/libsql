@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.338 2007/05/08 21:45:28 drh Exp $
+** @(#) $Id: pager.c,v 1.339 2007/05/09 15:56:40 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3077,6 +3077,7 @@ int sqlite3PagerAcquire(
     */
     if( nMax<(int)pgno || MEMDB || (noContent && !pPager->alwaysRollback) ){
       if( pgno>pPager->mxPgno ){
+        sqlite3PagerUnref(pPg);
         return SQLITE_FULL;
       }
       memset(PGHDR_TO_DATA(pPg), 0, pPager->pageSize);

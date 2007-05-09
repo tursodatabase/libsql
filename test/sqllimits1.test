@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.5 2007/05/09 11:37:23 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.6 2007/05/09 15:56:40 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -157,7 +157,6 @@ do_test sqllimits1-3.6 {
   }
 } {0 7}
 
-
 #--------------------------------------------------------------------
 # Test cases sqllimits1-4.* test the SQLITE_MAX_COLUMN limit.
 #
@@ -243,6 +242,20 @@ do_test sqllimits-1.4.9 {
 # the expression.
 #
 # TODO
+do_test sqllimits-1.5.1 {
+  execsql {
+    PRAGMA max_page_count = 1000000;  -- 1 GB
+    CREATE TABLE v0(a);
+  }
+  db transaction {
+    for {set i 1} {$i < 2000} {incr i} {
+      set expr "([string repeat {a AND } 50]a AND a) AS a"
+      execsql [subst {
+        CREATE VIEW v${i} AS SELECT $expr FROM v0
+      }]
+    }
+  }
+} {}
 
 #--------------------------------------------------------------------
 # Test cases sqllimits-6.* test that the SQLITE_MAX_VDBE_OP
