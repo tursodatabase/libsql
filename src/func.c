@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.153 2007/05/09 08:24:44 danielk1977 Exp $
+** $Id: func.c,v 1.154 2007/05/10 13:23:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -536,6 +536,7 @@ static void likeFunc(
   sqlite3_value **argv
 ){
   const unsigned char *zA, *zB;
+  int escape = 0;
 
   /* Limit the length of the LIKE or GLOB pattern to avoid problems
   ** of deep recursion and N*N behavior in patternCompare().
@@ -547,7 +548,6 @@ static void likeFunc(
 
   zB = sqlite3_value_text(argv[0]);
   zA = sqlite3_value_text(argv[1]);
-  int escape = 0;
   if( argc==3 ){
     /* The escape character string must consist of a single UTF-8 character.
     ** Otherwise, return an error.
