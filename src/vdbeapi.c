@@ -498,9 +498,7 @@ static void columnMallocFailure(sqlite3_stmt *pStmt)
 */
 const void *sqlite3_column_blob(sqlite3_stmt *pStmt, int i){
   const void *val;
-  sqlite3MallocDisallow();
   val = sqlite3_value_blob( columnMem(pStmt,i) );
-  sqlite3MallocAllow();
   return val;
 }
 int sqlite3_column_bytes(sqlite3_stmt *pStmt, int i){
