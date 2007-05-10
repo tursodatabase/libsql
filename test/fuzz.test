@@ -1,0 +1,110 @@
+
+# 2001 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the SELECT statement.
+#
+# $Id: fuzz.test,v 1.1 2007/05/10 15:37:53 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+proc fuzz {TemplateList} {
+  set n [llength $TemplateList]
+  set i [expr {int(rand()*$n)}]
+  return [subst -novar [lindex $TemplateList $i]]
+}
+
+proc Value {} {
+  set TemplateList {
+    456 0 -456 1 -1 
+    2147483648 2147483647 2147483649 -2147483647 -2147483648 -2147483649
+    'The' 'first' 'experiments' 'in' 'hardware' 'fault' 'injection'
+    zeroblob(1000)
+    NULL
+    56.1 -56.1
+    123456789.1234567899
+  }
+  fuzz $TemplateList
+}
+
+proc UnaryOp {} {
+  set TemplateList {+ - NOT}
+  fuzz $TemplateList
+}
+
+proc BinaryOp {} {
+  set TemplateList {+ - % * / AND OR LIKE GLOB}
+  fuzz $TemplateList
+}
+
+set ::ExprDepth 0
+proc Expr {} {
+  incr ::ExprDepth
+
+  set TemplateList {[Value]}
+  if {$::ExprDepth < 100} {
+    lappend TemplateList \
+      {[Expr] [BinaryOp] [Expr]}   \
+      {[UnaryOp] [Expr]}           \
+      {([Select])}                 \
+      {[Value]}                    
+  }
+  if {$::SelectDepth < 10} {
+    lappend TemplateList {([Select])}
+  } 
+  set res [fuzz $TemplateList]
+  incr ::ExprDepth -1
+  return $res
+}
+
+set ::SelectDepth 0
+proc Select {} {
+  incr ::SelectDepth
+  set TemplateList {
+      {SELECT [Expr]}
+  }
+  set res [fuzz $TemplateList]
+  incr ::SelectDepth -1
+  set res
+}
+
+do_test fuzz-1.1 {
+  execsql {
+    SELECT 'abc' LIKE X'ABCD';
+  }
+} {0}
+do_test fuzz-1.2 {
+  execsql {
+    SELECT 'abc' LIKE zeroblob(10);
+  }
+} {0}
+do_test fuzz-1.3 {
+  execsql {
+    SELECT zeroblob(10) LIKE 'abc';
+  }
+} {0}
+do_test fuzz-1.4 {
+  execsql {
+    SELECT (- -21) % NOT (456 LIKE zeroblob(10));
+  }
+} {0}
+
+do_test fuzz-2.1 {
+  for {set ii 0} {$ii < 2000} {incr ii} {
+    set ::expr [Expr]
+    execsql "SELECT $::expr"
+  }
+  set a ""
+} {}
+
+finish_test
+

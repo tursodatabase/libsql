@@ -101,8 +101,8 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
     pMem->z = pNew;
     pMem->n += pMem->u.i;
     pMem->u.i = 0;
-    pMem->flags &= MEM_Zero|MEM_Static|MEM_Ephem|MEM_Short;
-    pMem->flags |= MEM_Term|MEM_Dyn;
+    pMem->flags &= ~(MEM_Zero|MEM_Static|MEM_Ephem|MEM_Short);
+    pMem->flags |= (MEM_Term|MEM_Dyn);
   }
   return SQLITE_OK;
 }
@@ -188,6 +188,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
   int fg = pMem->flags;
   char *z = pMem->zShort;
 
+  assert( !(fg&MEM_Zero) );
   assert( !(fg&(MEM_Str|MEM_Blob)) );
   assert( fg&(MEM_Int|MEM_Real) );
 
@@ -386,6 +387,7 @@ void sqlite3VdbeMemSetZeroBlob(Mem *pMem, int n){
   pMem->n = 0;
   pMem->u.i = n;
   pMem->z = pMem->zShort;
+  pMem->enc = SQLITE_UTF8;
 }
 
 /*

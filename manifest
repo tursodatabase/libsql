@@ -1,5 +1,5 @@
-C Fix\sa\sC++ism\sin\sfunc.c.\s(CVS\s3970)
-D 2007-05-10T13:23:23
+C Add\snew\stest\sfile\sfuzz.test,\sto\stest\sSQLite\swith\sfuzzily\sgenerated\sSQL.\s(CVS\s3971)
+D 2007-05-10T15:37:53
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -139,7 +139,7 @@ F src/vdbeapi.c 120e04492e98e3cfd5545dd7130c76987e40e8b3
 F src/vdbeaux.c 62011e2ccf5fa9b3dcc7fa6ff5f0e0638d324a70
 F src/vdbeblob.c 96f3572fdc45eda5be06e6372b612bc30742d9f0
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
-F src/vdbemem.c f9ef7a16993130e610dd994a1a76b1e831857e27
+F src/vdbemem.c 2d59bc2b6356cf3721077f75da92fedee458c4e1
 F src/vtab.c c5ebebf615b2f29499fbe97a584c4bb342632aa0
 F src/where.c f3920748cc650fc25ac916215500bdb90dee568e
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -248,6 +248,7 @@ F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test 6f230b25b235cc1afcc7bd5a41baf7317018a8d1
+F test/fuzz.test 71f1a03e8249f14f15b39562525e5450a1713fd5
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -316,7 +317,7 @@ F test/pragma.test fecb7085f58d9fb5172a5c0b63fd3b25c7bfb414
 F test/printf.test 71047b5fe8e2adfbe514e0d56e10adf12d84deff
 F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
 F test/ptrchng.test 1c712dd6516e1377471744fa765e41c79a357da6
-F test/quick.test 616e8906598101acd1ebc9acbdabdbc1102d9ab1
+F test/quick.test 9f5bb4e95460472dc379f5dd8932c743407501ef
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -486,7 +487,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5800d0327ebc122e679ef860b58098b3c08eb709
-R 96efbe11ded0fcf2087a2e2cc7c73f86
-U drh
-Z dd77a8dbef149aca71589b484f8de078
+P 9c0050a10c6bea75ada902c16eb28eb3cf864718
+R 862728ba028801203dde1e64535d126a
+U danielk1977
+Z 6effd6cb91351315b8bd943713c44c7f
