@@ -13,7 +13,7 @@
 # The focus of this file is testing of the proper handling of conversions
 # to the native text representation.
 #
-# $Id: enc3.test,v 1.5 2006/01/12 19:42:41 drh Exp $
+# $Id: enc3.test,v 1.6 2007/05/10 21:14:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -65,6 +65,16 @@ ifcapable {bloblit && utf16} {
       SELECT CAST(a AS text) FROM t2 WHERE a LIKE 'abc%';
     }
   } {abcde}
+  do_test enc3-2.3 {
+    execsql {
+      SELECT CAST(x'61006200630064006500' AS text);
+    }
+  } {abcde}
+  do_test enc3-2.4 {
+    execsql {
+      SELECT rowid FROM t2 WHERE a LIKE x'610062002500';
+    }
+  } {1}
 }
 
 

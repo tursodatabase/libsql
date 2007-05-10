@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.614 2007/05/10 17:32:48 danielk1977 Exp $
+** $Id: vdbe.c,v 1.615 2007/05/10 21:14:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -334,7 +334,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
       else *zCsr++ = z;
     }
 
-    sqlite3_snprintf(100, zCsr, "]");
+    sqlite3_snprintf(100, zCsr, "]%s", encnames[pMem->enc]);
     zCsr += strlen(zCsr);
     if( f & MEM_Zero ){
       sqlite3_snprintf(100, zCsr,"+%lldz",pMem->u.i);
@@ -835,6 +835,7 @@ case OP_Blob: {
   pTos++;
   assert( pOp->p1 < SQLITE_MAX_LENGTH ); /* Due to SQLITE_MAX_SQL_LENGTH */
   sqlite3VdbeMemSetStr(pTos, pOp->p3, pOp->p1, 0, 0);
+  pTos->enc = encoding;
   break;
 }
 #endif /* SQLITE_OMIT_BLOB_LITERAL */
@@ -918,7 +919,7 @@ case OP_Pull: {            /* no-push */
   Deephemeralize(pTos);
   for(i=0; i<pOp->p1; i++, pFrom++){
     Deephemeralize(&pFrom[1]);
-    assert( (pFrom[1].flags & MEM_Ephem)==0 );
+    assert( (pFrom->flags & MEM_Ephem)==0 );
     *pFrom = pFrom[1];
     if( pFrom->flags & MEM_Short ){
       assert( pFrom->flags & (MEM_Str|MEM_Blob) );
@@ -2275,9 +2276,6 @@ case OP_MakeRecord: {
     if( pRec->flags&MEM_Null ){
       containsNull = 1;
     }
-    if( pRec->flags&MEM_Zero && pRec->n>0 ){
-      sqlite3VdbeMemExpandBlob(pRec);
-    }
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     len = sqlite3VdbeSerialTypeLen(serial_type);
     nData += len;
@@ -2285,6 +2283,7 @@ case OP_MakeRecord: {
     if( pRec->flags & MEM_Zero ){
       /* Only pure zero-filled BLOBs can be input to this Opcode.
       ** We do not allow blobs with a prefix and a zero-filled tail. */
+      assert( pRec->n==0 );
       nZero += pRec->u.i;
     }else if( len ){
       nZero = 0;

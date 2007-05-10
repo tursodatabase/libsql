@@ -1,5 +1,5 @@
-C Simplify\sfailing\scase\sin\sfuzz.test.\s(CVS\s3974)
-D 2007-05-10T17:38:57
+C When\sconverting\sliteral\sBLOBs\sto\stext\susing\sthe\sencoding\sof\sthe\smain\ndatabase.\s\sTicket\s#2349.\s(CVS\s3975)
+D 2007-05-10T21:14:03
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -132,7 +132,7 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c be7c64eed83fa3c01e0c42905e1c311dcd1be704
 F src/util.c 4f6bbcec2b2b1884d652b82c9f8949ede4618d68
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c c0b1cd6c7dc40f836184af1cf041cfcadd61c9a5
+F src/vdbe.c 308c698ad96a43249e12cb5067a4a823a6dea307
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h bddb7931fc1216fda6f6720e18d2a9b1e0f8fc96
 F src/vdbeapi.c 3ca7808c67a10b5c20150108b431d520d141e93e
@@ -214,7 +214,7 @@ F test/diskfull.test a91fa95a8729b71fdac4738a49755f70b48c61f3
 F test/distinctagg.test 2b89d1c5220d966a30ba4b40430338669301188b
 F test/enc.test 7a03417a1051fe8bc6c7641cf4c8c3f7e0066d52
 F test/enc2.test 45710bacfa9df29720bc84c067dfdf8c8ddfb797
-F test/enc3.test 890508efff6677345e93bf2a8adb0489b30df030
+F test/enc3.test 9331988b9d72decec96995c90637e87b00d747a5
 F test/exclusive.test 5bc520ba366ae3d242420af025ab64d465b04706
 F test/exclusive2.test f9738964b01e0bc4d4e5e270e347ca162da51799
 F test/exclusive3.test 0e49c35b7e7cb8e7280b4ce3f0359d30b207d2ff
@@ -487,7 +487,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1e8fcb3fbed7beb8bb1370953ecf3d4b9db01ede
-R 3407008af1a21abc526283fbb54db2fc
-U danielk1977
-Z fd4f103656f235fc374f0f6ff3013b5f
+P a54c74990caf22c0008a7029e24594e83048ffbc
+R c84e4f74a574fa506734b720c23aad6b
+U drh
+Z b06d89c3202832d761b85c19e8382942
