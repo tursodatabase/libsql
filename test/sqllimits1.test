@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.7 2007/05/10 10:46:57 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.8 2007/05/10 11:43:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -422,6 +422,21 @@ do_test sqllimits-1.11.2 {
     SELECT $::string LIKE $::pattern;
   }
 } {1 {LIKE or GLOB pattern too complex}}
+
+#--------------------------------------------------------------------
+# This test case doesn't really belong with the other limits tests.
+# It is in this file because it is taxing to run, like the limits tests.
+#
+do_test sqllimits-1.12.1 {
+  set ::N [expr int(([expr pow(2,32)]/50) + 1)]
+  expr (($::N*50) & 0xffffffff)<55
+} {1}
+do_test sqllimits-1.12.2 {
+  set ::format "[string repeat A 60][string repeat "%J" $::N]"
+  catchsql {
+    SELECT strftime($::format, 1);
+  }
+} {1 {string or blob too big}}
 
 finish_test
 
