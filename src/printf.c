@@ -51,6 +51,7 @@
 **
 */
 #include "sqliteInt.h"
+#include <math.h>
 
 /*
 ** Conversion types fall into various categories as defined by the
@@ -453,6 +454,11 @@ static int vxprintf(
         if( xtype==etFLOAT ) realvalue += rounder;
         /* Normalize realvalue to within 10.0 > realvalue >= 1.0 */
         exp = 0;
+        if( isnan(realvalue) ){
+          bufpt = "NaN";
+          length = 3;
+          break;
+        }
         if( realvalue>0.0 ){
           while( realvalue>=1e32 && exp<=350 ){ realvalue *= 1e-32; exp+=32; }
           while( realvalue>=1e8 && exp<=350 ){ realvalue *= 1e-8; exp+=8; }
@@ -460,8 +466,14 @@ static int vxprintf(
           while( realvalue<1e-8 && exp>=-350 ){ realvalue *= 1e8; exp-=8; }
           while( realvalue<1.0 && exp>=-350 ){ realvalue *= 10.0; exp--; }
           if( exp>350 || exp<-350 ){
-            bufpt = "NaN";
-            length = 3;
+            if( prefix=='-' ){
+              bufpt = "-Inf";
+            }else if( prefix=='+' ){
+              bufpt = "+Inf";
+            }else{
+              bufpt = "Inf";
+            }
+            length = strlen(bufpt);
             break;
           }
         }

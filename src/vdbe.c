@@ -43,11 +43,12 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.612 2007/05/08 20:59:49 drh Exp $
+** $Id: vdbe.c,v 1.613 2007/05/10 17:23:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
 #include <ctype.h>
+#include <math.h>
 #include "vdbeInt.h"
 
 /*
@@ -1177,6 +1178,9 @@ case OP_Remainder: {           /* same as TK_REM, no-push */
         b = ib % ia;
         break;
       }
+    }
+    if( isnan(b) ){
+      goto divide_by_zero;
     }
     Release(pTos);
     pTos--;

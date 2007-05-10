@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.45 2007/05/08 20:37:40 drh Exp $
+** $Id: utf.c,v 1.46 2007/05/10 17:23:12 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -572,6 +572,33 @@ void sqlite3Utf16Substr(
 
   sqlite3_result_text16(context, zStart, zEnd-zStart, SQLITE_TRANSIENT);
 }
+
+#if defined(SQLITE_TEST)
+/*
+** Translate UTF-8 to UTF-8.
+**
+** This has the effect of making sure that the string is well-formed
+** UTF-8.  Miscoded characters are removed.
+**
+** The translation is done in-place (since it is impossible for the
+** correct UTF-8 encoding to be longer than a malformed encoding).
+*/
+int sqlite3Utf8To8(unsigned char *zIn){
+  unsigned char *zOut = zIn;
+  unsigned char *zStart = zIn;
+  int c;
+
+  while(1){
+    READ_UTF8(zIn, c);
+    if( c==0 ) break;
+    if( c!=0xfffd ){
+      WRITE_UTF8(zOut, c);
+    }
+  }
+  *zOut = 0;
+  return zOut - zStart;
+}
+#endif
 
 #if defined(SQLITE_TEST)
 /*

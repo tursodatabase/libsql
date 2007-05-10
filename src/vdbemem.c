@@ -17,6 +17,7 @@
 */
 #include "sqliteInt.h"
 #include "os.h"
+#include <math.h>
 #include <ctype.h>
 #include "vdbeInt.h"
 
@@ -406,10 +407,14 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
 ** manifest type REAL.
 */
 void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
-  sqlite3VdbeMemRelease(pMem);
-  pMem->r = val;
-  pMem->flags = MEM_Real;
-  pMem->type = SQLITE_FLOAT;
+  if( isnan(val) ){
+    sqlite3VdbeMemSetNull(pMem);
+  }else{
+    sqlite3VdbeMemRelease(pMem);
+    pMem->r = val;
+    pMem->flags = MEM_Real;
+    pMem->type = SQLITE_FLOAT;
+  }
 }
 
 /*

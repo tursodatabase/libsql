@@ -17,23 +17,14 @@
 ** with historical versions of the "binary" command.  So it seems
 ** easier and safer to build our own mechanism.
 **
-** $Id: test_hexio.c,v 1.2 2007/04/09 20:30:11 drh Exp $
+** $Id: test_hexio.c,v 1.3 2007/05/10 17:23:12 drh Exp $
 */
+#include "sqliteInt.h"
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
-/*
-hexio_read  filename offset amt
-hexio_write filename offset hexdata
-hexio_get_int  hexdata
-hexio_get_varint  hexdata
-hexio_render_int8  integer
-hexio_render_int16  integer
-hexio_render_int38  integer
-hexio_render_varint  integer
-*/
 
 /*
 ** Convert binary to hex.  The input zBuf[] contains N bytes of
@@ -287,6 +278,37 @@ static int hexio_render_int32(
   return TCL_OK;
 }
 
+/*
+** USAGE:  utf8_to_utf8  HEX
+**
+** The argument is a UTF8 string represented in hexadecimal.
+** The UTF8 might not be well-formed.  Run this string through
+** sqlite3Utf8to8() convert it back to hex and return the result.
+*/
+static int utf8_to_utf8(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int n;
+  int nOut;
+  const unsigned char *zOrig;
+  unsigned char *z;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "HEX");
+    return TCL_ERROR;
+  }
+  zOrig = (unsigned char *)Tcl_GetStringFromObj(objv[1], &n);
+  z = sqlite3_malloc( n+3 );
+  n = hexToBin(zOrig, n, z);
+  z[n] = 0;
+  nOut = sqlite3Utf8To8(z);
+  binToHex(z,nOut);
+  Tcl_AppendResult(interp, (char*)z, 0);
+  sqlite3_free(z);
+  return TCL_OK;
+}
 
 
 /*
@@ -302,6 +324,7 @@ int Sqlitetest_hexio_Init(Tcl_Interp *interp){
      { "hexio_get_int",                hexio_get_int         },
      { "hexio_render_int16",           hexio_render_int16    },
      { "hexio_render_int32",           hexio_render_int32    },
+     { "utf8_to_utf8",                 utf8_to_utf8          },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

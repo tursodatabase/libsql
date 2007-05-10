@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.563 2007/05/10 10:46:57 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.564 2007/05/10 17:23:12 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1838,6 +1838,10 @@ int sqlite3OpenTempDatabase(Parse *);
   void sqlite3TableLock(Parse *, int, int, u8, const char *);
 #else
   #define sqlite3TableLock(v,w,x,y,z)
+#endif
+
+#ifdef SQLITE_TEST
+  int sqlite3Utf8To8(unsigned char*);
 #endif
 
 #ifdef SQLITE_MEMDEBUG

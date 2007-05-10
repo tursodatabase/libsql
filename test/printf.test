@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.23 2007/05/07 11:24:31 drh Exp $
+# $Id: printf.test,v 1.24 2007/05/10 17:23:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -155,7 +155,13 @@ do_test printf-7.2 {
 } {A double: 1e+308}
 do_test printf-7.3 {
   sqlite3_mprintf_scaled {A double: %g} 1.0e307 100.0
-} {A double: NaN}
+} {A double: Inf}
+do_test printf-7.4 {
+  sqlite3_mprintf_scaled {A double: %g} -1.0e307 100.0
+} {A double: -Inf}
+do_test printf-7.5 {
+  sqlite3_mprintf_scaled {A double: %+g} 1.0e307 100.0
+} {A double: +Inf}
 
 do_test printf-8.1 {
   sqlite3_mprintf_int {%u %u %u} 0x7fffffff 0x80000000 0xffffffff
@@ -257,6 +263,15 @@ do_test printf-13.2 {
 do_test printf-13.3 {
   sqlite3_mprintf_hexdouble %.20f 4693b8b5b5056e17
 } {100000000000000000000000000000000.00000000000000000000}
+do_test printf-13.4 {
+  sqlite3_mprintf_hexdouble %.20f 7ff0000000000000
+} {Inf}
+do_test printf-13.5 {
+  sqlite3_mprintf_hexdouble %.20f fff0000000000000
+} {-Inf}
+do_test printf-13.6 {
+  sqlite3_mprintf_hexdouble %.20f fff8000000000000
+} {NaN}
 
 do_test printf-14.1 {
   sqlite3_mprintf_str {abc-%y-123} 0 0 {not used}
