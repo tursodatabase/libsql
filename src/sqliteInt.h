@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.562 2007/05/08 21:45:28 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.563 2007/05/10 10:46:57 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -998,6 +998,9 @@ struct Expr {
                          ** right side of "<expr> IN (<select>)" */
   Table *pTab;           /* Table for OP_Column expressions. */
   Schema *pSchema;
+#if SQLITE_MAX_EXPR_DEPTH>0
+  int nHeight;           /* Height of the tree headed by this node */
+#endif
 };
 
 /*
@@ -1342,6 +1345,9 @@ struct Parse {
   Token sArg;                /* Complete text of a module argument */
   u8 declareVtab;            /* True if inside sqlite3_declare_vtab() */
   Table *pVirtualLock;       /* Require virtual table lock on this table */
+#endif
+#if SQLITE_MAX_EXPR_DEPTH>0
+  int nHeight;            /* Expression tree height of current sub-select */
 #endif
 };
 
@@ -1877,6 +1883,13 @@ FuncDef *sqlite3VtabOverloadFunction(FuncDef*, int nArg, Expr*);
 void sqlite3InvalidFunction(sqlite3_context*,int,sqlite3_value**);
 int sqlite3Reprepare(Vdbe*);
 void sqlite3ExprListCheckLength(Parse*, ExprList*, int, const char*);
+
+#if SQLITE_MAX_EXPR_DEPTH>0
+  void sqlite3ExprSetHeight(Expr *);
+  int sqlite3SelectExprHeight(Select *);
+#else
+  #define sqlite3ExprSetHeight(x)
+#endif
 
 u32 sqlite3Get2byte(const u8*);
 u32 sqlite3Get4byte(const u8*);

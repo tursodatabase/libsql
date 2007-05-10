@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.224 2007/05/08 17:54:44 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.225 2007/05/10 10:46:57 danielk1977 Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -766,6 +766,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     A = sqlite3Expr(TK_IN, X, 0, 0);
     if( A ){
       A->pList = Y;
+      sqlite3ExprSetHeight(A);
     }else{
       sqlite3ExprListDelete(Y);
     }
@@ -776,6 +777,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     A = sqlite3Expr(TK_SELECT, 0, 0, 0);
     if( A ){
       A->pSelect = X;
+      sqlite3ExprSetHeight(A);
     }else{
       sqlite3SelectDelete(X);
     }
@@ -785,6 +787,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     A = sqlite3Expr(TK_IN, X, 0, 0);
     if( A ){
       A->pSelect = Y;
+      sqlite3ExprSetHeight(A);
     }else{
       sqlite3SelectDelete(Y);
     }
@@ -796,6 +799,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     A = sqlite3Expr(TK_IN, X, 0, 0);
     if( A ){
       A->pSelect = sqlite3SelectNew(0,pSrc,0,0,0,0,0,0,0);
+      sqlite3ExprSetHeight(A);
     }else{
       sqlite3SrcListDelete(pSrc);
     }
@@ -807,6 +811,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     if( p ){
       p->pSelect = Y;
       sqlite3ExprSpan(p,&B,&E);
+      sqlite3ExprSetHeight(A);
     }else{
       sqlite3SelectDelete(Y);
     }
@@ -818,6 +823,7 @@ expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
   A = sqlite3Expr(TK_CASE, X, Z, 0);
   if( A ){
     A->pList = Y;
+    sqlite3ExprSetHeight(A);
   }else{
     sqlite3ExprListDelete(Y);
   }

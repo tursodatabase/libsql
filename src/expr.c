@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.288 2007/05/09 11:37:23 danielk1977 Exp $
+** $Id: expr.c,v 1.289 2007/05/10 10:46:56 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -247,6 +247,8 @@ Expr *sqlite3Expr(int op, Expr *pLeft, Expr *pRight, const Token *pToken){
       pNew->pColl = pLeft->pColl;
     }
   }
+
+  sqlite3ExprSetHeight(pNew);
   return pNew;
 }
 
@@ -343,6 +345,8 @@ Expr *sqlite3ExprFunction(ExprList *pList, Token *pToken){
   assert( pToken->dyn==0 );
   pNew->token = *pToken;
   pNew->span = pNew->token;
+
+  sqlite3ExprSetHeight(pNew);
   return pNew;
 }
 
@@ -478,6 +482,9 @@ Expr *sqlite3ExprDup(Expr *p){
   pNew->pList = sqlite3ExprListDup(p->pList);
   pNew->pSelect = sqlite3SelectDup(p->pSelect);
   pNew->pTab = p->pTab;
+#if SQLITE_MAX_EXPR_DEPTH>0
+  pNew->nHeight = p->nHeight;
+#endif
   return pNew;
 }
 void sqlite3TokenCopy(Token *pTo, Token *pFrom){
@@ -670,6 +677,72 @@ void sqlite3ExprListCheckLength(
     sqlite3ErrorMsg(pParse, "too many columns in %s", zObject);
   }
 }
+
+
+#if SQLITE_MAX_EXPR_DEPTH>0
+/* The following three functions, heightOfExpr(), heightOfExprList()
+** and heightOfSelect(), are used to determine the maximum height
+** of any expression tree referenced by the structure passed as the
+** first argument.
+**
+** If this maximum height is greater than the current value pointed
+** to by pnHeight, the second parameter, then set *pnHeight to that
+** value.
+*/
+static void heightOfExpr(Expr *p, int *pnHeight){
+  if( p ){
+    if( p->nHeight>*pnHeight ){
+      *pnHeight = p->nHeight;
+    }
+  }
+}
+static void heightOfExprList(ExprList *p, int *pnHeight){
+  if( p ){
+    int i;
+    for(i=0; i<p->nExpr; i++){
+      heightOfExpr(p->a[i].pExpr, pnHeight);
+    }
+  }
+}
+static void heightOfSelect(Select *p, int *pnHeight){
+  if( p ){
+    heightOfExpr(p->pWhere, pnHeight);
+    heightOfExpr(p->pHaving, pnHeight);
+    heightOfExpr(p->pLimit, pnHeight);
+    heightOfExpr(p->pOffset, pnHeight);
+    heightOfExprList(p->pEList, pnHeight);
+    heightOfExprList(p->pGroupBy, pnHeight);
+    heightOfExprList(p->pOrderBy, pnHeight);
+    heightOfSelect(p->pPrior, pnHeight);
+  }
+}
+
+/*
+** Set the Expr.nHeight variable in the structure passed as an 
+** argument. An expression with no children, Expr.pList or 
+** Expr.pSelect member has a height of 1. Any other expression
+** has a height equal to the maximum height of any other 
+** referenced Expr plus one.
+*/
+void sqlite3ExprSetHeight(Expr *p){
+  int nHeight = 0;
+  heightOfExpr(p->pLeft, &nHeight);
+  heightOfExpr(p->pRight, &nHeight);
+  heightOfExprList(p->pList, &nHeight);
+  heightOfSelect(p->pSelect, &nHeight);
+  p->nHeight = nHeight + 1;
+}
+
+/*
+** Return the maximum height of any expression tree referenced
+** by the select statement passed as an argument.
+*/
+int sqlite3SelectExprHeight(Select *p){
+  int nHeight = 0;
+  heightOfSelect(p, &nHeight);
+  return nHeight;
+}
+#endif
 
 /*
 ** Delete an entire expression list.
@@ -1335,15 +1408,28 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
 ** If the expression contains aggregate functions then set the EP_Agg
 ** property on the expression.
 */
-int sqlite3ExprResolveNames(
+int sqlite3ExprResolveNames( 
   NameContext *pNC,       /* Namespace to resolve expressions in. */
   Expr *pExpr             /* The expression to be analyzed. */
 ){
   int savedHasAgg;
   if( pExpr==0 ) return 0;
+#if SQLITE_MAX_EXPR_DEPTH>0
+  if( (pExpr->nHeight+pNC->pParse->nHeight)>SQLITE_MAX_EXPR_DEPTH ){
+    sqlite3ErrorMsg(pNC->pParse, 
+       "Expression tree is too large (maximum depth %d)",
+       SQLITE_MAX_EXPR_DEPTH
+    );
+    return 1;
+  }
+  pNC->pParse->nHeight += pExpr->nHeight;
+#endif
   savedHasAgg = pNC->hasAgg;
   pNC->hasAgg = 0;
   walkExprTree(pExpr, nameResolverStep, pNC);
+#if SQLITE_MAX_EXPR_DEPTH>0
+  pNC->pParse->nHeight -= pExpr->nHeight;
+#endif
   if( pNC->nErr>0 ){
     ExprSetProperty(pExpr, EP_Error);
   }
@@ -1383,6 +1469,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   int testAddr = 0;                       /* One-time test address */
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
+
 
   /* This code must be run in its entirety every time it is encountered
   ** if any of the following is true:
@@ -1521,6 +1608,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   if( testAddr ){
     sqlite3VdbeJumpHere(v, testAddr);
   }
+
   return;
 }
 #endif /* SQLITE_OMIT_SUBQUERY */

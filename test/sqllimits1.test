@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.6 2007/05/09 15:56:40 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.7 2007/05/10 10:46:57 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,7 +33,7 @@ source $testdir/tester.tcl
 #
 # Todo:
 #
-#     sqllimits-5.*:   SQLITE_MAX_EXPR_LENGTH           (sqlite todo)
+#     sqllimits-5.*:   SQLITE_MAX_EXPR_DEPTH            (sqlite todo)
 #     sqllimits-6.*:   SQLITE_MAX_VDBE_OP               (sqlite todo)
 #
 
@@ -237,25 +237,58 @@ do_test sqllimits-1.4.9 {
 } {1 {too many columns in result set}}
 
 #--------------------------------------------------------------------
-# These tests - sqllimits-5.* - test that the SQLITE_MAX_EXPR_LENGTH
+# These tests - sqllimits-5.* - test that the SQLITE_MAX_EXPR_DEPTH
 # limit is enforced. The limit refers to the number of terms in 
 # the expression.
 #
-# TODO
-do_test sqllimits-1.5.1 {
-  execsql {
-    PRAGMA max_page_count = 1000000;  -- 1 GB
-    CREATE TABLE v0(a);
-  }
-  db transaction {
-    for {set i 1} {$i < 2000} {incr i} {
-      set expr "([string repeat {a AND } 50]a AND a) AS a"
-      execsql [subst {
-        CREATE VIEW v${i} AS SELECT $expr FROM v0
-      }]
+if {$::SQLITE_MAX_EXPR_DEPTH != 1000} {
+  puts -nonewline stderr "WARNING: Compile with -DSQLITE_MAX_EXPR_DEPTH to run "
+  puts stderr "tests sqllimits-1.5.X"
+} else {
+  do_test sqllimits-1.5.1 {
+    set max $::SQLITE_MAX_EXPR_DEPTH
+    set expr "(1 [string repeat {AND 1 } $max])"
+    catchsql [subst {
+      SELECT $expr
+    }]
+  } "1 {Expression tree is too large (maximum depth $::SQLITE_MAX_EXPR_DEPTH)}"
+  
+  # Attempting to beat the expression depth limit using nested SELECT
+  # queries causes a parser stack overflow. 
+  do_test sqllimits-1.5.2 {
+    set max $::SQLITE_MAX_EXPR_DEPTH
+    set expr "SELECT 1"
+    for {set i 0} {$i <= $max} {incr i} {
+      set expr "SELECT ($expr)"
     }
-  }
-} {}
+    catchsql [subst {
+      SELECT $expr
+    }]
+  } "1 {parser stack overflow}"
+  
+  
+  do_test sqllimits-1.5.3 {
+    execsql {
+      PRAGMA max_page_count = 1000000;  -- 1 GB
+      CREATE TABLE v0(a);
+      INSERT INTO v0 VALUES(1);
+    }
+    db transaction {
+      for {set i 1} {$i < 200} {incr i} {
+        set expr "(a [string repeat {AND 1 } 50]) AS a"
+        execsql [subst {
+          CREATE VIEW v${i} AS SELECT $expr FROM v[expr {$i-1}]
+        }]
+      }
+    }
+  } {}
+  
+  do_test sqllimits-1.5.4 {
+    catchsql {
+      SELECT a FROM v199
+    }
+  } "1 {Expression tree is too large (maximum depth $::SQLITE_MAX_EXPR_DEPTH)}"
+}
 
 #--------------------------------------------------------------------
 # Test cases sqllimits-6.* test that the SQLITE_MAX_VDBE_OP

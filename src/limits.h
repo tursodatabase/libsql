@@ -12,7 +12,7 @@
 ** 
 ** This file defines various limits of what SQLite can process.
 **
-** @(#) $Id: limits.h,v 1.5 2007/05/08 15:34:48 drh Exp $
+** @(#) $Id: limits.h,v 1.6 2007/05/10 10:46:56 danielk1977 Exp $
 */
 
 /*
@@ -56,13 +56,14 @@
 #endif
 
 /*
-** The maximum number of terms in an expression.
-** This is limited to some extent by SQLITE_MAX_SQL_LENGTH.
-** But sometime you might want to place more severe limits
-** on the complexity of an expression.
+** The maximum depth of an expression tree. This is limited to 
+** some extent by SQLITE_MAX_SQL_LENGTH. But sometime you might 
+** want to place more severe limits on the complexity of an 
+** expression. A value of 0 (the default) means do not enforce
+** any limitation on expression tree depth.
 */
-#ifndef SQLITE_MAX_EXPR_LENGTH
-# define SQLITE_MAX_EXPR_LENGTH 5000
+#ifndef SQLITE_MAX_EXPR_DEPTH
+# define SQLITE_MAX_EXPR_DEPTH 0
 #endif
 
 /*
