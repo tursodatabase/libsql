@@ -1,5 +1,5 @@
-C Add\scases\sto\sfuzz.test.\sSome\stests\sin\sthis\sfile\sfail\sat\sthe\smoment.\s(CVS\s3973)
-D 2007-05-10T17:32:48
+C Simplify\sfailing\scase\sin\sfuzz.test.\s(CVS\s3974)
+D 2007-05-10T17:38:57
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -248,7 +248,7 @@ F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test 6f230b25b235cc1afcc7bd5a41baf7317018a8d1
-F test/fuzz.test ac67727e8edea39d9ec3a55d3eba4f95231f329b
+F test/fuzz.test 09efe2d8e4046160d5142a2f4095c41e002de951
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -487,7 +487,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ffe615a71107a38b6f60c7baf4284a5b0aecdc22
-R e35a9f0b80527b9d0b19209722d26b22
+P 1e8fcb3fbed7beb8bb1370953ecf3d4b9db01ede
+R 3407008af1a21abc526283fbb54db2fc
 U danielk1977
-Z 29917b781f3cb872f013bdcb708a70d5
+Z fd4f103656f235fc374f0f6ff3013b5f
