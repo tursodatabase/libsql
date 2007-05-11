@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sinserting\szeroblob()\sinto\san\sindexed\scolumn.\s(CVS\s3982)
-D 2007-05-11T07:08:28
+C Expand\sthe\sexpressions\stested\sby\sfuzz.test.\sFix\sfor\s(CAST\szeroblob()\sAS\stext).\s(CVS\s3983)
+D 2007-05-11T10:10:33
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -132,14 +132,14 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c be7c64eed83fa3c01e0c42905e1c311dcd1be704
 F src/util.c 4f6bbcec2b2b1884d652b82c9f8949ede4618d68
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c d1be8d8605608b6d7d925d40e1eb96e30d646fbc
+F src/vdbe.c 8dcd02c2ee383db5bd09488436322e0fee1b78dd
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h bddb7931fc1216fda6f6720e18d2a9b1e0f8fc96
 F src/vdbeapi.c 3ca7808c67a10b5c20150108b431d520d141e93e
 F src/vdbeaux.c 62011e2ccf5fa9b3dcc7fa6ff5f0e0638d324a70
 F src/vdbeblob.c 96f3572fdc45eda5be06e6372b612bc30742d9f0
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
-F src/vdbemem.c 0fb40f9255ebaa53af0281a6df2bcf5001313081
+F src/vdbemem.c 01237a4844106b9da838fc313bf1f86ddc6b0679
 F src/vtab.c c5ebebf615b2f29499fbe97a584c4bb342632aa0
 F src/where.c f3920748cc650fc25ac916215500bdb90dee568e
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -248,7 +248,7 @@ F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test bf30bac1c5ce10448ab739994268cf18f8b3fa30
-F test/fuzz.test 1015e6a1452e14d36797977923593a938ba35d2f
+F test/fuzz.test e939852bfd1d2db7264d6a55ed9b17834a535728
 F test/fuzz2.test fdbea571808441c12c91e9cd038eb77b4692d42b
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
@@ -488,7 +488,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d12a8924c6083cdff14990b4fd036ca386c2e34a
-R 680b3290f2d024e3ae05a79ad5b14302
+P ccef5d2daaa5a88dd3f23666f022296ef42f9d73
+R af6f63d05d6d29341c60b7b7ec2a00e4
 U danielk1977
-Z 9cd69253fcac83ce88c7739ef57267d1
+Z 67a8793031136a10487c9d10c7303799

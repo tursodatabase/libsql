@@ -13,7 +13,7 @@
 # (a.k.a. "fuzz") and sending it into the parser to try to generate
 # errors.
 #
-# $Id: fuzz.test,v 1.5 2007/05/11 07:08:29 danielk1977 Exp $
+# $Id: fuzz.test,v 1.6 2007/05/11 10:10:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -21,8 +21,19 @@ source $testdir/tester.tcl
 proc fuzz {TemplateList} {
   set n [llength $TemplateList]
   set i [expr {int(rand()*$n)}]
-  return [subst -novar [lindex $TemplateList $i]]
+  return [uplevel 1 subst -novar [list [lindex $TemplateList $i]]]
 }
+
+# Fuzzy generation primitives:
+#
+#     Literal
+#     UnaryOp
+#     BinaryOp
+#     Expr
+#     Table
+#     Select
+#     Insert
+#
 
 # Returns a string representing an SQL literal.
 #
@@ -39,55 +50,83 @@ proc Literal {} {
   fuzz $TemplateList
 }
 
+# Returns a string containing an SQL unary operator (e.g. "+" or "NOT").
+#
 proc UnaryOp {} {
-  set TemplateList {+ - NOT}
+  set TemplateList {+ - NOT ~}
   fuzz $TemplateList
 }
 
+# Returns a string containing an SQL binary operator (e.g. "*" or "/").
+#
 proc BinaryOp {} {
-  set TemplateList {+ - % * / AND OR LIKE GLOB}
+  set TemplateList {
+    || * / % + - << >> & | < <= > >= = == != <> AND OR
+    LIKE GLOB {NOT LIKE}
+  }
   fuzz $TemplateList
 }
 
+# Return the complete text of an SQL expression.
+#
 set ::ExprDepth 0
-proc Expr {} {
+proc Expr { {c {}} } {
   incr ::ExprDepth
 
-  set TemplateList {[Literal]}
-  if {$::ExprDepth < 100} {
+  set TemplateList [concat $c {[Literal]}]
+  if {$::ExprDepth < 25} {
     lappend TemplateList \
-      {[Expr] [BinaryOp] [Expr]}   \
-      {[UnaryOp] [Expr]}
+      {[Expr $c] [BinaryOp] [Expr $c]} \
+      {[UnaryOp] [Expr $c]}            \
+      {[Expr $c] ISNULL}               \
+      {[Expr $c] NOTNULL}              \
+      {CAST([Expr $c] AS blob)}        \
+      {CAST([Expr $c] AS text)}        \
+      {CAST([Expr $c] AS integer)}     \
+      {CAST([Expr $c] AS real)}        \
+      {CASE WHEN [Expr $c] THEN [Expr $c] ELSE [Expr $c] END}       \
+      {[Literal]} {[Literal]} {[Literal]}
   }
   if {$::SelectDepth < 10} {
-    lappend TemplateList {([Select 1])}
+    lappend TemplateList \
+      {([Select 1])}                       \
+      {[Expr $c] IN ([Select 1])}          \
+      {[Expr $c] NOT IN ([Select 1])}      \
+      {EXISTS ([Select 1])}                \
   } 
   set res [fuzz $TemplateList]
   incr ::ExprDepth -1
   return $res
 }
 
+# Return a valid table name.
+#
 set ::TableList [list]
 proc Table {} {
   set TemplateList [concat sqlite_master $::TableList]
   fuzz $TemplateList
 }
 
+# Return a SELECT statement.
+#
 set ::SelectDepth 0
 proc Select {{isExpr 0}} {
   incr ::SelectDepth
   set TemplateList {
       {SELECT [Expr]}
+      {SELECT [Literal]}
   }
   if {$::SelectDepth < 5} {
     lappend TemplateList \
         {SELECT [Expr] FROM ([Select])}                \
-        {SELECT [Expr] FROM [Table]}                  
+        {SELECT [Expr] FROM [Table]}                   \
 
     if {0 == $isExpr} {
       lappend TemplateList                                         \
           {SELECT [Expr], [Expr] FROM ([Select]) ORDER BY [Expr]}  \
           {SELECT * FROM ([Select]) ORDER BY [Expr]}               \
+          {SELECT * FROM [Table]}                                  \
+          {SELECT * FROM [Table] WHERE [Expr]}                     \
     }
   } 
   set res [fuzz $TemplateList]
@@ -95,7 +134,57 @@ proc Select {{isExpr 0}} {
   set res
 }
 
+# Generate and return a fuzzy INSERT statement.
+#
+proc Insert {} {
+  set TemplateList {
+      {INSERT INTO [Table] VALUES([Expr], [Expr], [Expr]);}
+      {INSERT INTO [Table] VALUES([Expr], [Expr], [Expr], [Expr]);}
+      {INSERT INTO [Table] VALUES([Expr], [Expr]);}
+  }
+  fuzz $TemplateList
+}
+
 ########################################################################
+
+set ::log [open fuzzy.log w]
+
+# 
+# Usage: do_fuzzy_test <testname> ?<options>?
+# 
+#     -template
+#     -errorlist
+#     
+proc do_fuzzy_test {testname args} {
+  set ::fuzzyopts(-errorlist) [list]
+  array set ::fuzzyopts $args
+  lappend ::fuzzyopts(-errorlist) {parser stack overflow} {ORDER BY column}
+
+  for {set ii 0} {$ii < 2000} {incr ii} {
+    do_test ${testname}.$ii {
+      set ::sql [subst $::fuzzyopts(-template)]
+      puts $::log $::sql
+      flush $::log
+      set rc [catch {execsql $::sql} msg]
+      set e 1
+      if {$rc} {
+        set e 0
+        foreach error $::fuzzyopts(-errorlist) {
+          if {0 == [string first $error $msg]} {
+            set e 1
+            break
+          }
+        }
+      }
+      if {$e == 0} {
+        puts ""
+        puts $::sql
+        puts $msg
+      }
+      set e
+    } {1}
+  }
+}
 
 #----------------------------------------------------------------
 # These tests caused errors that were first caught by the tests
@@ -141,56 +230,64 @@ do_test fuzz-1.7 {
   }
 } [execsql {SELECT zeroblob(1000)}]
 
+do_test fuzz-1.8 {
+  execsql {
+    SELECT CAST(zeroblob(1000) AS text);
+  }
+} {{}}
+
 #----------------------------------------------------------------
 # Test some fuzzily generated expressions.
 #
-for {set ii 0} {$ii < 2000} {incr ii} {
-  do_test fuzz-2.1.$ii {
-    set ::expr [Expr]
-    set rc [catch {execsql "SELECT $::expr"} msg]
-    set e [expr {
-      $rc == 0 || 
-      $msg eq "parser stack overflow" ||
-      0 == [string first "ORDER BY column number" $msg]
-    }]
-    if {$e == 0} {
-      puts ""
-      puts "SELECT $::expr"
-      puts $msg
-    }
-    set e
-  } {1}
-} 
+do_fuzzy_test fuzz-2 -template  { SELECT [Expr] }
 
 do_test fuzz-3.1 {
   execsql {
     CREATE TABLE abc(a, b, c);
-    CREATE TABLE def(d, e, f);
-    CREATE TABLE ghi(g, h, i);
+    CREATE TABLE def(a, b, c);
+    CREATE TABLE ghi(a, b, c);
   }
 } {}
-set ::TableList [list abc def ghi]
+set ::TableList  [list abc def ghi]
+set ::ColumnList [list a b c]
 
 #----------------------------------------------------------------
 # Test some fuzzily generated SELECT statements.
 #
-for {set ii 0} {$ii < 2000} {incr ii} {
-  do_test fuzz-2.2.$ii {
-    set ::select [Select]
-    set rc [catch {execsql $::select} msg]
-    set e [expr {$rc == 0 || $msg eq "parser stack overflow"}]
-    set e [expr {
-      $rc == 0 || 
-      $msg eq "parser stack overflow" ||
-      0 == [string first "ORDER BY column number" $msg]
-    }]
-    if {$e == 0} {
-      puts ""
-      puts $::select
-      puts $msg
-    }
-    set e
-  } {1}
-} 
+do_fuzzy_test fuzz-3.2 -template  {[Select]}
 
+#----------------------------------------------------------------
+# Insert a small amount of data into the database and then run 
+# some more generated SELECT statements.
+#
+do_test fuzz-4.1 {
+  execsql {
+    INSERT INTO abc VALUES(1, 2, 3);
+    INSERT INTO abc VALUES(4, 5, 6);
+    INSERT INTO abc VALUES(7, 8, 9);
+    INSERT INTO def VALUES(1, 2, 3);
+    INSERT INTO def VALUES(4, 5, 6);
+    INSERT INTO def VALUES(7, 8, 9);
+    INSERT INTO ghi VALUES(1, 2, 3);
+    INSERT INTO ghi VALUES(4, 5, 6);
+    INSERT INTO ghi VALUES(7, 8, 9);
+    CREATE INDEX abc_i ON abc(a, b, c);
+    CREATE INDEX def_i ON def(c, a, b);
+    CREATE INDEX ghi_i ON ghi(b, c, a);
+  }
+} {}
+do_fuzzy_test fuzz-4.2 -template {[Select]}
+
+#----------------------------------------------------------------
+# Test some fuzzy INSERT statements:
+#
+do_test         fuzz-5.1 {execsql BEGIN} {}
+do_fuzzy_test   fuzz-5.2 -template  {[Insert]} -errorlist table
+integrity_check fuzz-5.2.integrity
+do_test         fuzz-5.3 {execsql COMMIT} {}
+integrity_check fuzz-5.4.integrity
+
+do_fuzzy_test fuzz-6.1 -template {[Select]}
+
+close $::log
 finish_test

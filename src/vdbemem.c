@@ -102,8 +102,8 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
     pMem->z = pNew;
     pMem->n += pMem->u.i;
     pMem->u.i = 0;
-    pMem->flags &= ~(MEM_Zero|MEM_Static|MEM_Ephem|MEM_Short);
-    pMem->flags |= (MEM_Term|MEM_Dyn);
+    pMem->flags &= ~(MEM_Zero|MEM_Static|MEM_Ephem|MEM_Short|MEM_Term);
+    pMem->flags |= MEM_Dyn;
   }
   return SQLITE_OK;
 }
