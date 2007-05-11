@@ -1,5 +1,4 @@
-
-# 2001 September 15
+# 2007 May 10
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -10,9 +9,11 @@
 #
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The
-# focus of this file is testing the SELECT statement.
+# focus of this file is generating semi-random strings of SQL
+# (a.k.a. "fuzz") and sending it into the parser to try to generate
+# errors.
 #
-# $Id: fuzz.test,v 1.3 2007/05/10 17:38:57 danielk1977 Exp $
+# $Id: fuzz.test,v 1.4 2007/05/11 00:20:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -195,4 +196,3 @@ for {set ii 0} {$ii < 2000} {incr ii} {
 } 
 
 finish_test
-
