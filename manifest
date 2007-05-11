@@ -1,5 +1,5 @@
-C Expand\sthe\sexpressions\stested\sby\sfuzz.test.\sFix\sfor\s(CAST\szeroblob()\sAS\stext).\s(CVS\s3983)
-D 2007-05-11T10:10:33
+C Avoid\smultiple\sstorage\sclass\sspecifiers\s("static\sextern")\sin\sthe\samalagmation.\s(CVS\s3984)
+D 2007-05-11T12:30:04
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -95,7 +95,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c acfa86f50b71b7e289508b213bb88e68273d42a0
 F src/pager.h 94110a5570dca30d54a883e880a3633b2e4c05ae
 F src/parse.y 8451c5b04a599a8c0e637850dd28fc03340f44c9
-F src/pragma.c 0703152b9edd6601eea95e1d474b3bc2962d7920
+F src/pragma.c 6d5eb19feef9e84117b9b17a4c38b12b8c1c6897
 F src/prepare.c 87c23644986b5e41a58bc76f05abebd899e00089
 F src/printf.c 05b233c7a39aec4c54c79ef87af24f0a6591175d
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
@@ -104,7 +104,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
 F src/sqlite.h.in 664b8702c27dc742584788823c548491ac8935d6
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
-F src/sqliteInt.h ff1cfd5ac09dc43f55ad4994daef9a0ce876f043
+F src/sqliteInt.h 10becea12cf7771a05d67eda7df8ece362da8e29
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
 F src/tclsqlite.c f425c7583665ef78dd8397b2de0b8e0028e80ce2
 F src/test1.c 16938b7e76469abf957745743dd0287d5dee476d
@@ -488,7 +488,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ccef5d2daaa5a88dd3f23666f022296ef42f9d73
-R af6f63d05d6d29341c60b7b7ec2a00e4
-U danielk1977
-Z 67a8793031136a10487c9d10c7303799
+P 4e1bb41f302c13095aa9c638e59ae11417f49682
+R 0ef77c803856268fd492e9a8b4d88856
+U drh
+Z 29baa4cb103abeeafa2097c522aa6ac6
