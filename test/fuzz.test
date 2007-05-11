@@ -13,10 +13,13 @@
 # (a.k.a. "fuzz") and sending it into the parser to try to generate
 # errors.
 #
-# $Id: fuzz.test,v 1.6 2007/05/11 10:10:33 danielk1977 Exp $
+# $Id: fuzz.test,v 1.7 2007/05/11 16:58:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+set ::REPEATS 20
+set ::REPEATS 5000
 
 proc fuzz {TemplateList} {
   set n [llength $TemplateList]
@@ -74,7 +77,7 @@ proc Expr { {c {}} } {
   incr ::ExprDepth
 
   set TemplateList [concat $c {[Literal]}]
-  if {$::ExprDepth < 25} {
+  if {$::ExprDepth < 5} {
     lappend TemplateList \
       {[Expr $c] [BinaryOp] [Expr $c]} \
       {[UnaryOp] [Expr $c]}            \
@@ -84,6 +87,17 @@ proc Expr { {c {}} } {
       {CAST([Expr $c] AS text)}        \
       {CAST([Expr $c] AS integer)}     \
       {CAST([Expr $c] AS real)}        \
+      {abs([Expr])}                    \
+      {coalesce([Expr], [Expr])}       \
+      {hex([Expr])}                    \
+      {length([Expr])}                 \
+      {lower([Expr])}                  \
+      {upper([Expr])}                  \
+      {quote([Expr])}                  \
+      {random()}                       \
+      {randomblob(min(max([Expr],1), 500))}   \
+      {typeof([Expr])}                 \
+      {substr([Expr],[Expr],[Expr])}   \
       {CASE WHEN [Expr $c] THEN [Expr $c] ELSE [Expr $c] END}       \
       {[Literal]} {[Literal]} {[Literal]}
   }
@@ -110,6 +124,7 @@ proc Table {} {
 # Return a SELECT statement.
 #
 set ::SelectDepth 0
+set ::ColumnList [list]
 proc Select {{isExpr 0}} {
   incr ::SelectDepth
   set TemplateList {
@@ -119,14 +134,15 @@ proc Select {{isExpr 0}} {
   if {$::SelectDepth < 5} {
     lappend TemplateList \
         {SELECT [Expr] FROM ([Select])}                \
-        {SELECT [Expr] FROM [Table]}                   \
+        {SELECT [Expr $::ColumnList] FROM [Table]}     \
 
     if {0 == $isExpr} {
       lappend TemplateList                                         \
           {SELECT [Expr], [Expr] FROM ([Select]) ORDER BY [Expr]}  \
           {SELECT * FROM ([Select]) ORDER BY [Expr]}               \
           {SELECT * FROM [Table]}                                  \
-          {SELECT * FROM [Table] WHERE [Expr]}                     \
+          {SELECT * FROM [Table] WHERE [Expr $::ColumnList]}       \
+{SELECT * FROM [Table],[Table] AS t2 WHERE [Expr $::ColumnList] LIMIT 1}
     }
   } 
   set res [fuzz $TemplateList]
@@ -141,6 +157,38 @@ proc Insert {} {
       {INSERT INTO [Table] VALUES([Expr], [Expr], [Expr]);}
       {INSERT INTO [Table] VALUES([Expr], [Expr], [Expr], [Expr]);}
       {INSERT INTO [Table] VALUES([Expr], [Expr]);}
+  }
+  fuzz $TemplateList
+}
+
+proc Column {} {
+  fuzz $::ColumnList
+}
+
+# Generate and return a fuzzy UPDATE statement.
+#
+proc Update {} {
+  set TemplateList {
+    {UPDATE [Table] 
+     SET [Column] = [Expr $::ColumnList] 
+     WHERE [Expr $::ColumnList]}
+  }
+  fuzz $TemplateList
+}
+
+proc Delete {} {
+  set TemplateList {
+    {DELETE FROM [Table] WHERE [Expr $::ColumnList]}
+  }
+  fuzz $TemplateList
+}
+
+proc Statement {} {
+  set TemplateList {
+    {[Update]}
+    {[Insert]}
+    {[Select]}
+    {[Delete]}
   }
   fuzz $TemplateList
 }
@@ -160,7 +208,7 @@ proc do_fuzzy_test {testname args} {
   array set ::fuzzyopts $args
   lappend ::fuzzyopts(-errorlist) {parser stack overflow} {ORDER BY column}
 
-  for {set ii 0} {$ii < 2000} {incr ii} {
+  for {set ii 0} {$ii < $::REPEATS} {incr ii} {
     do_test ${testname}.$ii {
       set ::sql [subst $::fuzzyopts(-template)]
       puts $::log $::sql
@@ -231,10 +279,28 @@ do_test fuzz-1.7 {
 } [execsql {SELECT zeroblob(1000)}]
 
 do_test fuzz-1.8 {
+  # Problems with opcode OP_ToText (did not account for MEM_Zero).
+  # Also MemExpandBlob() was marking expanded blobs as nul-terminated.
+  # They are not.
   execsql {
     SELECT CAST(zeroblob(1000) AS text);
   }
 } {{}}
+
+do_test fuzz-1.9 {
+  # This was causing a NULL pointer dereference of Expr.pList.
+  execsql {
+    SELECT 1 FROM (SELECT * FROM sqlite_master WHERE random())
+  }
+} {}
+
+do_test fuzz-1.10 {
+  # Bug in calculation of Parse.ckOffset causing an assert() 
+  # to fail. Probably harmless.
+  execsql {
+    SELECT coalesce(1, substr( 1, 2, length('in' IN (SELECT 1))))
+  }
+} {1}
 
 #----------------------------------------------------------------
 # Test some fuzzily generated expressions.
@@ -249,7 +315,6 @@ do_test fuzz-3.1 {
   }
 } {}
 set ::TableList  [list abc def ghi]
-set ::ColumnList [list a b c]
 
 #----------------------------------------------------------------
 # Test some fuzzily generated SELECT statements.
@@ -287,7 +352,23 @@ integrity_check fuzz-5.2.integrity
 do_test         fuzz-5.3 {execsql COMMIT} {}
 integrity_check fuzz-5.4.integrity
 
-do_fuzzy_test fuzz-6.1 -template {[Select]}
+#----------------------------------------------------------------
+# Now that there is data in the datbase, run some more SELECT 
+# statements
+#
+set ::ColumnList [list a b c]
+set E {{no such col} {ambiguous column name}}
+do_fuzzy_test fuzz-6.1 -template {[Select]} -errorlist $E
+
+#----------------------------------------------------------------
+# Run some SELECTs, INSERTs, UPDATEs and DELETEs in a transaction.
+#
+set E {{no such col} {ambiguous column name} {table}}
+do_test         fuzz-7.1 {execsql BEGIN} {}
+do_fuzzy_test   fuzz-7.2 -template {[Statement]} -errorlist $E
+integrity_check fuzz-7.3.integrity
+do_test         fuzz-7.4 {execsql COMMIT} {}
+integrity_check fuzz-7.5.integrity
 
 close $::log
 finish_test
