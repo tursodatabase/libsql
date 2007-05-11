@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.65 2007/05/08 14:39:04 danielk1977 Exp $
+# $Id: func.test,v 1.66 2007/05/11 01:44:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -834,16 +834,18 @@ do_test func-22.12 {
 do_test func-22.13 {
   execsql {SELECT trim('  hi  ','');}
 } {{  hi  }}
-do_test func-22.14 {
-  execsql {SELECT hex(trim(x'c280e1bfbff48fbfbf6869',x'6162e1bfbfc280'))}
-} {F48FBFBF6869}
-do_test func-22.15 {
-  execsql {SELECT hex(trim(x'6869c280e1bfbff48fbfbf61',
-                           x'6162e1bfbfc280f48fbfbf'))}
-} {6869}
-do_test func-22.16 {
-  execsql {SELECT hex(trim(x'ceb1ceb2ceb3',x'ceb1'));}
-} {CEB2CEB3}
+if {[db one {PRAGMA encoding}]=="UTF-8"} {
+  do_test func-22.14 {
+    execsql {SELECT hex(trim(x'c280e1bfbff48fbfbf6869',x'6162e1bfbfc280'))}
+  } {F48FBFBF6869}
+  do_test func-22.15 {
+    execsql {SELECT hex(trim(x'6869c280e1bfbff48fbfbf61',
+                             x'6162e1bfbfc280f48fbfbf'))}
+  } {6869}
+  do_test func-22.16 {
+    execsql {SELECT hex(trim(x'ceb1ceb2ceb3',x'ceb1'));}
+  } {CEB2CEB3}
+}
 do_test func-22.20 {
   execsql {SELECT typeof(trim(NULL));}
 } {null}

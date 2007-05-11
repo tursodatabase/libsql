@@ -1,5 +1,5 @@
-C Make\ssure\sthat\sthe\sREGISTER\stoken\sgenerates\sa\svalid\sExpr.\s\sREGISTER\swill\ncause\sthe\stokenizer\sto\sabort,\sbut\sthe\sparser\smight\sdo\sseveral\sreduce\nactions\sprior\sto\sthat\sabort\sand\sthose\sreduce\sactions\ssometimes\sneed\sa\nvalid\sExpr.\s(CVS\s3980)
-D 2007-05-11T00:20:08
+C Additional\sparsing\sbugs\sfixed.\s(CVS\s3981)
+D 2007-05-11T01:44:51
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -70,7 +70,7 @@ F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 6049db7d5a8fdf2c677ff7d58fa31d4f6593c988
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 482db8506575b5b257b78cc4ca1e825731cceda4
+F src/expr.c d890a38c2fed16440a3360f42516061b8e3cfad3
 F src/func.c f57e0111eb0e6335d3673cd4dea3fd69aa9e8743
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
@@ -94,7 +94,7 @@ F src/os_win.c 3b6169038101d06c54b4f04662bfd44b6cf2f289
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c acfa86f50b71b7e289508b213bb88e68273d42a0
 F src/pager.h 94110a5570dca30d54a883e880a3633b2e4c05ae
-F src/parse.y 39b25cc7f9e1a1a999f367545192c35db644610d
+F src/parse.y 8451c5b04a599a8c0e637850dd28fc03340f44c9
 F src/pragma.c 0703152b9edd6601eea95e1d474b3bc2962d7920
 F src/prepare.c 87c23644986b5e41a58bc76f05abebd899e00089
 F src/printf.c 05b233c7a39aec4c54c79ef87af24f0a6591175d
@@ -247,7 +247,7 @@ F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
-F test/func.test 6f230b25b235cc1afcc7bd5a41baf7317018a8d1
+F test/func.test bf30bac1c5ce10448ab739994268cf18f8b3fa30
 F test/fuzz.test db1bffeeb367b0e9147a1822db5c8c17c6f0b2ab
 F test/fuzz2.test fdbea571808441c12c91e9cd038eb77b4692d42b
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
@@ -488,7 +488,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a57afaff424448ffed8f2344e5eb461f503bfb6e
-R 1c4b57b77de749bc2a551005b3fab4dc
+P d146f01a02579339c5dc86bbe59f246bd6c05c63
+R 7125d6d53e0b2202166323742c3b01c2
 U drh
-Z 1451f40dc8d5cea45bc2414baa2bda16
+Z 23c6aad98fcd55bc5de6b8a43a789f0e
