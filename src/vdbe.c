@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.615 2007/05/10 21:14:03 drh Exp $
+** $Id: vdbe.c,v 1.616 2007/05/11 07:08:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -919,7 +919,7 @@ case OP_Pull: {            /* no-push */
   Deephemeralize(pTos);
   for(i=0; i<pOp->p1; i++, pFrom++){
     Deephemeralize(&pFrom[1]);
-    assert( (pFrom->flags & MEM_Ephem)==0 );
+    assert( (pFrom[1].flags & MEM_Ephem)==0 );
     *pFrom = pFrom[1];
     if( pFrom->flags & MEM_Short ){
       assert( pFrom->flags & (MEM_Str|MEM_Blob) );
@@ -2276,6 +2276,9 @@ case OP_MakeRecord: {
     if( pRec->flags&MEM_Null ){
       containsNull = 1;
     }
+    if( pRec->flags&MEM_Zero && pRec->n>0 ){
+      sqlite3VdbeMemExpandBlob(pRec);
+    }
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     len = sqlite3VdbeSerialTypeLen(serial_type);
     nData += len;
@@ -2283,7 +2286,6 @@ case OP_MakeRecord: {
     if( pRec->flags & MEM_Zero ){
       /* Only pure zero-filled BLOBs can be input to this Opcode.
       ** We do not allow blobs with a prefix and a zero-filled tail. */
-      assert( pRec->n==0 );
       nZero += pRec->u.i;
     }else if( len ){
       nZero = 0;
@@ -3830,12 +3832,15 @@ case OP_IdxInsert: {        /* no-push */
   assert( p->apCsr[i]!=0 );
   assert( pTos->flags & MEM_Blob );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
-    int nKey = pTos->n;
-    const char *zKey = pTos->z;
     assert( pC->isTable==0 );
-    rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, 0, pOp->p2);
-    assert( pC->deferredMoveto==0 );
-    pC->cacheStatus = CACHE_STALE;
+    rc = sqlite3VdbeMemExpandBlob(pTos);
+    if( rc==SQLITE_OK ){
+      int nKey = pTos->n;
+      const char *zKey = pTos->z;
+      rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, 0, pOp->p2);
+      assert( pC->deferredMoveto==0 );
+      pC->cacheStatus = CACHE_STALE;
+    }
   }
   Release(pTos);
   pTos--;

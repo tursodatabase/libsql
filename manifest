@@ -1,5 +1,5 @@
-C Additional\sparsing\sbugs\sfixed.\s(CVS\s3981)
-D 2007-05-11T01:44:51
+C Fix\sa\sproblem\swith\sinserting\szeroblob()\sinto\san\sindexed\scolumn.\s(CVS\s3982)
+D 2007-05-11T07:08:28
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -132,7 +132,7 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c be7c64eed83fa3c01e0c42905e1c311dcd1be704
 F src/util.c 4f6bbcec2b2b1884d652b82c9f8949ede4618d68
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c 308c698ad96a43249e12cb5067a4a823a6dea307
+F src/vdbe.c d1be8d8605608b6d7d925d40e1eb96e30d646fbc
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h bddb7931fc1216fda6f6720e18d2a9b1e0f8fc96
 F src/vdbeapi.c 3ca7808c67a10b5c20150108b431d520d141e93e
@@ -248,7 +248,7 @@ F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test bf30bac1c5ce10448ab739994268cf18f8b3fa30
-F test/fuzz.test db1bffeeb367b0e9147a1822db5c8c17c6f0b2ab
+F test/fuzz.test 1015e6a1452e14d36797977923593a938ba35d2f
 F test/fuzz2.test fdbea571808441c12c91e9cd038eb77b4692d42b
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
@@ -488,7 +488,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d146f01a02579339c5dc86bbe59f246bd6c05c63
-R 7125d6d53e0b2202166323742c3b01c2
-U drh
-Z 23c6aad98fcd55bc5de6b8a43a789f0e
+P d12a8924c6083cdff14990b4fd036ca386c2e34a
+R 680b3290f2d024e3ae05a79ad5b14302
+U danielk1977
+Z 9cd69253fcac83ce88c7739ef57267d1

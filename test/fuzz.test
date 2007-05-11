@@ -13,7 +13,7 @@
 # (a.k.a. "fuzz") and sending it into the parser to try to generate
 # errors.
 #
-# $Id: fuzz.test,v 1.4 2007/05/11 00:20:08 drh Exp $
+# $Id: fuzz.test,v 1.5 2007/05/11 07:08:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -135,13 +135,11 @@ do_test fuzz-1.6 {
 
 do_test fuzz-1.7 {
   execsql {
-    SELECT (
-      SELECT zeroblob(1000) FROM (
-        SELECT * FROM (SELECT 'first') ORDER BY NOT 'in'
-      )
+    SELECT ( SELECT zeroblob(1000) FROM ( 
+      SELECT * FROM (SELECT 'first') ORDER BY NOT 'in') 
     )
   }
-} {}
+} [execsql {SELECT zeroblob(1000)}]
 
 #----------------------------------------------------------------
 # Test some fuzzily generated expressions.
