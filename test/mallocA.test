@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file contains additional out-of-memory checks (see malloc.tcl).
 #
-# $Id: mallocA.test,v 1.1 2007/05/12 12:08:51 drh Exp $
+# $Id: mallocA.test,v 1.2 2007/05/12 15:00:15 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -118,7 +118,7 @@ proc do_malloc_test {tn args} {
 #
 file delete -force test.db.bu
 db eval {
-  CREATE TABLE t1(a,b,c);
+  CREATE TABLE t1(a COLLATE NOCASE,b,c);
   INSERT INTO t1 VALUES(1,2,3);
   INSERT INTO t1 VALUES(1,2,4);
   INSERT INTO t1 VALUES(2,3,4);
@@ -133,6 +133,18 @@ sqlite3 db test.db
 
 do_malloc_test 1 -sqlbody {
   ANALYZE
+}
+do_malloc_test 2 -sqlbody {
+  REINDEX;
+}
+do_malloc_test 3 -sqlbody {
+  REINDEX t1;
+}
+do_malloc_test 4 -sqlbody {
+  REINDEX main.t1;
+}
+do_malloc_test 5 -sqlbody {
+  REINDEX nocase;
 }
 
 # Ensure that no file descriptors were leaked.

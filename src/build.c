@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.429 2007/05/08 20:59:49 drh Exp $
+** $Id: build.c,v 1.430 2007/05/12 15:00:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3306,6 +3306,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pObjName);
   if( iDb<0 ) return;
   z = sqlite3NameFromToken(pObjName);
+  if( z==0 ) return;
   zDb = db->aDb[iDb].zName;
   pTab = sqlite3FindTable(db, z, zDb);
   if( pTab ){
