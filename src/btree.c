@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.380 2007/05/12 09:30:47 danielk1977 Exp $
+** $Id: btree.c,v 1.381 2007/05/12 10:41:48 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4510,6 +4510,10 @@ static int balance_nonroot(MemPage *pPage){
           memcpy(apCell[nCell], &pOld->aData[pOld->hdrOffset+8], 4);
         }else{
           assert( leafCorrection==4 );
+          if( szCell[nCell]<4 ){
+            /* Do not allow any cells smaller than 4 bytes. */
+            szCell[nCell] = 4;
+          }
         }
         nCell++;
       }
