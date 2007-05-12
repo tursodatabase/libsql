@@ -1,5 +1,5 @@
-C Check\sin\ssome\schanges\sto\sfuzz.test.\sStill\sfailing.\s(CVS\s3985)
-D 2007-05-11T16:58:04
+C Bugfixes\sfor\sassert()\sfailures\sfound\sby\sfuzz.test.\s(CVS\s3986)
+D 2007-05-12T06:11:12
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -70,8 +70,8 @@ F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 6049db7d5a8fdf2c677ff7d58fa31d4f6593c988
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c d890a38c2fed16440a3360f42516061b8e3cfad3
-F src/func.c f57e0111eb0e6335d3673cd4dea3fd69aa9e8743
+F src/expr.c 2283be0ae4186fa9bb2a8a3f6b545a51ea7632bd
+F src/func.c b6586f83c141859c103dd4954de66efc3fbd101b
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c e595ca26805dfb3a9ebaabc28e7947c479f3b14d
@@ -488,7 +488,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2f70159b1d6ded4a1ac446faa3baf7269f37703f
-R 0b013336ad3732dc516052d4aa155e80
+P 6f346a6be9803b84260509352315f8fa1e820490
+R 421ee1c5131718e89476168ba0bf8dd2
 U danielk1977
-Z 5241c0f63790746ffd570aebaabc6267
+Z 5c7f7cde115ea23bf87a55ad3a52e94b

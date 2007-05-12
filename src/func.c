@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.154 2007/05/10 13:23:23 drh Exp $
+** $Id: func.c,v 1.155 2007/05/12 06:11:12 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1424,7 +1424,7 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 */
 int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   FuncDef *pDef;
-  if( pExpr->op!=TK_FUNCTION ){
+  if( pExpr->op!=TK_FUNCTION || !pExpr->pList ){
     return 0;
   }
   if( pExpr->pList->nExpr!=2 ){
