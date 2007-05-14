@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\s"flattening"\soptimization.\sOccured\sif\sthe\sparent\sof\sthe\sflattened\ssub-query\sis\salso\sthe\sparent\sof\sa\ssub-query\sthat\suses\sa\scompound\sop\s(i.e.\sUNION,\sINTERSECT\setc.).\s(CVS\s3994)
-D 2007-05-14T15:49:44
+C Fix\sa\sproblem\swith\sORDER\sBY\sand\scompound\sSELECT\squeries.\s(CVS\s3995)
+D 2007-05-14T16:50:49
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -99,7 +99,7 @@ F src/pragma.c 6d5eb19feef9e84117b9b17a4c38b12b8c1c6897
 F src/prepare.c 87c23644986b5e41a58bc76f05abebd899e00089
 F src/printf.c 05b233c7a39aec4c54c79ef87af24f0a6591175d
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
-F src/select.c 0075d98428a570b88be68555681dc6d97ada7e2e
+F src/select.c c10b98aeccc67a9724c37bbecd6553e5a8da5bf6
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
 F src/sqlite.h.in 664b8702c27dc742584788823c548491ac8935d6
@@ -248,7 +248,7 @@ F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test bf30bac1c5ce10448ab739994268cf18f8b3fa30
-F test/fuzz.test 0669d41a446b1e4ccc80e868e7a56fbb0f625c34
+F test/fuzz.test f5c67c3bbf2031d6d1c08a546569831d53dc6452
 F test/fuzz2.test fdbea571808441c12c91e9cd038eb77b4692d42b
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
@@ -490,7 +490,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b1d1b16e9857a1c05f60cf2ae15f5a534b0dd0ac
-R b9512c73a0efc847c1f6f52b98d9ff58
+P 1c33829c9ebcf1ff1bd21b161c73a642471b613a
+R 74dda36291eea9b6f0fd1e20ec50a297
 U danielk1977
-Z d0d6b5393092c51da922cfae2e5f56ea
+Z fb87e50598d8586a8e44de44e21c1fa0

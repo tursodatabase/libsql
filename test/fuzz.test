@@ -19,7 +19,7 @@
 #
 # The most complicated trees are for SELECT statements.
 #
-# $Id: fuzz.test,v 1.9 2007/05/14 15:49:44 danielk1977 Exp $
+# $Id: fuzz.test,v 1.10 2007/05/14 16:50:49 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -484,6 +484,17 @@ do_test fuzz-1.12.2 {
     DROP TABLE abc;
   }
 } {}
+
+
+do_test fuzz-1.13 {
+  # The problem here was that when there were more expressions in
+  # the ORDER BY list than the result-set list. The temporary b-tree
+  # used for sorting was being misconfigured in this case.
+  #
+  execsql {
+    SELECT 'abcd' UNION SELECT 'efgh' ORDER BY 1 ASC, 1 ASC;
+  }
+} {abcd efgh}
 
 #----------------------------------------------------------------
 # Test some fuzzily generated expressions.
