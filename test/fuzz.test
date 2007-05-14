@@ -10,21 +10,29 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The
 # focus of this file is generating semi-random strings of SQL
-# (a.k.a. "fuzz") and sending it into the parser to try to generate
-# errors.
+# (a.k.a. "fuzz") and sending it into the parser to try to 
+# generate errors.
 #
-# $Id: fuzz.test,v 1.7 2007/05/11 16:58:04 danielk1977 Exp $
+# The tests in this file are really about testing fuzzily generated
+# SQL parse-trees. The majority of the fuzzily generated SQL is 
+# valid as far as the parser is concerned. 
+#
+# The most complicated trees are for SELECT statements.
+#
+# $Id: fuzz.test,v 1.8 2007/05/14 14:05:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 set ::REPEATS 20
-set ::REPEATS 5000
+# set ::REPEATS 5000
 
 proc fuzz {TemplateList} {
   set n [llength $TemplateList]
   set i [expr {int(rand()*$n)}]
-  return [uplevel 1 subst -novar [list [lindex $TemplateList $i]]]
+  set r [uplevel 1 subst -novar [list [lindex $TemplateList $i]]]
+
+  string map {"\n" " "} $r
 }
 
 # Fuzzy generation primitives:
@@ -76,29 +84,32 @@ set ::ExprDepth 0
 proc Expr { {c {}} } {
   incr ::ExprDepth
 
-  set TemplateList [concat $c {[Literal]}]
-  if {$::ExprDepth < 5} {
+  set TemplateList [concat $c $c $c {[Literal]}]
+  if {$::ExprDepth < 3} {
     lappend TemplateList \
-      {[Expr $c] [BinaryOp] [Expr $c]} \
-      {[UnaryOp] [Expr $c]}            \
-      {[Expr $c] ISNULL}               \
-      {[Expr $c] NOTNULL}              \
-      {CAST([Expr $c] AS blob)}        \
-      {CAST([Expr $c] AS text)}        \
-      {CAST([Expr $c] AS integer)}     \
-      {CAST([Expr $c] AS real)}        \
-      {abs([Expr])}                    \
-      {coalesce([Expr], [Expr])}       \
-      {hex([Expr])}                    \
-      {length([Expr])}                 \
-      {lower([Expr])}                  \
-      {upper([Expr])}                  \
-      {quote([Expr])}                  \
-      {random()}                       \
-      {randomblob(min(max([Expr],1), 500))}   \
-      {typeof([Expr])}                 \
-      {substr([Expr],[Expr],[Expr])}   \
+      {[Expr $c] [BinaryOp] [Expr $c]}                              \
+      {[UnaryOp] [Expr $c]}                                         \
+      {[Expr $c] ISNULL}                                            \
+      {[Expr $c] NOTNULL}                                           \
+      {CAST([Expr $c] AS blob)}                                     \
+      {CAST([Expr $c] AS text)}                                     \
+      {CAST([Expr $c] AS integer)}                                  \
+      {CAST([Expr $c] AS real)}                                     \
+      {abs([Expr])}                                                 \
+      {coalesce([Expr], [Expr])}                                    \
+      {hex([Expr])}                                                 \
+      {length([Expr])}                                              \
+      {lower([Expr])}                                               \
+      {upper([Expr])}                                               \
+      {quote([Expr])}                                               \
+      {random()}                                                    \
+      {randomblob(min(max([Expr],1), 500))}                         \
+      {typeof([Expr])}                                              \
+      {substr([Expr],[Expr],[Expr])}                                \
       {CASE WHEN [Expr $c] THEN [Expr $c] ELSE [Expr $c] END}       \
+      {[Literal]} {[Literal]} {[Literal]}                           \
+      {[Literal]} {[Literal]} {[Literal]}                           \
+      {[Literal]} {[Literal]} {[Literal]}                           \
       {[Literal]} {[Literal]} {[Literal]}
   }
   if {$::SelectDepth < 10} {
@@ -121,30 +132,105 @@ proc Table {} {
   fuzz $TemplateList
 }
 
-# Return a SELECT statement.
+# Return one of:
 #
+#     "SELECT DISTINCT", "SELECT ALL" or "SELECT"
+#
+proc SelectKw {} {
+  set TemplateList {
+    "SELECT DISTINCT"
+    "SELECT ALL"
+    "SELECT"
+  }
+  fuzz $TemplateList
+}
+
+# Return a result set for a SELECT statement.
+#
+proc ResultSet {{nRes 0} {c ""}} {
+  if {$nRes == 0} {
+    set nRes [expr {rand()*2 + 1}]
+  }
+
+  set aRes [list]
+  for {set ii 0} {$ii < $nRes} {incr ii} {
+    lappend aRes [Expr $c]
+  }
+
+  join $aRes ", "
+}
+
 set ::SelectDepth 0
 set ::ColumnList [list]
-proc Select {{isExpr 0}} {
-  incr ::SelectDepth
-  set TemplateList {
-      {SELECT [Expr]}
-      {SELECT [Literal]}
-  }
-  if {$::SelectDepth < 5} {
-    lappend TemplateList \
-        {SELECT [Expr] FROM ([Select])}                \
-        {SELECT [Expr $::ColumnList] FROM [Table]}     \
+proc SimpleSelect {{nRes 0}} {
 
-    if {0 == $isExpr} {
-      lappend TemplateList                                         \
-          {SELECT [Expr], [Expr] FROM ([Select]) ORDER BY [Expr]}  \
-          {SELECT * FROM ([Select]) ORDER BY [Expr]}               \
-          {SELECT * FROM [Table]}                                  \
-          {SELECT * FROM [Table] WHERE [Expr $::ColumnList]}       \
-{SELECT * FROM [Table],[Table] AS t2 WHERE [Expr $::ColumnList] LIMIT 1}
+  set TemplateList {
+      {[SelectKw] [ResultSet $nRes]}
+  }
+
+  # The ::SelectDepth variable contains the number of ancestor SELECT
+  # statements (i.e. for a top level SELECT it is set to 0, for a
+  # sub-select 1, for a sub-select of a sub-select 2 etc.).
+  #
+  # If this is already greater than 3, do not generate a complicated
+  # SELECT statement. This tends to cause parser stack overflow (too
+  # boring to bother with).
+  #
+  if {$::SelectDepth < 4} {
+    lappend TemplateList \
+        {[SelectKw] [ResultSet $nRes $::ColumnList] FROM ([Select])}     \
+        {[SelectKw] [ResultSet $nRes] FROM ([Select])}                       \
+        {[SelectKw] [ResultSet $nRes $::ColumnList] FROM [Table]}            \
+        {
+             [SelectKw] [ResultSet $nRes $::ColumnList] 
+             FROM ([Select]) 
+             GROUP BY [Expr]
+             HAVING [Expr]
+        }                                                                \
+
+    if {0 == $nRes} {
+      lappend TemplateList                                             \
+          {[SelectKw] * FROM ([Select])}                               \
+          {[SelectKw] * FROM [Table]}                                  \
+          {[SelectKw] * FROM [Table] WHERE [Expr $::ColumnList]}       \
+          {
+             [SelectKw] * 
+             FROM [Table],[Table] AS t2 
+             WHERE [Expr $::ColumnList] 
+          }                                                            \
     }
   } 
+
+  fuzz $TemplateList
+}
+
+# Return a SELECT statement.
+#
+# If boolean parameter $isExpr is set to true, make sure the
+# returned SELECT statement returns a single column of data.
+#
+proc Select {{nMulti 0}} {
+  set TemplateList {
+    {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} 
+    {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} 
+    {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} 
+    {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} 
+    {[SimpleSelect $nMulti] ORDER BY [Expr]}
+    {[SimpleSelect $nMulti] ORDER BY [Expr] LIMIT [Expr] OFFSET [Expr]}
+  }
+
+  if {$::SelectDepth < 4} {
+    if {$nMulti == 0} {
+      set nMulti [expr {(rand()*2)+1}]
+    }
+    lappend TemplateList                                             \
+        {[SimpleSelect $nMulti] UNION     [Select $nMulti]}          \
+        {[SimpleSelect $nMulti] UNION ALL [Select $nMulti]}          \
+        {[SimpleSelect $nMulti] EXCEPT    [Select $nMulti]}          \
+        {[SimpleSelect $nMulti] INTERSECT [Select $nMulti]}
+  }
+
+  incr ::SelectDepth
   set res [fuzz $TemplateList]
   incr ::SelectDepth -1
   set res
@@ -193,22 +279,68 @@ proc Statement {} {
   fuzz $TemplateList
 }
 
+# Return an identifier. This just chooses randomly from a fixed set
+# of strings.
+proc Identifier {} {
+  set TemplateList {
+    This just chooses randomly a fixed 
+    We would also thank the developers for their analysis Samba
+  }
+
+  fuzz $TemplateList
+}
+
+proc Check {} {
+  set sd $::SelectDepth 
+  set ::SelectDepth 500
+  set TemplateList {
+    {}
+    {CHECK ([Expr])}
+  }
+  set res [fuzz $TemplateList]
+  set ::SelectDepth $sd
+  set res
+}
+
+proc Coltype {} {
+  set TemplateList {
+    {INTEGER PRIMARY KEY}
+    {VARCHAR [Check]}
+    {PRIMARY KEY}
+  }
+  fuzz $TemplateList
+}
+
+proc CreateTable {} {
+  set TemplateList {
+    {CREATE TABLE [Identifier]([Identifier] [Coltype], [Identifier] [Coltype])}
+    {CREATE TEMP TABLE [Identifier]([Identifier] [Coltype])}
+  }
+  fuzz $TemplateList
+}
+
 ########################################################################
 
 set ::log [open fuzzy.log w]
 
-# 
+#
 # Usage: do_fuzzy_test <testname> ?<options>?
 # 
 #     -template
 #     -errorlist
+#     -repeats
 #     
 proc do_fuzzy_test {testname args} {
   set ::fuzzyopts(-errorlist) [list]
+  set ::fuzzyopts(-repeats) $::REPEATS
   array set ::fuzzyopts $args
-  lappend ::fuzzyopts(-errorlist) {parser stack overflow} {ORDER BY column}
 
-  for {set ii 0} {$ii < $::REPEATS} {incr ii} {
+  lappend ::fuzzyopts(-errorlist) {parser stack overflow} 
+  lappend ::fuzzyopts(-errorlist) {ORDER BY}
+  lappend ::fuzzyopts(-errorlist) {GROUP BY}
+  lappend ::fuzzyopts(-errorlist) {datatype mismatch}
+
+  for {set ii 0} {$ii < $::fuzzyopts(-repeats)} {incr ii} {
     do_test ${testname}.$ii {
       set ::sql [subst $::fuzzyopts(-template)]
       puts $::log $::sql
@@ -302,6 +434,24 @@ do_test fuzz-1.10 {
   }
 } {1}
 
+do_test fuzz-1.11 {
+  # The literals (A, B, C, D) are not important, they are just used
+  # to make the EXPLAIN output easier to read.
+  #
+  # The problem here is that the EXISTS(...) expression leaves an
+  # extra value on the VDBE stack. This is confusing the parent and
+  # leads to an assert() failure when OP_Insert encounters an integer
+  # when it expects a record blob.
+  #
+  # Update: Any query with (LIMIT 0) was leaking stack.
+  #
+  execsql {
+    SELECT 'A' FROM (SELECT 'B') ORDER BY EXISTS (
+      SELECT 'C' FROM (SELECT 'D' LIMIT 0)
+    )
+  }
+} {A}
+
 #----------------------------------------------------------------
 # Test some fuzzily generated expressions.
 #
@@ -353,7 +503,7 @@ do_test         fuzz-5.3 {execsql COMMIT} {}
 integrity_check fuzz-5.4.integrity
 
 #----------------------------------------------------------------
-# Now that there is data in the datbase, run some more SELECT 
+# Now that there is data in the database, run some more SELECT 
 # statements
 #
 set ::ColumnList [list a b c]
@@ -369,6 +519,12 @@ do_fuzzy_test   fuzz-7.2 -template {[Statement]} -errorlist $E
 integrity_check fuzz-7.3.integrity
 do_test         fuzz-7.4 {execsql COMMIT} {}
 integrity_check fuzz-7.5.integrity
+
+#----------------------------------------------------------------
+# Many CREATE TABLE statements:
+#
+do_fuzzy_test   fuzz-8.1 -template {[CreateTable]} \
+    -errorlist {table duplicate} -repeats 1000
 
 close $::log
 finish_test

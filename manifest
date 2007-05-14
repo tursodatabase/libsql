@@ -1,5 +1,5 @@
-C In\sthe\swindows\sdriver,\sreacquire\sthe\sshared\slock\sif\san\sexclusive\slock\nfails.\s\sTicket\s#2354.\s(CVS\s3992)
-D 2007-05-14T12:12:11
+C Prevent\ssub-queries\swith\s"LIMIT\s0"\sfrom\sleaving\san\sextra\svalue\son\sthe\svdbe\sstack.\sAlso\supdates\sto\sfuzz.test.\s(CVS\s3993)
+D 2007-05-14T14:05:00
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -99,7 +99,7 @@ F src/pragma.c 6d5eb19feef9e84117b9b17a4c38b12b8c1c6897
 F src/prepare.c 87c23644986b5e41a58bc76f05abebd899e00089
 F src/printf.c 05b233c7a39aec4c54c79ef87af24f0a6591175d
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
-F src/select.c 3f563bb096c5768ac99d4b762084e86d5b227230
+F src/select.c f3e6058cef3aac0fb0a96dfd62fb37b72b8c85ee
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
 F src/sqlite.h.in 664b8702c27dc742584788823c548491ac8935d6
@@ -248,7 +248,7 @@ F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test bf30bac1c5ce10448ab739994268cf18f8b3fa30
-F test/fuzz.test 5bd59290ab42cabbfb2e0ad1683a480f0d8e8693
+F test/fuzz.test e61fbb7097978520c6ae03612c840b57b48ad040
 F test/fuzz2.test fdbea571808441c12c91e9cd038eb77b4692d42b
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
@@ -490,7 +490,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5627ff74be9242418434a06fe5c104d1f9128cab
-R 0c7c37e0f61fe341487e039cea8f4a7f
-U drh
-Z 54bb2a4cba89e7dc4f208e7721315ddf
+P fc489b53829aa25bc10cc47d679c81d95c746abf
+R fa35ecf9a7f31652dcfcf4751b869430
+U danielk1977
+Z 0ce8d812cf9df96379b1ebf7ced3b3f4
