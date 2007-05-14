@@ -1,5 +1,5 @@
-C Remove\sterms\swith\soperator\sTK_AS\sfrom\sthe\sexpression\stree.\s\sTicket\s#2356.\s(CVS\s3991)
-D 2007-05-14T11:34:47
+C In\sthe\swindows\sdriver,\sreacquire\sthe\sshared\slock\sif\san\sexclusive\slock\nfails.\s\sTicket\s#2354.\s(CVS\s3992)
+D 2007-05-14T12:12:11
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -90,7 +90,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c cb1fb044b84870c7b1b8b2902e9d7be779f8b7ce
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 3b6169038101d06c54b4f04662bfd44b6cf2f289
+F src/os_win.c d868d5f9e95ec9c1b9e2a30c54c996053db6dddd
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c acfa86f50b71b7e289508b213bb88e68273d42a0
 F src/pager.h 94110a5570dca30d54a883e880a3633b2e4c05ae
@@ -490,7 +490,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P dbe417745d3d4ed875715ad7083d7345d1b6a56f
-R 6fe321bd341ad3acbb13e0750cc6f8e7
+P 5627ff74be9242418434a06fe5c104d1f9128cab
+R 0c7c37e0f61fe341487e039cea8f4a7f
 U drh
-Z e5ed06d7f6549ae20b899f9b0e3f9c4d
+Z 54bb2a4cba89e7dc4f208e7721315ddf

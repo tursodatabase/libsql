@@ -1290,6 +1290,7 @@ static int winLock(OsFile *id, int locktype){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
       OSTRACE2("error-code = %d\n", GetLastError());
+      getReadLock(pFile);
     }
   }
 
