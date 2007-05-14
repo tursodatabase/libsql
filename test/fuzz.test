@@ -19,13 +19,13 @@
 #
 # The most complicated trees are for SELECT statements.
 #
-# $Id: fuzz.test,v 1.8 2007/05/14 14:05:00 danielk1977 Exp $
+# $Id: fuzz.test,v 1.9 2007/05/14 15:49:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-set ::REPEATS 20
-# set ::REPEATS 5000
+# set ::REPEATS 20
+set ::REPEATS 5000
 
 proc fuzz {TemplateList} {
   set n [llength $TemplateList]
@@ -112,7 +112,7 @@ proc Expr { {c {}} } {
       {[Literal]} {[Literal]} {[Literal]}                           \
       {[Literal]} {[Literal]} {[Literal]}
   }
-  if {$::SelectDepth < 10} {
+  if {$::SelectDepth < 4} {
     lappend TemplateList \
       {([Select 1])}                       \
       {[Expr $c] IN ([Select 1])}          \
@@ -197,7 +197,12 @@ proc SimpleSelect {{nRes 0}} {
              [SelectKw] * 
              FROM [Table],[Table] AS t2 
              WHERE [Expr $::ColumnList] 
-          }                                                            \
+          } {
+             [SelectKw] * 
+             FROM [Table] LEFT OUTER JOIN [Table] AS t2 
+             ON [Expr $::ColumnList]
+             WHERE [Expr $::ColumnList] 
+          }
     }
   } 
 
@@ -215,7 +220,9 @@ proc Select {{nMulti 0}} {
     {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} 
     {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} 
     {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} {[SimpleSelect $nMulti]} 
-    {[SimpleSelect $nMulti] ORDER BY [Expr]}
+    {[SimpleSelect $nMulti] ORDER BY [Expr] DESC}
+    {[SimpleSelect $nMulti] ORDER BY [Expr] ASC}
+    {[SimpleSelect $nMulti] ORDER BY [Expr] ASC, [Expr] DESC}
     {[SimpleSelect $nMulti] ORDER BY [Expr] LIMIT [Expr] OFFSET [Expr]}
   }
 
@@ -284,13 +291,16 @@ proc Statement {} {
 proc Identifier {} {
   set TemplateList {
     This just chooses randomly a fixed 
-    We would also thank the developers for their analysis Samba
+    We would also thank the developers 
+    for their analysis Samba
   }
-
   fuzz $TemplateList
 }
 
 proc Check {} {
+  # Use a large value for $::SelectDepth, because sub-selects are
+  # not allowed in expressions used by CHECK constraints.
+  #
   set sd $::SelectDepth 
   set ::SelectDepth 500
   set TemplateList {
@@ -451,6 +461,29 @@ do_test fuzz-1.11 {
     )
   }
 } {A}
+
+do_test fuzz-1.12.1 {
+  # Create a table with a single row.
+  execsql {
+    CREATE TABLE abc(b);
+    INSERT INTO abc VALUES('ABCDE');
+  }
+
+  # The following query was crashing. The later subquery (in the FROM)
+  # clause was flattened into the parent, but the code was not repairng
+  # the "b" reference in the other sub-query. When the query was executed,
+  # that "b" refered to a non-existant vdbe table-cursor.
+  #
+  execsql {
+    SELECT 1 IN ( SELECT b UNION SELECT 1 ) FROM (SELECT b FROM abc);
+  }
+} {1}
+do_test fuzz-1.12.2 {
+  # Clean up after the previous query.
+  execsql {
+    DROP TABLE abc;
+  }
+} {}
 
 #----------------------------------------------------------------
 # Test some fuzzily generated expressions.

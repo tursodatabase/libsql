@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.346 2007/05/14 14:05:00 danielk1977 Exp $
+** $Id: select.c,v 1.347 2007/05/14 15:49:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2079,6 +2079,7 @@ static void substSelect(Select *p, int iTable, ExprList *pEList){
   substExprList(p->pOrderBy, iTable, pEList);
   substExpr(p->pHaving, iTable, pEList);
   substExpr(p->pWhere, iTable, pEList);
+  substSelect(p->pPrior, iTable, pEList);
 }
 #endif /* !defined(SQLITE_OMIT_VIEW) */
 
