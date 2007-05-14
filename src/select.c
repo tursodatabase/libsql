@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.344 2007/05/10 10:46:57 danielk1977 Exp $
+** $Id: select.c,v 1.345 2007/05/14 11:34:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -821,12 +821,6 @@ static const char *columnType(
   char const *zOriginCol = 0;
   int j;
   if( pExpr==0 || pNC->pSrcList==0 ) return 0;
-
-  /* The TK_AS operator can only occur in ORDER BY, GROUP BY, HAVING,
-  ** and LIMIT clauses.  But pExpr originates in the result set of a
-  ** SELECT.  So pExpr can never contain an AS operator.
-  */
-  assert( pExpr->op!=TK_AS );
 
   switch( pExpr->op ){
     case TK_AGG_COLUMN:

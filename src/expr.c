@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.292 2007/05/12 06:11:12 danielk1977 Exp $
+** $Id: expr.c,v 1.293 2007/05/14 11:34:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -35,9 +35,6 @@
 */
 char sqlite3ExprAffinity(Expr *pExpr){
   int op = pExpr->op;
-  if( op==TK_AS ){
-    return sqlite3ExprAffinity(pExpr->pLeft);
-  }
   if( op==TK_SELECT ){
     return sqlite3ExprAffinity(pExpr->pSelect->pEList->a[0].pExpr);
   }
@@ -75,7 +72,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
   CollSeq *pColl = 0;
   if( pExpr ){
     pColl = pExpr->pColl;
-    if( (pExpr->op==TK_AS || pExpr->op==TK_CAST) && !pColl ){
+    if( pExpr->op==TK_CAST && !pColl ){
       return sqlite3ExprCollSeq(pParse, pExpr->pLeft);
     }
   }
@@ -481,10 +478,6 @@ Expr *sqlite3ExprDup(Expr *p){
   pNew->pRight = sqlite3ExprDup(p->pRight);
   pNew->pList = sqlite3ExprListDup(p->pList);
   pNew->pSelect = sqlite3SelectDup(p->pSelect);
-  pNew->pTab = p->pTab;
-#if SQLITE_MAX_EXPR_DEPTH>0
-  pNew->nHeight = p->nHeight;
-#endif
   return pNew;
 }
 void sqlite3TokenCopy(Token *pTo, Token *pFrom){
@@ -1114,10 +1107,17 @@ static int lookupName(
       for(j=0; j<pEList->nExpr; j++){
         char *zAs = pEList->a[j].zName;
         if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
+          Expr *pDup;
           assert( pExpr->pLeft==0 && pExpr->pRight==0 );
-          pExpr->op = TK_AS;
-          pExpr->iColumn = j;
-          pExpr->pLeft = sqlite3ExprDup(pEList->a[j].pExpr);
+          assert( pExpr->pList==0 );
+          assert( pExpr->pSelect==0 );
+          pDup = sqlite3ExprDup(pEList->a[j].pExpr);
+          if( pExpr->flags & EP_ExpCollate ){
+            pDup->pColl = pExpr->pColl;
+            pDup->flags |= EP_ExpCollate;
+          }
+          memcpy(pExpr, pDup, sizeof(*pExpr));
+          sqliteFree(pDup);
           cnt = 1;
           assert( zTab==0 && zDb==0 );
           goto lookupname_end_2;
@@ -1960,8 +1960,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       sqlite3VdbeAddOp(v, OP_And, 0, 0);
       break;
     }
-    case TK_UPLUS:
-    case TK_AS: {
+    case TK_UPLUS: {
       sqlite3ExprCode(pParse, pExpr->pLeft);
       stackChng = 0;
       break;
