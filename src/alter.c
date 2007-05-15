@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.24 2007/05/15 03:56:49 drh Exp $
+** $Id: alter.c,v 1.25 2007/05/15 14:34:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -273,7 +273,6 @@ void sqlite3AlterRenameTable(
   Table *pTab;              /* Table being renamed */
   char *zName = 0;          /* NULL-terminated version of pName */ 
   sqlite3 *db = pParse->db; /* Database connection */
-  int i;                    /* Loop counter */
   int nTabName;             /* Number of UTF-8 characters in zTabName */
   const char *zTabName;     /* Original name of the table */
   Vdbe *v;
@@ -339,9 +338,7 @@ void sqlite3AlterRenameTable(
 
   /* figure out how many UTF-8 characters are in zName */
   zTabName = pTab->zName;
-  for(i=nTabName=0; zTabName[i]; i++){
-    if( (zTabName[i]&0xc0)!=0x80 ) nTabName++;
-  }
+  nTabName = sqlite3Utf8CharLen(zTabName, -1);
 
   /* Modify the sqlite_master table to use the new table name. */
   sqlite3NestedParse(pParse,

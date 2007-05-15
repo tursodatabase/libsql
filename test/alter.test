@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.23 2007/05/15 09:00:16 drh Exp $
+# $Id: alter.test,v 1.24 2007/05/15 14:34:32 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -703,6 +703,10 @@ do_test alter-11.1 {
   }
 } {1 {duplicate column name: abc}}
 do_test alter-11.2 {
+  execsql {INSERT INTO t11 VALUES(1,2)}
+  sqlite3_exec db {SELECT %c6%c6 AS xyz, abc FROM t11}
+} {0 {xyz abc 1 2}}
+do_test alter-11.3 {
   sqlite3_exec db {CREATE TABLE t11b("%81%82%83" text)}
   execsql {
     ALTER TABLE t11b ADD COLUMN abc;
@@ -711,9 +715,35 @@ do_test alter-11.2 {
     ALTER TABLE t11b ADD COLUMN abc;
   }
 } {1 {duplicate column name: abc}}
-do_test alter-11.3 {
-  set v [sqlite3_exec db {CREATE TABLE t11c(%81%82%83 text)}]
-  set v [string range $v 0 20]\175
-} {1 {unrecognized token}}
+do_test alter-11.4 {
+  execsql {INSERT INTO t11b VALUES(3,4)}
+  sqlite3_exec db {SELECT %81%82%83 AS xyz, abc FROM t11b}
+} {0 {xyz abc 3 4}}
+do_test alter-11.5 {
+  sqlite3_exec db {SELECT [%81%82%83] AS xyz, abc FROM t11b}
+} {0 {xyz abc 3 4}}
+do_test alter-11.6 {
+  sqlite3_exec db {SELECT "%81%82%83" AS xyz, abc FROM t11b}
+} {0 {xyz abc 3 4}}
+do_test alter-11.7 {
+  sqlite3_exec db {CREATE TABLE t11c(%81%82%83 text)}
+  execsql {
+    ALTER TABLE t11c ADD COLUMN abc;
+  }
+  catchsql {
+    ALTER TABLE t11c ADD COLUMN abc;
+  }
+} {1 {duplicate column name: abc}}
+do_test alter-11.8 {
+  execsql {INSERT INTO t11c VALUES(5,6)}
+  sqlite3_exec db {SELECT %81%82%83 AS xyz, abc FROM t11c}
+} {0 {xyz abc 5 6}}
+do_test alter-11.9 {
+  sqlite3_exec db {SELECT [%81%82%83] AS xyz, abc FROM t11c}
+} {0 {xyz abc 5 6}}
+do_test alter-11.10 {
+  sqlite3_exec db {SELECT "%81%82%83" AS xyz, abc FROM t11c}
+} {0 {xyz abc 5 6}}
+
 
 finish_test
