@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.208 2007/05/08 15:15:02 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.209 2007/05/15 02:45:19 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -354,7 +354,7 @@ int sqlite3_complete16(const void *sql);
 ** The default busy callback is NULL.
 **
 ** Sqlite is re-entrant, so the busy handler may start a new query. 
-** (It is not clear why anyone would every want to do this, but it
+** (It is not clear why anyone would ever want to do this, but it
 ** is allowed, in theory.)  But the busy handler may not close the
 ** database.  Closing the database from a busy handler will delete 
 ** data structures out from under the executing query and will 
