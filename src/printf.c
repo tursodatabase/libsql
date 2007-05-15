@@ -729,19 +729,22 @@ static void mout(void *arg, const char *zNewText, int nNewChar){
     if( pM->xRealloc==0 ){
       nNewChar =  pM->nAlloc - pM->nChar - 1;
     }else{
-      pM->nAlloc = pM->nChar + nNewChar*2 + 1;
+      int nAlloc = pM->nChar + nNewChar*2 + 1;
       if( pM->zText==pM->zBase ){
-        pM->zText = pM->xRealloc(0, pM->nAlloc);
+        pM->zText = pM->xRealloc(0, nAlloc);
         if( pM->zText && pM->nChar ){
           memcpy(pM->zText, pM->zBase, pM->nChar);
         }
       }else{
         char *zNew;
-        zNew = pM->xRealloc(pM->zText, pM->nAlloc);
+        zNew = pM->xRealloc(pM->zText, nAlloc);
         if( zNew ){
           pM->zText = zNew;
+        }else{
+          return;
         }
       }
+      pM->nAlloc = nAlloc;
     }
   }
   if( pM->zText ){
