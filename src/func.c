@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.156 2007/05/15 01:13:47 drh Exp $
+** $Id: func.c,v 1.157 2007/05/15 11:55:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -103,7 +103,11 @@ static void lengthFunc(
     case SQLITE_TEXT: {
       const unsigned char *z = sqlite3_value_text(argv[0]);
       if( z==0 ) return;
-      for(len=0; *z; z++){ if( (0xc0&*z)!=0x80 ) len++; }
+      len = 0;
+      while( *z ){
+        len++;
+        SQLITE_SKIP_UTF8(z);
+      }
       sqlite3_result_int(context, len);
       break;
     }
@@ -162,7 +166,6 @@ static void substrFunc(
 ){
   const unsigned char *z;
   const unsigned char *z2;
-  int i;
   int len;
   int p0type;
   i64 p1, p2;
@@ -176,7 +179,10 @@ static void substrFunc(
   }else{
     z = sqlite3_value_text(argv[0]);
     if( z==0 ) return;
-    for(len=0, z2=z; *z2; z2++){ if( (0xc0&*z2)!=0x80 ) len++; }
+    len = 0;
+    for(z2=z; *z2; len++){
+      SQLITE_SKIP_UTF8(z2);
+    }
   }
   p1 = sqlite3_value_int(argv[1]);
   p2 = sqlite3_value_int(argv[2]);
@@ -193,16 +199,14 @@ static void substrFunc(
     p2 = len-p1;
   }
   if( p0type!=SQLITE_BLOB ){
-    for(i=0; i<p1 && z[i]; i++){
-      if( (z[i]&0xc0)==0x80 ) p1++;
+    while( *z && p1 ){
+      SQLITE_SKIP_UTF8(z);
+      p1--;
     }
-    while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p1++; }
-    for(; i<p1+p2 && z[i]; i++){
-      if( (z[i]&0xc0)==0x80 ) p2++;
+    for(z2=z; *z2 && p2; p2--){
+      SQLITE_SKIP_UTF8(z2);
     }
-    while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p2++; }
-    if( p2<0 ) p2 = 0;
-    sqlite3_result_text(context, (char*)&z[p1], p2, SQLITE_TRANSIENT);
+    sqlite3_result_text(context, (char*)z, z2-z, SQLITE_TRANSIENT);
   }else{
     if( p2<0 ) p2 = 0;
     sqlite3_result_blob(context, (char*)&z[p1], p2, SQLITE_TRANSIENT);
@@ -389,13 +393,13 @@ static const struct compareInfo likeInfoNorm = { '%', '_',   0, 1 };
 static const struct compareInfo likeInfoAlt = { '%', '_',   0, 0 };
 
 /*
-** X is a pointer to the first byte of a UTF-8 character.  Increment
-** X so that it points to the next character.  This only works right
-** if X points to a well-formed UTF-8 string.
+** Read a single UTF-8 character and return its value.
 */
-#define sqliteNextChar(X)  while( (0xc0&*++(X))==0x80 ){}
-#define sqliteCharVal(X)   sqlite3ReadUtf8(X)
-
+u32 sqlite3ReadUtf8(const unsigned char *z){
+  u32 c;
+  SQLITE_READ_UTF8(z, c);
+  return c;
+}
 
 /*
 ** Compare two UTF-8 strings for equality where the first string can
@@ -446,20 +450,20 @@ static int patternCompare(
       while( (c=zPattern[1]) == matchAll || c == matchOne ){
         if( c==matchOne ){
           if( *zString==0 ) return 0;
-          sqliteNextChar(zString);
+          SQLITE_SKIP_UTF8(zString);
         }
         zPattern++;
       }
       if( c && esc && sqlite3ReadUtf8(&zPattern[1])==esc ){
         u8 const *zTemp = &zPattern[1];
-        sqliteNextChar(zTemp);
+        SQLITE_SKIP_UTF8(zTemp);
         c = *zTemp;
       }
       if( c==0 ) return 1;
       if( c==matchSet ){
         assert( esc==0 );   /* This is GLOB, not LIKE */
         while( *zString && patternCompare(&zPattern[1],zString,pInfo,esc)==0 ){
-          sqliteNextChar(zString);
+          SQLITE_SKIP_UTF8(zString);
         }
         return *zString!=0;
       }else{
@@ -473,20 +477,20 @@ static int patternCompare(
           }
           if( c2==0 ) return 0;
           if( patternCompare(&zPattern[1],zString,pInfo,esc) ) return 1;
-          sqliteNextChar(zString);
+          SQLITE_SKIP_UTF8(zString);
         }
         return 0;
       }
     }else if( !prevEscape && c==matchOne ){
       if( *zString==0 ) return 0;
-      sqliteNextChar(zString);
+      SQLITE_SKIP_UTF8(zString);
       zPattern++;
     }else if( c==matchSet ){
       int prior_c = 0;
       assert( esc==0 );    /* This only occurs for GLOB, not LIKE */
       seen = 0;
       invert = 0;
-      c = sqliteCharVal(zString);
+      c = sqlite3ReadUtf8(zString);
       if( c==0 ) return 0;
       c2 = *++zPattern;
       if( c2=='^' ){ invert = 1; c2 = *++zPattern; }
@@ -494,10 +498,10 @@ static int patternCompare(
         if( c==']' ) seen = 1;
         c2 = *++zPattern;
       }
-      while( (c2 = sqliteCharVal(zPattern))!=0 && c2!=']' ){
+      while( (c2 = sqlite3ReadUtf8(zPattern))!=0 && c2!=']' ){
         if( c2=='-' && zPattern[1]!=']' && zPattern[1]!=0 && prior_c>0 ){
           zPattern++;
-          c2 = sqliteCharVal(zPattern);
+          c2 = sqlite3ReadUtf8(zPattern);
           if( c>=prior_c && c<=c2 ) seen = 1;
           prior_c = 0;
         }else if( c==c2 ){
@@ -506,14 +510,14 @@ static int patternCompare(
         }else{
           prior_c = c2;
         }
-        sqliteNextChar(zPattern);
+        SQLITE_SKIP_UTF8(zPattern);
       }
       if( c2==0 || (seen ^ invert)==0 ) return 0;
-      sqliteNextChar(zString);
+      SQLITE_SKIP_UTF8(zString);
       zPattern++;
     }else if( esc && !prevEscape && sqlite3ReadUtf8(zPattern)==esc){
       prevEscape = 1;
-      sqliteNextChar(zPattern);
+      SQLITE_SKIP_UTF8(zPattern);
     }else{
       if( noCase ){
         if( sqlite3UpperToLower[c] != sqlite3UpperToLower[*zString] ) return 0;
@@ -851,7 +855,7 @@ static void trimFunc(
   }else{
     const unsigned char *z;
     for(z=zCharSet, nChar=0; *z; nChar++){
-      sqliteNextChar(z);
+      SQLITE_SKIP_UTF8(z);
     }
     if( nChar>0 ){
       azChar = sqlite3_malloc( nChar*(sizeof(char*)+1) );
@@ -861,7 +865,7 @@ static void trimFunc(
       aLen = (unsigned char*)&azChar[nChar];
       for(z=zCharSet, nChar=0; *z; nChar++){
         azChar[nChar] = z;
-        sqliteNextChar(z);
+        SQLITE_SKIP_UTF8(z);
         aLen[nChar] = z - azChar[nChar];
       }
     }
