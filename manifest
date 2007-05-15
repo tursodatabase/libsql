@@ -1,5 +1,5 @@
-C Make\ssure\spParse->rc\sgets\sset\swhenever\ssqlite3ErrorMsg()\sis\scalled.\s\sThis\sis\nadded\sinsurance\sthat\sparsing\swill\sstop\squickly\safter\san\serror.\s\sThis\schange\ndid\smake\sthe\sparser\sstop\sfaster\sin\ssome\scases,\swhich\srequired\ssome\srevisions\nto\stests.\s(CVS\s4010)
-D 2007-05-15T16:51:37
+C Additional\stests\sfor\smalformed\sUTF-8.\s(CVS\s4011)
+D 2007-05-15T18:35:21
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -164,6 +164,7 @@ F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
 F test/autovacuum_ioerr.test c46a76869cb6eddbbb40b419b2b6c4c001766b1f
 F test/autovacuum_ioerr2.test dc189f323cf0546289b5a9bbda60bcb1fe52bd4b
 F test/avtrans.test b77740800de0d2cdcf394ef94d2d61225a1941d8
+F test/badutf.test e5cd3fd946b76fb0d05024156618ed905298f44a
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test ebc9ce9216e08bead63734ab816d0f27858f3b80
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
@@ -247,7 +248,7 @@ F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
-F test/func.test bf30bac1c5ce10448ab739994268cf18f8b3fa30
+F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 3d382b2d3c6b909a4f08b46dc6ca6a149eeb3a81
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
@@ -491,7 +492,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9b91502ef0ea9c0bfb8362c4b70314dc8449eb9e
-R 05f932c99108ea2fd9e2cf63bbb5a075
+P f84d9dab110c4415d9b772f8043397640162b6b2
+R 53fa1bf671cabc8be454726443bd9326
 U drh
-Z 9a27c4d77fa449acc8811ad8c3119491
+Z 08fe10d1e019c102afe7db67bcfd77dd

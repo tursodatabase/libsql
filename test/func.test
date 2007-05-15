@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.66 2007/05/11 01:44:52 drh Exp $
+# $Id: func.test,v 1.67 2007/05/15 18:35:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -327,17 +327,31 @@ do_test func-9.5 {
 do_test func-9.10 {
   execsql {SELECT hex(x'00112233445566778899aAbBcCdDeEfF')}
 } {00112233445566778899AABBCCDDEEFF}
-do_test func-9.11 {
-  execsql {SELECT hex(replace('abcdefg','ef','12'))}
-} {61626364313267}
-do_test func-9.12 {
-  execsql {SELECT hex(replace('abcdefg','','12'))}
-} {{}}
-breakpoint
-do_test func-9.13 {
-  execsql {SELECT hex(replace('aabcdefg','a','aaa'))}
-} {616161616161626364656667}
-
+set encoding [db one {PRAGMA encoding}]
+if {$encoding=="UTF-16le"} {
+  do_test func-9.11-utf16le {
+    execsql {SELECT hex(replace('abcdefg','ef','12'))}
+  } {6100620063006400310032006700}
+  do_test func-9.12-utf16le {
+    execsql {SELECT hex(replace('abcdefg','','12'))}
+  } {{}}
+  breakpoint
+  do_test func-9.13-utf16le {
+    execsql {SELECT hex(replace('aabcdefg','a','aaa'))}
+  } {610061006100610061006100620063006400650066006700}
+} elseif {$encoding=="UTF-8"} {
+  do_test func-9.11-utf8 {
+    execsql {SELECT hex(replace('abcdefg','ef','12'))}
+  } {61626364313267}
+  do_test func-9.12-utf8 {
+    execsql {SELECT hex(replace('abcdefg','','12'))}
+  } {{}}
+  breakpoint
+  do_test func-9.13-utf8 {
+    execsql {SELECT hex(replace('aabcdefg','a','aaa'))}
+  } {616161616161626364656667}
+}
+  
 # Use the "sqlite_register_test_function" TCL command which is part of
 # the text fixture in order to verify correct operation of some of
 # the user-defined SQL function APIs that are not used by the built-in
