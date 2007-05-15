@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.155 2007/05/12 06:11:12 danielk1977 Exp $
+** $Id: func.c,v 1.156 2007/05/15 01:13:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -146,7 +146,14 @@ static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 }
 
 /*
-** Implementation of the substr() function
+** Implementation of the substr() function.
+**
+** substr(x,p1,p2)  returns p2 characters of x[] beginning with p1.
+** p1 is 1-indexed.  So substr(x,1,1) returns the first character
+** of x.  If x is text, then we actually count UTF-8 characters.
+** If x is a blob, then we count bytes.
+**
+** If p1 is negative, then we begin abs(p1) from the end of x[].
 */
 static void substrFunc(
   sqlite3_context *context,
@@ -157,14 +164,22 @@ static void substrFunc(
   const unsigned char *z2;
   int i;
   int len;
+  int p0type;
   i64 p1, p2;
 
   assert( argc==3 );
-  z = sqlite3_value_text(argv[0]);
-  if( z==0 ) return;
+  p0type = sqlite3_value_type(argv[0]);
+  if( p0type==SQLITE_BLOB ){
+    len = sqlite3_value_bytes(argv[0]);
+    z = sqlite3_value_blob(argv[0]);
+    if( z==0 ) return;
+  }else{
+    z = sqlite3_value_text(argv[0]);
+    if( z==0 ) return;
+    for(len=0, z2=z; *z2; z2++){ if( (0xc0&*z2)!=0x80 ) len++; }
+  }
   p1 = sqlite3_value_int(argv[1]);
   p2 = sqlite3_value_int(argv[2]);
-  for(len=0, z2=z; *z2; z2++){ if( (0xc0&*z2)!=0x80 ) len++; }
   if( p1<0 ){
     p1 += len;
     if( p1<0 ){
@@ -177,16 +192,21 @@ static void substrFunc(
   if( p1+p2>len ){
     p2 = len-p1;
   }
-  for(i=0; i<p1 && z[i]; i++){
-    if( (z[i]&0xc0)==0x80 ) p1++;
+  if( p0type!=SQLITE_BLOB ){
+    for(i=0; i<p1 && z[i]; i++){
+      if( (z[i]&0xc0)==0x80 ) p1++;
+    }
+    while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p1++; }
+    for(; i<p1+p2 && z[i]; i++){
+      if( (z[i]&0xc0)==0x80 ) p2++;
+    }
+    while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p2++; }
+    if( p2<0 ) p2 = 0;
+    sqlite3_result_text(context, (char*)&z[p1], p2, SQLITE_TRANSIENT);
+  }else{
+    if( p2<0 ) p2 = 0;
+    sqlite3_result_blob(context, (char*)&z[p1], p2, SQLITE_TRANSIENT);
   }
-  while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p1++; }
-  for(; i<p1+p2 && z[i]; i++){
-    if( (z[i]&0xc0)==0x80 ) p2++;
-  }
-  while( z[i] && (z[i]&0xc0)==0x80 ){ i++; p2++; }
-  if( p2<0 ) p2 = 0;
-  sqlite3_result_text(context, (char*)&z[p1], p2, SQLITE_TRANSIENT);
 }
 
 /*
