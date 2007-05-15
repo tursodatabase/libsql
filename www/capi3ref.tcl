@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.58 2007/05/15 13:27:08 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.59 2007/05/15 14:17:25 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -158,9 +158,9 @@ api {} {
   #define SQLITE_TRANSIENT   ((void(*)(void *))-1)
 } {
  In the SQL strings input to sqlite3_prepare_v2() and sqlite3_prepare16_v2(),
- one or more literals can be replace by a parameter "?" or ":AAA" or 
- "@AAA" or "\$VVV"
- where AAA is an alphanumeric identifier and VVV is a variable name according
+ one or more literals can be replace by a parameter "?" or "?NNN"
+ or ":AAA" or "@AAA" or "\$VVV" where NNN is an integer literal,
+ AAA is an alphanumeric identifier and VVV is a variable name according
  to the syntax rules of the TCL programming language.
  The values of these parameters (also called "host parameter names")
  can be set using the sqlite3_bind_*() routines.
@@ -172,7 +172,9 @@ api {} {
  and subsequent
  occurrences have the same index as the first occurrence.  The index for
  named parameters can be looked up using the
- sqlite3_bind_parameter_name() API if desired.
+ sqlite3_bind_parameter_name() API if desired.  The index for "?NNN"
+ parametes is the value of NNN.  The NNN value must be between 1 and 999.
+
 
  The third argument is the value to bind to the parameter.
 
@@ -217,15 +219,17 @@ api {} {
 } {
   Return the name of the n-th parameter in the precompiled statement.
   Parameters of the form ":AAA" or "@AAA" or "\$VVV" have a name which is the
-  string ":AAA" or "\$VVV".  In other words, the initial ":" or "$" or "@"
+  string ":AAA" or "@AAA" or "\$VVV".  
+  In other words, the initial ":" or "$" or "@"
   is included as part of the name.
-  Parameters of the form "?" have no name.
+  Parameters of the form "?" or "?NNN" have no name.
 
   The first bound parameter has an index of 1, not 0.
 
   If the value n is out of range or if the n-th parameter is nameless,
   then NULL is returned.  The returned string is always in the
-  UTF-8 encoding.
+  UTF-8 encoding even if the named parameter was originally specified
+  as UTF-16 in sqlite3_prepare16_v2().
 }
 
 api {} {
@@ -390,6 +394,15 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
 
  If the SQL statement is not currently point to a valid row, or if the
  the column index is out of range, the result is undefined.
+
+ The sqlite3_column_type() routine returns the initial data type
+ of the result column.  The returned value is one of SQLITE_INTEGER,
+ SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, or SQLITE_NULL.  The value
+ returned by sqlite3_column_type() is only meaningful if no type
+ conversions have occurred as described below.  After a type conversion,
+ the value returned by sqlite3_column_type() is undefined.  Future
+ versions of SQLite may change the behavior of sqlite3_column_type()
+ following a type conversion.
 
  If the result is a BLOB or UTF-8 string then the sqlite3_column_bytes() 
  routine returns the number of bytes in that BLOB or string.
