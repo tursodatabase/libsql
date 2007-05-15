@@ -19,13 +19,13 @@
 #
 # The most complicated trees are for SELECT statements.
 #
-# $Id: fuzz.test,v 1.11 2007/05/15 07:00:34 danielk1977 Exp $
+# $Id: fuzz.test,v 1.12 2007/05/15 07:14:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 set ::REPEATS 5000
-if {[info exists $::ISQUICK]} {
+if {[info exists ::ISQUICK]} {
   if {$::ISQUICK} { set ::REPEATS 20 }
 }
 
@@ -619,7 +619,7 @@ integrity_check fuzz-7.5.integrity
 #----------------------------------------------------------------
 # Many CREATE and DROP TABLE statements:
 #
-set E [list table duplicate {no such col} {ambiguous column name}]
+set E [list table duplicate {no such col} {ambiguous column name} {use DROP}]
 do_fuzzy_test fuzz-8.1 -template {[CreateOrDropTableOrView]} -errorlist $E
 
 close $::log

@@ -1,5 +1,5 @@
-C A\sfix\sfor\squeries\sthat\sused\scorrelated,\scompound\ssub-queries\sin\sthe\sHAVING\sclause.\sAlso\supdate\sfuzz.test\ssome\smore.\s(CVS\s4001)
-D 2007-05-15T07:00:34
+C Fix\ssome\stest\sscript\serrors\sin\sfuzz.test.\s(CVS\s4002)
+D 2007-05-15T07:14:33
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -248,7 +248,7 @@ F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test bf30bac1c5ce10448ab739994268cf18f8b3fa30
-F test/fuzz.test 7a4c70e50c846e49611516869376d652463823a8
+F test/fuzz.test 3d382b2d3c6b909a4f08b46dc6ca6a149eeb3a81
 F test/fuzz2.test f1866329c9d0869297fb47fd1b4f597d5b66ac97
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
@@ -491,7 +491,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9ff382f4584ff685a78b39f24424319709efb382
-R 781ca6d5fc4b7ffe2d6fe8b39dfcde15
+P da0c1ab4deedd2b952a43b3af6962a9403f8c9ee
+R a07fd7fed8eb4a7544695a85e91db0c4
 U danielk1977
-Z dd0e0b0007aae2c4aac7b25601ed472b
+Z 156ec1d1638adadb1b9b333874a71edf
