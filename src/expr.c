@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.293 2007/05/14 11:34:47 drh Exp $
+** $Id: expr.c,v 1.294 2007/05/15 07:00:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -804,6 +804,9 @@ static int walkSelectExpr(Select *p, int (*xFunc)(void *, Expr*), void *pArg){
   walkExprList(p->pGroupBy, xFunc, pArg);
   walkExprTree(p->pHaving, xFunc, pArg);
   walkExprList(p->pOrderBy, xFunc, pArg);
+  if( p->pPrior ){
+    walkSelectExpr(p->pPrior, xFunc, pArg);
+  }
   return 0;
 }
 

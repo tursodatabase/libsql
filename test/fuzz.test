@@ -19,13 +19,15 @@
 #
 # The most complicated trees are for SELECT statements.
 #
-# $Id: fuzz.test,v 1.10 2007/05/14 16:50:49 danielk1977 Exp $
+# $Id: fuzz.test,v 1.11 2007/05/15 07:00:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-# set ::REPEATS 20
 set ::REPEATS 5000
+if {[info exists $::ISQUICK]} {
+  if {$::ISQUICK} { set ::REPEATS 20 }
+}
 
 proc fuzz {TemplateList} {
   set n [llength $TemplateList]
@@ -179,8 +181,8 @@ proc SimpleSelect {{nRes 0}} {
   if {$::SelectDepth < 4} {
     lappend TemplateList \
         {[SelectKw] [ResultSet $nRes $::ColumnList] FROM ([Select])}     \
-        {[SelectKw] [ResultSet $nRes] FROM ([Select])}                       \
-        {[SelectKw] [ResultSet $nRes $::ColumnList] FROM [Table]}            \
+        {[SelectKw] [ResultSet $nRes] FROM ([Select])}                   \
+        {[SelectKw] [ResultSet $nRes $::ColumnList] FROM [Table]}        \
         {
              [SelectKw] [ResultSet $nRes $::ColumnList] 
              FROM ([Select]) 
@@ -189,10 +191,10 @@ proc SimpleSelect {{nRes 0}} {
         }                                                                \
 
     if {0 == $nRes} {
-      lappend TemplateList                                             \
-          {[SelectKw] * FROM ([Select])}                               \
-          {[SelectKw] * FROM [Table]}                                  \
-          {[SelectKw] * FROM [Table] WHERE [Expr $::ColumnList]}       \
+      lappend TemplateList                                               \
+          {[SelectKw] * FROM ([Select])}                                 \
+          {[SelectKw] * FROM [Table]}                                    \
+          {[SelectKw] * FROM [Table] WHERE [Expr $::ColumnList]}         \
           {
              [SelectKw] * 
              FROM [Table],[Table] AS t2 
@@ -321,10 +323,40 @@ proc Coltype {} {
   fuzz $TemplateList
 }
 
+proc DropTable {} {
+  set TemplateList {
+    {DROP TABLE IF EXISTS [Identifier]}
+  }
+  fuzz $TemplateList
+}
+
+proc CreateView {} {
+  set TemplateList {
+    {CREATE VIEW [Identifier] AS [Select]}
+  }
+  fuzz $TemplateList
+}
+proc DropView {} {
+  set TemplateList {
+    {DROP VIEW IF EXISTS [Identifier]}
+  }
+  fuzz $TemplateList
+}
+
 proc CreateTable {} {
   set TemplateList {
     {CREATE TABLE [Identifier]([Identifier] [Coltype], [Identifier] [Coltype])}
     {CREATE TEMP TABLE [Identifier]([Identifier] [Coltype])}
+  }
+  fuzz $TemplateList
+}
+
+proc CreateOrDropTableOrView {} {
+  set TemplateList {
+    {[CreateTable]}
+    {[DropTable]}
+    {[CreateView]}
+    {[DropView]}
   }
   fuzz $TemplateList
 }
@@ -496,6 +528,26 @@ do_test fuzz-1.13 {
   }
 } {abcd efgh}
 
+do_test fuzz-1.14.1 {
+  execsql {
+    CREATE TABLE abc(a, b, c);
+    INSERT INTO abc VALUES(123, 456, 789);
+  }
+ 
+  # The [a] reference in the sub-select was causing a problem. Because
+  # the internal walkSelectExpr() function was not considering compound
+  # SELECT operators.
+  execsql {
+    SELECT 1 FROM abc
+    GROUP BY c HAVING EXISTS (SELECT a UNION SELECT 123);
+  }
+} {1}
+do_test fuzz-1.14.2 {
+  execsql {
+    DROP TABLE abc;
+  }
+} {}
+
 #----------------------------------------------------------------
 # Test some fuzzily generated expressions.
 #
@@ -565,10 +617,10 @@ do_test         fuzz-7.4 {execsql COMMIT} {}
 integrity_check fuzz-7.5.integrity
 
 #----------------------------------------------------------------
-# Many CREATE TABLE statements:
+# Many CREATE and DROP TABLE statements:
 #
-do_fuzzy_test   fuzz-8.1 -template {[CreateTable]} \
-    -errorlist {table duplicate} -repeats 1000
+set E [list table duplicate {no such col} {ambiguous column name}]
+do_fuzzy_test fuzz-8.1 -template {[CreateOrDropTableOrView]} -errorlist $E
 
 close $::log
 finish_test
