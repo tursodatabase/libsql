@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.57 2007/05/07 11:24:31 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.58 2007/05/15 13:27:08 drh Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -391,20 +391,23 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
  If the SQL statement is not currently point to a valid row, or if the
  the column index is out of range, the result is undefined.
 
- If the result is a BLOB then the sqlite3_column_bytes() routine returns
- the number of bytes in that BLOB.  No type conversions occur.
- If the result is a string (or a number since a number can be converted
- into a string) then sqlite3_column_bytes() converts
- the value into a UTF-8 string and returns
- the number of bytes in the resulting string.  The value returned does
- not include the \\000 terminator at the end of the string.  The
- sqlite3_column_bytes16() routine converts the value into a UTF-16
- encoding and returns the number of bytes (not characters) in the
- resulting string.  The \\u0000 terminator is not included in this count.
+ If the result is a BLOB or UTF-8 string then the sqlite3_column_bytes() 
+ routine returns the number of bytes in that BLOB or string.
+ If the result is a UTF-16 string, then sqlite3_column_bytes() converts
+ the string to UTF-8 and then returns the number of bytes.
+ If the result is a numeric value then sqlite3_column_bytes() uses
+ sqlite3_snprintf() to convert that value to a UTF-8 string and returns
+ the number of bytes in that string.
+ The value returned does
+ not include the \\000 terminator at the end of the string.  
+
+ The sqlite3_column_bytes16() routine is similar to sqlite3_column_bytes()
+ but leaves the result in UTF-16 instead of UTF-8.  
+ The \\u0000 terminator is not included in this count.
 
  These routines attempt to convert the value where appropriate.  For
  example, if the internal representation is FLOAT and a text result
- is requested, sprintf() is used internally to do the conversion
+ is requested, sqlite3_snprintf() is used internally to do the conversion
  automatically.  The following table details the conversions that
  are applied:
 
@@ -459,24 +462,21 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
   of conversion are done in place when it is possible, but sometime it is
   not possible and in those cases prior pointers are invalidated.  
 
-  The safest and easiest to remember policy is this: assume that any
-  result from
-  <ul>
-  <li>sqlite3_column_blob(),</li>
-  <li>sqlite3_column_text(), or</li>
-  <li>sqlite3_column_text16()</li>
-  </ul>
-  is invalided by subsequent calls to 
-  <ul>
-  <li>sqlite3_column_bytes(),</li>
-  <li>sqlite3_column_bytes16(),</li>
-  <li>sqlite3_column_text(), or</li>
-  <li>sqlite3_column_text16().</li>
-  </ul>
-  This means that you should always call sqlite3_column_bytes() or
-  sqlite3_column_bytes16() <u>before</u> calling sqlite3_column_blob(),
-  sqlite3_column_text(), or sqlite3_column_text16().
+  The safest and easiest to remember policy is to invoke these routines
+  in one of the following ways:
 
+  <ul>
+  <li>sqlite3_column_text() followed by sqlite3_column_bytes()</li>
+  <li>sqlite3_column_blob() followed by sqlite3_column_bytes()</li>
+  <li>sqlite3_column_text16() followed by sqlite3_column_bytes16()</li>
+  </ul>
+
+  In other words, you should call sqlite3_column_text(), sqlite3_column_blob(),
+  or sqlite3_column_text16() first to force the result into the desired
+  format, then invoke sqlite3_column_bytes() or sqlite3_column_bytes16() to
+  find the size of the result.  Do not mix call to sqlite3_column_text() or
+  sqlite3_column_blob() with calls to sqlite3_column_bytes16().  And do not
+  mix calls to sqlite3_column_text16() with calls to sqlite3_column_bytes().
 }
 
 api {} {

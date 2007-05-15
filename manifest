@@ -1,5 +1,5 @@
-C A\snew\sapproach\sfor\sUTF-8\stranslation.\s(CVS\s4004)
-D 2007-05-15T11:55:09
+C Clarification\son\sthe\sbest\spractices\sfor\susing\sthe\s_bytes()\sAPIs.\nChange\ssqlite3_value_blob()\sto\sforce\sthe\srepresentation\sto\sbe\spurely\na\sBLOB\sand\snot\sa\sdual\sBLOB/String.\s\sTicket\s#2360.\s(CVS\s4005)
+D 2007-05-15T13:27:07
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -71,7 +71,7 @@ F src/date.c 6049db7d5a8fdf2c677ff7d58fa31d4f6593c988
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 436f1d3e5addf95c195016b518cd2f44a6f5f081
-F src/func.c fc1524fd6097b19c54cc4555e3ea724eec628e2c
+F src/func.c 047c974d530ceca010293f4ae145e4ebc762e9d2
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c e595ca26805dfb3a9ebaabc28e7947c479f3b14d
@@ -135,7 +135,7 @@ F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
 F src/vdbe.c 5deb4cdccd57065ccf8a2e5c704e8473c90d204b
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h bddb7931fc1216fda6f6720e18d2a9b1e0f8fc96
-F src/vdbeapi.c 3ca7808c67a10b5c20150108b431d520d141e93e
+F src/vdbeapi.c 805147e4e6cd8218ded3dddf4e83ac6154b74a09
 F src/vdbeaux.c 62011e2ccf5fa9b3dcc7fa6ff5f0e0638d324a70
 F src/vdbeblob.c 96f3572fdc45eda5be06e6372b612bc30742d9f0
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
@@ -447,7 +447,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 88884dd743039d1a95aa57f4a5eb369de7744716
-F www/capi3ref.tcl be09756d8b9aebd2d7b597fb910eed66fb4480e6
+F www/capi3ref.tcl 31da5635eb64ab0f47c71b93b131a6bcb1ddebc9
 F www/changes.tcl 550300b0ff00fc1b872f7802b2d5a1e7587d3e58
 F www/common.tcl 2b793e5c31486c8a01dd27dc0a631ad93704438e
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
@@ -491,7 +491,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 252810424d8c4dcd19b369d62027094df7cf0bcc
-R 8b16cbfea1aee4c8ac49aefcccb7ea15
+P 6c8ad2790eaede90b3f1ef62614e667178b2a8c4
+R 61699b7a12569d4bc746b73ba93dce41
 U drh
-Z 1d3ef6d9d156a8b50e6d1607d4475644
+Z 4386a51ac4f148f41d41e7eee93b8111

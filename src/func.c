@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.157 2007/05/15 11:55:09 drh Exp $
+** $Id: func.c,v 1.158 2007/05/15 13:27:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -176,6 +176,7 @@ static void substrFunc(
     len = sqlite3_value_bytes(argv[0]);
     z = sqlite3_value_blob(argv[0]);
     if( z==0 ) return;
+    assert( len==sqlite3_value_bytes(argv[0]) );
   }else{
     z = sqlite3_value_text(argv[0]);
     if( z==0 ) return;
@@ -242,8 +243,10 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   const char *z2;
   int i, n;
   if( argc<1 || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
-  n = sqlite3_value_bytes(argv[0]);
   z2 = (char*)sqlite3_value_text(argv[0]);
+  n = sqlite3_value_bytes(argv[0]);
+  /* Verify that the call to _bytes() does not invalidate the _text() pointer */
+  assert( z2==(char*)sqlite3_value_text(argv[0]) );
   if( z2 ){
     z1 = sqlite3_malloc(n+1);
     if( z1 ){
@@ -260,8 +263,10 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   const char *z2;
   int i, n;
   if( argc<1 || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
-  n = sqlite3_value_bytes(argv[0]);
   z2 = (char*)sqlite3_value_text(argv[0]);
+  n = sqlite3_value_bytes(argv[0]);
+  /* Verify that the call to _bytes() does not invalidate the _text() pointer */
+  assert( z2==(char*)sqlite3_value_text(argv[0]) );
   if( z2 ){
     z1 = sqlite3_malloc(n+1);
     if( z1 ){
@@ -562,6 +567,9 @@ static void likeFunc(
   const unsigned char *zA, *zB;
   int escape = 0;
 
+  zB = sqlite3_value_text(argv[0]);
+  zA = sqlite3_value_text(argv[1]);
+
   /* Limit the length of the LIKE or GLOB pattern to avoid problems
   ** of deep recursion and N*N behavior in patternCompare().
   */
@@ -569,9 +577,8 @@ static void likeFunc(
     sqlite3_result_error(context, "LIKE or GLOB pattern too complex", -1);
     return;
   }
+  assert( zB==sqlite3_value_text(argv[0]) );  /* Encoding did not change */
 
-  zB = sqlite3_value_text(argv[0]);
-  zA = sqlite3_value_text(argv[1]);
   if( argc==3 ){
     /* The escape character string must consist of a single UTF-8 character.
     ** Otherwise, return an error.
@@ -655,8 +662,9 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
     }
     case SQLITE_BLOB: {
       char *zText = 0;
-      int nBlob = sqlite3_value_bytes(argv[0]);
       char const *zBlob = sqlite3_value_blob(argv[0]);
+      int nBlob = sqlite3_value_bytes(argv[0]);
+      assert( zBlob==sqlite3_value_blob(argv[0]) ); /* No encoding change */
 
       if( 2*nBlob+4>SQLITE_MAX_LENGTH ){
         sqlite3_result_error_toobig(context);
@@ -722,12 +730,13 @@ static void hexFunc(
   const unsigned char *pBlob;
   char *zHex, *z;
   assert( argc==1 );
+  pBlob = sqlite3_value_blob(argv[0]);
   n = sqlite3_value_bytes(argv[0]);
   if( n*2+1>SQLITE_MAX_LENGTH ){
     sqlite3_result_error_toobig(context);
     return;
   }
-  pBlob = sqlite3_value_blob(argv[0]);
+  assert( pBlob==sqlite3_value_blob(argv[0]) );  /* No encoding change */
   z = zHex = sqlite3_malloc(n*2 + 1);
   if( zHex==0 ) return;
   for(i=0; i<n; i++, pBlob++){
@@ -776,15 +785,18 @@ static void replaceFunc(
   int i, j;                /* Loop counters */
 
   assert( argc==3 );
-  nStr = sqlite3_value_bytes(argv[0]);
   zStr = sqlite3_value_text(argv[0]);
   if( zStr==0 ) return;
-  nPattern = sqlite3_value_bytes(argv[1]);
+  nStr = sqlite3_value_bytes(argv[0]);
+  assert( zStr==sqlite3_value_text(argv[0]) );  /* No encoding change */
   zPattern = sqlite3_value_text(argv[1]);
   if( zPattern==0 || zPattern[0]==0 ) return;
-  nRep = sqlite3_value_bytes(argv[2]);
+  nPattern = sqlite3_value_bytes(argv[1]);
+  assert( zPattern==sqlite3_value_text(argv[1]) );  /* No encoding change */
   zRep = sqlite3_value_text(argv[2]);
   if( zRep==0 ) return;
+  nRep = sqlite3_value_bytes(argv[2]);
+  assert( zRep==sqlite3_value_text(argv[2]) );
   nOut = nStr + 1;
   assert( nOut<SQLITE_MAX_LENGTH );
   zOut = sqlite3_malloc((int)nOut);
@@ -840,9 +852,10 @@ static void trimFunc(
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
     return;
   }
-  nIn = sqlite3_value_bytes(argv[0]);
   zIn = sqlite3_value_text(argv[0]);
   if( zIn==0 ) return;
+  nIn = sqlite3_value_bytes(argv[0]);
+  assert( zIn==sqlite3_value_text(argv[0]) );
   if( argc==1 ){
     static const unsigned char lenOne[] = { 1 };
     static const unsigned char *azOne[] = { (u8*)" " };

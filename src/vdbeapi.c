@@ -38,9 +38,9 @@ const void *sqlite3_value_blob(sqlite3_value *pVal){
   Mem *p = (Mem*)pVal;
   if( p->flags & (MEM_Blob|MEM_Str) ){
     sqlite3VdbeMemExpandBlob(p);
-    if( (p->flags & MEM_Term)==0 ){
-      p->flags &= ~MEM_Str;
-    }
+    p->flags &= ~MEM_Str;
+    p->flags |= MEM_Blob;
+    p->type = SQLITE_BLOB;
     return p->z;
   }else{
     return sqlite3_value_text(pVal);
