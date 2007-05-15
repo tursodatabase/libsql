@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.20 2007/05/08 12:37:46 danielk1977 Exp $
+# $Id: alter.test,v 1.21 2007/05/15 00:09:13 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -300,6 +300,11 @@ do_test alter-2.5 {
     ALTER TABLE t3 RENAME TO sqlite_t3;
   }
 } {1 {object name reserved for internal use: sqlite_t3}}
+do_test alter-2.6 {
+  catchsql {
+    ALTER TABLE t3 ADD COLUMN (ALTER TABLE t3 ADD COLUMN);
+  }
+} {1 {near "(": syntax error}}
 
 # If this compilation does not include triggers, omit the alter-3.* tests.
 ifcapable trigger {

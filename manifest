@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sORDER\sBY\sand\scompound\sSELECT\squeries.\s(CVS\s3995)
-D 2007-05-14T16:50:49
+C Make\ssure\sthe\sparser\saborts\squickly\sfollowing\sa\ssyntax\serror.\s(CVS\s3996)
+D 2007-05-15T00:09:13
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -94,7 +94,7 @@ F src/os_win.c d868d5f9e95ec9c1b9e2a30c54c996053db6dddd
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c acfa86f50b71b7e289508b213bb88e68273d42a0
 F src/pager.h 94110a5570dca30d54a883e880a3633b2e4c05ae
-F src/parse.y 8451c5b04a599a8c0e637850dd28fc03340f44c9
+F src/parse.y 5d4d60e7e1beb1ad134835ee0624d35617f36c4e
 F src/pragma.c 6d5eb19feef9e84117b9b17a4c38b12b8c1c6897
 F src/prepare.c 87c23644986b5e41a58bc76f05abebd899e00089
 F src/printf.c 05b233c7a39aec4c54c79ef87af24f0a6591175d
@@ -145,7 +145,7 @@ F src/where.c f3920748cc650fc25ac916215500bdb90dee568e
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test 93a40a7612b3c5e6efd1f5b98496a8b02a45cfdb
-F test/alter.test 088d82f140b7fcf0be2f712c826dd70387470aef
+F test/alter.test 0e69c016b5aacd4cc692e63115655c885bfe3c22
 F test/alter2.test 50c3f554b8236d179d72511c0a4f23c5eb7f2af3
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
 F test/altermalloc.test 19323e0f452834044c27a54c6e78554d706de7ba
@@ -490,7 +490,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1c33829c9ebcf1ff1bd21b161c73a642471b613a
-R 74dda36291eea9b6f0fd1e20ec50a297
-U danielk1977
-Z fb87e50598d8586a8e44de44e21c1fa0
+P af76928fc5891f9a222ac0c39f8b443a9707b9e3
+R 3e5c27a41d7feb2f3994d5008df8b7ba
+U drh
+Z 9652c7d3c4c7e15de8852ab1114d57ec
