@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.23 2007/05/08 12:37:46 danielk1977 Exp $
+** $Id: alter.c,v 1.24 2007/05/15 03:56:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -273,6 +273,9 @@ void sqlite3AlterRenameTable(
   Table *pTab;              /* Table being renamed */
   char *zName = 0;          /* NULL-terminated version of pName */ 
   sqlite3 *db = pParse->db; /* Database connection */
+  int i;                    /* Loop counter */
+  int nTabName;             /* Number of UTF-8 characters in zTabName */
+  const char *zTabName;     /* Original name of the table */
   Vdbe *v;
 #ifndef SQLITE_OMIT_TRIGGER
   char *zWhere = 0;         /* Where clause to locate temp triggers */
@@ -334,6 +337,12 @@ void sqlite3AlterRenameTable(
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   sqlite3ChangeCookie(db, v, iDb);
 
+  /* figure out how many UTF-8 characters are in zName */
+  zTabName = pTab->zName;
+  for(i=nTabName=0; zTabName[i]; i++){
+    if( (zTabName[i]&0xc0)!=0x80 ) nTabName++;
+  }
+
   /* Modify the sqlite_master table to use the new table name. */
   sqlite3NestedParse(pParse,
       "UPDATE %Q.%s SET "
@@ -348,7 +357,7 @@ void sqlite3AlterRenameTable(
           "name = CASE "
             "WHEN type='table' THEN %Q "
             "WHEN name LIKE 'sqlite_autoindex%%' AND type='index' THEN "
-              "'sqlite_autoindex_' || %Q || substr(name, %d+18,10) "
+             "'sqlite_autoindex_' || %Q || substr(name,%d+18,10) "
             "ELSE name END "
       "WHERE tbl_name=%Q AND "
           "(type='table' OR type='index' OR type='trigger');", 
@@ -356,7 +365,7 @@ void sqlite3AlterRenameTable(
 #ifndef SQLITE_OMIT_TRIGGER
       zName,
 #endif
-      zName, strlen(pTab->zName), pTab->zName
+      zName, nTabName, zTabName
   );
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT

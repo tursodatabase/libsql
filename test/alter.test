@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.21 2007/05/15 00:09:13 drh Exp $
+# $Id: alter.test,v 1.22 2007/05/15 03:56:50 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -97,6 +97,7 @@ do_test alter-1.2 {
 
 # Make some changes
 #
+integrity_check alter-1.3.0
 do_test alter-1.3 {
   execsql {
     ALTER TABLE [T1] RENAME to [-t1-];
@@ -665,12 +666,41 @@ ifcapable trigger {
   } {{}}
 }
 do_test alter-9.2 {
-    execsql {
+  execsql {
     SELECT SQLITE_RENAME_TABLE(0,0);
     SELECT SQLITE_RENAME_TABLE(10,20);
     SELECT SQLITE_RENAME_TABLE("foo", "foo");
   }
 } {{} {} {}}
 
+#------------------------------------------------------------------------
+# alter-10.X - Make sure ALTER TABLE works with multi-byte UTF-8 characters 
+# in the names.
+#
+do_test alter-10.1 {
+  execsql "CREATE TABLE xyz(x UNIQUE)"
+  execsql "ALTER TABLE xyz RENAME TO xyz\u1234abc"
+  execsql {SELECT name FROM sqlite_master WHERE name LIKE 'xyz%'}
+} [list xyz\u1234abc]
+do_test alter-10.2 {
+  execsql {SELECT name FROM sqlite_master WHERE name LIKE 'sqlite_autoindex%'}
+} [list sqlite_autoindex_xyz\u1234abc_1]
+do_test alter-10.3 {
+  execsql "ALTER TABLE xyz\u1234abc RENAME TO xyzabc"
+  execsql {SELECT name FROM sqlite_master WHERE name LIKE 'xyz%'}
+} [list xyzabc]
+do_test alter-10.4 {
+  execsql {SELECT name FROM sqlite_master WHERE name LIKE 'sqlite_autoindex%'}
+} [list sqlite_autoindex_xyzabc_1]
+
+do_test alter-11.1 {
+  sqlite3_exec db {CREATE TABLE t11(%c6%c6)}
+  execsql {
+    ALTER TABLE t11 ADD COLUMN abc;
+  }
+  catchsql {
+    ALTER TABLE t11 ADD COLUMN abc;
+  }
+} {1 {duplicate column name: abc}}
 
 finish_test

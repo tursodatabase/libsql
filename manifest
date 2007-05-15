@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment.\s\sTicket\s#2359.\s(CVS\s3999)
-D 2007-05-15T02:45:19
+C Fix\sproblems\sin\sALTER\sTABLE\sthat\soccur\swhen\scolumn\sor\stable\snames\sare\ninvalid\sUTF\sencodings.\s(CVS\s4000)
+D 2007-05-15T03:56:49
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -57,14 +57,14 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
-F src/alter.c ca8fc4a3c7359379598dc12589b65c32eb88defd
+F src/alter.c 357378a0c09b654d9ae3764e58ba1034da4552b5
 F src/analyze.c e8fcb1c35ace8418615eb18d9601f321ac86b2ec
 F src/attach.c ba628db0c2b6a362f036d017bf1196cdfe4ebb37
 F src/auth.c 5ea90bc93dfea46e9fe4bf531e14c7cd98219ecb
 F src/btree.c 0c2f9b06c90d7c59925c03153c9d47fd739c8ca5
 F src/btree.h 1d527bf61ed176f980c34999d5793a0fd45dcf8c
 F src/btreeInt.h cb3c0e9eb842d06079a62cdf3492c90c5db7ba75
-F src/build.c 8e744caf66d4411143985863108736887096d634
+F src/build.c a27a21a23fb08db0a9d6711e296f54b04fa25cee
 F src/callback.c 9c12535669a638f90a67e10440b99c7b93c0fbf4
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 6049db7d5a8fdf2c677ff7d58fa31d4f6593c988
@@ -107,7 +107,7 @@ F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h c31c9526bc602c3c71ddc45c548e987530826f11
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
 F src/tclsqlite.c f425c7583665ef78dd8397b2de0b8e0028e80ce2
-F src/test1.c 16938b7e76469abf957745743dd0287d5dee476d
+F src/test1.c 84c841e1088f743200b87581506e93f70344bd32
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c 946ea9d1a8c928656e3c70f0a2fcb8e733a15e86
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -145,7 +145,7 @@ F src/where.c f3920748cc650fc25ac916215500bdb90dee568e
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test 93a40a7612b3c5e6efd1f5b98496a8b02a45cfdb
-F test/alter.test 0e69c016b5aacd4cc692e63115655c885bfe3c22
+F test/alter.test 1513354e75cad76180d2ac06a20665193210c0d7
 F test/alter2.test 50c3f554b8236d179d72511c0a4f23c5eb7f2af3
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
 F test/altermalloc.test 19323e0f452834044c27a54c6e78554d706de7ba
@@ -249,7 +249,7 @@ F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test bf30bac1c5ce10448ab739994268cf18f8b3fa30
 F test/fuzz.test f5c67c3bbf2031d6d1c08a546569831d53dc6452
-F test/fuzz2.test fdbea571808441c12c91e9cd038eb77b4692d42b
+F test/fuzz2.test f1866329c9d0869297fb47fd1b4f597d5b66ac97
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -491,7 +491,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5af49a57d4866be21c0206f34584bcc63adc1315
-R 93a3d51fc25837371e9b0e6fd514aa55
+P 1fbbc108a9e7ad1dc22c08ee990e2b6b949784eb
+R b8fe54c7bac8048083b2ee052aff15ca
 U drh
-Z 35fee69111bd42bfa0668ba9070de64e
+Z e8c0d1effc885ae48b4a6dcdd97879b1

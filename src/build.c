@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.430 2007/05/12 15:00:15 drh Exp $
+** $Id: build.c,v 1.431 2007/05/15 03:56:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1562,13 +1562,16 @@ void sqlite3EndTable(
 #ifndef SQLITE_OMIT_ALTERTABLE
     if( !p->pSelect ){
       const char *zName = (const char *)pParse->sNameToken.z;
-      int nName;
+      int nName, i, nUtfChar;
       assert( !pSelect && pCons && pEnd );
       if( pCons->z==0 ){
         pCons = pEnd;
       }
       nName = (const char *)pCons->z - zName;
-      p->addColOffset = 13 + sqlite3Utf8CharLen(zName, nName);
+      for(i=nUtfChar=0; i<nName; i++){
+        if( (zName[i]&0xc0)!=0x80 ) nUtfChar++;
+      }
+      p->addColOffset = 13 + nUtfChar;
     }
 #endif
   }
