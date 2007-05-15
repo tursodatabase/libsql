@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.22 2007/05/15 03:56:50 drh Exp $
+# $Id: alter.test,v 1.23 2007/05/15 09:00:16 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -702,5 +702,18 @@ do_test alter-11.1 {
     ALTER TABLE t11 ADD COLUMN abc;
   }
 } {1 {duplicate column name: abc}}
+do_test alter-11.2 {
+  sqlite3_exec db {CREATE TABLE t11b("%81%82%83" text)}
+  execsql {
+    ALTER TABLE t11b ADD COLUMN abc;
+  }
+  catchsql {
+    ALTER TABLE t11b ADD COLUMN abc;
+  }
+} {1 {duplicate column name: abc}}
+do_test alter-11.3 {
+  set v [sqlite3_exec db {CREATE TABLE t11c(%81%82%83 text)}]
+  set v [string range $v 0 20]\175
+} {1 {unrecognized token}}
 
 finish_test

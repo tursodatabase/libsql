@@ -1,5 +1,5 @@
-C Fix\ssome\stest\sscript\serrors\sin\sfuzz.test.\s(CVS\s4002)
-D 2007-05-15T07:14:33
+C Do\snot\sallow\sbytes\s0x80\sthrough\s0xBF\sto\sbe\sthe\sfirst\scharacter\sof\san\nidentifer\sbecause\sno\svalid\sUTF-8\scharacter\scan\sbegin\swith\sthose\sbytes.\nIf\swe\sallowed\san\sidentifier\sto\sbegin\swith\sone\sof\sthose\sbytes,\sthen\sthe\nsubstr()\sfunction\sin\sALTER\sTABLE\swill\snot\swork\scorrectly.\s(CVS\s4003)
+D 2007-05-15T09:00:15
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -126,7 +126,7 @@ F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_schema.c ced72140a3a25c148975428e170ec1850d3c3a7d
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/test_tclvar.c 315e77c17f128ff8c06b38c08617fd07c825a95b
-F src/tokenize.c be3524e7f626340032108f40eecd6f6eb39b4b73
+F src/tokenize.c 9aa8e3f06f56a700ef498582dae431be3d5c4f4c
 F src/trigger.c 420192efe3e6f03addf7897c60c3c8bf913d3493
 F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c be7c64eed83fa3c01e0c42905e1c311dcd1be704
@@ -145,7 +145,7 @@ F src/where.c f3920748cc650fc25ac916215500bdb90dee568e
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test 93a40a7612b3c5e6efd1f5b98496a8b02a45cfdb
-F test/alter.test 1513354e75cad76180d2ac06a20665193210c0d7
+F test/alter.test e2b5ccf30f11cfe61693c7e8620a6691e6a504e1
 F test/alter2.test 50c3f554b8236d179d72511c0a4f23c5eb7f2af3
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
 F test/altermalloc.test 19323e0f452834044c27a54c6e78554d706de7ba
@@ -491,7 +491,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P da0c1ab4deedd2b952a43b3af6962a9403f8c9ee
-R a07fd7fed8eb4a7544695a85e91db0c4
-U danielk1977
-Z 156ec1d1638adadb1b9b333874a71edf
+P 51eeae7b7ad5a0fbdd9d4418120dbdb6cd577cd5
+R 710324b40f5e54ea717a1562c7c07a4d
+U drh
+Z 6fd77513c09320f6a39989f1ee4db43a
