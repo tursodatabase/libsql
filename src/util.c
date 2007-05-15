@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.202 2007/05/08 20:37:40 drh Exp $
+** $Id: util.c,v 1.203 2007/05/15 16:51:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -83,6 +83,9 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
   va_start(ap, zFormat);
   pParse->zErrMsg = sqlite3VMPrintf(zFormat, ap);
   va_end(ap);
+  if( pParse->rc==SQLITE_OK ){
+    pParse->rc = SQLITE_ERROR;
+  }
 }
 
 /*

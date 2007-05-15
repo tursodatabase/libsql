@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is the sqlite_interrupt() API.
 #
-# $Id: interrupt.test,v 1.13 2006/07/17 00:02:46 drh Exp $
+# $Id: interrupt.test,v 1.14 2007/05/15 16:51:37 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -180,14 +180,11 @@ for {set i 1} {$i<$max_count-5} {incr i 1} {
 # Interrupt during parsing
 #
 do_test interrupt-5.1 {
-  proc fake_interrupt {args} {sqlite3_interrupt $::DB; return SQLITE_OK}
-  db collation_needed fake_interrupt
-  catchsql {
-    CREATE INDEX fake ON fake1(a COLLATE fake_collation, b, c DESC);
+  proc fake_interrupt {args} {
+    db collate fake_collation no-op
+    sqlite3_interrupt db
+    return SQLITE_OK
   }
-} {1 interrupt}
-do_test interrupt-5.2 {
-  proc fake_interrupt {args} {db interrupt; return SQLITE_OK}
   db collation_needed fake_interrupt
   catchsql {
     CREATE INDEX fake ON fake1(a COLLATE fake_collation, b, c DESC);
