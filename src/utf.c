@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.47 2007/05/15 11:55:09 drh Exp $
+** $Id: utf.c,v 1.48 2007/05/15 14:40:11 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -432,54 +432,6 @@ int sqlite3Utf16ByteLen(const void *zIn, int nChar){
     }
   }
   return (z-(char const *)zIn)-((c==0)?2:0);
-}
-
-/*
-** UTF-16 implementation of the substr()
-*/
-void sqlite3Utf16Substr(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  int y, z;
-  unsigned char const *zStr;
-  unsigned char const *zStrEnd;
-  unsigned char const *zStart;
-  unsigned char const *zEnd;
-  int i;
-
-  zStr = (unsigned char const *)sqlite3_value_text16(argv[0]);
-  zStrEnd = &zStr[sqlite3_value_bytes16(argv[0])];
-  y = sqlite3_value_int(argv[1]);
-  z = sqlite3_value_int(argv[2]);
-
-  if( y>0 ){
-    y = y-1;
-    zStart = zStr;
-    if( SQLITE_UTF16BE==SQLITE_UTF16NATIVE ){
-      for(i=0; i<y && zStart<zStrEnd; i++) SKIP_UTF16BE(zStart);
-    }else{
-      for(i=0; i<y && zStart<zStrEnd; i++) SKIP_UTF16LE(zStart);
-    }
-  }else{
-    zStart = zStrEnd;
-    if( SQLITE_UTF16BE==SQLITE_UTF16NATIVE ){
-      for(i=y; i<0 && zStart>zStr; i++) RSKIP_UTF16BE(zStart);
-    }else{
-      for(i=y; i<0 && zStart>zStr; i++) RSKIP_UTF16LE(zStart);
-    }
-    for(; i<0; i++) z -= 1;
-  }
-
-  zEnd = zStart;
-  if( SQLITE_UTF16BE==SQLITE_UTF16NATIVE ){
-    for(i=0; i<z && zEnd<zStrEnd; i++) SKIP_UTF16BE(zEnd);
-  }else{
-    for(i=0; i<z && zEnd<zStrEnd; i++) SKIP_UTF16LE(zEnd);
-  }
-
-  sqlite3_result_text16(context, zStart, zEnd-zStart, SQLITE_TRANSIENT);
 }
 
 #if defined(SQLITE_TEST)
