@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.619 2007/05/16 11:55:57 drh Exp $
+** $Id: vdbe.c,v 1.620 2007/05/16 14:23:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -5056,7 +5056,7 @@ default: {
     }
 #endif
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) && !defined(NDEBUG)
     /* Keep track of the size of the largest BLOB or STR that has appeared
     ** on the top of the VDBE stack.
     */

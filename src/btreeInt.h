@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.2 2007/05/05 18:39:25 drh Exp $
+** $Id: btreeInt.h,v 1.3 2007/05/16 14:23:00 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -570,7 +570,7 @@ struct IntegrityCk {
 /*
 ** Read or write a two- and four-byte big-endian integer values.
 */
-#define get2byte sqlite3Get2byte
+#define get2byte(x) ((x)[0]<<8 | (x)[1])
 #define get4byte sqlite3Get4byte
 #define put2byte sqlite3Put2byte
 #define put4byte sqlite3Put4byte

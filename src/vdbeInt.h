@@ -174,6 +174,11 @@ typedef struct Mem Mem;
 #define MEM_Agg       0x0400   /* Mem.z points to an agg function context */
 #define MEM_Zero      0x0800   /* Mem.i contains count of 0s appended to blob */
 
+#ifdef SQLITE_OMIT_INCRBLOB
+  #undef MEM_Zero
+  #define MEM_Zero 0x0000
+#endif
+
 
 /* A VdbeFunc is just a FuncDef (defined in sqliteInt.h) that contains
 ** additional information about auxiliary information bound to arguments
@@ -387,7 +392,6 @@ void sqlite3VdbeMemSetInt64(Mem*, i64);
 void sqlite3VdbeMemSetDouble(Mem*, double);
 void sqlite3VdbeMemSetNull(Mem*);
 void sqlite3VdbeMemSetZeroBlob(Mem*,int);
-int sqlite3VdbeMemExpandBlob(Mem*);
 int sqlite3VdbeMemMakeWriteable(Mem*);
 int sqlite3VdbeMemDynamicify(Mem*);
 int sqlite3VdbeMemStringify(Mem*, int);
@@ -414,5 +418,11 @@ void sqlite3VdbeFifoInit(Fifo*);
 int sqlite3VdbeFifoPush(Fifo*, i64);
 int sqlite3VdbeFifoPop(Fifo*, i64*);
 void sqlite3VdbeFifoClear(Fifo*);
+
+#ifndef SQLITE_OMIT_INCRBLOB
+  int sqlite3VdbeMemExpandBlob(Mem *);
+#else
+  #define sqlite3VdbeMemExpandBlob(x) SQLITE_OK
+#endif
 
 #endif /* !defined(_VDBEINT_H_) */

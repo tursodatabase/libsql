@@ -1,5 +1,5 @@
-C Add\sa\s--nostatic\soption\sto\smksqlite3c.tcl.\s\sWith\sthis\soption\sturned\son,\nthe\sextra\s"static"\sstorage\sclass\smarkers\sare\snot\sinserted\sinto\sthe\namalgamation.\s(CVS\s4013)
-D 2007-05-16T13:55:26
+C Omit\ssome\sextra\scode\swhen\sOMIT_INCRBLOB\sis\sdefined.\s(CVS\s4014)
+D 2007-05-16T14:23:00
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F src/attach.c ba628db0c2b6a362f036d017bf1196cdfe4ebb37
 F src/auth.c 5ea90bc93dfea46e9fe4bf531e14c7cd98219ecb
 F src/btree.c 0c2f9b06c90d7c59925c03153c9d47fd739c8ca5
 F src/btree.h 1d527bf61ed176f980c34999d5793a0fd45dcf8c
-F src/btreeInt.h cb3c0e9eb842d06079a62cdf3492c90c5db7ba75
+F src/btreeInt.h 701343a0da648efb9591bb1f7b1a66199c270331
 F src/build.c 50992d92e131a9aa9aa6657fb1ddc13e176fd70c
 F src/callback.c 9c12535669a638f90a67e10440b99c7b93c0fbf4
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
@@ -132,14 +132,14 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c b881fe54498f6a35de424a62f8e071b621111728
 F src/util.c a44710b94da6d0d606521a5e1fd40c8067282c74
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c 55b1d46273584bb4739e923562a71069237f9f97
+F src/vdbe.c d0f60420211ce8c298ea37d1832105741b27af0f
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
-F src/vdbeInt.h bddb7931fc1216fda6f6720e18d2a9b1e0f8fc96
+F src/vdbeInt.h 7d2bf163d6d4e815724a457f2216dd8e38c3955c
 F src/vdbeapi.c f89d6bc5264e66f44589e454fbeeee96854d0dd3
 F src/vdbeaux.c 62011e2ccf5fa9b3dcc7fa6ff5f0e0638d324a70
 F src/vdbeblob.c 96f3572fdc45eda5be06e6372b612bc30742d9f0
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
-F src/vdbemem.c f04d1a25a71c41f86cad9d4dcc81abcd2a9ff403
+F src/vdbemem.c 596624a0b71aa2fb052cae640342dae9c734f8ad
 F src/vtab.c c5ebebf615b2f29499fbe97a584c4bb342632aa0
 F src/where.c f3920748cc650fc25ac916215500bdb90dee568e
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -492,7 +492,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2ac985a38034da87b0fa3837976e1f2164b22672
-R 5e790419b578af9a1263f12ce379977a
-U drh
-Z a49104c063bb649dce202b1f8aae51b8
+P 57e17c7cda23a3b3e1d0a691af07c35c1c644dcc
+R ef969dbd235873a63df830f4d99dc586
+U danielk1977
+Z e60d12dc0d97c78167f71ea169cd880a

@@ -88,6 +88,7 @@ int sqlite3VdbeMemDynamicify(Mem *pMem){
 ** If the given Mem* has a zero-filled tail, turn it into an ordinary
 ** blob stored in dynamically allocated space.
 */
+#ifndef SQLITE_OMIT_INCRBLOB
 int sqlite3VdbeMemExpandBlob(Mem *pMem){
   if( pMem->flags & MEM_Zero ){
     char *pNew;
@@ -107,6 +108,7 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
   }
   return SQLITE_OK;
 }
+#endif
 
 
 /*
