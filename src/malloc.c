@@ -12,7 +12,7 @@
 ** Memory allocation functions used throughout sqlite.
 **
 **
-** $Id: malloc.c,v 1.1 2007/05/05 11:48:54 drh Exp $
+** $Id: malloc.c,v 1.2 2007/05/16 17:28:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -788,10 +788,10 @@ void sqlite3SetString(char **pz, ...){
 ** then the connection error-code (the value returned by sqlite3_errcode())
 ** is set to SQLITE_NOMEM.
 */
-static int mallocHasFailed = 0;
+int sqlite3_mallocHasFailed = 0;
 int sqlite3ApiExit(sqlite3* db, int rc){
   if( sqlite3MallocFailed() ){
-    mallocHasFailed = 0;
+    sqlite3_mallocHasFailed = 0;
     sqlite3OsLeaveMutex();
     sqlite3Error(db, SQLITE_NOMEM, 0);
     rc = SQLITE_NOMEM;
@@ -800,21 +800,13 @@ int sqlite3ApiExit(sqlite3* db, int rc){
 }
 
 /* 
-** Return true is a malloc has failed in this thread since the last call
-** to sqlite3ApiExit(), or false otherwise.
-*/
-int sqlite3MallocFailed(){
-  return (mallocHasFailed && sqlite3OsInMutex(1));
-}
-
-/* 
 ** Set the "malloc has failed" condition to true for this thread.
 */
 void sqlite3FailedMalloc(){
   if( !sqlite3MallocFailed() ){
     sqlite3OsEnterMutex();
-    assert( mallocHasFailed==0 );
-    mallocHasFailed = 1;
+    assert( sqlite3_mallocHasFailed==0 );
+    sqlite3_mallocHasFailed = 1;
   }
 }
 

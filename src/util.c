@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.203 2007/05/15 16:51:37 drh Exp $
+** $Id: util.c,v 1.204 2007/05/16 17:28:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -537,17 +537,10 @@ int sqlite3VarintLen(u64 v){
 
 
 /*
-** Read or write a two- and four-byte big-endian integer values.
+** Read or write a four-byte big-endian integer value.
 */
-u32 sqlite3Get2byte(const u8 *p){
-  return (p[0]<<8) | p[1];
-}
 u32 sqlite3Get4byte(const u8 *p){
   return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
-}
-void sqlite3Put2byte(unsigned char *p, u32 v){
-  p[0] = v>>8;
-  p[1] = v;
 }
 void sqlite3Put4byte(unsigned char *p, u32 v){
   p[0] = v>>24;

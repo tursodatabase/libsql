@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.620 2007/05/16 14:23:00 danielk1977 Exp $
+** $Id: vdbe.c,v 1.621 2007/05/16 17:28:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -150,6 +150,12 @@ int sqlite3_max_blobsize = 0;
 #define Deephemeralize(P) \
    if( ((P)->flags&MEM_Ephem)!=0 \
        && sqlite3VdbeMemMakeWriteable(P) ){ goto no_mem;}
+
+/*
+** Call sqlite3VdbeMemExpandBlob() on the supplied value (type Mem*)
+** P if required.
+*/
+#define ExpandBlob(P) (((P)->flags&MEM_Zero)?sqlite3VdbeMemExpandBlob(P):0)
 
 /*
 ** Argument pMem points at a memory cell that will be passed to a
@@ -1470,7 +1476,7 @@ case OP_ToText: {                  /* same as TK_TO_TEXT, no-push */
   assert( MEM_Str==(MEM_Blob>>3) );
   pTos->flags |= (pTos->flags&MEM_Blob)>>3;
   applyAffinity(pTos, SQLITE_AFF_TEXT, encoding);
-  rc = sqlite3VdbeMemExpandBlob(pTos);
+  rc = ExpandBlob(pTos);
   assert( pTos->flags & MEM_Str );
   pTos->flags &= ~(MEM_Int|MEM_Real|MEM_Blob);
   break;
@@ -1675,8 +1681,8 @@ case OP_Ge: {             /* same as TK_GE, no-push */
   }
 
   assert( pOp->p3type==P3_COLLSEQ || pOp->p3==0 );
-  sqlite3VdbeMemExpandBlob(pNos);
-  sqlite3VdbeMemExpandBlob(pTos);
+  ExpandBlob(pNos);
+  ExpandBlob(pTos);
   res = sqlite3MemCompare(pNos, pTos, (CollSeq*)pOp->p3);
   switch( pOp->opcode ){
     case OP_Eq:    res = res==0;     break;
@@ -2275,7 +2281,7 @@ case OP_MakeRecord: {
       containsNull = 1;
     }
     if( pRec->flags&MEM_Zero && pRec->n>0 ){
-      sqlite3VdbeMemExpandBlob(pRec);
+      ExpandBlob(pRec);
     }
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     len = sqlite3VdbeSerialTypeLen(serial_type);
@@ -2928,7 +2934,7 @@ case OP_MoveGt: {       /* no-push */
       pC->rowidIsValid = res==0;
     }else{
       assert( pTos->flags & MEM_Blob );
-      sqlite3VdbeMemExpandBlob(pTos);
+      ExpandBlob(pTos);
       rc = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, 0, &res);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
@@ -3831,7 +3837,7 @@ case OP_IdxInsert: {        /* no-push */
   assert( pTos->flags & MEM_Blob );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     assert( pC->isTable==0 );
-    rc = sqlite3VdbeMemExpandBlob(pTos);
+    rc = ExpandBlob(pTos);
     if( rc==SQLITE_OK ){
       int nKey = pTos->n;
       const char *zKey = pTos->z;
@@ -3967,7 +3973,7 @@ case OP_IdxGE: {        /* no-push */
  
     assert( pTos->flags & MEM_Blob );  /* Created using OP_MakeRecord */
     assert( pC->deferredMoveto==0 );
-    sqlite3VdbeMemExpandBlob(pTos);
+    ExpandBlob(pTos);
     *pC->pIncrKey = pOp->p3!=0;
     assert( pOp->p3==0 || pOp->opcode!=OP_IdxGT );
     rc = sqlite3VdbeIdxKeyCompare(pC, pTos->n, (u8*)pTos->z, &res);
