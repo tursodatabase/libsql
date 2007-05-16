@@ -790,9 +790,9 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
   if( pOp->opcode==OP_Noop && pOp->p3!=0 ){
     char *z = sqlite3StrDup(pOp->p3);
     int i, j;
-    for(i=0; isspace(z[i]); i++){}
+    for(i=0; isspace((unsigned char)z[i]); i++){}
     for(j=0; z[i]; i++){
-      if( isspace(z[i]) ){
+      if( isspace((unsigned char)z[i]) ){
         if( z[i-1]!=' ' ){
           z[j++] = ' ';
         }

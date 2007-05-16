@@ -1,5 +1,5 @@
-C Change\sa\sfew\sselected\sfunctions\sto\smacros\sto\sspeed\sthings\sup.\s(CVS\s4015)
-D 2007-05-16T17:28:43
+C Avoid\spassing\sa\snegative\svalue\sto\sisspace()\sin\sa\scouple\splaces.\s(CVS\s4016)
+D 2007-05-16T17:50:46
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -130,13 +130,13 @@ F src/tokenize.c 6cef9e6fc454d789a32c5b509ccb193a2b01977b
 F src/trigger.c 420192efe3e6f03addf7897c60c3c8bf913d3493
 F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c b881fe54498f6a35de424a62f8e071b621111728
-F src/util.c b99afc6940747ec504ac98ce551fc31181c3fcc0
+F src/util.c 80cdf6b68d03b8f0ab3237a390842e039cff66c6
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
 F src/vdbe.c 51baf9ba77e986db857c69d63a979bb5227317ae
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h 7d2bf163d6d4e815724a457f2216dd8e38c3955c
 F src/vdbeapi.c f89d6bc5264e66f44589e454fbeeee96854d0dd3
-F src/vdbeaux.c 62011e2ccf5fa9b3dcc7fa6ff5f0e0638d324a70
+F src/vdbeaux.c 47f483c35c27dc0806715182ef6b281320c4b9b5
 F src/vdbeblob.c 96f3572fdc45eda5be06e6372b612bc30742d9f0
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c 89ffe903b4de158b29fe8459f6f816d1f860d4ee
@@ -492,7 +492,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1d89be287d34423b1a405cde0490260e7c731f07
-R 0c3a8d9f8c5cece70d3226582e2755a8
+P 93f811ec747f6a42daf9ee27cd8b013f248552a1
+R c67605dff2e838f24cfcf3d54b6e421f
 U danielk1977
-Z 6ba55ff12f0d9efe11930a5738e558b9
+Z 16ca321020c875a219eeb2a39861a462
