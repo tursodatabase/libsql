@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.49 2007/05/16 18:11:41 danielk1977 Exp $
+** $Id: utf.c,v 1.50 2007/05/16 18:23:05 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -123,38 +123,6 @@ const unsigned char sqlite3UtfTrans1[] = {
     c2 += (*zIn++);                                                   \
     c = (c2&0x03FF) + ((c&0x003F)<<10) + (((c&0x03C0)+0x0040)<<10);   \
     if( (c & 0xFFFF0000)==0 ) c = 0xFFFD;                             \
-  }                                                                   \
-}
-
-#define SKIP_UTF16BE(zIn){                                            \
-  if( *zIn>=0xD8 && (*zIn<0xE0 || (*zIn==0xE0 && *(zIn+1)==0x00)) ){  \
-    zIn += 4;                                                         \
-  }else{                                                              \
-    zIn += 2;                                                         \
-  }                                                                   \
-}
-#define SKIP_UTF16LE(zIn){                                            \
-  zIn++;                                                              \
-  if( *zIn>=0xD8 && (*zIn<0xE0 || (*zIn==0xE0 && *(zIn-1)==0x00)) ){  \
-    zIn += 3;                                                         \
-  }else{                                                              \
-    zIn += 1;                                                         \
-  }                                                                   \
-}
-
-#define RSKIP_UTF16LE(zIn){                                            \
-  if( *zIn>=0xD8 && (*zIn<0xE0 || (*zIn==0xE0 && *(zIn-1)==0x00)) ){  \
-    zIn -= 4;                                                         \
-  }else{                                                              \
-    zIn -= 2;                                                         \
-  }                                                                   \
-}
-#define RSKIP_UTF16BE(zIn){                                            \
-  zIn--;                                                              \
-  if( *zIn>=0xD8 && (*zIn<0xE0 || (*zIn==0xE0 && *(zIn+1)==0x00)) ){  \
-    zIn -= 3;                                                         \
-  }else{                                                              \
-    zIn -= 1;                                                         \
   }                                                                   \
 }
 
