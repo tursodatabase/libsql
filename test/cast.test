@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CAST operator.
 #
-# $Id: cast.test,v 1.5 2006/03/03 19:12:30 drh Exp $
+# $Id: cast.test,v 1.6 2007/05/16 11:55:57 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -191,6 +191,76 @@ do_test cast-2.1 {
 do_test cast-2.2 {
   execsql {SELECT CAST('   -123.456' AS real)}
 } -123.456
+
+# ticket #2364.  Use full percision integers if possible when casting
+# to numeric.  Do not fallback to real (and the corresponding 48-bit
+# mantissa) unless absolutely necessary.
+#
+do_test cast-3.1 {
+  execsql {SELECT CAST(9223372036854774800 AS integer)}
+} 9223372036854774800
+do_test cast-3.2 {
+  execsql {SELECT CAST(9223372036854774800 AS numeric)}
+} 9223372036854774800
+do_test cast-3.3 {
+  execsql {SELECT CAST(9223372036854774800 AS real)}
+} 9.22337203685477e+18
+do_test cast-3.4 {
+  execsql {SELECT CAST(CAST(9223372036854774800 AS real) AS integer)}
+} 9223372036854774784
+do_test cast-3.5 {
+  execsql {SELECT CAST(-9223372036854774800 AS integer)}
+} -9223372036854774800
+do_test cast-3.6 {
+  execsql {SELECT CAST(-9223372036854774800 AS numeric)}
+} -9223372036854774800
+do_test cast-3.7 {
+  execsql {SELECT CAST(-9223372036854774800 AS real)}
+} -9.22337203685477e+18
+do_test cast-3.8 {
+  execsql {SELECT CAST(CAST(-9223372036854774800 AS real) AS integer)}
+} -9223372036854774784
+do_test cast-3.11 {
+  execsql {SELECT CAST('9223372036854774800' AS integer)}
+} 9223372036854774800
+do_test cast-3.12 {
+  execsql {SELECT CAST('9223372036854774800' AS numeric)}
+} 9223372036854774800
+do_test cast-3.13 {
+  execsql {SELECT CAST('9223372036854774800' AS real)}
+} 9.22337203685477e+18
+do_test cast-3.14 {
+  execsql {SELECT CAST(CAST('9223372036854774800' AS real) AS integer)}
+} 9223372036854774784
+do_test cast-3.15 {
+  execsql {SELECT CAST('-9223372036854774800' AS integer)}
+} -9223372036854774800
+do_test cast-3.16 {
+  execsql {SELECT CAST('-9223372036854774800' AS numeric)}
+} -9223372036854774800
+do_test cast-3.17 {
+  execsql {SELECT CAST('-9223372036854774800' AS real)}
+} -9.22337203685477e+18
+do_test cast-3.18 {
+  execsql {SELECT CAST(CAST('-9223372036854774800' AS real) AS integer)}
+} -9223372036854774784
+if {[db eval {PRAGMA encoding}]=="UTF-8"} {
+  do_test cast-3.21 {
+    execsql {SELECT CAST(x'39323233333732303336383534373734383030' AS integer)}
+  } 9223372036854774800
+  do_test cast-3.22 {
+    execsql {SELECT CAST(x'39323233333732303336383534373734383030' AS numeric)}
+  } 9223372036854774800
+  do_test cast-3.23 {
+    execsql {SELECT CAST(x'39323233333732303336383534373734383030' AS real)}
+  } 9.22337203685477e+18
+  do_test cast-3.24 {
+    execsql {SELECT CAST(CAST(x'39323233333732303336383534373734383030' AS real) AS integer)}
+  } 9223372036854774784
+}
+do_test case-3.31 {
+  execsql {SELECT CAST(NULL AS numeric)}
+} {{}}
 
 
 finish_test

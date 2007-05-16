@@ -362,8 +362,20 @@ int sqlite3VdbeMemRealify(Mem *pMem){
 ** Invalidate any prior representations.
 */
 int sqlite3VdbeMemNumerify(Mem *pMem){
-  sqlite3VdbeMemRealify(pMem);
-  sqlite3VdbeIntegerAffinity(pMem);
+  double r1, r2;
+  i64 i;
+  assert( (pMem->flags & (MEM_Int|MEM_Real|MEM_Null))==0 );
+  assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
+  r1 = sqlite3VdbeRealValue(pMem);
+  i = (i64)r1;
+  r2 = (double)i;
+  if( r1==r2 ){
+    sqlite3VdbeMemIntegerify(pMem);
+  }else{
+    pMem->r = r1;
+    pMem->flags = MEM_Real;
+    sqlite3VdbeMemRelease(pMem);
+  }
   return SQLITE_OK;
 }
 
