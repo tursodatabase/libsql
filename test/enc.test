@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc.test,v 1.5 2004/11/14 21:56:31 drh Exp $
+# $Id: enc.test,v 1.6 2007/05/16 18:11:41 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -148,5 +148,7 @@ test_conversion enc-6 "\u4321\u1234"
 test_conversion enc-7 [string repeat "abcde\u00EF\u00EE\uFFFCabc" 100]
 test_conversion enc-8 [string repeat "\u007E\u007F\u0080\u0081" 100]
 test_conversion enc-9 [string repeat "\u07FE\u07FF\u0800\u0801\uFFF0" 100]
+
+test_conversion enc-10 [string repeat "\uE000" 100]
 
 finish_test
