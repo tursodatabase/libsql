@@ -1,5 +1,5 @@
-C Modify\stest\sscripts\sto\sallow\sfor\sthe\sfact\sthat\szeroblob()\sis\snot\savailable\swhen\scompiled\swith\sOMIT_INCRBLOB.\sTicket\s#2365.\s(CVS\s4019)
-D 2007-05-17T06:44:28
+C Add\sspeed3.test\sfile.\sFor\stesting\sperformance\sissues\srelated\sto\soverflow\spages.\s(CVS\s4020)
+D 2007-05-17T14:45:13
 F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -109,7 +109,7 @@ F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
 F src/tclsqlite.c f425c7583665ef78dd8397b2de0b8e0028e80ce2
 F src/test1.c 84c841e1088f743200b87581506e93f70344bd32
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
-F src/test3.c 946ea9d1a8c928656e3c70f0a2fcb8e733a15e86
+F src/test3.c a280931fb40222b7c90da45eea926459beee8904
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c c40a4cf43266c1c6da7bcb737d294304a177e6cc
 F src/test6.c 5957d249d437e4db74045ce2f1f661648d94bf94
@@ -345,6 +345,7 @@ F test/shared_err.test cc528f6e78665787e93d9ce3a782a2ce5179d821
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
+F test/speed3.test 2c1947ad95b0d5cbd41a485c62402911ef9fd541
 F test/sqllimits1.test b15a5784e47199d68fa1182157ba7e790f467d9f
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
@@ -492,7 +493,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 73e654fbdc791daa10c49557bf479f152586ac28
-R c13d834540a30a1f8b30b83cb25a8ca2
+P 2ee959be4afa2cf05d183ff92a31dd1b5a84becf
+R da5d5d48e56670e943a5c8c37e2f8834
 U danielk1977
-Z 77d3bac28b115aab1826c7188efad160
+Z 35759e4b823e1a75e52d456c8ba860fe
