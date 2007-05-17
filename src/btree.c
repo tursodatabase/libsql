@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.382 2007/05/16 17:28:43 danielk1977 Exp $
+** $Id: btree.c,v 1.383 2007/05/17 18:28:11 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3843,10 +3843,21 @@ static int fillInCell(
 
   while( nPayload>0 ){
     if( spaceLeft==0 ){
+      int isExact = 0;
 #ifndef SQLITE_OMIT_AUTOVACUUM
       Pgno pgnoPtrmap = pgnoOvfl; /* Overflow page pointer-map entry page */
+      if( pBt->autoVacuum ){
+        do{
+          pgnoOvfl++;
+        } while( 
+          PTRMAP_ISPAGE(pBt, pgnoOvfl) || pgnoOvfl==PENDING_BYTE_PAGE(pBt) 
+        );
+        if( pgnoOvfl>1 ){
+          /* isExact = 1; */
+        }
+      }
 #endif
-      rc = allocateBtreePage(pBt, &pOvfl, &pgnoOvfl, pgnoOvfl, 0);
+      rc = allocateBtreePage(pBt, &pOvfl, &pgnoOvfl, pgnoOvfl, isExact);
 #ifndef SQLITE_OMIT_AUTOVACUUM
       /* If the database supports auto-vacuum, and the second or subsequent
       ** overflow page is being allocated, add an entry to the pointer-map

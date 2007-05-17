@@ -12,7 +12,7 @@
 # focus of this script is testing that the overflow-page related
 # enhancements added after version 3.3.17 speed things up.
 #
-# $Id: speed3.test,v 1.1 2007/05/17 14:45:13 danielk1977 Exp $
+# $Id: speed3.test,v 1.2 2007/05/17 18:28:11 danielk1977 Exp $
 #
 
 #---------------------------------------------------------------------
@@ -97,6 +97,18 @@ proc io_log {db} {
   puts "Normal    : Read $stats2(read), wrote $stats2(write)"
 }
 
+proc overflow_report {db} {
+  set bt [btree_from_db db]
+  set csr [btree_cursor $bt 3 0]
+
+  for {btree_first $csr} {![btree_eof $csr]} {btree_next $csr} {
+    puts "[btree_ovfl_info $bt $csr]"
+  }
+
+  btree_close_cursor $csr
+  
+}
+
 proc reset_db {} {
   db close
   sqlite3 db test.db
@@ -146,6 +158,7 @@ do_test speed3-0.4 {
 # Delete all content in a table, one row at a time.
 #
 #io_log db
+#overflow_report db
 reset_db
 speed_trial speed3-1.incrvacuum $::NROW row {DELETE FROM main.t1 WHERE 1}
 speed_trial speed3-1.normal     $::NROW row {DELETE FROM aux.t1 WHERE 1}
@@ -154,8 +167,9 @@ io_log db
 # Select the "C" column (located at the far end of the overflow 
 # chain) from each table row.
 #
-db eval {PRAGMA incremental_vacuum(500000)}
+#db eval {PRAGMA incremental_vacuum(500000)}
 populate_t1 db
+#overflow_report db
 reset_db
 speed_trial speed3-2.incrvacuum $::NROW row {SELECT c FROM main.t1}
 speed_trial speed3-2.normal     $::NROW row {SELECT c FROM aux.t1}
