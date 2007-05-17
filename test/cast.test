@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CAST operator.
 #
-# $Id: cast.test,v 1.6 2007/05/16 11:55:57 drh Exp $
+# $Id: cast.test,v 1.7 2007/05/17 16:34:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -262,5 +262,20 @@ do_test case-3.31 {
   execsql {SELECT CAST(NULL AS numeric)}
 } {{}}
 
+# Test to see if it is possible to trick SQLite into reading past 
+# the end of a blob when converting it to a number.
+do_test cast-3.32.1 {
+  set blob "1234567890"
+  set DB [sqlite3_connection_pointer db]
+  set ::STMT [sqlite3_prepare $DB {SELECT CAST(? AS real)} -1 TAIL]
+  sqlite3_bind_blob -static $::STMT 1 $blob 5
+  sqlite3_step $::STMT
+} {SQLITE_ROW}
+do_test cast-3.32.2 {
+  sqlite3_column_int $::STMT 0
+} {12345}
+do_test cast-3.32.3 {
+  sqlite3_finalize $::STMT
+} {SQLITE_OK}
 
 finish_test

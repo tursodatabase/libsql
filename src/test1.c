@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.253 2007/05/15 03:56:50 drh Exp $
+** $Id: test1.c,v 1.254 2007/05/17 16:34:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2803,7 +2803,7 @@ static int test_bind_text16(
 }
 
 /*
-** Usage:   sqlite3_bind_blob  STMT N DATA BYTES
+** Usage:   sqlite3_bind_blob ?-static? STMT N DATA BYTES
 **
 ** Test the sqlite3_bind_blob interface.  STMT is a prepared statement.
 ** N is the index of a wildcard in the prepared statement.  This command
@@ -2820,11 +2820,17 @@ static int test_bind_blob(
   int bytes;
   char *value;
   int rc;
+  sqlite3_destructor_type xDestructor = SQLITE_TRANSIENT;
 
-  if( objc!=5 ){
+  if( objc!=5 && objc!=6 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
         Tcl_GetStringFromObj(objv[0], 0), " STMT N DATA BYTES", 0);
     return TCL_ERROR;
+  }
+
+  if( objc==6 ){
+    xDestructor = SQLITE_STATIC;
+    objv++;
   }
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
@@ -2832,7 +2838,7 @@ static int test_bind_blob(
   value = Tcl_GetString(objv[3]);
   if( Tcl_GetIntFromObj(interp, objv[4], &bytes) ) return TCL_ERROR;
 
-  rc = sqlite3_bind_blob(pStmt, idx, value, bytes, SQLITE_TRANSIENT);
+  rc = sqlite3_bind_blob(pStmt, idx, value, bytes, xDestructor);
   if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){
     return TCL_ERROR;
