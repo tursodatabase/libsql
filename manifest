@@ -1,6 +1,6 @@
-C Fix\sa\sproblem\swith\scasting\sblobs\sto\snumeric\stypes.\s(CVS\s4021)
-D 2007-05-17T16:34:44
-F Makefile.in 87b200ad9970907f76df734d29dff3d294c10935
+C Bring\sthe\sautoconf\sbased\sbuild\ssystem\sup\sto\sdate\swith\sthe\srecent\schanges.\s#2366,\s#2367\sand\s#2368.\s(CVS\s4022)
+D 2007-05-17T16:38:30
+F Makefile.in a42354804b50c2708ce72cf79e4daa30f50191b5
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 6de5e9812c227f00155cb59af3535017aef3e258
@@ -119,7 +119,7 @@ F src/test9.c c0f38f7795cc51d37db6c63874d90f40f10d0f0e
 F src/test_async.c 9d326ceda4306bcab252b8f7e8e480ed45d7ccb6
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c 882d59acad48bab3b1fe3daf3645059b590cfc79
-F src/test_config.c 14080fbd60d334c17bf9610c8ac31814a7ad3832
+F src/test_config.c 214f376781c75db1726acd045355546c17d5ee24
 F src/test_hexio.c 14c007252285c6dabcec4a28fcf08e9177e85178
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
@@ -132,7 +132,7 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c 73134f4d3e44686ef5abd877f4fb1290b75f3311
 F src/util.c 80cdf6b68d03b8f0ab3237a390842e039cff66c6
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c 51baf9ba77e986db857c69d63a979bb5227317ae
+F src/vdbe.c 38e902e80e36008c29638520d59cb1b88b997dbb
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h 7d2bf163d6d4e815724a457f2216dd8e38c3955c
 F src/vdbeapi.c f89d6bc5264e66f44589e454fbeeee96854d0dd3
@@ -256,7 +256,7 @@ F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/incrblob.test 7f82ae497364612aa17a37f77f12e01e2bee9f20
-F test/incrblob_err.test 9dae0762ba4d73b516d176d091c6b2b16f625953
+F test/incrblob_err.test 2501bec57e317e7051451b5093b47fc61a96c85a
 F test/incrvacuum.test f490c8ae86f2ecca622425d02e27d3119058cb21
 F test/incrvacuum2.test 82397ceb5941cbe852fd29bb33fcdf5665bc80c2
 F test/incrvacuum_ioerr.test cb331403b8dea3c5bae6163861ff25037b0df56a
@@ -317,7 +317,7 @@ F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test b4b38eb3cf76be2be444326856248898bb0e3fc9
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
-F test/pragma.test fecb7085f58d9fb5172a5c0b63fd3b25c7bfb414
+F test/pragma.test b0e73879206934a835856a8b8c4cc884cd8562f3
 F test/printf.test 69d8cb0771a1a5e4d9d5dece12fc2c16179ac5e5
 F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
 F test/ptrchng.test 1c712dd6516e1377471744fa765e41c79a357da6
@@ -493,7 +493,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 684f765df3e8a4836f254717d175a4a7b5e7d15f
-R f94684259a9006337971361185f52b0b
+P f2ce727c4d798c666e95876a2b67e8a305d82e3a
+R 7b00490089c9a9acc3bbd9b31f5ea738
 U danielk1977
-Z 9940d343779fd35f92c8bf0b213dac54
+Z 3e6e530a34bc48403e48b023fcadb804

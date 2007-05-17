@@ -127,7 +127,7 @@ LIBOBJ = alter.lo analyze.lo attach.lo auth.lo btree.lo build.lo \
          pager.lo parse.lo pragma.lo prepare.lo printf.lo random.lo \
          select.lo table.lo tokenize.lo trigger.lo update.lo \
          util.lo vacuum.lo \
-         vdbe.lo vdbeapi.lo vdbeaux.lo vdbefifo.lo vdbemem.lo \
+         vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbefifo.lo vdbemem.lo \
          where.lo utf.lo legacy.lo vtab.lo
 
 # All of the source code files.
@@ -180,6 +180,7 @@ SRC = \
   $(TOP)/src/vdbe.h \
   $(TOP)/src/vdbeapi.c \
   $(TOP)/src/vdbeaux.c \
+  $(TOP)/src/vdbeblob.c \
   $(TOP)/src/vdbefifo.c \
   $(TOP)/src/vdbemem.c \
   $(TOP)/src/vdbeInt.h \
@@ -465,6 +466,9 @@ vdbeapi.lo:	$(TOP)/src/vdbeapi.c $(VDBEHDR)
 
 vdbeaux.lo:	$(TOP)/src/vdbeaux.c $(VDBEHDR)
 	$(LTCOMPILE) -c $(TOP)/src/vdbeaux.c
+
+vdbeblob.lo:	$(TOP)/src/vdbeblob.c $(VDBEHDR)
+	$(LTCOMPILE) -c $(TOP)/src/vdbeblob.c
 
 vdbefifo.lo:	$(TOP)/src/vdbefifo.c $(VDBEHDR)
 	$(LTCOMPILE) -c $(TOP)/src/vdbefifo.c

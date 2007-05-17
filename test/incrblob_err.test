@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob_err.test,v 1.2 2007/05/04 19:03:03 danielk1977 Exp $
+# $Id: incrblob_err.test,v 1.3 2007/05/17 16:38:30 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -18,6 +18,14 @@ source $testdir/tester.tcl
 ifcapable {!incrblob} {
   finish_test
   return
+}
+
+# Only run these tests if memory debugging is turned on.
+#
+if {[info command sqlite_malloc_stat]==""} {
+   puts "Skipping incrblob_err tests: not compiled with -DSQLITE_MEMDEBUG..."
+   finish_test
+   return
 }
 
 # Usage: do_malloc_test <test number> <options...>

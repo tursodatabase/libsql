@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.53 2007/04/06 21:42:22 drh Exp $
+# $Id: pragma.test,v 1.54 2007/05/17 16:38:30 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -180,18 +180,23 @@ do_test pragma-1.14 {
 
 # Test turning "flag" pragmas on and off.
 #
-do_test pragma-1.15 {
-  execsql {
-    PRAGMA vdbe_listing=YES;
-    PRAGMA vdbe_listing;
-  }
-} {1}
-do_test pragma-1.16 {
-  execsql {
-    PRAGMA vdbe_listing=NO;
-    PRAGMA vdbe_listing;
-  }
-} {0}
+ifcapable debug {
+  # Pragma "vdbe_listing" is only available if compiled with SQLITE_DEBUG
+  #
+  do_test pragma-1.15 {
+    execsql {
+      PRAGMA vdbe_listing=YES;
+      PRAGMA vdbe_listing;
+    }
+  } {1}
+  do_test pragma-1.16 {
+    execsql {
+      PRAGMA vdbe_listing=NO;
+      PRAGMA vdbe_listing;
+    }
+  } {0}
+}
+
 do_test pragma-1.17 {
   execsql {
     PRAGMA parser_trace=ON;

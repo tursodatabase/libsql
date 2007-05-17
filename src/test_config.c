@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.4 2007/05/10 10:46:57 danielk1977 Exp $
+** $Id: test_config.c,v 1.5 2007/05/17 16:38:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -40,6 +40,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options","casesensitivelike","1",TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options","casesensitivelike","0",TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_DEBUG
+  Tcl_SetVar2(interp, "sqlite_options", "debug", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "debug", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_DISABLE_DIRSYNC
