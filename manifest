@@ -1,5 +1,5 @@
-C Change\sthe\sway\soverflow\spages\sare\sallocated\sfrom\sthe\sfree-list\sto\sincrease\sthe\schance\sthat\sthey\sare\sa\scontiguous\sblock.\sMuch\smore\scan\sstill\sbe\sdone.\s(CVS\s4023)
-D 2007-05-17T18:28:11
+C Add\sa\sfew\sextra\swords\sto\sthe\ssqlite3_finalize()\sdocumentation.\s(CVS\s4024)
+D 2007-05-19T06:48:43
 F Makefile.in a42354804b50c2708ce72cf79e4daa30f50191b5
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -449,7 +449,7 @@ F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
 F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 88884dd743039d1a95aa57f4a5eb369de7744716
-F www/capi3ref.tcl 8f1a17a10d95b48385ec4608449279274125c88a
+F www/capi3ref.tcl 167c2d5b45da22d77b2493b00d44b001b4ec83b1
 F www/changes.tcl 550300b0ff00fc1b872f7802b2d5a1e7587d3e58
 F www/common.tcl 2b793e5c31486c8a01dd27dc0a631ad93704438e
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
@@ -493,7 +493,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ae644bc7aad229f2d219ea20eb4774318feb3051
-R 269f6950d9247c5d127e8dd163a6acb5
+P b7391892041eb72b0ebcbb7a9a6721ae3482dd80
+R 3b43079991e582ef15539fb72b8cb17a
 U danielk1977
-Z 028a3648b2f6bed3a2edcff1de5c489f
+Z d666f8c368046b70b70a794faeae4894

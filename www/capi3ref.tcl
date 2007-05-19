@@ -1,4 +1,4 @@
-set rcsid {$Id: capi3ref.tcl,v 1.59 2007/05/15 14:17:25 drh Exp $}
+set rcsid {$Id: capi3ref.tcl,v 1.60 2007/05/19 06:48:43 danielk1977 Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -962,6 +962,10 @@ int sqlite3_finalize(sqlite3_stmt *pStmt);
  If the statement was executed successfully, or
  not executed at all, then SQLITE_OK is returned. If execution of the
  statement failed then an error code is returned. 
+
+ After sqlite_finalize() has been called, the statement handle is
+ invalidated. Passing it to any other SQLite function may cause a
+ crash.
 
  All prepared statements must finalized before sqlite3_close() is
  called or else the close will fail with a return code of SQLITE_BUSY.
