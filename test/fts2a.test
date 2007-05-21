@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS2 module.
 #
-# $Id: fts2a.test,v 1.1 2006/10/19 23:36:26 shess Exp $
+# $Id: fts2a.test,v 1.2 2007/05/21 21:59:18 shess Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -181,6 +181,22 @@ do_test fts2a-5.3 {
   execsql {SELECT rowid FROM t1 WHERE content MATCH NULL}
 } {}
 
-
+# Test the ability to handle non-positive rowids
+#
+do_test fts2a-6.0 {
+  execsql {INSERT INTO t1(rowid, content) VALUES(0, 'four five')}
+} {}
+do_test fts2a-6.1 {
+  execsql {SELECT content FROM t1 WHERE rowid = 0}
+} {{four five}}
+do_test fts2a-6.2 {
+  execsql {INSERT INTO t1(rowid, content) VALUES(-1, 'three four')}
+} {}
+do_test fts2a-6.3 {
+  execsql {SELECT content FROM t1 WHERE rowid = -1}
+} {{three four}}
+do_test fts2a-6.4 {
+  execsql {SELECT rowid FROM t1 WHERE t1 MATCH 'four'}
+} {-1 0 8 9 10 11 12 13 14 15 24 25 26 27 28 29 30 31}
 
 finish_test

@@ -716,12 +716,18 @@ typedef struct DLWriter {
   DocListType iType;
   DataBuffer *b;
   sqlite_int64 iPrevDocid;
+#ifndef NDEBUG
+  int has_iPrevDocid;
+#endif
 } DLWriter;
 
 static void dlwInit(DLWriter *pWriter, DocListType iType, DataBuffer *b){
   pWriter->b = b;
   pWriter->iType = iType;
   pWriter->iPrevDocid = 0;
+#ifndef NDEBUG
+  pWriter->has_iPrevDocid = 0;
+#endif
 }
 static void dlwDestroy(DLWriter *pWriter){
   SCRAMBLE(pWriter);
@@ -780,11 +786,15 @@ static void dlwAdd(DLWriter *pWriter, sqlite_int64 iDocid){
   char c[VARINT_MAX];
   int n = putVarint(c, iDocid-pWriter->iPrevDocid);
 
-  assert( pWriter->iPrevDocid<iDocid );
+  /* Docids must ascend. */
+  assert( !pWriter->has_iPrevDocid || iDocid>pWriter->iPrevDocid );
   assert( pWriter->iType==DL_DOCIDS );
 
   dataBufferAppend(pWriter->b, c, n);
   pWriter->iPrevDocid = iDocid;
+#ifndef NDEBUG
+  pWriter->has_iPrevDocid = 1;
+#endif
 }
 
 /*******************************************************************/
@@ -961,10 +971,14 @@ static void plwInit(PLWriter *pWriter, DLWriter *dlw, sqlite_int64 iDocid){
 
   pWriter->dlw = dlw;
 
-  assert( iDocid>pWriter->dlw->iPrevDocid );
+  /* Docids must ascend. */
+  assert( !pWriter->dlw->has_iPrevDocid || iDocid>pWriter->dlw->iPrevDocid );
   n = putVarint(c, iDocid-pWriter->dlw->iPrevDocid);
   dataBufferAppend(pWriter->dlw->b, c, n);
   pWriter->dlw->iPrevDocid = iDocid;
+#ifndef NDEBUG
+  pWriter->dlw->has_iPrevDocid = 1;
+#endif
 
   pWriter->iColumn = 0;
   pWriter->iPos = 0;
