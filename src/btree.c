@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.383 2007/05/17 18:28:11 danielk1977 Exp $
+** $Id: btree.c,v 1.384 2007/05/23 09:52:42 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1877,7 +1877,7 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin){
     if( eType==PTRMAP_FREEPAGE ){
       if( nFin==0 ){
         /* Remove the page from the files free-list. This is not required
-        ** if nFin is non-zero. In this case, the free-list will be
+        ** if nFin is non-zero. In that case, the free-list will be
         ** truncated to zero after this function returns, so it doesn't 
         ** matter if it still contains some garbage entries.
         */
@@ -3451,7 +3451,7 @@ static int allocateBtreePage(
     ** the entire-list will be searched for that page.
     */
 #ifndef SQLITE_OMIT_AUTOVACUUM
-    if( exact ){
+    if( exact && nearby<=sqlite3PagerPagecount(pBt->pPager) ){
       u8 eType;
       assert( nearby>0 );
       assert( pBt->autoVacuum );
@@ -3808,6 +3808,7 @@ static int fillInCell(
   Pgno pgnoOvfl = 0;
   int nHeader;
   CellInfo info;
+  Pgno pgnoFirstOvfl = 0;
 
   /* Fill in the header. */
   nHeader = 0;
@@ -3852,7 +3853,7 @@ static int fillInCell(
         } while( 
           PTRMAP_ISPAGE(pBt, pgnoOvfl) || pgnoOvfl==PENDING_BYTE_PAGE(pBt) 
         );
-        if( pgnoOvfl>1 ){
+        if( pgnoOvfl>1 && pgnoOvfl!=pgnoFirstOvfl ){
           /* isExact = 1; */
         }
       }
@@ -3861,11 +3862,19 @@ static int fillInCell(
 #ifndef SQLITE_OMIT_AUTOVACUUM
       /* If the database supports auto-vacuum, and the second or subsequent
       ** overflow page is being allocated, add an entry to the pointer-map
-      ** for that page now. The entry for the first overflow page will be
-      ** added later, by the insertCell() routine.
+      ** for that page now. 
+      **
+      ** If this is the first overflow page, then write a partial entry 
+      ** to the pointer-map. If we write nothing to this pointer-map slot,
+      ** then the optimistic overflow chain processing in clearCell()
+      ** may misinterpret the uninitialised values and delete the
+      ** wrong pages from the database.
       */
-      if( pBt->autoVacuum && pgnoPtrmap!=0 && rc==SQLITE_OK ){
-        rc = ptrmapPut(pBt, pgnoOvfl, PTRMAP_OVERFLOW2, pgnoPtrmap);
+      if( pBt->autoVacuum && rc==SQLITE_OK ){
+        u8 eType = (pgnoPtrmap?PTRMAP_OVERFLOW2:PTRMAP_OVERFLOW1);
+        rc = ptrmapPut(pBt, pgnoOvfl, eType, pgnoPtrmap);
+      }else{
+        pgnoFirstOvfl = pgnoOvfl;
       }
 #endif
       if( rc ){
