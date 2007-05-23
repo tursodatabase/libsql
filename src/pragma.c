@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.138 2007/05/11 12:30:04 drh Exp $
+** $Id: pragma.c,v 1.139 2007/05/23 13:50:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -445,6 +445,9 @@ void sqlite3Pragma(
 #ifndef SQLITE_OMIT_AUTOVACUUM
   if( sqlite3StrICmp(zLeft,"incremental_vacuum")==0 ){
     int iLimit, addr;
+    if( sqlite3ReadSchema(pParse) ){
+      goto pragma_out;
+    }
     if( zRight==0 || !sqlite3GetInt32(zRight, &iLimit) || iLimit<=0 ){
       iLimit = 0x7fffffff;
     }

@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.7 2007/05/23 13:34:32 danielk1977 Exp $
+# $Id: incrvacuum.test,v 1.8 2007/05/23 13:50:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -435,5 +435,21 @@ while 1 {
   if {$::nRow == $::iWrite} break
   incr ::iWrite
 }
+
+#---------------------------------------------------------------------
+# This test - incrvacuum-8.* - is to check that nothing goes wrong
+# with an incremental-vacuum if it is the first statement executed
+# after an existing database is opened.
+#
+# At one point, this would always return SQLITE_SCHEMA (which 
+# causes an infinite loop in tclsqlite.c if using the Tcl interface).
+#
+do_test incrvacuum-8.1 {
+  db close
+  sqlite3 db test.db
+  execsql {
+    PRAGMA incremental_vacuum(50);
+  }
+} {}
 
 finish_test
