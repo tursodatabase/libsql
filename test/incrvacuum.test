@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.6 2007/05/04 18:30:41 drh Exp $
+# $Id: incrvacuum.test,v 1.7 2007/05/23 13:34:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,7 +33,7 @@ do_test incrvacuum-1.1 {
   execsql {
     pragma auto_vacuum;
   }
-} {0}
+} $sqlite_options(default_autovacuum)
 do_test incrvacuum-1.2 {
   execsql {
     pragma auto_vacuum = 'full';

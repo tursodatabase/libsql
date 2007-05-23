@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.384 2007/05/23 09:52:42 danielk1977 Exp $
+** $Id: btree.c,v 1.385 2007/05/23 13:34:32 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3808,7 +3808,6 @@ static int fillInCell(
   Pgno pgnoOvfl = 0;
   int nHeader;
   CellInfo info;
-  Pgno pgnoFirstOvfl = 0;
 
   /* Fill in the header. */
   nHeader = 0;
@@ -3853,7 +3852,7 @@ static int fillInCell(
         } while( 
           PTRMAP_ISPAGE(pBt, pgnoOvfl) || pgnoOvfl==PENDING_BYTE_PAGE(pBt) 
         );
-        if( pgnoOvfl>1 && pgnoOvfl!=pgnoFirstOvfl ){
+        if( pgnoOvfl>1 ){
           /* isExact = 1; */
         }
       }
@@ -3873,8 +3872,9 @@ static int fillInCell(
       if( pBt->autoVacuum && rc==SQLITE_OK ){
         u8 eType = (pgnoPtrmap?PTRMAP_OVERFLOW2:PTRMAP_OVERFLOW1);
         rc = ptrmapPut(pBt, pgnoOvfl, eType, pgnoPtrmap);
-      }else{
-        pgnoFirstOvfl = pgnoOvfl;
+        if( rc ){
+          releasePage(pOvfl);
+        }
       }
 #endif
       if( rc ){
