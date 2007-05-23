@@ -1,5 +1,5 @@
-C Increase\sthe\snumber\sof\srepititions\sin\scrash.test.\s(CVS\s4027)
-D 2007-05-23T06:25:13
+C Make\ssure\szeroblob()\sworks\swith\sthe\sconcatenation\soperator.\s\sTicket\s#2379.\s(CVS\s4028)
+D 2007-05-23T06:31:39
 F Makefile.in a42354804b50c2708ce72cf79e4daa30f50191b5
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -133,7 +133,7 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c 73134f4d3e44686ef5abd877f4fb1290b75f3311
 F src/util.c 80cdf6b68d03b8f0ab3237a390842e039cff66c6
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c 38e902e80e36008c29638520d59cb1b88b997dbb
+F src/vdbe.c 74a82e8dc0cd84416fcca63d158c5ab8715f158d
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h 7d2bf163d6d4e815724a457f2216dd8e38c3955c
 F src/vdbeapi.c f89d6bc5264e66f44589e454fbeeee96854d0dd3
@@ -418,7 +418,7 @@ F test/where.test 5c342d6ad0d777275d4740ea5cbeaf5173b6eda4
 F test/where2.test 3249d426b3fc7a106713d784e1628307fc308d2e
 F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
 F test/where4.test b68496500bff496e83e76ae4ffb493b99064eac6
-F test/zeroblob.test 204b54e8adb29f5ec466ff789734098802099d90
+F test/zeroblob.test 12a3a44cb5c60816af4a38e4ab8713e83bf5e252
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/lemon.c c8c8b25ab1ac8156b3ad83ba4ea1bf00d5e07f5a
@@ -494,7 +494,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ed3a131f1d3fe51d1e79bdfe1bfafa55f825afa9
-R ecb9d9a11d5fd4fc118cc73caa42f7c8
-U danielk1977
-Z 878195d8d740a1b73f158bebb97ceae6
+P f3c3412afa95e7e4b2e6477718785b51f5352c39
+R be1ade13052f97e4c5360ea8823361db
+U drh
+Z acf5b62f956d717ae98df8f752c497d0

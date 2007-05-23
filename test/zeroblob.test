@@ -13,7 +13,7 @@
 # including the sqlite3_bind_zeroblob(), sqlite3_result_zeroblob(),
 # and the built-in zeroblob() SQL function.
 #
-# $Id: zeroblob.test,v 1.3 2007/05/17 06:44:29 danielk1977 Exp $
+# $Id: zeroblob.test,v 1.4 2007/05/23 06:31:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -119,6 +119,14 @@ do_test zeroblob-3.1 {
     )
   }
 } {1}
+
+# Concatentation works with zeroblob
+#
+do_test zeroblob-4.1 {
+  execsql {
+    SELECT hex(zeroblob(2) || x'61')
+  }
+} {000061}
   
 
 finish_test

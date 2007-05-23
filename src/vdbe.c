@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.622 2007/05/17 16:38:30 danielk1977 Exp $
+** $Id: vdbe.c,v 1.623 2007/05/23 06:31:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1033,6 +1033,7 @@ case OP_Concat: {           /* same as TK_CONCAT */
       nByte = -1;
       break;
     }
+    ExpandBlob(pTerm);
     Stringify(pTerm, encoding);
     nByte += pTerm->n;
   }
