@@ -1773,10 +1773,24 @@ int sqlite3VdbeSerialTypeLen(u32 serial_type){
 
 /*
 ** If we are on an architecture with mixed-endian floating 
-*** points (ex: ARM7) then swap the lower 4 bytes with the 
+** points (ex: ARM7) then swap the lower 4 bytes with the 
 ** upper 4 bytes.  Return the result.
 **
-** For most (sane) architectures, this is a no-op.
+** For most architectures, this is a no-op.
+**
+** (later):  It is reported to me that the mixed-endian problem
+** on ARM7 is an issue with GCC, not with the ARM7 chip.  It seems
+** that early versions of GCC stored the two words of a 64-bit
+** float in the wrong order.  And that error has been propagated
+** ever since.  The blame is not necessarily with GCC, though.
+** GCC might have just copying the problem from a prior compiler.
+** I am also told that newer versions of GCC that follow a different
+** ABI get the byte order right.
+**
+** Developers using SQLite on an ARM7 should compile and run their
+** application using -DSQLITE_DEBUG=1 at least once.  With DEBUG
+** enabled, some asserts below will ensure that the byte order of
+** floating point values is correct.
 */
 #ifdef SQLITE_MIXED_ENDIAN_64BIT_FLOAT
 static double floatSwap(double in){

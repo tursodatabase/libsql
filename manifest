@@ -1,5 +1,5 @@
-C Make\ssure\szeroblob()\sworks\swith\sthe\sconcatenation\soperator.\s\sTicket\s#2379.\s(CVS\s4028)
-D 2007-05-23T06:31:39
+C Additional\scomments\sono\sthe\sSQLITE_MIXED_ENDIAN_64BIT_FLOAT\sissue.\s(CVS\s4029)
+D 2007-05-23T07:20:09
 F Makefile.in a42354804b50c2708ce72cf79e4daa30f50191b5
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -137,7 +137,7 @@ F src/vdbe.c 74a82e8dc0cd84416fcca63d158c5ab8715f158d
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h 7d2bf163d6d4e815724a457f2216dd8e38c3955c
 F src/vdbeapi.c f89d6bc5264e66f44589e454fbeeee96854d0dd3
-F src/vdbeaux.c 47f483c35c27dc0806715182ef6b281320c4b9b5
+F src/vdbeaux.c a978d170b2ca99c8ff3da8a91f116a66da2600ac
 F src/vdbeblob.c 96f3572fdc45eda5be06e6372b612bc30742d9f0
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c 332875a5fc9ac482e00701db5487ceb7f6fc1adc
@@ -494,7 +494,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f3c3412afa95e7e4b2e6477718785b51f5352c39
-R be1ade13052f97e4c5360ea8823361db
+P 6e19ef758207cedd6db8b2796ef5d4d688cc0b62
+R 5b955388b5718234e99bb751cff2d291
 U drh
-Z acf5b62f956d717ae98df8f752c497d0
+Z eaf7c05ab3e15bb90bfa5a13a327e560
