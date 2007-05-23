@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sdatabase\sschema\shas\sbeen\sread\sbefore\scompiling\san\sincrmental_vacuum\spragma.\s(CVS\s4032)
-D 2007-05-23T13:50:24
+C Add\ssome\scode\sto\sMemTranslate()\sto\sprevent\sthe\sREAD_UTF8()\smacro\sfrom\soverreading\sa\sbuffer.\s(CVS\s4033)
+D 2007-05-23T16:23:09
 F Makefile.in a42354804b50c2708ce72cf79e4daa30f50191b5
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -130,7 +130,7 @@ F src/test_tclvar.c 315e77c17f128ff8c06b38c08617fd07c825a95b
 F src/tokenize.c 6cef9e6fc454d789a32c5b509ccb193a2b01977b
 F src/trigger.c 420192efe3e6f03addf7897c60c3c8bf913d3493
 F src/update.c 3359041db390a8f856d67272f299600e2104f350
-F src/utf.c 73134f4d3e44686ef5abd877f4fb1290b75f3311
+F src/utf.c 01b2aba02b10d12903e9e1ff897215c9faf6b662
 F src/util.c 80cdf6b68d03b8f0ab3237a390842e039cff66c6
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
 F src/vdbe.c 74a82e8dc0cd84416fcca63d158c5ab8715f158d
@@ -214,7 +214,7 @@ F test/descidx2.test eb3a2882ec58aa6e1e8131d9bb54436e5b4a3ce2
 F test/descidx3.test 3a55b8d73bc3e9ad084e0da7fec781cf0d2a0356
 F test/diskfull.test a91fa95a8729b71fdac4738a49755f70b48c61f3
 F test/distinctagg.test 2b89d1c5220d966a30ba4b40430338669301188b
-F test/enc.test 5792faf2dad78a1ff75e2d396a74b963be601815
+F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 45710bacfa9df29720bc84c067dfdf8c8ddfb797
 F test/enc3.test 9331988b9d72decec96995c90637e87b00d747a5
 F test/exclusive.test 5bc520ba366ae3d242420af025ab64d465b04706
@@ -271,7 +271,7 @@ F test/insert4.test 1e27f0a3e5670d5f03c1636f699aa44270945bca
 F test/interrupt.test de86456bb537da5942807cd844c087b33171d97a
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/ioerr.test 491d42c49bbec598966d26b01ed7901f55e5ee2d
-F test/ioerr2.test 65ede6b5f073b2f173228ed9f08b60f309a63d5f
+F test/ioerr2.test f938eadb12108048813869b86beee4a2f98e34b8
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -494,7 +494,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e691f2fa3d8c1bbb66d27eea299ae2fb1ea1a16d
-R e2e7e92bcfd3231b45d0af23c2f65207
+P efd7bcb34c1b4a0a3d4b954b90dfee93ac87bc86
+R f0050ec825035e61175a444a0e964e8b
 U danielk1977
-Z faab23a07e2c6de43bc46e141332808c
+Z ab8438e332b43e7af6a525defe04ba8f

@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.50 2007/05/16 18:23:05 danielk1977 Exp $
+** $Id: utf.c,v 1.51 2007/05/23 16:23:09 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -219,11 +219,70 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   z = zOut;
 
   if( pMem->enc==SQLITE_UTF8 ){
+    unsigned int iExtra = 0xD800;
+
+    if( 0==(pMem->flags&MEM_Term) && zTerm>zIn && (zTerm[-1]&0x80) ){
+      /* This UTF8 string is not nul-terminated, and the last byte is
+      ** not a character in the ascii range (codpoints 0..127). This
+      ** means the SQLITE_READ_UTF8() macro might read past the end
+      ** of the allocated buffer.
+      **
+      ** There are four possibilities:
+      **
+      **   1. The last byte is the first byte of a non-ASCII character,
+      **
+      **   2. The final N bytes of the input string are continuation bytes
+      **      and immediately preceding them is the first byte of a 
+      **      non-ASCII character.
+      **
+      **   3. The final N bytes of the input string are continuation bytes
+      **      and immediately preceding them is a byte that encodes a 
+      **      character in the ASCII range.
+      **
+      **   4. The entire string consists of continuation characters.
+      **
+      ** Cases (3) and (4) require no special handling. The SQLITE_READ_UTF8()
+      ** macro will not overread the buffer in these cases.
+      */
+      unsigned char *zExtra = &zTerm[-1];
+      while( zExtra>zIn && (zExtra[0]&0xC0)==0x80 ){
+        zExtra--;
+      }
+
+      if( (zExtra[0]&0xC0)==0xC0 ){
+        /* Make a copy of the last character encoding in the input string.
+        ** Then make sure it is nul-terminated and use SQLITE_READ_UTF8()
+        ** to decode the codepoint. Store the codepoint in variable iExtra,
+        ** it will be appended to the output string later.
+        */
+        unsigned char *zFree = 0;
+        unsigned char zBuf[16];
+        int nExtra = (pMem->n+zIn-zExtra);
+        zTerm = zExtra;
+        if( nExtra>15 ){
+          zExtra = sqliteMallocRaw(nExtra+1);
+          if( !zExtra ){
+            return SQLITE_NOMEM;
+          }
+          zFree = zExtra;
+        }else{
+          zExtra = zBuf;
+        }
+        memcpy(zExtra, zTerm, nExtra);
+        zExtra[nExtra] = '\0';
+        SQLITE_READ_UTF8(zExtra, iExtra);
+        sqliteFree(zFree);
+      }
+    }
+
     if( desiredEnc==SQLITE_UTF16LE ){
       /* UTF-8 -> UTF-16 Little-endian */
       while( zIn<zTerm ){
         SQLITE_READ_UTF8(zIn, c); 
         WRITE_UTF16LE(z, c);
+      }
+      if( iExtra!=0xD800 ){
+        WRITE_UTF16LE(z, iExtra);
       }
     }else{
       assert( desiredEnc==SQLITE_UTF16BE );
@@ -231,6 +290,9 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
       while( zIn<zTerm ){
         SQLITE_READ_UTF8(zIn, c); 
         WRITE_UTF16BE(z, c);
+      }
+      if( iExtra!=0xD800 ){
+        WRITE_UTF16BE(z, iExtra);
       }
     }
     pMem->n = z - zOut;

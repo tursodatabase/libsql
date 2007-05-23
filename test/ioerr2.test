@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr2.test,v 1.4 2007/04/13 02:14:30 drh Exp $
+# $Id: ioerr2.test,v 1.5 2007/05/23 16:23:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -103,7 +103,7 @@ foreach bPersist [list 0 1] {
     set ::sqlite_io_error_pending $::N
 
     foreach {::go res} [catchsql $sql] {}
-    check_db ioerr2-3.[expr {$bPersist+2}].$::N
+    check_db ioerr2-4.[expr {$bPersist+2}].$::N
   }
 }
 
