@@ -1,5 +1,5 @@
-C Remove\san\sassert()\sstatement\sthat\smay\snot\sbe\strue\sif\san\sIO\sor\smalloc\serror\shas\soccured.\s(CVS\s4037)
-D 2007-05-24T09:41:21
+C Fix\sa\stypo\sin\scomments\sin\ssqlite.h.in.\sNo\scode\schanges.\sTicket\s#2384.\s(CVS\s4038)
+D 2007-05-24T09:44:11
 F Makefile.in a42354804b50c2708ce72cf79e4daa30f50191b5
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -103,7 +103,7 @@ F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c c10b98aeccc67a9724c37bbecd6553e5a8da5bf6
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
-F src/sqlite.h.in aa3c0c02883663944db09ee79f3165d3c4ad7c47
+F src/sqlite.h.in b174b5508467deec4034c6c8a21f0354b498b46b
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 58edde37943f4f8155986f0c33735ba31fc66e9f
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
@@ -494,7 +494,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d00c8242c610476c15d6eb4dc53fecab3971fea1
-R 9abf1f4debe1a38817737548dec4e891
+P 16c8e9c20cd2a7628c20a31c3e9605fe2d92ba2e
+R 31e93049e72accf52aaca917e33c4138
 U danielk1977
-Z 935819231bb9014e0bc1aad53066c093
+Z 457de320f3ff18e51a78ea843a897962

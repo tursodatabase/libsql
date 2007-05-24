@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.209 2007/05/15 02:45:19 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.210 2007/05/24 09:44:11 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -40,7 +40,7 @@ extern "C" {
 ** For example "3.1.1beta".
 **
 ** The SQLITE_VERSION_NUMBER is an integer with the value 
-** (X*100000 + Y*1000 + Z). For example, for version "3.1.1beta", 
+** (X*1000000 + Y*1000 + Z). For example, for version "3.1.1beta", 
 ** SQLITE_VERSION_NUMBER is set to 3001001. To detect if they are using 
 ** version 3.1.1 or greater at compile time, programs may use the test 
 ** (SQLITE_VERSION_NUMBER>=3001001).
