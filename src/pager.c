@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.341 2007/05/24 07:22:42 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.342 2007/05/24 09:41:21 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1083,7 +1083,10 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   **
   ** An exception to the above rule: If the database is in no-sync mode
   ** and a page is moved during an incremental vacuum then the page may
-  ** not be in the pager cache.
+  ** not be in the pager cache. Later: if a malloc() or IO error occurs
+  ** during a Movepage() call, then the page may not be in the cache
+  ** either. So the condition described in the above paragraph is not
+  ** assert()able.
   **
   ** If in EXCLUSIVE state, then we update the pager cache if it exists
   ** and the main file. The page is then marked not dirty.
@@ -1102,7 +1105,6 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   ** cache or else it is marked as needSync==0.
   */
   pPg = pager_lookup(pPager, pgno);
-  assert( pPager->state>=PAGER_EXCLUSIVE || pPg!=0 || pPager->noSync );
   PAGERTRACE3("PLAYBACK %d page %d\n", PAGERID(pPager), pgno);
   if( pPager->state>=PAGER_EXCLUSIVE && (pPg==0 || pPg->needSync==0) ){
     rc = sqlite3OsSeek(pPager->fd, (pgno-1)*(i64)pPager->pageSize);
