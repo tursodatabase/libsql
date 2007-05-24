@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.387 2007/05/24 07:47:07 danielk1977 Exp $
+** $Id: btree.c,v 1.388 2007/05/24 09:20:16 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4244,11 +4244,11 @@ static int balance_quick(MemPage *pPage, MemPage *pParent){
   */
   if( pBt->autoVacuum ){
     rc = ptrmapPut(pBt, pgnoNew, PTRMAP_BTREE, pParent->pgno);
-    if( rc!=SQLITE_OK ){
-      return rc;
+    if( rc==SQLITE_OK ){
+      rc = ptrmapPutOvfl(pNew, 0);
     }
-    rc = ptrmapPutOvfl(pNew, 0);
     if( rc!=SQLITE_OK ){
+      releasePage(pNew);
       return rc;
     }
   }
