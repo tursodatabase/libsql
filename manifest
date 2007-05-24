@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sfailure\soccuring\sin\scorrupt.test.\s(CVS\s4034)
-D 2007-05-24T07:22:42
+C Remove\san\sincorrect\sassert()\sstatement\sthat\swas\sbeing\striggered\sby\sioerr\stests\srun\sin\sutf-16\smode.\s(CVS\s4035)
+D 2007-05-24T07:47:07
 F Makefile.in a42354804b50c2708ce72cf79e4daa30f50191b5
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -62,7 +62,7 @@ F src/alter.c 1b1deeb97446ed87f2fa17a3eb6236548841a348
 F src/analyze.c e8fcb1c35ace8418615eb18d9601f321ac86b2ec
 F src/attach.c ba628db0c2b6a362f036d017bf1196cdfe4ebb37
 F src/auth.c 5ea90bc93dfea46e9fe4bf531e14c7cd98219ecb
-F src/btree.c 125ff88b8a0eaae2acd48b42decad569f41c268a
+F src/btree.c f28399255953e789f6e10f2ac378aaeacd07be54
 F src/btree.h 1d527bf61ed176f980c34999d5793a0fd45dcf8c
 F src/btreeInt.h f92c0577f49d961c0148b477a25647e8fd80eecf
 F src/build.c 50992d92e131a9aa9aa6657fb1ddc13e176fd70c
@@ -494,7 +494,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0595319cd716611bb5a12eb952e395283ea749bb
-R e915c377db312aa08a1ede5669a4b334
+P 3c54cddf23e3b9f62815d1b825110563f78cc325
+R daeeb60ad754898cfa2fa94c3fe97378
 U danielk1977
-Z a909538d06b93140117bffbc9c2c6eaf
+Z bd68142b41ddc6ade1830ed22b5c15df

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.386 2007/05/24 07:22:42 danielk1977 Exp $
+** $Id: btree.c,v 1.387 2007/05/24 07:47:07 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2783,7 +2783,6 @@ static int accessPayload(
         } else 
 #endif
           rc = getOverflowPage(pBt, nextPage, 0, &nextPage);
-        assert(rc==SQLITE_OK || nextPage==0);
         offset -= ovflSize;
       }else{
         /* Need to read this page properly. It contains some of the
