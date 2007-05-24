@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.9 2007/05/24 07:22:42 danielk1977 Exp $
+# $Id: incrvacuum.test,v 1.10 2007/05/24 10:18:22 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -498,6 +498,61 @@ do_test incrvacuum-9.3 {
     ROLLBACK;
   }
 } {}
+
+#---------------------------------------------------------------------
+# Test that the parameter to the incremental_vacuum pragma works. That
+# is, if the user executes "PRAGMA incremental_vacuum(N)", at most
+# N pages are vacuumed.
+#
+do_test incrvacuum-10.1 {
+  execsql {
+    DROP TABLE t1;
+    DROP TABLE t2;
+  }
+  expr [file size test.db] / 1024
+} {29}
+
+do_test incrvacuum-10.2 {
+  execsql {
+    PRAGMA incremental_vacuum(1);
+  }
+  expr [file size test.db] / 1024
+} {28}
+
+do_test incrvacuum-10.3 {
+  execsql {
+    PRAGMA incremental_vacuum(5);
+  }
+  expr [file size test.db] / 1024
+} {23}
+
+do_test incrvacuum-10.4 {
+  execsql {
+    PRAGMA incremental_vacuum('1');
+  }
+  expr [file size test.db] / 1024
+} {22}
+
+do_test incrvacuum-10.5 {
+  execsql {
+    PRAGMA incremental_vacuum("3");
+  }
+  expr [file size test.db] / 1024
+} {19}
+
+do_test incrvacuum-10.6 {
+  execsql {
+    PRAGMA incremental_vacuum = 1;
+  }
+  expr [file size test.db] / 1024
+} {18}
+
+do_test incrvacuum-10.7 {
+  execsql {
+    PRAGMA incremental_vacuum(0);
+  }
+  expr [file size test.db] / 1024
+} {1}
 
 finish_test
 
