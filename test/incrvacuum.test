@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.8 2007/05/23 13:50:24 danielk1977 Exp $
+# $Id: incrvacuum.test,v 1.9 2007/05/24 07:22:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -452,4 +452,52 @@ do_test incrvacuum-8.1 {
   }
 } {}
 
+#---------------------------------------------------------------------
+# At one point this test case was causing an assert() to fail.
+#
+do_test incrvacuum-9.1 {
+  db close
+  file delete -force test.db test.db-journal
+  sqlite3 db test.db
+
+  execsql {
+    PRAGMA auto_vacuum = 'incremental';
+    CREATE TABLE t1(a, b, c);
+    CREATE TABLE t2(a, b, c);
+    INSERT INTO t2 VALUES(randstr(500,500),randstr(500,500),randstr(500,500));
+    INSERT INTO t1 VALUES(1, 2, 3);
+    INSERT INTO t1 SELECT a||a, b||b, c||c FROM t1;
+    INSERT INTO t1 SELECT a||a, b||b, c||c FROM t1;
+    INSERT INTO t1 SELECT a||a, b||b, c||c FROM t1;
+    INSERT INTO t1 SELECT a||a, b||b, c||c FROM t1;
+    INSERT INTO t1 SELECT a||a, b||b, c||c FROM t1;
+    INSERT INTO t1 SELECT a||a, b||b, c||c FROM t1;
+    INSERT INTO t1 SELECT a||a, b||b, c||c FROM t1;
+    INSERT INTO t1 SELECT a||a, b||b, c||c FROM t1;
+  }
+} {}
+
+do_test incrvacuum-9.2 {
+  execsql {
+    PRAGMA synchronous = 'OFF';
+    BEGIN;
+    UPDATE t1 SET a = a, b = b, c = c;
+    DROP TABLE t2;
+    PRAGMA incremental_vacuum(10);
+    ROLLBACK;
+  }
+} {}
+
+do_test incrvacuum-9.3 {
+  execsql {
+    PRAGMA cache_size = 10;
+    BEGIN;
+    UPDATE t1 SET a = a, b = b, c = c;
+    DROP TABLE t2;
+    PRAGMA incremental_vacuum(10);
+    ROLLBACK;
+  }
+} {}
+
 finish_test
+

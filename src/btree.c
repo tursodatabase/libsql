@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.385 2007/05/23 13:34:32 danielk1977 Exp $
+** $Id: btree.c,v 1.386 2007/05/24 07:22:42 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1659,12 +1659,15 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
 static int setChildPtrmaps(MemPage *pPage){
   int i;                             /* Counter variable */
   int nCell;                         /* Number of cells in page pPage */
-  int rc = SQLITE_OK;                /* Return code */
+  int rc;                            /* Return code */
   BtShared *pBt = pPage->pBt;
   int isInitOrig = pPage->isInit;
   Pgno pgno = pPage->pgno;
 
-  sqlite3BtreeInitPage(pPage, 0);
+  rc = sqlite3BtreeInitPage(pPage, pPage->pParent);
+  if( rc!=SQLITE_OK ){
+    goto set_child_ptrmaps_out;
+  }
   nCell = pPage->nCell;
 
   for(i=0; i<nCell; i++){
