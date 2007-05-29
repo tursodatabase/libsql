@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.294 2007/05/15 07:00:34 danielk1977 Exp $
+** $Id: expr.c,v 1.295 2007/05/29 12:11:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -171,15 +171,21 @@ static int binaryCompareP1(Expr *pExpr1, Expr *pExpr2, int jumpIfNull){
 ** used. Otherwise the collation sequence for the right hand expression
 ** is used, or the default (BINARY) if neither expression has a collating
 ** type.
+**
+** Argument pRight (but not pLeft) may be a null pointer. In this case,
+** it is not considered.
 */
-static CollSeq* binaryCompareCollSeq(Parse *pParse, Expr *pLeft, Expr *pRight){
+CollSeq* sqlite3BinaryCompareCollSeq(
+  Parse *pParse, 
+  Expr *pLeft, 
+  Expr *pRight
+){
   CollSeq *pColl;
   assert( pLeft );
-  assert( pRight );
   if( pLeft->flags & EP_ExpCollate ){
     assert( pLeft->pColl );
     pColl = pLeft->pColl;
-  }else if( pRight->flags & EP_ExpCollate ){
+  }else if( pRight && pRight->flags & EP_ExpCollate ){
     assert( pRight->pColl );
     pColl = pRight->pColl;
   }else{
@@ -203,7 +209,7 @@ static int codeCompare(
   int jumpIfNull    /* If true, jump if either operand is NULL */
 ){
   int p1 = binaryCompareP1(pLeft, pRight, jumpIfNull);
-  CollSeq *p3 = binaryCompareCollSeq(pParse, pLeft, pRight);
+  CollSeq *p3 = sqlite3BinaryCompareCollSeq(pParse, pLeft, pRight);
   return sqlite3VdbeOp3(pParse->pVdbe, opcode, p1, dest, (void*)p3, P3_COLLSEQ);
 }
 
@@ -1533,7 +1539,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
         }
         pEList = pExpr->pSelect->pEList;
         if( pEList && pEList->nExpr>0 ){ 
-          keyInfo.aColl[0] = binaryCompareCollSeq(pParse, pExpr->pLeft,
+          keyInfo.aColl[0] = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft,
               pEList->a[0].pExpr);
         }
       }else if( pExpr->pList ){

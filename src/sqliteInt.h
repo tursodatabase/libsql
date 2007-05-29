@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.569 2007/05/16 17:28:43 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.570 2007/05/29 12:11:30 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1569,7 +1569,7 @@ extern const unsigned char sqlite3UtfTrans1[];
 **     be encoded as a multi-byte character.  Any multi-byte character that
 **     attempts to encode a value between 0x00 and 0x7f is rendered as 0xfffd.
 **
-**  *  These macros never allow a UTF16 surragate value to be encoded.
+**  *  These macros never allow a UTF16 surrogate value to be encoded.
 **     If a multi-byte character attempts to encode a value between
 **     0xd800 and 0xe000 then it is rendered as 0xfffd.
 **
@@ -1954,6 +1954,7 @@ FuncDef *sqlite3VtabOverloadFunction(FuncDef*, int nArg, Expr*);
 void sqlite3InvalidFunction(sqlite3_context*,int,sqlite3_value**);
 int sqlite3Reprepare(Vdbe*);
 void sqlite3ExprListCheckLength(Parse*, ExprList*, int, const char*);
+CollSeq* sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
 
 #if SQLITE_MAX_EXPR_DEPTH>0
   void sqlite3ExprSetHeight(Expr *);
