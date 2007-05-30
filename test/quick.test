@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.57 2007/05/30 08:18:04 danielk1977 Exp $
+# $Id: quick.test,v 1.58 2007/05/30 10:36:47 danielk1977 Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -46,6 +46,7 @@ set EXCLUDE {
   crash2.test
   exclusive3.test
   fuzz.test
+  fuzz_malloc.test
   in2.test
   loadext.test
   malloc.test
