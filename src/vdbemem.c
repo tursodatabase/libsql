@@ -162,7 +162,10 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
   if( pMem->flags & (MEM_Static|MEM_Ephem) ){
     return sqlite3VdbeMemMakeWriteable(pMem);
   }else{
-    char *z = sqliteMalloc(pMem->n+2);
+    char *z; 
+    sqlite3VdbeMemExpandBlob(pMem);
+    z = sqliteMalloc(pMem->n+2);
+
     if( !z ) return SQLITE_NOMEM;
     memcpy(z, pMem->z, pMem->n);
     z[pMem->n] = 0;
