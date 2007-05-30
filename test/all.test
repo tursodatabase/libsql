@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.42 2007/05/10 17:32:48 danielk1977 Exp $
+# $Id: all.test,v 1.43 2007/05/30 08:18:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -61,6 +61,7 @@ set EXCLUDE {
   memleak.test
   sqllimits1.test
   fuzz.test
+  soak.test
 }
 
 # Files to include in the test.  If this list is empty then everything

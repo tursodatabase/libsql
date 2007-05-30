@@ -19,12 +19,14 @@
 #
 # The most complicated trees are for SELECT statements.
 #
-# $Id: fuzz.test,v 1.12 2007/05/15 07:14:33 danielk1977 Exp $
+# $Id: fuzz.test,v 1.13 2007/05/30 08:18:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 set ::REPEATS 5000
+
+# If running quick.test, don't do so many iterations.
 if {[info exists ::ISQUICK]} {
   if {$::ISQUICK} { set ::REPEATS 20 }
 }

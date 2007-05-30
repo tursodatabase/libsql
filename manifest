@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\szeroblob()\sand\sCAST(...)\sexpressions\sthat\scould\scause\san\sassert()\sto\sfail.\s(CVS\s4041)
-D 2007-05-30T06:19:33
+C Add\sthe\sstart\sof\sthe\ssoak-test\sinfrastructure.\s(CVS\s4042)
+D 2007-05-30T08:18:04
 F Makefile.in a42354804b50c2708ce72cf79e4daa30f50191b5
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -145,7 +145,7 @@ F src/vtab.c c5ebebf615b2f29499fbe97a584c4bb342632aa0
 F src/where.c 1c27ddb2f19976175fecdcf8f5a0ca23596917fb
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
-F test/all.test 93a40a7612b3c5e6efd1f5b98496a8b02a45cfdb
+F test/all.test f0ea4b968d5fe05d85e9cab6fa491ec7e3b9fcc4
 F test/alter.test c2a9402e17a731e5294ef370214bd9f88351d18d
 F test/alter2.test 50c3f554b8236d179d72511c0a4f23c5eb7f2af3
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
@@ -250,7 +250,7 @@ F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
-F test/fuzz.test 3d382b2d3c6b909a4f08b46dc6ca6a149eeb3a81
+F test/fuzz.test 9fdb668167bd38eb7137d49c8e9c250994bdbd5b
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
@@ -322,7 +322,7 @@ F test/pragma.test b0e73879206934a835856a8b8c4cc884cd8562f3
 F test/printf.test 69d8cb0771a1a5e4d9d5dece12fc2c16179ac5e5
 F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
 F test/ptrchng.test 1c712dd6516e1377471744fa765e41c79a357da6
-F test/quick.test 3d7f6ffd285e1589a58874dd483ccb6e058ea4a5
+F test/quick.test 41052ccf861fa49145496c9e9db62df4b0a2b6b8
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -343,6 +343,7 @@ F test/shared.test 5c39f216ce85d723eda5875804bbf5ef8a03fcfc
 F test/shared2.test 8b48f8d33494413ef4cf250110d89403e2bf6b23
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
 F test/shared_err.test cc528f6e78665787e93d9ce3a782a2ce5179d821
+F test/soak.test dac7ec07bdedd8f924de69ba029ed1dacbc1082a
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
@@ -495,7 +496,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f9a95e92dfaaa61ec0a44b9b7017b07929c94d26
-R 669d18871f9c948e2f1efb490acd8d0d
+P 03750a2a6b5186689f7db6650c0a889429790b03
+R cd63e6e2215c48b174d5e94a02b48d9a
 U danielk1977
-Z 49b3f7347b55c791931b6c0615c872bf
+Z 17f10a57e39853a2feb0d4c1a0988d68
