@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.348 2007/05/14 16:50:49 danielk1977 Exp $
+** $Id: select.c,v 1.349 2007/05/31 08:20:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2648,6 +2648,10 @@ int sqlite3SelectResolve(
         processOrderGroupBy(&sNC, pGroupBy, "GROUP") ){
       return SQLITE_ERROR;
     }
+  }
+
+  if( sqlite3MallocFailed() ){
+    return SQLITE_NOMEM;
   }
 
   /* Make sure the GROUP BY clause does not contain aggregate functions.

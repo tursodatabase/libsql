@@ -12,7 +12,7 @@
 # These were all discovered by fuzzy generation of SQL. Apart from
 # that they have little in common.
 #
-# $Id: mallocB.test,v 1.1 2007/05/30 10:36:47 danielk1977 Exp $
+# $Id: mallocB.test,v 1.2 2007/05/31 08:20:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -30,6 +30,7 @@ do_malloc_test mallocB-1 -sqlbody {SELECT - 456}
 do_malloc_test mallocB-2 -sqlbody {SELECT - 456.1}
 do_malloc_test mallocB-3 -sqlbody {SELECT random()}
 do_malloc_test mallocB-4 -sqlbody {SELECT zeroblob(1000)}
+do_malloc_test mallocB-5 -sqlbody {SELECT * FROM (SELECT 1) GROUP BY 1;}
 
 sqlite_malloc_fail 0
 finish_test
