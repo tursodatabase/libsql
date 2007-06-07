@@ -12,7 +12,7 @@
 ** 
 ** This file defines various limits of what SQLite can process.
 **
-** @(#) $Id: limits.h,v 1.7 2007/06/07 10:55:36 drh Exp $
+** @(#) $Id: limits.h,v 1.8 2007/06/07 19:08:34 drh Exp $
 */
 
 /*
@@ -80,6 +80,7 @@
 
 /*
 ** The maximum number of opcodes in a VDBE program.
+** Not currently enforced.
 */
 #ifndef SQLITE_MAX_VDBE_OP
 # define SQLITE_MAX_VDBE_OP 25000

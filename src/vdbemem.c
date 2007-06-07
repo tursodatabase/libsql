@@ -98,8 +98,11 @@ int sqlite3VdbeMemDynamicify(Mem *pMem){
 int sqlite3VdbeMemExpandBlob(Mem *pMem){
   if( pMem->flags & MEM_Zero ){
     char *pNew;
+    int nByte;
     assert( (pMem->flags & MEM_Blob)!=0 );
-    pNew = sqliteMalloc(pMem->n+pMem->u.i);
+    nByte = pMem->n + pMem->u.i;
+    if( nByte<=0 ) nByte = 1;
+    pNew = sqliteMalloc(nByte);
     if( pNew==0 ){ 
       return SQLITE_NOMEM;
     }
@@ -411,6 +414,7 @@ void sqlite3VdbeMemSetZeroBlob(Mem *pMem, int n){
   pMem->flags = MEM_Blob|MEM_Zero|MEM_Short;
   pMem->type = SQLITE_BLOB;
   pMem->n = 0;
+  if( n<0 ) n = 0;
   pMem->u.i = n;
   pMem->z = pMem->zShort;
   pMem->enc = SQLITE_UTF8;

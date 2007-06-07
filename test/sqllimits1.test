@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.9 2007/06/07 15:45:35 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.10 2007/06/07 19:08:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -41,8 +41,11 @@ source $testdir/tester.tcl
 # Test cases sqllimits-1.* test that the SQLITE_MAX_LENGTH limit
 # is enforced.
 #
-do_test sqllimits-1.1 {
+do_test sqllimits-1.1.1 {
   catchsql { SELECT randomblob(2147483647) }
+} {1 {string or blob too big}}
+do_test sqllimits-1.1.2 {
+  catchsql { SELECT zeroblob(2147483647) }
 } {1 {string or blob too big}}
 
 # Large, but allowable, blob-size.
@@ -58,6 +61,18 @@ do_test sqllimits-1.3 {
 } {1 {string or blob too big}}
 
 do_test sqllimits-1.4 {
+  catchsql { SELECT LENGTH(zeroblob($::LARGESIZE)) }
+} "0 $::LARGESIZE"
+
+do_test sqllimits-1.5 {
+  catchsql { SELECT quote(zeroblob($::LARGESIZE)) }
+} {1 {string or blob too big}}
+
+do_test sqllimits-1.6 {
+  catchsql { SELECT zeroblob(-1) }
+} {0 {}}
+
+do_test sqllimits-1.9 {
   set ::str [string repeat A 65537]
   set ::rep [string repeat B 65537]
   catchsql { SELECT replace($::str, 'A', $::rep) }
@@ -437,5 +452,3 @@ do_test sqllimits-1.12.2 {
 } {1 {string or blob too big}}
 
 finish_test
-
-

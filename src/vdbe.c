@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.623 2007/05/23 06:31:39 drh Exp $
+** $Id: vdbe.c,v 1.624 2007/06/07 19:08:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -5139,8 +5139,7 @@ too_big:
   rc = SQLITE_TOOBIG;
   goto vdbe_halt;
 
-  /* Jump to here if a malloc() fails.  It's hard to get a malloc()
-  ** to fail on a modern VM computer, so this code is untested.
+  /* Jump to here if a malloc() fails.
   */
 no_mem:
   sqlite3SetString(&p->zErrMsg, "out of memory", (char*)0);

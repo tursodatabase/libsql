@@ -13,7 +13,7 @@
 # including the sqlite3_bind_zeroblob(), sqlite3_result_zeroblob(),
 # and the built-in zeroblob() SQL function.
 #
-# $Id: zeroblob.test,v 1.5 2007/05/30 06:19:33 danielk1977 Exp $
+# $Id: zeroblob.test,v 1.6 2007/06/07 19:08:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -151,5 +151,29 @@ do_test zeroblob-5.4 {
   }
 } [execsql {SELECT zeroblob(100)}]
   
+
+# Check for malicious use of zeroblob.  Make sure nothing crashes.
+#
+do_test zeroblob-6.1.1 { 
+  execsql {select zeroblob(-1)} 
+} {{}} 
+do_test zeroblob-6.1.2 { 
+  execsql {select zeroblob(-10)} 
+} {{}} 
+do_test zeroblob-6.1.3 { 
+  execsql {select zeroblob(-100)} 
+} {{}} 
+do_test zeroblob-6.2 { 
+  execsql {select length(zeroblob(-1))} 
+} {0} 
+do_test zeroblob-6.3 { 
+  execsql {select zeroblob(-1)|1} 
+} {1} 
+do_test zeroblob-6.4 { 
+  catchsql {select length(zeroblob(2147483648))} 
+} {1 {string or blob too big}} 
+do_test zeroblob-6.5 { 
+  catchsql {select zeroblob(2147483648)} 
+} {1 {string or blob too big}} 
 
 finish_test

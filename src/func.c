@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.159 2007/05/15 14:40:11 drh Exp $
+** $Id: func.c,v 1.160 2007/06/07 19:08:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -756,10 +756,14 @@ static void zeroblobFunc(
   int argc,
   sqlite3_value **argv
 ){
-  int n;
+  i64 n;
   assert( argc==1 );
-  n = sqlite3_value_int(argv[0]);
-  sqlite3_result_zeroblob(context, n);
+  n = sqlite3_value_int64(argv[0]);
+  if( n>SQLITE_MAX_LENGTH ){
+    sqlite3_result_error_toobig(context);
+  }else{
+    sqlite3_result_zeroblob(context, n);
+  }
 }
 
 /*
