@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.5 2007/05/17 16:38:30 danielk1977 Exp $
+** $Id: test_config.c,v 1.6 2007/06/07 10:55:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -391,6 +391,11 @@ static void set_options(Tcl_Interp *interp){
     static int sqlite_max_expr_depth = SQLITE_MAX_EXPR_DEPTH;
     Tcl_LinkVar(interp, "SQLITE_MAX_EXPR_DEPTH",
            (char*)&sqlite_max_expr_depth, TCL_LINK_INT|TCL_LINK_READ_ONLY);
+  }
+  {
+    static int sqlite_max_compound_select = SQLITE_MAX_COMPOUND_SELECT;
+    Tcl_LinkVar(interp, "SQLITE_MAX_COMPOUND_SELECT",
+           (char*)&sqlite_max_compound_select, TCL_LINK_INT|TCL_LINK_READ_ONLY);
   }
   {
     static int sqlite_max_vdbe_op = SQLITE_MAX_VDBE_OP;
