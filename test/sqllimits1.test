@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.8 2007/05/10 11:43:53 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.9 2007/06/07 15:45:35 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -261,9 +261,7 @@ if {$::SQLITE_MAX_EXPR_DEPTH != 1000} {
     for {set i 0} {$i <= $max} {incr i} {
       set expr "SELECT ($expr)"
     }
-    catchsql [subst {
-      SELECT $expr
-    }]
+    catchsql [subst { $expr }]
   } "1 {parser stack overflow}"
   
   
