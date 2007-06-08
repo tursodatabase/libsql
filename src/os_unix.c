@@ -619,7 +619,7 @@ static sqlite3LockingStyle sqlite3DetectLockingStyle(const char *filePath,
     return unsupportedLockingStyle;
   
   return sqlite3TestLockingStyle(filePath, fd);  
-#endif // SQLITE_FIXED_LOCKING_STYLE
+#endif /* SQLITE_FIXED_LOCKING_STYLE */
 }
 
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
@@ -1733,7 +1733,7 @@ static int _AFPFSSetLock(const char *path, int fd, unsigned long long offset,
   if ( err==-1 ) {
     OSTRACE4("AFPLOCK failed to fsctl() '%s' %d %s\n", path, errno, 
       strerror(errno));
-    return 1; // error
+    return 1; /* error */
   } else {
     return 0;
   }
@@ -1760,7 +1760,7 @@ static int afpUnixCheckReservedLock(OsFile *id){
   /* Otherwise see if some other process holds it.
    */
   if ( !r ) {
-    // lock the byte
+    /* lock the byte */
     int failed = _AFPFSSetLock(context->filePath, pFile->h, RESERVED_BYTE, 1,1);  
     if (failed) {
       /* if we failed to get the lock then someone else must have it */
@@ -2015,36 +2015,36 @@ static int flockUnixCheckReservedLock(OsFile *id) {
   unixFile *pFile = (unixFile*)id;
   
   if (pFile->locktype == RESERVED_LOCK) {
-    return 1; // already have a reserved lock
+    return 1; /* already have a reserved lock */
   } else {
-    // attempt to get the lock
+    /* attempt to get the lock */
     int rc = flock(pFile->h, LOCK_EX | LOCK_NB);
     if (!rc) {
-      // got the lock, unlock it
+      /* got the lock, unlock it */
       flock(pFile->h, LOCK_UN);
-      return 0;  // no one has it reserved
+      return 0;  /* no one has it reserved */
     }
-    return 1; // someone else might have it reserved
+    return 1; /* someone else might have it reserved */
   }
 }
 
 static int flockUnixLock(OsFile *id, int locktype) {
   unixFile *pFile = (unixFile*)id;
   
-  // if we already have a lock, it is exclusive.  
-  // Just adjust level and punt on outta here.
+  /* if we already have a lock, it is exclusive.  
+  ** Just adjust level and punt on outta here. */
   if (pFile->locktype > NO_LOCK) {
     pFile->locktype = locktype;
     return SQLITE_OK;
   }
   
-  // grab an exclusive lock
+  /* grab an exclusive lock */
   int rc = flock(pFile->h, LOCK_EX | LOCK_NB);
   if (rc) {
-    // didn't get, must be busy
+    /* didn't get, must be busy */
     return SQLITE_BUSY;
   } else {
-    // got it, set the type and return ok
+    /* got it, set the type and return ok */
     pFile->locktype = locktype;
     return SQLITE_OK;
   }
@@ -2055,18 +2055,18 @@ static int flockUnixUnlock(OsFile *id, int locktype) {
   
   assert( locktype<=SHARED_LOCK );
   
-  // no-op if possible
+  /* no-op if possible */
   if( pFile->locktype==locktype ){
     return SQLITE_OK;
   }
   
-  // shared can just be set because we always have an exclusive
+  /* shared can just be set because we always have an exclusive */
   if (locktype==SHARED_LOCK) {
     pFile->locktype = locktype;
     return SQLITE_OK;
   }
   
-  // no, really, unlock.
+  /* no, really, unlock. */
   int rc = flock(pFile->h, LOCK_UN);
   if (rc)
     return SQLITE_IOERR_UNLOCK;
@@ -2117,14 +2117,14 @@ static int dotlockUnixCheckReservedLock(OsFile *id) {
     (dotlockLockingContext *) pFile->lockingContext;
   
   if (pFile->locktype == RESERVED_LOCK) {
-    return 1; // already have a reserved lock
+    return 1; /* already have a reserved lock */
   } else {
     struct stat statBuf;
     if (lstat(context->lockPath,&statBuf) == 0)
-      // file exists, someone else has the lock
+      /* file exists, someone else has the lock */
       return 1;
     else
-      // file does not exist, we could have it if we want it
+      /* file does not exist, we could have it if we want it */
       return 0;
   }
 }
@@ -2134,8 +2134,8 @@ static int dotlockUnixLock(OsFile *id, int locktype) {
   dotlockLockingContext *context = 
     (dotlockLockingContext *) pFile->lockingContext;
   
-  // if we already have a lock, it is exclusive.  
-  // Just adjust level and punt on outta here.
+  /* if we already have a lock, it is exclusive.  
+  ** Just adjust level and punt on outta here. */
   if (pFile->locktype > NO_LOCK) {
     pFile->locktype = locktype;
     
@@ -2144,21 +2144,21 @@ static int dotlockUnixLock(OsFile *id, int locktype) {
     return SQLITE_OK;
   }
   
-  // check to see if lock file already exists
+  /* check to see if lock file already exists */
   struct stat statBuf;
   if (lstat(context->lockPath,&statBuf) == 0){
-    return SQLITE_BUSY; // it does, busy
+    return SQLITE_BUSY; /* it does, busy */
   }
   
-  // grab an exclusive lock
+  /* grab an exclusive lock */
   int fd = open(context->lockPath,O_RDONLY|O_CREAT|O_EXCL,0600);
   if (fd < 0) {
-    // failed to open/create the file, someone else may have stolen the lock
+    /* failed to open/create the file, someone else may have stolen the lock */
     return SQLITE_BUSY; 
   }
   close(fd);
   
-  // got it, set the type and return ok
+  /* got it, set the type and return ok */
   pFile->locktype = locktype;
   return SQLITE_OK;
 }
@@ -2170,18 +2170,18 @@ static int dotlockUnixUnlock(OsFile *id, int locktype) {
   
   assert( locktype<=SHARED_LOCK );
   
-  // no-op if possible
+  /* no-op if possible */
   if( pFile->locktype==locktype ){
     return SQLITE_OK;
   }
   
-  // shared can just be set because we always have an exclusive
+  /* shared can just be set because we always have an exclusive */
   if (locktype==SHARED_LOCK) {
     pFile->locktype = locktype;
     return SQLITE_OK;
   }
   
-  // no, really, unlock.
+  /* no, really, unlock. */
   unlink(context->lockPath);
   pFile->locktype = NO_LOCK;
   return SQLITE_OK;
@@ -2496,7 +2496,7 @@ static int allocateUnixFile(
       return SQLITE_NOMEM;
     }
   } else {
-    //  pLock and pOpen are only used for posix advisory locking 
+    /*  pLock and pOpen are only used for posix advisory locking */
     f.pLock = NULL;
     f.pOpen = NULL;
   }
