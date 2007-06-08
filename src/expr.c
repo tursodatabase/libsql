@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.296 2007/05/30 10:36:47 danielk1977 Exp $
+** $Id: expr.c,v 1.297 2007/06/08 00:20:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -831,11 +831,21 @@ static int walkSelectExpr(Select *p, int (*xFunc)(void *, Expr*), void *pArg){
 ** is constant.  See sqlite3ExprIsConstant() for additional information.
 */
 static int exprNodeIsConstant(void *pArg, Expr *pExpr){
+  int *pN = (int*)pArg;
+
+  /* If *pArg is 3 then any term of the expression that comes from
+  ** the ON or USING clauses of a join disqualifies the expression
+  ** from being considered constant. */
+  if( (*pN)==3 && ExprHasAnyProperty(pExpr, EP_FromJoin) ){
+    *pN = 0;
+    return 2;
+  }
+
   switch( pExpr->op ){
     /* Consider functions to be constant if all their arguments are constant
     ** and *pArg==2 */
     case TK_FUNCTION:
-      if( *((int*)pArg)==2 ) return 0;
+      if( (*pN)==2 ) return 0;
       /* Fall through */
     case TK_ID:
     case TK_COLUMN:
@@ -846,11 +856,11 @@ static int exprNodeIsConstant(void *pArg, Expr *pExpr){
     case TK_SELECT:
     case TK_EXISTS:
 #endif
-      *((int*)pArg) = 0;
+      *pN = 0;
       return 2;
     case TK_IN:
       if( pExpr->pSelect ){
-        *((int*)pArg) = 0;
+        *pN = 0;
         return 2;
       }
     default:
@@ -870,6 +880,18 @@ int sqlite3ExprIsConstant(Expr *p){
   int isConst = 1;
   walkExprTree(p, exprNodeIsConstant, &isConst);
   return isConst;
+}
+
+/*
+** Walk an expression tree.  Return 1 if the expression is constant
+** that does no originate from the ON or USING clauses of a join.
+** Return 0 if it involves variables or function calls or terms from
+** an ON or USING clause.
+*/
+int sqlite3ExprIsConstantNotJoin(Expr *p){
+  int isConst = 3;
+  walkExprTree(p, exprNodeIsConstant, &isConst);
+  return isConst!=0;
 }
 
 /*

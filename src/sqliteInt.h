@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.570 2007/05/29 12:11:30 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.571 2007/06/08 00:20:48 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1742,6 +1742,7 @@ void sqlite3BeginTransaction(Parse*, int);
 void sqlite3CommitTransaction(Parse*);
 void sqlite3RollbackTransaction(Parse*);
 int sqlite3ExprIsConstant(Expr*);
+int sqlite3ExprIsConstantNotJoin(Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*);
 int sqlite3ExprIsInteger(Expr*, int*);
 int sqlite3IsRowid(const char*);
