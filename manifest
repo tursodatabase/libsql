@@ -1,5 +1,5 @@
-C Fix\sthe\squery\soptimizer\sso\sthat\sit\scorrectly\shandles\sconstant\sexpressions\nin\sthe\sON\sclause\sof\sa\sLEFT\sJOIN.\s\sTicket\s#2403.\s(CVS\s4049)
-D 2007-06-08T00:20:48
+C Make\ssure\srowid\scomparisons\sagainst\sNULL\swork\scorrectly.\s\sTicket\s#2404.\s(CVS\s4050)
+D 2007-06-08T08:39:02
 F Makefile.in a42354804b50c2708ce72cf79e4daa30f50191b5
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -142,7 +142,7 @@ F src/vdbeblob.c 96f3572fdc45eda5be06e6372b612bc30742d9f0
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c d86c25bbfe8102499ff7505fca44a779c68694d8
 F src/vtab.c c5ebebf615b2f29499fbe97a584c4bb342632aa0
-F src/where.c 6a3c44fed90af904ec3baac0b0e41592e9acacbb
+F src/where.c b5e7a9735db4010984b6d5c2febb1fa7ab4b1bd6
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test f0ea4b968d5fe05d85e9cab6fa491ec7e3b9fcc4
@@ -424,6 +424,7 @@ F test/where.test 5c342d6ad0d777275d4740ea5cbeaf5173b6eda4
 F test/where2.test 3249d426b3fc7a106713d784e1628307fc308d2e
 F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
 F test/where4.test f80207a4ea6504f3d0962f3ecebc7db274ea50c0
+F test/where5.test 402d3bbe94edf89d41bc556dc8e621df9768b418
 F test/zeroblob.test c5096545085330b7886d2f977272a73d9fa7737e
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
@@ -500,7 +501,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f40218434e549144ddb48303df30e5191d44d3fc
-R 6c0f437e174a3996f6b009b6d1c9018d
+P 46fdd195483787eef209a9b8ad108eba147be6fa
+R e8f6143bfd4596c3133479efdd40f198
 U drh
-Z 16d5acbd30bcbeb8aed6b967cb91d898
+Z a9444c898b9b5e55afca76332b67eee3
