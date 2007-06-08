@@ -1,5 +1,5 @@
-C Make\ssure\srowid\scomparisons\sagainst\sNULL\swork\scorrectly.\s\sTicket\s#2404.\s(CVS\s4050)
-D 2007-06-08T08:39:02
+C Additional\stest\scases\sfor\scomparisons\sagainst\sNULL\sin\sthe\sWHERE\sclause\nand\selsewhere\sin\sa\sSELECT.\s(CVS\s4051)
+D 2007-06-08T08:43:10
 F Makefile.in a42354804b50c2708ce72cf79e4daa30f50191b5
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -424,7 +424,7 @@ F test/where.test 5c342d6ad0d777275d4740ea5cbeaf5173b6eda4
 F test/where2.test 3249d426b3fc7a106713d784e1628307fc308d2e
 F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
 F test/where4.test f80207a4ea6504f3d0962f3ecebc7db274ea50c0
-F test/where5.test 402d3bbe94edf89d41bc556dc8e621df9768b418
+F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/zeroblob.test c5096545085330b7886d2f977272a73d9fa7737e
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
@@ -501,7 +501,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 46fdd195483787eef209a9b8ad108eba147be6fa
-R e8f6143bfd4596c3133479efdd40f198
+P 11ee8ea43f20f6146f4e4fcd9299468b3a99f998
+R 05a9a5f63d57dfcd13c111df92ba4c0c
 U drh
-Z a9444c898b9b5e55afca76332b67eee3
+Z 2f14a325dddcad80036ac767af210cc8

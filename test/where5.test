@@ -12,7 +12,7 @@
 # focus of this file is testing NULL comparisons in the WHERE clause.
 # See ticket #2404.
 #
-# $Id: where5.test,v 1.1 2007/06/08 08:39:02 drh Exp $
+# $Id: where5.test,v 1.2 2007/06/08 08:43:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -89,6 +89,17 @@ do_test where5-1.11 {
     SELECT * FROM t1 WHERE x!=NULL
   }
 } {}
+do_test where5-1.12 {
+  execsql {
+    SELECT * FROM t1 WHERE x IS NULL
+  }
+} {}
+do_test where5-1.13 {
+  execsql {
+    SELECT * FROM t1 WHERE x IS NOT NULL
+  }
+} {-1 0 1}
+
 
 do_test where5-2.0 {
   execsql {
@@ -150,6 +161,17 @@ do_test where5-2.11 {
     SELECT * FROM t2 WHERE x!=NULL
   }
 } {}
+do_test where5-2.12 {
+  execsql {
+    SELECT * FROM t2 WHERE x IS NULL
+  }
+} {}
+do_test where5-2.13 {
+  execsql {
+    SELECT * FROM t2 WHERE x IS NOT NULL
+  }
+} {-1 0 1}
+
 
 do_test where5-3.0 {
   execsql {
@@ -211,6 +233,56 @@ do_test where5-3.11 {
     SELECT * FROM t3 WHERE x!=NULL
   }
 } {}
+do_test where5-3.12 {
+  execsql {
+    SELECT * FROM t3 WHERE x IS NULL
+  }
+} {}
+do_test where5-3.13 {
+  execsql {
+    SELECT * FROM t3 WHERE x IS NOT NULL
+  }
+} {-1 0 1}
 
+do_test where5-4.0 {
+  execsql {
+    SELECT x<NULL FROM t3
+  }
+} {{} {} {}}
+do_test where5-4.1 {
+  execsql {
+    SELECT x<=NULL FROM t3
+  }
+} {{} {} {}}
+do_test where5-4.2 {
+  execsql {
+    SELECT x==NULL FROM t3
+  }
+} {{} {} {}}
+do_test where5-4.3 {
+  execsql {
+    SELECT x>NULL FROM t3
+  }
+} {{} {} {}}
+do_test where5-4.4 {
+  execsql {
+    SELECT x>=NULL FROM t3
+  }
+} {{} {} {}}
+do_test where5-4.5 {
+  execsql {
+    SELECT x!=NULL FROM t3
+  }
+} {{} {} {}}
+do_test where5-4.6 {
+  execsql {
+    SELECT x IS NULL FROM t3
+  }
+} {0 0 0}
+do_test where5-4.7 {
+  execsql {
+    SELECT x IS NOT NULL FROM t3
+  }
+} {1 1 1}
 
 finish_test
