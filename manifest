@@ -1,6 +1,6 @@
-C Use\sC-sylte\scomments\sexclusively,\snever\sC++\scomments.\s\sTicket\s#2406.\s(CVS\s4052)
-D 2007-06-08T18:27:03
-F Makefile.in a42354804b50c2708ce72cf79e4daa30f50191b5
+C Documentation\supdates,\sin\sparticular\sin\sthe\snew\slimits.html\sfile\sis\sadded.\s(CVS\s4053)
+D 2007-06-09T09:53:51
+F Makefile.in 31d9f7cd42c3d73ae117fcdb4b0ecd029fa8f50b
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 6de5e9812c227f00155cb59af3535017aef3e258
@@ -47,7 +47,7 @@ F ext/fts2/mkfts2amal.tcl 2a9ec76b0760fe7f3669dca5bc0d60728bc1c977
 F ext/icu/icu.c 6b47f5bbaf32bce03112282ecca1f54bec969e42
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 4e3bc2b9b069c15c43e4339c0e87eba9388617c1
+F main.mk 5bc9827b6fc59db504210bf68cbe335f3250588a
 F mkdll.sh ed62756baf44babf562a7843588790c02fee2106
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -77,7 +77,7 @@ F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c e595ca26805dfb3a9ebaabc28e7947c479f3b14d
 F src/legacy.c 388c71ad7fbcd898ba1bcbfc98a3ac954bfa5d01
-F src/limits.h 4cb1dbbc528a347fa0e8ad46729dab93297d77ed
+F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c afe4f4755dc49c36ef505748bbdddecb9f1d02a2
 F src/main.c 797dc983716c1480f6af78a36be3add8806211a1
 F src/malloc.c 07790014b4b126016ce3c94885a215e45eb07ad5
@@ -472,14 +472,15 @@ F www/direct1b.gif 32b48b764244817b6b591898dc52a04299a7b8a7
 F www/docs.tcl 09eeac4e565789a67abc63f166a9ae7f3050454d
 F www/download.tcl d59a0244f22a975c3f9deafb535fc20549cb8c45
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl 705c986e40775cc3d92a1676dcbb55f00f0459c5
+F www/faq.tcl 98179bd65a60b0405b716e554c50bc817a5e39be
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bbb8af1ee494a71031acac4c8d8c51535f23b9df
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 8f500433525f34ef93427ba5f4f83fb5fde1e0e7
+F www/index.tcl e3b86b8628c9dffd4a60a16c4e4e428a69a0fe25
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl 8dde95ed76af71579a132c9bb730d3764056d3ff
+F www/limits.tcl fa83cc03631056a504c2e8dd17554fadf1fb5ce1
 F www/lockingv3.tcl e52345bd20323bef6146bfce18ae0829b2b7c87d
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
@@ -501,7 +502,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 72612a0373c7abf8aadfdeb46358c0b0ae7b07a0
-R 4a0de78da8c062d2f4e8738bd1c4d8d0
+P 8f5b789fea23d76128c10b37158de2525a54ce20
+R 64d706da97939c009470d72809ed3b81
 U drh
-Z c63d7a71f7409006622c28c29603bd15
+Z dfdc17a078cec5ec9ada07770cf8c9c8

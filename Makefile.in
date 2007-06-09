@@ -584,6 +584,9 @@ formatchng.html:	$(TOP)/www/formatchng.tcl
 index.html:	$(TOP)/www/index.tcl last_change
 	tclsh $(TOP)/www/index.tcl >index.html
 
+limits.html:	$(TOP)/www/limits.tcl last_change
+	tclsh $(TOP)/www/limits.tcl >limits.html
+
 lang.html:	$(TOP)/www/lang.tcl
 	tclsh $(TOP)/www/lang.tcl >lang.html
 
@@ -657,6 +660,7 @@ DOC = \
   formatchng.html \
   index.html \
   lang.html \
+  limits.html \
   lockingv3.html \
   mingw.html \
   nulls.html \

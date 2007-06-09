@@ -12,7 +12,7 @@
 ** 
 ** This file defines various limits of what SQLite can process.
 **
-** @(#) $Id: limits.h,v 1.8 2007/06/07 19:08:34 drh Exp $
+** @(#) $Id: limits.h,v 1.9 2007/06/09 09:53:51 drh Exp $
 */
 
 /*
@@ -63,7 +63,7 @@
 ** any limitation on expression tree depth.
 */
 #ifndef SQLITE_MAX_EXPR_DEPTH
-# define SQLITE_MAX_EXPR_DEPTH 0
+# define SQLITE_MAX_EXPR_DEPTH 1000
 #endif
 
 /*
@@ -75,7 +75,7 @@
 ** any limit on the number of terms in a compount SELECT.
 */
 #ifndef SQLITE_MAX_COMPOUND_SELECT
-# define SQLITE_MAX_COMPOUND_SELECT 100
+# define SQLITE_MAX_COMPOUND_SELECT 500
 #endif
 
 /*

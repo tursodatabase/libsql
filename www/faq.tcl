@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.36 2006/04/05 01:02:08 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.37 2007/06/09 09:53:51 drh Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -94,14 +94,6 @@ faq {
 }
 
 faq {
-  Why does SQLite think that the expression '0'=='00' is TRUE?
-} {
-  <p>As of version 2.7.0, it doesn't.  See the document on
-  <a href="datatype3.html">datatypes in SQLite version 3</a>
-  for details.</p>
-}
-
-faq {
   Why doesn't SQLite allow me to use '0' and '0.0' as the primary
   key on two different rows of the same table?
 } {
@@ -114,20 +106,6 @@ faq {
   (See the previous question.)  Hence the values are not unique.</p>
 }
         
-faq {
-  My linux box is not able to read an SQLite database that was created
-  on my SparcStation.
-} {
-  <p>You need to upgrade your SQLite library to version 2.6.3 or later.</p>
-
-  <p>The x86 processor on your linux box is little-endian (meaning that
-  the least significant byte of integers comes first) but the Sparc is
-  big-endian (the most significant bytes comes first).  SQLite databases
-  created on a little-endian architecture cannot be on a big-endian
-  machine by version 2.6.2 or earlier of SQLite.  Beginning with
-  version 2.6.3, SQLite should be able to read and write database files
-  regardless of byte order of the machine on which the file was created.</p>
-}
 
 faq {
   Can multiple applications or multiple instances of the same
@@ -282,37 +260,8 @@ ORDER BY name
 faq {
   Are there any known size limits to SQLite databases?
 } {
-  <p>A database is limited in size to 2 tibibytes (2<sup>41</sup> bytes).
-  That is a theoretical limitation.  In practice, you should try to keep
-  your SQLite databases below 100 gigabytes to avoid performance problems.
-  If you need to store 100 gigabytes or more in a database, consider using
-  an enterprise database engine which is designed for that purpose.</p>
-
-  <p>The theoretical limit on the number of rows in a table is
-  2<sup>64</sup>-1, though obviously you will run into the file size
-  limitation prior to reaching the row limit.  A single row can hold
-  up to 2<sup>30</sup> bytes of data in the current implementation.  The
-  underlying file format supports row sizes up to about 2<sup>62</sup> bytes.
-  </p>
-
-  <p>There are probably limits on the number of tables or indices or
-  the number of columns in a table or index, but nobody is sure what
-  those limits are.  In practice, SQLite must read and parse the original
-  SQL of all table and index declarations everytime a new database file
-  is opened, so for the best performance of
-  <a href="capi3ref.html#sqlite3_open">sqlite3_open()</a> it is best
-  to keep down the number of declared tables.   Likewise, though there
-  is no limit on the number of columns in a table, more than a few hundred
-  seems extreme.  Only the first 31 columns of a table are candidates for
-  certain optimizations.  You can put as many columns in an index as you like
-  but indexes with more than 30 columns will not be used to optimize queries.
-  </p>
-
-  <p>The names of tables, indices, view, triggers, and columns can be
-  as long as desired.  However, the names of SQL functions (as created
-  by the 
-  <a href="capi3ref.html#sqlite3_create_function">sqlite3_create_function()</a>
-  API) may not exceed 255 characters in length.</p>
+  <p>See <a href="limits.html">limits.html</a> for a full discussion of
+  the limits of SQLite.</p>
 }
 
 faq {
