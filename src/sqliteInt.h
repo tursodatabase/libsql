@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.571 2007/06/08 00:20:48 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.572 2007/06/10 22:57:33 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -64,6 +64,10 @@
 #include <string.h>
 #include <assert.h>
 #include <stddef.h>
+
+#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+# define isnan(X)  ((X)!=(X))
+#endif
 
 /*
 ** If compiling for a processor that lacks floating point support,

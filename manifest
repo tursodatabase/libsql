@@ -1,5 +1,5 @@
-C Documentation\supdates,\sin\sparticular\sin\sthe\snew\slimits.html\sfile\sis\sadded.\s(CVS\s4053)
-D 2007-06-09T09:53:51
+C Define\sisnan()\son\swindows.\s\sTicket\s#2399.\s(CVS\s4054)
+D 2007-06-10T22:57:33
 F Makefile.in 31d9f7cd42c3d73ae117fcdb4b0ecd029fa8f50b
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -105,7 +105,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
 F src/sqlite.h.in b174b5508467deec4034c6c8a21f0354b498b46b
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
-F src/sqliteInt.h 0352ac447c1605e85c9d1d5caaf9641f5839ef93
+F src/sqliteInt.h 208c40b6e11925a321ec159d889e0ec06b618359
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
 F src/tclsqlite.c f425c7583665ef78dd8397b2de0b8e0028e80ce2
 F src/test1.c 0ec120a4652ee95268a5a45e1e1adee13be9ae28
@@ -502,7 +502,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8f5b789fea23d76128c10b37158de2525a54ce20
-R 64d706da97939c009470d72809ed3b81
+P 4ca6cdae94f6d0a2c95755d4a250f9f3bc7a0d7b
+R 13a39a5ca48ff870fc2a261fa80a07e3
 U drh
-Z dfdc17a078cec5ec9ada07770cf8c9c8
+Z 60e96b24716296bff6dbc0c8d1c6203d
