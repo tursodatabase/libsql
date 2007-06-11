@@ -1,5 +1,5 @@
-C Define\sisnan()\son\swindows.\s\sTicket\s#2399.\s(CVS\s4054)
-D 2007-06-10T22:57:33
+C Add\sa\sREADME.txt\sfile\sfor\sthe\sICU\sextension.\s(CVS\s4055)
+D 2007-06-11T08:00:00
 F Makefile.in 31d9f7cd42c3d73ae117fcdb4b0ecd029fa8f50b
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -44,7 +44,8 @@ F ext/fts2/fts2_porter.c 991a45463553c7318063fe7773368a6c0f39e35d
 F ext/fts2/fts2_tokenizer.h 4c5ffe31d63622869eb6eec1503df7f6996fd1bd
 F ext/fts2/fts2_tokenizer1.c 5c979fe8815f95396beb22b627571da895a025af
 F ext/fts2/mkfts2amal.tcl 2a9ec76b0760fe7f3669dca5bc0d60728bc1c977
-F ext/icu/icu.c 6b47f5bbaf32bce03112282ecca1f54bec969e42
+F ext/icu/README.txt a470afe5adf6534cc0bdafca31e6cf4d88c321fa
+F ext/icu/icu.c daab19e2c5221685688ecff2bb75bf9e0eea361d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
 F main.mk 5bc9827b6fc59db504210bf68cbe335f3250588a
@@ -502,7 +503,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4ca6cdae94f6d0a2c95755d4a250f9f3bc7a0d7b
-R 13a39a5ca48ff870fc2a261fa80a07e3
-U drh
-Z 60e96b24716296bff6dbc0c8d1c6203d
+P fed9373e27b9d5338159a41772f8983420b902b0
+R c45d0693cbf40360dc0b5addeae5d9aa
+U danielk1977
+Z 7dc46a81cb300982dd5e07eef7c7a05c

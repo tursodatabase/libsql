@@ -1,5 +1,16 @@
-
 /*
+** 2007 May 6
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** $Id: icu.c,v 1.5 2007/06/11 08:00:00 danielk1977 Exp $
+**
 ** This file implements an integration between the ICU library 
 ** ("International Components for Unicode", an open-source library 
 ** for handling unicode data) and SQLite. The integration uses 
@@ -8,16 +19,18 @@
 **   * An implementation of the SQL regexp() function (and hence REGEXP
 **     operator) using the ICU uregex_XX() APIs.
 **
-**   * Implementations of the SQL scalar upper() and lower() 
-**     functions for case mapping.
+**   * Implementations of the SQL scalar upper() and lower() functions
+**     for case mapping.
 **
-**   * Collation sequences
+**   * Integration of ICU and SQLite collation seqences.
 **
-**   * LIKE
+**   * An implementation of the LIKE operator that uses ICU to 
+**     provide case-independent matching.
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ICU)
 
+/* Include ICU headers */
 #include <unicode/utypes.h>
 #include <unicode/uregex.h>
 #include <unicode/ustring.h>
@@ -32,12 +45,12 @@
 #endif
 
 /*
-** Collation sequences:
-**
-**   ucol_open()
-**   ucol_strcoll()
-**   ucol_close()
+** Maximum length (in bytes) of the pattern in a LIKE or GLOB
+** operator.
 */
+#ifndef SQLITE_MAX_LIKE_PATTERN_LENGTH
+# define SQLITE_MAX_LIKE_PATTERN_LENGTH 50000
+#endif
 
 /*
 ** Version of sqlite3_free() that is always a function, never a macro.
@@ -52,7 +65,7 @@ static void xFree(void *p){
 ** false (0) if they are different.
 */
 static int icuLikeCompare(
-  const uint8_t *zPattern,   /* The UTF-8 LIKE pattern */
+  const uint8_t *zPattern,   /* LIKE pattern */
   const uint8_t *zString,    /* The UTF-8 string to compare against */
   const UChar32 uEsc         /* The escape character */
 ){
@@ -150,6 +163,15 @@ static void icuLikeFunc(
   const unsigned char *zA = sqlite3_value_text(argv[0]);
   const unsigned char *zB = sqlite3_value_text(argv[1]);
   UChar32 uEsc = 0;
+
+  /* Limit the length of the LIKE or GLOB pattern to avoid problems
+  ** of deep recursion and N*N behavior in patternCompare().
+  */
+  if( sqlite3_value_bytes(argv[0])>SQLITE_MAX_LIKE_PATTERN_LENGTH ){
+    sqlite3_result_error(context, "LIKE or GLOB pattern too complex", -1);
+    return;
+  }
+
 
   if( argc==3 ){
     /* The escape character string must consist of a single UTF-8 character.
@@ -291,7 +313,7 @@ static void icuRegexpFunc(sqlite3_context *p, int nArg, sqlite3_value **apArg){
 ** To access ICU "language specific" case mapping, upper() or lower()
 ** should be invoked with two arguments. The second argument is the name
 ** of the locale to use. Passing an empty string ("") or SQL NULL value
-** as the second argument is the smae as invoking the 1 argument version
+** as the second argument is the same as invoking the 1 argument version
 ** of upper() or lower().
 **
 **     lower('I', 'en_us') -> 'i'
