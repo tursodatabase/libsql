@@ -1,7 +1,7 @@
 #
 # Run this script to generate the limits.html output file
 #
-set rcsid {$Id: limits.tcl,v 1.1 2007/06/09 09:53:51 drh Exp $}
+set rcsid {$Id: limits.tcl,v 1.2 2007/06/11 23:23:25 drh Exp $}
 source common.tcl
 header {Implementation Limits For SQLite}
 puts {
@@ -105,7 +105,7 @@ The default setting for SQLITE_MAX_COLUMN is 2000.  You can change it
 at compile time to values as large as 32676.  You might be able to
 redefine this value to be as large as billions, though nobody has ever
 tried doing that so we do not know if it will work.  On the other hand, there
-are people who will argument that a well-normalized database design
+are people who will argue that a well-normalized database design
 will never need a value larger than about 100.
 </p>
 
