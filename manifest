@@ -1,5 +1,5 @@
-C Add\sa\sREADME.txt\sfile\sfor\sthe\sICU\sextension.\s(CVS\s4055)
-D 2007-06-11T08:00:00
+C Fix\sa\sbug\sin\sthe\sLIKE\soptimization\sthat\swas\scausing\sthe\spattern\sstring\nto\sbe\sdequoted\stwice.\s\sTicket\s#2407.\s(CVS\s4056)
+D 2007-06-11T12:56:15
 F Makefile.in 31d9f7cd42c3d73ae117fcdb4b0ecd029fa8f50b
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -143,7 +143,7 @@ F src/vdbeblob.c 96f3572fdc45eda5be06e6372b612bc30742d9f0
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c d86c25bbfe8102499ff7505fca44a779c68694d8
 F src/vtab.c c5ebebf615b2f29499fbe97a584c4bb342632aa0
-F src/where.c b5e7a9735db4010984b6d5c2febb1fa7ab4b1bd6
+F src/where.c 12387641659605318ae03d87f0687f223dfc9568
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test f0ea4b968d5fe05d85e9cab6fa491ec7e3b9fcc4
@@ -283,7 +283,7 @@ F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
-F test/like.test 5f7d76574752a9101cac13372c8a85999d0d91e6
+F test/like.test 9b8eb634d2c34b36b365c1baae115c9bd6e56674
 F test/limit.test 2a87b9cb2165abb49ca0ddcf5cb43cf24074581f
 F test/loadext.test 9ab2cb0226329c1a62dd45d204be95158a872201
 F test/loadext2.test 95ca7e2cb03fd3e068de97c3a2fe58dbdfd769e1
@@ -503,7 +503,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P fed9373e27b9d5338159a41772f8983420b902b0
-R c45d0693cbf40360dc0b5addeae5d9aa
-U danielk1977
-Z 7dc46a81cb300982dd5e07eef7c7a05c
+P 7b6927829f18d39052e67eebca4275e7aa496035
+R d6d46e4a7b82906dd6f96028e2072348
+U drh
+Z 8fc06e5a345de60554c57f06617628d9

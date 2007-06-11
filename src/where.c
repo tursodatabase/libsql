@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.252 2007/06/08 08:39:02 drh Exp $
+** $Id: where.c,v 1.253 2007/06/11 12:56:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -878,6 +878,7 @@ or_not_possible:
     if( pStr1 ){
       sqlite3TokenCopy(&pStr1->token, &pRight->token);
       pStr1->token.n = nPattern;
+      pStr1->flags = EP_Dequoted;
     }
     pStr2 = sqlite3ExprDup(pStr1);
     if( pStr2 ){
