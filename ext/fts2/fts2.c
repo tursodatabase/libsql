@@ -4254,6 +4254,9 @@ static void interiorReaderDestroy(InteriorReader *pReader){
   SCRAMBLE(pReader);
 }
 
+/* TODO(shess) The assertions are great, but what if we're in NDEBUG
+** and the blob is empty or otherwise contains suspect data?
+*/
 static void interiorReaderInit(const char *pData, int nData,
                                InteriorReader *pReader){
   int n, nTerm;
@@ -5337,6 +5340,11 @@ static int loadSegmentLeaves(fulltext_vtab *v,
 ** one more blockid than there are terms (that block contains terms >=
 ** the last interior-node term).
 */
+/* TODO(shess) The calling code may already know that the end child is
+** not worth calculating, because the end may be in a later sibling
+** node.  Consider whether breaking symmetry is worthwhile.  I suspect
+** it's not worthwhile.
+*/
 static void getChildrenContaining(const char *pData, int nData,
                                   const char *pTerm, int nTerm, int isPrefix,
                                   sqlite_int64 *piStartChild,
@@ -5453,6 +5461,7 @@ static int loadSegmentInt(fulltext_vtab *v, const char *pData, int nData,
     assert( iStartChild<=iLeavesEnd );
     assert( iEndChild<=iLeavesEnd );
 
+    /* Scan through the leaf segments for doclists. */
     return loadSegmentLeaves(v, iStartChild, iEndChild,
                              pTerm, nTerm, isPrefix, out);
   }
@@ -5461,6 +5470,19 @@ static int loadSegmentInt(fulltext_vtab *v, const char *pData, int nData,
 /* Call loadSegmentInt() to collect the doclist for pTerm/nTerm, then
 ** merge its doclist over *out (any duplicate doclists read from the
 ** segment rooted at pData will overwrite those in *out).
+*/
+/* TODO(shess) Consider changing this to determine the depth of the
+** leaves using either the first characters of interior nodes (when
+** ==1, we're one level above the leaves), or the first character of
+** the root (which will describe the height of the tree directly).
+** Either feels somewhat tricky to me.
+*/
+/* TODO(shess) The current merge is likely to be slow for large
+** doclists (though it should process from newest/smallest to
+** oldest/largest, so it may not be that bad).  It might be useful to
+** modify things to allow for N-way merging.  This could either be
+** within a segment, with pairwise merges across segments, or across
+** all segments at once.
 */
 static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
                        sqlite_int64 iLeavesEnd,
