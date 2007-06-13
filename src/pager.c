@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.342 2007/05/24 09:41:21 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.343 2007/06/13 15:22:28 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2941,6 +2941,9 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
   }else{
     /* Recycle an existing page with a zero ref-count. */
     rc = pager_recycle(pPager, 1, &pPg);
+    if( rc==SQLITE_BUSY ){
+      rc = SQLITE_IOERR_BLOCKED;
+    }
     if( rc!=SQLITE_OK ){
       goto pager_allocate_out;
     }
@@ -3886,6 +3889,14 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
   }
 
 sync_exit:
+  if( rc==SQLITE_IOERR_BLOCKED ){
+    /* pager_incr_changecounter() may attempt to obtain an exclusive
+     * lock to spill the cache and return IOERR_BLOCKED. But since 
+     * there is no chance the cache is inconsistent, it's
+     * better to return SQLITE_BUSY.
+     */
+    rc = SQLITE_BUSY;
+  }
   return rc;
 }
 

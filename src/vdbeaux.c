@@ -1391,7 +1391,10 @@ int sqlite3VdbeHalt(Vdbe *p){
       ** proceed with the special handling.
       */
       if( !isReadOnly ){
-        if( p->rc==SQLITE_NOMEM && isStatement ){
+        if( p->rc==SQLITE_IOERR_BLOCKED && isStatement ){
+          xFunc = sqlite3BtreeRollbackStmt;
+          p->rc = SQLITE_BUSY;
+        } else if( p->rc==SQLITE_NOMEM && isStatement ){
           xFunc = sqlite3BtreeRollbackStmt;
         }else{
           /* We are forced to roll back the active transaction. Before doing
