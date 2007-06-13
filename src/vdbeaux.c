@@ -1358,7 +1358,8 @@ int sqlite3VdbeHalt(Vdbe *p){
     int mrc;   /* Primary error code from p->rc */
     /* Check for one of the special errors - SQLITE_NOMEM or SQLITE_IOERR */
     mrc = p->rc & 0xff;
-    isSpecialError = ((mrc==SQLITE_NOMEM || mrc==SQLITE_IOERR)?1:0);
+    isSpecialError = (
+        (mrc==SQLITE_NOMEM || mrc==SQLITE_IOERR || mrc==SQLITE_INTERRUPT)?1:0);
     if( isSpecialError ){
       /* This loop does static analysis of the query to see which of the
       ** following three categories it falls into:

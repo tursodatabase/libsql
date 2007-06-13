@@ -1,5 +1,5 @@
-C Fix\sfor\s#2409.\sReturn\sSQLITE_IOERR_BLOCKED\sinstead\sof\sSQLITE_BUSY\sin\scases\swhere\sfailure\sto\sobtain\sa\sdatabase\slock\sleaves\sthe\scache\sin\san\sinconsistent\sstate.\r\nSee\sadditional\sinformation\sat\sCorruptionFollowingBusyError.\s(CVS\s4060)
-D 2007-06-13T15:22:28
+C Have\squeries\sinterrupted\sby\sthe\sprogress-handler\sreturn\sSQLITE_INTERRUPT.\sRollback\sany\sactive\stransaction\sif\sa\sDML\sstatement\sreturns\sSQLITE_INTERRUPT.\s(CVS\s4061)
+D 2007-06-13T16:49:49
 F Makefile.in 31d9f7cd42c3d73ae117fcdb4b0ecd029fa8f50b
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -134,11 +134,11 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c 01b2aba02b10d12903e9e1ff897215c9faf6b662
 F src/util.c 80cdf6b68d03b8f0ab3237a390842e039cff66c6
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c 265d7061e91ebd81ebf8337ce1bac52c0548522e
+F src/vdbe.c 2653777a2bcef952150fbf8112966d66f7bc416a
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h 7d2bf163d6d4e815724a457f2216dd8e38c3955c
 F src/vdbeapi.c 3747e4c3bc3139ff688bb3df462b10e42c084d16
-F src/vdbeaux.c 85b374b68ba4c1140269c2659122bb1b44a1995c
+F src/vdbeaux.c 97dcf9659cbbad54189d5a3ec0cbab111073ab2e
 F src/vdbeblob.c 96f3572fdc45eda5be06e6372b612bc30742d9f0
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c d86c25bbfe8102499ff7505fca44a779c68694d8
@@ -271,7 +271,7 @@ F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 5a20e1ace5fa0800b58d28284212290189b49aed
 F test/insert3.test 72ea6056811fd234f80d923f977c196089947381
 F test/insert4.test 1e27f0a3e5670d5f03c1636f699aa44270945bca
-F test/interrupt.test de86456bb537da5942807cd844c087b33171d97a
+F test/interrupt.test 81555fb0f8179bb2d0dc7151fd75428223f93cf2
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/ioerr.test 491d42c49bbec598966d26b01ed7901f55e5ee2d
 F test/ioerr2.test f938eadb12108048813869b86beee4a2f98e34b8
@@ -325,7 +325,7 @@ F test/pageropt.test b4b38eb3cf76be2be444326856248898bb0e3fc9
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
 F test/pragma.test b0e73879206934a835856a8b8c4cc884cd8562f3
 F test/printf.test 69d8cb0771a1a5e4d9d5dece12fc2c16179ac5e5
-F test/progress.test 8b22b4974b0a95272566385f8cb8c341c7130df8 x
+F test/progress.test 45ac03936cf2ff2a7af9e078e6559b314a394037 x
 F test/ptrchng.test 1c712dd6516e1377471744fa765e41c79a357da6
 F test/quick.test 73a81a29fc28661c9c3fee2dcc3ded83cb1f1834
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
@@ -504,7 +504,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6da39fa4429400e21924074f5f219f4cb32415ff
-R 1bb49dc38a5d5f3caa65dd4b9eb8ab34
+P ce2c9925d06315d73fb5fd0c7265fb4cd65665aa
+R 73f646ad7e62b62f9e1fc29cf7b1cf23
 U danielk1977
-Z a6c128ab59512ffa27dc80b804f1fa2e
+Z 3c6f98cf52fdf1045bcfe90bf24b807e

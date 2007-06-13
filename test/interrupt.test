@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is the sqlite_interrupt() API.
 #
-# $Id: interrupt.test,v 1.14 2007/05/15 16:51:37 drh Exp $
+# $Id: interrupt.test,v 1.15 2007/06/13 16:49:49 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -122,6 +122,10 @@ integrity_check interrupt-2.6
 # and that transaction is later rolled back, the internal schema tables do
 # not reset.
 #
+# UPDATE: Interrupting a DML statement in the middle of a transaction now
+# causes the transaction to roll back. Leaving the transaction open after
+# an SQL statement was interrupted halfway through risks database corruption.
+#
 ifcapable tempdb {
   for {set i 1} {$i<50} {incr i 5} {
     do_test interrupt-3.$i.1 {
@@ -141,12 +145,12 @@ ifcapable tempdb {
       execsql {
         SELECT name FROM sqlite_temp_master;
       }
-    } {t2}
+    } {}
     do_test interrupt-3.$i.4 {
       catchsql {
         ROLLBACK
       }
-    } {0 {}}
+    } {1 {cannot rollback - no transaction is active}}
     do_test interrupt-3.$i.5 {
       catchsql {SELECT name FROM sqlite_temp_master};
       execsql {
