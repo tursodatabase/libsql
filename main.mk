@@ -490,8 +490,8 @@ c_interface.html:	$(TOP)/www/c_interface.tcl
 capi3.html:	$(TOP)/www/capi3.tcl
 	tclsh $(TOP)/www/capi3.tcl >capi3.html
 
-capi3ref.html:	$(TOP)/www/capi3ref.tcl
-	tclsh $(TOP)/www/capi3ref.tcl >capi3ref.html
+capi3ref.html:	$(TOP)/www/mkapidoc.tcl sqlite3.h
+	tclsh $(TOP)/www/mkapidoc.tcl <sqlite3.h >capi3ref.html
 
 changes.html:	$(TOP)/www/changes.tcl
 	tclsh $(TOP)/www/changes.tcl >changes.html

@@ -1,6 +1,6 @@
-C Have\squeries\sinterrupted\sby\sthe\sprogress-handler\sreturn\sSQLITE_INTERRUPT.\sRollback\sany\sactive\stransaction\sif\sa\sDML\sstatement\sreturns\sSQLITE_INTERRUPT.\s(CVS\s4061)
-D 2007-06-13T16:49:49
-F Makefile.in 31d9f7cd42c3d73ae117fcdb4b0ecd029fa8f50b
+C The\sC-api\sreference\sdocumentation\sis\snow\sgenerated\sdirectly\sfrom\ncomments\sin\sthe\ssqlite3.h\sheader\sfile.\s(CVS\s4062)
+D 2007-06-14T20:57:19
+F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 6de5e9812c227f00155cb59af3535017aef3e258
@@ -48,7 +48,7 @@ F ext/icu/README.txt a470afe5adf6534cc0bdafca31e6cf4d88c321fa
 F ext/icu/icu.c daab19e2c5221685688ecff2bb75bf9e0eea361d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 5bc9827b6fc59db504210bf68cbe335f3250588a
+F main.mk 11d59c417b4ef124c2bf8514e7bd2fa1a78084c1
 F mkdll.sh ed62756baf44babf562a7843588790c02fee2106
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -104,7 +104,7 @@ F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c a96d80c0493bf81f90415479b0055dc91f60a812
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
-F src/sqlite.h.in 724358b899d028ff44bfac7d0c071b49fcc6c0b7
+F src/sqlite.h.in 6bd26a1429d96d72bb0e2c72fdd323defa2f558a
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 208c40b6e11925a321ec159d889e0ec06b618359
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
@@ -485,6 +485,7 @@ F www/lang.tcl 8dde95ed76af71579a132c9bb730d3764056d3ff
 F www/limits.tcl b74da35214028454f6e4170e0da3eeaf1811dbbd
 F www/lockingv3.tcl e52345bd20323bef6146bfce18ae0829b2b7c87d
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
+F www/mkapidoc.tcl 696996026a3e13e3a5c31cee75a3a64edb5a7da0
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
 F www/oldnews.tcl 3ab579af86125f6047cf65f06a7a61b5b41e2312
 F www/omitted.tcl ee6b46f83d513b2187869740da829a700e1a355e
@@ -504,7 +505,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ce2c9925d06315d73fb5fd0c7265fb4cd65665aa
-R 73f646ad7e62b62f9e1fc29cf7b1cf23
-U danielk1977
-Z 3c6f98cf52fdf1045bcfe90bf24b807e
+P 33454b5691637da7ded7d18d7f5726b796260c6b
+R 2c2e76c407ceb9bf161fc37b91736d01
+U drh
+Z 26427dc925b0fd93c79e5cb944cd04d4
