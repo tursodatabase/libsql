@@ -1,5 +1,5 @@
-C Fix\san\sobscure\smemory\sleak\sin\sthe\sSQL\scompiler..\s(CVS\s4070)
-D 2007-06-15T16:37:29
+C Fix\sa\smemory\sleak\sin\sthe\sparser\sthat\scan\soccur\sfollowing\sa\smalloc\sfailure.\s(CVS\s4071)
+D 2007-06-15T17:03:14
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -96,7 +96,7 @@ F src/os_win.c d868d5f9e95ec9c1b9e2a30c54c996053db6dddd
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 42cffb2e04a6efd23cfff28a15d686fbaa076b59
 F src/pager.h 94110a5570dca30d54a883e880a3633b2e4c05ae
-F src/parse.y e3d8e3f748bd3915523f77f704f303c7f0de613b
+F src/parse.y 2ed1d91fdcb4ae7ae7d1f4674544297807c7cc26
 F src/pragma.c 0d25dad58bdfd6789943a10f1b9663c2eb85b96d
 F src/prepare.c 87c23644986b5e41a58bc76f05abebd899e00089
 F src/printf.c cd91e057fa7e2661673eecd4eeecf4900b1e5cfe
@@ -254,7 +254,7 @@ F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
-F test/fuzz_malloc.test 8b3073c5221fc0fad78559a101cba50f7aa633c2
+F test/fuzz_malloc.test 2ef87c8406d539db61f00bb4934f7586d807e8dd
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -505,7 +505,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1d10a489340718cc708e11e28e7bb31c67e00ad8
-R 9fe50d18cd28bd8cd5d536116efc2ce9
-U danielk1977
-Z cfd25d2e291df33ba153e7f53553abed
+P d4ab94288b1e3d3d069ccc75d0fc2fbe6c1383c5
+R 28fd353cc057cda6d10f38cb606ea26f
+U drh
+Z 5ef79f4f040d332fbba242516bccdf34

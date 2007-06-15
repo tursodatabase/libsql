@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.229 2007/05/30 10:36:47 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.230 2007/06/15 17:03:14 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -381,6 +381,8 @@ select(A) ::= select(X) multiselect_op(Y) oneselect(Z).  {
   if( Z ){
     Z->op = Y;
     Z->pPrior = X;
+  }else{
+    sqlite3SelectDelete(X);
   }
   A = Z;
 }
