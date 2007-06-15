@@ -1,5 +1,5 @@
-C Fix\sfor\s#2415.\sThe\sprogress\shandler\sshould\sabandon\sonly\sthe\scurrent\squery,\snot\sall\sactive\squeries.\s(CVS\s4067)
-D 2007-06-15T14:53:53
+C Fix\sa\stest\ssuite\sbug.\sTo\saccommadate\sthe\sfact\sthat\shandles\sreturned\sby\s(db\sincrblob)\schange\sfor\sthe\ssecond\stest\ssuite\siteration\sof\sfull.test.\s(CVS\s4068)
+D 2007-06-15T15:08:08
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -259,7 +259,7 @@ F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
-F test/incrblob.test 7f82ae497364612aa17a37f77f12e01e2bee9f20
+F test/incrblob.test a23b9431596581f1f4ac03d04fa97c31776693d5
 F test/incrblob_err.test 2501bec57e317e7051451b5093b47fc61a96c85a
 F test/incrvacuum.test 740f441b9a61a9adff11b0ac57bf392a3414627c
 F test/incrvacuum2.test 82397ceb5941cbe852fd29bb33fcdf5665bc80c2
@@ -505,7 +505,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 452115959f1bd22bfe64ed10724d6d08d4cbe3f5
-R d9eb09dec49e726a53ec8218b08b7938
+P 115e19fe22b9e79fcc400f3a59c80dd9828100e7
+R faac273f032f44e759059a3160b925a1
 U danielk1977
-Z bb53f3bafee11aa837339c883edc6674
+Z f5171b3e48895d49bb0fd06bcd026d9b
