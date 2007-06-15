@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.4 2007/05/16 17:28:43 danielk1977 Exp $
+** $Id: btreeInt.h,v 1.5 2007/06/15 12:06:59 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -73,11 +73,9 @@
 **
 ** All of the integer values are big-endian (most significant byte first).
 **
-** The file change counter is incremented when the database is changed more
-** than once within the same second.  This counter, together with the
-** modification time of the file, allows other processes to know
-** when the file has changed and thus when they need to flush their
-** cache.
+** The file change counter is incremented when the database is changed
+** This counter allows other processes to know when the file has changed
+** and thus when they need to flush their cache.
 **
 ** The max embedded payload fraction is the amount of the total usable
 ** space in a page that can be consumed by a single cell for standard
@@ -96,7 +94,7 @@
 ** not specified in the header.
 **
 ** Each btree pages is divided into three sections:  The header, the
-** cell pointer array, and the cell area area.  Page 1 also has a 100-byte
+** cell pointer array, and the cell content area.  Page 1 also has a 100-byte
 ** file header that occurs before the page header.
 **
 **      |----------------|
@@ -196,7 +194,7 @@
 **      *     Data
 **
 ** Freelist pages come in two subtypes: trunk pages and leaf pages.  The
-** file header points to first in a linked list of trunk page.  Each trunk
+** file header points to the first in a linked list of trunk page.  Each trunk
 ** page points to multiple leaf pages.  The content of a leaf page is
 ** unspecified.  A trunk page looks like this:
 **
