@@ -449,8 +449,8 @@ void *sqlite3_server(void *NotUsed){
     pthread_mutex_unlock(&pMsg->clientMutex);
     pthread_cond_signal(&pMsg->clientWakeup);
   }
-  pthread_mutex_unlock(&g.serverMutex);
   sqlite3_thread_cleanup();
+  pthread_mutex_unlock(&g.serverMutex);
   return 0;
 }
 
@@ -473,12 +473,14 @@ void sqlite3_server_start(void){
 ** If a server thread is running, then stop it.  If no server is
 ** running, this routine is effectively a no-op.
 **
-** This routine returns immediately without waiting for the server
-** thread to stop.  But be assured that the server will eventually stop.
+** This routine waits until the server has actually stopped before
+** returning.
 */
 void sqlite3_server_stop(void){
   g.serverHalt = 1;
   pthread_cond_broadcast(&g.serverWakeup);
+  pthread_mutex_lock(&g.serverMutex);
+  pthread_mutex_unlock(&g.serverMutex);
 }
 
 #endif /* defined(OS_UNIX) && OS_UNIX && defined(THREADSAFE) && THREADSAFE */
