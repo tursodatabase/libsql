@@ -16,7 +16,7 @@
 # any statement other than a COMMIT, an I/O error is returned instead
 # of SQLITE_BUSY.
 #
-# $Id: tkt2409.test,v 1.1 2007/06/13 15:22:28 danielk1977 Exp $
+# $Id: tkt2409.test,v 1.2 2007/06/15 12:41:02 drh Exp $
 
 # Test Outline:
 #
@@ -209,5 +209,5 @@ do_test tkt2409-4.4 {
 
 unread_lock_db
 db2 close
+unset -nocomplain t1
 finish_test
-
