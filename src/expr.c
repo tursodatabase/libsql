@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.297 2007/06/08 00:20:48 drh Exp $
+** $Id: expr.c,v 1.298 2007/06/15 16:37:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1147,6 +1147,8 @@ static int lookupName(
             pDup->pColl = pExpr->pColl;
             pDup->flags |= EP_ExpCollate;
           }
+          if( pExpr->span.dyn ) sqliteFree((char*)pExpr->span.z);
+          if( pExpr->token.dyn ) sqliteFree((char*)pExpr->token.z);
           memcpy(pExpr, pDup, sizeof(*pExpr));
           sqliteFree(pDup);
           cnt = 1;
