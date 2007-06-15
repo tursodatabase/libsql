@@ -1,5 +1,5 @@
-C Fix\sa\srace\scondition\sin\stest_server.c/test7.c\s(test\schanges\sonly).\s(CVS\s4073)
-D 2007-06-15T17:50:04
+C Add\sa\sscript\sfor\s"soak"\stesting.\s(CVS\s4074)
+D 2007-06-15T18:43:37
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -444,6 +444,7 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F tool/showdb.c a086a3d788c7a23cb008317c3180ceb19f20bce0
 F tool/showjournal.c ec3b171be148656827c4949fbfb8ab4370822f87
+F tool/soak1.tcl 9a738c78097e09a8ea6bbc2f35cb805f0dea211a
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
 F tool/spaceanal.tcl f60a242a996a79d59cad6615cec83a9203e17911
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
@@ -505,7 +506,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1f6f0330000ca564e75cd930afb9f9ce23551d89
-R a0ee010a5bef0de1c3d00cec7cb6d958
-U danielk1977
-Z 8b3ca4bc021641212b2bd6f7678c807f
+P d0de32e4c630c43ecd9d5e5296ae84aeff80c083
+R 2ce4a0a4c9a1d5de925f69953c5edccd
+U drh
+Z 9c609f75c9a70cc4fe6ed5b8b117e928
