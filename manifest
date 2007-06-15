@@ -1,5 +1,5 @@
-C Add\sa\sscript\sfor\s"soak"\stesting.\s(CVS\s4074)
-D 2007-06-15T18:43:37
+C Remove\sa\sC++ism\sfrom\sthe\stest\sharness.\s\sGet\sthe\sTCL\sinterface\sworking\swith\nolder\sversions\sof\sTCL.\s(CVS\s4075)
+D 2007-06-15T18:53:14
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -108,8 +108,8 @@ F src/sqlite.h.in 6bd26a1429d96d72bb0e2c72fdd323defa2f558a
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 208c40b6e11925a321ec159d889e0ec06b618359
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
-F src/tclsqlite.c 1f3357fdf41fbab9bf82e18b6068b12a8112841e
-F src/test1.c 0ec120a4652ee95268a5a45e1e1adee13be9ae28
+F src/tclsqlite.c 9f96385c5047b24afa7601ea4055aae97c3e25e3
+F src/test1.c d2535b40abb1f2ec0070a3f5eb03bfe3ac4c4c12
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c a280931fb40222b7c90da45eea926459beee8904
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
@@ -506,7 +506,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d0de32e4c630c43ecd9d5e5296ae84aeff80c083
-R 2ce4a0a4c9a1d5de925f69953c5edccd
+P d4ea1287a8b013a97fcb55bb7f7feba427222bab
+R fb0bc720cbbdd7938b682792dc443232
 U drh
-Z 9c609f75c9a70cc4fe6ed5b8b117e928
+Z c9a4217acd60e058e2ac96a76af7a8bc

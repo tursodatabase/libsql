@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.188 2007/06/12 18:50:14 drh Exp $
+** $Id: tclsqlite.c,v 1.189 2007/06/15 18:53:14 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -294,7 +294,6 @@ static Tcl_ChannelType IncrblobChannelType = {
   0,                                 /* flushProc                            */
   0,                                 /* handlerProc                          */
   0,                                 /* wideSeekProc                         */
-  0,                                 /* threadActionProc                     */
 };
 
 /*
