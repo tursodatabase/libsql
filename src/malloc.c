@@ -12,7 +12,7 @@
 ** Memory allocation functions used throughout sqlite.
 **
 **
-** $Id: malloc.c,v 1.2 2007/05/16 17:28:43 danielk1977 Exp $
+** $Id: malloc.c,v 1.3 2007/06/15 20:29:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -203,6 +203,7 @@ int sqlite3_mallocDisallowed = 0; /* assert() in sqlite3Malloc() if set */
 int sqlite3_isFail = 0;           /* True if all malloc calls should fail */
 const char *sqlite3_zFile = 0;    /* Filename to associate debug info with */
 int sqlite3_iLine = 0;            /* Line number for debug info */
+int sqlite3_mallocfail_trace = 0; /* Print a msg on malloc fail if true */
 
 /*
 ** Check for a simulated memory allocation failure.  Return true if
@@ -217,6 +218,9 @@ int sqlite3TestMallocFail(){
     if( sqlite3_iMallocFail==0 ){
       sqlite3_iMallocFail = sqlite3_iMallocReset;
       sqlite3_isFail = 1;
+      if( sqlite3_mallocfail_trace ){
+         sqlite3DebugPrintf("###_malloc_fails_###\n");
+      }
       return 1;
     }
   }
