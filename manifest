@@ -1,5 +1,5 @@
-C Fix\sa\stest\ssuite\sbug.\sTo\saccommadate\sthe\sfact\sthat\shandles\sreturned\sby\s(db\sincrblob)\schange\sfor\sthe\ssecond\stest\ssuite\siteration\sof\sfull.test.\s(CVS\s4068)
-D 2007-06-15T15:08:08
+C Fix\sa\smemory\sleak\sthat\swas\sdiscovered\sby\sthe\stests\sthat\swere\sadded\sto\ncover\sticket\s#2339.\s(CVS\s4069)
+D 2007-06-15T15:31:50
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -101,7 +101,7 @@ F src/pragma.c 0d25dad58bdfd6789943a10f1b9663c2eb85b96d
 F src/prepare.c 87c23644986b5e41a58bc76f05abebd899e00089
 F src/printf.c cd91e057fa7e2661673eecd4eeecf4900b1e5cfe
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
-F src/select.c a96d80c0493bf81f90415479b0055dc91f60a812
+F src/select.c 33a258fc9c9dccb28ae2d3a02f1e1148d6433148
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
 F src/sqlite.h.in 6bd26a1429d96d72bb0e2c72fdd323defa2f558a
@@ -505,7 +505,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 115e19fe22b9e79fcc400f3a59c80dd9828100e7
-R faac273f032f44e759059a3160b925a1
-U danielk1977
-Z f5171b3e48895d49bb0fd06bcd026d9b
+P 32218834b80b1ba900c52e43a2e59783a2553897
+R 8c6ece4f58210bbfb811dd967ab2ba6d
+U drh
+Z 9eac641c488d35429a98333827efea5b

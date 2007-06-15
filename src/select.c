@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.350 2007/06/07 10:55:36 drh Exp $
+** $Id: select.c,v 1.351 2007/06/15 15:31:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1771,6 +1771,9 @@ static int multiSelect(
       pOffset = p->pOffset;
       p->pOffset = 0;
       rc = sqlite3Select(pParse, p, op, unionTab, 0, 0, 0, aff);
+      /* Query flattening in sqlite3Select() might refill p->pOrderBy.
+      ** Be sure to delete p->pOrderBy, therefore, to avoid a memory leak. */
+      sqlite3ExprListDelete(p->pOrderBy);
       p->pPrior = pPrior;
       p->pOrderBy = pOrderBy;
       sqlite3ExprDelete(p->pLimit);
