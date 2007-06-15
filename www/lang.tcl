@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.129 2007/05/15 01:13:47 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.130 2007/06/15 12:16:32 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1485,6 +1485,16 @@ upper-case letters.  The implementation of this function uses the C library
 routine <b>toupper()</b> which means it may not work correctly on 
 UTF-8 strings.</td>
 </tr>
+
+<tr>
+<td valign="top" align="right">zeroblob(<i>N</i>)</td>
+<td valign="top"><a name="zeroblob">
+Return a BLOB consisting of N bytes of 0x00.  SQLite
+manages these zeroblobs very efficiently.  Zeroblobs can be use to
+reserve space for a BLOB that is later written using 
+<a href="capi3ref.html#sqlite3_blob_open">incremental BLOB I/O</a>.</td>
+</tr>
+
 </table>
 
 <b>Date And Time Functions</b>

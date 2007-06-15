@@ -22,7 +22,66 @@ proc chng {date desc} {
     puts "<A NAME=\"version_$label\">"
   }
   puts "<DT><B>$date</B></DT>"
-  puts "<DD><P><UL>$desc</UL></P></DD>"
+  regsub -all {[Tt]icket #(\d+)} $desc \
+      {<a href="http://www.sqlite.org/cvstrac/tktview?tn=\1">\0</a>} desc
+  puts "<DD><P><UL>$desc</UL></P>"
+  puts "</DD>"
+}
+
+chng {2007 June 15 (3.4.0)} {
+<li>Fix a bug that can lead to database corruption if an SQLITE_BUSY error
+    occurs in the middle of an explicit transaction and that transaction
+    is later committed.  Ticket #2409.  See the
+    <a href="http://www.sqlite.org/cvstrac/wiki?p=CorruptionFollowingBusyError">
+    CorruptionFollowingBusyError</a> wiki page for details.</i>
+<li>Added explicit <a href="limits.html">upper bounds</a> on the sizes and
+    quantities of things SQLite can process.  This change might break some
+    applications that use SQLite in the extreme, which is when the current
+    release is 3.4.0 instead of 3.3.18.</li>
+<li>Added support for <a href="capi3ref.html#sqlite3_blob_open">
+    Incremental BLOB I/O</a>.</li>
+<li>Added the <a href="capi3ref.html#sqlite3_bind_zeroblob">zeroblob API</a>
+    and the <a href="lang_expr.html#zeroblob">zeroblob()</a> SQL function.</li>
+<li>Added support for <a href="pragma.html#pragma_incremental_vacuum">
+    Incremntal Vacuum</a>.</li>
+<li>Added the SQLITE_MIXED_ENDIAN_64BIT_FLOAT compile-time option to suppport
+    ARM7 processors with goofy endianness.</li>
+<li>Removed all instances of sprintf() and strcpy() from the core library.</li>
+<li>Added support for <a href="http://www.icu-project.org/">
+    International Components for Unicode (ICU)</a> to the full-text search
+    extensions.
+</ul><p>
+<ul type="circle">
+<li>In the windows OS driver, reacquire a SHARED lock if an attempt to
+    acquire an EXCLUSIVE lock fails.  Ticket #2354</li>
+<li>Fix the REPLACE() function so that it returns NULL if the second argument
+    is an empty string.  Ticket #2324.</li>
+<li>Document the hazards of type coversions in
+    <a href="capi3ref.html#sqlite3_column_blob">sqlite3_column_blob()</a>
+    and related APIs.  Fix unnecessary type conversions.  Ticket #2321.</li>
+<li>Internationalization of the TRIM() functin.  Ticket #2323</li>
+<li>Use memmove() instead of memcpy() when moving between memory regions
+    that might overlap.  Ticket #2334</li>
+<li>Fix an optimizer bug involving subqueries in a compound SELECT that has
+    both an ORDER BY and a LIMIT clause.  Ticket #2339.</li>
+<li>Make sure the <a href="capi3ref.html#sqlite3_snprintf">sqlite3_snprintf()
+    </a> interface does not zero-terminate the buffer if the buffer size is
+    less than 1.  Ticket #2341</li>
+<li>Fix the built-in printf logic so that it prints "NaN" not "Inf" for
+    floating-point NaNs.  Ticket #2345</li>
+<li>When converting BLOB to TEXT, use the text encoding of the main database.
+    Ticket #2349</li>
+<li>Keep the full precision of integers (if possible) when casting to
+    NUMERIC.  Ticket #2364</li>
+<li>Fix a bug in the handling of UTF16 codepoint 0xE000</li>
+<li>Consider explicit collate clauses when matching WHERE constraints
+    to indices in the query optimizer.  Ticket #2391</li>
+<li>Fix the query optimizer to correctly handle constant expressions in 
+    the ON clause of a LEFT JOIN.  Ticket #2403</li>
+<li>Fix the query optimizer to handle rowid comparisions to NULL
+    correctly.  Ticket #2404</li>
+<li>Fix many potental segfaults that could be caused by malicious SQL
+    statements.</li>
 }
 
 chng {2007 April 25 (3.3.17)} {

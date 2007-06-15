@@ -10,6 +10,37 @@ proc newsitem {date title text} {
 }
 
 
+newsitem {2007-Apr-09} {Version 3.3.15} {
+  An annoying bug introduced in 3.3.14 has been fixed.  There are
+  also many enhancements to the test suite.  
+}
+
+newsitem {2007-Apr-02} {Version 3.3.14} {
+  This version focuses on performance improvements.  If you recompile
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=TheAmalgamation">
+  the amalgamation</a> using GCC option -O3 (the precompiled binaries
+  use -O2) you may see performance
+  improvements of 35% or more over version 3.3.13 depending on your
+  workload.  This version also
+  adds support for <a href="pragma.html#pragma_locking_mode">
+  exclusive access mode</a>.
+}
+
+newsitem {2007-Feb-13} {Version 3.3.13} {
+  This version fixes a subtle bug in the ORDER BY optimizer that can 
+  occur when using joins.  There are also a few minor enhancements.
+  Upgrading is recommended.
+}
+
+newsitem {2007-Jan-27} {Version 3.3.12} {
+  The first published build of the previous version used the wrong
+  set of source files.  Consequently, many people downloaded a build
+  that was labeled as "3.3.11" but was really 3.3.10.  Version 3.3.12
+  is released to clear up the ambiguity.  A couple more bugs have
+  also been fixed and <a href="pragma.html#pragma_integrity_check">
+  PRAGMA integrity_check</a> has been enhanced.
+}
+
 newsitem {2007-Jan-22} {Version 3.3.11} {
   Version 3.3.11 fixes for a few more problems in version 3.3.9 that
   version 3.3.10 failed to catch.  Upgrading is recommended.
@@ -412,4 +443,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.20 2007/04/09 13:18:47 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.21 2007/06/15 12:16:32 drh Exp $}

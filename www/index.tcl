@@ -71,6 +71,24 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2007-Jun-15} {Version 3.4.0} {
+  This release fixes a bug that can lead to database corruption.  Upgrading
+  is strongly recommended.  If you must continue using an older version
+  of SQLite, please at least read
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=CorruptionFollowingBusyError">
+  how to avoid the bug</a>.
+  <p>
+  This release also adds explicit <a href="limits.html">limits</a> on the
+  sizes and quantities of things SQLite will handle.  The new limits might
+  causes minor problems for some existing applications that push the
+  envelope, which is the reason that this release is 3.4.0 instead of 3.3.18.
+  </p>
+  There are also new features, including
+  <a href="capi3ref.html#sqlite3_blob_open">incremental BLOB I/O</a> and
+  <a href="pragma.html#pragma_incremental_vacuum">incremental vacuum</a>.
+  See the <a href="changes.html">change log</a> for additional information.
+}
+
 newsitem {2007-Apr-25} {Version 3.3.17} {
   This version fixes a bug in the forwards-compatibility logic of SQLite
   that was causing a database to become unreadable when it should have
@@ -85,39 +103,8 @@ newsitem {2007-Apr-18} {Version 3.3.16} {
   VACUUM from running if a NULL value was in a UNIQUE column.
 }
 
-newsitem {2007-Apr-09} {Version 3.3.15} {
-  An annoying bug introduced in 3.3.14 has been fixed.  There are
-  also many enhancements to the test suite.  
-}
-
-newsitem {2007-Apr-02} {Version 3.3.14} {
-  This version focuses on performance improvements.  If you recompile
-  <a href="http://www.sqlite.org/cvstrac/wiki?p=TheAmalgamation">
-  the amalgamation</a> using GCC option -O3 (the precompiled binaries
-  use -O2) you may see performance
-  improvements of 35% or more over version 3.3.13 depending on your
-  workload.  This version also
-  adds support for <a href="pragma.html#pragma_locking_mode">
-  exclusive access mode</a>.
-}
-
-newsitem {2007-Feb-13} {Version 3.3.13} {
-  This version fixes a subtle bug in the ORDER BY optimizer that can 
-  occur when using joins.  There are also a few minor enhancements.
-  Upgrading is recommended.
-}
-
-newsitem {2007-Jan-27} {Version 3.3.12} {
-  The first published build of the previous version used the wrong
-  set of source files.  Consequently, many people downloaded a build
-  that was labeled as "3.3.11" but was really 3.3.10.  Version 3.3.12
-  is released to clear up the ambiguity.  A couple more bugs have
-  also been fixed and <a href="pragma.html#pragma_integrity_check">
-  PRAGMA integrity_check</a> has been enhanced.
-}
-
 puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.155 2007/06/09 09:53:51 drh Exp $}
+footer {$Id: index.tcl,v 1.156 2007/06/15 12:16:32 drh Exp $}
