@@ -1380,7 +1380,19 @@ int sqlite3VdbeHalt(Vdbe *p){
       for(i=0; i<p->nOp; i++){ 
         switch( p->aOp[i].opcode ){
           case OP_Transaction:
-            isReadOnly = 0;
+            /* This is a bit strange. If we hit a malloc() or IO error and
+            ** the statement did not open a statement transaction, we will
+            ** rollback any active transaction and abort all other active
+            ** statements. Or, if this is an SQLITE_INTERRUPT error, we
+            ** will only rollback if the interrupted statement was a write.
+            **
+            ** It could be argued that read-only statements should never
+            ** rollback anything. But careful analysis is required before
+            ** making this change
+            */
+            if( p->aOp[i].p2 || mrc!=SQLITE_INTERRUPT ){
+              isReadOnly = 0;
+            }
             break;
           case OP_Statement:
             isStatement = 1;

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.625 2007/06/13 16:49:49 danielk1977 Exp $
+** $Id: vdbe.c,v 1.626 2007/06/15 14:53:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -545,12 +545,14 @@ int sqlite3VdbeExec(
     */
     if( db->xProgress ){
       if( db->nProgressOps==nProgressOps ){
+        int prc;
         if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
-        if( db->xProgress(db->pProgressArg)!=0 ){
-          sqlite3_interrupt(db);
-        }
+        prc =db->xProgress(db->pProgressArg);
         if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
-        CHECK_FOR_INTERRUPT;
+        if( prc!=0 ){
+          rc = SQLITE_INTERRUPT;
+          goto vdbe_halt;
+        }
         nProgressOps = 0;
       }
       nProgressOps++;

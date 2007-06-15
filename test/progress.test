@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the 'progress callback'.
 #
-# $Id: progress.test,v 1.7 2007/06/13 16:49:49 danielk1977 Exp $
+# $Id: progress.test,v 1.8 2007/06/15 14:53:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -152,5 +152,26 @@ do_test progress-1.5 {
 do_test progress-1.6 {
   set ::rx
 } {10}
+
+# Check that abandoning a query using the progress handler does
+# not cause other queries to abort. Ticket #2415.
+do_test progress-1.7 {
+  execsql {
+    CREATE TABLE abc(a, b, c);
+    INSERT INTO abc VALUES(1, 2, 3);
+    INSERT INTO abc VALUES(4, 5, 6);
+    INSERT INTO abc VALUES(7, 8, 9);
+  }
+
+  set ::res [list]
+  db eval {SELECT a, b, c FROM abc} {
+    lappend ::res $a $b $c
+    db progress 10 "expr 1"
+    catch {db eval {SELECT a, b, c FROM abc} { }} msg
+    lappend ::res $msg
+  }
+
+  set ::res
+} {1 2 3 interrupted 4 5 6 interrupted 7 8 9 interrupted}
 
 finish_test
