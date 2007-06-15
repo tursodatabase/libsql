@@ -1,5 +1,5 @@
-C Remove\sa\sC++ism\sfrom\sthe\stest\sharness.\s\sGet\sthe\sTCL\sinterface\sworking\swith\nolder\sversions\sof\sTCL.\s(CVS\s4075)
-D 2007-06-15T18:53:14
+C Fix\smore\sdocumentation\stypos.\s\sTicket\s#2416.\s(CVS\s4076)
+D 2007-06-15T18:59:09
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -461,7 +461,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 88884dd743039d1a95aa57f4a5eb369de7744716
 F www/capi3ref.tcl 167c2d5b45da22d77b2493b00d44b001b4ec83b1
-F www/changes.tcl 397594fe2060982674cc20a2e6791c73b94a651c
+F www/changes.tcl b8e1911ea0d9495c47d4ff5e194163b7aa38ef2d
 F www/common.tcl 2b793e5c31486c8a01dd27dc0a631ad93704438e
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -482,7 +482,7 @@ F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
 F www/index.tcl 4d733614279b71ae25a385d65926c8d17ef3bd19
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
-F www/lang.tcl 49ef3e6dfca7c1f6e8573d3f3534b0bec31b9e7a
+F www/lang.tcl e481e68bc17a850944006e5cfeefa86750244774
 F www/limits.tcl b74da35214028454f6e4170e0da3eeaf1811dbbd
 F www/lockingv3.tcl e52345bd20323bef6146bfce18ae0829b2b7c87d
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
@@ -506,7 +506,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d4ea1287a8b013a97fcb55bb7f7feba427222bab
-R fb0bc720cbbdd7938b682792dc443232
+P c8beb8674e5a1effc2785f205124628fbdaf57e0
+R 1c19b10ce422ff514f733944e8c84cba
 U drh
-Z c9a4217acd60e058e2ac96a76af7a8bc
+Z a0e8fa84b47c4c74690f8c8b97b7bd9f

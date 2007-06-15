@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.130 2007/06/15 12:16:32 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.131 2007/06/15 18:59:09 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1490,7 +1490,7 @@ UTF-8 strings.</td>
 <td valign="top" align="right">zeroblob(<i>N</i>)</td>
 <td valign="top"><a name="zeroblob">
 Return a BLOB consisting of N bytes of 0x00.  SQLite
-manages these zeroblobs very efficiently.  Zeroblobs can be use to
+manages these zeroblobs very efficiently.  Zeroblobs can be used to
 reserve space for a BLOB that is later written using 
 <a href="capi3ref.html#sqlite3_blob_open">incremental BLOB I/O</a>.</td>
 </tr>

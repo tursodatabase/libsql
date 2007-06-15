@@ -36,7 +36,7 @@ chng {2007 June 15 (3.4.0)} {
     CorruptionFollowingBusyError</a> wiki page for details.</i>
 <li>Added explicit <a href="limits.html">upper bounds</a> on the sizes and
     quantities of things SQLite can process.  This change might break some
-    applications that use SQLite in the extreme, which is when the current
+    applications that use SQLite in the extreme, which is why the current
     release is 3.4.0 instead of 3.3.18.</li>
 <li>Added support for <a href="capi3ref.html#sqlite3_blob_open">
     Incremental BLOB I/O</a>.</li>
