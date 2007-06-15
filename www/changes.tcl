@@ -59,7 +59,7 @@ chng {2007 June 15 (3.4.0)} {
 <li>Document the hazards of type coversions in
     <a href="capi3ref.html#sqlite3_column_blob">sqlite3_column_blob()</a>
     and related APIs.  Fix unnecessary type conversions.  Ticket #2321.</li>
-<li>Internationalization of the TRIM() functin.  Ticket #2323</li>
+<li>Internationalization of the TRIM() function.  Ticket #2323</li>
 <li>Use memmove() instead of memcpy() when moving between memory regions
     that might overlap.  Ticket #2334</li>
 <li>Fix an optimizer bug involving subqueries in a compound SELECT that has
