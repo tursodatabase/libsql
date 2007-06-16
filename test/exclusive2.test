@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: exclusive2.test,v 1.5 2007/04/25 12:06:59 drh Exp $
+# $Id: exclusive2.test,v 1.6 2007/06/16 14:43:52 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -67,6 +67,11 @@ do_test exclusive2-1.0 {
 #        sees the change-counter has been incremented and discards the 
 #        invalid in-memory cache.
 #
+# This will only work if the database cache is large enough to hold 
+# the entire database. In the case of 1024 byte pages, this means
+# the cache size must be at least 17. Otherwise, some pages will be
+# loaded from the database file in step 8.
+#
 do_test exclusive2-1.1 {
   execsql {
     BEGIN;
@@ -82,6 +87,15 @@ do_test exclusive2-1.1 {
     SELECT count(*) FROM t1;
   }
 } {64}
+do_test exclusive2-1.2.1 {
+  # Make sure the pager cache is large enough to store the 
+  # entire database.
+  set nPage [expr [file size test.db]/1024]
+  if {$::SQLITE_DEFAULT_CACHE_SIZE < $nPage} {
+    execsql "PRAGMA cache_size = $nPage"
+  }
+  expr {[execsql {PRAGMA cache_size}] >= $nPage}
+} {1}
 do_test exclusive2-1.2 {
   set ::sig [t1sig]
   pagerChangeCounter test.db
@@ -132,6 +146,10 @@ do_test exclusive2-1.11 {
 #        SQLite detects the modified change-counter and discards the
 #        in-memory cache. Then it finds the corruption caused in step 4....
 #
+# As above, this test is only applicable if the pager cache is
+# large enough to hold the entire database. With 1024 byte pages,
+# this means 19 pages.
+#
 do_test exclusive2-2.1 {
   execsql {PRAGMA locking_mode = exclusive;}
   execsql {
@@ -148,6 +166,15 @@ do_test exclusive2-2.1 {
     SELECT count(*) FROM t1;
   }
 } {64}
+do_test exclusive2-2.2.1 {
+  # Make sure the pager cache is large enough to store the 
+  # entire database.
+  set nPage [expr [file size test.db]/1024]
+  if {$::SQLITE_DEFAULT_CACHE_SIZE < $nPage} {
+    execsql "PRAGMA cache_size = $nPage"
+  }
+  expr {[execsql {PRAGMA cache_size}] >= $nPage}
+} {1}
 do_test exclusive2-2.2 {
   set ::sig [t1sig]
   pagerChangeCounter test.db
