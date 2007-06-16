@@ -1,5 +1,5 @@
-C Modify\sthe\stests\sin\sexclusive2.test\sto\saccount\sfor\sthe\sfact\sthat\sthe\spager\scache\smay\sbe\svery\ssmall\sby\sdefault.\sThese\stests\sare\sonly\svalid\sif\sthe\sentire\sdatabase\sfitting\sin\sthe\scache.\s(CVS\s4082)
-D 2007-06-16T14:43:52
+C Fix\sa\sfaulty\sassert()\sin\sthe\spager.\s(CVS\s4083)
+D 2007-06-16T18:39:42
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -94,7 +94,7 @@ F src/os_unix.c f2ccf2e9a925fc679faf7a8fe85700e0f13cf0e1
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c d868d5f9e95ec9c1b9e2a30c54c996053db6dddd
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c d7e2b57f573aa3e4183c6112a4e7b5dd480b25e1
+F src/pager.c 9eeb505af0ff7abc339b6825754a884e822fa4a2
 F src/pager.h 94110a5570dca30d54a883e880a3633b2e4c05ae
 F src/parse.y 2ed1d91fdcb4ae7ae7d1f4674544297807c7cc26
 F src/pragma.c 0d25dad58bdfd6789943a10f1b9663c2eb85b96d
@@ -506,7 +506,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 10e6822d4f1e0a94d5033b7b9efc1d8ed1e957d1
-R 1d1b1769be7545513988c0696b58e024
-U danielk1977
-Z 5ed1041deb438cdb83ffe8e125caddda
+P 04a13fe43e61bd0dbff42c448e763078503b00bf
+R 1ba45126ee323ebbfc828a21f443049b
+U drh
+Z 8164f1f6910ed0e178685fbf46538c4c
