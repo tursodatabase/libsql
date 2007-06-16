@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.345 2007/06/16 04:42:12 drh Exp $
+** @(#) $Id: pager.c,v 1.346 2007/06/16 11:17:46 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -150,6 +150,78 @@
 ** The PgHdr.dirty flag is set when sqlite3PagerWrite() is called and
 ** is cleared again when the page content is written back to the original
 ** database file.
+**
+** Details of important structure elements:
+**
+** needSync
+**
+**     If this is true, this means that it is not safe to write the page
+**     content to the database because the original content needed
+**     for rollback has not by synced to the main rollback journal.
+**     The original content may have been written to the rollback journal
+**     but it has not yet been synced.  So we cannot write to the database
+**     file because power failure might cause the page in the journal file
+**     to never reach the disk.  It is as if the write to the journal file
+**     does not occur until the journal file is synced.
+**     
+**     This flag is false if the page content exactly matches what
+**     currently exists in the database file.  The needSync flag is also
+**     false if the original content has been written to the main rollback
+**     journal and synced.  If the page represents a new page that has
+**     been added onto the end of the database during the current
+**     transaction, the needSync flag is true until the original database
+**     size in the journal header has been synced to disk.
+**
+** inJournal
+**
+**     This is true if the original page has been written into the main
+**     rollback journal.  This is always false for new pages added to
+**     the end of the database file during the current transaction.
+**     And this flag says nothing about whether or not the journal
+**     has been synced to disk.  For pages that are in the original
+**     database file, the following expression should always be true:
+**
+**       inJournal = (pPager->aInJournal[(pgno-1)/8] & (1<<((pgno-1)%8))!=0
+**
+**     The pPager->aInJournal[] array is only valid for the original
+**     pages of the database, not new pages that are added to the end
+**     of the database, so obviously the above expression cannot be
+**     valid for new pages.  For new pages inJournal is always 0.
+**
+** dirty
+**
+**     When true, this means that the content of the page has been
+**     modified and needs to be written back to the database file.
+**     If false, it means that either the content of the page is
+**     unchanged or else the content is unimportant and we do not
+**     care whether or not it is preserved.
+**
+** alwaysRollback
+**
+**     This means that the sqlite3PagerDontRollback() API should be
+**     ignored for this page.  The DontRollback() API attempts to say
+**     that the content of the page on disk is unimportant (it is an
+**     unused page on the freelist) so that it is unnecessary to 
+**     rollback changes to this page because the content of the page
+**     can change without changing the meaning of the database.  This
+**     flag overrides any DontRollback() attempt.  This flag is set
+**     when a page that originally contained valid data is added to
+**     the freelist.  Later in the same transaction, this page might
+**     be pulled from the freelist and reused for something different
+**     and at that point the DontRollback() API will be called because
+**     pages taken from the freelist do not need to be protected by
+**     the rollback journal.  But this flag says that the page was
+**     not originally part of the freelist so that it still needs to
+**     be rolled back in spite of any subsequent DontRollback() calls.
+**
+** needRead 
+**
+**     This flag means (when true) that the content of the page has
+**     not yet been loaded from disk.  The in-memory content is just
+**     garbage.  (Actually, we zero the content, but you should not
+**     make any assumptions about the content nevertheless.)  If the
+**     content is needed in the future, it should be read from the
+**     original database file.
 */
 typedef struct PgHdr PgHdr;
 struct PgHdr {
@@ -4299,11 +4371,9 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
   }
   if( pPager->aInJournal && (int)pgno<=pPager->origDbSize ){
     pPg->inJournal =  (pPager->aInJournal[pgno/8] & (1<<(pgno&7)))!=0;
-  }else if( (int)pgno>=pPager->origDbSize ){
-    pPg->inJournal = 1;
   }else{
     pPg->inJournal = 0;
-    assert( pPg->needSync==0 );
+    assert( pPg->needSync==0 || (int)pgno>pPager->origDbSize );
   }
 
   /* Change the page number for pPg and insert it into the new hash-chain. */
