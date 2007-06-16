@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.343 2007/06/13 15:22:28 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.344 2007/06/16 03:06:28 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -512,18 +512,26 @@ static int pager_error(Pager *pPager, int rc){
   return rc;
 }
 
+/*
+** If SQLITE_CHECK_PAGES is defined then we do some sanity checking
+** on the cache using a hash function.  This is used for testing
+** and debugging only.
+*/
 #ifdef SQLITE_CHECK_PAGES
 /*
 ** Return a 32-bit hash of the page data for pPage.
 */
-static u32 pager_pagehash(PgHdr *pPage){
+static u32 pager_datahash(int nByte, unsigned char *pData){
   u32 hash = 0;
   int i;
-  unsigned char *pData = (unsigned char *)PGHDR_TO_DATA(pPage);
-  for(i=0; i<pPage->pPager->pageSize; i++){
-    hash = (hash+i)^pData[i];
+  for(i=0; i<nByte; i++){
+    hash = (hash*1039) + pData[i];
   }
   return hash;
+}
+static u32 pager_pagehash(PgHdr *pPage){
+  return pager_datahash(pPage->pPager->pageSize, 
+                        (unsigned char *)PGHDR_TO_DATA(pPage));
 }
 
 /*
@@ -539,6 +547,8 @@ static void checkPage(PgHdr *pPg){
 }
 
 #else
+#define pager_datahash(X)  0
+#define pager_pagehash(X)  0
 #define CHECK_PAGE(x)
 #endif
 
@@ -1105,7 +1115,8 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   ** cache or else it is marked as needSync==0.
   */
   pPg = pager_lookup(pPager, pgno);
-  PAGERTRACE3("PLAYBACK %d page %d\n", PAGERID(pPager), pgno);
+  PAGERTRACE4("PLAYBACK %d page %d hash(%08x)\n",
+               PAGERID(pPager), pgno, pager_datahash(pPager->pageSize, aData));
   if( pPager->state>=PAGER_EXCLUSIVE && (pPg==0 || pPg->needSync==0) ){
     rc = sqlite3OsSeek(pPager->fd, (pgno-1)*(i64)pPager->pageSize);
     if( rc==SQLITE_OK ){
@@ -2472,7 +2483,8 @@ static int pager_write_pagelist(PgHdr *pList){
     */
     if( pList->pgno<=pPager->dbSize ){
       char *pData = CODEC2(pPager, PGHDR_TO_DATA(pList), pList->pgno, 6);
-      PAGERTRACE3("STORE %d page %d\n", PAGERID(pPager), pList->pgno);
+      PAGERTRACE4("STORE %d page %d hash(%08x)\n",
+                   PAGERID(pPager), pList->pgno, pager_pagehash(pList));
       IOTRACE(("PGOUT %p %d\n", pPager, pList->pgno));
       rc = sqlite3OsWrite(pPager->fd, pData, pPager->pageSize);
       PAGER_INCR(sqlite3_pager_writedb_count);
@@ -2718,12 +2730,13 @@ static int readDbPage(Pager *pPager, PgHdr *pPg, Pgno pgno){
   PAGER_INCR(sqlite3_pager_readdb_count);
   PAGER_INCR(pPager->nRead);
   IOTRACE(("PGIN %p %d\n", pPager, pgno));
-  PAGERTRACE3("FETCH %d page %d\n", PAGERID(pPager), pPg->pgno);
   if( pgno==1 ){
     memcpy(&pPager->dbFileVers, &((u8*)PGHDR_TO_DATA(pPg))[24],
                                               sizeof(pPager->dbFileVers));
   }
   CODEC1(pPager, PGHDR_TO_DATA(pPg), pPg->pgno, 3);
+  PAGERTRACE4("FETCH %d page %d hash(%08x)\n",
+               PAGERID(pPager), pPg->pgno, pager_pagehash(pPg));
   return rc;
 }
 
@@ -3500,8 +3513,8 @@ static int pager_write(PgHdr *pPg){
                    pPager->journalOff, szPg));
           PAGER_INCR(sqlite3_pager_writej_count);
           pPager->journalOff += szPg;
-          PAGERTRACE4("JOURNAL %d page %d needSync=%d\n",
-                  PAGERID(pPager), pPg->pgno, pPg->needSync);
+          PAGERTRACE5("JOURNAL %d page %d needSync=%d hash(%08x)\n",
+               PAGERID(pPager), pPg->pgno, pPg->needSync, pager_pagehash(pPg));
           *(u32*)pEnd = saved;
 
 	  /* An error has occured writing to the journal file. The 
