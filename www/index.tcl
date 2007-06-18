@@ -71,17 +71,24 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2007-Jun-15} {Version 3.4.0} {
-  This release fixes a bug that can lead to database corruption.  Upgrading
+newsitem {2007-Jun-18} {Version 3.4.0} {
+  This release fixes two separate bugs either of which 
+  can lead to database corruption.  Upgrading
   is strongly recommended.  If you must continue using an older version
-  of SQLite, please at least read
+  of SQLite, please at least read about how to avoid these bugs
+  at
   <a href="http://www.sqlite.org/cvstrac/wiki?p=CorruptionFollowingBusyError">
-  how to avoid the bug</a>.
+  CorruptionFollowingBusyError</a> and
+  <a href="http://www.sqlite.org/cvstrac/tktview?tn=2418">ticket #2418</a>
   <p>
   This release also adds explicit <a href="limits.html">limits</a> on the
   sizes and quantities of things SQLite will handle.  The new limits might
-  causes minor problems for some existing applications that push the
-  envelope, which is the reason that this release is 3.4.0 instead of 3.3.18.
+  causes compatibility problems for existing applications that
+  use excessively large strings, BLOBs, tables, or SQL statements. 
+  The new limits can be increased at compile-time to work around any problems
+  that arise.  Nevertheless, the version number of this release is
+  3.4.0 instead of 3.3.18 in order to call attention to the possible
+  incompatibility.
   </p>
   There are also new features, including
   <a href="capi3ref.html#sqlite3_blob_open">incremental BLOB I/O</a> and
@@ -107,4 +114,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.156 2007/06/15 12:16:32 drh Exp $}
+footer {$Id: index.tcl,v 1.157 2007/06/18 12:22:43 drh Exp $}

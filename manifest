@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\sthe\spager.\s(CVS\s4083)
-D 2007-06-16T18:39:42
+C Documentation\supdates\sprior\sto\srelease\s3.4.0.\s\sEnhanced\ssupport\sfor\nsoak\stesting\sin\sthe\stest\sscripts.\s(CVS\s4084)
+D 2007-06-18T12:22:43
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -48,7 +48,7 @@ F ext/icu/README.txt a470afe5adf6534cc0bdafca31e6cf4d88c321fa
 F ext/icu/icu.c daab19e2c5221685688ecff2bb75bf9e0eea361d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 11d59c417b4ef124c2bf8514e7bd2fa1a78084c1
+F main.mk 02007ce4a5de0d4d6561207dcf839db9a3166935
 F mkdll.sh ed62756baf44babf562a7843588790c02fee2106
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -146,7 +146,7 @@ F src/vtab.c c5ebebf615b2f29499fbe97a584c4bb342632aa0
 F src/where.c 12387641659605318ae03d87f0687f223dfc9568
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
-F test/all.test f0ea4b968d5fe05d85e9cab6fa491ec7e3b9fcc4
+F test/all.test 56bc526a6cbb262c5b678dd606de8c92ae39705e
 F test/alter.test c2a9402e17a731e5294ef370214bd9f88351d18d
 F test/alter2.test 50c3f554b8236d179d72511c0a4f23c5eb7f2af3
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
@@ -254,7 +254,7 @@ F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
-F test/fuzz_malloc.test 2ef87c8406d539db61f00bb4934f7586d807e8dd
+F test/fuzz_malloc.test e2f1e74127ad7ab8fbeacc0f16d059a81c8f3ea6
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -327,7 +327,7 @@ F test/pragma.test b0e73879206934a835856a8b8c4cc884cd8562f3
 F test/printf.test 69d8cb0771a1a5e4d9d5dece12fc2c16179ac5e5
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 1c712dd6516e1377471744fa765e41c79a357da6
-F test/quick.test 73a81a29fc28661c9c3fee2dcc3ded83cb1f1834
+F test/quick.test 3335fcc3ed543e54be0088b57f21f5f3632a512e
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -391,7 +391,7 @@ F test/tkt2339.test 7016415bda86af1406a27260ac46f44885617606
 F test/tkt2391.test ab7a11be7402da8b51a5be603425367aa0684567
 F test/tkt2409.test f130054aedff681883466ad04332bd3f7db51a02
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
-F test/trans.test 3fe1b9e03b523482eee2b869858c5c1eca7b218b
+F test/trans.test 9e6e7b886ea8093239801b5af0981ff784d9c541
 F test/trigger1.test b361161cf20614024cc1e52ea0bdec250776b2ae
 F test/trigger2.test 33bf8ae9b788013be194efe5f66c04a202facbb4
 F test/trigger3.test 9102fd3933db294dc654b5aee9edfe9e94f2b9e2
@@ -461,7 +461,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 88884dd743039d1a95aa57f4a5eb369de7744716
 F www/capi3ref.tcl 167c2d5b45da22d77b2493b00d44b001b4ec83b1
-F www/changes.tcl b8e1911ea0d9495c47d4ff5e194163b7aa38ef2d
+F www/changes.tcl 273d57f681d16c40e9cd875e731215cab79526fc
 F www/common.tcl 2b793e5c31486c8a01dd27dc0a631ad93704438e
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -480,10 +480,10 @@ F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bbb8af1ee494a71031acac4c8d8c51535f23b9df
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 4d733614279b71ae25a385d65926c8d17ef3bd19
+F www/index.tcl 9c1f9127283298a90fe021a6277302aafabbced2
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl e481e68bc17a850944006e5cfeefa86750244774
-F www/limits.tcl b74da35214028454f6e4170e0da3eeaf1811dbbd
+F www/limits.tcl ff26cca93d6d697a8e5fa3a4b0355c751311763b
 F www/lockingv3.tcl e52345bd20323bef6146bfce18ae0829b2b7c87d
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/mkapidoc.tcl 696996026a3e13e3a5c31cee75a3a64edb5a7da0
@@ -494,7 +494,7 @@ F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
 F www/optoverview.tcl 815df406a38c9f69b27d37e8f7ede004c6d9f19e
-F www/pragma.tcl 3655b3fff2f6491768e020f43364288f9e149f79
+F www/pragma.tcl 394028988b9c22c23439a67a21be9e1fb818d258
 F www/quickstart.tcl 8708a4ca83fbf55c66af1782992626f20c3df095
 F www/shared.gif 265bae80c5b311c5a86e47662821076ffaf5c6ea
 F www/sharedcache.tcl 3ebec81110e606af6fd65a3c4c19562cb173b29c
@@ -506,7 +506,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 04a13fe43e61bd0dbff42c448e763078503b00bf
-R 1ba45126ee323ebbfc828a21f443049b
+P 4cff47b06132768e92ba2235cab5c17d1082f8f9
+R 402cac9c09afb3fbfb247beaa2c4bc40
 U drh
-Z 8164f1f6910ed0e178685fbf46538c4c
+Z 2f3e1c734a1de16ae2d28edfedfa6579

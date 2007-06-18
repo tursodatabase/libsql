@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.43 2007/05/30 08:18:04 danielk1977 Exp $
+# $Id: all.test,v 1.44 2007/06/18 12:22:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,6 +33,9 @@ if {[llength $argv]>0} {
       }
       -quick {
          set ISQUICK $value
+      }
+      -soak {
+         set SOAKTEST $value
       }
       default {
          puts stderr "Unknown option: $name"

@@ -28,14 +28,22 @@ proc chng {date desc} {
   puts "</DD>"
 }
 
-chng {2007 June 15 (3.4.0)} {
+chng {2007 June 18 (3.4.0)} {
 <li>Fix a bug that can lead to database corruption if an SQLITE_BUSY error
     occurs in the middle of an explicit transaction and that transaction
-    is later committed.  Ticket #2409.  See the
+    is later committed.  
+    <a href="http://www.sqlite.org/cvstrac/tktview?tn=2409">Ticket #2409.</a>
+    See the
     <a href="http://www.sqlite.org/cvstrac/wiki?p=CorruptionFollowingBusyError">
     CorruptionFollowingBusyError</a> wiki page for details.</i>
+<li>Fix a bug that can lead to database corruption if autovacuum mode is
+    on and a malloc() failure follows a CREATE TABLE or CREATE INDEX statement
+    which itself follows a cache overflow inside a transaction.  See
+    <a href="http://www.sqlite.org/cvstrac/tktview?tn=2418">ticket #2418</a>. 
+    </li>
 <li>Added explicit <a href="limits.html">upper bounds</a> on the sizes and
-    quantities of things SQLite can process.  This change might break some
+    quantities of things SQLite can process.  This change might cause
+    compatibility problems for
     applications that use SQLite in the extreme, which is why the current
     release is 3.4.0 instead of 3.3.18.</li>
 <li>Added support for <a href="capi3ref.html#sqlite3_blob_open">
@@ -43,7 +51,7 @@ chng {2007 June 15 (3.4.0)} {
 <li>Added the <a href="capi3ref.html#sqlite3_bind_zeroblob">zeroblob API</a>
     and the <a href="lang_expr.html#zeroblob">zeroblob()</a> SQL function.</li>
 <li>Added support for <a href="pragma.html#pragma_incremental_vacuum">
-    Incremntal Vacuum</a>.</li>
+    Incremental Vacuum</a>.</li>
 <li>Added the SQLITE_MIXED_ENDIAN_64BIT_FLOAT compile-time option to suppport
     ARM7 processors with goofy endianness.</li>
 <li>Removed all instances of sprintf() and strcpy() from the core library.</li>

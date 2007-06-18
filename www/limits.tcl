@@ -1,7 +1,7 @@
 #
 # Run this script to generate the limits.html output file
 #
-set rcsid {$Id: limits.tcl,v 1.2 2007/06/11 23:23:25 drh Exp $}
+set rcsid {$Id: limits.tcl,v 1.3 2007/06/18 12:22:43 drh Exp $}
 source common.tcl
 header {Implementation Limits For SQLite}
 puts {
@@ -299,7 +299,7 @@ limit at run-time.
 Note that the transaction processing in SQLite requires two bits
 of heap memory for every page in the database file.  For databases
 of a few megabytes in size, this amounts to only a few hundred
-bytes of heap memory.  But for gigabyte-sized database the amount
+bytes of heap memory.  But for gigabyte-sized databases the amount
 of heap memory required is getting into the kilobyte range and
 for terabyte-sized databases, megabytes of heap memory must be
 allocated and zeroed at each transaction.  SQLite will
