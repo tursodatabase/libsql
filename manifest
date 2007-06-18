@@ -1,5 +1,5 @@
-C Documentation\supdates\sprior\sto\srelease\s3.4.0.\s\sEnhanced\ssupport\sfor\nsoak\stesting\sin\sthe\stest\sscripts.\s(CVS\s4084)
-D 2007-06-18T12:22:43
+C Version\s3.4.0\s(CVS\s4085)
+D 2007-06-18T13:33:59
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -506,7 +506,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4cff47b06132768e92ba2235cab5c17d1082f8f9
+P eec387103869940697487ec5226eaed0b51ede7a
 R 402cac9c09afb3fbfb247beaa2c4bc40
 U drh
-Z 2f3e1c734a1de16ae2d28edfedfa6579
+Z 162256fba859e0db8631a03c60bce0d3
