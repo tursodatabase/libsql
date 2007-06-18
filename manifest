@@ -1,5 +1,5 @@
-C Version\s3.4.0\s(CVS\s4085)
-D 2007-06-18T13:33:59
+C Fix\sthe\sbuild\sscripts\sso\sthat\sthey\sgenerate\sTcl\sbindings\sfor\swindows\ncorrectly.\s(CVS\s4086)
+D 2007-06-18T16:06:20
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -49,7 +49,7 @@ F ext/icu/icu.c daab19e2c5221685688ecff2bb75bf9e0eea361d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
 F main.mk 02007ce4a5de0d4d6561207dcf839db9a3166935
-F mkdll.sh ed62756baf44babf562a7843588790c02fee2106
+F mkdll.sh 7f07436d2966844757d1c20d69e81953741297af
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
 F mkso.sh 24bde4c09e6fe80f718db3c31c068f45e13a2f2c
@@ -506,7 +506,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P eec387103869940697487ec5226eaed0b51ede7a
-R 402cac9c09afb3fbfb247beaa2c4bc40
+P 2647980fba92a453ef8afb48c80405d023177ab6
+R a9308379f43e01fbc38ff18317659a07
 U drh
-Z 162256fba859e0db8631a03c60bce0d3
+Z d44f3659a70767def6d2822d776a1e54

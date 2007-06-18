@@ -42,4 +42,4 @@ i386-mingw32msvc-dllwrap \
      --dlltool-name i386-mingw32msvc-dlltool \
      --as i386-mingw32msvc-as \
      --target i386-mingw32 \
-     -dllname sqlite3.dll -lmsvcrt sqlite3.o
+     -dllname tclsqlite3.dll -lmsvcrt sqlite3.o
