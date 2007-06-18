@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.347 2007/06/16 18:39:42 drh Exp $
+** @(#) $Id: pager.c,v 1.348 2007/06/18 17:25:18 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -619,7 +619,7 @@ static void checkPage(PgHdr *pPg){
 }
 
 #else
-#define pager_datahash(X)  0
+#define pager_datahash(X,Y)  0
 #define pager_pagehash(X)  0
 #define CHECK_PAGE(x)
 #endif
