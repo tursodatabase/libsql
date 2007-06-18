@@ -1,5 +1,5 @@
-C Bring\sthe\spager_datahash()\smacro\sinto\ssync\swith\sits\sfunction\sdefinition.\nTicket\s#2422.\s(CVS\s4087)
-D 2007-06-18T17:25:18
+C Another\sattempt\sto\sfix\sthe\sbuild\sprocess\sfor\sTCL\swindows\sbindings.\s(CVS\s4088)
+D 2007-06-18T17:44:16
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -49,7 +49,7 @@ F ext/icu/icu.c daab19e2c5221685688ecff2bb75bf9e0eea361d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
 F main.mk 02007ce4a5de0d4d6561207dcf839db9a3166935
-F mkdll.sh 7f07436d2966844757d1c20d69e81953741297af
+F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
 F mkso.sh 24bde4c09e6fe80f718db3c31c068f45e13a2f2c
@@ -506,7 +506,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c7be8b419fdfe6561331485f5f866610457e44ad
-R 860860c6c948060af4aca75438b38d78
+P ba967bbb62ccf29438db352c573773ae741d0daf
+R 422e5bb63646ce40accf856edaa2aad7
 U drh
-Z dc54e29e414be75fc5bd44a0f2d023fe
+Z 4920e177e4eb93acb0f85e3d895bd3c6

@@ -16,11 +16,11 @@ NM="i386-mingw32msvc-nm"
 CMD="$CC -c sqlite3.c"
 echo $CMD
 $CMD
-CMD="$CC -c tsrc/tclsqlite.c -o tclsqlite.o"
+CMD="$CC -c tclsqlite3.c"
 echo $CMD
 $CMD
 echo 'EXPORTS' >tclsqlite3.def
-$NM sqlite3.o tclsqlite.o | grep ' T ' >temp1
+$NM tclsqlite3.o | grep ' T ' >temp1
 grep '_Init$' temp1 >temp2
 grep '_SafeInit$' temp1 >>temp2
 grep ' T _sqlite3_' temp1 >>temp2
@@ -32,7 +32,7 @@ i386-mingw32msvc-dllwrap \
      --dlltool-name i386-mingw32msvc-dlltool \
      --as i386-mingw32msvc-as \
      --target i386-mingw32 \
-     -dllname tclsqlite3.dll -lmsvcrt tclsqlite.o sqlite3.o $TCLSTUBLIB
+     -dllname tclsqlite3.dll -lmsvcrt tclsqlite3.o $TCLSTUBLIB
 $NM sqlite3.o | grep ' T ' >temp1
 echo 'EXPORTS' >sqlite3.def
 grep ' _sqlite3_' temp1 | sed 's/^.* _//' >>sqlite3.def
@@ -42,4 +42,4 @@ i386-mingw32msvc-dllwrap \
      --dlltool-name i386-mingw32msvc-dlltool \
      --as i386-mingw32msvc-as \
      --target i386-mingw32 \
-     -dllname tclsqlite3.dll -lmsvcrt sqlite3.o
+     -dllname sqlite3.dll -lmsvcrt sqlite3.o
