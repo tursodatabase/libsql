@@ -1,5 +1,5 @@
-C Cleanup\sthe\sTCL\sinterface\ssource\scode\sand\sadd\sdocumentation\sfor\srecently\nadded\smethods\son\sthe\sSQLite\sobject\sof\sTCL.\s(CVS\s4093)
-D 2007-06-19T17:48:57
+C Change\sthe\sTCL\sbindings\sso\sthat\s@aaa\salways\streats\sthe\svariable\saaa\sas\na\sbytearray\sand\sbinds\sthe\svalue\sas\sa\sBLOB.\s\sThis\schange\sis\sbackwards\ncompatible\ssince\sthe\s$\sbehavior\sis\sunchanged\sand\s@\swas\snot\saccepted\nuntil\sthe\scurrent\sround\sof\schanges.\s(CVS\s4094)
+D 2007-06-19T23:01:42
 F Makefile.in 5babd49c427a0e82e849c89a4d3c3c1e607ec014
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -109,7 +109,7 @@ F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 07b0f7a4b7e849c9b96d921e9c5b32fc8802072c
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
-F src/tclsqlite.c df53bcb8239658c5ce45762c9837cc7f38c680de
+F src/tclsqlite.c 4bffe56752d2c24ade23340e46a91fd92c316e08
 F src/test1.c a83c097ee1353e8982745ee1b78612fea7425602
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c a280931fb40222b7c90da45eea926459beee8904
@@ -361,7 +361,7 @@ F test/substr.test 9f26cfca74397b26ab217fb838c3d0549eb4bcf3
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
 F test/table.test dbdfd06aef054ad5aed8e57a782137d57d5c5528
 F test/tableapi.test 036575a98dcce7c92e9f39056839bbad8a715412
-F test/tclsqlite.test 649d4cec8a2393b2e5df7b2b29158cddc14bd3e5
+F test/tclsqlite.test 593f3b30221e85786965d9e5670ae4f96b4e4159
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
 F test/tester.tcl 9382df472e0e86cbfddc44ab8c8cc02497bc9c8a
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -507,7 +507,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P dcb104bd41f5e992d4c84b8947cb5099ae746891
-R 2c8e4d427c1a25e275d6ce32dba71a8d
+P d88b79818a6a9e0413b9560687ec3c79fcb3dacc
+R d21ca8a6dbb4862f845d47de835dc249
 U drh
-Z 100864d73ffe0c8bd7da587cd9106c28
+Z 0aaea6ffbf1a789df99e683345d7d3e2

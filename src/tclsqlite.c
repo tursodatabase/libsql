@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.191 2007/06/19 17:48:57 drh Exp $
+** $Id: tclsqlite.c,v 1.192 2007/06/19 23:01:42 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -1593,10 +1593,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
             u8 *data;
             char *zType = pVar->typePtr ? pVar->typePtr->name : "";
             char c = zType[0];
-            if( c=='b' && strcmp(zType,"bytearray")==0 
-                 && (pVar->bytes==0 || zVar[0]=='@') ){
-              /* Only load a BLOB type if the Tcl variable is a bytearray and
-              ** either it has no string representation or the host
+            if( zVar[0]=='@' ||
+               (c=='b' && strcmp(zType,"bytearray")==0 && pVar->bytes==0) ){
+              /* Load a BLOB type if the Tcl variable is a bytearray and
+              ** it has no string representation or the host
               ** parameter name begins with "@". */
               data = Tcl_GetByteArrayFromObj(pVar, &n);
               sqlite3_bind_blob(pStmt, i, data, n, SQLITE_STATIC);

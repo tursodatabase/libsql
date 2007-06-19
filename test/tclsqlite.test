@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.58 2007/06/19 17:15:47 drh Exp $
+# $Id: tclsqlite.test,v 1.59 2007/06/19 23:01:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -456,8 +456,8 @@ do_test tcl-12.1 {
 
 
 # Check to see that when bindings of the form @aaa are used instead
-# of $aaa, that objects with a bytearray representation are inserted
-# as BLOBs even if they also have a string representation.
+# of $aaa, that objects are treated as bytearray and are inserted
+# as BLOBs.
 #
 do_test tcl-13.1 {
   db eval {CREATE TABLE t5(x BLOB)}
@@ -474,12 +474,20 @@ do_test tcl-13.2 {
   }
 } {text}
 do_test tcl-13.3 {
-btree_breakpoint
   db eval {
     DELETE FROM t5;
     INSERT INTO t5 VALUES(@x);
     SELECT typeof(x) FROM t5;
   }
 } {blob}
+do_test tcl-13.4 {
+  set y 1234
+  db eval {
+    DELETE FROM t5;
+    INSERT INTO t5 VALUES(@y);
+    SELECT hex(x), typeof(x) FROM t5
+  }
+} {31323334 blob}
+
 
 finish_test
