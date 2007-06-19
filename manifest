@@ -1,5 +1,5 @@
-C Another\sattempt\sto\sfix\sthe\sbuild\sprocess\sfor\sTCL\swindows\sbindings.\s(CVS\s4088)
-D 2007-06-18T17:44:16
+C Cast\sthe\s2nd\sparameter\sof\sftruncate\sto\soff_t\sto\swork\saround\sbugs\sin\nsome\sunix\simplementations.\s\sTicket\s#2425.\s(CVS\s4089)
+D 2007-06-19T10:50:38
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -90,7 +90,7 @@ F src/os_os2.c 2ce97909b926a598823f97338027dbec1dcf4165
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c f2ccf2e9a925fc679faf7a8fe85700e0f13cf0e1
+F src/os_unix.c 113ae3557500a0a04f78b02bb1290262ede6bbf8
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c d868d5f9e95ec9c1b9e2a30c54c996053db6dddd
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -506,7 +506,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ba967bbb62ccf29438db352c573773ae741d0daf
-R 422e5bb63646ce40accf856edaa2aad7
+P 1fd2a358d6361768981d0c7efbcf30b47c52a732
+R 5ece29a677a6f53a18c82ca6c8451f97
 U drh
-Z 4920e177e4eb93acb0f85e3d895bd3c6
+Z e419bb6f510127d019f2195a7b6f7e64

@@ -1271,7 +1271,7 @@ int sqlite3UnixSyncDirectory(const char *zDirname){
 static int unixTruncate(OsFile *id, i64 nByte){
   int rc;
   assert( id );
-  rc = ftruncate(((unixFile*)id)->h, nByte);
+  rc = ftruncate(((unixFile*)id)->h, (off_t)nByte);
   SimulateIOError( rc=1 );
   if( rc ){
     return SQLITE_IOERR_TRUNCATE;
