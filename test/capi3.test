@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.48 2007/03/30 20:46:13 drh Exp $
+# $Id: capi3.test,v 1.49 2007/06/19 10:58:24 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1044,6 +1044,20 @@ do_test capi3-16.4 {
   expr {$STMT==""}
 } {1}
 
-
+# Ticket #2426:  Misuse of sqlite3_column_* by calling it after
+# a sqlite3_reset should be harmless.
+#
+do_test capi3-17.1 {
+  set STMT [sqlite3_prepare $DB {SELECT * FROM t2} -1 TAIL]
+  sqlite3_step $STMT
+  sqlite3_column_int $STMT 0
+} {1}
+do_test capi3-17.2 {
+  sqlite3_reset $STMT
+  sqlite3_column_int $STMT 0
+} {0}
+do_test capi3-17.3 {
+  sqlite3_finalize $STMT
+} {SQLITE_OK}
 
 finish_test

@@ -1,5 +1,5 @@
-C Cast\sthe\s2nd\sparameter\sof\sftruncate\sto\soff_t\sto\swork\saround\sbugs\sin\nsome\sunix\simplementations.\s\sTicket\s#2425.\s(CVS\s4089)
-D 2007-06-19T10:50:38
+C Do\snot\ssegfault\seven\sif\ssqlite\sis\smisused\sby\srequesting\squery\sresults\nafter\sthe\squery\shas\sbeen\sreset.\s\sticket\s#2426.\s(CVS\s4090)
+D 2007-06-19T10:58:24
 F Makefile.in b9971ab07868cf2b3209fe3bf8c52e7e25af4193
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -137,7 +137,7 @@ F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
 F src/vdbe.c 4f3e83218359fd51ae0b6efc445a97bd5f658ae4
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h 7d2bf163d6d4e815724a457f2216dd8e38c3955c
-F src/vdbeapi.c 3747e4c3bc3139ff688bb3df462b10e42c084d16
+F src/vdbeapi.c 7930b9a188ab385287ca3eb3840af7225cb43549
 F src/vdbeaux.c b4eda47b713aa8fbe70dce4922852fd48b919555
 F src/vdbeblob.c 96f3572fdc45eda5be06e6372b612bc30742d9f0
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
@@ -184,7 +184,7 @@ F test/btree9.test 5d8711b241145b90f65dd1795d5dd8290846fa5e
 F test/busy.test 0271c854738e23ad76e10d4096a698e5af29d211
 F test/cache.test 9e530b55ba016ca17439f728a06898f0ade5f1da
 F test/capi2.test 7ecc9b342cc9ec27b53bbf95724cf2e5874fd496
-F test/capi3.test 1675323145d128e5942a9faffcfd5cf4e219a33f
+F test/capi3.test 08fe846db48d5bbf2aee1eca7804fb27f2fa602a
 F test/capi3b.test 5f0bc94b104e11086b1103b20277e1910f59c7f4
 F test/capi3c.test 96e35164739c6fe3357fa36f0fe74bc23abc8ef7
 F test/cast.test 0302bbc8d1be2f94da1e16ad2eb01ea356e26d18
@@ -506,7 +506,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1fd2a358d6361768981d0c7efbcf30b47c52a732
-R 5ece29a677a6f53a18c82ca6c8451f97
+P 0b20a69609c64af922bedab381f7d075e9da4fc5
+R 87fdbce58a1cae51fbd4daaedd8f598b
 U drh
-Z e419bb6f510127d019f2195a7b6f7e64
+Z eca7e9243576251c9daf0bfe44dbf734
