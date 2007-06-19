@@ -11,11 +11,11 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.572 2007/06/10 22:57:33 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.573 2007/06/19 15:23:48 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
-#include "limits.h"
+#include "sqliteLimit.h"
 
 
 #if defined(SQLITE_TCL) || defined(TCLSH)

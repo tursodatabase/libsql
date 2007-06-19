@@ -245,7 +245,7 @@ HDR = \
    $(TOP)/src/btree.h \
    $(TOP)/src/btreeInt.h \
    $(TOP)/src/hash.h \
-   $(TOP)/src/limits.h \
+   $(TOP)/src/sqliteLimit.h \
    opcodes.h \
    $(TOP)/src/os.h \
    $(TOP)/src/os_common.h \

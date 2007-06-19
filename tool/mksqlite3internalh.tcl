@@ -57,7 +57,6 @@ foreach hdr {
    btreeInt.h
    hash.h
    keywordhash.h
-   limits.h
    opcodes.h
    os_common.h
    os.h
@@ -67,6 +66,7 @@ foreach hdr {
    sqlite3ext.h
    sqlite3.h
    sqliteInt.h
+   sqliteLimit.h
    vdbe.h
    vdbeInt.h
 } {
