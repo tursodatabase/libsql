@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\s"limits.h"\ssource\sfile\sto\s"sqliteLimit.h".\r\nTicket\s#2428.\s(CVS\s4091)
-D 2007-06-19T15:23:48
+C In\sthe\sTCL\sbindings,\sif\sa\sTCL\svariable\shas\sa\sbytearray\srepresentation\sand\nthe\shost\sparameter\sstarts\swith\s@\sinstead\sof\s$,\sthen\salways\sstore\sthe\ncontent\sas\sa\sBLOB\snot\sas\sa\sstring\seven\sif\sa\sstring\srepresentation\sis\salso\navailable.\s(CVS\s4092)
+D 2007-06-19T17:15:47
 F Makefile.in 5babd49c427a0e82e849c89a4d3c3c1e607ec014
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -109,7 +109,7 @@ F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 07b0f7a4b7e849c9b96d921e9c5b32fc8802072c
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
-F src/tclsqlite.c 9f96385c5047b24afa7601ea4055aae97c3e25e3
+F src/tclsqlite.c 344e28bd3a1b7480a1cbf642911a99122b72ef8e
 F src/test1.c a83c097ee1353e8982745ee1b78612fea7425602
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c a280931fb40222b7c90da45eea926459beee8904
@@ -361,7 +361,7 @@ F test/substr.test 9f26cfca74397b26ab217fb838c3d0549eb4bcf3
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
 F test/table.test dbdfd06aef054ad5aed8e57a782137d57d5c5528
 F test/tableapi.test 036575a98dcce7c92e9f39056839bbad8a715412
-F test/tclsqlite.test 726c301d35a2c1f4181fb772a607f785dd9e284e
+F test/tclsqlite.test 649d4cec8a2393b2e5df7b2b29158cddc14bd3e5
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
 F test/tester.tcl 9382df472e0e86cbfddc44ab8c8cc02497bc9c8a
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -507,7 +507,7 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 783f19be387561fbca3ac7e223bdb7dedb5450c8
-R f61ebf06a1a8beeee76386cd58589428
+P 64bcc41f12e902fd025c9ba36c09dd6e4cf25923
+R 77fe303dc438055db8d268fdb3354536
 U drh
-Z c4d6065cec2901822a6c14d9f99cfb91
+Z 1386ace3ab85ad3dfcfb4f374c31ada6

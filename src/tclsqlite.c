@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.189 2007/06/15 18:53:14 drh Exp $
+** $Id: tclsqlite.c,v 1.190 2007/06/19 17:15:47 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -1587,16 +1587,18 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }
       for(i=1; i<=nVar; i++){
         const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
-        if( zVar!=0 && (zVar[0]=='$' || zVar[0]==':') ){
+        if( zVar!=0 && (zVar[0]=='$' || zVar[0]==':' || zVar[0]=='@') ){
           Tcl_Obj *pVar = Tcl_GetVar2Ex(interp, &zVar[1], 0, 0);
           if( pVar ){
             int n;
             u8 *data;
             char *zType = pVar->typePtr ? pVar->typePtr->name : "";
             char c = zType[0];
-            if( c=='b' && strcmp(zType,"bytearray")==0 && pVar->bytes==0 ){
+            if( c=='b' && strcmp(zType,"bytearray")==0 
+                 && (pVar->bytes==0 || zVar[0]=='@') ){
               /* Only load a BLOB type if the Tcl variable is a bytearray and
-              ** has no string representation. */
+              ** either it has no string representation or the host
+              ** parameter name begins with "@". */
               data = Tcl_GetByteArrayFromObj(pVar, &n);
               sqlite3_bind_blob(pStmt, i, data, n, SQLITE_STATIC);
               Tcl_IncrRefCount(pVar);
