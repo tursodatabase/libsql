@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the tclsqlite.html file.
 #
-set rcsid {$Id: tclsqlite.tcl,v 1.16 2006/01/05 15:50:07 drh Exp $}
+set rcsid {$Id: tclsqlite.tcl,v 1.17 2007/06/19 17:48:57 drh Exp $}
 source common.tcl
 header {The Tcl interface to the SQLite library}
 proc METHOD {name text} {
@@ -18,8 +18,8 @@ programming interface.</p>
 <h3>The API</h3>
 
 <p>The interface to the SQLite library consists of single
-tcl command named <b>sqlite</b> (version 2.8) or <b>sqlite3</b>
-(version 3.0).  Because there is only this
+tcl command named <b>sqlite3</b>
+Because there is only this
 one command, the interface is not placed in a separate
 namespace.</p>
 
@@ -48,12 +48,8 @@ in memory.
 
 <p>
 Once an SQLite database is open, it can be controlled using 
-methods of the <i>dbcmd</i>.  There are currently 21 methods
-defined:</p>
-
-<p>The <b>sqlite3</b> also accepts an optional third argument called
-the "mode".  This argument is a legacy from SQLite version 2 and is
-currently ignored.</p>
+methods of the <i>dbcmd</i>.  There are currently 22 methods
+defined.</p>
 
 <p>
 <ul>
@@ -69,6 +65,7 @@ foreach m [lsort {
  commit_hook
  complete
  copy
+ enable_load_extension
  errorcode
  eval
  exists
@@ -76,11 +73,15 @@ foreach m [lsort {
  last_insert_rowid
  nullvalue
  onecolumn
+ profile
  progress
+ rollback_hook
  timeout
  total_changes
  trace
  transaction
+ update_hook
+ version
 }] {
  puts "<li><a href=\"#$m\">$m</a></li>"
 }
@@ -201,14 +202,31 @@ variable does not exist a NULL values is used.  For example:
 </p>
 
 <blockquote><b>
-db1 eval {INSERT INTO t1 VALUES(5,$bigblob)}
+db1 eval {INSERT INTO t1 VALUES(5,$bigstring)}
 </b></blockquote>
 
 <p>
-Note that it is not necessary to quote the $bigblob value.  That happens
-automatically.  If $bigblob is a large string or binary object, this
+Note that it is not necessary to quote the $bigstring value.  That happens
+automatically.  If $bigstring is a large string or binary object, this
 technique is not only easier to write, it is also much more efficient
-since it avoids making a copy of the content of $bigblob.
+since it avoids making a copy of the content of $bigstring.
+</p>
+
+<p>
+If the $bigstring variable has both a string and a "bytearray" representation,
+then TCL inserts the value as a string.  If it has only a "bytearray"
+representation, then the value is inserted as a BLOB.  To force a
+value to be inserted as a BLOB even if it also has a text representation,
+us a "@" character to in place of the "$".  Like this:
+</p>
+
+<blockquote><b>
+db1 eval {INSERT INTO t1 VALUES(5,@bigstring)}
+</b></blockquote>
+
+<p>
+If the variable does not have a bytearray representation, then "@" works
+just like "$".
 </p>
 
 }
@@ -584,6 +602,47 @@ METHOD commit_hook {
 SQLite tries to commit changes to a database.  If the callback throws
 an exception or returns a non-zero result, then the transaction rolls back
 rather than commit.</p>
+}
+
+##############################################################################
+METHOD rollback_hook {
+
+<p>This method registers a callback routine that is invoked just before
+SQLite tries to do a rollback.  The script argument is run without change.</p>
+}
+
+##############################################################################
+METHOD update_hook {
+
+<p>This method registers a callback routine that is invoked just before
+each row is modified by an UPDATE, INSERT, or DELETE statement.  Four
+arguments are appended to the callback before it is invoked:</p>
+
+<ul>
+<li>The keyword "INSERT", "UPDATE", or "DELETE", as appropriate</li>
+<li>The name of the database which is being changed</li>
+<li>The table that is being changed</li>
+<li>The rowid of the row in the table being changed</li>
+</ul>
+}
+
+##############################################################################
+METHOD incrblob {
+
+<p>This method opens a TCL channel that can be used to read or write
+into a preexisting BLOB in the database.  The syntax is like this:</p>
+
+<blockquote>
+<i>dbcmd</i>&nbsp;&nbsp;<b>incrblob</b>&nbsp;&nbsp;<b>?-readonly??</b>
+&nbsp;&nbsp;<i>?DB?&nbsp;&nbsp;TABLE&nbsp;&nbsp;COLUMN&nbsp;&nbsp;ROWID</i>
+</blockquote>
+
+<p>
+The command returns a new TCL channel for reading or writing to the BLOB.
+The channel is opened using the underlying 
+<a href="/capi3ref.html#sqlite3_blob_open">sqlite3_blob_open()</a> C-langauge
+interface.  Close the channel using the <b>close</b> command of TCL.
+</p>
 }
 
 ##############################################################################
