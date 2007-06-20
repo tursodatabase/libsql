@@ -142,6 +142,15 @@ SRC += \
   $(TOP)/ext/fts2/fts2_tokenizer.h \
   $(TOP)/ext/fts2/fts2_tokenizer1.c
 
+# Source code for extensions.
+#
+EXTSRC += -DSQLITE_CORE=1             \
+  $(TOP)/ext/icu/icu.c                \
+  $(TOP)/ext/fts2/fts2.c              \
+  $(TOP)/ext/fts2/fts2_hash.c         \
+  $(TOP)/ext/fts2/fts2_porter.c       \
+  $(TOP)/ext/fts2/fts2_tokenizer1.c
+
 # Generated source code files
 #
 SRC += \
@@ -243,7 +252,8 @@ libsqlite3.a:	$(LIBOBJ)
 	$(RANLIB) libsqlite3.a
 
 sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
-	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE) $(TOP)/src/shell.c \
+	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE)                  \
+		$(TOP)/src/shell.c $(EXTSRC)                        \
 		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
 objects: $(LIBOBJ_ORIG)
@@ -447,7 +457,7 @@ tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
 testfixture$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC)
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
 		-DSQLITE_SERVER=1 -o testfixture$(EXE) \
-		$(TESTSRC) $(TOP)/src/tclsqlite.c \
+		$(TESTSRC) $(EXTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 
 fulltest:	testfixture$(EXE) sqlite3$(EXE)

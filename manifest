@@ -1,5 +1,5 @@
-C Fix\ssnippet\sgeneration\swhen\sthe\sleft-most\scolumn\sof\san\sfts2\stable\sis\sused\sin\sthe\sMATCH\sclause.\sFix\sfor\sticket\s#2429.\s(CVS\s4095)
-D 2007-06-20T06:23:55
+C Change\smain.mk\sto\smake\sit\seasier\sto\sbuild\stestfixture\sand\ssqlite3\swith\sthe\sicu\sor\sfts2\sextensions\slinked\sin.\s(CVS\s4096)
+D 2007-06-20T08:49:05
 F Makefile.in 5babd49c427a0e82e849c89a4d3c3c1e607ec014
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -48,7 +48,7 @@ F ext/icu/README.txt a470afe5adf6534cc0bdafca31e6cf4d88c321fa
 F ext/icu/icu.c daab19e2c5221685688ecff2bb75bf9e0eea361d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk f9b489de8f79174d29082cb87bfdfcd89e1135ec
+F main.mk 522c81a818f2f81eb5e904ce983710449c5d76ad
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -508,7 +508,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6f7d55acedc92eeaf988425c719addd56209187f
-R daeedf3dc5f4a3b817306b9576386c25
+P fec56ad2ede53e3e202d9ad869a059eeb315796f
+R 305d535beab9e92f7490ec39c929c5de
 U danielk1977
-Z 92220c57e2724013f6febf5dcfc993d4
+Z f48b9f28cbc8b24414d33e5bb1c0daae
