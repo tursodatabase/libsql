@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.18 2007/05/12 12:08:51 drh Exp $
+** @(#) $Id: analyze.c,v 1.19 2007/06/20 13:37:31 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -174,7 +174,7 @@ static void analyzeOneTable(
 
     /* Store the results.  
     **
-    ** The result is a single row of the sqlite_stmt1 table.  The first
+    ** The result is a single row of the sqlite_stat1 table.  The first
     ** two columns are the names of the table and index.  The third column
     ** is a string composed of a list of integer statistics about the
     ** index.  The first integer in the list is the total number of entires
