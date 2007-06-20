@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.230 2007/06/15 17:03:14 drh Exp $
+** @(#) $Id: parse.y,v 1.231 2007/06/20 12:18:31 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -536,7 +536,7 @@ sortorder(A) ::= .              {A = SQLITE_SO_ASC;}
 %type groupby_opt {ExprList*}
 %destructor groupby_opt {sqlite3ExprListDelete($$);}
 groupby_opt(A) ::= .                      {A = 0;}
-groupby_opt(A) ::= GROUP BY exprlist(X).  {A = X;}
+groupby_opt(A) ::= GROUP BY nexprlist(X). {A = X;}
 
 %type having_opt {Expr*}
 %destructor having_opt {sqlite3ExprDelete($$);}
@@ -849,14 +849,14 @@ case_operand(A) ::= .                   {A = 0;}
 
 %type exprlist {ExprList*}
 %destructor exprlist {sqlite3ExprListDelete($$);}
-%type expritem {Expr*}
-%destructor expritem {sqlite3ExprDelete($$);}
+%type nexprlist {ExprList*}
+%destructor nexprlist {sqlite3ExprListDelete($$);}
 
-exprlist(A) ::= exprlist(X) COMMA expritem(Y). 
-                                        {A = sqlite3ExprListAppend(X,Y,0);}
-exprlist(A) ::= expritem(X).            {A = sqlite3ExprListAppend(0,X,0);}
-expritem(A) ::= expr(X).                {A = X;}
-expritem(A) ::= .                       {A = 0;}
+exprlist(A) ::= nexprlist(X).                {A = X;}
+exprlist(A) ::= .                            {A = 0;}
+nexprlist(A) ::= nexprlist(X) COMMA expr(Y). {A = sqlite3ExprListAppend(X,Y,0);}
+nexprlist(A) ::= expr(Y).                    {A = sqlite3ExprListAppend(0,Y,0);}
+
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////
 //

@@ -1,5 +1,5 @@
-C Additional\schanges\sfor\sticket\s#2426.\s(CVS\s4098)
-D 2007-06-20T11:56:51
+C Disallow\sempty\sGROUP\sBY\sclauses.\s\sTicket\s#2431.\s(CVS\s4099)
+D 2007-06-20T12:18:31
 F Makefile.in 5babd49c427a0e82e849c89a4d3c3c1e607ec014
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -96,7 +96,7 @@ F src/os_win.c d868d5f9e95ec9c1b9e2a30c54c996053db6dddd
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 39352b58ee840cae715a4f0d20e446aa5e1445fe
 F src/pager.h 94110a5570dca30d54a883e880a3633b2e4c05ae
-F src/parse.y 2ed1d91fdcb4ae7ae7d1f4674544297807c7cc26
+F src/parse.y ad2ce25665be7f7303137f774a4e3e72e0d036ff
 F src/pragma.c 0d25dad58bdfd6789943a10f1b9663c2eb85b96d
 F src/prepare.c 87c23644986b5e41a58bc76f05abebd899e00089
 F src/printf.c 711908d6ff3385f9882df8ff405b9e0a2a4d04df
@@ -340,7 +340,7 @@ F test/schema.test b479341d04cc40a11f47929b0198c07ddd6b2565
 F test/schema2.test b438d2c7fd627227f405887c2328b4aed5dad012
 F test/select1.test 1a35bf8201c8a42a44d65acc3e6c9796a9c43dfb
 F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
-F test/select3.test 2d473f45c57c0526833e045fca0537badec0dd04
+F test/select3.test 47439f28862489626b483b0c718cfb0562e6f6d5
 F test/select4.test 305ba0a6e97efc5544def5e5cb49b54e1bf87fd9
 F test/select5.test 0b47058d3e916c1fc9fe81f44b438e02bade21ce
 F test/select6.test 399f14b9ba37b768afe5d2cd8c12e4f340a69db8
@@ -508,7 +508,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f025a745319486d858e2831178a86265fd5fcf32
-R aa0c290aec730ab79f90fd9070cb4470
+P 79debf95cdccdc1f18b6f0fcd213f514e327181c
+R 9993fe8d7ca1edb1600b61266ae9df74
 U drh
-Z d154e0e38a8408df243868876e3f2c61
+Z 88bcb70cc33bc6840bc6711d69f5e069
