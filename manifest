@@ -1,5 +1,5 @@
-C Fix\sfor\s#2432\sand\spartial\sfix\sfor\s#2427\s(documentation\schange\sonly).\s(CVS\s4097)
-D 2007-06-20T09:09:48
+C Additional\schanges\sfor\sticket\s#2426.\s(CVS\s4098)
+D 2007-06-20T11:56:51
 F Makefile.in 5babd49c427a0e82e849c89a4d3c3c1e607ec014
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -139,7 +139,7 @@ F src/vdbe.c 4f3e83218359fd51ae0b6efc445a97bd5f658ae4
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h 7d2bf163d6d4e815724a457f2216dd8e38c3955c
 F src/vdbeapi.c 7930b9a188ab385287ca3eb3840af7225cb43549
-F src/vdbeaux.c b4eda47b713aa8fbe70dce4922852fd48b919555
+F src/vdbeaux.c c580d3605edc2c24ba9bd26fa7aa8b4fff10daa4
 F src/vdbeblob.c 96f3572fdc45eda5be06e6372b612bc30742d9f0
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c d86c25bbfe8102499ff7505fca44a779c68694d8
@@ -508,7 +508,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 91719cc8eaf62f64099ff9eb2b48cef6c9c688f7
-R ad6a97884b6d5b19b2ec71c31d1920b5
-U danielk1977
-Z 78c34c230c464500c1539317261b19f4
+P f025a745319486d858e2831178a86265fd5fcf32
+R aa0c290aec730ab79f90fd9070cb4470
+U drh
+Z d154e0e38a8408df243868876e3f2c61

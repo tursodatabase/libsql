@@ -980,6 +980,7 @@ static void Cleanup(Vdbe *p){
   p->contextStackTop = 0;
   sqliteFree(p->zErrMsg);
   p->zErrMsg = 0;
+  p->resOnStack = 0;
 }
 
 /*
