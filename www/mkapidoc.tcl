@@ -3,7 +3,7 @@
 # Run this script redirecting the sqlite3.h file as standard
 # inputs and this script will generate API documentation.
 #
-set rcsid {$Id: mkapidoc.tcl,v 1.1 2007/06/14 20:57:19 drh Exp $}
+set rcsid {$Id: mkapidoc.tcl,v 1.2 2007/06/20 09:09:48 danielk1977 Exp $}
 source common.tcl
 header {C/C++ Interface For SQLite Version 3}
 puts {
@@ -162,7 +162,7 @@ proc resolve_links {args} {
 foreach c [lsort $content] {
   foreach {key title type keywords body code} $c break
   foreach k $keywords {
-    puts "<a name=\"$k\">"
+    puts "<a name=\"$k\"></a>"
   }
   puts "<h2>$title</h2>"
   puts "<blockquote><pre>"

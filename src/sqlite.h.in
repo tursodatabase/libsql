@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.212 2007/06/14 20:57:19 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.213 2007/06/20 09:09:48 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1988,7 +1988,7 @@ int sqlite3_rekey(
 /*
 ** CAPI3REF:  Suspend Execution For A Short Time
 **
-** This function causes the current thread to suspect execution
+** This function causes the current thread to suspend execution
 ** a number of milliseconds specified in its parameter.
 **
 ** If the operating system does not support sleep requests with 

@@ -1,5 +1,5 @@
-C Change\smain.mk\sto\smake\sit\seasier\sto\sbuild\stestfixture\sand\ssqlite3\swith\sthe\sicu\sor\sfts2\sextensions\slinked\sin.\s(CVS\s4096)
-D 2007-06-20T08:49:05
+C Fix\sfor\s#2432\sand\spartial\sfix\sfor\s#2427\s(documentation\schange\sonly).\s(CVS\s4097)
+D 2007-06-20T09:09:48
 F Makefile.in 5babd49c427a0e82e849c89a4d3c3c1e607ec014
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -104,7 +104,7 @@ F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c 33a258fc9c9dccb28ae2d3a02f1e1148d6433148
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
-F src/sqlite.h.in 6bd26a1429d96d72bb0e2c72fdd323defa2f558a
+F src/sqlite.h.in 42ec2b1e9186f08461d90b8268d06d3ae5cd9487
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 07b0f7a4b7e849c9b96d921e9c5b32fc8802072c
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
@@ -488,7 +488,7 @@ F www/lang.tcl e481e68bc17a850944006e5cfeefa86750244774
 F www/limits.tcl ff26cca93d6d697a8e5fa3a4b0355c751311763b
 F www/lockingv3.tcl e52345bd20323bef6146bfce18ae0829b2b7c87d
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
-F www/mkapidoc.tcl 696996026a3e13e3a5c31cee75a3a64edb5a7da0
+F www/mkapidoc.tcl 2fdbb765c38a4467687ba390e07c1229d4939a3b
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
 F www/oldnews.tcl badf03d45ed67a5046a4846e9ef9a4c234993f1b
 F www/omitted.tcl ee6b46f83d513b2187869740da829a700e1a355e
@@ -508,7 +508,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P fec56ad2ede53e3e202d9ad869a059eeb315796f
-R 305d535beab9e92f7490ec39c929c5de
+P 91719cc8eaf62f64099ff9eb2b48cef6c9c688f7
+R ad6a97884b6d5b19b2ec71c31d1920b5
 U danielk1977
-Z f48b9f28cbc8b24414d33e5bb1c0daae
+Z 78c34c230c464500c1539317261b19f4
