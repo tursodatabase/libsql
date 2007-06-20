@@ -436,7 +436,7 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
 ** manifest type REAL.
 */
 void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
-  if( isnan(val) ){
+  if( sqlite3_isnan(val) ){
     sqlite3VdbeMemSetNull(pMem);
   }else{
     sqlite3VdbeMemRelease(pMem);
