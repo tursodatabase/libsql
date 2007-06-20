@@ -1,6 +1,6 @@
-C A\scolumn\sname\spreceded\sby\sa\sunary\s"+"\soperator\sis\sconsidered\sto\sbe\na\scolumn\sname\swhen\scomputing\sthe\scollating\ssequence\sto\sbe\sused\sby\na\scomparison\soperator\sor\sORDER\sBY\sclause.\s(CVS\s4104)
-D 2007-06-20T16:13:23
-F Makefile.in 5babd49c427a0e82e849c89a4d3c3c1e607ec014
+C Use\sNAWK\severywhere\sin\sMakefile.in.\s\sTicket\s#2437.\s(CVS\s4105)
+D 2007-06-20T16:20:36
+F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION bd995b15c92d73ccf2f3e65d51702f88efea8001
@@ -509,7 +509,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 406675bb1c954dae95b9059f7f533ed57e3947d9
-R 451220594349c2cd54b6f02b90cec2b6
+P 99a20f6a427b5e0e0a793f59ebca9d17bc633437
+R 4a8e08631b162aa77c390642dcf9727d
 U drh
-Z 2ba114933a917ec8eae9630f8aa1ded1
+Z 2ca883375e13400b282495037812c118
