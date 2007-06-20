@@ -1,5 +1,5 @@
-C Disallow\sempty\sGROUP\sBY\sclauses.\s\sTicket\s#2431.\s(CVS\s4099)
-D 2007-06-20T12:18:31
+C Fix\sa\sbug\sin\sthe\scommand-line\sshell\sthat\sprevents\sthe\nreading\sof\sthe\s".sqliterc"\sfile.\s\sTicket\s#2433.\s(CVS\s4100)
+D 2007-06-20T13:10:01
 F Makefile.in 5babd49c427a0e82e849c89a4d3c3c1e607ec014
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -103,7 +103,7 @@ F src/printf.c 711908d6ff3385f9882df8ff405b9e0a2a4d04df
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c 33a258fc9c9dccb28ae2d3a02f1e1148d6433148
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c d07ae326b3815d80f71c69b3c7584382e47f6447
+F src/shell.c 4b0fc3c76a9f23a1c963e01703c0fbbca1b5c34d
 F src/sqlite.h.in 42ec2b1e9186f08461d90b8268d06d3ae5cd9487
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h 07b0f7a4b7e849c9b96d921e9c5b32fc8802072c
@@ -508,7 +508,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 79debf95cdccdc1f18b6f0fcd213f514e327181c
-R 9993fe8d7ca1edb1600b61266ae9df74
+P 9581e7a4a4d74b08ce5380b49862957c804e46bb
+R f4eb90ca2d9868c8b1b11339c212e254
 U drh
-Z 88bcb70cc33bc6840bc6711d69f5e069
+Z b7c7cc5fb84a83aff8a2eb79b3841116
