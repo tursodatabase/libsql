@@ -1,4 +1,4 @@
-set rcsid {$Id: datatype3.tcl,v 1.16 2007/02/23 14:20:38 drh Exp $}
+set rcsid {$Id: datatype3.tcl,v 1.17 2007/06/20 16:13:23 drh Exp $}
 source common.tcl
 header {Datatypes In SQLite Version 3}
 puts {
@@ -363,7 +363,8 @@ column, then the default collation type of the column determines the
 collation sequence to use for the comparison. If both operands are columns,
 then the collation type for the left operand determines the collation
 sequence used. If neither operand is a column, then the BINARY collation
-sequence is used.
+sequence is used.  For the purposes of this paragraph, a column name
+preceded by one or more unary "+" operators is considered a column name.
 </p>  
 
 <p>

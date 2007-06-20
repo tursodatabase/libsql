@@ -1,5 +1,5 @@
-C Remove\sthe\sdependency\son\slibm\sfor\sisnan().\s\sTicket\s#2436.\s(CVS\s4103)
-D 2007-06-20T15:29:25
+C A\scolumn\sname\spreceded\sby\sa\sunary\s"+"\soperator\sis\sconsidered\sto\sbe\na\scolumn\sname\swhen\scomputing\sthe\scollating\ssequence\sto\sbe\sused\sby\na\scomparison\soperator\sor\sORDER\sBY\sclause.\s(CVS\s4104)
+D 2007-06-20T16:13:23
 F Makefile.in 5babd49c427a0e82e849c89a4d3c3c1e607ec014
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -72,7 +72,7 @@ F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 6049db7d5a8fdf2c677ff7d58fa31d4f6593c988
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c b68f1b208be50413b407da92bd7b0fce840999cf
+F src/expr.c 763ca2b39fe551a6dc7d37ba40544311622eee32
 F src/func.c 4668843e6f0d27653939e12fc32276fb8e38d21a
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
@@ -197,6 +197,7 @@ F test/collate4.test daf498e294dcd596b961d425c3f2dda117e4717e
 F test/collate5.test 8fb4e7e0241839356bd8710f437c32efb47bfff8
 F test/collate6.test 6c9470d1606ee3e564675b229653e320c49ec638
 F test/collate7.test e23677b1fd271505302643a98178952bb65b6f21
+F test/collate8.test 7ed2461305ac959886a064dc1e3cf15e155a183f
 F test/colmeta.test 6505c73ab58796afcb7c89ba9f429d573fbc6e53
 F test/conflict.test ac40064d46c4c259cf6c216d30aa5bcc26e7eea2
 F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
@@ -470,7 +471,7 @@ F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
 F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
 F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
 F www/copyright.tcl b698824cea9b503751bf7380a98883a264d600a0
-F www/datatype3.tcl eca9badcfe2a898d64ebda88e804eb6ac7c4626c
+F www/datatype3.tcl f7b6831c9088549efe021df4f71a34c0095d4e94
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
 F www/different.tcl 8b76ae88bf73e38097b7936e198df4f89baf587c
 F www/direct1b.gif 32b48b764244817b6b591898dc52a04299a7b8a7
@@ -508,7 +509,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P cb47a8297fd91becdc4e1c50fd84b3efedd3951f
-R 6ebcd51f9fd0054745685eecbc671d5d
+P 406675bb1c954dae95b9059f7f533ed57e3947d9
+R 451220594349c2cd54b6f02b90cec2b6
 U drh
-Z 72f79d91f079bd73d6674fde4cba4b70
+Z 2ba114933a917ec8eae9630f8aa1ded1
