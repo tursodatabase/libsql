@@ -1,5 +1,5 @@
-C Change\sthe\sTCL\sbindings\sso\sthat\s@aaa\salways\streats\sthe\svariable\saaa\sas\na\sbytearray\sand\sbinds\sthe\svalue\sas\sa\sBLOB.\s\sThis\schange\sis\sbackwards\ncompatible\ssince\sthe\s$\sbehavior\sis\sunchanged\sand\s@\swas\snot\saccepted\nuntil\sthe\scurrent\sround\sof\schanges.\s(CVS\s4094)
-D 2007-06-19T23:01:42
+C Fix\ssnippet\sgeneration\swhen\sthe\sleft-most\scolumn\sof\san\sfts2\stable\sis\sused\sin\sthe\sMATCH\sclause.\sFix\sfor\sticket\s#2429.\s(CVS\s4095)
+D 2007-06-20T06:23:55
 F Makefile.in 5babd49c427a0e82e849c89a4d3c3c1e607ec014
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -36,7 +36,7 @@ F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c b058569b8bebd519b3bb43692240da1fef5246a8
+F ext/fts2/fts2.c 8f9bd5fce1a6900072ad9b65dd41fe8ba010f099
 F ext/fts2/fts2.h 591916a822cfb6426518fdbf6069359119bc46eb
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -251,6 +251,7 @@ F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
+F test/fts2o.test 05ce2ac9111c29998418a584de02136a0ded471b
 F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
@@ -507,7 +508,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d88b79818a6a9e0413b9560687ec3c79fcb3dacc
-R d21ca8a6dbb4862f845d47de835dc249
-U drh
-Z 0aaea6ffbf1a789df99e683345d7d3e2
+P 6f7d55acedc92eeaf988425c719addd56209187f
+R daeedf3dc5f4a3b817306b9576386c25
+U danielk1977
+Z 92220c57e2724013f6febf5dcfc993d4
