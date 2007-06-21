@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.213 2007/06/20 09:09:48 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.214 2007/06/21 15:25:05 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1237,10 +1237,16 @@ const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 ** These routines provide a means to determine what column of what
 ** table in which database a result of a SELECT statement comes from.
 ** The name of the database or table or column can be returned as
-** either a UTF8 or UTF16 string.  The returned string is valid until
+** either a UTF8 or UTF16 string.  The _database_ routines return
+** the database name, the _table_ routines return the table name, and
+** the origin_ routines return the column name.
+** The returned string is valid until
 ** the [sqlite3_stmt | prepared statement] is destroyed using
 ** [sqlite3_finalize()] or until the same information is requested
-** again about the same column.
+** again in a different encoding.
+**
+** The names returned are the original un-aliased names of the
+** database, table, and column.
 **
 ** The first argument to the following calls is a 
 ** [sqlite3_stmt | compiled SQL statement].
@@ -1439,8 +1445,6 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** the value returned by sqlite3_column_type() is undefined.  Future
 ** versions of SQLite may change the behavior of sqlite3_column_type()
 ** following a type conversion.
-**
-*** The sqlite3_column_nm
 **
 ** If the result is a BLOB or UTF-8 string then the sqlite3_column_bytes() 
 ** routine returns the number of bytes in that BLOB or string.

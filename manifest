@@ -1,5 +1,5 @@
-C Update\sthe\sURL\sto\smailing\slist\sarchives.\s(CVS\s4106)
-D 2007-06-21T13:30:40
+C Clarify\sdocumentation\sof\sthe\scolumn\smetadata\sAPIs.\s\sMake\ssure\sthat\sthe\nnew\sdocumentation\sclaims\sare\stested.\s(CVS\s4107)
+D 2007-06-21T15:25:05
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -104,7 +104,7 @@ F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c 33a258fc9c9dccb28ae2d3a02f1e1148d6433148
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 4b0fc3c76a9f23a1c963e01703c0fbbca1b5c34d
-F src/sqlite.h.in 42ec2b1e9186f08461d90b8268d06d3ae5cd9487
+F src/sqlite.h.in 475e0e3dbd34c151ca89423c97d878c99575c71a
 F src/sqlite3ext.h 7d0d363ea7327e817ef0dfe1b7eee1f171b72890
 F src/sqliteInt.h ed31d1a0311c1ffc018fa2e9035a6cf7985049c8
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
@@ -185,7 +185,7 @@ F test/btree9.test 5d8711b241145b90f65dd1795d5dd8290846fa5e
 F test/busy.test 0271c854738e23ad76e10d4096a698e5af29d211
 F test/cache.test 9e530b55ba016ca17439f728a06898f0ade5f1da
 F test/capi2.test 7ecc9b342cc9ec27b53bbf95724cf2e5874fd496
-F test/capi3.test 08fe846db48d5bbf2aee1eca7804fb27f2fa602a
+F test/capi3.test 1cf80839d6224126acf82eb824308981fb054ef9
 F test/capi3b.test 5f0bc94b104e11086b1103b20277e1910f59c7f4
 F test/capi3c.test 96e35164739c6fe3357fa36f0fe74bc23abc8ef7
 F test/cast.test 0302bbc8d1be2f94da1e16ad2eb01ea356e26d18
@@ -509,7 +509,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 314669b6cc76ab8984857c3591aa1910aac97694
-R 7dab77591ccdde744557f650d7710d3f
+P af4b914a2152ce021401b6f78bb88a5323aa6fc2
+R 9c91b2e377cf682d8693c478c169d4ef
 U drh
-Z 0b9b33667bf719d4ebe30216c3df8fd6
+Z 97256b78e966a6731710de3bdea5bd11
