@@ -1,5 +1,5 @@
-C Use\sNAWK\severywhere\sin\sMakefile.in.\s\sTicket\s#2437.\s(CVS\s4105)
-D 2007-06-20T16:20:36
+C Update\sthe\sURL\sto\smailing\slist\sarchives.\s(CVS\s4106)
+D 2007-06-21T13:30:40
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -503,13 +503,13 @@ F www/shared.gif 265bae80c5b311c5a86e47662821076ffaf5c6ea
 F www/sharedcache.tcl 3ebec81110e606af6fd65a3c4c19562cb173b29c
 F www/speed.tcl 656ed5be8cc9d536353e1a96927b925634a62933
 F www/sqlite.tcl abb87f0d74a4fe9642987466bb59fe6abada988f
-F www/support.tcl 7961ce16290692578d783bb11f0dc8391a9be9c3
+F www/support.tcl 1b94f4a98abfddcc1b13fb41565c8f66629cdf03
 F www/table-ex1b2.gif a588d21a2d88bb2a2ef0431fcc5ed5aa48c0bbc5
 F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 99a20f6a427b5e0e0a793f59ebca9d17bc633437
-R 4a8e08631b162aa77c390642dcf9727d
+P 314669b6cc76ab8984857c3591aa1910aac97694
+R 7dab77591ccdde744557f650d7710d3f
 U drh
-Z 2ca883375e13400b282495037812c118
+Z 0b9b33667bf719d4ebe30216c3df8fd6
