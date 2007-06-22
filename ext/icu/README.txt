@@ -113,9 +113,15 @@ SQLite. Documentation follows.
 2  COMPILATION AND USAGE
 
   The easiest way to compile and use the ICU extension is to build
-  and use it as a dynamically loadable SQLite extension.
+  and use it as a dynamically loadable SQLite extension. To do this
+  using gcc on *nix:
 
+    gcc -shared icu.c `icu-config --ldflags` -o libSqliteIcu.so
 
+  You may need to add "-I" flags so that gcc can find sqlite3ext.h
+  and sqlite3.h. The resulting shared lib, libSqliteIcu.so, may be
+  loaded into sqlite in the same way as any other dynamically loadable
+  extension.
 
 
 3 BUGS, PROBLEMS AND SECURITY ISSUES

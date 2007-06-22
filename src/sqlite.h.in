@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.214 2007/06/21 15:25:05 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.215 2007/06/22 15:21:16 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2495,6 +2495,19 @@ int sqlite3_create_module(
   const char *zName,         /* Name of the module */
   const sqlite3_module *,    /* Methods for the module */
   void *                     /* Client data for xCreate/xConnect */
+);
+
+/*
+** This routine is identical to the sqlite3_create_module() method above,
+** except that it allows a destructor function to be specified. It is
+** even more experimental than the rest of the virtual tables API.
+*/
+int sqlite3_create_module_v2(
+  sqlite3 *db,               /* SQLite connection to register module with */
+  const char *zName,         /* Name of the module */
+  const sqlite3_module *,    /* Methods for the module */
+  void *,                    /* Client data for xCreate/xConnect */
+  void(*xDestroy)(void*)     /* Module destructor function */
 );
 
 /*

@@ -75,16 +75,4 @@ struct sqlite3_tokenizer_cursor {
   /* Tokenizer implementations will typically add additional fields */
 };
 
-/*
-** Get the module for a tokenizer which generates tokens based on a
-** set of non-token characters.  The default is to break tokens at any
-** non-alnum character, though the set of delimiters can also be
-** specified by the first argv argument to xCreate().
-*/
-/* TODO(shess) This doesn't belong here.  Need some sort of
-** registration process.
-*/
-void sqlite3Fts2SimpleTokenizerModule(sqlite3_tokenizer_module const**ppModule);
-void sqlite3Fts2PorterTokenizerModule(sqlite3_tokenizer_module const**ppModule);
-
 #endif /* _FTS2_TOKENIZER_H_ */

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.574 2007/06/20 15:29:25 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.575 2007/06/22 15:21:16 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -584,6 +584,7 @@ struct Module {
   const sqlite3_module *pModule;       /* Callback pointers */
   const char *zName;                   /* Name passed to create_module() */
   void *pAux;                          /* pAux passed to create_module() */
+  void (*xDestroy)(void *);            /* Module destructor function */
 };
 
 /*

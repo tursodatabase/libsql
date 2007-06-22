@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.376 2007/05/08 20:37:39 drh Exp $
+** $Id: main.c,v 1.377 2007/06/22 15:21:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -194,6 +194,9 @@ int sqlite3_close(sqlite3 *db){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   for(i=sqliteHashFirst(&db->aModule); i; i=sqliteHashNext(i)){
     Module *pMod = (Module *)sqliteHashData(i);
+    if( pMod->xDestroy ){
+      pMod->xDestroy(pMod->pAux);
+    }
     sqliteFree(pMod);
   }
   sqlite3HashClear(&db->aModule);
@@ -986,41 +989,47 @@ static int openDatabase(
   db->aDb[1].safety_level = 1;
 #endif
 
+  db->magic = SQLITE_MAGIC_OPEN;
+  if( sqlite3MallocFailed() ){
+    goto opendb_out;
+  }
+
   /* Register all built-in functions, but do not attempt to read the
   ** database schema yet. This is delayed until the first time the database
   ** is accessed.
   */
-  if( !sqlite3MallocFailed() ){
-    sqlite3Error(db, SQLITE_OK, 0);
-    sqlite3RegisterBuiltinFunctions(db);
-  }
-  db->magic = SQLITE_MAGIC_OPEN;
+  sqlite3Error(db, SQLITE_OK, 0);
+  sqlite3RegisterBuiltinFunctions(db);
 
   /* Load automatic extensions - extensions that have been registered
   ** using the sqlite3_automatic_extension() API.
   */
   (void)sqlite3AutoLoadExtensions(db);
+  if( sqlite3_errcode(db)!=SQLITE_OK ){
+    goto opendb_out;
+  }
 
 #ifdef SQLITE_ENABLE_FTS1
-  {
+  if( !sqlite3MallocFailed() ){
     extern int sqlite3Fts1Init(sqlite3*);
-    sqlite3Fts1Init(db);
+    rc = sqlite3Fts1Init(db);
   }
 #endif
 
 #ifdef SQLITE_ENABLE_FTS2
-  {
+  if( !sqlite3MallocFailed() && rc==SQLITE_OK ){
     extern int sqlite3Fts2Init(sqlite3*);
-    sqlite3Fts2Init(db);
+    rc = sqlite3Fts2Init(db);
   }
 #endif
 
 #ifdef SQLITE_ENABLE_ICU
-  if( !sqlite3MallocFailed() ){
+  if( !sqlite3MallocFailed() && rc==SQLITE_OK ){
     extern int sqlite3IcuInit(sqlite3*);
-    sqlite3IcuInit(db);
+    rc = sqlite3IcuInit(db);
   }
 #endif
+  sqlite3Error(db, rc, 0);
 
   /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
   ** mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking

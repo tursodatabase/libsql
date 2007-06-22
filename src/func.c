@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.160 2007/06/07 19:08:33 drh Exp $
+** $Id: func.c,v 1.161 2007/06/22 15:21:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1410,7 +1410,13 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     }
   }
   sqlite3RegisterDateTimeFunctions(db);
-  sqlite3_overload_function(db, "MATCH", 2);
+  if( !sqlite3MallocFailed() ){
+    int rc = sqlite3_overload_function(db, "MATCH", 2);
+    assert( rc==SQLITE_NOMEM || rc==SQLITE_OK );
+    if( rc==SQLITE_NOMEM ){
+      sqlite3FailedMalloc();
+    }
+  }
 #ifdef SQLITE_SSE
   (void)sqlite3SseFunctions(db);
 #endif

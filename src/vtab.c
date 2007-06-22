@@ -11,10 +11,37 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.46 2007/05/04 13:15:57 drh Exp $
+** $Id: vtab.c,v 1.47 2007/06/22 15:21:16 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
+
+static int createModule(
+  sqlite3 *db,                    /* Database in which module is registered */
+  const char *zName,              /* Name assigned to this module */
+  const sqlite3_module *pModule,  /* The definition of the module */
+  void *pAux,                     /* Context pointer for xCreate/xConnect */
+  void (*xDestroy)(void *)        /* Module destructor function */
+) {
+  int nName = strlen(zName);
+  Module *pMod = (Module *)sqliteMallocRaw(sizeof(Module) + nName + 1);
+  if( pMod ){
+    char *zCopy = (char *)(&pMod[1]);
+    memcpy(zCopy, zName, nName+1);
+    pMod->zName = zCopy;
+    pMod->pModule = pModule;
+    pMod->pAux = pAux;
+    pMod->xDestroy = xDestroy;
+    pMod = (Module *)sqlite3HashInsert(&db->aModule, zCopy, nName, (void*)pMod);
+    if( pMod && pMod->xDestroy ){
+      pMod->xDestroy(pMod->pAux);
+    }
+    sqliteFree(pMod);
+    sqlite3ResetInternalSchema(db, 0);
+  }
+  return sqlite3ApiExit(db, SQLITE_OK);
+}
+
 
 /*
 ** External API function used to create a new virtual-table module.
@@ -25,19 +52,20 @@ int sqlite3_create_module(
   const sqlite3_module *pModule,  /* The definition of the module */
   void *pAux                      /* Context pointer for xCreate/xConnect */
 ){
-  int nName = strlen(zName);
-  Module *pMod = (Module *)sqliteMallocRaw(sizeof(Module) + nName + 1);
-  if( pMod ){
-    char *zCopy = (char *)(&pMod[1]);
-    memcpy(zCopy, zName, nName+1);
-    pMod->zName = zCopy;
-    pMod->pModule = pModule;
-    pMod->pAux = pAux;
-    pMod = (Module *)sqlite3HashInsert(&db->aModule, zCopy, nName, (void*)pMod);
-    sqliteFree(pMod);
-    sqlite3ResetInternalSchema(db, 0);
-  }
-  return sqlite3ApiExit(db, SQLITE_OK);
+  return createModule(db, zName, pModule, pAux, 0);
+}
+
+/*
+** External API function used to create a new virtual-table module.
+*/
+int sqlite3_create_module_v2(
+  sqlite3 *db,                    /* Database in which module is registered */
+  const char *zName,              /* Name assigned to this module */
+  const sqlite3_module *pModule,  /* The definition of the module */
+  void *pAux,                     /* Context pointer for xCreate/xConnect */
+  void (*xDestroy)(void *)        /* Module destructor function */
+){
+  return createModule(db, zName, pModule, pAux, xDestroy);
 }
 
 /*

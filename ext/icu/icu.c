@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: icu.c,v 1.5 2007/06/11 08:00:00 danielk1977 Exp $
+** $Id: icu.c,v 1.6 2007/06/22 15:21:16 danielk1977 Exp $
 **
 ** This file implements an integration between the ICU library 
 ** ("International Components for Unicode", an open-source library 
@@ -37,11 +37,12 @@
 #include <unicode/ucol.h>
 
 #include <assert.h>
-#include "sqlite3.h"
 
 #ifndef SQLITE_CORE
   #include "sqlite3ext.h"
   SQLITE_EXTENSION_INIT1
+#else
+  #include "sqlite3.h"
 #endif
 
 /*
@@ -342,7 +343,7 @@ static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
   nInput = sqlite3_value_bytes16(apArg[0]);
 
   nOutput = nInput * 2 + 2;
-  zOutput = sqlite3_malloc(nInput*2+2);
+  zOutput = sqlite3_malloc(nOutput);
   if( !zOutput ){
     return;
   }

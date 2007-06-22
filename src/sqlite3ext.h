@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.10 2007/03/29 18:46:01 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.11 2007/06/22 15:21:16 danielk1977 Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -76,6 +76,7 @@ struct sqlite3_api_routines {
   int  (*create_function)(sqlite3*,const char*,int,int,void*,void (*xFunc)(sqlite3_context*,int,sqlite3_value**),void (*xStep)(sqlite3_context*,int,sqlite3_value**),void (*xFinal)(sqlite3_context*));
   int  (*create_function16)(sqlite3*,const void*,int,int,void*,void (*xFunc)(sqlite3_context*,int,sqlite3_value**),void (*xStep)(sqlite3_context*,int,sqlite3_value**),void (*xFinal)(sqlite3_context*));
   int (*create_module)(sqlite3*,const char*,const sqlite3_module*,void*);
+  int (*create_module_v2)(sqlite3*,const char*,const sqlite3_module*,void*,void (*xDestroy)(void *));
   int  (*data_count)(sqlite3_stmt*pStmt);
   sqlite3 * (*db_handle)(sqlite3_stmt*);
   int (*declare_vtab)(sqlite3*,const char*);
@@ -209,6 +210,7 @@ struct sqlite3_api_routines {
 #define sqlite3_create_function        sqlite3_api->create_function
 #define sqlite3_create_function16      sqlite3_api->create_function16
 #define sqlite3_create_module          sqlite3_api->create_module
+#define sqlite3_create_module_v2       sqlite3_api->create_module_v2
 #define sqlite3_data_count             sqlite3_api->data_count
 #define sqlite3_db_handle              sqlite3_api->db_handle
 #define sqlite3_declare_vtab           sqlite3_api->declare_vtab

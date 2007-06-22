@@ -148,7 +148,9 @@ EXTSRC += -DSQLITE_CORE=1             \
   $(TOP)/ext/icu/icu.c                \
   $(TOP)/ext/fts2/fts2.c              \
   $(TOP)/ext/fts2/fts2_hash.c         \
+  $(TOP)/ext/fts2/fts2_icu.c          \
   $(TOP)/ext/fts2/fts2_porter.c       \
+  $(TOP)/ext/fts2/fts2_tokenizer.c    \
   $(TOP)/ext/fts2/fts2_tokenizer1.c
 
 # Generated source code files
