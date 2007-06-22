@@ -72,6 +72,7 @@
 # define INCL_DOSERRORS
 # define INCL_DOSMISC
 # define INCL_DOSPROCESS
+# define INCL_DOSMODULEMGR
 # include <os2.h>
 # define SQLITE_TEMPNAME_SIZE (CCHMAXPATHCOMP)
 #else
