@@ -1,5 +1,5 @@
-C fix\scompilation\sfailure\son\sOS/2\swith\sthe\samalgamation\s(CVS\s4109)
-D 2007-06-22T20:04:37
+C fix\slinking\sfailure\son\sOS/2\sthat\shappens\swith\sthe\samalgamation\sand\sthe\shigh\smemory\soption\senabled\s(CVS\s4110)
+D 2007-06-22T20:17:38
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,7 +86,7 @@ F src/main.c 65fc7de0b3c2e5b637c000ecf419c35de2525ef9
 F src/malloc.c fa9bbccc4e6d099cd04c2518d238a1669c9d1020
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 1f10b47acc1177fb9225edb4f5f0d25ed716f9cb
-F src/os.h 478f38ee534e9620540982cd5110b6637a569296
+F src/os.h bdb253b04d58e74967d55682adfe5dac944bde1e
 F src/os_common.h a38233cd3b1f260db6f01f1093295d5708130065
 F src/os_os2.c 2ce97909b926a598823f97338027dbec1dcf4165
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
@@ -512,7 +512,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 68677e420c744b39ea9d7399819e0f376748886d
-R 14309e1f88e8dc11bc579389b462f1f8
+P 12327ca049e62922bfb3c2a14e42554fd58265e8
+R c4f5686bdc00846759c01fbdffa7f82b
 U pweilbacher
-Z 308a7f4a2b7f476d0e17fda9459f3b91
+Z bbe405d266119d64ef43df21e50d3180

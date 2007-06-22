@@ -67,6 +67,9 @@
 # include <windows.h>
 # define SQLITE_TEMPNAME_SIZE (MAX_PATH+50)
 #elif OS_OS2
+# if (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ >= 3) && defined(OS2_HIGH_MEMORY)
+#  include <os2safe.h> /* has to be included before os2.h for linking to work */
+# endif
 # define INCL_DOSDATETIME
 # define INCL_DOSFILEMGR
 # define INCL_DOSERRORS
