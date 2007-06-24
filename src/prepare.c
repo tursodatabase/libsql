@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.50 2007/05/08 20:37:39 drh Exp $
+** $Id: prepare.c,v 1.51 2007/06/24 10:14:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -213,7 +213,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   **    meta[3]   Use freelist if 0.  Autovacuum if greater than zero.
   **    meta[4]   Db text encoding. 1:UTF-8 2:UTF-16LE 3:UTF-16BE
   **    meta[5]   The user cookie. Used by the application.
-  **    meta[6]   
+  **    meta[6]   Incremental-vacuum flag.
   **    meta[7]
   **    meta[8]
   **    meta[9]

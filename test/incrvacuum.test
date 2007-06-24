@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.10 2007/05/24 10:18:22 danielk1977 Exp $
+# $Id: incrvacuum.test,v 1.11 2007/06/24 10:14:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -553,6 +553,59 @@ do_test incrvacuum-10.7 {
   }
   expr [file size test.db] / 1024
 } {1}
+
+#----------------------------------------------------------------
+# Test that if we set the auto_vacuum mode to 'incremental', then
+# create a database, thereafter that database defaults to incremental 
+# vacuum mode.
+#
+db close
+file delete -force test.db test.db-journal
+sqlite3 db test.db
+
+do_test incrvacuum-11.1 {
+  execsql {
+    PRAGMA auto_vacuum;
+  }
+} {0}
+do_test incrvacuum-11.2 {
+  execsql {
+    PRAGMA auto_vacuum = incremental;
+  }
+} {}
+do_test incrvacuum-11.3 {
+  execsql {
+    PRAGMA auto_vacuum;
+  }
+} {2}
+do_test incrvacuum-11.4 {
+  file size test.db
+} {0}
+do_test incrvacuum-11.5 {
+  # Create the database file.
+  execsql { CREATE TABLE abc(a, b, c); }
+ 
+  # Close and reopen the connection.
+  db close
+  sqlite3 db test.db
+
+  # Test we are still in incremental vacuum mode.
+  execsql { PRAGMA auto_vacuum; }
+} {2}
+do_test incrvacuum-11.6 {
+  execsql {
+    PRAGMA auto_vacuum = 'full';
+    PRAGMA auto_vacuum;
+  }
+} {1}
+do_test incrvacuum-11.7 {
+  # Close and reopen the connection.
+  db close
+  sqlite3 db test.db
+
+  # Test we are still in incremental vacuum mode.
+  execsql { PRAGMA auto_vacuum; }
+} {2}
 
 finish_test
 
