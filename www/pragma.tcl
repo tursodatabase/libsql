@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.25 2007/06/18 12:22:43 drh Exp $}
+set rcsid {$Id: pragma.tcl,v 1.26 2007/06/24 08:00:44 danielk1977 Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -525,6 +525,13 @@ puts {
     table, invoke the callback function with information about that
     foreign key. The callback function will be invoked once for each
     column in each foreign key.</p></li>
+
+<a name="pragma_freelist_count"></a>
+<li><p><b>PRAGMA [database].freelist_count;</b></p>
+    <p>Return the number of unused pages in the database file. Running
+    a <a href="#pragma_incremental_vacuum">"PRAGMA incremental_vaccum(N);"</a> 
+    command with a large value of N will shrink the database file by this
+    number of pages. </p></li>
 
 <a name="pragma_index_info"></a>
 <li><p><b>PRAGMA index_info(</b><i>index-name</i><b>);</b></p>

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.627 2007/06/20 15:29:25 drh Exp $
+** $Id: vdbe.c,v 1.628 2007/06/24 08:00:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2515,9 +2515,16 @@ case OP_Transaction: {       /* no-push */
 */
 case OP_ReadCookie: {
   int iMeta;
+  int iDb = pOp->p1;
+  int iCookie = pOp->p2;
+
   assert( pOp->p2<SQLITE_N_BTREE_META );
-  assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( db->aDb[pOp->p1].pBt!=0 );
+  if( iDb<0 ){
+    iDb = (-1*(iDb+1));
+    iCookie *= -1;
+  }
+  assert( iDb>=0 && iDb<db->nDb );
+  assert( db->aDb[iDb].pBt!=0 );
   /* The indexing of meta values at the schema layer is off by one from
   ** the indexing in the btree layer.  The btree considers meta[0] to
   ** be the number of free pages in the database (a read-only value)
@@ -2525,7 +2532,7 @@ case OP_ReadCookie: {
   ** meta[1] to be the schema cookie.  So we have to shift the index
   ** by one in the following statement.
   */
-  rc = sqlite3BtreeGetMeta(db->aDb[pOp->p1].pBt, 1 + pOp->p2, (u32 *)&iMeta);
+  rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, 1 + iCookie, (u32 *)&iMeta);
   pTos++;
   pTos->u.i = iMeta;
   pTos->flags = MEM_Int;

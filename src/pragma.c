@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.139 2007/05/23 13:50:24 danielk1977 Exp $
+** $Id: pragma.c,v 1.140 2007/06/24 08:00:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1006,17 +1006,27 @@ void sqlite3Pragma(
   ** The user-version is not used internally by SQLite. It may be used by
   ** applications for any purpose.
   */
-  if( sqlite3StrICmp(zLeft, "schema_version")==0 ||
-      sqlite3StrICmp(zLeft, "user_version")==0 ){
+  if( sqlite3StrICmp(zLeft, "schema_version")==0 
+   || sqlite3StrICmp(zLeft, "user_version")==0 
+   || sqlite3StrICmp(zLeft, "freelist_count")==0 
+  ){
 
     int iCookie;   /* Cookie index. 0 for schema-cookie, 6 for user-cookie. */
-    if( zLeft[0]=='s' || zLeft[0]=='S' ){
-      iCookie = 0;
-    }else{
-      iCookie = 5;
+    switch( zLeft[0] ){
+      case 's': case 'S':
+        iCookie = 0;
+        break;
+      case 'f': case 'F':
+        iCookie = 1;
+        iDb = (-1*(iDb+1));
+        assert(iDb<=0);
+        break;
+      default:
+        iCookie = 5;
+        break;
     }
 
-    if( zRight ){
+    if( zRight && iDb>=0 ){
       /* Write the specified cookie value */
       static const VdbeOpList setCookie[] = {
         { OP_Transaction,    0,  1,  0},    /* 0 */

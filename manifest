@@ -1,5 +1,5 @@
-C When\sexpanding\s'*'\sin\sthe\sresult\sset\sof\sa\sSELECT,\squote\sthe\sexpanded\sidentifiers.\sFix\sfor\s#2450.\s(CVS\s4111)
-D 2007-06-24T06:32:18
+C Add\sthe\s"(database.)freelist_count"\sPRAGMA.\sFor\squerying\sthe\ssize\sof\sthe\ndatabase\sfree-list.\s(CVS\s4112)
+D 2007-06-24T08:00:43
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -99,7 +99,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 39352b58ee840cae715a4f0d20e446aa5e1445fe
 F src/pager.h 94110a5570dca30d54a883e880a3633b2e4c05ae
 F src/parse.y ad2ce25665be7f7303137f774a4e3e72e0d036ff
-F src/pragma.c 0d25dad58bdfd6789943a10f1b9663c2eb85b96d
+F src/pragma.c d2e6f5da991594e1c2c7636927f6be7cf66e81bd
 F src/prepare.c 87c23644986b5e41a58bc76f05abebd899e00089
 F src/printf.c 9b3048d270e8bb2f8b910b491ac3aadece6cfab2
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
@@ -137,7 +137,7 @@ F src/update.c 3359041db390a8f856d67272f299600e2104f350
 F src/utf.c 01b2aba02b10d12903e9e1ff897215c9faf6b662
 F src/util.c 80cdf6b68d03b8f0ab3237a390842e039cff66c6
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c a7407f045ecc35fc2a9ddeffdd06145e402a7685
+F src/vdbe.c 219cfe39555e6144d0b2b902832aaee18c9e0f0e
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h 7d2bf163d6d4e815724a457f2216dd8e38c3955c
 F src/vdbeapi.c 7930b9a188ab385287ca3eb3840af7225cb43549
@@ -330,6 +330,7 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test b4b38eb3cf76be2be444326856248898bb0e3fc9
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
 F test/pragma.test b0e73879206934a835856a8b8c4cc884cd8562f3
+F test/pragma2.test 6639e9e53fd91b2f1b58a5cf3d86fbe2fc9a70f5
 F test/printf.test 69d8cb0771a1a5e4d9d5dece12fc2c16179ac5e5
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 1c712dd6516e1377471744fa765e41c79a357da6
@@ -501,7 +502,7 @@ F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
 F www/optoverview.tcl 815df406a38c9f69b27d37e8f7ede004c6d9f19e
-F www/pragma.tcl 394028988b9c22c23439a67a21be9e1fb818d258
+F www/pragma.tcl bb3ae44a9c4a3e1047c07657954dd4ea18911194
 F www/quickstart.tcl 8708a4ca83fbf55c66af1782992626f20c3df095
 F www/shared.gif 265bae80c5b311c5a86e47662821076ffaf5c6ea
 F www/sharedcache.tcl 3ebec81110e606af6fd65a3c4c19562cb173b29c
@@ -513,7 +514,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f35e20e19633d7b114fdf145820ca5d61b5aa925
-R 0028662710d587da4e5d82de686d252d
+P d5b7224f37db1729dd042d48765d7a79247e1bde
+R 68c93754de3917a7a2bfaeb6e4eb9132
 U danielk1977
-Z 13d4831b99a0601e7fdfc2a1c76b4c67
+Z 04ec3282e5bef0f3d8094230d12c6499
