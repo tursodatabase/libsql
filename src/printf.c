@@ -74,6 +74,7 @@
 #define etTOKEN      13 /* a pointer to a Token structure */
 #define etSRCLIST    14 /* a pointer to a SrcList */
 #define etPOINTER    15 /* The %p conversion */
+#define etSQLESCAPE3 16 /* %w -> Strings with '\"' doubled */
 
 
 /*
@@ -115,6 +116,7 @@ static const et_info fmtinfo[] = {
   {  'z',  0, 6, etDYNSTRING,  0,  0 },
   {  'q',  0, 4, etSQLESCAPE,  0,  0 },
   {  'Q',  0, 4, etSQLESCAPE2, 0,  0 },
+  {  'w',  0, 4, etSQLESCAPE3, 0,  0 },
   {  'c',  0, 0, etCHARX,      0,  0 },
   {  'o',  8, 0, etRADIX,      0,  2 },
   {  'u', 10, 0, etRADIX,      0,  0 },
@@ -611,14 +613,16 @@ static int vxprintf(
         if( precision>=0 && precision<length ) length = precision;
         break;
       case etSQLESCAPE:
-      case etSQLESCAPE2: {
+      case etSQLESCAPE2:
+      case etSQLESCAPE3: {
         int i, j, n, ch, isnull;
         int needQuote;
+        char q = ((xtype==etSQLESCAPE3)?'"':'\'');   /* Quote character */
         char *escarg = va_arg(ap,char*);
         isnull = escarg==0;
         if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
         for(i=n=0; (ch=escarg[i])!=0; i++){
-          if( ch=='\'' )  n++;
+          if( ch==q )  n++;
         }
         needQuote = !isnull && xtype==etSQLESCAPE2;
         n += i + 1 + needQuote*2;
@@ -629,12 +633,12 @@ static int vxprintf(
           bufpt = buf;
         }
         j = 0;
-        if( needQuote ) bufpt[j++] = '\'';
+        if( needQuote ) bufpt[j++] = q;
         for(i=0; (ch=escarg[i])!=0; i++){
           bufpt[j++] = ch;
-          if( ch=='\'' ) bufpt[j++] = ch;
+          if( ch==q ) bufpt[j++] = ch;
         }
-        if( needQuote ) bufpt[j++] = '\'';
+        if( needQuote ) bufpt[j++] = q;
         bufpt[j] = 0;
         length = j;
         /* The precision is ignored on %q and %Q */
