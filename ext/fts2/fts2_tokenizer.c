@@ -1,3 +1,30 @@
+/*
+** 2007 June 22
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** This is part of an SQLite module implementing full-text search.
+** This particular file implements the generic tokenizer interface.
+*/
+
+/*
+** The code in this file is only compiled if:
+**
+**     * The FTS2 module is being built as an extension
+**       (in which case SQLITE_CORE is not defined), or
+**
+**     * The FTS2 module is being built into the core of
+**       SQLite (in which case SQLITE_ENABLE_FTS2 is defined).
+*/
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS2)
+
 
 #include "sqlite3.h"
 #include "sqlite3ext.h"
@@ -341,3 +368,4 @@ int sqlite3Fts2InitHashTable(
   return rc;
 }
 
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS2) */

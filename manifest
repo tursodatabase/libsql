@@ -1,5 +1,5 @@
-C All\sthe\suse\sof\sMySQL-style\squoting\sin\sthe\sFTS\smodules.\s\sTicket\s#2446.\s(CVS\s4119)
-D 2007-06-25T12:49:06
+C Put\s#ifdefs\sin\sfts2_tokenizer\sso\sthat\sthe\sbuild\sworks\seven\swhen\sFTS2\nis\somitted.\s\sAdd\sthe\sSQLite\sblessing\sto\sthe\sheader\scomments\son\sall\sFTS2\nsource\sfiles.\s(CVS\s4120)
+D 2007-06-25T13:50:04
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -37,16 +37,16 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 2ff290e0a130f6e7611f2e608cb3b5aaea721abc
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c d402141bd339f8d5881c05c9104959fbcf039ccb
-F ext/fts2/fts2.h 591916a822cfb6426518fdbf6069359119bc46eb
+F ext/fts2/fts2.c e6015f3a98edbcb29f4922fb7e6ec4039aa90a61
+F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
 F ext/fts2/fts2_icu.c 45b54d1e075020b35db20f69d829f95ca0651111
 F ext/fts2/fts2_porter.c 991a45463553c7318063fe7773368a6c0f39e35d
-F ext/fts2/fts2_tokenizer.c 9200889237906d5607496dbd4c8b8c53a617ca71
+F ext/fts2/fts2_tokenizer.c 36ef7d2004cf2be869a4dd0e784a0804a8619461
 F ext/fts2/fts2_tokenizer.h 6d151c51382e8f6cf689c616bb697fe780478089
-F ext/fts2/fts2_tokenizer1.c 5c979fe8815f95396beb22b627571da895a025af
-F ext/fts2/mkfts2amal.tcl 2a9ec76b0760fe7f3669dca5bc0d60728bc1c977
+F ext/fts2/fts2_tokenizer1.c 719f6eb8cf94a8a5be6576c9b3d94d22deeea816
+F ext/fts2/mkfts2amal.tcl 346454361d1c11e8839b629102d257bafcd7b3c7
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
@@ -515,7 +515,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P fbcf2d75cd2b88d175c122477aa483f0771870e5
-R 6b15629d97d8ed3f199946758b4a6655
+P 3be2a6d1c342454d93b05c38f3d9a960ab15dae2
+R a0ee812c4fb5f9207bb7a5036f901895
 U drh
-Z 8a6ebd38b49bd3fa6b3ff4c5ba27fa44
+Z 622822cd514b2de2535efbab623c0758
