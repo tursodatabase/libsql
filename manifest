@@ -1,5 +1,5 @@
-C Add\ssome\sdocumentation\sfor\suser-defined\sfts2\stokenizers.\s(CVS\s4116)
-D 2007-06-25T09:52:31
+C Add\ssome\stests\sfor\sthe\sfts2\sicu\stokenizer.\s(CVS\s4117)
+D 2007-06-25T11:24:39
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -43,7 +43,7 @@ F ext/fts2/fts2_hash.c b3f22116d4ef0bc8f2da6e3fdc435c86d0951a9b
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
 F ext/fts2/fts2_icu.c 45b54d1e075020b35db20f69d829f95ca0651111
 F ext/fts2/fts2_porter.c 991a45463553c7318063fe7773368a6c0f39e35d
-F ext/fts2/fts2_tokenizer.c 836373ee0fab4f8288a7815496529f25e4504881
+F ext/fts2/fts2_tokenizer.c 40aa54fab0305b53f883fe4a394552f71dda29ee
 F ext/fts2/fts2_tokenizer.h 6d151c51382e8f6cf689c616bb697fe780478089
 F ext/fts2/fts2_tokenizer1.c 5c979fe8815f95396beb22b627571da895a025af
 F ext/fts2/mkfts2amal.tcl 2a9ec76b0760fe7f3669dca5bc0d60728bc1c977
@@ -256,7 +256,7 @@ F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/fts2o.test 05ce2ac9111c29998418a584de02136a0ded471b
-F test/fts2token.test 8cfc9ee33361b93fa175197f25fefdd13dfb442e
+F test/fts2token.test 5f349000669bc10bb392c87443ca5d3a587c9df0
 F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
@@ -515,7 +515,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5b0408ddd0f1c825f402d0f5a3088a61b5ecd2c3
-R ba9f214b2c9893e0ab7d0a1d3ada75bc
+P 5a9eee86587219a68655d548864d129edec969ae
+R 61c2bfb00d5da35c1ad182696b085ade
 U danielk1977
-Z 128ebbe7f73a75dd3845535d3b5f71db
+Z 97c1d47f7790b3efb6130173bff1e39a

@@ -117,6 +117,8 @@ static void testFunc(
   const char *zInput;
   int nInput;
 
+  const char *zArg = 0;
+
   const char *zToken;
   int nToken;
   int iStart;
@@ -125,12 +127,16 @@ static void testFunc(
 
   Tcl_Obj *pRet;
 
-  assert( argc==2 );
+  assert( argc==2 || argc==3 );
 
   nName = sqlite3_value_bytes(argv[0]);
   zName = (const char *)sqlite3_value_text(argv[0]);
-  nInput = sqlite3_value_bytes(argv[1]);
-  zInput = (const char *)sqlite3_value_text(argv[1]);
+  nInput = sqlite3_value_bytes(argv[argc-1]);
+  zInput = (const char *)sqlite3_value_text(argv[argc-1]);
+
+  if( argc==3 ){
+    zArg = (const char *)sqlite3_value_text(argv[1]);
+  }
 
   pHash = (fts2Hash *)sqlite3_user_data(context);
   p = (sqlite3_tokenizer_module *)sqlite3Fts2HashFind(pHash, zName, nName+1);
@@ -145,7 +151,7 @@ static void testFunc(
   pRet = Tcl_NewObj();
   Tcl_IncrRefCount(pRet);
 
-  if( SQLITE_OK!=p->xCreate(0, 0, &pTokenizer) ){
+  if( SQLITE_OK!=p->xCreate(zArg ? 1 : 0, &zArg, &pTokenizer) ){
     zErr = "error in xCreate()";
     goto finish;
   }
@@ -221,6 +227,7 @@ int sqlite3Fts2InitHashTable(
    || (rc = sqlite3_create_function(db, zName, 2, any, p, scalarFunc, 0, 0))
 #ifdef SQLITE_TEST
    || (rc = sqlite3_create_function(db, zTest, 2, any, p, testFunc, 0, 0))
+   || (rc = sqlite3_create_function(db, zTest, 3, any, p, testFunc, 0, 0))
 #endif
   );
 

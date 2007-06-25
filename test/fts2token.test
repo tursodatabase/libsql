@@ -12,7 +12,7 @@
 # of this script is testing the pluggable tokeniser feature of the 
 # FTS2 module.
 #
-# $Id: fts2token.test,v 1.1 2007/06/22 15:21:16 danielk1977 Exp $
+# $Id: fts2token.test,v 1.2 2007/06/25 11:24:39 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -22,6 +22,19 @@ source $testdir/tester.tcl
 ifcapable !fts2 {
   finish_test
   return
+}
+
+proc escape_string {str} {
+  set out ""
+  foreach char [split $str ""] {
+    scan $char %c i
+    if {$i<=127} {
+      append out $char
+    } else {
+      append out [format {\x%.4x} $i]
+    }
+  }
+  set out
 }
 
 #--------------------------------------------------------------------------
@@ -95,13 +108,63 @@ do_test fts2token-3.2 {
     SELECT fts2_tokenizer_test('porter', 'I don''t see how');
   }
 } {{0 i I 1 don don 2 t t 3 see see 4 how how}}
-
 ifcapable icu {
   do_test fts2token-3.3 {
     execsql {
       SELECT fts2_tokenizer_test('icu', 'I don''t see how');
     }
   } {{0 i I 1 don't don't 2 see see 3 how how}}
+}
+
+#--------------------------------------------------------------------------
+# Test cases fts2token-4.* test the ICU tokenizer. In practice, this
+# tokenizer only has two modes - "thai" and "everybody else". Some other
+# Asian languages (Lao, Khmer etc.) require the same special treatment as 
+# Thai, but ICU doesn't support them yet.
+#
+ifcapable icu {
+
+  proc do_icu_test {name locale input output} {
+    set ::out [db eval { SELECT fts2_tokenizer_test('icu', $locale, $input) }]
+    do_test $name {
+      lindex $::out 0
+    } $output
+  }
+  
+  do_icu_test fts2token-4.1 en_US  {}   {}
+  do_icu_test fts2token-4.2 en_US {Test cases fts2} [list \
+    0 test Test 1 cases cases 2 fts2 fts2
+  ]
+
+  # The following test shows that ICU is smart enough to recognise
+  # Thai chararacters, even when the locale is set to English/United 
+  # States.
+  #
+  set input "\u0e2d\u0e30\u0e44\u0e23\u0e19\u0e30\u0e04\u0e23\u0e31\u0e1a"
+  set output    "0 \u0e2d\u0e30\u0e44\u0e23 \u0e2d\u0e30\u0e44\u0e23 "
+  append output "1 \u0e19\u0e30 \u0e19\u0e30 "
+  append output "2 \u0e04\u0e23\u0e31\u0e1a \u0e04\u0e23\u0e31\u0e1a"
+
+  do_icu_test fts2token-4.3 th_TH  $input $output
+  do_icu_test fts2token-4.4 en_US  $input $output
+
+  # ICU handles an unknown locale by falling back to the default.
+  # So this is not an error.
+  do_icu_test fts2token-4.5 MiddleOfTheOcean  $input $output
+
+  set    longtoken "AReallyReallyLongTokenOneThatWillSurelyRequire"
+  append longtoken "AReallocInTheIcuTokenizerCode"
+
+  set    input "short tokens then "
+  append input $longtoken
+  set    output "0 short short "
+  append output "1 tokens tokens "
+  append output "2 then then "
+  append output "3 [string tolower $longtoken] $longtoken"
+
+  do_icu_test fts2token-4.6 MiddleOfTheOcean  $input $output
+  do_icu_test fts2token-4.7 th_TH  $input $output
+  do_icu_test fts2token-4.8 en_US  $input $output
 }
 
 finish_test
