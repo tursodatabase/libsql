@@ -73,6 +73,7 @@ static void scalarFunc(
 #ifdef SQLITE_TEST
 
 #include <tcl.h>
+#include <string.h>
 
 /*
 ** Implementation of a special SQL scalar function for testing tokenizers 
@@ -187,6 +188,105 @@ finish:
   }
   Tcl_DecrRefCount(pRet);
 }
+
+static
+int registerTokenizer(
+  sqlite3 *db, 
+  char *zName, 
+  const sqlite3_tokenizer_module *p
+){
+  int rc;
+  sqlite3_stmt *pStmt;
+  const char zSql[] = "SELECT fts2_tokenizer(?, ?)";
+
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+
+  sqlite3_bind_text(pStmt, 1, zName, -1, SQLITE_STATIC);
+  sqlite3_bind_blob(pStmt, 2, &p, sizeof(p), SQLITE_STATIC);
+  sqlite3_step(pStmt);
+
+  return sqlite3_finalize(pStmt);
+}
+
+static
+int queryTokenizer(
+  sqlite3 *db, 
+  char *zName,  
+  const sqlite3_tokenizer_module **pp
+){
+  int rc;
+  sqlite3_stmt *pStmt;
+  const char zSql[] = "SELECT fts2_tokenizer(?)";
+
+  *pp = 0;
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+
+  sqlite3_bind_text(pStmt, 1, zName, -1, SQLITE_STATIC);
+  if( SQLITE_ROW==sqlite3_step(pStmt) ){
+    if( sqlite3_column_type(pStmt, 0)==SQLITE_BLOB ){
+      memcpy(pp, sqlite3_column_blob(pStmt, 0), sizeof(*pp));
+    }
+  }
+
+  return sqlite3_finalize(pStmt);
+}
+
+void sqlite3Fts2SimpleTokenizerModule(sqlite3_tokenizer_module const**ppModule);
+
+/*
+** Implementation of the scalar function fts2_tokenizer_internal_test().
+** This function is used for testing only, it is not included in the
+** build unless SQLITE_TEST is defined.
+**
+** The purpose of this is to test that the fts2_tokenizer() function
+** can be used as designed by the C-code in the queryTokenizer and
+** registerTokenizer() functions above. These two functions are repeated
+** in the README.tokenizer file as an example, so it is important to
+** test them.
+**
+** To run the tests, evaluate the fts2_tokenizer_internal_test() scalar
+** function with no arguments. An assert() will fail if a problem is
+** detected. i.e.:
+**
+**     SELECT fts2_tokenizer_internal_test();
+**
+*/
+static void intTestFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int rc;
+  const sqlite3_tokenizer_module *p1;
+  const sqlite3_tokenizer_module *p2;
+  sqlite3 *db = (sqlite3 *)sqlite3_user_data(context);
+
+  /* Test the query function */
+  sqlite3Fts2SimpleTokenizerModule(&p1);
+  rc = queryTokenizer(db, "simple", &p2);
+  assert( rc==SQLITE_OK );
+  assert( p1==p2 );
+  rc = queryTokenizer(db, "nosuchtokenizer", &p2);
+  assert( rc==SQLITE_ERROR );
+  assert( p2==0 );
+  assert( 0==strcmp(sqlite3_errmsg(db), "unknown tokenizer: nosuchtokenizer") );
+
+  /* Test the storage function */
+  rc = registerTokenizer(db, "nosuchtokenizer", p1);
+  assert( rc==SQLITE_OK );
+  rc = queryTokenizer(db, "nosuchtokenizer", &p2);
+  assert( rc==SQLITE_OK );
+  assert( p2==p1 );
+
+  sqlite3_result_text(context, "ok", -1, SQLITE_STATIC);
+}
+
 #endif
 
 /*
@@ -213,25 +313,31 @@ int sqlite3Fts2InitHashTable(
 ){
   int rc;
   void *p = (void *)pHash;
+  void *pdb = (void *)db;
   const int any = SQLITE_ANY;
   char *zTest = 0;
+  char *zTest2 = 0;
 
 #ifdef SQLITE_TEST
   zTest = sqlite3_mprintf("%s_test", zName);
-  if( !zTest ){
-    return SQLITE_NOMEM;
+  zTest2 = sqlite3_mprintf("%s_internal_test", zName);
+  if( !zTest || !zTest2 ){
+    rc = SQLITE_NOMEM;
   }
 #endif
 
-  if( (rc = sqlite3_create_function(db, zName, 1, any, p, scalarFunc, 0, 0))
+  if( rc!=SQLITE_OK
+   || (rc = sqlite3_create_function(db, zName, 1, any, p, scalarFunc, 0, 0))
    || (rc = sqlite3_create_function(db, zName, 2, any, p, scalarFunc, 0, 0))
 #ifdef SQLITE_TEST
    || (rc = sqlite3_create_function(db, zTest, 2, any, p, testFunc, 0, 0))
    || (rc = sqlite3_create_function(db, zTest, 3, any, p, testFunc, 0, 0))
+   || (rc = sqlite3_create_function(db, zTest2, 0, any, pdb, intTestFunc, 0, 0))
 #endif
   );
 
   sqlite3_free(zTest);
+  sqlite3_free(zTest2);
   return rc;
 }
 

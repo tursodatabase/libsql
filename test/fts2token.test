@@ -12,7 +12,7 @@
 # of this script is testing the pluggable tokeniser feature of the 
 # FTS2 module.
 #
-# $Id: fts2token.test,v 1.2 2007/06/25 11:24:39 danielk1977 Exp $
+# $Id: fts2token.test,v 1.3 2007/06/25 12:05:40 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -166,5 +166,9 @@ ifcapable icu {
   do_icu_test fts2token-4.7 th_TH  $input $output
   do_icu_test fts2token-4.8 en_US  $input $output
 }
+
+do_test fts2token-internal {
+  execsql { SELECT fts2_tokenizer_internal_test() }
+} {ok}
 
 finish_test

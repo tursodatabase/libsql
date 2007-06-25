@@ -47,8 +47,8 @@
   it is registered as tokenizer <tokenizer-name> and a copy of it
   returned. If only one argument is passed, a pointer to the tokenizer
   implementation currently registered as <tokenizer-name> is returned,
-  encoded as a blob. Or, if no such tokenizer exists, an SQL NULL value 
-  is returned.
+  encoded as a blob. Or, if no such tokenizer exists, an SQL exception
+  (error) is raised.
 
   SECURITY: If the fts2 extension is used in an environment where potentially
     malicious users may execute arbitrary SQL (i.e. gears), they should be
@@ -86,39 +86,49 @@
   The following two code samples illustrate the way C code should invoke
   the fts2_tokenizer() scalar function:
 
-  int registerTokenizer(sqlite3 *db, char *zName, sqlite3_tokenizer_module *p){
-    sqlite3_stmt *pStmt;
-    const char zSql[] = "SELECT fts2_tokenizer(?, ?)";
-
-    rc = sqlite3_prepare_v2(db, zSql, &pStmt);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-
-    sqlite3_bind_text(pStmt, 1, zName, -1, SQLITE_STATIC);
-    sqlite3_bind_blob(pStmt, 2, &p, sizeof(p), SQLITE_STATIC);
-    sqlite3_step(pStmt);
-
-    return sqlite3_finalize(pStmt);
-  }
-
-  int queryTokenizer(sqlite3 *db, char *zName, sqlite3_tokenizer_module **pp){
-    sqlite3_stmt *pStmt;
-    const char zSql[] = "SELECT fts2_tokenizer(?)";
-
-    *pp = 0;
-    rc = sqlite3_prepare_v2(db, zSql, &pStmt);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-
-    sqlite3_bind_text(pStmt, 1, zName, -1, SQLITE_STATIC);
-    if( SQLITE_ROW==sqlite3_step(pStmt) ){
-      if( sqlite3_column_type(pStmt, 0)==SQLITE_BLOB ){
-        memcpy(pp, sqlite3_column_blob(pStmt, 0), sizeof(*pp));
+      int registerTokenizer(
+        sqlite3 *db, 
+        char *zName, 
+        const sqlite3_tokenizer_module *p
+      ){
+        int rc;
+        sqlite3_stmt *pStmt;
+        const char zSql[] = "SELECT fts2_tokenizer(?, ?)";
+      
+        rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+      
+        sqlite3_bind_text(pStmt, 1, zName, -1, SQLITE_STATIC);
+        sqlite3_bind_blob(pStmt, 2, &p, sizeof(p), SQLITE_STATIC);
+        sqlite3_step(pStmt);
+      
+        return sqlite3_finalize(pStmt);
       }
-    }
-
-    return sqlite3_finalize(pStmt);
-  }
+      
+      int queryTokenizer(
+        sqlite3 *db, 
+        char *zName,  
+        const sqlite3_tokenizer_module **pp
+      ){
+        int rc;
+        sqlite3_stmt *pStmt;
+        const char zSql[] = "SELECT fts2_tokenizer(?)";
+      
+        *pp = 0;
+        rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+      
+        sqlite3_bind_text(pStmt, 1, zName, -1, SQLITE_STATIC);
+        if( SQLITE_ROW==sqlite3_step(pStmt) ){
+          if( sqlite3_column_type(pStmt, 0)==SQLITE_BLOB ){
+            memcpy(pp, sqlite3_column_blob(pStmt, 0), sizeof(*pp));
+          }
+        }
+      
+        return sqlite3_finalize(pStmt);
+      }
 
