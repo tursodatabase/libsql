@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.42 2007/05/14 11:34:47 drh Exp $
+# $Id: where.test,v 1.43 2007/06/25 16:29:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -1137,6 +1137,19 @@ do_test where-14.12 {
   } 
 } {4/4 4/1 1/4 1/1 sort}
 
+# Ticket #2445.
+#
+# There was a crash that could occur when a where clause contains an
+# alias for an expression in the result set, and that expression retrieves
+# a column of the second or subsequent table in a join.
+#
+do_test where-15.1 {
+  execsql {
+    CREATE TEMP TABLE t1 (a, b, c, d, e);
+    CREATE TEMP TABLE t2 (f);
+    SELECT t1.e AS alias FROM t2, t1 WHERE alias = 1 ;
+  }
+} {}
 
 integrity_check {where-99.0}
 

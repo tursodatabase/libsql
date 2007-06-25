@@ -1,5 +1,5 @@
-C Modify\sthe\snon-configure\sbuild\ssystem\sto\smake\sit\seasier\sto\sbuild\sthe\slibrary\swith\sthe\sfts2\sor\sicu\sextensions\slinked\sin.\s(CVS\s4121)
-D 2007-06-25T14:28:48
+C Fix\sfor\s#2445.\sA\sbug\sin\sthe\slookupName()\slogic\sthat\scould\scause\sa\scrash\swhen\sa\sWHERE\sclause\sused\san\salias\sto\srefer\sto\san\sexpression\sin\sthe\sresult-set\sof\sthe\sSELECT,\sand\sthat\sexpression\swas\sitself\sa\sreference\sto\sa\stable\scolumn.\s(CVS\s4122)
+D 2007-06-25T16:29:34
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -75,7 +75,7 @@ F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 6049db7d5a8fdf2c677ff7d58fa31d4f6593c988
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 763ca2b39fe551a6dc7d37ba40544311622eee32
+F src/expr.c de9f55b1baed00199466028ad96967208d487798
 F src/func.c 6b45261aa2c514f642201b90493af68469c04af6
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
@@ -134,7 +134,7 @@ F src/test_server.c 76c0baf509abe65ca6e5c7974ab0097cfdd8b833
 F src/test_tclvar.c 315e77c17f128ff8c06b38c08617fd07c825a95b
 F src/tokenize.c 6cef9e6fc454d789a32c5b509ccb193a2b01977b
 F src/trigger.c 420192efe3e6f03addf7897c60c3c8bf913d3493
-F src/update.c 3359041db390a8f856d67272f299600e2104f350
+F src/update.c 6b10becb6235ea314ed245fbfbf8b38755e3166e
 F src/utf.c 01b2aba02b10d12903e9e1ff897215c9faf6b662
 F src/util.c 80cdf6b68d03b8f0ab3237a390842e039cff66c6
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
@@ -431,7 +431,7 @@ F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
 F test/vtab_err.test 9eabf98b26838fed8bac4aea986580be0a2bd52e
 F test/vtab_shared.test d631d1f820c38c18939d53aab1fc35db5f0a8094
-F test/where.test 5c342d6ad0d777275d4740ea5cbeaf5173b6eda4
+F test/where.test 1bcde8984c63747ac6d6bafcacd20fd6e8a223de
 F test/where2.test 3249d426b3fc7a106713d784e1628307fc308d2e
 F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
 F test/where4.test f80207a4ea6504f3d0962f3ecebc7db274ea50c0
@@ -515,7 +515,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c795e6fd8f01bcbc1967062632c13d4952abf4d8
-R 36649f70433e3c0885d05bda9f2d7c0a
+P 02b23c4394da7efb82e9318146f10818b0f68b1f
+R 0b7987f665943fbbfc4744c2a66803b3
 U danielk1977
-Z 38df0eb7692e9724b2c5e31d97a48a87
+Z 03cd9b4e47591553bbb663ee352448e0
