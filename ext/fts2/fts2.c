@@ -2402,6 +2402,7 @@ static int getToken(const char *z, int *tokenType){
       *tokenType = TOKEN_SPACE;
       return i;
     }
+    case '`':
     case '\'':
     case '"': {
       int delim = z[0];
