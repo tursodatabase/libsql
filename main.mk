@@ -65,6 +65,9 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o btree.o build.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbefifo.o vdbemem.o \
          where.o utf.o legacy.o vtab.o
 
+EXTOBJ = icu.o fts2.o fts2_hash.o fts2_icu.o fts2_porter.o       \
+         fts2_tokenizer.o fts2_tokenizer1.o
+
 # All of the source code files.
 #
 SRC = \
@@ -202,7 +205,8 @@ TESTSRC = \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbeaux.c \
-  $(TOP)/src/where.c
+  $(TOP)/src/where.c \
+  $(TOP)/ext/fts2/fts2_tokenizer.c
 
 # Header files used by all library source files.
 #
@@ -249,8 +253,8 @@ last_change:	$(SRC)
 	cat $(SRC) | grep '$$Id: ' | sort -k 5 | tail -1 \
           | $(NAWK) '{print $$5,$$6}' >last_change
 
-libsqlite3.a:	$(LIBOBJ)
-	$(AR) libsqlite3.a $(LIBOBJ)
+libsqlite3.a:	$(LIBOBJ) $(EXTOBJ)
+	$(AR) libsqlite3.a $(LIBOBJ) $(EXTOBJ)
 	$(RANLIB) libsqlite3.a
 
 sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
@@ -450,6 +454,30 @@ vtab.o:	$(TOP)/src/vtab.c $(VDBEHDR) $(HDR)
 where.o:	$(TOP)/src/where.c $(HDR)
 	$(TCCX) -c $(TOP)/src/where.c
 
+# Rules to build the extension objects.
+#
+icu.o:	$(TOP)/ext/icu/icu.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/icu/icu.c
+
+fts2.o:	$(TOP)/ext/fts2/fts2.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts2/fts2.c
+
+fts2_hash.o:	$(TOP)/ext/fts2/fts2_hash.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts2/fts2_hash.c
+
+fts2_icu.o:	$(TOP)/ext/fts2/fts2_icu.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts2/fts2_icu.c
+
+fts2_porter.o:	$(TOP)/ext/fts2/fts2_porter.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts2/fts2_porter.c
+
+fts2_tokenizer.o:	$(TOP)/ext/fts2/fts2_tokenizer.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts2/fts2_tokenizer.c
+
+fts2_tokenizer1.o:	$(TOP)/ext/fts2/fts2_tokenizer1.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts2/fts2_tokenizer1.c
+
+
 # Rules for building test programs and for running tests
 #
 tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
@@ -459,7 +487,7 @@ tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
 testfixture$(EXE):	$(TOP)/src/tclsqlite.c libsqlite3.a $(TESTSRC)
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
 		-DSQLITE_SERVER=1 -o testfixture$(EXE) \
-		$(TESTSRC) $(EXTSRC) $(TOP)/src/tclsqlite.c \
+		-DSQLITE_CORE $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.a $(LIBTCL) $(THREADLIB)
 
 fulltest:	testfixture$(EXE) sqlite3$(EXE)

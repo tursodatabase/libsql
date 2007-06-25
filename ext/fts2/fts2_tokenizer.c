@@ -340,12 +340,12 @@ int sqlite3Fts2InitHashTable(
 ){
   int rc;
   void *p = (void *)pHash;
-  void *pdb = (void *)db;
   const int any = SQLITE_ANY;
   char *zTest = 0;
   char *zTest2 = 0;
 
 #ifdef SQLITE_TEST
+  void *pdb = (void *)db;
   zTest = sqlite3_mprintf("%s_test", zName);
   zTest2 = sqlite3_mprintf("%s_internal_test", zName);
   if( !zTest || !zTest2 ){
