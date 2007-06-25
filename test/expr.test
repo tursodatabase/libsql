@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.55 2007/05/10 17:23:12 drh Exp $
+# $Id: expr.test,v 1.56 2007/06/25 17:28:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -136,8 +136,8 @@ test_expr expr-1.101 {i1=0, i2=''} {i1=i2} 0
 test_expr expr-1.102 {i1=40, i2=1} {i2<<i1} 1099511627776
 
 test_expr expr-1.103 {i1=0} {(-2147483648.0 % -1)} 0.0
-test_expr expr-1.104 {i1=0} {(-9223372036854775808 % -1)} 0.0
-test_expr expr-1.105 {i1=0} {(-9223372036854775808 / -1)>1} 1
+test_expr expr-1.104 {i1=0} {(-9223372036854775808.0 % -1)} 0.0
+test_expr expr-1.105 {i1=0} {(-9223372036854775808.0 / -1)>1} 1
 
 test_expr expr-2.1 {r1=1.23, r2=2.34} {r1+r2} 3.57
 test_expr expr-2.2 {r1=1.23, r2=2.34} {r1-r2} -1.11
@@ -639,10 +639,37 @@ do_test expr-11.1 {
   execsql {SELECT typeof(9223372036854775807)}
 } {integer}
 do_test expr-11.2 {
+  execsql {SELECT typeof(00000009223372036854775807)}
+} {integer}
+do_test expr-11.3 {
+  execsql {SELECT typeof(+9223372036854775807)}
+} {integer}
+do_test expr-11.4 {
+  execsql {SELECT typeof(+000000009223372036854775807)}
+} {integer}
+do_test expr-11.5 {
   execsql {SELECT typeof(9223372036854775808)}
 } {real}
-do_test expr-11.3 {
-  execsql {SELECT typeof(92233720368547758070)}
+do_test expr-11.6 {
+  execsql {SELECT typeof(00000009223372036854775808)}
+} {real}
+do_test expr-11.7 {
+  execsql {SELECT typeof(+9223372036854775808)}
+} {real}
+do_test expr-11.8 {
+  execsql {SELECT typeof(+0000009223372036854775808)}
+} {real}
+do_test expr-11.11 {
+  execsql {SELECT typeof(-9223372036854775808)}
+} {integer}
+do_test expr-11.12 {
+  execsql {SELECT typeof(-00000009223372036854775808)}
+} {integer}
+do_test expr-11.13 {
+  execsql {SELECT typeof(-9223372036854775809)}
+} {real}
+do_test expr-11.14 {
+  execsql {SELECT typeof(-00000009223372036854775809)}
 } {real}
 
 # These two statements used to leak memory (because of missing %destructor

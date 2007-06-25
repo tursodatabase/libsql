@@ -307,7 +307,7 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
       return 0;
     }
     assert( pMem->z );
-    sqlite3Atoi64(pMem->z, &value);
+    sqlite3_atoi64(pMem->z, &value);
     return value;
   }else{
     return 0;

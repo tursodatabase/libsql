@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.630 2007/06/24 16:11:03 danielk1977 Exp $
+** $Id: vdbe.c,v 1.631 2007/06/25 17:28:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -227,7 +227,7 @@ static void applyNumericAffinity(Mem *pRec){
          && sqlite3IsNumber(pRec->z, &realnum, pRec->enc) ){
       i64 value;
       sqlite3VdbeChangeEncoding(pRec, SQLITE_UTF8);
-      if( !realnum && sqlite3Atoi64(pRec->z, &value) ){
+      if( !realnum && sqlite3_atoi64(pRec->z, &value) ){
         sqlite3VdbeMemRelease(pRec);
         pRec->u.i = value;
         pRec->flags = MEM_Int;
