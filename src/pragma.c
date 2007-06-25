@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.140 2007/06/24 08:00:43 danielk1977 Exp $
+** $Id: pragma.c,v 1.141 2007/06/25 08:16:58 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -424,6 +424,9 @@ void sqlite3Pragma(
 #ifndef SQLITE_OMIT_AUTOVACUUM
   if( sqlite3StrICmp(zLeft,"auto_vacuum")==0 ){
     Btree *pBt = pDb->pBt;
+    if( sqlite3ReadSchema(pParse) ){
+      goto pragma_out;
+    }
     if( !zRight ){
       int auto_vacuum = 
           pBt ? sqlite3BtreeGetAutoVacuum(pBt) : SQLITE_DEFAULT_AUTOVACUUM;
@@ -431,7 +434,34 @@ void sqlite3Pragma(
     }else{
       int eAuto = getAutoVacuum(zRight);
       if( eAuto>=0 ){
-        sqlite3BtreeSetAutoVacuum(pBt, eAuto);
+        /* Call SetAutoVacuum() to set initialize the internal auto and
+        ** incr-vacuum flags. This is required in case this connection
+        ** creates the database file. It is important that it is created
+        ** as an auto-vacuum capable db.
+        */
+        int rc = sqlite3BtreeSetAutoVacuum(pBt, eAuto);
+        if( rc==SQLITE_OK && (eAuto==1 || eAuto==2) ){
+          /* When setting the auto_vacuum mode to either "full" or 
+          ** "incremental", write the value of meta[6] in the database
+          ** file. Before writing to meta[6], check that meta[3] indicates
+          ** that this really is an auto-vacuum capable database.
+          */
+          static const VdbeOpList setMeta6[] = {
+            { OP_Transaction,    0,               1,        0},    /* 0 */
+            { OP_ReadCookie,     0,               3,        0},    /* 1 */
+            { OP_If,             0,               0,        0},    /* 2 */
+            { OP_Halt,           SQLITE_OK,       OE_Abort, 0},    /* 3 */
+            { OP_Integer,        0,               0,        0},    /* 4 */
+            { OP_SetCookie,      0,               6,        0},    /* 5 */
+          };
+          int iAddr;
+          iAddr = sqlite3VdbeAddOpList(v, ArraySize(setMeta6), setMeta6);
+          sqlite3VdbeChangeP1(v, iAddr, iDb);
+          sqlite3VdbeChangeP1(v, iAddr+1, iDb);
+          sqlite3VdbeChangeP2(v, iAddr+2, iAddr+4);
+          sqlite3VdbeChangeP1(v, iAddr+4, eAuto-1);
+          sqlite3VdbeChangeP1(v, iAddr+5, iDb);
+        }
       }
     }
   }else

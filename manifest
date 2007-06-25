@@ -1,5 +1,5 @@
-C Fix\sfor\s#2451.\sCode\scomment\schanges\sonly.\s(CVS\s4114)
-D 2007-06-24T16:11:03
+C Make\sthe\sauto_vacuum\smode\speristent\sin\sall\scases.\s(CVS\s4115)
+D 2007-06-25T08:16:58
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -65,7 +65,7 @@ F src/alter.c 1b1deeb97446ed87f2fa17a3eb6236548841a348
 F src/analyze.c 8d345472e0f4e44fc88f5cf489c16dcb77904525
 F src/attach.c ba628db0c2b6a362f036d017bf1196cdfe4ebb37
 F src/auth.c 5ea90bc93dfea46e9fe4bf531e14c7cd98219ecb
-F src/btree.c 63d40146c74499b8119ce4772b27210c7830313e
+F src/btree.c 4a282b7f8746bec2a3f59b03eee7c4046a345607
 F src/btree.h 1d527bf61ed176f980c34999d5793a0fd45dcf8c
 F src/btreeInt.h ac1ab1fb624ffbe571786cd2bd9559f9ae336355
 F src/build.c 50992d92e131a9aa9aa6657fb1ddc13e176fd70c
@@ -99,7 +99,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 39352b58ee840cae715a4f0d20e446aa5e1445fe
 F src/pager.h 94110a5570dca30d54a883e880a3633b2e4c05ae
 F src/parse.y ad2ce25665be7f7303137f774a4e3e72e0d036ff
-F src/pragma.c d2e6f5da991594e1c2c7636927f6be7cf66e81bd
+F src/pragma.c 838f7460e6f228cc80cd10846ee1139f3ae723dd
 F src/prepare.c 609bb27860ce98ab39889fecc0998dfd8220891b
 F src/printf.c 9b3048d270e8bb2f8b910b491ac3aadece6cfab2
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
@@ -176,7 +176,7 @@ F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 261fd1603613e7f877a516d29f281c9d8c2ecf52
 F test/bindxfer.test b9a57f66dbd317feeefa28bd65b6576f1592ee98
 F test/blob.test 28c3b25150684ee3d108bb78cfb67a472deef2f0
-F test/btree.test 8b6168980efdd194289798f19d4c81434f6d3a66
+F test/btree.test d394f22b03712f05fca9c59f6f4848a3cad01379
 F test/btree2.test 4b56a2a4a4f84d68c77aef271223a713bf5ebafc
 F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
@@ -267,7 +267,7 @@ F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/incrblob.test a23b9431596581f1f4ac03d04fa97c31776693d5
 F test/incrblob_err.test 2501bec57e317e7051451b5093b47fc61a96c85a
-F test/incrvacuum.test 433fbe59b4a77d50117adaef66b6dca52f611179
+F test/incrvacuum.test 92d0efe609509c65804be016cb376d5ec5abb5a5
 F test/incrvacuum2.test 82397ceb5941cbe852fd29bb33fcdf5665bc80c2
 F test/incrvacuum_ioerr.test cb331403b8dea3c5bae6163861ff25037b0df56a
 F test/index.test e65df12bed94b2903ee89987115e1578687e9266
@@ -514,7 +514,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c666fad151f25ab8365c497cd0967f4a5a2adb90
-R 55510efe85475a231257ad94221f8a4a
+P bc61dcbf64af56d4a1394c8ff46e91245dc16d15
+R ad646b50fb78ca315c96e2f2605f5241
 U danielk1977
-Z 19b49e3d7d8dd1d009e5f547530e18f8
+Z 7178761d0ea9f7ce5c978317ce1d9a00
