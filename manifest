@@ -1,5 +1,5 @@
-C Use\s(((i64)1)<<63)\sinstead\sof\sjust\s(1<<63)\sto\scompute\sthe\smost\snegative\s64-bit\sinteger.\s(CVS\s4131)
-D 2007-06-26T12:52:34
+C Reorganize\scomments\sin\sfts2_tokenizer.h.\sNo\scode\schanges.\s(CVS\s4132)
+D 2007-06-26T12:54:07
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -44,7 +44,7 @@ F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
 F ext/fts2/fts2_icu.c 45b54d1e075020b35db20f69d829f95ca0651111
 F ext/fts2/fts2_porter.c 991a45463553c7318063fe7773368a6c0f39e35d
 F ext/fts2/fts2_tokenizer.c 5cec41326fabe65323945a46fa9495ee85c3d5fd
-F ext/fts2/fts2_tokenizer.h 6d151c51382e8f6cf689c616bb697fe780478089
+F ext/fts2/fts2_tokenizer.h a7e46462d935a314b2682287f12f27530a3ee08e
 F ext/fts2/fts2_tokenizer1.c 719f6eb8cf94a8a5be6576c9b3d94d22deeea816
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
@@ -516,7 +516,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c6dfd9e43449b0b3528281d9e2e4971c6ba86ab5
-R ef164c42f461a60d1ea7875c9c81c3fc
+P be2570c061e1e751d1a46450bd1186549146526e
+R 6fa498c7a241cebb5a9c89bb113f95f1
 U danielk1977
-Z 261217702720ef772fc27545ebd414f5
+Z ceb6a414b7b3e25a3dea78f60f54d2f2

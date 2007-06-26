@@ -27,42 +27,109 @@
 #include "sqlite3.h"
 
 /*
-** Structures used by the tokenizer interface.
+** Structures used by the tokenizer interface. When a new tokenizer
+** implementation is registered, the caller provides a pointer to
+** an sqlite3_tokenizer_module containing pointers to the callback
+** functions that make up an implementation.
+**
+** When an fts2 table is created, it passes any arguments passed to
+** the tokenizer clause of the CREATE VIRTUAL TABLE statement to the
+** sqlite3_tokenizer_module.xCreate() function of the requested tokenizer
+** implementation. The xCreate() function in turn returns an 
+** sqlite3_tokenizer structure representing the specific tokenizer to
+** be used for the fts2 table (customized by the tokenizer clause arguments).
+**
+** To tokenize an input buffer, the sqlite3_tokenizer_module.xOpen()
+** method is called. It returns an sqlite3_tokenizer_cursor object
+** that may be used to tokenize a specific input buffer based on
+** the tokenization rules supplied by a specific sqlite3_tokenizer
+** object.
 */
+typedef struct sqlite3_tokenizer_module sqlite3_tokenizer_module;
 typedef struct sqlite3_tokenizer sqlite3_tokenizer;
 typedef struct sqlite3_tokenizer_cursor sqlite3_tokenizer_cursor;
-typedef struct sqlite3_tokenizer_module sqlite3_tokenizer_module;
 
 struct sqlite3_tokenizer_module {
-  int iVersion;                  /* currently 0 */
 
   /*
-  ** Create and destroy a tokenizer.  argc/argv are passed down from
-  ** the fulltext virtual table creation to allow customization.
+  ** Structure version. Should always be set to 0.
   */
-  int (*xCreate)(int argc, const char *const*argv,
-                 sqlite3_tokenizer **ppTokenizer);
+  int iVersion;
+
+  /*
+  ** Create a new tokenizer. The values in the argv[] array are the
+  ** arguments passed to the "tokenizer" clause of the CREATE VIRTUAL
+  ** TABLE statement that created the fts2 table. For example, if
+  ** the following SQL is executed:
+  **
+  **   CREATE .. USING fts2( ... , tokenizer <tokenizer-name> arg1 arg2)
+  **
+  ** then argc is set to 2, and the argv[] array contains pointers
+  ** to the strings "arg1" and "arg2".
+  **
+  ** This method should return either SQLITE_OK (0), or an SQLite error 
+  ** code. If SQLITE_OK is returned, then *ppTokenizer should be set
+  ** to point at the newly created tokenizer structure. The generic
+  ** sqlite3_tokenizer.pModule variable should not be initialised by
+  ** this callback. The caller will do so.
+  */
+  int (*xCreate)(
+    int argc,                           /* Size of argv array */
+    const char *const*argv,             /* Tokenizer argument strings */
+    sqlite3_tokenizer **ppTokenizer     /* OUT: Created tokenizer */
+  );
+
+  /*
+  ** Destroy an existing tokenizer. The fts2 module calls this method
+  ** exactly once for each successful call to xCreate().
+  */
   int (*xDestroy)(sqlite3_tokenizer *pTokenizer);
 
   /*
-  ** Tokenize a particular input.  Call xOpen() to prepare to
-  ** tokenize, xNext() repeatedly until it returns SQLITE_DONE, then
-  ** xClose() to free any internal state.  The pInput passed to
-  ** xOpen() must exist until the cursor is closed.  The ppToken
-  ** result from xNext() is only valid until the next call to xNext()
-  ** or until xClose() is called.
+  ** Create a tokenizer cursor to tokenize an input buffer. The caller
+  ** is responsible for ensuring that the input buffer remains valid
+  ** until the cursor is closed (using the xClose() method). 
+  */
+  int (*xOpen)(
+    sqlite3_tokenizer *pTokenizer,       /* Tokenizer object */
+    const char *pInput, int nBytes,      /* Input buffer */
+    sqlite3_tokenizer_cursor **ppCursor  /* OUT: Created tokenizer cursor */
+  );
+
+  /*
+  ** Destroy an existing tokenizer cursor. The fts2 module calls this 
+  ** method exactly once for each successful call to xOpen().
+  */
+  int (*xClose)(sqlite3_tokenizer_cursor *pCursor);
+
+  /*
+  ** Retrieve the next token from the tokenizer cursor pCursor. This
+  ** method should either return SQLITE_OK and set the values of the
+  ** "OUT" variables identified below, or SQLITE_DONE to indicate that
+  ** the end of the buffer has been reached, or an SQLite error code.
+  **
+  ** *ppToken should be set to point at a buffer containing the 
+  ** normalized version of the token (i.e. after any case-folding and/or
+  ** stemming has been performed). *pnBytes should be set to the length
+  ** of this buffer in bytes. The input text that generated the token is
+  ** identified by the byte offsets returned in *piStartOffset and
+  ** *piEndOffset.
+  **
+  ** The buffer *ppToken is set to point at is managed by the tokenizer
+  ** implementation. It is only required to be valid until the next call
+  ** to xNext() or xClose(). 
   */
   /* TODO(shess) current implementation requires pInput to be
   ** nul-terminated.  This should either be fixed, or pInput/nBytes
   ** should be converted to zInput.
   */
-  int (*xOpen)(sqlite3_tokenizer *pTokenizer,
-               const char *pInput, int nBytes,
-               sqlite3_tokenizer_cursor **ppCursor);
-  int (*xClose)(sqlite3_tokenizer_cursor *pCursor);
-  int (*xNext)(sqlite3_tokenizer_cursor *pCursor,
-               const char **ppToken, int *pnBytes,
-               int *piStartOffset, int *piEndOffset, int *piPosition);
+  int (*xNext)(
+    sqlite3_tokenizer_cursor *pCursor,   /* Tokenizer cursor */
+    const char **ppToken, int *pnBytes,  /* OUT: Normalized text for token */
+    int *piStartOffset,  /* OUT: Byte offset of token in input buffer */
+    int *piEndOffset,    /* OUT: Byte offset of end of token in input buffer */
+    int *piPosition      /* OUT: Number of tokens returned before this one */
+  );
 };
 
 struct sqlite3_tokenizer {
