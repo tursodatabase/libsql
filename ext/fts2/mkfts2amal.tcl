@@ -108,6 +108,7 @@ foreach file {
    fts2_porter.c
    fts2_tokenizer.c
    fts2_tokenizer1.c
+   fts2_icu.c
 } {
   copy_file tsrc/$file
 }

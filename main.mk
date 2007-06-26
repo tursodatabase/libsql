@@ -144,17 +144,9 @@ SRC += \
   $(TOP)/ext/fts2/fts2_porter.c \
   $(TOP)/ext/fts2/fts2_tokenizer.h \
   $(TOP)/ext/fts2/fts2_tokenizer1.c
+SRC += \
+  $(TOP)/ext/icu/icu.c
 
-# Source code for extensions.
-#
-EXTSRC += -DSQLITE_CORE=1             \
-  $(TOP)/ext/icu/icu.c                \
-  $(TOP)/ext/fts2/fts2.c              \
-  $(TOP)/ext/fts2/fts2_hash.c         \
-  $(TOP)/ext/fts2/fts2_icu.c          \
-  $(TOP)/ext/fts2/fts2_porter.c       \
-  $(TOP)/ext/fts2/fts2_tokenizer.c    \
-  $(TOP)/ext/fts2/fts2_tokenizer1.c
 
 # Generated source code files
 #
@@ -259,7 +251,7 @@ libsqlite3.a:	$(LIBOBJ) $(EXTOBJ)
 
 sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
 	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE)                  \
-		$(TOP)/src/shell.c $(EXTSRC)                        \
+		$(TOP)/src/shell.c                                  \
 		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
 objects: $(LIBOBJ_ORIG)
@@ -328,9 +320,6 @@ func.o:	$(TOP)/src/func.c $(HDR)
 
 hash.o:	$(TOP)/src/hash.c $(HDR)
 	$(TCCX) -c $(TOP)/src/hash.c
-
-icu.o:	$(TOP)/ext/icu/icu.c $(HDR)
-	$(TCCX) -c $(TOP)/ext/icu/icu.c
 
 insert.o:	$(TOP)/src/insert.c $(HDR)
 	$(TCCX) -c $(TOP)/src/insert.c

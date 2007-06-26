@@ -5895,6 +5895,8 @@ void sqlite3Fts2SimpleTokenizerModule(sqlite3_tokenizer_module const**ppModule);
 void sqlite3Fts2PorterTokenizerModule(sqlite3_tokenizer_module const**ppModule);
 void sqlite3Fts2IcuTokenizerModule(sqlite3_tokenizer_module const**ppModule);
 
+int sqlite3Fts2InitHashTable(sqlite3 *, fts2Hash *, const char *);
+
 /*
 ** Initialise the fts2 extension. If this extension is built as part
 ** of the sqlite library, then this function is called directly by

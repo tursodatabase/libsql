@@ -1,5 +1,5 @@
-C Fix\san\sunitialized\svariable\sin\sfts2.\s(CVS\s4128)
-D 2007-06-26T10:55:02
+C Remove\sthe\sunused\sEXTSRC\svariable\sfrom\sthe\snon-configure\smakefile.\s(CVS\s4129)
+D 2007-06-26T10:56:40
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -37,7 +37,7 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 2ff290e0a130f6e7611f2e608cb3b5aaea721abc
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c e6015f3a98edbcb29f4922fb7e6ec4039aa90a61
+F ext/fts2/fts2.c 1e1b6b6e831b1f40801dd3536b33e16738e91732
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c cafebb4620d19684c4c9872530012441df60f503
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -46,12 +46,12 @@ F ext/fts2/fts2_porter.c 991a45463553c7318063fe7773368a6c0f39e35d
 F ext/fts2/fts2_tokenizer.c 5cec41326fabe65323945a46fa9495ee85c3d5fd
 F ext/fts2/fts2_tokenizer.h 6d151c51382e8f6cf689c616bb697fe780478089
 F ext/fts2/fts2_tokenizer1.c 719f6eb8cf94a8a5be6576c9b3d94d22deeea816
-F ext/fts2/mkfts2amal.tcl 346454361d1c11e8839b629102d257bafcd7b3c7
+F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 46490244b446637272d30d0412c1783f59e474a8
+F main.mk 2bd119b5efb4352d0613e0a9cb8ae55cd943fd57
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
@@ -516,7 +516,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7f887a6a00fdd6efc3740bd8a1731bb1abde087c
-R 8f1b2e69d33343e0115fc4d9dde9fd6c
+P c349cf942534357955f80fc2aa8c96206af97b78
+R e274bb8f2d1469809dfb33a3f5436cb7
 U danielk1977
-Z edaaa8d4dcc9576b4fc81ef58100aecc
+Z df0dd041a3eb4ee7dd57d773a2b1890f
