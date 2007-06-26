@@ -74,6 +74,9 @@ if {$addstatic} {
   puts $out \
 {#ifndef SQLITE_PRIVATE
 # define SQLITE_PRIVATE static
+#endif
+#ifndef SQLITE_API
+# define SQLITE_API
 #endif}
 }
 
@@ -127,9 +130,9 @@ proc copy_file {filename} {
   section_comment "Begin file $tail"
   set in [open $filename r]
   if {[file extension $filename]==".h"} {
-    set declpattern {^ *[a-zA-Z][a-zA-Z_0-9 ]+ \*?sqlite3[A-Z][a-zA-Z0-9]+\(}
+    set declpattern {^ *[a-zA-Z][a-zA-Z_0-9 ]+ \*?(sqlite3[_A-Z][a-zA-Z0-9]+)\(}
   } else {
-    set declpattern {^[a-zA-Z][a-zA-Z_0-9 ]+ \*?sqlite3[A-Z][a-zA-Z0-9]+\(}
+    set declpattern {^[a-zA-Z][a-zA-Z_0-9 ]+ \*?(sqlite3[_A-Z][a-zA-Z0-9]+)\(}
   }
   while {![eof $in]} {
     set line [gets $in]
@@ -151,10 +154,15 @@ proc copy_file {filename} {
       puts $out "#if 0"
     } elseif {[regexp {^#line} $line]} {
       # Skip #line directives.
-    } elseif {$addstatic && [regexp $declpattern $line] 
+    } elseif {$addstatic && [regexp $declpattern $line all funcname] 
                   && ![regexp {^static} $line]} {
-      # Add the "static" keyword before internal functions.
-      puts $out "SQLITE_PRIVATE $line"
+      # Add the SQLITE_PRIVATE or SQLITE_API keyword before functions.
+      # so that linkage can be modified at compile-time.
+      if {[regexp {^sqlite3_} $funcname]} {
+        puts $out "SQLITE_API $line"
+      } else {
+        puts $out "SQLITE_PRIVATE $line"
+      }
     } else {
       puts $out $line
     }

@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\ssqlite3_atoi64\sback\sto\ssqlite3Atoi64\sso\sthat\sit\sis\sclearly\nand\sinternal\sAPI.\s\sModify\sthe\samalgamation\sto\suse\sa\smacro\sSQLITE_PRIVATE\ninstead\sof\sthe\skeyword\s"static"\sso\sthe\smacro\scan\sbe\soverridden\sto\sby\snothing.\s(CVS\s4124)
-D 2007-06-26T00:37:28
+C Modify\sthe\samalgamation\sgenerator\sto\sidentify\severy\sAPI\susing\sthe\nSQLITE_API\smacro\swhich\sis\snormally\sdefined\sto\snothing\sbut\swhich\scan\nbe\soverridden\son\sthe\scompiler\scommand-line\sto\sbe\s"static"\sif\sdesired.\nTicket\s#2453.\s(CVS\s4125)
+D 2007-06-26T00:52:40
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -446,7 +446,7 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c fe15d1cbc61c2b0375634b6d8c1ef24520799ea0
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl 3c062ba144060fdf9ac40f846570311dd75d70bf
+F tool/mksqlite3c.tcl 5d8ed832629acd4f75d088dd0c647dc12c48b1b0
 F tool/mksqlite3internalh.tcl 47737a925fb02fce43e2c0a14b3cc17574a4d44a
 F tool/omittest.tcl e6b3d6a1285f9813bc1dea53bb522b4b72774710
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -515,7 +515,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5b3a490649ab88c168e3e5bf2efbc7f61b1b954d
-R f6d478d470bd14098b1e348ce99c17b8
+P 96190cf13dd7219f483308fea92d703328aac4c7
+R 0a278f1a93b16895841922b584e0b14c
 U drh
-Z f364c8fcb2e6f1fc93356010ff2b7a3d
+Z e9a004de1bf93d40a3ce2a532ab17bdd
