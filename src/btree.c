@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.391 2007/06/25 08:16:58 danielk1977 Exp $
+** $Id: btree.c,v 1.392 2007/06/26 01:04:49 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2466,13 +2466,19 @@ void sqlite3BtreeReleaseTempCursor(BtCursor *pCur){
 }
 
 /*
-** The GET_CELL_INFO() macro. Takes one argument, a pointer to a valid
-** btree cursor (type BtCursor*).  This macro makes sure the BtCursor.info
-** field of the given cursor is valid.  If it is not already valid, call
+** Make sure the BtCursor* given in the argument has a valid
+** BtCursor.info structure.  If it is not already valid, call
 ** sqlite3BtreeParseCell() to fill it in.
 **
 ** BtCursor.info is a cache of the information in the current cell.
 ** Using this cache reduces the number of calls to sqlite3BtreeParseCell().
+**
+** 2007-06-25:  There is a bug in some versions of MSVC that cause the
+** compiler to crash when getCellInfo() is implemented as a macro.
+** But there is a measureable speed advantage to using the macro on gcc
+** (when less compiler optimizations like -Os or -O0 are used and the
+** compiler is not doing agressive inlining.)  So we use a real function
+** for MSVC and a macro for everything else.  Ticket #2457.
 */
 #ifndef NDEBUG
   static void assertCellInfo(BtCursor *pCur){
@@ -2484,13 +2490,24 @@ void sqlite3BtreeReleaseTempCursor(BtCursor *pCur){
 #else
   #define assertCellInfo(x)
 #endif
-
-#define GET_CELL_INFO(pCur)                                             \
-  if( pCur->info.nSize==0 )                                             \
+#ifdef _MSC_VER
+  /* Use a real function in MSVC to work around bugs in that compiler. */
+  static void getCellInfo(BtCursor *pCur){
+    if( pCur->info.nSize==0 ){
+      sqlite3BtreeParseCell(pCur->pPage, pCur->idx, &pCur->info);
+    }else{
+      assertCellInfo(pCur);
+    }
+  }
+#else /* if not _MSC_VER */
+  /* Use a macro in all other compilers so that the function is inlined */
+#define getCellInfo(pCur)                                               \
+  if( pCur->info.nSize==0 ){                                            \
     sqlite3BtreeParseCell(pCur->pPage, pCur->idx, &pCur->info);         \
-  else                                                                  \
-    assertCellInfo(pCur);
-   
+  }else{                                                                \
+    assertCellInfo(pCur);                                               \
+  }
+#endif /* _MSC_VER */
 
 /*
 ** Set *pSize to the size of the buffer needed to hold the value of
@@ -2507,7 +2524,7 @@ int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
     if( pCur->eState==CURSOR_INVALID ){
       *pSize = 0;
     }else{
-      GET_CELL_INFO(pCur);
+      getCellInfo(pCur);
       *pSize = pCur->info.nKey;
     }
   }
@@ -2529,7 +2546,7 @@ int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
       /* Not pointing at a valid entry - set *pSize to 0. */
       *pSize = 0;
     }else{
-      GET_CELL_INFO(pCur);
+      getCellInfo(pCur);
       *pSize = pCur->info.nData;
     }
   }
@@ -2702,7 +2719,7 @@ static int accessPayload(
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   assert( offset>=0 );
 
-  GET_CELL_INFO(pCur);
+  getCellInfo(pCur);
   aPayload = pCur->info.pCell + pCur->info.nHeader;
   nKey = (pPage->intKey ? 0 : pCur->info.nKey);
 
@@ -2891,7 +2908,7 @@ static const unsigned char *fetchPayload(
   assert( pCur->eState==CURSOR_VALID );
   pPage = pCur->pPage;
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
-  GET_CELL_INFO(pCur);
+  getCellInfo(pCur);
   aPayload = pCur->info.pCell;
   aPayload += pCur->info.nHeader;
   if( pPage->intKey ){
