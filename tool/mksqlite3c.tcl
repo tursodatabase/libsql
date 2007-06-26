@@ -70,6 +70,12 @@ puts $out [subst \
 ** This amalgamation was generated on $today.
 */
 #define SQLITE_AMALGAMATION 1}]
+if {$addstatic} {
+  puts $out \
+{#ifndef SQLITE_PRIVATE
+# define SQLITE_PRIVATE static
+#endif}
+}
 
 # These are the header files used by SQLite.  The first time any of these 
 # files are seen in a #include statement in the C code, include the complete
@@ -148,7 +154,7 @@ proc copy_file {filename} {
     } elseif {$addstatic && [regexp $declpattern $line] 
                   && ![regexp {^static} $line]} {
       # Add the "static" keyword before internal functions.
-      puts $out "static $line"
+      puts $out "SQLITE_PRIVATE $line"
     } else {
       puts $out $line
     }

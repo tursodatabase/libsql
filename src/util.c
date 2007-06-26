@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.206 2007/06/25 17:28:02 drh Exp $
+** $Id: util.c,v 1.207 2007/06/26 00:37:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -332,7 +332,7 @@ static int compare2pow63(const char *zNum){
 ** 32-bit numbers.  At that time, it was much faster than the
 ** atoi() library routine in RedHat 7.2.
 */
-int sqlite3_atoi64(const char *zNum, i64 *pNum){
+int sqlite3Atoi64(const char *zNum, i64 *pNum){
   i64 v = 0;
   int neg;
   int i, c;
@@ -407,7 +407,7 @@ int sqlite3FitsIn64Bits(const char *zNum){
 ** *pValue to that integer and return true.  Otherwise return false.
 **
 ** Any non-numeric characters that following zNum are ignored.
-** This is different from sqlite3_atoi64() which requires the
+** This is different from sqlite3Atoi64() which requires the
 ** input number to be zero-terminated.
 */
 int sqlite3GetInt32(const char *zNum, int *pValue){
