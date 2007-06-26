@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.186 2007/05/04 13:15:56 drh Exp $
+** $Id: insert.c,v 1.187 2007/06/26 10:38:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -349,6 +349,8 @@ void sqlite3Insert(
   int appendFlag = 0;   /* True if the insert is likely to be an append */
   int iDb;
 
+  int nHidden = 0;
+
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                 /* True if attempting to insert into a view */
   int triggers_exist = 0;     /* True if there are FOR EACH ROW triggers */
@@ -525,7 +527,12 @@ void sqlite3Insert(
   /* Make sure the number of columns in the source data matches the number
   ** of columns to be inserted into the table.
   */
-  if( pColumn==0 && nColumn && nColumn!=pTab->nCol ){
+  if( IsVirtual(pTab) ){
+    for(i=0; i<pTab->nCol; i++){
+      nHidden += (IsHiddenColumn(&pTab->aCol[i]) ? 1 : 0);
+    }
+  }
+  if( pColumn==0 && nColumn && nColumn!=(pTab->nCol-nHidden) ){
     sqlite3ErrorMsg(pParse, 
        "table %S has %d columns but %d values were supplied",
        pTabList, 0, pTab->nCol, nColumn);
@@ -640,6 +647,11 @@ void sqlite3Insert(
       sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
     }
 
+    /* Cannot have triggers on a virtual table. If it were possible,
+    ** this block would have to account for hidden column.
+    */
+    assert(!IsVirtual(pTab));
+
     /* Create the new column data
     */
     for(i=0; i<pTab->nCol; i++){
@@ -732,6 +744,7 @@ void sqlite3Insert(
     /* Push onto the stack, data for all columns of the new entry, beginning
     ** with the first column.
     */
+    nHidden = 0;
     for(i=0; i<pTab->nCol; i++){
       if( i==pTab->iPKey ){
         /* The value of the INTEGER PRIMARY KEY column is always a NULL.
@@ -742,13 +755,19 @@ void sqlite3Insert(
         continue;
       }
       if( pColumn==0 ){
-        j = i;
+        if( IsHiddenColumn(&pTab->aCol[i]) ){
+          assert( IsVirtual(pTab) );
+          j = -1;
+          nHidden++;
+        }else{
+          j = i - nHidden;
+        }
       }else{
         for(j=0; j<pColumn->nId; j++){
           if( pColumn->a[j].idx==i ) break;
         }
       }
-      if( nColumn==0 || (pColumn && j>=pColumn->nId) ){
+      if( j<0 || nColumn==0 || (pColumn && j>=pColumn->nId) ){
         sqlite3ExprCode(pParse, pTab->aCol[i].pDflt);
       }else if( useTempTable ){
         sqlite3VdbeAddOp(v, OP_Column, srcTab, j); 

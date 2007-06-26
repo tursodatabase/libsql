@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.352 2007/06/24 06:32:18 danielk1977 Exp $
+** $Id: select.c,v 1.353 2007/06/26 10:38:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1333,6 +1333,15 @@ static int prepSelectStmt(Parse *pParse, Select *p){
           for(j=0; j<pTab->nCol; j++){
             Expr *pExpr, *pRight;
             char *zName = pTab->aCol[j].zName;
+
+            /* If a column is marked as 'hidden' (currently only possible
+            ** for virtual tables), do not include it in the expanded
+            ** result-set list.
+            */
+            if( IsHiddenColumn(&pTab->aCol[j]) ){
+              assert(IsVirtual(pTab));
+              continue;
+            }
 
             if( i>0 ){
               struct SrcList_item *pLeft = &pTabList->a[i-1];

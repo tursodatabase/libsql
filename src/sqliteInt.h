@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.577 2007/06/26 00:37:28 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.578 2007/06/26 10:38:55 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -606,6 +606,9 @@ struct Column {
   u8 notNull;      /* True if there is a NOT NULL constraint */
   u8 isPrimKey;    /* True if this column is part of the PRIMARY KEY */
   char affinity;   /* One of the SQLITE_AFF_... values */
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  u8 isHidden;     /* True if this column is 'hidden' */
+#endif
 };
 
 /*
@@ -744,9 +747,11 @@ struct Table {
 ** table support is omitted from the build.
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-#  define IsVirtual(X) ((X)->isVirtual)
+#  define IsVirtual(X)      ((X)->isVirtual)
+#  define IsHiddenColumn(X) ((X)->isHidden)
 #else
-#  define IsVirtual(X) 0
+#  define IsVirtual(X)      0
+#  define IsHiddenColumn(X) 0
 #endif
 
 /*

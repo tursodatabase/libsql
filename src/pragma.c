@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.141 2007/06/25 08:16:58 danielk1977 Exp $
+** $Id: pragma.c,v 1.142 2007/06/26 10:38:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -627,6 +627,7 @@ void sqlite3Pragma(
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
       int i;
+      int nHidden = 0;
       Column *pCol;
       sqlite3VdbeSetNumCols(v, 6);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "cid", P3_STATIC);
@@ -638,7 +639,11 @@ void sqlite3Pragma(
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
         const Token *pDflt;
-        sqlite3VdbeAddOp(v, OP_Integer, i, 0);
+        if( IsHiddenColumn(pCol) ){
+          nHidden++;
+          continue;
+        }
+        sqlite3VdbeAddOp(v, OP_Integer, i-nHidden, 0);
         sqlite3VdbeOp3(v, OP_String8, 0, 0, pCol->zName, 0);
         sqlite3VdbeOp3(v, OP_String8, 0, 0,
            pCol->zType ? pCol->zType : "", 0);
