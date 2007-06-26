@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.348 2007/06/18 17:25:18 drh Exp $
+** @(#) $Id: pager.c,v 1.349 2007/06/26 22:10:12 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3878,7 +3878,6 @@ static int pager_incr_changecounter(Pager *pPager){
     /* Increment the value just read and write it back to byte 24. */
     change_counter++;
     put32bits(((char*)PGHDR_TO_DATA(pPgHdr))+24, change_counter);
-  
     /* Release the page reference. */
     sqlite3PagerUnref(pPgHdr);
     pPager->changeCountDone = 1;

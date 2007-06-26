@@ -114,12 +114,6 @@ READLINE_FLAGS =
 LIBREADLINE =
 #LIBREADLINE = -static -lreadline -ltermcap
 
-#### Should the database engine assume text is coded as UTF-8 or iso8859?
-#
-# ENCODING  = UTF8
-ENCODING = ISO8859
-
-
 #### Which "awk" program provides nawk compatibilty
 #
 # NAWK = nawk
