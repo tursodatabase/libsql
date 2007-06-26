@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sso\sthat\sit\s(hopefully)\sworks\son\sx86-64.\s\sTicket\s#2465.\s(CVS\s4134)
-D 2007-06-26T22:42:56
+C Make\ssure\sthe\sTCL\sbindings\salways\suse\sTcl_GetWideIntFromObj()\seven\sif\sthe\nreported\stype\sis\s"int"\sbecause\son\sx86-64\sand\s"int"\stype\sis\s64-bits.\nTicket\s#2465.\s(CVS\s4135)
+D 2007-06-26T22:55:38
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -112,7 +112,7 @@ F src/sqlite3ext.h 95575e0d175a0271fe2c3232c0d11e8720ed6887
 F src/sqliteInt.h 81183ae71162818bf60478e738ff68604128bb06
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
-F src/tclsqlite.c 4bffe56752d2c24ade23340e46a91fd92c316e08
+F src/tclsqlite.c 0d3370e01cd3b313ed29ed6b0ba00423b4329de0
 F src/test1.c 0024d7069ecabe0ccc4e2f491e4a43ed5d3f4196
 F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
 F src/test3.c a280931fb40222b7c90da45eea926459beee8904
@@ -516,7 +516,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 338c18791006bac3709410087316700aad3b332f
-R 76fa6fff3d8e3f760dede2f083ada376
+P 3daf7cae18ae2ee6404f770e69e4cd0c715615e5
+R 6bd5371797b28b1ad783bfd355bc5a05
 U drh
-Z ebf4030b9dc2f802dc6698d6e014be81
+Z 0e3284889f389cc363d1804b624bb69e
