@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.633 2007/06/26 11:13:26 danielk1977 Exp $
+** $Id: vdbe.c,v 1.634 2007/06/26 12:52:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1160,7 +1160,7 @@ case OP_Remainder: {           /* same as TK_REM, no-push */
         ** behaviour so that all architectures behave as if integer 
         ** overflow occured.
         */
-        if( a==-1 && b==(1<<63) ) a = 1;
+        if( a==-1 && b==(((i64)1)<<63) ) a = 1;
         b /= a;
         break;
       }
