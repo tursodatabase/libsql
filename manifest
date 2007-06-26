@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\sEXTSRC\svariable\sfrom\sthe\snon-configure\smakefile.\s(CVS\s4129)
-D 2007-06-26T10:56:40
+C Fix\sfor\s#2444:\sAvoid\sSIGFPE\son\s64-bit\splatforms\swhen\sevaluating\sexpressions\slike\s((1<<63)/-1).\s(CVS\s4130)
+D 2007-06-26T11:13:26
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 2d8574d1ba75f129aba2019f0b959db380a90935
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -138,7 +138,7 @@ F src/update.c 6b10becb6235ea314ed245fbfbf8b38755e3166e
 F src/utf.c 01b2aba02b10d12903e9e1ff897215c9faf6b662
 F src/util.c 9e81d417fc60bd2fe156f8f2317aa4845bc6cc90
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c 99f53a0aa8db4fe7fa867a24446bdd7deed191c4
+F src/vdbe.c b01ec63187c6ccc53f4d4520f58bb3e2b4c40409
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h 7d2bf163d6d4e815724a457f2216dd8e38c3955c
 F src/vdbeapi.c 7930b9a188ab385287ca3eb3840af7225cb43549
@@ -226,7 +226,7 @@ F test/enc3.test 9331988b9d72decec96995c90637e87b00d747a5
 F test/exclusive.test 5bc520ba366ae3d242420af025ab64d465b04706
 F test/exclusive2.test 3496656375dc88e97d704c2d5d2c93d626cb7104
 F test/exclusive3.test 0e49c35b7e7cb8e7280b4ce3f0359d30b207d2ff
-F test/expr.test a4dc0855b86ba0daeef47f3dd4cf394eda2bd0ac
+F test/expr.test b8d63779b043dff06580fe4f3d85e5bebd067957
 F test/filefmt.test 053b622009fbbb74dd37921ffad374d852c13cd8
 F test/fkey1.test dcb4f28eb22d5141f15161d6bdca9a4f58c95729
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -516,7 +516,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c349cf942534357955f80fc2aa8c96206af97b78
-R e274bb8f2d1469809dfb33a3f5436cb7
+P bbdcf372c6f2144a62fba742b3f4bd6b2fe58593
+R 485893afc93c6a008cca6e703f7615a7
 U danielk1977
-Z df0dd041a3eb4ee7dd57d773a2b1890f
+Z a1b4c3aea76673647cfd46dd712e2aca

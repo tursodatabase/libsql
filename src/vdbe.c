@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.632 2007/06/26 00:37:28 drh Exp $
+** $Id: vdbe.c,v 1.633 2007/06/26 11:13:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1153,11 +1153,20 @@ case OP_Remainder: {           /* same as TK_REM, no-push */
       case OP_Multiply:    b *= a;       break;
       case OP_Divide: {
         if( a==0 ) goto divide_by_zero;
+        /* Dividing the largest possible negative 64-bit integer (1<<63) by 
+        ** -1 returns an integer to large to store in a 64-bit data-type. On
+        ** some architectures, the value overflows to (1<<63). On others,
+        ** a SIGFPE is issued. The following statement normalizes this
+        ** behaviour so that all architectures behave as if integer 
+        ** overflow occured.
+        */
+        if( a==-1 && b==(1<<63) ) a = 1;
         b /= a;
         break;
       }
       default: {
         if( a==0 ) goto divide_by_zero;
+        if( a==-1 ) a = 1;
         b %= a;
         break;
       }
@@ -1184,6 +1193,7 @@ case OP_Remainder: {           /* same as TK_REM, no-push */
         i64 ia = (i64)a;
         i64 ib = (i64)b;
         if( ia==0 ) goto divide_by_zero;
+        if( ia==-1 ) ia = 1;
         b = ib % ia;
         break;
       }
