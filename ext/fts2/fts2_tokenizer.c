@@ -338,7 +338,7 @@ int sqlite3Fts2InitHashTable(
   fts2Hash *pHash, 
   const char *zName
 ){
-  int rc;
+  int rc = SQLITE_OK;
   void *p = (void *)pHash;
   const int any = SQLITE_ANY;
   char *zTest = 0;
