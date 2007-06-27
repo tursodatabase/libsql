@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.634 2007/06/26 12:52:34 danielk1977 Exp $
+** $Id: vdbe.c,v 1.635 2007/06/27 15:53:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -2408,6 +2408,7 @@ case OP_Statement: {       /* no-push */
     assert( sqlite3BtreeIsInTrans(pBt) );
     if( !sqlite3BtreeIsInStmt(pBt) ){
       rc = sqlite3BtreeBeginStmt(pBt);
+      p->openedStatement = 1;
     }
   }
   break;
@@ -4999,6 +5000,30 @@ case OP_VNext: {   /* no-push */
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VRename * * P3
+**
+** P3 is a pointer to a virtual table object, an sqlite3_vtab structure.
+** This opcode invokes the corresponding xRename method. The value
+** on the top of the stack is popped and passed as the zName argument
+** to the xRename method.
+*/
+case OP_VRename: {   /* no-push */
+  sqlite3_vtab *pVtab = (sqlite3_vtab *)(pOp->p3);
+  assert( pVtab->pModule->xRename );
+
+  Stringify(pTos, encoding);
+
+  if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+  sqlite3VtabLock(pVtab);
+  rc = pVtab->pModule->xRename(pVtab, pTos->z);
+  sqlite3VtabUnlock(db, pVtab);
+  if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
+
+  popStack(&pTos, 1);
+  break;
+}
+#endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VUpdate P1 P2 P3

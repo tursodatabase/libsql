@@ -343,6 +343,7 @@ struct Vdbe {
 #ifdef SQLITE_DEBUG
   FILE *trace;        /* Write an execution trace here, if not NULL */
 #endif
+  int openedStatement;  /* True if this VM has opened a statement journal */
 #ifdef SQLITE_SSE
   int fetchId;          /* Statement number used by sqlite3_fetch_statement */
   int lru;              /* Counter used for LRU cache replacement */

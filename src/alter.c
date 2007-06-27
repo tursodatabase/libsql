@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.25 2007/05/15 14:34:32 drh Exp $
+** $Id: alter.c,v 1.26 2007/06/27 15:53:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -53,7 +53,7 @@ static void renameTableFunc(
 
   /* The principle used to locate the table name in the CREATE TABLE 
   ** statement is that the table name is the first token that is immediatedly
-  ** followed by a left parenthesis - TK_LP.
+  ** followed by a left parenthesis - TK_LP - or "USING" TK_USING.
   */
   if( zSql ){
     do {
@@ -74,7 +74,7 @@ static void renameTableFunc(
         len = sqlite3GetToken(zCsr, &token);
       } while( token==TK_SPACE );
       assert( len>0 );
-    } while( token!=TK_LP );
+    } while( token!=TK_LP && token!=TK_USING );
 
     zRet = sqlite3MPrintf("%.*s%Q%s", tname.z - zSql, zSql, 
        zTableName, tname.z+tname.n);
@@ -279,18 +279,13 @@ void sqlite3AlterRenameTable(
 #ifndef SQLITE_OMIT_TRIGGER
   char *zWhere = 0;         /* Where clause to locate temp triggers */
 #endif
+  int isVirtualRename = 0;  /* True if this is a v-table with an xRename() */
   
   if( sqlite3MallocFailed() ) goto exit_rename_table;
   assert( pSrc->nSrc==1 );
 
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
   if( !pTab ) goto exit_rename_table;
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( IsVirtual(pTab) ){
-    sqlite3ErrorMsg(pParse, "virtual tables may not be altered");
-    goto exit_rename_table;
-  }
-#endif
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   zDb = db->aDb[iDb].zName;
 
@@ -325,16 +320,35 @@ void sqlite3AlterRenameTable(
   }
 #endif
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( IsVirtual(pTab) && pTab->pMod->pModule->xRename ){
+    isVirtualRename = 1;
+  }
+#endif
+
   /* Begin a transaction and code the VerifyCookie for database iDb. 
   ** Then modify the schema cookie (since the ALTER TABLE modifies the
-  ** schema).
+  ** schema). Open a statement transaction if the table is a virtual
+  ** table.
   */
   v = sqlite3GetVdbe(pParse);
   if( v==0 ){
     goto exit_rename_table;
   }
-  sqlite3BeginWriteOperation(pParse, 0, iDb);
+  sqlite3BeginWriteOperation(pParse, isVirtualRename, iDb);
   sqlite3ChangeCookie(db, v, iDb);
+
+  /* If this is a virtual table, invoke the xRename() function if
+  ** one is defined. The xRename() callback will modify the names
+  ** of any resources used by the v-table implementation (including other
+  ** SQLite tables) that are identified by the name of the virtual table.
+  */
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  if( isVirtualRename ){
+    sqlite3VdbeOp3(v, OP_String8, 0, 0, zName, 0);
+    sqlite3VdbeOp3(v, OP_VRename, 0, 0, (const char*)pTab->pVtab, P3_VTAB);
+  }
+#endif
 
   /* figure out how many UTF-8 characters are in zName */
   zTabName = pTab->zName;

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.46 2007/04/18 17:04:01 danielk1977 Exp $
+** $Id: test8.c,v 1.47 2007/06/27 15:53:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -61,6 +61,8 @@ struct echo_vtab {
   Tcl_Interp *interp;     /* Tcl interpreter containing debug variables */
   sqlite3 *db;            /* Database connection */
 
+  int isPattern;
+  char *zThis;            /* Name of the echo table */
   char *zTableName;       /* Name of the real table */
   char *zLogName;         /* Name of the log table */
   int nCol;               /* Number of columns in the real table */
@@ -73,6 +75,46 @@ struct echo_cursor {
   sqlite3_vtab_cursor base;
   sqlite3_stmt *pStmt;
 };
+
+/*
+** Convert an SQL-style quoted string into a normal string by removing
+** the quote characters.  The conversion is done in-place.  If the
+** input does not begin with a quote character, then this routine
+** is a no-op.
+**
+** Examples:
+**
+**     "abc"   becomes   abc
+**     'xyz'   becomes   xyz
+**     [pqr]   becomes   pqr
+**     `mno`   becomes   mno
+*/
+static void dequoteString(char *z){
+  int quote;
+  int i, j;
+  if( z==0 ) return;
+  quote = z[0];
+  switch( quote ){
+    case '\'':  break;
+    case '"':   break;
+    case '`':   break;                /* For MySQL compatibility */
+    case '[':   quote = ']';  break;  /* For MS SqlServer compatibility */
+    default:    return;
+  }
+  for(i=1, j=0; z[i]; i++){
+    if( z[i]==quote ){
+      if( z[i+1]==quote ){
+        z[j++] = quote;
+        i++;
+      }else{
+        z[j++] = 0;
+        break;
+      }
+    }else{
+      z[j++] = z[i];
+    }
+  }
+}
 
 /*
 ** Retrieve the column names for the table named zTab via database
@@ -256,18 +298,16 @@ static void appendToEchoModule(Tcl_Interp *interp, const char *zArg){
 */
 static int echoDeclareVtab(
   echo_vtab *pVtab, 
-  sqlite3 *db, 
-  int argc, 
-  const char *const*argv
+  sqlite3 *db 
 ){
   int rc = SQLITE_OK;
 
-  if( argc>=4 ){
+  if( pVtab->zTableName ){
     sqlite3_stmt *pStmt = 0;
     sqlite3_prepare(db, 
         "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?",
         -1, &pStmt, 0);
-    sqlite3_bind_text(pStmt, 1, argv[3], -1, 0);
+    sqlite3_bind_text(pStmt, 1, pVtab->zTableName, -1, 0);
     if( sqlite3_step(pStmt)==SQLITE_ROW ){
       int rc2;
       const char *zCreateTable = (const char *)sqlite3_column_text(pStmt, 0);
@@ -282,12 +322,11 @@ static int echoDeclareVtab(
         rc = SQLITE_ERROR;
       }
     }
-
     if( rc==SQLITE_OK ){
-      rc = getColumnNames(db, argv[3], &pVtab->aCol, &pVtab->nCol);
+      rc = getColumnNames(db, pVtab->zTableName, &pVtab->aCol, &pVtab->nCol);
     }
     if( rc==SQLITE_OK ){
-      rc = getIndexArray(db, argv[3], pVtab->nCol, &pVtab->aIndex);
+      rc = getIndexArray(db, pVtab->zTableName, pVtab->nCol, &pVtab->aIndex);
     }
   }
 
@@ -302,6 +341,7 @@ static int echoDestructor(sqlite3_vtab *pVtab){
   echo_vtab *p = (echo_vtab*)pVtab;
   sqliteFree(p->aIndex);
   sqliteFree(p->aCol);
+  sqliteFree(p->zThis);
   sqliteFree(p->zTableName);
   sqliteFree(p->zLogName);
   sqliteFree(p);
@@ -331,11 +371,27 @@ static int echoConstructor(
   pVtab->interp = (Tcl_Interp *)pAux;
   pVtab->db = db;
 
-  /* Allocate echo_vtab.zTableName */
-  pVtab->zTableName = sqlite3MPrintf("%s", argv[3]);
-  if( !pVtab->zTableName ){
+  /* Allocate echo_vtab.zThis */
+  pVtab->zThis = sqlite3MPrintf("%s", argv[2]);
+  if( !pVtab->zThis ){
     echoDestructor((sqlite3_vtab *)pVtab);
     return SQLITE_NOMEM;
+  }
+
+  /* Allocate echo_vtab.zTableName */
+  if( argc>3 ){
+    pVtab->zTableName = sqlite3MPrintf("%s", argv[3]);
+    dequoteString(pVtab->zTableName);
+    if( pVtab->zTableName && pVtab->zTableName[0]=='*' ){
+      char *z = sqlite3MPrintf("%s%s", argv[2], &(pVtab->zTableName[1]));
+      sqliteFree(pVtab->zTableName);
+      pVtab->zTableName = z;
+      pVtab->isPattern = 1;
+    }
+    if( !pVtab->zTableName ){
+      echoDestructor((sqlite3_vtab *)pVtab);
+      return SQLITE_NOMEM;
+    }
   }
 
   /* Log the arguments to this function to Tcl var ::echo_module */
@@ -347,7 +403,7 @@ static int echoConstructor(
   ** structure. If an error occurs, delete the sqlite3_vtab structure and
   ** return an error code.
   */
-  if( echoDeclareVtab(pVtab, db, argc, argv) ){
+  if( echoDeclareVtab(pVtab, db) ){
     echoDestructor((sqlite3_vtab *)pVtab);
     return SQLITE_ERROR;
   }
@@ -975,6 +1031,21 @@ static int echoFindFunction(
   return 1;
 }
 
+static int echoRename(sqlite3_vtab *vtab, const char *zNewName){
+  int rc = SQLITE_OK;
+  echo_vtab *p = (echo_vtab *)vtab;
+
+  if( p->isPattern ){
+    int nThis = strlen(p->zThis);
+    char *zSql = sqlite3MPrintf("ALTER TABLE %s RENAME TO %s%s", 
+        p->zTableName, zNewName, &p->zTableName[nThis]
+    );
+    rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
+  }
+
+  return rc;
+}
+
 /*
 ** A virtual table module that merely "echos" the contents of another
 ** table (like an SQL VIEW).
@@ -999,6 +1070,7 @@ static sqlite3_module echoModule = {
   echoCommit,                /* xCommit - commit transaction */
   echoRollback,              /* xRollback - rollback transaction */
   echoFindFunction,          /* xFindFunction - function overloading */
+  echoRename,                /* xRename - rename the table */
 };
 
 /*

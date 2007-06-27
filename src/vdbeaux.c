@@ -299,18 +299,23 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
 #endif
     ){
       if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
-    }else if( opcode==OP_Halt ){
+    }
+    if( opcode==OP_Halt ){
       if( pOp->p1==SQLITE_CONSTRAINT && pOp->p2==OE_Abort ){
         doesStatementRollback = 1;
       }
     }else if( opcode==OP_Statement ){
       hasStatementBegin = 1;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+    }else if( opcode==OP_VUpdate || opcode==OP_VRename ){
+      doesStatementRollback = 1;
     }else if( opcode==OP_VFilter ){
       int n;
       assert( p->nOp - i >= 3 );
       assert( pOp[-2].opcode==OP_Integer );
       n = pOp[-2].p1;
       if( n>nMaxArgs ) nMaxArgs = n;
+#endif
     }
     if( opcodeNoPush(opcode) ){
       nMaxStack--;
@@ -898,6 +903,7 @@ void sqlite3VdbeMakeReady(
   p->nChange = 0;
   p->cacheCtr = 1;
   p->minWriteFileFormat = 255;
+  p->openedStatement = 0;
 #ifdef VDBE_PROFILE
   {
     int i;
@@ -1447,7 +1453,9 @@ int sqlite3VdbeHalt(Vdbe *p){
       }
     }else if( !xFunc ){
       if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
-        xFunc = sqlite3BtreeCommitStmt;
+        if( p->openedStatement ){
+          xFunc = sqlite3BtreeCommitStmt;
+        } 
       }else if( p->errorAction==OE_Abort ){
         xFunc = sqlite3BtreeRollbackStmt;
       }else{

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.42 2007/03/30 14:56:35 danielk1977 Exp $
+# $Id: vtab1.test,v 1.43 2007/06/27 15:53:35 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -243,7 +243,6 @@ do_test vtab1-2.4 {
 # echo module has not been registered with this database connection.
 #
 do_test vtab1.2.6 {
-breakpoint
   catchsql { PRAGMA table_info(t1); }
 } {1 {no such module: echo}}
 
@@ -890,6 +889,44 @@ do_test vtab1.11-5 {
   }
 } {{2 1} {2 2}}
  
+#----------------------------------------------------------------------
+# Test the outcome if a constraint is encountered half-way through
+# a multi-row INSERT that is inside a transaction
+#
+do_test vtab1.12-1 {
+  execsql {
+    CREATE TABLE b(a, b, c);
+    CREATE TABLE c(a UNIQUE, b, c);
+    INSERT INTO b VALUES(1, 'A', 'B');
+    INSERT INTO b VALUES(2, 'C', 'D');
+    INSERT INTO b VALUES(3, 'E', 'F');
+    INSERT INTO c VALUES(3, 'G', 'H');
+    CREATE VIRTUAL TABLE echo_c USING echo(c);
+  }
+} {}
+
+# First test outside of a transaction.
+do_test vtab1.12-2 {
+  catchsql { INSERT INTO echo_c SELECT * FROM b; }
+} {1 {constraint failed}}
+do_test vtab1.12-3 {
+  execsql { SELECT * FROM c }
+} {3 G H}
+
+breakpoint
+
+# Now the real test - wrapped in a transaction.
+do_test vtab1.12-4 {
+  execsql  {BEGIN}
+  catchsql { INSERT INTO echo_c SELECT * FROM b; }
+} {1 {constraint failed}}
+do_test vtab1.12-5 {
+  execsql { SELECT * FROM c }
+} {3 G H}
+do_test vtab1.12-6 {
+  execsql { COMMIT }
+  execsql { SELECT * FROM c }
+} {3 G H}
 
 unset -nocomplain echo_module_begin_fail
 finish_test

@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.216 2007/06/27 10:21:39 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.217 2007/06/27 15:53:35 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2403,6 +2403,8 @@ struct sqlite3_module {
   int (*xFindFunction)(sqlite3_vtab *pVtab, int nArg, const char *zName,
                        void (**pxFunc)(sqlite3_context*,int,sqlite3_value**),
                        void **ppArg);
+
+  int (*xRename)(sqlite3_vtab *pVtab, const char *zNew);
 };
 
 /*

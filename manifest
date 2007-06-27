@@ -1,5 +1,5 @@
-C respect\s$LDFLAGS\sfrom\senv/configure\s(CVS\s4141)
-D 2007-06-27T15:01:46
+C Allow\sALTER\sTABLE\son\svirtual\stables.\s(CVS\s4142)
+D 2007-06-27T15:53:35
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -62,7 +62,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
-F src/alter.c 1b1deeb97446ed87f2fa17a3eb6236548841a348
+F src/alter.c 3402b657de80c242b0382f768df273505f8178cc
 F src/analyze.c 8d345472e0f4e44fc88f5cf489c16dcb77904525
 F src/attach.c ba628db0c2b6a362f036d017bf1196cdfe4ebb37
 F src/auth.c 5ea90bc93dfea46e9fe4bf531e14c7cd98219ecb
@@ -107,7 +107,7 @@ F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c e363327d0eba8d758ab00055de962a3bb0bc213e
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 4b0fc3c76a9f23a1c963e01703c0fbbca1b5c34d
-F src/sqlite.h.in a3c5d9f8566efe43589b428bd4f7f0f77766e9ae
+F src/sqlite.h.in bbcc5481af9f40ce5762c323cf555581a025f3de
 F src/sqlite3ext.h 95575e0d175a0271fe2c3232c0d11e8720ed6887
 F src/sqliteInt.h 81183ae71162818bf60478e738ff68604128bb06
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
@@ -120,7 +120,7 @@ F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c c40a4cf43266c1c6da7bcb737d294304a177e6cc
 F src/test6.c 5957d249d437e4db74045ce2f1f661648d94bf94
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
-F src/test8.c c3c4aeea4e3d70966306d6eca1b77ce7eee2f059
+F src/test8.c 4f0a8624028588e083731c11927f5b2a07184618
 F src/test9.c c0f38f7795cc51d37db6c63874d90f40f10d0f0e
 F src/test_async.c 9d326ceda4306bcab252b8f7e8e480ed45d7ccb6
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
@@ -138,11 +138,11 @@ F src/update.c 6b10becb6235ea314ed245fbfbf8b38755e3166e
 F src/utf.c 01b2aba02b10d12903e9e1ff897215c9faf6b662
 F src/util.c 9e81d417fc60bd2fe156f8f2317aa4845bc6cc90
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c b776b68ad926974c72296145d1282ff6e956b4ff
+F src/vdbe.c 32f39e9cab8a6ef64ad392711396d65ae89fc790
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
-F src/vdbeInt.h 7d2bf163d6d4e815724a457f2216dd8e38c3955c
+F src/vdbeInt.h c3514903cad9e36d6b3242be20261351d09db56c
 F src/vdbeapi.c 7930b9a188ab385287ca3eb3840af7225cb43549
-F src/vdbeaux.c c580d3605edc2c24ba9bd26fa7aa8b4fff10daa4
+F src/vdbeaux.c ca1d673fd5e45fe9ba994391b11568c48a7e1b59
 F src/vdbeblob.c bb30b3e387c35ba869949494b2736aff97159470
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c ca4d3994507cb0a9504820293af69f5c778b4abd
@@ -420,16 +420,17 @@ F test/vacuum.test cf839fc3ff24d601057319bbb5c700ce9c8e0fb0
 F test/vacuum2.test 5aea8c88a65cb29f7d175296e7c819c6158d838c
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 852bd4101e6d171c46ad682eb5c5faf662b2eba4
-F test/vtab1.test bf129928444f1fe3d992894f6e0b4c6d4a534d49
+F test/vtab1.test e740d4761b9125e6e541c62d199a3822f54614ff
 F test/vtab2.test 94bb3bf691ac10e34cf7dad46b1cf94b861d513c
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
-F test/vtab5.test 9fb8f335651afe8f870011e2f68e5b00c5ad03cd
+F test/vtab5.test 26bc7a0a52c5c2bcfa849ba327f8a0d4abccdb23
 F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
 F test/vtab7.test 5f9ef9fb84733e928d5d0267c821072561b198d5
 F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
 F test/vtabA.test 9cb6b1afead6fdd91bbdf1ca65c44ccfd9b10936
+F test/vtab_alter.test 87617789086fd1767aa071e7805f1af7e1dac144
 F test/vtab_err.test 9eabf98b26838fed8bac4aea986580be0a2bd52e
 F test/vtab_shared.test d631d1f820c38c18939d53aab1fc35db5f0a8094
 F test/where.test 1bcde8984c63747ac6d6bafcacd20fd6e8a223de
@@ -516,7 +517,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 850822e2904bc340afd0b7535ef51fbdf9e1f486
-R 1afeab26f16295155c75ffe8baa66b82
-U vapier
-Z 83aaaa53ff941923277b0d6c2cfa7d3d
+P 9c13fc0f4bf22c8e05b11ef5feaaf07d8a8b3f01
+R 53f2a209b5d25f95ed550b0d365211d1
+U danielk1977
+Z ba48bbb530071e692ea4d7c53d55d66a
