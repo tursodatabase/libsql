@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.37 2007/06/09 09:53:51 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.38 2007/06/27 00:08:40 drh Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -154,8 +154,8 @@ faq {
   <p>When SQLite tries to access a file that is locked by another
   process, the default behavior is to return SQLITE_BUSY.  You can
   adjust this behavior from C code using the 
-  <a href="capi3ref#sqlite3_busy_handler">sqlite3_busy_handler()</a> or
-  <a href="capi3ref#sqlite3_busy_timeout">sqlite3_busy_timeout()</a>
+  <a href="capi3ref.html#sqlite3_busy_handler">sqlite3_busy_handler()</a> or
+  <a href="capi3ref.html#sqlite3_busy_timeout">sqlite3_busy_timeout()</a>
   API functions.</p>
 }
 
@@ -171,13 +171,14 @@ faq {
   <p>"Threadsafe" in the previous paragraph means that two or more threads
   can run SQLite at the same time on different "<b>sqlite3</b>" structures
   returned from separate calls to 
-  <a href="capi3ref#sqlite3_open">sqlite3_open()</a>.  It is never safe
+  <a href="capi3ref.html#sqlite3_open">sqlite3_open()</a>.  It is never safe
   to use the same <b>sqlite3</b> structure pointer in two
   or more threads.</p>
 
   <p>Prior to version 3.3.1,
   an <b>sqlite3</b> structure could only be used in the same thread
-  that called <a href="capi3ref#sqlite3_open">sqlite3_open</a> to create it.
+  that called <a href="capi3ref.html#sqlite3_open">sqlite3_open</a>
+  to create it.
   You could not open a
   database in one thread then pass the handle off to another thread for
   it to use.  This was due to limitations (bugs?) in many common threading
@@ -193,6 +194,17 @@ faq {
   as long as the connection is not holding any fcntl() locks.  You
   can safely assume that no locks are being held if no
   transaction is pending and all statements have been finalized.</p>
+
+  <p>If you turn on
+  <a href="capi3ref.html#sqlite3_enable_shared_cache">shared cache</a>
+  mode or if you compile with the -DSQLITE_ENABLE_MEMORY_MANAGEMENT=1
+  option, then you can never move an <b>sqlite3</b> pointer across
+  threads.  The <b>sqlite3</b> pointer must only be used in the same
+  thread in which it was created by 
+  <a href="capi3ref.html#sqlite3_open">sqlite3_open()</a>.  If you
+  break the rules and use an <b>sqlite3</b> in more than one thread
+  under these circumstances, then you will likely corrupt some
+  internal data structures resulting in a crash.</p>
 
   <p>Under UNIX, you should not carry an open SQLite database across
   a fork() system call into the child process.  Problems will result

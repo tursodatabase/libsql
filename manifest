@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sTCL\sbindings\salways\suse\sTcl_GetWideIntFromObj()\seven\sif\sthe\nreported\stype\sis\s"int"\sbecause\son\sx86-64\sand\s"int"\stype\sis\s64-bits.\nTicket\s#2465.\s(CVS\s4135)
-D 2007-06-26T22:55:38
+C Update\sthe\sFAQ\sto\sdescribe\show\smoving\ssqlite3\shandles\sacross\sthreads\sis\nnot\ssafe\swith\sSQLITE_ENABLE_MEMORY_MANAGEMENT.\s\sTickets\s#2357\sand\s#2463.\s(CVS\s4136)
+D 2007-06-27T00:08:40
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -485,7 +485,7 @@ F www/direct1b.gif 32b48b764244817b6b591898dc52a04299a7b8a7
 F www/docs.tcl 09eeac4e565789a67abc63f166a9ae7f3050454d
 F www/download.tcl d59a0244f22a975c3f9deafb535fc20549cb8c45
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl 98179bd65a60b0405b716e554c50bc817a5e39be
+F www/faq.tcl bf83ec841224518fb570c31325f502d7a3e632e7
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bbb8af1ee494a71031acac4c8d8c51535f23b9df
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
@@ -516,7 +516,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3daf7cae18ae2ee6404f770e69e4cd0c715615e5
-R 6bd5371797b28b1ad783bfd355bc5a05
+P 5c93324b937b4d8394b0eb7d7fe74f7965623cbe
+R f301b87e0a5b037cd827261dc87d1b34
 U drh
-Z 0e3284889f389cc363d1804b624bb69e
+Z 516a346f8c7e5fef81f1bad761ac02ef
