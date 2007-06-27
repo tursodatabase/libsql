@@ -108,7 +108,7 @@ ALLOWRELEASE = @ALLOWRELEASE@
 
 # libtool compile/link/install
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC)
-LTLINK = $(LIBTOOL) --mode=link $(TCC)
+LTLINK = $(LIBTOOL) --mode=link $(TCC) @LDFLAGS@
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 
 # nawk compatible awk.
