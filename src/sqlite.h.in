@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.215 2007/06/22 15:21:16 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.216 2007/06/27 10:21:39 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -369,7 +369,7 @@ sqlite_int64 sqlite3_last_insert_rowid(sqlite3*);
 **
 ** SQLite implements the command "DELETE FROM table" without a WHERE clause
 ** by dropping and recreating the table.  (This is much faster than going
-** through and deleting individual elements form the table.)  Because of
+** through and deleting individual elements from the table.)  Because of
 ** this optimization, the change count for "DELETE FROM table" will be
 ** zero regardless of the number of elements that were originally in the
 ** table. To get an accurate count of the number of rows deleted, use
