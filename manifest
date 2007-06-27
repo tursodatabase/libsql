@@ -1,5 +1,5 @@
-C Allow\sALTER\sTABLE\son\svirtual\stables.\s(CVS\s4142)
-D 2007-06-27T15:53:35
+C Implement\sxRename()\sfor\sfts2\sso\sthat\sit\sis\spossible\sto\srename\sfts2\stables.\s(CVS\s4143)
+D 2007-06-27T16:26:07
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -37,7 +37,7 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 2ff290e0a130f6e7611f2e608cb3b5aaea721abc
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 1e1b6b6e831b1f40801dd3536b33e16738e91732
+F ext/fts2/fts2.c 4a177d5f296727f43df0ae315a850de8023ac5c5
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c cafebb4620d19684c4c9872530012441df60f503
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -129,9 +129,9 @@ F src/test_config.c 4d262b9f27b616dea481a40d57a95ab0ab27f878
 F src/test_hexio.c 14c007252285c6dabcec4a28fcf08e9177e85178
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
-F src/test_schema.c ced72140a3a25c148975428e170ec1850d3c3a7d
+F src/test_schema.c 89c526e4b1e9a8fb540550f6ebc69242bf57d3ce
 F src/test_server.c 76c0baf509abe65ca6e5c7974ab0097cfdd8b833
-F src/test_tclvar.c 315e77c17f128ff8c06b38c08617fd07c825a95b
+F src/test_tclvar.c ea4500a60d663f7fdf18fd3210efc112e0c6e7f0
 F src/tokenize.c 6cef9e6fc454d789a32c5b509ccb193a2b01977b
 F src/trigger.c 420192efe3e6f03addf7897c60c3c8bf913d3493
 F src/update.c 6b10becb6235ea314ed245fbfbf8b38755e3166e
@@ -255,7 +255,7 @@ F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
-F test/fts2o.test 05ce2ac9111c29998418a584de02136a0ded471b
+F test/fts2o.test fc65e2b5c25136649bff46de061cdcad4ab08287
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
@@ -517,7 +517,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9c13fc0f4bf22c8e05b11ef5feaaf07d8a8b3f01
-R 53f2a209b5d25f95ed550b0d365211d1
+P 37d1f9f37ea9d2e8a4dbe0ec67c0d6eb7fcc5f3f
+R 061154b74d9142e5c4c143483f77f02b
 U danielk1977
-Z ba48bbb530071e692ea4d7c53d55d66a
+Z 168b383abe5caa1cd0194ed13c2b238e

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_schema.c,v 1.11 2006/09/11 00:34:22 drh Exp $
+** $Id: test_schema.c,v 1.12 2007/06/27 16:26:07 danielk1977 Exp $
 */
 
 /* The code in this file defines a sqlite3 virtual-table module that
@@ -288,6 +288,7 @@ static sqlite3_module schemaModule = {
   0,                           /* xCommit */
   0,                           /* xRollback */
   0,                           /* xFindMethod */
+  0,                           /* xRename */
 };
 
 
