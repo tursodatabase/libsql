@@ -1,5 +1,5 @@
-C Test\serror\shandling\swhen\srenaming\sfts2\stables.\s(CVS\s4144)
-D 2007-06-27T17:09:24
+C Add\sa\stest\scase\sto\sverify\sthat\sticket\s#2470\shas\sbeen\sfixed.\s(CVS\s4145)
+D 2007-06-27T23:52:18
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -321,7 +321,7 @@ F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
 F test/misc5.test c7d2d2a5a20dc37d3605a8067f0df5af2240122e
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
-F test/misc7.test 22ca647b44aa0a5a78ae437d3e20476ce14d8412
+F test/misc7.test 6e573e3d635ac539ba480630f68b2fbe32d19d82
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
@@ -517,7 +517,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 488474fde753c5a7a14ed8f2fad7f16efd236491
-R 4f60da6efe6e8d95948cdc14fa0709df
-U danielk1977
-Z 7f85be68408492be44f5d735b8a75673
+P 57840eba6a4380a0b71dc9514cdda41e2c455bb0
+R d0d6e08a4eb10c3e13819067c7061aec
+U drh
+Z 97914bdcc06bf549188d2ae1e30f9e9f

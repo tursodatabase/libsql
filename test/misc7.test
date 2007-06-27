@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.13 2007/04/25 15:42:26 drh Exp $
+# $Id: misc7.test,v 1.14 2007/06/27 23:52:18 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -414,6 +414,24 @@ do_test misc7-17.4 {
   } 
 } {1 {database disk image is malformed}}
 }
+
+# Ticket #2470
+#
+do_test misc7-18.1 {
+  execsql {
+    CREATE TABLE table_1 (col_10);
+    CREATE TABLE table_2 (
+      col_1, col_2, col_3, col_4, col_5,
+      col_6, col_7, col_8, col_9, col_10
+    );
+    SELECT col_10
+    FROM
+      (SELECT table_1.col_10 AS col_10 FROM table_1),
+      (SELECT table_1.col_10, table_2.col_9 AS qcol_9
+         FROM table_1, table_2
+        GROUP BY table_1.col_10, qcol_9);
+  }
+} {}
 
 db close
 file delete -force test.db
