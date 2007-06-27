@@ -1,5 +1,5 @@
-C Implement\sxRename()\sfor\sfts2\sso\sthat\sit\sis\spossible\sto\srename\sfts2\stables.\s(CVS\s4143)
-D 2007-06-27T16:26:07
+C Test\serror\shandling\swhen\srenaming\sfts2\stables.\s(CVS\s4144)
+D 2007-06-27T17:09:24
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -62,7 +62,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
-F src/alter.c 3402b657de80c242b0382f768df273505f8178cc
+F src/alter.c 24c81ed6734304326922d42430567d1ee368c81d
 F src/analyze.c 8d345472e0f4e44fc88f5cf489c16dcb77904525
 F src/attach.c ba628db0c2b6a362f036d017bf1196cdfe4ebb37
 F src/auth.c 5ea90bc93dfea46e9fe4bf531e14c7cd98219ecb
@@ -255,7 +255,7 @@ F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
-F test/fts2o.test fc65e2b5c25136649bff46de061cdcad4ab08287
+F test/fts2o.test ceac3203cd5d62c0402dcce89d5e28bae5d7481e
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
@@ -517,7 +517,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 37d1f9f37ea9d2e8a4dbe0ec67c0d6eb7fcc5f3f
-R 061154b74d9142e5c4c143483f77f02b
+P 488474fde753c5a7a14ed8f2fad7f16efd236491
+R 4f60da6efe6e8d95948cdc14fa0709df
 U danielk1977
-Z 168b383abe5caa1cd0194ed13c2b238e
+Z 7f85be68408492be44f5d735b8a75673

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS2 module.
 #
-# $Id: fts2o.test,v 1.2 2007/06/27 16:26:07 danielk1977 Exp $
+# $Id: fts2o.test,v 1.3 2007/06/27 17:09:25 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -61,6 +61,45 @@ do_test fts2o-2.3 {
 do_test fts2o-2.4 {
   execsql { SELECT tbl_name FROM sqlite_master WHERE type = 'table'}
 } {fts_t1 fts_t1_content fts_t1_segments fts_t1_segdir}
+
+# See what happens when renaming the fts2 table fails.
+#
+do_test fts2o-2.5 {
+  catchsql {
+    CREATE TABLE t1_segdir(a, b, c);
+    ALTER TABLE fts_t1 RENAME to t1;
+  }
+} {1 {SQL logic error or missing database}}
+do_test fts2o-2.6 {
+  execsql { SELECT rowid, snippet(fts_t1) FROM fts_t1 WHERE a MATCH 'four'; }
+} {1 {one three <b>four</b>}}
+do_test fts2o-2.7 {
+  execsql { SELECT tbl_name FROM sqlite_master WHERE type = 'table'}
+} {fts_t1 fts_t1_content fts_t1_segments fts_t1_segdir t1_segdir}
+
+# See what happens when renaming the fts2 table fails inside a transaction.
+#
+do_test fts2o-2.8 {
+  execsql {
+    BEGIN;
+    INSERT INTO fts_t1(a, b, c) VALUES('one two three', 'one four', 'one two');
+  }
+} {}
+do_test fts2o-2.9 {
+  catchsql {
+    ALTER TABLE fts_t1 RENAME to t1;
+  }
+} {1 {SQL logic error or missing database}}
+do_test fts2o-2.10 {
+  execsql { SELECT rowid, snippet(fts_t1) FROM fts_t1 WHERE a MATCH 'four'; }
+} {1 {one three <b>four</b>}}
+do_test fts2o-2.11 {
+  execsql { SELECT tbl_name FROM sqlite_master WHERE type = 'table'}
+} {fts_t1 fts_t1_content fts_t1_segments fts_t1_segdir t1_segdir}
+do_test fts2o-2.12 {
+  execsql COMMIT
+  execsql {SELECT a FROM fts_t1}
+} {{one three four} {one two three}}
 
 finish_test
 
