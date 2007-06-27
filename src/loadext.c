@@ -76,6 +76,7 @@
 
 #ifdef SQLITE_OMIT_VIRTUALTABLE
 # define sqlite3_create_module 0
+# define sqlite3_create_module_v2 0
 # define sqlite3_declare_vtab 0
 #endif
 
