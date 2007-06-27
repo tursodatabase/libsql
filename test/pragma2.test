@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma2.test,v 1.1 2007/06/24 08:00:44 danielk1977 Exp $
+# $Id: pragma2.test,v 1.2 2007/06/27 10:20:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -36,6 +36,7 @@ db close
 file delete test.db test.db-journal
 file delete test3.db test3.db-journal
 sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
+db eval {PRAGMA auto_vacuum=0}
 
 do_test pragma2-1.1 {
   execsql {
@@ -66,6 +67,7 @@ file delete -force test2.db-journal
 do_test pragma2-2.1 {
   execsql {
     ATTACH 'test2.db' AS aux;
+    PRAGMA aux.auto_vacuum=OFF;
     PRAGMA aux.freelist_count;
   }
 } {0}

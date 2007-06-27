@@ -1,5 +1,5 @@
-C Set\sthe\sconnection\serror\scode\swhen\ssqlite3_blob_read()\sor\nsqlite3_blob_write()\sfail.\s\sTicket\s#2464.\s(CVS\s4137)
-D 2007-06-27T00:36:14
+C Make\ssure\sauto_vacuum\sis\sturned\soff\sbefore\srunning\sthe\stests\sin\spragma2.test.\s(CVS\s4138)
+D 2007-06-27T10:20:01
 F Makefile.in 7f7485a4cc039476a42e534b3f26ec90e2f9753e
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -331,7 +331,7 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test b4b38eb3cf76be2be444326856248898bb0e3fc9
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
 F test/pragma.test b0e73879206934a835856a8b8c4cc884cd8562f3
-F test/pragma2.test 6639e9e53fd91b2f1b58a5cf3d86fbe2fc9a70f5
+F test/pragma2.test bb5aa7be00dae2c381fcc782358048a33c955793
 F test/printf.test 69d8cb0771a1a5e4d9d5dece12fc2c16179ac5e5
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 1c712dd6516e1377471744fa765e41c79a357da6
@@ -516,7 +516,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2640f518deba1d196201fac903ec4d3ab26d4bb3
-R cb9e25036d94d8667607dda541f483a6
+P 3bd990be3cb8a74be9eaa8d5710852be6733cb58
+R ca8107f04c289cb786fead8e1be54d3e
 U drh
-Z f443a2324ae948e8ecfe65cdb660841d
+Z 5430943496f1c24366a6aec4a5c081bc
