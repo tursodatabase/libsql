@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.11 2007/06/15 15:08:08 danielk1977 Exp $
+# $Id: incrblob.test,v 1.12 2007/06/27 00:36:14 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -558,5 +558,18 @@ do_test incrblob-7.3.3 {
   read $::b
 } $::otherdata
 
-finish_test
+# Attempt to write on a read-only blob.  Make sure the error code
+# gets set.  Ticket #2464.
+#
+do_test incrblob-7.4 {
+  set rc [catch {sqlite3_blob_write $::b 10 HELLO} msg]
+  lappend rc $msg
+} {1 SQLITE_READONLY}
+do_test incrblob-7.5 {
+  sqlite3_errcode db
+} {SQLITE_READONLY}
+do_test incrblob-7.6 {
+  sqlite3_errmsg db
+} {attempt to write a readonly database}
 
+finish_test
