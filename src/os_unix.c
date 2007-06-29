@@ -918,15 +918,19 @@ static int unixOpenDirectory(
   OsFile *id,
   const char *zDirname
 ){
+  int h;
   unixFile *pFile = (unixFile*)id;
   assert( pFile!=0 );
   SET_THREADID(pFile);
   assert( pFile->dirfd<0 );
-  pFile->dirfd = open(zDirname, O_RDONLY|O_BINARY, 0);
-  if( pFile->dirfd<0 ){
+  pFile->dirfd = h = open(zDirname, O_RDONLY|O_BINARY, 0);
+  if( h<0 ){
     return SQLITE_CANTOPEN; 
   }
-  OSTRACE3("OPENDIR %-3d %s\n", pFile->dirfd, zDirname);
+#ifdef FD_CLOEXEC
+  fcntl(h, F_SETFD, fcntl(h, F_GETFD, 0) | FD_CLOEXEC);
+#endif
+  OSTRACE3("OPENDIR %-3d %s\n", h, zDirname);
   return SQLITE_OK;
 }
 
@@ -2577,6 +2581,9 @@ static int allocateUnixFile(
   unixFile f;
   int rc;
 
+#ifdef FD_CLOEXEC
+  fcntl(h, F_SETFD, fcntl(h, F_GETFD, 0) | FD_CLOEXEC);
+#endif
   memset(&f, 0, sizeof(f));
   sqlite3OsEnterMutex();
   rc = findLockInfo(h, &f.pLock, &f.pOpen);
