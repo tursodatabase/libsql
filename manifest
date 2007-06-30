@@ -1,5 +1,5 @@
-C Set\sFD_CLOEXEC\son\sall\sopen\sfiles\sunder\sUnix.\s\sTicket\s#2475.\s(CVS\s4146)
-D 2007-06-29T12:04:26
+C old\semx/gcc\ssets\s__EMX__\s(with\sdouble\sunderscores)\sas\sbuiltin\s#define\s(CVS\s4147)
+D 2007-06-30T15:24:38
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -87,7 +87,7 @@ F src/main.c 65fc7de0b3c2e5b637c000ecf419c35de2525ef9
 F src/malloc.c fa9bbccc4e6d099cd04c2518d238a1669c9d1020
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 1f10b47acc1177fb9225edb4f5f0d25ed716f9cb
-F src/os.h bdb253b04d58e74967d55682adfe5dac944bde1e
+F src/os.h cea2e179bb33f4fc09dbb9fcd51b2246544bd2db
 F src/os_common.h a38233cd3b1f260db6f01f1093295d5708130065
 F src/os_os2.c 2ce97909b926a598823f97338027dbec1dcf4165
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
@@ -517,7 +517,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b3f442698e01ad55666703025c4457445f2efc9b
-R 32ae689340efe4ebbf465449d4fc6cf6
-U drh
-Z 1010b88245cb62615c48bcce03c46f90
+P f1e5fed8eb0fb92bd0f040666c017850afe3cf9f
+R 32cb13f3fe445bd75e8118b293d404dc
+U pweilbacher
+Z bf2b5da3f5ed4235b2c504185b71aebe
