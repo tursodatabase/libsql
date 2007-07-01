@@ -682,16 +682,22 @@ char *sqlite3Os2FullPathname( const char *zRelative ){
   if( strchr(zRelative, ':') ){
     sqlite3SetString( &zFull, zRelative, (char*)0 );
   }else{
-    char zBuff[SQLITE_TEMPNAME_SIZE - 2] = {0};
-    char zDrive[1] = {0};
-    ULONG cbzFullLen = SQLITE_TEMPNAME_SIZE;
     ULONG ulDriveNum = 0;
     ULONG ulDriveMap = 0;
-    DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
-    DosQueryCurrentDir( 0L, zBuff, &cbzFullLen );
-    zFull = sqliteMalloc( cbzFullLen );
-    sprintf( zDrive, "%c", (char)('A' + ulDriveNum - 1) );
-    sqlite3SetString( &zFull, zDrive, ":\\", zBuff, "\\", zRelative, (char*)0 );
+    ULONG cbzBufLen = SQLITE_TEMPNAME_SIZE;
+    char zDrive[2];
+    char *zBuff;
+
+    zBuff = sqliteMalloc( cbzBufLen );
+    if( zBuff != 0 ){
+      DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
+      if( DosQueryCurrentDir( ulDriveNum, zBuff, &cbzBufLen ) == NO_ERROR ){
+        sprintf( zDrive, "%c", (char)('A' + ulDriveNum - 1) );
+        sqlite3SetString( &zFull, zDrive, ":\\", zBuff,
+                          "\\", zRelative, (char*)0 );
+      }
+      sqliteFree( zBuff );
+    }
   }
   return zFull;
 }
