@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.635 2007/06/27 15:53:35 danielk1977 Exp $
+** $Id: vdbe.c,v 1.636 2007/07/01 21:18:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -4306,8 +4306,7 @@ case OP_IntegrityCk: {
   pnErr = &p->aMem[j];
   assert( (pnErr->flags & MEM_Int)!=0 );
   for(j=0; j<nRoot; j++){
-    Mem *pMem = &pTos[-j];
-    aRoot[j] = pMem->u.i;
+    aRoot[j] = pTos[-j].u.i;
   }
   aRoot[j] = 0;
   popStack(&pTos, nRoot);
