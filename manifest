@@ -1,5 +1,5 @@
-C Modify\shandling\sof\sSQLITE_SCHEMA\sin\sfts2\scode.\sAn\sSQLITE_SCHEMA\serror\smay\scause\sSQLite\sto\sreload\sthe\sinternal\sschema,\sdeleting\sand\srecreating\sv-table\sobjects.\sSo\sthe\ssqlite3_vtab\sstructure\scan\sbe\sdeleted\sout\sfrom\sunder\sa\sv-table\simplementation.\s(CVS\s4151)
-D 2007-07-02T10:16:50
+C Fix\sa\scomment\stypo\sreported\son\sthe\smailing\slist.\s(CVS\s4152)
+D 2007-07-02T19:31:27
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -69,7 +69,7 @@ F src/auth.c 5ea90bc93dfea46e9fe4bf531e14c7cd98219ecb
 F src/btree.c c1cc6660b01d9e9f4329a9ab559d6a991c2be638
 F src/btree.h 1d527bf61ed176f980c34999d5793a0fd45dcf8c
 F src/btreeInt.h ac1ab1fb624ffbe571786cd2bd9559f9ae336355
-F src/build.c 50992d92e131a9aa9aa6657fb1ddc13e176fd70c
+F src/build.c 59fd5782a728686148a6d30a5df283c177d22c1f
 F src/callback.c 9c12535669a638f90a67e10440b99c7b93c0fbf4
 F src/complete.c 7d1a44be8f37de125fcafd3d3a018690b3799675
 F src/date.c 6049db7d5a8fdf2c677ff7d58fa31d4f6593c988
@@ -517,7 +517,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 35ae398bd37e4abbe362b0b780fc51153145b43d
-R 2df8ed56393bd9b520dd9a9b5001f0a9
-U danielk1977
-Z ce1561116c719f1082e5e2fdc681fecd
+P dee1a0fd28e8341af6523ab0c5628b671d7d2811
+R 748ebb7d5611da509fc36402c86fe12b
+U drh
+Z 10e512aabfacbf99d78b5a9941c7ad88

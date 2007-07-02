@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.432 2007/05/15 14:34:32 drh Exp $
+** $Id: build.c,v 1.433 2007/07/02 19:31:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2239,7 +2239,7 @@ void sqlite3CreateIndex(
   SrcList *pTblName, /* Table to index. Use pParse->pNewTable if 0 */
   ExprList *pList,   /* A list of columns to be indexed */
   int onError,       /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
-  Token *pStart,     /* The CREATE token that begins a CREATE TABLE statement */
+  Token *pStart,     /* The CREATE token that begins this statement */
   Token *pEnd,       /* The ")" that closes the CREATE INDEX statement */
   int sortOrder,     /* Sort order of primary key when pList==NULL */
   int ifNotExist     /* Omit error if index already exists */
