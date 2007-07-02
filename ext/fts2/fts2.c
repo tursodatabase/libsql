@@ -1947,20 +1947,15 @@ static int sql_step_statement(fulltext_vtab *v, fulltext_statement iStmt,
     if( rc==SQLITE_BUSY ) continue;
     if( rc!=SQLITE_ERROR ) return rc;
 
-    rc = sqlite3_reset(s);
-    if( rc!=SQLITE_SCHEMA ) return SQLITE_ERROR;
-
-    v->pFulltextStatements[iStmt] = NULL;   /* Still in s */
-    rc = sql_get_statement(v, iStmt, &pNewStmt);
-    if( rc!=SQLITE_OK ) goto err;
-    *ppStmt = pNewStmt;
-
-    rc = sqlite3_transfer_bindings(s, pNewStmt);
-    if( rc!=SQLITE_OK ) goto err;
-
+    /* If an SQLITE_SCHEMA error has occured, then finalizing this
+     * statement is going to delete the fulltext_vtab structure. If
+     * the statement just executed is in the pFulltextStatements[]
+     * array, it will be finalized twice. So remove it before
+     * calling sqlite3_finalize().
+     */
+    v->pFulltextStatements[iStmt] = NULL;
     rc = sqlite3_finalize(s);
-    if( rc!=SQLITE_OK ) return rc;
-    s = pNewStmt;
+    break;
   }
   return rc;
 
@@ -2018,25 +2013,17 @@ static int sql_step_leaf_statement(fulltext_vtab *v, int idx,
     if( rc==SQLITE_BUSY ) continue;
     if( rc!=SQLITE_ERROR ) return rc;
 
-    rc = sqlite3_reset(s);
-    if( rc!=SQLITE_SCHEMA ) return SQLITE_ERROR;
-
-    v->pLeafSelectStmts[idx] = NULL;   /* Still in s */
-    rc = sql_get_leaf_statement(v, idx, &pNewStmt);
-    if( rc!=SQLITE_OK ) goto err;
-    *ppStmt = pNewStmt;
-
-    rc = sqlite3_transfer_bindings(s, pNewStmt);
-    if( rc!=SQLITE_OK ) goto err;
-
+    /* If an SQLITE_SCHEMA error has occured, then finalizing this
+     * statement is going to delete the fulltext_vtab structure. If
+     * the statement just executed is in the pLeafSelectStmts[]
+     * array, it will be finalized twice. So remove it before
+     * calling sqlite3_finalize().
+     */
+    v->pLeafSelectStmts[idx] = NULL;
     rc = sqlite3_finalize(s);
-    if( rc!=SQLITE_OK ) return rc;
-    s = pNewStmt;
+    break;
   }
-  return rc;
 
- err:
-  sqlite3_finalize(s);
   return rc;
 }
 

@@ -1,5 +1,5 @@
-C Remove\san\sunnecessary\stemporary\svariable\sfor\sclarity\sof\spresentation\sin\na\sloop\sthat\sGCC\s4.2.0\sis\smiscompiling.\s\sTicket\s#2469.\s\sGCC\s4.2.0\smiscompiles\nthis\sloop\sregardless\sof\swhether\sor\snot\sthe\stemporary\svariable\sis\sused,\sbut\nby\sremoving\sthe\svariable,\swe\shope\sto\smake\sit\seasier\sto\sexplain\sthe\sproblem\nto\sGCC\smaintainers.\s\sThe\serror\sonly\sappears\sif\s-ftree-vrp\sis\sused\s(which\nis\sturned\son\sby\s-O2).\s(CVS\s4150)
-D 2007-07-01T21:18:40
+C Modify\shandling\sof\sSQLITE_SCHEMA\sin\sfts2\scode.\sAn\sSQLITE_SCHEMA\serror\smay\scause\sSQLite\sto\sreload\sthe\sinternal\sschema,\sdeleting\sand\srecreating\sv-table\sobjects.\sSo\sthe\ssqlite3_vtab\sstructure\scan\sbe\sdeleted\sout\sfrom\sunder\sa\sv-table\simplementation.\s(CVS\s4151)
+D 2007-07-02T10:16:50
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -37,7 +37,7 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 2ff290e0a130f6e7611f2e608cb3b5aaea721abc
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 4a177d5f296727f43df0ae315a850de8023ac5c5
+F ext/fts2/fts2.c 41a63f6e375c5b38ab126205a8d44656e2a15bf2
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c cafebb4620d19684c4c9872530012441df60f503
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -255,7 +255,7 @@ F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
-F test/fts2o.test ceac3203cd5d62c0402dcce89d5e28bae5d7481e
+F test/fts2o.test c6a79567d85403dc4d15b89f3f9799a0a0aef065
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
@@ -517,7 +517,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P cc2105176563c352a6dccef89a429a76b6f3adf5
-R 5ab68d3d21b1ac3447f261afad19b81e
-U drh
-Z cc964195494be17bba33eb2f44687e4f
+P 35ae398bd37e4abbe362b0b780fc51153145b43d
+R 2df8ed56393bd9b520dd9a9b5001f0a9
+U danielk1977
+Z ce1561116c719f1082e5e2fdc681fecd

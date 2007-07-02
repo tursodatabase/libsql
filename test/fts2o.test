@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS2 module.
 #
-# $Id: fts2o.test,v 1.3 2007/06/27 17:09:25 danielk1977 Exp $
+# $Id: fts2o.test,v 1.4 2007/07/02 10:16:50 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -100,6 +100,70 @@ do_test fts2o-2.12 {
   execsql COMMIT
   execsql {SELECT a FROM fts_t1}
 } {{one three four} {one two three}}
+do_test fts2o-2.12 {
+  execsql { SELECT a, b, c FROM fts_t1 WHERE c MATCH 'four'; }
+} {{one three four} {one four} {one four two}}
+
+#-------------------------------------------------------------------
+# Close, delete and reopen the database. The following test should 
+# be run on an initially empty db.
+#
+db close
+file delete -force test.db test.db-journal
+sqlite3 db test.db
+
+do_test fts2o-3.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t1 USING fts2(a, b, c);
+    INSERT INTO t1(a, b, c) VALUES('one three four', 'one four', 'one two');
+    SELECT a, b, c FROM t1 WHERE c MATCH 'two';
+  }
+} {{one three four} {one four} {one two}}
+
+# This test was crashing at one point.
+#
+do_test fts2o-3.2 {
+  execsql {
+    SELECT a, b, c FROM t1 WHERE c MATCH 'two';
+    CREATE TABLE t3(a, b, c);
+    SELECT a, b, c FROM t1 WHERE  c  MATCH 'two';
+  }
+} {{one three four} {one four} {one two} {one three four} {one four} {one two}}
+
+#---------------------------------------------------------------------
+# Test that it is possible to rename an fts2 table in an attached 
+# database.
+#
+file delete -force test2.db test2.db-journal
+
+do_test fts2o-3.1 {
+  execsql {
+    ATTACH 'test2.db' AS aux;
+    CREATE VIRTUAL TABLE aux.t1 USING fts2(a, b, c);
+    INSERT INTO aux.t1(a, b, c) VALUES(
+      'neung song sahm', 'neung see', 'neung see song'
+    );
+  }
+} {}
+
+do_test fts2o-3.2 {
+  execsql { SELECT a, b, c FROM aux.t1 WHERE a MATCH 'song'; }
+} {{neung song sahm} {neung see} {neung see song}}
+
+do_test fts2o-3.3 {
+  execsql { SELECT a, b, c FROM t1 WHERE c MATCH 'two'; }
+} {{one three four} {one four} {one two}}
+
+do_test fts2o-3.4 {
+  execsql { ALTER TABLE aux.t1 RENAME TO t2 }
+} {}
+
+do_test fts2o-3.2 {
+  execsql { SELECT a, b, c FROM t2 WHERE a MATCH 'song'; }
+} {{neung song sahm} {neung see} {neung see song}}
+
+do_test fts2o-3.3 {
+  execsql { SELECT a, b, c FROM t1 WHERE c MATCH 'two'; }
+} {{one three four} {one four} {one two}}
 
 finish_test
-
