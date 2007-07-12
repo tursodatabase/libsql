@@ -275,6 +275,7 @@ end_of_step:
   if( p->zSql && (rc&0xff)<SQLITE_ROW ){
     /* This behavior occurs if sqlite3_prepare_v2() was used to build
     ** the prepared statement.  Return error codes directly */
+    sqlite3Error(p->db, p->rc, 0);
     return p->rc;
   }else{
     /* This is for legacy sqlite3_prepare() builds and when the code
