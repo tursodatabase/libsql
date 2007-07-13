@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.129 2007/05/15 14:34:32 drh Exp $
+** $Id: tokenize.c,v 1.130 2007/07/13 10:26:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -381,6 +381,13 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
 }
 
 /*
+** The interface to the LEMON-generated parser
+*/
+void *sqlite3ParserAlloc(void*(*)(size_t));
+void sqlite3ParserFree(void*, void(*)(void*));
+void sqlite3Parser(void*, int, Token, Parse*);
+
+/*
 ** Run the parser on the given SQL string.  The parser structure is
 ** passed in.  An SQLITE_ status code is returned.  If an error occurs
 ** and pzErrMsg!=NULL then an error message might be written into 
@@ -394,9 +401,6 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int tokenType;
   int lastTokenParsed = -1;
   sqlite3 *db = pParse->db;
-  extern void *sqlite3ParserAlloc(void*(*)(size_t));
-  extern void sqlite3ParserFree(void*, void(*)(void*));
-  extern void sqlite3Parser(void*, int, Token, Parse*);
 
   if( db->activeVdbeCnt==0 ){
     db->u1.isInterrupted = 0;
