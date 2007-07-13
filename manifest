@@ -1,5 +1,5 @@
-C Update\sdocumentation\sto\smake\sit\sclear\sthat\sVACUUM\sis\sfree\sto\nchange\simplicit\srowids.\s\sTicket\s#2382.\s(CVS\s4157)
-D 2007-07-13T10:35:15
+C Add\san\sextra\sintegrity_check\sto\sthe\stransaction\stest\sscript.\s(CVS\s4158)
+D 2007-07-13T10:36:48
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -400,7 +400,7 @@ F test/tkt2391.test ab7a11be7402da8b51a5be603425367aa0684567
 F test/tkt2409.test f130054aedff681883466ad04332bd3f7db51a02
 F test/tkt2450.test 77ed94863f2049c1420288ddfea2d41e5e0971d6
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
-F test/trans.test 9e6e7b886ea8093239801b5af0981ff784d9c541
+F test/trans.test d132b8af1429a1e006bf4473de9a6e4c7f67a3f4
 F test/trigger1.test b361161cf20614024cc1e52ea0bdec250776b2ae
 F test/trigger2.test 33bf8ae9b788013be194efe5f66c04a202facbb4
 F test/trigger3.test 9102fd3933db294dc654b5aee9edfe9e94f2b9e2
@@ -517,7 +517,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f35fbf8070d770a603960b2a2afdeae91574ed5f
-R 5b7a1a1468910954610b2ff13678d36d
+P d111b1daa547fea51d9e1fbe49c0b1338298484e
+R 59291081800ad889c977d315921ad8a1
 U drh
-Z f5937f843c1fc81877d140cf25b28d86
+Z a3b827059bff0a78b7f75c8b9ecc3b60
