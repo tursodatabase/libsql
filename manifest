@@ -1,5 +1,5 @@
-C "extern"\sprototypes\scause\sproblems\sfor\sthe\sDigital\sMars\scompiler.\s\sSo\nremove\sthem.\s\sTicket\s#2502.\s(CVS\s4156)
-D 2007-07-13T10:26:08
+C Update\sdocumentation\sto\smake\sit\sclear\sthat\sVACUUM\sis\sfree\sto\nchange\simplicit\srowids.\s\sTicket\s#2382.\s(CVS\s4157)
+D 2007-07-13T10:35:15
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -493,7 +493,7 @@ F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
 F www/index.tcl 9c1f9127283298a90fe021a6277302aafabbced2
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
-F www/lang.tcl e481e68bc17a850944006e5cfeefa86750244774
+F www/lang.tcl d32eef14c40888a0e27c1c9968a7ae5692fa7858
 F www/limits.tcl ff26cca93d6d697a8e5fa3a4b0355c751311763b
 F www/lockingv3.tcl e52345bd20323bef6146bfce18ae0829b2b7c87d
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
@@ -517,7 +517,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b01fda5f50e40b6122faf169c44486bde7ffe16c
-R d29cc33e8e2ed440772d23db662e8ae5
+P f35fbf8070d770a603960b2a2afdeae91574ed5f
+R 5b7a1a1468910954610b2ff13678d36d
 U drh
-Z 4291f69b8652e32f9a933f1e37282a3c
+Z f5937f843c1fc81877d140cf25b28d86

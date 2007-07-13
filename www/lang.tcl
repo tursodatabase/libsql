@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.131 2007/06/15 18:59:09 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.132 2007/07/13 10:35:15 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -555,7 +555,8 @@ may only hold unique integer values.  (Except for this one case,
 SQLite ignores the datatype specification of columns and allows
 any kind of data to be put in a column regardless of its declared
 datatype.)  If a table does not have an INTEGER PRIMARY KEY column,
-then the B-Tree key will be a automatically generated integer.  The
+then the B-Tree key will be a automatically generated integer.
+<a name="rowid"> The
 B-Tree key for a row can always be accessed using one of the
 special names "<b>ROWID</b>", "<b>OID</b>", or "<b>_ROWID_</b>".
 This is true regardless of whether or not there is an INTEGER
@@ -1203,7 +1204,7 @@ helpful logic.</p>
 statement or one of the following special identifiers: "<b>ROWID</b>",
 "<b>OID</b>", or "<b>_ROWID_</b>".
 These special identifiers all describe the
-unique random integer key (the "row key") associated with every 
+unique integer key (the "row key") associated with every 
 row of every table.
 The special identifiers only refer to the row key if the CREATE TABLE
 statement does not define a real column with the same name.  Row keys
@@ -1300,7 +1301,8 @@ is a hexadecimal rendering of the content of that blob.</td>
 
 <tr>
 <td valign="top" align="right">last_insert_rowid()</td>
-<td valign="top">Return the ROWID of the last row insert from this
+<td valign="top">Return the <a href="lang_createtable.html#rowid">ROWID</a>
+of the last row insert from this
 connection to the database.  This is the same value that would be returned
 from the <b>sqlite_last_insert_rowid()</b> API function.</td>
 </tr>
@@ -1901,6 +1903,10 @@ the main database by copying its contents to a temporary database file and
 reloading the original database file from the copy.  This eliminates 
 free pages,  aligns table data to be contiguous, and otherwise cleans 
 up the database file structure.</p>
+
+<p>The VACUUM command may change the 
+<a href="lang_createtable.html#rowid">ROWID</a> of entires in tables that do
+not have an explicit INTEGER PRIMARY KEY.</p>
 
 <p>VACUUM only works on the main database.
 It is not possible to VACUUM an attached database file.</p>
