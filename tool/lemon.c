@@ -11,6 +11,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #ifndef __WIN32__
 #   if defined(_WIN32) || defined(WIN32)
@@ -27,20 +28,10 @@
 #define MAXRHS 1000
 #endif
 
-char *msort();
-extern void *malloc();
+static char *msort(char*,char**,int(*)(const char*,const char*));
 
-/******** From the file "action.h" *************************************/
-struct action *Action_new();
-struct action *Action_sort();
-
-/********* From the file "assert.h" ************************************/
-void myassert();
-#ifndef NDEBUG
-#  define assert(X) if(!(X))myassert(__FILE__,__LINE__)
-#else
-#  define assert(X)
-#endif
+static struct action *Action_new(void);
+static struct action *Action_sort(struct action *);
 
 /********** From the file "build.h" ************************************/
 void FindRulePrecedences();
@@ -332,7 +323,7 @@ void Configtable_clear(/* int(*)(struct config *) */);
 */
 
 /* Allocate a new parser action */
-struct action *Action_new(){
+static struct action *Action_new(void){
   static struct action *freelist = 0;
   struct action *new;
 
@@ -352,11 +343,14 @@ struct action *Action_new(){
   return new;
 }
 
-/* Compare two actions */
-static int actioncmp(ap1,ap2)
-struct action *ap1;
-struct action *ap2;
-{
+/* Compare two actions for sorting purposes.  Return negative, zero, or
+** positive if the first action is less than, equal to, or greater than
+** the first
+*/
+static int actioncmp(
+  struct action *ap1,
+  struct action *ap2
+){
   int rc;
   rc = ap1->sp->index - ap2->sp->index;
   if( rc==0 ) rc = (int)ap1->type - (int)ap2->type;
@@ -367,10 +361,11 @@ struct action *ap2;
 }
 
 /* Sort parser actions */
-struct action *Action_sort(ap)
-struct action *ap;
-{
-  ap = (struct action *)msort((char *)ap,(char **)&ap->next,actioncmp);
+static struct action *Action_sort(
+  struct action *ap
+){
+  ap = (struct action *)msort((char *)ap,(char **)&ap->next,
+                              (int(*)(const char*,const char*))actioncmp);
   return ap;
 }
 
@@ -556,17 +551,6 @@ int acttab_insert(acttab *p){
   return i - p->mnLookahead;
 }
 
-/********************** From the file "assert.c" ****************************/
-/*
-** A more efficient way of handling assertions.
-*/
-void myassert(file,line)
-char *file;
-int line;
-{
-  fprintf(stderr,"Assertion failed on line %d of file \"%s\"\n",line,file);
-  exit(1);
-}
 /********************** From the file "build.c" *****************************/
 /*
 ** Routines to construction the finite state machine for the LEMON
@@ -970,7 +954,7 @@ struct lemon *lemp;
     struct action *ap, *nap;
     struct state *stp;
     stp = lemp->sorted[i];
-    assert( stp->ap );
+    /* assert( stp->ap ); */
     stp->ap = Action_sort(stp->ap);
     for(ap=stp->ap; ap && ap->next; ap=ap->next){
       for(nap=ap->next; nap && nap->sp==ap->sp; nap=nap->next){
@@ -1560,12 +1544,12 @@ char **argv;
 **   The "next" pointers for elements in the lists a and b are
 **   changed.
 */
-static char *merge(a,b,cmp,offset)
-char *a;
-char *b;
-int (*cmp)();
-int offset;
-{
+static char *merge(
+  char *a,
+  char *b,
+  int (*cmp)(const char*,const char*),
+  int offset
+){
   char *ptr, *head;
 
   if( a==0 ){
@@ -1612,11 +1596,11 @@ int offset;
 **   The "next" pointers for elements in list are changed.
 */
 #define LISTSIZE 30
-char *msort(list,next,cmp)
-char *list;
-char **next;
-int (*cmp)();
-{
+static char *msort(
+  char *list,
+  char **next,
+  int (*cmp)(const char*,const char*)
+){
   unsigned long offset;
   char *ep;
   char *set[LISTSIZE];
@@ -2856,7 +2840,6 @@ struct lemon *lemp;
 
   fp = file_open(lemp,".out","wb");
   if( fp==0 ) return;
-  fprintf(fp," \b");
   for(i=0; i<lemp->nstate; i++){
     stp = lemp->sorted[i];
     fprintf(fp,"State %d:\n",stp->statenum);
@@ -2885,6 +2868,27 @@ struct lemon *lemp;
       if( PrintAction(ap,fp,30) ) fprintf(fp,"\n");
     }
     fprintf(fp,"\n");
+  }
+  fprintf(fp, "----------------------------------------------------\n");
+  fprintf(fp, "Symbols:\n");
+  for(i=0; i<lemp->nsymbol; i++){
+    int j;
+    struct symbol *sp;
+
+    sp = lemp->symbols[i];
+    fprintf(fp, "  %3d: %s", i, sp->name);
+    if( sp->type==NONTERMINAL ){
+      fprintf(fp, ":");
+      if( sp->lambda ){
+        fprintf(fp, " <lambda>");
+      }
+      for(j=0; j<lemp->nterminal; j++){
+        if( sp->firstset && SetFind(sp->firstset, j) ){
+          fprintf(fp, " %s", lemp->symbols[j]->name);
+        }
+      }
+    }
+    fprintf(fp, "\n");
   }
   fclose(fp);
   return;
