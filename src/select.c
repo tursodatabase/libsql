@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.353 2007/06/26 10:38:55 danielk1977 Exp $
+** $Id: select.c,v 1.354 2007/07/18 18:17:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2513,6 +2513,16 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
       sqlite3VdbeAddOp(v, OP_Null, 0, 0);
       sqlite3VdbeAddOp(v, OP_MakeRecord, 1, 0);
       seekOp = OP_MoveGt;
+    }
+    if( pIdx->aSortOrder[0]==SQLITE_SO_DESC ){
+      /* Ticket #2514: invert the seek operator if we are using
+      ** a descending index. */
+      if( seekOp==OP_Last ){
+        seekOp = OP_Rewind;
+      }else{
+        assert( seekOp==OP_MoveGt );
+        seekOp = OP_MoveLt;
+      }
     }
     sqlite3VdbeAddOp(v, seekOp, iIdx, 0);
     sqlite3VdbeAddOp(v, OP_IdxRowid, iIdx, 0);
