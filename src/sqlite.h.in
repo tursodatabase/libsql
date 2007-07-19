@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.217 2007/06/27 15:53:35 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.218 2007/07/19 12:41:40 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -963,10 +963,14 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** The second argument "zSql" is the statement to be compiled, encoded
 ** as either UTF-8 or UTF-16.  The sqlite3_prepare() and sqlite3_prepare_v2()
 ** interfaces uses UTF-8 and sqlite3_prepare16() and sqlite3_prepare16_v2()
-** use UTF-16. If the next argument, "nBytes", is less
+** use UTF-16.
+**
+** If the nByte argument is less
 ** than zero, then zSql is read up to the first zero terminator.  If
-** "nBytes" is not less than zero, then it is the length of the string zSql
-** in bytes (not characters).
+** nByte is non-negative, then it is the maximum number of 
+** bytes read from zSql.  When nByte is non-negative, the
+** zSql string ends at either the first '\000' character or 
+** until the nByte-th byte, whichever comes first.
 **
 ** *pzTail is made to point to the first byte past the end of the first
 ** SQL statement in zSql.  This routine only compiles the first statement
@@ -1019,28 +1023,28 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 int sqlite3_prepare(
   sqlite3 *db,            /* Database handle */
   const char *zSql,       /* SQL statement, UTF-8 encoded */
-  int nBytes,             /* Length of zSql in bytes. */
+  int nByte,              /* Maximum length of zSql in bytes. */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const char **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
 int sqlite3_prepare_v2(
   sqlite3 *db,            /* Database handle */
   const char *zSql,       /* SQL statement, UTF-8 encoded */
-  int nBytes,             /* Length of zSql in bytes. */
+  int nByte,              /* Maximum length of zSql in bytes. */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const char **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
 int sqlite3_prepare16(
   sqlite3 *db,            /* Database handle */
   const void *zSql,       /* SQL statement, UTF-16 encoded */
-  int nBytes,             /* Length of zSql in bytes. */
+  int nByte,              /* Maximum length of zSql in bytes. */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const void **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
 int sqlite3_prepare16_v2(
   sqlite3 *db,            /* Database handle */
   const void *zSql,       /* SQL statement, UTF-16 encoded */
-  int nBytes,             /* Length of zSql in bytes. */
+  int nByte,              /* Maximum length of zSql in bytes. */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const void **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
