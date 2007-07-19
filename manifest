@@ -1,5 +1,5 @@
-C Preliminary\sfix\sfor\sticket\s#2518.\s\sMake\ssure\sthe\sVACUUM\scommand\nincrements\sthe\schange\scounter.\s(CVS\s4163)
-D 2007-07-19T16:35:17
+C Disable\stests\sthat\suse\sthe\sprogress\shandler\swhen\sthe\sprogress\shandler\nis\sdisabled\sat\scompile-time.\s\sFollowup\sto\sticket\s#2497.\s(CVS\s4164)
+D 2007-07-19T22:30:19
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -190,7 +190,7 @@ F test/cache.test 9e530b55ba016ca17439f728a06898f0ade5f1da
 F test/capi2.test 7ecc9b342cc9ec27b53bbf95724cf2e5874fd496
 F test/capi3.test 1cf80839d6224126acf82eb824308981fb054ef9
 F test/capi3b.test 5f0bc94b104e11086b1103b20277e1910f59c7f4
-F test/capi3c.test 007f4acbd43838c0f8e49427c6acf1cd110e381d
+F test/capi3c.test 76a3fb94755288a2977ee387e95305e6224c0198
 F test/cast.test 0302bbc8d1be2f94da1e16ad2eb01ea356e26d18
 F test/check.test e5ea0c1a06c10e81e3434ca029e2c4a562f2b673
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
@@ -518,7 +518,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d1ae3de4613d36b5352eb852f1951a09d4a92ac1
-R 9a4b118d719ada76faba19f60490117c
+P 75263797e29af437290c09e85cd5fd2aea08694f
+R 88bfb3ffc2b0493ef8bd7f2ac71548aa
 U drh
-Z a495210a933458f9b08d076dceb8cb08
+Z daa0db0bb2263a39aabea796f2500945

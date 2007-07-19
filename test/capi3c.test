@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.8 2007/07/12 13:18:06 danielk1977 Exp $
+# $Id: capi3c.test,v 1.9 2007/07/19 22:30:19 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1215,31 +1215,32 @@ do_test capi3c-20.4 {
 # Test that sqlite3_step() sets the database error code correctly.
 # See ticket #2497.
 #
-do_test capi3c-21.1 {
-  set STMT [sqlite3_prepare_v2 $DB {SELECT * FROM t3} -1 TAIL]
-  db progress 5 "expr 1"
-  sqlite3_step $STMT
-} {SQLITE_INTERRUPT}
-do_test capi3c-21.2 {
-  sqlite3_errcode $DB
-} {SQLITE_INTERRUPT}
-do_test capi3c-21.3 {
-  sqlite3_finalize $STMT
-} {SQLITE_INTERRUPT}
-do_test capi3c-21.4 {
-  set STMT [sqlite3_prepare $DB {SELECT * FROM t3} -1 TAIL]
-  db progress 5 "expr 1"
-  sqlite3_step $STMT
-} {SQLITE_ERROR}
-do_test capi3c-21.5 {
-  sqlite3_errcode $DB
-} {SQLITE_ERROR}
-do_test capi3c-21.6 {
-  sqlite3_finalize $STMT
-} {SQLITE_INTERRUPT}
-do_test capi3c-21.7 {
-  sqlite3_errcode $DB
-} {SQLITE_INTERRUPT}
-
+ifcapable progress {
+  do_test capi3c-21.1 {
+    set STMT [sqlite3_prepare_v2 $DB {SELECT * FROM t3} -1 TAIL]
+    db progress 5 "expr 1"
+    sqlite3_step $STMT
+  } {SQLITE_INTERRUPT}
+  do_test capi3c-21.2 {
+    sqlite3_errcode $DB
+  } {SQLITE_INTERRUPT}
+  do_test capi3c-21.3 {
+    sqlite3_finalize $STMT
+  } {SQLITE_INTERRUPT}
+  do_test capi3c-21.4 {
+    set STMT [sqlite3_prepare $DB {SELECT * FROM t3} -1 TAIL]
+    db progress 5 "expr 1"
+    sqlite3_step $STMT
+  } {SQLITE_ERROR}
+  do_test capi3c-21.5 {
+    sqlite3_errcode $DB
+  } {SQLITE_ERROR}
+  do_test capi3c-21.6 {
+    sqlite3_finalize $STMT
+  } {SQLITE_INTERRUPT}
+  do_test capi3c-21.7 {
+    sqlite3_errcode $DB
+  } {SQLITE_INTERRUPT}
+}  
 
 finish_test
