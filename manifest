@@ -1,9 +1,9 @@
-C Fix\sa\smemory\sleak\sin\sthe\sRename\smethod\sof\sthe\secho\stest\svirtual\stable.\nNo\schanges\sto\sthe\score.\s(CVS\s4166)
-D 2007-07-20T00:35:59
+C Documentation\schange\sin\spreparation\sfor\sversion\s3.4.1.\s(CVS\s4167)
+D 2007-07-20T01:17:28
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
-F VERSION bd995b15c92d73ccf2f3e65d51702f88efea8001
+F VERSION 4172908fc281e4d4b467aac13bfee97f271774d3
 F aclocal.m4 d20ba55930a05197b484809fba1d2b603f4e67a6
 F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -473,7 +473,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 88884dd743039d1a95aa57f4a5eb369de7744716
 F www/capi3ref.tcl 167c2d5b45da22d77b2493b00d44b001b4ec83b1
-F www/changes.tcl 273d57f681d16c40e9cd875e731215cab79526fc
+F www/changes.tcl e23e0c2e93a4c79cb4caee109c20bd66c6d15831
 F www/common.tcl 2b793e5c31486c8a01dd27dc0a631ad93704438e
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -492,7 +492,7 @@ F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bbb8af1ee494a71031acac4c8d8c51535f23b9df
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 9c1f9127283298a90fe021a6277302aafabbced2
+F www/index.tcl 9f8672c2165ecedf876d7b35f02da53eea6401b8
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl d32eef14c40888a0e27c1c9968a7ae5692fa7858
 F www/limits.tcl ff26cca93d6d697a8e5fa3a4b0355c751311763b
@@ -518,7 +518,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 31dba1e933c523a47fdd007c2c7492133dfe72f2
-R b2601e6b4eaef4d5b493d2c539184a6c
+P e5c132fff3e8a0478622527a7e47d679594f899a
+R 257ed73322841f9860d11028b8dec0eb
 U drh
-Z 797882072b5d946c657e34a757eff53d
+Z 9de63deedb1b3572b2a40ff73689e23f

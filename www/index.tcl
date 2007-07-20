@@ -71,6 +71,16 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2007-Jly-20} {Version 3.4.1} {
+  This release fixes a bug in <a href="lang_vacuum.html">VACUUM</a> that
+  can lead to <a href="http://www.sqlite.org/cvstrac/wiki?p=DatabaseCorruption">
+  database corruption</a>.  The bug was introduced in version 
+  <a href="changes.html#version_3_3_14">3.3.14</a>.
+  Upgrading is recommended for all users.  Also included are a slew of
+  other more routine
+  <a href="changes.html#version_3_4_1">enhancements and bug fixes</a>.
+}
+
 newsitem {2007-Jun-18} {Version 3.4.0} {
   This release fixes two separate bugs either of which 
   can lead to database corruption.  Upgrading
@@ -93,7 +103,8 @@ newsitem {2007-Jun-18} {Version 3.4.0} {
   There are also new features, including
   <a href="capi3ref.html#sqlite3_blob_open">incremental BLOB I/O</a> and
   <a href="pragma.html#pragma_incremental_vacuum">incremental vacuum</a>.
-  See the <a href="changes.html">change log</a> for additional information.
+  See the <a href="changes.html#version_3_4_0">change log</a> 
+  for additional information.
 }
 
 newsitem {2007-Apr-25} {Version 3.3.17} {
@@ -114,4 +125,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.157 2007/06/18 12:22:43 drh Exp $}
+footer {$Id: index.tcl,v 1.158 2007/07/20 01:17:28 drh Exp $}

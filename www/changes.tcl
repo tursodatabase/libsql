@@ -28,6 +28,36 @@ proc chng {date desc} {
   puts "</DD>"
 }
 
+chng {2007 July 20 (3.4.1)} {
+<li>Fix a bug in <a href="lang_vacuum.html">VACUUM</a> that can lead to
+    <a href="http://www.sqlite.org/cvstrac/wiki?p=DatabaseCorruption">
+    database corruption</a> if two
+    processes are connected to the database at the same time and one
+    VACUUMs then the other then modifies the database.</li>
+<li>The expression "+column" is now considered the same as "column"
+    when computing the collating sequence to use on the expression.</li>
+<li>In the <a href="tclsqlite.html">TCL language interface</a>,
+   "@variable" instead of "$variable" always binds as a blob.</li>
+<li>Added <a href="pragma.html#pragma_freelist_count">PRAGMA freelist_count</a>
+    for determining the current size of the freelist.</li>
+<li>The <a href="pragma.html#pragma_auto_vacuum">
+    PRAGMA auto_vacuum=incremental</a> setting is now persistent.</li>
+<li>Add FD_CLOEXEC to all open files under unix.</li>
+<li>Fix a bug in the <a href="optoverview.html#minmax">
+    min()/max() optimization</a> when applied to
+    descending indices.</li>
+<li>Make sure the TCL language interface works correctly with 64-bit
+    integers on 64-bit machines.</li>
+<li>Allow the value -9223372036854775808 as an integer literal in SQL
+    statements.</li>
+<li>Add the capability of "hidden" columns in virtual tables.</li>
+<li>Use the macro SQLITE_PRIVATE (defaulting to "static") on all
+    internal functions in the amalgamation.</li>
+<li>Add pluggable tokenizers and <a href="http://www.icu-project.org/">ICU</a>
+    tokenization support to FTS2</li>
+<li>Other minor bug fixes and documentation enhancements</li>
+}
+
 chng {2007 June 18 (3.4.0)} {
 <li>Fix a bug that can lead to database corruption if an SQLITE_BUSY error
     occurs in the middle of an explicit transaction and that transaction
