@@ -158,7 +158,6 @@ const sqlite3_api_routines sqlite3_apis = {
   sqlite3_create_function,
   sqlite3_create_function16,
   sqlite3_create_module,
-  sqlite3_create_module_v2,
   sqlite3_data_count,
   sqlite3_db_handle,
   sqlite3_declare_vtab,
@@ -242,6 +241,12 @@ const sqlite3_api_routines sqlite3_apis = {
   sqlite3_prepare_v2,
   sqlite3_prepare16_v2,
   sqlite3_clear_bindings,
+
+  /*
+  ** Added for 3.4.1
+  */
+  sqlite3_create_module_v2,
+
 };
 
 /*
