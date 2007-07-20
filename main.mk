@@ -141,8 +141,10 @@ SRC += \
   $(TOP)/ext/fts2/fts2.h \
   $(TOP)/ext/fts2/fts2_hash.c \
   $(TOP)/ext/fts2/fts2_hash.h \
+  $(TOP)/ext/fts2/fts2_icu.c \
   $(TOP)/ext/fts2/fts2_porter.c \
   $(TOP)/ext/fts2/fts2_tokenizer.h \
+  $(TOP)/ext/fts2/fts2_tokenizer.c \
   $(TOP)/ext/fts2/fts2_tokenizer1.c
 SRC += \
   $(TOP)/ext/icu/icu.c
@@ -273,6 +275,9 @@ sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
 	cp sqlite3.c tclsqlite3.c
 	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
 	tclsh $(TOP)/tool/mksqlite3internalh.tcl
+
+fts2amal.c:	target_source $(TOP)/ext/fts2/mkfts2amal.tcl
+	tclsh $(TOP)/ext/fts2/mkfts2amal.tcl
 
 # Rules to build the LEMON compiler generator
 #

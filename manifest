@@ -1,5 +1,5 @@
-C Version\s3.4.1\s(CVS\s4170)
-D 2007-07-20T10:56:08
+C Updates\sto\sbuild\sscripts.\s\sAdded\sscripts\sfor\sbuilding\sFTS2\sshared\slibraries.\s(CVS\s4171)
+D 2007-07-20T13:42:26
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -51,8 +51,10 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 819122ab96e26ed5914b0f5bf34f0c21348878e8
+F main.mk 570e26f4e1b2060ad1cf08e36a8ce29065b1db75
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
+F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
+F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
 F mkopcodec.awk bd46ad001c98dfbab07b1713cb8e692fa0e5415d
 F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
 F mkso.sh 24bde4c09e6fe80f718db3c31c068f45e13a2f2c
@@ -518,7 +520,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7cf15a5f651f0777972e21e0a96d601cf294f0f3
-R 53a63e386d2f1bebd83197639640d532
+P 81a4dd07c1d7099461e9e6668433dac5d99b1f32
+R 1ad56d3b4d154f3cbb44ee4dac0e86c2
 U drh
-Z af056197b0e00b9f1ca6244c6a209215
+Z 43fa5edb181c3b479ee5d344b0b5c317
