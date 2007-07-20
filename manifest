@@ -1,5 +1,5 @@
-C Keep\ssqlite3ext.h\sbackwards\scompatible.\s\sThis\sreally\sshould\shave\sbeen\spart\nof\sthe\sprevious\scheck-in.\s(CVS\s4169)
-D 2007-07-20T10:48:36
+C Version\s3.4.1\s(CVS\s4170)
+D 2007-07-20T10:56:08
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -518,7 +518,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 639993490ea829208b5f309bbe6c166c34e89d14
+P 7cf15a5f651f0777972e21e0a96d601cf294f0f3
 R 53a63e386d2f1bebd83197639640d532
 U drh
-Z 494a6859ff64557ced4e460d6f3cbde1
+Z af056197b0e00b9f1ca6244c6a209215
