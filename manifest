@@ -1,5 +1,5 @@
-C Disable\stests\sthat\suse\sthe\sprogress\shandler\swhen\sthe\sprogress\shandler\nis\sdisabled\sat\scompile-time.\s\sFollowup\sto\sticket\s#2497.\s(CVS\s4164)
-D 2007-07-19T22:30:19
+C Cleanup\sunused\sfunction\sin\spager.c.\s\sThis\sis\sthe\sconclusion\sof\sthe\sfix\r\nto\sticket\s#2518.\sWe\sbelieve\sthe\sfix\sis\scomplete\sand\scorrect.\s(CVS\s4165)
+D 2007-07-20T00:33:36
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -97,7 +97,7 @@ F src/os_unix.c 4099d05dc4b01997e80a289f3c6a220688e5cff5
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c d868d5f9e95ec9c1b9e2a30c54c996053db6dddd
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c ce52bc1b1292d34848352cb74fa413f2e3114d88
+F src/pager.c 79a4587cc5e84a7ca1e211fa273bb2071a78447b
 F src/pager.h 94110a5570dca30d54a883e880a3633b2e4c05ae
 F src/parse.y ad2ce25665be7f7303137f774a4e3e72e0d036ff
 F src/pragma.c 7914a6b9ea05f158800116dfcae11e52ab8e39c4
@@ -518,7 +518,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 75263797e29af437290c09e85cd5fd2aea08694f
-R 88bfb3ffc2b0493ef8bd7f2ac71548aa
+P cbc56fd4ec60d08a13a3aa181d044e726c49ef3c
+R 50eec5fb77fce5bbf8eeff15756e0201
 U drh
-Z daa0db0bb2263a39aabea796f2500945
+Z 34289d7bcf73b986a79d68c15ee2a407

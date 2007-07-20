@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.350 2007/07/19 16:35:17 drh Exp $
+** @(#) $Id: pager.c,v 1.351 2007/07/20 00:33:36 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -549,17 +549,6 @@ static int write32bits(OsFile *fd, u32 val){
   put32bits(ac, val);
   return sqlite3OsWrite(fd, ac, 4);
 }
-
-/*
-** Read a 32-bit integer at offset 'offset' from the page identified by
-** page header 'p'.
-*/
-static u32 retrieve32bits(PgHdr *p, int offset){
-  unsigned char *ac;
-  ac = &((unsigned char*)PGHDR_TO_DATA(p))[offset];
-  return sqlite3Get4byte(ac);
-}
-
 
 /*
 ** This function should be called when an error occurs within the pager
@@ -3873,7 +3862,7 @@ static int pager_incr_changecounter(Pager *pPager){
     if( rc!=SQLITE_OK ) return rc;
   
     /* Increment the value just read and write it back to byte 24. */
-    change_counter = sqlite3Get4byte(pPager->dbFileVers);
+    change_counter = sqlite3Get4byte((u8*)pPager->dbFileVers);
     change_counter++;
     put32bits(((char*)PGHDR_TO_DATA(pPgHdr))+24, change_counter);
     /* Release the page reference. */
