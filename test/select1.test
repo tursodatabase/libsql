@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.53 2007/04/13 16:06:34 drh Exp $
+# $Id: select1.test,v 1.54 2007/07/23 22:51:15 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -224,6 +224,31 @@ do_test select1-2.20 {
   set v [catch {execsql {SELECT SUM(min(f1)) FROM test1}} msg]
   lappend v $msg
 } {1 {misuse of aggregate function min()}}
+
+# Ticket #2526
+#
+do_test select1-2.21 {
+  catchsql {
+     SELECT min(f1) AS m FROM test1 GROUP BY f1 HAVING max(m+5)<10
+  }
+} {1 {misuse of aliased aggregate m}}
+do_test select1-2.22 {
+  catchsql {
+     SELECT coalesce(min(f1)+5,11) AS m FROM test1
+      GROUP BY f1
+     HAVING max(m+5)<10
+  }
+} {1 {misuse of aliased aggregate m}}
+do_test select1-2.23 {
+  execsql {
+    CREATE TABLE tkt2526(a,b,c PRIMARY KEY);
+    INSERT INTO tkt2526 VALUES('x','y',NULL);
+    INSERT INTO tkt2526 VALUES('x','z',NULL);
+  }
+  catchsql {
+    SELECT count(a) AS cn FROM tkt2526 GROUP BY a HAVING cn<max(cn)
+  }
+} {1 {misuse of aliased aggregate cn}}
 
 # WHERE clause expressions
 #
