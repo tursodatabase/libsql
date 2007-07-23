@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.161 2007/06/22 15:21:16 danielk1977 Exp $
+** $Id: func.c,v 1.162 2007/07/23 19:12:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -25,6 +25,7 @@
 #include <assert.h>
 #include "vdbeInt.h"
 #include "os.h"
+
 
 /*
 ** Return the collating function associated with a function.
@@ -398,15 +399,6 @@ static const struct compareInfo likeInfoNorm = { '%', '_',   0, 1 };
 static const struct compareInfo likeInfoAlt = { '%', '_',   0, 0 };
 
 /*
-** Read a single UTF-8 character and return its value.
-*/
-u32 sqlite3ReadUtf8(const unsigned char *z){
-  u32 c;
-  SQLITE_READ_UTF8(z, c);
-  return c;
-}
-
-/*
 ** Compare two UTF-8 strings for equality where the first string can
 ** potentially be a "glob" expression.  Return true (1) if they
 ** are the same and false (0) if they are different.
@@ -440,97 +432,102 @@ static int patternCompare(
   const struct compareInfo *pInfo, /* Information about how to do the compare */
   const int esc                    /* The escape character */
 ){
-  register int c;
+  int c, c2;
   int invert;
   int seen;
-  int c2;
   u8 matchOne = pInfo->matchOne;
   u8 matchAll = pInfo->matchAll;
   u8 matchSet = pInfo->matchSet;
   u8 noCase = pInfo->noCase; 
   int prevEscape = 0;     /* True if the previous character was 'escape' */
 
-  while( (c = *zPattern)!=0 ){
+  while( (c = sqlite3Utf8Read(zPattern,0,&zPattern))!=0 ){
     if( !prevEscape && c==matchAll ){
-      while( (c=zPattern[1]) == matchAll || c == matchOne ){
-        if( c==matchOne ){
-          if( *zString==0 ) return 0;
-          SQLITE_SKIP_UTF8(zString);
+      while( (c=sqlite3Utf8Read(zPattern,0,&zPattern)) == matchAll
+               || c == matchOne ){
+        if( c==matchOne && sqlite3Utf8Read(zString, 0, &zString)==0 ){
+          return 0;
         }
-        zPattern++;
       }
-      if( c && esc && sqlite3ReadUtf8(&zPattern[1])==esc ){
-        u8 const *zTemp = &zPattern[1];
-        SQLITE_SKIP_UTF8(zTemp);
-        c = *zTemp;
-      }
-      if( c==0 ) return 1;
-      if( c==matchSet ){
-        assert( esc==0 );   /* This is GLOB, not LIKE */
-        while( *zString && patternCompare(&zPattern[1],zString,pInfo,esc)==0 ){
+      if( c==0 ){
+        return 1;
+      }else if( c==esc ){
+        c = sqlite3Utf8Read(zPattern, 0, &zPattern);
+        if( c==0 ){
+          return 0;
+        }
+      }else if( c==matchSet ){
+        assert( esc==0 );         /* This is GLOB, not LIKE */
+        assert( matchSet<0x80 );  /* '[' is a single-byte character */
+        while( *zString && patternCompare(&zPattern[-1],zString,pInfo,esc)==0 ){
           SQLITE_SKIP_UTF8(zString);
         }
         return *zString!=0;
-      }else{
-        while( (c2 = *zString)!=0 ){
-          if( noCase ){
-            c2 = sqlite3UpperToLower[c2];
-            c = sqlite3UpperToLower[c];
-            while( c2 != 0 && c2 != c ){ c2 = sqlite3UpperToLower[*++zString]; }
-          }else{
-            while( c2 != 0 && c2 != c ){ c2 = *++zString; }
+      }
+      while( (c2 = sqlite3Utf8Read(zString,0,&zString))!=0 ){
+        if( noCase ){
+          c2 = c2<0x80 ? sqlite3UpperToLower[c2] : c2;
+          c = c<0x80 ? sqlite3UpperToLower[c] : c;
+          while( c2 != 0 && c2 != c ){
+            c2 = sqlite3Utf8Read(zString, 0, &zString);
+            if( c2<0x80 ) c2 = sqlite3UpperToLower[c2];
           }
-          if( c2==0 ) return 0;
-          if( patternCompare(&zPattern[1],zString,pInfo,esc) ) return 1;
-          SQLITE_SKIP_UTF8(zString);
+        }else{
+          while( c2 != 0 && c2 != c ){
+            c2 = sqlite3Utf8Read(zString, 0, &zString);
+          }
         }
+        if( c2==0 ) return 0;
+        if( patternCompare(zPattern,zString,pInfo,esc) ) return 1;
+      }
+      return 0;
+    }else if( !prevEscape && c==matchOne ){
+      if( sqlite3Utf8Read(zString, 0, &zString)==0 ){
         return 0;
       }
-    }else if( !prevEscape && c==matchOne ){
-      if( *zString==0 ) return 0;
-      SQLITE_SKIP_UTF8(zString);
-      zPattern++;
     }else if( c==matchSet ){
       int prior_c = 0;
       assert( esc==0 );    /* This only occurs for GLOB, not LIKE */
       seen = 0;
       invert = 0;
-      c = sqlite3ReadUtf8(zString);
+      c = sqlite3Utf8Read(zString, 0, &zString);
       if( c==0 ) return 0;
-      c2 = *++zPattern;
-      if( c2=='^' ){ invert = 1; c2 = *++zPattern; }
+      c2 = sqlite3Utf8Read(zPattern, 0, &zPattern);
+      if( c2=='^' ){
+        invert = 1;
+        c2 = sqlite3Utf8Read(zPattern, 0, &zPattern);
+      }
       if( c2==']' ){
         if( c==']' ) seen = 1;
-        c2 = *++zPattern;
+        c2 = sqlite3Utf8Read(zPattern, 0, &zPattern);
       }
-      while( (c2 = sqlite3ReadUtf8(zPattern))!=0 && c2!=']' ){
-        if( c2=='-' && zPattern[1]!=']' && zPattern[1]!=0 && prior_c>0 ){
-          zPattern++;
-          c2 = sqlite3ReadUtf8(zPattern);
+      while( c2 && c2!=']' ){
+        if( c2=='-' && zPattern[0]!=']' && zPattern[0]!=0 && prior_c>0 ){
+          c2 = sqlite3Utf8Read(zPattern, 0, &zPattern);
           if( c>=prior_c && c<=c2 ) seen = 1;
           prior_c = 0;
-        }else if( c==c2 ){
-          seen = 1;
-          prior_c = c2;
         }else{
+          if( c==c2 ){
+            seen = 1;
+          }
           prior_c = c2;
         }
-        SQLITE_SKIP_UTF8(zPattern);
+        c2 = sqlite3Utf8Read(zPattern, 0, &zPattern);
       }
-      if( c2==0 || (seen ^ invert)==0 ) return 0;
-      SQLITE_SKIP_UTF8(zString);
-      zPattern++;
-    }else if( esc && !prevEscape && sqlite3ReadUtf8(zPattern)==esc){
+      if( c2==0 || (seen ^ invert)==0 ){
+        return 0;
+      }
+    }else if( esc==c && !prevEscape ){
       prevEscape = 1;
-      SQLITE_SKIP_UTF8(zPattern);
     }else{
+      c2 = sqlite3Utf8Read(zString, 0, &zString);
       if( noCase ){
-        if( sqlite3UpperToLower[c] != sqlite3UpperToLower[*zString] ) return 0;
-      }else{
-        if( c != *zString ) return 0;
+        c = c<0x80 ? sqlite3UpperToLower[c] : c;
+        c2 = c2<0x80 ? sqlite3UpperToLower[c2] : c2;
       }
-      zPattern++;
-      zString++;
+      if( c!=c2 ){
+        return 0;
+      }
       prevEscape = 0;
     }
   }
@@ -590,7 +587,7 @@ static void likeFunc(
           "ESCAPE expression must be a single character", -1);
       return;
     }
-    escape = sqlite3ReadUtf8(zEsc);
+    escape = sqlite3Utf8Read(zEsc, 0, &zEsc);
   }
   if( zA && zB ){
     struct compareInfo *pInfo = sqlite3_user_data(context);

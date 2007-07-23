@@ -1,5 +1,5 @@
-C Fix\sa\sbad\ssizeof\sin\svdbe.c.\s\sTicket\s#2522.\s(CVS\s4174)
-D 2007-07-22T19:10:21
+C Rework\sthe\sUTF8\sreader\slogic\sin\sorder\sto\savoid\sthe\suse\sof\smalloc().\nTicket\s#2523.\s(CVS\s4175)
+D 2007-07-23T19:12:42
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -78,7 +78,7 @@ F src/date.c 6049db7d5a8fdf2c677ff7d58fa31d4f6593c988
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c de9f55b1baed00199466028ad96967208d487798
-F src/func.c 6b45261aa2c514f642201b90493af68469c04af6
+F src/func.c dcba54fc18d2b2fd02f8b7c3dc13e27d100a4d8e
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c 89d184422d85db0418e0f66032ccea3657078ecd
@@ -111,7 +111,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c e7534cce78398bc1cac4a643e931fc6221c2897e
 F src/sqlite.h.in 8164526b1658a6dad472953ea91239849f913d45
 F src/sqlite3ext.h a27bedc222df5e5f0f458ac99726d0483b953a91
-F src/sqliteInt.h 81183ae71162818bf60478e738ff68604128bb06
+F src/sqliteInt.h 358f3a29b98e1efdd840a928dec8f60a51e6a33e
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
 F src/tclsqlite.c 0d3370e01cd3b313ed29ed6b0ba00423b4329de0
@@ -137,7 +137,7 @@ F src/test_tclvar.c ea4500a60d663f7fdf18fd3210efc112e0c6e7f0
 F src/tokenize.c 0f0955ef7b8ab99ba2d3099faa89b80ccba3733a
 F src/trigger.c 420192efe3e6f03addf7897c60c3c8bf913d3493
 F src/update.c 6b10becb6235ea314ed245fbfbf8b38755e3166e
-F src/utf.c 01b2aba02b10d12903e9e1ff897215c9faf6b662
+F src/utf.c c152f99ddccc5e0214a9817aa07ab1b208b43f14
 F src/util.c 9e81d417fc60bd2fe156f8f2317aa4845bc6cc90
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
 F src/vdbe.c a58fe70f11078deb16f6825cc99f099d2fad4a7b
@@ -520,7 +520,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1924ba5207bdc8d503c17cd9460c1a9f9c357635
-R 6a3d5d19ad9da4a9718db45f3a6f4e18
+P 77ebc3feb089c28155cf20873fb4eabd26fa50c1
+R 4c6f94c5ade866798dc608d64060285b
 U drh
-Z f3b0c8bff800cc59d8eb156576c3d0e8
+Z 9a4a3510d0a6e206d28b34d524cb6b1e
