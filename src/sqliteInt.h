@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.579 2007/07/23 19:12:42 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.580 2007/07/23 19:31:17 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1854,6 +1854,13 @@ int sqlite3ApiExit(sqlite3 *db, int);
 void sqlite3FailedMalloc(void);
 void sqlite3AbortOtherActiveVdbes(sqlite3 *, Vdbe *);
 int sqlite3OpenTempDatabase(Parse *);
+
+/*
+** The interface to the LEMON-generated parser
+*/
+void *sqlite3ParserAlloc(void*(*)(size_t));
+void sqlite3ParserFree(void*, void(*)(void*));
+void sqlite3Parser(void*, int, Token, Parse*);
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   void sqlite3CloseExtensions(sqlite3*);

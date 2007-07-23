@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.130 2007/07/13 10:26:08 drh Exp $
+** $Id: tokenize.c,v 1.131 2007/07/23 19:31:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -379,13 +379,6 @@ static int getToken(const unsigned char *z, int *tokenType){
 int sqlite3GetToken(const unsigned char *z, int *tokenType){
   return getToken(z, tokenType);
 }
-
-/*
-** The interface to the LEMON-generated parser
-*/
-void *sqlite3ParserAlloc(void*(*)(size_t));
-void sqlite3ParserFree(void*, void(*)(void*));
-void sqlite3Parser(void*, int, Token, Parse*);
 
 /*
 ** Run the parser on the given SQL string.  The parser structure is

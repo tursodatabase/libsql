@@ -1,5 +1,5 @@
-C Check\sthe\sreturn\svalue\sof\ssqlite3PagerWrite()\swhen\sautovacuuming.\nTicket\s#2524.\s(CVS\s4176)
-D 2007-07-23T19:26:17
+C Move\sprototypes\sfor\sLEMON-generated\sparser\sfunctions\sinto\ssqliteInt.h.\nTicket\s#2521.\s(CVS\s4177)
+D 2007-07-23T19:31:17
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -111,7 +111,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c e7534cce78398bc1cac4a643e931fc6221c2897e
 F src/sqlite.h.in 8164526b1658a6dad472953ea91239849f913d45
 F src/sqlite3ext.h a27bedc222df5e5f0f458ac99726d0483b953a91
-F src/sqliteInt.h 358f3a29b98e1efdd840a928dec8f60a51e6a33e
+F src/sqliteInt.h 536fb651e1eed201c1eb5a852351f2866554c8b1
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
 F src/tclsqlite.c 0d3370e01cd3b313ed29ed6b0ba00423b4329de0
@@ -134,7 +134,7 @@ F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_schema.c 89c526e4b1e9a8fb540550f6ebc69242bf57d3ce
 F src/test_server.c 76c0baf509abe65ca6e5c7974ab0097cfdd8b833
 F src/test_tclvar.c ea4500a60d663f7fdf18fd3210efc112e0c6e7f0
-F src/tokenize.c 0f0955ef7b8ab99ba2d3099faa89b80ccba3733a
+F src/tokenize.c e959754c67bbd0cf0b03520f7344a536a7ac2915
 F src/trigger.c 420192efe3e6f03addf7897c60c3c8bf913d3493
 F src/update.c 6b10becb6235ea314ed245fbfbf8b38755e3166e
 F src/utf.c c152f99ddccc5e0214a9817aa07ab1b208b43f14
@@ -520,7 +520,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9a059cb6bced5cdc950f7816602ac92d89a899be
-R de95d23d2d2c52fc380d1f516977c2ee
+P b4a5c62b853f7a7d38863c39be274dccd2640944
+R bb61dedb3e166418393c63c2982fb492
 U drh
-Z 059b1dcab09f99a22f4e8360846314b4
+Z 808a80e23d1f82302fa81879a5b9225c
