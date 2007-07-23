@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.392 2007/06/26 01:04:49 drh Exp $
+** $Id: btree.c,v 1.393 2007/07/23 19:26:17 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2009,7 +2009,7 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *pnTrunc){
       assert(nFin==0 || pBt->nTrunc==0 || nFin<=pBt->nTrunc);
       rc = SQLITE_OK;
       if( pBt->nTrunc ){
-        sqlite3PagerWrite(pBt->pPage1->pDbPage);
+        rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
         put4byte(&pBt->pPage1->aData[32], 0);
         put4byte(&pBt->pPage1->aData[36], 0);
         pBt->nTrunc = nFin;
