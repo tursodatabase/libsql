@@ -1,5 +1,5 @@
-C Detect\snested\saggregate\sfunctions\seven\sif\sthe\sinner\saggregate\sfunction\sis\naliased\susing\san\sAS\sclause.\s\sTicket\s#2526.\s(CVS\s4179)
-D 2007-07-23T22:51:15
+C Remove\sthe\scomment\sin\sthe\sdocumentation\sthat\ssays\sthat\sincremental\svacuum\nmode\sis\snot\spersistent\sbecause\sas\sof\s3.4.1\sit\sis\spersistent.\s\sTicket\s#2528.\s(CVS\s4180)
+D 2007-07-24T10:22:58
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -508,7 +508,7 @@ F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
 F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
 F www/optoverview.tcl 815df406a38c9f69b27d37e8f7ede004c6d9f19e
-F www/pragma.tcl bb3ae44a9c4a3e1047c07657954dd4ea18911194
+F www/pragma.tcl b605c43e966fbe1c5803e38b88b26cfa1b7b0737
 F www/quickstart.tcl 8708a4ca83fbf55c66af1782992626f20c3df095
 F www/shared.gif 265bae80c5b311c5a86e47662821076ffaf5c6ea
 F www/sharedcache.tcl 3ebec81110e606af6fd65a3c4c19562cb173b29c
@@ -520,7 +520,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b213614abff90c65cc7228c87f4973150e8a9679
-R 0fa1afe917039c6d6220f9448ebeacb8
+P de000280c6d0b13440d2450eb6ba42073ad46c56
+R ad80a56b3a68737b904d5cfe96ac37aa
 U drh
-Z 2aeee86ab0edd2e20bd18cb1e94315fd
+Z 557bd921e0baa7785a73ccc814a08459
