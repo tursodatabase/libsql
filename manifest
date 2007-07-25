@@ -1,5 +1,5 @@
-C Sorry,\sprevious\scheck-in\sincluded\sa\slast-minute\s"Did\sit\sreally\swork?"\nchange\s:-).\s(CVS\s4182)
-D 2007-07-25T00:28:00
+C Replicates\shttp://www.sqlite.org/cvstrac/chngview?cn=4151\swhich\nmodified\sfts2:\n\nModify\shandling\sof\sSQLITE_SCHEMA\sin\sfts2\scode.\sAn\sSQLITE_SCHEMA\serror\nmay\scause\sSQLite\sto\sreload\sthe\sinternal\sschema,\sdeleting\sand\nrecreating\sv-table\sobjects.\sSo\sthe\ssqlite3_vtab\sstructure\scan\sbe\ndeleted\sout\sfrom\sunder\sa\sv-table\simplementation.\s(CVS\s4183)
+D 2007-07-25T00:38:06
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -24,7 +24,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c f9294f39e16f3b853922820751b35b7d6cd25a03
+F ext/fts1/fts1.c 61fa4154f754f79f044c9534d0f52505050b57cc
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -243,6 +243,7 @@ F test/fts1j.test e4c0ffcd0ba2adce09c6b7b43ffd0749b5fda5c7
 F test/fts1k.test fdf295cb797ba6a2ef81ec41cb98df0ceb2e572c
 F test/fts1l.test 15c119ed2362b2b28d5300c0540a6a43eab66c36
 F test/fts1m.test 2d9ca67b095d49f037a914087cc0a61e89da4f0c
+F test/fts1n.test a2317dcd27b1d087ee3878b30e0a59c593c98b7a
 F test/fts1porter.test d86e9c3e0c7f8ff95add6582b4b585fb4e02b96d
 F test/fts2a.test 473a5c8b473a4e21a8e3fddaed1e59666e0c6ab7
 F test/fts2b.test 964abc0236c849c07ca1ae496bb25c268ae94816
@@ -521,7 +522,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c2ba3cc0f7ac9f5dfe5ffb554f9a1cd96b28335a
-R e83da9b483b1007864d54e3b9b822ce1
+P 5db25e369a1a4b5a4d87947abdbf25f96fe64807
+R 4f3383b3dfe35035aa76c90af94680b3
 U shess
-Z a1ea838168f8478a43be68f2abc4d644
+Z f88d97eea6886d33f533493eb19a7860
