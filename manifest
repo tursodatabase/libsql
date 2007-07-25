@@ -1,5 +1,5 @@
-C Apply\schange\s4095\sto\sfts1.\s\sFix\ssnippet\sgeneration\swhen\sthe\sleft-most\ncolumn\sof\san\sfts\stable\sis\sused\sin\sthe\sMATCH\sclause.\sFix\sfor\sticket\n#2429.\s(CVS\s4181)
-D 2007-07-25T00:25:20
+C Sorry,\sprevious\scheck-in\sincluded\sa\slast-minute\s"Did\sit\sreally\swork?"\nchange\s:-).\s(CVS\s4182)
+D 2007-07-25T00:28:00
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -24,7 +24,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c cb12e67591a1c6e8d4201d1e9a271904d949c2c9
+F ext/fts1/fts1.c f9294f39e16f3b853922820751b35b7d6cd25a03
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -521,7 +521,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6c4040941e3cf84ac0b1f5797cd700c7a2ce9353
-R 7022e666e237dc6fba6b28a2471e3066
+P c2ba3cc0f7ac9f5dfe5ffb554f9a1cd96b28335a
+R e83da9b483b1007864d54e3b9b822ce1
 U shess
-Z 911c02df1bb9d22928aeb4ea61d035a2
+Z a1ea838168f8478a43be68f2abc4d644
