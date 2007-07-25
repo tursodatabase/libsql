@@ -2281,6 +2281,7 @@ static void snippetAllOffsets(fulltext_cursor *p){
   pFts = p->q.pFts;
   nColumn = pFts->nColumn;
   iColumn = p->iCursorType;
+  iColumn = p->iCursorType - QUERY_FULLTEXT;
   if( iColumn<0 || iColumn>=nColumn ){
     iFirst = 0;
     iLast = nColumn-1;
