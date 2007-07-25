@@ -3262,6 +3262,28 @@ static int fulltextFindFunction(
   return 0;
 }
 
+/*
+** Rename an fts1 table.
+*/
+static int fulltextRename(
+  sqlite3_vtab *pVtab,
+  const char *zName
+){
+  fulltext_vtab *p = (fulltext_vtab *)pVtab;
+  int rc = SQLITE_NOMEM;
+  char *zSql = sqlite3_mprintf(
+    "ALTER TABLE %Q.'%q_content'  RENAME TO '%q_content';"
+    "ALTER TABLE %Q.'%q_term' RENAME TO '%q_term';"
+    , p->zDb, p->zName, zName
+    , p->zDb, p->zName, zName
+  );
+  if( zSql ){
+    rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
+    sqlite3_free(zSql);
+  }
+  return rc;
+}
+
 static const sqlite3_module fulltextModule = {
   /* iVersion      */ 0,
   /* xCreate       */ fulltextCreate,
@@ -3282,6 +3304,7 @@ static const sqlite3_module fulltextModule = {
   /* xCommit       */ 0,
   /* xRollback     */ 0,
   /* xFindFunction */ fulltextFindFunction,
+  /* xRename       */ fulltextRename,
 };
 
 int sqlite3Fts1Init(sqlite3 *db){
