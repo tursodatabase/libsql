@@ -1,5 +1,5 @@
-C Implement\sxRename()\sfor\sfts1\sso\sthat\sit\sis\spossible\sto\srename\sfts1\stables.\nSee\shttp://www.sqlite.org/cvstrac/chngview?cn=4143\s(CVS\s4184)
-D 2007-07-25T00:56:10
+C Fix\stwo\sobscure\smemory\sleaks\sthat\scan\sfollow\sa\smalloc()\sfailure\sin\ssqlite3_set_auxdata().\sTicket\s#2534.\s(CVS\s4185)
+D 2007-07-26T06:50:06
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -78,7 +78,7 @@ F src/date.c 6049db7d5a8fdf2c677ff7d58fa31d4f6593c988
 F src/delete.c 5c0d89b3ef7d48fe1f5124bfe8341f982747fe29
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c d39d87cf15da59ab87028278d92e3e3064d54605
-F src/func.c dcba54fc18d2b2fd02f8b7c3dc13e27d100a4d8e
+F src/func.c 28daebcddce30030f167afb3a7ed881a043b98b0
 F src/hash.c 67b23e14f0257b69a3e8aa663e4eeadc1a2b6fd5
 F src/hash.h 1b3f7e2609141fd571f62199fc38687d262e9564
 F src/insert.c ca135e919c2a9241e83e8dd74316677fdd54fb6f
@@ -140,10 +140,10 @@ F src/update.c 6b10becb6235ea314ed245fbfbf8b38755e3166e
 F src/utf.c c152f99ddccc5e0214a9817aa07ab1b208b43f14
 F src/util.c 9e81d417fc60bd2fe156f8f2317aa4845bc6cc90
 F src/vacuum.c 8bd895d29e7074e78d4e80f948e35ddc9cf2beef
-F src/vdbe.c a58fe70f11078deb16f6825cc99f099d2fad4a7b
+F src/vdbe.c cf973bd1af5fbda845b0f759bb06eb19ff42e215
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h c3514903cad9e36d6b3242be20261351d09db56c
-F src/vdbeapi.c fe3b713d5d37f8dfff1aa7546dae213a0e492f10
+F src/vdbeapi.c 220b81132abaf0f620edb8da48799a77daef12a7
 F src/vdbeaux.c ca1d673fd5e45fe9ba994391b11568c48a7e1b59
 F src/vdbeblob.c bb30b3e387c35ba869949494b2736aff97159470
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
@@ -314,7 +314,7 @@ F test/malloc7.test 1cf52834509eac7ebeb92105dacd4669f9ca9869
 F test/malloc8.test e4054ca2a87ab1d42255bec009b177ba20b5a487
 F test/malloc9.test 8381041fd89c31fba60c8a1a1c776bb022108572
 F test/mallocA.test 525674e6e0775a9bf85a33f1da1c6bbddc712c30
-F test/mallocB.test 975ef7b76af7c8e2b3e635951c8fe9cd5139cb05
+F test/mallocB.test 5d4a3dc4931a8c13ef3723c4934af23ff9d60d71
 F test/malloc_common.tcl 3cda97d63fbf370061ffa9795a24e5027367fef3
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
@@ -523,7 +523,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f9020cffda02923ef45979bb447ec2e232086ad5
-R 113424230958cdea7f4818042b790004
-U shess
-Z d58c62915852491e824945ca31f01cbb
+P febf75f022b9414fc456ddf274d301f95d61e1b8
+R ee7759b63bd272b0d59d8d149b62821d
+U danielk1977
+Z c91c02f3dbbce60d9aa5e32fe5d9eff0

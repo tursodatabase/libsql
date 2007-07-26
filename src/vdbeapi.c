@@ -390,13 +390,13 @@ void sqlite3_set_auxdata(
 ){
   struct AuxData *pAuxData;
   VdbeFunc *pVdbeFunc;
-  if( iArg<0 ) return;
+  if( iArg<0 ) goto failed;
 
   pVdbeFunc = pCtx->pVdbeFunc;
   if( !pVdbeFunc || pVdbeFunc->nAux<=iArg ){
     int nMalloc = sizeof(VdbeFunc) + sizeof(struct AuxData)*iArg;
     pVdbeFunc = sqliteRealloc(pVdbeFunc, nMalloc);
-    if( !pVdbeFunc ) return;
+    if( !pVdbeFunc ) goto failed;
     pCtx->pVdbeFunc = pVdbeFunc;
     memset(&pVdbeFunc->apAux[pVdbeFunc->nAux], 0, 
              sizeof(struct AuxData)*(iArg+1-pVdbeFunc->nAux));
@@ -410,6 +410,12 @@ void sqlite3_set_auxdata(
   }
   pAuxData->pAux = pAux;
   pAuxData->xDelete = xDelete;
+  return;
+
+failed:
+  if( xDelete ){
+    xDelete(pAux);
+  }
 }
 
 /*
