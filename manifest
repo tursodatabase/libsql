@@ -1,5 +1,5 @@
-C Fix\stwo\sobscure\smemory\sleaks\sthat\scan\sfollow\sa\smalloc()\sfailure\sin\ssqlite3_set_auxdata().\sTicket\s#2534.\s(CVS\s4185)
-D 2007-07-26T06:50:06
+C Test\sthat\san\sexplicit\scollation\ssequence\soverrides\san\simplicit\sone\sattached\sto\sa\s'new'\sreference\s(it\sdoes).\sNo\scode\schanges.\s(CVS\s4186)
+D 2007-07-26T10:16:30
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -200,7 +200,7 @@ F test/collate2.test 701d9651c5707024fd86a20649af9ea55e2c0eb8
 F test/collate3.test 947a77f5b8227e037a7094d0e338a5504f155cc4
 F test/collate4.test daf498e294dcd596b961d425c3f2dda117e4717e
 F test/collate5.test 8fb4e7e0241839356bd8710f437c32efb47bfff8
-F test/collate6.test 6c9470d1606ee3e564675b229653e320c49ec638
+F test/collate6.test c747a7a09bddbd8004555344a4a44927c0cd13ab
 F test/collate7.test e23677b1fd271505302643a98178952bb65b6f21
 F test/collate8.test 7ed2461305ac959886a064dc1e3cf15e155a183f
 F test/colmeta.test 6505c73ab58796afcb7c89ba9f429d573fbc6e53
@@ -523,7 +523,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P febf75f022b9414fc456ddf274d301f95d61e1b8
-R ee7759b63bd272b0d59d8d149b62821d
+P b88af1827bec3e8a32450dd0a073ffc3b12a5939
+R 5056595a62d026054125efdb6ec1cdbf
 U danielk1977
-Z c91c02f3dbbce60d9aa5e32fe5d9eff0
+Z 03f5264ace9236f38e705bca5549a9ae
