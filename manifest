@@ -1,5 +1,5 @@
-C Get\srid\sof\sthe\sfollowing\scompile-time\swarnings:\ntool/mkkeywordhash.c:353:\swarning:\sarray\ssubscript\shas\stype\s'char'\ntool/mkkeywordhash.c:354:\swarning:\sarray\ssubscript\shas\stype\s'char'\s(CVS\s4189)
-D 2007-07-30T18:26:20
+C "extern"\sdeclarations\sinside\sfunction\sbodies\sare\snot\severy\scompiler's\nfavorite,\sso\smove\sto\sglobal\sscope.\sAdditionally,\sat\sleast\sunder\sUnix\nenvironment\suse\s<unistd.h>\sto\sget\sthe\sproper\sprototype\sinstead\sof\susing\na\sK&R-style\sown\sdeclaration.\s(CVS\s4190)
+D 2007-07-30T18:31:53
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -447,7 +447,7 @@ F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/zeroblob.test c5096545085330b7886d2f977272a73d9fa7737e
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/lemon.c 995d20ec9f12aba4b3821c3a920bd69bb4839fde
+F tool/lemon.c 265ab88e7bb213bc216b1c0045a317d03f326189
 F tool/lempar.c 8f998bf8d08e2123149c2cc5d0597cd5d5d1abdd
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -523,7 +523,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 271e27fd30f3b99e6d6ad2fc2c6e87f43f4c76c8
-R 1509f336d338fc94f34e5717001264d7
+P c01d7944799d8a96a29f8d4f6d2bb7c4bb0e14bb
+R 716f8b047fd000adc1e73a5810951c7e
 U rse
-Z b912cbdd22550009e6c0f9bc44ef885c
+Z ae6e1e3bb03814327f895c292c68da17

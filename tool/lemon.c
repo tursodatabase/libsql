@@ -19,6 +19,12 @@
 #   endif
 #endif
 
+#ifdef __WIN32__
+extern int access();
+#else
+#include <unistd.h>
+#endif
+
 /* #define PRIVATE static */
 #define PRIVATE
 
@@ -2904,7 +2910,6 @@ int modemask;
   char *pathlist;
   char *path,*cp;
   char c;
-  extern int access();
 
 #ifdef __WIN32__
   cp = strrchr(argv0,'\\');
