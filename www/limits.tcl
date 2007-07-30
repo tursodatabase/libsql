@@ -1,7 +1,7 @@
 #
 # Run this script to generate the limits.html output file
 #
-set rcsid {$Id: limits.tcl,v 1.3 2007/06/18 12:22:43 drh Exp $}
+set rcsid {$Id: limits.tcl,v 1.4 2007/07/30 23:02:39 drh Exp $}
 source common.tcl
 header {Implementation Limits For SQLite}
 puts {
@@ -79,7 +79,7 @@ possible.
 <p>
 During part of SQLite's INSERT and SELECT processing, the complete
 content of each row in the database is encoded as a single BLOB.
-So the SQLTIE_MAX_LENGTH parameter also determines the maximum
+So the SQLITE_MAX_LENGTH parameter also determines the maximum
 number of bytes in a row.
 </p>
 }
