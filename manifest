@@ -1,5 +1,5 @@
-C Fix\sticket\s#2439:\sthe\sFTS1\sand\sFTS2\sextensions\suse\sthe\snon-standard,\nunportable\sand\shighly\sdeprecated\s<malloc.h>\sheader\son\sall\splatforms\nexcept\sApple\sMac\sOS\sX.\sThe\s<malloc.h>\sactually\sis\snever\srequired\son\nany\sOS\swith\san\sat\sleast\spartly\sPOSIX-conforming\sAPI\sas\sthe\smalloc(3)\s&\nfriends\sfunctions\sofficially\slive\sin\s<stdlib.h>\ssince\sover\s10\syears.\nUnder\ssome\splatform\slike\sFreeBSD\sthe\sinclusion\sof\s<malloc.h>\ssince\sa\sfew\nyears\seven\scauses\san\s"#error"\sand\sthis\sway\sa\sbuild\sfailure.\sSo,\sjust\sget\nrid\sof\sthe\sbad\s<malloc.h>\susage\sin\sFTS1\sand\sFTS2\sextensions\sat\sall\sand\nstick\swith\s<stdlib.h>\sthere\sonly.\s(CVS\s4191)
-D 2007-07-30T18:55:36
+C Make\sexcess\soutput\sfrom\sthe\sCLI\sappear\sinside\sSQL\scomments\sso\sas\snot\nto\sinterfere\swith\sgenerated\sSQL.\s\sTicket\s#2544.\s(CVS\s4192)
+D 2007-07-30T20:41:53
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -108,7 +108,7 @@ F src/printf.c 9b3048d270e8bb2f8b910b491ac3aadece6cfab2
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c 3b167744fc375bddfddcef87feb18f5171737677
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c d9e727be2c725639a861d6763bc9b290874dab7f
+F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
 F src/sqlite.h.in 8164526b1658a6dad472953ea91239849f913d45
 F src/sqlite3ext.h a27bedc222df5e5f0f458ac99726d0483b953a91
 F src/sqliteInt.h 536fb651e1eed201c1eb5a852351f2866554c8b1
@@ -523,7 +523,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5955a77d6c902dc65897ba19d6e06db3e10bd3ee
-R 984c4eda24873041ff0eaaaead3ed2cc
-U rse
-Z aeba5533a2320f69cfda14926afd4f33
+P 3f9a666143a8aafa0b1a5d56ec68f69f2b3d6a21
+R f9e9ee479a3920c21799e1a965e903b9
+U drh
+Z e66df22767e1f73d6fe6993e0a4787e7

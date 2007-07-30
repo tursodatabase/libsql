@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.165 2007/07/30 18:24:39 rse Exp $
+** $Id: shell.c,v 1.166 2007/07/30 20:41:53 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1779,7 +1779,7 @@ static void process_sqliterc(
   in = fopen(sqliterc,"rb");
   if( in ){
     if( stdin_is_interactive ){
-      printf("Loading resources from %s\n",sqliterc);
+      printf("-- Loading resources from %s\n",sqliterc);
     }
     process_input(p,in);
     fclose(in);
