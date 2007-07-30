@@ -1,5 +1,5 @@
-C "extern"\sdeclarations\sinside\sfunction\sbodies\sare\snot\severy\scompiler's\nfavorite,\sso\smove\sto\sglobal\sscope.\sAdditionally,\sat\sleast\sunder\sUnix\nenvironment\suse\s<unistd.h>\sto\sget\sthe\sproper\sprototype\sinstead\sof\susing\na\sK&R-style\sown\sdeclaration.\s(CVS\s4190)
-D 2007-07-30T18:31:53
+C Fix\sticket\s#2439:\sthe\sFTS1\sand\sFTS2\sextensions\suse\sthe\snon-standard,\nunportable\sand\shighly\sdeprecated\s<malloc.h>\sheader\son\sall\splatforms\nexcept\sApple\sMac\sOS\sX.\sThe\s<malloc.h>\sactually\sis\snever\srequired\son\nany\sOS\swith\san\sat\sleast\spartly\sPOSIX-conforming\sAPI\sas\sthe\smalloc(3)\s&\nfriends\sfunctions\sofficially\slive\sin\s<stdlib.h>\ssince\sover\s10\syears.\nUnder\ssome\splatform\slike\sFreeBSD\sthe\sinclusion\sof\s<malloc.h>\ssince\sa\sfew\nyears\seven\scauses\san\s"#error"\sand\sthis\sway\sa\sbuild\sfailure.\sSo,\sjust\sget\nrid\sof\sthe\sbad\s<malloc.h>\susage\sin\sFTS1\sand\sFTS2\sextensions\sat\sall\sand\nstick\swith\s<stdlib.h>\sthere\sonly.\s(CVS\s4191)
+D 2007-07-30T18:55:36
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -24,28 +24,28 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c d32c32029e07b844cb6f501bd133fcb82d9071b6
+F ext/fts1/fts1.c 61cce595d7776ae0ab883634d39be4acbfa5aae4
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
-F ext/fts1/fts1_porter.c 263e6a89c8769a456152e1abcd8821fcb4699e5b
+F ext/fts1/fts1_porter.c b1c7304b8988ba3f764a147cdd32043b4913ea7b
 F ext/fts1/fts1_tokenizer.h fdea722c38a9f82ed921642981234f666e47919c
-F ext/fts1/fts1_tokenizer1.c df09e638156abfe320e705c839baa98d595f45a7
+F ext/fts1/fts1_tokenizer1.c fd00d1fe4dc30dfc5c64cba695ce34f4af20d2fa
 F ext/fts1/fulltext.c d935e600d87bc86b7d64f55c7520ea41d6034c5c
 F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
 F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 2ff290e0a130f6e7611f2e608cb3b5aaea721abc
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 41a63f6e375c5b38ab126205a8d44656e2a15bf2
+F ext/fts2/fts2.c 6d7f8546254dbe3190dc647c52c9eec62f0cb4cc
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c cafebb4620d19684c4c9872530012441df60f503
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
 F ext/fts2/fts2_icu.c 45b54d1e075020b35db20f69d829f95ca0651111
-F ext/fts2/fts2_porter.c 991a45463553c7318063fe7773368a6c0f39e35d
+F ext/fts2/fts2_porter.c 98c9dbd1eed20032c03ce05877164e262567443e
 F ext/fts2/fts2_tokenizer.c 5cec41326fabe65323945a46fa9495ee85c3d5fd
 F ext/fts2/fts2_tokenizer.h a7e46462d935a314b2682287f12f27530a3ee08e
-F ext/fts2/fts2_tokenizer1.c 719f6eb8cf94a8a5be6576c9b3d94d22deeea816
+F ext/fts2/fts2_tokenizer1.c 8a545c232bdffafd117c4eeaf59789691909f26a
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
@@ -523,7 +523,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c01d7944799d8a96a29f8d4f6d2bb7c4bb0e14bb
-R 716f8b047fd000adc1e73a5810951c7e
+P 5955a77d6c902dc65897ba19d6e06db3e10bd3ee
+R 984c4eda24873041ff0eaaaead3ed2cc
 U rse
-Z ae6e1e3bb03814327f895c292c68da17
+Z aeba5533a2320f69cfda14926afd4f33

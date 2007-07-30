@@ -279,9 +279,6 @@
 #endif
 
 #include <assert.h>
-#if !defined(__APPLE__)
-#include <malloc.h>
-#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
