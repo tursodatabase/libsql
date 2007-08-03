@@ -1,5 +1,5 @@
-C Avoid\sreloading\sthe\sschema\swhen\san\sexpired\sstatement\sis\sfinalized\sor\sreset.\nThis\sis\sonly\snecessary\swhen\sthe\sin-memory\sschema\sdoes\snot\smatch\sthe\sfile-system\sschema.\s(CVS\s4194)
-D 2007-08-03T07:33:09
+C Change\ssome\s(English\slanguage)\sgrammar\sin\sfaq.tcl.\sTicket\s#2480.\sNo\scode\schanges.\s(CVS\s4195)
+D 2007-08-03T08:18:45
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -492,7 +492,7 @@ F www/direct1b.gif 32b48b764244817b6b591898dc52a04299a7b8a7
 F www/docs.tcl 09eeac4e565789a67abc63f166a9ae7f3050454d
 F www/download.tcl d59a0244f22a975c3f9deafb535fc20549cb8c45
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl bf83ec841224518fb570c31325f502d7a3e632e7
+F www/faq.tcl 745e87b2afc4deaf062aaee8649d50294de3f244
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bbb8af1ee494a71031acac4c8d8c51535f23b9df
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
@@ -523,7 +523,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c709140b51610a2fbbff15c1fd80783218780f6f
-R 293a7586f4cdc273241b9546560115df
+P 61de5b52daa0a862a04147dbaf71fafb696052f6
+R f0f2f5d35fe1d1b5e2b5b0509224f927
 U danielk1977
-Z 3cd7b0b17487fa01eb69a20aa7e9c59e
+Z 39535e4307302789b467068e94656ed8

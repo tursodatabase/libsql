@@ -1,7 +1,7 @@
 #
 # Run this script to generated a faq.html output file
 #
-set rcsid {$Id: faq.tcl,v 1.38 2007/06/27 00:08:40 drh Exp $}
+set rcsid {$Id: faq.tcl,v 1.39 2007/08/03 08:18:45 danielk1977 Exp $}
 source common.tcl
 header {SQLite Frequently Asked Questions</title>}
 
@@ -202,9 +202,9 @@ faq {
   threads.  The <b>sqlite3</b> pointer must only be used in the same
   thread in which it was created by 
   <a href="capi3ref.html#sqlite3_open">sqlite3_open()</a>.  If you
-  break the rules and use an <b>sqlite3</b> in more than one thread
-  under these circumstances, then you will likely corrupt some
-  internal data structures resulting in a crash.</p>
+  break the rules and use an <b>sqlite3</b> handle in more than one 
+  thread under these circumstances you will likely corrupt some
+  internal data structures, resulting in a crash.</p>
 
   <p>Under UNIX, you should not carry an open SQLite database across
   a fork() system call into the child process.  Problems will result
