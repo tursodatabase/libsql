@@ -1,5 +1,5 @@
-C Change\ssome\s(English\slanguage)\sgrammar\sin\sfaq.tcl.\sTicket\s#2480.\sNo\scode\schanges.\s(CVS\s4195)
-D 2007-08-03T08:18:45
+C Fix\ssome\scompiler\swarnings.\s(CVS\s4196)
+D 2007-08-05T23:52:05
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -37,7 +37,7 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 2ff290e0a130f6e7611f2e608cb3b5aaea721abc
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 6d7f8546254dbe3190dc647c52c9eec62f0cb4cc
+F ext/fts2/fts2.c 412242297d4141ef66ae06ac33fcacdb4a2a3d4e
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c cafebb4620d19684c4c9872530012441df60f503
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -68,7 +68,7 @@ F src/alter.c 24c81ed6734304326922d42430567d1ee368c81d
 F src/analyze.c 8d345472e0f4e44fc88f5cf489c16dcb77904525
 F src/attach.c ba628db0c2b6a362f036d017bf1196cdfe4ebb37
 F src/auth.c 5ea90bc93dfea46e9fe4bf531e14c7cd98219ecb
-F src/btree.c 53c6108fdc70e708be463afb48c98e51565f0d78
+F src/btree.c c7b7e9523db10e1be42355b374f5713f1da94498
 F src/btree.h 1d527bf61ed176f980c34999d5793a0fd45dcf8c
 F src/btreeInt.h ac1ab1fb624ffbe571786cd2bd9559f9ae336355
 F src/build.c 59fd5782a728686148a6d30a5df283c177d22c1f
@@ -111,7 +111,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
 F src/sqlite.h.in 8164526b1658a6dad472953ea91239849f913d45
 F src/sqlite3ext.h a27bedc222df5e5f0f458ac99726d0483b953a91
-F src/sqliteInt.h 536fb651e1eed201c1eb5a852351f2866554c8b1
+F src/sqliteInt.h 74ada10135dcfa78d86dd8707968fc5500665909
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
 F src/tclsqlite.c 0d3370e01cd3b313ed29ed6b0ba00423b4329de0
@@ -523,7 +523,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 61de5b52daa0a862a04147dbaf71fafb696052f6
-R f0f2f5d35fe1d1b5e2b5b0509224f927
-U danielk1977
-Z 39535e4307302789b467068e94656ed8
+P e526817f158883f617720fd389741a29454ad483
+R 120f8d4073349b0dabe5d1dc028d9275
+U drh
+Z d9ed6baaa0c4fdc93345dbb1dbea7133

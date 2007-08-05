@@ -1939,7 +1939,6 @@ static int sql_step_statement(fulltext_vtab *v, fulltext_statement iStmt,
   assert( s==v->pFulltextStatements[iStmt] );
 
   while( (rc=sqlite3_step(s))!=SQLITE_DONE && rc!=SQLITE_ROW ){
-    sqlite3_stmt *pNewStmt;
 
     if( rc==SQLITE_BUSY ) continue;
     if( rc!=SQLITE_ERROR ) return rc;
@@ -1954,10 +1953,6 @@ static int sql_step_statement(fulltext_vtab *v, fulltext_statement iStmt,
     rc = sqlite3_finalize(s);
     break;
   }
-  return rc;
-
- err:
-  sqlite3_finalize(s);
   return rc;
 }
 
@@ -2005,7 +2000,6 @@ static int sql_step_leaf_statement(fulltext_vtab *v, int idx,
   sqlite3_stmt *s = *ppStmt;
 
   while( (rc=sqlite3_step(s))!=SQLITE_DONE && rc!=SQLITE_ROW ){
-    sqlite3_stmt *pNewStmt;
 
     if( rc==SQLITE_BUSY ) continue;
     if( rc!=SQLITE_ERROR ) return rc;
