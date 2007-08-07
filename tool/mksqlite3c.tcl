@@ -129,6 +129,7 @@ proc copy_file {filename} {
   set tail [file tail $filename]
   section_comment "Begin file $tail"
   set in [open $filename r]
+  set varpattern {^[a-zA-Z][a-zA-Z_0-9 *]+ \*?(sqlite3[a-zA-Z0-9]+)([[;]| =)}
   if {[file extension $filename]==".h"} {
     set declpattern {^ *[a-zA-Z][a-zA-Z_0-9 ]+ \*?(sqlite3[_A-Z][a-zA-Z0-9]+)\(}
   } else {
@@ -154,14 +155,26 @@ proc copy_file {filename} {
       puts $out "#if 0"
     } elseif {[regexp {^#line} $line]} {
       # Skip #line directives.
-    } elseif {$addstatic && [regexp $declpattern $line all funcname] 
-                  && ![regexp {^static} $line]} {
-      # Add the SQLITE_PRIVATE or SQLITE_API keyword before functions.
-      # so that linkage can be modified at compile-time.
-      if {[regexp {^sqlite3_} $funcname]} {
-        puts $out "SQLITE_API $line"
+    } elseif {$addstatic && ![regexp {^static} $line]} {
+      if {[regexp $declpattern $line all funcname]} {
+        # Add the SQLITE_PRIVATE or SQLITE_API keyword before functions.
+        # so that linkage can be modified at compile-time.
+        if {[regexp {^sqlite3_} $funcname]} {
+          puts $out "SQLITE_API $line"
+        } else {
+          puts $out "SQLITE_PRIVATE $line"
+        }
+      } elseif {[regexp $varpattern $line all varname]} {
+        # Add the SQLITE_PRIVATE before variable declarations or
+        # definitions for internal use
+        if {![regexp {^sqlite3_} $varname]} {
+          regsub {^extern } $line {} line
+          puts $out "SQLITE_PRIVATE $line"
+        } else {
+          puts $out $line
+        }
       } else {
-        puts $out "SQLITE_PRIVATE $line"
+        puts $out $line
       }
     } else {
       puts $out $line

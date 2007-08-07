@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.52 2007/07/23 19:12:42 drh Exp $
+** $Id: utf.c,v 1.53 2007/08/07 17:04:59 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -49,7 +49,7 @@ const int sqlite3one = 1;
 ** This lookup table is used to help decode the first byte of
 ** a multi-byte UTF8 character.
 */
-const unsigned char sqlite3UtfTrans1[] = {
+static const unsigned char sqlite3UtfTrans1[] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
   0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,

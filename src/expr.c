@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.301 2007/07/23 22:51:15 drh Exp $
+** $Id: expr.c,v 1.302 2007/08/07 17:04:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -177,7 +177,7 @@ static int binaryCompareP1(Expr *pExpr1, Expr *pExpr2, int jumpIfNull){
 ** Argument pRight (but not pLeft) may be a null pointer. In this case,
 ** it is not considered.
 */
-CollSeq* sqlite3BinaryCompareCollSeq(
+CollSeq *sqlite3BinaryCompareCollSeq(
   Parse *pParse, 
   Expr *pLeft, 
   Expr *pRight
