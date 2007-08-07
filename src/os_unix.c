@@ -376,12 +376,12 @@ static Hash openHash = {SQLITE_HASH_BINARY, 0, 0, 0,
 **   file systems that are known to be unsupported
 */
 typedef enum {
-	posixLockingStyle = 0,       /* standard posix-advisory locks */
-	afpLockingStyle,             /* use afp locks */
-	flockLockingStyle,           /* use flock() */
-	dotlockLockingStyle,         /* use <file>.lock files */
-	noLockingStyle,              /* useful for read-only file system */
-	unsupportedLockingStyle      /* indicates unsupported file system */
+        posixLockingStyle = 0,       /* standard posix-advisory locks */
+        afpLockingStyle,             /* use afp locks */
+        flockLockingStyle,           /* use flock() */
+        dotlockLockingStyle,         /* use <file>.lock files */
+        noLockingStyle,              /* useful for read-only file system */
+        unsupportedLockingStyle      /* indicates unsupported file system */
 } sqlite3LockingStyle;
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
 
@@ -601,7 +601,7 @@ static sqlite3LockingStyle sqlite3DetectLockingStyle(const char *filePath,
   
   if( (!strcmp(fsInfo.f_fstypename, "hfs")) ||
     (!strcmp(fsInfo.f_fstypename, "ufs")) )
-		return posixLockingStyle;
+                return posixLockingStyle;
   
   if(!strcmp(fsInfo.f_fstypename, "afpfs"))
     return afpLockingStyle;
@@ -1714,7 +1714,7 @@ struct ByteRangeLockPB2
   int fd;                           /* file desc to assoc this lock with */
 };
 
-#define afpfsByteRangeLock2FSCTL	_IOWR('z', 23, struct ByteRangeLockPB2)
+#define afpfsByteRangeLock2FSCTL        _IOWR('z', 23, struct ByteRangeLockPB2)
 
 /* return 0 on success, 1 on failure.  To match the behavior of the 
   normal posix file locking (used in unixLock for example), we should 
@@ -1723,7 +1723,7 @@ struct ByteRangeLockPB2
 static int _AFPFSSetLock(const char *path, int fd, unsigned long long offset, 
                          unsigned long long length, int setLockFlag)
 {
-  struct ByteRangeLockPB2	pb;
+  struct ByteRangeLockPB2       pb;
   int                     err;
   
   pb.unLockFlag = setLockFlag ? 0 : 1;

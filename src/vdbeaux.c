@@ -1435,7 +1435,7 @@ int sqlite3VdbeHalt(Vdbe *p){
     */
     if( db->autoCommit && db->activeVdbeCnt==1 ){
       if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
-	/* The auto-commit flag is true, and the vdbe program was 
+        /* The auto-commit flag is true, and the vdbe program was 
         ** successful or hit an 'OR FAIL' constraint. This means a commit 
         ** is required.
         */

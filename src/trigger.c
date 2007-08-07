@@ -673,21 +673,21 @@ static int codeTriggerProgram(
     pParse->trigStack->orconf = orconf;
     switch( pTriggerStep->op ){
       case TK_SELECT: {
-	Select *ss = sqlite3SelectDup(pTriggerStep->pSelect);
+        Select *ss = sqlite3SelectDup(pTriggerStep->pSelect);
         if( ss ){
           sqlite3SelectResolve(pParse, ss, 0);
           sqlite3Select(pParse, ss, SRT_Discard, 0, 0, 0, 0, 0);
           sqlite3SelectDelete(ss);
         }
-	break;
+        break;
       }
       case TK_UPDATE: {
         SrcList *pSrc;
         pSrc = targetSrcList(pParse, pTriggerStep);
         sqlite3VdbeAddOp(v, OP_ResetCount, 0, 0);
         sqlite3Update(pParse, pSrc,
-		sqlite3ExprListDup(pTriggerStep->pExprList), 
-		sqlite3ExprDup(pTriggerStep->pWhere), orconf);
+                sqlite3ExprListDup(pTriggerStep->pExprList), 
+                sqlite3ExprDup(pTriggerStep->pWhere), orconf);
         sqlite3VdbeAddOp(v, OP_ResetCount, 1, 0);
         break;
       }

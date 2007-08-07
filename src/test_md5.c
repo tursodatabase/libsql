@@ -168,7 +168,7 @@ static void MD5Transform(uint32 buf[4], const uint32 in[16]){
  * initialization constants.
  */
 static void MD5Init(MD5Context *ctx){
-	ctx->isInit = 1;
+        ctx->isInit = 1;
         ctx->buf[0] = 0x67452301;
         ctx->buf[1] = 0xefcdab89;
         ctx->buf[2] = 0x98badcfe;

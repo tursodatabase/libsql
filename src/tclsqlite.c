@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.193 2007/06/26 22:55:38 drh Exp $
+** $Id: tclsqlite.c,v 1.194 2007/08/07 17:13:04 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -1980,7 +1980,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       int len;
       int N;
       if( TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &N) ){
-	return TCL_ERROR;
+        return TCL_ERROR;
       };
       if( pDb->zProgress ){
         Tcl_Free(pDb->zProgress);

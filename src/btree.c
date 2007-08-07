@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.394 2007/08/05 23:52:05 drh Exp $
+** $Id: btree.c,v 1.395 2007/08/07 17:13:04 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2793,8 +2793,8 @@ static int accessPayload(
       if( offset>=ovflSize ){
         /* The only reason to read this page is to obtain the page
         ** number for the next page in the overflow chain. The page
-	** data is not required. So first try to lookup the overflow
-	** page-list cache, if any, then fall back to the getOverflowPage()
+        ** data is not required. So first try to lookup the overflow
+        ** page-list cache, if any, then fall back to the getOverflowPage()
         ** function.
         */
 #ifndef SQLITE_OMIT_INCRBLOB
@@ -4773,7 +4773,7 @@ static int balance_nonroot(MemPage *pPage){
         memcpy(&pNew->aData[8], pCell, 4);
         pTemp = 0;
       }else if( leafData ){
-	/* If the tree is a leaf-data tree, and the siblings are leaves, 
+        /* If the tree is a leaf-data tree, and the siblings are leaves, 
         ** then there is no divider cell in apCell[]. Instead, the divider 
         ** cell consists of the integer key for the right-most cell of 
         ** the sibling-page assembled above only.
