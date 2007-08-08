@@ -12,7 +12,7 @@
 ** Memory allocation functions used throughout sqlite.
 **
 **
-** $Id: malloc.c,v 1.3 2007/06/15 20:29:20 drh Exp $
+** $Id: malloc.c,v 1.4 2007/08/08 01:04:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -792,10 +792,10 @@ void sqlite3SetString(char **pz, ...){
 ** then the connection error-code (the value returned by sqlite3_errcode())
 ** is set to SQLITE_NOMEM.
 */
-int sqlite3_mallocHasFailed = 0;
+int sqlite3MallocHasFailed = 0;
 int sqlite3ApiExit(sqlite3* db, int rc){
   if( sqlite3MallocFailed() ){
-    sqlite3_mallocHasFailed = 0;
+    sqlite3MallocHasFailed = 0;
     sqlite3OsLeaveMutex();
     sqlite3Error(db, SQLITE_NOMEM, 0);
     rc = SQLITE_NOMEM;
@@ -809,8 +809,8 @@ int sqlite3ApiExit(sqlite3* db, int rc){
 void sqlite3FailedMalloc(){
   if( !sqlite3MallocFailed() ){
     sqlite3OsEnterMutex();
-    assert( sqlite3_mallocHasFailed==0 );
-    sqlite3_mallocHasFailed = 1;
+    assert( sqlite3MallocHasFailed==0 );
+    sqlite3MallocHasFailed = 1;
   }
 }
 

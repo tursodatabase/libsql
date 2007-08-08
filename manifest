@@ -1,5 +1,5 @@
-C Remove\sall\stabs\sfrom\ssource\scode\sfiles.\s\sTicket\s#2556.\s(CVS\s4198)
-D 2007-08-07T17:13:04
+C Additional\srefinements\son\sthe\samalgamation:\s\sGive\sa\scouple\sof\sconstants\nfile\sscope\sand\sadd\sthe\sSQLITE_API\sprefix\sto\ssome\sinterfaces\sthat\sneed\sit.\nTicket\s#2554.\s(CVS\s4199)
+D 2007-08-08T01:04:52
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -86,11 +86,11 @@ F src/legacy.c 388c71ad7fbcd898ba1bcbfc98a3ac954bfa5d01
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c 6c24ee62adfe7fbfb2f2dd43ff18e5534b19010f
 F src/main.c 65fc7de0b3c2e5b637c000ecf419c35de2525ef9
-F src/malloc.c fa9bbccc4e6d099cd04c2518d238a1669c9d1020
+F src/malloc.c 3850ab4a2edfb190ffee353c5674ebd8c6b4ccc7
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 1f10b47acc1177fb9225edb4f5f0d25ed716f9cb
 F src/os.h cea2e179bb33f4fc09dbb9fcd51b2246544bd2db
-F src/os_common.h a38233cd3b1f260db6f01f1093295d5708130065
+F src/os_common.h f7fd79fb4c5e9ffa9d76cbe4fe7fe182f4573a0e
 F src/os_os2.c cba4e96fadb949076c717108fe0599d1a3c2e446
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
@@ -111,7 +111,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
 F src/sqlite.h.in 8164526b1658a6dad472953ea91239849f913d45
 F src/sqlite3ext.h a27bedc222df5e5f0f458ac99726d0483b953a91
-F src/sqliteInt.h c006580ea2c18cf4c583c59f2d683f5950263797
+F src/sqliteInt.h c484c3e6feb944d45036457dfe35ae871dcf428c
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
 F src/tclsqlite.c 648e6f53041ce4974234d4963e71680926760925
@@ -454,7 +454,7 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl d7b03011caa20dc685c67b2eae1eda523e85d571
+F tool/mksqlite3c.tcl e86df6c4d4980b5b6363f89b5a2b3411f1efb05e
 F tool/mksqlite3internalh.tcl 47737a925fb02fce43e2c0a14b3cc17574a4d44a
 F tool/omittest.tcl e6b3d6a1285f9813bc1dea53bb522b4b72774710
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -523,7 +523,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 73db545289a1a99bd48b22895d2a3ee86540f107
-R d0fe20d43b0c707879bbca4a90c42d4d
+P 7550dd1d5980a399fbb06b4ed69216700f879a0b
+R 584af6434a09845fc3702df718d20d4a
 U drh
-Z f49291d6caa8fd1a50c0dd0fc20a11b8
+Z 4a56fa1cdaa944e9bf519a503814dead

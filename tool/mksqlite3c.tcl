@@ -130,11 +130,11 @@ proc copy_file {filename} {
   section_comment "Begin file $tail"
   set in [open $filename r]
   set varpattern {^[a-zA-Z][a-zA-Z_0-9 *]+ \*?(sqlite3[a-zA-Z0-9]+)([[;]| =)}
+  set declpattern {[a-zA-Z][a-zA-Z_0-9 ]+ \*?(sqlite3[_a-zA-Z0-9]+)\(}
   if {[file extension $filename]==".h"} {
-    set declpattern {^ *[a-zA-Z][a-zA-Z_0-9 ]+ \*?(sqlite3[_A-Z][a-zA-Z0-9]+)\(}
-  } else {
-    set declpattern {^[a-zA-Z][a-zA-Z_0-9 ]+ \*?(sqlite3[_A-Z][a-zA-Z0-9]+)\(}
+    set declpattern " *$declpattern"
   }
+  set declpattern ^$declpattern
   while {![eof $in]} {
     set line [gets $in]
     if {[regexp {^#\s*include\s+["<]([^">]+)[">]} $line all hdr]} {
