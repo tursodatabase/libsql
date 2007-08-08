@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.258 2007/06/26 00:37:28 drh Exp $
+** $Id: test1.c,v 1.259 2007/08/08 12:11:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4440,7 +4440,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;
-  extern int sqlite3_os_trace;
   extern int sqlite3_where_trace;
   extern int sqlite3_sync_count, sqlite3_fullsync_count;
   extern int sqlite3_opentemp_count;
@@ -4460,6 +4459,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_os_type;
 #endif
 #ifdef SQLITE_DEBUG
+  extern int sqlite3_os_trace;
   extern int sqlite3_vdbe_addop_trace;
 #endif
 #ifdef SQLITE_TEST
@@ -4488,8 +4488,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_open_file_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_current_time", 
       (char*)&sqlite3_current_time, TCL_LINK_INT);
-  Tcl_LinkVar(interp, "sqlite_os_trace",
-      (char*)&sqlite3_os_trace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite3_tsd_count",
       (char*)&sqlite3_tsd_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite3_xferopt_count",
@@ -4537,6 +4535,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_vdbe_addop_trace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_where_trace",
       (char*)&sqlite3_where_trace, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite_os_trace",
+      (char*)&sqlite3_os_trace, TCL_LINK_INT);
 #endif
 #ifdef SQLITE_MEMDEBUG
   Tcl_LinkVar(interp, "sqlite_memused",

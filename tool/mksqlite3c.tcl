@@ -129,7 +129,7 @@ proc copy_file {filename} {
   set tail [file tail $filename]
   section_comment "Begin file $tail"
   set in [open $filename r]
-  set varpattern {^[a-zA-Z][a-zA-Z_0-9 *]+ \*?(sqlite3[a-zA-Z0-9]+)([[;]| =)}
+  set varpattern {^[a-zA-Z][a-zA-Z_0-9 *]+(sqlite3[_a-zA-Z0-9]+)(\[|;| =)}
   set declpattern {[a-zA-Z][a-zA-Z_0-9 ]+ \*?(sqlite3[_a-zA-Z0-9]+)\(}
   if {[file extension $filename]==".h"} {
     set declpattern " *$declpattern"
@@ -155,7 +155,7 @@ proc copy_file {filename} {
       puts $out "#if 0"
     } elseif {[regexp {^#line} $line]} {
       # Skip #line directives.
-    } elseif {$addstatic && ![regexp {^static} $line]} {
+    } elseif {$addstatic && ![regexp {^(static|typedef)} $line]} {
       if {[regexp $declpattern $line all funcname]} {
         # Add the SQLITE_PRIVATE or SQLITE_API keyword before functions.
         # so that linkage can be modified at compile-time.
@@ -170,9 +170,13 @@ proc copy_file {filename} {
         if {![regexp {^sqlite3_} $varname]} {
           regsub {^extern } $line {} line
           puts $out "SQLITE_PRIVATE $line"
+        } elseif {![regexp {^SQLITE_EXTERN} $line]} {
+          puts $out "SQLITE_API $line"
         } else {
           puts $out $line
         }
+      } elseif {[regexp {^void \(\*sqlite3_io_trace\)} $line]} {
+        puts $out "SQLITE_API $line"
       } else {
         puts $out $line
       }

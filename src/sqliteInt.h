@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.584 2007/08/08 01:04:52 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.585 2007/08/08 12:11:21 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1549,13 +1549,6 @@ typedef struct {
 } InitData;
 
 /*
- * This global flag is set for performance testing of triggers. When it is set
- * SQLite will perform the overhead of building new and old trigger references 
- * even when no triggers exist
- */
-extern int sqlite3_always_code_trigger_setup;
-
-/*
 ** Assuming zIn points to the first byte of a UTF-8 character,
 ** advance zIn to point to the first byte of the next UTF-8 character.
 */
@@ -1954,6 +1947,6 @@ void sqlite3Put4byte(u8*, u32);
 # define IOTRACE(A)
 # define sqlite3VdbeIOTraceSql(X)
 #endif
-extern void (*sqlite3_io_trace)(const char*,...);
+SQLITE_EXTERN void (*sqlite3_io_trace)(const char*,...);
 
 #endif

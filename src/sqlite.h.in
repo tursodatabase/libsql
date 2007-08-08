@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.218 2007/07/19 12:41:40 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.219 2007/08/08 12:11:21 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -41,6 +41,13 @@
 */
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/*
+** Add the ability to override 'extern'
+*/
+#ifndef SQLITE_EXTERN
+# define SQLITE_EXTERN extern
 #endif
 
 /*
@@ -100,7 +107,7 @@ extern "C" {
 ** is provided for DLL users who can only access functions and not
 ** constants within the DLL.
 */
-extern const char sqlite3_version[];
+SQLITE_EXTERN const char sqlite3_version[];
 const char *sqlite3_libversion(void);
 int sqlite3_libversion_number(void);
 
@@ -2020,7 +2027,7 @@ int sqlite3_sleep(int);
 ** it is not safe to invoke this routine after [sqlite3_open()] has
 ** been called.
 */
-extern char *sqlite3_temp_directory;
+SQLITE_EXTERN char *sqlite3_temp_directory;
 
 /*
 ** CAPI3REF:  Test To See If The Databse Is In Auto-Commit Mode
