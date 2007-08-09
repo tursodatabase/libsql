@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.132 2007/07/13 10:35:15 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.133 2007/08/09 00:00:26 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1081,7 +1081,7 @@ BLOB literals are string literals containing hexadecimal data and
 preceded by a single "x" or "X" character.  For example:</p>
 
 <blockquote><pre>
-X'53514697465'
+X'53514C697465'
 </pre></blockquote>
 
 <p>
@@ -1594,7 +1594,7 @@ If no column-list is specified then the number of values must
 be the same as the number of columns in the table.  If a column-list
 is specified, then the number of values must match the number of
 specified columns.  Columns of the table that do not appear in the
-column list are filled with the default value, or with NULL if not
+column list are filled with the default value, or with NULL if no
 default value is specified.
 </p>
 
