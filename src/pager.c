@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.352 2007/08/07 17:13:04 drh Exp $
+** @(#) $Id: pager.c,v 1.353 2007/08/10 23:54:16 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2625,7 +2625,7 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   ** very slow operation, so we work hard to avoid it.  But sometimes
   ** it can't be helped.
   */
-  if( pPg==0 && pPager->pFirst && syncOk && !MEMDB){
+  if( pPg==0 && pPager->pFirst && pPager->nRec && syncOk && !MEMDB){
     int rc = syncJournal(pPager);
     if( rc!=0 ){
       return rc;
