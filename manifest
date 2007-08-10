@@ -1,5 +1,5 @@
-C Update\stests\sso\sthat\sthey\swork\sproperly\seven\sif\sthe\ssoft-heap-limit\nis\sset\slow.\s(CVS\s4203)
-D 2007-08-10T19:46:14
+C Add\sa\stest\scase\sto\sreproduce\sthe\sdatabase\scorruption\sproblem\sreported\nby\sticket\s#2565.\s(CVS\s4204)
+D 2007-08-10T19:46:44
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -363,6 +363,7 @@ F test/shared2.test 8b48f8d33494413ef4cf250110d89403e2bf6b23
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
 F test/shared_err.test cc528f6e78665787e93d9ce3a782a2ce5179d821
 F test/soak.test 64f9b27fbcdec43335a88c546ce1983e6ba40d7b
+F test/softheap1.test 2fb06ccd146ed4db04fe63f39e0b02054b38b778
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
@@ -523,7 +524,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8be845981654d2a846c95c699395af222b6c3b43
-R 4f7973200fb8962875d87d3c791c258c
+P e01eb99edfa3390e97847a210532847cc64803da
+R aac32bb1cd0df3e93b59fdd82b5116c9
 U drh
-Z e2088765e2200838211ac2419fa9b628
+Z 295b4c36a089304d77fa0f7b791dfdde

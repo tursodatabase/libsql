@@ -1,0 +1,36 @@
+# 2007 Aug 10
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# This test script reproduces the problem reported by ticket #2565,
+# A database corruption bug that occurs in auto_vacuum mode when
+# the soft_heap_limit is set low enough to be triggered.
+#
+# $Id: softheap1.test,v 1.1 2007/08/10 19:46:44 drh Exp $
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+sqlite3_soft_heap_limit 5000
+do_test softheap1-1.1 {
+  execsql {
+    PRAGMA auto_vacuum=1;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(hex(randomblob(5000)));
+    BEGIN;
+    CREATE TABLE t2 AS SELECT * FROM t1;
+    ROLLBACK;
+    PRAGMA integrity_check;
+  }
+} {ok}
+sqlite3_soft_heap_limit $soft_limit
+   
+finish_test
