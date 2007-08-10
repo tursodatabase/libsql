@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.353 2007/08/10 23:54:16 drh Exp $
+** @(#) $Id: pager.c,v 1.354 2007/08/10 23:56:36 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -562,7 +562,11 @@ static int write32bits(OsFile *fd, u32 val){
 */
 static int pager_error(Pager *pPager, int rc){
   int rc2 = rc & 0xff;
-  assert( pPager->errCode==SQLITE_FULL || pPager->errCode==SQLITE_OK );
+  assert(
+       pPager->errCode==SQLITE_FULL ||
+       pPager->errCode==SQLITE_OK ||
+       (pPager->errCode & 0xff)==SQLITE_IOERR
+  );
   if(
     rc2==SQLITE_FULL ||
     rc2==SQLITE_IOERR ||
@@ -2755,7 +2759,7 @@ int sqlite3PagerReleaseMemory(int nReq){
           pTmp->pNextAll = pPg->pNextAll;
         }
         nReleased += sqliteAllocSize(pPg);
-        IOTRACE(("PGFREE %p %d\n", pPager, pPg->pgno));
+        IOTRACE(("PGFREE %p %d *\n", pPager, pPg->pgno));
         PAGER_INCR(sqlite3_pager_pgfree_count);
         sqliteFree(pPg);
       }
@@ -2767,7 +2771,11 @@ int sqlite3PagerReleaseMemory(int nReq){
         ** The error will be returned to the user (or users, in the case 
         ** of a shared pager cache) of the pager for which the error occured.
         */
-        assert( (rc&0xff)==SQLITE_IOERR || rc==SQLITE_FULL );
+        assert(
+            (rc&0xff)==SQLITE_IOERR ||
+            rc==SQLITE_FULL ||
+            rc==SQLITE_BUSY
+        );
         assert( pPager->state>=PAGER_RESERVED );
         pager_error(pPager, rc);
       }
