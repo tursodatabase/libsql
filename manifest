@@ -1,5 +1,5 @@
-C Fix\sdocumentation\stypos.\s\sTickets\s#2168\sand\s#2560.\s(CVS\s4201)
-D 2007-08-09T00:00:26
+C Add\sthe\s--soft-heap-limit=N\soption\sto\sthe\stest\sscripts.\s\sSet\sthis\svalue\sto\nenforce\sa\ssoft\sheap\slimit\sacross\sall\stests.\s\sThis\schanges\sexposes\sseveral\nnew\sbugs.\s(CVS\s4202)
+D 2007-08-10T16:41:09
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -273,7 +273,7 @@ F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/incrblob.test 1e74ef0f6df83ec8071d727d8f30295f11de0677
 F test/incrblob_err.test 2501bec57e317e7051451b5093b47fc61a96c85a
-F test/incrvacuum.test 92d0efe609509c65804be016cb376d5ec5abb5a5
+F test/incrvacuum.test 569347726ea5940c3359e3d8cabb3505595cb82f
 F test/incrvacuum2.test 82397ceb5941cbe852fd29bb33fcdf5665bc80c2
 F test/incrvacuum_ioerr.test cb331403b8dea3c5bae6163861ff25037b0df56a
 F test/index.test e65df12bed94b2903ee89987115e1578687e9266
@@ -308,7 +308,7 @@ F test/malloc.test 45a81af6328381d0630ab0a3d8cb8c58551603f7
 F test/malloc2.test 4ed7d719542c4570dec9c2ebe2bbdf3a9f3b0d05
 F test/malloc3.test e965954b6f808876a63d3101fd70370320b509a7
 F test/malloc4.test 59cd02f71b363302a04c4e77b97c0a1572eaa210
-F test/malloc5.test f228cb7101ae403327824d327a1f5651d83ef0f2
+F test/malloc5.test 30eeb4c5222c85c62b523cf007001ece80fb3437
 F test/malloc6.test 025ae0b78542e0ddd000d23f79d93e9be9ba0f15
 F test/malloc7.test 1cf52834509eac7ebeb92105dacd4669f9ca9869
 F test/malloc8.test e4054ca2a87ab1d42255bec009b177ba20b5a487
@@ -376,7 +376,7 @@ F test/table.test dbdfd06aef054ad5aed8e57a782137d57d5c5528
 F test/tableapi.test 036575a98dcce7c92e9f39056839bbad8a715412
 F test/tclsqlite.test 593f3b30221e85786965d9e5670ae4f96b4e4159
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
-F test/tester.tcl 9382df472e0e86cbfddc44ab8c8cc02497bc9c8a
+F test/tester.tcl 2ec34cd5b7916bb8f5dd33fa0e2e0412a499fdf4
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
@@ -523,7 +523,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3759a38fe8e8a873dc3aae8dc99ca1010551b50b
-R fbc8a53c964f67498ae60776a27efd94
+P 4333b231af8866e3d2d75bc64083b6c36c8da8d8
+R 59a1470063d9ac8d446eb8a6fbd0d1f5
 U drh
-Z 404cedd8a438ac3496ecea6543b3ec13
+Z 7db05446b00beee77c01beded332074f

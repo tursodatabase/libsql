@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.12 2007/06/25 08:16:58 danielk1977 Exp $
+# $Id: incrvacuum.test,v 1.13 2007/08/10 16:41:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -573,11 +573,19 @@ db close
 file delete -force test.db test.db-journal
 sqlite3 db test.db
 
-do_test incrvacuum-11.1 {
-  execsql {
-    PRAGMA auto_vacuum;
-  }
-} {0}
+ifcapable default_autovacuum {
+  do_test incrvacuum-11.1-av-dflt-on {
+    execsql {
+      PRAGMA auto_vacuum;
+    }
+  } {1}
+} else {
+  do_test incrvacuum-11.1-av-dflt-off {
+    execsql {
+      PRAGMA auto_vacuum;
+    }
+  } {0}
+}
 do_test incrvacuum-11.2 {
   execsql {
     PRAGMA auto_vacuum = incremental;
@@ -686,4 +694,3 @@ do_test incrvacuum-13.5 {
 
 db2 close
 finish_test
-
