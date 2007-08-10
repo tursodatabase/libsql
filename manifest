@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sto\sreproduce\sthe\sdatabase\scorruption\sproblem\sreported\nby\sticket\s#2565.\s(CVS\s4204)
-D 2007-08-10T19:46:44
+C Convert\sfts2\sto\suse\ssqlite3_prepare_v2()\sto\sprevent\scertain\slogic\nerrors\saround\sSQLITE_SCHEMA\shandling.\s\sThis\salso\sallows\nsql_step_statement()\sand\ssql_step_leaf_statement()\sto\sbe\sreplaced\swith\nsqlite3_step().\n\nAlso\sfix\sa\slogic\serror\sin\sflushPendingTerms()\swhich\swas\sclearing\sthe\nterm\stable\sin\scase\sof\serror.\s\sThis\swas\swrong\sin\sthe\sface\sof\nSQLITE_SCHEMA.\s\sEven\sthough\sthe\schange\sto\ssqlite3_prepare_v2()\sshould\ncause\sus\snot\sto\ssee\sSQLITE_SCHEMA\sany\slonger,\sit\swas\sstill\sa\slogic\nerror...\s(CVS\s4205)
+D 2007-08-10T23:47:04
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -37,7 +37,7 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 2ff290e0a130f6e7611f2e608cb3b5aaea721abc
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 412242297d4141ef66ae06ac33fcacdb4a2a3d4e
+F ext/fts2/fts2.c 29992419e893a919c1f5cb14615d30a05cb20abb
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c cafebb4620d19684c4c9872530012441df60f503
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -256,7 +256,7 @@ F test/fts2g.test 2638452a2ea809ae30e98acc3c063fe54c381d0a
 F test/fts2h.test 223af921323b409d4b5b18ff4e51619541b174bb
 F test/fts2i.test 1b22451d1f13f7c509baec620dc3a4a754885dd6
 F test/fts2j.test f68d7611f76309bc8b94170f3740d9fbbc061d9b
-F test/fts2k.test 222d0b3bc8667753f18406aaea9906a6098ea016
+F test/fts2k.test c7ebf4a4937594aa07459e3e1bca1251c1be8659
 F test/fts2l.test 4c53c89ce3919003765ff4fd8d98ecf724d97dd3
 F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
@@ -524,7 +524,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e01eb99edfa3390e97847a210532847cc64803da
-R aac32bb1cd0df3e93b59fdd82b5116c9
-U drh
-Z 295b4c36a089304d77fa0f7b791dfdde
+P f267ce809424ec2cc167bf9750989413a8f925c1
+R 7b50465ce600cfe9712feba4d5c8c556
+U shess
+Z fb3f3f46abbb55040332d6f3d03499aa

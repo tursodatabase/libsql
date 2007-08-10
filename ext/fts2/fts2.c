@@ -1649,7 +1649,7 @@ static int sql_prepare(sqlite3 *db, const char *zDb, const char *zName,
   char *zCommand = string_format(zFormat, zDb, zName);
   int rc;
   TRACE(("FTS2 prepare: %s\n", zCommand));
-  rc = sqlite3_prepare(db, zCommand, -1, ppStmt, NULL);
+  rc = sqlite3_prepare_v2(db, zCommand, -1, ppStmt, NULL);
   free(zCommand);
   return rc;
 }
@@ -1925,44 +1925,12 @@ static int sql_get_statement(fulltext_vtab *v, fulltext_statement iStmt,
   return SQLITE_OK;
 }
 
-/* Step the indicated statement, handling errors SQLITE_BUSY (by
-** retrying) and SQLITE_SCHEMA (by re-preparing and transferring
-** bindings to the new statement).
-** TODO(adam): We should extend this function so that it can work with
-** statements declared locally, not only globally cached statements.
+/* Like sqlite3_step(), but convert SQLITE_DONE to SQLITE_OK and
+** SQLITE_ROW to SQLITE_ERROR.  Useful for statements like UPDATE,
+** where we expect no results.
 */
-static int sql_step_statement(fulltext_vtab *v, fulltext_statement iStmt,
-                              sqlite3_stmt **ppStmt){
-  int rc;
-  sqlite3_stmt *s = *ppStmt;
-  assert( iStmt<MAX_STMT );
-  assert( s==v->pFulltextStatements[iStmt] );
-
-  while( (rc=sqlite3_step(s))!=SQLITE_DONE && rc!=SQLITE_ROW ){
-
-    if( rc==SQLITE_BUSY ) continue;
-    if( rc!=SQLITE_ERROR ) return rc;
-
-    /* If an SQLITE_SCHEMA error has occured, then finalizing this
-     * statement is going to delete the fulltext_vtab structure. If
-     * the statement just executed is in the pFulltextStatements[]
-     * array, it will be finalized twice. So remove it before
-     * calling sqlite3_finalize().
-     */
-    v->pFulltextStatements[iStmt] = NULL;
-    rc = sqlite3_finalize(s);
-    break;
-  }
-  return rc;
-}
-
-/* Like sql_step_statement(), but convert SQLITE_DONE to SQLITE_OK.
-** Useful for statements like UPDATE, where we expect no results.
-*/
-static int sql_single_step_statement(fulltext_vtab *v,
-                                     fulltext_statement iStmt,
-                                     sqlite3_stmt **ppStmt){
-  int rc = sql_step_statement(v, iStmt, ppStmt);
+static int sql_single_step(sqlite3_stmt *s){
+  int rc = sqlite3_step(s);
   return (rc==SQLITE_DONE) ? SQLITE_OK : rc;
 }
 
@@ -1988,36 +1956,6 @@ static int sql_get_leaf_statement(fulltext_vtab *v, int idx,
   return SQLITE_OK;
 }
 
-/* Like sql_step_statement(), but for special replicated LEAF_SELECT
-** statements.
-*/
-/* TODO(shess) Write version for generic statements and then share
-** that between the cached-statement functions.
-*/
-static int sql_step_leaf_statement(fulltext_vtab *v, int idx,
-                                   sqlite3_stmt **ppStmt){
-  int rc;
-  sqlite3_stmt *s = *ppStmt;
-
-  while( (rc=sqlite3_step(s))!=SQLITE_DONE && rc!=SQLITE_ROW ){
-
-    if( rc==SQLITE_BUSY ) continue;
-    if( rc!=SQLITE_ERROR ) return rc;
-
-    /* If an SQLITE_SCHEMA error has occured, then finalizing this
-     * statement is going to delete the fulltext_vtab structure. If
-     * the statement just executed is in the pLeafSelectStmts[]
-     * array, it will be finalized twice. So remove it before
-     * calling sqlite3_finalize().
-     */
-    v->pLeafSelectStmts[idx] = NULL;
-    rc = sqlite3_finalize(s);
-    break;
-  }
-
-  return rc;
-}
-
 /* insert into %_content (rowid, ...) values ([rowid], [pValues]) */
 static int content_insert(fulltext_vtab *v, sqlite3_value *rowid,
                           sqlite3_value **pValues){
@@ -2034,7 +1972,7 @@ static int content_insert(fulltext_vtab *v, sqlite3_value *rowid,
     if( rc!=SQLITE_OK ) return rc;
   }
 
-  return sql_single_step_statement(v, CONTENT_INSERT_STMT, &s);
+  return sql_single_step(s);
 }
 
 /* update %_content set col0 = pValues[0], col1 = pValues[1], ...
@@ -2054,7 +1992,7 @@ static int content_update(fulltext_vtab *v, sqlite3_value **pValues,
   rc = sqlite3_bind_int64(s, 1+v->nColumn, iRowid);
   if( rc!=SQLITE_OK ) return rc;
 
-  return sql_single_step_statement(v, CONTENT_UPDATE_STMT, &s);
+  return sql_single_step(s);
 }
 
 static void freeStringArray(int nString, const char **pString){
@@ -2087,7 +2025,7 @@ static int content_select(fulltext_vtab *v, sqlite_int64 iRow,
   rc = sqlite3_bind_int64(s, 1, iRow);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sql_step_statement(v, CONTENT_SELECT_STMT, &s);
+  rc = sqlite3_step(s);
   if( rc!=SQLITE_ROW ) return rc;
 
   values = (const char **) malloc(v->nColumn * sizeof(const char *));
@@ -2120,7 +2058,7 @@ static int content_delete(fulltext_vtab *v, sqlite_int64 iRow){
   rc = sqlite3_bind_int64(s, 1, iRow);
   if( rc!=SQLITE_OK ) return rc;
 
-  return sql_single_step_statement(v, CONTENT_DELETE_STMT, &s);
+  return sql_single_step(s);
 }
 
 /* insert into %_segments values ([pData])
@@ -2135,7 +2073,7 @@ static int block_insert(fulltext_vtab *v, const char *pData, int nData,
   rc = sqlite3_bind_blob(s, 1, pData, nData, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sql_step_statement(v, BLOCK_INSERT_STMT, &s);
+  rc = sqlite3_step(s);
   if( rc==SQLITE_ROW ) return SQLITE_ERROR;
   if( rc!=SQLITE_DONE ) return rc;
 
@@ -2161,7 +2099,7 @@ static int block_delete(fulltext_vtab *v,
   rc = sqlite3_bind_int64(s, 2, iEndBlockid);
   if( rc!=SQLITE_OK ) return rc;
 
-  return sql_single_step_statement(v, BLOCK_DELETE_STMT, &s);
+  return sql_single_step(s);
 }
 
 /* Returns SQLITE_ROW with *pidx set to the maximum segment idx found
@@ -2176,7 +2114,7 @@ static int segdir_max_index(fulltext_vtab *v, int iLevel, int *pidx){
   rc = sqlite3_bind_int(s, 1, iLevel);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sql_step_statement(v, SEGDIR_MAX_INDEX_STMT, &s);
+  rc = sqlite3_step(s);
   /* Should always get at least one row due to how max() works. */
   if( rc==SQLITE_DONE ) return SQLITE_DONE;
   if( rc!=SQLITE_ROW ) return rc;
@@ -2231,7 +2169,7 @@ static int segdir_set(fulltext_vtab *v, int iLevel, int idx,
   rc = sqlite3_bind_blob(s, 6, pRootData, nRootData, SQLITE_STATIC);
   if( rc!=SQLITE_OK ) return rc;
 
-  return sql_single_step_statement(v, SEGDIR_SET_STMT, &s);
+  return sql_single_step(s);
 }
 
 /* Queries %_segdir for the block span of the segments in level
@@ -2248,7 +2186,7 @@ static int segdir_span(fulltext_vtab *v, int iLevel,
   rc = sqlite3_bind_int(s, 1, iLevel);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sql_step_statement(v, SEGDIR_SPAN_STMT, &s);
+  rc = sqlite3_step(s);
   if( rc==SQLITE_DONE ) return SQLITE_DONE;  /* Should never happen */
   if( rc!=SQLITE_ROW ) return rc;
 
@@ -2293,7 +2231,7 @@ static int segdir_delete(fulltext_vtab *v, int iLevel){
   rc = sqlite3_bind_int64(s, 1, iLevel);
   if( rc!=SQLITE_OK ) return rc;
 
-  return sql_single_step_statement(v, SEGDIR_DELETE_STMT, &s);
+  return sql_single_step(s);
 }
 
 /* TODO(shess) clearPendingTerms() is far down the file because
@@ -5013,7 +4951,7 @@ static int leavesReaderInit(fulltext_vtab *v,
     rc = sqlite3_bind_int64(s, 2, iEndBlockid);
     if( rc!=SQLITE_OK ) return rc;
 
-    rc = sql_step_leaf_statement(v, idx, &s);
+    rc = sqlite3_step(s);
     if( rc==SQLITE_DONE ){
       pReader->eof = 1;
       return SQLITE_OK;
@@ -5041,7 +4979,7 @@ static int leavesReaderStep(fulltext_vtab *v, LeavesReader *pReader){
       pReader->eof = 1;
       return SQLITE_OK;
     }
-    rc = sql_step_leaf_statement(v, pReader->idx, &pReader->pStmt);
+    rc = sqlite3_step(pReader->pStmt);
     if( rc!=SQLITE_ROW ){
       pReader->eof = 1;
       return rc==SQLITE_DONE ? SQLITE_OK : rc;
@@ -5105,7 +5043,7 @@ static int leavesReadersInit(fulltext_vtab *v, int iLevel,
   if( rc!=SQLITE_OK ) return rc;
 
   i = 0;
-  while( (rc = sql_step_statement(v, SEGDIR_SELECT_STMT, &s))==SQLITE_ROW ){
+  while( (rc = sqlite3_step(s))==SQLITE_ROW ){
     sqlite_int64 iStart = sqlite3_column_int64(s, 0);
     sqlite_int64 iEnd = sqlite3_column_int64(s, 1);
     const char *pRootData = sqlite3_column_blob(s, 2);
@@ -5400,7 +5338,7 @@ static int loadAndGetChildrenContaining(
   rc = sqlite3_bind_int64(s, 1, iBlockid);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sql_step_statement(v, BLOCK_SELECT_STMT, &s);
+  rc = sqlite3_step(s);
   if( rc==SQLITE_DONE ) return SQLITE_ERROR;
   if( rc!=SQLITE_ROW ) return rc;
 
@@ -5538,7 +5476,7 @@ static int termSelect(fulltext_vtab *v, int iColumn,
   /* Traverse the segments from oldest to newest so that newer doclist
   ** elements for given docids overwrite older elements.
   */
-  while( (rc=sql_step_statement(v, SEGDIR_SELECT_ALL_STMT, &s))==SQLITE_ROW ){
+  while( (rc = sqlite3_step(s))==SQLITE_ROW ){
     const char *pData = sqlite3_column_blob(s, 0);
     const int nData = sqlite3_column_bytes(s, 0);
     const sqlite_int64 iLeavesEnd = sqlite3_column_int64(s, 1);
@@ -5655,7 +5593,7 @@ static int clearPendingTerms(fulltext_vtab *v){
 static int flushPendingTerms(fulltext_vtab *v){
   if( v->nPendingData>=0 ){
     int rc = writeZeroSegment(v, &v->pendingTerms);
-    clearPendingTerms(v);
+    if( rc==SQLITE_OK ) clearPendingTerms(v);
     return rc;
   }
   return SQLITE_OK;
