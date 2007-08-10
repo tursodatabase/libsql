@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.35 2006/01/03 00:33:50 drh Exp $
+# $Id: attach2.test,v 1.36 2007/08/10 19:46:14 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -212,6 +212,15 @@ do_test attach2-4.4 {
 lock_status 4.4.1 db {main shared temp closed file2 unlocked}
 lock_status 4.4.2 db2 {main unlocked temp closed file2 unlocked}
 
+# We have to make sure that the cache_size and the soft_heap_limit
+# are large enough to hold the entire change in memory.  If either
+# is set too small, then changes will spill to the database, forcing
+# a reserved lock to promote to exclusive.  That will mess up our
+# test results. 
+
+set soft_limit [sqlite3_soft_heap_limit 0]
+
+
 do_test attach2-4.5 {
   # Handle 'db2' reserves file2.
   execsql {BEGIN} db2
@@ -314,6 +323,7 @@ do_test attach2-4.15 {
 db close
 db2 close
 file delete -force test2.db
+sqlite3_soft_heap_limit $soft_limit
 
 # These tests - attach2-5.* - check that the master journal file is deleted
 # correctly when a multi-file transaction is committed or rolled back.
