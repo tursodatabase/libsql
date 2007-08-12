@@ -12,7 +12,7 @@
 # file is a copy of "trans.test" modified to run under autovacuum mode.
 # the point is to stress the autovacuum logic and try to get it to fail.
 #
-# $Id: avtrans.test,v 1.4 2006/02/11 01:25:51 drh Exp $
+# $Id: avtrans.test,v 1.5 2007/08/12 20:07:59 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -87,6 +87,7 @@ integrity_check avtrans-2.11
 
 # Check the locking behavior
 #
+sqlite3_soft_heap_limit 0
 do_test avtrans-3.1 {
   execsql {
     BEGIN;
@@ -161,6 +162,7 @@ do_test avtrans-3.14 {
   } db} msg]
   lappend v $msg
 } {0 {1 2 3 4}}
+sqlite3_soft_heap_limit $soft_limit
 integrity_check avtrans-3.15
 
 do_test avtrans-4.1 {

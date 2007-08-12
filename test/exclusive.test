@@ -12,7 +12,7 @@
 # of these tests is exclusive access mode (i.e. the thing activated by 
 # "PRAGMA locking_mode = EXCLUSIVE").
 #
-# $Id: exclusive.test,v 1.5 2007/04/06 21:42:22 drh Exp $
+# $Id: exclusive.test,v 1.6 2007/08/12 20:07:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -197,6 +197,7 @@ do_test exclusive-2.5 {
     INSERT INTO abc VALUES(7, 8, 9);
   } db2
 } {1 {database is locked}}
+sqlite3_soft_heap_limit 0
 do_test exclusive-2.6 {
   # Because connection 'db' only has a shared-lock, the other connection
   # will be able to get a RESERVED, but will fail to upgrade to EXCLUSIVE.
@@ -218,6 +219,7 @@ do_test exclusive-2.8 {
     ROLLBACK;
   } db2
 } {}
+sqlite3_soft_heap_limit $soft_limit
 
 do_test exclusive-2.9 {
   # Write the database to establish the exclusive lock with connection 'db.

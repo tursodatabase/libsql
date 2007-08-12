@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: exclusive2.test,v 1.7 2007/07/20 20:25:38 aswift Exp $
+# $Id: exclusive2.test,v 1.8 2007/08/12 20:07:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -19,6 +19,11 @@ ifcapable {!pager_pragmas} {
   finish_test
   return
 }
+
+# This module does not work right if the cache spills at unexpected
+# moments.  So disable the soft-heap-limit.
+#
+sqlite3_soft_heap_limit 0
 
 proc pagerChangeCounter {filename {new ""}} {
   set fd [open $filename RDWR]
@@ -165,7 +170,8 @@ do_test exclusive2-1.11 {
 #
 # As above, this test is only applicable if the pager cache is
 # large enough to hold the entire database. With 1024 byte pages,
-# this means 19 pages.
+# this means 19 pages.  We also need to disable the soft-heap-limit
+# to prevent memory-induced cache spills.
 #
 do_test exclusive2-2.1 {
   execsql {PRAGMA locking_mode = exclusive;}
@@ -286,5 +292,6 @@ do_test exclusive2-3.6 {
   }
   readPagerChangeCounter test.db
 } {5}
+sqlite3_soft_heap_limit $soft_limit
 
 finish_test

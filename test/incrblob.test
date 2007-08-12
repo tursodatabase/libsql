@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.12 2007/06/27 00:36:14 drh Exp $
+# $Id: incrblob.test,v 1.13 2007/08/12 20:07:59 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -104,6 +104,8 @@ proc nWrite {db} {
   array set stats [btree_pager_stats $bt]
   return $stats(write)
 }
+
+sqlite3_soft_heap_limit 0
 
 foreach AutoVacuumMode [list 0 1] {
 
@@ -202,6 +204,7 @@ foreach AutoVacuumMode [list 0 1] {
     nRead db
   } [expr $AutoVacuumMode ? 4 : 30]
 }
+sqlite3_soft_heap_limit $soft_limit
 
 #------------------------------------------------------------------------
 # incrblob-3.*: 
@@ -363,6 +366,7 @@ unset ::text
 #     after the transaction is commited and the blob channel 
 #     closed.
 #
+sqlite3_soft_heap_limit 0
 do_test incrblob-6.1 {
   sqlite3 db2 test.db
   execsql {
@@ -438,6 +442,7 @@ do_test incrblob-6.14 {
   }
 } {a different invocation}
 db2 close
+sqlite3_soft_heap_limit $soft_limit
 
 #-----------------------------------------------------------------------
 # The following tests verify the behaviour of the incremental IO

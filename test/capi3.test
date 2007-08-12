@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.50 2007/06/21 15:25:05 drh Exp $
+# $Id: capi3.test,v 1.51 2007/08/12 20:07:59 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -310,8 +310,7 @@ proc check_header {STMT test names decltypes} {
 proc check_origin_header {STMT test dbs tables cols} {
   # If sqlite3_column_origin_name() and friends are not compiled into
   # this build, this proc is a no-op.
-ifcapable columnmetadata {
-
+  ifcapable columnmetadata {
     # Use the return value of sqlite3_column_count() to build
     # a list of column indexes. i.e. If sqlite3_column_count
     # is 3, build the list {0 1 2}.
