@@ -793,8 +793,9 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
   if( nOp<1 ) return;
   pOp = &p->aOp[nOp-1];
   if( pOp->opcode==OP_Noop && pOp->p3!=0 ){
-    char *z = sqlite3StrDup(pOp->p3);
     int i, j;
+    char z[1000];
+    sqlite3_snprintf(sizeof(z), z, "%s", pOp->p3);
     for(i=0; isspace((unsigned char)z[i]); i++){}
     for(j=0; z[i]; i++){
       if( isspace((unsigned char)z[i]) ){
@@ -807,7 +808,6 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
     }
     z[j] = 0;
     sqlite3_io_trace("SQL %s\n", z);
-    sqliteFree(z);
   }
 }
 #endif /* !SQLITE_OMIT_TRACE && SQLITE_ENABLE_IOTRACE */

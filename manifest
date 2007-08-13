@@ -1,5 +1,5 @@
-C Updates\sto\stest\sscripts\sfor\sbetter\ssupport\sof\ssoft-heap-limit\stesting.\s(CVS\s4209)
-D 2007-08-12T20:07:59
+C Remove\sa\smemory\sallocation\sfrom\ssqlite3VdbeIOTraceSql().\s\sThis\smeans\sthat\nwhen\sdoing\sI/O\stracing,\sthe\stext\sof\san\sSQL\sstatement\sis\struncated\sto\sthe\nfirst\s1000\scharacters.\s\sBut\sit\salso\smeans\stracing\sworks\sin\san\sout-of-memory\nsituation.\s(CVS\s4210)
+D 2007-08-13T11:10:35
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -144,7 +144,7 @@ F src/vdbe.c cf973bd1af5fbda845b0f759bb06eb19ff42e215
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h c3514903cad9e36d6b3242be20261351d09db56c
 F src/vdbeapi.c 220b81132abaf0f620edb8da48799a77daef12a7
-F src/vdbeaux.c 6a29a0e372b48bf3b305feb4d1126ada20d61c02
+F src/vdbeaux.c d626e0f8cd78b4280bcb7af25d5c5566348ba87a
 F src/vdbeblob.c bb30b3e387c35ba869949494b2736aff97159470
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c ca4d3994507cb0a9504820293af69f5c778b4abd
@@ -524,7 +524,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7961a7385013d74ec78cbdfff6867c505528c163
-R 690155010e3cd347c457c2124998bd06
+P 990f621f2247f1636e895dcf51fea1e08f202d31
+R 0fa9df43f865850ecc78db80fef1138d
 U drh
-Z 29b329640ed678cd299e540cfde97bf2
+Z 94518ffb3c3b64a4210e21c75b2f41f5
