@@ -10,6 +10,20 @@ proc newsitem {date title text} {
 }
 
 
+newsitem {2007-Apr-25} {Version 3.3.17} {
+  This version fixes a bug in the forwards-compatibility logic of SQLite
+  that was causing a database to become unreadable when it should have
+  been read-only.  Upgrade from 3.3.16 only if you plan to deploy into
+  a product that might need to be upgraded in the future.  For day to day
+  use, it probably does not matter.
+}
+
+newsitem {2007-Apr-18} {Version 3.3.16} {
+  Performance improvements added in 3.3.14 but mistakenly turned off
+  in 3.3.15 have been reinstated.  A bug has been fixed that prevented 
+  VACUUM from running if a NULL value was in a UNIQUE column.
+}
+
 newsitem {2007-Apr-09} {Version 3.3.15} {
   An annoying bug introduced in 3.3.14 has been fixed.  There are
   also many enhancements to the test suite.  
@@ -443,4 +457,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.21 2007/06/15 12:16:32 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.22 2007/08/13 16:15:29 drh Exp $}

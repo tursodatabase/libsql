@@ -28,6 +28,27 @@ proc chng {date desc} {
   puts "</DD>"
 }
 
+chng {2007 August 13 (3.4.2)} {
+<li>Fix a database corruption bug that might occur if a ROLLBACK command
+is executed in <a href="pragma.html#pragma_auto_vacuum">auto-vacuum mode</a>
+and a very small <a href="capi3ref.html#sqlite3_soft_heap_limit">
+soft_heap_limit</a> is set. 
+<a href="http://www.sqlite.org/cvstrac/tktview?tn=2565">Ticket #2565</a>.
+
+<li>Add the ability to run a full regression test with a small
+<a href="capi3ref.html#sqlite3_soft_heap_limit">soft_heap_limit</a>.
+
+<li>Fix other minor problems with using small soft heap limits.
+
+<li>Work-around for 
+<a href="http://gcc.gnu.org/bugzilla/show_bug.cgi?id=32575">GCC bug 32575</a>.
+
+<li>Improved error detection of misused aggregate functions.
+
+<li>Improvements to the amalgamation generator script so that all symbols
+are prefixed with either SQLITE_PRIVATE or SQLITE_API.
+}
+
 chng {2007 July 20 (3.4.1)} {
 <li>Fix a bug in <a href="lang_vacuum.html">VACUUM</a> that can lead to
     <a href="http://www.sqlite.org/cvstrac/wiki?p=DatabaseCorruption">

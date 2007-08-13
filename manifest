@@ -1,9 +1,9 @@
-C Invalidate\sprepared\sSQL\sstatements\swhen\srolling\sback\sa\stransaction\sthat\sincludes\sschema\smodifications.\s(CVS\s4216)
-D 2007-08-13T15:28:34
+C Update\sversion\snumber\sof\sdocumentation\sin\spreparation\sfor\sversion\s3.4.2.\s(CVS\s4217)
+D 2007-08-13T16:15:29
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
-F VERSION 4172908fc281e4d4b467aac13bfee97f271774d3
+F VERSION 6200589421a0dfe968cd39c431fc62277b963540
 F aclocal.m4 d20ba55930a05197b484809fba1d2b603f4e67a6
 F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -480,7 +480,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 88884dd743039d1a95aa57f4a5eb369de7744716
 F www/capi3ref.tcl 167c2d5b45da22d77b2493b00d44b001b4ec83b1
-F www/changes.tcl e23e0c2e93a4c79cb4caee109c20bd66c6d15831
+F www/changes.tcl d35ba54037f59b545e7a810e9b4e9561568f1bc6
 F www/common.tcl 2b793e5c31486c8a01dd27dc0a631ad93704438e
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -499,7 +499,7 @@ F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
 F www/formatchng.tcl bbb8af1ee494a71031acac4c8d8c51535f23b9df
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl 9f8672c2165ecedf876d7b35f02da53eea6401b8
+F www/index.tcl ba829424fc003a60b5bf107ea100cbca8e1fd944
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl bb73892bf99c81658ec46d0c7a87e54cd21d435b
 F www/limits.tcl 9035eb73e814ccb298595fd57670dec817533616
@@ -507,7 +507,7 @@ F www/lockingv3.tcl e52345bd20323bef6146bfce18ae0829b2b7c87d
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
 F www/mkapidoc.tcl 2fdbb765c38a4467687ba390e07c1229d4939a3b
 F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
-F www/oldnews.tcl badf03d45ed67a5046a4846e9ef9a4c234993f1b
+F www/oldnews.tcl 7d01490a7f2686baf3446647600a79c7a5855695
 F www/omitted.tcl ee6b46f83d513b2187869740da829a700e1a355e
 F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
 F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
@@ -525,7 +525,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4f4f8ef416394b7e54e8894f7a0d067d64636fc4
-R 16853bbee0b5328a2b8d810b4ed6ad2c
-U danielk1977
-Z 9260f4f4b81705756cfdce0e976d1548
+P a07143fc0578a5fc7c891e94616ee0b353674d6e
+R 99c5100b90e247ae56aea7b42eb4cee0
+U drh
+Z b6e610d325c9668e526984d09a3029d1
