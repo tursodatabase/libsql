@@ -1,5 +1,5 @@
-C Fix\sa\spage\sleak\sin\sbtree\sbalance\sroutines\sthat\sfollows\sa\smalloc\sfailure.\nThis\sproblem\sdetected\sby\sthe\snew\ssoft-heap-limit\stesting.\s(CVS\s4214)
-D 2007-08-13T14:56:44
+C Disable\stests\sthat\srequire\s80-bit\slong\sdoubles\swhen\sthe\shost\sonly\nprovides\s64-bit\slong\sdoubles.\s\sTicket\s#2570.\s(CVS\s4215)
+D 2007-08-13T15:18:28
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -127,7 +127,7 @@ F src/test9.c c0f38f7795cc51d37db6c63874d90f40f10d0f0e
 F src/test_async.c 9d326ceda4306bcab252b8f7e8e480ed45d7ccb6
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c 882d59acad48bab3b1fe3daf3645059b590cfc79
-F src/test_config.c 4d262b9f27b616dea481a40d57a95ab0ab27f878
+F src/test_config.c 26389b032216e0fb2b544ff48a5e9101bd7b1fb4
 F src/test_hexio.c 14c007252285c6dabcec4a28fcf08e9177e85178
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_md5.c d9f828765b242ff86f58cd879259c3da4eaede02
@@ -193,7 +193,7 @@ F test/capi2.test 7ecc9b342cc9ec27b53bbf95724cf2e5874fd496
 F test/capi3.test f4e77c300d870653f9fc1b20bef6788f0790b3f1
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
 F test/capi3c.test 76a3fb94755288a2977ee387e95305e6224c0198
-F test/cast.test 0302bbc8d1be2f94da1e16ad2eb01ea356e26d18
+F test/cast.test c4780b58b569bab4947458195410ae8791ac216b
 F test/check.test 024ed399600b799160378cf9d9f436bdf5dfd184
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
 F test/collate2.test 701d9651c5707024fd86a20649af9ea55e2c0eb8
@@ -525,7 +525,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 540a7b28bc37709056cfdb13286274ec5bdd8423
-R afb921f147a22c593ebfd95c9b9c9329
+P bad661bb0bfabf982a2d711ea4165af130a4cae0
+R 87672e336cfbb4317cdd497fbb7beb13
 U drh
-Z 9c5ddd19c39d343909cd79d4e93a06b7
+Z beb749948d241b4e02e20c8b85c1b5e8
