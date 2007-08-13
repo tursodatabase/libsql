@@ -1,5 +1,5 @@
-C Fix\sthe\stest\slabels\sin\smallocC.test.\s(CVS\s4212)
-D 2007-08-13T12:58:18
+C When\sloading\sa\sdatabase\sschema,\sdo\snot\sclear\sthe\sSQLITE_InternChanges\sflag.\sThis\sfixes\sthe\sproblem\sillustrated\sby\s(4211).\s(CVS\s4213)
+D 2007-08-13T14:41:19
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -103,7 +103,7 @@ F src/pager.c cdf561d3ae4009be902df714da4518dc3522e206
 F src/pager.h 94110a5570dca30d54a883e880a3633b2e4c05ae
 F src/parse.y ad2ce25665be7f7303137f774a4e3e72e0d036ff
 F src/pragma.c 7914a6b9ea05f158800116dfcae11e52ab8e39c4
-F src/prepare.c 609bb27860ce98ab39889fecc0998dfd8220891b
+F src/prepare.c 3257b63db949aee338a16ad23e09df8d56c1c36f
 F src/printf.c 9b3048d270e8bb2f8b910b491ac3aadece6cfab2
 F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c 3b167744fc375bddfddcef87feb18f5171737677
@@ -525,7 +525,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P be50387e658a9a73e12b07ca89ae75e871489f16
-R fdaa1b644a67c60415028c6d452b9b0d
-U drh
-Z 9139cdcd5ab7595954bd78c2fc6145da
+P 7d4cdff444b98b76a34bd85d0a43cda28e7dffe4
+R 67369a53b9b79d6642304c8698e2f200
+U danielk1977
+Z 3331cfbcfcebf80726e0c74ecb2e7084
