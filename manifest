@@ -1,5 +1,5 @@
-C Disable\stests\sthat\srequire\s80-bit\slong\sdoubles\swhen\sthe\shost\sonly\nprovides\s64-bit\slong\sdoubles.\s\sTicket\s#2570.\s(CVS\s4215)
-D 2007-08-13T15:18:28
+C Invalidate\sprepared\sSQL\sstatements\swhen\srolling\sback\sa\stransaction\sthat\sincludes\sschema\smodifications.\s(CVS\s4216)
+D 2007-08-13T15:28:34
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -85,7 +85,7 @@ F src/insert.c ca135e919c2a9241e83e8dd74316677fdd54fb6f
 F src/legacy.c 388c71ad7fbcd898ba1bcbfc98a3ac954bfa5d01
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c 6c24ee62adfe7fbfb2f2dd43ff18e5534b19010f
-F src/main.c 65fc7de0b3c2e5b637c000ecf419c35de2525ef9
+F src/main.c 345ffcf44506bda3b53355c08cf22aecbded27e7
 F src/malloc.c 3850ab4a2edfb190ffee353c5674ebd8c6b4ccc7
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/os.c 1f10b47acc1177fb9225edb4f5f0d25ed716f9cb
@@ -325,7 +325,7 @@ F test/minmax2.test 8294b6728819608861ba0e06ac1d9a87c4d815b5
 F test/misc1.test 27a6ad11ba6e4b73aeee650ab68053ad7dfd0433
 F test/misc2.test d35faf7df27750d25ab656ca92dceebbd89f7368
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
-F test/misc4.test b043a05dea037cca5989f3ae09552fa16119bc80
+F test/misc4.test 21e8a275cadcf2ba2a9ac2c33ae024ecc5eaff3a
 F test/misc5.test c7d2d2a5a20dc37d3605a8067f0df5af2240122e
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 6e573e3d635ac539ba480630f68b2fbe32d19d82
@@ -349,7 +349,7 @@ F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
 F test/rollback.test 673cd8c44c685ad54987fe7f0eeba84efa09685d
 F test/rowid.test d125991eea1ffdea800d48471afd8fc4acc10b01
 F test/safety.test 4a06934e45d03b8b50ebcd8d174eb0367d2fd851
-F test/schema.test b479341d04cc40a11f47929b0198c07ddd6b2565
+F test/schema.test 401585200727464ef6bb0b3ba0f085f99a87cdce
 F test/schema2.test b438d2c7fd627227f405887c2328b4aed5dad012
 F test/select1.test 7603a4d406ea00516233e26539d2fac0cc85e732
 F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
@@ -525,7 +525,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P bad661bb0bfabf982a2d711ea4165af130a4cae0
-R 87672e336cfbb4317cdd497fbb7beb13
-U drh
-Z beb749948d241b4e02e20c8b85c1b5e8
+P 4f4f8ef416394b7e54e8894f7a0d067d64636fc4
+R 16853bbee0b5328a2b8d810b4ed6ad2c
+U danielk1977
+Z 9260f4f4b81705756cfdce0e976d1548

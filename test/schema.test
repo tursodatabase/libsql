@@ -13,7 +13,7 @@
 # This file tests the various conditions under which an SQLITE_SCHEMA
 # error should be returned.
 #
-# $Id: schema.test,v 1.6 2007/05/02 17:54:56 drh Exp $
+# $Id: schema.test,v 1.7 2007/08/13 15:28:35 danielk1977 Exp $
 
 #---------------------------------------------------------------------
 # When any of the following types of SQL statements or actions are 
@@ -28,6 +28,7 @@
 # Deleting a user-function............................schema-6.*
 # Deleting a collation sequence.......................schema-7.*
 # Setting or changing the authorization function......schema-8.*
+# Rollback of a DDL statement.........................schema-12.*
 #
 # Test cases schema-9.* and schema-10.* test some specific bugs
 # that came up during development.
@@ -332,5 +333,33 @@ do_test schema-11.7 {
 do_test schema-11.8 {
   sqlite3_finalize $::STMT
 } {SQLITE_OK}
+
+# The following demonstrates why statements need to be expired whenever
+# there is a rollback (explicit or otherwise).
+#
+do_test schema-12.1 {
+  # Begin a transaction and create a table. This increments 
+  # the schema cookie. Then compile an SQL statement, using
+  # the current (incremented) value of the cookie.
+  execsql {
+    BEGIN;
+    CREATE TABLE t3(a, b, c);
+  }
+  set ::STMT [sqlite3_prepare $::DB "CREATE TABLE t4(a,b,c)" -1 TAIL]
+
+  # Rollback the transaction, resetting the schema cookie to the value
+  # it had at the start of this test case. Then create a table, 
+  # incrementing the schema cookie.
+  execsql {
+    ROLLBACK;
+    CREATE TABLE t4(a, b, c);
+  }
+
+  # The schema cookie now has the same value as it did when SQL statement
+  # $::STMT was prepared. So unless it has been expired, it would be
+  # possible to run the "CREATE TABLE t4" statement and create a
+  # duplicate table.
+  list [sqlite3_step $::STMT] [sqlite3_finalize $::STMT]
+} {SQLITE_ERROR SQLITE_SCHEMA}
 
 finish_test

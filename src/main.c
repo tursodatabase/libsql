@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.377 2007/06/22 15:21:16 danielk1977 Exp $
+** $Id: main.c,v 1.378 2007/08/13 15:28:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -240,6 +240,7 @@ void sqlite3RollbackAll(sqlite3 *db){
   }
   sqlite3VtabRollback(db);
   if( db->flags&SQLITE_InternChanges ){
+    sqlite3ExpirePreparedStatements(db);
     sqlite3ResetInternalSchema(db, 0);
   }
 
