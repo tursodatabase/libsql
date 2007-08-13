@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.395 2007/08/07 17:13:04 drh Exp $
+** $Id: btree.c,v 1.396 2007/08/13 14:56:44 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4965,7 +4965,6 @@ static int balance_shallower(MemPage *pPage){
       }
     }
 #endif
-    if( rc!=SQLITE_OK ) goto end_shallow_balance;
     releasePage(pChild);
   }
 end_shallow_balance:
