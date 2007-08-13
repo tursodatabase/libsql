@@ -1,0 +1,131 @@
+# 2007 Aug 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# This file tests aspects of the malloc failure while parsing
+# CREATE TABLE statements in auto_vacuum mode.
+#
+# $Id: mallocC.test,v 1.1 2007/08/13 12:39:04 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Only run these tests if memory debugging is turned on.
+#
+if {[info command sqlite_malloc_stat]==""} {
+  puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG=1"
+  finish_test
+  return
+}
+
+# Generate a checksum based on the contents of the database. If the
+# checksum of two databases is the same, and the integrity-check passes
+# for both, the two databases are identical.
+#
+proc cksum {db} {
+  set ret [list]
+  ifcapable tempdb {
+    set sql {
+      SELECT name FROM sqlite_master WHERE type = 'table' UNION
+      SELECT name FROM sqlite_temp_master WHERE type = 'table' UNION
+      SELECT 'sqlite_master' UNION
+      SELECT 'sqlite_temp_master'
+    }
+  } else {
+    set sql {
+      SELECT name FROM sqlite_master WHERE type = 'table' UNION
+      SELECT 'sqlite_master'
+    }
+  }
+  set tbllist [$db eval $sql]
+  set txt {}
+  foreach tbl $tbllist {
+    append txt [$db eval "SELECT * FROM $tbl"]
+  }
+  # puts txt=$txt
+  return [md5 $txt]
+}
+
+proc do_mallocC_test {tn args} {
+  array set ::mallocopts $args
+  set sum [cksum db]
+
+  for {set ::n 1} {true} {incr ::n} {
+
+    # Run the SQL. Malloc number $::n is set to fail. A malloc() failure
+    # may or may not be reported.
+    sqlite_malloc_fail $::n
+    do_test malloc2shl-$tn.$::n.1 {
+      set res [catchsql [string trim $::mallocopts(-sql)]]
+      set rc [expr { 
+        0==[string compare $res {1 {out of memory}}] ||
+        0==[lindex $res 0]
+      }]
+      if {$rc!=1} {
+        puts "Error: $res"
+      }
+      set rc
+    } {1}
+
+    # If $::n is greater than the number of malloc() calls required to
+    # execute the SQL, then this test is finished. Break out of the loop.
+    if {[lindex [sqlite_malloc_stat] 2]>0} {
+      sqlite_malloc_fail -1
+      break
+    }
+
+    # Recover from the malloc failure.
+    #
+    # Update: The new malloc() failure handling means that a transaction may
+    # still be active even if a malloc() has failed. But when these tests were
+    # written this was not the case. So do a manual ROLLBACK here so that the
+    # tests pass.
+    do_test malloc2shl-$tn.$::n.2 {
+      catch {
+        execsql {
+          ROLLBACK;
+        }
+      }
+      expr 0
+    } {0}
+
+    # Checksum the database.
+    #do_test malloc2shl-$tn.$::n.3 {
+    #  cksum db
+    #} $sum
+
+    #integrity_check malloc2shl-$tn.$::n.4
+  if {$::nErr>1} return
+  }
+  unset ::mallocopts
+}
+
+execsql {
+  PRAGMA auto_vacuum=1;
+  CREATE TABLE t0(a, b, c);
+}
+do_mallocC_test 1 -sql {
+  BEGIN;
+  -- Allocate 32 new root pages. This will exercise the 'extract specific 
+  -- page from the freelist' code when in auto-vacuum mode (see the
+  -- allocatePage() routine in btree.c).
+  CREATE TABLE t1(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t2(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t3(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t4(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t5(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t6(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t7(a UNIQUE, b UNIQUE, c UNIQUE);
+  CREATE TABLE t8(a UNIQUE, b UNIQUE, c UNIQUE);
+
+  ROLLBACK;
+}
+
+finish_test
