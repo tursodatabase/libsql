@@ -1,5 +1,5 @@
-C Add\sa\snew\stest\scases\sfor\sa\sproblem\swith\smalloc\sfailure\sduring\sthe\sparsing\nof\sCREATE\sTABLE\sstatements\sin\sautovacuum\smode.\s(CVS\s4211)
-D 2007-08-13T12:39:04
+C Fix\sthe\stest\slabels\sin\smallocC.test.\s(CVS\s4212)
+D 2007-08-13T12:58:18
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -315,7 +315,7 @@ F test/malloc8.test e4054ca2a87ab1d42255bec009b177ba20b5a487
 F test/malloc9.test 8381041fd89c31fba60c8a1a1c776bb022108572
 F test/mallocA.test 525674e6e0775a9bf85a33f1da1c6bbddc712c30
 F test/mallocB.test 5d4a3dc4931a8c13ef3723c4934af23ff9d60d71
-F test/mallocC.test 7aea2854b3b4e594d2b4c032490e81440c2c4643
+F test/mallocC.test e470e03fe8b28d79f0a5123601a9653331cc7226
 F test/malloc_common.tcl 3cda97d63fbf370061ffa9795a24e5027367fef3
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
@@ -525,7 +525,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 578da2476e356ea35d272e18faf490efedeaf25c
-R 281d69a5cf894aa6aa42abf77097453b
+P be50387e658a9a73e12b07ca89ae75e871489f16
+R fdaa1b644a67c60415028c6d452b9b0d
 U drh
-Z a2e5e44543994276bad6f982b551b91d
+Z 9139cdcd5ab7595954bd78c2fc6145da

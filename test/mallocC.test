@@ -12,7 +12,7 @@
 # This file tests aspects of the malloc failure while parsing
 # CREATE TABLE statements in auto_vacuum mode.
 #
-# $Id: mallocC.test,v 1.1 2007/08/13 12:39:04 drh Exp $
+# $Id: mallocC.test,v 1.2 2007/08/13 12:58:18 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -62,7 +62,7 @@ proc do_mallocC_test {tn args} {
     # Run the SQL. Malloc number $::n is set to fail. A malloc() failure
     # may or may not be reported.
     sqlite_malloc_fail $::n
-    do_test malloc2shl-$tn.$::n.1 {
+    do_test mallocC-$tn.$::n.1 {
       set res [catchsql [string trim $::mallocopts(-sql)]]
       set rc [expr { 
         0==[string compare $res {1 {out of memory}}] ||
@@ -87,7 +87,7 @@ proc do_mallocC_test {tn args} {
     # still be active even if a malloc() has failed. But when these tests were
     # written this was not the case. So do a manual ROLLBACK here so that the
     # tests pass.
-    do_test malloc2shl-$tn.$::n.2 {
+    do_test mallocC-$tn.$::n.2 {
       catch {
         execsql {
           ROLLBACK;
@@ -97,11 +97,11 @@ proc do_mallocC_test {tn args} {
     } {0}
 
     # Checksum the database.
-    #do_test malloc2shl-$tn.$::n.3 {
+    #do_test mallocC-$tn.$::n.3 {
     #  cksum db
     #} $sum
 
-    #integrity_check malloc2shl-$tn.$::n.4
+    #integrity_check mallocC-$tn.$::n.4
   if {$::nErr>1} return
   }
   unset ::mallocopts
