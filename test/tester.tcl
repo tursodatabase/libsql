@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.79 2007/04/19 12:30:54 drh Exp $
+# $Id: tester.tcl,v 1.79.2.1 2007/08/14 13:20:28 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -42,6 +42,26 @@ if {[sqlite3 -tcl-uses-utf]} {
 
 set tcl_precision 15
 set sqlite_pending_byte 0x0010000
+
+# 
+# Check the command-line arguments for a default soft-heap-limit.
+# Store this default value in the global variable ::soft_limit and
+# update the soft-heap-limit each time this script is run.  In that
+# way if an individual test file changes the soft-heap-limit, it
+# will be reset at the start of the next test file.
+#
+if {![info exists soft_limit]} {
+  set soft_limit 0
+  for {set i 0} {$i<[llength $argv]} {incr i} {
+    if {[regexp {^--soft-heap-limit=(.+)$} [lindex $argv $i] all value]} {
+      if {$value!="off"} {
+        set soft_limit $value
+      }
+      set argv [lreplace $argv $i $i]
+    }
+  }
+}
+sqlite3_soft_heap_limit $soft_limit
 
 # Use the pager codec if it is available
 #
@@ -178,6 +198,14 @@ proc finalize_testing {} {
   sqlite3 db {}
   # sqlite3_clear_tsd_memdebug
   db close
+  set heaplimit [sqlite3_soft_heap_limit]
+  if {$heaplimit!=$::soft_limit} {
+    puts "soft-heap-limit changed by this script\
+          from $::soft_limit to $heaplimit"
+  } elseif {$heaplimit!="" && $heaplimit>0} {
+    puts "soft-heap-limit set to $heaplimit"
+  }
+  sqlite3_soft_heap_limit 0
   if {$::sqlite3_tsd_count} {
      puts "Thread-specific data leak: $::sqlite3_tsd_count instances"
      incr nErr

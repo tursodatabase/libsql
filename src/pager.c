@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.329 2007/04/16 15:02:19 drh Exp $
+** @(#) $Id: pager.c,v 1.329.2.1 2007/08/14 13:20:28 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -506,7 +506,11 @@ static u32 retrieve32bits(PgHdr *p, int offset){
 */
 static int pager_error(Pager *pPager, int rc){
   int rc2 = rc & 0xff;
-  assert( pPager->errCode==SQLITE_FULL || pPager->errCode==SQLITE_OK );
+  assert(
+       pPager->errCode==SQLITE_FULL ||
+       pPager->errCode==SQLITE_OK ||
+       (pPager->errCode & 0xff)==SQLITE_IOERR
+  );
   if(
     rc2==SQLITE_FULL ||
     rc2==SQLITE_IOERR ||
@@ -1086,6 +1090,10 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   ** page in the pager cache. In this case just update the pager cache,
   ** not the database file. The page is left marked dirty in this case.
   **
+  ** If a malloc() or I/O error occurs during a Movepage() call then the
+  ** page might not be in cache.  So the condition described in the
+  ** above paragraph is not assertable.
+  **
   ** If in EXCLUSIVE state, then we update the pager cache if it exists
   ** and the main file. The page is then marked not dirty.
   **
@@ -1094,16 +1102,16 @@ static int pager_playback_one_page(Pager *pPager, OsFile *jfd, int useCksum){
   ** This occurs when a page is changed prior to the start of a statement
   ** then changed again within the statement.  When rolling back such a
   ** statement we must not write to the original database unless we know
-  ** for certain that original page contents are in the main rollback
-  ** journal.  Otherwise, if a full ROLLBACK occurs after the statement
-  ** rollback the full ROLLBACK will not restore the page to its original
-  ** content.  Two conditions must be met before writing to the database
-  ** files. (1) the database must be locked.  (2) we know that the original
-  ** page content is in the main journal either because the page is not in
-  ** cache or else it is marked as needSync==0.
+  ** for certain that original page contents are synced into the main rollback
+  ** journal.  Otherwise, a power loss might leave modified data in the
+  ** database file without an entry in the rollback journal that can
+  ** restore the database to its original form.  Two conditions must be
+  ** met before writing to the database files. (1) the database must be
+  ** locked.  (2) we know that the original page content is fully synced
+  ** in the main journal either because the page is not in cache or else
+  ** the page is marked as needSync==0.
   */
   pPg = pager_lookup(pPager, pgno);
-  assert( pPager->state>=PAGER_EXCLUSIVE || pPg!=0 );
   PAGERTRACE3("PLAYBACK %d page %d\n", PAGERID(pPager), pgno);
   if( pPager->state>=PAGER_EXCLUSIVE && (pPg==0 || pPg->needSync==0) ){
     rc = sqlite3OsSeek(pPager->fd, (pgno-1)*(i64)pPager->pageSize);
@@ -1364,10 +1372,15 @@ static int pager_playback(Pager *pPager, int isHot){
     }
 
     /* If nRec is 0 and this rollback is of a transaction created by this
-    ** process. In this case the rest of the journal file consists of
-    ** journalled copies of pages that need to be read back into the cache.
+    ** process and if this is the final header in the journal, then it means
+    ** that this part of the journal was being filled but has not yet been
+    ** synced to disk.  Compute the number of pages based on the remaining
+    ** size of the file.
+    **
+    ** The third term of the test was added to fix ticket #2565.
     */
-    if( nRec==0 && !isHot ){
+    if( nRec==0 && !isHot &&
+        pPager->journalHdr+JOURNAL_HDR_SZ(pPager)==pPager->journalOff ){
       nRec = (szJ - pPager->journalOff) / JOURNAL_PG_SZ(pPager);
     }
 
@@ -2647,7 +2660,7 @@ int sqlite3PagerReleaseMemory(int nReq){
           pTmp->pNextAll = pPg->pNextAll;
         }
         nReleased += sqliteAllocSize(pPg);
-        IOTRACE(("PGFREE %p %d\n", pPager, pPg->pgno));
+        IOTRACE(("PGFREE %p %d *\n", pPager, pPg->pgno));
         PAGER_INCR(sqlite3_pager_pgfree_count);
         sqliteFree(pPg);
       }
@@ -2659,7 +2672,11 @@ int sqlite3PagerReleaseMemory(int nReq){
         ** The error will be returned to the user (or users, in the case 
         ** of a shared pager cache) of the pager for which the error occured.
         */
-        assert( (rc&0xff)==SQLITE_IOERR || rc==SQLITE_FULL );
+        assert(
+            (rc&0xff)==SQLITE_IOERR ||
+            rc==SQLITE_FULL ||
+            rc==SQLITE_BUSY
+        );
         assert( pPager->state>=PAGER_RESERVED );
         pager_error(pPager, rc);
       }
@@ -4161,15 +4178,15 @@ void sqlite3PagerSetCodec(
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
-** Move the page identified by pData to location pgno in the file. 
+** Move the page pPg to location pgno in the file. 
 **
-** There must be no references to the current page pgno. If current page
-** pgno is not already in the rollback journal, it is not written there by
-** by this routine. The same applies to the page pData refers to on entry to
-** this routine.
+** There must be no references to the page previously located at
+** pgno (which we call pPgOld) though that page is allowed to be
+** in cache.  If the page previous located at pgno is not already
+** in the rollback journal, it is not put there by by this routine.
 **
-** References to the page refered to by pData remain valid. Updating any
-** meta-data associated with page pData (i.e. data stored in the nExtra bytes
+** References to the page pPg remain valid. Updating any
+** meta-data associated with pPg (i.e. data stored in the nExtra bytes
 ** allocated along with the page) is the responsibility of the caller.
 **
 ** A transaction must be active when this routine is called. It used to be
@@ -4178,7 +4195,7 @@ void sqlite3PagerSetCodec(
 ** transaction is active).
 */
 int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
-  PgHdr *pPgOld; 
+  PgHdr *pPgOld;  /* The page being overwritten. */
   int h;
   Pgno needSyncPgno = 0;
 
@@ -4203,17 +4220,23 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
   ** page pgno before the 'move' operation, it needs to be retained 
   ** for the page moved there.
   */
+  pPg->needSync = 0;
   pPgOld = pager_lookup(pPager, pgno);
   if( pPgOld ){
     assert( pPgOld->nRef==0 );
     unlinkHashChain(pPager, pPgOld);
     makeClean(pPgOld);
-    if( pPgOld->needSync ){
-      assert( pPgOld->inJournal );
-      pPg->inJournal = 1;
-      pPg->needSync = 1;
-      assert( pPager->needSync );
-    }
+    pPg->needSync = pPgOld->needSync;
+  }else{
+    pPg->needSync = 0;
+  }
+  if( pPager->aInJournal && (int)pgno<=pPager->origDbSize ){
+    pPg->inJournal =  (pPager->aInJournal[pgno/8] & (1<<(pgno&7)))!=0;
+  }else if( (int)pgno>=pPager->origDbSize ){
+    pPg->inJournal = 1;
+  }else{
+    pPg->inJournal = 0;
+    assert( pPg->needSync==0 );
   }
 
   /* Change the page number for pPg and insert it into the new hash-chain. */
