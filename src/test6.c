@@ -21,11 +21,99 @@
 
 #ifndef SQLITE_OMIT_DISKIO  /* This file is a no-op if disk I/O is disabled */
 
-/*
-** crashFile is a subclass of OsFile that is taylored for the
-** crash test module.
-*/
 typedef struct crashFile crashFile;
+typedef struct WriteBuffer WriteBuffer;
+
+/*
+** Method:
+**
+**   This layer is implemented as a wrapper around the "real" 
+**   sqlite3_file object for the host system. Each time data is 
+**   written to the file object, instead of being written to the
+**   underlying file, the write operation is stored in an in-memory 
+**   structure (type WriteBuffer). This structure is placed at the
+**   end of a global ordered list (the write-list).
+**
+**   When data is read from a file object, the requested region is
+**   first retrieved from the real file. The write-list is then 
+**   traversed and data copied from any overlapping WriteBuffer 
+**   structures to the output buffer. i.e. a read() operation following
+**   one or more write() operations works as expected, even if no
+**   data has actually been written out to the real file.
+**
+**   When a fsync() operation is performed, an operating system crash 
+**   may be simulated, in which case exit(-1) is called (the call to 
+**   xSync() never returns). Whether or not a crash is simulated,
+**   the data associated with a subset of the WriteBuffer structures 
+**   stored in the write-list is written to the real underlying files 
+**   and the entries removed from the write-list. If a crash is simulated,
+**   a subset of the buffers may be corrupted before the data is written.
+**
+**   The exact subset of the write-list written and/or corrupted is
+**   determined by the simulated device characteristics and sector-size.
+**
+** "Normal" mode:
+**
+**   Normal mode is used when the simulated device has none of the
+**   SQLITE_IOCAP_XXX flags set.
+**
+**   In normal mode, if the fsync() is not a simulated crash, the 
+**   write-list is traversed from beginning to end. Each WriteBuffer
+**   structure associated with the file handle used to call xSync()
+**   is written to the real file and removed from the write-list.
+**
+**   If a crash is simulated, one of the following takes place for 
+**   each WriteBuffer in the write-list, regardless of which 
+**   file-handle it is associated with:
+**
+**     1. The buffer is correctly written to the file, just as if
+**        a crash were not being simulated.
+**
+**     2. Nothing is done.
+**
+**     3. Garbage data is written to all sectors of the file that 
+**        overlap the region specified by the WriteBuffer. Or garbage
+**        data is written to some contiguous section within the 
+**        overlapped sectors.
+**
+** Device Characteristic flag handling:
+**
+**   If the IOCAP_ATOMIC flag is set, then option (3) above is 
+**   never selected.
+**
+**   If the IOCAP_ATOMIC512 flag is set, and the WriteBuffer represents
+**   an aligned write() of an integer number of 512 byte regions, then
+**   option (3) above is never selected. Instead, each 512 byte region
+**   is either correctly written or left completely untouched. Similar
+**   logic governs the behaviour if any of the other ATOMICXXX flags
+**   is set.
+**
+**   If either the IOCAP_SAFEAPPEND or IOCAP_SEQUENTIAL flags are set
+**   and a crash is being simulated, then an entry of the write-list is
+**   selected at random. Everything in the list after the selected entry 
+**   is discarded before processing begins.
+**
+**   If IOCAP_SEQUENTIAL is set and a crash is being simulated, option 
+**   (1) is selected for all write-list entries except the last. If a 
+**   crash is not being simulated, then all entries in the write-list
+**   that occur before at least one write() on the file-handle specified
+**   as part of the xSync() are written to their associated real files.
+**
+**   If IOCAP_SAFEAPPEND is set and the first byte written by the write()
+**   operation is one byte past the current end of the file, then option
+**   (1) is always selected.
+*/
+struct WriteBuffer {
+  i64 iOffset;             /* Byte offset of the start of this write() */
+  int nBuf;                /* Number of bytes written */
+  u8 *zBuf;                /* Pointer to copy of written data */
+  crashFile *pFile;        /* File this write() applies to */
+};
+
+/*
+** crashFile is a subclass of OsFile that is taylored for 
+** the crash test module.
+*/
 struct crashFile {
   IoMethod const *pMethod; /* Must be first */
   u8 **apBlk;              /* Array of blocks that have been written to. */
