@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.220 2007/08/14 01:58:53 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.221 2007/08/14 18:03:15 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -736,7 +736,9 @@ int sqlite3_total_changes(sqlite3*);
 ** immediately.
 **
 ** It is safe to call this routine from a thread different from the
-** thread that is currently running the database operation.
+** thread that is currently running the database operation.  But it
+** is not safe to call this routine with a database connection that
+** is closed or might close before sqlite3_interrupt() returns.
 **
 ** The SQL operation that is interrupted will return [SQLITE_INTERRUPT].
 ** If an interrupted operation was an update that is inside an
