@@ -1129,7 +1129,8 @@ static int vdbeCommit(sqlite3 *db){
     int needSync = 0;
     char *zMaster = 0;   /* File-name for the master journal */
     char const *zMainFile = sqlite3BtreeGetFilename(db->aDb[0].pBt);
-    OsFile *master = 0;
+    sqlite3_file *master = 0;
+    i64 offset = 0;
 
     /* Select a master journal file name */
     do {
@@ -1164,7 +1165,8 @@ static int vdbeCommit(sqlite3 *db){
         if( !needSync && !sqlite3BtreeSyncDisabled(pBt) ){
           needSync = 1;
         }
-        rc = sqlite3OsWrite(master, zFile, strlen(zFile)+1);
+        rc = sqlite3OsWrite(master, zFile, strlen(zFile)+1, offset);
+        offset += strlen(zFile)+1;
         if( rc!=SQLITE_OK ){
           sqlite3OsClose(&master);
           sqlite3OsDelete(zMaster);
@@ -1179,6 +1181,7 @@ static int vdbeCommit(sqlite3 *db){
     ** the master journal file is store in so that it gets synced too.
     */
     zMainFile = sqlite3BtreeGetDirname(db->aDb[0].pBt);
+#if 0
     rc = sqlite3OsOpenDirectory(master, zMainFile);
     if( rc!=SQLITE_OK ||
           (needSync && (rc=sqlite3OsSync(master,0))!=SQLITE_OK) ){
@@ -1187,6 +1190,7 @@ static int vdbeCommit(sqlite3 *db){
       sqliteFree(zMaster);
       return rc;
     }
+#endif
 
     /* Sync all the db files involved in the transaction. The same call
     ** sets the master journal pointer in each individual journal. If

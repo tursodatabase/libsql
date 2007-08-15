@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.223 2007/08/15 13:04:54 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.224 2007/08/15 17:08:46 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -488,7 +488,7 @@ struct sqlite3_io_methods {
   int iVersion;
   int (*xClose)(sqlite3_file*);
   int (*xRead)(sqlite3_file*, void*, int iAmt, sqlite_int64 iOfst);
-  int (*xWrite)(sqlite3_file*, void*, int iAmt, sqlite_int64 iOfst);
+  int (*xWrite)(sqlite3_file*, const void*, int iAmt, sqlite_int64 iOfst);
   int (*xTruncate)(sqlite3_file*, sqlite_int64 size);
   int (*xSync)(sqlite3_file*, int flags);
   int (*xFileSize)(sqlite3_file*, sqlite_int64 *pSize);

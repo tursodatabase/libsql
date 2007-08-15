@@ -82,7 +82,7 @@
 */
 typedef struct unixFile unixFile;
 struct unixFile {
-  IoMethod const *pMethod;  /* Always the first entry */
+  sqlite3_io_methods const *pMethod;  /* Always the first entry */
   struct openCnt *pOpen;    /* Info about all open fd's on this inode */
   struct lockInfo *pLock;   /* Info about locks on this inode */
 #ifdef SQLITE_ENABLE_LOCKING_STYLE
@@ -99,6 +99,7 @@ struct unixFile {
 #endif
 };
 
+
 /*
 ** Provide the ability to override some OS-layer functions during
 ** testing.  This is used to simulate OS crashes to verify that 
@@ -106,13 +107,15 @@ struct unixFile {
 */
 #ifdef SQLITE_CRASH_TEST
   extern int sqlite3CrashTestEnable;
-  extern int sqlite3CrashOpenReadWrite(const char*, OsFile**, int*);
-  extern int sqlite3CrashOpenExclusive(const char*, OsFile**, int);
-  extern int sqlite3CrashOpenReadOnly(const char*, OsFile**, int);
-# define CRASH_TEST_OVERRIDE(X,A,B,C) \
-    if(sqlite3CrashTestEnable){ return X(A,B,C); }
+  int sqlite3CrashFileWrap(sqlite3_file *, const char *, sqlite3_file **);
+  static int CRASH_TEST_OVERRIDE(const char *zFile, sqlite3_file **pId, int rc){
+    if( rc==SQLITE_OK && sqlite3CrashTestEnable ){
+      rc = sqlite3CrashFileWrap(*pId, zFile, pId); 
+    }
+    return rc;
+  }
 #else
-# define CRASH_TEST_OVERRIDE(X,A,B,C)  /* no-op */
+# define CRASH_TEST_OVERRIDE(A,B,C) C
 #endif
 
 
@@ -801,7 +804,7 @@ int sqlite3UnixFileExists(const char *zFilename){
 /* Forward declaration */
 static int allocateUnixFile(
   int h,                    /* File descriptor of the open file */
-  OsFile **pId,             /* Write the real file descriptor here */
+  sqlite3_file **pId,       /* Write the real file descriptor here */
   const char *zFilename,    /* Name of the file being opened */
   int delFlag               /* If true, make sure the file deletes on close */
 );
@@ -821,12 +824,11 @@ static int allocateUnixFile(
 */
 int sqlite3UnixOpenReadWrite(
   const char *zFilename,
-  OsFile **pId,
+  sqlite3_file **pId,
   int *pReadonly
 ){
   int h;
   
-  CRASH_TEST_OVERRIDE(sqlite3CrashOpenReadWrite, zFilename, pId, pReadonly);
   assert( 0==*pId );
   h = open(zFilename, O_RDWR|O_CREAT|O_LARGEFILE|O_BINARY,
                         SQLITE_DEFAULT_FILE_PERMISSIONS);
@@ -844,7 +846,10 @@ int sqlite3UnixOpenReadWrite(
   }else{
     *pReadonly = 0;
   }
-  return allocateUnixFile(h, pId, zFilename, 0);
+
+  return CRASH_TEST_OVERRIDE(
+    zFilename, pId, allocateUnixFile(h, pId, zFilename, 0)
+  );
 }
 
 
@@ -862,10 +867,13 @@ int sqlite3UnixOpenReadWrite(
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-int sqlite3UnixOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
+int sqlite3UnixOpenExclusive(
+  const char *zFilename, 
+  sqlite3_file **pId, 
+  int delFlag
+){
   int h;
 
-  CRASH_TEST_OVERRIDE(sqlite3CrashOpenExclusive, zFilename, pId, delFlag);
   assert( 0==*pId );
   h = open(zFilename,
                 O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW|O_LARGEFILE|O_BINARY,
@@ -873,7 +881,9 @@ int sqlite3UnixOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
   if( h<0 ){
     return SQLITE_CANTOPEN;
   }
-  return allocateUnixFile(h, pId, zFilename, delFlag);
+  return CRASH_TEST_OVERRIDE(
+    zFilename, pId, allocateUnixFile(h, pId, zFilename, delFlag)
+  );
 }
 
 /*
@@ -883,16 +893,17 @@ int sqlite3UnixOpenExclusive(const char *zFilename, OsFile **pId, int delFlag){
 **
 ** On failure, return SQLITE_CANTOPEN.
 */
-int sqlite3UnixOpenReadOnly(const char *zFilename, OsFile **pId){
+int sqlite3UnixOpenReadOnly(const char *zFilename, sqlite3_file **pId){
   int h;
   
-  CRASH_TEST_OVERRIDE(sqlite3CrashOpenReadOnly, zFilename, pId, 0);
   assert( 0==*pId );
   h = open(zFilename, O_RDONLY|O_LARGEFILE|O_BINARY);
   if( h<0 ){
     return SQLITE_CANTOPEN;
   }
-  return allocateUnixFile(h, pId, zFilename, 0);
+  return CRASH_TEST_OVERRIDE(
+    zFilename, pId, allocateUnixFile(h, pId, zFilename, 0)
+  );
 }
 
 /*
@@ -994,29 +1005,26 @@ int sqlite3UnixIsDirWritable(char *zBuf){
 ** Seek to the offset in id->offset then read cnt bytes into pBuf.
 ** Return the number of bytes actually read.  Update the offset.
 */
-static int seekAndRead(unixFile *id, void *pBuf, int cnt){
+static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   int got;
   i64 newOffset;
   TIMER_START;
 #if defined(USE_PREAD)
-  got = pread(id->h, pBuf, cnt, id->offset);
+  got = pread(id->h, pBuf, cnt, offset);
   SimulateIOError( got = -1 );
 #elif defined(USE_PREAD64)
-  got = pread64(id->h, pBuf, cnt, id->offset);
+  got = pread64(id->h, pBuf, cnt, offset);
   SimulateIOError( got = -1 );
 #else
-  newOffset = lseek(id->h, id->offset, SEEK_SET);
+  newOffset = lseek(id->h, offset, SEEK_SET);
   SimulateIOError( newOffset-- );
-  if( newOffset!=id->offset ){
+  if( newOffset!=offset ){
     return -1;
   }
   got = read(id->h, pBuf, cnt);
 #endif
   TIMER_END;
   OSTRACE5("READ    %-3d %5d %7lld %d\n", id->h, got, id->offset, TIMER_ELAPSED);
-  if( got>0 ){
-    id->offset += got;
-  }
   return got;
 }
 
@@ -1025,10 +1033,15 @@ static int seekAndRead(unixFile *id, void *pBuf, int cnt){
 ** bytes were read successfully and SQLITE_IOERR if anything goes
 ** wrong.
 */
-static int unixRead(OsFile *id, void *pBuf, int amt){
+static int unixRead(
+  sqlite3_file *id, 
+  void *pBuf, 
+  int amt,
+  sqlite3_int64 offset
+){
   int got;
   assert( id );
-  got = seekAndRead((unixFile*)id, pBuf, amt);
+  got = seekAndRead((unixFile*)id, offset, pBuf, amt);
   if( got==amt ){
     return SQLITE_OK;
   }else if( got<0 ){
@@ -1043,26 +1056,23 @@ static int unixRead(OsFile *id, void *pBuf, int amt){
 ** Seek to the offset in id->offset then read cnt bytes into pBuf.
 ** Return the number of bytes actually read.  Update the offset.
 */
-static int seekAndWrite(unixFile *id, const void *pBuf, int cnt){
+static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
   int got;
   i64 newOffset;
   TIMER_START;
 #if defined(USE_PREAD)
-  got = pwrite(id->h, pBuf, cnt, id->offset);
+  got = pwrite(id->h, pBuf, cnt, offset);
 #elif defined(USE_PREAD64)
-  got = pwrite64(id->h, pBuf, cnt, id->offset);
+  got = pwrite64(id->h, pBuf, cnt, offset);
 #else
-  newOffset = lseek(id->h, id->offset, SEEK_SET);
-  if( newOffset!=id->offset ){
+  newOffset = lseek(id->h, offset, SEEK_SET);
+  if( newOffset!=offset ){
     return -1;
   }
   got = write(id->h, pBuf, cnt);
 #endif
   TIMER_END;
-  OSTRACE5("WRITE   %-3d %5d %7lld %d\n", id->h, got, id->offset, TIMER_ELAPSED);
-  if( got>0 ){
-    id->offset += got;
-  }
+  OSTRACE5("WRITE   %-3d %5d %7lld %d\n", id->h, got, offset, TIMER_ELAPSED);
   return got;
 }
 
@@ -1071,12 +1081,18 @@ static int seekAndWrite(unixFile *id, const void *pBuf, int cnt){
 ** Write data from a buffer into a file.  Return SQLITE_OK on success
 ** or some other error code on failure.
 */
-static int unixWrite(OsFile *id, const void *pBuf, int amt){
+static int unixWrite(
+  sqlite3_file *id, 
+  const void *pBuf, 
+  int amt,
+  sqlite3_int64 offset 
+){
   int wrote = 0;
   assert( id );
   assert( amt>0 );
-  while( amt>0 && (wrote = seekAndWrite((unixFile*)id, pBuf, amt))>0 ){
+  while( amt>0 && (wrote = seekAndWrite((unixFile*)id, offset, pBuf, amt))>0 ){
     amt -= wrote;
+    offset += wrote;
     pBuf = &((char*)pBuf)[wrote];
   }
   SimulateIOError(( wrote=(-1), amt=1 ));
@@ -1205,7 +1221,7 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
 ** the directory entry for the journal was never created) and the transaction
 ** will not roll back - possibly leading to database corruption.
 */
-static int unixSync(OsFile *id, int dataOnly){
+static int unixSync(sqlite3_file *id, int dataOnly){
   int rc;
   unixFile *pFile = (unixFile*)id;
   assert( pFile );
@@ -1272,7 +1288,7 @@ int sqlite3UnixSyncDirectory(const char *zDirname){
 /*
 ** Truncate an open file to a specified size
 */
-static int unixTruncate(OsFile *id, i64 nByte){
+static int unixTruncate(sqlite3_file *id, i64 nByte){
   int rc;
   assert( id );
   rc = ftruncate(((unixFile*)id)->h, (off_t)nByte);
@@ -1287,7 +1303,7 @@ static int unixTruncate(OsFile *id, i64 nByte){
 /*
 ** Determine the current size of a file in bytes
 */
-static int unixFileSize(OsFile *id, i64 *pSize){
+static int unixFileSize(sqlite3_file *id, i64 *pSize){
   int rc;
   struct stat buf;
   assert( id );
@@ -1306,7 +1322,7 @@ static int unixFileSize(OsFile *id, i64 *pSize){
 ** non-zero.  If the file is unlocked or holds only SHARED locks, then
 ** return zero.
 */
-static int unixCheckReservedLock(OsFile *id){
+static int unixCheckReservedLock(sqlite3_file *id){
   int r = 0;
   unixFile *pFile = (unixFile*)id;
 
@@ -1362,7 +1378,7 @@ static int unixCheckReservedLock(OsFile *id){
 ** This routine will only increase a lock.  Use the sqlite3OsUnlock()
 ** routine to lower a locking level.
 */
-static int unixLock(OsFile *id, int locktype){
+static int unixLock(sqlite3_file *id, int locktype){
   /* The following describes the implementation of the various locks and
   ** lock transitions in terms of the POSIX advisory shared and exclusive
   ** lock primitives (called read-locks and write-locks below, to avoid
@@ -1564,7 +1580,7 @@ end_lock:
 ** If the locking level of the file descriptor is already at or below
 ** the requested locking level, this routine is a no-op.
 */
-static int unixUnlock(OsFile *id, int locktype){
+static int unixUnlock(sqlite3_file *id, int locktype){
   struct lockInfo *pLock;
   struct flock lock;
   int rc = SQLITE_OK;
@@ -1650,44 +1666,42 @@ static int unixUnlock(OsFile *id, int locktype){
 /*
 ** Close a file.
 */
-static int unixClose(OsFile **pId){
-  unixFile *id = (unixFile*)*pId;
-
-  if( !id ) return SQLITE_OK;
-  unixUnlock(*pId, NO_LOCK);
-  if( id->dirfd>=0 ) close(id->dirfd);
-  id->dirfd = -1;
+static int unixClose(sqlite3_file *id){
+  unixFile *pFile = (unixFile *)id;
+  if( !pFile ) return SQLITE_OK;
+  unixUnlock(id, NO_LOCK);
+  if( pFile->dirfd>=0 ) close(pFile->dirfd);
+  pFile->dirfd = -1;
   sqlite3OsEnterMutex();
 
-  if( id->pOpen->nLock ){
+  if( pFile->pOpen->nLock ){
     /* If there are outstanding locks, do not actually close the file just
     ** yet because that would clear those locks.  Instead, add the file
     ** descriptor to pOpen->aPending.  It will be automatically closed when
     ** the last lock is cleared.
     */
     int *aNew;
-    struct openCnt *pOpen = id->pOpen;
+    struct openCnt *pOpen = pFile->pOpen;
     aNew = realloc( pOpen->aPending, (pOpen->nPending+1)*sizeof(int) );
     if( aNew==0 ){
       /* If a malloc fails, just leak the file descriptor */
     }else{
       pOpen->aPending = aNew;
-      pOpen->aPending[pOpen->nPending] = id->h;
+      pOpen->aPending[pOpen->nPending] = pFile->h;
       pOpen->nPending++;
     }
   }else{
     /* There are no outstanding locks so we can close the file immediately */
-    close(id->h);
+    close(pFile->h);
   }
-  releaseLockInfo(id->pLock);
-  releaseOpenCnt(id->pOpen);
+  releaseLockInfo(pFile->pLock);
+  releaseOpenCnt(pFile->pOpen);
 
   sqlite3OsLeaveMutex();
-  id->isOpen = 0;
-  OSTRACE2("CLOSE   %-3d\n", id->h);
+  pFile->isOpen = 0;
+  OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
   sqlite3ThreadSafeFree(id);
-  *pId = 0;
   return SQLITE_OK;
 }
 
@@ -2348,30 +2362,37 @@ static int unixLockState(OsFile *id){
 ** a database and it's journal file) that the sector size will be the
 ** same for both.
 */
-static int unixSectorSize(OsFile *id){
+static int unixSectorSize(sqlite3_file *id){
   return SQLITE_DEFAULT_SECTOR_SIZE;
+}
+
+static int unixDeviceCharacteristics(sqlite3_file *id){
+  return 0;
+}
+
+static int unixBreakLock(sqlite3_file *id){
+  assert(!"TODO: unixBreakLock()");
+  return 0;
 }
 
 /*
 ** This vector defines all the methods that can operate on an OsFile
 ** for unix.
 */
-static const IoMethod sqlite3UnixIoMethod = {
+static const sqlite3_io_methods sqlite3UnixIoMethod = {
+  1,                        /* iVersion */
   unixClose,
-  unixOpenDirectory,
   unixRead,
   unixWrite,
-  unixSeek,
   unixTruncate,
   unixSync,
-  unixSetFullSync,
-  unixFileHandle,
   unixFileSize,
   unixLock,
   unixUnlock,
-  unixLockState,
   unixCheckReservedLock,
+  unixBreakLock,
   unixSectorSize,
+  unixDeviceCharacteristics
 };
 
 #ifdef SQLITE_ENABLE_LOCKING_STYLE
@@ -2573,7 +2594,7 @@ static int allocateUnixFile(
 #else /* SQLITE_ENABLE_LOCKING_STYLE */
 static int allocateUnixFile(
   int h,                 /* Open file descriptor on file being opened */
-  OsFile **pId,          /* Write the resul unixFile structure here */
+  sqlite3_file **pId,    /* Write the resul unixFile structure here */
   const char *zFilename, /* Name of the file being opened */
   int delFlag            /* If true, delete the file on or before closing */
 ){
@@ -2611,7 +2632,7 @@ static int allocateUnixFile(
   }else{
     *pNew = f;
     pNew->pMethod = &sqlite3UnixIoMethod;
-    *pId = (OsFile*)pNew;
+    *pId = (sqlite3_file*)pNew;
     OpenCounter(+1);
     return SQLITE_OK;
   }

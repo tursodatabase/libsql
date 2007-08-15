@@ -348,27 +348,28 @@ extern unsigned int sqlite3_pending_byte;
 /*
 ** Prototypes for operating system interface routines.
 */
-int sqlite3OsClose(OsFile**);
-int sqlite3OsOpenDirectory(OsFile*, const char*);
-int sqlite3OsRead(OsFile*, void*, int amt);
-int sqlite3OsWrite(OsFile*, const void*, int amt);
-int sqlite3OsSeek(OsFile*, i64 offset);
-int sqlite3OsTruncate(OsFile*, i64 size);
-int sqlite3OsSync(OsFile*, int);
-void sqlite3OsSetFullSync(OsFile *id, int setting);
-int sqlite3OsFileSize(OsFile*, i64 *pSize);
-int sqlite3OsLock(OsFile*, int);
-int sqlite3OsUnlock(OsFile*, int);
-int sqlite3OsCheckReservedLock(OsFile *id);
-int sqlite3OsOpenReadWrite(const char*, OsFile**, int*);
-int sqlite3OsOpenExclusive(const char*, OsFile**, int);
-int sqlite3OsOpenReadOnly(const char*, OsFile**);
+int sqlite3OsClose(sqlite3_file**);
+int sqlite3OsRead(sqlite3_file*, void*, int amt, i64 offset);
+int sqlite3OsWrite(sqlite3_file*, const void*, int amt, i64 offset);
+int sqlite3OsTruncate(sqlite3_file*, i64 size);
+int sqlite3OsSync(sqlite3_file*, int);
+int sqlite3OsFileSize(sqlite3_file*, i64 *pSize);
+int sqlite3OsLock(sqlite3_file*, int);
+int sqlite3OsUnlock(sqlite3_file*, int);
+int sqlite3OsBreakLock(sqlite3_file*);
+int sqlite3OsCheckReservedLock(sqlite3_file *id);
+int sqlite3OsSectorSize(sqlite3_file *id);
+int sqlite3OsDeviceCharacteristics(sqlite3_file *id);
+
+int sqlite3OsOpenReadWrite(const char*, sqlite3_file**, int*);
+int sqlite3OsOpenExclusive(const char*, sqlite3_file**, int);
+int sqlite3OsOpenReadOnly(const char*, sqlite3_file**);
+
 int sqlite3OsDelete(const char*);
 int sqlite3OsFileExists(const char*);
 char *sqlite3OsFullPathname(const char*);
 int sqlite3OsIsDirWritable(char*);
 int sqlite3OsSyncDirectory(const char*);
-int sqlite3OsSectorSize(OsFile *id);
 int sqlite3OsTempFileName(char*);
 int sqlite3OsRandomSeed(char*);
 int sqlite3OsSleep(int ms);
@@ -386,8 +387,8 @@ void *sqlite3OsDlsym(void*, const char*);
 int sqlite3OsDlclose(void*);
 
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
-  int sqlite3OsFileHandle(OsFile *id);
-  int sqlite3OsLockState(OsFile *id);
+  int sqlite3OsFileHandle(sqlite3_file *id);
+  int sqlite3OsLockState(sqlite3_file *id);
 #endif
 
 /*
@@ -409,9 +410,9 @@ int sqlite3OsDlclose(void*);
 ** operating system interfaces or behaviors.
 */
 struct sqlite3OsVtbl {
-  int (*xOpenReadWrite)(const char*, OsFile**, int*);
-  int (*xOpenExclusive)(const char*, OsFile**, int);
-  int (*xOpenReadOnly)(const char*, OsFile**);
+  int (*xOpenReadWrite)(const char*, sqlite3_file**, int*);
+  int (*xOpenExclusive)(const char*, sqlite3_file**, int);
+  int (*xOpenReadOnly)(const char*, sqlite3_file**);
 
   int (*xDelete)(const char*);
   int (*xFileExists)(const char*);

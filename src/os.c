@@ -20,63 +20,65 @@
 
 /*
 ** The following routines are convenience wrappers around methods
-** of the OsFile object.  This is mostly just syntactic sugar.  All
+** of the sqlite3_file object.  This is mostly just syntactic sugar. All
 ** of this would be completely automatic if SQLite were coded using
 ** C++ instead of plain old C.
 */
-int sqlite3OsClose(OsFile **pId){
-  OsFile *id;
+int sqlite3OsClose(sqlite3_file **pId){
+  int rc = SQLITE_OK;
+  sqlite3_file *id;
   if( pId!=0 && (id = *pId)!=0 ){
-    return id->pMethod->xClose(pId);
-  }else{
-    return SQLITE_OK;
+    rc = id->pMethods->xClose(id);
+    if( rc==SQLITE_OK ){
+      *pId = 0;
+    }
   }
+  return rc;
 }
-int sqlite3OsOpenDirectory(OsFile *id, const char *zName){
-  return id->pMethod->xOpenDirectory(id, zName);
+int sqlite3OsRead(sqlite3_file *id, void *pBuf, int amt, i64 offset){
+  return id->pMethods->xRead(id, pBuf, amt, offset);
 }
-int sqlite3OsRead(OsFile *id, void *pBuf, int amt){
-  return id->pMethod->xRead(id, pBuf, amt);
+int sqlite3OsWrite(sqlite3_file *id, const void *pBuf, int amt, i64 offset){
+  return id->pMethods->xWrite(id, pBuf, amt, offset);
 }
-int sqlite3OsWrite(OsFile *id, const void *pBuf, int amt){
-  return id->pMethod->xWrite(id, pBuf, amt);
+int sqlite3OsTruncate(sqlite3_file *id, i64 size){
+  return id->pMethods->xTruncate(id, size);
 }
-int sqlite3OsSeek(OsFile *id, i64 offset){
-  return id->pMethod->xSeek(id, offset);
+int sqlite3OsSync(sqlite3_file *id, int fullsync){
+  return id->pMethods->xSync(id, fullsync);
 }
-int sqlite3OsTruncate(OsFile *id, i64 size){
-  return id->pMethod->xTruncate(id, size);
+int sqlite3OsFileSize(sqlite3_file *id, i64 *pSize){
+  return id->pMethods->xFileSize(id, pSize);
 }
-int sqlite3OsSync(OsFile *id, int fullsync){
-  return id->pMethod->xSync(id, fullsync);
+int sqlite3OsLock(sqlite3_file *id, int lockType){
+  return id->pMethods->xLock(id, lockType);
 }
-void sqlite3OsSetFullSync(OsFile *id, int value){
-  id->pMethod->xSetFullSync(id, value);
+int sqlite3OsUnlock(sqlite3_file *id, int lockType){
+  return id->pMethods->xUnlock(id, lockType);
 }
-int sqlite3OsFileSize(OsFile *id, i64 *pSize){
-  return id->pMethod->xFileSize(id, pSize);
+int sqlite3OsBreakLock(sqlite3_file *id){
+  return id->pMethods->xBreakLock(id);
 }
-int sqlite3OsLock(OsFile *id, int lockType){
-  return id->pMethod->xLock(id, lockType);
+int sqlite3OsCheckReservedLock(sqlite3_file *id){
+  return id->pMethods->xCheckReservedLock(id);
 }
-int sqlite3OsUnlock(OsFile *id, int lockType){
-  return id->pMethod->xUnlock(id, lockType);
-}
-int sqlite3OsCheckReservedLock(OsFile *id){
-  return id->pMethod->xCheckReservedLock(id);
-}
-int sqlite3OsSectorSize(OsFile *id){
-  int (*xSectorSize)(OsFile*) = id->pMethod->xSectorSize;
+int sqlite3OsSectorSize(sqlite3_file *id){
+  int (*xSectorSize)(sqlite3_file*) = id->pMethods->xSectorSize;
   return xSectorSize ? xSectorSize(id) : SQLITE_DEFAULT_SECTOR_SIZE;
+}
+int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
+  return id->pMethods->xDeviceCharacteristics(id);
 }
 
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
   /* These methods are currently only used for testing and debugging. */
-  int sqlite3OsFileHandle(OsFile *id){
-    return id->pMethod->xFileHandle(id);
+  int sqlite3OsFileHandle(sqlite3_file *id){
+    /* return id->pMethods->xFileHandle(id); */
+    return 0;
   }
-  int sqlite3OsLockState(OsFile *id){
-    return id->pMethod->xLockState(id);
+  int sqlite3OsLockState(sqlite3_file *id){
+    /* return id->pMethods->xLockState(id); */
+    return 0;
   }
 #endif
 

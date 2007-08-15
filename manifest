@@ -1,5 +1,5 @@
-C Add\sa\sdebugging\smemory\sallocator.\s(CVS\s4227)
-D 2007-08-15T17:07:57
+C Modify\sthe\scrash-recovery\stest\scode\sin\stest6.c\sfor\s3.5.\sAlso\schange\ssome\sother\scode\sto\suse\sthe\snew\ssqlite3_io_methods\sinterface.\sLots\sof\sthings\sare\sbroken\snow.\s(CVS\s4228)
+D 2007-08-15T17:08:46
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -91,18 +91,18 @@ F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c ef73642a171d174cd556d0168f8edbceaf94933b
 F src/mem2.c b8173ddcca23e99829617185154a35a6f046b214
 F src/mutex.c 667dae0de95f8fb92a3ffc8c3f20c0d26115a1a6
-F src/os.c 1f10b47acc1177fb9225edb4f5f0d25ed716f9cb
-F src/os.h cea2e179bb33f4fc09dbb9fcd51b2246544bd2db
+F src/os.c e2faefbe0f5a8ca5e3b1c49ee1b5c6cfa0f0e279
+F src/os.h 8eff07babf74e5bc3f895f8a6c7c294dad5ff997
 F src/os_common.h a5c446d3b93f09f369d13bf217de4bed3437dd1c
 F src/os_os2.c cba4e96fadb949076c717108fe0599d1a3c2e446
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 9d2a421acc607262e63ccf31e3fe86e5f2520af6
+F src/os_unix.c 05ad65c32b4937fd47b17b472955aa5dfc438074
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c d868d5f9e95ec9c1b9e2a30c54c996053db6dddd
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c cdf561d3ae4009be902df714da4518dc3522e206
+F src/pager.c 05ea9dcbc4de4e9d9ca332ca1f8a9ba65fe2cbf5
 F src/pager.h 94110a5570dca30d54a883e880a3633b2e4c05ae
 F src/parse.y ad2ce25665be7f7303137f774a4e3e72e0d036ff
 F src/pragma.c 7914a6b9ea05f158800116dfcae11e52ab8e39c4
@@ -112,18 +112,18 @@ F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c 3b167744fc375bddfddcef87feb18f5171737677
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in 025e9fd6c519f2945296a9db46ca9da4571c22d7
+F src/sqlite.h.in 165913eb3426fbaa8a2a51d87f84593bfe5bee15
 F src/sqlite3ext.h a27bedc222df5e5f0f458ac99726d0483b953a91
 F src/sqliteInt.h fc9f6e8d916e182c04983a089c4ce4057fac5003
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
 F src/tclsqlite.c 648e6f53041ce4974234d4963e71680926760925
 F src/test1.c 94bd41c24a4d8d782e39c1275421511587d8b293
-F src/test2.c 24458b17ab2f3c90cbc1c8446bd7ffe69be62f88
+F src/test2.c 5c3edc610852a8f67990cd08c5d5dbb79e3f8db9
 F src/test3.c a280931fb40222b7c90da45eea926459beee8904
 F src/test4.c 8b784cd82de158a2317cb4ac4bc86f91ad315e25
 F src/test5.c c40a4cf43266c1c6da7bcb737d294304a177e6cc
-F src/test6.c 2c4ed21787944bd8896cba80d4a544d8bed5473e
+F src/test6.c 4d812a5ea1fe08693f4189bfc974b341102a3bea
 F src/test7.c 03fa8d787f6aebc6d1f72504d52f33013ad2c8e3
 F src/test8.c 27a61c60f736066646a9e9ca21acdfdf0f3ea11e
 F src/test9.c c0f38f7795cc51d37db6c63874d90f40f10d0f0e
@@ -147,7 +147,7 @@ F src/vdbe.c cf973bd1af5fbda845b0f759bb06eb19ff42e215
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h c3514903cad9e36d6b3242be20261351d09db56c
 F src/vdbeapi.c 220b81132abaf0f620edb8da48799a77daef12a7
-F src/vdbeaux.c d626e0f8cd78b4280bcb7af25d5c5566348ba87a
+F src/vdbeaux.c 8e6dbe3dac3bdd7d37c87ba553059b5251ba07e5
 F src/vdbeblob.c bb30b3e387c35ba869949494b2736aff97159470
 F src/vdbefifo.c 3ca8049c561d5d67cbcb94dc909ae9bb68c0bf8f
 F src/vdbemem.c ca4d3994507cb0a9504820293af69f5c778b4abd
@@ -528,7 +528,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c0fa3769790af199a4c8715c80bb8ff900730520
-R afa459b840a3b96de70924b91a0e1dbb
-U drh
-Z 9341f1481e29775e7a036e24546ed5fc
+P 8d2d1c4ff9dca61f75e3048107ee9712d346a28c
+R 7d9819ae0c3408fa1555b7b8d9a48850
+U danielk1977
+Z 41f21c80ce49e631fe5dbf7930bb9145
