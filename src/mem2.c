@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.1 2007/08/15 17:07:57 drh Exp $
+** $Id: mem2.c,v 1.2 2007/08/15 19:16:43 drh Exp $
 */
 
 /*
@@ -239,7 +239,9 @@ void *sqlite3_malloc(unsigned int nByte){
     pHdr->iForeGuard = FOREGUARD;
     pHdr->nBacktraceSlots = backtraceLevels;
     if( backtraceLevels ){
-      pHdr->nBacktrace = backtrace(pBt, backtraceLevels);
+      void *aAddr[40];
+      pHdr->nBacktrace = backtrace(aAddr, backtraceLevels+1)-1;
+      memcpy(pBt, &aAddr[1], pHdr->nBacktrace*sizeof(void*));
     }else{
       pHdr->nBacktrace = 0;
     }
@@ -304,13 +306,12 @@ void sqlite3_free(void *pPrior){
 void *sqlite3_realloc(void *pPrior, unsigned int nByte){
   struct MemBlockHdr *pOldHdr;
   void *pNew;
-  unsigned nOld;
   if( pPrior==0 ){
     return sqlite3_malloc(nByte);
   }
   if( nByte==0 ){
     sqlite3_free(pPrior);
-    return;
+    return 0;
   }
   pOldHdr = sqlite3MemsysGetHeader(pPrior);
   pNew = sqlite3_malloc(nByte);
@@ -329,10 +330,10 @@ void *sqlite3_realloc(void *pPrior, unsigned int nByte){
 ** A value of zero turns of backtracing.  The number is always rounded
 ** up to a multiple of 2.
 */
-void sqlite3_memdebug_backtrace_depth(int depth){
+void sqlite3_memdebug_backtrace(int depth){
   if( depth<0 ){ depth = 0; }
   if( depth>20 ){ depth = 20; }
-  depth = (depth+1)&~1;
+  depth = (depth+1)&0xfe;
   backtraceLevels = depth;
 }
 

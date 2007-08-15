@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.194 2007/08/07 17:13:04 drh Exp $
+** $Id: tclsqlite.c,v 1.195 2007/08/15 19:16:43 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2483,6 +2483,8 @@ int TCLSH_MAIN(int argc, char **argv){
   Sqlite3_Init(interp);
 #ifdef SQLITE_TEST
   {
+    extern int Md5_Init(Tcl_Interp*);
+    extern int Sqliteconfig_Init(Tcl_Interp*);
     extern int Sqlitetest1_Init(Tcl_Interp*);
     extern int Sqlitetest2_Init(Tcl_Interp*);
     extern int Sqlitetest3_Init(Tcl_Interp*);
@@ -2492,15 +2494,16 @@ int TCLSH_MAIN(int argc, char **argv){
     extern int Sqlitetest7_Init(Tcl_Interp*);
     extern int Sqlitetest8_Init(Tcl_Interp*);
     extern int Sqlitetest9_Init(Tcl_Interp*);
-    extern int Md5_Init(Tcl_Interp*);
-    extern int Sqlitetestsse_Init(Tcl_Interp*);
     extern int Sqlitetestasync_Init(Tcl_Interp*);
-    extern int Sqlitetesttclvar_Init(Tcl_Interp*);
-    extern int Sqlitetestschema_Init(Tcl_Interp*);
     extern int Sqlitetest_autoext_Init(Tcl_Interp*);
     extern int Sqlitetest_hexio_Init(Tcl_Interp*);
-    extern int Sqliteconfig_Init(Tcl_Interp*);
+    extern int Sqlitetest_malloc_Init(Tcl_Interp*);
+    extern int Sqlitetestschema_Init(Tcl_Interp*);
+    extern int Sqlitetestsse_Init(Tcl_Interp*);
+    extern int Sqlitetesttclvar_Init(Tcl_Interp*);
 
+    Md5_Init(interp);
+    Sqliteconfig_Init(interp);
     Sqlitetest1_Init(interp);
     Sqlitetest2_Init(interp);
     Sqlitetest3_Init(interp);
@@ -2511,12 +2514,11 @@ int TCLSH_MAIN(int argc, char **argv){
     Sqlitetest8_Init(interp);
     Sqlitetest9_Init(interp);
     Sqlitetestasync_Init(interp);
-    Sqlitetesttclvar_Init(interp);
-    Sqlitetestschema_Init(interp);
     Sqlitetest_autoext_Init(interp);
     Sqlitetest_hexio_Init(interp);
-    Sqliteconfig_Init(interp);
-    Md5_Init(interp);
+    Sqlitetest_malloc_Init(interp);
+    Sqlitetestschema_Init(interp);
+    Sqlitetesttclvar_Init(interp);
 #ifdef SQLITE_SSE
     Sqlitetestsse_Init(interp);
 #endif

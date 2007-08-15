@@ -195,6 +195,7 @@ TESTSRC = \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
   $(TOP)/src/test_hexio.c \
+  $(TOP)/src/test_malloc.c \
   $(TOP)/src/test_md5.c \
   $(TOP)/src/test_schema.c \
   $(TOP)/src/test_server.c \
