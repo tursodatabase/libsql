@@ -1,5 +1,5 @@
-C Revisions\sto\sthe\sinterface\sdesign\sfor\s3.5.\s(CVS\s4225)
-D 2007-08-15T11:28:56
+C Add\sinitial\simplementations\sof\smutex\sand\smemory\ssubsystem\smodules.\s(CVS\s4226)
+D 2007-08-15T13:04:54
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -51,7 +51,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 570e26f4e1b2060ad1cf08e36a8ce29065b1db75
+F main.mk c9336cf989f5e2076e5fbda909fa57cca24b6515
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -85,9 +85,11 @@ F src/insert.c ca135e919c2a9241e83e8dd74316677fdd54fb6f
 F src/legacy.c 388c71ad7fbcd898ba1bcbfc98a3ac954bfa5d01
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c 6c24ee62adfe7fbfb2f2dd43ff18e5534b19010f
-F src/main.c 345ffcf44506bda3b53355c08cf22aecbded27e7
+F src/main.c f12d230c1226d3f43c1f4595af1c25ccbe3017c7
 F src/malloc.c 3850ab4a2edfb190ffee353c5674ebd8c6b4ccc7
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
+F src/mem1.c f4127f6f6f183b66f7c4345e33c9fe19a43e9942
+F src/mutex.c 667dae0de95f8fb92a3ffc8c3f20c0d26115a1a6
 F src/os.c 1f10b47acc1177fb9225edb4f5f0d25ed716f9cb
 F src/os.h cea2e179bb33f4fc09dbb9fcd51b2246544bd2db
 F src/os_common.h a5c446d3b93f09f369d13bf217de4bed3437dd1c
@@ -109,9 +111,9 @@ F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c 3b167744fc375bddfddcef87feb18f5171737677
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in 9f35010f878acf0c161ea8324f96b22a81eb59f9
+F src/sqlite.h.in 025e9fd6c519f2945296a9db46ca9da4571c22d7
 F src/sqlite3ext.h a27bedc222df5e5f0f458ac99726d0483b953a91
-F src/sqliteInt.h aaf44ba52e0afe1327baae8082e3662d7b36723b
+F src/sqliteInt.h fc9f6e8d916e182c04983a089c4ce4057fac5003
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
 F src/table.c a8de75bcedf84d4060d804264b067ab3b1a3561d
 F src/tclsqlite.c 648e6f53041ce4974234d4963e71680926760925
@@ -525,7 +527,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0b5b526c9de22a34c5051d14735a062ed3f898eb
-R e61d44cb3c83a44c033e2ccb600c0264
+P 174116f7c0ceeceb5e32868b29fabf8a6943cbf6
+R 7f615db37ae8f52942fff60e5e86001f
 U drh
-Z ff0efbdc8d85c0f34cf38329a6a4a48d
+Z 657d3d4bb780276ea6842b10c93c7b7e

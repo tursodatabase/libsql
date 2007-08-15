@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.378 2007/08/13 15:28:34 danielk1977 Exp $
+** $Id: main.c,v 1.379 2007/08/15 13:04:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -421,30 +421,6 @@ void sqlite3_interrupt(sqlite3 *db){
   }
 }
 
-/*
-** Memory allocation routines that use SQLites internal memory
-** memory allocator.  Depending on how SQLite is compiled, the
-** internal memory allocator might be just an alias for the
-** system default malloc/realloc/free.  Or the built-in allocator
-** might do extra stuff like put sentinals around buffers to 
-** check for overruns or look for memory leaks.
-**
-** Use sqlite3_free() to free memory returned by sqlite3_mprintf().
-*/
-void sqlite3_free(void *p){ if( p ) sqlite3OsFree(p); }
-void *sqlite3_malloc(int nByte){ return nByte>0 ? sqlite3OsMalloc(nByte) : 0; }
-void *sqlite3_realloc(void *pOld, int nByte){ 
-  if( pOld ){
-    if( nByte>0 ){
-      return sqlite3OsRealloc(pOld, nByte);
-    }else{
-      sqlite3OsFree(pOld);
-      return 0;
-    }
-  }else{
-    return sqlite3_malloc(nByte);
-  }
-}
 
 /*
 ** This function is exactly the same as sqlite3_create_function(), except

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.585 2007/08/08 12:11:21 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.586 2007/08/15 13:04:54 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -441,6 +441,7 @@ struct Schema {
 ** consistently.
 */
 struct sqlite3 {
+  sqlite3_vfs *pVfs;            /* OS Interface */
   int nDb;                      /* Number of backends currently in use */
   Db *aDb;                      /* All backends */
   int flags;                    /* Miscellanous flags. See below */

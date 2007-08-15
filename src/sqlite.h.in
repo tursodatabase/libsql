@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.222 2007/08/15 11:28:56 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.223 2007/08/15 13:04:54 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1020,10 +1020,7 @@ char *sqlite3_vmprintf(const char*, va_list);
 char *sqlite3_snprintf(int,char*,const char*, ...);
 
 /*
-** CAPI3REF: Memory Allocation Functions
-**
-** The SQLite sources include a memory allocation subsystem
-** that implements the interfaces shown here.
+** CAPI3REF: Memory Allocation Subsystem
 **
 ** The SQLite core uses these three routines for all of its own
 ** internal memory allocation needs.  The default implementation
@@ -1031,14 +1028,14 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 ** and free() provided by the standard C library.  However, if 
 ** SQLite is compiled with the following C preprocessor macro
 **
-** <blockquote>SQLITE_OMIT_MEMORY_ALLOCATION</blockquote>
+** <blockquote> SQLITE_OMIT_MEMORY_ALLOCATION </blockquote>
 **
 ** then no implementation is provided for these routines by
 ** SQLite.  The application that links against SQLite is
 ** expected to provide its own implementation.
 */
-void *sqlite3_malloc(int);
-void *sqlite3_realloc(void*, int);
+void *sqlite3_malloc(unsigned int);
+void *sqlite3_realloc(void*, unsigned int);
 void sqlite3_free(void*);
 
 /*
