@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem1.c,v 1.2 2007/08/15 17:07:57 drh Exp $
+** $Id: mem1.c,v 1.3 2007/08/15 20:41:29 drh Exp $
 */
 
 /*
@@ -37,29 +37,42 @@
 */
 #include "sqliteInt.h"
 
-
 /*
-** Mutex to control access to the memory allocation subsystem.
+** All of the static variables used by this module are collected
+** into a single structure named "mem".  This is to keep the
+** static variables organized and to reduce namespace pollution
+** when this module is combined with other in the amalgamation.
 */
-static sqlite3_mutex *memMutex = 0;
+static struct {
+  /*
+  ** The alarm callback and its arguments.  The mem.mutex lock will
+  ** be held while the callback is running.  Recursive calls into
+  ** the memory subsystem are allowed, but no new callbacks will be
+  ** issued.  The alarmBusy variable is set to prevent recursive
+  ** callbacks.
+  */
+  sqlite3_uint64 alarmThreshold;
+  void (*alarmCallback)(void*, sqlite3_uint64, unsigned);
+  void *alarmArg;
+  int alarmBusy;
+  
+  /*
+  ** Mutex to control access to the memory allocation subsystem.
+  */
+  sqlite3_mutex *mutex;
+  
+  /*
+  ** Current allocation and high-water mark.
+  */
+  sqlite3_uint64 nowUsed;
+  sqlite3_uint64 mxUsed;
+  
+ 
+} mem = {  /* This variable holds all of the local data */
+   ((sqlite3_uint64)1)<<63,    /* alarmThreshold */
+   /* Everything else is initialized to zero */
+};
 
-/*
-** Current allocation and high-water mark.
-*/
-static sqlite3_uint64 nowUsed = 0;
-static sqlite3_uint64 mxUsed = 0;
-
-/*
-** The alarm callback and its arguments.  The memMutex lock will
-** be held while the callback is running.  Recursive calls into
-** the memory subsystem are allowed, but no new callbacks will be
-** issued.  The alarmBusy variable is set to prevent recursive
-** callbacks.
-*/
-static void (*alarmCallback)(void*, sqlite3_uint64, unsigned) = 0;
-static void *alarmArg = 0;
-static sqlite3_uint64 alarmThreshold = (((sqlite3_uint64)1)<<63);
-static int alarmBusy = 0;
 
 
 /*
@@ -67,12 +80,12 @@ static int alarmBusy = 0;
 */
 sqlite3_uint64 sqlite3_memory_used(void){
   sqlite3_uint64 n;
-  if( memMutex==0 ){
-    memMutex = sqlite3_mutex_alloc(1);
+  if( mem.mutex==0 ){
+    mem.mutex = sqlite3_mutex_alloc(1);
   }
-  sqlite3_mutex_enter(memMutex, 1);
-  n = nowUsed;
-  sqlite3_mutex_leave(memMutex);  
+  sqlite3_mutex_enter(mem.mutex, 1);
+  n = mem.nowUsed;
+  sqlite3_mutex_leave(mem.mutex);  
   return n;
 }
 
@@ -83,15 +96,15 @@ sqlite3_uint64 sqlite3_memory_used(void){
 */
 sqlite3_uint64 sqlite3_memory_highwater(int resetFlag){
   sqlite3_uint64 n;
-  if( memMutex==0 ){
-    memMutex = sqlite3_mutex_alloc(1);
+  if( mem.mutex==0 ){
+    mem.mutex = sqlite3_mutex_alloc(1);
   }
-  sqlite3_mutex_enter(memMutex, 1);
-  n = mxUsed;
+  sqlite3_mutex_enter(mem.mutex, 1);
+  n = mem.mxUsed;
   if( resetFlag ){
-    mxUsed = nowUsed;
+    mem.mxUsed = mem.nowUsed;
   }
-  sqlite3_mutex_leave(memMutex);  
+  sqlite3_mutex_leave(mem.mutex);  
   return n;
 }
 
@@ -103,14 +116,14 @@ int sqlite3_memory_alarm(
   void *pArg,
   sqlite3_uint64 iThreshold
 ){
-  if( memMutex==0 ){
-    memMutex = sqlite3_mutex_alloc(1);
+  if( mem.mutex==0 ){
+    mem.mutex = sqlite3_mutex_alloc(1);
   }
-  sqlite3_mutex_enter(memMutex, 1);
-  alarmCallback = xCallback;
-  alarmArg = pArg;
-  alarmThreshold = iThreshold;
-  sqlite3_mutex_leave(memMutex);
+  sqlite3_mutex_enter(mem.mutex, 1);
+  mem.alarmCallback = xCallback;
+  mem.alarmArg = pArg;
+  mem.alarmThreshold = iThreshold;
+  sqlite3_mutex_leave(mem.mutex);
   return SQLITE_OK;
 }
 
@@ -118,10 +131,10 @@ int sqlite3_memory_alarm(
 ** Trigger the alarm 
 */
 static void sqlite3MemsysAlarm(unsigned nByte){
-  if( alarmCallback==0 || alarmBusy  ) return;
-  alarmBusy = 1;
-  alarmCallback(alarmArg, nowUsed, nByte);
-  alarmBusy = 0;
+  if( mem.alarmCallback==0 || mem.alarmBusy  ) return;
+  mem.alarmBusy = 1;
+  mem.alarmCallback(mem.alarmArg, mem.nowUsed, nByte);
+  mem.alarmBusy = 0;
 }
 
 /*
@@ -129,11 +142,11 @@ static void sqlite3MemsysAlarm(unsigned nByte){
 */
 void *sqlite3_malloc(unsigned int nBytes){
   sqlite3_uint64 *p;
-  if( memMutex==0 ){
-    memMutex = sqlite3_mutex_alloc(1);
+  if( mem.mutex==0 ){
+    mem.mutex = sqlite3_mutex_alloc(1);
   }
-  sqlite3_mutex_enter(memMutex, 1);
-  if( nowUsed+nBytes>=alarmThreshold ){
+  sqlite3_mutex_enter(mem.mutex, 1);
+  if( mem.nowUsed+nBytes>=mem.alarmThreshold ){
     sqlite3MemsysAlarm(nBytes);
   }
   p = malloc(nBytes+8);
@@ -144,12 +157,12 @@ void *sqlite3_malloc(unsigned int nBytes){
   if( p ){
     p[0] = nBytes;
     p++;
-    nowUsed += nBytes;
-    if( nowUsed>mxUsed ){
-      mxUsed = nowUsed;
+    mem.nowUsed += nBytes;
+    if( mem.nowUsed>mem.mxUsed ){
+      mem.mxUsed = mem.nowUsed;
     }
   }
-  sqlite3_mutex_leave(memMutex);
+  sqlite3_mutex_leave(mem.mutex);
   return (void*)p; 
 }
 
@@ -162,14 +175,14 @@ void sqlite3_free(void *pPrior){
   if( pPrior==0 ){
     return;
   }
-  assert( memMutex!=0 );
+  assert( mem.mutex!=0 );
   p = pPrior;
   p--;
   nByte = (unsigned int)*p;
-  sqlite3_mutex_enter(memMutex, 1);
-  nowUsed -= nByte;
+  sqlite3_mutex_enter(mem.mutex, 1);
+  mem.nowUsed -= nByte;
   free(p);
-  sqlite3_mutex_leave(memMutex);  
+  sqlite3_mutex_leave(mem.mutex);  
 }
 
 /*
@@ -188,9 +201,9 @@ void *sqlite3_realloc(void *pPrior, unsigned int nBytes){
   p = pPrior;
   p--;
   nOld = (unsigned int)p[0];
-  assert( memMutex!=0 );
-  sqlite3_mutex_enter(memMutex, 1);
-  if( nowUsed+nBytes-nOld>=alarmThreshold ){
+  assert( mem.mutex!=0 );
+  sqlite3_mutex_enter(mem.mutex, 1);
+  if( mem.nowUsed+nBytes-nOld>=mem.alarmThreshold ){
     sqlite3MemsysAlarm(nBytes-nOld);
   }
   p = realloc(p, nBytes+8);
@@ -201,12 +214,12 @@ void *sqlite3_realloc(void *pPrior, unsigned int nBytes){
   if( p ){
     p[0] = nBytes;
     p++;
-    nowUsed += nBytes-nOld;
-    if( nowUsed>mxUsed ){
-      mxUsed = nowUsed;
+    mem.nowUsed += nBytes-nOld;
+    if( mem.nowUsed>mem.mxUsed ){
+      mem.mxUsed = mem.nowUsed;
     }
   }
-  sqlite3_mutex_leave(memMutex);
+  sqlite3_mutex_leave(mem.mutex);
   return (void*)p;
 }
 

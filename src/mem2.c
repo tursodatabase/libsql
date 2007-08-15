@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.2 2007/08/15 19:16:43 drh Exp $
+** $Id: mem2.c,v 1.3 2007/08/15 20:41:29 drh Exp $
 */
 
 /*
@@ -56,93 +56,6 @@
 # define backtrace_symbols_fd(A,B,C)
 #endif
 
-
-/*
-** Mutex to control access to the memory allocation subsystem.
-*/
-static sqlite3_mutex *memMutex = 0;
-
-/*
-** Current allocation and high-water mark.
-*/
-static sqlite3_uint64 nowUsed = 0;
-static sqlite3_uint64 mxUsed = 0;
-
-/*
-** The alarm callback and its arguments.  The memMutex lock will
-** be held while the callback is running.  Recursive calls into
-** the memory subsystem are allowed, but no new callbacks will be
-** issued.  The alarmBusy variable is set to prevent recursive
-** callbacks.
-*/
-static void (*alarmCallback)(void*, sqlite3_uint64, unsigned) = 0;
-static void *alarmArg = 0;
-static sqlite3_uint64 alarmThreshold = (((sqlite3_uint64)1)<<63);
-static int alarmBusy = 0;
-
-
-/*
-** Return the amount of memory currently checked out.
-*/
-sqlite3_uint64 sqlite3_memory_used(void){
-  sqlite3_uint64 n;
-  if( memMutex==0 ){
-    memMutex = sqlite3_mutex_alloc(1);
-  }
-  sqlite3_mutex_enter(memMutex, 1);
-  n = nowUsed;
-  sqlite3_mutex_leave(memMutex);  
-  return n;
-}
-
-/*
-** Return the maximum amount of memory that has ever been
-** checked out since either the beginning of this process
-** or since the most recent reset.
-*/
-sqlite3_uint64 sqlite3_memory_highwater(int resetFlag){
-  sqlite3_uint64 n;
-  if( memMutex==0 ){
-    memMutex = sqlite3_mutex_alloc(1);
-  }
-  sqlite3_mutex_enter(memMutex, 1);
-  n = mxUsed;
-  if( resetFlag ){
-    mxUsed = nowUsed;
-  }
-  sqlite3_mutex_leave(memMutex);  
-  return n;
-}
-
-/*
-** Change the alarm callback
-*/
-int sqlite3_memory_alarm(
-  void(*xCallback)(void *pArg, sqlite3_uint64 used, unsigned int N),
-  void *pArg,
-  sqlite3_uint64 iThreshold
-){
-  if( memMutex==0 ){
-    memMutex = sqlite3_mutex_alloc(1);
-  }
-  sqlite3_mutex_enter(memMutex, 1);
-  alarmCallback = xCallback;
-  alarmArg = pArg;
-  alarmThreshold = iThreshold;
-  sqlite3_mutex_leave(memMutex);
-  return SQLITE_OK;
-}
-
-/*
-** Trigger the alarm 
-*/
-static void sqlite3MemsysAlarm(unsigned nByte){
-  if( alarmCallback==0 || alarmBusy  ) return;
-  alarmBusy = 1;
-  alarmCallback(alarmArg, nowUsed, nByte);
-  alarmBusy = 0;
-}
-
 /*
 ** Each memory allocation looks like this:
 **
@@ -171,15 +84,124 @@ struct MemBlockHdr {
 #define REARGUARD 0xE4676B53
 
 /*
-** Head and tail of a linked list of all outstanding allocations
+** All of the static variables used by this module are collected
+** into a single structure named "mem".  This is to keep the
+** static variables organized and to reduce namespace pollution
+** when this module is combined with other in the amalgamation.
 */
-static struct MemBlockHdr *pFirst = 0;
-static struct MemBlockHdr *pLast = 0;
+static struct {
+  /*
+  ** The alarm callback and its arguments.  The mem.mutex lock will
+  ** be held while the callback is running.  Recursive calls into
+  ** the memory subsystem are allowed, but no new callbacks will be
+  ** issued.  The alarmBusy variable is set to prevent recursive
+  ** callbacks.
+  */
+  sqlite3_uint64 alarmThreshold;
+  void (*alarmCallback)(void*, sqlite3_uint64, unsigned);
+  void *alarmArg;
+  int alarmBusy;
+  
+  /*
+  ** Mutex to control access to the memory allocation subsystem.
+  */
+  sqlite3_mutex *mutex;
+  
+  /*
+  ** Current allocation and high-water mark.
+  */
+  sqlite3_uint64 nowUsed;
+  sqlite3_uint64 mxUsed;
+  
+  /*
+  ** Head and tail of a linked list of all outstanding allocations
+  */
+  struct MemBlockHdr *pFirst;
+  struct MemBlockHdr *pLast;
+  
+  /*
+  ** The number of levels of backtrace to save in new allocations.
+  */
+  int nBacktrace;
+
+  /*
+  ** These values are used to simulate malloc failures.  When
+  ** iFail is 1, simulate a malloc failures and reset the value
+  ** to iReset.
+  */
+  int iFail;    /* Decrement and fail malloc when this is 1 */
+  int iReset;   /* When malloc fails set iiFail to this value */
+  int iFailCnt; /* Number of failures */
+  
+  
+} mem = {  /* This variable holds all of the local data */
+   ((sqlite3_uint64)1)<<63,    /* alarmThreshold */
+   /* Everything else is initialized to zero */
+};
+
+
 
 /*
-** The number of levels of backtrace to save in new allocations.
+** Return the amount of memory currently checked out.
 */
-static int backtraceLevels = 0;
+sqlite3_uint64 sqlite3_memory_used(void){
+  sqlite3_uint64 n;
+  if( mem.mutex==0 ){
+    mem.mutex = sqlite3_mutex_alloc(1);
+  }
+  sqlite3_mutex_enter(mem.mutex, 1);
+  n = mem.nowUsed;
+  sqlite3_mutex_leave(mem.mutex);  
+  return n;
+}
+
+/*
+** Return the maximum amount of memory that has ever been
+** checked out since either the beginning of this process
+** or since the most recent reset.
+*/
+sqlite3_uint64 sqlite3_memory_highwater(int resetFlag){
+  sqlite3_uint64 n;
+  if( mem.mutex==0 ){
+    mem.mutex = sqlite3_mutex_alloc(1);
+  }
+  sqlite3_mutex_enter(mem.mutex, 1);
+  n = mem.mxUsed;
+  if( resetFlag ){
+    mem.mxUsed = mem.nowUsed;
+  }
+  sqlite3_mutex_leave(mem.mutex);  
+  return n;
+}
+
+/*
+** Change the alarm callback
+*/
+int sqlite3_memory_alarm(
+  void(*xCallback)(void *pArg, sqlite3_uint64 used, unsigned int N),
+  void *pArg,
+  sqlite3_uint64 iThreshold
+){
+  if( mem.mutex==0 ){
+    mem.mutex = sqlite3_mutex_alloc(1);
+  }
+  sqlite3_mutex_enter(mem.mutex, 1);
+  mem.alarmCallback = xCallback;
+  mem.alarmArg = pArg;
+  mem.alarmThreshold = iThreshold;
+  sqlite3_mutex_leave(mem.mutex);
+  return SQLITE_OK;
+}
+
+/*
+** Trigger the alarm 
+*/
+static void sqlite3MemsysAlarm(unsigned nByte){
+  if( mem.alarmCallback==0 || mem.alarmBusy  ) return;
+  mem.alarmBusy = 1;
+  mem.alarmCallback(mem.alarmArg, mem.nowUsed, nByte);
+  mem.alarmBusy = 0;
+}
 
 /*
 ** Given an allocation, find the MemBlockHdr for that allocation.
@@ -201,7 +223,17 @@ static struct MemBlockHdr *sqlite3MemsysGetHeader(void *pAllocation){
 }
 
 /*
-** Allocate nByte of memory
+** This routine is called once the first time a simulated memory
+** failure occurs.  The sole purpose of this routine is to provide
+** a convenient place to set a debugger breakpoint when debugging
+** errors related to malloc() failures.
+*/
+static void sqlite3MemsysFailed(void){
+  mem.iFailCnt = 0;
+}
+
+/*
+** Allocate nByte bytes of memory.
 */
 void *sqlite3_malloc(unsigned int nByte){
   struct MemBlockHdr *pHdr;
@@ -210,37 +242,51 @@ void *sqlite3_malloc(unsigned int nByte){
   void *p;
   unsigned int totalSize;
 
-  if( memMutex==0 ){
-    memMutex = sqlite3_mutex_alloc(1);
+  if( mem.mutex==0 ){
+    mem.mutex = sqlite3_mutex_alloc(1);
   }
-  sqlite3_mutex_enter(memMutex, 1);
-  if( nowUsed+nByte>=alarmThreshold ){
+  sqlite3_mutex_enter(mem.mutex, 1);
+  if( mem.nowUsed+nByte>=mem.alarmThreshold ){
     sqlite3MemsysAlarm(nByte);
   }
   nByte = (nByte+3)&~3;
   totalSize = nByte + sizeof(*pHdr) + sizeof(unsigned int) +
-               backtraceLevels*sizeof(void*);
-  p = malloc(totalSize);
-  if( p==0 ){
-    sqlite3MemsysAlarm(nByte);
+               mem.nBacktrace*sizeof(void*);
+  if( mem.iFail>0 ){
+    if( mem.iFail==1 ){
+      p = 0;
+      mem.iFail = mem.iReset;
+      if( mem.iFailCnt==0 ){
+        sqlite3MemsysFailed();  /* A place to set a breakpoint */
+      }
+      mem.iFailCnt++;
+    }else{
+      p = malloc(totalSize);
+      mem.iFail--;
+    }
+  }else{
     p = malloc(totalSize);
+    if( p==0 ){
+      sqlite3MemsysAlarm(nByte);
+      p = malloc(totalSize);
+    }
   }
   if( p ){
     pBt = p;
-    pHdr = (struct MemBlockHdr*)&pBt[backtraceLevels];
+    pHdr = (struct MemBlockHdr*)&pBt[mem.nBacktrace];
     pHdr->pNext = 0;
-    pHdr->pPrev = pLast;
-    if( pLast ){
-      pLast->pNext = pHdr;
+    pHdr->pPrev = mem.pLast;
+    if( mem.pLast ){
+      mem.pLast->pNext = pHdr;
     }else{
-      pFirst = pHdr;
+      mem.pFirst = pHdr;
     }
-    pLast = pHdr;
+    mem.pLast = pHdr;
     pHdr->iForeGuard = FOREGUARD;
-    pHdr->nBacktraceSlots = backtraceLevels;
-    if( backtraceLevels ){
+    pHdr->nBacktraceSlots = mem.nBacktrace;
+    if( mem.nBacktrace ){
       void *aAddr[40];
-      pHdr->nBacktrace = backtrace(aAddr, backtraceLevels+1)-1;
+      pHdr->nBacktrace = backtrace(aAddr, mem.nBacktrace+1)-1;
       memcpy(pBt, &aAddr[1], pHdr->nBacktrace*sizeof(void*));
     }else{
       pHdr->nBacktrace = 0;
@@ -249,13 +295,13 @@ void *sqlite3_malloc(unsigned int nByte){
     pInt = (unsigned int *)&pHdr[1];
     pInt[nByte/sizeof(unsigned int)] = REARGUARD;
     memset(pInt, 0x65, nByte);
-    nowUsed += nByte;
-    if( nowUsed>mxUsed ){
-      mxUsed = nowUsed;
+    mem.nowUsed += nByte;
+    if( mem.nowUsed>mem.mxUsed ){
+      mem.mxUsed = mem.nowUsed;
     }
     p = (void*)pInt;
   }
-  sqlite3_mutex_leave(memMutex);
+  sqlite3_mutex_leave(mem.mutex);
   return p; 
 }
 
@@ -268,30 +314,30 @@ void sqlite3_free(void *pPrior){
   if( pPrior==0 ){
     return;
   }
-  assert( memMutex!=0 );
+  assert( mem.mutex!=0 );
   pHdr = sqlite3MemsysGetHeader(pPrior);
   pBt = (void**)pHdr;
   pBt -= pHdr->nBacktraceSlots;
-  sqlite3_mutex_enter(memMutex, 1);
-  nowUsed -= pHdr->iSize;
+  sqlite3_mutex_enter(mem.mutex, 1);
+  mem.nowUsed -= pHdr->iSize;
   if( pHdr->pPrev ){
     assert( pHdr->pPrev->pNext==pHdr );
     pHdr->pPrev->pNext = pHdr->pNext;
   }else{
-    assert( pFirst==pHdr );
-    pFirst = pHdr->pNext;
+    assert( mem.pFirst==pHdr );
+    mem.pFirst = pHdr->pNext;
   }
   if( pHdr->pNext ){
     assert( pHdr->pNext->pPrev==pHdr );
     pHdr->pNext->pPrev = pHdr->pPrev;
   }else{
-    assert( pLast==pHdr );
-    pLast = pHdr->pPrev;
+    assert( mem.pLast==pHdr );
+    mem.pLast = pHdr->pPrev;
   }
   memset(pBt, 0x2b, sizeof(void*)*pHdr->nBacktrace + sizeof(*pHdr) +
                     pHdr->iSize + sizeof(unsigned int));
   free(pBt);
-  sqlite3_mutex_leave(memMutex);  
+  sqlite3_mutex_leave(mem.mutex);  
 }
 
 /*
@@ -334,7 +380,7 @@ void sqlite3_memdebug_backtrace(int depth){
   if( depth<0 ){ depth = 0; }
   if( depth>20 ){ depth = 20; }
   depth = (depth+1)&0xfe;
-  backtraceLevels = depth;
+  mem.nBacktrace = depth;
 }
 
 /*
@@ -351,7 +397,7 @@ void sqlite3_memdebug_dump(const char *zFilename){
                     zFilename);
     return;
   }
-  for(pHdr=pFirst; pHdr; pHdr=pHdr->pNext){
+  for(pHdr=mem.pFirst; pHdr; pHdr=pHdr->pNext){
     fprintf(out, "**** %d bytes at %p ****\n", pHdr->iSize, &pHdr[1]);
     if( pHdr->nBacktrace ){
       fflush(out);
@@ -362,6 +408,28 @@ void sqlite3_memdebug_dump(const char *zFilename){
     }
   }
   fclose(out);
+}
+
+/*
+** This routine is used to simulate malloc failures.
+**
+** After calling this routine, there will be iFail successful
+** memory allocations and then a failure.  If iRepeat is true,
+** all subsequent memory allocations will fail.  If iRepeat is
+** false, only a single allocation will fail.
+**
+** Each call to this routine overrides the previous.  To disable
+** the simulated allocation failure mechanism, set iFail to -1.
+**
+** This routine returns the number of simulated failures that have
+** occurred since the previous call.
+*/
+int sqlite3_memdebug_fail(int iFail, int iRepeat){
+  int n = mem.iFailCnt;
+  mem.iFail = iFail+1;
+  mem.iReset = iRepeat;
+  mem.iFailCnt = 0;
+  return n;
 }
 
 #endif /* SQLITE_MEMDEBUG && !SQLITE_OMIT_MEMORY_ALLOCATION */

@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.1 2007/08/15 19:16:43 drh Exp $
+** $Id: test_malloc.c,v 1.2 2007/08/15 20:41:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -228,6 +228,45 @@ static int test_memdebug_dump(
 
 
 /*
+** Usage:    sqlite3_memdebug_fail  COUNTER  REPEAT
+**
+** Arrange for a simulated malloc() failure after COUNTER successes.
+** If REPEAT is 1 then all subsequent malloc()s fail.   If REPEAT is
+** 0 then only a single failure occurs.
+**
+** Each call to this routine overrides the prior counter value.
+** This routine returns the number of simulated failures that have
+** happened since the previous call to this routine.
+**
+** To disable simulated failures, use a COUNTER of -1.
+*/
+static int test_memdebug_fail(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int iFail;
+  int iRepeat;
+  int nFail = 0;
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "COUNTER REPEAT");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &iFail) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &iRepeat) ) return TCL_ERROR;
+#ifdef SQLITE_MEMDEBUG
+  {
+    extern int sqlite3_memdebug_fail(int,int);
+    nFail = sqlite3_memdebug_fail(iFail, iRepeat);
+  }
+#endif
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(nFail));
+  return TCL_OK;
+}
+
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest_malloc_Init(Tcl_Interp *interp){
@@ -242,6 +281,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_memory_highwater",   test_memory_highwater         },
      { "sqlite3_memdebug_backtrace", test_memdebug_backtrace       },
      { "sqlite3_memdebug_dump",      test_memdebug_dump            },
+     { "sqlite3_memdebug_fail",      test_memdebug_fail            },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

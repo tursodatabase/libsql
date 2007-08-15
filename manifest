@@ -1,5 +1,5 @@
-C Test\sinfrastructure\sfor\sthe\snew\smemory\ssubsystem.\s(CVS\s4229)
-D 2007-08-15T19:16:43
+C Enhancements\sand\ssmoke\stesting\sof\sthe\snew\smemory\sallocation\ssubsystem.\nHave\snot\syet\scut\sit\sover\sto\sthe\score,\sthough.\s(CVS\s4230)
+D 2007-08-15T20:41:29
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -88,8 +88,8 @@ F src/loadext.c 6c24ee62adfe7fbfb2f2dd43ff18e5534b19010f
 F src/main.c f12d230c1226d3f43c1f4595af1c25ccbe3017c7
 F src/malloc.c 3850ab4a2edfb190ffee353c5674ebd8c6b4ccc7
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
-F src/mem1.c ef73642a171d174cd556d0168f8edbceaf94933b
-F src/mem2.c 1f3745eae124b08706a9e582b1e75bae614d0f5a
+F src/mem1.c 6d4b9efe51242fcc63d410fb326824f1208b3d4e
+F src/mem2.c d0ba3b23da2e95bced1818ade8a8a2dc9526111c
 F src/mutex.c 667dae0de95f8fb92a3ffc8c3f20c0d26115a1a6
 F src/os.c e2faefbe0f5a8ca5e3b1c49ee1b5c6cfa0f0e279
 F src/os.h 8eff07babf74e5bc3f895f8a6c7c294dad5ff997
@@ -133,7 +133,7 @@ F src/test_btree.c 882d59acad48bab3b1fe3daf3645059b590cfc79
 F src/test_config.c 26389b032216e0fb2b544ff48a5e9101bd7b1fb4
 F src/test_hexio.c 14c007252285c6dabcec4a28fcf08e9177e85178
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
-F src/test_malloc.c 3f47498aba913d0d555e392211b9d3355f69c21b
+F src/test_malloc.c d9ba6be85f9c4a439b19f6e0a72d91c369d72c63
 F src/test_md5.c d9f828765b242ff86f58cd879259c3da4eaede02
 F src/test_schema.c 89c526e4b1e9a8fb540550f6ebc69242bf57d3ce
 F src/test_server.c 76c0baf509abe65ca6e5c7974ab0097cfdd8b833
@@ -529,7 +529,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P af9503daf3f7703fcddad754bc1dc9e179830b6e
-R 637b616a5b01e055657d69b5613c0e1b
+P 9e506656720fb3a3205b8cc398152272ce56f6f3
+R 1bc235d902bd5b92ca3cb78565b1c6fd
 U drh
-Z 56bc577909e0d6bde5f25aac7f6e7b86
+Z 15d4eec20da6957d2d37ec345d76fef8
