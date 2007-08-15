@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.221 2007/08/14 18:03:15 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.222 2007/08/15 11:28:56 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -323,7 +323,7 @@ int sqlite3_exec(
 ** Combination of the following bit values are used as the
 ** third argument to the [sqlite3_open_v2()] interface and
 ** as fourth argument to the xOpen method of the
-** [sqlite3_adaptor] object.
+** [sqlite3_vfs] object.
 **
 */
 #define SQLITE_OPEN_READONLY         0x00000001
@@ -375,8 +375,7 @@ int sqlite3_exec(
 **
 ** SQLite uses one of the following integer values as the second
 ** argument to calls it makes to the xLock() and xUnlock() methods
-** of an [sqlite3_io_methods] object.  SQLite expects the return
-*** value from the xGetLock() method to be one of these integers.
+** of an [sqlite3_io_methods] object.
 */
 #define SQLITE_LOCK_NONE          0
 #define SQLITE_LOCK_SHARED        1
@@ -413,7 +412,9 @@ int sqlite3_exec(
 ** An [sqlite3_file] object represents an open file in the OS
 ** interface layer.  Individual OS interface implementations will
 ** want to subclass this object by appending additional fields
-** of their own use.
+** of their own use.  The pMethods entry is a pointer to an
+** [sqlite3_io_methods] object that defines methods for performing
+** I/O operations on the open file.
 */
 typedef struct sqlite3_file sqlite3_file;
 struct sqlite3_file {
@@ -423,9 +424,64 @@ struct sqlite3_file {
 /*
 ** CAPI3REF: OS Interface File Virtual Methods Object
 **
-** Every open file in the OS interface layer contains a pointer to
+** Every open file in the [sqlite3_vfs] xOpen method contains a pointer to
 ** an instance of the following object.  This object defines the
 ** methods used to perform various operations against the open file.
+**
+** The flags argument to xSync may be one of SQLITE_SYNC_BARRIER,
+** SQLITE_SYNC_NORMAL, SQLITE_SYNC_FULL.  The first choice means that
+** data is not necessarily synced to disk completely, only that
+** all writes that occur before the sync complete before any
+** writes that occur after the sync.  The second flag is the
+** normal fsync().  The third flag is a OS-X style fullsync.
+** The SQLITE_SYNC_DATA flag may be ORed in to indicate that only
+** the data of the file and not its inode needs to be synced.
+** 
+** The integer values to xLock() and xUnlock() are one of
+** SQLITE_LOCK_NONE, SQLITE_LOCK_READ, SQLITE_LOCK_RESERVED,
+** SQLITE_LOCK_PENDING, or SQLITE_LOCK_EXCLUSIVE.  xLock()
+** increases the lock. xUnlock() decreases the lock.  
+** The xCheckReservedLock() method looks
+** to see if any database connection, either in this
+** process or in some other process, is holding an RESERVED,
+** PENDING, or EXCLUSIVE lock on the file.  It returns true
+** if such a lock exists and false if not.
+** 
+** xBreakLock() attempts to break a lock held by another process.
+** This can be used to remove a stale dot-file lock, for example.
+** It returns 0 on success and non-zero for a failure.
+**
+** The xSectorSize() method returns the sector size of the
+** device that underlies the file.  The sector size is the
+** minimum write that can be performed without disturbing
+** other bytes in the file.  The xDeviceCharacteristics()
+** method returns a bit vector describing behaviors of the
+** underlying device:
+**
+** <ul>
+** <li> SQLITE_IOCAP_ATOMIC
+** <li> SQLITE_IOCAP_ATOMIC512
+** <li> SQLITE_IOCAP_ATOMIC1K
+** <li> SQLITE_IOCAP_ATOMIC2K
+** <li> SQLITE_IOCAP_ATOMIC4K
+** <li> SQLITE_IOCAP_ATOMIC8K
+** <li> SQLITE_IOCAP_ATOMIC16K
+** <li> SQLITE_IOCAP_ATOMIC32K
+** <li> SQLITE_IOCAP_ATOMIC64K
+** <li> SQLITE_IOCAP_SAFE_APPEND
+** <li> SQLITE_IOCAP_SEQUENTIAL
+** </ul>
+**
+** The SQLITE_IOCAP_ATOMIC property means that all writes of
+** any size are atomic.  The SQLITE_IOCAP_ATOMICnnn values
+** mean that writes of blocks that are nnn bytes in size and
+** are aligned to an address which is an integer multiple of
+** nnn are atomic.  The SQLITE_IOCAP_SAFE_APPEND value means
+** that when data is appended to a file, the data is appended
+** first then the size of the file is extended, never the other
+** way around.  The SQLITE_IOCAP_SEQUENTIAL property means that
+** information is written to disk in the same order as calls
+** to xWrite().
 */
 typedef struct sqlite3_io_methods sqlite3_io_methods;
 struct sqlite3_io_methods {
@@ -438,7 +494,7 @@ struct sqlite3_io_methods {
   int (*xFileSize)(sqlite3_file*, sqlite_int64 *pSize);
   int (*xLock)(sqlite3_file*, int);
   int (*xUnlock)(sqlite3_file*, int);
-  int (*xGetLock)(sqlite3_file*);
+  int (*xCheckReservedLock)(sqlite3_file*);
   int (*xBreakLock)(sqlite3_file*);
   int (*xSectorSize)(sqlite3_file*);
   int (*xDeviceCharacteristics)(sqlite3_file*);
@@ -446,44 +502,61 @@ struct sqlite3_io_methods {
 };
 
 /*
-** CAPI3REF: OS Interface Mutex Handle
+** CAPI3REF: Mutex Handle
 **
-** Each OS interface implementation defines an [sqlite3_mutex] according
-** to its own needs.  The SQLite core only deals with pointers to
-** [sqlite3_mutex] objects and knows nothing about their internal
-** structure.
+** The mutex module within SQLite defines [sqlite3_mutex] to be an
+** abstract type for a mutex object.  The SQLite core never looks
+** at the internal representation of an [sqlite3_mutex].  It only
+** deals with pointers to the [sqlite3_mutex] object.
 */
 typedef struct sqlite3_mutex sqlite3_mutex;
 
 /*
 ** CAPI3REF: OS Interface Object
 **
-** An instance of the [sqlite3_adaptor] object defines the OS interface
-** for an SQLite database connection.  A pointer to an instance of
-** this object is the fourth parameter to [sqlite3_open_v2()].  
+** An instance of this object defines the interface between the
+** SQLite core and the underlying operating system.  The "vfs"
+** in the name of the object stands for "virtual file system".
 **
 ** The iVersion field is initially 1 but may be larger for future
-** versions.  szOsFile is the size of the subclassed [sqlite3_file]
-** structure used by these methods.  szMutex is the size of the
-** [sqlite3_mutex] structure.  mxPathname is the maximum length of
-** an OS pathname.  By knowing all of these values in advance, we 
-** intend for them to be allocated in advance so that the OS
-** interface methods never need to malloc() for themselves.
+** versions.  szOsFile is the size of the subclassed sqlite3_file
+** structure used by this VFS.  mxPathname is the maximum length of
+** a pathname in this VFS.
+**
+** The nRef field is incremented and decremented by SQLite to keep
+** count of the number of users of the VFS.  This field and
+** vfsMutex, pNext, and pPrev are the only fields in the sqlite3_vfs 
+** structure that SQLite will ever modify.  These fields are modified 
+** within an sqlite3_mutex_serialize() call so that updates are threadsafe.
 ** 
-** The osMutex is a preallocated mutex.
-** xDeallocateMutex() is never called for this mutex.
-** 
+** The sqlite3_vfs.vfsMutex is a mutex used by the OS interface.
+** It should initially be NULL.  SQLite will initialize this field
+** using sqlite3_mutex_allocate() upon first use of the adaptor
+** by sqlite3_open_v2() and will deallocate the mutex when the
+** last user closes.  In other words, vfsMutex will be allocated
+** when nRef transitions from 0 to 1 and will be deallocated when
+** nRef transitions from 1 to 0.
+**
+** Registered vfs modules are kept on a linked list formed by
+** the pNext and pPrev pointers.  The [sqlite3_register_vfs()]
+** and [sqlite3_unregister_vfs()] interfaces manage this list
+** in a thread-safe way.  The [sqlite3_find_vfs()] searches the
+** list.
+**
+** The zName field holds the name of the VFS module.  The name must
+** be unique across all VFS modules.
+**
 ** SQLite will guarantee that the zFilename string passed to
 ** xOpen() is a full pathname as generated by xFullPathname() and
 ** that the string will be valid and unchanged until xClose() is
-** callled.  So the [sqlite3_file] can store a pointer to the
+** called.  So the sqlite3_file can store a pointer to the
 ** filename if it needs to remember the filename for some reason.
-** 
+**
 ** The flags argument to xOpen() is a copy of the flags argument
-** to [sqlite3_open_v2()].  If [sqlite3_open()] or [sqlite3_open16()]
-** is used, then flags is [SQLITE_OPEN_READWRITE] | [SQLITE_OPEN_CREATE].
+** to sqlite3_open_v2().  If sqlite3_open() or sqlite3_open16()
+** is used, then flags is SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE.
 ** If xOpen() opens a file read-only then it sets *pOutFlags to
-** include [SQLITE_OPEN_READONLY].  Other bits in *pOutFlags may be
+** include SQLITE_OPEN_READONLY.  Other bits in *pOutFlags may be
 ** set.
 ** 
 ** SQLite will also add one of the following flags to the xOpen()
@@ -497,12 +570,12 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** <li>  [SQLITE_OPEN_SUBJOURNAL]
 ** <li>  [SQLITE_OPEN_MASTER_JOURNAL]
 ** </ul>
-** 
+**
 ** The file I/O implementation can use the object type flags to
 ** changes the way it deals with files.  For example, an application
 ** that does not care about crash recovery or rollback, might make
 ** the open of a journal file a no-op.  Writes to this journal are
-** also a no-op.  Any attempt to read the journal return [SQLITE_IOERR].
+** also a no-op.  Any attempt to read the journal return SQLITE_IOERR.
 ** Or the implementation might recognize the a database file will
 ** be doing page-aligned sector reads and writes in a random order
 ** and set up its I/O subsystem accordingly.
@@ -536,70 +609,27 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** SQLite will always allocate at least mxPathname+1 byte for
 ** the output buffers for xGetTempName and xFullPathname.
 ** 
-** The xGetGlobal and xSetGlobal methods access an associatative
-** array of pointers to void.  SQLite always holds the osMutex 
-** when using either routine.  The only currently defined value
-** for iClass is SQLITE_CLASS_SHAREDCACHE.  The xGetGlobal
-** routine returns a NULL pointer if the requested element does not
-** exist.  xSetGlobal replaces an element with the new pointer.
-** xSetGlobal returns either [SQLITE_OK], [SQLITE_FULL], [SQLITE_NOMEM],
-** or [SQLITE_MISUSE].  The entry is deleted if the new pointer is 
-** NULL.  The OS interface can implement these methods as a linked 
-** list or as a hash table or anything else that seems appropriate.
-** 
-** The xMalloc(), xRealloc(), and xFree() methods are the traditional
-** memory allocation and freeing routines.  The prior
-** allocation pointer to xFree() and xRealloc() is always non-NULL.
-** The new allocation size given to xRealloc() is always positive.
-** 
-** xReclaimAlloc(), xReclaimFree(), and xReclaimSetCallback() are
-** memory allocation routines in which the memory can be reclaimed
-** asynchronously by the memory allocation subsystem.  Only memory
-** allocated by xReclaimAlloc() can be reclaimed in this way, and
-** then only when a reclaim callback is registered on the allocation.
-** xReclaimAlloc() and xReclaimFree() are distinct from xMalloc()
-** and xFree() since we suspect the former versions will have 
-** additional overhead and also be much less frequently used.
-** 
-** The xReclaimSetCallback() method declares to the memory subsystem 
-** that a particular memory allocation can be reclaimed by the memory
-** subsystem if it comes under memory pressure.  In order to reclaim
-** the allocation, the memory subsystem must first hold the
-** mutex given in the 3rd argument.  Then it invokes the callback
-** of the 4th argument passing in a copy of the 5th argument and
-** a pointer to the allocation.  If the callback returns 0 then
-** the allocation is reclaimed.  If the callback returns anything
-** other than 1, then the reclaim request is denied.  The xReclaimable
-** method can be called with a NULL callback pointer to indicate
-** that the allocation is no longer reclaimable.
-** 
-** The [sqlite3_release_memory()] and [sqlite3_soft_heap_limit()]
-** interfaces are not part of the "core" SQLite where "core" is
-** defined as the part of SQLite that uses the [sqlite3_adaptor].
-** The [sqlite3_release_memory()] and [sqlite3_soft_heap_limit()]
-** interfaces are part of the default memory subsystem.  If
-** individual applications override the default memory subsystem,
-** then [sqlite3_release_memory()] and [sqlite3_soft_heap_limit()]
-** will not work on those applications.
-** 
+** The xRandomness(), xSleep(), and xCurrentTime() interfaces
+** are not strictly a part of the filesystem, but they are
+** included in the VFS structure for completeness.
 ** The xRandomness() function attempts to return nBytes bytes
 ** of good-quality randomness into zOut.  The return value is
-** the actual number of bytes of randomness generated.
-** 
-** Mutexes are recursive.  By this we mean that the same thread
-** can enter a single mutex multiple times.  Other threads cannot
-** enter the mutex until the original thread has leaf the mutex
-** once for each time entered.  xEnterMutex returns 0 on success.
-** If the blockFlag is 0 and another thread already holds the 
-** mutex, then xEnterMutex returns 1.
+** the actual number of bytes of randomness generated.  The
+** xSleep() method cause the calling thread to sleep for at
+** least the number of microseconds given.  The xCurrentTime()
+** method returns a Julian Day Number for the current date and
+** time.
 */
-typedef struct sqlite3_adaptor sqlite3_adaptor;
-struct sqlite3_adaptor {
+typedef struct sqlite3_vfs sqlite3_vfs;
+struct sqlite3_vfs {
   int iVersion;            /* Structure version number */
   int szOsFile;            /* Size of subclassed sqlite3_file */
-  int szMutex;             /* Size of an sqlite3_mutex structure */
   int mxPathname;          /* Maximum file pathname length */
-  sqlite3_mutex *osMutex;  /* A static mutex for this OS interface */
+  int nRef;                /* Number of references to this structure */
+  sqlite3_mutex *vfsMutex; /* A mutex for this VFS */
+  sqlite3_vfs *pNext;      /* Next registered VFS */
+  sqlite3_vfs *pPrev;      /* Previous registered VFS */
+  const char *zName;       /* Name of this virtual file system */
   void *pAppData;          /* Application context */
   int (*xOpen)(void *pAppData, const char *zName, sqlite3_file*,
                int flags, int *pOutFlags);
@@ -607,28 +637,14 @@ struct sqlite3_adaptor {
   int (*xAccess)(void *pAppData, const char *zName, int flags);
   int (*xGetTempName)(void *pAppData, char *zOut);
   int (*xFullPathname)(void *pAppData, const char *zName, char *zOut);
-  void *(*xGetGlobal)(void *pAppData, int iClass, const char *zName);
-  int (*xSetGlobal)(void *pAppData, int iClass, const char *zName, void*);
   void *(*xDlOpen)(void *pAppData, char *zFilename);
   void (*xDlError)(void*, int nByte, char *zErrMsg);
   void *(*xDlSym)(void*, const char *zSymbol);
   void (*xDlclose)(void*);
-  void *(*xMalloc)(void *pAppData, unsigned int nSize);
-  void *(*xRealloc)(void *pAppData, void *pOld, unsigned int nNewSize);
-  void (*xFree)(void *pAppData, void*);
-  void *(*xReclaimAlloc)(void *pAppData, unsigned int size);
-  void (*xReclaimSetCallback)(void *pAppData, void *pAllocation,
-      sqlite3_mutex*, int (*)(void*,void*), void*);
-  void (*xReclaimFree)(void *pAppData, void*);
   int (*xRandomness)(void *pAppData, int nByte, char *zOut);
   int (*xSleep)(void *pAppData, int microseconds);
   int (*xCurrentTime)(void *pAppData, double*);
-  int (*xAllocateMutex)(void *pAppData, sqlite3_mutex*);
-  int (*xDeallocateMutex)(sqlite3_mutex*);
-  int (*xEnterMutex)(sqlite3_mutex*, int blockFlag);
-  int (*xLeaveMutex)(sqlite3_mutex*);
-  int (*xInMutex)(sqlite3_mutex*);
-  /* New fields may be appended in future versions.  The iVersion
+  /* New fields may be appended in figure versions.  The iVersion
   ** value will increment whenever this happens. */
 };
 
@@ -1006,15 +1022,80 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 /*
 ** CAPI3REF: Memory Allocation Functions
 **
-** SQLite uses its own memory allocator.  On some installations, this
-** memory allocator is identical to the standard malloc()/realloc()/free()
-** and can be used interchangable.  On others, the implementations are
-** different.  For maximum portability, it is best not to mix calls
-** to the standard malloc/realloc/free with the sqlite versions.
+** The SQLite sources include a memory allocation subsystem
+** that implements the interfaces shown here.
+**
+** The SQLite core uses these three routines for all of its own
+** internal memory allocation needs.  The default implementation
+** of the memory allocation subsystem uses the malloc(), realloc()
+** and free() provided by the standard C library.  However, if 
+** SQLite is compiled with the following C preprocessor macro
+**
+** <blockquote>SQLITE_OMIT_MEMORY_ALLOCATION</blockquote>
+**
+** then no implementation is provided for these routines by
+** SQLite.  The application that links against SQLite is
+** expected to provide its own implementation.
 */
 void *sqlite3_malloc(int);
 void *sqlite3_realloc(void*, int);
 void sqlite3_free(void*);
+
+/*
+** CAPI3REF: Memory Allocator Statistics
+**
+** In addition to the basic three allocation routines 
+** [sqlite3_malloc()], [sqlite3_free()], and [sqlite3_realloc()],
+** the memory allocation subsystem included with the SQLite
+** sources provides the interfaces shown below.
+**
+** The first of these two routines returns the amount of memory 
+** currently outstanding (malloced but not freed).  The second
+** returns the largest instantaneous amount of outstanding
+** memory.  The highwater mark is reset if the argument is
+** true.  The SQLite core does not use either of these routines
+** and so they do not have to be implemented by the application
+** if SQLITE_OMIT_MEMORY_ALLOCATION is defined.  These routines
+** are provided by the default memory subsystem for diagnostic
+** purposes.
+*/
+sqlite3_uint64 sqlite3_memory_used(void);
+sqlite3_uint64 sqlite3_memory_highwater(int resetFlag);
+
+/*
+** CAPI3REF: Memory Allocation Alarms
+**
+** The [sqlite3_memory_alarm] routine is used to register
+** a callback on memory allocation events.
+**
+** This routine registers or clears a callbacks that fires when
+** the amount of memory allocated exceeds iThreshold.  Only
+** a single callback can be registered at a time.  Each call
+** to [sqlite3_memory_alarm()] overwrites the previous callback.
+** The callback is disabled by setting xCallback to a NULL
+** pointer.
+** 
+** The parameters to the callback are the pArg value, the 
+** amount of memory currently in use, and the size of the
+** allocation that provoked the callback.  The callback will
+** presumably invoke [sqlite3_free()] to free up memory space.
+** The callback may invoke [sqlite3_malloc()] or [sqlite3_realloc()]
+** but if it does, no additional callbacks will be invoked by
+** the recursive calls.
+**
+** The [sqlite3_soft_heap_limit()] interface works by registering
+** a memory alarm at the soft heap limit and invoking 
+** [sqlite3_release_memory()] in the alarm callback.  Application
+** programs should not attempt to use the [sqlite3_memory_alarm()]
+** interface because doing so will interfere with the
+** [sqlite3_soft_heap_limit()] module.
+*/
+int sqlite3_memory_alarm(
+  void(*xCallback)(void *pArg, sqlite3_uint64 used, unsigned int N),
+  void *pArg,
+  sqlite3_uint64 iThreshold
+);
+
 
 /*
 ** CAPI3REF: Compile-Time Authorization Callbacks
@@ -1228,8 +1309,8 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** The third options is behavior that is used always for sqlite3_open()
 ** and sqlite3_open16().
 **
-** The fourth parameter to sqlite3_open_v2() is a pointer to an
-** [sqlite3_adaptor] object that defines the operating system 
+** The fourth parameter to sqlite3_open_v2() is the name of the
+** [sqlite3_vfs] object that defines the operating system 
 ** interface that the new database connection should use.  If the
 ** fourth parameter is a NULL pointer then a default suitable for
 ** the host environment is substituted.
@@ -1251,7 +1332,7 @@ int sqlite3_open_v2(
   const void *filename,   /* Database filename (UTF-16) */
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */
-  sqlite3_adaptor*        /* The OS interface layer */
+  const char *zVfs        /* Name of VFS module to use */
 );
 
 /*
@@ -3047,6 +3128,108 @@ int sqlite3_blob_read(sqlite3_blob *, void *z, int n, int iOffset);
 */
 int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
 
+/*
+** CAPI3REF:  Virtual File System Objects
+**
+** A virtual filesystem (VFS) is an [sqlite3_vfs] object
+** that SQLite uses to interact
+** with the underlying operating system.  Most builds come with a
+** single default VFS that is appropriate for the host computer.
+** New VFSes can be registered and existing VFSes can be unregistered.
+** The following interfaces are provided.
+**
+** The sqlite3_find_vfs() interface returns a pointer to a VFS given its
+** name.  Names are case sensitive.  If there is no match, a NULL
+** pointer is returned.  If zVfsName is NULL then the default 
+** VFS is returned.
+**
+** New VFSes are registered with sqlite3_register_vfs().  Each
+** new VFS becomes the default VFS if the makeDflt flag is set.
+** The same VFS can be registered multiple times without injury.
+** To make an existing VFS into the default VFS, register it again
+** with the makeDflt flag set.
+** 
+** Unregister a VFS with the sqlite3_unregister_vfs() interface.
+** If the default VFS is unregistered, another VFS is chosen as
+** the default.  The choice for the new VFS is arbitrary.
+*/
+sqlite3_vfs *sqlite3_find_vfs(const char *zVfsName);
+int sqlite3_register_vfs(sqlite3_vfs*, int makeDflt);
+int sqlite3_unregister_vfs(sqlite3_vfs*);
+
+/*
+** CAPI3REF: Mutexes
+**
+** The SQLite core uses these routines for thread
+** synchronization.  Though they are intended for internal
+** use by SQLite, code that links against SQLite is
+** permitted to use any of these routines.
+**
+** The SQLite source code contains multiple implementations 
+** of these mutex routines that can be selected at compile-time
+** by defining one of the following C preprocessor macros:
+**
+** <ul>
+** <li>   SQLITE_MUTEX_PTHREAD
+** <li>   SQLITE_MUTEX_WIN32
+** <li>   SQLITE_MUTEX_NOOP
+** <li>   SQLITE_MUTEX_APPDEF
+** </ul>
+**
+** If none of the above macros is defined, the code uses
+** a default implementation.  
+** 
+** The SQLITE_MUTEX_NOOP implementation is a set of routines 
+** that does no real locking and is appropriate for use in 
+** a single-threaded application.
+** 
+** If the SQLITE_MUTEX_APPDEF is defined, then no mutex
+** implementation is included with the library.  The
+** mutex interface routines defined above are external
+** references in the SQLite library for which implementations
+** must be provided by the application.
+**
+** The sqlite3_mutex_alloc() routine allocates a new
+** mutex and returns a pointer to it.  If it returns NULL
+** that means that a mutex could not be allocated.  SQLite
+** will unwind its stack and return an error.  The argument
+** to sqlite3_mutex_alloc() is usually zero, which causes
+** any space required for the mutex to be obtained from
+** sqlite3_malloc().  However if the argument is a positive
+** integer less than SQLITE_NUM_STATIC_MUTEX, then a pointer
+** to a static mutex is returned.  There are a finite number
+** of static mutexes.  Static mutexes should not be passed
+** to sqlite3_mutex_free().  Static mutexes are used internally
+** by the SQLite core and should not be used by the application.
+**
+** The sqlite3_mutex_free() routine deallocates a previously
+** allocated mutex.  SQLite is careful to deallocate every
+** mutex that it allocates.
+**
+** The sqlite3_mutex_enter() routine attempts to enter a
+** mutex.  If another thread is already within the mutex,
+** sqlite3_mutex_enter() will return SQLITE_BUSY if blockFlag
+** is zero, or it will block and wait for the other thread to
+** exit if blockFlag is non-zero.  Mutexes are recursive.  The
+** same thread can enter a single mutex multiple times.  Each
+** entrance must be matched with a corresponding exit before
+** another thread is able to enter the mutex.
+**
+** The sqlite3_mutex_exit() routine exits a mutex that was
+** previously entered by the same thread.  The behavior
+** is undefined if the mutex is not currently entered or
+** is not currently allocated.  SQLite will never do either.
+**
+** The sqlite3_mutex_serialize() routine is used to serialize 
+** a subroutine.  The subroutine given in the argument is invoked
+** while holding a static mutex.  This ensures that no other
+** thread is running this same subroutine at the same time.
+*/
+sqlite3_mutex *sqlite3_mutex_alloc(int);
+void sqlite3_mutex_free(sqlite3_mutex*);
+int sqlite3_mutex_enter(sqlite3_mutex*, int blockFlag);
+void sqlite3_mutex_leave(sqlite3_mutex*);
+int sqlite3_mutex_serialize(void(*)(void*), void*);
 
 
 /*
