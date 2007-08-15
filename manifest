@@ -1,5 +1,5 @@
-C Add\sinitial\simplementations\sof\smutex\sand\smemory\ssubsystem\smodules.\s(CVS\s4226)
-D 2007-08-15T13:04:54
+C Add\sa\sdebugging\smemory\sallocator.\s(CVS\s4227)
+D 2007-08-15T17:07:57
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -51,7 +51,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk c9336cf989f5e2076e5fbda909fa57cca24b6515
+F main.mk 4b70d380336187ddfb3e2f24394fad74e6266f92
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -88,7 +88,8 @@ F src/loadext.c 6c24ee62adfe7fbfb2f2dd43ff18e5534b19010f
 F src/main.c f12d230c1226d3f43c1f4595af1c25ccbe3017c7
 F src/malloc.c 3850ab4a2edfb190ffee353c5674ebd8c6b4ccc7
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
-F src/mem1.c f4127f6f6f183b66f7c4345e33c9fe19a43e9942
+F src/mem1.c ef73642a171d174cd556d0168f8edbceaf94933b
+F src/mem2.c b8173ddcca23e99829617185154a35a6f046b214
 F src/mutex.c 667dae0de95f8fb92a3ffc8c3f20c0d26115a1a6
 F src/os.c 1f10b47acc1177fb9225edb4f5f0d25ed716f9cb
 F src/os.h cea2e179bb33f4fc09dbb9fcd51b2246544bd2db
@@ -527,7 +528,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 174116f7c0ceeceb5e32868b29fabf8a6943cbf6
-R 7f615db37ae8f52942fff60e5e86001f
+P c0fa3769790af199a4c8715c80bb8ff900730520
+R afa459b840a3b96de70924b91a0e1dbb
 U drh
-Z 657d3d4bb780276ea6842b10c93c7b7e
+Z 9341f1481e29775e7a036e24546ed5fc

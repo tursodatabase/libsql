@@ -58,7 +58,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 LIBOBJ+= alter.o analyze.o attach.o auth.o btree.o build.o \
          callback.o complete.o date.o delete.o \
          expr.o func.o hash.o insert.o loadext.o \
-         main.o malloc.o mem1.o mutex.o \
+         main.o malloc.o mem1.o mem2.o mutex.o \
          opcodes.o os.o os_os2.o os_unix.o os_win.o \
          pager.o parse.o pragma.o prepare.o printf.o random.o \
          select.o table.o tclsqlite.o tokenize.o trigger.o \
@@ -92,7 +92,8 @@ SRC = \
   $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
   $(TOP)/src/malloc.c \
-  $(TOP)/src/mem.c \
+  $(TOP)/src/mem1.c \
+  $(TOP)/src/mem2.c \
   $(TOP)/src/mutex.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_os2.c \
@@ -346,6 +347,9 @@ malloc.o:	$(TOP)/src/malloc.c $(HDR)
 
 mem1.o:	$(TOP)/src/mem1.c $(HDR)
 	$(TCCX) -c $(TOP)/src/mem1.c
+
+mem2.o:	$(TOP)/src/mem2.c $(HDR)
+	$(TCCX) -c $(TOP)/src/mem2.c
 
 mutex.o:	$(TOP)/src/mutex.c $(HDR)
 	$(TCCX) -c $(TOP)/src/mutex.c
