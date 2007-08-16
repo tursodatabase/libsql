@@ -362,7 +362,6 @@ struct Vdbe {
 /*
 ** Function prototypes
 */
-sqlite3 *sqlite3DbOfVdbe(Vdbe*);
 void sqlite3VdbeFreeCursor(Vdbe *, Cursor*);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(Cursor*);

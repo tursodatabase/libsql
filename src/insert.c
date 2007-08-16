@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.189 2007/08/16 04:30:40 drh Exp $
+** $Id: insert.c,v 1.190 2007/08/16 12:24:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -41,7 +41,7 @@ void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
     */
     int n;
     Table *pTab = pIdx->pTable;
-    sqlite3 *db = sqlite3DbOfVdbe(v);
+    sqlite3 *db = sqlite3VdbeDb(v);
     pIdx->zColAff = (char *)sqlite3DbMallocZero(db, pIdx->nColumn+1);
     if( !pIdx->zColAff ){
       return;
@@ -80,7 +80,7 @@ void sqlite3TableAffinityStr(Vdbe *v, Table *pTab){
   if( !pTab->zColAff ){
     char *zColAff;
     int i;
-    sqlite3 *db = sqlite3DbOfVdbe(v);
+    sqlite3 *db = sqlite3VdbeDb(v);
 
     zColAff = (char *)sqlite3DbMallocZero(db, pTab->nCol+1);
     if( !zColAff ){

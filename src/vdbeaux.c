@@ -29,13 +29,6 @@
 int sqlite3_vdbe_addop_trace = 0;
 #endif
 
-/*
-** Return the database connection associated with a VDBE
-*/
-sqlite3 *sqlite3DbOfVdbe(Vdbe *p){
-  return p->db;
-}
-
 
 /*
 ** Create a new virtual database engine.

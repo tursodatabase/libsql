@@ -1,5 +1,5 @@
-C Fix\ssome\smore\ssmall\sproblems\sintroduced\sby\srecent\srefactoring.\s(CVS\s4235)
-D 2007-08-16T11:36:15
+C Combine\ssqlite3DbOfVdbe()\sand\ssqlite3VdbeDb()\sinto\sa\ssingle\sfunction.\s(CVS\s4236)
+D 2007-08-16T12:24:02
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -77,11 +77,11 @@ F src/complete.c ea63834e798a0ab14159bdc6e6cabc3df21aa346
 F src/date.c c44aa498ee9a289ba2b2c62e8269b74b1b81351f
 F src/delete.c 849846d06d29851dde0d9f424a5de5817eb140d1
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c a304c22073fb120f9c788ed34393089623c272e2
+F src/expr.c 3ea108a9e409f58b8203e29c54442da5085be5bf
 F src/func.c 472c0610164180624ff5aa51b0521a331bfef11b
 F src/hash.c 2f322979071dd2bdba7503b5276d66f028744382
 F src/hash.h 3ad3da76bfb954978d227bf495568b0e6da2c19e
-F src/insert.c bca11ad7b7ab4a1ba4808b6e0a6fd842923f88bb
+F src/insert.c 633322aef1799f6604fa805e12488bc628570b0c
 F src/legacy.c 6013a7cb7da1b72550b3d35d4fc598b3c3e5b8c1
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c aa1c6e584d39cc241226ec9390387bc2d4a23e8f
@@ -146,9 +146,9 @@ F src/util.c 0273ba16dbf9bab423b1b84c6d548d8f14c25f64
 F src/vacuum.c f45bd9d3aad8d68bb3b85cf89d7a797be5075fde
 F src/vdbe.c 10052a4f1e42e629aee0466b40983e2b61e0295a
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
-F src/vdbeInt.h e0bd068cf607dcb10021aefa9390b96f56fc3e03
+F src/vdbeInt.h 8e360d326328e7a66100f468697edf9cfb4567dc
 F src/vdbeapi.c a503e3762826d55e808b28393ae1d7b0fa36b1e9
-F src/vdbeaux.c aa079bb65d3ebe81eab4765c26c3e69deabc6825
+F src/vdbeaux.c c6d50887e8f29706ae35b965298e58fa6ba0e9bf
 F src/vdbeblob.c cf9ee3c7d9977cbd896f8b118da4fb4268637f4f
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 019952d44066a24aef70ca8c284cfd2d1073c398
@@ -529,7 +529,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 384d0ca9bc96309e7057e4a2bd4bac5049485e9b
-R 1aa8628043fcd7569e15be343f911cb3
-U danielk1977
-Z f796049af9ef1de328748803dd52f7d3
+P 5e2795d0eb8ea2a076b3014cfa9096aa7e8f69d7
+R b100c12e733e2a4acaaa8416cb3efc24
+U drh
+Z 7b53ce3745d3376527526db865d1b543

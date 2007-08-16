@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.306 2007/08/16 11:36:15 danielk1977 Exp $
+** $Id: expr.c,v 1.307 2007/08/16 12:24:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1691,7 +1691,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
 ** text z[0..n-1] on the stack.
 */
 static void codeInteger(Vdbe *v, const char *z, int n){
-  assert( z || v==0 || sqlite3DbOfVdbe(v)->mallocFailed );
+  assert( z || v==0 || sqlite3VdbeDb(v)->mallocFailed );
   if( z ){
     int i;
     if( sqlite3GetInt32(z, &i) ){
