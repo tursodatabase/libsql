@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.380 2007/08/16 04:30:40 drh Exp $
+** $Id: main.c,v 1.381 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -219,7 +219,7 @@ int sqlite3_close(sqlite3 *db){
   */
   sqlite3_free(db->aDb[1].pSchema);
   sqlite3_free(db);
-  sqlite3ReleaseThreadData();
+  /* sqlite3ReleaseThreadData(); */
   return SQLITE_OK;
 }
 
@@ -542,7 +542,7 @@ int sqlite3_create_function16(
   char *zFunc8;
   assert( !db->mallocFailed );
 
-  zFunc8 = sqlite3Utf16to8(zFunctionName, -1);
+  zFunc8 = sqlite3Utf16to8(db, zFunctionName, -1);
   rc = sqlite3CreateFunc(db, zFunc8, nArg, eTextRep, p, xFunc, xStep, xFinal);
   sqlite3_free(zFunc8);
 
@@ -780,7 +780,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   }
   z = sqlite3_value_text16(db->pErr);
   if( z==0 ){
-    sqlite3ValueSetStr(db->pErr, -1, sqlite3ErrStr(db->errCode),
+    sqlite3ValueSetStr(db, db->pErr, -1, sqlite3ErrStr(db->errCode),
          SQLITE_UTF8, SQLITE_STATIC);
     z = sqlite3_value_text16(db->pErr);
   }
@@ -1044,15 +1044,15 @@ int sqlite3_open16(
   sqlite3 **ppDb
 ){
   char const *zFilename8;   /* zFilename encoded in UTF-8 instead of UTF-16 */
-  int rc = SQLITE_OK;
   sqlite3_value *pVal;
+  int rc = SQLITE_NOMEM;
 
   assert( zFilename );
   assert( ppDb );
   *ppDb = 0;
-  pVal = sqlite3ValueNew();
-  sqlite3ValueSetStr(pVal, -1, zFilename, SQLITE_UTF16NATIVE, SQLITE_STATIC);
-  zFilename8 = sqlite3ValueText(pVal, SQLITE_UTF8);
+  pVal = sqlite3ValueNew(0);
+  sqlite3ValueSetStr(0, pVal, -1, zFilename, SQLITE_UTF16NATIVE, SQLITE_STATIC);
+  zFilename8 = sqlite3ValueText(0, pVal, SQLITE_UTF8);
   if( zFilename8 ){
     rc = openDatabase(zFilename8, ppDb);
     if( rc==SQLITE_OK && *ppDb ){
@@ -1155,7 +1155,7 @@ int sqlite3_create_collation16(
   int rc = SQLITE_OK;
   char *zName8; 
   assert( !db->mallocFailed );
-  zName8 = sqlite3Utf16to8(zName, -1);
+  zName8 = sqlite3Utf16to8(db, zName, -1);
   if( zName8 ){
     rc = createCollation(db, zName8, enc, pCtx, xCompare, 0);
     sqlite3_free(zName8);
@@ -1258,7 +1258,7 @@ int sqlite3_enable_shared_cache(int enable){
     }
 
     pTd->useSharedData = enable;
-    sqlite3ReleaseThreadData();
+    /* sqlite3ReleaseThreadData(); */
   }
   return sqlite3ApiExit(0, SQLITE_OK);
 }

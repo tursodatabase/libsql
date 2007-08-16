@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.255 2007/08/16 04:30:41 drh Exp $
+** $Id: where.c,v 1.256 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -716,7 +716,8 @@ static void exprAnalyze(
   int nPattern;
   int isComplete;
   int op;
-  sqlite3 *db = pWC->pParse->db;
+  Parse *pParse = pWC->pParse;
+  sqlite3 *db = pParse->db;
 
   if( db->mallocFailed ) return;
   prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
@@ -2152,24 +2153,24 @@ WhereInfo *sqlite3WhereBegin(
     if( pParse->explain==2 ){
       char *zMsg;
       struct SrcList_item *pItem = &pTabList->a[pLevel->iFrom];
-      zMsg = sqlite3MPrintf("TABLE %s", pItem->zName);
+      zMsg = sqlite3MPrintf(db, "TABLE %s", pItem->zName);
       if( pItem->zAlias ){
-        zMsg = sqlite3MPrintf("%z AS %s", zMsg, pItem->zAlias);
+        zMsg = sqlite3MPrintf(db, "%z AS %s", zMsg, pItem->zAlias);
       }
       if( (pIx = pLevel->pIdx)!=0 ){
-        zMsg = sqlite3MPrintf("%z WITH INDEX %s", zMsg, pIx->zName);
+        zMsg = sqlite3MPrintf(db, "%z WITH INDEX %s", zMsg, pIx->zName);
       }else if( pLevel->flags & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE) ){
-        zMsg = sqlite3MPrintf("%z USING PRIMARY KEY", zMsg);
+        zMsg = sqlite3MPrintf(db, "%z USING PRIMARY KEY", zMsg);
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       else if( pLevel->pBestIdx ){
         sqlite3_index_info *pBestIdx = pLevel->pBestIdx;
-        zMsg = sqlite3MPrintf("%z VIRTUAL TABLE INDEX %d:%s", zMsg,
+        zMsg = sqlite3MPrintf(db, "%z VIRTUAL TABLE INDEX %d:%s", zMsg,
                     pBestIdx->idxNum, pBestIdx->idxStr);
       }
 #endif
       if( pLevel->flags & WHERE_ORDERBY ){
-        zMsg = sqlite3MPrintf("%z ORDER BY", zMsg);
+        zMsg = sqlite3MPrintf(db, "%z ORDER BY", zMsg);
       }
       sqlite3VdbeOp3(v, OP_Explain, i, pLevel->iFrom, zMsg, P3_DYNAMIC);
     }

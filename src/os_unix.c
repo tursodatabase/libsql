@@ -2296,7 +2296,7 @@ char *sqlite3UnixFullPathname(const char *zRelative){
     zBuf[0] = 0;
     sqlite3SetString(&zFull, getcwd(zBuf, 5000), "/", zRelative,
                     (char*)0);
-    sqliteFree(zBuf);
+    sqlite3_free(zBuf);
   }
 
 #if 0
@@ -2899,11 +2899,13 @@ ThreadData *sqlite3UnixThreadSpecificData(int allocateFlag){
   static ThreadData *pTsd = 0;
   if( allocateFlag>0 ){
     if( pTsd==0 ){
+#if 0
       if( !sqlite3TestMallocFail() ){
         pTsd = sqlite3OsMalloc( sizeof(zeroData) );
       }
 #ifdef SQLITE_MEMDEBUG
       sqlite3_isFail = 0;
+#endif
 #endif
       if( pTsd ){
         *pTsd = zeroData;

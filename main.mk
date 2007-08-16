@@ -172,7 +172,6 @@ TESTSRC = \
   $(TOP)/src/date.c \
   $(TOP)/src/func.c \
   $(TOP)/src/insert.c \
-  $(TOP)/src/main.c \
   $(TOP)/src/malloc.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_os2.c \

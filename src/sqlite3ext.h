@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.12 2007/07/20 10:48:36 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.13 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -102,7 +102,7 @@ struct sqlite3_api_routines {
   sqlite_int64  (*last_insert_rowid)(sqlite3*);
   const char * (*libversion)(void);
   int  (*libversion_number)(void);
-  void *(*malloc)(int);
+  void *(*malloc)(unsigned int);
   char * (*mprintf)(const char*,...);
   int  (*open)(const char*,sqlite3**);
   int  (*open16)(const void*,sqlite3**);
@@ -110,7 +110,7 @@ struct sqlite3_api_routines {
   int  (*prepare16)(sqlite3*,const void*,int,sqlite3_stmt**,const void**);
   void * (*profile)(sqlite3*,void(*)(void*,const char*,sqlite_uint64),void*);
   void  (*progress_handler)(sqlite3*,int,int(*)(void*),void*);
-  void *(*realloc)(void*,int);
+  void *(*realloc)(void*,unsigned int);
   int  (*reset)(sqlite3_stmt*pStmt);
   void  (*result_blob)(sqlite3_context*,const void*,int,void(*)(void*));
   void  (*result_double)(sqlite3_context*,double);

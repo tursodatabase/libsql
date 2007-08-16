@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.164 2007/08/16 04:30:40 drh Exp $
+** $Id: func.c,v 1.165 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1064,13 +1064,13 @@ static void test_destructor(
   test_destructor_count_var++;
   assert( nArg==1 );
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
-  len = sqlite3ValueBytes(argv[0], ENC(db)); 
-  zVal = sqliteMalloc(len+3);
+  len = sqlite3ValueBytes(0, argv[0], ENC(db)); 
+  zVal = sqlite3_malloc(len+3);
   zVal[len] = 0;
   zVal[len-1] = 0;
   assert( zVal );
   zVal++;
-  memcpy(zVal, sqlite3ValueText(argv[0], ENC(db)), len);
+  memcpy(zVal, sqlite3ValueText(0, argv[0], ENC(db)), len);
   if( ENC(db)==SQLITE_UTF8 ){
     sqlite3_result_text(pCtx, zVal, -1, destructor);
 #ifndef SQLITE_OMIT_UTF16
@@ -1109,7 +1109,7 @@ static void test_auxdata(
   sqlite3_value **argv
 ){
   int i;
-  char *zRet = sqliteMalloc(nArg*2);
+  char *zRet = sqlite3_malloc(nArg*2);
   if( !zRet ) return;
   for(i=0; i<nArg; i++){
     char const *z = (char*)sqlite3_value_text(argv[i]);
@@ -1273,10 +1273,10 @@ static void minmaxStep(sqlite3_context *context, int argc, sqlite3_value **argv)
     max = sqlite3_user_data(context)!=0;
     cmp = sqlite3MemCompare(pBest, pArg, pColl);
     if( (max && cmp<0) || (!max && cmp>0) ){
-      sqlite3VdbeMemCopy(pBest, pArg);
+      sqlite3VdbeMemCopy(0, pBest, pArg);
     }
   }else{
-    sqlite3VdbeMemCopy(pBest, pArg);
+    sqlite3VdbeMemCopy(0, pBest, pArg);
   }
 }
 static void minMaxFinalize(sqlite3_context *context){
@@ -1408,11 +1408,11 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     }
   }
   sqlite3RegisterDateTimeFunctions(db);
-  if( !sqlite3MallocFailed() ){
+  if( !db->mallocFailed ){
     int rc = sqlite3_overload_function(db, "MATCH", 2);
     assert( rc==SQLITE_NOMEM || rc==SQLITE_OK );
     if( rc==SQLITE_NOMEM ){
-      sqlite3FailedMalloc();
+      db->mallocFailed = 1;
     }
   }
 #ifdef SQLITE_SSE

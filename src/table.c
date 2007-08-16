@@ -154,12 +154,12 @@ int sqlite3_get_table(
         sqlite3_free(*pzErrMsg);
         *pzErrMsg = sqlite3_mprintf("%s",res.zErrMsg);
       }
-      sqliteFree(res.zErrMsg);
+      sqlite3_free(res.zErrMsg);
     }
     db->errCode = res.rc;
     return res.rc & db->errMask;
   }
-  sqliteFree(res.zErrMsg);
+  sqlite3_free(res.zErrMsg);
   if( rc!=SQLITE_OK ){
     sqlite3_free_table(&res.azResult[1]);
     return rc & db->errMask;

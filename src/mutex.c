@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement mutexes for
 ** use by the SQLite core.
 **
-** $Id: mutex.c,v 1.1 2007/08/15 13:04:54 drh Exp $
+** $Id: mutex.c,v 1.2 2007/08/16 10:09:03 danielk1977 Exp $
 */
 
 /*
@@ -92,6 +92,7 @@ void sqlite3_mutex_leave(sqlite3_mutex *pNotUsed){
 */
 int sqlite3_mutex_serialize(void (*xCallback)(void*), void *pArg){
   xCallback(pArg);
+  return SQLITE_OK;
 }
 
 #if 0

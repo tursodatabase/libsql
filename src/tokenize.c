@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.132 2007/08/16 04:30:40 drh Exp $
+** $Id: tokenize.c,v 1.133 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -435,7 +435,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       case TK_ILLEGAL: {
         if( pzErrMsg ){
           sqlite3_free(*pzErrMsg);
-          *pzErrMsg = sqlite3MPrintf("unrecognized token: \"%T\"",
+          *pzErrMsg = sqlite3MPrintf(db, "unrecognized token: \"%T\"",
                           &pParse->sLastToken);
         }
         nErr++;

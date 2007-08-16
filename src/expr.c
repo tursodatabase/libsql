@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.304 2007/08/16 04:30:40 drh Exp $
+** $Id: expr.c,v 1.305 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -318,7 +318,7 @@ Expr *sqlite3RegisterExpr(Parse *pParse, Token *pToken){
 ** Join two expressions using an AND operator.  If either expression is
 ** NULL, then just return the other expression.
 */
-Expr *sqlite3ExprAnd(sqlite *db, Expr *pLeft, Expr *pRight){
+Expr *sqlite3ExprAnd(sqlite3 *db, Expr *pLeft, Expr *pRight){
   if( pLeft==0 ){
     return pRight;
   }else if( pRight==0 ){
@@ -328,6 +328,7 @@ Expr *sqlite3ExprAnd(sqlite *db, Expr *pLeft, Expr *pRight){
     if( p==0 ){
       db->mallocFailed = 1;
     }
+    return p;
   }
 }
 
@@ -491,7 +492,7 @@ void sqlite3DequoteExpr(sqlite3 *db, Expr *p){
 **
 ** Any tables that the SrcList might point to are not duplicated.
 */
-Expr *sqlite3ExprDup(sqlite *db, Expr *p){
+Expr *sqlite3ExprDup(sqlite3 *db, Expr *p){
   Expr *pNew;
   if( p==0 ) return 0;
   pNew = sqlite3DbMallocRaw(db, sizeof(*p) );
@@ -1179,7 +1180,7 @@ static int lookupName(
             sqlite3_free(zCol);
             return 2;
           }
-          pDup = sqlite3ExprDup(pOrig);
+          pDup = sqlite3ExprDup(db, pOrig);
           if( pExpr->flags & EP_ExpCollate ){
             pDup->pColl = pExpr->pColl;
             pDup->flags |= EP_ExpCollate;
@@ -1780,7 +1781,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     case TK_STRING: {
       assert( TK_FLOAT==OP_Real );
       assert( TK_STRING==OP_String8 );
-      sqlite3DequoteExpr(pExpr);
+      sqlite3DequoteExpr(pParse->db, pExpr);
       sqlite3VdbeOp3(v, op, 0, 0, (char*)pExpr->token.z, pExpr->token.n);
       break;
     }
@@ -1883,7 +1884,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       assert( pLeft );
       if( pLeft->op==TK_FLOAT || pLeft->op==TK_INTEGER ){
         Token *p = &pLeft->token;
-        char *z = sqlite3MPrintf("-%.*s", p->n, p->z);
+        char *z = sqlite3MPrintf(pParse->db, "-%.*s", p->n, p->z);
         if( pLeft->op==TK_FLOAT ){
           sqlite3VdbeOp3(v, OP_Real, 0, 0, z, p->n+1);
         }else{
@@ -2095,7 +2096,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
          assert( pExpr->iColumn==OE_Rollback ||
                  pExpr->iColumn == OE_Abort ||
                  pExpr->iColumn == OE_Fail );
-         sqlite3DequoteExpr(pExpr);
+         sqlite3DequoteExpr(pParse->db, pExpr);
          sqlite3VdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->iColumn,
                         (char*)pExpr->token.z, pExpr->token.n);
       } else {
@@ -2465,7 +2466,6 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
   Parse *pParse = pNC->pParse;
   SrcList *pSrcList = pNC->pSrcList;
   AggInfo *pAggInfo = pNC->pAggInfo;
-  
 
   switch( pExpr->op ){
     case TK_AGG_COLUMN:
@@ -2491,7 +2491,9 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
                 break;
               }
             }
-            if( k>=pAggInfo->nColumn && (k = addAggInfoColumn(pAggInfo))>=0 ){
+            if( (k>=pAggInfo->nColumn)
+             && (k = addAggInfoColumn(pParse->db, pAggInfo))>=0 
+            ){
               pCol = &pAggInfo->aCol[k];
               pCol->pTab = pExpr->pTab;
               pCol->iTable = pExpr->iTable;
@@ -2548,7 +2550,7 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
           /* pExpr is original.  Make a new entry in pAggInfo->aFunc[]
           */
           u8 enc = ENC(pParse->db);
-          i = addAggInfoFunc(pAggInfo);
+          i = addAggInfoFunc(pParse->db, pAggInfo);
           if( i>=0 ){
             pItem = &pAggInfo->aFunc[i];
             pItem->pExpr = pExpr;

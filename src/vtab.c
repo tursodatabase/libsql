@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.49 2007/08/16 04:30:41 drh Exp $
+** $Id: vtab.c,v 1.50 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -250,7 +250,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     if( pEnd ){
       pParse->sNameToken.n = pEnd->z - pParse->sNameToken.z + pEnd->n;
     }
-    zStmt = sqlite3MPrintf("CREATE VIRTUAL TABLE %T", &pParse->sNameToken);
+    zStmt = sqlite3MPrintf(db, "CREATE VIRTUAL TABLE %T", &pParse->sNameToken);
 
     /* A slot for the record has already been allocated in the 
     ** SQLITE_MASTER table.  We just need to update that slot with all
@@ -276,7 +276,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     sqlite3ChangeCookie(db, v, iDb);
 
     sqlite3VdbeAddOp(v, OP_Expire, 0, 0);
-    zWhere = sqlite3MPrintf("name='%q'", pTab->zName);
+    zWhere = sqlite3MPrintf(db, "name='%q'", pTab->zName);
     sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 1, zWhere, P3_DYNAMIC);
     sqlite3VdbeOp3(v, OP_VCreate, iDb, 0, pTab->zName, strlen(pTab->zName) + 1);
   }
@@ -343,7 +343,7 @@ static int vtabCallConstructor(
   const char *const*azArg = (const char *const*)pTab->azModuleArg;
   int nArg = pTab->nModuleArg;
   char *zErr = 0;
-  char *zModuleName = sqlite3MPrintf("%s", pTab->zName);
+  char *zModuleName = sqlite3MPrintf(db, "%s", pTab->zName);
 
   if( !zModuleName ){
     return SQLITE_NOMEM;
@@ -365,14 +365,14 @@ static int vtabCallConstructor(
 
   if( SQLITE_OK!=rc ){
     if( zErr==0 ){
-      *pzErr = sqlite3MPrintf("vtable constructor failed: %s", zModuleName);
+      *pzErr = sqlite3MPrintf(db, "vtable constructor failed: %s", zModuleName);
     }else {
-      *pzErr = sqlite3MPrintf("%s", zErr);
+      *pzErr = sqlite3MPrintf(db, "%s", zErr);
       sqlite3_free(zErr);
     }
   }else if( db->pVTab ){
     const char *zFormat = "vtable constructor did not declare schema: %s";
-    *pzErr = sqlite3MPrintf(zFormat, pTab->zName);
+    *pzErr = sqlite3MPrintf(db, zFormat, pTab->zName);
     rc = SQLITE_ERROR;
   } 
   if( rc==SQLITE_OK ){
@@ -503,7 +503,7 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   ** error. Otherwise, do nothing.
   */
   if( !pMod ){
-    *pzErr = sqlite3MPrintf("no such module: %s", zModule);
+    *pzErr = sqlite3MPrintf(db, "no such module: %s", zModule);
     rc = SQLITE_ERROR;
   }else{
     rc = vtabCallConstructor(db, pTab, pMod, pMod->pModule->xCreate, pzErr);

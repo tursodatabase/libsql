@@ -12,7 +12,7 @@
 ** Memory allocation functions used throughout sqlite.
 **
 **
-** $Id: malloc.c,v 1.5 2007/08/16 04:30:40 drh Exp $
+** $Id: malloc.c,v 1.6 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -24,18 +24,24 @@
 ** value indicates no limit.
 */
 void sqlite3_soft_heap_limit(int n){
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   ThreadData *pTd = sqlite3ThreadData();
   if( pTd ){
     pTd->nSoftHeapLimit = n;
   }
   sqlite3ReleaseThreadData();
+#endif
 }
 
 /*
 ** Release memory held by SQLite instances created by the current thread.
 */
 int sqlite3_release_memory(int n){
+#if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
   return sqlite3PagerReleaseMemory(n);
+#else
+  return SQLITE_OK;
+#endif
 }
 
 
@@ -84,7 +90,7 @@ void *sqlite3DbReallocOrFree(sqlite3 *db, void *p, int n){
   void *pNew;
   pNew = sqlite3_realloc(p, n);
   if( !pNew ){
-    sqlite3FreeX(p);
+    sqlite3_free(p);
     db->mallocFailed = 1;
   }
   return pNew;
@@ -103,17 +109,32 @@ char *sqlite3StrDup(const char *z){
   int n;
   if( z==0 ) return 0;
   n = strlen(z)+1;
-  zNew = sqlite3MallocRaw(n, 1);
+  zNew = sqlite3_malloc(n);
   if( zNew ) memcpy(zNew, z, n);
   return zNew;
 }
 char *sqlite3StrNDup(const char *z, int n){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqlite3MallocRaw(n+1, 1);
+  zNew = sqlite3_malloc(n+1);
   if( zNew ){
     memcpy(zNew, z, n);
     zNew[n] = 0;
+  }
+  return zNew;
+}
+
+char *sqlite3DbStrDup(sqlite3 *db, const char *z){
+  char *zNew = sqlite3StrDup(z);
+  if( z && !zNew ){
+    db->mallocFailed = 1;
+  }
+  return zNew;
+}
+char *sqlite3DbStrNDup(sqlite3 *db, const char *z, int n){
+  char *zNew = sqlite3StrNDup(z, n);
+  if( z && !zNew ){
+    db->mallocFailed = 1;
   }
   return zNew;
 }
@@ -138,8 +159,8 @@ void sqlite3SetString(char **pz, ...){
     nByte += strlen(z);
   }
   va_end(ap);
-  sqliteFree(*pz);
-  *pz = zResult = sqliteMallocRaw( nByte );
+  sqlite3_free(*pz);
+  *pz = zResult = sqlite3_malloc(nByte);
   if( zResult==0 ){
     return;
   }
@@ -169,7 +190,7 @@ void sqlite3SetString(char **pz, ...){
 ** is set to SQLITE_NOMEM.
 */
 int sqlite3ApiExit(sqlite3* db, int rc){
-  if( db->mallocFailed ){
+  if( db && db->mallocFailed ){
     sqlite3Error(db, SQLITE_NOMEM, 0);
     db->mallocFailed = 0;
     rc = SQLITE_NOMEM;
@@ -182,6 +203,7 @@ int sqlite3ApiExit(sqlite3* db, int rc){
 ** This function sets a flag in the thread-specific-data structure that will
 ** cause an assert to fail if sqliteMalloc() or sqliteRealloc() is called.
 */
+#if 0
 void sqlite3MallocDisallow(){
 #if 0
   assert( sqlite3_mallocDisallowed>=0 );
@@ -199,4 +221,5 @@ void sqlite3MallocAllow(){
   sqlite3_mallocDisallowed--;
 #endif
 }
+#endif
 #endif

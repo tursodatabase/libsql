@@ -125,7 +125,7 @@ struct WriteBuffer {
 struct CrashFile {
   const sqlite3_io_methods *pMethod;   /* Must be first */
   sqlite3_file *pRealFile;             /* Underlying "real" file handle */
-  const char *zName;
+  char *zName;
 };
 
 struct CrashGlobal {
@@ -224,7 +224,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
           for(i=iFirst; rc==SQLITE_OK && i<=iLast; i++){
             sqlite3Randomness(g.iSectorSize, zGarbage); 
             rc = sqlite3OsWrite(
-              pFile->pRealFile, i*g.iSectorSize, zGarbage, g.iSectorSize
+              pFile->pRealFile, zGarbage, g.iSectorSize, i*g.iSectorSize
             );
           }
           sqlite3_free(zGarbage);
@@ -286,7 +286,7 @@ static int writeListAppend(
 /*
 ** Close a crash-file.
 */
-int cfClose(sqlite3_file *pFile){
+static int cfClose(sqlite3_file *pFile){
   CrashFile *pCrash = (CrashFile *)pFile;
   writeListSync(pCrash, 0);
   sqlite3OsClose(&pCrash->pRealFile);
@@ -296,7 +296,12 @@ int cfClose(sqlite3_file *pFile){
 /*
 ** Read data from a crash-file.
 */
-int cfRead(sqlite3_file *pFile, void *zBuf, int iAmt, sqlite_int64 iOfst){
+static int cfRead(
+  sqlite3_file *pFile, 
+  void *zBuf, 
+  int iAmt, 
+  sqlite_int64 iOfst
+){
   CrashFile *pCrash = (CrashFile *)pFile;
   sqlite3_int64 iSize;
   int rc;
@@ -361,21 +366,26 @@ int cfRead(sqlite3_file *pFile, void *zBuf, int iAmt, sqlite_int64 iOfst){
 /*
 ** Write data to a crash-file.
 */
-int cfWrite(sqlite3_file *pFile, void *zBuf, int iAmt, sqlite_int64 iOfst){
+static int cfWrite(
+  sqlite3_file *pFile, 
+  const void *zBuf, 
+  int iAmt, 
+  sqlite_int64 iOfst
+){
   return writeListAppend(pFile, iOfst, zBuf, iAmt);
 }
 
 /*
 ** Truncate a crash-file.
 */
-int cfTruncate(sqlite3_file *pFile, sqlite_int64 size){
+static int cfTruncate(sqlite3_file *pFile, sqlite_int64 size){
   return writeListAppend(pFile, size, 0, 0);
 }
 
 /*
 ** Sync a crash-file.
 */
-int cfSync(sqlite3_file *pFile, int flags){
+static int cfSync(sqlite3_file *pFile, int flags){
   CrashFile *pCrash = (CrashFile *)pFile;
   int isCrash = 0;
 
@@ -391,7 +401,7 @@ int cfSync(sqlite3_file *pFile, int flags){
 /*
 ** Return the current file-size of the crash-file.
 */
-int cfFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
+static int cfFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
   CrashFile *pCrash = (CrashFile *)pFile;
   WriteBuffer *pWrite;
   int rc;
@@ -416,16 +426,16 @@ int cfFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
 /*
 ** Calls related to file-locks are passed on to the real file handle.
 */
-int cfLock(sqlite3_file *pFile, int eLock){
+static int cfLock(sqlite3_file *pFile, int eLock){
   return sqlite3OsLock(((CrashFile *)pFile)->pRealFile, eLock);
 }
-int cfUnlock(sqlite3_file *pFile, int eLock){
+static int cfUnlock(sqlite3_file *pFile, int eLock){
   return sqlite3OsUnlock(((CrashFile *)pFile)->pRealFile, eLock);
 }
-int cfCheckReservedLock(sqlite3_file *pFile){
+static int cfCheckReservedLock(sqlite3_file *pFile){
   return sqlite3OsCheckReservedLock(((CrashFile *)pFile)->pRealFile);
 }
-int cfBreakLock(sqlite3_file *pFile){
+static int cfBreakLock(sqlite3_file *pFile){
   return sqlite3OsBreakLock(((CrashFile *)pFile)->pRealFile);
 }
 
@@ -434,10 +444,10 @@ int cfBreakLock(sqlite3_file *pFile){
 ** the global values configured by the [sqlite_crashparams] tcl
 *  interface.
 */
-int cfSectorSize(sqlite3_file *pFile){
+static int cfSectorSize(sqlite3_file *pFile){
   return g.iSectorSize;
 }
-int cfDeviceCharacteristics(sqlite3_file *pFile){
+static int cfDeviceCharacteristics(sqlite3_file *pFile){
   return g.iDeviceCharacteristics;
 }
 
@@ -474,7 +484,7 @@ int sqlite3CrashFileOpen(
   pReal = (sqlite3_file *)sqlite3_malloc(pVfs->szOsFile);
   if( pReal ){
     pWrapper->pMethod = &CrashFileVtab;
-    pWrapper->zName = zName;
+    pWrapper->zName = (char *)zName;
     rc = pVfs->xOpen(pVfs->pAppData, zName, pReal, flags, pOutFlags);
     if( rc==SQLITE_OK ){
       pWrapper->pRealFile = pFile;
@@ -498,7 +508,7 @@ int sqlite3CrashFileWrap(
 
   pWrapper->pMethod = &CrashFileVtab;
   pWrapper->pRealFile = pFile;
-  pWrapper->zName = &pWrapper[1];
+  pWrapper->zName = (char *)&pWrapper[1];
   memcpy(pWrapper->zName, zName, strlen(zName)+1);
 
   *ppWrapper = (sqlite3_file *)pWrapper;

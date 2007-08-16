@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.357 2007/08/16 04:30:40 drh Exp $
+** @(#) $Id: pager.c,v 1.358 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2745,7 +2745,15 @@ int sqlite3PagerReleaseMemory(int nReq){
           for( pTmp=pPager->pAll; pTmp->pNextAll!=pPg; pTmp=pTmp->pNextAll ){}
           pTmp->pNextAll = pPg->pNextAll;
         }
+#if 0
         nReleased += sqliteAllocSize(pPg);
+#else
+        nReleased += (
+            sizeof(*pPg) + pPager->pageSize
+            + sizeof(u32) + pPager->nExtra
+            + MEMDB*sizeof(PgHistory) 
+        );
+#endif
         IOTRACE(("PGFREE %p %d *\n", pPager, pPg->pgno));
         PAGER_INCR(sqlite3_pager_pgfree_count);
         sqlite3_free(pPg);
@@ -3121,7 +3129,9 @@ int sqlite3PagerAcquire(
     pPg->pgno = pgno;
     assert( !MEMDB || pgno>pPager->stmtSize );
     if( pPager->aInJournal && (int)pgno<=pPager->origDbSize ){
+#if 0
       sqlite3CheckMemory(pPager->aInJournal, pgno/8);
+#endif
       assert( pPager->journalOpen );
       pPg->inJournal = (pPager->aInJournal[pgno/8] & (1<<(pgno&7)))!=0;
       pPg->needSync = 0;

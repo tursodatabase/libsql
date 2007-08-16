@@ -376,56 +376,56 @@ int sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
 void sqlite3VdbeDeleteAuxData(VdbeFunc*, int);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
-int sqlite3VdbeIdxKeyCompare(Cursor*, int , const unsigned char*, int*);
-int sqlite3VdbeIdxRowid(BtCursor *, i64 *);
+int sqlite3VdbeIdxKeyCompare(sqlite3*,Cursor*,int,const unsigned char*,int*);
+int sqlite3VdbeIdxRowid(sqlite3 *, BtCursor *, i64 *);
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
 int sqlite3VdbeRecordCompare(void*,int,const void*,int, const void*);
 int sqlite3VdbeIdxRowidLen(const u8*);
 int sqlite3VdbeExec(Vdbe*);
 int sqlite3VdbeList(Vdbe*);
 int sqlite3VdbeHalt(Vdbe*);
-int sqlite3VdbeChangeEncoding(Mem *, int);
+int sqlite3VdbeChangeEncoding(sqlite3 *, Mem *, int);
 int sqlite3VdbeMemTooBig(Mem*);
-int sqlite3VdbeMemCopy(Mem*, const Mem*);
+int sqlite3VdbeMemCopy(sqlite3*, Mem*, const Mem*);
 void sqlite3VdbeMemShallowCopy(Mem*, const Mem*, int);
-int sqlite3VdbeMemMove(Mem*, Mem*);
-int sqlite3VdbeMemNulTerminate(Mem*);
-int sqlite3VdbeMemSetStr(Mem*, const char*, int, u8, void(*)(void*));
+int sqlite3VdbeMemMove(sqlite3*, Mem*, Mem*);
+int sqlite3VdbeMemNulTerminate(sqlite3 *, Mem*);
+int sqlite3VdbeMemSetStr(sqlite3 *, Mem*, const char*, int, u8, void(*)(void*));
 void sqlite3VdbeMemSetInt64(Mem*, i64);
 void sqlite3VdbeMemSetDouble(Mem*, double);
 void sqlite3VdbeMemSetNull(Mem*);
 void sqlite3VdbeMemSetZeroBlob(Mem*,int);
-int sqlite3VdbeMemMakeWriteable(Mem*);
-int sqlite3VdbeMemDynamicify(Mem*);
-int sqlite3VdbeMemStringify(Mem*, int);
+int sqlite3VdbeMemMakeWriteable(sqlite3 *, Mem*);
+int sqlite3VdbeMemDynamicify(sqlite3 *, Mem*);
+int sqlite3VdbeMemStringify(sqlite3*, Mem*, int);
 i64 sqlite3VdbeIntValue(Mem*);
 int sqlite3VdbeMemIntegerify(Mem*);
 double sqlite3VdbeRealValue(Mem*);
 void sqlite3VdbeIntegerAffinity(Mem*);
 int sqlite3VdbeMemRealify(Mem*);
 int sqlite3VdbeMemNumerify(Mem*);
-int sqlite3VdbeMemFromBtree(BtCursor*,int,int,int,Mem*);
+int sqlite3VdbeMemFromBtree(sqlite3*,BtCursor*,int,int,int,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
 int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 #ifndef NDEBUG
   void sqlite3VdbeMemSanity(Mem*);
   int sqlite3VdbeOpcodeNoPush(u8);
 #endif
-int sqlite3VdbeMemTranslate(Mem*, u8);
+int sqlite3VdbeMemTranslate(sqlite3 *, Mem*, u8);
 #ifdef SQLITE_DEBUG
   void sqlite3VdbePrintSql(Vdbe*);
   void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf);
 #endif
-int sqlite3VdbeMemHandleBom(Mem *pMem);
+int sqlite3VdbeMemHandleBom(sqlite3 *, Mem *pMem);
 void sqlite3VdbeFifoInit(Fifo*);
 int sqlite3VdbeFifoPush(Fifo*, i64);
 int sqlite3VdbeFifoPop(Fifo*, i64*);
 void sqlite3VdbeFifoClear(Fifo*);
 
 #ifndef SQLITE_OMIT_INCRBLOB
-  int sqlite3VdbeMemExpandBlob(Mem *);
+  int sqlite3VdbeMemExpandBlob(sqlite3 *, Mem *);
 #else
-  #define sqlite3VdbeMemExpandBlob(x) SQLITE_OK
+  #define sqlite3VdbeMemExpandBlob(d,x) SQLITE_OK
 #endif
 
 #endif /* !defined(_VDBEINT_H_) */

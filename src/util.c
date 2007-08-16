@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.208 2007/08/16 04:30:40 drh Exp $
+** $Id: util.c,v 1.209 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -44,17 +44,17 @@
 ** to NULL.
 */
 void sqlite3Error(sqlite3 *db, int err_code, const char *zFormat, ...){
-  if( db && (db->pErr || (db->pErr = sqlite3ValueNew())!=0) ){
+  if( db && (db->pErr || (db->pErr = sqlite3ValueNew(db))!=0) ){
     db->errCode = err_code;
     if( zFormat ){
       char *z;
       va_list ap;
       va_start(ap, zFormat);
-      z = sqlite3VMPrintf(zFormat, ap);
+      z = sqlite3VMPrintf(db, zFormat, ap);
       va_end(ap);
-      sqlite3ValueSetStr(db->pErr, -1, z, SQLITE_UTF8, sqlite3FreeX);
+      sqlite3ValueSetStr(db, db->pErr, -1, z, SQLITE_UTF8, sqlite3_free);
     }else{
-      sqlite3ValueSetStr(db->pErr, 0, 0, SQLITE_UTF8, SQLITE_STATIC);
+      sqlite3ValueSetStr(db, db->pErr, 0, 0, SQLITE_UTF8, SQLITE_STATIC);
     }
   }
 }
@@ -79,9 +79,9 @@ void sqlite3Error(sqlite3 *db, int err_code, const char *zFormat, ...){
 void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
   va_list ap;
   pParse->nErr++;
-  sqliteFree(pParse->zErrMsg);
+  sqlite3_free(pParse->zErrMsg);
   va_start(ap, zFormat);
-  pParse->zErrMsg = sqlite3VMPrintf(zFormat, ap);
+  pParse->zErrMsg = sqlite3VMPrintf(pParse->db, zFormat, ap);
   va_end(ap);
   if( pParse->rc==SQLITE_OK ){
     pParse->rc = SQLITE_ERROR;
@@ -92,7 +92,7 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
 ** Clear the error message in pParse, if any
 */
 void sqlite3ErrorClear(Parse *pParse){
-  sqliteFree(pParse->zErrMsg);
+  sqlite3_free(pParse->zErrMsg);
   pParse->zErrMsg = 0;
   pParse->nErr = 0;
 }

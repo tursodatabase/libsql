@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.53 2007/08/16 04:30:40 drh Exp $
+** $Id: prepare.c,v 1.54 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -290,7 +290,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     rc = SQLITE_OK;
   }else{
     char *zSql;
-    zSql = sqlite3MPrintf(
+    zSql = sqlite3MPrintf(db, 
         "SELECT name, rootpage, sql FROM '%q'.%s",
         db->aDb[iDb].zName, zMasterName);
     sqlite3SafetyOff(db);
@@ -560,7 +560,7 @@ int sqlite3Prepare(
   }
 
   rc = sqlite3ApiExit(db, rc);
-  sqlite3ReleaseThreadData();
+  /* sqlite3ReleaseThreadData(); */
   assert( (rc&db->errMask)==rc );
   return rc;
 }
@@ -647,7 +647,7 @@ static int sqlite3Prepare16(
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
   }
-  zSql8 = sqlite3Utf16to8(zSql, nBytes);
+  zSql8 = sqlite3Utf16to8(db, zSql, nBytes);
   if( zSql8 ){
     rc = sqlite3Prepare(db, zSql8, -1, saveSqlFlag, ppStmt, &zTail8);
   }

@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.28 2007/08/16 04:30:39 drh Exp $
+** $Id: alter.c,v 1.29 2007/08/16 10:09:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -51,6 +51,8 @@ static void renameTableFunc(
   int len = 0;
   char *zRet;
 
+  sqlite3 *db = sqlite3_user_data(context);
+
   /* The principle used to locate the table name in the CREATE TABLE 
   ** statement is that the table name is the first token that is immediatedly
   ** followed by a left parenthesis - TK_LP - or "USING" TK_USING.
@@ -76,9 +78,9 @@ static void renameTableFunc(
       assert( len>0 );
     } while( token!=TK_LP && token!=TK_USING );
 
-    zRet = sqlite3MPrintf("%.*s%Q%s", tname.z - zSql, zSql, 
+    zRet = sqlite3MPrintf(db, "%.*s%Q%s", tname.z - zSql, zSql, 
        zTableName, tname.z+tname.n);
-    sqlite3_result_text(context, zRet, -1, sqlite3FreeX);
+    sqlite3_result_text(context, zRet, -1, sqlite3_free);
   }
 }
 
@@ -104,6 +106,8 @@ static void renameTriggerFunc(
   unsigned char const *zCsr = zSql;
   int len = 0;
   char *zRet;
+
+  sqlite3 *db = sqlite3_user_data(context);
 
   /* The principle used to locate the table name in the CREATE TRIGGER 
   ** statement is that the table name is the first token that is immediatedly
@@ -149,9 +153,9 @@ static void renameTriggerFunc(
     /* Variable tname now contains the token that is the old table-name
     ** in the CREATE TRIGGER statement.
     */
-    zRet = sqlite3MPrintf("%.*s%Q%s", tname.z - zSql, zSql, 
+    zRet = sqlite3MPrintf(db, "%.*s%Q%s", tname.z - zSql, zSql, 
        zTableName, tname.z+tname.n);
-    sqlite3_result_text(context, zRet, -1, sqlite3FreeX);
+    sqlite3_result_text(context, zRet, -1, sqlite3_free);
   }
 }
 #endif   /* !SQLITE_OMIT_TRIGGER */
@@ -174,7 +178,7 @@ void sqlite3AlterFunctions(sqlite3 *db){
 
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
     sqlite3CreateFunc(db, aFuncs[i].zName, aFuncs[i].nArg,
-        SQLITE_UTF8, 0, aFuncs[i].xFunc, 0, 0);
+        SQLITE_UTF8, (void *)db, aFuncs[i].xFunc, 0, 0);
   }
 }
 
@@ -196,13 +200,14 @@ static char *whereTempTriggers(Parse *pParse, Table *pTab){
   ** expression being built up in zWhere.
   */
   if( pTab->pSchema!=pTempSchema ){
+    sqlite3 *db = pParse->db;
     for( pTrig=pTab->pTrigger; pTrig; pTrig=pTrig->pNext ){
       if( pTrig->pSchema==pTempSchema ){
         if( !zWhere ){
-          zWhere = sqlite3MPrintf("name=%Q", pTrig->name);
+          zWhere = sqlite3MPrintf(db, "name=%Q", pTrig->name);
         }else{
           tmp = zWhere;
-          zWhere = sqlite3MPrintf("%s OR name=%Q", zWhere, pTrig->name);
+          zWhere = sqlite3MPrintf(db, "%s OR name=%Q", zWhere, pTrig->name);
           sqlite3_free(tmp);
         }
       }
@@ -245,7 +250,7 @@ static void reloadTableSchema(Parse *pParse, Table *pTab, const char *zName){
   sqlite3VdbeOp3(v, OP_DropTable, iDb, 0, pTab->zName, 0);
 
   /* Reload the table, index and permanent trigger schemas. */
-  zWhere = sqlite3MPrintf("tbl_name=%Q", zName);
+  zWhere = sqlite3MPrintf(pParse->db, "tbl_name=%Q", zName);
   if( !zWhere ) return;
   sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0, zWhere, P3_DYNAMIC);
 
@@ -487,7 +492,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   */
   if( pDflt ){
     sqlite3_value *pVal;
-    if( sqlite3ValueFromExpr(pDflt, SQLITE_UTF8, SQLITE_AFF_NONE, &pVal) ){
+    if( sqlite3ValueFromExpr(db, pDflt, SQLITE_UTF8, SQLITE_AFF_NONE, &pVal) ){
       db->mallocFailed = 1;
       return;
     }

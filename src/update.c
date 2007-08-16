@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.139 2007/08/16 04:30:40 drh Exp $
+** $Id: update.c,v 1.140 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -60,7 +60,7 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i){
     u8 enc = ENC(sqlite3VdbeDb(v));
     Column *pCol = &pTab->aCol[i];
     assert( i<pTab->nCol );
-    sqlite3ValueFromExpr(pCol->pDflt, enc, pCol->affinity, &pValue);
+    sqlite3ValueFromExpr(sqlite3VdbeDb(v), pCol->pDflt, enc, pCol->affinity, &pValue);
     if( pValue ){
       sqlite3VdbeChangeP3(v, -1, (const char *)pValue, P3_MEM);
     }else{

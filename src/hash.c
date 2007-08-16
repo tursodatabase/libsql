@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.20 2007/08/16 04:30:40 drh Exp $
+** $Id: hash.c,v 1.21 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -222,7 +222,7 @@ static void rehash(Hash *pH, int new_size){
   int (*xHash)(const void*,int); /* The hash function */
 
   assert( (new_size & (new_size-1))==0 );
-  new_ht = (struct _ht *)sqlite3_malloc( new_size*sizeof(struct _ht) );
+  new_ht = (struct _ht *)sqlite3MallocZero( new_size*sizeof(struct _ht) );
   if( new_ht==0 ) return;
   if( pH->ht ) sqlite3_free(pH->ht);
   pH->ht = new_ht;

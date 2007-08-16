@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.434 2007/08/16 04:30:39 drh Exp $
+** $Id: build.c,v 1.435 2007/08/16 10:09:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -235,10 +235,9 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   if( pParse->nErr ) return;
   assert( pParse->nested<10 );  /* Nesting should only be of limited depth */
   va_start(ap, zFormat);
-  zSql = sqlite3VMPrintf(zFormat, ap);
+  zSql = sqlite3VMPrintf(pParse->db, zFormat, ap);
   va_end(ap);
   if( zSql==0 ){
-    pParse->db->mallocFailed = 1;
     return;   /* A malloc must have failed */
   }
   pParse->nested++;
@@ -1498,10 +1497,12 @@ void sqlite3EndTable(
 
     /* Compute the complete text of the CREATE statement */
     if( pSelect ){
-      zStmt = createTableStmt(p, p->pSchema==pParse->db->aDb[1].pSchema);
+      zStmt = createTableStmt(p, p->pSchema==db->aDb[1].pSchema);
     }else{
       n = pEnd->z - pParse->sNameToken.z + 1;
-      zStmt = sqlite3MPrintf("CREATE %s %.*s", zType2, n, pParse->sNameToken.z);
+      zStmt = sqlite3MPrintf(db, 
+          "CREATE %s %.*s", zType2, n, pParse->sNameToken.z
+      );
     }
 
     /* A slot for the record has already been allocated in the 
@@ -1540,7 +1541,7 @@ void sqlite3EndTable(
 
     /* Reparse everything to update our internal data structures */
     sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0,
-        sqlite3MPrintf("tbl_name='%q'",p->zName), P3_DYNAMIC);
+        sqlite3MPrintf(db, "tbl_name='%q'",p->zName), P3_DYNAMIC);
   }
 
 
@@ -2405,7 +2406,7 @@ void sqlite3CreateIndex(
   if( pList==0 ){
     nullId.z = (u8*)pTab->aCol[pTab->nCol-1].zName;
     nullId.n = strlen((char*)nullId.z);
-    pList = sqlite3ExprListAppend(0, 0, &nullId);
+    pList = sqlite3ExprListAppend(pParse, 0, 0, &nullId);
     if( pList==0 ) goto exit_create_index;
     pList->a[0].sortOrder = sortOrder;
   }
@@ -2607,7 +2608,7 @@ void sqlite3CreateIndex(
     */
     if( pStart && pEnd ){
       /* A named index with an explicit CREATE INDEX statement */
-      zStmt = sqlite3MPrintf("CREATE%s INDEX %.*s",
+      zStmt = sqlite3MPrintf(db, "CREATE%s INDEX %.*s",
         onError==OE_None ? "" : " UNIQUE",
         pEnd->z - pName->z + 1,
         pName->z);
@@ -2636,7 +2637,7 @@ void sqlite3CreateIndex(
       sqlite3RefillIndex(pParse, pIndex, iMem);
       sqlite3ChangeCookie(db, v, iDb);
       sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0,
-         sqlite3MPrintf("name='%q'", pIndex->zName), P3_DYNAMIC);
+         sqlite3MPrintf(db, "name='%q'", pIndex->zName), P3_DYNAMIC);
       sqlite3VdbeAddOp(v, OP_Expire, 0, 0);
     }
   }
@@ -3366,7 +3367,7 @@ KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
   int i;
   int nCol = pIdx->nColumn;
   int nBytes = sizeof(KeyInfo) + (nCol-1)*sizeof(CollSeq*) + nCol;
-  KeyInfo *pKey = (KeyInfo *)sqlite3DbMallocZer(pParse->db, nBytes);
+  KeyInfo *pKey = (KeyInfo *)sqlite3DbMallocZero(pParse->db, nBytes);
 
   if( pKey ){
     pKey->aSortOrder = (u8 *)&(pKey->aColl[nCol]);

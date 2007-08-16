@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.54 2007/08/16 04:30:40 drh Exp $
+** $Id: utf.c,v 1.55 2007/08/16 10:09:03 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -216,7 +216,7 @@ int sqlite3VdbeMemTranslate(sqlite3 *db, Mem *pMem, u8 desiredEnc){
   if( pMem->enc!=SQLITE_UTF8 && desiredEnc!=SQLITE_UTF8 ){
     u8 temp;
     int rc;
-    rc = sqlite3VdbeMemMakeWriteable(pMem);
+    rc = sqlite3VdbeMemMakeWriteable(db, pMem);
     if( rc!=SQLITE_OK ){
       assert( rc==SQLITE_NOMEM );
       return SQLITE_NOMEM;
@@ -336,7 +336,7 @@ translate_out:
 ** The allocation (static, dynamic etc.) and encoding of the Mem may be
 ** changed by this function.
 */
-int sqlite3VdbeMemHandleBom(Mem *pMem){
+int sqlite3VdbeMemHandleBom(sqlite3 *db, Mem *pMem){
   int rc = SQLITE_OK;
   u8 bom = 0;
 
@@ -364,10 +364,11 @@ int sqlite3VdbeMemHandleBom(Mem *pMem){
       char *z = pMem->z;
       pMem->z = 0;
       pMem->xDel = 0;
-      rc = sqlite3VdbeMemSetStr(pMem, &z[2], pMem->n-2, bom, SQLITE_TRANSIENT);
+      rc = sqlite3VdbeMemSetStr(db, pMem, &z[2], pMem->n-2, bom, 
+          SQLITE_TRANSIENT);
       xDel(z);
     }else{
-      rc = sqlite3VdbeMemSetStr(pMem, &pMem->z[2], pMem->n-2, bom, 
+      rc = sqlite3VdbeMemSetStr(db, pMem, &pMem->z[2], pMem->n-2, bom, 
           SQLITE_TRANSIENT);
     }
   }

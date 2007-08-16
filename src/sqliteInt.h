@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.587 2007/08/16 04:30:40 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.588 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1606,7 +1606,7 @@ void sqlite3FinishCoding(Parse*);
 Expr *sqlite3Expr(int, Expr*, Expr*, const Token*);
 Expr *sqlite3PExpr(Parse*, int, Expr*, Expr*, const Token*);
 Expr *sqlite3RegisterExpr(Parse*,Token*);
-Expr *sqlite3ExprAnd(sqlite*,Expr*, Expr*);
+Expr *sqlite3ExprAnd(sqlite3*,Expr*, Expr*);
 void sqlite3ExprSpan(Expr*,Token*,Token*);
 Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*);
@@ -1685,7 +1685,7 @@ int sqlite3ExprResolveNames(NameContext *, Expr *);
 int sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 int sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 Vdbe *sqlite3GetVdbe(Parse*);
-Expr *sqlite3CreateIdExpr(const char*);
+Expr *sqlite3CreateIdExpr(Parse *, const char*);
 void sqlite3Randomness(int, void*);
 void sqlite3RollbackAll(sqlite3*);
 void sqlite3CodeVerifySchema(Parse*, int);
@@ -1786,7 +1786,7 @@ int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
 char sqlite3ExprAffinity(Expr *pExpr);
 int sqlite3Atoi64(const char*, i64*);
 void sqlite3Error(sqlite3*, int, const char*,...);
-void *sqlite3HexToBlob(const char *z);
+void *sqlite3HexToBlob(sqlite3*, const char *z);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 const char *sqlite3ErrStr(int);
 int sqlite3ReadSchema(Parse *pParse);
@@ -1798,14 +1798,15 @@ int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3CheckObjectName(Parse *, const char *);
 void sqlite3VdbeSetChanges(sqlite3 *, int);
 
-const void *sqlite3ValueText(sqlite3_value*, u8);
-int sqlite3ValueBytes(sqlite3_value*, u8);
-void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8, void(*)(void*));
+const void *sqlite3ValueText(sqlite3 *db, sqlite3_value*, u8);
+int sqlite3ValueBytes(sqlite3 *db, sqlite3_value*, u8);
+void sqlite3ValueSetStr(sqlite3 *,sqlite3_value*, int, const void *,u8, 
+                        void(*)(void*));
 void sqlite3ValueFree(sqlite3_value*);
-sqlite3_value *sqlite3ValueNew(void);
-char *sqlite3Utf16to8(const void*, int);
-int sqlite3ValueFromExpr(Expr *, u8, u8, sqlite3_value **);
-void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
+sqlite3_value *sqlite3ValueNew(sqlite3 *);
+char *sqlite3Utf16to8(sqlite3 *, const void*, int);
+int sqlite3ValueFromExpr(sqlite3 *, Expr *, u8, u8, sqlite3_value **);
+void sqlite3ValueApplyAffinity(sqlite3 *, sqlite3_value *, u8, u8);
 extern const unsigned char sqlite3UpperToLower[];
 void sqlite3RootPageMoved(Db*, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);
@@ -1834,7 +1835,7 @@ void sqlite3ReleaseThreadData(void);
 void sqlite3AttachFunctions(sqlite3 *);
 void sqlite3MinimumFileFormat(Parse*, int, int);
 void sqlite3SchemaFree(void *);
-Schema *sqlite3SchemaGet(Btree *);
+Schema *sqlite3SchemaGet(sqlite3 *, Btree *);
 int sqlite3SchemaToIndex(sqlite3 *db, Schema *);
 KeyInfo *sqlite3IndexKeyinfo(Parse *, Index *);
 int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *, 
@@ -1844,6 +1845,9 @@ int sqlite3ApiExit(sqlite3 *db, int);
 void sqlite3FailedMalloc(void);
 void sqlite3AbortOtherActiveVdbes(sqlite3 *, Vdbe *);
 int sqlite3OpenTempDatabase(Parse *);
+
+void *sqlite3DbReallocOrFree(sqlite3 *, void *, int);
+sqlite3 *sqlite3DbOfVdbe(Vdbe *);
 
 /*
 ** The interface to the LEMON-generated parser
@@ -1898,7 +1902,7 @@ int sqlite3VtabCallCreate(sqlite3*, int, const char *, char **);
 int sqlite3VtabCallConnect(Parse*, Table*);
 int sqlite3VtabCallDestroy(sqlite3*, int, const char *);
 int sqlite3VtabBegin(sqlite3 *, sqlite3_vtab *);
-FuncDef *sqlite3VtabOverloadFunction(FuncDef*, int nArg, Expr*);
+FuncDef *sqlite3VtabOverloadFunction(sqlite3 *,FuncDef*, int nArg, Expr*);
 void sqlite3InvalidFunction(sqlite3_context*,int,sqlite3_value**);
 int sqlite3Reprepare(Vdbe*);
 void sqlite3ExprListCheckLength(Parse*, ExprList*, int, const char*);

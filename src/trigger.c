@@ -253,8 +253,9 @@ void sqlite3FinishTrigger(
     sqlite3VdbeChangeP3(v, addr+6, (char*)pAll->z, pAll->n);
     sqlite3ChangeCookie(db, v, iDb);
     sqlite3VdbeAddOp(v, OP_Close, 0, 0);
-    sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0, 
-       sqlite3MPrintf("type='trigger' AND name='%q'", pTrig->name), P3_DYNAMIC);
+    sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0, sqlite3MPrintf(
+        db, "type='trigger' AND name='%q'", pTrig->name), P3_DYNAMIC
+    );
   }
 
   if( db->init.busy ){

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.49 2007/08/16 04:30:40 drh Exp $
+** $Id: test8.c,v 1.50 2007/08/16 10:09:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -220,7 +220,7 @@ static int getIndexArray(
   }
 
   /* Compile an sqlite pragma to loop through all indices on table zTab */
-  zSql = sqlite3MPrintf("PRAGMA index_list(%s)", zTab);
+  zSql = sqlite3MPrintf(0, "PRAGMA index_list(%s)", zTab);
   if( !zSql ){
     rc = SQLITE_NOMEM;
     goto get_index_array_out;
@@ -234,7 +234,7 @@ static int getIndexArray(
   while( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
     const char *zIdx = (const char *)sqlite3_column_text(pStmt, 1);
     sqlite3_stmt *pStmt2 = 0;
-    zSql = sqlite3MPrintf("PRAGMA index_info(%s)", zIdx);
+    zSql = sqlite3MPrintf(0, "PRAGMA index_info(%s)", zIdx);
     if( !zSql ){
       rc = SQLITE_NOMEM;
       goto get_index_array_out;
@@ -372,7 +372,7 @@ static int echoConstructor(
   pVtab->db = db;
 
   /* Allocate echo_vtab.zThis */
-  pVtab->zThis = sqlite3MPrintf("%s", argv[2]);
+  pVtab->zThis = sqlite3MPrintf(0, "%s", argv[2]);
   if( !pVtab->zThis ){
     echoDestructor((sqlite3_vtab *)pVtab);
     return SQLITE_NOMEM;
@@ -380,10 +380,10 @@ static int echoConstructor(
 
   /* Allocate echo_vtab.zTableName */
   if( argc>3 ){
-    pVtab->zTableName = sqlite3MPrintf("%s", argv[3]);
+    pVtab->zTableName = sqlite3MPrintf(0, "%s", argv[3]);
     dequoteString(pVtab->zTableName);
     if( pVtab->zTableName && pVtab->zTableName[0]=='*' ){
-      char *z = sqlite3MPrintf("%s%s", argv[2], &(pVtab->zTableName[1]));
+      char *z = sqlite3MPrintf(0, "%s%s", argv[2], &(pVtab->zTableName[1]));
       sqlite3_free(pVtab->zTableName);
       pVtab->zTableName = z;
       pVtab->isPattern = 1;
@@ -440,8 +440,8 @@ static int echoCreate(
   if( rc==SQLITE_OK && argc==5 ){
     char *zSql;
     echo_vtab *pVtab = *(echo_vtab **)ppVtab;
-    pVtab->zLogName = sqlite3MPrintf("%s", argv[4]);
-    zSql = sqlite3MPrintf("CREATE TABLE %Q(logmsg)", pVtab->zLogName);
+    pVtab->zLogName = sqlite3MPrintf(0, "%s", argv[4]);
+    zSql = sqlite3MPrintf(0, "CREATE TABLE %Q(logmsg)", pVtab->zLogName);
     rc = sqlite3_exec(db, zSql, 0, 0, 0);
     sqlite3_free(zSql);
   }
@@ -482,7 +482,7 @@ static int echoDestroy(sqlite3_vtab *pVtab){
   /* Drop the "log" table, if one exists (see echoCreate() for details) */
   if( p && p->zLogName ){
     char *zSql;
-    zSql = sqlite3MPrintf("DROP TABLE %Q", p->zLogName);
+    zSql = sqlite3MPrintf(0, "DROP TABLE %Q", p->zLogName);
     rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
     sqlite3_free(zSql);
   }
@@ -1037,7 +1037,7 @@ static int echoRename(sqlite3_vtab *vtab, const char *zNewName){
 
   if( p->isPattern ){
     int nThis = strlen(p->zThis);
-    char *zSql = sqlite3MPrintf("ALTER TABLE %s RENAME TO %s%s", 
+    char *zSql = sqlite3MPrintf(0, "ALTER TABLE %s RENAME TO %s%s", 
         p->zTableName, zNewName, &p->zTableName[nThis]
     );
     rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
