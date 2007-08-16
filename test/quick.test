@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.59 2007/06/18 12:22:43 drh Exp $
+# $Id: quick.test,v 1.60 2007/08/16 13:01:45 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -95,12 +95,6 @@ foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
     incr nErr
     lappend ::failList $tail
     set sqlite_open_file_count 0
-  }
-  if {$::sqlite3_tsd_count} {
-    puts "Thread-specific data leak: $::sqlite3_tsd_count instances"
-    incr nErr
-    lappend ::failList $tail
-    set ::sqlite3_tsd_count 0
   }
 }
 source $testdir/misuse.test

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.381 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: main.c,v 1.382 2007/08/16 13:01:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -1267,13 +1267,11 @@ int sqlite3_enable_shared_cache(int enable){
 /*
 ** This is a convenience routine that makes sure that all thread-specific
 ** data for this thread has been deallocated.
+**
+** SQLite no longer uses thread-specific data so this routine is now a
+** no-op.  It is retained for historical compatibility.
 */
 void sqlite3_thread_cleanup(void){
-  ThreadData *pTd = sqlite3OsThreadSpecificData(0);
-  if( pTd ){
-    memset(pTd, 0, sizeof(*pTd));
-    sqlite3OsThreadSpecificData(-1);
-  }
 }
 
 /*

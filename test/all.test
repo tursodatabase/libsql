@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.44 2007/06/18 12:22:43 drh Exp $
+# $Id: all.test,v 1.45 2007/08/16 13:01:45 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -99,12 +99,6 @@ for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
       incr nErr
       lappend ::failList $tail
       set sqlite_open_file_count 0
-    }
-    if {$::sqlite3_tsd_count} {
-      puts "Thread-specific data leak: $::sqlite3_tsd_count instances"
-      incr nErr
-      lappend ::failList $tail
-      set ::sqlite3_tsd_count 0
     }
   }
   if {[info exists Leak]} {

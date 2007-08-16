@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.224 2007/08/15 17:08:46 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.225 2007/08/16 13:01:45 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3193,7 +3193,7 @@ int sqlite3_unregister_vfs(sqlite3_vfs*);
 ** to sqlite3_mutex_alloc() is usually zero, which causes
 ** any space required for the mutex to be obtained from
 ** sqlite3_malloc().  However if the argument is a positive
-** integer less than SQLITE_NUM_STATIC_MUTEX, then a pointer
+** integer less than or equal to SQLITE_MUTEX_STATIC_MAX, then a pointer
 ** to a static mutex is returned.  There are a finite number
 ** of static mutexes.  Static mutexes should not be passed
 ** to sqlite3_mutex_free().  Static mutexes are used internally

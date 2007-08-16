@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.588 2007/08/16 10:09:03 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.589 2007/08/16 13:01:45 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -181,6 +181,16 @@ typedef UINT8_TYPE u8;             /* 1-byte unsigned integer */
 typedef UINT8_TYPE i8;             /* 1-byte signed integer */
 
 /*
+** The mutex subsystem provides a handfull of static mutexes
+** that are identified by small positive integers.  The following
+** macros give symbolic names to those integers.
+*/
+#define SQLITE_MUTEX_MEM      1    /* Used by the memory allocator */
+#define SQLITE_MUTEX_PRNG     2    /* Used by pseudorandom generator */
+#define SQLITE_MUTEX_CACHE    3    /* Used by shared cache */
+#define SQLITE_MUTEX_STATIC_MAX 3
+
+/*
 ** Macros to determine whether the machine is big or little endian,
 ** evaluated at runtime.
 */
@@ -219,74 +229,6 @@ struct BusyHandler {
 #include "btree.h"
 #include "pager.h"
 
-#ifdef SQLITE_MEMDEBUG
-/*
-** The following global variables are used for testing and debugging
-** only.  They only work if SQLITE_MEMDEBUG is defined.
-*/
-extern int sqlite3_nMalloc;      /* Number of sqliteMalloc() calls */
-extern int sqlite3_nFree;        /* Number of sqliteFree() calls */
-extern int sqlite3_iMallocFail;  /* Fail sqliteMalloc() after this many calls */
-extern int sqlite3_iMallocReset; /* Set iMallocFail to this when it reaches 0 */
-
-extern void *sqlite3_pFirst;         /* Pointer to linked list of allocations */
-extern int sqlite3_nMaxAlloc;        /* High water mark of ThreadData.nAlloc */
-extern int sqlite3_mallocDisallowed; /* assert() in sqlite3Malloc() if set */
-extern int sqlite3_isFail;           /* True if all malloc calls should fail */
-extern const char *sqlite3_zFile;    /* Filename to associate debug info with */
-extern int sqlite3_iLine;            /* Line number for debug info */
-
-#define ENTER_MALLOC (sqlite3_zFile = __FILE__, sqlite3_iLine = __LINE__)
-#define sqliteMalloc(x)          (ENTER_MALLOC, sqlite3Malloc(x,1))
-#define sqliteMallocRaw(x)       (ENTER_MALLOC, sqlite3MallocRaw(x,1))
-#define sqliteRealloc(x,y)       (ENTER_MALLOC, sqlite3Realloc(x,y))
-#define sqliteStrDup(x)          (ENTER_MALLOC, sqlite3StrDup(x))
-#define sqliteStrNDup(x,y)       (ENTER_MALLOC, sqlite3StrNDup(x,y))
-#define sqliteReallocOrFree(x,y) (ENTER_MALLOC, sqlite3ReallocOrFree(x,y))
-
-#else
-
-#define ENTER_MALLOC 0
-#define sqliteMalloc(x)          sqlite3Malloc(x,1)
-#define sqliteMallocRaw(x)       sqlite3MallocRaw(x,1)
-#define sqliteRealloc(x,y)       sqlite3Realloc(x,y)
-#define sqliteStrDup(x)          sqlite3StrDup(x)
-#define sqliteStrNDup(x,y)       sqlite3StrNDup(x,y)
-#define sqliteReallocOrFree(x,y) sqlite3ReallocOrFree(x,y)
-
-#endif
-
-/* Variable sqlite3MallocHasFailed is set to true after a malloc() 
-** failure occurs. 
-**
-** The sqlite3MallocFailed() macro returns true if a malloc has failed
-** in this thread since the last call to sqlite3ApiExit(), or false 
-** otherwise.
-*/
-extern int sqlite3MallocHasFailed;
-#define sqlite3MallocFailed() (sqlite3MallocHasFailed && sqlite3OsInMutex(1))
-
-#define sqliteFree(x)          sqlite3FreeX(x)
-#define sqliteAllocSize(x)     sqlite3AllocSize(x)
-
-/*
-** An instance of this structure might be allocated to store information
-** specific to a single thread.
-*/
-struct ThreadData {
-  int dummy;               /* So that this structure is never empty */
-
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-  int nSoftHeapLimit;      /* Suggested max mem allocation.  No limit if <0 */
-  int nAlloc;              /* Number of bytes currently allocated */
-  Pager *pPager;           /* Linked list of all pagers in this thread */
-#endif
-
-#ifndef SQLITE_OMIT_SHARED_CACHE
-  u8 useSharedData;        /* True if shared pagers and schemas are enabled */
-  BtShared *pBtree;        /* Linked list of all currently open BTrees */
-#endif
-};
 
 /*
 ** Name of the master database table.  The master database table
