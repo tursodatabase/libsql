@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.256 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: where.c,v 1.257 2007/08/16 11:36:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1260,7 +1260,7 @@ static double bestVirtualIndex(
 
     /* Allocate the sqlite3_index_info structure
     */
-    pIdxInfo = sqlite3_malloc( sizeof(*pIdxInfo)
+    pIdxInfo = sqlite3MallocZero( sizeof(*pIdxInfo)
                              + (sizeof(*pIdxCons) + sizeof(*pUsage))*nTerm
                              + sizeof(*pIdxOrderBy)*nOrderBy );
     if( pIdxInfo==0 ){

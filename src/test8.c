@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.50 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: test8.c,v 1.51 2007/08/16 11:36:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -163,7 +163,7 @@ static int getColumnNames(
     for(ii=0; ii<nCol; ii++){
       nBytes += (strlen(sqlite3_column_name(pStmt, ii)) + 1);
     }
-    aCol = (char **)sqlite3_malloc(nBytes);
+    aCol = (char **)sqlite3MallocZero(nBytes);
     if( !aCol ){
       rc = SQLITE_NOMEM;
       goto out;
@@ -213,7 +213,7 @@ static int getIndexArray(
   char *zSql;
 
   /* Allocate space for the index array */
-  aIndex = (int *)sqlite3_malloc(sizeof(int) * nCol);
+  aIndex = (int *)sqlite3MallocZero(sizeof(int) * nCol);
   if( !aIndex ){
     rc = SQLITE_NOMEM;
     goto get_index_array_out;
@@ -364,7 +364,7 @@ static int echoConstructor(
   echo_vtab *pVtab;
 
   /* Allocate the sqlite3_vtab/echo_vtab structure itself */
-  pVtab = sqlite3_malloc( sizeof(*pVtab) );
+  pVtab = sqlite3MallocZero( sizeof(*pVtab) );
   if( !pVtab ){
     return SQLITE_NOMEM;
   }
@@ -498,7 +498,7 @@ static int echoDestroy(sqlite3_vtab *pVtab){
 */
 static int echoOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   echo_cursor *pCur;
-  pCur = sqlite3_malloc(sizeof(echo_cursor));
+  pCur = sqlite3MallocZero(sizeof(echo_cursor));
   *ppCursor = (sqlite3_vtab_cursor *)pCur;
   return (pCur ? SQLITE_OK : SQLITE_NOMEM);
 }
@@ -528,15 +528,17 @@ static int echoEof(sqlite3_vtab_cursor *cur){
 ** Echo virtual table module xNext method.
 */
 static int echoNext(sqlite3_vtab_cursor *cur){
-  int rc;
+  int rc = SQLITE_OK;
   echo_cursor *pCur = (echo_cursor *)cur;
-  rc = sqlite3_step(pCur->pStmt);
 
-  if( rc==SQLITE_ROW ){
-    rc = SQLITE_OK;
-  }else{
-    rc = sqlite3_finalize(pCur->pStmt);
-    pCur->pStmt = 0;
+  if( pCur->pStmt ){
+    rc = sqlite3_step(pCur->pStmt);
+    if( rc==SQLITE_ROW ){
+      rc = SQLITE_OK;
+    }else{
+      rc = sqlite3_finalize(pCur->pStmt);
+      pCur->pStmt = 0;
+    }
   }
 
   return rc;
