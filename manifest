@@ -1,5 +1,5 @@
-C Remove\sthe\sthread\sspecific\sdata\ssubsystem\sfrom\sthe\sunix\sbuild.\s\sRemove\nlegacy\scruft\sfrom\ssqliteInt.h.\s\sUse\sthe\snew\smutex\ssubsystem\sin\sthe\sPRNG.\s(CVS\s4237)
-D 2007-08-16T13:01:45
+C Change\sthe\sdesign\sof\sthe\s\smutex\sinterface\sto\sallow\sfor\nboth\s"fast"\sand\s"recursive"\smutexes.\s(CVS\s4238)
+D 2007-08-16T19:40:17
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -88,9 +88,9 @@ F src/loadext.c aa1c6e584d39cc241226ec9390387bc2d4a23e8f
 F src/main.c 996df547489d4826f70629b16623d7408f55ecd7
 F src/malloc.c 613c65f12ff0ee4edd017aa458209ab7a23cd7b1
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
-F src/mem1.c 08c4ee16393835b2d24ad39ce7b64c0f8c5b1df7
-F src/mem2.c d0ba3b23da2e95bced1818ade8a8a2dc9526111c
-F src/mutex.c b4f963ebdcb0622b3026937826afefd8a05884e1
+F src/mem1.c 2c6a6e3b2c9c7cb8d398a8468095032407c3e0b7
+F src/mem2.c 661ca7ebf6e4b964fecc95d24e8c89dbcfc9dfea
+F src/mutex.c 679d5d9c99bd302c0c43ee3eba61348c44aea366
 F src/os.c e2faefbe0f5a8ca5e3b1c49ee1b5c6cfa0f0e279
 F src/os.h 8eff07babf74e5bc3f895f8a6c7c294dad5ff997
 F src/os_common.h a5c446d3b93f09f369d13bf217de4bed3437dd1c
@@ -112,7 +112,7 @@ F src/random.c 6119474a6f6917f708c1dee25b9a8e519a620e88
 F src/select.c 98c367bce3f38c5adfcc97de9ab5c79b0e5dc2b2
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in 1fb6748ebd4c36b8476c03791009585fd5cfcf3b
+F src/sqlite.h.in 8efd7d5aca057a793d221973da1f22a22e69f4db
 F src/sqlite3ext.h 647a6b8a8f76ff6c9611e4a071531d8e63ff2d6b
 F src/sqliteInt.h fa9baff32aef7ca1ecebcd014b3bd75c981829d0
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
@@ -529,7 +529,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ba80ee59a72afe36817997de705ef81d876b6f35
-R 4dbfd96f907def879d1b3bfd1f2c5bd5
+P 3d60c14a32955b69e714a73372924d421899f83b
+R 79bf1accc56116075f09cd253592694c
 U drh
-Z 6248f8cb69e3663b94e130d7ac9b903a
+Z e40cc1b0395242393945aa35a1600f4d

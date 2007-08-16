@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement mutexes for
 ** use by the SQLite core.
 **
-** $Id: mutex.c,v 1.2 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: mutex.c,v 1.3 2007/08/16 19:40:17 drh Exp $
 */
 
 /*
@@ -38,41 +38,30 @@
 /*
 ** The sqlite3_mutex_alloc() routine allocates a new
 ** mutex and returns a pointer to it.  If it returns NULL
-** that means that a mutex could not be allocated.  SQLite
-** will unwind its stack and return an error.  The argument
-** to sqlite3_mutex_alloc() is usually zero, which causes
-** any space required for the mutex to be obtained from
-** sqlite3_malloc().  However if the argument is a positive
-** integer less than SQLITE_NUM_STATIC_MUTEX, then a pointer
-** to a static mutex is returned.  There are a finite number
-** of static mutexes.  Static mutexes should not be passed
-** to sqlite3_mutex_free().  The allocation of a static
-** mutex cannot fail.
+** that means that a mutex could not be allocated. 
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int idNotUsed){
   return (sqlite3_mutex*)sqlite3_mutex_alloc;
 }
 
 /*
-** This routine deallocates a previously
-** allocated mutex.  SQLite is careful to deallocate every
-** mutex that it allocates.
+** This routine deallocates a previously allocated mutex.
 */
 void sqlite3_mutex_free(sqlite3_mutex *pNotUsed){}
 
 /*
-** The sqlite3_mutex_enter() routine attempts to enter a
-** mutex.  If another thread is already within the mutex,
-** sqlite3_mutex_enter() will return SQLITE_BUSY if blockFlag
-** is zero, or it will block and wait for the other thread to
-** exit if blockFlag is non-zero.  Mutexes are recursive.  The
-** same thread can enter a single mutex multiple times.  Each
-** entrance must be matched with a corresponding exit before
-** another thread is able to enter the mutex.
+** The sqlite3_mutex_enter() and sqlite3_mutex_try() routines attempt
+** to enter a mutex.  If another thread is already within the mutex,
+** sqlite3_mutex_enter() will block and sqlite3_mutex_try() will return
+** SQLITE_BUSY.  The sqlite3_mutex_try() interface returns SQLITE_OK
+** upon successful entry.  Mutexes created using SQLITE_MUTEX_RECURSIVE can
+** be entered multiple times by the same thread.  In such cases the,
+** mutex must be exited an equal number of times before another thread
+** can enter.  If the same thread tries to enter any other kind of mutex
+** more than once, the behavior is undefined.
 */
-int sqlite3_mutex_enter(sqlite3_mutex *pNotUsed, int blockFlag){
-  return SQLITE_OK;
-}
+void sqlite3_mutex_enter(sqlite3_mutex *pNotUsed){}
+int sqlite3_mutex_try(sqlite3_mutex *pNotUsed){ return SQLITE_OK; }
 
 /*
 ** The sqlite3_mutex_exit() routine exits a mutex that was
@@ -80,20 +69,7 @@ int sqlite3_mutex_enter(sqlite3_mutex *pNotUsed, int blockFlag){
 ** is undefined if the mutex is not currently entered or
 ** is not currently allocated.  SQLite will never do either.
 */
-void sqlite3_mutex_leave(sqlite3_mutex *pNotUsed){
-  return;
-}
-
-/*
-** The sqlite3_mutex_serialize() routine is used to serialize 
-** execution of a subroutine.  The subroutine given in the argument
-** is invoked.  But only one thread at a time is allowed to be
-** running a subroutine using sqlite3_mutex_serialize().
-*/
-int sqlite3_mutex_serialize(void (*xCallback)(void*), void *pArg){
-  xCallback(pArg);
-  return SQLITE_OK;
-}
+void sqlite3_mutex_leave(sqlite3_mutex *pNotUsed){}
 
 #if 0
 /**************** Non-recursive Pthread Mutex Implementation *****************
@@ -106,6 +82,7 @@ int sqlite3_mutex_serialize(void (*xCallback)(void*), void *pArg){
 ** Each recursive mutex is an instance of the following structure.
 */
 struct RMutex {
+  int recursiveMagic;         /* Magic number identifying this as recursive */
   int nRef;                   /* Number of entrances */
   pthread_mutex_t auxMutex;   /* Mutex controlling access to nRef and owner */
   pthread_mutex_t mainMutex;  /* Mutex controlling the lock */
@@ -113,51 +90,107 @@ struct RMutex {
 };
 
 /*
-** Static mutexes
+** Each fast mutex is an instance of the following structure
 */
-static struct RMutex rmutexes[] = {
-  { 0, PTHREAD_MUTEX_INITIALIZER, PTHREAD_MUTEX_INITIALIZER, },
-  { 0, PTHREAD_MUTEX_INITIALIZER, PTHREAD_MUTEX_INITIALIZER, },
-  { 0, PTHREAD_MUTEX_INITIALIZER, PTHREAD_MUTEX_INITIALIZER, },
+struct FMutex {
+  int fastMagic;          /* Identifies this as a fast mutex */
+  pthread_mutex_t mutex;  /* The actual underlying mutex */
 };
 
 /*
-** A mutex used for serialization.
+** Either of the above
 */
-static RMutex serialMutex =
-   {0, PTHREAD_MUTEX_INITIALIZER, PTHREAD_MUTEX_INITIALIZER, };
+union AnyMutex {
+  struct RMutex r;
+  struct FMutex f;
+};
+
+/*
+** Magic numbers
+*/
+#define SQLITE_MTX_RECURSIVE   0x4ED886ED
+#define SQLITE_MTX_STATIC      0x56FCE1B4
+#define SQLITE_MTX_FAST        0x245BFD4F
+
+/*
+** Static mutexes
+*/
 
 /*
 ** The sqlite3_mutex_alloc() routine allocates a new
 ** mutex and returns a pointer to it.  If it returns NULL
 ** that means that a mutex could not be allocated.  SQLite
 ** will unwind its stack and return an error.  The argument
-** to sqlite3_mutex_alloc() is usually zero, which causes
-** any space required for the mutex to be obtained from
-** sqlite3_malloc().  However if the argument is a positive
-** integer less than SQLITE_NUM_STATIC_MUTEX, then a pointer
-** to a static mutex is returned.  There are a finite number
-** of static mutexes.  Static mutexes should not be passed
-** to sqlite3_mutex_free().  The allocation of a static
-** mutex cannot fail.
+** to sqlite3_mutex_alloc() is one of these integer constants:
+**
+** <ul>
+** <li>  SQLITE_MUTEX_FAST               0
+** <li>  SQLITE_MUTEX_RECURSIVE          1
+** <li>  SQLITE_MUTEX_STATIC_MASTER      2
+** <li>  SQLITE_MUTEX_STATIC_MEM         3
+** <li>  SQLITE_MUTEX_STATIC_PRNG        4
+** </ul>
+**
+** The first two constants cause sqlite3_mutex_alloc() to create
+** a new mutex.  The new mutex is recursive when SQLITE_MUTEX_RECURSIVE
+** is used but not necessarily so when SQLITE_MUTEX_FAST is used.
+** The mutex implementation does not need to make a distinction
+** between SQLITE_MUTEX_RECURSIVE and SQLITE_MUTEX_FAST if it does
+** not want to.  But SQLite will only request a recursive mutex in
+** cases where it really needs one.  If a faster non-recursive mutex
+** implementation is available on the host platform, the mutex subsystem
+** might return such a mutex in response to SQLITE_MUTEX_FAST.
+**
+** The other allowed parameters to sqlite3_mutex_alloc() each return
+** a pointer to a static preexisting mutex.  Three static mutexes are
+** used by the current version of SQLite.  Future versions of SQLite
+** may add additional static mutexes.  Static mutexes are for internal
+** use by SQLite only.  Applications that use SQLite mutexes should
+** use only the dynamic mutexes returned by SQLITE_MUTEX_FAST or
+** SQLITE_MUTEX_RECURSIVE.
+**
+** Note that if one of the dynamic mutex parameters (SQLITE_MUTEX_FAST
+** or SQLITE_MUTEX_RECURSIVE) is used then sqlite3_mutex_alloc()
+** returns a different mutex on every call.  But for the static 
+** mutex types, the same mutex is returned on every call that has
+** the same type number.
 */
-sqlite3_mutex *sqlite3_mutex_alloc(int id){
-  struct RMutex *p;
-  if( id>0 ){
-    if( id>sizeof(rmutexes)/sizeof(rmutexes[0]) ){
-      p = 0;
-    }else{
-      p = &rmutexes[id-1];
+sqlite3_mutex *sqlite3_mutex_alloc(int iType){
+  static struct FMutex staticMutexes[] = {
+    { SQLITE_MTX_STATIC, PTHREAD_MUTEX_INITIALIZER },
+    { SQLITE_MTX_STATIC, PTHREAD_MUTEX_INITIALIZER },
+    { SQLITE_MTX_STATIC, PTHREAD_MUTEX_INITIALIZER },
+  };
+  sqlite3_mutex *p;
+  switch( iType ){
+    case SQLITE_MUTEX_FAST: {
+      struct FMutex *px = sqlite3_malloc( sizeof(*px) );
+      if( px ){
+        px->fastMagic = SQLITE_MTX_FAST;
+        pthread_mutex_init(&px->mutex, 0);
+      }
+      p = (sqlite3_mutex*)px;
+      break;
     }
-  }else{
-    p = sqlite3_malloc( sizeof(*p) );
-    if( p ){
-      p->nRef = 0;
-      pthread_mutex_init(&p->mutex, 0);
+    case SQLITE_MUTEX_RECURSIVE: {
+      struct RMutex *px = sqlite3_malloc( sizeof(*px) );
+      if( px ){
+        px->recursiveMagic = SQLITE_MTX_RECURSIVE;
+        pthread_mutex_init(&px->auxMutex, 0);
+        pthread_mutex_init(&px->mainMutex, 0);
+        px->nRef = 0;
+      }
+      p = (sqlite3_mutex*)px;
+      break;
+    }
+    default: {
+      p = &staticMutexes[iType-2];
+      break;
     }
   }
-  return (sqlite3_mutex*)p;
+  return p;
 }
+
 
 /*
 ** This routine deallocates a previously
@@ -165,46 +198,77 @@ sqlite3_mutex *sqlite3_mutex_alloc(int id){
 ** mutex that it allocates.
 */
 void sqlite3_mutex_free(sqlite3_mutex *pMutex){
-  struct RMutex *p = (struct RMutex*)pMutex;
-  assert( p->nRef==0 );
-  pthread_mutex_destroy(&p->mutex);
-  sqlite3_free(p);
+  int iType = *(int*)pMutex;
+  if( iType==SQLITE_MTX_FAST ){
+    struct FMutex *p = (struct FMutex*)pMutex;
+    pthread_mutex_destroy(&p->mutex);
+    sqlite3_free(p);
+  }else if( iType==SQLITE_MTX_RECURSIVE ){
+    struct RMutex *p = (struct RMutex*)pMutex;
+    pthread_mutex_destroy(&p->auxMutex);
+    pthread_mutex_destroy(&p->mainMutex);
+    sqlite3_free(p);
+  }
 }
 
 /*
-** The sqlite3_mutex_enter() routine attempts to enter a
-** mutex.  If another thread is already within the mutex,
-** sqlite3_mutex_enter() will return SQLITE_BUSY if blockFlag
-** is zero, or it will block and wait for the other thread to
-** exit if blockFlag is non-zero.  Mutexes are recursive.  The
-** same thread can enter a single mutex multiple times.  Each
-** entrance must be matched with a corresponding exit before
-** another thread is able to enter the mutex.
+** The sqlite3_mutex_enter() and sqlite3_mutex_try() routines attempt
+** to enter a mutex.  If another thread is already within the mutex,
+** sqlite3_mutex_enter() will block and sqlite3_mutex_try() will return
+** SQLITE_BUSY.  The sqlite3_mutex_try() interface returns SQLITE_OK
+** upon successful entry.  Mutexes created using SQLITE_MUTEX_RECURSIVE can
+** be entered multiple times by the same thread.  In such cases the,
+** mutex must be exited an equal number of times before another thread
+** can enter.  If the same thread tries to enter any other kind of mutex
+** more than once, the behavior is undefined.
 */
-int sqlite3_mutex_enter(sqlite3_mutex *pMutex, int blockFlag){
-  struct RMutex *p = (struct RMutex*)pMutex;
-  while(1){
+void sqlite3_mutex_enter(sqlite3_mutex *pMutex){
+  if( SQLITE_MTX_FAST == *(int*)pMutex ){
+    struct FMutex *p = (struct FMutex*)pMutex;
+    pthread_mutex_lock(&p->mutex);
+  }else{
+    struct RMutex *p = (struct RMutex*)pMutex;
     pthread_mutex_lock(&p->auxMutex);
     if( p->nRef==0 ){
       p->nRef++;
       p->owner = pthread_self();
       pthread_mutex_lock(&p->mainMutex);
       pthread_mutex_unlock(&p->auxMutex);
-      return SQLITE_OK;
     }else if( pthread_equal(p->owner, pthread_self()) ){
       p->nRef++;
       pthread_mutex_unlock(&p->auxMutex);
-      return SQLITE_OK;
-    }else if( !blockFlag ){
-      pthread_mutex_unlock(&p->auxMutex);
-      return SQLITE_BUSY;
     }else{
-      pthread_mutex_unlock(&p->auxMutex);
-      pthread_mutex_lock(&p->mainMutex);
-      pthread_mutex_unlock(&p->mainMutex);
+      while( p->nRef ){
+        pthread_mutex_unlock(&p->auxMutex);
+        pthread_mutex_lock(&p->mainMutex);
+        pthread_mutex_unlock(&p->mainMutex);
+      }
     }
   }
-  /* NOTREACHED */
+}
+int sqlite3_mutex_try(sqlite3_mutex *pMutex){
+  if( SQLITE_MTX_FAST == *(int*)pMutex ){
+    struct FMutex *p = (struct FMutex*)pMutex;
+    if( pthread_mutex_trylock(&p->mutex) ){
+      return SQLITE_BUSY;
+    }
+  }else{
+    struct RMutex *p = (struct RMutex*)pMutex;
+    pthread_mutex_lock(&p->auxMutex);
+    if( p->nRef==0 ){
+      p->nRef++;
+      p->owner = pthread_self();
+      pthread_mutex_lock(&p->mainMutex);
+      pthread_mutex_unlock(&p->auxMutex);
+    }else if( pthread_equal(p->owner, pthread_self()) ){
+      p->nRef++;
+      pthread_mutex_unlock(&p->auxMutex);
+    }else{
+      pthread_mutex_unlock(&p->auxMutex);
+      return SQLITE_BUSY;
+    }
+  }
+  return SQLITE_OK;
 }
 
 /*
@@ -214,25 +278,18 @@ int sqlite3_mutex_enter(sqlite3_mutex *pMutex, int blockFlag){
 ** is not currently allocated.  SQLite will never do either.
 */
 void sqlite3_mutex_leave(sqlite3_mutex *pMutex){
-  struct RMutex *p = (struct RMutex*)pMutex;
-  pthread_mutex_lock(&p->auxMutex);
-  p->nRef--;
-  if( p->nRef<=0 ){
-    pthread_mutex_unlock(&p->mainMutex);
+  if( SQLITE_MTX_FAST == *(int*)pMutex ){
+    struct FMutex *p = (struct FMutex*)pMutex;
+    pthread_mutex_unlock(&p->mutex);
+  }else{
+    struct RMutex *p = (struct RMutex*)pMutex;
+    pthread_mutex_lock(&p->auxMutex);
+    p->nRef--;
+    if( p->nRef<=0 ){
+      pthread_mutex_unlock(&p->mainMutex);
+    }
+    pthread_mutex_unlock(&p->auxMutex);
   }
-  pthread_mutex_unlock(&p->auxMutex);
-}
-
-/*
-** The sqlite3_mutex_serialize() routine is used to serialize 
-** execution of a subroutine.  The subroutine given in the argument
-** is invoked.  But only one thread at a time is allowed to be
-** running a subroutine using sqlite3_mutex_serialize().
-*/
-int sqlite3_mutex_serialize(void (*xCallback)(void*), void *pArg){
-  sqlite3_mutex_enter(&serialMutex, 1);
-  xCallback(pArg);
-  sqlite3_mutex_leave(&serialMutex);
 }
 #endif /* non-recursive pthreads */
 

@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem1.c,v 1.4 2007/08/16 13:01:45 drh Exp $
+** $Id: mem1.c,v 1.5 2007/08/16 19:40:17 drh Exp $
 */
 
 /*
@@ -81,9 +81,9 @@ static struct {
 sqlite3_uint64 sqlite3_memory_used(void){
   sqlite3_uint64 n;
   if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_MEM);
+    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
-  sqlite3_mutex_enter(mem.mutex, 1);
+  sqlite3_mutex_enter(mem.mutex);
   n = mem.nowUsed;
   sqlite3_mutex_leave(mem.mutex);  
   return n;
@@ -97,9 +97,9 @@ sqlite3_uint64 sqlite3_memory_used(void){
 sqlite3_uint64 sqlite3_memory_highwater(int resetFlag){
   sqlite3_uint64 n;
   if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_MEM);
+    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
-  sqlite3_mutex_enter(mem.mutex, 1);
+  sqlite3_mutex_enter(mem.mutex);
   n = mem.mxUsed;
   if( resetFlag ){
     mem.mxUsed = mem.nowUsed;
@@ -117,9 +117,9 @@ int sqlite3_memory_alarm(
   sqlite3_uint64 iThreshold
 ){
   if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_MEM);
+    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
-  sqlite3_mutex_enter(mem.mutex, 1);
+  sqlite3_mutex_enter(mem.mutex);
   mem.alarmCallback = xCallback;
   mem.alarmArg = pArg;
   mem.alarmThreshold = iThreshold;
@@ -131,9 +131,17 @@ int sqlite3_memory_alarm(
 ** Trigger the alarm 
 */
 static void sqlite3MemsysAlarm(unsigned nByte){
+  void (*xCallback)(void*,sqlite3_uint64,unsigned);
+  sqlite3_uint64 nowUsed;
+  void *pArg;
   if( mem.alarmCallback==0 || mem.alarmBusy  ) return;
   mem.alarmBusy = 1;
-  mem.alarmCallback(mem.alarmArg, mem.nowUsed, nByte);
+  xCallback = mem.alarmCallback;
+  nowUsed = mem.nowUsed;
+  pArg = mem.alarmArg;
+  sqlite3_mutex_leave(mem.mutex);
+  xCallback(pArg, nowUsed, nByte);
+  sqlite3_mutex_enter(mem.mutex);
   mem.alarmBusy = 0;
 }
 
@@ -143,9 +151,9 @@ static void sqlite3MemsysAlarm(unsigned nByte){
 void *sqlite3_malloc(unsigned int nBytes){
   sqlite3_uint64 *p;
   if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_MEM);
+    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
-  sqlite3_mutex_enter(mem.mutex, 1);
+  sqlite3_mutex_enter(mem.mutex);
   if( mem.nowUsed+nBytes>=mem.alarmThreshold ){
     sqlite3MemsysAlarm(nBytes);
   }
@@ -179,7 +187,7 @@ void sqlite3_free(void *pPrior){
   p = pPrior;
   p--;
   nByte = (unsigned int)*p;
-  sqlite3_mutex_enter(mem.mutex, 1);
+  sqlite3_mutex_enter(mem.mutex);
   mem.nowUsed -= nByte;
   free(p);
   sqlite3_mutex_leave(mem.mutex);  
@@ -202,7 +210,7 @@ void *sqlite3_realloc(void *pPrior, unsigned int nBytes){
   p--;
   nOld = (unsigned int)p[0];
   assert( mem.mutex!=0 );
-  sqlite3_mutex_enter(mem.mutex, 1);
+  sqlite3_mutex_enter(mem.mutex);
   if( mem.nowUsed+nBytes-nOld>=mem.alarmThreshold ){
     sqlite3MemsysAlarm(nBytes-nOld);
   }

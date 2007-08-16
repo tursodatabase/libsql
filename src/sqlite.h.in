@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.225 2007/08/16 13:01:45 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.226 2007/08/16 19:40:17 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -508,6 +508,8 @@ struct sqlite3_io_methods {
 ** abstract type for a mutex object.  The SQLite core never looks
 ** at the internal representation of an [sqlite3_mutex].  It only
 ** deals with pointers to the [sqlite3_mutex] object.
+**
+** Mutexes are created using [sqlite3_mutex_alloc()].
 */
 typedef struct sqlite3_mutex sqlite3_mutex;
 
@@ -519,19 +521,24 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** in the name of the object stands for "virtual file system".
 **
 ** The iVersion field is initially 1 but may be larger for future
-** versions.  szOsFile is the size of the subclassed sqlite3_file
+** versions of SQLite.  Additional fields may be appended to this
+** object when the iVersion value is increased.
+**
+** The szOsFile field is the size of the subclassed sqlite3_file
 ** structure used by this VFS.  mxPathname is the maximum length of
 ** a pathname in this VFS.
 **
 ** The nRef field is incremented and decremented by SQLite to keep
 ** count of the number of users of the VFS.  This field and
 ** vfsMutex, pNext, and pPrev are the only fields in the sqlite3_vfs 
-** structure that SQLite will ever modify.  These fields are modified 
-** within an sqlite3_mutex_serialize() call so that updates are threadsafe.
+** structure that SQLite will ever modify.  SQLite will only access
+** or modify these fields while holding a particular static mutex.
+** The application should never modify any fields of the sqlite3_vfs
+** object once the object has been registered.
 ** 
 ** The sqlite3_vfs.vfsMutex is a mutex used by the OS interface.
 ** It should initially be NULL.  SQLite will initialize this field
-** using sqlite3_mutex_allocate() upon first use of the adaptor
+** using sqlite3_mutex_alloc() upon first use of the adaptor
 ** by sqlite3_open_v2() and will deallocate the mutex when the
 ** last user closes.  In other words, vfsMutex will be allocated
 ** when nRef transitions from 0 to 1 and will be deallocated when
@@ -3190,43 +3197,72 @@ int sqlite3_unregister_vfs(sqlite3_vfs*);
 ** mutex and returns a pointer to it.  If it returns NULL
 ** that means that a mutex could not be allocated.  SQLite
 ** will unwind its stack and return an error.  The argument
-** to sqlite3_mutex_alloc() is usually zero, which causes
-** any space required for the mutex to be obtained from
-** sqlite3_malloc().  However if the argument is a positive
-** integer less than or equal to SQLITE_MUTEX_STATIC_MAX, then a pointer
-** to a static mutex is returned.  There are a finite number
-** of static mutexes.  Static mutexes should not be passed
-** to sqlite3_mutex_free().  Static mutexes are used internally
-** by the SQLite core and should not be used by the application.
+** to sqlite3_mutex_alloc() is one of these integer constants:
+**
+** <ul>
+** <li>  SQLITE_MUTEX_FAST
+** <li>  SQLITE_MUTEX_RECURSIVE
+** <li>  SQLITE_MUTEX_STATIC_MASTER
+** <li>  SQLITE_MUTEX_STATIC_MEM
+** <li>  SQLITE_MUTEX_STATIC_PRNG
+** </ul>
+**
+** The first two constants cause sqlite3_mutex_alloc() to create
+** a new mutex.  The new mutex is recursive when SQLITE_MUTEX_RECURSIVE
+** is used but not necessarily so when SQLITE_MUTEX_FAST is used.
+** The mutex implementation does not need to make a distinction
+** between SQLITE_MUTEX_RECURSIVE and SQLITE_MUTEX_FAST if it does
+** not want to.  But SQLite will only request a recursive mutex in
+** cases where it really needs one.  If a faster non-recursive mutex
+** implementation is available on the host platform, the mutex subsystem
+** might return such a mutex in response to SQLITE_MUTEX_FAST.
+**
+** The other allowed parameters to sqlite3_mutex_alloc() each return
+** a pointer to a static preexisting mutex.  Three static mutexes are
+** used by the current version of SQLite.  Future versions of SQLite
+** may add additional static mutexes.  Static mutexes are for internal
+** use by SQLite only.  Applications that use SQLite mutexes should
+** use only the dynamic mutexes returned by SQLITE_MUTEX_FAST or
+** SQLITE_MUTEX_RECURSIVE.
+**
+** Note that if one of the dynamic mutex parameters (SQLITE_MUTEX_FAST
+** or SQLITE_MUTEX_RECURSIVE) is used then sqlite3_mutex_alloc()
+** returns a different mutex on every call.  But for the static 
+** mutex types, the same mutex is returned on every call that has
+** the same type number.
 **
 ** The sqlite3_mutex_free() routine deallocates a previously
-** allocated mutex.  SQLite is careful to deallocate every
-** mutex that it allocates.
+** allocated dynamic mutex.  SQLite is careful to deallocate every
+** dynamic mutex that it allocates.  The dynamic mutexes must not be in 
+** use when they are deallocated.  Static mutexes do not need to be
+** deallocated and SQLite never bothers to do so.
 **
-** The sqlite3_mutex_enter() routine attempts to enter a
-** mutex.  If another thread is already within the mutex,
-** sqlite3_mutex_enter() will return SQLITE_BUSY if blockFlag
-** is zero, or it will block and wait for the other thread to
-** exit if blockFlag is non-zero.  Mutexes are recursive.  The
-** same thread can enter a single mutex multiple times.  Each
-** entrance must be matched with a corresponding exit before
-** another thread is able to enter the mutex.
+** The sqlite3_mutex_enter() and sqlite3_mutex_try() routines attempt
+** to enter a mutex.  If another thread is already within the mutex,
+** sqlite3_mutex_enter() will block and sqlite3_mutex_try() will return
+** SQLITE_BUSY.  The sqlite3_mutex_try() interface returns SQLITE_OK
+** upon successful entry.  Mutexes created using SQLITE_MUTEX_RECURSIVE can
+** be entered multiple times by the same thread.  In such cases the,
+** mutex must be exited an equal number of times before another thread
+** can enter.  If the same thread tries to enter any other kind of mutex
+** more than once, the behavior is undefined.   SQLite will never exhibit
+** such behavior in its own use of mutexes.
 **
 ** The sqlite3_mutex_exit() routine exits a mutex that was
 ** previously entered by the same thread.  The behavior
 ** is undefined if the mutex is not currently entered or
 ** is not currently allocated.  SQLite will never do either.
-**
-** The sqlite3_mutex_serialize() routine is used to serialize 
-** a subroutine.  The subroutine given in the argument is invoked
-** while holding a static mutex.  This ensures that no other
-** thread is running this same subroutine at the same time.
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int);
 void sqlite3_mutex_free(sqlite3_mutex*);
-int sqlite3_mutex_enter(sqlite3_mutex*, int blockFlag);
+void sqlite3_mutex_enter(sqlite3_mutex*);
+int sqlite3_mutex_try(sqlite3_mutex*);
 void sqlite3_mutex_leave(sqlite3_mutex*);
-int sqlite3_mutex_serialize(void(*)(void*), void*);
+#define SQLITE_MUTEX_FAST             0
+#define SQLITE_MUTEX_RECURSIVE        1
+#define SQLITE_MUTEX_STATIC_MASTER    2
+#define SQLITE_MUTEX_STATIC_MEM       3
+#define SQLITE_MUTEX_STATIC_PRNG      4
 
 
 /*
