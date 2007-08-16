@@ -11,7 +11,7 @@
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
 **
-** $Id: test4.c,v 1.17 2006/02/23 21:43:56 drh Exp $
+** $Id: test4.c,v 1.18 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -143,7 +143,7 @@ static int tcl_thread_create(
   }
   threadset[i].busy = 1;
   sqliteFree(threadset[i].zFilename);
-  threadset[i].zFilename = sqliteStrDup(argv[2]);
+  threadset[i].zFilename = sqlite3StrDup(argv[2]);
   threadset[i].opnum = 1;
   threadset[i].completed = 0;
   rc = pthread_create(&x, 0, thread_main, &threadset[i]);
@@ -477,7 +477,7 @@ static int tcl_thread_compile(
   thread_wait(&threadset[i]);
   threadset[i].xOp = do_compile;
   sqliteFree(threadset[i].zArg);
-  threadset[i].zArg = sqliteStrDup(argv[2]);
+  threadset[i].zArg = sqlite3StrDup(argv[2]);
   threadset[i].opnum++;
   return TCL_OK;
 }

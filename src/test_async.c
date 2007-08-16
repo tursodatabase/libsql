@@ -316,8 +316,8 @@ static const char *azOpcodeName[] = {
 **
 **
 ** For an ASYNC_WRITE operation, zBuf points to the data to write to the file. 
-** This space is sqliteMalloc()d along with the AsyncWrite structure in a
-** single blob, so is deleted when sqliteFree() is called on the parent 
+** This space is sqlite3_malloc()d along with the AsyncWrite structure in a
+** single blob, so is deleted when sqlite3_free() is called on the parent 
 ** structure.
 */
 struct AsyncWrite {
@@ -343,8 +343,8 @@ struct AsyncFile {
 
 /*
 ** Add an entry to the end of the global write-op list. pWrite should point 
-** to an AsyncWrite structure allocated using sqlite3OsMalloc().  The writer
-** thread will call sqlite3OsFree() to free the structure after the specified
+** to an AsyncWrite structure allocated using sqlite3_malloc().  The writer
+** thread will call sqlite3_free() to free the structure after the specified
 ** operation has been completed.
 **
 ** Once an AsyncWrite structure has been added to the list, it becomes the
@@ -410,7 +410,7 @@ static int addNewAsyncWrite(
   if( op!=ASYNC_CLOSE && async.ioError ){
     return async.ioError;
   }
-  p = sqlite3OsMalloc(sizeof(AsyncWrite) + (zByte?nByte:0));
+  p = sqlite3_malloc(sizeof(AsyncWrite) + (zByte?nByte:0));
   if( !p ){
     return SQLITE_NOMEM;
   }
@@ -718,7 +718,7 @@ static int asyncOpenFile(
 
   n = strlen(zName);
   for(i=n-1; i>=0 && zName[i]!='/'; i--){}
-  p = (AsyncFile *)sqlite3OsMalloc(sizeof(AsyncFile) + n - i);
+  p = (AsyncFile *)sqlite3_malloc(sizeof(AsyncFile) + n - i);
   if( !p ){
     rc = SQLITE_NOMEM;
     goto error_out;
@@ -755,7 +755,7 @@ static int asyncOpenExclusive(const char *z, OsFile **ppFile, int delFlag){
     i64 i = (i64)(delFlag);
     rc = addNewAsyncWrite(pFile, ASYNC_OPENEXCLUSIVE, i, nByte, z);
     if( rc!=SQLITE_OK ){
-      sqlite3OsFree(pFile);
+      sqlite3_free(pFile);
       *ppFile = 0;
     }
   }
@@ -991,7 +991,7 @@ static void *asyncWriterThread(void *NotUsed){
         ASYNC_TRACE(("CLOSE %s\n", p->pFile->zName));
         sqlite3OsClose(&p->pFile->pBaseWrite);
         sqlite3OsClose(&p->pFile->pBaseRead);
-        sqlite3OsFree(p->pFile);
+        sqlite3_free(p->pFile);
         break;
 
       case ASYNC_OPENDIRECTORY:
@@ -1048,7 +1048,7 @@ static void *asyncWriterThread(void *NotUsed){
       async.pQueueLast = 0;
     }
     async.pQueueFirst = p->pNext;
-    sqlite3OsFree(p);
+    sqlite3_free(p);
     assert( holdingMutex );
 
     /* An IO error has occured. We cannot report the error back to the

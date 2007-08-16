@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.60 2007/05/09 20:31:30 drh Exp $
+** $Id: attach.c,v 1.61 2007/08/16 04:30:39 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -102,7 +102,8 @@ static void attachFunc(
   for(i=0; i<db->nDb; i++){
     char *z = db->aDb[i].zName;
     if( z && zName && sqlite3StrICmp(z, zName)==0 ){
-      sqlite3_snprintf(sizeof(zErr), zErr, "database %s is already in use", zName);
+      sqlite3_snprintf(sizeof(zErr), zErr, 
+                       "database %s is already in use", zName);
       goto attach_error;
     }
   }
@@ -111,14 +112,16 @@ static void attachFunc(
   ** hash tables.
   */
   if( db->aDb==db->aDbStatic ){
-    aNew = sqliteMalloc( sizeof(db->aDb[0])*3 );
+    aNew = sqlite3_malloc( sizeof(db->aDb[0])*3 );
     if( aNew==0 ){
+      db->mallocFailed = 1;
       return;
     }
     memcpy(aNew, db->aDb, sizeof(db->aDb[0])*2);
   }else{
-    aNew = sqliteRealloc(db->aDb, sizeof(db->aDb[0])*(db->nDb+1) );
+    aNew = sqlite3_realloc(db->aDb, sizeof(db->aDb[0])*(db->nDb+1) );
     if( aNew==0 ){
+      db->mallocFailed = 1;
       return;
     } 
   }
@@ -132,7 +135,7 @@ static void attachFunc(
   */
   rc = sqlite3BtreeFactory(db, zFile, 0, SQLITE_DEFAULT_CACHE_SIZE, &aNew->pBt);
   if( rc==SQLITE_OK ){
-    aNew->pSchema = sqlite3SchemaGet(aNew->pBt);
+    aNew->pSchema = sqlite3SchemaGet(db, aNew->pBt);
     if( !aNew->pSchema ){
       rc = SQLITE_NOMEM;
     }else if( aNew->pSchema->file_format && aNew->pSchema->enc!=ENC(db) ){
@@ -142,7 +145,7 @@ static void attachFunc(
     }
     sqlite3PagerLockingMode(sqlite3BtreePager(aNew->pBt), db->dfltLockMode);
   }
-  aNew->zName = sqliteStrDup(zName);
+  aNew->zName = sqlite3DbStrDup(db, zName);
   aNew->safety_level = 3;
 
 #if SQLITE_HAS_CODEC
@@ -155,7 +158,7 @@ static void attachFunc(
     switch( t ){
       case SQLITE_INTEGER:
       case SQLITE_FLOAT:
-        zErrDyn = sqliteStrDup("Invalid key value");
+        zErrDyn = sqlite3DbStrDup(db, "Invalid key value");
         rc = SQLITE_ERROR;
         break;
         
@@ -196,7 +199,7 @@ static void attachFunc(
     sqlite3ResetInternalSchema(db, 0);
     db->nDb = iDb;
     if( rc==SQLITE_NOMEM ){
-      sqlite3FailedMalloc();
+      db->mallocFailed = 1;
       sqlite3_snprintf(sizeof(zErr),zErr, "out of memory");
     }else{
       sqlite3_snprintf(sizeof(zErr),zErr, "unable to open database: %s", zFile);
@@ -210,7 +213,7 @@ attach_error:
   /* Return an error if we get here */
   if( zErrDyn ){
     sqlite3_result_error(context, zErrDyn, -1);
-    sqliteFree(zErrDyn);
+    sqlite3_free(zErrDyn);
   }else{
     zErr[sizeof(zErr)-1] = 0;
     sqlite3_result_error(context, zErr, -1);
@@ -292,14 +295,14 @@ static void codeAttach(
   sqlite3* db = pParse->db;
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  assert( sqlite3MallocFailed() || pAuthArg );
+  assert( db->mallocFailed || pAuthArg );
   if( pAuthArg ){
-    char *zAuthArg = sqlite3NameFromToken(&pAuthArg->span);
+    char *zAuthArg = sqlite3NameFromToken(db, &pAuthArg->span);
     if( !zAuthArg ){
       goto attach_end;
     }
     rc = sqlite3AuthCheck(pParse, type, zAuthArg, 0, 0);
-    sqliteFree(zAuthArg);
+    sqlite3_free(zAuthArg);
     if(rc!=SQLITE_OK ){
       goto attach_end;
     }
@@ -323,7 +326,7 @@ static void codeAttach(
   sqlite3ExprCode(pParse, pDbname);
   sqlite3ExprCode(pParse, pKey);
 
-  assert( v || sqlite3MallocFailed() );
+  assert( v || db->mallocFailed );
   if( v ){
     sqlite3VdbeAddOp(v, OP_Function, 0, nFunc);
     pFunc = sqlite3FindFunction(db, zFunc, strlen(zFunc), nFunc, SQLITE_UTF8,0);
@@ -424,7 +427,7 @@ int sqlite3FixSrcList(
   zDb = pFix->zDb;
   for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
     if( pItem->zDatabase==0 ){
-      pItem->zDatabase = sqliteStrDup(zDb);
+      pItem->zDatabase = sqlite3DbStrDup(pFix->pParse->db, zDb);
     }else if( sqlite3StrICmp(pItem->zDatabase,zDb)!=0 ){
       sqlite3ErrorMsg(pFix->pParse,
          "%s %T cannot reference objects in database %s",

@@ -219,6 +219,7 @@ struct sqlite3_context {
   Mem *pMem;            /* Memory cell used to store aggregate context */
   u8 isError;           /* Set to true for an error */
   CollSeq *pColl;       /* Collating sequence */
+  sqlite3 *db;          /* Database connection */
 };
 
 /*
@@ -361,6 +362,7 @@ struct Vdbe {
 /*
 ** Function prototypes
 */
+sqlite3 *sqlite3DbOfVdbe(Vdbe*);
 void sqlite3VdbeFreeCursor(Vdbe *, Cursor*);
 void sqliteVdbePopStack(Vdbe*,int);
 int sqlite3VdbeCursorMoveto(Cursor*);

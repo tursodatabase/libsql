@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.138 2007/06/25 16:29:34 danielk1977 Exp $
+** $Id: update.c,v 1.139 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -115,10 +115,10 @@ void sqlite3Update(
   int oldIdx      = -1;  /* index of trigger "old" temp table       */
 
   sContext.pParse = 0;
-  if( pParse->nErr || sqlite3MallocFailed() ){
+  db = pParse->db;
+  if( pParse->nErr || db->mallocFailed ){
     goto update_cleanup;
   }
-  db = pParse->db;
   assert( pTabList->nSrc==1 );
 
   /* Locate the table which we want to update. 
@@ -148,7 +148,7 @@ void sqlite3Update(
   if( sqlite3ViewGetColumnNames(pParse, pTab) ){
     goto update_cleanup;
   }
-  aXRef = sqliteMallocRaw( sizeof(int) * pTab->nCol );
+  aXRef = sqlite3DbMallocRaw(db, sizeof(int) * pTab->nCol );
   if( aXRef==0 ) goto update_cleanup;
   for(i=0; i<pTab->nCol; i++) aXRef[i] = -1;
 
@@ -235,7 +235,7 @@ void sqlite3Update(
     if( i<pIdx->nColumn ) nIdx++;
   }
   if( nIdxTotal>0 ){
-    apIdx = sqliteMallocRaw( sizeof(Index*) * nIdx + nIdxTotal );
+    apIdx = sqlite3DbMallocRaw(db, sizeof(Index*) * nIdx + nIdxTotal );
     if( apIdx==0 ) goto update_cleanup;
     aIdxUsed = (char*)&apIdx[nIdx];
   }
@@ -291,7 +291,7 @@ void sqlite3Update(
   */
   if( isView ){
     Select *pView;
-    pView = sqlite3SelectDup(pTab->pSelect);
+    pView = sqlite3SelectDup(db, pTab->pSelect);
     sqlite3Select(pParse, pView, SRT_EphemTab, iCur, 0, 0, 0, 0);
     sqlite3SelectDelete(pView);
   }
@@ -525,8 +525,8 @@ void sqlite3Update(
 
 update_cleanup:
   sqlite3AuthContextPop(&sContext);
-  sqliteFree(apIdx);
-  sqliteFree(aXRef);
+  sqlite3_free(apIdx);
+  sqlite3_free(aXRef);
   sqlite3SrcListDelete(pTabList);
   sqlite3ExprListDelete(pChanges);
   sqlite3ExprDelete(pWhere);
@@ -569,24 +569,27 @@ static void updateVirtualTable(
   int ephemTab;             /* Table holding the result of the SELECT */
   int i;                    /* Loop counter */
   int addr;                 /* Address of top of loop */
+  sqlite3 *db = pParse->db; /* Database connection */
 
   /* Construct the SELECT statement that will find the new values for
   ** all updated rows. 
   */
-  pEList = sqlite3ExprListAppend(0, sqlite3CreateIdExpr("_rowid_"), 0);
+  pEList = sqlite3ExprListAppend(pParse, 0, 
+                                 sqlite3CreateIdExpr(pParse, "_rowid_"), 0);
   if( pRowid ){
-    pEList = sqlite3ExprListAppend(pEList, sqlite3ExprDup(pRowid), 0);
+    pEList = sqlite3ExprListAppend(pParse, pEList,
+                                   sqlite3ExprDup(db, pRowid), 0);
   }
   assert( pTab->iPKey<0 );
   for(i=0; i<pTab->nCol; i++){
     if( aXRef[i]>=0 ){
-      pExpr = sqlite3ExprDup(pChanges->a[aXRef[i]].pExpr);
+      pExpr = sqlite3ExprDup(db, pChanges->a[aXRef[i]].pExpr);
     }else{
-      pExpr = sqlite3CreateIdExpr(pTab->aCol[i].zName);
+      pExpr = sqlite3CreateIdExpr(pParse, pTab->aCol[i].zName);
     }
-    pEList = sqlite3ExprListAppend(pEList, pExpr, 0);
+    pEList = sqlite3ExprListAppend(pParse, pEList, pExpr, 0);
   }
-  pSelect = sqlite3SelectNew(pEList, pSrc, pWhere, 0, 0, 0, 0, 0, 0);
+  pSelect = sqlite3SelectNew(pParse, pEList, pSrc, pWhere, 0, 0, 0, 0, 0, 0);
   
   /* Create the ephemeral table into which the update results will
   ** be stored.

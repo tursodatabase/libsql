@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.131 2007/07/23 19:31:17 drh Exp $
+** $Id: tokenize.c,v 1.132 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -384,7 +384,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
 ** Run the parser on the given SQL string.  The parser structure is
 ** passed in.  An SQLITE_ status code is returned.  If an error occurs
 ** and pzErrMsg!=NULL then an error message might be written into 
-** memory obtained from malloc() and *pzErrMsg made to point to that
+** memory obtained from sqlite3_malloc() and *pzErrMsg made to point to that
 ** error message.  Or maybe not.
 */
 int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
@@ -400,7 +400,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   }
   pParse->rc = SQLITE_OK;
   i = 0;
-  pEngine = sqlite3ParserAlloc((void*(*)(size_t))sqlite3MallocX);
+  pEngine = sqlite3ParserAlloc((void*(*)(size_t))sqlite3_malloc);
   if( pEngine==0 ){
     return SQLITE_NOMEM;
   }
@@ -412,7 +412,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pParse->nVarExprAlloc==0 );
   assert( pParse->apVarExpr==0 );
   pParse->zTail = pParse->zSql = zSql;
-  while( !sqlite3MallocFailed() && zSql[i]!=0 ){
+  while( !db->mallocFailed && zSql[i]!=0 ){
     assert( i>=0 );
     pParse->sLastToken.z = (u8*)&zSql[i];
     assert( pParse->sLastToken.dyn==0 );
@@ -434,7 +434,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       }
       case TK_ILLEGAL: {
         if( pzErrMsg ){
-          sqliteFree(*pzErrMsg);
+          sqlite3_free(*pzErrMsg);
           *pzErrMsg = sqlite3MPrintf("unrecognized token: \"%T\"",
                           &pParse->sLastToken);
         }
@@ -463,8 +463,8 @@ abort_parse:
     }
     sqlite3Parser(pEngine, 0, pParse->sLastToken, pParse);
   }
-  sqlite3ParserFree(pEngine, sqlite3FreeX);
-  if( sqlite3MallocFailed() ){
+  sqlite3ParserFree(pEngine, sqlite3_free);
+  if( db->mallocFailed ){
     pParse->rc = SQLITE_NOMEM;
   }
   if( pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE && pParse->zErrMsg==0 ){
@@ -474,7 +474,7 @@ abort_parse:
     if( pzErrMsg && *pzErrMsg==0 ){
       *pzErrMsg = pParse->zErrMsg;
     }else{
-      sqliteFree(pParse->zErrMsg);
+      sqlite3_free(pParse->zErrMsg);
     }
     pParse->zErrMsg = 0;
     if( !nErr ) nErr++;
@@ -485,7 +485,7 @@ abort_parse:
   }
 #ifndef SQLITE_OMIT_SHARED_CACHE
   if( pParse->nested==0 ){
-    sqliteFree(pParse->aTableLock);
+    sqlite3_free(pParse->aTableLock);
     pParse->aTableLock = 0;
     pParse->nTableLock = 0;
   }
@@ -500,7 +500,7 @@ abort_parse:
   }
 
   sqlite3DeleteTrigger(pParse->pNewTrigger);
-  sqliteFree(pParse->apVarExpr);
+  sqlite3_free(pParse->apVarExpr);
   if( nErr>0 && (pParse->rc==SQLITE_OK || pParse->rc==SQLITE_DONE) ){
     pParse->rc = SQLITE_ERROR;
   }

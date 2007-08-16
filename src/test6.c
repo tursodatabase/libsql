@@ -206,7 +206,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
           rc = sqlite3OsTruncate(pFile->pRealFile, pWrite->iOffset);
         }
         *ppPtr = pWrite->pNext;
-        sqliteFree(pWrite);
+        sqlite3_free(pWrite);
         break;
       }
       case 2: {               /* Do nothing */
@@ -218,7 +218,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
         sqlite3_int64 iFirst = (pWrite->iOffset%g.iSectorSize);
         sqlite3_int64 iLast = (pWrite->iOffset+pWrite->nBuf-1)%g.iSectorSize;
 
-        zGarbage = sqliteMalloc(g.iSectorSize);
+        zGarbage = sqlite3_malloc(g.iSectorSize);
         if( zGarbage ){
           sqlite3_int64 i;
           for(i=iFirst; rc==SQLITE_OK && i<=iLast; i++){
@@ -227,7 +227,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
               pFile->pRealFile, i*g.iSectorSize, zGarbage, g.iSectorSize
             );
           }
-          sqliteFree(zGarbage);
+          sqlite3_free(zGarbage);
         }else{
           rc = SQLITE_NOMEM;
         }
@@ -263,7 +263,7 @@ static int writeListAppend(
 
   assert((zBuf && nBuf) || (!nBuf && !zBuf));
 
-  pNew = (WriteBuffer *)sqliteMalloc(sizeof(WriteBuffer) + nBuf);
+  pNew = (WriteBuffer *)sqlite3_malloc(sizeof(WriteBuffer) + nBuf);
   pNew->iOffset = iOffset;
   pNew->nBuf = nBuf;
   pNew->pFile = (CrashFile *)pFile;
@@ -471,7 +471,7 @@ int sqlite3CrashFileOpen(
   CrashFile *pWrapper = (CrashFile *)pFile;
   int rc = SQLITE_NOMEM;
   sqlite3_file *pReal;
-  pReal = (sqlite3_file *)sqliteMalloc(pVfs->szOsFile);
+  pReal = (sqlite3_file *)sqlite3_malloc(pVfs->szOsFile);
   if( pReal ){
     pWrapper->pMethod = &CrashFileVtab;
     pWrapper->zName = zName;
@@ -479,7 +479,7 @@ int sqlite3CrashFileOpen(
     if( rc==SQLITE_OK ){
       pWrapper->pRealFile = pFile;
     }else{
-      sqliteFree(pReal);
+      sqlite3_free(pReal);
     }
   }
   return rc;
@@ -491,7 +491,7 @@ int sqlite3CrashFileWrap(
   sqlite3_file **ppWrapper
 ){
   CrashFile *pWrapper;
-  pWrapper = (CrashFile *)sqliteMalloc(sizeof(CrashFile)+strlen(zName)+1);
+  pWrapper = (CrashFile *)sqlite3_malloc(sizeof(CrashFile)+strlen(zName)+1);
   if( !pWrapper ){
     return SQLITE_NOMEM;
   }

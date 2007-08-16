@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.53 2007/08/07 17:04:59 drh Exp $
+** $Id: utf.c,v 1.54 2007/08/16 04:30:40 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -187,7 +187,7 @@ int sqlite3Utf8Read(
 ** desiredEnc. It is an error if the string is already of the desired
 ** encoding, or if *pMem does not contain a string value.
 */
-int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
+int sqlite3VdbeMemTranslate(sqlite3 *db, Mem *pMem, u8 desiredEnc){
   unsigned char zShort[NBFS]; /* Temporary short output buffer */
   int len;                    /* Maximum length of output string in bytes */
   unsigned char *zOut;                  /* Output buffer */
@@ -254,13 +254,13 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   ** byte past the end.
   **
   ** Variable zOut is set to point at the output buffer. This may be space
-  ** obtained from malloc(), or Mem.zShort, if it large enough and not in
-  ** use, or the zShort array on the stack (see above).
+  ** obtained from sqlite3_malloc(), or Mem.zShort, if it large enough and
+  ** not in use, or the zShort array on the stack (see above).
   */
   zIn = (u8*)pMem->z;
   zTerm = &zIn[pMem->n];
   if( len>NBFS ){
-    zOut = sqliteMallocRaw(len);
+    zOut = sqlite3DbMallocRaw(db, len);
     if( !zOut ) return SQLITE_NOMEM;
   }else{
     zOut = zShort;
@@ -402,19 +402,19 @@ int sqlite3Utf8CharLen(const char *zIn, int nByte){
 #ifndef SQLITE_OMIT_UTF16
 /*
 ** Convert a UTF-16 string in the native encoding into a UTF-8 string.
-** Memory to hold the UTF-8 string is obtained from malloc and must be
-** freed by the calling function.
+** Memory to hold the UTF-8 string is obtained from sqlite3_malloc and must
+** be freed by the calling function.
 **
 ** NULL is returned if there is an allocation error.
 */
-char *sqlite3Utf16to8(const void *z, int nByte){
+char *sqlite3Utf16to8(sqlite3 *db, const void *z, int nByte){
   Mem m;
   memset(&m, 0, sizeof(m));
-  sqlite3VdbeMemSetStr(&m, z, nByte, SQLITE_UTF16NATIVE, SQLITE_STATIC);
-  sqlite3VdbeChangeEncoding(&m, SQLITE_UTF8);
-  assert( (m.flags & MEM_Term)!=0 || sqlite3MallocFailed() );
-  assert( (m.flags & MEM_Str)!=0 || sqlite3MallocFailed() );
-  return (m.flags & MEM_Dyn)!=0 ? m.z : sqliteStrDup(m.z);
+  sqlite3VdbeMemSetStr(db, &m, z, nByte, SQLITE_UTF16NATIVE, SQLITE_STATIC);
+  sqlite3VdbeChangeEncoding(db, &m, SQLITE_UTF8);
+  assert( (m.flags & MEM_Term)!=0 || db->mallocFailed );
+  assert( (m.flags & MEM_Str)!=0 || db->mallocFailed );
+  return (m.flags & MEM_Dyn)!=0 ? m.z : sqlite3DbStrDup(db, m.z);
 }
 
 /*

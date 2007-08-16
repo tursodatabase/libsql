@@ -627,7 +627,7 @@ static int vxprintf(
         needQuote = !isnull && xtype==etSQLESCAPE2;
         n += i + 1 + needQuote*2;
         if( n>etBUFSIZE ){
-          bufpt = zExtra = sqliteMalloc( n );
+          bufpt = zExtra = sqlite3_malloc( n );
           if( bufpt==0 ) return -1;
         }else{
           bufpt = buf;
@@ -729,29 +729,33 @@ struct sgMprintf {
 static void mout(void *arg, const char *zNewText, int nNewChar){
   struct sgMprintf *pM = (struct sgMprintf*)arg;
   pM->nTotal += nNewChar;
-  if( pM->nChar + nNewChar + 1 > pM->nAlloc ){
-    if( pM->xRealloc==0 ){
-      nNewChar =  pM->nAlloc - pM->nChar - 1;
-    }else{
-      int nAlloc = pM->nChar + nNewChar*2 + 1;
-      if( pM->zText==pM->zBase ){
-        pM->zText = pM->xRealloc(0, nAlloc);
-        if( pM->zText && pM->nChar ){
-          memcpy(pM->zText, pM->zBase, pM->nChar);
-        }
-      }else{
-        char *zNew;
-        zNew = pM->xRealloc(pM->zText, nAlloc);
-        if( zNew ){
-          pM->zText = zNew;
-        }else{
-          return;
-        }
-      }
-      pM->nAlloc = nAlloc;
-    }
-  }
   if( pM->zText ){
+    if( pM->nChar + nNewChar + 1 > pM->nAlloc ){
+      if( pM->xRealloc==0 ){
+        nNewChar =  pM->nAlloc - pM->nChar - 1;
+      }else{
+        int nAlloc = pM->nChar + nNewChar*2 + 1;
+        if( pM->zText==pM->zBase ){
+          pM->zText = pM->xRealloc(0, nAlloc);
+          if( pM->zText==0 ){
+            return;
+          }else if( pM->nChar ){
+            memcpy(pM->zText, pM->zBase, pM->nChar);
+          }
+        }else{
+          char *zNew;
+          zNew = pM->xRealloc(pM->zText, nAlloc);
+          if( zNew ){
+            pM->zText = zNew;
+          }else{
+            pM->xRealloc(pM->zText, 0);
+            pM->zText = 0;
+            return;
+          }
+        }
+        pM->nAlloc = nAlloc;
+      }
+    }
     if( nNewChar>0 ){
       memcpy(&pM->zText[pM->nChar], zNewText, nNewChar);
       pM->nChar += nNewChar;
@@ -798,29 +802,37 @@ static char *base_vprintf(
 ** Realloc that is a real function, not a macro.
 */
 static void *printf_realloc(void *old, int size){
-  return sqliteRealloc(old,size);
+  return sqlite3_realloc(old,size);
 }
 
 /*
 ** Print into memory obtained from sqliteMalloc().  Use the internal
 ** %-conversion extensions.
 */
-char *sqlite3VMPrintf(const char *zFormat, va_list ap){
+char *sqlite3VMPrintf(sqlite3 *db, const char *zFormat, va_list ap){
+  char *z;
   char zBase[SQLITE_PRINT_BUF_SIZE];
-  return base_vprintf(printf_realloc, 1, zBase, sizeof(zBase), zFormat, ap);
+  z = base_vprintf(printf_realloc, 1, zBase, sizeof(zBase), zFormat, ap);
+  if( z==0 && db!=0 ){
+    db->mallocFailed = 1;
+  }
+  return z;
 }
 
 /*
 ** Print into memory obtained from sqliteMalloc().  Use the internal
 ** %-conversion extensions.
 */
-char *sqlite3MPrintf(const char *zFormat, ...){
+char *sqlite3MPrintf(sqlite3 *db, const char *zFormat, ...){
   va_list ap;
   char *z;
   char zBase[SQLITE_PRINT_BUF_SIZE];
   va_start(ap, zFormat);
   z = base_vprintf(printf_realloc, 1, zBase, sizeof(zBase), zFormat, ap);
   va_end(ap);
+  if( z==0 && db!=0 ){
+    db->mallocFailed = 1;
+  }
   return z;
 }
 

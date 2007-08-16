@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.18 2007/05/07 09:32:45 danielk1977 Exp $
+** $Id: callback.c,v 1.19 2007/08/16 04:30:39 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -27,10 +27,10 @@ static void callCollNeeded(sqlite3 *db, const char *zName, int nName){
   assert( !db->xCollNeeded || !db->xCollNeeded16 );
   if( nName<0 ) nName = strlen(zName);
   if( db->xCollNeeded ){
-    char *zExternal = sqliteStrNDup(zName, nName);
+    char *zExternal = sqlite3DbStrNDup(db, zName, nName);
     if( !zExternal ) return;
     db->xCollNeeded(db->pCollNeededArg, db, (int)ENC(db), zExternal);
-    sqliteFree(zExternal);
+    sqlite3_free(zExternal);
   }
 #ifndef SQLITE_OMIT_UTF16
   if( db->xCollNeeded16 ){
@@ -162,7 +162,7 @@ static CollSeq *findCollSeqEntry(
   pColl = sqlite3HashFind(&db->aCollSeq, zName, nName);
 
   if( 0==pColl && create ){
-    pColl = sqliteMalloc( 3*sizeof(*pColl) + nName + 1 );
+    pColl = sqlite3DbMallocZero(db, 3*sizeof(*pColl) + nName + 1 );
     if( pColl ){
       CollSeq *pDel = 0;
       pColl[0].zName = (char*)&pColl[3];
@@ -179,9 +179,9 @@ static CollSeq *findCollSeqEntry(
       ** return the pColl pointer to be deleted (because it wasn't added
       ** to the hash table).
       */
-      assert( !pDel || (sqlite3MallocFailed() && pDel==pColl) );
+      assert( !pDel || (db->mallocFailed && pDel==pColl) );
       if( pDel ){
-        sqliteFree(pDel);
+        sqlite3_free(pDel);
         pColl = 0;
       }
     }
@@ -303,14 +303,14 @@ FuncDef *sqlite3FindFunction(
   ** new entry to the hash table and return it.
   */
   if( createFlag && bestmatch<6 && 
-      (pBest = sqliteMalloc(sizeof(*pBest)+nName))!=0 ){
+      (pBest = sqlite3DbMallocZero(db, sizeof(*pBest)+nName))!=0 ){
     pBest->nArg = nArg;
     pBest->pNext = pFirst;
     pBest->iPrefEnc = enc;
     memcpy(pBest->zName, zName, nName);
     pBest->zName[nName] = 0;
     if( pBest==sqlite3HashInsert(&db->aFunc,pBest->zName,nName,(void*)pBest) ){
-      sqliteFree(pBest);
+      sqlite3_free(pBest);
       return 0;
     }
   }
@@ -323,7 +323,7 @@ FuncDef *sqlite3FindFunction(
 
 /*
 ** Free all resources held by the schema structure. The void* argument points
-** at a Schema struct. This function does not call sqliteFree() on the 
+** at a Schema struct. This function does not call sqlite3_free() on the 
 ** pointer itself, it just cleans up subsiduary resources (i.e. the contents
 ** of the schema hash tables).
 */
@@ -356,12 +356,12 @@ void sqlite3SchemaFree(void *p){
 ** Find and return the schema associated with a BTree.  Create
 ** a new one if necessary.
 */
-Schema *sqlite3SchemaGet(Btree *pBt){
+Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
   Schema * p;
   if( pBt ){
     p = (Schema *)sqlite3BtreeSchema(pBt,sizeof(Schema),sqlite3SchemaFree);
   }else{
-    p = (Schema *)sqliteMalloc(sizeof(Schema));
+    p = (Schema *)sqlite3DbMallocZero(db,sizeof(Schema));
   }
   if( p && 0==p->file_format ){
     sqlite3HashInit(&p->tblHash, SQLITE_HASH_STRING, 0);

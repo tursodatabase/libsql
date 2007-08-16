@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.163 2007/07/26 06:50:06 danielk1977 Exp $
+** $Id: func.c,v 1.164 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -334,10 +334,10 @@ static void randomBlob(
     sqlite3_result_error_toobig(context);
     return;
   }
-  p = sqliteMalloc(n);
+  p = sqlite3_malloc(n);
   if( p ){
     sqlite3Randomness(n, p);
-    sqlite3_result_blob(context, (char*)p, n, sqlite3FreeX);
+    sqlite3_result_blob(context, (char*)p, n, sqlite3_free);
   }
 }
 
@@ -667,7 +667,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
         sqlite3_result_error_toobig(context);
         return;
       }
-      zText = (char *)sqliteMalloc((2*nBlob)+4); 
+      zText = (char *)sqlite3_malloc((2*nBlob)+4); 
       if( !zText ){
         sqlite3_result_error(context, "out of memory", -1);
       }else{
@@ -681,7 +681,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
         zText[0] = 'X';
         zText[1] = '\'';
         sqlite3_result_text(context, zText, -1, SQLITE_TRANSIENT);
-        sqliteFree(zText);
+        sqlite3_free(zText);
       }
       break;
     }
@@ -697,7 +697,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
         sqlite3_result_error_toobig(context);
         return;
       }
-      z = sqliteMalloc( i+n+3 );
+      z = sqlite3_malloc( i+n+3 );
       if( z==0 ) return;
       z[0] = '\'';
       for(i=0, j=1; zArg[i]; i++){
@@ -709,7 +709,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       z[j++] = '\'';
       z[j] = 0;
       sqlite3_result_text(context, z, j, SQLITE_TRANSIENT);
-      sqliteFree(z);
+      sqlite3_free(z);
     }
   }
 }
@@ -1049,7 +1049,7 @@ static void destructor(void *p){
   char *zVal = (char *)p;
   assert(zVal);
   zVal--;
-  sqliteFree(zVal);
+  sqlite3_free(zVal);
   test_destructor_count_var--;
 }
 static void test_destructor(
@@ -1102,7 +1102,7 @@ static void test_destructor_count(
 ** registration, the result for that argument is 1.  The overall result
 ** is the individual argument results separated by spaces.
 */
-static void free_test_auxdata(void *p) {sqliteFree(p);}
+static void free_test_auxdata(void *p) {sqlite3_free(p);}
 static void test_auxdata(
   sqlite3_context *pCtx, 
   int nArg,
@@ -1124,7 +1124,7 @@ static void test_auxdata(
         }
       }else{
         zRet[i*2] = '0';
-        zAux = sqliteStrDup(z);
+        zAux = sqlite3StrDup(z);
         sqlite3_set_auxdata(pCtx, i, zAux, free_test_auxdata);
       }
       zRet[i*2+1] = ' ';

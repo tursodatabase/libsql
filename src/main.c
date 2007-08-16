@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.379 2007/08/15 13:04:54 drh Exp $
+** $Id: main.c,v 1.380 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -176,7 +176,7 @@ int sqlite3_close(sqlite3 *db){
     FuncDef *pFunc, *pNext;
     for(pFunc = (FuncDef*)sqliteHashData(i); pFunc; pFunc=pNext){
       pNext = pFunc->pNext;
-      sqliteFree(pFunc);
+      sqlite3_free(pFunc);
     }
   }
 
@@ -188,7 +188,7 @@ int sqlite3_close(sqlite3 *db){
         pColl[j].xDel(pColl[j].pUser);
       }
     }
-    sqliteFree(pColl);
+    sqlite3_free(pColl);
   }
   sqlite3HashClear(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -197,7 +197,7 @@ int sqlite3_close(sqlite3 *db){
     if( pMod->xDestroy ){
       pMod->xDestroy(pMod->pAux);
     }
-    sqliteFree(pMod);
+    sqlite3_free(pMod);
   }
   sqlite3HashClear(&db->aModule);
 #endif
@@ -217,8 +217,8 @@ int sqlite3_close(sqlite3 *db){
   ** the same sqliteMalloc() as the one that allocates the database 
   ** structure?
   */
-  sqliteFree(db->aDb[1].pSchema);
-  sqliteFree(db);
+  sqlite3_free(db->aDb[1].pSchema);
+  sqlite3_free(db);
   sqlite3ReleaseThreadData();
   return SQLITE_OK;
 }
@@ -488,7 +488,7 @@ int sqlite3CreateFunc(
     if( db->activeVdbeCnt ){
       sqlite3Error(db, SQLITE_BUSY, 
         "Unable to delete/modify user-function due to active statements");
-      assert( !sqlite3MallocFailed() );
+      assert( !db->mallocFailed );
       return SQLITE_BUSY;
     }else{
       sqlite3ExpirePreparedStatements(db);
@@ -521,7 +521,7 @@ int sqlite3_create_function(
   void (*xFinal)(sqlite3_context*)
 ){
   int rc;
-  assert( !sqlite3MallocFailed() );
+  assert( !db->mallocFailed );
   rc = sqlite3CreateFunc(db, zFunctionName, nArg, enc, p, xFunc, xStep, xFinal);
 
   return sqlite3ApiExit(db, rc);
@@ -540,11 +540,11 @@ int sqlite3_create_function16(
 ){
   int rc;
   char *zFunc8;
-  assert( !sqlite3MallocFailed() );
+  assert( !db->mallocFailed );
 
   zFunc8 = sqlite3Utf16to8(zFunctionName, -1);
   rc = sqlite3CreateFunc(db, zFunc8, nArg, eTextRep, p, xFunc, xStep, xFinal);
-  sqliteFree(zFunc8);
+  sqlite3_free(zFunc8);
 
   return sqlite3ApiExit(db, rc);
 }
@@ -731,10 +731,10 @@ int sqlite3BtreeFactory(
 */
 const char *sqlite3_errmsg(sqlite3 *db){
   const char *z;
-  assert( !sqlite3MallocFailed() );
   if( !db ){
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
+  assert( !db->mallocFailed );
   if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
     return sqlite3ErrStr(SQLITE_MISUSE);
   }
@@ -771,7 +771,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   };
 
   const void *z;
-  assert( !sqlite3MallocFailed() );
+  assert( !db->mallocFailed );
   if( !db ){
     return (void *)(&outOfMemBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
   }
@@ -794,7 +794,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
 ** passed to this function, we assume a malloc() failed during sqlite3_open().
 */
 int sqlite3_errcode(sqlite3 *db){
-  if( !db || sqlite3MallocFailed() ){
+  if( !db || db->mallocFailed ){
     return SQLITE_NOMEM;
   }
   if( sqlite3SafetyCheck(db) ){
@@ -895,10 +895,8 @@ static int openDatabase(
   int rc;
   CollSeq *pColl;
 
-  assert( !sqlite3MallocFailed() );
-
   /* Allocate the sqlite data structure */
-  db = sqliteMalloc( sizeof(sqlite3) );
+  db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
   db->errMask = 0xff;
   db->priorNewRowid = 0;
@@ -929,7 +927,7 @@ static int openDatabase(
       createCollation(db, "BINARY", SQLITE_UTF16LE, 0, binCollFunc, 0) ||
       (db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 6, 0))==0 
   ){
-    assert( sqlite3MallocFailed() );
+    assert( db->mallocFailed );
     db->magic = SQLITE_MAGIC_CLOSED;
     goto opendb_out;
   }
@@ -952,8 +950,8 @@ static int openDatabase(
     db->magic = SQLITE_MAGIC_CLOSED;
     goto opendb_out;
   }
-  db->aDb[0].pSchema = sqlite3SchemaGet(db->aDb[0].pBt);
-  db->aDb[1].pSchema = sqlite3SchemaGet(0);
+  db->aDb[0].pSchema = sqlite3SchemaGet(db, db->aDb[0].pBt);
+  db->aDb[1].pSchema = sqlite3SchemaGet(db, 0);
 
 
   /* The default safety_level for the main database is 'full'; for the temp
@@ -967,7 +965,7 @@ static int openDatabase(
 #endif
 
   db->magic = SQLITE_MAGIC_OPEN;
-  if( sqlite3MallocFailed() ){
+  if( db->mallocFailed ){
     goto opendb_out;
   }
 
@@ -987,21 +985,21 @@ static int openDatabase(
   }
 
 #ifdef SQLITE_ENABLE_FTS1
-  if( !sqlite3MallocFailed() ){
+  if( !db->mallocFailed ){
     extern int sqlite3Fts1Init(sqlite3*);
     rc = sqlite3Fts1Init(db);
   }
 #endif
 
 #ifdef SQLITE_ENABLE_FTS2
-  if( !sqlite3MallocFailed() && rc==SQLITE_OK ){
+  if( !db->mallocFailed && rc==SQLITE_OK ){
     extern int sqlite3Fts2Init(sqlite3*);
     rc = sqlite3Fts2Init(db);
   }
 #endif
 
 #ifdef SQLITE_ENABLE_ICU
-  if( !sqlite3MallocFailed() && rc==SQLITE_OK ){
+  if( !db->mallocFailed && rc==SQLITE_OK ){
     extern int sqlite3IcuInit(sqlite3*);
     rc = sqlite3IcuInit(db);
   }
@@ -1121,7 +1119,7 @@ int sqlite3_create_collation(
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
   int rc;
-  assert( !sqlite3MallocFailed() );
+  assert( !db->mallocFailed );
   rc = createCollation(db, zName, enc, pCtx, xCompare, 0);
   return sqlite3ApiExit(db, rc);
 }
@@ -1138,7 +1136,7 @@ int sqlite3_create_collation_v2(
   void(*xDel)(void*)
 ){
   int rc;
-  assert( !sqlite3MallocFailed() );
+  assert( !db->mallocFailed );
   rc = createCollation(db, zName, enc, pCtx, xCompare, xDel);
   return sqlite3ApiExit(db, rc);
 }
@@ -1156,11 +1154,11 @@ int sqlite3_create_collation16(
 ){
   int rc = SQLITE_OK;
   char *zName8; 
-  assert( !sqlite3MallocFailed() );
+  assert( !db->mallocFailed );
   zName8 = sqlite3Utf16to8(zName, -1);
   if( zName8 ){
     rc = createCollation(db, zName8, enc, pCtx, xCompare, 0);
-    sqliteFree(zName8);
+    sqlite3_free(zName8);
   }
   return sqlite3ApiExit(db, rc);
 }
@@ -1386,7 +1384,7 @@ error_out:
     rc = SQLITE_ERROR;
   }
   sqlite3Error(db, rc, (zErrMsg?"%s":0), zErrMsg);
-  sqliteFree(zErrMsg);
+  sqlite3_free(zErrMsg);
   return sqlite3ApiExit(db, rc);
 }
 #endif

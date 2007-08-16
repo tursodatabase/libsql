@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.48 2007/07/20 00:35:59 drh Exp $
+** $Id: test8.c,v 1.49 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -122,8 +122,8 @@ static void dequoteString(char *z){
 ** code otherwise.
 **
 ** If successful, the number of columns is written to *pnCol. *paCol is
-** set to point at sqliteMalloc()'d space containing the array of
-** nCol column names. The caller is responsible for calling sqliteFree
+** set to point at sqlite3_malloc()'d space containing the array of
+** nCol column names. The caller is responsible for calling sqlite3_free
 ** on *paCol.
 */
 static int getColumnNames(
@@ -142,13 +142,13 @@ static int getColumnNames(
   ** of the result set of the compiled SELECT will be the same as
   ** the column names of table <tbl>.
   */
-  zSql = sqlite3MPrintf("SELECT * FROM %Q", zTab);
+  zSql = sqlite3_mprintf("SELECT * FROM %Q", zTab);
   if( !zSql ){
     rc = SQLITE_NOMEM;
     goto out;
   }
   rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
-  sqliteFree(zSql);
+  sqlite3_free(zSql);
 
   if( rc==SQLITE_OK ){
     int ii;
@@ -163,7 +163,7 @@ static int getColumnNames(
     for(ii=0; ii<nCol; ii++){
       nBytes += (strlen(sqlite3_column_name(pStmt, ii)) + 1);
     }
-    aCol = (char **)sqliteMalloc(nBytes);
+    aCol = (char **)sqlite3_malloc(nBytes);
     if( !aCol ){
       rc = SQLITE_NOMEM;
       goto out;
@@ -213,7 +213,7 @@ static int getIndexArray(
   char *zSql;
 
   /* Allocate space for the index array */
-  aIndex = (int *)sqliteMalloc(sizeof(int) * nCol);
+  aIndex = (int *)sqlite3_malloc(sizeof(int) * nCol);
   if( !aIndex ){
     rc = SQLITE_NOMEM;
     goto get_index_array_out;
@@ -226,7 +226,7 @@ static int getIndexArray(
     goto get_index_array_out;
   }
   rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
-  sqliteFree(zSql);
+  sqlite3_free(zSql);
 
   /* For each index, figure out the left-most column and set the 
   ** corresponding entry in aIndex[] to 1.
@@ -240,7 +240,7 @@ static int getIndexArray(
       goto get_index_array_out;
     }
     rc = sqlite3_prepare(db, zSql, -1, &pStmt2, 0);
-    sqliteFree(zSql);
+    sqlite3_free(zSql);
     if( pStmt2 && sqlite3_step(pStmt2)==SQLITE_ROW ){
       int cid = sqlite3_column_int(pStmt2, 1);
       assert( cid>=0 && cid<nCol );
@@ -263,7 +263,7 @@ get_index_array_out:
     }
   }
   if( rc!=SQLITE_OK ){
-    sqliteFree(aIndex);
+    sqlite3_free(aIndex);
     aIndex = 0;
   }
   *paIndex = aIndex;
@@ -339,12 +339,12 @@ static int echoDeclareVtab(
 */
 static int echoDestructor(sqlite3_vtab *pVtab){
   echo_vtab *p = (echo_vtab*)pVtab;
-  sqliteFree(p->aIndex);
-  sqliteFree(p->aCol);
-  sqliteFree(p->zThis);
-  sqliteFree(p->zTableName);
-  sqliteFree(p->zLogName);
-  sqliteFree(p);
+  sqlite3_free(p->aIndex);
+  sqlite3_free(p->aCol);
+  sqlite3_free(p->zThis);
+  sqlite3_free(p->zTableName);
+  sqlite3_free(p->zLogName);
+  sqlite3_free(p);
   return 0;
 }
 
@@ -364,7 +364,7 @@ static int echoConstructor(
   echo_vtab *pVtab;
 
   /* Allocate the sqlite3_vtab/echo_vtab structure itself */
-  pVtab = sqliteMalloc( sizeof(*pVtab) );
+  pVtab = sqlite3_malloc( sizeof(*pVtab) );
   if( !pVtab ){
     return SQLITE_NOMEM;
   }
@@ -384,7 +384,7 @@ static int echoConstructor(
     dequoteString(pVtab->zTableName);
     if( pVtab->zTableName && pVtab->zTableName[0]=='*' ){
       char *z = sqlite3MPrintf("%s%s", argv[2], &(pVtab->zTableName[1]));
-      sqliteFree(pVtab->zTableName);
+      sqlite3_free(pVtab->zTableName);
       pVtab->zTableName = z;
       pVtab->isPattern = 1;
     }
@@ -443,7 +443,7 @@ static int echoCreate(
     pVtab->zLogName = sqlite3MPrintf("%s", argv[4]);
     zSql = sqlite3MPrintf("CREATE TABLE %Q(logmsg)", pVtab->zLogName);
     rc = sqlite3_exec(db, zSql, 0, 0, 0);
-    sqliteFree(zSql);
+    sqlite3_free(zSql);
   }
 
   return rc;
@@ -484,7 +484,7 @@ static int echoDestroy(sqlite3_vtab *pVtab){
     char *zSql;
     zSql = sqlite3MPrintf("DROP TABLE %Q", p->zLogName);
     rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
-    sqliteFree(zSql);
+    sqlite3_free(zSql);
   }
 
   if( rc==SQLITE_OK ){
@@ -498,7 +498,7 @@ static int echoDestroy(sqlite3_vtab *pVtab){
 */
 static int echoOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   echo_cursor *pCur;
-  pCur = sqliteMalloc(sizeof(echo_cursor));
+  pCur = sqlite3_malloc(sizeof(echo_cursor));
   *ppCursor = (sqlite3_vtab_cursor *)pCur;
   return (pCur ? SQLITE_OK : SQLITE_NOMEM);
 }
@@ -511,7 +511,7 @@ static int echoClose(sqlite3_vtab_cursor *cur){
   echo_cursor *pCur = (echo_cursor *)cur;
   sqlite3_stmt *pStmt = pCur->pStmt;
   pCur->pStmt = 0;
-  sqliteFree(pCur);
+  sqlite3_free(pCur);
   rc = sqlite3_finalize(pStmt);
   return rc;
 }
@@ -1041,7 +1041,7 @@ static int echoRename(sqlite3_vtab *vtab, const char *zNewName){
         p->zTableName, zNewName, &p->zTableName[nThis]
     );
     rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
-    sqliteFree(zSql);
+    sqlite3_free(zSql);
   }
 
   return rc;

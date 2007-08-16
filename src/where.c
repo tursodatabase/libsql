@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.254 2007/07/30 14:40:48 danielk1977 Exp $
+** $Id: where.c,v 1.255 2007/08/16 04:30:41 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -207,7 +207,7 @@ static void whereClauseClear(WhereClause *pWC){
     }
   }
   if( pWC->a!=pWC->aStatic ){
-    sqliteFree(pWC->a);
+    sqlite3_free(pWC->a);
   }
 }
 
@@ -228,8 +228,9 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, int flags){
   int idx;
   if( pWC->nTerm>=pWC->nSlot ){
     WhereTerm *pOld = pWC->a;
-    pWC->a = sqliteMalloc( sizeof(pWC->a[0])*pWC->nSlot*2 );
+    pWC->a = sqlite3_malloc( sizeof(pWC->a[0])*pWC->nSlot*2 );
     if( pWC->a==0 ){
+      pWC->pParse->db->mallocFailed = 1;
       if( flags & TERM_DYNAMIC ){
         sqlite3ExprDelete(p);
       }
@@ -237,7 +238,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, int flags){
     }
     memcpy(pWC->a, pOld, sizeof(pWC->a[0])*pWC->nTerm);
     if( pOld!=pWC->aStatic ){
-      sqliteFree(pOld);
+      sqlite3_free(pOld);
     }
     pWC->nSlot *= 2;
   }
@@ -550,7 +551,7 @@ static int isLikeOrGlob(
       (pColl->type!=SQLITE_COLL_NOCASE || !noCase) ){
     return 0;
   }
-  sqlite3DequoteExpr(pRight);
+  sqlite3DequoteExpr(db, pRight);
   z = (char *)pRight->token.z;
   for(cnt=0; (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2]; cnt++){}
   if( cnt==0 || 255==(u8)z[cnt] ){
@@ -715,8 +716,9 @@ static void exprAnalyze(
   int nPattern;
   int isComplete;
   int op;
+  sqlite3 *db = pWC->pParse->db;
 
-  if( sqlite3MallocFailed() ) return;
+  if( db->mallocFailed ) return;
   prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
   op = pExpr->op;
   if( op==TK_IN ){
@@ -749,8 +751,8 @@ static void exprAnalyze(
       Expr *pDup;
       if( pTerm->leftCursor>=0 ){
         int idxNew;
-        pDup = sqlite3ExprDup(pExpr);
-        if( sqlite3MallocFailed() ){
+        pDup = sqlite3ExprDup(db, pExpr);
+        if( db->mallocFailed ){
           sqlite3ExprDelete(pDup);
           return;
         }
@@ -788,8 +790,8 @@ static void exprAnalyze(
     for(i=0; i<2; i++){
       Expr *pNewExpr;
       int idxNew;
-      pNewExpr = sqlite3Expr(ops[i], sqlite3ExprDup(pExpr->pLeft),
-                             sqlite3ExprDup(pList->a[i].pExpr), 0);
+      pNewExpr = sqlite3Expr(ops[i], sqlite3ExprDup(db, pExpr->pLeft),
+                             sqlite3ExprDup(db, pList->a[i].pExpr), 0);
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
       exprAnalyze(pSrc, pWC, idxNew);
       pTerm = &pWC->a[idxTerm];
@@ -849,12 +851,12 @@ static void exprAnalyze(
       Expr *pLeft = 0;
       for(i=sOr.nTerm-1, pOrTerm=sOr.a; i>=0 && ok; i--, pOrTerm++){
         if( (pOrTerm->flags & TERM_OR_OK)==0 ) continue;
-        pDup = sqlite3ExprDup(pOrTerm->pExpr->pRight);
-        pList = sqlite3ExprListAppend(pList, pDup, 0);
+        pDup = sqlite3ExprDup(db, pOrTerm->pExpr->pRight);
+        pList = sqlite3ExprListAppend(pWC->pParse, pList, pDup, 0);
         pLeft = pOrTerm->pExpr->pLeft;
       }
       assert( pLeft!=0 );
-      pDup = sqlite3ExprDup(pLeft);
+      pDup = sqlite3ExprDup(db, pLeft);
       pNew = sqlite3Expr(TK_IN, pDup, 0, 0);
       if( pNew ){
         int idxNew;
@@ -878,7 +880,7 @@ or_not_possible:
   /* Add constraints to reduce the search space on a LIKE or GLOB
   ** operator.
   */
-  if( isLikeOrGlob(pWC->pParse->db, pExpr, &nPattern, &isComplete) ){
+  if( isLikeOrGlob(db, pExpr, &nPattern, &isComplete) ){
     Expr *pLeft, *pRight;
     Expr *pStr1, *pStr2;
     Expr *pNewExpr1, *pNewExpr2;
@@ -886,21 +888,21 @@ or_not_possible:
 
     pLeft = pExpr->pList->a[1].pExpr;
     pRight = pExpr->pList->a[0].pExpr;
-    pStr1 = sqlite3Expr(TK_STRING, 0, 0, 0);
+    pStr1 = sqlite3PExpr(pParse, TK_STRING, 0, 0, 0);
     if( pStr1 ){
-      sqlite3TokenCopy(&pStr1->token, &pRight->token);
+      sqlite3TokenCopy(db, &pStr1->token, &pRight->token);
       pStr1->token.n = nPattern;
       pStr1->flags = EP_Dequoted;
     }
-    pStr2 = sqlite3ExprDup(pStr1);
+    pStr2 = sqlite3ExprDup(db, pStr1);
     if( pStr2 ){
       assert( pStr2->token.dyn );
       ++*(u8*)&pStr2->token.z[nPattern-1];
     }
-    pNewExpr1 = sqlite3Expr(TK_GE, sqlite3ExprDup(pLeft), pStr1, 0);
+    pNewExpr1 = sqlite3PExpr(pParse, TK_GE, sqlite3ExprDup(db,pLeft), pStr1, 0);
     idxNew1 = whereClauseInsert(pWC, pNewExpr1, TERM_VIRTUAL|TERM_DYNAMIC);
     exprAnalyze(pSrc, pWC, idxNew1);
-    pNewExpr2 = sqlite3Expr(TK_LT, sqlite3ExprDup(pLeft), pStr2, 0);
+    pNewExpr2 = sqlite3PExpr(pParse, TK_LT, sqlite3ExprDup(db,pLeft), pStr2, 0);
     idxNew2 = whereClauseInsert(pWC, pNewExpr2, TERM_VIRTUAL|TERM_DYNAMIC);
     exprAnalyze(pSrc, pWC, idxNew2);
     pTerm = &pWC->a[idxTerm];
@@ -931,7 +933,7 @@ or_not_possible:
     prereqColumn = exprTableUsage(pMaskSet, pLeft);
     if( (prereqExpr & prereqColumn)==0 ){
       Expr *pNewExpr;
-      pNewExpr = sqlite3Expr(TK_MATCH, 0, sqlite3ExprDup(pRight), 0);
+      pNewExpr = sqlite3Expr(TK_MATCH, 0, sqlite3ExprDup(db, pRight), 0);
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
       pNewTerm = &pWC->a[idxNew];
       pNewTerm->prereqRight = prereqExpr;
@@ -1257,10 +1259,11 @@ static double bestVirtualIndex(
 
     /* Allocate the sqlite3_index_info structure
     */
-    pIdxInfo = sqliteMalloc( sizeof(*pIdxInfo)
+    pIdxInfo = sqlite3_malloc( sizeof(*pIdxInfo)
                              + (sizeof(*pIdxCons) + sizeof(*pUsage))*nTerm
                              + sizeof(*pIdxOrderBy)*nOrderBy );
     if( pIdxInfo==0 ){
+      pParse->db->mallocFailed = 1;
       sqlite3ErrorMsg(pParse, "out of memory");
       return 0.0;
     }
@@ -1375,7 +1378,7 @@ static double bestVirtualIndex(
   TRACE_IDX_OUTPUTS(pIdxInfo);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM ){
-      sqlite3FailedMalloc();
+      pParse->db->mallocFailed = 1;
     }else {
       sqlite3ErrorMsg(pParse, "%s", sqlite3ErrStr(rc));
     }
@@ -1736,7 +1739,7 @@ static void codeEqualityTerm(
       pLevel->nxt = sqlite3VdbeMakeLabel(v);
     }
     pLevel->nIn++;
-    pLevel->aInLoop = sqliteReallocOrFree(pLevel->aInLoop,
+    pLevel->aInLoop = sqlite3DbReallocOrFree(pParse->db, pLevel->aInLoop,
                                     sizeof(pLevel->aInLoop[0])*pLevel->nIn);
     pIn = pLevel->aInLoop;
     if( pIn ){
@@ -1855,10 +1858,10 @@ static void whereInfoFree(WhereInfo *pWInfo){
           */
           sqlite3_free(pInfo->idxStr);
         }
-        sqliteFree(pInfo);
+        sqlite3_free(pInfo);
       }
     }
-    sqliteFree(pWInfo);
+    sqlite3_free(pWInfo);
   }
 }
 
@@ -1969,6 +1972,7 @@ WhereInfo *sqlite3WhereBegin(
   WhereLevel *pLevel;             /* A single level in the pWInfo list */
   int iFrom;                      /* First unused FROM clause element */
   int andFlags;              /* AND-ed combination of all wc.a[].flags */
+  sqlite3 *db;               /* Database connection */
 
   /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask 
@@ -1988,8 +1992,10 @@ WhereInfo *sqlite3WhereBegin(
   /* Allocate and initialize the WhereInfo structure that will become the
   ** return value.
   */
-  pWInfo = sqliteMalloc( sizeof(WhereInfo) + pTabList->nSrc*sizeof(WhereLevel));
-  if( sqlite3MallocFailed() ){
+  db = pParse->db;
+  pWInfo = sqlite3DbMallocZero(db,  
+                      sizeof(WhereInfo) + pTabList->nSrc*sizeof(WhereLevel));
+  if( db->mallocFailed ){
     goto whereBeginNoMem;
   }
   pWInfo->nLevel = pTabList->nSrc;
@@ -2014,7 +2020,7 @@ WhereInfo *sqlite3WhereBegin(
     createMask(&maskSet, pTabList->a[i].iCursor);
   }
   exprAnalyzeAll(pTabList, &wc);
-  if( sqlite3MallocFailed() ){
+  if( db->mallocFailed ){
     goto whereBeginNoMem;
   }
 
@@ -2691,7 +2697,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         sqlite3VdbeAddOp(v, OP_Next, pIn->iCur, pIn->topAddr);
         sqlite3VdbeJumpHere(v, pIn->topAddr-1);
       }
-      sqliteFree(pLevel->aInLoop);
+      sqlite3_free(pLevel->aInLoop);
     }
     sqlite3VdbeResolveLabel(v, pLevel->brk);
     if( pLevel->iLeftJoin ){

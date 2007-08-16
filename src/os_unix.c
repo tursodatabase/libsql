@@ -357,10 +357,8 @@ struct openCnt {
 ** openKey structures) into lockInfo and openCnt structures.  Access to 
 ** these hash tables must be protected by a mutex.
 */
-static Hash lockHash = {SQLITE_HASH_BINARY, 0, 0, 0, 
-    sqlite3ThreadSafeMalloc, sqlite3ThreadSafeFree, 0, 0};
-static Hash openHash = {SQLITE_HASH_BINARY, 0, 0, 0, 
-    sqlite3ThreadSafeMalloc, sqlite3ThreadSafeFree, 0, 0};
+static Hash lockHash = {SQLITE_HASH_BINARY, 0, 0, 0, 0, 0};
+static Hash openHash = {SQLITE_HASH_BINARY, 0, 0, 0, 0, 0};
 
 #ifdef SQLITE_ENABLE_LOCKING_STYLE
 /*
@@ -537,7 +535,7 @@ static void releaseLockInfo(struct lockInfo *pLock){
   pLock->nRef--;
   if( pLock->nRef==0 ){
     sqlite3HashInsert(&lockHash, &pLock->key, sizeof(pLock->key), 0);
-    sqlite3ThreadSafeFree(pLock);
+    sqlite3_free(pLock);
   }
 }
 
@@ -552,7 +550,7 @@ static void releaseOpenCnt(struct openCnt *pOpen){
   if( pOpen->nRef==0 ){
     sqlite3HashInsert(&openHash, &pOpen->key, sizeof(pOpen->key), 0);
     free(pOpen->aPending);
-    sqlite3ThreadSafeFree(pOpen);
+    sqlite3_free(pOpen);
   }
 }
 
@@ -664,7 +662,7 @@ static int findLockInfo(
   pLock = (struct lockInfo*)sqlite3HashFind(&lockHash, &key1, sizeof(key1));
   if( pLock==0 ){
     struct lockInfo *pOld;
-    pLock = sqlite3ThreadSafeMalloc( sizeof(*pLock) );
+    pLock = sqlite3_malloc( sizeof(*pLock) );
     if( pLock==0 ){
       rc = 1;
       goto exit_findlockinfo;
@@ -676,7 +674,7 @@ static int findLockInfo(
     pOld = sqlite3HashInsert(&lockHash, &pLock->key, sizeof(key1), pLock);
     if( pOld!=0 ){
       assert( pOld==pLock );
-      sqlite3ThreadSafeFree(pLock);
+      sqlite3_free(pLock);
       rc = 1;
       goto exit_findlockinfo;
     }
@@ -688,7 +686,7 @@ static int findLockInfo(
     pOpen = (struct openCnt*)sqlite3HashFind(&openHash, &key2, sizeof(key2));
     if( pOpen==0 ){
       struct openCnt *pOld;
-      pOpen = sqlite3ThreadSafeMalloc( sizeof(*pOpen) );
+      pOpen = sqlite3_malloc( sizeof(*pOpen) );
       if( pOpen==0 ){
         releaseLockInfo(pLock);
         rc = 1;
@@ -702,7 +700,7 @@ static int findLockInfo(
       pOld = sqlite3HashInsert(&openHash, &pOpen->key, sizeof(key2), pOpen);
       if( pOld!=0 ){
         assert( pOld==pOpen );
-        sqlite3ThreadSafeFree(pOpen);
+        sqlite3_free(pOpen);
         releaseLockInfo(pLock);
         rc = 1;
         goto exit_findlockinfo;
@@ -1701,7 +1699,7 @@ static int unixClose(sqlite3_file *id){
   pFile->isOpen = 0;
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
-  sqlite3ThreadSafeFree(id);
+  sqlite3_free(id);
   return SQLITE_OK;
 }
 
@@ -2006,8 +2004,8 @@ static int afpUnixClose(OsFile **pId) {
   /* free the AFP locking structure */
   if (id->lockingContext != NULL) {
     if (((afpLockingContext *)id->lockingContext)->filePath != NULL)
-      sqlite3ThreadSafeFree(((afpLockingContext*)id->lockingContext)->filePath);
-    sqlite3ThreadSafeFree(id->lockingContext);
+      sqlite3_free(((afpLockingContext*)id->lockingContext)->filePath);
+    sqlite3_free(id->lockingContext);
   }
   
   if( id->dirfd>=0 ) close(id->dirfd);
@@ -2016,7 +2014,7 @@ static int afpUnixClose(OsFile **pId) {
   id->isOpen = 0;
   OSTRACE2("CLOSE   %-3d\n", id->h);
   OpenCounter(-1);
-  sqlite3ThreadSafeFree(id);
+  sqlite3_free(id);
   *pId = 0;
   return SQLITE_OK;
 }
@@ -2112,7 +2110,7 @@ static int flockUnixClose(OsFile **pId) {
   id->isOpen = 0;
   OSTRACE2("CLOSE   %-3d\n", id->h);
   OpenCounter(-1);
-  sqlite3ThreadSafeFree(id);
+  sqlite3_free(id);
   *pId = 0;
   return SQLITE_OK;
 }
@@ -2216,9 +2214,9 @@ static int dotlockUnixClose(OsFile **pId) {
   /* free the dotlock locking structure */
   if (id->lockingContext != NULL) {
     if (((dotlockLockingContext *)id->lockingContext)->lockPath != NULL)
-      sqlite3ThreadSafeFree( ( (dotlockLockingContext *)
+      sqlite3_free( ( (dotlockLockingContext *)
         id->lockingContext)->lockPath);
-    sqlite3ThreadSafeFree(id->lockingContext);
+    sqlite3_free(id->lockingContext);
   }
   
   if( id->dirfd>=0 ) close(id->dirfd);
@@ -2231,7 +2229,7 @@ static int dotlockUnixClose(OsFile **pId) {
   id->isOpen = 0;
   OSTRACE2("CLOSE   %-3d\n", id->h);
   OpenCounter(-1);
-  sqlite3ThreadSafeFree(id);
+  sqlite3_free(id);
   *pId = 0;
   return SQLITE_OK;
 }
@@ -2273,7 +2271,7 @@ static int nolockUnixClose(OsFile **pId) {
   id->isOpen = 0;
   OSTRACE2("CLOSE   %-3d\n", id->h);
   OpenCounter(-1);
-  sqlite3ThreadSafeFree(id);
+  sqlite3_free(id);
   *pId = 0;
   return SQLITE_OK;
 }
@@ -2291,7 +2289,7 @@ char *sqlite3UnixFullPathname(const char *zRelative){
   if( zRelative[0]=='/' ){
     sqlite3SetString(&zFull, zRelative, (char*)0);
   }else{
-    char *zBuf = sqliteMalloc(5000);
+    char *zBuf = sqlite3_malloc(5000);
     if( zBuf==0 ){
       return 0;
     }
@@ -2531,7 +2529,7 @@ static int allocateUnixFile(
   f.dirfd = -1;
   f.h = h;
   SET_THREADID(&f);
-  pNew = sqlite3ThreadSafeMalloc( sizeof(unixFile) );
+  pNew = sqlite3_malloc( sizeof(unixFile) );
   if( pNew==0 ){
     close(h);
     sqlite3OsEnterMutex();
@@ -2549,10 +2547,10 @@ static int allocateUnixFile(
         int nFilename;
         pNew->pMethod = &sqlite3AFPLockingUnixIoMethod;
         pNew->lockingContext = 
-          sqlite3ThreadSafeMalloc(sizeof(afpLockingContext));
+          sqlite3_malloc(sizeof(afpLockingContext));
         nFilename = strlen(zFilename)+1;
         ((afpLockingContext *)pNew->lockingContext)->filePath = 
-          sqlite3ThreadSafeMalloc(nFilename);
+          sqlite3_malloc(nFilename);
         memcpy(((afpLockingContext *)pNew->lockingContext)->filePath, 
                zFilename, nFilename);
         srandomdev();
@@ -2567,11 +2565,11 @@ static int allocateUnixFile(
          ** the dotlockLockingContext */
         int nFilename;
         pNew->pMethod = &sqlite3DotlockLockingUnixIoMethod;
-        pNew->lockingContext = sqlite3ThreadSafeMalloc(
+        pNew->lockingContext = sqlite3_malloc(
           sizeof(dotlockLockingContext));
         nFilename = strlen(zFilename) + 6;
         ((dotlockLockingContext *)pNew->lockingContext)->lockPath = 
-            sqlite3ThreadSafeMalloc( nFilename );
+            sqlite3_malloc( nFilename );
         sqlite3_snprintf(nFilename, 
                 ((dotlockLockingContext *)pNew->lockingContext)->lockPath, 
                 "%s.lock", zFilename);
@@ -2620,7 +2618,7 @@ static int allocateUnixFile(
   f.dirfd = -1;
   f.h = h;
   SET_THREADID(&f);
-  pNew = sqlite3ThreadSafeMalloc( sizeof(unixFile) );
+  pNew = sqlite3_malloc( sizeof(unixFile) );
   if( pNew==0 ){
     close(h);
     sqlite3OsEnterMutex();

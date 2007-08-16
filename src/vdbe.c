@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.639 2007/07/26 06:50:06 danielk1977 Exp $
+** $Id: vdbe.c,v 1.640 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -109,15 +109,6 @@ int sqlite3_max_blobsize = 0;
 #define Stringify(P, enc) \
    if(((P)->flags&(MEM_Str|MEM_Blob))==0 && sqlite3VdbeMemStringify(P,enc)) \
      { goto no_mem; }
-
-/*
-** Convert the given stack entity into a string that has been obtained
-** from sqliteMalloc().  This is different from Stringify() above in that
-** Stringify() will use the NBFS bytes of static string space if the string
-** will fit but this routine always mallocs for space.
-** Return non-zero if we run out of memory.
-*/
-#define Dynamicify(P,enc) sqlite3VdbeMemDynamicify(P)
 
 /*
 ** The header of a record consists of a sequence variable-length integers.
@@ -206,7 +197,7 @@ static Cursor *allocateCursor(Vdbe *p, int iCur, int iDb){
   if( p->apCsr[iCur] ){
     sqlite3VdbeFreeCursor(p, p->apCsr[iCur]);
   }
-  p->apCsr[iCur] = pCx = sqliteMalloc( sizeof(Cursor) );
+  p->apCsr[iCur] = pCx = sqlite3MallocZero( sizeof(Cursor) );
   if( pCx ){
     pCx->iDb = iDb;
   }
@@ -219,14 +210,14 @@ static Cursor *allocateCursor(Vdbe *p, int iCur, int iDb){
 ** looks like a number, convert it into a number.  If it does not
 ** look like a number, leave it alone.
 */
-static void applyNumericAffinity(Mem *pRec){
+static void applyNumericAffinity(sqlite3 *db, Mem *pRec){
   if( (pRec->flags & (MEM_Real|MEM_Int))==0 ){
     int realnum;
-    sqlite3VdbeMemNulTerminate(pRec);
+    sqlite3VdbeMemNulTerminate(db, pRec);
     if( (pRec->flags&MEM_Str)
          && sqlite3IsNumber(pRec->z, &realnum, pRec->enc) ){
       i64 value;
-      sqlite3VdbeChangeEncoding(pRec, SQLITE_UTF8);
+      sqlite3VdbeChangeEncoding(db, pRec, SQLITE_UTF8);
       if( !realnum && sqlite3Atoi64(pRec->z, &value) ){
         sqlite3VdbeMemRelease(pRec);
         pRec->u.i = value;
@@ -256,20 +247,25 @@ static void applyNumericAffinity(Mem *pRec){
 ** SQLITE_AFF_NONE:
 **    No-op.  pRec is unchanged.
 */
-static void applyAffinity(Mem *pRec, char affinity, u8 enc){
+static void applyAffinity(
+  sqlite3 *db,        /* Report malloc() errors to this db connection */
+  Mem *pRec,          /* The value to apply affinity to */
+  char affinity,      /* The affinity to be applied */
+  u8 enc              /* Use this text encoding */
+){
   if( affinity==SQLITE_AFF_TEXT ){
     /* Only attempt the conversion to TEXT if there is an integer or real
     ** representation (blob and NULL do not get converted) but no string
     ** representation.
     */
     if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
-      sqlite3VdbeMemStringify(pRec, enc);
+      sqlite3VdbeMemStringify(db, pRec, enc);
     }
     pRec->flags &= ~(MEM_Real|MEM_Int);
   }else if( affinity!=SQLITE_AFF_NONE ){
     assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
              || affinity==SQLITE_AFF_NUMERIC );
-    applyNumericAffinity(pRec);
+    applyNumericAffinity(db, pRec);
     if( pRec->flags & MEM_Real ){
       sqlite3VdbeIntegerAffinity(pRec);
     }
@@ -429,7 +425,7 @@ __inline__ unsigned long long int hwtime(void){
 ** return SQLITE_BUSY.
 **
 ** If an error occurs, an error message is written to memory obtained
-** from sqliteMalloc() and p->zErrMsg is made to point to that memory.
+** from sqlite3_malloc() and p->zErrMsg is made to point to that memory.
 ** The error code is stored in p->rc and this routine returns SQLITE_ERROR.
 **
 ** If the callback ever returns non-zero, then the program exits
@@ -501,7 +497,7 @@ int sqlite3VdbeExec(
   for(pc=p->pc; rc==SQLITE_OK; pc++){
     assert( pc>=0 && pc<p->nOp );
     assert( pTos<=&p->aStack[pc] );
-    if( sqlite3MallocFailed() ) goto no_mem;
+    if( db->mallocFailed ) goto no_mem;
 #ifdef VDBE_PROFILE
     origPc = pc;
     start = hwtime();
@@ -753,11 +749,11 @@ case OP_String8: {         /* same as TK_STRING */
     pTos++;
     sqlite3VdbeMemSetStr(pTos, pOp->p3, -1, SQLITE_UTF8, SQLITE_STATIC);
     if( SQLITE_OK!=sqlite3VdbeChangeEncoding(pTos, encoding) ) goto no_mem;
-    if( SQLITE_OK!=sqlite3VdbeMemDynamicify(pTos) ) goto no_mem;
+    if( SQLITE_OK!=sqlite3VdbeMemDynamicify(db, pTos) ) goto no_mem;
     pTos->flags &= ~(MEM_Dyn);
     pTos->flags |= MEM_Static;
     if( pOp->p3type==P3_DYNAMIC ){
-      sqliteFree(pOp->p3);
+      sqlite3_free(pOp->p3);
     }
     pOp->p3type = P3_DYNAMIC;
     pOp->p3 = pTos->z;
@@ -814,13 +810,13 @@ case OP_HexBlob: {            /* same as TK_BLOB */
     char *zBlob = sqlite3HexToBlob(pOp->p3);
     if( !zBlob ) goto no_mem;
     if( pOp->p3type==P3_DYNAMIC ){
-      sqliteFree(pOp->p3);
+      sqlite3_free(pOp->p3);
     }
     pOp->p3 = zBlob;
     pOp->p3type = P3_DYNAMIC;
   }else{
     if( pOp->p3type==P3_DYNAMIC ){
-      sqliteFree(pOp->p3);
+      sqlite3_free(pOp->p3);
     }
     pOp->p3type = P3_STATIC;
     pOp->p3 = "";
@@ -1015,7 +1011,7 @@ case OP_Callback: {            /* no-push */
 ** any element of the stack is NULL, then the result is NULL.
 **
 ** When P1==1, this routine makes a copy of the top stack element
-** into memory obtained from sqliteMalloc().
+** into memory obtained from sqlite3_malloc().
 */
 case OP_Concat: {           /* same as TK_CONCAT */
   char *zNew;
@@ -1056,7 +1052,7 @@ case OP_Concat: {           /* same as TK_CONCAT */
     if( nByte+2>SQLITE_MAX_LENGTH ){
       goto too_big;
     }
-    zNew = sqliteMallocRaw( nByte+2 );
+    zNew = sqlite3DbMallocRaw(db, nByte+2 );
     if( zNew==0 ) goto no_mem;
     j = 0;
     pTerm = &pTos[1-nField];
@@ -1289,7 +1285,7 @@ case OP_Function: {
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   (*ctx.pFunc->xFunc)(&ctx, n, apVal);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
-  if( sqlite3MallocFailed() ){
+  if( db->mallocFailed ){
     /* Even though a malloc() has failed, the implementation of the
     ** user function may have called an sqlite3_result_XXX() function
     ** to return a value. The following call releases any resources
@@ -2075,7 +2071,7 @@ case OP_Column: {
 
     aType = pC->aType;
     if( aType==0 ){
-      pC->aType = aType = sqliteMallocRaw( 2*nField*sizeof(aType) );
+      pC->aType = aType = sqlite3DbMallocRaw(db, 2*nField*sizeof(aType) );
     }
     if( aType==0 ){
       goto no_mem;
@@ -2346,7 +2342,7 @@ case OP_MakeRecord: {
 
   /* Allocate space for the new record. */
   if( nByte>sizeof(zTemp) ){
-    zNewRecord = sqliteMallocRaw(nByte);
+    zNewRecord = sqlite3DbMallocRaw(db, nByte);
     if( !zNewRecord ){
       goto no_mem;
     }
@@ -3468,14 +3464,14 @@ case OP_Insert: {         /* no-push */
       assert( pTos->flags & (MEM_Blob|MEM_Str) );
     }
     if( pC->pseudoTable ){
-      sqliteFree(pC->pData);
+      sqlite3_free(pC->pData);
       pC->iKey = iKey;
       pC->nData = pTos->n;
       if( pTos->flags & MEM_Dyn ){
         pC->pData = pTos->z;
         pTos->flags = MEM_Null;
       }else{
-        pC->pData = sqliteMallocRaw( pC->nData+2 );
+        pC->pData = sqlite3_malloc( pC->nData+2 );
         if( !pC->pData ) goto no_mem;
         memcpy(pC->pData, pTos->z, pC->nData);
         pC->pData[pC->nData] = 0;
@@ -3644,7 +3640,7 @@ case OP_RowData: {
       pTos->flags = MEM_Blob | MEM_Short;
       pTos->z = pTos->zShort;
     }else{
-      char *z = sqliteMallocRaw( n );
+      char *z = sqlite3_malloc( n );
       if( z==0 ) goto no_mem;
       pTos->flags = MEM_Blob | MEM_Dyn;
       pTos->xDel = 0;
@@ -4213,14 +4209,13 @@ case OP_ParseSchema: {        /* no-push */
   sqlite3SafetyOff(db);
   assert( db->init.busy==0 );
   db->init.busy = 1;
-  assert( !sqlite3MallocFailed() );
+  assert( !db->mallocFailed );
   rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
   if( rc==SQLITE_ABORT ) rc = initData.rc;
-  sqliteFree(zSql);
+  sqlite3_free(zSql);
   db->init.busy = 0;
   sqlite3SafetyOn(db);
   if( rc==SQLITE_NOMEM ){
-    sqlite3FailedMalloc();
     goto no_mem;
   }
   break;  
@@ -4311,7 +4306,7 @@ case OP_IntegrityCk: {
     if( (pTos[-nRoot].flags & MEM_Int)==0 ) break;
   }
   assert( nRoot>0 );
-  aRoot = sqliteMallocRaw( sizeof(int)*(nRoot+1) );
+  aRoot = sqlite3_malloc( sizeof(int)*(nRoot+1) );
   if( aRoot==0 ) goto no_mem;
   j = pOp->p1;
   assert( j>=0 && j<p->nMem );
@@ -4337,7 +4332,7 @@ case OP_IntegrityCk: {
   }
   pTos->enc = SQLITE_UTF8;
   sqlite3VdbeChangeEncoding(pTos, encoding);
-  sqliteFree(aRoot);
+  sqlite3_free(aRoot);
   break;
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
@@ -4350,7 +4345,9 @@ case OP_IntegrityCk: {
 case OP_FifoWrite: {        /* no-push */
   assert( pTos>=p->aStack );
   sqlite3VdbeMemIntegerify(pTos);
-  sqlite3VdbeFifoPush(&p->sFifo, pTos->u.i);
+  if( sqlite3VdbeFifoPush(&p->sFifo, pTos->u.i)==SQLITE_NOMEM ){
+    goto nomem;
+  }
   assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
   break;
@@ -4390,7 +4387,7 @@ case OP_ContextPush: {        /* no-push */
   /* FIX ME: This should be allocated as part of the vdbe at compile-time */
   if( i>=p->contextStackDepth ){
     p->contextStackDepth = i+1;
-    p->contextStack = sqliteReallocOrFree(p->contextStack,
+    p->contextStack = sqlite3ReallocOrFree(db, p->contextStack,
                                           sizeof(Context)*(i+1));
     if( p->contextStack==0 ) goto no_mem;
   }
@@ -4624,6 +4621,7 @@ case OP_AggStep: {        /* no-push */
   ctx.s.xDel = 0;
   ctx.isError = 0;
   ctx.pColl = 0;
+  ctx.db = db;
   if( ctx.pFunc->needCollSeq ){
     assert( pOp>p->aOp );
     assert( pOp[-1].p3type==P3_COLLSEQ );
@@ -4820,6 +4818,7 @@ case OP_VOpen: {   /* no-push */
       pCur->pVtabCursor = pVtabCursor;
       pCur->pModule = pVtabCursor->pVtab->pModule;
     }else{
+      db->mallocFailed = 1;
       pModule->xClose(pVtabCursor);
     }
   }
@@ -5201,6 +5200,7 @@ too_big:
   /* Jump to here if a malloc() fails.
   */
 no_mem:
+  db->mallocFailed = 1;
   sqlite3SetString(&p->zErrMsg, "out of memory", (char*)0);
   rc = SQLITE_NOMEM;
   goto vdbe_halt;
@@ -5216,7 +5216,7 @@ abort_due_to_misuse:
   */
 abort_due_to_error:
   if( p->zErrMsg==0 ){
-    if( sqlite3MallocFailed() ) rc = SQLITE_NOMEM;
+    if( db->mallocFailed ) rc = SQLITE_NOMEM;
     sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
   }
   goto vdbe_halt;

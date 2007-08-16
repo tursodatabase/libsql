@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.396 2007/08/13 14:56:44 drh Exp $
+** $Id: btree.c,v 1.397 2007/08/16 04:30:39 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -143,7 +143,7 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
   ** with table iTable, allocate one and link it into the list.
   */
   if( !pLock ){
-    pLock = (BtLock *)sqliteMalloc(sizeof(BtLock));
+    pLock = (BtLock *)sqlite3MallocZero(sizeof(BtLock));
     if( !pLock ){
       return SQLITE_NOMEM;
     }
@@ -182,7 +182,7 @@ static void unlockAllTables(Btree *p){
     BtLock *pLock = *ppIter;
     if( pLock->pBtree==p ){
       *ppIter = pLock->pNext;
-      sqliteFree(pLock);
+      sqlite3_free(pLock);
     }else{
       ppIter = &pLock->pNext;
     }
@@ -197,7 +197,7 @@ static void releasePage(MemPage *pPage);  /* Forward reference */
 ** Invalidate the overflow page-list cache for cursor pCur, if any.
 */
 static void invalidateOverflowCache(BtCursor *pCur){
-  sqliteFree(pCur->aOverflow);
+  sqlite3_free(pCur->aOverflow);
   pCur->aOverflow = 0;
 }
 
@@ -235,13 +235,13 @@ static int saveCursorPosition(BtCursor *pCur){
   ** data.
   */
   if( rc==SQLITE_OK && 0==pCur->pPage->intKey){
-    void *pKey = sqliteMalloc(pCur->nKey);
+    void *pKey = sqlite3_malloc(pCur->nKey);
     if( pKey ){
       rc = sqlite3BtreeKey(pCur, 0, pCur->nKey, pKey);
       if( rc==SQLITE_OK ){
         pCur->pKey = pKey;
       }else{
-        sqliteFree(pKey);
+        sqlite3_free(pKey);
       }
     }else{
       rc = SQLITE_NOMEM;
@@ -282,7 +282,7 @@ static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
 ** Clear the current cursor position.
 */
 static void clearCursorPosition(BtCursor *pCur){
-  sqliteFree(pCur->pKey);
+  sqlite3_free(pCur->pKey);
   pCur->pKey = 0;
   pCur->eState = CURSOR_INVALID;
 }
@@ -309,7 +309,7 @@ int sqlite3BtreeRestoreOrClearCursorPosition(BtCursor *pCur){
   pCur->eState = CURSOR_INVALID;
   rc = sqlite3BtreeMoveto(pCur, pCur->pKey, pCur->nKey, 0, &pCur->skip);
   if( rc==SQLITE_OK ){
-    sqliteFree(pCur->pKey);
+    sqlite3_free(pCur->pKey);
     pCur->pKey = 0;
     assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_INVALID );
   }
@@ -608,7 +608,7 @@ static int defragmentPage(MemPage *pPage){
   assert( pPage->pBt!=0 );
   assert( pPage->pBt->usableSize <= SQLITE_MAX_PAGE_SIZE );
   assert( pPage->nOverflow==0 );
-  temp = sqliteMalloc( pPage->pBt->pageSize );
+  temp = sqlite3_malloc( pPage->pBt->pageSize );
   if( temp==0 ) return SQLITE_NOMEM;
   data = pPage->aData;
   hdr = pPage->hdrOffset;
@@ -636,7 +636,7 @@ static int defragmentPage(MemPage *pPage){
   data[hdr+7] = 0;
   addr = cellOffset+2*nCell;
   memset(&data[addr], 0, brk-addr);
-  sqliteFree(temp);
+  sqlite3_free(temp);
   return SQLITE_OK;
 }
 
@@ -1052,7 +1052,7 @@ int sqlite3BtreeOpen(
   #endif
 #endif
 
-  p = sqliteMalloc(sizeof(Btree));
+  p = sqlite3MallocZero(sizeof(Btree));
   if( !p ){
     return SQLITE_NOMEM;
   }
@@ -1065,7 +1065,7 @@ int sqlite3BtreeOpen(
   if( pTsdro->useSharedData && zFilename && !isMemdb ){
     char *zFullPathname = sqlite3OsFullPathname(zFilename);
     if( !zFullPathname ){
-      sqliteFree(p);
+      sqlite3_free(p);
       return SQLITE_NOMEM;
     }
     for(pBt=pTsdro->pBtree; pBt; pBt=pBt->pNext){
@@ -1074,11 +1074,11 @@ int sqlite3BtreeOpen(
         p->pBt = pBt;
         *ppBtree = p;
         pBt->nRef++;
-        sqliteFree(zFullPathname);
+        sqlite3_free(zFullPathname);
         return SQLITE_OK;
       }
     }
-    sqliteFree(zFullPathname);
+    sqlite3_free(zFullPathname);
   }
 #endif
 
@@ -1093,7 +1093,7 @@ int sqlite3BtreeOpen(
   assert( sizeof(u16)==2 );
   assert( sizeof(Pgno)==4 );
 
-  pBt = sqliteMalloc( sizeof(*pBt) );
+  pBt = sqlite3MallocZero( sizeof(*pBt) );
   if( pBt==0 ){
     rc = SQLITE_NOMEM;
     goto btree_open_out;
@@ -1166,8 +1166,8 @@ btree_open_out:
     if( pBt && pBt->pPager ){
       sqlite3PagerClose(pBt->pPager);
     }
-    sqliteFree(pBt);
-    sqliteFree(p);
+    sqlite3_free(pBt);
+    sqlite3_free(p);
     *ppBtree = 0;
   }
   return rc;
@@ -1199,7 +1199,7 @@ int sqlite3BtreeClose(Btree *p){
   ** this handle.
   */
   sqlite3BtreeRollback(p);
-  sqliteFree(p);
+  sqlite3_free(p);
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
   /* If there are still other outstanding references to the shared-btree
@@ -1236,8 +1236,8 @@ int sqlite3BtreeClose(Btree *p){
   if( pBt->xFreeSchema && pBt->pSchema ){
     pBt->xFreeSchema(pBt->pSchema);
   }
-  sqliteFree(pBt->pSchema);
-  sqliteFree(pBt);
+  sqlite3_free(pBt->pSchema);
+  sqlite3_free(pBt);
   return SQLITE_OK;
 }
 
@@ -2381,7 +2381,7 @@ int sqlite3BtreeCursor(
       return SQLITE_READONLY;
     }
   }
-  pCur = sqliteMalloc( sizeof(*pCur) );
+  pCur = sqlite3MallocZero( sizeof(*pCur) );
   if( pCur==0 ){
     rc = SQLITE_NOMEM;
     goto create_cursor_exception;
@@ -2416,7 +2416,7 @@ int sqlite3BtreeCursor(
 create_cursor_exception:
   if( pCur ){
     releasePage(pCur->pPage);
-    sqliteFree(pCur);
+    sqlite3_free(pCur);
   }
   unlockBtreeIfUnused(pBt);
   return rc;
@@ -2440,7 +2440,7 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
   releasePage(pCur->pPage);
   unlockBtreeIfUnused(pBt);
   invalidateOverflowCache(pCur);
-  sqliteFree(pCur);
+  sqlite3_free(pCur);
   return SQLITE_OK;
 }
 
@@ -2763,7 +2763,7 @@ static int accessPayload(
     */
     if( pCur->isIncrblobHandle && !pCur->aOverflow ){
       int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
-      pCur->aOverflow = (Pgno *)sqliteMalloc(sizeof(Pgno)*nOvfl);
+      pCur->aOverflow = (Pgno *)sqlite3MallocZero(sizeof(Pgno)*nOvfl);
       if( nOvfl && !pCur->aOverflow ){
         rc = SQLITE_NOMEM;
       }
@@ -3238,11 +3238,11 @@ int sqlite3BtreeMoveto(
         if( available>=nCellKey ){
           c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
         }else{
-          pCellKey = sqliteMallocRaw( nCellKey );
+          pCellKey = sqlite3_malloc( nCellKey );
           if( pCellKey==0 ) return SQLITE_NOMEM;
           rc = sqlite3BtreeKey(pCur, 0, nCellKey, (void *)pCellKey);
           c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
-          sqliteFree(pCellKey);
+          sqlite3_free(pCellKey);
           if( rc ) return rc;
         }
       }
@@ -4452,7 +4452,7 @@ static int balance_nonroot(MemPage *pPage){
   /*
   ** Allocate space for memory structures
   */
-  apCell = sqliteMallocRaw( 
+  apCell = sqlite3_malloc( 
        nMaxCells*sizeof(u8*)                           /* apCell */
      + nMaxCells*sizeof(int)                           /* szCell */
      + ROUND8(sizeof(MemPage))*NB                      /* aCopy */
@@ -4863,7 +4863,7 @@ static int balance_nonroot(MemPage *pPage){
   ** Cleanup before returning.
   */
 balance_cleanup:
-  sqliteFree(apCell);
+  sqlite3_free(apCell);
   for(i=0; i<nOld; i++){
     releasePage(apOld[i]);
   }
@@ -4894,7 +4894,7 @@ static int balance_shallower(MemPage *pPage){
   assert( pPage->nCell==0 );
   pBt = pPage->pBt;
   mxCellPerPage = MX_CELL(pBt);
-  apCell = sqliteMallocRaw( mxCellPerPage*(sizeof(u8*)+sizeof(int)) );
+  apCell = sqlite3_malloc( mxCellPerPage*(sizeof(u8*)+sizeof(int)) );
   if( apCell==0 ) return SQLITE_NOMEM;
   szCell = (int*)&apCell[mxCellPerPage];
   if( pPage->leaf ){
@@ -4968,7 +4968,7 @@ static int balance_shallower(MemPage *pPage){
     releasePage(pChild);
   }
 end_shallow_balance:
-  sqliteFree(apCell);
+  sqlite3_free(apCell);
   return rc;
 }
 
@@ -5151,7 +5151,7 @@ int sqlite3BtreeInsert(
   assert( pPage->isInit );
   rc = sqlite3PagerWrite(pPage->pDbPage);
   if( rc ) return rc;
-  newCell = sqliteMallocRaw( MX_CELL_SIZE(pBt) );
+  newCell = sqlite3_malloc( MX_CELL_SIZE(pBt) );
   if( newCell==0 ) return SQLITE_NOMEM;
   rc = fillInCell(pPage, newCell, pKey, nKey, pData, nData, nZero, &szNew);
   if( rc ) goto end_insert;
@@ -5184,7 +5184,7 @@ int sqlite3BtreeInsert(
     moveToRoot(pCur);
   }
 end_insert:
-  sqliteFree(newCell);
+  sqlite3_free(newCell);
   return rc;
 }
 
@@ -5267,7 +5267,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
       pNext = findCell(leafCur.pPage, leafCur.idx);
       szNext = cellSizePtr(leafCur.pPage, pNext);
       assert( MX_CELL_SIZE(pBt)>=szNext+4 );
-      tempCell = sqliteMallocRaw( MX_CELL_SIZE(pBt) );
+      tempCell = sqlite3_malloc( MX_CELL_SIZE(pBt) );
       if( tempCell==0 ){
         rc = SQLITE_NOMEM;
       }
@@ -5283,7 +5283,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
       dropCell(leafCur.pPage, leafCur.idx, szNext);
       rc = balance(leafCur.pPage, 0);
     }
-    sqliteFree(tempCell);
+    sqlite3_free(tempCell);
     sqlite3BtreeReleaseTempCursor(&leafCur);
   }else{
     TRACE(("DELETE: table=%d delete from leaf %d\n",
@@ -5748,11 +5748,11 @@ static void checkAppendMsg(
     char *zOld = pCheck->zErrMsg;
     pCheck->zErrMsg = 0;
     sqlite3SetString(&pCheck->zErrMsg, zOld, "\n", zMsg1, zMsg2, (char*)0);
-    sqliteFree(zOld);
+    sqlite3_free(zOld);
   }else{
     sqlite3SetString(&pCheck->zErrMsg, zMsg1, zMsg2, (char*)0);
   }
-  sqliteFree(zMsg2);
+  sqlite3_free(zMsg2);
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
@@ -5995,7 +5995,7 @@ static int checkTreePage(
   */
   data = pPage->aData;
   hdr = pPage->hdrOffset;
-  hit = sqliteMalloc( usableSize );
+  hit = sqlite3MallocZero( usableSize );
   if( hit ){
     memset(hit, 1, get2byte(&data[hdr+5]));
     nCell = get2byte(&data[hdr+3]);
@@ -6038,7 +6038,7 @@ static int checkTreePage(
           cnt, data[hdr+7], iPage);
     }
   }
-  sqliteFree(hit);
+  sqlite3_free(hit);
 
   releasePage(pPage);
   return depth+1;
@@ -6070,7 +6070,7 @@ char *sqlite3BtreeIntegrityCheck(
 
   nRef = sqlite3PagerRefcount(pBt->pPager);
   if( lockBtreeWithRetry(p)!=SQLITE_OK ){
-    return sqliteStrDup("Unable to acquire a read lock on the database");
+    return sqlite3StrDup("Unable to acquire a read lock on the database");
   }
   sCheck.pBt = pBt;
   sCheck.pPager = pBt->pPager;
@@ -6087,7 +6087,7 @@ char *sqlite3BtreeIntegrityCheck(
     unlockBtreeIfUnused(pBt);
     return 0;
   }
-  sCheck.anRef = sqliteMallocRaw( (sCheck.nPage+1)*sizeof(sCheck.anRef[0]) );
+  sCheck.anRef = sqlite3_malloc( (sCheck.nPage+1)*sizeof(sCheck.anRef[0]) );
   if( !sCheck.anRef ){
     unlockBtreeIfUnused(pBt);
     *pnErr = 1;
@@ -6152,7 +6152,7 @@ char *sqlite3BtreeIntegrityCheck(
 
   /* Clean  up and report errors.
   */
-  sqliteFree(sCheck.anRef);
+  sqlite3_free(sCheck.anRef);
   *pnErr = sCheck.nErr;
   return sCheck.zErrMsg;
 }
@@ -6280,13 +6280,13 @@ int sqlite3BtreeIsInReadTrans(Btree *p){
 **
 ** Just before the shared-btree is closed, the function passed as the 
 ** xFree argument when the memory allocation was made is invoked on the 
-** blob of allocated memory. This function should not call sqliteFree()
+** blob of allocated memory. This function should not call sqlite3_free()
 ** on the memory, the btree layer does that.
 */
 void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){
   BtShared *pBt = p->pBt;
   if( !pBt->pSchema ){
-    pBt->pSchema = sqliteMalloc(nBytes);
+    pBt->pSchema = sqlite3MallocZero(nBytes);
     pBt->xFreeSchema = xFree;
   }
   return pBt->pSchema;

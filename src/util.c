@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.207 2007/06/26 00:37:28 drh Exp $
+** $Id: util.c,v 1.208 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -631,13 +631,13 @@ static int hexToInt(int h){
 ** binary value has been obtained from malloc and must be freed by
 ** the calling routine.
 */
-void *sqlite3HexToBlob(const char *z){
+void *sqlite3HexToBlob(sqlite3 *db, const char *z){
   char *zBlob;
   int i;
   int n = strlen(z);
   if( n%2 ) return 0;
 
-  zBlob = (char *)sqliteMalloc(n/2);
+  zBlob = (char *)sqlite3DbMallocRaw(db, n/2);
   if( zBlob ){
     for(i=0; i<n; i+=2){
       zBlob[i/2] = (hexToInt(z[i])<<4) | hexToInt(z[i+1]);
@@ -698,35 +698,4 @@ int sqlite3SafetyOff(sqlite3 *db){
     db->u1.isInterrupted = 1;
     return 1;
   }
-}
-
-/*
-** Return a pointer to the ThreadData associated with the calling thread.
-*/
-ThreadData *sqlite3ThreadData(){
-  ThreadData *p = (ThreadData*)sqlite3OsThreadSpecificData(1);
-  if( !p ){
-    sqlite3FailedMalloc();
-  }
-  return p;
-}
-
-/*
-** Return a pointer to the ThreadData associated with the calling thread.
-** If no ThreadData has been allocated to this thread yet, return a pointer
-** to a substitute ThreadData structure that is all zeros. 
-*/
-const ThreadData *sqlite3ThreadDataReadOnly(){
-  static const ThreadData zeroData = {0};  /* Initializer to silence warnings
-                                           ** from broken compilers */
-  const ThreadData *pTd = sqlite3OsThreadSpecificData(0);
-  return pTd ? pTd : &zeroData;
-}
-
-/*
-** Check to see if the ThreadData for this thread is all zero.  If it
-** is, then deallocate it. 
-*/
-void sqlite3ReleaseThreadData(){
-  sqlite3OsThreadSpecificData(-1);
 }

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.188 2007/07/23 19:39:47 drh Exp $
+** $Id: insert.c,v 1.189 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -41,7 +41,8 @@ void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
     */
     int n;
     Table *pTab = pIdx->pTable;
-    pIdx->zColAff = (char *)sqliteMalloc(pIdx->nColumn+1);
+    sqlite3 *db = sqlite3DbOfVdbe(v);
+    pIdx->zColAff = (char *)sqlite3DbMallocZero(db, pIdx->nColumn+1);
     if( !pIdx->zColAff ){
       return;
     }
@@ -79,8 +80,9 @@ void sqlite3TableAffinityStr(Vdbe *v, Table *pTab){
   if( !pTab->zColAff ){
     char *zColAff;
     int i;
+    sqlite3 *db = sqlite3DbOfVdbe(v);
 
-    zColAff = (char *)sqliteMalloc(pTab->nCol+1);
+    zColAff = (char *)sqlite3DbMallocZero(db, pTab->nCol+1);
     if( !zColAff ){
       return;
     }
@@ -356,10 +358,10 @@ void sqlite3Insert(
   int triggers_exist = 0;     /* True if there are FOR EACH ROW triggers */
 #endif
 
-  if( pParse->nErr || sqlite3MallocFailed() ){
+  db = pParse->db;
+  if( pParse->nErr || db->mallocFailed ){
     goto insert_cleanup;
   }
-  db = pParse->db;
 
   /* Locate the table into which we will be inserting new information.
   */
@@ -462,7 +464,7 @@ void sqlite3Insert(
 
     /* Resolve the expressions in the SELECT statement and execute it. */
     rc = sqlite3Select(pParse, pSelect, SRT_Subroutine, iInsertBlock,0,0,0,0);
-    if( rc || pParse->nErr || sqlite3MallocFailed() ){
+    if( rc || pParse->nErr || db->mallocFailed ){
       goto insert_cleanup;
     }
 

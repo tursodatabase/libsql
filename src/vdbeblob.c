@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.11 2007/06/27 00:36:14 drh Exp $
+** $Id: vdbeblob.c,v 1.12 2007/08/16 04:30:41 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -104,7 +104,7 @@ int sqlite3_blob_open(
       if( sParse.zErrMsg ){
         sqlite3_snprintf(sizeof(zErr), zErr, "%s", sParse.zErrMsg);
       }
-      sqliteFree(sParse.zErrMsg);
+      sqlite3_free(sParse.zErrMsg);
       rc = SQLITE_ERROR;
       sqlite3SafetyOff(db);
       goto blob_open_out;
@@ -173,13 +173,13 @@ int sqlite3_blob_open(
       ** and offset cache without causing any IO.
       */
       sqlite3VdbeChangeP2(v, 5, pTab->nCol+1);
-      if( !sqlite3MallocFailed() ){
+      if( !db->mallocFailed ){
         sqlite3VdbeMakeReady(v, 1, 0, 1, 0);
       }
     }
 
     rc = sqlite3SafetyOff(db);
-    if( rc!=SQLITE_OK || sqlite3MallocFailed() ){
+    if( rc!=SQLITE_OK || db->mallocFailed ){
       goto blob_open_out;
     }
 
@@ -208,9 +208,9 @@ int sqlite3_blob_open(
       rc = SQLITE_ERROR;
       goto blob_open_out;
     }
-    pBlob = (Incrblob *)sqliteMalloc(sizeof(Incrblob));
-    if( sqlite3MallocFailed() ){
-      sqliteFree(pBlob);
+    pBlob = (Incrblob *)sqlite3DbMallocZero(db, sizeof(Incrblob));
+    if( db->mallocFailed ){
+      sqlite3_free(pBlob);
       goto blob_open_out;
     }
     pBlob->flags = flags;
@@ -228,7 +228,7 @@ int sqlite3_blob_open(
 
 blob_open_out:
   zErr[sizeof(zErr)-1] = '\0';
-  if( rc!=SQLITE_OK || sqlite3MallocFailed() ){
+  if( rc!=SQLITE_OK || db->mallocFailed ){
     sqlite3_finalize((sqlite3_stmt *)v);
   }
   sqlite3Error(db, rc, (rc==SQLITE_OK?0:zErr));
@@ -242,7 +242,7 @@ blob_open_out:
 int sqlite3_blob_close(sqlite3_blob *pBlob){
   Incrblob *p = (Incrblob *)pBlob;
   sqlite3_stmt *pStmt = p->pStmt;
-  sqliteFree(p);
+  sqlite3_free(p);
   return sqlite3_finalize(pStmt);
 }
 

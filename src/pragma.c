@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.142 2007/06/26 10:38:55 danielk1977 Exp $
+** $Id: pragma.c,v 1.143 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -264,12 +264,12 @@ void sqlite3Pragma(
     return;
   }
 
-  zLeft = sqlite3NameFromToken(pId);
+  zLeft = sqlite3NameFromToken(db, pId);
   if( !zLeft ) return;
   if( minusFlag ){
-    zRight = sqlite3MPrintf("-%T", pValue);
+    zRight = sqlite3MPrintf(db, "-%T", pValue);
   }else{
-    zRight = sqlite3NameFromToken(pValue);
+    zRight = sqlite3NameFromToken(db, pValue);
   }
 
   zDb = ((iDb>0)?pDb->zName:0);
@@ -567,7 +567,7 @@ void sqlite3Pragma(
       ){
         invalidateTempStorage(pParse);
       }
-      sqliteFree(sqlite3_temp_directory);
+      sqlite3_free(sqlite3_temp_directory);
       if( zRight[0] ){
         sqlite3_temp_directory = zRight;
         zRight = 0;
@@ -1173,8 +1173,8 @@ void sqlite3Pragma(
 #endif
   }
 pragma_out:
-  sqliteFree(zLeft);
-  sqliteFree(zRight);
+  sqlite3_free(zLeft);
+  sqlite3_free(zRight);
 }
 
 #endif /* SQLITE_OMIT_PRAGMA || SQLITE_OMIT_PARSER */

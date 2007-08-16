@@ -316,14 +316,14 @@ int sqlite3_load_extension(
 
   /* Append the new shared library handle to the db->aExtension array. */
   db->nExtension++;
-  aHandle = sqliteMalloc(sizeof(handle)*db->nExtension);
+  aHandle = sqlite3DbMallocZero(db, sizeof(handle)*db->nExtension);
   if( aHandle==0 ){
     return SQLITE_NOMEM;
   }
   if( db->nExtension>0 ){
     memcpy(aHandle, db->aExtension, sizeof(handle)*(db->nExtension-1));
   }
-  sqliteFree(db->aExtension);
+  sqlite3_free(db->aExtension);
   db->aExtension = aHandle;
 
   db->aExtension[db->nExtension-1] = handle;
@@ -339,7 +339,7 @@ void sqlite3CloseExtensions(sqlite3 *db){
   for(i=0; i<db->nExtension; i++){
     sqlite3OsDlclose(db->aExtension[i]);
   }
-  sqliteFree(db->aExtension);
+  sqlite3_free(db->aExtension);
 }
 
 /*
@@ -378,7 +378,7 @@ int sqlite3_auto_extension(void *xInit){
   }
   if( i==nAutoExtension ){
     nAutoExtension++;
-    aAutoExtension = sqlite3Realloc( aAutoExtension,
+    aAutoExtension = sqlite3_realloc( aAutoExtension,
                                      nAutoExtension*sizeof(aAutoExtension[0]) );
     if( aAutoExtension==0 ){
       nAutoExtension = 0;
@@ -397,7 +397,7 @@ int sqlite3_auto_extension(void *xInit){
 */
 void sqlite3_reset_auto_extension(void){
   sqlite3OsEnterMutex();
-  sqliteFree(aAutoExtension);
+  sqlite3_free(aAutoExtension);
   aAutoExtension = 0;
   nAutoExtension = 0;
   sqlite3OsLeaveMutex();

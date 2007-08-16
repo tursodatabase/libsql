@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.27 2007/06/27 17:09:24 danielk1977 Exp $
+** $Id: alter.c,v 1.28 2007/08/16 04:30:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -203,7 +203,7 @@ static char *whereTempTriggers(Parse *pParse, Table *pTab){
         }else{
           tmp = zWhere;
           zWhere = sqlite3MPrintf("%s OR name=%Q", zWhere, pTrig->name);
-          sqliteFree(tmp);
+          sqlite3_free(tmp);
         }
       }
     }
@@ -281,7 +281,7 @@ void sqlite3AlterRenameTable(
 #endif
   int isVirtualRename = 0;  /* True if this is a v-table with an xRename() */
   
-  if( sqlite3MallocFailed() ) goto exit_rename_table;
+  if( db->mallocFailed ) goto exit_rename_table;
   assert( pSrc->nSrc==1 );
 
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
@@ -290,7 +290,7 @@ void sqlite3AlterRenameTable(
   zDb = db->aDb[iDb].zName;
 
   /* Get a NULL terminated version of the new table name. */
-  zName = sqlite3NameFromToken(pName);
+  zName = sqlite3NameFromToken(db, pName);
   if( !zName ) goto exit_rename_table;
 
   /* Check that a table or index named 'zName' does not already exist
@@ -404,7 +404,7 @@ void sqlite3AlterRenameTable(
             "sql = sqlite_rename_trigger(sql, %Q), "
             "tbl_name = %Q "
             "WHERE %s;", zName, zName, zWhere);
-    sqliteFree(zWhere);
+    sqlite3_free(zWhere);
   }
 #endif
 
@@ -413,7 +413,7 @@ void sqlite3AlterRenameTable(
 
 exit_rename_table:
   sqlite3SrcListDelete(pSrc);
-  sqliteFree(zName);
+  sqlite3_free(zName);
 }
 
 
@@ -434,17 +434,19 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   char *zCol;               /* Null-terminated column definition */
   Column *pCol;             /* The new column */
   Expr *pDflt;              /* Default value for the new column */
+  sqlite3 *db;              /* The database connection; */
 
   if( pParse->nErr ) return;
   pNew = pParse->pNewTable;
   assert( pNew );
 
-  iDb = sqlite3SchemaToIndex(pParse->db, pNew->pSchema);
-  zDb = pParse->db->aDb[iDb].zName;
+  db = pParse->db;
+  iDb = sqlite3SchemaToIndex(db, pNew->pSchema);
+  zDb = db->aDb[iDb].zName;
   zTab = pNew->zName;
   pCol = &pNew->aCol[pNew->nCol-1];
   pDflt = pCol->pDflt;
-  pTab = sqlite3FindTable(pParse->db, zTab, zDb);
+  pTab = sqlite3FindTable(db, zTab, zDb);
   assert( pTab );
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -486,7 +488,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   if( pDflt ){
     sqlite3_value *pVal;
     if( sqlite3ValueFromExpr(pDflt, SQLITE_UTF8, SQLITE_AFF_NONE, &pVal) ){
-      /* malloc() has failed */
+      db->mallocFailed = 1;
       return;
     }
     if( !pVal ){
@@ -497,7 +499,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   }
 
   /* Modify the CREATE TABLE statement. */
-  zCol = sqliteStrNDup((char*)pColDef->z, pColDef->n);
+  zCol = sqlite3DbStrNDup(db, (char*)pColDef->z, pColDef->n);
   if( zCol ){
     char *zEnd = &zCol[pColDef->n-1];
     while( (zEnd>zCol && *zEnd==';') || isspace(*(unsigned char *)zEnd) ){
@@ -510,7 +512,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
       zDb, SCHEMA_TABLE(iDb), pNew->addColOffset, zCol, pNew->addColOffset+1,
       zTab
     );
-    sqliteFree(zCol);
+    sqlite3_free(zCol);
   }
 
   /* If the default value of the new column is NULL, then set the file
@@ -545,10 +547,11 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   int iDb;
   int i;
   int nAlloc;
+  sqlite3 *db = pParse->db;
 
   /* Look up the table being altered. */
   assert( pParse->pNewTable==0 );
-  if( sqlite3MallocFailed() ) goto exit_begin_add_column;
+  if( db->mallocFailed ) goto exit_begin_add_column;
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
   if( !pTab ) goto exit_begin_add_column;
 
@@ -566,12 +569,12 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   }
 
   assert( pTab->addColOffset>0 );
-  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
 
   /* Put a copy of the Table struct in Parse.pNewTable for the
   ** sqlite3AddColumn() function and friends to modify.
   */
-  pNew = (Table *)sqliteMalloc(sizeof(Table));
+  pNew = (Table*)sqlite3DbMallocZero(db, sizeof(Table));
   if( !pNew ) goto exit_begin_add_column;
   pParse->pNewTable = pNew;
   pNew->nRef = 1;
@@ -579,20 +582,21 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   assert( pNew->nCol>0 );
   nAlloc = (((pNew->nCol-1)/8)*8)+8;
   assert( nAlloc>=pNew->nCol && nAlloc%8==0 && nAlloc-pNew->nCol<8 );
-  pNew->aCol = (Column *)sqliteMalloc(sizeof(Column)*nAlloc);
-  pNew->zName = sqliteStrDup(pTab->zName);
+  pNew->aCol = (Column*)sqlite3_malloc(sizeof(Column)*nAlloc);
+  pNew->zName = sqlite3DbStrDup(db, pTab->zName);
   if( !pNew->aCol || !pNew->zName ){
+    db->mallocFailed = 1;
     goto exit_begin_add_column;
   }
   memcpy(pNew->aCol, pTab->aCol, sizeof(Column)*pNew->nCol);
   for(i=0; i<pNew->nCol; i++){
     Column *pCol = &pNew->aCol[i];
-    pCol->zName = sqliteStrDup(pCol->zName);
+    pCol->zName = sqlite3DbStrDup(db, pCol->zName);
     pCol->zColl = 0;
     pCol->zType = 0;
     pCol->pDflt = 0;
   }
-  pNew->pSchema = pParse->db->aDb[iDb].pSchema;
+  pNew->pSchema = db->aDb[iDb].pSchema;
   pNew->addColOffset = pTab->addColOffset;
   pNew->nRef = 1;
 
@@ -600,7 +604,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   v = sqlite3GetVdbe(pParse);
   if( !v ) goto exit_begin_add_column;
-  sqlite3ChangeCookie(pParse->db, v, iDb);
+  sqlite3ChangeCookie(db, v, iDb);
 
 exit_begin_add_column:
   sqlite3SrcListDelete(pSrc);

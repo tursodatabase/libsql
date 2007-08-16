@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.19 2007/06/20 13:37:31 drh Exp $
+** @(#) $Id: analyze.c,v 1.20 2007/08/16 04:30:39 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -304,9 +304,9 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
     if( iDb>=0 ){
       analyzeDatabase(pParse, iDb);
     }else{
-      z = sqlite3NameFromToken(pName1);
+      z = sqlite3NameFromToken(db, pName1);
       pTab = sqlite3LocateTable(pParse, z, 0);
-      sqliteFree(z);
+      sqlite3_free(z);
       if( pTab ){
         analyzeTable(pParse, pTab);
       }
@@ -316,10 +316,10 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
     iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pTableName);
     if( iDb>=0 ){
       zDb = db->aDb[iDb].zName;
-      z = sqlite3NameFromToken(pTableName);
+      z = sqlite3NameFromToken(db, pTableName);
       if( z ){
         pTab = sqlite3LocateTable(pParse, z, zDb);
-        sqliteFree(z);
+        sqlite3_free(z);
         if( pTab ){
           analyzeTable(pParse, pTab);
         }
@@ -402,7 +402,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   sqlite3SafetyOff(db);
   rc = sqlite3_exec(db, zSql, analysisLoader, &sInfo, 0);
   sqlite3SafetyOn(db);
-  sqliteFree(zSql);
+  sqlite3_free(zSql);
   return rc;
 }
 

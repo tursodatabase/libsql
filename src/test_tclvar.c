@@ -16,7 +16,7 @@
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
 **
-** $Id: test_tclvar.c,v 1.11 2007/06/27 16:26:07 danielk1977 Exp $
+** $Id: test_tclvar.c,v 1.12 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -58,7 +58,7 @@ static int tclvarConnect(
   tclvar_vtab *pVtab;
   static const char zSchema[] = 
      "CREATE TABLE whatever(name TEXT, arrayname TEXT, value TEXT)";
-  pVtab = sqliteMalloc( sizeof(*pVtab) );
+  pVtab = sqlite3_malloc( sizeof(*pVtab) );
   if( pVtab==0 ) return SQLITE_NOMEM;
   *ppVtab = &pVtab->base;
   pVtab->interp = (Tcl_Interp *)pAux;
@@ -69,7 +69,7 @@ static int tclvarConnect(
 ** methods are identical. */
 
 static int tclvarDisconnect(sqlite3_vtab *pVtab){
-  sqliteFree(pVtab);
+  sqlite3_free(pVtab);
   return SQLITE_OK;
 }
 /* The xDisconnect and xDestroy methods are also the same */
@@ -79,7 +79,7 @@ static int tclvarDisconnect(sqlite3_vtab *pVtab){
 */
 static int tclvarOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   tclvar_cursor *pCur;
-  pCur = sqliteMalloc(sizeof(tclvar_cursor));
+  pCur = sqlite3_malloc(sizeof(tclvar_cursor));
   *ppCursor = &pCur->base;
   return SQLITE_OK;
 }
@@ -95,7 +95,7 @@ static int tclvarClose(sqlite3_vtab_cursor *cur){
   if( pCur->pList2 ){
     Tcl_DecrRefCount(pCur->pList2);
   }
-  sqliteFree(pCur);
+  sqlite3_free(pCur);
   return SQLITE_OK;
 }
 

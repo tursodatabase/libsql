@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.52 2007/08/13 14:41:19 danielk1977 Exp $
+** $Id: prepare.c,v 1.53 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -24,7 +24,7 @@
 ** that the database is corrupt.
 */
 static void corruptSchema(InitData *pData, const char *zExtra){
-  if( !sqlite3MallocFailed() ){
+  if( !pData->db->mallocFailed ){
     sqlite3SetString(pData->pzErrMsg, "malformed database schema",
        zExtra!=0 && zExtra[0]!=0 ? " - " : (char*)0, zExtra, (char*)0);
   }
@@ -50,7 +50,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
 
   pData->rc = SQLITE_OK;
   DbClearProperty(db, iDb, DB_Empty);
-  if( sqlite3MallocFailed() ){
+  if( db->mallocFailed ){
     corruptSchema(pData, 0);
     return SQLITE_NOMEM;
   }
@@ -79,7 +79,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
     if( SQLITE_OK!=rc ){
       pData->rc = rc;
       if( rc==SQLITE_NOMEM ){
-        sqlite3FailedMalloc();
+        db->mallocFailed = 1;
       }else if( rc!=SQLITE_INTERRUPT ){
         corruptSchema(pData, zErr);
       }
@@ -297,7 +297,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
     if( rc==SQLITE_ABORT ) rc = initData.rc;
     sqlite3SafetyOn(db);
-    sqliteFree(zSql);
+    sqlite3_free(zSql);
 #ifndef SQLITE_OMIT_ANALYZE
     if( rc==SQLITE_OK ){
       sqlite3AnalysisLoad(db, iDb);
@@ -305,7 +305,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 #endif
     sqlite3BtreeCloseCursor(curMain);
   }
-  if( sqlite3MallocFailed() ){
+  if( db->mallocFailed ){
     /* sqlite3SetString(pzErrMsg, "out of memory", (char*)0); */
     rc = SQLITE_NOMEM;
     sqlite3ResetInternalSchema(db, 0);
@@ -464,7 +464,7 @@ int sqlite3Prepare(
   int i;
 
   /* Assert that malloc() has not failed */
-  assert( !sqlite3MallocFailed() );
+  assert( !db->mallocFailed );
 
   assert( ppStmt );
   *ppStmt = 0;
@@ -492,17 +492,17 @@ int sqlite3Prepare(
     if( nBytes>SQLITE_MAX_SQL_LENGTH ){
       return SQLITE_TOOBIG;
     }
-    zSqlCopy = sqlite3StrNDup(zSql, nBytes);
+    zSqlCopy = sqlite3DbStrNDup(db, zSql, nBytes);
     if( zSqlCopy ){
       sqlite3RunParser(&sParse, zSqlCopy, &zErrMsg);
-      sqliteFree(zSqlCopy);
+      sqlite3_free(zSqlCopy);
     }
     sParse.zTail = &zSql[nBytes];
   }else{
     sqlite3RunParser(&sParse, zSql, &zErrMsg);
   }
 
-  if( sqlite3MallocFailed() ){
+  if( db->mallocFailed ){
     sParse.rc = SQLITE_NOMEM;
   }
   if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
@@ -512,7 +512,7 @@ int sqlite3Prepare(
   if( sParse.rc==SQLITE_SCHEMA ){
     sqlite3ResetInternalSchema(db, 0);
   }
-  if( sqlite3MallocFailed() ){
+  if( db->mallocFailed ){
     sParse.rc = SQLITE_NOMEM;
   }
   if( pzTail ){
@@ -545,7 +545,7 @@ int sqlite3Prepare(
   if( saveSqlFlag ){
     sqlite3VdbeSetSql(sParse.pVdbe, zSql, sParse.zTail - zSql);
   }
-  if( rc!=SQLITE_OK || sqlite3MallocFailed() ){
+  if( rc!=SQLITE_OK || db->mallocFailed ){
     sqlite3_finalize((sqlite3_stmt*)sParse.pVdbe);
     assert(!(*ppStmt));
   }else{
@@ -554,7 +554,7 @@ int sqlite3Prepare(
 
   if( zErrMsg ){
     sqlite3Error(db, rc, "%s", zErrMsg);
-    sqliteFree(zErrMsg);
+    sqlite3_free(zErrMsg);
   }else{
     sqlite3Error(db, rc, 0);
   }
@@ -661,7 +661,7 @@ static int sqlite3Prepare16(
     int chars_parsed = sqlite3Utf8CharLen(zSql8, zTail8-zSql8);
     *pzTail = (u8 *)zSql + sqlite3Utf16ByteLen(zSql, chars_parsed);
   }
-  sqliteFree(zSql8); 
+  sqlite3_free(zSql8); 
   return sqlite3ApiExit(db, rc);
 }
 

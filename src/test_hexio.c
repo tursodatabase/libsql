@@ -17,7 +17,7 @@
 ** with historical versions of the "binary" command.  So it seems
 ** easier and safer to build our own mechanism.
 **
-** $Id: test_hexio.c,v 1.3 2007/05/10 17:23:12 drh Exp $
+** $Id: test_hexio.c,v 1.4 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -115,7 +115,7 @@ static int hexio_read(
   if( Tcl_GetIntFromObj(interp, objv[2], &offset) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[3], &amt) ) return TCL_ERROR;
   zFile = Tcl_GetString(objv[1]);
-  zBuf = malloc( amt*2+1 );
+  zBuf = sqlite3_malloc( amt*2+1 );
   if( zBuf==0 ){
     return TCL_ERROR;
   }
@@ -132,7 +132,7 @@ static int hexio_read(
   }
   binToHex(zBuf, got);
   Tcl_AppendResult(interp, zBuf, 0);
-  free(zBuf);
+  sqlite3_free(zBuf);
   return TCL_OK;
 }
 
@@ -163,7 +163,7 @@ static int hexio_write(
   if( Tcl_GetIntFromObj(interp, objv[2], &offset) ) return TCL_ERROR;
   zFile = Tcl_GetString(objv[1]);
   zIn = (const unsigned char *)Tcl_GetStringFromObj(objv[3], &nIn);
-  aOut = malloc( nIn/2 );
+  aOut = sqlite3_malloc( nIn/2 );
   if( aOut==0 ){
     return TCL_ERROR;
   }
@@ -175,7 +175,7 @@ static int hexio_write(
   }
   fseek(out, offset, SEEK_SET);
   written = fwrite(aOut, 1, nOut, out);
-  free(aOut);
+  sqlite3_free(aOut);
   fclose(out);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(written));
   return TCL_OK;
@@ -205,7 +205,7 @@ static int hexio_get_int(
     return TCL_ERROR;
   }
   zIn = (const unsigned char *)Tcl_GetStringFromObj(objv[1], &nIn);
-  aOut = malloc( nIn/2 );
+  aOut = sqlite3_malloc( nIn/2 );
   if( aOut==0 ){
     return TCL_ERROR;
   }
@@ -216,7 +216,7 @@ static int hexio_get_int(
     memset(aNum, 0, sizeof(aNum));
     memcpy(&aNum[4-nOut], aOut, nOut);
   }
-  free(aOut);
+  sqlite3_free(aOut);
   val = (aNum[0]<<24) | (aNum[1]<<16) | (aNum[2]<<8) | aNum[3];
   Tcl_SetObjResult(interp, Tcl_NewIntObj(val));
   return TCL_OK;

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_schema.c,v 1.12 2007/06/27 16:26:07 danielk1977 Exp $
+** $Id: test_schema.c,v 1.13 2007/08/16 04:30:40 drh Exp $
 */
 
 /* The code in this file defines a sqlite3 virtual-table module that
@@ -39,13 +39,9 @@
 #ifdef SQLITE_TEST
   #include "sqliteInt.h"
   #include "tcl.h"
-  #define MALLOC(x) sqliteMallocRaw(x) 
-  #define FREE(x)   sqliteFree(x)
 #else
   #include "sqlite3ext.h"
   SQLITE_EXTENSION_INIT1
-  #define MALLOC(x) malloc(x) 
-  #define FREE(x)   free(x)
 #endif
 
 #include <stdlib.h>
@@ -74,7 +70,7 @@ struct schema_cursor {
 ** Table destructor for the schema module.
 */
 static int schemaDestroy(sqlite3_vtab *pVtab){
-  FREE(pVtab);
+  sqlite3_free(pVtab);
   return 0;
 }
 
@@ -89,7 +85,7 @@ static int schemaCreate(
   char **pzErr
 ){
   int rc = SQLITE_NOMEM;
-  schema_vtab *pVtab = MALLOC(sizeof(schema_vtab));
+  schema_vtab *pVtab = sqlite3_malloc(sizeof(schema_vtab));
   if( pVtab ){
     memset(pVtab, 0, sizeof(schema_vtab));
     pVtab->db = db;
@@ -107,7 +103,7 @@ static int schemaCreate(
 static int schemaOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   int rc = SQLITE_NOMEM;
   schema_cursor *pCur;
-  pCur = MALLOC(sizeof(schema_cursor));
+  pCur = sqlite3_malloc(sizeof(schema_cursor));
   if( pCur ){
     memset(pCur, 0, sizeof(schema_cursor));
     *ppCursor = (sqlite3_vtab_cursor *)pCur;
@@ -124,7 +120,7 @@ static int schemaClose(sqlite3_vtab_cursor *cur){
   sqlite3_finalize(pCur->pDbList);
   sqlite3_finalize(pCur->pTableList);
   sqlite3_finalize(pCur->pColumnList);
-  FREE(pCur);
+  sqlite3_free(pCur);
   return SQLITE_OK;
 }
 

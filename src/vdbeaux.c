@@ -29,13 +29,20 @@
 int sqlite3_vdbe_addop_trace = 0;
 #endif
 
+/*
+** Return the database connection associated with a VDBE
+*/
+sqlite3 *sqlite3DbOfVdbe(Vdbe *p){
+  return p->db;
+}
+
 
 /*
 ** Create a new virtual database engine.
 */
 Vdbe *sqlite3VdbeCreate(sqlite3 *db){
   Vdbe *p;
-  p = sqliteMalloc( sizeof(Vdbe) );
+  p = sqlite3DbMallocZero(db, sizeof(Vdbe) );
   if( p==0 ) return 0;
   p->db = db;
   if( db->pVdbe ){
@@ -54,7 +61,7 @@ Vdbe *sqlite3VdbeCreate(sqlite3 *db){
 void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n){
   if( p==0 ) return;
   assert( p->zSql==0 );
-  p->zSql = sqlite3StrNDup(z, n);
+  p->zSql = sqlite3DbStrNDup(p->db, z, n);
 }
 
 /*
@@ -115,13 +122,15 @@ static void resizeOpArray(Vdbe *p, int N){
     VdbeOp *pNew;
     int nNew = N + 100*(!runMode);
     int oldSize = p->nOpAlloc;
-    pNew = sqliteRealloc(p->aOp, nNew*sizeof(Op));
+    pNew = sqlite_realloc(p->aOp, nNew*sizeof(Op));
     if( pNew ){
       p->nOpAlloc = nNew;
       p->aOp = pNew;
       if( nNew>oldSize ){
         memset(&p->aOp[oldSize], 0, (nNew-oldSize)*sizeof(Op));
       }
+    }else{
+      p->db->mallocFailed = 1;
     }
   }
 }
@@ -150,7 +159,7 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->nOpAlloc<=i ){
     resizeOpArray(p, i+1);
-    if( sqlite3MallocFailed() ){
+    if( p->db->mallocFailed ){
       return 0;
     }
   }
@@ -197,7 +206,7 @@ int sqlite3VdbeMakeLabel(Vdbe *p){
   assert( p->magic==VDBE_MAGIC_INIT );
   if( i>=p->nLabelAlloc ){
     p->nLabelAlloc = p->nLabelAlloc*2 + 10;
-    p->aLabel = sqliteReallocOrFree(p->aLabel,
+    p->aLabel = sqlite3ReallocOrFree(p->db, p->aLabel,
                                     p->nLabelAlloc*sizeof(p->aLabel[0]));
   }
   if( p->aLabel ){
@@ -325,7 +334,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
     assert( -1-pOp->p2<p->nLabel );
     pOp->p2 = aLabel[-1-pOp->p2];
   }
-  sqliteFree(p->aLabel);
+  sqlite3_free(p->aLabel);
   p->aLabel = 0;
 
   *pMaxFuncArgs = nMaxArgs;
@@ -361,7 +370,7 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
   int addr;
   assert( p->magic==VDBE_MAGIC_INIT );
   resizeOpArray(p, p->nOp + nOp);
-  if( sqlite3MallocFailed() ){
+  if( p->db->mallocFailed ){
     return 0;
   }
   addr = p->nOp;
@@ -427,7 +436,7 @@ void sqlite3VdbeJumpHere(Vdbe *p, int addr){
 */
 static void freeEphemeralFunction(FuncDef *pDef){
   if( pDef && (pDef->flags & SQLITE_FUNC_EPHEM)!=0 ){
-    sqliteFree(pDef);
+    sqlite3_free(pDef);
   }
 }
 
@@ -440,7 +449,7 @@ static void freeP3(int p3type, void *p3){
       case P3_DYNAMIC:
       case P3_KEYINFO:
       case P3_KEYINFO_HANDOFF: {
-        sqliteFree(p3);
+        sqlite3_free(p3);
         break;
       }
       case P3_MPRINTF: {
@@ -451,7 +460,7 @@ static void freeP3(int p3type, void *p3){
         VdbeFunc *pVdbeFunc = (VdbeFunc *)p3;
         freeEphemeralFunction(pVdbeFunc->pFunc);
         sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
-        sqliteFree(pVdbeFunc);
+        sqlite3_free(pVdbeFunc);
         break;
       }
       case P3_FUNCDEF: {
@@ -489,15 +498,15 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr, int N){
 ** few minor changes to the program.
 **
 ** If n>=0 then the P3 operand is dynamic, meaning that a copy of
-** the string is made into memory obtained from sqliteMalloc().
+** the string is made into memory obtained from sqlite3_malloc().
 ** A value of n==0 means copy bytes of zP3 up to and including the
 ** first null byte.  If n>0 then copy n+1 bytes of zP3.
 **
 ** If n==P3_KEYINFO it means that zP3 is a pointer to a KeyInfo structure.
 ** A copy is made of the KeyInfo structure into memory obtained from
-** sqliteMalloc, to be freed when the Vdbe is finalized.
+** sqlite3_malloc, to be freed when the Vdbe is finalized.
 ** n==P3_KEYINFO_HANDOFF indicates that zP3 points to a KeyInfo structure
-** stored in memory that the caller has obtained from sqliteMalloc. The 
+** stored in memory that the caller has obtained from sqlite3_malloc. The 
 ** caller should not free the allocation, it will be freed when the Vdbe is
 ** finalized.
 ** 
@@ -510,7 +519,7 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr, int N){
 void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
   Op *pOp;
   assert( p==0 || p->magic==VDBE_MAGIC_INIT );
-  if( p==0 || p->aOp==0 || sqlite3MallocFailed() ){
+  if( p==0 || p->aOp==0 || p->db->mallocFailed ){
     if (n != P3_KEYINFO) {
       freeP3(n, (void*)*(char**)&zP3);
     }
@@ -532,7 +541,7 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
 
     nField = ((KeyInfo*)zP3)->nField;
     nByte = sizeof(*pKeyInfo) + (nField-1)*sizeof(pKeyInfo->aColl[0]) + nField;
-    pKeyInfo = sqliteMallocRaw( nByte );
+    pKeyInfo = sqlite3_malloc( nByte );
     pOp->p3 = (char*)pKeyInfo;
     if( pKeyInfo ){
       unsigned char *aSortOrder;
@@ -544,6 +553,7 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
       }
       pOp->p3type = P3_KEYINFO;
     }else{
+      p->db->mallocFailed = 1;
       pOp->p3type = P3_NOTUSED;
     }
   }else if( n==P3_KEYINFO_HANDOFF ){
@@ -554,7 +564,7 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
     pOp->p3type = n;
   }else{
     if( n==0 ) n = strlen(zP3);
-    pOp->p3 = sqliteStrNDup(zP3, n);
+    pOp->p3 = sqlite3DbStrNDup(p->db, zP3, n);
     pOp->p3type = P3_DYNAMIC;
   }
 }
@@ -567,7 +577,7 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
 void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
   va_list ap;
   assert( p->nOp>0 || p->aOp==0 );
-  assert( p->aOp==0 || p->aOp[p->nOp-1].p3==0 || sqlite3MallocFailed() );
+  assert( p->aOp==0 || p->aOp[p->nOp-1].p3==0 || p->db->mallocFailed );
   va_start(ap, zFormat);
   sqlite3VdbeChangeP3(p, -1, sqlite3VMPrintf(zFormat, ap), P3_DYNAMIC);
   va_end(ap);
@@ -579,7 +589,7 @@ void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
 */
 VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
   assert( p->magic==VDBE_MAGIC_INIT );
-  assert( (addr>=0 && addr<p->nOp) || sqlite3MallocFailed() );
+  assert( (addr>=0 && addr<p->nOp) || p->db->mallocFailed );
   return ((addr>=0 && addr<p->nOp)?(&p->aOp[addr]):0);
 }
 
@@ -864,7 +874,7 @@ void sqlite3VdbeMakeReady(
     if( isExplain ){
       nStack = 10;
     }
-    p->aStack = sqliteMalloc(
+    p->aStack = sqlite3DbMallocZer(db,
         nStack*sizeof(p->aStack[0])    /* aStack */
       + nArg*sizeof(Mem*)              /* apArg */
       + nVar*sizeof(Mem)               /* aVar */
@@ -872,7 +882,7 @@ void sqlite3VdbeMakeReady(
       + nMem*sizeof(Mem)               /* aMem */
       + nCursor*sizeof(Cursor*)        /* apCsr */
     );
-    if( !sqlite3MallocFailed() ){
+    if( !db->mallocFailed ){
       p->aMem = &p->aStack[nStack];
       p->nMem = nMem;
       p->aVar = &p->aMem[nMem];
@@ -940,9 +950,9 @@ void sqlite3VdbeFreeCursor(Vdbe *p, Cursor *pCx){
     p->inVtabMethod = 0;
   }
 #endif
-  sqliteFree(pCx->pData);
-  sqliteFree(pCx->aType);
-  sqliteFree(pCx);
+  sqlite3_free(pCx->pData);
+  sqlite3_free(pCx->aType);
+  sqlite3_free(pCx);
 }
 
 /*
@@ -979,12 +989,12 @@ static void Cleanup(Vdbe *p){
     for(i=0; i<p->contextStackTop; i++){
       sqlite3VdbeFifoClear(&p->contextStack[i].sFifo);
     }
-    sqliteFree(p->contextStack);
+    sqlite3_free(p->contextStack);
   }
   p->contextStack = 0;
   p->contextStackDepth = 0;
   p->contextStackTop = 0;
-  sqliteFree(p->zErrMsg);
+  sqlite3_free(p->zErrMsg);
   p->zErrMsg = 0;
   p->resOnStack = 0;
 }
@@ -999,10 +1009,10 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
   Mem *pColName;
   int n;
   releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
-  sqliteFree(p->aColName);
+  sqlite3_free(p->aColName);
   n = nResColumn*COLNAME_N;
   p->nResColumn = nResColumn;
-  p->aColName = pColName = (Mem*)sqliteMalloc( sizeof(Mem)*n );
+  p->aColName = pColName = (Mem*)sqlite3DbMallocZero(db, sizeof(Mem)*n );
   if( p->aColName==0 ) return;
   while( n-- > 0 ){
     (pColName++)->flags = MEM_Null;
@@ -1017,7 +1027,7 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
 **
 ** If N==P3_STATIC  it means that zName is a pointer to a constant static
 ** string and we can just copy the pointer. If it is P3_DYNAMIC, then 
-** the string is freed using sqliteFree() when the vdbe is finished with
+** the string is freed using sqlite3_free() when the vdbe is finished with
 ** it. Otherwise, N bytes of zName are copied.
 */
 int sqlite3VdbeSetColName(Vdbe *p, int idx, int var, const char *zName, int N){
@@ -1025,7 +1035,7 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, int var, const char *zName, int N){
   Mem *pColName;
   assert( idx<p->nResColumn );
   assert( var<COLNAME_N );
-  if( sqlite3MallocFailed() ) return SQLITE_NOMEM;
+  if( p->db->mallocFailed ) return SQLITE_NOMEM;
   assert( p->aColName!=0 );
   pColName = &(p->aColName[idx+var*p->nResColumn]);
   if( N==P3_DYNAMIC || N==P3_STATIC ){
@@ -1135,7 +1145,7 @@ static int vdbeCommit(sqlite3 *db){
     /* Select a master journal file name */
     do {
       u32 random;
-      sqliteFree(zMaster);
+      sqlite3_free(zMaster);
       sqlite3Randomness(sizeof(random), &random);
       zMaster = sqlite3MPrintf("%s-mj%08X", zMainFile, random&0x7fffffff);
       if( !zMaster ){
@@ -1146,7 +1156,7 @@ static int vdbeCommit(sqlite3 *db){
     /* Open the master journal. */
     rc = sqlite3OsOpenExclusive(zMaster, &master, 0);
     if( rc!=SQLITE_OK ){
-      sqliteFree(zMaster);
+      sqlite3_free(zMaster);
       return rc;
     }
  
@@ -1170,7 +1180,7 @@ static int vdbeCommit(sqlite3 *db){
         if( rc!=SQLITE_OK ){
           sqlite3OsClose(&master);
           sqlite3OsDelete(zMaster);
-          sqliteFree(zMaster);
+          sqlite3_free(zMaster);
           return rc;
         }
       }
@@ -1187,7 +1197,7 @@ static int vdbeCommit(sqlite3 *db){
           (needSync && (rc=sqlite3OsSync(master,0))!=SQLITE_OK) ){
       sqlite3OsClose(&master);
       sqlite3OsDelete(zMaster);
-      sqliteFree(zMaster);
+      sqlite3_free(zMaster);
       return rc;
     }
 #endif
@@ -1210,7 +1220,7 @@ static int vdbeCommit(sqlite3 *db){
     }
     sqlite3OsClose(&master);
     if( rc!=SQLITE_OK ){
-      sqliteFree(zMaster);
+      sqlite3_free(zMaster);
       return rc;
     }
 
@@ -1219,7 +1229,7 @@ static int vdbeCommit(sqlite3 *db){
     ** transaction files are deleted.
     */
     rc = sqlite3OsDelete(zMaster);
-    sqliteFree(zMaster);
+    sqlite3_free(zMaster);
     zMaster = 0;
     if( rc ){
       return rc;
@@ -1350,7 +1360,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   **
   */
 
-  if( sqlite3MallocFailed() ){
+  if( p->db->mallocFailed ){
     p->rc = SQLITE_NOMEM;
   }
   if( p->magic!=VDBE_MAGIC_RUN ){
@@ -1663,16 +1673,16 @@ void sqlite3VdbeDelete(Vdbe *p){
       Op *pOp = &p->aOp[i];
       freeP3(pOp->p3type, pOp->p3);
     }
-    sqliteFree(p->aOp);
+    sqlite3_free(p->aOp);
   }
   releaseMemArray(p->aVar, p->nVar);
-  sqliteFree(p->aLabel);
-  sqliteFree(p->aStack);
+  sqlite3_free(p->aLabel);
+  sqlite3_free(p->aStack);
   releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
-  sqliteFree(p->aColName);
-  sqliteFree(p->zSql);
+  sqlite3_free(p->aColName);
+  sqlite3_free(p->zSql);
   p->magic = VDBE_MAGIC_DEAD;
-  sqliteFree(p);
+  sqlite3_free(p);
 }
 
 /*

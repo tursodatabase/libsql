@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.75 2007/05/17 14:45:13 danielk1977 Exp $
+** $Id: test3.c,v 1.76 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -577,7 +577,7 @@ static int btree_integrity_check(
   }
   pBt = sqlite3TextToPtr(argv[1]);
   nRoot = argc-2;
-  aRoot = (int*)malloc( sizeof(int)*(argc-2) );
+  aRoot = (int*)sqlite3_malloc( sizeof(int)*(argc-2) );
   for(i=0; i<argc-2; i++){
     if( Tcl_GetInt(interp, argv[i+2], &aRoot[i]) ) return TCL_ERROR;
   }
@@ -586,7 +586,7 @@ static int btree_integrity_check(
 #else
   zResult = 0;
 #endif
-  free((void*)aRoot);
+  sqlite3_free((void*)aRoot);
   if( zResult ){
     Tcl_AppendResult(interp, zResult, 0);
     sqliteFree(zResult); 
@@ -1014,7 +1014,7 @@ static int btree_key(
     sqlite3_snprintf(sizeof(zBuf2),zBuf2, "%llu", n);
     Tcl_AppendResult(interp, zBuf2, 0);
   }else{
-    zBuf = malloc( n+1 );
+    zBuf = sqlite3_malloc( n+1 );
     rc = sqlite3BtreeKey(pCur, 0, n, zBuf);
     if( rc ){
       Tcl_AppendResult(interp, errorName(rc), 0);
@@ -1022,7 +1022,7 @@ static int btree_key(
     }
     zBuf[n] = 0;
     Tcl_AppendResult(interp, zBuf, 0);
-    free(zBuf);
+    sqlite3_free(zBuf);
   }
   return SQLITE_OK;
 }
@@ -1054,7 +1054,7 @@ static int btree_data(
   }else{
     n = atoi(argv[2]);
   }
-  zBuf = malloc( n+1 );
+  zBuf = sqlite3_malloc( n+1 );
   rc = sqlite3BtreeData(pCur, 0, n, zBuf);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);
@@ -1063,7 +1063,7 @@ static int btree_data(
   }
   zBuf[n] = 0;
   Tcl_AppendResult(interp, zBuf, 0);
-  free(zBuf);
+  sqlite3_free(zBuf);
   return SQLITE_OK;
 }
 

@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.69 2007/03/27 16:19:52 danielk1977 Exp $
+** $Id: vacuum.c,v 1.70 2007/08/16 04:30:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -112,7 +112,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   pTemp = db->aDb[db->nDb-1].pBt;
   sqlite3BtreeSetPageSize(pTemp, sqlite3BtreeGetPageSize(pMain),
      sqlite3BtreeGetReserve(pMain));
-  if( sqlite3MallocFailed() ){
+  if( db->mallocFailed ){
     rc = SQLITE_NOMEM;
     goto end_of_vacuum;
   }

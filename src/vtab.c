@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.48 2007/06/26 10:38:55 danielk1977 Exp $
+** $Id: vtab.c,v 1.49 2007/08/16 04:30:41 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -24,7 +24,7 @@ static int createModule(
   void (*xDestroy)(void *)        /* Module destructor function */
 ) {
   int nName = strlen(zName);
-  Module *pMod = (Module *)sqliteMallocRaw(sizeof(Module) + nName + 1);
+  Module *pMod = (Module *)sqlite3DbMallocRaw(db, sizeof(Module) + nName + 1);
   if( pMod ){
     char *zCopy = (char *)(&pMod[1]);
     memcpy(zCopy, zName, nName+1);
@@ -36,7 +36,7 @@ static int createModule(
     if( pMod && pMod->xDestroy ){
       pMod->xDestroy(pMod->pAux);
     }
-    sqliteFree(pMod);
+    sqlite3_free(pMod);
     sqlite3ResetInternalSchema(db, 0);
   }
   return sqlite3ApiExit(db, SQLITE_OK);
@@ -114,9 +114,9 @@ void sqlite3VtabClear(Table *p){
   if( p->azModuleArg ){
     int i;
     for(i=0; i<p->nModuleArg; i++){
-      sqliteFree(p->azModuleArg[i]);
+      sqlite3_free(p->azModuleArg[i]);
     }
-    sqliteFree(p->azModuleArg);
+    sqlite3_free(p->azModuleArg);
   }
 }
 
@@ -126,19 +126,20 @@ void sqlite3VtabClear(Table *p){
 ** string will be freed automatically when the table is
 ** deleted.
 */
-static void addModuleArgument(Table *pTable, char *zArg){
+static void addModuleArgument(sqlite3 *db, Table *pTable, char *zArg){
   int i = pTable->nModuleArg++;
   int nBytes = sizeof(char *)*(1+pTable->nModuleArg);
   char **azModuleArg;
-  azModuleArg = sqliteRealloc(pTable->azModuleArg, nBytes);
+  azModuleArg = sqlite3_realloc(pTable->azModuleArg, nBytes);
   if( azModuleArg==0 ){
     int j;
     for(j=0; j<i; j++){
-      sqliteFree(pTable->azModuleArg[j]);
+      sqlite3_free(pTable->azModuleArg[j]);
     }
-    sqliteFree(zArg);
-    sqliteFree(pTable->azModuleArg);
+    sqlite3_free(zArg);
+    sqlite3_free(pTable->azModuleArg);
     pTable->nModuleArg = 0;
+    db->mallocFailed = 1;
   }else{
     azModuleArg[i] = zArg;
     azModuleArg[i+1] = 0;
@@ -159,6 +160,7 @@ void sqlite3VtabBeginParse(
 ){
   int iDb;              /* The database the table is being created in */
   Table *pTable;        /* The new virtual table */
+  sqlite3 *db;          /* Database connection */
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
   if( sqlite3ThreadDataReadOnly()->useSharedData ){
@@ -172,14 +174,15 @@ void sqlite3VtabBeginParse(
   if( pTable==0 || pParse->nErr ) return;
   assert( 0==pTable->pIndex );
 
-  iDb = sqlite3SchemaToIndex(pParse->db, pTable->pSchema);
+  db = pParse->db;
+  iDb = sqlite3SchemaToIndex(db, pTable->pSchema);
   assert( iDb>=0 );
 
   pTable->isVirtual = 1;
   pTable->nModuleArg = 0;
-  addModuleArgument(pTable, sqlite3NameFromToken(pModuleName));
-  addModuleArgument(pTable, sqlite3StrDup(pParse->db->aDb[iDb].zName));
-  addModuleArgument(pTable, sqlite3StrDup(pTable->zName));
+  addModuleArgument(db, pTable, sqlite3NameFromToken(db, pModuleName));
+  addModuleArgument(db, pTable, sqlite3DbStrDup(db, db->aDb[iDb].zName));
+  addModuleArgument(db, pTable, sqlite3DbStrDup(db, pTable->zName));
   pParse->sNameToken.n = pModuleName->z + pModuleName->n - pName1->z;
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -204,7 +207,8 @@ static void addArgumentToVtab(Parse *pParse){
   if( pParse->sArg.z && pParse->pNewTable ){
     const char *z = (const char*)pParse->sArg.z;
     int n = pParse->sArg.n;
-    addModuleArgument(pParse->pNewTable, sqliteStrNDup(z, n));
+    sqlite3 *db = pParse->db;
+    addModuleArgument(db, pParse->pNewTable, sqlite3DbStrNDup(db, z, n));
   }
 }
 
@@ -267,7 +271,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
       pTab->zName,
       zStmt
     );
-    sqliteFree(zStmt);
+    sqlite3_free(zStmt);
     v = sqlite3GetVdbe(pParse);
     sqlite3ChangeCookie(db, v, iDb);
 
@@ -375,7 +379,7 @@ static int vtabCallConstructor(
     rc = rc2;
   }
   db->pVTab = 0;
-  sqliteFree(zModuleName);
+  sqlite3_free(zModuleName);
 
   /* If everything went according to plan, loop through the columns
   ** of the table to see if any of them contain the token "hidden".
@@ -444,7 +448,7 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
     if( rc!=SQLITE_OK ){
       sqlite3ErrorMsg(pParse, "%s", zErr);
     }
-    sqliteFree(zErr);
+    sqlite3_free(zErr);
   }
 
   return rc;
@@ -460,8 +464,9 @@ static int addToVTrans(sqlite3 *db, sqlite3_vtab *pVtab){
   if( (db->nVTrans%ARRAY_INCR)==0 ){
     sqlite3_vtab **aVTrans;
     int nBytes = sizeof(sqlite3_vtab *) * (db->nVTrans + ARRAY_INCR);
-    aVTrans = sqliteRealloc((void *)db->aVTrans, nBytes);
+    aVTrans = sqlite3_realloc((void *)db->aVTrans, nBytes);
     if( !aVTrans ){
+      db->mallocFailed = 1;
       return SQLITE_NOMEM;
     }
     memset(&aVTrans[db->nVTrans], 0, sizeof(sqlite3_vtab *)*ARRAY_INCR);
@@ -480,7 +485,7 @@ static int addToVTrans(sqlite3 *db, sqlite3_vtab *pVtab){
 **
 ** If an error occurs, *pzErr is set to point an an English language
 ** description of the error and an SQLITE_XXX error code is returned.
-** In this case the caller must call sqliteFree() on *pzErr.
+** In this case the caller must call sqlite3_free() on *pzErr.
 */
 int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   int rc = SQLITE_OK;
@@ -546,7 +551,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
     db->pVTab = 0;
   } else {
     sqlite3Error(db, SQLITE_ERROR, zErr);
-    sqliteFree(zErr);
+    sqlite3_free(zErr);
     rc = SQLITE_ERROR;
   }
   sParse.declareVtab = 0;
@@ -607,7 +612,7 @@ static void callFinaliser(sqlite3 *db, int offset){
       if( x ) x(pVtab);
       sqlite3VtabUnlock(db, pVtab);
     }
-    sqliteFree(db->aVTrans);
+    sqlite3_free(db->aVTrans);
     db->nVTrans = 0;
     db->aVTrans = 0;
   }
@@ -724,6 +729,7 @@ int sqlite3VtabBegin(sqlite3 *db, sqlite3_vtab *pVtab){
 ** SQLITE_FUNC_EPHEM flag.
 */
 FuncDef *sqlite3VtabOverloadFunction(
+  sqlite3 *db,    /* Database connection for reporting malloc problems */
   FuncDef *pDef,  /* Function to possibly overload */
   int nArg,       /* Number of arguments to the function */
   Expr *pExpr     /* First argument to the function */
@@ -754,19 +760,21 @@ FuncDef *sqlite3VtabOverloadFunction(
   /* Call the xFuncFunction method on the virtual table implementation
   ** to see if the implementation wants to overload this function 
   */
-  zLowerName = sqlite3StrDup(pDef->zName);
-  for(z=(unsigned char*)zLowerName; *z; z++){
-    *z = sqlite3UpperToLower[*z];
+  zLowerName = sqlite3DbStrDup(db, pDef->zName);
+  if( zLowerName ){
+    for(z=(unsigned char*)zLowerName; *z; z++){
+      *z = sqlite3UpperToLower[*z];
+    }
+    rc = pMod->xFindFunction(pVtab, nArg, zLowerName, &xFunc, &pArg);
+    sqlite3_free(zLowerName);
   }
-  rc = pMod->xFindFunction(pVtab, nArg, zLowerName, &xFunc, &pArg);
-  sqliteFree(zLowerName);
   if( rc==0 ){
     return pDef;
   }
 
   /* Create a new ephemeral function definition for the overloaded
   ** function */
-  pNew = sqliteMalloc( sizeof(*pNew) + strlen(pDef->zName) );
+  pNew = sqlite3DbMallocZero(db, sizeof(*pNew) + strlen(pDef->zName) );
   if( pNew==0 ){
     return pDef;
   }
