@@ -1,5 +1,5 @@
-C More\swork\son\srefactoring\sof\smalloc()\sinterfaces.\sThere\sare\sstill\smany\serrors.\s(CVS\s4233)
-D 2007-08-16T10:09:02
+C Replace\sa\sfew\ssqlite3_malloc()\scalls\sthat\sshould\sbe\ssqlite3MallocZero().\s(CVS\s4234)
+D 2007-08-16T10:36:34
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -78,7 +78,7 @@ F src/date.c c44aa498ee9a289ba2b2c62e8269b74b1b81351f
 F src/delete.c 849846d06d29851dde0d9f424a5de5817eb140d1
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c beb6b40974ddb22d683b8239d635c37f28b16f95
-F src/func.c 4195c626d09662a2cc040a35057f2b3828dd7465
+F src/func.c 472c0610164180624ff5aa51b0521a331bfef11b
 F src/hash.c 2f322979071dd2bdba7503b5276d66f028744382
 F src/hash.h 3ad3da76bfb954978d227bf495568b0e6da2c19e
 F src/insert.c bca11ad7b7ab4a1ba4808b6e0a6fd842923f88bb
@@ -151,7 +151,7 @@ F src/vdbeapi.c ca82e14ac4ef0c15d7ed8851b0bf9377d7eb0058
 F src/vdbeaux.c aa079bb65d3ebe81eab4765c26c3e69deabc6825
 F src/vdbeblob.c cf9ee3c7d9977cbd896f8b118da4fb4268637f4f
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
-F src/vdbemem.c 52ec18736ff0203cd34a1b55043027a312f23646
+F src/vdbemem.c 019952d44066a24aef70ca8c284cfd2d1073c398
 F src/vtab.c 8d65679ab4ef3efce5d946d7f2d2dac5a33313b4
 F src/where.c b5af62312d2ac6b22897cd0f06fb0eca477d8589
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -529,7 +529,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 161643a694458e76849cd663f277892ae7c6b729
-R 78bb61c2e514dbedee0545c75b0d9447
+P 77b1671351fe94b0ebc126a63140643deae2aa64
+R 75b32abf10755f4737e84372abb73bce
 U danielk1977
-Z 4f8b342764fab083222a09714d137d45
+Z 839a6b4935ab0a1b59398b298a99bcf2

@@ -884,7 +884,7 @@ const void *sqlite3ValueText(sqlite3 *db, sqlite3_value* pVal, u8 enc){
 ** Create a new sqlite3_value object.
 */
 sqlite3_value *sqlite3ValueNew(sqlite3 *db){
-  Mem *p = sqlite3_malloc(sizeof(*p));
+  Mem *p = sqlite3MallocZero(sizeof(*p));
   if( p ){
     p->flags = MEM_Null;
     p->type = SQLITE_NULL;

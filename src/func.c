@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.165 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: func.c,v 1.166 2007/08/16 10:36:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1065,7 +1065,7 @@ static void test_destructor(
   assert( nArg==1 );
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   len = sqlite3ValueBytes(0, argv[0], ENC(db)); 
-  zVal = sqlite3_malloc(len+3);
+  zVal = sqlite3MallocZero(len+3);
   zVal[len] = 0;
   zVal[len-1] = 0;
   assert( zVal );
@@ -1109,7 +1109,7 @@ static void test_auxdata(
   sqlite3_value **argv
 ){
   int i;
-  char *zRet = sqlite3_malloc(nArg*2);
+  char *zRet = sqlite3MallocZero(nArg*2);
   if( !zRet ) return;
   for(i=0; i<nArg; i++){
     char const *z = (char*)sqlite3_value_text(argv[i]);
