@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.45 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: test2.c,v 1.46 2007/08/17 15:53:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -78,7 +78,7 @@ static int pager_open(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &nPage) ) return TCL_ERROR;
-  rc = sqlite3PagerOpen(&pPager, argv[1], 0, 0);
+  rc = sqlite3PagerOpen(sqlite3_find_vfs(0), &pPager, argv[1], 0, 0);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -528,18 +528,21 @@ static int fake_big_file(
   int argc,              /* Number of arguments */
   const char **argv      /* Text of each argument */
 ){
+  sqlite3_vfs *pVfs;
+  sqlite3_file *fd = 0;
+  int flags = SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE;
   int rc;
   int n;
   i64 offset;
-  sqlite3_file *fd = 0;
-  int readOnly = 0;
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " N-MEGABYTES FILE\"", 0);
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
-  rc = sqlite3OsOpenReadWrite(argv[2], &fd, &readOnly);
+
+  pVfs = sqlite3_find_vfs(0);
+  rc = sqlite3OsOpenMalloc(pVfs, argv[2], &fd, flags);
   if( rc ){
     Tcl_AppendResult(interp, "open failed: ", errorName(rc), 0);
     return TCL_ERROR;
@@ -547,7 +550,7 @@ static int fake_big_file(
   offset = n;
   offset *= 1024*1024;
   rc = sqlite3OsWrite(fd, "Hello, World!", 14, offset);
-  sqlite3OsClose(&fd);
+  sqlite3OsCloseFree(fd);
   if( rc ){
     Tcl_AppendResult(interp, "write failed: ", errorName(rc), 0);
     return TCL_ERROR;

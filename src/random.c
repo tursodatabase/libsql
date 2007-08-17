@@ -15,7 +15,7 @@
 ** Random numbers are used by some of the database backends in order
 ** to generate random integer keys for tables or random filenames.
 **
-** $Id: random.c,v 1.16 2007/01/05 14:38:56 drh Exp $
+** $Id: random.c,v 1.17 2007/08/17 15:53:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -63,7 +63,7 @@ static int randomByte(void){
     char k[256];
     prng.j = 0;
     prng.i = 0;
-    sqlite3OsRandomSeed(k);
+    sqlite3OsRandomness(sqlite3_find_vfs(0), 256, k);
     for(i=0; i<256; i++){
       prng.s[i] = i;
     }
@@ -92,9 +92,9 @@ static int randomByte(void){
 */
 void sqlite3Randomness(int N, void *pBuf){
   unsigned char *zBuf = pBuf;
-  sqlite3OsEnterMutex();
+  sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_PRNG));
   while( N-- ){
     *(zBuf++) = randomByte();
   }
-  sqlite3OsLeaveMutex();
+  sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_PRNG));
 }

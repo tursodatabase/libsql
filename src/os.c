@@ -24,16 +24,9 @@
 ** of this would be completely automatic if SQLite were coded using
 ** C++ instead of plain old C.
 */
-int sqlite3OsClose(sqlite3_file **pId){
-  int rc = SQLITE_OK;
-  sqlite3_file *id;
-  if( pId!=0 && (id = *pId)!=0 ){
-    rc = id->pMethods->xClose(id);
-    if( rc==SQLITE_OK ){
-      *pId = 0;
-    }
-  }
-  return rc;
+int sqlite3OsClose(sqlite3_file *pId){
+  if( !pId->pMethods ) return SQLITE_OK;
+  return pId->pMethods->xClose(pId);
 }
 int sqlite3OsRead(sqlite3_file *id, void *pBuf, int amt, i64 offset){
   return id->pMethods->xRead(id, pBuf, amt, offset);
@@ -82,17 +75,83 @@ int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
   }
 #endif
 
-#ifdef SQLITE_ENABLE_REDEF_IO
-/*
-** A function to return a pointer to the virtual function table.
-** This routine really does not accomplish very much since the
-** virtual function table is a global variable and anybody who
-** can call this function can just as easily access the variable
-** for themselves.  Nevertheless, we include this routine for
-** backwards compatibility with an earlier redefinable I/O
-** interface design.
-*/
-struct sqlite3OsVtbl *sqlite3_os_switch(void){
-  return &sqlite3Os;
+int sqlite3OsOpen(
+  sqlite3_vfs *pVfs, 
+  const char *zPath, 
+  sqlite3_file *pFile, 
+  int flags, 
+  int *pFlagsOut
+){
+  return pVfs->xOpen(pVfs->pAppData, zPath, pFile, flags, pFlagsOut);
 }
-#endif
+int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath){
+  return pVfs->xDelete(pVfs->pAppData, zPath);
+}
+int sqlite3OsAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
+  return pVfs->xAccess(pVfs->pAppData, zPath, flags);
+}
+int sqlite3OsGetTempName(sqlite3_vfs *pVfs, char *zBufOut){
+  return pVfs->xGetTempName(pVfs->pAppData, zBufOut);
+}
+int sqlite3OsFullPathname(sqlite3_vfs *pVfs, const char *zPath, char *zPathOut){
+  return pVfs->xFullPathname(pVfs->pAppData, zPath, zPathOut);
+}
+void *sqlite3OsDlOpen(sqlite3_vfs *pVfs, const char *zPath){
+  return pVfs->xDlOpen(pVfs->pAppData, zPath);
+}
+void sqlite3OsDlError(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
+  pVfs->xDlError(pVfs->pAppData, nByte, zBufOut);
+}
+void *sqlite3OsDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
+  return pVfs->xDlSym(pHandle, zSymbol);
+}
+void sqlite3OsDlClose(sqlite3_vfs *pVfs, void *pHandle){
+  pVfs->xDlClose(pHandle);
+}
+int sqlite3OsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
+  return pVfs->xRandomness(pVfs->pAppData, nByte, zBufOut);
+}
+int sqlite3OsSleep(sqlite3_vfs *pVfs, int nMicro){
+  return pVfs->xSleep(pVfs->pAppData, nMicro);
+}
+int sqlite3OsCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
+  return pVfs->xCurrentTime(pVfs->pAppData, pTimeOut);
+}
+
+int sqlite3OsOpenMalloc(
+  sqlite3_vfs *pVfs, 
+  const char *zFile, 
+  sqlite3_file **ppFile, 
+  int flags
+){
+  int rc = SQLITE_NOMEM;
+  sqlite3_file *pFile;
+  pFile = (sqlite3_file *)sqlite3_malloc(pVfs->szOsFile);
+  if( pFile ){
+    rc = sqlite3OsOpen(pVfs, zFile, pFile, flags, 0);
+    if( rc!=SQLITE_OK ){
+      sqlite3_free(pFile);
+    }else{
+      *ppFile = pFile;
+    }
+  }
+  return rc;
+}
+int sqlite3OsCloseFree(sqlite3_file *pFile){
+  int rc = SQLITE_OK;
+  if( pFile ){
+    rc = sqlite3OsClose(pFile);
+    sqlite3_free(pFile);
+  }
+  return rc;
+}
+
+/* 
+** Default vfs implementation. Defined by the various os_X.c implementations.
+*/
+extern sqlite3_vfs sqlite3DefaultVfs;
+
+sqlite3_vfs *sqlite3_find_vfs(const char *zVfs){
+  return &sqlite3DefaultVfs;
+}
+

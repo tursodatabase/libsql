@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.227 2007/08/17 01:14:38 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.228 2007/08/17 15:53:37 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -644,16 +644,20 @@ struct sqlite3_vfs {
   int (*xAccess)(void *pAppData, const char *zName, int flags);
   int (*xGetTempName)(void *pAppData, char *zOut);
   int (*xFullPathname)(void *pAppData, const char *zName, char *zOut);
-  void *(*xDlOpen)(void *pAppData, char *zFilename);
-  void (*xDlError)(void*, int nByte, char *zErrMsg);
+  void *(*xDlOpen)(void *pAppData, const char *zFilename);
+  void (*xDlError)(void *pAppData, int nByte, char *zErrMsg);
   void *(*xDlSym)(void*, const char *zSymbol);
-  void (*xDlclose)(void*);
+  void (*xDlClose)(void*);
   int (*xRandomness)(void *pAppData, int nByte, char *zOut);
   int (*xSleep)(void *pAppData, int microseconds);
   int (*xCurrentTime)(void *pAppData, double*);
   /* New fields may be appended in figure versions.  The iVersion
   ** value will increment whenever this happens. */
 };
+
+#define SQLITE_ACCESS_EXISTS    0
+#define SQLITE_ACCESS_READWRITE 1
+#define SQLITE_ACCESS_READONLY  2
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes

@@ -263,7 +263,7 @@ static int writeListAppend(
 
   assert((zBuf && nBuf) || (!nBuf && !zBuf));
 
-  pNew = (WriteBuffer *)sqlite3_malloc(sizeof(WriteBuffer) + nBuf);
+  pNew = (WriteBuffer *)sqlite3MallocZero(sizeof(WriteBuffer) + nBuf);
   pNew->iOffset = iOffset;
   pNew->nBuf = nBuf;
   pNew->pFile = (CrashFile *)pFile;
@@ -544,8 +544,8 @@ static int crashParamsObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+  sqlite3_vfs *pVfs;
   int i;
-
   int iDelay;
   const char *zCrashFile;
   int nCrashFile;
@@ -575,17 +575,19 @@ static int crashParamsObjCmd(
   
   if( objc<3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?OPTIONS? DELAY CRASHFILE");
-    return TCL_ERROR;
+    goto error;
   }
 
-  zCrashFile = sqlite3OsFullPathname(Tcl_GetString(objv[objc-1]));
+  pVfs = sqlite3_find_vfs(0);
+  zCrashFile = sqlite3_malloc(pVfs->mxPathname);
+  sqlite3OsFullPathname(pVfs, Tcl_GetString(objv[objc-1]), zCrashFile);
   nCrashFile = strlen(zCrashFile);
   if( nCrashFile>=sizeof(g.zCrashFile) ){
     Tcl_AppendResult(interp, "Filename is too long: \"", zCrashFile, "\"", 0);
-    return TCL_ERROR;
+    goto error;
   }
   if( Tcl_GetIntFromObj(interp, objv[objc-2], &iDelay) ){
-    return TCL_ERROR;
+    goto error;
   }
 
   for(i=1; i<(objc-2); i+=2){
@@ -599,16 +601,16 @@ static int crashParamsObjCmd(
         "Bad option: \"", zOpt, 
         "\" - must be \"-characteristics\" or \"-sectorsize\"", 0
       );
-      return TCL_ERROR;
+      goto error;
     }
     if( i==objc-3 ){
       Tcl_AppendResult(interp, "Option requires an argument: \"", zOpt, "\"",0);
-      return TCL_ERROR;
+      goto error;
     }
 
     if( zOpt[1]=='s' ){
       if( Tcl_GetIntFromObj(interp, objv[i+1], &iSectorSize) ){
-        return TCL_ERROR;
+        goto error;
       }
       setSectorsize = 1;
     }else{
@@ -616,7 +618,7 @@ static int crashParamsObjCmd(
       Tcl_Obj **apObj;
       int nObj;
       if( Tcl_ListObjGetElements(interp, objv[i+1], &nObj, &apObj) ){
-        return TCL_ERROR;
+        goto error;
       }
       for(j=0; j<nObj; j++){
         int rc;
@@ -630,7 +632,7 @@ static int crashParamsObjCmd(
         );
         Tcl_DecrRefCount(pFlag);
         if( rc ){
-          return TCL_ERROR;
+          goto error;
         }
 
         iDc |= aFlag[iChoice].iValue;
@@ -647,9 +649,13 @@ static int crashParamsObjCmd(
   }
   g.iCrash = iDelay;
   memcpy(g.zCrashFile, zCrashFile, nCrashFile+1);
-
+  sqlite3_free(zCrashFile);
   sqlite3CrashTestEnable = 1;
   return TCL_OK;
+
+error:
+  sqlite3_free(zCrashFile);
+  return TCL_ERROR;
 }
 
 #endif /* SQLITE_OMIT_DISKIO */

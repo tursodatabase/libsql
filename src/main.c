@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.383 2007/08/17 01:14:38 drh Exp $
+** $Id: main.c,v 1.384 2007/08/17 15:53:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -304,7 +304,8 @@ static int sqliteDefaultBusyCallback(
   static const u8 totals[] =
      { 0, 1, 3,  8, 18, 33, 53, 78, 103, 128, 178, 228 };
 # define NDELAY (sizeof(delays)/sizeof(delays[0]))
-  int timeout = ((sqlite3 *)ptr)->busyTimeout;
+  sqlite3 *db = (sqlite3 *)ptr;
+  int timeout = db->busyTimeout;
   int delay, prior;
 
   assert( count>=0 );
@@ -319,7 +320,7 @@ static int sqliteDefaultBusyCallback(
     delay = timeout - prior;
     if( delay<=0 ) return 0;
   }
-  sqlite3OsSleep(delay);
+  sqlite3OsSleep(db->pVfs, delay);
   return 1;
 #else
   int timeout = ((sqlite3 *)ptr)->busyTimeout;
@@ -898,6 +899,7 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
+  db->pVfs = sqlite3_find_vfs(0);
   db->errMask = 0xff;
   db->priorNewRowid = 0;
   db->magic = SQLITE_MAGIC_BUSY;
@@ -1374,7 +1376,9 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 ** Sleep for a little while.  Return the amount of time slept.
 */
 int sqlite3_sleep(int ms){
-  return sqlite3OsSleep(ms);
+  sqlite3_vfs *pVfs;
+  pVfs = sqlite3_find_vfs(0);
+  return sqlite3OsSleep(pVfs, 1000*ms);
 }
 
 /*

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.641 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: vdbe.c,v 1.642 2007/08/17 15:53:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -486,7 +486,7 @@ int sqlite3VdbeExec(
   sqlite3VdbeIOTraceSql(p);
 #ifdef SQLITE_DEBUG
   if( (p->db->flags & SQLITE_VdbeListing)!=0
-    || sqlite3OsFileExists("vdbe_explain")
+    || sqlite3OsAccess(db->pVfs, "vdbe_explain", SQLITE_ACCESS_EXISTS)
   ){
     int i;
     printf("VDBE Program Listing:\n");
@@ -495,7 +495,7 @@ int sqlite3VdbeExec(
       sqlite3VdbePrintOp(stdout, i, &p->aOp[i]);
     }
   }
-  if( sqlite3OsFileExists("vdbe_trace") ){
+  if( sqlite3OsAccess(db->pVfs, "vdbe_trace", SQLITE_ACCESS_EXISTS) ){
     p->trace = stdout;
   }
 #endif
@@ -519,7 +519,8 @@ int sqlite3VdbeExec(
       }
       sqlite3VdbePrintOp(p->trace, pc, pOp);
     }
-    if( p->trace==0 && pc==0 && sqlite3OsFileExists("vdbe_sqltrace") ){
+    if( p->trace==0 && pc==0 
+     && sqlite3OsAccess(db->pVfs, "vdbe_sqltrace", SQLITE_ACCESS_EXISTS) ){
       sqlite3VdbePrintSql(p);
     }
 #endif

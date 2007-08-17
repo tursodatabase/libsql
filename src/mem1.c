@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem1.c,v 1.5 2007/08/16 19:40:17 drh Exp $
+** $Id: mem1.c,v 1.6 2007/08/17 15:53:36 danielk1977 Exp $
 */
 
 /*
@@ -204,7 +204,7 @@ void *sqlite3_realloc(void *pPrior, unsigned int nBytes){
   }
   if( nBytes==0 ){
     sqlite3_free(pPrior);
-    return;
+    return 0;
   }
   p = pPrior;
   p--;

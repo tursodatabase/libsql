@@ -121,6 +121,8 @@
 # define TEMP_FILE_PREFIX "etilqs_"
 #endif
 
+#if 0
+
 /*
 ** Define the interfaces for Unix, Windows, and OS/2.
 */
@@ -200,6 +202,7 @@
 #define sqlite3OsDlclose            sqlite3Os2Dlclose
 #endif
 
+#endif
 
 
 
@@ -345,10 +348,10 @@ extern unsigned int sqlite3_pending_byte;
 #define SHARED_FIRST      (PENDING_BYTE+2)
 #define SHARED_SIZE       510
 
-/*
-** Prototypes for operating system interface routines.
+/* 
+** Functions for accessing sqlite3_file methods 
 */
-int sqlite3OsClose(sqlite3_file**);
+int sqlite3OsClose(sqlite3_file*);
 int sqlite3OsRead(sqlite3_file*, void*, int amt, i64 offset);
 int sqlite3OsWrite(sqlite3_file*, const void*, int amt, i64 offset);
 int sqlite3OsTruncate(sqlite3_file*, i64 size);
@@ -361,10 +364,33 @@ int sqlite3OsCheckReservedLock(sqlite3_file *id);
 int sqlite3OsSectorSize(sqlite3_file *id);
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id);
 
+/* 
+** Functions for accessing sqlite3_vfs methods 
+*/
+int sqlite3OsOpen(sqlite3_vfs *, const char *, sqlite3_file*, int, int *);
+int sqlite3OsDelete(sqlite3_vfs *, const char *);
+int sqlite3OsAccess(sqlite3_vfs *, const char *, int);
+int sqlite3OsGetTempName(sqlite3_vfs *, char *);
+int sqlite3OsFullPathname(sqlite3_vfs *, const char *, char *);
+void *sqlite3OsDlOpen(sqlite3_vfs *, const char *);
+void sqlite3OsDlError(sqlite3_vfs *, int, char *);
+void *sqlite3OsDlSym(sqlite3_vfs *, void *, const char *);
+void sqlite3OsDlClose(sqlite3_vfs *, void *);
+int sqlite3OsRandomness(sqlite3_vfs *, int, char *);
+int sqlite3OsSleep(sqlite3_vfs *, int);
+int sqlite3OsCurrentTime(sqlite3_vfs *, double*);
+
+/*
+** Convenience functions for opening and closing files using 
+** sqlite3_malloc() to obtain space for the file-handle structure.
+*/
+int sqlite3OsOpenMalloc(sqlite3_vfs *, const char *, sqlite3_file **, int); 
+int sqlite3OsCloseFree(sqlite3_file *);
+
+#if 0
 int sqlite3OsOpenReadWrite(const char*, sqlite3_file**, int*);
 int sqlite3OsOpenExclusive(const char*, sqlite3_file**, int);
 int sqlite3OsOpenReadOnly(const char*, sqlite3_file**);
-
 int sqlite3OsDelete(const char*);
 int sqlite3OsFileExists(const char*);
 char *sqlite3OsFullPathname(const char*);
@@ -385,6 +411,7 @@ int sqlite3OsAllocationSize(void *);
 void *sqlite3OsDlopen(const char*);
 void *sqlite3OsDlsym(void*, const char*);
 int sqlite3OsDlclose(void*);
+#endif
 
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
   int sqlite3OsFileHandle(sqlite3_file *id);
@@ -478,7 +505,7 @@ struct sqlite3OsVtbl {
     sqlite3OsEnterMutex,
     sqlite3OsLeaveMutex,
     sqlite3OsInMutex,
-    sqlite3OsThreadSpecificData,
+    0,
     sqlite3OsMalloc,
     sqlite3OsRealloc,
     sqlite3OsFree,
