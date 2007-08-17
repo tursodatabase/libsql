@@ -95,7 +95,6 @@ struct unixFile {
   int h;                    /* The file descriptor */
   unsigned char locktype;   /* The type of lock held on this fd */
   unsigned char isOpen;     /* True if needs to be closed */
-  unsigned char fullSync;   /* Use F_FULLSYNC if available */
   int dirfd;                /* File descriptor for the directory */
   i64 offset;               /* Seek offset */
 #ifdef SQLITE_UNIX_THREADS
@@ -807,14 +806,6 @@ int sqlite3UnixFileExists(const char *zFilename){
   return access(zFilename, 0)==0;
 }
 
-/* Forward declaration */
-static int allocateUnixFile(
-  int h,                    /* File descriptor of the open file */
-  sqlite3_file **pId,       /* Write the real file descriptor here */
-  const char *zFilename,    /* Name of the file being opened */
-  int delFlag               /* If true, make sure the file deletes on close */
-);
-
 /*
 ** Attempt to open a file for both reading and writing.  If that
 ** fails, try opening it read-only.  If the file does not exist,
@@ -933,6 +924,7 @@ int sqlite3UnixOpenReadOnly(const char *zFilename, sqlite3_file **pId){
 ** On failure, the function returns SQLITE_CANTOPEN and leaves
 ** *id unchanged.
 */
+#if 0
 static int unixOpenDirectory(
   OsFile *id,
   const char *zDirname
@@ -952,6 +944,7 @@ static int unixOpenDirectory(
   OSTRACE3("OPENDIR %-3d %s\n", h, zDirname);
   return SQLITE_OK;
 }
+#endif
 
 /*
 ** Check that a given pathname is a directory and is writable 
@@ -1075,18 +1068,6 @@ static int unixWrite(
   return SQLITE_OK;
 }
 
-/*
-** Move the read/write pointer in a file.
-*/
-static int unixSeek(OsFile *id, i64 offset){
-  assert( id );
-#ifdef SQLITE_TEST
-  if( offset ) SimulateDiskfullError(return SQLITE_FULL);
-#endif
-  ((unixFile*)id)->offset = offset;
-  return SQLITE_OK;
-}
-
 #ifdef SQLITE_TEST
 /*
 ** Count the number of fullsyncs and normal syncs.  This is used to test
@@ -1189,25 +1170,29 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
 ** the directory entry for the journal was never created) and the transaction
 ** will not roll back - possibly leading to database corruption.
 */
-static int unixSync(sqlite3_file *id, int dataOnly){
+static int unixSync(sqlite3_file *id, int flags){
   int rc;
   unixFile *pFile = (unixFile*)id;
+
+  int isDataOnly = (flags & SQLITE_SYNC_DATAONLY);
+  int isFullsync = (flags & SQLITE_SYNC_FULL);
+
   assert( pFile );
   OSTRACE2("SYNC    %-3d\n", pFile->h);
-  rc = full_fsync(pFile->h, pFile->fullSync, dataOnly);
+  rc = full_fsync(pFile->h, isFullsync, isDataOnly);
   SimulateIOError( rc=1 );
   if( rc ){
     return SQLITE_IOERR_FSYNC;
   }
   if( pFile->dirfd>=0 ){
     OSTRACE4("DIRSYNC %-3d (have_fullfsync=%d fullsync=%d)\n", pFile->dirfd,
-            HAVE_FULLFSYNC, pFile->fullSync);
+            HAVE_FULLFSYNC, isFullsync);
 #ifndef SQLITE_DISABLE_DIRSYNC
     /* The directory sync is only attempted if full_fsync is
     ** turned off or unavailable.  If a full_fsync occurred above,
     ** then the directory sync is superfluous.
     */
-    if( (!HAVE_FULLFSYNC || !pFile->fullSync) && full_fsync(pFile->dirfd,0,0) ){
+    if( (!HAVE_FULLFSYNC || !isFullsync) && full_fsync(pFile->dirfd,0,0) ){
        /*
        ** We have received multiple reports of fsync() returning
        ** errors when applied to directories on certain file systems.
@@ -2248,6 +2233,7 @@ static int nolockUnixClose(OsFile **pId) {
 
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
 
+#if 0
 /*
 ** Change the value of the fullsync flag in the given file descriptor.
 */
@@ -2262,13 +2248,7 @@ static int unixFileHandle(OsFile *id){
   return ((unixFile*)id)->h;
 }
 
-/*
-** Return an integer that indices the type of lock currently held
-** by this handle.  (Used for testing and analysis only.)
-*/
-static int unixLockState(OsFile *id){
-  return ((unixFile*)id)->locktype;
-}
+#endif
 
 /*
 ** Return the sector size in bytes of the underlying block device for
@@ -2284,6 +2264,9 @@ static int unixSectorSize(sqlite3_file *id){
   return SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
+/*
+** Return the device characteristics for the file. This is always 0.
+*/
 static int unixDeviceCharacteristics(sqlite3_file *id){
   return 0;
 }
@@ -2291,6 +2274,14 @@ static int unixDeviceCharacteristics(sqlite3_file *id){
 static int unixBreakLock(sqlite3_file *id){
   assert(!"TODO: unixBreakLock()");
   return 0;
+}
+
+/*
+** Return an integer that indices the type of lock currently held
+** by this handle.  (Used for testing and analysis only.)
+*/
+static int unixLockState(sqlite3_file *id){
+  return ((unixFile*)id)->locktype;
 }
 
 /*
@@ -2309,6 +2300,7 @@ static const sqlite3_io_methods sqlite3UnixIoMethod = {
   unixUnlock,
   unixCheckReservedLock,
   unixBreakLock,
+  unixLockState,
   unixSectorSize,
   unixDeviceCharacteristics
 };
@@ -2629,6 +2621,16 @@ static int unixDelete(void *pNotUsed, const char *zPath){
   return SQLITE_OK;
 }
 
+/*
+** Test the existance of or access permissions of file zPath. The
+** test performed depends on the value of flags:
+**
+**     SQLITE_ACCESS_EXISTS: Return 1 if the file exists
+**     SQLITE_ACCESS_READWRITE: Return 1 if the file is read and writable.
+**     SQLITE_ACCESS_READONLY: Return 1 if the file is readable.
+**
+** Otherwise return 0.
+*/
 static int unixAccess(void *pNotUsed, const char *zPath, int flags){
   int amode;
   switch( flags ){
@@ -2776,17 +2778,12 @@ void unixDlClose(void *pHandle){
 #endif
 
 /*
-** Both arguments are integers. This macro returns the lowest of the 
-** two arguments. 
-*/
-#define MIN(x,y) ((x)>(y)?(y):(x))
-
-/*
-** Get information to seed the random number generator.  The seed
-** is written into the buffer zBuf[256].  The calling function must
-** supply a sufficiently large buffer.
+** Write nBuf bytes of random data to the supplied buffer zBuf.
 */
 static int unixRandomness(void *pNotUsed, int nBuf, char *zBuf){
+
+  assert(nBuf>=(sizeof(time_t)+sizeof(int)));
+
   /* We have to initialize zBuf to prevent valgrind from reporting
   ** errors.  The reports issued by valgrind are incorrect - we would
   ** prefer that the randomness be increased by making use of the
@@ -2807,11 +2804,9 @@ static int unixRandomness(void *pNotUsed, int nBuf, char *zBuf){
     if( fd<0 ){
       time_t t;
       time(&t);
-      memcpy(zBuf, &t, MIN(nBuf, sizeof(t)));
-      if( (nBuf-sizeof(t))>0 ){
-        pid = getpid();
-        memcpy(&zBuf[sizeof(t)], &pid, MIN(nBuf-sizeof(t), sizeof(pid)));
-      }
+      memcpy(zBuf, &t, sizeof(t));
+      pid = getpid();
+      memcpy(&zBuf[sizeof(t)], &pid, sizeof(pid));
     }else{
       read(fd, zBuf, nBuf);
       close(fd);

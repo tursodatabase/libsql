@@ -1,5 +1,5 @@
-C Begin\smigration\sto\susing\ssqlite3_vfs\sinterface.\s(CVS\s4240)
-D 2007-08-17T15:53:36
+C Remove\ssome\sold\sOsFile\sand\sIoMethod\srelated\scode.\sAdd\sthe\ssqlite3OsLockState\sfunction.\s(CVS\s4241)
+D 2007-08-17T16:50:38
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -68,7 +68,7 @@ F src/alter.c f0aac0060ae8102e58f210b44d35b53438d53173
 F src/analyze.c a14237d869c6bea0846493b59317e4097e81a0b6
 F src/attach.c a52225c75b107be8c5bc144a2b6d20201be3f8f8
 F src/auth.c 5ea90bc93dfea46e9fe4bf531e14c7cd98219ecb
-F src/btree.c c4e563b8a8301413984156909461dea882eabed8
+F src/btree.c f00ed30c442b4934d042af84e065498c542d21aa
 F src/btree.h 91ee529d581c1473d8e6e15299acc3b8de1d0674
 F src/btreeInt.h 6329e955a7dadd8628d5866e2465721b5fd25ef2
 F src/build.c add67be992307b4b11849a6611bfd3352aacde92
@@ -91,14 +91,14 @@ F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c 30bf8be3846f92fdf88c490c5e5378512383bcbe
 F src/mem2.c 661ca7ebf6e4b964fecc95d24e8c89dbcfc9dfea
 F src/mutex.c 67b2efd36a1e67a7dc7b7fa852fd69953462c943
-F src/os.c c8034df18a06cd1e9dde7d6e096b6709345ee72e
-F src/os.h e54a81bc851724ad17206bfcb4a474f9481f9fc0
+F src/os.c dce5a35b7ef4e8087b682376adf835d132ccf850
+F src/os.h d33920f6b3e0dc300a2de3d765820cb0e8176cbc
 F src/os_common.h a5c446d3b93f09f369d13bf217de4bed3437dd1c
 F src/os_os2.c cba4e96fadb949076c717108fe0599d1a3c2e446
 F src/os_os2.h e5f17dd69333632bbc3112881ea407c37d245eb3
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c bf86c474a5febb67684b967a8d2816b1d7f26891
+F src/os_unix.c 4b27202b4bfc1548c2ff3ae9a40b2e4530e57c7b
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c d868d5f9e95ec9c1b9e2a30c54c996053db6dddd
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -112,7 +112,7 @@ F src/random.c 00b30565f018f3a256c157432935de070231c73b
 F src/select.c 98c367bce3f38c5adfcc97de9ab5c79b0e5dc2b2
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in f29eb4bc8dc8f4dc61690f339ebb82fec010d4c1
+F src/sqlite.h.in 366645a566cb674c1e26d10451e784cbe2a7b58c
 F src/sqlite3ext.h 647a6b8a8f76ff6c9611e4a071531d8e63ff2d6b
 F src/sqliteInt.h 442a6861cf3f535f410acad19a55b2fbca2564a7
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
@@ -529,7 +529,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4c1e9ffebe7c611a8b6a89153ae97ab9bca19ea3
-R 473ba7528424cad7a8d671117a18b080
+P af3e3c7acdc67013dd733effebe981620d922dd1
+R 0b450cd00a75691c9505bbff03bfb4a5
 U danielk1977
-Z ac059cef33a845a67fcbf5f572a89687
+Z 31339accc484dfc95959c68759a89caa

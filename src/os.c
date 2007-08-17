@@ -37,8 +37,8 @@ int sqlite3OsWrite(sqlite3_file *id, const void *pBuf, int amt, i64 offset){
 int sqlite3OsTruncate(sqlite3_file *id, i64 size){
   return id->pMethods->xTruncate(id, size);
 }
-int sqlite3OsSync(sqlite3_file *id, int fullsync){
-  return id->pMethods->xSync(id, fullsync);
+int sqlite3OsSync(sqlite3_file *id, int flags){
+  return id->pMethods->xSync(id, flags);
 }
 int sqlite3OsFileSize(sqlite3_file *id, i64 *pSize){
   return id->pMethods->xFileSize(id, pSize);
@@ -70,8 +70,7 @@ int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
     return 0;
   }
   int sqlite3OsLockState(sqlite3_file *id){
-    /* return id->pMethods->xLockState(id); */
-    return 0;
+    return id->pMethods->xLockState(id);
   }
 #endif
 
