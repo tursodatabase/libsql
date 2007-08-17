@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.5 2007/06/15 12:06:59 drh Exp $
+** $Id: btreeInt.h,v 1.6 2007/08/17 01:14:38 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -248,7 +248,7 @@ typedef struct BtLock BtLock;
 
 /*
 ** Page type flags.  An ORed combination of these flags appear as the
-** first byte of every BTree page.
+** first byte of on-disk image of every BTree page.
 */
 #define PTF_INTKEY    0x01
 #define PTF_ZERODATA  0x02
@@ -276,8 +276,8 @@ struct MemPage {
   u8 hasData;          /* True if this page stores data */
   u8 hdrOffset;        /* 100 for page 1.  0 otherwise */
   u8 childPtrSize;     /* 0 if leaf==1.  4 if leaf==0 */
-  u16 maxLocal;        /* Copy of Btree.maxLocal or Btree.maxLeaf */
-  u16 minLocal;        /* Copy of Btree.minLocal or Btree.minLeaf */
+  u16 maxLocal;        /* Copy of BtShared.maxLocal or BtShared.maxLeaf */
+  u16 minLocal;        /* Copy of BtShared.minLocal or BtShared.minLeaf */
   u16 cellOffset;      /* Index in aData of first cell pointer */
   u16 idxParent;       /* Index in parent of this node */
   u16 nFree;           /* Number of free bytes on the page */
@@ -286,8 +286,8 @@ struct MemPage {
     u8 *pCell;          /* Pointers to the body of the overflow cell */
     u16 idx;            /* Insert this cell before idx-th non-overflow cell */
   } aOvfl[5];
-  BtShared *pBt;       /* Pointer back to BTree structure */
-  u8 *aData;           /* Pointer back to the start of the page */
+  BtShared *pBt;       /* Pointer to BtShared that this page is part of */
+  u8 *aData;           /* Pointer to disk image of the page data */
   DbPage *pDbPage;     /* Pager page handle */
   Pgno pgno;           /* Page number for this page */
   MemPage *pParent;    /* The parent of this page.  NULL for root */
@@ -300,11 +300,30 @@ struct MemPage {
 */
 #define EXTRA_SIZE sizeof(MemPage)
 
-/* Btree handle */
+/* A Btree handle
+**
+** A database connection contains a pointer to an instance of
+** this object for every database file that it has open.  This structure
+** is opaque to the database connection.  The database connection cannot
+** see the internals of this structure and only deals with pointers to
+** this structure.
+**
+** For some database files, the same underlying database cache might be 
+** shared between multiple connections.  In that case, each contection
+** has it own pointer to this object.  But each instance of this object
+** points to the same BtShared object.  The database cache and the
+** schema associated with the database file are all contained within
+** the BtShared object.
+*/
 struct Btree {
-  sqlite3 *pSqlite;
-  BtShared *pBt;
-  u8 inTrans;            /* TRANS_NONE, TRANS_READ or TRANS_WRITE */
+  sqlite3 *pSqlite;  /* The database connection holding this btree */
+  BtShared *pBt;     /* Sharable content of this btree */
+  u8 inTrans;        /* TRANS_NONE, TRANS_READ or TRANS_WRITE */
+  u8 sharable;       /* True if we can share pBt with other pSqlite */
+  u8 locked;         /* True if pSqlite currently has pBt locked */
+  int wantToLock;    /* Number of nested calls to sqlite3BtreeEnter() */
+  Btree *pNext;      /* List of Btrees with the same pSqlite value */
+  Btree *pPrev;      /* Back pointer of the same list */
 };
 
 /*
@@ -312,15 +331,21 @@ struct Btree {
 **
 ** If the shared-data extension is enabled, there may be multiple users
 ** of the Btree structure. At most one of these may open a write transaction,
-** but any number may have active read transactions. Variable Btree.pDb 
-** points to the handle that owns any current write-transaction.
+** but any number may have active read transactions.
 */
 #define TRANS_NONE  0
 #define TRANS_READ  1
 #define TRANS_WRITE 2
 
 /*
-** Everything we need to know about an open database
+** An instance of this object represents a single database file.
+** 
+** A single database file can be in use as the same time by two
+** or more database connections.  When two or more connections are
+** sharing the same database file, each connection has it own
+** private Btree object for the file and each of those Btrees points
+** to this one BtShared object.  BtShared.nRef is the number of
+** connections currently sharing this database file.
 */
 struct BtShared {
   Pager *pPager;        /* The page cache */
@@ -350,6 +375,7 @@ struct BtShared {
   void *pSchema;        /* Pointer to space allocated by sqlite3BtreeSchema() */
   void (*xFreeSchema)(void*);  /* Destructor for BtShared.pSchema */
 #ifndef SQLITE_OMIT_SHARED_CACHE
+  sqlite3_mutex *mutex; /* Non-recursive mutex required to access this struct */
   BtLock *pLock;        /* List of locks held on this shared-btree struct */
   BtShared *pNext;      /* Next in ThreadData.pBtree linked list */
 #endif
@@ -373,9 +399,15 @@ struct CellInfo {
 };
 
 /*
-** A cursor is a pointer to a particular entry in the BTree.
+** A cursor is a pointer to a particular entry within a particular
+** b-tree within a database file.
+**
 ** The entry is identified by its MemPage and the index in
 ** MemPage.aCell[] of the entry.
+**
+** When a single database file can shared by two more database connections,
+** but cursors cannot be shared.  Each cursor is associated with a
+** particular database connection identified BtCursor.pBtree.pSqlite.
 */
 struct BtCursor {
   Btree *pBtree;            /* The Btree to which this cursor belongs */
@@ -530,8 +562,6 @@ struct BtLock {
 ** of handle p (type Btree*) are internally consistent.
 */
 #define btreeIntegrity(p) \
-  assert( p->inTrans!=TRANS_NONE || p->pBt->nTransaction<p->pBt->nRef ); \
-  assert( p->pBt->nTransaction<=p->pBt->nRef ); \
   assert( p->pBt->inTransaction!=TRANS_NONE || p->pBt->nTransaction==0 ); \
   assert( p->pBt->inTransaction>=p->inTrans ); 
 

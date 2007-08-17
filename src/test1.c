@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.262 2007/08/16 13:01:45 drh Exp $
+** $Id: test1.c,v 1.263 2007/08/17 01:14:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1312,6 +1312,7 @@ static int test_enable_shared(
   int rc;
   int enable;
   int ret = 0;
+  extern int sqlite3SharedCacheEnabled;
 
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "BOOLEAN");
@@ -1320,7 +1321,7 @@ static int test_enable_shared(
   if( Tcl_GetBooleanFromObj(interp, objv[1], &enable) ){
     return TCL_ERROR;
   }
-  ret = sqlite3ThreadDataReadOnly()->useSharedData;
+  ret = sqlite3SharedCacheEnabled;
   rc = sqlite3_enable_shared_cache(enable);
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, (char *)sqlite3ErrStr(rc), TCL_STATIC);

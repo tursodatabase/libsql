@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.398 2007/08/16 10:09:02 danielk1977 Exp $
+** $Id: btree.c,v 1.399 2007/08/17 01:14:38 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -32,6 +32,36 @@ static const char zMagicHeader[] = SQLITE_FILE_HEADER;
 int sqlite3_btree_trace=0;  /* True to enable tracing */
 #endif
 
+#ifndef SQLITE_OMIT_SHARED_CACHE
+/*
+** A flag to indicate whether or not shared cache is enabled.  Also,
+** a list of BtShared objects that are eligible for participation
+** in shared cache.
+*/
+#ifdef SQLITE_TEST
+BtShared *sqlite3SharedCacheList = 0;
+int sqlite3SharedCacheEnabled = 0;
+#else
+static BtShared *sqlite3SharedCacheList = 0;
+static int sqlite3SharedCacheEnabled = 0;
+#endif
+
+#endif /* SQLITE_OMIT_SHARED_CACHE */
+
+#ifndef SQLITE_OMIT_SHARED_CACHE
+/*
+** Enable or disable the shared pager and schema features.
+**
+** This routine has no effect on existing database connections.
+** The shared cache setting effects only future calls to
+** sqlite3_open(), sqlite3_open16(), or sqlite3_open_v2().
+*/
+int sqlite3_enable_shared_cache(int enable){
+  sqlite3SharedCacheEnabled = enable;
+  return SQLITE_OK;
+}
+#endif
+
 /*
 ** Forward declaration
 */
@@ -50,8 +80,9 @@ static int checkReadLocks(Btree*,Pgno,BtCursor*);
   #define queryTableLock(a,b,c) SQLITE_OK
   #define lockTable(a,b,c) SQLITE_OK
   #define unlockAllTables(a)
-#else
+#endif
 
+#ifndef SQLITE_OMIT_SHARED_CACHE
 /*
 ** Query to see if btree handle p may obtain a lock of type eLock 
 ** (READ_LOCK or WRITE_LOCK) on the table with root-page iTab. Return
@@ -63,7 +94,7 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
   BtLock *pIter;
 
   /* This is a no-op if the shared-cache is not enabled */
-  if( 0==sqlite3ThreadDataReadOnly()->useSharedData ){
+  if( !p->sharable ){
     return SQLITE_OK;
   }
 
@@ -96,7 +127,9 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
   }
   return SQLITE_OK;
 }
+#endif /* !SQLITE_OMIT_SHARED_CACHE */
 
+#ifndef SQLITE_OMIT_SHARED_CACHE
 /*
 ** Add a lock on the table with root-page iTable to the shared-btree used
 ** by Btree handle p. Parameter eLock must be either READ_LOCK or 
@@ -111,7 +144,7 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
   BtLock *pIter;
 
   /* This is a no-op if the shared-cache is not enabled */
-  if( 0==sqlite3ThreadDataReadOnly()->useSharedData ){
+  if( !p->sharable ){
     return SQLITE_OK;
   }
 
@@ -164,7 +197,9 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
 
   return SQLITE_OK;
 }
+#endif /* !SQLITE_OMIT_SHARED_CACHE */
 
+#ifndef SQLITE_OMIT_SHARED_CACHE
 /*
 ** Release all the table locks (locks obtained via calls to the lockTable()
 ** procedure) held by Btree handle p.
@@ -172,11 +207,7 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
 static void unlockAllTables(Btree *p){
   BtLock **ppIter = &p->pBt->pLock;
 
-  /* If the shared-cache extension is not enabled, there should be no
-  ** locks in the BtShared.pLock list, making this procedure a no-op. Assert
-  ** that this is the case.
-  */
-  assert( sqlite3ThreadDataReadOnly()->useSharedData || 0==*ppIter );
+  assert( p->sharable || 0==*ppIter );
 
   while( *ppIter ){
     BtLock *pLock = *ppIter;
@@ -1023,6 +1054,8 @@ static void pageReinit(DbPage *pData, int pageSize){
 ** zFilename is the name of the database file.  If zFilename is NULL
 ** a new database with a random name is created.  This randomly named
 ** database file will be deleted when sqlite3BtreeClose() is called.
+** If zFilename is ":memory:" then an in-memory database is created
+** that is automatically destroyed when it is closed.
 */
 int sqlite3BtreeOpen(
   const char *zFilename,  /* Name of the file containing the BTree database */
@@ -1030,14 +1063,11 @@ int sqlite3BtreeOpen(
   Btree **ppBtree,        /* Pointer to new Btree object written here */
   int flags               /* Options */
 ){
-  BtShared *pBt;          /* Shared part of btree structure */
+  BtShared *pBt = 0;      /* Shared part of btree structure */
   Btree *p;               /* Handle to return */
   int rc = SQLITE_OK;
   int nReserve;
   unsigned char zDbHeader[100];
-#if !defined(SQLITE_OMIT_SHARED_CACHE) && !defined(SQLITE_OMIT_DISKIO)
-  const ThreadData *pTsdro;
-#endif
 
   /* Set the variable isMemdb to true for an in-memory database, or 
   ** false for a file-based database. This symbol is only required if
@@ -1059,106 +1089,150 @@ int sqlite3BtreeOpen(
   p->inTrans = TRANS_NONE;
   p->pSqlite = pSqlite;
 
-  /* Try to find an existing Btree structure opened on zFilename. */
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && !defined(SQLITE_OMIT_DISKIO)
-  pTsdro = sqlite3ThreadDataReadOnly();
-  if( pTsdro->useSharedData && zFilename && !isMemdb ){
+  /*
+  ** If this Btree is a candidate for shared cache, try to find an
+  ** existing BtShared object that we can share with
+  */
+  if( (flags & BTREE_PRIVATE)==0
+   && isMemdb==0
+   && zFilename && zFilename[0]
+   && sqlite3SharedCacheEnabled
+  ){
     char *zFullPathname = sqlite3OsFullPathname(zFilename);
+    sqlite3_mutex *mutexShared;
+    p->sharable = 1;
     if( !zFullPathname ){
       sqlite3_free(p);
       return SQLITE_NOMEM;
     }
-    for(pBt=pTsdro->pBtree; pBt; pBt=pBt->pNext){
+    mutexShared = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+    sqlite3_mutex_enter(mutexShared);
+    for(pBt=sqlite3SharedCacheList; pBt; pBt=pBt->pNext){
       assert( pBt->nRef>0 );
       if( 0==strcmp(zFullPathname, sqlite3PagerFilename(pBt->pPager)) ){
         p->pBt = pBt;
-        *ppBtree = p;
         pBt->nRef++;
-        sqlite3_free(zFullPathname);
-        return SQLITE_OK;
+        break;
       }
     }
+    sqlite3_mutex_leave(mutexShared);
     sqlite3_free(zFullPathname);
   }
 #endif
-
-  /*
-  ** The following asserts make sure that structures used by the btree are
-  ** the right size.  This is to guard against size changes that result
-  ** when compiling on a different architecture.
-  */
-  assert( sizeof(i64)==8 || sizeof(i64)==4 );
-  assert( sizeof(u64)==8 || sizeof(u64)==4 );
-  assert( sizeof(u32)==4 );
-  assert( sizeof(u16)==2 );
-  assert( sizeof(Pgno)==4 );
-
-  pBt = sqlite3MallocZero( sizeof(*pBt) );
   if( pBt==0 ){
-    rc = SQLITE_NOMEM;
-    goto btree_open_out;
-  }
-  rc = sqlite3PagerOpen(&pBt->pPager, zFilename, EXTRA_SIZE, flags);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3PagerReadFileheader(pBt->pPager,sizeof(zDbHeader),zDbHeader);
-  }
-  if( rc!=SQLITE_OK ){
-    goto btree_open_out;
-  }
-  p->pBt = pBt;
-
-  sqlite3PagerSetDestructor(pBt->pPager, pageDestructor);
-  sqlite3PagerSetReiniter(pBt->pPager, pageReinit);
-  pBt->pCursor = 0;
-  pBt->pPage1 = 0;
-  pBt->readOnly = sqlite3PagerIsreadonly(pBt->pPager);
-  pBt->pageSize = get2byte(&zDbHeader[16]);
-  if( pBt->pageSize<512 || pBt->pageSize>SQLITE_MAX_PAGE_SIZE
-       || ((pBt->pageSize-1)&pBt->pageSize)!=0 ){
-    pBt->pageSize = SQLITE_DEFAULT_PAGE_SIZE;
-    pBt->maxEmbedFrac = 64;   /* 25% */
-    pBt->minEmbedFrac = 32;   /* 12.5% */
-    pBt->minLeafFrac = 32;    /* 12.5% */
-#ifndef SQLITE_OMIT_AUTOVACUUM
-    /* If the magic name ":memory:" will create an in-memory database, then
-    ** leave the autoVacuum mode at 0 (do not auto-vacuum), even if
-    ** SQLITE_DEFAULT_AUTOVACUUM is true. On the other hand, if
-    ** SQLITE_OMIT_MEMORYDB has been defined, then ":memory:" is just a
-    ** regular file-name. In this case the auto-vacuum applies as per normal.
+    /*
+    ** The following asserts make sure that structures used by the btree are
+    ** the right size.  This is to guard against size changes that result
+    ** when compiling on a different architecture.
     */
-    if( zFilename && !isMemdb ){
-      pBt->autoVacuum = (SQLITE_DEFAULT_AUTOVACUUM ? 1 : 0);
-      pBt->incrVacuum = (SQLITE_DEFAULT_AUTOVACUUM==2 ? 1 : 0);
+    assert( sizeof(i64)==8 || sizeof(i64)==4 );
+    assert( sizeof(u64)==8 || sizeof(u64)==4 );
+    assert( sizeof(u32)==4 );
+    assert( sizeof(u16)==2 );
+    assert( sizeof(Pgno)==4 );
+  
+    pBt = sqlite3MallocZero( sizeof(*pBt) );
+    if( pBt==0 ){
+      rc = SQLITE_NOMEM;
+      goto btree_open_out;
+    }
+    rc = sqlite3PagerOpen(&pBt->pPager, zFilename, EXTRA_SIZE, flags);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3PagerReadFileheader(pBt->pPager,sizeof(zDbHeader),zDbHeader);
+    }
+    if( rc!=SQLITE_OK ){
+      goto btree_open_out;
+    }
+    p->pBt = pBt;
+  
+    sqlite3PagerSetDestructor(pBt->pPager, pageDestructor);
+    sqlite3PagerSetReiniter(pBt->pPager, pageReinit);
+    pBt->pCursor = 0;
+    pBt->pPage1 = 0;
+    pBt->readOnly = sqlite3PagerIsreadonly(pBt->pPager);
+    pBt->pageSize = get2byte(&zDbHeader[16]);
+    if( pBt->pageSize<512 || pBt->pageSize>SQLITE_MAX_PAGE_SIZE
+         || ((pBt->pageSize-1)&pBt->pageSize)!=0 ){
+      pBt->pageSize = SQLITE_DEFAULT_PAGE_SIZE;
+      pBt->maxEmbedFrac = 64;   /* 25% */
+      pBt->minEmbedFrac = 32;   /* 12.5% */
+      pBt->minLeafFrac = 32;    /* 12.5% */
+#ifndef SQLITE_OMIT_AUTOVACUUM
+      /* If the magic name ":memory:" will create an in-memory database, then
+      ** leave the autoVacuum mode at 0 (do not auto-vacuum), even if
+      ** SQLITE_DEFAULT_AUTOVACUUM is true. On the other hand, if
+      ** SQLITE_OMIT_MEMORYDB has been defined, then ":memory:" is just a
+      ** regular file-name. In this case the auto-vacuum applies as per normal.
+      */
+      if( zFilename && !isMemdb ){
+        pBt->autoVacuum = (SQLITE_DEFAULT_AUTOVACUUM ? 1 : 0);
+        pBt->incrVacuum = (SQLITE_DEFAULT_AUTOVACUUM==2 ? 1 : 0);
+      }
+#endif
+      nReserve = 0;
+    }else{
+      nReserve = zDbHeader[20];
+      pBt->maxEmbedFrac = zDbHeader[21];
+      pBt->minEmbedFrac = zDbHeader[22];
+      pBt->minLeafFrac = zDbHeader[23];
+      pBt->pageSizeFixed = 1;
+#ifndef SQLITE_OMIT_AUTOVACUUM
+      pBt->autoVacuum = (get4byte(&zDbHeader[36 + 4*4])?1:0);
+      pBt->incrVacuum = (get4byte(&zDbHeader[36 + 7*4])?1:0);
+#endif
+    }
+    pBt->usableSize = pBt->pageSize - nReserve;
+    assert( (pBt->pageSize & 7)==0 );  /* 8-byte alignment of pageSize */
+    sqlite3PagerSetPagesize(pBt->pPager, pBt->pageSize);
+   
+#if !defined(SQLITE_OMIT_SHARED_CACHE) && !defined(SQLITE_OMIT_DISKIO)
+    /* Add the new BtShared object to the linked list sharable BtShareds.
+    */
+    if( p->sharable ){
+      sqlite3_mutex *mutexShared;
+      pBt->nRef = 1;
+      mutexShared = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+      pBt->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+      sqlite3_mutex_enter(mutexShared);
+      pBt->pNext = sqlite3SharedCacheList;
+      sqlite3SharedCacheList = pBt;
+      sqlite3_mutex_leave(mutexShared);
     }
 #endif
-    nReserve = 0;
-  }else{
-    nReserve = zDbHeader[20];
-    pBt->maxEmbedFrac = zDbHeader[21];
-    pBt->minEmbedFrac = zDbHeader[22];
-    pBt->minLeafFrac = zDbHeader[23];
-    pBt->pageSizeFixed = 1;
-#ifndef SQLITE_OMIT_AUTOVACUUM
-    pBt->autoVacuum = (get4byte(&zDbHeader[36 + 4*4])?1:0);
-    pBt->incrVacuum = (get4byte(&zDbHeader[36 + 7*4])?1:0);
-#endif
   }
-  pBt->usableSize = pBt->pageSize - nReserve;
-  assert( (pBt->pageSize & 7)==0 );  /* 8-byte alignment of pageSize */
-  sqlite3PagerSetPagesize(pBt->pPager, pBt->pageSize);
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && !defined(SQLITE_OMIT_DISKIO)
-  /* Add the new btree to the linked list starting at ThreadData.pBtree.
-  ** There is no chance that a malloc() may fail inside of the 
-  ** sqlite3ThreadData() call, as the ThreadData structure must have already
-  ** been allocated for pTsdro->useSharedData to be non-zero.
+  /* If the new Btree uses a sharable pBtShared, then link the new
+  ** Btree into the list of all sharable Btrees for the same connection.
+  ** The list is kept in ascending order by pBtShared address.
   */
-  if( pTsdro->useSharedData && zFilename && !isMemdb ){
-    pBt->pNext = pTsdro->pBtree;
-    sqlite3ThreadData()->pBtree = pBt;
+  if( p->sharable ){
+    int i;
+    Btree *pSib;
+    for(i=0; i<pSqlite->nDb; i++){
+      if( (pSib = pSqlite->aDb[i].pBt)!=0 && pSib->sharable ){
+        while( pSib->pPrev ){ pSib = pSib->pPrev; }
+        if( p->pBt<pSib->pBt ){
+          p->pNext = pSib;
+          p->pPrev = 0;
+          pSib->pPrev = p;
+        }else{
+          while( pSib->pNext && pSib->pNext->pBt>p->pBt ){
+            pSib = pSib->pNext;
+          }
+          p->pNext = pSib->pNext;
+          p->pPrev = pSib;
+          if( p->pNext ){
+            p->pNext->pPrev = p;
+          }
+          pSib->pNext = p;
+        }
+        break;
+      }
+    }
   }
 #endif
-  pBt->nRef = 1;
   *ppBtree = p;
 
 btree_open_out:
@@ -1174,17 +1248,51 @@ btree_open_out:
 }
 
 /*
+** Decrement the BtShared.nRef counter.  When it reaches zero,
+** remove the BtShared structure from the sharing list.  Return
+** true if the BtShared.nRef counter reaches zero and return
+** false if it is still positive.
+*/
+static int removeFromSharingList(BtShared *pBt){
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  sqlite3_mutex *pMaster;
+  BtShared *pList;
+  int removed = 0;
+
+  pMaster = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_mutex_enter(pMaster);
+  pBt->nRef--;
+  if( pBt->nRef<=0 ){
+    if( sqlite3SharedCacheList==pBt ){
+      sqlite3SharedCacheList = pBt->pNext;
+    }else{
+      pList = sqlite3SharedCacheList;
+      while( pList && pList->pNext!=pBt ){
+        pList=pList->pNext;
+      }
+      if( pList ){
+        pList->pNext = pBt->pNext;
+      }
+    }
+    sqlite3_mutex_free(pBt->mutex);
+    removed = 1;
+  }
+  sqlite3_mutex_leave(pMaster);
+  return removed;
+#else
+  return 1;
+#endif
+}
+
+/*
 ** Close an open database and invalidate all cursors.
 */
 int sqlite3BtreeClose(Btree *p){
   BtShared *pBt = p->pBt;
   BtCursor *pCur;
 
-#ifndef SQLITE_OMIT_SHARED_CACHE
-  ThreadData *pTsd;
-#endif
-
   /* Close all cursors opened via this handle.  */
+  sqlite3BtreeEnter(p);
   pCur = pBt->pCursor;
   while( pCur ){
     BtCursor *pTmp = pCur;
@@ -1199,47 +1307,130 @@ int sqlite3BtreeClose(Btree *p){
   ** this handle.
   */
   sqlite3BtreeRollback(p);
-  sqlite3_free(p);
+  sqlite3BtreeLeave(p);
 
-#ifndef SQLITE_OMIT_SHARED_CACHE
   /* If there are still other outstanding references to the shared-btree
   ** structure, return now. The remainder of this procedure cleans 
   ** up the shared-btree.
   */
-  assert( pBt->nRef>0 );
-  pBt->nRef--;
-  if( pBt->nRef ){
-    return SQLITE_OK;
+  assert( p->wantToLock==0 && p->locked==0 );
+  if( !p->sharable || removeFromSharingList(pBt) ){
+    /* The pBt is no longer on the sharing list, so we can access
+    ** it without having to hold the mutex.
+    **
+    ** Clean out and delete the BtShared object.
+    */
+    assert( !pBt->pCursor );
+    assert( pBt->nRef==0 );
+    sqlite3PagerClose(pBt->pPager);
+    if( pBt->xFreeSchema && pBt->pSchema ){
+      pBt->xFreeSchema(pBt->pSchema);
+    }
+    sqlite3_free(pBt->pSchema);
+    sqlite3_free(pBt);
   }
 
-  /* Remove the shared-btree from the thread wide list. Call 
-  ** ThreadDataReadOnly() and then cast away the const property of the 
-  ** pointer to avoid allocating thread data if it is not really required.
-  */
-  pTsd = (ThreadData *)sqlite3ThreadDataReadOnly();
-  if( pTsd->pBtree==pBt ){
-    assert( pTsd==sqlite3ThreadData() );
-    pTsd->pBtree = pBt->pNext;
-  }else{
-    BtShared *pPrev;
-    for(pPrev=pTsd->pBtree; pPrev && pPrev->pNext!=pBt; pPrev=pPrev->pNext){}
-    if( pPrev ){
-      assert( pTsd==sqlite3ThreadData() );
-      pPrev->pNext = pBt->pNext;
-    }
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  else{
+    assert( p->wantToLock==0 );
+    assert( p->locked==0 );
+    assert( p->sharable );
+    if( p->pPrev ) p->pPrev->pNext = p->pNext;
+    if( p->pNext ) p->pNext->pPrev = p->pPrev;
   }
 #endif
 
-  /* Close the pager and free the shared-btree structure */
-  assert( !pBt->pCursor );
-  sqlite3PagerClose(pBt->pPager);
-  if( pBt->xFreeSchema && pBt->pSchema ){
-    pBt->xFreeSchema(pBt->pSchema);
-  }
-  sqlite3_free(pBt->pSchema);
-  sqlite3_free(pBt);
+  sqlite3_free(p);
   return SQLITE_OK;
 }
+
+#ifndef SQLITE_OMIT_SHARED_CACHE
+/*
+** Enter a mutex on the given BTree object.
+**
+** If the object is not sharable, then no mutex is ever required
+** and this routine is a no-op.  The underlying mutex is non-recursive.
+** But we keep a reference count in Btree.wantToLock so the behavior
+** of this interface is recursive.
+**
+** To avoid deadlocks, multiple Btrees are locked in the same order
+** by all database connections.  The p->pNext is a list of other
+** Btrees belonging to the same database connection as the p Btree
+** which need to be locked after p.  If we cannot get a lock on
+** p, then first unlock all of the others on p->pNext, then wait
+** for the lock to become available on p, then relock all of the
+** subsequent Btrees that desire a lock.
+*/
+void sqlite3BtreeEnter(Btree *p){
+  Btree *pLater;
+
+  /* Some basic sanity checking on the Btree.  The list of Btrees
+  ** connected by pNext and pPrev should be in sorted order by
+  ** Btree.pBt value. All elements of the list should belong to
+  ** the same connection. Only shared Btrees are on the list. */
+  assert( p->pNext==0 || p->pNext->pBt>p->pBt );
+  assert( p->pPrev==0 || p->pPrev->pBt<p->pBt );
+  assert( p->pNext==0 || p->pNext->pSqlite==p->pSqlite );
+  assert( p->pPrev==0 || p->pPrev->pSqlite==p->pSqlite );
+  assert( p->sharable || (p->pNext==0 && p->pPrev==0) );
+
+  /* Check for locking consistency */
+  assert( !p->locked || p->wantToLock>0 );
+  assert( p->sharable || p->wantToLock==0 );
+
+  if( !p->sharable ) return;
+  p->wantToLock++;
+  if( p->locked ) return;
+
+  /* In most cases, we should be able to acquire the lock we
+  ** want without having to go throught the ascending lock
+  ** procedure that follows.  Just be sure not to block.
+  */
+  if( sqlite3_mutex_try(p->pBt->mutex)==SQLITE_OK ){
+    p->locked = 1;
+    return;
+  }
+
+  /* To avoid deadlock, first release all locks with a larger
+  ** BtShared address.  Then acquire our lock.  Then reacquire
+  ** the other BtShared locks that we used to hold in ascending
+  ** order.
+  */
+  for(pLater=p->pNext; pLater; pLater=pLater->pNext){
+    assert( pLater->sharable );
+    assert( pLater->pNext==0 || pLater->pNext->pBt>pLater->pBt );
+    assert( !pLater->locked || pLater->wantToLock>0 );
+    if( pLater->locked ){
+      sqlite3_mutex_leave(pLater->pBt->mutex);
+      pLater->locked = 0;
+    }
+  }
+  sqlite3_mutex_enter(p->pBt->mutex);
+  for(pLater=p->pNext; pLater; pLater=pLater->pNext){
+    if( pLater->wantToLock ){
+      sqlite3_mutex_enter(pLater->pBt->mutex);
+      pLater->locked = 1;
+    }
+  }
+}
+#endif /* !SQLITE_OMIT_SHARED_CACHE */
+
+/*
+** Exit the recursive mutex on a Btree.
+*/
+#ifndef SQLITE_OMIT_SHARED_CACHE
+void sqlite3BtreeLeave(Btree *p){
+  if( p->sharable ){
+    assert( p->wantToLock>0 );
+    p->wantToLock--;
+    if( p->wantToLock==0 ){
+      assert( p->locked );
+      sqlite3_mutex_leave(p->pBt->mutex);
+      p->locked = 0;
+    }
+  }
+}
+#endif /* !SQLITE_OMIT_SHARED_CACHE */
 
 /*
 ** Change the busy handler callback function.

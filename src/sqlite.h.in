@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.226 2007/08/16 19:40:17 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.227 2007/08/17 01:14:38 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2175,6 +2175,9 @@ int sqlite3_global_recover(void);
 ** [sqlite3_value_text16()] can be invalidated by a subsequent call to
 ** [sqlite3_value_bytes()], [sqlite3_value_bytes16()], [sqlite3_value_text()],
 ** or [sqlite3_value_text16()].  
+**
+** These routines must be called from the same thread as
+** the SQL function that supplied the sqlite3_value* parameters.
 */
 const void *sqlite3_value_blob(sqlite3_value*);
 int sqlite3_value_bytes(sqlite3_value*);
@@ -2206,6 +2209,9 @@ int sqlite3_value_numeric_type(sqlite3_value*);
 ** [sqlite3_context | SQL function context] that is the first
 ** parameter to the callback routine that implements the aggregate
 ** function.
+**
+** This routine must be called from the same thread in which
+** the aggregate SQL function was originally invoked.
 */
 void *sqlite3_aggregate_context(sqlite3_context*, int nBytes);
 
@@ -2216,6 +2222,9 @@ void *sqlite3_aggregate_context(sqlite3_context*, int nBytes);
 ** and [sqlite3_create_function16()] routines
 ** used to register user functions is available to
 ** the implementation of the function using this call.
+**
+** This routine must be called from the same thread in which
+** the SQL function was originally invoked.
 */
 void *sqlite3_user_data(sqlite3_context*);
 
@@ -2248,6 +2257,9 @@ void *sqlite3_user_data(sqlite3_context*);
 ** In practice, meta-data is preserved between function calls for
 ** expressions that are constant at compile time. This includes literal
 ** values and SQL variables.
+**
+** These routine must be called from the same thread in which
+** the SQL function was originally invoked.
 */
 void *sqlite3_get_auxdata(sqlite3_context*, int);
 void sqlite3_set_auxdata(sqlite3_context*, int, void*, void (*)(void*));
@@ -2294,6 +2306,9 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** The sqlite3_result_toobig() cause the function implementation
 ** to throw and error indicating that a string or BLOB is to long
 ** to represent.
+**
+** These routines must be called from within the same thread as
+** the SQL function associated with the [sqlite3_context] pointer.
 */
 void sqlite3_result_blob(sqlite3_context*, const void*, int, void(*)(void*));
 void sqlite3_result_double(sqlite3_context*, double);
@@ -3234,8 +3249,9 @@ int sqlite3_unregister_vfs(sqlite3_vfs*);
 ** The sqlite3_mutex_free() routine deallocates a previously
 ** allocated dynamic mutex.  SQLite is careful to deallocate every
 ** dynamic mutex that it allocates.  The dynamic mutexes must not be in 
-** use when they are deallocated.  Static mutexes do not need to be
-** deallocated and SQLite never bothers to do so.
+** use when they are deallocated.  Attempting to deallocate a static
+** mutex results in undefined behavior.  SQLite never deallocates
+** a static mutex.
 **
 ** The sqlite3_mutex_enter() and sqlite3_mutex_try() routines attempt
 ** to enter a mutex.  If another thread is already within the mutex,

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.50 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: vtab.c,v 1.51 2007/08/17 01:14:39 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -162,7 +162,7 @@ void sqlite3VtabBeginParse(
   Table *pTable;        /* The new virtual table */
   sqlite3 *db;          /* Database connection */
 
-#ifndef SQLITE_OMIT_SHARED_CACHE
+#if 0 /* FIX ME */
   if( sqlite3ThreadDataReadOnly()->useSharedData ){
     sqlite3ErrorMsg(pParse, "Cannot use virtual tables in shared-cache mode");
     return;

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.435 2007/08/16 10:09:02 danielk1977 Exp $
+** $Id: build.c,v 1.436 2007/08/17 01:14:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -69,7 +69,7 @@ void sqlite3TableLock(
   int nBytes;
   TableLock *p;
 
-  if( 0==sqlite3ThreadDataReadOnly()->useSharedData || iDb<0 ){
+  if( iDb<0 ){
     return;
   }
 
@@ -100,7 +100,6 @@ void sqlite3TableLock(
 static void codeTableLocks(Parse *pParse){
   int i;
   Vdbe *pVdbe; 
-  assert( sqlite3ThreadDataReadOnly()->useSharedData || pParse->nTableLock==0 );
 
   if( 0==(pVdbe = sqlite3GetVdbe(pParse)) ){
     return;

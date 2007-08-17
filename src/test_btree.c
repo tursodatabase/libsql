@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_btree.c,v 1.2 2007/05/08 11:27:16 drh Exp $
+** $Id: test_btree.c,v 1.3 2007/08/17 01:14:39 drh Exp $
 */
 #include "btreeInt.h"
 #include <tcl.h>
@@ -140,17 +140,15 @@ int sqlite3BtreeSharedCacheReport(
   Tcl_Obj *CONST objv[]
 ){
 #ifndef SQLITE_OMIT_SHARED_CACHE
-  const ThreadData *pTd = sqlite3ThreadDataReadOnly();
-  if( pTd->useSharedData ){
-    BtShared *pBt;
-    Tcl_Obj *pRet = Tcl_NewObj();
-    for(pBt=pTd->pBtree; pBt; pBt=pBt->pNext){
-      const char *zFile = sqlite3PagerFilename(pBt->pPager);
-      Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj(zFile, -1));
-      Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(pBt->nRef));
-    }
-    Tcl_SetObjResult(interp, pRet);
+  extern BtShared *sqlite3SharedCacheList;
+  BtShared *pBt;
+  Tcl_Obj *pRet = Tcl_NewObj();
+  for(pBt=sqlite3SharedCacheList; pBt; pBt=pBt->pNext){
+    const char *zFile = sqlite3PagerFilename(pBt->pPager);
+    Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj(zFile, -1));
+    Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(pBt->nRef));
   }
+  Tcl_SetObjResult(interp, pRet);
 #endif
   return TCL_OK;
 }

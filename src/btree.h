@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.82 2007/05/08 21:45:27 drh Exp $
+** @(#) $Id: btree.h,v 1.83 2007/08/17 01:14:38 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -59,6 +59,14 @@ int sqlite3BtreeOpen(
 #define BTREE_OMIT_JOURNAL  1  /* Do not use journal.  No argument */
 #define BTREE_NO_READLOCK   2  /* Omit readlocks on readonly files */
 #define BTREE_MEMORY        4  /* In-memory DB.  No argument */
+#define BTREE_READONLY      8  /* Open the database in read-only mode */
+#define BTREE_READWRITE    16  /* Open for both reading and writing */
+#define BTREE_CREATE       32  /* Create the database if it does not exist */
+
+/* Additional values for the 4th argument of sqlite3BtreeOpen that
+** are not associated with PAGER_ values.
+*/
+#define BTREE_PRIVATE      64  /* Never share with other connections */
 
 int sqlite3BtreeClose(Btree*);
 int sqlite3BtreeSetBusyHandler(Btree*,BusyHandler*);
@@ -86,6 +94,19 @@ int sqlite3BtreeIsInReadTrans(Btree*);
 void *sqlite3BtreeSchema(Btree *, int, void(*)(void *));
 int sqlite3BtreeSchemaLocked(Btree *);
 int sqlite3BtreeLockTable(Btree *, int, u8);
+
+/*
+** If we are not using shared cache, then there is no need to
+** use mutexes to access the BtShared structures.  So make the
+** Enter and Leave procedures no-ops.
+*/
+#ifdef SQLITE_OMIT_SHARED_CACHE
+# define sqlite3BtreeEnter(X)
+# define sqlite3BtreeLeave(X)
+#else
+  void sqlite3BtreeEnter(Btree*);
+  void sqlite3BtreeLeave(Btree*);
+#endif
 
 const char *sqlite3BtreeGetFilename(Btree *);
 const char *sqlite3BtreeGetDirname(Btree *);
