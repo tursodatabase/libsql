@@ -2504,6 +2504,7 @@ static int allocateUnixFile(
 #else /* SQLITE_ENABLE_LOCKING_STYLE */
 static int fillInUnixFile(
   int h,                 /* Open file descriptor on file being opened */
+  int dirfd,
   sqlite3_file *pId,     /* Write to the unixFile structure here */
   const char *zFilename  /* Name of the file being opened */
 ){
@@ -2525,6 +2526,7 @@ static int fillInUnixFile(
   OSTRACE3("OPEN    %-3d %s\n", h, zFilename);
   pNew->dirfd = -1;
   pNew->h = h;
+  pNew->dirfd = dirfd;
   SET_THREADID(pNew);
 
   pNew->pMethod = &sqlite3UnixIoMethod;
@@ -2538,6 +2540,33 @@ static int fillInUnixFile(
 ** Everything above deals with file I/O.  Everything that follows deals
 ** with other miscellanous aspects of the operating system interface
 ****************************************************************************/
+
+static int openDirectory(const char *zFilename, int *pFd){
+  char *zDirname;
+  int ii;
+  int fd;
+
+  zDirname = (char *)sqlite3_malloc(MAX_PATHNAME);
+  if( !zDirname ){
+    return SQLITE_NOMEM;
+  }
+  strncpy(zDirname, zFilename, MAX_PATHNAME);
+  zDirname[MAX_PATHNAME-1] = '\0';
+  for(ii=strlen(zDirname); ii>=0 && zDirname[ii]!='/'; ii--);
+  if( ii>0 ){
+    zDirname[ii] = '\0';
+    fd = open(zDirname, O_RDONLY|O_BINARY, 0);
+    if( fd>0 ){
+#ifdef FD_CLOEXEC
+      fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
+#endif
+      OSTRACE3("OPENDIR %-3d %s\n", fd, zDirname);
+    }
+  }
+  sqlite3_free(zDirname);
+  *pFd = fd;
+  return (fd>0?SQLITE_OK:SQLITE_CANTOPEN);
+}
 
 /*
 ** Previously, the SQLite OS layer used three functions in place of this
@@ -2566,8 +2595,10 @@ static int unixOpen(
   int flags,
   int *pOutFlags
 ){
-  int fd = 0;
-  int oflags = 0;
+  int fd = 0;                    /* File descriptor returned by open() */
+  int dirfd = -1;                /* Directory file descriptor */
+  int oflags = 0;                /* Flags to pass to open() */
+  int eType = flags&0xFFFFFF00;  /* Type of file to open */
 
   int isExclusive  = (flags & SQLITE_OPEN_EXCLUSIVE);
   int isDelete     = (flags & SQLITE_OPEN_DELETEONCLOSE);
@@ -2575,14 +2606,29 @@ static int unixOpen(
   int isReadonly   = (flags & SQLITE_OPEN_READONLY);
   int isReadWrite  = (flags & SQLITE_OPEN_READWRITE);
 
-  /* Exactly one of the READWRITE and READONLY flags must be set */
+  /* If creating a master or main-file journal, this function will open
+  ** a file-descriptor on the directory too. The first time unixSync()
+  ** is called the directory file descriptor will be fsync()ed and close()d.
+  */
+  int isOpenDirectory = (isCreate && 
+      (eType==SQLITE_OPEN_MASTER_JOURNAL || eType==SQLITE_OPEN_MAIN_JOURNAL)
+  );
+
+  /* Check the following statements are true: 
+  **
+  **   (a) Exactly one of the READWRITE and READONLY flags must be set, and 
+  **   (b) if CREATE is set, then READWRITE must also be set, and
+  **   (c) if EXCLUSIVE is set, then CREATE must also be set.
+  */
   assert((isReadonly==0 || isReadWrite==0) && (isReadWrite || isReadonly));
-
-  /* If isCreate is true, then the file must be opened for read/write access. */
   assert(isCreate==0 || isReadWrite);
-
-  /* If isExclusive is true, then isCreate must also be true */
   assert(isExclusive==0 || isCreate);
+
+  /* Assert that the upper layer has set one of the "file-type" flags. */
+  assert( eType==SQLITE_OPEN_MAIN_DB      || eType==SQLITE_OPEN_TEMP_DB 
+       || eType==SQLITE_OPEN_MAIN_JOURNAL || eType==SQLITE_OPEN_TEMP_JOURNAL 
+       || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_MASTER_JOURNAL 
+  );
 
   if( isReadonly )  oflags |= O_RDONLY;
   if( isReadWrite ) oflags |= O_RDWR;
@@ -2609,16 +2655,35 @@ static int unixOpen(
   }
 
   assert(fd!=0);
-  return fillInUnixFile(fd, pFile, zPath);
+  if( isOpenDirectory ){
+    int rc = openDirectory(zPath, &dirfd);
+    if( rc!=SQLITE_OK ){
+      close(fd);
+      return rc;
+    }
+  }
+  return fillInUnixFile(fd, dirfd, pFile, zPath);
 }
 
 /*
-** Delete the file at zPath.
+** Delete the file at zPath. If the dirSync argument is true, fsync()
+** the directory after deleting the file.
 */
-static int unixDelete(void *pNotUsed, const char *zPath){
+static int unixDelete(void *pNotUsed, const char *zPath, int dirSync){
+  int rc = SQLITE_OK;
   SimulateIOError(return SQLITE_IOERR_DELETE);
   unlink(zPath);
-  return SQLITE_OK;
+  if( dirSync ){
+    int fd;
+    rc = openDirectory(zPath, &fd);
+    if( rc==SQLITE_OK ){
+      if( fsync(fd) ){
+        rc = SQLITE_IOERR_DIR_FSYNC;
+      }
+      close(fd);
+    }
+  }
+  return rc;
 }
 
 /*

@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.229 2007/08/17 16:50:38 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.230 2007/08/18 10:59:21 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -641,7 +641,7 @@ struct sqlite3_vfs {
   void *pAppData;          /* Application context */
   int (*xOpen)(void *pAppData, const char *zName, sqlite3_file*,
                int flags, int *pOutFlags);
-  int (*xDelete)(void *pAppData, const char *zName);
+  int (*xDelete)(void *pAppData, const char *zName, int syncDir);
   int (*xAccess)(void *pAppData, const char *zName, int flags);
   int (*xGetTempName)(void *pAppData, char *zOut);
   int (*xFullPathname)(void *pAppData, const char *zName, char *zOut);

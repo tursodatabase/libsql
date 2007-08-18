@@ -12,7 +12,7 @@
 # focus of this script testing the ability of SQLite to handle database
 # files larger than 4GB.
 #
-# $Id: bigfile.test,v 1.9 2005/11/25 09:01:24 danielk1977 Exp $
+# $Id: bigfile.test,v 1.10 2007/08/18 10:59:21 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -64,8 +64,9 @@ do_test bigfile-1.1 {
 # large files.  So skip all of the remaining tests in this file.
 #
 db close
-if {[catch {fake_big_file 4096 test.db}]} {
+if {[catch {fake_big_file 4096 test.db} msg]} {
   puts "**** Unable to create a file larger than 4096 MB. *****"
+  puts "$msg"
   finish_test
   return
 }

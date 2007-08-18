@@ -83,8 +83,8 @@ int sqlite3OsOpen(
 ){
   return pVfs->xOpen(pVfs->pAppData, zPath, pFile, flags, pFlagsOut);
 }
-int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath){
-  return pVfs->xDelete(pVfs->pAppData, zPath);
+int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
+  return pVfs->xDelete(pVfs->pAppData, zPath, dirSync);
 }
 int sqlite3OsAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
   return pVfs->xAccess(pVfs->pAppData, zPath, flags);

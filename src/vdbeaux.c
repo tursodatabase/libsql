@@ -1133,7 +1133,6 @@ static int vdbeCommit(sqlite3 *db){
 #ifndef SQLITE_OMIT_DISKIO
   else{
     sqlite3_vfs *pVfs = db->pVfs;
-    int flag = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_EXCLUSIVE);
     int needSync = 0;
     char *zMaster = 0;   /* File-name for the master journal */
     char const *zMainFile = sqlite3BtreeGetFilename(db->aDb[0].pBt);
@@ -1152,11 +1151,12 @@ static int vdbeCommit(sqlite3 *db){
     }while( sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS) );
 
     /* Open the master journal. */
-    pMaster = sqlite3_malloc(pVfs->szOsFile);
-    rc = sqlite3OsOpen(pVfs, zMaster, pMaster, flag, 0);
+    rc = sqlite3OsOpenMalloc(pVfs, zMaster, &pMaster, 
+        SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|
+        SQLITE_OPEN_EXCLUSIVE|SQLITE_OPEN_MASTER_JOURNAL
+    );
     if( rc!=SQLITE_OK ){
       sqlite3_free(zMaster);
-      sqlite3_free(pMaster);
       return rc;
     }
  
@@ -1178,10 +1178,9 @@ static int vdbeCommit(sqlite3 *db){
         rc = sqlite3OsWrite(pMaster, zFile, strlen(zFile)+1, offset);
         offset += strlen(zFile)+1;
         if( rc!=SQLITE_OK ){
-          sqlite3OsClose(pMaster);
-          sqlite3OsDelete(pVfs, zMaster);
+          sqlite3OsCloseFree(pMaster);
+          sqlite3OsDelete(pVfs, zMaster, 0);
           sqlite3_free(zMaster);
-          sqlite3_free(pMaster);
           return rc;
         }
       }
@@ -1192,16 +1191,12 @@ static int vdbeCommit(sqlite3 *db){
     ** the master journal file is store in so that it gets synced too.
     */
     zMainFile = sqlite3BtreeGetDirname(db->aDb[0].pBt);
-#if 0
-    rc = sqlite3OsOpenDirectory(master, zMainFile);
-    if( rc!=SQLITE_OK ||
-          (needSync && (rc=sqlite3OsSync(master,0))!=SQLITE_OK) ){
-      sqlite3OsClose(&master);
-      sqlite3OsDelete(zMaster);
+    if( (needSync && (rc=sqlite3OsSync(pMaster,0))!=SQLITE_OK) ){
+      sqlite3OsCloseFree(pMaster);
+      sqlite3OsDelete(pVfs, zMaster, 0);
       sqlite3_free(zMaster);
       return rc;
     }
-#endif
 
     /* Sync all the db files involved in the transaction. The same call
     ** sets the master journal pointer in each individual journal. If
@@ -1219,10 +1214,9 @@ static int vdbeCommit(sqlite3 *db){
         rc = sqlite3BtreeCommitPhaseOne(pBt, zMaster);
       }
     }
-    sqlite3OsClose(pMaster);
+    sqlite3OsCloseFree(pMaster);
     if( rc!=SQLITE_OK ){
       sqlite3_free(zMaster);
-      sqlite3_free(pMaster);
       return rc;
     }
 
@@ -1230,25 +1224,10 @@ static int vdbeCommit(sqlite3 *db){
     ** doing this the directory is synced again before any individual
     ** transaction files are deleted.
     */
-    rc = sqlite3OsDelete(pVfs, zMaster);
+    rc = sqlite3OsDelete(pVfs, zMaster, 1);
     sqlite3_free(zMaster);
-    sqlite3_free(pMaster);
     zMaster = 0;
-    pMaster = 0;
     if( rc ){
-      return rc;
-    }
-#if 0
-    rc = sqlite3OsSyncDirectory(zMainFile);
-#endif
-    if( rc!=SQLITE_OK ){
-      /* This is not good. The master journal file has been deleted, but
-      ** the directory sync failed. There is no completely safe course of
-      ** action from here. The individual journals contain the name of the
-      ** master journal file, but there is no way of knowing if that
-      ** master journal exists now or if it will exist after the operating
-      ** system crash that may follow the fsync() failure.
-      */
       return rc;
     }
 
