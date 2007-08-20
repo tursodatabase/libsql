@@ -1,5 +1,5 @@
-C Call\ssqlite3OsSleep()\swith\san\sargument\sin\smicroseconds,\snot\smilliseconds.\s(CVS\s4248)
-D 2007-08-20T16:07:01
+C Copy\sfts2\sto\sfts3,\srenaming,\sand\sreplacing\sreferences\sto\sfts2\swith\nfts3,\sincluding\scapitalization\svariants.\s(CVS\s4249)
+D 2007-08-20T17:37:03
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -47,6 +47,18 @@ F ext/fts2/fts2_tokenizer.c 5cec41326fabe65323945a46fa9495ee85c3d5fd
 F ext/fts2/fts2_tokenizer.h a7e46462d935a314b2682287f12f27530a3ee08e
 F ext/fts2/fts2_tokenizer1.c 8a545c232bdffafd117c4eeaf59789691909f26a
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
+F ext/fts3/README.tokenizers a97c9a55b3422f6cb04af9de9296fe2447ea4a78
+F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
+F ext/fts3/fts3.c 64ebaf649e779ef22cade60e973090e0a924746a
+F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
+F ext/fts3/fts3_hash.c 84654768178452b00bbc986dd878a8299dc1e3dc
+F ext/fts3/fts3_hash.h af585d6867d478fc0457f64cfaae60e09541e63a
+F ext/fts3/fts3_icu.c 35a5d08fea8f12edecb8a58fdb33452eb8f17948
+F ext/fts3/fts3_porter.c a3e823a0a8fbb038750c9aa55043e19bdb08eacb
+F ext/fts3/fts3_tokenizer.c 81e7604555b24dce6bc487d8169ca4ef51c71e4c
+F ext/fts3/fts3_tokenizer.h 7eb79de4f991a77f43c517e209e5fae95dfa7369
+F ext/fts3/fts3_tokenizer1.c 0580bf16fdd5a01ae256f1280c550be1cb85d73f
+F ext/fts3/mkfts3amal.tcl 8282b56f11d008b9fa1f09ad3f7eca513949575e
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
@@ -529,7 +541,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 40f66ada815fa1043d24c9cd6d898e1797e7044a
-R 5fb91f464358f45b9c4a3580891f684c
-U danielk1977
-Z f75586ca189e62660dd1185f4b909242
+P 917790413ced92266bf5c7cca6d130ed7ac6221b
+R 12135797b14d0786e21cb0e23688a7b7
+U shess
+Z 6b59af8f3637dd0e81f2542e9ac4aa6a
