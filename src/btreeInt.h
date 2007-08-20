@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.6 2007/08/17 01:14:38 drh Exp $
+** $Id: btreeInt.h,v 1.7 2007/08/20 13:14:29 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -314,6 +314,9 @@ struct MemPage {
 ** points to the same BtShared object.  The database cache and the
 ** schema associated with the database file are all contained within
 ** the BtShared object.
+**
+** All fields in this structure are accessed under the sqlite3.pMutex
+** mutex.
 */
 struct Btree {
   sqlite3 *pSqlite;  /* The database connection holding this btree */
@@ -346,6 +349,10 @@ struct Btree {
 ** private Btree object for the file and each of those Btrees points
 ** to this one BtShared object.  BtShared.nRef is the number of
 ** connections currently sharing this database file.
+**
+** Fields in this structure are accessed under the BtShared.mutex
+** mutex, except for nRef and pNext which are accessed under the
+** global SQLITE_MUTEX_STATIC_MASTER mutex.
 */
 struct BtShared {
   Pager *pPager;        /* The page cache */
@@ -370,14 +377,14 @@ struct BtShared {
   int minLeaf;          /* Minimum local payload in a LEAFDATA table */
   BusyHandler *pBusyHandler;   /* Callback for when there is lock contention */
   u8 inTransaction;     /* Transaction state */
-  int nRef;             /* Number of references to this structure */
   int nTransaction;     /* Number of open transactions (read + write) */
   void *pSchema;        /* Pointer to space allocated by sqlite3BtreeSchema() */
   void (*xFreeSchema)(void*);  /* Destructor for BtShared.pSchema */
 #ifndef SQLITE_OMIT_SHARED_CACHE
+  int nRef;             /* Number of references to this structure */
+  BtShared *pNext;      /* Next on a list of sharable BtShared structs */
   sqlite3_mutex *mutex; /* Non-recursive mutex required to access this struct */
   BtLock *pLock;        /* List of locks held on this shared-btree struct */
-  BtShared *pNext;      /* Next in ThreadData.pBtree linked list */
 #endif
 };
 
@@ -408,6 +415,10 @@ struct CellInfo {
 ** When a single database file can shared by two more database connections,
 ** but cursors cannot be shared.  Each cursor is associated with a
 ** particular database connection identified BtCursor.pBtree.pSqlite.
+**
+** The fields in this structure are accessed under the sqlite3.pMutex
+** mutex, specifically the BtCurser.pBtree->pSqlite->pMutex mutex.
+** The pNext and pPrev fields also require the BtShared.mutex mutex.
 */
 struct BtCursor {
   Btree *pBtree;            /* The Btree to which this cursor belongs */

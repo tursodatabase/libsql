@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.401 2007/08/17 16:50:38 danielk1977 Exp $
+** $Id: btree.c,v 1.402 2007/08/20 13:14:29 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1207,7 +1207,7 @@ int sqlite3BtreeOpen(
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && !defined(SQLITE_OMIT_DISKIO)
   /* If the new Btree uses a sharable pBtShared, then link the new
   ** Btree into the list of all sharable Btrees for the same connection.
-  ** The list is kept in ascending order by pBtShared address.
+  ** The list is kept in ascending order by pBt address.
   */
   if( p->sharable ){
     int i;
@@ -1220,7 +1220,7 @@ int sqlite3BtreeOpen(
           p->pPrev = 0;
           pSib->pPrev = p;
         }else{
-          while( pSib->pNext && pSib->pNext->pBt>p->pBt ){
+          while( pSib->pNext && pSib->pNext->pBt<p->pBt ){
             pSib = pSib->pNext;
           }
           p->pNext = pSib->pNext;
@@ -1323,7 +1323,6 @@ int sqlite3BtreeClose(Btree *p){
     ** Clean out and delete the BtShared object.
     */
     assert( !pBt->pCursor );
-    assert( pBt->nRef==0 );
     sqlite3PagerClose(pBt->pPager);
     if( pBt->xFreeSchema && pBt->pSchema ){
       pBt->xFreeSchema(pBt->pSchema);

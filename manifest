@@ -1,5 +1,5 @@
-C Get\smain.c\sto\scompile\swhen\sHAVE_USLEEP\sis\s0.\s(CVS\s4245)
-D 2007-08-20T11:12:41
+C Bug\sfix\sin\sBTree\sshared\scache\slocking\scode.\s(CVS\s4246)
+D 2007-08-20T13:14:29
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -68,9 +68,9 @@ F src/alter.c f0aac0060ae8102e58f210b44d35b53438d53173
 F src/analyze.c a14237d869c6bea0846493b59317e4097e81a0b6
 F src/attach.c a52225c75b107be8c5bc144a2b6d20201be3f8f8
 F src/auth.c 5ea90bc93dfea46e9fe4bf531e14c7cd98219ecb
-F src/btree.c f00ed30c442b4934d042af84e065498c542d21aa
+F src/btree.c f8a04f35eb81360773899983f7c2008145e13935
 F src/btree.h 91ee529d581c1473d8e6e15299acc3b8de1d0674
-F src/btreeInt.h 6329e955a7dadd8628d5866e2465721b5fd25ef2
+F src/btreeInt.h 9b4ca8999e52f713420e5f297dd86887a7a9820f
 F src/build.c add67be992307b4b11849a6611bfd3352aacde92
 F src/callback.c 143436453bb93e831c9574fea0b9b9eb90e40ff3
 F src/complete.c ea63834e798a0ab14159bdc6e6cabc3df21aa346
@@ -529,7 +529,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 41f2175b1ed7eccf271b687ee5c3ea262a0cd096
-R 3e86c1deeec6de8a6818d829abf2506d
+P b27f022fb924709f1c5e4642d5d59cab942e826d
+R ee810a3824b25c07a2182b7d0dedc3f5
 U drh
-Z e107c976a8aac7848166a53955d0d290
+Z 6c13724b198dff1360ddd718c375cb8a
