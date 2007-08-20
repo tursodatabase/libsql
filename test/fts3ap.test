@@ -1,0 +1,44 @@
+# 2007 August 9
+#
+# The author disclaims copyright to this source code.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# DELETE handling required the current data to not contain nulls.
+# This verifies that we don't add that assumption back in.
+#
+# $Id: fts3ap.test,v 1.1 2007/08/20 17:38:42 shess Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+db eval {
+  CREATE VIRTUAL TABLE t1 USING fts3(col_a, col_b);
+
+  INSERT INTO t1(rowid, col_a, col_b) VALUES(1, 'testing', 'testing');
+  INSERT INTO t1(rowid, col_a, col_b) VALUES(2, 'only a', null);
+  INSERT INTO t1(rowid, col_a, col_b) VALUES(3, null, 'only b');
+  INSERT INTO t1(rowid, col_a, col_b) VALUES(4, null, null);
+
+  INSERT INTO t1(rowid, col_a, col_b) VALUES(5, 'testing', 'testing');
+  INSERT INTO t1(rowid, col_a, col_b) VALUES(6, 'only a', null);
+  INSERT INTO t1(rowid, col_a, col_b) VALUES(7, null, 'only b');
+  INSERT INTO t1(rowid, col_a, col_b) VALUES(8, null, null);
+}
+
+do_test fts3an-1.1 {
+  execsql "-- REPLACE INTO t1 (rowid, col_a, col_b) VALUES (1, 'text', 'text')"
+} {}
+
+do_test fts3an-1.2 {
+  execsql "-- INSERT OR REPLACE INTO t1 (rowid, col_a, col_b) VALUES (1, 'text', 'text')"
+} {}
+
+finish_test

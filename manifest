@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sbuilding\swith\sfts3.\s(CVS\s4250)
-D 2007-08-20T17:37:48
+C Replicate\sthe\sfts2*.test\sfiles\sas\sfts3a*.test,\sand\sconvert\sfts2\sto\nfts3\sin\sthe\stext\sof\sthe\sfiles.\s(CVS\s4251)
+D 2007-08-20T17:38:42
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -278,6 +278,23 @@ F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/fts2o.test c6a79567d85403dc4d15b89f3f9799a0a0aef065
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
+F test/fts3aa.test 432d1d5c41939bb5405d4d6c80a9ec759b363393
+F test/fts3ab.test 7f6cf260ae80dda064023df8e8e503e9a412b91f
+F test/fts3ac.test 356280144a2c92aa7b11474afadfe62a437fcd69
+F test/fts3ad.test 32a114c6f214081f244f642bde9fd5517938788e
+F test/fts3ae.test 31d8137fc7c14b5b991e3c4fa041ad2ac1255c7b
+F test/fts3af.test d394978c534eabf22dd0837e718b913fd66b499c
+F test/fts3ag.test 107664eed6c42cf6886f2cdcd3afbf3950370b8b
+F test/fts3ah.test ba181d6a3dee0c929f0d69df67cac9c47cda6bff
+F test/fts3ai.test d29cee6ed653e30de478066881cec8aa766531b2
+F test/fts3aj.test 584facbc9ac4381a7ec624bfde677340ffc2a5a4
+F test/fts3ak.test bd14deafe9d1586e8e9bf032411026ac4f8c925d
+F test/fts3al.test 00b5cfe4d463e98e15ea1e8123bec2a8574586f4
+F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
+F test/fts3an.test 2da4df52fe8ea8389f6fa7a01e4c1a0f091118d6
+F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
+F test/fts3ap.test 0cf3cc99155f68d5d8c9bdbe7571b2bffe4da27e
+F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
@@ -541,7 +558,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 216c91d2fc49792d9ff53596746f1162f5b7f8d4
-R 2c4f6435b19caee2352f00347c6724cc
+P 95ef963232ab1f15a7c42229819d33d3571a753e
+R d1d5263c19598614a8f875927a21fd65
 U shess
-Z fc4df19e02ea94b7a6ecca752c10e7ee
+Z 1aa55194173606959745629a53728042
