@@ -1,5 +1,5 @@
-C Copy\sfts2\sto\sfts3,\srenaming,\sand\sreplacing\sreferences\sto\sfts2\swith\nfts3,\sincluding\scapitalization\svariants.\s(CVS\s4249)
-D 2007-08-20T17:37:03
+C Add\ssupport\sfor\sbuilding\swith\sfts3.\s(CVS\s4250)
+D 2007-08-20T17:37:48
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 659cad1c400ab92948087d46c499e0330215db7b
+F main.mk e90dcb16ce27c6d8d8ed18335c4cc03f5a5fed0b
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -97,7 +97,7 @@ F src/insert.c 633322aef1799f6604fa805e12488bc628570b0c
 F src/legacy.c 6013a7cb7da1b72550b3d35d4fc598b3c3e5b8c1
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c c0ccda3dbda109da087a8fd762deebe5fdf24a1d
-F src/main.c b597752b33dce7dec3940fa302b4130ebf4d1ba7
+F src/main.c 685aa31a7af0d650c94e6968d713c3a9374aa72e
 F src/malloc.c 613c65f12ff0ee4edd017aa458209ab7a23cd7b1
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c 30bf8be3846f92fdf88c490c5e5378512383bcbe
@@ -142,7 +142,7 @@ F src/test9.c c0f38f7795cc51d37db6c63874d90f40f10d0f0e
 F src/test_async.c 871ffbe4a520be74b403aca87aa622ebdb690232
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
-F src/test_config.c 26389b032216e0fb2b544ff48a5e9101bd7b1fb4
+F src/test_config.c 1d0da26fd51757765f2073c57a925db8ddc7120c
 F src/test_hexio.c 82916f918687502658f02533b519c38cb180db6d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c d9ba6be85f9c4a439b19f6e0a72d91c369d72c63
@@ -541,7 +541,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 917790413ced92266bf5c7cca6d130ed7ac6221b
-R 12135797b14d0786e21cb0e23688a7b7
+P 216c91d2fc49792d9ff53596746f1162f5b7f8d4
+R 2c4f6435b19caee2352f00347c6724cc
 U shess
-Z 6b59af8f3637dd0e81f2542e9ac4aa6a
+Z fc4df19e02ea94b7a6ecca752c10e7ee

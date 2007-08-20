@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.387 2007/08/20 16:07:01 danielk1977 Exp $
+** $Id: main.c,v 1.388 2007/08/20 17:37:48 shess Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -998,6 +998,13 @@ static int openDatabase(
   if( !db->mallocFailed && rc==SQLITE_OK ){
     extern int sqlite3Fts2Init(sqlite3*);
     rc = sqlite3Fts2Init(db);
+  }
+#endif
+
+#ifdef SQLITE_ENABLE_FTS3
+  if( !db->mallocFailed && rc==SQLITE_OK ){
+    extern int sqlite3Fts3Init(sqlite3*);
+    rc = sqlite3Fts3Init(db);
   }
 #endif
 

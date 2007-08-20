@@ -66,8 +66,23 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o btree.o build.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbefifo.o vdbemem.o \
          where.o utf.o legacy.o vtab.o
 
-EXTOBJ = icu.o fts2.o fts2_hash.o fts2_icu.o fts2_porter.o       \
-         fts2_tokenizer.o fts2_tokenizer1.o
+EXTOBJ = icu.o
+EXTOBJ += fts1.o \
+	  fts1_hash.o \
+	  fts1_tokenizer1.o \
+	  fts1_porter.o
+EXTOBJ += fts2.o \
+	  fts2_hash.o \
+	  fts2_icu.o \
+	  fts2_porter.o \
+          fts2_tokenizer.o \
+	  fts2_tokenizer1.o
+EXTOBJ += fts3.o \
+	  fts3_hash.o \
+	  fts3_icu.o \
+	  fts3_porter.o \
+          fts3_tokenizer.o \
+	  fts3_tokenizer1.o
 
 # All of the source code files.
 #
@@ -151,6 +166,16 @@ SRC += \
   $(TOP)/ext/fts2/fts2_tokenizer.c \
   $(TOP)/ext/fts2/fts2_tokenizer1.c
 SRC += \
+  $(TOP)/ext/fts3/fts3.c \
+  $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3_hash.c \
+  $(TOP)/ext/fts3/fts3_hash.h \
+  $(TOP)/ext/fts3/fts3_icu.c \
+  $(TOP)/ext/fts3/fts3_porter.c \
+  $(TOP)/ext/fts3/fts3_tokenizer.h \
+  $(TOP)/ext/fts3/fts3_tokenizer.c \
+  $(TOP)/ext/fts3/fts3_tokenizer1.c
+SRC += \
   $(TOP)/ext/icu/icu.c
 
 
@@ -203,8 +228,9 @@ TESTSRC = \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
   $(TOP)/src/vdbeaux.c \
-  $(TOP)/src/where.c \
-  $(TOP)/ext/fts2/fts2_tokenizer.c
+  $(TOP)/src/where.c
+TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
+TESTSRC += $(TOP)/ext/fts3/fts3_tokenizer.c
 
 # Header files used by all library source files.
 #
@@ -232,6 +258,10 @@ EXTHDR += \
   $(TOP)/ext/fts2/fts2.h \
   $(TOP)/ext/fts2/fts2_hash.h \
   $(TOP)/ext/fts2/fts2_tokenizer.h
+EXTHDR += \
+  $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3_hash.h \
+  $(TOP)/ext/fts3/fts3_tokenizer.h
 
 
 # Header files used by the VDBE submodule
@@ -282,6 +312,9 @@ sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
 
 fts2amal.c:	target_source $(TOP)/ext/fts2/mkfts2amal.tcl
 	tclsh $(TOP)/ext/fts2/mkfts2amal.tcl
+
+fts3amal.c:	target_source $(TOP)/ext/fts3/mkfts3amal.tcl
+	tclsh $(TOP)/ext/fts3/mkfts3amal.tcl
 
 # Rules to build the LEMON compiler generator
 #
@@ -483,6 +516,24 @@ fts2_tokenizer.o:	$(TOP)/ext/fts2/fts2_tokenizer.c $(HDR) $(EXTHDR)
 
 fts2_tokenizer1.o:	$(TOP)/ext/fts2/fts2_tokenizer1.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts2/fts2_tokenizer1.c
+
+fts3.o:	$(TOP)/ext/fts3/fts3.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3.c
+
+fts3_hash.o:	$(TOP)/ext/fts3/fts3_hash.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_hash.c
+
+fts3_icu.o:	$(TOP)/ext/fts3/fts3_icu.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_icu.c
+
+fts3_porter.o:	$(TOP)/ext/fts3/fts3_porter.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_porter.c
+
+fts3_tokenizer.o:	$(TOP)/ext/fts3/fts3_tokenizer.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenizer.c
+
+fts3_tokenizer1.o:	$(TOP)/ext/fts3/fts3_tokenizer1.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenizer1.c
 
 
 # Rules for building test programs and for running tests
