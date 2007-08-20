@@ -1187,11 +1187,10 @@ static int vdbeCommit(sqlite3 *db){
     }
 
 
-    /* Sync the master journal file. Before doing this, open the directory
-    ** the master journal file is store in so that it gets synced too.
-    */
+    /* Sync the master journal file. */
     zMainFile = sqlite3BtreeGetDirname(db->aDb[0].pBt);
-    if( (needSync && (rc=sqlite3OsSync(pMaster,0))!=SQLITE_OK) ){
+    if( (needSync 
+     && (rc=sqlite3OsSync(pMaster, SQLITE_SYNC_NORMAL))!=SQLITE_OK) ){
       sqlite3OsCloseFree(pMaster);
       sqlite3OsDelete(pVfs, zMaster, 0);
       sqlite3_free(zMaster);

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.360 2007/08/18 10:59:20 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.361 2007/08/20 05:36:51 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -307,7 +307,7 @@ struct Pager {
   u8 stmtAutoopen;            /* Open stmt journal when main journal is opened*/
   u8 noSync;                  /* Do not sync the journal if true */
   u8 fullSync;                /* Do extra syncs of the journal for robustness */
-  u8 full_fsync;              /* Use F_FULLFSYNC when available */
+  u8 sync_flags;              /* One of SYNC_NORMAL or SYNC_FULL */
   u8 state;                   /* PAGER_UNLOCK, _SHARED, _RESERVED, etc. */
   u8 tempFile;                /* zFilename is a temporary file */
   u8 readOnly;                /* True for a read-only database */
@@ -1670,7 +1670,7 @@ void sqlite3PagerSetCachesize(Pager *pPager, int mxPage){
 void sqlite3PagerSetSafetyLevel(Pager *pPager, int level, int full_fsync){
   pPager->noSync =  level==1 || pPager->tempFile;
   pPager->fullSync = level==3 && !pPager->tempFile;
-  pPager->full_fsync = full_fsync;
+  pPager->sync_flags = (full_fsync?SQLITE_SYNC_FULL:SQLITE_SYNC_NORMAL);
   if( pPager->noSync ) pPager->needSync = 0;
 }
 #endif
@@ -1884,6 +1884,7 @@ int sqlite3PagerOpen(
   /* pPager->needSync = 0; */
   pPager->noSync = pPager->tempFile || !useJournal;
   pPager->fullSync = (pPager->noSync?0:1);
+  pPager->sync_flags = SQLITE_SYNC_NORMAL;
   /* pPager->pFirst = 0; */
   /* pPager->pFirstSynced = 0; */
   /* pPager->pLast = 0; */
@@ -2419,7 +2420,7 @@ static int syncJournal(Pager *pPager){
         if( pPager->fullSync ){
           PAGERTRACE2("SYNC journal of %d\n", PAGERID(pPager));
           IOTRACE(("JSYNC %p\n", pPager))
-          rc = sqlite3OsSync(pPager->jfd, 0);
+          rc = sqlite3OsSync(pPager->jfd, pPager->sync_flags);
           if( rc!=0 ) return rc;
         }
 
@@ -2430,7 +2431,9 @@ static int syncJournal(Pager *pPager){
       }
       PAGERTRACE2("SYNC journal of %d\n", PAGERID(pPager));
       IOTRACE(("JSYNC %p\n", pPager))
-      rc = sqlite3OsSync(pPager->jfd, pPager->full_fsync);
+      rc = sqlite3OsSync(pPager->jfd, pPager->sync_flags| 
+        (pPager->sync_flags==SQLITE_SYNC_FULL?SQLITE_SYNC_DATAONLY:0)
+      );
       if( rc!=0 ) return rc;
       pPager->journalStarted = 1;
     }
@@ -4007,7 +4010,7 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
 
     /* Sync the database file. */
     if( !pPager->noSync ){
-      rc = sqlite3OsSync(pPager->fd, 0);
+      rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
     }
     IOTRACE(("DBSYNC %p\n", pPager))
 

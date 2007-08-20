@@ -1174,8 +1174,14 @@ static int unixSync(sqlite3_file *id, int flags){
   int rc;
   unixFile *pFile = (unixFile*)id;
 
-  int isDataOnly = (flags & SQLITE_SYNC_DATAONLY);
-  int isFullsync = (flags & SQLITE_SYNC_FULL);
+  int isDataOnly = (flags&SQLITE_SYNC_DATAONLY);
+  int isFullsync = (flags&0x0F)==SQLITE_SYNC_FULL;
+
+  /* Check that one of SQLITE_SYNC_NORMAL, FULL or BARRIER was passed */
+  assert((flags&0x0F)==SQLITE_SYNC_NORMAL
+      || (flags&0x0F)==SQLITE_SYNC_FULL
+      || (flags&0x0F)==SQLITE_SYNC_BARRIER
+  );
 
   assert( pFile );
   OSTRACE2("SYNC    %-3d\n", pFile->h);
