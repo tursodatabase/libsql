@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.385 2007/08/18 10:59:20 danielk1977 Exp $
+** $Id: main.c,v 1.386 2007/08/20 11:12:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -323,11 +323,12 @@ static int sqliteDefaultBusyCallback(
   sqlite3OsSleep(db->pVfs, delay);
   return 1;
 #else
+  sqlite3 *db = (sqlite3 *)ptr;
   int timeout = ((sqlite3 *)ptr)->busyTimeout;
   if( (count+1)*1000 > timeout ){
     return 0;
   }
-  sqlite3OsSleep(1000);
+  sqlite3OsSleep(db->pVfs, 1000000);
   return 1;
 #endif
 }
