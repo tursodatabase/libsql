@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.388 2007/08/20 17:37:48 shess Exp $
+** $Id: main.c,v 1.389 2007/08/20 22:48:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -218,8 +218,8 @@ int sqlite3_close(sqlite3 *db){
   ** structure?
   */
   sqlite3_free(db->aDb[1].pSchema);
+  sqlite3_vfs_release(db->pVfs);
   sqlite3_free(db);
-  /* sqlite3ReleaseThreadData(); */
   return SQLITE_OK;
 }
 
@@ -900,7 +900,7 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
-  db->pVfs = sqlite3_find_vfs(0);
+  db->pVfs = sqlite3_vfs_find(0);
   db->errMask = 0xff;
   db->priorNewRowid = 0;
   db->magic = SQLITE_MAGIC_BUSY;
@@ -1385,7 +1385,7 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 */
 int sqlite3_sleep(int ms){
   sqlite3_vfs *pVfs;
-  pVfs = sqlite3_find_vfs(0);
+  pVfs = sqlite3_vfs_find(0);
 
   /* This function works in milliseconds, but the underlying OsSleep() 
   ** API uses microseconds. Hence the 1000's.

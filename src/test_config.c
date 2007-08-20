@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.8 2007/08/20 17:37:48 shess Exp $
+** $Id: test_config.c,v 1.9 2007/08/20 22:48:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -197,12 +197,6 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "fts2", "0", TCL_GLOBAL_ONLY);
 #endif
 
-#ifdef SQLITE_ENABLE_FTS3
-  Tcl_SetVar2(interp, "sqlite_options", "fts3", "1", TCL_GLOBAL_ONLY);
-#else
-  Tcl_SetVar2(interp, "sqlite_options", "fts3", "0", TCL_GLOBAL_ONLY);
-#endif
-
 #ifdef SQLITE_OMIT_GLOBALRECOVER
   Tcl_SetVar2(interp, "sqlite_options", "globalrecover", "0", TCL_GLOBAL_ONLY);
 #else
@@ -334,7 +328,7 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp, "sqlite_options", "tclvar", "1", TCL_GLOBAL_ONLY);
 #endif
 
-#if defined(THREADSAFE) && THREADSAFE
+#if SQLITE_THREADSAFE
   Tcl_SetVar2(interp, "sqlite_options", "threadsafe", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "threadsafe", "0", TCL_GLOBAL_ONLY);

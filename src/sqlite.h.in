@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.230 2007/08/18 10:59:21 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.231 2007/08/20 22:48:43 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -548,7 +548,7 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** Registered vfs modules are kept on a linked list formed by
 ** the pNext and pPrev pointers.  The [sqlite3_register_vfs()]
 ** and [sqlite3_unregister_vfs()] interfaces manage this list
-** in a thread-safe way.  The [sqlite3_find_vfs()] searches the
+** in a thread-safe way.  The [sqlite3_acquire_vfs()] searches the
 ** list.
 **
 ** The zName field holds the name of the VFS module.  The name must
@@ -636,7 +636,6 @@ struct sqlite3_vfs {
   int nRef;                /* Number of references to this structure */
   sqlite3_mutex *vfsMutex; /* A mutex for this VFS */
   sqlite3_vfs *pNext;      /* Next registered VFS */
-  sqlite3_vfs *pPrev;      /* Previous registered VFS */
   const char *zName;       /* Name of this virtual file system */
   void *pAppData;          /* Application context */
   int (*xOpen)(void *pAppData, const char *zName, sqlite3_file*,
@@ -859,6 +858,13 @@ int sqlite3_complete16(const void *sql);
 ** connection.  Setting a new busy handler clears any previous one.
 ** Note that calling [sqlite3_busy_timeout()] will also set or clear
 ** the busy handler.
+**
+** When operating in [sqlite3_enable_shared_cache | shared cache mode],
+** only a single busy handler can be defined for each database file.
+** So if two database connections share a single cache, then changing
+** the busy handler on one connection will also change the busy
+** handler in the other connection.  The busy handler is invoked
+** in the thread that was running when the SQLITE_BUSY was hit.
 */
 int sqlite3_busy_handler(sqlite3*, int(*)(void*,int), void*);
 
@@ -3162,24 +3168,28 @@ int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
 ** New VFSes can be registered and existing VFSes can be unregistered.
 ** The following interfaces are provided.
 **
-** The sqlite3_find_vfs() interface returns a pointer to a VFS given its
+** The sqlite3_vfs_find() interface returns a pointer to a VFS given its
 ** name.  Names are case sensitive.  If there is no match, a NULL
 ** pointer is returned.  If zVfsName is NULL then the default 
-** VFS is returned.
+** VFS is returned.  If a valid VFS pointer is returned, its
+** vfsMutex field will have been initialized and nRef will be
+** greater than zero.  The sqlite3_vfs_release() function should
+** be used to release the VFS when it is no longer needed.
 **
-** New VFSes are registered with sqlite3_register_vfs().  Each
+** New VFSes are registered with sqlite3_vfs_register().  Each
 ** new VFS becomes the default VFS if the makeDflt flag is set.
 ** The same VFS can be registered multiple times without injury.
 ** To make an existing VFS into the default VFS, register it again
 ** with the makeDflt flag set.
 ** 
-** Unregister a VFS with the sqlite3_unregister_vfs() interface.
+** Unregister a VFS with the sqlite3_vfs_unregister() interface.
 ** If the default VFS is unregistered, another VFS is chosen as
 ** the default.  The choice for the new VFS is arbitrary.
 */
-sqlite3_vfs *sqlite3_find_vfs(const char *zVfsName);
-int sqlite3_register_vfs(sqlite3_vfs*, int makeDflt);
-int sqlite3_unregister_vfs(sqlite3_vfs*);
+sqlite3_vfs *sqlite3_vfs_find(const char *zVfsName);
+int sqlite3_vfs_release(sqlite3_vfs*);
+int sqlite3_vfs_register(sqlite3_vfs*, int makeDflt);
+int sqlite3_vfs_unregister(sqlite3_vfs*);
 
 /*
 ** CAPI3REF: Mutexes
@@ -3273,12 +3283,33 @@ int sqlite3_unregister_vfs(sqlite3_vfs*);
 ** previously entered by the same thread.  The behavior
 ** is undefined if the mutex is not currently entered or
 ** is not currently allocated.  SQLite will never do either.
+**
+** The sqlite3_mutex_held() and sqlite3_mutex_notheld() routines
+** are intended for use inside assert() statements.  They should
+** return true if the mutex in their argument is held or not held,
+** respectively, by the current thread. The implementation is
+** not required to provided working implementations of these
+** routines as their intended use is within assert() statements
+** only.  If the implementation does not provide working
+** versions of these routines, it must at least provide stubs
+** that always return true.
+**
+** If the argument to sqlite3_mutex_held() is a NULL pointer then
+** the routine should return 1.  This seems counter-intuitive since
+** clearly the mutex cannot be held if it does not exist.  But the
+** the reason the mutex does not exist is because the build is not
+** using mutexes.  And we do not want the assert() containing the
+** call to sqlite3_mutex_held() to fail, so a non-zero return is
+** the appropriate thing to do.  The sqlite3_mutex_notheld() 
+** interface should also return 1 when given a NULL pointer.
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int);
 void sqlite3_mutex_free(sqlite3_mutex*);
 void sqlite3_mutex_enter(sqlite3_mutex*);
 int sqlite3_mutex_try(sqlite3_mutex*);
 void sqlite3_mutex_leave(sqlite3_mutex*);
+int sqlite3_mutex_held(sqlite3_mutex*);
+int sqlite3_mutex_notheld(sqlite3_mutex*);
 #define SQLITE_MUTEX_FAST             0
 #define SQLITE_MUTEX_RECURSIVE        1
 #define SQLITE_MUTEX_STATIC_MASTER    2

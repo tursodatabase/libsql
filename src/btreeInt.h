@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.7 2007/08/20 13:14:29 drh Exp $
+** $Id: btreeInt.h,v 1.8 2007/08/20 22:48:42 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -264,6 +264,9 @@ typedef struct BtLock BtLock;
 ** walk up the BTree from any leaf to the root.  Care must be taken to
 ** unref() the parent page pointer when this page is no longer referenced.
 ** The pageDestructor() routine handles that chore.
+**
+** Access to all fields of this structure is controlled by the mutex
+** stored in MemPage.pBt->mutex.
 */
 struct MemPage {
   u8 isInit;           /* True if previously initialized. MUST BE FIRST! */
@@ -315,8 +318,7 @@ struct MemPage {
 ** schema associated with the database file are all contained within
 ** the BtShared object.
 **
-** All fields in this structure are accessed under the sqlite3.pMutex
-** mutex.
+** All fields in this structure are accessed under the sqlite3.mutex.
 */
 struct Btree {
   sqlite3 *pSqlite;  /* The database connection holding this btree */
@@ -416,9 +418,9 @@ struct CellInfo {
 ** but cursors cannot be shared.  Each cursor is associated with a
 ** particular database connection identified BtCursor.pBtree.pSqlite.
 **
-** The fields in this structure are accessed under the sqlite3.pMutex
-** mutex, specifically the BtCurser.pBtree->pSqlite->pMutex mutex.
-** The pNext and pPrev fields also require the BtShared.mutex mutex.
+** Fields in this structure are accessed under the BtShared.mutex
+** mutex.  The pBtree field is safe to access under the
+** BtShared->pBtree->pSqlite->mutex mutex.
 */
 struct BtCursor {
   Btree *pBtree;            /* The Btree to which this cursor belongs */

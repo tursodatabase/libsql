@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.4 2007/08/16 19:40:17 drh Exp $
+** $Id: mem2.c,v 1.5 2007/08/20 22:48:43 drh Exp $
 */
 
 /*
@@ -132,6 +132,12 @@ static struct {
   int iFail;    /* Decrement and fail malloc when this is 1 */
   int iReset;   /* When malloc fails set iiFail to this value */
   int iFailCnt; /* Number of failures */
+
+  /* 
+  ** sqlite3MallocDisallow() increments the following counter.
+  ** sqlite3MallocAllow() decrements it.
+  */
+  int disallow; /* Do not allow memory allocation */
   
   
 } mem = {  /* This variable holds all of the local data */
@@ -254,6 +260,7 @@ void *sqlite3_malloc(unsigned int nByte){
     mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
   sqlite3_mutex_enter(mem.mutex);
+  assert( mem.disallow==0 );
   if( mem.nowUsed+nByte>=mem.alarmThreshold ){
     sqlite3MemsysAlarm(nByte);
   }
@@ -367,6 +374,7 @@ void *sqlite3_realloc(void *pPrior, unsigned int nByte){
     sqlite3_free(pPrior);
     return 0;
   }
+  assert( mem.disallow==0 );
   pOldHdr = sqlite3MemsysGetHeader(pPrior);
   pNew = sqlite3_malloc(nByte);
   if( pNew ){
@@ -438,6 +446,26 @@ int sqlite3_memdebug_fail(int iFail, int iRepeat){
   mem.iReset = iRepeat;
   mem.iFailCnt = 0;
   return n;
+}
+
+/*
+** The following two routines are used to assert that no memory
+** allocations occur between one call and the next.  The use of
+** these routines does not change the computed results in any way.
+** These routines are like asserts.
+*/
+void sqlite3MallocDisallow(void){
+  assert( mem.mutex!=0 );
+  sqlite3_mutex_enter(mem.mutex);
+  mem.disallow++;
+  sqlite3_mutex_leave(mem.mutex);
+}
+void sqlite3MallocAllow(void){
+  assert( mem.mutex );
+  sqlite3_mutex_enter(mem.mutex);
+  assert( mem.disallow>0 );
+  mem.disallow--;
+  sqlite3_mutex_leave(mem.mutex);
 }
 
 #endif /* SQLITE_MEMDEBUG && !SQLITE_OMIT_MEMORY_ALLOCATION */

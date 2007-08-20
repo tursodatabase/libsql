@@ -59,10 +59,7 @@
 ** If we are to be thread-safe, include the pthreads header and define
 ** the SQLITE_UNIX_THREADS macro.
 */
-#ifndef THREADSAFE
-# define THREADSAFE 1
-#endif
-#if THREADSAFE
+#if SQLITE_THREADSAFE
 # include <pthread.h>
 # define SQLITE_UNIX_THREADS 1
 #endif
@@ -102,7 +99,7 @@ struct unixFile {
   unsigned char locktype;   /* The type of lock held on this fd */
   unsigned char isOpen;     /* True if needs to be closed */
   int dirfd;                /* File descriptor for the directory */
-#ifdef SQLITE_UNIX_THREADS
+#if SQLITE_THREADSAFE
   pthread_t tid;            /* The thread that "owns" this unixFile */
 #endif
 };
@@ -150,7 +147,7 @@ struct unixFile {
 ** The threadid macro resolves to the thread-id or to 0.  Used for
 ** testing and debugging only.
 */
-#ifdef SQLITE_UNIX_THREADS
+#if SQLITE_THREADSAFE
 #define threadid pthread_self()
 #else
 #define threadid 0
@@ -172,7 +169,7 @@ struct unixFile {
 ** recomputed because its key includes the thread-id.  See the 
 ** transferOwnership() function below for additional information
 */
-#if defined(SQLITE_UNIX_THREADS)
+#if SQLITE_THREADSAFE
 # define SET_THREADID(X)   (X)->tid = pthread_self()
 # define CHECK_THREADID(X) (threadsOverrideEachOthersLocks==0 && \
                             !pthread_equal((X)->tid, pthread_self()))
@@ -293,7 +290,7 @@ struct unixFile {
 struct lockKey {
   dev_t dev;       /* Device number */
   ino_t ino;       /* Inode number */
-#ifdef SQLITE_UNIX_THREADS
+#if SQLITE_THREADSAFE
   pthread_t tid;   /* Thread ID or zero if threads can override each other */
 #endif
 };
@@ -383,7 +380,7 @@ static void leaveMutex(){
   sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_GLOBAL));
 }
 
-#ifdef SQLITE_UNIX_THREADS
+#if SQLITE_THREADSAFE
 /*
 ** This variable records whether or not threads can override each others
 ** locks.
@@ -520,7 +517,7 @@ static void testThreadLockingBehavior(int fd_orig){
   close(fd);
   threadsOverrideEachOthersLocks =  d[0].result==0 && d[1].result==0;
 }
-#endif /* SQLITE_UNIX_THREADS */
+#endif /* SQLITE_THREADSAFE */
 
 /*
 ** Release a lockInfo structure previously allocated by findLockInfo().
@@ -648,7 +645,7 @@ static int findLockInfo(
   memset(&key1, 0, sizeof(key1));
   key1.dev = statbuf.st_dev;
   key1.ino = statbuf.st_ino;
-#ifdef SQLITE_UNIX_THREADS
+#if SQLITE_THREADSAFE
   if( threadsOverrideEachOthersLocks<0 ){
     testThreadLockingBehavior(fd);
   }
@@ -744,7 +741,7 @@ static const char *locktypeName(int locktype){
 ** If the unixFile is locked and an ownership is wrong, then return
 ** SQLITE_MISUSE.  SQLITE_OK is returned if everything works.
 */
-#ifdef SQLITE_UNIX_THREADS
+#if SQLITE_THREADSAFE
 static int transferOwnership(unixFile *pFile){
   int rc;
   pthread_t hSelf;
@@ -2717,7 +2714,6 @@ sqlite3_vfs sqlite3DefaultVfs = {
   0,                  /* nRef */
   0,                  /* vfsMutex */
   0,                  /* pNext */
-  0,                  /* pPrev */
   "unix",             /* zName */
   0,                  /* pAppData */
 

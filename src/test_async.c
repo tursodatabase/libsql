@@ -74,11 +74,6 @@
 #include "os.h"
 #include <tcl.h>
 
-/* If the THREADSAFE macro is not set, assume that it is turned off. */
-#ifndef THREADSAFE
-# define THREADSAFE 0
-#endif
-
 /*
 ** This test uses pthreads and hence only works on unix and with
 ** a threadsafe build of SQLite.  It also requires that the redefinable
@@ -86,7 +81,7 @@
 ** default.  If a required element is missing, almost all of the code
 ** in this file is commented out.
 */
-#if OS_UNIX && THREADSAFE && defined(SQLITE_ENABLE_REDEF_IO)
+#if OS_UNIX && SQLITE_THREADSAFE && defined(SQLITE_ENABLE_REDEF_IO)
 
 /*
 ** This demo uses pthreads.  If you do not have a pthreads implementation
@@ -1249,7 +1244,7 @@ static int testAsyncWait(
 }
 
 
-#endif  /* OS_UNIX and THREADSAFE and defined(SQLITE_ENABLE_REDEF_IO) */
+#endif  /* OS_UNIX and SQLITE_THREADSAFE and defined(SQLITE_ENABLE_REDEF_IO) */
 
 /*
 ** This routine registers the custom TCL commands defined in this
@@ -1257,7 +1252,7 @@ static int testAsyncWait(
 ** of this module.
 */
 int Sqlitetestasync_Init(Tcl_Interp *interp){
-#if OS_UNIX && THREADSAFE && defined(SQLITE_ENABLE_REDEF_IO)
+#if OS_UNIX && SQLITE_THREADSAFE && defined(SQLITE_ENABLE_REDEF_IO)
   Tcl_CreateObjCommand(interp,"sqlite3async_enable",testAsyncEnable,0,0);
   Tcl_CreateObjCommand(interp,"sqlite3async_halt",testAsyncHalt,0,0);
   Tcl_CreateObjCommand(interp,"sqlite3async_delay",testAsyncDelay,0,0);
@@ -1265,6 +1260,6 @@ int Sqlitetestasync_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp,"sqlite3async_wait",testAsyncWait,0,0);
   Tcl_LinkVar(interp, "sqlite3async_trace",
       (char*)&sqlite3async_trace, TCL_LINK_INT);
-#endif  /* OS_UNIX and THREADSAFE and defined(SQLITE_ENABLE_REDEF_IO) */
+#endif  /* OS_UNIX and SQLITE_THREADSAFE and defined(SQLITE_ENABLE_REDEF_IO) */
   return TCL_OK;
 }

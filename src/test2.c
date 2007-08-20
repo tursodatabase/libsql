@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.48 2007/08/20 14:23:44 danielk1977 Exp $
+** $Id: test2.c,v 1.49 2007/08/20 22:48:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -78,7 +78,7 @@ static int pager_open(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &nPage) ) return TCL_ERROR;
-  rc = sqlite3PagerOpen(sqlite3_find_vfs(0), &pPager, argv[1], 0, 0);
+  rc = sqlite3PagerOpen(sqlite3_vfs_find(0), &pPager, argv[1], 0, 0);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -540,7 +540,7 @@ static int fake_big_file(
   }
   if( Tcl_GetInt(interp, argv[1], &n) ) return TCL_ERROR;
 
-  pVfs = sqlite3_find_vfs(0);
+  pVfs = sqlite3_vfs_find(0);
   rc = sqlite3OsOpenMalloc(pVfs, argv[2], &fd, 
       (SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB), 0
   );

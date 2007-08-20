@@ -12,17 +12,17 @@
 ** Code for testing the client/server version of the SQLite library.
 ** Derived from test4.c.
 **
-** $Id: test7.c,v 1.5 2007/08/16 04:30:40 drh Exp $
+** $Id: test7.c,v 1.6 2007/08/20 22:48:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
 #include "os.h"
 
 /*
-** This test only works on UNIX with a THREADSAFE build that includes
+** This test only works on UNIX with a SQLITE_THREADSAFE build that includes
 ** the SQLITE_SERVER option.
 */
-#if OS_UNIX && defined(THREADSAFE) && THREADSAFE==1 && \
+#if OS_UNIX && SQLITE_THREADSAFE && \
     defined(SQLITE_SERVER) && !defined(SQLITE_OMIT_SHARED_CACHE)
 
 #include <stdlib.h>

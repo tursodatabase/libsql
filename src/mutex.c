@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement mutexes for
 ** use by the SQLite core.
 **
-** $Id: mutex.c,v 1.4 2007/08/17 01:14:38 drh Exp $
+** $Id: mutex.c,v 1.5 2007/08/20 22:48:43 drh Exp $
 */
 
 /*
@@ -41,7 +41,7 @@
 ** that means that a mutex could not be allocated. 
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int idNotUsed){
-  return (sqlite3_mutex*)sqlite3_mutex_alloc;
+  return (sqlite3_mutex*)8;
 }
 
 /*
@@ -64,12 +64,23 @@ void sqlite3_mutex_enter(sqlite3_mutex *pNotUsed){}
 int sqlite3_mutex_try(sqlite3_mutex *pNotUsed){ return SQLITE_OK; }
 
 /*
-** The sqlite3_mutex_exit() routine exits a mutex that was
+** The sqlite3_mutex_leave() routine exits a mutex that was
 ** previously entered by the same thread.  The behavior
 ** is undefined if the mutex is not currently entered or
 ** is not currently allocated.  SQLite will never do either.
 */
 void sqlite3_mutex_leave(sqlite3_mutex *pNotUsed){}
+
+/*
+** The sqlite3_mutex_held() and sqlite3_mutex_notheld() routine are
+** intended for use inside assert() statements.
+*/
+int sqlite3_mutex_held(sqlite3_mutex *pNotUsed){
+  return 1;
+}
+int sqlite3_mutex_notheld(sqlite3_mutex *pNotUsed){
+  return 1;
+}
 
 #if 0
 /**************** Non-recursive Pthread Mutex Implementation *****************
@@ -292,6 +303,17 @@ void sqlite3_mutex_leave(sqlite3_mutex *pMutex){
     }
     pthread_mutex_unlock(&p->auxMutex);
   }
+}
+
+/*
+** The sqlite3_mutex_held() and sqlite3_mutex_notheld() routine are
+** intended for use inside assert() statements.
+*/
+int sqlite3_mutex_held(sqlite3_mutex *pNotUsed){
+  return 1;
+}
+int sqlite3_mutex_notheld(sqlite3_mutex *pNotUsed){
+  return 1;
 }
 #endif /* non-recursive pthreads */
 

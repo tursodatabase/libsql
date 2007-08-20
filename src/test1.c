@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.264 2007/08/17 15:53:37 danielk1977 Exp $
+** $Id: test1.c,v 1.265 2007/08/20 22:48:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4330,7 +4330,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_pager_writedb_count;
   extern int sqlite3_pager_writej_count;
   extern int sqlite3_pager_pgfree_count;
-#if OS_UNIX && defined(SQLITE_TEST) && defined(THREADSAFE) && THREADSAFE
+#if OS_UNIX && defined(SQLITE_TEST) && SQLITE_THREADSAFE
   extern int threadsOverrideEachOthersLocks;
 #endif
 #if OS_WIN
@@ -4380,7 +4380,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   Tcl_LinkVar(interp, "unaligned_string_counter",
       (char*)&unaligned_string_counter, TCL_LINK_INT);
 #endif
-#if OS_UNIX && defined(SQLITE_TEST) && defined(THREADSAFE) && THREADSAFE
+#if OS_UNIX && defined(SQLITE_TEST) && SQLITE_THREADSAFE
   Tcl_LinkVar(interp, "threadsOverrideEachOthersLocks",
       (char*)&threadsOverrideEachOthersLocks, TCL_LINK_INT);
 #endif

@@ -74,6 +74,10 @@ int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
   }
 #endif
 
+/*
+** The next group of routines are convenience wrappers around the
+** VFS methods.
+*/
 int sqlite3OsOpen(
   sqlite3_vfs *pVfs, 
   const char *zPath, 
@@ -81,9 +85,6 @@ int sqlite3OsOpen(
   int flags, 
   int *pFlagsOut
 ){
-#if defined(SQLITE_TEST) && !defined(SQLITE_OMIT_DISKIO)
-  return sqlite3CrashFileOpen(pVfs, zPath, pFile, flags, pFlagsOut);
-#endif
   return pVfs->xOpen(pVfs->pAppData, zPath, pFile, flags, pFlagsOut);
 }
 int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
@@ -154,7 +155,96 @@ int sqlite3OsCloseFree(sqlite3_file *pFile){
 */
 extern sqlite3_vfs sqlite3DefaultVfs;
 
-sqlite3_vfs *sqlite3_find_vfs(const char *zVfs){
-  return &sqlite3DefaultVfs;
+/*
+** The list of all registered VFS implementations.
+*/
+static sqlite3_vfs *vfsList = &sqlite3DefaultVfs;
+
+/*
+** Locate a VFS by name.  If no name is given, simply return the
+** first VFS on the list.
+*/
+sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
+  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_vfs *pVfs;
+  sqlite3_mutex_enter(mutex);
+  for(pVfs = vfsList; pVfs; pVfs=pVfs->pNext){
+    if( zVfs==0 ) break;
+    if( strcmp(zVfs, pVfs->zName)==0 ) break;
+  }
+  if( pVfs ){
+    pVfs->nRef++;
+    assert( pVfs->nRef==1 || pVfs->vfsMutex!=0 );
+    assert( pVfs->nRef>1 || pVfs->vfsMutex==0 );
+    if( pVfs->vfsMutex==0 ){
+      pVfs->vfsMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+    }
+  }
+  sqlite3_mutex_leave(mutex);
+  return pVfs;
 }
 
+/*
+** Release a VFS once it is no longer needed.
+*/
+int sqlite3_vfs_release(sqlite3_vfs *pVfs){
+  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_mutex_enter(mutex);
+  assert( pVfs->nRef>0 );
+  pVfs->nRef--;
+  if( pVfs->nRef==0 ){
+    sqlite3_mutex_free(pVfs->vfsMutex);
+    pVfs->vfsMutex = 0;
+  }
+  sqlite3_mutex_leave(mutex);
+  return SQLITE_OK;
+}
+
+/*
+** Unlink a VFS from the linked list
+*/
+static void vfsUnlink(sqlite3_vfs *pVfs){
+  assert( sqlite3_mutex_held(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER)) );
+  if( vfsList==pVfs ){
+    vfsList = pVfs->pNext;
+  }else{
+    sqlite3_vfs *p = vfsList;
+    while( p->pNext && p->pNext!=pVfs ){
+      p = p->pNext;
+    }
+    if( p->pNext==pVfs ){
+      p->pNext = pVfs->pNext;
+    }
+  }
+}
+
+/*
+** Register a VFS with the system.  It is harmless to register the same
+** VFS multiple times.  The new VFS becomes the default if makeDflt is
+** true.
+*/
+int sqlite3_vfs_register(sqlite3_vfs *pVfs, int makeDflt){
+  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_mutex_enter(mutex);
+  vfsUnlink(pVfs);
+  if( makeDflt || vfsList==0 ){
+    pVfs->pNext = vfsList;
+    vfsList = pVfs;
+  }else{
+    pVfs->pNext = vfsList->pNext;
+    pVfs->pNext = pVfs;
+  }
+  sqlite3_mutex_leave(mutex);
+  return SQLITE_OK;
+}
+
+/*
+** Unregister a VFS so that it is no longer accessible.
+*/
+int sqlite3_vfs_unregister(sqlite3_vfs *pVfs){
+  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_mutex_enter(mutex);
+  vfsUnlink(pVfs);
+  sqlite3_mutex_leave(mutex);
+  return SQLITE_OK;
+}

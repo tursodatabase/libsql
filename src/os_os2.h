@@ -25,12 +25,12 @@
 
 /*
 ** Macros used to determine whether or not to use threads.  The
-** SQLITE_UNIX_THREADS macro is defined if we are synchronizing for
+** SQLITE_OS2_THREADS macro is defined if we are synchronizing for
 ** Posix threads and SQLITE_W32_THREADS is defined if we are
 ** synchronizing using Win32 threads.
 */
 /* this mutex implementation only available with EMX */
-#if defined(THREADSAFE) && THREADSAFE
+#if SQLITE_THREADSAFE
 # include <sys/builtin.h>
 # include <sys/smutex.h>
 # define SQLITE_OS2_THREADS 1

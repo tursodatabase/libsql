@@ -11,12 +11,12 @@
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
 **
-** $Id: test4.c,v 1.18 2007/08/16 04:30:40 drh Exp $
+** $Id: test4.c,v 1.19 2007/08/20 22:48:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
 #include "os.h"
-#if defined(OS_UNIX) && OS_UNIX==1 && defined(THREADSAFE) && THREADSAFE==1
+#if defined(OS_UNIX) && OS_UNIX==1 && SQLITE_THREADSAFE
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>

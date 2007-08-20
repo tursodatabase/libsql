@@ -281,8 +281,8 @@ last_change:	$(SRC)
 	cat $(SRC) | grep '$$Id: ' | sort -k 5 | tail -1 \
           | $(NAWK) '{print $$5,$$6}' >last_change
 
-libsqlite3.a:	$(LIBOBJ) $(EXTOBJ)
-	$(AR) libsqlite3.a $(LIBOBJ) $(EXTOBJ)
+libsqlite3.a:	$(LIBOBJ)
+	$(AR) libsqlite3.a $(LIBOBJ)
 	$(RANLIB) libsqlite3.a
 
 sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h

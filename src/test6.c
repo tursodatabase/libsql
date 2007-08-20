@@ -452,6 +452,14 @@ static const sqlite3_io_methods CrashFileVtab = {
 };
 
 /*
+** Application data for the crash VFS
+*/
+struct crashAppData {
+  int (*xOpen)(void*,const char*,sqlite3_file*,int,int*); /* Original xOpen */
+  void *pAppData;                                      /* Original pAppData */
+};
+
+/*
 ** Open a crash-file file handle. The vfs pVfs is used to open
 ** the underlying real file.
 **
@@ -461,7 +469,7 @@ static const sqlite3_io_methods CrashFileVtab = {
 ** sqlite3_malloc(). The assumption here is (pVfs->szOsFile) is
 ** equal or greater than sizeof(CrashFile).
 */
-int sqlite3CrashFileOpen(
+static int sqlite3CrashFileOpen(
   sqlite3_vfs *pVfs,
   const char *zName,
   sqlite3_file *pFile,
@@ -499,7 +507,8 @@ int sqlite3CrashFileOpen(
       sqlite3OsClose(pFile);
     }
   }else{
-    rc = pVfs->xOpen(pVfs->pAppData, zName, pFile, flags, pOutFlags);
+    struct crashAppData *pData = (struct crashAppData*)pVfs->pAppData;
+    rc = pData->xOpen(pData->pAppData, zName, pFile, flags, pOutFlags);
   }
   return rc;
 }
@@ -528,11 +537,26 @@ static int crashParamsObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  sqlite3_vfs *pVfs;
   int i;
   int iDelay;
   const char *zCrashFile;
   int nCrashFile;
+  static sqlite3_vfs crashVfs, *pOriginalVfs;
+  static struct crashAppData appData;
+
+  if( pOriginalVfs==0 ){
+    pOriginalVfs = sqlite3_vfs_find(0);
+    crashVfs = *pOriginalVfs;
+    crashVfs.xOpen = sqlite3CrashFileOpen;
+    crashVfs.vfsMutex = 0;
+    crashVfs.nRef = 0;
+    crashVfs.pAppData = &appData;
+    appData.xOpen = pOriginalVfs->xOpen;
+    appData.pAppData = pOriginalVfs->pAppData;
+    sqlite3_vfs_release(pOriginalVfs);
+    sqlite3_vfs_unregister(pOriginalVfs);
+    sqlite3_vfs_register(&crashVfs, 1);
+  }
 
   int iDc = 0;
   int iSectorSize = 0;

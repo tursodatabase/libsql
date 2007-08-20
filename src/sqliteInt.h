@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.592 2007/08/20 14:23:44 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.593 2007/08/20 22:48:43 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -31,6 +31,19 @@
 */
 #if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
 # define NDEBUG 1
+#endif
+
+/*
+** The SQLITE_THREADSAFE macro must be defined as either 0 or 1.
+** Older versions of SQLite used an optional THREADSAFE macro.
+** We support that for legacy
+*/
+#if !defined(SQLITE_THREADSAFE)
+#if defined(THREADSAFE)
+# define SQLITE_THREADSAFE THREADSAFE
+#else
+# define SQLTIE_THREADSAFE 1
+#endif
 #endif
 
 /*
@@ -399,7 +412,7 @@ struct sqlite3 {
   int magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Value returned by sqlite3_changes() */
   int nTotalChange;             /* Value returned by sqlite3_total_changes() */
-  sqlite3_mutex *pMutex;        /* Connection mutex */
+  sqlite3_mutex *mutex;         /* Connection mutex */
   struct sqlite3InitInfo {      /* Information used during initialization */
     int iDb;                    /* When back is being initialized */
     int newTnum;                /* Rootpage of table being initialized */
@@ -1818,10 +1831,17 @@ void sqlite3Parser(void*, int, Token, Parse*);
 #endif
 
 /*
-** FIX ME:  create these routines
+** The MallocDisallow() and MallocAllow() routines are like asserts.
+** Call them around a section of code that you do not expect to do
+** any memory allocation.
 */
-#define sqlite3MallocDisallow()
-#define sqlite3MallocAllow()
+#ifdef SQLITE_MEMDEBUG
+  void sqlite3MallocDisallow(void);
+  void sqlite3MallocAllow(void);
+#else
+# define sqlite3MallocDisallow()
+# define sqlite3MallocAllow()
+#endif
 
 
 #ifdef SQLITE_OMIT_VIRTUALTABLE
@@ -1850,7 +1870,6 @@ void sqlite3InvalidFunction(sqlite3_context*,int,sqlite3_value**);
 int sqlite3Reprepare(Vdbe*);
 void sqlite3ExprListCheckLength(Parse*, ExprList*, int, const char*);
 CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
-int sqlite3CrashFileOpen(sqlite3_vfs*, const char*, sqlite3_file*, int,int*);
 
 #if SQLITE_MAX_EXPR_DEPTH>0
   void sqlite3ExprSetHeight(Expr *);

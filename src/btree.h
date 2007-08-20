@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.83 2007/08/17 01:14:38 drh Exp $
+** @(#) $Id: btree.h,v 1.84 2007/08/20 22:48:42 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -100,12 +100,12 @@ int sqlite3BtreeLockTable(Btree *, int, u8);
 ** use mutexes to access the BtShared structures.  So make the
 ** Enter and Leave procedures no-ops.
 */
-#ifdef SQLITE_OMIT_SHARED_CACHE
-# define sqlite3BtreeEnter(X)
-# define sqlite3BtreeLeave(X)
-#else
+#if SQLITE_THREADSAFE && !defined(SQLITE_OMIT_SHARED_CACHE)
   void sqlite3BtreeEnter(Btree*);
   void sqlite3BtreeLeave(Btree*);
+#else
+# define sqlite3BtreeEnter(X)
+# define sqlite3BtreeLeave(X)
 #endif
 
 const char *sqlite3BtreeGetFilename(Btree *);
