@@ -782,8 +782,8 @@ static int transferOwnership(unixFile *pFile){
 #endif
 
 /*
-** Seek to the offset in id->offset then read cnt bytes into pBuf.
-** Return the number of bytes actually read.  Update the offset.
+** Seek to the offset passed as the second argument, then read cnt 
+** bytes into pBuf. Return the number of bytes actually read.
 */
 static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   int got;
