@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.78 2007/08/16 11:36:15 danielk1977 Exp $
+** $Id: test3.c,v 1.79 2007/08/20 23:50:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "pager.h"
@@ -49,6 +49,13 @@ static char *errorName(int rc){
 }
 
 /*
+** A bogus sqlite3 connection structure for use in the btree
+** tests.
+*/
+static sqlite3 sDb;
+static int nRefSqlite3 = 0;
+
+/*
 ** Usage:   btree_open FILENAME NCACHE FLAGS
 **
 ** Open a new database
@@ -69,7 +76,12 @@ static int btree_open(
   }
   if( Tcl_GetInt(interp, argv[2], &nCache) ) return TCL_ERROR;
   if( Tcl_GetInt(interp, argv[3], &flags) ) return TCL_ERROR;
-  rc = sqlite3BtreeOpen(argv[1], 0, &pBt, flags);
+  nRefSqlite3++;
+  if( nRefSqlite3==1 ){
+    sDb.pVfs = sqlite3_vfs_find(0);
+    sDb.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
+  }
+  rc = sqlite3BtreeOpen(argv[1], &sDb, &pBt, flags);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -103,6 +115,13 @@ static int btree_close(
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
+  }
+  nRefSqlite3--;
+  if( nRefSqlite3==0 ){
+    sqlite3_mutex_free(sDb.mutex);
+    sDb.mutex = 0;
+    sqlite3_vfs_release(sDb.pVfs);
+    sDb.pVfs = 0;
   }
   return TCL_OK;
 }
