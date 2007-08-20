@@ -57,7 +57,7 @@ int sqlite3OsCheckReservedLock(sqlite3_file *id){
 }
 int sqlite3OsSectorSize(sqlite3_file *id){
   int (*xSectorSize)(sqlite3_file*) = id->pMethods->xSectorSize;
-  return xSectorSize ? xSectorSize(id) : SQLITE_DEFAULT_SECTOR_SIZE;
+  return (xSectorSize ? xSectorSize(id) : SQLITE_DEFAULT_SECTOR_SIZE);
 }
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
   return id->pMethods->xDeviceCharacteristics(id);
@@ -81,6 +81,9 @@ int sqlite3OsOpen(
   int flags, 
   int *pFlagsOut
 ){
+#if defined(SQLITE_TEST) && !defined(SQLITE_OMIT_DISKIO)
+  return sqlite3CrashFileOpen(pVfs, zPath, pFile, flags, pFlagsOut);
+#endif
   return pVfs->xOpen(pVfs->pAppData, zPath, pFile, flags, pFlagsOut);
 }
 int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
@@ -121,13 +124,14 @@ int sqlite3OsOpenMalloc(
   sqlite3_vfs *pVfs, 
   const char *zFile, 
   sqlite3_file **ppFile, 
-  int flags
+  int flags,
+  int *pOutFlags
 ){
   int rc = SQLITE_NOMEM;
   sqlite3_file *pFile;
   pFile = (sqlite3_file *)sqlite3_malloc(pVfs->szOsFile);
   if( pFile ){
-    rc = sqlite3OsOpen(pVfs, zFile, pFile, flags, 0);
+    rc = sqlite3OsOpen(pVfs, zFile, pFile, flags, pOutFlags);
     if( rc!=SQLITE_OK ){
       sqlite3_free(pFile);
     }else{

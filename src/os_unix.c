@@ -87,6 +87,12 @@
 typedef struct unixFile unixFile;
 struct unixFile {
   sqlite3_io_methods const *pMethod;  /* Always the first entry */
+#ifdef SQLITE_TEST
+  /* In test mode, increase the size of this structure a bit so that 
+  ** it is larger than the struct CrashFile defined in test6.c.
+  */
+  char aPadding[32];
+#endif
   struct openCnt *pOpen;    /* Info about all open fd's on this inode */
   struct lockInfo *pLock;   /* Info about locks on this inode */
 #ifdef SQLITE_ENABLE_LOCKING_STYLE
@@ -96,31 +102,10 @@ struct unixFile {
   unsigned char locktype;   /* The type of lock held on this fd */
   unsigned char isOpen;     /* True if needs to be closed */
   int dirfd;                /* File descriptor for the directory */
-  i64 offset;               /* Seek offset */
 #ifdef SQLITE_UNIX_THREADS
   pthread_t tid;            /* The thread that "owns" this unixFile */
 #endif
 };
-
-
-/*
-** Provide the ability to override some OS-layer functions during
-** testing.  This is used to simulate OS crashes to verify that 
-** commits are atomic even in the event of an OS crash.
-*/
-#ifdef SQLITE_CRASH_TEST
-  extern int sqlite3CrashTestEnable;
-  int sqlite3CrashFileWrap(sqlite3_file *, const char *, sqlite3_file **);
-  static int CRASH_TEST_OVERRIDE(const char *zFile, sqlite3_file **pId, int rc){
-    if( rc==SQLITE_OK && sqlite3CrashTestEnable ){
-      rc = sqlite3CrashFileWrap(*pId, zFile, pId); 
-    }
-    return rc;
-  }
-#else
-# define CRASH_TEST_OVERRIDE(A,B,C) C
-#endif
-
 
 /*
 ** Include code that is common to all os_*.c files
@@ -819,7 +804,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   got = read(id->h, pBuf, cnt);
 #endif
   TIMER_END;
-  OSTRACE5("READ    %-3d %5d %7lld %d\n", id->h, got, id->offset, TIMER_ELAPSED);
+  OSTRACE5("READ    %-3d %5d %7lld %d\n", id->h, got, offset, TIMER_ELAPSED);
   return got;
 }
 

@@ -17,7 +17,7 @@
 # These routines allow us to simulate the kind of file damage that 
 # occurs after a power failure.
 #
-# $Id: crash.test,v 1.24 2007/05/23 06:25:13 danielk1977 Exp $
+# $Id: crash.test,v 1.25 2007/08/20 14:23:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,7 +28,7 @@ ifcapable !crashtest {
 }
 
 set repeats 100
-# set repeats 10
+#set repeats 10
 
 # The following procedure computes a "signature" for table "abc".  If
 # abc changes in any way, the signature should change.  

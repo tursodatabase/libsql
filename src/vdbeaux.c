@@ -1153,7 +1153,7 @@ static int vdbeCommit(sqlite3 *db){
     /* Open the master journal. */
     rc = sqlite3OsOpenMalloc(pVfs, zMaster, &pMaster, 
         SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|
-        SQLITE_OPEN_EXCLUSIVE|SQLITE_OPEN_MASTER_JOURNAL
+        SQLITE_OPEN_EXCLUSIVE|SQLITE_OPEN_MASTER_JOURNAL, 0
     );
     if( rc!=SQLITE_OK ){
       sqlite3_free(zMaster);

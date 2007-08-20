@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.83 2007/08/16 13:01:45 drh Exp $
+# $Id: tester.tcl,v 1.84 2007/08/20 14:23:44 danielk1977 Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -359,7 +359,7 @@ proc crashsql {args} {
 
     if     {$n>1 && [string first $z -delay]==0}     {set crashdelay $z2} \
     elseif {$n>1 && [string first $z -file]==0}      {set crashfile $z2}  \
-    elseif {$n>1 && [string first $z -blocksize]==0} {set blocksize $z2}  \
+    elseif {$n>1 && [string first $z -blocksize]==0} {set blocksize "-s $z2" } \
     else   { error "Unrecognized option: $z" }
   }
 
@@ -370,7 +370,7 @@ proc crashsql {args} {
   set cfile [file join [pwd] $crashfile]
 
   set f [open crash.tcl w]
-  puts $f "sqlite3_crashparams $crashdelay $cfile $blocksize"
+  puts $f "sqlite3_crashparams $blocksize $crashdelay $cfile"
   puts $f "set sqlite_pending_byte $::sqlite_pending_byte"
   puts $f "sqlite3 db test.db"
 

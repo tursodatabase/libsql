@@ -126,10 +126,16 @@ struct CrashFile {
   const sqlite3_io_methods *pMethod;   /* Must be first */
   sqlite3_file *pRealFile;             /* Underlying "real" file handle */
   char *zName;
+
+  /* Cache of the entire file. */
+  int iSize;                           /* Size of file in bytes */
+  int nData;                           /* Size of buffer allocated at zData */
+  u8 *zData;                           /* Buffer containing file contents */
 };
 
 struct CrashGlobal {
   WriteBuffer *pWriteList;     /* Head of write-list */
+  WriteBuffer *pWriteListEnd;  /* End of write-list */
 
   int iSectorSize;             /* Value of simulated sector size */
   int iDeviceCharacteristics;  /* Value of simulated device characteristics */
@@ -138,12 +144,12 @@ struct CrashGlobal {
   char zCrashFile[500];        /* Crash during an xSync() on this file */ 
 };
 
-static CrashGlobal g = {0, SQLITE_DEFAULT_SECTOR_SIZE, 0, 0};
+static CrashGlobal g = {0, 0, SQLITE_DEFAULT_SECTOR_SIZE, 0, 0};
 
 /*
 ** Set this global variable to 1 to enable crash testing.
 */
-int sqlite3CrashTestEnable = 0;
+static int sqlite3CrashTestEnable = 0;
 
 /*
 ** Flush the write-list as if xSync() had been called on file handle
@@ -152,6 +158,7 @@ int sqlite3CrashTestEnable = 0;
 static int writeListSync(CrashFile *pFile, int isCrash){
   int rc = SQLITE_OK;
   int iDc = g.iDeviceCharacteristics;
+  i64 iSize;
 
   WriteBuffer *pWrite;
   WriteBuffer **ppPtr;
@@ -168,8 +175,11 @@ static int writeListSync(CrashFile *pFile, int isCrash){
     }
   }
 
+  sqlite3OsFileSize((sqlite3_file *)pFile, &iSize);
+
   ppPtr = &g.pWriteList;
   for(pWrite=*ppPtr; rc==SQLITE_OK && pWrite; pWrite=*ppPtr){
+    sqlite3_file *pRealFile = pWrite->pFile->pRealFile;
 
     /* (eAction==1)      -> write block out normally,
     ** (eAction==2)      -> do nothing,
@@ -200,10 +210,10 @@ static int writeListSync(CrashFile *pFile, int isCrash){
       case 1: {               /* Write out correctly */
         if( pWrite->zBuf ){
           rc = sqlite3OsWrite(
-              pFile->pRealFile, pWrite->zBuf, pWrite->nBuf, pWrite->iOffset
+              pRealFile, pWrite->zBuf, pWrite->nBuf, pWrite->iOffset
           );
         }else{
-          rc = sqlite3OsTruncate(pFile->pRealFile, pWrite->iOffset);
+          rc = sqlite3OsTruncate(pRealFile, pWrite->iOffset);
         }
         *ppPtr = pWrite->pNext;
         sqlite3_free(pWrite);
@@ -215,8 +225,10 @@ static int writeListSync(CrashFile *pFile, int isCrash){
       }
       case 3: {               /* Trash sectors */
         u8 *zGarbage;
-        sqlite3_int64 iFirst = (pWrite->iOffset%g.iSectorSize);
-        sqlite3_int64 iLast = (pWrite->iOffset+pWrite->nBuf-1)%g.iSectorSize;
+        int iFirst = (pWrite->iOffset/g.iSectorSize);
+        int iLast = (pWrite->iOffset+pWrite->nBuf-1)/g.iSectorSize;
+
+        assert(pWrite->zBuf);
 
         zGarbage = sqlite3_malloc(g.iSectorSize);
         if( zGarbage ){
@@ -224,7 +236,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
           for(i=iFirst; rc==SQLITE_OK && i<=iLast; i++){
             sqlite3Randomness(g.iSectorSize, zGarbage); 
             rc = sqlite3OsWrite(
-              pFile->pRealFile, zGarbage, g.iSectorSize, i*g.iSectorSize
+              pRealFile, zGarbage, g.iSectorSize, i*g.iSectorSize
             );
           }
           sqlite3_free(zGarbage);
@@ -246,6 +258,9 @@ static int writeListSync(CrashFile *pFile, int isCrash){
   if( rc==SQLITE_OK && isCrash ){
     exit(-1);
   }
+
+  for(pWrite=g.pWriteList; pWrite && pWrite->pNext; pWrite=pWrite->pNext);
+  g.pWriteListEnd = pWrite;
 
   return rc;
 }
@@ -273,12 +288,12 @@ static int writeListAppend(
   }
 
   if( g.pWriteList ){
-    WriteBuffer *pEnd;
-    for(pEnd=g.pWriteList; pEnd->pNext; pEnd=pEnd->pNext);
-    pEnd->pNext = pNew;
+    assert(g.pWriteListEnd);
+    g.pWriteListEnd->pNext = pNew;
   }else{
     g.pWriteList = pNew;
   }
+  g.pWriteListEnd = pNew;
   
   return SQLITE_OK;
 }
@@ -289,7 +304,7 @@ static int writeListAppend(
 static int cfClose(sqlite3_file *pFile){
   CrashFile *pCrash = (CrashFile *)pFile;
   writeListSync(pCrash, 0);
-  sqlite3OsClose(&pCrash->pRealFile);
+  sqlite3OsCloseFree(pCrash->pRealFile);
   return SQLITE_OK;
 }
 
@@ -304,63 +319,15 @@ static int cfRead(
 ){
   CrashFile *pCrash = (CrashFile *)pFile;
   sqlite3_int64 iSize;
-  int rc;
   WriteBuffer *pWrite;
 
   /* Check the file-size to see if this is a short-read */
-  rc = sqlite3OsFileSize(pFile, &iSize);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-  if( iSize<(iOfst+iAmt) ){
+  if( pCrash->iSize<(iOfst+iAmt) ){
     return SQLITE_IOERR_SHORT_READ;
   }
 
-  /* Zero the output buffer */
-  memset(zBuf, 0, iAmt);
-
-  /* Read some data from the real file */
-  rc = sqlite3OsFileSize(pCrash->pRealFile, &iSize);
-  if( rc==SQLITE_OK && iSize>iOfst ){
-    int nRead = iAmt;
-    if( iSize<(iOfst+iAmt) ){
-      nRead = iSize - iOfst;
-    }
-    rc = sqlite3OsRead(pCrash->pRealFile, zBuf, nRead, iOfst);
-  }
-
-  /* Fill in the buffer by traversing the write-list */
-  for(pWrite=g.pWriteList; rc==SQLITE_OK && pWrite; pWrite=pWrite->pNext){
-    if( pWrite->pFile==pCrash ){
-      int iWriteOffset;
-      int nWriteBuf;
-      u8 *zWriteBuf;
-
-      iWriteOffset = pWrite->iOffset - iOfst;
-      nWriteBuf = pWrite->nBuf;
-      zWriteBuf = pWrite->zBuf;
-      if( iWriteOffset<0 ){
-        nWriteBuf += iWriteOffset;
-        zWriteBuf -= iWriteOffset;
-        iWriteOffset = 0;
-      }
-      if( (iWriteOffset+nWriteBuf)>iAmt ){
-        nWriteBuf = iAmt - iWriteOffset;
-      }
-      
-      if( pWrite->zBuf && nWriteBuf>0){
-        /* Copy data to the buffer */
-        memcpy(&((u8 *)zBuf)[iWriteOffset], zWriteBuf, nWriteBuf);
-      }
-
-      if( pWrite->zBuf==0 && iWriteOffset<iAmt ){
-        /* Zero part of the buffer to simulate a truncate */
-        memset(&((u8 *)zBuf)[iWriteOffset], 0, iAmt-iWriteOffset);
-      }
-    }
-  }
-
-  return rc;
+  memcpy(zBuf, &pCrash->zData[iOfst], iAmt);
+  return SQLITE_OK;
 }
 
 /*
@@ -372,6 +339,22 @@ static int cfWrite(
   int iAmt, 
   sqlite_int64 iOfst
 ){
+  CrashFile *pCrash = (CrashFile *)pFile;
+  if( iAmt+iOfst>pCrash->iSize ){
+    pCrash->iSize = iAmt+iOfst;
+  }
+  while( pCrash->iSize>pCrash->nData ){
+    char *zNew;
+    int nNew = (pCrash->nData*2) + 4096;
+    zNew = (char *)sqlite3_realloc(pCrash->zData, nNew);
+    if( !zNew ){
+      return SQLITE_NOMEM;
+    }
+    memset(&zNew[pCrash->nData], 0, nNew-pCrash->nData);
+    pCrash->nData = nNew;
+    pCrash->zData = zNew;
+  }
+  memcpy(&pCrash->zData[iOfst], zBuf, iAmt);
   return writeListAppend(pFile, iOfst, zBuf, iAmt);
 }
 
@@ -379,6 +362,11 @@ static int cfWrite(
 ** Truncate a crash-file.
 */
 static int cfTruncate(sqlite3_file *pFile, sqlite_int64 size){
+  CrashFile *pCrash = (CrashFile *)pFile;
+  assert(size>=0);
+  if( pCrash->iSize>size ){
+    pCrash->iSize = size;
+  }
   return writeListAppend(pFile, size, 0, 0);
 }
 
@@ -389,10 +377,18 @@ static int cfSync(sqlite3_file *pFile, int flags){
   CrashFile *pCrash = (CrashFile *)pFile;
   int isCrash = 0;
 
-  if( 0==strcmp(pCrash->zName, g.zCrashFile) ){
-    if( (--g.iCrash==0) ){
-      isCrash = 1;
-    }
+  const char *zName = pCrash->zName;
+  const char *zCrashFile = g.zCrashFile;
+  int nName = strlen(zName);
+  int nCrashFile = strlen(zCrashFile);
+
+  if( nCrashFile>0 && zCrashFile[nCrashFile-1]=='*' ){
+    nCrashFile--;
+    if( nName>nCrashFile ) nName = nCrashFile;
+  }
+
+  if( nName==nCrashFile && 0==memcmp(zName, zCrashFile, nName) ){
+    if( (--g.iCrash)==0 ) isCrash = 1;
   }
 
   return writeListSync(pCrash, isCrash);
@@ -403,23 +399,7 @@ static int cfSync(sqlite3_file *pFile, int flags){
 */
 static int cfFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
   CrashFile *pCrash = (CrashFile *)pFile;
-  WriteBuffer *pWrite;
-  int rc;
-  sqlite_int64 iSize;
-
-  rc = sqlite3OsFileSize(pCrash->pRealFile, &iSize);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-
-  for(pWrite=g.pWriteList; pWrite; pWrite=pWrite->pNext){
-    sqlite_int64 iEnd = pWrite->nBuf+pWrite->iOffset;
-    if( pWrite->pFile==pCrash && (pWrite->zBuf==0 || iEnd>iSize) ){
-      iSize = iEnd;
-    }
-  }
-  *pSize = iSize;
-
+  *pSize = (i64)pCrash->iSize;
   return SQLITE_OK;
 }
 
@@ -434,6 +414,9 @@ static int cfUnlock(sqlite3_file *pFile, int eLock){
 }
 static int cfCheckReservedLock(sqlite3_file *pFile){
   return sqlite3OsCheckReservedLock(((CrashFile *)pFile)->pRealFile);
+}
+static int cfLockState(sqlite3_file *pFile){
+  return sqlite3OsLockState(((CrashFile *)pFile)->pRealFile);
 }
 static int cfBreakLock(sqlite3_file *pFile){
   return sqlite3OsBreakLock(((CrashFile *)pFile)->pRealFile);
@@ -463,6 +446,7 @@ static const sqlite3_io_methods CrashFileVtab = {
   cfUnlock,                     /* xUnlock */
   cfCheckReservedLock,          /* xCheckReservedLock */
   cfBreakLock,                  /* xBreakLock */
+  cfLockState,                  /* xLockState */
   cfSectorSize,                 /* xSectorSize */
   cfDeviceCharacteristics       /* xDeviceCharacteristics */
 };
@@ -470,6 +454,12 @@ static const sqlite3_io_methods CrashFileVtab = {
 /*
 ** Open a crash-file file handle. The vfs pVfs is used to open
 ** the underlying real file.
+**
+** The caller will have allocated pVfs->szOsFile bytes of space
+** at pFile. This file uses this space for the CrashFile structure
+** and allocates space for the "real" file structure using 
+** sqlite3_malloc(). The assumption here is (pVfs->szOsFile) is
+** equal or greater than sizeof(CrashFile).
 */
 int sqlite3CrashFileOpen(
   sqlite3_vfs *pVfs,
@@ -478,46 +468,40 @@ int sqlite3CrashFileOpen(
   int flags,
   int *pOutFlags
 ){
-  CrashFile *pWrapper = (CrashFile *)pFile;
-  int rc = SQLITE_NOMEM;
-  sqlite3_file *pReal;
-  pReal = (sqlite3_file *)sqlite3_malloc(pVfs->szOsFile);
-  if( pReal ){
-    pWrapper->pMethod = &CrashFileVtab;
-    pWrapper->zName = (char *)zName;
-    rc = pVfs->xOpen(pVfs->pAppData, zName, pReal, flags, pOutFlags);
+  int rc;
+  if( sqlite3CrashTestEnable ){
+    CrashFile *pWrapper = (CrashFile *)pFile;
+    sqlite3_file *pReal;
+    assert(pVfs->szOsFile>=sizeof(CrashFile));
+    memset(pWrapper, 0, sizeof(CrashFile));
+    sqlite3CrashTestEnable = 0;
+    rc = sqlite3OsOpenMalloc(pVfs, zName, &pReal, flags, pOutFlags);
+    sqlite3CrashTestEnable = 1;
     if( rc==SQLITE_OK ){
-      pWrapper->pRealFile = pFile;
-    }else{
-      sqlite3_free(pReal);
+      i64 iSize;
+      pWrapper->pMethod = &CrashFileVtab;
+      pWrapper->zName = (char *)zName;
+      pWrapper->pRealFile = pReal;
+      rc = sqlite3OsFileSize(pReal, &iSize);
+      pWrapper->iSize = (int)iSize;
     }
+    if( rc==SQLITE_OK ){
+      pWrapper->nData = (4096 + pWrapper->iSize);
+      pWrapper->zData = (char *)sqlite3_malloc(pWrapper->nData);
+      if( pWrapper->zData ){
+        memset(pWrapper->zData, 0, pWrapper->nData);
+        rc = sqlite3OsRead(pReal, pWrapper->zData, pWrapper->iSize, 0); 
+      }else{
+        rc = SQLITE_NOMEM;
+      }
+    }
+    if( rc!=SQLITE_OK && pWrapper->pMethod ){
+      sqlite3OsClose(pFile);
+    }
+  }else{
+    rc = pVfs->xOpen(pVfs->pAppData, zName, pFile, flags, pOutFlags);
   }
   return rc;
-}
-
-int sqlite3CrashFileWrap(
-  sqlite3_file *pFile,
-  const char *zName,
-  sqlite3_file **ppWrapper
-){
-  CrashFile *pWrapper;
-  pWrapper = (CrashFile *)sqlite3_malloc(sizeof(CrashFile)+strlen(zName)+1);
-  if( !pWrapper ){
-    return SQLITE_NOMEM;
-  }
-
-  pWrapper->pMethod = &CrashFileVtab;
-  pWrapper->pRealFile = pFile;
-  pWrapper->zName = (char *)&pWrapper[1];
-  memcpy(pWrapper->zName, zName, strlen(zName)+1);
-
-  *ppWrapper = (sqlite3_file *)pWrapper;
-  return SQLITE_OK;
-}
-
-
-int sqlite3CrashFileSize(){
-  return (int)sizeof(CrashFile);
 }
 
 /*
@@ -578,10 +562,7 @@ static int crashParamsObjCmd(
     goto error;
   }
 
-  pVfs = sqlite3_find_vfs(0);
-  zCrashFile = sqlite3_malloc(pVfs->mxPathname);
-  sqlite3OsFullPathname(pVfs, Tcl_GetString(objv[objc-1]), zCrashFile);
-  nCrashFile = strlen(zCrashFile);
+  zCrashFile = Tcl_GetStringFromObj(objv[objc-1], &nCrashFile);
   if( nCrashFile>=sizeof(g.zCrashFile) ){
     Tcl_AppendResult(interp, "Filename is too long: \"", zCrashFile, "\"", 0);
     goto error;
@@ -649,12 +630,10 @@ static int crashParamsObjCmd(
   }
   g.iCrash = iDelay;
   memcpy(g.zCrashFile, zCrashFile, nCrashFile+1);
-  sqlite3_free(zCrashFile);
   sqlite3CrashTestEnable = 1;
   return TCL_OK;
 
 error:
-  sqlite3_free(zCrashFile);
   return TCL_ERROR;
 }
 
