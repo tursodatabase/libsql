@@ -15,7 +15,6 @@
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
-#include "os.h"
 
 /*
 ** Return TRUE (non-zero) of the statement supplied as an argument needs

@@ -14,11 +14,10 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.70 2007/08/16 04:30:40 drh Exp $
+** $Id: vacuum.c,v 1.71 2007/08/21 10:44:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
-#include "os.h"
 
 #if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
 /*

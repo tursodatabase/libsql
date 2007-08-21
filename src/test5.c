@@ -15,11 +15,10 @@
 ** is used for testing the SQLite routines for converting between
 ** the various supported unicode encodings.
 **
-** $Id: test5.c,v 1.18 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: test5.c,v 1.19 2007/08/21 10:44:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
-#include "os.h"         /* to get SQLITE_BIGENDIAN */
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>

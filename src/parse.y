@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.233 2007/08/16 10:09:03 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.234 2007/08/21 10:44:16 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -55,7 +55,6 @@
 //
 %include {
 #include "sqliteInt.h"
-#include "parse.h"
 
 /*
 ** An instance of this structure holds information about the

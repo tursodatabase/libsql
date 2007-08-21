@@ -12,10 +12,9 @@
 ** Memory allocation functions used throughout sqlite.
 **
 **
-** $Id: malloc.c,v 1.6 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: malloc.c,v 1.7 2007/08/21 10:44:16 drh Exp $
 */
 #include "sqliteInt.h"
-#include "os.h"
 #include <stdarg.h>
 #include <ctype.h>
 

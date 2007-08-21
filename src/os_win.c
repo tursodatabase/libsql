@@ -13,7 +13,6 @@
 ** This file contains code that is specific to windows.
 */
 #include "sqliteInt.h"
-#include "os.h"
 #if OS_WIN               /* This file is used for windows only */
 
 #include <winbase.h>

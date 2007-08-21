@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.69 2007/08/18 10:59:20 danielk1977 Exp $
+** $Id: date.c,v 1.70 2007/08/21 10:44:16 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -46,7 +46,6 @@
 **      Richmond, Virginia (USA)
 */
 #include "sqliteInt.h"
-#include "os.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <assert.h>

@@ -16,7 +16,6 @@
 ** name sqlite_value
 */
 #include "sqliteInt.h"
-#include "os.h"
 #include <math.h>
 #include <ctype.h>
 #include "vdbeInt.h"

@@ -15,7 +15,6 @@
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
-#include "os.h"
 #undef _SQLITE_OS_C_
 
 /*

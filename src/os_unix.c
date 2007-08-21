@@ -13,7 +13,6 @@
 ** This file contains code that is specific to Unix systems.
 */
 #include "sqliteInt.h"
-#include "os.h"
 #if OS_UNIX              /* This file is used on unix only */
 
 /* #define SQLITE_ENABLE_LOCKING_STYLE 0 */

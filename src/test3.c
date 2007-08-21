@@ -13,11 +13,9 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.79 2007/08/20 23:50:25 drh Exp $
+** $Id: test3.c,v 1.80 2007/08/21 10:44:16 drh Exp $
 */
 #include "sqliteInt.h"
-#include "pager.h"
-#include "btree.h"
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>

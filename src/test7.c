@@ -12,11 +12,10 @@
 ** Code for testing the client/server version of the SQLite library.
 ** Derived from test4.c.
 **
-** $Id: test7.c,v 1.6 2007/08/20 22:48:43 drh Exp $
+** $Id: test7.c,v 1.7 2007/08/21 10:44:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
-#include "os.h"
 
 /*
 ** This test only works on UNIX with a SQLITE_THREADSAFE build that includes

@@ -13,13 +13,18 @@
 ** This header file (together with is companion C source-code file
 ** "os.c") attempt to abstract the underlying operating system so that
 ** the SQLite library will work on both POSIX and windows systems.
+**
+** This header file is #include-ed by sqliteInt.h and thus ends up
+** being included by every source file.
 */
 #ifndef _SQLITE_OS_H_
 #define _SQLITE_OS_H_
 
 /*
 ** Figure out if we are dealing with Unix, Windows, or some other
-** operating system.
+** operating system.  After the following block of preprocess macros,
+** all of OS_UNIX, OS_WIN, OS_OS2, and OS_OTHER will defined to either
+** 1 or 0.  One of the four will be 1.  The other three will be 0.
 */
 #if defined(OS_OTHER)
 # if OS_OTHER==1
@@ -58,6 +63,7 @@
 #  define OS_WIN 0
 # endif
 #endif
+
 
 
 /*

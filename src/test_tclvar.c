@@ -16,11 +16,10 @@
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
 **
-** $Id: test_tclvar.c,v 1.13 2007/08/16 11:36:15 danielk1977 Exp $
+** $Id: test_tclvar.c,v 1.14 2007/08/21 10:44:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
-#include "os.h"
 #include <stdlib.h>
 #include <string.h>
 

@@ -71,7 +71,6 @@
 */
 
 #include "sqliteInt.h"
-#include "os.h"
 #include <tcl.h>
 
 /*

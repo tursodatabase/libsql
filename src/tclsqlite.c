@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.195 2007/08/15 19:16:43 drh Exp $
+** $Id: tclsqlite.c,v 1.196 2007/08/21 10:44:16 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -23,7 +23,6 @@
 */
 #ifndef SQLITE_AMALGAMATION
 # include "sqliteInt.h"
-# include "hash.h"
 # include <stdlib.h>
 # include <string.h>
 # include <assert.h>

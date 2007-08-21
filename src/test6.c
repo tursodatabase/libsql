@@ -16,7 +16,6 @@
 */
 #if SQLITE_TEST          /* This file is used for the testing only */
 #include "sqliteInt.h"
-#include "os.h"
 #include "tcl.h"
 
 #ifndef SQLITE_OMIT_DISKIO  /* This file is a no-op if disk I/O is disabled */

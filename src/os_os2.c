@@ -14,7 +14,6 @@
 */
 
 #include "sqliteInt.h"
-#include "os.h"
 
 #if OS_OS2
 

@@ -14,11 +14,10 @@
 ** for completeness. Test code is written in C for these cases
 ** as there is not much point in binding to Tcl.
 **
-** $Id: test9.c,v 1.3 2007/04/23 23:56:32 drh Exp $
+** $Id: test9.c,v 1.4 2007/08/21 10:44:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
-#include "os.h"
 #include <stdlib.h>
 #include <string.h>
 

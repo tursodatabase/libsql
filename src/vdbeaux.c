@@ -15,7 +15,6 @@
 ** But that file was getting too big so this subroutines were split out.
 */
 #include "sqliteInt.h"
-#include "os.h"
 #include <ctype.h>
 #include "vdbeInt.h"
 

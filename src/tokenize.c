@@ -15,10 +15,9 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.133 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: tokenize.c,v 1.134 2007/08/21 10:44:16 drh Exp $
 */
 #include "sqliteInt.h"
-#include "os.h"
 #include <ctype.h>
 #include <stdlib.h>
 

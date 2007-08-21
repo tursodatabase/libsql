@@ -11,20 +11,14 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.145 2007/08/17 15:53:37 danielk1977 Exp $
+** $Id: pragma.c,v 1.146 2007/08/21 10:44:16 drh Exp $
 */
 #include "sqliteInt.h"
-#include "os.h"
 #include <ctype.h>
 
 /* Ignore this whole file if pragmas are disabled
 */
 #if !defined(SQLITE_OMIT_PRAGMA) && !defined(SQLITE_OMIT_PARSER)
-
-#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
-# include "pager.h"
-# include "btree.h"
-#endif
 
 /*
 ** Interpret the given string as a safety level.  Return 0 for OFF,
