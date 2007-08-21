@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.55 2007/08/21 10:44:16 drh Exp $
+** $Id: prepare.c,v 1.56 2007/08/21 19:33:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -470,6 +470,7 @@ int sqlite3Prepare(
   if( sqlite3SafetyOn(db) ){
     return SQLITE_MISUSE;
   }
+  assert( sqlite3_mutex_held(db->mutex) );
 
   /* If any attached database schemas are locked, do not proceed with
   ** compilation. Instead return SQLITE_LOCKED immediately.
@@ -563,6 +564,20 @@ int sqlite3Prepare(
   assert( (rc&db->errMask)==rc );
   return rc;
 }
+static int sqlite3LockAndPrepare(
+  sqlite3 *db,              /* Database handle. */
+  const char *zSql,         /* UTF-8 encoded SQL statement. */
+  int nBytes,               /* Length of zSql in bytes. */
+  int saveSqlFlag,          /* True to copy SQL text into the sqlite3_stmt */
+  sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
+  const char **pzTail       /* OUT: End of parsed string */
+){
+  int rc;
+  sqlite3_mutex_enter(db->mutex);
+  rc = sqlite3Prepare(db, zSql, nBytes, saveSqlFlag, ppStmt, pzTail);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+}
 
 /*
 ** Rerun the compilation of a statement after a schema change.
@@ -574,12 +589,13 @@ int sqlite3Reprepare(Vdbe *p){
   sqlite3_stmt *pNew;
   const char *zSql;
   sqlite3 *db;
-  
+
   zSql = sqlite3VdbeGetSql(p);
   if( zSql==0 ){
     return 0;
   }
   db = sqlite3VdbeDb(p);
+  assert( sqlite3_mutex_held(db->mutex) );
   rc = sqlite3Prepare(db, zSql, -1, 0, &pNew, 0);
   if( rc ){
     assert( pNew==0 );
@@ -610,7 +626,7 @@ int sqlite3_prepare(
   sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
   const char **pzTail       /* OUT: End of parsed string */
 ){
-  return sqlite3Prepare(db,zSql,nBytes,0,ppStmt,pzTail);
+  return sqlite3LockAndPrepare(db,zSql,nBytes,0,ppStmt,pzTail);
 }
 int sqlite3_prepare_v2(
   sqlite3 *db,              /* Database handle. */
@@ -619,7 +635,7 @@ int sqlite3_prepare_v2(
   sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
   const char **pzTail       /* OUT: End of parsed string */
 ){
-  return sqlite3Prepare(db,zSql,nBytes,1,ppStmt,pzTail);
+  return sqlite3LockAndPrepare(db,zSql,nBytes,1,ppStmt,pzTail);
 }
 
 
@@ -646,6 +662,7 @@ static int sqlite3Prepare16(
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
   }
+  sqlite3_mutex_enter(db->mutex);
   zSql8 = sqlite3Utf16to8(db, zSql, nBytes);
   if( zSql8 ){
     rc = sqlite3Prepare(db, zSql8, -1, saveSqlFlag, ppStmt, &zTail8);
@@ -661,7 +678,9 @@ static int sqlite3Prepare16(
     *pzTail = (u8 *)zSql + sqlite3Utf16ByteLen(zSql, chars_parsed);
   }
   sqlite3_free(zSql8); 
-  return sqlite3ApiExit(db, rc);
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 /*

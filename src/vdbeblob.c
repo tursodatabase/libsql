@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.13 2007/08/21 15:13:19 drh Exp $
+** $Id: vdbeblob.c,v 1.14 2007/08/21 19:33:57 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -247,7 +247,6 @@ blob_open_out:
 */
 int sqlite3_blob_close(sqlite3_blob *pBlob){
   Incrblob *p = (Incrblob *)pBlob;
-  sqlite3_stmt *pStmt;
   sqlite3_mutex *mutex = p->db->mutex;
   int rc;
 

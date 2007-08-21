@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.20 2007/08/16 10:09:02 danielk1977 Exp $
+** $Id: callback.c,v 1.21 2007/08/21 19:33:56 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -36,8 +36,8 @@ static void callCollNeeded(sqlite3 *db, const char *zName, int nName){
   if( db->xCollNeeded16 ){
     char const *zExternal;
     sqlite3_value *pTmp = sqlite3ValueNew(db);
-    sqlite3ValueSetStr(db, pTmp, nName, zName, SQLITE_UTF8, SQLITE_STATIC);
-    zExternal = sqlite3ValueText(db, pTmp, SQLITE_UTF16NATIVE);
+    sqlite3ValueSetStr(pTmp, nName, zName, SQLITE_UTF8, SQLITE_STATIC);
+    zExternal = sqlite3ValueText(pTmp, SQLITE_UTF16NATIVE);
     if( zExternal ){
       db->xCollNeeded16(db->pCollNeededArg, db, (int)ENC(db), zExternal);
     }

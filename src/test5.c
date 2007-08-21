@@ -15,7 +15,7 @@
 ** is used for testing the SQLite routines for converting between
 ** the various supported unicode encodings.
 **
-** $Id: test5.c,v 1.19 2007/08/21 10:44:16 drh Exp $
+** $Id: test5.c,v 1.20 2007/08/21 19:33:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -156,7 +156,7 @@ static int test_translate(
     if( objc==5 ){
       z = sqlite3StrDup(z);
     }
-    sqlite3ValueSetStr(0, pVal, -1, z, enc_from, xDel);
+    sqlite3ValueSetStr(pVal, -1, z, enc_from, xDel);
   }else{
     z = (char*)Tcl_GetByteArrayFromObj(objv[1], &len);
     if( objc==5 ){
@@ -164,11 +164,11 @@ static int test_translate(
       z = sqlite3_malloc(len);
       memcpy(z, zTmp, len);
     }
-    sqlite3ValueSetStr(0, pVal, -1, z, enc_from, xDel);
+    sqlite3ValueSetStr(pVal, -1, z, enc_from, xDel);
   }
 
-  z = (char *)sqlite3ValueText(0, pVal, enc_to);
-  len = sqlite3ValueBytes(0, pVal, enc_to) + (enc_to==SQLITE_UTF8?1:2);
+  z = (char *)sqlite3ValueText(pVal, enc_to);
+  len = sqlite3ValueBytes(pVal, enc_to) + (enc_to==SQLITE_UTF8?1:2);
   Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((u8*)z, len));
 
   sqlite3ValueFree(pVal);

@@ -680,6 +680,7 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
 static void releaseMemArray(Mem *p, int N){
   if( p ){
     while( N-->0 ){
+      assert( N<2 || p[0].db==p[1].db );
       sqlite3VdbeMemRelease(p++);
     }
   }
@@ -887,11 +888,16 @@ void sqlite3VdbeMakeReady(
       p->nCursor = nCursor;
       for(n=0; n<nVar; n++){
         p->aVar[n].flags = MEM_Null;
+        p->aVar[n].db = db;
+      }
+      for(n=0; n<nStack; n++){
+        p->aStack[n].db = db;
       }
     }
   }
   for(n=0; n<p->nMem; n++){
     p->aMem[n].flags = MEM_Null;
+    p->aMem[n].db = db;
   }
 
   p->pTos = &p->aStack[-1];
@@ -1032,11 +1038,9 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, int var, const char *zName, int N){
   assert( p->aColName!=0 );
   pColName = &(p->aColName[idx+var*p->nResColumn]);
   if( N==P3_DYNAMIC || N==P3_STATIC ){
-    rc = sqlite3VdbeMemSetStr(p->db, 
-        pColName, zName, -1, SQLITE_UTF8, SQLITE_STATIC);
+    rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, SQLITE_STATIC);
   }else{
-    rc = sqlite3VdbeMemSetStr(p->db, 
-        pColName, zName, N, SQLITE_UTF8, SQLITE_TRANSIENT);
+    rc = sqlite3VdbeMemSetStr(pColName, zName, N, SQLITE_UTF8,SQLITE_TRANSIENT);
   }
   if( rc==SQLITE_OK && N==P3_DYNAMIC ){
     pColName->flags = (pColName->flags&(~MEM_Static))|MEM_Dyn;
@@ -1550,7 +1554,7 @@ int sqlite3VdbeReset(Vdbe *p){
   */
   if( p->pc>=0 ){
     if( p->zErrMsg ){
-      sqlite3ValueSetStr(db,db->pErr,-1,p->zErrMsg,SQLITE_UTF8,sqlite3_free);
+      sqlite3ValueSetStr(db->pErr,-1,p->zErrMsg,SQLITE_UTF8,sqlite3_free);
       db->errCode = p->rc;
       p->zErrMsg = 0;
     }else if( p->rc ){
@@ -2032,7 +2036,9 @@ int sqlite3VdbeRecordCompare(
   Mem mem1;
   Mem mem2;
   mem1.enc = pKeyInfo->enc;
+  mem1.db = pKeyInfo->db;
   mem2.enc = pKeyInfo->enc;
+  mem2.db = pKeyInfo->db;
   
   idx1 = GetVarint(aKey1, szHdr1);
   d1 = szHdr1;
@@ -2106,7 +2112,7 @@ int sqlite3VdbeIdxRowidLen(const u8 *aKey){
 ** Read the rowid (the last field in the record) and store it in *rowid.
 ** Return SQLITE_OK if everything works, or an error code otherwise.
 */
-int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
+int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   i64 nCellKey = 0;
   int rc;
   u32 szHdr;        /* Size of the header */
@@ -2118,7 +2124,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   if( nCellKey<=0 ){
     return SQLITE_CORRUPT_BKPT;
   }
-  rc = sqlite3VdbeMemFromBtree(db, pCur, 0, nCellKey, 1, &m);
+  rc = sqlite3VdbeMemFromBtree(pCur, 0, nCellKey, 1, &m);
   if( rc ){
     return rc;
   }
@@ -2142,7 +2148,6 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
 ** is ignored as well.
 */
 int sqlite3VdbeIdxKeyCompare(
-  sqlite3 *db,
   Cursor *pC,                 /* The cursor to compare against */
   int nKey, const u8 *pKey,   /* The key to compare */
   int *res                    /* Write the comparison result here */
@@ -2158,7 +2163,7 @@ int sqlite3VdbeIdxKeyCompare(
     *res = 0;
     return SQLITE_OK;
   }
-  rc = sqlite3VdbeMemFromBtree(db, pC->pCursor, 0, nCellKey, 1, &m);
+  rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, nCellKey, 1, &m);
   if( rc ){
     return rc;
   }
@@ -2173,6 +2178,7 @@ int sqlite3VdbeIdxKeyCompare(
 ** sqlite3_changes() on the database handle 'db'. 
 */
 void sqlite3VdbeSetChanges(sqlite3 *db, int nChange){
+  assert( sqlite3_mutex_held(db->mutex) );
   db->nChange = nChange;
   db->nTotalChange += nChange;
 }

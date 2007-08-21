@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.392 2007/08/21 16:15:56 drh Exp $
+** $Id: main.c,v 1.393 2007/08/21 19:33:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -819,7 +819,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   assert( !db->mallocFailed );
   z = sqlite3_value_text16(db->pErr);
   if( z==0 ){
-    sqlite3ValueSetStr(db, db->pErr, -1, sqlite3ErrStr(db->errCode),
+    sqlite3ValueSetStr(db->pErr, -1, sqlite3ErrStr(db->errCode),
          SQLITE_UTF8, SQLITE_STATIC);
     z = sqlite3_value_text16(db->pErr);
   }
@@ -1116,8 +1116,8 @@ int sqlite3_open16(
   assert( ppDb );
   *ppDb = 0;
   pVal = sqlite3ValueNew(0);
-  sqlite3ValueSetStr(0, pVal, -1, zFilename, SQLITE_UTF16NATIVE, SQLITE_STATIC);
-  zFilename8 = sqlite3ValueText(0, pVal, SQLITE_UTF8);
+  sqlite3ValueSetStr(pVal, -1, zFilename, SQLITE_UTF16NATIVE, SQLITE_STATIC);
+  zFilename8 = sqlite3ValueText(pVal, SQLITE_UTF8);
   if( zFilename8 ){
     rc = openDatabase(zFilename8, ppDb,
                       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);

@@ -12,24 +12,46 @@
 ** Memory allocation functions used throughout sqlite.
 **
 **
-** $Id: malloc.c,v 1.7 2007/08/21 10:44:16 drh Exp $
+** $Id: malloc.c,v 1.8 2007/08/21 19:33:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
 #include <ctype.h>
 
 /*
-** Set the soft heap-size limit for the current thread. Passing a negative
-** value indicates no limit.
+** This routine runs when the memory allocator sees that the
+** total memory allocation is about to exceed the soft heap
+** limit.
+*/
+static void softHeapLimitEnforcer(
+  void *NotUsed, 
+  sqlite3_uint64 inUse,
+  unsigned int allocSize
+){
+  sqlite3_release_memory(allocSize);
+}
+
+/*
+** Set the soft heap-size limit for the current thread. Passing a
+** zero or negative value indicates no limit.
 */
 void sqlite3_soft_heap_limit(int n){
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-  ThreadData *pTd = sqlite3ThreadData();
-  if( pTd ){
-    pTd->nSoftHeapLimit = n;
+  sqlite3_uint64 iLimit;
+  int overage;
+  if( n<0 ){
+    iLimit = 0;
+  }else{
+    iLimit = n;
   }
-  sqlite3ReleaseThreadData();
-#endif
+  if( iLimit>0 ){
+    sqlite3_memory_alarm(softHeapLimitEnforcer, 0, iLimit);
+  }else{
+    sqlite3_memory_alarm(0, 0, 0);
+  }
+  overage = sqlite3_memory_used() - n;
+  if( overage>0 ){
+    sqlite3_release_memory(overage);
+  }
 }
 
 /*
@@ -63,7 +85,7 @@ void *sqlite3DbMallocZero(sqlite3 *db, unsigned n){
   void *p = sqlite3_malloc(n);
   if( p ){
     memset(p, 0, n);
-  }else{
+  }else if( db ){
     db->mallocFailed = 1;
   }
   return p;
@@ -196,29 +218,3 @@ int sqlite3ApiExit(sqlite3* db, int rc){
   }
   return rc & (db ? db->errMask : 0xff);
 }
-
-#ifdef SQLITE_MEMDEBUG
-/*
-** This function sets a flag in the thread-specific-data structure that will
-** cause an assert to fail if sqliteMalloc() or sqliteRealloc() is called.
-*/
-#if 0
-void sqlite3MallocDisallow(){
-#if 0
-  assert( sqlite3_mallocDisallowed>=0 );
-  sqlite3_mallocDisallowed++;
-#endif
-}
-
-/*
-** This function clears the flag set in the thread-specific-data structure set
-** by sqlite3MallocDisallow().
-*/
-void sqlite3MallocAllow(){
-#if 0
-  assert( sqlite3_mallocDisallowed>0 );
-  sqlite3_mallocDisallowed--;
-#endif
-}
-#endif
-#endif

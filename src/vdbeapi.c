@@ -97,7 +97,7 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
 const void *sqlite3_value_blob(sqlite3_value *pVal){
   Mem *p = (Mem*)pVal;
   if( p->flags & (MEM_Blob|MEM_Str) ){
-    sqlite3VdbeMemExpandBlob(0, p);
+    sqlite3VdbeMemExpandBlob(p);
     p->flags &= ~MEM_Str;
     p->flags |= MEM_Blob;
     return p->z;
@@ -106,10 +106,10 @@ const void *sqlite3_value_blob(sqlite3_value *pVal){
   }
 }
 int sqlite3_value_bytes(sqlite3_value *pVal){
-  return sqlite3ValueBytes(0, pVal, SQLITE_UTF8);
+  return sqlite3ValueBytes(pVal, SQLITE_UTF8);
 }
 int sqlite3_value_bytes16(sqlite3_value *pVal){
-  return sqlite3ValueBytes(0, pVal, SQLITE_UTF16NATIVE);
+  return sqlite3ValueBytes(pVal, SQLITE_UTF16NATIVE);
 }
 double sqlite3_value_double(sqlite3_value *pVal){
   return sqlite3VdbeRealValue((Mem*)pVal);
@@ -121,17 +121,17 @@ sqlite_int64 sqlite3_value_int64(sqlite3_value *pVal){
   return sqlite3VdbeIntValue((Mem*)pVal);
 }
 const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
-  return (const unsigned char *)sqlite3ValueText(0, pVal, SQLITE_UTF8);
+  return (const unsigned char *)sqlite3ValueText(pVal, SQLITE_UTF8);
 }
 #ifndef SQLITE_OMIT_UTF16
 const void *sqlite3_value_text16(sqlite3_value* pVal){
-  return sqlite3ValueText(0, pVal, SQLITE_UTF16NATIVE);
+  return sqlite3ValueText(pVal, SQLITE_UTF16NATIVE);
 }
 const void *sqlite3_value_text16be(sqlite3_value *pVal){
-  return sqlite3ValueText(0, pVal, SQLITE_UTF16BE);
+  return sqlite3ValueText(pVal, SQLITE_UTF16BE);
 }
 const void *sqlite3_value_text16le(sqlite3_value *pVal){
-  return sqlite3ValueText(0, pVal, SQLITE_UTF16LE);
+  return sqlite3ValueText(pVal, SQLITE_UTF16LE);
 }
 #endif /* SQLITE_OMIT_UTF16 */
 int sqlite3_value_type(sqlite3_value* pVal){
@@ -150,19 +150,19 @@ void sqlite3_result_blob(
   void (*xDel)(void *)
 ){
   assert( n>=0 );
-  sqlite3VdbeMemSetStr(0, &pCtx->s, z, n, 0, xDel);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, 0, xDel);
 }
 void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
   sqlite3VdbeMemSetDouble(&pCtx->s, rVal);
 }
 void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
   pCtx->isError = 1;
-  sqlite3VdbeMemSetStr(0, &pCtx->s, z, n, SQLITE_UTF8, SQLITE_TRANSIENT);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, SQLITE_TRANSIENT);
 }
 #ifndef SQLITE_OMIT_UTF16
 void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
   pCtx->isError = 1;
-  sqlite3VdbeMemSetStr(0, &pCtx->s, z, n, SQLITE_UTF16NATIVE, SQLITE_TRANSIENT);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, SQLITE_TRANSIENT);
 }
 #endif
 void sqlite3_result_int(sqlite3_context *pCtx, int iVal){
@@ -180,7 +180,7 @@ void sqlite3_result_text(
   int n,
   void (*xDel)(void *)
 ){
-  sqlite3VdbeMemSetStr(0, &pCtx->s, z, n, SQLITE_UTF8, xDel);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, xDel);
 }
 #ifndef SQLITE_OMIT_UTF16
 void sqlite3_result_text16(
@@ -189,7 +189,7 @@ void sqlite3_result_text16(
   int n, 
   void (*xDel)(void *)
 ){
-  sqlite3VdbeMemSetStr(0, &pCtx->s, z, n, SQLITE_UTF16NATIVE, xDel);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, xDel);
 }
 void sqlite3_result_text16be(
   sqlite3_context *pCtx, 
@@ -197,7 +197,7 @@ void sqlite3_result_text16be(
   int n, 
   void (*xDel)(void *)
 ){
-  sqlite3VdbeMemSetStr(0, &pCtx->s, z, n, SQLITE_UTF16BE, xDel);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16BE, xDel);
 }
 void sqlite3_result_text16le(
   sqlite3_context *pCtx, 
@@ -205,11 +205,11 @@ void sqlite3_result_text16le(
   int n, 
   void (*xDel)(void *)
 ){
-  sqlite3VdbeMemSetStr(0, &pCtx->s, z, n, SQLITE_UTF16LE, xDel);
+  sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16LE, xDel);
 }
 #endif /* SQLITE_OMIT_UTF16 */
 void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
-  sqlite3VdbeMemCopy(0, &pCtx->s, pValue);
+  sqlite3VdbeMemCopy(&pCtx->s, pValue);
 }
 void sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
   sqlite3VdbeMemSetZeroBlob(&pCtx->s, n);
@@ -351,19 +351,27 @@ end_of_step:
 */
 #ifdef SQLITE_OMIT_PARSER
 int sqlite3_step(sqlite3_stmt *pStmt){
-  return sqlite3Step((Vdbe*)pStmt);
+  int rc;
+  Vdbe *v;
+  v = (Vdbe*)pStmt;
+  sqlite3_mutex_enter(v->db->mutex);
+  rc = sqlite3Step(v);
+  sqlite3_mutex_leave(v->db->mutex);
+  return rc;
 }
 #else
 int sqlite3_step(sqlite3_stmt *pStmt){
   int cnt = 0;
   int rc;
   Vdbe *v = (Vdbe*)pStmt;
+  sqlite3_mutex_enter(v->db->mutex);
   while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
          && cnt++ < 5
          && sqlite3Reprepare(v) ){
     sqlite3_reset(pStmt);
     v->expired = 0;
   }
+  sqlite3_mutex_leave(v->db->mutex);
   return rc;
 }
 #endif
@@ -404,8 +412,10 @@ void sqlite3InvalidFunction(
 ** same context that was returned on prior calls.
 */
 void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
-  Mem *pMem = p->pMem;
+  Mem *pMem;
   assert( p && p->pFunc && p->pFunc->xStep );
+  assert( sqlite3_mutex_held(p->s.db->mutex) );
+  pMem = p->pMem;
   if( (pMem->flags & MEM_Agg)==0 ){
     if( nByte==0 ){
       assert( pMem->flags==MEM_Null );
@@ -418,7 +428,7 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
         pMem->z = pMem->zShort;
         memset(pMem->z, 0, nByte);
       }else{
-        pMem->z = sqlite3DbMallocZero(p->db, nByte);
+        pMem->z = sqlite3DbMallocZero(p->s.db, nByte);
       }
     }
   }
@@ -430,7 +440,10 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
 ** the user-function defined by pCtx.
 */
 void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
-  VdbeFunc *pVdbeFunc = pCtx->pVdbeFunc;
+  VdbeFunc *pVdbeFunc;
+
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
+  pVdbeFunc = pCtx->pVdbeFunc;
   if( !pVdbeFunc || iArg>=pVdbeFunc->nAux || iArg<0 ){
     return 0;
   }
@@ -452,13 +465,14 @@ void sqlite3_set_auxdata(
   VdbeFunc *pVdbeFunc;
   if( iArg<0 ) goto failed;
 
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   pVdbeFunc = pCtx->pVdbeFunc;
   if( !pVdbeFunc || pVdbeFunc->nAux<=iArg ){
     int nAux = (pVdbeFunc ? pVdbeFunc->nAux : 0);
     int nMalloc = sizeof(VdbeFunc) + sizeof(struct AuxData)*iArg;
     pVdbeFunc = sqlite3_realloc(pVdbeFunc, nMalloc);
     if( !pVdbeFunc ){
-      pCtx->db->mallocFailed = 1;
+      pCtx->s.db->mallocFailed = 1;
       goto failed;
     }
     pCtx->pVdbeFunc = pVdbeFunc;
@@ -524,7 +538,7 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   Vdbe *pVm = (Vdbe *)pStmt;
   int vals = sqlite3_data_count(pStmt);
   if( pVm==0 || pVm->resOnStack==0 || i>=pVm->nResColumn || i<0 ){
-    static const Mem nullMem = {{0}, 0.0, "", 0, MEM_Null, SQLITE_NULL };
+    static const Mem nullMem = {{0}, 0.0, 0, "", 0, MEM_Null, SQLITE_NULL };
     sqlite3Error(pVm->db, SQLITE_RANGE, 0);
     return (Mem*)&nullMem;
   }
@@ -800,9 +814,9 @@ static int bindText(
     return rc;
   }
   pVar = &p->aVar[i-1];
-  rc = sqlite3VdbeMemSetStr(p->db, pVar, zData, nData, encoding, xDel);
+  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, encoding, xDel);
   if( rc==SQLITE_OK && encoding!=0 ){
-    rc = sqlite3VdbeChangeEncoding(p->db, pVar, ENC(p->db));
+    rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
   }
   sqlite3Error(p->db, rc, 0);
   rc = sqlite3ApiExit(p->db, rc);
@@ -882,7 +896,7 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
   sqlite3_mutex_enter(p->db->mutex);
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
-    rc = sqlite3VdbeMemCopy(0, &p->aVar[i-1], pValue);
+    rc = sqlite3VdbeMemCopy(&p->aVar[i-1], pValue);
   }
   sqlite3_mutex_leave(p->db->mutex);
   return rc;
@@ -987,7 +1001,7 @@ int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
   }
   for(i=0; rc==SQLITE_OK && i<pFrom->nVar; i++){
     sqlite3MallocDisallow();
-    rc = sqlite3VdbeMemMove(0, &pTo->aVar[i], &pFrom->aVar[i]);
+    rc = sqlite3VdbeMemMove(&pTo->aVar[i], &pFrom->aVar[i]);
     sqlite3MallocAllow();
   }
   assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );

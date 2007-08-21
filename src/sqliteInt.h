@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.594 2007/08/21 13:51:23 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.595 2007/08/21 19:33:56 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -793,6 +793,7 @@ struct FKey {
 ** were larger.
 */
 struct KeyInfo {
+  sqlite3 *db;        /* The database connection */
   u8 enc;             /* Text encoding - one of the TEXT_Utf* values */
   u8 incrKey;         /* Increase 2nd key by epsilon before comparison */
   int nField;         /* Number of entries in aColl[] */
@@ -1744,15 +1745,15 @@ int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3CheckObjectName(Parse *, const char *);
 void sqlite3VdbeSetChanges(sqlite3 *, int);
 
-const void *sqlite3ValueText(sqlite3 *db, sqlite3_value*, u8);
-int sqlite3ValueBytes(sqlite3 *db, sqlite3_value*, u8);
-void sqlite3ValueSetStr(sqlite3 *,sqlite3_value*, int, const void *,u8, 
+const void *sqlite3ValueText(sqlite3_value*, u8);
+int sqlite3ValueBytes(sqlite3_value*, u8);
+void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8, 
                         void(*)(void*));
 void sqlite3ValueFree(sqlite3_value*);
 sqlite3_value *sqlite3ValueNew(sqlite3 *);
 char *sqlite3Utf16to8(sqlite3 *, const void*, int);
 int sqlite3ValueFromExpr(sqlite3 *, Expr *, u8, u8, sqlite3_value **);
-void sqlite3ValueApplyAffinity(sqlite3 *, sqlite3_value *, u8, u8);
+void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 extern const unsigned char sqlite3UpperToLower[];
 void sqlite3RootPageMoved(Db*, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);

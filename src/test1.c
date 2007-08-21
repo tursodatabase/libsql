@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.266 2007/08/21 10:44:16 drh Exp $
+** $Id: test1.c,v 1.267 2007/08/21 19:33:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -921,10 +921,10 @@ static int test_create_function(
       sqlite3_iMallocFail++;
     }
 #endif 
-    pVal = sqlite3ValueNew(0);
-    sqlite3ValueSetStr(0,pVal, -1, "x_sqlite_exec", SQLITE_UTF8, SQLITE_STATIC);
+    pVal = sqlite3ValueNew(db);
+    sqlite3ValueSetStr(pVal, -1, "x_sqlite_exec", SQLITE_UTF8, SQLITE_STATIC);
     rc = sqlite3_create_function16(db, 
-              sqlite3ValueText(0, pVal, SQLITE_UTF16NATIVE),
+              sqlite3ValueText(pVal, SQLITE_UTF16NATIVE),
               1, SQLITE_UTF16, db, sqlite3ExecFunc, 0, 0);
     sqlite3ValueFree(pVal);
   }
@@ -2056,11 +2056,11 @@ static int test_collate_func(
   }
 
   pVal = sqlite3ValueNew(0);
-  sqlite3ValueSetStr(0, pVal, nA, zA, encin, SQLITE_STATIC);
+  sqlite3ValueSetStr(pVal, nA, zA, encin, SQLITE_STATIC);
   n = sqlite3_value_bytes(pVal);
   Tcl_ListObjAppendElement(i,pX,
       Tcl_NewStringObj((char*)sqlite3_value_text(pVal),n));
-  sqlite3ValueSetStr(0, pVal, nB, zB, encin, SQLITE_STATIC);
+  sqlite3ValueSetStr(pVal, nB, zB, encin, SQLITE_STATIC);
   n = sqlite3_value_bytes(pVal);
   Tcl_ListObjAppendElement(i,pX,
       Tcl_NewStringObj((char*)sqlite3_value_text(pVal),n));
@@ -2101,9 +2101,9 @@ static int test_collate(
     }
 #endif
     pVal = sqlite3ValueNew(0);
-    sqlite3ValueSetStr(0, pVal, -1, "test_collate", SQLITE_UTF8, SQLITE_STATIC);
+    sqlite3ValueSetStr(pVal, -1, "test_collate", SQLITE_UTF8, SQLITE_STATIC);
     rc = sqlite3_create_collation16(db, 
-          sqlite3ValueText(0, pVal, SQLITE_UTF16NATIVE), SQLITE_UTF16BE, 
+          sqlite3ValueText(pVal, SQLITE_UTF16NATIVE), SQLITE_UTF16BE, 
           (void *)SQLITE_UTF16BE, val?test_collate_func:0);
     sqlite3ValueFree(pVal);
   }
@@ -2270,7 +2270,7 @@ static void test_function_utf8(
   Tcl_DecrRefCount(pX);
   sqlite3_result_text(pCtx, Tcl_GetStringResult(interp), -1, SQLITE_TRANSIENT);
   pVal = sqlite3ValueNew(0);
-  sqlite3ValueSetStr(0, pVal, -1, Tcl_GetStringResult(interp), 
+  sqlite3ValueSetStr(pVal, -1, Tcl_GetStringResult(interp), 
       SQLITE_UTF8, SQLITE_STATIC);
   sqlite3_result_text16be(pCtx, sqlite3_value_text16be(pVal),
       -1, SQLITE_TRANSIENT);
@@ -2293,7 +2293,7 @@ static void test_function_utf16le(
   Tcl_EvalObjEx(interp, pX, 0);
   Tcl_DecrRefCount(pX);
   pVal = sqlite3ValueNew(0);
-  sqlite3ValueSetStr(0, pVal, -1, Tcl_GetStringResult(interp), 
+  sqlite3ValueSetStr(pVal, -1, Tcl_GetStringResult(interp), 
       SQLITE_UTF8, SQLITE_STATIC);
   sqlite3_result_text(pCtx,(char*)sqlite3_value_text(pVal),-1,SQLITE_TRANSIENT);
   sqlite3ValueFree(pVal);
@@ -2315,7 +2315,7 @@ static void test_function_utf16be(
   Tcl_EvalObjEx(interp, pX, 0);
   Tcl_DecrRefCount(pX);
   pVal = sqlite3ValueNew(0);
-  sqlite3ValueSetStr(0, pVal, -1, Tcl_GetStringResult(interp), 
+  sqlite3ValueSetStr(pVal, -1, Tcl_GetStringResult(interp), 
       SQLITE_UTF8, SQLITE_STATIC);
   sqlite3_result_text16le(pCtx, sqlite3_value_text16le(pVal),
       -1, SQLITE_TRANSIENT);

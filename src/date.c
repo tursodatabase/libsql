@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.70 2007/08/21 10:44:16 drh Exp $
+** $Id: date.c,v 1.71 2007/08/21 19:33:56 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -905,7 +905,7 @@ static void ctimeFunc(
 ){
   sqlite3_value *pVal = sqlite3ValueNew(0);
   if( pVal ){
-    sqlite3ValueSetStr(0, pVal, -1, "now", SQLITE_UTF8, SQLITE_STATIC);
+    sqlite3ValueSetStr(pVal, -1, "now", SQLITE_UTF8, SQLITE_STATIC);
     timeFunc(context, 1, &pVal);
     sqlite3ValueFree(pVal);
   }
@@ -923,7 +923,7 @@ static void cdateFunc(
 ){
   sqlite3_value *pVal = sqlite3ValueNew(0);
   if( pVal ){
-    sqlite3ValueSetStr(0, pVal, -1, "now", SQLITE_UTF8, SQLITE_STATIC);
+    sqlite3ValueSetStr(pVal, -1, "now", SQLITE_UTF8, SQLITE_STATIC);
     dateFunc(context, 1, &pVal);
     sqlite3ValueFree(pVal);
   }
@@ -941,7 +941,7 @@ static void ctimestampFunc(
 ){
   sqlite3_value *pVal = sqlite3ValueNew(0);
   if( pVal ){
-    sqlite3ValueSetStr(0, pVal, -1, "now", SQLITE_UTF8, SQLITE_STATIC);
+    sqlite3ValueSetStr(pVal, -1, "now", SQLITE_UTF8, SQLITE_STATIC);
     datetimeFunc(context, 1, &pVal);
     sqlite3ValueFree(pVal);
   }

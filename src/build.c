@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.436 2007/08/17 01:14:38 drh Exp $
+** $Id: build.c,v 1.437 2007/08/21 19:33:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3369,6 +3369,7 @@ KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
   KeyInfo *pKey = (KeyInfo *)sqlite3DbMallocZero(pParse->db, nBytes);
 
   if( pKey ){
+    pKey->db = pParse->db;
     pKey->aSortOrder = (u8 *)&(pKey->aColl[nCol]);
     assert( &pKey->aSortOrder[nCol]==&(((u8 *)pKey)[nBytes]) );
     for(i=0; i<nCol; i++){

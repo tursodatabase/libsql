@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.55 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: utf.c,v 1.56 2007/08/21 19:33:57 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -187,7 +187,7 @@ int sqlite3Utf8Read(
 ** desiredEnc. It is an error if the string is already of the desired
 ** encoding, or if *pMem does not contain a string value.
 */
-int sqlite3VdbeMemTranslate(sqlite3 *db, Mem *pMem, u8 desiredEnc){
+int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   unsigned char zShort[NBFS]; /* Temporary short output buffer */
   int len;                    /* Maximum length of output string in bytes */
   unsigned char *zOut;                  /* Output buffer */
@@ -196,6 +196,7 @@ int sqlite3VdbeMemTranslate(sqlite3 *db, Mem *pMem, u8 desiredEnc){
   unsigned char *z;                     /* Output iterator */
   unsigned int c;
 
+  assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( pMem->flags&MEM_Str );
   assert( pMem->enc!=desiredEnc );
   assert( pMem->enc!=0 );
@@ -216,7 +217,7 @@ int sqlite3VdbeMemTranslate(sqlite3 *db, Mem *pMem, u8 desiredEnc){
   if( pMem->enc!=SQLITE_UTF8 && desiredEnc!=SQLITE_UTF8 ){
     u8 temp;
     int rc;
-    rc = sqlite3VdbeMemMakeWriteable(db, pMem);
+    rc = sqlite3VdbeMemMakeWriteable(pMem);
     if( rc!=SQLITE_OK ){
       assert( rc==SQLITE_NOMEM );
       return SQLITE_NOMEM;
@@ -260,8 +261,10 @@ int sqlite3VdbeMemTranslate(sqlite3 *db, Mem *pMem, u8 desiredEnc){
   zIn = (u8*)pMem->z;
   zTerm = &zIn[pMem->n];
   if( len>NBFS ){
-    zOut = sqlite3DbMallocRaw(db, len);
-    if( !zOut ) return SQLITE_NOMEM;
+    zOut = sqlite3DbMallocRaw(pMem->db, len);
+    if( !zOut ){
+      return SQLITE_NOMEM;
+    }
   }else{
     zOut = zShort;
   }
@@ -336,7 +339,7 @@ translate_out:
 ** The allocation (static, dynamic etc.) and encoding of the Mem may be
 ** changed by this function.
 */
-int sqlite3VdbeMemHandleBom(sqlite3 *db, Mem *pMem){
+int sqlite3VdbeMemHandleBom(Mem *pMem){
   int rc = SQLITE_OK;
   u8 bom = 0;
 
@@ -364,11 +367,11 @@ int sqlite3VdbeMemHandleBom(sqlite3 *db, Mem *pMem){
       char *z = pMem->z;
       pMem->z = 0;
       pMem->xDel = 0;
-      rc = sqlite3VdbeMemSetStr(db, pMem, &z[2], pMem->n-2, bom, 
+      rc = sqlite3VdbeMemSetStr(pMem, &z[2], pMem->n-2, bom, 
           SQLITE_TRANSIENT);
       xDel(z);
     }else{
-      rc = sqlite3VdbeMemSetStr(db, pMem, &pMem->z[2], pMem->n-2, bom, 
+      rc = sqlite3VdbeMemSetStr(pMem, &pMem->z[2], pMem->n-2, bom, 
           SQLITE_TRANSIENT);
     }
   }
@@ -411,8 +414,9 @@ int sqlite3Utf8CharLen(const char *zIn, int nByte){
 char *sqlite3Utf16to8(sqlite3 *db, const void *z, int nByte){
   Mem m;
   memset(&m, 0, sizeof(m));
-  sqlite3VdbeMemSetStr(db, &m, z, nByte, SQLITE_UTF16NATIVE, SQLITE_STATIC);
-  sqlite3VdbeChangeEncoding(db, &m, SQLITE_UTF8);
+  m.db = db;
+  sqlite3VdbeMemSetStr(&m, z, nByte, SQLITE_UTF16NATIVE, SQLITE_STATIC);
+  sqlite3VdbeChangeEncoding(&m, SQLITE_UTF8);
   assert( (m.flags & MEM_Term)!=0 || db->mallocFailed );
   assert( (m.flags & MEM_Str)!=0 || db->mallocFailed );
   return (m.flags & MEM_Dyn)!=0 ? m.z : sqlite3DbStrDup(db, m.z);

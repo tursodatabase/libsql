@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.405 2007/08/21 13:11:01 danielk1977 Exp $
+** $Id: btree.c,v 1.406 2007/08/21 19:33:56 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3704,6 +3704,13 @@ int sqlite3BtreeEof(BtCursor *pCur){
   ** as well as the boolean result value.
   */
   return (CURSOR_VALID!=pCur->eState);
+}
+
+/*
+** Return the database connection handle for a cursor.
+*/
+sqlite3 *sqlite3BtreeCursorDb(const BtCursor *pCur){
+  return pCur->pBtree->pSqlite;
 }
 
 /*

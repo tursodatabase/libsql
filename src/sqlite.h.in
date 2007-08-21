@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.233 2007/08/21 16:15:56 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.234 2007/08/21 19:33:56 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2257,7 +2257,7 @@ void *sqlite3_aggregate_context(sqlite3_context*, int nBytes);
 ** the implementation of the function using this call.
 **
 ** This routine must be called from the same thread in which
-** the SQL function was originally invoked.
+** the SQL function is running.
 */
 void *sqlite3_user_data(sqlite3_context*);
 
@@ -2291,8 +2291,8 @@ void *sqlite3_user_data(sqlite3_context*);
 ** expressions that are constant at compile time. This includes literal
 ** values and SQL variables.
 **
-** These routine must be called from the same thread in which
-** the SQL function was originally invoked.
+** These routines must be called from the same thread in which
+** the SQL function is running.
 */
 void *sqlite3_get_auxdata(sqlite3_context*, int);
 void sqlite3_set_auxdata(sqlite3_context*, int, void*, void (*)(void*));
@@ -2657,6 +2657,12 @@ int sqlite3_release_memory(int);
 ** is unable to reduce memory usage below the soft limit, execution will
 ** continue without error or notification.  This is why the limit is 
 ** called a "soft" limit.  It is advisory only.
+**
+** The soft heap limit is implemented using the [sqlite3_memory_alarm()]
+** interface.  Only a single memory alarm is available in the default
+** implementation.  This means that if the application also uses the
+** memory alarm interface it will interfere with the operation of the
+** soft heap limit and undefined behavior will result.  
 **
 ** Prior to SQLite version 3.5.0, this routine only constrained the memory
 ** allocated by a single thread - the same thread in which this routine

@@ -260,7 +260,7 @@ const sqlite3_api_routines sqlite3_apis = {
 ** error message text.  The calling function should free this memory
 ** by calling sqlite3_free().
 */
-int sqlite3_load_extension(
+static int sqlite3LoadExtension(
   sqlite3 *db,          /* Load the extension into this database connection */
   const char *zFile,    /* Name of the shared library containing extension */
   const char *zProc,    /* Entry point.  Use "sqlite3_extension_init" if 0 */
@@ -329,6 +329,18 @@ int sqlite3_load_extension(
   db->aExtension[db->nExtension-1] = handle;
   return SQLITE_OK;
 }
+int sqlite3_load_extension(
+  sqlite3 *db,          /* Load the extension into this database connection */
+  const char *zFile,    /* Name of the shared library containing extension */
+  const char *zProc,    /* Entry point.  Use "sqlite3_extension_init" if 0 */
+  char **pzErrMsg       /* Put error message here if not 0 */
+){
+  int rc;
+  sqlite3_mutex_enter(db->mutex);
+  rc = sqlite3LoadExtension(db, zFile, zProc, pzErrMsg);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+}
 
 /*
 ** Call this routine when the database connection is closing in order
@@ -336,6 +348,7 @@ int sqlite3_load_extension(
 */
 void sqlite3CloseExtensions(sqlite3 *db){
   int i;
+  assert( sqlite3_mutex_held(db->mutex) );
   for(i=0; i<db->nExtension; i++){
     sqlite3OsDlClose(db->pVfs, db->aExtension[i]);
   }
@@ -347,11 +360,13 @@ void sqlite3CloseExtensions(sqlite3 *db){
 ** default so as not to open security holes in older applications.
 */
 int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
+  sqlite3_mutex_enter(db->mutex);
   if( onoff ){
     db->flags |= SQLITE_LoadExtension;
   }else{
     db->flags &= ~SQLITE_LoadExtension;
   }
+  sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
 

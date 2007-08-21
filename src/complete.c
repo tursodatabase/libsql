@@ -16,7 +16,7 @@
 ** separating it out, the code will be automatically omitted from
 ** static links that do not use it.
 **
-** $Id: complete.c,v 1.4 2007/08/16 10:09:02 danielk1977 Exp $
+** $Id: complete.c,v 1.5 2007/08/21 19:33:56 drh Exp $
 */
 #include "sqliteInt.h"
 #ifndef SQLITE_OMIT_COMPLETE
@@ -251,8 +251,8 @@ int sqlite3_complete16(const void *zSql){
   int rc = SQLITE_NOMEM;
 
   pVal = sqlite3ValueNew(0);
-  sqlite3ValueSetStr(0, pVal, -1, zSql, SQLITE_UTF16NATIVE, SQLITE_STATIC);
-  zSql8 = sqlite3ValueText(0, pVal, SQLITE_UTF8);
+  sqlite3ValueSetStr(pVal, -1, zSql, SQLITE_UTF16NATIVE, SQLITE_STATIC);
+  zSql8 = sqlite3ValueText(pVal, SQLITE_UTF8);
   if( zSql8 ){
     rc = sqlite3_complete(zSql8);
   }
