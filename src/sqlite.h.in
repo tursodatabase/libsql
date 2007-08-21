@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.232 2007/08/21 15:13:19 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.233 2007/08/21 16:15:56 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -169,6 +169,12 @@ typedef sqlite_uint64 sqlite3_uint64;
 ** [sqlite3_prepare16_v2()] must be destroyed using [sqlite3_finalize()]
 ** before this routine is called. Otherwise, SQLITE_BUSY is returned and the
 ** database connection remains open.
+**
+** Passing this routine a database connection that has already been
+** closed results in undefined behavior.  If other interfaces that
+** reference the same database connection are pending (either in the
+** same thread or in different threads) when this routine is called,
+** then the behavior is undefined and is almost certainly undesirable.
 */
 int sqlite3_close(sqlite3 *);
 
@@ -695,6 +701,10 @@ int sqlite3_extended_result_codes(sqlite3*, int onoff);
 ** is running.  But once the trigger terminates, the value returned
 ** by this routine reverts to the last value inserted before the
 ** trigger fired.
+**
+** If another thread does a new insert on the same database connection
+** while this routine is running and thus changes the last insert rowid,
+** then the return value of this routine is undefined.
 */
 sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 
@@ -728,6 +738,10 @@ sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 ** zero regardless of the number of elements that were originally in the
 ** table. To get an accurate count of the number of rows deleted, use
 ** "DELETE FROM table WHERE 1" instead.
+**
+** If another thread makes changes on the same database connection
+** while this routine is running then the return value of this routine
+** is undefined.
 */
 int sqlite3_changes(sqlite3*);
 
@@ -750,6 +764,10 @@ int sqlite3_changes(sqlite3*);
 ** zero regardless of the number of elements that were originally in the
 ** table. To get an accurate count of the number of rows deleted, use
 ** "DELETE FROM table WHERE 1" instead.
+**
+** If another thread makes changes on the same database connection
+** while this routine is running then the return value of this routine
+** is undefined.
 */
 int sqlite3_total_changes(sqlite3*);
 
@@ -1344,7 +1362,7 @@ int sqlite3_open16(
   sqlite3 **ppDb          /* OUT: SQLite db handle */
 );
 int sqlite3_open_v2(
-  const void *filename,   /* Database filename (UTF-16) */
+  const void *filename,   /* Database filename (UTF-8) */
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */
   const char *zVfs        /* Name of VFS module to use */
@@ -2150,7 +2168,7 @@ int sqlite3_aggregate_count(sqlite3_context*);
 int sqlite3_expired(sqlite3_stmt*);
 int sqlite3_transfer_bindings(sqlite3_stmt*, sqlite3_stmt*);
 int sqlite3_global_recover(void);
-
+void sqlite3_thread_cleanup(void);
 
 /*
 ** CAPI3REF: Obtaining SQL Function Parameter Values
@@ -2503,6 +2521,10 @@ SQLITE_EXTERN char *sqlite3_temp_directory;
 ** mode.  Return TRUE if it is and FALSE if not.  Autocommit mode is on
 ** by default.  Autocommit is disabled by a BEGIN statement and reenabled
 ** by the next COMMIT or ROLLBACK.
+**
+** If another thread changes the autocommit status of the database
+** connection while this routine is running, then the return value
+** is undefined.
 */
 int sqlite3_get_autocommit(sqlite3*);
 
@@ -2581,28 +2603,14 @@ void *sqlite3_update_hook(
 ** Sharing is enabled if the argument is true and disabled if the argument
 ** is false.
 **
-** Cache sharing is enabled and disabled on a thread-by-thread basis.
-** Each call to this routine enables or disables cache sharing only for
-** connections created in the same thread in which this routine is called.
-** There is no mechanism for sharing cache between database connections
-** running in different threads.
+** Beginning in SQLite version 3.5.0, cache sharing is enabled and disabled
+** for an entire process.  In prior versions of SQLite, sharing was
+** enabled or disabled for each thread separately.
 **
-** Sharing must be disabled prior to shutting down a thread or else
-** the thread will leak memory.  Call this routine with an argument of
-** 0 to turn off sharing.  Or use the sqlite3_thread_cleanup() API.
-**
-** This routine must not be called when any database connections
-** are active in the current thread.  Enabling or disabling shared
-** cache while there are active database connections will result
-** in memory corruption.
-**
-** When the shared cache is enabled, the
-** following routines must always be called from the same thread:
-** [sqlite3_open()], [sqlite3_prepare_v2()], [sqlite3_step()],
-** [sqlite3_reset()], [sqlite3_finalize()], and [sqlite3_close()].
-** This is due to the fact that the shared cache makes use of
-** thread-specific storage so that it will be available for sharing
-** with other connections.
+** The cache sharing mode set by this interface effects all subsequent
+** calls to [sqlite3_open()], [sqlite3_open_v2()], and [sqlite3_open16()].
+** Existing database connections continue use the sharing mode that was
+** in effect at the time they were opened.
 **
 ** Virtual tables cannot be used with a shared cache.  When shared
 ** cache is enabled, the sqlite3_create_module() API used to register
@@ -2631,21 +2639,18 @@ int sqlite3_release_memory(int);
 /*
 ** CAPI3REF:  Impose A Limit On Heap Size
 **
-** Place a "soft" limit on the amount of heap memory that may be allocated by
-** SQLite within the current thread. If an internal allocation is requested 
-** that would exceed the specified limit, [sqlite3_release_memory()] is invoked
-** one or more times to free up some space before the allocation is made.
+** Place a "soft" limit on the amount of heap memory that may be allocated
+** by SQLite.  If an internal allocation is requested 
+** that would exceed the specified limit, [sqlite3_release_memory()] is
+** invoked one or more times to free up some space before the allocation
+** is made.
 **
-** The limit is called "soft", because if [sqlite3_release_memory()] cannot free
-** sufficient memory to prevent the limit from being exceeded, the memory is
-** allocated anyway and the current operation proceeds.
-**
-** Prior to shutting down a thread sqlite3_soft_heap_limit() must be set to 
-** zero (the default) or else the thread will leak memory. Alternatively, use
-** the [sqlite3_thread_cleanup()] API.
+** The limit is called "soft", because if [sqlite3_release_memory()] cannot
+** free sufficient memory to prevent the limit from being exceeded,
+** the memory is allocated anyway and the current operation proceeds.
 **
 ** A negative or zero value for N means that there is no soft heap limit and
-** [sqlite3_release_memory()] will only be called when memory is exhaused.
+** [sqlite3_release_memory()] will only be called when memory is exhausted.
 ** The default value for the soft heap limit is zero.
 **
 ** SQLite makes a best effort to honor the soft heap limit.  But if it
@@ -2653,26 +2658,12 @@ int sqlite3_release_memory(int);
 ** continue without error or notification.  This is why the limit is 
 ** called a "soft" limit.  It is advisory only.
 **
-** This function is only available if the library was compiled with the 
-** SQLITE_ENABLE_MEMORY_MANAGEMENT option set.
-** memory-management has been enabled.
+** Prior to SQLite version 3.5.0, this routine only constrained the memory
+** allocated by a single thread - the same thread in which this routine
+** runs.  Beginning with SQLite version 3.5.0, the soft heap limit is
+** applied cumulatively to all threads.
 */
 void sqlite3_soft_heap_limit(int);
-
-/*
-** CAPI3REF:  Clean Up Thread Local Storage
-**
-** This routine makes sure that all thread-local storage has been
-** deallocated for the current thread.
-**
-** This routine is not technically necessary.  All thread-local storage
-** will be automatically deallocated once memory-management and
-** shared-cache are disabled and the soft heap limit has been set
-** to zero.  This routine is provided as a convenience for users who
-** want to make absolutely sure they have not forgotten something
-** prior to killing off a thread.
-*/
-void sqlite3_thread_cleanup(void);
 
 /*
 ** CAPI3REF:  Extract Metadata About A Column Of A Table

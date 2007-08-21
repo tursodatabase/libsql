@@ -29,6 +29,67 @@ int sqlite3_expired(sqlite3_stmt *pStmt){
   return p==0 || p->expired;
 }
 
+/*
+** The following routine destroys a virtual machine that is created by
+** the sqlite3_compile() routine. The integer returned is an SQLITE_
+** success/failure code that describes the result of executing the virtual
+** machine.
+**
+** This routine sets the error code and string returned by
+** sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16().
+*/
+int sqlite3_finalize(sqlite3_stmt *pStmt){
+  int rc;
+  if( pStmt==0 ){
+    rc = SQLITE_OK;
+  }else{
+    Vdbe *v = (Vdbe*)pStmt;
+    sqlite3_mutex_enter(v->db->mutex);
+    rc = sqlite3VdbeFinalize(v);
+    sqlite3_mutex_leave(v->db->mutex);
+  }
+  return rc;
+}
+
+/*
+** Terminate the current execution of an SQL statement and reset it
+** back to its starting state so that it can be reused. A success code from
+** the prior execution is returned.
+**
+** This routine sets the error code and string returned by
+** sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16().
+*/
+int sqlite3_reset(sqlite3_stmt *pStmt){
+  int rc;
+  if( pStmt==0 ){
+    rc = SQLITE_OK;
+  }else{
+    Vdbe *v = (Vdbe*)pStmt;
+    sqlite3_mutex_enter(v->db->mutex);
+    rc = sqlite3VdbeReset(v);
+    sqlite3VdbeMakeReady(v, -1, 0, 0, 0);
+    assert( (rc & (v->db->errMask))==rc );
+    sqlite3_mutex_leave(v->db->mutex);
+  }
+  return rc;
+}
+
+/*
+** Set all the parameters in the compiled SQL statement to NULL.
+*/
+int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
+  int i;
+  int rc = SQLITE_OK;
+  Vdbe *v = (Vdbe*)pStmt;
+  sqlite3_mutex_enter(v->db->mutex);
+  for(i=1; rc==SQLITE_OK && i<=sqlite3_bind_parameter_count(pStmt); i++){
+    rc = sqlite3_bind_null(pStmt, i);
+  }
+  sqlite3_mutex_leave(v->db->mutex);
+  return rc;
+}
+
+
 /**************************** sqlite3_value_  *******************************
 ** The following routines extract information from a Mem or sqlite3_value
 ** structure.

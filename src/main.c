@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.391 2007/08/21 15:13:19 drh Exp $
+** $Id: main.c,v 1.392 2007/08/21 16:15:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -231,6 +231,7 @@ int sqlite3_close(sqlite3 *db){
 void sqlite3RollbackAll(sqlite3 *db){
   int i;
   int inTrans = 0;
+  assert( sqlite3_mutex_held(db->mutex) );
   for(i=0; i<db->nDb; i++){
     if( db->aDb[i].pBt ){
       if( sqlite3BtreeIsInTrans(db->aDb[i].pBt) ){
@@ -366,9 +367,11 @@ int sqlite3_busy_handler(
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
   }
+  sqlite3_mutex_enter(db->mutex);
   db->busyHandler.xFunc = xBusy;
   db->busyHandler.pArg = pArg;
   db->busyHandler.nBusy = 0;
+  sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
 
@@ -385,6 +388,7 @@ void sqlite3_progress_handler(
   void *pArg
 ){
   if( !sqlite3SafetyCheck(db) ){
+    sqlite3_mutex_enter(db->mutex);
     if( nOps>0 ){
       db->xProgress = xProgress;
       db->nProgressOps = nOps;
@@ -394,6 +398,7 @@ void sqlite3_progress_handler(
       db->nProgressOps = 0;
       db->pProgressArg = 0;
     }
+    sqlite3_mutex_leave(db->mutex);
   }
 }
 #endif
@@ -445,6 +450,7 @@ int sqlite3CreateFunc(
   FuncDef *p;
   int nName;
 
+  assert( sqlite3_mutex_held(db->mutex) );
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
   }
@@ -472,10 +478,13 @@ int sqlite3CreateFunc(
     int rc;
     rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF8,
          pUserData, xFunc, xStep, xFinal);
-    if( rc!=SQLITE_OK ) return rc;
-    rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF16LE,
-        pUserData, xFunc, xStep, xFinal);
-    if( rc!=SQLITE_OK ) return rc;
+    if( rc==SQLITE_OK ){
+      rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF16LE,
+          pUserData, xFunc, xStep, xFinal);
+    }
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
     enc = SQLITE_UTF16BE;
   }
 #else
@@ -525,10 +534,12 @@ int sqlite3_create_function(
   void (*xFinal)(sqlite3_context*)
 ){
   int rc;
+  sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
   rc = sqlite3CreateFunc(db, zFunctionName, nArg, enc, p, xFunc, xStep, xFinal);
-
-  return sqlite3ApiExit(db, rc);
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -544,13 +555,14 @@ int sqlite3_create_function16(
 ){
   int rc;
   char *zFunc8;
+  sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
-
   zFunc8 = sqlite3Utf16to8(db, zFunctionName, -1);
   rc = sqlite3CreateFunc(db, zFunc8, nArg, eTextRep, p, xFunc, xStep, xFinal);
   sqlite3_free(zFunc8);
-
-  return sqlite3ApiExit(db, rc);
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 #endif
 
@@ -573,11 +585,15 @@ int sqlite3_overload_function(
   int nArg
 ){
   int nName = strlen(zName);
+  int rc;
+  sqlite3_mutex_enter(db->mutex);
   if( sqlite3FindFunction(db, zName, nName, nArg, SQLITE_UTF8, 0)==0 ){
     sqlite3CreateFunc(db, zName, nArg, SQLITE_UTF8,
                       0, sqlite3InvalidFunction, 0, 0);
   }
-  return sqlite3ApiExit(db, SQLITE_OK);
+  rc = sqlite3ApiExit(db, SQLITE_OK);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 #ifndef SQLITE_OMIT_TRACE
@@ -590,9 +606,12 @@ int sqlite3_overload_function(
 ** SQL statement.
 */
 void *sqlite3_trace(sqlite3 *db, void (*xTrace)(void*,const char*), void *pArg){
-  void *pOld = db->pTraceArg;
+  void *pOld;
+  sqlite3_mutex_enter(db->mutex);
+  pOld = db->pTraceArg;
   db->xTrace = xTrace;
   db->pTraceArg = pArg;
+  sqlite3_mutex_leave(db->mutex);
   return pOld;
 }
 /*
@@ -608,9 +627,12 @@ void *sqlite3_profile(
   void (*xProfile)(void*,const char*,sqlite_uint64),
   void *pArg
 ){
-  void *pOld = db->pProfileArg;
+  void *pOld;
+  sqlite3_mutex_enter(db->mutex);
+  pOld = db->pProfileArg;
   db->xProfile = xProfile;
   db->pProfileArg = pArg;
+  sqlite3_mutex_leave(db->mutex);
   return pOld;
 }
 #endif /* SQLITE_OMIT_TRACE */
@@ -626,9 +648,12 @@ void *sqlite3_commit_hook(
   int (*xCallback)(void*),  /* Function to invoke on each commit */
   void *pArg                /* Argument to the function */
 ){
-  void *pOld = db->pCommitArg;
+  void *pOld;
+  sqlite3_mutex_enter(db->mutex);
+  pOld = db->pCommitArg;
   db->xCommitCallback = xCallback;
   db->pCommitArg = pArg;
+  sqlite3_mutex_leave(db->mutex);
   return pOld;
 }
 
@@ -641,9 +666,12 @@ void *sqlite3_update_hook(
   void (*xCallback)(void*,int,char const *,char const *,sqlite_int64),
   void *pArg                /* Argument to the function */
 ){
-  void *pRet = db->pUpdateArg;
+  void *pRet;
+  sqlite3_mutex_enter(db->mutex);
+  pRet = db->pUpdateArg;
   db->xUpdateCallback = xCallback;
   db->pUpdateArg = pArg;
+  sqlite3_mutex_leave(db->mutex);
   return pRet;
 }
 
@@ -656,9 +684,12 @@ void *sqlite3_rollback_hook(
   void (*xCallback)(void*), /* Callback function */
   void *pArg                /* Argument to the function */
 ){
-  void *pRet = db->pRollbackArg;
+  void *pRet;
+  sqlite3_mutex_enter(db->mutex);
+  pRet = db->pRollbackArg;
   db->xRollbackCallback = xCallback;
   db->pRollbackArg = pArg;
+  sqlite3_mutex_leave(db->mutex);
   return pRet;
 }
 
@@ -697,6 +728,7 @@ int sqlite3BtreeFactory(
   int btree_flags = 0;
   int rc;
   
+  assert( sqlite3_mutex_held(db->mutex) );
   assert( ppBtree != 0);
   if( omitJournal ){
     btree_flags |= BTREE_OMIT_JOURNAL;
@@ -738,6 +770,7 @@ const char *sqlite3_errmsg(sqlite3 *db){
   if( !db ){
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
+  sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
   if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
     return sqlite3ErrStr(SQLITE_MISUSE);
@@ -746,6 +779,7 @@ const char *sqlite3_errmsg(sqlite3 *db){
   if( z==0 ){
     z = sqlite3ErrStr(db->errCode);
   }
+  sqlite3_mutex_leave(db->mutex);
   return z;
 }
 
@@ -775,13 +809,14 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   };
 
   const void *z;
-  assert( !db->mallocFailed );
   if( !db ){
     return (void *)(&outOfMemBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
   }
   if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
     return (void *)(&misuseBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
   }
+  sqlite3_mutex_enter(db->mutex);
+  assert( !db->mallocFailed );
   z = sqlite3_value_text16(db->pErr);
   if( z==0 ){
     sqlite3ValueSetStr(db, db->pErr, -1, sqlite3ErrStr(db->errCode),
@@ -789,6 +824,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
     z = sqlite3_value_text16(db->pErr);
   }
   sqlite3ApiExit(0, 0);
+  sqlite3_mutex_leave(db->mutex);
   return z;
 }
 #endif /* SQLITE_OMIT_UTF16 */
@@ -825,6 +861,7 @@ static int createCollation(
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
   }
+  assert( sqlite3_mutex_held(db->mutex) );
 
   /* If SQLITE_UTF16 is specified as the encoding type, transform this
   ** to one of SQLITE_UTF16LE or SQLITE_UTF16BE using the
@@ -1099,45 +1136,6 @@ int sqlite3_open16(
 #endif /* SQLITE_OMIT_UTF16 */
 
 /*
-** The following routine destroys a virtual machine that is created by
-** the sqlite3_compile() routine. The integer returned is an SQLITE_
-** success/failure code that describes the result of executing the virtual
-** machine.
-**
-** This routine sets the error code and string returned by
-** sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16().
-*/
-int sqlite3_finalize(sqlite3_stmt *pStmt){
-  int rc;
-  if( pStmt==0 ){
-    rc = SQLITE_OK;
-  }else{
-    rc = sqlite3VdbeFinalize((Vdbe*)pStmt);
-  }
-  return rc;
-}
-
-/*
-** Terminate the current execution of an SQL statement and reset it
-** back to its starting state so that it can be reused. A success code from
-** the prior execution is returned.
-**
-** This routine sets the error code and string returned by
-** sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16().
-*/
-int sqlite3_reset(sqlite3_stmt *pStmt){
-  int rc;
-  if( pStmt==0 ){
-    rc = SQLITE_OK;
-  }else{
-    rc = sqlite3VdbeReset((Vdbe*)pStmt);
-    sqlite3VdbeMakeReady((Vdbe*)pStmt, -1, 0, 0, 0);
-    assert( (rc & (sqlite3_db_handle(pStmt)->errMask))==rc );
-  }
-  return rc;
-}
-
-/*
 ** Register a new collation sequence with the database handle db.
 */
 int sqlite3_create_collation(
@@ -1148,9 +1146,12 @@ int sqlite3_create_collation(
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
   int rc;
+  sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
   rc = createCollation(db, zName, enc, pCtx, xCompare, 0);
-  return sqlite3ApiExit(db, rc);
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 /*
@@ -1165,9 +1166,12 @@ int sqlite3_create_collation_v2(
   void(*xDel)(void*)
 ){
   int rc;
+  sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
   rc = createCollation(db, zName, enc, pCtx, xCompare, xDel);
-  return sqlite3ApiExit(db, rc);
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -1183,13 +1187,16 @@ int sqlite3_create_collation16(
 ){
   int rc = SQLITE_OK;
   char *zName8; 
+  sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
   zName8 = sqlite3Utf16to8(db, zName, -1);
   if( zName8 ){
     rc = createCollation(db, zName8, enc, pCtx, xCompare, 0);
     sqlite3_free(zName8);
   }
-  return sqlite3ApiExit(db, rc);
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 #endif /* SQLITE_OMIT_UTF16 */
 
@@ -1205,9 +1212,11 @@ int sqlite3_collation_needed(
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
   }
+  sqlite3_mutex_enter(db->mutex);
   db->xCollNeeded = xCollNeeded;
   db->xCollNeeded16 = 0;
   db->pCollNeededArg = pCollNeededArg;
+  sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
 
@@ -1224,9 +1233,11 @@ int sqlite3_collation_needed16(
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
   }
+  sqlite3_mutex_enter(db->mutex);
   db->xCollNeeded = 0;
   db->xCollNeeded16 = xCollNeeded16;
   db->pCollNeededArg = pCollNeededArg;
+  sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
 #endif /* SQLITE_OMIT_UTF16 */
@@ -1306,6 +1317,7 @@ int sqlite3_table_column_metadata(
   if( sqlite3SafetyOn(db) ){
     return SQLITE_MISUSE;
   }
+  sqlite3_mutex_enter(db->mutex);
   rc = sqlite3Init(db, &zErrMsg);
   if( SQLITE_OK!=rc ){
     goto error_out;
@@ -1383,39 +1395,34 @@ error_out:
   }
   sqlite3Error(db, rc, (zErrMsg?"%s":0), zErrMsg);
   sqlite3_free(zErrMsg);
-  return sqlite3ApiExit(db, rc);
-}
-#endif
-
-/*
-** Set all the parameters in the compiled SQL statement to NULL.
-*/
-int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
-  int i;
-  int rc = SQLITE_OK;
-  for(i=1; rc==SQLITE_OK && i<=sqlite3_bind_parameter_count(pStmt); i++){
-    rc = sqlite3_bind_null(pStmt, i);
-  }
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
   return rc;
 }
+#endif
 
 /*
 ** Sleep for a little while.  Return the amount of time slept.
 */
 int sqlite3_sleep(int ms){
   sqlite3_vfs *pVfs;
+  int rc;
   pVfs = sqlite3_vfs_find(0);
 
   /* This function works in milliseconds, but the underlying OsSleep() 
   ** API uses microseconds. Hence the 1000's.
   */
-  return (sqlite3OsSleep(pVfs, 1000*ms)/1000);
+  rc = (sqlite3OsSleep(pVfs, 1000*ms)/1000);
+  sqlite3_vfs_release(pVfs);
+  return rc;
 }
 
 /*
 ** Enable or disable the extended result codes.
 */
 int sqlite3_extended_result_codes(sqlite3 *db, int onoff){
+  sqlite3_mutex_enter(db->mutex);
   db->errMask = onoff ? 0xffffffff : 0xff;
+  sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
