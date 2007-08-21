@@ -1,5 +1,5 @@
-C The\ssqlite3_value\sobject\snow\scarries\san\ssqlite3*\spointer\sto\suse\sfor\nrecording\smalloc\sfailures.\s\sThis\seliminates\sthe\sneed\sto\spass\ssqlite3*\npointers\sinto\smany\sinternal\sinterfaces.\s\sAlso\sadded\smore\smutexing.\s(CVS\s4263)
-D 2007-08-21T19:33:56
+C All\smutexing\sand\slocking\sappears\sto\sbe\sin\splace.\s\sNow\swe\sjust\shave\sto\ntest\sit\sand\smake\sit\sall\swork.\s(CVS\s4264)
+D 2007-08-21T20:25:40
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -124,7 +124,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 98c367bce3f38c5adfcc97de9ab5c79b0e5dc2b2
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in 95e159919060f9c6e060ff420ce17490f7b6a0f3
+F src/sqlite.h.in b2a7484c024c42f2e639f289beb7c8db36513a2c
 F src/sqlite3ext.h 647a6b8a8f76ff6c9611e4a071531d8e63ff2d6b
 F src/sqliteInt.h 23eb6a5b1f10d5d3d34c3c7846b7c3b93acf1276
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
@@ -159,7 +159,7 @@ F src/vacuum.c 318ccae7c4e3ddf241aeaee4d2611bfe1949a373
 F src/vdbe.c 9d4d00589c174aad9a616f1615464ddddebba0ec
 F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
 F src/vdbeInt.h 39fb069ce04137545ca0bc790f80ddc64a8c99d9
-F src/vdbeapi.c 09eb4fe5ce6e8e4558ca3fa1e22241f2d3895bf0
+F src/vdbeapi.c e12f99aa859118afbffff67eb32df36d564b5c80
 F src/vdbeaux.c b0aeed4ff33352904b392ee6c7408bae5b141b9b
 F src/vdbeblob.c d12ed95dac0992e1e372d079d76af047cc42f7c7
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
@@ -558,7 +558,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7428732b1fa04b83eda0a3539834693ef351313e
-R 913d5d6bd631d176ac289a9e0cf82ff0
+P 9287276191a582c1cf7cf6b71d8399727d8e534d
+R c2481d632c284d895f66ae3d4866a0ab
 U drh
-Z c581f4a42a4b4dc59e9659821c9fdece
+Z aa5c15d669e0ef0f762ec1f2d438a5a0

@@ -137,7 +137,6 @@ const void *sqlite3_value_text16le(sqlite3_value *pVal){
 int sqlite3_value_type(sqlite3_value* pVal){
   return pVal->type;
 }
-/* sqlite3_value_numeric_type() defined in vdbe.c */
 
 /**************************** sqlite3_result_  *******************************
 ** The following routines are used by user-defined functions to specify
@@ -150,28 +149,35 @@ void sqlite3_result_blob(
   void (*xDel)(void *)
 ){
   assert( n>=0 );
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, 0, xDel);
 }
 void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetDouble(&pCtx->s, rVal);
 }
 void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   pCtx->isError = 1;
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, SQLITE_TRANSIENT);
 }
 #ifndef SQLITE_OMIT_UTF16
 void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   pCtx->isError = 1;
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, SQLITE_TRANSIENT);
 }
 #endif
 void sqlite3_result_int(sqlite3_context *pCtx, int iVal){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetInt64(&pCtx->s, (i64)iVal);
 }
 void sqlite3_result_int64(sqlite3_context *pCtx, i64 iVal){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetInt64(&pCtx->s, iVal);
 }
 void sqlite3_result_null(sqlite3_context *pCtx){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetNull(&pCtx->s);
 }
 void sqlite3_result_text(
@@ -180,6 +186,7 @@ void sqlite3_result_text(
   int n,
   void (*xDel)(void *)
 ){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, xDel);
 }
 #ifndef SQLITE_OMIT_UTF16
@@ -189,6 +196,7 @@ void sqlite3_result_text16(
   int n, 
   void (*xDel)(void *)
 ){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, xDel);
 }
 void sqlite3_result_text16be(
@@ -197,6 +205,7 @@ void sqlite3_result_text16be(
   int n, 
   void (*xDel)(void *)
 ){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16BE, xDel);
 }
 void sqlite3_result_text16le(
@@ -205,18 +214,22 @@ void sqlite3_result_text16le(
   int n, 
   void (*xDel)(void *)
 ){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16LE, xDel);
 }
 #endif /* SQLITE_OMIT_UTF16 */
 void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemCopy(&pCtx->s, pValue);
 }
 void sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetZeroBlob(&pCtx->s, n);
 }
 
 /* Force an SQLITE_TOOBIG error. */
 void sqlite3_result_error_toobig(sqlite3_context *pCtx){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetZeroBlob(&pCtx->s, SQLITE_MAX_LENGTH+1);
 }
 
@@ -535,14 +548,21 @@ int sqlite3_data_count(sqlite3_stmt *pStmt){
 ** of NULL.
 */
 static Mem *columnMem(sqlite3_stmt *pStmt, int i){
-  Vdbe *pVm = (Vdbe *)pStmt;
-  int vals = sqlite3_data_count(pStmt);
-  if( pVm==0 || pVm->resOnStack==0 || i>=pVm->nResColumn || i<0 ){
+  Vdbe *pVm;
+  int vals;
+  Mem *pOut;
+
+  pVm = (Vdbe *)pStmt;
+  if( pVm && pVm->resOnStack && i<pVm->nResColumn && i>=0 ){
+    sqlite3_mutex_enter(pVm->db->mutex);
+    vals = sqlite3_data_count(pStmt);
+    pOut = &pVm->pTos[(1-vals)+i];
+  }else{
     static const Mem nullMem = {{0}, 0.0, 0, "", 0, MEM_Null, SQLITE_NULL };
     sqlite3Error(pVm->db, SQLITE_RANGE, 0);
-    return (Mem*)&nullMem;
+    pOut = (Mem*)&nullMem;
   }
-  return &pVm->pTos[(1-vals)+i];
+  return pOut;
 }
 
 /*
@@ -552,7 +572,7 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
 ** malloc() has failed, the threads mallocFailed flag is cleared and the result
 ** code of statement pStmt set to SQLITE_NOMEM.
 **
-** Specificly, this is called from within:
+** Specifically, this is called from within:
 **
 **     sqlite3_column_int()
 **     sqlite3_column_int64()
@@ -572,7 +592,10 @@ static void columnMallocFailure(sqlite3_stmt *pStmt)
   ** and _finalize() will return NOMEM.
   */
   Vdbe *p = (Vdbe *)pStmt;
-  p->rc = sqlite3ApiExit(0, p->rc);
+  if( p ){
+    p->rc = sqlite3ApiExit(p->db, p->rc);
+    sqlite3_mutex_leave(p->db->mutex);
+  }
 }
 
 /**************************** sqlite3_column_  *******************************
@@ -620,7 +643,9 @@ const unsigned char *sqlite3_column_text(sqlite3_stmt *pStmt, int i){
   return val;
 }
 sqlite3_value *sqlite3_column_value(sqlite3_stmt *pStmt, int i){
-  return columnMem(pStmt, i);
+  sqlite3_value *pOut = columnMem(pStmt, i);
+  columnMallocFailure(pStmt);
+  return pOut;
 }
 #ifndef SQLITE_OMIT_UTF16
 const void *sqlite3_column_text16(sqlite3_stmt *pStmt, int i){
@@ -630,7 +655,9 @@ const void *sqlite3_column_text16(sqlite3_stmt *pStmt, int i){
 }
 #endif /* SQLITE_OMIT_UTF16 */
 int sqlite3_column_type(sqlite3_stmt *pStmt, int i){
-  return sqlite3_value_type( columnMem(pStmt,i) );
+  int iType = sqlite3_value_type( columnMem(pStmt,i) );
+  columnMallocFailure(pStmt);
+  return iType;
 }
 
 /* The following function is experimental and subject to change or
@@ -662,20 +689,28 @@ static const void *columnName(
   const void *(*xFunc)(Mem*),
   int useType
 ){
-  const void *ret;
+  const void *ret = 0;
   Vdbe *p = (Vdbe *)pStmt;
-  int n = sqlite3_column_count(pStmt);
+  int n;
+  
 
-  if( p==0 || N>=n || N<0 ){
-    return 0;
+  if( p!=0 ){
+    n = sqlite3_column_count(pStmt);
+    if( N<n && N>=0 ){
+      N += useType*n;
+      ret = xFunc(&p->aColName[N]);
+
+#if 0
+      /* A malloc may have failed inside of the xFunc() call. If this
+      ** is the case, clear the mallocFailed flag and return NULL.
+      */
+      if( p->db && p->db->mallocFailed ){
+        p->db->mallocFailed = 0;
+        ret = 0;
+      }
+#endif
+    }
   }
-  N += useType*n;
-  ret = xFunc(&p->aColName[N]);
-
-  /* A malloc may have failed inside of the xFunc() call. If this is the case,
-  ** clear the mallocFailed flag and return NULL.
-  */
-  sqlite3ApiExit(0, 0);
   return ret;
 }
 

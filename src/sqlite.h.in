@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.234 2007/08/21 19:33:56 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.235 2007/08/21 20:25:40 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1745,6 +1745,10 @@ const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 **
 ** These APIs are only available if the library was compiled with the 
 ** SQLITE_ENABLE_COLUMN_METADATA preprocessor symbol defined.
+**
+** If two or more threads call one or more of these routines against the same
+** prepared statement and column at the same time then the results are
+** undefined.
 */
 const char *sqlite3_column_database_name(sqlite3_stmt*,int);
 const void *sqlite3_column_database_name16(sqlite3_stmt*,int);
@@ -1905,17 +1909,27 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 /*
 ** CAPI3REF: Results Values From A Query
 **
-** These routines return information about the information
-** in a single column of the current result row of a query.  In every
+** These routines return information about
+** a single column of the current result row of a query.  In every
 ** case the first argument is a pointer to the 
 ** [sqlite3_stmt | SQL statement] that is being
-** evaluate (the [sqlite3_stmt*] that was returned from 
+** evaluated (the [sqlite3_stmt*] that was returned from 
 ** [sqlite3_prepare_v2()] or one of its variants) and
 ** the second argument is the index of the column for which information 
-** should be returned.  The left-most column has an index of 0.
+** should be returned.  The left-most column of the result set
+** has an index of 0.
 **
 ** If the SQL statement is not currently point to a valid row, or if the
-** the column index is out of range, the result is undefined.
+** the column index is out of range, the result is undefined. 
+** These routines may only be called when the most recent call to
+** [sqlite3_step()] has returned [SQLITE_ROW] and neither
+** [sqlite3_reset()] nor [sqlite3_finalize()] has been call subsequently.
+** If any of these routines are called after [sqlite3_reset()] or
+** [sqlite3_finalize()] or after [sqlite3_step()] has returned
+** something other than [SQLITE_ROW], the results are undefined.
+** If [sqlite3_step()] or [sqlite3_reset()] or [sqlite3_finalize()]
+** are called from a different thread while any of these routines
+** are pending, then the results are undefined.  
 **
 ** The sqlite3_column_type() routine returns 
 ** [SQLITE_INTEGER | datatype code] for the initial data type
@@ -2019,6 +2033,13 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** find the size of the result.  Do not mix call to sqlite3_column_text() or
 ** sqlite3_column_blob() with calls to sqlite3_column_bytes16().  And do not
 ** mix calls to sqlite3_column_text16() with calls to sqlite3_column_bytes().
+**
+** The pointers returned are valid until a type conversion occurs as
+** described above, or until [sqlite3_step()] or [sqlite3_reset()] or
+** [sqlite3_finalize()] is called.  The memory space used to hold strings
+** and blobs is freed automatically.  Do <b>not</b> pass the pointers returned
+** [sqlite3_column_blob()], [sqlite_column_text()], etc. into 
+** [sqlite3_free()].
 */
 const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);
 int sqlite3_column_bytes(sqlite3_stmt*, int iCol);
@@ -2211,6 +2232,9 @@ void sqlite3_thread_cleanup(void);
 **
 ** These routines must be called from the same thread as
 ** the SQL function that supplied the sqlite3_value* parameters.
+** Or, if the sqlite3_value* argument comes from the [sqlite3_column_value()]
+** interface, then these routines should be called from the same thread
+** that ran [sqlite3_column_value()].
 */
 const void *sqlite3_value_blob(sqlite3_value*);
 int sqlite3_value_bytes(sqlite3_value*);
@@ -3311,6 +3335,13 @@ int sqlite3_mutex_try(sqlite3_mutex*);
 void sqlite3_mutex_leave(sqlite3_mutex*);
 int sqlite3_mutex_held(sqlite3_mutex*);
 int sqlite3_mutex_notheld(sqlite3_mutex*);
+
+/*
+** CAPI3REF: Mutex Types
+**
+** The [sqlite3_mutex_alloc()] interface takes a single argument
+** which is one of these integer constants.
+*/
 #define SQLITE_MUTEX_FAST             0
 #define SQLITE_MUTEX_RECURSIVE        1
 #define SQLITE_MUTEX_STATIC_MASTER    2
