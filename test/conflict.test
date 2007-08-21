@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.29 2007/04/06 21:42:22 drh Exp $
+# $Id: conflict.test,v 1.30 2007/08/21 14:27:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -285,20 +285,23 @@ do_test conflict-6.0 {
 #   t3     Number of temporary files for tables
 #   t4     Number of temporary files for statement journals
 #
+# Update: Since temporary table files are now opened lazily, and none
+# of the following tests use large quantities of data, t3 is always 0.
+#
 foreach {i conf1 cmd t0 t1 t2 t3 t4} {
   1 {}       UPDATE                  1 {6 7 8 9}  1 0 1
-  2 REPLACE  UPDATE                  0 {7 6 9}    1 1 0
-  3 IGNORE   UPDATE                  0 {6 7 3 9}  1 1 0
+  2 REPLACE  UPDATE                  0 {7 6 9}    1 0 0
+  3 IGNORE   UPDATE                  0 {6 7 3 9}  1 0 0
   4 FAIL     UPDATE                  1 {6 7 3 4}  1 0 0
   5 ABORT    UPDATE                  1 {1 2 3 4}  1 0 1
   6 ROLLBACK UPDATE                  1 {1 2 3 4}  0 0 0
-  7 REPLACE  {UPDATE OR IGNORE}      0 {6 7 3 9}  1 1 0
-  8 IGNORE   {UPDATE OR REPLACE}     0 {7 6 9}    1 1 0
-  9 FAIL     {UPDATE OR IGNORE}      0 {6 7 3 9}  1 1 0
- 10 ABORT    {UPDATE OR REPLACE}     0 {7 6 9}    1 1 0
- 11 ROLLBACK {UPDATE OR IGNORE}      0 {6 7 3 9}  1 1 0
- 12 {}       {UPDATE OR IGNORE}      0 {6 7 3 9}  1 1 0
- 13 {}       {UPDATE OR REPLACE}     0 {7 6 9}    1 1 0
+  7 REPLACE  {UPDATE OR IGNORE}      0 {6 7 3 9}  1 0 0
+  8 IGNORE   {UPDATE OR REPLACE}     0 {7 6 9}    1 0 0
+  9 FAIL     {UPDATE OR IGNORE}      0 {6 7 3 9}  1 0 0
+ 10 ABORT    {UPDATE OR REPLACE}     0 {7 6 9}    1 0 0
+ 11 ROLLBACK {UPDATE OR IGNORE}      0 {6 7 3 9}  1 0 0
+ 12 {}       {UPDATE OR IGNORE}      0 {6 7 3 9}  1 0 0
+ 13 {}       {UPDATE OR REPLACE}     0 {7 6 9}    1 0 0
  14 {}       {UPDATE OR FAIL}        1 {6 7 3 4}  1 0 0
  15 {}       {UPDATE OR ABORT}       1 {1 2 3 4}  1 0 1
  16 {}       {UPDATE OR ROLLBACK}    1 {1 2 3 4}  0 0 0

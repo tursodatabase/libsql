@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.363 2007/08/21 10:44:16 drh Exp $
+** @(#) $Id: pager.c,v 1.364 2007/08/21 14:27:02 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -550,6 +550,16 @@ static int write32bits(sqlite3_file *fd, i64 offset, u32 val){
 }
 
 /*
+** If file pFd is open, call sqlite3OsUnlock() on it.
+*/
+static int osUnlock(sqlite3_file *pFd, int eLock){
+  if( !pFd->pMethods ){
+    return SQLITE_OK;
+  }
+  return sqlite3OsUnlock(pFd, eLock);
+}
+
+/*
 ** This function should be called when an error occurs within the pager
 ** code. The first argument is a pointer to the pager structure, the
 ** second the error-code about to be returned by a pager API function. 
@@ -930,7 +940,7 @@ static PgHdr *pager_lookup(Pager *pPager, Pgno pgno){
 static void pager_unlock(Pager *pPager){
   if( !pPager->exclusiveMode ){
     if( !MEMDB ){
-      sqlite3OsUnlock(pPager->fd, NO_LOCK);
+      osUnlock(pPager->fd, NO_LOCK);
       pPager->dbSize = -1;
       IOTRACE(("UNLOCK %p\n", pPager))
     }
@@ -1045,7 +1055,7 @@ static int pager_end_transaction(Pager *pPager){
   }
 
   if( !pPager->exclusiveMode ){
-    rc2 = sqlite3OsUnlock(pPager->fd, SHARED_LOCK);
+    rc2 = osUnlock(pPager->fd, SHARED_LOCK);
     pPager->state = PAGER_SHARED;
   }else if( pPager->state==PAGER_SYNCED ){
     pPager->state = PAGER_EXCLUSIVE;
@@ -1318,7 +1328,7 @@ static void pager_truncate_cache(Pager *pPager);
 */
 static int pager_truncate(Pager *pPager, int nPage){
   int rc = SQLITE_OK;
-  if( pPager->state>=PAGER_EXCLUSIVE ){
+  if( pPager->state>=PAGER_EXCLUSIVE && pPager->fd->pMethods ){
     rc = sqlite3OsTruncate(pPager->fd, pPager->pageSize*(i64)nPage);
   }
   if( rc==SQLITE_OK ){
@@ -1335,7 +1345,14 @@ static int pager_truncate(Pager *pPager, int nPage){
 ** by sqlite3OsSectorSize() and the pageSize.
 */
 static void setSectorSize(Pager *pPager){
-  pPager->sectorSize = sqlite3OsSectorSize(pPager->fd);
+  assert(pPager->fd->pMethods||pPager->tempFile);
+  if( !pPager->tempFile ){
+    /* Sector size doesn't matter for temporary files. Also, the file
+    ** may not have been opened yet, in whcih case the OsSectorSize()
+    ** call will segfault.
+    */
+    pPager->sectorSize = sqlite3OsSectorSize(pPager->fd);
+  }
   if( pPager->sectorSize<pPager->pageSize ){
     pPager->sectorSize = pPager->pageSize;
   }
@@ -1823,10 +1840,13 @@ int sqlite3PagerOpen(
       }
     }
   }else{
-    rc = sqlite3PagerOpentemp(pVfs, pPager->fd, pPager->zFilename);
-    if( rc==SQLITE_OK ){
-      tempFile = 1;
-    }
+    /* If a temporary file is requested, it is not opened immediately.
+    ** In this case we accept the default page size and delay actually
+    ** opening the file until the first call to OsWrite().
+    */ 
+    /* rc = sqlite3PagerOpentemp(pVfs, pPager->fd, pPager->zFilename); */
+    tempFile = 1;
+    pPager->state = PAGER_EXCLUSIVE;
   }
 
   if( pPager && rc==SQLITE_OK ){
@@ -1887,7 +1907,7 @@ int sqlite3PagerOpen(
   /* pPager->pFirstSynced = 0; */
   /* pPager->pLast = 0; */
   pPager->nExtra = FORCE_ALIGNMENT(nExtra);
-  assert(pPager->fd->pMethods||memDb);
+  assert(pPager->fd->pMethods||memDb||tempFile);
   if( !memDb ){
     setSectorSize(pPager);
   }
@@ -1999,7 +2019,8 @@ void enable_simulated_io_errors(void){
 int sqlite3PagerReadFileheader(Pager *pPager, int N, unsigned char *pDest){
   int rc = SQLITE_OK;
   memset(pDest, 0, N);
-  if( MEMDB==0 ){
+  assert(MEMDB||pPager->fd->pMethods||pPager->tempFile);
+  if( pPager->fd->pMethods ){
     IOTRACE(("DBHDR %p 0 %d\n", pPager, N))
     rc = sqlite3OsRead(pPager->fd, pDest, N, 0);
     if( rc==SQLITE_IOERR_SHORT_READ ){
@@ -2019,7 +2040,7 @@ int sqlite3PagerReadFileheader(Pager *pPager, int N, unsigned char *pDest){
 ** file is 4096 bytes, 5 is returned instead of 4.
 */
 int sqlite3PagerPagecount(Pager *pPager){
-  i64 n;
+  i64 n = 0;
   int rc;
   assert( pPager!=0 );
   if( pPager->errCode ){
@@ -2028,7 +2049,9 @@ int sqlite3PagerPagecount(Pager *pPager){
   if( pPager->dbSize>=0 ){
     n = pPager->dbSize;
   } else {
-    if( (rc = sqlite3OsFileSize(pPager->fd, &n))!=SQLITE_OK ){
+    assert(pPager->fd->pMethods||pPager->tempFile);
+    if( (pPager->fd->pMethods)
+     && (rc = sqlite3OsFileSize(pPager->fd, &n))!=SQLITE_OK ){
       pager_error(pPager, rc);
       return 0;
     }
@@ -2570,6 +2593,14 @@ static int pager_write_pagelist(PgHdr *pList){
 
   pList = sort_pagelist(pList);
   while( pList ){
+
+    /* If the file has not yet been opened, open it now. */
+    if( !pPager->fd->pMethods ){
+      assert(pPager->tempFile);
+      rc = sqlite3PagerOpentemp(pPager->pVfs, pPager->fd, pPager->zFilename);
+      if( rc ) return rc;
+    }
+
     assert( pList->dirty );
     /* If there are dirty pages in the page cache with page numbers greater
     ** than Pager.dbSize, this means sqlite3PagerTruncate() was called to
@@ -2834,6 +2865,10 @@ static int readDbPage(Pager *pPager, PgHdr *pPg, Pgno pgno){
   int rc;
   i64 offset;
   assert( MEMDB==0 );
+  assert(pPager->fd->pMethods||pPager->tempFile);
+  if( !pPager->fd->pMethods ){
+    return SQLITE_IOERR_SHORT_READ;
+  }
   offset = (pgno-1)*(i64)pPager->pageSize;
   rc = sqlite3OsRead(pPager->fd, PGHDR_TO_DATA(pPg), pPager->pageSize, offset);
   PAGER_INCR(sqlite3_pager_readdb_count);
