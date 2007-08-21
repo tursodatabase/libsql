@@ -1,5 +1,5 @@
-C Avoid\sjournalling\san\sextra\spage\swhen\sa\sbtree\sinsert\soperation\suses\sthe\s'quick-balance'\strick.\s(CVS\s4257)
-D 2007-08-21T13:11:01
+C Add\sthe\stests\sthat\sgo\swith\sthe\sprevious\scommit.\s(CVS\s4258)
+D 2007-08-21T13:30:07
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -317,6 +317,7 @@ F test/insert3.test 72ea6056811fd234f80d923f977c196089947381
 F test/insert4.test 1e27f0a3e5670d5f03c1636f699aa44270945bca
 F test/interrupt.test 81555fb0f8179bb2d0dc7151fd75428223f93cf2
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
+F test/io.test b2f21c23f920541ba64e7b3251674bd8773c6bc8
 F test/ioerr.test 491d42c49bbec598966d26b01ed7901f55e5ee2d
 F test/ioerr2.test f938eadb12108048813869b86beee4a2f98e34b8
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
@@ -557,7 +558,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5bced2392ad77aff0aa1ddea83f2ff9e3ffe28a8
-R 62bf9d7ba713afd09c97220ab74284f7
+P 0da48209140b6c1ba47df799ce6065054b994f02
+R cea3f4dd0f8d31322bd710223c9b6fd4
 U danielk1977
-Z b65c4a9665c9f568889e6d02dbdc7083
+Z 0894b0ecd2f2b85dfd7a091f744238da
