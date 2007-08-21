@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.390 2007/08/21 10:44:16 drh Exp $
+** $Id: main.c,v 1.391 2007/08/21 15:13:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -118,6 +118,7 @@ int sqlite3_close(sqlite3 *db){
   if( sqlite3SafetyCheck(db) ){
     return SQLITE_MISUSE;
   }
+  sqlite3_mutex_enter(db->mutex);
 
 #ifdef SQLITE_SSE
   {
@@ -218,6 +219,8 @@ int sqlite3_close(sqlite3 *db){
   */
   sqlite3_free(db->aDb[1].pSchema);
   sqlite3_vfs_release(db->pVfs);
+  sqlite3_mutex_leave(db->mutex);
+  sqlite3_mutex_free(db->mutex);
   sqlite3_free(db);
   return SQLITE_OK;
 }
@@ -890,7 +893,9 @@ static int createCollation(
 */
 static int openDatabase(
   const char *zFilename, /* Database filename UTF-8 encoded */
-  sqlite3 **ppDb         /* OUT: Returned database handle */
+  sqlite3 **ppDb,        /* OUT: Returned database handle */
+  unsigned flags,        /* Operational flags */
+  const char *zVfs       /* Name of the VFS to use */
 ){
   sqlite3 *db;
   int rc;
@@ -899,7 +904,12 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
-  db->pVfs = sqlite3_vfs_find(0);
+  db->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
+  if( db->mutex==0 ){
+    db->mallocFailed = 1;
+    goto opendb_out;
+  }
+  db->pVfs = sqlite3_vfs_find(zVfs);
   db->errMask = 0xff;
   db->priorNewRowid = 0;
   db->magic = SQLITE_MAGIC_BUSY;
@@ -1041,7 +1051,16 @@ int sqlite3_open(
   const char *zFilename, 
   sqlite3 **ppDb 
 ){
-  return openDatabase(zFilename, ppDb);
+  return openDatabase(zFilename, ppDb,
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
+}
+int sqlite3_open_v2(
+  const void *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  int flags,              /* Flags */
+  const char *zVfs        /* Name of VFS module to use */
+){
+  return openDatabase(filename, ppDb, flags, zVfs);
 }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -1063,7 +1082,8 @@ int sqlite3_open16(
   sqlite3ValueSetStr(0, pVal, -1, zFilename, SQLITE_UTF16NATIVE, SQLITE_STATIC);
   zFilename8 = sqlite3ValueText(0, pVal, SQLITE_UTF8);
   if( zFilename8 ){
-    rc = openDatabase(zFilename8, ppDb);
+    rc = openDatabase(zFilename8, ppDb,
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
     if( rc==SQLITE_OK && *ppDb ){
       rc = sqlite3_exec(*ppDb, "PRAGMA encoding = 'UTF-16'", 0, 0, 0);
       if( rc!=SQLITE_OK ){

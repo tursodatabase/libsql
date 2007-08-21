@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.12 2007/08/16 04:30:41 drh Exp $
+** $Id: vdbeblob.c,v 1.13 2007/08/21 15:13:19 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -30,6 +30,7 @@ struct Incrblob {
   int iOffset;            /* Byte offset of blob in cursor data */
   BtCursor *pCsr;         /* Cursor pointing at blob row */
   sqlite3_stmt *pStmt;    /* Statement holding cursor open */
+  sqlite3 *db;            /* The associated database */
 };
 
 /*
@@ -87,6 +88,7 @@ int sqlite3_blob_open(
   char zErr[128];
 
   zErr[0] = 0;
+  sqlite3_mutex_enter(db->mutex);
   do {
     Parse sParse;
     Table *pTab;
@@ -96,6 +98,7 @@ int sqlite3_blob_open(
 
     rc = sqlite3SafetyOn(db);
     if( rc!=SQLITE_OK ){
+      sqlite3_mutex_leave(db->mutex);
       return rc;
     }
 
@@ -219,6 +222,7 @@ int sqlite3_blob_open(
     pBlob->pStmt = (sqlite3_stmt *)v;
     pBlob->iOffset = v->apCsr[0]->aOffset[iCol];
     pBlob->nByte = sqlite3VdbeSerialTypeLen(type);
+    pBlob->db = db;
     *ppBlob = (sqlite3_blob *)pBlob;
     rc = SQLITE_OK;
   }else if( rc==SQLITE_OK ){
@@ -232,7 +236,9 @@ blob_open_out:
     sqlite3_finalize((sqlite3_stmt *)v);
   }
   sqlite3Error(db, rc, (rc==SQLITE_OK?0:zErr));
-  return sqlite3ApiExit(db, rc);
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 /*
@@ -241,12 +247,20 @@ blob_open_out:
 */
 int sqlite3_blob_close(sqlite3_blob *pBlob){
   Incrblob *p = (Incrblob *)pBlob;
-  sqlite3_stmt *pStmt = p->pStmt;
+  sqlite3_stmt *pStmt;
+  sqlite3_mutex *mutex = p->db->mutex;
+  int rc;
+
+  sqlite3_mutex_enter(mutex);
+  rc = sqlite3_finalize(p->pStmt);
+  sqlite3_mutex_leave(mutex);
   sqlite3_free(p);
-  return sqlite3_finalize(pStmt);
+  return rc;
 }
 
-
+/*
+** Perform a read or write operation on a blob
+*/
 static int blobReadWrite(
   sqlite3_blob *pBlob, 
   void *z, 
@@ -256,33 +270,38 @@ static int blobReadWrite(
 ){
   int rc;
   Incrblob *p = (Incrblob *)pBlob;
-  Vdbe *v = (Vdbe *)(p->pStmt);
-  sqlite3 *db;  
-
-  /* If there is no statement handle, then the blob-handle has
-  ** already been invalidated. Return SQLITE_ABORT in this case.
-  */
-  if( !v ) return SQLITE_ABORT;
+  Vdbe *v;
+  sqlite3 *db = p->db;  
 
   /* Request is out of range. Return a transient error. */
   if( (iOffset+n)>p->nByte ){
     return SQLITE_ERROR;
   }
+  sqlite3_mutex_enter(db->mutex);
 
-  /* Call either BtreeData() or BtreePutData(). If SQLITE_ABORT is
-  ** returned, clean-up the statement handle.
+  /* If there is no statement handle, then the blob-handle has
+  ** already been invalidated. Return SQLITE_ABORT in this case.
   */
-  db = v->db;
-  rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
-  if( rc==SQLITE_ABORT ){
-    sqlite3VdbeFinalize(v);
-    p->pStmt = 0;
+  v = (Vdbe*)p->pStmt;
+  if( v==0 ){
+    rc = SQLITE_ABORT;
   }else{
-    db->errCode = rc;
-    v->rc = rc;
+    /* Call either BtreeData() or BtreePutData(). If SQLITE_ABORT is
+    ** returned, clean-up the statement handle.
+    */
+    assert( db == v->db );
+    rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
+    if( rc==SQLITE_ABORT ){
+      sqlite3VdbeFinalize(v);
+      p->pStmt = 0;
+    }else{
+      db->errCode = rc;
+      v->rc = rc;
+    }
   }
-
-  return sqlite3ApiExit(db, rc);
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 /*
@@ -301,6 +320,9 @@ int sqlite3_blob_write(sqlite3_blob *pBlob, const void *z, int n, int iOffset){
 
 /*
 ** Query a blob handle for the size of the data.
+**
+** The Incrblob.nByte field is fixed for the lifetime of the Incrblob
+** so no mutex is required for access.
 */
 int sqlite3_blob_bytes(sqlite3_blob *pBlob){
   Incrblob *p = (Incrblob *)pBlob;
