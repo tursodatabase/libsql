@@ -126,7 +126,10 @@ struct CrashFile {
   sqlite3_file *pRealFile;             /* Underlying "real" file handle */
   char *zName;
 
-  /* Cache of the entire file. */
+  /* Cache of the entire file. This is used to speed up OsRead() and 
+  ** OsFileSize() calls. Although both could be done by traversing the
+  ** write-list, in practice this is impractically slow.
+  */
   int iSize;                           /* Size of file in bytes */
   int nData;                           /* Size of buffer allocated at zData */
   u8 *zData;                           /* Buffer containing file contents */
@@ -303,7 +306,7 @@ static int writeListAppend(
 static int cfClose(sqlite3_file *pFile){
   CrashFile *pCrash = (CrashFile *)pFile;
   writeListSync(pCrash, 0);
-  sqlite3OsCloseFree(pCrash->pRealFile);
+  sqlite3OsClose(pCrash->pRealFile);
   return SQLITE_OK;
 }
 
@@ -454,8 +457,7 @@ static const sqlite3_io_methods CrashFileVtab = {
 ** Application data for the crash VFS
 */
 struct crashAppData {
-  int (*xOpen)(void*,const char*,sqlite3_file*,int,int*); /* Original xOpen */
-  void *pAppData;                                      /* Original pAppData */
+  sqlite3_vfs *pOrig;                   /* Wrapped vfs structure */
 };
 
 /*
@@ -468,48 +470,76 @@ struct crashAppData {
 ** sqlite3_malloc(). The assumption here is (pVfs->szOsFile) is
 ** equal or greater than sizeof(CrashFile).
 */
-static int sqlite3CrashFileOpen(
-  sqlite3_vfs *pVfs,
+static int cfOpen(
+  void *pAppData,
   const char *zName,
   sqlite3_file *pFile,
   int flags,
   int *pOutFlags
 ){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAppData;
   int rc;
-  if( sqlite3CrashTestEnable ){
-    CrashFile *pWrapper = (CrashFile *)pFile;
-    sqlite3_file *pReal;
-    assert(pVfs->szOsFile>=sizeof(CrashFile));
-    memset(pWrapper, 0, sizeof(CrashFile));
-    sqlite3CrashTestEnable = 0;
-    rc = sqlite3OsOpenMalloc(pVfs, zName, &pReal, flags, pOutFlags);
-    sqlite3CrashTestEnable = 1;
-    if( rc==SQLITE_OK ){
-      i64 iSize;
-      pWrapper->pMethod = &CrashFileVtab;
-      pWrapper->zName = (char *)zName;
-      pWrapper->pRealFile = pReal;
-      rc = sqlite3OsFileSize(pReal, &iSize);
-      pWrapper->iSize = (int)iSize;
+  CrashFile *pWrapper = (CrashFile *)pFile;
+  sqlite3_file *pReal = &pWrapper[1];
+
+  memset(pWrapper, 0, sizeof(CrashFile));
+  rc = sqlite3OsOpen(pVfs, zName, pReal, flags, pOutFlags);
+
+  if( rc==SQLITE_OK ){
+    i64 iSize;
+    pWrapper->pMethod = &CrashFileVtab;
+    pWrapper->zName = (char *)zName;
+    pWrapper->pRealFile = pReal;
+    rc = sqlite3OsFileSize(pReal, &iSize);
+    pWrapper->iSize = (int)iSize;
+  }
+  if( rc==SQLITE_OK ){
+    pWrapper->nData = (4096 + pWrapper->iSize);
+    pWrapper->zData = (char *)sqlite3_malloc(pWrapper->nData);
+    if( pWrapper->zData ){
+      memset(pWrapper->zData, 0, pWrapper->nData);
+      rc = sqlite3OsRead(pReal, pWrapper->zData, pWrapper->iSize, 0); 
+    }else{
+      rc = SQLITE_NOMEM;
     }
-    if( rc==SQLITE_OK ){
-      pWrapper->nData = (4096 + pWrapper->iSize);
-      pWrapper->zData = (char *)sqlite3_malloc(pWrapper->nData);
-      if( pWrapper->zData ){
-        memset(pWrapper->zData, 0, pWrapper->nData);
-        rc = sqlite3OsRead(pReal, pWrapper->zData, pWrapper->iSize, 0); 
-      }else{
-        rc = SQLITE_NOMEM;
-      }
-    }
-    if( rc!=SQLITE_OK && pWrapper->pMethod ){
-      sqlite3OsClose(pFile);
-    }
-  }else{
-    struct crashAppData *pData = (struct crashAppData*)pVfs->pAppData;
-    rc = pData->xOpen(pData->pAppData, zName, pFile, flags, pOutFlags);
+  }
+  if( rc!=SQLITE_OK && pWrapper->pMethod ){
+    sqlite3OsClose(pFile);
   }
   return rc;
+}
+
+static int cfDelete(void *pAppData, const char *zPath, int dirSync){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAppData;
+  return pVfs->xDelete(pVfs->pAppData, zPath, dirSync);
+}
+static int cfAccess(void *pAppData, const char *zPath, int flags){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAppData;
+  return pVfs->xAccess(pVfs->pAppData, zPath, flags);
+}
+static int cfGetTempName(void *pAppData, char *zBufOut){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAppData;
+  return pVfs->xGetTempName(pVfs->pAppData, zBufOut);
+}
+static int cfFullPathname(void *pAppData, const char *zPath, char *zPathOut){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAppData;
+  return pVfs->xFullPathname(pVfs->pAppData, zPath, zPathOut);
+}
+static void *cfDlOpen(void *pAppData, const char *zPath){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAppData;
+  return pVfs->xDlOpen(pVfs->pAppData, zPath);
+}
+static int cfRandomness(void *pAppData, int nByte, char *zBufOut){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAppData;
+  return pVfs->xRandomness(pVfs->pAppData, nByte, zBufOut);
+}
+static int cfSleep(void *pAppData, int nMicro){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAppData;
+  return pVfs->xSleep(pVfs->pAppData, nMicro);
+}
+static int cfCurrentTime(void *pAppData, double *pTimeOut){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAppData;
+  return pVfs->xCurrentTime(pVfs->pAppData, pTimeOut);
 }
 
 /*
@@ -540,20 +570,42 @@ static int crashParamsObjCmd(
   int iDelay;
   const char *zCrashFile;
   int nCrashFile;
-  static sqlite3_vfs crashVfs, *pOriginalVfs;
   static struct crashAppData appData;
 
-  if( pOriginalVfs==0 ){
-    pOriginalVfs = sqlite3_vfs_find(0);
-    crashVfs = *pOriginalVfs;
-    crashVfs.xOpen = sqlite3CrashFileOpen;
-    crashVfs.vfsMutex = 0;
-    crashVfs.nRef = 0;
-    crashVfs.pAppData = &appData;
-    appData.xOpen = pOriginalVfs->xOpen;
-    appData.pAppData = pOriginalVfs->pAppData;
+  static sqlite3_vfs crashVfs = {
+    1,                  /* iVersion */
+    0,                  /* szOsFile */
+    0,                  /* mxPathname */
+    0,                  /* nRef */
+    0,                  /* vfsMutex */
+    0,                  /* pNext */
+    "crash",            /* zName */
+    0,                  /* pAppData */
+  
+    cfOpen,               /* xOpen */
+    cfDelete,             /* xDelete */
+    cfAccess,             /* xAccess */
+    cfGetTempName,        /* xGetTempName */
+    cfFullPathname,       /* xFullPathname */
+    cfDlOpen,             /* xDlOpen */
+    0,                    /* xDlError */
+    0,                    /* xDlSym */
+    0,                    /* xDlClose */
+    cfRandomness,         /* xRandomness */
+    cfSleep,              /* xSleep */
+    cfCurrentTime         /* xCurrentTime */
+  };
+
+  if( crashVfs.pAppData==0 ){
+    sqlite3_vfs *pOriginalVfs = sqlite3_vfs_find(0);
+    crashVfs.xDlError = pOriginalVfs->xDlError;
+    crashVfs.xDlSym = pOriginalVfs->xDlSym;
+    crashVfs.xDlClose = pOriginalVfs->xDlClose;
+    crashVfs.mxPathname = pOriginalVfs->mxPathname;
+    crashVfs.pAppData = (void *)pOriginalVfs;
+    crashVfs.szOsFile = sizeof(CrashFile) + pOriginalVfs->szOsFile;
     sqlite3_vfs_release(pOriginalVfs);
-    sqlite3_vfs_unregister(pOriginalVfs);
+    /* sqlite3_vfs_unregister(pOriginalVfs); */
     sqlite3_vfs_register(&crashVfs, 1);
   }
 

@@ -233,6 +233,7 @@ int sqlite3_vfs_register(sqlite3_vfs *pVfs, int makeDflt){
     pVfs->pNext = vfsList->pNext;
     pVfs->pNext = pVfs;
   }
+  assert(vfsList);
   sqlite3_mutex_leave(mutex);
   return SQLITE_OK;
 }
@@ -244,6 +245,7 @@ int sqlite3_vfs_unregister(sqlite3_vfs *pVfs){
   sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
   sqlite3_mutex_enter(mutex);
   vfsUnlink(pVfs);
+  assert(vfsList);
   sqlite3_mutex_leave(mutex);
   return SQLITE_OK;
 }
