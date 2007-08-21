@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.404 2007/08/20 23:50:25 drh Exp $
+** $Id: btree.c,v 1.405 2007/08/21 13:11:01 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4499,7 +4499,6 @@ static int insertCell(
 
   assert( i>=0 && i<=pPage->nCell+pPage->nOverflow );
   assert( sz==cellSizePtr(pPage, pCell) );
-  assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   if( pPage->nOverflow || sz+2>pPage->nFree ){
     if( pTemp ){
@@ -4512,6 +4511,11 @@ static int insertCell(
     pPage->aOvfl[j].idx = i;
     pPage->nFree = 0;
   }else{
+    int rc = sqlite3PagerWrite(pPage->pDbPage);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+    assert( sqlite3PagerIswriteable(pPage->pDbPage) );
     data = pPage->aData;
     hdr = pPage->hdrOffset;
     top = get2byte(&data[hdr+5]);
@@ -4519,7 +4523,7 @@ static int insertCell(
     end = cellOffset + 2*pPage->nCell + 2;
     ins = cellOffset + 2*i;
     if( end > top - sz ){
-      int rc = defragmentPage(pPage);
+      rc = defragmentPage(pPage);
       if( rc!=SQLITE_OK ) return rc;
       top = get2byte(&data[hdr+5]);
       assert( end + sz <= top );
@@ -4547,7 +4551,7 @@ static int insertCell(
       assert( (info.nData+(pPage->intKey?0:info.nKey))==info.nPayload );
       if( (info.nData+(pPage->intKey?0:info.nKey))>info.nLocal ){
         Pgno pgnoOvfl = get4byte(&pCell[info.iOverflow]);
-        int rc = ptrmapPut(pPage->pBt, pgnoOvfl, PTRMAP_OVERFLOW1, pPage->pgno);
+        rc = ptrmapPut(pPage->pBt, pgnoOvfl, PTRMAP_OVERFLOW1, pPage->pgno);
         if( rc!=SQLITE_OK ) return rc;
       }
     }
@@ -4782,7 +4786,7 @@ static int balance_nonroot(MemPage *pPage){
   ** Find the parent page.
   */
   assert( pPage->isInit );
-  assert( sqlite3PagerIswriteable(pPage->pDbPage) );
+  assert( sqlite3PagerIswriteable(pPage->pDbPage) || pPage->nOverflow==1 );
   pBt = pPage->pBt;
   pParent = pPage->pParent;
   assert( pParent );
@@ -4815,6 +4819,10 @@ static int balance_nonroot(MemPage *pPage){
     return balance_quick(pPage, pParent);
   }
 #endif
+
+  if( SQLITE_OK!=(rc = sqlite3PagerWrite(pPage->pDbPage)) ){
+    return rc;
+  }
 
   /*
   ** Find the cell in the parent page whose left child points back
@@ -5481,7 +5489,8 @@ static int balance(MemPage *pPage, int insert){
   int rc = SQLITE_OK;
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   if( pPage->pParent==0 ){
-    if( pPage->nOverflow>0 ){
+    rc = sqlite3PagerWrite(pPage->pDbPage);
+    if( rc==SQLITE_OK && pPage->nOverflow>0 ){
       rc = balance_deeper(pPage);
     }
     if( rc==SQLITE_OK && pPage->nCell==0 ){
@@ -5594,11 +5603,6 @@ int sqlite3BtreeInsert(
           pCur->pgnoRoot, nKey, nData, pPage->pgno,
           loc==0 ? "overwrite" : "new entry"));
   assert( pPage->isInit );
-  rc = sqlite3PagerWrite(pPage->pDbPage);
-  if( rc ){
-    sqlite3BtreeLeave(p);
-    return rc;
-  }
   newCell = sqlite3_malloc( MX_CELL_SIZE(pBt) );
   if( newCell==0 ) return SQLITE_NOMEM;
   rc = fillInCell(pPage, newCell, pKey, nKey, pData, nData, nZero, &szNew);
@@ -5608,6 +5612,10 @@ int sqlite3BtreeInsert(
   if( loc==0 && CURSOR_VALID==pCur->eState ){
     int szOld;
     assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
+    rc = sqlite3PagerWrite(pPage->pDbPage);
+    if( rc ){
+      goto end_insert;
+    }
     oldCell = findCell(pPage, pCur->idx);
     if( !pPage->leaf ){
       memcpy(newCell, oldCell, 4);
