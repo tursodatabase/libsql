@@ -372,7 +372,7 @@ static void **aAutoExtension = 0;
 int sqlite3_auto_extension(void *xInit){
   int i;
   int rc = SQLITE_OK;
-  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_GLOBAL);
+  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
   sqlite3_mutex_enter(mutex);
   for(i=0; i<nAutoExtension; i++){
     if( aAutoExtension[i]==xInit ) break;
@@ -396,7 +396,7 @@ int sqlite3_auto_extension(void *xInit){
 ** Reset the automatic extension loading mechanism.
 */
 void sqlite3_reset_auto_extension(void){
-  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_GLOBAL);
+  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
   sqlite3_mutex_enter(mutex);
   sqlite3_free(aAutoExtension);
   aAutoExtension = 0;
@@ -419,7 +419,7 @@ int sqlite3AutoLoadExtensions(sqlite3 *db){
   }
   for(i=0; go; i++){
     char *zErrmsg = 0;
-    sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_GLOBAL);
+    sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
     sqlite3_mutex_enter(mutex);
     if( i>=nAutoExtension ){
       xInit = 0;

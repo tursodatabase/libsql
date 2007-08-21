@@ -373,10 +373,10 @@ typedef enum {
 ** Helper functions to obtain and relinquish the global mutex.
 */
 static void enterMutex(){
-  sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_GLOBAL));
+  sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER));
 }
 static void leaveMutex(){
-  sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_GLOBAL));
+  sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER));
 }
 
 #if SQLITE_THREADSAFE
