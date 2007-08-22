@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.268 2007/08/22 00:39:21 drh Exp $
+** $Id: test1.c,v 1.269 2007/08/22 02:56:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -319,6 +319,45 @@ static int test_exec_printf(
   Tcl_DStringFree(&str);
   if( zErr ) sqlite3_free(zErr);
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  return TCL_OK;
+}
+
+/*
+** Usage:  db_enter DB
+**         db_leave DB
+**
+** Enter or leave the mutex on a database connection.
+*/
+static int db_enter(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite3 *db;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+       " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  sqlite3_mutex_enter(db->mutex);
+  return TCL_OK;
+}
+static int db_leave(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite3 *db;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+       " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  sqlite3_mutex_leave(db->mutex);
   return TCL_OK;
 }
 
@@ -916,7 +955,7 @@ static int test_create_function(
   ** because it is not tested anywhere else. */
   if( rc==SQLITE_OK ){
     sqlite3_value *pVal;
-    pVal = sqlite3ValueNew(db);
+    pVal = sqlite3ValueNew(0);
     sqlite3ValueSetStr(pVal, -1, "x_sqlite_exec", SQLITE_UTF8, SQLITE_STATIC);
     rc = sqlite3_create_function16(db, 
               sqlite3ValueText(pVal, SQLITE_UTF16NATIVE),
@@ -4103,8 +4142,10 @@ static int test_pager_refcounts(
     if( db->aDb[i].pBt==0 ){
       v = -1;
     }else{
+      sqlite3_mutex_enter(db->mutex);
       a = sqlite3PagerStats(sqlite3BtreePager(db->aDb[i].pBt));
       v = a[0];
+      sqlite3_mutex_leave(db->mutex);
     }
     Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(v));
   }
@@ -4158,6 +4199,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      char *zName;
      Tcl_CmdProc *xProc;
   } aCmd[] = {
+     { "db_enter",                      (Tcl_CmdProc*)db_enter               },
+     { "db_leave",                      (Tcl_CmdProc*)db_leave               },
      { "sqlite3_mprintf_int",           (Tcl_CmdProc*)sqlite3_mprintf_int    },
      { "sqlite3_mprintf_int64",         (Tcl_CmdProc*)sqlite3_mprintf_int64  },
      { "sqlite3_mprintf_str",           (Tcl_CmdProc*)sqlite3_mprintf_str    },

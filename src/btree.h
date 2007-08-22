@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.85 2007/08/21 19:33:56 drh Exp $
+** @(#) $Id: btree.h,v 1.86 2007/08/22 02:56:43 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -103,9 +103,11 @@ int sqlite3BtreeLockTable(Btree *, int, u8);
 #if SQLITE_THREADSAFE && !defined(SQLITE_OMIT_SHARED_CACHE)
   void sqlite3BtreeEnter(Btree*);
   void sqlite3BtreeLeave(Btree*);
+# define sqlite3BtreeMutexHeld(X) sqlite3_mutex_held(X)
 #else
 # define sqlite3BtreeEnter(X)
 # define sqlite3BtreeLeave(X)
+# define sqlite3BtreeMutexHeld(X) 1
 #endif
 
 const char *sqlite3BtreeGetFilename(Btree *);

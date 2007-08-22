@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.57 2007/08/22 00:39:20 drh Exp $
+** $Id: prepare.c,v 1.58 2007/08/22 02:56:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -571,6 +571,9 @@ static int sqlite3LockAndPrepare(
   const char **pzTail       /* OUT: End of parsed string */
 ){
   int rc;
+  if( sqlite3SafetyCheck(db) ){
+    return SQLITE_MISUSE;
+  }
   sqlite3_mutex_enter(db->mutex);
   rc = sqlite3Prepare(db, zSql, nBytes, saveSqlFlag, ppStmt, pzTail);
   sqlite3_mutex_leave(db->mutex);

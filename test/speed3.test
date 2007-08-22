@@ -12,7 +12,7 @@
 # focus of this script is testing that the overflow-page related
 # enhancements added after version 3.3.17 speed things up.
 #
-# $Id: speed3.test,v 1.2 2007/05/17 18:28:11 danielk1977 Exp $
+# $Id: speed3.test,v 1.3 2007/08/22 02:56:44 drh Exp $
 #
 
 #---------------------------------------------------------------------
@@ -89,8 +89,10 @@ proc populate_t1 {db} {
 
 
 proc io_log {db} {
+  db_enter db
   array set stats1 [btree_pager_stats [btree_from_db db]]
   array set stats2 [btree_pager_stats [btree_from_db db 2]]
+  db_leave db
 # puts "1: [array get stats1]"
 # puts "2: [array get stats2]"
   puts "Incrvacuum: Read $stats1(read), wrote $stats1(write)"
@@ -176,4 +178,3 @@ speed_trial speed3-2.normal     $::NROW row {SELECT c FROM aux.t1}
 io_log db
 
 finish_test
-

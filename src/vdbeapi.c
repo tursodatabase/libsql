@@ -560,7 +560,10 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
     pOut = &pVm->pTos[(1-vals)+i];
   }else{
     static const Mem nullMem = {{0}, 0.0, 0, "", 0, MEM_Null, SQLITE_NULL };
-    sqlite3Error(pVm->db, SQLITE_RANGE, 0);
+    if( pVm->db ){
+      sqlite3_mutex_enter(pVm->db->mutex);
+      sqlite3Error(pVm->db, SQLITE_RANGE, 0);
+    }
     pOut = (Mem*)&nullMem;
   }
   return pOut;
@@ -846,16 +849,15 @@ static int bindText(
   }
   sqlite3_mutex_enter(p->db->mutex);
   rc = vdbeUnbind(p, i);
-  if( rc || zData==0 ){
-    return rc;
+  if( rc==SQLITE_OK && zData!=0 ){
+    pVar = &p->aVar[i-1];
+    rc = sqlite3VdbeMemSetStr(pVar, zData, nData, encoding, xDel);
+    if( rc==SQLITE_OK && encoding!=0 ){
+      rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
+    }
+    sqlite3Error(p->db, rc, 0);
+    rc = sqlite3ApiExit(p->db, rc);
   }
-  pVar = &p->aVar[i-1];
-  rc = sqlite3VdbeMemSetStr(pVar, zData, nData, encoding, xDel);
-  if( rc==SQLITE_OK && encoding!=0 ){
-    rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
-  }
-  sqlite3Error(p->db, rc, 0);
-  rc = sqlite3ApiExit(p->db, rc);
   sqlite3_mutex_leave(p->db->mutex);
   return rc;
 }
@@ -1029,17 +1031,20 @@ int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
   Vdbe *pTo = (Vdbe*)pToStmt;
   int i, rc = SQLITE_OK;
   if( (pFrom->magic!=VDBE_MAGIC_RUN && pFrom->magic!=VDBE_MAGIC_HALT)
-    || (pTo->magic!=VDBE_MAGIC_RUN && pTo->magic!=VDBE_MAGIC_HALT) ){
+    || (pTo->magic!=VDBE_MAGIC_RUN && pTo->magic!=VDBE_MAGIC_HALT)
+    || pTo->db!=pFrom->db ){
     return SQLITE_MISUSE;
   }
   if( pFrom->nVar!=pTo->nVar ){
     return SQLITE_ERROR;
   }
+  sqlite3_mutex_enter(pTo->db->mutex);
   for(i=0; rc==SQLITE_OK && i<pFrom->nVar; i++){
     sqlite3MallocDisallow();
     rc = sqlite3VdbeMemMove(&pTo->aVar[i], &pFrom->aVar[i]);
     sqlite3MallocAllow();
   }
+  sqlite3_mutex_leave(pTo->db->mutex);
   assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
   return rc;
 }

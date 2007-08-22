@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.80 2007/08/21 10:44:16 drh Exp $
+** $Id: test3.c,v 1.81 2007/08/22 02:56:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -78,6 +78,7 @@ static int btree_open(
   if( nRefSqlite3==1 ){
     sDb.pVfs = sqlite3_vfs_find(0);
     sDb.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
+    sqlite3_mutex_enter(sDb.mutex);
   }
   rc = sqlite3BtreeOpen(argv[1], &sDb, &pBt, flags);
   if( rc!=SQLITE_OK ){
@@ -116,6 +117,7 @@ static int btree_close(
   }
   nRefSqlite3--;
   if( nRefSqlite3==0 ){
+    sqlite3_mutex_leave(sDb.mutex);
     sqlite3_mutex_free(sDb.mutex);
     sDb.mutex = 0;
     sqlite3_vfs_release(sDb.pVfs);
@@ -123,6 +125,7 @@ static int btree_close(
   }
   return TCL_OK;
 }
+
 
 /*
 ** Usage:   btree_begin_transaction ID
@@ -528,6 +531,7 @@ static int btree_pager_stats(
     return TCL_ERROR;
   }
   pBt = sqlite3TextToPtr(argv[1]);
+  sqlite3BtreeEnter(pBt);
   a = sqlite3PagerStats(sqlite3BtreePager(pBt));
   for(i=0; i<11; i++){
     static char *zName[] = {
@@ -539,6 +543,7 @@ static int btree_pager_stats(
     sqlite3_snprintf(sizeof(zBuf), zBuf,"%d",a[i]);
     Tcl_AppendElement(interp, zBuf);
   }
+  sqlite3BtreeLeave(pBt);
   return TCL_OK;
 }
 

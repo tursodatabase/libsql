@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement mutexes for
 ** use by the SQLite core.
 **
-** $Id: mutex.c,v 1.7 2007/08/22 00:39:20 drh Exp $
+** $Id: mutex.c,v 1.8 2007/08/22 02:56:44 drh Exp $
 */
 /*
 ** If SQLITE_MUTEX_APPDEF is defined, then this whole module is
@@ -30,11 +30,11 @@
 ** Figure out what version of the code to use
 */
 #define SQLITE_MUTEX_NOOP 1   /* The default */
-#if 0
 #if defined(SQLITE_DEBUG) && !SQLITE_THREADSAFE
 # undef SQLITE_MUTEX_NOOP
 # define SQLITE_MUTEX_NOOP_DEBUG
 #endif
+#if 0
 #if defined(SQLITE_MUTEX_NOOP) && SQLITE_THREADSAFE && OS_UNIX
 # undef SQLITE_MUTEX_NOOP
 # define SQLITE_MUTEX_PTHREAD
@@ -139,9 +139,9 @@ sqlite3_mutex *sqlite3_mutex_alloc(int id){
       break;
     }
     default: {
-      assert( id-SQLITE_MUTEX_STATIC_MASTER >= 0 );
-      assert( id-SQLITE_MUTEX_STATIC_MASTER < count(aStatic) );
-      pNew = &aStatic[id-SQLITE_MUTEX_STATIC_MASTER];
+      assert( id-2 >= 0 );
+      assert( id-2 < sizeof(aStatic)/sizeof(aStatic[0]) );
+      pNew = &aStatic[id-2];
       pNew->id = id;
       break;
     }

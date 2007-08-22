@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.51 2007/08/17 01:14:39 drh Exp $
+** $Id: vtab.c,v 1.52 2007/08/22 02:56:44 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -23,7 +23,10 @@ static int createModule(
   void *pAux,                     /* Context pointer for xCreate/xConnect */
   void (*xDestroy)(void *)        /* Module destructor function */
 ) {
-  int nName = strlen(zName);
+  int rc, nName;
+
+  sqlite3_mutex_enter(db->mutex);
+  nName = strlen(zName);
   Module *pMod = (Module *)sqlite3DbMallocRaw(db, sizeof(Module) + nName + 1);
   if( pMod ){
     char *zCopy = (char *)(&pMod[1]);
@@ -39,7 +42,9 @@ static int createModule(
     sqlite3_free(pMod);
     sqlite3ResetInternalSchema(db, 0);
   }
-  return sqlite3ApiExit(db, SQLITE_OK);
+  rc = sqlite3ApiExit(db, SQLITE_OK);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 
@@ -525,11 +530,14 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   Parse sParse;
 
   int rc = SQLITE_OK;
-  Table *pTab = db->pVTab;
+  Table *pTab;
   char *zErr = 0;
 
+  sqlite3_mutex_enter(db->mutex);
+  pTab = db->pVTab;
   if( !pTab ){
     sqlite3Error(db, SQLITE_MISUSE, 0);
+    sqlite3_mutex_leave(db->mutex);
     return SQLITE_MISUSE;
   }
   assert(pTab->isVirtual && pTab->nCol==0 && pTab->aCol==0);
@@ -561,7 +569,9 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   sParse.pNewTable = 0;
 
   assert( (rc&0xff)==rc );
-  return sqlite3ApiExit(db, rc);
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 /*
