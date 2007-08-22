@@ -24,8 +24,12 @@
 ** C++ instead of plain old C.
 */
 int sqlite3OsClose(sqlite3_file *pId){
-  if( !pId->pMethods ) return SQLITE_OK;
-  return pId->pMethods->xClose(pId);
+  int rc = SQLITE_OK;
+  if( pId->pMethods ){
+    rc = pId->pMethods->xClose(pId);
+    pId->pMethods = 0;
+  }
+  return rc;
 }
 int sqlite3OsRead(sqlite3_file *id, void *pBuf, int amt, i64 offset){
   return id->pMethods->xRead(id, pBuf, amt, offset);

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.365 2007/08/22 00:39:20 drh Exp $
+** @(#) $Id: pager.c,v 1.366 2007/08/22 11:22:04 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -602,6 +602,42 @@ static int osUnlock(sqlite3_file *pFd, int eLock){
   }
   return sqlite3OsUnlock(pFd, eLock);
 }
+
+/*
+** This function determines whether or not the atomic-write optimization
+** can be used with this pager. The optimization can be used if:
+**
+**  (a) the value returned by OsDeviceCharacteristics() indicates that
+**      a database page may be written atomically, and
+**  (b) the value returned by OsSectorSize() is less than or equal
+**      to the page size.
+**
+** If the optimization cannot be used, 0 is returned. If it can be used,
+** then the value returned is the size of the journal file when it
+** contains rollback data for exactly one page.
+*/
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
+static int jrnlBufferSize(Pager *pPager){
+  int dc;           /* Device characteristics */
+  int nSector;      /* Sector size */
+  int nPage;        /* Page size */
+  sqlite3_file *fd = pPager->fd;
+
+  if( fd->pMethods ){
+    dc = sqlite3OsDeviceCharacteristics(fd);
+    nSector = sqlite3OsSectorSize(fd);
+    nPage = pPager->pageSize;
+  }
+
+  assert(SQLITE_IOCAP_ATOMIC512==(512>>8));
+  assert(SQLITE_IOCAP_ATOMIC64K==(65536>>8));
+
+  if( !fd->pMethods || (dc&(SQLITE_IOCAP_ATOMIC|(nPage<<8))&&nSector<=nPage) ){
+    return JOURNAL_HDR_SZ(pPager) + JOURNAL_PG_SZ(pPager);
+  }
+  return 0;
+}
+#endif
 
 /*
 ** This function should be called when an error occurs within the pager
@@ -1820,6 +1856,7 @@ int sqlite3PagerOpen(
   int readOnly = 0;
   int useJournal = (flags & PAGER_OMIT_JOURNAL)==0;
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;
+  int journalFileSize = sqlite3JournalSize(pVfs);
 
   /* The default return is a NULL pointer */
   *ppPager = 0;
@@ -1827,7 +1864,8 @@ int sqlite3PagerOpen(
   /* Allocate memory for the pager structure */
   pPager = sqlite3MallocZero(
     sizeof(*pPager) +           /* Pager structure */
-    pVfs->szOsFile * 3 +        /* The db, journal and stmt journal files */ 
+    journalFileSize +           /* The journal file structure */ 
+    pVfs->szOsFile * 2 +        /* The db and stmt journal files */ 
     pVfs->mxPathname * 3 + 30   /* zFilename, zDirectory, zJournal */
   );
   if( !pPager ){
@@ -1835,9 +1873,9 @@ int sqlite3PagerOpen(
   }
   pPtr = (u8 *)&pPager[1];
   pPager->fd = (sqlite3_file*)&pPtr[pVfs->szOsFile*0];
-  pPager->jfd = (sqlite3_file*)&pPtr[pVfs->szOsFile*1];
-  pPager->stfd = (sqlite3_file*)&pPtr[pVfs->szOsFile*2];
-  pPager->zFilename = (char*)&pPtr[pVfs->szOsFile*3];
+  pPager->stfd = (sqlite3_file*)&pPtr[pVfs->szOsFile*1];
+  pPager->jfd = (sqlite3_file*)&pPtr[pVfs->szOsFile*2];
+  pPager->zFilename = (char*)&pPtr[pVfs->szOsFile*2+journalFileSize];
   pPager->zDirectory = &pPager->zFilename[pVfs->mxPathname];
   pPager->zJournal = &pPager->zDirectory[pVfs->mxPathname];
   pPager->pVfs = pVfs;
@@ -1871,7 +1909,6 @@ int sqlite3PagerOpen(
     ** In this case we accept the default page size and delay actually
     ** opening the file until the first call to OsWrite().
     */ 
-    /* rc = sqlite3PagerOpentemp(pVfs, pPager->fd, pPager->zFilename); */
     tempFile = 1;
     pPager->state = PAGER_EXCLUSIVE;
   }
@@ -2998,7 +3035,7 @@ static int pagerSharedLock(Pager *pPager){
           int fout = 0;
           int flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
           assert( !pPager->tempFile );
-          rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, &fout);
+          rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags,&fout);
           assert( rc!=SQLITE_OK || pPager->jfd->pMethods );
           if( fout&SQLITE_OPEN_READONLY ){
             rc = SQLITE_BUSY;
@@ -3460,7 +3497,13 @@ static int pager_open_journal(Pager *pPager){
   }else{
     flags |= (SQLITE_OPEN_MAIN_JOURNAL);
   }
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
+  rc = sqlite3JournalOpen(
+      pVfs, pPager->zJournal, pPager->jfd, flags, jrnlBufferSize(pPager)
+  );
+#else
   rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, 0);
+#endif
   assert( rc!=SQLITE_OK || pPager->jfd->pMethods );
   pPager->journalOff = 0;
   pPager->setMaster = 0;
@@ -4010,27 +4053,36 @@ void sqlite3PagerDontRollback(DbPage *pPg){
 ** This routine is called to increment the database file change-counter,
 ** stored at byte 24 of the pager file.
 */
-static int pager_incr_changecounter(Pager *pPager){
+static int pager_incr_changecounter(Pager *pPager, int isDirect){
   PgHdr *pPgHdr;
   u32 change_counter;
-  int rc;
+  int rc = SQLITE_OK;
 
   if( !pPager->changeCountDone ){
     /* Open page 1 of the file for writing. */
     rc = sqlite3PagerGet(pPager, 1, &pPgHdr);
     if( rc!=SQLITE_OK ) return rc;
-    rc = sqlite3PagerWrite(pPgHdr);
-    if( rc!=SQLITE_OK ) return rc;
-  
+
+    if( !isDirect ){
+      rc = sqlite3PagerWrite(pPgHdr);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+
     /* Increment the value just read and write it back to byte 24. */
     change_counter = sqlite3Get4byte((u8*)pPager->dbFileVers);
     change_counter++;
     put32bits(((char*)PGHDR_TO_DATA(pPgHdr))+24, change_counter);
+
+    if( isDirect && pPager->fd->pMethods ){
+      const void *zBuf = PGHDR_TO_DATA(pPgHdr);
+      rc = sqlite3OsWrite(pPager->fd, zBuf, pPager->pageSize, 0);
+    }
+
     /* Release the page reference. */
     sqlite3PagerUnref(pPgHdr);
     pPager->changeCountDone = 1;
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -4064,6 +4116,36 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
     PgHdr *pPg;
     assert( pPager->journalOpen );
 
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
+    /* The atomic-write optimization can be used if all of the
+    ** following are true:
+    **
+    **    + The file-system supports the atomic-write property for
+    **      blocks of size page-size, and
+    **    + This commit is not part of a multi-file transaction, and
+    **    + Exactly one page has been modified and store in the journal file.
+    **
+    ** If the optimization can be used, then the journal file will never
+    ** be created for this transaction.
+    */
+    if( !zMaster && pPager->journalOff==jrnlBufferSize(pPager) && nTrunc==0
+      && (0==pPager->pDirty || 0==pPager->pDirty->pDirty)
+    ){
+      /* Update the nRec field in the journal file. */
+      int offset = pPager->journalHdr + sizeof(aJournalMagic);
+      assert(pPager->nRec==1);
+      rc = write32bits(pPager->jfd, offset, pPager->nRec);
+
+      /* Update the db file change counter. The following call will modify
+      ** the in-memory representation of page 1 to include the updated
+      ** change counter and then write page 1 directly to the database
+      ** file. Because of the atomic-write property of the host file-system, 
+      ** this is safe.
+      */
+      rc = pager_incr_changecounter(pPager, 1);
+    }else 
+#endif
+
     /* If a master journal file name has already been written to the
     ** journal file, then no sync is required. This happens when it is
     ** written, then the process fails to upgrade from a RESERVED to an
@@ -4071,7 +4153,7 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
     ** transaction the m-j name will have already been written.
     */
     if( !pPager->setMaster ){
-      rc = pager_incr_changecounter(pPager);
+      rc = pager_incr_changecounter(pPager, 0);
       if( rc!=SQLITE_OK ) goto sync_exit;
 #ifndef SQLITE_OMIT_AUTOVACUUM
       if( nTrunc!=0 ){
@@ -4095,8 +4177,8 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
       rc = writeMasterJournal(pPager, zMaster);
       if( rc!=SQLITE_OK ) goto sync_exit;
       rc = syncJournal(pPager);
-      if( rc!=SQLITE_OK ) goto sync_exit;
     }
+    if( rc!=SQLITE_OK ) goto sync_exit;
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( nTrunc!=0 ){

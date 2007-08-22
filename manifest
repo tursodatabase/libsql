@@ -1,5 +1,5 @@
-C Remove\sa\sdebugging\sbtree_breakpoint\sfrom\svtab1.test.\s(CVS\s4267)
-D 2007-08-22T02:57:17
+C Add\scode\sfor\sthe\satomic-write\soptimisation.\sDisabled\sby\sdefault.\s(CVS\s4268)
+D 2007-08-22T11:22:04
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk b1d97fe47a0633bc2ee5a09c7fdf7f4105156437
+F main.mk 9e796bb4e04ca16d3d1506e6496a7468410dd441
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -94,6 +94,7 @@ F src/func.c 36440cb02589fd4697cbbf0b351eeedc160d1f4b
 F src/hash.c 2f322979071dd2bdba7503b5276d66f028744382
 F src/hash.h 3ad3da76bfb954978d227bf495568b0e6da2c19e
 F src/insert.c 633322aef1799f6604fa805e12488bc628570b0c
+F src/journal.c 5ba2a1443b181741d3f2984d9d49e730073d74d1
 F src/legacy.c a83519a8fbb488c3155fca577b010d590ec479e9
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c dd803303fd06ef0b13913faaa4a7fc7d8c8c4e77
@@ -103,7 +104,7 @@ F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c 30bf8be3846f92fdf88c490c5e5378512383bcbe
 F src/mem2.c 482f0aaf14e8ef1db64cb8c5b9a9bfe708297c92
 F src/mutex.c 9cf641f556a4119ef90ed41b82f2d5647f81686e
-F src/os.c 89b93d67bc436c2d9df4b5d296f30a59144e55bb
+F src/os.c d8f029317c95dcd2887b9f0f154281cdfbd303ad
 F src/os.h 399c89cafa93b9ef35c3dc70f77644d10936b535
 F src/os_common.h a5c446d3b93f09f369d13bf217de4bed3437dd1c
 F src/os_os2.c 8769301bff502de642ad2634cedcb77d967ce199
@@ -114,7 +115,7 @@ F src/os_unix.c 7aad42b1ee70d68034a4ac45fa822edccdc3d9e6
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 29c0e19c1072679a4c7818c49fab2f35d2ad7747
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c d68e8c7b7e258c3e22c7872b602ff1b00d6cb41a
+F src/pager.c 3568c1c557b2ff8faf054732abd32bc640116684
 F src/pager.h 53087c6fb9db01aed17c7fd044662a27507e89b8
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 9b989506a1b7c8aecd6befb8235e2f57a4aba7e5
@@ -126,7 +127,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
 F src/sqlite.h.in 39f920631c49a8a79502d8b7908e608d7a0029bd
 F src/sqlite3ext.h 647a6b8a8f76ff6c9611e4a071531d8e63ff2d6b
-F src/sqliteInt.h 23eb6a5b1f10d5d3d34c3c7846b7c3b93acf1276
+F src/sqliteInt.h 74eb61d596c0fb308a5ec07f060318f3a83474df
 F src/sqliteLimit.h f14609c27636ebc217c9603ade26dbdd7d0f6afa
 F src/table.c c725e47f6f3092b9a7b569fc58e408e2173ee008
 F src/tclsqlite.c 92e06e076d613484aa2afc5ad830d9080de92347
@@ -558,7 +559,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 783e07d561d1f5509de9475f3b9f38315f247002
-R c5d3ce86bb4b05fc274208eefc6e2108
-U drh
-Z 9b8a52ba0f42f58ff0496debe78e0c8e
+P 6cc8641ed2fbfc32d418ce153f2819052f230be2
+R 60a77806fdc37cc90a1c02666401cadd
+U danielk1977
+Z ac8c850ecd87e6662e4865fbe6fa7e4b

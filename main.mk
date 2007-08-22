@@ -57,7 +57,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 #
 LIBOBJ+= alter.o analyze.o attach.o auth.o btree.o build.o \
          callback.o complete.o date.o delete.o \
-         expr.o func.o hash.o insert.o loadext.o \
+         expr.o func.o hash.o insert.o journal.o loadext.o \
          main.o malloc.o mem1.o mem2.o mutex.o \
          opcodes.o os.o os_os2.o os_unix.o os_win.o \
          pager.o parse.o pragma.o prepare.o printf.o random.o \
@@ -103,6 +103,7 @@ SRC = \
   $(TOP)/src/hash.c \
   $(TOP)/src/hash.h \
   $(TOP)/src/insert.c \
+  $(TOP)/src/journal.c \
   $(TOP)/src/legacy.c \
   $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
@@ -365,6 +366,9 @@ hash.o:	$(TOP)/src/hash.c $(HDR)
 
 insert.o:	$(TOP)/src/insert.c $(HDR)
 	$(TCCX) -c $(TOP)/src/insert.c
+
+journal.o:	$(TOP)/src/journal.c $(HDR)
+	$(TCCX) -c $(TOP)/src/journal.c
 
 legacy.o:	$(TOP)/src/legacy.c $(HDR)
 	$(TCCX) -c $(TOP)/src/legacy.c
