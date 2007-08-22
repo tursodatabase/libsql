@@ -12,7 +12,7 @@
 # This file contains test cases focused on the two memory-management APIs, 
 # sqlite3_soft_heap_limit() and sqlite3_release_memory().
 #
-# $Id: malloc5.test,v 1.12 2007/08/12 20:07:59 drh Exp $
+# $Id: malloc5.test,v 1.13 2007/08/22 22:04:37 drh Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -25,7 +25,8 @@ source $testdir/tester.tcl
 db close
 
 # Only run these tests if memory debugging is turned on.
-if {[info command sqlite_malloc_stat]==""} {
+#
+ifcapable !memdebug {
    puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
@@ -174,7 +175,7 @@ do_test malloc5-3.2 {
 } {1 2 3 4 5 6 7 8 9 10 11 12}
 
 db2 close
-sqlite_malloc_outstanding -clearmaxbytes
+puts "Highwater mark: [sqlite3_memory_highwater]"
 
 # The following two test cases each execute a transaction in which 
 # 10000 rows are inserted into table abc. The first test case is used
@@ -198,22 +199,22 @@ do_test malloc5-4.1 {
     execsql "INSERT INTO abc VALUES($i, $i, '[string repeat X 100]');"
   }
   execsql {COMMIT;}
-  set ::nMaxBytes [sqlite_malloc_outstanding -maxbytes]
-  if {$::nMaxBytes==""} {set ::nMaxBytes 1000001}
-  expr $::nMaxBytes > 1000000
+  set nMaxBytes [sqlite3_memory_highwater 1]
+  puts -nonewline " (Highwater mark: $nMaxBytes) "
+  expr $nMaxBytes > 1000000
 } {1}
 do_test malloc5-4.2 {
   sqlite3_release_memory
-  sqlite_malloc_outstanding -clearmaxbytes
   sqlite3_soft_heap_limit 100000
+  sqlite3_memory_highwater 1
   execsql {BEGIN;}
   for {set i 0} {$i < 10000} {incr i} {
     execsql "INSERT INTO abc VALUES($i, $i, '[string repeat X 100]');"
   }
   execsql {COMMIT;}
-  set ::nMaxBytes [sqlite_malloc_outstanding -maxbytes]
-  if {$::nMaxBytes==""} {set ::nMaxBytes 0}
-  expr $::nMaxBytes <= 100000
+  set nMaxBytes [sqlite3_memory_highwater 1]
+  puts -nonewline " (Highwater mark: $nMaxBytes) "
+  expr $nMaxBytes <= 100000
 } {1}
 do_test malloc5-4.3 {
   # Check that the content of table abc is at least roughly as expected.

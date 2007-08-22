@@ -8,25 +8,25 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+#
 # This file attempts to check that the library can recover from a malloc()
 # failure when sqlite3_global_recover() is invoked.
 #
-# $Id: malloc2.test,v 1.5 2006/09/04 18:54:14 drh Exp $
+# (Later:) The sqlite3_global_recover() interface is now a no-op.
+# Recovery from malloc() failures is automatic.  But we keep these
+# tests around because you can never have too many test cases.
+#
+# $Id: malloc2.test,v 1.6 2007/08/22 22:04:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Only run these tests if memory debugging is turned on.
 #
-if {[info command sqlite_malloc_stat]==""} {
-  puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG=1"
-  finish_test
-  return
-}
-
-ifcapable !globalrecover {
-  finish_test
-  return
+ifcapable !memdebug {
+   puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
+   finish_test
+   return
 }
 
 # Generate a checksum based on the contents of the database. If the
@@ -65,7 +65,7 @@ proc do_malloc2_test {tn args} {
 
     # Run the SQL. Malloc number $::n is set to fail. A malloc() failure
     # may or may not be reported.
-    sqlite_malloc_fail $::n
+    sqlite3_memdebug_fail $::n 1
     do_test malloc2-$tn.$::n.2 {
       set res [catchsql [string trim $::mallocopts(-sql)]]
       set rc [expr { 
@@ -80,21 +80,19 @@ proc do_malloc2_test {tn args} {
 
     # If $::n is greater than the number of malloc() calls required to
     # execute the SQL, then this test is finished. Break out of the loop.
-    if {[lindex [sqlite_malloc_stat] 2]>0} {
-      sqlite_malloc_fail -1
-      break
-    }
+    set nFail [sqlite3_memdebug_fail -1 -1]
+    if {$nFail==0} break
 
     # Nothing should work now, because the allocator should refuse to
     # allocate any memory.
     #
     # Update: SQLite now automatically recovers from a malloc() failure.
     # So the statement in the test below would work. 
-if 0 {
-    do_test malloc2-$tn.$::n.3 {
-      catchsql {SELECT 'nothing should work'}
-    } {1 {out of memory}}
-}
+    if 0 {
+      do_test malloc2-$tn.$::n.3 {
+        catchsql {SELECT 'nothing should work'}
+      } {1 {out of memory}}
+    }
 
     # Recover from the malloc failure.
     #
@@ -118,7 +116,7 @@ if 0 {
     } $sum
 
     integrity_check malloc2-$tn.$::n.6
-  if {$::nErr>1} return
+    if {$::nErr>1} return
   }
   unset ::mallocopts
 }

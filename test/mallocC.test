@@ -12,17 +12,17 @@
 # This file tests aspects of the malloc failure while parsing
 # CREATE TABLE statements in auto_vacuum mode.
 #
-# $Id: mallocC.test,v 1.2 2007/08/13 12:58:18 drh Exp $
+# $Id: mallocC.test,v 1.3 2007/08/22 22:04:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Only run these tests if memory debugging is turned on.
 #
-if {[info command sqlite_malloc_stat]==""} {
-  puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG=1"
-  finish_test
-  return
+ifcapable !memdebug {
+   puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
+   finish_test
+   return
 }
 
 # Generate a checksum based on the contents of the database. If the
@@ -61,7 +61,7 @@ proc do_mallocC_test {tn args} {
 
     # Run the SQL. Malloc number $::n is set to fail. A malloc() failure
     # may or may not be reported.
-    sqlite_malloc_fail $::n
+    sqlite3_memdebug_fail $::n 1
     do_test mallocC-$tn.$::n.1 {
       set res [catchsql [string trim $::mallocopts(-sql)]]
       set rc [expr { 
@@ -76,8 +76,8 @@ proc do_mallocC_test {tn args} {
 
     # If $::n is greater than the number of malloc() calls required to
     # execute the SQL, then this test is finished. Break out of the loop.
-    if {[lindex [sqlite_malloc_stat] 2]>0} {
-      sqlite_malloc_fail -1
+    set nFail [sqlite3_memdebug_fail -1 -1]
+    if {$nFail==0} {
       break
     }
 

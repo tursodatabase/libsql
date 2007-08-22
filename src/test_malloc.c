@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.2 2007/08/15 20:41:29 drh Exp $
+** $Id: test_malloc.c,v 1.3 2007/08/22 22:04:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -228,7 +228,7 @@ static int test_memdebug_dump(
 
 
 /*
-** Usage:    sqlite3_memdebug_fail  COUNTER  REPEAT
+** Usage:    sqlite3_memdebug_fail  COUNTER  ?REPEAT?
 **
 ** Arrange for a simulated malloc() failure after COUNTER successes.
 ** If REPEAT is 1 then all subsequent malloc()s fail.   If REPEAT is
@@ -249,12 +249,16 @@ static int test_memdebug_fail(
   int iFail;
   int iRepeat;
   int nFail = 0;
-  if( objc!=3 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "COUNTER REPEAT");
+  if( objc!=3 && objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "COUNTER ?REPEAT?");
     return TCL_ERROR;
   }
   if( Tcl_GetIntFromObj(interp, objv[1], &iFail) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &iRepeat) ) return TCL_ERROR;
+  if( objc==3 ){
+    if( Tcl_GetIntFromObj(interp, objv[2], &iRepeat) ) return TCL_ERROR;
+  }else{
+    iRepeat = -1;
+  }
 #ifdef SQLITE_MEMDEBUG
   {
     extern int sqlite3_memdebug_fail(int,int);
@@ -262,6 +266,25 @@ static int test_memdebug_fail(
   }
 #endif
   Tcl_SetObjResult(interp, Tcl_NewIntObj(nFail));
+  return TCL_OK;
+}
+
+
+/*
+** Usage:    sqlite3_memdebug_pending
+**
+** Return the number of successful mallocs remaining before the
+** next simulated failure.  Return -1 if no simulated failure is
+** currently scheduled.
+*/
+static int test_memdebug_pending(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  extern int sqlite3_memdebug_pending(void);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_memdebug_pending()));
   return TCL_OK;
 }
 
@@ -282,6 +305,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_memdebug_backtrace", test_memdebug_backtrace       },
      { "sqlite3_memdebug_dump",      test_memdebug_dump            },
      { "sqlite3_memdebug_fail",      test_memdebug_fail            },
+     { "sqlite3_memdebug_pending",   test_memdebug_pending         },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

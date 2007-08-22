@@ -48,6 +48,9 @@ proc do_malloc_test {tn args} {
       catch {file delete -force test.db-journal}
       catch {file delete -force test2.db}
       catch {file delete -force test2.db-journal}
+      if {[info exists ::mallocopts(-testdb)]} {
+        file copy $::mallocopts(-testdb) test.db
+      }
       catch {sqlite3 db test.db} 
 
       # Execute any -tclprep and -sqlprep scripts.

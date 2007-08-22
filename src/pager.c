@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.367 2007/08/22 18:54:33 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.368 2007/08/22 22:04:37 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -538,7 +538,9 @@ static int pageInStatement(PgHdr *pPg){
 static void pager_resize_hash_table(Pager *pPager, int N){
   PgHdr **aHash, *pPg;
   assert( N>0 && (N&(N-1))==0 );
+  pagerLeave(pPager);
   aHash = sqlite3MallocZero( sizeof(aHash[0])*N );
+  pagerEnter(pPager);
   if( aHash==0 ){
     /* Failure to rehash is not an error.  It is only a performance hit. */
     return;
@@ -2873,7 +2875,7 @@ int sqlite3PagerReleaseMemory(int nReq){
     Pager *pPager = sqlite3PagerList;
     for( ; pPager && (nReq<0 || nReleased<nReq); pPager=pPager->pNext){
       PgHdr *pPg;
-      int rc;
+      int rc = SQLITE_OK;
 
       /* In-memory databases should not appear on the pager list */
       assert( !MEMDB );
@@ -2885,7 +2887,10 @@ int sqlite3PagerReleaseMemory(int nReq){
       ** calling fsync() if this is the first iteration of the outermost 
       ** loop).
       */
-      while( SQLITE_OK==(rc = pager_recycle(pPager, i, &pPg)) && pPg) {
+      while( (nReq<0 || nReleased<nReq) &&
+             SQLITE_OK==(rc = pager_recycle(pPager, i, &pPg)) &&
+             pPg
+      ) {
         /* We've found a page to free. At this point the page has been 
         ** removed from the page hash-table, free-list and synced-list 
         ** (pFirstSynced). It is still in the all pages (pAll) list. 
@@ -3163,9 +3168,11 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
         goto pager_allocate_out;
       }
     }
+    pagerLeave(pPager);
     pPg = sqlite3_malloc( sizeof(*pPg) + pPager->pageSize
                             + sizeof(u32) + pPager->nExtra
                             + MEMDB*sizeof(PgHistory) );
+    pagerEnter(pPager);
     if( pPg==0 ){
       rc = SQLITE_NOMEM;
       goto pager_allocate_out;
@@ -3486,7 +3493,9 @@ static int pager_open_journal(Pager *pPager){
   assert( pPager->useJournal );
   assert( pPager->aInJournal==0 );
   sqlite3PagerPagecount(pPager);
+  pagerLeave(pPager);
   pPager->aInJournal = sqlite3MallocZero( pPager->dbSize/8 + 1 );
+  pagerEnter(pPager);
   if( pPager->aInJournal==0 ){
     rc = SQLITE_NOMEM;
     goto failed_to_open_journal;
@@ -3610,7 +3619,9 @@ int sqlite3PagerBegin(DbPage *pPg, int exFlag){
     assert( pPager->origDbSize==0 );
     assert( pPager->aInJournal==0 );
     sqlite3PagerPagecount(pPager);
+    pagerLeave(pPager);
     pPager->aInJournal = sqlite3MallocZero( pPager->dbSize/8 + 1 );
+    pagerEnter(pPager);
     if( !pPager->aInJournal ){
       rc = SQLITE_NOMEM;
     }else{
@@ -4439,7 +4450,9 @@ static int pagerStmtBegin(Pager *pPager){
     return SQLITE_OK;
   }
   assert( pPager->journalOpen );
+  pagerLeave(pPager);
   pPager->aInStmt = sqlite3MallocZero( pPager->dbSize/8 + 1 );
+  pagerEnter(pPager);
   if( pPager->aInStmt==0 ){
     /* sqlite3OsLock(pPager->fd, SHARED_LOCK); */
     return SQLITE_NOMEM;

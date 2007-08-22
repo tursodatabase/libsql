@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.85 2007/08/22 20:18:22 drh Exp $
+# $Id: tester.tcl,v 1.86 2007/08/22 22:04:37 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -192,9 +192,6 @@ proc finalize_testing {} {
   catch {db2 close}
   catch {db3 close}
 
-  catch {
-    pp_check_for_leaks
-  }
   sqlite3 db {}
   # sqlite3_clear_tsd_memdebug
   db close
@@ -569,63 +566,6 @@ proc copy_file {from to} {
     close $t
     close $f
   }
-}
-
-# This command checks for outstanding calls to sqlite3_malloc()
-# A list is returned with one entry for each outstanding
-# malloc. Each list entry is itself a list of 5 items, as follows:
-#
-#     { <number-bytes> <file-name> <line-number> <test-case> <stack-dump> }
-#
-proc check_for_leaks {} {
-  set ret [list]
-  set cnt 0
-  foreach alloc [sqlite_malloc_outstanding] {
-    foreach {nBytes file iLine userstring backtrace} $alloc {}
-    set stack [list]
-    set skip 0
-
-    # The first command in this block will probably fail on windows. This
-    # means there will be no stack dump available.
-    if {$cnt < 25 && $backtrace!=""} {
-      catch {
-        set stuff [eval "exec addr2line -e ./testfixture -f $backtrace"]
-        foreach {func line} $stuff {
-          if {$func != "??" || $line != "??:0"} {
-            regexp {.*/(.*)} $line dummy line
-            lappend stack "${func}() $line"
-          } else {
-            if {[lindex $stack end] != "..."} {
-              lappend stack "..."
-            }
-          }
-        }
-      }
-      incr cnt
-    }
-
-    if {!$skip} {
-      lappend ret [list $nBytes $file $iLine $userstring $stack]
-    }
-  }
-  return $ret
-}
-
-# Pretty print a report based on the return value of [check_for_leaks] to
-# stdout.
-proc pp_check_for_leaks {} {
-  set l [check_for_leaks]
-  set n 0
-  foreach leak $l {
-    foreach {nBytes file iLine userstring stack} $leak {}
-    puts "$nBytes bytes leaked at $file:$iLine ($userstring)"
-    foreach frame $stack {
-      puts "        $frame"
-    }
-    incr n $nBytes
-  }
-  puts "Memory leaked: $n bytes in [llength $l] allocations"
-  puts ""
 }
 
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set
