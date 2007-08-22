@@ -1,5 +1,5 @@
-C A\scomplete\srun\sof\squick.test\swith\smutex\sdebugging\senabled.\s(CVS\s4266)
-D 2007-08-22T02:56:43
+C Remove\sa\sdebugging\sbtree_breakpoint\sfrom\svtab1.test.\s(CVS\s4267)
+D 2007-08-22T02:57:17
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -461,7 +461,7 @@ F test/vacuum.test cf839fc3ff24d601057319bbb5c700ce9c8e0fb0
 F test/vacuum2.test e198d81a1cbc3f3f6b8aeee27cadfffea8995d42
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 852bd4101e6d171c46ad682eb5c5faf662b2eba4
-F test/vtab1.test f05e77fa16c6e5a6a7fea4b5e9a97f36ee78fdae
+F test/vtab1.test 607cddf5b425ff3076b8caacc6d6b4422f66ffab
 F test/vtab2.test 94bb3bf691ac10e34cf7dad46b1cf94b861d513c
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
@@ -558,7 +558,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1914044b8832041f13b20ead613bd13725425d7a
-R da84160f0df065e75198c0663969de9f
+P 783e07d561d1f5509de9475f3b9f38315f247002
+R c5d3ce86bb4b05fc274208eefc6e2108
 U drh
-Z 4868a722cbf9dfdb786e2878b91cc4b4
+Z 9b8a52ba0f42f58ff0496debe78e0c8e
