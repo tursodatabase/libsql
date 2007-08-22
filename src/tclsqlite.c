@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.196 2007/08/21 10:44:16 drh Exp $
+** $Id: tclsqlite.c,v 1.197 2007/08/22 00:39:21 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2370,12 +2370,12 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 #ifdef SQLITE_TEST
   {
     extern void Md5_Register(sqlite3*);
-#ifdef SQLITE_MEMDEBUG
+#if 0
     int mallocfail = sqlite3_iMallocFail;
     sqlite3_iMallocFail = 0;
 #endif
     Md5_Register(p->db);
-#ifdef SQLITE_MEMDEBUG
+#if 0
     sqlite3_iMallocFail = mallocfail;
 #endif
   }

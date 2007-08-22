@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.267 2007/08/21 19:33:57 drh Exp $
+** $Id: test1.c,v 1.268 2007/08/22 00:39:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -916,11 +916,6 @@ static int test_create_function(
   ** because it is not tested anywhere else. */
   if( rc==SQLITE_OK ){
     sqlite3_value *pVal;
-#if 0
-    if( sqlite3_iMallocFail>0 ){
-      sqlite3_iMallocFail++;
-    }
-#endif 
     pVal = sqlite3ValueNew(db);
     sqlite3ValueSetStr(pVal, -1, "x_sqlite_exec", SQLITE_UTF8, SQLITE_STATIC);
     rc = sqlite3_create_function16(db, 
@@ -2095,7 +2090,7 @@ static int test_collate(
             (void *)SQLITE_UTF16LE, val?test_collate_func:0);
     if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[4], &val) ) return TCL_ERROR;
 
-#ifdef SQLITE_MEMDEBUG
+#if 0
     if( sqlite3_iMallocFail>0 ){
       sqlite3_iMallocFail++;
     }
@@ -4018,20 +4013,20 @@ static int test_soft_heap_limit(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-#if defined(SQLITE_ENABLE_MEMORY_MANAGEMENT) && !defined(SQLITE_OMIT_DISKIO)
+  static int softHeapLimit = 0;
   int amt;
   if( objc!=1 && objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?N?");
     return TCL_ERROR;
   }
-  amt = sqlite3ThreadDataReadOnly()->nSoftHeapLimit;
+  amt = softHeapLimit;
   if( objc==2 ){
     int N;
     if( Tcl_GetIntFromObj(interp, objv[1], &N) ) return TCL_ERROR;
     sqlite3_soft_heap_limit(N);
+    softHeapLimit = N;
   }
   Tcl_SetObjResult(interp, Tcl_NewIntObj(amt));
-#endif
   return TCL_OK;
 }
 
@@ -4061,9 +4056,6 @@ static int test_tsd_release(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-#if defined(SQLITE_MEMDEBUG)
-  sqlite3ReleaseThreadData();
-#endif
   return TCL_OK;
 }
 
@@ -4321,8 +4313,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_where_trace;
   extern int sqlite3_sync_count, sqlite3_fullsync_count;
   extern int sqlite3_opentemp_count;
-  extern int sqlite3_memUsed;
-  extern int sqlite3_memMax;
   extern int sqlite3_like_count;
   extern int sqlite3_xferopt_count;
   extern int sqlite3_pager_readdb_count;
@@ -4402,12 +4392,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_where_trace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_os_trace",
       (char*)&sqlite3_os_trace, TCL_LINK_INT);
-#endif
-#ifdef SQLITE_MEMDEBUG
-  Tcl_LinkVar(interp, "sqlite_memused",
-      (char*)&sqlite3_memUsed, TCL_LINK_INT | TCL_LINK_READ_ONLY);
-  Tcl_LinkVar(interp, "sqlite_memmax",
-      (char*)&sqlite3_memMax, TCL_LINK_INT | TCL_LINK_READ_ONLY);
 #endif
 #ifndef SQLITE_OMIT_DISKIO
   Tcl_LinkVar(interp, "sqlite_opentemp_count",

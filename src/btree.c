@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.406 2007/08/21 19:33:56 drh Exp $
+** $Id: btree.c,v 1.407 2007/08/22 00:39:20 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -31,12 +31,14 @@ static const char zMagicHeader[] = SQLITE_FILE_HEADER;
 int sqlite3_btree_trace=0;  /* True to enable tracing */
 #endif
 
+
+
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /*
 ** A flag to indicate whether or not shared cache is enabled.  Also,
 ** a list of BtShared objects that are eligible for participation
 ** in shared cache.  The variables have file scope during normal builds,
-** but the test harness needs to access these variables so make them
+** but the test harness needs to access these variables so we make them
 ** global for test builds.
 */
 #ifdef SQLITE_TEST
