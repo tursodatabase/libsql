@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.596 2007/08/22 11:22:04 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.597 2007/08/22 11:41:18 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -42,7 +42,7 @@
 #if defined(THREADSAFE)
 # define SQLITE_THREADSAFE THREADSAFE
 #else
-# define SQLTIE_THREADSAFE 1
+# define SQLITE_THREADSAFE 1
 #endif
 #endif
 

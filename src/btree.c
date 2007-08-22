@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.408 2007/08/22 02:56:43 drh Exp $
+** $Id: btree.c,v 1.409 2007/08/22 11:41:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1372,13 +1372,10 @@ int sqlite3BtreeClose(Btree *p){
   }
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
-  else{
-    assert( p->wantToLock==0 );
-    assert( p->locked==0 );
-    assert( p->sharable );
-    if( p->pPrev ) p->pPrev->pNext = p->pNext;
-    if( p->pNext ) p->pNext->pPrev = p->pPrev;
-  }
+  assert( p->wantToLock==0 );
+  assert( p->locked==0 );
+  if( p->pPrev ) p->pPrev->pNext = p->pNext;
+  if( p->pNext ) p->pNext->pPrev = p->pPrev;
 #endif
 
   sqlite3_free(p);
@@ -1482,10 +1479,10 @@ void sqlite3BtreeLeave(Btree *p){
 ** Short-cuts for entering and leaving mutexes on a cursor.
 */
 static void cursorLeave(BtCursor *p){
-  sqlite3BtreeLeave(p->pBt);
+  sqlite3BtreeLeave(p->pBtree);
 }
 static void cursorEnter(BtCursor *pCur){
-  sqlite3BtreeEnter(pCur->pBt);
+  sqlite3BtreeEnter(pCur->pBtree);
 }
 #else
 # define cursorEnter(X)
@@ -3759,7 +3756,6 @@ static int btreeNext(BtCursor *pCur, int *pRes){
       if( sqlite3BtreeIsRootPage(pPage) ){
         *pRes = 1;
         pCur->eState = CURSOR_INVALID;
-        cursorLeave(pCur);
         return SQLITE_OK;
       }
       sqlite3BtreeMoveToParent(pCur);
