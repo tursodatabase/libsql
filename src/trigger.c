@@ -265,7 +265,8 @@ void sqlite3FinishTrigger(
     pDel = sqlite3HashInsert(&db->aDb[iDb].pSchema->trigHash, 
                      pTrig->name, strlen(pTrig->name), pTrig);
     if( pDel ){
-      assert( db->mallocFailed && pDel==pTrig );
+      assert( pDel==pTrig );
+      db->mallocFailed = 1;
       goto triggerfinish_cleanup;
     }
     n = strlen(pTrig->table) + 1;
@@ -356,11 +357,12 @@ TriggerStep *sqlite3TriggerInsertStep(
   Select *pSelect,    /* A SELECT statement that supplies values */
   int orconf          /* The conflict algorithm (OE_Abort, OE_Replace, etc.) */
 ){
-  TriggerStep *pTriggerStep = sqlite3DbMallocZero(db, sizeof(TriggerStep));
+  TriggerStep *pTriggerStep;
 
   assert(pEList == 0 || pSelect == 0);
-  assert(pEList != 0 || pSelect != 0);
+  assert(pEList != 0 || pSelect != 0 || db->mallocFailed);
 
+  pTriggerStep = sqlite3DbMallocZero(db, sizeof(TriggerStep));
   if( pTriggerStep ){
     pTriggerStep->op = TK_INSERT;
     pTriggerStep->pSelect = pSelect;

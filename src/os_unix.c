@@ -2317,14 +2317,10 @@ static int fillInUnixFile(
 ** the file descriptor *pFd using close().
 */
 static int openDirectory(const char *zFilename, int *pFd){
-  char *zDirname;
   int ii;
   int fd;
+  char zDirname[MAX_PATHNAME+1];
 
-  zDirname = (char *)sqlite3_malloc(MAX_PATHNAME);
-  if( !zDirname ){
-    return SQLITE_NOMEM;
-  }
   strncpy(zDirname, zFilename, MAX_PATHNAME);
   zDirname[MAX_PATHNAME-1] = '\0';
   for(ii=strlen(zDirname); ii>=0 && zDirname[ii]!='/'; ii--);
@@ -2338,7 +2334,6 @@ static int openDirectory(const char *zFilename, int *pFd){
       OSTRACE3("OPENDIR %-3d %s\n", fd, zDirname);
     }
   }
-  sqlite3_free(zDirname);
   *pFd = fd;
   return (fd>0?SQLITE_OK:SQLITE_CANTOPEN);
 }

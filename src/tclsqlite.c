@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.197 2007/08/22 00:39:21 drh Exp $
+** $Id: tclsqlite.c,v 1.198 2007/08/22 20:18:22 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2350,8 +2350,20 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     sqlite3_close(p->db);
     p->db = 0;
   }
+#ifdef SQLITE_TEST
+  if( p->db ){
+    extern int Md5_Register(sqlite3*);
+    if( Md5_Register(p->db)==SQLITE_NOMEM ){
+      zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(p->db));
+      sqlite3_close(p->db);
+      p->db = 0;
+    }
+  }
+#endif  
 #ifdef SQLITE_HAS_CODEC
-  sqlite3_key(p->db, pKey, nKey);
+  if( p->db ){
+    sqlite3_key(p->db, pKey, nKey);
+  }
 #endif
   if( p->db==0 ){
     Tcl_SetResult(interp, zErrMsg, TCL_VOLATILE);
@@ -2363,23 +2375,6 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   p->interp = interp;
   zArg = Tcl_GetStringFromObj(objv[1], 0);
   Tcl_CreateObjCommand(interp, zArg, DbObjCmd, (char*)p, DbDeleteCmd);
-
-  /* If compiled with SQLITE_TEST turned on, then register the "md5sum"
-  ** SQL function.
-  */
-#ifdef SQLITE_TEST
-  {
-    extern void Md5_Register(sqlite3*);
-#if 0
-    int mallocfail = sqlite3_iMallocFail;
-    sqlite3_iMallocFail = 0;
-#endif
-    Md5_Register(p->db);
-#if 0
-    sqlite3_iMallocFail = mallocfail;
-#endif
-  }
-#endif  
   return TCL_OK;
 }
 

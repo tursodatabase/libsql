@@ -717,7 +717,7 @@ struct sgMprintf {
   int  nChar;      /* Length of the string so far */
   int  nTotal;     /* Output size if unconstrained */
   int  nAlloc;     /* Amount of space allocated in zText */
-  void *(*xRealloc)(void*, unsigned int);  /* Function used to realloc memory */
+  void *(*xRealloc)(void*,int);  /* Function used to realloc memory */
 };
 
 /* 
@@ -769,7 +769,7 @@ static void mout(void *arg, const char *zNewText, int nNewChar){
 ** the consumer.  
 */
 static char *base_vprintf(
-  void *(*xRealloc)(void*, unsigned int), /* realloc() function. May be NULL */
+  void *(*xRealloc)(void*, int),  /* realloc() function. May be NULL */
   int useInternal,                /* Use internal %-conversions if true */
   char *zInitBuf,                 /* Initially write here, before mallocing */
   int nInitBuf,                   /* Size of zInitBuf[] */
@@ -801,7 +801,7 @@ static char *base_vprintf(
 /*
 ** Realloc that is a real function, not a macro.
 */
-static void *printf_realloc(void *old, unsigned int size){
+static void *printf_realloc(void *old, int size){
   return sqlite3_realloc(old, size);
 }
 

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.437 2007/08/21 19:33:56 drh Exp $
+** $Id: build.c,v 1.438 2007/08/22 20:18:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -90,6 +90,9 @@ void sqlite3TableLock(
     p->iTab = iTab;
     p->isWriteLock = isWriteLock;
     p->zName = zName;
+  }else{
+    pParse->nTableLock = 0;
+    pParse->db->mallocFailed = 1;
   }
 }
 

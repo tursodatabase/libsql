@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.395 2007/08/22 02:56:44 drh Exp $
+** $Id: main.c,v 1.396 2007/08/22 20:18:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1076,7 +1076,9 @@ static int openDatabase(
 #endif
 
 opendb_out:
-  sqlite3_mutex_leave(db->mutex);
+  if( db ){
+    sqlite3_mutex_leave(db->mutex);
+  }
   if( SQLITE_NOMEM==(rc = sqlite3_errcode(db)) ){
     sqlite3_close(db);
     db = 0;

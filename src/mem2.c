@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.5 2007/08/20 22:48:43 drh Exp $
+** $Id: mem2.c,v 1.6 2007/08/22 20:18:22 drh Exp $
 */
 
 /*
@@ -249,13 +249,16 @@ static void sqlite3MemsysFailed(void){
 /*
 ** Allocate nByte bytes of memory.
 */
-void *sqlite3_malloc(unsigned int nByte){
+void *sqlite3_malloc(int nByte){
   struct MemBlockHdr *pHdr;
   void **pBt;
   unsigned int *pInt;
   void *p;
   unsigned int totalSize;
 
+  if( nByte<=0 ){
+    return 0;
+  }
   if( mem.mutex==0 ){
     mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
@@ -364,13 +367,13 @@ void sqlite3_free(void *pPrior){
 ** much more likely to break and we are much more liking to find
 ** the error.
 */
-void *sqlite3_realloc(void *pPrior, unsigned int nByte){
+void *sqlite3_realloc(void *pPrior, int nByte){
   struct MemBlockHdr *pOldHdr;
   void *pNew;
   if( pPrior==0 ){
     return sqlite3_malloc(nByte);
   }
-  if( nByte==0 ){
+  if( nByte<=0 ){
     sqlite3_free(pPrior);
     return 0;
   }
@@ -430,9 +433,10 @@ void sqlite3_memdebug_dump(const char *zFilename){
 ** This routine is used to simulate malloc failures.
 **
 ** After calling this routine, there will be iFail successful
-** memory allocations and then a failure.  If iRepeat is true,
+** memory allocations and then a failure.  If iRepeat is 1
 ** all subsequent memory allocations will fail.  If iRepeat is
-** false, only a single allocation will fail.
+** 0, only a single allocation will fail.  If iRepeat is negative
+** then the previous setting for iRepeat is unchanged.
 **
 ** Each call to this routine overrides the previous.  To disable
 ** the simulated allocation failure mechanism, set iFail to -1.
@@ -443,7 +447,9 @@ void sqlite3_memdebug_dump(const char *zFilename){
 int sqlite3_memdebug_fail(int iFail, int iRepeat){
   int n = mem.iFailCnt;
   mem.iFail = iFail+1;
-  mem.iReset = iRepeat;
+  if( iRepeat>=0 ){
+    mem.iReset = iRepeat;
+  }
   mem.iFailCnt = 0;
   return n;
 }

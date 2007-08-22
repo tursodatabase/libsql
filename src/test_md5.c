@@ -382,7 +382,7 @@ static void md5finalize(sqlite3_context *context){
   DigestToBase16(digest, zBuf);
   sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
 }
-void Md5_Register(sqlite3 *db){
-  sqlite3_create_function(db, "md5sum", -1, SQLITE_UTF8, 0, 0, 
-      md5step, md5finalize);
+int Md5_Register(sqlite3 *db){
+  return sqlite3_create_function(db, "md5sum", -1, SQLITE_UTF8, 0, 0, 
+                                 md5step, md5finalize);
 }

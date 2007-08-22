@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.236 2007/08/22 00:39:20 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.237 2007/08/22 20:18:22 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1070,8 +1070,8 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 ** SQLite.  The application that links against SQLite is
 ** expected to provide its own implementation.
 */
-void *sqlite3_malloc(unsigned int);
-void *sqlite3_realloc(void*, unsigned int);
+void *sqlite3_malloc(int);
+void *sqlite3_realloc(void*, int);
 void sqlite3_free(void*);
 
 /*

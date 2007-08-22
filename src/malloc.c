@@ -12,7 +12,7 @@
 ** Memory allocation functions used throughout sqlite.
 **
 **
-** $Id: malloc.c,v 1.9 2007/08/22 00:39:20 drh Exp $
+** $Id: malloc.c,v 1.10 2007/08/22 20:18:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -97,7 +97,7 @@ void *sqlite3DbMallocZero(sqlite3 *db, unsigned n){
 */
 void *sqlite3DbMallocRaw(sqlite3 *db, unsigned n){
   void *p = sqlite3_malloc(n);
-  if( !p ){
+  if( !p && db ){
     db->mallocFailed = 1;
   }
   return p;

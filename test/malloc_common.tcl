@@ -30,22 +30,25 @@ proc do_malloc_test {tn args} {
   if {[string is integer $tn]} {
     set tn malloc-$tn
   }
+  if {[info exists ::mallocopts(-start)]} {
+    set start $::mallocopts(-start)
+  } else {
+    set start 1
+  }
 
   set ::go 1
-  for {set ::n 1} {$::go && $::n < 50000} {incr ::n} {
+  for {set ::n $start} {$::go && $::n < 50000} {incr ::n} {
     do_test $tn.$::n {
 
       # Remove all traces of database files test.db and test2.db from the files
       # system. Then open (empty database) "test.db" with the handle [db].
       # 
-      sqlite_malloc_fail 0
       catch {db close} 
       catch {file delete -force test.db}
       catch {file delete -force test.db-journal}
       catch {file delete -force test2.db}
       catch {file delete -force test2.db-journal}
       catch {sqlite3 db test.db} 
-      set ::DB [sqlite3_connection_pointer db]
 
       # Execute any -tclprep and -sqlprep scripts.
       #
@@ -59,7 +62,7 @@ proc do_malloc_test {tn args} {
       # Now set the ${::n}th malloc() to fail and execute the -tclbody and
       # -sqlbody scripts.
       #
-      sqlite_malloc_fail $::n
+      sqlite3_memdebug_fail $::n 1
       set ::mallocbody {}
       if {[info exists ::mallocopts(-tclbody)]} {
         append ::mallocbody "$::mallocopts(-tclbody)\n"
@@ -68,28 +71,26 @@ proc do_malloc_test {tn args} {
         append ::mallocbody "db eval {$::mallocopts(-sqlbody)}"
       }
       set v [catch $::mallocbody msg]
+      set failFlag [sqlite3_memdebug_fail -1 0]
+      set go [expr {$failFlag>0}]
 
-      # If the test fails (if $v!=0) and the database connection actually
-      # exists, make sure the failure code is SQLITE_NOMEM.
-      if {$v && [info command db]=="db" && [info exists ::mallocopts(-sqlbody)]
-              && [db errorcode]!=7} {
-        set v 999
-      }
 
-      set leftover [lindex [sqlite_malloc_stat] 2]
-      if {$leftover>0} {
-        if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
-        set ::go 0
+      if {$failFlag==0} {
         if {$v} {
-          puts "\nError message returned: $msg"
+          set v2 $msg
         } else {
-          set v {1 1}
+          set v 1
+          set v2 1
         }
+      } elseif {!$v} {
+        set v2 $msg
+      } elseif {[info command db]=="" || [db errorcode]==7
+                   || $msg=="out of memory"} {
+        set v2 1
       } else {
-        set v2 [expr {$msg=="" || $msg=="out of memory"}]
-        if {!$v2} {puts "\nError message returned: $msg"}
-        lappend v $v2
+        set v2 $msg
       }
+      lappend v $v2
     } {1 1}
 
     if {[info exists ::mallocopts(-cleanup)]} {
@@ -98,4 +99,3 @@ proc do_malloc_test {tn args} {
   }
   unset ::mallocopts
 }
-

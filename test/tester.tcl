@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.84 2007/08/20 14:23:44 danielk1977 Exp $
+# $Id: tester.tcl,v 1.85 2007/08/22 20:18:22 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -208,7 +208,9 @@ proc finalize_testing {} {
   sqlite3_soft_heap_limit 0
   incr nTest
   puts "$nErr errors out of $nTest tests"
-  puts "Failures on these tests: $::failList"
+  if {$nErr>0} {
+    puts "Failures on these tests: $::failList"
+  }
   if {$nErr>0 && ![working_64bit_int]} {
     puts "******************************************************************"
     puts "N.B.:  The version of TCL that you used to build this test harness"
@@ -221,6 +223,13 @@ proc finalize_testing {} {
     puts "$sqlite_open_file_count files were left open"
     incr nErr
   }
+  if {[sqlite3_memory_used]>0} {
+    puts "Unfreed memory: [sqlite3_memory_used] bytes"
+    incr nErr
+  } else {
+    puts "All memory allocations freed - no leaks"
+  }
+  puts "Maximum memory usage: [sqlite3_memory_highwater] bytes"
   foreach f [glob -nocomplain test.db-*-journal] {
     file delete -force $f
   }
@@ -562,8 +571,8 @@ proc copy_file {from to} {
   }
 }
 
-# This command checks for outstanding calls to sqliteMalloc() from within
-# the current thread. A list is returned with one entry for each outstanding
+# This command checks for outstanding calls to sqlite3_malloc()
+# A list is returned with one entry for each outstanding
 # malloc. Each list entry is itself a list of 5 items, as follows:
 #
 #     { <number-bytes> <file-name> <line-number> <test-case> <stack-dump> }

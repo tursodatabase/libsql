@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem1.c,v 1.6 2007/08/17 15:53:36 danielk1977 Exp $
+** $Id: mem1.c,v 1.7 2007/08/22 20:18:22 drh Exp $
 */
 
 /*
@@ -148,8 +148,11 @@ static void sqlite3MemsysAlarm(unsigned nByte){
 /*
 ** Allocate nBytes of memory
 */
-void *sqlite3_malloc(unsigned int nBytes){
+void *sqlite3_malloc(int nBytes){
   sqlite3_uint64 *p;
+  if( nBytes<=0 ){
+    return 0;
+  }
   if( mem.mutex==0 ){
     mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
@@ -196,13 +199,13 @@ void sqlite3_free(void *pPrior){
 /*
 ** Change the size of an existing memory allocation
 */
-void *sqlite3_realloc(void *pPrior, unsigned int nBytes){
+void *sqlite3_realloc(void *pPrior, int nBytes){
   unsigned nOld;
   sqlite3_uint64 *p;
   if( pPrior==0 ){
     return sqlite3_malloc(nBytes);
   }
-  if( nBytes==0 ){
+  if( nBytes<=0 ){
     sqlite3_free(pPrior);
     return 0;
   }

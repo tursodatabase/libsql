@@ -908,7 +908,7 @@ sqlite3_value *sqlite3ValueNew(sqlite3 *db){
     p->flags = MEM_Null;
     p->type = SQLITE_NULL;
     p->db = db;
-  }else{
+  }else if( db ){
     db->mallocFailed = 1;
   }
   return p;

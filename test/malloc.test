@@ -8,20 +8,22 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-# This file attempts to check the library in an out-of-memory situation.
-# When compiled with -DSQLITE_DEBUG=1, the SQLite library accepts a special
-# command (sqlite_malloc_fail N) which causes the N-th malloc to fail.  This
-# special feature is used to see what happens in the library if a malloc
-# were to really fail due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.43 2007/08/16 04:39:01 danielk1977 Exp $
+# This file attempts to check the behavior of the SQLite library in 
+# an out-of-memory situation. When compiled with -DSQLITE_DEBUG=1, 
+# the SQLite library accepts a special command (sqlite3_memdebug_fail N C)
+# which causes the N-th malloc to fail.  This special feature is used
+# to see what happens in the library if a malloc were to really fail
+# due to an out-of-memory situation.
+#
+# $Id: malloc.test,v 1.44 2007/08/22 20:18:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Only run these tests if memory debugging is turned on.
 #
-if {[info command sqlite_malloc_stat]==""} {
+ifcapable !memdebug {
    puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
@@ -182,7 +184,7 @@ do_malloc_test 7 -sqlprep {
   SELECT min(a) FROM t1 WHERE a<6 GROUP BY b;
   SELECT a FROM t1 WHERE a<6 ORDER BY a;
   SELECT b FROM t1 WHERE a>6;
-} 
+}
 
 # This block is designed to test that some malloc failures that may
 # occur in vdbeapi.c. Specifically, if a malloc failure that occurs
@@ -197,9 +199,10 @@ do_malloc_test 7 -sqlprep {
 # These tests only run if UTF-16 support is compiled in.
 #
 if {$::sqlite_options(utf16)} {
+  set ::STMT {}
   do_malloc_test 8 -tclprep {
     set sql "SELECT '[string repeat abc 20]', '[string repeat def 20]', ?"
-    set ::STMT [sqlite3_prepare $::DB $sql -1 X]
+    set ::STMT [sqlite3_prepare db $sql -1 X]
     sqlite3_step $::STMT
     if { $::tcl_platform(byteOrder)=="littleEndian" } {
       set ::bomstr "\xFF\xFE"
@@ -214,12 +217,15 @@ if {$::sqlite_options(utf16)} {
     sqlite3_column_double $::STMT 1
     sqlite3_reset $::STMT
     sqlite3_bind_text16 $::STMT 1 $::bomstr 60
-    catch {sqlite3_finalize $::STMT}
-    if {[lindex [sqlite_malloc_stat] 2]<=0} {
-      error "out of memory"
-    }
+    #catch {sqlite3_finalize $::STMT}
+    #if {[lindex [sqlite_malloc_stat] 2]<=0} {
+    #  error "out of memory"
+    #}
   } -cleanup {
-    sqlite3_finalize $::STMT
+    if {$::STMT!=""} {
+      sqlite3_finalize $::STMT
+      set ::STMT {}
+    }
   }
 }
 
@@ -250,8 +256,8 @@ do_malloc_test 10 -sqlprep {
 
 # This block tests malloc() failures that occur within calls to
 # sqlite3_create_function().
-do_malloc_test 11  -tclbody {
-  set rc [sqlite3_create_function $::DB]
+do_malloc_test 11 -tclbody {
+  set rc [sqlite3_create_function db]
   if {[string match $rc SQLITE_NOMEM]} {
     error "out of memory"
   }
@@ -260,7 +266,7 @@ do_malloc_test 11  -tclbody {
 do_malloc_test 12 -tclbody {
   set sql16 [encoding convertto unicode "SELECT * FROM sqlite_master"]
   append sql16 "\00\00"
-  set ::STMT [sqlite3_prepare16 $::DB $sql16 -1 DUMMY]
+  set ::STMT [sqlite3_prepare16 db $sql16 -1 DUMMY]
   sqlite3_finalize $::STMT
 }
 
@@ -320,9 +326,9 @@ proc string_compare {a b} {
 # Test for malloc() failures in sqlite3_create_collation() and 
 # sqlite3_create_collation16().
 #
-do_malloc_test 15 -tclbody {
+do_malloc_test 15 -start 4 -tclbody {
   db collate string_compare string_compare
-  if {[catch {add_test_collate $::DB 1 1 1} msg]} {
+  if {[catch {add_test_collate db 1 1 1} msg]} {
     if {$msg=="SQLITE_NOMEM"} {set msg "out of memory"}
     error $msg
   }
@@ -423,7 +429,7 @@ do_malloc_test 19 -tclprep {
 } -tclbody {
   unset -nocomplain ::STMT
   set r [catch {
-    set ::STMT [sqlite3_prepare $::DB {SELECT ?} -1 DUMMY]
+    set ::STMT [sqlite3_prepare db {SELECT ?} -1 DUMMY]
     sqlite3_bind_text16 -static $::STMT 1 $static_string 112
   } msg]
   if {$r} {error [string range $msg 4 end]}
@@ -466,7 +472,7 @@ do_malloc_test 22 -tclbody {
   set ::STMT ""
   set r [catch {
     set ::STMT [
-      sqlite3_prepare_v2 $::DB "SELECT * FROM sqlite_master" -1 DUMMY
+      sqlite3_prepare_v2 db "SELECT * FROM sqlite_master" -1 DUMMY
     ]
   } msg]
   if {$r} {error [string range $msg 4 end]}
@@ -484,5 +490,4 @@ do_test malloc-99.X {
 } {0}
 
 puts open-file-count=$sqlite_open_file_count
-sqlite_malloc_fail 0
 finish_test

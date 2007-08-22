@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.134 2007/08/21 10:44:16 drh Exp $
+** $Id: tokenize.c,v 1.135 2007/08/22 20:18:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -401,6 +401,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   i = 0;
   pEngine = sqlite3ParserAlloc((void*(*)(size_t))sqlite3_malloc);
   if( pEngine==0 ){
+    db->mallocFailed = 1;
     return SQLITE_NOMEM;
   }
   assert( pParse->sLastToken.dyn==0 );
