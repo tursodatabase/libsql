@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.366 2007/08/22 11:22:04 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.367 2007/08/22 18:54:33 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1928,7 +1928,7 @@ int sqlite3PagerOpen(
     return ((rc==SQLITE_OK)?SQLITE_NOMEM:rc);
   }
 
-  PAGERTRACE3("OPEN %d %s\n", FILEHANDLEID(fd), zFullPathname);
+  PAGERTRACE3("OPEN %d %s\n", FILEHANDLEID(pPager->fd), zFullPathname);
   IOTRACE(("OPEN %p %s\n", pPager, zFullPathname))
 
   /* Fill in Pager.zDirectory[] */
@@ -3753,6 +3753,7 @@ static int pager_write(PgHdr *pPg){
         }else{
           u32 cksum, saved;
           char *pData2, *pEnd;
+
           /* We should never write to the journal file the page that
           ** contains the database locks.  The following assert verifies
           ** that we do not. */
@@ -3870,6 +3871,7 @@ int sqlite3PagerWrite(DbPage *pDbPage){
     Pgno pg1;                 /* First page of the sector pPg is located on. */
     int nPage;                /* Number of pages starting at pg1 to journal */
     int ii;
+    int needSync = 0;
 
     /* Set the doNotSync flag to 1. This is because we cannot allow a journal
     ** header to be written between the pages journaled by this function.
@@ -3897,18 +3899,39 @@ int sqlite3PagerWrite(DbPage *pDbPage){
 
     for(ii=0; ii<nPage && rc==SQLITE_OK; ii++){
       Pgno pg = pg1+ii;
+      PgHdr *pPage;
       if( !pPager->aInJournal || pg==pPg->pgno || 
           pg>pPager->origDbSize || !(pPager->aInJournal[pg/8]&(1<<(pg&7)))
       ) {
         if( pg!=PAGER_MJ_PGNO(pPager) ){
-          PgHdr *pPage;
           rc = sqlite3PagerGet(pPager, pg, &pPage);
           if( rc==SQLITE_OK ){
             rc = pager_write(pPage);
+            if( pPage->needSync ){
+              needSync = 1;
+            }
             sqlite3PagerUnref(pPage);
           }
         }
+      }else if( (pPage = pager_lookup(pPager, pg)) ){
+        if( pPage->needSync ){
+          needSync = 1;
+        }
       }
+    }
+
+    /* If the PgHdr.needSync flag is set for any of the nPage pages 
+    ** starting at pg1, then it needs to be set for all of them. Because
+    ** writing to any of these nPage pages may damage the others, the
+    ** journal file must contain sync()ed copies of all of them
+    ** before any of them can be written out to the database file.
+    */
+    if( needSync ){
+      for(ii=0; ii<nPage && needSync; ii++){
+        PgHdr *pPage = pager_lookup(pPager, pg1+ii);
+        if( pPage ) pPage->needSync = 1;
+      }
+      assert(pPager->needSync);
     }
 
     assert( pPager->doNotSync==1 );
