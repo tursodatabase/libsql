@@ -1,5 +1,5 @@
-C Improvements\sto\smemory\sleak\sdetection.\s\sThe\s--backtrace=NNN\soption\sis\snow\nrecognized\sby\stester.tcl.\s\sMemory\sleak\ssummaries\sare\sautomatically\swritten\nto\sthe\sfile\s./memleak.txt\sand\seach\sleak\sis\stagged\swith\sthe\stest\sin\swhich\nit\soccurred.\s\sThe\squick.test\sscript\sruns\son\sLinux\swith\sno\serrors\sand\nno\sleaks.\s(CVS\s4273)
-D 2007-08-23T02:47:53
+C Change\snames\sof\sconstants\sin\slemon.c\sto\swork\saround\sname\sconflicts\non\sSolaris.\s\sTicket\s#2583.\s(CVS\s4274)
+D 2007-08-23T02:50:56
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -483,7 +483,7 @@ F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/zeroblob.test c5096545085330b7886d2f977272a73d9fa7737e
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/lemon.c 265ab88e7bb213bc216b1c0045a317d03f326189
+F tool/lemon.c 0ab4cca47950da4dc04cf957db0c0ed54b464aa9
 F tool/lempar.c 8f998bf8d08e2123149c2cc5d0597cd5d5d1abdd
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -559,7 +559,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 205d0b881d541db65837ce6cf44d58d607635bc2
-R fd27d05e85257f20863930e99fdcd43b
+P 21f6b31097692171c6493e6ca6de6acbd62dc595
+R eedd9c3af3e8b7da02c2c75af15e1919
 U drh
-Z e30b8575a2c30d279fba7b1e44399c46
+Z e69a56f3f634fc877bc9bea036855b24

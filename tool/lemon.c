@@ -108,7 +108,7 @@ int SetUnion(/* char *A,char *B */);    /* A <- A U B, thru element N */
 ** Principal data structures for the LEMON parser generator.
 */
 
-typedef enum {B_FALSE=0, B_TRUE} Boolean;
+typedef enum {LEMON_FALSE=0, LEMON_TRUE} Boolean;
 
 /* Symbols (terminals and nonterminals) of the grammar are stored
 ** in the following: */
@@ -610,7 +610,7 @@ struct lemon *lemp;
   int progress;
 
   for(i=0; i<lemp->nsymbol; i++){
-    lemp->symbols[i]->lambda = B_FALSE;
+    lemp->symbols[i]->lambda = LEMON_FALSE;
   }
   for(i=lemp->nterminal; i<lemp->nsymbol; i++){
     lemp->symbols[i]->firstset = SetNew();
@@ -623,10 +623,10 @@ struct lemon *lemp;
       if( rp->lhs->lambda ) continue;
       for(i=0; i<rp->nrhs; i++){
          struct symbol *sp = rp->rhs[i];
-         if( sp->type!=TERMINAL || sp->lambda==B_FALSE ) break;
+         if( sp->type!=TERMINAL || sp->lambda==LEMON_FALSE ) break;
       }
       if( i==rp->nrhs ){
-        rp->lhs->lambda = B_TRUE;
+        rp->lhs->lambda = LEMON_TRUE;
         progress = 1;
       }
     }
@@ -649,10 +649,10 @@ struct lemon *lemp;
           }
           break;
 	}else if( s1==s2 ){
-          if( s1->lambda==B_FALSE ) break;
+          if( s1->lambda==LEMON_FALSE ) break;
 	}else{
           progress += SetUnion(s1->firstset,s2->firstset);
-          if( s2->lambda==B_FALSE ) break;
+          if( s2->lambda==LEMON_FALSE ) break;
 	}
       }
     }
@@ -972,11 +972,11 @@ struct lemon *lemp;
   }
 
   /* Report an error for each rule that can never be reduced. */
-  for(rp=lemp->rule; rp; rp=rp->next) rp->canReduce = B_FALSE;
+  for(rp=lemp->rule; rp; rp=rp->next) rp->canReduce = LEMON_FALSE;
   for(i=0; i<lemp->nstate; i++){
     struct action *ap;
     for(ap=lemp->sorted[i]->ap; ap; ap=ap->next){
-      if( ap->type==REDUCE ) ap->x.rp->canReduce = B_TRUE;
+      if( ap->type==REDUCE ) ap->x.rp->canReduce = LEMON_TRUE;
     }
   }
   for(rp=lemp->rule; rp; rp=rp->next){
@@ -1210,7 +1210,7 @@ struct lemon *lemp;
             break;
 	  }else{
             SetUnion(newcfp->fws,xsp->firstset);
-            if( xsp->lambda==B_FALSE ) break;
+            if( xsp->lambda==LEMON_FALSE ) break;
 	  }
 	}
         if( i==rp->nrhs ) Plink_add(&cfp->fplp,newcfp);
@@ -4271,7 +4271,7 @@ char *x;
     sp->prec = -1;
     sp->assoc = UNK;
     sp->firstset = 0;
-    sp->lambda = B_FALSE;
+    sp->lambda = LEMON_FALSE;
     sp->destructor = 0;
     sp->datatype = 0;
     Symbol_insert(sp,sp->name);
