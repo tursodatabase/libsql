@@ -1741,7 +1741,7 @@ typedef struct Snippet {
 
 typedef enum QueryType {
   QUERY_GENERIC,   /* table scan */
-  QUERY_ROWID,     /* lookup by rowid */
+  QUERY_DOCID,     /* lookup by docid */
   QUERY_FULLTEXT   /* QUERY_FULLTEXT + [i] is a full-text search for column i*/
 } QueryType;
 
@@ -1977,15 +1977,18 @@ static int sql_get_leaf_statement(fulltext_vtab *v, int idx,
   return SQLITE_OK;
 }
 
-/* insert into %_content (rowid, ...) values ([rowid], [pValues]) */
-static int content_insert(fulltext_vtab *v, sqlite3_value *rowid,
+/* insert into %_content (docid, ...) values ([docid], [pValues])
+** If the docid contains SQL NULL, then a unique docid will be
+** generated.
+*/
+static int content_insert(fulltext_vtab *v, sqlite3_value *docid,
                           sqlite3_value **pValues){
   sqlite3_stmt *s;
   int i;
   int rc = sql_get_statement(v, CONTENT_INSERT_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_value(s, 1, rowid);
+  rc = sqlite3_bind_value(s, 1, docid);
   if( rc!=SQLITE_OK ) return rc;
 
   for(i=0; i<v->nColumn; ++i){
@@ -1997,9 +2000,9 @@ static int content_insert(fulltext_vtab *v, sqlite3_value *rowid,
 }
 
 /* update %_content set col0 = pValues[0], col1 = pValues[1], ...
- *                  where rowid = [iRowid] */
+ *                  where docid = [iDocid] */
 static int content_update(fulltext_vtab *v, sqlite3_value **pValues,
-                          sqlite_int64 iRowid){
+                          sqlite_int64 iDocid){
   sqlite3_stmt *s;
   int i;
   int rc = sql_get_statement(v, CONTENT_UPDATE_STMT, &s);
@@ -2010,7 +2013,7 @@ static int content_update(fulltext_vtab *v, sqlite3_value **pValues,
     if( rc!=SQLITE_OK ) return rc;
   }
 
-  rc = sqlite3_bind_int64(s, 1+v->nColumn, iRowid);
+  rc = sqlite3_bind_int64(s, 1+v->nColumn, iDocid);
   if( rc!=SQLITE_OK ) return rc;
 
   return sql_single_step(s);
@@ -2025,13 +2028,13 @@ static void freeStringArray(int nString, const char **pString){
   free((void *) pString);
 }
 
-/* select * from %_content where rowid = [iRow]
+/* select * from %_content where docid = [iDocid]
  * The caller must delete the returned array and all strings in it.
  * null fields will be NULL in the returned array.
  *
  * TODO: Perhaps we should return pointer/length strings here for consistency
  * with other code which uses pointer/length. */
-static int content_select(fulltext_vtab *v, sqlite_int64 iRow,
+static int content_select(fulltext_vtab *v, sqlite_int64 iDocid,
                           const char ***pValues){
   sqlite3_stmt *s;
   const char **values;
@@ -2043,7 +2046,7 @@ static int content_select(fulltext_vtab *v, sqlite_int64 iRow,
   rc = sql_get_statement(v, CONTENT_SELECT_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_int64(s, 1, iRow);
+  rc = sqlite3_bind_int64(s, 1, iDocid);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3_step(s);
@@ -2070,20 +2073,20 @@ static int content_select(fulltext_vtab *v, sqlite_int64 iRow,
   return rc;
 }
 
-/* delete from %_content where rowid = [iRow ] */
-static int content_delete(fulltext_vtab *v, sqlite_int64 iRow){
+/* delete from %_content where docid = [iDocid ] */
+static int content_delete(fulltext_vtab *v, sqlite_int64 iDocid){
   sqlite3_stmt *s;
   int rc = sql_get_statement(v, CONTENT_DELETE_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3_bind_int64(s, 1, iRow);
+  rc = sqlite3_bind_int64(s, 1, iDocid);
   if( rc!=SQLITE_OK ) return rc;
 
   return sql_single_step(s);
 }
 
 /* insert into %_segments values ([pData])
-**   returns assigned rowid in *piBlockid
+**   returns assigned blockid in *piBlockid
 */
 static int block_insert(fulltext_vtab *v, const char *pData, int nData,
                         sqlite_int64 *piBlockid){
@@ -2098,12 +2101,13 @@ static int block_insert(fulltext_vtab *v, const char *pData, int nData,
   if( rc==SQLITE_ROW ) return SQLITE_ERROR;
   if( rc!=SQLITE_DONE ) return rc;
 
+  /* blockid column is an alias for rowid. */
   *piBlockid = sqlite3_last_insert_rowid(v->db);
   return SQLITE_OK;
 }
 
 /* delete from %_segments
-**   where rowid between [iStartBlockid] and [iEndBlockid]
+**   where blockid between [iStartBlockid] and [iEndBlockid]
 **
 ** Deletes the range of blocks, inclusive, used to delete the blocks
 ** which form a segment.
@@ -2803,7 +2807,7 @@ static int fulltextConnect(
 }
 
 /* The %_content table holds the text of each document, with
-** the rowid used as the docid.
+** the docid column exposed as the SQLite rowid for the table.
 */
 /* TODO(shess) This comment needs elaboration to match the updated
 ** code.  Work it into the top-of-file comment at that time.
@@ -2866,8 +2870,8 @@ static int fulltextBestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     if( pConstraint->usable ) {
       if( pConstraint->iColumn==-1 &&
           pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ ){
-        pInfo->idxNum = QUERY_ROWID;      /* lookup by rowid */
-        TRACE(("FTS3 QUERY_ROWID\n"));
+        pInfo->idxNum = QUERY_DOCID;      /* lookup by docid */
+        TRACE(("FTS3 QUERY_DOCID\n"));
       } else if( pConstraint->iColumn>=0 &&
                  pConstraint->op==SQLITE_INDEX_CONSTRAINT_MATCH ){
         /* full-text search */
@@ -2879,7 +2883,7 @@ static int fulltextBestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
       pInfo->aConstraintUsage[i].omit = 1;
 
       /* An arbitrary value for now.
-       * TODO: Perhaps rowid matches should be considered cheaper than
+       * TODO: Perhaps docid matches should be considered cheaper than
        * full-text searches. */
       pInfo->estimatedCost = 1.0;   
 
@@ -3661,7 +3665,7 @@ static int fulltextQuery(
 ** If idxNum==QUERY_GENERIC then do a full table scan against
 ** the %_content table.
 **
-** If idxNum==QUERY_ROWID then do a rowid lookup for a single entry
+** If idxNum==QUERY_DOCID then do a docid lookup for a single entry
 ** in the %_content table.
 **
 ** If idxNum>=QUERY_FULLTEXT then use the full text index.  The
@@ -3701,7 +3705,7 @@ static int fulltextFilter(
     case QUERY_GENERIC:
       break;
 
-    case QUERY_ROWID:
+    case QUERY_DOCID:
       rc = sqlite3_bind_int64(c->pStmt, 1, sqlite3_value_int64(argv[0]));
       if( rc!=SQLITE_OK ) return rc;
       break;
@@ -3764,7 +3768,8 @@ static int fulltextColumn(sqlite3_vtab_cursor *pCursor,
 }
 
 /* This is the xRowid method.  The SQLite core calls this routine to
-** retrive the rowid for the current row of the result set.  The
+** retrieve the rowid for the current row of the result set.  fts3
+** exposes %_content.docid as the rowid for the virtual table.  The
 ** rowid should be written to *pRowid.
 */
 static int fulltextRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
@@ -3834,12 +3839,12 @@ static int buildTerms(fulltext_vtab *v, sqlite_int64 iDocid,
 }
 
 /* Add doclists for all terms in [pValues] to pendingTerms table. */
-static int insertTerms(fulltext_vtab *v, sqlite_int64 iRowid,
+static int insertTerms(fulltext_vtab *v, sqlite_int64 iDocid,
                        sqlite3_value **pValues){
   int i;
   for(i = 0; i < v->nColumn ; ++i){
     char *zText = (char*)sqlite3_value_text(pValues[i]);
-    int rc = buildTerms(v, iRowid, zText, i);
+    int rc = buildTerms(v, iDocid, zText, i);
     if( rc!=SQLITE_OK ) return rc;
   }
   return SQLITE_OK;
@@ -3848,18 +3853,18 @@ static int insertTerms(fulltext_vtab *v, sqlite_int64 iRowid,
 /* Add empty doclists for all terms in the given row's content to
 ** pendingTerms.
 */
-static int deleteTerms(fulltext_vtab *v, sqlite_int64 iRowid){
+static int deleteTerms(fulltext_vtab *v, sqlite_int64 iDocid){
   const char **pValues;
   int i, rc;
 
   /* TODO(shess) Should we allow such tables at all? */
   if( DL_DEFAULT==DL_DOCIDS ) return SQLITE_ERROR;
 
-  rc = content_select(v, iRowid, &pValues);
+  rc = content_select(v, iDocid, &pValues);
   if( rc!=SQLITE_OK ) return rc;
 
   for(i = 0 ; i < v->nColumn; ++i) {
-    rc = buildTerms(v, iRowid, pValues[i], -1);
+    rc = buildTerms(v, iDocid, pValues[i], -1);
     if( rc!=SQLITE_OK ) break;
   }
 
@@ -3870,21 +3875,22 @@ static int deleteTerms(fulltext_vtab *v, sqlite_int64 iRowid){
 /* TODO(shess) Refactor the code to remove this forward decl. */
 static int initPendingTerms(fulltext_vtab *v, sqlite_int64 iDocid);
 
-/* Insert a row into the %_content table; set *piRowid to be the ID of the
+/* Insert a row into the %_content table; set *piDocid to be the ID of the
 ** new row.  Add doclists for terms to pendingTerms.
 */
-static int index_insert(fulltext_vtab *v, sqlite3_value *pRequestRowid,
-                        sqlite3_value **pValues, sqlite_int64 *piRowid){
+static int index_insert(fulltext_vtab *v, sqlite3_value *pRequestDocid,
+                        sqlite3_value **pValues, sqlite_int64 *piDocid){
   int rc;
 
-  rc = content_insert(v, pRequestRowid, pValues);  /* execute an SQL INSERT */
+  rc = content_insert(v, pRequestDocid, pValues);  /* execute an SQL INSERT */
   if( rc!=SQLITE_OK ) return rc;
 
-  *piRowid = sqlite3_last_insert_rowid(v->db);
-  rc = initPendingTerms(v, *piRowid);
+  /* docid column is an alias for rowid. */
+  *piDocid = sqlite3_last_insert_rowid(v->db);
+  rc = initPendingTerms(v, *piDocid);
   if( rc!=SQLITE_OK ) return rc;
 
-  return insertTerms(v, *piRowid, pValues);
+  return insertTerms(v, *piDocid, pValues);
 }
 
 /* Delete a row from the %_content table; add empty doclists for terms
@@ -5653,7 +5659,7 @@ static int initPendingTerms(fulltext_vtab *v, sqlite_int64 iDocid){
 /* This function implements the xUpdate callback; it's the top-level entry
  * point for inserting, deleting or updating a row in a full-text table. */
 static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
-                   sqlite_int64 *pRowid){
+                          sqlite_int64 *pRowid){
   fulltext_vtab *v = (fulltext_vtab *) pVtab;
   int rc;
 
