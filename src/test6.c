@@ -20,6 +20,8 @@
 
 #ifndef SQLITE_OMIT_DISKIO  /* This file is a no-op if disk I/O is disabled */
 
+/* #define TRACE_CRASHTEST */
+
 typedef struct CrashFile CrashFile;
 typedef struct CrashGlobal CrashGlobal;
 typedef struct WriteBuffer WriteBuffer;
@@ -177,6 +179,10 @@ static int writeListSync(CrashFile *pFile, int isCrash){
     }
   }
 
+#ifdef TRACE_CRASHTEST
+  printf("Sync %s (is %s crash)\n", pFile->zName, (isCrash?"a":"not a"));
+#endif
+
   sqlite3OsFileSize((sqlite3_file *)pFile, &iSize);
 
   ppPtr = &g.pWriteList;
@@ -218,11 +224,21 @@ static int writeListSync(CrashFile *pFile, int isCrash){
           rc = sqlite3OsTruncate(pRealFile, pWrite->iOffset);
         }
         *ppPtr = pWrite->pNext;
+#ifdef TRACE_CRASHTEST
+        if( isCrash ){
+          printf("Writing %d bytes @ %d\n", pWrite->nBuf, (int)pWrite->iOffset);
+        }
+#endif
         sqlite3_free(pWrite);
         break;
       }
       case 2: {               /* Do nothing */
         ppPtr = &pWrite->pNext;
+#ifdef TRACE_CRASHTEST
+        if( isCrash ){
+          printf("Omiting %d bytes @ %d\n", pWrite->nBuf, (int)pWrite->iOffset);
+        }
+#endif
         break;
       }
       case 3: {               /* Trash sectors */
@@ -231,6 +247,10 @@ static int writeListSync(CrashFile *pFile, int isCrash){
         int iLast = (pWrite->iOffset+pWrite->nBuf-1)/g.iSectorSize;
 
         assert(pWrite->zBuf);
+
+#ifdef TRACE_CRASHTEST
+        printf("Trashing %d sectors @ sector %d\n", 1+iLast-iFirst, iFirst);
+#endif
 
         zGarbage = sqlite3_malloc(g.iSectorSize);
         if( zGarbage ){

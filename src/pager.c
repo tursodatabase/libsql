@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.368 2007/08/22 22:04:37 drh Exp $
+** @(#) $Id: pager.c,v 1.369 2007/08/23 11:07:10 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -634,7 +634,7 @@ static int jrnlBufferSize(Pager *pPager){
   assert(SQLITE_IOCAP_ATOMIC512==(512>>8));
   assert(SQLITE_IOCAP_ATOMIC64K==(65536>>8));
 
-  if( !fd->pMethods || (dc&(SQLITE_IOCAP_ATOMIC|(nPage<<8))&&nSector<=nPage) ){
+  if( !fd->pMethods || (dc&(SQLITE_IOCAP_ATOMIC|(nPage>>8))&&nSector<=nPage) ){
     return JOURNAL_HDR_SZ(pPager) + JOURNAL_PG_SZ(pPager);
   }
   return 0;

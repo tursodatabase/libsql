@@ -1,5 +1,5 @@
-C Add\ssome\stests\sfor\sthe\satomic-write\soptimization.\s(CVS\s4275)
-D 2007-08-23T08:06:45
+C Add\ssome\sfurther\stests\sand\sa\sbugfix\sfor\sthe\satomic-write\soptimization.\s(CVS\s4276)
+D 2007-08-23T11:07:10
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -115,7 +115,7 @@ F src/os_unix.c 3ff776e03535b64df12dcc272a913a52d69f3e4a
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 29c0e19c1072679a4c7818c49fab2f35d2ad7747
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 54087a81a44e38e30cf8bfed41a73acc9ece84a8
+F src/pager.c 7b0eee5f01f26449837f690baca7d929f683609c
 F src/pager.h 53087c6fb9db01aed17c7fd044662a27507e89b8
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 9b989506a1b7c8aecd6befb8235e2f57a4aba7e5
@@ -136,7 +136,7 @@ F src/test2.c 4f742e99ed1bea5c14692f627bdb59a146f30504
 F src/test3.c a7d011c51d6b2e2a73c43983d5c2b731d69c74d7
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
-F src/test6.c 2c141f367ba483eef99a7f4d00f07431caff791e
+F src/test6.c 5d6286568b12ec6c813cb30d2a14de8229f8e388
 F src/test7.c a9d509d0e9ad214b4772696f49f6e61be26213d1
 F src/test8.c e6a543c8b248efe120ae33a6859fcd55dcf46a96
 F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
@@ -227,6 +227,7 @@ F test/corrupt2.test 572f8df0303d0ce63ddad5c5c9101a83a345ae46
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/crash.test 24020168cc42977a4dd83ff78d2b5eb6577715db
 F test/crash2.test 423c6ec404d15b7d7d0e40aef0a26740cce6075f
+F test/crash3.test caa79052f29ee5cb17ecede2c386251eb932c05f
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b562aba1a65be49935fc43a04e90766e39231804
 F test/date.test 4834d022b2fa5982cafed20938f7523a7475e4cd
@@ -318,7 +319,7 @@ F test/insert3.test 72ea6056811fd234f80d923f977c196089947381
 F test/insert4.test 1e27f0a3e5670d5f03c1636f699aa44270945bca
 F test/interrupt.test 81555fb0f8179bb2d0dc7151fd75428223f93cf2
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
-F test/io.test ca9db7cd57a1b02cd983863c1be1153e1900e68b
+F test/io.test 4368da68ae82a8496cd3904a886345b75303979f
 F test/ioerr.test 491d42c49bbec598966d26b01ed7901f55e5ee2d
 F test/ioerr2.test f938eadb12108048813869b86beee4a2f98e34b8
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
@@ -412,7 +413,7 @@ F test/table.test dbdfd06aef054ad5aed8e57a782137d57d5c5528
 F test/tableapi.test 036575a98dcce7c92e9f39056839bbad8a715412
 F test/tclsqlite.test 593f3b30221e85786965d9e5670ae4f96b4e4159
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
-F test/tester.tcl c50fd942fe3c8fc36c45be161fcd9b60603f033c
+F test/tester.tcl d6fd4e9eac69a7bc7791ca2f80c91945d1f6d1cc
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
@@ -559,7 +560,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e4e74cd0f9343448ea38e57f08bb4f0616825f31
-R 630334db112909a8743c928d15787556
+P e2cc7b4a3476a733b2701546f6b4ec9abc18152b
+R 98112005a7fda39581e1ca266aa94e0a
 U danielk1977
-Z 01e41e90624e3bb8ea0ae5e4ad13b9f8
+Z 5d888b8b25790997a283d2df12c0d28a
