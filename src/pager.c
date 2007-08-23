@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.370 2007/08/23 11:47:59 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.371 2007/08/23 14:48:24 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -822,17 +822,37 @@ static int writeJournalHdr(Pager *pPager){
   seekJournalHdr(pPager);
   pPager->journalHdr = pPager->journalOff;
 
-  /* FIX ME: 
-  **
-  ** Possibly for a pager not in no-sync mode, the journal magic should not
-  ** be written until nRec is filled in as part of next syncJournal(). 
-  **
-  ** Actually maybe the whole journal header should be delayed until that
-  ** point. Think about this.
-  */
   memcpy(zHeader, aJournalMagic, sizeof(aJournalMagic));
-  /* The nRec Field. 0xFFFFFFFF for no-sync journals. */
-  put32bits(&zHeader[sizeof(aJournalMagic)], pPager->noSync ? 0xffffffff : 0);
+
+  /* 
+  ** Write the nRec Field - the number of page records that follow this
+  ** journal header. Normally, zero is written to this value at this time.
+  ** After the records are added to the journal (and the journal synced, 
+  ** if in full-sync mode), the zero is overwritten with the true number
+  ** of records (see syncJournal()).
+  **
+  ** A faster alternative is to write 0xFFFFFFFF to the nRec field. When
+  ** reading the journal this value tells SQLite to assume that the
+  ** rest of the journal file contains valid page records. This assumption
+  ** is dangerous, as if a failure occured whilst writing to the journal
+  ** file it may contain some garbage data. There are two scenarios
+  ** where this risk can be ignored:
+  **
+  **   * When the pager is in no-sync mode. Corruption can follow a
+  **     power failure in this case anyway.
+  **
+  **   * When the SQLITE_IOCAP_SAFE_APPEND flag is set. This guarantees
+  **     that garbage data is never appended to the journal file.
+  */
+  assert(pPager->fd->pMethods||pPager->noSync);
+  if( (pPager->noSync) 
+   || (sqlite3OsDeviceCharacteristics(pPager->fd)&SQLITE_IOCAP_SAFE_APPEND) 
+  ){
+    put32bits(&zHeader[sizeof(aJournalMagic)], 0xffffffff);
+  }else{
+    put32bits(&zHeader[sizeof(aJournalMagic)], 0);
+  }
+
   /* The random check-hash initialiser */ 
   sqlite3Randomness(sizeof(pPager->cksumInit), &pPager->cksumInit);
   put32bits(&zHeader[sizeof(aJournalMagic)+4], pPager->cksumInit);
@@ -2484,7 +2504,12 @@ int sqlite3PagerRef(DbPage *pPg){
 ** is synced, then the nRec field is updated, then a second sync occurs.
 **
 ** For temporary databases, we do not care if we are able to rollback
-** after a power failure, so sync occurs.
+** after a power failure, so no sync occurs.
+**
+** If the IOCAP_SEQUENTIAL flag is set for the persistent media on which
+** the database is stored, then OsSync() is never called on the journal
+** file. In this case all that is required is to update the nRec field in
+** the journal header.
 **
 ** This routine clears the needSync field of every page current held in
 ** memory.
@@ -2493,12 +2518,15 @@ static int syncJournal(Pager *pPager){
   PgHdr *pPg;
   int rc = SQLITE_OK;
 
+
   /* Sync the journal before modifying the main database
   ** (assuming there is a journal and it needs to be synced.)
   */
   if( pPager->needSync ){
     if( !pPager->tempFile ){
+      int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
       assert( pPager->journalOpen );
+
       /* assert( !pPager->noSync ); // noSync might be set if synchronous
       ** was turned off after the transaction was started.  Ticket #615 */
 #ifndef NDEBUG
@@ -2512,15 +2540,20 @@ static int syncJournal(Pager *pPager){
         assert( pPager->journalOff==jSz );
       }
 #endif
-      {
-        i64 jrnlOff;
-
+      if( 0==(iDc&SQLITE_IOCAP_SAFE_APPEND) ){
         /* Write the nRec value into the journal file header. If in
         ** full-synchronous mode, sync the journal first. This ensures that
         ** all data has really hit the disk before nRec is updated to mark
-        ** it as a candidate for rollback. 
+        ** it as a candidate for rollback.
+        **
+        ** This is not required if the persistent media supports the
+        ** SAFE_APPEND property. Because in this case it is not possible 
+        ** for garbage data to be appended to the file, the nRec field
+        ** is populated with 0xFFFFFFFF when the journal header is written
+        ** and never needs to be updated.
         */
-        if( pPager->fullSync ){
+        i64 jrnlOff;
+        if( pPager->fullSync && 0==(iDc&SQLITE_IOCAP_SEQUENTIAL) ){
           PAGERTRACE2("SYNC journal of %d\n", PAGERID(pPager));
           IOTRACE(("JSYNC %p\n", pPager))
           rc = sqlite3OsSync(pPager->jfd, pPager->sync_flags);
@@ -2532,12 +2565,14 @@ static int syncJournal(Pager *pPager){
         rc = write32bits(pPager->jfd, jrnlOff, pPager->nRec);
         if( rc ) return rc;
       }
-      PAGERTRACE2("SYNC journal of %d\n", PAGERID(pPager));
-      IOTRACE(("JSYNC %p\n", pPager))
-      rc = sqlite3OsSync(pPager->jfd, pPager->sync_flags| 
-        (pPager->sync_flags==SQLITE_SYNC_FULL?SQLITE_SYNC_DATAONLY:0)
-      );
-      if( rc!=0 ) return rc;
+      if( 0==(iDc&SQLITE_IOCAP_SEQUENTIAL) ){
+        PAGERTRACE2("SYNC journal of %d\n", PAGERID(pPager));
+        IOTRACE(("JSYNC %p\n", pPager))
+        rc = sqlite3OsSync(pPager->jfd, pPager->sync_flags| 
+          (pPager->sync_flags==SQLITE_SYNC_FULL?SQLITE_SYNC_DATAONLY:0)
+        );
+        if( rc!=0 ) return rc;
+      }
       pPager->journalStarted = 1;
     }
     pPager->needSync = 0;
@@ -2774,11 +2809,12 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   ** it can't be helped.
   */
   if( pPg==0 && pPager->pFirst && syncOk && !MEMDB){
+    int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
     int rc = syncJournal(pPager);
     if( rc!=0 ){
       return rc;
     }
-    if( pPager->fullSync ){
+    if( pPager->fullSync && 0==(iDc&SQLITE_IOCAP_SAFE_APPEND) ){
       /* If in full-sync mode, write a new journal header into the
       ** journal file. This is done to avoid ever modifying a journal
       ** header that is involved in the rollback of pages that have
