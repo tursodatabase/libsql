@@ -1,5 +1,5 @@
-C Add\ssome\swarm-body\stests\sfor\srollback\sjournal\si/o\senhancements.\s(CVS\s4279)
-D 2007-08-23T16:27:21
+C Fix\sfts3\sto\snot\shave\sthe\sVACUUM\sbug\sfrom\sfts2.\s\s%_content.docid\sis\san\nalias\sto\sfix\sthe\srowid\sfor\sdocuments,\s%_segments.blockid\sis\san\salias\nto\sfix\sthe\srowid\sfor\ssegment\sblocks.\s\sUnit\stest\sfor\sthe\sproblem.\s(CVS\s4280)
+D 2007-08-23T20:23:37
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -49,7 +49,7 @@ F ext/fts2/fts2_tokenizer1.c 8a545c232bdffafd117c4eeaf59789691909f26a
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.tokenizers a97c9a55b3422f6cb04af9de9296fe2447ea4a78
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 64ebaf649e779ef22cade60e973090e0a924746a
+F ext/fts3/fts3.c 2098c9b08503b70d4f0c60c5a4665d7413c31a97
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3_hash.c 84654768178452b00bbc986dd878a8299dc1e3dc
 F ext/fts3/fts3_hash.h af585d6867d478fc0457f64cfaae60e09541e63a
@@ -296,6 +296,7 @@ F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test 2da4df52fe8ea8389f6fa7a01e4c1a0f091118d6
 F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
+F test/fts3b.test 94cd8a2fb709c99c1617df01f6908de77892d8bc
 F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
@@ -560,7 +561,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 595568492e63822caed5b6970542dcee4615dc4d
-R 481110817a2ed016cc610c9d83519f44
-U danielk1977
-Z bffb4d15c81e758cd2ec1b776561f96d
+P ff3770f855c1dd75025b1f2496f8c75e9f17ee44
+R d6799fcfef1763dfc3645c2d81885228
+U shess
+Z 2f4ef0343bc2683827077b02b21cd810

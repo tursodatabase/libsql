@@ -1772,13 +1772,14 @@ typedef enum fulltext_statement {
 */
 static const char *const fulltext_zStatement[MAX_STMT] = {
   /* CONTENT_INSERT */ NULL,  /* generated in contentInsertStatement() */
-  /* CONTENT_SELECT */ "select * from %_content where rowid = ?",
+  /* CONTENT_SELECT */ NULL,  /* generated in contentSelectStatement() */
   /* CONTENT_UPDATE */ NULL,  /* generated in contentUpdateStatement() */
-  /* CONTENT_DELETE */ "delete from %_content where rowid = ?",
+  /* CONTENT_DELETE */ "delete from %_content where docid = ?",
 
-  /* BLOCK_INSERT */ "insert into %_segments values (?)",
-  /* BLOCK_SELECT */ "select block from %_segments where rowid = ?",
-  /* BLOCK_DELETE */ "delete from %_segments where rowid between ? and ?",
+  /* BLOCK_INSERT */
+  "insert into %_segments (blockid, block) values (null, ?)",
+  /* BLOCK_SELECT */ "select block from %_segments where blockid = ?",
+  /* BLOCK_DELETE */ "delete from %_segments where blockid between ? and ?",
 
   /* SEGDIR_MAX_INDEX */ "select max(idx) from %_segdir where level = ?",
   /* SEGDIR_SET */ "insert into %_segdir values (?, ?, ?, ?, ?, ?)",
@@ -1821,7 +1822,7 @@ struct fulltext_vtab {
   sqlite3_stmt *pLeafSelectStmts[MERGE_COUNT];
   /* The statement used to prepare pLeafSelectStmts. */
 #define LEAF_SELECT \
-  "select block from %_segments where rowid between ? and ? order by rowid"
+  "select block from %_segments where blockid between ? and ? order by blockid"
 
   /* These buffer pending index updates during transactions.
   ** nPendingData estimates the memory size of the pending data.  It
@@ -1863,14 +1864,14 @@ static struct fulltext_vtab *cursor_vtab(fulltext_cursor *c){
 static const sqlite3_module fts3Module;   /* forward declaration */
 
 /* Return a dynamically generated statement of the form
- *   insert into %_content (rowid, ...) values (?, ...)
+ *   insert into %_content (docid, ...) values (?, ...)
  */
 static const char *contentInsertStatement(fulltext_vtab *v){
   StringBuffer sb;
   int i;
 
   initStringBuffer(&sb);
-  append(&sb, "insert into %_content (rowid, ");
+  append(&sb, "insert into %_content (docid, ");
   appendList(&sb, v->nColumn, v->azContentColumn);
   append(&sb, ") values (?");
   for(i=0; i<v->nColumn; ++i)
@@ -1880,8 +1881,20 @@ static const char *contentInsertStatement(fulltext_vtab *v){
 }
 
 /* Return a dynamically generated statement of the form
+ *   select <content columns> from %_content where docid = ?
+ */
+static const char *contentSelectStatement(fulltext_vtab *v){
+  StringBuffer sb;
+  initStringBuffer(&sb);
+  append(&sb, "SELECT ");
+  appendList(&sb, v->nColumn, v->azContentColumn);
+  append(&sb, " FROM %_content WHERE docid = ?");
+  return stringBufferData(&sb);
+}
+
+/* Return a dynamically generated statement of the form
  *   update %_content set [col_0] = ?, [col_1] = ?, ...
- *                    where rowid = ?
+ *                    where docid = ?
  */
 static const char *contentUpdateStatement(fulltext_vtab *v){
   StringBuffer sb;
@@ -1896,7 +1909,7 @@ static const char *contentUpdateStatement(fulltext_vtab *v){
     append(&sb, v->azContentColumn[i]);
     append(&sb, " = ?");
   }
-  append(&sb, " where rowid = ?");
+  append(&sb, " where docid = ?");
   return stringBufferData(&sb);
 }
 
@@ -1913,6 +1926,8 @@ static int sql_get_statement(fulltext_vtab *v, fulltext_statement iStmt,
     switch( iStmt ){
       case CONTENT_INSERT_STMT:
         zStmt = contentInsertStatement(v); break;
+      case CONTENT_SELECT_STMT:
+        zStmt = contentSelectStatement(v); break;
       case CONTENT_UPDATE_STMT:
         zStmt = contentUpdateStatement(v); break;
       default:
@@ -2806,6 +2821,7 @@ static int fulltextCreate(sqlite3 *db, void *pAux,
 
   initStringBuffer(&schema);
   append(&schema, "CREATE TABLE %_content(");
+  append(&schema, "  docid INTEGER PRIMARY KEY,");
   appendList(&schema, spec.nColumn, spec.azContentColumn);
   append(&schema, ")");
   rc = sql_exec(db, spec.zDb, spec.zName, stringBufferData(&schema));
@@ -2813,7 +2829,11 @@ static int fulltextCreate(sqlite3 *db, void *pAux,
   if( rc!=SQLITE_OK ) goto out;
 
   rc = sql_exec(db, spec.zDb, spec.zName,
-                "create table %_segments(block blob);");
+                "create table %_segments("
+                "  blockid INTEGER PRIMARY KEY,"
+                "  block blob"
+                ");"
+                );
   if( rc!=SQLITE_OK ) goto out;
 
   rc = sql_exec(db, spec.zDb, spec.zName,
@@ -3662,15 +3682,18 @@ static int fulltextFilter(
   fulltext_cursor *c = (fulltext_cursor *) pCursor;
   fulltext_vtab *v = cursor_vtab(c);
   int rc;
-  char *zSql;
+  StringBuffer sb;
 
   TRACE(("FTS3 Filter %p\n",pCursor));
 
-  zSql = sqlite3_mprintf("select rowid, * from %%_content %s",
-                          idxNum==QUERY_GENERIC ? "" : "where rowid=?");
+  initStringBuffer(&sb);
+  append(&sb, "SELECT docid, ");
+  appendList(&sb, v->nColumn, v->azContentColumn);
+  append(&sb, " FROM %_content");
+  if( idxNum!=QUERY_GENERIC ) append(&sb, " WHERE docid = ?");
   sqlite3_finalize(c->pStmt);
-  rc = sql_prepare(v->db, v->zDb, v->zName, &c->pStmt, zSql);
-  sqlite3_free(zSql);
+  rc = sql_prepare(v->db, v->zDb, v->zName, &c->pStmt, stringBufferData(&sb));
+  stringBufferDestroy(&sb);
   if( rc!=SQLITE_OK ) return rc;
 
   c->iCursorType = idxNum;
