@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.369 2007/08/23 11:07:10 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.370 2007/08/23 11:47:59 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1798,7 +1798,10 @@ static int sqlite3PagerOpentemp(
 ){
   int cnt = 8;
   int rc;
-  int flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_EXCLUSIVE);
+  int flags = (
+     SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|
+     SQLITE_OPEN_EXCLUSIVE|SQLITE_OPEN_DELETEONCLOSE
+  );
 
   char *zFree = 0;
   if( zNameOut==0 ){
