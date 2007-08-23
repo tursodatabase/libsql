@@ -1,5 +1,5 @@
-C Change\snames\sof\sconstants\sin\slemon.c\sto\swork\saround\sname\sconflicts\non\sSolaris.\s\sTicket\s#2583.\s(CVS\s4274)
-D 2007-08-23T02:50:56
+C Add\ssome\stests\sfor\sthe\satomic-write\soptimization.\s(CVS\s4275)
+D 2007-08-23T08:06:45
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -94,7 +94,7 @@ F src/func.c aa8a3a8db571c46e5197664ddbc2784006ee5525
 F src/hash.c 2f322979071dd2bdba7503b5276d66f028744382
 F src/hash.h 3ad3da76bfb954978d227bf495568b0e6da2c19e
 F src/insert.c 633322aef1799f6604fa805e12488bc628570b0c
-F src/journal.c 5ba2a1443b181741d3f2984d9d49e730073d74d1
+F src/journal.c 03d6b5cc1afe7c5e3cd0af55415f5168eb094398
 F src/legacy.c 7e1b1c57694e49cbadf561e2a7d9cd984dc743b5
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c 8b31e2e0e961918fa045515459aee1c122d8c266
@@ -104,7 +104,7 @@ F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c 7b023d45dd71944414db469c742457239e24d74d
 F src/mem2.c 48919353f72b8f6e957a0021eb9deaf863998189
 F src/mutex.c 9cf641f556a4119ef90ed41b82f2d5647f81686e
-F src/os.c d8f029317c95dcd2887b9f0f154281cdfbd303ad
+F src/os.c 86593b6e8cc22304d7c2d24b06c0aae49254b181
 F src/os.h 399c89cafa93b9ef35c3dc70f77644d10936b535
 F src/os_common.h a5c446d3b93f09f369d13bf217de4bed3437dd1c
 F src/os_os2.c 8769301bff502de642ad2634cedcb77d967ce199
@@ -136,7 +136,7 @@ F src/test2.c 4f742e99ed1bea5c14692f627bdb59a146f30504
 F src/test3.c a7d011c51d6b2e2a73c43983d5c2b731d69c74d7
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
-F src/test6.c 1191c2305c85aa192f04186b59b05a4fb40018cc
+F src/test6.c 2c141f367ba483eef99a7f4d00f07431caff791e
 F src/test7.c a9d509d0e9ad214b4772696f49f6e61be26213d1
 F src/test8.c e6a543c8b248efe120ae33a6859fcd55dcf46a96
 F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
@@ -318,7 +318,7 @@ F test/insert3.test 72ea6056811fd234f80d923f977c196089947381
 F test/insert4.test 1e27f0a3e5670d5f03c1636f699aa44270945bca
 F test/interrupt.test 81555fb0f8179bb2d0dc7151fd75428223f93cf2
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
-F test/io.test 6b7ee16f78560c4b81b52da2ea1051b8a2a93ce3
+F test/io.test ca9db7cd57a1b02cd983863c1be1153e1900e68b
 F test/ioerr.test 491d42c49bbec598966d26b01ed7901f55e5ee2d
 F test/ioerr2.test f938eadb12108048813869b86beee4a2f98e34b8
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
@@ -559,7 +559,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 21f6b31097692171c6493e6ca6de6acbd62dc595
-R eedd9c3af3e8b7da02c2c75af15e1919
-U drh
-Z e69a56f3f634fc877bc9bea036855b24
+P e4e74cd0f9343448ea38e57f08bb4f0616825f31
+R 630334db112909a8743c928d15787556
+U danielk1977
+Z 01e41e90624e3bb8ea0ae5e4ad13b9f8

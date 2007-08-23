@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** @(#) $Id: journal.c,v 1.1 2007/08/22 11:22:04 danielk1977 Exp $
+** @(#) $Id: journal.c,v 1.2 2007/08/23 08:06:45 danielk1977 Exp $
 */
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
@@ -54,11 +54,14 @@ typedef struct JournalFile JournalFile;
 static int createFile(JournalFile *p){
   int rc = SQLITE_OK;
   if( !p->pReal ){
-    p->pReal = (sqlite3_file *)&p[1];
-    rc = sqlite3OsOpen(p->pVfs, p->zJournal, p->pReal, p->flags, 0);
-    if( rc==SQLITE_OK && p->iSize>0 ){
-      assert(p->iSize<=p->nBuf);
-      rc = sqlite3OsWrite(p->pReal, p->zBuf, p->iSize, 0);
+    sqlite3_file *pReal = (sqlite3_file *)&p[1];
+    rc = sqlite3OsOpen(p->pVfs, p->zJournal, pReal, p->flags, 0);
+    if( rc==SQLITE_OK ){
+      p->pReal = pReal;
+      if( p->iSize>0 ){
+        assert(p->iSize<=p->nBuf);
+        rc = sqlite3OsWrite(p->pReal, p->zBuf, p->iSize, 0);
+      }
     }
   }
   return rc;

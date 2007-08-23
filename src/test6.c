@@ -540,6 +540,98 @@ static int cfCurrentTime(void *pAppData, double *pTimeOut){
   return pVfs->xCurrentTime(pVfs->pAppData, pTimeOut);
 }
 
+static int processDevSymArgs(
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[],
+  int *piDeviceChar,
+  int *piSectorSize
+){
+  struct DeviceFlag {
+    char *zName;
+    int iValue;
+  } aFlag[] = {
+    { "atomic",      SQLITE_IOCAP_ATOMIC      },
+    { "atomic512",   SQLITE_IOCAP_ATOMIC512   },
+    { "atomic1k",    SQLITE_IOCAP_ATOMIC1K    },
+    { "atomic2k",    SQLITE_IOCAP_ATOMIC2K    },
+    { "atomic4k",    SQLITE_IOCAP_ATOMIC4K    },
+    { "atomic8k",    SQLITE_IOCAP_ATOMIC8K    },
+    { "atomic16k",   SQLITE_IOCAP_ATOMIC16K   },
+    { "atomic32k",   SQLITE_IOCAP_ATOMIC32K   },
+    { "atomic64k",   SQLITE_IOCAP_ATOMIC64K   },
+    { "sequential",  SQLITE_IOCAP_SEQUENTIAL  },
+    { "safe_append", SQLITE_IOCAP_SAFE_APPEND },
+    { 0, 0 }
+  };
+
+  int i;
+  int iDc = 0;
+  int iSectorSize = 0;
+  int setSectorsize = 0;
+  int setDeviceChar = 0;
+
+  for(i=0; i<objc; i+=2){
+    int nOpt;
+    char *zOpt = Tcl_GetStringFromObj(objv[i], &nOpt);
+
+    if( (nOpt>11 || nOpt<2 || strncmp("-sectorsize", zOpt, nOpt)) 
+     && (nOpt>16 || nOpt<2 || strncmp("-characteristics", zOpt, nOpt))
+    ){
+      Tcl_AppendResult(interp, 
+        "Bad option: \"", zOpt, 
+        "\" - must be \"-characteristics\" or \"-sectorsize\"", 0
+      );
+      return TCL_ERROR;
+    }
+    if( i==objc-1 ){
+      Tcl_AppendResult(interp, "Option requires an argument: \"", zOpt, "\"",0);
+      return TCL_ERROR;
+    }
+
+    if( zOpt[1]=='s' ){
+      if( Tcl_GetIntFromObj(interp, objv[i+1], &iSectorSize) ){
+        return TCL_ERROR;
+      }
+      setSectorsize = 1;
+    }else{
+      int j;
+      Tcl_Obj **apObj;
+      int nObj;
+      if( Tcl_ListObjGetElements(interp, objv[i+1], &nObj, &apObj) ){
+        return TCL_ERROR;
+      }
+      for(j=0; j<nObj; j++){
+        int rc;
+        int iChoice;
+        Tcl_Obj *pFlag = Tcl_DuplicateObj(apObj[j]);
+        Tcl_IncrRefCount(pFlag);
+        Tcl_UtfToLower(Tcl_GetString(pFlag));
+ 
+        rc = Tcl_GetIndexFromObjStruct(
+            interp, pFlag, aFlag, sizeof(aFlag[0]), "no such flag", 0, &iChoice
+        );
+        Tcl_DecrRefCount(pFlag);
+        if( rc ){
+          return TCL_ERROR;
+        }
+
+        iDc |= aFlag[iChoice].iValue;
+      }
+      setDeviceChar = 1;
+    }
+  }
+
+  if( setDeviceChar ){
+    *piDeviceChar = iDc;
+  }
+  if( setSectorsize ){
+    *piSectorSize = iSectorSize;
+  }
+
+  return TCL_OK;
+}
+
 /*
 ** tclcmd:   sqlite_crashparams ?OPTIONS? DELAY CRASHFILE
 **
@@ -564,7 +656,6 @@ static int crashParamsObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int i;
   int iDelay;
   const char *zCrashFile;
   int nCrashFile;
@@ -606,29 +697,9 @@ static int crashParamsObjCmd(
     sqlite3_vfs_register(&crashVfs, 1);
   }
 
-  int iDc = 0;
-  int iSectorSize = 0;
-  int setSectorsize = 0;
-  int setDeviceChar = 0;
+  int iDc = -1;
+  int iSectorSize = -1;
 
-  struct DeviceFlag {
-    char *zName;
-    int iValue;
-  } aFlag[] = {
-    { "atomic",      SQLITE_IOCAP_ATOMIC      },
-    { "atomic512",   SQLITE_IOCAP_ATOMIC512   },
-    { "atomic1k",    SQLITE_IOCAP_ATOMIC1K    },
-    { "atomic2k",    SQLITE_IOCAP_ATOMIC2K    },
-    { "atomic4k",    SQLITE_IOCAP_ATOMIC4K    },
-    { "atomic8k",    SQLITE_IOCAP_ATOMIC8K    },
-    { "atomic16k",   SQLITE_IOCAP_ATOMIC16K   },
-    { "atomic32k",   SQLITE_IOCAP_ATOMIC32K   },
-    { "atomic64k",   SQLITE_IOCAP_ATOMIC64K   },
-    { "sequential",  SQLITE_IOCAP_SEQUENTIAL  },
-    { "safe_append", SQLITE_IOCAP_SAFE_APPEND },
-    { 0, 0 }
-  };
-  
   if( objc<3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?OPTIONS? DELAY CRASHFILE");
     goto error;
@@ -643,63 +714,17 @@ static int crashParamsObjCmd(
     goto error;
   }
 
-  for(i=1; i<(objc-2); i+=2){
-    int nOpt;
-    char *zOpt = Tcl_GetStringFromObj(objv[i], &nOpt);
-
-    if( (nOpt>11 || nOpt<2 || strncmp("-sectorsize", zOpt, nOpt)) 
-     && (nOpt>16 || nOpt<2 || strncmp("-characteristics", zOpt, nOpt))
-    ){
-      Tcl_AppendResult(interp, 
-        "Bad option: \"", zOpt, 
-        "\" - must be \"-characteristics\" or \"-sectorsize\"", 0
-      );
-      goto error;
-    }
-    if( i==objc-3 ){
-      Tcl_AppendResult(interp, "Option requires an argument: \"", zOpt, "\"",0);
-      goto error;
-    }
-
-    if( zOpt[1]=='s' ){
-      if( Tcl_GetIntFromObj(interp, objv[i+1], &iSectorSize) ){
-        goto error;
-      }
-      setSectorsize = 1;
-    }else{
-      int j;
-      Tcl_Obj **apObj;
-      int nObj;
-      if( Tcl_ListObjGetElements(interp, objv[i+1], &nObj, &apObj) ){
-        goto error;
-      }
-      for(j=0; j<nObj; j++){
-        int rc;
-        int iChoice;
-        Tcl_Obj *pFlag = Tcl_DuplicateObj(apObj[j]);
-        Tcl_IncrRefCount(pFlag);
-        Tcl_UtfToLower(Tcl_GetString(pFlag));
- 
-        rc = Tcl_GetIndexFromObjStruct(
-            interp, pFlag, aFlag, sizeof(aFlag[0]), "no such flag", 0, &iChoice
-        );
-        Tcl_DecrRefCount(pFlag);
-        if( rc ){
-          goto error;
-        }
-
-        iDc |= aFlag[iChoice].iValue;
-      }
-      setDeviceChar = 1;
-    }
+  if( processDevSymArgs(interp, objc-3, &objv[1], &iDc, &iSectorSize) ){
+    return TCL_ERROR;
   }
 
-  if( setDeviceChar ){
+  if( iDc>=0 ){
     g.iDeviceCharacteristics = iDc;
   }
-  if( setSectorsize ){
+  if( iSectorSize>=0 ){
     g.iSectorSize = iSectorSize;
   }
+
   g.iCrash = iDelay;
   memcpy(g.zCrashFile, zCrashFile, nCrashFile+1);
   sqlite3CrashTestEnable = 1;
@@ -707,6 +732,32 @@ static int crashParamsObjCmd(
 
 error:
   return TCL_ERROR;
+}
+
+static int devSymObjCmd(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+
+  extern int sqlite3_test_device_characteristics;
+  extern int sqlite3_test_sector_size;
+
+  int iDc = -1;
+  int iSectorSize = -1;
+  if( processDevSymArgs(interp, objc-1, &objv[1], &iDc, &iSectorSize) ){
+    return TCL_ERROR;
+  }
+
+  if( iDc>=0 ){
+    sqlite3_test_device_characteristics = iDc;
+  }
+  if( iSectorSize>=0 ){
+    sqlite3_test_sector_size = iSectorSize;
+  }
+
+  return TCL_OK;
 }
 
 #endif /* SQLITE_OMIT_DISKIO */
@@ -717,6 +768,7 @@ error:
 int Sqlitetest6_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_DISKIO
   Tcl_CreateObjCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, 0, 0);
+  Tcl_CreateObjCommand(interp, "sqlite3_simulate_device", devSymObjCmd, 0, 0);
 #endif
   return TCL_OK;
 }
