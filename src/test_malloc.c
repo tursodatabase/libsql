@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.3 2007/08/22 22:04:37 drh Exp $
+** $Id: test_malloc.c,v 1.4 2007/08/23 02:47:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -27,7 +27,16 @@
 static void pointerToText(void *p, char *z){
   static const char zHex[] = "0123456789abcdef";
   int i, k;
-  sqlite3_uint64 n = (sqlite3_uint64)p;
+  unsigned int u;
+  sqlite3_uint64 n;
+  if( sizeof(n)==sizeof(p) ){
+    memcpy(&n, &p, sizeof(p));
+  }else if( sizeof(u)==sizeof(p) ){
+    memcpy(&u, &p, sizeof(u));
+    n = u;
+  }else{
+    assert( 0 );
+  }
   for(i=0, k=sizeof(p)*2-1; i<sizeof(p)*2; i++, k--){
     z[k] = zHex[n&0xf];
     n >>= 4;
@@ -46,6 +55,7 @@ static int hexToInt(int h){
 static int textToPointer(const char *z, void **pp){
   sqlite3_uint64 n = 0;
   int i;
+  unsigned int u;
   for(i=0; i<sizeof(void*)*2 && z[0]; i++){
     int v;
     v = hexToInt(*z++);
@@ -53,7 +63,14 @@ static int textToPointer(const char *z, void **pp){
     n = n*16 + v;
   }
   if( *z!=0 ) return TCL_ERROR;
-  *pp = (void*)n;
+  if( sizeof(n)==sizeof(*pp) ){
+    memcpy(pp, &n, sizeof(n));
+  }else if( sizeof(u)==sizeof(*pp) ){
+    u = (unsigned int)n;
+    memcpy(pp, &u, sizeof(u));
+  }else{
+    assert( 0 );
+  }
   return TCL_OK;
 }
 
@@ -290,6 +307,38 @@ static int test_memdebug_pending(
 
 
 /*
+** Usage:    sqlite3_memdebug_settitle TITLE
+**
+** Set a title string stored with each allocation.  The TITLE is
+** typically the name of the test that was running when the
+** allocation occurred.  The TITLE is stored with the allocation
+** and can be used to figure out which tests are leaking memory.
+**
+** Each title overwrite the previous.
+*/
+static int test_memdebug_settitle(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zTitle;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "TITLE");
+    return TCL_ERROR;
+  }
+  zTitle = Tcl_GetString(objv[1]);
+#ifdef SQLITE_MEMDEBUG
+  {
+    extern int sqlite3_memdebug_settitle(const char*);
+    sqlite3_memdebug_settitle(zTitle);
+  }
+#endif
+  return TCL_OK;
+}
+
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest_malloc_Init(Tcl_Interp *interp){
@@ -306,6 +355,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_memdebug_dump",      test_memdebug_dump            },
      { "sqlite3_memdebug_fail",      test_memdebug_fail            },
      { "sqlite3_memdebug_pending",   test_memdebug_pending         },
+     { "sqlite3_memdebug_settitle",  test_memdebug_settitle        },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

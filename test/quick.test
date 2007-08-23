@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.60 2007/08/16 13:01:45 drh Exp $
+# $Id: quick.test,v 1.61 2007/08/23 02:47:54 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -55,6 +55,7 @@ set EXCLUDE {
   malloc.test
   malloc2.test
   malloc3.test
+  malloc4.test
   memleak.test
   misc7.test
   misuse.test

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.52 2007/08/21 10:44:16 drh Exp $
+** $Id: test8.c,v 1.53 2007/08/23 02:47:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -852,7 +852,7 @@ int echoUpdate(
           "%s %Q=?%d", zSep, pVtab->aCol[i-2], i), 1);
       zSep = ",";
     }
-    string_concat(&z, sqlite3_mprintf(" WHERE rowid=?%d", nData), 0);
+    string_concat(&z, sqlite3_mprintf(" WHERE rowid=?%d", nData), 1);
   }
 
   /* If apData[0] is an integer and nData==1 then do a DELETE */

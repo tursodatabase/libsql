@@ -320,8 +320,6 @@ static int cfRead(
   sqlite_int64 iOfst
 ){
   CrashFile *pCrash = (CrashFile *)pFile;
-  sqlite3_int64 iSize;
-  WriteBuffer *pWrite;
 
   /* Check the file-size to see if this is a short-read */
   if( pCrash->iSize<(iOfst+iAmt) ){
@@ -346,9 +344,9 @@ static int cfWrite(
     pCrash->iSize = iAmt+iOfst;
   }
   while( pCrash->iSize>pCrash->nData ){
-    char *zNew;
+    u8 *zNew;
     int nNew = (pCrash->nData*2) + 4096;
-    zNew = (char *)sqlite3_realloc(pCrash->zData, nNew);
+    zNew = sqlite3_realloc(pCrash->zData, nNew);
     if( !zNew ){
       return SQLITE_NOMEM;
     }
@@ -480,7 +478,7 @@ static int cfOpen(
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pAppData;
   int rc;
   CrashFile *pWrapper = (CrashFile *)pFile;
-  sqlite3_file *pReal = &pWrapper[1];
+  sqlite3_file *pReal = (sqlite3_file*)&pWrapper[1];
 
   memset(pWrapper, 0, sizeof(CrashFile));
   rc = sqlite3OsOpen(pVfs, zName, pReal, flags, pOutFlags);
@@ -495,7 +493,7 @@ static int cfOpen(
   }
   if( rc==SQLITE_OK ){
     pWrapper->nData = (4096 + pWrapper->iSize);
-    pWrapper->zData = (char *)sqlite3_malloc(pWrapper->nData);
+    pWrapper->zData = sqlite3_malloc(pWrapper->nData);
     if( pWrapper->zData ){
       memset(pWrapper->zData, 0, pWrapper->nData);
       rc = sqlite3OsRead(pReal, pWrapper->zData, pWrapper->iSize, 0); 
@@ -570,7 +568,6 @@ static int crashParamsObjCmd(
   int iDelay;
   const char *zCrashFile;
   int nCrashFile;
-  static struct crashAppData appData;
 
   static sqlite3_vfs crashVfs = {
     1,                  /* iVersion */

@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.237 2007/08/22 20:18:22 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.238 2007/08/23 02:47:53 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1389,8 +1389,11 @@ int sqlite3_open_v2(
 ** (overwriting the previous values). Note that calls to [sqlite3_errcode()],
 ** [sqlite3_errmsg()], and [sqlite3_errmsg16()] themselves do not affect the
 ** results of future invocations.  Calls to API routines that do not return
-** an error code (examples: [sqlite3_data_count()] or [sqlite3_mprintf()]) do
-** not change the error code returned by this routine.
+** an error code (example: [sqlite3_data_count()]) do not
+** change the error code returned by this routine.  Interfaces that are
+** not associated with a specific database connection (examples:
+** [sqlite3_mprintf()] or [sqlite3_enable_shared_cache()] do not change
+** the return code.  
 **
 ** Assuming no other intervening sqlite3_* API calls are made, the error
 ** code returned by this function is associated with the same error as
@@ -1708,6 +1711,10 @@ int sqlite3_column_count(sqlite3_stmt *pStmt);
 ** [sqlite3_stmt | prepared statement] is destroyed by [sqlite3_finalize()]
 ** or until the next call sqlite3_column_name() or sqlite3_column_name16()
 ** on the same column.
+**
+** If sqlite3_malloc() fails during the processing of either routine
+** (for example during a conversion from UTF-8 to UTF-16) then a
+** NULL pointer is returned.
 */
 const char *sqlite3_column_name(sqlite3_stmt*, int N);
 const void *sqlite3_column_name16(sqlite3_stmt*, int N);
@@ -2040,6 +2047,12 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** and blobs is freed automatically.  Do <b>not</b> pass the pointers returned
 ** [sqlite3_column_blob()], [sqlite_column_text()], etc. into 
 ** [sqlite3_free()].
+**
+** If a memory allocation error occurs during the evaluation of any
+** of these routines, a default value is returned.  The default value
+** is either the integer 0, the floating point number 0.0, or a NULL
+** pointer.  Subsequent calls to [sqlite3_errcode()] will return
+** [SQLITE_NOMEM].
 */
 const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);
 int sqlite3_column_bytes(sqlite3_stmt*, int iCol);

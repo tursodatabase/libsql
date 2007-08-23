@@ -2657,6 +2657,10 @@ static int unixRandomness(void *pNotUsed, int nBuf, char *zBuf){
 /*
 ** Sleep for a little while.  Return the amount of time slept.
 ** The argument is the number of microseconds we want to sleep.
+** The return value is the number of microseconds of sleep actually
+** requested from the underlying operating system, a number which
+** might be greater than or equal to the argument, but not less
+** than the argument.
 */
 static int unixSleep(void *pNotUsed, int microseconds){
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
@@ -2665,7 +2669,7 @@ static int unixSleep(void *pNotUsed, int microseconds){
 #else
   int seconds = (microseconds+999999)/1000000;
   sleep(seconds);
-  return seconds;
+  return seconds*1000000;
 #endif
 }
 

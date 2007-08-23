@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.86 2007/08/22 22:04:37 drh Exp $
+# $Id: tester.tcl,v 1.87 2007/08/23 02:47:54 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -63,6 +63,21 @@ if {![info exists soft_limit]} {
 }
 sqlite3_soft_heap_limit $soft_limit
 
+# 
+# Check the command-line arguments to set the memory debugger
+# backtrace depth.
+#
+# See the sqlite3_memdebug_backtrace() function in mem2.c or
+# test_malloc.c for additional information.
+#
+for {set i 0} {$i<[llength $argv]} {incr i} {
+  if {[regexp {^--backtrace=(\d+)$} [lindex $argv $i] all value]} {
+    sqlite3_memdebug_backtrace $value
+    set argv [lreplace $argv $i $i]
+  }
+}
+
+
 # Use the pager codec if it is available
 #
 if {[sqlite3 -has-codec] && [info command sqlite_orig]==""} {
@@ -106,7 +121,7 @@ if {![info exists speedTest]} {
 #
 proc do_test {name cmd expected} {
   global argv nErr nTest skip_test maxErr
-  set ::sqlite_malloc_id $name
+  sqlite3_memdebug_settitle $name
   if {$skip_test} {
     set skip_test 0
     return
@@ -165,20 +180,6 @@ proc speed_trial_summary {name} {
   puts [format {%-21.21s %12d uS TOTAL} $name $total_time]
 }
 
-# The procedure uses the special "sqlite_malloc_stat" command
-# (which is only available if SQLite is compiled with -DSQLITE_DEBUG=1)
-# to see how many malloc()s have not been free()ed.  The number
-# of surplus malloc()s is stored in the global variable $::Leak.
-# If the value in $::Leak grows, it may mean there is a memory leak
-# in the library.
-#
-proc memleak_check {} {
-  if {[info command sqlite_malloc_stat]!=""} {
-    set r [sqlite_malloc_stat]
-    set ::Leak [expr {[lindex $r 0]-[lindex $r 1]}]
-  }
-}
-
 # Run this routine last
 #
 proc finish_test {} {
@@ -186,7 +187,6 @@ proc finish_test {} {
 }
 proc finalize_testing {} {
   global nTest nErr sqlite_open_file_count
-  if {$nErr==0} memleak_check
 
   catch {db close}
   catch {db2 close}
@@ -223,6 +223,10 @@ proc finalize_testing {} {
   if {[sqlite3_memory_used]>0} {
     puts "Unfreed memory: [sqlite3_memory_used] bytes"
     incr nErr
+    ifcapable memdebug {
+      puts "Writing unfreed memory log to \"./memleak.txt\""
+      sqlite3_memdebug_dump ./memleak.txt
+    }
   } else {
     puts "All memory allocations freed - no leaks"
   }

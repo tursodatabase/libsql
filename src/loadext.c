@@ -454,6 +454,7 @@ int sqlite3AutoLoadExtensions(sqlite3 *db){
             "automatic extension loading failed: %s", zErrmsg);
       go = 0;
       rc = SQLITE_ERROR;
+      sqlite3_free(zErrmsg);
     }
   }
   return rc;

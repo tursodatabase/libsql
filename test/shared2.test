@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared2.test,v 1.4 2006/01/26 13:11:37 danielk1977 Exp $
+# $Id: shared2.test,v 1.5 2007/08/23 02:47:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -124,9 +124,8 @@ db1 close
 db2 close
 
 do_test shared2-3.2 {
-  sqlite3_thread_cleanup
   sqlite3_enable_shared_cache 1
-} {0}
+} {1}
 
 sqlite3_enable_shared_cache $::enable_shared_cache
 finish_test

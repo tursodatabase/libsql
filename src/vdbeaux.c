@@ -1007,6 +1007,8 @@ static void Cleanup(Vdbe *p){
 void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
   Mem *pColName;
   int n;
+  sqlite3 *db = p->db;
+
   releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
   sqlite3_free(p->aColName);
   n = nResColumn*COLNAME_N;
@@ -1014,7 +1016,9 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
   p->aColName = pColName = (Mem*)sqlite3DbMallocZero(p->db, sizeof(Mem)*n );
   if( p->aColName==0 ) return;
   while( n-- > 0 ){
-    (pColName++)->flags = MEM_Null;
+    pColName->flags = MEM_Null;
+    pColName->db = db;
+    pColName++;
   }
 }
 

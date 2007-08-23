@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.7 2007/08/22 22:04:37 drh Exp $
+** $Id: mem2.c,v 1.8 2007/08/23 02:47:53 drh Exp $
 */
 
 /*
@@ -59,9 +59,9 @@
 /*
 ** Each memory allocation looks like this:
 **
-**    ----------------------------------------------------------------
-**    |  backtrace pointers |  MemBlockHdr |  allocation |  EndGuard |
-**    ----------------------------------------------------------------
+**  ------------------------------------------------------------------------
+**  | Title |  backtrace pointers |  MemBlockHdr |  allocation |  EndGuard |
+**  ------------------------------------------------------------------------
 **
 ** The application code sees only a pointer to the allocation.  We have
 ** to back up from the allocation pointer to find the MemBlockHdr.  The
@@ -72,8 +72,9 @@
 struct MemBlockHdr {
   struct MemBlockHdr *pNext, *pPrev;  /* Linked list of all unfreed memory */
   unsigned int iSize;                 /* Size of this allocation */
-  unsigned short nBacktrace;          /* Number of backtraces on this alloc */
-  unsigned short nBacktraceSlots;     /* Available backtrace slots */
+  unsigned char nBacktrace;           /* Number of backtraces on this alloc */
+  unsigned char nBacktraceSlots;      /* Available backtrace slots */
+  unsigned short nTitle;              /* Bytes of title; includes '\0' */
   unsigned int iForeGuard;            /* Guard word for sanity */
 };
 
@@ -123,6 +124,12 @@ static struct {
   ** The number of levels of backtrace to save in new allocations.
   */
   int nBacktrace;
+
+  /*
+  ** Title text to insert in front of each block
+  */
+  int nTitle;        /* Bytes of zTitle to save.  Includes '\0' and padding */
+  char zTitle[100];  /* The title text */
 
   /*
   ** These values are used to simulate malloc failures.  When
@@ -252,6 +259,7 @@ static void sqlite3MemsysFailed(void){
 void *sqlite3_malloc(int nByte){
   struct MemBlockHdr *pHdr;
   void **pBt;
+  char *z;
   unsigned int *pInt;
   void *p;
   unsigned int totalSize;
@@ -269,7 +277,7 @@ void *sqlite3_malloc(int nByte){
   }
   nByte = (nByte+3)&~3;
   totalSize = nByte + sizeof(*pHdr) + sizeof(unsigned int) +
-               mem.nBacktrace*sizeof(void*);
+               mem.nBacktrace*sizeof(void*) + mem.nTitle;
   if( mem.iFail>0 ){
     if( mem.iFail==1 ){
       p = 0;
@@ -290,7 +298,8 @@ void *sqlite3_malloc(int nByte){
     }
   }
   if( p ){
-    pBt = p;
+    z = p;
+    pBt = (void**)&z[mem.nTitle];
     pHdr = (struct MemBlockHdr*)&pBt[mem.nBacktrace];
     pHdr->pNext = 0;
     pHdr->pPrev = mem.pLast;
@@ -302,12 +311,16 @@ void *sqlite3_malloc(int nByte){
     mem.pLast = pHdr;
     pHdr->iForeGuard = FOREGUARD;
     pHdr->nBacktraceSlots = mem.nBacktrace;
+    pHdr->nTitle = mem.nTitle;
     if( mem.nBacktrace ){
       void *aAddr[40];
       pHdr->nBacktrace = backtrace(aAddr, mem.nBacktrace+1)-1;
       memcpy(pBt, &aAddr[1], pHdr->nBacktrace*sizeof(void*));
     }else{
       pHdr->nBacktrace = 0;
+    }
+    if( mem.nTitle ){
+      memcpy(z, mem.zTitle, mem.nTitle);
     }
     pHdr->iSize = nByte;
     pInt = (unsigned int *)&pHdr[1];
@@ -329,6 +342,7 @@ void *sqlite3_malloc(int nByte){
 void sqlite3_free(void *pPrior){
   struct MemBlockHdr *pHdr;
   void **pBt;
+  char *z;
   if( pPrior==0 ){
     return;
   }
@@ -352,9 +366,11 @@ void sqlite3_free(void *pPrior){
     assert( mem.pLast==pHdr );
     mem.pLast = pHdr->pPrev;
   }
-  memset(pBt, 0x2b, sizeof(void*)*pHdr->nBacktrace + sizeof(*pHdr) +
-                    pHdr->iSize + sizeof(unsigned int));
-  free(pBt);
+  z = (char*)pBt;
+  z -= pHdr->nTitle;
+  memset(z, 0x2b, sizeof(void*)*pHdr->nBacktraceSlots + sizeof(*pHdr) +
+                  pHdr->iSize + sizeof(unsigned int) + pHdr->nTitle);
+  free(z);
   sqlite3_mutex_leave(mem.mutex);  
 }
 
@@ -403,6 +419,22 @@ void sqlite3_memdebug_backtrace(int depth){
 }
 
 /*
+** Set the title string for subsequent allocations.
+*/
+void sqlite3_memdebug_settitle(const char *zTitle){
+  int n = strlen(zTitle) + 1;
+  if( mem.mutex==0 ){
+    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
+  }
+  sqlite3_mutex_enter(mem.mutex);
+  if( n>=sizeof(mem.zTitle) ) n = sizeof(mem.zTitle)-1;
+  memcpy(mem.zTitle, zTitle, n);
+  mem.zTitle[n] = 0;
+  mem.nTitle = (n+3)&~3;
+  sqlite3_mutex_leave(mem.mutex);
+}
+
+/*
 ** Open the file indicated and write a log of all unfreed memory 
 ** allocations into that log.
 */
@@ -417,7 +449,9 @@ void sqlite3_memdebug_dump(const char *zFilename){
     return;
   }
   for(pHdr=mem.pFirst; pHdr; pHdr=pHdr->pNext){
-    fprintf(out, "**** %d bytes at %p ****\n", pHdr->iSize, &pHdr[1]);
+    char *z = (char*)pHdr;
+    z -= pHdr->nBacktraceSlots*sizeof(void*) + pHdr->nTitle;
+    fprintf(out, "**** %d bytes at %p from %s ****\n", pHdr->iSize,&pHdr[1],z);
     if( pHdr->nBacktrace ){
       fflush(out);
       pBt = (void**)pHdr;
