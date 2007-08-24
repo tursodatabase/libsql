@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager.test,v 1.28 2007/04/05 17:15:53 danielk1977 Exp $
+# $Id: pager.test,v 1.29 2007/08/24 16:08:29 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -409,6 +409,7 @@ do_test pager-4.6.1 {
 # Test truncate on an in-memory database is Ok.
 ifcapable memorydb {
   do_test pager-4.6.2 {
+btree_breakpoint
     set ::p2 [pager_open :memory: 10]
     pager_truncate $::p2 5
   } {}
@@ -569,6 +570,3 @@ do_test pager-6.5 {
 } {}
 }
 finish_test
-
-
-

@@ -2702,8 +2702,6 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     1,                  /* iVersion */
     sizeof(unixFile),   /* szOsFile */
     MAX_PATHNAME,       /* mxPathname */
-    0,                  /* nRef */
-    0,                  /* vfsMutex */
     0,                  /* pNext */
     "unix",             /* zName */
     0,                  /* pAppData */

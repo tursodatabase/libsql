@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.397 2007/08/24 03:51:34 drh Exp $
+** $Id: main.c,v 1.398 2007/08/24 16:08:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -220,7 +220,6 @@ int sqlite3_close(sqlite3 *db){
   ** structure?
   */
   sqlite3_free(db->aDb[1].pSchema);
-  sqlite3_vfs_release(db->pVfs);
   sqlite3_mutex_leave(db->mutex);
   sqlite3_mutex_free(db->mutex);
   sqlite3_free(db);
@@ -1420,7 +1419,6 @@ int sqlite3_sleep(int ms){
   ** API uses microseconds. Hence the 1000's.
   */
   rc = (sqlite3OsSleep(pVfs, 1000*ms)/1000);
-  sqlite3_vfs_release(pVfs);
   return rc;
 }
 

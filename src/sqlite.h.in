@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.239 2007/08/24 03:51:34 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.240 2007/08/24 16:08:29 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -535,27 +535,17 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** structure used by this VFS.  mxPathname is the maximum length of
 ** a pathname in this VFS.
 **
-** The nRef field is incremented and decremented by SQLite to keep
-** count of the number of users of the VFS.  This field and
-** vfsMutex, pNext, and pPrev are the only fields in the sqlite3_vfs 
-** structure that SQLite will ever modify.  SQLite will only access
-** or modify these fields while holding a particular static mutex.
-** The application should never modify any fields of the sqlite3_vfs
-** object once the object has been registered.
-** 
-** The sqlite3_vfs.vfsMutex is a mutex used by the OS interface.
-** It should initially be NULL.  SQLite will initialize this field
-** using sqlite3_mutex_alloc() upon first use of the adaptor
-** by sqlite3_open_v2() and will deallocate the mutex when the
-** last user closes.  In other words, vfsMutex will be allocated
-** when nRef transitions from 0 to 1 and will be deallocated when
-** nRef transitions from 1 to 0.
-**
 ** Registered vfs modules are kept on a linked list formed by
 ** the pNext pointer.  The [sqlite3_register_vfs()]
 ** and [sqlite3_unregister_vfs()] interfaces manage this list
 ** in a thread-safe way.  The [sqlite3_find_vfs()] interface
 ** searches the list.
+**
+** The pNext field is the only fields in the sqlite3_vfs 
+** structure that SQLite will ever modify.  SQLite will only access
+** or modify this field while holding a particular static mutex.
+** The application should never modify anything within the sqlite3_vfs
+** object once the object has been registered.
 **
 ** The zName field holds the name of the VFS module.  The name must
 ** be unique across all VFS modules.
@@ -639,11 +629,9 @@ struct sqlite3_vfs {
   int iVersion;            /* Structure version number */
   int szOsFile;            /* Size of subclassed sqlite3_file */
   int mxPathname;          /* Maximum file pathname length */
-  int nRef;                /* Number of references to this structure */
-  sqlite3_mutex *vfsMutex; /* A mutex for this VFS */
   sqlite3_vfs *pNext;      /* Next registered VFS */
   const char *zName;       /* Name of this virtual file system */
-  void *pAppData;          /* Application context */
+  void *pAppData;          /* Pointer to application-specific data */
   int (*xOpen)(sqlite3_vfs*, const char *zName, sqlite3_file*,
                int flags, int *pOutFlags);
   int (*xDelete)(sqlite3_vfs*, const char *zName, int syncDir);
@@ -3213,10 +3201,7 @@ int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
 ** The sqlite3_vfs_find() interface returns a pointer to a VFS given its
 ** name.  Names are case sensitive.  If there is no match, a NULL
 ** pointer is returned.  If zVfsName is NULL then the default 
-** VFS is returned.  If a valid VFS pointer is returned, its
-** vfsMutex field will have been initialized and nRef will be
-** greater than zero.  The sqlite3_vfs_release() function should
-** be used to release the VFS when it is no longer needed.
+** VFS is returned.
 **
 ** New VFSes are registered with sqlite3_vfs_register().  Each
 ** new VFS becomes the default VFS if the makeDflt flag is set.
@@ -3229,7 +3214,6 @@ int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
 ** the default.  The choice for the new VFS is arbitrary.
 */
 sqlite3_vfs *sqlite3_vfs_find(const char *zVfsName);
-int sqlite3_vfs_release(sqlite3_vfs*);
 int sqlite3_vfs_register(sqlite3_vfs*, int makeDflt);
 int sqlite3_vfs_unregister(sqlite3_vfs*);
 

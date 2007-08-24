@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.81 2007/08/22 02:56:44 drh Exp $
+** $Id: test3.c,v 1.82 2007/08/24 16:08:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -120,7 +120,6 @@ static int btree_close(
     sqlite3_mutex_leave(sDb.mutex);
     sqlite3_mutex_free(sDb.mutex);
     sDb.mutex = 0;
-    sqlite3_vfs_release(sDb.pVfs);
     sDb.pVfs = 0;
   }
   return TCL_OK;

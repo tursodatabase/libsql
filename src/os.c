@@ -199,32 +199,8 @@ sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
     if( zVfs==0 ) break;
     if( strcmp(zVfs, pVfs->zName)==0 ) break;
   }
-  if( pVfs ){
-    pVfs->nRef++;
-    assert( pVfs->nRef==1 || pVfs->vfsMutex!=0 );
-    assert( pVfs->nRef>1 || pVfs->vfsMutex==0 );
-    if( pVfs->vfsMutex==0 ){
-      pVfs->vfsMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-    }
-  }
   sqlite3_mutex_leave(mutex);
   return pVfs;
-}
-
-/*
-** Release a VFS once it is no longer needed.
-*/
-int sqlite3_vfs_release(sqlite3_vfs *pVfs){
-  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
-  sqlite3_mutex_enter(mutex);
-  assert( pVfs->nRef>0 );
-  pVfs->nRef--;
-  if( pVfs->nRef==0 && pVfs->vfsMutex ){
-    sqlite3_mutex_free(pVfs->vfsMutex);
-    pVfs->vfsMutex = 0;
-  }
-  sqlite3_mutex_leave(mutex);
-  return SQLITE_OK;
 }
 
 /*

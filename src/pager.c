@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.374 2007/08/24 11:52:29 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.375 2007/08/24 16:08:29 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1857,7 +1857,7 @@ static int sqlite3PagerOpentemp(
 ** last page is released using sqlite3PagerUnref().
 **
 ** If zFilename is NULL then a randomly-named temporary file is created
-** and
+** and used as the file to be cached.  The file will be deleted
 ** automatically when it is closed.
 **
 ** If zFilename is ":memory:" then all information is held in cache.
@@ -1881,19 +1881,46 @@ int sqlite3PagerOpen(
   int useJournal = (flags & PAGER_OMIT_JOURNAL)==0;
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;
   int journalFileSize = sqlite3JournalSize(pVfs);
-  int nDefaultPage = SQLITE_DEFAULT_PAGE_SIZE;     /* Default page size. */
+  int nDefaultPage = SQLITE_DEFAULT_PAGE_SIZE;
+  char *zPathname;
+  int nPathname;
 
   /* The default return is a NULL pointer */
   *ppPager = 0;
+
+  /* Compute the full pathname */
+  zPathname = sqlite3_malloc(pVfs->mxPathname+1);
+  if( zPathname==0 ){
+    return SQLITE_NOMEM;
+  }
+  if( zFilename && zFilename[0] ){
+#ifndef SQLITE_OMIT_MEMORYDB
+    if( strcmp(zFilename,":memory:")==0 ){
+      memDb = 1;
+      zPathname[0] = 0;
+    }else
+#endif
+    {
+      rc = sqlite3OsFullPathname(pVfs, zFilename, zPathname);
+      if( rc!=SQLITE_OK ){
+        sqlite3_free(zPathname);
+        return rc;
+      }
+    }
+  }else{
+    zPathname[0] = 0;
+  }
+  nPathname = strlen(zPathname);
 
   /* Allocate memory for the pager structure */
   pPager = sqlite3MallocZero(
     sizeof(*pPager) +           /* Pager structure */
     journalFileSize +           /* The journal file structure */ 
     pVfs->szOsFile * 2 +        /* The db and stmt journal files */ 
-    pVfs->mxPathname * 3 + 30   /* zFilename, zDirectory, zJournal */
+    nPathname * 3 + 30          /* zFilename, zDirectory, zJournal */
   );
   if( !pPager ){
+    sqlite3_free(zPathname);
     return SQLITE_NOMEM;
   }
   pPtr = (u8 *)&pPager[1];
@@ -1901,64 +1928,58 @@ int sqlite3PagerOpen(
   pPager->stfd = (sqlite3_file*)&pPtr[pVfs->szOsFile*1];
   pPager->jfd = (sqlite3_file*)&pPtr[pVfs->szOsFile*2];
   pPager->zFilename = (char*)&pPtr[pVfs->szOsFile*2+journalFileSize];
-  pPager->zDirectory = &pPager->zFilename[pVfs->mxPathname];
-  pPager->zJournal = &pPager->zDirectory[pVfs->mxPathname];
+  pPager->zDirectory = &pPager->zFilename[nPathname+1];
+  pPager->zJournal = &pPager->zDirectory[nPathname+1];
   pPager->pVfs = pVfs;
+  memcpy(pPager->zFilename, zPathname, nPathname+1);
+  sqlite3_free(zPathname);
 
   /* Open the pager file.
   */
-  if( zFilename && zFilename[0] ){
-#ifndef SQLITE_OMIT_MEMORYDB
-    if( strcmp(zFilename,":memory:")==0 ){
-      memDb = 1;
-      pPager->zFilename[0] = '\0';
-    }else
-#endif
-    {
-      rc = sqlite3OsFullPathname(pVfs, zFilename, pPager->zFilename);
-      if( rc==SQLITE_OK ){
-        if( strlen(pPager->zFilename)>(pVfs->mxPathname - strlen("-journal")) ){
-          rc = SQLITE_CANTOPEN;
-        }else{
-          int oflag = 
-              (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_DB);
-          int fout = 0;
-          rc = sqlite3OsOpen(pVfs, pPager->zFilename, pPager->fd, oflag, &fout);
-          readOnly = (fout&SQLITE_OPEN_READONLY);
- 
-          /* If the file was successfully opened for read/write access,
-          ** choose a default page size in case we have to create the
-          ** database file. The default page size is the maximum of:
-          **
-          **    + SQLITE_DEFAULT_PAGE_SIZE,
-          **    + The value returned by sqlite3OsSectorSize()
-          **    + The largest page size that can be written atomically.
-          */
-          if( rc==SQLITE_OK && !readOnly ){
-            int iSectorSize = sqlite3OsSectorSize(pPager->fd);
-            if( nDefaultPage<iSectorSize ){
-              nDefaultPage = iSectorSize;
-            }
+  if( pPager->zFilename[0] ){
+    if( nPathname>(pVfs->mxPathname - sizeof("-journal")) ){
+      rc = SQLITE_CANTOPEN;
+    }else{
+/***  FIXME:  Might need to be SQLITE_OPEN_TEMP_DB.  Need to pass in
+**** a flag from higher up.
+****/
+      int oflag = 
+            (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_DB);
+      int fout = 0;
+      rc = sqlite3OsOpen(pVfs, pPager->zFilename, pPager->fd, oflag, &fout);
+      readOnly = (fout&SQLITE_OPEN_READONLY);
+
+      /* If the file was successfully opened for read/write access,
+      ** choose a default page size in case we have to create the
+      ** database file. The default page size is the maximum of:
+      **
+      **    + SQLITE_DEFAULT_PAGE_SIZE,
+      **    + The value returned by sqlite3OsSectorSize()
+      **    + The largest page size that can be written atomically.
+      */
+      if( rc==SQLITE_OK && !readOnly ){
+        int iSectorSize = sqlite3OsSectorSize(pPager->fd);
+        if( nDefaultPage<iSectorSize ){
+          nDefaultPage = iSectorSize;
+        }
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
-            {
-              int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
-              int ii;
-              assert(SQLITE_IOCAP_ATOMIC512==(512>>8));
-              assert(SQLITE_IOCAP_ATOMIC64K==(65536>>8));
-              assert(SQLITE_MAX_DEFAULT_PAGE_SIZE<=65536);
-              for(ii=nDefaultPage; ii<=SQLITE_MAX_DEFAULT_PAGE_SIZE; ii=ii*2){
-                if( iDc&(SQLITE_IOCAP_ATOMIC|(ii>>8)) ) nDefaultPage = ii;
-              }
-            }
-#endif
-            if( nDefaultPage>SQLITE_MAX_DEFAULT_PAGE_SIZE ){
-              nDefaultPage = SQLITE_MAX_DEFAULT_PAGE_SIZE;
-            }
+        {
+          int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
+          int ii;
+          assert(SQLITE_IOCAP_ATOMIC512==(512>>8));
+          assert(SQLITE_IOCAP_ATOMIC64K==(65536>>8));
+          assert(SQLITE_MAX_DEFAULT_PAGE_SIZE<=65536);
+          for(ii=nDefaultPage; ii<=SQLITE_MAX_DEFAULT_PAGE_SIZE; ii=ii*2){
+            if( iDc&(SQLITE_IOCAP_ATOMIC|(ii>>8)) ) nDefaultPage = ii;
           }
+        }
+#endif
+        if( nDefaultPage>SQLITE_MAX_DEFAULT_PAGE_SIZE ){
+          nDefaultPage = SQLITE_MAX_DEFAULT_PAGE_SIZE;
         }
       }
     }
-  }else{
+  }else if( !memDb ){
     /* If a temporary file is requested, it is not opened immediately.
     ** In this case we accept the default page size and delay actually
     ** opening the file until the first call to OsWrite().
@@ -1986,13 +2007,13 @@ int sqlite3PagerOpen(
   IOTRACE(("OPEN %p %s\n", pPager, pPager->zFilename))
 
   /* Fill in Pager.zDirectory[] */
-  memcpy(pPager->zDirectory, pPager->zFilename, pVfs->mxPathname);
+  memcpy(pPager->zDirectory, pPager->zFilename, nPathname+1);
   for(i=strlen(pPager->zDirectory); i>0 && pPager->zDirectory[i-1]!='/'; i--){}
   if( i>0 ) pPager->zDirectory[i-1] = 0;
 
   /* Fill in Pager.zJournal[] */
-  memcpy(pPager->zJournal, pPager->zFilename, pVfs->mxPathname);
-  memcpy(&pPager->zJournal[strlen(pPager->zJournal)], "-journal", 9);
+  memcpy(pPager->zJournal, pPager->zFilename, nPathname);
+  memcpy(&pPager->zJournal[nPathname], "-journal", 9);
 
   /* pPager->journalOpen = 0; */
   pPager->useJournal = useJournal && !memDb;
@@ -2007,8 +2028,8 @@ int sqlite3PagerOpen(
   /* pPager->nPage = 0; */
   pPager->mxPage = 100;
   pPager->mxPgno = SQLITE_MAX_PAGE_COUNT;
-  assert( PAGER_UNLOCK==0 );
   /* pPager->state = PAGER_UNLOCK; */
+  assert( pPager->state == (tempFile ? PAGER_EXCLUSIVE : PAGER_UNLOCK) );
   /* pPager->errMask = 0; */
   pPager->tempFile = tempFile;
   assert( tempFile==PAGER_LOCKINGMODE_NORMAL 
@@ -4317,7 +4338,7 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
     pPager->pDirty = 0;
 
     /* Sync the database file. */
-    if( !pPager->noSync ){ 
+    if( !pPager->noSync ){
       rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
     }
     IOTRACE(("DBSYNC %p\n", pPager))

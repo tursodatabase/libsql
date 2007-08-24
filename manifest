@@ -1,5 +1,5 @@
-C Select\sthe\sdefault\spage\ssize\sfor\snew\sdatabases\sbased\son\sthe\ssector-size\sand\sIOCAP\sflags.\s(CVS\s4286)
-D 2007-08-24T11:52:29
+C Remove\snRef\sand\svfsMutex\sfrom\sthe\ssqlite3_vfs\sstructure.\s\sOmit\sthe\nsqlite3_vfs_release()\sinterface.\s\sLess\smemory\sallocated\sfor\sa\spager\nin\sthe\scommon\scase\swhere\sthe\ssize\sof\sthe\spathname\sis\sless\sthan\sMAX_PATH.\s(CVS\s4287)
+D 2007-08-24T16:08:29
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -98,24 +98,24 @@ F src/journal.c 573911e274738b3fda813d4f0a6e319f8a9ecd36
 F src/legacy.c 7e1b1c57694e49cbadf561e2a7d9cd984dc743b5
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c 8b31e2e0e961918fa045515459aee1c122d8c266
-F src/main.c 795ec066ce38908b5c35ca4353bb601d022e2275
+F src/main.c 58f71f9b0c583fbe74d13b6d3fdb509cac5871f3
 F src/malloc.c d4282f50964ab1ca31f504c97b7cf2fdb4d4195d
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c afe2fbf6d7e8247c6c9f69c1481358b1cad60c08
 F src/mem2.c 1a2ca756a285b5365d667841508cc1f98938b8d8
 F src/mutex.c 9cf641f556a4119ef90ed41b82f2d5647f81686e
-F src/os.c 3b0d37208ea3ec9e1f913fbdeaf88841ed443b9d
+F src/os.c a8ed3c495161475dbce255f7003144144fb425f1
 F src/os.h 2bfbbad126a775e4d8c7d59eb4d9585a5fd7dfb5
 F src/os_common.h a5c446d3b93f09f369d13bf217de4bed3437dd1c
 F src/os_os2.c 8769301bff502de642ad2634cedcb77d967ce199
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c c45b20f868fab1178710ea2f1c8043ce706d3a99
+F src/os_unix.c 27b1fad58587bc949013a5a4df9fc20fce395648
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 1cb94dd33d38e01de82d77bef107c7f3323463ec
+F src/os_win.c e2598a18dbcb70cba888cebd37fb46d1eaee82b1
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 6c9622a14f9778efb575072737c7f68c1ab95fe2
+F src/pager.c f5c2a4e85b632faa7cd891c214f1cfd021c1ffa9
 F src/pager.h 53087c6fb9db01aed17c7fd044662a27507e89b8
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 9b989506a1b7c8aecd6befb8235e2f57a4aba7e5
@@ -125,7 +125,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 98c367bce3f38c5adfcc97de9ab5c79b0e5dc2b2
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in 09a5256ee80dfc7cb4353739f78e4267be323574
+F src/sqlite.h.in 22397464e1026437a755489c3eeb459346ae8749
 F src/sqlite3ext.h 9a26028378c288af500d8b94ed079666fed5806b
 F src/sqliteInt.h ea7a14a33c0a03479d2d98ce9ac83fe5e7f4bb55
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
@@ -133,10 +133,10 @@ F src/table.c c725e47f6f3092b9a7b569fc58e408e2173ee008
 F src/tclsqlite.c d76af53f45c9e9f7f7d39531fa4c7bee7d0adad6
 F src/test1.c 8b20d1f05777ac480d3caf8d5f79ab7a543513fc
 F src/test2.c 4f742e99ed1bea5c14692f627bdb59a146f30504
-F src/test3.c a7d011c51d6b2e2a73c43983d5c2b731d69c74d7
+F src/test3.c 637824fa560f9a4ffcec6b262febb0f57f400487
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
-F src/test6.c 37caea087882ecce1cbc6c83f9f1d457bd42b731
+F src/test6.c 7007b3941ade02f51242ae898b5b9646d2164773
 F src/test7.c a9d509d0e9ad214b4772696f49f6e61be26213d1
 F src/test8.c e6a543c8b248efe120ae33a6859fcd55dcf46a96
 F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
@@ -368,7 +368,7 @@ F test/misc7.test a67af9620a510ce19f96ba69f3848228b7c62a73
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
-F test/pager.test 6c644725db2a79528f67a6f3472b9c9ddee17f05
+F test/pager.test f07c06fef8e3b4964a9b337b751b56825a44d326
 F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 51e3c091bc2992f5098f7576e3594e1908988939
@@ -561,7 +561,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P eb6c98fc1097b327453d7e8ec8877101ea8187c3
-R 33f9af4f9be6e647c8b59a027b74b510
-U danielk1977
-Z ea44b5abf05f45dd9f144b230dd5f4ae
+P 13dda2e8e879835c21e539ba3ff8f96face1af4c
+R 9943ec857d44edaed5e279e84f17aaa5
+U drh
+Z a0440ce84e84a78d112a7ad4d7f13668

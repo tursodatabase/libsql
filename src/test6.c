@@ -722,8 +722,6 @@ static int crashParamsObjCmd(
     1,                  /* iVersion */
     0,                  /* szOsFile */
     0,                  /* mxPathname */
-    0,                  /* nRef */
-    0,                  /* vfsMutex */
     0,                  /* pNext */
     "crash",            /* zName */
     0,                  /* pAppData */
@@ -751,7 +749,6 @@ static int crashParamsObjCmd(
     crashVfs.mxPathname = pOriginalVfs->mxPathname;
     crashVfs.pAppData = (void *)pOriginalVfs;
     crashVfs.szOsFile = sizeof(CrashFile) + pOriginalVfs->szOsFile;
-    sqlite3_vfs_release(pOriginalVfs);
     /* sqlite3_vfs_unregister(pOriginalVfs); */
     sqlite3_vfs_register(&crashVfs, 1);
   }

@@ -1465,8 +1465,6 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     1,                 /* iVersion */
     sizeof(winFile),   /* szOsFile */
     MAX_PATH,          /* mxPathname */
-    0,                 /* nRef */
-    0,                 /* vfsMutex */
     0,                 /* pNext */
     "win32",           /* zName */
     0,                 /* pAppData */
