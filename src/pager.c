@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.375 2007/08/24 16:08:29 drh Exp $
+** @(#) $Id: pager.c,v 1.376 2007/08/24 16:29:24 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1808,15 +1808,17 @@ int sqlite3_opentemp_count = 0;
 ** other error code if we fail. The OS will automatically delete the temporary
 ** file when it is closed.
 **
-** If zNameOut is 0, then SQLITE_OPEN_SUBJOURNAL is passed to the OS layer.
-** If zNameOut is not 0, SQLITE_OPEN_TEMP_DB is passed.
+** If zFilename is 0, then an appropriate temporary filename is
+** generated automatically and  SQLITE_OPEN_SUBJOURNAL is passed to
+** the OS layer as the file type.
+**
+** If zFilename is not 0, SQLITE_OPEN_TEMP_DB is passed as the file type.
 */
 static int sqlite3PagerOpentemp(
   sqlite3_vfs *pVfs, 
   sqlite3_file *pFile, 
-  char *zNameOut
+  char *zFilename
 ){
-  int cnt = 8;
   int rc;
   int flags = (
      SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|
@@ -1824,13 +1826,18 @@ static int sqlite3PagerOpentemp(
   );
 
   char *zFree = 0;
-  if( zNameOut==0 ){
+  if( zFilename==0 ){
     zFree = (char *)sqlite3_malloc(pVfs->mxPathname);
     if( !zFree ){
       return SQLITE_NOMEM;
     }
-    zNameOut = zFree;
+    zFilename = zFree;
     flags |= SQLITE_OPEN_SUBJOURNAL;
+    rc = sqlite3OsGetTempName(pVfs, zFilename);
+    if( rc!=SQLITE_OK ){
+      sqlite3_free(zFree);
+      return rc;
+    }
   }else{
     flags |= SQLITE_OPEN_TEMP_DB;
   }
@@ -1839,13 +1846,8 @@ static int sqlite3PagerOpentemp(
   sqlite3_opentemp_count++;  /* Used for testing and analysis only */
 #endif
 
-  do{
-    cnt--;
-    sqlite3OsGetTempName(pVfs, zNameOut);
-    rc = sqlite3OsOpen(pVfs, zNameOut, pFile, flags, 0);
-    assert( rc!=SQLITE_OK || pFile->pMethods );
-  }while( cnt>0 && rc!=SQLITE_OK && rc!=SQLITE_NOMEM );
-
+  rc = sqlite3OsOpen(pVfs, zFilename, pFile, flags, 0);
+  assert( rc!=SQLITE_OK || pFile->pMethods );
   sqlite3_free(zFree);
   return rc;
 }
@@ -1902,13 +1904,13 @@ int sqlite3PagerOpen(
 #endif
     {
       rc = sqlite3OsFullPathname(pVfs, zFilename, zPathname);
-      if( rc!=SQLITE_OK ){
-        sqlite3_free(zPathname);
-        return rc;
-      }
     }
   }else{
-    zPathname[0] = 0;
+    rc = sqlite3OsGetTempName(pVfs, zPathname);
+  }
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(zPathname);
+    return rc;
   }
   nPathname = strlen(zPathname);
 
@@ -1936,7 +1938,7 @@ int sqlite3PagerOpen(
 
   /* Open the pager file.
   */
-  if( pPager->zFilename[0] ){
+  if( zFilename && zFilename[0] && !memDb ){
     if( nPathname>(pVfs->mxPathname - sizeof("-journal")) ){
       rc = SQLITE_CANTOPEN;
     }else{

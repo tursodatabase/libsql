@@ -1,5 +1,5 @@
-C Remove\snRef\sand\svfsMutex\sfrom\sthe\ssqlite3_vfs\sstructure.\s\sOmit\sthe\nsqlite3_vfs_release()\sinterface.\s\sLess\smemory\sallocated\sfor\sa\spager\nin\sthe\scommon\scase\swhere\sthe\ssize\sof\sthe\spathname\sis\sless\sthan\sMAX_PATH.\s(CVS\s4287)
-D 2007-08-24T16:08:29
+C Fix\sbugs\sin\stemp\sdatabase\shandling\sintroduced\sby\sthe\sprevous\scheck-in.\s(CVS\s4288)
+D 2007-08-24T16:29:24
 F Makefile.in 0c0e53720f658c7a551046442dd7afba0b72bfbe
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -115,7 +115,7 @@ F src/os_unix.c 27b1fad58587bc949013a5a4df9fc20fce395648
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c e2598a18dbcb70cba888cebd37fb46d1eaee82b1
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c f5c2a4e85b632faa7cd891c214f1cfd021c1ffa9
+F src/pager.c b076458d72dcda7517c49aae0f0fd43c9a1195e5
 F src/pager.h 53087c6fb9db01aed17c7fd044662a27507e89b8
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 9b989506a1b7c8aecd6befb8235e2f57a4aba7e5
@@ -368,7 +368,7 @@ F test/misc7.test a67af9620a510ce19f96ba69f3848228b7c62a73
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
-F test/pager.test f07c06fef8e3b4964a9b337b751b56825a44d326
+F test/pager.test 60303481b22b240c18d6dd1b64edcecc2f4b5a97
 F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 51e3c091bc2992f5098f7576e3594e1908988939
@@ -561,7 +561,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 13dda2e8e879835c21e539ba3ff8f96face1af4c
-R 9943ec857d44edaed5e279e84f17aaa5
+P b8451da378179d43f25d9a014480c0f13dd1dc37
+R 56a3777f2f9b394db341a6008cd56bd7
 U drh
-Z a0440ce84e84a78d112a7ad4d7f13668
+Z 62539d3b8746b570b0ccb1349666e464
