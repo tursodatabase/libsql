@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.71 2007/08/21 10:44:16 drh Exp $
+** $Id: vacuum.c,v 1.72 2007/08/24 11:43:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -247,9 +247,7 @@ end_of_vacuum:
   db->autoCommit = 1;
 
   if( pDb ){
-    sqlite3MallocDisallow();
     sqlite3BtreeClose(pDb->pBt);
-    sqlite3MallocAllow();
     pDb->pBt = 0;
     pDb->pSchema = 0;
   }
