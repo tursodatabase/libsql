@@ -109,7 +109,7 @@
 ** If sqlite is being embedded in another program, you may wish to change the
 ** prefix to reflect your program's name, so that if your program exits
 ** prematurely, old temporary files can be easily identified. This can be done
-** using -DTEMP_FILE_PREFIX=myprefix_ on the compiler command line.
+** using -DSQLITE_TEMP_FILE_PREFIX=myprefix_ on the compiler command line.
 **
 ** 2006-10-31:  The default prefix used to be "sqlite_".  But then
 ** Mcafee started using SQLite in their anti-virus product and it
@@ -123,8 +123,8 @@
 ** enough to know that calling the developer will not help get rid
 ** of the file.
 */
-#ifndef TEMP_FILE_PREFIX
-# define TEMP_FILE_PREFIX "etilqs_"
+#ifndef SQLITE_TEMP_FILE_PREFIX
+# define SQLITE_TEMP_FILE_PREFIX "etilqs_"
 #endif
 
 /*
@@ -271,6 +271,20 @@ int sqlite3OsCloseFree(sqlite3_file *);
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
   int sqlite3OsFileHandle(sqlite3_file *id);
   int sqlite3OsLockState(sqlite3_file *id);
+#endif
+
+/*
+** Each OS-specific backend defines an instance of the following
+** structure for returning a pointer to its sqlite3_vfs.  If OS_OTHER
+** is defined (meaning that the application-defined OS interface layer
+** is used) then there is no default VFS.   The application must
+** register one or more VFS structures using sqlite3_vfs_register()
+** before attempting to use SQLite.
+*/
+#if OS_UNIX || OS_WIN || OS_OS2
+sqlite3_vfs *sqlite3OsDefaultVfs(void);
+#else
+# define sqlite3OsDefaultVfs(X) 0
 #endif
 
 #endif /* _SQLITE_OS_H_ */

@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.4 2007/08/23 02:47:53 drh Exp $
+** $Id: test_malloc.c,v 1.5 2007/08/24 03:51:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -288,25 +288,6 @@ static int test_memdebug_fail(
 
 
 /*
-** Usage:    sqlite3_memdebug_pending
-**
-** Return the number of successful mallocs remaining before the
-** next simulated failure.  Return -1 if no simulated failure is
-** currently scheduled.
-*/
-static int test_memdebug_pending(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  extern int sqlite3_memdebug_pending(void);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_memdebug_pending()));
-  return TCL_OK;
-}
-
-
-/*
 ** Usage:    sqlite3_memdebug_settitle TITLE
 **
 ** Set a title string stored with each allocation.  The TITLE is
@@ -354,7 +335,6 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_memdebug_backtrace", test_memdebug_backtrace       },
      { "sqlite3_memdebug_dump",      test_memdebug_dump            },
      { "sqlite3_memdebug_fail",      test_memdebug_fail            },
-     { "sqlite3_memdebug_pending",   test_memdebug_pending         },
      { "sqlite3_memdebug_settitle",  test_memdebug_settitle        },
   };
   int i;

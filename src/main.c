@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.396 2007/08/22 20:18:22 drh Exp $
+** $Id: main.c,v 1.397 2007/08/24 03:51:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -945,15 +945,16 @@ static int openDatabase(
   if( db==0 ) goto opendb_out;
   db->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
   if( db->mutex==0 ){
-    db->mallocFailed = 1;
+    sqlite3_free(db);
+    db = 0;
     goto opendb_out;
   }
   sqlite3_mutex_enter(db->mutex);
   db->pVfs = sqlite3_vfs_find(zVfs);
   db->errMask = 0xff;
   db->priorNewRowid = 0;
-  db->magic = SQLITE_MAGIC_BUSY;
   db->nDb = 2;
+  db->magic = SQLITE_MAGIC_BUSY;
   db->aDb = db->aDbStatic;
   db->autoCommit = 1;
   db->flags |= SQLITE_ShortColNames
@@ -1076,7 +1077,7 @@ static int openDatabase(
 #endif
 
 opendb_out:
-  if( db ){
+  if( db && db->mutex ){
     sqlite3_mutex_leave(db->mutex);
   }
   if( SQLITE_NOMEM==(rc = sqlite3_errcode(db)) ){

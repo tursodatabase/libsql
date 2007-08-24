@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem1.c,v 1.7 2007/08/22 20:18:22 drh Exp $
+** $Id: mem1.c,v 1.8 2007/08/24 03:51:34 drh Exp $
 */
 
 /*
@@ -51,8 +51,8 @@ static struct {
   ** issued.  The alarmBusy variable is set to prevent recursive
   ** callbacks.
   */
-  sqlite3_uint64 alarmThreshold;
-  void (*alarmCallback)(void*, sqlite3_uint64, unsigned);
+  sqlite3_int64 alarmThreshold;
+  void (*alarmCallback)(void*, sqlite3_int64,int);
   void *alarmArg;
   int alarmBusy;
   
@@ -64,22 +64,18 @@ static struct {
   /*
   ** Current allocation and high-water mark.
   */
-  sqlite3_uint64 nowUsed;
-  sqlite3_uint64 mxUsed;
+  sqlite3_int64 nowUsed;
+  sqlite3_int64 mxUsed;
   
  
-} mem = {  /* This variable holds all of the local data */
-   ((sqlite3_uint64)1)<<63,    /* alarmThreshold */
-   /* Everything else is initialized to zero */
-};
-
+} mem;
 
 
 /*
 ** Return the amount of memory currently checked out.
 */
-sqlite3_uint64 sqlite3_memory_used(void){
-  sqlite3_uint64 n;
+sqlite3_int64 sqlite3_memory_used(void){
+  sqlite3_int64 n;
   if( mem.mutex==0 ){
     mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
@@ -94,8 +90,8 @@ sqlite3_uint64 sqlite3_memory_used(void){
 ** checked out since either the beginning of this process
 ** or since the most recent reset.
 */
-sqlite3_uint64 sqlite3_memory_highwater(int resetFlag){
-  sqlite3_uint64 n;
+sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
+  sqlite3_int64 n;
   if( mem.mutex==0 ){
     mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
@@ -112,9 +108,9 @@ sqlite3_uint64 sqlite3_memory_highwater(int resetFlag){
 ** Change the alarm callback
 */
 int sqlite3_memory_alarm(
-  void(*xCallback)(void *pArg, sqlite3_uint64 used, unsigned int N),
+  void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
   void *pArg,
-  sqlite3_uint64 iThreshold
+  sqlite3_int64 iThreshold
 ){
   if( mem.mutex==0 ){
     mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
@@ -130,9 +126,9 @@ int sqlite3_memory_alarm(
 /*
 ** Trigger the alarm 
 */
-static void sqlite3MemsysAlarm(unsigned nByte){
-  void (*xCallback)(void*,sqlite3_uint64,unsigned);
-  sqlite3_uint64 nowUsed;
+static void sqlite3MemsysAlarm(int nByte){
+  void (*xCallback)(void*,sqlite3_int64,int);
+  sqlite3_int64 nowUsed;
   void *pArg;
   if( mem.alarmCallback==0 || mem.alarmBusy  ) return;
   mem.alarmBusy = 1;
@@ -149,7 +145,7 @@ static void sqlite3MemsysAlarm(unsigned nByte){
 ** Allocate nBytes of memory
 */
 void *sqlite3_malloc(int nBytes){
-  sqlite3_uint64 *p;
+  sqlite3_int64 *p;
   if( nBytes<=0 ){
     return 0;
   }
@@ -157,7 +153,7 @@ void *sqlite3_malloc(int nBytes){
     mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
   sqlite3_mutex_enter(mem.mutex);
-  if( mem.nowUsed+nBytes>=mem.alarmThreshold ){
+  if( mem.alarmCallback!=0 && mem.nowUsed+nBytes>=mem.alarmThreshold ){
     sqlite3MemsysAlarm(nBytes);
   }
   p = malloc(nBytes+8);
@@ -181,15 +177,15 @@ void *sqlite3_malloc(int nBytes){
 ** Free memory.
 */
 void sqlite3_free(void *pPrior){
-  sqlite3_uint64 *p;
-  unsigned nByte;
+  sqlite3_int64 *p;
+  int nByte;
   if( pPrior==0 ){
     return;
   }
   assert( mem.mutex!=0 );
   p = pPrior;
   p--;
-  nByte = (unsigned int)*p;
+  nByte = (int)*p;
   sqlite3_mutex_enter(mem.mutex);
   mem.nowUsed -= nByte;
   free(p);
@@ -200,8 +196,8 @@ void sqlite3_free(void *pPrior){
 ** Change the size of an existing memory allocation
 */
 void *sqlite3_realloc(void *pPrior, int nBytes){
-  unsigned nOld;
-  sqlite3_uint64 *p;
+  int nOld;
+  sqlite3_int64 *p;
   if( pPrior==0 ){
     return sqlite3_malloc(nBytes);
   }
@@ -211,7 +207,7 @@ void *sqlite3_realloc(void *pPrior, int nBytes){
   }
   p = pPrior;
   p--;
-  nOld = (unsigned int)p[0];
+  nOld = (int)p[0];
   assert( mem.mutex!=0 );
   sqlite3_mutex_enter(mem.mutex);
   if( mem.nowUsed+nBytes-nOld>=mem.alarmThreshold ){

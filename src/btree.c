@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.410 2007/08/23 02:47:53 drh Exp $
+** $Id: btree.c,v 1.411 2007/08/24 03:51:33 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1102,13 +1102,6 @@ int sqlite3BtreeOpen(
   int nReserve;
   unsigned char zDbHeader[100];
 
-  if( pSqlite ){
-    pVfs = pSqlite->pVfs;
-  }else{
-    pVfs = sqlite3_vfs_find(0);
-  }
-  assert( sqlite3BtreeMutexHeld(pSqlite->mutex) );
-
   /* Set the variable isMemdb to true for an in-memory database, or 
   ** false for a file-based database. This symbol is only required if
   ** either of the shared-data or autovacuum features are compiled 
@@ -1121,6 +1114,13 @@ int sqlite3BtreeOpen(
     const int isMemdb = zFilename && !strcmp(zFilename, ":memory:");
   #endif
 #endif
+
+  if( pSqlite ){
+    pVfs = pSqlite->pVfs;
+  }else{
+    pVfs = sqlite3_vfs_find(0);
+  }
+  assert( sqlite3BtreeMutexHeld(pSqlite->mutex) );
 
   p = sqlite3MallocZero(sizeof(Btree));
   if( !p ){

@@ -12,7 +12,7 @@
 # focus of this file is testing for correct handling of disk full
 # errors.
 # 
-# $Id: diskfull.test,v 1.6 2007/04/05 17:15:53 danielk1977 Exp $
+# $Id: diskfull.test,v 1.7 2007/08/24 03:51:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -113,4 +113,3 @@ do_diskfull_test diskfull-2 VACUUM
 # }
 
 finish_test
-

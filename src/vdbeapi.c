@@ -702,9 +702,9 @@ static const void *columnName(
     n = sqlite3_column_count(pStmt);
     if( N<n && N>=0 ){
       N += useType*n;
+      sqlite3_mutex_enter(p->db->mutex);
       ret = xFunc(&p->aColName[N]);
 
-#if 0
       /* A malloc may have failed inside of the xFunc() call. If this
       ** is the case, clear the mallocFailed flag and return NULL.
       */
@@ -712,7 +712,7 @@ static const void *columnName(
         p->db->mallocFailed = 0;
         ret = 0;
       }
-#endif
+      sqlite3_mutex_leave(p->db->mutex);
     }
   }
   return ret;

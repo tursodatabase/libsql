@@ -109,13 +109,6 @@ struct unixFile {
 #include "os_common.h"
 
 /*
-** Do not include any of the File I/O interface procedures if the
-** SQLITE_OMIT_DISKIO macro is defined (indicating that the database
-** will be in-memory only)
-*/
-#ifndef SQLITE_OMIT_DISKIO
-
-/*
 ** Define various macros that are missing from some systems.
 */
 #ifndef O_LARGEFILE
@@ -2300,12 +2293,6 @@ static int fillInUnixFile(
 }
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
 
-#endif /* SQLITE_OMIT_DISKIO */
-/***************************************************************************
-** Everything above deals with file I/O.  Everything that follows deals
-** with other miscellanous aspects of the operating system interface
-****************************************************************************/
-
 /*
 ** Open a file descriptor to the directory containing file zFilename.
 ** If successful, *pFd is set to the opened file descriptor and
@@ -2321,8 +2308,7 @@ static int openDirectory(const char *zFilename, int *pFd){
   int fd;
   char zDirname[MAX_PATHNAME+1];
 
-  strncpy(zDirname, zFilename, MAX_PATHNAME);
-  zDirname[MAX_PATHNAME-1] = '\0';
+  sqlite3_snprintf(MAX_PATHNAME, zDirname, "%s", zFilename);
   for(ii=strlen(zDirname); ii>=0 && zDirname[ii]!='/'; ii--);
   if( ii>0 ){
     zDirname[ii] = '\0';
@@ -2361,7 +2347,7 @@ static int openDirectory(const char *zFilename, int *pFd){
 ** OpenExclusive().
 */
 static int unixOpen(
-  void *pNotUsed, 
+  sqlite3_vfs *pVfs, 
   const char *zPath, 
   sqlite3_file *pFile,
   int flags,
@@ -2414,7 +2400,7 @@ static int unixOpen(
     /* Failed to open the file for read/write access. Try read-only. */
     flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
     flags |= SQLITE_OPEN_READONLY;
-    return unixOpen(pNotUsed, zPath, pFile, flags, pOutFlags);
+    return unixOpen(pVfs, zPath, pFile, flags, pOutFlags);
   }
   if( fd<0 ){
     return SQLITE_CANTOPEN;
@@ -2441,7 +2427,7 @@ static int unixOpen(
 ** Delete the file at zPath. If the dirSync argument is true, fsync()
 ** the directory after deleting the file.
 */
-static int unixDelete(void *pNotUsed, const char *zPath, int dirSync){
+static int unixDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   int rc = SQLITE_OK;
   SimulateIOError(return SQLITE_IOERR_DELETE);
   unlink(zPath);
@@ -2468,7 +2454,7 @@ static int unixDelete(void *pNotUsed, const char *zPath, int dirSync){
 **
 ** Otherwise return 0.
 */
-static int unixAccess(void *pNotUsed, const char *zPath, int flags){
+static int unixAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
   int amode;
   switch( flags ){
     case SQLITE_ACCESS_EXISTS:
@@ -2488,10 +2474,11 @@ static int unixAccess(void *pNotUsed, const char *zPath, int flags){
 }
 
 /*
-** Create a temporary file name in zBuf.  zBuf must be big enough to
-** hold at least MAX_PATHNAME characters.
+** Create a temporary file name in zBuf.  zBuf must be allocated
+** by the calling process and must be big enough to hold at least
+** pVfs->mxPathname bytes.
 */
-static int unixGetTempName(void *pNotUsed, char *zBuf){
+static int unixGetTempName(sqlite3_vfs *pVfs, char *zBuf){
   static const char *azDirs[] = {
      0,
      "/var/tmp",
@@ -2516,7 +2503,8 @@ static int unixGetTempName(void *pNotUsed, char *zBuf){
     break;
   }
   do{
-    sqlite3_snprintf(MAX_PATHNAME-17, zBuf, "%s/"TEMP_FILE_PREFIX, zDir);
+    assert( pVfs->mxPathname==MAX_PATHNAME );
+    sqlite3_snprintf(MAX_PATHNAME-17, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX, zDir);
     j = strlen(zBuf);
     sqlite3Randomness(15, &zBuf[j]);
     for(i=0; i<15; i++, j++){
@@ -2537,18 +2525,18 @@ static int unixGetTempName(void *pNotUsed, char *zBuf){
 ** (in this case, MAX_PATHNAME bytes). The full-path is written to
 ** this buffer before returning.
 */
-static int unixFullPathname(void *pNotUsed, const char *zPath, char *zOut){
+static int unixFullPathname(sqlite3_vfs *pVfs, const char *zPath, char *zOut){
+  assert( pVfs->mxPathname==MAX_PATHNAME );
   zOut[MAX_PATHNAME-1] = '\0';
   if( zPath[0]=='/' ){
-    strncpy(zOut, zPath, MAX_PATHNAME-1);
+    sqlite3_snprintf(MAX_PATHNAME, zOut, "%s", zPath);
   }else{
     int nCwd;
     if( getcwd(zOut, MAX_PATHNAME-1)==0 ){
       return SQLITE_ERROR;
     }
     nCwd = strlen(zOut);
-    zOut[nCwd] = '/';
-    strncpy(&zOut[nCwd+1], zPath, MAX_PATHNAME-1-nCwd-1);
+    sqlite3_snprintf(MAX_PATHNAME-nCwd, &zOut[nCwd], "/%s", zPath);
   }
   return SQLITE_OK;
 
@@ -2586,25 +2574,24 @@ static int unixFullPathname(void *pNotUsed, const char *zPath, char *zOut){
 ** within the shared library, and closing the shared library.
 */
 #include <dlfcn.h>
-static void *unixDlOpen(void *pNotUsed, const char *zFilename){
+static void *unixDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   return dlopen(zFilename, RTLD_NOW | RTLD_GLOBAL);
 }
-static void unixDlError(void *pNotUsed, int nBuf, char *zBufOut){
+static void unixDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
   char *zErr;
   enterMutex();
   zErr = dlerror();
   if( zErr ){
-    strncpy(zBufOut, zErr, nBuf-1);
-    zBufOut[nBuf-1] = '\0';
+    sqlite3_snprintf(nBuf, zBufOut, "%s", zErr);
   }else if(nBuf>0) {
     zBufOut[0] = '\0';
   }
   leaveMutex();
 }
-void *unixDlSym(void *pHandle, const char *zSymbol){
+void *unixDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
   return dlsym(pHandle, zSymbol);
 }
-void unixDlClose(void *pHandle){
+void unixDlClose(sqlite3_vfs *pVfs, void *pHandle){
   dlclose(pHandle);
 }
 #else /* if SQLITE_OMIT_LOAD_EXTENSION is defined: */
@@ -2617,7 +2604,7 @@ void unixDlClose(void *pHandle){
 /*
 ** Write nBuf bytes of random data to the supplied buffer zBuf.
 */
-static int unixRandomness(void *pNotUsed, int nBuf, char *zBuf){
+static int unixRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 
   assert(nBuf>=(sizeof(time_t)+sizeof(int)));
 
@@ -2662,7 +2649,7 @@ static int unixRandomness(void *pNotUsed, int nBuf, char *zBuf){
 ** might be greater than or equal to the argument, but not less
 ** than the argument.
 */
-static int unixSleep(void *pNotUsed, int microseconds){
+static int unixSleep(sqlite3_vfs *pVfs, int microseconds){
 #if defined(HAVE_USLEEP) && HAVE_USLEEP
   usleep(microseconds);
   return microseconds;
@@ -2686,7 +2673,7 @@ int sqlite3_current_time = 0;
 ** current time and date as a Julian Day number into *prNow and
 ** return 0.  Return 1 if the time and date cannot be found.
 */
-static int unixCurrentTime(void *pNotUsed, double *prNow){
+static int unixCurrentTime(sqlite3_vfs *pVfs, double *prNow){
 #ifdef NO_GETTOD
   time_t t;
   time(&t);
@@ -2704,29 +2691,38 @@ static int unixCurrentTime(void *pNotUsed, double *prNow){
   return 0;
 }
 
-
-sqlite3_vfs sqlite3DefaultVfs = {
-  1,                  /* iVersion */
-  sizeof(unixFile),   /* szOsFile */
-  MAX_PATHNAME,       /* mxPathname */
-  0,                  /* nRef */
-  0,                  /* vfsMutex */
-  0,                  /* pNext */
-  "unix",             /* zName */
-  0,                  /* pAppData */
-
-  unixOpen,           /* xOpen */
-  unixDelete,         /* xDelete */
-  unixAccess,         /* xAccess */
-  unixGetTempName,    /* xGetTempName */
-  unixFullPathname,   /* xFullPathname */
-  unixDlOpen,         /* xDlOpen */
-  unixDlError,        /* xDlError */
-  unixDlSym,          /* xDlSym */
-  unixDlClose,        /* xDlClose */
-  unixRandomness,     /* xRandomness */
-  unixSleep,          /* xSleep */
-  unixCurrentTime     /* xCurrentTime */
-};
+/*
+** Return a pointer to the sqlite3DefaultVfs structure.   We use
+** a function rather than give the structure global scope because
+** some compilers (MSVC) do not allow forward declarations of
+** initialized structures.
+*/
+sqlite3_vfs *sqlite3OsDefaultVfs(void){
+  static sqlite3_vfs unixVfs = {
+    1,                  /* iVersion */
+    sizeof(unixFile),   /* szOsFile */
+    MAX_PATHNAME,       /* mxPathname */
+    0,                  /* nRef */
+    0,                  /* vfsMutex */
+    0,                  /* pNext */
+    "unix",             /* zName */
+    0,                  /* pAppData */
+  
+    unixOpen,           /* xOpen */
+    unixDelete,         /* xDelete */
+    unixAccess,         /* xAccess */
+    unixGetTempName,    /* xGetTempName */
+    unixFullPathname,   /* xFullPathname */
+    unixDlOpen,         /* xDlOpen */
+    unixDlError,        /* xDlError */
+    unixDlSym,          /* xDlSym */
+    unixDlClose,        /* xDlClose */
+    unixRandomness,     /* xRandomness */
+    unixSleep,          /* xSleep */
+    unixCurrentTime     /* xCurrentTime */
+  };
+  
+  return &unixVfs;
+}
  
 #endif /* OS_UNIX */

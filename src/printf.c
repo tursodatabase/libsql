@@ -113,7 +113,7 @@ static const et_info fmtinfo[] = {
   {  'd', 10, 1, etRADIX,      0,  0 },
   {  's',  0, 4, etSTRING,     0,  0 },
   {  'g',  0, 1, etGENERIC,    30, 0 },
-  {  'z',  0, 6, etDYNSTRING,  0,  0 },
+  {  'z',  0, 4, etDYNSTRING,  0,  0 },
   {  'q',  0, 4, etSQLESCAPE,  0,  0 },
   {  'Q',  0, 4, etSQLESCAPE2, 0,  0 },
   {  'w',  0, 4, etSQLESCAPE3, 0,  0 },

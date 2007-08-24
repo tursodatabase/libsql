@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.53 2007/08/23 02:47:53 drh Exp $
+** $Id: vtab.c,v 1.54 2007/08/24 03:51:34 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -24,10 +24,11 @@ static int createModule(
   void (*xDestroy)(void *)        /* Module destructor function */
 ) {
   int rc, nName;
+  Module *pMod;
 
   sqlite3_mutex_enter(db->mutex);
   nName = strlen(zName);
-  Module *pMod = (Module *)sqlite3DbMallocRaw(db, sizeof(Module) + nName + 1);
+  pMod = (Module *)sqlite3DbMallocRaw(db, sizeof(Module) + nName + 1);
   if( pMod ){
     char *zCopy = (char *)(&pMod[1]);
     memcpy(zCopy, zName, nName+1);

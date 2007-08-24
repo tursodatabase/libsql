@@ -110,40 +110,40 @@ int sqlite3OsOpen(
   int flags, 
   int *pFlagsOut
 ){
-  return pVfs->xOpen(pVfs->pAppData, zPath, pFile, flags, pFlagsOut);
+  return pVfs->xOpen(pVfs, zPath, pFile, flags, pFlagsOut);
 }
 int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
-  return pVfs->xDelete(pVfs->pAppData, zPath, dirSync);
+  return pVfs->xDelete(pVfs, zPath, dirSync);
 }
 int sqlite3OsAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
-  return pVfs->xAccess(pVfs->pAppData, zPath, flags);
+  return pVfs->xAccess(pVfs, zPath, flags);
 }
 int sqlite3OsGetTempName(sqlite3_vfs *pVfs, char *zBufOut){
-  return pVfs->xGetTempName(pVfs->pAppData, zBufOut);
+  return pVfs->xGetTempName(pVfs, zBufOut);
 }
 int sqlite3OsFullPathname(sqlite3_vfs *pVfs, const char *zPath, char *zPathOut){
-  return pVfs->xFullPathname(pVfs->pAppData, zPath, zPathOut);
+  return pVfs->xFullPathname(pVfs, zPath, zPathOut);
 }
 void *sqlite3OsDlOpen(sqlite3_vfs *pVfs, const char *zPath){
-  return pVfs->xDlOpen(pVfs->pAppData, zPath);
+  return pVfs->xDlOpen(pVfs, zPath);
 }
 void sqlite3OsDlError(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
-  pVfs->xDlError(pVfs->pAppData, nByte, zBufOut);
+  pVfs->xDlError(pVfs, nByte, zBufOut);
 }
 void *sqlite3OsDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
-  return pVfs->xDlSym(pHandle, zSymbol);
+  return pVfs->xDlSym(pVfs, pHandle, zSymbol);
 }
 void sqlite3OsDlClose(sqlite3_vfs *pVfs, void *pHandle){
-  pVfs->xDlClose(pHandle);
+  pVfs->xDlClose(pVfs, pHandle);
 }
 int sqlite3OsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
-  return pVfs->xRandomness(pVfs->pAppData, nByte, zBufOut);
+  return pVfs->xRandomness(pVfs, nByte, zBufOut);
 }
 int sqlite3OsSleep(sqlite3_vfs *pVfs, int nMicro){
-  return pVfs->xSleep(pVfs->pAppData, nMicro);
+  return pVfs->xSleep(pVfs, nMicro);
 }
 int sqlite3OsCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
-  return pVfs->xCurrentTime(pVfs->pAppData, pTimeOut);
+  return pVfs->xCurrentTime(pVfs, pTimeOut);
 }
 
 int sqlite3OsOpenMalloc(
@@ -175,15 +175,12 @@ int sqlite3OsCloseFree(sqlite3_file *pFile){
   return rc;
 }
 
-/* 
-** Default vfs implementation. Defined by the various os_X.c implementations.
-*/
-extern sqlite3_vfs sqlite3DefaultVfs;
-
 /*
-** The list of all registered VFS implementations.
+** The list of all registered VFS implementations.  This list is
+** initialized to the single VFS returned by sqlite3OsDefaultVfs()
+** upon the first call to sqlite3_vfs_find().
 */
-static sqlite3_vfs *vfsList = &sqlite3DefaultVfs;
+static sqlite3_vfs *vfsList = 0;
 
 /*
 ** Locate a VFS by name.  If no name is given, simply return the
@@ -192,7 +189,12 @@ static sqlite3_vfs *vfsList = &sqlite3DefaultVfs;
 sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
   sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
   sqlite3_vfs *pVfs;
+  static int isInit = 0;
   sqlite3_mutex_enter(mutex);
+  if( !isInit ){
+    vfsList = sqlite3OsDefaultVfs();
+    isInit = 1;
+  }
   for(pVfs = vfsList; pVfs; pVfs=pVfs->pNext){
     if( zVfs==0 ) break;
     if( strcmp(zVfs, pVfs->zName)==0 ) break;
@@ -217,7 +219,7 @@ int sqlite3_vfs_release(sqlite3_vfs *pVfs){
   sqlite3_mutex_enter(mutex);
   assert( pVfs->nRef>0 );
   pVfs->nRef--;
-  if( pVfs->nRef==0 ){
+  if( pVfs->nRef==0 && pVfs->vfsMutex ){
     sqlite3_mutex_free(pVfs->vfsMutex);
     pVfs->vfsMutex = 0;
   }

@@ -678,7 +678,7 @@ static int crashParamsObjCmd(
 ){
   int iDelay;
   const char *zCrashFile;
-  int nCrashFile;
+  int nCrashFile, iDc, iSectorSize;
 
   static sqlite3_vfs crashVfs = {
     1,                  /* iVersion */
@@ -704,6 +704,7 @@ static int crashParamsObjCmd(
     cfCurrentTime         /* xCurrentTime */
   };
 
+
   if( crashVfs.pAppData==0 ){
     sqlite3_vfs *pOriginalVfs = sqlite3_vfs_find(0);
     crashVfs.xDlError = pOriginalVfs->xDlError;
@@ -717,8 +718,8 @@ static int crashParamsObjCmd(
     sqlite3_vfs_register(&crashVfs, 1);
   }
 
-  int iDc = -1;
-  int iSectorSize = -1;
+  iDc = -1;
+  iSectorSize = -1;
 
   if( objc<3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "?OPTIONS? DELAY CRASHFILE");

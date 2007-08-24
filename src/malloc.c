@@ -12,7 +12,7 @@
 ** Memory allocation functions used throughout sqlite.
 **
 **
-** $Id: malloc.c,v 1.10 2007/08/22 20:18:22 drh Exp $
+** $Id: malloc.c,v 1.11 2007/08/24 03:51:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -25,8 +25,8 @@
 */
 static void softHeapLimitEnforcer(
   void *NotUsed, 
-  sqlite3_uint64 inUse,
-  unsigned int allocSize
+  sqlite3_int64 inUse,
+  int allocSize
 ){
   sqlite3_release_memory(allocSize);
 }

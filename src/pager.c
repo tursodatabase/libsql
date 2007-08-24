@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.371 2007/08/23 14:48:24 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.372 2007/08/24 03:51:34 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1873,7 +1873,6 @@ int sqlite3PagerOpen(
 ){
   u8 *pPtr;
   Pager *pPager = 0;
-  char *zFullPathname = 0;
   int rc = SQLITE_OK;
   int i;
   int tempFile = 0;
@@ -1905,8 +1904,7 @@ int sqlite3PagerOpen(
   pPager->zJournal = &pPager->zDirectory[pVfs->mxPathname];
   pPager->pVfs = pVfs;
 
-  /* Open the pager file and set zFullPathname to point at malloc()ed 
-  ** memory containing the complete filename (i.e. including the directory).
+  /* Open the pager file.
   */
   if( zFilename && zFilename[0] ){
 #ifndef SQLITE_OMIT_MEMORYDB
@@ -1942,9 +1940,9 @@ int sqlite3PagerOpen(
     pPager->pTmpSpace = (char *)sqlite3_malloc(SQLITE_DEFAULT_PAGE_SIZE);
   }
 
-  /* If an error occured in either of the blocks above, free the memory 
-  ** pointed to by zFullPathname, free the Pager structure and close the 
-  ** file. Since the pager is not allocated there is no need to set 
+  /* If an error occured in either of the blocks above.
+  ** Free the Pager structure and close the file.
+  ** Since the pager is not allocated there is no need to set 
   ** any Pager.errMask variables.
   */
   if( !pPager || !pPager->pTmpSpace ){
@@ -1953,8 +1951,8 @@ int sqlite3PagerOpen(
     return ((rc==SQLITE_OK)?SQLITE_NOMEM:rc);
   }
 
-  PAGERTRACE3("OPEN %d %s\n", FILEHANDLEID(pPager->fd), zFullPathname);
-  IOTRACE(("OPEN %p %s\n", pPager, zFullPathname))
+  PAGERTRACE3("OPEN %d %s\n", FILEHANDLEID(pPager->fd), pPager->zFilename);
+  IOTRACE(("OPEN %p %s\n", pPager, pPager->zFilename))
 
   /* Fill in Pager.zDirectory[] */
   memcpy(pPager->zDirectory, pPager->zFilename, pVfs->mxPathname);
@@ -2682,6 +2680,7 @@ static PgHdr *sort_pagelist(PgHdr *pIn){
 */
 static int pager_write_pagelist(PgHdr *pList){
   Pager *pPager;
+  PgHdr *p;
   int rc;
 
   if( pList==0 ) return SQLITE_OK;
@@ -2709,6 +2708,10 @@ static int pager_write_pagelist(PgHdr *pList){
   }
 
   pList = sort_pagelist(pList);
+  for(p=pList; p; p=p->pDirty){
+    assert( p->dirty );
+    p->dirty = 0;
+  }
   while( pList ){
 
     /* If the file has not yet been opened, open it now. */
@@ -2718,7 +2721,6 @@ static int pager_write_pagelist(PgHdr *pList){
       if( rc ) return rc;
     }
 
-    assert( pList->dirty );
     /* If there are dirty pages in the page cache with page numbers greater
     ** than Pager.dbSize, this means sqlite3PagerTruncate() was called to
     ** make the file smaller (presumably by auto-vacuum code). Do not write
@@ -2743,7 +2745,6 @@ static int pager_write_pagelist(PgHdr *pList){
     }
 #endif
     if( rc ) return rc;
-    pList->dirty = 0;
 #ifdef SQLITE_CHECK_PAGES
     pList->pageHash = pager_pagehash(pList);
 #endif
@@ -2846,6 +2847,7 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
     pPg->dirty = 1;
     pPg->pDirty = 0;
     rc = pager_write_pagelist( pPg );
+    pPg->dirty = 0;
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -3698,11 +3700,14 @@ static void makeClean(PgHdr *pPg){
   if( pPg->dirty ){
     pPg->dirty = 0;
     if( pPg->pDirty ){
+      assert( pPg->pDirty->pPrevDirty==pPg );
       pPg->pDirty->pPrevDirty = pPg->pPrevDirty;
     }
     if( pPg->pPrevDirty ){
+      assert( pPg->pPrevDirty->pDirty==pPg );
       pPg->pPrevDirty->pDirty = pPg->pDirty;
     }else{
+      assert( pPg->pPager->pDirty==pPg );
       pPg->pPager->pDirty = pPg->pDirty;
     }
   }
@@ -4263,7 +4268,11 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
     /* Write all dirty pages to the database file */
     pPg = pager_get_all_dirty_pages(pPager);
     rc = pager_write_pagelist(pPg);
-    if( rc!=SQLITE_OK ) goto sync_exit;
+    if( rc!=SQLITE_OK ){
+      while( pPg && !pPg->dirty ){ pPg = pPg->pDirty; }
+      pPager->pDirty = pPg;
+      goto sync_exit;
+    }
     pPager->pDirty = 0;
 
     /* Sync the database file. */

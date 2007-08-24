@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.8 2007/08/23 02:47:53 drh Exp $
+** $Id: mem2.c,v 1.9 2007/08/24 03:51:34 drh Exp $
 */
 
 /*
@@ -71,11 +71,11 @@
 */
 struct MemBlockHdr {
   struct MemBlockHdr *pNext, *pPrev;  /* Linked list of all unfreed memory */
-  unsigned int iSize;                 /* Size of this allocation */
-  unsigned char nBacktrace;           /* Number of backtraces on this alloc */
-  unsigned char nBacktraceSlots;      /* Available backtrace slots */
-  unsigned short nTitle;              /* Bytes of title; includes '\0' */
-  unsigned int iForeGuard;            /* Guard word for sanity */
+  int iSize;                          /* Size of this allocation */
+  char nBacktrace;                    /* Number of backtraces on this alloc */
+  char nBacktraceSlots;               /* Available backtrace slots */
+  short nTitle;                       /* Bytes of title; includes '\0' */
+  int iForeGuard;                     /* Guard word for sanity */
 };
 
 /*
@@ -98,8 +98,8 @@ static struct {
   ** issued.  The alarmBusy variable is set to prevent recursive
   ** callbacks.
   */
-  sqlite3_uint64 alarmThreshold;
-  void (*alarmCallback)(void*, sqlite3_uint64, unsigned);
+  sqlite3_int64 alarmThreshold;
+  void (*alarmCallback)(void*, sqlite3_int64, int);
   void *alarmArg;
   int alarmBusy;
   
@@ -111,8 +111,8 @@ static struct {
   /*
   ** Current allocation and high-water mark.
   */
-  sqlite3_uint64 nowUsed;
-  sqlite3_uint64 mxUsed;
+  sqlite3_int64 nowUsed;
+  sqlite3_int64 mxUsed;
   
   /*
   ** Head and tail of a linked list of all outstanding allocations
@@ -147,18 +147,14 @@ static struct {
   int disallow; /* Do not allow memory allocation */
   
   
-} mem = {  /* This variable holds all of the local data */
-   ((sqlite3_uint64)1)<<63,    /* alarmThreshold */
-   /* Everything else is initialized to zero */
-};
-
+} mem;
 
 
 /*
 ** Return the amount of memory currently checked out.
 */
-sqlite3_uint64 sqlite3_memory_used(void){
-  sqlite3_uint64 n;
+sqlite3_int64 sqlite3_memory_used(void){
+  sqlite3_int64 n;
   if( mem.mutex==0 ){
     mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
@@ -173,8 +169,8 @@ sqlite3_uint64 sqlite3_memory_used(void){
 ** checked out since either the beginning of this process
 ** or since the most recent reset.
 */
-sqlite3_uint64 sqlite3_memory_highwater(int resetFlag){
-  sqlite3_uint64 n;
+sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
+  sqlite3_int64 n;
   if( mem.mutex==0 ){
     mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
@@ -191,9 +187,9 @@ sqlite3_uint64 sqlite3_memory_highwater(int resetFlag){
 ** Change the alarm callback
 */
 int sqlite3_memory_alarm(
-  void(*xCallback)(void *pArg, sqlite3_uint64 used, unsigned int N),
+  void(*xCallback)(void *pArg, sqlite3_int64 used, int N),
   void *pArg,
-  sqlite3_uint64 iThreshold
+  sqlite3_int64 iThreshold
 ){
   if( mem.mutex==0 ){
     mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
@@ -209,9 +205,9 @@ int sqlite3_memory_alarm(
 /*
 ** Trigger the alarm 
 */
-static void sqlite3MemsysAlarm(unsigned nByte){
-  void (*xCallback)(void*,sqlite3_uint64,unsigned);
-  sqlite3_uint64 nowUsed;
+static void sqlite3MemsysAlarm(int nByte){
+  void (*xCallback)(void*,sqlite3_int64,int);
+  sqlite3_int64 nowUsed;
   void *pArg;
   if( mem.alarmCallback==0 || mem.alarmBusy  ) return;
   mem.alarmBusy = 1;
@@ -232,14 +228,14 @@ static void sqlite3MemsysAlarm(unsigned nByte){
 */
 static struct MemBlockHdr *sqlite3MemsysGetHeader(void *pAllocation){
   struct MemBlockHdr *p;
-  unsigned int *pInt;
+  int *pInt;
 
   p = (struct MemBlockHdr*)pAllocation;
   p--;
   assert( p->iForeGuard==FOREGUARD );
   assert( (p->iSize & 3)==0 );
-  pInt = (unsigned int*)pAllocation;
-  assert( pInt[p->iSize/sizeof(unsigned int)]==REARGUARD );
+  pInt = (int*)pAllocation;
+  assert( pInt[p->iSize/sizeof(int)]==REARGUARD );
   return p;
 }
 
@@ -260,9 +256,9 @@ void *sqlite3_malloc(int nByte){
   struct MemBlockHdr *pHdr;
   void **pBt;
   char *z;
-  unsigned int *pInt;
+  int *pInt;
   void *p;
-  unsigned int totalSize;
+  int totalSize;
 
   if( nByte<=0 ){
     return 0;
@@ -272,11 +268,11 @@ void *sqlite3_malloc(int nByte){
   }
   sqlite3_mutex_enter(mem.mutex);
   assert( mem.disallow==0 );
-  if( mem.nowUsed+nByte>=mem.alarmThreshold ){
+  if( mem.alarmCallback!=0 && mem.nowUsed+nByte>=mem.alarmThreshold ){
     sqlite3MemsysAlarm(nByte);
   }
   nByte = (nByte+3)&~3;
-  totalSize = nByte + sizeof(*pHdr) + sizeof(unsigned int) +
+  totalSize = nByte + sizeof(*pHdr) + sizeof(int) +
                mem.nBacktrace*sizeof(void*) + mem.nTitle;
   if( mem.iFail>0 ){
     if( mem.iFail==1 ){
@@ -323,8 +319,8 @@ void *sqlite3_malloc(int nByte){
       memcpy(z, mem.zTitle, mem.nTitle);
     }
     pHdr->iSize = nByte;
-    pInt = (unsigned int *)&pHdr[1];
-    pInt[nByte/sizeof(unsigned int)] = REARGUARD;
+    pInt = (int*)&pHdr[1];
+    pInt[nByte/sizeof(int)] = REARGUARD;
     memset(pInt, 0x65, nByte);
     mem.nowUsed += nByte;
     if( mem.nowUsed>mem.mxUsed ){
@@ -369,7 +365,7 @@ void sqlite3_free(void *pPrior){
   z = (char*)pBt;
   z -= pHdr->nTitle;
   memset(z, 0x2b, sizeof(void*)*pHdr->nBacktraceSlots + sizeof(*pHdr) +
-                  pHdr->iSize + sizeof(unsigned int) + pHdr->nTitle);
+                  pHdr->iSize + sizeof(int) + pHdr->nTitle);
   free(z);
   sqlite3_mutex_leave(mem.mutex);  
 }
@@ -486,15 +482,6 @@ int sqlite3_memdebug_fail(int iFail, int iRepeat){
   }
   mem.iFailCnt = 0;
   return n;
-}
-
-/*
-** This routine returns the number of successful mallocs remaining until
-** the next simulated malloc failure.  -1 is returned if no simulated
-** failure is currently scheduled.
-*/
-int sqlite3_memdebug_pending(void){
-  return mem.iFail-1;
 }
 
 /*
