@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.411 2007/08/24 03:51:33 drh Exp $
+** $Id: btree.c,v 1.412 2007/08/24 11:52:29 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1199,7 +1199,7 @@ int sqlite3BtreeOpen(
     pBt->pageSize = get2byte(&zDbHeader[16]);
     if( pBt->pageSize<512 || pBt->pageSize>SQLITE_MAX_PAGE_SIZE
          || ((pBt->pageSize-1)&pBt->pageSize)!=0 ){
-      pBt->pageSize = SQLITE_DEFAULT_PAGE_SIZE;
+      pBt->pageSize = sqlite3PagerSetPagesize(pBt->pPager, 0);
       pBt->maxEmbedFrac = 64;   /* 25% */
       pBt->minEmbedFrac = 32;   /* 12.5% */
       pBt->minLeafFrac = 32;    /* 12.5% */

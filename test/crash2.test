@@ -16,7 +16,7 @@
 # specifically, the tests in this file verify this functionality
 # for storage mediums with various sector sizes.
 #
-# $Id: crash2.test,v 1.4 2007/04/06 21:42:22 drh Exp $
+# $Id: crash2.test,v 1.5 2007/08/24 11:52:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -26,6 +26,8 @@ ifcapable !crashtest {
   return
 }
 
+db close
+
 # This test is designed to check that the crash-test infrastructure
 # can create files that do not consist of an integer number of
 # simulated disk blocks (i.e. 3KB file using 2KB disk blocks).
@@ -33,6 +35,7 @@ ifcapable !crashtest {
 do_test crash2-1.1 {
   crashsql -delay 500 -file test.db -blocksize 2048 {
     PRAGMA auto_vacuum=OFF;
+    PRAGMA page_size=1024;
     BEGIN;
     CREATE TABLE abc AS SELECT 1 AS a, 2 AS b, 3 AS c;
     CREATE TABLE def AS SELECT 1 AS d, 2 AS e, 3 AS f;
@@ -53,10 +56,11 @@ for {set ii 0} {$ii < 5} {incr ii} {
   # of different seeds for the random number generator.
   #
   do_test crash2-1.2.$ii {
-    crashsql -file test.db -blocksize 2048 "
+    crashsql -file test.db -blocksize 2048 [subst {
       [string repeat {SELECT random();} $ii]
       CREATE TABLE hij(h, i, j);
-    "
+    }]
+    sqlite3 db test.db
     db eval {PRAGMA integrity_check}
   } {ok}
 }
@@ -86,7 +90,8 @@ do_test crash2-2.0 {
 for {set i 1} {$i < 30} {incr i} {
   set sig [signature]
   set sector [expr 1024 * 1<<($i%4)]
-  do_test crash-2.$i.1 {
+  db close
+  do_test crash2-2.$i.1 {
      crashsql -blocksize $sector -delay [expr $i%5 + 1] -file test.db-journal "
        BEGIN;
        SELECT random() FROM abc LIMIT $i;
@@ -95,7 +100,8 @@ for {set i 1} {$i < 30} {incr i} {
        COMMIT;
      "
   } {1 {child process exited abnormally}}
-  do_test crash-2.$i.2 {
+  do_test crash2-2.$i.2 {
+    sqlite3 db test.db
     signature
   } $sig
 } 
@@ -107,7 +113,8 @@ for {set i 1} {$i < 30} {incr i} {
 for {set i 1} {$i < 10} {incr i} {
   set sig [signature]
   set sector [expr 1024 * 1<<($i%4)]
-  do_test crash-3.$i.1 {
+  db close
+  do_test crash2-3.$i.1 {
      crashsql -blocksize $sector -file test.db "
        BEGIN;
        SELECT random() FROM abc LIMIT $i;
@@ -116,7 +123,8 @@ for {set i 1} {$i < 10} {incr i} {
        COMMIT;
      "
   } {1 {child process exited abnormally}}
-  do_test crash-3.$i.2 {
+  do_test crash2-3.$i.2 {
+    sqlite3 db test.db
     signature
   } $sig
 } 

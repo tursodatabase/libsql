@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.373 2007/08/24 08:15:54 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.374 2007/08/24 11:52:29 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1857,7 +1857,7 @@ static int sqlite3PagerOpentemp(
 ** last page is released using sqlite3PagerUnref().
 **
 ** If zFilename is NULL then a randomly-named temporary file is created
-** and used as the file to be cached.  The file will be deleted
+** and
 ** automatically when it is closed.
 **
 ** If zFilename is ":memory:" then all information is held in cache.
@@ -1881,6 +1881,7 @@ int sqlite3PagerOpen(
   int useJournal = (flags & PAGER_OMIT_JOURNAL)==0;
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;
   int journalFileSize = sqlite3JournalSize(pVfs);
+  int nDefaultPage = SQLITE_DEFAULT_PAGE_SIZE;     /* Default page size. */
 
   /* The default return is a NULL pointer */
   *ppPager = 0;
@@ -1924,6 +1925,36 @@ int sqlite3PagerOpen(
           int fout = 0;
           rc = sqlite3OsOpen(pVfs, pPager->zFilename, pPager->fd, oflag, &fout);
           readOnly = (fout&SQLITE_OPEN_READONLY);
+ 
+          /* If the file was successfully opened for read/write access,
+          ** choose a default page size in case we have to create the
+          ** database file. The default page size is the maximum of:
+          **
+          **    + SQLITE_DEFAULT_PAGE_SIZE,
+          **    + The value returned by sqlite3OsSectorSize()
+          **    + The largest page size that can be written atomically.
+          */
+          if( rc==SQLITE_OK && !readOnly ){
+            int iSectorSize = sqlite3OsSectorSize(pPager->fd);
+            if( nDefaultPage<iSectorSize ){
+              nDefaultPage = iSectorSize;
+            }
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
+            {
+              int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
+              int ii;
+              assert(SQLITE_IOCAP_ATOMIC512==(512>>8));
+              assert(SQLITE_IOCAP_ATOMIC64K==(65536>>8));
+              assert(SQLITE_MAX_DEFAULT_PAGE_SIZE<=65536);
+              for(ii=nDefaultPage; ii<=SQLITE_MAX_DEFAULT_PAGE_SIZE; ii=ii*2){
+                if( iDc&(SQLITE_IOCAP_ATOMIC|(ii>>8)) ) nDefaultPage = ii;
+              }
+            }
+#endif
+            if( nDefaultPage>SQLITE_MAX_DEFAULT_PAGE_SIZE ){
+              nDefaultPage = SQLITE_MAX_DEFAULT_PAGE_SIZE;
+            }
+          }
         }
       }
     }
@@ -1937,7 +1968,7 @@ int sqlite3PagerOpen(
   }
 
   if( pPager && rc==SQLITE_OK ){
-    pPager->pTmpSpace = (char *)sqlite3_malloc(SQLITE_DEFAULT_PAGE_SIZE);
+    pPager->pTmpSpace = (char *)sqlite3_malloc(nDefaultPage);
   }
 
   /* If an error occured in either of the blocks above.
@@ -1970,7 +2001,7 @@ int sqlite3PagerOpen(
   /* pPager->stmtInUse = 0; */
   /* pPager->nRef = 0; */
   pPager->dbSize = memDb-1;
-  pPager->pageSize = SQLITE_DEFAULT_PAGE_SIZE;
+  pPager->pageSize = nDefaultPage;
   /* pPager->stmtSize = 0; */
   /* pPager->stmtJSize = 0; */
   /* pPager->nPage = 0; */
@@ -2056,11 +2087,12 @@ void sqlite3PagerSetReiniter(Pager *pPager, void (*xReinit)(DbPage*,int)){
 ** and returned.
 */
 int sqlite3PagerSetPagesize(Pager *pPager, int pageSize){
-  assert( pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE );
-  if( !pPager->memDb && pPager->nRef==0 ){
+  assert( pageSize==0 || (pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE) );
+  if( pageSize && !pPager->memDb && pPager->nRef==0 ){
     pagerEnter(pPager);
     pager_reset(pPager);
     pPager->pageSize = pageSize;
+    setSectorSize(pPager);
     pagerLeave(pPager);
     sqlite3_free(pPager->pTmpSpace);
     pPager->pTmpSpace = sqlite3_malloc(pageSize);
@@ -4285,7 +4317,7 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
     pPager->pDirty = 0;
 
     /* Sync the database file. */
-    if( !pPager->noSync ){
+    if( !pPager->noSync ){ 
       rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
     }
     IOTRACE(("DBSYNC %p\n", pPager))

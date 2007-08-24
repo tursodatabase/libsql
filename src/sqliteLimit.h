@@ -12,7 +12,7 @@
 ** 
 ** This file defines various limits of what SQLite can process.
 **
-** @(#) $Id: sqliteLimit.h,v 1.1 2007/06/19 15:23:48 drh Exp $
+** @(#) $Id: sqliteLimit.h,v 1.2 2007/08/24 11:52:29 danielk1977 Exp $
 */
 
 /*
@@ -128,6 +128,17 @@
 */
 #ifndef SQLITE_DEFAULT_PAGE_SIZE
 # define SQLITE_DEFAULT_PAGE_SIZE 1024
+#endif
+
+/*
+** Ordinarily, if no value is explicitly provided, SQLite creates databases
+** with page size SQLITE_DEFAULT_PAGE_SIZE. However, based on certain
+** device characteristics (sector-size and atomic write() support),
+** SQLite may choose a larger value. This constant is the maximum value
+** SQLite will choose on it's own.
+*/
+#ifndef SQLITE_MAX_DEFAULT_PAGE_SIZE
+# define SQLITE_MAX_DEFAULT_PAGE_SIZE 8192
 #endif
 
 /* Maximum page size.  The upper bound on this value is 32768.  This a limit

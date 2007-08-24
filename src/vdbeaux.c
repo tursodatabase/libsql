@@ -1192,10 +1192,12 @@ static int vdbeCommit(sqlite3 *db){
       }
     }
 
-
-    /* Sync the master journal file. */
+    /* Sync the master journal file. If the IOCAP_SEQUENTIAL device
+    ** flag is set this is not required.
+    */
     zMainFile = sqlite3BtreeGetDirname(db->aDb[0].pBt);
     if( (needSync 
+     && (0==(sqlite3OsDeviceCharacteristics(pMaster)&SQLITE_IOCAP_SEQUENTIAL))
      && (rc=sqlite3OsSync(pMaster, SQLITE_SYNC_NORMAL))!=SQLITE_OK) ){
       sqlite3OsCloseFree(pMaster);
       sqlite3OsDelete(pVfs, zMaster, 0);
