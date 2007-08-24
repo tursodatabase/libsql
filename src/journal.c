@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** @(#) $Id: journal.c,v 1.2 2007/08/23 08:06:45 danielk1977 Exp $
+** @(#) $Id: journal.c,v 1.3 2007/08/24 08:15:54 danielk1977 Exp $
 */
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
@@ -218,6 +218,17 @@ int sqlite3JournalOpen(
   p->zJournal = zName;
   p->pVfs = pVfs;
   return SQLITE_OK;
+}
+
+/*
+** If the argument p points to a JournalFile structure, and the underlying
+** file has not yet been created, create it now.
+*/
+int sqlite3JournalCreate(sqlite3_file *p){
+  if( p->pMethods!=&JournalFileMethods ){
+    return SQLITE_OK;
+  }
+  return createFile((JournalFile *)p);
 }
 
 /* 

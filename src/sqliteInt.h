@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.598 2007/08/23 02:47:53 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.599 2007/08/24 08:15:54 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1867,6 +1867,7 @@ CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
   int sqlite3JournalOpen(sqlite3_vfs *, const char *, sqlite3_file *, int, int);
   int sqlite3JournalSize(sqlite3_vfs *);
+  int sqlite3JournalCreate(sqlite3_file *);
 #else
   #define sqlite3JournalSize(pVfs) ((pVfs)->szOsFile)
 #endif

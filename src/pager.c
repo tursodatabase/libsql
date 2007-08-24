@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.372 2007/08/24 03:51:34 drh Exp $
+** @(#) $Id: pager.c,v 1.373 2007/08/24 08:15:54 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4192,7 +4192,6 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
   */
   if( pPager->state!=PAGER_SYNCED && !MEMDB && pPager->dirtyCache ){
     PgHdr *pPg;
-    assert( pPager->journalOpen );
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
     /* The atomic-write optimization can be used if all of the
@@ -4206,9 +4205,13 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
     ** If the optimization can be used, then the journal file will never
     ** be created for this transaction.
     */
-    if( !zMaster && pPager->journalOff==jrnlBufferSize(pPager) && nTrunc==0
-      && (0==pPager->pDirty || 0==pPager->pDirty->pDirty)
-    ){
+    int useAtomicWrite = (
+        !zMaster && 
+        pPager->journalOff==jrnlBufferSize(pPager) && 
+        nTrunc==0 && 
+        (0==pPager->pDirty || 0==pPager->pDirty->pDirty)
+    );
+    if( useAtomicWrite ){
       /* Update the nRec field in the journal file. */
       int offset = pPager->journalHdr + sizeof(aJournalMagic);
       assert(pPager->nRec==1);
@@ -4221,7 +4224,12 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
       ** this is safe.
       */
       rc = pager_incr_changecounter(pPager, 1);
-    }else 
+    }else{
+      rc = sqlite3JournalCreate(pPager->jfd);
+      if( rc!=SQLITE_OK ) goto sync_exit;
+    }
+
+    if( !useAtomicWrite )
 #endif
 
     /* If a master journal file name has already been written to the
@@ -4231,6 +4239,7 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
     ** transaction the m-j name will have already been written.
     */
     if( !pPager->setMaster ){
+      assert( pPager->journalOpen );
       rc = pager_incr_changecounter(pPager, 0);
       if( rc!=SQLITE_OK ) goto sync_exit;
 #ifndef SQLITE_OMIT_AUTOVACUUM
