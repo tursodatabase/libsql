@@ -709,7 +709,7 @@ clean:
 	rm -f sqlite3.dll sqlite3.lib sqlite3.def
 
 distclean:	clean
-	rm -f config.log config.status libtool Makefile config.h
+	rm -f config.log config.status libtool Makefile config.h sqlite3.pc
 
 #
 # Windows section
