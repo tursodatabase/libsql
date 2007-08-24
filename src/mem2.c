@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.9 2007/08/24 03:51:34 drh Exp $
+** $Id: mem2.c,v 1.10 2007/08/24 04:15:00 drh Exp $
 */
 
 /*
@@ -447,7 +447,8 @@ void sqlite3_memdebug_dump(const char *zFilename){
   for(pHdr=mem.pFirst; pHdr; pHdr=pHdr->pNext){
     char *z = (char*)pHdr;
     z -= pHdr->nBacktraceSlots*sizeof(void*) + pHdr->nTitle;
-    fprintf(out, "**** %d bytes at %p from %s ****\n", pHdr->iSize,&pHdr[1],z);
+    fprintf(out, "**** %d bytes at %p from %s ****\n", 
+            pHdr->iSize, &pHdr[1], pHdr->nTitle ? z : "???");
     if( pHdr->nBacktrace ){
       fflush(out);
       pBt = (void**)pHdr;
