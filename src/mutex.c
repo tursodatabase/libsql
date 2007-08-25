@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement mutexes for
 ** use by the SQLite core.
 **
-** $Id: mutex.c,v 1.11 2007/08/25 14:39:46 drh Exp $
+** $Id: mutex.c,v 1.12 2007/08/25 16:21:30 drh Exp $
 */
 /*
 ** If SQLITE_MUTEX_APPDEF is defined, then this whole module is
@@ -22,12 +22,26 @@
 #ifndef SQLITE_MUTEX_APPDEF
 
 
-/* This is the beginning of real code
+/* This is the beginning of internal implementation of mutexes
+** for SQLite.
 */
 #include "sqliteInt.h"
 
 /*
-** Figure out what version of the code to use
+** Figure out what version of the code to use.  The choices are
+**
+**   SQLITE_MUTEX_NOOP         For single-threaded applications that
+**                             do not desire error checking.
+**
+**   SQLITE_MUTEX_NOOP_DEBUG   For single-threaded applications with
+**                             error checking to help verify that mutexes
+**                             are being used correctly even though they
+**                             are not needed.  Used when SQLITE_DEBUG is
+**                             defined on single-threaded builds.
+**
+**   SQLITE_MUTEX_PTHREADS     For multi-threaded applications on Unix.
+**
+**   SQLITE_MUTEX_WIN          For multi-threaded applications on Win32.
 */
 #define SQLITE_MUTEX_NOOP 1   /* The default */
 #if defined(SQLITE_DEBUG) && !SQLITE_THREADSAFE
@@ -114,8 +128,8 @@ int sqlite3_mutex_notheld(sqlite3_mutex *pNotUsed){
 ** The mutex object
 */
 struct sqlite3_mutex {
-  int id;
-  int cnt;
+  int id;     /* The mutex type */
+  int cnt;    /* Number of entries without a matching leave */
 };
 
 /*
@@ -170,14 +184,12 @@ void sqlite3_mutex_free(sqlite3_mutex *p){
 */
 void sqlite3_mutex_enter(sqlite3_mutex *p){
   assert( p );
-  assert( p->cnt==0 || p->id==SQLITE_MUTEX_RECURSIVE );
+  assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
   p->cnt++;
 }
 int sqlite3_mutex_try(sqlite3_mutex *p){
   assert( p );
-  if( p->cnt>0 && p->id!=SQLITE_MUTEX_RECURSIVE ){
-    return SQLITE_BUSY;
-  }
+  assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
   p->cnt++;
   return SQLITE_OK;
 }
@@ -189,8 +201,10 @@ int sqlite3_mutex_try(sqlite3_mutex *p){
 ** is not currently allocated.  SQLite will never do either.
 */
 void sqlite3_mutex_leave(sqlite3_mutex *p){
-  assert( p->cnt>0 );
+  assert( p );
+  assert( sqlite3_mutex_held(p) );
   p->cnt--;
+  assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
 }
 
 /*
@@ -369,19 +383,34 @@ void sqlite3_mutex_leave(sqlite3_mutex *p){
   assert( p );
   assert( sqlite3_mutex_held(p) );
   p->nRef--;
+  assert( p->nRef==0 || p->id==SQLITE_MUTEX_RECURSIVE );
   pthread_mutex_unlock(&p->mutex);
 }
 
 /*
 ** The sqlite3_mutex_held() and sqlite3_mutex_notheld() routine are
-** intended for use inside assert() statements.
+** intended for use only inside assert() statements.  On some platforms,
+** there might be race conditions that can cause these routines to
+** deliver incorrect results.  In particular, if pthread_equal() is
+** not an atomic operation, then these routines might delivery
+** incorrect results.  On most platforms, pthread_equal() is a 
+** comparison of two integers and is therefore atomic.  But we are
+** told that HPUX is not such a platform.  If so, then these routines
+** will not always work correctly on HPUX.
+**
+** On those platforms where pthread_equal() is not atomic, SQLite
+** should be compiled without -DSQLITE_DEBUG and with -DNDEBUG to
+** make sure no assert() statements are evaluated and hence these
+** routines are never called.
 */
+#ifndef NDEBUG
 int sqlite3_mutex_held(sqlite3_mutex *p){
   return p==0 || (p->nRef!=0 && pthread_equal(p->owner, pthread_self()));
 }
 int sqlite3_mutex_notheld(sqlite3_mutex *p){
   return p==0 || p->nRef==0 || pthread_equal(p->owner, pthread_self())==0;
 }
+#endif
 #endif /* SQLITE_MUTEX_PTHREAD */
 
 #ifdef SQLITE_MUTEX_WIN
@@ -533,12 +562,13 @@ void sqlite3_mutex_leave(sqlite3_mutex *p){
   assert( p->nRef>0 );
   assert( p->owner==GetCurrentThreadId() );
   p->nRef--;
+  assert( p->nRef==0 || p->id==SQLITE_MUTEX_RECURSIVE );
   LeaveCriticalSection(&p->mutex);
 }
 
 /*
 ** The sqlite3_mutex_held() and sqlite3_mutex_notheld() routine are
-** intended for use inside assert() statements.
+** intended for use only inside assert() statements.
 */
 int sqlite3_mutex_held(sqlite3_mutex *p){
   return p==0 || (p->nRef!=0 && p->owner==GetCurrentThreadId());

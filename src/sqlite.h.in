@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.241 2007/08/25 14:49:37 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.242 2007/08/25 16:21:30 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -117,11 +117,11 @@ int sqlite3_libversion_number(void);
 **
 ** Each open SQLite database is represented by pointer to an instance of the
 ** opaque structure named "sqlite3".  It is useful to think of an sqlite3
-** pointer as an object.  The [sqlite3_open], [sqlite3_open16], and
-** [sqlite3_open_v2] interfaces are its constructors
-** and [sqlite3_close] is its destructor.  There are many other interfaces
-** (such as [sqlite3_prepare_v2], [sqlite3_create_function], and
-** [sqlite3_busy_timeout] to name but three) that are methods on this
+** pointer as an object.  The [sqlite3_open()], [sqlite3_open16()], and
+** [sqlite3_open_v2()] interfaces are its constructors
+** and [sqlite3_close()] is its destructor.  There are many other interfaces
+** (such as [sqlite3_prepare_v2()], [sqlite3_create_function()], and
+** [sqlite3_busy_timeout()] to name but three) that are methods on this
 ** object.
 */
 typedef struct sqlite3 sqlite3;
@@ -904,27 +904,27 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 **
 ** As an example, suppose the query result where this table:
 **
-** <pre>
+** <blockquote><pre>
 **        Name        | Age
 **        -----------------------
 **        Alice       | 43
 **        Bob         | 28
 **        Cindy       | 21
-** </pre>
+** </pre></blockquote>
 **
 ** If the 3rd argument were &azResult then after the function returns
 ** azResult will contain the following data:
 **
-** <pre>
-**        azResult[0] = "Name";
-**        azResult[1] = "Age";
-**        azResult[2] = "Alice";
-**        azResult[3] = "43";
-**        azResult[4] = "Bob";
-**        azResult[5] = "28";
-**        azResult[6] = "Cindy";
-**        azResult[7] = "21";
-** </pre>
+** <blockquote><pre>
+**        azResult&#91;0] = "Name";
+**        azResult&#91;1] = "Age";
+**        azResult&#91;2] = "Alice";
+**        azResult&#91;3] = "43";
+**        azResult&#91;4] = "Bob";
+**        azResult&#91;5] = "28";
+**        azResult&#91;6] = "Cindy";
+**        azResult&#91;7] = "21";
+** </pre></blockquote>
 **
 ** Notice that there is an extra row of data containing the column
 ** headers.  But the *nrow return value is still 3.  *ncolumn is
@@ -1051,7 +1051,7 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 ** CAPI3REF: Memory Allocation Subsystem
 **
 ** The SQLite core uses these three routines for all of its own
-** internal memory allocation needs.  The default implementation
+** internal memory allocation needs. The default implementation
 ** of the memory allocation subsystem uses the malloc(), realloc()
 ** and free() provided by the standard C library.  However, if 
 ** SQLite is compiled with the following C preprocessor macro
@@ -1060,7 +1060,18 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 **
 ** then no implementation is provided for these routines by
 ** SQLite.  The application that links against SQLite is
-** expected to provide its own implementation.
+** expected to provide its own implementation.  If the application
+** does provide its own implementation for these routines, then
+** it must also provide an implementation for
+** [sqlite3_memory_alarm()].
+**
+** <b>Exception:</b> The windows OS interface layer calls
+** the system malloc() and free() directly when converting
+** filenames between the UTF-8 encoding used by SQLite
+** and whatever filename encoding is used by the particular windows
+** installation.  Memory allocation errors are detected, but
+** they are reported back as [SQLITE_CANTOPEN] or
+** [SQLITE_IOERR] rather than [SQLITE_NOMEM].
 */
 void *sqlite3_malloc(int);
 void *sqlite3_realloc(void*, int);
@@ -1113,7 +1124,10 @@ sqlite3_int64 sqlite3_memory_highwater(int resetFlag);
 ** [sqlite3_release_memory()] in the alarm callback.  Application
 ** programs should not attempt to use the [sqlite3_memory_alarm()]
 ** interface because doing so will interfere with the
-** [sqlite3_soft_heap_limit()] module.
+** [sqlite3_soft_heap_limit()] module.  This interface is exposed
+** only so that applications can provide their own
+** alternative implementation when the SQLite core is
+** compiled with SQLITE_OMIT_MEMORY_ALLOCATION.
 */
 int sqlite3_memory_alarm(
   void(*xCallback)(void *pArg, sqlite3_int64 used, int N),
@@ -1633,7 +1647,7 @@ int sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n);
 ** numbering and the value returned by this interface is the index of the
 ** host parameter with the largest index value.
 **
-** The prepared statement must not not be [sqlite3_finalize | finalized]
+** The prepared statement must not be [sqlite3_finalize | finalized]
 ** prior to this routine returnning.  Otherwise the results are undefined
 ** and probably undesirable.
 */
@@ -1963,8 +1977,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 **
 ** <blockquote>
 ** <table border="1">
-** <tr><th> Internal <th> Requested <th> 
-** <tr><th>  Type    <th>    Type   <th> Conversion
+** <tr><th> Internal<br>Type <th> Requested<br>Type <th>  Conversion
 **
 ** <tr><td>  NULL    <td> INTEGER   <td> Result is 0
 ** <tr><td>  NULL    <td>  FLOAT    <td> Result is 0.0
@@ -2524,6 +2537,9 @@ int sqlite3_rekey(
 ** millisecond time resolution, then the time will be rounded up to 
 ** the nearest second. The number of milliseconds of sleep actually 
 ** requested from the operating system is returned.
+**
+** SQLite implements this interface by calling the xSleep()
+** method of the default [sqlite3_vfs] object.
 */
 int sqlite3_sleep(int);
 
@@ -2696,7 +2712,10 @@ int sqlite3_release_memory(int);
 ** Prior to SQLite version 3.5.0, this routine only constrained the memory
 ** allocated by a single thread - the same thread in which this routine
 ** runs.  Beginning with SQLite version 3.5.0, the soft heap limit is
-** applied cumulatively to all threads.
+** applied to all threads.  The value specified for the soft heap limit
+** is an bound on the total memory allocation for all threads.  In
+** version 3.5.0 there is no mechanism for limiting the heap usage for
+** individual threads.
 */
 void sqlite3_soft_heap_limit(int);
 
@@ -3226,28 +3245,30 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** permitted to use any of these routines.
 **
 ** The SQLite source code contains multiple implementations 
-** of these mutex routines that can be selected at compile-time
-** by defining one of the following C preprocessor macros:
+** of these mutex routines.  An appropriate implementation
+** is selected automatically at compile-time.  The following
+** implementations are available in the SQLite core:
 **
 ** <ul>
 ** <li>   SQLITE_MUTEX_PTHREAD
-** <li>   SQLITE_MUTEX_WIN32
+** <li>   SQLITE_MUTEX_WIN
 ** <li>   SQLITE_MUTEX_NOOP
-** <li>   SQLITE_MUTEX_APPDEF
 ** </ul>
 **
-** If none of the above macros is defined, the code uses
-** a default implementation.  
-** 
 ** The SQLITE_MUTEX_NOOP implementation is a set of routines 
 ** that does no real locking and is appropriate for use in 
-** a single-threaded application.
+** a single-threaded application.  The SQLITE_MUTEX_PTHREAD
+** and SQLITE_MUTEX_WIN implementations are appropriate for
+** use on unix and windows.
 ** 
-** If the SQLITE_MUTEX_APPDEF is defined, then no mutex
+** If SQLite is compiled with the SQLITE_MUTEX_APPDEF preprocessor
+** macro defined (with "-DSQLITE_MUTEX_APPDEF=1"), then no mutex
 ** implementation is included with the library.  The
-** mutex interface routines defined above are external
+** mutex interface routines defined here become external
 ** references in the SQLite library for which implementations
-** must be provided by the application.
+** must be provided by the application.  This facility allows an
+** application that links against SQLite to provide its own mutex
+** implementation without having to modify the SQLite core.
 **
 ** The sqlite3_mutex_alloc() routine allocates a new
 ** mutex and returns a pointer to it.  If it returns NULL
@@ -3275,7 +3296,7 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** might return such a mutex in response to SQLITE_MUTEX_FAST.
 **
 ** The other allowed parameters to sqlite3_mutex_alloc() each return
-** a pointer to a static preexisting mutex.  Three static mutexes are
+** a pointer to a static preexisting mutex.  Four static mutexes are
 ** used by the current version of SQLite.  Future versions of SQLite
 ** may add additional static mutexes.  Static mutexes are for internal
 ** use by SQLite only.  Applications that use SQLite mutexes should
@@ -3306,22 +3327,41 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** more than once, the behavior is undefined.   SQLite will never exhibit
 ** such behavior in its own use of mutexes.
 **
-** The sqlite3_mutex_exit() routine exits a mutex that was
+** The sqlite3_mutex_leave() routine exits a mutex that was
 ** previously entered by the same thread.  The behavior
-** is undefined if the mutex is not currently entered or
-** is not currently allocated.  SQLite will never do either.
+** is undefined if the mutex is not currently entered by the
+** calling thread or is not currently allocated.  SQLite will
+** never do either.
+**
+** See also: [sqlite3_mutex_held()] and [sqlite3_mutex_notheld()].
+*/
+sqlite3_mutex *sqlite3_mutex_alloc(int);
+void sqlite3_mutex_free(sqlite3_mutex*);
+void sqlite3_mutex_enter(sqlite3_mutex*);
+int sqlite3_mutex_try(sqlite3_mutex*);
+void sqlite3_mutex_leave(sqlite3_mutex*);
+
+/*
+** CAPI3REF: Mutex Verifcation Routines
 **
 ** The sqlite3_mutex_held() and sqlite3_mutex_notheld() routines
 ** are intended for use inside assert() statements.  The SQLite core
 ** never uses these routines except inside an assert() and applications
-** are advised to follow the lead of the core.  These routines should
-** return true if the mutex in their argument is held or not held,
-** respectively, by the current thread. The implementation is
-** not required to provided working implementations of these
-** routines as their intended use is within assert() statements
-** only.  If the implementation does not provide working
-** versions of these routines, it must at least provide stubs
-** that always return true.
+** are advised to follow the lead of the core.  The core only
+** provides implementations for these routines when it is compiled
+** with the SQLITE_DEBUG flag.  External mutex implementations
+** are only required to provide these routines if SQLITE_DEBUG is
+** defined and if NDEBUG is not defined.
+**
+** These routines should return true if the mutex in their argument
+** is held or not held, respectively, by the calling thread.
+**
+** The implementation is not required to provided versions of these
+** routines that actually work.
+** If the implementation does not provide working
+** versions of these routines, it should at least provide stubs
+** that always return true so that one does not get spurious
+** assertion failures.
 **
 ** If the argument to sqlite3_mutex_held() is a NULL pointer then
 ** the routine should return 1.  This seems counter-intuitive since
@@ -3332,11 +3372,6 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** the appropriate thing to do.  The sqlite3_mutex_notheld() 
 ** interface should also return 1 when given a NULL pointer.
 */
-sqlite3_mutex *sqlite3_mutex_alloc(int);
-void sqlite3_mutex_free(sqlite3_mutex*);
-void sqlite3_mutex_enter(sqlite3_mutex*);
-int sqlite3_mutex_try(sqlite3_mutex*);
-void sqlite3_mutex_leave(sqlite3_mutex*);
 int sqlite3_mutex_held(sqlite3_mutex*);
 int sqlite3_mutex_notheld(sqlite3_mutex*);
 

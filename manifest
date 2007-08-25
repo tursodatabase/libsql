@@ -1,5 +1,5 @@
-C Clarification\sin\sthe\sdocumentation\sof\sthe\ssqlite3_mutex_held()\sand\nsqlite3_mutex_notheld()\sinterfaces.\s\sMake\sit\sclear\sthat\sthese\sroutines\nare\sonly\sfor\suse\sinside\sassert().\s(CVS\s4298)
-D 2007-08-25T14:49:37
+C Documentation\sand\scomment\supdates\sin\ssqlite.h.in\sand\smutex.c.\s(CVS\s4299)
+D 2007-08-25T16:21:30
 F Makefile.in 938f2769921fa1b30c633548f153804021eb1512
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -103,7 +103,7 @@ F src/malloc.c d4282f50964ab1ca31f504c97b7cf2fdb4d4195d
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c afe2fbf6d7e8247c6c9f69c1481358b1cad60c08
 F src/mem2.c 1a2ca756a285b5365d667841508cc1f98938b8d8
-F src/mutex.c 81e4c57389ba5851b6bc78c704508f0a1d8659b8
+F src/mutex.c 676c77a92127d27862d880f7789805f753737f00
 F src/os.c a8ed3c495161475dbce255f7003144144fb425f1
 F src/os.h 2bfbbad126a775e4d8c7d59eb4d9585a5fd7dfb5
 F src/os_common.h a5c446d3b93f09f369d13bf217de4bed3437dd1c
@@ -125,7 +125,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 98c367bce3f38c5adfcc97de9ab5c79b0e5dc2b2
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in 7dfaf428b5f76fcacf17a346f253d74f60f8dbe6
+F src/sqlite.h.in 50c8b68c7470b91653157d3554caa8a1287d90e3
 F src/sqlite3ext.h 9a26028378c288af500d8b94ed079666fed5806b
 F src/sqliteInt.h 13c908f5f156a192fcd247f993ac513bfaf81f53
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
@@ -561,7 +561,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1668284d151e78d16b0d83bf55dfd9d349a452a7
-R 7564b5bfcb8bbb8ed0a65088101cdf1b
+P a6bbf6eaf6ccc471b4efe02cd8a3971112d909ab
+R 5aa8de70c5a923723a89fce8d25cd561
 U drh
-Z 24484f519020cb40e59b1e0abccf1bd2
+Z dd6162fabca2e02bb42b3381cc2f1528
