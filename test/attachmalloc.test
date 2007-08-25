@@ -12,98 +12,13 @@
 # focus of this script is testing the ATTACH statement and
 # specifically out-of-memory conditions within that command.
 #
-# $Id: attachmalloc.test,v 1.3 2006/09/04 18:54:14 drh Exp $
+# $Id: attachmalloc.test,v 1.4 2007/08/25 13:37:49 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-# Only run these tests if memory debugging is turned on.
-#
-if {[info command sqlite_malloc_stat]==""} {
-  puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG=1"
-  finish_test
-  return
-}
-
-
-# Usage: do_malloc_test <test name> <options...>
-#
-# The first argument, <test number>, is an integer used to name the
-# tests executed by this proc. Options are as follows:
-#
-#     -tclprep          TCL script to run to prepare test.
-#     -sqlprep          SQL script to run to prepare test.
-#     -tclbody          TCL script to run with malloc failure simulation.
-#     -sqlbody          TCL script to run with malloc failure simulation.
-#     -cleanup          TCL script to run after the test.
-#
-# This command runs a series of tests to verify SQLite's ability
-# to handle an out-of-memory condition gracefully. It is assumed
-# that if this condition occurs a malloc() call will return a
-# NULL pointer. Linux, for example, doesn't do that by default. See
-# the "BUGS" section of malloc(3).
-#
-# Each iteration of a loop, the TCL commands in any argument passed
-# to the -tclbody switch, followed by the SQL commands in any argument
-# passed to the -sqlbody switch are executed. Each iteration the
-# Nth call to sqliteMalloc() is made to fail, where N is increased
-# each time the loop runs starting from 1. When all commands execute
-# successfully, the loop ends.
-#
-proc do_malloc_test {tn args} {
-  array set ::mallocopts $args
-
-  set ::go 1
-  for {set ::n 1} {$::go} {incr ::n} {
-
-    do_test $tn.$::n {
-
-      sqlite_malloc_fail 0
-      catch {db close}
-      catch {file delete -force test.db}
-      catch {file delete -force test.db-journal}
-      catch {file delete -force test2.db}
-      catch {file delete -force test2.db-journal}
-      set ::DB [sqlite3 db test.db]
-
-      if {[info exists ::mallocopts(-tclprep)]} {
-        eval $::mallocopts(-tclprep)
-      }
-      if {[info exists ::mallocopts(-sqlprep)]} {
-        execsql $::mallocopts(-sqlprep)
-      }
-
-      sqlite_malloc_fail $::n
-      set ::mallocbody {}
-      if {[info exists ::mallocopts(-tclbody)]} {
-        append ::mallocbody "$::mallocopts(-tclbody)\n"
-      }
-      if {[info exists ::mallocopts(-sqlbody)]} {
-        append ::mallocbody "db eval {$::mallocopts(-sqlbody)}"
-      }
-
-      set v [catch $::mallocbody msg]
-
-      set leftover [lindex [sqlite_malloc_stat] 2]
-      if {$leftover>0} {
-        if {$leftover>1} {puts "\nLeftover: $leftover\nReturn=$v  Message=$msg"}
-        set ::go 0
-        set v {1 1}
-      } else {
-        set v2 [expr {$msg=="" || $msg=="out of memory"}]
-        if {!$v2} {puts "\nError message returned: $msg"}
-        lappend v $v2
-      }
-    } {1 1}
-    sqlite_malloc_fail 0
-
-    if {[info exists ::mallocopts(-cleanup)]} {
-      catch $::mallocopts(-cleanup)
-    }
-  }
-  unset ::mallocopts
-}
+source $testdir/malloc_common.tcl
 
 do_malloc_test attachmalloc-1 -tclprep {
   db close

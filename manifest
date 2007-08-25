@@ -1,5 +1,5 @@
-C Fix\sbugs\sin\sthe\saltermalloc.test\sand\sincrblob_err.test\sscripts.\s(CVS\s4295)
-D 2007-08-25T13:09:26
+C Update\sthe\srest\sof\sthe\smalloc\sfailure\stest\sscripts\sto\suse\sthe\snew\sinterface.\s(CVS\s4296)
+D 2007-08-25T13:37:49
 F Makefile.in 938f2769921fa1b30c633548f153804021eb1512
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -138,7 +138,7 @@ F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
 F src/test6.c a6223d9d938aba83f20611a2c01680d8043cd2f7
 F src/test7.c a9d509d0e9ad214b4772696f49f6e61be26213d1
-F src/test8.c e6a543c8b248efe120ae33a6859fcd55dcf46a96
+F src/test8.c a91b8d28341bbd168f5ba1ecad2be1008ddf15d1
 F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
 F src/test_async.c 12ff3db0e052f561596d4dbdd29272f28b25060d
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
@@ -180,7 +180,7 @@ F test/async2.test 8f2c70b831dac7292450d0a42580cf2dab497dbb
 F test/attach.test cf289abdb120053136649efd1306ab9d47fa41b2
 F test/attach2.test 78bc1a25ea8785c7571b44f5947ada2bd5d78127
 F test/attach3.test eafcafb107585aecc2ed1569a77914138eef46a9
-F test/attachmalloc.test 03eeddd06e685ddbe975efd51824e4941847e5f4
+F test/attachmalloc.test c558251bcc3a2408d11fca42b9cee574fa3d74c2
 F test/auth.test 66923137cf78475f5671b5e6e6274935e055aea0
 F test/auth2.test 8da06f0ffcfd98154dda78e0f3b35a6503c27b64
 F test/autoinc.test 60005a676e3e4e17dfa9dbd08aa0b76587ff97e3
@@ -207,9 +207,9 @@ F test/btree9.test 5d8711b241145b90f65dd1795d5dd8290846fa5e
 F test/busy.test 0271c854738e23ad76e10d4096a698e5af29d211
 F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
 F test/capi2.test 3c5066836cbaa9923bcc8282c010aa227bb5efd4
-F test/capi3.test b436e762c01a9cb2235d4de8b55af3b887f0e384
+F test/capi3.test e1b40aa127de9ecfcca707f359d68b993ef38b4c
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
-F test/capi3c.test 76a3fb94755288a2977ee387e95305e6224c0198
+F test/capi3c.test 787ce050fd5e09e419c920f91c7f404e62e20cd8
 F test/cast.test c4780b58b569bab4947458195410ae8791ac216b
 F test/check.test 024ed399600b799160378cf9d9f436bdf5dfd184
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
@@ -301,7 +301,7 @@ F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
-F test/fuzz_malloc.test e2f1e74127ad7ab8fbeacc0f16d059a81c8f3ea6
+F test/fuzz_malloc.test 18f1502b2d926b47dba90728f1573928abd96a80
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -398,7 +398,7 @@ F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
 F test/shared.test 08b30d5f1939efff0517e7ff8ec7b74ad31c151b
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
-F test/shared_err.test cc528f6e78665787e93d9ce3a782a2ce5179d821
+F test/shared_err.test 9fa070e3e7d63022a81b6156ac71f114c0678e3d
 F test/soak.test 64f9b27fbcdec43335a88c546ce1983e6ba40d7b
 F test/softheap1.test 0c49aa6eee25e7d32943e85e8d1f20eff566b1dc
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
@@ -475,7 +475,7 @@ F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
 F test/vtabA.test 9cb6b1afead6fdd91bbdf1ca65c44ccfd9b10936
 F test/vtab_alter.test 87617789086fd1767aa071e7805f1af7e1dac144
-F test/vtab_err.test 9eabf98b26838fed8bac4aea986580be0a2bd52e
+F test/vtab_err.test f63f4c96bcd403076d49393136fb4fd9e0c5b402
 F test/vtab_shared.test d631d1f820c38c18939d53aab1fc35db5f0a8094
 F test/where.test 1bcde8984c63747ac6d6bafcacd20fd6e8a223de
 F test/where2.test 3249d426b3fc7a106713d784e1628307fc308d2e
@@ -561,7 +561,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 686fcfeda407c29cdb51fe814da616f1ccac5414
-R 79030448b310160e2ed68e6b77c89fcc
+P e5ec17071720a973bbd213a8b23038d3aff25315
+R a2a459ce4d89b3260dd62868dc774bc5
 U danielk1977
-Z f916d879cdbedc415720abb0ce0c3ff1
+Z 07d9ea0b58d791968ed1c4e04f1541a3

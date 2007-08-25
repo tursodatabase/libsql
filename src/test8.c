@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.53 2007/08/23 02:47:53 drh Exp $
+** $Id: test8.c,v 1.54 2007/08/25 13:37:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -303,29 +303,31 @@ static int echoDeclareVtab(
 
   if( pVtab->zTableName ){
     sqlite3_stmt *pStmt = 0;
-    sqlite3_prepare(db, 
+    rc = sqlite3_prepare(db, 
         "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?",
         -1, &pStmt, 0);
-    sqlite3_bind_text(pStmt, 1, pVtab->zTableName, -1, 0);
-    if( sqlite3_step(pStmt)==SQLITE_ROW ){
-      int rc2;
-      const char *zCreateTable = (const char *)sqlite3_column_text(pStmt, 0);
-      rc = sqlite3_declare_vtab(db, zCreateTable);
-      rc2 = sqlite3_finalize(pStmt);
+    if( rc==SQLITE_OK ){
+      sqlite3_bind_text(pStmt, 1, pVtab->zTableName, -1, 0);
+      if( sqlite3_step(pStmt)==SQLITE_ROW ){
+        int rc2;
+        const char *zCreateTable = (const char *)sqlite3_column_text(pStmt, 0);
+        rc = sqlite3_declare_vtab(db, zCreateTable);
+        rc2 = sqlite3_finalize(pStmt);
+        if( rc==SQLITE_OK ){
+          rc = rc2;
+        }
+      } else {
+        rc = sqlite3_finalize(pStmt);
+        if( rc==SQLITE_OK ){ 
+          rc = SQLITE_ERROR;
+        }
+      }
       if( rc==SQLITE_OK ){
-        rc = rc2;
+        rc = getColumnNames(db, pVtab->zTableName, &pVtab->aCol, &pVtab->nCol);
       }
-    } else {
-      rc = sqlite3_finalize(pStmt);
-      if( rc==SQLITE_OK ){ 
-        rc = SQLITE_ERROR;
+      if( rc==SQLITE_OK ){
+        rc = getIndexArray(db, pVtab->zTableName, pVtab->nCol, &pVtab->aIndex);
       }
-    }
-    if( rc==SQLITE_OK ){
-      rc = getColumnNames(db, pVtab->zTableName, &pVtab->aCol, &pVtab->nCol);
-    }
-    if( rc==SQLITE_OK ){
-      rc = getIndexArray(db, pVtab->zTableName, pVtab->nCol, &pVtab->aIndex);
     }
   }
 
@@ -784,6 +786,9 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   appendToEchoModule(pVtab->interp, "xBestIndex");;
   appendToEchoModule(pVtab->interp, zQuery);
 
+  if( !zQuery ){
+    return SQLITE_NOMEM;
+  }
   pIdxInfo->idxNum = hashString(zQuery);
   pIdxInfo->idxStr = zQuery;
   pIdxInfo->needToFreeIdxStr = 1;
