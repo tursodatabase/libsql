@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement mutexes for
 ** use by the SQLite core.
 **
-** $Id: mutex.c,v 1.12 2007/08/25 16:21:30 drh Exp $
+** $Id: mutex.c,v 1.13 2007/08/25 16:31:30 drh Exp $
 */
 /*
 ** If SQLITE_MUTEX_APPDEF is defined, then this whole module is
@@ -289,22 +289,14 @@ sqlite3_mutex *sqlite3_mutex_alloc(int iType){
   sqlite3_mutex *p;
   switch( iType ){
     case SQLITE_MUTEX_RECURSIVE: {
-      static pthread_mutex_t initMutex = PTHREAD_MUTEX_INITIALIZER;
-      static int isInit = 0;
-      static pthread_mutexattr_t recursiveAttr;
-      if( !isInit ){
-        pthread_mutex_lock(&initMutex);
-        if( !isInit ){
-          pthread_mutexattr_init(&recursiveAttr);
-          pthread_mutexattr_settype(&recursiveAttr, PTHREAD_MUTEX_RECURSIVE);
-        }
-        isInit = 1;
-        pthread_mutex_unlock(&initMutex);
-      }
       p = sqlite3MallocZero( sizeof(*p) );
       if( p ){
-        p->id = iType;
+        pthread_mutexattr_t recursiveAttr;
+        pthread_mutexattr_init(&recursiveAttr);
+        pthread_mutexattr_settype(&recursiveAttr, PTHREAD_MUTEX_RECURSIVE);
         pthread_mutex_init(&p->mutex, &recursiveAttr);
+        pthread_mutexattr_destroy(&recursiveAttr);
+        p->id = iType;
       }
       break;
     }
