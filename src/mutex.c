@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement mutexes for
 ** use by the SQLite core.
 **
-** $Id: mutex.c,v 1.10 2007/08/25 03:59:09 drh Exp $
+** $Id: mutex.c,v 1.11 2007/08/25 14:39:46 drh Exp $
 */
 /*
 ** If SQLITE_MUTEX_APPDEF is defined, then this whole module is
@@ -208,10 +208,10 @@ int sqlite3_mutex_notheld(sqlite3_mutex *p){
 
 
 #ifdef SQLITE_MUTEX_PTHREAD
-/**************** Non-recursive Pthread Mutex Implementation *****************
+/******************** Pthread Mutex Implementation *********************
 **
 ** This implementation of mutexes is built using a version of pthreads that
-** does not have native support for recursive mutexes.
+** has native support for recursive mutexes.
 */
 #include <pthread.h>
 
@@ -274,8 +274,27 @@ sqlite3_mutex *sqlite3_mutex_alloc(int iType){
   };
   sqlite3_mutex *p;
   switch( iType ){
-    case SQLITE_MUTEX_FAST:
     case SQLITE_MUTEX_RECURSIVE: {
+      static pthread_mutex_t initMutex = PTHREAD_MUTEX_INITIALIZER;
+      static int isInit = 0;
+      static pthread_mutexattr_t recursiveAttr;
+      if( !isInit ){
+        pthread_mutex_lock(&initMutex);
+        if( !isInit ){
+          pthread_mutexattr_init(&recursiveAttr);
+          pthread_mutexattr_settype(&recursiveAttr, PTHREAD_MUTEX_RECURSIVE);
+        }
+        isInit = 1;
+        pthread_mutex_unlock(&initMutex);
+      }
+      p = sqlite3MallocZero( sizeof(*p) );
+      if( p ){
+        p->id = iType;
+        pthread_mutex_init(&p->mutex, &recursiveAttr);
+      }
+      break;
+    }
+    case SQLITE_MUTEX_FAST: {
       p = sqlite3MallocZero( sizeof(*p) );
       if( p ){
         p->id = iType;
@@ -320,26 +339,19 @@ void sqlite3_mutex_free(sqlite3_mutex *p){
 ** more than once, the behavior is undefined.
 */
 void sqlite3_mutex_enter(sqlite3_mutex *p){
-  pthread_t self = pthread_self();
-  if( p->nRef>0 && pthread_equal(p->owner, self) ){
-    p->nRef++;
-  }else{
-    pthread_mutex_lock(&p->mutex);
-    assert( p->nRef==0 );
-    p->owner = self;
-    p->nRef = 1;
-  }
+  assert( p );
+  assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
+  pthread_mutex_lock(&p->mutex);
+  p->owner = pthread_self();
+  p->nRef++;
 }
 int sqlite3_mutex_try(sqlite3_mutex *p){
-  pthread_t self = pthread_self();
   int rc;
-  if( p->nRef>0 && pthread_equal(p->owner, self) ){
+  assert( p );
+  assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
+  if( pthread_mutex_trylock(&p->mutex)==0 ){
+    p->owner = pthread_self();
     p->nRef++;
-    rc = SQLITE_OK;
-  }else if( pthread_mutex_lock(&p->mutex)==0 ){
-    assert( p->nRef==0 );
-    p->owner = self;
-    p->nRef = 1;
     rc = SQLITE_OK;
   }else{
     rc = SQLITE_BUSY;
@@ -354,12 +366,10 @@ int sqlite3_mutex_try(sqlite3_mutex *p){
 ** is not currently allocated.  SQLite will never do either.
 */
 void sqlite3_mutex_leave(sqlite3_mutex *p){
-  assert( pthread_equal(p->owner, pthread_self()) );
-  assert( p->nRef>0 );
+  assert( p );
+  assert( sqlite3_mutex_held(p) );
   p->nRef--;
-  if( p->nRef==0 ){
-    pthread_mutex_unlock(&p->mutex);
-  }
+  pthread_mutex_unlock(&p->mutex);
 }
 
 /*
@@ -493,12 +503,16 @@ void sqlite3_mutex_free(sqlite3_mutex *p){
 ** more than once, the behavior is undefined.
 */
 void sqlite3_mutex_enter(sqlite3_mutex *p){
+  assert( p );
+  assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
   EnterCriticalSection(&p->mutex);
   p->owner = GetCurrentThreadId(); 
   p->nRef++;
 }
 int sqlite3_mutex_try(sqlite3_mutex *p){
   int rc;
+  assert( p );
+  assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
   if( TryEnterCriticalSection(&p->mutex) ){
     p->owner = GetCurrentThreadId();
     p->nRef++;

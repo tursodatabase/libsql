@@ -11,12 +11,13 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.599 2007/08/24 08:15:54 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.600 2007/08/25 14:39:46 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
 #include "sqliteLimit.h"
 
+#define _XOPEN_SOURCE 500  /* Needed to enable pthread recursive mutexes */
 
 #if defined(SQLITE_TCL) || defined(TCLSH)
 # include <tcl.h>
