@@ -1,4 +1,10 @@
 
+ifcapable !memdebug {
+  puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
+  finish_test
+  return
+}
+
 # Usage: do_malloc_test <test number> <options...>
 #
 # The first argument, <test number>, is an integer used to name the
