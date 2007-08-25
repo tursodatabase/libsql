@@ -75,12 +75,9 @@
 
 /*
 ** This test uses pthreads and hence only works on unix and with
-** a threadsafe build of SQLite.  It also requires that the redefinable
-** I/O feature of SQLite be turned on.  This feature is turned off by
-** default.  If a required element is missing, almost all of the code
-** in this file is commented out.
+** a threadsafe build of SQLite.
 */
-#if OS_UNIX && SQLITE_THREADSAFE && defined(SQLITE_ENABLE_REDEF_IO)
+#if OS_UNIX && SQLITE_THREADSAFE
 
 /*
 ** This demo uses pthreads.  If you do not have a pthreads implementation
@@ -97,6 +94,7 @@
 /* Forward references */
 typedef struct AsyncWrite AsyncWrite;
 typedef struct AsyncFile AsyncFile;
+typedef struct AsyncFileData AsyncFileData;
 
 /* Enable for debugging */
 static int sqlite3async_trace = 0;
@@ -280,8 +278,7 @@ static const char *azOpcodeName[] = {
 **     nByte   -> Number of bytes of data to write (pointed to by zBuf).
 **
 ** ASYNC_SYNC:
-**     iOffset -> Unused.
-**     nByte   -> Value of "fullsync" flag to pass to sqlite3OsSync().
+**     nByte   -> flags to pass to sqlite3OsSync().
 **
 ** ASYNC_TRUNCATE:
 **     iOffset -> Size to truncate file to.
@@ -301,7 +298,7 @@ static const char *azOpcodeName[] = {
 **
 **
 ** ASYNC_DELETE:
-**     iOffset -> Unused.
+**     iOffset -> Contains the "syncDir" flag.
 **     nByte   -> Number of bytes of zBuf points to (file name).
 **
 ** ASYNC_OPENEXCLUSIVE:
@@ -315,8 +312,8 @@ static const char *azOpcodeName[] = {
 ** structure.
 */
 struct AsyncWrite {
-  AsyncFile *pFile;   /* File to write data to or sync */
-  int op;             /* One of ASYNC_xxx etc. */
+  AsyncFileData *pFileData;    /* File to write data to or sync */
+  int op;                      /* One of ASYNC_xxx etc. */
   i64 iOffset;        /* See above */
   int nByte;          /* See above */
   char *zBuf;         /* Data to write to file (or NULL if op!=ASYNC_WRITE) */
@@ -324,15 +321,25 @@ struct AsyncWrite {
 };
 
 /* 
-** The AsyncFile structure is a subclass of OsFile used for asynchronous IO.
+** The AsyncFile structure is a subclass of sqlite3_file used for 
+** asynchronous IO. 
+**
+** All of the actual data for the structure is stored in the structure
+** pointed to by AsyncFile.pData, which is allocated as part of the
+** sqlite3OsOpen() using sqlite3_malloc(). The reason for this is that the
+** lifetime of the AsyncFile structure is ended by the caller after OsClose()
+** is called, but the data in AsyncFileData may be required by the
+** writer thread after that point.
 */
 struct AsyncFile {
-  IoMethod *pMethod;   /* Must be first */
-  i64 iOffset;         /* Current seek() offset in file */
-  char *zName;         /* Underlying OS filename - used for debugging */
-  int nName;           /* Number of characters in zName */
-  OsFile *pBaseRead;   /* Read handle to the underlying Os file */
-  OsFile *pBaseWrite;  /* Write handle to the underlying Os file */
+  sqlite3_io_methods *pMethod;
+  AsyncFileData *pData;
+};
+struct AsyncFileData {
+  char *zName;               /* Underlying OS filename - used for debugging */
+  int nName;                 /* Number of characters in zName */
+  sqlite3_file *pBaseRead;   /* Read handle to the underlying Os file */
+  sqlite3_file *pBaseWrite;  /* Write handle to the underlying Os file */
 };
 
 /*
@@ -359,7 +366,7 @@ static void addAsyncWrite(AsyncWrite *pWrite){
   }
   async.pQueueLast = pWrite;
   ASYNC_TRACE(("PUSH %p (%s %s %d)\n", pWrite, azOpcodeName[pWrite->op],
-         pWrite->pFile ? pWrite->pFile->zName : "-", pWrite->iOffset));
+         pWrite->pFileData ? pWrite->pFileData->zName : "-", pWrite->iOffset));
 
   if( pWrite->op==ASYNC_CLOSE ){
     async.nFile--;
@@ -394,7 +401,7 @@ static void incrOpenFileCount(){
 ** structure and insert it (via addAsyncWrite() ) into the global list.
 */
 static int addNewAsyncWrite(
-  AsyncFile *pFile, 
+  AsyncFileData *pFileData, 
   int op, 
   i64 iOffset, 
   int nByte,
@@ -411,7 +418,7 @@ static int addNewAsyncWrite(
   p->op = op;
   p->iOffset = iOffset;
   p->nByte = nByte;
-  p->pFile = pFile;
+  p->pFileData = pFileData;
   p->pNext = 0;
   if( zByte ){
     p->zBuf = (char *)&p[1];
@@ -427,8 +434,9 @@ static int addNewAsyncWrite(
 ** Close the file. This just adds an entry to the write-op list, the file is
 ** not actually closed.
 */
-static int asyncClose(OsFile **pId){
-  return addNewAsyncWrite((AsyncFile *)*pId, ASYNC_CLOSE, 0, 0, 0);
+static int asyncClose(sqlite3_file *pFile){
+  AsyncFileData *p = ((AsyncFile *)pFile)->pData;
+  return addNewAsyncWrite(p, ASYNC_CLOSE, 0, 0, 0);
 }
 
 /*
@@ -437,45 +445,9 @@ static int asyncClose(OsFile **pId){
 ** the global AsyncWrite list. Either SQLITE_OK or SQLITE_NOMEM may be
 ** returned.
 */
-static int asyncWrite(OsFile *id, const void *pBuf, int amt){
-  AsyncFile *pFile = (AsyncFile *)id;
-  int rc = addNewAsyncWrite(pFile, ASYNC_WRITE, pFile->iOffset, amt, pBuf);
-  pFile->iOffset += (i64)amt;
-  return rc;
-}
-
-/*
-** Truncate the file to nByte bytes in length. This just adds an entry to 
-** the write-op list, no IO actually takes place.
-*/
-static int asyncTruncate(OsFile *id, i64 nByte){
-  return addNewAsyncWrite((AsyncFile *)id, ASYNC_TRUNCATE, nByte, 0, 0);
-}
-
-/*
-** Open the directory identified by zName and associate it with the 
-** specified file. This just adds an entry to the write-op list, the 
-** directory is opened later by sqlite3_async_flush().
-*/
-static int asyncOpenDirectory(OsFile *id, const char *zName){
-  AsyncFile *pFile = (AsyncFile *)id;
-  return addNewAsyncWrite(pFile, ASYNC_OPENDIRECTORY, 0, strlen(zName)+1,zName);
-}
-
-/*
-** Sync the file. This just adds an entry to the write-op list, the 
-** sync() is done later by sqlite3_async_flush().
-*/
-static int asyncSync(OsFile *id, int fullsync){
-  return addNewAsyncWrite((AsyncFile *)id, ASYNC_SYNC, 0, fullsync, 0);
-}
-
-/*
-** Set (or clear) the full-sync flag on the underlying file. This operation
-** is queued and performed later by sqlite3_async_flush().
-*/
-static void asyncSetFullSync(OsFile *id, int value){
-  addNewAsyncWrite((AsyncFile *)id, ASYNC_SETFULLSYNC, 0, value, 0);
+static int asyncWrite(sqlite3_file *pFile, const void *pBuf, int amt, i64 iOff){
+  AsyncFileData *p = ((AsyncFile *)pFile)->pData;
+  return addNewAsyncWrite(p, ASYNC_WRITE, iOff, amt, pBuf);
 }
 
 /*
@@ -485,15 +457,15 @@ static void asyncSetFullSync(OsFile *id, int value){
 **
 ** This method holds the mutex from start to finish.
 */
-static int asyncRead(OsFile *id, void *obuf, int amt){
+static int asyncRead(sqlite3_file *pFile, void *zOut, int iAmt, i64 iOffset){
+  AsyncFileData *p = ((AsyncFile *)pFile)->pData;
   int rc = SQLITE_OK;
   i64 filesize;
   int nRead;
-  AsyncFile *pFile = (AsyncFile *)id;
-  OsFile *pBase = pFile->pBaseRead;
+  sqlite3_file *pBase = p->pBaseRead;
 
-  /* If an I/O error has previously occurred on this file, then all
-  ** subsequent operations fail.
+  /* If an I/O error has previously occurred in this virtual file 
+  ** system, then all subsequent operations fail.
   */
   if( async.ioError!=SQLITE_OK ){
     return async.ioError;
@@ -502,44 +474,37 @@ static int asyncRead(OsFile *id, void *obuf, int amt){
   /* Grab the write queue mutex for the duration of the call */
   pthread_mutex_lock(&async.queueMutex);
 
-  if( pBase ){
+  if( pBase->pMethods ){
     rc = sqlite3OsFileSize(pBase, &filesize);
     if( rc!=SQLITE_OK ){
       goto asyncread_out;
     }
-    rc = sqlite3OsSeek(pBase, pFile->iOffset);
-    if( rc!=SQLITE_OK ){
-      goto asyncread_out;
-    }
-    nRead = MIN(filesize - pFile->iOffset, amt);
+    nRead = MIN(filesize - iOffset, iAmt);
     if( nRead>0 ){
-      rc = sqlite3OsRead(pBase, obuf, nRead);
-      ASYNC_TRACE(("READ %s %d bytes at %d\n", pFile->zName, nRead, pFile->iOffset));
+      rc = sqlite3OsRead(pBase, zOut, nRead, iOffset);
+      ASYNC_TRACE(("READ %s %d bytes at %d\n", p->zName, nRead, iOffset));
     }
   }
 
   if( rc==SQLITE_OK ){
-    AsyncWrite *p;
-    i64 iOffset = pFile->iOffset;           /* Current seek offset */
+    AsyncWrite *pWrite;
 
-    for(p=async.pQueueFirst; p; p = p->pNext){
-      if( p->pFile==pFile && p->op==ASYNC_WRITE ){
-        int iBeginOut = (p->iOffset - iOffset);
+    for(pWrite=async.pQueueFirst; pWrite; pWrite = pWrite->pNext){
+      if( pWrite->pFileData==p && pWrite->op==ASYNC_WRITE ){
+        int iBeginOut = (pWrite->iOffset-iOffset);
         int iBeginIn = -iBeginOut;
         int nCopy;
 
         if( iBeginIn<0 ) iBeginIn = 0;
         if( iBeginOut<0 ) iBeginOut = 0;
-        nCopy = MIN(p->nByte-iBeginIn, amt-iBeginOut);
+        nCopy = MIN(pWrite->nByte-iBeginIn, iAmt-iBeginOut);
 
         if( nCopy>0 ){
-          memcpy(&((char *)obuf)[iBeginOut], &p->zBuf[iBeginIn], nCopy);
+          memcpy(&((char *)zOut)[iBeginOut], &pWrite->zBuf[iBeginIn], nCopy);
           ASYNC_TRACE(("OVERREAD %d bytes at %d\n", nCopy, iBeginOut+iOffset));
         }
       }
     }
-
-    pFile->iOffset += (i64)amt;
   }
 
 asyncread_out:
@@ -548,14 +513,21 @@ asyncread_out:
 }
 
 /*
-** Seek to the specified offset. This just adjusts the AsyncFile.iOffset 
-** variable - calling seek() on the underlying file is defered until the 
-** next read() or write() operation. 
+** Truncate the file to nByte bytes in length. This just adds an entry to 
+** the write-op list, no IO actually takes place.
 */
-static int asyncSeek(OsFile *id, i64 offset){
-  AsyncFile *pFile = (AsyncFile *)id;
-  pFile->iOffset = offset;
-  return SQLITE_OK;
+static int asyncTruncate(sqlite3_file *pFile, i64 nByte){
+  AsyncFileData *p = ((AsyncFile *)pFile)->pData;
+  return addNewAsyncWrite(p, ASYNC_TRUNCATE, nByte, 0, 0);
+}
+
+/*
+** Sync the file. This just adds an entry to the write-op list, the 
+** sync() is done later by sqlite3_async_flush().
+*/
+static int asyncSync(sqlite3_file *pFile, int flags){
+  AsyncFileData *p = ((AsyncFile *)pFile)->pData;
+  return addNewAsyncWrite(p, ASYNC_SYNC, 0, flags, 0);
 }
 
 /*
@@ -565,10 +537,11 @@ static int asyncSeek(OsFile *id, i64 offset){
 **
 ** This method holds the mutex from start to finish.
 */
-int asyncFileSize(OsFile *id, i64 *pSize){
+int asyncFileSize(sqlite3_file *pFile, i64 *piSize){
+  AsyncFileData *p = ((AsyncFile *)pFile)->pData;
   int rc = SQLITE_OK;
   i64 s = 0;
-  OsFile *pBase;
+  sqlite3_file *pBase;
 
   pthread_mutex_lock(&async.queueMutex);
 
@@ -577,37 +550,29 @@ int asyncFileSize(OsFile *id, i64 *pSize){
   ** must be in the write-op queue anyway, so we can omit reading from the
   ** file-system.
   */
-  pBase = ((AsyncFile *)id)->pBaseRead;
-  if( pBase ){
+  pBase = p->pBaseRead;
+  if( pBase->pMethods ){
     rc = sqlite3OsFileSize(pBase, &s);
   }
 
   if( rc==SQLITE_OK ){
-    AsyncWrite *p;
-    for(p=async.pQueueFirst; p; p = p->pNext){
-      if( p->pFile==(AsyncFile *)id ){
-        switch( p->op ){
+    AsyncWrite *pWrite;
+    for(pWrite=async.pQueueFirst; pWrite; pWrite = pWrite->pNext){
+      if( pWrite->pFileData==p ){
+        switch( pWrite->op ){
           case ASYNC_WRITE:
-            s = MAX(p->iOffset + (i64)(p->nByte), s);
+            s = MAX(pWrite->iOffset + (i64)(pWrite->nByte), s);
             break;
           case ASYNC_TRUNCATE:
-            s = MIN(s, p->iOffset);
+            s = MIN(s, pWrite->iOffset);
             break;
         }
       }
     }
-    *pSize = s;
+    *piSize = s;
   }
   pthread_mutex_unlock(&async.queueMutex);
   return rc;
-}
-
-/*
-** Return the operating system file handle. This is only used for debugging 
-** at the moment anyway.
-*/
-static int asyncFileHandle(OsFile *id){
-  return sqlite3OsFileHandle(((AsyncFile *)id)->pBaseRead);
 }
 
 /*
@@ -618,166 +583,128 @@ static int asyncFileHandle(OsFile *id){
 ** cannot see our internal hash table (obviously) and will thus not
 ** honor our locks.
 */
-static int asyncLock(OsFile *id, int lockType){
-  AsyncFile *pFile = (AsyncFile*)id;
-  ASYNC_TRACE(("LOCK %d (%s)\n", lockType, pFile->zName));
+static int asyncLock(sqlite3_file *pFile, int lockType){
+  AsyncFileData *p = ((AsyncFile *)pFile)->pData;
+  ASYNC_TRACE(("LOCK %d (%s)\n", lockType, p->zName));
   pthread_mutex_lock(&async.lockMutex);
-  sqlite3HashInsert(&async.aLock, pFile->zName, pFile->nName, (void*)lockType);
+  sqlite3HashInsert(&async.aLock, p->zName, p->nName, (void*)lockType);
   pthread_mutex_unlock(&async.lockMutex);
   return SQLITE_OK;
 }
-static int asyncUnlock(OsFile *id, int lockType){
-  return asyncLock(id, lockType);
+static int asyncUnlock(sqlite3_file *pFile, int lockType){
+  return asyncLock(pFile, lockType);
 }
 
 /*
 ** This function is called when the pager layer first opens a database file
 ** and is checking for a hot-journal.
 */
-static int asyncCheckReservedLock(OsFile *id){
-  AsyncFile *pFile = (AsyncFile*)id;
+static int asyncCheckReservedLock(sqlite3_file *pFile){
+  AsyncFileData *p = ((AsyncFile *)pFile)->pData;
   int rc;
   pthread_mutex_lock(&async.lockMutex);
-  rc = (int)sqlite3HashFind(&async.aLock, pFile->zName, pFile->nName);
+  rc = (int)sqlite3HashFind(&async.aLock, p->zName, p->nName);
   pthread_mutex_unlock(&async.lockMutex);
-  ASYNC_TRACE(("CHECK-LOCK %d (%s)\n", rc, pFile->zName));
+  ASYNC_TRACE(("CHECK-LOCK %d (%s)\n", rc, p->zName));
   return rc>SHARED_LOCK;
 }
 
-static int asyncSectorSize(OsFile *id){
-  /* TODO: This is tricky to implement, as this backend might not have
-  ** an open file handle at this point.
-  */
-  return 512;
+/* 
+** This is a no-op, as the asynchronous backend does not support locking.
+*/
+static int asyncBreakLock(sqlite3_file *id){
+  return SQLITE_OK;
 }
 
 /* 
 ** This is broken. But sqlite3OsLockState() is only used for testing anyway.
 */
-static int asyncLockState(OsFile *id){
+static int asyncLockState(sqlite3_file *id){
   return SQLITE_OK;
 }
 
-/*
-** The following variables hold pointers to the original versions of
-** OS-layer interface routines that are overloaded in order to create
-** the asynchronous I/O backend.
+/* 
+** Return the device characteristics and sector-size of the device. It
+** is not tricky to implement these correctly, as this backend might 
+** not have an open file handle at this point.
 */
-static int (*xOrigOpenReadWrite)(const char*, OsFile**, int*) = 0;
-static int (*xOrigOpenExclusive)(const char*, OsFile**, int) = 0;
-static int (*xOrigOpenReadOnly)(const char*, OsFile**) = 0;
-static int (*xOrigDelete)(const char*) = 0;
-static int (*xOrigFileExists)(const char*) = 0;
-static int (*xOrigSyncDirectory)(const char*) = 0;
+static int asyncSectorSize(sqlite3_file *pFile){
+  return 512;
+}
+static int asyncDeviceCharacteristics(sqlite3_file *pFile){
+  return 0;
+}
 
 /*
-** This routine does most of the work of opening a file and building
-** the OsFile structure.
+** Open a file.
 */
-static int asyncOpenFile(
-  const char *zName,     /* The name of the file to be opened */
-  OsFile **pFile,        /* Put the OsFile structure here */
-  OsFile *pBaseRead,     /* The real OsFile from the real I/O routine */
-  int openForWriting     /* Open a second file handle for writing if true */
+static int asyncOpen(
+  sqlite3_vfs *pAsyncVfs,
+  const char *zName,
+  sqlite3_file *pFile,
+  int flags,
+  int *pOutFlags
 ){
-  int rc, i, n;
-  AsyncFile *p;
-  OsFile *pBaseWrite = 0;
-
-  static IoMethod iomethod = {
-    asyncClose,
-    asyncOpenDirectory,
-    asyncRead,
-    asyncWrite,
-    asyncSeek,
-    asyncTruncate,
-    asyncSync,
-    asyncSetFullSync,
-    asyncFileHandle,
-    asyncFileSize,
-    asyncLock,
-    asyncUnlock,
-    asyncLockState,
-    asyncCheckReservedLock,
-    asyncSectorSize,
+  static sqlite3_io_methods async_methods = {
+    1,                               /* iVersion */
+    asyncClose,                      /* xClose */
+    asyncRead,                       /* xRead */
+    asyncWrite,                      /* xWrite */
+    asyncTruncate,                   /* xTruncate */
+    asyncSync,                       /* xSync */
+    asyncFileSize,                   /* xFileSize */
+    asyncLock,                       /* xLock */
+    asyncUnlock,                     /* xUnlock */
+    asyncCheckReservedLock,          /* xCheckReservedLock */
+    asyncBreakLock,                  /* xBreakLock */
+    asyncLockState,                  /* xLockState */
+    asyncSectorSize,                 /* xSectorSize */
+    asyncDeviceCharacteristics       /* xDeviceCharacteristics */
   };
 
-  if( openForWriting && SQLITE_ASYNC_TWO_FILEHANDLES ){
-    int dummy;
-    rc = xOrigOpenReadWrite(zName, &pBaseWrite, &dummy);
-    if( rc!=SQLITE_OK ){
-      goto error_out;
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
+  AsyncFile *p = (AsyncFile *)pFile;
+  int nName = strlen(zName);;
+  int rc;
+  int nByte;
+  AsyncFileData *pData;
+
+  nByte = (
+    sizeof(AsyncFileData) +        /* AsyncFileData structure */
+    2 * pVfs->szOsFile +           /* AsyncFileData.zName */
+    nName + 1                      /* AsyncFileData.pBaseRead and pBaseWrite */
+  );
+  pData = sqlite3_malloc(nByte);
+  if( !pData ){
+    return SQLITE_NOMEM;
+  }
+  memset(pData, 0, nByte);
+  pData->zName = (char *)&pData[1];
+  pData->nName = nName;
+  pData->pBaseRead = (sqlite3_file *)&pData->zName[nName+1];
+  pData->pBaseWrite = (sqlite3_file *)&pData->zName[nName+1+pVfs->szOsFile];
+  memcpy(pData->zName, zName, nName+1);
+
+  if( flags&SQLITE_OPEN_EXCLUSIVE ){
+    rc = addNewAsyncWrite(pData, ASYNC_OPENEXCLUSIVE, (i64)flags, 0, 0);
+    if( pOutFlags ) *pOutFlags = flags;
+  }else{
+    rc = sqlite3OsOpen(pVfs, zName, pData->pBaseRead, flags, pOutFlags);
+    if( rc==SQLITE_OK && ((*pOutFlags)&SQLITE_OPEN_READWRITE) ){
+      rc = sqlite3OsOpen(pVfs, zName, pData->pBaseWrite, flags, 0);
     }
   }
 
-  n = strlen(zName);
-  for(i=n-1; i>=0 && zName[i]!='/'; i--){}
-  p = (AsyncFile *)sqlite3_malloc(sizeof(AsyncFile) + n - i);
-  if( !p ){
-    rc = SQLITE_NOMEM;
-    goto error_out;
+  if( rc==SQLITE_OK ){
+    p->pMethod = &async_methods;
+    p->pData = pData;
+    incrOpenFileCount();
+  }else{
+    sqlite3OsClose(pData->pBaseRead);
+    sqlite3OsClose(pData->pBaseWrite);
+    sqlite3_free(pData);
   }
-  memset(p, 0, sizeof(AsyncFile));
-  p->zName = (char*)&p[1];
-  strcpy(p->zName, &zName[i+1]);
-  p->nName = n - i;
-  p->pMethod = &iomethod;
-  p->pBaseRead = pBaseRead;
-  p->pBaseWrite = pBaseWrite;
-  
-  *pFile = (OsFile *)p;
-  return SQLITE_OK;
 
-error_out:
-  assert(!p);
-  sqlite3OsClose(&pBaseRead);
-  sqlite3OsClose(&pBaseWrite);
-  *pFile = 0;
-  return rc;
-}
-
-/*
-** The async-IO backends implementation of the three functions used to open
-** a file (xOpenExclusive, xOpenReadWrite and xOpenReadOnly). Most of the 
-** work is done in function asyncOpenFile() - see above.
-*/
-static int asyncOpenExclusive(const char *z, OsFile **ppFile, int delFlag){
-  int rc = asyncOpenFile(z, ppFile, 0, 0);
-  if( rc==SQLITE_OK ){
-    AsyncFile *pFile = (AsyncFile *)(*ppFile);
-    int nByte = strlen(z)+1;
-    i64 i = (i64)(delFlag);
-    rc = addNewAsyncWrite(pFile, ASYNC_OPENEXCLUSIVE, i, nByte, z);
-    if( rc!=SQLITE_OK ){
-      sqlite3_free(pFile);
-      *ppFile = 0;
-    }
-  }
-  if( rc==SQLITE_OK ){
-    incrOpenFileCount();
-  }
-  return rc;
-}
-static int asyncOpenReadOnly(const char *z, OsFile **ppFile){
-  OsFile *pBase = 0;
-  int rc = xOrigOpenReadOnly(z, &pBase);
-  if( rc==SQLITE_OK ){
-    rc = asyncOpenFile(z, ppFile, pBase, 0);
-  }
-  if( rc==SQLITE_OK ){
-    incrOpenFileCount();
-  }
-  return rc;
-}
-static int asyncOpenReadWrite(const char *z, OsFile **ppFile, int *pReadOnly){
-  OsFile *pBase = 0;
-  int rc = xOrigOpenReadWrite(z, &pBase, pReadOnly);
-  if( rc==SQLITE_OK ){
-    rc = asyncOpenFile(z, ppFile, pBase, (*pReadOnly ? 0 : 1));
-  }
-  if( rc==SQLITE_OK ){
-    incrOpenFileCount();
-  }
   return rc;
 }
 
@@ -785,45 +712,111 @@ static int asyncOpenReadWrite(const char *z, OsFile **ppFile, int *pReadOnly){
 ** Implementation of sqlite3OsDelete. Add an entry to the end of the 
 ** write-op queue to perform the delete.
 */
-static int asyncDelete(const char *z){
-  return addNewAsyncWrite(0, ASYNC_DELETE, 0, strlen(z)+1, z);
+static int asyncDelete(sqlite3_vfs *pAsyncVfs, const char *z, int syncDir){
+  return addNewAsyncWrite(0, ASYNC_DELETE, syncDir, strlen(z)+1, z);
 }
 
 /*
-** Implementation of sqlite3OsSyncDirectory. Add an entry to the end of the 
-** write-op queue to perform the directory sync.
+** Implementation of sqlite3OsAccess. This method holds the mutex from
+** start to finish.
 */
-static int asyncSyncDirectory(const char *z){
-  return addNewAsyncWrite(0, ASYNC_SYNCDIRECTORY, 0, strlen(z)+1, z);
-}
-
-/*
-** Implementation of sqlite3OsFileExists. Return true if file 'z' exists
-** in the file system. 
-**
-** This method holds the mutex from start to finish.
-*/
-static int asyncFileExists(const char *z){
+static int asyncAccess(sqlite3_vfs *pAsyncVfs, const char *zName, int flags){
   int ret;
   AsyncWrite *p;
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
+
+  assert(flags==SQLITE_ACCESS_READWRITE 
+      || flags==SQLITE_ACCESS_READONLY 
+      || flags==SQLITE_ACCESS_EXISTS 
+  );
 
   pthread_mutex_lock(&async.queueMutex);
-
-  /* See if the real file system contains the specified file.  */
-  ret = xOrigFileExists(z);
-  
-  for(p=async.pQueueFirst; p; p = p->pNext){
-    if( p->op==ASYNC_DELETE && 0==strcmp(p->zBuf, z) ){
-      ret = 0;
-    }else if( p->op==ASYNC_OPENEXCLUSIVE && 0==strcmp(p->zBuf, z) ){
-      ret = 1;
+  ret = sqlite3OsAccess(pVfs, zName, flags);
+  if( flags==SQLITE_ACCESS_EXISTS ){
+    for(p=async.pQueueFirst; p; p = p->pNext){
+      if( p->op==ASYNC_DELETE && 0==strcmp(p->zBuf, zName) ){
+        ret = 0;
+      }else if( p->op==ASYNC_OPENEXCLUSIVE 
+             && 0==strcmp(p->pFileData->zName, zName) 
+      ){
+        ret = 1;
+      }
     }
   }
-
-  ASYNC_TRACE(("EXISTS: %s = %d\n", z, ret));
+  ASYNC_TRACE(("ACCESS(%s): %s = %d\n", 
+    flags==SQLITE_ACCESS_READWRITE?"read-write":
+    flags==SQLITE_ACCESS_READONLY?"read-only":"exists"
+    , zName, ret)
+  );
   pthread_mutex_unlock(&async.queueMutex);
   return ret;
 }
+
+static int asyncGetTempName(sqlite3_vfs *pAsyncVfs, char *zBufOut){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
+  return pVfs->xGetTempName(pVfs, zBufOut);
+}
+static int asyncFullPathname(
+  sqlite3_vfs *pAsyncVfs, 
+  const char *zPath, 
+  char *zPathOut
+){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
+  return sqlite3OsFullPathname(pVfs, zPath, zPathOut);
+}
+static void *asyncDlOpen(sqlite3_vfs *pAsyncVfs, const char *zPath){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
+  return pVfs->xDlOpen(pVfs, zPath);
+}
+static void asyncDlError(sqlite3_vfs *pAsyncVfs, int nByte, char *zErrMsg){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
+  pVfs->xDlError(pVfs, nByte, zErrMsg);
+}
+static void *asyncDlSym(
+  sqlite3_vfs *pAsyncVfs, 
+  void *pHandle, 
+  const char *zSymbol
+){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
+  return pVfs->xDlSym(pVfs, pHandle, zSymbol);
+}
+static void asyncDlClose(sqlite3_vfs *pAsyncVfs, void *pHandle){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
+  pVfs->xDlClose(pVfs, pHandle);
+}
+static int asyncRandomness(sqlite3_vfs *pAsyncVfs, int nByte, char *zBufOut){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
+  return pVfs->xRandomness(pVfs, nByte, zBufOut);
+}
+static int asyncSleep(sqlite3_vfs *pAsyncVfs, int nMicro){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
+  return pVfs->xSleep(pVfs, nMicro);
+}
+static int asyncCurrentTime(sqlite3_vfs *pAsyncVfs, double *pTimeOut){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
+  return pVfs->xCurrentTime(pVfs, pTimeOut);
+}
+
+static sqlite3_vfs async_vfs = {
+  1,                    /* iVersion */
+  sizeof(AsyncFile),    /* szOsFile */
+  0,                    /* mxPathname */
+  0,                    /* pNext */
+  "async",              /* zName */
+  0,                    /* pAppData */
+  asyncOpen,            /* xOpen */
+  asyncDelete,          /* xDelete */
+  asyncAccess,          /* xAccess */
+  asyncGetTempName,     /* xGetTempName */
+  asyncFullPathname,    /* xFullPathname */
+  asyncDlOpen,          /* xDlOpen */
+  asyncDlError,         /* xDlError */
+  asyncDlSym,           /* xDlSym */
+  asyncDlClose,         /* xDlClose */
+  asyncRandomness,      /* xDlError */
+  asyncSleep,           /* xDlSym */
+  asyncCurrentTime      /* xDlClose */
+};
 
 /*
 ** Call this routine to enable or disable the
@@ -833,41 +826,19 @@ static int asyncFileExists(const char *z){
 ** this routine while any SQLite database connections are open.
 */
 static void asyncEnable(int enable){
-  if( enable && xOrigOpenReadWrite==0 ){
-    assert(sqlite3Os.xOpenReadWrite);
-    sqlite3HashInit(&async.aLock, SQLITE_HASH_BINARY, 1);
-    xOrigOpenReadWrite = sqlite3Os.xOpenReadWrite;
-    xOrigOpenReadOnly = sqlite3Os.xOpenReadOnly;
-    xOrigOpenExclusive = sqlite3Os.xOpenExclusive;
-    xOrigDelete = sqlite3Os.xDelete;
-    xOrigFileExists = sqlite3Os.xFileExists;
-    xOrigSyncDirectory = sqlite3Os.xSyncDirectory;
-
-    sqlite3Os.xOpenReadWrite = asyncOpenReadWrite;
-    sqlite3Os.xOpenReadOnly = asyncOpenReadOnly;
-    sqlite3Os.xOpenExclusive = asyncOpenExclusive;
-    sqlite3Os.xDelete = asyncDelete;
-    sqlite3Os.xFileExists = asyncFileExists;
-    sqlite3Os.xSyncDirectory = asyncSyncDirectory;
-    assert(sqlite3Os.xOpenReadWrite);
-  }
-  if( !enable && xOrigOpenReadWrite!=0 ){
-    assert(sqlite3Os.xOpenReadWrite);
-    sqlite3HashClear(&async.aLock);
-    sqlite3Os.xOpenReadWrite = xOrigOpenReadWrite;
-    sqlite3Os.xOpenReadOnly = xOrigOpenReadOnly;
-    sqlite3Os.xOpenExclusive = xOrigOpenExclusive;
-    sqlite3Os.xDelete = xOrigDelete;
-    sqlite3Os.xFileExists = xOrigFileExists;
-    sqlite3Os.xSyncDirectory = xOrigSyncDirectory;
-
-    xOrigOpenReadWrite = 0;
-    xOrigOpenReadOnly = 0;
-    xOrigOpenExclusive = 0;
-    xOrigDelete = 0;
-    xOrigFileExists = 0;
-    xOrigSyncDirectory = 0;
-    assert(sqlite3Os.xOpenReadWrite);
+  if( enable ){
+    if( !async_vfs.pAppData ){
+      async_vfs.pAppData = (void *)sqlite3_vfs_find(0);
+      async_vfs.mxPathname = ((sqlite3_vfs *)async_vfs.pAppData)->mxPathname;
+      sqlite3_vfs_register(&async_vfs, 1);
+      sqlite3HashInit(&async.aLock, SQLITE_HASH_BINARY, 1);
+    }
+  }else{
+    if( async_vfs.pAppData ){
+      sqlite3_vfs_unregister(&async_vfs);
+      async_vfs.pAppData = 0;
+      sqlite3HashClear(&async.aLock);
+    }
   }
 }
 
@@ -891,6 +862,7 @@ static void asyncEnable(int enable){
 ** Only one instance of this procedure may be running at a time.
 */
 static void *asyncWriterThread(void *NotUsed){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)(async_vfs.pAppData);
   AsyncWrite *p = 0;
   int rc = SQLITE_OK;
   int holdingMutex = 0;
@@ -899,7 +871,7 @@ static void *asyncWriterThread(void *NotUsed){
     return 0;
   }
   while( async.writerHaltNow==0 ){
-    OsFile *pBase = 0;
+    sqlite3_file *pBase = 0;
 
     if( !holdingMutex ){
       pthread_mutex_lock(&async.queueMutex);
@@ -940,18 +912,18 @@ static void *asyncWriterThread(void *NotUsed){
     if( async.ioError!=SQLITE_OK && p->op!=ASYNC_CLOSE ){
       p->op = ASYNC_NOOP;
     }
-    if( p->pFile ){
-      pBase = p->pFile->pBaseWrite;
+    if( p->pFileData ){
+      pBase = p->pFileData->pBaseWrite;
       if( 
         p->op==ASYNC_CLOSE || 
         p->op==ASYNC_OPENEXCLUSIVE ||
-        (pBase && (p->op==ASYNC_SYNC || p->op==ASYNC_WRITE) ) 
+        (pBase->pMethods && (p->op==ASYNC_SYNC || p->op==ASYNC_WRITE) ) 
       ){
         pthread_mutex_unlock(&async.queueMutex);
         holdingMutex = 0;
       }
-      if( !pBase ){
-        pBase = p->pFile->pBaseRead;
+      if( !pBase->pMethods ){
+        pBase = p->pFileData->pBaseRead;
       }
     }
 
@@ -962,67 +934,44 @@ static void *asyncWriterThread(void *NotUsed){
       case ASYNC_WRITE:
         assert( pBase );
         ASYNC_TRACE(("WRITE %s %d bytes at %d\n",
-                p->pFile->zName, p->nByte, p->iOffset));
-        rc = sqlite3OsSeek(pBase, p->iOffset);
-        if( rc==SQLITE_OK ){
-          rc = sqlite3OsWrite(pBase, (const void *)(p->zBuf), p->nByte);
-        }
+                p->pFileData->zName, p->nByte, p->iOffset));
+        rc = sqlite3OsWrite(pBase, (void *)(p->zBuf), p->nByte, p->iOffset);
         break;
 
       case ASYNC_SYNC:
         assert( pBase );
-        ASYNC_TRACE(("SYNC %s\n", p->pFile->zName));
+        ASYNC_TRACE(("SYNC %s\n", p->pFileData->zName));
         rc = sqlite3OsSync(pBase, p->nByte);
         break;
 
       case ASYNC_TRUNCATE:
         assert( pBase );
-        ASYNC_TRACE(("TRUNCATE %s to %d bytes\n", p->pFile->zName, p->iOffset));
+        ASYNC_TRACE(("TRUNCATE %s to %d bytes\n", 
+                p->pFileData->zName, p->iOffset));
         rc = sqlite3OsTruncate(pBase, p->iOffset);
         break;
 
       case ASYNC_CLOSE:
-        ASYNC_TRACE(("CLOSE %s\n", p->pFile->zName));
-        sqlite3OsClose(&p->pFile->pBaseWrite);
-        sqlite3OsClose(&p->pFile->pBaseRead);
-        sqlite3_free(p->pFile);
-        break;
-
-      case ASYNC_OPENDIRECTORY:
-        assert( pBase );
-        ASYNC_TRACE(("OPENDIR %s\n", p->zBuf));
-        sqlite3OsOpenDirectory(pBase, p->zBuf);
-        break;
-
-      case ASYNC_SETFULLSYNC:
-        assert( pBase );
-        ASYNC_TRACE(("SETFULLSYNC %s %d\n", p->pFile->zName, p->nByte));
-        sqlite3OsSetFullSync(pBase, p->nByte);
+        ASYNC_TRACE(("CLOSE %s\n", p->pFileData->zName));
+        sqlite3OsClose(p->pFileData->pBaseWrite);
+        sqlite3OsClose(p->pFileData->pBaseRead);
+        sqlite3_free(p->pFileData);
         break;
 
       case ASYNC_DELETE:
         ASYNC_TRACE(("DELETE %s\n", p->zBuf));
-        rc = xOrigDelete(p->zBuf);
-        break;
-
-      case ASYNC_SYNCDIRECTORY:
-        ASYNC_TRACE(("SYNCDIR %s\n", p->zBuf));
-        rc = xOrigSyncDirectory(p->zBuf);
+        rc = sqlite3OsDelete(pVfs, p->zBuf, (int)p->iOffset);
         break;
 
       case ASYNC_OPENEXCLUSIVE: {
-        AsyncFile *pFile = p->pFile;
-        int delFlag = ((p->iOffset)?1:0);
-        OsFile *pBase = 0;
-        ASYNC_TRACE(("OPEN %s delFlag=%d\n", p->zBuf, delFlag));
-        assert(pFile->pBaseRead==0 && pFile->pBaseWrite==0);
-        rc = xOrigOpenExclusive(p->zBuf, &pBase, delFlag);
+        int flags = (int)p->iOffset;
+        AsyncFileData *pData = p->pFileData;
+        ASYNC_TRACE(("OPEN %s flags=%d\n", p->zBuf, (int)p->iOffset));
+        assert(pData->pBaseRead->pMethods==0 && pData->pBaseWrite->pMethods==0);
+        rc = sqlite3OsOpen(pVfs, pData->zName, pData->pBaseRead, flags, 0);
         assert( holdingMutex==0 );
         pthread_mutex_lock(&async.queueMutex);
         holdingMutex = 1;
-        if( rc==SQLITE_OK ){
-          pFile->pBaseRead = pBase;
-        }
         break;
       }
 
@@ -1075,7 +1024,7 @@ static void *asyncWriterThread(void *NotUsed){
       pthread_mutex_unlock(&async.queueMutex);
       holdingMutex = 0;
       if( async.ioDelay>0 ){
-        sqlite3OsSleep(async.ioDelay);
+        sqlite3OsSleep(pVfs, async.ioDelay);
       }else{
         sched_yield();
       }
@@ -1112,7 +1061,7 @@ static int testAsyncEnable(
     return TCL_ERROR;
   }
   if( objc==1 ){
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(xOrigOpenReadWrite!=0));
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(async_vfs.pAppData!=0));
   }else{
     int en;
     if( Tcl_GetBooleanFromObj(interp, objv[1], &en) ) return TCL_ERROR;

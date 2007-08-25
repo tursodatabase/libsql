@@ -517,8 +517,7 @@ struct crashAppData {
 };
 
 /*
-** Open a crash-file file handle. The vfs pVfs is used to open
-** the underlying real file.
+** Open a crash-file file handle.
 **
 ** The caller will have allocated pVfs->szOsFile bytes of space
 ** at pFile. This file uses this space for the CrashFile structure
@@ -584,6 +583,18 @@ static int cfFullPathname(sqlite3_vfs *pCfVfs, const char *zPath, char *zPathOut
 static void *cfDlOpen(sqlite3_vfs *pCfVfs, const char *zPath){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
   return pVfs->xDlOpen(pVfs, zPath);
+}
+static void cfDlError(sqlite3_vfs *pCfVfs, int nByte, char *zErrMsg){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
+  pVfs->xDlError(pVfs, nByte, zErrMsg);
+}
+static void *cfDlSym(sqlite3_vfs *pCfVfs, void *pHandle, const char *zSymbol){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
+  return pVfs->xDlSym(pVfs, pHandle, zSymbol);
+}
+static void cfDlClose(sqlite3_vfs *pCfVfs, void *pHandle){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
+  pVfs->xDlClose(pVfs, pHandle);
 }
 static int cfRandomness(sqlite3_vfs *pCfVfs, int nByte, char *zBufOut){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
@@ -732,9 +743,9 @@ static int crashParamsObjCmd(
     cfGetTempName,        /* xGetTempName */
     cfFullPathname,       /* xFullPathname */
     cfDlOpen,             /* xDlOpen */
-    0,                    /* xDlError */
-    0,                    /* xDlSym */
-    0,                    /* xDlClose */
+    cfDlError,            /* xDlError */
+    cfDlSym,              /* xDlSym */
+    cfDlClose,            /* xDlClose */
     cfRandomness,         /* xRandomness */
     cfSleep,              /* xSleep */
     cfCurrentTime         /* xCurrentTime */
@@ -743,9 +754,6 @@ static int crashParamsObjCmd(
 
   if( crashVfs.pAppData==0 ){
     sqlite3_vfs *pOriginalVfs = sqlite3_vfs_find(0);
-    crashVfs.xDlError = pOriginalVfs->xDlError;
-    crashVfs.xDlSym = pOriginalVfs->xDlSym;
-    crashVfs.xDlClose = pOriginalVfs->xDlClose;
     crashVfs.mxPathname = pOriginalVfs->mxPathname;
     crashVfs.pAppData = (void *)pOriginalVfs;
     crashVfs.szOsFile = sizeof(CrashFile) + pOriginalVfs->szOsFile;
