@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.240 2007/08/24 16:08:29 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.241 2007/08/25 14:49:37 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3312,7 +3312,9 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** is not currently allocated.  SQLite will never do either.
 **
 ** The sqlite3_mutex_held() and sqlite3_mutex_notheld() routines
-** are intended for use inside assert() statements.  They should
+** are intended for use inside assert() statements.  The SQLite core
+** never uses these routines except inside an assert() and applications
+** are advised to follow the lead of the core.  These routines should
 ** return true if the mutex in their argument is held or not held,
 ** respectively, by the current thread. The implementation is
 ** not required to provided working implementations of these
