@@ -1,5 +1,5 @@
-C Make\sthe\stest_async\sbackend\swork\sagain.\s(CVS\s4293)
-D 2007-08-25T12:29:30
+C Update\sthe\sasync2.test\stest\sscript\sto\suse\sthe\snew\smalloc()\sfailure\ssimulation\sinterface.\s(CVS\s4294)
+D 2007-08-25T12:39:29
 F Makefile.in 938f2769921fa1b30c633548f153804021eb1512
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -176,7 +176,7 @@ F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
 F test/altermalloc.test 19323e0f452834044c27a54c6e78554d706de7ba
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
 F test/async.test 464dc7c7ccb144e8c82ecca429e6d7cd1c96bd6e
-F test/async2.test 32f73280ec36cf426b21f9da6adee614cc137986
+F test/async2.test 8f2c70b831dac7292450d0a42580cf2dab497dbb
 F test/attach.test cf289abdb120053136649efd1306ab9d47fa41b2
 F test/attach2.test 78bc1a25ea8785c7571b44f5947ada2bd5d78127
 F test/attach3.test eafcafb107585aecc2ed1569a77914138eef46a9
@@ -561,7 +561,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7d24c3a5a7641df2bbb8c91a0bc5aa75c96a73fe
-R 2cc75c2f206441da9358edc45d8dfd5c
+P 04167483aad42d319393e8caf470d8de11e468d8
+R 3ac03d9834656eb331e47b1b082a24fe
 U danielk1977
-Z aea3dbc69c22966552218a64ff9753b2
+Z 187857b23ffd18eb57875326b16afab2

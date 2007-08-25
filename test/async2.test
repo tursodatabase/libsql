@@ -5,7 +5,7 @@
 #
 #***********************************************************************
 #
-# $Id: async2.test,v 1.4 2007/08/25 12:29:30 danielk1977 Exp $
+# $Id: async2.test,v 1.5 2007/08/25 12:39:29 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -13,7 +13,7 @@ source $testdir/tester.tcl
 
 if {
   [info commands sqlite3async_enable]=="" ||
-  [info command sqlite_malloc_stat]==""
+  [info command sqlite3_memdebug_fail]==""
 } {
   # The async logic is not built into this system
   puts "Skipping async2 tests: not compiled with required features"
@@ -51,7 +51,7 @@ foreach err [list ioerr malloc] {
   set ::go 1
   for {set n 1} {$::go} {incr n} {
     set ::sqlite_io_error_pending 0
-    sqlite_malloc_fail 0
+    sqlite3_memdebug_fail -1 0
     file delete -force test.db test.db-journal
     sqlite3 db test.db
     execsql $::setup_script
@@ -64,14 +64,14 @@ foreach err [list ioerr malloc] {
   
     switch -- $err {
       ioerr  { set ::sqlite_io_error_pending $n }
-      malloc { sqlite_malloc_fail $n }
+      malloc { sqlite3_memdebug_fail $n 1 }
     }
     sqlite3async_halt idle
     sqlite3async_start
     sqlite3async_wait
   
     set ::sqlite_io_error_pending 0
-    sqlite_malloc_fail 0
+    sqlite3_memdebug_fail -1 0
 
     sqlite3 db test.db
     set c [db eval {SELECT c FROM counter LIMIT 1}]
