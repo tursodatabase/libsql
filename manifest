@@ -1,5 +1,5 @@
-C New\smutex\simplementation\sfor\sboth\sUnix\sand\swindows.\s(CVS\s4291)
-D 2007-08-24T20:46:59
+C Bug\sfix\sin\sthe\simplementation\sof\srecursive\smutexes\susing\snon-recursive\npthreads\smutexes.\s\sTicket\s#2588.\s(CVS\s4292)
+D 2007-08-25T03:59:09
 F Makefile.in 938f2769921fa1b30c633548f153804021eb1512
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -103,7 +103,7 @@ F src/malloc.c d4282f50964ab1ca31f504c97b7cf2fdb4d4195d
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c afe2fbf6d7e8247c6c9f69c1481358b1cad60c08
 F src/mem2.c 1a2ca756a285b5365d667841508cc1f98938b8d8
-F src/mutex.c 81ca843fedb51b614a9a31fe92c275bae0033be2
+F src/mutex.c 2337e3105ee274be77b743e43ffb053a1bca89e2
 F src/os.c a8ed3c495161475dbce255f7003144144fb425f1
 F src/os.h 2bfbbad126a775e4d8c7d59eb4d9585a5fd7dfb5
 F src/os_common.h a5c446d3b93f09f369d13bf217de4bed3437dd1c
@@ -561,7 +561,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3c908648353a575c3ff57be5dd9454a946d23b9f
-R a4b1b44d66f0c9d1fa25ae7671bf0a2e
+P e144b81f699ca991cc4fa12a487156391db0b367
+R e4459c3682ecfd854817ac4629de6e06
 U drh
-Z f2a9efc6afc9861301de6cbe6bd4d291
+Z 31776312f0c60a3baebc711d0ab05f9b

@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement mutexes for
 ** use by the SQLite core.
 **
-** $Id: mutex.c,v 1.9 2007/08/24 20:46:59 drh Exp $
+** $Id: mutex.c,v 1.10 2007/08/25 03:59:09 drh Exp $
 */
 /*
 ** If SQLITE_MUTEX_APPDEF is defined, then this whole module is
@@ -321,7 +321,7 @@ void sqlite3_mutex_free(sqlite3_mutex *p){
 */
 void sqlite3_mutex_enter(sqlite3_mutex *p){
   pthread_t self = pthread_self();
-  if( pthread_equal(p->owner, self) && p->nRef>0 ){
+  if( p->nRef>0 && pthread_equal(p->owner, self) ){
     p->nRef++;
   }else{
     pthread_mutex_lock(&p->mutex);
@@ -333,7 +333,7 @@ void sqlite3_mutex_enter(sqlite3_mutex *p){
 int sqlite3_mutex_try(sqlite3_mutex *p){
   pthread_t self = pthread_self();
   int rc;
-  if( pthread_equal(p->owner, self) && p->nRef>0 ){
+  if( p->nRef>0 && pthread_equal(p->owner, self) ){
     p->nRef++;
     rc = SQLITE_OK;
   }else if( pthread_mutex_lock(&p->mutex)==0 ){
