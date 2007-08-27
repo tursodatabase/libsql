@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement mutexes for
 ** use by the SQLite core.
 **
-** $Id: mutex.c,v 1.13 2007/08/25 16:31:30 drh Exp $
+** $Id: mutex.c,v 1.14 2007/08/27 17:27:49 danielk1977 Exp $
 */
 /*
 ** If SQLITE_MUTEX_APPDEF is defined, then this whole module is
@@ -253,6 +253,7 @@ struct sqlite3_mutex {
 ** <li>  SQLITE_MUTEX_STATIC_MEM
 ** <li>  SQLITE_MUTEX_STATIC_MEM2
 ** <li>  SQLITE_MUTEX_STATIC_PRNG
+** <li>  SQLITE_MUTEX_STATIC_LRU
 ** </ul>
 **
 ** The first two constants cause sqlite3_mutex_alloc() to create
@@ -281,6 +282,7 @@ struct sqlite3_mutex {
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int iType){
   static sqlite3_mutex staticMutexes[] = {
+    { PTHREAD_MUTEX_INITIALIZER, },
     { PTHREAD_MUTEX_INITIALIZER, },
     { PTHREAD_MUTEX_INITIALIZER, },
     { PTHREAD_MUTEX_INITIALIZER, },
@@ -474,7 +476,7 @@ sqlite3_mutex *sqlite3_mutex_alloc(int iType){
       break;
     }
     default: {
-      static sqlite3_mutex staticMutexes[4];
+      static sqlite3_mutex staticMutexes[5];
       static int isInit = 0;
       while( !isInit ){
         static long lock = 0;

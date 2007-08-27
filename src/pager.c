@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.376 2007/08/24 16:29:24 drh Exp $
+** @(#) $Id: pager.c,v 1.377 2007/08/27 17:27:49 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -131,6 +131,13 @@
 */
 #define FORCE_ALIGNMENT(X)   (((X)+7)&~7)
 
+typedef struct PgHdr PgHdr;
+typedef struct PagerLruLink PagerLruLink;
+struct PagerLruLink {
+  PgHdr *pNext;
+  PgHdr *pPrev;
+};
+
 /*
 ** Each in-memory image of a page begins with the following header.
 ** This header is only visible to this pager module.  The client
@@ -221,12 +228,11 @@
 **     content is needed in the future, it should be read from the
 **     original database file.
 */
-typedef struct PgHdr PgHdr;
 struct PgHdr {
   Pager *pPager;                 /* The pager to which this page belongs */
   Pgno pgno;                     /* The page number for this page */
   PgHdr *pNextHash, *pPrevHash;  /* Hash collision chain for PgHdr.pgno */
-  PgHdr *pNextFree, *pPrevFree;  /* Freelist of pages where nRef==0 */
+  PagerLruLink free;             /* Next and previous free pages */
   PgHdr *pNextAll;               /* A list of all pages */
   u8 inJournal;                  /* TRUE if has been written to journal */
   u8 dirty;                      /* TRUE if we need to write back changes */
@@ -235,6 +241,9 @@ struct PgHdr {
   u8 needRead;                   /* Read content if PagerWrite() is called */
   short int nRef;                /* Number of users of this page */
   PgHdr *pDirty, *pPrevDirty;    /* Dirty pages */
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  PagerLruLink gfree;            /* Global list of nRef==0 pages */
+#endif
   u32 notUsed;                   /* Buffer space */
 #ifdef SQLITE_CHECK_PAGES
   u32 pageHash;
@@ -282,6 +291,13 @@ struct PgHistory {
 #define PGHDR_TO_EXTRA(G,P) ((void*)&((char*)(&(G)[1]))[(P)->pageSize])
 #define PGHDR_TO_HIST(P,PGR)  \
             ((PgHistory*)&((char*)(&(P)[1]))[(PGR)->pageSize+(PGR)->nExtra])
+
+typedef struct PagerLruList PagerLruList;
+struct PagerLruList {
+  PgHdr *pFirst;
+  PgHdr *pLast;
+  PgHdr *pFirstSynced;   /* First page in list with PgHdr.needSync==0 */
+};
 
 /*
 ** A open page cache is an instance of the following structure.
@@ -338,8 +354,7 @@ struct Pager {
   sqlite3_file *fd, *jfd;     /* File descriptors for database and journal */
   sqlite3_file *stfd;         /* File descriptor for the statement subjournal*/
   BusyHandler *pBusyHandler;  /* Pointer to sqlite.busyHandler */
-  PgHdr *pFirst, *pLast;      /* List of free pages */
-  PgHdr *pFirstSynced;        /* First free page with PgHdr.needSync==0 */
+  PagerLruList lru;           /* LRU list of free pages */
   PgHdr *pAll;                /* List of all pages */
   PgHdr *pStmt;               /* List of pages in the statement subjournal */
   PgHdr *pDirty;              /* List of all dirty pages */
@@ -394,6 +409,7 @@ int sqlite3_pager_pgfree_count = 0;    /* Number of cache pages freed */
 */
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 static Pager *sqlite3PagerList = 0;
+static PagerLruList sqlite3LruPageList = {0, 0, 0};
 #endif
 
 
@@ -514,6 +530,99 @@ static const unsigned char aJournalMagic[] = {
 #else
 # define REFINFO(X)
 #endif
+
+static void listAdd(PagerLruList *pList, PagerLruLink *pLink, PgHdr *pPg){
+  pLink->pNext = 0;
+  pLink->pPrev = pList->pLast;
+
+  if( pList->pLast ){
+    int iOff = (char *)pLink - (char *)pPg;
+    PagerLruLink *pLastLink = (PagerLruLink *)(&((u8 *)pList->pLast)[iOff]);
+    pLastLink->pNext = pPg;
+  }else{
+    assert(!pList->pFirst);
+    pList->pFirst = pPg;
+  }
+
+  pList->pLast = pPg;
+  if( !pList->pFirstSynced && pPg->needSync==0 ){
+    pList->pFirstSynced = pPg;
+  }
+}
+
+static void listRemove(PagerLruList *pList, PagerLruLink *pLink, PgHdr *pPg){
+  int iOff = (char *)pLink - (char *)pPg;
+
+  if( pPg==pList->pFirst ){
+    pList->pFirst = pLink->pNext;
+  }
+  if( pPg==pList->pLast ){
+    pList->pLast = pLink->pPrev;
+  }
+  if( pLink->pPrev ){
+    PagerLruLink *pPrevLink = (PagerLruLink *)(&((u8 *)pLink->pPrev)[iOff]);
+    pPrevLink->pNext = pLink->pNext;
+  }
+  if( pLink->pNext ){
+    PagerLruLink *pNextLink = (PagerLruLink *)(&((u8 *)pLink->pNext)[iOff]);
+    pNextLink->pPrev = pLink->pPrev;
+  }
+  if( pPg==pList->pFirstSynced ){
+    PgHdr *p = pLink->pNext;
+    while( p && p->needSync ){
+      PagerLruLink *pL = (PagerLruLink *)(&((u8 *)p)[iOff]);
+      p = pL->pNext;
+    }
+    pList->pFirstSynced = p;
+  }
+
+  pLink->pNext = pLink->pPrev = 0;
+}
+
+/* 
+** Add page to the free-list 
+*/
+static void lruListAdd(PgHdr *pPg){
+  listAdd(&pPg->pPager->lru, &pPg->free, pPg);
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  if( !pPg->pPager->memDb ){
+    sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+    listAdd(&sqlite3LruPageList, &pPg->gfree, pPg);
+    sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+  }
+#endif
+}
+
+/* 
+** Remove page from free-list 
+*/
+static void lruListRemove(PgHdr *pPg){
+  listRemove(&pPg->pPager->lru, &pPg->free, pPg);
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  if( !pPg->pPager->memDb ){
+    sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+    listRemove(&sqlite3LruPageList, &pPg->gfree, pPg);
+    sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+  }
+#endif
+}
+
+/* 
+** Set the Pager.pFirstSynced variable 
+*/
+static void lruListSetFirstSynced(Pager *pPager){
+  pPager->lru.pFirstSynced = pPager->lru.pFirst;
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  if( !pPager->memDb ){
+    PgHdr *p;
+    sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+    for(p=sqlite3LruPageList.pFirst; p && p->needSync; p=p->gfree.pNext);
+    assert(p==pPager->lru.pFirstSynced || p==sqlite3LruPageList.pFirstSynced);
+    sqlite3LruPageList.pFirstSynced = p;
+    sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+  }
+#endif
+}
 
 /*
 ** Return true if page *pPg has already been written to the statement
@@ -1081,12 +1190,13 @@ static void pager_reset(Pager *pPager){
     IOTRACE(("PGFREE %p %d\n", pPager, pPg->pgno));
     PAGER_INCR(sqlite3_pager_pgfree_count);
     pNext = pPg->pNextAll;
+    lruListRemove(pPg);
     sqlite3_free(pPg);
   }
+  assert(pPager->lru.pFirst==0);
+  assert(pPager->lru.pFirstSynced==0);
+  assert(pPager->lru.pLast==0);
   pPager->pStmt = 0;
-  pPager->pFirst = 0;
-  pPager->pFirstSynced = 0;
-  pPager->pLast = 0;
   pPager->pAll = 0;
   pPager->nHash = 0;
   sqlite3_free(pPager->aHash);
@@ -1165,7 +1275,7 @@ static int pager_end_transaction(Pager *pPager){
   pPager->origDbSize = 0;
   pPager->setMaster = 0;
   pPager->needSync = 0;
-  pPager->pFirstSynced = pPager->pFirst;
+  lruListSetFirstSynced(pPager);
   pPager->dbSize = -1;
 
   return (rc==SQLITE_OK?rc2:rc);
@@ -2284,27 +2394,8 @@ static void unlinkHashChain(Pager *pPager, PgHdr *pPg){
 static void unlinkPage(PgHdr *pPg){
   Pager *pPager = pPg->pPager;
 
-  /* Keep the pFirstSynced pointer pointing at the first synchronized page */
-  if( pPg==pPager->pFirstSynced ){
-    PgHdr *p = pPg->pNextFree;
-    while( p && p->needSync ){ p = p->pNextFree; }
-    pPager->pFirstSynced = p;
-  }
-
-  /* Unlink from the freelist */
-  if( pPg->pPrevFree ){
-    pPg->pPrevFree->pNextFree = pPg->pNextFree;
-  }else{
-    assert( pPager->pFirst==pPg );
-    pPager->pFirst = pPg->pNextFree;
-  }
-  if( pPg->pNextFree ){
-    pPg->pNextFree->pPrevFree = pPg->pPrevFree;
-  }else{
-    assert( pPager->pLast==pPg );
-    pPager->pLast = pPg->pPrevFree;
-  }
-  pPg->pNextFree = pPg->pPrevFree = 0;
+  /* Unlink from free page list */
+  lruListRemove(pPg);
 
   /* Unlink from the pgno hash table */
   unlinkHashChain(pPager, pPg);
@@ -2498,21 +2589,7 @@ Pgno sqlite3PagerPagenumber(DbPage *p){
 static void _page_ref(PgHdr *pPg){
   if( pPg->nRef==0 ){
     /* The page is currently on the freelist.  Remove it. */
-    if( pPg==pPg->pPager->pFirstSynced ){
-      PgHdr *p = pPg->pNextFree;
-      while( p && p->needSync ){ p = p->pNextFree; }
-      pPg->pPager->pFirstSynced = p;
-    }
-    if( pPg->pPrevFree ){
-      pPg->pPrevFree->pNextFree = pPg->pNextFree;
-    }else{
-      pPg->pPager->pFirst = pPg->pNextFree;
-    }
-    if( pPg->pNextFree ){
-      pPg->pNextFree->pPrevFree = pPg->pPrevFree;
-    }else{
-      pPg->pPager->pLast = pPg->pPrevFree;
-    }
+    lruListRemove(pPg);
     pPg->pPager->nRef++;
   }
   pPg->nRef++;
@@ -2635,7 +2712,7 @@ static int syncJournal(Pager *pPager){
     for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
       pPg->needSync = 0;
     }
-    pPager->pFirstSynced = pPager->pFirst;
+    lruListSetFirstSynced(pPager);
   }
 
 #ifndef NDEBUG
@@ -2647,7 +2724,7 @@ static int syncJournal(Pager *pPager){
     for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
       assert( pPg->needSync==0 );
     }
-    assert( pPager->pFirstSynced==pPager->pFirst );
+    assert( pPager->lru.pFirstSynced==pPager->lru.pFirst );
   }
 #endif
 
@@ -2857,14 +2934,14 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   /* Find a page to recycle.  Try to locate a page that does not
   ** require us to do an fsync() on the journal.
   */
-  pPg = pPager->pFirstSynced;
+  pPg = pPager->lru.pFirstSynced;
 
   /* If we could not find a page that does not require an fsync()
   ** on the journal file then fsync the journal file.  This is a
   ** very slow operation, so we work hard to avoid it.  But sometimes
   ** it can't be helped.
   */
-  if( pPg==0 && pPager->pFirst && syncOk && !MEMDB){
+  if( pPg==0 && pPager->lru.pFirst && syncOk && !MEMDB){
     int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
     int rc = syncJournal(pPager);
     if( rc!=0 ){
@@ -2885,7 +2962,7 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
         return rc;
       }
     }
-    pPg = pPager->pFirst;
+    pPg = pPager->lru.pFirst;
   }
   if( pPg==0 ){
     return SQLITE_OK;
@@ -2945,7 +3022,7 @@ int sqlite3PagerReleaseMemory(int nReq){
   int nReleased = 0;          /* Bytes of memory released so far */
   sqlite3_mutex *mutex;       /* The MEM2 mutex */
   Pager *pPager;              /* For looping over pagers */
-  int i;                      /* Passes over pagers */
+  int rc = SQLITE_OK;
 
   /* Acquire the memory-management mutex
   */
@@ -2959,75 +3036,73 @@ int sqlite3PagerReleaseMemory(int nReq){
      pPager->iInUseMM = 1;
   }
 
-  /* Outermost loop runs for at most two iterations. First iteration we
-  ** try to find memory that can be released without calling fsync(). Second
-  ** iteration (which only runs if the first failed to free nReq bytes of
-  ** memory) is permitted to call fsync(). This is of course much more 
-  ** expensive.
-  */
-  for(i=0; i<=1; i++){
+  while( rc==SQLITE_OK && (nReq<0 || nReleased<nReq) ){
+    PgHdr *pPg;
+    PgHdr *pRecycled;
+ 
+    /* Try to find a page to recycle that does not require a sync(). If
+    ** this is not possible, find one that does require a sync().
+    */
+    sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+    pPg = sqlite3LruPageList.pFirstSynced;
+    while( pPg && (pPg->needSync || pPg->pPager->iInUseDB) ){
+      pPg = pPg->gfree.pNext;
+    }
+    if( !pPg ){
+      pPg = sqlite3LruPageList.pFirst;
+      while( pPg && pPg->pPager->iInUseDB ){
+        pPg = pPg->gfree.pNext;
+      }
+    }
+    sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
 
-    /* Loop through all the SQLite pagers opened by the current thread. */
-    Pager *pPager = sqlite3PagerList;
-    for( ; pPager && (nReq<0 || nReleased<nReq); pPager=pPager->pNext){
-      PgHdr *pPg;
-      int rc = SQLITE_OK;
+    if( !pPg ) break;
 
-      /* In-memory databases should not appear on the pager list */
-      assert( !MEMDB );
-
-      /* Skip pagers that are currently in use by the b-tree layer */
-      if( pPager->iInUseDB ) continue;
-
-      /* For each pager, try to free as many pages as possible (without 
-      ** calling fsync() if this is the first iteration of the outermost 
-      ** loop).
+    pPager = pPg->pPager;
+    assert(!pPg->needSync || pPg==pPager->lru.pFirst);
+    assert(pPg->needSync || pPg==pPager->lru.pFirstSynced);
+  
+    rc = pager_recycle(pPager, 1, &pRecycled);
+    assert(pRecycled==pPg || rc!=SQLITE_OK);
+    if( rc==SQLITE_OK ){
+      /* We've found a page to free. At this point the page has been 
+      ** removed from the page hash-table, free-list and synced-list 
+      ** (pFirstSynced). It is still in the all pages (pAll) list. 
+      ** Remove it from this list before freeing.
+      **
+      ** Todo: Check the Pager.pStmt list to make sure this is Ok. It 
+      ** probably is though.
       */
-      while( (nReq<0 || nReleased<nReq) &&
-             SQLITE_OK==(rc = pager_recycle(pPager, i, &pPg)) &&
-             pPg
-      ) {
-        /* We've found a page to free. At this point the page has been 
-        ** removed from the page hash-table, free-list and synced-list 
-        ** (pFirstSynced). It is still in the all pages (pAll) list. 
-        ** Remove it from this list before freeing.
-        **
-        ** Todo: Check the Pager.pStmt list to make sure this is Ok. It 
-        ** probably is though.
-        */
-        PgHdr *pTmp;
-        assert( pPg );
-        if( pPg==pPager->pAll ){
-           pPager->pAll = pPg->pNextAll;
-        }else{
-          for( pTmp=pPager->pAll; pTmp->pNextAll!=pPg; pTmp=pTmp->pNextAll ){}
-          pTmp->pNextAll = pPg->pNextAll;
-        }
-        nReleased += (
-            sizeof(*pPg) + pPager->pageSize
-            + sizeof(u32) + pPager->nExtra
-            + MEMDB*sizeof(PgHistory) 
-        );
-        IOTRACE(("PGFREE %p %d *\n", pPager, pPg->pgno));
-        PAGER_INCR(sqlite3_pager_pgfree_count);
-        sqlite3_free(pPg);
+      PgHdr *pTmp;
+      assert( pPg );
+      if( pPg==pPager->pAll ){
+         pPager->pAll = pPg->pNextAll;
+      }else{
+        for( pTmp=pPager->pAll; pTmp->pNextAll!=pPg; pTmp=pTmp->pNextAll ){}
+        pTmp->pNextAll = pPg->pNextAll;
       }
-
-      if( rc!=SQLITE_OK ){
-        /* An error occured whilst writing to the database file or 
-        ** journal in pager_recycle(). The error is not returned to the 
-        ** caller of this function. Instead, set the Pager.errCode variable.
-        ** The error will be returned to the user (or users, in the case 
-        ** of a shared pager cache) of the pager for which the error occured.
-        */
-        assert(
-            (rc&0xff)==SQLITE_IOERR ||
-            rc==SQLITE_FULL ||
-            rc==SQLITE_BUSY
-        );
-        assert( pPager->state>=PAGER_RESERVED );
-        pager_error(pPager, rc);
-      }
+      nReleased += (
+          sizeof(*pPg) + pPager->pageSize
+          + sizeof(u32) + pPager->nExtra
+          + MEMDB*sizeof(PgHistory) 
+      );
+      IOTRACE(("PGFREE %p %d *\n", pPager, pPg->pgno));
+      PAGER_INCR(sqlite3_pager_pgfree_count);
+      sqlite3_free(pPg);
+    }else{
+      /* An error occured whilst writing to the database file or 
+      ** journal in pager_recycle(). The error is not returned to the 
+      ** caller of this function. Instead, set the Pager.errCode variable.
+      ** The error will be returned to the user (or users, in the case 
+      ** of a shared pager cache) of the pager for which the error occured.
+      */
+      assert(
+          (rc&0xff)==SQLITE_IOERR ||
+          rc==SQLITE_FULL ||
+          rc==SQLITE_BUSY
+      );
+      assert( pPager->state>=PAGER_RESERVED );
+      pager_error(pPager, rc);
     }
   }
 
@@ -3252,9 +3327,9 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
   /* Create a new PgHdr if any of the four conditions defined 
   ** above are met: */
   if( pPager->nPage<pPager->mxPage
-   || pPager->pFirst==0 
+   || pPager->lru.pFirst==0 
    || MEMDB
-   || (pPager->pFirstSynced==0 && pPager->doNotSync)
+   || (pPager->lru.pFirstSynced==0 && pPager->doNotSync)
   ){
     if( pPager->nPage>=pPager->nHash ){
       pager_resize_hash_table(pPager,
@@ -3541,19 +3616,9 @@ int sqlite3PagerUnref(DbPage *pPg){
   ** destructor and add the page to the freelist.
   */
   if( pPg->nRef==0 ){
-    Pager *pPager;
-    pPager = pPg->pPager;
-    pPg->pNextFree = 0;
-    pPg->pPrevFree = pPager->pLast;
-    pPager->pLast = pPg;
-    if( pPg->pPrevFree ){
-      pPg->pPrevFree->pNextFree = pPg;
-    }else{
-      pPager->pFirst = pPg;
-    }
-    if( pPg->needSync==0 && pPager->pFirstSynced==0 ){
-      pPager->pFirstSynced = pPg;
-    }
+    Pager *pPager = pPg->pPager;
+
+    lruListAdd(pPg);
     if( pPager->xDestructor ){
       pPager->xDestructor(pPg, pPager->pageSize);
     }
