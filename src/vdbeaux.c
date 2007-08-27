@@ -19,6 +19,7 @@
 #include "vdbeInt.h"
 
 
+
 /*
 ** When debugging the code generator in a symbolic debugger, one can
 ** set the sqlite3_vdbe_addop_trace to 1 and all opcodes will be printed
@@ -669,7 +670,7 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
   if( pOut==0 ) pOut = stdout;
   zP3 = displayP3(pOp, zPtr, sizeof(zPtr));
   fprintf(pOut, zFormat1,
-      pc, sqlite3OpcodeNames[pOp->opcode], pOp->p1, pOp->p2, zP3);
+      pc, sqlite3OpcodeName(pOp->opcode), pOp->p1, pOp->p2, zP3);
   fflush(pOut);
 }
 #endif
@@ -734,7 +735,7 @@ int sqlite3VdbeList(
     pMem++;
 
     pMem->flags = MEM_Static|MEM_Str|MEM_Term;
-    pMem->z = (char*)sqlite3OpcodeNames[pOp->opcode];  /* Opcode */
+    pMem->z = (char*)sqlite3OpcodeName(pOp->opcode);  /* Opcode */
     assert( pMem->z!=0 );
     pMem->n = strlen(pMem->z);
     pMem->type = SQLITE_TEXT;

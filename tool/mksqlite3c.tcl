@@ -233,7 +233,6 @@ foreach file {
    auth.c
    build.c
    callback.c
-   complete.c
    delete.c
    func.c
    insert.c
@@ -252,6 +251,7 @@ foreach file {
    parse.c
 
    tokenize.c
+   complete.c
 
    main.c
 } {

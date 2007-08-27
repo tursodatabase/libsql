@@ -2588,10 +2588,10 @@ static void unixDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
   }
   leaveMutex();
 }
-void *unixDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
+static void *unixDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
   return dlsym(pHandle, zSymbol);
 }
-void unixDlClose(sqlite3_vfs *pVfs, void *pHandle){
+static void unixDlClose(sqlite3_vfs *pVfs, void *pHandle){
   dlclose(pHandle);
 }
 #else /* if SQLITE_OMIT_LOAD_EXTENSION is defined: */
