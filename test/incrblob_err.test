@@ -9,13 +9,13 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob_err.test,v 1.4 2007/08/25 13:09:26 danielk1977 Exp $
+# $Id: incrblob_err.test,v 1.5 2007/08/27 23:48:24 drh Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable {!incrblob} {
+ifcapable {!incrblob  || !memdebug} {
   finish_test
   return
 }

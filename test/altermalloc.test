@@ -12,14 +12,14 @@
 # focus of this script is testing the ALTER TABLE statement and
 # specifically out-of-memory conditions within that command.
 #
-# $Id: altermalloc.test,v 1.4 2007/08/25 13:09:26 danielk1977 Exp $
+# $Id: altermalloc.test,v 1.5 2007/08/27 23:48:24 drh Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
-ifcapable !altertable {
+ifcapable !altertable||!memdebug {
   finish_test
   return
 }

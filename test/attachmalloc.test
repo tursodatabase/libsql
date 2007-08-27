@@ -12,11 +12,16 @@
 # focus of this script is testing the ATTACH statement and
 # specifically out-of-memory conditions within that command.
 #
-# $Id: attachmalloc.test,v 1.4 2007/08/25 13:37:49 danielk1977 Exp $
+# $Id: attachmalloc.test,v 1.5 2007/08/27 23:48:24 drh Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !memdebug {
+  finish_test
+  return
+}
 
 source $testdir/malloc_common.tcl
 
