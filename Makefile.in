@@ -122,8 +122,9 @@ TCC += -DSQLITE_OMIT_LOAD_EXTENSION=1
 #
 LIBOBJ = alter.lo analyze.lo attach.lo auth.lo btree.lo build.lo \
          callback.lo complete.lo date.lo \
-         delete.lo expr.lo func.lo hash.lo insert.lo loadext.lo \
-         main.lo malloc.lo opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
+         delete.lo expr.lo func.lo hash.lo journal.lo insert.lo loadext.lo \
+         main.lo malloc.lo mem1.lo mem2.lo mutex.lo \
+         opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
          pager.lo parse.lo pragma.lo prepare.lo printf.lo random.lo \
          select.lo table.lo tokenize.lo trigger.lo update.lo \
          util.lo vacuum.lo \
@@ -149,10 +150,14 @@ SRC = \
   $(TOP)/src/hash.c \
   $(TOP)/src/hash.h \
   $(TOP)/src/insert.c \
+  $(TOP)/src/journal.c \
   $(TOP)/src/legacy.c \
   $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
   $(TOP)/src/malloc.c \
+  $(TOP)/src/mem1.c \
+  $(TOP)/src/mem2.c \
+  $(TOP)/src/mutex.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
@@ -228,6 +233,7 @@ TESTSRC = \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
   $(TOP)/src/test_hexio.c \
+  $(TOP)/src/test_malloc.c \
   $(TOP)/src/test_md5.c \
   $(TOP)/src/test_schema.c \
   $(TOP)/src/test_server.c \
@@ -364,6 +370,9 @@ hash.lo:	$(TOP)/src/hash.c $(HDR)
 insert.lo:	$(TOP)/src/insert.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/insert.c
 
+journal.lo:	$(TOP)/src/journal.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/journal.c
+
 legacy.lo:	$(TOP)/src/legacy.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/legacy.c
 
@@ -375,6 +384,15 @@ main.lo:	$(TOP)/src/main.c $(HDR)
 
 malloc.lo:	$(TOP)/src/malloc.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/malloc.c
+
+mem1.lo:	$(TOP)/src/mem1.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem1.c
+
+mem2.lo:	$(TOP)/src/mem2.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem2.c
+
+mutex.lo:	$(TOP)/src/mutex.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex.c
 
 pager.lo:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 	$(LTCOMPILE) -c $(TOP)/src/pager.c
