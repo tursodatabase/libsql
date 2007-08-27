@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.600 2007/08/25 14:39:46 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.601 2007/08/27 21:49:34 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -280,7 +280,6 @@ typedef struct NameContext NameContext;
 typedef struct Parse Parse;
 typedef struct Select Select;
 typedef struct SrcList SrcList;
-typedef struct ThreadData ThreadData;
 typedef struct Table Table;
 typedef struct TableLock TableLock;
 typedef struct Token Token;
@@ -1533,11 +1532,11 @@ int sqlite3IsNumber(const char*, int*, u8);
 void *sqlite3MallocZero(unsigned);
 void *sqlite3DbMallocZero(sqlite3*, unsigned);
 void *sqlite3DbMallocRaw(sqlite3*, unsigned);
-void *sqlite3ReallocOrFree(sqlite3*,void*,int);
 char *sqlite3StrDup(const char*);
 char *sqlite3StrNDup(const char*, int);
 char *sqlite3DbStrDup(sqlite3*,const char*);
 char *sqlite3DbStrNDup(sqlite3*,const char*, int);
+void *sqlite3DbReallocOrFree(sqlite3 *, void *, int);
 
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
@@ -1779,9 +1778,6 @@ int sqlite3AnalysisLoad(sqlite3*,int iDB);
 void sqlite3DefaultRowEst(Index*);
 void sqlite3RegisterLikeFunctions(sqlite3*, int);
 int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
-ThreadData *sqlite3ThreadData(void);
-const ThreadData *sqlite3ThreadDataReadOnly(void);
-void sqlite3ReleaseThreadData(void);
 void sqlite3AttachFunctions(sqlite3 *);
 void sqlite3MinimumFileFormat(Parse*, int, int);
 void sqlite3SchemaFree(void *);
@@ -1792,12 +1788,9 @@ int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
   void (*)(sqlite3_context*,int,sqlite3_value **),
   void (*)(sqlite3_context*,int,sqlite3_value **), void (*)(sqlite3_context*));
 int sqlite3ApiExit(sqlite3 *db, int);
-void sqlite3FailedMalloc(void);
 void sqlite3AbortOtherActiveVdbes(sqlite3 *, Vdbe *);
 int sqlite3OpenTempDatabase(Parse *);
 
-void *sqlite3DbReallocOrFree(sqlite3 *, void *, int);
-sqlite3 *sqlite3DbOfVdbe(Vdbe *);
 
 /*
 ** The interface to the LEMON-generated parser

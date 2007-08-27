@@ -199,6 +199,9 @@ foreach file {
    date.c
    os.c
 
+   mem1.c
+   mem2.c
+   mutex.c
    malloc.c
    printf.c
    random.c
@@ -221,6 +224,7 @@ foreach file {
    vdbeapi.c
    vdbe.c
    vdbeblob.c
+   journal.c
 
    expr.c
    alter.c
