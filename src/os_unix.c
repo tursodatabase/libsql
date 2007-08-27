@@ -2463,7 +2463,7 @@ static int unixAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
     case SQLITE_ACCESS_READWRITE:
       amode = W_OK|R_OK;
       break;
-    case SQLITE_ACCESS_READONLY:
+    case SQLITE_ACCESS_READ:
       amode = R_OK;
       break;
 

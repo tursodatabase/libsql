@@ -726,7 +726,7 @@ static int asyncAccess(sqlite3_vfs *pAsyncVfs, const char *zName, int flags){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
 
   assert(flags==SQLITE_ACCESS_READWRITE 
-      || flags==SQLITE_ACCESS_READONLY 
+      || flags==SQLITE_ACCESS_READ 
       || flags==SQLITE_ACCESS_EXISTS 
   );
 
@@ -745,7 +745,7 @@ static int asyncAccess(sqlite3_vfs *pAsyncVfs, const char *zName, int flags){
   }
   ASYNC_TRACE(("ACCESS(%s): %s = %d\n", 
     flags==SQLITE_ACCESS_READWRITE?"read-write":
-    flags==SQLITE_ACCESS_READONLY?"read-only":"exists"
+    flags==SQLITE_ACCESS_READ?"read":"exists"
     , zName, ret)
   );
   pthread_mutex_unlock(&async.queueMutex);

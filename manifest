@@ -1,5 +1,5 @@
-C Modify\ssqlite3_release_memory()\sto\suse\sa\sglobal\sLRU\slist\sof\spages.\sUntested.\s(CVS\s4301)
-D 2007-08-27T17:27:49
+C Added\sthe\s34to35.html\sdocument\sdescribing\sthe\schanges\sbetween\s3.4.2\sand\n3.5.0.\s\sMinor\sinterface\scleanups.\s(CVS\s4302)
+D 2007-08-27T21:10:36
 F Makefile.in 938f2769921fa1b30c633548f153804021eb1512
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 9e796bb4e04ca16d3d1506e6496a7468410dd441
+F main.mk 238b00009433760c469ceb94f37f49e76dceae45
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -111,9 +111,9 @@ F src/os_os2.c 8769301bff502de642ad2634cedcb77d967ce199
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 27b1fad58587bc949013a5a4df9fc20fce395648
+F src/os_unix.c 7a340c712efa1bde95b6e23b7f279d9fb6e7dcf2
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 4f840e97624dbde9cae3d020ce072a4f1d2a11b1
+F src/os_win.c 3ffd3aacff4cb69848284e29dcec0feff23b0752
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c cfa6dc38b797206549491de3ec7f0aea50611dda
 F src/pager.h 53087c6fb9db01aed17c7fd044662a27507e89b8
@@ -125,7 +125,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 98c367bce3f38c5adfcc97de9ab5c79b0e5dc2b2
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in 2d45cd3fc1b6677d06c8e547bbe1b9a040a7f677
+F src/sqlite.h.in 4cf42ce749e4bdf13b9bb4959e91439c3ce8a054
 F src/sqlite3ext.h 9a26028378c288af500d8b94ed079666fed5806b
 F src/sqliteInt.h 13c908f5f156a192fcd247f993ac513bfaf81f53
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
@@ -140,7 +140,7 @@ F src/test6.c a6223d9d938aba83f20611a2c01680d8043cd2f7
 F src/test7.c a9d509d0e9ad214b4772696f49f6e61be26213d1
 F src/test8.c a91b8d28341bbd168f5ba1ecad2be1008ddf15d1
 F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
-F src/test_async.c 12ff3db0e052f561596d4dbdd29272f28b25060d
+F src/test_async.c f222bd196b55a2e73b1427400d5aa97841787167
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c f0b911bb615d93a192647e76910dce65cbbcf3ad
@@ -504,6 +504,7 @@ F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
 F tool/spaceanal.tcl f60a242a996a79d59cad6615cec83a9203e17911
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
+F www/34to35.tcl 5a477bf9210b324ee16bd26fc04ddd578b63b395
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.gif f845a64772062e82d17980a349f95f1f0b4c8054
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
@@ -561,7 +562,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3d746343add3feb9d208302a00b419d71d6ba246
-R 95f58c79a104b4b1aa01178fe78f1fa0
-U danielk1977
-Z 8ec1ffcae0650e586d1badb059ab31f9
+P 5626ce0b5e249d48b56fdc4561ef663941eb23dc
+R 53f45ea77bc4d4516f85c7437592148c
+U drh
+Z edf7af5b96ec397985d0784a02a0916d

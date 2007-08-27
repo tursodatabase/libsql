@@ -707,6 +707,9 @@ version3.html:	$(TOP)/www/version3.tcl
 whentouse.html:	$(TOP)/www/whentouse.tcl
 	tclsh $(TOP)/www/whentouse.tcl >whentouse.html
 
+34to35.html:	$(TOP)/www/34to35.tcl
+	tclsh $(TOP)/www/34to35.tcl >34to35.html
+
 
 # Files to be published on the website.
 #
@@ -750,7 +753,8 @@ DOC = \
   tclsqlite.html \
   vdbe.html \
   version3.html \
-  whentouse.html
+  whentouse.html \
+  34to35.html
 
 doc:	common.tcl $(DOC)
 	mkdir -p doc

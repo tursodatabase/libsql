@@ -1237,14 +1237,12 @@ static int winAccess(
   }
   free(zConverted);
   switch( flags ){
+    case SQLITE_ACCESS_READ:
     case SQLITE_ACCESS_EXISTS:
       rc = attr!=0xffffffff;
       break;
     case SQLITE_ACCESS_READWRITE:
       rc = (attr & FILE_ATTRIBUTE_READONLY)==0;
-      break;
-    case SQLITE_ACCESS_READONLY:
-      rc = (attr!=0xffffffff) && ((attr & FILE_ATTRIBUTE_READONLY)==1);
       break;
     default:
       assert(!"Invalid flags argument");
