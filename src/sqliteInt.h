@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.602 2007/08/27 23:26:59 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.603 2007/08/28 02:27:52 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -233,8 +233,8 @@ struct BusyHandler {
 ** Defer sourcing vdbe.h and btree.h until after the "u8" and 
 ** "BusyHandler typedefs.
 */
-#include "vdbe.h"
 #include "btree.h"
+#include "vdbe.h"
 #include "pager.h"
 
 

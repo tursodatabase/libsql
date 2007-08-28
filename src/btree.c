@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.412 2007/08/24 11:52:29 danielk1977 Exp $
+** $Id: btree.c,v 1.413 2007/08/28 02:27:52 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1385,98 +1385,6 @@ int sqlite3BtreeClose(Btree *p){
   sqlite3_free(p);
   return SQLITE_OK;
 }
-
-#if SQLITE_THREADSAFE && !defined(SQLITE_OMIT_SHARED_CACHE)
-/*
-** Enter a mutex on the given BTree object.
-**
-** If the object is not sharable, then no mutex is ever required
-** and this routine is a no-op.  The underlying mutex is non-recursive.
-** But we keep a reference count in Btree.wantToLock so the behavior
-** of this interface is recursive.
-**
-** To avoid deadlocks, multiple Btrees are locked in the same order
-** by all database connections.  The p->pNext is a list of other
-** Btrees belonging to the same database connection as the p Btree
-** which need to be locked after p.  If we cannot get a lock on
-** p, then first unlock all of the others on p->pNext, then wait
-** for the lock to become available on p, then relock all of the
-** subsequent Btrees that desire a lock.
-*/
-void sqlite3BtreeEnter(Btree *p){
-  Btree *pLater;
-
-  /* Some basic sanity checking on the Btree.  The list of Btrees
-  ** connected by pNext and pPrev should be in sorted order by
-  ** Btree.pBt value. All elements of the list should belong to
-  ** the same connection. Only shared Btrees are on the list. */
-  assert( p->pNext==0 || p->pNext->pBt>p->pBt );
-  assert( p->pPrev==0 || p->pPrev->pBt<p->pBt );
-  assert( p->pNext==0 || p->pNext->pSqlite==p->pSqlite );
-  assert( p->pPrev==0 || p->pPrev->pSqlite==p->pSqlite );
-  assert( p->sharable || (p->pNext==0 && p->pPrev==0) );
-
-  /* Check for locking consistency */
-  assert( !p->locked || p->wantToLock>0 );
-  assert( p->sharable || p->wantToLock==0 );
-
-  /* We should already hold a lock on the database connection */
-  assert( sqlite3BtreeMutexHeld(p->pSqlite->mutex) );
-
-  if( !p->sharable ) return;
-  p->wantToLock++;
-  if( p->locked ) return;
-
-  /* In most cases, we should be able to acquire the lock we
-  ** want without having to go throught the ascending lock
-  ** procedure that follows.  Just be sure not to block.
-  */
-  if( sqlite3_mutex_try(p->pBt->mutex)==SQLITE_OK ){
-    p->locked = 1;
-    return;
-  }
-
-  /* To avoid deadlock, first release all locks with a larger
-  ** BtShared address.  Then acquire our lock.  Then reacquire
-  ** the other BtShared locks that we used to hold in ascending
-  ** order.
-  */
-  for(pLater=p->pNext; pLater; pLater=pLater->pNext){
-    assert( pLater->sharable );
-    assert( pLater->pNext==0 || pLater->pNext->pBt>pLater->pBt );
-    assert( !pLater->locked || pLater->wantToLock>0 );
-    if( pLater->locked ){
-      sqlite3_mutex_leave(pLater->pBt->mutex);
-      pLater->locked = 0;
-    }
-  }
-  sqlite3_mutex_enter(p->pBt->mutex);
-  for(pLater=p->pNext; pLater; pLater=pLater->pNext){
-    if( pLater->wantToLock ){
-      sqlite3_mutex_enter(pLater->pBt->mutex);
-      pLater->locked = 1;
-    }
-  }
-}
-#endif /* !SQLITE_OMIT_SHARED_CACHE */
-
-/*
-** Exit the recursive mutex on a Btree.
-*/
-#if SQLITE_THREADSAFE && !defined(SQLITE_OMIT_SHARED_CACHE)
-void sqlite3BtreeLeave(Btree *p){
-  if( p->sharable ){
-    assert( p->wantToLock>0 );
-    p->wantToLock--;
-    if( p->wantToLock==0 ){
-      assert( p->locked );
-      sqlite3_mutex_leave(p->pBt->mutex);
-      p->locked = 0;
-    }
-  }
-}
-#endif
-
 
 #if SQLITE_THREADSAFE && !defined(SQLITE_OMIT_SHARED_CACHE)
 /*
@@ -6680,7 +6588,6 @@ char *sqlite3BtreeIntegrityCheck(
 */
 const char *sqlite3BtreeGetFilename(Btree *p){
   assert( p->pBt->pPager!=0 );
-  assert( sqlite3BtreeMutexHeld(p->pBt->mutex) );
   return sqlite3PagerFilename(p->pBt->pPager);
 }
 
@@ -6689,7 +6596,6 @@ const char *sqlite3BtreeGetFilename(Btree *p){
 */
 const char *sqlite3BtreeGetDirname(Btree *p){
   assert( p->pBt->pPager!=0 );
-  assert( sqlite3BtreeMutexHeld(p->pBt->mutex) );
   return sqlite3PagerDirname(p->pBt->pPager);
 }
 
@@ -6700,7 +6606,6 @@ const char *sqlite3BtreeGetDirname(Btree *p){
 */
 const char *sqlite3BtreeGetJournalname(Btree *p){
   assert( p->pBt->pPager!=0 );
-  assert( sqlite3BtreeMutexHeld(p->pBt->mutex) );
   return sqlite3PagerJournalname(p->pBt->pPager);
 }
 
@@ -6780,7 +6685,6 @@ int sqlite3BtreeCopyFile(Btree *pTo, Btree *pFrom){
 ** Return non-zero if a transaction is active.
 */
 int sqlite3BtreeIsInTrans(Btree *p){
-  assert( sqlite3BtreeMutexHeld(p->pBt->mutex) );
   assert( sqlite3BtreeMutexHeld(p->pSqlite->mutex) );
   return (p && (p->inTrans==TRANS_WRITE));
 }
@@ -6798,7 +6702,6 @@ int sqlite3BtreeIsInStmt(Btree *p){
 ** Return non-zero if a read (or write) transaction is active.
 */
 int sqlite3BtreeIsInReadTrans(Btree *p){
-  assert( sqlite3BtreeMutexHeld(p->pBt->mutex) );
   assert( sqlite3BtreeMutexHeld(p->pSqlite->mutex) );
   return (p && (p->inTrans!=TRANS_NONE));
 }

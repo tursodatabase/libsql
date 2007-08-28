@@ -55,7 +55,7 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 
 # Object files for the SQLite library.
 #
-LIBOBJ+= alter.o analyze.o attach.o auth.o btree.o build.o \
+LIBOBJ+= alter.o analyze.o attach.o auth.o btmutex.o btree.o build.o \
          callback.o complete.o date.o delete.o \
          expr.o func.o hash.o insert.o journal.o loadext.o \
          main.o malloc.o mem1.o mem2.o mutex.o \
@@ -91,6 +91,7 @@ SRC = \
   $(TOP)/src/analyze.c \
   $(TOP)/src/attach.c \
   $(TOP)/src/auth.c \
+  $(TOP)/src/btmutex.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
@@ -194,11 +195,15 @@ SRC += \
 # Source code to the test files.
 #
 TESTSRC = \
+  $(TOP)/src/btmutex.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/date.c \
   $(TOP)/src/func.c \
   $(TOP)/src/insert.c \
   $(TOP)/src/malloc.c \
+  $(TOP)/src/mem1.c \
+  $(TOP)/src/mem2.c \
+  $(TOP)/src/mutex.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
@@ -336,6 +341,9 @@ attach.o:	$(TOP)/src/attach.c $(HDR)
 
 auth.o:	$(TOP)/src/auth.c $(HDR)
 	$(TCCX) -c $(TOP)/src/auth.c
+
+btmutex.o:	$(TOP)/src/btmutex.c $(HDR) $(TOP)/src/btreeInt.h
+	$(TCCX) -c $(TOP)/src/btmutex.c
 
 btree.o:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
 	$(TCCX) -c $(TOP)/src/btree.c

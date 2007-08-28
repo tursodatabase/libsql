@@ -1,6 +1,6 @@
-C Disable\stests\sthat\sdebug\son\sSQLITE_MEMDEBUG\swhen\sthat\smacro\sis\snot\sdefined.\s(CVS\s4306)
-D 2007-08-27T23:48:24
-F Makefile.in 51bdcd1708f0971bc6b5d8eb47f00d127a899345
+C Work\stoward\scorrect\sbtree\slocking\sin\sa\smultithreaded\senvironment.\s(CVS\s4307)
+D 2007-08-28T02:27:52
+F Makefile.in e8296e112b8942a96c0ed504398bd0d43e3c67ce
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 6200589421a0dfe968cd39c431fc62277b963540
@@ -63,7 +63,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 238b00009433760c469ceb94f37f49e76dceae45
+F main.mk 6b817f36cdfe3c1846cf6bac96afe8f73add5fe5
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -80,10 +80,11 @@ F src/alter.c fd78c6005456c727a6cb7c01c5266f2aacf6d401
 F src/analyze.c a14237d869c6bea0846493b59317e4097e81a0b6
 F src/attach.c a52225c75b107be8c5bc144a2b6d20201be3f8f8
 F src/auth.c 083c1205b45e3f52291ec539d396b4fc557856b3
-F src/btree.c dbb8ec48e619fc4900f42cafffc7de90b4b21250
-F src/btree.h 76c89673981cb77575300c0b78a76eaa00a28743
+F src/btmutex.c e11c59a7a68d9f295a1abfb753ffa4755b5037b1
+F src/btree.c 850cd5de860e01233153ade9b24ffc775a794e8e
+F src/btree.h a8fb26c56b745b57446c2bf29133619261313051
 F src/btreeInt.h c1ba892252bc4dd76ad66da056536c64b23456e3
-F src/build.c bc7406e2ea5bfa8276ee1abeae1db27a98fd0b33
+F src/build.c 08001e8a12b06178193dc4a8f24610f58de80dae
 F src/callback.c a542236a68060caad378efa30006ca46cf77b1b2
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c af235f38f50809abd0a96da3bb3e0cc32be6226e
@@ -127,7 +128,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
 F src/sqlite.h.in 4cf42ce749e4bdf13b9bb4959e91439c3ce8a054
 F src/sqlite3ext.h 9a26028378c288af500d8b94ed079666fed5806b
-F src/sqliteInt.h ec674206f8a6a475ac58552c40e77d88d66862a2
+F src/sqliteInt.h e681df44a19ffb6750d129802f124132ae240c83
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
 F src/table.c c725e47f6f3092b9a7b569fc58e408e2173ee008
 F src/tclsqlite.c d76af53f45c9e9f7f7d39531fa4c7bee7d0adad6
@@ -157,11 +158,11 @@ F src/update.c e89b980b443d44b68bfc0b1746cdb6308e049ac9
 F src/utf.c 4af6259d5906b5a1bf3035cc387c4d7907bdd56e
 F src/util.c 3f9c0387b54f977726790f52ab92cd3d9379b367
 F src/vacuum.c 5ec133b69edf581a232af7e2b01f45c9f2b8be32
-F src/vdbe.c 9d4d00589c174aad9a616f1615464ddddebba0ec
-F src/vdbe.h 001c5b257567c1d3de7feb2203aac71d0d7b16a3
-F src/vdbeInt.h 2bb602c9cb19191d574517bdec0f6c0b600bd3da
+F src/vdbe.c 62d210babaac906a5847d7bd4c71e7b114595e85
+F src/vdbe.h 5b3ee0fd91a08579f514713038fa7dbef9edf407
+F src/vdbeInt.h 0681e0b74a43d3adfec65780d73b2db8f826c7c9
 F src/vdbeapi.c bdd0aea216744482dd1b7fab56de18ba5b6fbdf4
-F src/vdbeaux.c 2889abf9a6fe954de158bea07652d46101577d08
+F src/vdbeaux.c bffdf7b69de21a70520260d359e19df64f31aea4
 F src/vdbeblob.c d12ed95dac0992e1e372d079d76af047cc42f7c7
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 896fa3f8df9d2661eb15c7ce361857741b447268
@@ -562,7 +563,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P bc6d73d015327a9cf6b687aaf4b3f0d07e0fd484
-R 2349531d73bc37131a9a7284d5308814
+P 741d6fb096dcb232871d3a8468c386022afcf554
+R ff3e167d1bd072e0909067b1f2888076
 U drh
-Z 56024ff7bdc953200a8a79d2b652027f
+Z 6d8ca04435be2f950a1ddef0045b914b

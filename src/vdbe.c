@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.644 2007/08/21 19:33:57 drh Exp $
+** $Id: vdbe.c,v 1.645 2007/08/28 02:27:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -465,6 +465,7 @@ int sqlite3VdbeExec(
   if( p->magic!=VDBE_MAGIC_RUN ) return SQLITE_MISUSE;
   assert( db->magic==SQLITE_MAGIC_BUSY );
   pTos = p->pTos;
+  sqlite3BtreeMutexSetEnter(&p->mtxSet);
   if( p->rc==SQLITE_NOMEM ){
     /* This happens if a malloc() inside a call to sqlite3_column_text() or
     ** sqlite3_column_text16() failed.  */
@@ -685,10 +686,11 @@ case OP_Halt: {            /* no-push */
   rc = sqlite3VdbeHalt(p);
   assert( rc==SQLITE_BUSY || rc==SQLITE_OK );
   if( rc==SQLITE_BUSY ){
-    p->rc = SQLITE_BUSY;
-    return SQLITE_BUSY;
+    p->rc = rc = SQLITE_BUSY;
+  }else{
+    rc = p->rc ? SQLITE_ERROR : SQLITE_DONE;
   }
-  return p->rc ? SQLITE_ERROR : SQLITE_DONE;
+  goto vdbe_return;
 }
 
 /* Opcode: Integer P1 * *
@@ -1003,7 +1005,8 @@ case OP_Callback: {            /* no-push */
   p->popStack = pOp->p1;
   p->pc = pc + 1;
   p->pTos = pTos;
-  return SQLITE_ROW;
+  rc = SQLITE_ROW;
+  goto vdbe_return;
 }
 
 /* Opcode: Concat P1 P2 *
@@ -2462,15 +2465,16 @@ case OP_AutoCommit: {       /* no-push */
         p->pTos = pTos;
         p->pc = pc;
         db->autoCommit = 1-i;
-        p->rc = SQLITE_BUSY;
-        return SQLITE_BUSY;
+        p->rc = rc = SQLITE_BUSY;
+        goto vdbe_return;
       }
     }
     if( p->rc==SQLITE_OK ){
-      return SQLITE_DONE;
+      rc = SQLITE_DONE;
     }else{
-      return SQLITE_ERROR;
+      rc = SQLITE_ERROR;
     }
+    goto vdbe_return;
   }else{
     sqlite3SetString(&p->zErrMsg,
         (!i)?"cannot start a transaction within a transaction":(
@@ -2513,9 +2517,9 @@ case OP_Transaction: {       /* no-push */
     rc = sqlite3BtreeBeginTrans(pBt, pOp->p2);
     if( rc==SQLITE_BUSY ){
       p->pc = pc;
-      p->rc = SQLITE_BUSY;
+      p->rc = rc = SQLITE_BUSY;
       p->pTos = pTos;
-      return SQLITE_BUSY;
+      goto vdbe_return;
     }
     if( rc!=SQLITE_OK && rc!=SQLITE_READONLY /* && rc!=SQLITE_BUSY */ ){
       goto abort_due_to_error;
@@ -2755,9 +2759,9 @@ case OP_OpenWrite: {       /* no-push */
   switch( rc ){
     case SQLITE_BUSY: {
       p->pc = pc;
-      p->rc = SQLITE_BUSY;
+      p->rc = rc = SQLITE_BUSY;
       p->pTos = &pTos[1 + (pOp->p2<=0)]; /* Operands must remain on stack */
-      return SQLITE_BUSY;
+      goto vdbe_return;
     }
     case SQLITE_OK: {
       int flags = sqlite3BtreeFlags(pCur->pCursor);
@@ -5193,6 +5197,12 @@ vdbe_halt:
   }
   sqlite3VdbeHalt(p);
   p->pTos = pTos;
+
+  /* This is the only way out of this procedure.  We have to
+  ** release the mutexes on btrees that were acquired at the
+  ** top. */
+vdbe_return:
+  sqlite3BtreeMutexSetLeave(&p->mtxSet);
   return rc;
 
   /* Jump to here if a string or blob larger than SQLITE_MAX_LENGTH

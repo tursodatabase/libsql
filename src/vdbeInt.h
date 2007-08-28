@@ -317,7 +317,7 @@ struct Vdbe {
   unsigned uniqueCnt;     /* Used by OP_MakeRecord when P2!=0 */
   int errorAction;        /* Recovery action to do in case of an error */
   int inTempTrans;        /* True if temp database is transactioned */
-  int returnStack[100];   /* Return address stack for OP_Gosub & OP_Return */
+  int returnStack[25];    /* Return address stack for OP_Gosub & OP_Return */
   int returnDepth;        /* Next unused element in returnStack[] */
   int nResColumn;         /* Number of columns in one row of the result set */
   char **azResColumn;     /* Values for one row of result */ 
@@ -332,6 +332,7 @@ struct Vdbe {
   u8 inVtabMethod;        /* See comments above */
   int nChange;            /* Number of db changes made since last reset */
   i64 startTime;          /* Time when query started - used for profiling */
+  BtreeMutexSet mtxSet;   /* Set of Btree mutexes */
   int nSql;             /* Number of bytes in zSql */
   char *zSql;           /* Text of the SQL statement that generated this */
 #ifdef SQLITE_DEBUG

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.438 2007/08/22 20:18:22 drh Exp $
+** $Id: build.c,v 1.439 2007/08/28 02:27:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -164,6 +164,7 @@ void sqlite3FinishCoding(Parse *pParse){
       sqlite3VdbeJumpHere(v, pParse->cookieGoto-1);
       for(iDb=0, mask=1; iDb<db->nDb; mask<<=1, iDb++){
         if( (mask & pParse->cookieMask)==0 ) continue;
+        sqlite3VdbeAddMutexBtree(v, db->aDb[iDb].pBt);
         sqlite3VdbeAddOp(v, OP_Transaction, iDb, (mask & pParse->writeMask)!=0);
         sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, pParse->cookieValue[iDb]);
       }

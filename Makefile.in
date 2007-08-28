@@ -120,7 +120,7 @@ TCC += -DSQLITE_OMIT_LOAD_EXTENSION=1
 
 # Object files for the SQLite library.
 #
-LIBOBJ = alter.lo analyze.lo attach.lo auth.lo btree.lo build.lo \
+LIBOBJ = alter.lo analyze.lo attach.lo auth.lo btmutex.lo btree.lo build.lo \
          callback.lo complete.lo date.lo \
          delete.lo expr.lo func.lo hash.lo journal.lo insert.lo loadext.lo \
          main.lo malloc.lo mem1.lo mem2.lo mutex.lo \
@@ -138,6 +138,7 @@ SRC = \
   $(TOP)/src/analyze.c \
   $(TOP)/src/attach.c \
   $(TOP)/src/auth.c \
+  $(TOP)/src/btmutex.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
@@ -339,6 +340,9 @@ attach.lo:	$(TOP)/src/attach.c $(HDR)
 
 auth.lo:	$(TOP)/src/auth.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/auth.c
+
+btmutex.lo:	$(TOP)/src/btmutex.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/btmutex.c
 
 btree.lo:	$(TOP)/src/btree.c $(HDR) $(TOP)/src/pager.h
 	$(LTCOMPILE) -c $(TOP)/src/btree.c

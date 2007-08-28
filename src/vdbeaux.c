@@ -658,6 +658,13 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
 }
 #endif
 
+/*
+** Add a btree to the set of btrees that might need a mutex.
+*/
+void sqlite3VdbeAddMutexBtree(Vdbe *p, Btree *pBtree){
+  sqlite3BtreeMutexSetInsert(&p->mtxSet, pBtree);
+}
+
 
 #if defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
 /*
