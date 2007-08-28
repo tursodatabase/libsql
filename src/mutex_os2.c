@@ -1,5 +1,5 @@
 /*
-** 2007 August 14
+** 2007 August 28
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -9,26 +9,24 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains the C functions that implement mutexes.
+** This file contains the C functions that implement mutexes for OS/2
 **
-** The implementation in this file does not provide any mutual
-** exclusion and is thus suitable for use only in applications
-** that use SQLite in a single thread.  But this implementation
-** does do a lot of error checking on mutexes to make sure they
-** are called correctly and at appropriate times.  Hence, this
-** implementation is suitable for testing.
-** debugging purposes
-**
-** $Id: mutex.c,v 1.15 2007/08/28 16:34:43 drh Exp $
+** $Id: mutex_os2.c,v 1.1 2007/08/28 16:34:43 drh Exp $
 */
 #include "sqliteInt.h"
 
-#ifdef SQLITE_MUTEX_NOOP_DEBUG
+
 /*
-** In this implementation, mutexes do not provide any mutual exclusion.
-** But the error checking is provided.  This implementation is useful
-** for test purposes.
+** The code in this file is only used if SQLITE_MUTEX_OS2 is defined.
+** See the mutex.h file for details.
 */
+#ifdef SQLITE_MUTEX_OS2
+
+/**** FIX ME:
+***** This is currently a no-op implementation suitable for use
+***** in single-threaded applications only.  Somebody please replace
+***** this with a real mutex implementation for OS/2.
+****/
 
 /*
 ** The mutex object
@@ -123,4 +121,4 @@ int sqlite3_mutex_held(sqlite3_mutex *p){
 int sqlite3_mutex_notheld(sqlite3_mutex *p){
   return p==0 || p->cnt==0;
 }
-#endif /* SQLITE_MUTEX_NOOP_DEBUG */
+#endif /* SQLITE_MUTEX_OS2 */

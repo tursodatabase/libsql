@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.603 2007/08/28 02:27:52 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.604 2007/08/28 16:34:43 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -73,6 +73,7 @@
 #include "sqlite3.h"
 #include "hash.h"
 #include "parse.h"
+#include "mutex.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

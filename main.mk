@@ -58,7 +58,8 @@ TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
 LIBOBJ+= alter.o analyze.o attach.o auth.o btmutex.o btree.o build.o \
          callback.o complete.o date.o delete.o \
          expr.o func.o hash.o insert.o journal.o loadext.o \
-         main.o malloc.o mem1.o mem2.o mutex.o \
+         main.o malloc.o mem1.o mem2.o mutex.o mutex_os2.o \
+         mutex_unix.o mutex_w32.o \
          opcodes.o os.o os_os2.o os_unix.o os_win.o \
          pager.o parse.o pragma.o prepare.o printf.o random.o \
          select.o table.o tclsqlite.o tokenize.o trigger.o \
@@ -112,6 +113,9 @@ SRC = \
   $(TOP)/src/mem1.c \
   $(TOP)/src/mem2.c \
   $(TOP)/src/mutex.c \
+  $(TOP)/src/mutex_os2.c \
+  $(TOP)/src/mutex_unix.c \
+  $(TOP)/src/mutex_w32.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
@@ -195,15 +199,10 @@ SRC += \
 # Source code to the test files.
 #
 TESTSRC = \
-  $(TOP)/src/btmutex.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/date.c \
   $(TOP)/src/func.c \
   $(TOP)/src/insert.c \
-  $(TOP)/src/malloc.c \
-  $(TOP)/src/mem1.c \
-  $(TOP)/src/mem2.c \
-  $(TOP)/src/mutex.c \
   $(TOP)/src/os.c \
   $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
@@ -211,6 +210,7 @@ TESTSRC = \
   $(TOP)/src/pager.c \
   $(TOP)/src/pragma.c \
   $(TOP)/src/printf.c \
+  $(TOP)/src/select.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
@@ -241,16 +241,17 @@ TESTSRC += $(TOP)/ext/fts3/fts3_tokenizer.c
 # Header files used by all library source files.
 #
 HDR = \
-   sqlite3.h  \
    $(TOP)/src/btree.h \
    $(TOP)/src/btreeInt.h \
    $(TOP)/src/hash.h \
-   $(TOP)/src/sqliteLimit.h \
+   $(TOP)/src/mutex.h \
    opcodes.h \
    $(TOP)/src/os.h \
    $(TOP)/src/os_common.h \
+   sqlite3.h  \
    $(TOP)/src/sqlite3ext.h \
    $(TOP)/src/sqliteInt.h  \
+   $(TOP)/src/sqliteLimit.h \
    $(TOP)/src/vdbe.h \
    parse.h
 
@@ -398,6 +399,15 @@ mem2.o:	$(TOP)/src/mem2.c $(HDR)
 
 mutex.o:	$(TOP)/src/mutex.c $(HDR)
 	$(TCCX) -c $(TOP)/src/mutex.c
+
+mutex_os2.o:	$(TOP)/src/mutex_os2.c $(HDR)
+	$(TCCX) -c $(TOP)/src/mutex_os2.c
+
+mutex_unix.o:	$(TOP)/src/mutex_unix.c $(HDR)
+	$(TCCX) -c $(TOP)/src/mutex_unix.c
+
+mutex_w32.o:	$(TOP)/src/mutex_w32.c $(HDR)
+	$(TCCX) -c $(TOP)/src/mutex_w32.c
 
 pager.o:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 	$(TCCX) -c $(TOP)/src/pager.c

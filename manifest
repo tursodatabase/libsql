@@ -1,6 +1,6 @@
-C Updates\sto\sthe\ssqlite3_open()\sdocumentation.\s\sMethod\sthe\smagic\n:memory:\sfilename.\s\sTicket\s#2591.\s(CVS\s4311)
-D 2007-08-28T15:47:45
-F Makefile.in e8296e112b8942a96c0ed504398bd0d43e3c67ce
+C Break\sup\sthe\smutex\simplementation\sinto\sseparate\ssource\sfiles,\sone\neach\sfor\sunix,\sw32,\sand\sos2.\s(CVS\s4312)
+D 2007-08-28T16:34:43
+F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 6200589421a0dfe968cd39c431fc62277b963540
@@ -63,7 +63,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 6b817f36cdfe3c1846cf6bac96afe8f73add5fe5
+F main.mk 6c8e14bbe8c52df32a5468e556df258ef563b4f2
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -104,7 +104,11 @@ F src/malloc.c d4282f50964ab1ca31f504c97b7cf2fdb4d4195d
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c afe2fbf6d7e8247c6c9f69c1481358b1cad60c08
 F src/mem2.c 1a2ca756a285b5365d667841508cc1f98938b8d8
-F src/mutex.c adbad5e138e8caef8d3763280c75bfe2167812f6
+F src/mutex.c 40e5ba09d56863895882a0204d93832e9960ea78
+F src/mutex.h 4d3babe3a691533ac980967d394da512140b5143
+F src/mutex_os2.c d47e9bd495583dd31263d8fe55160a31eb600a3c
+F src/mutex_unix.c 84ae0344b0bd6591e3bfea2cb6d375233d39f8a4
+F src/mutex_w32.c 8716478c5f1829b27fd2c9a0759230a9dc3aa9e3
 F src/os.c a8ed3c495161475dbce255f7003144144fb425f1
 F src/os.h 2bfbbad126a775e4d8c7d59eb4d9585a5fd7dfb5
 F src/os_common.h 98862f120ca6bf7a48ce8b16f158b77d00bc9d2f
@@ -128,7 +132,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
 F src/sqlite.h.in 679cfc7927f843cd30a7b7a0fa17173752939a36
 F src/sqlite3ext.h 9a26028378c288af500d8b94ed079666fed5806b
-F src/sqliteInt.h e681df44a19ffb6750d129802f124132ae240c83
+F src/sqliteInt.h 8225c78e94177fa4f1052c4cf0f779838bf56c19
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
 F src/table.c c725e47f6f3092b9a7b569fc58e408e2173ee008
 F src/tclsqlite.c d76af53f45c9e9f7f7d39531fa4c7bee7d0adad6
@@ -563,7 +567,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e7a98b48384ea581d98dad5118ee33468d526c62
-R 79b1204662164ac9dfde3b22f0e8e0d8
+P 5f55b2fc4ecdfc1bb68f479751b8642926fd8833
+R 51f416da38767e7822a0835f98d9ee97
 U drh
-Z 512659d0af1bbd911b2ca09d7e649b66
+Z 49f77ee210b93cd481f8532fcc9bb445
