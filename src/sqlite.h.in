@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.244 2007/08/27 21:10:36 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.245 2007/08/28 15:21:45 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3238,7 +3238,10 @@ int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
 ** new VFS becomes the default VFS if the makeDflt flag is set.
 ** The same VFS can be registered multiple times without injury.
 ** To make an existing VFS into the default VFS, register it again
-** with the makeDflt flag set.
+** with the makeDflt flag set.  If two different VFSes with the
+** same name are registered, the behavior is undefined.  If a
+** VFS is registered with a name that is NULL or an empty string,
+** then the behavior is undefined.
 ** 
 ** Unregister a VFS with the sqlite3_vfs_unregister() interface.
 ** If the default VFS is unregistered, another VFS is chosen as
