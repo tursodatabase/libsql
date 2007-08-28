@@ -1,5 +1,5 @@
-C remove\sunused\sos_os2.h\s(CVS\s4314)
-D 2007-08-28T19:21:22
+C Fix\smemory\sleak\sof\sInteriorReader.term.\s\sComes\sup\swhen\sdoing\squeries\nagainst\slarge\ssegments.\s(CVS\s4315)
+D 2007-08-28T20:36:54
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -37,7 +37,7 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 2ff290e0a130f6e7611f2e608cb3b5aaea721abc
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 29992419e893a919c1f5cb14615d30a05cb20abb
+F ext/fts2/fts2.c 9a02a0db89b29b6185557ca7ca2d188a814ea64d
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c cafebb4620d19684c4c9872530012441df60f503
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -49,7 +49,7 @@ F ext/fts2/fts2_tokenizer1.c 8a545c232bdffafd117c4eeaf59789691909f26a
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.tokenizers a97c9a55b3422f6cb04af9de9296fe2447ea4a78
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c c77071d54e97bb10e7310b17fab048dfe1550466
+F ext/fts3/fts3.c f85d5d8fdf0c691d5d542917dffcdd8f6f570ed1
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3_hash.c 84654768178452b00bbc986dd878a8299dc1e3dc
 F ext/fts3/fts3_hash.h af585d6867d478fc0457f64cfaae60e09541e63a
@@ -567,7 +567,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P af24e7d01a7fab5e33080a0f786e0bc6f610a6f3
-R 7b6245a3074068afb2d3762f9a7bccba
-U pweilbacher
-Z 22b40e71fe4c01610ac58736c86d61fe
+P dd43a2de3ed1659d70361370d07a184dd8ece45f
+R 70912c36e1c512cb72f986c6f3262b7a
+U shess
+Z e249b078ef5ae37e1d80116148f5bc5a

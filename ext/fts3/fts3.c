@@ -4221,6 +4221,7 @@ typedef struct InteriorReader {
 } InteriorReader;
 
 static void interiorReaderDestroy(InteriorReader *pReader){
+  dataBufferDestroy(&pReader->term);
   SCRAMBLE(pReader);
 }
 
