@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.245 2007/08/28 15:21:45 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.246 2007/08/28 15:47:45 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1327,22 +1327,23 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** CAPI3REF: Opening A New Database Connection
 **
 ** Open the sqlite database file "filename".  The "filename" is UTF-8
-** encoded for sqlite3_open() and UTF-16 encoded in the native byte order
-** for sqlite3_open16().  An [sqlite3*] handle is returned in *ppDb, even
+** encoded for [sqlite3_open()] and [sqlite3_open_v2()] and UTF-16 encoded
+** in the native byte order for [sqlite3_open16()].
+** An [sqlite3*] handle is returned in *ppDb, even
 ** if an error occurs. If the database is opened (or created) successfully,
 ** then [SQLITE_OK] is returned. Otherwise an error code is returned. The
 ** [sqlite3_errmsg()] or [sqlite3_errmsg16()]  routines can be used to obtain
 ** an English language description of the error.
 **
-** If the database file does not exist, then a new database will be created
-** as needed.  The default encoding for the database will be UTF-8 if
-** sqlite3_open() is called and UTF-16 if sqlite3_open16 is used.
+** The default encoding for the database will be UTF-8 if
+** [sqlite3_open()] or [sqlite3_open_v2()] is called and
+** UTF-16 if [sqlite3_open16()] is used.
 **
 ** Whether or not an error occurs when it is opened, resources associated
 ** with the [sqlite3*] handle should be released by passing it to
 ** [sqlite3_close()] when it is no longer required.
 **
-** The sqlite3_open_v2() interface works like sqlite3_open() except that
+** The [sqlite3_open_v2()] interface works like [sqlite3_open()] except that
 ** provides two additional parameters for additional control over the
 ** new database connection.  The flags parameter can be one of:
 **
@@ -1354,22 +1355,33 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 **
 ** The first value opens the database read-only.  If the database does
 ** not previously exist, an error is returned.  The second option opens
-** the database for reading and writing but the database must already
+** the database for reading and writing if possible, or reading only if
+** if the file is write protected.  In either case the database must already
 ** exist or an error is returned.  The third option opens the database
 ** for reading and writing and creates it if it does not already exist.
-** The third options is behavior that is used always for sqlite3_open()
-** and sqlite3_open16().
+** The third options is behavior that is always used for [sqlite3_open()]
+** and [sqlite3_open16()].
+**
+** If the filename is ":memory:" or an empty string, then an private
+** in-memory database is created for the connection.  This in-memory
+** database will vanish when the database connection is closed.  Future
+** version of SQLite might make use of additional special filenames
+** that begin with the ":" character.  It is recommended that 
+** when a database filename really does begin with
+** ":" that you prefix the filename with a pathname like "./" to
+** avoid ambiguity.
 **
 ** The fourth parameter to sqlite3_open_v2() is the name of the
 ** [sqlite3_vfs] object that defines the operating system 
 ** interface that the new database connection should use.  If the
-** fourth parameter is a NULL pointer then a default suitable for
-** the host environment is substituted.
+** fourth parameter is a NULL pointer then the default [sqlite3_vfs]
+** object is used.
 **
-** Note to windows users:  The encoding used for the filename argument
-** of sqlite3_open() must be UTF-8, not whatever codepage is currently
-** defined.  Filenames containing international characters must be converted
-** to UTF-8 prior to passing them into sqlite3_open().
+** <b>Note to windows users:</b>  The encoding used for the filename argument
+** of [sqlite3_open()] and [sqlite3_open_v2()] must be UTF-8, not whatever
+** codepage is currently defined.  Filenames containing international
+** characters must be converted to UTF-8 prior to passing them into
+** [sqlite3_open()] or [sqlite3_open_v2()].
 */
 int sqlite3_open(
   const char *filename,   /* Database filename (UTF-8) */

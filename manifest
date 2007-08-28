@@ -1,5 +1,5 @@
-C Update\sthe\ssqlite3_vfs_register()\sdocumentation\sto\smake\r\nthe\sbehavior\sundefined\sfor\sVFSes\swith\sa\sNULL\sor\sempty\sstring\r\nas\sthe\sname\sor\swith\sduplicate\snames.\s(CVS\s4310)
-D 2007-08-28T15:21:45
+C Updates\sto\sthe\ssqlite3_open()\sdocumentation.\s\sMethod\sthe\smagic\n:memory:\sfilename.\s\sTicket\s#2591.\s(CVS\s4311)
+D 2007-08-28T15:47:45
 F Makefile.in e8296e112b8942a96c0ed504398bd0d43e3c67ce
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -126,7 +126,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 98c367bce3f38c5adfcc97de9ab5c79b0e5dc2b2
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in da8b9380c32ad72cca3deb25ef43ed5707b6b6bd
+F src/sqlite.h.in 679cfc7927f843cd30a7b7a0fa17173752939a36
 F src/sqlite3ext.h 9a26028378c288af500d8b94ed079666fed5806b
 F src/sqliteInt.h e681df44a19ffb6750d129802f124132ae240c83
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
@@ -563,7 +563,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4c5631ce347a25dd6df90e7e4395a55cd750c1c9
-R 3046317a55b31ec340f798a75ee5fd0a
+P e7a98b48384ea581d98dad5118ee33468d526c62
+R 79b1204662164ac9dfde3b22f0e8e0d8
 U drh
-Z 4d0250ba3b6ebc171f9648b0cd34f1b0
+Z 512659d0af1bbd911b2ca09d7e649b66
