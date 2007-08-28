@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for pthreads
 **
-** $Id: mutex_unix.c,v 1.1 2007/08/28 16:34:43 drh Exp $
+** $Id: mutex_unix.c,v 1.2 2007/08/28 22:24:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -34,6 +34,9 @@ struct sqlite3_mutex {
   int id;                    /* Mutex type */
   int nRef;                  /* Number of entrances */
   pthread_t owner;           /* Thread that is within this mutex */
+#ifdef SQLITE_DEBUG
+  int trace;                 /* True to trace changes */
+#endif
 };
 
 /*
@@ -149,6 +152,11 @@ void sqlite3_mutex_enter(sqlite3_mutex *p){
   pthread_mutex_lock(&p->mutex);
   p->owner = pthread_self();
   p->nRef++;
+#ifdef SQLITE_DEBUG
+  if( p->trace ){
+    printf("enter mutex %p (%d) with nRef=%d\n", p, p->trace, p->nRef);
+  }
+#endif
 }
 int sqlite3_mutex_try(sqlite3_mutex *p){
   int rc;
@@ -158,6 +166,11 @@ int sqlite3_mutex_try(sqlite3_mutex *p){
     p->owner = pthread_self();
     p->nRef++;
     rc = SQLITE_OK;
+#ifdef SQLITE_DEBUG
+    if( p->trace ){
+      printf("enter mutex %p (%d) with nRef=%d\n", p, p->trace, p->nRef);
+    }
+#endif
   }else{
     rc = SQLITE_BUSY;
   }
@@ -175,6 +188,11 @@ void sqlite3_mutex_leave(sqlite3_mutex *p){
   assert( sqlite3_mutex_held(p) );
   p->nRef--;
   assert( p->nRef==0 || p->id==SQLITE_MUTEX_RECURSIVE );
+#ifdef SQLITE_DEBUG
+  if( p->trace ){
+    printf("leave mutex %p (%d) with nRef=%d\n", p, p->trace, p->nRef);
+  }
+#endif
   pthread_mutex_unlock(&p->mutex);
 }
 

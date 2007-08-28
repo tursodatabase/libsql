@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.378 2007/08/28 08:00:18 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.379 2007/08/28 22:24:35 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4794,6 +4794,13 @@ int sqlite3PagerStmtRollback(Pager *pPager){
 */
 const char *sqlite3PagerFilename(Pager *pPager){
   return pPager->zFilename;
+}
+
+/*
+** Return the VFS structure for the pager.
+*/
+const sqlite3_vfs *sqlite3PagerVfs(Pager *pPager){
+  return pPager->pVfs;
 }
 
 /*

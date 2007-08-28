@@ -13,7 +13,7 @@
 # cache context. What happens to connection B if one connection A encounters
 # an IO-error whilst reading or writing the file-system?
 #
-# $Id: shared_err.test,v 1.12 2007/08/25 13:37:49 danielk1977 Exp $
+# $Id: shared_err.test,v 1.13 2007/08/28 22:24:35 drh Exp $
 
 proc skip {args} {}
 
@@ -156,6 +156,7 @@ do_ioerr_test shared_ioerr-3 -tclprep {
   sqlite3_step $::STMT       ;# Cursor points at 001.001.001.001
 
 } -tclbody {
+btree_breakpoint
   execsql {
     BEGIN;
     INSERT INTO t1 VALUES('201.201.201.201.201', NULL);

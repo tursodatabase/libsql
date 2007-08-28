@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.10 2007/08/27 21:49:34 drh Exp $
+** $Id: btreeInt.h,v 1.11 2007/08/28 22:24:35 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -318,7 +318,11 @@ struct MemPage {
 ** schema associated with the database file are all contained within
 ** the BtShared object.
 **
-** All fields in this structure are accessed under the sqlite3.mutex.
+** All fields in this structure are accessed under sqlite3.mutex.
+** The pBt pointer itself may not be changed while there exists cursors 
+** in the referenced BtShared that point back to this Btree since those
+** cursors have to do go through this Btree to find their BtShared and
+** they often do so without holding sqlite3.mutex.
 */
 struct Btree {
   sqlite3 *pSqlite;  /* The database connection holding this btree */
@@ -419,11 +423,11 @@ struct CellInfo {
 ** particular database connection identified BtCursor.pBtree.pSqlite.
 **
 ** Fields in this structure are accessed under the BtShared.mutex
-** mutex.  The pBtree field is safe to access under the
-** BtShared->pBtree->pSqlite->mutex mutex.
+** found at self->pBt->mutex. 
 */
 struct BtCursor {
   Btree *pBtree;            /* The Btree to which this cursor belongs */
+  BtShared *pBt;            /* The BtShared this cursor points to */
   BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
   int (*xCompare)(void*,int,const void*,int,const void*); /* Key comp func */
   void *pArg;               /* First arg to xCompare() */

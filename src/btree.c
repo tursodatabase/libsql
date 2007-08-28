@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.413 2007/08/28 02:27:52 drh Exp $
+** $Id: btree.c,v 1.414 2007/08/28 22:24:35 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -96,6 +96,7 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
   BtShared *pBt = p->pBt;
   BtLock *pIter;
 
+  assert( sqlite3BtreeMutexHeld(p->pSqlite->mutex) );
   assert( sqlite3BtreeMutexHeld(pBt->mutex) );
   
   /* This is a no-op if the shared-cache is not enabled */
@@ -148,6 +149,7 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
   BtLock *pLock = 0;
   BtLock *pIter;
 
+  assert( sqlite3BtreeMutexHeld(p->pSqlite->mutex) );
   assert( sqlite3BtreeMutexHeld(pBt->mutex) );
 
   /* This is a no-op if the shared-cache is not enabled */
@@ -214,6 +216,7 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
 static void unlockAllTables(Btree *p){
   BtLock **ppIter = &p->pBt->pLock;
 
+  assert( sqlite3BtreeMutexHeld(p->pSqlite->mutex) );
   assert( sqlite3BtreeMutexHeld(p->pBt->mutex) );
   assert( p->sharable || 0==*ppIter );
 
@@ -236,6 +239,7 @@ static void releasePage(MemPage *pPage);  /* Forward reference */
 ** Invalidate the overflow page-list cache for cursor pCur, if any.
 */
 static void invalidateOverflowCache(BtCursor *pCur){
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
   sqlite3_free(pCur->aOverflow);
   pCur->aOverflow = 0;
 }
@@ -265,7 +269,7 @@ static int saveCursorPosition(BtCursor *pCur){
 
   assert( CURSOR_VALID==pCur->eState );
   assert( 0==pCur->pKey );
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pBt->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
 
   rc = sqlite3BtreeKeySize(pCur, &pCur->nKey);
 
@@ -308,6 +312,7 @@ static int saveCursorPosition(BtCursor *pCur){
 static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
   BtCursor *p;
   assert( sqlite3BtreeMutexHeld(pBt->mutex) );
+  assert( pExcept==0 || pExcept->pBt==pBt );
   for(p=pBt->pCursor; p; p=p->pNext){
     if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) && 
         p->eState==CURSOR_VALID ){
@@ -324,7 +329,7 @@ static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
 ** Clear the current cursor position.
 */
 static void clearCursorPosition(BtCursor *pCur){
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pBt->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
   sqlite3_free(pCur->pKey);
   pCur->pKey = 0;
   pCur->eState = CURSOR_INVALID;
@@ -343,6 +348,7 @@ static void clearCursorPosition(BtCursor *pCur){
 */
 int sqlite3BtreeRestoreOrClearCursorPosition(BtCursor *pCur){
   int rc;
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
   assert( pCur->eState==CURSOR_REQUIRESEEK );
 #ifndef SQLITE_OMIT_INCRBLOB
   if( pCur->isIncrblobHandle ){
@@ -1052,9 +1058,11 @@ static void pageDestructor(DbPage *pData, int pageSize){
   MemPage *pPage;
   assert( (pageSize & 7)==0 );
   pPage = (MemPage *)sqlite3PagerGetExtra(pData);
+  assert( pPage->isInit==0 || sqlite3BtreeMutexHeld(pPage->pBt->mutex) );
   if( pPage->pParent ){
     MemPage *pParent = pPage->pParent;
-    assert( sqlite3BtreeMutexHeld(pPage->pBt->mutex) );
+    assert( pPage->isInit==1 );
+    assert( pParent->pBt==pPage->pBt );
     pPage->pParent = 0;
     releasePage(pParent);
   }
@@ -1115,13 +1123,10 @@ int sqlite3BtreeOpen(
   #endif
 #endif
 
-  if( pSqlite ){
-    pVfs = pSqlite->pVfs;
-  }else{
-    pVfs = sqlite3_vfs_find(0);
-  }
-  assert( sqlite3BtreeMutexHeld(pSqlite->mutex) );
+  assert( pSqlite!=0 );
+  assert( sqlite3_mutex_held(pSqlite->mutex) );
 
+  pVfs = pSqlite->pVfs;
   p = sqlite3MallocZero(sizeof(Btree));
   if( !p ){
     return SQLITE_NOMEM;
@@ -1136,7 +1141,7 @@ int sqlite3BtreeOpen(
   */
   if( (flags & BTREE_PRIVATE)==0
    && isMemdb==0
-   && (pSqlite==0 || (pSqlite->flags &SQLITE_Vtab)==0)
+   && (pSqlite->flags & SQLITE_Vtab)==0
    && zFilename && zFilename[0]
    && sqlite3SharedCacheEnabled
   ){
@@ -1155,7 +1160,8 @@ int sqlite3BtreeOpen(
     sqlite3_mutex_enter(mutexShared);
     for(pBt=sqlite3SharedCacheList; pBt; pBt=pBt->pNext){
       assert( pBt->nRef>0 );
-      if( 0==strcmp(zFullPathname, sqlite3PagerFilename(pBt->pPager)) ){
+      if( 0==strcmp(zFullPathname, sqlite3PagerFilename(pBt->pPager))
+               && sqlite3PagerVfs(pBt->pPager)==pVfs ){
         p->pBt = pBt;
         pBt->nRef++;
         break;
@@ -1338,6 +1344,7 @@ int sqlite3BtreeClose(Btree *p){
   BtCursor *pCur;
 
   /* Close all cursors opened via this handle.  */
+  assert( sqlite3_mutex_held(p->pSqlite->mutex) );
   sqlite3BtreeEnter(p);
   pCur = pBt->pCursor;
   while( pCur ){
@@ -1390,12 +1397,8 @@ int sqlite3BtreeClose(Btree *p){
 /*
 ** Short-cuts for entering and leaving mutexes on a cursor.
 */
-static void cursorLeave(BtCursor *p){
-  sqlite3BtreeLeave(p->pBtree);
-}
-static void cursorEnter(BtCursor *pCur){
-  sqlite3BtreeEnter(pCur->pBtree);
-}
+# define cursorEnter(X) assert( sqlite3_mutex_held(X->pBt->mutex) )
+# define cursorLeave(X)
 #else
 # define cursorEnter(X)
 # define cursorLeave(X)
@@ -1406,6 +1409,7 @@ static void cursorEnter(BtCursor *pCur){
 */
 int sqlite3BtreeSetBusyHandler(Btree *p, BusyHandler *pHandler){
   BtShared *pBt = p->pBt;
+  assert( sqlite3_mutex_held(p->pSqlite->mutex) );
   sqlite3BtreeEnter(p);
   pBt->pBusyHandler = pHandler;
   sqlite3PagerSetBusyhandler(pBt->pPager, pHandler);
@@ -1430,6 +1434,7 @@ int sqlite3BtreeSetBusyHandler(Btree *p, BusyHandler *pHandler){
 */
 int sqlite3BtreeSetCacheSize(Btree *p, int mxPage){
   BtShared *pBt = p->pBt;
+  assert( sqlite3_mutex_held(p->pSqlite->mutex) );
   sqlite3BtreeEnter(p);
   sqlite3PagerSetCachesize(pBt->pPager, mxPage);
   sqlite3BtreeLeave(p);
@@ -1447,6 +1452,7 @@ int sqlite3BtreeSetCacheSize(Btree *p, int mxPage){
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
 int sqlite3BtreeSetSafetyLevel(Btree *p, int level, int fullSync){
   BtShared *pBt = p->pBt;
+  assert( sqlite3_mutex_held(p->pSqlite->mutex) );
   sqlite3BtreeEnter(p);
   sqlite3PagerSetSafetyLevel(pBt->pPager, level, fullSync);
   sqlite3BtreeLeave(p);
@@ -1461,8 +1467,9 @@ int sqlite3BtreeSetSafetyLevel(Btree *p, int level, int fullSync){
 int sqlite3BtreeSyncDisabled(Btree *p){
   BtShared *pBt = p->pBt;
   int rc;
-  assert( pBt && pBt->pPager );
+  assert( sqlite3_mutex_held(p->pSqlite->mutex) );  
   sqlite3BtreeEnter(p);
+  assert( pBt && pBt->pPager );
   rc = sqlite3PagerNosync(pBt->pPager);
   sqlite3BtreeLeave(p);
   return rc;
@@ -1986,6 +1993,7 @@ static int relocatePage(
   assert( eType==PTRMAP_OVERFLOW2 || eType==PTRMAP_OVERFLOW1 || 
       eType==PTRMAP_BTREE || eType==PTRMAP_ROOTPAGE );
   assert( sqlite3BtreeMutexHeld(pBt->mutex) );
+  assert( pDbPage->pBt==pBt );
 
   /* Move page iDbPage from it's current location to page number iFreePage */
   TRACE(("AUTOVACUUM: Moving %d to free page %d (ptr page %d type %d)\n", 
@@ -2595,6 +2603,7 @@ static int btreeCursor(
   BtShared *pBt = p->pBt;
 
   assert( sqlite3BtreeMutexHeld(pBt->mutex) );
+  assert( sqlite3BtreeMutexHeld(p->pSqlite->mutex) );
   *ppCur = 0;
   if( wrFlag ){
     if( pBt->readOnly ){
@@ -2636,6 +2645,7 @@ static int btreeCursor(
   pCur->xCompare = xCmp ? xCmp : dfltCompare;
   pCur->pArg = pArg;
   pCur->pBtree = p;
+  pCur->pBt = pBt;
   pCur->wrFlag = wrFlag;
   pCur->pNext = pBt->pCursor;
   if( pCur->pNext ){
@@ -2676,9 +2686,10 @@ int sqlite3BtreeCursor(
 ** when the last cursor is closed.
 */
 int sqlite3BtreeCloseCursor(BtCursor *pCur){
-  BtShared *pBt = pCur->pBtree->pBt;
+  BtShared *pBt = pCur->pBt;
 
-  cursorEnter(pCur);
+  assert( sqlite3_mutex_held(pCur->pBt->mutex) );
+  assert( sqlite3_mutex_held(pCur->pBtree->pSqlite->mutex) );
   clearCursorPosition(pCur);
   if( pCur->pPrev ){
     pCur->pPrev->pNext = pCur->pNext;
@@ -2691,7 +2702,6 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
   releasePage(pCur->pPage);
   unlockBtreeIfUnused(pBt);
   invalidateOverflowCache(pCur);
-  cursorLeave(pCur);
   sqlite3_free(pCur);
   return SQLITE_OK;
 }
@@ -2701,14 +2711,14 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
 ** The temporary cursor is not on the cursor list for the Btree.
 */
 void sqlite3BtreeGetTempCursor(BtCursor *pCur, BtCursor *pTempCur){
+  cursorEnter(pCur);
   memcpy(pTempCur, pCur, sizeof(*pCur));
   pTempCur->pNext = 0;
   pTempCur->pPrev = 0;
   if( pTempCur->pPage ){
-    cursorEnter(pCur);
     sqlite3PagerRef(pTempCur->pPage->pDbPage);
-    cursorLeave(pCur);
   }
+  cursorLeave(pCur);
 }
 
 /*
@@ -2716,11 +2726,11 @@ void sqlite3BtreeGetTempCursor(BtCursor *pCur, BtCursor *pTempCur){
 ** function above.
 */
 void sqlite3BtreeReleaseTempCursor(BtCursor *pCur){
+  cursorEnter(pCur);
   if( pCur->pPage ){
-    cursorEnter(pCur);
     sqlite3PagerUnref(pCur->pPage->pDbPage);
-    cursorLeave(pCur);
   }
+  cursorLeave(pCur);
 }
 
 /*
@@ -2778,7 +2788,7 @@ void sqlite3BtreeReleaseTempCursor(BtCursor *pCur){
 int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
   int rc;
 
-  sqlite3BtreeEnter(pCur->pBtree);
+  assert( sqlite3_mutex_held(pCur->pBt->mutex) );
   rc = restoreOrClearCursorPosition(pCur);
   if( rc==SQLITE_OK ){
     assert( pCur->eState==CURSOR_INVALID || pCur->eState==CURSOR_VALID );
@@ -2789,7 +2799,6 @@ int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
       *pSize = pCur->info.nKey;
     }
   }
-  sqlite3BtreeLeave(pCur->pBtree);
   return rc;
 }
 
@@ -2803,7 +2812,7 @@ int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
 int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
   int rc;
 
-  sqlite3BtreeEnter(pCur->pBtree);
+  assert( sqlite3_mutex_held(pCur->pBt->mutex) );
   rc = restoreOrClearCursorPosition(pCur);
   if( rc==SQLITE_OK ){
     assert( pCur->eState==CURSOR_INVALID || pCur->eState==CURSOR_VALID );
@@ -2815,7 +2824,6 @@ int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
       *pSize = pCur->info.nData;
     }
   }
-  sqlite3BtreeLeave(pCur->pBtree);
   return rc;
 }
 
@@ -2978,14 +2986,14 @@ static int accessPayload(
   int rc = SQLITE_OK;
   u32 nKey;
   int iIdx = 0;
-  MemPage *pPage = pCur->pPage;        /* Btree page of current cursor entry */
-  BtShared *pBt = pCur->pBtree->pBt;   /* Btree this cursor belongs to */
+  MemPage *pPage = pCur->pPage;     /* Btree page of current cursor entry */
+  BtShared *pBt = pCur->pBt;        /* Btree this cursor belongs to */
 
   assert( pPage );
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   assert( offset>=0 );
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pBt->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
 
   getCellInfo(pCur);
   aPayload = pCur->info.pCell + pCur->info.nHeader;
@@ -3111,20 +3119,20 @@ static int accessPayload(
 int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
   int rc;
 
-  sqlite3BtreeEnter(pCur->pBtree);
+  cursorEnter(pCur);
   rc = restoreOrClearCursorPosition(pCur);
   if( rc==SQLITE_OK ){
     assert( pCur->eState==CURSOR_VALID );
     assert( pCur->pPage!=0 );
     if( pCur->pPage->intKey ){
-      sqlite3BtreeLeave(pCur->pBtree);
+      cursorLeave(pCur);
       return SQLITE_CORRUPT_BKPT;
     }
     assert( pCur->pPage->intKey==0 );
     assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
     rc = accessPayload(pCur, offset, amt, (unsigned char*)pBuf, 0, 0);
   }
-  sqlite3BtreeLeave(pCur->pBtree);
+  cursorLeave(pCur);
   return rc;
 }
 
@@ -3140,7 +3148,7 @@ int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
   int rc;
 
-  sqlite3BtreeEnter(pCur->pBtree);
+  cursorEnter(pCur);
   rc = restoreOrClearCursorPosition(pCur);
   if( rc==SQLITE_OK ){
     assert( pCur->eState==CURSOR_VALID );
@@ -3148,7 +3156,7 @@ int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
     assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
     rc = accessPayload(pCur, offset, amt, pBuf, 1, 0);
   }
-  sqlite3BtreeLeave(pCur->pBtree);
+  cursorLeave(pCur);
   return rc;
 }
 
@@ -3183,7 +3191,7 @@ static const unsigned char *fetchPayload(
 
   assert( pCur!=0 && pCur->pPage!=0 );
   assert( pCur->eState==CURSOR_VALID );
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pBt->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
   pPage = pCur->pPage;
   assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
   getCellInfo(pCur);
@@ -3223,14 +3231,14 @@ static const unsigned char *fetchPayload(
 ** in the common case where no overflow pages are used.
 */
 const void *sqlite3BtreeKeyFetch(BtCursor *pCur, int *pAmt){
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pBt->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
   if( pCur->eState==CURSOR_VALID ){
     return (const void*)fetchPayload(pCur, pAmt, 0);
   }
   return 0;
 }
 const void *sqlite3BtreeDataFetch(BtCursor *pCur, int *pAmt){
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pBt->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
   if( pCur->eState==CURSOR_VALID ){
     return (const void*)fetchPayload(pCur, pAmt, 1);
   }
@@ -3246,7 +3254,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   int rc;
   MemPage *pNewPage;
   MemPage *pOldPage;
-  BtShared *pBt = pCur->pBtree->pBt;
+  BtShared *pBt = pCur->pBt;
 
   assert( sqlite3BtreeMutexHeld(pBt->mutex) );
   assert( pCur->eState==CURSOR_VALID );
@@ -3298,7 +3306,7 @@ void sqlite3BtreeMoveToParent(BtCursor *pCur){
   MemPage *pPage;
   int idxParent;
 
-  sqlite3BtreeEnter(pCur->pBtree);
+  cursorEnter(pCur);
   assert( pCur->eState==CURSOR_VALID );
   pPage = pCur->pPage;
   assert( pPage!=0 );
@@ -3312,7 +3320,7 @@ void sqlite3BtreeMoveToParent(BtCursor *pCur){
   pCur->info.nSize = 0;
   assert( pParent->idxShift==0 );
   pCur->idx = idxParent;
-  sqlite3BtreeLeave(pCur->pBtree);
+  cursorLeave(pCur);
 }
 
 /*
@@ -3324,7 +3332,6 @@ static int moveToRoot(BtCursor *pCur){
   Btree *p = pCur->pBtree;
   BtShared *pBt = p->pBt;
 
-  assert( sqlite3BtreeMutexHeld(p->pSqlite->mutex) );
   assert( sqlite3BtreeMutexHeld(pBt->mutex) );
   if( pCur->eState==CURSOR_REQUIRESEEK ){
     clearCursorPosition(pCur);
@@ -3368,8 +3375,7 @@ static int moveToLeftmost(BtCursor *pCur){
   int rc = SQLITE_OK;
   MemPage *pPage;
 
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pBt->mutex) );
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pSqlite->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
   assert( pCur->eState==CURSOR_VALID );
   while( rc==SQLITE_OK && !(pPage = pCur->pPage)->leaf ){
     assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
@@ -3394,8 +3400,7 @@ static int moveToRightmost(BtCursor *pCur){
   int rc = SQLITE_OK;
   MemPage *pPage;
 
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pBt->mutex) );
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pSqlite->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
   assert( pCur->eState==CURSOR_VALID );
   while( rc==SQLITE_OK && !(pPage = pCur->pPage)->leaf ){
     pgno = get4byte(&pPage->aData[pPage->hdrOffset+8]);
@@ -3416,7 +3421,7 @@ static int moveToRightmost(BtCursor *pCur){
 int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
   int rc;
 
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pBt->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
   assert( sqlite3BtreeMutexHeld(pCur->pBtree->pSqlite->mutex) );
   rc = moveToRoot(pCur);
   if( rc==SQLITE_OK ){
@@ -3440,7 +3445,7 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
 int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
   int rc;
  
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pBt->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
   assert( sqlite3BtreeMutexHeld(pCur->pBtree->pSqlite->mutex) );
   rc = moveToRoot(pCur);
   if( rc==SQLITE_OK ){
@@ -3493,7 +3498,7 @@ int sqlite3BtreeMoveto(
 ){
   int rc;
 
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pBt->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
   assert( sqlite3BtreeMutexHeld(pCur->pBtree->pSqlite->mutex) );
   rc = moveToRoot(pCur);
   if( rc ){
@@ -3621,6 +3626,7 @@ int sqlite3BtreeEof(BtCursor *pCur){
 ** Return the database connection handle for a cursor.
 */
 sqlite3 *sqlite3BtreeCursorDb(const BtCursor *pCur){
+  assert( sqlite3_mutex_held(pCur->pBtree->pSqlite->mutex) );
   return pCur->pBtree->pSqlite;
 }
 
@@ -3634,6 +3640,7 @@ static int btreeNext(BtCursor *pCur, int *pRes){
   int rc;
   MemPage *pPage;
 
+  assert( sqlite3_mutex_held(pCur->pBt->mutex) );
   rc = restoreOrClearCursorPosition(pCur);
   if( rc!=SQLITE_OK ){
     return rc;
@@ -3708,6 +3715,7 @@ static int btreePrevious(BtCursor *pCur, int *pRes){
   Pgno pgno;
   MemPage *pPage;
 
+  assert( sqlite3_mutex_held(pCur->pBt->mutex) );
   rc = restoreOrClearCursorPosition(pCur);
   if( rc!=SQLITE_OK ){
     return rc;
@@ -5486,20 +5494,20 @@ int sqlite3BtreeInsert(
   unsigned char *oldCell;
   unsigned char *newCell = 0;
 
-  sqlite3BtreeEnter(p);
+  cursorEnter(pCur);
   if( pBt->inTransaction!=TRANS_WRITE ){
     /* Must start a transaction before doing an insert */
     rc = pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
-    sqlite3BtreeLeave(p);
+    cursorLeave(pCur);
     return rc;
   }
   assert( !pBt->readOnly );
   if( !pCur->wrFlag ){
-    sqlite3BtreeLeave(p);
+    cursorLeave(pCur);
     return SQLITE_PERM;   /* Cursor not open for writing */
   }
   if( checkReadLocks(pCur->pBtree, pCur->pgnoRoot, pCur) ){
-    sqlite3BtreeLeave(p);
+    cursorLeave(pCur);
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
 
@@ -5509,7 +5517,7 @@ int sqlite3BtreeInsert(
     SQLITE_OK!=(rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur)) ||
     SQLITE_OK!=(rc = sqlite3BtreeMoveto(pCur, pKey, nKey, appendBias, &loc))
   ){
-    sqlite3BtreeLeave(p);
+    cursorLeave(pCur);
     return rc;
   }
 
@@ -5558,7 +5566,7 @@ int sqlite3BtreeInsert(
   }
 end_insert:
   sqlite3_free(newCell);
-  sqlite3BtreeLeave(p);
+  cursorLeave(pCur);
   return rc;
 }
 
@@ -5574,25 +5582,25 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   Btree *p = pCur->pBtree;
   BtShared *pBt = p->pBt;
 
-  sqlite3BtreeEnter(p);
+  cursorEnter(pCur);
   assert( pPage->isInit );
   if( pBt->inTransaction!=TRANS_WRITE ){
     /* Must start a transaction before doing a delete */
     rc = pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
-    sqlite3BtreeLeave(p);
+    cursorLeave(pCur);
     return rc;
   }
   assert( !pBt->readOnly );
   if( pCur->idx >= pPage->nCell ){
-    sqlite3BtreeLeave(p);
+    cursorLeave(pCur);
     return SQLITE_ERROR;  /* The cursor is not pointing to anything */
   }
   if( !pCur->wrFlag ){
-    sqlite3BtreeLeave(p);
+    cursorLeave(pCur);
     return SQLITE_PERM;   /* Did not open this cursor for writing */
   }
   if( checkReadLocks(pCur->pBtree, pCur->pgnoRoot, pCur) ){
-    sqlite3BtreeLeave(p);
+    cursorLeave(pCur);
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
 
@@ -5606,7 +5614,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     (rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur))!=0 ||
     (rc = sqlite3PagerWrite(pPage->pDbPage))!=0
   ){
-    sqlite3BtreeLeave(p);
+    cursorLeave(pCur);
     return rc;
   }
 
@@ -5620,7 +5628,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   }
   rc = clearCell(pPage, pCell);
   if( rc ){
-    sqlite3BtreeLeave(p);
+    cursorLeave(pCur);
     return rc;
   }
 
@@ -5679,7 +5687,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   if( rc==SQLITE_OK ){
     moveToRoot(pCur);
   }
-  sqlite3BtreeLeave(p);
+  cursorLeave(pCur);
   return rc;
 }
 
@@ -5700,6 +5708,8 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags){
   Pgno pgnoRoot;
   int rc;
 
+  assert( sqlite3_mutex_held(p->pSqlite->mutex) );
+  assert( sqlite3_mutex_held(pBt->mutex) );
   if( pBt->inTransaction!=TRANS_WRITE ){
     /* Must start a transaction first */
     rc = pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
@@ -6131,6 +6141,7 @@ int sqlite3BtreeFlags(BtCursor *pCur){
   */
   MemPage *pPage = pCur->pPage;
   assert( sqlite3BtreeMutexHeld(pPage->pBt->mutex) );
+  assert( pPage->pBt==pCur->pBt );
   return pPage ? pPage->aData[pPage->hdrOffset] : 0;
 }
 
@@ -6140,8 +6151,6 @@ int sqlite3BtreeFlags(BtCursor *pCur){
 ** testing and debugging only.
 */
 Pager *sqlite3BtreePager(Btree *p){
-  assert( sqlite3BtreeMutexHeld(p->pSqlite->mutex) );
-  assert( sqlite3BtreeMutexHeld(p->pBt->mutex) );
   return p->pBt->pPager;
 }
 
@@ -6585,17 +6594,25 @@ char *sqlite3BtreeIntegrityCheck(
 
 /*
 ** Return the full pathname of the underlying database file.
+**
+** The pager filename is invariant as long as the pager is
+** open so it is safe to access without the BtShared mutex.
 */
 const char *sqlite3BtreeGetFilename(Btree *p){
   assert( p->pBt->pPager!=0 );
+  assert( sqlite3_mutex_held(p->pSqlite->mutex) );
   return sqlite3PagerFilename(p->pBt->pPager);
 }
 
 /*
 ** Return the pathname of the directory that contains the database file.
+**
+** The pager directory name is invariant as long as the pager is
+** open so it is safe to access without the BtShared mutex.
 */
 const char *sqlite3BtreeGetDirname(Btree *p){
   assert( p->pBt->pPager!=0 );
+  assert( sqlite3_mutex_held(p->pSqlite->mutex) );
   return sqlite3PagerDirname(p->pBt->pPager);
 }
 
@@ -6603,9 +6620,13 @@ const char *sqlite3BtreeGetDirname(Btree *p){
 ** Return the pathname of the journal file for this database. The return
 ** value of this routine is the same regardless of whether the journal file
 ** has been created or not.
+**
+** The pager journal filename is invariant as long as the pager is
+** open so it is safe to access without the BtShared mutex.
 */
 const char *sqlite3BtreeGetJournalname(Btree *p){
   assert( p->pBt->pPager!=0 );
+  assert( sqlite3_mutex_held(p->pSqlite->mutex) );
   return sqlite3PagerJournalname(p->pBt->pPager);
 }
 
@@ -6685,7 +6706,7 @@ int sqlite3BtreeCopyFile(Btree *pTo, Btree *pFrom){
 ** Return non-zero if a transaction is active.
 */
 int sqlite3BtreeIsInTrans(Btree *p){
-  assert( sqlite3BtreeMutexHeld(p->pSqlite->mutex) );
+  assert( p==0 || sqlite3BtreeMutexHeld(p->pSqlite->mutex) );
   return (p && (p->inTrans==TRANS_WRITE));
 }
 
@@ -6724,7 +6745,6 @@ int sqlite3BtreeIsInReadTrans(Btree *p){
 */
 void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){
   BtShared *pBt = p->pBt;
-  assert( sqlite3BtreeMutexHeld(p->pSqlite->mutex) );
   sqlite3BtreeEnter(p);
   if( !pBt->pSchema ){
     pBt->pSchema = sqlite3MallocZero(nBytes);
@@ -6776,7 +6796,7 @@ int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
 ** to change the length of the data stored.
 */
 int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
-  assert( sqlite3BtreeMutexHeld(pCsr->pBtree->pBt->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCsr->pBt->mutex) );
   assert( sqlite3BtreeMutexHeld(pCsr->pBtree->pSqlite->mutex) );
   assert(pCsr->isIncrblobHandle);
   if( pCsr->eState==CURSOR_REQUIRESEEK ){
@@ -6791,8 +6811,8 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
   if( !pCsr->wrFlag ){
     return SQLITE_READONLY;
   }
-  assert( !pCsr->pBtree->pBt->readOnly 
-          && pCsr->pBtree->pBt->inTransaction==TRANS_WRITE );
+  assert( !pCsr->pBt->readOnly 
+          && pCsr->pBt->inTransaction==TRANS_WRITE );
   if( checkReadLocks(pCsr->pBtree, pCsr->pgnoRoot, pCsr) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
@@ -6814,7 +6834,7 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
 ** sqlite3BtreePutData()).
 */
 void sqlite3BtreeCacheOverflow(BtCursor *pCur){
-  assert( sqlite3BtreeMutexHeld(pCur->pBtree->pBt->mutex) );
+  assert( sqlite3BtreeMutexHeld(pCur->pBt->mutex) );
   assert( sqlite3BtreeMutexHeld(pCur->pBtree->pSqlite->mutex) );
   assert(!pCur->isIncrblobHandle);
   assert(!pCur->aOverflow);

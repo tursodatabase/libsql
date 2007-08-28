@@ -659,9 +659,14 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
 #endif
 
 /*
-** Add a btree to the set of btrees that might need a mutex.
+** Declare to the Vdbe that the BTree object at db->aDb[i] is used.
+**
 */
-void sqlite3VdbeAddMutexBtree(Vdbe *p, Btree *pBtree){
+void sqlite3VdbeUsesBtree(Vdbe *p, int i, Btree *pBtree){
+  assert( i>=0 && i<p->db->nDb );
+  assert( i<sizeof(p->btreeMask)*8 );
+  assert( p->db->aDb[i].pBt==pBtree );
+  p->btreeMask |= 1<<i;
   sqlite3BtreeMutexSetInsert(&p->mtxSet, pBtree);
 }
 
@@ -1091,7 +1096,7 @@ static int vdbeCommit(sqlite3 *db){
   */ 
   for(i=0; i<db->nDb; i++){ 
     Btree *pBt = db->aDb[i].pBt;
-    if( pBt && sqlite3BtreeIsInTrans(pBt) ){
+    if( sqlite3BtreeIsInTrans(pBt) ){
       needXcommit = 1;
       if( i!=1 ) nTrans++;
     }
@@ -1183,7 +1188,7 @@ static int vdbeCommit(sqlite3 *db){
     for(i=0; i<db->nDb; i++){
       Btree *pBt = db->aDb[i].pBt;
       if( i==1 ) continue;   /* Ignore the TEMP database */
-      if( pBt && sqlite3BtreeIsInTrans(pBt) ){
+      if( sqlite3BtreeIsInTrans(pBt) ){
         char const *zFile = sqlite3BtreeGetJournalname(pBt);
         if( zFile[0]==0 ) continue;  /* Ignore :memory: databases */
         if( !needSync && !sqlite3BtreeSyncDisabled(pBt) ){
@@ -1225,7 +1230,7 @@ static int vdbeCommit(sqlite3 *db){
     */
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
-      if( pBt && sqlite3BtreeIsInTrans(pBt) ){
+      if( pBt ){
         rc = sqlite3BtreeCommitPhaseOne(pBt, zMaster);
       }
     }
