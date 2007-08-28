@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.377 2007/08/27 17:27:49 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.378 2007/08/28 08:00:18 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -132,6 +132,33 @@
 #define FORCE_ALIGNMENT(X)   (((X)+7)&~7)
 
 typedef struct PgHdr PgHdr;
+
+/*
+** Each pager stores all currently unreferenced pages in a list sorted
+** in least-recently-used (LRU) order (i.e. the first item on the list has 
+** not been referenced in a long time, the last item has been recently
+** used). An instance of this structure is included as part of each
+** pager structure for this purpose (variable Pager.lru).
+**
+** Additionally, if memory-management is enabled, all unreferenced pages 
+** are stored in a global LRU list (global variable sqlite3LruPageList).
+**
+** In both cases, the PagerLruList.pFirstSynced variable points to
+** the first page in the corresponding list that does not require an
+** fsync() operation before it's memory can be reclaimed. If no such
+** page exists, PagerLruList.pFirstSynced is set to NULL.
+*/
+typedef struct PagerLruList PagerLruList;
+struct PagerLruList {
+  PgHdr *pFirst;         /* First page in LRU list */
+  PgHdr *pLast;          /* Last page in LRU list (the most recently used) */
+  PgHdr *pFirstSynced;   /* First page in list with PgHdr.needSync==0 */
+};
+
+/*
+** The following structure contains the next and previous pointers used
+** to link a PgHdr structure into a PagerLruList linked list. 
+*/
 typedef struct PagerLruLink PagerLruLink;
 struct PagerLruLink {
   PgHdr *pNext;
@@ -291,13 +318,6 @@ struct PgHistory {
 #define PGHDR_TO_EXTRA(G,P) ((void*)&((char*)(&(G)[1]))[(P)->pageSize])
 #define PGHDR_TO_HIST(P,PGR)  \
             ((PgHistory*)&((char*)(&(P)[1]))[(PGR)->pageSize+(PGR)->nExtra])
-
-typedef struct PagerLruList PagerLruList;
-struct PagerLruList {
-  PgHdr *pFirst;
-  PgHdr *pLast;
-  PgHdr *pFirstSynced;   /* First page in list with PgHdr.needSync==0 */
-};
 
 /*
 ** A open page cache is an instance of the following structure.
@@ -531,9 +551,21 @@ static const unsigned char aJournalMagic[] = {
 # define REFINFO(X)
 #endif
 
+/*
+** Add page pPg to the end of the linked list managed by structure
+** pList (pPg becomes the last entry in the list - the most recently 
+** used). Argument pLink should point to either pPg->free or pPg->gfree,
+** depending on whether pPg is being added to the pager-specific or
+** global LRU list.
+*/
 static void listAdd(PagerLruList *pList, PagerLruLink *pLink, PgHdr *pPg){
   pLink->pNext = 0;
   pLink->pPrev = pList->pLast;
+
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  assert(pLink==&pPg->free || pLink==&pPg->gfree);
+  assert(pLink==&pPg->gfree || pList!=&sqlite3LruPageList);
+#endif
 
   if( pList->pLast ){
     int iOff = (char *)pLink - (char *)pPg;
@@ -550,8 +582,19 @@ static void listAdd(PagerLruList *pList, PagerLruLink *pLink, PgHdr *pPg){
   }
 }
 
+/*
+** Remove pPg from the list managed by the structure pointed to by pList.
+**
+** Argument pLink should point to either pPg->free or pPg->gfree, depending 
+** on whether pPg is being added to the pager-specific or global LRU list.
+*/
 static void listRemove(PagerLruList *pList, PagerLruLink *pLink, PgHdr *pPg){
   int iOff = (char *)pLink - (char *)pPg;
+
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  assert(pLink==&pPg->free || pLink==&pPg->gfree);
+  assert(pLink==&pPg->gfree || pList!=&sqlite3LruPageList);
+#endif
 
   if( pPg==pList->pFirst ){
     pList->pFirst = pLink->pNext;
@@ -580,7 +623,9 @@ static void listRemove(PagerLruList *pList, PagerLruLink *pLink, PgHdr *pPg){
 }
 
 /* 
-** Add page to the free-list 
+** Add page pPg to the list of free pages for the pager. If 
+** memory-management is enabled, also add the page to the global 
+** list of free pages.
 */
 static void lruListAdd(PgHdr *pPg){
   listAdd(&pPg->pPager->lru, &pPg->free, pPg);
@@ -594,7 +639,9 @@ static void lruListAdd(PgHdr *pPg){
 }
 
 /* 
-** Remove page from free-list 
+** Remove page pPg from the list of free pages for the associated pager.
+** If memory-management is enabled, also remove pPg from the global list
+** of free pages.
 */
 static void lruListRemove(PgHdr *pPg){
   listRemove(&pPg->pPager->lru, &pPg->free, pPg);
@@ -608,7 +655,11 @@ static void lruListRemove(PgHdr *pPg){
 }
 
 /* 
-** Set the Pager.pFirstSynced variable 
+** This function is called just after the needSync flag has been cleared
+** from all pages managed by pPager (usually because the journal file
+** has just been synced). It updates the pPager->lru.pFirstSynced variable
+** and, if memory-management is enabled, the sqlite3LruPageList.pFirstSynced
+** variable also.
 */
 static void lruListSetFirstSynced(Pager *pPager){
   pPager->lru.pFirstSynced = pPager->lru.pFirst;
@@ -3056,6 +3107,10 @@ int sqlite3PagerReleaseMemory(int nReq){
     }
     sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
 
+    /* If pPg==0, then the block above has failed to find a page to
+    ** recycle. In this case return early - no further memory will
+    ** be released.
+    */
     if( !pPg ) break;
 
     pPager = pPg->pPager;
@@ -3089,6 +3144,7 @@ int sqlite3PagerReleaseMemory(int nReq){
       IOTRACE(("PGFREE %p %d *\n", pPager, pPg->pgno));
       PAGER_INCR(sqlite3_pager_pgfree_count);
       sqlite3_free(pPg);
+      pPager->nPage--;
     }else{
       /* An error occured whilst writing to the database file or 
       ** journal in pager_recycle(). The error is not returned to the 

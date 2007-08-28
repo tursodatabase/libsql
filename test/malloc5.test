@@ -12,7 +12,7 @@
 # This file contains test cases focused on the two memory-management APIs, 
 # sqlite3_soft_heap_limit() and sqlite3_release_memory().
 #
-# $Id: malloc5.test,v 1.13 2007/08/22 22:04:37 drh Exp $
+# $Id: malloc5.test,v 1.14 2007/08/28 08:00:18 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -248,7 +248,7 @@ do_test malloc5-5.1 {
   }
   sqlite3_release_memory
 } 0
-do_test malloc5-5.1 {
+do_test malloc5-5.2 {
   sqlite3_soft_heap_limit 5000
   execsql {
     COMMIT;
@@ -257,6 +257,122 @@ do_test malloc5-5.1 {
   }
   expr 1
 } {1}
+sqlite3_soft_heap_limit $::soft_limit
+
+#-------------------------------------------------------------------------
+# The following test cases (malloc5-6.*) test the new global LRU list
+# used to determine the pages to recycle when sqlite3_release_memory is
+# called and there is more than one pager open.
+#
+proc nPage {db} {
+  set bt [btree_from_db $db]
+  array set stats [btree_pager_stats $bt]
+  set stats(page)
+}
+db close
+file delete -force test.db test.db-journal test2.db test2.db-journal
+
+# This block of test-cases (malloc5-6.1.*) prepares two database files
+# for the subsequent tests.
+do_test malloc5-6.1.1 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA page_size=1024;
+    PRAGMA default_cache_size=10;
+    BEGIN;
+    CREATE TABLE abc(a PRIMARY KEY, b, c);
+    INSERT INTO abc VALUES(randstr(50,50), randstr(75,75), randstr(100,100));
+    INSERT INTO abc 
+        SELECT randstr(50,50), randstr(75,75), randstr(100,100) FROM abc;
+    INSERT INTO abc 
+        SELECT randstr(50,50), randstr(75,75), randstr(100,100) FROM abc;
+    INSERT INTO abc 
+        SELECT randstr(50,50), randstr(75,75), randstr(100,100) FROM abc;
+    INSERT INTO abc 
+        SELECT randstr(50,50), randstr(75,75), randstr(100,100) FROM abc;
+    INSERT INTO abc 
+        SELECT randstr(50,50), randstr(75,75), randstr(100,100) FROM abc;
+    INSERT INTO abc 
+        SELECT randstr(50,50), randstr(75,75), randstr(100,100) FROM abc;
+    COMMIT;
+  } 
+  copy_file test.db test2.db
+  sqlite3 db2 test2.db
+  list [expr [file size test.db]/1024] [expr [file size test2.db]/1024]
+} {23 23}
+do_test malloc5-6.1.2 {
+  list [execsql {PRAGMA cache_size}] [execsql {PRAGMA cache_size} db2]
+} {10 10}
+
+do_test malloc5-6.2.1 {
+  execsql { SELECT * FROM abc } db2
+  execsql {SELECT * FROM abc} db
+  list [nPage db] [nPage db2]
+} {10 10}
+do_test malloc5-6.2.2 {
+  # If we now try to reclaim some memory, it should come from the db2 cache.
+  sqlite3_release_memory 3000
+  list [nPage db] [nPage db2]
+} {10 7}
+do_test malloc5-6.2.3 {
+  # Access the db2 cache again, so that all the db2 pages have been used
+  # more recently than all the db pages. Then try to reclaim 3000 bytes.
+  # This time, 3 pages should be pulled from the db cache.
+  execsql { SELECT * FROM abc } db2
+  sqlite3_release_memory 3000
+  list [nPage db] [nPage db2]
+} {7 10}
+
+
+do_test malloc5-6.3.1 {
+  # Now open a transaction and update 2 pages in the db2 cache. Then
+  # do a SELECT on the db cache so that all the db pages are more recently
+  # used than the db2 pages. When we try to free memory, SQLite should
+  # free the non-dirty db2 pages, then the db pages, then finally use
+  # sync() to free up the dirty db2 pages. The only page that cannot be
+  # freed is page1 of db2. Because there is an open transaction, the
+  # btree layer holds a reference to page 1 in the db2 cache.
+  execsql {
+    BEGIN;
+    UPDATE abc SET c = randstr(100,100) 
+    WHERE rowid = 1 OR rowid = (SELECT max(rowid) FROM abc);
+  } db2
+  execsql { SELECT * FROM abc } db
+  list [nPage db] [nPage db2]
+} {10 10}
+do_test malloc5-6.3.2 {
+  # Try to release 7700 bytes. This should release all the 
+  # non-dirty pages held by db2.
+  sqlite3_release_memory [expr 7*1100]
+  list [nPage db] [nPage db2]
+} {10 3}
+do_test malloc5-6.3.3 {
+  # Try to release another 1000 bytes. This should come fromt the db
+  # cache, since all three pages held by db2 are either in-use or diry.
+  sqlite3_release_memory 1000
+  list [nPage db] [nPage db2]
+} {9 3}
+do_test malloc5-6.3.4 {
+  # Now release 9900 more (about 9 pages worth). This should expunge
+  # the rest of the db cache. But the db2 cache remains intact, because
+  # SQLite tries to avoid calling sync().
+  sqlite3_release_memory 9900
+  list [nPage db] [nPage db2]
+} {0 3}
+do_test malloc5-6.3.5 {
+  # But if we are really insistent, SQLite will consent to call sync()
+  # if there is no other option.
+  sqlite3_release_memory 1000
+  list [nPage db] [nPage db2]
+} {0 2}
+do_test malloc5-6.3.6 {
+  # The referenced page (page 1 of the db2 cache) will not be freed no
+  # matter how much memory we ask for:
+  sqlite3_release_memory 31459
+  list [nPage db] [nPage db2]
+} {0 1}
+
+db2 close
 
 sqlite3_soft_heap_limit $::soft_limit
 finish_test
