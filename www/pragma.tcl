@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the pragma.html file.
 #
-set rcsid {$Id: pragma.tcl,v 1.27 2007/07/24 10:22:58 drh Exp $}
+set rcsid {$Id: pragma.tcl,v 1.28 2007/08/28 08:19:49 danielk1977 Exp $}
 source common.tcl
 header {Pragma statements supported by SQLite}
 
@@ -320,7 +320,7 @@ PRAGMA <b>main.</b>locking_mode=EXCLUSIVE;
    <p>The "temp" database (in which TEMP tables and indices are stored)
    always uses exclusive locking mode.  The locking mode of temp cannot
    be changed.  All other databases use the normal locking mode by default
-   and are effected by this pragma.</p>
+   and are affected by this pragma.</p>
 </li>
 
 <a name="pragma_page_size"></a>
