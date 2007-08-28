@@ -1,4 +1,4 @@
-C The\sshared_err\stest\sruns\swith\sno\serrors.\s\sBut\sa\spotential\sdeadlock\shas\sbeen\ndiscovered\sand\sis\sstill\sunfixed.\s(CVS\s4317)
+C The\sshared_err\stest\sruns\swith\sno\serrors.\s\sBut\sa\spotential\sdeadlock\shas\sbeen\ndiscovered\sand\sis\sstill\sunfixed.\s(CVS\s4318)
 D 2007-08-28T23:28:08
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
@@ -567,7 +567,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 967ab229af462a8ae663090ea36b4cc10e351653
+P f84550be0a0c9e5859b852863b9a8f8ed3fd6919
 R 9c42e7c4d50fc0b5627cd0c4b7aa2569
 U drh
-Z b0b14ea00679504633b7555caa0627b8
+Z 82189ccd3fcca220119ac94e3b76d37a
