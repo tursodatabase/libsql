@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: btmutex.c,v 1.1 2007/08/28 02:27:52 drh Exp $
+** $Id: btmutex.c,v 1.2 2007/08/28 16:44:20 drh Exp $
 **
 ** This file contains code used to implement mutexes on Btree objects.
 ** This code really belongs in btree.c.  But btree.c is getting too
@@ -85,6 +85,7 @@ void sqlite3BtreeEnter(Btree *p){
     }
   }
   sqlite3_mutex_enter(p->pBt->mutex);
+  p->locked = 1;
   for(pLater=p->pNext; pLater; pLater=pLater->pNext){
     if( pLater->wantToLock ){
       sqlite3_mutex_enter(pLater->pBt->mutex);
@@ -168,6 +169,7 @@ void sqlite3BtreeMutexSetEnter(BtreeMutexSet *pSet){
     p->wantToLock++;
     if( !p->locked ){
       sqlite3_mutex_enter(p->pBt->mutex);
+      p->locked = 1;
     }
   }
 }
@@ -191,6 +193,7 @@ void sqlite3BtreeMutexSetLeave(BtreeMutexSet *pSet){
     p->wantToLock--;
     if( p->wantToLock==0 ){
       sqlite3_mutex_leave(p->pBt->mutex);
+      p->locked = 0;
     }
   }
 }
