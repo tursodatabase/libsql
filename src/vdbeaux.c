@@ -667,7 +667,7 @@ void sqlite3VdbeUsesBtree(Vdbe *p, int i, Btree *pBtree){
   assert( i<sizeof(p->btreeMask)*8 );
   assert( p->db->aDb[i].pBt==pBtree );
   p->btreeMask |= 1<<i;
-  sqlite3BtreeMutexSetInsert(&p->mtxSet, pBtree);
+  sqlite3BtreeMutexArrayInsert(&p->aMutex, pBtree);
 }
 
 
@@ -1331,7 +1331,7 @@ void sqlite3AbortOtherActiveVdbes(sqlite3 *db, Vdbe *pExcept){
 ** lock contention, return SQLITE_BUSY.  If SQLITE_BUSY is returned, it
 ** means the close did not happen and needs to be repeated.
 */
-int sqlite3VdbeHalt(Vdbe *p){
+static int sqlite3VdbeHaltLocked(Vdbe *p){
   sqlite3 *db = p->db;
   int i;
   int (*xFunc)(Btree *pBt) = 0;  /* Function to call on each btree backend */
@@ -1533,6 +1533,14 @@ int sqlite3VdbeHalt(Vdbe *p){
 
   return SQLITE_OK;
 }
+int sqlite3VdbeHalt(Vdbe *p){
+  int rc;
+  sqlite3BtreeMutexArrayEnter(&p->aMutex);
+  rc = sqlite3VdbeHaltLocked(p);
+  sqlite3BtreeMutexArrayLeave(&p->aMutex);
+  return rc;
+}
+
 
 /*
 ** Each VDBE holds the result of the most recent sqlite3_step() call

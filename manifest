@@ -1,5 +1,5 @@
-C Clean\sup\sthe\slocking\sin\sthe\sbtree\slogic.\s(CVS\s4316)
-D 2007-08-28T22:24:35
+C The\sshared_err\stest\sruns\swith\sno\serrors.\s\sBut\sa\spotential\sdeadlock\shas\sbeen\ndiscovered\sand\sis\sstill\sunfixed.\s(CVS\s4317)
+D 2007-08-28T23:28:08
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -80,9 +80,9 @@ F src/alter.c fd78c6005456c727a6cb7c01c5266f2aacf6d401
 F src/analyze.c a14237d869c6bea0846493b59317e4097e81a0b6
 F src/attach.c a52225c75b107be8c5bc144a2b6d20201be3f8f8
 F src/auth.c 083c1205b45e3f52291ec539d396b4fc557856b3
-F src/btmutex.c 3a19fcb311d0d09e63d397779be881d4273f4518
-F src/btree.c 8796aa42fd16feb587844489a0fce8c66e52ac02
-F src/btree.h a8fb26c56b745b57446c2bf29133619261313051
+F src/btmutex.c fc9d8316fccf491f1011ddc4087338f0ce3b5263
+F src/btree.c 0241f79766d718d524a28857c3899aee7a728194
+F src/btree.h 03895d1da697e616d918856a26ec63ef8f5aa497
 F src/btreeInt.h 5b1bc919cb80f0dd6baec1cdbae737f9806a7e3b
 F src/build.c 99b0b0c44ce7673c00d8c0c97ce536e3b796328b
 F src/callback.c a542236a68060caad378efa30006ca46cf77b1b2
@@ -162,11 +162,11 @@ F src/update.c e89b980b443d44b68bfc0b1746cdb6308e049ac9
 F src/utf.c 4af6259d5906b5a1bf3035cc387c4d7907bdd56e
 F src/util.c 3f9c0387b54f977726790f52ab92cd3d9379b367
 F src/vacuum.c 5ec133b69edf581a232af7e2b01f45c9f2b8be32
-F src/vdbe.c 62d210babaac906a5847d7bd4c71e7b114595e85
+F src/vdbe.c f578e7f0905489ced1f05bc418dd51c0f79f9a04
 F src/vdbe.h 498e9ddade4baf70f2fc39e585670131dde07caa
-F src/vdbeInt.h a9dcd0688783abbd60981aff7ecc5b57a9559765
+F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
 F src/vdbeapi.c bdd0aea216744482dd1b7fab56de18ba5b6fbdf4
-F src/vdbeaux.c 0bbc8fbb6bcd610e98ce8eef77d0db660710f9dd
+F src/vdbeaux.c 347d2c1d68f326c90c27660da86849c51134fe1d
 F src/vdbeblob.c d12ed95dac0992e1e372d079d76af047cc42f7c7
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 896fa3f8df9d2661eb15c7ce361857741b447268
@@ -403,7 +403,7 @@ F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
 F test/shared.test 08b30d5f1939efff0517e7ff8ec7b74ad31c151b
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
-F test/shared_err.test 99d3d87924cedc1db2233ef59f38c389dd358698
+F test/shared_err.test 494a24f6ba5994d4e4e8fe57ce8c6253e545409a
 F test/soak.test 64f9b27fbcdec43335a88c546ce1983e6ba40d7b
 F test/softheap1.test 0c49aa6eee25e7d32943e85e8d1f20eff566b1dc
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
@@ -567,7 +567,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6c617bd89fc57881a2a308a6360e8ebb42835d46
-R 45b11caba5c119849cdae69b051cb491
+P 967ab229af462a8ae663090ea36b4cc10e351653
+R 9c42e7c4d50fc0b5627cd0c4b7aa2569
 U drh
-Z 8c8847e04e8b6bae7d208c08aa3c66c5
+Z b0b14ea00679504633b7555caa0627b8

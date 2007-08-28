@@ -333,7 +333,7 @@ struct Vdbe {
   int nChange;            /* Number of db changes made since last reset */
   i64 startTime;          /* Time when query started - used for profiling */
   int btreeMask;          /* Bitmask of db->aDb[] entries referenced */
-  BtreeMutexSet mtxSet;   /* Set of Btree mutexes */
+  BtreeMutexArray aMutex; /* An array of Btree used here and needing locks */
   int nSql;             /* Number of bytes in zSql */
   char *zSql;           /* Text of the SQL statement that generated this */
 #ifdef SQLITE_DEBUG

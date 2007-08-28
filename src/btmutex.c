@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: btmutex.c,v 1.2 2007/08/28 16:44:20 drh Exp $
+** $Id: btmutex.c,v 1.3 2007/08/28 23:28:08 drh Exp $
 **
 ** This file contains code used to implement mutexes on Btree objects.
 ** This code really belongs in btree.c.  But btree.c is getting too
@@ -110,7 +110,7 @@ void sqlite3BtreeLeave(Btree *p){
 }
 
 /*
-** Potentially dd a new Btree pointer to a BtreeMutexSet.
+** Potentially dd a new Btree pointer to a BtreeMutexArray.
 ** Really only add the Btree if it can possibly be shared with
 ** another database connection.
 **
@@ -122,7 +122,7 @@ void sqlite3BtreeLeave(Btree *p){
 ** The number of shared btrees will always be small (usually 0 or 1)
 ** so an insertion sort is an adequate algorithm here.
 */
-void sqlite3BtreeMutexSetInsert(BtreeMutexSet *pSet, Btree *pBtree){
+void sqlite3BtreeMutexArrayInsert(BtreeMutexArray *pSet, Btree *pBtree){
   int i, j;
   BtShared *pBt;
   if( !pBtree->sharable ) return;
@@ -150,11 +150,11 @@ void sqlite3BtreeMutexSetInsert(BtreeMutexSet *pSet, Btree *pBtree){
 }
 
 /*
-** Enter the mutex of every btree in the set.  This routine is
+** Enter the mutex of every btree in the array.  This routine is
 ** called at the beginning of sqlite3VdbeExec().  The mutexes are
 ** exited at the end of the same function.
 */
-void sqlite3BtreeMutexSetEnter(BtreeMutexSet *pSet){
+void sqlite3BtreeMutexArrayEnter(BtreeMutexArray *pSet){
   int i;
   for(i=0; i<pSet->nMutex; i++){
     Btree *p = pSet->aBtree[i];
@@ -175,9 +175,9 @@ void sqlite3BtreeMutexSetEnter(BtreeMutexSet *pSet){
 }
 
 /*
-** Leave the mutex of every btree in the set.
+** Leave the mutex of every btree in the group.
 */
-void sqlite3BtreeMutexSetLeave(BtreeMutexSet *pSet){
+void sqlite3BtreeMutexArrayLeave(BtreeMutexArray *pSet){
   int i;
   for(i=0; i<pSet->nMutex; i++){
     Btree *p = pSet->aBtree[i];

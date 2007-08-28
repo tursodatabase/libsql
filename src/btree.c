@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.414 2007/08/28 22:24:35 drh Exp $
+** $Id: btree.c,v 1.415 2007/08/28 23:28:08 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2420,7 +2420,10 @@ int sqlite3BtreeRollback(Btree *p){
     while( pBt->pCursor ){
       sqlite3 *db = pBt->pCursor->pBtree->pSqlite;
       if( db ){
+        /**** FIX ME: This can deadlock ****/
+        sqlite3_mutex_enter(db->mutex);
         sqlite3AbortOtherActiveVdbes(db, 0);
+        sqlite3_mutex_leave(db->mutex);
       }
     }
   }

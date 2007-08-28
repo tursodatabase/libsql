@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.87 2007/08/28 02:27:52 drh Exp $
+** @(#) $Id: btree.h,v 1.88 2007/08/28 23:28:08 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -41,7 +41,7 @@
 typedef struct Btree Btree;
 typedef struct BtCursor BtCursor;
 typedef struct BtShared BtShared;
-typedef struct BtreeMutexSet BtreeMutexSet;
+typedef struct BtreeMutexArray BtreeMutexArray;
 
 /*
 ** This structure records all of the Btrees that need to hold
@@ -49,7 +49,7 @@ typedef struct BtreeMutexSet BtreeMutexSet;
 ** are placed in aBtree[] in order of aBtree[]->pBt.  That way,
 ** we can always lock and unlock them all quickly.
 */
-struct BtreeMutexSet {
+struct BtreeMutexArray {
   int nMutex;
   Btree *aBtree[SQLITE_MAX_ATTACHED+1];
 };
@@ -183,13 +183,13 @@ int sqlite3BtreePageDump(Btree*, int, int recursive);
 #endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE
-  void sqlite3BtreeMutexSetEnter(BtreeMutexSet*);
-  void sqlite3BtreeMutexSetLeave(BtreeMutexSet*);
-  void sqlite3BtreeMutexSetInsert(BtreeMutexSet*, Btree*);
+  void sqlite3BtreeMutexArrayEnter(BtreeMutexArray*);
+  void sqlite3BtreeMutexArrayLeave(BtreeMutexArray*);
+  void sqlite3BtreeMutexArrayInsert(BtreeMutexArray*, Btree*);
 #else
-# define sqlite3BtreeMutexSetEnter(X)
-# define sqlite3BtreeMutexSetLeave(X)
-# define sqlite3BtreeMutexSetInsert(X,Y)
+# define sqlite3BtreeMutexArrayEnter(X)
+# define sqlite3BtreeMutexArrayLeave(X)
+# define sqlite3BtreeMutexArrayInsert(X,Y)
 #endif
 
 
