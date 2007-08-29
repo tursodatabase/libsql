@@ -1,5 +1,5 @@
-C Modifications\sto\sthe\smalloc\sfailure\stests\sto\stest\stransient\sand\spersistent\sfailures.\s(CVS\s4321)
-D 2007-08-29T12:31:26
+C Be\scareful\sto\sverify\sthe\sschema\scookie\swhen\srunning\sthe\sxfer\soptimization\non\sINSERT\sstatements.\s(CVS\s4322)
+D 2007-08-29T13:45:59
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -94,7 +94,7 @@ F src/expr.c 70660e0c5fc6375a03b3a7fc4eb6e66d96e5f6b1
 F src/func.c 4db632f1a81ed42a5a315136d3e90b7d8c76834c
 F src/hash.c 8fe2fa52bd17869c87748e42cff5b1e7fbf90822
 F src/hash.h 3ad3da76bfb954978d227bf495568b0e6da2c19e
-F src/insert.c 633322aef1799f6604fa805e12488bc628570b0c
+F src/insert.c b11e5ca0d68bf2a7a56f47a052a0ee67dd4e2f89
 F src/journal.c 573911e274738b3fda813d4f0a6e319f8a9ecd36
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
@@ -567,7 +567,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e8060f85e7871572e2a38dc96f03e6e1f34cc8fd
-R 6d16792962565a302345db7d8e56e541
-U danielk1977
-Z 9b2b7f4f6f1c4dee7c46f90167d9dbc1
+P e38ef81b85feb5bff2ad8448f3438ff0ab36571e
+R 4005574fa538fb54a130f6155d3c58ce
+U drh
+Z 0efa78184b21c87b5dc9bb414aa7047b

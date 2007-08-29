@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.190 2007/08/16 12:24:02 drh Exp $
+** $Id: insert.c,v 1.191 2007/08/29 13:45:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1525,6 +1525,7 @@ static int xferOptimization(
 #endif
   iDbSrc = sqlite3SchemaToIndex(pParse->db, pSrc->pSchema);
   v = sqlite3GetVdbe(pParse);
+  sqlite3CodeVerifySchema(pParse, iDbSrc);
   iSrc = pParse->nTab++;
   iDest = pParse->nTab++;
   counterMem = autoIncBegin(pParse, iDbDest, pDest);
