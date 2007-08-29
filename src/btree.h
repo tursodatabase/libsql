@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.89 2007/08/29 00:33:07 drh Exp $
+** @(#) $Id: btree.h,v 1.90 2007/08/29 04:00:58 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -175,23 +175,24 @@ int sqlite3BtreePageDump(Btree*, int, int recursive);
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE
   void sqlite3BtreeEnter(Btree*);
   void sqlite3BtreeLeave(Btree*);
-# define sqlite3BtreeMutexHeld(X) sqlite3_mutex_held(X)
+  int sqlite3BtreeHoldsMutex(Btree*);
   void sqlite3BtreeEnterAll(sqlite3*);
   void sqlite3BtreeLeaveAll(sqlite3*);
+  int sqlite3BtreeHoldsAllMutexes(sqlite3*);
   void sqlite3BtreeMutexArrayEnter(BtreeMutexArray*);
   void sqlite3BtreeMutexArrayLeave(BtreeMutexArray*);
   void sqlite3BtreeMutexArrayInsert(BtreeMutexArray*, Btree*);
 #else
 # define sqlite3BtreeEnter(X)
 # define sqlite3BtreeLeave(X)
-# define sqlite3BtreeMutexHeld(X) 1
+# define sqlite3BtreeHoldsMutex(X) 1
 # define sqlite3BtreeEnterAll(X)
 # define sqlite3BtreeLeaveAll(X)
+# define sqlite3BtreeHoldsAllMutexes(X) 1
 # define sqlite3BtreeMutexArrayEnter(X)
 # define sqlite3BtreeMutexArrayLeave(X)
 # define sqlite3BtreeMutexArrayInsert(X,Y)
 #endif
-
 
 
 #endif /* _BTREE_H_ */

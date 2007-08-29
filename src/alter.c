@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.30 2007/08/25 13:09:26 danielk1977 Exp $
+** $Id: alter.c,v 1.31 2007/08/29 04:00:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -234,6 +234,7 @@ static void reloadTableSchema(Parse *pParse, Table *pTab, const char *zName){
 
   v = sqlite3GetVdbe(pParse);
   if( !v ) return;
+  assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   assert( iDb>=0 );
 
@@ -288,6 +289,7 @@ void sqlite3AlterRenameTable(
   
   if( db->mallocFailed ) goto exit_rename_table;
   assert( pSrc->nSrc==1 );
+  assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
 
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
   if( !pTab ) goto exit_rename_table;
@@ -446,6 +448,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   assert( pNew );
 
   db = pParse->db;
+  assert( sqlite3BtreeHoldsAllMutexes(db) );
   iDb = sqlite3SchemaToIndex(db, pNew->pSchema);
   zDb = db->aDb[iDb].zName;
   zTab = pNew->zName;
@@ -556,6 +559,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
 
   /* Look up the table being altered. */
   assert( pParse->pNewTable==0 );
+  assert( sqlite3BtreeHoldsAllMutexes(db) );
   if( db->mallocFailed ) goto exit_begin_add_column;
   pTab = sqlite3LocateTable(pParse, pSrc->a[0].zName, pSrc->a[0].zDatabase);
   if( !pTab ) goto exit_begin_add_column;

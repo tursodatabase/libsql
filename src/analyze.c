@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.21 2007/08/16 10:09:02 danielk1977 Exp $
+** @(#) $Id: analyze.c,v 1.22 2007/08/29 04:00:58 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -37,6 +37,8 @@ static void openStatTable(
   Vdbe *v = sqlite3GetVdbe(pParse);
 
   if( v==0 ) return;
+  assert( sqlite3BtreeHoldsAllMutexes(db) );
+  assert( sqlite3VdbeDb(v)==db );
   pDb = &db->aDb[iDb];
   if( (pStat = sqlite3FindTable(db, "sqlite_stat1", pDb->zName))==0 ){
     /* The sqlite_stat1 tables does not exist.  Create it.  
@@ -100,7 +102,7 @@ static void analyzeOneTable(
     /* Do no analysis for tables that have no indices */
     return;
   }
-
+  assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   assert( iDb>=0 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
@@ -258,6 +260,7 @@ static void analyzeTable(Parse *pParse, Table *pTab){
   int iStatCur;
 
   assert( pTab!=0 );
+  assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   iStatCur = pParse->nTab++;
@@ -288,6 +291,7 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
 
   /* Read the database schema. If an error occurs, leave an error message
   ** and code in pParse and return NULL. */
+  assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
   if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
     return;
   }
@@ -381,6 +385,8 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   HashElem *i;
   char *zSql;
   int rc;
+
+  assert( sqlite3BtreeHoldsAllMutexes(db) );
 
   /* Clear any prior statistics */
   for(i=sqliteHashFirst(&db->aDb[iDb].pSchema->idxHash);i;i=sqliteHashNext(i)){
