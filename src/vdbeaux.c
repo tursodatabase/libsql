@@ -936,7 +936,7 @@ void sqlite3VdbeMakeReady(
 }
 
 /*
-** Close a cursor and release all the resources that cursor happens
+** Close a VDBE cursor and release all the resources that cursor happens
 ** to hold.
 */
 void sqlite3VdbeFreeCursor(Vdbe *p, Cursor *pCx){
@@ -966,14 +966,16 @@ void sqlite3VdbeFreeCursor(Vdbe *p, Cursor *pCx){
 }
 
 /*
-** Close all cursors
+** Close all cursors except for VTab cursors that are currently
+** in use.
 */
-static void closeAllCursors(Vdbe *p){
+static void closeAllCursorsExceptActiveVtabs(Vdbe *p){
   int i;
   if( p->apCsr==0 ) return;
   for(i=0; i<p->nCursor; i++){
-    if( !p->inVtabMethod || (p->apCsr[i] && !p->apCsr[i]->pVtabCursor) ){
-      sqlite3VdbeFreeCursor(p, p->apCsr[i]);
+    Cursor *pC = p->apCsr[i];
+    if( pC && (!p->inVtabMethod || !pC->pVtabCursor) ){
+      sqlite3VdbeFreeCursor(p, pC);
       p->apCsr[i] = 0;
     }
   }
@@ -992,7 +994,7 @@ static void Cleanup(Vdbe *p){
     releaseMemArray(p->aStack, 1 + (p->pTos - p->aStack));
     p->pTos = &p->aStack[-1];
   }
-  closeAllCursors(p);
+  closeAllCursorsExceptActiveVtabs(p);
   releaseMemArray(p->aMem, p->nMem);
   sqlite3VdbeFifoClear(&p->sFifo);
   if( p->contextStack ){
@@ -1311,7 +1313,7 @@ void sqlite3AbortOtherActiveVdbes(sqlite3 *db, Vdbe *pExcept){
     if( pOther==pExcept ) continue;
     if( pOther->magic!=VDBE_MAGIC_RUN || pOther->pc<0 ) continue;
     checkActiveVdbeCnt(db);
-    closeAllCursors(pOther);
+    closeAllCursorsExceptActiveVtabs(pOther);
     checkActiveVdbeCnt(db);
     pOther->aborted = 1;
   }
@@ -1323,13 +1325,14 @@ void sqlite3AbortOtherActiveVdbes(sqlite3 *db, Vdbe *pExcept){
 ** changes.  If a rollback is needed, then do the rollback.
 **
 ** This routine is the only way to move the state of a VM from
-** SQLITE_MAGIC_RUN to SQLITE_MAGIC_HALT.
+** SQLITE_MAGIC_RUN to SQLITE_MAGIC_HALT.  It is harmless to
+** call this on a VM that is in the SQLITE_MAGIC_HALT state.
 **
 ** Return an error code.  If the commit could not complete because of
 ** lock contention, return SQLITE_BUSY.  If SQLITE_BUSY is returned, it
 ** means the close did not happen and needs to be repeated.
 */
-static int sqlite3VdbeHaltLocked(Vdbe *p){
+int sqlite3VdbeHalt(Vdbe *p){
   sqlite3 *db = p->db;
   int i;
   int (*xFunc)(Btree *pBt) = 0;  /* Function to call on each btree backend */
@@ -1366,20 +1369,19 @@ static int sqlite3VdbeHaltLocked(Vdbe *p){
   if( p->db->mallocFailed ){
     p->rc = SQLITE_NOMEM;
   }
+  closeAllCursorsExceptActiveVtabs(p);
   if( p->magic!=VDBE_MAGIC_RUN ){
-    /* Already halted.  Nothing to do. */
-    assert( p->magic==VDBE_MAGIC_HALT );
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-    closeAllCursors(p);
-#endif
     return SQLITE_OK;
   }
-  closeAllCursors(p);
   checkActiveVdbeCnt(db);
 
   /* No commit or rollback needed if the program never started */
   if( p->pc>=0 ){
     int mrc;   /* Primary error code from p->rc */
+
+    /* Lock all btrees used by the statement */
+    sqlite3BtreeMutexArrayEnter(&p->aMutex);
+
     /* Check for one of the special errors - SQLITE_NOMEM or SQLITE_IOERR */
     mrc = p->rc & 0xff;
     isSpecialError = (
@@ -1423,7 +1425,8 @@ static int sqlite3VdbeHaltLocked(Vdbe *p){
             break;
         }
       }
-  
+
+   
       /* If the query was read-only, we need do no rollback at all. Otherwise,
       ** proceed with the special handling.
       */
@@ -1458,6 +1461,7 @@ static int sqlite3VdbeHaltLocked(Vdbe *p){
         */
         int rc = vdbeCommit(db);
         if( rc==SQLITE_BUSY ){
+          sqlite3BtreeMutexArrayLeave(&p->aMutex);
           return SQLITE_BUSY;
         }else if( rc!=SQLITE_OK ){
           p->rc = rc;
@@ -1520,6 +1524,9 @@ static int sqlite3VdbeHaltLocked(Vdbe *p){
       sqlite3ResetInternalSchema(db, 0);
       db->flags = (db->flags | SQLITE_InternChanges);
     }
+
+    /* Release the locks */
+    sqlite3BtreeMutexArrayLeave(&p->aMutex);
   }
 
   /* We have successfully halted and closed the VM.  Record this fact. */
@@ -1528,15 +1535,12 @@ static int sqlite3VdbeHaltLocked(Vdbe *p){
   }
   p->magic = VDBE_MAGIC_HALT;
   checkActiveVdbeCnt(db);
+  if( p->db->mallocFailed ){
+    p->rc = SQLITE_NOMEM;
+  }
+  checkActiveVdbeCnt(db);
 
   return SQLITE_OK;
-}
-int sqlite3VdbeHalt(Vdbe *p){
-  int rc;
-  sqlite3BtreeMutexArrayEnter(&p->aMutex);
-  rc = sqlite3VdbeHaltLocked(p);
-  sqlite3BtreeMutexArrayLeave(&p->aMutex);
-  return rc;
 }
 
 

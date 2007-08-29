@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.44 2007/05/09 20:31:30 drh Exp $
+# $Id: attach.test,v 1.45 2007/08/29 17:43:20 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -53,6 +53,7 @@ do_test attach-1.4 {
   }
 } {1 x 2 y}
 do_test attach-1.5 {
+btree_breakpoint
   execsql {
     DETACH DATABASE two;
     SELECT * FROM t1;

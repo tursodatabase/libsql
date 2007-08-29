@@ -1,5 +1,5 @@
-C Use\sthe\sDbMalloc()\sand\sDbRealloc()\sfunctions\smore\sconsistently.\s(CVS\s4323)
-D 2007-08-29T14:06:23
+C Improvements\sto\smutex\sasserts.\s\sThe\squick\stest\sruns\sto\scompletion\swithout\nassertion\sfaults.\s(CVS\s4324)
+D 2007-08-29T17:43:20
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -77,12 +77,12 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c c9f30b4d6fbf7eff7c5518b002a217d4ecd13bcf
-F src/analyze.c a28b43a5f79bfa7616ab506bb917077242098469
+F src/analyze.c 49b4bd45eb286d833793ed6bf72355a5c1974865
 F src/attach.c a52225c75b107be8c5bc144a2b6d20201be3f8f8
 F src/auth.c 083c1205b45e3f52291ec539d396b4fc557856b3
-F src/btmutex.c c04e67d99d949a12beb17209f307950f21313980
-F src/btree.c 7079a423e0da7eec5147d102202e2b51038002cd
-F src/btree.h 7391b9e78ae441fe0fb3a6d3ae772770d35a4375
+F src/btmutex.c abc2eda085ff7729c4093db8b4e5357e932f082c
+F src/btree.c ff821439edf1fdf85fee7cc7b475b02cacceb2ae
+F src/btree.h a90328ee4d7aa49a1ec4309c94a9fae65f39d969
 F src/btreeInt.h 1fa6510aa8601dc0358a5240d191335236d3cf76
 F src/build.c 830d1a6b2de157fc4d4dd08d4433066ad83f8b72
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
@@ -138,7 +138,7 @@ F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c d76af53f45c9e9f7f7d39531fa4c7bee7d0adad6
 F src/test1.c 8b20d1f05777ac480d3caf8d5f79ab7a543513fc
 F src/test2.c 4ab230fbdc0decfa7422f6a052b609ba54f4dfac
-F src/test3.c de8f2a245d0adf4215487af8267c11ccca31e750
+F src/test3.c 09098991c3a94a1c7f54d28888fca2951d459585
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
 F src/test6.c a6223d9d938aba83f20611a2c01680d8043cd2f7
@@ -166,8 +166,8 @@ F src/vdbe.c 9f2ef520614425016881234965b8146ac771d7dc
 F src/vdbe.h 498e9ddade4baf70f2fc39e585670131dde07caa
 F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
 F src/vdbeapi.c 9c2d681b75e4b90c28b9dd01a3f2e5905267f884
-F src/vdbeaux.c 7cc1e0b33e4d5b8259fd12b7bd28c2180903146c
-F src/vdbeblob.c d12ed95dac0992e1e372d079d76af047cc42f7c7
+F src/vdbeaux.c 77db89679834d55ff026c6311c34d2964bf46431
+F src/vdbeblob.c 4da667be7dff5e197b3b986d6f2095cf97a22917
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 246d434fa60bde6553490eb686adfd86adcd6712
 F src/vtab.c ace9b41a088f6ad55d2e39084d92180a2bee3276
@@ -182,7 +182,7 @@ F test/altermalloc.test b341e6515fa6cd9f0ac5d19153c556c9add70be9
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
 F test/async.test 464dc7c7ccb144e8c82ecca429e6d7cd1c96bd6e
 F test/async2.test 8f2c70b831dac7292450d0a42580cf2dab497dbb
-F test/attach.test cf289abdb120053136649efd1306ab9d47fa41b2
+F test/attach.test b849e1baae863c3a6132ff8b9b1baf356ab6c178
 F test/attach2.test 78bc1a25ea8785c7571b44f5947ada2bd5d78127
 F test/attach3.test eafcafb107585aecc2ed1569a77914138eef46a9
 F test/attachmalloc.test fdbfd9dc0b600db14f9189690c6c12511cc3a56f
@@ -567,7 +567,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d8ef7024172fffee049cfda6707220af2577e9a1
-R 02e243d6b7b8198a44d4e659876a4584
-U danielk1977
-Z e737eb1ddcb93155a8d9637fcf24015b
+P c790c234c369c6b7610e67dcaaa9eee347df729c
+R 673cf3ccb79c2542ccd493ed4a5e1538
+U drh
+Z a367643531757313c52ae724bb0d4a7f

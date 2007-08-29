@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.417 2007/08/29 12:31:26 danielk1977 Exp $
+** $Id: btree.c,v 1.418 2007/08/29 17:43:20 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -236,7 +236,7 @@ static void releasePage(MemPage *pPage);  /* Forward reference */
 */
 #ifndef NDEBUG
 static int cursorHoldsMutex(BtCursor *p){
-  return sqlite3BtreeHoldsMutex(p->pBtree);
+  return sqlite3_mutex_held(p->pBt->mutex);
 }
 #endif
 
@@ -1150,32 +1150,43 @@ int sqlite3BtreeOpen(
    && isMemdb==0
    && (pSqlite->flags & SQLITE_Vtab)==0
    && zFilename && zFilename[0]
-   && sqlite3SharedCacheEnabled
   ){
-    char *zFullPathname = (char *)sqlite3_malloc(pVfs->mxPathname);
-    sqlite3_mutex *mutexShared;
-    p->sharable = 1;
-    if( pSqlite ){
-      pSqlite->flags |= SQLITE_SharedCache;
-    }
-    if( !zFullPathname ){
-      sqlite3_free(p);
-      return SQLITE_NOMEM;
-    }
-    sqlite3OsFullPathname(pVfs, zFilename, zFullPathname);
-    mutexShared = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
-    sqlite3_mutex_enter(mutexShared);
-    for(pBt=sqlite3SharedCacheList; pBt; pBt=pBt->pNext){
-      assert( pBt->nRef>0 );
-      if( 0==strcmp(zFullPathname, sqlite3PagerFilename(pBt->pPager))
-               && sqlite3PagerVfs(pBt->pPager)==pVfs ){
-        p->pBt = pBt;
-        pBt->nRef++;
-        break;
+    if( sqlite3SharedCacheEnabled ){
+      char *zFullPathname = (char *)sqlite3_malloc(pVfs->mxPathname);
+      sqlite3_mutex *mutexShared;
+      p->sharable = 1;
+      if( pSqlite ){
+        pSqlite->flags |= SQLITE_SharedCache;
       }
+      if( !zFullPathname ){
+        sqlite3_free(p);
+        return SQLITE_NOMEM;
+      }
+      sqlite3OsFullPathname(pVfs, zFilename, zFullPathname);
+      mutexShared = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+      sqlite3_mutex_enter(mutexShared);
+      for(pBt=sqlite3SharedCacheList; pBt; pBt=pBt->pNext){
+        assert( pBt->nRef>0 );
+        if( 0==strcmp(zFullPathname, sqlite3PagerFilename(pBt->pPager))
+                 && sqlite3PagerVfs(pBt->pPager)==pVfs ){
+          p->pBt = pBt;
+          pBt->nRef++;
+          break;
+        }
+      }
+      sqlite3_mutex_leave(mutexShared);
+      sqlite3_free(zFullPathname);
     }
-    sqlite3_mutex_leave(mutexShared);
-    sqlite3_free(zFullPathname);
+#ifdef SQLITE_DEBUG
+    else{
+      /* In debug mode, we mark all persistent databases as sharable
+      ** even when they are not.  This exercises the locking code and
+      ** gives more opportunity for asserts(sqlite3_mutex_held())
+      ** statements to find locking problems.
+      */
+      p->sharable = 1;
+    }
+#endif
   }
 #endif
   if( pBt==0 ){
@@ -1253,6 +1264,11 @@ int sqlite3BtreeOpen(
       pBt->nRef = 1;
       mutexShared = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
       pBt->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+      if( pBt->mutex==0 ){
+        rc = SQLITE_NOMEM;
+        pSqlite->mallocFailed = 0;
+        goto btree_open_out;
+      }
       sqlite3_mutex_enter(mutexShared);
       pBt->pNext = sqlite3SharedCacheList;
       sqlite3SharedCacheList = pBt;
@@ -2687,9 +2703,9 @@ int sqlite3BtreeCursor(
 */
 int sqlite3BtreeCloseCursor(BtCursor *pCur){
   BtShared *pBt = pCur->pBt;
+  Btree *pBtree = pCur->pBtree;
 
-  assert( cursorHoldsMutex(pCur) );
-  assert( sqlite3_mutex_held(pCur->pBtree->pSqlite->mutex) );
+  sqlite3BtreeEnter(pBtree);
   clearCursorPosition(pCur);
   if( pCur->pPrev ){
     pCur->pPrev->pNext = pCur->pNext;
@@ -2703,6 +2719,7 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
   unlockBtreeIfUnused(pBt);
   invalidateOverflowCache(pCur);
   sqlite3_free(pCur);
+  sqlite3BtreeLeave(pBtree);
   return SQLITE_OK;
 }
 
@@ -6578,7 +6595,6 @@ char *sqlite3BtreeIntegrityCheck(
 */
 const char *sqlite3BtreeGetFilename(Btree *p){
   assert( p->pBt->pPager!=0 );
-  /* assert( sqlite3BtreeHoldsMutex(p) ); */
   return sqlite3PagerFilename(p->pBt->pPager);
 }
 
@@ -6590,7 +6606,6 @@ const char *sqlite3BtreeGetFilename(Btree *p){
 */
 const char *sqlite3BtreeGetDirname(Btree *p){
   assert( p->pBt->pPager!=0 );
-  assert( sqlite3BtreeHoldsMutex(p) );
   return sqlite3PagerDirname(p->pBt->pPager);
 }
 
@@ -6604,7 +6619,6 @@ const char *sqlite3BtreeGetDirname(Btree *p){
 */
 const char *sqlite3BtreeGetJournalname(Btree *p){
   assert( p->pBt->pPager!=0 );
-  assert( sqlite3BtreeHoldsMutex(p) );
   return sqlite3PagerJournalname(p->pBt->pPager);
 }
 

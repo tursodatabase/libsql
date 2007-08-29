@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: btmutex.c,v 1.5 2007/08/29 04:00:58 drh Exp $
+** $Id: btmutex.c,v 1.6 2007/08/29 17:43:20 drh Exp $
 **
 ** This file contains code used to implement mutexes on Btree objects.
 ** This code really belongs in btree.c.  But btree.c is getting too
@@ -111,16 +111,33 @@ void sqlite3BtreeLeave(Btree *p){
 
 #ifndef NDEBUG
 /*
-** Return true if a mutex is held on the btree.
+** Return true if the BtShared mutex is held on the btree.  
+**
+** This routine makes no determination one why or another if the
+** database connection mutex is held.
 **
 ** This routine is used only from within assert() statements.
 */
 int sqlite3BtreeHoldsMutex(Btree *p){
-  return sqlite3_mutex_held(p->pSqlite->mutex) && 
-         (p->sharable==0 ||
+  return (p->sharable==0 ||
              (p->locked && p->wantToLock && sqlite3_mutex_held(p->pBt->mutex)));
 }
 #endif
+
+
+#ifndef SQLITE_OMIT_INCRBLOB
+/*
+** Enter and leave a mutex on a Btree given a cursor owned by that
+** Btree.  These entry points are used by incremental I/O and can be
+** omitted if that module is not used.
+*/
+void sqlite3BtreeEnterCursor(BtCursor *pCur){
+  sqlite3BtreeEnter(pCur->pBtree);
+}
+void sqlite3BtreeLeaveCursor(BtCursor *pCur){
+  sqlite3BtreeLeave(pCur->pBtree);
+}
+#endif /* SQLITE_OMIT_INCRBLOB */
 
 
 /*

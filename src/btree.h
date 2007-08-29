@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.90 2007/08/29 04:00:58 drh Exp $
+** @(#) $Id: btree.h,v 1.91 2007/08/29 17:43:20 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -176,6 +176,8 @@ int sqlite3BtreePageDump(Btree*, int, int recursive);
   void sqlite3BtreeEnter(Btree*);
   void sqlite3BtreeLeave(Btree*);
   int sqlite3BtreeHoldsMutex(Btree*);
+  void sqlite3BtreeEnterCursor(BtCursor*);
+  void sqlite3BtreeLeaveCursor(BtCursor*);
   void sqlite3BtreeEnterAll(sqlite3*);
   void sqlite3BtreeLeaveAll(sqlite3*);
   int sqlite3BtreeHoldsAllMutexes(sqlite3*);
@@ -186,6 +188,8 @@ int sqlite3BtreePageDump(Btree*, int, int recursive);
 # define sqlite3BtreeEnter(X)
 # define sqlite3BtreeLeave(X)
 # define sqlite3BtreeHoldsMutex(X) 1
+# define sqlite3BtreeEnterCursor(X)
+# define sqlite3BtreeLeaveCursor(X)
 # define sqlite3BtreeEnterAll(X)
 # define sqlite3BtreeLeaveAll(X)
 # define sqlite3BtreeHoldsAllMutexes(X) 1

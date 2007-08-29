@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.14 2007/08/21 19:33:57 drh Exp $
+** $Id: vdbeblob.c,v 1.15 2007/08/29 17:43:20 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -102,6 +102,7 @@ int sqlite3_blob_open(
       return rc;
     }
 
+    sqlite3BtreeEnterAll(db);
     pTab = sqlite3LocateTable(&sParse, zTable, zDb);
     if( !pTab ){
       if( sParse.zErrMsg ){
@@ -110,6 +111,7 @@ int sqlite3_blob_open(
       sqlite3_free(sParse.zErrMsg);
       rc = SQLITE_ERROR;
       sqlite3SafetyOff(db);
+      sqlite3BtreeLeaveAll(db);
       goto blob_open_out;
     }
 
@@ -123,6 +125,7 @@ int sqlite3_blob_open(
       sqlite3_snprintf(sizeof(zErr), zErr, "no such column: \"%s\"", zColumn);
       rc = SQLITE_ERROR;
       sqlite3SafetyOff(db);
+      sqlite3BtreeLeaveAll(db);
       goto blob_open_out;
     }
 
@@ -140,6 +143,7 @@ int sqlite3_blob_open(
                              "cannot open indexed column for writing");
             rc = SQLITE_ERROR;
             sqlite3SafetyOff(db);
+            sqlite3BtreeLeaveAll(db);
             goto blob_open_out;
           }
         }
@@ -158,6 +162,9 @@ int sqlite3_blob_open(
       /* Configure the OP_VerifyCookie */
       sqlite3VdbeChangeP1(v, 1, iDb);
       sqlite3VdbeChangeP2(v, 1, pTab->pSchema->schema_cookie);
+
+      /* Make sure a mutex is held on the table to be accessed */
+      sqlite3VdbeUsesBtree(v, iDb, db->aDb[iDb].pBt); 
 
       /* Configure the db number pushed onto the stack */
       sqlite3VdbeChangeP1(v, 2, iDb);
@@ -180,7 +187,8 @@ int sqlite3_blob_open(
         sqlite3VdbeMakeReady(v, 1, 0, 1, 0);
       }
     }
-
+   
+    sqlite3BtreeLeaveAll(db);
     rc = sqlite3SafetyOff(db);
     if( rc!=SQLITE_OK || db->mallocFailed ){
       goto blob_open_out;
@@ -218,7 +226,9 @@ int sqlite3_blob_open(
     }
     pBlob->flags = flags;
     pBlob->pCsr =  v->apCsr[0]->pCursor;
+    sqlite3BtreeEnterCursor(pBlob->pCsr);
     sqlite3BtreeCacheOverflow(pBlob->pCsr);
+    sqlite3BtreeLeaveCursor(pBlob->pCsr);
     pBlob->pStmt = (sqlite3_stmt *)v;
     pBlob->iOffset = v->apCsr[0]->aOffset[iCol];
     pBlob->nByte = sqlite3VdbeSerialTypeLen(type);
@@ -247,12 +257,9 @@ blob_open_out:
 */
 int sqlite3_blob_close(sqlite3_blob *pBlob){
   Incrblob *p = (Incrblob *)pBlob;
-  sqlite3_mutex *mutex = p->db->mutex;
   int rc;
 
-  sqlite3_mutex_enter(mutex);
   rc = sqlite3_finalize(p->pStmt);
-  sqlite3_mutex_leave(mutex);
   sqlite3_free(p);
   return rc;
 }
@@ -289,7 +296,9 @@ static int blobReadWrite(
     ** returned, clean-up the statement handle.
     */
     assert( db == v->db );
+    sqlite3BtreeEnterCursor(p->pCsr);
     rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
+    sqlite3BtreeLeaveCursor(p->pCsr);
     if( rc==SQLITE_ABORT ){
       sqlite3VdbeFinalize(v);
       p->pStmt = 0;
