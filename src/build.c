@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.440 2007/08/28 22:24:35 drh Exp $
+** $Id: build.c,v 1.441 2007/08/29 12:31:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -241,6 +241,7 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   zSql = sqlite3VMPrintf(pParse->db, zFormat, ap);
   va_end(ap);
   if( zSql==0 ){
+    pParse->db->mallocFailed = 1;
     return;   /* A malloc must have failed */
   }
   pParse->nested++;
@@ -1562,9 +1563,13 @@ void sqlite3EndTable(
     }
 #ifndef SQLITE_OMIT_FOREIGN_KEY
     for(pFKey=p->pFKey; pFKey; pFKey=pFKey->pNextFrom){
+      void *data;
       int nTo = strlen(pFKey->zTo) + 1;
       pFKey->pNextTo = sqlite3HashFind(&pSchema->aFKey, pFKey->zTo, nTo);
-      sqlite3HashInsert(&pSchema->aFKey, pFKey->zTo, nTo, pFKey);
+      data = sqlite3HashInsert(&pSchema->aFKey, pFKey->zTo, nTo, pFKey);
+      if( data==(void *)pFKey ){
+        db->mallocFailed = 1;
+      }
     }
 #endif
     pParse->pNewTable = 0;
@@ -2383,7 +2388,10 @@ void sqlite3CreateIndex(
     sqlite3_snprintf(sizeof(zBuf),zBuf,"_%d",n);
     zName = 0;
     sqlite3SetString(&zName, "sqlite_autoindex_", pTab->zName, zBuf, (char*)0);
-    if( zName==0 ) goto exit_create_index;
+    if( zName==0 ){
+      db->mallocFailed = 1;
+      goto exit_create_index;
+    }
   }
 
   /* Check for authorization to create an index.

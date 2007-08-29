@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.308 2007/08/22 20:18:22 drh Exp $
+** $Id: expr.c,v 1.309 2007/08/29 12:31:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -221,13 +221,14 @@ static int codeCompare(
 ** is responsible for making sure the node eventually gets freed.
 */
 Expr *sqlite3Expr(
+  sqlite3 *db,            /* Handle for sqlite3DbMallocZero() (may be null) */
   int op,                 /* Expression opcode */
   Expr *pLeft,            /* Left operand */
   Expr *pRight,           /* Right operand */
   const Token *pToken     /* Argument token */
 ){
   Expr *pNew;
-  pNew = sqlite3MallocZero( sizeof(Expr) );
+  pNew = sqlite3DbMallocZero(db, sizeof(Expr));
   if( pNew==0 ){
     /* When malloc fails, delete pLeft and pRight. Expressions passed to 
     ** this function must always be allocated with sqlite3Expr() for this 
@@ -273,11 +274,7 @@ Expr *sqlite3PExpr(
   Expr *pRight,           /* Right operand */
   const Token *pToken     /* Argument token */
 ){
-  Expr *pNew = sqlite3Expr(op, pLeft, pRight, pToken);
-  if( pNew==0 ){
-    pParse->db->mallocFailed = 1;
-  }
-  return pNew;
+  return sqlite3Expr(pParse->db, op, pLeft, pRight, pToken);
 }
 
 /*
@@ -297,12 +294,11 @@ Expr *sqlite3RegisterExpr(Parse *pParse, Token *pToken){
   int depth;
   if( pParse->nested==0 ){
     sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", pToken);
-    return sqlite3Expr(TK_NULL, 0, 0, 0);
+    return sqlite3PExpr(pParse, TK_NULL, 0, 0, 0);
   }
   if( v==0 ) return 0;
-  p = sqlite3Expr(TK_REGISTER, 0, 0, pToken);
+  p = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, pToken);
   if( p==0 ){
-    pParse->db->mallocFailed = 1;
     return 0;  /* Malloc failed */
   }
   depth = atoi((char*)&pToken->z[1]);
@@ -322,7 +318,7 @@ Expr *sqlite3ExprAnd(sqlite3 *db, Expr *pLeft, Expr *pRight){
   }else if( pRight==0 ){
     return pLeft;
   }else{
-    Expr *p = sqlite3Expr(TK_AND, pLeft, pRight, 0);
+    Expr *p = sqlite3Expr(db, TK_AND, pLeft, pRight, 0);
     if( p==0 ){
       db->mallocFailed = 1;
     }
@@ -1234,9 +1230,13 @@ static int lookupName(
     }else{
       z = sqlite3StrDup(zCol);
     }
-    sqlite3ErrorMsg(pParse, zErr, z);
-    sqlite3_free(z);
-    pTopNC->nErr++;
+    if( z ){
+      sqlite3ErrorMsg(pParse, zErr, z);
+      sqlite3_free(z);
+      pTopNC->nErr++;
+    }else{
+      db->mallocFailed = 1;
+    }
   }
 
   /* If a column from a table in pSrcList is referenced, then record
@@ -1668,7 +1668,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
         VdbeComment((v, "# Init EXISTS result"));
       }
       sqlite3ExprDelete(pSel->pLimit);
-      pSel->pLimit = sqlite3Expr(TK_INTEGER, 0, 0, &one);
+      pSel->pLimit = sqlite3PExpr(pParse, TK_INTEGER, 0, 0, &one);
       if( sqlite3Select(pParse, pSel, sop, iMem, 0, 0, 0, 0) ){
         return;
       }

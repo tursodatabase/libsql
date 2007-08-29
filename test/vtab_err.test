@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: vtab_err.test,v 1.6 2007/08/25 13:37:49 danielk1977 Exp $
+# $Id: vtab_err.test,v 1.7 2007/08/29 12:31:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -40,7 +40,7 @@ do_ioerr_test vtab_err-1 -tclprep {
   COMMIT;
 }
 
-do_malloc_test vtab_err-2 -tclprep {
+do_malloc_test vtab_err-2 -tclprep { 
   register_echo_module [sqlite3_connection_pointer db]
 } -sqlbody {
   BEGIN;
@@ -58,6 +58,6 @@ do_malloc_test vtab_err-2 -tclprep {
   COMMIT;
 } 
 
-sqlite3_memdebug_fail -1 0
+sqlite3_memdebug_fail -1
 
 finish_test

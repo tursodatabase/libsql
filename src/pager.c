@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.379 2007/08/28 22:24:35 drh Exp $
+** @(#) $Id: pager.c,v 1.380 2007/08/29 12:31:27 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -699,6 +699,7 @@ static void pager_resize_hash_table(Pager *pPager, int N){
   PgHdr **aHash, *pPg;
   assert( N>0 && (N&(N-1))==0 );
   pagerLeave(pPager);
+  sqlite3MallocBenignFailure((int)pPager->aHash);
   aHash = sqlite3MallocZero( sizeof(aHash[0])*N );
   pagerEnter(pPager);
   if( aHash==0 ){
@@ -2266,22 +2267,32 @@ void sqlite3PagerSetReiniter(Pager *pPager, void (*xReinit)(DbPage*,int)){
 }
 
 /*
-** Set the page size.  Return the new size.  If the suggest new page
-** size is inappropriate, then an alternative page size is selected
-** and returned.
+** Set the page size to *pPageSize. If the suggest new page size is
+** inappropriate, then an alternative page size is set to that
+** value before returning.
 */
-int sqlite3PagerSetPagesize(Pager *pPager, int pageSize){
+int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize){
+  int rc = SQLITE_OK;
+  u16 pageSize = *pPageSize;
   assert( pageSize==0 || (pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE) );
-  if( pageSize && !pPager->memDb && pPager->nRef==0 ){
-    pagerEnter(pPager);
-    pager_reset(pPager);
-    pPager->pageSize = pageSize;
-    setSectorSize(pPager);
-    pagerLeave(pPager);
-    sqlite3_free(pPager->pTmpSpace);
-    pPager->pTmpSpace = sqlite3_malloc(pageSize);
+  if( pageSize && pageSize!=pPager->pageSize 
+   && !pPager->memDb && pPager->nRef==0 
+  ){
+    char *pNew = (char *)sqlite3_malloc(pageSize);
+    if( !pNew ){
+      rc = SQLITE_NOMEM;
+    }else{
+      pagerEnter(pPager);
+      pager_reset(pPager);
+      pPager->pageSize = pageSize;
+      setSectorSize(pPager);
+      sqlite3_free(pPager->pTmpSpace);
+      pPager->pTmpSpace = pNew;
+      pagerLeave(pPager);
+    }
   }
-  return pPager->pageSize;
+  *pPageSize = pPager->pageSize;
+  return rc;
 }
 
 /*
@@ -3267,7 +3278,7 @@ static int pagerSharedLock(Pager *pPager){
           int fout = 0;
           int flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
           assert( !pPager->tempFile );
-          rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags,&fout);
+          rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, &fout);
           assert( rc!=SQLITE_OK || pPager->jfd->pMethods );
           if( fout&SQLITE_OPEN_READONLY ){
             rc = SQLITE_BUSY;
@@ -3276,7 +3287,7 @@ static int pagerSharedLock(Pager *pPager){
         }
         if( rc!=SQLITE_OK ){
           pager_unlock(pPager);
-          return SQLITE_BUSY;
+          return (rc==SQLITE_NOMEM?rc:SQLITE_BUSY);
         }
         pPager->journalOpen = 1;
         pPager->journalStarted = 0;

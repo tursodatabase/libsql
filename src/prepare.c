@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.59 2007/08/29 00:33:07 drh Exp $
+** $Id: prepare.c,v 1.60 2007/08/29 12:31:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -182,7 +182,8 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   rc = sqlite3InitCallback(&initData, 3, (char **)azArg, 0);
   if( rc ){
     sqlite3SafetyOn(db);
-    return initData.rc;
+    rc = initData.rc;
+    goto error_out;
   }
   pTab = sqlite3FindTable(db, zMasterName, db->aDb[iDb].zName);
   if( pTab ){
@@ -204,7 +205,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   if( rc!=SQLITE_OK && rc!=SQLITE_EMPTY ){
     sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
     sqlite3BtreeLeave(pDb->pBt);
-    return rc;
+    goto error_out;
   }
 
   /* Get the database meta information.
@@ -233,7 +234,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
       sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
       sqlite3BtreeCloseCursor(curMain);
       sqlite3BtreeLeave(pDb->pBt);
-      return rc;
+      goto error_out;
     }
   }else{
     memset(meta, 0, sizeof(meta));
@@ -329,6 +330,11 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     rc = SQLITE_OK;
   }
   sqlite3BtreeLeave(pDb->pBt);
+
+error_out:
+  if( rc==SQLITE_NOMEM ){
+    db->mallocFailed = 1;
+  }
   return rc;
 }
 
@@ -421,6 +427,9 @@ static int schemaIsValid(sqlite3 *db){
         allOk = 0;
       }
       sqlite3BtreeCloseCursor(curTemp);
+    }
+    if( rc==SQLITE_NOMEM ){
+      db->mallocFailed = 1;
     }
   }
   return allOk;

@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.5 2007/08/24 03:51:34 drh Exp $
+** $Id: test_malloc.c,v 1.6 2007/08/29 12:31:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -245,7 +245,12 @@ static int test_memdebug_dump(
 
 
 /*
-** Usage:    sqlite3_memdebug_fail  COUNTER  ?REPEAT?
+** Usage:    sqlite3_memdebug_fail  COUNTER  ?OPTIONS?
+**
+** where options are:
+**
+**     -repeat    <boolean>
+**     -benigncnt <varname>
 **
 ** Arrange for a simulated malloc() failure after COUNTER successes.
 ** If REPEAT is 1 then all subsequent malloc()s fail.   If REPEAT is
@@ -263,23 +268,56 @@ static int test_memdebug_fail(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+  int ii;
   int iFail;
-  int iRepeat;
+  int iRepeat = -1;
+  int iBenignCnt;
+  Tcl_Obj *pBenignCnt = 0;
+
   int nFail = 0;
-  if( objc!=3 && objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "COUNTER ?REPEAT?");
+
+  if( objc<2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "COUNTER ?OPTIONS?");
     return TCL_ERROR;
   }
   if( Tcl_GetIntFromObj(interp, objv[1], &iFail) ) return TCL_ERROR;
-  if( objc==3 ){
-    if( Tcl_GetIntFromObj(interp, objv[2], &iRepeat) ) return TCL_ERROR;
-  }else{
-    iRepeat = -1;
+
+  for(ii=2; ii<objc; ii+=2){
+    int nOption;
+    char *zOption = Tcl_GetStringFromObj(objv[ii], &nOption);
+    char *zErr = 0;
+
+    if( nOption>1 && strncmp(zOption, "-repeat", nOption)==0 ){
+      if( ii==(objc-1) ){
+        zErr = "option requires an argument: ";
+      }else{
+        if( Tcl_GetIntFromObj(interp, objv[ii+1], &iRepeat) ){
+          return TCL_ERROR;
+        }
+      }
+    }else if( nOption>1 && strncmp(zOption, "-benigncnt", nOption)==0 ){
+      if( ii==(objc-1) ){
+        zErr = "option requires an argument: ";
+      }else{
+        pBenignCnt = objv[ii+1];
+      }
+    }else{
+      zErr = "unknown option: ";
+    }
+
+    if( zErr ){
+      Tcl_AppendResult(interp, zErr, zOption, 0);
+      return TCL_ERROR;
+    }
   }
+  
 #ifdef SQLITE_MEMDEBUG
   {
-    extern int sqlite3_memdebug_fail(int,int);
-    nFail = sqlite3_memdebug_fail(iFail, iRepeat);
+    extern int sqlite3_memdebug_fail(int,int,int*);
+    nFail = sqlite3_memdebug_fail(iFail, iRepeat, &iBenignCnt);
+    if( pBenignCnt ){
+      Tcl_ObjSetVar2(interp, pBenignCnt, 0, Tcl_NewIntObj(iBenignCnt), 0);
+    }
   }
 #endif
   Tcl_SetObjResult(interp, Tcl_NewIntObj(nFail));

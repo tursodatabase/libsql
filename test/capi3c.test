@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.10 2007/08/25 13:37:49 danielk1977 Exp $
+# $Id: capi3c.test,v 1.11 2007/08/29 12:31:29 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -749,7 +749,7 @@ if {[info command sqlite3_memdebug_fail]!=""} {
   do_test capi3c-10-1 {
     sqlite3 db test.db
     set DB [sqlite3_connection_pointer db]
-    sqlite3_memdebug_fail 0 0
+    sqlite3_memdebug_fail 0
     catchsql {
       select * from sqlite_master;
     }
@@ -763,7 +763,7 @@ if {[info command sqlite3_memdebug_fail]!=""} {
     } {out of memory}
   }
   db close
-  sqlite3_memdebug_fail -1 0
+  sqlite3_memdebug_fail -1
 }
 
 # The following tests - capi3c-11.* - test that a COMMIT or ROLLBACK

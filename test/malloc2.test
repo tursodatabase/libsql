@@ -16,7 +16,7 @@
 # Recovery from malloc() failures is automatic.  But we keep these
 # tests around because you can never have too many test cases.
 #
-# $Id: malloc2.test,v 1.6 2007/08/22 22:04:37 drh Exp $
+# $Id: malloc2.test,v 1.7 2007/08/29 12:31:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -65,7 +65,7 @@ proc do_malloc2_test {tn args} {
 
     # Run the SQL. Malloc number $::n is set to fail. A malloc() failure
     # may or may not be reported.
-    sqlite3_memdebug_fail $::n 1
+    sqlite3_memdebug_fail $::n -repeat 1
     do_test malloc2-$tn.$::n.2 {
       set res [catchsql [string trim $::mallocopts(-sql)]]
       set rc [expr { 
@@ -80,7 +80,7 @@ proc do_malloc2_test {tn args} {
 
     # If $::n is greater than the number of malloc() calls required to
     # execute the SQL, then this test is finished. Break out of the loop.
-    set nFail [sqlite3_memdebug_fail -1 -1]
+    set nFail [sqlite3_memdebug_fail -1]
     if {$nFail==0} break
 
     # Nothing should work now, because the allocator should refuse to

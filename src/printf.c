@@ -789,7 +789,9 @@ static char *base_vprintf(
         memcpy(sM.zText, sM.zBase, sM.nChar+1);
       }
     }else if( sM.nAlloc>sM.nChar+10 ){
-      char *zNew = xRealloc(sM.zText, sM.nChar+1);
+      char *zNew;
+      sqlite3MallocBenignFailure(1);
+      zNew = xRealloc(sM.zText, sM.nChar+1);
       if( zNew ){
         sM.zText = zNew;
       }

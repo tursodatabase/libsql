@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.604 2007/08/28 16:34:43 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.605 2007/08/29 12:31:28 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1542,6 +1542,7 @@ char *sqlite3StrNDup(const char*, int);
 char *sqlite3DbStrDup(sqlite3*,const char*);
 char *sqlite3DbStrNDup(sqlite3*,const char*, int);
 void *sqlite3DbReallocOrFree(sqlite3 *, void *, int);
+void *sqlite3DbRealloc(sqlite3 *, void *, int);
 
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
@@ -1557,7 +1558,7 @@ void sqlite3DequoteExpr(sqlite3*, Expr*);
 int sqlite3KeywordCode(const unsigned char*, int);
 int sqlite3RunParser(Parse*, const char*, char **);
 void sqlite3FinishCoding(Parse*);
-Expr *sqlite3Expr(int, Expr*, Expr*, const Token*);
+Expr *sqlite3Expr(sqlite3*, int, Expr*, Expr*, const Token*);
 Expr *sqlite3PExpr(Parse*, int, Expr*, Expr*, const Token*);
 Expr *sqlite3RegisterExpr(Parse*,Token*);
 Expr *sqlite3ExprAnd(sqlite3*,Expr*, Expr*);
@@ -1832,9 +1833,11 @@ void sqlite3Parser(void*, int, Token, Parse*);
 #ifdef SQLITE_MEMDEBUG
   void sqlite3MallocDisallow(void);
   void sqlite3MallocAllow(void);
+  void sqlite3MallocBenignFailure(int);
 #else
 # define sqlite3MallocDisallow()
 # define sqlite3MallocAllow()
+# define sqlite3MallocBenignFailure(x)
 #endif
 
 

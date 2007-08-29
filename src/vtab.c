@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.54 2007/08/24 03:51:34 drh Exp $
+** $Id: vtab.c,v 1.55 2007/08/29 12:31:29 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -296,6 +296,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     int nName = strlen(zName) + 1;
     pOld = sqlite3HashInsert(&pSchema->tblHash, zName, nName, pTab);
     if( pOld ){
+      db->mallocFailed = 1;
       assert( pTab==pOld );  /* Malloc must have failed inside HashInsert() */
       return;
     }

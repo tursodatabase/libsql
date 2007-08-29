@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.44 2007/08/22 20:18:22 drh Exp $
+# $Id: malloc.test,v 1.45 2007/08/29 12:31:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -215,7 +215,8 @@ if {$::sqlite_options(utf16)} {
     sqlite3_column_int $::STMT 0
     sqlite3_column_text16 $::STMT 1
     sqlite3_column_double $::STMT 1
-    sqlite3_reset $::STMT
+    set rc [sqlite3_reset $::STMT]
+    if {$rc eq "SQLITE_NOMEM"} {error "out of memory"}
     sqlite3_bind_text16 $::STMT 1 $::bomstr 60
     #catch {sqlite3_finalize $::STMT}
     #if {[lindex [sqlite_malloc_stat] 2]<=0} {

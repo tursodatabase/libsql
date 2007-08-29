@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.72 2007/08/24 11:43:37 drh Exp $
+** $Id: vacuum.c,v 1.73 2007/08/29 12:31:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -25,6 +25,9 @@
 */
 static int execSql(sqlite3 *db, const char *zSql){
   sqlite3_stmt *pStmt;
+  if( !zSql ){
+    return SQLITE_NOMEM;
+  }
   if( SQLITE_OK!=sqlite3_prepare(db, zSql, -1, &pStmt, 0) ){
     return sqlite3_errcode(db);
   }

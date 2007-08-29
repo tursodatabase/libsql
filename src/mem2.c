@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.10 2007/08/24 04:15:00 drh Exp $
+** $Id: mem2.c,v 1.11 2007/08/29 12:31:26 danielk1977 Exp $
 */
 
 /*
@@ -138,7 +138,9 @@ static struct {
   */
   int iFail;    /* Decrement and fail malloc when this is 1 */
   int iReset;   /* When malloc fails set iiFail to this value */
-  int iFailCnt; /* Number of failures */
+  int iFailCnt;         /* Number of failures */
+  int iBenignFailCnt;   /* Number of benign failures */
+  int iNextIsBenign;    /* True if the next call to malloc may fail benignly */
 
   /* 
   ** sqlite3MallocDisallow() increments the following counter.
@@ -247,6 +249,7 @@ static struct MemBlockHdr *sqlite3MemsysGetHeader(void *pAllocation){
 */
 static void sqlite3MemsysFailed(void){
   mem.iFailCnt = 0;
+  mem.iBenignFailCnt = 0;
 }
 
 /*
@@ -261,6 +264,7 @@ void *sqlite3_malloc(int nByte){
   int totalSize;
 
   if( nByte<=0 ){
+    mem.iNextIsBenign = 0;
     return 0;
   }
   if( mem.mutex==0 ){
@@ -282,6 +286,9 @@ void *sqlite3_malloc(int nByte){
         sqlite3MemsysFailed();  /* A place to set a breakpoint */
       }
       mem.iFailCnt++;
+      if( mem.iNextIsBenign ){
+        mem.iBenignFailCnt++;
+      }
     }else{
       p = malloc(totalSize);
       mem.iFail--;
@@ -329,6 +336,7 @@ void *sqlite3_malloc(int nByte){
     p = (void*)pInt;
   }
   sqlite3_mutex_leave(mem.mutex);
+  mem.iNextIsBenign = 0;
   return p; 
 }
 
@@ -475,14 +483,24 @@ void sqlite3_memdebug_dump(const char *zFilename){
 ** This routine returns the number of simulated failures that have
 ** occurred since the previous call.
 */
-int sqlite3_memdebug_fail(int iFail, int iRepeat){
+int sqlite3_memdebug_fail(int iFail, int iRepeat, int *piBenign){
   int n = mem.iFailCnt;
+  if( piBenign ){
+    *piBenign = mem.iBenignFailCnt;
+  }
   mem.iFail = iFail+1;
   if( iRepeat>=0 ){
     mem.iReset = iRepeat;
   }
   mem.iFailCnt = 0;
+  mem.iBenignFailCnt = 0;
   return n;
+}
+
+void sqlite3MallocBenignFailure(int isBenign){
+  if( isBenign ){
+    mem.iNextIsBenign = 1;
+  }
 }
 
 /*

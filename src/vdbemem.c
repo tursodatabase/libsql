@@ -260,9 +260,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
     if( pMem->flags & MEM_Short ){
       pMem->z = pMem->zShort;
     }
-    if( ctx.isError ){
-      rc = SQLITE_ERROR;
-    }
+    rc = (ctx.isError?SQLITE_ERROR:SQLITE_OK);
   }
   return rc;
 }

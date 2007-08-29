@@ -12,7 +12,7 @@
 ** Memory allocation functions used throughout sqlite.
 **
 **
-** $Id: malloc.c,v 1.11 2007/08/24 03:51:34 drh Exp $
+** $Id: malloc.c,v 1.12 2007/08/29 12:31:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -82,11 +82,9 @@ void *sqlite3MallocZero(unsigned n){
 ** the mallocFailed flag in the connection pointer.
 */
 void *sqlite3DbMallocZero(sqlite3 *db, unsigned n){
-  void *p = sqlite3_malloc(n);
+  void *p = sqlite3DbMallocRaw(db, n);
   if( p ){
     memset(p, 0, n);
-  }else if( db ){
-    db->mallocFailed = 1;
   }
   return p;
 }
@@ -96,11 +94,25 @@ void *sqlite3DbMallocZero(sqlite3 *db, unsigned n){
 ** the mallocFailed flag in the connection pointer.
 */
 void *sqlite3DbMallocRaw(sqlite3 *db, unsigned n){
-  void *p = sqlite3_malloc(n);
-  if( !p && db ){
-    db->mallocFailed = 1;
+  void *p = 0;
+  if( !db || db->mallocFailed==0 ){
+    p = sqlite3_malloc(n);
+    if( !p && db ){
+      db->mallocFailed = 1;
+    }
   }
   return p;
+}
+
+void *sqlite3DbRealloc(sqlite3 *db, void *p, int n){
+  void *pNew = 0;
+  if( db->mallocFailed==0 ){
+    pNew = sqlite3_realloc(p, n);
+    if( !pNew ){
+      db->mallocFailed = 1;
+    }
+  }
+  return pNew;
 }
 
 /*
@@ -109,14 +121,12 @@ void *sqlite3DbMallocRaw(sqlite3 *db, unsigned n){
 */
 void *sqlite3DbReallocOrFree(sqlite3 *db, void *p, int n){
   void *pNew;
-  pNew = sqlite3_realloc(p, n);
+  pNew = sqlite3DbRealloc(db, p, n);
   if( !pNew ){
     sqlite3_free(p);
-    db->mallocFailed = 1;
   }
   return pNew;
 }
-
 
 /*
 ** Make a copy of a string in memory obtained from sqliteMalloc(). These 
@@ -211,6 +221,11 @@ void sqlite3SetString(char **pz, ...){
 ** is set to SQLITE_NOMEM.
 */
 int sqlite3ApiExit(sqlite3* db, int rc){
+  /* If the db handle is not NULL, then we must hold the connection handle
+  ** mutex here. Otherwise the read (and possible write) of db->mallocFailed 
+  ** is unsafe, as is the call to sqlite3Error().
+  */
+  assert( !db || sqlite3_mutex_held(db->mutex) );
   if( db && db->mallocFailed ){
     sqlite3Error(db, SQLITE_NOMEM, 0);
     db->mallocFailed = 0;
@@ -218,3 +233,4 @@ int sqlite3ApiExit(sqlite3* db, int rc){
   }
   return rc & (db ? db->errMask : 0xff);
 }
+ 

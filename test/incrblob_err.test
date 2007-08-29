@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob_err.test,v 1.5 2007/08/27 23:48:24 drh Exp $
+# $Id: incrblob_err.test,v 1.6 2007/08/29 12:31:29 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -79,7 +79,7 @@ do_malloc_test 3 -tclprep {
     error "out of memory" 
   }
 } 
-sqlite3_memdebug_fail -1 0
+sqlite3_memdebug_fail -1
 
 do_ioerr_test incrblob_err-4 -cksum 1 -sqlprep {
   CREATE TABLE blobs(k, v BLOB);

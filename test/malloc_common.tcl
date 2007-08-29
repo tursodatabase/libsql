@@ -42,68 +42,90 @@ proc do_malloc_test {tn args} {
     set start 1
   }
 
-  set ::go 1
-  for {set ::n $start} {$::go && $::n < 50000} {incr ::n} {
-    do_test $tn.$::n {
+  foreach ::iRepeat {0 1} {
+    set ::go 1
+    for {set ::n $start} {$::go && $::n < 50000} {incr ::n} {
 
-      # Remove all traces of database files test.db and test2.db from the files
-      # system. Then open (empty database) "test.db" with the handle [db].
-      # 
-      catch {db close} 
-      catch {file delete -force test.db}
-      catch {file delete -force test.db-journal}
-      catch {file delete -force test2.db}
-      catch {file delete -force test2.db-journal}
-      if {[info exists ::mallocopts(-testdb)]} {
-        file copy $::mallocopts(-testdb) test.db
-      }
-      catch {sqlite3 db test.db} 
-
-      # Execute any -tclprep and -sqlprep scripts.
+      # If $::iRepeat is 0, then the malloc() failure is transient - it
+      # fails and then subsequent calls succeed. If $::iRepeat is 1, 
+      # then the failure is persistent - once malloc() fails it keeps
+      # failing.
       #
-      if {[info exists ::mallocopts(-tclprep)]} {
-        eval $::mallocopts(-tclprep)
-      }
-      if {[info exists ::mallocopts(-sqlprep)]} {
-        execsql $::mallocopts(-sqlprep)
-      }
+      set zRepeat "transient"
+      if {$::iRepeat} {set zRepeat "persistent"}
 
-      # Now set the ${::n}th malloc() to fail and execute the -tclbody and
-      # -sqlbody scripts.
-      #
-      sqlite3_memdebug_fail $::n 1
-      set ::mallocbody {}
-      if {[info exists ::mallocopts(-tclbody)]} {
-        append ::mallocbody "$::mallocopts(-tclbody)\n"
-      }
-      if {[info exists ::mallocopts(-sqlbody)]} {
-        append ::mallocbody "db eval {$::mallocopts(-sqlbody)}"
-      }
-      set v [catch $::mallocbody msg]
-      set failFlag [sqlite3_memdebug_fail -1 0]
-      set go [expr {$failFlag>0}]
-
-
-      if {$failFlag==0} {
-        if {$v} {
-          set v2 $msg
-        } else {
-          set v 1
-          set v2 1
+      do_test ${tn}.${zRepeat}.${::n} {
+  
+        # Remove all traces of database files test.db and test2.db 
+        # from the file-system. Then open (empty database) "test.db" 
+        # with the handle [db].
+        # 
+        catch {db close} 
+        catch {file delete -force test.db}
+        catch {file delete -force test.db-journal}
+        catch {file delete -force test2.db}
+        catch {file delete -force test2.db-journal}
+        if {[info exists ::mallocopts(-testdb)]} {
+          file copy $::mallocopts(-testdb) test.db
         }
-      } elseif {!$v} {
-        set v2 $msg
-      } elseif {[info command db]=="" || [db errorcode]==7
-                   || $msg=="out of memory"} {
-        set v2 1
-      } else {
-        set v2 $msg
-      }
-      lappend v $v2
-    } {1 1}
+        catch {sqlite3 db test.db} 
+  
+        # Execute any -tclprep and -sqlprep scripts.
+        #
+        if {[info exists ::mallocopts(-tclprep)]} {
+          eval $::mallocopts(-tclprep)
+        }
+        if {[info exists ::mallocopts(-sqlprep)]} {
+          execsql $::mallocopts(-sqlprep)
+        }
+  
+        # Now set the ${::n}th malloc() to fail and execute the -tclbody 
+        # and -sqlbody scripts.
+        #
+        sqlite3_memdebug_fail $::n -repeat $::iRepeat
+        set ::mallocbody {}
+        if {[info exists ::mallocopts(-tclbody)]} {
+          append ::mallocbody "$::mallocopts(-tclbody)\n"
+        }
+        if {[info exists ::mallocopts(-sqlbody)]} {
+          append ::mallocbody "db eval {$::mallocopts(-sqlbody)}"
+        }
 
-    if {[info exists ::mallocopts(-cleanup)]} {
-      catch [list uplevel #0 $::mallocopts(-cleanup)] msg
+        # The following block sets local variables as follows:
+        #
+        #     isFail  - True if an error (any error) was reported by sqlite.
+        #     nFail   - The total number of simulated malloc() failures.
+        #     nBenign - The number of benign simulated malloc() failures.
+        #
+        set isFail [catch $::mallocbody msg]
+        set nFail [sqlite3_memdebug_fail -1 -benigncnt nBenign]
+#puts "isFail=$isFail nFail=$nFail nBenign=$nBenign msg=$msg"
+
+        # If one or more mallocs failed, run this loop body again.
+        #
+        set go [expr {$nFail>0}]
+
+        if {($nFail-$nBenign)==0} {
+          if {$isFail} {
+            set v2 $msg
+          } else {
+            set isFail 1
+            set v2 1
+          }
+        } elseif {!$isFail} {
+          set v2 $msg
+        } elseif {[info command db]=="" || [db errorcode]==7
+                     || $msg=="out of memory"} {
+          set v2 1
+        } else {
+          set v2 $msg
+        }
+        lappend isFail $v2
+      } {1 1}
+  
+      if {[info exists ::mallocopts(-cleanup)]} {
+        catch [list uplevel #0 $::mallocopts(-cleanup)] msg
+      }
     }
   }
   unset ::mallocopts

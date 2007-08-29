@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.22 2007/08/22 20:18:22 drh Exp $
+** $Id: callback.c,v 1.23 2007/08/29 12:31:26 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -361,11 +361,13 @@ void sqlite3SchemaFree(void *p){
 Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
   Schema * p;
   if( pBt ){
-    p = (Schema *)sqlite3BtreeSchema(pBt,sizeof(Schema),sqlite3SchemaFree);
+    p = (Schema *)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaFree);
   }else{
-    p = (Schema *)sqlite3DbMallocZero(db,sizeof(Schema));
+    p = (Schema *)sqlite3MallocZero(sizeof(Schema));
   }
-  if( p && 0==p->file_format ){
+  if( !p ){
+    db->mallocFailed = 1;
+  }else if ( 0==p->file_format ){
     sqlite3HashInit(&p->tblHash, SQLITE_HASH_STRING, 0);
     sqlite3HashInit(&p->idxHash, SQLITE_HASH_STRING, 0);
     sqlite3HashInit(&p->trigHash, SQLITE_HASH_STRING, 0);

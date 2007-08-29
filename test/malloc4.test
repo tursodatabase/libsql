@@ -12,7 +12,7 @@
 # This file contains tests to ensure that the library handles malloc() failures
 # correctly. The emphasis in this file is on sqlite3_column_XXX() APIs.
 #
-# $Id: malloc4.test,v 1.5 2007/08/23 02:47:53 drh Exp $
+# $Id: malloc4.test,v 1.6 2007/08/29 12:31:29 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -51,7 +51,7 @@ proc do_stmt_test {id sql} {
     } {1}
 
     # Set the Nth malloc() to fail.
-    sqlite3_memdebug_fail $n 1
+    sqlite3_memdebug_fail $n -repeat 1
 
     # Test malloc failure in the _name(), _name16(), decltype() and
     # decltype16() APIs. Calls that occur after the malloc() failure should

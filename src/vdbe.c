@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.646 2007/08/28 23:28:08 drh Exp $
+** $Id: vdbe.c,v 1.647 2007/08/29 12:31:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2637,7 +2637,8 @@ case OP_VerifyCookie: {       /* no-push */
     iMeta = 0;
   }
   if( rc==SQLITE_OK && iMeta!=pOp->p2 ){
-    sqlite3SetString(&p->zErrMsg, "database schema has changed", (char*)0);
+    sqlite3_free(p->zErrMsg);
+    p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
     /* If the schema-cookie from the database file matches the cookie 
     ** stored with the in-memory representation of the schema, do
     ** not reload the schema from the database file.

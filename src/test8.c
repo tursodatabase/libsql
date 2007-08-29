@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.54 2007/08/25 13:37:49 danielk1977 Exp $
+** $Id: test8.c,v 1.55 2007/08/29 12:31:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -361,6 +361,7 @@ static int echoConstructor(
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
+  int rc;
   int i;
   echo_vtab *pVtab;
 
@@ -404,9 +405,10 @@ static int echoConstructor(
   ** structure. If an error occurs, delete the sqlite3_vtab structure and
   ** return an error code.
   */
-  if( echoDeclareVtab(pVtab, db) ){
+  rc = echoDeclareVtab(pVtab, db);
+  if( rc!=SQLITE_OK ){
     echoDestructor((sqlite3_vtab *)pVtab);
-    return SQLITE_ERROR;
+    return rc;
   }
 
   /* Success. Set *ppVtab and return */
@@ -646,14 +648,25 @@ static int echoFilter(
 ** If the third argument, doFree, is true, then sqlite3_free() is
 ** also called to free the buffer pointed to by zAppend.
 */
-static void string_concat(char **pzStr, char *zAppend, int doFree){
+static void string_concat(char **pzStr, char *zAppend, int doFree, int *pRc){
   char *zIn = *pzStr;
-  if( zIn ){
-    char *zTemp = zIn;
-    zIn = sqlite3_mprintf("%s%s", zIn, zAppend);
-    sqlite3_free(zTemp);
+  if( !zAppend && doFree && *pRc==SQLITE_OK ){
+    *pRc = SQLITE_NOMEM;
+  }
+  if( *pRc!=SQLITE_OK ){
+    sqlite3_free(zIn);
+    zIn = 0;
   }else{
-    zIn = sqlite3_mprintf("%s", zAppend);
+    if( zIn ){
+      char *zTemp = zIn;
+      zIn = sqlite3_mprintf("%s%s", zIn, zAppend);
+      sqlite3_free(zTemp);
+    }else{
+      zIn = sqlite3_mprintf("%s", zAppend);
+    }
+    if( !zIn ){
+      *pRc = SQLITE_NOMEM;
+    }
   }
   *pzStr = zIn;
   if( doFree ){
@@ -709,6 +722,9 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     useCost = 1;
   } else {
     zQuery = sqlite3_mprintf("SELECT count(*) FROM %Q", pVtab->zTableName);
+    if( !zQuery ){
+      return SQLITE_NOMEM;
+    }
     rc = sqlite3_prepare(pVtab->db, zQuery, -1, &pStmt, 0);
     sqlite3_free(zQuery);
     if( rc!=SQLITE_OK ){
@@ -723,6 +739,9 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   }
 
   zQuery = sqlite3_mprintf("SELECT rowid, * FROM %Q", pVtab->zTableName);
+  if( !zQuery ){
+    return SQLITE_NOMEM;
+  }
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
     const struct sqlite3_index_constraint *pConstraint;
     struct sqlite3_index_constraint_usage *pUsage;
@@ -759,7 +778,7 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       } else {
         zNew = sqlite3_mprintf(" %s %s %s ?", zSep, zCol, zOp);
       }
-      string_concat(&zQuery, zNew, 1);
+      string_concat(&zQuery, zNew, 1, &rc);
 
       zSep = "AND";
       pUsage->argvIndex = ++nArg;
@@ -779,7 +798,7 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       zCol = "rowid";
     }
     zNew = sqlite3_mprintf(" ORDER BY %s %s", zCol, zDir);
-    string_concat(&zQuery, zNew, 1);
+    string_concat(&zQuery, zNew, 1, &rc);
     pIdxInfo->orderByConsumed = 1;
   }
 
@@ -787,7 +806,7 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   appendToEchoModule(pVtab->interp, zQuery);
 
   if( !zQuery ){
-    return SQLITE_NOMEM;
+    return rc;
   }
   pIdxInfo->idxNum = hashString(zQuery);
   pIdxInfo->idxStr = zQuery;
@@ -843,26 +862,32 @@ int echoUpdate(
   if( nData>1 && sqlite3_value_type(apData[0])==SQLITE_INTEGER ){
     char *zSep = " SET";
     z = sqlite3_mprintf("UPDATE %Q", pVtab->zTableName);
+    if( !z ){
+      rc = SQLITE_NOMEM;
+    }
 
     bindArgOne = (apData[1] && sqlite3_value_type(apData[1])==SQLITE_INTEGER);
     bindArgZero = 1;
 
     if( bindArgOne ){
-       string_concat(&z, " SET rowid=?1 ", 0);
+       string_concat(&z, " SET rowid=?1 ", 0, &rc);
        zSep = ",";
     }
     for(i=2; i<nData; i++){
       if( apData[i]==0 ) continue;
       string_concat(&z, sqlite3_mprintf(
-          "%s %Q=?%d", zSep, pVtab->aCol[i-2], i), 1);
+          "%s %Q=?%d", zSep, pVtab->aCol[i-2], i), 1, &rc);
       zSep = ",";
     }
-    string_concat(&z, sqlite3_mprintf(" WHERE rowid=?%d", nData), 1);
+    string_concat(&z, sqlite3_mprintf(" WHERE rowid=?%d", nData), 1, &rc);
   }
 
   /* If apData[0] is an integer and nData==1 then do a DELETE */
   else if( nData==1 && sqlite3_value_type(apData[0])==SQLITE_INTEGER ){
     z = sqlite3_mprintf("DELETE FROM %Q WHERE rowid = ?1", pVtab->zTableName);
+    if( !z ){
+      rc = SQLITE_NOMEM;
+    }
     bindArgZero = 1;
   }
 
@@ -873,24 +898,27 @@ int echoUpdate(
     char *zValues = 0;
   
     zInsert = sqlite3_mprintf("INSERT INTO %Q (", pVtab->zTableName);
+    if( !zInsert ){
+      rc = SQLITE_NOMEM;
+    }
     if( sqlite3_value_type(apData[1])==SQLITE_INTEGER ){
       bindArgOne = 1;
       zValues = sqlite3_mprintf("?");
-      string_concat(&zInsert, "rowid", 0);
+      string_concat(&zInsert, "rowid", 0, &rc);
     }
 
     assert((pVtab->nCol+2)==nData);
     for(ii=2; ii<nData; ii++){
       string_concat(&zInsert, 
-          sqlite3_mprintf("%s%Q", zValues?", ":"", pVtab->aCol[ii-2]), 1);
+          sqlite3_mprintf("%s%Q", zValues?", ":"", pVtab->aCol[ii-2]), 1, &rc);
       string_concat(&zValues, 
-          sqlite3_mprintf("%s?%d", zValues?", ":"", ii), 1);
+          sqlite3_mprintf("%s?%d", zValues?", ":"", ii), 1, &rc);
     }
 
-    string_concat(&z, zInsert, 1);
-    string_concat(&z, ") VALUES(", 0);
-    string_concat(&z, zValues, 1);
-    string_concat(&z, ")", 0);
+    string_concat(&z, zInsert, 1, &rc);
+    string_concat(&z, ") VALUES(", 0, &rc);
+    string_concat(&z, zValues, 1, &rc);
+    string_concat(&z, ")", 0, &rc);
   }
 
   /* Anything else is an error */
@@ -899,7 +927,9 @@ int echoUpdate(
     return SQLITE_ERROR;
   }
 
-  rc = sqlite3_prepare(db, z, -1, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_prepare(db, z, -1, &pStmt, 0);
+  }
   assert( rc!=SQLITE_OK || pStmt );
   sqlite3_free(z);
   if( rc==SQLITE_OK ) {
@@ -935,43 +965,50 @@ static int echoTransactionCall(sqlite3_vtab *tab, const char *zCall){
   appendToEchoModule(pVtab->interp, zCall);
   appendToEchoModule(pVtab->interp, z);
   sqlite3_free(z);
-  return SQLITE_OK;
+  return (z?SQLITE_OK:SQLITE_NOMEM);
 }
 static int echoBegin(sqlite3_vtab *tab){
+  int rc;
   echo_vtab *pVtab = (echo_vtab *)tab;
   Tcl_Interp *interp = pVtab->interp;
   const char *zVal; 
 
-  echoTransactionCall(tab, "xBegin");
+  rc = echoTransactionCall(tab, "xBegin");
 
-  /* Check if the $::echo_module_begin_fail variable is defined. If it is,
-  ** and it is set to the name of the real table underlying this virtual
-  ** echo module table, then cause this xSync operation to fail.
-  */
-  zVal = Tcl_GetVar(interp, "echo_module_begin_fail", TCL_GLOBAL_ONLY);
-  if( zVal && 0==strcmp(zVal, pVtab->zTableName) ){
-    return SQLITE_ERROR;
+  if( rc==SQLITE_OK ){
+    /* Check if the $::echo_module_begin_fail variable is defined. If it is,
+    ** and it is set to the name of the real table underlying this virtual
+    ** echo module table, then cause this xSync operation to fail.
+    */
+    zVal = Tcl_GetVar(interp, "echo_module_begin_fail", TCL_GLOBAL_ONLY);
+    if( zVal && 0==strcmp(zVal, pVtab->zTableName) ){
+      rc = SQLITE_ERROR;
+    }
   }
-  return SQLITE_OK;
+  return rc;
 }
 static int echoSync(sqlite3_vtab *tab){
+  int rc;
   echo_vtab *pVtab = (echo_vtab *)tab;
   Tcl_Interp *interp = pVtab->interp;
   const char *zVal; 
 
-  echoTransactionCall(tab, "xSync");
+  rc = echoTransactionCall(tab, "xSync");
 
-  /* Check if the $::echo_module_sync_fail variable is defined. If it is,
-  ** and it is set to the name of the real table underlying this virtual
-  ** echo module table, then cause this xSync operation to fail.
-  */
-  zVal = Tcl_GetVar(interp, "echo_module_sync_fail", TCL_GLOBAL_ONLY);
-  if( zVal && 0==strcmp(zVal, pVtab->zTableName) ){
-    return -1;
+  if( rc==SQLITE_OK ){
+    /* Check if the $::echo_module_sync_fail variable is defined. If it is,
+    ** and it is set to the name of the real table underlying this virtual
+    ** echo module table, then cause this xSync operation to fail.
+    */
+    zVal = Tcl_GetVar(interp, "echo_module_sync_fail", TCL_GLOBAL_ONLY);
+    if( zVal && 0==strcmp(zVal, pVtab->zTableName) ){
+      rc = -1;
+    }
   }
-  return SQLITE_OK;
+  return rc;
 }
 static int echoCommit(sqlite3_vtab *tab){
+  sqlite3MallocBenignFailure(1);
   return echoTransactionCall(tab, "xCommit");
 }
 static int echoRollback(sqlite3_vtab *tab){

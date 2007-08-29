@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.11 2007/08/22 22:04:37 drh Exp $
+# $Id: malloc3.test,v 1.12 2007/08/29 12:31:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -560,7 +560,7 @@ proc run_test {arglist {pcstart 0} {iFailStart 1}} {
         set ::rollback_hook_count 0
 
         set ac [sqlite3_get_autocommit $::DB]        ;# Auto-Commit
-        sqlite3_memdebug_fail $iFail 1
+        sqlite3_memdebug_fail $iFail -repeat 1
         set rc [catch {db eval [lindex $v 1]} msg]   ;# True error occurs
         set nac [sqlite3_get_autocommit $::DB]       ;# New Auto-Commit 
 
@@ -575,7 +575,7 @@ proc run_test {arglist {pcstart 0} {iFailStart 1}} {
           } {1}
         }
 
-        set nFail [sqlite3_memdebug_fail -1 -1]
+        set nFail [sqlite3_memdebug_fail -1]
         if {$rc == 0} {
             # Successful execution of sql. Our "mallocs-until-failure" 
             # count should be greater than 0. Otherwise a malloc() failed
@@ -639,7 +639,7 @@ db cache size 0
 
 run_test $::run_test_script 9 1
 # run_test [lrange $::run_test_script 0 3] 0 63
-sqlite3_memdebug_fail -1 -1
+sqlite3_memdebug_fail -1
 db close
 
 finish_test

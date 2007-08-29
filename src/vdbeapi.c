@@ -234,6 +234,13 @@ void sqlite3_result_error_toobig(sqlite3_context *pCtx){
   sqlite3VdbeMemSetZeroBlob(&pCtx->s, SQLITE_MAX_LENGTH+1);
 }
 
+/* An SQLITE_NOMEM error. */
+void sqlite3_result_error_nomem(sqlite3_context *pCtx){
+  assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
+  sqlite3VdbeMemSetNull(&pCtx->s);
+  pCtx->isError = 1;
+  pCtx->s.db->mallocFailed = 1;
+}
 
 /*
 ** Execute the statement pStmt, either until a row of data is ready, the

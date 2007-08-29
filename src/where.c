@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.257 2007/08/16 11:36:15 danielk1977 Exp $
+** $Id: where.c,v 1.258 2007/08/29 12:31:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -791,7 +791,7 @@ static void exprAnalyze(
     for(i=0; i<2; i++){
       Expr *pNewExpr;
       int idxNew;
-      pNewExpr = sqlite3Expr(ops[i], sqlite3ExprDup(db, pExpr->pLeft),
+      pNewExpr = sqlite3Expr(db, ops[i], sqlite3ExprDup(db, pExpr->pLeft),
                              sqlite3ExprDup(db, pList->a[i].pExpr), 0);
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
       exprAnalyze(pSrc, pWC, idxNew);
@@ -858,7 +858,7 @@ static void exprAnalyze(
       }
       assert( pLeft!=0 );
       pDup = sqlite3ExprDup(db, pLeft);
-      pNew = sqlite3Expr(TK_IN, pDup, 0, 0);
+      pNew = sqlite3Expr(db, TK_IN, pDup, 0, 0);
       if( pNew ){
         int idxNew;
         transferJoinMarkings(pNew, pExpr);
@@ -934,7 +934,7 @@ or_not_possible:
     prereqColumn = exprTableUsage(pMaskSet, pLeft);
     if( (prereqExpr & prereqColumn)==0 ){
       Expr *pNewExpr;
-      pNewExpr = sqlite3Expr(TK_MATCH, 0, sqlite3ExprDup(db, pRight), 0);
+      pNewExpr = sqlite3Expr(db, TK_MATCH, 0, sqlite3ExprDup(db, pRight), 0);
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
       pNewTerm = &pWC->a[idxNew];
       pNewTerm->prereqRight = prereqExpr;

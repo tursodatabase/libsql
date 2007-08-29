@@ -115,15 +115,13 @@ static void resizeOpArray(Vdbe *p, int N){
     VdbeOp *pNew;
     int nNew = N + 100*(!runMode);
     int oldSize = p->nOpAlloc;
-    pNew = sqlite3_realloc(p->aOp, nNew*sizeof(Op));
+    pNew = sqlite3DbRealloc(p->db, p->aOp, nNew*sizeof(Op));
     if( pNew ){
       p->nOpAlloc = nNew;
       p->aOp = pNew;
       if( nNew>oldSize ){
         memset(&p->aOp[oldSize], 0, (nNew-oldSize)*sizeof(Op));
       }
-    }else{
-      p->db->mallocFailed = 1;
     }
   }
 }
