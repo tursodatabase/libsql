@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.418 2007/08/29 17:43:20 drh Exp $
+** $Id: btree.c,v 1.419 2007/08/29 19:15:08 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1068,7 +1068,6 @@ static void pageDestructor(DbPage *pData, int pageSize){
   assert( pPage->isInit==0 || sqlite3_mutex_held(pPage->pBt->mutex) );
   if( pPage->pParent ){
     MemPage *pParent = pPage->pParent;
-    assert( pPage->isInit==1 );
     assert( pParent->pBt==pPage->pBt );
     pPage->pParent = 0;
     releasePage(pParent);

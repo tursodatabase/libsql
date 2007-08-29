@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\stest_server.c\sthat\sresulted\sfrom\sthe\schange\sin\ssemantics\nof\ssqlite3_enable_shared_cache().\s\sAll\squick\stests\snow\spass.\s(CVS\s4326)
-D 2007-08-29T18:20:17
+C Fix\sminor\sproblems\son\svarious\stests.\s\sThis\sis\sa\ssnapshot\sprior\sto\spossible\nmajor\schanges\sin\sorder\sto\sfix\sthe\ssqlite3AbortOtherActiveVdbes\sproblem.\s(CVS\s4327)
+D 2007-08-29T19:15:08
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -81,7 +81,7 @@ F src/analyze.c 49b4bd45eb286d833793ed6bf72355a5c1974865
 F src/attach.c a52225c75b107be8c5bc144a2b6d20201be3f8f8
 F src/auth.c 083c1205b45e3f52291ec539d396b4fc557856b3
 F src/btmutex.c abc2eda085ff7729c4093db8b4e5357e932f082c
-F src/btree.c ff821439edf1fdf85fee7cc7b475b02cacceb2ae
+F src/btree.c 91b362f7366f1c3f3c62458c4367fbf4e1ee7b16
 F src/btree.h a90328ee4d7aa49a1ec4309c94a9fae65f39d969
 F src/btreeInt.h 1fa6510aa8601dc0358a5240d191335236d3cf76
 F src/build.c 830d1a6b2de157fc4d4dd08d4433066ad83f8b72
@@ -212,7 +212,7 @@ F test/btree9.test 5d8711b241145b90f65dd1795d5dd8290846fa5e
 F test/busy.test 0271c854738e23ad76e10d4096a698e5af29d211
 F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
 F test/capi2.test 3c5066836cbaa9923bcc8282c010aa227bb5efd4
-F test/capi3.test 6297cd1f8f2767f3d125e53dd39ce5ee9a8143ea
+F test/capi3.test ba20464efde48b33b5792cad9ac71dfe2e8d8cd9
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
 F test/capi3c.test 9b324b73317d65d864c56c355a06a5b5cfbcd5a2
 F test/cast.test c4780b58b569bab4947458195410ae8791ac216b
@@ -306,7 +306,7 @@ F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
-F test/fuzz_malloc.test 18f1502b2d926b47dba90728f1573928abd96a80
+F test/fuzz_malloc.test 2b465a70936c326b919f5fde6eb629eaff3b7e41
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -567,7 +567,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4874499377e8f89a25d8cc2cf7982e6811d53f1b
-R 3ac59bb853d4a6cf2d63adb2cab31d22
+P 5201fa4f8310ffc8b6881d96b152581d74e2df6b
+R 562e94af4a79ce02beef7330814d555d
 U drh
-Z c627e49f5a84bbe8cf633df06b8fb596
+Z 261f9a43e26799d1b991384722e003d4
