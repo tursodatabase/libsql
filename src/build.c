@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.441 2007/08/29 12:31:26 danielk1977 Exp $
+** $Id: build.c,v 1.442 2007/08/29 14:06:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -800,7 +800,7 @@ void sqlite3StartTable(
     }
   }
 
-  pTable = sqlite3MallocZero( sizeof(Table) );
+  pTable = sqlite3DbMallocZero(db, sizeof(Table));
   if( pTable==0 ){
     db->mallocFailed = 1;
     pParse->rc = SQLITE_NOMEM;
@@ -933,9 +933,8 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   }
   if( (p->nCol & 0x7)==0 ){
     Column *aNew;
-    aNew = sqlite3_realloc( p->aCol, (p->nCol+8)*sizeof(p->aCol[0]));
+    aNew = sqlite3DbRealloc(pParse->db,p->aCol,(p->nCol+8)*sizeof(p->aCol[0]));
     if( aNew==0 ){
-      pParse->db->mallocFailed = 1;
       sqlite3_free(z);
       return;
     }
@@ -2829,9 +2828,8 @@ void *sqlite3ArrayAllocate(
     void *pNew;
     int newSize;
     newSize = (*pnAlloc)*2 + initSize;
-    pNew = sqlite3_realloc(pArray, newSize*szEntry);
+    pNew = sqlite3DbRealloc(db, pArray, newSize*szEntry);
     if( pNew==0 ){
-      db->mallocFailed = 1;
       *pIdx = -1;
       return pArray;
     }
@@ -2941,10 +2939,9 @@ SrcList *sqlite3SrcListAppend(
   if( pList->nSrc>=pList->nAlloc ){
     SrcList *pNew;
     pList->nAlloc *= 2;
-    pNew = sqlite3_realloc(pList,
+    pNew = sqlite3DbRealloc(db, pList,
                sizeof(*pList) + (pList->nAlloc-1)*sizeof(pList->a[0]) );
     if( pNew==0 ){
-      db->mallocFailed = 1;
       sqlite3SrcListDelete(pList);
       return 0;
     }

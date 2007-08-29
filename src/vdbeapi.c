@@ -491,9 +491,8 @@ void sqlite3_set_auxdata(
   if( !pVdbeFunc || pVdbeFunc->nAux<=iArg ){
     int nAux = (pVdbeFunc ? pVdbeFunc->nAux : 0);
     int nMalloc = sizeof(VdbeFunc) + sizeof(struct AuxData)*iArg;
-    pVdbeFunc = sqlite3_realloc(pVdbeFunc, nMalloc);
+    pVdbeFunc = sqlite3DbRealloc(pCtx->s.db, pVdbeFunc, nMalloc);
     if( !pVdbeFunc ){
-      pCtx->s.db->mallocFailed = 1;
       goto failed;
     }
     pCtx->pVdbeFunc = pVdbeFunc;

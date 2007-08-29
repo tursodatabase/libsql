@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.55 2007/08/29 12:31:29 danielk1977 Exp $
+** $Id: vtab.c,v 1.56 2007/08/29 14:06:23 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -136,7 +136,7 @@ static void addModuleArgument(sqlite3 *db, Table *pTable, char *zArg){
   int i = pTable->nModuleArg++;
   int nBytes = sizeof(char *)*(1+pTable->nModuleArg);
   char **azModuleArg;
-  azModuleArg = sqlite3_realloc(pTable->azModuleArg, nBytes);
+  azModuleArg = sqlite3DbRealloc(db, pTable->azModuleArg, nBytes);
   if( azModuleArg==0 ){
     int j;
     for(j=0; j<i; j++){
@@ -145,7 +145,6 @@ static void addModuleArgument(sqlite3 *db, Table *pTable, char *zArg){
     sqlite3_free(zArg);
     sqlite3_free(pTable->azModuleArg);
     pTable->nModuleArg = 0;
-    db->mallocFailed = 1;
   }else{
     azModuleArg[i] = zArg;
     azModuleArg[i+1] = 0;
@@ -469,9 +468,8 @@ static int addToVTrans(sqlite3 *db, sqlite3_vtab *pVtab){
   if( (db->nVTrans%ARRAY_INCR)==0 ){
     sqlite3_vtab **aVTrans;
     int nBytes = sizeof(sqlite3_vtab *) * (db->nVTrans + ARRAY_INCR);
-    aVTrans = sqlite3_realloc((void *)db->aVTrans, nBytes);
+    aVTrans = sqlite3DbRealloc(db, (void *)db->aVTrans, nBytes);
     if( !aVTrans ){
-      db->mallocFailed = 1;
       return SQLITE_NOMEM;
     }
     memset(&aVTrans[db->nVTrans], 0, sizeof(sqlite3_vtab *)*ARRAY_INCR);

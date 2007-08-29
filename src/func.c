@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.170 2007/08/29 12:31:26 danielk1977 Exp $
+** $Id: func.c,v 1.171 2007/08/29 14:06:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -234,6 +234,11 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   sqlite3_result_double(context, r);
 }
 
+/*
+** Allocate nByte bytes of space using sqlite3_malloc(). If the
+** allocation fails, call sqlite3_result_error_nomem() to notify
+** the database handle that malloc() has failed.
+*/
 static void *contextMalloc(sqlite3_context *context, int nByte){
   char *z = sqlite3_malloc(nByte);
   if( !z && nByte>0 ){
@@ -1074,10 +1079,11 @@ static void test_destructor(
   assert( nArg==1 );
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   len = sqlite3ValueBytes(argv[0], ENC(db)); 
-  zVal = sqlite3MallocZero(len+3);
-  zVal[len] = 0;
-  zVal[len-1] = 0;
-  assert( zVal );
+  zVal = contextMalloc(pCtx, len+3);
+  if( !zVal ){
+    return;
+  }
+  zVal[len+1] = 0;
   zVal++;
   memcpy(zVal, sqlite3ValueText(argv[0], ENC(db)), len);
   if( ENC(db)==SQLITE_UTF8 ){

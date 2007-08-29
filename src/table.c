@@ -143,6 +143,11 @@ int sqlite3_get_table(
   if( res.azResult==0 ) return SQLITE_NOMEM;
   res.azResult[0] = 0;
   rc = sqlite3_exec(db, zSql, sqlite3_get_table_cb, &res, pzErrMsg);
+#ifndef NDEBUG
+  sqlite3_mutex_enter(db->mutex);
+  assert((rc&db->errMask)==rc && (res.rc&db->errMask)==res.rc);
+  sqlite3_mutex_leave(db->mutex);
+#endif
   if( res.azResult ){
     assert( sizeof(res.azResult[0])>= sizeof(res.nData) );
     res.azResult[0] = (char*)res.nData;
@@ -156,13 +161,15 @@ int sqlite3_get_table(
       }
       sqlite3_free(res.zErrMsg);
     }
+    sqlite3_mutex_enter(db->mutex);
     db->errCode = res.rc;
-    return res.rc & db->errMask;
+    sqlite3_mutex_leave(db->mutex);
+    return res.rc;
   }
   sqlite3_free(res.zErrMsg);
   if( rc!=SQLITE_OK ){
     sqlite3_free_table(&res.azResult[1]);
-    return rc & db->errMask;
+    return rc;
   }
   if( res.nAlloc>res.nData ){
     char **azNew;
@@ -177,7 +184,7 @@ int sqlite3_get_table(
   *pazResult = &res.azResult[1];
   if( pnColumn ) *pnColumn = res.nColumn;
   if( pnRow ) *pnRow = res.nRow;
-  return rc & db->errMask;
+  return rc;
 }
 
 /*

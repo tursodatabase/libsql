@@ -12,7 +12,7 @@
 ** Memory allocation functions used throughout sqlite.
 **
 **
-** $Id: malloc.c,v 1.12 2007/08/29 12:31:26 danielk1977 Exp $
+** $Id: malloc.c,v 1.13 2007/08/29 14:06:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -104,6 +104,10 @@ void *sqlite3DbMallocRaw(sqlite3 *db, unsigned n){
   return p;
 }
 
+/*
+** Resize the block of memory pointed to by p to n bytes. If the
+** resize fails, set the mallocFailed flag inthe connection object.
+*/
 void *sqlite3DbRealloc(sqlite3 *db, void *p, int n){
   void *pNew = 0;
   if( db->mallocFailed==0 ){
