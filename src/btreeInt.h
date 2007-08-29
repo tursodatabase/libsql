@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.11 2007/08/28 22:24:35 drh Exp $
+** $Id: btreeInt.h,v 1.12 2007/08/29 00:33:07 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -331,7 +331,7 @@ struct Btree {
   u8 sharable;       /* True if we can share pBt with other pSqlite */
   u8 locked;         /* True if pSqlite currently has pBt locked */
   int wantToLock;    /* Number of nested calls to sqlite3BtreeEnter() */
-  Btree *pNext;      /* List of Btrees with the same pSqlite value */
+  Btree *pNext;      /* List of other sharable Btrees from the same pSqlite */
   Btree *pPrev;      /* Back pointer of the same list */
 };
 
@@ -358,7 +358,10 @@ struct Btree {
 **
 ** Fields in this structure are accessed under the BtShared.mutex
 ** mutex, except for nRef and pNext which are accessed under the
-** global SQLITE_MUTEX_STATIC_MASTER mutex.
+** global SQLITE_MUTEX_STATIC_MASTER mutex.  The pPager field
+** may not be modified once it is initially set as long as nRef>0.
+** The pSchema field may be set once under BtShared.mutex and
+** thereafter is unchanged as long as nRef>0.
 */
 struct BtShared {
   Pager *pPager;        /* The page cache */

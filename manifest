@@ -1,5 +1,5 @@
-C The\sshared_err\stest\sruns\swith\sno\serrors.\s\sBut\sa\spotential\sdeadlock\shas\sbeen\ndiscovered\sand\sis\sstill\sunfixed.\s(CVS\s4318)
-D 2007-08-28T23:28:08
+C More\slocking\sfixes.\s\sNow\smakes\sit\sall\sthe\sway\sthrough\squick.test.\s\sThere\nare\serrors\sbut\sno\sassertion\sfaults.\s\sProgress.\s(CVS\s4319)
+D 2007-08-29T00:33:07
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -80,10 +80,10 @@ F src/alter.c fd78c6005456c727a6cb7c01c5266f2aacf6d401
 F src/analyze.c a14237d869c6bea0846493b59317e4097e81a0b6
 F src/attach.c a52225c75b107be8c5bc144a2b6d20201be3f8f8
 F src/auth.c 083c1205b45e3f52291ec539d396b4fc557856b3
-F src/btmutex.c fc9d8316fccf491f1011ddc4087338f0ce3b5263
+F src/btmutex.c 0abcf98bd6eff466c2c471c96259635169d53981
 F src/btree.c 0241f79766d718d524a28857c3899aee7a728194
-F src/btree.h 03895d1da697e616d918856a26ec63ef8f5aa497
-F src/btreeInt.h 5b1bc919cb80f0dd6baec1cdbae737f9806a7e3b
+F src/btree.h 21cea6453a7ed73c90535329b44910610f3c635e
+F src/btreeInt.h 1fa6510aa8601dc0358a5240d191335236d3cf76
 F src/build.c 99b0b0c44ce7673c00d8c0c97ce536e3b796328b
 F src/callback.c a542236a68060caad378efa30006ca46cf77b1b2
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
@@ -124,7 +124,7 @@ F src/pager.c 97fd0bb853e01e6890ad9aae97e7f9155330ebdc
 F src/pager.h a9872db184613ae90ae80921f5fd956aa8f3522e
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 9b989506a1b7c8aecd6befb8235e2f57a4aba7e5
-F src/prepare.c 29ea14cf6b0558f2f80aa53e112bff55f1119e36
+F src/prepare.c 67df42078f348876edf6124aca2c615de5743d75
 F src/printf.c 33d23a68e498006136ca9770579cf2d14a7ec68e
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 98c367bce3f38c5adfcc97de9ab5c79b0e5dc2b2
@@ -567,7 +567,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f84550be0a0c9e5859b852863b9a8f8ed3fd6919
-R 9c42e7c4d50fc0b5627cd0c4b7aa2569
+P f093a0d7b29a819605e0527bf23a047e16c32688
+R 61c7afc6574f5208f9d0bca844fc0424
 U drh
-Z 82189ccd3fcca220119ac94e3b76d37a
+Z b78638b8a0836a1559717f1c34999b51

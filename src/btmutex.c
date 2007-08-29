@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: btmutex.c,v 1.3 2007/08/28 23:28:08 drh Exp $
+** $Id: btmutex.c,v 1.4 2007/08/29 00:33:07 drh Exp $
 **
 ** This file contains code used to implement mutexes on Btree objects.
 ** This code really belongs in btree.c.  But btree.c is getting too
@@ -110,6 +110,61 @@ void sqlite3BtreeLeave(Btree *p){
 }
 
 /*
+** Enter the mutex on every Btree associated with a database
+** connection.  This is needed (for example) prior to parsing
+** a statement since we will be comparing table and column names
+** against all schemas and we do not want those schemas being
+** reset out from under us.
+**
+** There is a corresponding leave-all procedures.
+**
+** Enter the mutexes in accending order by BtShared pointer address
+** to avoid the possibility of deadlock when two threads with
+** two or more btrees in common both try to lock all their btrees
+** at the same instant.
+*/
+void sqlite3BtreeEnterAll(sqlite3 *db){
+  int i;
+  Btree *p;
+  assert( sqlite3_mutex_held(db->mutex) );
+  for(i=0; i<db->nDb && ((p = db->aDb[i].pBt)==0 || p->sharable==0); i++){}
+  if( i<db->nDb ){
+    while( p->pNext ) p = p->pNext;
+    while( 1 ){
+      if( p->locked ){
+        sqlite3_mutex_leave(p->pBt->mutex);
+        p->locked = 0;
+      }
+      if( p->pPrev==0 ) break;
+      p = p->pPrev;
+    }
+    while( p ){
+      p->wantToLock++;
+      sqlite3_mutex_enter(p->pBt->mutex);
+      p->locked = 1;
+      p = p->pNext;
+    }
+  }
+}
+void sqlite3BtreeLeaveAll(sqlite3 *db){
+  int i;
+  Btree *p;
+  assert( sqlite3_mutex_held(db->mutex) );
+  for(i=0; i<db->nDb && ((p = db->aDb[i].pBt)==0 || p->sharable==0); i++){}
+  if( i<db->nDb ){
+    while( p->pPrev ) p = p->pPrev;
+    while( p ){
+      p->wantToLock--;
+      if( p->wantToLock==0 ){
+        sqlite3_mutex_leave(p->pBt->mutex);
+        p->locked = 0;
+      }
+      p = p->pNext;
+    }
+  }
+}
+
+/*
 ** Potentially dd a new Btree pointer to a BtreeMutexArray.
 ** Really only add the Btree if it can possibly be shared with
 ** another database connection.
@@ -122,31 +177,32 @@ void sqlite3BtreeLeave(Btree *p){
 ** The number of shared btrees will always be small (usually 0 or 1)
 ** so an insertion sort is an adequate algorithm here.
 */
-void sqlite3BtreeMutexArrayInsert(BtreeMutexArray *pSet, Btree *pBtree){
+void sqlite3BtreeMutexArrayInsert(BtreeMutexArray *pArray, Btree *pBtree){
   int i, j;
   BtShared *pBt;
   if( !pBtree->sharable ) return;
 #ifndef NDEBUG
   {
-    for(i=0; i<pSet->nMutex; i++){
-      assert( pSet->aBtree[i]!=pBtree );
+    for(i=0; i<pArray->nMutex; i++){
+      assert( pArray->aBtree[i]!=pBtree );
     }
   }
 #endif
-  assert( pSet->nMutex>=0 );
-  assert( pSet->nMutex<sizeof(pSet->aBtree)/sizeof(pSet->aBtree[0])-1 );
+  assert( pArray->nMutex>=0 );
+  assert( pArray->nMutex<sizeof(pArray->aBtree)/sizeof(pArray->aBtree[0])-1 );
   pBt = pBtree->pBt;
-  for(i=0; i<pSet->nMutex; i++){
-    assert( pSet->aBtree[i]!=pBtree );
-    if( pSet->aBtree[i]->pBt>pBt ){
-      for(j=pSet->nMutex; j>i; j--){
-        pSet->aBtree[j] = pSet->aBtree[j-1];
+  for(i=0; i<pArray->nMutex; i++){
+    assert( pArray->aBtree[i]!=pBtree );
+    if( pArray->aBtree[i]->pBt>pBt ){
+      for(j=pArray->nMutex; j>i; j--){
+        pArray->aBtree[j] = pArray->aBtree[j-1];
       }
-      pSet->aBtree[i] = pBtree;
+      pArray->aBtree[i] = pBtree;
+      pArray->nMutex++;
       return;
     }
   }
-  pSet->aBtree[pSet->nMutex++] = pBtree;
+  pArray->aBtree[pArray->nMutex++] = pBtree;
 }
 
 /*
@@ -154,12 +210,12 @@ void sqlite3BtreeMutexArrayInsert(BtreeMutexArray *pSet, Btree *pBtree){
 ** called at the beginning of sqlite3VdbeExec().  The mutexes are
 ** exited at the end of the same function.
 */
-void sqlite3BtreeMutexArrayEnter(BtreeMutexArray *pSet){
+void sqlite3BtreeMutexArrayEnter(BtreeMutexArray *pArray){
   int i;
-  for(i=0; i<pSet->nMutex; i++){
-    Btree *p = pSet->aBtree[i];
+  for(i=0; i<pArray->nMutex; i++){
+    Btree *p = pArray->aBtree[i];
     /* Some basic sanity checking */
-    assert( i==0 || pSet->aBtree[i-1]->pBt<p->pBt );
+    assert( i==0 || pArray->aBtree[i-1]->pBt<p->pBt );
     assert( !p->locked || p->wantToLock>0 );
     assert( p->sharable );
 
@@ -177,12 +233,12 @@ void sqlite3BtreeMutexArrayEnter(BtreeMutexArray *pSet){
 /*
 ** Leave the mutex of every btree in the group.
 */
-void sqlite3BtreeMutexArrayLeave(BtreeMutexArray *pSet){
+void sqlite3BtreeMutexArrayLeave(BtreeMutexArray *pArray){
   int i;
-  for(i=0; i<pSet->nMutex; i++){
-    Btree *p = pSet->aBtree[i];
+  for(i=0; i<pArray->nMutex; i++){
+    Btree *p = pArray->aBtree[i];
     /* Some basic sanity checking */
-    assert( i==0 || pSet->aBtree[i-1]->pBt<p->pBt );
+    assert( i==0 || pArray->aBtree[i-1]->pBt<p->pBt );
     assert( p->locked );
     assert( p->sharable );
     assert( p->wantToLock>0 );
