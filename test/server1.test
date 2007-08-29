@@ -13,7 +13,7 @@
 #
 # This file is derived from thread1.test
 #
-# $Id: server1.test,v 1.4 2006/01/15 00:13:16 drh Exp $
+# $Id: server1.test,v 1.5 2007/08/29 18:20:17 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -125,7 +125,7 @@ do_test server1-2.2 {
 } SQLITE_ROW
 
 # Write to a different table from another thread.  This is allowed
-# becaus in server mode with a shared cache we have table-level locking.
+# because in server mode with a shared cache we have table-level locking.
 #
 do_test server1-2.3 {
   client_create C test.db
@@ -167,4 +167,5 @@ do_test server1-2.6 {
 } SQLITE_OK
 
 client_halt *   
+sqlite3_enable_shared_cache 0
 finish_test

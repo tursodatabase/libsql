@@ -1,5 +1,5 @@
-C Disable\stests\sthat\srequire\sSQLITE_ENABLE_ATOMIC_WRITE\sif\sthat\sfeature\sis\nnot\senabled.\s(CVS\s4325)
-D 2007-08-29T17:59:42
+C Fix\sa\sbug\sin\stest_server.c\sthat\sresulted\sfrom\sthe\schange\sin\ssemantics\nof\ssqlite3_enable_shared_cache().\s\sAll\squick\stests\snow\spass.\s(CVS\s4326)
+D 2007-08-29T18:20:17
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -154,7 +154,7 @@ F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c 9f26ba3469efc97f38100a899ca889d480778864
 F src/test_md5.c 34599caee5b1c73dcf86ca31f55846fab8c19ef7
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
-F src/test_server.c 319f6b1a99bab5f7149387442243d6e65a8ab4eb
+F src/test_server.c 1020673fc02ba5bbfa5dc96ded9f54f0f3744d38
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/tokenize.c 67e42600ab34f976f2b1288c499ad6c98d652f0e
 F src/trigger.c 724a77d54609a33bde90618934fbeddfcc729a10
@@ -399,7 +399,7 @@ F test/select4.test 305ba0a6e97efc5544def5e5cb49b54e1bf87fd9
 F test/select5.test 0b47058d3e916c1fc9fe81f44b438e02bade21ce
 F test/select6.test 399f14b9ba37b768afe5d2cd8c12e4f340a69db8
 F test/select7.test 45606f9afbe2056058c7d75fc33e5092e65ec770
-F test/server1.test e328b8e641ba8fe9273132cfef497383185dc1f5
+F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test 08b30d5f1939efff0517e7ff8ec7b74ad31c151b
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
@@ -567,7 +567,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2732af0ec77dbc90c0439b6a61d893d9ea3b5697
-R 059f0847c9d9a250350f32e9db1368e9
+P 4874499377e8f89a25d8cc2cf7982e6811d53f1b
+R 3ac59bb853d4a6cf2d63adb2cab31d22
 U drh
-Z 45a6f3bdb4c80a793d38f336e5948655
+Z c627e49f5a84bbe8cf633df06b8fb596
