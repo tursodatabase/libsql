@@ -2573,7 +2573,10 @@ static int docListOfTerm(
 
   pLeft = docListNew(DL_POSITIONS);
   rc = term_select_all(v, iColumn, pQTerm->pTerm, pQTerm->nTerm, pLeft);
-  if( rc ) return rc;
+  if( rc ){
+    docListDelete(pLeft);
+    return rc;
+  }
   for(i=1; i<=pQTerm->nPhrase; i++){
     pRight = docListNew(DL_POSITIONS);
     rc = term_select_all(v, iColumn, pQTerm[i].pTerm, pQTerm[i].nTerm, pRight);

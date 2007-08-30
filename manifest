@@ -1,5 +1,5 @@
-C Make\smutex\sfunctions\savailable\sto\sloadable\sextensions.\s\sFix\sthe\namalgamation\sgenerator\sto\sinclude\sthe\slatest\ssource\sfiles.\s(CVS\s4346)
-D 2007-08-30T17:15:38
+C Fix\smemory\sleak\sreported\sby\san\sfts1\suser.\s\sWas\slosing\sa\sdoclist\son\sa\nquery\serror.\s(CVS\s4347)
+D 2007-08-30T19:56:38
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -24,7 +24,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c 61cce595d7776ae0ab883634d39be4acbfa5aae4
+F ext/fts1/fts1.c d07c6eeb3cedb19c5d74b53ae71f1c47d6a782cc
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1f80cf5e759af68b854d4de2e97badf546a465ca
-R 05dd9b169879bf8fee202d2f8994f350
-U drh
-Z 56110931b83628f9e147d4d36691a985
+P 293a3f837bd6c6a26f694a9210e59ace23abb6bb
+R 173cd743c09d9b4badf1c69fa1972b1a
+U shess
+Z 2021fe976e5f4838f83a977058b33242
