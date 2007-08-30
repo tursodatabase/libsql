@@ -1,5 +1,5 @@
-C Fixes\sto\smalloc3.test\sso\sthat\sit\scan\srun\sin\stransient\sor\spersistent\sfailure\smode.\s(CVS\s4336)
-D 2007-08-30T14:41:34
+C Remove\sthe\sSYNC_BARRIER\sflag.\s(CVS\s4337)
+D 2007-08-30T14:49:58
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -116,7 +116,7 @@ F src/os_os2.c 8769301bff502de642ad2634cedcb77d967ce199
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 89bf24aa2475048a7833c45c522e7c6a81b83bb8
+F src/os_unix.c 0f3997dc16c4e83e1d5f4b392c30e1b20f0a77ba
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 3ffd3aacff4cb69848284e29dcec0feff23b0752
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -130,7 +130,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c e5cc50e8d22b2490c4fb47f2ef08a9b43bcb52d9
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in 4340f2063848977e9eefd534ee13776f5cc9b0f0
+F src/sqlite.h.in b61b40d756363e6e41d5c0a0f5c714e1c05b3287
 F src/sqlite3ext.h 9a26028378c288af500d8b94ed079666fed5806b
 F src/sqliteInt.h 5dbb7a934a88dfa9893e2627f4821b0464f5edc0
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4bdfe1419c536fec5b3c0a7fbe3d0ff52f183f43
-R ef8c07e08dd9f512fe2fb64c573a68e8
+P e14e3688eb64577a2a7070e4e47e715a5d7d5089
+R d153c0e3a7a30a92852af782bebeb3e7
 U danielk1977
-Z 77487b8985e6f89316a2736312affc63
+Z 0d44ea64241f36be6571ec0c2f8d4fc2

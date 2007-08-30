@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.248 2007/08/30 14:10:30 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.249 2007/08/30 14:49:58 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -398,15 +398,10 @@ int sqlite3_exec(
 **
 ** When the SQLITE_SYNC_DATAONLY flag is used, it means that the
 ** sync operation only needs to flush data to mass storage.  Inode
-** information need not be flushed.  The SQLITE_SYNC_BARRIER flag
-** means that the nothing actually needs to be synched to mass storage,
-** but all write operations that occur before the barrier must complete
-** before any write operations that occur after the barrier begin.
-** The SQLITE_SYNC_NORMAL means to use normal fsync() semantics.
-** The SQLITE_SYNC_FULL flag means to use Mac OS-X style fullsync
-** instead of fsync().
+** information need not be flushed.  The SQLITE_SYNC_NORMAL means 
+** to use normal fsync() semantics.  The SQLITE_SYNC_FULL flag means 
+** to use Mac OS-X style fullsync instead of fsync().
 */
-#define SQLITE_SYNC_BARRIER       0x00001
 #define SQLITE_SYNC_NORMAL        0x00002
 #define SQLITE_SYNC_FULL          0x00003
 #define SQLITE_SYNC_DATAONLY      0x00010
@@ -434,14 +429,14 @@ struct sqlite3_file {
 ** an instance of the following object.  This object defines the
 ** methods used to perform various operations against the open file.
 **
-** The flags argument to xSync may be one of SQLITE_SYNC_BARRIER,
-** SQLITE_SYNC_NORMAL, SQLITE_SYNC_FULL.  The first choice means that
-** data is not necessarily synced to disk completely, only that
-** all writes that occur before the sync complete before any
-** writes that occur after the sync.  The second flag is the
-** normal fsync().  The third flag is a OS-X style fullsync.
-** The SQLITE_SYNC_DATA flag may be ORed in to indicate that only
-** the data of the file and not its inode needs to be synced.
+** The flags argument to xSync may be one of SQLITE_SYNC_NORMAL or
+** SQLITE_SYNC_FULL.  The first choice means that data is not
+** necessarily synced to disk completely, only that all writes that
+** occur before the sync complete before any writes that occur after the
+** sync.  The second flag is the normal fsync().  The third flag is a
+** OS-X style fullsync.  The SQLITE_SYNC_DATA flag may be ORed in to
+** indicate that only the data of the file and not its inode needs to be
+** synced.
 ** 
 ** The integer values to xLock() and xUnlock() are one of
 ** SQLITE_LOCK_NONE, SQLITE_LOCK_READ, SQLITE_LOCK_RESERVED,
