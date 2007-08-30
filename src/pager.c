@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.380 2007/08/29 12:31:27 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.381 2007/08/30 08:08:17 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -872,14 +872,19 @@ static void checkPage(PgHdr *pPg){
 /*
 ** When this is called the journal file for pager pPager must be open.
 ** The master journal file name is read from the end of the file and 
-** written into memory obtained from sqlite3_malloc(). *pzMaster is
-** set to point at the memory and SQLITE_OK returned. The caller must
-** sqlite3_free() *pzMaster.
+** written into memory supplied by the caller. 
 **
-** If no master journal file name is present *pzMaster is set to 0 and
+** zMaster must point to a buffer of at least nMaster bytes allocated by
+** the caller. This should be sqlite3_vfs.mxPathname+1 (to ensure there is
+** enough space to write the master journal name). If the master journal
+** name in the journal is longer than nMaster bytes (including a
+** nul-terminator), then this is handled as if no master journal name
+** were present in the journal.
+**
+** If no master journal file name is present zMaster[0] is set to 0 and
 ** SQLITE_OK returned.
 */
-static int readMasterJournal(sqlite3_file *pJrnl, char **pzMaster){
+static int readMasterJournal(sqlite3_file *pJrnl, char *zMaster, int nMaster){
   int rc;
   u32 len;
   i64 szJ;
@@ -887,7 +892,7 @@ static int readMasterJournal(sqlite3_file *pJrnl, char **pzMaster){
   int i;
   unsigned char aMagic[8]; /* A buffer to hold the magic header */
 
-  *pzMaster = 0;
+  zMaster[0] = '\0';
 
   rc = sqlite3OsFileSize(pJrnl, &szJ);
   if( rc!=SQLITE_OK || szJ<16 ) return rc;
@@ -895,37 +900,33 @@ static int readMasterJournal(sqlite3_file *pJrnl, char **pzMaster){
   rc = read32bits(pJrnl, szJ-16, &len);
   if( rc!=SQLITE_OK ) return rc;
 
+  if( len>=nMaster ){
+    return SQLITE_OK;
+  }
+
   rc = read32bits(pJrnl, szJ-12, &cksum);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3OsRead(pJrnl, aMagic, 8, szJ-8);
   if( rc!=SQLITE_OK || memcmp(aMagic, aJournalMagic, 8) ) return rc;
 
-  *pzMaster = (char *)sqlite3MallocZero(len+1);
-  if( !*pzMaster ){
-    return SQLITE_NOMEM;
-  }
-  rc = sqlite3OsRead(pJrnl, *pzMaster, len, szJ-16-len);
+  rc = sqlite3OsRead(pJrnl, zMaster, len, szJ-16-len);
   if( rc!=SQLITE_OK ){
-    sqlite3_free(*pzMaster);
-    *pzMaster = 0;
     return rc;
   }
+  zMaster[len] = '\0';
 
   /* See if the checksum matches the master journal name */
   for(i=0; i<len; i++){
-    cksum -= (*pzMaster)[i];
-  }
+    cksum -= zMaster[i];
+   }
   if( cksum ){
     /* If the checksum doesn't add up, then one or more of the disk sectors
     ** containing the master journal filename is corrupted. This means
     ** definitely roll back, so just return SQLITE_OK and report a (nul)
     ** master-journal filename.
     */
-    sqlite3_free(*pzMaster);
-    *pzMaster = 0;
-  }else{
-    (*pzMaster)[len] = '\0';
+    zMaster[0] = '\0';
   }
    
   return SQLITE_OK;
@@ -1493,6 +1494,10 @@ static int pager_playback_one_page(
 ** This routine checks if it is possible to delete the master journal file,
 ** and does so if it is.
 **
+** Argument zMaster may point to Pager.pTmpSpace. So that buffer is not 
+** available for use within this function.
+**
+**
 ** The master journal file contains the names of all child journals.
 ** To tell if a master journal can be deleted, check to each of the
 ** children.  If all children are either missing or do not refer to
@@ -1527,15 +1532,17 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   if( nMasterJournal>0 ){
     char *zJournal;
     char *zMasterPtr = 0;
+    int nMasterPtr = pPager->pVfs->mxPathname+1;
 
     /* Load the entire master journal file into space obtained from
     ** sqlite3_malloc() and pointed to by zMasterJournal. 
     */
-    zMasterJournal = (char *)sqlite3_malloc(nMasterJournal);
+    zMasterJournal = (char *)sqlite3_malloc(nMasterJournal + nMasterPtr);
     if( !zMasterJournal ){
       rc = SQLITE_NOMEM;
       goto delmaster_out;
     }
+    zMasterPtr = &zMasterJournal[nMasterJournal];
     rc = sqlite3OsRead(pMaster, zMasterJournal, nMasterJournal, 0);
     if( rc!=SQLITE_OK ) goto delmaster_out;
 
@@ -1553,14 +1560,13 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
           goto delmaster_out;
         }
 
-        rc = readMasterJournal(pJournal, &zMasterPtr);
+        rc = readMasterJournal(pJournal, zMasterPtr, nMasterPtr);
         sqlite3OsClose(pJournal);
         if( rc!=SQLITE_OK ){
           goto delmaster_out;
         }
 
-        c = zMasterPtr!=0 && strcmp(zMasterPtr, zMaster)==0;
-        sqlite3_free(zMasterPtr);
+        c = zMasterPtr[0]!=0 && strcmp(zMasterPtr, zMaster)==0;
         if( c ){
           /* We have a match. Do not delete the master journal file. */
           goto delmaster_out;
@@ -1698,17 +1704,18 @@ static int pager_playback(Pager *pPager, int isHot){
   ** present on disk, then the journal is not hot and does not need to be
   ** played back.
   */
-  rc = readMasterJournal(pPager->jfd, &zMaster);
+  zMaster = pPager->pTmpSpace;
+  rc = readMasterJournal(pPager->jfd, zMaster, pPager->pVfs->mxPathname+1);
   assert( rc!=SQLITE_DONE );
   if( rc!=SQLITE_OK 
-   || (zMaster && !sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS)) 
+   || (zMaster[0] && !sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS)) 
   ){
-    sqlite3_free(zMaster);
     zMaster = 0;
     if( rc==SQLITE_DONE ) rc = SQLITE_OK;
     goto end_playback;
   }
   pPager->journalOff = 0;
+  zMaster = 0;
 
   /* This loop terminates either when the readJournalHdr() call returns
   ** SQLITE_DONE or an IO error occurs. */
@@ -1780,16 +1787,17 @@ static int pager_playback(Pager *pPager, int isHot){
 
 end_playback:
   if( rc==SQLITE_OK ){
+    zMaster = pPager->pTmpSpace;
+    rc = readMasterJournal(pPager->jfd, zMaster, pPager->pVfs->mxPathname+1);
+  }
+  if( rc==SQLITE_OK ){
     rc = pager_end_transaction(pPager);
   }
-  if( zMaster ){
+  if( rc==SQLITE_OK && zMaster[0] ){
     /* If there was a master journal and this routine will return success,
     ** see if it is possible to delete the master journal.
     */
-    if( rc==SQLITE_OK ){
-      rc = pager_delmaster(pPager, zMaster);
-    }
-    sqlite3_free(zMaster);
+    rc = pager_delmaster(pPager, zMaster);
   }
 
   /* The Pager.sectorSize variable may have been updated while rolling
