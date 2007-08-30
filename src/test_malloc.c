@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.6 2007/08/29 12:31:28 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.7 2007/08/30 15:46:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -324,6 +324,33 @@ static int test_memdebug_fail(
   return TCL_OK;
 }
 
+/*
+** Usage:    sqlite3_memdebug_pending
+**
+** Return the number of malloc() calls that will succeed before a 
+** simulated failure occurs. A negative return value indicates that
+** no malloc() failure is scheduled.
+*/
+static int test_memdebug_pending(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+
+#ifdef SQLITE_MEMDEBUG
+  {
+    extern int sqlite3_memdebug_pending();
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_memdebug_pending()));
+  }
+#endif
+  return TCL_OK;
+}
+
 
 /*
 ** Usage:    sqlite3_memdebug_settitle TITLE
@@ -373,6 +400,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_memdebug_backtrace", test_memdebug_backtrace       },
      { "sqlite3_memdebug_dump",      test_memdebug_dump            },
      { "sqlite3_memdebug_fail",      test_memdebug_fail            },
+     { "sqlite3_memdebug_pending",   test_memdebug_pending         },
      { "sqlite3_memdebug_settitle",  test_memdebug_settitle        },
   };
   int i;

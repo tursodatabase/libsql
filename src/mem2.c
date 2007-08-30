@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.11 2007/08/29 12:31:26 danielk1977 Exp $
+** $Id: mem2.c,v 1.12 2007/08/30 15:46:07 danielk1977 Exp $
 */
 
 /*
@@ -495,6 +495,10 @@ int sqlite3_memdebug_fail(int iFail, int iRepeat, int *piBenign){
   mem.iFailCnt = 0;
   mem.iBenignFailCnt = 0;
   return n;
+}
+
+int sqlite3_memdebug_pending(){
+  return (mem.iFail-1);
 }
 
 void sqlite3MallocBenignFailure(int isBenign){
