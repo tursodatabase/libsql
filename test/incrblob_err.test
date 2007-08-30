@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob_err.test,v 1.6 2007/08/29 12:31:29 danielk1977 Exp $
+# $Id: incrblob_err.test,v 1.7 2007/08/30 11:48:32 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -18,14 +18,6 @@ source $testdir/tester.tcl
 ifcapable {!incrblob  || !memdebug} {
   finish_test
   return
-}
-
-# Only run these tests if memory debugging is turned on.
-#
-if {[info command sqlite3_memdebug_fail]==""} {
-   puts "Skipping incrblob_err tests: not compiled with -DSQLITE_MEMDEBUG..."
-   finish_test
-   return
 }
 
 source $testdir/malloc_common.tcl
@@ -79,7 +71,6 @@ do_malloc_test 3 -tclprep {
     error "out of memory" 
   }
 } 
-sqlite3_memdebug_fail -1
 
 do_ioerr_test incrblob_err-4 -cksum 1 -sqlprep {
   CREATE TABLE blobs(k, v BLOB);

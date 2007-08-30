@@ -12,7 +12,7 @@
 # This file contains tests to ensure that the library handles malloc() failures
 # correctly. The emphasis in this file is on sqlite3_column_XXX() APIs.
 #
-# $Id: malloc4.test,v 1.6 2007/08/29 12:31:29 danielk1977 Exp $
+# $Id: malloc4.test,v 1.7 2007/08/30 11:48:32 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -76,12 +76,10 @@ proc do_stmt_test {id sql} {
     } {1}
     do_test ${testid}.2.2 {
       set mf1 [expr [sqlite3_memdebug_pending] < 0]
-btree_breakpoint
       set ::name16 [sqlite3_column_name16 $::STMT 0]
       set ::name16 [encoding convertfrom unicode $::name16]
       set ::name16 [string range $::name16 0 end-1]
       set mf2 [expr [sqlite3_memdebug_pending] < 0]
-puts [list $mf1 $mf2 $::name16]
       expr {$mf1 == $mf2 || $::name16 == ""}
     } {1}
     do_test ${testid}.2.3 {

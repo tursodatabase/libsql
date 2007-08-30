@@ -718,6 +718,7 @@ struct sgMprintf {
   int  nTotal;     /* Output size if unconstrained */
   int  nAlloc;     /* Amount of space allocated in zText */
   void *(*xRealloc)(void*,int);  /* Function used to realloc memory */
+  int  iMallocFailed;            /* True if xRealloc() has failed */
 };
 
 /* 
@@ -728,6 +729,7 @@ struct sgMprintf {
 */
 static void mout(void *arg, const char *zNewText, int nNewChar){
   struct sgMprintf *pM = (struct sgMprintf*)arg;
+  if( pM->iMallocFailed ) return;
   pM->nTotal += nNewChar;
   if( pM->zText ){
     if( pM->nChar + nNewChar + 1 > pM->nAlloc ){
@@ -738,6 +740,8 @@ static void mout(void *arg, const char *zNewText, int nNewChar){
         if( pM->zText==pM->zBase ){
           pM->zText = pM->xRealloc(0, nAlloc);
           if( pM->zText==0 ){
+            pM->nAlloc = 0;
+            pM->iMallocFailed = 0;
             return;
           }else if( pM->nChar ){
             memcpy(pM->zText, pM->zBase, pM->nChar);
@@ -748,8 +752,10 @@ static void mout(void *arg, const char *zNewText, int nNewChar){
           if( zNew ){
             pM->zText = zNew;
           }else{
+            pM->iMallocFailed = 0;
             pM->xRealloc(pM->zText, 0);
             pM->zText = 0;
+            pM->nAlloc = 0;
             return;
           }
         }
@@ -781,6 +787,7 @@ static char *base_vprintf(
   sM.nChar = sM.nTotal = 0;
   sM.nAlloc = nInitBuf;
   sM.xRealloc = xRealloc;
+  sM.iMallocFailed = 0;
   vxprintf(mout, &sM, useInternal, zFormat, ap);
   if( xRealloc ){
     if( sM.zText==sM.zBase ){

@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\sin\sasync2.test.\sNo\scode\schanges.\s(CVS\s4333)
-D 2007-08-30T10:49:55
+C Fixes\sfor\sfailures\sin\sfuzz_malloc.test.\s(CVS\s4334)
+D 2007-08-30T11:48:32
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -125,9 +125,9 @@ F src/pager.h 1ac4468049348ec72df09d138fc1d7e3a9d0d3a6
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 59a5e12ad0972ca2403503c12efb77f208c9a144
 F src/prepare.c 1506fd279824b1f4bac97514966d0370101f9a6b
-F src/printf.c e8cb99691b8370d0b721e2618db0ad01550e9b98
+F src/printf.c 81e5db668c211b9b8a9483197d6118b19d76fa74
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
-F src/select.c c8045b76f4c2ae95227de5997d1649e601181c76
+F src/select.c e5cc50e8d22b2490c4fb47f2ef08a9b43bcb52d9
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
 F src/sqlite.h.in 1ef41c05bf64d580e77e6c57f8705cdf36f37be0
@@ -162,7 +162,7 @@ F src/update.c e89b980b443d44b68bfc0b1746cdb6308e049ac9
 F src/utf.c 4af6259d5906b5a1bf3035cc387c4d7907bdd56e
 F src/util.c 3f9c0387b54f977726790f52ab92cd3d9379b367
 F src/vacuum.c 38745037c63246d1b0669038257890cf89fc4578
-F src/vdbe.c 9d22f69c813e5a2a4c14c33cb89b7fd4edc0f462
+F src/vdbe.c d2f156bbb6b636e9b4a3648c38454bf472668a86
 F src/vdbe.h 03a0fa17f6753a24d6cb585d7a362944a2c115aa
 F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
 F src/vdbeapi.c 9c2d681b75e4b90c28b9dd01a3f2e5905267f884
@@ -306,13 +306,13 @@ F test/func.test 605989453d1b42cec1d05c17aa232dc98e3e04e6
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
-F test/fuzz_malloc.test 2b465a70936c326b919f5fde6eb629eaff3b7e41
+F test/fuzz_malloc.test 4a4ab73c1a15cd1f3568890afd4ef9e800388c2f
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/incrblob.test 7f95c929b719626443a996b105d2b0ff06f47818
-F test/incrblob_err.test a25f71ad03eef61aa6b553dba5642c79b74e0e98
+F test/incrblob_err.test 0adf87296ad14cef6a23cd9283f81cc836c5a332
 F test/incrvacuum.test 569347726ea5940c3359e3d8cabb3505595cb82f
 F test/incrvacuum2.test 82397ceb5941cbe852fd29bb33fcdf5665bc80c2
 F test/incrvacuum_ioerr.test cb331403b8dea3c5bae6163861ff25037b0df56a
@@ -348,7 +348,7 @@ F test/main.test e7212ce1023957c7209778cc87fa932bd79ba89a
 F test/malloc.test 52306f056e7359e68ed2e204f37f47a0e2020c57
 F test/malloc2.test c1a74f46a3581b56df29ff46a4e1c99b41c44ad9
 F test/malloc3.test 95211d9b2394252cacf836c62fd3d405c58f73bd
-F test/malloc4.test 18dace2c0013aa616abb17b71ebb29095dfce12d
+F test/malloc4.test 08830f5964a95f5a75218f56e7742e5dbe482e53
 F test/malloc5.test 9db9205a5d444e23043368f961f92641c7770199
 F test/malloc6.test 3733b9bd4e039c3239f869c40edbb88172025e2e
 F test/malloc7.test dd66d8f82916becf1d29b6640e4f4855485570f8
@@ -358,7 +358,7 @@ F test/mallocA.test bec59bb8c9837cea463d1e76e62d0ea5113c4292
 F test/mallocB.test 56fd615f3fea97180132a89dd1dd2068852ef6a0
 F test/mallocC.test 3c6385336c82c9c2249c6c28ed23f430e1d66bd3
 F test/mallocD.test 03164dad24407f2a833b8215789f05a342647926
-F test/malloc_common.tcl 3c2fb94035e9085f8a687d724b6b61fdac8d961f
+F test/malloc_common.tcl 7ba29166a33f82eef970935fd27edb8be581a019
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 41550d87c9395ab2fec5993655865e29235130a3
-R 0b029ad5b7a1a43fe250d3b514e5c065
+P d80d87c239df06ef2182bc2b78e6d4c1852d28c9
+R 6bcf9078fb1ea6dd2af8be55db3d1f19
 U danielk1977
-Z a4c62edaa5b493566de4c2f9f8f2604c
+Z 13201505b60e15eac914a3dde38bb1c5

@@ -129,4 +129,5 @@ proc do_malloc_test {tn args} {
     }
   }
   unset ::mallocopts
+  sqlite3_memdebug_fail -1
 }
