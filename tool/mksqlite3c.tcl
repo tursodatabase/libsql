@@ -203,6 +203,9 @@ foreach file {
    mem1.c
    mem2.c
    mutex.c
+   mutex_os2.c
+   mutex_unix.c
+   mutex_w32.c
    malloc.c
    printf.c
    random.c
@@ -216,7 +219,8 @@ foreach file {
    os_win.c
 
    pager.c
-   
+
+   btmutex.c   
    btree.c
 
    vdbefifo.c

@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.15 2007/08/30 16:23:19 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.16 2007/08/30 17:15:38 drh Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -167,6 +167,11 @@ struct sqlite3_api_routines {
   int (*create_collation_v2)(sqlite3*,const char*,int,void*,int(*)(void*,int,const void*,int,const void*),void(*)(void*));
   sqlite3_int64 (*memory_highwater)(int);
   sqlite3_int64 (*memory_used)(void);
+  sqlite3_mutex *(*mutex_alloc)(int);
+  void (*mutex_enter)(sqlite3_mutex*);
+  void (*mutex_free)(sqlite3_mutex*);
+  void (*mutex_leave)(sqlite3_mutex*);
+  int (*mutex_try)(sqlite3_mutex*);
   int (*open_v2)(const char*,sqlite3**,int,const char*);
   int (*release_memory)(int);
   void (*result_error_nomem)(sqlite3_context*);
@@ -321,6 +326,11 @@ struct sqlite3_api_routines {
 #define sqlite3_create_collation_v2    sqlite3_api->create_collation_v2
 #define sqlite3_memory_highwater       sqlite3_api->memory_highwater
 #define sqlite3_memory_used            sqlite3_api->memory_used
+#define sqlite3_mutex_alloc            sqlite3_api->mutex_alloc
+#define sqlite3_mutex_enter            sqlite3_api->mutex_enter
+#define sqlite3_mutex_free             sqlite3_api->mutex_free
+#define sqlite3_mutex_leave            sqlite3_api->mutex_leave
+#define sqlite3_mutex_try              sqlite3_api->mutex_try
 #define sqlite3_open_v2                sqlite3_api->open_v2
 #define sqlite3_release_memory         sqlite3_api->release_memory
 #define sqlite3_result_error_nomem     sqlite3_api->result_error_nomem
