@@ -19,7 +19,7 @@
 ** Source files should #include the sqliteInt.h file and let that file
 ** include this one indirectly.
 **
-** $Id: mutex.h,v 1.1 2007/08/28 16:34:43 drh Exp $
+** $Id: mutex.h,v 1.2 2007/08/30 14:10:30 drh Exp $
 */
 
 
@@ -44,7 +44,7 @@
 **
 **   SQLITE_MUTEX_PTHREADS     For multi-threaded applications on Unix.
 **
-**   SQLITE_MUTEX_WIN          For multi-threaded applications on Win32.
+**   SQLITE_MUTEX_W32          For multi-threaded applications on Win32.
 **
 **   SQLITE_MUTEX_OS2          For multi-threaded applications on OS/2.
 */
@@ -59,7 +59,7 @@
 #endif
 #if defined(SQLITE_MUTEX_NOOP) && SQLITE_THREADSAFE && OS_WIN
 # undef SQLITE_MUTEX_NOOP
-# define SQLITE_MUTEX_WIN
+# define SQLITE_MUTEX_W32
 #endif
 #if defined(SQLITE_MUTEX_NOOP) && SQLITE_THREADSAFE && OS_OS2
 # undef SQLITE_MUTEX_NOOP

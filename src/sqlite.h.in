@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.247 2007/08/29 12:31:28 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.248 2007/08/30 14:10:30 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3278,16 +3278,17 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** implementations are available in the SQLite core:
 **
 ** <ul>
+** <li>   SQLITE_MUTEX_OS2
 ** <li>   SQLITE_MUTEX_PTHREAD
-** <li>   SQLITE_MUTEX_WIN
+** <li>   SQLITE_MUTEX_W32
 ** <li>   SQLITE_MUTEX_NOOP
 ** </ul>
 **
 ** The SQLITE_MUTEX_NOOP implementation is a set of routines 
 ** that does no real locking and is appropriate for use in 
-** a single-threaded application.  The SQLITE_MUTEX_PTHREAD
-** and SQLITE_MUTEX_WIN implementations are appropriate for
-** use on unix and windows.
+** a single-threaded application.  The SQLITE_MUTEX_OS2,
+** SQLITE_MUTEX_PTHREAD, and SQLITE_MUTEX_W32 implementations
+** are appropriate for use on os/2, unix, and windows.
 ** 
 ** If SQLite is compiled with the SQLITE_MUTEX_APPDEF preprocessor
 ** macro defined (with "-DSQLITE_MUTEX_APPDEF=1"), then no mutex

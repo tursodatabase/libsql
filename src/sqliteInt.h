@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.605 2007/08/29 12:31:28 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.606 2007/08/30 14:10:30 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -73,7 +73,6 @@
 #include "sqlite3.h"
 #include "hash.h"
 #include "parse.h"
-#include "mutex.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -295,6 +294,7 @@ typedef struct WhereInfo WhereInfo;
 typedef struct WhereLevel WhereLevel;
 
 #include "os.h"
+#include "mutex.h"
 
 /*
 ** Each database file to be accessed by the system is an instance

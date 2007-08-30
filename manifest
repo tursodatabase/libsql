@@ -1,5 +1,5 @@
-C Fixes\sfor\sfailures\sin\sfuzz_malloc.test.\s(CVS\s4334)
-D 2007-08-30T11:48:32
+C Bug\sfixes\sin\sthe\smutex\sheader\sfile.\s\sTickets\s#2599\sand\s#2600.\s(CVS\s4335)
+D 2007-08-30T14:10:30
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -105,10 +105,10 @@ F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c afe2fbf6d7e8247c6c9f69c1481358b1cad60c08
 F src/mem2.c 2ba377e2f7d57ec36238456eb44371ac40aa0e94
 F src/mutex.c 40e5ba09d56863895882a0204d93832e9960ea78
-F src/mutex.h 4d3babe3a691533ac980967d394da512140b5143
+F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c d47e9bd495583dd31263d8fe55160a31eb600a3c
 F src/mutex_unix.c ff77650261a245035b79c5c8a174f4e05d3cae8a
-F src/mutex_w32.c 8716478c5f1829b27fd2c9a0759230a9dc3aa9e3
+F src/mutex_w32.c 54beb16ade8f80ea2bc30bc4dfb2087be3487ef3
 F src/os.c a8ed3c495161475dbce255f7003144144fb425f1
 F src/os.h 2bfbbad126a775e4d8c7d59eb4d9585a5fd7dfb5
 F src/os_common.h 98862f120ca6bf7a48ce8b16f158b77d00bc9d2f
@@ -130,9 +130,9 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c e5cc50e8d22b2490c4fb47f2ef08a9b43bcb52d9
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in 1ef41c05bf64d580e77e6c57f8705cdf36f37be0
+F src/sqlite.h.in 4340f2063848977e9eefd534ee13776f5cc9b0f0
 F src/sqlite3ext.h 9a26028378c288af500d8b94ed079666fed5806b
-F src/sqliteInt.h 1dd9226a6f2f048222d5a5df38ab8cd26d8ece5d
+F src/sqliteInt.h 5dbb7a934a88dfa9893e2627f4821b0464f5edc0
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c d76af53f45c9e9f7f7d39531fa4c7bee7d0adad6
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d80d87c239df06ef2182bc2b78e6d4c1852d28c9
-R 6bcf9078fb1ea6dd2af8be55db3d1f19
-U danielk1977
-Z 13201505b60e15eac914a3dde38bb1c5
+P d3e502263808c1fe0487fda02f16adcbb1279183
+R 8ab4e043a311e4bca4b56b1d50a59fcc
+U drh
+Z 20709391f71da3ae2883ec1a97c7dd8d
