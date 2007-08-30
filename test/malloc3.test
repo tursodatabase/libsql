@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.12 2007/08/29 12:31:29 danielk1977 Exp $
+# $Id: malloc3.test,v 1.13 2007/08/30 14:41:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -177,7 +177,7 @@ proc SQL  {a1 {a2 ""}} {
 #     argument is either 1 or 0, the expected value of the auto-commit flag.
 #
 proc TEST_AUTOCOMMIT {id a} {
-    TEST $id "do_test \$testid { sqlite3_get_autocommit $::DB } {$a}"
+    TEST $id "do_test \$testid { sqlite3_get_autocommit \$::DB } {$a}"
 }
 
 #--------------------------------------------------------------------------
@@ -519,7 +519,7 @@ SQL COMMIT
 # End of test program declaration
 #--------------------------------------------------------------------------
 
-proc run_test {arglist {pcstart 0} {iFailStart 1}} {
+proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
   if {[llength $arglist] %2} {
     error "Uneven number of arguments to TEST"
   }
@@ -560,10 +560,9 @@ proc run_test {arglist {pcstart 0} {iFailStart 1}} {
         set ::rollback_hook_count 0
 
         set ac [sqlite3_get_autocommit $::DB]        ;# Auto-Commit
-        sqlite3_memdebug_fail $iFail -repeat 1
+        sqlite3_memdebug_fail $iFail -repeat 0
         set rc [catch {db eval [lindex $v 1]} msg]   ;# True error occurs
         set nac [sqlite3_get_autocommit $::DB]       ;# New Auto-Commit 
-
 
         if {$rc != 0 && $nac && !$ac} {
           # Before [db eval] the auto-commit flag was clear. Now it
@@ -634,12 +633,21 @@ proc run_test {arglist {pcstart 0} {iFailStart 1}} {
   }
 }
 
-# Turn of the Tcl interface's prepared statement caching facility.
+# Turn of the Tcl interface's prepared statement caching facility. Then
+# run the tests with "persistent" malloc failures.
 db cache size 0
+run_test $::run_test_script 1
 
-run_test $::run_test_script 9 1
-# run_test [lrange $::run_test_script 0 3] 0 63
-sqlite3_memdebug_fail -1
+# Close and reopen the db.
 db close
+file delete -force test.db test.db-journal
+sqlite3 db test.db
+set ::DB [sqlite3_connection_pointer db]
 
+# Turn of the Tcl interface's prepared statement caching facility in
+# the new connnection. Then run the tests with "transient" malloc failures.
+db cache size 0
+run_test $::run_test_script 0
+
+sqlite3_memdebug_fail -1
 finish_test
