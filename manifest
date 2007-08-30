@@ -1,5 +1,5 @@
-C Fix\smemory\sleak\sreported\sby\san\sfts1\suser.\s\sWas\slosing\sa\sdoclist\son\sa\nquery\serror.\s(CVS\s4347)
-D 2007-08-30T19:56:38
+C Fix\sdiscrepency\sin\sthe\stest\spointed\sout\sby\sa\suser.\s\sWas\stesting\sfts2\s:-).\s(CVS\s4348)
+D 2007-08-30T20:01:33
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -267,7 +267,7 @@ F test/fts1k.test fdf295cb797ba6a2ef81ec41cb98df0ceb2e572c
 F test/fts1l.test 15c119ed2362b2b28d5300c0540a6a43eab66c36
 F test/fts1m.test 2d9ca67b095d49f037a914087cc0a61e89da4f0c
 F test/fts1n.test a2317dcd27b1d087ee3878b30e0a59c593c98b7a
-F test/fts1o.test 81c87d789090daee172f307d9fdafc1e2583d1ce
+F test/fts1o.test 382b8b07a2d6de5610814d9477117c4430464b9c
 F test/fts1porter.test d86e9c3e0c7f8ff95add6582b4b585fb4e02b96d
 F test/fts2a.test 473a5c8b473a4e21a8e3fddaed1e59666e0c6ab7
 F test/fts2b.test 964abc0236c849c07ca1ae496bb25c268ae94816
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 293a3f837bd6c6a26f694a9210e59ace23abb6bb
-R 173cd743c09d9b4badf1c69fa1972b1a
+P eee025024972852990e704253d1443c1cefb376c
+R 22bb7f489df69532356733d65729e11a
 U shess
-Z 2021fe976e5f4838f83a977058b33242
+Z 9c84fe5ce7236ca1a106e01233a60397
