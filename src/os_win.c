@@ -1130,8 +1130,8 @@ static int winOpen(
 #endif
   }
   if( h==INVALID_HANDLE_VALUE ){
+    free(zConverted);
     if( flags & SQLITE_OPEN_READWRITE ){
-      free(zConverted);
       return winOpen(0, zName, id, 
              ((flags|SQLITE_OPEN_READONLY)&~SQLITE_OPEN_READWRITE), pOutFlags);
     }else{

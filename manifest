@@ -1,5 +1,5 @@
-C Fix\sthe\s"test_destructor"\stest\sfunction\sin\sutf-16\smode.\sFix\sfor\stest\sfailure\sin\sutf16\sversion\sof\sfunc.test.\s(CVS\s4344)
-D 2007-08-30T16:30:27
+C Fix\sa\smemory\sleak\sin\sthe\swin32\sOS\sdriver.\s\sTicket\s#2602.\s(CVS\s4345)
+D 2007-08-30T16:46:04
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -118,7 +118,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 84dcfc01006ae0b4f8e16cf094de4bdaf7ddf1a8
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 3ffd3aacff4cb69848284e29dcec0feff23b0752
+F src/os_win.c 85e5661c852492e6bda9e79542932d7edf0e2177
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 847674a74c232f3f7c386d4b902df41a60f781c4
 F src/pager.h 1ac4468049348ec72df09d138fc1d7e3a9d0d3a6
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e9b2700b8c30b0255c9e33419ff18bdebb78087a
-R 27462cb23e301d0ba4176124c264ff8a
-U danielk1977
-Z 0415599994e32458e5dda96854a85efc
+P c073b78040e5833de038dea464ac87c7358b8b51
+R 30bc014a6024147ec249bf381de3c5ae
+U drh
+Z e78a8479742fa9ce1b1dff972c5bc640
