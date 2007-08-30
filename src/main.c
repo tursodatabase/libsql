@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.398 2007/08/24 16:08:29 drh Exp $
+** $Id: main.c,v 1.399 2007/08/30 16:23:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1098,7 +1098,7 @@ int sqlite3_open(
                       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
 }
 int sqlite3_open_v2(
-  const void *filename,   /* Database filename (UTF-8) */
+  const char *filename,   /* Database filename (UTF-8) */
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */
   const char *zVfs        /* Name of VFS module to use */

@@ -246,6 +246,27 @@ const sqlite3_api_routines sqlite3_apis = {
   */
   sqlite3_create_module_v2,
 
+  /*
+  ** Added for 3.5.0
+  */
+  sqlite3_bind_zeroblob,
+  sqlite3_blob_bytes,
+  sqlite3_blob_close,
+  sqlite3_blob_open,
+  sqlite3_blob_read,
+  sqlite3_blob_write,
+  sqlite3_create_collation_v2,
+  sqlite3_memory_highwater,
+  sqlite3_memory_used,
+  sqlite3_open_v2,
+  sqlite3_release_memory,
+  sqlite3_result_error_nomem,
+  sqlite3_result_error_toobig,
+  sqlite3_sleep,
+  sqlite3_soft_heap_limit,
+  sqlite3_vfs_find,
+  sqlite3_vfs_register,
+  sqlite3_vfs_unregister,
 };
 
 /*
