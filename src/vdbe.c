@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.647 2007/08/29 12:31:28 danielk1977 Exp $
+** $Id: vdbe.c,v 1.648 2007/08/30 01:19:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2421,6 +2421,7 @@ case OP_Statement: {       /* no-push */
   Btree *pBt;
   if( i>=0 && i<db->nDb && (pBt = db->aDb[i].pBt)!=0 && !(db->autoCommit) ){
     assert( sqlite3BtreeIsInTrans(pBt) );
+    assert( (p->btreeMask & (1<<i))!=0 );
     if( !sqlite3BtreeIsInStmt(pBt) ){
       rc = sqlite3BtreeBeginStmt(pBt);
       p->openedStatement = 1;
@@ -2511,6 +2512,7 @@ case OP_Transaction: {       /* no-push */
   Btree *pBt;
 
   assert( i>=0 && i<db->nDb );
+  assert( (p->btreeMask & (1<<i))!=0 );
   pBt = db->aDb[i].pBt;
 
   if( pBt ){
@@ -2557,6 +2559,7 @@ case OP_ReadCookie: {
   }
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 );
+  assert( (p->btreeMask & (1<<iDb))!=0 );
   /* The indexing of meta values at the schema layer is off by one from
   ** the indexing in the btree layer.  The btree considers meta[0] to
   ** be the number of free pages in the database (a read-only value)
@@ -2585,6 +2588,7 @@ case OP_SetCookie: {       /* no-push */
   Db *pDb;
   assert( pOp->p2<SQLITE_N_BTREE_META );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   assert( pTos>=p->aStack );
@@ -2629,6 +2633,7 @@ case OP_VerifyCookie: {       /* no-push */
   int iMeta;
   Btree *pBt;
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
   if( pBt ){
     rc = sqlite3BtreeGetMeta(pBt, 1, (u32 *)&iMeta);
@@ -2720,6 +2725,7 @@ case OP_OpenWrite: {       /* no-push */
   assert( (pTos->flags & MEM_Dyn)==0 );
   pTos--;
   assert( iDb>=0 && iDb<db->nDb );
+  assert( (p->btreeMask & (1<<iDb))!=0 );
   pDb = &db->aDb[iDb];
   pX = pDb->pBt;
   assert( pX!=0 );
@@ -4075,6 +4081,7 @@ case OP_Destroy: {
     rc = SQLITE_LOCKED;
   }else{
     assert( iCnt==1 );
+    assert( (p->btreeMask & (1<<pOp->p2))!=0 );
     rc = sqlite3BtreeDropTable(db->aDb[pOp->p2].pBt, pOp->p1, &iMoved);
     pTos++;
     pTos->flags = MEM_Int;
@@ -4136,6 +4143,7 @@ case OP_Clear: {        /* no-push */
     }
   }
 #endif
+  assert( (p->btreeMask & (1<<pOp->p2))!=0 );
   rc = sqlite3BtreeClearTable(db->aDb[pOp->p2].pBt, pOp->p1);
   break;
 }
@@ -4166,6 +4174,7 @@ case OP_CreateTable: {
   int flags;
   Db *pDb;
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   if( pOp->opcode==OP_CreateTable ){
@@ -4327,6 +4336,8 @@ case OP_IntegrityCk: {
   aRoot[j] = 0;
   popStack(&pTos, nRoot);
   pTos++;
+  assert( pOp->p2>=0 && pOp->p2<db->nDb );
+  assert( (p->btreeMask & (1<<pOp->p2))!=0 );
   z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p2].pBt, aRoot, nRoot,
                                  pnErr->u.i, &nErr);
   pnErr->u.i -= nErr;
@@ -4701,6 +4712,7 @@ case OP_IncrVacuum: {        /* no-push */
   Btree *pBt;
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
   rc = sqlite3BtreeIncrVacuum(pBt);
   if( rc==SQLITE_DONE ){
@@ -4752,6 +4764,8 @@ case OP_TableLock: {        /* no-push */
   if( isWriteLock ){
     p1 = (-1*p1)-1;
   }
+  assert( p1>=0 && p1<db->nDb );
+  assert( (p->btreeMask & (1<<p1))!=0 );
   rc = sqlite3BtreeLockTable(db->aDb[p1].pBt, pOp->p2, isWriteLock);
   if( rc==SQLITE_LOCKED ){
     const char *z = (const char *)pOp->p3;

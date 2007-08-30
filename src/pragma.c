@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.146 2007/08/21 10:44:16 drh Exp $
+** $Id: pragma.c,v 1.147 2007/08/30 01:19:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -300,6 +300,7 @@ void sqlite3Pragma(
     };
     int addr;
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
+    sqlite3VdbeUsesBtree(v, iDb);
     if( !zRight ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "cache_size", P3_STATIC);
@@ -455,6 +456,7 @@ void sqlite3Pragma(
           sqlite3VdbeChangeP2(v, iAddr+2, iAddr+4);
           sqlite3VdbeChangeP1(v, iAddr+4, eAuto-1);
           sqlite3VdbeChangeP1(v, iAddr+5, iDb);
+          sqlite3VdbeUsesBtree(v, iDb);
         }
       }
     }
@@ -1043,6 +1045,7 @@ void sqlite3Pragma(
   ){
 
     int iCookie;   /* Cookie index. 0 for schema-cookie, 6 for user-cookie. */
+    sqlite3VdbeUsesBtree(v, iDb);
     switch( zLeft[0] ){
       case 's': case 'S':
         iCookie = 0;

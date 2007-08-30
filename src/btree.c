@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.419 2007/08/29 19:15:08 drh Exp $
+** $Id: btree.c,v 1.420 2007/08/30 01:19:59 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -356,7 +356,10 @@ static void clearCursorPosition(BtCursor *pCur){
 int sqlite3BtreeRestoreOrClearCursorPosition(BtCursor *pCur){
   int rc;
   assert( cursorHoldsMutex(pCur) );
-  assert( pCur->eState==CURSOR_REQUIRESEEK );
+  assert( pCur->eState>=CURSOR_REQUIRESEEK );
+  if( pCur->eState==CURSOR_FAULT ){
+    return pCur->skip;
+  }
 #ifndef SQLITE_OMIT_INCRBLOB
   if( pCur->isIncrblobHandle ){
     return SQLITE_ABORT;
@@ -373,7 +376,7 @@ int sqlite3BtreeRestoreOrClearCursorPosition(BtCursor *pCur){
 }
 
 #define restoreOrClearCursorPosition(p) \
-  (p->eState==CURSOR_REQUIRESEEK ? \
+  (p->eState>=CURSOR_REQUIRESEEK ? \
          sqlite3BtreeRestoreOrClearCursorPosition(p) : \
          SQLITE_OK)
 
@@ -2394,16 +2397,49 @@ int sqlite3BtreeCommit(Btree *p){
 ** Return the number of write-cursors open on this handle. This is for use
 ** in assert() expressions, so it is only compiled if NDEBUG is not
 ** defined.
+**
+** For the purposes of this routine, a write-cursor is any cursor that
+** is capable of writing to the databse.  That means the cursor was
+** originally opened for writing and the cursor has not be disabled
+** by having its state changed to CURSOR_FAULT.
 */
 static int countWriteCursors(BtShared *pBt){
   BtCursor *pCur;
   int r = 0;
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-    if( pCur->wrFlag ) r++; 
+    if( pCur->wrFlag && pCur->eState!=CURSOR_FAULT ) r++; 
   }
   return r;
 }
 #endif
+
+/*
+** This routine sets the state to CURSOR_FAULT and the error
+** code to errCode for every cursor on BtShared that pBtree
+** references.
+**
+** Every cursor is tripped, including cursors that belong
+** to other database connections that happen to be sharing
+** the cache with pBtree.
+**
+** This routine gets called when a rollback occurs.
+** All cursors using the same cache must be tripped
+** to prevent them from trying to use the btree after
+** the rollback.  The rollback may have deleted tables
+** or moved root pages, so it is not sufficient to
+** save the state of the cursor.  The cursor must be
+** invalidated.
+*/
+void sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode){
+  BtCursor *p;
+  sqlite3BtreeEnter(pBtree);
+  for(p=pBtree->pBt->pCursor; p; p=p->pNext){
+    clearCursorPosition(p);
+    p->eState = CURSOR_FAULT;
+    p->skip = errCode;
+  }
+  sqlite3BtreeLeave(pBtree);
+}
 
 /*
 ** Rollback the transaction in progress.  All cursors will be
@@ -2430,15 +2466,7 @@ int sqlite3BtreeRollback(Btree *p){
     ** we cannot simply return the error to the caller. Instead, abort 
     ** all queries that may be using any of the cursors that failed to save.
     */
-    while( pBt->pCursor ){
-      sqlite3 *db = pBt->pCursor->pBtree->pSqlite;
-      if( db ){
-        /**** FIX ME: This can deadlock ****/
-        sqlite3_mutex_enter(db->mutex);
-        sqlite3AbortOtherActiveVdbes(db, 0);
-        sqlite3_mutex_leave(db->mutex);
-      }
-    }
+    sqlite3BtreeTripAllCursors(p, rc);
   }
 #endif
   btreeIntegrity(p);
@@ -3343,7 +3371,13 @@ static int moveToRoot(BtCursor *pCur){
   BtShared *pBt = p->pBt;
 
   assert( cursorHoldsMutex(pCur) );
-  if( pCur->eState==CURSOR_REQUIRESEEK ){
+  assert( CURSOR_INVALID < CURSOR_REQUIRESEEK );
+  assert( CURSOR_VALID   < CURSOR_REQUIRESEEK );
+  assert( CURSOR_FAULT   > CURSOR_REQUIRESEEK );
+  if( pCur->eState>=CURSOR_REQUIRESEEK ){
+    if( pCur->eState==CURSOR_FAULT ){
+      return pCur->skip;
+    }
     clearCursorPosition(pCur);
   }
   pRoot = pCur->pPage;
@@ -5514,6 +5548,9 @@ int sqlite3BtreeInsert(
   if( checkReadLocks(pCur->pBtree, pCur->pgnoRoot, pCur) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
+  if( pCur->eState==CURSOR_FAULT ){
+    return pCur->skip;
+  }
 
   /* Save the positions of any other cursors open on this table */
   clearCursorPosition(pCur);
@@ -5592,6 +5629,9 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     return rc;
   }
   assert( !pBt->readOnly );
+  if( pCur->eState==CURSOR_FAULT ){
+    return pCur->skip;
+  }
   if( pCur->idx >= pPage->nCell ){
     return SQLITE_ERROR;  /* The cursor is not pointing to anything */
   }
@@ -6789,8 +6829,12 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
   assert( cursorHoldsMutex(pCsr) );
   assert( sqlite3_mutex_held(pCsr->pBtree->pSqlite->mutex) );
   assert(pCsr->isIncrblobHandle);
-  if( pCsr->eState==CURSOR_REQUIRESEEK ){
-    return SQLITE_ABORT;
+  if( pCsr->eState>=CURSOR_REQUIRESEEK ){
+    if( pCsr->eState==CURSOR_FAULT ){
+      return pCsr->skip;
+    }else{
+      return SQLITE_ABORT;
+    }
   }
 
   /* Check some preconditions: 

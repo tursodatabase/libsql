@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: btmutex.c,v 1.6 2007/08/29 17:43:20 drh Exp $
+** $Id: btmutex.c,v 1.7 2007/08/30 01:19:59 drh Exp $
 **
 ** This file contains code used to implement mutexes on Btree objects.
 ** This code really belongs in btree.c.  But btree.c is getting too
@@ -239,7 +239,7 @@ int sqlite3BtreeHoldsAllMutexes(sqlite3 *db){
 void sqlite3BtreeMutexArrayInsert(BtreeMutexArray *pArray, Btree *pBtree){
   int i, j;
   BtShared *pBt;
-  if( pBtree->sharable==0 ) return;
+  if( pBtree==0 || pBtree->sharable==0 ) return;
 #ifndef NDEBUG
   {
     for(i=0; i<pArray->nMutex; i++){

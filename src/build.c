@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.442 2007/08/29 14:06:23 danielk1977 Exp $
+** $Id: build.c,v 1.443 2007/08/30 01:19:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -164,7 +164,7 @@ void sqlite3FinishCoding(Parse *pParse){
       sqlite3VdbeJumpHere(v, pParse->cookieGoto-1);
       for(iDb=0, mask=1; iDb<db->nDb; mask<<=1, iDb++){
         if( (mask & pParse->cookieMask)==0 ) continue;
-        sqlite3VdbeUsesBtree(v, iDb, db->aDb[iDb].pBt);
+        sqlite3VdbeUsesBtree(v, iDb);
         sqlite3VdbeAddOp(v, OP_Transaction, iDb, (mask & pParse->writeMask)!=0);
         sqlite3VdbeAddOp(v, OP_VerifyCookie, iDb, pParse->cookieValue[iDb]);
       }
@@ -847,6 +847,7 @@ void sqlite3StartTable(
     ** set them now.
     */
     sqlite3VdbeAddOp(v, OP_ReadCookie, iDb, 1);   /* file_format */
+    sqlite3VdbeUsesBtree(v, iDb);
     lbl = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp(v, OP_If, 0, lbl);
     fileFormat = (db->flags & SQLITE_LegacyFileFmt)!=0 ?
@@ -2693,6 +2694,7 @@ void sqlite3MinimumFileFormat(Parse *pParse, int iDb, int minFormat){
   v = sqlite3GetVdbe(pParse);
   if( v ){
     sqlite3VdbeAddOp(v, OP_ReadCookie, iDb, 1);
+    sqlite3VdbeUsesBtree(v, iDb);
     sqlite3VdbeAddOp(v, OP_Integer, minFormat, 0);
     sqlite3VdbeAddOp(v, OP_Ge, 0, sqlite3VdbeCurrentAddr(v)+3);
     sqlite3VdbeAddOp(v, OP_Integer, minFormat, 0);
@@ -3089,6 +3091,7 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
   if( type!=TK_DEFERRED ){
     for(i=0; i<db->nDb; i++){
       sqlite3VdbeAddOp(v, OP_Transaction, i, (type==TK_EXCLUSIVE)+1);
+      sqlite3VdbeUsesBtree(v, i);
     }
   }
   sqlite3VdbeAddOp(v, OP_AutoCommit, 0, 0);

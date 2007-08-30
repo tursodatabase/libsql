@@ -660,12 +660,15 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
 ** Declare to the Vdbe that the BTree object at db->aDb[i] is used.
 **
 */
-void sqlite3VdbeUsesBtree(Vdbe *p, int i, Btree *pBtree){
+void sqlite3VdbeUsesBtree(Vdbe *p, int i){
+  int mask;
   assert( i>=0 && i<p->db->nDb );
   assert( i<sizeof(p->btreeMask)*8 );
-  assert( p->db->aDb[i].pBt==pBtree );
-  p->btreeMask |= 1<<i;
-  sqlite3BtreeMutexArrayInsert(&p->aMutex, pBtree);
+  mask = 1<<i;
+  if( (p->btreeMask & mask)==0 ){
+    p->btreeMask |= mask;
+    sqlite3BtreeMutexArrayInsert(&p->aMutex, p->db->aDb[i].pBt);
+  }
 }
 
 
@@ -1301,21 +1304,28 @@ static void checkActiveVdbeCnt(sqlite3 *db){
 #endif
 
 /*
-** Find every active VM other than pVdbe and change its status to
-** aborted.  This happens when one VM causes a rollback due to an
-** ON CONFLICT ROLLBACK clause (for example).  The other VMs must be
-** aborted so that they do not have data rolled out from underneath
-** them leading to a segfault.
+** For every Btree that in database connection db which 
+** has been modified, "trip" or invalidate each cursor in
+** that Btree might have been modified so that the cursor
+** can never be used again.  This happens when a rollback
+*** occurs.  We have to trip all the other cursors, even
+** cursor from other VMs in different database connections,
+** so that none of them try to use the data at which they
+** were pointing and which now may have been changed due
+** to the rollback.
+**
+** Remember that a rollback can delete tables complete and
+** reorder rootpages.  So it is not sufficient just to save
+** the state of the cursor.  We have to invalidate the cursor
+** so that it is never used again.
 */
-void sqlite3AbortOtherActiveVdbes(sqlite3 *db, Vdbe *pExcept){
-  Vdbe *pOther;
-  for(pOther=db->pVdbe; pOther; pOther=pOther->pNext){
-    if( pOther==pExcept ) continue;
-    if( pOther->magic!=VDBE_MAGIC_RUN || pOther->pc<0 ) continue;
-    checkActiveVdbeCnt(db);
-    closeAllCursorsExceptActiveVtabs(pOther);
-    checkActiveVdbeCnt(db);
-    pOther->aborted = 1;
+void invalidateCursorsOnModifiedBtrees(sqlite3 *db){
+  int i;
+  for(i=0; i<db->nDb; i++){
+    Btree *p = db->aDb[i].pBt;
+    if( p && sqlite3BtreeIsInTrans(p) ){
+      sqlite3BtreeTripAllCursors(p, SQLITE_ABORT);
+    }
   }
 }
 
@@ -1440,7 +1450,7 @@ int sqlite3VdbeHalt(Vdbe *p){
           /* We are forced to roll back the active transaction. Before doing
           ** so, abort any other statements this handle currently has active.
           */
-          sqlite3AbortOtherActiveVdbes(db, p);
+          invalidateCursorsOnModifiedBtrees(db);
           sqlite3RollbackAll(db);
           db->autoCommit = 1;
         }
@@ -1480,7 +1490,7 @@ int sqlite3VdbeHalt(Vdbe *p){
       }else if( p->errorAction==OE_Abort ){
         xFunc = sqlite3BtreeRollbackStmt;
       }else{
-        sqlite3AbortOtherActiveVdbes(db, p);
+        invalidateCursorsOnModifiedBtrees(db);
         sqlite3RollbackAll(db);
         db->autoCommit = 1;
       }

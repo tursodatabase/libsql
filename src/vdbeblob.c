@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.15 2007/08/29 17:43:20 drh Exp $
+** $Id: vdbeblob.c,v 1.16 2007/08/30 01:19:59 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -164,7 +164,7 @@ int sqlite3_blob_open(
       sqlite3VdbeChangeP2(v, 1, pTab->pSchema->schema_cookie);
 
       /* Make sure a mutex is held on the table to be accessed */
-      sqlite3VdbeUsesBtree(v, iDb, db->aDb[iDb].pBt); 
+      sqlite3VdbeUsesBtree(v, iDb); 
 
       /* Configure the db number pushed onto the stack */
       sqlite3VdbeChangeP1(v, 2, iDb);
