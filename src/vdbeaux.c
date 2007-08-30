@@ -1852,11 +1852,24 @@ int sqlite3VdbeSerialTypeLen(u32 serial_type){
 ** application using -DSQLITE_DEBUG=1 at least once.  With DEBUG
 ** enabled, some asserts below will ensure that the byte order of
 ** floating point values is correct.
+**
+** (2007-08-30)  Frank van Vugt has studied this problem closely
+** and has send his findings to the SQLite developers.  Frank
+** writes that some Linux kernels offer floating point hardware
+** emulation that uses only 32-bit mantissas instead of a full 
+** 48-bits as required by the IEEE standard.  (This is the
+** CONFIG_FPE_FASTFPE option.)  On such systems, floating point
+** byte swapping becomes very complicated.  To avoid problems,
+** the necessary byte swapping is carried out using a 64-bit integer
+** rather than a 64-bit float.  Frank assures us that the code here
+** works for him.  We, the developers, have no way to independently
+** verify this, but Frank seems to know what he is talking about
+** so we trust him.
 */
 #ifdef SQLITE_MIXED_ENDIAN_64BIT_FLOAT
-static double floatSwap(double in){
+static u64 floatSwap(u64 in){
   union {
-    double r;
+    u64 r;
     u32 i[2];
   } u;
   u32 t;
@@ -1900,8 +1913,8 @@ int sqlite3VdbeSerialPut(u8 *buf, int nBuf, Mem *pMem, int file_format){
     int i;
     if( serial_type==7 ){
       assert( sizeof(v)==sizeof(pMem->r) );
-      swapMixedEndianFloat(pMem->r);
       memcpy(&v, &pMem->r, sizeof(v));
+      swapMixedEndianFloat(v);
     }else{
       v = pMem->u.i;
     }
@@ -1991,9 +2004,9 @@ int sqlite3VdbeSerialGet(
       */
       static const u64 t1 = ((u64)0x3ff00000)<<32;
       static const double r1 = 1.0;
-      double r2 = r1;
-      swapMixedEndianFloat(r2);
-      assert( sizeof(r2)==sizeof(t1) && memcmp(&r2, &t1, sizeof(r1))==0 );
+      u64 t2 = t1;
+      swapMixedEndianFloat(t2);
+      assert( sizeof(r1)==sizeof(t2) && memcmp(&r1, &t2, sizeof(r1))==0 );
 #endif
 
       x = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
@@ -2004,8 +2017,8 @@ int sqlite3VdbeSerialGet(
         pMem->flags = MEM_Int;
       }else{
         assert( sizeof(x)==8 && sizeof(pMem->r)==8 );
+        swapMixedEndianFloat(x);
         memcpy(&pMem->r, &x, sizeof(x));
-        swapMixedEndianFloat(pMem->r);
         pMem->flags = MEM_Real;
       }
       return 8;
