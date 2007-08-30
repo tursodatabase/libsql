@@ -258,11 +258,19 @@ const sqlite3_api_routines sqlite3_apis = {
   sqlite3_create_collation_v2,
   sqlite3_memory_highwater,
   sqlite3_memory_used,
+#ifdef SQLITE_MUTEX_NOOP
+  0, 
+  0, 
+  0,
+  0,
+  0,
+#else
   sqlite3_mutex_alloc,
   sqlite3_mutex_enter,
   sqlite3_mutex_free,
   sqlite3_mutex_leave,
   sqlite3_mutex_try,
+#endif
   sqlite3_open_v2,
   sqlite3_release_memory,
   sqlite3_result_error_nomem,
