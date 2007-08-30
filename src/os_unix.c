@@ -2395,7 +2395,7 @@ static int unixOpen(
 
   memset(pFile, 0, sizeof(unixFile));
   fd = open(zPath, oflags, isDelete?0600:SQLITE_DEFAULT_FILE_PERMISSIONS);
-  if( fd<0 && isReadWrite && !isExclusive ){
+  if( fd<0 && errno!=EISDIR && isReadWrite && !isExclusive ){
     /* Failed to open the file for read/write access. Try read-only. */
     flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
     flags |= SQLITE_OPEN_READONLY;
