@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.147 2007/08/30 01:19:59 drh Exp $
+** $Id: pragma.c,v 1.148 2007/08/30 10:07:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -337,7 +337,12 @@ void sqlite3Pragma(
       int size = pBt ? sqlite3BtreeGetPageSize(pBt) : 0;
       returnSingleInt(pParse, "page_size", size);
     }else{
-      sqlite3BtreeSetPageSize(pBt, atoi(zRight), -1);
+      /* Malloc may fail when setting the page-size, as there is an internal
+      ** buffer that the pager module resizes using sqlite3_realloc().
+      */
+      if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, atoi(zRight), -1) ){
+        db->mallocFailed = 1;
+      }
     }
   }else
 

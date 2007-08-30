@@ -13,7 +13,7 @@
 # cache context. What happens to connection B if one connection A encounters
 # an IO-error whilst reading or writing the file-system?
 #
-# $Id: shared_err.test,v 1.15 2007/08/30 02:26:54 drh Exp $
+# $Id: shared_err.test,v 1.16 2007/08/30 10:07:39 danielk1977 Exp $
 
 proc skip {args} {}
 
@@ -433,6 +433,30 @@ do_test shared_malloc-8.X {
   expr $::aborted>=1
 } {1}
 
+# This test is designed to catch a specific bug that was present during
+# development of 3.5.0. If a malloc() failed while setting the page-size,
+# a buffer (Pager.pTmpSpace) was being freed. This could cause a seg-fault
+# later if another connection tried to use the pager.
+#
+# This test will crash 3.4.2.
+#
+do_malloc_test shared_err-9 -tclprep {
+  sqlite3 db2 test.db
+} -sqlbody {
+  PRAGMA page_size = 4096;
+  PRAGMA page_size = 1024;
+} -cleanup {
+  db2 eval {
+    CREATE TABLE abc(a, b, c);
+    BEGIN;
+    INSERT INTO abc VALUES(1, 2, 3);
+    ROLLBACK;
+  }     
+  db2 close
+}     
+
+
 catch {db close}
+catch {db2 close}
 sqlite3_enable_shared_cache $::enable_shared_cache
 finish_test
