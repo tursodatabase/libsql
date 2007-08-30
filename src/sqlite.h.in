@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.250 2007/08/30 16:23:19 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.251 2007/08/30 20:09:48 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -111,6 +111,30 @@ extern "C" {
 SQLITE_EXTERN const char sqlite3_version[];
 const char *sqlite3_libversion(void);
 int sqlite3_libversion_number(void);
+
+/*
+** CAPI3REF: Test To See If The Library Is Threadsafe
+**
+** This routine returns TRUE (nonzero) if SQLite was compiled with
+** all of its mutexes enabled and is thus threadsafe.  It returns
+** zero if the particular build is for single-threaded operation
+** only.
+**
+** Really all this routine does is return true if SQLite was compiled
+** with the -DSQLITE_THREADSAFE=1 option and false if
+** compiled with -DSQLITE_THREADSAFE=0.  If SQLite uses an
+** application-defined mutex subsystem, malloc subsystem, collating
+** sequence, VFS, SQL function, progress callback, commit hook,
+** extension, or other accessories and these add-ons are not
+** threadsafe, then clearly the combination will not be threadsafe
+** either.  Hence, this routine never reports that the library
+** is guaranteed to be threadsafe, only when it is guaranteed not
+** to be.
+**
+** This is an experimental API and may go away or change in future
+** releases.
+*/
+int sqlite3_threadsafe(void);
 
 /*
 ** CAPI3REF: Database Connection Handle
