@@ -1,5 +1,5 @@
-C Fix\sfor\sthe\ssqlite3AbortOtherActiveVdbes()\sproblem.\s(CVS\s4328)
-D 2007-08-30T01:19:59
+C Test\scase\sfixes\sfor\sfulltest.\s(CVS\s4329)
+D 2007-08-30T02:26:54
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -387,7 +387,7 @@ F test/quick.test 88844a19f6d9dc5c990e01c7dd611d33d022a1c1
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
-F test/rollback.test 673cd8c44c685ad54987fe7f0eeba84efa09685d
+F test/rollback.test ee0bbe2b5bf30aba3e6eeb50a2a7e475ac79eb70
 F test/rowid.test d125991eea1ffdea800d48471afd8fc4acc10b01
 F test/safety.test 4a06934e45d03b8b50ebcd8d174eb0367d2fd851
 F test/schema.test 401585200727464ef6bb0b3ba0f085f99a87cdce
@@ -403,7 +403,7 @@ F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test 08b30d5f1939efff0517e7ff8ec7b74ad31c151b
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
-F test/shared_err.test 494a24f6ba5994d4e4e8fe57ce8c6253e545409a
+F test/shared_err.test ae8ba4ccca50e742c1b5fdbd504a2a0f3b3e67dd
 F test/soak.test 64f9b27fbcdec43335a88c546ce1983e6ba40d7b
 F test/softheap1.test 0c49aa6eee25e7d32943e85e8d1f20eff566b1dc
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
@@ -567,7 +567,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 35cb63ecfd9d8ca7304aae1b150ee5d1c3498bde
-R 29b78abcd06801b9626610a433b86a61
+P e40d40a5d41c491bef852a92e5846b273b206909
+R c839fab02b445dc9c276b91a0eebee5f
 U drh
-Z 1ee4e75dc5784f54890a8213aed8fba0
+Z 319e3e5c3c386bc32b0490ba9c2b3ff7

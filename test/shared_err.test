@@ -13,7 +13,7 @@
 # cache context. What happens to connection B if one connection A encounters
 # an IO-error whilst reading or writing the file-system?
 #
-# $Id: shared_err.test,v 1.14 2007/08/28 23:28:09 drh Exp $
+# $Id: shared_err.test,v 1.15 2007/08/30 02:26:54 drh Exp $
 
 proc skip {args} {}
 
@@ -202,7 +202,7 @@ do_ioerr_test shared_ioerr-3 -tclprep {
     expr {
       ($::steprc eq "SQLITE_ROW" && $::finalrc eq "SQLITE_OK") ||
       ($::steprc eq "SQLITE_ERROR" && $::finalrc eq "SQLITE_IOERR") ||
-      ($::steprc eq "SQLITE_ABORT" && $::finalrc eq "SQLITE_OK")
+      ($::steprc eq "SQLITE_ERROR" && $::finalrc eq "SQLITE_ABORT")
     }
   } {1}
 
@@ -282,7 +282,7 @@ do_ioerr_test shared_ioerr-3rev -tclprep {
     expr {
       ($::steprc eq "SQLITE_ROW" && $::finalrc eq "SQLITE_OK") ||
       ($::steprc eq "SQLITE_ERROR" && $::finalrc eq "SQLITE_IOERR") ||
-      ($::steprc eq "SQLITE_ABORT" && $::finalrc eq "SQLITE_OK")
+      ($::steprc eq "SQLITE_ERROR" && $::finalrc eq "SQLITE_ABORT")
     }
   } {1}
 
@@ -292,7 +292,7 @@ do_ioerr_test shared_ioerr-3rev -tclprep {
 
 # Only run these tests if memory debugging is turned on.
 #
-if {[info command sqlite_malloc_stat]==""} {
+ifcapable !memdebug {
    puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
    db close
    sqlite3_enable_shared_cache $::enable_shared_cache
@@ -309,7 +309,7 @@ if {[info command sqlite_malloc_stat]==""} {
 # owns the cursor (the one for which the position is not saved) should
 # continue unaffected.
 # 
-do_malloc_test 4 -tclprep {
+do_malloc_test shared_err-4 -tclprep {
   sqlite3 db2 test.db
   execsql {
     PRAGMA read_uncommitted = 1;
@@ -333,7 +333,7 @@ do_malloc_test 4 -tclprep {
 } -cleanup {
   do_test shared_malloc-4.$::n.cleanup.1 {
     set ::rc [sqlite3_step $::STMT]
-    expr {$::rc=="SQLITE_ROW" || $::rc=="SQLITE_ABORT"}
+    expr {$::rc=="SQLITE_ROW" || $::rc=="SQLITE_ERROR"}
   } {1}
   if {$::rc=="SQLITE_ROW"} {
     do_test shared_malloc-4.$::n.cleanup.2 {
@@ -341,13 +341,15 @@ do_malloc_test 4 -tclprep {
     } {2222222222}
   }
   do_test shared_malloc-4.$::n.cleanup.3 {
-    sqlite3_finalize $::STMT
-  } {SQLITE_OK}
+   set rc [sqlite3_finalize $::STMT]
+   expr {$rc=="SQLITE_OK" || $rc=="SQLITE_ABORT" || $rc=="SQLITE_NOMEM"}
+  } {1}
 # db2 eval {select * from sqlite_master}
   db2 close
 }
 
-do_malloc_test 5 -tclbody {
+do_malloc_test shared_err-5 -tclbody {
+  db close
   sqlite3 dbX test.db
   sqlite3 dbY test.db
   dbX close
@@ -357,7 +359,7 @@ do_malloc_test 5 -tclbody {
   catch {dbY close}
 }
 
-do_malloc_test 6 -tclbody {
+do_malloc_test shared_err-6 -tclbody {
   catch {db close}
   sqlite3_thread_cleanup
   sqlite3_enable_shared_cache 0
@@ -365,13 +367,15 @@ do_malloc_test 6 -tclbody {
   sqlite3_enable_shared_cache 1
 }
 
-do_test shared_misuse-7.1 {
-  sqlite3 db test.db
-  catch {
-    sqlite3_enable_shared_cache 0
-  } msg
-  set msg
-} {library routine called out of sequence}
+# As of 3.5.0, sqlite3_enable_shared_cache can be called at
+# any time and from any thread
+#do_test shared_err-misuse-7.1 {
+#  sqlite3 db test.db
+#  catch {
+#    sqlite3_enable_shared_cache 0
+#  } msg
+#  set msg
+#} {library routine called out of sequence}
 
 # Again provoke a malloc() failure when a cursor position is being saved, 
 # this time during a ROLLBACK operation by some other handle. 
@@ -381,7 +385,7 @@ do_test shared_misuse-7.1 {
 # be aborted.
 # 
 set ::aborted 0
-do_malloc_test 8 -tclprep {
+do_malloc_test shared_err-8 -tclprep {
   sqlite3 db2 test.db
   execsql {
     PRAGMA read_uncommitted = 1;
@@ -413,12 +417,13 @@ do_malloc_test 8 -tclprep {
   do_test shared_malloc-8.$::n.cleanup.2 {
     set rc1 [sqlite3_step $::STMT]
     set rc2 [sqlite3_finalize $::STMT]
-    if {$rc1=="SQLITE_ABORT"} {
+    if {$rc2=="SQLITE_ABORT"} {
       incr ::aborted
     }
     expr {
       ($rc1=="SQLITE_DONE" && $rc2=="SQLITE_OK") || 
-      ($rc1=="SQLITE_ABORT" && $rc2=="SQLITE_OK")
+      ($rc1=="SQLITE_ERROR" && $rc2=="SQLITE_ABORT") ||
+      ($rc1=="SQLITE_ERROR" && $rc2=="SQLITE_NOMEM")
     }
   } {1}
   db2 close
