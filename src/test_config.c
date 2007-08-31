@@ -16,8 +16,23 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.13 2007/08/29 17:59:42 drh Exp $
+** $Id: test_config.c,v 1.14 2007/08/31 17:42:48 danielk1977 Exp $
 */
+
+#include "sqliteLimit.h"
+
+int sqlite3MAX_LENGTH = SQLITE_MAX_LENGTH;
+int sqlite3MAX_COLUMN = SQLITE_MAX_COLUMN;
+int sqlite3MAX_SQL_LENGTH = SQLITE_MAX_SQL_LENGTH;
+int sqlite3MAX_EXPR_DEPTH = SQLITE_MAX_EXPR_DEPTH;
+int sqlite3MAX_COMPOUND_SELECT = SQLITE_MAX_COMPOUND_SELECT;
+int sqlite3MAX_VDBE_OP = SQLITE_MAX_VDBE_OP;
+int sqlite3MAX_FUNCTION_ARG = SQLITE_MAX_FUNCTION_ARG;
+int sqlite3MAX_VARIABLE_NUMBER = SQLITE_MAX_VARIABLE_NUMBER;
+int sqlite3MAX_PAGE_SIZE = SQLITE_MAX_PAGE_SIZE;
+int sqlite3MAX_PAGE_COUNT = SQLITE_MAX_PAGE_COUNT;
+int sqlite3MAX_LIKE_PATTERN_LENGTH = SQLITE_MAX_LIKE_PATTERN_LENGTH;
+
 #include "sqliteInt.h"
 #include "tcl.h"
 #include <stdlib.h>
@@ -393,41 +408,21 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp, "sqlite_options", "vtab", "1", TCL_GLOBAL_ONLY);
 #endif
 
-  {
-    static int sqlite_max_length = SQLITE_MAX_LENGTH;
-    Tcl_LinkVar(interp, "SQLITE_MAX_LENGTH",
-           (char*)&sqlite_max_length, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_max_column = SQLITE_MAX_COLUMN;
-    Tcl_LinkVar(interp, "SQLITE_MAX_COLUMN",
-           (char*)&sqlite_max_column, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_max_sql_length = SQLITE_MAX_SQL_LENGTH;
-    Tcl_LinkVar(interp, "SQLITE_MAX_SQL_LENGTH",
-           (char*)&sqlite_max_sql_length, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_max_expr_depth = SQLITE_MAX_EXPR_DEPTH;
-    Tcl_LinkVar(interp, "SQLITE_MAX_EXPR_DEPTH",
-           (char*)&sqlite_max_expr_depth, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_max_compound_select = SQLITE_MAX_COMPOUND_SELECT;
-    Tcl_LinkVar(interp, "SQLITE_MAX_COMPOUND_SELECT",
-           (char*)&sqlite_max_compound_select, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_max_vdbe_op = SQLITE_MAX_VDBE_OP;
-    Tcl_LinkVar(interp, "SQLITE_MAX_VDBE_OP",
-           (char*)&sqlite_max_vdbe_op, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_max_function_arg = SQLITE_MAX_FUNCTION_ARG;
-    Tcl_LinkVar(interp, "SQLITE_MAX_FUNCTION_ARG",
-           (char*)&sqlite_max_function_arg, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
+#define LINKVAR(x) \
+    Tcl_LinkVar(interp, "SQLITE_" #x, (char *)&(sqlite3 ## x), TCL_LINK_INT)
+
+  LINKVAR( MAX_LENGTH );
+  LINKVAR( MAX_COLUMN );
+  LINKVAR( MAX_SQL_LENGTH );
+  LINKVAR( MAX_EXPR_DEPTH );
+  LINKVAR( MAX_COMPOUND_SELECT );
+  LINKVAR( MAX_VDBE_OP );
+  LINKVAR( MAX_FUNCTION_ARG );
+  LINKVAR( MAX_VARIABLE_NUMBER );
+  LINKVAR( MAX_PAGE_SIZE );
+  LINKVAR( MAX_PAGE_COUNT );
+  LINKVAR( MAX_LIKE_PATTERN_LENGTH );
+
   {
     static int sqlite_default_temp_cache_size = SQLITE_DEFAULT_TEMP_CACHE_SIZE;
     Tcl_LinkVar(interp, "SQLITE_DEFAULT_TEMP_CACHE_SIZE",
@@ -440,24 +435,9 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
            (char*)&sqlite_default_cache_size, TCL_LINK_INT|TCL_LINK_READ_ONLY);
   }
   {
-    static int sqlite_max_variable_number = SQLITE_MAX_VARIABLE_NUMBER;
-    Tcl_LinkVar(interp, "SQLITE_MAX_VARIABLE_NUMBER",
-           (char*)&sqlite_max_variable_number, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
     static int sqlite_default_page_size = SQLITE_DEFAULT_PAGE_SIZE;
     Tcl_LinkVar(interp, "SQLITE_DEFAULT_PAGE_SIZE",
            (char*)&sqlite_default_page_size, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_max_page_size = SQLITE_MAX_PAGE_SIZE;
-    Tcl_LinkVar(interp, "SQLITE_MAX_PAGE_SIZE",
-           (char*)&sqlite_max_page_size, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_max_page_count = SQLITE_MAX_PAGE_COUNT;
-    Tcl_LinkVar(interp, "SQLITE_MAX_PAGE_COUNT",
-           (char*)&sqlite_max_page_count, TCL_LINK_INT|TCL_LINK_READ_ONLY);
   }
   {
     static int temp_store = TEMP_STORE;
@@ -468,11 +448,6 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
     static int sqlite_default_file_format = SQLITE_DEFAULT_FILE_FORMAT;
     Tcl_LinkVar(interp, "SQLITE_DEFAULT_FILE_FORMAT",
            (char*)&sqlite_default_file_format, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_max_like_pattern = SQLITE_MAX_LIKE_PATTERN_LENGTH;
-    Tcl_LinkVar(interp, "SQLITE_MAX_LIKE_PATTERN_LENGTH",
-           (char*)&sqlite_max_like_pattern, TCL_LINK_INT|TCL_LINK_READ_ONLY);
   }
   {
     static int sqlite_max_attached = SQLITE_MAX_ATTACHED;

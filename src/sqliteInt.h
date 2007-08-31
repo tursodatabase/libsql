@@ -11,11 +11,49 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.606 2007/08/30 14:10:30 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.607 2007/08/31 17:42:48 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
 #include "sqliteLimit.h"
+
+#ifdef SQLITE_TEST
+  #undef SQLITE_MAX_LENGTH
+  #undef SQLITE_MAX_COLUMN
+  #undef SQLITE_MAX_SQL_LENGTH
+  #undef SQLITE_MAX_EXPR_DEPTH
+  #undef SQLITE_MAX_COMPOUND_SELECT
+  #undef SQLITE_MAX_VDBE_OP
+  #undef SQLITE_MAX_FUNCTION_ARG
+  #undef SQLITE_MAX_VARIABLE_NUMBER
+  #undef SQLITE_MAX_PAGE_SIZE
+  #undef SQLITE_MAX_PAGE_COUNT
+  #undef SQLITE_MAX_LIKE_PATTERN_LENGTH
+
+  #define SQLITE_MAX_LENGTH              sqlite3MAX_LENGTH
+  #define SQLITE_MAX_COLUMN              sqlite3MAX_COLUMN
+  #define SQLITE_MAX_SQL_LENGTH          sqlite3MAX_SQL_LENGTH
+  #define SQLITE_MAX_EXPR_DEPTH          sqlite3MAX_EXPR_DEPTH
+  #define SQLITE_MAX_COMPOUND_SELECT     sqlite3MAX_COMPOUND_SELECT
+  #define SQLITE_MAX_VDBE_OP             sqlite3MAX_VDBE_OP
+  #define SQLITE_MAX_FUNCTION_ARG        sqlite3MAX_FUNCTION_ARG
+  #define SQLITE_MAX_VARIABLE_NUMBER     sqlite3MAX_VARIABLE_NUMBER
+  #define SQLITE_MAX_PAGE_SIZE           sqlite3MAX_PAGE_SIZE
+  #define SQLITE_MAX_PAGE_COUNT          sqlite3MAX_PAGE_COUNT
+  #define SQLITE_MAX_LIKE_PATTERN_LENGTH sqlite3MAX_LIKE_PATTERN_LENGTH
+
+  extern int sqlite3MAX_LENGTH;
+  extern int sqlite3MAX_COLUMN;
+  extern int sqlite3MAX_SQL_LENGTH;
+  extern int sqlite3MAX_EXPR_DEPTH;
+  extern int sqlite3MAX_COMPOUND_SELECT;
+  extern int sqlite3MAX_VDBE_OP;
+  extern int sqlite3MAX_FUNCTION_ARG;
+  extern int sqlite3MAX_VARIABLE_NUMBER;
+  extern int sqlite3MAX_PAGE_SIZE;
+  extern int sqlite3MAX_PAGE_COUNT;
+  extern int sqlite3MAX_LIKE_PATTERN_LENGTH;
+#endif
 
 #define _XOPEN_SOURCE 500  /* Needed to enable pthread recursive mutexes */
 
@@ -973,7 +1011,7 @@ struct Expr {
                          ** right side of "<expr> IN (<select>)" */
   Table *pTab;           /* Table for OP_Column expressions. */
   Schema *pSchema;
-#if SQLITE_MAX_EXPR_DEPTH>0
+#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
   int nHeight;           /* Height of the tree headed by this node */
 #endif
 };
@@ -1321,7 +1359,7 @@ struct Parse {
   u8 declareVtab;            /* True if inside sqlite3_declare_vtab() */
   Table *pVirtualLock;       /* Require virtual table lock on this table */
 #endif
-#if SQLITE_MAX_EXPR_DEPTH>0
+#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
   int nHeight;            /* Expression tree height of current sub-select */
 #endif
 };
@@ -1876,7 +1914,7 @@ CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
   #define sqlite3JournalSize(pVfs) ((pVfs)->szOsFile)
 #endif
 
-#if SQLITE_MAX_EXPR_DEPTH>0
+#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
   void sqlite3ExprSetHeight(Expr *);
   int sqlite3SelectExprHeight(Select *);
 #else

@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.10 2007/06/07 19:08:34 drh Exp $
+# $Id: sqllimits1.test,v 1.11 2007/08/31 17:42:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -35,7 +35,20 @@ source $testdir/tester.tcl
 #
 #     sqllimits-5.*:   SQLITE_MAX_EXPR_DEPTH            (sqlite todo)
 #     sqllimits-6.*:   SQLITE_MAX_VDBE_OP               (sqlite todo)
+#     sqllimits-12.*:  SQLITE_MAX_PAGE_COUNT            (sqlite todo)
 #
+
+set SQLITE_MAX_LENGTH                1000000
+set SQLITE_MAX_COLUMN
+set SQLITE_MAX_SQL_LENGTH             100000
+set SQLITE_MAX_EXPR_DEPTH               1000
+set SQLITE_MAX_COMPOUND_SELECT             5
+set SQLITE_MAX_VDBE_OP
+set SQLITE_MAX_FUNCTION_ARG
+set SQLITE_MAX_VARIABLE_NUMBER
+set SQLITE_MAX_PAGE_SIZE
+set SQLITE_MAX_PAGE_COUNT
+set SQLITE_MAX_LIKE_PATTERN_LENGTH      1000
 
 #--------------------------------------------------------------------
 # Test cases sqllimits-1.* test that the SQLITE_MAX_LENGTH limit
@@ -70,7 +83,7 @@ do_test sqllimits-1.5 {
 
 do_test sqllimits-1.6 {
   catchsql { SELECT zeroblob(-1) }
-} {0 {}}
+} {0 {{}}}
 
 do_test sqllimits-1.9 {
   set ::str [string repeat A 65537]
@@ -350,6 +363,9 @@ do_test sqllimits-1.7.2 {
 # TODO
 do_test sqllimits-1.8.1 {
   set max $::SQLITE_MAX_ATTACHED
+  for {set i 0} {$i < ($max)} {incr i} {
+    file delete -force test${i}.db test${i}.db-journal
+  }
   for {set i 0} {$i < ($max)} {incr i} {
     execsql "ATTACH 'test${i}.db' AS aux${i}"
   }

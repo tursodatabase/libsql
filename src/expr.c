@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.310 2007/08/29 14:06:23 danielk1977 Exp $
+** $Id: expr.c,v 1.311 2007/08/31 17:42:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -704,7 +704,7 @@ void sqlite3ExprListCheckLength(
 }
 
 
-#if SQLITE_MAX_EXPR_DEPTH>0
+#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
 /* The following three functions, heightOfExpr(), heightOfExprList()
 ** and heightOfSelect(), are used to determine the maximum height
 ** of any expression tree referenced by the structure passed as the
@@ -1484,7 +1484,7 @@ int sqlite3ExprResolveNames(
 ){
   int savedHasAgg;
   if( pExpr==0 ) return 0;
-#if SQLITE_MAX_EXPR_DEPTH>0
+#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
   if( (pExpr->nHeight+pNC->pParse->nHeight)>SQLITE_MAX_EXPR_DEPTH ){
     sqlite3ErrorMsg(pNC->pParse, 
        "Expression tree is too large (maximum depth %d)",
@@ -1497,7 +1497,7 @@ int sqlite3ExprResolveNames(
   savedHasAgg = pNC->hasAgg;
   pNC->hasAgg = 0;
   walkExprTree(pExpr, nameResolverStep, pNC);
-#if SQLITE_MAX_EXPR_DEPTH>0
+#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
   pNC->pParse->nHeight -= pExpr->nHeight;
 #endif
   if( pNC->nErr>0 ){

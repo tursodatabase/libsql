@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.46 2007/08/23 02:47:53 drh Exp $
+# $Id: all.test,v 1.47 2007/08/31 17:42:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -52,20 +52,19 @@ set argv {}
 #
 set LeakList {}
 
-set EXCLUDE {
-  all.test
-  async.test
-  crash.test
-  crash2.test
-  autovacuum_crash.test
-  quick.test
-  malloc.test
-  misuse.test
-  memleak.test
-  sqllimits1.test
-  fuzz.test
-  soak.test
-}
+set EXCLUDE {}
+lappend EXCLUDE all.test               ;# This file
+lappend EXCLUDE async.test
+lappend EXCLUDE crash.test             ;# Run seperately later.
+lappend EXCLUDE crash2.test            ;# Run seperately later.
+lappend EXCLUDE autovacuum_crash.test  ;# Run seperately later.
+lappend EXCLUDE quick.test             ;# Alternate test driver script
+lappend EXCLUDE malloc.test            ;# Run seperately later.
+lappend EXCLUDE misuse.test            ;# Run seperately later.
+lappend EXCLUDE memleak.test           ;# Alternate test driver script
+lappend EXCLUDE sqllimits1.test        ;# Default values use too much memory
+lappend EXCLUDE fuzz.test
+lappend EXCLUDE soak.test              ;# Takes a very long time (default 1 hr)
 
 # Files to include in the test.  If this list is empty then everything
 # that is not in the EXCLUDE list is run.

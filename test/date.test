@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.22 2007/05/04 13:15:57 drh Exp $
+# $Id: date.test,v 1.23 2007/08/31 17:42:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -233,6 +233,13 @@ if {$tzoffset==4} {
   datetest 6.18 {datetime('now','localtim')} NULL
   set sqlite_current_time 0
 }
+
+# These two are a bit of a scam. They are added to ensure that 100% of
+# the date.c file is covered by testing, even when the time-zone
+# is not -0400 (the condition for running of the block of tests above).
+#
+datetest 6.19 {datetime('2039-07-01 12:00:00','localtime',null)} NULL
+datetest 6.20 {datetime('2039-07-01 12:00:00','utc',null)} NULL
 
 # Date-time functions that contain NULL arguments return a NULL
 # result.
