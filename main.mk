@@ -484,6 +484,9 @@ opcode.html:	$(TOP)/www/opcode.tcl $(TOP)/src/vdbe.c
 capi3ref.html:	$(TOP)/www/mkapidoc.tcl sqlite3.h
 	tclsh $(TOP)/www/mkapidoc.tcl <sqlite3.h >capi3ref.html
 
+copyright-release.html:	$(TOP)/www/copyright-release.html
+	cp $(TOP)/www/copyright-release.html .
+
 %: $(TOP)/www/%
 	cp $< $@
 

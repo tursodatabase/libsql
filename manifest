@@ -1,5 +1,5 @@
-C Remove\sthe\sxLockState\smethod\sfor\ssqlite3_io_methods.\s\sReplace\sit\swith\na\sdefined\scall\sto\sxFileControl().\s\sThis\ssimplifies\sthe\sinterface\sand\nalso\sgives\sus\scoverage\stesting\sof\ssqlite3_file_control().\s(CVS\s4355)
-D 2007-08-31T18:34:59
+C Get\smake\sdoc\sworking\sagain.\s(CVS\s4356)
+D 2007-08-31T18:50:31
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk d29c5113c83ae6f4d9d740bb6f775e6b768027fa
+F main.mk 423379cb666309af9bf7a4c9360582d2af300bc0
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d119427314d27f291b605073d34826cdb89746c1
-R 5a754c2a05368b21aadde7128c0f2568
+P 306586c412b87c6d12bac796641517afa3f9eb6a
+R 002e8e0983679c6291c6701f9b0da54a
 U drh
-Z d953f5ab4979b6f6daa0a1ff8fd3931b
+Z 4ae8c52c08c30321820ce9a70abb8993
