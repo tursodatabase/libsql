@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.13 2007/08/30 14:41:34 danielk1977 Exp $
+# $Id: malloc3.test,v 1.14 2007/08/31 05:00:49 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -640,7 +640,7 @@ run_test $::run_test_script 1
 
 # Close and reopen the db.
 db close
-file delete -force test.db test.db-journal
+file delete -force test.db test.db-journal test2.db test2.db-journal
 sqlite3 db test.db
 set ::DB [sqlite3_connection_pointer db]
 

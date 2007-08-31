@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\ssqlite3_threadsafe()\sAPI.\s(CVS\s4350)
-D 2007-08-30T20:09:48
+C Fix\sa\sproblem\sin\smalloc3.test\spreventing\sall.test\sfrom\scompleting.\sNo\scode\schanges.\s(CVS\s4351)
+D 2007-08-31T05:00:49
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -347,7 +347,7 @@ F test/lock4.test 49e22396b9be6e047b3d35469f233be79153c9d5
 F test/main.test e7212ce1023957c7209778cc87fa932bd79ba89a
 F test/malloc.test 52306f056e7359e68ed2e204f37f47a0e2020c57
 F test/malloc2.test c1a74f46a3581b56df29ff46a4e1c99b41c44ad9
-F test/malloc3.test ca656197fe627d006012f50f084a712bf154f0bb
+F test/malloc3.test 39b72b04436a81e0c3d548d195f8bdbf1ebf4b52
 F test/malloc4.test 2691bdd25fc764449051b2098692e739555246a7
 F test/malloc5.test 9db9205a5d444e23043368f961f92641c7770199
 F test/malloc6.test 3733b9bd4e039c3239f869c40edbb88172025e2e
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a73a8b50f76f4f948a4080070ac2354d8ea05515
-R c4d79d2cd68f00b0062f4ecfacc90065
-U drh
-Z 40195c533200bec4568da6a8f5f748e2
+P 1b39a714efbe1f4ccc8daf68a227a8c9b84a388f
+R 5354fced5254a75816d7576469879796
+U danielk1977
+Z ef735893af1f42e3e38cbeb5ea49fed9
