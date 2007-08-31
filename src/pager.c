@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.381 2007/08/30 08:08:17 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.382 2007/08/31 16:11:36 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4820,6 +4820,15 @@ const char *sqlite3PagerFilename(Pager *pPager){
 */
 const sqlite3_vfs *sqlite3PagerVfs(Pager *pPager){
   return pPager->pVfs;
+}
+
+/*
+** Return the file handle for the database file associated
+** with the pager.  This might return NULL if the file has
+** not yet been opened.
+*/
+sqlite3_file *sqlite3PagerFile(Pager *pPager){
+  return pPager->fd;
 }
 
 /*

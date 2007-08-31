@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.16 2007/08/30 17:15:38 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.17 2007/08/31 16:11:36 drh Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -165,6 +165,7 @@ struct sqlite3_api_routines {
   int (*blob_read)(sqlite3_blob*,void*,int,int);
   int (*blob_write)(sqlite3_blob*,const void*,int,int);
   int (*create_collation_v2)(sqlite3*,const char*,int,void*,int(*)(void*,int,const void*,int,const void*),void(*)(void*));
+  int (*file_control)(sqlite3*,const char*,int,void*);
   sqlite3_int64 (*memory_highwater)(int);
   sqlite3_int64 (*memory_used)(void);
   sqlite3_mutex *(*mutex_alloc)(int);
@@ -324,6 +325,7 @@ struct sqlite3_api_routines {
 #define sqlite3_blob_read              sqlite3_api->blob_read
 #define sqlite3_blob_write             sqlite3_api->blob_write
 #define sqlite3_create_collation_v2    sqlite3_api->create_collation_v2
+#define sqlite3_file_control           sqlite3_api->file_control
 #define sqlite3_memory_highwater       sqlite3_api->memory_highwater
 #define sqlite3_memory_used            sqlite3_api->memory_used
 #define sqlite3_mutex_alloc            sqlite3_api->mutex_alloc

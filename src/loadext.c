@@ -256,6 +256,7 @@ const sqlite3_api_routines sqlite3_apis = {
   sqlite3_blob_read,
   sqlite3_blob_write,
   sqlite3_create_collation_v2,
+  sqlite3_file_control,
   sqlite3_memory_highwater,
   sqlite3_memory_used,
 #ifdef SQLITE_MUTEX_NOOP

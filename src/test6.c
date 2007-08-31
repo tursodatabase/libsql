@@ -476,8 +476,8 @@ static int cfCheckReservedLock(sqlite3_file *pFile){
 static int cfLockState(sqlite3_file *pFile){
   return sqlite3OsLockState(((CrashFile *)pFile)->pRealFile);
 }
-static int cfBreakLock(sqlite3_file *pFile){
-  return sqlite3OsBreakLock(((CrashFile *)pFile)->pRealFile);
+static int cfFileControl(sqlite3_file *pFile, int op, void *pArg){
+  return sqlite3OsFileControl(((CrashFile *)pFile)->pRealFile, op, pArg);
 }
 
 /*
@@ -503,8 +503,8 @@ static const sqlite3_io_methods CrashFileVtab = {
   cfLock,                       /* xLock */
   cfUnlock,                     /* xUnlock */
   cfCheckReservedLock,          /* xCheckReservedLock */
-  cfBreakLock,                  /* xBreakLock */
   cfLockState,                  /* xLockState */
+  cfFileControl,                /* xFileControl */
   cfSectorSize,                 /* xSectorSize */
   cfDeviceCharacteristics       /* xDeviceCharacteristics */
 };

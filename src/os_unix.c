@@ -2016,11 +2016,10 @@ static int nolockUnixClose(sqlite3_file *id) {
 
 
 /*
-** TODO: xBreakLock() for this vfs.
+** No xFileControl opcodes are implemented by this VFS.
 */
-static int unixBreakLock(sqlite3_file *id){
-  assert(!"TODO: unixBreakLock()");
-  return 0;
+static int unixFileControl(sqlite3_file *id, int op, void *pArg){
+  return SQLITE_ERROR;
 }
 
 /*
@@ -2067,8 +2066,8 @@ static const sqlite3_io_methods sqlite3UnixIoMethod = {
   unixLock,
   unixUnlock,
   unixCheckReservedLock,
-  unixBreakLock,
   unixLockState,
+  unixFileControl,
   unixSectorSize,
   unixDeviceCharacteristics
 };
@@ -2089,8 +2088,8 @@ static const sqlite3_io_methods sqlite3AFPLockingUnixIoMethod = {
   afpUnixLock,
   afpUnixUnlock,
   afpUnixCheckReservedLock,
-  unixBreakLock,
   unixLockState,
+  unixFileControl,
   unixSectorSize,
   unixDeviceCharacteristics
 };
@@ -2110,8 +2109,8 @@ static const sqlite3_io_methods sqlite3FlockLockingUnixIoMethod = {
   flockUnixLock,
   flockUnixUnlock,
   flockUnixCheckReservedLock,
-  unixBreakLock,
   unixLockState,
+  unixFileControl,
   unixSectorSize,
   unixDeviceCharacteristics
 };
@@ -2131,8 +2130,8 @@ static const sqlite3_io_methods sqlite3DotlockLockingUnixIoMethod = {
   dotlockUnixLock,
   dotlockUnixUnlock,
   dotlockUnixCheckReservedLock,
-  unixBreakLock,
   unixLockState,
+  unixFileControl,
   unixSectorSize,
   unixDeviceCharacteristics
 };
@@ -2152,8 +2151,8 @@ static const sqlite3_io_methods sqlite3NolockLockingUnixIoMethod = {
   nolockUnixLock,
   nolockUnixUnlock,
   nolockUnixCheckReservedLock,
-  unixBreakLock,
   unixLockState,
+  unixFileControl,
   unixSectorSize,
   unixDeviceCharacteristics
 };

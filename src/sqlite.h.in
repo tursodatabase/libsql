@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.251 2007/08/30 20:09:48 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.252 2007/08/31 16:11:36 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -472,9 +472,20 @@ struct sqlite3_file {
 ** PENDING, or EXCLUSIVE lock on the file.  It returns true
 ** if such a lock exists and false if not.
 ** 
-** xBreakLock() attempts to break a lock held by another process.
-** This can be used to remove a stale dot-file lock, for example.
-** It returns 0 on success and non-zero for a failure.
+** The xFileControl() method is a generic interface that allows custom
+** VFS implementations to directly control an open file using the
+** [sqlite3_file_control()] interface.  The second argument (the
+** "op" argument) is intended to be an integer opcode.  The third
+** argument is a generic pointer which is intended to be a pointer
+** to a structure that may contain arguments or space in which to
+** write return values.  Potential uses for xFileControl() might be
+** functions to enable blocking locks with timeouts, to change the
+** locking strategy (for example to use dot-file locks), to inquire
+** about the status of a lock, or to break stale locks.  No standard
+** xFileControl opcodes are currently defined, but this may change in 
+** future releases.  Applications that define a custom xFileControl
+** method should use opcodes greater than 100 to avoid conflicts
+** with future official opcodes which will be less than that value.
 **
 ** The xSectorSize() method returns the sector size of the
 ** device that underlies the file.  The sector size is the
@@ -520,8 +531,8 @@ struct sqlite3_io_methods {
   int (*xLock)(sqlite3_file*, int);
   int (*xUnlock)(sqlite3_file*, int);
   int (*xCheckReservedLock)(sqlite3_file*);
-  int (*xBreakLock)(sqlite3_file*);
   int (*xLockState)(sqlite3_file *);
+  int (*xFileControl)(sqlite3_file*, int op, void *pArg);
   int (*xSectorSize)(sqlite3_file*);
   int (*xDeviceCharacteristics)(sqlite3_file*);
   /* Additional methods may be added in future releases */
@@ -3438,6 +3449,29 @@ int sqlite3_mutex_notheld(sqlite3_mutex*);
 #define SQLITE_MUTEX_STATIC_PRNG      5  /* sqlite3_random() */
 #define SQLITE_MUTEX_STATIC_LRU       6  /* lru page list */
 
+/*
+** CAPI3REF: Low-Level Control Of Database Files
+**
+** The [sqlite3_file_control()] interface makes a direct call to the
+** xFileControl method for the [sqlite3_io_methods] object associated
+** with a particular database identified by the second argument.  The
+** name of the database is the name assigned to the database by the
+** <a href="lang_attach.html">ATTACH</a> SQL command that opened the
+** database.  To control the main database file, use the name "main"
+** or a NULL pointer.  The third and fourth parameters to this routine
+** are passed directly through to the second and third parameters of
+** the xFileControl method.  The return value of the xFileControl
+** method becomes the return value of this routine.
+**
+** If the second parameter (zDbName) does not match the name of any
+** open database file, then SQLITE_ERROR is returned.  This error
+** code is not remembered and will not be recalled by [sqlite3_errcode()]
+** or [sqlite3_errmsg()].  The underlying xFileControl method might
+** also return SQLITE_ERROR.  There is no way to distinguish between
+** an incorrect zDbName and an SQLITE_ERROR return from the underlying
+** xFileControl method.
+*/
+int sqlite3_file_control(sqlite3*, const char *zDbName, int op, void*);
 
 /*
 ** Undo the hack that converts floating point types to integer for

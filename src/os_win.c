@@ -977,9 +977,9 @@ static int winUnlock(sqlite3_file *id, int locktype){
 }
 
 /*
-** Currently unimplemented
+** No xFileControl operations are currently implemented.
 */
-static int winBreakLock(sqlite3_file *id){
+static int winFileControl(sqlite3_file *id){
   return SQLITE_ERROR;
 }
 
@@ -1028,8 +1028,8 @@ static const sqlite3_io_methods winIoMethod = {
   winLock,
   winUnlock,
   winCheckReservedLock,
-  winBreakLock,
   winLockState,
+  winFileControl,
   winSectorSize,
   winDeviceCharacteristics
 };

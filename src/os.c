@@ -52,11 +52,11 @@ int sqlite3OsLock(sqlite3_file *id, int lockType){
 int sqlite3OsUnlock(sqlite3_file *id, int lockType){
   return id->pMethods->xUnlock(id, lockType);
 }
-int sqlite3OsBreakLock(sqlite3_file *id){
-  return id->pMethods->xBreakLock(id);
-}
 int sqlite3OsCheckReservedLock(sqlite3_file *id){
   return id->pMethods->xCheckReservedLock(id);
+}
+int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
+  return id->pMethods->xFileControl(id,op,pArg);
 }
 
 #ifdef SQLITE_TEST
