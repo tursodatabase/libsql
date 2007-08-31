@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.199 2007/08/30 14:58:20 drh Exp $
+** $Id: tclsqlite.c,v 1.200 2007/08/31 14:31:45 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2255,7 +2255,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 }
 
 /*
-**   sqlite3 DBNAME FILENAME ?MODE? ?-key KEY?
+**   sqlite3 DBNAME FILENAME ?-vfs VFSNAME? ?-key KEY? ?-readonly BOOLEAN?
+**                           ?-create BOOLEAN?
 **
 ** This is the main Tcl command.  When the "sqlite" Tcl command is
 ** invoked, this routine runs to process that command.
@@ -2265,25 +2266,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 ** DBNAME that is used to control that connection.  The database
 ** connection is deleted when the DBNAME command is deleted.
 **
-** The second argument is the name of the directory that contains
-** the sqlite database that is to be accessed.
+** The second argument is the name of the database file.
 **
-** For testing purposes, we also support the following:
-**
-**  sqlite3 -encoding
-**
-**       Return the encoding used by LIKE and GLOB operators.  Choices
-**       are UTF-8 and iso8859.
-**
-**  sqlite3 -version
-**
-**       Return the version number of the SQLite library.
-**
-**  sqlite3 -tcl-uses-utf
-**
-**       Return "1" if compiled with a Tcl uses UTF-8.  Return "0" if
-**       not.  Used by tests to make sure the library was compiled 
-**       correctly.
 */
 static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   SqliteDb *p;
@@ -2291,7 +2275,10 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   int nKey = 0;
   const char *zArg;
   char *zErrMsg;
+  int i;
   const char *zFile;
+  const char *zVfs = 0;
+  int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
   Tcl_DString translatedFilename;
   if( objc==2 ){
     zArg = Tcl_GetStringFromObj(objv[1], 0);
@@ -2307,28 +2294,42 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 #endif
       return TCL_OK;
     }
-    if( strcmp(zArg,"-tcl-uses-utf")==0 ){
-#ifdef TCL_UTF_MAX
-      Tcl_AppendResult(interp,"1",0);
-#else
-      Tcl_AppendResult(interp,"0",0);
-#endif
-      return TCL_OK;
-    }
   }
-  if( objc==5 || objc==6 ){
-    zArg = Tcl_GetStringFromObj(objv[objc-2], 0);
+  for(i=3; i+1<objc; i+=2){
+    zArg = Tcl_GetString(objv[i]);
     if( strcmp(zArg,"-key")==0 ){
-      pKey = Tcl_GetByteArrayFromObj(objv[objc-1], &nKey);
-      objc -= 2;
+      pKey = Tcl_GetByteArrayFromObj(objv[i+1], &nKey);
+    }else if( strcmp(zArg, "-vfs")==0 ){
+      i++;
+      zVfs = Tcl_GetString(objv[i]);
+    }else if( strcmp(zArg, "-readonly")==0 ){
+      int b;
+      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( b ){
+        flags &= ~SQLITE_OPEN_READWRITE;
+        flags |= SQLITE_OPEN_READONLY;
+      }else{
+        flags &= ~SQLITE_OPEN_READONLY;
+        flags |= SQLITE_OPEN_READWRITE;
+      }
+    }else if( strcmp(zArg, "-create")==0 ){
+      int b;
+      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( b ){
+        flags |= SQLITE_OPEN_CREATE;
+      }else{
+        flags &= ~SQLITE_OPEN_CREATE;
+      }
+    }else{
+      Tcl_AppendResult(interp, "unknown option: ", zArg, (char*)0);
+      return TCL_ERROR;
     }
   }
-  if( objc!=3 && objc!=4 ){
+  if( objc<3 || (objc&1)!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, 
+      "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
 #ifdef SQLITE_HAS_CODEC
-      "HANDLE FILENAME ?-key CODEC-KEY?"
-#else
-      "HANDLE FILENAME ?MODE?"
+      " ?-key CODECKEY?"
 #endif
     );
     return TCL_ERROR;
@@ -2342,7 +2343,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   memset(p, 0, sizeof(*p));
   zFile = Tcl_GetStringFromObj(objv[2], 0);
   zFile = Tcl_TranslateFileName(interp, zFile, &translatedFilename);
-  sqlite3_open(zFile, &p->db);
+  sqlite3_open_v2(zFile, &p->db, flags, zVfs);
   Tcl_DStringFree(&translatedFilename);
   if( SQLITE_OK!=sqlite3_errcode(p->db) ){
     zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(p->db));
@@ -2426,12 +2427,14 @@ EXTERN int Tclsqlite_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
 #ifdef TCLSH
 /*****************************************************************************
 ** The code that follows is used to build standalone TCL interpreters
+** that are statically linked with SQLite.  
 */
 
 /*
 ** If the macro TCLSH is one, then put in code this for the
 ** "main" routine that will initialize Tcl and take input from
-** standard input.
+** standard input, or if a file is named on the command line
+** the TCL interpreter reads and evaluates that file.
 */
 #if TCLSH==1
 static char zMainloop[] =

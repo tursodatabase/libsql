@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\smalloc3.test\spreventing\sall.test\sfrom\scompleting.\sNo\scode\schanges.\s(CVS\s4351)
-D 2007-08-31T05:00:49
+C Convert\sthe\sTCL\sinterface\sto\suse\ssqlite3_open_v2\s(CVS\s4352)
+D 2007-08-31T14:31:45
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -135,7 +135,7 @@ F src/sqlite3ext.h 3e5368b64a28602ef8abf9cfb6c8c1643903f238
 F src/sqliteInt.h 5dbb7a934a88dfa9893e2627f4821b0464f5edc0
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
-F src/tclsqlite.c 5b801c7eeefe8c968325558e2a7977cf8a713d5f
+F src/tclsqlite.c 8db035768623779c97d0509eb88ecbb49c51abca
 F src/test1.c 8b20d1f05777ac480d3caf8d5f79ab7a543513fc
 F src/test2.c 4ab230fbdc0decfa7422f6a052b609ba54f4dfac
 F src/test3.c 199a440ba2b38b26251393b609451a3484a15907
@@ -418,9 +418,9 @@ F test/substr.test 9f26cfca74397b26ab217fb838c3d0549eb4bcf3
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
 F test/table.test dbdfd06aef054ad5aed8e57a782137d57d5c5528
 F test/tableapi.test 036575a98dcce7c92e9f39056839bbad8a715412
-F test/tclsqlite.test 593f3b30221e85786965d9e5670ae4f96b4e4159
+F test/tclsqlite.test 3addd6a88b8a756ec802ca8840587fa3d61bfcff
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
-F test/tester.tcl d6fd4e9eac69a7bc7791ca2f80c91945d1f6d1cc
+F test/tester.tcl 577c2eb71a6e308f8e4d6b283c6a0d2966ed2824
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1b39a714efbe1f4ccc8daf68a227a8c9b84a388f
-R 5354fced5254a75816d7576469879796
-U danielk1977
-Z ef735893af1f42e3e38cbeb5ea49fed9
+P ee9b3e5e38c52f5669009a08aec58678ccad0d87
+R b9ef3977fd4686cc6e05c610911a5a80
+U drh
+Z edb6e93aa3250c0879e9ae9ba46c5a0f

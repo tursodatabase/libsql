@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.59 2007/06/19 23:01:42 drh Exp $
+# $Id: tclsqlite.test,v 1.60 2007/08/31 14:31:45 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -25,7 +25,7 @@ source $testdir/tester.tcl
 if {[sqlite3 -has-codec]} {
   set r "sqlite_orig HANDLE FILENAME ?-key CODEC-KEY?"
 } else {
-  set r "sqlite3 HANDLE FILENAME ?MODE?"
+  set r "sqlite3 HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
 }
 do_test tcl-1.1 {
   set v [catch {sqlite3 bogus} msg]
@@ -140,22 +140,20 @@ do_test tcl-1.20 {
 } {1 {wrong # args: should be "db copy CONFLICT-ALGORITHM TABLE FILENAME ?SEPARATOR? ?NULLINDICATOR?"}}
 
 
-if {[sqlite3 -tcl-uses-utf]} {
-  catch {unset ::result}
-  do_test tcl-2.1 {
-    execsql "CREATE TABLE t\u0123x(a int, b\u1235 float)"
-  } {}
-  ifcapable schema_pragmas {
-    do_test tcl-2.2 {
-      execsql "PRAGMA table_info(t\u0123x)"
-    } "0 a int 0 {} 0 1 b\u1235 float 0 {} 0"
-  }
-  do_test tcl-2.3 {
-    execsql "INSERT INTO t\u0123x VALUES(1,2.3)"
-    db eval "SELECT * FROM t\u0123x" result break
-    set result(*)
-  } "a b\u1235"
+catch {unset ::result}
+do_test tcl-2.1 {
+  execsql "CREATE TABLE t\u0123x(a int, b\u1235 float)"
+} {}
+ifcapable schema_pragmas {
+  do_test tcl-2.2 {
+    execsql "PRAGMA table_info(t\u0123x)"
+  } "0 a int 0 {} 0 1 b\u1235 float 0 {} 0"
 }
+do_test tcl-2.3 {
+  execsql "INSERT INTO t\u0123x VALUES(1,2.3)"
+  db eval "SELECT * FROM t\u0123x" result break
+  set result(*)
+} "a b\u1235"
 
 
 # Test the onecolumn method
