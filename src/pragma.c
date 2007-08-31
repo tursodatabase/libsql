@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.148 2007/08/30 10:07:39 danielk1977 Exp $
+** $Id: pragma.c,v 1.149 2007/08/31 18:34:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1108,16 +1108,18 @@ void sqlite3Pragma(
     for(i=0; i<db->nDb; i++){
       Btree *pBt;
       Pager *pPager;
+      const char *zState = "unknown";
+      int j;
       if( db->aDb[i].zName==0 ) continue;
       sqlite3VdbeOp3(v, OP_String8, 0, 0, db->aDb[i].zName, P3_STATIC);
       pBt = db->aDb[i].pBt;
       if( pBt==0 || (pPager = sqlite3BtreePager(pBt))==0 ){
-        sqlite3VdbeOp3(v, OP_String8, 0, 0, "closed", P3_STATIC);
-      }else{
-        int j = sqlite3PagerLockstate(pPager);
-        sqlite3VdbeOp3(v, OP_String8, 0, 0, 
-            (j>=0 && j<=4) ? azLockName[j] : "unknown", P3_STATIC);
+        zState = "closed";
+      }else if( sqlite3_file_control(db, db->aDb[i].zName, 
+                                     SQLITE_FCNTL_LOCKSTATE, &j)==SQLITE_OK ){
+         zState = azLockName[j];
       }
+      sqlite3VdbeOp3(v, OP_String8, 0, 0, zState, P3_STATIC);
       sqlite3VdbeAddOp(v, OP_Callback, 2, 0);
     }
   }else

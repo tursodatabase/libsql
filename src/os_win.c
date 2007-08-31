@@ -977,19 +977,16 @@ static int winUnlock(sqlite3_file *id, int locktype){
 }
 
 /*
-** No xFileControl operations are currently implemented.
+** Control and query of the open file handle.
 */
-static int winFileControl(sqlite3_file *id){
+static int winFileControl(sqlite3_file *id, int op, void *pArg){
+  switch( op ){
+    case SQLITE_FCNTL_LOCKSTATE: {
+      *(int*)pArg = ((winFile*)id)->locktype;
+      return SQLITE_OK;
+    }
+  }
   return SQLITE_ERROR;
-}
-
-/*
-** Return an integer that indices the type of lock currently held
-** by this handle.  (Used for testing and analysis only.)
-*/
-static int winLockState(sqlite3_file *id){
-  winFile *pFile = (winFile*)id;
-  return pFile->locktype;
 }
 
 /*
@@ -1028,7 +1025,6 @@ static const sqlite3_io_methods winIoMethod = {
   winLock,
   winUnlock,
   winCheckReservedLock,
-  winLockState,
   winFileControl,
   winSectorSize,
   winDeviceCharacteristics

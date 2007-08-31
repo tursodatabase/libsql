@@ -240,7 +240,6 @@ int sqlite3OsFileSize(sqlite3_file*, i64 *pSize);
 int sqlite3OsLock(sqlite3_file*, int);
 int sqlite3OsUnlock(sqlite3_file*, int);
 int sqlite3OsCheckReservedLock(sqlite3_file *id);
-int sqlite3OsLockState(sqlite3_file *id);
 int sqlite3OsFileControl(sqlite3_file*,int,void*);
 int sqlite3OsSectorSize(sqlite3_file *id);
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id);
@@ -267,11 +266,6 @@ int sqlite3OsCurrentTime(sqlite3_vfs *, double*);
 */
 int sqlite3OsOpenMalloc(sqlite3_vfs *, const char *, sqlite3_file **, int,int*);
 int sqlite3OsCloseFree(sqlite3_file *);
-
-#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
-  int sqlite3OsFileHandle(sqlite3_file *id);
-  int sqlite3OsLockState(sqlite3_file *id);
-#endif
 
 /*
 ** Each OS-specific backend defines an instance of the following

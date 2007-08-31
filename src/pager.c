@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.382 2007/08/31 16:11:36 drh Exp $
+** @(#) $Id: pager.c,v 1.383 2007/08/31 18:34:59 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -5009,17 +5009,6 @@ int sqlite3PagerLockingMode(Pager *pPager, int eMode){
   }
   return (int)pPager->exclusiveMode;
 }
-
-#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
-/*
-** Return the current state of the file lock for the given pager.
-** The return value is one of NO_LOCK, SHARED_LOCK, RESERVED_LOCK,
-** PENDING_LOCK, or EXCLUSIVE_LOCK.
-*/
-int sqlite3PagerLockstate(Pager *pPager){
-  return sqlite3OsLockState(pPager->fd);
-}
-#endif
 
 #ifdef SQLITE_DEBUG
 /*

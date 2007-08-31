@@ -612,15 +612,8 @@ static int asyncCheckReservedLock(sqlite3_file *pFile){
 /* 
 ** This is a no-op, as the asynchronous backend does not support locking.
 */
-static int asyncBreakLock(sqlite3_file *id){
-  return SQLITE_OK;
-}
-
-/* 
-** This is broken. But sqlite3OsLockState() is only used for testing anyway.
-*/
-static int asyncLockState(sqlite3_file *id){
-  return SQLITE_OK;
+static int asyncFileControl(sqlite3_file *id, int op, void *pArg){
+  return SQLITE_ERROR;
 }
 
 /* 
@@ -656,8 +649,7 @@ static int asyncOpen(
     asyncLock,                       /* xLock */
     asyncUnlock,                     /* xUnlock */
     asyncCheckReservedLock,          /* xCheckReservedLock */
-    asyncBreakLock,                  /* xBreakLock */
-    asyncLockState,                  /* xLockState */
+    asyncFileControl,                /* xFileControl */
     asyncSectorSize,                 /* xSectorSize */
     asyncDeviceCharacteristics       /* xDeviceCharacteristics */
   };

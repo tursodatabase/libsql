@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.252 2007/08/31 16:11:36 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.253 2007/08/31 18:34:59 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -481,11 +481,10 @@ struct sqlite3_file {
 ** write return values.  Potential uses for xFileControl() might be
 ** functions to enable blocking locks with timeouts, to change the
 ** locking strategy (for example to use dot-file locks), to inquire
-** about the status of a lock, or to break stale locks.  No standard
-** xFileControl opcodes are currently defined, but this may change in 
-** future releases.  Applications that define a custom xFileControl
-** method should use opcodes greater than 100 to avoid conflicts
-** with future official opcodes which will be less than that value.
+** about the status of a lock, or to break stale locks.  The SQLite
+** core reserves opcodes less than 100 for its own use.  Applications
+** that define a custom xFileControl method should use opcodes 
+** greater than 100 to avoid conflicts.
 **
 ** The xSectorSize() method returns the sector size of the
 ** device that underlies the file.  The sector size is the
@@ -531,12 +530,28 @@ struct sqlite3_io_methods {
   int (*xLock)(sqlite3_file*, int);
   int (*xUnlock)(sqlite3_file*, int);
   int (*xCheckReservedLock)(sqlite3_file*);
-  int (*xLockState)(sqlite3_file *);
   int (*xFileControl)(sqlite3_file*, int op, void *pArg);
   int (*xSectorSize)(sqlite3_file*);
   int (*xDeviceCharacteristics)(sqlite3_file*);
   /* Additional methods may be added in future releases */
 };
+
+/*
+** CAPI3REF: Standard File Control Opcodes
+**
+** These integer constants are opcodes for the xFileControl method
+** of the [sqlite3_io_methods] object and to the [sqlite3_file_control()]
+** interface.
+**
+** The [SQLITE_FCNTL_LOCKSTATE] opcode is used for debugging.  This
+** opcode cases the xFileControl method to write the current state of
+** the lock (one of [SQLITE_LOCK_NONE], [SQLITE_LOCK_SHARED],
+** [SQLITE_LOCK_RESERVED], [SQLITE_LOCK_PENDING], or [SQLITE_LOCK_EXCLUSIVE])
+** into an integer that the pArg argument points to.  This capability
+** is used during testing and only needs to be supported when SQLITE_TEST
+** is defined.
+*/
+#define SQLITE_FCNTL_LOCKSTATE        1
 
 /*
 ** CAPI3REF: Mutex Handle

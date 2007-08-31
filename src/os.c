@@ -88,17 +88,6 @@ int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
   }
 #endif
 
-#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
-  /* These methods are currently only used for testing and debugging. */
-  int sqlite3OsFileHandle(sqlite3_file *id){
-    /* return id->pMethods->xFileHandle(id); */
-    return 0;
-  }
-  int sqlite3OsLockState(sqlite3_file *id){
-    return id->pMethods->xLockState(id);
-  }
-#endif
-
 /*
 ** The next group of routines are convenience wrappers around the
 ** VFS methods.

@@ -2016,18 +2016,16 @@ static int nolockUnixClose(sqlite3_file *id) {
 
 
 /*
-** No xFileControl opcodes are implemented by this VFS.
+** Information and control of an open file handle.
 */
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
+  switch( op ){
+    case SQLITE_FCNTL_LOCKSTATE: {
+      *(int*)pArg = ((unixFile*)id)->locktype;
+      return SQLITE_OK;
+    }
+  }
   return SQLITE_ERROR;
-}
-
-/*
-** Return an integer that indices the type of lock currently held
-** by this handle.  (Used for testing and analysis only.)
-*/
-static int unixLockState(sqlite3_file *id){
-  return ((unixFile*)id)->locktype;
 }
 
 /*
@@ -2066,7 +2064,6 @@ static const sqlite3_io_methods sqlite3UnixIoMethod = {
   unixLock,
   unixUnlock,
   unixCheckReservedLock,
-  unixLockState,
   unixFileControl,
   unixSectorSize,
   unixDeviceCharacteristics
@@ -2088,7 +2085,6 @@ static const sqlite3_io_methods sqlite3AFPLockingUnixIoMethod = {
   afpUnixLock,
   afpUnixUnlock,
   afpUnixCheckReservedLock,
-  unixLockState,
   unixFileControl,
   unixSectorSize,
   unixDeviceCharacteristics
@@ -2109,7 +2105,6 @@ static const sqlite3_io_methods sqlite3FlockLockingUnixIoMethod = {
   flockUnixLock,
   flockUnixUnlock,
   flockUnixCheckReservedLock,
-  unixLockState,
   unixFileControl,
   unixSectorSize,
   unixDeviceCharacteristics
@@ -2130,7 +2125,6 @@ static const sqlite3_io_methods sqlite3DotlockLockingUnixIoMethod = {
   dotlockUnixLock,
   dotlockUnixUnlock,
   dotlockUnixCheckReservedLock,
-  unixLockState,
   unixFileControl,
   unixSectorSize,
   unixDeviceCharacteristics
@@ -2151,7 +2145,6 @@ static const sqlite3_io_methods sqlite3NolockLockingUnixIoMethod = {
   nolockUnixLock,
   nolockUnixUnlock,
   nolockUnixCheckReservedLock,
-  unixLockState,
   unixFileControl,
   unixSectorSize,
   unixDeviceCharacteristics

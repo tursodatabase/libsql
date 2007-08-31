@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** @(#) $Id: journal.c,v 1.3 2007/08/24 08:15:54 danielk1977 Exp $
+** @(#) $Id: journal.c,v 1.4 2007/08/31 18:34:59 drh Exp $
 */
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
@@ -186,8 +186,7 @@ static struct sqlite3_io_methods JournalFileMethods = {
   0,             /* xLock */
   0,             /* xUnlock */
   0,             /* xCheckReservedLock */
-  0,             /* xBreakLock */
-  0,             /* xLockState */
+  0,             /* xFileControl */
   0,             /* xSectorSize */
   0              /* xDeviceCharacteristics */
 };
@@ -239,4 +238,3 @@ int sqlite3JournalSize(sqlite3_vfs *pVfs){
   return (pVfs->szOsFile+sizeof(JournalFile));
 }
 #endif
-
