@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.25 2007/08/03 07:33:10 danielk1977 Exp $
+# $Id: shared.test,v 1.26 2007/09/01 16:16:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -861,6 +861,46 @@ if {[llength [info command sqlite3_shared_cache_report]]==1} {
 do_test shared-$av.11.11 {
   db close
   db2 close
+} {}
+
+# This tests that if it is impossible to free any pages, SQLite will
+# exceed the limit set by PRAGMA cache_size.
+do_test shared-$av.12.1 {
+  file delete -force test.db test.db-journal
+  sqlite3 db test.db 
+  execsql {
+    PRAGMA cache_size = 10;
+    PRAGMA cache_size;
+  }
+} {10}
+do_test shared-$av.12.2 {
+  set ::db_handles [list]
+  for {set i 1} {$i < 15} {incr i} {
+    lappend ::db_handles db$i
+    sqlite3 db$i test.db 
+    execsql "CREATE TABLE db${i}(a, b, c)" db$i 
+    execsql "INSERT INTO db${i} VALUES(1, 2, 3)"
+  }
+} {}
+proc nested_select {handles} {
+  [lindex $handles 0] eval "SELECT * FROM [lindex $handles 0]" {
+    lappend ::res $a $b $c
+    if {[llength $handles]>1} {
+      nested_select [lrange $handles 1 end]
+    }
+  }
+}
+do_test shared-$av.12.3 {
+  set ::res [list]
+  nested_select $::db_handles
+  set ::res
+} [string range [string repeat "1 2 3 " [llength $::db_handles]] 0 end-1]
+
+do_test shared-$av.12.X {
+  db close
+  foreach h $::db_handles { 
+    $h close
+  }
 } {}
 
 }

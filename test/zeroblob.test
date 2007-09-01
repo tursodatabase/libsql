@@ -13,7 +13,7 @@
 # including the sqlite3_bind_zeroblob(), sqlite3_result_zeroblob(),
 # and the built-in zeroblob() SQL function.
 #
-# $Id: zeroblob.test,v 1.7 2007/09/01 11:04:28 danielk1977 Exp $
+# $Id: zeroblob.test,v 1.8 2007/09/01 16:16:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -189,5 +189,15 @@ do_test zeroblob-7.2 {
 do_test zeroblob-7.3 {
   sqlite3_finalize $::STMT
 } {SQLITE_OK}
+
+# Test that MakeRecord can handle a value with some real content
+# and a zero-blob tail.
+#
+do_test zeroblob-8.1 {
+  llength [execsql {
+    SELECT 'hello' AS a, zeroblob(10) as b from t1 ORDER BY a, b;
+  }]
+} {8}
+
 
 finish_test

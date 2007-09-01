@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.13 2007/09/01 11:04:28 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.14 2007/09/01 16:16:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -99,6 +99,12 @@ do_test sqllimits-1.9 {
 do_test sqllimits-1.10 {
   set ::str [string repeat %J 2100]
   catchsql { SELECT strftime($::str, '2003-10-31') }
+} {1 {string or blob too big}}
+
+do_test sqllimits-1.11 {
+  set ::str1 [string repeat A [expr {$SQLITE_MAX_LENGTH - 10}]]
+  set ::str2 [string repeat B [expr {$SQLITE_MAX_LENGTH - 10}]]
+  catchsql { SELECT $::str1 || $::str2 }
 } {1 {string or blob too big}}
 
 #--------------------------------------------------------------------
@@ -194,6 +200,49 @@ do_test sqllimits1-3.6 {
     SELECT COUNT(*) FROM trig;
   }
 } {0 7}
+
+# Now check the response of the library to opening a file larger than
+# the current max_page_count value. The response is to change the
+# internal max_page_count value to match the actual size of the file.
+do_test sqllimits1-3.7.1 {
+  execsql {
+    PRAGMA max_page_count = 1000000;
+    CREATE TABLE abc(a, b, c);
+    INSERT INTO abc VALUES(1, 2, 3);
+    INSERT INTO abc SELECT a||b||c, b||c||a, c||a||b FROM abc;
+    INSERT INTO abc SELECT a||b||c, b||c||a, c||a||b FROM abc;
+    INSERT INTO abc SELECT a||b||c, b||c||a, c||a||b FROM abc;
+    INSERT INTO abc SELECT a||b||c, b||c||a, c||a||b FROM abc;
+    INSERT INTO abc SELECT a||b||c, b||c||a, c||a||b FROM abc;
+    INSERT INTO abc SELECT a||b||c, b||c||a, c||a||b FROM abc;
+    INSERT INTO abc SELECT a||b||c, b||c||a, c||a||b FROM abc;
+    INSERT INTO abc SELECT a||b||c, b||c||a, c||a||b FROM abc;
+    INSERT INTO abc SELECT a, b, c FROM abc;
+    INSERT INTO abc SELECT b, a, c FROM abc;
+    INSERT INTO abc SELECT c, b, a FROM abc;
+  }
+  expr [file size test.db] / 1024
+} {1691}
+do_test sqllimits1-3.7.2 {
+  db close
+  sqlite3 db test.db
+  execsql {
+    PRAGMA max_page_count = 1000;
+  }
+  execsql {
+    SELECT count(*) FROM sqlite_master;
+  }
+} {6}
+do_test sqllimits1-3.7.3 {
+  execsql {
+    PRAGMA max_page_count;
+  }
+} {1691}
+do_test sqllimits1-3.7.4 {
+  execsql {
+    DROP TABLE abc;
+  }
+} {}
 
 #--------------------------------------------------------------------
 # Test cases sqllimits1-4.* test the SQLITE_MAX_COLUMN limit.

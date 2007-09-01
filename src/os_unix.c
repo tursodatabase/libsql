@@ -2484,6 +2484,13 @@ static int unixGetTempName(sqlite3_vfs *pVfs, char *zBuf){
   int i, j;
   struct stat buf;
   const char *zDir = ".";
+
+  /* It's odd to simulate an io-error here, but really this is just
+  ** using the io-error infrastructure to test that SQLite handles this
+  ** function failing. 
+  */
+  SimulateIOError( return SQLITE_ERROR );
+
   azDirs[0] = sqlite3_temp_directory;
   for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); i++){
     if( azDirs[i]==0 ) continue;
@@ -2517,6 +2524,14 @@ static int unixGetTempName(sqlite3_vfs *pVfs, char *zBuf){
 ** this buffer before returning.
 */
 static int unixFullPathname(sqlite3_vfs *pVfs, const char *zPath, char *zOut){
+
+  /* It's odd to simulate an io-error here, but really this is just
+  ** using the io-error infrastructure to test that SQLite handles this
+  ** function failing. This function could fail if, for example, the
+  ** current working directly has been unlinked.
+  */
+  SimulateIOError( return SQLITE_ERROR );
+
   assert( pVfs->mxPathname==MAX_PATHNAME );
   zOut[MAX_PATHNAME-1] = '\0';
   if( zPath[0]=='/' ){

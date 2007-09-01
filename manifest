@@ -1,5 +1,5 @@
-C Test\ssqlite3_bind_zeroblob().\sOnly\sinclude\ssqlite3Utf8To8\sin\sbuilds\sif\sSQLITE_DEBUG\sis\sdefined.\s(CVS\s4363)
-D 2007-09-01T11:04:26
+C Remove\sthe\ssyncOk\sargument\sto\spager_recycle.\sNow\sthat\ssqlite3_memory_release\suses\sa\sglobal\slru\slist\sof\spage,\sit\sis\sno\slonger\srequired.\s(CVS\s4364)
+D 2007-09-01T16:16:15
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -116,11 +116,11 @@ F src/os_os2.c 8769301bff502de642ad2634cedcb77d967ce199
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 9043705193a53f9ba8aca9284b5788ce6cda0010
+F src/os_unix.c 3b1b9c6d1b09b9cddd19287e6f842d712bf07602
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c ce778c06afcbfd120ede237befece4655e83c8d0
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 9b898267587e660a1eed124e95c8fa48b2d7966c
+F src/pager.c ac52bb1e22f7ce203e1eec8fa666be2cdd695ee9
 F src/pager.h f204c1a9fe0574953fba89c56d9d9bd1ddfa604a
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 363e548dafb52327face8d99757ab56a7b1c1b26
@@ -401,7 +401,7 @@ F test/select5.test 0b47058d3e916c1fc9fe81f44b438e02bade21ce
 F test/select6.test 399f14b9ba37b768afe5d2cd8c12e4f340a69db8
 F test/select7.test 45606f9afbe2056058c7d75fc33e5092e65ec770
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
-F test/shared.test 08b30d5f1939efff0517e7ff8ec7b74ad31c151b
+F test/shared.test 90ab9f5492168bf7ee5c0c3b3bc0d0d287cebc00
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
 F test/shared_err.test 68455ec2f7f250d2e89f17b0c98ecf94009e6800
@@ -411,7 +411,7 @@ F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test 55e039b34d505aa442cee415f83c451ae28b3123
-F test/sqllimits1.test 573788829a361c2a115c46e2424183d0525ba6b6
+F test/sqllimits1.test b4b2afd7d75622fd183d4b7875f1fcfed0cf3f34
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 9f26cfca74397b26ab217fb838c3d0549eb4bcf3
@@ -488,7 +488,7 @@ F test/where2.test 3249d426b3fc7a106713d784e1628307fc308d2e
 F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
 F test/where4.test f80207a4ea6504f3d0962f3ecebc7db274ea50c0
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
-F test/zeroblob.test d4d36287b07332d5214fa3ffea20ac8d704d4e6a
+F test/zeroblob.test 987cc5e565dc0a905eaf87897ad958855d755f69
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/lemon.c 0ab4cca47950da4dc04cf957db0c0ed54b464aa9
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7571345d2078fb52029f9b9924d833ec36d443e6
-R 0c7389a2063dc14d52226e56b9777f30
+P fde6142b7bb33198b3d6b65cfbddfad61694b1fb
+R 5e0055f11989e9e05101c27a19df02f2
 U danielk1977
-Z cf841d7dca9b6d93f2cc7d05120bc95f
+Z 10eb73331132f5b8e253fba21e5676db

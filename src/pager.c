@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.383 2007/08/31 18:34:59 drh Exp $
+** @(#) $Id: pager.c,v 1.384 2007/09/01 16:16:15 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2995,11 +2995,15 @@ static int hasHotJournal(Pager *pPager){
 ** This routine may return SQLITE_IOERR, SQLITE_FULL or SQLITE_OK. It 
 ** does not set the pPager->errCode variable.
 */
-static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
+static int pager_recycle(Pager *pPager, PgHdr **ppPg){
   PgHdr *pPg;
   *ppPg = 0;
 
+  /* It is illegal to call this function unless the pager object
+  ** pointed to by pPager has at least one free page (page with nRef==0).
+  */ 
   assert(!MEMDB);
+  assert(pPager->lru.pFirst);
 
   /* Find a page to recycle.  Try to locate a page that does not
   ** require us to do an fsync() on the journal.
@@ -3011,7 +3015,7 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
   ** very slow operation, so we work hard to avoid it.  But sometimes
   ** it can't be helped.
   */
-  if( pPg==0 && pPager->lru.pFirst && syncOk && !MEMDB){
+  if( pPg==0 && pPager->lru.pFirst){
     int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
     int rc = syncJournal(pPager);
     if( rc!=0 ){
@@ -3033,9 +3037,6 @@ static int pager_recycle(Pager *pPager, int syncOk, PgHdr **ppPg){
       }
     }
     pPg = pPager->lru.pFirst;
-  }
-  if( pPg==0 ){
-    return SQLITE_OK;
   }
 
   assert( pPg->nRef==0 );
@@ -3136,7 +3137,7 @@ int sqlite3PagerReleaseMemory(int nReq){
     assert(!pPg->needSync || pPg==pPager->lru.pFirst);
     assert(pPg->needSync || pPg==pPager->lru.pFirstSynced);
   
-    rc = pager_recycle(pPager, 1, &pRecycled);
+    rc = pager_recycle(pPager, &pRecycled);
     assert(pRecycled==pPg || rc!=SQLITE_OK);
     if( rc==SQLITE_OK ){
       /* We've found a page to free. At this point the page has been 
@@ -3433,7 +3434,7 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
     pPager->nPage++;
   }else{
     /* Recycle an existing page with a zero ref-count. */
-    rc = pager_recycle(pPager, 1, &pPg);
+    rc = pager_recycle(pPager, &pPg);
     if( rc==SQLITE_BUSY ){
       rc = SQLITE_IOERR_BLOCKED;
     }
