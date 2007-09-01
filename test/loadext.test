@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is extension loading.
 #
-# $Id: loadext.test,v 1.9 2007/04/06 21:42:22 drh Exp $
+# $Id: loadext.test,v 1.10 2007/09/01 05:57:50 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,6 +28,23 @@ if {$::tcl_platform(platform) eq "windows"} {
 } else {
   set testextension ./libtestloadext.so
 }
+
+# The error messages tested by this file are operating system dependent
+# (because they are returned by sqlite3OsDlError()). For now, they only
+# work with UNIX (and probably only certain kinds of UNIX).
+#
+# When a shared-object cannot be opened, we expect the error message to
+# be:
+#
+#      [format $dlerror_cantopen <shared-object-name>]
+#
+# When a symbol cannot be found within an open shared-object, the error
+# message should be:
+#
+#      [format $dlerror_nosymbol <shared-object-name> <symbol-name>]
+#
+set dlerror_cantopen {%s: file too short}
+set dlerror_nosymbol {%s: undefined symbol: %s}
 
 # Make sure the test extension actually exists.  If it does not
 # exist, try to create it.  If unable to create it, then skip this
@@ -99,9 +116,7 @@ do_test loadext-2.1 {
     sqlite3_load_extension db "${testextension}xx"
   } msg]
   list $rc $msg
-} [list 1 [subst -nocommands \
-  {unable to open shared library [${testextension}xx]}
-]]
+} [list 1 [format $dlerror_cantopen ${testextension}xx]]
 
 # Try to load an extension for which the file is not a shared object
 #
@@ -113,9 +128,7 @@ do_test loadext-2.2 {
     sqlite3_load_extension db "${testextension}xx"
   } msg]
   list $rc $msg
-} [list 1 [subst -nocommands \
-  {unable to open shared library [${testextension}xx]}
-]]
+} [list 1 [format $dlerror_cantopen ${testextension}xx]]
 
 # Try to load an extension for which the file is present but the
 # entry point is not.
@@ -125,9 +138,7 @@ do_test loadext-2.3 {
     sqlite3_load_extension db $testextension icecream
   } msg]
   list $rc $msg
-} [list 1 [subst -nocommands \
-  {no entry point [icecream] in shared library [$testextension]}
-]]
+} [list 1 [format $dlerror_nosymbol $testextension icecream]]
 
 # Try to load an extension for which the entry point fails (returns non-zero) 
 #
@@ -154,8 +165,7 @@ do_test loadext-3.2 {
   catchsql {
     SELECT load_extension($::testextension)
   }
-} [list 1 "no entry point \[sqlite3_extension_init\]\
-           in shared library \[$testextension\]"]
+} [list 1 [format $dlerror_nosymbol $testextension sqlite3_extension_init]]
 do_test loadext-3.3 {
   catchsql {
     SELECT load_extension($::testextension,'testloadext_init')

@@ -327,7 +327,12 @@ static int sqlite3LoadExtension(
   handle = sqlite3OsDlOpen(pVfs, zFile);
   if( handle==0 ){
     if( pzErrMsg ){
-      *pzErrMsg = sqlite3_mprintf("unable to open shared library [%s]", zFile);
+      char zErr[256];
+      zErr[sizeof(zErr)-1] = '\0';
+      sqlite3_snprintf(sizeof(zErr)-1, zErr, 
+          "unable to open shared library [%s]", zFile);
+      sqlite3OsDlError(pVfs, sizeof(zErr)-1, zErr);
+      *pzErrMsg = sqlite3DbStrDup(db, zErr);
     }
     return SQLITE_ERROR;
   }
@@ -335,10 +340,14 @@ static int sqlite3LoadExtension(
                    sqlite3OsDlSym(pVfs, handle, zProc);
   if( xInit==0 ){
     if( pzErrMsg ){
-       *pzErrMsg = sqlite3_mprintf("no entry point [%s] in shared library [%s]",
-                                   zProc, zFile);
+      char zErr[256];
+      zErr[sizeof(zErr)-1] = '\0';
+      sqlite3_snprintf(sizeof(zErr)-1, zErr,
+          "no entry point [%s] in shared library [%s]", zProc,zFile);
+      sqlite3OsDlError(pVfs, sizeof(zErr)-1, zErr);
+      *pzErrMsg = sqlite3DbStrDup(db, zErr);
+      sqlite3OsDlClose(pVfs, handle);
     }
-    sqlite3OsDlClose(pVfs, handle);
     return SQLITE_ERROR;
   }else if( xInit(db, &zErrmsg, &sqlite3_apis) ){
     if( pzErrMsg ){

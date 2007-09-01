@@ -1,5 +1,5 @@
-C Change\sthe\swindows\stempfile\sname\sgenerator\sso\sthat\sit\suses\s119\sbits\nof\srandomness\sand\sdoes\snot\sbother\sto\scheck\sto\ssee\sif\sthe\sfile\salready\nexists.\s\sTicket\s#2608.\s\s(Unable\sto\stest\sfrom\sthis\smachine,\sbut\sthe\nchanges\sare\ssimple\sand\sisolated.\s\sHope\sit\sworks.)\s(CVS\s4357)
-D 2007-09-01T02:13:11
+C Call\ssqlite3OsDlError\sto\sobtain\serror\sinformation\safter\sDlOpen\sor\sDlSym\sfail.\s(CVS\s4358)
+D 2007-09-01T05:57:50
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -98,7 +98,7 @@ F src/insert.c b11e5ca0d68bf2a7a56f47a052a0ee67dd4e2f89
 F src/journal.c 2e0fb96d5e407a28b756b4a8b3694f2dccabe7f8
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
-F src/loadext.c d8a41422b7c2a79d4cf89a62da404d6b786704cf
+F src/loadext.c 6894dbbf1666577d957922811620375d6c2f058d
 F src/main.c 00a894cd348d8d3651097bb8136f03e53afa644b
 F src/malloc.c de4e77fe70a9a0ac47a1c3a874422b107231bf31
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
@@ -338,7 +338,7 @@ F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
 F test/like.test 9b8eb634d2c34b36b365c1baae115c9bd6e56674
 F test/limit.test 2a87b9cb2165abb49ca0ddcf5cb43cf24074581f
-F test/loadext.test 9ab2cb0226329c1a62dd45d204be95158a872201
+F test/loadext.test ea04ac20e20e3f42514f55487ef9a9d6fda51bd1
 F test/loadext2.test 95ca7e2cb03fd3e068de97c3a2fe58dbdfd769e1
 F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 5f9557b775662c2a5ee435378f39e10d64f65cb3
@@ -411,7 +411,7 @@ F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test 55e039b34d505aa442cee415f83c451ae28b3123
-F test/sqllimits1.test cd2069518d1a1d7b5406b8f26fc8436aa87268e8
+F test/sqllimits1.test 6974f124d9333510bb2c3e796012b5ec48844db3
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 9f26cfca74397b26ab217fb838c3d0549eb4bcf3
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8f73ebc6e30467d2c594701e0aa45b53147ef2ef
-R 47873120abe0056067c2bbb673058814
-U drh
-Z 9ba63200ed790f0c99661e3e7809f71e
+P ca6c1e3f44d8b9d9b76a0efe53ea6a6ad5e14d57
+R bc8176723b1b67ea3809dd5ad6b3d1c7
+U danielk1977
+Z 3bc8cc7848a229a5523b979148fa9e5d
