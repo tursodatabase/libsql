@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.31 2007/03/17 10:26:59 danielk1977 Exp $
+# $Id: ioerr.test,v 1.32 2007/09/01 17:00:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -264,6 +264,27 @@ do_ioerr_test ioerr-11 -erc 1 -sqlprep {
    INSERT INTO A(Id, Name) VALUES(1, 'Name');
 } -sqlbody {
    UPDATE A SET Id = 2, Name = 'Name2' WHERE Id = 1;
+}
+
+# Test that an io error encountered in a sync() caused by a call to
+# sqlite3_release_memory() is handled Ok. Only try this if 
+# memory-management is enabled.
+#
+ifcapable memorymanage {
+  do_ioerr_test memmanage-ioerr1 -sqlprep {
+    BEGIN;
+    CREATE TABLE t1(a, b, c);
+    INSERT INTO t1 VALUES(randstr(50,50), randstr(100,100), randstr(10,10));
+    INSERT INTO t1 SELECT randstr(50,50), randstr(9,9), randstr(90,90) FROM t1;
+    INSERT INTO t1 SELECT randstr(50,50), randstr(9,9), randstr(90,90) FROM t1;
+    INSERT INTO t1 SELECT randstr(50,50), randstr(9,9), randstr(90,90) FROM t1;
+    INSERT INTO t1 SELECT randstr(50,50), randstr(9,9), randstr(90,90) FROM t1;
+    INSERT INTO t1 SELECT randstr(50,50), randstr(9,9), randstr(90,90) FROM t1;
+  } -tclbody {
+    sqlite3_release_memory 
+  } -sqlbody {
+    COMMIT;
+  }
 }
 
 finish_test

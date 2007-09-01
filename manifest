@@ -1,5 +1,5 @@
-C Remove\sthe\ssyncOk\sargument\sto\spager_recycle.\sNow\sthat\ssqlite3_memory_release\suses\sa\sglobal\slru\slist\sof\spage,\sit\sis\sno\slonger\srequired.\s(CVS\s4364)
-D 2007-09-01T16:16:15
+C Remove\scode\sfor\scalling\sthe\sSQL\sfunction\srandstr()\swith\s0\sor\s1\sargument,\sas\sit\sis\sregistered\swith\ssqlite\sas\srequiring\sexactly\s2.\sAlso\stest\sio\serrors\sin\ssqlite3_release_memory().\s(CVS\s4365)
+D 2007-09-01T17:00:13
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -91,7 +91,7 @@ F src/date.c af235f38f50809abd0a96da3bb3e0cc32be6226e
 F src/delete.c 849846d06d29851dde0d9f424a5de5817eb140d1
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 95f3674736ff4b3238f7f2d252fbd93aea55e610
-F src/func.c 10135a09d37f89b524bfea7c36368699e9c3b89a
+F src/func.c 7c59882c72b2a2b7bf5a2e121f0727e7527bf7cd
 F src/hash.c 8fe2fa52bd17869c87748e42cff5b1e7fbf90822
 F src/hash.h 3ad3da76bfb954978d227bf495568b0e6da2c19e
 F src/insert.c b11e5ca0d68bf2a7a56f47a052a0ee67dd4e2f89
@@ -326,7 +326,7 @@ F test/insert4.test 1e27f0a3e5670d5f03c1636f699aa44270945bca
 F test/interrupt.test 81555fb0f8179bb2d0dc7151fd75428223f93cf2
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/io.test f0203ae4a6d954ec843cb7e446f9774004b04c6a
-F test/ioerr.test 491d42c49bbec598966d26b01ed7901f55e5ee2d
+F test/ioerr.test 4b175825ed42b04f935e00f57cfb2a9f0c13de7d
 F test/ioerr2.test f938eadb12108048813869b86beee4a2f98e34b8
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P fde6142b7bb33198b3d6b65cfbddfad61694b1fb
-R 5e0055f11989e9e05101c27a19df02f2
+P fb27692ab10b22851b265348bb6b3e1dececd60f
+R 8691eaca2d86eeb9c8f0223ed070263c
 U danielk1977
-Z 10eb73331132f5b8e253fba21e5676db
+Z 57e05a1c340e3f153329a367979054dc

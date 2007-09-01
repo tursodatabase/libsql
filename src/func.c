@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.172 2007/08/30 16:30:27 danielk1977 Exp $
+** $Id: func.c,v 1.173 2007/09/01 17:00:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1016,20 +1016,18 @@ static void randStr(sqlite3_context *context, int argc, sqlite3_value **argv){
      ".-!,:*^+=_|?/<> ";
   int iMin, iMax, n, r, i;
   unsigned char zBuf[1000];
-  if( argc>=1 ){
-    iMin = sqlite3_value_int(argv[0]);
-    if( iMin<0 ) iMin = 0;
-    if( iMin>=sizeof(zBuf) ) iMin = sizeof(zBuf)-1;
-  }else{
-    iMin = 1;
-  }
-  if( argc>=2 ){
-    iMax = sqlite3_value_int(argv[1]);
-    if( iMax<iMin ) iMax = iMin;
-    if( iMax>=sizeof(zBuf) ) iMax = sizeof(zBuf)-1;
-  }else{
-    iMax = 50;
-  }
+
+  /* It used to be possible to call randstr() with any number of arguments,
+  ** but now it is registered with SQLite as requiring exactly 2.
+  */
+  assert(argc==2);
+
+  iMin = sqlite3_value_int(argv[0]);
+  if( iMin<0 ) iMin = 0;
+  if( iMin>=sizeof(zBuf) ) iMin = sizeof(zBuf)-1;
+  iMax = sqlite3_value_int(argv[1]);
+  if( iMax<iMin ) iMax = iMin;
+  if( iMax>=sizeof(zBuf) ) iMax = sizeof(zBuf)-1;
   n = iMin;
   if( iMax>iMin ){
     sqlite3Randomness(sizeof(r), &r);
