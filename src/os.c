@@ -224,7 +224,7 @@ int sqlite3_vfs_register(sqlite3_vfs *pVfs, int makeDflt){
     vfsList = pVfs;
   }else{
     pVfs->pNext = vfsList->pNext;
-    pVfs->pNext = pVfs;
+    vfsList->pNext = pVfs;
   }
   assert(vfsList);
   sqlite3_mutex_leave(mutex);

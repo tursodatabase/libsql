@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.401 2007/08/31 16:11:36 drh Exp $
+** $Id: main.c,v 1.402 2007/09/01 06:51:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -950,7 +950,6 @@ static int openDatabase(
     goto opendb_out;
   }
   sqlite3_mutex_enter(db->mutex);
-  db->pVfs = sqlite3_vfs_find(zVfs);
   db->errMask = 0xff;
   db->priorNewRowid = 0;
   db->nDb = 2;
@@ -970,6 +969,14 @@ static int openDatabase(
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3HashInit(&db->aModule, SQLITE_HASH_STRING, 0);
 #endif
+
+  db->pVfs = sqlite3_vfs_find(zVfs);
+  if( !db->pVfs ){
+    rc = SQLITE_ERROR;
+    db->magic = SQLITE_MAGIC_CLOSED;
+    sqlite3Error(db, rc, "no such vfs: %s", (zVfs?zVfs:"(null)"));
+    goto opendb_out;
+  }
 
   /* Add the default collation sequence BINARY. BINARY works for both UTF-8
   ** and UTF-16, so add a version for each to avoid any unnecessary

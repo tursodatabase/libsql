@@ -301,7 +301,6 @@ objects: $(LIBOBJ_ORIG)
 # all that automatic generation.
 #
 target_source:	$(SRC)
-	@echo $(SRC)
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc

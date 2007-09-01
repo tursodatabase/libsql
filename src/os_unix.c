@@ -2568,14 +2568,20 @@ static int unixFullPathname(sqlite3_vfs *pVfs, const char *zPath, char *zOut){
 static void *unixDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   return dlopen(zFilename, RTLD_NOW | RTLD_GLOBAL);
 }
+
+/*
+** SQLite calls this function immediately after a call to unixDlSym() or
+** unixDlOpen() fails (returns a null pointer). If a more detailed error
+** message is available, it is written to zBufOut. If no error message
+** is available, zBufOut is left unmodified and SQLite uses a default
+** error message.
+*/
 static void unixDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
   char *zErr;
   enterMutex();
   zErr = dlerror();
   if( zErr ){
     sqlite3_snprintf(nBuf, zBufOut, "%s", zErr);
-  }else if(nBuf>0) {
-    zBufOut[0] = '\0';
   }
   leaveMutex();
 }

@@ -753,8 +753,7 @@ static int crashParamsObjCmd(
     crashVfs.mxPathname = pOriginalVfs->mxPathname;
     crashVfs.pAppData = (void *)pOriginalVfs;
     crashVfs.szOsFile = sizeof(CrashFile) + pOriginalVfs->szOsFile;
-    /* sqlite3_vfs_unregister(pOriginalVfs); */
-    sqlite3_vfs_register(&crashVfs, 1);
+    sqlite3_vfs_register(&crashVfs, 0);
   }
 
   iDc = -1;
