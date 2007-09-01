@@ -1,5 +1,5 @@
-C Call\ssqlite3OsDlError\sto\sobtain\serror\sinformation\safter\sDlOpen\sor\sDlSym\sfail.\s(CVS\s4358)
-D 2007-09-01T05:57:50
+C Fix\sa\sbug\sin\sloadext.test.\s(CVS\s4359)
+D 2007-09-01T06:19:06
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -338,7 +338,7 @@ F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
 F test/like.test 9b8eb634d2c34b36b365c1baae115c9bd6e56674
 F test/limit.test 2a87b9cb2165abb49ca0ddcf5cb43cf24074581f
-F test/loadext.test ea04ac20e20e3f42514f55487ef9a9d6fda51bd1
+F test/loadext.test 1911e7365a6d31d77ba00dd3a8a31b7f2111a670
 F test/loadext2.test 95ca7e2cb03fd3e068de97c3a2fe58dbdfd769e1
 F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 5f9557b775662c2a5ee435378f39e10d64f65cb3
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ca6c1e3f44d8b9d9b76a0efe53ea6a6ad5e14d57
-R bc8176723b1b67ea3809dd5ad6b3d1c7
+P 3d74256c9123e8434c68e6a0c5b61686b34a4328
+R 1c0347842404603d8a4dc887d9128ff6
 U danielk1977
-Z 3bc8cc7848a229a5523b979148fa9e5d
+Z 352000b212599994e03c0b4ef61b1896

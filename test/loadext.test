@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is extension loading.
 #
-# $Id: loadext.test,v 1.10 2007/09/01 05:57:50 danielk1977 Exp $
+# $Id: loadext.test,v 1.11 2007/09/01 06:19:06 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,18 +33,28 @@ if {$::tcl_platform(platform) eq "windows"} {
 # (because they are returned by sqlite3OsDlError()). For now, they only
 # work with UNIX (and probably only certain kinds of UNIX).
 #
-# When a shared-object cannot be opened, we expect the error message to
-# be:
+# When a shared-object cannot be opened because it does not exist, the
+# format of the message returned is:
 #
-#      [format $dlerror_cantopen <shared-object-name>]
+#      [format $dlerror_nosuchfile <shared-object-name>]
+#
+# When a shared-object cannot be opened because it consists of the 4
+# characters "blah" only, we expect the error message to be:
+#
+#      [format $dlerror_notadll <shared-object-name>]
 #
 # When a symbol cannot be found within an open shared-object, the error
 # message should be:
 #
 #      [format $dlerror_nosymbol <shared-object-name> <symbol-name>]
 #
-set dlerror_cantopen {%s: file too short}
-set dlerror_nosymbol {%s: undefined symbol: %s}
+# The exact error messages are not important. The important bit is
+# that SQLite is correctly copying the message from xDlError().
+#
+set dlerror_nosuchfile \
+    {%s: cannot open shared object file: No such file or directory}
+set dlerror_notadll    {%s: file too short}
+set dlerror_nosymbol   {%s: undefined symbol: %s}
 
 # Make sure the test extension actually exists.  If it does not
 # exist, try to create it.  If unable to create it, then skip this
@@ -112,11 +122,12 @@ sqlite3_enable_load_extension db 1
 # Try to load an extension for which the file does not exist.
 #
 do_test loadext-2.1 {
+  file delete -force ${testextension}xx
   set rc [catch {
     sqlite3_load_extension db "${testextension}xx"
   } msg]
   list $rc $msg
-} [list 1 [format $dlerror_cantopen ${testextension}xx]]
+} [list 1 [format $dlerror_nosuchfile ${testextension}xx]]
 
 # Try to load an extension for which the file is not a shared object
 #
@@ -128,7 +139,7 @@ do_test loadext-2.2 {
     sqlite3_load_extension db "${testextension}xx"
   } msg]
   list $rc $msg
-} [list 1 [format $dlerror_cantopen ${testextension}xx]]
+} [list 1 [format $dlerror_notadll ${testextension}xx]]
 
 # Try to load an extension for which the file is present but the
 # entry point is not.
