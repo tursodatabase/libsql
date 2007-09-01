@@ -698,6 +698,68 @@ static int processDevSymArgs(
 }
 
 /*
+** tclcmd:   sqlite_crash_enable ENABLE
+**
+** Parameter ENABLE must be a boolean value. If true, then the "crash"
+** vfs is added to the system. If false, it is removed.
+*/
+static int crashEnableCmd(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int isEnable;
+  static sqlite3_vfs crashVfs = {
+    1,                  /* iVersion */
+    0,                  /* szOsFile */
+    0,                  /* mxPathname */
+    0,                  /* pNext */
+    "crash",            /* zName */
+    0,                  /* pAppData */
+  
+    cfOpen,               /* xOpen */
+    cfDelete,             /* xDelete */
+    cfAccess,             /* xAccess */
+    cfGetTempName,        /* xGetTempName */
+    cfFullPathname,       /* xFullPathname */
+    cfDlOpen,             /* xDlOpen */
+    cfDlError,            /* xDlError */
+    cfDlSym,              /* xDlSym */
+    cfDlClose,            /* xDlClose */
+    cfRandomness,         /* xRandomness */
+    cfSleep,              /* xSleep */
+    cfCurrentTime         /* xCurrentTime */
+  };
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "ENABLE");
+    return TCL_ERROR;
+  }
+
+  if( Tcl_GetBooleanFromObj(interp, objv[1], &isEnable) ){
+    return TCL_ERROR;
+  }
+
+  if( (isEnable && crashVfs.pAppData) || (!isEnable && !crashVfs.pAppData) ){
+    return TCL_OK;
+  }
+
+  if( crashVfs.pAppData==0 ){
+    sqlite3_vfs *pOriginalVfs = sqlite3_vfs_find(0);
+    crashVfs.mxPathname = pOriginalVfs->mxPathname;
+    crashVfs.pAppData = (void *)pOriginalVfs;
+    crashVfs.szOsFile = sizeof(CrashFile) + pOriginalVfs->szOsFile;
+    sqlite3_vfs_register(&crashVfs, 0);
+  }else{
+    crashVfs.pAppData = 0;
+    sqlite3_vfs_unregister(&crashVfs);
+  }
+
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:   sqlite_crashparams ?OPTIONS? DELAY CRASHFILE
 **
 ** This procedure implements a TCL command that enables crash testing
@@ -724,37 +786,6 @@ static int crashParamsObjCmd(
   int iDelay;
   const char *zCrashFile;
   int nCrashFile, iDc, iSectorSize;
-
-  static sqlite3_vfs crashVfs = {
-    1,                  /* iVersion */
-    0,                  /* szOsFile */
-    0,                  /* mxPathname */
-    0,                  /* pNext */
-    "crash",            /* zName */
-    0,                  /* pAppData */
-  
-    cfOpen,               /* xOpen */
-    cfDelete,             /* xDelete */
-    cfAccess,             /* xAccess */
-    cfGetTempName,        /* xGetTempName */
-    cfFullPathname,       /* xFullPathname */
-    cfDlOpen,             /* xDlOpen */
-    cfDlError,            /* xDlError */
-    cfDlSym,              /* xDlSym */
-    cfDlClose,            /* xDlClose */
-    cfRandomness,         /* xRandomness */
-    cfSleep,              /* xSleep */
-    cfCurrentTime         /* xCurrentTime */
-  };
-
-
-  if( crashVfs.pAppData==0 ){
-    sqlite3_vfs *pOriginalVfs = sqlite3_vfs_find(0);
-    crashVfs.mxPathname = pOriginalVfs->mxPathname;
-    crashVfs.pAppData = (void *)pOriginalVfs;
-    crashVfs.szOsFile = sizeof(CrashFile) + pOriginalVfs->szOsFile;
-    sqlite3_vfs_register(&crashVfs, 0);
-  }
 
   iDc = -1;
   iSectorSize = -1;
@@ -826,6 +857,7 @@ static int devSymObjCmd(
 */
 int Sqlitetest6_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_DISKIO
+  Tcl_CreateObjCommand(interp, "sqlite3_crash_enable", crashEnableCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_simulate_device", devSymObjCmd, 0, 0);
 #endif

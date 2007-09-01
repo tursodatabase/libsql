@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.12 2007/08/30 15:46:07 danielk1977 Exp $
+** $Id: mem2.c,v 1.13 2007/09/01 09:02:54 danielk1977 Exp $
 */
 
 /*
@@ -153,14 +153,21 @@ static struct {
 
 
 /*
-** Return the amount of memory currently checked out.
+** Enter the mutex mem.mutex. Allocate it if it is not already allocated.
 */
-sqlite3_int64 sqlite3_memory_used(void){
-  sqlite3_int64 n;
+static void enterMem(void){
   if( mem.mutex==0 ){
     mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
   }
   sqlite3_mutex_enter(mem.mutex);
+}
+
+/*
+** Return the amount of memory currently checked out.
+*/
+sqlite3_int64 sqlite3_memory_used(void){
+  sqlite3_int64 n;
+  enterMem();
   n = mem.nowUsed;
   sqlite3_mutex_leave(mem.mutex);  
   return n;
@@ -173,10 +180,7 @@ sqlite3_int64 sqlite3_memory_used(void){
 */
 sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
   sqlite3_int64 n;
-  if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
-  }
-  sqlite3_mutex_enter(mem.mutex);
+  enterMem();
   n = mem.mxUsed;
   if( resetFlag ){
     mem.mxUsed = mem.nowUsed;
@@ -193,10 +197,7 @@ int sqlite3_memory_alarm(
   void *pArg,
   sqlite3_int64 iThreshold
 ){
-  if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
-  }
-  sqlite3_mutex_enter(mem.mutex);
+  enterMem();
   mem.alarmCallback = xCallback;
   mem.alarmArg = pArg;
   mem.alarmThreshold = iThreshold;
@@ -260,82 +261,77 @@ void *sqlite3_malloc(int nByte){
   void **pBt;
   char *z;
   int *pInt;
-  void *p;
+  void *p = 0;
   int totalSize;
 
-  if( nByte<=0 ){
-    mem.iNextIsBenign = 0;
-    return 0;
-  }
-  if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
-  }
-  sqlite3_mutex_enter(mem.mutex);
-  assert( mem.disallow==0 );
-  if( mem.alarmCallback!=0 && mem.nowUsed+nByte>=mem.alarmThreshold ){
-    sqlite3MemsysAlarm(nByte);
-  }
-  nByte = (nByte+3)&~3;
-  totalSize = nByte + sizeof(*pHdr) + sizeof(int) +
-               mem.nBacktrace*sizeof(void*) + mem.nTitle;
-  if( mem.iFail>0 ){
-    if( mem.iFail==1 ){
-      p = 0;
-      mem.iFail = mem.iReset;
-      if( mem.iFailCnt==0 ){
-        sqlite3MemsysFailed();  /* A place to set a breakpoint */
-      }
-      mem.iFailCnt++;
-      if( mem.iNextIsBenign ){
-        mem.iBenignFailCnt++;
-      }
-    }else{
-      p = malloc(totalSize);
-      mem.iFail--;
-    }
-  }else{
-    p = malloc(totalSize);
-    if( p==0 ){
+  if( nByte>0 ){
+    enterMem();
+    assert( mem.disallow==0 );
+    if( mem.alarmCallback!=0 && mem.nowUsed+nByte>=mem.alarmThreshold ){
       sqlite3MemsysAlarm(nByte);
+    }
+    nByte = (nByte+3)&~3;
+    totalSize = nByte + sizeof(*pHdr) + sizeof(int) +
+                 mem.nBacktrace*sizeof(void*) + mem.nTitle;
+    if( mem.iFail>0 ){
+      if( mem.iFail==1 ){
+        p = 0;
+        mem.iFail = mem.iReset;
+        if( mem.iFailCnt==0 ){
+          sqlite3MemsysFailed();  /* A place to set a breakpoint */
+        }
+        mem.iFailCnt++;
+        if( mem.iNextIsBenign ){
+          mem.iBenignFailCnt++;
+        }
+      }else{
+        p = malloc(totalSize);
+        mem.iFail--;
+      }
+    }else{
       p = malloc(totalSize);
+      if( p==0 ){
+        sqlite3MemsysAlarm(nByte);
+        p = malloc(totalSize);
+      }
     }
+    if( p ){
+      z = p;
+      pBt = (void**)&z[mem.nTitle];
+      pHdr = (struct MemBlockHdr*)&pBt[mem.nBacktrace];
+      pHdr->pNext = 0;
+      pHdr->pPrev = mem.pLast;
+      if( mem.pLast ){
+        mem.pLast->pNext = pHdr;
+      }else{
+        mem.pFirst = pHdr;
+      }
+      mem.pLast = pHdr;
+      pHdr->iForeGuard = FOREGUARD;
+      pHdr->nBacktraceSlots = mem.nBacktrace;
+      pHdr->nTitle = mem.nTitle;
+      if( mem.nBacktrace ){
+        void *aAddr[40];
+        pHdr->nBacktrace = backtrace(aAddr, mem.nBacktrace+1)-1;
+        memcpy(pBt, &aAddr[1], pHdr->nBacktrace*sizeof(void*));
+      }else{
+        pHdr->nBacktrace = 0;
+      }
+      if( mem.nTitle ){
+        memcpy(z, mem.zTitle, mem.nTitle);
+      }
+      pHdr->iSize = nByte;
+      pInt = (int*)&pHdr[1];
+      pInt[nByte/sizeof(int)] = REARGUARD;
+      memset(pInt, 0x65, nByte);
+      mem.nowUsed += nByte;
+      if( mem.nowUsed>mem.mxUsed ){
+        mem.mxUsed = mem.nowUsed;
+      }
+      p = (void*)pInt;
+    }
+    sqlite3_mutex_leave(mem.mutex);
   }
-  if( p ){
-    z = p;
-    pBt = (void**)&z[mem.nTitle];
-    pHdr = (struct MemBlockHdr*)&pBt[mem.nBacktrace];
-    pHdr->pNext = 0;
-    pHdr->pPrev = mem.pLast;
-    if( mem.pLast ){
-      mem.pLast->pNext = pHdr;
-    }else{
-      mem.pFirst = pHdr;
-    }
-    mem.pLast = pHdr;
-    pHdr->iForeGuard = FOREGUARD;
-    pHdr->nBacktraceSlots = mem.nBacktrace;
-    pHdr->nTitle = mem.nTitle;
-    if( mem.nBacktrace ){
-      void *aAddr[40];
-      pHdr->nBacktrace = backtrace(aAddr, mem.nBacktrace+1)-1;
-      memcpy(pBt, &aAddr[1], pHdr->nBacktrace*sizeof(void*));
-    }else{
-      pHdr->nBacktrace = 0;
-    }
-    if( mem.nTitle ){
-      memcpy(z, mem.zTitle, mem.nTitle);
-    }
-    pHdr->iSize = nByte;
-    pInt = (int*)&pHdr[1];
-    pInt[nByte/sizeof(int)] = REARGUARD;
-    memset(pInt, 0x65, nByte);
-    mem.nowUsed += nByte;
-    if( mem.nowUsed>mem.mxUsed ){
-      mem.mxUsed = mem.nowUsed;
-    }
-    p = (void*)pInt;
-  }
-  sqlite3_mutex_leave(mem.mutex);
   mem.iNextIsBenign = 0;
   return p; 
 }
@@ -427,10 +423,7 @@ void sqlite3_memdebug_backtrace(int depth){
 */
 void sqlite3_memdebug_settitle(const char *zTitle){
   int n = strlen(zTitle) + 1;
-  if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
-  }
-  sqlite3_mutex_enter(mem.mutex);
+  enterMem();
   if( n>=sizeof(mem.zTitle) ) n = sizeof(mem.zTitle)-1;
   memcpy(mem.zTitle, zTitle, n);
   mem.zTitle[n] = 0;

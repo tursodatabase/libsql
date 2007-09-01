@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem1.c,v 1.8 2007/08/24 03:51:34 drh Exp $
+** $Id: mem1.c,v 1.9 2007/09/01 09:02:54 danielk1977 Exp $
 */
 
 /*
@@ -70,16 +70,22 @@ static struct {
  
 } mem;
 
+/*
+** Enter the mutex mem.mutex. Allocate it if it is not already allocated.
+*/
+static void enterMem(void){
+  if( mem.mutex==0 ){
+    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
+  }
+  sqlite3_mutex_enter(mem.mutex);
+}
 
 /*
 ** Return the amount of memory currently checked out.
 */
 sqlite3_int64 sqlite3_memory_used(void){
   sqlite3_int64 n;
-  if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
-  }
-  sqlite3_mutex_enter(mem.mutex);
+  enterMutex();
   n = mem.nowUsed;
   sqlite3_mutex_leave(mem.mutex);  
   return n;
@@ -92,10 +98,7 @@ sqlite3_int64 sqlite3_memory_used(void){
 */
 sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
   sqlite3_int64 n;
-  if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
-  }
-  sqlite3_mutex_enter(mem.mutex);
+  enterMutex();
   n = mem.mxUsed;
   if( resetFlag ){
     mem.mxUsed = mem.nowUsed;
@@ -112,10 +115,7 @@ int sqlite3_memory_alarm(
   void *pArg,
   sqlite3_int64 iThreshold
 ){
-  if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
-  }
-  sqlite3_mutex_enter(mem.mutex);
+  enterMutex();
   mem.alarmCallback = xCallback;
   mem.alarmArg = pArg;
   mem.alarmThreshold = iThreshold;
@@ -145,31 +145,27 @@ static void sqlite3MemsysAlarm(int nByte){
 ** Allocate nBytes of memory
 */
 void *sqlite3_malloc(int nBytes){
-  sqlite3_int64 *p;
-  if( nBytes<=0 ){
-    return 0;
-  }
-  if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
-  }
-  sqlite3_mutex_enter(mem.mutex);
-  if( mem.alarmCallback!=0 && mem.nowUsed+nBytes>=mem.alarmThreshold ){
-    sqlite3MemsysAlarm(nBytes);
-  }
-  p = malloc(nBytes+8);
-  if( p==0 ){
-    sqlite3MemsysAlarm(nBytes);
-    p = malloc(nBytes+8);
-  }
-  if( p ){
-    p[0] = nBytes;
-    p++;
-    mem.nowUsed += nBytes;
-    if( mem.nowUsed>mem.mxUsed ){
-      mem.mxUsed = mem.nowUsed;
+  sqlite3_int64 *p = 0;
+  if( nBytes>0 ){
+    enterMutex();
+    if( mem.alarmCallback!=0 && mem.nowUsed+nBytes>=mem.alarmThreshold ){
+      sqlite3MemsysAlarm(nBytes);
     }
+    p = malloc(nBytes+8);
+    if( p==0 ){
+      sqlite3MemsysAlarm(nBytes);
+      p = malloc(nBytes+8);
+    }
+    if( p ){
+      p[0] = nBytes;
+      p++;
+      mem.nowUsed += nBytes;
+      if( mem.nowUsed>mem.mxUsed ){
+        mem.mxUsed = mem.nowUsed;
+      }
+    }
+    sqlite3_mutex_leave(mem.mutex);
   }
-  sqlite3_mutex_leave(mem.mutex);
   return (void*)p; 
 }
 

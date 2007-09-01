@@ -741,7 +741,7 @@ static void mout(void *arg, const char *zNewText, int nNewChar){
           pM->zText = pM->xRealloc(0, nAlloc);
           if( pM->zText==0 ){
             pM->nAlloc = 0;
-            pM->iMallocFailed = 0;
+            pM->iMallocFailed = 1;
             return;
           }else if( pM->nChar ){
             memcpy(pM->zText, pM->zBase, pM->nChar);
@@ -752,7 +752,7 @@ static void mout(void *arg, const char *zNewText, int nNewChar){
           if( zNew ){
             pM->zText = zNew;
           }else{
-            pM->iMallocFailed = 0;
+            pM->iMallocFailed = 1;
             pM->xRealloc(pM->zText, 0);
             pM->zText = 0;
             pM->nAlloc = 0;
@@ -789,7 +789,8 @@ static char *base_vprintf(
   sM.xRealloc = xRealloc;
   sM.iMallocFailed = 0;
   vxprintf(mout, &sM, useInternal, zFormat, ap);
-  if( xRealloc ){
+  assert(sM.iMallocFailed==0 || sM.zText==0);
+  if( xRealloc && !sM.iMallocFailed ){
     if( sM.zText==sM.zBase ){
       sM.zText = xRealloc(0, sM.nChar+1);
       if( sM.zText ){

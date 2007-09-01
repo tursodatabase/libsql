@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.90 2007/09/01 06:51:28 danielk1977 Exp $
+# $Id: tester.tcl,v 1.91 2007/09/01 09:02:54 danielk1977 Exp $
 
 
 set tcl_precision 15
@@ -356,6 +356,7 @@ proc crashsql {args} {
   set cfile [file join [pwd] $crashfile]
 
   set f [open crash.tcl w]
+  puts $f "sqlite3_crash_enable 1"
   puts $f "sqlite3_crashparams $blocksize $dc $crashdelay $cfile"
   puts $f "set sqlite_pending_byte $::sqlite_pending_byte"
   puts $f "sqlite3 db test.db -vfs crash"
