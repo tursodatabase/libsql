@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.12 2007/09/01 05:57:50 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.13 2007/09/01 11:04:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -21,7 +21,7 @@ source $testdir/tester.tcl
 #
 #     sqllimits-1.*:  SQLITE_MAX_LENGTH
 #     sqllimits-2.*:  SQLITE_MAX_SQL_LENGTH
-#     sqllimits-3.*:  SQLITE_MAX_PAGE_COUNT
+#     sqllimits-3.*:  SQLITE_MAX_PAGE_COUNT (and the max_page_count pragma)
 #     sqllimits-4.*:  SQLITE_MAX_COLUMN
 #
 #
@@ -37,6 +37,11 @@ source $testdir/tester.tcl
 #     sqllimits-6.*:   SQLITE_MAX_VDBE_OP               (sqlite todo)
 #     sqllimits-12.*:  SQLITE_MAX_PAGE_COUNT            (sqlite todo)
 #
+
+unset -nocomplain saved
+foreach var [info vars SQLITE_MAX_*] {
+  set saved($var) [set $var]
+}
 
 set SQLITE_MAX_LENGTH                 100000
 set SQLITE_MAX_COLUMN
@@ -472,4 +477,8 @@ do_test sqllimits-1.12.2 {
   }
 } {1 {string or blob too big}}
 
+
+foreach {key value} [array get saved] {
+  catch {set $key $value}
+}
 finish_test

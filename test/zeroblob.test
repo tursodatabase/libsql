@@ -13,7 +13,7 @@
 # including the sqlite3_bind_zeroblob(), sqlite3_result_zeroblob(),
 # and the built-in zeroblob() SQL function.
 #
-# $Id: zeroblob.test,v 1.6 2007/06/07 19:08:34 drh Exp $
+# $Id: zeroblob.test,v 1.7 2007/09/01 11:04:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -175,5 +175,19 @@ do_test zeroblob-6.4 {
 do_test zeroblob-6.5 { 
   catchsql {select zeroblob(2147483648)} 
 } {1 {string or blob too big}} 
+
+# Test bind_zeroblob()
+#
+do_test zeroblob-7.1 {
+  set ::STMT [sqlite3_prepare $::DB "SELECT length(?)" -1 DUMMY]
+  sqlite3_bind_zeroblob $::STMT 1 450
+  sqlite3_step $::STMT
+} {SQLITE_ROW}
+do_test zeroblob-7.2 {
+  sqlite3_column_int $::STMT 0
+} {450}
+do_test zeroblob-7.3 {
+  sqlite3_finalize $::STMT
+} {SQLITE_OK}
 
 finish_test

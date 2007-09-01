@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.56 2007/08/21 19:33:57 drh Exp $
+** $Id: utf.c,v 1.57 2007/09/01 11:04:27 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -456,7 +456,10 @@ int sqlite3Utf16ByteLen(const void *zIn, int nChar){
   return (z-(char const *)zIn)-((c==0)?2:0);
 }
 
-#if defined(SQLITE_TEST)
+/* This test function is not currently used by the automated test-suite. 
+** Hence it is only available in debug builds.
+*/
+#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
 /*
 ** Translate UTF-8 to UTF-8.
 **

@@ -1,5 +1,5 @@
-C Allow\ssqlite3GetInt32\sto\srecognize\s10-digit\sdecimal\snumbers\sas\s32-bit.\s(CVS\s4362)
-D 2007-09-01T10:01:13
+C Test\ssqlite3_bind_zeroblob().\sOnly\sinclude\ssqlite3Utf8To8\sin\sbuilds\sif\sSQLITE_DEBUG\sis\sdefined.\s(CVS\s4363)
+D 2007-09-01T11:04:26
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -136,7 +136,7 @@ F src/sqliteInt.h adc8a20e80ccf9eef24cc32f241a3427915a136e
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 8db035768623779c97d0509eb88ecbb49c51abca
-F src/test1.c e68d0c781b10730cd96f45bca9af36dc00fa10d6
+F src/test1.c f43580b00e3f764015acd52892690ee4f28ce775
 F src/test2.c 4ab230fbdc0decfa7422f6a052b609ba54f4dfac
 F src/test3.c 199a440ba2b38b26251393b609451a3484a15907
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -149,7 +149,7 @@ F src/test_async.c 8b6aa6a5701bf3cf52708db178379ee608b44b0c
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c 3f50b4060c360d33d069e64ce5684eac43fbf4db
-F src/test_hexio.c 82916f918687502658f02533b519c38cb180db6d
+F src/test_hexio.c 94a1efec4b19311eb7c4dc40e8496a3d8eadf18a
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c 35310c5147effb632fd52c1dd872ef82d56faee8
 F src/test_md5.c 34599caee5b1c73dcf86ca31f55846fab8c19ef7
@@ -159,7 +159,7 @@ F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/tokenize.c 67e42600ab34f976f2b1288c499ad6c98d652f0e
 F src/trigger.c 724a77d54609a33bde90618934fbeddfcc729a10
 F src/update.c e89b980b443d44b68bfc0b1746cdb6308e049ac9
-F src/utf.c 4af6259d5906b5a1bf3035cc387c4d7907bdd56e
+F src/utf.c 3cb3e9a460fee5634e08501a037d2e768bb2047b
 F src/util.c 49263637e0f228411201501ddfd1138338d6322c
 F src/vacuum.c 38745037c63246d1b0669038257890cf89fc4578
 F src/vdbe.c d2f156bbb6b636e9b4a3648c38454bf472668a86
@@ -174,7 +174,7 @@ F src/vtab.c ace9b41a088f6ad55d2e39084d92180a2bee3276
 F src/where.c 4687a2a56bc0fe66ad457958ea9f72b6cae17426
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
-F test/all.test 51e7ba4c58f160843ee6891ec9891c749377d3b2
+F test/all.test b59d1bd8b0c1d4a08b845e8af48fd43926f01f11
 F test/alter.test c2a9402e17a731e5294ef370214bd9f88351d18d
 F test/alter2.test 50c3f554b8236d179d72511c0a4f23c5eb7f2af3
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
@@ -411,7 +411,7 @@ F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test 55e039b34d505aa442cee415f83c451ae28b3123
-F test/sqllimits1.test 6974f124d9333510bb2c3e796012b5ec48844db3
+F test/sqllimits1.test 573788829a361c2a115c46e2424183d0525ba6b6
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 9f26cfca74397b26ab217fb838c3d0549eb4bcf3
@@ -488,7 +488,7 @@ F test/where2.test 3249d426b3fc7a106713d784e1628307fc308d2e
 F test/where3.test 0a30fe9808b0fa01c46d0fcf4fac0bf6cf75bb30
 F test/where4.test f80207a4ea6504f3d0962f3ecebc7db274ea50c0
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
-F test/zeroblob.test c5096545085330b7886d2f977272a73d9fa7737e
+F test/zeroblob.test d4d36287b07332d5214fa3ffea20ac8d704d4e6a
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/lemon.c 0ab4cca47950da4dc04cf957db0c0ed54b464aa9
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 595bfe72f053bc6ecb58bb9044a4cdc53d30b404
-R be04c5213b6574236677be8610d7fbc8
+P 7571345d2078fb52029f9b9924d833ec36d443e6
+R 0c7389a2063dc14d52226e56b9777f30
 U danielk1977
-Z 7223bbde30f1abb7747d25cbae5b7337
+Z cf841d7dca9b6d93f2cc7d05120bc95f

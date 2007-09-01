@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.47 2007/08/31 17:42:48 danielk1977 Exp $
+# $Id: all.test,v 1.48 2007/09/01 11:04:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -62,7 +62,6 @@ lappend EXCLUDE quick.test             ;# Alternate test driver script
 lappend EXCLUDE malloc.test            ;# Run seperately later.
 lappend EXCLUDE misuse.test            ;# Run seperately later.
 lappend EXCLUDE memleak.test           ;# Alternate test driver script
-lappend EXCLUDE sqllimits1.test        ;# Default values use too much memory
 lappend EXCLUDE fuzz.test
 lappend EXCLUDE soak.test              ;# Takes a very long time (default 1 hr)
 

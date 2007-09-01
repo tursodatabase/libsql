@@ -17,7 +17,7 @@
 ** with historical versions of the "binary" command.  So it seems
 ** easier and safer to build our own mechanism.
 **
-** $Id: test_hexio.c,v 1.4 2007/08/16 04:30:40 drh Exp $
+** $Id: test_hexio.c,v 1.5 2007/09/01 11:04:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -291,6 +291,7 @@ static int utf8_to_utf8(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifdef SQLITE_DEBUG
   int n;
   int nOut;
   const unsigned char *zOrig;
@@ -307,6 +308,7 @@ static int utf8_to_utf8(
   binToHex(z,nOut);
   Tcl_AppendResult(interp, (char*)z, 0);
   sqlite3_free(z);
+#endif
   return TCL_OK;
 }
 
