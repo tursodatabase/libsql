@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.211 2007/08/21 19:33:57 drh Exp $
+** $Id: util.c,v 1.212 2007/09/01 10:01:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -420,10 +420,16 @@ int sqlite3GetInt32(const char *zNum, int *pValue){
     zNum++;
   }
   while( zNum[0]=='0' ) zNum++;
-  for(i=0; i<10 && (c = zNum[i] - '0')>=0 && c<=9; i++){
+  for(i=0; i<11 && (c = zNum[i] - '0')>=0 && c<=9; i++){
     v = v*10 + c;
   }
-  if( i>9 ){
+
+  /* The longest decimal representation of a 32 bit integer is 10 digits:
+  **
+  **             1234567890
+  **     2^31 -> 2147483648
+  */
+  if( i>10 ){
     return 0;
   }
   if( v-neg>2147483647 ){

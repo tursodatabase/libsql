@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.13 2007/08/10 16:41:09 drh Exp $
+# $Id: incrvacuum.test,v 1.14 2007/09/01 10:01:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -544,8 +544,9 @@ do_test incrvacuum-10.4 {
 } {22}
 
 do_test incrvacuum-10.5 {
+breakpoint
   execsql {
-    PRAGMA incremental_vacuum("3");
+    PRAGMA incremental_vacuum("+3");
   }
   expr [file size test.db] / 1024
 } {19}
@@ -558,8 +559,10 @@ do_test incrvacuum-10.6 {
 } {18}
 
 do_test incrvacuum-10.7 {
+  # Use a really big number as an argument to incremetal_vacuum. Should
+  # be interpreted as "free all possible space".
   execsql {
-    PRAGMA incremental_vacuum(0);
+    PRAGMA incremental_vacuum(2147483649);
   }
   expr [file size test.db] / 1024
 } {1}

@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\shandling\sa\smalloc()\sfailure\sin\sprintf.c.\sAlso\ssome\sother\sthings\sto\simprove\stest\scoverage.\s(CVS\s4361)
-D 2007-09-01T09:02:54
+C Allow\ssqlite3GetInt32\sto\srecognize\s10-digit\sdecimal\snumbers\sas\s32-bit.\s(CVS\s4362)
+D 2007-09-01T10:01:13
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -160,7 +160,7 @@ F src/tokenize.c 67e42600ab34f976f2b1288c499ad6c98d652f0e
 F src/trigger.c 724a77d54609a33bde90618934fbeddfcc729a10
 F src/update.c e89b980b443d44b68bfc0b1746cdb6308e049ac9
 F src/utf.c 4af6259d5906b5a1bf3035cc387c4d7907bdd56e
-F src/util.c 3f9c0387b54f977726790f52ab92cd3d9379b367
+F src/util.c 49263637e0f228411201501ddfd1138338d6322c
 F src/vacuum.c 38745037c63246d1b0669038257890cf89fc4578
 F src/vdbe.c d2f156bbb6b636e9b4a3648c38454bf472668a86
 F src/vdbe.h 03a0fa17f6753a24d6cb585d7a362944a2c115aa
@@ -251,7 +251,7 @@ F test/enc3.test 9331988b9d72decec96995c90637e87b00d747a5
 F test/exclusive.test 00d5328b243083ccda7729f275eedc6c4e02ae29
 F test/exclusive2.test d13bf66753dca46e61241d35d36ab7c868b0d313
 F test/exclusive3.test 0e49c35b7e7cb8e7280b4ce3f0359d30b207d2ff
-F test/expr.test b8d63779b043dff06580fe4f3d85e5bebd067957
+F test/expr.test ed41c753c41c4bf39061329b224bada2ff89c604
 F test/filefmt.test 053b622009fbbb74dd37921ffad374d852c13cd8
 F test/fkey1.test dcb4f28eb22d5141f15161d6bdca9a4f58c95729
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -313,7 +313,7 @@ F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/incrblob.test 7f95c929b719626443a996b105d2b0ff06f47818
 F test/incrblob_err.test 0adf87296ad14cef6a23cd9283f81cc836c5a332
-F test/incrvacuum.test 569347726ea5940c3359e3d8cabb3505595cb82f
+F test/incrvacuum.test 985bc94a7ff544db09aec3a0c93c779280da9415
 F test/incrvacuum2.test 82397ceb5941cbe852fd29bb33fcdf5665bc80c2
 F test/incrvacuum_ioerr.test cb331403b8dea3c5bae6163861ff25037b0df56a
 F test/index.test e65df12bed94b2903ee89987115e1578687e9266
@@ -381,7 +381,7 @@ F test/pageropt.test 51e3c091bc2992f5098f7576e3594e1908988939
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
 F test/pragma.test b0e73879206934a835856a8b8c4cc884cd8562f3
 F test/pragma2.test bb5aa7be00dae2c381fcc782358048a33c955793
-F test/printf.test 13e2887b21f8956cb6c352cf6e6c438cb2f2e55c
+F test/printf.test d3cacac565b074d3cfed0fd847085d4a9fddc934
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 1c712dd6516e1377471744fa765e41c79a357da6
 F test/quick.test 88844a19f6d9dc5c990e01c7dd611d33d022a1c1
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5f48fb95c26a713b3259ee49fd444108030376dc
-R f5d2790ed3ef3229e31edc3fdbdb0ddc
+P 595bfe72f053bc6ecb58bb9044a4cdc53d30b404
+R be04c5213b6574236677be8610d7fbc8
 U danielk1977
-Z bbe8f7cb92a5a4389623700351cb30a0
+Z 7223bbde30f1abb7747d25cbae5b7337

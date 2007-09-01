@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.25 2007/09/01 09:02:54 danielk1977 Exp $
+# $Id: printf.test,v 1.26 2007/09/01 10:01:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -181,6 +181,9 @@ do_test printf-8.5 {
 do_test printf-8.6 {
   sqlite3_mprintf_int64 {%llx %llo %lld} -1 -1 -1
 } {ffffffffffffffff 1777777777777777777777 -1}
+do_test printf-8.7 {
+  sqlite3_mprintf_int64 {%llx %llx %llx} +2147483647 +2147483648 +4294967296
+} {7fffffff 80000000 100000000}
 
 do_test printf-9.1 {
   sqlite3_mprintf_int {%*.*c} 4 4 65
@@ -298,7 +301,6 @@ do_test printf-15.3 {
 foreach var {a b c d} {
   set $var [string repeat $var 400]
 }
-
 set str1 "[string repeat A 360]%d%d%s"
 set str2 [string repeat B 5000]
 set zSuccess "[string repeat A 360]11[string repeat B 5000]"
