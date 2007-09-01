@@ -1285,17 +1285,14 @@ static int winGetTempName(sqlite3_vfs *pVfs, char *zBuf){
   }
   for(i=strlen(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
   zTempPath[i] = 0;
-  for(;;){
-    sqlite3_snprintf(pVfs->mxPathname-30, zBuf,
-                     "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath);
-    j = strlen(zBuf);
-    sqlite3Randomness(15, &zBuf[j]);
-    for(i=0; i<15; i++, j++){
-      zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
-    }
-    zBuf[j] = 0;
-    if( !sqlite3OsAccess(pVfs, zBuf, SQLITE_ACCESS_EXISTS) ) break;
+  sqlite3_snprintf(pVfs->mxPathname-30, zBuf,
+                   "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath);
+  j = strlen(zBuf);
+  sqlite3Randomness(20, &zBuf[j]);
+  for(i=0; i<20; i++, j++){
+    zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
   }
+  zBuf[j] = 0;
   OSTRACE2("TEMP FILENAME: %s\n", zBuf);
   return SQLITE_OK; 
 }
