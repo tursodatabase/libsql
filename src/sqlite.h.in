@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.253 2007/08/31 18:34:59 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.254 2007/09/01 18:17:22 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -223,7 +223,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** invoked once for each row of the query result.  This callback
 ** should normally return 0.  If the callback returns a non-zero
 ** value then the query is aborted, all subsequent SQL statements
-** are skipped and the sqlite3_exec() function returns the SQLITE_ABORT.
+** are skipped and the sqlite3_exec() function returns the [SQLITE_ABORT].
 **
 ** The 4th parameter to this interface is an arbitrary pointer that is
 ** passed through to the callback function as its first parameter.
@@ -244,9 +244,8 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** not while executing the callback) then an appropriate error
 ** message is written into memory obtained from [sqlite3_malloc()] and
 ** *errmsg is made to point to that message.  The calling function
-** is responsible for freeing the memory that holds the error
-** message.   Use [sqlite3_free()] for this.  If errmsg==NULL,
-** then no error message is ever written.
+** is responsible for freeing the memory using [sqlite3_free()].
+** If errmsg==NULL, then no error message is ever written.
 **
 ** The return value is is SQLITE_OK if there are no errors and
 ** some other [SQLITE_OK | return code] if there is an error.  
@@ -437,7 +436,7 @@ int sqlite3_exec(
 ** An [sqlite3_file] object represents an open file in the OS
 ** interface layer.  Individual OS interface implementations will
 ** want to subclass this object by appending additional fields
-** of their own use.  The pMethods entry is a pointer to an
+** for their own use.  The pMethods entry is a pointer to an
 ** [sqlite3_io_methods] object that defines methods for performing
 ** I/O operations on the open file.
 */
@@ -449,23 +448,26 @@ struct sqlite3_file {
 /*
 ** CAPI3REF: OS Interface File Virtual Methods Object
 **
-** Every open file in the [sqlite3_vfs] xOpen method contains a pointer to
-** an instance of the following object.  This object defines the
+** Every file opened by the [sqlite3_vfs] xOpen method contains a pointer to
+** an instance of the this object.  This object defines the
 ** methods used to perform various operations against the open file.
 **
-** The flags argument to xSync may be one of SQLITE_SYNC_NORMAL or
-** SQLITE_SYNC_FULL.  The first choice means that data is not
-** necessarily synced to disk completely, only that all writes that
-** occur before the sync complete before any writes that occur after the
-** sync.  The second flag is the normal fsync().  The third flag is a
+** The flags argument to xSync may be one of [SQLITE_SYNC_NORMAL] or
+** [SQLITE_SYNC_FULL].  The first choice is the normal fsync().
+*  The second choice is an
 ** OS-X style fullsync.  The SQLITE_SYNC_DATA flag may be ORed in to
 ** indicate that only the data of the file and not its inode needs to be
 ** synced.
 ** 
 ** The integer values to xLock() and xUnlock() are one of
-** SQLITE_LOCK_NONE, SQLITE_LOCK_READ, SQLITE_LOCK_RESERVED,
-** SQLITE_LOCK_PENDING, or SQLITE_LOCK_EXCLUSIVE.  xLock()
-** increases the lock. xUnlock() decreases the lock.  
+** <ul>
+** <li> [SQLITE_LOCK_NONE],
+** <li> [SQLITE_LOCK_READ],
+** <li> [SQLITE_LOCK_RESERVED],
+** <li> [SQLITE_LOCK_PENDING], or
+** <li> [SQLITE_LOCK_EXCLUSIVE].
+** </ul>
+** xLock() increases the lock. xUnlock() decreases the lock.  
 ** The xCheckReservedLock() method looks
 ** to see if any database connection, either in this
 ** process or in some other process, is holding an RESERVED,
@@ -474,16 +476,17 @@ struct sqlite3_file {
 ** 
 ** The xFileControl() method is a generic interface that allows custom
 ** VFS implementations to directly control an open file using the
-** [sqlite3_file_control()] interface.  The second argument (the
-** "op" argument) is intended to be an integer opcode.  The third
+** [sqlite3_file_control()] interface.  The second "op" argument
+** is an integer opcode.   The third
 ** argument is a generic pointer which is intended to be a pointer
 ** to a structure that may contain arguments or space in which to
 ** write return values.  Potential uses for xFileControl() might be
 ** functions to enable blocking locks with timeouts, to change the
 ** locking strategy (for example to use dot-file locks), to inquire
 ** about the status of a lock, or to break stale locks.  The SQLite
-** core reserves opcodes less than 100 for its own use.  Applications
-** that define a custom xFileControl method should use opcodes 
+** core reserves opcodes less than 100 for its own use. 
+** A [SQLITE_FCNTL_LOCKSTATE | list of opcodes] less than 100 is available.
+** Applications that define a custom xFileControl method should use opcodes 
 ** greater than 100 to avoid conflicts.
 **
 ** The xSectorSize() method returns the sector size of the
@@ -494,17 +497,17 @@ struct sqlite3_file {
 ** underlying device:
 **
 ** <ul>
-** <li> SQLITE_IOCAP_ATOMIC
-** <li> SQLITE_IOCAP_ATOMIC512
-** <li> SQLITE_IOCAP_ATOMIC1K
-** <li> SQLITE_IOCAP_ATOMIC2K
-** <li> SQLITE_IOCAP_ATOMIC4K
-** <li> SQLITE_IOCAP_ATOMIC8K
-** <li> SQLITE_IOCAP_ATOMIC16K
-** <li> SQLITE_IOCAP_ATOMIC32K
-** <li> SQLITE_IOCAP_ATOMIC64K
-** <li> SQLITE_IOCAP_SAFE_APPEND
-** <li> SQLITE_IOCAP_SEQUENTIAL
+** <li> [SQLITE_IOCAP_ATOMIC]
+** <li> [SQLITE_IOCAP_ATOMIC512]
+** <li> [SQLITE_IOCAP_ATOMIC1K]
+** <li> [SQLITE_IOCAP_ATOMIC2K]
+** <li> [SQLITE_IOCAP_ATOMIC4K]
+** <li> [SQLITE_IOCAP_ATOMIC8K]
+** <li> [SQLITE_IOCAP_ATOMIC16K]
+** <li> [SQLITE_IOCAP_ATOMIC32K]
+** <li> [SQLITE_IOCAP_ATOMIC64K]
+** <li> [SQLITE_IOCAP_SAFE_APPEND]
+** <li> [SQLITE_IOCAP_SEQUENTIAL]
 ** </ul>
 **
 ** The SQLITE_IOCAP_ATOMIC property means that all writes of
@@ -576,7 +579,7 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** versions of SQLite.  Additional fields may be appended to this
 ** object when the iVersion value is increased.
 **
-** The szOsFile field is the size of the subclassed sqlite3_file
+** The szOsFile field is the size of the subclassed [sqlite3_file]
 ** structure used by this VFS.  mxPathname is the maximum length of
 ** a pathname in this VFS.
 **
@@ -602,10 +605,10 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** filename if it needs to remember the filename for some reason.
 **
 ** The flags argument to xOpen() is a copy of the flags argument
-** to sqlite3_open_v2().  If sqlite3_open() or sqlite3_open16()
-** is used, then flags is SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE.
+** to [sqlite3_open_v2()].  If [sqlite3_open()] or [sqlite3_open16()]
+** is used, then flags is [SQLITE_OPEN_READWRITE] | [SQLITE_OPEN_CREATE].
 ** If xOpen() opens a file read-only then it sets *pOutFlags to
-** include SQLITE_OPEN_READONLY.  Other bits in *pOutFlags may be
+** include [SQLITE_OPEN_READONLY].  Other bits in *pOutFlags may be
 ** set.
 ** 
 ** SQLite will also add one of the following flags to the xOpen()
@@ -649,10 +652,11 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** szOsFile bytes are allocated for this object.  The xOpen method
 ** fills in the allocated space.
 ** 
-** The flags argument to xAccess() may be 0 (to test for the
-** existance of a file) or SQLITE_ACCESS_READWRITE to test to see
-** if a file is readable and writable, or SQLITE_ACCESS_READONLY
-** to test to see if a file is read-only.  The file can be a 
+** The flags argument to xAccess() may be [SQLITE_ACCESS_EXISTS] 
+** to test for the existance of a file,
+** or [SQLITE_ACCESS_READWRITE] to test to see
+** if a file is readable and writable, or [SQLITE_ACCESS_READ]
+** to test to see if a file is at least readable.  The file can be a 
 ** directory.
 ** 
 ** SQLite will always allocate at least mxPathname+1 byte for
@@ -663,7 +667,7 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** included in the VFS structure for completeness.
 ** The xRandomness() function attempts to return nBytes bytes
 ** of good-quality randomness into zOut.  The return value is
-** the actual number of bytes of randomness generated.  The
+** the actual number of bytes of randomness obtained.  The
 ** xSleep() method cause the calling thread to sleep for at
 ** least the number of microseconds given.  The xCurrentTime()
 ** method returns a Julian Day Number for the current date and
@@ -1510,7 +1514,8 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** program using one of these routines. 
 **
 ** The first argument "db" is an [sqlite3 | SQLite database handle] 
-** obtained from a prior call to [sqlite3_open()] or [sqlite3_open16()].
+** obtained from a prior call to [sqlite3_open()], [sqlite3_open_v2()]
+** or [sqlite3_open16()].
 ** The second argument "zSql" is the statement to be compiled, encoded
 ** as either UTF-8 or UTF-16.  The sqlite3_prepare() and sqlite3_prepare_v2()
 ** interfaces uses UTF-8 and sqlite3_prepare16() and sqlite3_prepare16_v2()
@@ -2622,15 +2627,15 @@ int sqlite3_sleep(int);
 ** is NULL pointer, then SQLite does a search for an appropriate temporary
 ** file directory.
 **
-** Once [sqlite3_open()] has been called, changing this variable will
-** invalidate the current temporary database, if any.  Generally speaking,
-** it is not safe to invoke this routine after [sqlite3_open()] has
-** been called.
+** It is not safe to modify this variable once a database connection
+** has been opened.  It is intended that this variable be set once
+** as part of process initialization and before any SQLite interface
+** routines have been call and remain unchanged thereafter.
 */
 SQLITE_EXTERN char *sqlite3_temp_directory;
 
 /*
-** CAPI3REF:  Test To See If The Databse Is In Auto-Commit Mode
+** CAPI3REF:  Test To See If The Database Is In Auto-Commit Mode
 **
 ** Test to see whether or not the database connection is in autocommit
 ** mode.  Return TRUE if it is and FALSE if not.  Autocommit mode is on
@@ -2728,14 +2733,16 @@ void *sqlite3_update_hook(
 ** in effect at the time they were opened.
 **
 ** Virtual tables cannot be used with a shared cache.  When shared
-** cache is enabled, the sqlite3_create_module() API used to register
+** cache is enabled, the [sqlite3_create_module()] API used to register
 ** virtual tables will always return an error.
 **
 ** This routine returns [SQLITE_OK] if shared cache was
 ** enabled or disabled successfully.  An [SQLITE_ERROR | error code]
 ** is returned otherwise.
 **
-** Shared cache is disabled by default for backward compatibility.
+** Shared cache is disabled by default.  But this might change in
+** future releases of SQLite.  Applications that care about shared
+** cache setting should set it explicitly.
 */
 int sqlite3_enable_shared_cache(int);
 
@@ -2745,9 +2752,6 @@ int sqlite3_enable_shared_cache(int);
 ** Attempt to free N bytes of heap memory by deallocating non-essential
 ** memory allocations held by the database library (example: memory 
 ** used to cache database pages to improve performance).
-**
-** This function is not a part of standard builds.  It is only created
-** if SQLite is compiled with the SQLITE_ENABLE_MEMORY_MANAGEMENT macro.
 */
 int sqlite3_release_memory(int);
 
@@ -2783,7 +2787,7 @@ int sqlite3_release_memory(int);
 ** allocated by a single thread - the same thread in which this routine
 ** runs.  Beginning with SQLite version 3.5.0, the soft heap limit is
 ** applied to all threads.  The value specified for the soft heap limit
-** is an bound on the total memory allocation for all threads.  In
+** is an upper bound on the total memory allocation for all threads.  In
 ** version 3.5.0 there is no mechanism for limiting the heap usage for
 ** individual threads.
 */
@@ -3485,6 +3489,8 @@ int sqlite3_mutex_notheld(sqlite3_mutex*);
 ** also return SQLITE_ERROR.  There is no way to distinguish between
 ** an incorrect zDbName and an SQLITE_ERROR return from the underlying
 ** xFileControl method.
+**
+** See also: [SQLITE_FCNTL_LOCKSTATE]
 */
 int sqlite3_file_control(sqlite3*, const char *zDbName, int op, void*);
 
