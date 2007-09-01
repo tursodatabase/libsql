@@ -12,7 +12,7 @@
 # focus of this file is testing the ALTER TABLE ... RENAME TO
 # command on virtual tables.
 #
-# $Id: vtab_alter.test,v 1.1 2007/06/27 15:53:35 danielk1977 Exp $
+# $Id: vtab_alter.test,v 1.2 2007/09/01 18:24:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -101,4 +101,3 @@ do_test vtab_alter-3.2 {
 } {1 2 3}
 
 finish_test
-

@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.27 2007/08/21 19:33:56 drh Exp $
+** $Id: auth.c,v 1.28 2007/09/01 18:24:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -109,7 +109,7 @@ void sqlite3AuthRead(
 ){
   sqlite3 *db = pParse->db;
   int rc;
-  Table *pTab;          /* The table being read */
+  Table *pTab = 0;      /* The table being read */
   const char *zCol;     /* Name of the column of the table */
   int iSrc;             /* Index in pTabList->a[] of table being read */
   const char *zDBase;   /* Name of database being accessed */
@@ -135,8 +135,6 @@ void sqlite3AuthRead(
     */
     assert( pExpr->iTable==pStack->newIdx || pExpr->iTable==pStack->oldIdx );
     pTab = pStack->pTab;
-  }else{
-    return;
   }
   if( pTab==0 ) return;
   if( pExpr->iColumn>=0 ){

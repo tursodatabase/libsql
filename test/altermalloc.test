@@ -12,7 +12,7 @@
 # focus of this script is testing the ALTER TABLE statement and
 # specifically out-of-memory conditions within that command.
 #
-# $Id: altermalloc.test,v 1.5 2007/08/27 23:48:24 drh Exp $
+# $Id: altermalloc.test,v 1.6 2007/09/01 18:24:55 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -37,6 +37,30 @@ do_malloc_test altermalloc-1 -tclprep {
   ALTER TABLE t1 ADD COLUMN b INTEGER DEFAULT NULL;
   ALTER TABLE t1 ADD COLUMN c TEXT DEFAULT 'default-text';
   ALTER TABLE t1 RENAME TO t2;
+}
+
+# Test malloc() failure on an ALTER TABLE on a virtual table.
+#
+ifcapable vtab {
+  do_malloc_test altermalloc-vtab -tclprep {
+    sqlite3 db2 test.db 
+    register_echo_module [sqlite3_connection_pointer db2]
+    db2 eval {
+      CREATE TABLE t1(a, b VARCHAR, c INTEGER);
+      CREATE VIRTUAL TABLE t1echo USING echo(t1);
+    }
+    db2 close
+
+    register_echo_module [sqlite3_connection_pointer db]
+  } -tclbody {
+    set rc [catch {db eval { ALTER TABLE t1echo RENAME TO t1_echo }} msg]
+    if {$msg eq "vtable constructor failed: t1echo"} {
+      set msg "out of memory"
+    }
+    if {$rc} {
+      error $msg
+    }
+  }
 }
 
 finish_test

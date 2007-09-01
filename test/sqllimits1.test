@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.14 2007/09/01 16:16:16 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.15 2007/09/01 18:24:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -105,6 +105,16 @@ do_test sqllimits-1.11 {
   set ::str1 [string repeat A [expr {$SQLITE_MAX_LENGTH - 10}]]
   set ::str2 [string repeat B [expr {$SQLITE_MAX_LENGTH - 10}]]
   catchsql { SELECT $::str1 || $::str2 }
+} {1 {string or blob too big}}
+
+do_test sqllimits-1.12 {
+  set ::str1 [string repeat ' [expr {$SQLITE_MAX_LENGTH - 10}]]
+  catchsql { SELECT quote($::str1) }
+} {1 {string or blob too big}}
+
+do_test sqllimits-1.13 {
+  set ::str1 [string repeat ' [expr {$SQLITE_MAX_LENGTH - 10}]]
+  catchsql { SELECT hex($::str1) }
 } {1 {string or blob too big}}
 
 #--------------------------------------------------------------------

@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.14 2007/08/22 02:56:44 drh Exp $
+# $Id: incrblob.test,v 1.15 2007/09/01 18:24:55 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -327,6 +327,15 @@ do_test incrblob-4.9.2 {
   set c
 } {1 2 3 4 5 6 7 8 9}
 
+do_test incrblob-4.10 {
+  set ::blob [db incrblob -readonly blobs k 3]
+  set rc [catch { sqlite3_blob_read $::blob 10 100 } msg]
+  list $rc $msg
+} {1 SQLITE_ERROR}
+do_test incrblob-4.11 {
+  close $::blob
+} {}
+
 #------------------------------------------------------------------------
 # incrblob-5.*: 
 #
@@ -517,7 +526,7 @@ foreach {tn arg} {1 "" 2 -readonly} {
 }
 
 set fd [open [info script]]
-set ::data [read $fd]
+set ::data [read $fd 14000]
 close $fd
 
 db close

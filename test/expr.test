@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.58 2007/09/01 10:01:13 danielk1977 Exp $
+# $Id: expr.test,v 1.59 2007/09/01 18:24:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -272,6 +272,8 @@ test_expr expr-5.10b {t1='abxyzzyc', t2='A%_C'} {t1 LIKE t2} $NCSL
 test_expr expr-5.11 {t1='abc', t2='xyz'} {t1 NOT LIKE t2} 1
 test_expr expr-5.12a {t1='abc', t2='abc'} {t1 NOT LIKE t2} 0
 test_expr expr-5.12b {t1='abc', t2='ABC'} {t1 NOT LIKE t2} $CSL
+test_expr expr-5.13  {t1='A'}  {t1 LIKE 'A%_'} 0
+test_expr expr-5.14  {t1='AB'} {t1 LIKE 'A%b' ESCAPE 'b'} 0
 
 # The following tests only work on versions of TCL that support Unicode
 #
