@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem1.c,v 1.9 2007/09/01 09:02:54 danielk1977 Exp $
+** $Id: mem1.c,v 1.10 2007/09/02 17:50:35 drh Exp $
 */
 
 /*
@@ -85,7 +85,7 @@ static void enterMem(void){
 */
 sqlite3_int64 sqlite3_memory_used(void){
   sqlite3_int64 n;
-  enterMutex();
+  enterMem();
   n = mem.nowUsed;
   sqlite3_mutex_leave(mem.mutex);  
   return n;
@@ -98,7 +98,7 @@ sqlite3_int64 sqlite3_memory_used(void){
 */
 sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
   sqlite3_int64 n;
-  enterMutex();
+  enterMem();
   n = mem.mxUsed;
   if( resetFlag ){
     mem.mxUsed = mem.nowUsed;
@@ -115,7 +115,7 @@ int sqlite3_memory_alarm(
   void *pArg,
   sqlite3_int64 iThreshold
 ){
-  enterMutex();
+  enterMem();
   mem.alarmCallback = xCallback;
   mem.alarmArg = pArg;
   mem.alarmThreshold = iThreshold;
@@ -147,7 +147,7 @@ static void sqlite3MemsysAlarm(int nByte){
 void *sqlite3_malloc(int nBytes){
   sqlite3_int64 *p = 0;
   if( nBytes>0 ){
-    enterMutex();
+    enterMem();
     if( mem.alarmCallback!=0 && mem.nowUsed+nBytes>=mem.alarmThreshold ){
       sqlite3MemsysAlarm(nBytes);
     }
