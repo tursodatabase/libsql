@@ -1,4 +1,4 @@
-/*
+ /*
 ** 2005 November 29
 **
 ** The author disclaims copyright to this source code.  In place of
@@ -217,6 +217,7 @@ static void vfsUnlink(sqlite3_vfs *pVfs){
 */
 int sqlite3_vfs_register(sqlite3_vfs *pVfs, int makeDflt){
   sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_vfs_find(0);  /* Make sure we are initialized */
   sqlite3_mutex_enter(mutex);
   vfsUnlink(pVfs);
   if( makeDflt || vfsList==0 ){

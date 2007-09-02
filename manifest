@@ -1,5 +1,5 @@
-C Fix\sfunction\sname\stypo\sin\smem1.c.\s\sThis\sbug\smanaged\sto\smake\sit\sinto\nthe\stree\sbecause\sthe\scode\sin\smem1.c\sis\sonly\scompiled\swhen\sthe\n-DSQLITE_MEMDEBUG\scompile-time\soption\sis\somitted.\s\sBut\npre-checkin\stests\susually\sinclude\sthis\soption.\s\sTicket\s#2612.\s(CVS\s4368)
-D 2007-09-02T17:50:35
+C The\ssqlite3_vfs_register()\sinterface\snow\scalls\ssqlite3_vfs_find(0)\sto\smake\nsure\sthe\sVFS\ssubsystem\sis\sinitialized.\s\sTicket\s#2611.\s(CVS\s4369)
+D 2007-09-02T17:52:04
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -109,7 +109,7 @@ F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c d47e9bd495583dd31263d8fe55160a31eb600a3c
 F src/mutex_unix.c ff77650261a245035b79c5c8a174f4e05d3cae8a
 F src/mutex_w32.c 54beb16ade8f80ea2bc30bc4dfb2087be3487ef3
-F src/os.c 27dea97099f9dd8d4b3fdf6177539146c6f3aeac
+F src/os.c 198c6c55cbdbe5b9c3105070c88fcc077d1b2447
 F src/os.h 53e65427899ed5697d79749d646e6a297b70171a
 F src/os_common.h 98862f120ca6bf7a48ce8b16f158b77d00bc9d2f
 F src/os_os2.c 8769301bff502de642ad2634cedcb77d967ce199
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 02b751fb9dbc683b1b77a2ed3cdeb4190f7339e0
-R 45c6bdf6644faf889f95225c86308b21
+P 59e02db2402f9fcadfbeee88ab5778d27ddde634
+R cc1701215560ac5f56998d19801b627b
 U drh
-Z 76041633e96f0f564e922222926d7e4f
+Z 7338fdebf2f3b27723b52ee9b31d387c
