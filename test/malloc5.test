@@ -12,7 +12,7 @@
 # This file contains test cases focused on the two memory-management APIs, 
 # sqlite3_soft_heap_limit() and sqlite3_release_memory().
 #
-# $Id: malloc5.test,v 1.14 2007/08/28 08:00:18 danielk1977 Exp $
+# $Id: malloc5.test,v 1.15 2007/09/03 11:04:22 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -298,8 +298,9 @@ do_test malloc5-6.1.1 {
   } 
   copy_file test.db test2.db
   sqlite3 db2 test2.db
-  list [expr [file size test.db]/1024] [expr [file size test2.db]/1024]
-} {23 23}
+  list \
+    [expr ([file size test.db]/1024)>20] [expr ([file size test2.db]/1024)>20]
+} {1 1}
 do_test malloc5-6.1.2 {
   list [execsql {PRAGMA cache_size}] [execsql {PRAGMA cache_size} db2]
 } {10 10}

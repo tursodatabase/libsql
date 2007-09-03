@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.274 2007/09/01 11:04:26 danielk1977 Exp $
+** $Id: test1.c,v 1.275 2007/09/03 11:04:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1012,12 +1012,24 @@ static void t1CountFinalize(sqlite3_context *context){
   }
 }
 
+static void legacyCountStep(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  /* no-op */
+}
+static void legacyCountFinalize(sqlite3_context *context){
+  sqlite3_result_int(context, sqlite3_aggregate_count(context));
+}
+
 /*
-** Usage:  sqlite_test_create_aggregate DB
+** Usage:  sqlite3_create_aggregate DB
 **
 ** Call the sqlite3_create_function API on the given database in order
-** to create a function named "x_count".  This function does the same thing
-** as the "md5sum" function.
+** to create a function named "x_count".  This function is similar
+** to the built-in count() function, with a few special quirks
+** for testing the sqlite3_result_error() APIs.
 **
 ** The original motivation for this routine was to be able to call the
 ** sqlite3_create_aggregate function while a query is in progress in order
@@ -1025,6 +1037,10 @@ static void t1CountFinalize(sqlite3_context *context){
 **
 ** This routine was later extended to test the use of sqlite3_result_error()
 ** within aggregate functions.
+**
+** Later: It is now also extended to register the aggregate function
+** "legacy_count()" with the supplied database handle. This is used
+** to test the deprecated sqlite3_aggregate_count() API.
 */
 static int test_create_aggregate(
   void *NotUsed,
@@ -1043,10 +1059,16 @@ static int test_create_aggregate(
   rc = sqlite3_create_function(db, "x_count", 0, SQLITE_UTF8, 0, 0,
       t1CountStep,t1CountFinalize);
   if( rc==SQLITE_OK ){
-    sqlite3_create_function(db, "x_count", 1, SQLITE_UTF8, 0, 0,
+    rc = sqlite3_create_function(db, "x_count", 1, SQLITE_UTF8, 0, 0,
         t1CountStep,t1CountFinalize);
   }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "legacy_count", 0, SQLITE_ANY, 0, 0,
+        legacyCountStep, legacyCountFinalize
+    );
+  }
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), 0);
   return TCL_OK;
 }
 

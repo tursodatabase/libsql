@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.402 2007/09/01 06:51:28 danielk1977 Exp $
+** $Id: main.c,v 1.403 2007/09/03 11:04:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -511,14 +511,16 @@ int sqlite3CreateFunc(
   }
 
   p = sqlite3FindFunction(db, zFunctionName, nName, nArg, enc, 1);
-  if( p ){
-    p->flags = 0;
-    p->xFunc = xFunc;
-    p->xStep = xStep;
-    p->xFinalize = xFinal;
-    p->pUserData = pUserData;
-    p->nArg = nArg;
+  assert(p || db->mallocFailed);
+  if( !p ){
+    return SQLITE_NOMEM;
   }
+  p->flags = 0;
+  p->xFunc = xFunc;
+  p->xStep = xStep;
+  p->xFinalize = xFinal;
+  p->pUserData = pUserData;
+  p->nArg = nArg;
   return SQLITE_OK;
 }
 

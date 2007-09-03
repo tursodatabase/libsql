@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.45 2007/08/29 12:31:29 danielk1977 Exp $
+# $Id: malloc.test,v 1.46 2007/09/03 11:04:22 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -259,6 +259,9 @@ do_malloc_test 10 -sqlprep {
 # sqlite3_create_function().
 do_malloc_test 11 -tclbody {
   set rc [sqlite3_create_function db]
+  if {[string match $rc SQLITE_OK]} {
+    set rc [sqlite3_create_aggregate db]
+  }
   if {[string match $rc SQLITE_NOMEM]} {
     error "out of memory"
   }

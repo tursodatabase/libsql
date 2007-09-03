@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.67 2007/05/15 18:35:21 drh Exp $
+# $Id: func.test,v 1.68 2007/09/03 11:04:22 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -869,5 +869,14 @@ do_test func-22.21 {
 do_test func-22.22 {
   execsql {SELECT typeof(trim('hello',NULL));}
 } {null}
+
+# This is to test the deprecated sqlite3_aggregate_count() API.
+#
+do_test func-23.1 {
+  sqlite3_create_aggregate db
+  execsql {
+    SELECT legacy_count() FROM t6;
+  }
+} {3}
 
 finish_test
