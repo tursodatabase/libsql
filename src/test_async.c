@@ -1184,7 +1184,7 @@ static int testAsyncWait(
 }
 
 
-#endif  /* OS_UNIX and SQLITE_THREADSAFE and defined(SQLITE_ENABLE_REDEF_IO) */
+#endif  /* OS_UNIX and SQLITE_THREADSAFE */
 
 /*
 ** This routine registers the custom TCL commands defined in this
