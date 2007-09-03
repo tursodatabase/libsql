@@ -1,5 +1,5 @@
-C Enable\sthreadsafe\sbuilds\sby\sdefault\sin\sconfigure.\s\sTicket\s#2606.\nChanges\sto\stest\sscripts\sto\sdo\sbetter\stesting\sunder\sall\sconfigurations.\s(CVS\s4379)
-D 2007-09-03T16:12:09
+C Fix\sthe\sincrblob.test\son\swindows.\s\sDisable\sline\sterminator\stranslation.\s(CVS\s4380)
+D 2007-09-03T16:45:36
 F Makefile.in f3460f3363dd568c950a62f93e97eb19f6d069d8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -311,7 +311,7 @@ F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
-F test/incrblob.test b5c63e1f84f2cabbee589280a3b3c36d376116ec
+F test/incrblob.test daad09b0d18eb419ac824c9896b7432882f9c0a5
 F test/incrblob_err.test 0adf87296ad14cef6a23cd9283f81cc836c5a332
 F test/incrvacuum.test 985bc94a7ff544db09aec3a0c93c779280da9415
 F test/incrvacuum2.test 82397ceb5941cbe852fd29bb33fcdf5665bc80c2
@@ -569,7 +569,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 340a6d09bcde11065c1887b84bb81805b523ffb6
-R 4367f3d99c80cf432553fe59070fb24e
+P d66e08fd4f12407e565dc9fc53a5802216808378
+R 186fe2c8a469b23dfb70c0be812dd050
 U drh
-Z 23b771c76e7b6db1a5e3463f6439365b
+Z e8476c3cbe0a8c0d18d46c08e5b4c341

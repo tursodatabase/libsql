@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.15 2007/09/01 18:24:55 danielk1977 Exp $
+# $Id: incrblob.test,v 1.16 2007/09/03 16:45:36 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -350,7 +350,9 @@ do_test incrblob-5.1 {
     INSERT INTO aux.files VALUES('this one', zeroblob($::size));
   }
   set fd  [db incrblob aux files text 1]
+  fconfigure $fd -translation binary
   set fd2 [open [info script]]
+  fconfigure $fd2 -translation binary
   puts -nonewline $fd [read $fd2]
   close $fd
   close $fd2
@@ -359,6 +361,7 @@ do_test incrblob-5.1 {
 } [file size [info script]]
 do_test incrblob-5.2 {
   set fd2 [open [info script]]
+  fconfigure $fd2 -translation binary
   set ::data [read $fd2]
   close $fd2
   set ::data
@@ -526,6 +529,7 @@ foreach {tn arg} {1 "" 2 -readonly} {
 }
 
 set fd [open [info script]]
+fconfigure $fd -translation binary
 set ::data [read $fd 14000]
 close $fd
 
