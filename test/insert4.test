@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT transfer optimization.
 #
-# $Id: insert4.test,v 1.5 2007/04/12 21:25:02 drh Exp $
+# $Id: insert4.test,v 1.6 2007/09/03 17:30:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -29,6 +29,7 @@ proc xferopt_test {testname N} {
 # Create tables used for testing.
 #
 execsql {
+  PRAGMA legacy_file_format = 0;
   CREATE TABLE t1(a int, b int, check(b>a));
   CREATE TABLE t2(x int, y int);
   CREATE VIEW v2 AS SELECT y, x FROM t2;
@@ -226,7 +227,6 @@ xfer_check insert4-3.22 1 {1 9} \
     {a int, b int} \
     {x integer, b int}
 
-
 # Ticket #2291.
 #
 do_test insert4-4.1 {
@@ -238,5 +238,30 @@ do_test insert4-4.1 {
     VACUUM;   
   }
 } {}
+
+# Check some error conditions:
+#
+do_test insert4-5.1 {
+  # Table does not exist.
+  catchsql { INSERT INTO t2 SELECT * FROM nosuchtable }
+} {1 {no such table: nosuchtable}}
+do_test insert4-5.2 {
+  # Number of columns does not match.
+  catchsql { 
+    CREATE TABLE t5(a, b, c);
+    INSERT INTO t4 SELECT * FROM t5;
+  }
+} {1 {table t4 has 2 columns but 3 values were supplied}}
+
+do_test insert4-6.1 {
+  execsql {
+    CREATE INDEX t2_i2 ON t2(x, y COLLATE nocase); 
+    CREATE INDEX t2_i1 ON t2(x ASC, y DESC);
+    CREATE INDEX t3_i1 ON t3(a, b);
+    INSERT INTO t2 SELECT * FROM t3;
+  }
+} {}
+
+
 
 finish_test

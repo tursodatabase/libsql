@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.191 2007/08/29 13:45:59 drh Exp $
+** $Id: insert.c,v 1.192 2007/09/03 17:30:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1418,9 +1418,7 @@ static int xferOptimization(
   if( onError!=OE_Abort && onError!=OE_Rollback ){
     return 0;   /* Cannot do OR REPLACE or OR IGNORE or OR FAIL */
   }
-  if( pSelect->pSrc==0 ){
-    return 0;   /* SELECT must have a FROM clause */
-  }
+  assert(pSelect->pSrc);   /* allocated even if there is no FROM clause */
   if( pSelect->pSrc->nSrc!=1 ){
     return 0;   /* FROM clause must have exactly one term */
   }

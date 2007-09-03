@@ -1,5 +1,5 @@
-C Fix\sthe\sopen\sfile\scounter\son\swindows.\s(CVS\s4382)
-D 2007-09-03T17:09:03
+C Remove\san\sunreachable\scase\sfrom\sxferOptimization().\sAlso\sother\sminor\stest\scoverage\simprovements.\s(CVS\s4383)
+D 2007-09-03T17:30:07
 F Makefile.in f3460f3363dd568c950a62f93e97eb19f6d069d8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -94,7 +94,7 @@ F src/expr.c 7853a8161ec0b0fce62fc8da921db557899f1ec1
 F src/func.c 9d88141c4cffb3a04719e5a0fda65cde34bfa1e5
 F src/hash.c 06c69a3a038b713c43353c79023372bcfe7f5180
 F src/hash.h 3ad3da76bfb954978d227bf495568b0e6da2c19e
-F src/insert.c b11e5ca0d68bf2a7a56f47a052a0ee67dd4e2f89
+F src/insert.c df9712e1f67201573a9677d3a2fe401d52d84dda
 F src/journal.c a45147d798f4d8dbdeed200ca7f740579bd8591b
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
@@ -136,7 +136,7 @@ F src/sqliteInt.h bb126b074352ef0ee20399883172161baf5eead2
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 8c970b4cdc615dfc0726abb470a06d285ed336fb
-F src/test1.c 1b0b076c8fa8d6c88b6a36d3644d4c6ad956a712
+F src/test1.c 738f9b4ab808dcfec1516ef699c416e3f4f1d119
 F src/test2.c 77b34303883b9d722c65a6879bb0163a400e3789
 F src/test3.c 63e49781476f95e6167b441bf98b93392938a850
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -322,7 +322,7 @@ F test/index3.test f66718cd92ce1216819d47e6a156755e4b2c4ca1
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 5a20e1ace5fa0800b58d28284212290189b49aed
 F test/insert3.test 72ea6056811fd234f80d923f977c196089947381
-F test/insert4.test 1e27f0a3e5670d5f03c1636f699aa44270945bca
+F test/insert4.test 9b10c6231e04241f527f44b454bf3507e7033d16
 F test/interrupt.test 81555fb0f8179bb2d0dc7151fd75428223f93cf2
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/io.test 9aad06bbcd178f3c0ad6380c1f89df1edecefd6f
@@ -412,7 +412,7 @@ F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test 55e039b34d505aa442cee415f83c451ae28b3123
-F test/sqllimits1.test 4522961cee7038c4147fdac65e818c2a11c798b3
+F test/sqllimits1.test a86428dde21fbd918422b8ab61659a4215c0d124
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 9f26cfca74397b26ab217fb838c3d0549eb4bcf3
@@ -569,7 +569,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1be70015e24f715a4276f253d2e0c0eec44650ee
-R f39bacaaf8a4bd80c3fcaaeb07d44f18
-U drh
-Z 88317a5f744f86fb2f40c61a6535923b
+P 40cf0c177635c087b7695a8c4c3b37da57f74425
+R f6b05a8d392e762308a90982daa6a0ca
+U danielk1977
+Z 917ba269c58ddec092c1b31420c06b88
