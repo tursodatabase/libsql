@@ -12,10 +12,15 @@
 #
 # This file tests malloc failures in concert with fuzzy SQL generation.
 #
-# $Id: fuzz_malloc.test,v 1.8 2007/08/30 11:48:32 danielk1977 Exp $
+# $Id: fuzz_malloc.test,v 1.9 2007/09/03 15:42:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !memdebug {
+  finish_test
+  return
+}
 
 source $testdir/malloc_common.tcl
 source $testdir/fuzz_common.tcl

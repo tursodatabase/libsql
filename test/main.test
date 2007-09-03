@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.26 2007/09/01 09:02:54 danielk1977 Exp $
+# $Id: main.test,v 1.27 2007/09/03 15:42:48 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -317,40 +317,44 @@ do_test main-3.6 {
 
 # The following test-case tests the linked list code used to manage
 # sqlite3_vfs structures.
-do_test main-4.1 {
-  sqlite3_crash_enable 1
-  sqlite3_crash_enable 0
-
-  sqlite3async_enable 1
-  sqlite3async_enable 0
-
-  sqlite3_crash_enable 1
-  sqlite3async_enable 1
-  sqlite3_crash_enable 0
-  sqlite3async_enable 0
-
-  sqlite3_crash_enable 1
-  sqlite3async_enable 1
-  sqlite3async_enable 0
-  sqlite3_crash_enable 0
-
-  sqlite3async_enable 1
-  sqlite3_crash_enable 1
-  sqlite3_crash_enable 0
-  sqlite3async_enable 0
-
-  sqlite3async_enable 1
-  sqlite3_crash_enable 1
-  sqlite3async_enable 0
-  sqlite3_crash_enable 0
-} {}
-do_test main-4.2 {
-  set rc [catch {sqlite3 db test.db -vfs crash} msg]
-  list $rc $msg
-} {1 {no such vfs: crash}}
-do_test main-4.3 {
-  set rc [catch {sqlite3 db test.db -vfs async} msg]
-  list $rc $msg
-} {1 {no such vfs: async}}
-
+if {$::tcl_platform(platform)=="unix"} {
+  ifcapable threadsafe {
+    do_test main-4.1 {
+      sqlite3_crash_enable 1
+      sqlite3_crash_enable 0
+    
+      sqlite3async_enable 1
+      sqlite3async_enable 0
+    
+      sqlite3_crash_enable 1
+      sqlite3async_enable 1
+      sqlite3_crash_enable 0
+      sqlite3async_enable 0
+    
+      sqlite3_crash_enable 1
+      sqlite3async_enable 1
+      sqlite3async_enable 0
+      sqlite3_crash_enable 0
+    
+      sqlite3async_enable 1
+      sqlite3_crash_enable 1
+      sqlite3_crash_enable 0
+      sqlite3async_enable 0
+    
+      sqlite3async_enable 1
+      sqlite3_crash_enable 1
+      sqlite3async_enable 0
+      sqlite3_crash_enable 0
+    } {}
+    do_test main-4.2 {
+      set rc [catch {sqlite3 db test.db -vfs crash} msg]
+      list $rc $msg
+    } {1 {no such vfs: crash}}
+    do_test main-4.3 {
+      set rc [catch {sqlite3 db test.db -vfs async} msg]
+      list $rc $msg
+    } {1 {no such vfs: async}}
+  }
+}
+    
 finish_test

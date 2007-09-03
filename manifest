@@ -1,5 +1,5 @@
-C Remove\sthe\slast\straces\sof\sSQLITE_ENABLE_REDEF_IO.\s(CVS\s4377)
-D 2007-09-03T15:26:21
+C Test\sscript\sfixes\sto\sget\sthings\srunning\sunder\svarying\sconfigurations.\nNo\schanges\sto\scode.\s(CVS\s4378)
+D 2007-09-03T15:42:48
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -306,7 +306,7 @@ F test/func.test 71b39d44a0dffe123145b7c2973e8c4fb8a67ffd
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
-F test/fuzz_malloc.test 4a4ab73c1a15cd1f3568890afd4ef9e800388c2f
+F test/fuzz_malloc.test 166b58dfd77cc04f6afeeaef0cfc1087abf134d1
 F test/hook.test 7e7645fd9a033f79cce8fdff151e32715e7ec50a
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
@@ -344,7 +344,7 @@ F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 5f9557b775662c2a5ee435378f39e10d64f65cb3
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 49e22396b9be6e047b3d35469f233be79153c9d5
-F test/main.test 913427b847c6cfba055c9d0629f7479f51ba1a48
+F test/main.test 05f585bb70c05caac3e047903b517cbb319ed204
 F test/malloc.test bb1c95fb536cfefd3a5b4ce8ca1d4c99e73b1e33
 F test/malloc2.test c1a74f46a3581b56df29ff46a4e1c99b41c44ad9
 F test/malloc3.test 39b72b04436a81e0c3d548d195f8bdbf1ebf4b52
@@ -569,7 +569,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 020a2b10d408f51d4ef3211c5f701f5378fd4625
-R dd888c3eb00d5288441bd185de933461
+P 38dff76ddf0ec7d2cd0d2e1282f9c36558e5661a
+R efd0ff82d5940d7eeec257455d4f7a8f
 U drh
-Z cd566d270e089965d6607a571009ad25
+Z 4bb62e482335066851b26278d8f0a329
