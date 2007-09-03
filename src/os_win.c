@@ -1175,6 +1175,7 @@ static int winOpen(
   {
     free(zConverted);
   }
+  OpenCounter(+1);
   return SQLITE_OK;
 }
 
