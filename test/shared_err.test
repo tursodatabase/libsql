@@ -13,7 +13,7 @@
 # cache context. What happens to connection B if one connection A encounters
 # an IO-error whilst reading or writing the file-system?
 #
-# $Id: shared_err.test,v 1.16 2007/08/30 10:07:39 danielk1977 Exp $
+# $Id: shared_err.test,v 1.17 2007/09/03 16:12:10 drh Exp $
 
 proc skip {args} {}
 
@@ -293,7 +293,8 @@ do_ioerr_test shared_ioerr-3rev -tclprep {
 # Only run these tests if memory debugging is turned on.
 #
 ifcapable !memdebug {
-   puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
+   puts "Skipping tests shared_err-4 through -9:\
+         not compiled with -DSQLITE_MEMDEBUG..."
    db close
    sqlite3_enable_shared_cache $::enable_shared_cache
    finish_test

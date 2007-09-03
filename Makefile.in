@@ -52,7 +52,7 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 
 # Should the database engine be compiled threadsafe
 #
-TCC += -DTHREADSAFE=@THREADSAFE@
+TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 
 # The pthreads library if needed
 #

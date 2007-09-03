@@ -1,7 +1,22 @@
+# 2007 May 05
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains common code used by many different malloc tests
+# within the test suite.
+#
+# $Id: malloc_common.tcl,v 1.8 2007/09/03 16:12:10 drh Exp $
 
+# If we did not compile with malloc testing enabled, then do nothing.
+#
 ifcapable !memdebug {
-  puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
-  finish_test
   return 0
 }
 
@@ -99,7 +114,6 @@ proc do_malloc_test {tn args} {
         #
         set isFail [catch $::mallocbody msg]
         set nFail [sqlite3_memdebug_fail -1 -benigncnt nBenign]
-#puts "isFail=$isFail nFail=$nFail nBenign=$nBenign msg=$msg"
 
         # If one or more mallocs failed, run this loop body again.
         #
@@ -131,5 +145,3 @@ proc do_malloc_test {tn args} {
   unset ::mallocopts
   sqlite3_memdebug_fail -1
 }
-
-return 1

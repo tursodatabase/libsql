@@ -12,7 +12,7 @@
 # This file contains test cases focused on the two memory-management APIs, 
 # sqlite3_soft_heap_limit() and sqlite3_release_memory().
 #
-# $Id: malloc5.test,v 1.15 2007/09/03 11:04:22 danielk1977 Exp $
+# $Id: malloc5.test,v 1.16 2007/09/03 16:12:10 drh Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -27,7 +27,7 @@ db close
 # Only run these tests if memory debugging is turned on.
 #
 ifcapable !memdebug {
-   puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
+   puts "Skipping malloc5 tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
 }

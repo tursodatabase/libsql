@@ -92,7 +92,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.29 $
+# $Revision: 1.30 $
 
 #########
 # Programs needed
@@ -178,18 +178,18 @@ AC_SUBST(BUILD_CFLAGS)
 # Do we want to support multithreaded use of sqlite
 #
 AC_ARG_ENABLE(threadsafe, 
-AC_HELP_STRING([--enable-threadsafe],[Support threadsafe operation]),,enable_threadsafe=no)
+AC_HELP_STRING([--enable-threadsafe],[Support threadsafe operation]),,enable_threadsafe=yes)
 AC_MSG_CHECKING([whether to support threadsafe operation])
 if test "$enable_threadsafe" = "no"; then
-  THREADSAFE=0
+  SQLITE_THREADSAFE=0
   AC_MSG_RESULT([no])
 else
-  THREADSAFE=1
+  SQLITE_THREADSAFE=1
   AC_MSG_RESULT([yes])
 fi
-AC_SUBST(THREADSAFE)
+AC_SUBST(SQLITE_THREADSAFE)
 
-if test "$THREADSAFE" = "1"; then
+if test "$SQLITE_THREADSAFE" = "1"; then
   LIBS=""
   AC_CHECK_LIB(pthread, pthread_create)
   TARGET_THREAD_LIB="$LIBS"

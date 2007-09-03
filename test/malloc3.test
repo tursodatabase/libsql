@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.14 2007/08/31 05:00:49 danielk1977 Exp $
+# $Id: malloc3.test,v 1.15 2007/09/03 16:12:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -21,7 +21,7 @@ source $testdir/tester.tcl
 # Only run these tests if memory debugging is turned on.
 #
 ifcapable !memdebug {
-   puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
+   puts "Skipping malloc3 tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
 }

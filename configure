@@ -845,7 +845,7 @@ RELEASE
 VERSION_NUMBER
 BUILD_CC
 BUILD_CFLAGS
-THREADSAFE
+SQLITE_THREADSAFE
 TARGET_THREAD_LIB
 XTHREADCONNECT
 THREADSOVERRIDELOCKS
@@ -1931,7 +1931,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.42 $
+# $Revision: 1.43 $
 
 #########
 # Programs needed
@@ -18883,23 +18883,23 @@ fi
 if test "${enable_threadsafe+set}" = set; then
   enableval=$enable_threadsafe;
 else
-  enable_threadsafe=no
+  enable_threadsafe=yes
 fi
 
 { echo "$as_me:$LINENO: checking whether to support threadsafe operation" >&5
 echo $ECHO_N "checking whether to support threadsafe operation... $ECHO_C" >&6; }
 if test "$enable_threadsafe" = "no"; then
-  THREADSAFE=0
+  SQLITE_THREADSAFE=0
   { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
 else
-  THREADSAFE=1
+  SQLITE_THREADSAFE=1
   { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
 fi
 
 
-if test "$THREADSAFE" = "1"; then
+if test "$SQLITE_THREADSAFE" = "1"; then
   LIBS=""
 
 { echo "$as_me:$LINENO: checking for pthread_create in -lpthread" >&5
@@ -20739,7 +20739,7 @@ RELEASE!$RELEASE$ac_delim
 VERSION_NUMBER!$VERSION_NUMBER$ac_delim
 BUILD_CC!$BUILD_CC$ac_delim
 BUILD_CFLAGS!$BUILD_CFLAGS$ac_delim
-THREADSAFE!$THREADSAFE$ac_delim
+SQLITE_THREADSAFE!$SQLITE_THREADSAFE$ac_delim
 TARGET_THREAD_LIB!$TARGET_THREAD_LIB$ac_delim
 XTHREADCONNECT!$XTHREADCONNECT$ac_delim
 THREADSOVERRIDELOCKS!$THREADSOVERRIDELOCKS$ac_delim
@@ -21142,4 +21142,3 @@ if test "$no_create" != yes; then
   # would make configure fail if this is the last instruction.
   $ac_cs_success || { (exit 1); exit 1; }
 fi
-

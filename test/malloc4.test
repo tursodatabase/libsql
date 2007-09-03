@@ -12,7 +12,7 @@
 # This file contains tests to ensure that the library handles malloc() failures
 # correctly. The emphasis in this file is on sqlite3_column_XXX() APIs.
 #
-# $Id: malloc4.test,v 1.8 2007/08/30 15:16:05 danielk1977 Exp $
+# $Id: malloc4.test,v 1.9 2007/09/03 16:12:10 drh Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -27,8 +27,8 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Only run these tests if memory debugging is turned on.
-if {[info command sqlite3_memdebug_pending]==""} {
-   puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
+ifcapable !memdebug {
+   puts "Skipping malloc4 tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
 }
