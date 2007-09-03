@@ -2550,7 +2550,7 @@ static int unixFullPathname(sqlite3_vfs *pVfs, const char *zPath, char *zOut){
   }else{
     int nCwd;
     if( getcwd(zOut, MAX_PATHNAME-1)==0 ){
-      return SQLITE_ERROR;
+      return SQLITE_CANTOPEN;
     }
     nCwd = strlen(zOut);
     sqlite3_snprintf(MAX_PATHNAME-nCwd, &zOut[nCwd], "/%s", zPath);
