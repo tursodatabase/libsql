@@ -1,5 +1,5 @@
-C Add\sa\smodule-destructor\sto\sthe\secho\smodule\s(test8.c)\sto\simprove\scode\scoverage.\s(CVS\s4372)
-D 2007-09-03T11:51:50
+C Document\sthe\sfact\sthat\sxRandomness\sis\sonly\scalled\sonce\sfrom\sthe\sdefault\sVFS.\nTicket\s#2614.\s(CVS\s4373)
+D 2007-09-03T12:34:57
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -510,7 +510,7 @@ F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
 F tool/spaceanal.tcl f60a242a996a79d59cad6615cec83a9203e17911
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
-F www/34to35.tcl 5a477bf9210b324ee16bd26fc04ddd578b63b395
+F www/34to35.tcl 4f624758651931952dd6f23d0856758c8babe3b2
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.gif f845a64772062e82d17980a349f95f1f0b4c8054
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c0ce63196458c81e0859fc8a38f2dd2145a580bc
-R e4b27aa117d92ab923ab170f9a80b4a8
-U danielk1977
-Z 8ba1b1c43d2e7301aebcb9fd4022cc57
+P e3dd3651421ee723f9b7550fc333a308a83b276d
+R e5bbccd4e7ccaddc79e4352e0f90298b
+U drh
+Z 5e24864e26a2ac7181c9f9ec2eeb72f5
