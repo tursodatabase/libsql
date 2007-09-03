@@ -2,7 +2,7 @@
 ifcapable !memdebug {
   puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
   finish_test
-  return
+  return 0
 }
 
 # Usage: do_malloc_test <test number> <options...>
@@ -131,3 +131,5 @@ proc do_malloc_test {tn args} {
   unset ::mallocopts
   sqlite3_memdebug_fail -1
 }
+
+return 1

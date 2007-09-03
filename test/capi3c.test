@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.11 2007/08/29 12:31:29 danielk1977 Exp $
+# $Id: capi3c.test,v 1.12 2007/09/03 07:31:10 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -745,7 +745,7 @@ foreach {code english} $code2english {
 }
 
 # Test the error message when a "real" out of memory occurs.
-if {[info command sqlite3_memdebug_fail]!=""} {
+ifcapable memdebug {
   do_test capi3c-10-1 {
     sqlite3 db test.db
     set DB [sqlite3_connection_pointer db]

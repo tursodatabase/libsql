@@ -1,5 +1,5 @@
-C The\ssqlite3_vfs_register()\sinterface\snow\scalls\ssqlite3_vfs_find(0)\sto\smake\nsure\sthe\sVFS\ssubsystem\sis\sinitialized.\s\sTicket\s#2611.\s(CVS\s4369)
-D 2007-09-02T17:52:04
+C Fixes\sto\stest\scode\sso\sthat\sthe\stest\ssuite\spasses\swithout\sSQLITE_MEMDEBUG\sdefined.\s(CVS\s4370)
+D 2007-09-03T07:31:10
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -151,7 +151,7 @@ F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c 3f50b4060c360d33d069e64ce5684eac43fbf4db
 F src/test_hexio.c 94a1efec4b19311eb7c4dc40e8496a3d8eadf18a
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
-F src/test_malloc.c 35310c5147effb632fd52c1dd872ef82d56faee8
+F src/test_malloc.c c34e7696dc4a5150c82452be28b87c7e38ba15ad
 F src/test_md5.c 34599caee5b1c73dcf86ca31f55846fab8c19ef7
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c 1020673fc02ba5bbfa5dc96ded9f54f0f3744d38
@@ -214,7 +214,7 @@ F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
 F test/capi2.test 3c5066836cbaa9923bcc8282c010aa227bb5efd4
 F test/capi3.test ba20464efde48b33b5792cad9ac71dfe2e8d8cd9
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
-F test/capi3c.test 9b324b73317d65d864c56c355a06a5b5cfbcd5a2
+F test/capi3c.test 40dfef274e7b9363cbd15ccfce9ce364b7b097a4
 F test/cast.test c4780b58b569bab4947458195410ae8791ac216b
 F test/check.test 024ed399600b799160378cf9d9f436bdf5dfd184
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
@@ -357,8 +357,8 @@ F test/malloc9.test fb99833476bc1a9b0b15573b9a56ae13af843ef9
 F test/mallocA.test bec59bb8c9837cea463d1e76e62d0ea5113c4292
 F test/mallocB.test 56fd615f3fea97180132a89dd1dd2068852ef6a0
 F test/mallocC.test 3c6385336c82c9c2249c6c28ed23f430e1d66bd3
-F test/mallocD.test 03164dad24407f2a833b8215789f05a342647926
-F test/malloc_common.tcl 7ba29166a33f82eef970935fd27edb8be581a019
+F test/mallocD.test b3d50177adb1c563b1295ad57db4e018f8a43066
+F test/malloc_common.tcl 4c0ae53eae755d8b7ac5fa5f2509083ec2968667
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
@@ -381,7 +381,7 @@ F test/pageropt.test 51e3c091bc2992f5098f7576e3594e1908988939
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
 F test/pragma.test b0e73879206934a835856a8b8c4cc884cd8562f3
 F test/pragma2.test bb5aa7be00dae2c381fcc782358048a33c955793
-F test/printf.test d3cacac565b074d3cfed0fd847085d4a9fddc934
+F test/printf.test 6bf1a86c6a1e45536f72d782bf44c8e3c76510f8
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 1c712dd6516e1377471744fa765e41c79a357da6
 F test/quick.test 88844a19f6d9dc5c990e01c7dd611d33d022a1c1
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 59e02db2402f9fcadfbeee88ab5778d27ddde634
-R cc1701215560ac5f56998d19801b627b
-U drh
-Z 7338fdebf2f3b27723b52ee9b31d387c
+P 4a9999a36d01a8c6490792605a6f7e233cc4402c
+R 7d21bfe5332f51fbfd47107d9eb37c68
+U danielk1977
+Z 34ef56b14cc4c07e252ab613eb7ad3cf

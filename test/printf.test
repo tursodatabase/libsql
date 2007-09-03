@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.26 2007/09/01 10:01:13 danielk1977 Exp $
+# $Id: printf.test,v 1.27 2007/09/03 07:31:10 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -298,23 +298,25 @@ do_test printf-15.3 {
 
 # Now test malloc() failure within a sqlite3_mprintf():
 #
-foreach var {a b c d} {
-  set $var [string repeat $var 400]
-}
-set str1 "[string repeat A 360]%d%d%s"
-set str2 [string repeat B 5000]
-set zSuccess "[string repeat A 360]11[string repeat B 5000]"
-foreach ::iRepeat {0 1} {
-  set nTestNum 1
-  while {1} {
-    sqlite3_memdebug_fail $nTestNum -repeat $::iRepeat
-    set z [sqlite3_mprintf_str $str1 1 1 $str2]
-    set nFail [sqlite3_memdebug_fail -1 -benign nBenign]
-    do_test printf-malloc-$::iRepeat.$nTestNum {
-      expr {($nFail>0 && $z eq "") || ($nFail==$nBenign && $z eq $zSuccess)}
-    } {1}
-    if {$nFail == 0} break
-    incr nTestNum
+ifcapable memdebug {
+  foreach var {a b c d} {
+    set $var [string repeat $var 400]
+  }
+  set str1 "[string repeat A 360]%d%d%s"
+  set str2 [string repeat B 5000]
+  set zSuccess "[string repeat A 360]11[string repeat B 5000]"
+  foreach ::iRepeat {0 1} {
+    set nTestNum 1
+    while {1} {
+      sqlite3_memdebug_fail $nTestNum -repeat $::iRepeat
+      set z [sqlite3_mprintf_str $str1 1 1 $str2]
+      set nFail [sqlite3_memdebug_fail -1 -benign nBenign]
+      do_test printf-malloc-$::iRepeat.$nTestNum {
+        expr {($nFail>0 && $z eq "") || ($nFail==$nBenign && $z eq $zSuccess)}
+      } {1}
+      if {$nFail == 0} break
+      incr nTestNum
+    }
   }
 }
 

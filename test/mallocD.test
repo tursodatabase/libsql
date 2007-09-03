@@ -9,11 +9,12 @@
 #
 #***********************************************************************
 #
-# $Id: mallocD.test,v 1.1 2007/08/30 08:08:17 danielk1977 Exp $
+# $Id: mallocD.test,v 1.2 2007/09/03 07:31:10 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-source $testdir/malloc_common.tcl
+
+if {![source $testdir/malloc_common.tcl]} return
 
 sqlite3_simulate_device -char atomic
 
