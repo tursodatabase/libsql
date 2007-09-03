@@ -9,13 +9,6 @@
 # BCC              C Compiler and options for use in building executables that
 #                  will run on the platform that is doing the build.
 #
-# USLEEP           If the target operating system supports the "usleep()" system
-#                  call, then define the HAVE_USLEEP macro for all C modules.
-#
-# THREADSAFE       If you want the SQLite library to be safe for use within a 
-#                  multi-threaded program, then define the following macro
-#                  appropriately:
-#
 # THREADLIB        Specify any extra linker options needed to make the library
 #                  thread safe
 #
@@ -51,7 +44,7 @@
 
 # This is how we compile
 #
-TCCX = $(TCC) $(OPTS) $(THREADSAFE) $(USLEEP) -I. -I$(TOP)/src
+TCCX = $(TCC) $(OPTS) -I. -I$(TOP)/src
 
 # Object files for the SQLite library.
 #

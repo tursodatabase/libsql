@@ -1,5 +1,5 @@
-C Documentation\supdates\sin\spreparation\sfor\sthe\srelease\sof\sversion\s3.5.0.\s(CVS\s4386)
-D 2007-09-03T20:32:45
+C Fix\sbtree.c\sso\sthat\sit\sworks\swith\s-DSQLITE_THREADSAFE=0\sand\s-DSQLITE_DEBUG=1\s(CVS\s4387)
+D 2007-09-03T22:00:39
 F Makefile.in f3460f3363dd568c950a62f93e97eb19f6d069d8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk ce638342ef19844812eaade3b8a944709bb2813e
+F main.mk 236865e8cb89db59b913ee4b28326e67dfda3c53
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -81,7 +81,7 @@ F src/analyze.c 49b4bd45eb286d833793ed6bf72355a5c1974865
 F src/attach.c 02fd8779270b1df1c63e7ba6e6655b960fa0f3d5
 F src/auth.c d41c34f3150b3b8248d364770ef922bbcefbff82
 F src/btmutex.c 442be6f068d77ca9ffd69899cf0a3943c244548c
-F src/btree.c bc7d856505b12f903966d1fd87165588ac7a961b
+F src/btree.c b1e8025ac1ba81d78c2d2bab47af8efd1d143995
 F src/btree.h d0736ebca4b6eafbdd823c46a8de574cea078211
 F src/btreeInt.h 4330c19b8314545fdb209cc77e2a57f6a5290e9c
 F src/build.c 94d0d6dfd1e706c480903fbdda2e77466f21b898
@@ -569,7 +569,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 51726a9bb6c7f98c496302745656dc317ad5c094
-R b6337e684a5d9067ca7a33a3860add13
+P c6809bf77625f420ac62513635628ff4f1766f83
+R 7ec7f5bd5ba036194f3de9124caa4922
 U drh
-Z bffd337f01056c4ca53d6f1685390e4f
+Z 0685daa71fde16dce4df6f8f549f50de
