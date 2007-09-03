@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.16 2007/09/03 17:30:07 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.17 2007/09/03 18:01:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -45,7 +45,7 @@ foreach var [info vars SQLITE_MAX_*] {
 
 set SQLITE_MAX_LENGTH                 100000
 set SQLITE_MAX_COLUMN
-set SQLITE_MAX_SQL_LENGTH             100000
+set SQLITE_MAX_SQL_LENGTH              50000
 set SQLITE_MAX_EXPR_DEPTH               1000
 set SQLITE_MAX_COMPOUND_SELECT             5
 set SQLITE_MAX_VDBE_OP
