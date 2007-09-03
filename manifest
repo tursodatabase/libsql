@@ -1,5 +1,5 @@
-C Document\sthe\sfact\sthat\sxRandomness\sis\sonly\scalled\sonce\sfrom\sthe\sdefault\sVFS.\nTicket\s#2614.\s(CVS\s4373)
-D 2007-09-03T12:34:57
+C Improvements\sto\sthe\sxRandomness()\smethod\son\sthe\sdefault\swindows\sVFS.\nTicket\s#2615.\s(CVS\s4374)
+D 2007-09-03T13:06:12
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -118,7 +118,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 3b1b9c6d1b09b9cddd19287e6f842d712bf07602
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c ce778c06afcbfd120ede237befece4655e83c8d0
+F src/os_win.c 57f9b96e78b98e135c41b985613a448d704f23f0
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c ac52bb1e22f7ce203e1eec8fa666be2cdd695ee9
 F src/pager.h f204c1a9fe0574953fba89c56d9d9bd1ddfa604a
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e3dd3651421ee723f9b7550fc333a308a83b276d
-R e5bbccd4e7ccaddc79e4352e0f90298b
+P e89d4131a1b55da1a7f226d7f7b416f02f5e2c6e
+R 70eed1b737d2685751d3043c11b74d10
 U drh
-Z 5e24864e26a2ac7181c9f9ec2eeb72f5
+Z 3dfc552072668685c58ab6fae3991bd7

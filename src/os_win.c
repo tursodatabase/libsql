@@ -1421,12 +1421,30 @@ void winDlClose(sqlite3_vfs *pVfs, void *pHandle){
 ** Write up to nBuf bytes of randomness into zBuf.
 */
 static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
-  if( sizeof(LPSYSTEMTIME)>=nBuf ){
-    GetSystemTime((LPSYSTEMTIME)zBuf);
-    return sizeof(LPSYSTEMTIME);
-  }else{
-    return 0;
+  int n = 0;
+  if( sizeof(LPSYSTEMTIME)<=nBuf-n ){
+    SYSTEMTIME x;
+    GetSystemTime(&x);
+    memcpy(&zBuf[n], &x, sizeof(x));
+    n += sizeof(x);
   }
+  if( sizeof(DWORD)<=nBuf-n ){
+    DWORD pid = GetCurrentProcessId();
+    memcpy(&zBuf[n], &pid, sizeof(pid));
+    n += sizeof(pid);
+  }
+  if( sizeof(DWORD)<=nBuf-n ){
+    DWORD cnt = GetTickCount();
+    memcpy(&zBuf[n], &cnt, sizeof(cnt));
+    n += sizeof(cnt);
+  }
+  if( sizeof(LARGE_INTEGER)<=nBuf-n ){
+    LARGE_INTEGER i;
+    QueryPerformanceCounter(&i);
+    memcpy(&zBuf[n], &i, sizeof(i));
+    n += sizeof(i);
+  }
+  return n;
 }
 
 
