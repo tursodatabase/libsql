@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.420 2007/08/30 01:19:59 drh Exp $
+** $Id: btree.c,v 1.421 2007/09/03 15:19:35 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1110,7 +1110,8 @@ int sqlite3BtreeOpen(
   const char *zFilename,  /* Name of the file containing the BTree database */
   sqlite3 *pSqlite,       /* Associated database handle */
   Btree **ppBtree,        /* Pointer to new Btree object written here */
-  int flags               /* Options */
+  int flags,              /* Options */
+  int vfsFlags            /* Flags passed through to sqlite3_vfs.xOpen() */
 ){
   sqlite3_vfs *pVfs;      /* The VFS to use for this btree */
   BtShared *pBt = 0;      /* Shared part of btree structure */
@@ -1208,7 +1209,8 @@ int sqlite3BtreeOpen(
       rc = SQLITE_NOMEM;
       goto btree_open_out;
     }
-    rc = sqlite3PagerOpen(pVfs, &pBt->pPager, zFilename, EXTRA_SIZE, flags);
+    rc = sqlite3PagerOpen(pVfs, &pBt->pPager, zFilename,
+                          EXTRA_SIZE, flags, vfsFlags);
     if( rc==SQLITE_OK ){
       rc = sqlite3PagerReadFileheader(pBt->pPager,sizeof(zDbHeader),zDbHeader);
     }

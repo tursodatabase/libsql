@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** @(#) $Id: journal.c,v 1.5 2007/09/01 18:24:55 danielk1977 Exp $
+** @(#) $Id: journal.c,v 1.6 2007/09/03 15:19:35 drh Exp $
 */
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
@@ -93,7 +93,7 @@ static int jrnlRead(
   if( p->pReal ){
     rc = sqlite3OsRead(p->pReal, zBuf, iAmt, iOfst);
   }else{
-    assert( n+iOfst<=p->iSize );
+    assert( iAmt+iOfst<=p->iSize );
     memcpy(zBuf, &p->zBuf[iOfst], iAmt);
   }
   return rc;

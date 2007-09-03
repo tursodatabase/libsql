@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.92 2007/08/30 01:19:59 drh Exp $
+** @(#) $Id: btree.h,v 1.93 2007/09/03 15:19:35 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -59,7 +59,8 @@ int sqlite3BtreeOpen(
   const char *zFilename,   /* Name of database file to open */
   sqlite3 *db,             /* Associated database connection */
   Btree **,                /* Return open Btree* here */
-  int flags                /* Flags */
+  int flags,               /* Flags */
+  int vfsFlags             /* Flags passed through to VFS open */
 );
 
 /* The flags parameter to sqlite3BtreeOpen can be the bitwise or of the

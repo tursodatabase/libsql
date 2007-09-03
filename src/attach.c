@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.61 2007/08/16 04:30:39 drh Exp $
+** $Id: attach.c,v 1.62 2007/09/03 15:19:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -73,8 +73,8 @@ static void attachFunc(
   const char *zName;
   const char *zFile;
   Db *aNew;
-  char zErr[128];
   char *zErrDyn = 0;
+  char zErr[128];
 
   zFile = (const char *)sqlite3_value_text(argv[0]);
   zName = (const char *)sqlite3_value_text(argv[1]);
@@ -133,7 +133,9 @@ static void attachFunc(
   ** it to obtain the database schema. At this point the schema may
   ** or may not be initialised.
   */
-  rc = sqlite3BtreeFactory(db, zFile, 0, SQLITE_DEFAULT_CACHE_SIZE, &aNew->pBt);
+  rc = sqlite3BtreeFactory(db, zFile, 0, SQLITE_DEFAULT_CACHE_SIZE,
+                           db->openFlags | SQLITE_OPEN_MAIN_DB,
+                           &aNew->pBt);
   if( rc==SQLITE_OK ){
     aNew->pSchema = sqlite3SchemaGet(db, aNew->pBt);
     if( !aNew->pSchema ){

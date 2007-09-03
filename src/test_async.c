@@ -1192,7 +1192,7 @@ static int testAsyncWait(
 ** of this module.
 */
 int Sqlitetestasync_Init(Tcl_Interp *interp){
-#if OS_UNIX && SQLITE_THREADSAFE && defined(SQLITE_ENABLE_REDEF_IO)
+#if OS_UNIX && SQLITE_THREADSAFE
   Tcl_CreateObjCommand(interp,"sqlite3async_enable",testAsyncEnable,0,0);
   Tcl_CreateObjCommand(interp,"sqlite3async_halt",testAsyncHalt,0,0);
   Tcl_CreateObjCommand(interp,"sqlite3async_delay",testAsyncDelay,0,0);
@@ -1200,6 +1200,6 @@ int Sqlitetestasync_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp,"sqlite3async_wait",testAsyncWait,0,0);
   Tcl_LinkVar(interp, "sqlite3async_trace",
       (char*)&sqlite3async_trace, TCL_LINK_INT);
-#endif  /* OS_UNIX and SQLITE_THREADSAFE and defined(SQLITE_ENABLE_REDEF_IO) */
+#endif  /* OS_UNIX and SQLITE_THREADSAFE */
   return TCL_OK;
 }

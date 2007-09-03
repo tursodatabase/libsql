@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.200 2007/08/31 14:31:45 drh Exp $
+** $Id: tclsqlite.c,v 1.201 2007/09/03 15:19:35 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2306,7 +2306,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       int b;
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
       if( b ){
-        flags &= ~SQLITE_OPEN_READWRITE;
+        flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
         flags |= SQLITE_OPEN_READONLY;
       }else{
         flags &= ~SQLITE_OPEN_READONLY;
@@ -2315,7 +2315,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     }else if( strcmp(zArg, "-create")==0 ){
       int b;
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
-      if( b ){
+      if( b && (flags & SQLITE_OPEN_READONLY)==0 ){
         flags |= SQLITE_OPEN_CREATE;
       }else{
         flags &= ~SQLITE_OPEN_CREATE;

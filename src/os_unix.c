@@ -2368,15 +2368,26 @@ static int unixOpen(
   **   (a) Exactly one of the READWRITE and READONLY flags must be set, and 
   **   (b) if CREATE is set, then READWRITE must also be set, and
   **   (c) if EXCLUSIVE is set, then CREATE must also be set.
+  **   (d) if DELETEONCLOSE is set, then CREATE must also be set.
   */
   assert((isReadonly==0 || isReadWrite==0) && (isReadWrite || isReadonly));
   assert(isCreate==0 || isReadWrite);
   assert(isExclusive==0 || isCreate);
+  assert(isDelete==0 || isCreate);
+
+
+  /* The main DB, main journal, and master journal are never automatically
+  ** deleted
+  */
+  assert( eType!=SQLITE_OPEN_MAIN_DB || !isDelete );
+  assert( eType!=SQLITE_OPEN_MAIN_JOURNAL || !isDelete );
+  assert( eType!=SQLITE_OPEN_MASTER_JOURNAL || !isDelete );
 
   /* Assert that the upper layer has set one of the "file-type" flags. */
   assert( eType==SQLITE_OPEN_MAIN_DB      || eType==SQLITE_OPEN_TEMP_DB 
        || eType==SQLITE_OPEN_MAIN_JOURNAL || eType==SQLITE_OPEN_TEMP_JOURNAL 
        || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_MASTER_JOURNAL 
+       || eType==SQLITE_OPEN_TRANSIENT_DB
   );
 
   if( isReadonly )  oflags |= O_RDONLY;

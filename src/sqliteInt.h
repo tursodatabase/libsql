@@ -11,12 +11,16 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.607 2007/08/31 17:42:48 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.608 2007/09/03 15:19:35 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
 #include "sqliteLimit.h"
 
+/*
+** For testing purposes, the various size limit constants are really
+** variables that we can modify in the testfixture.
+*/
 #ifdef SQLITE_TEST
   #undef SQLITE_MAX_LENGTH
   #undef SQLITE_MAX_COLUMN
@@ -433,6 +437,7 @@ struct sqlite3 {
   int nDb;                      /* Number of backends currently in use */
   Db *aDb;                      /* All backends */
   int flags;                    /* Miscellanous flags. See below */
+  int openFlags;                /* Flags passed to sqlite3_vfs.xOpen() */
   int errCode;                  /* Most recent error code (SQLITE_*) */
   int errMask;                  /* & result codes with this before returning */
   u8 autoCommit;                /* The auto-commit flag. */
@@ -1754,7 +1759,7 @@ void sqlite3DeferForeignKey(Parse*, int);
 void sqlite3Attach(Parse*, Expr*, Expr*, Expr*);
 void sqlite3Detach(Parse*, Expr*);
 int sqlite3BtreeFactory(const sqlite3 *db, const char *zFilename,
-                       int omitJournal, int nCache, Btree **ppBtree);
+                       int omitJournal, int nCache, int flags, Btree **ppBtree);
 int sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
 int sqlite3FixSrcList(DbFixer*, SrcList*);
 int sqlite3FixSelect(DbFixer*, Select*);

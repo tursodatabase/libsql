@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.384 2007/09/01 16:16:15 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.385 2007/09/03 15:19:35 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -353,6 +353,7 @@ struct Pager {
   u8 doNotSync;               /* Boolean. While true, do not spill the cache */
   u8 exclusiveMode;           /* Boolean. True if locking_mode==EXCLUSIVE */
   u8 changeCountDone;         /* Set after incrementing the change-counter */
+  u32 vfsFlags;               /* Flags for sqlite3_vfs.xOpen() */
   int errCode;                /* One of several kinds of errors */
   int dbSize;                 /* Number of pages in the file */
   int origDbSize;             /* dbSize before the current change */
@@ -1979,21 +1980,17 @@ int sqlite3_opentemp_count = 0;
 ** file when it is closed.
 **
 ** If zFilename is 0, then an appropriate temporary filename is
-** generated automatically and  SQLITE_OPEN_SUBJOURNAL is passed to
-** the OS layer as the file type.
+** generated automatically.
 **
-** If zFilename is not 0, SQLITE_OPEN_TEMP_DB is passed as the file type.
+** The vfsFlags value should be SQLITE_OPEN_SUBJOURNAL or SQLITE_OPEN
 */
 static int sqlite3PagerOpentemp(
-  sqlite3_vfs *pVfs, 
-  sqlite3_file *pFile, 
-  char *zFilename
+  sqlite3_vfs *pVfs,    /* The virtual file system layer */
+  sqlite3_file *pFile,  /* Write the file descriptor here */
+  char *zFilename,      /* Name of the file.  Might be NULL */
+  int vfsFlags          /* Flags passed through to the VFS */
 ){
   int rc;
-  int flags = (
-     SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|
-     SQLITE_OPEN_EXCLUSIVE|SQLITE_OPEN_DELETEONCLOSE
-  );
 
   char *zFree = 0;
   if( zFilename==0 ){
@@ -2002,21 +1999,20 @@ static int sqlite3PagerOpentemp(
       return SQLITE_NOMEM;
     }
     zFilename = zFree;
-    flags |= SQLITE_OPEN_SUBJOURNAL;
     rc = sqlite3OsGetTempName(pVfs, zFilename);
     if( rc!=SQLITE_OK ){
       sqlite3_free(zFree);
       return rc;
     }
-  }else{
-    flags |= SQLITE_OPEN_TEMP_DB;
   }
 
 #ifdef SQLITE_TEST
   sqlite3_opentemp_count++;  /* Used for testing and analysis only */
 #endif
 
-  rc = sqlite3OsOpen(pVfs, zFilename, pFile, flags, 0);
+  vfsFlags |=  SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE |
+            SQLITE_OPEN_EXCLUSIVE | SQLITE_OPEN_DELETEONCLOSE;
+  rc = sqlite3OsOpen(pVfs, zFilename, pFile, vfsFlags, 0);
   assert( rc!=SQLITE_OK || pFile->pMethods );
   sqlite3_free(zFree);
   return rc;
@@ -2041,7 +2037,8 @@ int sqlite3PagerOpen(
   Pager **ppPager,         /* Return the Pager structure here */
   const char *zFilename,   /* Name of the database file to open */
   int nExtra,              /* Extra bytes append to each in-memory page */
-  int flags                /* flags controlling this file */
+  int flags,               /* flags controlling this file */
+  int vfsFlags             /* flags passed through to sqlite3_vfs.xOpen() */
 ){
   u8 *pPtr;
   Pager *pPager = 0;
@@ -2096,6 +2093,7 @@ int sqlite3PagerOpen(
     return SQLITE_NOMEM;
   }
   pPtr = (u8 *)&pPager[1];
+  pPager->vfsFlags = vfsFlags;
   pPager->fd = (sqlite3_file*)&pPtr[pVfs->szOsFile*0];
   pPager->stfd = (sqlite3_file*)&pPtr[pVfs->szOsFile*1];
   pPager->jfd = (sqlite3_file*)&pPtr[pVfs->szOsFile*2];
@@ -2112,13 +2110,9 @@ int sqlite3PagerOpen(
     if( nPathname>(pVfs->mxPathname - sizeof("-journal")) ){
       rc = SQLITE_CANTOPEN;
     }else{
-/***  FIXME:  Might need to be SQLITE_OPEN_TEMP_DB.  Need to pass in
-**** a flag from higher up.
-****/
-      int oflag = 
-            (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_DB);
       int fout = 0;
-      rc = sqlite3OsOpen(pVfs, pPager->zFilename, pPager->fd, oflag, &fout);
+      rc = sqlite3OsOpen(pVfs, pPager->zFilename, pPager->fd,
+                         pPager->vfsFlags, &fout);
       readOnly = (fout&SQLITE_OPEN_READONLY);
 
       /* If the file was successfully opened for read/write access,
@@ -2919,7 +2913,8 @@ static int pager_write_pagelist(PgHdr *pList){
     /* If the file has not yet been opened, open it now. */
     if( !pPager->fd->pMethods ){
       assert(pPager->tempFile);
-      rc = sqlite3PagerOpentemp(pPager->pVfs, pPager->fd, pPager->zFilename);
+      rc = sqlite3PagerOpentemp(pPager->pVfs, pPager->fd, pPager->zFilename,
+                                pPager->vfsFlags);
       if( rc ) return rc;
     }
 
@@ -4720,7 +4715,8 @@ static int pagerStmtBegin(Pager *pPager){
   pPager->stmtHdrOff = 0;
   pPager->stmtCksum = pPager->cksumInit;
   if( !pPager->stmtOpen ){
-    rc = sqlite3PagerOpentemp(pPager->pVfs, pPager->stfd, 0);
+    rc = sqlite3PagerOpentemp(pPager->pVfs, pPager->stfd, 0,
+                              SQLITE_OPEN_SUBJOURNAL);
     if( rc ) goto stmt_begin_failed;
     pPager->stmtOpen = 1;
     pPager->stmtNRec = 0;
