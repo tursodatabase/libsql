@@ -212,8 +212,11 @@ SRC += \
 # Source code to the test files.
 #
 TESTSRC = \
+  $(TOP)/src/attach.c \
   $(TOP)/src/btree.c \
+  $(TOP)/src/build.c \
   $(TOP)/src/date.c \
+  $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
   $(TOP)/src/insert.c \
   $(TOP)/src/malloc.c \
@@ -223,7 +226,9 @@ TESTSRC = \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
   $(TOP)/src/pragma.c \
+  $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
+  $(TOP)/src/select.c \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
@@ -243,11 +248,15 @@ TESTSRC = \
   $(TOP)/src/test_schema.c \
   $(TOP)/src/test_server.c \
   $(TOP)/src/test_tclvar.c \
+  $(TOP)/src/tokenize.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
   $(TOP)/src/vdbe.c \
+  $(TOP)/src/vdbeapi.c \
   $(TOP)/src/vdbeaux.c \
-  $(TOP)/src/where.c
+  $(TOP)/src/vdbemem.c \
+  $(TOP)/src/where.c \
+  parse.c
 
 # Header files used by all library source files.
 #
