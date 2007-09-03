@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the goals.html file.
 #
-set rcsid {$Id: 34to35.tcl,v 1.2 2007/09/03 12:34:57 drh Exp $}
+set rcsid {$Id: 34to35.tcl,v 1.3 2007/09/03 20:32:45 drh Exp $}
 source common.tcl
 header {SQLite Changes From Version 3.4.2 To 3.5.0}
 
@@ -27,8 +27,19 @@ proc IMAGE {name {caption {}}} {
 proc PARAGRAPH {text} {
   # regsub -all "/(\[a-zA-Z0-9\]+)/" $text {<i>\1</i>} t2
   #regsub -all "\\*(\[^\n*\]+)\\*" $text {<tt><b><big>\1</big></b></tt>} t3
-  regsub -all {\[([^]\n]+)\]} $text {<b>\1</b>} t3
-  puts "<p>$t3</p>\n"
+  regsub -all {\[([^]\n]+)\]} $text {[resolve_link \1]} t3
+  puts "<p>[subst -novar -noback $t3]</p>\n"
+}
+proc resolve_link {args} {
+  set a2 [split $args |]
+  set id [string trim [lindex $a2 0]]
+  if {[lindex $a2 1]==""} {
+    set display [string trim [lindex $a2 0]]
+  } else {
+    set display [string trim [lrange $a2 1 end]]
+  }
+  regsub -all {[^a-zA-Z0-9_]} $id {} id
+  return "<a href=\"capi3ref.html#$id\">$display</a>"
 }
 set level(0) 0
 set level(1) 0
@@ -79,8 +90,9 @@ PARAGRAPH {
   <ol>
   <li>The OS interface layer has been completely reworked:
   <ol type="a">
-  <li>The [sqlite3_os_switch()] interface has been removed.</li>
-  <li>The [SQLITE_ENABLE_REDEF_IO] compile-time flag no longer functions.
+  <li>The undocumented <b>sqlite3_os_switch()</b> interface has
+      been removed.</li>
+  <li>The <b>SQLITE_ENABLE_REDEF_IO</b> compile-time flag no longer functions.
       I/O procedures are now always redefinable.</li>
   <li>Three new objects are defined for specifying I/O procedures:
       [sqlite3_vfs], [sqlite3_file], and [sqlite3_io_methods].</li>
@@ -134,7 +146,7 @@ HEADING 1 {The OS Interface Layer}
 
 PARAGRAPH {
   If your system defines a custom OS interface for SQLite or if you
-  were using the (undocumented) [sqlite3_os_switch()]
+  were using the undocumented <b>sqlite3_os_switch()</b>
   interface, then you will need to make modifications in order to
   upgrade to SQLite version 3.5.0.  This may seem painful at first
   glance.  But as you look more closely, you will probably discover
@@ -361,9 +373,9 @@ PARAGRAPH {
    filename if it needs to remember the filename for some reason.
    The flags argument to xOpen() is a copy of the flags argument
    to sqlite3_open_v2().  If sqlite3_open() or sqlite3_open16()
-   is used, then flags is SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE.
+   is used, then flags is [SQLITE_OPEN_READWRITE] | [SQLITE_OPEN_CREATE].
    If xOpen() opens a file read-only then it sets *pOutFlags to
-   include SQLITE_OPEN_READONLY.  Other bits in *pOutFlags may be
+   include [SQLITE_OPEN_READONLY].  Other bits in *pOutFlags may be
    set.
    SQLite will also add one of the following flags to the xOpen()
    call, depending on the object being opened:
@@ -372,6 +384,7 @@ PARAGRAPH {
    <li>  [SQLITE_OPEN_MAIN_JOURNAL]
    <li>  [SQLITE_OPEN_TEMP_DB]
    <li>  [SQLITE_OPEN_TEMP_JOURNAL]
+   <li>  [SQLITE_OPEN_TRANSIENT_DB]
    <li>  [SQLITE_OPEN_SUBJOURNAL]
    <li>  [SQLITE_OPEN_MASTER_JOURNAL]
    </ul>
@@ -379,7 +392,7 @@ PARAGRAPH {
    changes the way it deals with files.  For example, an application
    that does not care about crash recovery or rollback, might make
    the open of a journal file a no-op.  Writes to this journal are
-   also a no-op.  Any attempt to read the journal return SQLITE_IOERR.
+   also a no-op.  Any attempt to read the journal returns [SQLITE_IOERR].
    Or the implementation might recognize the a database file will
    be doing page-aligned sector reads and writes in a random order
    and set up its I/O subsystem accordingly.
@@ -402,6 +415,20 @@ PARAGRAPH {
 }
 
 PARAGRAPH {
+  The differences between an [SQLITE_OPEN_TEMP_DB] database and an
+  [SQLITE_OPEN_TRANSIENT_DB] database is this:  The [SQLITE_OPEN_TEMP_DB]
+  is used for explicitly declared and named TEMP tables (using the
+  CREATE TEMP TABLE syntax) or for named tables in a temporary database
+  that is created by opening a database with a filename that is an empty
+  string.  An [SQLITE_OPEN_TRANSIENT_DB] holds an database table that
+  SQLite creates automatically in order to evaluate a subquery or
+  ORDER BY or GROUP BY clause.  Both TEMP_DB and TRANSIENT_DB databases
+  are private and are deleted automatically.  TEMP_DB databases last
+  for the duration of the database connection.  TRANSIENT_DB databases
+  last only for the duration of a single SQL statement.
+}
+
+PARAGRAPH {
   The xDelete method is used delete a file.  The name of the file is
   given in the second parameter.  The filename will be in UTF-8.
   The VFS must convert the filename into whatever character representation
@@ -415,9 +442,9 @@ PARAGRAPH {
 PARAGRAPH {
   The xAccess method is used to check for access permissions on a file.
   The filename will be UTF-8 encoded.  The flags argument will be
-  SQLITE_ACCESS_EXISTS to check for the existence of the file,
-  SQLITE_ACCESS_READWRITE to check to see if the file is both readable
-  and writable, or SQLITE_ACCESS_READ to check to see if the file is
+  [SQLITE_ACCESS_EXISTS] to check for the existence of the file,
+  [SQLITE_ACCESS_READWRITE] to check to see if the file is both readable
+  and writable, or [SQLITE_ACCESS_READ] to check to see if the file is
   at least readable.  The "file" named by the second parameter might
   be a directory or folder name.
 }
@@ -532,8 +559,7 @@ struct sqlite3_io_methods {
   int (*xLock)(sqlite3_file*, int);
   int (*xUnlock)(sqlite3_file*, int);
   int (*xCheckReservedLock)(sqlite3_file*);
-  int (*xBreakLock)(sqlite3_file*);
-  int (*xLockState)(sqlite3_file *);
+  int (*xFileControl)(sqlite3_file*, int op, void *pArg);
   int (*xSectorSize)(sqlite3_file*);
   int (*xDeviceCharacteristics)(sqlite3_file*);
   /* Additional methods may be added in future releases */
@@ -556,9 +582,9 @@ PARAGRAPH {
 PARAGRAPH {
   The xRead method reads iAmt bytes from the file beginning at a byte
   offset to iOfst.  The data read is stored in the pointer of the
-  second parameter.  xRead returns the SQLITE_OK on success,
-  SQLITE_IOERR_SHORT_READ if it was not able to read the full number
-  of bytes because it reached end-of-file, or SQLITE_IOERR_READ for
+  second parameter.  xRead returns the [SQLITE_OK] on success,
+  [SQLITE_IOERR_SHORT_READ] if it was not able to read the full number
+  of bytes because it reached end-of-file, or [SQLITE_IOERR_READ] for
   any other error.
 }
 
@@ -570,38 +596,33 @@ PARAGRAPH {
   to beginning its write.  xWrite continues to extends the file as
   necessary so that the size of the file is at least iAmt+iOfst bytes 
   at the conclusion of the xWrite call.  The xWrite method returns
-  SQLITE_OK on success.  If the write cannot complete because the
-  underlying storage medium is full, then SQLITE_FULL is returned.
-  SQLITE_IOERR_WRITE should be returned for any other error.
+  [SQLITE_OK] on success.  If the write cannot complete because the
+  underlying storage medium is full, then [SQLITE_FULL] is returned.
+  [SQLITE_IOERR_WRITE] should be returned for any other error.
 }
 
 PARAGRAPH {
   The xTruncate method truncates a file to be nByte bytes in length.
   If the file is already nByte bytes or less in length then this
-  method is a no-op.  The xTruncate method returns SQLITE_OK on
-  success and SQLITE_IOERR_TRUNCATE if anything goes wrong.
+  method is a no-op.  The xTruncate method returns [SQLITE_OK] on
+  success and [SQLITE_IOERR_TRUNCATE] if anything goes wrong.
 }
 
 PARAGRAPH {
   The xSync method is used to force previously written data out of
   operating system cache and into non-volatile memory.  The second
-  parameter is usually SQLITE_SYNC_NORMAL.  If the second parameter
-  is SQLITE_SYNC_FULL then the xSync method should make sure that
+  parameter is usually [SQLITE_SYNC_NORMAL].  If the second parameter
+  is [SQLITE_SYNC_FULL] then the xSync method should make sure that
   data has also been flushed through the disk controllers cache.
-  The SQLITE_SYNC_FULL parameter is the equivalent of the F_FULLSYNC
-  ioctl() on Mac OS X.  The SQLITE_SYNC_BARRIER is currently unused.
-  In the future this value might request that the xSync call serve
-  as an I/O barrier operation.  All write requests that occur before
-  the xSync must complete before any write request that occurs
-  afterwards, but the barrier does not require that all writes 
-  complete prior to the return of xSync.  The xSync method returns
-  SQLITE_OK on success and SQLITE_IOERR_FSYNC if anything goes wrong.
+  The [SQLITE_SYNC_FULL] parameter is the equivalent of the F_FULLSYNC
+  ioctl() on Mac OS X. The xSync method returns
+  [SQLITE_OK] on success and [SQLITE_IOERR_FSYNC] if anything goes wrong.
 }
 
 PARAGRAPH {
   The xFileSize() method determines the current size of the file
-  in bytes and writes that value into *pSize.  It returns SQLITE_OK
-  on success and SQLITE_IOERR_FSTAT if something goes wrong.
+  in bytes and writes that value into *pSize.  It returns [SQLITE_OK]
+  on success and [SQLITE_IOERR_FSTAT] if something goes wrong.
 }
 
 PARAGRAPH {
@@ -620,21 +641,21 @@ PARAGRAPH {
   and xUnlock.  The xLock method increases the locking level to the
   specified locking level or higher.  The xUnlock method decreases the
   locking level to no lower than the level specified.  
-  SQLITE_LOCK_NONE means that the file is unlocked.  SQLITE_LOCK_SHARED
+  [SQLITE_LOCK_NONE] means that the file is unlocked.  [SQLITE_LOCK_SHARED]
   gives permission to read the file.  Multiple database connections can
-  hold SQLITE_LOCK_SHARED at the same time.
-  SQLITE_LOCK_RESERVED is like SQLITE_LOCK_SHARED in that its is permission
+  hold [SQLITE_LOCK_SHARED] at the same time.
+  [SQLITE_LOCK_RESERVED] is like [SQLITE_LOCK_SHARED] in that its is permission
   to read the file.  But only a single connection can hold a reserved lock
-  at any point in time.  The SQLITE_LOCK_PENDING is also permission to
+  at any point in time.  The [SQLITE_LOCK_PENDING] is also permission to
   read the file.  Other connections can continue to read the file as well,
   but no other connection is allowed to escalate a lock from none to shared.
-  SQLITE_LOCK_EXCLUSIVE is permission to write on the file.  Only a single
+  [SQLITE_LOCK_EXCLUSIVE] is permission to write on the file.  Only a single
   connection can hold an exclusive lock and no other connection can hold
   any lock (other than "none") while one connection is hold an exclusive
-  lock.  The xLock returns SQLITE_OK on success, SQLITE_BUSY if it
-  is unable to obtain the lock, or SQLITE_IOERR_RDLOCK if something else
-  goes wrong.  The xUnlock method returns SQLITE_OK on success and
-  SQLITE_IOERR_UNLOCK for problems.
+  lock.  The xLock returns [SQLITE_OK] on success, [SQLITE_BUSY] if it
+  is unable to obtain the lock, or [SQLITE_IOERR_RDLOCK] if something else
+  goes wrong.  The xUnlock method returns [SQLITE_OK] on success and
+  [SQLITE_IOERR_UNLOCK] for problems.
 }
 
 PARAGRAPH {
@@ -644,10 +665,21 @@ PARAGRAPH {
 }
 
 PARAGRAPH {
-  The xLockState method returns one of the [SQLITE_LOCK_NONE] through
-  [SQLITE_LOCK_EXCLUSIVE] constants defined above to indicate the current
-  state of the lock for the given file handle.  This method is used for
-  testing purposes only.
+  The xFileControl() method is a generic interface that allows custom
+  VFS implementations to directly control an open file using the
+  (new and experimental)
+  [sqlite3_file_control()] interface.  The second "op" argument
+  is an integer opcode.   The third
+  argument is a generic pointer which is intended to be a pointer
+  to a structure that may contain arguments or space in which to
+  write return values.  Potential uses for xFileControl() might be
+  functions to enable blocking locks with timeouts, to change the
+  locking strategy (for example to use dot-file locks), to inquire
+  about the status of a lock, or to break stale locks.  The SQLite
+  core reserves opcodes less than 100 for its own use. 
+  A [SQLITE_FCNTL_LOCKSTATE | list of opcodes] less than 100 is available.
+  Applications that define a custom xFileControl method should use opcodes 
+  greater than 100 to avoid conflicts.
 }
 
 PARAGRAPH {
@@ -667,26 +699,27 @@ PARAGRAPH {
   have that SQLite can use to increase performance.  The allowed return
   is the bit-wise OR of the following values:
   <ul>
-  <li> SQLITE_IOCAP_ATOMIC
-  <li> SQLITE_IOCAP_ATOMIC512
-  <li> SQLITE_IOCAP_ATOMIC1K
-  <li> SQLITE_IOCAP_ATOMIC2K
-  <li> SQLITE_IOCAP_ATOMIC4K
-  <li> SQLITE_IOCAP_ATOMIC8K
-  <li> SQLITE_IOCAP_ATOMIC16K
-  <li> SQLITE_IOCAP_ATOMIC32K
-  <li> SQLITE_IOCAP_ATOMIC64K
-  <li> SQLITE_IOCAP_SAFE_APPEND
-  <li> SQLITE_IOCAP_SEQUENTIAL
+  <li> [SQLITE_IOCAP_ATOMIC]
+  <li> [SQLITE_IOCAP_ATOMIC512]
+  <li> [SQLITE_IOCAP_ATOMIC1K]
+  <li> [SQLITE_IOCAP_ATOMIC2K]
+  <li> [SQLITE_IOCAP_ATOMIC4K]
+  <li> [SQLITE_IOCAP_ATOMIC8K]
+  <li> [SQLITE_IOCAP_ATOMIC16K]
+  <li> [SQLITE_IOCAP_ATOMIC32K]
+  <li> [SQLITE_IOCAP_ATOMIC64K]
+  <li> [SQLITE_IOCAP_SAFE_APPEND]
+  <li> [SQLITE_IOCAP_SEQUENTIAL]
   </ul>
-  The SQLITE_IOCAP_ATOMIC bit means that all writes to this device are
+  The [SQLITE_IOCAP_ATOMIC] bit means that all writes to this device are
   atomic in the sense that either the entire write occurs or none of it
-  occurs.  The other SQLITE_IOCAP_ATOMIC<i>nnn</i> values indicate that
+  occurs.  The other 
+  [SQLITE_IOCAP_ATOMIC | SQLITE_IOCAP_ATOMIC<i>nnn</i>] values indicate that
   writes of aligned blocks of the indicated size are atomic.
-  SQLITE_IOCAP_SAFE_APPEND means that when extending a file with new
+  [SQLITE_IOCAP_SAFE_APPEND] means that when extending a file with new
   data, the new data is written first and then the file size is updated.
   So if a power failure occurs, there is no chance that the file might have
-  been extended with randomness.  The SQLITE_IOCAP_SEQUENTIAL bit means
+  been extended with randomness.  The [SQLITE_IOCAP_SEQUENTIAL] bit means
   that all writes occur in the order that they are issued and are not
   reordered by the underlying file system.
 }
@@ -702,7 +735,7 @@ PARAGRAPH {
 PARAGRAPH {
   <ol>
   <li> Define an appropriate subclass of the [sqlite3_file] object.
-  <li> Implement the methods required by the [sqlite_io_methods] object.
+  <li> Implement the methods required by the [sqlite3_io_methods] object.
   <li> Create a static and 
        constant [sqlite3_io_methods] object containing pointers
        to the methods from the previous step.
@@ -868,10 +901,11 @@ PARAGRAPH {
   substituted in that case.  The argument to [sqlite3_mutex_alloc()]
   can also be a constant designating one of several static mutexes:
   <ul>
-  <li>  SQLITE_MUTEX_STATIC_MASTER
-  <li>  SQLITE_MUTEX_STATIC_MEM
-  <li>  SQLITE_MUTEX_STATIC_MEM2
-  <li>  SQLITE_MUTEX_STATIC_PRNG
+  <li>  [SQLITE_MUTEX_STATIC_MASTER]
+  <li>  [SQLITE_MUTEX_STATIC_MEM]
+  <li>  [SQLITE_MUTEX_STATIC_MEM2]
+  <li>  [SQLITE_MUTEX_STATIC_PRNG]
+  <li>  [SQLITE_MUTEX_STATIC_LRU]
   </ul>
   These static mutexes are reserved for use internally by SQLite
   and should not be used by the application.  The static mutexes
@@ -887,7 +921,7 @@ PARAGRAPH {
 PARAGRAPH {
   The [sqlite3_mutex_enter()] attempts to enter the mutex and blocks
   if another threads is already there.  [sqlite3_mutex_try()] attempts
-  to enter and returns SQLITE_OK on success or SQLITE_BUSY if another
+  to enter and returns [SQLITE_OK] on success or [SQLITE_BUSY] if another
   thread is already there.  [sqlite3_mutex_leave()] exits a mutex.
   The mutex is held until the number of exits matches the number of
   entrances.  If [sqlite3_mutex_leave()] is called on a mutex that 

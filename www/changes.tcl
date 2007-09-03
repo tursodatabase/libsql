@@ -28,6 +28,32 @@ proc chng {date desc} {
   puts "</DD>"
 }
 
+
+chng {2007 Sep 3 (3.5.0 beta)} {
+<li>Redesign the OS interface layer.  See
+    <a href="34to35.html">34to35.html</a> for details.
+    <font color="red">*** Potentially incompatible change ***</font>
+<li>The <a href="capi3ref.html#sqlite3_release_memory">
+    sqlite3_release_memory()</a>,
+    <a href="capi3ref.html#sqlite3_soft_heap_limit">
+    sqlite3_soft_heap_limit()</a>,
+    and <a href="capi3ref.html#sqlite3_enable_shared_cache">
+    sqlite3_enable_shared_cache()</a> interfaces now work cross all
+    threads in the process, not just the single thread in which they
+    are invoked.
+    <font color="red">*** Potentially incompatible change ***</font>
+<li>Added the 
+    <a href="capi3ref.html#sqlite3_open_v2">sqlite3_open_v2()</a>
+    interface.  
+<li>Reimplemented the memory allocation subsystem and made it 
+    replacable at compile-time.
+<li>Created a new mutex subsystem and made it replacable at
+    compile-time.
+<li>The same database connection may now be used simultaneously by
+    separate threads.
+}
+
+
 chng {2007 August 13 (3.4.2)} {
 <li>Fix a database corruption bug that might occur if a ROLLBACK command
 is executed in <a href="pragma.html#pragma_auto_vacuum">auto-vacuum mode</a>

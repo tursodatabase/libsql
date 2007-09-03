@@ -1,9 +1,9 @@
-C In\ssqllimits1.test,\sset\sMAX_SQL_LENGTH\sto\sa\svalue\ssmaller\sthan\sMAX_LENGTH.\s(CVS\s4385)
-D 2007-09-03T18:01:25
+C Documentation\supdates\sin\spreparation\sfor\sthe\srelease\sof\sversion\s3.5.0.\s(CVS\s4386)
+D 2007-09-03T20:32:45
 F Makefile.in f3460f3363dd568c950a62f93e97eb19f6d069d8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
-F VERSION 6200589421a0dfe968cd39c431fc62277b963540
+F VERSION 8be5bca3565b0c9667edbf4455759f1bffc0eb72
 F aclocal.m4 d20ba55930a05197b484809fba1d2b603f4e67a6
 F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -130,7 +130,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 4706a6115da1bdc09a2be5991168a6cc2c0df267
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in fb4c95cd6995379741b46ffb6f38c5ed87bc26a9
+F src/sqlite.h.in d112cedeeef4047353a674bab25e55d8b51d2006
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h bb126b074352ef0ee20399883172161baf5eead2
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
@@ -511,7 +511,7 @@ F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
 F tool/spaceanal.tcl f60a242a996a79d59cad6615cec83a9203e17911
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
-F www/34to35.tcl 4f624758651931952dd6f23d0856758c8babe3b2
+F www/34to35.tcl daa7103b7b5f6820b860600fc2a83bca639a38b7
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.gif f845a64772062e82d17980a349f95f1f0b4c8054
 F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
@@ -524,7 +524,7 @@ F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
 F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
 F www/capi3.tcl 88884dd743039d1a95aa57f4a5eb369de7744716
 F www/capi3ref.tcl 167c2d5b45da22d77b2493b00d44b001b4ec83b1
-F www/changes.tcl d35ba54037f59b545e7a810e9b4e9561568f1bc6
+F www/changes.tcl 480f301f7945cc0348a0cc92905d37fe499eacd2
 F www/common.tcl 2b793e5c31486c8a01dd27dc0a631ad93704438e
 F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
 F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
@@ -540,10 +540,10 @@ F www/download.tcl d59a0244f22a975c3f9deafb535fc20549cb8c45
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl 745e87b2afc4deaf062aaee8649d50294de3f244
 F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
-F www/formatchng.tcl bbb8af1ee494a71031acac4c8d8c51535f23b9df
+F www/formatchng.tcl 722a9c08be4f7325b3a545abfe508cfbabe20eb7
 F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl ba829424fc003a60b5bf107ea100cbca8e1fd944
+F www/index.tcl 118db0f8ff6e1c6d90a8346e5e9a8b991c73516d
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
 F www/lang.tcl bb73892bf99c81658ec46d0c7a87e54cd21d435b
 F www/limits.tcl 9035eb73e814ccb298595fd57670dec817533616
@@ -569,7 +569,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ed15db4610bc6202c624234e48d234e0005825e4
-R 8ee90cb4a03f4fb2b7c9287a6f1c505c
-U danielk1977
-Z 0cb73faf14fbb0ba98a3d2b74121fc8e
+P 51726a9bb6c7f98c496302745656dc317ad5c094
+R b6337e684a5d9067ca7a33a3860add13
+U drh
+Z bffd337f01056c4ca53d6f1685390e4f

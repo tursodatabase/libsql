@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.255 2007/09/03 15:19:35 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.256 2007/09/03 20:32:45 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1413,7 +1413,7 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** The third options is behavior that is always used for [sqlite3_open()]
 ** and [sqlite3_open16()].
 **
-** If the filename is ":memory:" or an empty string, then an private
+** If the filename is ":memory:", then an private
 ** in-memory database is created for the connection.  This in-memory
 ** database will vanish when the database connection is closed.  Future
 ** version of SQLite might make use of additional special filenames
@@ -1421,6 +1421,10 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** when a database filename really does begin with
 ** ":" that you prefix the filename with a pathname like "./" to
 ** avoid ambiguity.
+**
+** If the filename is an empty string, then a private temporary
+** on-disk database will be created.  This private database will be
+** automatically deleted as soon as the database connection is closed.
 **
 ** The fourth parameter to sqlite3_open_v2() is the name of the
 ** [sqlite3_vfs] object that defines the operating system 

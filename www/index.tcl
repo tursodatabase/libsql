@@ -71,6 +71,20 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2007-Sep-3} {Version 3.5.0 beta} {
+  The OS interface layer and the memory allocation subsystems in
+  SQLite have been reimplemented.  The published API is largely unchanged
+  but the (unpublished) OS interface has been modified extensively.  
+  Application that implement their own OS interface will require
+  modification.  See
+  <a href="34to35.html">34to35.html</a> for details.<p>
+
+  This is a large change approximately 1 line of count of out 10 was
+  modified.  We are calling this first release "beta" in order to give
+  the user community time to test and evaluate the changes before we
+  freeze the new design.
+}
+
 newsitem {2007-Aug-13} {Version 3.4.2} {
   While stress-testing the 
   <a href="capi3ref.html#sqlite3_soft_heap_limit">soft_heap_limit</a>
@@ -125,4 +139,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.159 2007/08/13 16:15:29 drh Exp $}
+footer {$Id: index.tcl,v 1.160 2007/09/03 20:32:46 drh Exp $}

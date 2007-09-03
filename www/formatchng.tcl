@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the formatchng.html file.
 #
-set rcsid {$Id: formatchng.tcl,v 1.19 2006/08/12 14:38:47 drh Exp $ }
+set rcsid {$Id: formatchng.tcl,v 1.20 2007/09/03 20:32:45 drh Exp $ }
 source common.tcl
 header {File Format Changes in SQLite}
 puts {
@@ -251,6 +251,19 @@ occurred since version 1.0.0:
   all users have upgraded to a version of SQLite that will
   understand the new file format.  That might take several
   years.</p></td>
+</tr>
+<tr>
+  <td valign="top">3.4.2 to 3.5.0</td>
+  <td valign="top">2007-Sep-3</td>
+  <td><p>The design of the OS interface layer was changed for
+  release 3.5.0.  Applications that implemented a custom OS
+  interface will need to be modified in order to upgrade.
+  There are also some subtly different semantics a few obscure
+  APIs.  An <a href="34to35.html">article</a> is avilable which
+  describing the changes in detail.</p>
+
+  <p>The on-disk file format is unchanged.</p>
+  </td>
 </tr>
 </table>
 </blockquote>
