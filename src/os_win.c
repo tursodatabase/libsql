@@ -711,12 +711,27 @@ static int winTruncate(sqlite3_file *id, i64 nByte){
   return SQLITE_OK;
 }
 
+#ifdef SQLITE_TEST
+/*
+** Count the number of fullsyncs and normal syncs.  This is used to test
+** that syncs and fullsyncs are occuring at the right times.
+*/
+int sqlite3_sync_count = 0;
+int sqlite3_fullsync_count = 0;
+#endif
+
 /*
 ** Make sure all writes to a particular file are committed to disk.
 */
 static int winSync(sqlite3_file *id, int flags){
   winFile *pFile = (winFile*)id;
   OSTRACE3("SYNC %d lock=%d\n", pFile->h, pFile->locktype);
+#ifdef SQLITE_TEST
+  if( flags & SQLITE_SYNC_FULL ){
+    sqlite3_fullsync_count++;
+  }
+  sqlite3_sync_count++;
+#endif
   if( FlushFileBuffers(pFile->h) ){
     return SQLITE_OK;
   }else{

@@ -1,5 +1,5 @@
-C Fix\sthe\sincrblob.test\son\swindows.\s\sDisable\sline\sterminator\stranslation.\s(CVS\s4380)
-D 2007-09-03T16:45:36
+C Get\sthe\sio.test\stests\sworking\son\swindows.\s(CVS\s4381)
+D 2007-09-03T17:02:50
 F Makefile.in f3460f3363dd568c950a62f93e97eb19f6d069d8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -118,7 +118,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 75521336c950555fae26288b61a3091fd6b0c367
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 57f9b96e78b98e135c41b985613a448d704f23f0
+F src/os_win.c c077b821e010c09ce6314f78b1f6f21cdb2141ff
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 0ce52a22ebfae0c085b68e00e30e9bf9ea462d0d
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
@@ -136,7 +136,7 @@ F src/sqliteInt.h bb126b074352ef0ee20399883172161baf5eead2
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 8c970b4cdc615dfc0726abb470a06d285ed336fb
-F src/test1.c 6103787d839c2056a42b88082b53d0b79f62285d
+F src/test1.c 1b0b076c8fa8d6c88b6a36d3644d4c6ad956a712
 F src/test2.c 77b34303883b9d722c65a6879bb0163a400e3789
 F src/test3.c 63e49781476f95e6167b441bf98b93392938a850
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -325,7 +325,7 @@ F test/insert3.test 72ea6056811fd234f80d923f977c196089947381
 F test/insert4.test 1e27f0a3e5670d5f03c1636f699aa44270945bca
 F test/interrupt.test 81555fb0f8179bb2d0dc7151fd75428223f93cf2
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
-F test/io.test 6377bcbc356283e6029ab9858d9f6aa89517d331
+F test/io.test 9aad06bbcd178f3c0ad6380c1f89df1edecefd6f
 F test/ioerr.test 4b175825ed42b04f935e00f57cfb2a9f0c13de7d
 F test/ioerr2.test f938eadb12108048813869b86beee4a2f98e34b8
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
@@ -357,7 +357,7 @@ F test/malloc9.test 95d7069ad4fa262bf33bc4c5ca0a46f2bb2391cb
 F test/mallocA.test 27d0d275f96cb9e1ede278a3951013f40eea669d
 F test/mallocB.test f55be22689e40599c20bfc449caafc97da32e8ca
 F test/mallocC.test cebc4b6ee430fe73f378c1ec7f7210cb7c1ecc33
-F test/mallocD.test b3d50177adb1c563b1295ad57db4e018f8a43066
+F test/mallocD.test 473db9092f962685ca5710a153d2abbe3428bb9e
 F test/malloc_common.tcl 6cd3c6b540cd53dea828ee2b15a2b72b297b7b30
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
@@ -569,7 +569,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d66e08fd4f12407e565dc9fc53a5802216808378
-R 186fe2c8a469b23dfb70c0be812dd050
+P ccbd2efebaecfd26d7016eb6684ad26c0bcc4e6b
+R 93c85e6d97728406c543d3200f8eaf2c
 U drh
-Z e8476c3cbe0a8c0d18d46c08e5b4c341
+Z f97bb49e5294f294045a5a03d6e2aca0
