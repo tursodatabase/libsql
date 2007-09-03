@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.55 2007/08/29 12:31:28 danielk1977 Exp $
+** $Id: test8.c,v 1.56 2007/09/03 11:51:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -349,6 +349,11 @@ static int echoDestructor(sqlite3_vtab *pVtab){
   return 0;
 }
 
+typedef struct EchoModule EchoModule;
+struct EchoModule {
+  Tcl_Interp *interp;
+};
+
 /*
 ** This function is called to do the work of the xConnect() method -
 ** to allocate the required in-memory structures for a newly connected
@@ -370,7 +375,7 @@ static int echoConstructor(
   if( !pVtab ){
     return SQLITE_NOMEM;
   }
-  pVtab->interp = (Tcl_Interp *)pAux;
+  pVtab->interp = ((EchoModule *)pAux)->interp;
   pVtab->db = db;
 
   /* Allocate echo_vtab.zThis */
@@ -427,7 +432,7 @@ static int echoCreate(
   char **pzErr
 ){
   int rc = SQLITE_OK;
-  appendToEchoModule((Tcl_Interp *)(pAux), "xCreate");
+  appendToEchoModule(((EchoModule *)pAux)->interp, "xCreate");
   rc = echoConstructor(db, pAux, argc, argv, ppVtab, pzErr);
 
   /* If there were two arguments passed to the module at the SQL level 
@@ -462,7 +467,7 @@ static int echoConnect(
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
-  appendToEchoModule((Tcl_Interp *)(pAux), "xConnect");
+  appendToEchoModule(((EchoModule *)pAux)->interp, "xConnect");
   return echoConstructor(db, pAux, argc, argv, ppVtab, pzErr);
 }
 
@@ -1125,6 +1130,10 @@ static int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb){
   return TCL_OK;
 }
 
+static void moduleDestroy(void *p){
+  sqlite3_free(p);
+}
+
 /*
 ** Register the echo virtual table module.
 */
@@ -1135,12 +1144,15 @@ static int register_echo_module(
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   sqlite3 *db;
+  EchoModule *pMod;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  sqlite3_create_module(db, "echo", &echoModule, (void *)interp);
+  pMod = sqlite3_malloc(sizeof(EchoModule));
+  pMod->interp = interp;
+  sqlite3_create_module_v2(db, "echo", &echoModule, (void*)pMod, moduleDestroy);
   return TCL_OK;
 }
 
