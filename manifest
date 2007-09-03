@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sxRandomness()\smethod\son\sthe\sdefault\swindows\sVFS.\nTicket\s#2615.\s(CVS\s4374)
-D 2007-09-03T13:06:12
+C Fix\sa\sproblem\sin\shash.c\swhen\sreplacing\sentries\sin\stables\sconfigured\swith\scopyKey==0.\s(CVS\s4375)
+D 2007-09-03T15:03:21
 F Makefile.in bfcc303429a5d9dcd552d807ee016c77427418c3
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -92,7 +92,7 @@ F src/delete.c 849846d06d29851dde0d9f424a5de5817eb140d1
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 7853a8161ec0b0fce62fc8da921db557899f1ec1
 F src/func.c 9d88141c4cffb3a04719e5a0fda65cde34bfa1e5
-F src/hash.c 8fe2fa52bd17869c87748e42cff5b1e7fbf90822
+F src/hash.c 06c69a3a038b713c43353c79023372bcfe7f5180
 F src/hash.h 3ad3da76bfb954978d227bf495568b0e6da2c19e
 F src/insert.c b11e5ca0d68bf2a7a56f47a052a0ee67dd4e2f89
 F src/journal.c 63f8a40827e871997272eb2598f5cd9e66aa0947
@@ -143,7 +143,7 @@ F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
 F src/test6.c 0513982dfef4da2a4154b538d2bf538b84ca21d3
 F src/test7.c a9d509d0e9ad214b4772696f49f6e61be26213d1
-F src/test8.c 146cb2c2e7e9bac0e30e4890e7880ffe3e223a68
+F src/test8.c f113aa3723a52113d0fa7c28155ecd37e7e04077
 F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
 F src/test_async.c 8b6aa6a5701bf3cf52708db178379ee608b44b0c
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
@@ -470,7 +470,7 @@ F test/vacuum.test cf839fc3ff24d601057319bbb5c700ce9c8e0fb0
 F test/vacuum2.test e198d81a1cbc3f3f6b8aeee27cadfffea8995d42
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 852bd4101e6d171c46ad682eb5c5faf662b2eba4
-F test/vtab1.test 607cddf5b425ff3076b8caacc6d6b4422f66ffab
+F test/vtab1.test 2f0afae624babc671af2052e88e98b4ac4aafd1e
 F test/vtab2.test 94bb3bf691ac10e34cf7dad46b1cf94b861d513c
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
@@ -568,7 +568,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e89d4131a1b55da1a7f226d7f7b416f02f5e2c6e
-R 70eed1b737d2685751d3043c11b74d10
-U drh
-Z 3dfc552072668685c58ab6fae3991bd7
+P 91b50f31e35652a40d51f5d9bf22efce36d515e4
+R 1f20fef17ef49080f07da6476975a4c8
+U danielk1977
+Z a985adb5f326fdf3ef20c1c9a11c8b46

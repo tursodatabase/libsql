@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.45 2007/08/22 02:57:17 drh Exp $
+# $Id: vtab1.test,v 1.46 2007/09/03 15:03:21 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -179,10 +179,24 @@ do_test vtab1-1.15 {
 } {1 {no such module: echo}}
 
 register_echo_module [sqlite3_connection_pointer db]
-do_test vtab1-1.X {
+register_echo_module [sqlite3_connection_pointer db]
+
+# Test an error message returned from a v-table constructor.
+#
+do_test vtab1-1.16 {
   execsql {
     DROP TABLE techo;
+    CREATE TABLE logmsg(log);
+  }
+  catchsql {
+    CREATE VIRTUAL TABLE techo USING echo(treal, logmsg);
+  }
+} {1 {table 'logmsg' already exists}}
+
+do_test vtab1-1.17 {
+  execsql {
     DROP TABLE treal;
+    DROP TABLE logmsg;
     SELECT sql FROM sqlite_master;
   }
 } {}

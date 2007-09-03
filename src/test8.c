@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.56 2007/09/03 11:51:50 danielk1977 Exp $
+** $Id: test8.c,v 1.57 2007/09/03 15:03:21 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -452,6 +452,14 @@ static int echoCreate(
     zSql = sqlite3MPrintf(0, "CREATE TABLE %Q(logmsg)", pVtab->zLogName);
     rc = sqlite3_exec(db, zSql, 0, 0, 0);
     sqlite3_free(zSql);
+    if( rc!=SQLITE_OK ){
+      *pzErr = sqlite3StrDup(sqlite3_errmsg(db));
+    }
+  }
+
+  if( *ppVtab && rc!=SQLITE_OK ){
+    echoDestructor(*ppVtab);
+    *ppVtab = 0;
   }
 
   return rc;
