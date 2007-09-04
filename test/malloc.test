@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.46 2007/09/03 11:04:22 danielk1977 Exp $
+# $Id: malloc.test,v 1.47 2007/09/04 01:25:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -246,8 +246,12 @@ do_malloc_test 9 -sqlprep {
 
 # This block tests malloc() failures that occur while opening a 
 # connection to a database.
-do_malloc_test 10 -sqlprep {
-  CREATE TABLE abc(a, b, c);
+do_malloc_test 10 -tclprep {
+  catch {db2 close}
+  db close
+  file delete -force test.db test.db-journal
+  sqlite3 db test.db
+  db eval {CREATE TABLE abc(a, b, c)}
 } -tclbody {
   db close
   sqlite3 db2 test.db

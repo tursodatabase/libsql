@@ -1,5 +1,5 @@
-C Fix\sMakefile.in\sso\sthat\sit\srebuilds\sall\ssource\sfiles\sthat\suse\sSQLITE_TEST\nwhen\sconstructing\sthe\stestfixture.\s(CVS\s4388)
-D 2007-09-03T22:15:45
+C Fix\sthe\smalloc-10\stest\sin\smalloc.test\sso\sthat\sit\swill\srun\son\swindows\swhen\ninvoked\sfrom\sexclusive3.test.\s(CVS\s4389)
+D 2007-09-04T01:25:49
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -345,7 +345,7 @@ F test/lock2.test 5f9557b775662c2a5ee435378f39e10d64f65cb3
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 49e22396b9be6e047b3d35469f233be79153c9d5
 F test/main.test 05f585bb70c05caac3e047903b517cbb319ed204
-F test/malloc.test bb1c95fb536cfefd3a5b4ce8ca1d4c99e73b1e33
+F test/malloc.test 5b4ac16e0e11cca99a25574298eb5ac8e93236db
 F test/malloc2.test c1a74f46a3581b56df29ff46a4e1c99b41c44ad9
 F test/malloc3.test d10a1f484805be103f154ce4968f76ba5d530217
 F test/malloc4.test f0e5e0f639f61e2776a6c3f5308f836b3ad8b3c7
@@ -569,7 +569,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P fee2d7c0e6d34dd19ff5f7631c1743879068c8ce
-R d7596e46fc67268777995a33626c8f88
+P dced71a010c14a53e0f71841b5fd55108b7f88b3
+R fe4f8dbf329d720618e95c841905d656
 U drh
-Z c5f1a6a7f97c287575fba17bfc1b9c2f
+Z 69eacf5f608708f12a5b7d1ca5788549
