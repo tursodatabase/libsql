@@ -1,5 +1,5 @@
-C Add\sexternal\slocking\sto\stest_async.c.\sThere\sare\sstill\ssome\stests\sto\scome.\s(CVS\s4398)
-D 2007-09-04T18:28:44
+C Do\snot\suse\sthe\sTryEnterCriticalSection\sAPI\son\swindows\ssince\sit\sis\nunavailable\son\ssome\splatforms.\s(CVS\s4399)
+D 2007-09-04T22:31:37
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -108,7 +108,7 @@ F src/mutex.c 40e5ba09d56863895882a0204d93832e9960ea78
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c d47e9bd495583dd31263d8fe55160a31eb600a3c
 F src/mutex_unix.c ff77650261a245035b79c5c8a174f4e05d3cae8a
-F src/mutex_w32.c 54beb16ade8f80ea2bc30bc4dfb2087be3487ef3
+F src/mutex_w32.c 2812771e75148c58a62ca05bbeb9a8dd6ec46307
 F src/os.c 198c6c55cbdbe5b9c3105070c88fcc077d1b2447
 F src/os.h 53e65427899ed5697d79749d646e6a297b70171a
 F src/os_common.h 98862f120ca6bf7a48ce8b16f158b77d00bc9d2f
@@ -130,7 +130,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 4706a6115da1bdc09a2be5991168a6cc2c0df267
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
-F src/sqlite.h.in 3926f5d7422ce8e0641f4fc941fc368c19ef6c94
+F src/sqlite.h.in 775be6f8a5305ef2c92506bc23181550171aaae2
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h bb126b074352ef0ee20399883172161baf5eead2
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
@@ -569,7 +569,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P efd61df1b9170f0134787ae17ac996a7eff64add
-R ef7fa5443cd985d720e63f8ac953cec0
-U danielk1977
-Z 605a822a91549091d299d216a22bbd33
+P 3794dcd31a74e90b181b336bf6a4c917bda526b8
+R f8c85691f2efa8fda77b1b74d5099eab
+U drh
+Z 971dbe3f56f98d850a595d781e5442d1

@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.258 2007/09/04 12:18:42 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.259 2007/09/04 22:31:37 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3431,6 +3431,11 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** can enter.  If the same thread tries to enter any other kind of mutex
 ** more than once, the behavior is undefined.   SQLite will never exhibit
 ** such behavior in its own use of mutexes.
+**
+** Some systems (ex: windows95) do not the operation implemented by
+** sqlite3_mutex_try().  On those systems, sqlite3_mutex_try() will
+** always return SQLITE_BUSY.  The SQLite core only ever uses
+** sqlite3_mutex_try() as an optimization so this is acceptable behavior.
 **
 ** The sqlite3_mutex_leave() routine exits a mutex that was
 ** previously entered by the same thread.  The behavior
