@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.257 2007/09/04 12:00:00 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.258 2007/09/04 12:18:42 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1703,7 +1703,8 @@ typedef struct sqlite3_context sqlite3_context;
 ** (just an integer to hold it size) while it is being processed.
 ** Zeroblobs are intended to serve as place-holders for BLOBs whose
 ** content is later written using 
-** [sqlite3_blob_open | increment BLOB I/O] routines.
+** [sqlite3_blob_open | increment BLOB I/O] routines.  A negative
+** value for the zeroblob results in a zero-length BLOB.
 **
 ** The sqlite3_bind_*() routines must be called after
 ** [sqlite3_prepare_v2()] (and its variants) or [sqlite3_reset()] and
@@ -2058,6 +2059,11 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** The value returned does not include the zero terminator at the end
 ** of the string.  For clarity: the value returned is the number of
 ** bytes in the string, not the number of characters.
+**
+** Strings returned by sqlite3_column_text() and sqlite3_column_text16(),
+** even zero-length strings, are always zero terminated.  The return
+** value from sqlite3_column_blob() for a zero-length blob is an arbitrary
+** pointer, possibly even a NULL pointer.
 **
 ** The sqlite3_column_bytes16() routine is similar to sqlite3_column_bytes()
 ** but leaves the result in UTF-16 instead of UTF-8.  
