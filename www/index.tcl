@@ -79,7 +79,7 @@ newsitem {2007-Sep-04} {Version 3.5.0 alpha} {
   modification.  See
   <a href="34to35.html">34to35.html</a> for details.<p>
 
-  This is a large change approximately 1 line of count of out 10 was
+  This is a large change.  Approximately 10% of the source code was
   modified.  We are calling this first release "alpha" in order to give
   the user community time to test and evaluate the changes before we
   freeze the new design.
@@ -113,4 +113,4 @@ puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.161 2007/09/04 01:58:27 drh Exp $}
+footer {$Id: index.tcl,v 1.162 2007/09/04 03:08:57 drh Exp $}
