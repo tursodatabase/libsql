@@ -29,7 +29,7 @@ proc chng {date desc} {
 }
 
 
-chng {2007 Sep 3 (3.5.0 beta)} {
+chng {2007 Sep 04 (3.5.0) alpha} {
 <li>Redesign the OS interface layer.  See
     <a href="34to35.html">34to35.html</a> for details.
     <font color="red">*** Potentially incompatible change ***</font>

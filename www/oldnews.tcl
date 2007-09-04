@@ -9,6 +9,31 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2007-Jun-18} {Version 3.4.0} {
+  This release fixes two separate bugs either of which 
+  can lead to database corruption.  Upgrading
+  is strongly recommended.  If you must continue using an older version
+  of SQLite, please at least read about how to avoid these bugs
+  at
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=CorruptionFollowingBusyError">
+  CorruptionFollowingBusyError</a> and
+  <a href="http://www.sqlite.org/cvstrac/tktview?tn=2418">ticket #2418</a>
+  <p>
+  This release also adds explicit <a href="limits.html">limits</a> on the
+  sizes and quantities of things SQLite will handle.  The new limits might
+  causes compatibility problems for existing applications that
+  use excessively large strings, BLOBs, tables, or SQL statements. 
+  The new limits can be increased at compile-time to work around any problems
+  that arise.  Nevertheless, the version number of this release is
+  3.4.0 instead of 3.3.18 in order to call attention to the possible
+  incompatibility.
+  </p>
+  There are also new features, including
+  <a href="capi3ref.html#sqlite3_blob_open">incremental BLOB I/O</a> and
+  <a href="pragma.html#pragma_incremental_vacuum">incremental vacuum</a>.
+  See the <a href="changes.html#version_3_4_0">change log</a> 
+  for additional information.
+}
 
 newsitem {2007-Apr-25} {Version 3.3.17} {
   This version fixes a bug in the forwards-compatibility logic of SQLite
@@ -457,4 +482,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.22 2007/08/13 16:15:29 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.23 2007/09/04 01:58:27 drh Exp $}

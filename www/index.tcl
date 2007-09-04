@@ -71,7 +71,7 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2007-Sep-3} {Version 3.5.0 beta} {
+newsitem {2007-Sep-04} {Version 3.5.0 alpha} {
   The OS interface layer and the memory allocation subsystems in
   SQLite have been reimplemented.  The published API is largely unchanged
   but the (unpublished) OS interface has been modified extensively.  
@@ -80,7 +80,7 @@ newsitem {2007-Sep-3} {Version 3.5.0 beta} {
   <a href="34to35.html">34to35.html</a> for details.<p>
 
   This is a large change approximately 1 line of count of out 10 was
-  modified.  We are calling this first release "beta" in order to give
+  modified.  We are calling this first release "alpha" in order to give
   the user community time to test and evaluate the changes before we
   freeze the new design.
 }
@@ -109,34 +109,8 @@ newsitem {2007-Jly-20} {Version 3.4.1} {
   <a href="changes.html#version_3_4_1">enhancements and bug fixes</a>.
 }
 
-newsitem {2007-Jun-18} {Version 3.4.0} {
-  This release fixes two separate bugs either of which 
-  can lead to database corruption.  Upgrading
-  is strongly recommended.  If you must continue using an older version
-  of SQLite, please at least read about how to avoid these bugs
-  at
-  <a href="http://www.sqlite.org/cvstrac/wiki?p=CorruptionFollowingBusyError">
-  CorruptionFollowingBusyError</a> and
-  <a href="http://www.sqlite.org/cvstrac/tktview?tn=2418">ticket #2418</a>
-  <p>
-  This release also adds explicit <a href="limits.html">limits</a> on the
-  sizes and quantities of things SQLite will handle.  The new limits might
-  causes compatibility problems for existing applications that
-  use excessively large strings, BLOBs, tables, or SQL statements. 
-  The new limits can be increased at compile-time to work around any problems
-  that arise.  Nevertheless, the version number of this release is
-  3.4.0 instead of 3.3.18 in order to call attention to the possible
-  incompatibility.
-  </p>
-  There are also new features, including
-  <a href="capi3ref.html#sqlite3_blob_open">incremental BLOB I/O</a> and
-  <a href="pragma.html#pragma_incremental_vacuum">incremental vacuum</a>.
-  See the <a href="changes.html#version_3_4_0">change log</a> 
-  for additional information.
-}
-
 puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.160 2007/09/03 20:32:46 drh Exp $}
+footer {$Id: index.tcl,v 1.161 2007/09/04 01:58:27 drh Exp $}
