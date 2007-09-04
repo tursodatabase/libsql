@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: async.test,v 1.8 2007/09/04 14:31:47 danielk1977 Exp $
+# $Id: async.test,v 1.9 2007/09/04 18:28:44 danielk1977 Exp $
 
 
 if {[catch {sqlite3async_enable}]} {
@@ -32,7 +32,9 @@ set INCLUDE {
   trans.test
   lock.test
   lock3.test
+  lock2.test
 }
+# set INCLUDE lock4.test
 
 # Enable asynchronous IO.
 sqlite3async_enable 1
