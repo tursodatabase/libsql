@@ -1,5 +1,5 @@
-C Add\sinternal\slocking\sto\sthe\stest_async.c\sbackend.\sSo\sthat\smore\sthan\sone\sconnection\smay\sbe\sused\sfrom\swithin\sa\ssingle\sprocess.\s(CVS\s4396)
-D 2007-09-04T14:31:47
+C Fix\sa\sproblem\swhereby\sthe\s*ppVtab\soutput\sbuffer\spassed\sto\ssqlite3_module.xConstruct()\scould\sbe\sinvalidated\s(freed)\sif\sa\smalloc()\sfailure\soccured\swithin\sa\scall\sto\ssqlite3_declare_vtab().\s(CVS\s4397)
+D 2007-09-04T15:38:58
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -170,7 +170,7 @@ F src/vdbeaux.c e35c851e3c1d18a7b90dbe35ae5e0fc9419a4ed4
 F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 246d434fa60bde6553490eb686adfd86adcd6712
-F src/vtab.c ace9b41a088f6ad55d2e39084d92180a2bee3276
+F src/vtab.c 6776605198e0b844391335f1b77e3595b3616331
 F src/where.c 4687a2a56bc0fe66ad457958ea9f72b6cae17426
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -569,7 +569,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 63ca02a5b2700858f0eceadc9b58b942d473b191
-R 5cb983fe15fecf887cd0939edebbb838
+P 17ca684c124445f17d1e36c37e169056c5fd4569
+R aab5e4f24ec35c5749ccbfc9ee626576
 U danielk1977
-Z 34bdd4fc38cb5e365ec1bd9364840893
+Z d2e7e7e0b743acfcb2048b0ee18425ea
