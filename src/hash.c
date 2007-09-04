@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.23 2007/09/03 15:03:21 danielk1977 Exp $
+** $Id: hash.c,v 1.24 2007/09/04 14:31:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -310,10 +310,11 @@ static void removeElementGivenHash(
 }
 
 /* Attempt to locate an element of the hash table pH with a key
-** that matches pKey,nKey.  Return the data for this element if it is
-** found, or NULL if there is no match.
+** that matches pKey,nKey.  Return a pointer to the corresponding 
+** HashElem structure for this element if it is found, or NULL
+** otherwise.
 */
-void *sqlite3HashFind(const Hash *pH, const void *pKey, int nKey){
+HashElem *sqlite3HashFindElem(const Hash *pH, const void *pKey, int nKey){
   int h;             /* A hash on key */
   HashElem *elem;    /* The element that matches key */
   int (*xHash)(const void*,int);  /* The hash function */
@@ -324,6 +325,16 @@ void *sqlite3HashFind(const Hash *pH, const void *pKey, int nKey){
   h = (*xHash)(pKey,nKey);
   assert( (pH->htsize & (pH->htsize-1))==0 );
   elem = findElementGivenHash(pH,pKey,nKey, h & (pH->htsize-1));
+  return elem;
+}
+
+/* Attempt to locate an element of the hash table pH with a key
+** that matches pKey,nKey.  Return the data for this element if it is
+** found, or NULL if there is no match.
+*/
+void *sqlite3HashFind(const Hash *pH, const void *pKey, int nKey){
+  HashElem *elem;    /* The element that matches key */
+  elem = sqlite3HashFindElem(pH, pKey, nKey);
   return elem ? elem->data : 0;
 }
 
