@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.256 2007/09/03 20:32:45 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.257 2007/09/04 12:00:00 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -463,7 +463,7 @@ struct sqlite3_file {
 ** The integer values to xLock() and xUnlock() are one of
 ** <ul>
 ** <li> [SQLITE_LOCK_NONE],
-** <li> [SQLITE_LOCK_READ],
+** <li> [SQLITE_LOCK_SHARED],
 ** <li> [SQLITE_LOCK_RESERVED],
 ** <li> [SQLITE_LOCK_PENDING], or
 ** <li> [SQLITE_LOCK_EXCLUSIVE].
@@ -526,11 +526,11 @@ typedef struct sqlite3_io_methods sqlite3_io_methods;
 struct sqlite3_io_methods {
   int iVersion;
   int (*xClose)(sqlite3_file*);
-  int (*xRead)(sqlite3_file*, void*, int iAmt, sqlite_int64 iOfst);
-  int (*xWrite)(sqlite3_file*, const void*, int iAmt, sqlite_int64 iOfst);
-  int (*xTruncate)(sqlite3_file*, sqlite_int64 size);
+  int (*xRead)(sqlite3_file*, void*, int iAmt, sqlite3_int64 iOfst);
+  int (*xWrite)(sqlite3_file*, const void*, int iAmt, sqlite3_int64 iOfst);
+  int (*xTruncate)(sqlite3_file*, sqlite3_int64 size);
   int (*xSync)(sqlite3_file*, int flags);
-  int (*xFileSize)(sqlite3_file*, sqlite_int64 *pSize);
+  int (*xFileSize)(sqlite3_file*, sqlite3_int64 *pSize);
   int (*xLock)(sqlite3_file*, int);
   int (*xUnlock)(sqlite3_file*, int);
   int (*xCheckReservedLock)(sqlite3_file*);
@@ -585,9 +585,9 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** a pathname in this VFS.
 **
 ** Registered vfs modules are kept on a linked list formed by
-** the pNext pointer.  The [sqlite3_register_vfs()]
-** and [sqlite3_unregister_vfs()] interfaces manage this list
-** in a thread-safe way.  The [sqlite3_find_vfs()] interface
+** the pNext pointer.  The [sqlite3_vfs_register()]
+** and [sqlite3_vfs_unregister()] interfaces manage this list
+** in a thread-safe way.  The [sqlite3_vfs_find()] interface
 ** searches the list.
 **
 ** The pNext field is the only fields in the sqlite3_vfs 
@@ -804,7 +804,7 @@ int sqlite3_changes(sqlite3*);
 ** was opened. This includes UPDATE, INSERT and DELETE statements executed
 ** as part of trigger programs. All changes are counted as soon as the
 ** statement that makes them is completed (when the statement handle is
-** passed to [sqlite3_reset()] or [sqlite3_finalise()]).
+** passed to [sqlite3_reset()] or [sqlite3_finalize()]).
 **
 ** See also the [sqlite3_change()] interface.
 **
@@ -1114,7 +1114,8 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 ** CAPI3REF: Memory Allocation Subsystem
 **
 ** The SQLite core uses these three routines for all of its own
-** internal memory allocation needs. The default implementation
+** internal memory allocation needs. (See the exception below.)
+** The default implementation
 ** of the memory allocation subsystem uses the malloc(), realloc()
 ** and free() provided by the standard C library.  However, if 
 ** SQLite is compiled with the following C preprocessor macro
@@ -1125,8 +1126,18 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 ** SQLite.  The application that links against SQLite is
 ** expected to provide its own implementation.  If the application
 ** does provide its own implementation for these routines, then
-** it must also provide an implementation for
-** [sqlite3_memory_alarm()].
+** it must also provide an implementations for
+** [sqlite3_memory_alarm()], [sqlite3_memory_used()], and
+** [sqlite3_memory_highwater()].  The alternative implementations
+** for these last three routines need not actually work, but
+** stub functions at least are needed to statisfy the linker.
+** SQLite never calls [sqlite3_memory_highwater()] itself, but
+** the symbol is included in a table as part of the
+** [sqlite3_load_extension()] interface.  The
+** [sqlite3_memory_alarm()] and [sqlite3_memory_used()] interfaces
+** are called by [sqlite3_soft_heap_limit()] and working implementations
+** of both routines must be provided if [sqlite3_soft_heap_limit()]
+** is to operate correctly.
 **
 ** <b>Exception:</b> The windows OS interface layer calls
 ** the system malloc() and free() directly when converting
@@ -1152,11 +1163,14 @@ void sqlite3_free(void*);
 ** currently outstanding (malloced but not freed).  The second
 ** returns the largest instantaneous amount of outstanding
 ** memory.  The highwater mark is reset if the argument is
-** true.  The SQLite core does not use either of these routines
-** and so they do not have to be implemented by the application
-** if SQLITE_OMIT_MEMORY_ALLOCATION is defined.  These routines
-** are provided by the default memory subsystem for diagnostic
-** purposes.
+** true.
+**
+** The implementation of these routines in the SQLite core
+** is omitted if the application is compiled with the
+** SQLITE_OMIT_MEMORY_ALLOCATION macro defined.  In that case,
+** the application that links SQLite must provide its own
+** alternative implementation.  See the documentation on
+** [sqlite3_malloc()] for additional information.
 */
 sqlite3_int64 sqlite3_memory_used(void);
 sqlite3_int64 sqlite3_memory_highwater(int resetFlag);
@@ -2130,7 +2144,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** described above, or until [sqlite3_step()] or [sqlite3_reset()] or
 ** [sqlite3_finalize()] is called.  The memory space used to hold strings
 ** and blobs is freed automatically.  Do <b>not</b> pass the pointers returned
-** [sqlite3_column_blob()], [sqlite_column_text()], etc. into 
+** [sqlite3_column_blob()], [sqlite3_column_text()], etc. into 
 ** [sqlite3_free()].
 **
 ** If a memory allocation error occurs during the evaluation of any
@@ -3198,7 +3212,7 @@ int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
 ** [sqlite3_blob_open()] and destroyed by [sqlite3_blob_close()].
 ** The [sqlite3_blob_read()] and [sqlite3_blob_write()] interfaces
 ** can be used to read or write small subsections of the blob.
-** The [sqltie3_blob_size()] interface returns the size of the
+** The [sqlite3_blob_bytes()] interface returns the size of the
 ** blob in bytes.
 */
 typedef struct sqlite3_blob sqlite3_blob;
