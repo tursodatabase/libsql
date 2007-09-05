@@ -24,8 +24,8 @@
 ** Asynchronous I/O appears to give better responsiveness, but at a price.
 ** You lose the Durable property.  With the default I/O backend of SQLite,
 ** once a write completes, you know that the information you wrote is
-** safely on disk.  With the asynchronous I/O, this is no the case.  If
-** your program crashes or if you take a power lose after the database
+** safely on disk.  With the asynchronous I/O, this is not the case.  If
+** your program crashes or if a power lose occurs after the database
 ** write but before the asynchronous write thread has completed, then the
 ** database change might never make it to disk and the next user of the
 ** database might not see your change.
@@ -36,26 +36,14 @@
 **
 ** HOW IT WORKS
 **
-** Asynchronous I/O works by overloading the OS-layer disk I/O routines
-** with modified versions that store the data to be written in queue of
-** pending write operations.  Look at the asyncEnable() subroutine to see
-** how overloading works.  Six os-layer routines are overloaded:
+** Asynchronous I/O works by creating a special SQLite "vfs" structure
+** and registering it with sqlite3_vfs_register(). When files opened via 
+** this vfs are written to (using sqlite3OsWrite()), the data is not 
+** written directly to disk, but is placed in the "write-queue" to be
+** handled by the background thread.
 **
-**     sqlite3OsOpenReadWrite;
-**     sqlite3OsOpenReadOnly;
-**     sqlite3OsOpenExclusive;
-**     sqlite3OsDelete;
-**     sqlite3OsFileExists;
-**     sqlite3OsSyncDirectory;
-**
-** The original implementations of these routines are saved and are
-** used by the writer thread to do the real I/O.  The substitute
-** implementations typically put the I/O operation on a queue
-** to be handled later by the writer thread, though read operations
-** must be handled right away, obviously.
-**
-** Asynchronous I/O is disabled by setting the os-layer interface routines
-** back to their original values.
+** The special vfs is registered (and unregistered) by calls to 
+** function asyncEnable() (see below).
 **
 ** LIMITATIONS
 **
@@ -73,7 +61,10 @@
 /* 
 ** If this symbol is defined, then file-system locks are obtained as
 ** required. This slows things down, but allows multiple processes
-** to access the database concurrently.
+** to access the database concurrently. If this symbol is not defined,
+** then connections from within a single process will respect each
+** others database locks, but external connections will not - leading
+** to database corruption.
 */
 #define ENABLE_FILE_LOCKING
 
@@ -125,7 +116,11 @@ static void asyncTrace(const char *zFormat, ...){
 ** Basic rules:
 **
 **     * Both read and write access to the global write-op queue must be 
-**       protected by the async.queueMutex.
+**       protected by the async.queueMutex. As are the async.ioError and
+**       async.nFile variables.
+**
+**     * The async.aLock hash-table and all AsyncLock and AsyncFileLock
+**       structures must be protected by teh async.lockMutex mutex.
 **
 **     * The file handles from the underlying system are assumed not to 
 **       be thread safe.
@@ -309,27 +304,39 @@ struct AsyncWrite {
 };
 
 /*
+** An instance of this structure is created for each distinct open file 
+** (i.e. if two handles are opened on the one file, only one of these
+** structures is allocated) and stored in the async.aLock hash table. The
+** keys for async.aLock are the full pathnames of the opened files.
+**
+** AsyncLock.pList points to the head of a linked list of AsyncFileLock
+** structures, one for each handle currently open on the file.
+**
+** If the opened file is not a main-database (the SQLITE_OPEN_MAIN_DB is
+** not passed to the sqlite3OsOpen() call), or if ENABLE_FILE_LOCKING is 
+** not defined at compile time, variables AsyncLock.pFile and 
+** AsyncLock.eLock are never used. Otherwise, pFile is a file handle
+** opened on the file in question and used to obtain the file-system 
+** locks required by database connections within this process.
+**
+** See comments above the asyncLock() function for more details on 
+** the implementation of database locking used by this backend.
+*/
+struct AsyncLock {
+  sqlite3_file *pFile;
+  int eLock;
+  AsyncFileLock *pList;
+};
+
+/*
 ** An instance of the following structure is allocated along with each
 ** AsyncFileData structure (see AsyncFileData.lock), but is only used if the
 ** file was opened with the SQLITE_OPEN_MAIN_DB.
-**
-** The global async.aLock[] hash table maps from database file-name to a
-** linked-list of AsyncFileLock structures corresponding to handles opened on
-** the file. The AsyncFileLock structures are linked into the list when the
-** file is opened and removed when it is closed. Mutex async.lockMutex must be
-** held before accessing any AsyncFileLock structure or the async.aLock[]
-** table.
 */
 struct AsyncFileLock {
   int eLock;                /* Internally visible lock state (sqlite pov) */
   int eAsyncLock;           /* Lock-state with write-queue unlock */
   AsyncFileLock *pNext;
-};
-
-struct AsyncLock {
-  sqlite3_file *pFile;
-  int eLock;
-  AsyncFileLock *pList;
 };
 
 /* 
@@ -611,6 +618,7 @@ static int getFileLock(AsyncLock *pLock){
       assert(pIter->eAsyncLock>=pIter->eLock);
       if( pIter->eAsyncLock>eRequired ){
         eRequired = pIter->eAsyncLock;
+        assert(eRequired>=0 && eRequired<=SQLITE_LOCK_EXCLUSIVE);
       }
     }
     if( eRequired>pLock->eLock ){
@@ -627,12 +635,9 @@ static int getFileLock(AsyncLock *pLock){
 }
 
 /*
-** No disk locking is performed.  We keep track of locks locally in
-** the async.aLock hash table.  Locking should appear to work the same
-** as with standard (unmodified) SQLite as long as all connections 
-** come from this one process.  Connections from external processes
-** cannot see our internal hash table (obviously) and will thus not
-** honor our locks.
+** The following two methods - asyncLock() and asyncUnlock() - are used
+** to obtain and release locks on database files opened with the
+** asynchronous backend.
 */
 static int asyncLock(sqlite3_file *pFile, int eLock){
   int rc = SQLITE_OK;
@@ -656,9 +661,7 @@ static int asyncLock(sqlite3_file *pFile, int eLock){
     }
     if( rc==SQLITE_OK ){
       p->lock.eLock = eLock;
-      if( eLock>p->lock.eAsyncLock ){
-        p->lock.eAsyncLock = eLock;
-      }
+      p->lock.eAsyncLock = MAX(p->lock.eAsyncLock, eLock);
     }
     assert(p->lock.eAsyncLock>=p->lock.eLock);
     if( rc==SQLITE_OK ){
@@ -674,9 +677,7 @@ static int asyncUnlock(sqlite3_file *pFile, int eLock){
   AsyncFileData *p = ((AsyncFile *)pFile)->pData;
   AsyncFileLock *pLock = &p->lock;
   pthread_mutex_lock(&async.lockMutex);
-  if( pLock->eLock>eLock ){
-    pLock->eLock = eLock;
-  }
+  pLock->eLock = MIN(pLock->eLock, eLock);
   pthread_mutex_unlock(&async.lockMutex);
   return addNewAsyncWrite(p, ASYNC_UNLOCK, 0, eLock, 0);
 }
@@ -1010,16 +1011,19 @@ static sqlite3_vfs async_vfs = {
 static void asyncEnable(int enable){
   if( enable ){
     if( !async_vfs.pAppData ){
+      static int hashTableInit = 0;
       async_vfs.pAppData = (void *)sqlite3_vfs_find(0);
       async_vfs.mxPathname = ((sqlite3_vfs *)async_vfs.pAppData)->mxPathname;
       sqlite3_vfs_register(&async_vfs, 1);
-      sqlite3HashInit(&async.aLock, SQLITE_HASH_BINARY, 1);
+      if( !hashTableInit ){
+        sqlite3HashInit(&async.aLock, SQLITE_HASH_BINARY, 1);
+        hashTableInit = 1;
+      }
     }
   }else{
     if( async_vfs.pAppData ){
       sqlite3_vfs_unregister(&async_vfs);
       async_vfs.pAppData = 0;
-      sqlite3HashClear(&async.aLock);
     }
   }
 }
@@ -1149,14 +1153,19 @@ static void *asyncWriterThread(void *NotUsed){
         pLock = sqlite3HashFind(&async.aLock, pData->zName, pData->nName);
         for(ppIter=&pLock->pList; *ppIter; ppIter=&((*ppIter)->pNext)){
           if( (*ppIter)==&pData->lock ){
-            *ppIter = (*ppIter)->pNext;
+            *ppIter = pData->lock.pNext;
             break;
           }
         }
         if( !pLock->pList ){
-          if( pLock->pFile ) sqlite3OsClose(pLock->pFile);
+          if( pLock->pFile ){
+            sqlite3OsClose(pLock->pFile);
+          }
           sqlite3_free(pLock);
           sqlite3HashInsert(&async.aLock, pData->zName, pData->nName, 0);
+          if( !sqliteHashFirst(&async.aLock) ){
+            sqlite3HashClear(&async.aLock);
+          }
         }else{
           rc = getFileLock(pLock);
         }
@@ -1171,13 +1180,9 @@ static void *asyncWriterThread(void *NotUsed){
         AsyncFileData *pData = p->pFileData;
         int eLock = p->nByte;
         pthread_mutex_lock(&async.lockMutex);
-        if( pData->lock.eAsyncLock>eLock ){
-          if( pData->lock.eLock>eLock ){
-            pData->lock.eAsyncLock = pData->lock.eLock;
-          }else{
-            pData->lock.eAsyncLock = eLock;
-          }
-        }
+        pData->lock.eAsyncLock = MIN(
+            pData->lock.eAsyncLock, MAX(pData->lock.eLock, eLock)
+        );
         assert(pData->lock.eAsyncLock>=pData->lock.eLock);
         pLock = sqlite3HashFind(&async.aLock, pData->zName, pData->nName);
         rc = getFileLock(pLock);

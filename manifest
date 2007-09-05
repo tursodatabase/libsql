@@ -1,5 +1,5 @@
-C Do\snot\suse\sthe\sTryEnterCriticalSection\sAPI\son\swindows\ssince\sit\sis\nunavailable\son\ssome\splatforms.\s(CVS\s4399)
-D 2007-09-04T22:31:37
+C Fix\sa\sproblem\sin\sthe\stest\sscripts\sfor\sthe\sasynchronous\sbackend.\s(CVS\s4400)
+D 2007-09-05T11:34:54
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -145,7 +145,7 @@ F src/test6.c 0513982dfef4da2a4154b538d2bf538b84ca21d3
 F src/test7.c a9d509d0e9ad214b4772696f49f6e61be26213d1
 F src/test8.c f113aa3723a52113d0fa7c28155ecd37e7e04077
 F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
-F src/test_async.c e221db3e87b472733a8015be7d70bae0edb848b1
+F src/test_async.c 5d30feff6238f083eb32a55f5c18b036a1a5e40c
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c 6fb459214b27952b143f45e35200d94096d54cc6
@@ -180,8 +180,8 @@ F test/alter2.test 50c3f554b8236d179d72511c0a4f23c5eb7f2af3
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
 F test/altermalloc.test 1f4d2d66750bea1a78cd9f0b7dba5bfb155dd6cf
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
-F test/async.test 18e7dc66535f3d86c05e0f954384472e2ed52490
-F test/async2.test a8ef7abfda880b171b2f0a8476300816e33a808a
+F test/async.test c52216f8bdebff26900a338b75ea6079944bf141
+F test/async2.test 75f2d15f4c27189ec3296cf2565ec91834bbed76
 F test/attach.test b849e1baae863c3a6132ff8b9b1baf356ab6c178
 F test/attach2.test 78bc1a25ea8785c7571b44f5947ada2bd5d78127
 F test/attach3.test eafcafb107585aecc2ed1569a77914138eef46a9
@@ -569,7 +569,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3794dcd31a74e90b181b336bf6a4c917bda526b8
-R f8c85691f2efa8fda77b1b74d5099eab
-U drh
-Z 971dbe3f56f98d850a595d781e5442d1
+P bf3d67d1bd1c48fff45dc24818b8358f79c9fdef
+R 25fb668c32b81804b4ade4316a54624b
+U danielk1977
+Z 8a09ee32bd86264ddd0da49c7bb5aaae

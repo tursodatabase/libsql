@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: async.test,v 1.9 2007/09/04 18:28:44 danielk1977 Exp $
+# $Id: async.test,v 1.10 2007/09/05 11:34:54 danielk1977 Exp $
 
 
 if {[catch {sqlite3async_enable}]} {
@@ -18,7 +18,11 @@ if {[catch {sqlite3async_enable}]} {
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 rename finish_test really_finish_test
-proc finish_test {} {}
+proc finish_test {} {
+  catch {db close}
+  catch {db2 close}
+  catch {db3 close}
+}
 set ISQUICK 1
 
 set INCLUDE {
@@ -34,7 +38,6 @@ set INCLUDE {
   lock3.test
   lock2.test
 }
-# set INCLUDE lock4.test
 
 # Enable asynchronous IO.
 sqlite3async_enable 1
@@ -51,7 +54,15 @@ foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
   set tail [file tail $testfile]
   if {[lsearch -exact $INCLUDE $tail]<0} continue
   source $testfile
-  catch {db close}
+
+  # Make sure everything is flushed through. This is because [source]ing 
+  # the next test file will delete the database file on disk (using
+  # [file delete]). If the asynchronous backend still has the file
+  # open, it will become confused.
+  #
+  sqlite3async_halt idle
+  sqlite3async_start
+  sqlite3async_wait
 }
 
 # Flush the write-queue and disable asynchronous IO. This should ensure
