@@ -238,6 +238,13 @@ int sqlite3Os2TempFileName( char *zBuf ){
       }
     }
   }
+  /* strip off a trailing slashes or backslashes, otherwise we would get *
+   * multiple (back)slashes which causes DosOpen() to fail               */
+  j = strlen(zTempPath);
+  while( j > 0 && zTempPath[j-1] == '\\' || zTempPath[j-1] == '/' ){
+      j--;
+  }
+  zTempPath[j] = '\0';
   for(;;){
       sprintf( zBuf, "%s\\"TEMP_FILE_PREFIX, zTempPath );
       j = strlen( zBuf );
