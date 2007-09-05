@@ -13,7 +13,7 @@
 # Specifically, it tests that the xFullPathname() method of
 # of the asynchronous vfs works correctly.
 #
-# $Id: async3.test,v 1.1 2007/09/05 14:32:25 danielk1977 Exp $
+# $Id: async3.test,v 1.2 2007/09/05 16:54:41 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -43,6 +43,7 @@ do_test async3-1.0 {
   file delete -force chocolate/banana/vanilla/file.db
   file delete -force chocolate/banana/vanilla/file.db-journal
 } {}
+
 do_test async3-1.1 {
   sqlite3 db chocolate/banana/vanilla/file.db
   execsql {

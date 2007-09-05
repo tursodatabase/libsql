@@ -5,7 +5,7 @@
 #
 #***********************************************************************
 #
-# $Id: async2.test,v 1.7 2007/09/05 11:34:54 danielk1977 Exp $
+# $Id: async2.test,v 1.8 2007/09/05 16:54:41 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -46,7 +46,6 @@ set sql_script {
 
 db close
 
-
 foreach err [list ioerr malloc-transient malloc-persistent] {
   set ::go 1
   for {set n 1} {$::go} {incr n} {
@@ -59,14 +58,16 @@ foreach err [list ioerr malloc-transient malloc-persistent] {
   
     sqlite3async_enable 1
     sqlite3 db test.db
-    execsql $::sql_script
-    db close
   
     switch -- $err {
       ioerr             { set ::sqlite_io_error_pending $n }
       malloc-persistent { sqlite3_memdebug_fail $n -repeat 1 }
       malloc-transient  { sqlite3_memdebug_fail $n -repeat 0 }
     }
+
+    catchsql $::sql_script
+    db close
+
     sqlite3async_halt idle
     sqlite3async_start
     sqlite3async_wait

@@ -1,5 +1,5 @@
-C Test\sthat\sthe\sasynchronous\sbackend\sworks\swith\scomponents\slike\s"."\sor\s".."\sin\sthe\spath\sto\sthe\sdatabase\sfile.\s(CVS\s4403)
-D 2007-09-05T14:32:25
+C Fix\serror\shandling\s(malloc\sand\sio\serrors)\sin\sthe\sasynchronous\sbackend.\s(CVS\s4404)
+D 2007-09-05T16:54:41
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -145,7 +145,7 @@ F src/test6.c 0513982dfef4da2a4154b538d2bf538b84ca21d3
 F src/test7.c a9d509d0e9ad214b4772696f49f6e61be26213d1
 F src/test8.c f113aa3723a52113d0fa7c28155ecd37e7e04077
 F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
-F src/test_async.c 6e30875ed6227a28f61ce5fce6cd6b3571c06133
+F src/test_async.c 9bf363454cc1d5e0695c2ae51dd626f1f115fbe3
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c 6fb459214b27952b143f45e35200d94096d54cc6
@@ -181,8 +181,8 @@ F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
 F test/altermalloc.test 1f4d2d66750bea1a78cd9f0b7dba5bfb155dd6cf
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
 F test/async.test eca5ea2646ea4adfbfa276fa710238e79eb1d477
-F test/async2.test 75f2d15f4c27189ec3296cf2565ec91834bbed76
-F test/async3.test 60a6e5a8e739a418d3f95f16d3061e54583997ee
+F test/async2.test e56affa75ed822424a6f9b12b22db8031433bb7c
+F test/async3.test 08ea0217083e4866eb1b0147158298f2a2cd1346
 F test/attach.test b849e1baae863c3a6132ff8b9b1baf356ab6c178
 F test/attach2.test 78bc1a25ea8785c7571b44f5947ada2bd5d78127
 F test/attach3.test eafcafb107585aecc2ed1569a77914138eef46a9
@@ -570,7 +570,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3aace2fa91e96038f7a32366828ac7520470fa67
-R 4773df5025bfb3384ab08322753dc6d8
+P 0a87a854226ccea920484613dd7f7873e673c96e
+R f4e7b2c15b1baf3a171de58fa18366fc
 U danielk1977
-Z f1ee4a8ff07588869cdd656e05c5eaeb
+Z 99f53f4bf25aa26163bc39c798fb3945
