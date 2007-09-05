@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.3 2007/09/04 22:31:37 drh Exp $
+** $Id: mutex_w32.c,v 1.4 2007/09/05 14:30:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -30,6 +30,33 @@ struct sqlite3_mutex {
   int nRef;                  /* Number of enterances */
   DWORD owner;               /* Thread holding this mutex */
 };
+
+/*
+** Return true (non-zero) if we are running under WinNT, Win2K, WinXP,
+** or WinCE.  Return false (zero) for Win95, Win98, or WinME.
+**
+** Here is an interesting observation:  Win95, Win98, and WinME lack
+** the LockFileEx() API.  But we can still statically link against that
+** API as long as we don't call it win running Win95/98/ME.  A call to
+** this routine is used to determine if the host is Win95/98/ME or
+** WinNT/2K/XP so that we will know whether or not we can safely call
+** the LockFileEx() API.
+*/
+#if OS_WINCE
+# define mutexIsNT()  (1)
+#else
+  static int mutexIsNT(void){
+    static int osType = 0;
+    if( osType==0 ){
+      OSVERSIONINFO sInfo;
+      sInfo.dwOSVersionInfoSize = sizeof(sInfo);
+      GetVersionEx(&sInfo);
+      osType = sInfo.dwPlatformId==VER_PLATFORM_WIN32_NT ? 2 : 1;
+    }
+    return osType==2;
+  }
+#endif /* OS_WINCE */
+
 
 /*
 ** The sqlite3_mutex_alloc() routine allocates a new
@@ -141,16 +168,10 @@ void sqlite3_mutex_enter(sqlite3_mutex *p){
   p->nRef++;
 }
 int sqlite3_mutex_try(sqlite3_mutex *p){
-  /* The TryEnterCriticalSection() interface is not available on all
-  ** windows systems.  Since sqlite3_mutex_try() is only used as an
-  ** optimization, we can skip it on windows. */
-  return SQLITE_BUSY;
-
-#if 0  /* Not Available */
   int rc;
   assert( p );
   assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
-  if( TryEnterCriticalSection(&p->mutex) ){
+  if( mutexIsNT() && TryEnterCriticalSection(&p->mutex) ){
     p->owner = GetCurrentThreadId();
     p->nRef++;
     rc = SQLITE_OK;
@@ -158,7 +179,6 @@ int sqlite3_mutex_try(sqlite3_mutex *p){
     rc = SQLITE_BUSY;
   }
   return rc;
-#endif
 }
 
 /*

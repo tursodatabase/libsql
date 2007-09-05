@@ -1,5 +1,5 @@
-C Remove\sthe\sunixFile.isOpen\svariable\s(no\slonger\sin\suse).\s(CVS\s4401)
-D 2007-09-05T13:56:32
+C Restore\sthe\ssqlite3_mutex_try()\soptimization\son\swinNT\ssystems.\s(CVS\s4402)
+D 2007-09-05T14:30:42
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -108,7 +108,7 @@ F src/mutex.c 40e5ba09d56863895882a0204d93832e9960ea78
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c d47e9bd495583dd31263d8fe55160a31eb600a3c
 F src/mutex_unix.c ff77650261a245035b79c5c8a174f4e05d3cae8a
-F src/mutex_w32.c 2812771e75148c58a62ca05bbeb9a8dd6ec46307
+F src/mutex_w32.c d2c56fb81aca10af1577bdae2a4083eb2505f8ee
 F src/os.c 198c6c55cbdbe5b9c3105070c88fcc077d1b2447
 F src/os.h 53e65427899ed5697d79749d646e6a297b70171a
 F src/os_common.h 98862f120ca6bf7a48ce8b16f158b77d00bc9d2f
@@ -569,7 +569,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 630fc71f3df5ab6129ddff9d8184893ecc6cf3c5
-R 9a78b375d5424edc5f5d67c6a4158c36
-U danielk1977
-Z 26fe5592b03efb24fd754f70db25a373
+P 1786e9c881a67fbf8bd014d643590534c8c601dc
+R 13dbaebf3174563b1064b0b1bbb0d310
+U drh
+Z 14476c6d97c0081a9542a49eeb3e06d4
