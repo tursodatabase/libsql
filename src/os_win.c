@@ -1438,7 +1438,7 @@ void winDlClose(sqlite3_vfs *pVfs, void *pHandle){
 */
 static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   int n = 0;
-  if( sizeof(LPSYSTEMTIME)<=nBuf-n ){
+  if( sizeof(SYSTEMTIME)<=nBuf-n ){
     SYSTEMTIME x;
     GetSystemTime(&x);
     memcpy(&zBuf[n], &x, sizeof(x));

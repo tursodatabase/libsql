@@ -1,5 +1,5 @@
-C Fix\serror\shandling\s(malloc\sand\sio\serrors)\sin\sthe\sasynchronous\sbackend.\s(CVS\s4404)
-D 2007-09-05T16:54:41
+C Fix\sa\sharmless\stypo\sin\sthe\sPRNG\sinitialization\son\swin32.\s\sTicket\s#2617.\s(CVS\s4405)
+D 2007-09-05T17:06:03
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -118,7 +118,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 522486e24d1a743efc366cb93a727fa9314797b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c d8909c199a5195f8d21be98216241370bdf93cdd
+F src/os_win.c b663c171abbbfa8ca20e5b9b93f7a0f09df616e9
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 0ce52a22ebfae0c085b68e00e30e9bf9ea462d0d
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
@@ -570,7 +570,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0a87a854226ccea920484613dd7f7873e673c96e
-R f4e7b2c15b1baf3a171de58fa18366fc
-U danielk1977
-Z 99f53f4bf25aa26163bc39c798fb3945
+P 80a44382d149b9d53212c15368565ede31aa2dc4
+R b1c9f0cdccf744e448ce6e94fa87f8cd
+U drh
+Z 156cfe7f3b9b1606282f8d34fdf8a505
