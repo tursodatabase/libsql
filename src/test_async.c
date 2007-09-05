@@ -621,13 +621,18 @@ static int getFileLock(AsyncLock *pLock){
         assert(eRequired>=0 && eRequired<=SQLITE_LOCK_EXCLUSIVE);
       }
     }
+
     if( eRequired>pLock->eLock ){
       rc = sqlite3OsLock(pLock->pFile, eRequired);
-    }else if(eRequired<pLock->eLock){
-      rc = sqlite3OsUnlock(pLock->pFile, eRequired);
+      if( rc==SQLITE_OK ){
+        pLock->eLock = eRequired;
+      }
     }
-    if( rc==SQLITE_OK ){
-      pLock->eLock = eRequired;
+    else if( eRequired<pLock->eLock && eRequired<=SQLITE_LOCK_SHARED ){
+      rc = sqlite3OsUnlock(pLock->pFile, eRequired);
+      if( rc==SQLITE_OK ){
+        pLock->eLock = eRequired;
+      }
     }
   }
 
@@ -932,11 +937,11 @@ static int asyncFullPathname(
       /* Replace any occurences of "<path-component>/../" with "" */
       if( iOut>0 && iIn<=(nPathOut-4) 
        && zPathOut[iIn]=='/' && zPathOut[iIn+1]=='.' 
-       && zPathOut[iIn+2]=='.' && zPathOut[iIn+2]=='/'
+       && zPathOut[iIn+2]=='.' && zPathOut[iIn+3]=='/'
       ){
         iIn += 3;
         iOut--;
-        for( ; iOut>0 && zPathOut[iOut]!='/'; iOut--);
+        for( ; iOut>0 && zPathOut[iOut-1]!='/'; iOut--);
         continue;
       }
 
