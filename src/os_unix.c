@@ -96,7 +96,6 @@ struct unixFile {
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
   int h;                    /* The file descriptor */
   unsigned char locktype;   /* The type of lock held on this fd */
-  unsigned char isOpen;     /* True if needs to be closed */
   int dirfd;                /* File descriptor for the directory */
 #if SQLITE_THREADSAFE
   pthread_t tid;            /* The thread that "owns" this unixFile */
@@ -1434,7 +1433,6 @@ static int unixClose(sqlite3_file *id){
   releaseOpenCnt(pFile->pOpen);
 
   leaveMutex();
-  pFile->isOpen = 0;
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
   memset(pFile, 0, sizeof(unixFile));
@@ -1755,7 +1753,6 @@ static int afpUnixClose(sqlite3_file *id) {
   if( pFile->dirfd>=0 ) close(pFile->dirfd);
   pFile->dirfd = -1;
   close(pFile->h);
-  pFile->isOpen = 0;
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
   return SQLITE_OK;
@@ -1849,7 +1846,6 @@ static int flockUnixClose(sqlite3_file *pId) {
   
   close(pFile->h);  
   leaveMutex();
-  pFile->isOpen = 0;
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
   return SQLITE_OK;
@@ -1966,7 +1962,6 @@ static int dotlockUnixClose(sqlite3_file *id) {
   close(pFile->h);
   
   leaveMutex();
-  pFile->isOpen = 0;
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
   return SQLITE_OK;
@@ -2006,7 +2001,6 @@ static int nolockUnixClose(sqlite3_file *id) {
   close(pFile->h);
   
   leaveMutex();
-  pFile->isOpen = 0;
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
   return SQLITE_OK;

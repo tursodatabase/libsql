@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: async.test,v 1.10 2007/09/05 11:34:54 danielk1977 Exp $
+# $Id: async.test,v 1.11 2007/09/05 13:56:32 danielk1977 Exp $
 
 
 if {[catch {sqlite3async_enable}]} {
@@ -26,17 +26,17 @@ proc finish_test {} {
 set ISQUICK 1
 
 set INCLUDE {
+  insert.test
+  insert2.test
+  insert3.test
+  lock.test
+  lock2.test
+  lock3.test
   select1.test
   select2.test
   select3.test
   select4.test
-  insert.test
-  insert2.test
-  insert3.test
   trans.test
-  lock.test
-  lock3.test
-  lock2.test
 }
 
 # Enable asynchronous IO.
@@ -45,8 +45,8 @@ sqlite3async_enable 1
 rename do_test really_do_test
 proc do_test {name args} {
   uplevel really_do_test async_io-$name $args
-  sqlite3async_halt idle
   sqlite3async_start
+  sqlite3async_halt idle
   sqlite3async_wait
 }
 
