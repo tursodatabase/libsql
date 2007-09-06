@@ -1,5 +1,5 @@
-C Base\sthe\sname\sof\sthe\sstatement\sjournal\son\sthe\soriginal\sdatabase\sfilename.\nRemember\sthe\sstatement\sjournal\sname\sfor\sthe\slifetime\sof\sthe\sPager\sso\nthat\sthe\sname\spointer\spassed\sto\sxOpen\spersists\sas\slong\sas\sthe\sfile\nexists.\s(CVS\s4410)
-D 2007-09-06T23:28:24
+C Throw\san\serror\son\san\sattempt\sto\sopen\sa\sdatabase\swhere\sthe\spage\nsize\sis\slarger\sthan\sSQLITE_MAX_PAGE_SIZE.\s\sTicket\s#2628.\s(CVS\s4411)
+D 2007-09-06T23:39:37
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -81,7 +81,7 @@ F src/analyze.c 49b4bd45eb286d833793ed6bf72355a5c1974865
 F src/attach.c 02fd8779270b1df1c63e7ba6e6655b960fa0f3d5
 F src/auth.c d41c34f3150b3b8248d364770ef922bbcefbff82
 F src/btmutex.c 442be6f068d77ca9ffd69899cf0a3943c244548c
-F src/btree.c f37796c6f0306ed61e69e4c54621350572df30d1
+F src/btree.c 9d684690afbc66f20905c408e2e018008cf99277
 F src/btree.h d0736ebca4b6eafbdd823c46a8de574cea078211
 F src/btreeInt.h 4330c19b8314545fdb209cc77e2a57f6a5290e9c
 F src/build.c 94d0d6dfd1e706c480903fbdda2e77466f21b898
@@ -413,7 +413,7 @@ F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test 55e039b34d505aa442cee415f83c451ae28b3123
-F test/sqllimits1.test 1e47dd64b42efdc1863d524594f3bfe29e0b734f
+F test/sqllimits1.test 2495508114bd84f6fc9ece34d5a7bb3dc69359bc
 F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 9f26cfca74397b26ab217fb838c3d0549eb4bcf3
@@ -570,7 +570,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2b755defe51a565a2b6ace58381d6e91f6f17db8
-R 7302a8ee1069963289d7beafba5ccbcf
+P 44d8d1e92d93a5bb28bd10281b4d87e89586ef58
+R f03766f65192dfb6547d9735765cf66c
 U drh
-Z 2eeafbb47f910b6b2e141f033520b30a
+Z 23993a6f77c3daa2e5e01c8013cf24fc

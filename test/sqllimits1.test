@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.17 2007/09/03 18:01:25 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.18 2007/09/06 23:39:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -503,6 +503,28 @@ do_test sqllimits-1.10.5 {
   execsql "pragma page_size = [expr {$max - 5}]"
   execsql "pragma page_size"
 } $::SQLITE_MAX_PAGE_SIZE
+
+# Opening a database where the page size is too large should generate
+# an error.
+#
+do_test sqllimits-1.10.5 {
+  db close
+  file delete -force test.db
+  set ::SQLITE_MAX_PAGE_SIZE 32768
+  sqlite3 db test.db
+  db eval {PRAGMA page_size=32768}
+  db eval {CREATE TABLE t1(x);}
+  db eval {PRAGMA page_size}
+} {32768}
+do_test sqllimits-1.10.6 {
+  db close
+  set ::SQLITE_MAX_PAGE_SIZE 8192
+  sqlite3 db test.db
+  catchsql {SELECT name FROM sqlite_master}
+} {1 {file is encrypted or is not a database}}
+db close
+file delete -force test.db
+sqlite3 db test.db
 
 #--------------------------------------------------------------------
 # Test cases sqllimits-11.* verify that the 
