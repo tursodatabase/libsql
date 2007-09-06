@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** @(#) $Id: journal.c,v 1.6 2007/09/03 15:19:35 drh Exp $
+** @(#) $Id: journal.c,v 1.7 2007/09/06 13:49:37 drh Exp $
 */
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
@@ -33,17 +33,20 @@
 
 #include "sqliteInt.h"
 
+
+/*
+** A JournalFile object is a subclass of sqlite3_file used by
+** as an open file handle for journal files.
+*/
 struct JournalFile {
-  sqlite3_io_methods *pMethod;
-
-  int nBuf;
-  char *zBuf;
-  int iSize;
-
-  int flags;
-  sqlite3_vfs *pVfs;
-  sqlite3_file *pReal;
-  const char *zJournal;
+  sqlite3_io_methods *pMethod;    /* I/O methods on journal files */
+  int nBuf;                       /* Size of zBuf[] in bytes */
+  char *zBuf;                     /* Space to buffer journal writes */
+  int iSize;                      /* Amount of zBuf[] currently used */
+  int flags;                      /* xOpen flags */
+  sqlite3_vfs *pVfs;              /* The "real" underlying VFS */
+  sqlite3_file *pReal;            /* The "real" underlying file descriptor */
+  const char *zJournal;           /* Name of the journal file */
 };
 typedef struct JournalFile JournalFile;
 
@@ -83,10 +86,10 @@ static int jrnlClose(sqlite3_file *pJfd){
 ** Read data from the file.
 */
 static int jrnlRead(
-  sqlite3_file *pJfd, 
-  void *zBuf, 
-  int iAmt, 
-  sqlite_int64 iOfst
+  sqlite3_file *pJfd,    /* The journal file from which to read */
+  void *zBuf,            /* Put the results here */
+  int iAmt,              /* Number of bytes to read */
+  sqlite_int64 iOfst     /* Begin reading at this offset */
 ){
   int rc = SQLITE_OK;
   JournalFile *p = (JournalFile *)pJfd;
@@ -103,10 +106,10 @@ static int jrnlRead(
 ** Write data to the file.
 */
 static int jrnlWrite(
-  sqlite3_file *pJfd, 
-  const void *zBuf, 
-  int iAmt, 
-  sqlite_int64 iOfst
+  sqlite3_file *pJfd,    /* The journal file into which to write */
+  const void *zBuf,      /* Take data to be written from here */
+  int iAmt,              /* Number of bytes to write */
+  sqlite_int64 iOfst     /* Begin writing at this offset into the file */
 ){
   int rc = SQLITE_OK;
   JournalFile *p = (JournalFile *)pJfd;
@@ -190,11 +193,11 @@ static struct sqlite3_io_methods JournalFileMethods = {
 ** Open a journal file.
 */
 int sqlite3JournalOpen(
-  sqlite3_vfs *pVfs, 
-  const char *zName, 
-  sqlite3_file *pJfd,
-  int flags,
-  int nBuf
+  sqlite3_vfs *pVfs,         /* The VFS to use for actual file I/O */
+  const char *zName,         /* Name of the journal file */
+  sqlite3_file *pJfd,        /* Preallocated, blank file handle */
+  int flags,                 /* Opening flags */
+  int nBuf                   /* Bytes buffered before opening the file */
 ){
   JournalFile *p = (JournalFile *)pJfd;
   memset(p, 0, sqlite3JournalSize(pVfs));
