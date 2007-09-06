@@ -1,5 +1,5 @@
-C Allocate\spage\scache\sheaders\sand\spage\scache\sdata\sbuffers\sseparately.\nThe\sdata\sbuffer\swill\sbe\sa\spower\sof\stwo\sin\ssize\sand\sthis\sgives\ssome\nmalloc\simplementation\sadditional\soptimization\sopportunitites.\s(CVS\s4409)
-D 2007-09-06T22:19:15
+C Base\sthe\sname\sof\sthe\sstatement\sjournal\son\sthe\soriginal\sdatabase\sfilename.\nRemember\sthe\sstatement\sjournal\sname\sfor\sthe\slifetime\sof\sthe\sPager\sso\nthat\sthe\sname\spointer\spassed\sto\sxOpen\spersists\sas\slong\sas\sthe\sfile\nexists.\s(CVS\s4410)
+D 2007-09-06T23:28:24
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -120,7 +120,7 @@ F src/os_unix.c 522486e24d1a743efc366cb93a727fa9314797b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c b663c171abbbfa8ca20e5b9b93f7a0f09df616e9
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 10a95d9373105af62255a05aac1ffe0400b93a3d
+F src/pager.c 70b4b9b6e1715adba48cd6a263885ae848f3f263
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 363e548dafb52327face8d99757ab56a7b1c1b26
@@ -344,7 +344,7 @@ F test/loadext2.test 95ca7e2cb03fd3e068de97c3a2fe58dbdfd769e1
 F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 5f9557b775662c2a5ee435378f39e10d64f65cb3
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
-F test/lock4.test c8e035ba9cf08985e4fc0f4600ffae241a435ab3
+F test/lock4.test f358fa835dff485d462072eee991111f09e87441
 F test/main.test 05f585bb70c05caac3e047903b517cbb319ed204
 F test/malloc.test 5b4ac16e0e11cca99a25574298eb5ac8e93236db
 F test/malloc2.test c1a74f46a3581b56df29ff46a4e1c99b41c44ad9
@@ -570,7 +570,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3298441086330d1d24c30b7c061dfec98e9ea3ac
-R fab7f476269f83c2a9fb525589500817
+P 2b755defe51a565a2b6ace58381d6e91f6f17db8
+R 7302a8ee1069963289d7beafba5ccbcf
 U drh
-Z 091fe80161eedb1e09f57479031bbfb6
+Z 2eeafbb47f910b6b2e141f033520b30a

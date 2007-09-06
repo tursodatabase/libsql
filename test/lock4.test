@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock4.test,v 1.5 2007/09/05 13:56:32 danielk1977 Exp $
+# $Id: lock4.test,v 1.6 2007/09/06 23:28:25 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -83,7 +83,6 @@ do_test lock4-1.3 {
   db eval {
      COMMIT;
   }
-breakpoint
   while {[file exists test2.db-journal]} {
     after 10
   }
