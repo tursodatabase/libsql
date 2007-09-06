@@ -42,6 +42,11 @@
 ** written directly to disk, but is placed in the "write-queue" to be
 ** handled by the background thread.
 **
+** When files opened with the asynchronous vfs are read from 
+** (using sqlite3OsRead()), the data is read from the file on 
+** disk and the write-queue, so that from the point of view of
+** the vfs reader the OsWrite() appears to have already completed.
+**
 ** The special vfs is registered (and unregistered) by calls to 
 ** function asyncEnable() (see below).
 **
@@ -56,15 +61,48 @@
 ** run out of memory.  Users of this technique may want to keep track of
 ** the quantity of pending writes and stop accepting new write requests
 ** when the buffer gets to be too big.
-*/
-
-/* 
-** If this symbol is defined, then file-system locks are obtained as
-** required. This slows things down, but allows multiple processes
-** to access the database concurrently. If this symbol is not defined,
-** then connections from within a single process will respect each
-** others database locks, but external connections will not - leading
-** to database corruption.
+**
+** LOCKING + CONCURRENCY
+**
+** Multiple connections from within a single process that use this
+** implementation of asynchronous IO may access a single database
+** file concurrently. From the point of view of the user, if all
+** connections are from within a single process, there is no difference
+** between the concurrency offered by "normal" SQLite and SQLite
+** using the asynchronous backend.
+**
+** If connections from within multiple database files may access the
+** database file, the ENABLE_FILE_LOCKING symbol (see below) must be
+** defined. If it is not defined, then no locks are established on 
+** the database file. In this case, if multiple processes access 
+** the database file, corruption will quickly result.
+**
+** If ENABLE_FILE_LOCKING is defined (the default), then connections 
+** from within multiple processes may access a single database file 
+** without risking corruption. However concurrency is reduced as
+** follows:
+**
+**   * When a connection using asynchronous IO begins a database
+**     transaction, the database is locked immediately. However the
+**     lock is not released until after all relevant operations
+**     in the write-queue have been flushed to disk. This means
+**     (for example) that the database may remain locked for some 
+**     time after a "COMMIT" or "ROLLBACK" is issued.
+**
+**   * If an application using asynchronous IO executes transactions
+**     in quick succession, other database users may be effectively
+**     locked out of the database. This is because when a BEGIN
+**     is executed, a database lock is established immediately. But
+**     when the corresponding COMMIT or ROLLBACK occurs, the lock
+**     is not released until the relevant part of the write-queue 
+**     has been flushed through. As a result, if a COMMIT is followed
+**     by a BEGIN before the write-queue is flushed through, the database 
+**     is never unlocked,preventing other processes from accessing 
+**     the database.
+**
+** Defining ENABLE_FILE_LOCKING when using an NFS or other remote 
+** file-system may slow things down, as synchronous round-trips to the 
+** server may be required to establish database file locks.
 */
 #define ENABLE_FILE_LOCKING
 
@@ -76,7 +114,6 @@
 ** a threadsafe build of SQLite.
 */
 #if OS_UNIX && SQLITE_THREADSAFE
-
 
 /*
 ** This demo uses pthreads.  If you do not have a pthreads implementation
@@ -128,12 +165,24 @@ static void asyncTrace(const char *zFormat, ...){
 **     * See the last two paragraphs under "The Writer Thread" for
 **       an assumption to do with file-handle synchronization by the Os.
 **
+** Deadlock prevention:
+**
+**     There are three mutex used by the system: the "writer" mutex, 
+**     the "queue" mutex and the "lock" mutex. Rules are:
+**
+**     * It is illegal to block on the writer mutex when any other mutex
+**       are held, and 
+**
+**     * It is illegal to block on the queue mutex when the lock mutex
+**       is held.
+**
+**     i.e. mutex's must be grabbed in the order "writer", "queue", "lock".
+**
 ** File system operations (invoked by SQLite thread):
 **
-**     xOpenXXX (three versions)
+**     xOpen
 **     xDelete
 **     xFileExists
-**     xSyncDirectory
 **
 ** File handle operations (invoked by SQLite thread):
 **
