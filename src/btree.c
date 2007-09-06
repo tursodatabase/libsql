@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.422 2007/09/03 22:00:39 drh Exp $
+** $Id: btree.c,v 1.423 2007/09/06 22:19:15 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -902,7 +902,8 @@ int sqlite3BtreeInitPage(
   assert( pParent==0 || pParent->pBt==pBt );
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pPage->pgno==sqlite3PagerPagenumber(pPage->pDbPage) );
-  assert( pPage->aData == &((unsigned char*)pPage)[-pBt->pageSize] );
+  assert( pPage == sqlite3PagerGetExtra(pPage->pDbPage) );
+  assert( pPage->aData == sqlite3PagerGetData(pPage->pDbPage) );
   if( pPage->pParent!=pParent && (pPage->pParent!=0 || pPage->isInit) ){
     /* The parent page should never change unless the file is corrupt */
     return SQLITE_CORRUPT_BKPT;
@@ -969,7 +970,8 @@ static void zeroPage(MemPage *pPage, int flags){
   int first;
 
   assert( sqlite3PagerPagenumber(pPage->pDbPage)==pPage->pgno );
-  assert( &data[pBt->pageSize] == (unsigned char*)pPage );
+  assert( sqlite3PagerGetExtra(pPage->pDbPage) == (void*)pPage );
+  assert( sqlite3PagerGetData(pPage->pDbPage) == data );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( sqlite3_mutex_held(pBt->mutex) );
   memset(&data[hdr], 0, pBt->usableSize - hdr);
@@ -1053,7 +1055,8 @@ static void releasePage(MemPage *pPage){
   if( pPage ){
     assert( pPage->aData );
     assert( pPage->pBt );
-    assert( &pPage->aData[pPage->pBt->pageSize]==(unsigned char*)pPage );
+    assert( sqlite3PagerGetExtra(pPage->pDbPage) == (void*)pPage );
+    assert( sqlite3PagerGetData(pPage->pDbPage)==pPage->aData );
     assert( sqlite3_mutex_held(pPage->pBt->mutex) );
     sqlite3PagerUnref(pPage->pDbPage);
   }
@@ -1731,7 +1734,7 @@ static void unlockBtreeIfUnused(BtShared *pBt){
     if( sqlite3PagerRefcount(pBt->pPager)>=1 ){
       if( pBt->pPage1->aData==0 ){
         MemPage *pPage = pBt->pPage1;
-        pPage->aData = &((u8*)pPage)[-pBt->pageSize];
+        pPage->aData = sqlite3PagerGetData(pPage->pDbPage);
         pPage->pBt = pBt;
         pPage->pgno = 1;
       }
@@ -4348,7 +4351,7 @@ static int reparentPage(BtShared *pBt, Pgno pgno, MemPage *pNewParent, int idx){
   if( pDbPage ){
     pThis = (MemPage *)sqlite3PagerGetExtra(pDbPage);
     if( pThis->isInit ){
-      assert( pThis->aData==(sqlite3PagerGetData(pDbPage)) );
+      assert( pThis->aData==sqlite3PagerGetData(pDbPage) );
       if( pThis->pParent!=pNewParent ){
         if( pThis->pParent ) sqlite3PagerUnref(pThis->pParent->pDbPage);
         pThis->pParent = pNewParent;
@@ -4899,12 +4902,10 @@ static int balance_nonroot(MemPage *pPage){
   ** process of being overwritten.
   */
   for(i=0; i<nOld; i++){
-    MemPage *p = apCopy[i] = (MemPage*)&aCopy[i][pBt->pageSize];
-    p->aData = &((u8*)p)[-pBt->pageSize];
-    memcpy(p->aData, apOld[i]->aData, pBt->pageSize + sizeof(MemPage));
-    /* The memcpy() above changes the value of p->aData so we have to
-    ** set it again. */
-    p->aData = &((u8*)p)[-pBt->pageSize];
+    MemPage *p = apCopy[i] = (MemPage*)aCopy[i];
+    memcpy(p, apOld[i], sizeof(MemPage));
+    p->aData = (void*)&p[1];
+    memcpy(p->aData, apOld[i]->aData, pBt->pageSize);
   }
 
   /*

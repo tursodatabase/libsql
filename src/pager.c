@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.385 2007/09/03 15:19:35 drh Exp $
+** @(#) $Id: pager.c,v 1.386 2007/09/06 22:19:15 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -271,12 +271,11 @@ struct PgHdr {
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   PagerLruLink gfree;            /* Global list of nRef==0 pages */
 #endif
-  u32 notUsed;                   /* Buffer space */
 #ifdef SQLITE_CHECK_PAGES
   u32 pageHash;
 #endif
-  /* pPager->pageSize bytes of page data follow this header */
-  /* Pager.nExtra bytes of local data follow the page data */
+  void *pData;                   /* Page data */
+  /* Pager.nExtra bytes of local data appended to this header */
 };
 
 /*
@@ -313,11 +312,10 @@ struct PgHistory {
 ** Convert a pointer to a PgHdr into a pointer to its data
 ** and back again.
 */
-#define PGHDR_TO_DATA(P)  ((void*)(&(P)[1]))
-#define DATA_TO_PGHDR(D)  (&((PgHdr*)(D))[-1])
-#define PGHDR_TO_EXTRA(G,P) ((void*)&((char*)(&(G)[1]))[(P)->pageSize])
+#define PGHDR_TO_DATA(P)    ((P)->pData)
+#define PGHDR_TO_EXTRA(G,P) ((void*)&((G)[1]))
 #define PGHDR_TO_HIST(P,PGR)  \
-            ((PgHistory*)&((char*)(&(P)[1]))[(PGR)->pageSize+(PGR)->nExtra])
+            ((PgHistory*)&((char*)(&(P)[1]))[(PGR)->nExtra])
 
 /*
 ** A open page cache is an instance of the following structure.
@@ -1245,6 +1243,7 @@ static void pager_reset(Pager *pPager){
     PAGER_INCR(sqlite3_pager_pgfree_count);
     pNext = pPg->pNextAll;
     lruListRemove(pPg);
+    sqlite3_free(pPg->pData);
     sqlite3_free(pPg);
   }
   assert(pPager->lru.pFirst==0);
@@ -2495,6 +2494,7 @@ static void pager_truncate_cache(Pager *pPager){
       PAGER_INCR(sqlite3_pager_pgfree_count);
       unlinkPage(pPg);
       makeClean(pPg);
+      sqlite3_free(pPg->pData);
       sqlite3_free(pPg);
       pPager->nPage--;
     }
@@ -3158,6 +3158,7 @@ int sqlite3PagerReleaseMemory(int nReq){
       );
       IOTRACE(("PGFREE %p %d *\n", pPager, pPg->pgno));
       PAGER_INCR(sqlite3_pager_pgfree_count);
+      sqlite3_free(pPg->pData);
       sqlite3_free(pPg);
       pPager->nPage--;
     }else{
@@ -3394,6 +3395,7 @@ static int pagerSharedLock(Pager *pPager){
 static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
   int rc = SQLITE_OK;
   PgHdr *pPg;
+  void *pData;
 
   /* Create a new PgHdr if any of the four conditions defined 
   ** above are met: */
@@ -3411,9 +3413,15 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
       }
     }
     pagerLeave(pPager);
-    pPg = sqlite3_malloc( sizeof(*pPg) + pPager->pageSize
-                            + sizeof(u32) + pPager->nExtra
+    pPg = sqlite3_malloc( sizeof(*pPg) + sizeof(u32) + pPager->nExtra
                             + MEMDB*sizeof(PgHistory) );
+    if( pPg ){
+      pData = sqlite3_malloc( pPager->pageSize );
+      if( pData==0 ){
+        sqlite3_free(pPg);
+        pPg = 0;
+      }
+    }
     pagerEnter(pPager);
     if( pPg==0 ){
       rc = SQLITE_NOMEM;
@@ -3423,6 +3431,7 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
     if( MEMDB ){
       memset(PGHDR_TO_HIST(pPg, pPager), 0, sizeof(PgHistory));
     }
+    pPg->pData = pData;
     pPg->pPager = pPager;
     pPg->pNextAll = pPager->pAll;
     pPager->pAll = pPg;
@@ -3987,7 +3996,6 @@ static int pager_write(PgHdr *pPg){
     */
     if( !pPg->inJournal && (pPager->useJournal || MEMDB) ){
       if( (int)pPg->pgno <= pPager->origDbSize ){
-        int szPg;
         if( MEMDB ){
           PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
           PAGERTRACE3("JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno);
@@ -3997,8 +4005,8 @@ static int pager_write(PgHdr *pPg){
             memcpy(pHist->pOrig, PGHDR_TO_DATA(pPg), pPager->pageSize);
           }
         }else{
-          u32 cksum, saved;
-          char *pData2, *pEnd;
+          u32 cksum;
+          char *pData2;
 
           /* We should never write to the journal file the page that
           ** contains the database locks.  The following assert verifies
@@ -4006,20 +4014,21 @@ static int pager_write(PgHdr *pPg){
           assert( pPg->pgno!=PAGER_MJ_PGNO(pPager) );
           pData2 = CODEC2(pPager, pData, pPg->pgno, 7);
           cksum = pager_cksum(pPager, (u8*)pData2);
-          pEnd = pData2 + pPager->pageSize;
-          pData2 -= 4;
-          saved = *(u32*)pEnd;
-          put32bits(pEnd, cksum);
-          szPg = pPager->pageSize+8;
-          put32bits(pData2, pPg->pgno);
-          rc = sqlite3OsWrite(pPager->jfd, pData2, szPg, pPager->journalOff);
-          IOTRACE(("JOUT %p %d %lld %d\n", pPager, pPg->pgno,
+          rc = write32bits(pPager->jfd, pPager->journalOff, pPg->pgno);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3OsWrite(pPager->jfd, pData2, pPager->pageSize,
+                                pPager->journalOff + 4);
+            pPager->journalOff += pPager->pageSize+4;
+          }
+          if( rc==SQLITE_OK ){
+            rc = write32bits(pPager->jfd, pPager->journalOff, cksum);
+            pPager->journalOff += 4;
+          }
+          IOTRACE(("JOUT %p %d %lld %d\n", pPager, pPg->pgno, 
                    pPager->journalOff, szPg));
           PAGER_INCR(sqlite3_pager_writej_count);
-          pPager->journalOff += szPg;
           PAGERTRACE5("JOURNAL %d page %d needSync=%d hash(%08x)\n",
                PAGERID(pPager), pPg->pgno, pPg->needSync, pager_pagehash(pPg));
-          *(u32*)pEnd = saved;
 
           /* An error has occured writing to the journal file. The 
           ** transaction will be rolled back by the layer above.
@@ -4068,9 +4077,11 @@ static int pager_write(PgHdr *pPg){
         page_add_to_stmt_list(pPg);
       }else{
         i64 offset = pPager->stmtNRec*(4+pPager->pageSize);
-        char *pData2 = CODEC2(pPager, pData, pPg->pgno, 7)-4;
-        put32bits(pData2, pPg->pgno);
-        rc = sqlite3OsWrite(pPager->stfd, pData2, pPager->pageSize+4, offset);
+        char *pData2 = CODEC2(pPager, pData, pPg->pgno, 7);
+        rc = write32bits(pPager->stfd, offset, pPg->pgno);
+        if( rc==SQLITE_OK ){
+          rc = sqlite3OsWrite(pPager->stfd, pData2, pPager->pageSize, offset+4);
+        }
         PAGERTRACE3("STMT-JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno);
         if( rc!=SQLITE_OK ){
           return rc;

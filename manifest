@@ -1,5 +1,5 @@
-C Updated\scomments\son\sjournal.c.\s\sNo\schanges\sto\scode.\s(CVS\s4408)
-D 2007-09-06T13:49:37
+C Allocate\spage\scache\sheaders\sand\spage\scache\sdata\sbuffers\sseparately.\nThe\sdata\sbuffer\swill\sbe\sa\spower\sof\stwo\sin\ssize\sand\sthis\sgives\ssome\nmalloc\simplementation\sadditional\soptimization\sopportunitites.\s(CVS\s4409)
+D 2007-09-06T22:19:15
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -81,7 +81,7 @@ F src/analyze.c 49b4bd45eb286d833793ed6bf72355a5c1974865
 F src/attach.c 02fd8779270b1df1c63e7ba6e6655b960fa0f3d5
 F src/auth.c d41c34f3150b3b8248d364770ef922bbcefbff82
 F src/btmutex.c 442be6f068d77ca9ffd69899cf0a3943c244548c
-F src/btree.c b1e8025ac1ba81d78c2d2bab47af8efd1d143995
+F src/btree.c f37796c6f0306ed61e69e4c54621350572df30d1
 F src/btree.h d0736ebca4b6eafbdd823c46a8de574cea078211
 F src/btreeInt.h 4330c19b8314545fdb209cc77e2a57f6a5290e9c
 F src/build.c 94d0d6dfd1e706c480903fbdda2e77466f21b898
@@ -120,7 +120,7 @@ F src/os_unix.c 522486e24d1a743efc366cb93a727fa9314797b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c b663c171abbbfa8ca20e5b9b93f7a0f09df616e9
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 0ce52a22ebfae0c085b68e00e30e9bf9ea462d0d
+F src/pager.c 10a95d9373105af62255a05aac1ffe0400b93a3d
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 363e548dafb52327face8d99757ab56a7b1c1b26
@@ -202,7 +202,7 @@ F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 261fd1603613e7f877a516d29f281c9d8c2ecf52
 F test/bindxfer.test b9a57f66dbd317feeefa28bd65b6576f1592ee98
 F test/blob.test 28c3b25150684ee3d108bb78cfb67a472deef2f0
-F test/btree.test d394f22b03712f05fca9c59f6f4848a3cad01379
+F test/btree.test eef24f3dd52b5b268321ae5aacfe30d3baca4e84
 F test/btree2.test 4b56a2a4a4f84d68c77aef271223a713bf5ebafc
 F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
@@ -570,7 +570,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 79cf4e886cd5f1cd22574ce13135d4e32c1047b6
-R e940832e4042881361230f79ce400588
+P 3298441086330d1d24c30b7c061dfec98e9ea3ac
+R fab7f476269f83c2a9fb525589500817
 U drh
-Z 99beef2eb5ea70985d445f46a130fc96
+Z 091fe80161eedb1e09f57479031bbfb6
