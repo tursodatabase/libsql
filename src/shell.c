@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.166 2007/07/30 20:41:53 drh Exp $
+** $Id: shell.c,v 1.167 2007/09/07 01:12:32 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1537,12 +1537,13 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 }
 
 /*
-** Return TRUE if the last non-whitespace character in z[] is a semicolon.
-** z[] is N characters long.
+** Return TRUE if a semicolon occurs anywhere in the first N characters
+** of string z[].
 */
-static int _ends_with_semicolon(const char *z, int N){
-  while( N>0 && isspace((unsigned char)z[N-1]) ){ N--; }
-  return N>0 && z[N-1]==';';
+static int _contains_semicolon(const char *z, int N){
+  int i;
+  for(i=0; i<N; i++){  if( z[i]==';' ) return 1; }
+  return 0;
 }
 
 /*
@@ -1597,6 +1598,7 @@ static int process_input(struct callback_data *p, FILE *in){
   char *zLine = 0;
   char *zSql = 0;
   int nSql = 0;
+  int nSqlPrior = 0;
   char *zErrMsg;
   int rc;
   int errCnt = 0;
@@ -1629,6 +1631,7 @@ static int process_input(struct callback_data *p, FILE *in){
     if( _is_command_terminator(zLine) ){
       memcpy(zLine,";",2);
     }
+    nSqlPrior = nSql;
     if( zSql==0 ){
       int i;
       for(i=0; zLine[i] && isspace((unsigned char)zLine[i]); i++){}
@@ -1653,7 +1656,8 @@ static int process_input(struct callback_data *p, FILE *in){
       memcpy(&zSql[nSql], zLine, len+1);
       nSql += len;
     }
-    if( zSql && _ends_with_semicolon(zSql, nSql) && sqlite3_complete(zSql) ){
+    if( zSql && _contains_semicolon(&zSql[nSqlPrior], nSql-nSqlPrior)
+                && sqlite3_complete(zSql) ){
       p->cnt = 0;
       open_db(p);
       rc = sqlite3_exec(p->db, zSql, callback, p, &zErrMsg);

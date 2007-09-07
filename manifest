@@ -1,5 +1,5 @@
-C Throw\san\serror\son\san\sattempt\sto\sopen\sa\sdatabase\swhere\sthe\spage\nsize\sis\slarger\sthan\sSQLITE_MAX_PAGE_SIZE.\s\sTicket\s#2628.\s(CVS\s4411)
-D 2007-09-06T23:39:37
+C Modify\sthe\sCLI\sso\sthat\sit\swill\signore\swhitespace\sat\sthe\send\sof\slines.\nTicket\s#2631\s(CVS\s4412)
+D 2007-09-07T01:12:32
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -129,7 +129,7 @@ F src/printf.c 85f7a4344dda6782a76df43da8e4d5b0342d6b85
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 4706a6115da1bdc09a2be5991168a6cc2c0df267
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c ac29402b538515fa4697282387be9c1205e6e9eb
+F src/shell.c 82089379833e361ba8a2ae65316a2173785300c0
 F src/sqlite.h.in 775be6f8a5305ef2c92506bc23181550171aaae2
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h bb126b074352ef0ee20399883172161baf5eead2
@@ -570,7 +570,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 44d8d1e92d93a5bb28bd10281b4d87e89586ef58
-R f03766f65192dfb6547d9735765cf66c
+P 4881f7cb37e35dcf5da358464ac858a508128e47
+R ce40876ae34e300aa8df8df02cc80ba8
 U drh
-Z 23993a6f77c3daa2e5e01c8013cf24fc
+Z 704732809c269e991b0391352c5618d9
