@@ -9,13 +9,16 @@
 #
 #***********************************************************************
 #
-# $Id: thread001.test,v 1.1 2007/09/07 11:29:25 danielk1977 Exp $
+# $Id: thread001.test,v 1.2 2007/09/07 18:40:38 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 if {[info commands sqlthread] eq ""} {
-  puts "Skipping thread-safety tests - not running a threadsafe unix build"
+  puts -nonewline "Skipping thread-safety tests - "
+  puts            " not running a threadsafe sqlite/tcl build"
+  puts -nonewline "Both SQLITE_THREADSAFE and TCL_THREADS must be defined when"
+  puts            " building testfixture"
   finish_test
   return
 }
@@ -64,14 +67,22 @@ set thread_program [format {
     set res
   }
 
+  proc do_test {name script result} {
+    set res [eval $script]
+    if {$res ne $result} {
+      error "$name failed: expected \"$result\" got \"$res\""
+    }
+  }
+
   for {set i 0} {$i < 100} {incr i} {
     # Test that the invariant is true.
-    set val [execsql {
-      SELECT 
-        (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
-        (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
-    }]
-    if {$val ne "1"} {error "Invariant test failed"}
+    do_test t1 {
+      execsql {
+        SELECT 
+          (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
+          (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
+      }
+    } {1}
 
     # Add another row to the database.
     execsql { INSERT INTO ab SELECT NULL, md5sum(a, b) FROM ab }

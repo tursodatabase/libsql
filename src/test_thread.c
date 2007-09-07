@@ -14,14 +14,14 @@
 ** test that sqlite3 database handles may be concurrently accessed by 
 ** multiple threads. Right now this only works on unix.
 **
-** $Id: test_thread.c,v 1.1 2007/09/07 11:29:25 danielk1977 Exp $
+** $Id: test_thread.c,v 1.2 2007/09/07 18:40:38 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
-#if defined(OS_UNIX) && SQLITE_THREADSAFE
+
+#if SQLITE_THREADSAFE && defined(TCL_THREADS)
 
 #include <tcl.h>
-#include <pthread.h>
 #include <errno.h>
 #include <unistd.h>
 
@@ -30,26 +30,70 @@
 */
 typedef struct SqlThread SqlThread;
 struct SqlThread {
-  int fd;            /* The pipe to send commands to the parent */
-  char *zScript;     /* The script to execute. */
-  char *zVarname;    /* Varname in parent script */
+  Tcl_ThreadId parent;     /* Thread id of parent thread */
+  Tcl_Interp *interp;      /* Parent interpreter */
+  char *zScript;           /* The script to execute. */
+  char *zVarname;          /* Varname in parent script */
 };
 
-typedef struct SqlParent SqlParent;
-struct SqlParent {
-  Tcl_Interp *interp;
-  int fd;
+/*
+** A custom Tcl_Event type used by this module. When the event is
+** handled, script zScript is evaluated in interpreter interp. If
+** the evaluation throws an exception (returns TCL_ERROR), then the
+** error is handled by Tcl_BackgroundError(). If no error occurs,
+** the result is simply discarded.
+*/
+typedef struct EvalEvent EvalEvent;
+struct EvalEvent {
+  Tcl_Event base;          /* Base class of type Tcl_Event */
+  char *zScript;           /* The script to execute. */
+  Tcl_Interp *interp;      /* The interpreter to execute it in. */
 };
 
 static Tcl_ObjCmdProc sqlthread_proc;
+int Sqlitetest1_Init(Tcl_Interp *);
 
-static void *tclScriptThread(void *pSqlThread){
+/*
+** Handler for events of type EvalEvent.
+*/
+static int tclScriptEvent(Tcl_Event *evPtr, int flags){
+  int rc;
+  EvalEvent *p = (EvalEvent *)evPtr;
+  rc = Tcl_Eval(p->interp, p->zScript);
+  if( rc!=TCL_OK ){
+    Tcl_BackgroundError(p->interp);
+  }
+  return 1;
+}
+
+/*
+** Register an EvalEvent to evaluate the script pScript in the
+** parent interpreter/thread of SqlThread p.
+*/
+static void postToParent(SqlThread *p, Tcl_Obj *pScript){
+  EvalEvent *pEvent;
+  char *zMsg;
+  int nMsg;
+
+  zMsg = Tcl_GetStringFromObj(pScript, &nMsg); 
+  pEvent = (EvalEvent *)ckalloc(sizeof(EvalEvent)+nMsg+1);
+  pEvent->base.nextPtr = 0;
+  pEvent->base.proc = tclScriptEvent;
+  pEvent->zScript = (char *)&pEvent[1];
+  memcpy(pEvent->zScript, zMsg, nMsg+1);
+  pEvent->interp = p->interp;
+
+  Tcl_ThreadQueueEvent(p->parent, (Tcl_Event *)pEvent, TCL_QUEUE_TAIL);
+  Tcl_ThreadAlert(p->parent);
+}
+
+/*
+** The main function for threads created with [sqlthread spawn].
+*/
+static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
   Tcl_Interp *interp;
   Tcl_Obj *pRes;
   Tcl_Obj *pList;
-
-  char *zMsg;
-  int nMsg;
   int rc;
 
   SqlThread *p = (SqlThread *)pSqlThread;
@@ -62,6 +106,7 @@ static void *tclScriptThread(void *pSqlThread){
   pRes = Tcl_GetObjResult(interp);
   pList = Tcl_NewObj();
   Tcl_IncrRefCount(pList);
+  Tcl_IncrRefCount(pRes);
 
   if( rc==TCL_OK ){
     Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj("set", -1));
@@ -71,32 +116,13 @@ static void *tclScriptThread(void *pSqlThread){
   }
   Tcl_ListObjAppendElement(interp, pList, pRes);
 
-  zMsg = Tcl_GetStringFromObj(pList, &nMsg); 
-  write(p->fd, zMsg, nMsg+1);
-  close(p->fd);
-  sqlite3_free(p);
+  postToParent(p, pList);
+
+  ckfree((void *)p);
   Tcl_DecrRefCount(pList);
+  Tcl_DecrRefCount(pRes);
   Tcl_DeleteInterp(interp);
-
-  return 0;
-}
-
-void pipe_callback(ClientData clientData, int flags){
-  SqlParent *p = (SqlParent *)clientData;
-  char zBuf[1024];
-  int nChar;
-
-  nChar = read(p->fd, zBuf, 1023);
-  if( nChar<=0 ){
-    /* Other end has been closed */
-    Tcl_DeleteFileHandler(p->fd);
-    sqlite3_free(p);
-  }else{
-    zBuf[1023] = '\0';
-    if( TCL_OK!=Tcl_Eval(p->interp, zBuf) ){
-      Tcl_BackgroundError(p->interp);
-    }
-  }
+  return;
 }
 
 /*
@@ -115,59 +141,34 @@ static int sqlthread_spawn(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  pthread_t x;
+  Tcl_ThreadId x;
   SqlThread *pNew;
-  SqlParent *pParent;
-  int fds[2];
   int rc;
 
   int nVarname; char *zVarname;
   int nScript; char *zScript;
 
+  /* Parameters for thread creation */
+  const int nStack = TCL_THREAD_STACK_DEFAULT;
+  const int flags = TCL_THREAD_NOFLAGS;
+
   assert(objc==4);
 
   zVarname = Tcl_GetStringFromObj(objv[2], &nVarname);
   zScript = Tcl_GetStringFromObj(objv[3], &nScript);
-  pNew = (SqlThread *)sqlite3_malloc(sizeof(SqlThread)+nVarname+nScript+2);
-  if( pNew==0 ){
-    Tcl_AppendResult(interp, "Malloc failure", 0);
-    return TCL_ERROR;
-  }
+
+  pNew = (SqlThread *)ckalloc(sizeof(SqlThread)+nVarname+nScript+2);
   pNew->zVarname = (char *)&pNew[1];
   pNew->zScript = (char *)&pNew->zVarname[nVarname+1];
   memcpy(pNew->zVarname, zVarname, nVarname+1);
   memcpy(pNew->zScript, zScript, nScript+1);
+  pNew->parent = Tcl_GetCurrentThread();
+  pNew->interp = interp;
 
-  pParent = (SqlParent *)sqlite3_malloc(sizeof(SqlParent));
-  if( pParent==0 ){
-    Tcl_AppendResult(interp, "Malloc failure", 0);
+  rc = Tcl_CreateThread(&x, tclScriptThread, (void *)pNew, nStack, flags);
+  if( rc!=TCL_OK ){
+    Tcl_AppendResult(interp, "Error in Tcl_CreateThread()", 0);
     sqlite3_free(pNew);
-    return TCL_ERROR;
-  }
-
-  rc = pipe(fds);
-  if( rc!=0 ){
-    Tcl_AppendResult(interp, "Error in pipe(): ", strerror(errno), 0);
-    sqlite3_free(pNew);
-    sqlite3_free(pParent);
-    return TCL_ERROR;
-  }
-
-  pParent->fd = fds[0];
-  pParent->interp = interp;
-  Tcl_CreateFileHandler(
-      fds[0], TCL_READABLE|TCL_EXCEPTION, pipe_callback, (void *)pParent
-  );
-
-  pNew->fd = fds[1];
-  rc = pthread_create(&x, 0, tclScriptThread, (void *)pNew);
-  if( rc!=0 ){
-    Tcl_AppendResult(interp, "Error in pthread_create(): ", strerror(errno), 0);
-    Tcl_DeleteFileHandler(fds[0]);
-    sqlite3_free(pNew);
-    sqlite3_free(pParent);
-    close(fds[0]);
-    close(fds[1]);
     return TCL_ERROR;
   }
 
@@ -185,13 +186,13 @@ static int sqlthread_spawn(
 **
 **     NOTE: At the moment, this doesn't work. FIXME.
 */
-#if 0
 static int sqlthread_parent(
   ClientData clientData,
   Tcl_Interp *interp,
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+  EvalEvent *pEvent;
   char *zMsg;
   int nMsg;
   SqlThread *p = (SqlThread *)clientData;
@@ -203,11 +204,17 @@ static int sqlthread_parent(
   }
 
   zMsg = Tcl_GetStringFromObj(objv[2], &nMsg);
-  write(p->fd, zMsg, nMsg+1);
+  pEvent = (EvalEvent *)ckalloc(sizeof(EvalEvent)+nMsg+1);
+  pEvent->base.nextPtr = 0;
+  pEvent->base.proc = tclScriptEvent;
+  pEvent->zScript = (char *)&pEvent[1];
+  memcpy(pEvent->zScript, zMsg, nMsg+1);
+  pEvent->interp = p->interp;
+  Tcl_ThreadQueueEvent(p->parent, (Tcl_Event *)pEvent, TCL_QUEUE_TAIL);
+  Tcl_ThreadAlert(p->parent);
 
   return TCL_OK;
 }
-#endif
 
 /*
 ** Dispatch routine for the sub-commands of [sqlthread].
@@ -224,9 +231,7 @@ static int sqlthread_proc(
     int nArg;
     char *zUsage;
   } aSub[] = {
-#if 0
     {"parent", sqlthread_parent, 1, "SCRIPT"},
-#endif
     {"spawn",  sqlthread_spawn,  2, "VARNAME SCRIPT"},
     {0, 0, 0}
   };
@@ -240,7 +245,7 @@ static int sqlthread_proc(
   }
 
   rc = Tcl_GetIndexFromObjStruct(
-       interp, objv[1], aSub, sizeof(aSub[0]), "sub-command", 0, &iIndex
+      interp, objv[1], aSub, sizeof(aSub[0]), "sub-command", 0, &iIndex
   );
   if( rc!=TCL_OK ) return rc;
   pSub = &aSub[iIndex];
