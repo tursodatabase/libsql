@@ -1,0 +1,121 @@
+# 2007 September 7
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: thread001.test,v 1.1 2007/09/07 11:29:25 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+if {[info commands sqlthread] eq ""} {
+  puts "Skipping thread-safety tests - not running a threadsafe unix build"
+  finish_test
+  return
+}
+
+# Set up a database and a schema. The database contains a single
+# table with two columns. The first column ("a") is an INTEGER PRIMARY 
+# KEY. The second contains the md5sum of all rows in the table with
+# a smaller value stored in column "a".
+#
+do_test thread001.1 {
+  execsql {
+    CREATE TABLE ab(a INTEGER PRIMARY KEY, b);
+    CREATE INDEX ab_i ON ab(b);
+    INSERT INTO ab SELECT NULL, md5sum(a, b) FROM ab;
+    SELECT count(*) FROM ab;
+  }
+} {1}
+do_test thread001.2 {
+  execsql {
+    SELECT 
+      (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
+      (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
+  }
+} {1}
+do_test thread001.3 {
+  execsql { PRAGMA integrity_check }
+} {ok}
+
+set thread_program [format {
+  set ::DB %s
+
+  # Execute the supplied SQL using database handle $::DB.
+  #
+  proc execsql {sql} {
+    set res [list]
+    set ::STMT [sqlite3_prepare $::DB $sql -1 dummy_tail]
+    while {[sqlite3_step $::STMT] eq "SQLITE_ROW"} {
+      for {set i 0} {$i < [sqlite3_column_count $::STMT]} {incr i} {
+        lappend res [sqlite3_column_text $::STMT 0]
+      }
+    }
+    set rc [sqlite3_finalize $::STMT]
+    if {$rc ne "SQLITE_OK"} {
+      error [sqlite3_errmsg $::DB]
+    }
+    set res
+  }
+
+  for {set i 0} {$i < 100} {incr i} {
+    # Test that the invariant is true.
+    set val [execsql {
+      SELECT 
+        (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
+        (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
+    }]
+    if {$val ne "1"} {error "Invariant test failed"}
+
+    # Add another row to the database.
+    execsql { INSERT INTO ab SELECT NULL, md5sum(a, b) FROM ab }
+  }
+
+  list OK
+} [sqlite3_connection_pointer db]]
+
+# Kick off 10 threads:
+#
+array unset finished
+for {set i 0} {$i < 10} {incr i} {
+  sqlthread spawn finished($i) $thread_program
+}
+
+for {set i 0} {$i < 10} {incr i} {
+  if {![info exists finished($i)]} {
+    vwait finished($i)
+  }
+  do_test thread001.4.$i {
+    set ::finished($i)
+  } OK
+}
+
+do_test thread001.5 {
+  execsql { SELECT count(*) FROM ab; }
+} {1001}
+do_test thread001.6 {
+  execsql {
+    SELECT 
+      (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
+      (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
+  }
+} {1}
+do_test thread001.7 {
+  execsql { PRAGMA integrity_check }
+} {ok}
+
+# Give the event-handlers a chance to close any open parent-child pipes.
+# Otherwise, the test is reported as leaking memory (it has not - it's 
+# just that the memory is freed asynchronously).
+#
+after 250 {set abit 0}
+vwait abit
+
+finish_test
+
