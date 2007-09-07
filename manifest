@@ -1,5 +1,5 @@
-C Add\sthe\sbeginning\sof\sthe\sthread-safety\stests.\sThere\sare\smore\sto\scome.\s(CVS\s4413)
-D 2007-09-07T11:29:25
+C Fix\sa\ssegfault\sthat\scould\soccur\swhile\sattempting\sto\sadd\snew\spages\nto\sthe\sfreelist\sin\sa\scorrupt\sdatabase.\s(CVS\s4414)
+D 2007-09-07T14:32:07
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -81,7 +81,7 @@ F src/analyze.c 49b4bd45eb286d833793ed6bf72355a5c1974865
 F src/attach.c 02fd8779270b1df1c63e7ba6e6655b960fa0f3d5
 F src/auth.c d41c34f3150b3b8248d364770ef922bbcefbff82
 F src/btmutex.c 442be6f068d77ca9ffd69899cf0a3943c244548c
-F src/btree.c 9d684690afbc66f20905c408e2e018008cf99277
+F src/btree.c 30f7efafc4f5818477b80cf77b3d05acd2805ab7
 F src/btree.h d0736ebca4b6eafbdd823c46a8de574cea078211
 F src/btreeInt.h 4330c19b8314545fdb209cc77e2a57f6a5290e9c
 F src/build.c 94d0d6dfd1e706c480903fbdda2e77466f21b898
@@ -232,6 +232,7 @@ F test/conflict.test 79b5214ef7a52f3e58a50ae5c60c37e7594d04e9
 F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
 F test/corrupt2.test 572f8df0303d0ce63ddad5c5c9101a83a345ae46
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
+F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/crash.test 24020168cc42977a4dd83ff78d2b5eb6577715db
 F test/crash2.test 26d7a4c5520201e5de2c696ea51ab946b59dc0e9
 F test/crash3.test 0b09687ae1a3ccbcefdfaeb4b963e26e36255d76
@@ -572,7 +573,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f780a17f4b0e679479c2b368d8659a0ee61c343d
-R e4d6e8dadc7d65c050f265cc5a051321
-U danielk1977
-Z 57428b4bd8d43ba4be46844bba20292d
+P 753908e8411024abd5c3da1b8c62f70e35f8734d
+R 694839393b8154b22df691b07855d693
+U drh
+Z 118daf76b8bcf6c5ec13879a5aaee9dc

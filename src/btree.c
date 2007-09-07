@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.424 2007/09/06 23:39:37 drh Exp $
+** $Id: btree.c,v 1.425 2007/09/07 14:32:07 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4140,12 +4140,15 @@ static int freePage(MemPage *pPage){
       /* The trunk is full.  Turn the page being freed into a new
       ** trunk page with no leaves. */
       rc = sqlite3PagerWrite(pPage->pDbPage);
-      if( rc ) return rc;
-      put4byte(pPage->aData, pTrunk->pgno);
-      put4byte(&pPage->aData[4], 0);
-      put4byte(&pPage1->aData[32], pPage->pgno);
-      TRACE(("FREE-PAGE: %d new trunk page replacing %d\n",
-              pPage->pgno, pTrunk->pgno));
+      if( rc==SQLITE_OK ){
+        put4byte(pPage->aData, pTrunk->pgno);
+        put4byte(&pPage->aData[4], 0);
+        put4byte(&pPage1->aData[32], pPage->pgno);
+        TRACE(("FREE-PAGE: %d new trunk page replacing %d\n",
+                pPage->pgno, pTrunk->pgno));
+      }
+    }else if( k<0 ){
+      rc = SQLITE_CORRUPT;
     }else{
       /* Add the newly freed page as a leaf on the current trunk */
       rc = sqlite3PagerWrite(pTrunk->pDbPage);
