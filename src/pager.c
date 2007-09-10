@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.387 2007/09/06 23:28:24 drh Exp $
+** @(#) $Id: pager.c,v 1.388 2007/09/10 06:12:04 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4010,7 +4010,7 @@ static int pager_write(PgHdr *pPg){
             pPager->journalOff += 4;
           }
           IOTRACE(("JOUT %p %d %lld %d\n", pPager, pPg->pgno, 
-                   pPager->journalOff, szPg));
+                   pPager->journalOff, pPager->pageSize));
           PAGER_INCR(sqlite3_pager_writej_count);
           PAGERTRACE5("JOURNAL %d page %d needSync=%d hash(%08x)\n",
                PAGERID(pPager), pPg->pgno, pPg->needSync, pager_pagehash(pPg));
