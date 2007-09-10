@@ -1,5 +1,5 @@
-C Enhance\sthread001.test\sagain,\sthis\stime\sto\salso\stest\sin\sshared-cache\smode.\s(CVS\s4418)
-D 2007-09-10T07:35:47
+C Add\sanother\stest\sfile\sto\shelp\sverify\sthread-safety.\s(CVS\s4419)
+D 2007-09-10T10:53:02
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -156,7 +156,7 @@ F src/test_md5.c 34599caee5b1c73dcf86ca31f55846fab8c19ef7
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c 1020673fc02ba5bbfa5dc96ded9f54f0f3744d38
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
-F src/test_thread.c cbd7ba2cb295df9c9a8e848a8886c8d0f318de27
+F src/test_thread.c a98d69cae883e53d3686fc25889a5fa5f51439f8
 F src/tokenize.c 67e42600ab34f976f2b1288c499ad6c98d652f0e
 F src/trigger.c 724a77d54609a33bde90618934fbeddfcc729a10
 F src/update.c e89b980b443d44b68bfc0b1746cdb6308e049ac9
@@ -388,7 +388,7 @@ F test/pragma2.test bb5aa7be00dae2c381fcc782358048a33c955793
 F test/printf.test 6bf1a86c6a1e45536f72d782bf44c8e3c76510f8
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 1c712dd6516e1377471744fa765e41c79a357da6
-F test/quick.test 88844a19f6d9dc5c990e01c7dd611d33d022a1c1
+F test/quick.test bedc5696abff22532b6df7da2b073254b15e53b7
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -426,9 +426,10 @@ F test/tclsqlite.test a868898e3350246be7ea132621dc25f9835b3030
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
 F test/tester.tcl 913a808f05b0aed2fbb16481a423b1a5a118bdf0
 F test/thread001.test 8fbd9559da0bbdc273e00318c7fd66c162020af7
+F test/thread002.test 1b886bc4cb396e2bba94be8996f159b2b5b605bc
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
-F test/thread_common.tcl 95b11a3f42df7cba82e0c8feb8a70d339aaad4cb
+F test/thread_common.tcl 8a9d7a4500dfdbbd36679c977831b62c130b76b1
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
 F test/tkt1435.test f8c52c41de6e5ca02f1845f3a46e18e25cadac00
@@ -574,7 +575,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6ee2b8ffc4310c8e329f634f3ade058b33c53a2a
-R 59e1b6472478b1b0d4fb7b3646b47885
+P 54f87899033ddd892bfd3a16310f64fb42d807ae
+R d80f0142f0a5e23af45dc05a2499fc1e
 U danielk1977
-Z f03978abade17ec790e2c8c978d82d62
+Z d1aeb7bb16c21c3bfd6864755301855d

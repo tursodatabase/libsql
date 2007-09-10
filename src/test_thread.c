@@ -14,7 +14,7 @@
 ** test that sqlite3 database handles may be concurrently accessed by 
 ** multiple threads. Right now this only works on unix.
 **
-** $Id: test_thread.c,v 1.3 2007/09/10 06:23:54 danielk1977 Exp $
+** $Id: test_thread.c,v 1.4 2007/09/10 10:53:02 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -224,6 +224,12 @@ static int xBusy(void *pArg, int nBusy){
   return 1;             /* Try again... */
 }
 
+/*
+** sqlthread open
+**
+**     Open a database handle and return the string representation of
+**     the pointer value.
+*/
 static int sqlthread_open(
   ClientData clientData,
   Tcl_Interp *interp,
@@ -251,6 +257,24 @@ static int sqlthread_open(
 
 
 /*
+** sqlthread open
+**
+**     Return the current thread-id (Tcl_GetCurrentThread()) cast to
+**     an integer.
+*/
+static int sqlthread_id(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  Tcl_ThreadId id = Tcl_GetCurrentThread();
+  Tcl_SetObjResult(interp, Tcl_NewIntObj((int)id));
+  return TCL_OK;
+}
+
+
+/*
 ** Dispatch routine for the sub-commands of [sqlthread].
 */
 static int sqlthread_proc(
@@ -268,6 +292,7 @@ static int sqlthread_proc(
     {"parent", sqlthread_parent, 1, "SCRIPT"},
     {"spawn",  sqlthread_spawn,  2, "VARNAME SCRIPT"},
     {"open",   sqlthread_open,   1, "DBNAME"},
+    {"id",     sqlthread_id,     0, ""},
     {0, 0, 0}
   };
   struct SubCommand *pSub;
