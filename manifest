@@ -1,5 +1,5 @@
-C Fix\san\sundeclared\sidentifier\sin\san\sIOTRACE\s(debugging)\sblock.\s(CVS\s4416)
-D 2007-09-10T06:12:04
+C Upgrade\sthread001.test\sto\stest\swith\smultiple\sdatabase\shandles.\s(CVS\s4417)
+D 2007-09-10T06:23:54
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -156,7 +156,7 @@ F src/test_md5.c 34599caee5b1c73dcf86ca31f55846fab8c19ef7
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c 1020673fc02ba5bbfa5dc96ded9f54f0f3744d38
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
-F src/test_thread.c 35d2b6c83b18cc32961e868a7e784e9eed6c94e9
+F src/test_thread.c cbd7ba2cb295df9c9a8e848a8886c8d0f318de27
 F src/tokenize.c 67e42600ab34f976f2b1288c499ad6c98d652f0e
 F src/trigger.c 724a77d54609a33bde90618934fbeddfcc729a10
 F src/update.c e89b980b443d44b68bfc0b1746cdb6308e049ac9
@@ -425,7 +425,7 @@ F test/tableapi.test 036575a98dcce7c92e9f39056839bbad8a715412
 F test/tclsqlite.test a868898e3350246be7ea132621dc25f9835b3030
 F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
 F test/tester.tcl 913a808f05b0aed2fbb16481a423b1a5a118bdf0
-F test/thread001.test 52ea6333672d4b6d11a637be45582a0154a838b5
+F test/thread001.test 956b80909cbec7cf2f2540bf1c8bb573052f0868
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
@@ -573,7 +573,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9b7bab7fc28201b62159e959651acb980095ad06
-R 90d4db77fefa25d20916043e00059852
+P 48e59c747f2be08102f16290fa57dfffc2ae920d
+R e7956c3743bdd54859507fb25353105c
 U danielk1977
-Z 01c5bb4b8b727cf6a26f0f3b84249e3e
+Z 0ed31afa9b04e141d583b88b37a43f9c

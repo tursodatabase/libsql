@@ -14,7 +14,7 @@
 ** test that sqlite3 database handles may be concurrently accessed by 
 ** multiple threads. Right now this only works on unix.
 **
-** $Id: test_thread.c,v 1.2 2007/09/07 18:40:38 danielk1977 Exp $
+** $Id: test_thread.c,v 1.3 2007/09/10 06:23:54 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -108,14 +108,17 @@ static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
   Tcl_IncrRefCount(pList);
   Tcl_IncrRefCount(pRes);
 
-  if( rc==TCL_OK ){
-    Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj("set", -1));
-    Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj(p->zVarname, -1));
-  }else{
+  if( rc!=TCL_OK ){
     Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj("error", -1));
+    Tcl_ListObjAppendElement(interp, pList, pRes);
+    postToParent(p, pList);
+    Tcl_DecrRefCount(pList);
+    pList = Tcl_NewObj();
   }
-  Tcl_ListObjAppendElement(interp, pList, pRes);
 
+  Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj("set", -1));
+  Tcl_ListObjAppendElement(interp, pList, Tcl_NewStringObj(p->zVarname, -1));
+  Tcl_ListObjAppendElement(interp, pList, pRes);
   postToParent(p, pList);
 
   ckfree((void *)p);
@@ -216,6 +219,37 @@ static int sqlthread_parent(
   return TCL_OK;
 }
 
+static int xBusy(void *pArg, int nBusy){
+  sqlite3_sleep(50);
+  return 1;             /* Try again... */
+}
+
+static int sqlthread_open(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int sqlite3TestMakePointerStr(Tcl_Interp *interp, char *zPtr, void *p);
+
+  const char *zFilename;
+  sqlite3 *db;
+  int rc;
+  char zBuf[100];
+  extern void Md5_Register(sqlite3*);
+
+  zFilename = Tcl_GetString(objv[2]);
+  rc = sqlite3_open(zFilename, &db);
+  Md5_Register(db);
+  sqlite3_busy_handler(db, xBusy, 0);
+  
+  if( sqlite3TestMakePointerStr(interp, zBuf, db) ) return TCL_ERROR;
+  Tcl_AppendResult(interp, zBuf, 0);
+
+  return TCL_OK;
+}
+
+
 /*
 ** Dispatch routine for the sub-commands of [sqlthread].
 */
@@ -233,6 +267,7 @@ static int sqlthread_proc(
   } aSub[] = {
     {"parent", sqlthread_parent, 1, "SCRIPT"},
     {"spawn",  sqlthread_spawn,  2, "VARNAME SCRIPT"},
+    {"open",   sqlthread_open,   1, "DBNAME"},
     {0, 0, 0}
   };
   struct SubCommand *pSub;

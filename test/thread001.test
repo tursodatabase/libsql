@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: thread001.test,v 1.2 2007/09/07 18:40:38 danielk1977 Exp $
+# $Id: thread001.test,v 1.3 2007/09/10 06:23:54 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -23,32 +23,11 @@ if {[info commands sqlthread] eq ""} {
   return
 }
 
-# Set up a database and a schema. The database contains a single
-# table with two columns. The first column ("a") is an INTEGER PRIMARY 
-# KEY. The second contains the md5sum of all rows in the table with
-# a smaller value stored in column "a".
-#
-do_test thread001.1 {
-  execsql {
-    CREATE TABLE ab(a INTEGER PRIMARY KEY, b);
-    CREATE INDEX ab_i ON ab(b);
-    INSERT INTO ab SELECT NULL, md5sum(a, b) FROM ab;
-    SELECT count(*) FROM ab;
-  }
-} {1}
-do_test thread001.2 {
-  execsql {
-    SELECT 
-      (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
-      (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
-  }
-} {1}
-do_test thread001.3 {
-  execsql { PRAGMA integrity_check }
-} {ok}
+set ::NTHREAD 10
 
-set thread_program [format {
-  set ::DB %s
+# The following script is sourced by every thread spawned using 
+# [sqlthread spawn]:
+set thread_procs {
 
   # Execute the supplied SQL using database handle $::DB.
   #
@@ -73,60 +52,112 @@ set thread_program [format {
       error "$name failed: expected \"$result\" got \"$res\""
     }
   }
-
-  for {set i 0} {$i < 100} {incr i} {
-    # Test that the invariant is true.
-    do_test t1 {
-      execsql {
-        SELECT 
-          (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
-          (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
-      }
-    } {1}
-
-    # Add another row to the database.
-    execsql { INSERT INTO ab SELECT NULL, md5sum(a, b) FROM ab }
-  }
-
-  list OK
-} [sqlite3_connection_pointer db]]
-
-# Kick off 10 threads:
-#
-array unset finished
-for {set i 0} {$i < 10} {incr i} {
-  sqlthread spawn finished($i) $thread_program
 }
 
-for {set i 0} {$i < 10} {incr i} {
-  if {![info exists finished($i)]} {
-    vwait finished($i)
-  }
-  do_test thread001.4.$i {
-    set ::finished($i)
-  } OK
+proc thread_spawn {varname args} {
+  sqlthread spawn $varname [join $args ;]
 }
 
-do_test thread001.5 {
-  execsql { SELECT count(*) FROM ab; }
-} {1001}
-do_test thread001.6 {
-  execsql {
-    SELECT 
-      (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
-      (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
-  }
-} {1}
-do_test thread001.7 {
-  execsql { PRAGMA integrity_check }
-} {ok}
+#########################################################################
+# End of infrastruture. Start of test cases.
+#########################################################################
 
-# Give the event-handlers a chance to close any open parent-child pipes.
-# Otherwise, the test is reported as leaking memory (it has not - it's 
-# just that the memory is freed asynchronously).
+
+# Run this test twice: Once with all threads using the same database
+# connection, and once with each using it's own connection.
 #
-after 250 {set abit 0}
-vwait abit
+foreach {dbconfig tn} [list "set ::DB $::DB" 1 "" 2] {
+
+  # Empty the database.
+  #
+  catchsql { DROP TABLE ab; }
+
+  # Set up a database and a schema. The database contains a single
+  # table with two columns. The first column ("a") is an INTEGER PRIMARY 
+  # KEY. The second contains the md5sum of all rows in the table with
+  # a smaller value stored in column "a".
+  #
+  do_test thread001.$tn.1 {
+    execsql {
+      CREATE TABLE ab(a INTEGER PRIMARY KEY, b);
+      CREATE INDEX ab_i ON ab(b);
+      INSERT INTO ab SELECT NULL, md5sum(a, b) FROM ab;
+      SELECT count(*) FROM ab;
+    }
+  } {1}
+  do_test thread001.$tn.2 {
+    execsql {
+      SELECT 
+        (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
+        (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
+    }
+  } {1}
+  do_test thread001.$tn.3 {
+    execsql { PRAGMA integrity_check }
+  } {ok}
+  
+  set thread_program {
+    set needToClose 0
+    if {![info exists ::DB]} {
+      set ::DB [sqlthread open test.db]
+      set needToClose 1
+    }
+  
+    for {set i 0} {$i < 100} {incr i} {
+      # Test that the invariant is true.
+      do_test t1 {
+        execsql {
+          SELECT 
+            (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
+            (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
+        }
+      } {1}
+  
+      # Add another row to the database.
+      execsql { INSERT INTO ab SELECT NULL, md5sum(a, b) FROM ab }
+    }
+  
+    if {$needToClose} {
+      sqlite3_close $::DB
+    }
+  
+    list OK
+  }
+  
+  # Kick off $::NTHREAD threads:
+  #
+  array unset finished
+  for {set i 0} {$i < $::NTHREAD} {incr i} {
+    thread_spawn finished($i) $dbconfig $thread_procs $thread_program
+  }
+  
+  # Wait for all threads to finish,  then check they all returned "OK".
+  #
+  for {set i 0} {$i < $::NTHREAD} {incr i} {
+    if {![info exists finished($i)]} {
+      vwait finished($i)
+    }
+    do_test thread001.$tn.4.$i {
+      set ::finished($i)
+    } OK
+  }
+  
+  # Check the database still looks Ok.
+  #
+  do_test thread001.$tn.5 {
+    execsql { SELECT count(*) FROM ab; }
+  } [expr {1 + $::NTHREAD*100}]
+  do_test thread001.$tn.6 {
+    execsql {
+      SELECT 
+        (SELECT md5sum(a, b) FROM ab WHERE a < (SELECT max(a) FROM ab)) ==
+        (SELECT b FROM ab WHERE a = (SELECT max(a) FROM ab))
+    }
+  } {1}
+  do_test thread001.$tn.7 {
+    execsql { PRAGMA integrity_check }
+  } {ok}
+}
 
 finish_test
 
