@@ -19,7 +19,7 @@
 ** implementation is suitable for testing.
 ** debugging purposes
 **
-** $Id: mutex.c,v 1.15 2007/08/28 16:34:43 drh Exp $
+** $Id: mutex.c,v 1.16 2007/09/10 16:13:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -44,7 +44,7 @@ struct sqlite3_mutex {
 ** that means that a mutex could not be allocated. 
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int id){
-  static sqlite3_mutex aStatic[4];
+  static sqlite3_mutex aStatic[5];
   sqlite3_mutex *pNew = 0;
   switch( id ){
     case SQLITE_MUTEX_FAST:
