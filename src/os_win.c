@@ -1326,7 +1326,7 @@ static int winFullPathname(
 
 #if defined(__CYGWIN__)
   cygwin_conv_to_full_win32_path(zRelative, zFull);
-  return SQLITE_OK
+  return SQLITE_OK;
 #endif
 
 #if OS_WINCE
