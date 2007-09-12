@@ -1,5 +1,5 @@
-C Add\sa\smissing\ssemi-colon\sto\sos_win.c.\sTicket\s#2642.\s(CVS\s4421)
-D 2007-09-12T14:09:23
+C In\sthe\squery\soptimizer,\smake\ssure\stable\sdependencies\sfrom\sall\sterms\nof\sa\scompound\sSELECT\sstatement\sare\srecognized\sso\sthat\ssubqueries\sin\na\sWHERE\sclause\sare\snot\sevaluated\stoo\searly.\s\sFix\sfor\sticket\s#2640.\s(CVS\s4422)
+D 2007-09-12T15:41:01
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -172,7 +172,7 @@ F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 246d434fa60bde6553490eb686adfd86adcd6712
 F src/vtab.c 6776605198e0b844391335f1b77e3595b3616331
-F src/where.c 4687a2a56bc0fe66ad457958ea9f72b6cae17426
+F src/where.c 1b3a67bba14cb19b44496090a66f58370b8c768d
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test b59d1bd8b0c1d4a08b845e8af48fd43926f01f11
@@ -456,6 +456,7 @@ F test/tkt2339.test 7016415bda86af1406a27260ac46f44885617606
 F test/tkt2391.test ab7a11be7402da8b51a5be603425367aa0684567
 F test/tkt2409.test f130054aedff681883466ad04332bd3f7db51a02
 F test/tkt2450.test 77ed94863f2049c1420288ddfea2d41e5e0971d6
+F test/tkt2640.test c513e7992a602a87ef3a2cc9ca1cba4146924e9b
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test d132b8af1429a1e006bf4473de9a6e4c7f67a3f4
 F test/trigger1.test b361161cf20614024cc1e52ea0bdec250776b2ae
@@ -575,7 +576,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4dbeb915b3138194abd5554b52003162235f9a5f
-R 02383b5025ac23032b71caa8921229ac
-U danielk1977
-Z 8ca913804fd51c8a1ac42ebd8d8ec287
+P c6ee5929e7d1f9b7c351f57ee8886f71ea0b6619
+R d30c1161749c146af96e8835cb148fe8
+U drh
+Z 7de72dd4fad27cd8d1629bca893a1041
