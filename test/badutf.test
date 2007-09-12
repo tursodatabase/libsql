@@ -13,7 +13,7 @@
 # This file checks to make sure SQLite is able to gracefully
 # handle malformed UTF-8.
 #
-# $Id: badutf.test,v 1.1 2007/05/15 18:35:21 drh Exp $
+# $Id: badutf.test,v 1.2 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -41,49 +41,53 @@ do_test badutf-1.7 {
   sqlite3_exec db {SELECT hex('%ff') AS x}
 } {0 {x FF}}
 
-do_test badutf-1.10 {
-  sqlite3 db2 {}
-  db2 eval {PRAGMA encoding=UTF16be}
-  sqlite3_exec db2 {SELECT hex('%80') AS x}
-} {0 {x 0080}}
-do_test badutf-1.11 {
-  sqlite3_exec db2 {SELECT hex('%81') AS x}
-} {0 {x 0081}}
-do_test badutf-1.12 {
-  sqlite3_exec db2 {SELECT hex('%bf') AS x}
-} {0 {x 00BF}}
-do_test badutf-1.13 {
-  sqlite3_exec db2 {SELECT hex('%c0') AS x}
-} {0 {x FFFD}}
-do_test badutf-1.14 {
-  sqlite3_exec db2 {SELECT hex('%c1') AS x}
-} {0 {x FFFD}}
-do_test badutf-1.15 {
-  sqlite3_exec db2 {SELECT hex('%c0%bf') AS x}
-} {0 {x FFFD}}
-do_test badutf-1.16 {
-  sqlite3_exec db2 {SELECT hex('%c1%bf') AS x}
-} {0 {x FFFD}}
-do_test badutf-1.17 {
-  sqlite3_exec db2 {SELECT hex('%c3%bf') AS x}
-} {0 {x 00FF}}
-do_test badutf-1.18 {
-  sqlite3_exec db2 {SELECT hex('%e0') AS x}
-} {0 {x FFFD}}
-do_test badutf-1.19 {
-  sqlite3_exec db2 {SELECT hex('%f0') AS x}
-} {0 {x FFFD}}
-do_test badutf-1.20 {
-  sqlite3_exec db2 {SELECT hex('%ff') AS x}
-} {0 {x FFFD}}
+sqlite3 db2 {}
+ifcapable utf16 {
+  do_test badutf-1.10 {
+    db2 eval {PRAGMA encoding=UTF16be}
+    sqlite3_exec db2 {SELECT hex('%80') AS x}
+  } {0 {x 0080}}
+  do_test badutf-1.11 {
+    sqlite3_exec db2 {SELECT hex('%81') AS x}
+  } {0 {x 0081}}
+  do_test badutf-1.12 {
+    sqlite3_exec db2 {SELECT hex('%bf') AS x}
+  } {0 {x 00BF}}
+  do_test badutf-1.13 {
+    sqlite3_exec db2 {SELECT hex('%c0') AS x}
+  } {0 {x FFFD}}
+  do_test badutf-1.14 {
+    sqlite3_exec db2 {SELECT hex('%c1') AS x}
+  } {0 {x FFFD}}
+  do_test badutf-1.15 {
+    sqlite3_exec db2 {SELECT hex('%c0%bf') AS x}
+  } {0 {x FFFD}}
+  do_test badutf-1.16 {
+    sqlite3_exec db2 {SELECT hex('%c1%bf') AS x}
+  } {0 {x FFFD}}
+  do_test badutf-1.17 {
+    sqlite3_exec db2 {SELECT hex('%c3%bf') AS x}
+  } {0 {x 00FF}}
+  do_test badutf-1.18 {
+    sqlite3_exec db2 {SELECT hex('%e0') AS x}
+  } {0 {x FFFD}}
+  do_test badutf-1.19 {
+    sqlite3_exec db2 {SELECT hex('%f0') AS x}
+  } {0 {x FFFD}}
+  do_test badutf-1.20 {
+    sqlite3_exec db2 {SELECT hex('%ff') AS x}
+  } {0 {x FFFD}}
+}
 
 
-do_test badutf-2.1 {
-  sqlite3_exec db {SELECT '%80'=CAST(x'80' AS text) AS x}
-} {0 {x 1}}
-do_test badutf-2.2 {
-  sqlite3_exec db {SELECT CAST('%80' AS blob)=x'80' AS x}
-} {0 {x 1}}
+ifcapable bloblit {
+  do_test badutf-2.1 {
+    sqlite3_exec db {SELECT '%80'=CAST(x'80' AS text) AS x}
+  } {0 {x 1}}
+  do_test badutf-2.2 {
+    sqlite3_exec db {SELECT CAST('%80' AS blob)=x'80' AS x}
+  } {0 {x 1}}
+}
 
 do_test badutf-3.1 {
   sqlite3_exec db {SELECT length('%80') AS x}

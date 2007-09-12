@@ -16,7 +16,7 @@
 # any statement other than a COMMIT, an I/O error is returned instead
 # of SQLITE_BUSY.
 #
-# $Id: tkt2409.test,v 1.2 2007/06/15 12:41:02 drh Exp $
+# $Id: tkt2409.test,v 1.3 2007/09/12 17:01:45 danielk1977 Exp $
 
 # Test Outline:
 #
@@ -39,6 +39,11 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !pager_pragmas {
+  finish_test
+  return
+}
 
 sqlite3_extended_result_codes $::DB 1
 

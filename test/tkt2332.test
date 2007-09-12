@@ -9,13 +9,13 @@
 #
 #***********************************************************************
 #
-# $Id: tkt2332.test,v 1.3 2007/05/04 19:03:03 danielk1977 Exp $
+# $Id: tkt2332.test,v 1.4 2007/09/12 17:01:45 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable {!incrblob} {
+ifcapable !incrblob||!tclvar {
   finish_test
   return
 }

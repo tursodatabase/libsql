@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.45 2007/08/29 17:43:20 drh Exp $
+# $Id: attach.test,v 1.46 2007/09/12 17:01:45 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -736,13 +736,15 @@ db close
 file delete -force test2.db
 file delete -force no-such-file
 
-do_test attach-7.1 {
-  file delete -force test.db test.db-journal
-  sqlite3 db test.db
-  catchsql {
-    DETACH RAISE ( IGNORE ) IN ( SELECT "AAAAAA" . * ORDER BY 
-    REGISTER LIMIT "AAAAAA" . "AAAAAA" OFFSET RAISE ( IGNORE ) NOT NULL )
-  }
-} {1 {invalid name: "RAISE ( IGNORE ) IN ( SELECT "AAAAAA" . * ORDER BY 
-    REGISTER LIMIT "AAAAAA" . "AAAAAA" OFFSET RAISE ( IGNORE ) NOT NULL )"}}
+ifcapable subquery {
+  do_test attach-7.1 {
+    file delete -force test.db test.db-journal
+    sqlite3 db test.db
+    catchsql {
+      DETACH RAISE ( IGNORE ) IN ( SELECT "AAAAAA" . * ORDER BY 
+      REGISTER LIMIT "AAAAAA" . "AAAAAA" OFFSET RAISE ( IGNORE ) NOT NULL )
+    }
+  } {1 {invalid name: "RAISE ( IGNORE ) IN ( SELECT "AAAAAA" . * ORDER BY 
+      REGISTER LIMIT "AAAAAA" . "AAAAAA" OFFSET RAISE ( IGNORE ) NOT NULL )"}}
+}
 finish_test

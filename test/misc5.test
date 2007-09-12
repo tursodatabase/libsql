@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc5.test,v 1.16 2007/01/03 23:37:29 drh Exp $
+# $Id: misc5.test,v 1.17 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -582,22 +582,24 @@ sqlite3 db test.db
 
 # Ticket #1911
 #
-do_test misc5-9.1 {
-  execsql {
-    SELECT name, type FROM sqlite_master WHERE name IS NULL
-    UNION
-    SELECT type, name FROM sqlite_master WHERE type IS NULL
-    ORDER BY 1, 2, 1, 2, 1, 2
-  }
-} {}
-do_test misc5-9.2 {
-  execsql {
-    SELECT name, type FROM sqlite_master WHERE name IS NULL
-    UNION
-    SELECT type, name FROM sqlite_master WHERE type IS NULL
-    ORDER BY 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2
-  }
-} {}
+ifcapable compound {
+  do_test misc5-9.1 {
+    execsql {
+      SELECT name, type FROM sqlite_master WHERE name IS NULL
+      UNION
+      SELECT type, name FROM sqlite_master WHERE type IS NULL
+      ORDER BY 1, 2, 1, 2, 1, 2
+    }
+  } {}
+  do_test misc5-9.2 {
+    execsql {
+      SELECT name, type FROM sqlite_master WHERE name IS NULL
+      UNION
+      SELECT type, name FROM sqlite_master WHERE type IS NULL
+      ORDER BY 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2
+    }
+  } {}
+}
 
 # Ticket #1912.  Make the tokenizer require a space after a numeric
 # literal.

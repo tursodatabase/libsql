@@ -13,7 +13,7 @@
 # caused by an ON CONFLICT ROLLBACK clause aborts any other pending
 # statements.
 #
-# $Id: rollback.test,v 1.5 2007/08/30 02:26:54 drh Exp $
+# $Id: rollback.test,v 1.6 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -58,17 +58,17 @@ ifcapable conflict {
   
   # Try to continue with the SELECT statement
   #
-btree_breakpoint
   do_test rollback-1.5 {
     sqlite3_step $STMT
   } {SQLITE_ERROR}
+
+  # Restart the SELECT statement
+  #
+  do_test rollback-1.6 { sqlite3_reset $STMT } {SQLITE_ABORT}
+} else {
+  do_test rollback-1.6 { sqlite3_reset $STMT } {SQLITE_OK}
 }
 
-# Restart the SELECT statement
-#
-do_test rollback-1.6 {
-  sqlite3_reset $STMT
-} {SQLITE_ABORT}
 do_test rollback-1.7 {
   sqlite3_step $STMT
 } {SQLITE_ROW}

@@ -15,10 +15,15 @@
 # that IS NULL phrases are correctly optimized.  But you can never
 # have too many tests, so some other tests are thrown in as well.
 #
-# $Id: where4.test,v 1.4 2007/06/02 07:54:38 danielk1977 Exp $
+# $Id: where4.test,v 1.5 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !tclvar||!bloblit {
+  finish_test
+  return
+}
 
 # Build some test data
 #

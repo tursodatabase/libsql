@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.61 2007/09/01 06:51:28 danielk1977 Exp $
+# $Id: tclsqlite.test,v 1.62 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -460,35 +460,37 @@ do_test tcl-12.1 {
 # of $aaa, that objects are treated as bytearray and are inserted
 # as BLOBs.
 #
-do_test tcl-13.1 {
-  db eval {CREATE TABLE t5(x BLOB)}
-  set x abc123
-  db eval {INSERT INTO t5 VALUES($x)}
-  db eval {SELECT typeof(x) FROM t5}
-} {text}
-do_test tcl-13.2 {
-  binary scan $x H notUsed
-  db eval {
-    DELETE FROM t5;
-    INSERT INTO t5 VALUES($x);
-    SELECT typeof(x) FROM t5;
-  }
-} {text}
-do_test tcl-13.3 {
-  db eval {
-    DELETE FROM t5;
-    INSERT INTO t5 VALUES(@x);
-    SELECT typeof(x) FROM t5;
-  }
-} {blob}
-do_test tcl-13.4 {
-  set y 1234
-  db eval {
-    DELETE FROM t5;
-    INSERT INTO t5 VALUES(@y);
-    SELECT hex(x), typeof(x) FROM t5
-  }
-} {31323334 blob}
+ifcapable tclvar {
+  do_test tcl-13.1 {
+    db eval {CREATE TABLE t5(x BLOB)}
+    set x abc123
+    db eval {INSERT INTO t5 VALUES($x)}
+    db eval {SELECT typeof(x) FROM t5}
+  } {text}
+  do_test tcl-13.2 {
+    binary scan $x H notUsed
+    db eval {
+      DELETE FROM t5;
+      INSERT INTO t5 VALUES($x);
+      SELECT typeof(x) FROM t5;
+    }
+  } {text}
+  do_test tcl-13.3 {
+    db eval {
+      DELETE FROM t5;
+      INSERT INTO t5 VALUES(@x);
+      SELECT typeof(x) FROM t5;
+    }
+  } {blob}
+  do_test tcl-13.4 {
+    set y 1234
+    db eval {
+      DELETE FROM t5;
+      INSERT INTO t5 VALUES(@y);
+      SELECT hex(x), typeof(x) FROM t5
+    }
+  } {31323334 blob}
+}
 
 
 finish_test

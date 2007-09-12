@@ -12,7 +12,7 @@
 # focus of this script is testing that the overflow-page related
 # enhancements added after version 3.3.17 speed things up.
 #
-# $Id: speed3.test,v 1.3 2007/08/22 02:56:44 drh Exp $
+# $Id: speed3.test,v 1.4 2007/09/12 17:01:45 danielk1977 Exp $
 #
 
 #---------------------------------------------------------------------
@@ -34,6 +34,12 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !tclvar {
+  finish_test
+  return
+}
+
 speed_trial_init speed1
 
 # Set a uniform random seed

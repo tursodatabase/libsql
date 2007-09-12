@@ -15,10 +15,15 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr2.test,v 1.5 2007/05/23 16:23:09 danielk1977 Exp $
+# $Id: ioerr2.test,v 1.6 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !integrityck {
+  finish_test
+  return
+}
 
 do_test ioerr2-1.1 {
   execsql {

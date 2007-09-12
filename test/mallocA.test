@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file contains additional out-of-memory checks (see malloc.tcl).
 #
-# $Id: mallocA.test,v 1.5 2007/09/03 16:12:10 drh Exp $
+# $Id: mallocA.test,v 1.6 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -44,17 +44,19 @@ file copy test.db test.db.bu
 do_malloc_test mallocA-1 -testdb test.db.bu -sqlbody {
   ANALYZE
 }
-do_malloc_test mallocA-2 -testdb test.db.bu -sqlbody {
-  REINDEX;
-}
-do_malloc_test mallocA-3 -testdb test.db.bu -sqlbody {
-  REINDEX t1;
-}
-do_malloc_test mallocA-4 -testdb test.db.bu -sqlbody {
-  REINDEX main.t1;
-}
-do_malloc_test mallocA-5 -testdb test.db.bu -sqlbody {
-  REINDEX nocase;
+ifcapable reindex {
+  do_malloc_test mallocA-2 -testdb test.db.bu -sqlbody {
+    REINDEX;
+  }
+  do_malloc_test mallocA-3 -testdb test.db.bu -sqlbody {
+    REINDEX t1;
+  }
+  do_malloc_test mallocA-4 -testdb test.db.bu -sqlbody {
+    REINDEX main.t1;
+  }
+  do_malloc_test mallocA-5 -testdb test.db.bu -sqlbody {
+    REINDEX nocase;
+  }
 }
 
 # Ensure that no file descriptors were leaked.

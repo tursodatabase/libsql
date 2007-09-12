@@ -11,10 +11,15 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the built-in SUBSTR() functions.
 #
-# $Id: substr.test,v 1.1 2007/05/15 01:13:47 drh Exp $
+# $Id: substr.test,v 1.2 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !tclvar {
+  finish_test
+  return
+}
 
 # Create a table to work with.
 #

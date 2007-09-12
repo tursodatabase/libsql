@@ -12,7 +12,7 @@
 # file is a copy of "trans.test" modified to run under autovacuum mode.
 # the point is to stress the autovacuum logic and try to get it to fail.
 #
-# $Id: avtrans.test,v 1.5 2007/08/12 20:07:59 drh Exp $
+# $Id: avtrans.test,v 1.6 2007/09/12 17:01:45 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -909,7 +909,7 @@ for {set i 2} {$i<=$limit} {incr i} {
         } [expr {$i%2==0}]
       } else {
         do_test avtrans-9.$i.5-$cnt {
-           expr {$sqlite_fullsync_count>0}
+           expr {$sqlite_fullsync_count==0}
         } {1}
       }
     }

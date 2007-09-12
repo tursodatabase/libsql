@@ -21,10 +21,15 @@
 #     sqlite3_value_bytes()
 #     sqlite3_value_bytes16()
 #
-# $Id: ptrchng.test,v 1.1 2007/04/27 17:16:22 drh Exp $
+# $Id: ptrchng.test,v 1.2 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !bloblit {
+  finish_test
+  return
+}
 
 # Register the "pointer_change" SQL function.
 #

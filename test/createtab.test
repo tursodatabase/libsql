@@ -12,7 +12,7 @@
 # focus of this file is testing that it is OK to create new tables
 # and indices while creating existing tables and indices.
 #
-# $Id: createtab.test,v 1.2 2007/05/04 14:36:22 drh Exp $
+# $Id: createtab.test,v 1.3 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -45,9 +45,15 @@ for {set av 0} {$av<=$upperBound} {incr av} {
       SELECT count(*) FROM t1;
     }
   } {4}
+
+  set isUtf16 0
+  ifcapable utf16 { 
+    set isUtf16 [expr {[execsql {PRAGMA encoding}] != "UTF-8"}]
+  }
+
   do_test createtab-$av.2 {
     file size test.db
-  } [expr {1024*(4+($av!=0)+([execsql {PRAGMA encoding}]!="UTF-8")*2)}]
+  } [expr {1024*(4+($av!=0)+(${isUtf16}*2))}]
   
   # Start reading the table
   #

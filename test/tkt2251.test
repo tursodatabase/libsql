@@ -28,10 +28,15 @@
 # raw OP_Column in all places where a table column is extracted from
 # the database.
 #
-# $Id: tkt2251.test,v 1.1 2007/02/24 15:18:51 drh Exp $
+# $Id: tkt2251.test,v 1.2 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !altertable {
+  finish_test
+  return
+}
 
 # Create sample data.  Verify that the default value and type of an added
 # column is correct for aggregates.

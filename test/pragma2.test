@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma2.test,v 1.2 2007/06/27 10:20:01 drh Exp $
+# $Id: pragma2.test,v 1.3 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -24,7 +24,7 @@ source $testdir/tester.tcl
 # pragma2-3.*: Test trying to write to the freelist_count is a no-op.
 #
 
-ifcapable !pragma {
+ifcapable !pragma||!schema_pragmas {
   finish_test
   return
 }

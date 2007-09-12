@@ -9,11 +9,16 @@
 #
 #***********************************************************************
 #
-# $Id: tkt2339.test,v 1.1 2007/05/06 20:04:25 drh Exp $
+# $Id: tkt2339.test,v 1.2 2007/09/12 17:01:45 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !subquery||!compound {
+  finish_test
+  return
+}
 
 do_test tkt2339.1 {
   execsql {

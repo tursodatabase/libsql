@@ -13,7 +13,7 @@
 # including the sqlite3_bind_zeroblob(), sqlite3_result_zeroblob(),
 # and the built-in zeroblob() SQL function.
 #
-# $Id: zeroblob.test,v 1.9 2007/09/04 12:18:42 drh Exp $
+# $Id: zeroblob.test,v 1.10 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -110,23 +110,27 @@ do_test zeroblob-2.2 {
 
 # DISTINCT works for zeroblobs
 #
-do_test zeroblob-3.1 {
-  execsql {
-    SELECT count(DISTINCT a) FROM (
-      SELECT x'00000000000000000000' AS a
-      UNION ALL
-      SELECT zeroblob(10) AS a
-    )
-  }
-} {1}
+ifcapable bloblit&&subquery&&compound {
+  do_test zeroblob-3.1 {
+    execsql {
+      SELECT count(DISTINCT a) FROM (
+        SELECT x'00000000000000000000' AS a
+        UNION ALL
+        SELECT zeroblob(10) AS a
+      )
+    }
+  } {1}
+}
 
 # Concatentation works with zeroblob
 #
-do_test zeroblob-4.1 {
-  execsql {
-    SELECT hex(zeroblob(2) || x'61')
-  }
-} {000061}
+ifcapable bloblit {
+  do_test zeroblob-4.1 {
+    execsql {
+      SELECT hex(zeroblob(2) || x'61')
+    }
+  } {000061}
+}
 
 # Check various CAST(...) operations on zeroblob.
 #

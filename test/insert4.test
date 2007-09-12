@@ -11,10 +11,15 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the INSERT transfer optimization.
 #
-# $Id: insert4.test,v 1.6 2007/09/03 17:30:07 danielk1977 Exp $
+# $Id: insert4.test,v 1.7 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !view||!subquery {
+  finish_test
+  return
+}
 
 # The sqlite3_xferopt_count variable is incremented whenever the 
 # insert transfer optimization applies.

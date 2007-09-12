@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.26 2007/09/01 16:16:16 danielk1977 Exp $
+# $Id: shared.test,v 1.27 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -865,14 +865,16 @@ do_test shared-$av.11.11 {
 
 # This tests that if it is impossible to free any pages, SQLite will
 # exceed the limit set by PRAGMA cache_size.
-do_test shared-$av.12.1 {
-  file delete -force test.db test.db-journal
-  sqlite3 db test.db 
-  execsql {
-    PRAGMA cache_size = 10;
-    PRAGMA cache_size;
-  }
-} {10}
+file delete -force test.db test.db-journal
+sqlite3 db test.db 
+ifcapable pager_pragmas {
+  do_test shared-$av.12.1 {
+    execsql {
+      PRAGMA cache_size = 10;
+      PRAGMA cache_size;
+    }
+  } {10}
+}
 do_test shared-$av.12.2 {
   set ::db_handles [list]
   for {set i 1} {$i < 15} {incr i} {

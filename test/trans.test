@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.36 2007/07/13 10:36:48 drh Exp $
+# $Id: trans.test,v 1.37 2007/09/12 17:01:45 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -908,7 +908,7 @@ for {set i 2} {$i<=$limit} {incr i} {
         } [expr {$i%2==0}]
       } else {
         do_test trans-9.$i.5-$cnt {
-          expr {$sqlite_fullsync_count>0}
+          expr {$sqlite_fullsync_count==0}
         } {1}
       }
     }

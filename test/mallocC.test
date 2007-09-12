@@ -12,14 +12,14 @@
 # This file tests aspects of the malloc failure while parsing
 # CREATE TABLE statements in auto_vacuum mode.
 #
-# $Id: mallocC.test,v 1.5 2007/09/03 16:12:10 drh Exp $
+# $Id: mallocC.test,v 1.6 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Only run these tests if memory debugging is turned on.
 #
-ifcapable !memdebug {
+ifcapable !memdebug||!compound {
    puts "Skipping mallocC tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return

@@ -14,11 +14,15 @@
 # fixed.  
 #
 #
-# $Id: tkt2192.test,v 1.1 2007/01/26 19:04:00 drh Exp $
+# $Id: tkt2192.test,v 1.2 2007/09/12 17:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !datetime {
+  finish_test
+  return
+}
 
 do_test tkt2191-1.1 {
   execsql {

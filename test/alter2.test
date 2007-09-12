@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter2.test,v 1.8 2007/05/08 01:08:49 drh Exp $
+# $Id: alter2.test,v 1.9 2007/09/12 17:01:45 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -68,11 +68,13 @@ proc get_file_format {{fname test.db}} {
 #
 proc alter_table {tbl sql {file_format 2}} {
   sqlite3 dbat test.db
-  dbat eval {
+  set s [string map {' ''} $sql]
+  set t [string map {' ''} $tbl]
+  dbat eval [subst {
     PRAGMA writable_schema = 1;
-    UPDATE sqlite_master SET sql = $sql WHERE name = $tbl AND type = 'table';
+    UPDATE sqlite_master SET sql = '$s' WHERE name = '$t' AND type = 'table';
     PRAGMA writable_schema = 0;
-  }
+  }]
   dbat close
   set_file_format 2
 }
@@ -259,18 +261,20 @@ do_test alter2-4.5 {
 # resets the file format to 1.
 #
 set default_file_format [expr $SQLITE_DEFAULT_FILE_FORMAT==4 ? 4 : 1]
-do_test alter2-5.1 {
-  set_file_format 2
-  get_file_format
-} {2}
-do_test alter2-5.2 {
-  execsql {
-    VACUUM;
-  }
-} {}
-do_test alter2-5.3 {
-  get_file_format
-} $default_file_format
+ifcapable vacuum {
+  do_test alter2-5.1 {
+    set_file_format 2
+    get_file_format
+  } {2}
+  do_test alter2-5.2 {
+    execsql {
+      VACUUM;
+    }
+  } {}
+  do_test alter2-5.3 {
+    get_file_format
+  } $default_file_format
+}
  
 #---------------------------------------------------------------------
 # Test that when a database with file-format 2 is opened, new 
@@ -397,38 +401,40 @@ ifcapable trigger {
 #-----------------------------------------------------------------------
 # Test creating an index on a column added with a default value. 
 #
-do_test alter2-10.1 {
-  execsql {
-    CREATE TABLE t2(a);
-    INSERT INTO t2 VALUES('a');
-    INSERT INTO t2 VALUES('b');
-    INSERT INTO t2 VALUES('c');
-    INSERT INTO t2 VALUES('d');
-  }
-  alter_table t2 {CREATE TABLE t2(a, b DEFAULT X'ABCD', c DEFAULT NULL);} 3
-  catchsql {
-    SELECT * FROM sqlite_master;
-  }
-  execsql {
-    SELECT quote(a), quote(b), quote(c) FROM t2 LIMIT 1;
-  }
-} {'a' X'ABCD' NULL}
-do_test alter2-10.2 {
-  execsql {
-    CREATE INDEX i1 ON t2(b);
-    SELECT a FROM t2 WHERE b = X'ABCD';
-  }
-} {a b c d}
-do_test alter2-10.3 {
-  execsql {
-    DELETE FROM t2 WHERE a = 'c';
-    SELECT a FROM t2 WHERE b = X'ABCD';
-  }
-} {a b d}
-do_test alter2-10.4 {
-  execsql {
-    SELECT count(b) FROM t2 WHERE b = X'ABCD';
-  }
-} {3}
+ifcapable bloblit {
+  do_test alter2-10.1 {
+    execsql {
+      CREATE TABLE t2(a);
+      INSERT INTO t2 VALUES('a');
+      INSERT INTO t2 VALUES('b');
+      INSERT INTO t2 VALUES('c');
+      INSERT INTO t2 VALUES('d');
+    }
+    alter_table t2 {CREATE TABLE t2(a, b DEFAULT X'ABCD', c DEFAULT NULL);} 3
+    catchsql {
+      SELECT * FROM sqlite_master;
+    }
+    execsql {
+      SELECT quote(a), quote(b), quote(c) FROM t2 LIMIT 1;
+    }
+  } {'a' X'ABCD' NULL}
+  do_test alter2-10.2 {
+    execsql {
+      CREATE INDEX i1 ON t2(b);
+      SELECT a FROM t2 WHERE b = X'ABCD';
+    }
+  } {a b c d}
+  do_test alter2-10.3 {
+    execsql {
+      DELETE FROM t2 WHERE a = 'c';
+      SELECT a FROM t2 WHERE b = X'ABCD';
+    }
+  } {a b d}
+  do_test alter2-10.4 {
+    execsql {
+      SELECT count(b) FROM t2 WHERE b = X'ABCD';
+    }
+  } {3}
+}
 
 finish_test

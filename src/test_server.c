@@ -196,6 +196,11 @@
 ** an integer.
 */
 
+/* Include this to get the definition of SQLITE_THREADSAFE, in the
+** case that default values are used.
+*/
+#include "sqliteInt.h"
+
 /*
 ** Only compile the code in this file on UNIX with a SQLITE_THREADSAFE build
 ** and only if the SQLITE_SERVER macro is defined.
