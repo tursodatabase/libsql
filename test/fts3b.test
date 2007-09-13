@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  This
 # script tests for the fts2 rowid-versus-vacuum problem (ticket #2566).
 #
-# $Id: fts3b.test,v 1.1 2007/08/23 20:23:37 shess Exp $
+# $Id: fts3b.test,v 1.2 2007/09/13 18:12:10 shess Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -102,5 +102,38 @@ do_test fts3b-2.2 {
     SELECT rowid FROM t2 WHERE c MATCH 'lorem';
   }
 } $res
+
+# Since fts3 is already an API break, I've marked the table-named
+# column HIDDEN.
+
+db eval {
+  CREATE VIRTUAL TABLE t3 USING fts3(c);
+  INSERT INTO t3 (c) VALUES('this is a test');
+  INSERT INTO t3 (c) VALUES('that was a test');
+  INSERT INTO t3 (c) VALUES('this is fun');
+  DELETE FROM t3 WHERE c = 'that was a test';
+}
+
+# Test that the table-named column still works.
+do_test fts3b-3.1 {
+  execsql {
+    SELECT snippet(t3) FROM t3 WHERE t3 MATCH 'test';
+  }
+} {{this is a <b>test</b>}}
+
+# Test that the column doesn't appear when selecting all columns.
+do_test fts3b-3.2 {
+  execsql {
+    SELECT * FROM t3 WHERE rowid = 1;
+  }
+} {{this is a test}}
+
+# Test that the column doesn't conflict with inserts that don't name
+# columns.
+do_test fts3b-3.3 {
+  execsql {
+    INSERT INTO t3 VALUES ('another test');
+  }
+} {}
 
 finish_test

@@ -2702,7 +2702,7 @@ static char *fulltextSchema(
     zSchema = zNext;
     zSep = ",";
   }
-  zNext = sqlite3_mprintf("%s,%Q)", zSchema, zTableName);
+  zNext = sqlite3_mprintf("%s,%Q HIDDEN)", zSchema, zTableName);
   sqlite3_free(zSchema);
   return zNext;
 }
