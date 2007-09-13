@@ -1,3 +1,26 @@
+/* fts2 has a design flaw which can lead to database corruption (see
+** below).  It is recommended not to use it any longer, instead use
+** fts3 (or higher).  If you believe that your use of fts2 is safe,
+** add -DSQLITE_ENABLE_BROKEN_FTS2=1 to your CFLAGS.
+*/
+#ifndef SQLITE_ENABLE_BROKEN_FTS2
+#error fts2 has a design flaw and has been deprecated.
+#endif
+/* The flaw is that fts2 uses the content table's unaliased rowid as
+** the unique docid.  fts2 embeds the rowid in the index it builds,
+** and expects the rowid to not change.  The SQLite VACUUM operation
+** will renumber such rowids, thereby breaking fts2.  If you are using
+** fts2 in a system which has disabled VACUUM, then you can continue
+** to use it safely.  Note that PRAGMA auto_vacuum does NOT disable
+** VACUUM, though systems using auto_vacuum are unlikely to invoke
+** VACUUM.
+**
+** Unlike fts1, which is safe across VACUUM if you never delete
+** documents, fts2 has a second exposure to this flaw, in the segments
+** table.  So fts2 should be considered unsafe across VACUUM in all
+** cases.
+*/
+
 /*
 ** 2006 Oct 10
 **

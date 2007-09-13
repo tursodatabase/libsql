@@ -1,9 +1,3 @@
-/* fts3 is not ready for use.  So don't use it yet!  Contact
-** shess@google.com with questions.
-*/
-#ifndef SQLITE_FTS3_IS_NOT_READY
-#error fts3 is not ready for use.
-#endif
 /*
 ** 2006 Oct 10
 **
