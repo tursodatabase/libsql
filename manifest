@@ -1,5 +1,5 @@
-C Fixes\sfor\scompilation/testing\swhen\sthe\svarious\sOMIT\smacros\sare\sdefined.\s(CVS\s4423)
-D 2007-09-12T17:01:45
+C Fix\sincorrect\sindex\scost\sassumptions\sthat\soccur\safter\san\sANALYZE.\nTicket\s#2643.\s(CVS\s4424)
+D 2007-09-13T17:54:40
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -172,7 +172,7 @@ F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 246d434fa60bde6553490eb686adfd86adcd6712
 F src/vtab.c 6776605198e0b844391335f1b77e3595b3616331
-F src/where.c 1b3a67bba14cb19b44496090a66f58370b8c768d
+F src/where.c 44042c8b9d0d054cc318c3a0df052215ebf49d2d
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test b59d1bd8b0c1d4a08b845e8af48fd43926f01f11
@@ -457,6 +457,7 @@ F test/tkt2391.test ab7a11be7402da8b51a5be603425367aa0684567
 F test/tkt2409.test 20318bf6acd9b834b4420548f277b8e3a7420cd1
 F test/tkt2450.test 77ed94863f2049c1420288ddfea2d41e5e0971d6
 F test/tkt2640.test c513e7992a602a87ef3a2cc9ca1cba4146924e9b
+F test/tkt2643.test 3f3ebb743da00d4fed4fcf6daed92a0e18e57813
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test b361161cf20614024cc1e52ea0bdec250776b2ae
@@ -576,7 +577,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9c9c2a1da2b6235b3b0541d1f55a02a1f350567f
-R e714a99afd32daf4589c0492f0d973f7
-U danielk1977
-Z 3ca4821de1ee59d63f410052e38375a2
+P c8405b15c074c94dab5e33272cf1471f458d11df
+R b946fdafcbe6e914052dcda867e14d99
+U drh
+Z c838890951ff9cb355602e662e43675b
