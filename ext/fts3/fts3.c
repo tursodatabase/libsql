@@ -2702,7 +2702,10 @@ static char *fulltextSchema(
     zSchema = zNext;
     zSep = ",";
   }
-  zNext = sqlite3_mprintf("%s,%Q HIDDEN)", zSchema, zTableName);
+  zNext = sqlite3_mprintf("%s,%Q HIDDEN", zSchema, zTableName);
+  sqlite3_free(zSchema);
+  zSchema = zNext;
+  zNext = sqlite3_mprintf("%s,docid HIDDEN)", zSchema);
   sqlite3_free(zSchema);
   return zNext;
 }
@@ -2861,6 +2864,7 @@ out:
 
 /* Decide how to handle an SQL query. */
 static int fulltextBestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
+  fulltext_vtab *v = (fulltext_vtab *)pVTab;
   int i;
   TRACE(("FTS3 BestIndex\n"));
 
@@ -2868,11 +2872,11 @@ static int fulltextBestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     const struct sqlite3_index_constraint *pConstraint;
     pConstraint = &pInfo->aConstraint[i];
     if( pConstraint->usable ) {
-      if( pConstraint->iColumn==-1 &&
+      if( (pConstraint->iColumn==-1 || pConstraint->iColumn==v->nColumn+1) &&
           pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ ){
         pInfo->idxNum = QUERY_DOCID;      /* lookup by docid */
         TRACE(("FTS3 QUERY_DOCID\n"));
-      } else if( pConstraint->iColumn>=0 &&
+      } else if( pConstraint->iColumn>=0 && pConstraint->iColumn<=v->nColumn &&
                  pConstraint->op==SQLITE_INDEX_CONSTRAINT_MATCH ){
         /* full-text search */
         pInfo->idxNum = QUERY_FULLTEXT + pConstraint->iColumn;
@@ -3763,6 +3767,10 @@ static int fulltextColumn(sqlite3_vtab_cursor *pCursor,
     ** Return a blob which is a pointer to the cursor
     */
     sqlite3_result_blob(pContext, &c, sizeof(c), SQLITE_TRANSIENT);
+  }else if( idxCol==v->nColumn+1 ){
+    /* The docid column, which is an alias for rowid. */
+    sqlite3_value *pVal = sqlite3_column_value(c->pStmt, 0);
+    sqlite3_result_value(pContext, pVal);
   }
   return SQLITE_OK;
 }
@@ -5674,13 +5682,17 @@ static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
      * ppArg[1] = new rowid
      * ppArg[2..2+v->nColumn-1] = values
      * ppArg[2+v->nColumn] = value for magic column (we ignore this)
+     * ppArg[2+v->nColumn+1] = value for docid
      */
     sqlite_int64 rowid = sqlite3_value_int64(ppArg[0]);
     if( sqlite3_value_type(ppArg[1]) != SQLITE_INTEGER ||
-      sqlite3_value_int64(ppArg[1]) != rowid ){
+        sqlite3_value_int64(ppArg[1]) != rowid ){
       rc = SQLITE_ERROR;  /* we don't allow changing the rowid */
-    } else {
-      assert( nArg==2+v->nColumn+1);
+    }else if( sqlite3_value_type(ppArg[2+v->nColumn+1]) != SQLITE_INTEGER ||
+              sqlite3_value_int64(ppArg[2+v->nColumn+1]) != rowid ){
+      rc = SQLITE_ERROR;  /* we don't allow changing the docid */
+    }else{
+      assert( nArg==2+v->nColumn+2);
       rc = index_update(v, rowid, &ppArg[2]);
     }
   } else {
@@ -5688,9 +5700,26 @@ static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
      * ppArg[1] = requested rowid
      * ppArg[2..2+v->nColumn-1] = values
      * ppArg[2+v->nColumn] = value for magic column (we ignore this)
+     * ppArg[2+v->nColumn+1] = value for docid
      */
-    assert( nArg==2+v->nColumn+1);
-    rc = index_insert(v, ppArg[1], &ppArg[2], pRowid);
+    sqlite3_value *pRequestDocid = ppArg[2+v->nColumn+1];
+    assert( nArg==2+v->nColumn+2);
+    if( SQLITE_NULL != sqlite3_value_type(pRequestDocid) &&
+        SQLITE_NULL != sqlite3_value_type(ppArg[1]) ){
+      /* TODO(shess) Consider allowing this to work if the values are
+      ** identical.  I'm inclined to discourage that usage, though,
+      ** given that both rowid and docid are special columns.  Better
+      ** would be to define one or the other as the default winner,
+      ** but should it be fts3-centric (docid) or SQLite-centric
+      ** (rowid)?
+      */
+      rc = SQLITE_ERROR;
+    }else{
+      if( SQLITE_NULL == sqlite3_value_type(pRequestDocid) ){
+        pRequestDocid = ppArg[1];
+      }
+      rc = index_insert(v, pRequestDocid, &ppArg[2], pRowid);
+    }
   }
 
   return rc;
