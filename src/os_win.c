@@ -1162,13 +1162,13 @@ static int winOpen(
 #if OS_WINCE
   if( (flags & (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)) ==
                (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)
-       && !winceCreateLock(zFilename, &f)
+       && !winceCreateLock(zFilename, pFile)
   ){
     CloseHandle(h);
     free(zConverted);
     return SQLITE_CANTOPEN;
   }
-  if( dwFlagsAndAttributes & FILE_FLAG_DELETEONCLOSE ){
+  if( dwFlagsAndAttributes & FILE_FLAG_DELETE_ON_CLOSE ){
     pFile->zDeleteOnClose = zConverted;
   }else
 #endif
