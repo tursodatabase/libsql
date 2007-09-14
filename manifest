@@ -1,5 +1,5 @@
-C Add\sdemo\scode\sfor\sa\svfs\sthat\soperates\son\sa\ssingle\spre-allocated\sfile.\s(CVS\s4429)
-D 2007-09-14T16:19:27
+C Minor\sfixes\sfor\sthe\sOMIT_INCRBLOB\scompilation\soption.\s(CVS\s4430)
+D 2007-09-14T16:20:01
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -98,7 +98,7 @@ F src/insert.c df9712e1f67201573a9677d3a2fe401d52d84dda
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
-F src/loadext.c 6894dbbf1666577d957922811620375d6c2f058d
+F src/loadext.c 124e566563d1c03e68e1396cb44df9870612c6e9
 F src/main.c e69df8c9e56e06f54ef894481e56b26ba807d253
 F src/malloc.c de4e77fe70a9a0ac47a1c3a874422b107231bf31
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
@@ -135,7 +135,7 @@ F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h bb126b074352ef0ee20399883172161baf5eead2
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
-F src/tclsqlite.c c3f864a9891aa32b0d65dcda4c50784c047c5a0a
+F src/tclsqlite.c 9659ec914abfdb35e184eee908d07eba11a39018
 F src/test1.c 738f9b4ab808dcfec1516ef699c416e3f4f1d119
 F src/test2.c 77b34303883b9d722c65a6879bb0163a400e3789
 F src/test3.c 73c1fd55d1ece61f295a6b9204fd97a139de86ae
@@ -182,7 +182,7 @@ F test/alter2.test 816574fd9302af05e95895758aff2811090c6c78
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
 F test/altermalloc.test 1f4d2d66750bea1a78cd9f0b7dba5bfb155dd6cf
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
-F test/async.test eca5ea2646ea4adfbfa276fa710238e79eb1d477
+F test/async.test ae370c6169e314f0f82dcbe59fbc8589b23dfc2f
 F test/async2.test e56affa75ed822424a6f9b12b22db8031433bb7c
 F test/async3.test 08ea0217083e4866eb1b0147158298f2a2cd1346
 F test/attach.test 8880661ee05a7fdeb2d3868e66c08aab21cec8f1
@@ -390,7 +390,7 @@ F test/pragma2.test 5e063bf1d4dfd6baa885cd1809fcd5b2609e9dab
 F test/printf.test 6bf1a86c6a1e45536f72d782bf44c8e3c76510f8
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 38ae1806833d72d9a81a6121322e274f24937e18
-F test/quick.test bedc5696abff22532b6df7da2b073254b15e53b7
+F test/quick.test 47605260d370844596ae5b52cdcf50d70525e7ee
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -512,7 +512,7 @@ F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mksqlite3c.tcl 1b2fc352849823600fea9474245591e96733e557
 F tool/mksqlite3internalh.tcl 47737a925fb02fce43e2c0a14b3cc17574a4d44a
-F tool/omittest.tcl e6b3d6a1285f9813bc1dea53bb522b4b72774710
+F tool/omittest.tcl 7d1fdf469e2f4d175f70c36e469db64a1626fabb
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F tool/showdb.c a086a3d788c7a23cb008317c3180ceb19f20bce0
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 995c63b561e935b6a1da34590cb40582f5c30cee
-R 96d75dbd4f4bfe96dce3c4861d830f43
+P 15680ca4821ec0652dfbe863199b4c3f2afad4ba
+R 3b0f74cab9e5fa659d0726d3ebceecb4
 U danielk1977
-Z b1ec5ccea80dfe40e173f2ee9efa6584
+Z 86a81965c9c5862aa319c3fa3e0a0e24

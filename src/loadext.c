@@ -93,6 +93,15 @@
 # define sqlite3_get_table     0
 #endif
 
+#ifdef SQLITE_OMIT_INCRBLOB
+#define sqlite3_bind_zeroblob  0
+#define sqlite3_blob_bytes     0
+#define sqlite3_blob_close     0
+#define sqlite3_blob_open      0
+#define sqlite3_blob_read      0
+#define sqlite3_blob_write     0
+#endif
+
 /*
 ** The following structure contains pointers to all SQLite API routines.
 ** A pointer to this structure is passed into extensions when they are
