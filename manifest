@@ -1,5 +1,5 @@
-C Drop\sthe\sforced\serror\sfrom\sfts3.c\sand\sadd\sforced\serrors\sto\sfts2.c\sand\nfts1.c.\s(CVS\s4427)
-D 2007-09-13T18:16:08
+C Add\stests\sto\sprevent\sa\sregression\sof\sthe\sshort\sread\sproblem\sdiscovered\nin\sversion\s3.2.2.\s(CVS\s4428)
+D 2007-09-14T01:48:12
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -409,6 +409,7 @@ F test/shared.test 3f27bca85ba3c032c346f895d42d4110cb5288e6
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
 F test/shared_err.test bfe49fbbf26746a3c05255b1dc7230744182b744
+F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/soak.test 64f9b27fbcdec43335a88c546ce1983e6ba40d7b
 F test/softheap1.test 29cbdb847e63ffef3af5da1e3cd15f44ee11d770
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
@@ -577,7 +578,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c8d2345200f9ece1af712543982097d0b6f348c7
-R ef2d8ee95ba1b46aa99333d48f97eddd
-U shess
-Z 7e45d9fdd88f579666a7625daeccbaf8
+P fec6567a0f8a868cda9bba2a473491dfb17b6c88
+R 64368b1c928a9ef5d9e681f8f2f0c32e
+U drh
+Z ca9ce5d0d5be2d28682a36a17ba9e364
