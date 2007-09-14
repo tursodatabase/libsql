@@ -1,5 +1,5 @@
-C Add\stests\sto\sprevent\sa\sregression\sof\sthe\sshort\sread\sproblem\sdiscovered\nin\sversion\s3.2.2.\s(CVS\s4428)
-D 2007-09-14T01:48:12
+C Add\sdemo\scode\sfor\sa\svfs\sthat\soperates\son\sa\ssingle\spre-allocated\sfile.\s(CVS\s4429)
+D 2007-09-14T16:19:27
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk e38d91102a2f8b70898e2817fe02aa656a02cb58
+F main.mk 5b05dad1fb7ce75200efe2c415b37ae9ff3575b4
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -153,6 +153,7 @@ F src/test_hexio.c 94a1efec4b19311eb7c4dc40e8496a3d8eadf18a
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c c34e7696dc4a5150c82452be28b87c7e38ba15ad
 F src/test_md5.c 34599caee5b1c73dcf86ca31f55846fab8c19ef7
+F src/test_onefile.c f545d497cdd25991e2ece107969737306bb89532
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
@@ -377,6 +378,7 @@ F test/misc7.test a67af9620a510ce19f96ba69f3848228b7c62a73
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
+F test/onefile.test 3b907ebfa5cc2ecd31d918776bb43fdf432b6618
 F test/openv2.test f5dd6b23e4dce828eb211649b600763c42a668df
 F test/pager.test 60303481b22b240c18d6dd1b64edcecc2f4b5a97
 F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
@@ -578,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P fec6567a0f8a868cda9bba2a473491dfb17b6c88
-R 64368b1c928a9ef5d9e681f8f2f0c32e
-U drh
-Z ca9ce5d0d5be2d28682a36a17ba9e364
+P 995c63b561e935b6a1da34590cb40582f5c30cee
+R 96d75dbd4f4bfe96dce3c4861d830f43
+U danielk1977
+Z b1ec5ccea80dfe40e173f2ee9efa6584

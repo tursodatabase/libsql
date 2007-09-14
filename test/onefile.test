@@ -1,0 +1,55 @@
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file runs all tests.
+#
+# $Id: onefile.test,v 1.1 2007/09/14 16:19:27 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+rename finish_test really_finish_test
+proc finish_test {} {
+  catch {db close}
+  catch {db2 close}
+  catch {db3 close}
+}
+set ISQUICK 1
+
+set INCLUDE {
+  conflict.test
+  insert.test
+  insert2.test
+  insert3.test
+  rollback.test
+  select1.test
+  select2.test
+  select3.test
+  temptable.test
+}
+#set INCLUDE insert2.test
+
+rename sqlite3 really_sqlite3
+proc sqlite3 {args} {
+  if {[string range [lindex $args 0] 0 0] ne "-"} {
+    lappend args -vfs fs
+  }
+  uplevel [concat really_sqlite3 $args]
+}
+
+rename do_test really_do_test
+proc do_test {name args} {
+  uplevel really_do_test onefile-$name $args
+}
+
+foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
+  set tail [file tail $testfile]
+  if {[lsearch -exact $INCLUDE $tail]<0} continue
+  source $testfile
+}
+
+really_finish_test
+rename really_do_test do_test
+rename really_finish_test finish_test
