@@ -1267,7 +1267,7 @@ static int winAccess(
 ** Create a temporary file name in zBuf.  zBuf must be big enough to
 ** hold at pVfs->mxPathname characters.
 */
-static int winGetTempName(sqlite3_vfs *pVfs, char *zBuf){
+static int winGetTempname(sqlite3_vfs *pVfs, char *zBuf){
   static char zChars[] =
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -1527,7 +1527,7 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     winOpen,           /* xOpen */
     winDelete,         /* xDelete */
     winAccess,         /* xAccess */
-    winGetTempName,    /* xGetTempName */
+    winGetTempname,    /* xGetTempName */
     winFullPathname,   /* xFullPathname */
     winDlOpen,         /* xDlOpen */
     winDlError,        /* xDlError */

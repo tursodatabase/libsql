@@ -163,7 +163,7 @@ static int tmpDeviceCharacteristics(sqlite3_file*);
 static int fsOpen(sqlite3_vfs*, const char *, sqlite3_file*, int , int *);
 static int fsDelete(sqlite3_vfs*, const char *zName, int syncDir);
 static int fsAccess(sqlite3_vfs*, const char *zName, int flags);
-static int fsGetTempName(sqlite3_vfs*, char *zOut);
+static int fsGetTempname(sqlite3_vfs*, char *zOut);
 static int fsFullPathname(sqlite3_vfs*, const char *zName, char *zOut);
 static void *fsDlOpen(sqlite3_vfs*, const char *zFilename);
 static void fsDlError(sqlite3_vfs*, int nByte, char *zErrMsg);
@@ -192,7 +192,7 @@ static fs_vfs_t fs_vfs = {
     fsOpen,                                     /* xOpen */
     fsDelete,                                   /* xDelete */
     fsAccess,                                   /* xAccess */
-    fsGetTempName,                              /* xGetTempName */
+    fsGetTempname,                              /* xGetTempName */
     fsFullPathname,                             /* xFullPathname */
     fsDlOpen,                                   /* xDlOpen */
     fsDlError,                                  /* xDlError */
@@ -726,9 +726,9 @@ static int fsAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
 ** temporary file. zBufOut is guaranteed to point to a buffer of 
 ** at least (FS_MAX_PATHNAME+1) bytes.
 */
-static int fsGetTempName(sqlite3_vfs *pVfs, char *zBufOut){
+static int fsGetTempname(sqlite3_vfs *pVfs, char *zBufOut){
   sqlite3_vfs *pParent = ((fs_vfs_t *)pVfs)->pParent;
-  return pParent->xGetTempName(pParent, zBufOut);
+  return pParent->xGetTempname(pParent, zBufOut);
 }
 
 /*

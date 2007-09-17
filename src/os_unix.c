@@ -2474,7 +2474,7 @@ static int unixAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
 ** by the calling process and must be big enough to hold at least
 ** pVfs->mxPathname bytes.
 */
-static int unixGetTempName(sqlite3_vfs *pVfs, char *zBuf){
+static int unixGetTempname(sqlite3_vfs *pVfs, char *zBuf){
   static const char *azDirs[] = {
      0,
      "/var/tmp",
@@ -2726,7 +2726,7 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     unixOpen,           /* xOpen */
     unixDelete,         /* xDelete */
     unixAccess,         /* xAccess */
-    unixGetTempName,    /* xGetTempName */
+    unixGetTempname,    /* xGetTempName */
     unixFullPathname,   /* xFullPathname */
     unixDlOpen,         /* xDlOpen */
     unixDlError,        /* xDlError */

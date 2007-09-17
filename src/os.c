@@ -107,8 +107,8 @@ int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 int sqlite3OsAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
   return pVfs->xAccess(pVfs, zPath, flags);
 }
-int sqlite3OsGetTempName(sqlite3_vfs *pVfs, char *zBufOut){
-  return pVfs->xGetTempName(pVfs, zBufOut);
+int sqlite3OsGetTempname(sqlite3_vfs *pVfs, char *zBufOut){
+  return pVfs->xGetTempname(pVfs, zBufOut);
 }
 int sqlite3OsFullPathname(sqlite3_vfs *pVfs, const char *zPath, char *zPathOut){
   return pVfs->xFullPathname(pVfs, zPath, zPathOut);

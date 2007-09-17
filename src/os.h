@@ -250,7 +250,7 @@ int sqlite3OsDeviceCharacteristics(sqlite3_file *id);
 int sqlite3OsOpen(sqlite3_vfs *, const char *, sqlite3_file*, int, int *);
 int sqlite3OsDelete(sqlite3_vfs *, const char *, int);
 int sqlite3OsAccess(sqlite3_vfs *, const char *, int);
-int sqlite3OsGetTempName(sqlite3_vfs *, char *);
+int sqlite3OsGetTempname(sqlite3_vfs *, char *);
 int sqlite3OsFullPathname(sqlite3_vfs *, const char *, char *);
 void *sqlite3OsDlOpen(sqlite3_vfs *, const char *);
 void sqlite3OsDlError(sqlite3_vfs *, int, char *);
