@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.389 2007/09/17 06:06:39 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.390 2007/09/17 07:02:57 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2039,7 +2039,8 @@ int sqlite3PagerOpen(
   *ppPager = 0;
 
   /* Compute the full pathname */
-  zPathname = sqlite3_malloc(pVfs->mxPathname+1);
+  nPathname = pVfs->mxPathname+1;
+  zPathname = sqlite3_malloc(nPathname);
   if( zPathname==0 ){
     return SQLITE_NOMEM;
   }
@@ -2051,10 +2052,10 @@ int sqlite3PagerOpen(
     }else
 #endif
     {
-      rc = sqlite3OsFullPathname(pVfs, zFilename, zPathname);
+      rc = sqlite3OsFullPathname(pVfs, zFilename, nPathname, zPathname);
     }
   }else{
-    rc = sqlite3OsGetTempname(pVfs, zPathname);
+    rc = sqlite3OsGetTempname(pVfs, nPathname, zPathname);
   }
   if( rc!=SQLITE_OK ){
     sqlite3_free(zPathname);

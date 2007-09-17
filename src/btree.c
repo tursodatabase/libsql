@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.426 2007/09/12 17:01:45 danielk1977 Exp $
+** $Id: btree.c,v 1.427 2007/09/17 07:02:57 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1158,7 +1158,8 @@ int sqlite3BtreeOpen(
    && zFilename && zFilename[0]
   ){
     if( sqlite3SharedCacheEnabled ){
-      char *zFullPathname = (char *)sqlite3_malloc(pVfs->mxPathname);
+      int nFullPathname = pVfs->mxPathname+1;
+      char *zFullPathname = (char *)sqlite3_malloc(nFullPathname);
       sqlite3_mutex *mutexShared;
       p->sharable = 1;
       if( pSqlite ){
@@ -1168,7 +1169,7 @@ int sqlite3BtreeOpen(
         sqlite3_free(p);
         return SQLITE_NOMEM;
       }
-      sqlite3OsFullPathname(pVfs, zFilename, zFullPathname);
+      sqlite3OsFullPathname(pVfs, zFilename, nFullPathname, zFullPathname);
       mutexShared = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
       sqlite3_mutex_enter(mutexShared);
       for(pBt=sqlite3SharedCacheList; pBt; pBt=pBt->pNext){

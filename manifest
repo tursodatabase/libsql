@@ -1,5 +1,5 @@
-C Change\sthe\snames\sof\sxGetTempName\sand\ssqlite3OsGetTempName\sto\sxGetTempname.\sTo\sbe\sconsistent\swith\sxFullPathname\sand\ssqlite3OsFullPathname.\s(CVS\s4432)
-D 2007-09-17T06:06:39
+C Add\sa\sparameter\sto\sspecify\sthe\ssize\sof\sthe\soutput\sbuffer\spassed\sto\sxGetTempname()\sand\sxFullPathname().\sThis,\sand\sthe\sprevious\scommit,\sare\schanges\sto\sthe\spublic\svfs\sAPI\sintroduced\sin\s3.5.0.\s(CVS\s4433)
+D 2007-09-17T07:02:57
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -81,7 +81,7 @@ F src/analyze.c 49b4bd45eb286d833793ed6bf72355a5c1974865
 F src/attach.c 02fd8779270b1df1c63e7ba6e6655b960fa0f3d5
 F src/auth.c d41c34f3150b3b8248d364770ef922bbcefbff82
 F src/btmutex.c 442be6f068d77ca9ffd69899cf0a3943c244548c
-F src/btree.c ac94b8a9b0fb042b0284c0db5575740d27872558
+F src/btree.c ed7c4825b0d30a8a77c43b468009cfa8a31c967a
 F src/btree.h d0736ebca4b6eafbdd823c46a8de574cea078211
 F src/btreeInt.h 4330c19b8314545fdb209cc77e2a57f6a5290e9c
 F src/build.c 94d0d6dfd1e706c480903fbdda2e77466f21b898
@@ -109,18 +109,18 @@ F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c d47e9bd495583dd31263d8fe55160a31eb600a3c
 F src/mutex_unix.c ff77650261a245035b79c5c8a174f4e05d3cae8a
 F src/mutex_w32.c d2c56fb81aca10af1577bdae2a4083eb2505f8ee
-F src/os.c 521a698a82f1fbd4f3717a8da72db6d819ff0a0c
-F src/os.h 143d122c04ef6cb0c914b97749a6aadd91a18a73
+F src/os.c 3b66834a5853ddaa83dfd6c146be9e4fc1864b98
+F src/os.h 4c880cf67437f323cd0c3ab2154f1d76babc12d3
 F src/os_common.h 98862f120ca6bf7a48ce8b16f158b77d00bc9d2f
 F src/os_os2.c 5b5f42180c5961b9d207748fda8f9aa0e70569c8
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 2c6a5507cd2c6522db9e70ca83db1ac72816ffd4
+F src/os_unix.c 8d4f5e952adcbd04276aa07bf8fc9865f3ba3bd3
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 697dd7ad0fcfca7911542ab0bc5a1834c705a9e4
+F src/os_win.c e638300494c492a460c76561a345dae1671c30f0
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c f38ad4de4dcc1b4083de1f9fd494173f5e8afadc
+F src/pager.c d246d888bbdbb97321238f5f71d2f6727b2cc9d8
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 363e548dafb52327face8d99757ab56a7b1c1b26
@@ -130,7 +130,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 4706a6115da1bdc09a2be5991168a6cc2c0df267
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 82089379833e361ba8a2ae65316a2173785300c0
-F src/sqlite.h.in 1b651cd409f3aed2e78e47f551b4a92f47dd57f4
+F src/sqlite.h.in 26b53ebd71d051bdefb6ba326f6742747c188cb7
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h bb126b074352ef0ee20399883172161baf5eead2
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
@@ -141,11 +141,11 @@ F src/test2.c 77b34303883b9d722c65a6879bb0163a400e3789
 F src/test3.c 73c1fd55d1ece61f295a6b9204fd97a139de86ae
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
-F src/test6.c 0f3894c2fd13d03e9903a88820d318123dbeb536
+F src/test6.c a9fc983d32d6f262eab300d742e49ff239b0bdbd
 F src/test7.c ae24ba989ecc2dc600d93c6311191b5d0c596f2b
 F src/test8.c f113aa3723a52113d0fa7c28155ecd37e7e04077
 F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
-F src/test_async.c 70eb7a4366c3410f558745f4a19b38bcfb9992a8
+F src/test_async.c c5ea222c2bb0c3c33ab910d1b82622655dd50684
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c 6fb459214b27952b143f45e35200d94096d54cc6
@@ -153,7 +153,7 @@ F src/test_hexio.c 94a1efec4b19311eb7c4dc40e8496a3d8eadf18a
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c c34e7696dc4a5150c82452be28b87c7e38ba15ad
 F src/test_md5.c 34599caee5b1c73dcf86ca31f55846fab8c19ef7
-F src/test_onefile.c 22260e8de36d050f263088ad33bba107191d9e16
+F src/test_onefile.c d877baba46837587345933376c00c656f58d6fb6
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8cc51e0a817115c4eb667f7257a3f5a4a39d0a4a
-R b3d078ae916fc494191428062b49abff
+P ad3687b16e9420d8bbaa3a645aaf803813b36061
+R 47f0785310596c6f237d4e202feaacc9
 U danielk1977
-Z dc8a2b824ad51bca0b771b0a8a2897ba
+Z 83729562c61099b61142e11a997b9c6e

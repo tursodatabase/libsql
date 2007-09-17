@@ -990,9 +990,9 @@ static int asyncAccess(sqlite3_vfs *pAsyncVfs, const char *zName, int flags){
   return ret;
 }
 
-static int asyncGetTempname(sqlite3_vfs *pAsyncVfs, char *zBufOut){
+static int asyncGetTempname(sqlite3_vfs *pAsyncVfs, int nBufOut, char *zBufOut){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
-  return pVfs->xGetTempname(pVfs, zBufOut);
+  return pVfs->xGetTempname(pVfs, nBufOut, zBufOut);
 }
 
 /*
@@ -1001,11 +1001,12 @@ static int asyncGetTempname(sqlite3_vfs *pAsyncVfs, char *zBufOut){
 static int asyncFullPathname(
   sqlite3_vfs *pAsyncVfs, 
   const char *zPath, 
+  int nPathOut,
   char *zPathOut
 ){
   int rc;
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
-  rc = sqlite3OsFullPathname(pVfs, zPath, zPathOut);
+  rc = sqlite3OsFullPathname(pVfs, zPath, nPathOut, zPathOut);
 
   /* Because of the way intra-process file locking works, this backend
   ** needs to return a canonical path. The following block assumes the

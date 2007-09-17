@@ -2474,7 +2474,7 @@ static int unixAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
 ** by the calling process and must be big enough to hold at least
 ** pVfs->mxPathname bytes.
 */
-static int unixGetTempname(sqlite3_vfs *pVfs, char *zBuf){
+static int unixGetTempname(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   static const char *azDirs[] = {
      0,
      "/var/tmp",
@@ -2507,6 +2507,7 @@ static int unixGetTempname(sqlite3_vfs *pVfs, char *zBuf){
   }
   do{
     assert( pVfs->mxPathname==MAX_PATHNAME );
+    assert( nBuf>=MAX_PATHNAME );
     sqlite3_snprintf(MAX_PATHNAME-17, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX, zDir);
     j = strlen(zBuf);
     sqlite3Randomness(15, &zBuf[j]);
@@ -2528,7 +2529,12 @@ static int unixGetTempname(sqlite3_vfs *pVfs, char *zBuf){
 ** (in this case, MAX_PATHNAME bytes). The full-path is written to
 ** this buffer before returning.
 */
-static int unixFullPathname(sqlite3_vfs *pVfs, const char *zPath, char *zOut){
+static int unixFullPathname(
+  sqlite3_vfs *pVfs,            /* Pointer to vfs object */
+  const char *zPath,            /* Possibly relative input path */
+  int nOut,                     /* Size of output buffer in bytes */
+  char *zOut                    /* Output buffer */
+){
 
   /* It's odd to simulate an io-error here, but really this is just
   ** using the io-error infrastructure to test that SQLite handles this

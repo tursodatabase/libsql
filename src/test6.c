@@ -568,13 +568,18 @@ static int cfAccess(sqlite3_vfs *pCfVfs, const char *zPath, int flags){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
   return pVfs->xAccess(pVfs, zPath, flags);
 }
-static int cfGetTempname(sqlite3_vfs *pCfVfs, char *zBufOut){
+static int cfGetTempname(sqlite3_vfs *pCfVfs, int nBufOut, char *zBufOut){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-  return pVfs->xGetTempname(pVfs, zBufOut);
+  return pVfs->xGetTempname(pVfs, nBufOut, zBufOut);
 }
-static int cfFullPathname(sqlite3_vfs *pCfVfs, const char *zPath, char *zPathOut){
+static int cfFullPathname(
+  sqlite3_vfs *pCfVfs, 
+  const char *zPath, 
+  int nPathOut,
+  char *zPathOut
+){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-  return pVfs->xFullPathname(pVfs, zPath, zPathOut);
+  return pVfs->xFullPathname(pVfs, zPath, nPathOut, zPathOut);
 }
 static void *cfDlOpen(sqlite3_vfs *pCfVfs, const char *zPath){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
