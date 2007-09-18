@@ -1,5 +1,5 @@
-C Remove\sunneeded\spSchema\sfield\sfrom\sthe\sExpr\sstructure.\s(CVS\s4434)
-D 2007-09-18T15:55:07
+C Add\sdisabled\stest\scases\sfor\sticket\s#2652.\s\sWe\swill\senable\sthese\stest\scases\nafter\s#2652\sis\sfixed.\s\sThe\sfix\swill\sbe\sdifficult\sand\swill\sprobably\stake\na\swhile.\s\sOn\sthe\sother\shand,\scorrelated\saggregate\squeries\shave\snever\nworked\sin\sSQLite\sand\sthe\sproblem\sis\sjust\snow\scoming\sto\slight,\sso\sit\sis\nprobably\snot\sa\spressing\sissue.\s(CVS\s4435)
+D 2007-09-18T16:53:53
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -419,7 +419,7 @@ F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test 688fe59ea7b4eabf62b955447aa6cc3249d69d7d
 F test/sqllimits1.test 2495508114bd84f6fc9ece34d5a7bb3dc69359bc
-F test/subquery.test ae324ee928c5fb463a3ce08a8860d6e7f1ca5797
+F test/subquery.test 8203f85db56ba022a57a0589890090c8feed4e59
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test d36c864a238e1f51e7829af660906f05d47b5e32
 F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8b29f5fbfc723cdf67cf3410cd01f7c17ea39a4b
-R c3880261fcbeb041d8dcc6ffc4cf831e
+P b2d605a2714245febb316a24edc7a076e21a3849
+R e6b647dc9ed6ae5366e798a233d9f71a
 U drh
-Z 7b960caa2f9eed42bfce40d8a538e199
+Z 4b521139eec9fe1b7735660703f3a0ef

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing correlated subqueries
 #
-# $Id: subquery.test,v 1.14 2006/01/17 09:35:02 danielk1977 Exp $
+# $Id: subquery.test,v 1.15 2007/09/18 16:53:53 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -417,8 +417,78 @@ do_test subquery-6.4 {
   set callcnt
 } {1}
 
+if 0 {   #############  disable until we get #2652 fixed
+# Ticket #2652.  Allow aggregate functions of outer queries inside
+# a non-aggregate subquery.
+#
+do_test subquery-7.1 {
+  execsql {
+    CREATE TABLE t7(c7);
+    INSERT INTO t7 VALUES(1);
+    INSERT INTO t7 VALUES(2);
+    INSERT INTO t7 VALUES(3);
+    CREATE TABLE t8(c8);
+    INSERT INTO t8 VALUES(100);
+    INSERT INTO t8 VALUES(200);
+    INSERT INTO t8 VALUES(300);
+    CREATE TABLE t9(c9);
+    INSERT INTO t9 VALUES(10000);
+    INSERT INTO t9 VALUES(20000);
+    INSERT INTO t9 VALUES(30000);
 
-
-
+    SELECT (SELECT c7+c8 FROM t7) FROM t8;
+  }
+} {101 201 301}
+do_test subquery-7.2 {
+  execsql {
+    SELECT (SELECT max(c7)+c8 FROM t7) FROM t8;
+  }
+} {103 203 303}
+do_test subquery-7.3 {
+  execsql {
+    SELECT (SELECT c7+max(c8) FROM t8) FROM t7
+  }
+} {301}
+do_test subquery-7.4 {
+  execsql {
+    SELECT (SELECT max(c7)+max(c8) FROM t8) FROM t7
+  }
+} {303}
+do_test subquery-7.5 {
+  execsql {
+    SELECT (SELECT c8 FROM t8 WHERE rowid=max(c7)) FROM t7
+  }
+} {300}
+do_test subquery-7.6 {
+  execsql {
+    SELECT (SELECT (SELECT max(c7+c8+c9) FROM t9) FROM t8) FROM t7
+  }
+} {30101 30102 30103}
+do_test subquery-7.7 {
+  execsql {
+    SELECT (SELECT (SELECT c7+max(c8+c9) FROM t9) FROM t8) FROM t7
+  }
+} {30101 30102 30103}
+do_test subquery-7.8 {
+  execsql {
+    SELECT (SELECT (SELECT max(c7)+c8+c9 FROM t9) FROM t8) FROM t7
+  }
+} {10103}
+do_test subquery-7.9 {
+  execsql {
+    SELECT (SELECT (SELECT c7+max(c8)+c9 FROM t9) FROM t8) FROM t7
+  }
+} {10301 10302 10303}
+do_test subquery-7.10 {
+  execsql {
+    SELECT (SELECT (SELECT c7+c8+max(c9) FROM t9) FROM t8) FROM t7
+  }
+} {30101 30102 30103}
+do_test subquery-7.11 {
+  execsql {
+    SELECT (SELECT (SELECT max(c7)+max(c8)+max(c9) FROM t9) FROM t8) FROM t7
+  }
+} {30303}
+}  ;############# Disabled
 
 finish_test
