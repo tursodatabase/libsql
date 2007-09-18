@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.608 2007/09/03 15:19:35 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.609 2007/09/18 15:55:07 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -736,7 +736,7 @@ struct Table {
   int nModuleArg;           /* Number of arguments to the module */
   char **azModuleArg;       /* Text of all module args. [0] is module name */
 #endif
-  Schema *pSchema;
+  Schema *pSchema;          /* Schema that contains this table */
 };
 
 /*
@@ -1015,7 +1015,7 @@ struct Expr {
   Select *pSelect;       /* When the expression is a sub-select.  Also the
                          ** right side of "<expr> IN (<select>)" */
   Table *pTab;           /* Table for OP_Column expressions. */
-  Schema *pSchema;
+/*  Schema *pSchema; */
 #if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
   int nHeight;           /* Height of the tree headed by this node */
 #endif
@@ -1746,7 +1746,7 @@ int sqlite3JoinType(Parse*, Token*, Token*, Token*);
 void sqlite3CreateForeignKey(Parse*, ExprList*, Token*, ExprList*, int);
 void sqlite3DeferForeignKey(Parse*, int);
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  void sqlite3AuthRead(Parse*,Expr*,SrcList*);
+  void sqlite3AuthRead(Parse*,Expr*,Schema*,SrcList*);
   int sqlite3AuthCheck(Parse*,int, const char*, const char*, const char*);
   void sqlite3AuthContextPush(Parse*, AuthContext*, const char*);
   void sqlite3AuthContextPop(AuthContext*);

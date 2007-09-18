@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.312 2007/09/01 18:24:55 danielk1977 Exp $
+** $Id: expr.c,v 1.313 2007/09/18 15:55:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1014,6 +1014,7 @@ static int lookupName(
   struct SrcList_item *pItem;       /* Use for looping over pSrcList items */
   struct SrcList_item *pMatch = 0;  /* The matching pSrcList item */
   NameContext *pTopNC = pNC;        /* First namecontext in the list */
+  Schema *pSchema = 0;              /* Schema of the expression */
 
   assert( pColumnToken && pColumnToken->z ); /* The Z in X.Y.Z cannot be NULL */
   zDb = sqlite3NameFromToken(db, pDbToken);
@@ -1052,7 +1053,7 @@ static int lookupName(
         }
         if( 0==(cntTab++) ){
           pExpr->iTable = pItem->iCursor;
-          pExpr->pSchema = pTab->pSchema;
+          pSchema = pTab->pSchema;
           pMatch = pItem;
         }
         for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
@@ -1062,7 +1063,7 @@ static int lookupName(
             cnt++;
             pExpr->iTable = pItem->iCursor;
             pMatch = pItem;
-            pExpr->pSchema = pTab->pSchema;
+            pSchema = pTab->pSchema;
             /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
             pExpr->iColumn = j==pTab->iPKey ? -1 : j;
             pExpr->affinity = pTab->aCol[j].affinity;
@@ -1116,7 +1117,7 @@ static int lookupName(
         int iCol;
         Column *pCol = pTab->aCol;
 
-        pExpr->pSchema = pTab->pSchema;
+        pSchema = pTab->pSchema;
         cntTab++;
         for(iCol=0; iCol < pTab->nCol; iCol++, pCol++) {
           if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
@@ -1263,7 +1264,7 @@ lookupname_end_2:
   sqlite3_free(zCol);
   if( cnt==1 ){
     assert( pNC!=0 );
-    sqlite3AuthRead(pParse, pExpr, pNC->pSrcList);
+    sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
     if( pMatch && !pMatch->pSelect ){
       pExpr->pTab = pMatch->pTab;
     }

@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.28 2007/09/01 18:24:55 danielk1977 Exp $
+** $Id: auth.c,v 1.29 2007/09/18 15:55:07 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -105,6 +105,7 @@ static void sqliteAuthBadReturnCode(Parse *pParse, int rc){
 void sqlite3AuthRead(
   Parse *pParse,        /* The parser context */
   Expr *pExpr,          /* The expression to check authorization on */
+  Schema *pSchema,      /* The schema of the expression */
   SrcList *pTabList     /* All table that pExpr might refer to */
 ){
   sqlite3 *db = pParse->db;
@@ -118,7 +119,7 @@ void sqlite3AuthRead(
 
   if( db->xAuth==0 ) return;
   if( pExpr->op!=TK_COLUMN ) return;
-  iDb = sqlite3SchemaToIndex(pParse->db, pExpr->pSchema);
+  iDb = sqlite3SchemaToIndex(pParse->db, pSchema);
   if( iDb<0 ){
     /* An attempt to read a column out of a subquery or other
     ** temporary table. */
