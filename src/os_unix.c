@@ -2290,7 +2290,7 @@ static int fillInUnixFile(
 */
 static int openDirectory(const char *zFilename, int *pFd){
   int ii;
-  int fd;
+  int fd = -1;
   char zDirname[MAX_PATHNAME+1];
 
   sqlite3_snprintf(MAX_PATHNAME, zDirname, "%s", zFilename);
@@ -2298,7 +2298,7 @@ static int openDirectory(const char *zFilename, int *pFd){
   if( ii>0 ){
     zDirname[ii] = '\0';
     fd = open(zDirname, O_RDONLY|O_BINARY, 0);
-    if( fd>0 ){
+    if( fd>=0 ){
 #ifdef FD_CLOEXEC
       fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
 #endif
@@ -2306,7 +2306,7 @@ static int openDirectory(const char *zFilename, int *pFd){
     }
   }
   *pFd = fd;
-  return (fd>0?SQLITE_OK:SQLITE_CANTOPEN);
+  return (fd>=0?SQLITE_OK:SQLITE_CANTOPEN);
 }
 
 /*
