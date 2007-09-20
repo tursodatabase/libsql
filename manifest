@@ -1,5 +1,5 @@
-C fix\stypo\sin\scomment\s(CVS\s4438)
-D 2007-09-20T11:32:18
+C get\srid\sof\sremaining\sGCC\s4.3\s-Wall\scompiler\swarnings\sby\sinitializing\stwo\svariables\sand\sone\sstructure\sproperly\s(although\sthe\scode\spath\swas\salready\srather\ssafe)\s(CVS\s4439)
+D 2007-09-20T11:34:18
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -503,7 +503,7 @@ F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/zeroblob.test 7d1854ea79d048e023e5f2e38106a7e99a17435c
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/lemon.c 0ab4cca47950da4dc04cf957db0c0ed54b464aa9
+F tool/lemon.c 1f8c0ee267cd8224bb6c979ca3b7cf36299c4c78
 F tool/lempar.c 8f998bf8d08e2123149c2cc5d0597cd5d5d1abdd
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 27fe1288336665c4d47c5d7ddcbeacc451ec4a9d
-R 64f1097aed00a79a87dd233f0bca675a
+P c2ac43a4ef674c0202d5bd1ec57fc25c89d0554e
+R b948484588679e72e10618f1789eb46d
 U rse
-Z 6f6d5df99d60b533b39077f06f479aff
+Z 4b5325865a92adc308765583c725dbd7

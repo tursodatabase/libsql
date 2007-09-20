@@ -2388,9 +2388,9 @@ to follow the previous rule.");
 static void preprocess_input(char *z){
   int i, j, k, n;
   int exclude = 0;
-  int start;
+  int start = 0;
   int lineno = 1;
-  int start_lineno;
+  int start_lineno = 1;
   for(i=0; z[i]; i++){
     if( z[i]=='\n' ) lineno++;
     if( z[i]!='%' || (i>0 && z[i-1]!='\n') ) continue;
@@ -2448,6 +2448,7 @@ struct lemon *gp;
   char *cp, *nextcp;
   int startline = 0;
 
+  memset(&ps, '\0', sizeof(ps));
   ps.gp = gp;
   ps.filename = gp->filename;
   ps.errorcnt = 0;
