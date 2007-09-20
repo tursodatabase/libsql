@@ -1,5 +1,5 @@
-C Cleanup\sthe\shash\sfunctions\sin\sFTS3.\s(CVS\s4440)
-D 2007-09-20T12:53:28
+C Replace\s"i64"\swith\s"sqlite3_int64"\sin\sthe\sw32\sVFS.\s(CVS\s4441)
+D 2007-09-20T14:39:24
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -118,7 +118,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 308bd8ad6977f66f608228cccaecc4cbc1a24693
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c e638300494c492a460c76561a345dae1671c30f0
+F src/os_win.c 99960c7b9dad8dab72e47068afb7941492bfeaac
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c d246d888bbdbb97321238f5f71d2f6727b2cc9d8
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d748694f8d9b14d98b6fe7ceb404754692761705
-R 8fa4ab546f014755f6bea9393d1cafc9
+P ac645c8f30aac0d98fc481260084c9bd3975a845
+R 35dd856dee6b05cd6c330ea61be3221e
 U drh
-Z ed8c3b918a22b61a19882d5a8de5f03a
+Z d53eea7e4130e4187dcb9f3c7d105bcc

@@ -290,7 +290,7 @@ struct tm *__cdecl localtime(const time_t *t)
   static struct tm y;
   FILETIME uTm, lTm;
   SYSTEMTIME pTm;
-  i64 t64;
+  sqlite3_int64 t64;
   t64 = *t;
   t64 = (t64 + 11644473600)*10000000;
   uTm.dwLowDateTime = t64 & 0xFFFFFFFF;
@@ -700,7 +700,7 @@ static int winWrite(
 /*
 ** Truncate an open file to a specified size
 */
-static int winTruncate(sqlite3_file *id, i64 nByte){
+static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
   LONG upperBits = (nByte>>32) & 0x7fffffff;
   LONG lowerBits = nByte & 0xffffffff;
   winFile *pFile = (winFile*)id;
