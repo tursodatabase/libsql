@@ -2451,7 +2451,7 @@ static int unixDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 ** Otherwise return 0.
 */
 static int unixAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
-  int amode;
+  int amode = 0;
   switch( flags ){
     case SQLITE_ACCESS_EXISTS:
       amode = F_OK;

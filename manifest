@@ -1,5 +1,5 @@
-C Add\sdisabled\stest\scases\sfor\sticket\s#2652.\s\sWe\swill\senable\sthese\stest\scases\nafter\s#2652\sis\sfixed.\s\sThe\sfix\swill\sbe\sdifficult\sand\swill\sprobably\stake\na\swhile.\s\sOn\sthe\sother\shand,\scorrelated\saggregate\squeries\shave\snever\nworked\sin\sSQLite\sand\sthe\sproblem\sis\sjust\snow\scoming\sto\slight,\sso\sit\sis\nprobably\snot\sa\spressing\sissue.\s(CVS\s4435)
-D 2007-09-18T16:53:53
+C The\scode\sis\scorrect\sas\sit\scontains\san\sassert(3)\sin\sthe\s"default"\sswitch\ncase,\sbut\sGCC\s4.3\sis\snot\sable\sto\sdetect\sthis\sand\sinstead\scomplains\nwith\s"warning:\s'amode'\smay\sbe\sused\suninitialized\sin\sthis\sfunction".\nHence,\salthough\sthe\sassert(3)\salready\sprotects\sthe\scode\shere,\sget\srid\sof\nthis\scompiler\swarning\sby\sdoing\sa\ssimple\sinitialization\sof\sthe\s"amode"\nvariable.\s(CVS\s4436)
+D 2007-09-20T08:38:15
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -116,7 +116,7 @@ F src/os_os2.c 5b5f42180c5961b9d207748fda8f9aa0e70569c8
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 8d4f5e952adcbd04276aa07bf8fc9865f3ba3bd3
+F src/os_unix.c 89283ae67b4830c5d62adb8dec5b430dc1a407d1
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c e638300494c492a460c76561a345dae1671c30f0
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b2d605a2714245febb316a24edc7a076e21a3849
-R e6b647dc9ed6ae5366e798a233d9f71a
-U drh
-Z 4b521139eec9fe1b7735660703f3a0ef
+P 5c41619e292699c72231cff10e26dfbe9a363a00
+R e4223310be7efe080ee8a56ed8385f11
+U rse
+Z 9fd1174c608fad45cd8dd99f9bda9af0
