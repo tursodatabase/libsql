@@ -1,5 +1,5 @@
-C Fixes\sfor\suninitialized\svariables.\s\sTickets\s#2658\sand\s#2659.\s(CVS\s4437)
-D 2007-09-20T10:02:54
+C fix\stypo\sin\scomment\s(CVS\s4438)
+D 2007-09-20T11:32:18
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -172,7 +172,7 @@ F src/vdbeaux.c e35c851e3c1d18a7b90dbe35ae5e0fc9419a4ed4
 F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 246d434fa60bde6553490eb686adfd86adcd6712
-F src/vtab.c 243f41bd94a710e8d1eb30f0abfe6d0889538e71
+F src/vtab.c f819d55ef638d45e09ce00009d435da8bf16f528
 F src/where.c 44042c8b9d0d054cc318c3a0df052215ebf49d2d
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 91831ff2922666b39d8f4ba448982c6763030633
-R b3e2e386d4621bf8e0cec5124924d72e
-U drh
-Z bfc1344953fd378c8e37f74827865187
+P 27fe1288336665c4d47c5d7ddcbeacc451ec4a9d
+R 64f1097aed00a79a87dd233f0bca675a
+U rse
+Z 6f6d5df99d60b533b39077f06f479aff
