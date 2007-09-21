@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.609 2007/09/18 15:55:07 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.610 2007/09/21 04:28:16 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -794,7 +794,7 @@ struct FKey {
 };
 
 /*
-** SQLite supports many different ways to resolve a contraint
+** SQLite supports many different ways to resolve a constraint
 ** error.  ROLLBACK processing means that a constraint violation
 ** causes the operation in process to fail and for the current transaction
 ** to be rolled back.  ABORT processing means the operation in process
