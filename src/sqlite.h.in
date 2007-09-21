@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.262 2007/09/21 04:27:03 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.263 2007/09/21 12:43:17 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3083,24 +3083,24 @@ struct sqlite3_module {
 */
 struct sqlite3_index_info {
   /* Inputs */
-  const int nConstraint;     /* Number of entries in aConstraint */
-  const struct sqlite3_index_constraint {
+  int nConstraint;           /* Number of entries in aConstraint */
+  struct sqlite3_index_constraint {
      int iColumn;              /* Column on left-hand side of constraint */
      unsigned char op;         /* Constraint operator */
      unsigned char usable;     /* True if this constraint is usable */
      int iTermOffset;          /* Used internally - xBestIndex should ignore */
-  } *const aConstraint;      /* Table of WHERE clause constraints */
-  const int nOrderBy;        /* Number of terms in the ORDER BY clause */
-  const struct sqlite3_index_orderby {
+  } *aConstraint;            /* Table of WHERE clause constraints */
+  int nOrderBy;              /* Number of terms in the ORDER BY clause */
+  struct sqlite3_index_orderby {
      int iColumn;              /* Column number */
      unsigned char desc;       /* True for DESC.  False for ASC. */
-  } *const aOrderBy;         /* The ORDER BY clause */
+  } *aOrderBy;               /* The ORDER BY clause */
 
   /* Outputs */
   struct sqlite3_index_constraint_usage {
     int argvIndex;           /* if >0, constraint is part of argv to xFilter */
     unsigned char omit;      /* Do not code a test for this constraint */
-  } *const aConstraintUsage;
+  } *aConstraintUsage;
   int idxNum;                /* Number used to identify the index */
   char *idxStr;              /* String, possibly obtained from sqlite3_malloc */
   int needToFreeIdxStr;      /* Free idxStr using sqlite3_free() if true */
