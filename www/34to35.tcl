@@ -1,7 +1,7 @@
 #
 # Run this TCL script to generate HTML for the goals.html file.
 #
-set rcsid {$Id: 34to35.tcl,v 1.3 2007/09/03 20:32:45 drh Exp $}
+set rcsid {$Id: 34to35.tcl,v 1.4 2007/10/01 13:54:11 drh Exp $}
 source common.tcl
 header {SQLite Changes From Version 3.4.2 To 3.5.0}
 
@@ -551,11 +551,11 @@ typedef struct sqlite3_io_methods sqlite3_io_methods;
 struct sqlite3_io_methods {
   int iVersion;
   int (*xClose)(sqlite3_file*);
-  int (*xRead)(sqlite3_file*, void*, int iAmt, sqlite_int64 iOfst);
-  int (*xWrite)(sqlite3_file*, const void*, int iAmt, sqlite_int64 iOfst);
-  int (*xTruncate)(sqlite3_file*, sqlite_int64 size);
+  int (*xRead)(sqlite3_file*, void*, int iAmt, sqlite3_int64 iOfst);
+  int (*xWrite)(sqlite3_file*, const void*, int iAmt, sqlite3_int64 iOfst);
+  int (*xTruncate)(sqlite3_file*, sqlite3_int64 size);
   int (*xSync)(sqlite3_file*, int flags);
-  int (*xFileSize)(sqlite3_file*, sqlite_int64 *pSize);
+  int (*xFileSize)(sqlite3_file*, sqlite3_int64 *pSize);
   int (*xLock)(sqlite3_file*, int);
   int (*xUnlock)(sqlite3_file*, int);
   int (*xCheckReservedLock)(sqlite3_file*);
