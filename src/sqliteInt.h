@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.611 2007/10/01 14:30:15 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.612 2007/10/01 17:47:00 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -59,13 +59,32 @@
   extern int sqlite3MAX_LIKE_PATTERN_LENGTH;
 #endif
 
+
+/*
+** The SQLITE_THREADSAFE macro must be defined as either 0 or 1.
+** Older versions of SQLite used an optional THREADSAFE macro.
+** We support that for legacy
+*/
+#if !defined(SQLITE_THREADSAFE)
+#if defined(THREADSAFE)
+# define SQLITE_THREADSAFE THREADSAFE
+#else
+# define SQLITE_THREADSAFE 1
+#endif
+#endif
+
 /*
 ** We need to define _XOPEN_SOURCE as follows in order to enable
 ** recursive mutexes on most unix systems.  But Mac OS X is different.
 ** The _XOPEN_SOURCE define causes problems for Mac OS X we are told,
 ** so it is omitted there.  See ticket #2673.
+**
+** Later we learn that _XOPEN_SOURCE is poorly or incorrectly
+** implemented on some systems.  So we avoid defining it at all
+** if it is already defined or if it is unneeded because we are
+** not doing a threadsafe build.  Ticket #2681.
 */
-#ifndef __MACOS__
+#if !defined(_XOPEN_SOURCE) && !defined(__MACOS__) && SQLITE_THREADSAFE
 #  define _XOPEN_SOURCE 500  /* Needed to enable pthread recursive mutexes */
 #endif
 
@@ -82,19 +101,6 @@
 */
 #if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
 # define NDEBUG 1
-#endif
-
-/*
-** The SQLITE_THREADSAFE macro must be defined as either 0 or 1.
-** Older versions of SQLite used an optional THREADSAFE macro.
-** We support that for legacy
-*/
-#if !defined(SQLITE_THREADSAFE)
-#if defined(THREADSAFE)
-# define SQLITE_THREADSAFE THREADSAFE
-#else
-# define SQLITE_THREADSAFE 1
-#endif
 #endif
 
 /*
