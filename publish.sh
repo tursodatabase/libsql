@@ -42,9 +42,9 @@ rm -f ../doc/sqlite-source-$VERSW.zip
 zip ../doc/sqlite-source-$VERSW.zip *
 cd ..
 make sqlite3.c
-cp tsrc/sqlite3.h .
+cp tsrc/sqlite3.h tsrc/sqlite3ext.h .
 pwd
-zip doc/sqlite-amalgamation-$VERSW.zip sqlite3.c sqlite3.h
+zip doc/sqlite-amalgamation-$VERSW.zip sqlite3.c sqlite3.h sqlite3ext.h
 
 # Build the sqlite.so and tclsqlite.so shared libraries
 # under Linux
