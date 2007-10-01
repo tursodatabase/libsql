@@ -1,5 +1,5 @@
-C Remove\s"const"\skeywords\sfrom\sthe\ssqlite3_index_info\sstructure\sdefinition.\nThe\suse\sof\sthis\skeyword\sis\ssuspected\sto\sbe\scausing\sproblems\sfor\ssome\ncompilers.\s(CVS\s4445)
-D 2007-09-21T12:43:17
+C Add\stext\sto\sthe\sload_extension\sSQL\sfunction\sdocumentation\sthat\nexplains\slimitations\sin\sthe\suse\sof\sthat\sfunction.\s\sTicket\s#2672.\s(CVS\s4446)
+D 2007-10-01T13:45:04
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -556,7 +556,7 @@ F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
 F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
 F www/index.tcl 087ec69ed7e28658e750a9ed38161c7f8344414c
 F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
-F www/lang.tcl bb73892bf99c81658ec46d0c7a87e54cd21d435b
+F www/lang.tcl df99415fcac649e71566fe5b279615799b85ff67
 F www/limits.tcl 9035eb73e814ccb298595fd57670dec817533616
 F www/lockingv3.tcl e52345bd20323bef6146bfce18ae0829b2b7c87d
 F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0c1e6f69cd55ced4af5dcfbeff04820ba0d5b051
-R d221fe17dbb1bc5aa1e2a7f9106dccf9
+P 005d780de6e9e377ee296ff576e58cf1b512f245
+R e5c5bdab974bf15dec956bf9d58e16f9
 U drh
-Z 4f0e3e4d1c3098ab0e3fee9b7e54dbbb
+Z ce44966a19ab56de0eaeaf617f455506

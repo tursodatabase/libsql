@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.133 2007/08/09 00:00:26 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.134 2007/10/01 13:45:04 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1342,6 +1342,16 @@ file named <i>X</i> using the entry point <i>Y</i>.  The result
 is a NULL.  If <i>Y</i> is omitted then the default entry point
 of <b>sqlite3_extension_init</b> is used.  This function raises
 an exception if the extension fails to load or initialize correctly.
+
+<p>This function will fail if the extension attempts to modify
+or delete a SQL function or collating sequence.  The
+extension can add new functions or collating sequences, but cannot
+modify or delete existing functions or collating sequences because
+those functions and/or collating sequences might be used elsewhere
+in the currently running SQL statement.  To load an extension that
+changes or deletes functions or collating sequences, use the
+<a href="capi3ref.html#sqlite3_load_extension">sqlite3_load_extension()</a>
+C-language API.</p>
 </tr>
 
 <tr>
