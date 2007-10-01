@@ -1,5 +1,5 @@
-C Update\sthe\sbuild\sprocess\sso\sthat\sit\sincludes\ssqlite3ext.h\swith\sthe\namalgamation\sZIP\sarchive.\s\sTicket\s#2678.\s(CVS\s4449)
-D 2007-10-01T13:59:49
+C Omit\sthe\s_XOPEN_SOURCE\s500\sdefine\son\sMac\sOS-X.\s\sTicket\s#2673\s(CVS\s4450)
+D 2007-10-01T14:30:15
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -132,7 +132,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 82089379833e361ba8a2ae65316a2173785300c0
 F src/sqlite.h.in 60d1a884f49304787b07864ceba31e6df93a5a7c
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
-F src/sqliteInt.h ab7d3169cbfa911335fd94a61f22f052a9f5adeb
+F src/sqliteInt.h cb503be6d432493c877674e129369d928441bc0a
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 9659ec914abfdb35e184eee908d07eba11a39018
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f7a2647033817c73f40010e145e4c29173a55689
-R 6d5b9658c78173a7eca5c77bdddf5d48
+P 6232ee6750562b2cb913af4bb26111a097dd1192
+R b232fb71e14846726c7d6a58e91d11d1
 U drh
-Z 430256babf97efbbcb65847b3651c78e
+Z 5ca45cfd76a3eb06a9dad300fffb2aa0

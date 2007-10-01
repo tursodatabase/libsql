@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.610 2007/09/21 04:28:16 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.611 2007/10/01 14:30:15 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -59,7 +59,15 @@
   extern int sqlite3MAX_LIKE_PATTERN_LENGTH;
 #endif
 
-#define _XOPEN_SOURCE 500  /* Needed to enable pthread recursive mutexes */
+/*
+** We need to define _XOPEN_SOURCE as follows in order to enable
+** recursive mutexes on most unix systems.  But Mac OS X is different.
+** The _XOPEN_SOURCE define causes problems for Mac OS X we are told,
+** so it is omitted there.  See ticket #2673.
+*/
+#ifndef __MACOS__
+#  define _XOPEN_SOURCE 500  /* Needed to enable pthread recursive mutexes */
+#endif
 
 #if defined(SQLITE_TCL) || defined(TCLSH)
 # include <tcl.h>
