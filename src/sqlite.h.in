@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.263 2007/09/21 12:43:17 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.264 2007/10/01 13:50:32 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1482,7 +1482,7 @@ int sqlite3_open_v2(
 ** most recent API call succeeded, the return value from sqlite3_errcode()
 ** is undefined. 
 **
-** The sqlite3_errmsg() and sqlite3_errmsg16() return English-langauge
+** The sqlite3_errmsg() and sqlite3_errmsg16() return English-language
 ** text that describes the error, as either UTF8 or UTF16 respectively.
 ** Memory to hold the error message string is managed internally.  The 
 ** string may be overwritten or deallocated by subsequent calls to SQLite
@@ -2897,7 +2897,7 @@ int sqlite3_table_column_metadata(
   char const **pzCollSeq,     /* OUTPUT: Collation sequence name */
   int *pNotNull,              /* OUTPUT: True if NOT NULL constraint exists */
   int *pPrimaryKey,           /* OUTPUT: True if column part of PK */
-  int *pAutoinc               /* OUTPUT: True if colums is auto-increment */
+  int *pAutoinc               /* OUTPUT: True if column is auto-increment */
 );
 
 /*
@@ -3054,7 +3054,7 @@ struct sqlite3_module {
 ** is usable) and false if it cannot.
 **
 ** The optimizer automatically inverts terms of the form "expr OP column"
-** and makes other simplificatinos to the WHERE clause in an attempt to
+** and makes other simplifications to the WHERE clause in an attempt to
 ** get as many WHERE clause terms into the form shown above as possible.
 ** The aConstraint[] array only reports WHERE clause terms in the correct
 ** form that refer to the particular virtual table being queried.
@@ -3143,7 +3143,7 @@ int sqlite3_create_module_v2(
 /*
 ** Every module implementation uses a subclass of the following structure
 ** to describe a particular instance of the module.  Each subclass will
-** be taylored to the specific needs of the module implementation.   The
+** be tailored to the specific needs of the module implementation.   The
 ** purpose of this superclass is to define certain fields that are common
 ** to all module implementations.
 **
@@ -3209,7 +3209,7 @@ int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
 ** to be experimental.  The interface might change in incompatible ways.
 ** If this is a problem for you, do not use the interface at this time.
 **
-** When the virtual-table mechanism stablizes, we will declare the
+** When the virtual-table mechanism stabilizes, we will declare the
 ** interface fixed, support it indefinitely, and remove this comment.
 **
 ****** EXPERIMENTAL - subject to change without notice **************
