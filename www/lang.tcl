@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.134 2007/10/01 13:45:04 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.135 2007/10/01 17:45:40 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -311,6 +311,10 @@ and the ROLLBACK conflict resolution algorithm is specified.
 See the documentation on the <a href="#conflict">ON CONFLICT</a>
 clause for additional information about the ROLLBACK
 conflict resolution algorithm.
+</p>
+
+<p>
+END TRANSACTION is an alias for COMMIT.
 </p>
 
 <p>
