@@ -1,5 +1,5 @@
-C Additional\s#ifdefing\saround\s_XOPEN_SOURCE.\s\sTicket\s#2681.\s(CVS\s4452)
-D 2007-10-01T17:47:00
+C Use\slocal\svariables\sinstead\sof\s#defines\sfor\sthe\smutex\sname\sand\slength\sin\sOS/2's\ssqlite3_mutex_alloc().\s(CVS\s4453)
+D 2007-10-02T19:56:04
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -106,7 +106,7 @@ F src/mem1.c 1f85902b98b38bd8a8b0c24012933957256db13e
 F src/mem2.c b97b4662bf5902cbde0a849c4739e64ce7b07177
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
-F src/mutex_os2.c 07a2d5db7a6b1f6716dbb44dfaa79e9f24bcf20c
+F src/mutex_os2.c 7fe4773e98ed74a63b2e54fc557929eb155f6269
 F src/mutex_unix.c ff77650261a245035b79c5c8a174f4e05d3cae8a
 F src/mutex_w32.c d2c56fb81aca10af1577bdae2a4083eb2505f8ee
 F src/os.c 3b66834a5853ddaa83dfd6c146be9e4fc1864b98
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ebe3e6913c35bebb0e78dac995527d5da97a9377
-R cfc075825147a4ccdcc8d892e7e61dcc
-U drh
-Z fd115abb078ffce00ef35ed41bd4c589
+P eb5d78451ee2a5d8480537530f30fbb305bf7632
+R a8abd8d07626f709082a5e1aa7c6fdec
+U pweilbacher
+Z 73d6f9cab3860483d902ed77f0494d38
