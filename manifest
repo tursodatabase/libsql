@@ -1,5 +1,5 @@
-C Add\sautomatic\srecovery\sfrom\sthe\spager\s"error-state".\sAlso\sadd\sa\snew\serror\scode\s-\sSQLITE_IOERR_NOMEM.\s(CVS\s4454)
-D 2007-10-03T08:46:44
+C Fix\sa\sproblem\sin\stest\sscript\smalloc5.test.\s(CVS\s4455)
+D 2007-10-03T09:43:55
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -353,7 +353,7 @@ F test/malloc.test 17366a4f76e7aac14cd709e8209ef840cd497410
 F test/malloc2.test 1506ab3a4490b38b8850a6fa3e12591235179872
 F test/malloc3.test cf2efe9d16194276f227f34ac341019e013fb17d
 F test/malloc4.test f0e5e0f639f61e2776a6c3f5308f836b3ad8b3c7
-F test/malloc5.test b2fd56b369dd5884ad88edfaef41304393809125
+F test/malloc5.test 18f3f71756e775a17ce4d0c49d76fb0027dda066
 F test/malloc6.test d05fd71ef3c5983d10e0a6d728ea4a502a45a9e4
 F test/malloc7.test 0d71bb6520b99934b551fa36a9c591404aeaad61
 F test/malloc8.test addc27d907fec1af429551b95c72caa47fce2974
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 272959cc91d0c9299d6fca8a962eb563650af87b
-R e48ace1bd2100159c32ec15d9bfa3f76
+P 12eca32a6a3d68d5b20eed03afdffe7599e66014
+R ab778c4ccea4851cfb45b8ff8e4ecac9
 U danielk1977
-Z d1e46257f1f89b59b016148eed84362d
+Z 0b2e370c486d9ff351342955af404557

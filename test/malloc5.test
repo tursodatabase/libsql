@@ -12,7 +12,7 @@
 # This file contains test cases focused on the two memory-management APIs, 
 # sqlite3_soft_heap_limit() and sqlite3_release_memory().
 #
-# $Id: malloc5.test,v 1.16 2007/09/03 16:12:10 drh Exp $
+# $Id: malloc5.test,v 1.17 2007/10/03 09:43:55 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -214,7 +214,23 @@ do_test malloc5-4.2 {
   execsql {COMMIT;}
   set nMaxBytes [sqlite3_memory_highwater 1]
   puts -nonewline " (Highwater mark: $nMaxBytes) "
-  expr $nMaxBytes <= 100000
+
+  # We used to test ($nMaxBytes<100000), because the soft-heap-limit is
+  # 100000 bytes. But if an allocation that will exceed the 
+  # soft-heap-limit is requested from within the only pager instance in 
+  # the system, then there is no way to free memory and the limit has to 
+  # be exceeded. An exception is memory allocated to store actual page
+  # data (the code contains a special case for this).
+  #
+  # This is not a problem because all allocations apart from those
+  # used to store cached page data are both small and transient.
+  #
+  # Summary: the actual high-water mark for memory usage may be slightly 
+  # higher than the soft-heap-limit. The specific allocations that cause
+  # the problem are the calls to sqlite3_malloc() inserted into selected
+  # sqlite3OsXXX() functions in test builds.
+  #
+  expr $nMaxBytes <= 100100
 } {1}
 do_test malloc5-4.3 {
   # Check that the content of table abc is at least roughly as expected.
