@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sto\smalloc.test.\s(CVS\s4456)
-D 2007-10-03T15:02:40
+C Fix\sa\smemory\sleak\sthat\scould\soccur\sduring\serror-state\srecovery.\s(CVS\s4457)
+D 2007-10-03T15:22:26
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -120,7 +120,7 @@ F src/os_unix.c 308bd8ad6977f66f608228cccaecc4cbc1a24693
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 99960c7b9dad8dab72e47068afb7941492bfeaac
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 40381e1650e7acc7d594a236cea6514f0859993f
+F src/pager.c 0a92a08192785af79547b017cda45eb683b22552
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 363e548dafb52327face8d99757ab56a7b1c1b26
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 028ec36c71d6ac43c8f1cda77578d844c6955f68
-R e25e9198e045e9322e20cf6ddf2e312b
+P 7d3f0b149bd2b9c7c12aabb93d022c0ea26f0d74
+R 758b9cd7fcc1c70228ec040144239c4a
 U danielk1977
-Z 714be4396c475700cdae911b78c710f2
+Z 232289e1446c6deb39d7a5dfa3b4eda2
