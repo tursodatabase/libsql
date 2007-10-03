@@ -1,5 +1,5 @@
-C Fix\sa\ssyntax\serror\sthat\scomes\sup\swhen\smemory\sdebugging\sis\sdisabled.\s(CVS\s4462)
-D 2007-10-03T21:10:58
+C Get\sio.test\sto\swork\seven\sif\sauto_vacuum\sis\son\sby\sdefault\sand\swe\sare\nrunning\swith\sa\sreduced\smaximum\spage\ssize.\s(CVS\s4463)
+D 2007-10-03T21:18:20
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -329,7 +329,7 @@ F test/insert3.test 9a4ef3526fd3cca8b05278020ec3100448b4c677
 F test/insert4.test d7d256791e549de24e0a27a213405e1204e7a4dd
 F test/interrupt.test 81555fb0f8179bb2d0dc7151fd75428223f93cf2
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
-F test/io.test d497d43f4704e88e64c9e55c7e5edd8b5bcc6f5b
+F test/io.test a5923f1c45144d167e4faa8b16dc83348038eed0
 F test/ioerr.test 4b175825ed42b04f935e00f57cfb2a9f0c13de7d
 F test/ioerr2.test e3d52c40f43f9b61da9b38951a737e7b84ebae96
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a57b25a2e4127bb3d9dc83031db117664c10d4ea
-R 2814415d8c5ceda1568f0acd70d4d5fc
+P 96dd3c336b5bbf9da6ba9ace85dbe7c4b1ff2bcb
+R 97f2e979b587833fee0776ca26556089
 U drh
-Z 9551c2ee3c05c71709fa89fc90beaf8d
+Z 328ee6d4a8d802d30813c6252c44ec65
