@@ -1352,28 +1352,16 @@ int sqlite3VdbeHalt(Vdbe *p){
   ** transaction will be committed or rolled back as a result of the
   ** execution of this virtual machine. 
   **
-  ** Special errors:
+  ** If any of the following errors occur:
   **
-  **     If an SQLITE_NOMEM error has occured in a statement that writes to
-  **     the database, then either a statement or transaction must be rolled
-  **     back to ensure the tree-structures are in a consistent state. A
-  **     statement transaction is rolled back if one is open, otherwise the
-  **     entire transaction must be rolled back.
+  **     SQLITE_NOMEM
+  **     SQLITE_IOERR
+  **     SQLITE_FULL
+  **     SQLITE_INTERRUPT
   **
-  **     If an SQLITE_IOERR error has occured in a statement that writes to
-  **     the database, then the entire transaction must be rolled back. The
-  **     I/O error may have caused garbage to be written to the journal 
-  **     file. Were the transaction to continue and eventually be rolled 
-  **     back that garbage might end up in the database file.
-  **     
-  **     In both of the above cases, the Vdbe.errorAction variable is 
-  **     ignored. If the sqlite3.autoCommit flag is false and a transaction
-  **     is rolled back, it will be set to true.
-  **
-  ** Other errors:
-  **
-  ** No error:
-  **
+  ** Then the internal cache might have been left in an inconsistent
+  ** state.  We need to rollback the statement transaction, if there is
+  ** one, or the complete transaction if there is no statement transaction.
   */
 
   if( p->db->mallocFailed ){
@@ -1392,10 +1380,10 @@ int sqlite3VdbeHalt(Vdbe *p){
     /* Lock all btrees used by the statement */
     sqlite3BtreeMutexArrayEnter(&p->aMutex);
 
-    /* Check for one of the special errors - SQLITE_NOMEM or SQLITE_IOERR */
+    /* Check for one of the special errors */
     mrc = p->rc & 0xff;
-    isSpecialError = (
-        (mrc==SQLITE_NOMEM || mrc==SQLITE_IOERR || mrc==SQLITE_INTERRUPT)?1:0);
+    isSpecialError = mrc==SQLITE_NOMEM || mrc==SQLITE_IOERR
+                     || mrc==SQLITE_INTERRUPT || mrc==SQLITE_FULL ;
     if( isSpecialError ){
       /* This loop does static analysis of the query to see which of the
       ** following three categories it falls into:
@@ -1444,7 +1432,7 @@ int sqlite3VdbeHalt(Vdbe *p){
         if( p->rc==SQLITE_IOERR_BLOCKED && isStatement ){
           xFunc = sqlite3BtreeRollbackStmt;
           p->rc = SQLITE_BUSY;
-        } else if( p->rc==SQLITE_NOMEM && isStatement ){
+        } else if( (p->rc==SQLITE_NOMEM || p->rc==SQLITE_FULL) && isStatement ){
           xFunc = sqlite3BtreeRollbackStmt;
         }else{
           /* We are forced to roll back the active transaction. Before doing

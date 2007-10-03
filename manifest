@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sthat\scould\soccur\sduring\serror-state\srecovery.\s(CVS\s4457)
-D 2007-10-03T15:22:26
+C Rollback\sthe\stransaction\sif\san\sSQLITE_FULL\serror\sis\sencountered.\nThis\sis\sa\spreliminary\sfix\sfor\sticket\s#2686.\s\sMore\stesting\sand\nanalysis\sis\sneeded\sbefore\swe\sclose\sthe\sticket.\s(CVS\s4458)
+D 2007-10-03T15:30:52
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -168,7 +168,7 @@ F src/vdbe.c b6c53921512496ef4d7c4f571feb73b7a495db35
 F src/vdbe.h 03a0fa17f6753a24d6cb585d7a362944a2c115aa
 F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
 F src/vdbeapi.c 9c2d681b75e4b90c28b9dd01a3f2e5905267f884
-F src/vdbeaux.c e35c851e3c1d18a7b90dbe35ae5e0fc9419a4ed4
+F src/vdbeaux.c 9bb437cb69ae45d7ae2acfcb83264d8bd15b39cc
 F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 246d434fa60bde6553490eb686adfd86adcd6712
@@ -461,6 +461,7 @@ F test/tkt2409.test 20318bf6acd9b834b4420548f277b8e3a7420cd1
 F test/tkt2450.test 77ed94863f2049c1420288ddfea2d41e5e0971d6
 F test/tkt2640.test c513e7992a602a87ef3a2cc9ca1cba4146924e9b
 F test/tkt2643.test 3f3ebb743da00d4fed4fcf6daed92a0e18e57813
+F test/tkt2686.tcl 2da95620744e11807335ab07f4cc9bbfb1b08001
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test b361161cf20614024cc1e52ea0bdec250776b2ae
@@ -580,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7d3f0b149bd2b9c7c12aabb93d022c0ea26f0d74
-R 758b9cd7fcc1c70228ec040144239c4a
-U danielk1977
-Z 232289e1446c6deb39d7a5dfa3b4eda2
+P 3d1d13d1eb5817c22956e6e7792783116a828962
+R 2dfb044e805a2e65c272b67cf877a8ea
+U drh
+Z fad836448ac64c67c038efdc32241a75
