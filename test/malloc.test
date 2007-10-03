@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.49 2007/10/03 08:46:45 danielk1977 Exp $
+# $Id: malloc.test,v 1.50 2007/10/03 15:02:40 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -517,6 +517,47 @@ do_malloc_test 22 -tclbody {
   if {$::STMT ne ""} {
     sqlite3_finalize $::STMT
     set ::STMT ""
+  }
+}
+
+ifcapable {pager_pragmas} {
+  # This tests a special case - that an error that occurs while the pager
+  # is trying to recover from error-state in exclusive-access mode works.
+  #
+  do_malloc_test 23 -tclprep {
+    db eval {
+      PRAGMA cache_size = 10;
+      PRAGMA locking_mode = exclusive;
+      BEGIN;
+      CREATE TABLE abc(a, b, c);
+      CREATE INDEX abc_i ON abc(a, b, c);
+      INSERT INTO abc 
+        VALUES(randstr(100,100), randstr(100,100), randstr(100,100));
+      INSERT INTO abc 
+        SELECT randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+      INSERT INTO abc 
+        SELECT randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+      INSERT INTO abc 
+        SELECT randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+      INSERT INTO abc 
+        SELECT randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+      INSERT INTO abc 
+        SELECT randstr(100,100), randstr(100,100), randstr(100,100) FROM abc;
+      COMMIT;
+    }
+  
+    # This puts the pager into error state.
+    #
+    db eval BEGIN
+    db eval {UPDATE abc SET a = 0 WHERE oid%2}
+    set ::sqlite_io_error_pending 10
+    catch {db eval {ROLLBACK}} msg
+
+  } -sqlbody {
+    SELECT * FROM abc LIMIT 10;
+  } -cleanup {
+    set e [db eval {PRAGMA integrity_check}]
+    if {$e ne "ok"} {error $e}
   }
 }
 

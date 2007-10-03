@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\stest\sscript\smalloc5.test.\s(CVS\s4455)
-D 2007-10-03T09:43:55
+C Add\sa\stest\scase\sto\smalloc.test.\s(CVS\s4456)
+D 2007-10-03T15:02:40
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -349,7 +349,7 @@ F test/lock2.test 5f9557b775662c2a5ee435378f39e10d64f65cb3
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test f358fa835dff485d462072eee991111f09e87441
 F test/main.test 05f585bb70c05caac3e047903b517cbb319ed204
-F test/malloc.test 17366a4f76e7aac14cd709e8209ef840cd497410
+F test/malloc.test fc062a1233cc0d139a6058caf1b2129bb73f86a1
 F test/malloc2.test 1506ab3a4490b38b8850a6fa3e12591235179872
 F test/malloc3.test cf2efe9d16194276f227f34ac341019e013fb17d
 F test/malloc4.test f0e5e0f639f61e2776a6c3f5308f836b3ad8b3c7
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 12eca32a6a3d68d5b20eed03afdffe7599e66014
-R ab778c4ccea4851cfb45b8ff8e4ecac9
+P 028ec36c71d6ac43c8f1cda77578d844c6955f68
+R e25e9198e045e9322e20cf6ddf2e312b
 U danielk1977
-Z 0b2e370c486d9ff351342955af404557
+Z 714be4396c475700cdae911b78c710f2
