@@ -28,6 +28,27 @@ proc chng {date desc} {
   puts "</DD>"
 }
 
+chng {2007 Oct 04 (3.5.1)} {
+<li><i><b>Nota Bene:</b> We are not using terms "alpha" or "beta" on this
+    release because the code is stable and because if we use those terms,
+    nobody will upgrade.  However, we still reserve the right to make
+    incompatible changes to the new VFS interface in future releases.</i></li>
+
+<li>Fix a bug in the handling of SQLITE_FULL errors that could lead
+    to database corruption.  Ticket #2686.
+<li>The test_async.c drive now does full file locking and works correctly
+    when used simultaneously by multiple processes on the same database.
+<li>The CLI ignores whitespace (including comments) at the end of lines
+<li>Make sure the query optimizer checks dependences on all terms of
+    a compound SELECT statement.  Ticket #2640.
+<li>Add demonstration code showing how to build a VFS for a raw
+    mass storage without a filesystem.
+<li>Added an output buffer size parameter to the xGetTempname() method
+    of the VFS layer.
+<li>Sticky SQLITE_FULL or SQLITE_IOERR errors in the pager are reset
+    when a new transaction is started.
+}
+
 
 chng {2007 Sep 04 (3.5.0) alpha} {
 <li>Redesign the OS interface layer.  See
