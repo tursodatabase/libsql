@@ -1398,25 +1398,13 @@ int sqlite3VdbeHalt(Vdbe *p){
       ** this is probably easier. Todo: Might be an opportunity to reduce 
       ** code size a very small amount though...
       */
-      int isReadOnly = 1;
+      int notReadOnly = 0;
       int isStatement = 0;
       assert(p->aOp || p->nOp==0);
       for(i=0; i<p->nOp; i++){ 
         switch( p->aOp[i].opcode ){
           case OP_Transaction:
-            /* This is a bit strange. If we hit a malloc() or IO error and
-            ** the statement did not open a statement transaction, we will
-            ** rollback any active transaction and abort all other active
-            ** statements. Or, if this is an SQLITE_INTERRUPT error, we
-            ** will only rollback if the interrupted statement was a write.
-            **
-            ** It could be argued that read-only statements should never
-            ** rollback anything. But careful analysis is required before
-            ** making this change
-            */
-            if( p->aOp[i].p2 || mrc!=SQLITE_INTERRUPT ){
-              isReadOnly = 0;
-            }
+            notReadOnly |= p->aOp[i].p2;
             break;
           case OP_Statement:
             isStatement = 1;
@@ -1428,11 +1416,11 @@ int sqlite3VdbeHalt(Vdbe *p){
       /* If the query was read-only, we need do no rollback at all. Otherwise,
       ** proceed with the special handling.
       */
-      if( !isReadOnly ){
+      if( notReadOnly || mrc!=SQLITE_INTERRUPT ){
         if( p->rc==SQLITE_IOERR_BLOCKED && isStatement ){
           xFunc = sqlite3BtreeRollbackStmt;
           p->rc = SQLITE_BUSY;
-        } else if( (p->rc==SQLITE_NOMEM || p->rc==SQLITE_FULL) && isStatement ){
+        } else if( (mrc==SQLITE_NOMEM || mrc==SQLITE_FULL) && isStatement ){
           xFunc = sqlite3BtreeRollbackStmt;
         }else{
           /* We are forced to roll back the active transaction. Before doing
