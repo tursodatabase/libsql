@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.405 2007/10/03 08:46:45 danielk1977 Exp $
+** $Id: main.c,v 1.406 2007/10/03 21:10:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -245,7 +245,7 @@ void sqlite3RollbackAll(sqlite3 *db){
     }
   }
   sqlite3VtabRollback(db);
-  sqlite3MallocLeaveBenignBlock(0);                 /* Leave benign region */
+  sqlite3MallocLeaveBenignBlock();                 /* Leave benign region */
 
   if( db->flags&SQLITE_InternChanges ){
     sqlite3ExpirePreparedStatements(db);

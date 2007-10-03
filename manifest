@@ -1,5 +1,5 @@
-C Update\sdocumentation\sin\spreparation\sfor\sthe\srelease\sof\s3.5.1.\s(CVS\s4461)
-D 2007-10-03T20:32:17
+C Fix\sa\ssyntax\serror\sthat\scomes\sup\swhen\smemory\sdebugging\sis\sdisabled.\s(CVS\s4462)
+D 2007-10-03T21:10:58
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -99,7 +99,7 @@ F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c 124e566563d1c03e68e1396cb44df9870612c6e9
-F src/main.c 3040200e563e3f9a3c24198da48fd4d400d5c43a
+F src/main.c 946ca0da59f1b00754cf0226aec30076f992130f
 F src/malloc.c de4e77fe70a9a0ac47a1c3a874422b107231bf31
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c 1f85902b98b38bd8a8b0c24012933957256db13e
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 84616a13af633700635ad2f91e92c2f7271e96d1
-R a40f48df8a0a3f23b1cc061d30c433fc
+P a57b25a2e4127bb3d9dc83031db117664c10d4ea
+R 2814415d8c5ceda1568f0acd70d4d5fc
 U drh
-Z 88778a88af738f1ce2df517bdfde8e29
+Z 9551c2ee3c05c71709fa89fc90beaf8d
