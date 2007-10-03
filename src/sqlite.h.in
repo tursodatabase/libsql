@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.265 2007/10/03 08:46:45 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.266 2007/10/03 20:15:28 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2673,6 +2673,13 @@ SQLITE_EXTERN char *sqlite3_temp_directory;
 ** mode.  Return TRUE if it is and FALSE if not.  Autocommit mode is on
 ** by default.  Autocommit is disabled by a BEGIN statement and reenabled
 ** by the next COMMIT or ROLLBACK.
+**
+** If certain kinds of errors occur on a statement within a multi-statement
+** transactions (errors including [SQLITE_FULL], [SQLITE_IOERR], 
+** [SQLITE_NOMEM], [SQLITE_BUSY], and [SQLITE_INTERRUPT]) then the
+** transaction might be rolled back automatically.  The only way to
+** find out if SQLite automatically rolled back the transaction after
+** an error is to use this function.
 **
 ** If another thread changes the autocommit status of the database
 ** connection while this routine is running, then the return value

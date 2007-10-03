@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.135 2007/10/01 17:45:40 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.136 2007/10/03 20:15:28 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -288,11 +288,6 @@ ROLLBACK [TRANSACTION [<name>]]
 }
 
 puts {
-<p>Beginning in version 2.0, SQLite supports transactions with
-rollback and atomic commit.</p>
-
-<p>The optional transaction name is ignored. SQLite currently 
-does not allow nested transactions.</p>
 
 <p>
 No changes can be made to the database except within a transaction.
@@ -317,9 +312,17 @@ conflict resolution algorithm.
 END TRANSACTION is an alias for COMMIT.
 </p>
 
+<p>The optional transaction name is current ignored. SQLite 
+does not recognize nested transactions at this time.
+However, future versions of SQLite may be enhanced to support nested
+transactions and the transaction name would then become significant.
+Application are advised not to use the transaction name in order
+to avoid future compatibility problems.</p>
+
 <p>
-In SQLite version 3.0.8 and later, transactions can be deferred,
-immediate, or exclusive.  Deferred means that no locks are acquired
+Transactions can be deferred, immediate, or exclusive.  
+The default transaction behavior is deferred.
+Deferred means that no locks are acquired
 on the database until the database is first accessed.  Thus with a
 deferred transaction, the BEGIN statement itself does nothing.  Locks
 are not acquired until the first read or write operation.  The first read
@@ -347,13 +350,6 @@ is available <a href="lockingv3.html">separately</a>.
 </p>
 
 <p>
-The default behavior for SQLite version 3.0.8 is a
-deferred transaction.  For SQLite version 3.0.0 through 3.0.7,
-deferred is the only kind of transaction available.  For SQLite
-version 2.8 and earlier, all transactions are exclusive.
-</p>
-
-<p>
 The COMMIT command does not actually perform a commit until all
 pending SQL commands finish.  Thus if two or more SELECT statements
 are in the middle of processing and a COMMIT is executed, the commit
@@ -367,6 +363,43 @@ that prevented the database from being updated.  When COMMIT fails in this
 way, the transaction remains active and the COMMIT can be retried later
 after the reader has had a chance to clear.
 </p>
+
+<h3>Response To Errors Within A Transaction</h3>
+
+<p>If certain kinds of errors occur within a transaction, the
+transaction may or may not be rolled back automatically.  The
+errors that cause the behavior include:</p>
+
+<ul>
+<li> SQLITE_FULL: database or disk full
+<li> SQLITE_IOERR: disk I/O error
+<li> SQLITE_BUSY: database in use by another process
+<li> SQLITE_NOMEM: out or memory
+<li> SQLITE_INTERRUPT: processing interrupted by user request
+</ul>
+
+<p>
+For all of these errors, SQLite attempts to undo just the one statement
+it was working on and leave changes from prior statements within the
+same transaction intact and continue with the transaction.  However, 
+depending on the statement being evaluated and the point at which the
+error occurs, it might be necessary for SQLite to rollback and
+cancel the transaction.  An application can tell which
+course of action SQLite took by using the
+<a href="capi3ref.html#sqlite3_get_autocommit">sqlite3_get_autocommit()</a>
+C-language interface.</p>
+
+<p>It is recommended that applications respond to the errors
+listed above by explicitly issuing a ROLLBACK command.  If the 
+transaction has already been rolled back automatically
+by the error response, then the ROLLBACK command will fail with an
+error, but no harm is caused by this.</p>
+
+<p>Future versions of SQLite may extend the list of errors which
+might cause automatic transaction rollback.  Future versions of
+SQLite might change the error response.  In particular, we may
+choose to simplify the interface in future versions of SQLite by
+causing the errors above to force an unconditional rollback.</p>
 }
 
 
