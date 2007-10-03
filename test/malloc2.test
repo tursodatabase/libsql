@@ -16,7 +16,7 @@
 # Recovery from malloc() failures is automatic.  But we keep these
 # tests around because you can never have too many test cases.
 #
-# $Id: malloc2.test,v 1.7 2007/08/29 12:31:29 danielk1977 Exp $
+# $Id: malloc2.test,v 1.8 2007/10/03 08:46:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,6 +28,8 @@ ifcapable !memdebug {
    finish_test
    return
 }
+
+sqlite3_extended_result_codes db 1
 
 # Generate a checksum based on the contents of the database. If the
 # checksum of two databases is the same, and the integrity-check passes
@@ -70,6 +72,7 @@ proc do_malloc2_test {tn args} {
       set res [catchsql [string trim $::mallocopts(-sql)]]
       set rc [expr { 
         0==[string compare $res {1 {out of memory}}] ||
+        [db errorcode] == 3082 ||
         0==[lindex $res 0]
       }]
       if {$rc!=1} {
@@ -250,6 +253,12 @@ do_test malloc2-5 {
   sqlite3 db3 test.db
   sqlite3 db4 test.db
   sqlite3 db5 test.db
+
+  sqlite3_extended_result_codes db1 1
+  sqlite3_extended_result_codes db2 1
+  sqlite3_extended_result_codes db3 1
+  sqlite3_extended_result_codes db4 1
+  sqlite3_extended_result_codes db5 1
 
   # Close the head of the list:
   db5 close

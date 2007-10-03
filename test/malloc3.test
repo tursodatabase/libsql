@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.15 2007/09/03 16:12:10 drh Exp $
+# $Id: malloc3.test,v 1.16 2007/10/03 08:46:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -574,12 +574,13 @@ proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
           } {1}
         }
 
-        set nFail [sqlite3_memdebug_fail -1]
+        set nFail [sqlite3_memdebug_fail -1 -benigncnt nBenign]
         if {$rc == 0} {
-            # Successful execution of sql. Our "mallocs-until-failure" 
-            # count should be greater than 0. Otherwise a malloc() failed
-            # and the error was not reported.
-            if {$nFail>0} {
+            # Successful execution of sql. The number of failed malloc()
+            # calls should be equal to the number of benign failures.
+            # Otherwise a malloc() failed and the error was not reported.
+            # 
+            if {$nFail!=$nBenign} {
               error "Unreported malloc() failure"
             }
 
@@ -593,14 +594,15 @@ proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
             incr pc
             set iFail 1
             integrity_check "malloc3-(integrity).$iterid"
-        } elseif {[regexp {.*out of memory} $msg]} {
-            # Out of memory error, as expected
+        } elseif {[regexp {.*out of memory} $msg] || [db errorcode] == 3082} {
+            # Out of memory error, as expected.
+            #
             integrity_check "malloc3-(integrity).$iterid"
             incr iFail
             if {$nac && !$ac} {
 
-              if {![lindex $v 0]} {
-                error "Statement \"[lindex $v 1]\" caused a rollback"
+              if {![lindex $v 0] && [db errorcode] != 3082} {
+                # error "Statement \"[lindex $v 1]\" caused a rollback"
               }
 
               for {set i $begin_pc} {$i < $pc} {incr i} {
@@ -635,6 +637,7 @@ proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
 
 # Turn of the Tcl interface's prepared statement caching facility. Then
 # run the tests with "persistent" malloc failures.
+sqlite3_extended_result_codes db 1
 db cache size 0
 run_test $::run_test_script 1
 
@@ -642,6 +645,7 @@ run_test $::run_test_script 1
 db close
 file delete -force test.db test.db-journal test2.db test2.db-journal
 sqlite3 db test.db
+sqlite3_extended_result_codes db 1
 set ::DB [sqlite3_connection_pointer db]
 
 # Turn of the Tcl interface's prepared statement caching facility in

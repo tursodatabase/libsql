@@ -18,6 +18,33 @@
 #undef _SQLITE_OS_C_
 
 /*
+** The default SQLite sqlite3_vfs implementations do not allocate
+** memory (actually, os_unix.c allocates a small amount of memory
+** from within OsOpen()), but some third-party implementations may.
+** So we test the effects of a malloc() failing and the sqlite3OsXXX()
+** function returning SQLITE_IOERR_NOMEM using the DO_OS_MALLOC_TEST macro.
+**
+** The following functions are instrumented for malloc() failure 
+** testing:
+**
+**     sqlite3OsOpen()
+**     sqlite3OsRead()
+**     sqlite3OsWrite()
+**     sqlite3OsSync()
+**     sqlite3OsLock()
+**
+*/
+#ifdef SQLITE_TEST
+  #define DO_OS_MALLOC_TEST if (1) {            \
+    void *pTstAlloc = sqlite3_malloc(10);       \
+    if (!pTstAlloc) return SQLITE_IOERR_NOMEM;  \
+    sqlite3_free(pTstAlloc);                    \
+  }
+#else
+  #define DO_OS_MALLOC_TEST
+#endif
+
+/*
 ** The following routines are convenience wrappers around methods
 ** of the sqlite3_file object.  This is mostly just syntactic sugar. All
 ** of this would be completely automatic if SQLite were coded using
@@ -32,21 +59,25 @@ int sqlite3OsClose(sqlite3_file *pId){
   return rc;
 }
 int sqlite3OsRead(sqlite3_file *id, void *pBuf, int amt, i64 offset){
+  DO_OS_MALLOC_TEST;
   return id->pMethods->xRead(id, pBuf, amt, offset);
 }
 int sqlite3OsWrite(sqlite3_file *id, const void *pBuf, int amt, i64 offset){
+  DO_OS_MALLOC_TEST;
   return id->pMethods->xWrite(id, pBuf, amt, offset);
 }
 int sqlite3OsTruncate(sqlite3_file *id, i64 size){
   return id->pMethods->xTruncate(id, size);
 }
 int sqlite3OsSync(sqlite3_file *id, int flags){
+  DO_OS_MALLOC_TEST;
   return id->pMethods->xSync(id, flags);
 }
 int sqlite3OsFileSize(sqlite3_file *id, i64 *pSize){
   return id->pMethods->xFileSize(id, pSize);
 }
 int sqlite3OsLock(sqlite3_file *id, int lockType){
+  DO_OS_MALLOC_TEST;
   return id->pMethods->xLock(id, lockType);
 }
 int sqlite3OsUnlock(sqlite3_file *id, int lockType){
@@ -99,6 +130,7 @@ int sqlite3OsOpen(
   int flags, 
   int *pFlagsOut
 ){
+  DO_OS_MALLOC_TEST;
   return pVfs->xOpen(pVfs, zPath, pFile, flags, pFlagsOut);
 }
 int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){

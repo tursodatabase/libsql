@@ -12,7 +12,7 @@
 # This file contains common code used by many different malloc tests
 # within the test suite.
 #
-# $Id: malloc_common.tcl,v 1.8 2007/09/03 16:12:10 drh Exp $
+# $Id: malloc_common.tcl,v 1.9 2007/10/03 08:46:45 danielk1977 Exp $
 
 # If we did not compile with malloc testing enabled, then do nothing.
 #
@@ -54,7 +54,7 @@ proc do_malloc_test {tn args} {
   if {[info exists ::mallocopts(-start)]} {
     set start $::mallocopts(-start)
   } else {
-    set start 1
+    set start 0
   }
 
   foreach ::iRepeat {0 1} {
@@ -83,7 +83,10 @@ proc do_malloc_test {tn args} {
         if {[info exists ::mallocopts(-testdb)]} {
           file copy $::mallocopts(-testdb) test.db
         }
-        catch {sqlite3 db test.db} 
+        catch { sqlite3 db test.db }
+        if {[info commands db] ne ""} {
+          sqlite3_extended_result_codes db 1
+        }
   
         # Execute any -tclprep and -sqlprep scripts.
         #
@@ -128,11 +131,17 @@ proc do_malloc_test {tn args} {
           }
         } elseif {!$isFail} {
           set v2 $msg
-        } elseif {[info command db]=="" || [db errorcode]==7
-                     || $msg=="out of memory"} {
+        } elseif {
+          [info command db]=="" || 
+          [db errorcode]==7 ||
+          [db errorcode]==[expr 10+(12<<8)] ||
+          $msg=="out of memory"
+        } {
           set v2 1
         } else {
           set v2 $msg
+          breakpoint
+          puts [db errorcode]
         }
         lappend isFail $v2
       } {1 1}

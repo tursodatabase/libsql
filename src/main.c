@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.404 2007/09/03 15:19:35 drh Exp $
+** $Id: main.c,v 1.405 2007/10/03 08:46:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -234,6 +234,7 @@ void sqlite3RollbackAll(sqlite3 *db){
   int i;
   int inTrans = 0;
   assert( sqlite3_mutex_held(db->mutex) );
+  sqlite3MallocEnterBenignBlock(1);                 /* Enter benign region */
   for(i=0; i<db->nDb; i++){
     if( db->aDb[i].pBt ){
       if( sqlite3BtreeIsInTrans(db->aDb[i].pBt) ){
@@ -244,6 +245,8 @@ void sqlite3RollbackAll(sqlite3 *db){
     }
   }
   sqlite3VtabRollback(db);
+  sqlite3MallocLeaveBenignBlock(0);                 /* Leave benign region */
+
   if( db->flags&SQLITE_InternChanges ){
     sqlite3ExpirePreparedStatements(db);
     sqlite3ResetInternalSchema(db, 0);

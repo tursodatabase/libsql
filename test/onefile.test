@@ -6,11 +6,11 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: onefile.test,v 1.1 2007/09/14 16:19:27 danielk1977 Exp $
+# $Id: onefile.test,v 1.2 2007/10/03 08:46:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-rename finish_test really_finish_test
+rename finish_test really_finish_test2
 proc finish_test {} {
   catch {db close}
   catch {db2 close}
@@ -50,6 +50,12 @@ foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
   source $testfile
 }
 
-really_finish_test
+file delete -force test.db test2.db test3.db test4.db
+
+really_finish_test2
+rename do_test {}
 rename really_do_test do_test
-rename really_finish_test finish_test
+rename finish_test {}
+rename really_finish_test2 finish_test
+rename sqlite3 {}
+rename really_sqlite3 sqlite3

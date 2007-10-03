@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.60 2007/08/29 12:31:27 danielk1977 Exp $
+** $Id: prepare.c,v 1.61 2007/10/03 08:46:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -332,7 +332,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   sqlite3BtreeLeave(pDb->pBt);
 
 error_out:
-  if( rc==SQLITE_NOMEM ){
+  if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
     db->mallocFailed = 1;
   }
   return rc;
@@ -428,7 +428,7 @@ static int schemaIsValid(sqlite3 *db){
       }
       sqlite3BtreeCloseCursor(curTemp);
     }
-    if( rc==SQLITE_NOMEM ){
+    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
       db->mallocFailed = 1;
     }
   }

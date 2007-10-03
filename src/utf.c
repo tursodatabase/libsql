@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.58 2007/09/12 17:01:45 danielk1977 Exp $
+** $Id: utf.c,v 1.59 2007/10/03 08:46:45 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -447,6 +447,10 @@ char *sqlite3Utf16to8(sqlite3 *db, const void *z, int nByte){
   m.db = db;
   sqlite3VdbeMemSetStr(&m, z, nByte, SQLITE_UTF16NATIVE, SQLITE_STATIC);
   sqlite3VdbeChangeEncoding(&m, SQLITE_UTF8);
+  if( db->mallocFailed ){
+    sqlite3VdbeMemRelease(&m);
+    m.z = 0;
+  }
   assert( (m.flags & MEM_Term)!=0 || db->mallocFailed );
   assert( (m.flags & MEM_Str)!=0 || db->mallocFailed );
   return (m.flags & MEM_Dyn)!=0 ? m.z : sqlite3DbStrDup(db, m.z);

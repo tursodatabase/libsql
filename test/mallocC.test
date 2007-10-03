@@ -12,7 +12,7 @@
 # This file tests aspects of the malloc failure while parsing
 # CREATE TABLE statements in auto_vacuum mode.
 #
-# $Id: mallocC.test,v 1.6 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: mallocC.test,v 1.7 2007/10/03 08:46:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -66,6 +66,7 @@ proc do_mallocC_test {tn args} {
       set res [catchsql [string trim $::mallocopts(-sql)]]
       set rc [expr { 
         0==[string compare $res {1 {out of memory}}] ||
+        [db errorcode] == 3082 ||
         0==[lindex $res 0]
       }]
       if {$rc!=1} {
@@ -106,6 +107,8 @@ proc do_mallocC_test {tn args} {
   }
   unset ::mallocopts
 }
+
+sqlite3_extended_result_codes db 1
 
 execsql {
   PRAGMA auto_vacuum=1;

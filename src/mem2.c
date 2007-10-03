@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.13 2007/09/01 09:02:54 danielk1977 Exp $
+** $Id: mem2.c,v 1.14 2007/10/03 08:46:45 danielk1977 Exp $
 */
 
 /*
@@ -141,6 +141,7 @@ static struct {
   int iFailCnt;         /* Number of failures */
   int iBenignFailCnt;   /* Number of benign failures */
   int iNextIsBenign;    /* True if the next call to malloc may fail benignly */
+  int iIsBenign;        /* All malloc calls may fail benignly */
 
   /* 
   ** sqlite3MallocDisallow() increments the following counter.
@@ -281,7 +282,7 @@ void *sqlite3_malloc(int nByte){
           sqlite3MemsysFailed();  /* A place to set a breakpoint */
         }
         mem.iFailCnt++;
-        if( mem.iNextIsBenign ){
+        if( mem.iNextIsBenign || mem.iIsBenign ){
           mem.iBenignFailCnt++;
         }
       }else{
@@ -494,10 +495,32 @@ int sqlite3_memdebug_pending(){
   return (mem.iFail-1);
 }
 
+/*
+** The following three functions are used to indicate to the test 
+** infrastructure which malloc() calls may fail benignly without
+** affecting functionality. This can happen when resizing hash tables 
+** (failing to resize a hash-table is a performance hit, but not an 
+** error) or sometimes during a rollback operation.
+**
+** If the argument is true, sqlite3MallocBenignFailure() indicates that the
+** next call to allocate memory may fail benignly.
+**
+** If sqlite3MallocEnterBenignBlock() is called with a non-zero argument,
+** then all memory allocations requested before the next call to
+** sqlite3MallocLeaveBenignBlock() may fail benignly.
+*/
 void sqlite3MallocBenignFailure(int isBenign){
   if( isBenign ){
     mem.iNextIsBenign = 1;
   }
+}
+void sqlite3MallocEnterBenignBlock(int isBenign){
+  if( isBenign ){
+    mem.iIsBenign = 1;
+  }
+}
+void sqlite3MallocLeaveBenignBlock(){
+  mem.iIsBenign = 0;
 }
 
 /*

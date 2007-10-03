@@ -1,5 +1,5 @@
-C Use\slocal\svariables\sinstead\sof\s#defines\sfor\sthe\smutex\sname\sand\slength\sin\sOS/2's\ssqlite3_mutex_alloc().\s(CVS\s4453)
-D 2007-10-02T19:56:04
+C Add\sautomatic\srecovery\sfrom\sthe\spager\s"error-state".\sAlso\sadd\sa\snew\serror\scode\s-\sSQLITE_IOERR_NOMEM.\s(CVS\s4454)
+D 2007-10-03T08:46:44
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -78,10 +78,10 @@ F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c c9f30b4d6fbf7eff7c5518b002a217d4ecd13bcf
 F src/analyze.c 49b4bd45eb286d833793ed6bf72355a5c1974865
-F src/attach.c 02fd8779270b1df1c63e7ba6e6655b960fa0f3d5
+F src/attach.c a01d55157d46a1234909f3a7f21fb09549c947bd
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/btmutex.c 442be6f068d77ca9ffd69899cf0a3943c244548c
-F src/btree.c ed7c4825b0d30a8a77c43b468009cfa8a31c967a
+F src/btree.c a491c45b4412e6f19458e122bafa0cca8f22d224
 F src/btree.h d0736ebca4b6eafbdd823c46a8de574cea078211
 F src/btreeInt.h 4330c19b8314545fdb209cc77e2a57f6a5290e9c
 F src/build.c 94d0d6dfd1e706c480903fbdda2e77466f21b898
@@ -99,17 +99,17 @@ F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c 124e566563d1c03e68e1396cb44df9870612c6e9
-F src/main.c e69df8c9e56e06f54ef894481e56b26ba807d253
+F src/main.c 3040200e563e3f9a3c24198da48fd4d400d5c43a
 F src/malloc.c de4e77fe70a9a0ac47a1c3a874422b107231bf31
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c 1f85902b98b38bd8a8b0c24012933957256db13e
-F src/mem2.c b97b4662bf5902cbde0a849c4739e64ce7b07177
+F src/mem2.c 9c59519e471f858961fbdccd9543317bba1c5e58
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 7fe4773e98ed74a63b2e54fc557929eb155f6269
 F src/mutex_unix.c ff77650261a245035b79c5c8a174f4e05d3cae8a
 F src/mutex_w32.c d2c56fb81aca10af1577bdae2a4083eb2505f8ee
-F src/os.c 3b66834a5853ddaa83dfd6c146be9e4fc1864b98
+F src/os.c 6a84b6ff284fa558e879d9b6a5809004aacc8195
 F src/os.h 4c880cf67437f323cd0c3ab2154f1d76babc12d3
 F src/os_common.h 98862f120ca6bf7a48ce8b16f158b77d00bc9d2f
 F src/os_os2.c 5b5f42180c5961b9d207748fda8f9aa0e70569c8
@@ -120,19 +120,19 @@ F src/os_unix.c 308bd8ad6977f66f608228cccaecc4cbc1a24693
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 99960c7b9dad8dab72e47068afb7941492bfeaac
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c d246d888bbdbb97321238f5f71d2f6727b2cc9d8
+F src/pager.c 40381e1650e7acc7d594a236cea6514f0859993f
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 363e548dafb52327face8d99757ab56a7b1c1b26
-F src/prepare.c 1506fd279824b1f4bac97514966d0370101f9a6b
+F src/prepare.c 920d09a5fc690ccd48ec8c82717a11d53365dae3
 F src/printf.c 85f7a4344dda6782a76df43da8e4d5b0342d6b85
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 4706a6115da1bdc09a2be5991168a6cc2c0df267
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 82089379833e361ba8a2ae65316a2173785300c0
-F src/sqlite.h.in 60d1a884f49304787b07864ceba31e6df93a5a7c
+F src/sqlite.h.in 28746e34b4ada1cecc49768844064d3f1c7fd78e
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
-F src/sqliteInt.h 8fb50cf69b235dfe7f3b604d4d219a9726b8478c
+F src/sqliteInt.h 9092213f1ff14cd7edee8d0649d8a193dbbad4b2
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 9659ec914abfdb35e184eee908d07eba11a39018
@@ -161,7 +161,7 @@ F src/test_thread.c a98d69cae883e53d3686fc25889a5fa5f51439f8
 F src/tokenize.c 67e42600ab34f976f2b1288c499ad6c98d652f0e
 F src/trigger.c 724a77d54609a33bde90618934fbeddfcc729a10
 F src/update.c e89b980b443d44b68bfc0b1746cdb6308e049ac9
-F src/utf.c e8c72a123570061b8088d929e403d4fc09193be7
+F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 49263637e0f228411201501ddfd1138338d6322c
 F src/vacuum.c 38745037c63246d1b0669038257890cf89fc4578
 F src/vdbe.c b6c53921512496ef4d7c4f571feb73b7a495db35
@@ -180,7 +180,7 @@ F test/all.test b59d1bd8b0c1d4a08b845e8af48fd43926f01f11
 F test/alter.test c2a9402e17a731e5294ef370214bd9f88351d18d
 F test/alter2.test 816574fd9302af05e95895758aff2811090c6c78
 F test/alter3.test a6eec8f454be9b6ce73d8d7dc711453675a10ce7
-F test/altermalloc.test 1f4d2d66750bea1a78cd9f0b7dba5bfb155dd6cf
+F test/altermalloc.test 29d4a8400277efb4ba8ffe90804c6dc2fdfbf063
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
 F test/async.test ae370c6169e314f0f82dcbe59fbc8589b23dfc2f
 F test/async2.test e56affa75ed822424a6f9b12b22db8031433bb7c
@@ -188,7 +188,7 @@ F test/async3.test 08ea0217083e4866eb1b0147158298f2a2cd1346
 F test/attach.test 8880661ee05a7fdeb2d3868e66c08aab21cec8f1
 F test/attach2.test 78bc1a25ea8785c7571b44f5947ada2bd5d78127
 F test/attach3.test eafcafb107585aecc2ed1569a77914138eef46a9
-F test/attachmalloc.test fdbfd9dc0b600db14f9189690c6c12511cc3a56f
+F test/attachmalloc.test 475c95e9d5756318f62226e2d2299e64ecdbc543
 F test/auth.test 66923137cf78475f5671b5e6e6274935e055aea0
 F test/auth2.test 8da06f0ffcfd98154dda78e0f3b35a6503c27b64
 F test/autoinc.test 60005a676e3e4e17dfa9dbd08aa0b76587ff97e3
@@ -349,20 +349,20 @@ F test/lock2.test 5f9557b775662c2a5ee435378f39e10d64f65cb3
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test f358fa835dff485d462072eee991111f09e87441
 F test/main.test 05f585bb70c05caac3e047903b517cbb319ed204
-F test/malloc.test 51675aa9dba74480391e31d2b57e54e67d9169c1
-F test/malloc2.test c1a74f46a3581b56df29ff46a4e1c99b41c44ad9
-F test/malloc3.test d10a1f484805be103f154ce4968f76ba5d530217
+F test/malloc.test 17366a4f76e7aac14cd709e8209ef840cd497410
+F test/malloc2.test 1506ab3a4490b38b8850a6fa3e12591235179872
+F test/malloc3.test cf2efe9d16194276f227f34ac341019e013fb17d
 F test/malloc4.test f0e5e0f639f61e2776a6c3f5308f836b3ad8b3c7
 F test/malloc5.test b2fd56b369dd5884ad88edfaef41304393809125
-F test/malloc6.test dfb0fcbe40abf18833ddefbe17b688dc665a4a5f
+F test/malloc6.test d05fd71ef3c5983d10e0a6d728ea4a502a45a9e4
 F test/malloc7.test 0d71bb6520b99934b551fa36a9c591404aeaad61
 F test/malloc8.test addc27d907fec1af429551b95c72caa47fce2974
 F test/malloc9.test 95d7069ad4fa262bf33bc4c5ca0a46f2bb2391cb
 F test/mallocA.test f474c5bdbef4070e11c89d01ba1b0e78f955b97a
 F test/mallocB.test 83bdbea443cc81758a57b0287807b0941218819a
-F test/mallocC.test 7d3b19d2fee772ee309c21e0e31153f8df750f32
+F test/mallocC.test 6f02fa2b4baa943bc6d6db323d5d07067967e728
 F test/mallocD.test 473db9092f962685ca5710a153d2abbe3428bb9e
-F test/malloc_common.tcl 6cd3c6b540cd53dea828ee2b15a2b72b297b7b30
+F test/malloc_common.tcl b47137fb36e95fdafb0267745afefcd6b0a5b9dc
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
@@ -378,7 +378,7 @@ F test/misc7.test a67af9620a510ce19f96ba69f3848228b7c62a73
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
-F test/onefile.test 3b907ebfa5cc2ecd31d918776bb43fdf432b6618
+F test/onefile.test b9cce375fd2a41ee3afa79a0a808954046b74458
 F test/openv2.test f5dd6b23e4dce828eb211649b600763c42a668df
 F test/pager.test 60303481b22b240c18d6dd1b64edcecc2f4b5a97
 F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
@@ -580,7 +580,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P eb5d78451ee2a5d8480537530f30fbb305bf7632
-R a8abd8d07626f709082a5e1aa7c6fdec
-U pweilbacher
-Z 73d6f9cab3860483d902ed77f0494d38
+P 272959cc91d0c9299d6fca8a962eb563650af87b
+R e48ace1bd2100159c32ec15d9bfa3f76
+U danielk1977
+Z d1e46257f1f89b59b016148eed84362d
