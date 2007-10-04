@@ -1,5 +1,5 @@
-C Get\sio.test\sto\swork\seven\sif\sauto_vacuum\sis\son\sby\sdefault\sand\swe\sare\nrunning\swith\sa\sreduced\smaximum\spage\ssize.\s(CVS\s4463)
-D 2007-10-03T21:18:20
+C Updates\sto\sthe\sdocumentation\sindex\spage.\s(CVS\s4464)
+D 2007-10-04T00:29:29
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -547,7 +547,7 @@ F www/datatype3.tcl f7b6831c9088549efe021df4f71a34c0095d4e94
 F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
 F www/different.tcl 8b76ae88bf73e38097b7936e198df4f89baf587c
 F www/direct1b.gif 32b48b764244817b6b591898dc52a04299a7b8a7
-F www/docs.tcl 09eeac4e565789a67abc63f166a9ae7f3050454d
+F www/docs.tcl be3fabaead4a21ec5315934f5eac10b4e79081c7
 F www/download.tcl d59a0244f22a975c3f9deafb535fc20549cb8c45
 F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
 F www/faq.tcl ebdcad6041d66220b866ac49bcd55726c3bd80ef
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 96dd3c336b5bbf9da6ba9ace85dbe7c4b1ff2bcb
-R 97f2e979b587833fee0776ca26556089
+P 0d05f3fbaad44a0d3723cd543b865326acddf883
+R f8bfaa703e1e463c9d733910321c4533
 U drh
-Z 328ee6d4a8d802d30813c6252c44ec65
+Z 45cfc127b53f87e0f390304ff24761f2

@@ -1,7 +1,7 @@
 # This script generates the "docs.html" page that describes various
 # sources of documentation available for SQLite.
 #
-set rcsid {$Id: docs.tcl,v 1.14 2006/01/30 16:20:30 drh Exp $}
+set rcsid {$Id: docs.tcl,v 1.15 2007/10/04 00:29:29 drh Exp $}
 source common.tcl
 header {SQLite Documentation}
 puts {
@@ -48,6 +48,16 @@ doc {Sharing Cache Mode} {sharedcache.html} {
 }
 doc {Tcl API} {tclsqlite.html} {
   A description of the TCL interface bindings for SQLite.
+}
+
+doc {How SQLite Implements Atomic Commit} {ac/atomiccommit.html} {
+  A description of the logic within SQLite that implements
+  transactions with atomic commit, even in the face of power
+  failures.
+}
+doc {Moving From SQLite 3.4 to 3.5} {34to35.html} {
+  A document describing the differences between SQLite version 3.4.2
+  and 3.5.0.
 }
 
 doc {Pragma commands} {pragma.html} {
