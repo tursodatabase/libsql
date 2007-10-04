@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.444 2007/09/03 15:19:35 drh Exp $
+** $Id: build.c,v 1.445 2007/10/04 18:11:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1912,6 +1912,13 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   }
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iDb>=0 && iDb<db->nDb );
+
+  /* If pTab is a virtual table, call ViewGetColumnNames() to ensure
+  ** it is initialized.
+  */
+  if( IsVirtual(pTab) && sqlite3ViewGetColumnNames(pParse, pTab) ){
+    goto exit_drop_table;
+  }
 #ifndef SQLITE_OMIT_AUTHORIZATION
   {
     int code;
@@ -1929,9 +1936,6 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     }else if( IsVirtual(pTab) ){
-      if( sqlite3ViewGetColumnNames(pParse, pTab) ){
-        goto exit_drop_table;
-      }
       code = SQLITE_DROP_VTABLE;
       zArg2 = pTab->pMod->zName;
 #endif
