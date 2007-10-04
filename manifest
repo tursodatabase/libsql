@@ -1,5 +1,5 @@
-C Fixes\sfor\sOMIT_AUTHORIZATION\sbuilds.\s#2691.\s(CVS\s4466)
-D 2007-10-04T18:11:16
+C Correct\sthe\sname\son\sthe\snew\stest\sscript\sfor\sticket\s#2686.\s(CVS\s4467)
+D 2007-10-04T18:52:15
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -461,7 +461,7 @@ F test/tkt2409.test 20318bf6acd9b834b4420548f277b8e3a7420cd1
 F test/tkt2450.test 77ed94863f2049c1420288ddfea2d41e5e0971d6
 F test/tkt2640.test c513e7992a602a87ef3a2cc9ca1cba4146924e9b
 F test/tkt2643.test 3f3ebb743da00d4fed4fcf6daed92a0e18e57813
-F test/tkt2686.tcl 2da95620744e11807335ab07f4cc9bbfb1b08001
+F test/tkt2686.test 8815c3eeae7c8363bd7c2889349ec39e8bc8000d
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test b361161cf20614024cc1e52ea0bdec250776b2ae
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 81cf518646b277b08e04079c67053450a259542b
-R 31dfbe867d981c04386bb89c8b5d2aa3
-U danielk1977
-Z b6b461fcc376266e5d3af087856eaf2e
+P 755fcaf7e355042d88fed6b9b49669300b010695
+R c192a5dcfb8cde1191f8dc38b631436e
+U drh
+Z f2026b8a433720ce0929b82a000a15a4

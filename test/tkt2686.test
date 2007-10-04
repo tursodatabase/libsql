@@ -11,7 +11,7 @@
 #
 # This file is to test that ticket #2686 has been fixed.
 #
-# $Id: tkt2686.tcl,v 1.1 2007/10/03 15:30:52 drh Exp $
+# $Id: tkt2686.test,v 1.1 2007/10/04 18:52:15 drh Exp $
 #
 
 set testdir [file dirname $argv0]
