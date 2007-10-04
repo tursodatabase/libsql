@@ -1,5 +1,5 @@
-C Updates\sto\sthe\sdocumentation\sindex\spage.\s(CVS\s4464)
-D 2007-10-04T00:29:29
+C Version\s3.5.1\s(CVS\s4465)
+D 2007-10-04T00:30:53
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0d05f3fbaad44a0d3723cd543b865326acddf883
+P 837fc86166bfc789a53de1853043044f5e8ae3ac
 R f8bfaa703e1e463c9d733910321c4533
 U drh
-Z 45cfc127b53f87e0f390304ff24761f2
+Z e9ffee3d744279b2211a56e91fc33742
