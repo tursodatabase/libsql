@@ -1,6 +1,6 @@
-C The\ssqlite3internal.h\sfile\sobsolete\sas\sof\sversion\s3.5.0.\s\sRemove\nlegacy\sprocedures\sand\smakefile\stargets\sfor\sbuilding\sthis\sfile.\nTickets\s#2693\sand\s#2694.\s(CVS\s4469)
-D 2007-10-05T14:54:08
-F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
+C Fix\sproblem\sbuilding\stestfixture\son\smac.\sTicket\s#2689.\s(CVS\s4470)
+D 2007-10-05T15:04:13
+F Makefile.in 75b729d562e9525d57d9890ec598b38e1a8b02bc
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 873b19f713b5e7481dd12648f2fa3178058dee00
@@ -142,7 +142,7 @@ F src/test3.c 73c1fd55d1ece61f295a6b9204fd97a139de86ae
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
 F src/test6.c a9fc983d32d6f262eab300d742e49ff239b0bdbd
-F src/test7.c ae24ba989ecc2dc600d93c6311191b5d0c596f2b
+F src/test7.c acec2256c7c2d279db5a8b5fa1a2a68fcc942c67
 F src/test8.c f113aa3723a52113d0fa7c28155ecd37e7e04077
 F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
 F src/test_async.c c5ea222c2bb0c3c33ab910d1b82622655dd50684
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 38674fd287e0ca67e27c46a3ad0db4dcc8ed1e0c
-R d6fd7079c36c10d2b406996d8e798ff9
-U drh
-Z 09287fc8a59d522f72c25c8db8fe6220
+P e65842a9d4c779d24207e8a7934fe3bf35ff228b
+R b83859050d5b26cf66a470937c7295fe
+U danielk1977
+Z 80bd2f8fe3f9e95b46cdb428645feda3
