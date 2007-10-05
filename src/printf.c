@@ -51,7 +51,6 @@
 **
 */
 #include "sqliteInt.h"
-#include <math.h>
 
 /*
 ** Conversion types fall into various categories as defined by the

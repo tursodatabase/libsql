@@ -1,5 +1,5 @@
-C Changes\slemon\sso\sthat\sthe\sgenerated\sparser\sdoes\snot\saccept\sprior\sto\nseeing\sthe\sEOF\stoken.\s\sThis\sis\sa\slemon\schange\sonly\sand\sdoes\snot\neffect\sSQLite.\s\sTicket\s#2550.\s(CVS\s4473)
-D 2007-10-05T16:16:36
+C Remove\s#include\s<math.h>\sfrom\sall\ssource\sfiles.\s\sIt\sis\sno\slonger\sneeded\sbut\ncauses\scompile\sproblems\swhen\s-DSQLITE_OMIT_FLOATING_POINT\sis\sdefined.\nTicket\s#2696.\s(CVS\s4474)
+D 2007-10-05T16:23:55
 F Makefile.in 75b729d562e9525d57d9890ec598b38e1a8b02bc
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -125,7 +125,7 @@ F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 363e548dafb52327face8d99757ab56a7b1c1b26
 F src/prepare.c 920d09a5fc690ccd48ec8c82717a11d53365dae3
-F src/printf.c 85f7a4344dda6782a76df43da8e4d5b0342d6b85
+F src/printf.c 96c8d55315a13fc53cb3754cb15046f3ff891ea2
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 4706a6115da1bdc09a2be5991168a6cc2c0df267
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
@@ -164,14 +164,14 @@ F src/update.c e89b980b443d44b68bfc0b1746cdb6308e049ac9
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 49263637e0f228411201501ddfd1138338d6322c
 F src/vacuum.c 38745037c63246d1b0669038257890cf89fc4578
-F src/vdbe.c b6c53921512496ef4d7c4f571feb73b7a495db35
+F src/vdbe.c 57e37b55c4dcdc9ed71c57180cee514c33d0e8f9
 F src/vdbe.h 03a0fa17f6753a24d6cb585d7a362944a2c115aa
 F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
 F src/vdbeapi.c 9c2d681b75e4b90c28b9dd01a3f2e5905267f884
 F src/vdbeaux.c 5f1e5e98a13235cbc446501fe040eb31423fface
 F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
-F src/vdbemem.c 246d434fa60bde6553490eb686adfd86adcd6712
+F src/vdbemem.c 123994fcd344993d2fb050a83b91b341bbbd08b4
 F src/vtab.c f819d55ef638d45e09ce00009d435da8bf16f528
 F src/where.c 44042c8b9d0d054cc318c3a0df052215ebf49d2d
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a51946e66badab37cd54982265631bbc5e414f8e
-R 210c10367161878aed944ec38d45f171
+P 1c68d93412a608f5164ad984ff290ab3b832bf7a
+R 92ef499e839f7de60b71b849f7357fde
 U drh
-Z 3fd649e0712ea99e40f908f4ebe8b274
+Z 38554d7e6f7ee3afbb3381491153861c
