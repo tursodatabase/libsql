@@ -149,6 +149,7 @@ struct symbol {
 struct rule {
   struct symbol *lhs;      /* Left-hand side of the rule */
   char *lhsalias;          /* Alias for the LHS (NULL if none) */
+  int lhsStart;            /* True if left-hand side is the start symbol */
   int ruleline;            /* Line number for the rule */
   int nrhs;                /* Number of RHS symbols */
   struct symbol **rhs;     /* The RHS symbols */
@@ -709,6 +710,7 @@ does not work properly.",sp->name);
   ** left-hand side */
   for(rp=sp->rule; rp; rp=rp->nextlhs){
     struct config *newcfp;
+    rp->lhsStart = 1;
     newcfp = Configlist_addbasis(rp,0);
     SetAdd(newcfp->fws,0);
   }
@@ -3942,6 +3944,7 @@ struct lemon *lemp;
       }
       if( ap->type!=REDUCE ) continue;
       rp = ap->x.rp;
+      if( rp->lhsStart ) continue;
       if( rp==rbest ) continue;
       n = 1;
       for(ap2=ap->next; ap2; ap2=ap2->next){
