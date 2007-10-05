@@ -1403,7 +1403,7 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   return (void*)h;
 }
 static void winDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
-  FormatMessage(
+  FormatMessageA(
     FORMAT_MESSAGE_FROM_SYSTEM,
     NULL,
     GetLastError(),

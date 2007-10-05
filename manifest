@@ -1,5 +1,5 @@
-C Correct\sthe\sname\son\sthe\snew\stest\sscript\sfor\sticket\s#2686.\s(CVS\s4467)
-D 2007-10-04T18:52:15
+C Use\sFormatMessageA()\sinstead\sof\sFormatMessage()\sin\sthe\sw32\sVFS.\nTicket\s#2687.\s(CVS\s4468)
+D 2007-10-05T14:49:46
 F Makefile.in cbfb898945536a8f9ea8b897e1586dd1fdbcc5db
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -118,7 +118,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 308bd8ad6977f66f608228cccaecc4cbc1a24693
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 99960c7b9dad8dab72e47068afb7941492bfeaac
+F src/os_win.c b2b6aa5f72c84f24c2afd49abfa751abab0e5b79
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 0a92a08192785af79547b017cda45eb683b22552
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 755fcaf7e355042d88fed6b9b49669300b010695
-R c192a5dcfb8cde1191f8dc38b631436e
+P d261e2c731ef97d86fa9dc3caa1ce31ee9ce78ae
+R bc765c2cc9806a318609586e7909d1b2
 U drh
-Z f2026b8a433720ce0929b82a000a15a4
+Z dd0ca0580c7369afba4a15a0eb23d6d2
