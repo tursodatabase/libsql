@@ -1,5 +1,5 @@
-C Fix\sproblem\sbuilding\stestfixture\son\smac.\sTicket\s#2689.\s(CVS\s4470)
-D 2007-10-05T15:04:13
+C Do\snot\sattempt\sto\suse\sTryEnterCriticalSection()\sunder\swin32.\s\sIt\scauses\ntoo\smany\scompiler\sproblems.\s\sTicket\s#2685.\s(CVS\s4471)
+D 2007-10-05T15:08:01
 F Makefile.in 75b729d562e9525d57d9890ec598b38e1a8b02bc
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -108,7 +108,7 @@ F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 7fe4773e98ed74a63b2e54fc557929eb155f6269
 F src/mutex_unix.c ff77650261a245035b79c5c8a174f4e05d3cae8a
-F src/mutex_w32.c d2c56fb81aca10af1577bdae2a4083eb2505f8ee
+F src/mutex_w32.c 6e197765f283815496193e78e9548b5d0e53b68e
 F src/os.c 6a84b6ff284fa558e879d9b6a5809004aacc8195
 F src/os.h 4c880cf67437f323cd0c3ab2154f1d76babc12d3
 F src/os_common.h 98862f120ca6bf7a48ce8b16f158b77d00bc9d2f
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e65842a9d4c779d24207e8a7934fe3bf35ff228b
-R b83859050d5b26cf66a470937c7295fe
-U danielk1977
-Z 80bd2f8fe3f9e95b46cdb428645feda3
+P fe067d706b40d9756433eac9896660514d1c8216
+R da5eae15cf17bf50336e76f7b8e01006
+U drh
+Z da16cefa553e529b7c5a0949638526d9

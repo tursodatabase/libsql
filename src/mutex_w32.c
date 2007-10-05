@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.4 2007/09/05 14:30:42 drh Exp $
+** $Id: mutex_w32.c,v 1.5 2007/10/05 15:08:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -168,16 +168,27 @@ void sqlite3_mutex_enter(sqlite3_mutex *p){
   p->nRef++;
 }
 int sqlite3_mutex_try(sqlite3_mutex *p){
-  int rc;
+  int rc = SQLITE_BUSY;
   assert( p );
   assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
+  /*
+  ** The sqlite3_mutex_try() routine is very rarely used, and when it
+  ** is used it is merely an optimization.  So it is OK for it to always
+  ** fail.  
+  **
+  ** The TryEnterCriticalSection() interface is only available on WinNT.
+  ** And some windows compilers complain if you try to use it without
+  ** first doing some #defines that prevent SQLite from building on Win98.
+  ** For that reason, we will omit this optimization for now.  See
+  ** ticket #2685.
+  */
+#if 0
   if( mutexIsNT() && TryEnterCriticalSection(&p->mutex) ){
     p->owner = GetCurrentThreadId();
     p->nRef++;
     rc = SQLITE_OK;
-  }else{
-    rc = SQLITE_BUSY;
   }
+#endif
   return rc;
 }
 
