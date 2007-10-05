@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.15 2007/08/22 20:18:22 drh Exp $
+# $Id: misc7.test,v 1.16 2007/10/05 15:53:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -386,8 +386,12 @@ do_test misc7-17.1 {
   }
 } {1 {database is locked}}
 do_test misc7-17.2 {
-  catch {file attributes test.db-journal -permissions rw-------}
+  # Note that the -readonly flag must be cleared before the -permissions
+  # are set. Otherwise, when using tcl 8.5 on mac, the fact that the 
+  # -readonly flag is set causes the attempt to set the permissions
+  # to fail.
   catch {file attributes test.db-journal -readonly 0}
+  catch {file attributes test.db-journal -permissions rw-------}
   catchsql {
     SELECT count(*) FROM t3;
   }

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the DELETE FROM statement.
 #
-# $Id: delete.test,v 1.21 2006/01/03 00:33:50 drh Exp $
+# $Id: delete.test,v 1.22 2007/10/05 15:53:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -309,5 +309,11 @@ do_test delete-8.6 {
   execsql {SELECT * FROM t3}
 } {123}
 integrity_check delete-8.7
+
+# Need to do the following for tcl 8.5 on mac. On that configuration, the
+# -readonly flag is taken so seriously that a subsequent [file delete -force]
+# (required before the next test file can be executed) will fail.
+#
+catch {file attributes test.db -readonly 0}
 
 finish_test

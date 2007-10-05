@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\suse\sTryEnterCriticalSection()\sunder\swin32.\s\sIt\scauses\ntoo\smany\scompiler\sproblems.\s\sTicket\s#2685.\s(CVS\s4471)
-D 2007-10-05T15:08:01
+C Changes\sto\sa\scouple\sof\stest\sscripts\sto\shandle\sthe\stcl\s8.5\sversion\sof\s(file\sattributes\s-readonly)\son\smac.\s(CVS\s4472)
+D 2007-10-05T15:53:29
 F Makefile.in 75b729d562e9525d57d9890ec598b38e1a8b02bc
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -241,7 +241,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/date.test b2bd57ff2ab6185b9322306f7b68fa647d63c857
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
-F test/delete.test 525a6953bc3978780cae35f3eaf1027cf4ce887d
+F test/delete.test 57533e88e886608bf5ae0f394e14c2eb1b1f7754
 F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
 F test/descidx1.test 2177c4ad55edcf56ad5f4c6490f307d7774e8a10
@@ -374,7 +374,7 @@ F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test 21e8a275cadcf2ba2a9ac2c33ae024ecc5eaff3a
 F test/misc5.test ef90b03ae715b718f07fd084cccb4ef9eb1658e3
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
-F test/misc7.test a67af9620a510ce19f96ba69f3848228b7c62a73
+F test/misc7.test 3fbd0a9e3dd03331d9d76acd47bc179e1a97e15e
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test 9503e1f63e959544c006d9f01709c5b5eab67d54
@@ -426,7 +426,7 @@ F test/sync.test d05397b8f89f423dd6dba528692019ab036bc1c3
 F test/table.test dbdfd06aef054ad5aed8e57a782137d57d5c5528
 F test/tableapi.test 92651a95c23cf955e92407928e640536402fa3cc
 F test/tclsqlite.test c7feea1985c3e8a1ed134ba342347d47fa762e43
-F test/temptable.test c36f3e5a94507abb64f7ba23deeb4e1a8a8c3821
+F test/temptable.test d9208644207cf205437907d994004f636309ccc7
 F test/tester.tcl 913a808f05b0aed2fbb16481a423b1a5a118bdf0
 F test/thread001.test 8fbd9559da0bbdc273e00318c7fd66c162020af7
 F test/thread002.test 1b886bc4cb396e2bba94be8996f159b2b5b605bc
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P fe067d706b40d9756433eac9896660514d1c8216
-R da5eae15cf17bf50336e76f7b8e01006
-U drh
-Z da16cefa553e529b7c5a0949638526d9
+P f795431c725d88bd4011f20cf63cac630de842f1
+R 979cdcdc8ea6ae6406c777ce279b3379
+U danielk1977
+Z c03fae9704ced5b927314f1297351417
