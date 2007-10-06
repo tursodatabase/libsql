@@ -1,5 +1,5 @@
-C Remove\s#include\s<math.h>\sfrom\sall\ssource\sfiles.\s\sIt\sis\sno\slonger\sneeded\sbut\ncauses\scompile\sproblems\swhen\s-DSQLITE_OMIT_FLOATING_POINT\sis\sdefined.\nTicket\s#2696.\s(CVS\s4474)
-D 2007-10-05T16:23:55
+C Fix\sa\smemory\sleak\sin\sthe\ssqlite3_realloc()\simplementation\sof\sthe\nnon-debugging\smemory\sallocator.\s(CVS\s4475)
+D 2007-10-06T01:40:35
 F Makefile.in 75b729d562e9525d57d9890ec598b38e1a8b02bc
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -102,7 +102,7 @@ F src/loadext.c 124e566563d1c03e68e1396cb44df9870612c6e9
 F src/main.c 946ca0da59f1b00754cf0226aec30076f992130f
 F src/malloc.c de4e77fe70a9a0ac47a1c3a874422b107231bf31
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
-F src/mem1.c 1f85902b98b38bd8a8b0c24012933957256db13e
+F src/mem1.c 232075b7da8c9b7f23159bbda25c7407168ab9db
 F src/mem2.c 9c59519e471f858961fbdccd9543317bba1c5e58
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1c68d93412a608f5164ad984ff290ab3b832bf7a
-R 92ef499e839f7de60b71b849f7357fde
+P 4424357d17f615fab922780616eac6773535923a
+R 2ed601e13bd5dddd1e1e50775404fa02
 U drh
-Z 38554d7e6f7ee3afbb3381491153861c
+Z de6ecf621e823f38d84bd35865827bb5
