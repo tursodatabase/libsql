@@ -1104,9 +1104,13 @@ static int winOpen(
   }
   if( flags & (SQLITE_OPEN_TEMP_DB | SQLITE_OPEN_TEMP_JOURNAL
                     | SQLITE_OPEN_SUBJOURNAL) ){
+#if OS_WINCE
+    dwFlagsAndAttributes = FILE_ATTRIBUTE_HIDDEN;
+#else
     dwFlagsAndAttributes = FILE_ATTRIBUTE_TEMPORARY
                                | FILE_ATTRIBUTE_HIDDEN
                                | FILE_FLAG_DELETE_ON_CLOSE;
+#endif
   }else{
     dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
   }
@@ -1337,6 +1341,7 @@ static int winFullPathname(
 #if OS_WINCE
   /* WinCE has no concept of a relative pathname, or so I am told. */
   sqlite3_snprintf(pVfs->mxPathname, zFull, "%s", zRelative);
+  return SQLTIE_OK;
 #endif
 
 #if !OS_WINCE && !defined(__CYGWIN__)
