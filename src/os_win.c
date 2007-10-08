@@ -1168,7 +1168,7 @@ static int winOpen(
 #if OS_WINCE
   if( (flags & (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)) ==
                (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)
-       && !winceCreateLock(zFilename, pFile)
+       && !winceCreateLock(zName, pFile)
   ){
     CloseHandle(h);
     free(zConverted);
