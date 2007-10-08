@@ -1112,11 +1112,17 @@ static int winOpen(
   }else{
     dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
   }
+#if 0
   if( flags & (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_TEMP_DB) ){
     dwFlagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
   }else{
     dwFlagsAndAttributes |= FILE_FLAG_SEQUENTIAL_SCAN;
   }
+#else
+  /* Reports from the internet are that performance is always
+  ** better if FILE_FLAG_RANDOM_ACCESS is used.  Ticket #2699. */
+  dwFlagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
+#endif
   if( isNT() ){
     h = CreateFileW((WCHAR*)zConverted,
        dwDesiredAccess,
