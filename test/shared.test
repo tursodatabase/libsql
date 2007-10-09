@@ -9,13 +9,15 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.27 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: shared.test,v 1.28 2007/10/09 08:29:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 db close
 
-ifcapable !shared_cache {
+# These tests cannot be run without the ATTACH command.
+#
+ifcapable !shared_cache||!attach {
   finish_test
   return
 }

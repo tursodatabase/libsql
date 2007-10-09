@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.25 2007/05/15 16:51:37 drh Exp $
+# $Id: alter.test,v 1.26 2007/10/09 08:29:32 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -203,50 +203,52 @@ do_test alter-1.7 {
 
 # Check that ALTER TABLE works on attached databases.
 #
-do_test alter-1.8.1 {
-  file delete -force test2.db
-  file delete -force test2.db-journal
-  execsql {
-    ATTACH 'test2.db' AS aux;
-  }
-} {}
-do_test alter-1.8.2 {
-  execsql {
-    CREATE TABLE t4(a PRIMARY KEY, b, c);
-    CREATE TABLE aux.t4(a PRIMARY KEY, b, c);
-    CREATE INDEX i4 ON t4(b);
-    CREATE INDEX aux.i4 ON t4(b);
-  }
-} {}
-do_test alter-1.8.3 {
-  execsql {
-    INSERT INTO t4 VALUES('main', 'main', 'main');
-    INSERT INTO aux.t4 VALUES('aux', 'aux', 'aux');
-    SELECT * FROM t4 WHERE a = 'main';
-  }
-} {main main main}
-do_test alter-1.8.4 {
-  execsql {
-    ALTER TABLE t4 RENAME TO t5;
-    SELECT * FROM t4 WHERE a = 'aux';
-  }
-} {aux aux aux}
-do_test alter-1.8.5 {
-  execsql {
-    SELECT * FROM t5;
-  }
-} {main main main}
-do_test alter-1.8.6 {
-  execsql {
-    SELECT * FROM t5 WHERE b = 'main';
-  }
-} {main main main}
-do_test alter-1.8.7 {
-  execsql {
-    ALTER TABLE aux.t4 RENAME TO t5;
-    SELECT * FROM aux.t5 WHERE b = 'aux';
-  }
-} {aux aux aux}
+ifcapable attach {
+  do_test alter-1.8.1 {
+    file delete -force test2.db
+    file delete -force test2.db-journal
+    execsql {
+      ATTACH 'test2.db' AS aux;
+    }
+  } {}
+  do_test alter-1.8.2 {
+    execsql {
+      CREATE TABLE t4(a PRIMARY KEY, b, c);
+      CREATE TABLE aux.t4(a PRIMARY KEY, b, c);
+      CREATE INDEX i4 ON t4(b);
+      CREATE INDEX aux.i4 ON t4(b);
+    }
+  } {}
+  do_test alter-1.8.3 {
+    execsql {
+      INSERT INTO t4 VALUES('main', 'main', 'main');
+      INSERT INTO aux.t4 VALUES('aux', 'aux', 'aux');
+      SELECT * FROM t4 WHERE a = 'main';
+    }
+  } {main main main}
+  do_test alter-1.8.4 {
+    execsql {
+      ALTER TABLE t4 RENAME TO t5;
+      SELECT * FROM t4 WHERE a = 'aux';
+    }
+  } {aux aux aux}
+  do_test alter-1.8.5 {
+    execsql {
+      SELECT * FROM t5;
+    }
+  } {main main main}
+  do_test alter-1.8.6 {
+    execsql {
+      SELECT * FROM t5 WHERE b = 'main';
+    }
+  } {main main main}
+  do_test alter-1.8.7 {
+    execsql {
+      ALTER TABLE aux.t4 RENAME TO t5;
+      SELECT * FROM aux.t5 WHERE b = 'aux';
+    }
+  } {aux aux aux}
+}
 
 do_test alter-1.9.1 {
   execsql {
@@ -396,36 +398,38 @@ do_test alter-3.1.8 {
 # quoting. Otherwise the sqlite_alter_trigger() function might not work.
 file delete -force test3.db
 file delete -force test3.db-journal
-do_test alter-3.2.1 {
-  catchsql {
-    ATTACH 'test3.db' AS ON;
-  }
-} {1 {near "ON": syntax error}}
-do_test alter-3.2.2 {
-  catchsql {
-    ATTACH 'test3.db' AS 'ON';
-  }
-} {0 {}}
-do_test alter-3.2.3 {
-  catchsql {
-    CREATE TABLE ON.t1(a, b, c); 
-  }
-} {1 {near "ON": syntax error}}
-do_test alter-3.2.4 {
-  catchsql {
-    CREATE TABLE 'ON'.t1(a, b, c); 
-  }
-} {0 {}}
-do_test alter-3.2.4 {
-  catchsql {
-    CREATE TABLE 'ON'.ON(a, b, c); 
-  }
-} {1 {near "ON": syntax error}}
-do_test alter-3.2.5 {
-  catchsql {
-    CREATE TABLE 'ON'.'ON'(a, b, c); 
-  }
-} {0 {}}
+ifcapable attach {
+  do_test alter-3.2.1 {
+    catchsql {
+      ATTACH 'test3.db' AS ON;
+    }
+  } {1 {near "ON": syntax error}}
+  do_test alter-3.2.2 {
+    catchsql {
+      ATTACH 'test3.db' AS 'ON';
+    }
+  } {0 {}}
+  do_test alter-3.2.3 {
+    catchsql {
+      CREATE TABLE ON.t1(a, b, c); 
+    }
+  } {1 {near "ON": syntax error}}
+  do_test alter-3.2.4 {
+    catchsql {
+      CREATE TABLE 'ON'.t1(a, b, c); 
+    }
+  } {0 {}}
+  do_test alter-3.2.4 {
+    catchsql {
+      CREATE TABLE 'ON'.ON(a, b, c); 
+    }
+  } {1 {near "ON": syntax error}}
+  do_test alter-3.2.5 {
+    catchsql {
+      CREATE TABLE 'ON'.'ON'(a, b, c); 
+    }
+  } {0 {}}
+}
 do_test alter-3.2.6 {
   catchsql {
     CREATE TABLE t10(a, ON, c);
@@ -441,11 +445,13 @@ do_test alter-3.2.8 {
     CREATE TRIGGER trig4 AFTER INSERT ON ON BEGIN SELECT 1; END;
   }
 } {1 {near "ON": syntax error}}
-do_test alter-3.2.9 {
-  catchsql {
-    CREATE TRIGGER 'on'.trig4 AFTER INSERT ON 'ON' BEGIN SELECT 1; END;
-  }
-} {0 {}}
+ifcapable attach {
+  do_test alter-3.2.9 {
+    catchsql {
+      CREATE TRIGGER 'on'.trig4 AFTER INSERT ON 'ON' BEGIN SELECT 1; END;
+    }
+  } {0 {}}
+}
 do_test alter-3.2.10 {
   execsql {
     DROP TABLE t10;

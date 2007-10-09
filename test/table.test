@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.47 2007/05/02 17:54:56 drh Exp $
+# $Id: table.test,v 1.48 2007/10/09 08:29:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -612,7 +612,7 @@ do_test table-14.1 {
 } {0 {}}
 
 # Try to drop a table from within a callback:
-do_test table-14.3 {
+do_test table-14.2 {
   set rc [
     catch {
       db eval {SELECT * FROM tablet8 LIMIT 1} {} {
@@ -623,33 +623,35 @@ do_test table-14.3 {
   set result [list $rc $msg]
 } {1 {database table is locked}}
 
-# Now attach a database and ensure that a table can be created in the 
-# attached database whilst in a callback from a query on the main database.
-do_test table-14.4 {
-  file delete -force test2.db
-  file delete -force test2.db-journal
-  execsql {
-    attach 'test2.db' as aux;
-  }
-  db eval {SELECT * FROM tablet8 LIMIT 1} {} {
-    db eval {CREATE TABLE aux.t1(a, b, c)}
-  }
-} {}
-
-# On the other hand, it should be impossible to drop a table when any VMs 
-# are active. This is because VerifyCookie instructions may have already
-# been executed, and btree root-pages may not move after this (which a
-# delete table might do).
-do_test table-14.4 {
-  set rc [
-    catch {
-      db eval {SELECT * FROM tablet8 LIMIT 1} {} {
-        db eval {DROP TABLE aux.t1;}
-      }
-    } msg
-  ] 
-  set result [list $rc $msg]
-} {1 {database table is locked}}
+ifcapable attach {
+  # Now attach a database and ensure that a table can be created in the 
+  # attached database whilst in a callback from a query on the main database.
+  do_test table-14.3 {
+    file delete -force test2.db
+    file delete -force test2.db-journal
+    execsql {
+      ATTACH 'test2.db' as aux;
+    }
+    db eval {SELECT * FROM tablet8 LIMIT 1} {} {
+      db eval {CREATE TABLE aux.t1(a, b, c)}
+    }
+  } {}
+  
+  # On the other hand, it should be impossible to drop a table when any VMs 
+  # are active. This is because VerifyCookie instructions may have already
+  # been executed, and btree root-pages may not move after this (which a
+  # delete table might do).
+  do_test table-14.4 {
+    set rc [
+      catch {
+        db eval {SELECT * FROM tablet8 LIMIT 1} {} {
+          db eval {DROP TABLE aux.t1;}
+        }
+      } msg
+    ] 
+    set result [list $rc $msg]
+  } {1 {database table is locked}}
+}
 
 # Create and drop 2000 tables. This is to check that the balance_shallow()
 # routine works correctly on the sqlite_master table. At one point it

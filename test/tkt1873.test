@@ -14,10 +14,15 @@
 # fixed.  
 #
 #
-# $Id: tkt1873.test,v 1.1 2006/06/27 16:34:58 danielk1977 Exp $
+# $Id: tkt1873.test,v 1.2 2007/10/09 08:29:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !attach {
+  finish_test
+  return
+}
 
 file delete -force test2.db test2.db-journal
 

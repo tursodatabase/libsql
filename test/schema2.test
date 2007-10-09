@@ -14,7 +14,7 @@
 # error should be returned.  This is a copy of schema.test that
 # has been altered to use sqlite3_prepare_v2 instead of sqlite3_prepare
 #
-# $Id: schema2.test,v 1.2 2007/05/02 17:54:56 drh Exp $
+# $Id: schema2.test,v 1.3 2007/10/09 08:29:33 danielk1977 Exp $
 
 #---------------------------------------------------------------------
 # When any of the following types of SQL statements or actions are 
@@ -142,26 +142,28 @@ do_test schema2-4.4 {
 # Tests 5.1 to 5.4 check that prepared statements are invalidated when
 # a database is DETACHed (but not when one is ATTACHed).
 #
-do_test schema2-5.1 {
-  set sql {SELECT * FROM abc;}
-  set ::STMT [sqlite3_prepare_v2 $::DB $sql -1 TAIL]
-  execsql {
-    ATTACH 'test2.db' AS aux;
-  }
-  sqlite3_step $::STMT
-} {SQLITE_DONE}
-do_test schema2-5.2 {
-  sqlite3_reset $::STMT
-} {SQLITE_OK}
-do_test schema2-5.3 {
-  execsql {
-    DETACH aux;
-  }
-  sqlite3_step $::STMT
-} {SQLITE_DONE}
-do_test schema2-5.4 {
-  sqlite3_finalize $::STMT
-} {SQLITE_OK}
+ifcapable attach {
+  do_test schema2-5.1 {
+    set sql {SELECT * FROM abc;}
+    set ::STMT [sqlite3_prepare_v2 $::DB $sql -1 TAIL]
+    execsql {
+      ATTACH 'test2.db' AS aux;
+    }
+    sqlite3_step $::STMT
+  } {SQLITE_DONE}
+  do_test schema2-5.2 {
+    sqlite3_reset $::STMT
+  } {SQLITE_OK}
+  do_test schema2-5.3 {
+    execsql {
+      DETACH aux;
+    }
+    sqlite3_step $::STMT
+  } {SQLITE_DONE}
+  do_test schema2-5.4 {
+    sqlite3_finalize $::STMT
+  } {SQLITE_OK}
+}
 
 #---------------------------------------------------------------------
 # Tests 6.* check that prepared statements are invalidated when

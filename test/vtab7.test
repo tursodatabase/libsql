@@ -12,7 +12,7 @@
 # of this test is reading and writing to the database from within a
 # virtual table xSync() callback.
 #
-# $Id: vtab7.test,v 1.2 2006/07/26 16:22:16 danielk1977 Exp $
+# $Id: vtab7.test,v 1.3 2007/10/09 08:29:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -125,21 +125,23 @@ do_test vtab7-2.6 {
 } {abc abc2 log}
 
 # Write to an attached database from xSync().
-do_test vtab7-3.1 {
-  file delete -force test2.db
-  file delete -force test2.db-journal
-  execsql {
-    ATTACH 'test2.db' AS db2;
-    CREATE TABLE db2.stuff(description, shape, color);
-  }
-  set ::callbacks(xSync,abc) {
-    execsql { INSERT INTO db2.stuff VALUES('abc', 'square', 'green'); }
-  }
-  execsql {
-    INSERT INTO abc2 VALUES(1, 2, 3);
-    SELECT * from stuff;
-  }
-} {abc square green}
+ifcapable attach {
+  do_test vtab7-3.1 {
+    file delete -force test2.db
+    file delete -force test2.db-journal
+    execsql {
+      ATTACH 'test2.db' AS db2;
+      CREATE TABLE db2.stuff(description, shape, color);
+    }
+    set ::callbacks(xSync,abc) {
+      execsql { INSERT INTO db2.stuff VALUES('abc', 'square', 'green'); }
+    }
+    execsql {
+      INSERT INTO abc2 VALUES(1, 2, 3);
+      SELECT * from stuff;
+    }
+  } {abc square green}
+}
 
 # UPDATE: The next test passes, but leaks memory. So leave it out.
 #

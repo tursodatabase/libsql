@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.54 2007/05/17 16:38:30 danielk1977 Exp $
+# $Id: pragma.test,v 1.55 2007/10/09 08:29:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -210,33 +210,33 @@ do_test pragma-1.18 {
 } {}
 
 # Test modifying the safety_level of an attached database.
-do_test pragma-2.1 {
-  file delete -force test2.db
-  file delete -force test2.db-journal
-  execsql {
-    ATTACH 'test2.db' AS aux;
-  } 
-} {}
-ifcapable pager_pragmas {
-do_test pragma-2.2 {
-  execsql {
-    pragma aux.synchronous;
-  } 
-} {2}
-do_test pragma-2.3 {
-  execsql {
-    pragma aux.synchronous = OFF;
-    pragma aux.synchronous;
-    pragma synchronous;
-  } 
-} {0 2}
-do_test pragma-2.4 {
-  execsql {
-    pragma aux.synchronous = ON;
-    pragma synchronous;
-    pragma aux.synchronous;
-  } 
-} {2 1}
+ifcapable pager_pragmas&&attach {
+  do_test pragma-2.1 {
+    file delete -force test2.db
+    file delete -force test2.db-journal
+    execsql {
+      ATTACH 'test2.db' AS aux;
+    } 
+  } {}
+  do_test pragma-2.2 {
+    execsql {
+      pragma aux.synchronous;
+    } 
+  } {2}
+  do_test pragma-2.3 {
+    execsql {
+      pragma aux.synchronous = OFF;
+      pragma aux.synchronous;
+      pragma synchronous;
+    } 
+  } {0 2}
+  do_test pragma-2.4 {
+    execsql {
+      pragma aux.synchronous = ON;
+      pragma synchronous;
+      pragma aux.synchronous;
+    } 
+  } {2 1}
 } ;# ifcapable pager_pragmas
 
 # Construct a corrupted index and make sure the integrity_check
@@ -259,158 +259,160 @@ do_test pragma-3.1 {
     SELECT rowid, * from t2;
   }
 } {1 11 2 3 2 22 3 4}
-if {![sqlite3 -has-codec] && $sqlite_options(integrityck)} {
-  do_test pragma-3.2 {
-    set rootpage [execsql {SELECT rootpage FROM sqlite_master WHERE name='i2'}]
-    set db [btree_open test.db 100 0]
-    btree_begin_transaction $db
-    set c [btree_cursor $db $rootpage 1]
-    btree_first $c
-    btree_delete $c
-    btree_commit $db
-    btree_close $db
-    execsql {PRAGMA integrity_check}
-  } {{rowid 1 missing from index i2} {wrong # of entries in index i2}}
-  do_test pragma-3.3 {
-    execsql {PRAGMA integrity_check=1}
-  } {{rowid 1 missing from index i2}}
-  do_test pragma-3.4 {
-    execsql {
-      ATTACH DATABASE 'test.db' AS t2;
-      PRAGMA integrity_check
-    }
-  } {{rowid 1 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
-  do_test pragma-3.5 {
-    execsql {
-      PRAGMA integrity_check=3
-    }
-  } {{rowid 1 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2}}
-  do_test pragma-3.6 {
-    execsql {
-      PRAGMA integrity_check=xyz
-    }
-  } {{rowid 1 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
-  do_test pragma-3.7 {
-    execsql {
-      PRAGMA integrity_check=0
-    }
-  } {{rowid 1 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
-
-  # Add additional corruption by appending unused pages to the end of
-  # the database file testerr.db
-  #
-  do_test pragma-3.8 {
-    execsql {DETACH t2}
-    file delete -force testerr.db testerr.db-journal
-    set out [open testerr.db w]
-    fconfigure $out -translation binary
-    set in [open test.db r]
-    fconfigure $in -translation binary
-    puts -nonewline $out [read $in]
-    seek $in 0
-    puts -nonewline $out [read $in]
-    close $in
-    close $out
-    execsql {REINDEX t2}
-    execsql {PRAGMA integrity_check}
-  } {ok}
-  do_test pragma-3.9 {
-    execsql {
-      ATTACH 'testerr.db' AS t2;
-      PRAGMA integrity_check
-    }
-  } {{*** in database t2 ***
+ifcapable attach {
+  if {![sqlite3 -has-codec] && $sqlite_options(integrityck)} {
+    do_test pragma-3.2 {
+      set rootpage [execsql {SELECT rootpage FROM sqlite_master WHERE name='i2'}]
+      set db [btree_open test.db 100 0]
+      btree_begin_transaction $db
+      set c [btree_cursor $db $rootpage 1]
+      btree_first $c
+      btree_delete $c
+      btree_commit $db
+      btree_close $db
+      execsql {PRAGMA integrity_check}
+    } {{rowid 1 missing from index i2} {wrong # of entries in index i2}}
+    do_test pragma-3.3 {
+      execsql {PRAGMA integrity_check=1}
+    } {{rowid 1 missing from index i2}}
+    do_test pragma-3.4 {
+      execsql {
+        ATTACH DATABASE 'test.db' AS t2;
+        PRAGMA integrity_check
+      }
+    } {{rowid 1 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
+    do_test pragma-3.5 {
+      execsql {
+        PRAGMA integrity_check=3
+      }
+    } {{rowid 1 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2}}
+    do_test pragma-3.6 {
+      execsql {
+        PRAGMA integrity_check=xyz
+      }
+    } {{rowid 1 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
+    do_test pragma-3.7 {
+      execsql {
+        PRAGMA integrity_check=0
+      }
+    } {{rowid 1 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
+  
+    # Add additional corruption by appending unused pages to the end of
+    # the database file testerr.db
+    #
+    do_test pragma-3.8 {
+      execsql {DETACH t2}
+      file delete -force testerr.db testerr.db-journal
+      set out [open testerr.db w]
+      fconfigure $out -translation binary
+      set in [open test.db r]
+      fconfigure $in -translation binary
+      puts -nonewline $out [read $in]
+      seek $in 0
+      puts -nonewline $out [read $in]
+      close $in
+      close $out
+      execsql {REINDEX t2}
+      execsql {PRAGMA integrity_check}
+    } {ok}
+    do_test pragma-3.9 {
+      execsql {
+        ATTACH 'testerr.db' AS t2;
+        PRAGMA integrity_check
+      }
+    } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
 Page 6 is never used} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
-  do_test pragma-3.10 {
-    execsql {
-      PRAGMA integrity_check=1
-    }
-  } {{*** in database t2 ***
+    do_test pragma-3.10 {
+      execsql {
+        PRAGMA integrity_check=1
+      }
+    } {{*** in database t2 ***
 Page 4 is never used}}
-  do_test pragma-3.11 {
-    execsql {
-      PRAGMA integrity_check=5
-    }
-  } {{*** in database t2 ***
+    do_test pragma-3.11 {
+      execsql {
+        PRAGMA integrity_check=5
+      }
+    } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
 Page 6 is never used} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
-  do_test pragma-3.12 {
-    execsql {
-      PRAGMA integrity_check=4
-    }
-  } {{*** in database t2 ***
+    do_test pragma-3.12 {
+      execsql {
+        PRAGMA integrity_check=4
+      }
+    } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
 Page 6 is never used} {rowid 1 missing from index i2}}
-  do_test pragma-3.13 {
-    execsql {
-      PRAGMA integrity_check=3
-    }
-  } {{*** in database t2 ***
+    do_test pragma-3.13 {
+      execsql {
+        PRAGMA integrity_check=3
+      }
+    } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
 Page 6 is never used}}
-  do_test pragma-3.14 {
-    execsql {
-      PRAGMA integrity_check(2)
-    }
-  } {{*** in database t2 ***
+    do_test pragma-3.14 {
+      execsql {
+        PRAGMA integrity_check(2)
+      }
+    } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used}}
-  do_test pragma-3.15 {
-    execsql {
-      ATTACH 'testerr.db' AS t3;
-      PRAGMA integrity_check
-    }
-  } {{*** in database t2 ***
+    do_test pragma-3.15 {
+      execsql {
+        ATTACH 'testerr.db' AS t3;
+        PRAGMA integrity_check
+      }
+    } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
 Page 6 is never used} {rowid 1 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
 Page 4 is never used
 Page 5 is never used
 Page 6 is never used} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
-  do_test pragma-3.16 {
-    execsql {
-      PRAGMA integrity_check(9)
-    }
-  } {{*** in database t2 ***
+    do_test pragma-3.16 {
+      execsql {
+        PRAGMA integrity_check(9)
+      }
+    } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
 Page 6 is never used} {rowid 1 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
 Page 4 is never used
 Page 5 is never used
 Page 6 is never used} {rowid 1 missing from index i2}}
-  do_test pragma-3.17 {
-    execsql {
-      PRAGMA integrity_check=7
-    }
-  } {{*** in database t2 ***
+    do_test pragma-3.17 {
+      execsql {
+        PRAGMA integrity_check=7
+      }
+    } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
 Page 6 is never used} {rowid 1 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
 Page 4 is never used
 Page 5 is never used}}
-  do_test pragma-3.18 {
-    execsql {
-      PRAGMA integrity_check=4
-    }
-  } {{*** in database t2 ***
+    do_test pragma-3.18 {
+      execsql {
+        PRAGMA integrity_check=4
+      }
+    } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
 Page 6 is never used} {rowid 1 missing from index i2}}
+  }
+  do_test pragma-3.99 {
+    catchsql {DETACH t3}
+    catchsql {DETACH t2}
+    file delete -force testerr.db testerr.db-journal
+    catchsql {DROP INDEX i2}
+  } {0 {}}
 }
-do_test pragma-3.99 {
-  catchsql {DETACH t3}
-  catchsql {DETACH t2}
-  file delete -force testerr.db testerr.db-journal
-  catchsql {DROP INDEX i2}
-} {0 {}}
 
 # Test modifying the cache_size of an attached database.
-ifcapable pager_pragmas {
+ifcapable pager_pragmas&&attach {
 do_test pragma-4.1 {
   execsql {
     ATTACH 'test2.db' AS aux;
@@ -481,7 +483,7 @@ catchsql {COMMIT;}
 # Test schema-query pragmas
 #
 ifcapable schema_pragmas {
-ifcapable tempdb {
+ifcapable tempdb&&attach {
   do_test pragma-6.1 {
     set res {}
     execsql {SELECT * FROM sqlite_temp_master}
@@ -647,18 +649,20 @@ do_test pragma-8.1.10 {
 # Make sure the schema-version can be manipulated in an attached database.
 file delete -force test2.db
 file delete -force test2.db-journal
-do_test pragma-8.1.11 {
-  execsql {
-    ATTACH 'test2.db' AS aux;
-    CREATE TABLE aux.t1(a, b, c);
-    PRAGMA aux.schema_version = 205;
-  }
-} {}
-do_test pragma-8.1.12 {
-  execsql {
-    PRAGMA aux.schema_version;
-  }
-} 205
+ifcapable attach {
+  do_test pragma-8.1.11 {
+    execsql {
+      ATTACH 'test2.db' AS aux;
+      CREATE TABLE aux.t1(a, b, c);
+      PRAGMA aux.schema_version = 205;
+    }
+  } {}
+  do_test pragma-8.1.12 {
+    execsql {
+      PRAGMA aux.schema_version;
+    }
+  } 205
+}
 do_test pragma-8.1.13 {
   execsql {
     PRAGMA schema_version;
@@ -667,28 +671,30 @@ do_test pragma-8.1.13 {
 
 # And check that modifying the schema-version in an attached database
 # forces the second connection to reload the schema.
-do_test pragma-8.1.14 {
-  sqlite3 db2 test.db; set ::DB2 [sqlite3_connection_pointer db2]
-  execsql {
-    ATTACH 'test2.db' AS aux;
-    SELECT * FROM aux.t1;
-  } db2
-} {}
-do_test pragma-8.1.15 {
-  execsql {
-    PRAGMA aux.schema_version = 206;
-  }
-} {}
-do_test pragma-8.1.16 {
-  set ::STMT [sqlite3_prepare $::DB2 "SELECT * FROM aux.t1" -1 DUMMY]
-  sqlite3_step $::STMT
-} SQLITE_ERROR
-do_test pragma-8.1.17 {
-  sqlite3_finalize $::STMT
-} SQLITE_SCHEMA
-do_test pragma-8.1.18 {
-  db2 close
-} {}
+ifcapable attach {
+  do_test pragma-8.1.14 {
+    sqlite3 db2 test.db; set ::DB2 [sqlite3_connection_pointer db2]
+    execsql {
+      ATTACH 'test2.db' AS aux;
+      SELECT * FROM aux.t1;
+    } db2
+  } {}
+  do_test pragma-8.1.15 {
+    execsql {
+      PRAGMA aux.schema_version = 206;
+    }
+  } {}
+  do_test pragma-8.1.16 {
+    set ::STMT [sqlite3_prepare $::DB2 "SELECT * FROM aux.t1" -1 DUMMY]
+    sqlite3_step $::STMT
+  } SQLITE_ERROR
+  do_test pragma-8.1.17 {
+    sqlite3_finalize $::STMT
+  } SQLITE_SCHEMA
+  do_test pragma-8.1.18 {
+    db2 close
+  } {}
+}
 
 # Now test that the user-version can be read and written (and that we aren't
 # accidentally manipulating the schema-version instead).
@@ -732,61 +738,64 @@ ifcapable vacuum {
     }
   } {109}
 }
-db eval {ATTACH 'test2.db' AS aux}
 
-# Check that the user-version in the auxilary database can be manipulated (
-# and that we aren't accidentally manipulating the same in the main db).
-do_test pragma-8.2.5 {
-  execsql {
-    PRAGMA aux.user_version;
-  }
-} {0}
-do_test pragma-8.2.6 {
-  execsql {
-    PRAGMA aux.user_version = 3;
-  }
-} {}
-do_test pragma-8.2.7 {
-  execsql {
-    PRAGMA aux.user_version;
-  }
-} {3}
-do_test pragma-8.2.8 {
-  execsql {
-    PRAGMA main.user_version;
-  }
-} {2}
-
-# Now check that a ROLLBACK resets the user-version if it has been modified
-# within a transaction.
-do_test pragma-8.2.9 {
-  execsql {
-    BEGIN;
-    PRAGMA aux.user_version = 10;
-    PRAGMA user_version = 11;
-  }
-} {}
-do_test pragma-8.2.10 {
-  execsql {
-    PRAGMA aux.user_version;
-  }
-} {10}
-do_test pragma-8.2.11 {
-  execsql {
-    PRAGMA main.user_version;
-  }
-} {11}
-do_test pragma-8.2.12 {
-  execsql {
-    ROLLBACK;
-    PRAGMA aux.user_version;
-  }
-} {3}
-do_test pragma-8.2.13 {
-  execsql {
-    PRAGMA main.user_version;
-  }
-} {2}
+ifcapable attach {
+  db eval {ATTACH 'test2.db' AS aux}
+  
+  # Check that the user-version in the auxilary database can be manipulated (
+  # and that we aren't accidentally manipulating the same in the main db).
+  do_test pragma-8.2.5 {
+    execsql {
+      PRAGMA aux.user_version;
+    }
+  } {0}
+  do_test pragma-8.2.6 {
+    execsql {
+      PRAGMA aux.user_version = 3;
+    }
+  } {}
+  do_test pragma-8.2.7 {
+    execsql {
+      PRAGMA aux.user_version;
+    }
+  } {3}
+  do_test pragma-8.2.8 {
+    execsql {
+      PRAGMA main.user_version;
+    }
+  } {2}
+  
+  # Now check that a ROLLBACK resets the user-version if it has been modified
+  # within a transaction.
+  do_test pragma-8.2.9 {
+    execsql {
+      BEGIN;
+      PRAGMA aux.user_version = 10;
+      PRAGMA user_version = 11;
+    }
+  } {}
+  do_test pragma-8.2.10 {
+    execsql {
+      PRAGMA aux.user_version;
+    }
+  } {10}
+  do_test pragma-8.2.11 {
+    execsql {
+      PRAGMA main.user_version;
+    }
+  } {11}
+  do_test pragma-8.2.12 {
+    execsql {
+      ROLLBACK;
+      PRAGMA aux.user_version;
+    }
+  } {3}
+  do_test pragma-8.2.13 {
+    execsql {
+      PRAGMA main.user_version;
+    }
+  } {2}
+}
 
 # Try a negative value for the user-version
 do_test pragma-8.2.14 {

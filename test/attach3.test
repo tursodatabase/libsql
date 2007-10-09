@@ -12,12 +12,16 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and schema changes to attached databases.
 #
-# $Id: attach3.test,v 1.17 2006/06/20 11:01:09 danielk1977 Exp $
+# $Id: attach3.test,v 1.18 2007/10/09 08:29:32 danielk1977 Exp $
 #
-
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !attach {
+  finish_test
+  return
+}
 
 # Create tables t1 and t2 in the main database
 execsql {

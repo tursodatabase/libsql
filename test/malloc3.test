@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.16 2007/10/03 08:46:45 danielk1977 Exp $
+# $Id: malloc3.test,v 1.17 2007/10/09 08:29:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -462,25 +462,27 @@ TEST 29 {
 # Test a simple multi-file transaction 
 #
 file delete -force test2.db
-SQL {ATTACH 'test2.db' AS aux;}
-SQL {BEGIN}
-SQL {CREATE TABLE aux.tbl2(x, y, z)}
-SQL {INSERT INTO tbl2 VALUES(1, 2, 3)}
-SQL {INSERT INTO def VALUES(4, 5, 6)}
-TEST 30 {
-  do_test $testid {
-    execsql {
-      SELECT * FROM tbl2, def WHERE d = x;
-    }
-  } {1 2 3 1 2 3}
-}
-SQL {COMMIT}
-TEST 31 {
-  do_test $testid {
-    execsql {
-      SELECT * FROM tbl2, def WHERE d = x;
-    }
-  } {1 2 3 1 2 3}
+ifcapable attach {
+  SQL {ATTACH 'test2.db' AS aux;}
+  SQL {BEGIN}
+  SQL {CREATE TABLE aux.tbl2(x, y, z)}
+  SQL {INSERT INTO tbl2 VALUES(1, 2, 3)}
+  SQL {INSERT INTO def VALUES(4, 5, 6)}
+  TEST 30 {
+    do_test $testid {
+      execsql {
+        SELECT * FROM tbl2, def WHERE d = x;
+      }
+    } {1 2 3 1 2 3}
+  }
+  SQL {COMMIT}
+  TEST 31 {
+    do_test $testid {
+      execsql {
+        SELECT * FROM tbl2, def WHERE d = x;
+      }
+    } {1 2 3 1 2 3}
+  }
 }
 
 # Test what happens when a malloc() fails while there are other active

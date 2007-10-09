@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.16 2007/09/03 16:45:36 drh Exp $
+# $Id: incrblob.test,v 1.17 2007/10/09 08:29:32 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -341,35 +341,37 @@ do_test incrblob-4.11 {
 #
 #     Test that opening a blob in an attached database works.
 #
-do_test incrblob-5.1 {
-  file delete -force test2.db test2.db-journal
-  set ::size [expr [file size [info script]]]
-  execsql {
-    ATTACH 'test2.db' AS aux;
-    CREATE TABLE aux.files(name, text);
-    INSERT INTO aux.files VALUES('this one', zeroblob($::size));
-  }
-  set fd  [db incrblob aux files text 1]
-  fconfigure $fd -translation binary
-  set fd2 [open [info script]]
-  fconfigure $fd2 -translation binary
-  puts -nonewline $fd [read $fd2]
-  close $fd
-  close $fd2
-  set ::text [db one {select text from aux.files}]
-  string length $::text
-} [file size [info script]]
-do_test incrblob-5.2 {
-  set fd2 [open [info script]]
-  fconfigure $fd2 -translation binary
-  set ::data [read $fd2]
-  close $fd2
-  set ::data
-} $::text
+ifcapable attach {
+  do_test incrblob-5.1 {
+    file delete -force test2.db test2.db-journal
+    set ::size [expr [file size [info script]]]
+    execsql {
+      ATTACH 'test2.db' AS aux;
+      CREATE TABLE aux.files(name, text);
+      INSERT INTO aux.files VALUES('this one', zeroblob($::size));
+    }
+    set fd  [db incrblob aux files text 1]
+    fconfigure $fd -translation binary
+    set fd2 [open [info script]]
+    fconfigure $fd2 -translation binary
+    puts -nonewline $fd [read $fd2]
+    close $fd
+    close $fd2
+    set ::text [db one {select text from aux.files}]
+    string length $::text
+  } [file size [info script]]
+  do_test incrblob-5.2 {
+    set fd2 [open [info script]]
+    fconfigure $fd2 -translation binary
+    set ::data [read $fd2]
+    close $fd2
+    set ::data
+  } $::text
+}
 
 # free memory
-unset ::data
-unset ::text
+unset -nocomplain ::data
+unset -nocomplain ::text
 
 #------------------------------------------------------------------------
 # incrblob-6.*: 

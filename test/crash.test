@@ -17,7 +17,7 @@
 # These routines allow us to simulate the kind of file damage that 
 # occurs after a power failure.
 #
-# $Id: crash.test,v 1.25 2007/08/20 14:23:44 danielk1977 Exp $
+# $Id: crash.test,v 1.26 2007/10/09 08:29:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -209,98 +209,100 @@ for {set i 1} {$i < $repeats} {incr i} {
 # crash-4.3.*: Test recovery when crash occurs during sync() of the master
 #              journal file. 
 #
-do_test crash-4.0 {
-  file delete -force test2.db
-  file delete -force test2.db-journal
-  execsql {
-    ATTACH 'test2.db' AS aux;
-    PRAGMA aux.default_cache_size = 10;
-    CREATE TABLE aux.abc2 AS SELECT 2*a as a, 2*b as b, 2*c as c FROM abc;
+ifcapable attach {
+  do_test crash-4.0 {
+    file delete -force test2.db
+    file delete -force test2.db-journal
+    execsql {
+      ATTACH 'test2.db' AS aux;
+      PRAGMA aux.default_cache_size = 10;
+      CREATE TABLE aux.abc2 AS SELECT 2*a as a, 2*b as b, 2*c as c FROM abc;
+    }
+    expr ([file size test2.db] / 1024) > 450
+  } {1}
+  
+  set fin 0
+  for {set i 1} {$i<$repeats} {incr i} {
+    set sig [signature]
+    set sig2 [signature2]
+    do_test crash-4.1.$i.1 {
+       set c [crashsql -delay $i -file test.db-journal "
+         ATTACH 'test2.db' AS aux;
+         BEGIN;
+         SELECT randstr($i,$i) FROM abc LIMIT $i;
+         INSERT INTO abc VALUES(randstr(10,10), 0, 0);
+         DELETE FROM abc WHERE random()%10!=0;
+         INSERT INTO abc2 VALUES(randstr(10,10), 0, 0);
+         DELETE FROM abc2 WHERE random()%10!=0;
+         COMMIT;
+       "]
+       if { $c == {0 {}} } {
+         set ::fin 1
+         set c {1 {child process exited abnormally}}
+       }
+       set c
+    } {1 {child process exited abnormally}}
+    if {$::fin} break
+    do_test crash-4.1.$i.2 {
+      signature
+    } $sig
+    do_test crash-4.1.$i.3 {
+      signature2
+    } $sig2
+  } 
+  set i 0
+  set fin 0
+  while {[incr i]} {
+    set sig [signature]
+    set sig2 [signature2]
+    set ::fin 0
+    do_test crash-4.2.$i.1 {
+       set c [crashsql -delay $i -file test2.db-journal "
+         ATTACH 'test2.db' AS aux;
+         BEGIN;
+         SELECT randstr($i,$i) FROM abc LIMIT $i;
+         INSERT INTO abc VALUES(randstr(10,10), 0, 0);
+         DELETE FROM abc WHERE random()%10!=0;
+         INSERT INTO abc2 VALUES(randstr(10,10), 0, 0);
+         DELETE FROM abc2 WHERE random()%10!=0;
+         COMMIT;
+       "]
+       if { $c == {0 {}} } {
+         set ::fin 1
+         set c {1 {child process exited abnormally}}
+       }
+       set c
+    } {1 {child process exited abnormally}}
+    if { $::fin } break
+    do_test crash-4.2.$i.2 {
+      signature
+    } $sig
+    do_test crash-4.2.$i.3 {
+      signature2
+    } $sig2
+  } 
+  for {set i 1} {$i < 5} {incr i} {
+    set sig [signature]
+    set sig2 [signature2]
+    do_test crash-4.3.$i.1 {
+       crashsql -delay 1 -file test.db-mj* "
+         ATTACH 'test2.db' AS aux;
+         BEGIN;
+         SELECT random() FROM abc LIMIT $i;
+         INSERT INTO abc VALUES(randstr(10,10), 0, 0);
+         DELETE FROM abc WHERE random()%10!=0;
+         INSERT INTO abc2 VALUES(randstr(10,10), 0, 0);
+         DELETE FROM abc2 WHERE random()%10!=0;
+         COMMIT;
+       "
+    } {1 {child process exited abnormally}}
+    do_test crash-4.3.$i.2 {
+      signature
+    } $sig
+    do_test crash-4.3.$i.3 {
+      signature2
+    } $sig2
   }
-  expr ([file size test2.db] / 1024) > 450
-} {1}
-
-set fin 0
-for {set i 1} {$i<$repeats} {incr i} {
-  set sig [signature]
-  set sig2 [signature2]
-  do_test crash-4.1.$i.1 {
-     set c [crashsql -delay $i -file test.db-journal "
-       ATTACH 'test2.db' AS aux;
-       BEGIN;
-       SELECT randstr($i,$i) FROM abc LIMIT $i;
-       INSERT INTO abc VALUES(randstr(10,10), 0, 0);
-       DELETE FROM abc WHERE random()%10!=0;
-       INSERT INTO abc2 VALUES(randstr(10,10), 0, 0);
-       DELETE FROM abc2 WHERE random()%10!=0;
-       COMMIT;
-     "]
-     if { $c == {0 {}} } {
-       set ::fin 1
-       set c {1 {child process exited abnormally}}
-     }
-     set c
-  } {1 {child process exited abnormally}}
-  if {$::fin} break
-  do_test crash-4.1.$i.2 {
-    signature
-  } $sig
-  do_test crash-4.1.$i.3 {
-    signature2
-  } $sig2
-} 
-set i 0
-set fin 0
-while {[incr i]} {
-  set sig [signature]
-  set sig2 [signature2]
-  set ::fin 0
-  do_test crash-4.2.$i.1 {
-     set c [crashsql -delay $i -file test2.db-journal "
-       ATTACH 'test2.db' AS aux;
-       BEGIN;
-       SELECT randstr($i,$i) FROM abc LIMIT $i;
-       INSERT INTO abc VALUES(randstr(10,10), 0, 0);
-       DELETE FROM abc WHERE random()%10!=0;
-       INSERT INTO abc2 VALUES(randstr(10,10), 0, 0);
-       DELETE FROM abc2 WHERE random()%10!=0;
-       COMMIT;
-     "]
-     if { $c == {0 {}} } {
-       set ::fin 1
-       set c {1 {child process exited abnormally}}
-     }
-     set c
-  } {1 {child process exited abnormally}}
-  if { $::fin } break
-  do_test crash-4.2.$i.2 {
-    signature
-  } $sig
-  do_test crash-4.2.$i.3 {
-    signature2
-  } $sig2
-} 
-for {set i 1} {$i < 5} {incr i} {
-  set sig [signature]
-  set sig2 [signature2]
-  do_test crash-4.3.$i.1 {
-     crashsql -delay 1 -file test.db-mj* "
-       ATTACH 'test2.db' AS aux;
-       BEGIN;
-       SELECT random() FROM abc LIMIT $i;
-       INSERT INTO abc VALUES(randstr(10,10), 0, 0);
-       DELETE FROM abc WHERE random()%10!=0;
-       INSERT INTO abc2 VALUES(randstr(10,10), 0, 0);
-       DELETE FROM abc2 WHERE random()%10!=0;
-       COMMIT;
-     "
-  } {1 {child process exited abnormally}}
-  do_test crash-4.3.$i.2 {
-    signature
-  } $sig
-  do_test crash-4.3.$i.3 {
-    signature2
-  } $sig2
 }
 
 #--------------------------------------------------------------------------

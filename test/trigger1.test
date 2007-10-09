@@ -532,7 +532,7 @@ ifcapable conflict {
 # Also verify that references within trigger programs are resolved at
 # statement compile time, not trigger installation time. This means, for
 # example, that you can drop and re-create tables referenced by triggers. 
-ifcapable tempdb {
+ifcapable tempdb&&attach {
   do_test trigger1-10.0 {
     file delete -force test2.db
     file delete -force test2.db-journal

@@ -12,11 +12,16 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach2.test,v 1.36 2007/08/10 19:46:14 drh Exp $
+# $Id: attach2.test,v 1.37 2007/10/09 08:29:32 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !attach {
+  finish_test
+  return
+}
 
 # Ticket #354
 #

@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.50 2007/10/03 15:02:40 danielk1977 Exp $
+# $Id: malloc.test,v 1.51 2007/10/09 08:29:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -293,7 +293,7 @@ do_malloc_test 12 -tclbody {
 
 # Test malloc errors when replaying two hot journals from a 2-file 
 # transaction.
-ifcapable crashtest {
+ifcapable crashtest&&attach {
   do_malloc_test 13 -tclprep {
     set rc [crashsql -delay 1 -file test2.db {
       ATTACH 'test2.db' as aux;
@@ -477,23 +477,25 @@ unset static_string
 # Make sure SQLITE_NOMEM is reported out on an ATTACH failure even
 # when the malloc failure occurs within the nested parse.
 #
-do_malloc_test 20 -tclprep {
-  db close
-  file delete -force test2.db test2.db-journal
-  sqlite3 db test2.db
-  sqlite3_extended_result_codes db 1
-  db eval {CREATE TABLE t1(x);}
-  db close
-} -tclbody {
-  if {[catch {sqlite3 db test.db}]} {
-    error "out of memory"
-  }
-  sqlite3_extended_result_codes db 1
-} -sqlbody {
-  ATTACH DATABASE 'test2.db' AS t2;
-  SELECT * FROM t1;
-  DETACH DATABASE t2;
-} 
+ifcapable attach {
+  do_malloc_test 20 -tclprep {
+    db close
+    file delete -force test2.db test2.db-journal
+    sqlite3 db test2.db
+    sqlite3_extended_result_codes db 1
+    db eval {CREATE TABLE t1(x);}
+    db close
+  } -tclbody {
+    if {[catch {sqlite3 db test.db}]} {
+      error "out of memory"
+    }
+    sqlite3_extended_result_codes db 1
+  } -sqlbody {
+    ATTACH DATABASE 'test2.db' AS t2;
+    SELECT * FROM t1;
+    DETACH DATABASE t2;
+  } 
+}
 
 # Test malloc failure whilst installing a foreign key.
 #

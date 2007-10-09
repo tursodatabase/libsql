@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.18 2007/09/06 23:39:37 drh Exp $
+# $Id: sqllimits1.test,v 1.19 2007/10/09 08:29:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -440,23 +440,24 @@ do_test sqllimits-1.7.2 {
 #--------------------------------------------------------------------
 # Test cases sqllimits-8.*: Test the SQLITE_MAX_ATTACHED limit.
 #
-# TODO
-do_test sqllimits-1.8.1 {
-  set max $::SQLITE_MAX_ATTACHED
-  for {set i 0} {$i < ($max)} {incr i} {
-    file delete -force test${i}.db test${i}.db-journal
-  }
-  for {set i 0} {$i < ($max)} {incr i} {
-    execsql "ATTACH 'test${i}.db' AS aux${i}"
-  }
-  catchsql "ATTACH 'test${i}.db' AS aux${i}"
-} "1 {too many attached databases - max $::SQLITE_MAX_ATTACHED}"
-do_test sqllimits-1.8.2 {
-  set max $::SQLITE_MAX_ATTACHED
-  for {set i 0} {$i < ($max)} {incr i} {
-    execsql "DETACH aux${i}"
-  }
-} {}
+ifcapable attach {
+  do_test sqllimits-1.8.1 {
+    set max $::SQLITE_MAX_ATTACHED
+    for {set i 0} {$i < ($max)} {incr i} {
+      file delete -force test${i}.db test${i}.db-journal
+    }
+    for {set i 0} {$i < ($max)} {incr i} {
+      execsql "ATTACH 'test${i}.db' AS aux${i}"
+    }
+    catchsql "ATTACH 'test${i}.db' AS aux${i}"
+  } "1 {too many attached databases - max $::SQLITE_MAX_ATTACHED}"
+  do_test sqllimits-1.8.2 {
+    set max $::SQLITE_MAX_ATTACHED
+    for {set i 0} {$i < ($max)} {incr i} {
+      execsql "DETACH aux${i}"
+    }
+  } {}
+}
 
 #--------------------------------------------------------------------
 # Test cases sqllimits-9.*: Check that the SQLITE_MAX_VARIABLE_NUMBER 

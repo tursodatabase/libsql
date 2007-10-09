@@ -17,7 +17,7 @@
 #      sqlite_update_hook    (tests hook-4-*)
 #      sqlite_rollback_hook  (tests hook-5.*)
 #
-# $Id: hook.test,v 1.11 2006/01/17 09:35:02 danielk1977 Exp $
+# $Id: hook.test,v 1.12 2007/10/09 08:29:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -177,23 +177,25 @@ ifcapable trigger {
 
 # Update-hook + ATTACH
 set ::update_hook {}
-do_test hook-4.2.3 {
-  file delete -force test2.db
-  execsql {
-    ATTACH 'test2.db' AS aux;
-    CREATE TABLE aux.t3(a INTEGER PRIMARY KEY, b);
-    INSERT INTO aux.t3 SELECT * FROM t1;
-    UPDATE t3 SET b = 'two or so' WHERE a = 2;
-    DELETE FROM t3 WHERE 1; -- Avoid the truncate optimization (for now)
-  }
-  set ::update_hook
-} [list \
-    INSERT aux t3 1 \
-    INSERT aux t3 2 \
-    UPDATE aux t3 2 \
-    DELETE aux t3 1 \
-    DELETE aux t3 2 \
-]
+ifcapable attach {
+  do_test hook-4.2.3 {
+    file delete -force test2.db
+    execsql {
+      ATTACH 'test2.db' AS aux;
+      CREATE TABLE aux.t3(a INTEGER PRIMARY KEY, b);
+      INSERT INTO aux.t3 SELECT * FROM t1;
+      UPDATE t3 SET b = 'two or so' WHERE a = 2;
+      DELETE FROM t3 WHERE 1; -- Avoid the truncate optimization (for now)
+    }
+    set ::update_hook
+  } [list \
+      INSERT aux t3 1 \
+      INSERT aux t3 2 \
+      UPDATE aux t3 2 \
+      DELETE aux t3 1 \
+      DELETE aux t3 2 \
+  ]
+}
 
 ifcapable trigger {
   execsql {
@@ -221,7 +223,7 @@ do_test hook-4.3.1 {
     DELETE main t1 3 \
 ]
 set ::update_hook {}
-ifcapable compound {
+ifcapable compound&&attach {
   do_test hook-4.3.2 {
     execsql {
       SELECT * FROM t1 UNION SELECT * FROM t3;

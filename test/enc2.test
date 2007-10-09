@@ -13,7 +13,7 @@
 # various suported unicode encodings (UTF-8, UTF-16, UTF-16le and
 # UTF-16be).
 #
-# $Id: enc2.test,v 1.28 2006/09/23 20:36:03 drh Exp $
+# $Id: enc2.test,v 1.29 2007/10/09 08:29:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -170,26 +170,27 @@ foreach enc $encodings {
 
 # Test that it is an error to try to attach a database with a different
 # encoding to the main database.
-do_test enc2-4.1 {
-  file delete -force test.db
-  sqlite3 db test.db
-  db eval "PRAGMA encoding = 'UTF-8'"
-  db eval "CREATE TABLE abc(a, b, c);"
-} {}
-do_test enc2-4.2 {
-  file delete -force test2.db
-  sqlite3 db2 test2.db
-  db2 eval "PRAGMA encoding = 'UTF-16'"
-  db2 eval "CREATE TABLE abc(a, b, c);"
-} {}
-do_test enc2-4.3 {
-  catchsql {
-    ATTACH 'test2.db' as aux;
-  }
-} {1 {attached databases must use the same text encoding as main database}}
-
-db2 close
-db close
+ifcapable attach {
+  do_test enc2-4.1 {
+    file delete -force test.db
+    sqlite3 db test.db
+    db eval "PRAGMA encoding = 'UTF-8'"
+    db eval "CREATE TABLE abc(a, b, c);"
+  } {}
+  do_test enc2-4.2 {
+    file delete -force test2.db
+    sqlite3 db2 test2.db
+    db2 eval "PRAGMA encoding = 'UTF-16'"
+    db2 eval "CREATE TABLE abc(a, b, c);"
+  } {}
+  do_test enc2-4.3 {
+    catchsql {
+      ATTACH 'test2.db' as aux;
+    }
+  } {1 {attached databases must use the same text encoding as main database}}
+  db2 close
+  db close
+}
 
 # The following tests - enc2-5.* - test that SQLite selects the correct
 # collation sequence when more than one is available.

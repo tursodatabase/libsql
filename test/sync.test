@@ -13,20 +13,21 @@
 # This file implements tests to verify that fsync is disabled when
 # pragma synchronous=off even for multi-database commits.
 #
-# $Id: sync.test,v 1.5 2006/02/11 01:25:51 drh Exp $
+# $Id: sync.test,v 1.6 2007/10/09 08:29:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 #
 # These tests are only applicable on unix when pager pragma are
-# enabled.
+# enabled. Also, since every test uses an ATTACHed database, they
+# are only run when ATTACH is enabled.
 #
 if {$::tcl_platform(platform)!="unix"} {
   finish_test
   return
 }
-ifcapable !pager_pragmas {
+ifcapable !pager_pragmas||!attach {
   finish_test
   return
 }

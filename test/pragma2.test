@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma2.test,v 1.3 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: pragma2.test,v 1.4 2007/10/09 08:29:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -64,54 +64,56 @@ do_test pragma2-1.4 {
 file delete -force test2.db
 file delete -force test2.db-journal
 
-do_test pragma2-2.1 {
-  execsql {
-    ATTACH 'test2.db' AS aux;
-    PRAGMA aux.auto_vacuum=OFF;
-    PRAGMA aux.freelist_count;
-  }
-} {0}
-do_test pragma2-2.2 {
-  execsql {
-    CREATE TABLE aux.abc(a, b, c);
-    PRAGMA aux.freelist_count;
-  }
-} {0}
-do_test pragma2-2.3 {
-  set ::val [string repeat 0123456789 1000]
-  execsql {
-    INSERT INTO aux.abc VALUES(1, 2, $::val);
-    PRAGMA aux.freelist_count;
-  }
-} {0}
-do_test pragma2-2.4 {
-  expr {[file size test2.db] / 1024}
-} {11}
-do_test pragma2-2.5 {
-  execsql {
-    DELETE FROM aux.abc;
-    PRAGMA aux.freelist_count;
-  }
-} {9}
-
-do_test pragma2-3.1 {
-  execsql {
-    PRAGMA aux.freelist_count;
-    PRAGMA main.freelist_count;
-    PRAGMA freelist_count;
-  }
-} {9 1 1}
-do_test pragma2-3.2 {
-  execsql {
-    PRAGMA freelist_count = 500;
-    PRAGMA freelist_count;
-  }
-} {1 1}
-do_test pragma2-3.3 {
-  execsql {
-    PRAGMA aux.freelist_count = 500;
-    PRAGMA aux.freelist_count;
-  }
-} {9 9}
+ifcapable attach {
+  do_test pragma2-2.1 {
+    execsql {
+      ATTACH 'test2.db' AS aux;
+      PRAGMA aux.auto_vacuum=OFF;
+      PRAGMA aux.freelist_count;
+    }
+  } {0}
+  do_test pragma2-2.2 {
+    execsql {
+      CREATE TABLE aux.abc(a, b, c);
+      PRAGMA aux.freelist_count;
+    }
+  } {0}
+  do_test pragma2-2.3 {
+    set ::val [string repeat 0123456789 1000]
+    execsql {
+      INSERT INTO aux.abc VALUES(1, 2, $::val);
+      PRAGMA aux.freelist_count;
+    }
+  } {0}
+  do_test pragma2-2.4 {
+    expr {[file size test2.db] / 1024}
+  } {11}
+  do_test pragma2-2.5 {
+    execsql {
+      DELETE FROM aux.abc;
+      PRAGMA aux.freelist_count;
+    }
+  } {9}
+  
+  do_test pragma2-3.1 {
+    execsql {
+      PRAGMA aux.freelist_count;
+      PRAGMA main.freelist_count;
+      PRAGMA freelist_count;
+    }
+  } {9 1 1}
+  do_test pragma2-3.2 {
+    execsql {
+      PRAGMA freelist_count = 500;
+      PRAGMA freelist_count;
+    }
+  } {1 1}
+  do_test pragma2-3.3 {
+    execsql {
+      PRAGMA aux.freelist_count = 500;
+      PRAGMA aux.freelist_count;
+    }
+  } {9 9}
+}
 
 finish_test

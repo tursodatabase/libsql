@@ -12,7 +12,7 @@
 # focus of this script is testing the sqlite3_set_authorizer() API
 # and related functionality.
 #
-# $Id: auth.test,v 1.37 2006/08/24 14:59:46 drh Exp $
+# $Id: auth.test,v 1.38 2007/10/09 08:29:32 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -305,11 +305,13 @@ do_test auth-1.35.1 {
   }
   catchsql {SELECT * FROM t2}
 } {1 {access to t2.b is prohibited}}
-do_test auth-1.35.2 {
-  execsql {ATTACH DATABASE 'test.db' AS two}
-  catchsql {SELECT * FROM two.t2}
-} {1 {access to two.t2.b is prohibited}}
-execsql {DETACH DATABASE two}
+ifcapable attach {
+  do_test auth-1.35.2 {
+    execsql {ATTACH DATABASE 'test.db' AS two}
+    catchsql {SELECT * FROM two.t2}
+  } {1 {access to two.t2.b is prohibited}}
+  execsql {DETACH DATABASE two}
+}
 do_test auth-1.36 {
   proc auth {code arg1 arg2 arg3 arg4} {
     if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="b"} {
@@ -1610,174 +1612,176 @@ do_test auth-1.250 {
 
 # ticket #340 - authorization for ATTACH and DETACH.
 #
-do_test auth-1.251 {
-  db authorizer ::auth
-  proc auth {code arg1 arg2 arg3 arg4} {
-    if {$code=="SQLITE_ATTACH"} {
-      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
-    }
-    return SQLITE_OK
-  }
-  catchsql {
-    ATTACH DATABASE ':memory:' AS test1
-  }
-} {0 {}}
-do_test auth-1.252 {
-  set ::authargs
-} {:memory: {} {} {}}
-do_test auth-1.253 {
-  catchsql {DETACH DATABASE test1}
-  proc auth {code arg1 arg2 arg3 arg4} {
-    if {$code=="SQLITE_ATTACH"} {
-      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
-      return SQLITE_DENY
-    }
-    return SQLITE_OK
-  }
-  catchsql {
-    ATTACH DATABASE ':memory:' AS test1;
-  }
-} {1 {not authorized}}
-do_test auth-1.254 {
-  lindex [execsql {PRAGMA database_list}] 7
-} {}
-do_test auth-1.255 {
-  catchsql {DETACH DATABASE test1}
-  proc auth {code arg1 arg2 arg3 arg4} {
-    if {$code=="SQLITE_ATTACH"} {
-      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
-      return SQLITE_IGNORE
-    }
-    return SQLITE_OK
-  }
-  catchsql {
-    ATTACH DATABASE ':memory:' AS test1;
-  }
-} {0 {}}
-do_test auth-1.256 {
-  lindex [execsql {PRAGMA database_list}] 7
-} {}
-do_test auth-1.257 {
-  proc auth {code arg1 arg2 arg3 arg4} {
-    if {$code=="SQLITE_DETACH"} {
-      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+ifcapable attach {
+  do_test auth-1.251 {
+    db authorizer ::auth
+    proc auth {code arg1 arg2 arg3 arg4} {
+      if {$code=="SQLITE_ATTACH"} {
+        set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+      }
       return SQLITE_OK
     }
-    return SQLITE_OK
-  }
-  execsql {ATTACH DATABASE ':memory:' AS test1}
-  catchsql {
-    DETACH DATABASE test1;
-  }
-} {0 {}}
-do_test auth-1.258 {
-  lindex [execsql {PRAGMA database_list}] 7
-} {}
-do_test auth-1.259 {
-  execsql {ATTACH DATABASE ':memory:' AS test1}
-  proc auth {code arg1 arg2 arg3 arg4} {
-    if {$code=="SQLITE_DETACH"} {
-      set ::authargs [list $arg1 $arg2 $arg3 $arg4]
-      return SQLITE_IGNORE
+    catchsql {
+      ATTACH DATABASE ':memory:' AS test1
     }
-    return SQLITE_OK
-  }
-  catchsql {
-    DETACH DATABASE test1;
-  }
-} {0 {}}
-ifcapable tempdb {
-  ifcapable schema_pragmas {
-  do_test auth-1.260 {
-    lindex [execsql {PRAGMA database_list}] 7
-  } {test1}
-  } ;# ifcapable schema_pragmas
-  do_test auth-1.261 {
+  } {0 {}}
+  do_test auth-1.252 {
+    set ::authargs
+  } {:memory: {} {} {}}
+  do_test auth-1.253 {
+    catchsql {DETACH DATABASE test1}
     proc auth {code arg1 arg2 arg3 arg4} {
-      if {$code=="SQLITE_DETACH"} {
+      if {$code=="SQLITE_ATTACH"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_DENY
       }
       return SQLITE_OK
     }
     catchsql {
-      DETACH DATABASE test1;
+      ATTACH DATABASE ':memory:' AS test1;
     }
   } {1 {not authorized}}
-  ifcapable schema_pragmas {
-  do_test auth-1.262 {
+  do_test auth-1.254 {
     lindex [execsql {PRAGMA database_list}] 7
-  } {test1}
-  } ;# ifcapable schema_pragmas
-  db authorizer {}
-  execsql {DETACH DATABASE test1}
-  db authorizer ::auth
-  
-  # Authorization for ALTER TABLE. These tests are omitted if the library
-  # was built without ALTER TABLE support.
-  ifcapable altertable {
-  
-    do_test auth-1.263 {
-      proc auth {code arg1 arg2 arg3 arg4} {
-        if {$code=="SQLITE_ALTER_TABLE"} {
-          set ::authargs [list $arg1 $arg2 $arg3 $arg4]
-          return SQLITE_OK
-        }
+  } {}
+  do_test auth-1.255 {
+    catchsql {DETACH DATABASE test1}
+    proc auth {code arg1 arg2 arg3 arg4} {
+      if {$code=="SQLITE_ATTACH"} {
+        set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+        return SQLITE_IGNORE
+      }
+      return SQLITE_OK
+    }
+    catchsql {
+      ATTACH DATABASE ':memory:' AS test1;
+    }
+  } {0 {}}
+  do_test auth-1.256 {
+    lindex [execsql {PRAGMA database_list}] 7
+  } {}
+  do_test auth-1.257 {
+    proc auth {code arg1 arg2 arg3 arg4} {
+      if {$code=="SQLITE_DETACH"} {
+        set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_OK
       }
-      catchsql {
-        ALTER TABLE t1 RENAME TO t1x
+      return SQLITE_OK
+    }
+    execsql {ATTACH DATABASE ':memory:' AS test1}
+    catchsql {
+      DETACH DATABASE test1;
+    }
+  } {0 {}}
+  do_test auth-1.258 {
+    lindex [execsql {PRAGMA database_list}] 7
+  } {}
+  do_test auth-1.259 {
+    execsql {ATTACH DATABASE ':memory:' AS test1}
+    proc auth {code arg1 arg2 arg3 arg4} {
+      if {$code=="SQLITE_DETACH"} {
+        set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+        return SQLITE_IGNORE
       }
-    } {0 {}}
-    do_test auth-1.264 {
-      execsql {SELECT name FROM sqlite_temp_master WHERE type='table'}
-    } {t1x}
-    do_test auth-1.265 {
-      set authargs
-    } {temp t1 {} {}}
-    do_test auth-1.266 {
+      return SQLITE_OK
+    }
+    catchsql {
+      DETACH DATABASE test1;
+    }
+  } {0 {}}
+  ifcapable tempdb {
+    ifcapable schema_pragmas {
+    do_test auth-1.260 {
+      lindex [execsql {PRAGMA database_list}] 7
+    } {test1}
+    } ;# ifcapable schema_pragmas
+    do_test auth-1.261 {
       proc auth {code arg1 arg2 arg3 arg4} {
-        if {$code=="SQLITE_ALTER_TABLE"} {
-          set ::authargs [list $arg1 $arg2 $arg3 $arg4]
-          return SQLITE_IGNORE
-        }
-        return SQLITE_OK
-      }
-      catchsql {
-        ALTER TABLE t1x RENAME TO t1
-      }
-    } {0 {}}
-    do_test auth-1.267 {
-      execsql {SELECT name FROM sqlite_temp_master WHERE type='table'}
-    } {t1x}
-    do_test auth-1.268 {
-      set authargs
-    } {temp t1x {} {}}
-    do_test auth-1.269 {
-      proc auth {code arg1 arg2 arg3 arg4} {
-        if {$code=="SQLITE_ALTER_TABLE"} {
+        if {$code=="SQLITE_DETACH"} {
           set ::authargs [list $arg1 $arg2 $arg3 $arg4]
           return SQLITE_DENY
         }
         return SQLITE_OK
       }
       catchsql {
-        ALTER TABLE t1x RENAME TO t1
+        DETACH DATABASE test1;
       }
     } {1 {not authorized}}
-    do_test auth-1.270 {
-      execsql {SELECT name FROM sqlite_temp_master WHERE type='table'}
-    } {t1x}
-
-    do_test auth-1.271 {
-      set authargs
-    } {temp t1x {} {}}
-  } ;# ifcapable altertable
-
-} else {
-  db authorizer {}
-  db eval {
-    DETACH DATABASE test1;
+    ifcapable schema_pragmas {
+    do_test auth-1.262 {
+      lindex [execsql {PRAGMA database_list}] 7
+    } {test1}
+    } ;# ifcapable schema_pragmas
+    db authorizer {}
+    execsql {DETACH DATABASE test1}
+    db authorizer ::auth
+    
+    # Authorization for ALTER TABLE. These tests are omitted if the library
+    # was built without ALTER TABLE support.
+    ifcapable altertable {
+    
+      do_test auth-1.263 {
+        proc auth {code arg1 arg2 arg3 arg4} {
+          if {$code=="SQLITE_ALTER_TABLE"} {
+            set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+            return SQLITE_OK
+          }
+          return SQLITE_OK
+        }
+        catchsql {
+          ALTER TABLE t1 RENAME TO t1x
+        }
+      } {0 {}}
+      do_test auth-1.264 {
+        execsql {SELECT name FROM sqlite_temp_master WHERE type='table'}
+      } {t1x}
+      do_test auth-1.265 {
+        set authargs
+      } {temp t1 {} {}}
+      do_test auth-1.266 {
+        proc auth {code arg1 arg2 arg3 arg4} {
+          if {$code=="SQLITE_ALTER_TABLE"} {
+            set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+            return SQLITE_IGNORE
+          }
+          return SQLITE_OK
+        }
+        catchsql {
+          ALTER TABLE t1x RENAME TO t1
+        }
+      } {0 {}}
+      do_test auth-1.267 {
+        execsql {SELECT name FROM sqlite_temp_master WHERE type='table'}
+      } {t1x}
+      do_test auth-1.268 {
+        set authargs
+      } {temp t1x {} {}}
+      do_test auth-1.269 {
+        proc auth {code arg1 arg2 arg3 arg4} {
+          if {$code=="SQLITE_ALTER_TABLE"} {
+            set ::authargs [list $arg1 $arg2 $arg3 $arg4]
+            return SQLITE_DENY
+          }
+          return SQLITE_OK
+        }
+        catchsql {
+          ALTER TABLE t1x RENAME TO t1
+        }
+      } {1 {not authorized}}
+      do_test auth-1.270 {
+        execsql {SELECT name FROM sqlite_temp_master WHERE type='table'}
+      } {t1x}
+  
+      do_test auth-1.271 {
+        set authargs
+      } {temp t1x {} {}}
+    } ;# ifcapable altertable
+  
+  } else {
+    db authorizer {}
+    db eval {
+      DETACH DATABASE test1;
+    }
   }
 }
 

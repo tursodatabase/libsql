@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.32 2007/09/01 17:00:13 danielk1977 Exp $
+# $Id: ioerr.test,v 1.33 2007/10/09 08:29:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -118,22 +118,24 @@ do_ioerr_test ioerr-4 -tclprep {
 #
 # Tests 8 and 17 are excluded when auto-vacuum is enabled for the same 
 # reason as in test cases ioerr-1.XXX
-set ex ""
-if {[string match [execsql {pragma auto_vacuum}] 1]} {
-  set ex [list 4 17]
+ifcapable attach {
+  set ex ""
+  if {[string match [execsql {pragma auto_vacuum}] 1]} {
+    set ex [list 4 17]
+  }
+  do_ioerr_test ioerr-5 -sqlprep {
+    ATTACH 'test2.db' AS test2;
+  } -sqlbody {
+    BEGIN;
+    CREATE TABLE t1(a,b,c);
+    CREATE TABLE test2.t2(a,b,c);
+    COMMIT;
+  } -exclude $ex
 }
-do_ioerr_test ioerr-5 -sqlprep {
-  ATTACH 'test2.db' AS test2;
-} -sqlbody {
-  BEGIN;
-  CREATE TABLE t1(a,b,c);
-  CREATE TABLE test2.t2(a,b,c);
-  COMMIT;
-} -exclude $ex
 
 # Test IO errors when replaying two hot journals from a 2-file 
 # transaction. This test only runs on UNIX.
-ifcapable crashtest {
+ifcapable crashtest&&attach {
   if {![catch {sqlite3 -has_codec} r] && !$r} {
     do_ioerr_test ioerr-6 -tclprep {
       execsql {

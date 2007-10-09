@@ -12,7 +12,7 @@
 # of these tests is exclusive access mode (i.e. the thing activated by 
 # "PRAGMA locking_mode = EXCLUSIVE").
 #
-# $Id: exclusive.test,v 1.6 2007/08/12 20:07:59 drh Exp $
+# $Id: exclusive.test,v 1.7 2007/10/09 08:29:32 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -84,82 +84,84 @@ do_test exclusive-1.6 {
     pragma temp.locking_mode;
   } 
 } [list normal normal $temp_mode]
-do_test exclusive-1.7 {
-  execsql {
-    pragma locking_mode = exclusive;
-    ATTACH 'test2.db' as aux;
-  }
-  execsql {
-    pragma main.locking_mode;
-    pragma aux.locking_mode;
-  }
-} {exclusive exclusive}
-do_test exclusive-1.8 {
-  execsql {
-    pragma main.locking_mode = normal;
-  }
-  execsql {
-    pragma main.locking_mode;
-    pragma temp.locking_mode;
-    pragma aux.locking_mode;
-  }
-} [list normal $temp_mode exclusive]
-do_test exclusive-1.9 {
-  execsql {
-    pragma locking_mode;
-  }
-} {exclusive}
-do_test exclusive-1.10 {
-  execsql {
-    ATTACH 'test3.db' as aux2;
-  }
-  execsql {
-    pragma main.locking_mode;
-    pragma aux.locking_mode;
-    pragma aux2.locking_mode;
-  }
-} {normal exclusive exclusive}
-do_test exclusive-1.11 {
-  execsql {
-    pragma aux.locking_mode = normal;
-  }
-  execsql {
-    pragma main.locking_mode;
-    pragma aux.locking_mode;
-    pragma aux2.locking_mode;
-  }
-} {normal normal exclusive}
-do_test exclusive-1.12 {
-  execsql {
-    pragma locking_mode = normal;
-  }
-  execsql {
-    pragma main.locking_mode;
-    pragma temp.locking_mode;
-    pragma aux.locking_mode;
-    pragma aux2.locking_mode;
-  }
-} [list normal $temp_mode normal normal]
-do_test exclusive-1.13 {
-  execsql {
-    ATTACH 'test4.db' as aux3;
-  }
-  execsql {
-    pragma main.locking_mode;
-    pragma temp.locking_mode;
-    pragma aux.locking_mode;
-    pragma aux2.locking_mode;
-    pragma aux3.locking_mode;
-  }
-} [list normal $temp_mode normal normal normal]
-
-do_test exclusive-1.99 {
-  execsql {
-    DETACH aux;
-    DETACH aux2;
-    DETACH aux3;
-  }
-} {}
+ifcapable attach {
+  do_test exclusive-1.7 {
+    execsql {
+      pragma locking_mode = exclusive;
+      ATTACH 'test2.db' as aux;
+    }
+    execsql {
+      pragma main.locking_mode;
+      pragma aux.locking_mode;
+    }
+  } {exclusive exclusive}
+  do_test exclusive-1.8 {
+    execsql {
+      pragma main.locking_mode = normal;
+    }
+    execsql {
+      pragma main.locking_mode;
+      pragma temp.locking_mode;
+      pragma aux.locking_mode;
+    }
+  } [list normal $temp_mode exclusive]
+  do_test exclusive-1.9 {
+    execsql {
+      pragma locking_mode;
+    }
+  } {exclusive}
+  do_test exclusive-1.10 {
+    execsql {
+      ATTACH 'test3.db' as aux2;
+    }
+    execsql {
+      pragma main.locking_mode;
+      pragma aux.locking_mode;
+      pragma aux2.locking_mode;
+    }
+  } {normal exclusive exclusive}
+  do_test exclusive-1.11 {
+    execsql {
+      pragma aux.locking_mode = normal;
+    }
+    execsql {
+      pragma main.locking_mode;
+      pragma aux.locking_mode;
+      pragma aux2.locking_mode;
+    }
+  } {normal normal exclusive}
+  do_test exclusive-1.12 {
+    execsql {
+      pragma locking_mode = normal;
+    }
+    execsql {
+      pragma main.locking_mode;
+      pragma temp.locking_mode;
+      pragma aux.locking_mode;
+      pragma aux2.locking_mode;
+    }
+  } [list normal $temp_mode normal normal]
+  do_test exclusive-1.13 {
+    execsql {
+      ATTACH 'test4.db' as aux3;
+    }
+    execsql {
+      pragma main.locking_mode;
+      pragma temp.locking_mode;
+      pragma aux.locking_mode;
+      pragma aux2.locking_mode;
+      pragma aux3.locking_mode;
+    }
+  } [list normal $temp_mode normal normal normal]
+  
+  do_test exclusive-1.99 {
+    execsql {
+      DETACH aux;
+      DETACH aux2;
+      DETACH aux3;
+    }
+  } {}
+}
 
 #----------------------------------------------------------------------
 # Test cases exclusive-2.X verify that connections in exclusive 

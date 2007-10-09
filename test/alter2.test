@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter2.test,v 1.9 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: alter2.test,v 1.10 2007/10/09 08:29:32 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -287,15 +287,17 @@ do_test alter2-6.1 {
   set ::DB [sqlite3_connection_pointer db]
   get_file_format
 } {2}
-do_test alter2-6.2 {
-  file delete -force test2.db-journal
-  file delete -force test2.db
-  execsql {
-    ATTACH 'test2.db' AS aux;
-    CREATE TABLE aux.t1(a, b);
-  }
-  get_file_format test2.db
-} $default_file_format
+ifcapable attach {
+  do_test alter2-6.2 {
+    file delete -force test2.db-journal
+    file delete -force test2.db
+    execsql {
+      ATTACH 'test2.db' AS aux;
+      CREATE TABLE aux.t1(a, b);
+    }
+    get_file_format test2.db
+  } $default_file_format
+}
 do_test alter2-6.3 {
   execsql {
     CREATE TABLE t1(a, b);

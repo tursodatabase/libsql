@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the AUTOINCREMENT features.
 #
-# $Id: autoinc.test,v 1.9 2006/01/03 00:33:50 drh Exp $
+# $Id: autoinc.test,v 1.10 2007/10/09 08:29:32 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -416,7 +416,7 @@ ifcapable tempdb {
 
 # Make sure AUTOINCREMENT works on ATTACH-ed tables.
 #
-ifcapable tempdb {
+ifcapable tempdb&&attach {
   do_test autoinc-5.1 {
     file delete -force test2.db
     file delete -force test2.db-journal

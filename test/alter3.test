@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter3.test,v 1.9 2006/01/17 09:35:02 danielk1977 Exp $
+# $Id: alter3.test,v 1.10 2007/10/09 08:29:32 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -236,71 +236,73 @@ do_test alter3-4.99 {
   }
 } {}
 
-do_test alter3-5.1 {
-  file delete -force test2.db
-  file delete -force test2.db-journal
-  execsql {
-    CREATE TABLE t1(a, b);
-    INSERT INTO t1 VALUES(1, 'one');
-    INSERT INTO t1 VALUES(2, 'two');
-    ATTACH 'test2.db' AS aux;
-    CREATE TABLE aux.t1 AS SELECT * FROM t1;
-    PRAGMA aux.schema_version = 30;
-    SELECT sql FROM aux.sqlite_master;
-  } 
-} {{CREATE TABLE t1(a,b)}}
-do_test alter3-5.2 {
-  execsql {
-    ALTER TABLE aux.t1 ADD COLUMN c VARCHAR(128);
-    SELECT sql FROM aux.sqlite_master;
-  }
-} {{CREATE TABLE t1(a,b, c VARCHAR(128))}}
-do_test alter3-5.3 {
-  execsql {
-    SELECT * FROM aux.t1;
-  }
-} {1 one {} 2 two {}}
-ifcapable schema_version {
-  do_test alter3-5.4 {
+ifcapable attach {
+  do_test alter3-5.1 {
+    file delete -force test2.db
+    file delete -force test2.db-journal
     execsql {
-      PRAGMA aux.schema_version;
-    }
-  } {31}
-}
-if {!$has_codec} {
-  do_test alter3-5.5 {
-    list [get_file_format test2.db] [get_file_format]
-  } {2 3}
-}
-do_test alter3-5.6 {
-  execsql {
-    ALTER TABLE aux.t1 ADD COLUMN d DEFAULT 1000;
-    SELECT sql FROM aux.sqlite_master;
-  }
-} {{CREATE TABLE t1(a,b, c VARCHAR(128), d DEFAULT 1000)}}
-do_test alter3-5.7 {
-  execsql {
-    SELECT * FROM aux.t1;
-  }
-} {1 one {} 1000 2 two {} 1000}
-ifcapable schema_version {
-  do_test alter3-5.8 {
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 'one');
+      INSERT INTO t1 VALUES(2, 'two');
+      ATTACH 'test2.db' AS aux;
+      CREATE TABLE aux.t1 AS SELECT * FROM t1;
+      PRAGMA aux.schema_version = 30;
+      SELECT sql FROM aux.sqlite_master;
+    } 
+  } {{CREATE TABLE t1(a,b)}}
+  do_test alter3-5.2 {
     execsql {
-      PRAGMA aux.schema_version;
+      ALTER TABLE aux.t1 ADD COLUMN c VARCHAR(128);
+      SELECT sql FROM aux.sqlite_master;
     }
-  } {32}
+  } {{CREATE TABLE t1(a,b, c VARCHAR(128))}}
+  do_test alter3-5.3 {
+    execsql {
+      SELECT * FROM aux.t1;
+    }
+  } {1 one {} 2 two {}}
+  ifcapable schema_version {
+    do_test alter3-5.4 {
+      execsql {
+        PRAGMA aux.schema_version;
+      }
+    } {31}
+  }
+  if {!$has_codec} {
+    do_test alter3-5.5 {
+      list [get_file_format test2.db] [get_file_format]
+    } {2 3}
+  }
+  do_test alter3-5.6 {
+    execsql {
+      ALTER TABLE aux.t1 ADD COLUMN d DEFAULT 1000;
+      SELECT sql FROM aux.sqlite_master;
+    }
+  } {{CREATE TABLE t1(a,b, c VARCHAR(128), d DEFAULT 1000)}}
+  do_test alter3-5.7 {
+    execsql {
+      SELECT * FROM aux.t1;
+    }
+  } {1 one {} 1000 2 two {} 1000}
+  ifcapable schema_version {
+    do_test alter3-5.8 {
+      execsql {
+        PRAGMA aux.schema_version;
+      }
+    } {32}
+  }
+  do_test alter3-5.9 {
+    execsql {
+      SELECT * FROM t1;
+    }
+  } {1 one 2 two}
+  do_test alter3-5.99 {
+    execsql {
+      DROP TABLE aux.t1;
+      DROP TABLE t1;
+    }
+  } {}
 }
-do_test alter3-5.9 {
-  execsql {
-    SELECT * FROM t1;
-  }
-} {1 one 2 two}
-do_test alter3-5.99 {
-  execsql {
-    DROP TABLE aux.t1;
-    DROP TABLE t1;
-  }
-} {}
 
 #----------------------------------------------------------------
 # Test that the table schema is correctly reloaded when a column
