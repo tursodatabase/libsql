@@ -1341,7 +1341,7 @@ static int winFullPathname(
 #if OS_WINCE
   /* WinCE has no concept of a relative pathname, or so I am told. */
   sqlite3_snprintf(pVfs->mxPathname, zFull, "%s", zRelative);
-  return SQLTIE_OK;
+  return SQLITE_OK;
 #endif
 
 #if !OS_WINCE && !defined(__CYGWIN__)

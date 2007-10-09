@@ -1,5 +1,5 @@
-C Fixes\sto\sthe\stest\ssuite\s(no\scode\schanges)\sso\sthat\squick.test\sruns\swith\sOMIT_ATTACH\sbuilds.\s#2706.\s(CVS\s4480)
-D 2007-10-09T08:29:32
+C Fix\sa\stypo\sin\sthe\swince\sdriver.\s\sTicket\s#2710.\s\sSee\salso\sticket\s#2702.\s(CVS\s4481)
+D 2007-10-09T15:20:40
 F Makefile.in 75b729d562e9525d57d9890ec598b38e1a8b02bc
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -118,7 +118,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c 308bd8ad6977f66f608228cccaecc4cbc1a24693
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 3ea65d671b2bf1c6e29bab9cc5b4525e12391b3a
+F src/os_win.c 13b80c00eefac383e09d2b370df33ac4f5d68b03
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 0a92a08192785af79547b017cda45eb683b22552
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ccd709e1791b1c1091a61139633b972b378c1816
-R 6c6a7773faeda4091116a43ab452b402
-U danielk1977
-Z a91cdcc7bf556827c74c0b09ee7b03b3
+P 07c00fffe50e8380748f7ae02328531a75d64610
+R 87effa23f67301612b5a4904681b4423
+U drh
+Z 4946d916a41e6ddb436d8c356df5466f
