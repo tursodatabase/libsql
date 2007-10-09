@@ -1081,6 +1081,7 @@ static int winOpen(
   DWORD dwShareMode;
   DWORD dwCreationDisposition;
   DWORD dwFlagsAndAttributes = 0;
+  int isTemp;
   winFile *pFile = (winFile*)id;
   void *zConverted = convertUtf8Filename(zName);
   if( zConverted==0 ){
@@ -1111,20 +1112,14 @@ static int winOpen(
                                | FILE_ATTRIBUTE_HIDDEN
                                | FILE_FLAG_DELETE_ON_CLOSE;
 #endif
+    isTemp = 1;
   }else{
     dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
+    isTemp = 0;
   }
-#if 0
-  if( flags & (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_TEMP_DB) ){
-    dwFlagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
-  }else{
-    dwFlagsAndAttributes |= FILE_FLAG_SEQUENTIAL_SCAN;
-  }
-#else
   /* Reports from the internet are that performance is always
   ** better if FILE_FLAG_RANDOM_ACCESS is used.  Ticket #2699. */
   dwFlagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
-#endif
   if( isNT() ){
     h = CreateFileW((WCHAR*)zConverted,
        dwDesiredAccess,
@@ -1176,7 +1171,7 @@ static int winOpen(
     free(zConverted);
     return SQLITE_CANTOPEN;
   }
-  if( dwFlagsAndAttributes & FILE_FLAG_DELETE_ON_CLOSE ){
+  if( isTemp ){
     pFile->zDeleteOnClose = zConverted;
   }else
 #endif
