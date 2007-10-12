@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.174 2007/09/03 11:04:22 danielk1977 Exp $
+** $Id: func.c,v 1.175 2007/10/12 19:11:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -169,7 +169,7 @@ static void substrFunc(
   int p0type;
   i64 p1, p2;
 
-  assert( argc==3 );
+  assert( argc==3 || argc==2 );
   p0type = sqlite3_value_type(argv[0]);
   if( p0type==SQLITE_BLOB ){
     len = sqlite3_value_bytes(argv[0]);
@@ -185,7 +185,11 @@ static void substrFunc(
     }
   }
   p1 = sqlite3_value_int(argv[1]);
-  p2 = sqlite3_value_int(argv[2]);
+  if( argc==3 ){
+    p2 = sqlite3_value_int(argv[2]);
+  }else{
+    p2 = SQLITE_MAX_LENGTH;
+  }
   if( p1<0 ){
     p1 += len;
     if( p1<0 ){
@@ -1329,6 +1333,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "max",                0, 1, SQLITE_UTF8,    1, 0          },
     { "typeof",             1, 0, SQLITE_UTF8,    0, typeofFunc },
     { "length",             1, 0, SQLITE_UTF8,    0, lengthFunc },
+    { "substr",             2, 0, SQLITE_UTF8,    0, substrFunc },
     { "substr",             3, 0, SQLITE_UTF8,    0, substrFunc },
     { "abs",                1, 0, SQLITE_UTF8,    0, absFunc    },
     { "round",              1, 0, SQLITE_UTF8,    0, roundFunc  },
