@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.266 2007/10/03 20:15:28 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.267 2007/10/12 18:30:13 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2518,10 +2518,13 @@ void sqlite3_result_zeroblob(sqlite3_context*, int n);
 ** and a UTF-16 string for sqlite3_create_collation16().  In all cases
 ** the name is passed as the second function argument.
 **
-** The third argument must be one of the constants [SQLITE_UTF8],
+** The third argument may be one of the constants [SQLITE_UTF8],
 ** [SQLITE_UTF16LE] or [SQLITE_UTF16BE], indicating that the user-supplied
 ** routine expects to be passed pointers to strings encoded using UTF-8,
-** UTF-16 little-endian or UTF-16 big-endian respectively.
+** UTF-16 little-endian or UTF-16 big-endian respectively.  The
+** third argument might also be [SQLITE_UTF16_ALIGNED] to indicate that
+** the routine expects pointers to 16-bit word aligned strings
+** of UTF16 in the native byte order of the host computer.
 **
 ** A pointer to the user supplied routine must be passed as the fifth
 ** argument. If it is NULL, this is the same as deleting the collation

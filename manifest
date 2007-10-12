@@ -1,5 +1,5 @@
-C Fix\sto\sthe\smain.mk\smakefile.\s(CVS\s4483)
-D 2007-10-12T00:23:44
+C Update\sdocumentation\sto\stalk\sabout\sthe\sSQLITE_UTF16_ALIGNED\soption\r\nfor\ssqlite3_create_collation().\sTicket\s#2722\s(CVS\s4484)
+D 2007-10-12T18:30:13
 F Makefile.in 75b729d562e9525d57d9890ec598b38e1a8b02bc
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -130,7 +130,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 4706a6115da1bdc09a2be5991168a6cc2c0df267
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 82089379833e361ba8a2ae65316a2173785300c0
-F src/sqlite.h.in 0b8875192b9cea40cf4a5d1dfda2d0172a0bd4c4
+F src/sqlite.h.in 06c1bbf810800ad11313e646df99b35d90d1c7df
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 3fa9f4e9d2f07e162509f75d827d32f41fcd4f30
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b2bdb476858c6e4b8977ea06be68b2331d1d84df
-R a4607a18b0a2180a4c64deb4390c98c4
+P e4527dd6ed81f5cb7862b76305be7d7b6d31016d
+R a35e73f7c77633a2ba6b75c8bed091b5
 U drh
-Z 5fdde331973141e4918f2081ace343f2
+Z 5b9b0d9890947d49da524670bda85258
