@@ -12,7 +12,7 @@
 # focus of this script is testing the sqlite3_set_authorizer() API
 # and related functionality.
 #
-# $Id: auth2.test,v 1.1 2006/08/24 14:59:46 drh Exp $
+# $Id: auth2.test,v 1.2 2007/10/12 20:42:30 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -71,5 +71,98 @@ do_test auth2-1.7 {
 do_test auth2-1.8 {
   set ::flist
 } coalesce
+
+# Make sure the authorizer is not called when parsing the schema
+# and when computing the result set of a view.
+#
+db close
+sqlite3 db test.db
+sqlite3 db2 test.db
+proc auth {args} {
+  global authargs
+  append authargs $args\n
+  return SQLITE_OK
+}
+db auth auth
+do_test auth2-2.1 {
+  set ::authargs {}
+  db eval {
+    CREATE TABLE t2(x,y,z);
+  }
+  set ::authargs
+} {SQLITE_INSERT sqlite_master {} main {}
+SQLITE_CREATE_TABLE t2 {} main {}
+SQLITE_UPDATE sqlite_master type main {}
+SQLITE_UPDATE sqlite_master name main {}
+SQLITE_UPDATE sqlite_master tbl_name main {}
+SQLITE_UPDATE sqlite_master rootpage main {}
+SQLITE_UPDATE sqlite_master sql main {}
+SQLITE_READ sqlite_master ROWID main {}
+SQLITE_READ sqlite_master name main {}
+SQLITE_READ sqlite_master rootpage main {}
+SQLITE_READ sqlite_master sql main {}
+SQLITE_READ sqlite_master tbl_name main {}
+}
+do_test auth2-2.2 {
+  set ::authargs {}
+  db eval {
+    CREATE VIEW v2 AS SELECT x+y AS a, y+z AS b from t2;
+  }
+  set ::authargs
+} {SQLITE_INSERT sqlite_master {} main {}
+SQLITE_CREATE_VIEW v2 {} main {}
+SQLITE_UPDATE sqlite_master type main {}
+SQLITE_UPDATE sqlite_master name main {}
+SQLITE_UPDATE sqlite_master tbl_name main {}
+SQLITE_UPDATE sqlite_master rootpage main {}
+SQLITE_UPDATE sqlite_master sql main {}
+SQLITE_READ sqlite_master ROWID main {}
+SQLITE_READ sqlite_master name main {}
+SQLITE_READ sqlite_master rootpage main {}
+SQLITE_READ sqlite_master sql main {}
+SQLITE_READ sqlite_master tbl_name main {}
+}
+do_test auth2-2.3 {
+  set ::authargs {}
+  db eval {
+    SELECT a, b FROM v2;
+  }
+  set ::authargs
+} {SQLITE_SELECT {} {} {} {}
+SQLITE_READ v2 a main {}
+SQLITE_READ v2 b main {}
+SQLITE_SELECT {} {} {} v2
+SQLITE_READ t2 x main v2
+SQLITE_READ t2 y main v2
+SQLITE_READ t2 y main v2
+SQLITE_READ t2 z main v2
+}
+do_test auth2-2.4 {
+  db2 eval {
+    CREATE TABLE t3(p,q,r);
+  }
+  set ::authargs {}
+  db eval {
+    SELECT b, a FROM v2;
+  }
+  set ::authargs
+} {SQLITE_SELECT {} {} {} {}
+SQLITE_READ v2 b main {}
+SQLITE_READ v2 a main {}
+SQLITE_SELECT {} {} {} v2
+SQLITE_READ t2 x main v2
+SQLITE_READ t2 y main v2
+SQLITE_READ t2 y main v2
+SQLITE_READ t2 z main v2
+SQLITE_SELECT {} {} {} {}
+SQLITE_READ v2 b main {}
+SQLITE_READ v2 a main {}
+SQLITE_SELECT {} {} {} v2
+SQLITE_READ t2 x main v2
+SQLITE_READ t2 y main v2
+SQLITE_READ t2 y main v2
+SQLITE_READ t2 z main v2
+}
+db2 close
 
 finish_test
