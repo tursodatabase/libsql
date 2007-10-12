@@ -1,5 +1,5 @@
-C Update\sdocumentation\sto\stalk\sabout\sthe\sSQLITE_UTF16_ALIGNED\soption\r\nfor\ssqlite3_create_collation().\sTicket\s#2722\s(CVS\s4484)
-D 2007-10-12T18:30:13
+C Add\san\sexplicit\stype\sconversion\sin\san\sAWK\sscript\sto\swork\saround\nbugs\sin\scygwin.\s\sTicket\s#2713.\s(CVS\s4485)
+D 2007-10-12T18:36:26
 F Makefile.in 75b729d562e9525d57d9890ec598b38e1a8b02bc
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -68,7 +68,7 @@ F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
 F mkopcodec.awk 3fb9bf077053c968451f4dd03d11661ac373f9d1
-F mkopcodeh.awk cde995d269aa06c94adbf6455bea0acedb913fa5
+F mkopcodeh.awk 799a299eaf3173c0f8ac0bd7c4b49c0f4d4590ca
 F mkso.sh 24bde4c09e6fe80f718db3c31c068f45e13a2f2c
 F publish.sh b2cda679be481dfa5b4a9cc4668dde6acc00e4f6
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e4527dd6ed81f5cb7862b76305be7d7b6d31016d
-R a35e73f7c77633a2ba6b75c8bed091b5
+P a7292c14ded6cfca65850ef8169799d2d5f35a61
+R 543195db97b17525243d1b59b6c19dbd
 U drh
-Z 5b9b0d9890947d49da524670bda85258
+Z a55d964d9bc5c4c7e6901f8d6a15f858

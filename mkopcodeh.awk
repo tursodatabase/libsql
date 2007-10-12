@@ -41,7 +41,7 @@
 
 # Remember the TK_ values from the parse.h file
 /^#define TK_/ {
-  tk[$2] = $3
+  tk[$2] = 0+$3
 }
 
 # Scan for "case OP_aaaa:" lines in the vdbe.c file
