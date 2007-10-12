@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.406 2007/10/03 21:10:58 drh Exp $
+** $Id: main.c,v 1.407 2007/10/12 19:35:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1272,7 +1272,7 @@ int sqlite3_collation_needed16(
 ** This function is now an anachronism. It used to be used to recover from a
 ** malloc() failure, but SQLite now does this automatically.
 */
-int sqlite3_global_recover(){
+int sqlite3_global_recover(void){
   return SQLITE_OK;
 }
 #endif

@@ -1,5 +1,5 @@
-C Make\sthe\s3rd\sparameter\sof\sthe\sSUBSTR()\sfunction\soptional.\s\sTicket\s#2579.\s(CVS\s4486)
-D 2007-10-12T19:11:55
+C Convert\sa\sK&R\sstyle\sfunction\sto\sANSI\sstyle.\s\sTicket\s#2548.\s(CVS\s4487)
+D 2007-10-12T19:35:49
 F Makefile.in 75b729d562e9525d57d9890ec598b38e1a8b02bc
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -99,7 +99,7 @@ F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c 124e566563d1c03e68e1396cb44df9870612c6e9
-F src/main.c 946ca0da59f1b00754cf0226aec30076f992130f
+F src/main.c 994a6b6914d91dc6dea5012667ec0a52e74d3bca
 F src/malloc.c de4e77fe70a9a0ac47a1c3a874422b107231bf31
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c 232075b7da8c9b7f23159bbda25c7407168ab9db
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 043cee2fd9319f24bb5c70d6619bfe8f8e2e3b91
-R 1df8a48ac33d659b8c4b4d1ef001d500
+P 4a807d48ea9923c1e3df4a5ad503710e62ae29f8
+R 4b8c327d78cb80cdce0615f0d18610ed
 U drh
-Z cbea4efc34541b98a3b5677cab7e87e4
+Z 9f848e6120696622a7cbb1f37bdcaef8
