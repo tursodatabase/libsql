@@ -1,5 +1,5 @@
-C Still\smore\stweaks\sto\sthe\swince\sinterface.\s\sTicket\s#2711.\s(CVS\s4482)
-D 2007-10-09T15:36:10
+C Fix\sto\sthe\smain.mk\smakefile.\s(CVS\s4483)
+D 2007-10-12T00:23:44
 F Makefile.in 75b729d562e9525d57d9890ec598b38e1a8b02bc
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk c571eedc08ec4188cef8373d7320b40833075949
+F main.mk b260a68e26e9553afe8568bbf5554443858e7c49
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P beb91af7061a3950636064bf60946132a884cd7b
-R c96cd61a3f0ce59ab096a8987f60365d
+P b2bdb476858c6e4b8977ea06be68b2331d1d84df
+R a4607a18b0a2180a4c64deb4390c98c4
 U drh
-Z 8159b8ccb5f123a5d7af87677f2c9596
+Z 5fdde331973141e4918f2081ace343f2

@@ -352,6 +352,7 @@ parse.h:	parse.c
 
 parse.c:	$(TOP)/src/parse.y lemon $(TOP)/addopcodes.awk
 	cp $(TOP)/src/parse.y .
+	rm -f parse.h
 	./lemon $(OPTS) parse.y
 	mv parse.h parse.h.temp
 	awk -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
