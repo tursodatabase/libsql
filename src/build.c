@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.446 2007/10/12 20:42:29 drh Exp $
+** $Id: build.c,v 1.447 2007/10/15 07:08:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1725,10 +1725,14 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
     n = pParse->nTab;
     sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
     pTable->nCol = -1;
+#ifndef SQLITE_OMIT_AUTHORIZATION
     xAuth = db->xAuth;
     db->xAuth = 0;
     pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSel);
     db->xAuth = xAuth;
+#else
+    pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSel);
+#endif
     pParse->nTab = n;
     if( pSelTab ){
       assert( pTable->aCol==0 );

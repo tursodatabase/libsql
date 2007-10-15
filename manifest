@@ -1,5 +1,5 @@
-C Do\snot\sinvoke\sthe\sauthorizer\swhen\sreparsing\sthe\sschema\safter\sa\sschema\nchange\sor\swhen\strying\sto\sfigure\sout\sthe\sresult\sset\sof\sa\sview.\s(CVS\s4488)
-D 2007-10-12T20:42:29
+C Fix\sfor\sOMIT_AUTHORIZATION\sbuilds.\s(CVS\s4489)
+D 2007-10-15T07:08:44
 F Makefile.in 75b729d562e9525d57d9890ec598b38e1a8b02bc
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -84,7 +84,7 @@ F src/btmutex.c 442be6f068d77ca9ffd69899cf0a3943c244548c
 F src/btree.c a491c45b4412e6f19458e122bafa0cca8f22d224
 F src/btree.h d0736ebca4b6eafbdd823c46a8de574cea078211
 F src/btreeInt.h 4330c19b8314545fdb209cc77e2a57f6a5290e9c
-F src/build.c a400945db0c43f077e06d45a670bf9ad0c6fd4a2
+F src/build.c d4ace66c2612d8973a17afdfe34b2a62f1a80178
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
@@ -581,7 +581,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e1b2e7c24ce0f838687a503dc98188a0e67c79de
-R 525828fdeb77c0b3207ff7d87dd55a9d
-U drh
-Z 10cf92f8870071423d4027eef109f9ac
+P e756bc9b74ef357c088b3044527c41e6834ba1a2
+R 2a362f0638262e15107e468de4d77838
+U danielk1977
+Z 171613e0cdad61754450cbee9fe33dc0
