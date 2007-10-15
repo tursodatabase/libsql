@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.91 2007/09/01 09:02:54 danielk1977 Exp $
+# $Id: tester.tcl,v 1.92 2007/10/15 19:34:32 drh Exp $
 
 
 set tcl_precision 15
@@ -203,6 +203,9 @@ proc finalize_testing {} {
     }
   } else {
     puts "All memory allocations freed - no leaks"
+    ifcapable memdebug {
+      sqlite3_memdebug_dump ./memusage.txt
+    }
   }
   puts "Maximum memory usage: [sqlite3_memory_highwater] bytes"
   foreach f [glob -nocomplain test.db-*-journal] {

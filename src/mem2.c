@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.14 2007/10/03 08:46:45 danielk1977 Exp $
+** $Id: mem2.c,v 1.15 2007/10/15 19:34:32 drh Exp $
 */
 
 /*
@@ -85,6 +85,11 @@ struct MemBlockHdr {
 #define REARGUARD 0xE4676B53
 
 /*
+** Number of malloc size increments to track.
+*/
+#define NCSIZE  500
+
+/*
 ** All of the static variables used by this module are collected
 ** into a single structure named "mem".  This is to keep the
 ** static variables organized and to reduce namespace pollution
@@ -148,8 +153,15 @@ static struct {
   ** sqlite3MallocAllow() decrements it.
   */
   int disallow; /* Do not allow memory allocation */
-  
-  
+
+  /*
+  ** Gather statistics on the sizes of memory allocations.
+  ** sizeCnt[i] is the number of allocation attempts of i*4
+  ** bytes.  i==NCSIZE is the number of allocation attempts for
+  ** sizes more than NCSIZE*4 bytes.
+  */
+  int sizeCnt[NCSIZE];
+
 } mem;
 
 
@@ -272,6 +284,11 @@ void *sqlite3_malloc(int nByte){
       sqlite3MemsysAlarm(nByte);
     }
     nByte = (nByte+3)&~3;
+    if( nByte/8>NCSIZE-1 ){
+      mem.sizeCnt[NCSIZE-1]++;
+    }else{
+      mem.sizeCnt[nByte/8]++;
+    }
     totalSize = nByte + sizeof(*pHdr) + sizeof(int) +
                  mem.nBacktrace*sizeof(void*) + mem.nTitle;
     if( mem.iFail>0 ){
@@ -440,6 +457,7 @@ void sqlite3_memdebug_dump(const char *zFilename){
   FILE *out;
   struct MemBlockHdr *pHdr;
   void **pBt;
+  int i;
   out = fopen(zFilename, "w");
   if( out==0 ){
     fprintf(stderr, "** Unable to output memory debug output log: %s **\n",
@@ -458,6 +476,15 @@ void sqlite3_memdebug_dump(const char *zFilename){
       backtrace_symbols_fd(pBt, pHdr->nBacktrace, fileno(out));
       fprintf(out, "\n");
     }
+  }
+  fprintf(out, "COUNTS:\n");
+  for(i=0; i<NCSIZE-1; i++){
+    if( mem.sizeCnt[i] ){
+      fprintf(out, "   %3d: %d\n", i*8+8, mem.sizeCnt[i]);
+    }
+  }
+  if( mem.sizeCnt[NCSIZE-1] ){
+    fprintf(out, "  >%3d: %d\n", NCSIZE*8, mem.sizeCnt[NCSIZE-1]);
   }
   fclose(out);
 }
