@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.428 2007/10/03 08:46:44 danielk1977 Exp $
+** $Id: btree.c,v 1.429 2007/10/16 19:45:30 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3039,7 +3039,7 @@ static int accessPayload(
   u32 nKey;
   int iIdx = 0;
   MemPage *pPage = pCur->pPage;     /* Btree page of current cursor entry */
-  BtShared *pBt = pCur->pBt;        /* Btree this cursor belongs to */
+  BtShared *pBt;                   /* Btree this cursor belongs to */
 
   assert( pPage );
   assert( pCur->eState==CURSOR_VALID );
@@ -3073,6 +3073,7 @@ static int accessPayload(
     offset -= pCur->info.nLocal;
   }
 
+  pBt = pCur->pBt;
   if( rc==SQLITE_OK && amt>0 ){
     const int ovflSize = pBt->usableSize - 4;  /* Bytes content per ovfl page */
     Pgno nextPage;
