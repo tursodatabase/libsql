@@ -255,13 +255,14 @@ static int sqlite3Step(Vdbe *p){
   sqlite3 *db;
   int rc;
 
+  if( p==0 || p->magic!=VDBE_MAGIC_RUN ){
+    return SQLITE_MISUSE;
+  }
+
   /* Assert that malloc() has not failed */
   db = p->db;
   assert( !db->mallocFailed );
 
-  if( p==0 || p->magic!=VDBE_MAGIC_RUN ){
-    return SQLITE_MISUSE;
-  }
   if( p->aborted ){
     return SQLITE_ABORT;
   }
