@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.8 2007/09/03 07:31:10 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.9 2007/10/19 17:47:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -154,6 +154,106 @@ static int test_free(
 }
 
 /*
+** These routines are in test_hexio.c
+*/
+int sqlite3TestHexToBin(const char *, int, char *);
+int sqlite3TestBinToHex(char*,int);
+
+/*
+** Usage:    memset  ADDRESS  SIZE  HEX
+**
+** Set a chunk of memory (obtained from malloc, probably) to a
+** specified hex pattern.
+*/
+static int test_memset(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  void *p;
+  int size, n, i;
+  char *zHex;
+  char *zOut;
+  char zBin[100];
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "ADDRESS SIZE HEX");
+    return TCL_ERROR;
+  }
+  if( textToPointer(Tcl_GetString(objv[1]), &p) ){
+    Tcl_AppendResult(interp, "bad pointer: ", Tcl_GetString(objv[1]), (char*)0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[2], &size) ){
+    return TCL_ERROR;
+  }
+  if( size<=0 ){
+    Tcl_AppendResult(interp, "size must be positive", (char*)0);
+    return TCL_ERROR;
+  }
+  zHex = Tcl_GetStringFromObj(objv[3], &n);
+  if( n>sizeof(zBin)*2 ) n = sizeof(zBin)*2;
+  n = sqlite3TestHexToBin(zHex, n, zBin);
+  if( n==0 ){
+    Tcl_AppendResult(interp, "no data", (char*)0);
+    return TCL_ERROR;
+  }
+  zOut = p;
+  for(i=0; i<size; i++){
+    zOut[i] = zBin[i%n];
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage:    memget  ADDRESS  SIZE
+**
+** Return memory as hexadecimal text.
+*/
+static int test_memget(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  void *p;
+  int size, n;
+  char *zBin;
+  char zHex[100];
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "ADDRESS SIZE");
+    return TCL_ERROR;
+  }
+  if( textToPointer(Tcl_GetString(objv[1]), &p) ){
+    Tcl_AppendResult(interp, "bad pointer: ", Tcl_GetString(objv[1]), (char*)0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[2], &size) ){
+    return TCL_ERROR;
+  }
+  if( size<=0 ){
+    Tcl_AppendResult(interp, "size must be positive", (char*)0);
+    return TCL_ERROR;
+  }
+  zBin = p;
+  while( size>0 ){
+    if( size>(sizeof(zHex)-1)/2 ){
+      n = (sizeof(zHex)-1)/2;
+    }else{
+      n = size;
+    }
+    memcpy(zHex, zBin, n);
+    zBin += n;
+    size -= n;
+    sqlite3TestBinToHex(zHex, n);
+    Tcl_AppendResult(interp, zHex, (char*)0);
+  }
+  return TCL_OK;
+}
+
+/*
 ** Usage:    sqlite3_memory_used
 **
 ** Raw test interface for sqlite3_memory_used().
@@ -234,7 +334,7 @@ static int test_memdebug_dump(
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
     return TCL_ERROR;
   }
-#ifdef SQLITE_MEMDEBUG
+#if defined(SQLITE_MEMDEBUG) || defined(SQLITE_MEMORY_SIZE)
   {
     extern void sqlite3_memdebug_dump(const char*);
     sqlite3_memdebug_dump(Tcl_GetString(objv[1]));
@@ -395,6 +495,8 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_malloc",             test_malloc                   },
      { "sqlite3_realloc",            test_realloc                  },
      { "sqlite3_free",               test_free                     },
+     { "memset",                     test_memset                   },
+     { "memget",                     test_memget                   },
      { "sqlite3_memory_used",        test_memory_used              },
      { "sqlite3_memory_highwater",   test_memory_highwater         },
      { "sqlite3_memdebug_backtrace", test_memdebug_backtrace       },

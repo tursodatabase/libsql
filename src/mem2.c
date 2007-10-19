@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.15 2007/10/15 19:34:32 drh Exp $
+** $Id: mem2.c,v 1.16 2007/10/19 17:47:25 drh Exp $
 */
 
 /*
@@ -20,7 +20,8 @@
 ** SQLITE_MEMDEBUG macro is defined and SQLITE_OMIT_MEMORY_ALLOCATION
 ** is not defined.
 */
-#if defined(SQLITE_MEMDEBUG) && !defined(SQLITE_OMIT_MEMORY_ALLOCATION)
+#if defined(SQLITE_MEMDEBUG) && !defined(SQLITE_OMIT_MEMORY_ALLOCATION) \
+           && !defined(SQLITE_MEMORY_SIZE)
 
 /*
 ** We will eventually construct multiple memory allocation subsystems
@@ -87,7 +88,7 @@ struct MemBlockHdr {
 /*
 ** Number of malloc size increments to track.
 */
-#define NCSIZE  500
+#define NCSIZE  1000
 
 /*
 ** All of the static variables used by this module are collected
@@ -156,9 +157,9 @@ static struct {
 
   /*
   ** Gather statistics on the sizes of memory allocations.
-  ** sizeCnt[i] is the number of allocation attempts of i*4
+  ** sizeCnt[i] is the number of allocation attempts of i*8
   ** bytes.  i==NCSIZE is the number of allocation attempts for
-  ** sizes more than NCSIZE*4 bytes.
+  ** sizes more than NCSIZE*8 bytes.
   */
   int sizeCnt[NCSIZE];
 
