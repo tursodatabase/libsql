@@ -1,5 +1,5 @@
-C Bug\sfix\sin\sthe\srealloc\salgorithm\sof\sthe\sstatic\smemory\sallocator.\s(CVS\s4497)
-D 2007-10-20T16:11:39
+C Add\sthe\snew\smemory\sallocator\sto\sthe\samalgamation.\s\sImprovements\sto\nout-of-memory\shandling.\s(CVS\s4498)
+D 2007-10-20T16:36:31
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -100,11 +100,11 @@ F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c 124e566563d1c03e68e1396cb44df9870612c6e9
 F src/main.c 994a6b6914d91dc6dea5012667ec0a52e74d3bca
-F src/malloc.c de4e77fe70a9a0ac47a1c3a874422b107231bf31
+F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c cacb202bc379da10d69aa66d497c0ea7bd9cd8a5
 F src/mem2.c 3f669b5e20975a5a2ca392aca891cd686e22b097
-F src/mem3.c 232f658b5919a979e894817e8d9a8047cc01738a
+F src/mem3.c df13c608e8dfb54f62e3448eb126e760aecbacf1
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 7fe4773e98ed74a63b2e54fc557929eb155f6269
@@ -512,7 +512,7 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl 1b2fc352849823600fea9474245591e96733e557
+F tool/mksqlite3c.tcl 48778943a2fc83a4fdcbb3e109706b4b8e1b135a
 F tool/mksqlite3internalh.tcl 47737a925fb02fce43e2c0a14b3cc17574a4d44a
 F tool/omittest.tcl 7d1fdf469e2f4d175f70c36e469db64a1626fabb
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -582,7 +582,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ca51b2f54076fcf73a8857aecf4b45d66ef0c7b6
-R 149041cc2a0cdac1aeaffd2ccb597c27
+P 50db16be5025f6d5efc51e3354615059da7e8611
+R 9881665fdb8e4b9770ed547fbe8fa687
 U drh
-Z c7cecaa706d7ed7726d405d4a3f2983e
+Z fb42a97e45f6a24233932545382ee686

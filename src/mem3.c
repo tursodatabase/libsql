@@ -20,7 +20,7 @@
 ** This version of the memory allocation subsystem is used if
 ** and only if SQLITE_MEMORY_SIZE is defined.
 **
-** $Id: mem3.c,v 1.4 2007/10/20 16:11:39 drh Exp $
+** $Id: mem3.c,v 1.5 2007/10/20 16:36:31 drh Exp $
 */
 
 /*
@@ -372,6 +372,7 @@ static void memsys3Merge(int *pRoot){
 static void *memsys3Malloc(int nByte){
   int i;
   int nBlock;
+  int toFree;
 
   assert( sizeof(Mem3Block)==8 );
   if( nByte<=0 ){
@@ -418,22 +419,24 @@ static void *memsys3Malloc(int nByte){
   ** of the end of the master chunk.  This step happens very
   ** rarely (we hope!)
   */
-  memsys3OutOfMemory(nBlock*16);
-  if( mem.iMaster ){
-    memsys3Link(mem.iMaster);
-    mem.iMaster = 0;
-    mem.szMaster = 0;
-  }
-  for(i=0; i<N_HASH; i++){
-    memsys3Merge(&mem.aiHash[i]);
-  }
-  for(i=0; i<MX_SMALL-1; i++){
-    memsys3Merge(&mem.aiSmall[i]);
-  }
-  if( mem.szMaster ){
-    memsys3Unlink(mem.iMaster);
-    if( mem.szMaster>=nBlock ){
-      return memsys3FromMaster(nBlock);
+  for(toFree=nBlock*16; toFree<SQLITE_MEMORY_SIZE*2; toFree *= 2){
+    memsys3OutOfMemory(toFree);
+    if( mem.iMaster ){
+      memsys3Link(mem.iMaster);
+      mem.iMaster = 0;
+      mem.szMaster = 0;
+    }
+    for(i=0; i<N_HASH; i++){
+      memsys3Merge(&mem.aiHash[i]);
+    }
+    for(i=0; i<MX_SMALL-1; i++){
+      memsys3Merge(&mem.aiSmall[i]);
+    }
+    if( mem.szMaster ){
+      memsys3Unlink(mem.iMaster);
+      if( mem.szMaster>=nBlock ){
+        return memsys3FromMaster(nBlock);
+      }
     }
   }
 

@@ -12,7 +12,7 @@
 ** Memory allocation functions used throughout sqlite.
 **
 **
-** $Id: malloc.c,v 1.13 2007/08/29 14:06:23 danielk1977 Exp $
+** $Id: malloc.c,v 1.14 2007/10/20 16:36:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -237,4 +237,3 @@ int sqlite3ApiExit(sqlite3* db, int rc){
   }
   return rc & (db ? db->errMask : 0xff);
 }
- 

@@ -202,6 +202,7 @@ foreach file {
 
    mem1.c
    mem2.c
+   mem3.c
    mutex.c
    mutex_os2.c
    mutex_unix.c
