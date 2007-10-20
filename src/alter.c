@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.32 2007/08/29 14:06:23 danielk1977 Exp $
+** $Id: alter.c,v 1.33 2007/10/20 20:58:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -378,7 +378,7 @@ void sqlite3AlterRenameTable(
           "name = CASE "
             "WHEN type='table' THEN %Q "
             "WHEN name LIKE 'sqlite_autoindex%%' AND type='index' THEN "
-             "'sqlite_autoindex_' || %Q || substr(name,%d+18,10) "
+             "'sqlite_autoindex_' || %Q || substr(name,%d+18) "
             "ELSE name END "
       "WHERE tbl_name=%Q AND "
           "(type='table' OR type='index' OR type='trigger');", 
@@ -515,7 +515,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     }
     sqlite3NestedParse(pParse, 
         "UPDATE %Q.%s SET "
-          "sql = substr(sql,1,%d) || ', ' || %Q || substr(sql,%d,length(sql)) "
+          "sql = substr(sql,1,%d) || ', ' || %Q || substr(sql,%d) "
         "WHERE type = 'table' AND name = %Q", 
       zDb, SCHEMA_TABLE(iDb), pNew->addColOffset, zCol, pNew->addColOffset+1,
       zTab

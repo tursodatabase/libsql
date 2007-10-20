@@ -1,5 +1,5 @@
-C Add\sthe\snew\smemory\sallocator\sto\sthe\samalgamation.\s\sImprovements\sto\nout-of-memory\shandling.\s(CVS\s4498)
-D 2007-10-20T16:36:31
+C Use\sthe\s2-argument\sversion\sof\ssubstr()\sin\sthe\sSQL\scontained\sin\sthe\nVACUUM\sand\sALTER\sTABLE\scommands.\s\sTicket\s#2737.\s(CVS\s4499)
+D 2007-10-20T20:58:57
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -76,7 +76,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
-F src/alter.c c9f30b4d6fbf7eff7c5518b002a217d4ecd13bcf
+F src/alter.c 8512ed319aa5f7b9bbbd4e17953809e3ff398fdd
 F src/analyze.c 49b4bd45eb286d833793ed6bf72355a5c1974865
 F src/attach.c a01d55157d46a1234909f3a7f21fb09549c947bd
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
@@ -164,7 +164,7 @@ F src/trigger.c 724a77d54609a33bde90618934fbeddfcc729a10
 F src/update.c e89b980b443d44b68bfc0b1746cdb6308e049ac9
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 49263637e0f228411201501ddfd1138338d6322c
-F src/vacuum.c 38745037c63246d1b0669038257890cf89fc4578
+F src/vacuum.c a5e51c77370c1a6445e86d42abfc43867cdd482d
 F src/vdbe.c 57e37b55c4dcdc9ed71c57180cee514c33d0e8f9
 F src/vdbe.h 03a0fa17f6753a24d6cb585d7a362944a2c115aa
 F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
@@ -582,7 +582,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 50db16be5025f6d5efc51e3354615059da7e8611
-R 9881665fdb8e4b9770ed547fbe8fa687
+P b58c2b37a5deb19ce0ef78629989016743a46bb3
+R 93ce60039c736ad9c297f3402ccf1b38
 U drh
-Z fb42a97e45f6a24233932545382ee686
+Z d47a6f1c477365472bef60a638ee6194
