@@ -1,5 +1,5 @@
-C Fix\sa\smutex\sleak\sin\sthe\snew\smalloc-free\smemory\sallocator.\s(CVS\s4494)
-D 2007-10-20T12:34:01
+C Go\sback\sto\sallocating\seach\spage\sand\sits\sheader\swith\sa\ssingle\smemory\nallocation.\s\sThis\sundoes\sthe\schange\sof\s(4409).\s(CVS\s4495)
+D 2007-10-20T13:17:55
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -121,7 +121,7 @@ F src/os_unix.c 308bd8ad6977f66f608228cccaecc4cbc1a24693
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c fe8f2d8fc3a010a2e9d4a0acbdcf4981522cac7b
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 0a92a08192785af79547b017cda45eb683b22552
+F src/pager.c a464ba8e6001573556420be0afc178a370717f64
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 363e548dafb52327face8d99757ab56a7b1c1b26
@@ -582,7 +582,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8487ca82fade60b9fa63abf74e10f6ebcb48b98e
-R 90ba9f4c15dca4497d400480c35485e4
+P 30f014d3d0231a668c40508ff4a6b90ce622c857
+R 353b5c52c9c15c7259d8c65cac3000a2
 U drh
-Z ea0e251b46a75fe3eb6d2bdbc7463d99
+Z 00b4c63daba6680a8c5aa4fee0ee068a

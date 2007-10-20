@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.392 2007/10/03 15:22:26 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.393 2007/10/20 13:17:55 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1227,7 +1227,6 @@ static void pager_reset(Pager *pPager){
     PAGER_INCR(sqlite3_pager_pgfree_count);
     pNext = pPg->pNextAll;
     lruListRemove(pPg);
-    sqlite3_free(pPg->pData);
     sqlite3_free(pPg);
   }
   assert(pPager->lru.pFirst==0);
@@ -2533,7 +2532,6 @@ static void pager_truncate_cache(Pager *pPager){
       PAGER_INCR(sqlite3_pager_pgfree_count);
       unlinkPage(pPg);
       makeClean(pPg);
-      sqlite3_free(pPg->pData);
       sqlite3_free(pPg);
       pPager->nPage--;
     }
@@ -3197,7 +3195,6 @@ int sqlite3PagerReleaseMemory(int nReq){
       );
       IOTRACE(("PGFREE %p %d *\n", pPager, pPg->pgno));
       PAGER_INCR(sqlite3_pager_pgfree_count);
-      sqlite3_free(pPg->pData);
       sqlite3_free(pPg);
       pPager->nPage--;
     }else{
@@ -3460,7 +3457,7 @@ static int pagerSharedLock(Pager *pPager){
 static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
   int rc = SQLITE_OK;
   PgHdr *pPg;
-  void *pData;
+  int nByteHdr;
 
   /* Create a new PgHdr if any of the four conditions defined 
   ** above are met: */
@@ -3478,25 +3475,16 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
       }
     }
     pagerLeave(pPager);
-    pPg = sqlite3_malloc( sizeof(*pPg) + sizeof(u32) + pPager->nExtra
-                            + MEMDB*sizeof(PgHistory) );
-    if( pPg ){
-      pData = sqlite3_malloc( pPager->pageSize );
-      if( pData==0 ){
-        sqlite3_free(pPg);
-        pPg = 0;
-      }
-    }
+    nByteHdr = sizeof(*pPg) + sizeof(u32) + pPager->nExtra
+              + MEMDB*sizeof(PgHistory);
+    pPg = sqlite3_malloc( nByteHdr + pPager->pageSize );
     pagerEnter(pPager);
     if( pPg==0 ){
       rc = SQLITE_NOMEM;
       goto pager_allocate_out;
     }
-    memset(pPg, 0, sizeof(*pPg));
-    if( MEMDB ){
-      memset(PGHDR_TO_HIST(pPg, pPager), 0, sizeof(PgHistory));
-    }
-    pPg->pData = pData;
+    memset(pPg, 0, nByteHdr);
+    pPg->pData = (void*)(nByteHdr + (char*)pPg);
     pPg->pPager = pPager;
     pPg->pNextAll = pPager->pAll;
     pPager->pAll = pPg;
