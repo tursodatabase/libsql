@@ -20,7 +20,7 @@
 ** This version of the memory allocation subsystem is used if
 ** and only if SQLITE_MEMORY_SIZE is defined.
 **
-** $Id: mem3.c,v 1.1 2007/10/19 17:47:25 drh Exp $
+** $Id: mem3.c,v 1.2 2007/10/20 12:34:01 drh Exp $
 */
 
 /*
@@ -547,6 +547,7 @@ void *sqlite3_realloc(void *pPrior, int nBytes){
     sqlite3MemsysAlarm(nBytes);
     p = internal_malloc(nBytes);
     if( p==0 ){
+      sqlite3_mutex_leave(mem.mutex);
       return 0;
     }
   }
