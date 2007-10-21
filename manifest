@@ -1,5 +1,5 @@
-C Use\sthe\s2-argument\sversion\sof\ssubstr()\sin\sthe\sSQL\scontained\sin\sthe\nVACUUM\sand\sALTER\sTABLE\scommands.\s\sTicket\s#2737.\s(CVS\s4499)
-D 2007-10-20T20:58:57
+C Finally\sbring\sOS/2\sto\sthe\s3.5\slevel.\sThis\sat\sleast\sis\sa\sfirst\sdraft\sversion\sthat\ssurvives\svery\sbasic\stests.\sIt\sstill\scontains\sa\slot\sof\sdebugging\sstuff...\s(CVS\s4500)
+D 2007-10-21T22:47:03
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -113,7 +113,7 @@ F src/mutex_w32.c 6e197765f283815496193e78e9548b5d0e53b68e
 F src/os.c 6a84b6ff284fa558e879d9b6a5809004aacc8195
 F src/os.h 4c880cf67437f323cd0c3ab2154f1d76babc12d3
 F src/os_common.h 98862f120ca6bf7a48ce8b16f158b77d00bc9d2f
-F src/os_os2.c 5b5f42180c5961b9d207748fda8f9aa0e70569c8
+F src/os_os2.c 8d8ef4462cfa1b4d824ec55c486bce86fa0ac6fc
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
@@ -582,7 +582,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b58c2b37a5deb19ce0ef78629989016743a46bb3
-R 93ce60039c736ad9c297f3402ccf1b38
-U drh
-Z d47a6f1c477365472bef60a638ee6194
+P 82b08a3dc2366007bcac4d9e451ef61c8c018fa5
+R df01a40a99534be139290c835bedc073
+U pweilbacher
+Z 4453b56bdc367fcc42bae9fbfc378ecc

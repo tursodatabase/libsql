@@ -18,9 +18,35 @@
 #if OS_OS2
 
 /*
+** A Note About Memory Allocation:
+**
+** This driver uses malloc()/free() directly rather than going through
+** the SQLite-wrappers sqlite3_malloc()/sqlite3_free().  Those wrappers
+** are designed for use on embedded systems where memory is scarce and
+** malloc failures happen frequently.  OS/2 does not typically run on
+** embedded systems, and when it does the developers normally have bigger
+** problems to worry about than running out of memory.  So there is not
+** a compelling need to use the wrappers.
+**
+** But there is a good reason to not use the wrappers.  If we use the
+** wrappers then we will get simulated malloc() failures within this
+** driver.  And that causes all kinds of problems for our tests.  We
+** could enhance SQLite to deal with simulated malloc failures within
+** the OS driver, but the code to deal with those failure would not
+** be exercised on Linux (which does not need to malloc() in the driver)
+** and so we would have difficulty writing coverage tests for that
+** code.  Better to leave the code out, we think.
+**
+** The point of this discussion is as follows:  When creating a new
+** OS layer for an embedded system, if you use this file as an example,
+** avoid the use of malloc()/free().  Those routines work ok on OS/2
+** desktops but not so well in embedded systems.
+*/
+
+/*
 ** Macros used to determine whether or not to use threads.
 */
-#if defined(THREADSAFE) && THREADSAFE
+#if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE
 # define SQLITE_OS2_THREADS 1
 #endif
 
@@ -30,249 +56,40 @@
 #include "os_common.h"
 
 /*
-** The os2File structure is subclass of OsFile specific for the OS/2
+** The os2File structure is subclass of sqlite3_file specific for the OS/2
 ** protability layer.
 */
 typedef struct os2File os2File;
 struct os2File {
-  IoMethod const *pMethod;  /* Always the first entry */
+  const sqlite3_io_methods *pMethod;  /* Always the first entry */
   HFILE h;                  /* Handle for accessing the file */
   int delOnClose;           /* True if file is to be deleted on close */
   char* pathToDel;          /* Name of file to delete on close */
   unsigned char locktype;   /* Type of lock currently held on this file */
 };
 
-/*
-** Do not include any of the File I/O interface procedures if the
-** SQLITE_OMIT_DISKIO macro is defined (indicating that there database
-** will be in-memory only)
-*/
-#ifndef SQLITE_OMIT_DISKIO
-
-/*
-** Delete the named file
-*/
-int sqlite3Os2Delete( const char *zFilename ){
-  APIRET rc = NO_ERROR;
-
-  rc = DosDelete( (PSZ)zFilename );
-  OSTRACE2( "DELETE \"%s\"\n", zFilename );
-  return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
-}
-
-/*
-** Return TRUE if the named file exists.
-*/
-int sqlite3Os2FileExists( const char *zFilename ){
-  FILESTATUS3 fsts3ConfigInfo;
-  memset(&fsts3ConfigInfo, 0, sizeof(fsts3ConfigInfo));
-  return DosQueryPathInfo( (PSZ)zFilename, FIL_STANDARD,
-        &fsts3ConfigInfo, sizeof(FILESTATUS3) ) == NO_ERROR;
-}
-
-/* Forward declaration */
-int allocateOs2File( os2File *pInit, OsFile **pld );
-
-/*
-** Attempt to open a file for both reading and writing.  If that
-** fails, try opening it read-only.  If the file does not exist,
-** try to create it.
-**
-** On success, a handle for the open file is written to *id
-** and *pReadonly is set to 0 if the file was opened for reading and
-** writing or 1 if the file was opened read-only.  The function returns
-** SQLITE_OK.
-**
-** On failure, the function returns SQLITE_CANTOPEN and leaves
-** *id and *pReadonly unchanged.
-*/
-int sqlite3Os2OpenReadWrite(
-  const char *zFilename,
-  OsFile **pld,
-  int *pReadonly
-){
-  os2File  f;
-  HFILE    hf;
-  ULONG    ulAction;
-  APIRET   rc = NO_ERROR;
-
-  assert( *pld == 0 );
-  rc = DosOpen( (PSZ)zFilename, &hf, &ulAction, 0L,
-            FILE_ARCHIVED | FILE_NORMAL,
-                OPEN_ACTION_CREATE_IF_NEW | OPEN_ACTION_OPEN_IF_EXISTS,
-                OPEN_FLAGS_FAIL_ON_ERROR | OPEN_FLAGS_RANDOM |
-                    OPEN_SHARE_DENYNONE | OPEN_ACCESS_READWRITE, (PEAOP2)NULL );
-  if( rc != NO_ERROR ){
-    rc = DosOpen( (PSZ)zFilename, &hf, &ulAction, 0L,
-            FILE_ARCHIVED | FILE_NORMAL,
-                OPEN_ACTION_CREATE_IF_NEW | OPEN_ACTION_OPEN_IF_EXISTS,
-                OPEN_FLAGS_FAIL_ON_ERROR | OPEN_FLAGS_RANDOM |
-                        OPEN_SHARE_DENYWRITE | OPEN_ACCESS_READONLY, (PEAOP2)NULL );
-    if( rc != NO_ERROR ){
-        return SQLITE_CANTOPEN;
-    }
-    *pReadonly = 1;
-  }
-  else{
-    *pReadonly = 0;
-  }
-  f.h = hf;
-  f.locktype = NO_LOCK;
-  f.delOnClose = 0;
-  f.pathToDel = NULL;
-  OpenCounter(+1);
-  OSTRACE3( "OPEN R/W %d \"%s\"\n", hf, zFilename );
-  return allocateOs2File( &f, pld );
-}
-
-
-/*
-** Attempt to open a new file for exclusive access by this process.
-** The file will be opened for both reading and writing.  To avoid
-** a potential security problem, we do not allow the file to have
-** previously existed.  Nor do we allow the file to be a symbolic
-** link.
-**
-** If delFlag is true, then make arrangements to automatically delete
-** the file when it is closed.
-**
-** On success, write the file handle into *id and return SQLITE_OK.
-**
-** On failure, return SQLITE_CANTOPEN.
-*/
-int sqlite3Os2OpenExclusive( const char *zFilename, OsFile **pld, int delFlag ){
-  os2File  f;
-  HFILE    hf;
-  ULONG    ulAction;
-  APIRET   rc = NO_ERROR;
-
-  assert( *pld == 0 );
-  rc = DosOpen( (PSZ)zFilename, &hf, &ulAction, 0L, FILE_NORMAL,
-            OPEN_ACTION_CREATE_IF_NEW | OPEN_ACTION_REPLACE_IF_EXISTS,
-            OPEN_FLAGS_FAIL_ON_ERROR | OPEN_FLAGS_RANDOM |
-                OPEN_SHARE_DENYREADWRITE | OPEN_ACCESS_READWRITE, (PEAOP2)NULL );
-  if( rc != NO_ERROR ){
-    return SQLITE_CANTOPEN;
-  }
-
-  f.h = hf;
-  f.locktype = NO_LOCK;
-  f.delOnClose = delFlag ? 1 : 0;
-  f.pathToDel = delFlag ? sqlite3OsFullPathname( zFilename ) : NULL;
-  OpenCounter( +1 );
-  if( delFlag ) DosForceDelete( (PSZ)sqlite3OsFullPathname( zFilename ) );
-  OSTRACE3( "OPEN EX %d \"%s\"\n", hf, sqlite3OsFullPathname ( zFilename ) );
-  return allocateOs2File( &f, pld );
-}
-
-/*
-** Attempt to open a new file for read-only access.
-**
-** On success, write the file handle into *id and return SQLITE_OK.
-**
-** On failure, return SQLITE_CANTOPEN.
-*/
-int sqlite3Os2OpenReadOnly( const char *zFilename, OsFile **pld ){
-  os2File  f;
-  HFILE    hf;
-  ULONG    ulAction;
-  APIRET   rc = NO_ERROR;
-
-  assert( *pld == 0 );
-  rc = DosOpen( (PSZ)zFilename, &hf, &ulAction, 0L,
-            FILE_NORMAL, OPEN_ACTION_OPEN_IF_EXISTS,
-            OPEN_FLAGS_FAIL_ON_ERROR | OPEN_FLAGS_RANDOM |
-                OPEN_SHARE_DENYWRITE | OPEN_ACCESS_READONLY, (PEAOP2)NULL );
-  if( rc != NO_ERROR ){
-    return SQLITE_CANTOPEN;
-  }
-  f.h = hf;
-  f.locktype = NO_LOCK;
-  f.delOnClose = 0;
-  f.pathToDel = NULL;
-  OpenCounter( +1 );
-  OSTRACE3( "OPEN RO %d \"%s\"\n", hf, zFilename );
-  return allocateOs2File( &f, pld );
-}
-
-/*
-** Attempt to open a file descriptor for the directory that contains a
-** file.  This file descriptor can be used to fsync() the directory
-** in order to make sure the creation of a new file is actually written
-** to disk.
-**
-** This routine is only meaningful for Unix.  It is a no-op under
-** OS/2 since OS/2 does not support hard links.
-**
-** On success, a handle for a previously open file is at *id is
-** updated with the new directory file descriptor and SQLITE_OK is
-** returned.
-**
-** On failure, the function returns SQLITE_CANTOPEN and leaves
-** *id unchanged.
-*/
-int os2OpenDirectory(
-  OsFile *id,
-  const char *zDirname
-){
-  return SQLITE_OK;
-}
-
-/*
-** Create a temporary file name in zBuf.  zBuf must be big enough to
-** hold at least SQLITE_TEMPNAME_SIZE characters.
-*/
-int sqlite3Os2TempFileName( char *zBuf ){
-  static const unsigned char zChars[] =
-    "abcdefghijklmnopqrstuvwxyz"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "0123456789";
-  int i, j;
-  PSZ zTempPath = 0;
-  if( DosScanEnv( (PSZ)"TEMP", &zTempPath ) ){
-    if( DosScanEnv( (PSZ)"TMP", &zTempPath ) ){
-      if( DosScanEnv( (PSZ)"TMPDIR", &zTempPath ) ){
-           ULONG ulDriveNum = 0, ulDriveMap = 0;
-           DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
-           sprintf( (char*)zTempPath, "%c:", (char)( 'A' + ulDriveNum - 1 ) );
-      }
-    }
-  }
-  /* strip off a trailing slashes or backslashes, otherwise we would get *
-   * multiple (back)slashes which causes DosOpen() to fail               */
-  j = strlen(zTempPath);
-  while( j > 0 && zTempPath[j-1] == '\\' || zTempPath[j-1] == '/' ){
-      j--;
-  }
-  zTempPath[j] = '\0';
-  for(;;){
-      sprintf( zBuf, "%s\\"TEMP_FILE_PREFIX, zTempPath );
-      j = strlen( zBuf );
-      sqlite3Randomness( 15, &zBuf[j] );
-      for( i = 0; i < 15; i++, j++ ){
-        zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
-      }
-      zBuf[j] = 0;
-      if( !sqlite3OsFileExists( zBuf ) ) break;
-  }
-  OSTRACE2( "TEMP FILENAME: %s\n", zBuf );
-  return SQLITE_OK;
-}
+/*****************************************************************************
+** The next group of routines implement the I/O methods specified
+** by the sqlite3_io_methods object.
+******************************************************************************/
 
 /*
 ** Close a file.
 */
-int os2Close( OsFile **pld ){
-  os2File *pFile;
+int os2Close( sqlite3_file *id ){
   APIRET rc = NO_ERROR;
-  if( pld && (pFile = (os2File*)*pld) != 0 ){
+  os2File *pFile;
+  if( id && (pFile = (os2File*)id) != 0 ){
     OSTRACE2( "CLOSE %d\n", pFile->h );
     rc = DosClose( pFile->h );
     pFile->locktype = NO_LOCK;
     if( pFile->delOnClose != 0 ){
-        rc = DosForceDelete( (PSZ)pFile->pathToDel );
+      rc = DosForceDelete( (PSZ)pFile->pathToDel );
     }
-    *pld = 0;
+    if( pFile->pathToDel ){
+      free( pFile->pathToDel );
+    }
+    id = 0;
     OpenCounter( -1 );
   }
 
@@ -284,16 +101,26 @@ int os2Close( OsFile **pld ){
 ** bytes were read successfully and SQLITE_IOERR if anything goes
 ** wrong.
 */
-int os2Read( OsFile *id, void *pBuf, int amt ){
+int os2Read(
+  sqlite3_file *id,               /* File to read from */
+  void *pBuf,                     /* Write content into this buffer */
+  int amt,                        /* Number of bytes to read */
+  sqlite3_int64 offset            /* Begin reading at this offset */
+){
+  ULONG fileLocation = 0L;
   ULONG got;
+  os2File *pFile = (os2File*)id;
   assert( id!=0 );
-  SimulateIOError( return SQLITE_IOERR );
-  OSTRACE3( "READ %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
-  DosRead( ((os2File*)id)->h, pBuf, amt, &got );
-  if (got == (ULONG)amt)
-    return SQLITE_OK;
-  else if (got == 0)
+  SimulateIOError( return SQLITE_IOERR_READ );
+  OSTRACE3( "READ %d lock=%d\n", pFile->h, pFile->locktype );
+  if( DosSetFilePtr(pFile->h, offset, FILE_BEGIN, &fileLocation) != NO_ERROR ){
+    return SQLITE_IOERR;
+  }
+  if( DosRead( pFile->h, pBuf, amt, &got ) != NO_ERROR ){
     return SQLITE_IOERR_READ;
+  }
+  if( got == (ULONG)amt )
+    return SQLITE_OK;
   else {
     memset(&((char*)pBuf)[got], 0, amt-got);
     return SQLITE_IOERR_SHORT_READ;
@@ -304,73 +131,80 @@ int os2Read( OsFile *id, void *pBuf, int amt ){
 ** Write data from a buffer into a file.  Return SQLITE_OK on success
 ** or some other error code on failure.
 */
-int os2Write( OsFile *id, const void *pBuf, int amt ){
+int os2Write(
+  sqlite3_file *id,               /* File to write into */
+  const void *pBuf,               /* The bytes to be written */
+  int amt,                        /* Number of bytes to write */
+  sqlite3_int64 offset            /* Offset into the file to begin writing at */
+){
+  ULONG fileLocation = 0L;
   APIRET rc = NO_ERROR;
   ULONG wrote;
+  os2File *pFile = (os2File*)id;
   assert( id!=0 );
-  SimulateIOError( return SQLITE_IOERR );
+  SimulateIOError( return SQLITE_IOERR_WRITE );
   SimulateDiskfullError( return SQLITE_FULL );
-  OSTRACE3( "WRITE %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
+  OSTRACE3( "WRITE %d lock=%d\n", pFile->h, pFile->locktype );
+  if( DosSetFilePtr(pFile->h, offset, FILE_BEGIN, &fileLocation) != NO_ERROR ){
+    return SQLITE_IOERR;
+  }
+  assert( amt>0 );
   while( amt > 0 &&
-      (rc = DosWrite( ((os2File*)id)->h, (PVOID)pBuf, amt, &wrote )) && wrote > 0 ){
-      amt -= wrote;
-      pBuf = &((char*)pBuf)[wrote];
+         (rc = DosWrite( pFile->h, (PVOID)pBuf, amt, &wrote )) &&
+         wrote > 0
+  ){
+    amt -= wrote;
+    pBuf = &((char*)pBuf)[wrote];
   }
 
   return ( rc != NO_ERROR || amt > (int)wrote ) ? SQLITE_FULL : SQLITE_OK;
 }
 
 /*
-** Move the read/write pointer in a file.
+** Truncate an open file to a specified size
 */
-int os2Seek( OsFile *id, i64 offset ){
+int os2Truncate( sqlite3_file *id, i64 nByte ){
   APIRET rc = NO_ERROR;
-  ULONG filePointer = 0L;
-  assert( id!=0 );
-  rc = DosSetFilePtr( ((os2File*)id)->h, offset, FILE_BEGIN, &filePointer );
-  OSTRACE3( "SEEK %d %lld\n", ((os2File*)id)->h, offset );
+  ULONG filePosition = 0L;
+  os2File *pFile = (os2File*)id;
+  OSTRACE3( "TRUNCATE %d %lld\n", pFile->h, nByte );
+  SimulateIOError( return SQLITE_IOERR_TRUNCATE );
+  rc = DosSetFilePtr( pFile->h, nByte, FILE_BEGIN, &filePosition );
+  if( rc != NO_ERROR ){
+    return SQLITE_IOERR;
+  }
+  rc = DosSetFilePtr( pFile->h, 0L, FILE_END, &filePosition );
   return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
 }
+
+#ifdef SQLITE_TEST
+/*
+** Count the number of fullsyncs and normal syncs.  This is used to test
+** that syncs and fullsyncs are occuring at the right times.
+*/
+int sqlite3_sync_count = 0;
+int sqlite3_fullsync_count = 0;
+#endif
 
 /*
 ** Make sure all writes to a particular file are committed to disk.
 */
-int os2Sync( OsFile *id, int dataOnly ){
-  assert( id!=0 );
-  OSTRACE3( "SYNC %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
-  return DosResetBuffer( ((os2File*)id)->h ) == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
-}
-
-/*
-** Sync the directory zDirname. This is a no-op on operating systems other
-** than UNIX.
-*/
-int sqlite3Os2SyncDirectory( const char *zDirname ){
-  SimulateIOError( return SQLITE_IOERR );
-  return SQLITE_OK;
-}
-
-/*
-** Truncate an open file to a specified size
-*/
-int os2Truncate( OsFile *id, i64 nByte ){
-  APIRET rc = NO_ERROR;
-  ULONG upperBits = nByte>>32;
-  assert( id!=0 );
-  OSTRACE3( "TRUNCATE %d %lld\n", ((os2File*)id)->h, nByte );
-  SimulateIOError( return SQLITE_IOERR );
-  rc = DosSetFilePtr( ((os2File*)id)->h, nByte, FILE_BEGIN, &upperBits );
-  if( rc != NO_ERROR ){
-    return SQLITE_IOERR;
+int os2Sync( sqlite3_file *id, int flags ){
+  os2File *pFile = (os2File*)id;
+  OSTRACE3( "SYNC %d lock=%d\n", pFile->h, pFile->locktype );
+#ifdef SQLITE_TEST
+  if( flags & SQLITE_SYNC_FULL){
+    sqlite3_fullsync_count++;
   }
-  rc = DosSetFilePtr( ((os2File*)id)->h, 0L, FILE_END, &upperBits );
-  return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
+  sqlite3_sync_count++;
+#endif
+  return DosResetBuffer( pFile->h ) == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
 }
 
 /*
 ** Determine the current size of a file in bytes
 */
-int os2FileSize( OsFile *id, i64 *pSize ){
+int os2FileSize( sqlite3_file *id, sqlite3_int64 *pSize ){
   APIRET rc = NO_ERROR;
   FILESTATUS3 fsts3FileInfo;
   memset(&fsts3FileInfo, 0, sizeof(fsts3FileInfo));
@@ -380,8 +214,7 @@ int os2FileSize( OsFile *id, i64 *pSize ){
   if( rc == NO_ERROR ){
     *pSize = fsts3FileInfo.cbFile;
     return SQLITE_OK;
-  }
-  else{
+  }else{
     return SQLITE_IOERR;
   }
 }
@@ -389,16 +222,19 @@ int os2FileSize( OsFile *id, i64 *pSize ){
 /*
 ** Acquire a reader lock.
 */
-static int getReadLock( os2File *id ){
+static int getReadLock( os2File *pFile ){
   FILELOCK  LockArea,
             UnlockArea;
+  APIRET res;
   memset(&LockArea, 0, sizeof(LockArea));
   memset(&UnlockArea, 0, sizeof(UnlockArea));
   LockArea.lOffset = SHARED_FIRST;
   LockArea.lRange = SHARED_SIZE;
   UnlockArea.lOffset = 0L;
   UnlockArea.lRange = 0L;
-  return DosSetFileLocks( id->h, &UnlockArea, &LockArea, 2000L, 1L );
+  res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+  OSTRACE3( "GETREADLOCK %d res=%d\n", pFile->h, res );
+  return res;
 }
 
 /*
@@ -407,33 +243,17 @@ static int getReadLock( os2File *id ){
 static int unlockReadLock( os2File *id ){
   FILELOCK  LockArea,
             UnlockArea;
+  APIRET res;
   memset(&LockArea, 0, sizeof(LockArea));
   memset(&UnlockArea, 0, sizeof(UnlockArea));
   LockArea.lOffset = 0L;
   LockArea.lRange = 0L;
   UnlockArea.lOffset = SHARED_FIRST;
   UnlockArea.lRange = SHARED_SIZE;
-  return DosSetFileLocks( id->h, &UnlockArea, &LockArea, 2000L, 1L );
+  res = DosSetFileLocks( id->h, &UnlockArea, &LockArea, 2000L, 1L );
+  OSTRACE3( "UNLOCK-READLOCK file handle=%d res=%d?\n", id->h, res );
+  return res;
 }
-
-#ifndef SQLITE_OMIT_PAGER_PRAGMAS
-/*
-** Check that a given pathname is a directory and is writable
-**
-*/
-int sqlite3Os2IsDirWritable( char *zDirname ){
-  FILESTATUS3 fsts3ConfigInfo;
-  APIRET rc = NO_ERROR;
-  memset(&fsts3ConfigInfo, 0, sizeof(fsts3ConfigInfo));
-  if( zDirname==0 ) return 0;
-  if( strlen(zDirname)>CCHMAXPATH ) return 0;
-  rc = DosQueryPathInfo( (PSZ)zDirname, FIL_STANDARD, &fsts3ConfigInfo, sizeof(FILESTATUS3) );
-  if( rc != NO_ERROR ) return 0;
-  if( (fsts3ConfigInfo.attrFile & FILE_DIRECTORY) != FILE_DIRECTORY ) return 0;
-
-  return 1;
-}
-#endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
 /*
 ** Lock the file with the lock specified by parameter locktype - one
@@ -461,10 +281,10 @@ int sqlite3Os2IsDirWritable( char *zDirname ){
 ** It is not possible to lower the locking level one step at a time.  You
 ** must go straight to locking level 0.
 */
-int os2Lock( OsFile *id, int locktype ){
-  APIRET rc = SQLITE_OK;    /* Return code from subroutines */
+int os2Lock( sqlite3_file *id, int locktype ){
+  int rc = SQLITE_OK;       /* Return code from subroutines */
   APIRET res = NO_ERROR;    /* Result of an OS/2 lock call */
-  int newLocktype;       /* Set id->locktype to this value before exiting */
+  int newLocktype;       /* Set pFile->locktype to this value before exiting */
   int gotPendingLock = 0;/* True if we acquired a PENDING lock this time */
   FILELOCK  LockArea,
             UnlockArea;
@@ -475,10 +295,11 @@ int os2Lock( OsFile *id, int locktype ){
   OSTRACE4( "LOCK %d %d was %d\n", pFile->h, locktype, pFile->locktype );
 
   /* If there is already a lock of this type or more restrictive on the
-  ** OsFile, do nothing. Don't use the end_lock: exit path, as
+  ** os2File, do nothing. Don't use the end_lock: exit path, as
   ** sqlite3OsEnterMutex() hasn't been called yet.
   */
   if( pFile->locktype>=locktype ){
+    OSTRACE3( "LOCK %d %d ok (already held)\n", pFile->h, locktype );
     return SQLITE_OK;
   }
 
@@ -494,7 +315,7 @@ int os2Lock( OsFile *id, int locktype ){
   */
   newLocktype = pFile->locktype;
   if( pFile->locktype==NO_LOCK
-   || (locktype==EXCLUSIVE_LOCK && pFile->locktype==RESERVED_LOCK)
+      || (locktype==EXCLUSIVE_LOCK && pFile->locktype==RESERVED_LOCK)
   ){
     int cnt = 3;
 
@@ -503,29 +324,35 @@ int os2Lock( OsFile *id, int locktype ){
     UnlockArea.lOffset = 0L;
     UnlockArea.lRange = 0L;
 
-    while( cnt-->0 && (res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L) )!=NO_ERROR ){
+    while( cnt-->0 && ( res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L) )
+                      != NO_ERROR
+    ){
       /* Try 3 times to get the pending lock.  The pending lock might be
       ** held by another reader process who will release it momentarily.
       */
-      OSTRACE2( "could not get a PENDING lock. cnt=%d\n", cnt );
+      OSTRACE2( "LOCK could not get a PENDING lock. cnt=%d\n", cnt );
       DosSleep(1);
     }
-    gotPendingLock = res;
+    if( res == NO_ERROR){
+      gotPendingLock = 1;
+      OSTRACE3( "LOCK %d pending lock boolean set.  res=%d\n", pFile->h, res );
+    }
   }
 
   /* Acquire a shared lock
   */
-  if( locktype==SHARED_LOCK && res ){
+  if( locktype==SHARED_LOCK && res == NO_ERROR ){
     assert( pFile->locktype==NO_LOCK );
     res = getReadLock(pFile);
     if( res == NO_ERROR ){
       newLocktype = SHARED_LOCK;
     }
+    OSTRACE3( "LOCK %d acquire shared lock. res=%d\n", pFile->h, res );
   }
 
   /* Acquire a RESERVED lock
   */
-  if( locktype==RESERVED_LOCK && res ){
+  if( locktype==RESERVED_LOCK && res == NO_ERROR ){
     assert( pFile->locktype==SHARED_LOCK );
     LockArea.lOffset = RESERVED_BYTE;
     LockArea.lRange = 1L;
@@ -535,18 +362,20 @@ int os2Lock( OsFile *id, int locktype ){
     if( res == NO_ERROR ){
       newLocktype = RESERVED_LOCK;
     }
+    OSTRACE3( "LOCK %d acquire reserved lock. res=%d\n", pFile->h, res );
   }
 
   /* Acquire a PENDING lock
   */
-  if( locktype==EXCLUSIVE_LOCK && res ){
+  if( locktype==EXCLUSIVE_LOCK && res == NO_ERROR ){
     newLocktype = PENDING_LOCK;
     gotPendingLock = 0;
+    OSTRACE2( "LOCK %d acquire pending lock. pending lock boolean unset.\n", pFile->h );
   }
 
   /* Acquire an EXCLUSIVE lock
   */
-  if( locktype==EXCLUSIVE_LOCK && res ){
+  if( locktype==EXCLUSIVE_LOCK && res == NO_ERROR ){
     assert( pFile->locktype>=SHARED_LOCK );
     res = unlockReadLock(pFile);
     OSTRACE2( "unreadlock = %d\n", res );
@@ -558,19 +387,23 @@ int os2Lock( OsFile *id, int locktype ){
     if( res == NO_ERROR ){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
-      OSTRACE2( "error-code = %d\n", res );
+      OSTRACE2( "OS/2 error-code = %d\n", res );
+      getReadLock(pFile);
     }
+    OSTRACE3( "LOCK %d acquire exclusive lock.  res=%d\n", pFile->h, res );
   }
 
   /* If we are holding a PENDING lock that ought to be released, then
   ** release it now.
   */
   if( gotPendingLock && locktype==SHARED_LOCK ){
+    int r;
     LockArea.lOffset = 0L;
     LockArea.lRange = 0L;
     UnlockArea.lOffset = PENDING_BYTE;
     UnlockArea.lRange = 1L;
-    DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+    r = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+    OSTRACE3( "LOCK %d unlocking pending/is shared. r=%d\n", pFile->h, r );
   }
 
   /* Update the state of the lock has held in the file descriptor then
@@ -580,10 +413,11 @@ int os2Lock( OsFile *id, int locktype ){
     rc = SQLITE_OK;
   }else{
     OSTRACE4( "LOCK FAILED %d trying for %d but got %d\n", pFile->h,
-           locktype, newLocktype );
+              locktype, newLocktype );
     rc = SQLITE_BUSY;
   }
   pFile->locktype = newLocktype;
+  OSTRACE3( "LOCK %d now %d\n", pFile->h, pFile->locktype );
   return rc;
 }
 
@@ -592,7 +426,7 @@ int os2Lock( OsFile *id, int locktype ){
 ** file by this or any other process. If such a lock is held, return
 ** non-zero, otherwise zero.
 */
-int os2CheckReservedLock( OsFile *id ){
+int os2CheckReservedLock( sqlite3_file *id ){
   APIRET rc = NO_ERROR;
   os2File *pFile = (os2File*)id;
   assert( pFile!=0 );
@@ -609,12 +443,15 @@ int os2CheckReservedLock( OsFile *id ){
     UnlockArea.lOffset = 0L;
     UnlockArea.lRange = 0L;
     rc = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+    OSTRACE3( "TEST WR-LOCK %d lock reserved byte rc=%d\n", pFile->h, rc );
     if( rc == NO_ERROR ){
+      int r;
       LockArea.lOffset = 0L;
       LockArea.lRange = 0L;
       UnlockArea.lOffset = RESERVED_BYTE;
       UnlockArea.lRange = 1L;
-      rc = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+      r = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+      OSTRACE3( "TEST WR-LOCK %d unlock reserved byte r=%d\n", pFile->h, r );
     }
     OSTRACE3( "TEST WR-LOCK %d %d (remote)\n", pFile->h, rc );
   }
@@ -632,10 +469,11 @@ int os2CheckReservedLock( OsFile *id ){
 ** is NO_LOCK.  If the second argument is SHARED_LOCK then this routine
 ** might return SQLITE_IOERR;
 */
-int os2Unlock( OsFile *id, int locktype ){
+int os2Unlock( sqlite3_file *id, int locktype ){
   int type;
-  APIRET rc = SQLITE_OK;
   os2File *pFile = (os2File*)id;
+  APIRET rc = SQLITE_OK;
+  APIRET res = NO_ERROR;
   FILELOCK  LockArea,
             UnlockArea;
   memset(&LockArea, 0, sizeof(LockArea));
@@ -649,11 +487,13 @@ int os2Unlock( OsFile *id, int locktype ){
     LockArea.lRange = 0L;
     UnlockArea.lOffset = SHARED_FIRST;
     UnlockArea.lRange = SHARED_SIZE;
-    DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+    OSTRACE3( "UNLOCK %d exclusive lock res=%d\n", pFile->h, res );
     if( locktype==SHARED_LOCK && getReadLock(pFile) != NO_ERROR ){
       /* This should never happen.  We should always be able to
       ** reacquire the read lock */
-      rc = SQLITE_IOERR;
+      OSTRACE3( "UNLOCK %d to %d getReadLock() failed\n", pFile->h, locktype );
+      rc = SQLITE_IOERR_UNLOCK;
     }
   }
   if( type>=RESERVED_LOCK ){
@@ -661,75 +501,38 @@ int os2Unlock( OsFile *id, int locktype ){
     LockArea.lRange = 0L;
     UnlockArea.lOffset = RESERVED_BYTE;
     UnlockArea.lRange = 1L;
-    DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+    OSTRACE3( "UNLOCK %d reserved res=%d\n", pFile->h, res );
   }
   if( locktype==NO_LOCK && type>=SHARED_LOCK ){
-    unlockReadLock(pFile);
+    res = unlockReadLock(pFile);
+    OSTRACE5( "UNLOCK %d is %d want %d res=%d\n", pFile->h, type, locktype, res );
   }
   if( type>=PENDING_LOCK ){
     LockArea.lOffset = 0L;
     LockArea.lRange = 0L;
     UnlockArea.lOffset = PENDING_BYTE;
     UnlockArea.lRange = 1L;
-    DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+    OSTRACE3( "UNLOCK %d pending res=%d\n", pFile->h, res );
   }
   pFile->locktype = locktype;
+  OSTRACE3( "UNLOCK %d now %d\n", pFile->h, pFile->locktype );
   return rc;
 }
 
 /*
-** Turn a relative pathname into a full pathname.  Return a pointer
-** to the full pathname stored in space obtained from sqliteMalloc().
-** The calling function is responsible for freeing this space once it
-** is no longer needed.
+** Control and query of the open file handle.
 */
-char *sqlite3Os2FullPathname( const char *zRelative ){
-  char *zFull = 0;
-  if( strchr(zRelative, ':') ){
-    sqlite3SetString( &zFull, zRelative, (char*)0 );
-  }else{
-    ULONG ulDriveNum = 0;
-    ULONG ulDriveMap = 0;
-    ULONG cbzBufLen = SQLITE_TEMPNAME_SIZE;
-    char zDrive[2];
-    char *zBuff;
-
-    zBuff = sqliteMalloc( cbzBufLen );
-    if( zBuff != 0 ){
-      DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
-      if( DosQueryCurrentDir( ulDriveNum, (PBYTE)zBuff, &cbzBufLen ) == NO_ERROR ){
-        sprintf( zDrive, "%c", (char)('A' + ulDriveNum - 1) );
-        sqlite3SetString( &zFull, zDrive, ":\\", zBuff,
-                          "\\", zRelative, (char*)0 );
-      }
-      sqliteFree( zBuff );
+static int os2FileControl(sqlite3_file *id, int op, void *pArg){
+  switch( op ){
+    case SQLITE_FCNTL_LOCKSTATE: {
+      *(int*)pArg = ((os2File*)id)->locktype;
+      OSTRACE3( "FCNTL_LOCKSTATE %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
+      return SQLITE_OK;
     }
   }
-  return zFull;
-}
-
-/*
-** The fullSync option is meaningless on os2, or correct me if I'm wrong.  This is a no-op.
-** From os_unix.c: Change the value of the fullsync flag in the given file descriptor.
-** From os_unix.c: ((unixFile*)id)->fullSync = v;
-*/
-static void os2SetFullSync( OsFile *id, int v ){
-  return;
-}
-
-/*
-** Return the underlying file handle for an OsFile
-*/
-static int os2FileHandle( OsFile *id ){
-  return (int)((os2File*)id)->h;
-}
-
-/*
-** Return an integer that indices the type of lock currently held
-** by this handle.  (Used for testing and analysis only.)
-*/
-static int os2LockState( OsFile *id ){
-  return ((os2File*)id)->locktype;
+  return SQLITE_ERROR;
 }
 
 /*
@@ -742,78 +545,300 @@ static int os2LockState( OsFile *id ){
 ** a database and it's journal file) that the sector size will be the
 ** same for both.
 */
-static int os2SectorSize(OsFile *id){
+static int os2SectorSize(sqlite3_file *id){
   return SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
 /*
-** This vector defines all the methods that can operate on an OsFile
-** for os2.
+** Return a vector of device characteristics.
 */
-static const IoMethod sqlite3Os2IoMethod = {
+static int os2DeviceCharacteristics(sqlite3_file *id){
+  return 0;
+}
+
+/*
+** This vector defines all the methods that can operate on an
+** sqlite3_file for os2.
+*/
+static const sqlite3_io_methods os2IoMethod = {
+  1,                        /* iVersion */
   os2Close,
-  os2OpenDirectory,
   os2Read,
   os2Write,
-  os2Seek,
   os2Truncate,
   os2Sync,
-  os2SetFullSync,
-  os2FileHandle,
   os2FileSize,
   os2Lock,
   os2Unlock,
-  os2LockState,
   os2CheckReservedLock,
+  os2FileControl,
   os2SectorSize,
+  os2DeviceCharacteristics
 };
 
+/***************************************************************************
+** Here ends the I/O methods that form the sqlite3_io_methods object.
+**
+** The next block of code implements the VFS methods.
+****************************************************************************/
+
 /*
-** Allocate memory for an OsFile.  Initialize the new OsFile
-** to the value given in pInit and return a pointer to the new
-** OsFile.  If we run out of memory, close the file and return NULL.
+** Open a file.
 */
-int allocateOs2File( os2File *pInit, OsFile **pld ){
-  os2File *pNew;
-  pNew = sqliteMalloc( sizeof(*pNew) );
-  if( pNew==0 ){
-    DosClose( pInit->h );
-    *pld = 0;
-    return SQLITE_NOMEM;
+static int os2Open(
+  sqlite3_vfs *pVfs,            /* Not used */
+  const char *zName,            /* Name of the file */
+  sqlite3_file *id,             /* Write the SQLite file handle here */
+  int flags,                    /* Open mode flags */
+  int *pOutFlags                /* Status return flags */
+){
+  HFILE h;
+  ULONG ulFileAttribute = 0;
+  ULONG ulOpenFlags = 0;
+  ULONG ulOpenMode = 0;
+  os2File *pFile = (os2File*)id;
+  APIRET rc = NO_ERROR;
+  ULONG ulAction;
+
+  memset(pFile, 0, sizeof(*pFile));
+
+  OSTRACE2( "OPEN want %d\n", flags );
+
+  //ulOpenMode = flags & SQLITE_OPEN_READWRITE ? OPEN_ACCESS_READWRITE : OPEN_ACCESS_READONLY;
+  if( flags & SQLITE_OPEN_READWRITE ){
+    ulOpenMode |= OPEN_ACCESS_READWRITE;
+    OSTRACE1( "OPEN read/write\n" );
   }else{
-    *pNew = *pInit;
-    pNew->pMethod = &sqlite3Os2IoMethod;
-    pNew->locktype = NO_LOCK;
-    *pld = (OsFile*)pNew;
-    OpenCounter(+1);
-    return SQLITE_OK;
+    ulOpenMode |= OPEN_ACCESS_READONLY;
+    OSTRACE1( "OPEN read only\n" );
   }
+
+  //ulOpenFlags = flags & SQLITE_OPEN_CREATE ? OPEN_ACTION_CREATE_IF_NEW : OPEN_ACTION_FAIL_IF_NEW;
+  if( flags & SQLITE_OPEN_CREATE ){
+    ulOpenFlags |= OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW;
+    OSTRACE1( "OPEN open new/create\n" );
+  }else{
+    ulOpenFlags |= OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_FAIL_IF_NEW;
+    OSTRACE1( "OPEN open existing\n" );
+  }
+
+  //ulOpenMode |= flags & SQLITE_OPEN_MAIN_DB ? OPEN_SHARE_DENYNONE : OPEN_SHARE_DENYWRITE;
+  if( flags & SQLITE_OPEN_MAIN_DB ){
+    ulOpenMode |= OPEN_SHARE_DENYNONE;
+    OSTRACE1( "OPEN share read/write\n" );
+  }else{
+    ulOpenMode |= OPEN_SHARE_DENYWRITE;
+    OSTRACE1( "OPEN share read only\n" );
+  }
+
+  if( flags & (SQLITE_OPEN_TEMP_DB | SQLITE_OPEN_TEMP_JOURNAL
+               | SQLITE_OPEN_SUBJOURNAL) ){
+    //ulFileAttribute = FILE_HIDDEN;  //for debugging, we want to make sure it is deleted
+    ulFileAttribute = FILE_NORMAL;
+    pFile->delOnClose = 1;
+    pFile->pathToDel = (char*)malloc(sizeof(char) * pVfs->mxPathname);
+    sqlite3OsFullPathname(pVfs, zName, pVfs->mxPathname, pFile->pathToDel);
+    OSTRACE1( "OPEN hidden/delete on close file attributes\n" );
+  }else{
+    ulFileAttribute = FILE_ARCHIVED | FILE_NORMAL;
+    pFile->delOnClose = 0;
+    pFile->pathToDel = NULL;
+    OSTRACE1( "OPEN normal file attribute\n" );
+  }
+
+  //ulOpenMode |= flags & (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_TEMP_DB) ?
+  //                  OPEN_FLAGS_RANDOM : OPEN_FLAGS_SEQUENTIAL;
+  if( flags & (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_TEMP_DB) ){
+    ulOpenMode |= OPEN_FLAGS_RANDOM;
+    OSTRACE1( "OPEN random access\n" );
+  }else{
+    ulOpenMode |= OPEN_FLAGS_SEQUENTIAL;
+    OSTRACE1( "OPEN sequential access\n" );
+  }
+  ulOpenMode |= OPEN_FLAGS_FAIL_ON_ERROR;
+
+  rc = DosOpen( (PSZ)zName,
+                &h,
+                &ulAction,
+                0L,
+                ulFileAttribute,
+                ulOpenFlags,
+                ulOpenMode,
+                (PEAOP2)NULL );
+  if( rc != NO_ERROR ){
+    OSTRACE7( "OPEN Invalid handle rc=%d: zName=%s, ulAction=%#lx, ulAttr=%#lx, ulFlags=%#lx, ulMode=%#lx\n",
+              rc, zName, ulAction, ulFileAttribute, ulOpenFlags, ulOpenMode );
+    if( flags & SQLITE_OPEN_READWRITE ){
+      OSTRACE2( "OPEN %d Invalid handle\n", ((flags | SQLITE_OPEN_READONLY) & ~SQLITE_OPEN_READWRITE) );
+      return os2Open( 0, zName, id,
+                      ((flags | SQLITE_OPEN_READONLY) & ~SQLITE_OPEN_READWRITE),
+                      pOutFlags );
+    }else{
+      return SQLITE_CANTOPEN;
+    }
+  }
+
+  if( pOutFlags ){
+    *pOutFlags = flags & SQLITE_OPEN_READWRITE ? SQLITE_OPEN_READWRITE : SQLITE_OPEN_READONLY;
+  }
+
+  pFile->pMethod = &os2IoMethod;
+  pFile->h = h;
+  OpenCounter(+1);
+  OSTRACE3( "OPEN %d pOutFlags=%d\n", pFile->h, pOutFlags );
+  return SQLITE_OK;
 }
 
-#endif /* SQLITE_OMIT_DISKIO */
-/***************************************************************************
-** Everything above deals with file I/O.  Everything that follows deals
-** with other miscellanous aspects of the operating system interface
-****************************************************************************/
+/*
+** Delete the named file.
+*/
+int os2Delete(
+  sqlite3_vfs *pVfs,                     /* Not used on os2 */
+  const char *zFilename,                 /* Name of file to delete */
+  int syncDir                            /* Not used on os2 */
+){
+  APIRET rc = NO_ERROR;
+  SimulateIOError(return SQLITE_IOERR_DELETE);
+  rc = DosDelete( (PSZ)zFilename );
+  OSTRACE2( "DELETE \"%s\"\n", zFilename );
+  return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
+}
+
+/*
+** Check the existance and status of a file.
+*/
+static int os2Access(
+  sqlite3_vfs *pVfs,        /* Not used on os2 */
+  const char *zFilename,    /* Name of file to check */
+  int flags                 /* Type of test to make on this file */
+){
+  FILESTATUS3 fsts3ConfigInfo;
+  APIRET rc = NO_ERROR;
+
+  memset(&fsts3ConfigInfo, 0, sizeof(fsts3ConfigInfo));
+  rc = DosQueryPathInfo( (PSZ)zFilename, FIL_STANDARD,
+                         &fsts3ConfigInfo, sizeof(FILESTATUS3) );
+  OSTRACE4( "ACCESS fsts3ConfigInfo.attrFile=%d flags=%d rc=%d\n",
+            fsts3ConfigInfo.attrFile, flags, rc );
+  switch( flags ){
+    case SQLITE_ACCESS_READ:
+    case SQLITE_ACCESS_EXISTS:
+      rc = (rc == NO_ERROR);
+      OSTRACE3( "ACCESS %s access of read and exists  rc=%d\n", zFilename, rc );
+      break;
+    case SQLITE_ACCESS_READWRITE:
+      rc = (fsts3ConfigInfo.attrFile & FILE_READONLY) == 0;
+      OSTRACE3( "ACCESS %s access of read/write  rc=%d\n", zFilename, rc );
+      break;
+    default:
+      assert( !"Invalid flags argument" );
+  }
+  return rc;
+}
+
+
+/*
+** Create a temporary file name in zBuf.  zBuf must be big enough to
+** hold at pVfs->mxPathname characters.
+*/
+static int os2GetTempname( sqlite3_vfs *pVfs, int nBuf, char *zBuf ){
+  static const unsigned char zChars[] =
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789";
+  int i, j;
+  char zTempPath[CCHMAXPATH];
+  APIRET rc = NO_ERROR;
+  FILESTATUS3 fsts3ConfigInfo;
+  if( DosScanEnv( (PSZ)"TEMP", (PSZ*)&zTempPath ) ){
+    if( DosScanEnv( (PSZ)"TMP", (PSZ*)&zTempPath ) ){
+      if( DosScanEnv( (PSZ)"TMPDIR", (PSZ*)&zTempPath ) ){
+           ULONG ulDriveNum = 0, ulDriveMap = 0;
+           DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
+           sprintf( (char*)zTempPath, "%c:", (char)( 'A' + ulDriveNum - 1 ) );
+      }
+    }
+  }
+  do{
+    assert( nBuf>=pVfs->mxPathname );
+    sqlite3_snprintf(pVfs->mxPathname-17, zBuf, "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath );
+    j = strlen( zBuf );
+    sqlite3Randomness( 15, &zBuf[j] );
+    for( i = 0; i < 15; i++, j++ ){
+      zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
+    }
+    zBuf[j] = 0;
+
+    memset(&fsts3ConfigInfo, 0, sizeof(fsts3ConfigInfo));
+    rc = DosQueryPathInfo( (PSZ)zBuf, FIL_STANDARD,
+                           &fsts3ConfigInfo, sizeof(FILESTATUS3) );
+  }while( rc != NO_ERROR );
+  OSTRACE2( "TEMP FILENAME: %s\n", zBuf );
+  return SQLITE_OK;
+}
+
+
+/*
+** Turn a relative pathname into a full pathname.  Write the full
+** pathname into zFull[].  zFull[] will be at least pVfs->mxPathname
+** bytes in size.
+*/
+static int os2FullPathname(
+  sqlite3_vfs *pVfs,          /* Pointer to vfs object */
+  const char *zRelative,      /* Possibly relative input path */
+  int nFull,                  /* Size of output buffer in bytes */
+  char *zFull                 /* Output buffer */
+){
+  if( strchr(zRelative, ':') ){
+    sqlite3SetString( &zFull, zRelative, (char*)0 );
+  }else{
+    ULONG ulDriveNum = 0;
+    ULONG ulDriveMap = 0;
+    ULONG cbzBufLen = SQLITE_TEMPNAME_SIZE;
+    char zDrive[2];
+    char *zBuff = (char*)malloc( cbzBufLen );
+    if( zBuff == 0 ){
+      return SQLITE_NOMEM;
+    }
+    DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
+    if( DosQueryCurrentDir( ulDriveNum, (PBYTE)zBuff, &cbzBufLen ) == NO_ERROR ){
+      sprintf( zDrive, "%c", (char)('A' + ulDriveNum - 1) );
+      sqlite3SetString( &zFull, zDrive, ":\\", zBuff,
+                        "\\", zRelative, (char*)0 );
+    }
+    free( zBuff );
+  }
+  return SQLITE_OK;
+}
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*
 ** Interfaces for opening a shared library, finding entry points
 ** within the shared library, and closing the shared library.
 */
-void *sqlite3Os2Dlopen(const char *zFilename){
+/*
+** Interfaces for opening a shared library, finding entry points
+** within the shared library, and closing the shared library.
+*/
+static void *os2DlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   UCHAR loadErr[256];
   HMODULE hmod;
   APIRET rc;
   rc = DosLoadModule((PSZ)loadErr, sizeof(loadErr), zFilename, &hmod);
-  if (rc != NO_ERROR) return 0;
-  return (void*)hmod;
+  return rc != NO_ERROR ? 0 : (void*)hmod;
 }
-void *sqlite3Os2Dlsym(void *pHandle, const char *zSymbol){
+/*
+** A no-op since the error code is returned on the DosLoadModule call.
+** os2Dlopen returns zero if DosLoadModule is not successful.
+*/
+static void os2DlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
+/* no-op */
+}
+void *os2DlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
   PFN pfn;
   APIRET rc;
   rc = DosQueryProcAddr((HMODULE)pHandle, 0L, zSymbol, &pfn);
-  if (rc != NO_ERROR) {
+  if( rc != NO_ERROR ){
     /* if the symbol itself was not found, search again for the same
      * symbol with an extra underscore, that might be needed depending
      * on the calling convention */
@@ -821,100 +846,87 @@ void *sqlite3Os2Dlsym(void *pHandle, const char *zSymbol){
     strncat(_zSymbol, zSymbol, 255);
     rc = DosQueryProcAddr((HMODULE)pHandle, 0L, _zSymbol, &pfn);
   }
-  if (rc != NO_ERROR) return 0;
-  return (void *)pfn;
+  return rc != NO_ERROR ? 0 : (void*)pfn;
 }
-int sqlite3Os2Dlclose(void *pHandle){
-  return DosFreeModule((HMODULE)pHandle);
+void os2DlClose(sqlite3_vfs *pVfs, void *pHandle){
+  DosFreeModule((HMODULE)pHandle);
 }
-#endif /* SQLITE_OMIT_LOAD_EXTENSION */
+#else /* if SQLITE_OMIT_LOAD_EXTENSION is defined: */
+  #define os2DlOpen 0
+  #define os2DlError 0
+  #define os2DlSym 0
+  #define os2DlClose 0
+#endif
 
 
 /*
-** Get information to seed the random number generator.  The seed
-** is written into the buffer zBuf[256].  The calling function must
-** supply a sufficiently large buffer.
+** Write up to nBuf bytes of randomness into zBuf.
 */
-int sqlite3Os2RandomSeed( char *zBuf ){
-  /* We have to initialize zBuf to prevent valgrind from reporting
-  ** errors.  The reports issued by valgrind are incorrect - we would
-  ** prefer that the randomness be increased by making use of the
-  ** uninitialized space in zBuf - but valgrind errors tend to worry
-  ** some users.  Rather than argue, it seems easier just to initialize
-  ** the whole array and silence valgrind, even if that means less randomness
-  ** in the random seed.
-  **
-  ** When testing, initializing zBuf[] to zero is all we do.  That means
-  ** that we always use the same random number sequence. This makes the
-  ** tests repeatable.
-  */
-  memset( zBuf, 0, 256 );
-  DosGetDateTime( (PDATETIME)zBuf );
-  return SQLITE_OK;
+static int os2Randomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf ){
+  ULONG sizeofULong = sizeof(ULONG);
+  int n = 0;
+  if( sizeof(DATETIME) <= nBuf - n ){
+    DATETIME x;
+    DosGetDateTime(&x);
+    memcpy(&zBuf[n], &x, sizeof(x));
+    n += sizeof(x);
+  }
+
+  if( sizeofULong <= nBuf - n ){
+    PPIB ppib;
+    DosGetInfoBlocks(NULL, &ppib);
+    memcpy(&zBuf[n], &ppib->pib_ulpid, sizeofULong);
+    n += sizeofULong;
+  }
+
+  if( sizeofULong <= nBuf - n ){
+    PTIB ptib;
+    DosGetInfoBlocks(&ptib, NULL);
+    memcpy(&zBuf[n], &ptib->tib_ptib2->tib2_ultid, sizeofULong);
+    n += sizeofULong;
+  }
+
+  /* if we still haven't filled the buffer yet the following will */
+  /* grab everything once instead of making several calls for a single item */
+  if( sizeofULong <= nBuf - n ){
+    ULONG ulSysInfo[QSV_MAX];
+    DosQuerySysInfo(1L, QSV_MAX, ulSysInfo, sizeofULong * QSV_MAX);
+
+    memcpy(&zBuf[n], &ulSysInfo[QSV_MS_COUNT - 1], sizeofULong);
+    n += sizeofULong;
+
+    if( sizeofULong <= nBuf - n ){
+      memcpy(&zBuf[n], &ulSysInfo[QSV_TIMER_INTERVAL - 1], sizeofULong);
+      n += sizeofULong;
+    }
+    if( sizeofULong <= nBuf - n ){
+      memcpy(&zBuf[n], &ulSysInfo[QSV_TIME_LOW - 1], sizeofULong);
+      n += sizeofULong;
+    }
+    if( sizeofULong <= nBuf - n ){
+      memcpy(&zBuf[n], &ulSysInfo[QSV_TIME_HIGH - 1], sizeofULong);
+      n += sizeofULong;
+    }
+    if( sizeofULong <= nBuf - n ){
+      memcpy(&zBuf[n], &ulSysInfo[QSV_TOTAVAILMEM - 1], sizeofULong);
+      n += sizeofULong;
+    }
+  }
+
+  return n;
 }
 
 /*
 ** Sleep for a little while.  Return the amount of time slept.
+** The argument is the number of microseconds we want to sleep.
+** The return value is the number of microseconds of sleep actually
+** requested from the underlying operating system, a number which
+** might be greater than or equal to the argument, but not less
+** than the argument.
 */
-int sqlite3Os2Sleep( int ms ){
-  DosSleep( ms );
-  return ms;
-}
-
-/*
-** Static variables used for thread synchronization
-*/
-static int inMutex = 0;
-#ifdef SQLITE_OS2_THREADS
-static ULONG mutexOwner;
-#endif
-
-/*
-** The following pair of routines implement mutual exclusion for
-** multi-threaded processes.  Only a single thread is allowed to
-** executed code that is surrounded by EnterMutex() and LeaveMutex().
-**
-** SQLite uses only a single Mutex.  There is not much critical
-** code and what little there is executes quickly and without blocking.
-*/
-void sqlite3Os2EnterMutex(){
-#ifdef SQLITE_OS2_THREADS
-  PTIB ptib;
-  DosEnterCritSec();
-  DosGetInfoBlocks( &ptib, NULL );
-  mutexOwner = ptib->tib_ptib2->tib2_ultid;
-#endif
-  assert( !inMutex );
-  inMutex = 1;
-}
-void sqlite3Os2LeaveMutex(){
-#ifdef SQLITE_OS2_THREADS
-  PTIB ptib;
-#endif
-  assert( inMutex );
-  inMutex = 0;
-#ifdef SQLITE_OS2_THREADS
-  DosGetInfoBlocks( &ptib, NULL );
-  assert( mutexOwner == ptib->tib_ptib2->tib2_ultid );
-  DosExitCritSec();
-#endif
-}
-
-/*
-** Return TRUE if the mutex is currently held.
-**
-** If the thisThreadOnly parameter is true, return true if and only if the
-** calling thread holds the mutex.  If the parameter is false, return
-** true if any thread holds the mutex.
-*/
-int sqlite3Os2InMutex( int thisThreadOnly ){
-#ifdef SQLITE_OS2_THREADS
-  PTIB ptib;
-  DosGetInfoBlocks( &ptib, NULL );
-  return inMutex>0 && (thisThreadOnly==0 || mutexOwner==ptib->tib_ptib2->tib2_ultid);
-#else
-  return inMutex>0;
-#endif
+static int os2Sleep( sqlite3_vfs *pVfs, int microsec ){
+  DosSleep( (microsec/1000) );
+  return microsec;
 }
 
 /*
@@ -930,7 +942,7 @@ int sqlite3_current_time = 0;
 ** current time and date as a Julian Day number into *prNow and
 ** return 0.  Return 1 if the time and date cannot be found.
 */
-int sqlite3Os2CurrentTime( double *prNow ){
+int os2CurrentTime( sqlite3_vfs *pVfs, double *prNow ){
   double now;
   USHORT second, minute, hour,
          day, month, year;
@@ -965,68 +977,35 @@ int sqlite3Os2CurrentTime( double *prNow ){
 }
 
 /*
-** Remember the number of thread-specific-data blocks allocated.
-** Use this to verify that we are not leaking thread-specific-data.
-** Ticket #1601
+** Return a pointer to the sqlite3DefaultVfs structure.   We use
+** a function rather than give the structure global scope because
+** some compilers (MSVC) do not allow forward declarations of
+** initialized structures.
 */
-#ifdef SQLITE_TEST
-int sqlite3_tsd_count = 0;
-# define TSD_COUNTER_INCR InterlockedIncrement( &sqlite3_tsd_count )
-# define TSD_COUNTER_DECR InterlockedDecrement( &sqlite3_tsd_count )
-#else
-# define TSD_COUNTER_INCR  /* no-op */
-# define TSD_COUNTER_DECR  /* no-op */
-#endif
+sqlite3_vfs *sqlite3OsDefaultVfs(void){
+  static sqlite3_vfs os2Vfs = {
+    1,                 /* iVersion */
+    sizeof(os2File),   /* szOsFile */
+    CCHMAXPATH,        /* mxPathname */
+    0,                 /* pNext */
+    "os2",             /* zName */
+    0,                 /* pAppData */
 
-/*
-** If called with allocateFlag>1, then return a pointer to thread
-** specific data for the current thread.  Allocate and zero the
-** thread-specific data if it does not already exist necessary.
-**
-** If called with allocateFlag==0, then check the current thread
-** specific data.  Return it if it exists.  If it does not exist,
-** then return NULL.
-**
-** If called with allocateFlag<0, check to see if the thread specific
-** data is allocated and is all zero.  If it is then deallocate it.
-** Return a pointer to the thread specific data or NULL if it is
-** unallocated or gets deallocated.
-*/
-ThreadData *sqlite3Os2ThreadSpecificData( int allocateFlag ){
-  static ThreadData **s_ppTsd = NULL;
-  static const ThreadData zeroData = {0, 0, 0};
-  ThreadData *pTsd;
+    os2Open,           /* xOpen */
+    os2Delete,         /* xDelete */
+    os2Access,         /* xAccess */
+    os2GetTempname,    /* xGetTempname */
+    os2FullPathname,   /* xFullPathname */
+    os2DlOpen,         /* xDlOpen */
+    os2DlError,        /* xDlError */
+    os2DlSym,          /* xDlSym */
+    os2DlClose,        /* xDlClose */
+    os2Randomness,     /* xRandomness */
+    os2Sleep,          /* xSleep */
+    os2CurrentTime     /* xCurrentTime */
+  };
 
-  if( !s_ppTsd ){
-    sqlite3OsEnterMutex();
-    if( !s_ppTsd ){
-      PULONG pul;
-      APIRET rc = DosAllocThreadLocalMemory(1, &pul);
-      if( rc != NO_ERROR ){
-        sqlite3OsLeaveMutex();
-        return 0;
-      }
-      s_ppTsd = (ThreadData **)pul;
-    }
-    sqlite3OsLeaveMutex();
-  }
-  pTsd = *s_ppTsd;
-  if( allocateFlag>0 ){
-    if( !pTsd ){
-      pTsd = sqlite3OsMalloc( sizeof(zeroData) );
-      if( pTsd ){
-        *pTsd = zeroData;
-        *s_ppTsd = pTsd;
-        TSD_COUNTER_INCR;
-      }
-    }
-  }else if( pTsd!=0 && allocateFlag<0
-              && memcmp( pTsd, &zeroData, sizeof(ThreadData) )==0 ){
-    sqlite3OsFree(pTsd);
-    *s_ppTsd = NULL;
-    TSD_COUNTER_DECR;
-    pTsd = 0;
-  }
-  return pTsd;
+  return &os2Vfs;
 }
+
 #endif /* OS_OS2 */
