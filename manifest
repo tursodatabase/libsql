@@ -1,5 +1,5 @@
-C We\sneed\san\sextra\sdefine\sto\sactivate\sOS/2\ssemaphores\sfor\scompiling/linking.\s(CVS\s4501)
-D 2007-10-21T22:59:13
+C Add\sthe\sNEAR\soperator\sto\sfts3.\s(CVS\s4502)
+D 2007-10-22T18:02:20
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -49,7 +49,7 @@ F ext/fts2/fts2_tokenizer1.c 8a545c232bdffafd117c4eeaf59789691909f26a
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.tokenizers a97c9a55b3422f6cb04af9de9296fe2447ea4a78
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 6b390b5054f9267ee5778dccffc856a3d70e7b70
+F ext/fts3/fts3.c 577d6714694212ca46cd6870242fcecdba3ea19b
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3_hash.c 1c2dc969a5b485848fb804c0ac41a046f18a09c9
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
@@ -307,6 +307,7 @@ F test/fts3an.test 2da4df52fe8ea8389f6fa7a01e4c1a0f091118d6
 F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
+F test/fts3near.test 2d4dadcaac5025ab65bb87e66c45f39e92966194
 F test/func.test fd05232dffa77492c473f5a71d2cde6cb0ccfb1a
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
@@ -582,7 +583,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 46b2d1034b3d25ded71085c901301ad64b5aaba2
-R 65a79f0002ae265ecc00f076b01522d4
-U pweilbacher
-Z 34e942d3f77a4c8a8a7e2b27afd201de
+P 0604dace0e22297bafcf90f4485d3c07383f876e
+R 61aa6db1c18424f8de4053314cf282ab
+U danielk1977
+Z fec043abcdb514c5f33f0448e34947e4

@@ -288,8 +288,10 @@
 #include "fts3_hash.h"
 #include "fts3_tokenizer.h"
 #include "sqlite3.h"
-#include "sqlite3ext.h"
-SQLITE_EXTENSION_INIT1
+#ifndef SQLITE_CORE 
+  #include "sqlite3ext.h"
+  SQLITE_EXTENSION_INIT1
+#endif
 
 
 /* TODO(shess) MAN, this thing needs some refactoring.  At minimum, it
@@ -310,6 +312,11 @@ SQLITE_EXTENSION_INIT1
 #else
 # define TRACE(A)
 #endif
+
+/*
+** Default span for NEAR operators.
+*/
+#define SQLITE_FTS3_DEFAULT_NEAR_PARAM 10
 
 /* It is not safe to call isspace(), tolower(), or isalnum() on
 ** hi-bit-set characters.  This is the same solution used in the
@@ -1365,20 +1372,34 @@ static void docListUnion(
   dlwDestroy(&writer);
 }
 
-/* pLeft and pRight are DLReaders positioned to the same docid.
+/* 
+** This function is used as part of the implementation of phrase and
+** NEAR matching.
 **
-** If there are no instances in pLeft or pRight where the position
-** of pLeft is one less than the position of pRight, then this
-** routine adds nothing to pOut.
+** pLeft and pRight are DLReaders positioned to the same docid in
+** lists of type DL_POSITION. This function writes an entry to the
+** DLWriter pOut for each position in pRight that is less than
+** (nNear+1) greater (but not equal to or smaller) than a position 
+** in pLeft. For example, if nNear is 0, and the positions contained
+** by pLeft and pRight are:
 **
-** If there are one or more instances where positions from pLeft
-** are exactly one less than positions from pRight, then add a new
-** document record to pOut.  If pOut wants to hold positions, then
-** include the positions from pRight that are one more than a
-** position in pLeft.  In other words:  pRight.iPos==pLeft.iPos+1.
+**    pLeft:  5 10 15 20
+**    pRight: 6  9 17 21
+**
+** then the docid is added to pOut. If pOut is of type DL_POSITIONS,
+** then a positionids "6" and "21" are also added to pOut.
+**
+** If boolean argument isSaveLeft is true, then positionids are copied
+** from pLeft instead of pRight. In the example above, the positions "5"
+** and "20" would be added instead of "6" and "21".
 */
-static void posListPhraseMerge(DLReader *pLeft, DLReader *pRight,
-                               DLWriter *pOut){
+static void posListPhraseMerge(
+  DLReader *pLeft, 
+  DLReader *pRight,
+  int nNear,
+  int isSaveLeft,
+  DLWriter *pOut
+){
   PLReader left, right;
   PLWriter writer;
   int match = 0;
@@ -1394,18 +1415,23 @@ static void posListPhraseMerge(DLReader *pLeft, DLReader *pRight,
       plrStep(&left);
     }else if( plrColumn(&left)>plrColumn(&right) ){
       plrStep(&right);
-    }else if( plrPosition(&left)+1<plrPosition(&right) ){
-      plrStep(&left);
-    }else if( plrPosition(&left)+1>plrPosition(&right) ){
+    }else if( plrPosition(&left)>=plrPosition(&right) ){
       plrStep(&right);
     }else{
-      if( !match ){
-        plwInit(&writer, pOut, dlrDocid(pLeft));
-        match = 1;
+      if( (plrPosition(&right)-plrPosition(&left))<=(nNear+1) ){
+        if( !match ){
+          plwInit(&writer, pOut, dlrDocid(pLeft));
+          match = 1;
+        }
+        if( !isSaveLeft ){
+          plwAdd(&writer, plrColumn(&right), plrPosition(&right), 0, 0);
+        }else{
+          plwAdd(&writer, plrColumn(&left), plrPosition(&left), 0, 0);
+        }
+        plrStep(&right);
+      }else{
+        plrStep(&left);
       }
-      plwAdd(&writer, plrColumn(&right), plrPosition(&right), 0, 0);
-      plrStep(&left);
-      plrStep(&right);
     }
   }
 
@@ -1418,11 +1444,53 @@ static void posListPhraseMerge(DLReader *pLeft, DLReader *pRight,
   plrDestroy(&right);
 }
 
-/* We have two doclists with positions:  pLeft and pRight.
-** Write the phrase intersection of these two doclists into pOut.
+/*
+** Compare the values pointed to by the PLReaders passed as arguments. 
+** Return -1 if the value pointed to by pLeft is considered less than
+** the value pointed to by pRight, +1 if it is considered greater
+** than it, or 0 if it is equal. i.e.
+**
+**     (*pLeft - *pRight)
+**
+** A PLReader that is in the EOF condition is considered greater than
+** any other. If neither argument is in EOF state, the return value of
+** plrColumn() is used. If the plrColumn() values are equal, the
+** comparison is on the basis of plrPosition().
+*/
+static int plrCompare(PLReader *pLeft, PLReader *pRight){
+  assert(!plrAtEnd(pLeft) || !plrAtEnd(pRight));
+
+  if( plrAtEnd(pRight) || plrAtEnd(pLeft) ){
+    return (plrAtEnd(pRight) ? -1 : 1);
+  }
+  if( plrColumn(pLeft)!=plrColumn(pRight) ){
+    return ((plrColumn(pLeft)<plrColumn(pRight)) ? -1 : 1);
+  }
+  if( plrPosition(pLeft)!=plrPosition(pRight) ){
+    return ((plrPosition(pLeft)<plrPosition(pRight)) ? -1 : 1);
+  }
+  return 0;
+}
+
+/* We have two doclists with positions:  pLeft and pRight. Depending
+** on the value of the nNear parameter, perform either a phrase
+** intersection (if nNear==0) or a NEAR intersection (if nNear>0)
+** and write the results into pOut.
 **
 ** A phrase intersection means that two documents only match
 ** if pLeft.iPos+1==pRight.iPos.
+**
+** A NEAR intersection means that two documents only match if 
+** (abs(pLeft.iPos-pRight.iPos)<nNear).
+**
+** If a NEAR intersection is requested, then the nPhrase argument should
+** be passed the number of tokens in the two operands to the NEAR operator
+** combined. For example:
+**
+**       Query syntax               nPhrase
+**      ------------------------------------
+**       "A B C" NEAR "D E"         5
+**       A NEAR B                   2
 **
 ** iType controls the type of data written to pOut.  If iType is
 ** DL_POSITIONS, the positions are those from pRight.
@@ -1430,7 +1498,9 @@ static void posListPhraseMerge(DLReader *pLeft, DLReader *pRight,
 static void docListPhraseMerge(
   const char *pLeft, int nLeft,
   const char *pRight, int nRight,
-  DocListType iType,
+  int nNear,            /* 0 for a phrase merge, non-zero for a NEAR merge */
+  int nPhrase,          /* Number of tokens in left+right operands to NEAR */
+  DocListType iType,    /* Type of doclist to write to pOut */
   DataBuffer *pOut      /* Write the combined doclist here */
 ){
   DLReader left, right;
@@ -1450,7 +1520,61 @@ static void docListPhraseMerge(
     }else if( dlrDocid(&right)<dlrDocid(&left) ){
       dlrStep(&right);
     }else{
-      posListPhraseMerge(&left, &right, &writer);
+      if( nNear==0 ){
+        posListPhraseMerge(&left, &right, 0, 0, &writer);
+      }else{
+        /* This case occurs when two terms (simple terms or phrases) are
+         * connected by a NEAR operator, span (nNear+1). i.e.
+         *
+         *     '"terrible company" NEAR widget'
+         */
+        DataBuffer one = {0, 0, 0};
+        DataBuffer two = {0, 0, 0};
+
+        DLWriter dlwriter2;
+        DLReader dr1 = {0, 0, 0, 0, 0}; 
+        DLReader dr2 = {0, 0, 0, 0, 0};
+
+        dlwInit(&dlwriter2, iType, &one);
+        posListPhraseMerge(&right, &left, nNear-3+nPhrase, 1, &dlwriter2);
+        dlwInit(&dlwriter2, iType, &two);
+        posListPhraseMerge(&left, &right, nNear-1, 0, &dlwriter2);
+
+        if( one.nData) dlrInit(&dr1, iType, one.pData, one.nData);
+        if( two.nData) dlrInit(&dr2, iType, two.pData, two.nData);
+
+        if( !dlrAtEnd(&dr1) || !dlrAtEnd(&dr2) ){
+          PLReader pr1 = {0};
+          PLReader pr2 = {0};
+
+          PLWriter plwriter;
+          plwInit(&plwriter, &writer, dlrDocid(dlrAtEnd(&dr1)?&dr2:&dr1));
+
+          if( one.nData ) plrInit(&pr1, &dr1);
+          if( two.nData ) plrInit(&pr2, &dr2);
+          while( !plrAtEnd(&pr1) || !plrAtEnd(&pr2) ){
+            int iCompare = plrCompare(&pr1, &pr2);
+            switch( iCompare ){
+              case -1:
+                plwCopy(&plwriter, &pr1);
+                plrStep(&pr1);
+                break;
+              case 1:
+                plwCopy(&plwriter, &pr2);
+                plrStep(&pr2);
+                break;
+              case 0:
+                plwCopy(&plwriter, &pr1);
+                plrStep(&pr1);
+                plrStep(&pr2);
+                break;
+            }
+          }
+          plwTerminate(&plwriter);
+        }
+        dataBufferDestroy(&one);
+        dataBufferDestroy(&two);
+      }
       dlrStep(&left);
       dlrStep(&right);
     }
@@ -1660,12 +1784,42 @@ static int sql_prepare(sqlite3 *db, const char *zDb, const char *zName,
 typedef struct fulltext_vtab fulltext_vtab;
 
 /* A single term in a query is represented by an instances of
-** the following structure.
+** the following structure. Each word which may match against
+** document content is a term. Operators, like NEAR or OR, are
+** not terms. Query terms are organized as a flat list stored
+** in the Query.pTerms array.
+**
+** If the QueryTerm.nPhrase variable is non-zero, then the QueryTerm
+** is the first in a contiguous string of terms that are either part
+** of the same phrase, or connected by the NEAR operator.
+**
+** If the QueryTerm.nNear variable is non-zero, then the token is followed 
+** by a NEAR operator with span set to (nNear-1). For example, the 
+** following query:
+**
+** The QueryTerm.iPhrase variable stores the index of the token within
+** it's phrase, indexed starting at 1, or 1 if the token is not part 
+** of any phrase.
+**
+** For example, the data structure used to represent the following query:
+**
+**     ... MATCH 'sqlite NEAR/5 google NEAR/2 "search engine"'
+**
+** is:
+**
+**     {nPhrase=4, iPhrase=1, nNear=6, pTerm="sqlite"},
+**     {nPhrase=0, iPhrase=1, nNear=3, pTerm="google"},
+**     {nPhrase=0, iPhrase=1, nNear=0, pTerm="search"},
+**     {nPhrase=0, iPhrase=2, nNear=0, pTerm="engine"},
+**
+** compiling the FTS3 syntax to Query structures is done by the parseQuery()
+** function.
 */
 typedef struct QueryTerm {
   short int nPhrase; /* How many following terms are part of the same phrase */
   short int iPhrase; /* This is the i-th term of a phrase. */
   short int iColumn; /* Column of the index that must match this term */
+  signed char nNear; /* term followed by a NEAR operator with span=(nNear-1) */
   signed char isOr;  /* this term is preceded by "OR" */
   signed char isNot; /* this term is preceded by "-" */
   signed char isPrefix; /* this term is followed by "*" */
@@ -1707,6 +1861,7 @@ typedef struct Query {
   int nTerms;           /* Number of terms in the query */
   QueryTerm *pTerms;    /* Array of terms.  Space obtained from malloc() */
   int nextIsOr;         /* Set the isOr flag on the next inserted term */
+  int nextIsNear;       /* Set the isOr flag on the next inserted term */
   int nextColumn;       /* Next word parsed must be in this column */
   int dfltColumn;       /* The default column */
 } Query;
@@ -1723,6 +1878,7 @@ typedef struct Snippet {
     char snStatus;       /* Status flag for use while constructing snippets */
     short int iCol;      /* The column that contains the match */
     short int iTerm;     /* The index in Query.pTerms[] of the matching term */
+    int iToken;          /* The index of the matching document token */
     short int nByte;     /* Number of bytes in the term */
     int iStart;          /* The offset to the first character of the term */
   } *aMatch;      /* Points to space obtained from malloc */
@@ -2952,6 +3108,7 @@ static void snippetClear(Snippet *p){
 static void snippetAppendMatch(
   Snippet *p,               /* Append the entry to this snippet */
   int iCol, int iTerm,      /* The column and query term */
+  int iToken,               /* Matching token in document */
   int iStart, int nByte     /* Offset and size of the match */
 ){
   int i;
@@ -2969,6 +3126,7 @@ static void snippetAppendMatch(
   pMatch = &p->aMatch[i];
   pMatch->iCol = iCol;
   pMatch->iTerm = iTerm;
+  pMatch->iToken = iToken;
   pMatch->iStart = iStart;
   pMatch->nByte = nByte;
 }
@@ -3042,7 +3200,7 @@ static void snippetOffsetsOfColumn(
       if( i==nTerm-1 || aTerm[i+1].iPhrase==1 ){
         for(j=aTerm[i].iPhrase-1; j>=0; j--){
           int k = (iRotor-j) & FTS3_ROTOR_MASK;
-          snippetAppendMatch(pSnippet, iColumn, i-j,
+          snippetAppendMatch(pSnippet, iColumn, i-j, iPos-j,
                 iRotorBegin[k], iRotorLen[k]);
         }
       }
@@ -3053,6 +3211,104 @@ static void snippetOffsetsOfColumn(
   pTModule->xClose(pTCursor);  
 }
 
+/*
+** Remove entries from the pSnippet structure to account for the NEAR
+** operator. When this is called, pSnippet contains the list of token 
+** offsets produced by treating all NEAR operators as AND operators.
+** This function removes any entries that should not be present after
+** accounting for the NEAR restriction. For example, if the queried
+** document is:
+**
+**     "A B C D E A"
+**
+** and the query is:
+** 
+**     A NEAR/0 E
+**
+** then when this function is called the Snippet contains token offsets
+** 0, 4 and 5. This function removes the "0" entry (because the first A
+** is not near enough to an E).
+*/
+static void trimSnippetOffsetsForNear(Query *pQuery, Snippet *pSnippet){
+  int ii;
+  int iDir = 1;
+
+  while(iDir>-2) {
+    assert( iDir==1 || iDir==-1 );
+    for(ii=0; ii<pSnippet->nMatch; ii++){
+      int jj;
+      int nNear;
+      struct snippetMatch *pMatch = &pSnippet->aMatch[ii];
+      QueryTerm *pQueryTerm = &pQuery->pTerms[pMatch->iTerm];
+
+      if( (pMatch->iTerm+iDir)<0 
+       || (pMatch->iTerm+iDir)>=pQuery->nTerms
+      ){
+        continue;
+      }
+     
+      nNear = pQueryTerm->nNear;
+      if( iDir<0 ){
+        nNear = pQueryTerm[-1].nNear;
+      }
+  
+      if( pMatch->iTerm>=0 && nNear ){
+        int isOk = 0;
+        int iNextTerm = pMatch->iTerm+iDir;
+        int iPrevTerm = iNextTerm;
+
+        int iEndToken;
+        int iStartToken;
+
+        if( iDir<0 ){
+          int nPhrase = 1;
+          iStartToken = pMatch->iToken;
+          while( (pMatch->iTerm+nPhrase)<pQuery->nTerms 
+              && pQuery->pTerms[pMatch->iTerm+nPhrase].iPhrase>1 
+          ){
+            nPhrase++;
+          }
+          iEndToken = iStartToken + nPhrase - 1;
+        }else{
+          iEndToken   = pMatch->iToken;
+          iStartToken = pMatch->iToken+1-pQueryTerm->iPhrase;
+        }
+
+        while( pQuery->pTerms[iNextTerm].iPhrase>1 ){
+          iNextTerm--;
+        }
+        while( (iPrevTerm+1)<pQuery->nTerms && 
+               pQuery->pTerms[iPrevTerm+1].iPhrase>1 
+        ){
+          iPrevTerm++;
+        }
+  
+        for(jj=0; isOk==0 && jj<pSnippet->nMatch; jj++){
+          struct snippetMatch *p = &pSnippet->aMatch[jj];
+          if( p->iCol==pMatch->iCol && ((
+               p->iTerm==iNextTerm && 
+               p->iToken>iEndToken && 
+               p->iToken<=iEndToken+nNear
+          ) || (
+               p->iTerm==iPrevTerm && 
+               p->iToken<iStartToken && 
+               p->iToken>=iStartToken-nNear
+          ))){
+            isOk = 1;
+          }
+        }
+        if( !isOk ){
+          for(jj=1-pQueryTerm->iPhrase; jj<=0; jj++){
+            pMatch[jj].iTerm = -1;
+          }
+          ii = -1;
+          iDir = 1;
+        }
+      }
+    }
+    iDir -= 2;
+  }
+}
 
 /*
 ** Compute all offsets for the current row of the query.  
@@ -3083,6 +3339,8 @@ static void snippetAllOffsets(fulltext_cursor *p){
     nDoc = sqlite3_column_bytes(p->pStmt, i+1);
     snippetOffsetsOfColumn(&p->q, &p->snippet, i, zDoc, nDoc);
   }
+
+  trimSnippetOffsetsForNear(&p->q, &p->snippet);
 }
 
 /*
@@ -3098,11 +3356,18 @@ static void snippetOffsetText(Snippet *p){
   initStringBuffer(&sb);
   for(i=0; i<p->nMatch; i++){
     struct snippetMatch *pMatch = &p->aMatch[i];
-    zBuf[0] = ' ';
-    sprintf(&zBuf[cnt>0], "%d %d %d %d", pMatch->iCol,
-        pMatch->iTerm, pMatch->iStart, pMatch->nByte);
-    append(&sb, zBuf);
-    cnt++;
+    if( pMatch->iTerm>=0 ){
+      /* If snippetMatch.iTerm is less than 0, then the match was 
+      ** discarded as part of processing the NEAR operator (see the 
+      ** trimSnippetOffsetsForNear() function for details). Ignore 
+      ** it in this case
+      */
+      zBuf[0] = ' ';
+      sprintf(&zBuf[cnt>0], "%d %d %d %d", pMatch->iCol,
+          pMatch->iTerm, pMatch->iStart, pMatch->nByte);
+      append(&sb, zBuf);
+      cnt++;
+    }
   }
   p->zOffset = stringBufferData(&sb);
   p->nOffset = stringBufferLength(&sb);
@@ -3350,10 +3615,10 @@ static int termSelect(fulltext_vtab *v, int iColumn,
 ** overwritten.
 */
 static int docListOfTerm(
-  fulltext_vtab *v,   /* The full text index */
-  int iColumn,        /* column to restrict to.  No restriction if >=nColumn */
-  QueryTerm *pQTerm,  /* Term we are looking for, or 1st term of a phrase */
-  DataBuffer *pResult /* Write the result here */
+  fulltext_vtab *v,    /* The full text index */
+  int iColumn,         /* column to restrict to.  No restriction if >=nColumn */
+  QueryTerm *pQTerm,   /* Term we are looking for, or 1st term of a phrase */
+  DataBuffer *pResult  /* Write the result here */
 ){
   DataBuffer left, right, new;
   int i, rc;
@@ -3366,9 +3631,20 @@ static int docListOfTerm(
 
   dataBufferInit(&left, 0);
   rc = termSelect(v, iColumn, pQTerm->pTerm, pQTerm->nTerm, pQTerm->isPrefix,
-                  0<pQTerm->nPhrase ? DL_POSITIONS : DL_DOCIDS, &left);
+                  (0<pQTerm->nPhrase ? DL_POSITIONS : DL_DOCIDS), &left);
   if( rc ) return rc;
   for(i=1; i<=pQTerm->nPhrase && left.nData>0; i++){
+    /* If this token is connected to the next by a NEAR operator, and
+    ** the next token is the start of a phrase, then set nPhraseRight
+    ** to the number of tokens in the phrase. Otherwise leave it at 1.
+    */
+    int nPhraseRight = 1;
+    while( (i+nPhraseRight)<=pQTerm->nPhrase 
+        && pQTerm[i+nPhraseRight].nNear==0 
+    ){
+      nPhraseRight++;
+    }
+
     dataBufferInit(&right, 0);
     rc = termSelect(v, iColumn, pQTerm[i].pTerm, pQTerm[i].nTerm,
                     pQTerm[i].isPrefix, DL_POSITIONS, &right);
@@ -3378,7 +3654,9 @@ static int docListOfTerm(
     }
     dataBufferInit(&new, 0);
     docListPhraseMerge(left.pData, left.nData, right.pData, right.nData,
-                       i<pQTerm->nPhrase ? DL_POSITIONS : DL_DOCIDS, &new);
+                       pQTerm[i-1].nNear, pQTerm[i-1].iPhrase + nPhraseRight,
+                       ((i<pQTerm->nPhrase) ? DL_POSITIONS : DL_DOCIDS),
+                       &new);
     dataBufferDestroy(&left);
     dataBufferDestroy(&right);
     left = new;
@@ -3470,11 +3748,38 @@ static int tokenizeSegment(
       pQuery->nextColumn = iCol;
       continue;
     }
-    if( !inPhrase && pQuery->nTerms>0 && nToken==2
-         && pSegment[iBegin]=='O' && pSegment[iBegin+1]=='R' ){
+    if( !inPhrase && pQuery->nTerms>0 && nToken==2 
+     && pSegment[iBegin+0]=='O'
+     && pSegment[iBegin+1]=='R' 
+    ){
       pQuery->nextIsOr = 1;
       continue;
     }
+    if( !inPhrase && pQuery->nTerms>0 && !pQuery->nextIsOr && nToken==4 
+      && pSegment[iBegin+0]=='N' 
+      && pSegment[iBegin+1]=='E' 
+      && pSegment[iBegin+2]=='A' 
+      && pSegment[iBegin+3]=='R' 
+    ){
+      QueryTerm *pTerm = &pQuery->pTerms[pQuery->nTerms-1];
+      if( (iBegin+6)<nSegment 
+       && pSegment[iBegin+4] == '/'
+       && pSegment[iBegin+5]>='0' && pSegment[iBegin+5]<='9'
+      ){
+        pTerm->nNear = (pSegment[iBegin+5] - '0');
+        nToken += 2;
+        if( pSegment[iBegin+6]>='0' && pSegment[iBegin+6]<=9 ){
+          pTerm->nNear = pTerm->nNear * 10 + (pSegment[iBegin+6] - '0');
+          iEnd++;
+        }
+        pModule->xNext(pCursor, &pToken, &nToken, &iBegin, &iEnd, &iPos);
+      } else {
+        pTerm->nNear = SQLITE_FTS3_DEFAULT_NEAR_PARAM;
+      }
+      pTerm->nNear++;
+      continue;
+    }
+
     queryAdd(pQuery, pToken, nToken);
     if( !inPhrase && iBegin>0 && pSegment[iBegin-1]=='-' ){
       pQuery->pTerms[pQuery->nTerms-1].isNot = 1;
@@ -3508,6 +3813,8 @@ static int parseQuery(
   Query *pQuery            /* Write the parse results here. */
 ){
   int iInput, inPhrase = 0;
+  int ii;
+  QueryTerm *aTerm;
 
   if( zInput==0 ) nInput = 0;
   if( nInput<0 ) nInput = strlen(zInput);
@@ -3537,6 +3844,21 @@ static int parseQuery(
     queryClear(pQuery);
     return SQLITE_ERROR;
   }
+
+  /* Modify the values of the QueryTerm.nPhrase variables to account for
+  ** the NEAR operator. For the purposes of QueryTerm.nPhrase, phrases
+  ** and tokens connected by the NEAR operator are handled as a single
+  ** phrase. See comments above the QueryTerm structure for details.
+  */
+  aTerm = pQuery->pTerms;
+  for(ii=0; ii<pQuery->nTerms; ii++){
+    if( aTerm[ii].nNear || aTerm[ii].nPhrase ){
+      while (aTerm[ii+aTerm[ii].nPhrase].nNear) {
+        aTerm[ii].nPhrase += (1 + aTerm[ii+aTerm[ii].nPhrase+1].nPhrase);
+      }
+    }
+  }
+
   return SQLITE_OK;
 }
 

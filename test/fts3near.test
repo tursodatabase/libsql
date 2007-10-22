@@ -1,0 +1,168 @@
+
+# 2007 October 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+# $Id: fts3near.test,v 1.1 2007/10/22 18:02:20 danielk1977 Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+db eval {
+  CREATE VIRTUAL TABLE t1 USING fts3(content);
+  INSERT INTO t1(content) VALUES('one three four five');
+  INSERT INTO t1(content) VALUES('two three four five');
+  INSERT INTO t1(content) VALUES('one two three four five');
+}
+
+do_test fts3near-1.1 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH 'one NEAR/0 three'}
+} {1}
+do_test fts3near-1.2 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH 'one NEAR/1 two'}
+} {3}
+do_test fts3near-1.3 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH 'one NEAR/1 three'}
+} {1 3}
+do_test fts3near-1.4 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH 'three NEAR/1 one'}
+} {1 3}
+do_test fts3near-1.5 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH '"one two" NEAR/1 five'}
+} {}
+do_test fts3near-1.6 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH '"one two" NEAR/2 five'}
+} {3}
+do_test fts3near-1.7 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH 'one NEAR four'}
+} {1 3}
+do_test fts3near-1.8 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH 'four NEAR three'}
+} {1 2 3}
+do_test fts3near-1.9 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH '"four five" NEAR/0 three'}
+} {1 2 3}
+do_test fts3near-1.10 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH '"four five" NEAR/2 one'}
+} {1 3}
+do_test fts3near-1.11 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH '"four five" NEAR/1 one'}
+} {1}
+do_test fts3near-1.12 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH 'five NEAR/1 "two three"'}
+} {2 3} 
+do_test fts3near-1.13 {
+  execsql {SELECT docid FROM t1 WHERE content MATCH 'one NEAR five'}
+} {1 3} 
+
+
+# Output format of the offsets() function:
+#
+#     <column number> <term number> <starting offset> <number of bytes>
+#
+db eval {
+  INSERT INTO t1(content) VALUES('A X B C D A B');
+}
+do_test fts3near-2.1 {
+  execsql {
+    SELECT offsets(t1) FROM t1 WHERE content MATCH 'A NEAR/0 B'
+  }
+} {{0 0 10 1 0 1 12 1}}
+do_test fts3near-2.2 {
+  execsql {
+    SELECT offsets(t1) FROM t1 WHERE content MATCH 'B NEAR/0 A'
+  }
+} {{0 1 10 1 0 0 12 1}}
+do_test fts3near-2.3 {
+  execsql {
+    SELECT offsets(t1) FROM t1 WHERE content MATCH '"C D" NEAR/0 A'
+  }
+} {{0 0 6 1 0 1 8 1 0 2 10 1}}
+do_test fts3near-2.4 {
+  execsql {
+    SELECT offsets(t1) FROM t1 WHERE content MATCH 'A NEAR/0 "C D"'
+  }
+} {{0 1 6 1 0 2 8 1 0 0 10 1}}
+do_test fts3near-2.5 {
+  execsql {
+    SELECT offsets(t1) FROM t1 WHERE content MATCH 'A NEAR A'
+  }
+} {{0 0 0 1 0 1 0 1 0 0 10 1 0 1 10 1}}
+do_test fts3near-2.6 {
+  execsql {
+    INSERT INTO t1 VALUES('A A A');
+    SELECT offsets(t1) FROM t1 WHERE content MATCH 'A NEAR/2 A';
+  }
+} [list [list 0 0 0 1   0 1 0 1   0 0 2 1   0 1 2 1   0 0 4 1   0 1 4 1]]
+do_test fts3near-2.7 {
+  execsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES('A A A A');
+    SELECT offsets(t1) FROM t1 WHERE content MATCH 'A NEAR A NEAR A';
+  }
+} [list [list \
+    0 0 0 1   0 1 0 1   0 2 0 1   0 0 2 1   \
+    0 1 2 1   0 2 2 1   0 0 4 1   0 1 4 1   \
+    0 2 4 1   0 0 6 1   0 1 6 1   0 2 6 1   \
+]]
+
+db eval {
+  DELETE FROM t1;
+  INSERT INTO t1(content) VALUES(
+    'one two three two four six three six nine four eight twelve'
+  );
+}
+
+do_test fts3near-3.1 {
+  execsql {SELECT offsets(t1) FROM t1 WHERE content MATCH 'three NEAR/1 one'}
+} {{0 1 0 3 0 0 8 5}}
+do_test fts3near-3.2 {
+  execsql {SELECT offsets(t1) FROM t1 WHERE content MATCH 'one NEAR/1 three'}
+} {{0 0 0 3 0 1 8 5}}
+do_test fts3near-3.3 {
+  execsql {SELECT offsets(t1) FROM t1 WHERE content MATCH 'three NEAR/1 two'}
+} {{0 1 4 3 0 0 8 5 0 1 14 3}}
+do_test fts3near-3.4 {
+  execsql {SELECT offsets(t1) FROM t1 WHERE content MATCH 'three NEAR/2 two'}
+} {{0 1 4 3 0 0 8 5 0 1 14 3 0 0 27 5}}
+do_test fts3near-3.5 {
+  execsql {SELECT offsets(t1) FROM t1 WHERE content MATCH 'two NEAR/2 three'}
+} {{0 0 4 3 0 1 8 5 0 0 14 3 0 1 27 5}}
+do_test fts3near-3.6 {
+  execsql {
+    SELECT offsets(t1) FROM t1 WHERE content MATCH 'three NEAR/0 "two four"'
+  }
+} {{0 0 8 5 0 1 14 3 0 2 18 4}}
+do_test fts3near-3.7 {
+  execsql {
+    SELECT offsets(t1) FROM t1 WHERE content MATCH '"two four" NEAR/0 three'}
+} {{0 2 8 5 0 0 14 3 0 1 18 4}}
+
+db eval {
+  INSERT INTO t1(content) VALUES('
+    This specification defines Cascading Style Sheets, level 2 (CSS2). CSS2 is a style sheet language that allows authors and users to attach style (e.g., fonts, spacing, and aural cues) to structured documents (e.g., HTML documents and XML applications). By separating the presentation style of documents from the content of documents, CSS2 simplifies Web authoring and site maintenance.
+
+    CSS2 builds on CSS1 (see [CSS1]) and, with very few exceptions, all valid CSS1 style sheets are valid CSS2 style sheets. CSS2 supports media-specific style sheets so that authors may tailor the presentation of their documents to visual browsers, aural devices, printers, braille devices, handheld devices, etc. This specification also supports content positioning, downloadable fonts, table layout, features for internationalization, automatic counters and numbering, and some properties related to user interface.
+  ') 
+}
+do_test fts3near-4.1 {
+  execsql {
+    SELECT snippet(t1) FROM t1 WHERE content MATCH 'specification NEAR supports'
+  }
+} {{<b>...</b> devices, handheld devices, etc. This <b>specification</b> also <b>supports</b> content positioning, downloadable fonts, <b>...</b>}}
+
+finish_test
