@@ -772,6 +772,12 @@ static int transferOwnership(unixFile *pFile){
 /*
 ** Seek to the offset passed as the second argument, then read cnt 
 ** bytes into pBuf. Return the number of bytes actually read.
+**
+** NB:  If you define USE_PREAD or USE_PREAD64, then it might also
+** be necessary to define _XOPEN_SOURCE to be 500.  This varies from
+** one system to another.  Since SQLite does not define USE_PREAD
+** any any form by default, we will not attempt to define _XOPEN_SOURCE.
+** See tickets #2741 and #2681.
 */
 static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   int got;
