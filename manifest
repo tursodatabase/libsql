@@ -1,5 +1,5 @@
-C Add\sthe\sNEAR\soperator\sto\sfts3.\s(CVS\s4502)
-D 2007-10-22T18:02:20
+C Fix\san\serror\smessage\sin\sthe\stcl\sinterface.\s(CVS\s4503)
+D 2007-10-23T08:17:48
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -136,7 +136,7 @@ F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 3fa9f4e9d2f07e162509f75d827d32f41fcd4f30
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
-F src/tclsqlite.c 9659ec914abfdb35e184eee908d07eba11a39018
+F src/tclsqlite.c 29bb44a88e02ca4d2017113b7b1acc839582d57a
 F src/test1.c 738f9b4ab808dcfec1516ef699c416e3f4f1d119
 F src/test2.c 77b34303883b9d722c65a6879bb0163a400e3789
 F src/test3.c 73c1fd55d1ece61f295a6b9204fd97a139de86ae
@@ -427,7 +427,7 @@ F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
 F test/tableapi.test 92651a95c23cf955e92407928e640536402fa3cc
-F test/tclsqlite.test c7feea1985c3e8a1ed134ba342347d47fa762e43
+F test/tclsqlite.test 3fac87cb1059c46b8fa8a60b553f4f1adb0fb6d9
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
 F test/tester.tcl 58a86ba2f93f76c728e7a338f8b7724c566ce708
 F test/thread001.test 8fbd9559da0bbdc273e00318c7fd66c162020af7
@@ -583,7 +583,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0604dace0e22297bafcf90f4485d3c07383f876e
-R 61aa6db1c18424f8de4053314cf282ab
+P aef7720e0bb49d52332ddebe6f698feb926ef7d7
+R 86d6f1c31cfe170f6b4b00de0d246413
 U danielk1977
-Z fec043abcdb514c5f33f0448e34947e4
+Z ed043c1e2caea20587e74619c1ec5335

@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.203 2007/09/14 16:20:01 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.204 2007/10/23 08:17:48 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -1073,7 +1073,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }
     }else{
       Tcl_AppendResult( interp, "bad option \"", 
-          Tcl_GetStringFromObj(objv[0],0), "\": must be flush or size", 0);
+          Tcl_GetStringFromObj(objv[2],0), "\": must be flush or size", 0);
       return TCL_ERROR;
     }
     break;
