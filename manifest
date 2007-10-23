@@ -1,5 +1,5 @@
-C Fix\san\serror\smessage\sin\sthe\stcl\sinterface.\s(CVS\s4503)
-D 2007-10-23T08:17:48
+C Add\sspeed4.test,\swith\ssome\sspeed\stests\sfor\striggers,\ssub-selects,\sviews\sand\sjoins.\s(CVS\s4504)
+D 2007-10-23T10:25:30
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -392,7 +392,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 6bf1a86c6a1e45536f72d782bf44c8e3c76510f8
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 38ae1806833d72d9a81a6121322e274f24937e18
-F test/quick.test 47605260d370844596ae5b52cdcf50d70525e7ee
+F test/quick.test fa4e9d57956d05d024689e12ec7b40b3f0224d44
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -420,6 +420,7 @@ F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
+F test/speed4.test 20d8ea20bea3ca09c3ef3b5ec820a17e58e132cb
 F test/sqllimits1.test 3b08a538c9828041a5c1454293594d922602044d
 F test/subquery.test 8203f85db56ba022a57a0589890090c8feed4e59
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
@@ -583,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P aef7720e0bb49d52332ddebe6f698feb926ef7d7
-R 86d6f1c31cfe170f6b4b00de0d246413
+P 2449e08069ef830f119203c4a3737d6756e73c63
+R 9ff5bb31431b0085b77a736c1e69245b
 U danielk1977
-Z ed043c1e2caea20587e74619c1ec5335
+Z 15cc286b9726040cda03d092104a36be
