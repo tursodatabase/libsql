@@ -432,13 +432,12 @@ static void freeEphemeralFunction(FuncDef *pDef){
 static void freeP3(int p3type, void *p3){
   if( p3 ){
     switch( p3type ){
+      case P3_REAL:
+      case P3_INT64:
+      case P3_MPRINTF:
       case P3_DYNAMIC:
       case P3_KEYINFO:
       case P3_KEYINFO_HANDOFF: {
-        sqlite3_free(p3);
-        break;
-      }
-      case P3_MPRINTF: {
         sqlite3_free(p3);
         break;
       }
@@ -628,6 +627,16 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
     case P3_FUNCDEF: {
       FuncDef *pDef = (FuncDef*)pOp->p3;
       sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
+      zP3 = zTemp;
+      break;
+    }
+    case P3_INT64: {
+      sqlite3_snprintf(nTemp, zTemp, "%lld", *(sqlite3_int64*)pOp->p3);
+      zP3 = zTemp;
+      break;
+    }
+    case P3_REAL: {
+      sqlite3_snprintf(nTemp, zTemp, "%.16g", *(double*)pOp->p3);
       zP3 = zTemp;
       break;
     }

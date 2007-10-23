@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.313 2007/09/18 15:55:07 drh Exp $
+** $Id: expr.c,v 1.314 2007/10/23 15:39:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1681,19 +1681,53 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
 #endif /* SQLITE_OMIT_SUBQUERY */
 
 /*
+** Duplicate an 8-byte value
+*/
+static char *dup8bytes(Vdbe *v, const char *in){
+  char *out = sqlite3DbMallocRaw(sqlite3VdbeDb(v), 8);
+  if( out ){
+    memcpy(out, in, 8);
+  }
+  return out;
+}
+
+/*
+** Generate an instruction that will put the floating point
+** value described by z[0..n-1] on the stack.
+*/
+static void codeReal(Vdbe *v, const char *z, int n, int negateFlag){
+  assert( z || v==0 || sqlite3VdbeDb(v)->mallocFailed );
+  if( z ){
+    double value;
+    char *zV;
+    sqlite3AtoF(z, &value);
+    if( negateFlag ) value = -value;
+    zV = dup8bytes(v, (char*)&value);
+    sqlite3VdbeOp3(v, OP_Real, 0, 0, zV, P3_REAL);
+  }
+}
+
+
+/*
 ** Generate an instruction that will put the integer describe by
 ** text z[0..n-1] on the stack.
 */
-static void codeInteger(Vdbe *v, const char *z, int n){
+static void codeInteger(Vdbe *v, const char *z, int n, int negateFlag){
   assert( z || v==0 || sqlite3VdbeDb(v)->mallocFailed );
   if( z ){
     int i;
     if( sqlite3GetInt32(z, &i) ){
+      if( negateFlag ) i = -i;
       sqlite3VdbeAddOp(v, OP_Integer, i, 0);
-    }else if( sqlite3FitsIn64Bits(z) ){
-      sqlite3VdbeOp3(v, OP_Int64, 0, 0, z, n);
+    }else if( sqlite3FitsIn64Bits(z, negateFlag) ){
+      i64 value;
+      char *zV;
+      sqlite3Atoi64(z, &value);
+      if( negateFlag ) value = -value;
+      zV = dup8bytes(v, (char*)&value);
+      sqlite3VdbeOp3(v, OP_Int64, 0, 0, zV, P3_INT64);
     }else{
-      sqlite3VdbeOp3(v, OP_Real, 0, 0, z, n);
+      codeReal(v, z, n, negateFlag);
     }
   }
 }
@@ -1769,15 +1803,16 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       break;
     }
     case TK_INTEGER: {
-      codeInteger(v, (char*)pExpr->token.z, pExpr->token.n);
+      codeInteger(v, (char*)pExpr->token.z, pExpr->token.n, 0);
       break;
     }
-    case TK_FLOAT:
+    case TK_FLOAT: {
+      codeReal(v, (char*)pExpr->token.z, pExpr->token.n, 0);
+      break;
+    }
     case TK_STRING: {
-      assert( TK_FLOAT==OP_Real );
-      assert( TK_STRING==OP_String8 );
       sqlite3DequoteExpr(pParse->db, pExpr);
-      sqlite3VdbeOp3(v, op, 0, 0, (char*)pExpr->token.z, pExpr->token.n);
+      sqlite3VdbeOp3(v,OP_String8, 0, 0, (char*)pExpr->token.z, pExpr->token.n);
       break;
     }
     case TK_NULL: {
@@ -1879,13 +1914,11 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       assert( pLeft );
       if( pLeft->op==TK_FLOAT || pLeft->op==TK_INTEGER ){
         Token *p = &pLeft->token;
-        char *z = sqlite3MPrintf(pParse->db, "-%.*s", p->n, p->z);
         if( pLeft->op==TK_FLOAT ){
-          sqlite3VdbeOp3(v, OP_Real, 0, 0, z, p->n+1);
+          codeReal(v, (char*)p->z, p->n, 1);
         }else{
-          codeInteger(v, z, p->n+1);
+          codeInteger(v, (char*)p->z, p->n, 1);
         }
-        sqlite3_free(z);
         break;
       }
       /* Fall through into TK_NOT */

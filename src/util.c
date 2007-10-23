@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.212 2007/09/01 10:01:13 danielk1977 Exp $
+** $Id: util.c,v 1.213 2007/10/23 15:39:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -376,7 +376,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum){
 ** 9223373036854775808 will not fit in 64 bits.  So it seems safer to return
 ** false.
 */
-int sqlite3FitsIn64Bits(const char *zNum){
+int sqlite3FitsIn64Bits(const char *zNum, int negFlag){
   int i, c;
   int neg = 0;
   if( *zNum=='-' ){
@@ -385,6 +385,7 @@ int sqlite3FitsIn64Bits(const char *zNum){
   }else if( *zNum=='+' ){
     zNum++;
   }
+  if( negFlag ) neg = 1-neg;
   while( *zNum=='0' ){
     zNum++;   /* Skip leading zeros.  Ticket #2454 */
   }
