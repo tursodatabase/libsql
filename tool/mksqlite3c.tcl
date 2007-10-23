@@ -105,7 +105,7 @@ foreach hdr {
 } {
   set available_hdr($hdr) 1
 }
-set available_hdr(sqlite3.h) 0
+set available_hdr(sqliteInt.h) 0
 
 # 78 stars used for comment formatting.
 set s78 \
@@ -195,7 +195,7 @@ proc copy_file {filename} {
 # inlining opportunities.
 #
 foreach file {
-   sqlite3.h
+   sqliteInt.h
 
    date.c
    os.c

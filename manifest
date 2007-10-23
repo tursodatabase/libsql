@@ -1,5 +1,5 @@
-C Floating\spoint\sand\s64-bit\sinteger\sconstants\sstore\sin\sthe\svirtual\nmachine\sopcodes\sin\sbinary,\snot\sas\stext.\s\sPerformance\simprovement.\nTicket\s#2733.\s(CVS\s4507)
-D 2007-10-23T15:39:45
+C Make\ssure\sthe\s_LARGEFILE_SOURCE\smacro\soccurs\sbefore\sany\ssystem\nincludes.\s\sTicket\s#2739.\s(CVS\s4508)
+D 2007-10-23T15:51:27
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -133,7 +133,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 82089379833e361ba8a2ae65316a2173785300c0
 F src/sqlite.h.in 06c1bbf810800ad11313e646df99b35d90d1c7df
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
-F src/sqliteInt.h ae43aebc3c971b0949fd1a672431c4c01386848a
+F src/sqliteInt.h d06f27ede6c746f173dbd5b8a7047242ff669496
 F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 29bb44a88e02ca4d2017113b7b1acc839582d57a
@@ -514,7 +514,7 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl 48778943a2fc83a4fdcbb3e109706b4b8e1b135a
+F tool/mksqlite3c.tcl 91322dcb07dad72022bb953dd33b271528e6e843
 F tool/mksqlite3internalh.tcl 47737a925fb02fce43e2c0a14b3cc17574a4d44a
 F tool/omittest.tcl 7d1fdf469e2f4d175f70c36e469db64a1626fabb
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 27f846d089ebe9e4970a2499ad4e2e98773d2e78
-R 29246301e1a21448d6de393ea1067bfb
+P 7e30fd6a09899842c922b044714dc66796e545d4
+R d9c7fcf2ca1443d4e0b73fd2f5d1f543
 U drh
-Z 4278cd4e208f23a96cec913f943e3d86
+Z 191ba2675d247fcea34a3a700c2914c1
