@@ -214,7 +214,7 @@ static sqlite3_vfs *vfsList = 0;
 */
 sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
   sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
-  sqlite3_vfs *pVfs;
+  sqlite3_vfs *pVfs = 0;
   static int isInit = 0;
   sqlite3_mutex_enter(mutex);
   if( !isInit ){
@@ -234,9 +234,11 @@ sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
 */
 static void vfsUnlink(sqlite3_vfs *pVfs){
   assert( sqlite3_mutex_held(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER)) );
-  if( vfsList==pVfs ){
+  if( pVfs==0 ){
+    /* No-op */
+  }else if( vfsList==pVfs ){
     vfsList = pVfs->pNext;
-  }else{
+  }else if( vfsList ){
     sqlite3_vfs *p = vfsList;
     while( p->pNext && p->pNext!=pVfs ){
       p = p->pNext;
@@ -276,7 +278,6 @@ int sqlite3_vfs_unregister(sqlite3_vfs *pVfs){
   sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
   sqlite3_mutex_enter(mutex);
   vfsUnlink(pVfs);
-  assert(vfsList);
   sqlite3_mutex_leave(mutex);
   return SQLITE_OK;
 }

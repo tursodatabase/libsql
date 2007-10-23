@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.277 2007/09/03 17:30:07 danielk1977 Exp $
+** $Id: test1.c,v 1.278 2007/10/23 14:49:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4206,6 +4206,43 @@ static int working_64bit_int(
 
 
 /*
+** tclcmd:   vfs_unlink_test
+**
+** This TCL command unregisters the primary VFS and then registers
+** it back again.  This is used to test the ability to register a
+** VFS when none are previously registered, and the ability to 
+** unregister the only available VFS.  Ticket #2738
+*/
+static int vfs_unlink_test(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int i;
+  sqlite3_vfs *apVfs[20];
+
+  for(i=0; i<sizeof(apVfs)/sizeof(apVfs[0]); i++){
+    apVfs[i] = sqlite3_vfs_find(0);
+    if( apVfs[i] ){
+      assert( apVfs[i]==sqlite3_vfs_find(apVfs[i]->zName) );
+      sqlite3_vfs_unregister(apVfs[i]);
+      assert( 0==sqlite3_vfs_find(apVfs[i]->zName) );
+    }
+  }
+  assert( 0==sqlite3_vfs_find(0) );
+  for(i=sizeof(apVfs)/sizeof(apVfs[0])-1; i>=0; i--){
+    if( apVfs[i] ){
+      sqlite3_vfs_register(apVfs[i], 1);
+      assert( apVfs[i]==sqlite3_vfs_find(0) );
+      assert( apVfs[i]==sqlite3_vfs_find(apVfs[i]->zName) );
+    }
+  }
+  return TCL_OK;
+}
+
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -4340,6 +4377,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_create_collation_v2", test_create_collation_v2, 0 },
      { "sqlite3_global_recover",     test_global_recover, 0   },
      { "working_64bit_int",          working_64bit_int,   0   },
+     { "vfs_unlink_test",            vfs_unlink_test,     0   },
 
      /* Functions from os.h */
 #ifndef SQLITE_OMIT_DISKIO

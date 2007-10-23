@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.93 2007/10/20 15:41:58 drh Exp $
+# $Id: tester.tcl,v 1.94 2007/10/23 14:49:59 drh Exp $
 
 
 set tcl_precision 15
@@ -166,6 +166,7 @@ proc finalize_testing {} {
   catch {db2 close}
   catch {db3 close}
 
+  vfs_unlink_test
   sqlite3 db {}
   # sqlite3_clear_tsd_memdebug
   db close
