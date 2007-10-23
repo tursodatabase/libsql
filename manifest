@@ -1,5 +1,5 @@
-C Make\ssure\sthe\ssqlite3_vfs_register()\sand\ssqlite3_vfs_unregister()\sAPIs\nwork\sright\seven\sif\snot\sVFS\sis\scurrently\sregistered.\s\sTicket\s#2738.\s(CVS\s4505)
-D 2007-10-23T14:49:59
+C Fix\slimit\sassertions\sin\svdbe.c.\s\sTicket\s#2740.\s(CVS\s4506)
+D 2007-10-23T14:55:07
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -165,7 +165,7 @@ F src/update.c e89b980b443d44b68bfc0b1746cdb6308e049ac9
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 49263637e0f228411201501ddfd1138338d6322c
 F src/vacuum.c a5e51c77370c1a6445e86d42abfc43867cdd482d
-F src/vdbe.c 57e37b55c4dcdc9ed71c57180cee514c33d0e8f9
+F src/vdbe.c b21ea40c5b0ae4379394fa2aad92909e1a8736b5
 F src/vdbe.h 03a0fa17f6753a24d6cb585d7a362944a2c115aa
 F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
 F src/vdbeapi.c 21b69e71ab39d8e694c9cdb556a74dbefba9ebda
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3e3475b9e0f996841aa40419693c7c3eaa6c71aa
-R f5b08c77641b2a161a8d65b96bb2a7d8
+P c36500871e85b55cb0804d5c9e88fa6861a507a9
+R 407160c3c038e7e8a4d0ba1b11794db6
 U drh
-Z 7b5ff5d5e516010e45b59cf86b7b1e00
+Z 0e481a3e67cd54e4694f0f724a957ac6
