@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.55 2007/08/29 19:15:09 drh Exp $
+# $Id: capi3.test,v 1.56 2007/10/23 18:55:50 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1020,6 +1020,51 @@ do_test capi3-15.2 {
 do_test capi3-15.3 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
+do_test capi3-15.4 {
+  #        123456789 1234567
+  set sql {SELECT 1234567890}
+  set STMT [sqlite3_prepare $DB $sql 8 TAIL]
+  sqlite3_step $STMT
+  set v1 [sqlite3_column_int $STMT 0]
+  sqlite3_finalize $STMT
+  set v1
+} {1}
+do_test capi3-15.5 {
+  #        123456789 1234567
+  set sql {SELECT 1234567890}
+  set STMT [sqlite3_prepare $DB $sql 9 TAIL]
+  sqlite3_step $STMT
+  set v1 [sqlite3_column_int $STMT 0]
+  sqlite3_finalize $STMT
+  set v1
+} {12}
+do_test capi3-15.6 {
+  #        123456789 1234567
+  set sql {SELECT 1234567890}
+  set STMT [sqlite3_prepare $DB $sql 12 TAIL]
+  sqlite3_step $STMT
+  set v1 [sqlite3_column_int $STMT 0]
+  sqlite3_finalize $STMT
+  set v1
+} {12345}
+do_test capi3-15.7 {
+  #        123456789 1234567
+  set sql {SELECT 12.34567890}
+  set STMT [sqlite3_prepare $DB $sql 12 TAIL]
+  sqlite3_step $STMT
+  set v1 [sqlite3_column_double $STMT 0]
+  sqlite3_finalize $STMT
+  set v1
+} {12.34}
+do_test capi3-15.8 {
+  #        123456789 1234567
+  set sql {SELECT 12.34567890}
+  set STMT [sqlite3_prepare $DB $sql 14 TAIL]
+  sqlite3_step $STMT
+  set v1 [sqlite3_column_double $STMT 0]
+  sqlite3_finalize $STMT
+  set v1
+} {12.3456}
 
 # Make sure code is always generated even if an IF EXISTS or 
 # IF NOT EXISTS clause is present that the table does not or
