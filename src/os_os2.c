@@ -747,32 +747,32 @@ static int os2GetTempname( sqlite3_vfs *pVfs, int nBuf, char *zBuf ){
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";
   int i, j;
-  char zTempPath[CCHMAXPATH];
-  APIRET rc = NO_ERROR;
-  FILESTATUS3 fsts3ConfigInfo;
-  if( DosScanEnv( (PSZ)"TEMP", (PSZ*)&zTempPath ) ){
-    if( DosScanEnv( (PSZ)"TMP", (PSZ*)&zTempPath ) ){
-      if( DosScanEnv( (PSZ)"TMPDIR", (PSZ*)&zTempPath ) ){
+  PSZ zTempPath = "";
+  if( DosScanEnv( (PSZ)"TEMP", &zTempPath ) ){
+    if( DosScanEnv( (PSZ)"TMP", &zTempPath ) ){
+      if( DosScanEnv( (PSZ)"TMPDIR", &zTempPath ) ){
            ULONG ulDriveNum = 0, ulDriveMap = 0;
            DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
            sprintf( (char*)zTempPath, "%c:", (char)( 'A' + ulDriveNum - 1 ) );
       }
     }
   }
-  do{
-    assert( nBuf>=pVfs->mxPathname );
-    sqlite3_snprintf(pVfs->mxPathname-17, zBuf, "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath );
-    j = strlen( zBuf );
-    sqlite3Randomness( 15, &zBuf[j] );
-    for( i = 0; i < 15; i++, j++ ){
-      zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
-    }
-    zBuf[j] = 0;
-
-    memset(&fsts3ConfigInfo, 0, sizeof(fsts3ConfigInfo));
-    rc = DosQueryPathInfo( (PSZ)zBuf, FIL_STANDARD,
-                           &fsts3ConfigInfo, sizeof(FILESTATUS3) );
-  }while( rc != NO_ERROR );
+  /* strip off a trailing slashes or backslashes, otherwise we would get *
+   * multiple (back)slashes which causes DosOpen() to fail               */
+  j = strlen(zTempPath);
+  while( j > 0 && ( zTempPath[j-1] == '\\' || zTempPath[j-1] == '/' ) ){
+    j--;
+  }
+  zTempPath[j] = '\0';
+  assert( nBuf>=pVfs->mxPathname );
+  sqlite3_snprintf( pVfs->mxPathname-30, zBuf,
+                    "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath );
+  j = strlen( zBuf );
+  sqlite3Randomness( 20, &zBuf[j] );
+  for( i = 0; i < 20; i++, j++ ){
+    zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
+  }
+  zBuf[j] = 0;
   OSTRACE2( "TEMP FILENAME: %s\n", zBuf );
   return SQLITE_OK;
 }
