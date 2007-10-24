@@ -4120,17 +4120,18 @@ static int buildTerms(fulltext_vtab *v, sqlite_int64 iDocid,
   if( rc!=SQLITE_OK ) return rc;
 
   pCursor->pTokenizer = pTokenizer;
-  while( SQLITE_OK==pTokenizer->pModule->xNext(pCursor,
-                                               &pToken, &nTokenBytes,
-                                               &iStartOffset, &iEndOffset,
-                                               &iPosition) ){
+  while( SQLITE_OK==(rc=pTokenizer->pModule->xNext(pCursor,
+                                                   &pToken, &nTokenBytes,
+                                                   &iStartOffset, &iEndOffset,
+                                                   &iPosition)) ){
     DLCollector *p;
     int nData;                   /* Size of doclist before our update. */
 
-    /* Positions can't be negative; we use -1 as a terminator internally. */
-    if( iPosition<0 ){
-      pTokenizer->pModule->xClose(pCursor);
-      return SQLITE_ERROR;
+    /* Positions can't be negative; we use -1 as a terminator
+     * internally.  Token can't be NULL or empty. */
+    if( iPosition<0 || pToken == NULL || nTokenBytes == 0 ){
+      rc = SQLITE_ERROR;
+      break;
     }
 
     p = fts3HashFind(&v->pendingTerms, pToken, nTokenBytes);
@@ -4159,6 +4160,7 @@ static int buildTerms(fulltext_vtab *v, sqlite_int64 iDocid,
   ** not durable.  *ponder*
   */
   pTokenizer->pModule->xClose(pCursor);
+  if( SQLITE_DONE == rc ) return SQLITE_OK;
   return rc;
 }
 
