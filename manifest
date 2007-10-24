@@ -1,5 +1,5 @@
-C Add\scomments,\sassertions,\sand\stest\scases\sto\sdemonstrate\sthat\sthe\nproblem\sdescribed\sin\sticket\s#2742\sis\snot\sa\sreal\sproblem.\s(CVS\s4510)
-D 2007-10-23T18:55:49
+C fts3.c\sbuildTerms()\spasses\s-1\sfor\snInput.\s(CVS\s4511)
+D 2007-10-24T21:52:37
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -53,7 +53,7 @@ F ext/fts3/fts3.c 577d6714694212ca46cd6870242fcecdba3ea19b
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3_hash.c 1c2dc969a5b485848fb804c0ac41a046f18a09c9
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
-F ext/fts3/fts3_icu.c 35a5d08fea8f12edecb8a58fdb33452eb8f17948
+F ext/fts3/fts3_icu.c e676f8f0c472cfbb3194febf0eadc1cea6ff0d0c
 F ext/fts3/fts3_porter.c a3e823a0a8fbb038750c9aa55043e19bdb08eacb
 F ext/fts3/fts3_tokenizer.c 81e7604555b24dce6bc487d8169ca4ef51c71e4c
 F ext/fts3/fts3_tokenizer.h 7eb79de4f991a77f43c517e209e5fae95dfa7369
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d7ed7cd077fe5f9ffba2bca48b84b231ccfd85b0
-R 038cadfe29415eab90fa87425599b5e1
-U drh
-Z 4b76268e2531d74156d78787b834a33e
+P c085d6dfc0f5849113986cb2a25e64d0c95b3dfb
+R 1b4ac17574411f9b35840f7094f3e2bb
+U shess
+Z 7dd99f635814c93b45c657ecd5503b28

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements a tokenizer for fts3 based on the ICU library.
 ** 
-** $Id: fts3_icu.c,v 1.1 2007/08/20 17:37:04 shess Exp $
+** $Id: fts3_icu.c,v 1.2 2007/10/24 21:52:37 shess Exp $
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
@@ -112,6 +112,7 @@ static int icuOpen(
 
   *ppCursor = 0;
 
+  if( -1 == nInput ) nInput = strlen(nInput);
   nChar = nInput+1;
   pCsr = (IcuCursor *)sqlite3_malloc(
       sizeof(IcuCursor) +                /* IcuCursor */
