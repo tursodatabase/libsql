@@ -944,12 +944,13 @@ int sqlite3_current_time = 0;
 */
 int os2CurrentTime( sqlite3_vfs *pVfs, double *prNow ){
   double now;
-  USHORT second, minute, hour,
+  SHORT minute; /* needs to be able to cope with negative timezone offset */
+  USHORT second, hour,
          day, month, year;
   DATETIME dt;
   DosGetDateTime( &dt );
   second = (USHORT)dt.seconds;
-  minute = (USHORT)dt.minutes + dt.timezone;
+  minute = (SHORT)dt.minutes + dt.timezone;
   hour = (USHORT)dt.hours;
   day = (USHORT)dt.day;
   month = (USHORT)dt.month;
