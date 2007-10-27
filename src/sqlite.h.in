@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.267 2007/10/12 18:30:13 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.268 2007/10/27 16:25:16 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -748,9 +748,9 @@ int sqlite3_extended_result_codes(sqlite3*, int onoff);
 ** type INTEGER PRIMARY KEY then that column is another an alias for the
 ** rowid.
 **
-** This routine returns the rowid of the most recent INSERT into
+** This routine returns the rowid of the most recent successful INSERT into
 ** the database from the database connection given in the first 
-** argument.  If no inserts have ever occurred on this database
+** argument.  If no successful inserts have ever occurred on this database
 ** connection, zero is returned.
 **
 ** If an INSERT occurs within a trigger, then the rowid of the
@@ -758,6 +758,16 @@ int sqlite3_extended_result_codes(sqlite3*, int onoff);
 ** is running.  But once the trigger terminates, the value returned
 ** by this routine reverts to the last value inserted before the
 ** trigger fired.
+**
+** An INSERT that fails due to a constraint violation is not a
+** successful insert and does not change the value returned by this
+** routine.  Thus INSERT OR FAIL, INSERT OR IGNORE, INSERT OR ROLLBACK,
+** and INSERT OR ABORT make no changes to the return value of this
+** routine when their insertion fails.  When INSERT OR REPLACE 
+** encounters a constraint violation, it does not fail.  The
+** INSERT continues to completion after deleting rows that caused
+** the constraint problem so INSERT OR REPLACE will always change
+** the return value of this interface.
 **
 ** If another thread does a new insert on the same database connection
 ** while this routine is running and thus changes the last insert rowid,
