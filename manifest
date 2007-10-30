@@ -1,5 +1,5 @@
-C Clarify\sthe\sbehavior\sof\ssqlite3_last_insert_rowid()\swhen\susing\nINSERT\sOR\sIGNORE.\s(CVS\s4515)
-D 2007-10-27T16:25:16
+C Fix\sa\srace\scondtion\sin\stest_async.c.\s(CVS\s4516)
+D 2007-10-30T15:29:43
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -146,7 +146,7 @@ F src/test6.c a9fc983d32d6f262eab300d742e49ff239b0bdbd
 F src/test7.c acec2256c7c2d279db5a8b5fa1a2a68fcc942c67
 F src/test8.c f113aa3723a52113d0fa7c28155ecd37e7e04077
 F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
-F src/test_async.c c5ea222c2bb0c3c33ab910d1b82622655dd50684
+F src/test_async.c b273b3dc31712b2274815766c360a2bad907b8ab
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c fd6ba4c62dd943e794f00f6ea1e9e32d97bf27f1
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P deb8f56d3adea0025d28b8effabec7c7b7fe3026
-R 27a5740f77270c1f94cbbc07f45db7e7
-U drh
-Z 09d045b0cf9283304b9f062260162563
+P c0fa0c8ba80f4cd60bd06da7a032c6424ffd16f8
+R 78bd8c196220170b3b4010cbc5e84b4f
+U danielk1977
+Z 9f1f861b176142b510f4edd5799736a8

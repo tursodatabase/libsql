@@ -1151,7 +1151,7 @@ static void asyncEnable(int enable){
 **
 ** Only one instance of this procedure may be running at a time.
 */
-static void *asyncWriterThread(void *NotUsed){
+static void *asyncWriterThread(void *pIsStarted){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)(async_vfs.pAppData);
   AsyncWrite *p = 0;
   int rc = SQLITE_OK;
@@ -1160,6 +1160,7 @@ static void *asyncWriterThread(void *NotUsed){
   if( pthread_mutex_trylock(&async.writerMutex) ){
     return 0;
   }
+  (*(int *)pIsStarted) = 1;
   while( async.writerHaltNow==0 ){
     int doNotFree = 0;
     sqlite3_file *pBase = 0;
@@ -1473,12 +1474,16 @@ static int testAsyncStart(
 ){
   pthread_t x;
   int rc;
-  rc = pthread_create(&x, 0, asyncWriterThread, 0);
+  volatile int isStarted = 0;
+  rc = pthread_create(&x, 0, asyncWriterThread, &isStarted);
   if( rc ){
     Tcl_AppendResult(interp, "failed to create the thread", 0);
     return TCL_ERROR;
   }
   pthread_detach(x);
+  while( isStarted==0 ){
+    sched_yield();
+  }
   return TCL_OK;
 }
 
@@ -1497,6 +1502,7 @@ static int testAsyncWait(
   Tcl_Obj *CONST objv[]
 ){
   int cnt = 10;
+  assert(async.writerHaltNow==0);
   if( async.writerHaltNow==0 && async.writerHaltWhenIdle==0 ){
     Tcl_AppendResult(interp, "would block forever", (char*)0);
     return TCL_ERROR;
