@@ -2268,6 +2268,7 @@ static int fillInUnixFile(
   rc = findLockInfo(h, &pNew->pLock, &pNew->pOpen);
   leaveMutex();
   if( rc ){
+    if( dirfd>=0 ) close(dirfd);
     close(h);
     return SQLITE_NOMEM;
   }
