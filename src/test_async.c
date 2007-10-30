@@ -1502,7 +1502,6 @@ static int testAsyncWait(
   Tcl_Obj *CONST objv[]
 ){
   int cnt = 10;
-  assert(async.writerHaltNow==0);
   if( async.writerHaltNow==0 && async.writerHaltWhenIdle==0 ){
     Tcl_AppendResult(interp, "would block forever", (char*)0);
     return TCL_ERROR;
