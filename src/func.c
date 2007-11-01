@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.175 2007/10/12 19:11:55 drh Exp $
+** $Id: func.c,v 1.176 2007/11/01 17:38:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1312,6 +1312,42 @@ static void minMaxFinalize(sqlite3_context *context){
   }
 }
 
+#ifdef SQLITE_GROUP_CONCAT
+/*
+** group_concat(EXPR, ?SEPARATOR?)
+*/
+static void groupConcatStep(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zVal;
+  char **pzAccumulator;
+  const char *zSep;
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  zVal = sqlite3_value_text(argv[0]);
+  pzAccumulator = (char**)sqlite3_aggregate_context(context, sizeof(char*));
+  if( pzAccumulator ){
+    if( *pzAccumulator==0 ){
+      *pzAccumulator = sqlite3_mprintf("%s", zVal);
+    }else{
+      if( argc==2 ){
+        zSep = sqlite3_value_text(argv[1]);
+      }else{
+        zSep = ",";
+      }
+      *pzAccumulator = sqlite3_mprintf("%z%s%s", *pzAccumulator, zSep, zVal);
+    }
+  }
+}
+static void groupConcatFinalize(sqlite3_context *context){
+  char **pzAccum;
+  pzAccum = sqlite3_aggregate_context(context, 0);
+  if( pzAccum ){
+    sqlite3_result_text(context, *pzAccum, -1, sqlite3_free);
+  }
+}
+#endif /*SQLITE_GROUP_CONCAT*/
 
 /*
 ** This function registered all of the above C functions as SQL
@@ -1391,6 +1427,10 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "avg",    1, 0, 0, sumStep,      avgFinalize    },
     { "count",  0, 0, 0, countStep,    countFinalize  },
     { "count",  1, 0, 0, countStep,    countFinalize  },
+#ifdef SQLITE_GROUP_CONCAT
+    { "group_concat", 1, 0, 0, groupConcatStep, groupConcatFinalize },
+    { "group_concat", 2, 0, 0, groupConcatStep, groupConcatFinalize },
+#endif
   };
   int i;
 
