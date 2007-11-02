@@ -157,7 +157,7 @@ static void asyncTrace(const char *zFormat, ...){
 **       async.nFile variables.
 **
 **     * The async.aLock hash-table and all AsyncLock and AsyncFileLock
-**       structures must be protected by teh async.lockMutex mutex.
+**       structures must be protected by the async.lockMutex mutex.
 **
 **     * The file handles from the underlying system are assumed not to 
 **       be thread safe.
@@ -263,9 +263,9 @@ static void asyncTrace(const char *zFormat, ...){
 ** Both async.ioError and async.nFile are protected by async.queueMutex.
 */
 static struct TestAsyncStaticData {
+  pthread_mutex_t lockMutex;   /* For access to aLock hash table */
   pthread_mutex_t queueMutex;  /* Mutex for access to write operation queue */
   pthread_mutex_t writerMutex; /* Prevents multiple writer threads */
-  pthread_mutex_t lockMutex;   /* For access to aLock hash table */
   pthread_cond_t queueSignal;  /* For waking up sleeping writer thread */
   pthread_cond_t emptySignal;  /* Notify when the write queue is empty */
   AsyncWrite *pQueueFirst;     /* Next write operation to be processed */
@@ -411,6 +411,163 @@ struct AsyncFileData {
   AsyncFileLock lock;
   AsyncWrite close;
 };
+
+/*
+** The following async_XXX functions are debugging wrappers around the
+** corresponding pthread_XXX functions:
+**
+**     pthread_mutex_lock();
+**     pthread_mutex_unlock();
+**     pthread_mutex_trylock();
+**     pthread_cond_wait();
+**
+** It is illegal to pass any mutex other than those stored in the
+** following global variables of these functions.
+**
+**     async.queueMutex
+**     async.writerMutex
+**     async.lockMutex
+**
+** If NDEBUG is defined, these wrappers do nothing except call the 
+** corresponding pthreads function. If NDEBUG is not defined, then the
+** following variables are used to store the thread-id (as returned
+** by pthread_self()) currently holding the mutex, or 0 otherwise:
+**
+**     asyncdebug.queueMutexHolder
+**     asyncdebug.writerMutexHolder
+**     asyncdebug.lockMutexHolder
+**
+** These variables are used by some assert() statements that verify
+** the statements made in the "Deadlock Prevention" notes earlier
+** in this file.
+*/
+#ifndef NDEBUG
+
+static struct TestAsyncDebugData {
+  pthread_t lockMutexHolder;
+  pthread_t queueMutexHolder;
+  pthread_t writerMutexHolder;
+} asyncdebug = {0, 0, 0};
+
+/*
+** Wrapper around pthread_mutex_lock(). Checks that we have not violated
+** the anti-deadlock rules (see "Deadlock prevention" above).
+*/
+static int async_mutex_lock(pthread_mutex_t *pMutex){
+  int iIdx;
+  int rc;
+  pthread_mutex_t *aMutex = (pthread_mutex_t *)(&async);
+  pthread_t *aHolder = (pthread_t *)(&asyncdebug);
+
+  /* The code in this 'ifndef NDEBUG' block depends on a certain alignment
+   * of the variables in TestAsyncStaticData and TestAsyncDebugData. The
+   * following assert() statements check that this has not been changed.
+   *
+   * Really, these only need to be run once at startup time.
+   */
+  assert(&(aMutex[0])==&async.lockMutex);
+  assert(&(aMutex[1])==&async.queueMutex);
+  assert(&(aMutex[2])==&async.writerMutex);
+  assert(&(aHolder[0])==&asyncdebug.lockMutexHolder);
+  assert(&(aHolder[1])==&asyncdebug.queueMutexHolder);
+  assert(&(aHolder[2])==&asyncdebug.writerMutexHolder);
+
+  assert( pthread_self()!=0 );
+
+  for(iIdx=0; iIdx<3; iIdx++){
+    if( pMutex==&aMutex[iIdx] ) break;
+
+    /* This is the key assert(). Here we are checking that if the caller
+     * is trying to block on async.writerMutex, neither of the other two
+     * mutex are held. If the caller is trying to block on async.queueMutex,
+     * lockMutex is not held.
+     */
+    assert(!pthread_equal(aHolder[iIdx], pthread_self()));
+  }
+  assert(iIdx<3);
+
+  rc = pthread_mutex_lock(pMutex);
+  if( rc==0 ){
+    assert(aHolder[iIdx]==0);
+    aHolder[iIdx] = pthread_self();
+  }
+  return rc;
+}
+
+/*
+** Wrapper around pthread_mutex_unlock().
+*/
+static int async_mutex_unlock(pthread_mutex_t *pMutex){
+  int iIdx;
+  int rc;
+  pthread_mutex_t *aMutex = (pthread_mutex_t *)(&async);
+  pthread_t *aHolder = (pthread_t *)(&asyncdebug);
+
+  for(iIdx=0; iIdx<3; iIdx++){
+    if( pMutex==&aMutex[iIdx] ) break;
+  }
+  assert(iIdx<3);
+
+  assert(pthread_equal(aHolder[iIdx], pthread_self()));
+  aHolder[iIdx] = 0;
+  rc = pthread_mutex_unlock(pMutex);
+  assert(rc==0);
+
+  return 0;
+}
+
+/*
+** Wrapper around pthread_mutex_trylock().
+*/
+static int async_mutex_trylock(pthread_mutex_t *pMutex){
+  int iIdx;
+  int rc;
+  pthread_mutex_t *aMutex = (pthread_mutex_t *)(&async);
+  pthread_t *aHolder = (pthread_t *)(&asyncdebug);
+
+  for(iIdx=0; iIdx<3; iIdx++){
+    if( pMutex==&aMutex[iIdx] ) break;
+  }
+  assert(iIdx<3);
+
+  rc = pthread_mutex_trylock(pMutex);
+  if( rc==0 ){
+    assert(aHolder[iIdx]==0);
+    aHolder[iIdx] = pthread_self();
+  }
+  return rc;
+}
+
+/*
+** Wrapper around pthread_cond_wait().
+*/
+static int async_cond_wait(pthread_cond_t *pCond, pthread_mutex_t *pMutex){
+  int iIdx;
+  int rc;
+  pthread_mutex_t *aMutex = (pthread_mutex_t *)(&async);
+  pthread_t *aHolder = (pthread_t *)(&asyncdebug);
+
+  for(iIdx=0; iIdx<3; iIdx++){
+    if( pMutex==&aMutex[iIdx] ) break;
+  }
+  assert(iIdx<3);
+
+  assert(pthread_equal(aHolder[iIdx],pthread_self()));
+  aHolder[iIdx] = 0;
+  rc = pthread_cond_wait(pCond, pMutex);
+  if( rc==0 ){
+    aHolder[iIdx] = pthread_self();
+  }
+  return rc;
+}
+
+/* Call our async_XX wrappers instead of selected pthread_XX functions */
+#define pthread_mutex_lock    async_mutex_lock
+#define pthread_mutex_unlock  async_mutex_unlock
+#define pthread_mutex_trylock async_mutex_trylock
+#define pthread_cond_wait     async_cond_wait
+
+#endif   /* !defined(NDEBUG) */
 
 /*
 ** Add an entry to the end of the global write-op list. pWrite should point 
@@ -914,7 +1071,6 @@ static int asyncOpen(
     HashElem *pElem;
     p->pMethod = &async_methods;
     p->pData = pData;
-    incrOpenFileCount();
 
     /* Link AsyncFileData.lock into the linked list of 
     ** AsyncFileLock structures for this file.
@@ -931,6 +1087,10 @@ static int asyncOpen(
   }
 
   pthread_mutex_unlock(&async.lockMutex);
+
+  if( rc==SQLITE_OK ){
+    incrOpenFileCount();
+  }
 
   if( rc==SQLITE_OK && isExclusive ){
     rc = addNewAsyncWrite(pData, ASYNC_OPENEXCLUSIVE, (i64)flags, 0, 0);
@@ -1475,7 +1635,7 @@ static int testAsyncStart(
   pthread_t x;
   int rc;
   volatile int isStarted = 0;
-  rc = pthread_create(&x, 0, asyncWriterThread, &isStarted);
+  rc = pthread_create(&x, 0, asyncWriterThread, (void *)&isStarted);
   if( rc ){
     Tcl_AppendResult(interp, "failed to create the thread", 0);
     return TCL_ERROR;
