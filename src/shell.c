@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.167 2007/09/07 01:12:32 drh Exp $
+** $Id: shell.c,v 1.168 2007/11/02 12:53:04 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -60,6 +60,53 @@
 */
 extern int isatty();
 #endif
+
+#if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__)
+#include <sys/time.h>
+#include <sys/resource.h>
+
+/* Saved resource information for the beginning of an operation */
+static struct rusage sBegin;
+
+/* True if the timer is enabled */
+static int enableTimer = 0;
+
+/*
+** Begin timing an operation
+*/
+static void beginTimer(void){
+  if( enableTimer ){
+    getrusage(RUSAGE_SELF, &sBegin);
+  }
+}
+
+/* Return the difference of two time_structs in microseconds */
+static int timeDiff(struct timeval *pStart, struct timeval *pEnd){
+  return (pEnd->tv_usec - pStart->tv_usec) + 
+         1000000*(pEnd->tv_sec - pStart->tv_sec);
+}
+
+/*
+** Print the timing results.
+*/
+static void endTimer(void){
+  if( enableTimer ){
+    struct rusage sEnd;
+    getrusage(RUSAGE_SELF, &sEnd);
+    printf("CPU Time: user %f sys %f\n",
+       0.000001*timeDiff(&sBegin.ru_utime, &sEnd.ru_utime),
+       0.000001*timeDiff(&sBegin.ru_stime, &sEnd.ru_stime));
+  }
+}
+#define BEGIN_TIMER beginTimer()
+#define END_TIMER endTimer()
+#define HAS_TIMER 1
+#else
+#define BEGIN_TIMER 
+#define END_TIMER
+#define HAS_TIMER 0
+#endif
+
 
 /*
 ** If the following flag is set, then command execution stops
@@ -884,6 +931,9 @@ static char zHelp[] =
   ".show                  Show the current values for various settings\n"
   ".tables ?PATTERN?      List names of tables matching a LIKE pattern\n"
   ".timeout MS            Try opening locked tables for MS milliseconds\n"
+#if HAS_TIMER
+  ".timer ON|OFF          Turn the CPU timer measurement on or off\n"
+#endif
   ".width NUM NUM ...     Set column widths for \"column\" mode\n"
 ;
 
@@ -1515,10 +1565,16 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     sqlite3_free_table(azResult);
   }else
 
-  if( c=='t' && n>1 && strncmp(azArg[0], "timeout", n)==0 && nArg>=2 ){
+  if( c=='t' && n>4 && strncmp(azArg[0], "timeout", n)==0 && nArg>=2 ){
     open_db(p);
     sqlite3_busy_timeout(p->db, atoi(azArg[1]));
   }else
+  
+#if HAS_TIMER  
+  if( c=='t' && n>=5 && strncmp(azArg[0], "timer", n)==0 && nArg>1 ){
+    enableTimer = booleanValue(azArg[1]);
+  }else
+#endif
 
   if( c=='w' && strncmp(azArg[0], "width", n)==0 ){
     int j;
@@ -1527,6 +1583,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       p->colWidth[j-1] = atoi(azArg[j]);
     }
   }else
+
 
   {
     fprintf(stderr, "unknown command or invalid arguments: "
@@ -1660,7 +1717,9 @@ static int process_input(struct callback_data *p, FILE *in){
                 && sqlite3_complete(zSql) ){
       p->cnt = 0;
       open_db(p);
+      BEGIN_TIMER;
       rc = sqlite3_exec(p->db, zSql, callback, p, &zErrMsg);
+      END_TIMER;
       if( rc || zErrMsg ){
         char zPrefix[100];
         if( in!=0 || !stdin_is_interactive ){
