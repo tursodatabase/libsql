@@ -1,5 +1,5 @@
-C Add\ssome\sassert()\sstatements\sto\sthe\sasychronous\sbackend\sdemo\sto\senforce\sthe\sstrategy\sused\sto\savoid\sdeadlock.\sAlso\sa\sminor\schange\sto\savoid\sa\spotential\sdeadlock.\s(CVS\s4520)
-D 2007-11-02T09:07:58
+C Fix\sbuilding\sof\ssqlite3_analyzer\son\sMac.\s(CVS\s4521)
+D 2007-11-02T12:52:40
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -63,7 +63,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 53f2973d5a5bf78bedabf6a881ea594ee4730975
+F main.mk bec651944103119cf086abffbd8d443f8f7f1268
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 61987a89d1c4af59c745d1c5f17bab3301588b6c
-R d9f327755cf051e49069fca786597d4c
-U danielk1977
-Z a15fd5ac5eb07cc6080324647670aa63
+P 6340ca5eee3d398a9ef4f37a442efad37c9bf547
+R 0015f0586bb0a17a8ebee567349ffb1c
+U drh
+Z 8e366ad6caa4aac98afe5c1c8f0199c2

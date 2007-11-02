@@ -451,7 +451,7 @@ sqlite3_analyzer$(EXE):	$(TOP)/src/tclsqlite.c sqlite3.c $(TESTSRC) \
 	  -e 's,^,",' \
 	  -e 's,$$,\\n",' \
 	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
-	$(TCCX) $(TCL_FLAGS)                                                   \
+	$(TCCX) $(TCL_FLAGS)                  $(TESTFIXTURE_FLAGS)                                 \
 		-DTCLSH=2 -DSQLITE_TEST=1 -DSQLITE_DEBUG=1 -DSQLITE_PRIVATE="" \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                    \
 		-o sqlite3_analyzer$(EXE)                                      \
