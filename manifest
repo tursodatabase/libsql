@@ -1,5 +1,5 @@
-C Use\smalloc\sto\sobtain\sspace\sfor\ssqlite3_aggregate_context().\sTicket\s#2751.\s(CVS\s4524)
-D 2007-11-05T12:46:04
+C Make\ssure\sthe\sdefault\spage\ssize\snever\sexceeds\sthe\smaximum\spage\ssize.\s(CVS\s4525)
+D 2007-11-05T14:30:23
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -134,7 +134,7 @@ F src/shell.c 0b9dd90afc34f28b8786638155d32f6248d0bf0a
 F src/sqlite.h.in 430a26215c164a2d4236dcbce4730a704b455271
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 7fd5cfa357d7aefe22cd2bcdfabcca4e7d5ab5b2
-F src/sqliteLimit.h 1bcbbdfa856f8b71b561abb31edb864b0eca1d12
+F src/sqliteLimit.h 15ffe2116746c27ace2b428a26a4fcd6dba6fa65
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 29bb44a88e02ca4d2017113b7b1acc839582d57a
 F src/test1.c 0e6fe5449ef9e7289bcaf904e9e3a2ea20650b32
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7027368c15b3270a139bea5612d7c03c2288dcc4
-R f48d762508b2cec0e17045c8a04103c5
-U danielk1977
-Z 8f2f270d472bbb43dd1c8e038513a32b
+P bf75058f5777ce4b03f2287406805236470f70d0
+R f17985c7426308201f40cd7a2588b6dd
+U drh
+Z 398356503015380b1d0b8d21e6e6c5cc
