@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.393 2007/10/20 13:17:55 drh Exp $
+** @(#) $Id: pager.c,v 1.394 2007/11/05 15:30:13 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4051,9 +4051,10 @@ static int pager_write(PgHdr *pPg){
           PAGERTRACE3("JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno);
           assert( pHist->pOrig==0 );
           pHist->pOrig = sqlite3_malloc( pPager->pageSize );
-          if( pHist->pOrig ){
-            memcpy(pHist->pOrig, PGHDR_TO_DATA(pPg), pPager->pageSize);
+          if( !pHist->pOrig ){
+            return SQLITE_NOMEM;
           }
+          memcpy(pHist->pOrig, PGHDR_TO_DATA(pPg), pPager->pageSize);
         }else{
           u32 cksum;
           char *pData2;

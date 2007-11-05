@@ -16,7 +16,7 @@
 # Recovery from malloc() failures is automatic.  But we keep these
 # tests around because you can never have too many test cases.
 #
-# $Id: malloc2.test,v 1.8 2007/10/03 08:46:45 danielk1977 Exp $
+# $Id: malloc2.test,v 1.9 2007/11/05 15:30:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -83,7 +83,8 @@ proc do_malloc2_test {tn args} {
 
     # If $::n is greater than the number of malloc() calls required to
     # execute the SQL, then this test is finished. Break out of the loop.
-    set nFail [sqlite3_memdebug_fail -1]
+    set nFail [sqlite3_memdebug_fail -1 -benigncnt nBenign]
+    incr nFail [expr {-1*$nBenign}]
     if {$nFail==0} break
 
     # Nothing should work now, because the allocator should refuse to
@@ -194,7 +195,9 @@ ifcapable tempdb {
     }
     for {set i 0} {$i<20} {incr i} {
       execsql {
-      INSERT INTO ghi VALUES(randstr(300,300),randstr(300,300),randstr(300,300));
+        INSERT INTO ghi VALUES(
+            randstr(300,300), randstr(300,300), randstr(300,300)
+        );
       }
     }
     execsql {

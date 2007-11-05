@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\smisc1\stest\sscript.\s(CVS\s4526)
-D 2007-11-05T14:58:23
+C Fix\ssome\sminor\sproblems\swith\smalloc\sfailure\sand\sin-memory\sdatabases.\s(CVS\s4527)
+D 2007-11-05T15:30:13
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -81,7 +81,7 @@ F src/analyze.c 49b4bd45eb286d833793ed6bf72355a5c1974865
 F src/attach.c a01d55157d46a1234909f3a7f21fb09549c947bd
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/btmutex.c 442be6f068d77ca9ffd69899cf0a3943c244548c
-F src/btree.c 1212c51618a685e44313799daf39b3be6215cbb5
+F src/btree.c 008ce6b6bbcf00dfa3b1eca41bd3560fb287fd52
 F src/btree.h d0736ebca4b6eafbdd823c46a8de574cea078211
 F src/btreeInt.h 4330c19b8314545fdb209cc77e2a57f6a5290e9c
 F src/build.c d4ace66c2612d8973a17afdfe34b2a62f1a80178
@@ -121,7 +121,7 @@ F src/os_unix.c db6755454c84004d0041eb1b2194c90b35db0a5b
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c fe8f2d8fc3a010a2e9d4a0acbdcf4981522cac7b
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c a464ba8e6001573556420be0afc178a370717f64
+F src/pager.c c5ffa55c299663b579fbcb430752c1e79d302c5b
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
 F src/parse.y 2d2ce439dc6184621fb0b86f4fc5aca7f391a590
 F src/pragma.c 363e548dafb52327face8d99757ab56a7b1c1b26
@@ -352,7 +352,7 @@ F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test f358fa835dff485d462072eee991111f09e87441
 F test/main.test 05f585bb70c05caac3e047903b517cbb319ed204
 F test/malloc.test 16ee55742216e3d0fdadb695fb90ad229f46b32c
-F test/malloc2.test 1506ab3a4490b38b8850a6fa3e12591235179872
+F test/malloc2.test 850471731efad72af5a7748e366a371933ff0b64
 F test/malloc3.test 3d690cbd66c93a3d41606ed8cfcbe1c9853e9d83
 F test/malloc4.test f0e5e0f639f61e2776a6c3f5308f836b3ad8b3c7
 F test/malloc5.test 18f3f71756e775a17ce4d0c49d76fb0027dda066
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9c2731f143d52f8bf27f309612c38a1be22e3019
-R 333c4d028d1c9ba2909dfa403ae8734b
-U drh
-Z 2b5eac958d9b64126e861aa6f52ac347
+P fa16996d99cdce9f652508e3a70b7e5747810823
+R 67904078d34cf321e2667752697e090d
+U danielk1977
+Z bce4afc8796f379c28fab01cb3de5e6e
