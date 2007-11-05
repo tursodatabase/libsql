@@ -446,12 +446,7 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
       pMem->flags = MEM_Agg;
       pMem->xDel = sqlite3_free;
       pMem->u.pDef = p->pFunc;
-      if( nByte<=NBFS ){
-        pMem->z = pMem->zShort;
-        memset(pMem->z, 0, nByte);
-      }else{
-        pMem->z = sqlite3DbMallocZero(p->s.db, nByte);
-      }
+      pMem->z = sqlite3DbMallocZero(p->s.db, nByte);
     }
   }
   return (void*)pMem->z;

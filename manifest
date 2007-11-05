@@ -1,5 +1,5 @@
-C Handle\s"IS\sNULL"\sconstraints\son\svirtual\stable\sscans.\sIS\sNULL\sconstraints\sare\snot\spassed\sto\sthe\svirtual\stable\slayer.\sTicket\s#2759.\s(CVS\s4523)
-D 2007-11-05T05:12:53
+C Use\smalloc\sto\sobtain\sspace\sfor\ssqlite3_aggregate_context().\sTicket\s#2751.\s(CVS\s4524)
+D 2007-11-05T12:46:04
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -168,7 +168,7 @@ F src/vacuum.c a5e51c77370c1a6445e86d42abfc43867cdd482d
 F src/vdbe.c 6a577531074e5bcd86c56655eb52512aef384201
 F src/vdbe.h 856360de71d4bdda71fbb534087668667924e41a
 F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
-F src/vdbeapi.c 21b69e71ab39d8e694c9cdb556a74dbefba9ebda
+F src/vdbeapi.c 1795d8412b6464a59dc4c940803cf53f3d21259c
 F src/vdbeaux.c 7bb91382da8f4e904650ed4a393f7ae83bee8669
 F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 56680360d3b14a66a077ebb735f4594ed524a4bb
-R c2385fbfbf468f6a65082faa2df6e19b
+P 7027368c15b3270a139bea5612d7c03c2288dcc4
+R f48d762508b2cec0e17045c8a04103c5
 U danielk1977
-Z b4b52c4ef3717f88e5ea0d2790947f26
+Z 8f2f270d472bbb43dd1c8e038513a32b
