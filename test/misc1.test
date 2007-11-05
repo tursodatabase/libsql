@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc1.test,v 1.41 2006/06/27 20:06:45 drh Exp $
+# $Id: misc1.test,v 1.42 2007/11/05 14:58:23 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -487,7 +487,7 @@ do_test misc1-14.2 {
 } {1}
 do_test misc1-14.3 {
   cd ..
-  file delete tempdir
+  file delete -force tempdir
   execsql {COMMIT}
   file exists ./test.db-journal
 } {0}

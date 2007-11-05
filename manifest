@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sdefault\spage\ssize\snever\sexceeds\sthe\smaximum\spage\ssize.\s(CVS\s4525)
-D 2007-11-05T14:30:23
+C Fix\sa\sbug\sin\sthe\smisc1\stest\sscript.\s(CVS\s4526)
+D 2007-11-05T14:58:23
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -370,7 +370,7 @@ F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
 F test/minmax.test 66434d8ee04869fe4c220b665b73748accbb9163
 F test/minmax2.test 8294b6728819608861ba0e06ac1d9a87c4d815b5
-F test/misc1.test 27a6ad11ba6e4b73aeee650ab68053ad7dfd0433
+F test/misc1.test 1b89c02c4a33b49dee4cd1d20d161aaaba719075
 F test/misc2.test 1ee89298de9c16b61454658b24999c403e86afe4
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test 21e8a275cadcf2ba2a9ac2c33ae024ecc5eaff3a
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P bf75058f5777ce4b03f2287406805236470f70d0
-R f17985c7426308201f40cd7a2588b6dd
+P 9c2731f143d52f8bf27f309612c38a1be22e3019
+R 333c4d028d1c9ba2909dfa403ae8734b
 U drh
-Z 398356503015380b1d0b8d21e6e6c5cc
+Z 2b5eac958d9b64126e861aa6f52ac347
