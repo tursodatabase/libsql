@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: async.test,v 1.12 2007/09/14 16:20:01 danielk1977 Exp $
+# $Id: async.test,v 1.13 2007/11/05 17:01:08 danielk1977 Exp $
 
 
 if {[catch {sqlite3async_enable}]} {
@@ -47,6 +47,7 @@ proc do_test {name args} {
   sqlite3async_start
   sqlite3async_halt idle
   sqlite3async_wait
+  sqlite3async_halt never
 }
 
 foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
@@ -62,6 +63,7 @@ foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
   sqlite3async_halt idle
   sqlite3async_start
   sqlite3async_wait
+  sqlite3async_halt never
 }
 
 # Flush the write-queue and disable asynchronous IO. This should ensure
@@ -70,6 +72,7 @@ set sqlite3async_trace 1
 sqlite3async_halt idle
 sqlite3async_start
 sqlite3async_wait
+sqlite3async_halt never
 sqlite3async_enable 0
 set sqlite3async_trace 0
 

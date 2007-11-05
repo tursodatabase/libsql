@@ -13,7 +13,7 @@
 # Specifically, it tests that the xFullPathname() method of
 # of the asynchronous vfs works correctly.
 #
-# $Id: async3.test,v 1.2 2007/09/05 16:54:41 danielk1977 Exp $
+# $Id: async3.test,v 1.3 2007/11/05 17:01:08 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -69,5 +69,6 @@ foreach p $paths {
 db close
 sqlite3async_halt idle
 sqlite3async_wait
+sqlite3async_halt never
 sqlite3async_enable 0
 finish_test

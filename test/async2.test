@@ -5,7 +5,7 @@
 #
 #***********************************************************************
 #
-# $Id: async2.test,v 1.8 2007/09/05 16:54:41 danielk1977 Exp $
+# $Id: async2.test,v 1.9 2007/11/05 17:01:08 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -71,6 +71,7 @@ foreach err [list ioerr malloc-transient malloc-persistent] {
     sqlite3async_halt idle
     sqlite3async_start
     sqlite3async_wait
+    sqlite3async_halt never
     sqlite3async_enable 0
 
     set ::sqlite_io_error_pending 0
@@ -123,5 +124,6 @@ catch {db close}
 sqlite3async_halt idle
 sqlite3async_start
 sqlite3async_wait
+sqlite3async_halt never
 
 finish_test

@@ -1,5 +1,5 @@
-C Fix\ssome\sminor\sproblems\swith\smalloc\sfailure\sand\sin-memory\sdatabases.\s(CVS\s4527)
-D 2007-11-05T15:30:13
+C Reset\sthe\swriter-thread\shalt\scriteria\safter\shalting\sthe\sthread.\s(CVS\s4528)
+D 2007-11-05T17:01:08
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -183,9 +183,9 @@ F test/alter2.test 489140038c13f4f9c76a0a8243eb1249f44d4ce1
 F test/alter3.test 8ce6b9c5605b3cfe7b901f454ecaf174c4f93e31
 F test/altermalloc.test 29d4a8400277efb4ba8ffe90804c6dc2fdfbf063
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
-F test/async.test ae370c6169e314f0f82dcbe59fbc8589b23dfc2f
-F test/async2.test e56affa75ed822424a6f9b12b22db8031433bb7c
-F test/async3.test 08ea0217083e4866eb1b0147158298f2a2cd1346
+F test/async.test aecaa46ed0618a3c338f3651ca4f10fbb4021044
+F test/async2.test 8998e089b0fbb3d84cdd51c25a78833486d721af
+F test/async3.test 9ffa0977a78cc6351862a1583be2b1eecd41736d
 F test/attach.test 72529edb04115675894a7399609983ea46b73ba6
 F test/attach2.test 099e46a9a753035ff1b8ec0954e18ea50a934df3
 F test/attach3.test 7b92dc8e40c1ebca9732ca6f2d3fefbd46f196df
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P fa16996d99cdce9f652508e3a70b7e5747810823
-R 67904078d34cf321e2667752697e090d
+P b752906e708e1c8c76084152f5829e16e8988ef2
+R 7f1455a4cfebc5f5c43e5e1e4ec5f996
 U danielk1977
-Z bce4afc8796f379c28fab01cb3de5e6e
+Z e5e92eeb58930447253626b7e5820cf1
