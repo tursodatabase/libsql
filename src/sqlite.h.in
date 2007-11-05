@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.268 2007/10/27 16:25:16 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.269 2007/11/05 17:54:17 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1131,29 +1131,23 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 **
 ** The SQLite core uses these three routines for all of its own
 ** internal memory allocation needs. (See the exception below.)
+**
 ** The default implementation
 ** of the memory allocation subsystem uses the malloc(), realloc()
 ** and free() provided by the standard C library.  However, if 
 ** SQLite is compiled with the following C preprocessor macro
 **
-** <blockquote> SQLITE_OMIT_MEMORY_ALLOCATION </blockquote>
+** <blockquote> SQLITE_MEMORY_SIZE=<i>NNN</i> </blockquote>
 **
-** then no implementation is provided for these routines by
-** SQLite.  The application that links against SQLite is
-** expected to provide its own implementation.  If the application
-** does provide its own implementation for these routines, then
-** it must also provide an implementations for
-** [sqlite3_memory_alarm()], [sqlite3_memory_used()], and
-** [sqlite3_memory_highwater()].  The alternative implementations
-** for these last three routines need not actually work, but
-** stub functions at least are needed to statisfy the linker.
-** SQLite never calls [sqlite3_memory_highwater()] itself, but
-** the symbol is included in a table as part of the
-** [sqlite3_load_extension()] interface.  The
-** [sqlite3_memory_alarm()] and [sqlite3_memory_used()] interfaces
-** are called by [sqlite3_soft_heap_limit()] and working implementations
-** of both routines must be provided if [sqlite3_soft_heap_limit()]
-** is to operate correctly.
+** where <i>NNN</i> is an integer, then SQLite create a static
+** array of at least <i>NNN</i> bytes in size and use that array
+** for all of its dynamic memory allocation needs.
+**
+** In SQLite version 3.5.0 and 3.5.1, it was possible to define
+** the SQLITE_OMIT_MEMORY_ALLOCATION which would cause the built-in
+** implementation of these routines to be omitted.  That capability
+** is no longer provided.  Only built-in memory allocators can be
+** used.
 **
 ** <b>Exception:</b> The windows OS interface layer calls
 ** the system malloc() and free() directly when converting
@@ -1181,53 +1175,12 @@ void sqlite3_free(void*);
 ** memory.  The highwater mark is reset if the argument is
 ** true.
 **
-** The implementation of these routines in the SQLite core
-** is omitted if the application is compiled with the
-** SQLITE_OMIT_MEMORY_ALLOCATION macro defined.  In that case,
-** the application that links SQLite must provide its own
-** alternative implementation.  See the documentation on
-** [sqlite3_malloc()] for additional information.
+** The value returned may or may not include allocation
+** overhead, depending on which built-in memory allocator
+** implementation is used.
 */
 sqlite3_int64 sqlite3_memory_used(void);
 sqlite3_int64 sqlite3_memory_highwater(int resetFlag);
-
-/*
-** CAPI3REF: Memory Allocation Alarms
-**
-** The [sqlite3_memory_alarm] routine is used to register
-** a callback on memory allocation events.
-**
-** This routine registers or clears a callbacks that fires when
-** the amount of memory allocated exceeds iThreshold.  Only
-** a single callback can be registered at a time.  Each call
-** to [sqlite3_memory_alarm()] overwrites the previous callback.
-** The callback is disabled by setting xCallback to a NULL
-** pointer.
-** 
-** The parameters to the callback are the pArg value, the 
-** amount of memory currently in use, and the size of the
-** allocation that provoked the callback.  The callback will
-** presumably invoke [sqlite3_free()] to free up memory space.
-** The callback may invoke [sqlite3_malloc()] or [sqlite3_realloc()]
-** but if it does, no additional callbacks will be invoked by
-** the recursive calls.
-**
-** The [sqlite3_soft_heap_limit()] interface works by registering
-** a memory alarm at the soft heap limit and invoking 
-** [sqlite3_release_memory()] in the alarm callback.  Application
-** programs should not attempt to use the [sqlite3_memory_alarm()]
-** interface because doing so will interfere with the
-** [sqlite3_soft_heap_limit()] module.  This interface is exposed
-** only so that applications can provide their own
-** alternative implementation when the SQLite core is
-** compiled with SQLITE_OMIT_MEMORY_ALLOCATION.
-*/
-int sqlite3_memory_alarm(
-  void(*xCallback)(void *pArg, sqlite3_int64 used, int N),
-  void *pArg,
-  sqlite3_int64 iThreshold
-);
-
 
 /*
 ** CAPI3REF: Compile-Time Authorization Callbacks
@@ -2324,6 +2277,7 @@ int sqlite3_expired(sqlite3_stmt*);
 int sqlite3_transfer_bindings(sqlite3_stmt*, sqlite3_stmt*);
 int sqlite3_global_recover(void);
 void sqlite3_thread_cleanup(void);
+int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
 
 /*
 ** CAPI3REF: Obtaining SQL Function Parameter Values
@@ -2828,12 +2782,6 @@ int sqlite3_release_memory(int);
 ** is unable to reduce memory usage below the soft limit, execution will
 ** continue without error or notification.  This is why the limit is 
 ** called a "soft" limit.  It is advisory only.
-**
-** The soft heap limit is implemented using the [sqlite3_memory_alarm()]
-** interface.  Only a single memory alarm is available in the default
-** implementation.  This means that if the application also uses the
-** memory alarm interface it will interfere with the operation of the
-** soft heap limit and undefined behavior will result.  
 **
 ** Prior to SQLite version 3.5.0, this routine only constrained the memory
 ** allocated by a single thread - the same thread in which this routine

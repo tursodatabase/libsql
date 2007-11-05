@@ -1,5 +1,5 @@
-C Reset\sthe\swriter-thread\shalt\scriteria\safter\shalting\sthe\sthread.\s(CVS\s4528)
-D 2007-11-05T17:01:08
+C Drop\ssupport\sfor\sthe\sSQLITE_OMIT_MEMORY_ALLOCATION\scompile-time\soption.\s(CVS\s4529)
+D 2007-11-05T17:54:17
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -102,8 +102,8 @@ F src/loadext.c 124e566563d1c03e68e1396cb44df9870612c6e9
 F src/main.c 994a6b6914d91dc6dea5012667ec0a52e74d3bca
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
-F src/mem1.c cacb202bc379da10d69aa66d497c0ea7bd9cd8a5
-F src/mem2.c 3f669b5e20975a5a2ca392aca891cd686e22b097
+F src/mem1.c ad348eedd829528e66f4a5aead464d88e6b08d69
+F src/mem2.c 2a1da2e8debcfd0097188470f04573107a018116
 F src/mem3.c df13c608e8dfb54f62e3448eb126e760aecbacf1
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
@@ -131,7 +131,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 4706a6115da1bdc09a2be5991168a6cc2c0df267
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 0b9dd90afc34f28b8786638155d32f6248d0bf0a
-F src/sqlite.h.in 430a26215c164a2d4236dcbce4730a704b455271
+F src/sqlite.h.in 3844177d389d58bd4a8be4ee81eefb01a084ed72
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 7fd5cfa357d7aefe22cd2bcdfabcca4e7d5ab5b2
 F src/sqliteLimit.h 15ffe2116746c27ace2b428a26a4fcd6dba6fa65
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b752906e708e1c8c76084152f5829e16e8988ef2
-R 7f1455a4cfebc5f5c43e5e1e4ec5f996
-U danielk1977
-Z e5e92eeb58930447253626b7e5820cf1
+P ecbff972a1f5c7d846c322c435fa73584655b7f0
+R 4a6faeb1d5909fa4fd0f66b7cab8ebd0
+U drh
+Z c84b000500150d084eda9369c9fa3fc9
