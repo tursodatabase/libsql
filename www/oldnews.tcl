@@ -9,6 +9,30 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2007-Aug-13} {Version 3.4.2} {
+  While stress-testing the 
+  <a href="capi3ref.html#sqlite3_soft_heap_limit">soft_heap_limit</a>
+  feature, a bug that could lead to
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=DatabaseCorruption">database
+  corruption</a> was <a href="http://www.sqlite.org/cvstrac/tktview?tn=2565">
+  discovered and fixed</a>.
+  Though the consequences of this bug are severe, the chances of hitting 
+  it in a typical application are remote.  Upgrading is recommended
+  only if you use the 
+  <a href="capi3ref.html#sqlite3_soft_heap_limit">sqlite3_soft_heap_limit</a>
+  interface.
+}
+
+newsitem {2007-Jly-20} {Version 3.4.1} {
+  This release fixes a bug in <a href="lang_vacuum.html">VACUUM</a> that
+  can lead to <a href="http://www.sqlite.org/cvstrac/wiki?p=DatabaseCorruption">
+  database corruption</a>.  The bug was introduced in version 
+  <a href="changes.html#version_3_3_14">3.3.14</a>.
+  Upgrading is recommended for all users.  Also included are a slew of
+  other more routine
+  <a href="changes.html#version_3_4_1">enhancements and bug fixes</a>.
+}
+
 newsitem {2007-Jun-18} {Version 3.4.0} {
   This release fixes two separate bugs either of which 
   can lead to database corruption.  Upgrading
@@ -482,4 +506,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.23 2007/09/04 01:58:27 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.24 2007/11/05 18:11:18 drh Exp $}

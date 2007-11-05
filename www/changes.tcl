@@ -28,6 +28,20 @@ proc chng {date desc} {
   puts "</DD>"
 }
 
+chng {2007 Nov 05 (3.5.2)} {
+<li>Dropped support for the SQLITE_OMIT_MEMORY_ALLOCATION compile-time
+option.
+<li>Always open files using FILE_FLAG_RANDOM_ACCESS under windows.
+<li>The 3rd parameter of the built-in SUBSTR() function is now optional.
+<li>Bug fix: do not invoke the authorizer when reparsing the schema after
+a schema change.
+<li>Added the experimental malloc-free memory allocator in mem3.c.
+<li>Virtual machine stores 64-bit integer and floating point constants
+in binary instead of text for a performance boost.
+<li>Fix a race condition in test_async.c.
+<li>Added the ".timer" command to the CLI
+}
+
 chng {2007 Oct 04 (3.5.1)} {
 <li><i><b>Nota Bene:</b> We are not using terms "alpha" or "beta" on this
     release because the code is stable and because if we use those terms,

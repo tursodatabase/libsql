@@ -71,6 +71,19 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
+newsitem {2007-Nov-05} {Version 3.5.2} {
+  This is an incremental release that fixes several minor problems,
+  adds some obscure features, and provides some performance tweaks.  
+  Upgrading is optional.
+
+  The experimental compile-time option
+  SQLITE_OMIT_MEMORY_ALLOCATION is no longer supported.  On the other
+  hand, it is now possible to compile SQLite so that it uses a static
+  array for all its dynamic memory allocation needs and never calls
+  malloc.  Expect to see additional radical changes to the memory 
+  allocation subsystem in future releases.
+}
+
 newsitem {2007-Oct-04} {Version 3.5.1} {
   Fix a long-standing bug that might cause database corruption if a
   disk-full error occurs in the middle of a transaction and that
@@ -95,32 +108,8 @@ newsitem {2007-Sep-04} {Version 3.5.0 alpha} {
   freeze the new design.
 }
 
-newsitem {2007-Aug-13} {Version 3.4.2} {
-  While stress-testing the 
-  <a href="capi3ref.html#sqlite3_soft_heap_limit">soft_heap_limit</a>
-  feature, a bug that could lead to
-  <a href="http://www.sqlite.org/cvstrac/wiki?p=DatabaseCorruption">database
-  corruption</a> was <a href="http://www.sqlite.org/cvstrac/tktview?tn=2565">
-  discovered and fixed</a>.
-  Though the consequences of this bug are severe, the chances of hitting 
-  it in a typical application are remote.  Upgrading is recommended
-  only if you use the 
-  <a href="capi3ref.html#sqlite3_soft_heap_limit">sqlite3_soft_heap_limit</a>
-  interface.
-}
-
-newsitem {2007-Jly-20} {Version 3.4.1} {
-  This release fixes a bug in <a href="lang_vacuum.html">VACUUM</a> that
-  can lead to <a href="http://www.sqlite.org/cvstrac/wiki?p=DatabaseCorruption">
-  database corruption</a>.  The bug was introduced in version 
-  <a href="changes.html#version_3_3_14">3.3.14</a>.
-  Upgrading is recommended for all users.  Also included are a slew of
-  other more routine
-  <a href="changes.html#version_3_4_1">enhancements and bug fixes</a>.
-}
-
 puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.164 2007/10/03 20:32:17 drh Exp $}
+footer {$Id: index.tcl,v 1.165 2007/11/05 18:11:18 drh Exp $}
