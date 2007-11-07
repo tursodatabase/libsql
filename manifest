@@ -1,5 +1,5 @@
-C Version\s3.5.2\s(CVS\s4531)
-D 2007-11-05T20:49:21
+C In\sthe\swindows\sVFS,\smake\ssure\swe\sdo\snot\sreturn\san\serror\sif\sattempting\nto\sdelete\sa\sfile\sthat\sdoes\snot\sexist.\s(CVS\s4532)
+D 2007-11-07T01:19:07
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -119,7 +119,7 @@ F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
 F src/os_unix.c db6755454c84004d0041eb1b2194c90b35db0a5b
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c fe8f2d8fc3a010a2e9d4a0acbdcf4981522cac7b
+F src/os_win.c 81690a858b90a1e0b83e7afbce6b6498bb3d3a1d
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c c5ffa55c299663b579fbcb430752c1e79d302c5b
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b985328ad98669cbf2fb9a56b015a1db35657004
-R 045acfab3b69ad15684e6d98cc0cde64
+P 60da01630ab3668541aea7d303fc5d52fe3ee281
+R 7ccf0aa6904afb1d48146bf503fba144
 U drh
-Z 07d5a7ae440a197103a6adf74b52b41d
+Z 00cca131396f556941a71f0d631fd420

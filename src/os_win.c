@@ -1188,13 +1188,13 @@ static int winOpen(
 ** Note that windows does not allow a file to be deleted if some other
 ** process has it open.  Sometimes a virus scanner or indexing program
 ** will open a journal file shortly after it is created in order to do
-** whatever it is it does.  While this other process is holding the
+** whatever does.  While this other process is holding the
 ** file open, we will be unable to delete it.  To work around this
 ** problem, we delay 100 milliseconds and try to delete again.  Up
 ** to MX_DELETION_ATTEMPTs deletion attempts are run before giving
 ** up and returning an error.
 */
-#define MX_DELETION_ATTEMPTS 3
+#define MX_DELETION_ATTEMPTS 5
 static int winDelete(
   sqlite3_vfs *pVfs,          /* Not used on win32 */
   const char *zFilename,      /* Name of file to delete */
@@ -1209,22 +1209,22 @@ static int winDelete(
   SimulateIOError(return SQLITE_IOERR_DELETE);
   if( isNT() ){
     do{
-      rc = DeleteFileW(zConverted);
-    }while( rc==0 && GetFileAttributesW(zConverted)!=0xffffffff 
+      DeleteFileW(zConverted);
+    }while( (rc = GetFileAttributesW(zConverted))!=0xffffffff 
             && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
   }else{
 #if OS_WINCE
     return SQLITE_NOMEM;
 #else
     do{
-      rc = DeleteFileA(zConverted);
-    }while( rc==0 && GetFileAttributesA(zConverted)!=0xffffffff
+      DeleteFileA(zConverted);
+    }while( (rc = GetFileAttributesA(zConverted))!=0xffffffff
             && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
 #endif
   }
   free(zConverted);
   OSTRACE2("DELETE \"%s\"\n", zFilename);
-  return rc!=0 ? SQLITE_OK : SQLITE_IOERR;
+  return rc==0xffffffff ? SQLITE_OK : SQLITE_IOERR_DELETE;
 }
 
 /*
