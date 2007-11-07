@@ -20,7 +20,7 @@
 ** This version of the memory allocation subsystem is used if
 ** and only if SQLITE_MEMORY_SIZE is defined.
 **
-** $Id: mem3.c,v 1.5 2007/10/20 16:36:31 drh Exp $
+** $Id: mem3.c,v 1.6 2007/11/07 15:13:25 drh Exp $
 */
 
 /*
@@ -133,6 +133,7 @@ static struct {
 static void memsys3UnlinkFromList(int i, int *pRoot){
   int next = mem.aPool[i].u.list.next;
   int prev = mem.aPool[i].u.list.prev;
+  assert( sqlite3_mutex_held(mem.mutex) );
   if( prev==0 ){
     *pRoot = next;
   }else{
@@ -151,6 +152,7 @@ static void memsys3UnlinkFromList(int i, int *pRoot){
 */
 static void memsys3Unlink(int i){
   int size, hash;
+  assert( sqlite3_mutex_held(mem.mutex) );
   size = mem.aPool[i-1].u.hdr.size;
   assert( size==mem.aPool[i+size-1].u.hdr.prevSize );
   assert( size>=2 );
@@ -167,6 +169,7 @@ static void memsys3Unlink(int i){
 ** at *pRoot.
 */
 static void memsys3LinkIntoList(int i, int *pRoot){
+  assert( sqlite3_mutex_held(mem.mutex) );
   mem.aPool[i].u.list.next = *pRoot;
   mem.aPool[i].u.list.prev = 0;
   if( *pRoot ){
@@ -181,6 +184,7 @@ static void memsys3LinkIntoList(int i, int *pRoot){
 */
 static void memsys3Link(int i){
   int size, hash;
+  assert( sqlite3_mutex_held(mem.mutex) );
   size = mem.aPool[i-1].u.hdr.size;
   assert( size==mem.aPool[i+size-1].u.hdr.prevSize );
   assert( size>=2 );
@@ -259,6 +263,7 @@ int sqlite3_memory_alarm(
 static void memsys3OutOfMemory(int nByte){
   if( !mem.alarmBusy ){
     mem.alarmBusy = 1;
+    assert( sqlite3_mutex_held(mem.mutex) );
     sqlite3_mutex_leave(mem.mutex);
     sqlite3_release_memory(nByte);
     sqlite3_mutex_enter(mem.mutex);
@@ -283,6 +288,7 @@ static int memsys3Size(void *p){
 ** user portion of the chunk.
 */
 static void *memsys3Checkout(int i, int nBlock){
+  assert( sqlite3_mutex_held(mem.mutex) );
   assert( mem.aPool[i-1].u.hdr.size==nBlock );
   assert( mem.aPool[i+nBlock-1].u.hdr.prevSize==nBlock );
   mem.aPool[i-1].u.hdr.size = -nBlock;
@@ -296,6 +302,7 @@ static void *memsys3Checkout(int i, int nBlock){
 ** is not large enough, return 0.
 */
 static void *memsys3FromMaster(int nBlock){
+  assert( sqlite3_mutex_held(mem.mutex) );
   assert( mem.szMaster>=nBlock );
   if( nBlock>=mem.szMaster-1 ){
     /* Use the entire master */
@@ -340,6 +347,7 @@ static void *memsys3FromMaster(int nBlock){
 static void memsys3Merge(int *pRoot){
   int iNext, prev, size, i;
 
+  assert( sqlite3_mutex_held(mem.mutex) );
   for(i=*pRoot; i>0; i=iNext){
     iNext = mem.aPool[i].u.list.next;
     size = mem.aPool[i-1].u.hdr.size;
@@ -374,6 +382,7 @@ static void *memsys3Malloc(int nByte){
   int nBlock;
   int toFree;
 
+  assert( sqlite3_mutex_held(mem.mutex) );
   assert( sizeof(Mem3Block)==8 );
   if( nByte<=0 ){
     nBlock = 2;
@@ -451,6 +460,7 @@ void memsys3Free(void *pOld){
   Mem3Block *p = (Mem3Block*)pOld;
   int i;
   int size;
+  assert( sqlite3_mutex_held(mem.mutex) );
   assert( p>mem.aPool && p<&mem.aPool[SQLITE_MEMORY_SIZE/8] );
   i = p - mem.aPool;
   size = -mem.aPool[i-1].u.hdr.size;

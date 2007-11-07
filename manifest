@@ -1,5 +1,5 @@
-C Changes\sthe\sasynchronous\sI/O\stest\smodule\sso\sthat\sit\scan\sbe\sappended\sto\sthe\nend\sof\sthe\samalgamation.\s(CVS\s4533)
-D 2007-11-07T01:23:12
+C Add\sasserts\son\ssqlite3_mutex_held()\sto\sthe\szero-malloc\smemory\sallocator,\nin\sorder\sto\sprove\sthat\sthe\smutex\sis\sheld\swhen\sit\sis\sneeded.\s(CVS\s4534)
+D 2007-11-07T15:13:25
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -104,7 +104,7 @@ F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c ad348eedd829528e66f4a5aead464d88e6b08d69
 F src/mem2.c 2a1da2e8debcfd0097188470f04573107a018116
-F src/mem3.c df13c608e8dfb54f62e3448eb126e760aecbacf1
+F src/mem3.c a9857cf92c9e4c889184b2cf1ca1839c801fc942
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 7fe4773e98ed74a63b2e54fc557929eb155f6269
@@ -584,7 +584,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 08a685abc149cd29c3595a61c9bc1a04e6d95c4d
-R 3b0bda0e6456e1bdcf3962caf8e375c7
+P c1fe27de7b6f0080466cc3f827979db9997e22a4
+R 4d22767fe7548ed57a40b50ba1b3d0b1
 U drh
-Z 8393b2be25309ab5b02c9ff46dbdc791
+Z 591ee87bae6e45cc97f6c36812f304cb
