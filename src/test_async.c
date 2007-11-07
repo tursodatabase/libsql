@@ -106,7 +106,9 @@
 */
 #define ENABLE_FILE_LOCKING
 
-#include "sqliteInt.h"
+#ifndef SQLITE_AMALGAMATION
+# include "sqliteInt.h"
+#endif
 #include <tcl.h>
 
 /*
