@@ -1,5 +1,5 @@
-C Add\sasserts\son\ssqlite3_mutex_held()\sto\sthe\szero-malloc\smemory\sallocator,\nin\sorder\sto\sprove\sthat\sthe\smutex\sis\sheld\swhen\sit\sis\sneeded.\s(CVS\s4534)
-D 2007-11-07T15:13:25
+C Fix\sthe\scode\sgeneration\sfor\sUPDATE\sand\sDELETE\sso\sthat\nBEFORE\striggers\sthat\suse\sRAISE(IGNORE)\sdo\snot\sleave\sextra\nvalues\son\sthe\sstack.\s\sTicket\s#2767\s(CVS\s4535)
+D 2007-11-11T18:36:34
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -88,7 +88,7 @@ F src/build.c d4ace66c2612d8973a17afdfe34b2a62f1a80178
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
-F src/delete.c 849846d06d29851dde0d9f424a5de5817eb140d1
+F src/delete.c 034b87768c4135a22038a86a205f9d2d5f68a143
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 23fac3749024deeaaa6c25b6b5c521e8d140a2c5
 F src/func.c 73b4974e5ff03cc71345cc3a33b0022f7b99974a
@@ -161,7 +161,7 @@ F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c a98d69cae883e53d3686fc25889a5fa5f51439f8
 F src/tokenize.c 67e42600ab34f976f2b1288c499ad6c98d652f0e
 F src/trigger.c 724a77d54609a33bde90618934fbeddfcc729a10
-F src/update.c e89b980b443d44b68bfc0b1746cdb6308e049ac9
+F src/update.c 2add92a6159fa73128653706574afbcd8fd1dd80
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c a5e51c77370c1a6445e86d42abfc43867cdd482d
@@ -465,6 +465,7 @@ F test/tkt2450.test 77ed94863f2049c1420288ddfea2d41e5e0971d6
 F test/tkt2640.test c513e7992a602a87ef3a2cc9ca1cba4146924e9b
 F test/tkt2643.test 3f3ebb743da00d4fed4fcf6daed92a0e18e57813
 F test/tkt2686.test 8815c3eeae7c8363bd7c2889349ec39e8bc8000d
+F test/tkt2767.test 6b02308d553d194f329a469bf5c157fe724738d4
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -584,7 +585,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c1fe27de7b6f0080466cc3f827979db9997e22a4
-R 4d22767fe7548ed57a40b50ba1b3d0b1
+P 31eb4abc89e9c0fd90fde5486d4008f9d09fdf4e
+R a1f586a7644a244540f38fb9992343e8
 U drh
-Z 591ee87bae6e45cc97f6c36812f304cb
+Z 9a344de272865e137595258a6a6021fd

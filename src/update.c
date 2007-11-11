@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.140 2007/08/16 10:09:03 danielk1977 Exp $
+** $Id: update.c,v 1.141 2007/11/11 18:36:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -318,6 +318,8 @@ void sqlite3Update(
   }
 
   if( triggers_exist ){
+    int mem1;      /* Memory address storing the rowid for next row to update */
+    
     /* Create pseudo-tables for NEW and OLD
     */
     sqlite3VdbeAddOp(v, OP_OpenPseudo, oldIdx, 0);
@@ -328,10 +330,10 @@ void sqlite3Update(
     /* The top of the update loop for when there are triggers.
     */
     addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, 0);
-
+    mem1 = pParse->nMem++;
+    sqlite3VdbeAddOp(v, OP_MemStore, mem1, 0);
+    
     if( !isView ){
-      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
-      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
       /* Open a cursor and make it point to the record that is
       ** being updated.
       */
@@ -380,6 +382,11 @@ void sqlite3Update(
     if( sqlite3CodeRowTrigger(pParse, TK_UPDATE, pChanges, TRIGGER_BEFORE, pTab,
           newIdx, oldIdx, onError, addr) ){
       goto update_cleanup;
+    }
+    
+    if( !isView ){
+      sqlite3VdbeAddOp(v, OP_MemLoad, mem1, 0);
+      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
     }
   }
 
