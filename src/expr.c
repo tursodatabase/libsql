@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.315 2007/10/23 18:55:49 drh Exp $
+** $Id: expr.c,v 1.316 2007/11/12 09:50:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -54,13 +54,17 @@ char sqlite3ExprAffinity(Expr *pExpr){
 ** collating sequences.
 */
 Expr *sqlite3ExprSetColl(Parse *pParse, Expr *pExpr, Token *pName){
+  char *zColl = 0;            /* Dequoted name of collation sequence */
   CollSeq *pColl;
-  if( pExpr==0 ) return 0;
-  pColl = sqlite3LocateCollSeq(pParse, (char*)pName->z, pName->n);
-  if( pColl ){
-    pExpr->pColl = pColl;
-    pExpr->flags |= EP_ExpCollate;
+  zColl = sqlite3NameFromToken(pParse->db, pName);
+  if( pExpr && zColl ){
+    pColl = sqlite3LocateCollSeq(pParse, zColl, -1);
+    if( pColl ){
+      pExpr->pColl = pColl;
+      pExpr->flags |= EP_ExpCollate;
+    }
   }
+  sqlite3_free(zColl);
   return pExpr;
 }
 

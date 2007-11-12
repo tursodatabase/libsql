@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.447 2007/10/15 07:08:44 danielk1977 Exp $
+** $Id: build.c,v 1.448 2007/11/12 09:50:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1183,16 +1183,20 @@ void sqlite3AddCheckConstraint(
 ** Set the collation function of the most recently parsed table column
 ** to the CollSeq given.
 */
-void sqlite3AddCollateType(Parse *pParse, const char *zType, int nType){
+void sqlite3AddCollateType(Parse *pParse, Token *pToken){
   Table *p;
   int i;
+  char *zColl;              /* Dequoted name of collation sequence */
 
   if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
 
-  if( sqlite3LocateCollSeq(pParse, zType, nType) ){
+  zColl = sqlite3NameFromToken(pParse->db, pToken);
+  if( !zColl ) return;
+
+  if( sqlite3LocateCollSeq(pParse, zColl, -1) ){
     Index *pIdx;
-    p->aCol[i].zColl = sqlite3DbStrNDup(pParse->db, zType, nType);
+    p->aCol[i].zColl = zColl;
   
     /* If the column is declared as "<name> PRIMARY KEY COLLATE <type>",
     ** then an index may have been created on this column before the
@@ -1204,6 +1208,8 @@ void sqlite3AddCollateType(Parse *pParse, const char *zType, int nType){
         pIdx->azColl[0] = p->aCol[i].zColl;
       }
     }
+  }else{
+    sqlite3_free(zColl);
   }
 }
 
@@ -3351,16 +3357,19 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
     reindexDatabases(pParse, 0);
     return;
   }else if( pName2==0 || pName2->z==0 ){
+    char *zColl;
     assert( pName1->z );
-    pColl = sqlite3FindCollSeq(db, ENC(db), (char*)pName1->z, pName1->n, 0);
+    zColl = sqlite3NameFromToken(pParse->db, pName1);
+    if( !zColl ) return;
+    pColl = sqlite3FindCollSeq(db, ENC(db), zColl, -1, 0);
     if( pColl ){
-      char *zColl = sqlite3DbStrNDup(db, (const char *)pName1->z, pName1->n);
       if( zColl ){
         reindexDatabases(pParse, zColl);
         sqlite3_free(zColl);
       }
       return;
     }
+    sqlite3_free(zColl);
   }
   iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pObjName);
   if( iDb<0 ) return;

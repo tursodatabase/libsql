@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.234 2007/08/21 10:44:16 drh Exp $
+** @(#) $Id: parse.y,v 1.235 2007/11/12 09:50:26 danielk1977 Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -272,7 +272,7 @@ ccons ::= CHECK LP expr(X) RP.       {sqlite3AddCheckConstraint(pParse,X);}
 ccons ::= REFERENCES nm(T) idxlist_opt(TA) refargs(R).
                                 {sqlite3CreateForeignKey(pParse,0,&T,TA,R);}
 ccons ::= defer_subclause(D).   {sqlite3DeferForeignKey(pParse,D);}
-ccons ::= COLLATE id(C).  {sqlite3AddCollateType(pParse, (char*)C.z, C.n);}
+ccons ::= COLLATE ids(C).  {sqlite3AddCollateType(pParse, &C);}
 
 // The optional AUTOINCREMENT keyword
 %type autoinc {int}
@@ -657,7 +657,7 @@ expr(A) ::= VARIABLE(X).     {
   Expr *pExpr = A = sqlite3PExpr(pParse, TK_VARIABLE, 0, 0, pToken);
   sqlite3ExprAssignVarNumber(pParse, pExpr);
 }
-expr(A) ::= expr(E) COLLATE id(C). {
+expr(A) ::= expr(E) COLLATE ids(C). {
   A = sqlite3ExprSetColl(pParse, E, &C);
 }
 %ifndef SQLITE_OMIT_CAST
@@ -893,7 +893,7 @@ idxlist(A) ::= idxlist(X) COMMA idxitem(Y) collate(C) sortorder(Z).  {
   Expr *p = 0;
   if( C.n>0 ){
     p = sqlite3PExpr(pParse, TK_COLUMN, 0, 0, 0);
-    if( p ) p->pColl = sqlite3LocateCollSeq(pParse, (char*)C.z, C.n);
+    sqlite3ExprSetColl(pParse, p, &C);
   }
   A = sqlite3ExprListAppend(pParse,X, p, &Y);
   sqlite3ExprListCheckLength(pParse, A, SQLITE_MAX_COLUMN, "index");
@@ -903,7 +903,7 @@ idxlist(A) ::= idxitem(Y) collate(C) sortorder(Z). {
   Expr *p = 0;
   if( C.n>0 ){
     p = sqlite3PExpr(pParse, TK_COLUMN, 0, 0, 0);
-    if( p ) p->pColl = sqlite3LocateCollSeq(pParse, (char*)C.z, C.n);
+    sqlite3ExprSetColl(pParse, p, &C);
   }
   A = sqlite3ExprListAppend(pParse,0, p, &Y);
   sqlite3ExprListCheckLength(pParse, A, SQLITE_MAX_COLUMN, "index");
@@ -913,7 +913,7 @@ idxitem(A) ::= nm(X).              {A = X;}
 
 %type collate {Token}
 collate(C) ::= .                {C.z = 0; C.n = 0;}
-collate(C) ::= COLLATE id(X).   {C = X;}
+collate(C) ::= COLLATE ids(X).   {C = X;}
 
 
 ///////////////////////////// The DROP INDEX command /////////////////////////
