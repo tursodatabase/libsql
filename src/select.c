@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.360 2007/11/12 15:29:19 danielk1977 Exp $
+** $Id: select.c,v 1.361 2007/11/12 15:40:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -3067,7 +3067,8 @@ int sqlite3Select(
   }
 #endif
 
-  /* If possible, rewrite the query to use GROUP BY instead of 
+  /* If possible, rewrite the query to use GROUP BY instead of DISTINCT.
+  ** GROUP BY may use an index, DISTINCT never does.
   */
   if( p->isDistinct && !p->isAgg && !p->pGroupBy ){
     p->pGroupBy = sqlite3ExprListDup(db, p->pEList);
