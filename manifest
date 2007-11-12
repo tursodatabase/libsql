@@ -1,5 +1,5 @@
-C Allow\scollation\ssequence\snames\sto\sbe\squoted.\sTicket\s#2744.\s(CVS\s4537)
-D 2007-11-12T09:50:26
+C Where\spossible,\stransform\sthe\sDISTINCT\squalifier\sto\sa\sGROUP\sBY\sclause.\sGROUP\sBY\sclauses\smay\sbe\soptimized\sby\sindices,\sDISTINCT\squalifiers\scannot.\s(CVS\s4538)
+D 2007-11-12T15:29:19
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -128,7 +128,7 @@ F src/pragma.c 363e548dafb52327face8d99757ab56a7b1c1b26
 F src/prepare.c 663284f62a73a48b89f5f4e769e155fefba60384
 F src/printf.c 96c8d55315a13fc53cb3754cb15046f3ff891ea2
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
-F src/select.c 4706a6115da1bdc09a2be5991168a6cc2c0df267
+F src/select.c 19fb48509aa5dbdda5f31b92eec6743535dc0316
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 0b9dd90afc34f28b8786638155d32f6248d0bf0a
 F src/sqlite.h.in 3844177d389d58bd4a8be4ee81eefb01a084ed72
@@ -225,7 +225,7 @@ F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
 F test/collate2.test 701d9651c5707024fd86a20649af9ea55e2c0eb8
 F test/collate3.test 947a77f5b8227e037a7094d0e338a5504f155cc4
 F test/collate4.test daf498e294dcd596b961d425c3f2dda117e4717e
-F test/collate5.test 8fb4e7e0241839356bd8710f437c32efb47bfff8
+F test/collate5.test e54df13eb9e1140273680b3153c6e19b39e59888
 F test/collate6.test 8be65a182abaac8011a622131486dafb8076e907
 F test/collate7.test e23677b1fd271505302643a98178952bb65b6f21
 F test/collate8.test 7ed2461305ac959886a064dc1e3cf15e155a183f
@@ -329,7 +329,7 @@ F test/index3.test f66718cd92ce1216819d47e6a156755e4b2c4ca1
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 5a20e1ace5fa0800b58d28284212290189b49aed
 F test/insert3.test 9a4ef3526fd3cca8b05278020ec3100448b4c677
-F test/insert4.test ac36af0ea9e6a2447f0d9b65da512498018a7743
+F test/insert4.test 6919ddacd79c2cfeb9785b0f84217f9cb14853b5
 F test/interrupt.test 81555fb0f8179bb2d0dc7151fd75428223f93cf2
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/io.test 835b0ec66166312ff743e2fd11a878c65068de9f
@@ -375,7 +375,7 @@ F test/misc1.test 1b89c02c4a33b49dee4cd1d20d161aaaba719075
 F test/misc2.test 1ee89298de9c16b61454658b24999c403e86afe4
 F test/misc3.test 7bd937e2c62bcc6be71939faf068d506467b1e03
 F test/misc4.test 21e8a275cadcf2ba2a9ac2c33ae024ecc5eaff3a
-F test/misc5.test ef90b03ae715b718f07fd084cccb4ef9eb1658e3
+F test/misc5.test 33b95f12f18b7b9558c79545503f05728fbf2c22
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 3fbd0a9e3dd03331d9d76acd47bc179e1a97e15e
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
@@ -586,7 +586,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P af5af5dc2608f369f0f4274ca06974b365424e72
-R 6609950e4e33ca146fe5280a3d429455
+P 06749ac7afeea4adbdeb9315f3819d5224534c66
+R d3236e16fe589d623a588d0fca905a2c
 U danielk1977
-Z 68349a41f440456331fc2acbb07fcff1
+Z e2a2364ba8c7fed549c957127a8396b6

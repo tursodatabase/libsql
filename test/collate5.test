@@ -14,7 +14,7 @@
 # SELECT statements that use user-defined collation sequences. Also
 # GROUP BY clauses that use user-defined collation sequences.
 #
-# $Id: collate5.test,v 1.5 2005/09/07 22:48:16 drh Exp $
+# $Id: collate5.test,v 1.6 2007/11/12 15:29:19 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -57,17 +57,17 @@ do_test collate5-1.1 {
   execsql {
     SELECT DISTINCT a FROM collate5t1;
   }
-} {a b n}
+} {A B N}
 do_test collate5-1.2 {
   execsql {
     SELECT DISTINCT b FROM collate5t1;
   }
-} {apple Apple banana {}}
+} {{} Apple apple banana}
 do_test collate5-1.3 {
   execsql {
     SELECT DISTINCT a, b FROM collate5t1;
   }
-} {a apple A Apple b banana n {}}
+} {A Apple a apple B banana N {}}
 
 # The remainder of this file tests compound SELECT statements.
 # Omit it if the library is compiled such that they are omitted.

@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc5.test,v 1.17 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: misc5.test,v 1.18 2007/11/12 15:29:19 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -481,8 +481,18 @@ ifcapable subquery {
         SELECT songid    
         FROM songs    
         WHERE LOWER(artist) = (    
+          -- This sub-query is indeterminate. Because there is no ORDER BY,
+          -- it may return 'one', 'two' or 'three'. Because of this, the
+	  -- outermost parent query may correctly return any of 'one', 'two' 
+          -- or 'three' as well.
           SELECT DISTINCT LOWER(artist)    
           FROM (      
+            -- This sub-query returns the table:
+            --
+            --     two      14
+            --     one      10
+            --     three    5
+            --
             SELECT DISTINCT artist,sum(timesplayed) AS total      
             FROM songs      
             GROUP BY LOWER(artist)      
@@ -495,7 +505,7 @@ ifcapable subquery {
       )  
       ORDER BY LOWER(artist) ASC;
     }
-  } {two}
+  } {one}
 }
 
 # Ticket #1370.  Do not overwrite small files (less than 1024 bytes)

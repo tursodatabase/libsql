@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.359 2007/08/31 17:42:48 danielk1977 Exp $
+** $Id: select.c,v 1.360 2007/11/12 15:29:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -3067,6 +3067,15 @@ int sqlite3Select(
   }
 #endif
 
+  /* If possible, rewrite the query to use GROUP BY instead of 
+  */
+  if( p->isDistinct && !p->isAgg && !p->pGroupBy ){
+    p->pGroupBy = sqlite3ExprListDup(db, p->pEList);
+    pGroupBy = p->pGroupBy;
+    p->isDistinct = 0;
+    isDistinct = 0;
+  }
+
   /* If there is an ORDER BY clause, then this sorting
   ** index might end up being unused if the data can be 
   ** extracted in pre-sorted order.  If that is the case, then the
@@ -3102,6 +3111,7 @@ int sqlite3Select(
   */
   if( isDistinct ){
     KeyInfo *pKeyInfo;
+    assert( isAgg || pGroupBy );
     distinct = pParse->nTab++;
     pKeyInfo = keyInfoFromExprList(pParse, p->pEList);
     sqlite3VdbeOp3(v, OP_OpenEphemeral, distinct, 0, 
@@ -3129,7 +3139,8 @@ int sqlite3Select(
 
     /* Use the standard inner loop
     */
-    if( selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, distinct, eDest,
+    assert(!isDistinct);
+    if( selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, -1, eDest,
                     iParm, pWInfo->iContinue, pWInfo->iBreak, aff) ){
        goto select_end;
     }
@@ -3191,7 +3202,7 @@ int sqlite3Select(
     if( db->mallocFailed ) goto select_end;
 
     /* Processing for aggregates with GROUP BY is very different and
-    ** much more complex tha aggregates without a GROUP BY.
+    ** much more complex than aggregates without a GROUP BY.
     */
     if( pGroupBy ){
       KeyInfo *pKeyInfo;  /* Keying information for the group by clause */
