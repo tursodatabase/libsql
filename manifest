@@ -1,5 +1,5 @@
-C Fix\sthe\scode\sgeneration\sfor\sUPDATE\sand\sDELETE\sso\sthat\nBEFORE\striggers\sthat\suse\sRAISE(IGNORE)\sdo\snot\sleave\sextra\nvalues\son\sthe\sstack.\s\sTicket\s#2767\s(CVS\s4535)
-D 2007-11-11T18:36:34
+C Modify\sthe\sorder\sof\sassert()\smacros\sin\svdbe.c\sas\sper\sthe\ssuggestion\sin\s#2768.\s(CVS\s4536)
+D 2007-11-12T08:09:35
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -165,7 +165,7 @@ F src/update.c 2add92a6159fa73128653706574afbcd8fd1dd80
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c a5e51c77370c1a6445e86d42abfc43867cdd482d
-F src/vdbe.c 6a577531074e5bcd86c56655eb52512aef384201
+F src/vdbe.c 791d056da2c264c2cfed6e2150852926845875e5
 F src/vdbe.h 856360de71d4bdda71fbb534087668667924e41a
 F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
 F src/vdbeapi.c 1795d8412b6464a59dc4c940803cf53f3d21259c
@@ -585,7 +585,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 31eb4abc89e9c0fd90fde5486d4008f9d09fdf4e
-R a1f586a7644a244540f38fb9992343e8
-U drh
-Z 9a344de272865e137595258a6a6021fd
+P 3391f4139ccfe62cc27739a06567c422ddae9c69
+R 9bae5c8582864d5a42b9bca9b6ebf6ec
+U danielk1977
+Z eedea99e32136cad94caf09bae94e010
