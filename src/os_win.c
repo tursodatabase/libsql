@@ -1407,6 +1407,14 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   return (void*)h;
 }
 static void winDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
+#if OS_WINCE
+  int error = GetLastError();
+  if( error>0x7FFFFFF ){
+    sqlite3_snprintf(nBuf, zBufOut, "OsError 0x%x", error);
+  }else{
+    sqlite3_snprintf(nBuf, zBufOut, "OsError %d", error);
+  }
+#else
   FormatMessageA(
     FORMAT_MESSAGE_FROM_SYSTEM,
     NULL,
@@ -1416,6 +1424,7 @@ static void winDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
     nBuf-1,
     0
   );
+#endif
 }
 void *winDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
 #if OS_WINCE

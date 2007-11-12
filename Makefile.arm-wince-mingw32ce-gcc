@@ -11,6 +11,12 @@
 # below and type "make".
 #
 
+#### The directory where to find the mingw32ce tools
+MINGW32CE = /opt/mingw32ce/bin
+
+#### The target prefix of the mingw32ce tools
+TARGET = arm-wince-mingw32ce
+
 #### The toplevel directory of the source tree.  This is the directory
 #    that contains this "Makefile.in" and the "configure.in" script.
 #
@@ -25,15 +31,15 @@ BCC = gcc -g -O2
 #### If the target operating system supports the "usleep()" system
 #    call, then define the HAVE_USLEEP macro for all C modules.
 #
-#USLEEP = 
-USLEEP = -DHAVE_USLEEP=1
+USLEEP = 
+#USLEEP = -DHAVE_USLEEP=1
 
 #### If you want the SQLite library to be safe for use within a 
 #    multi-threaded program, then define the following macro
 #    appropriately:
 #
-#THREADSAFE = -DTHREADSAFE=1
-THREADSAFE = -DTHREADSAFE=0
+THREADSAFE = -DTHREADSAFE=1
+#THREADSAFE = -DTHREADSAFE=0
 
 #### Specify any extra linker options needed to make the library
 #    thread safe
@@ -57,37 +63,41 @@ TLIBS =
 #OPTS = -DSQLITE_DEBUG=2
 #OPTS = -DSQLITE_DEBUG=1
 #OPTS = 
-OPTS = -DNDEBUG=1
-OPTS += -DHAVE_FDATASYNC=1
+OPTS = -DNDEBUG=1 -DOS_WIN=1 -D_WIN32_WCE=1
+#OPTS += -DHAVE_FDATASYNC=1
 
 #### The suffix to add to executable files.  ".exe" for windows.
 #    Nothing for unix.
 #
-#EXE = .exe
-EXE =
+EXE = .exe
+#EXE =
 
 #### C Compile and options for use in building executables that 
 #    will run on the target platform.  This is usually the same
 #    as BCC, unless you are cross-compiling.
 #
-TCC = gcc -O6
+#TCC = gcc -O6
 #TCC = gcc -g -O0 -Wall
 #TCC = gcc -g -O0 -Wall -fprofile-arcs -ftest-coverage
 #TCC = /opt/mingw/bin/i386-mingw32-gcc -O6
+TCC = $(MINGW32CE)/$(TARGET)-gcc -O2
 #TCC = /opt/ansic/bin/c89 -O +z -Wl,-a,archive
 
 #### Tools used to build a static library.
 #
-AR = ar cr
+#AR = ar cr
 #AR = /opt/mingw/bin/i386-mingw32-ar cr
-RANLIB = ranlib
+AR = $(MINGW32CE)/$(TARGET)-ar cr
+#RANLIB = ranlib
 #RANLIB = /opt/mingw/bin/i386-mingw32-ranlib
+RANLIB = $(MINGW32CE)/$(TARGET)-ranlib
 
-MKSHLIB = gcc -shared
-SO = so
-SHPREFIX = lib
-# SO = dll
-# SHPREFIX =
+#MKSHLIB = gcc -shared
+#SO = so
+#SHPREFIX = lib
+MKSHLIB = $(MINGW32CE)/$(TARGET)-gcc -shared
+SO = dll
+SHPREFIX =
 
 #### Extra compiler options needed for programs that use the TCL library.
 #
@@ -105,8 +115,8 @@ LIBTCL = /home/drh/tcltk/8.4linux/libtcl8.4g.a -lm -ldl
 #LIBTCL = /home/drh/tcltk/8.3hpux/libtcl8.3.a -ldld -lm -lc
 
 #### Additional objects for SQLite library when TCL support is enabled.
-#TCLOBJ =
-TCLOBJ = tclsqlite.o
+TCLOBJ =
+#TCLOBJ = tclsqlite.o
 
 #### Compiler options needed for programs that use the readline() library.
 #

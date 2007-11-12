@@ -55,7 +55,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o btmutex.o btree.o build.o \
          mutex_unix.o mutex_w32.o \
          opcodes.o os.o os_os2.o os_unix.o os_win.o \
          pager.o parse.o pragma.o prepare.o printf.o random.o \
-         select.o table.o tclsqlite.o tokenize.o trigger.o \
+         select.o table.o $(TCLOBJ) tokenize.o trigger.o \
          update.o util.o vacuum.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbefifo.o vdbemem.o \
          where.o utf.o legacy.o vtab.o
