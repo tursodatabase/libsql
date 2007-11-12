@@ -1,5 +1,5 @@
-C Fix\sa\scode\scomment\sin\sselect.c.\sNo\scode\schanges.\s(CVS\s4539)
-D 2007-11-12T15:40:42
+C Another\sattempt\sat\sfixing\sa\smemory\sleak\sin\sthe\sTCL\sinterface.\nSee\scheck-in\s(4338)\sfor\sthe\sfirst\sattempt.\s\sTicket\s#2597.\s(CVS\s4540)
+D 2007-11-12T17:56:43
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc 65241babba6faf1152bf86574477baab19190499
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -136,7 +136,7 @@ F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 4e6fdeb5630ead97bcec60b941e7a72203c64b9e
 F src/sqliteLimit.h 15ffe2116746c27ace2b428a26a4fcd6dba6fa65
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
-F src/tclsqlite.c 29bb44a88e02ca4d2017113b7b1acc839582d57a
+F src/tclsqlite.c 8658bb91d32397e289b69445609ffd42d0a922ea
 F src/test1.c 0e6fe5449ef9e7289bcaf904e9e3a2ea20650b32
 F src/test2.c 77b34303883b9d722c65a6879bb0163a400e3789
 F src/test3.c 73c1fd55d1ece61f295a6b9204fd97a139de86ae
@@ -586,7 +586,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e56331234791cf3d830a30e4cfa66682bdf2eed1
-R 951a097fbbb24a975791f93cbe995c02
-U danielk1977
-Z 063c20c543ab435cbe9b4000bec9ea90
+P cf41d6a00f658d2cd64ff9811a3b1270ad1a580b
+R b85e86f0e00579d26110152442d23592
+U drh
+Z c7e01fdf5ed2429e27dcf878b216c197
