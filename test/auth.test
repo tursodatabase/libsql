@@ -12,7 +12,7 @@
 # focus of this script is testing the sqlite3_set_authorizer() API
 # and related functionality.
 #
-# $Id: auth.test,v 1.38 2007/10/09 08:29:32 danielk1977 Exp $
+# $Id: auth.test,v 1.39 2007/11/13 10:30:26 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -2121,6 +2121,16 @@ do_test auth-2.8 {
   catchsql {SELECT ROWID,b,c FROM t2}
 } {0 {{} 2 33 {} 8 9}}
 do_test auth-2.9.1 {
+  # We have to flush the cache here in case the Tcl interface tries to
+  # reuse a statement compiled with sqlite3_prepare_v2(). In this case,
+  # the first error encountered is an SQLITE_SCHEMA error. Then, when
+  # trying to recompile the statement, the authorization error is encountered.
+  # If we do not flush the cache, the correct error message is returned, but
+  # the error code is SQLITE_SCHEMA, not SQLITE_ERROR as required by the test
+  # case after this one.
+  #
+  db cache flush
+
   proc auth {code arg1 arg2 arg3 arg4} {
     if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="ROWID"} {
       return bogus

@@ -1586,6 +1586,8 @@ int sqlite3VdbeReset(Vdbe *p){
     ** called), set the database error in this case as well.
     */
     sqlite3Error(db, p->rc, 0);
+    sqlite3ValueSetStr(db->pErr, -1, p->zErrMsg, SQLITE_UTF8, sqlite3_free);
+    p->zErrMsg = 0;
   }
 
   /* Reclaim all memory used by the VDBE

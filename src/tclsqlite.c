@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.205 2007/11/12 17:56:43 drh Exp $
+** $Id: tclsqlite.c,v 1.206 2007/11/13 10:30:26 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -886,6 +886,67 @@ static char *local_getline(char *zPrompt, FILE *in){
   return zLine;
 }
 
+
+/*
+** Figure out the column names for the data returned by the statement
+** passed as the second argument.
+**
+** If parameter papColName is not NULL, then *papColName is set to point
+** at an array allocated using Tcl_Alloc(). It is the callers responsibility
+** to free this array using Tcl_Free(), and to decrement the reference
+** count of each Tcl_Obj* member of the array.
+**
+** The return value of this function is the number of columns of data
+** returned by pStmt (and hence the size of the *papColName array).
+**
+** If pArray is not NULL, then it contains the name of a Tcl array
+** variable. The "*" member of this array is set to a list containing
+** the names of the columns returned by the statement, in order from
+** left to right. e.g. if the names of the returned columns are a, b and
+** c, it does the equivalent of the tcl command:
+**
+**     set ${pArray}(*) {a b c}
+*/
+static int
+computeColumnNames(
+  Tcl_Interp *interp, 
+  sqlite3_stmt *pStmt,              /* SQL statement */
+  Tcl_Obj ***papColName,            /* OUT: Array of column names */
+  Tcl_Obj *pArray                   /* Name of array variable (may be null) */
+){
+  int nCol;
+
+  /* Compute column names */
+  nCol = sqlite3_column_count(pStmt);
+  if( papColName ){
+    int i;
+    Tcl_Obj **apColName = (Tcl_Obj**)Tcl_Alloc( sizeof(Tcl_Obj*)*nCol );
+    for(i=0; i<nCol; i++){
+      apColName[i] = dbTextToObj(sqlite3_column_name(pStmt,i));
+      Tcl_IncrRefCount(apColName[i]);
+    }
+
+    /* If results are being stored in an array variable, then create
+    ** the array(*) entry for that array
+    */
+    if( pArray ){
+      Tcl_Obj *pColList = Tcl_NewObj();
+      Tcl_Obj *pStar = Tcl_NewStringObj("*", -1);
+      Tcl_IncrRefCount(pColList);
+      for(i=0; i<nCol; i++){
+        Tcl_ListObjAppendElement(interp, pColList, apColName[i]);
+      }
+      Tcl_IncrRefCount(pStar);
+      Tcl_ObjSetVar2(interp, pArray, pStar, pColList,0);
+      Tcl_DecrRefCount(pColList);
+      Tcl_DecrRefCount(pStar);
+    }
+    *papColName = apColName;
+  }
+
+  return nCol;
+}
+
 /*
 ** The "sqlite" command below creates a new Tcl command for each
 ** connection it opens to an SQLite database.  This routine is invoked
@@ -1506,7 +1567,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     while( rc==TCL_OK && zSql[0] ){
       int i;                     /* Loop counter */
       int nVar;                  /* Number of bind parameters in the pStmt */
-      int nCol;                  /* Number of columns in the result set */
+      int nCol = -1;             /* Number of columns in the result set */
       Tcl_Obj **apColName = 0;   /* Array of column names */
       int len;                   /* String length of zSql */
   
@@ -1514,13 +1575,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       ** which matches the next sequence of SQL.
       */
       pStmt = 0;
-      pPreStmt = pDb->stmtList;
       len = strlen(zSql);
-      if( pPreStmt && sqlite3_expired(pPreStmt->pStmt) ){
-        flushStmtCache(pDb);
-        pPreStmt = 0;
-      }
-      for(; pPreStmt; pPreStmt=pPreStmt->pNext){
+      for(pPreStmt = pDb->stmtList; pPreStmt; pPreStmt=pPreStmt->pNext){
         int n = pPreStmt->nSql;
         if( len>=n 
             && memcmp(pPreStmt->zSql, zSql, n)==0
@@ -1551,7 +1607,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       /* If no prepared statement was found.  Compile the SQL text
       */
       if( pStmt==0 ){
-        if( SQLITE_OK!=sqlite3_prepare(pDb->db, zSql, -1, &pStmt, &zLeft) ){
+        if( SQLITE_OK!=sqlite3_prepare_v2(pDb->db, zSql, -1, &pStmt, &zLeft) ){
           Tcl_SetObjResult(interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
           rc = TCL_ERROR;
           break;
@@ -1625,36 +1681,20 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         }
       }
 
-      /* Compute column names */
-      nCol = sqlite3_column_count(pStmt);
-      if( pScript ){
-        apColName = (Tcl_Obj**)Tcl_Alloc( sizeof(Tcl_Obj*)*nCol );
-        if( apColName==0 ) break;
-        for(i=0; i<nCol; i++){
-          apColName[i] = dbTextToObj(sqlite3_column_name(pStmt,i));
-          Tcl_IncrRefCount(apColName[i]);
-        }
-      }
-
-      /* If results are being stored in an array variable, then create
-      ** the array(*) entry for that array
-      */
-      if( pArray ){
-        Tcl_Obj *pColList = Tcl_NewObj();
-        Tcl_Obj *pStar = Tcl_NewStringObj("*", -1);
-        Tcl_IncrRefCount(pColList);
-        for(i=0; i<nCol; i++){
-          Tcl_ListObjAppendElement(interp, pColList, apColName[i]);
-        }
-        Tcl_IncrRefCount(pStar);
-        Tcl_ObjSetVar2(interp, pArray, pStar, pColList,0);
-        Tcl_DecrRefCount(pColList);
-        Tcl_DecrRefCount(pStar);
-      }
-
       /* Execute the SQL
       */
       while( rc==TCL_OK && pStmt && SQLITE_ROW==sqlite3_step(pStmt) ){
+
+	/* Compute column names. This must be done after the first successful
+	** call to sqlite3_step(), in case the query is recompiled and the
+        ** number or names of the returned columns changes. 
+        */
+        assert(!pArray||pScript);
+        if (nCol < 0) {
+          Tcl_Obj ***ap = (pScript?&apColName:0);
+          nCol = computeColumnNames(interp, pStmt, ap, pArray);
+        }
+
         for(i=0; i<nCol; i++){
           Tcl_Obj *pVal;
           
@@ -1727,6 +1767,14 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 
       /* Free the column name objects */
       if( pScript ){
+        /* If the query returned no rows, but an array variable was 
+        ** specified, call computeColumnNames() now to populate the 
+        ** arrayname(*) variable.
+        */
+        if (pArray && nCol < 0) {
+          Tcl_Obj ***ap = (pScript?&apColName:0);
+          nCol = computeColumnNames(interp, pStmt, ap, pArray);
+        }
         for(i=0; i<nCol; i++){
           Tcl_DecrRefCount(apColName[i]);
         }
@@ -1745,15 +1793,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       ** flush the statement cache and try the statement again.
       */
       rc2 = sqlite3_reset(pStmt);
-      if( SQLITE_SCHEMA==rc2 ){
-        /* After a schema change, flush the cache and try to run the
-        ** statement again
-        */
-        flushStmtCache( pDb );
-        sqlite3_finalize(pStmt);
-        if( pPreStmt ) Tcl_Free((char*)pPreStmt);
-        continue;
-      }else if( SQLITE_OK!=rc2 ){
+      if( SQLITE_OK!=rc2 ){
         /* If a run-time error occurs, report the error and stop reading
         ** the SQL
         */
@@ -1854,9 +1894,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     if( rc!=SQLITE_OK ){
       rc = TCL_ERROR;
       Tcl_SetResult(interp, (char *)sqlite3_errmsg(pDb->db), TCL_VOLATILE);
-    }else{
-      /* Must flush any cached statements */
-      flushStmtCache( pDb );
     }
     break;
   }

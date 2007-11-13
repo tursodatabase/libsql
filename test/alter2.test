@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter2.test,v 1.10 2007/10/09 08:29:32 danielk1977 Exp $
+# $Id: alter2.test,v 1.11 2007/11/13 10:30:26 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -239,9 +239,20 @@ do_test alter2-4.1 {
   set_file_format 5
 } {}
 do_test alter2-4.2 {
-  catchsql {
-    SELECT * FROM sqlite_master;
-  }
+  # We have to run two queries here because the Tcl interface uses
+  # sqlite3_prepare_v2(). In this case, the first query encounters an 
+  # SQLITE_SCHEMA error. Then, when trying to recompile the statement, the
+  # "unsupported file format" error is encountered. So the error code
+  # returned is SQLITE_SCHEMA, not SQLITE_ERROR as required by the following
+  # test case.
+  #
+  # When the query is attempted a second time, the same error message is
+  # returned but the error code is SQLITE_ERROR, because the unsupported
+  # file format was detected during a call to sqlite3_prepare(), not
+  # sqlite3_step().
+  #
+  catchsql { SELECT * FROM sqlite_master; }
+  catchsql { SELECT * FROM sqlite_master; }
 } {1 {unsupported file format}}
 do_test alter2-4.3 {
   sqlite3_errcode $::DB
