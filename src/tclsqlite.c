@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.206 2007/11/13 10:30:26 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.207 2007/11/14 06:48:48 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -85,7 +85,7 @@ struct SqlPreparedStmt {
   SqlPreparedStmt *pPrev;  /* Previous on the list */
   sqlite3_stmt *pStmt;     /* The prepared statement */
   int nSql;                /* chars in zSql[] */
-  char zSql[1];            /* Text of the SQL statement */
+  const char *zSql;        /* Text of the SQL statement */
 };
 
 typedef struct IncrblobChannel IncrblobChannel;
@@ -1813,12 +1813,13 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         */
         if( pPreStmt==0 ){
           len = zLeft - zSql;
-          pPreStmt = (SqlPreparedStmt*)Tcl_Alloc( sizeof(*pPreStmt) + len );
+          pPreStmt = (SqlPreparedStmt*)Tcl_Alloc( sizeof(*pPreStmt) );
           if( pPreStmt==0 ) return TCL_ERROR;
           pPreStmt->pStmt = pStmt;
           pPreStmt->nSql = len;
-          memcpy(pPreStmt->zSql, zSql, len);
-          pPreStmt->zSql[len] = 0;
+          pPreStmt->zSql = sqlite3_sql(pStmt);
+          assert( strlen(pPreStmt->zSql)==len );
+          assert( 0==memcmp(pPreStmt->zSql, zSql, len) );
         }
 
         /* Add the prepared statement to the beginning of the cache list
