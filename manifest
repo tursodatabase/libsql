@@ -1,5 +1,5 @@
-C Add\san\sexperimental\sAPI\sfor\sretrieving\sthe\sSQL\ssource\sfrom\sa\scompiled\sstatement:\ssqlite3_sql().\sTicket\s#2769.\s(CVS\s4543)
-D 2007-11-14T06:48:48
+C Fix\sa\ssegfault\sthat\scan\soccur\safter\sa\smalloc\sfailure\sin\san\sANALYZE\sstatement.\sTicket\s#2772.\s(CVS\s4544)
+D 2007-11-15T13:10:23
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -78,7 +78,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
 F src/alter.c 8512ed319aa5f7b9bbbd4e17953809e3ff398fdd
-F src/analyze.c 49b4bd45eb286d833793ed6bf72355a5c1974865
+F src/analyze.c fd1a3d756c1a20fca3c505bed0398f4cdca83cb8
 F src/attach.c a01d55157d46a1234909f3a7f21fb09549c947bd
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/btmutex.c 442be6f068d77ca9ffd69899cf0a3943c244548c
@@ -362,7 +362,7 @@ F test/malloc6.test d05fd71ef3c5983d10e0a6d728ea4a502a45a9e4
 F test/malloc7.test 0d71bb6520b99934b551fa36a9c591404aeaad61
 F test/malloc8.test addc27d907fec1af429551b95c72caa47fce2974
 F test/malloc9.test 95d7069ad4fa262bf33bc4c5ca0a46f2bb2391cb
-F test/mallocA.test f474c5bdbef4070e11c89d01ba1b0e78f955b97a
+F test/mallocA.test 5ee8d42ff90e5b1aeee6fb645e73ffcb35bffd21
 F test/mallocB.test 83bdbea443cc81758a57b0287807b0941218819a
 F test/mallocC.test 6f02fa2b4baa943bc6d6db323d5d07067967e728
 F test/mallocD.test d638fb8f214b47fd31edfae8af738b92bd943dc0
@@ -587,7 +587,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7bb00c7df672cb8988121f30e3bbdea9ad951603
-R 5c4df6521dfe4d4463c8657cb223a380
+P d31f1e0d74a871d66cf7d3ef35faae5171d5cbc3
+R 0bf5660b4afc6cfd49b0db1c5f6e2c5f
 U danielk1977
-Z d57498e72dddc8893fb5fcae7c38aca8
+Z 7a2e3189eb57bd7c9ad5d20204c8b8f2

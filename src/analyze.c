@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.23 2007/08/29 17:43:20 drh Exp $
+** @(#) $Id: analyze.c,v 1.24 2007/11/15 13:10:23 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -309,10 +309,12 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
       analyzeDatabase(pParse, iDb);
     }else{
       z = sqlite3NameFromToken(db, pName1);
-      pTab = sqlite3LocateTable(pParse, z, 0);
-      sqlite3_free(z);
-      if( pTab ){
-        analyzeTable(pParse, pTab);
+      if( z ){
+        pTab = sqlite3LocateTable(pParse, z, 0);
+        sqlite3_free(z);
+        if( pTab ){
+          analyzeTable(pParse, pTab);
+        }
       }
     }
   }else{
