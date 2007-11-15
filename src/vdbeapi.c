@@ -255,7 +255,8 @@ static int sqlite3Step(Vdbe *p){
   sqlite3 *db;
   int rc;
 
-  if( p==0 || p->magic!=VDBE_MAGIC_RUN ){
+  assert(p);
+  if( p->magic!=VDBE_MAGIC_RUN ){
     return SQLITE_MISUSE;
   }
 
@@ -373,47 +374,51 @@ end_of_step:
 */
 #ifdef SQLITE_OMIT_PARSER
 int sqlite3_step(sqlite3_stmt *pStmt){
-  int rc;
-  Vdbe *v;
-  v = (Vdbe*)pStmt;
-  sqlite3_mutex_enter(v->db->mutex);
-  rc = sqlite3Step(v);
-  sqlite3_mutex_leave(v->db->mutex);
+  int rc = SQLITE_MISUSE;
+  if( pStmt ){
+    Vdbe *v;
+    v = (Vdbe*)pStmt;
+    sqlite3_mutex_enter(v->db->mutex);
+    rc = sqlite3Step(v);
+    sqlite3_mutex_leave(v->db->mutex);
+  }
   return rc;
 }
 #else
 int sqlite3_step(sqlite3_stmt *pStmt){
-  int cnt = 0;
-  int rc;
-  Vdbe *v = (Vdbe*)pStmt;
-  sqlite3 *db = v->db;
-  sqlite3_mutex_enter(db->mutex);
-  while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
-         && cnt++ < 5
-         && sqlite3Reprepare(v) ){
-    sqlite3_reset(pStmt);
-    v->expired = 0;
-  }
-  if( rc==SQLITE_SCHEMA && v->zSql && db->pErr ){
-    /* This case occurs after failing to recompile an sql statement. 
-    ** The error message from the SQL compiler has already been loaded 
-    ** into the database handle. This block copies the error message 
-    ** from the database handle into the statement and sets the statement
-    ** program counter to 0 to ensure that when the statement is 
-    ** finalized or reset the parser error message is available via
-    ** sqlite3_errmsg() and sqlite3_errcode().
-    */
-    const char *zErr = (const char *)sqlite3_value_text(db->pErr); 
-    sqlite3_free(v->zErrMsg);
-    if( !db->mallocFailed ){
-      v->zErrMsg = sqlite3DbStrDup(db, zErr);
-    } else {
-      v->zErrMsg = 0;
-      v->rc = SQLITE_NOMEM;
+  int rc = SQLITE_MISUSE;
+  if( pStmt ){
+    int cnt = 0;
+    Vdbe *v = (Vdbe*)pStmt;
+    sqlite3 *db = v->db;
+    sqlite3_mutex_enter(db->mutex);
+    while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
+           && cnt++ < 5
+           && sqlite3Reprepare(v) ){
+      sqlite3_reset(pStmt);
+      v->expired = 0;
     }
+    if( rc==SQLITE_SCHEMA && v->zSql && db->pErr ){
+      /* This case occurs after failing to recompile an sql statement. 
+      ** The error message from the SQL compiler has already been loaded 
+      ** into the database handle. This block copies the error message 
+      ** from the database handle into the statement and sets the statement
+      ** program counter to 0 to ensure that when the statement is 
+      ** finalized or reset the parser error message is available via
+      ** sqlite3_errmsg() and sqlite3_errcode().
+      */
+      const char *zErr = (const char *)sqlite3_value_text(db->pErr); 
+      sqlite3_free(v->zErrMsg);
+      if( !db->mallocFailed ){
+        v->zErrMsg = sqlite3DbStrDup(db, zErr);
+      } else {
+        v->zErrMsg = 0;
+        v->rc = SQLITE_NOMEM;
+      }
+    }
+    rc = sqlite3ApiExit(db, rc);
+    sqlite3_mutex_leave(db->mutex);
   }
-  rc = sqlite3ApiExit(db, rc);
-  sqlite3_mutex_leave(db->mutex);
   return rc;
 }
 #endif

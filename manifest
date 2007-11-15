@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scan\soccur\safter\sa\smalloc\sfailure\sin\san\sANALYZE\sstatement.\sTicket\s#2772.\s(CVS\s4544)
-D 2007-11-15T13:10:23
+C Return\sSQLITE_MISUSE\sinstead\sof\scrashing\sif\sNULL\sis\s(incorrectly)\spassed\sto\ssqlite3_step().\sTicket\s#2773.\s(CVS\s4545)
+D 2007-11-15T16:04:15
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -169,7 +169,7 @@ F src/vacuum.c a5e51c77370c1a6445e86d42abfc43867cdd482d
 F src/vdbe.c 791d056da2c264c2cfed6e2150852926845875e5
 F src/vdbe.h 79e09ff13b85457abe437d9814454534ebbc1fe3
 F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
-F src/vdbeapi.c eecea7fa87e20664acf270f17c6f397421e9344b
+F src/vdbeapi.c dd2c43317294e0a013e9f634ee4209a3ea459b43
 F src/vdbeaux.c ffc2610c0d29a6e7b5c1d5dfea2ad406f7f9aff1
 F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
@@ -587,7 +587,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d31f1e0d74a871d66cf7d3ef35faae5171d5cbc3
-R 0bf5660b4afc6cfd49b0db1c5f6e2c5f
+P d05eb67dd6e171cfe8b9528aa3c7c953780d8c82
+R 9acff769b3adb7f693b9b5ea49173f93
 U danielk1977
-Z 7a2e3189eb57bd7c9ad5d20204c8b8f2
+Z 8d55885cb813c4feb6a2a8686164b3b8
