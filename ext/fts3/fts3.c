@@ -1335,7 +1335,7 @@ static void docListUnion(
   DLWriter writer;
 
   if( nLeft==0 ){
-    dataBufferAppend(pOut, pRight, nRight);
+    if( nRight!=0) dataBufferAppend(pOut, pRight, nRight);
     return;
   }
   if( nRight==0 ){
@@ -1633,7 +1633,7 @@ static void docListOrMerge(
   DLWriter writer;
 
   if( nLeft==0 ){
-    dataBufferAppend(pOut, pRight, nRight);
+    if( nRight!=0 ) dataBufferAppend(pOut, pRight, nRight);
     return;
   }
   if( nRight==0 ){

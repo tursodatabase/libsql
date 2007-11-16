@@ -7,7 +7,7 @@
 # of this script is testing handling of edge cases for various doclist
 # merging functions in the FTS3 module query logic.
 #
-# $Id: fts3ag.test,v 1.1 2007/08/20 17:38:42 shess Exp $
+# $Id: fts3ag.test,v 1.2 2007/11/16 00:23:08 shess Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -83,5 +83,11 @@ do_test fts3ag-1.11 {
 do_test fts3ag-1.12 {
   execsql {SELECT rowid FROM t1 WHERE t1 MATCH 'also OR this'}
 } {1 2}
+
+# Empty left and right in docListOrMerge().  Each term matches neither
+# row, and when combined there was an assertion failure.
+do_test fts3ag-1.13 {
+  execsql {SELECT rowid FROM t1 WHERE t1 MATCH 'something OR nothing'}
+} {}
 
 finish_test
