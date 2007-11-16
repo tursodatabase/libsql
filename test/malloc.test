@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.51 2007/10/09 08:29:33 danielk1977 Exp $
+# $Id: malloc.test,v 1.52 2007/11/16 14:55:46 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -144,7 +144,7 @@ ifcapable trigger {
     BEGIN TRANSACTION;
     CREATE TABLE t1(a,b);
     CREATE TABLE t2(x,y);
-    CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    CREATE TRIGGER r1 AFTER INSERT ON t1 WHEN new.a = 2 BEGIN
       INSERT INTO t2(x,y) VALUES(new.rowid,1);
       INSERT INTO t2(x,y) SELECT * FROM t2;
       INSERT INTO t2 SELECT * FROM t2;

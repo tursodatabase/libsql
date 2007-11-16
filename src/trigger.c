@@ -773,12 +773,13 @@ int sqlite3CodeRowTrigger(
 
   for(p=pTab->pTrigger; p; p=p->pNext){
     int fire_this = 0;
+    sqlite3 *db = pParse->db;
 
     /* Determine whether we should code this trigger */
     if( 
       p->op==op && 
       p->tr_tm==tr_tm && 
-      (p->pSchema==p->pTabSchema || p->pSchema==pParse->db->aDb[1].pSchema) &&
+      (p->pSchema==p->pTabSchema || p->pSchema==db->aDb[1].pSchema) &&
       (op!=TK_UPDATE||!p->pColumns||checkColumnOverLap(p->pColumns,pChanges))
     ){
       TriggerStack *pS;      /* Pointer to trigger-stack entry */
@@ -816,8 +817,8 @@ int sqlite3CodeRowTrigger(
 
       /* code the WHEN clause */
       endTrigger = sqlite3VdbeMakeLabel(pParse->pVdbe);
-      whenExpr = sqlite3ExprDup(pParse->db, p->pWhen);
-      if( sqlite3ExprResolveNames(&sNC, whenExpr) ){
+      whenExpr = sqlite3ExprDup(db, p->pWhen);
+      if( db->mallocFailed || sqlite3ExprResolveNames(&sNC, whenExpr) ){
         pParse->trigStack = trigStackEntry.pNext;
         sqlite3ExprDelete(whenExpr);
         return 1;
