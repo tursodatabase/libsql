@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.235 2007/11/12 09:50:26 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.236 2007/11/17 22:23:28 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -649,7 +649,7 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
   Expr *temp4 = sqlite3PExpr(pParse, TK_DOT, temp2, temp3, 0);
   A = sqlite3PExpr(pParse, TK_DOT, temp1, temp4, 0);
 }
-term(A) ::= INTEGER|FLOAT|BLOB(X).      {A = sqlite3PExpr(pParse, @X, 0, 0, &X);}
+term(A) ::= INTEGER|FLOAT|BLOB(X).  {A = sqlite3PExpr(pParse, @X, 0, 0, &X);}
 term(A) ::= STRING(X).       {A = sqlite3PExpr(pParse, @X, 0, 0, &X);}
 expr(A) ::= REGISTER(X).     {A = sqlite3RegisterExpr(pParse, &X);}
 expr(A) ::= VARIABLE(X).     {
@@ -738,7 +738,11 @@ expr(A) ::= expr(X) IS NOT NULL(E). {
   A = sqlite3PExpr(pParse, TK_NOTNULL, X, 0, 0);
   sqlite3ExprSpan(A,&X->span,&E);
 }
-expr(A) ::= NOT|BITNOT(B) expr(X). {
+expr(A) ::= NOT(B) expr(X). {
+  A = sqlite3PExpr(pParse, @B, X, 0, 0);
+  sqlite3ExprSpan(A,&B,&X->span);
+}
+expr(A) ::= BITNOT(B) expr(X). {
   A = sqlite3PExpr(pParse, @B, X, 0, 0);
   sqlite3ExprSpan(A,&B,&X->span);
 }
