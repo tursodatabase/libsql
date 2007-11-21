@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.270 2007/11/14 06:48:48 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.271 2007/11/21 15:24:01 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2940,7 +2940,7 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff);
 ** This routine stores a pointer to the extension in an array
 ** that is obtained from malloc().  If you run a memory leak
 ** checker on your program and it reports a leak because of this
-** array, then invoke [sqlite3_automatic_extension_reset()] prior
+** array, then invoke [sqlite3_reset_auto_extension()] prior
 ** to shutdown to free the memory.
 **
 ** Automatic extensions apply across all threads.

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.361 2007/11/12 15:40:42 danielk1977 Exp $
+** $Id: select.c,v 1.362 2007/11/21 15:24:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2321,10 +2321,18 @@ static int flattenSubquery(
     sqlite3_free(pSubitem->zDatabase);
     sqlite3_free(pSubitem->zName);
     sqlite3_free(pSubitem->zAlias);
+    pSubitem->pTab = 0;
+    pSubitem->zDatabase = 0;
+    pSubitem->zName = 0;
+    pSubitem->zAlias = 0;
     if( nSubSrc>1 ){
       int extra = nSubSrc - 1;
       for(i=1; i<nSubSrc; i++){
         pSrc = sqlite3SrcListAppend(db, pSrc, 0, 0);
+        if( pSrc==0 ){
+          p->pSrc = 0;
+          return 1;
+        }
       }
       p->pSrc = pSrc;
       for(i=pSrc->nSrc-1; i-extra>=iFrom; i--){
@@ -3031,6 +3039,9 @@ int sqlite3Select(
 #endif
     sqlite3Select(pParse, pItem->pSelect, SRT_EphemTab, 
                  pItem->iCursor, p, i, &isAgg, 0);
+    if( db->mallocFailed ){
+      goto select_end;
+    }
 #if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
     pParse->nHeight -= sqlite3SelectExprHeight(p);
 #endif
