@@ -1,5 +1,5 @@
-C Handle\sout-of-memory\ssituations\sinside\sthe\squery\sflattener.\nTicket\s#2784.\s(CVS\s4549)
-D 2007-11-21T15:24:01
+C Change\sto\ssqlite3.pc.in\srecommended\sby\sticket\s#2786.\s(CVS\s4550)
+D 2007-11-22T00:47:41
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -76,7 +76,7 @@ F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
-F sqlite3.pc.in 985b9bf34192a549d7d370e0f0b6b34a4f61369a
+F sqlite3.pc.in abed4664817e1cd500f2276142c71958087c16bc
 F src/alter.c 8512ed319aa5f7b9bbbd4e17953809e3ff398fdd
 F src/analyze.c fd1a3d756c1a20fca3c505bed0398f4cdca83cb8
 F src/attach.c a01d55157d46a1234909f3a7f21fb09549c947bd
@@ -588,7 +588,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b48a4bfd3288906dfb7659c37f76d345011c91a0
-R 94d8bd17a581bf51c0d05b97c905485d
+P 2655a3f2d18fe16a36a6cf3776261ee0507e6912
+R 57613eb980e0d66d4315373d250fab0a
 U drh
-Z 650dc1e2f84003ff347970458f1d7c32
+Z 099ffa84cb86898af38ee472e1aed808
