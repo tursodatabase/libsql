@@ -1,5 +1,5 @@
-C Remove\smost\sdocumentation\sfrom\sthe\ssource\scode\srepository.\nDocumentation\sconfiguration\smanagement\sis\snow\shandled\sby\sa\nseparate\srepository\sat\shttp://www.sqlite.org/docsrc.\s(CVS\s4553)
-D 2007-11-23T15:12:44
+C Changes\sfts3\sto\suse\sonly\ssqlite3_malloc()\sand\snot\ssystem\smalloc.\nTicket\s#2762.\s(CVS\s4554)
+D 2007-11-23T17:31:17
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -16,7 +16,7 @@ F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess dba2d1300ec8f8cd00c6fb44b9edde21c14e960c
 F config.sub 9a842e7c332ed65cef3f2c20354e06dc998b2796
-F configure 991a04cca803ad0f049ce4e2aebe53737bd487b0 x
+F configure 802235968fa597ed6579498b2d2e7a78b5d3988b x
 F configure.ac ec7fd46700b722ae06bfc083e5d5e49fd6e7f12c
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -50,21 +50,21 @@ F ext/fts2/fts2_tokenizer1.c 8a545c232bdffafd117c4eeaf59789691909f26a
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.tokenizers a97c9a55b3422f6cb04af9de9296fe2447ea4a78
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 2e77742df5822f14f835442e799e9d13cfb281d5
+F ext/fts3/fts3.c 2ea2aead0d342a9844f522d9b51e24d47614b06b
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3_hash.c 1c2dc969a5b485848fb804c0ac41a046f18a09c9
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
 F ext/fts3/fts3_icu.c e676f8f0c472cfbb3194febf0eadc1cea6ff0d0c
-F ext/fts3/fts3_porter.c a3e823a0a8fbb038750c9aa55043e19bdb08eacb
+F ext/fts3/fts3_porter.c 3063da945fb0a935781c135f7575f39166173eca
 F ext/fts3/fts3_tokenizer.c 81e7604555b24dce6bc487d8169ca4ef51c71e4c
 F ext/fts3/fts3_tokenizer.h 7eb79de4f991a77f43c517e209e5fae95dfa7369
-F ext/fts3/fts3_tokenizer1.c 0580bf16fdd5a01ae256f1280c550be1cb85d73f
+F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
 F ext/fts3/mkfts3amal.tcl 8282b56f11d008b9fa1f09ad3f7eca513949575e
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk cb811927bd5d5ccb4e4d2803cda37e7beb4cb301
+F main.mk 297e32b77abde73e5638e048d474a86617bc40af
 F mkdll.sh 37fa8a7412e51b5ab2bc6d4276135f022a0feffb
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -178,7 +178,7 @@ F src/vtab.c f819d55ef638d45e09ce00009d435da8bf16f528
 F src/where.c ddcbc5c419e9851906c9a9e76839086c98e7cea4
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
-F test/all.test b59d1bd8b0c1d4a08b845e8af48fd43926f01f11
+F test/all.test d810e0ff34656a7754f2b8d5448fc199544ffc73
 F test/alter.test a87b7933d41c713c53341abe4eb014d0e273119e
 F test/alter2.test 4e0c502214daa710a0a9d7ec9689a0326b1a4e2a
 F test/alter3.test 8ce6b9c5605b3cfe7b901f454ecaf174c4f93e31
@@ -292,6 +292,7 @@ F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test a70357e72742681eaebfdbe9007b87ff3b771638
 F test/fts2o.test c6a79567d85403dc4d15b89f3f9799a0a0aef065
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
+F test/fts3.test 6ee4c38b0864583c80e82a2d4372f63aae8b10c7
 F test/fts3aa.test 432d1d5c41939bb5405d4d6c80a9ec759b363393
 F test/fts3ab.test 7f6cf260ae80dda064023df8e8e503e9a412b91f
 F test/fts3ac.test 356280144a2c92aa7b11474afadfe62a437fcd69
@@ -396,7 +397,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 6bf1a86c6a1e45536f72d782bf44c8e3c76510f8
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 38ae1806833d72d9a81a6121322e274f24937e18
-F test/quick.test fa4e9d57956d05d024689e12ec7b40b3f0224d44
+F test/quick.test 18727c9a480fe87143c5e7f381a38df8d1203d44
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -589,7 +590,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 492b39b6a8bf4ad8792d7a7949f77827a5047fd8
-R 7554991b55d2120a0c7e743f79583bd0
+P b20f3a6fed1027fc8faf886c8998dcb5dc0917c6
+R 5ee0135e46211550a7bb8e22a222740d
 U drh
-Z 396d00f0624becb7305e8ad8f1621670
+Z f73b5c155cb24c8d6437849c3d16495e

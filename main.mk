@@ -220,8 +220,8 @@ TESTSRC = \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
 
-TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
-TESTSRC += $(TOP)/ext/fts3/fts3_tokenizer.c
+#TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
+#TESTSRC += $(TOP)/ext/fts3/fts3_tokenizer.c
 
 TESTSRC2 = \
   $(TOP)/src/attach.c $(TOP)/src/btree.c $(TOP)/src/build.c $(TOP)/src/date.c  \
@@ -271,13 +271,6 @@ EXTHDR += \
 # are what get build when you type just "make" with no arguments.
 #
 all:	sqlite3.h libsqlite3.a sqlite3$(EXE)
-
-# Generate the file "last_change" which contains the date of change
-# of the most recently modified source code file
-#
-last_change:	$(SRC)
-	cat $(SRC) | grep '$$Id: ' | sort -k 5 | tail -1 \
-          | $(NAWK) '{print $$5,$$6}' >last_change
 
 libsqlite3.a:	$(LIBOBJ)
 	$(AR) libsqlite3.a $(LIBOBJ)
@@ -433,6 +426,12 @@ amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                  \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
+fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
+	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                            \
+	-DSQLITE_ENABLE_FTS3=1                                               \
+		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c fts3amal.c       \
+		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
+
 fulltest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/all.test
 
@@ -479,3 +478,4 @@ clean:
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -rf tsrc
 	rm -f testloadext.dll libtestloadext.so
+	rm -f sqlite3.c fts?amal.c

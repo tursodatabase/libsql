@@ -453,13 +453,13 @@ static void dataBufferInit(DataBuffer *pBuffer, int nCapacity){
   assert( nCapacity>=0 );
   pBuffer->nData = 0;
   pBuffer->nCapacity = nCapacity;
-  pBuffer->pData = nCapacity==0 ? NULL : malloc(nCapacity);
+  pBuffer->pData = nCapacity==0 ? NULL : sqlite3_malloc(nCapacity);
 }
 static void dataBufferReset(DataBuffer *pBuffer){
   pBuffer->nData = 0;
 }
 static void dataBufferDestroy(DataBuffer *pBuffer){
-  if( pBuffer->pData!=NULL ) free(pBuffer->pData);
+  if( pBuffer->pData!=NULL ) sqlite3_free(pBuffer->pData);
   SCRAMBLE(pBuffer);
 }
 static void dataBufferExpand(DataBuffer *pBuffer, int nAddCapacity){
@@ -470,7 +470,7 @@ static void dataBufferExpand(DataBuffer *pBuffer, int nAddCapacity){
   */
   if( pBuffer->nData+nAddCapacity>pBuffer->nCapacity ){
     pBuffer->nCapacity = pBuffer->nData+nAddCapacity;
-    pBuffer->pData = realloc(pBuffer->pData, pBuffer->nCapacity);
+    pBuffer->pData = sqlite3_realloc(pBuffer->pData, pBuffer->nCapacity);
   }
 }
 static void dataBufferAppend(DataBuffer *pBuffer,
@@ -1065,7 +1065,7 @@ static void dlcAddPos(DLCollector *pCollector, int iColumn, int iPos,
 }
 
 static DLCollector *dlcNew(sqlite_int64 iDocid, DocListType iType){
-  DLCollector *pCollector = malloc(sizeof(DLCollector));
+  DLCollector *pCollector = sqlite3_malloc(sizeof(DLCollector));
   dataBufferInit(&pCollector->b, 0);
   dlwInit(&pCollector->dlw, iType, &pCollector->b);
   plwInit(&pCollector->plw, &pCollector->dlw, iDocid);
@@ -1076,7 +1076,7 @@ static void dlcDelete(DLCollector *pCollector){
   dlwDestroy(&pCollector->dlw);
   dataBufferDestroy(&pCollector->b);
   SCRAMBLE(pCollector);
-  free(pCollector);
+  sqlite3_free(pCollector);
 }
 
 
@@ -1708,7 +1708,7 @@ static void docListExceptMerge(
 }
 
 static char *string_dup_n(const char *s, int n){
-  char *str = malloc(n + 1);
+  char *str = sqlite3_malloc(n + 1);
   memcpy(str, s, n);
   str[n] = '\0';
   return str;
@@ -1741,7 +1741,7 @@ static char *string_format(const char *zFormat,
   }
   len += 1;  /* for null terminator */
 
-  r = result = malloc(len);
+  r = result = sqlite3_malloc(len);
   for(p = zFormat; *p; ++p){
     if( *p=='%' ){
       memcpy(r, zDb, nDb);
@@ -1764,7 +1764,7 @@ static int sql_exec(sqlite3 *db, const char *zDb, const char *zName,
   int rc;
   TRACE(("FTS3 sql: %s\n", zCommand));
   rc = sqlite3_exec(db, zCommand, NULL, 0, NULL);
-  free(zCommand);
+  sqlite3_free(zCommand);
   return rc;
 }
 
@@ -1774,7 +1774,7 @@ static int sql_prepare(sqlite3 *db, const char *zDb, const char *zName,
   int rc;
   TRACE(("FTS3 prepare: %s\n", zCommand));
   rc = sqlite3_prepare_v2(db, zCommand, -1, ppStmt, NULL);
-  free(zCommand);
+  sqlite3_free(zCommand);
   return rc;
 }
 
@@ -2085,7 +2085,7 @@ static int sql_get_statement(fulltext_vtab *v, fulltext_statement iStmt,
     }
     rc = sql_prepare(v->db, v->zDb, v->zName, &v->pFulltextStatements[iStmt],
                          zStmt);
-    if( zStmt != fulltext_zStatement[iStmt]) free((void *) zStmt);
+    if( zStmt != fulltext_zStatement[iStmt]) sqlite3_free((void *) zStmt);
     if( rc!=SQLITE_OK ) return rc;
   } else {
     int rc = sqlite3_reset(v->pFulltextStatements[iStmt]);
@@ -2173,9 +2173,9 @@ static void freeStringArray(int nString, const char **pString){
   int i;
 
   for (i=0 ; i < nString ; ++i) {
-    if( pString[i]!=NULL ) free((void *) pString[i]);
+    if( pString[i]!=NULL ) sqlite3_free((void *) pString[i]);
   }
-  free((void *) pString);
+  sqlite3_free((void *) pString);
 }
 
 /* select * from %_content where docid = [iDocid]
@@ -2202,7 +2202,7 @@ static int content_select(fulltext_vtab *v, sqlite_int64 iDocid,
   rc = sqlite3_step(s);
   if( rc!=SQLITE_ROW ) return rc;
 
-  values = (const char **) malloc(v->nColumn * sizeof(const char *));
+  values = (const char **) sqlite3_malloc(v->nColumn * sizeof(const char *));
   for(i=0; i<v->nColumn; ++i){
     if( sqlite3_column_type(s, i)==SQLITE_NULL ){
       values[i] = NULL;
@@ -2445,12 +2445,12 @@ static void fulltext_vtab_destroy(fulltext_vtab *v){
 
   clearPendingTerms(v);
 
-  free(v->azColumn);
+  sqlite3_free(v->azColumn);
   for(i = 0; i < v->nColumn; ++i) {
     sqlite3_free(v->azContentColumn[i]);
   }
-  free(v->azContentColumn);
-  free(v);
+  sqlite3_free(v->azContentColumn);
+  sqlite3_free(v);
 }
 
 /*
@@ -2561,7 +2561,7 @@ typedef struct Token {
 */
 static char **tokenizeString(const char *z, int *pnToken){
   int nToken = 0;
-  Token *aToken = malloc( strlen(z) * sizeof(aToken[0]) );
+  Token *aToken = sqlite3_malloc( strlen(z) * sizeof(aToken[0]) );
   int n = 1;
   int e, i;
   int totalSize = 0;
@@ -2577,7 +2577,7 @@ static char **tokenizeString(const char *z, int *pnToken){
     }
     z += n;
   }
-  azToken = (char**)malloc( nToken*sizeof(char*) + totalSize );
+  azToken = (char**)sqlite3_malloc( nToken*sizeof(char*) + totalSize );
   zCopy = (char*)&azToken[nToken];
   nToken--;
   for(i=0; i<nToken; i++){
@@ -2588,7 +2588,7 @@ static char **tokenizeString(const char *z, int *pnToken){
     zCopy += n+1;
   }
   azToken[nToken] = 0;
-  free(aToken);
+  sqlite3_free(aToken);
   *pnToken = nToken;
   return azToken;
 }
@@ -2726,9 +2726,9 @@ typedef struct TableSpec {
 ** Reclaim all of the memory used by a TableSpec
 */
 static void clearTableSpec(TableSpec *p) {
-  free(p->azColumn);
-  free(p->azContentColumn);
-  free(p->azTokenizer);
+  sqlite3_free(p->azColumn);
+  sqlite3_free(p->azContentColumn);
+  sqlite3_free(p->azTokenizer);
 }
 
 /* Parse a CREATE VIRTUAL TABLE statement, which looks like this:
@@ -2763,7 +2763,7 @@ static int parseSpec(TableSpec *pSpec, int argc, const char *const*argv,
   for(i=n=0; i<argc; i++){
     n += strlen(argv[i]) + 1;
   }
-  azArg = malloc( sizeof(char*)*argc + n );
+  azArg = sqlite3_malloc( sizeof(char*)*argc + n );
   if( azArg==0 ){
     return SQLITE_NOMEM;
   }
@@ -2808,7 +2808,7 @@ static int parseSpec(TableSpec *pSpec, int argc, const char *const*argv,
   ** for the convenience of people who might examine the generated
   ** %_content table and wonder what the columns are used for.
   */
-  pSpec->azContentColumn = malloc( pSpec->nColumn * sizeof(char *) );
+  pSpec->azContentColumn = sqlite3_malloc( pSpec->nColumn * sizeof(char *) );
   if( pSpec->azContentColumn==0 ){
     clearTableSpec(pSpec);
     return SQLITE_NOMEM;
@@ -2880,7 +2880,7 @@ static int constructVtab(
   char const *zTok;         /* Name of tokenizer to use for this fts table */
   int nTok;                 /* Length of zTok, including nul terminator */
 
-  v = (fulltext_vtab *) malloc(sizeof(fulltext_vtab));
+  v = (fulltext_vtab *) sqlite3_malloc(sizeof(fulltext_vtab));
   if( v==0 ) return SQLITE_NOMEM;
   CLEAR(v);
   /* sqlite will initialize v->base */
@@ -3073,12 +3073,16 @@ static int fulltextDestroy(sqlite3_vtab *pVTab){
 static int fulltextOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   fulltext_cursor *c;
 
-  c = (fulltext_cursor *) calloc(sizeof(fulltext_cursor), 1);
-  /* sqlite will initialize c->base */
-  *ppCursor = &c->base;
-  TRACE(("FTS3 Open %p: %p\n", pVTab, c));
-
-  return SQLITE_OK;
+  c = (fulltext_cursor *) sqlite3_malloc(sizeof(fulltext_cursor));
+  if( c ){
+    memset(c, 0, sizeof(fulltext_cursor));
+    /* sqlite will initialize c->base */
+    *ppCursor = &c->base;
+    TRACE(("FTS3 Open %p: %p\n", pVTab, c));
+    return SQLITE_OK;
+  }else{
+    return SQLITE_NOMEM;
+  }
 }
 
 
@@ -3087,9 +3091,9 @@ static int fulltextOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
 static void queryClear(Query *q){
   int i;
   for(i = 0; i < q->nTerms; ++i){
-    free(q->pTerms[i].pTerm);
+    sqlite3_free(q->pTerms[i].pTerm);
   }
-  free(q->pTerms);
+  sqlite3_free(q->pTerms);
   CLEAR(q);
 }
 
@@ -3097,9 +3101,9 @@ static void queryClear(Query *q){
 ** Snippet
 */
 static void snippetClear(Snippet *p){
-  free(p->aMatch);
-  free(p->zOffset);
-  free(p->zSnippet);
+  sqlite3_free(p->aMatch);
+  sqlite3_free(p->zOffset);
+  sqlite3_free(p->zSnippet);
   CLEAR(p);
 }
 /*
@@ -3115,7 +3119,7 @@ static void snippetAppendMatch(
   struct snippetMatch *pMatch;
   if( p->nMatch+1>=p->nAlloc ){
     p->nAlloc = p->nAlloc*2 + 10;
-    p->aMatch = realloc(p->aMatch, p->nAlloc*sizeof(p->aMatch[0]) );
+    p->aMatch = sqlite3_realloc(p->aMatch, p->nAlloc*sizeof(p->aMatch[0]) );
     if( p->aMatch==0 ){
       p->nMatch = 0;
       p->nAlloc = 0;
@@ -3450,7 +3454,7 @@ static void snippetText(
   int iMatch;
   
 
-  free(pCursor->snippet.zSnippet);
+  sqlite3_free(pCursor->snippet.zSnippet);
   pCursor->snippet.zSnippet = 0;
   aMatch = pCursor->snippet.aMatch;
   nMatch = pCursor->snippet.nMatch;
@@ -3552,7 +3556,7 @@ static int fulltextClose(sqlite3_vtab_cursor *pCursor){
   snippetClear(&c->snippet);
   if( c->result.nData!=0 ) dlrDestroy(&c->reader);
   dataBufferDestroy(&c->result);
-  free(c);
+  sqlite3_free(c);
   return SQLITE_OK;
 }
 
@@ -3670,14 +3674,14 @@ static int docListOfTerm(
 static void queryAdd(Query *q, const char *pTerm, int nTerm){
   QueryTerm *t;
   ++q->nTerms;
-  q->pTerms = realloc(q->pTerms, q->nTerms * sizeof(q->pTerms[0]));
+  q->pTerms = sqlite3_realloc(q->pTerms, q->nTerms * sizeof(q->pTerms[0]));
   if( q->pTerms==0 ){
     q->nTerms = 0;
     return;
   }
   t = &q->pTerms[q->nTerms - 1];
   CLEAR(t);
-  t->pTerm = malloc(nTerm+1);
+  t->pTerm = sqlite3_malloc(nTerm+1);
   memcpy(t->pTerm, pTerm, nTerm);
   t->pTerm[nTerm] = 0;
   t->nTerm = nTerm;
@@ -4296,18 +4300,20 @@ typedef struct InteriorBlock {
 
 static InteriorBlock *interiorBlockNew(int iHeight, sqlite_int64 iChildBlock,
                                        const char *pTerm, int nTerm){
-  InteriorBlock *block = calloc(1, sizeof(InteriorBlock));
+  InteriorBlock *block = sqlite3_malloc(sizeof(InteriorBlock));
   char c[VARINT_MAX+VARINT_MAX];
   int n;
 
-  dataBufferInit(&block->term, 0);
-  dataBufferReplace(&block->term, pTerm, nTerm);
+  if( block ){
+    memset(block, 0, sizeof(*block));
+    dataBufferInit(&block->term, 0);
+    dataBufferReplace(&block->term, pTerm, nTerm);
 
-  n = putVarint(c, iHeight);
-  n += putVarint(c+n, iChildBlock);
-  dataBufferInit(&block->data, INTERIOR_MAX);
-  dataBufferReplace(&block->data, c, n);
-
+    n = putVarint(c, iHeight);
+    n += putVarint(c+n, iChildBlock);
+    dataBufferInit(&block->data, INTERIOR_MAX);
+    dataBufferReplace(&block->data, c, n);
+  }
   return block;
 }
 
@@ -4472,11 +4478,11 @@ static int interiorWriterDestroy(InteriorWriter *pWriter){
     block = block->next;
     dataBufferDestroy(&b->term);
     dataBufferDestroy(&b->data);
-    free(b);
+    sqlite3_free(b);
   }
   if( pWriter->parentWriter!=NULL ){
     interiorWriterDestroy(pWriter->parentWriter);
-    free(pWriter->parentWriter);
+    sqlite3_free(pWriter->parentWriter);
   }
   dataBufferDestroy(&pWriter->term);
   SCRAMBLE(pWriter);
@@ -4510,7 +4516,7 @@ static int interiorWriterRootInfo(fulltext_vtab *v, InteriorWriter *pWriter,
   if( rc!=SQLITE_OK ) return rc;
   *piEndBlockid = iBlockid;
 
-  pWriter->parentWriter = malloc(sizeof(*pWriter->parentWriter));
+  pWriter->parentWriter = sqlite3_malloc(sizeof(*pWriter->parentWriter));
   interiorWriterInit(pWriter->iHeight+1,
                      block->term.pData, block->term.nData,
                      iBlockid, pWriter->parentWriter);
@@ -5900,7 +5906,7 @@ static int writeZeroSegment(fulltext_vtab *v, fts3Hash *pTerms){
   if( rc!=SQLITE_OK ) return rc;
 
   n = fts3HashCount(pTerms);
-  pData = malloc(n*sizeof(TermData));
+  pData = sqlite3_malloc(n*sizeof(TermData));
 
   for(i = 0, e = fts3HashFirst(pTerms); e; i++, e = fts3HashNext(e)){
     assert( i<n );
@@ -5931,7 +5937,7 @@ static int writeZeroSegment(fulltext_vtab *v, fts3Hash *pTerms){
 
  err:
   dataBufferDestroy(&dl);
-  free(pData);
+  sqlite3_free(pData);
   leafWriterDestroy(&writer);
   return rc;
 }

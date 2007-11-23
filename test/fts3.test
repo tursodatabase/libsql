@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.66 2007/11/23 17:31:19 drh Exp $
+# $Id: fts3.test,v 1.1 2007/11/23 17:31:19 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -31,60 +31,18 @@ while {[set arg [lshift argv]] != ""} {
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+ifcapable !fts3 {
+  puts stderr "this build does not include FTS3 capability"
+  exit 1
+}
 rename finish_test really_finish_test
 proc finish_test {} {}
 set ISQUICK 1
 
 set EXCLUDE {
-  all.test
-  async.test
-  async2.test
-  btree2.test
-  btree3.test
-  btree4.test
-  btree5.test
-  btree6.test
-  corrupt.test
-  crash.test
-  crash2.test
-  crash3.test
-  exclusive3.test
   fts3.test
-  fuzz.test
-  fuzz_malloc.test
-  in2.test
-  loadext.test
-  malloc.test
-  malloc2.test
-  malloc3.test
-  malloc4.test
-  memleak.test
-  misc7.test
-  misuse.test
-  onefile.test
-  quick.test
-  soak.test
-  speed1.test
-  speed2.test
-  speed4.test
-  sqllimits1.test
-
-  thread001.test
-  thread002.test
-
-  incrvacuum_ioerr.test
-  autovacuum_crash.test
-  btree8.test
-  utf16.test
-  shared_err.test
-  vtab_err.test
 }
-
-if {[sqlite3 -has-codec]} {
-  # lappend EXCLUDE \
-  #  conflict.test
-}
-
 
 # Files to include in the test.  If this list is empty then everything
 # that is not in the EXCLUDE list is run.
@@ -92,7 +50,7 @@ if {[sqlite3 -has-codec]} {
 set INCLUDE {
 }
 
-foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
+foreach testfile [lsort -dictionary [glob $testdir/fts3*.test]] {
   set tail [file tail $testfile]
   if {[lsearch -exact $EXCLUDE $tail]>=0} continue
   if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue
@@ -105,7 +63,6 @@ foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
     set sqlite_open_file_count 0
   }
 }
-source $testdir/misuse.test
 
 set sqlite_open_file_count 0
 really_finish_test
