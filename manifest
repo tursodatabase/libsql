@@ -1,5 +1,5 @@
-C Do\snot\srequire\sSQLITE_ENABLE_BROKEN_FTS2\sif\sFTS2\sis\snot\senabled.\nThe\ssame\sfor\sFTS1.\s\sTicket\s#2777.\s(CVS\s4556)
-D 2007-11-23T18:06:23
+C Fix\sa\stypo\sin\sa\schange\sto\sall.test\sfrom\searlier\stoday.\s(CVS\s4557)
+D 2007-11-23T18:19:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -178,7 +178,7 @@ F src/vtab.c f819d55ef638d45e09ce00009d435da8bf16f528
 F src/where.c ddcbc5c419e9851906c9a9e76839086c98e7cea4
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
-F test/all.test d810e0ff34656a7754f2b8d5448fc199544ffc73
+F test/all.test f069885276df58fa2876bb54b3f9bd379eafa919
 F test/alter.test a87b7933d41c713c53341abe4eb014d0e273119e
 F test/alter2.test 4e0c502214daa710a0a9d7ec9689a0326b1a4e2a
 F test/alter3.test 8ce6b9c5605b3cfe7b901f454ecaf174c4f93e31
@@ -590,7 +590,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c8485eb8bc62c810ec9f73e103468c57116fd94c
-R 85158c45fe0f0fa8b2db9d8f4ecdc0ea
+P f94cdcfd1171fd110ed9cd4c47f1fb5fa7e99ca9
+R cf810e1e41ea0c1ce9c3cdeb8ac44a5e
 U drh
-Z 248bc72c249d49a5e6a1450796292c2d
+Z b72934b154618065708efb065dded2b6
