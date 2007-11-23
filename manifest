@@ -1,5 +1,5 @@
-C Avoid\sa\sdouble-free\sin\san\sout-of-memory\ssituation\swith\sa\sUSING\nclause\sor\sNATURAL\sJOIN.\s\sTicket\s#2789.\s(CVS\s4551)
-D 2007-11-23T13:42:52
+C Make\ssure\sthat\sINSERT\sINTO\s...\sSELECT\s...\salways\suses\san\sephemeral\r\nintermediate\stable\sif\sthe\sSELECT\sclause\srefers\sto\sthe\sdestination\stable,\r\neven\sif\sthe\sSELECT\sclause\sis\scompound\sor\suses\sthe\sdestination\stable\r\nin\sa\ssubquery.\s\sThis\sfixes\sa\slong-standing\sbug\sthat\scan\scause\san\r\ninfinite\sloop\sfor\ssome\sSQL\sstatements.\s(CVS\s4552)
+D 2007-11-23T15:02:19
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30c7e3ba426ddb253b8ef037d1873425da6009a8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/expr.c 7977bb9680ebeeabfa3214d936778baaa26dcc0c
 F src/func.c 73b4974e5ff03cc71345cc3a33b0022f7b99974a
 F src/hash.c 45a7005aac044b6c86bd7e49c44bc15d30006d6c
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
-F src/insert.c df9712e1f67201573a9677d3a2fe401d52d84dda
+F src/insert.c 86fe24ca954b6b3b6c32d05e5aa17387f244cfbb
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
@@ -331,6 +331,7 @@ F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 5a20e1ace5fa0800b58d28284212290189b49aed
 F test/insert3.test 9a4ef3526fd3cca8b05278020ec3100448b4c677
 F test/insert4.test 6919ddacd79c2cfeb9785b0f84217f9cb14853b5
+F test/insert5.test e8d5ba31283db5b0315ada9774dd99b6e9fe2122
 F test/interrupt.test 81555fb0f8179bb2d0dc7151fd75428223f93cf2
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
 F test/io.test 835b0ec66166312ff743e2fd11a878c65068de9f
@@ -588,7 +589,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 247fa2eac0789be48cae3587643ab07576ae7b76
-R fadab18fb0a0bf50417bc8c670c993f9
+P 596694752c5935ae50ad38d3b41bbda39ca999d8
+R 20a8f4025ce189436d5177ee5388d030
 U drh
-Z 099e4af1d341dbdcd9f41e78699e9abe
+Z 5100bd3ff118635e492cb0995aacacc3

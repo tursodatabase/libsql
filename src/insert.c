@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.192 2007/09/03 17:30:07 danielk1977 Exp $
+** $Id: insert.c,v 1.193 2007/11/23 15:02:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -99,22 +99,38 @@ void sqlite3TableAffinityStr(Vdbe *v, Table *pTab){
 }
 
 /*
-** Return non-zero if SELECT statement p opens the table with rootpage
-** iTab in database iDb.  This is used to see if a statement of the form 
-** "INSERT INTO <iDb, iTab> SELECT ..." can run without using temporary
-** table for the results of the SELECT. 
-**
-** No checking is done for sub-selects that are part of expressions.
+** Return non-zero if the table pTab in database iDb or any of its indices
+** have been opened at any point in the VDBE program beginning at location
+** iStartAddr throught the end of the program.  This is used to see if 
+** a statement of the form  "INSERT INTO <iDb, pTab> SELECT ..." can 
+** run without using temporary table for the results of the SELECT. 
 */
-static int selectReadsTable(Select *p, Schema *pSchema, int iTab){
+static int readsTable(Vdbe *v, int iStartAddr, int iDb, Table *pTab){
   int i;
-  struct SrcList_item *pItem;
-  if( p->pSrc==0 ) return 0;
-  for(i=0, pItem=p->pSrc->a; i<p->pSrc->nSrc; i++, pItem++){
-    if( pItem->pSelect ){
-      if( selectReadsTable(pItem->pSelect, pSchema, iTab) ) return 1;
-    }else{
-      if( pItem->pTab->pSchema==pSchema && pItem->pTab->tnum==iTab ) return 1;
+  int iEnd = sqlite3VdbeCurrentAddr(v);
+  for(i=iStartAddr; i<iEnd; i++){
+    VdbeOp *pOp = sqlite3VdbeGetOp(v, i);
+    if( pOp->opcode==OP_OpenRead ){
+      VdbeOp *pPrior = &pOp[-1];
+      int tnum = pOp->p2;
+      assert( i>iStartAddr );
+      assert( pPrior->opcode==OP_Integer );
+      if( pPrior->p1==iDb ){
+        Index *pIndex;
+        if( tnum==pTab->tnum ){
+          return 1;
+        }
+        for(pIndex=pTab->pIndex; pIndex; pIndex=pIndex->pNext){
+          if( tnum==pIndex->tnum ){
+            return 1;
+          }
+        }
+      }
+    }
+    if( pOp->opcode==OP_VOpen && pOp->p3==(const char*)pTab->pVtab ){
+      assert( pOp->p3!=0 );
+      assert( pOp->p3type==P3_VTAB );
+      return 1;
     }
   }
   return 0;
@@ -481,7 +497,7 @@ void sqlite3Insert(
     ** of the tables being read by the SELECT statement.  Also use a 
     ** temp table in the case of row triggers.
     */
-    if( triggers_exist || selectReadsTable(pSelect,pTab->pSchema,pTab->tnum) ){
+    if( triggers_exist || readsTable(v, iSelectLoop, iDb, pTab) ){
       useTempTable = 1;
     }
 
@@ -517,7 +533,7 @@ void sqlite3Insert(
     memset(&sNC, 0, sizeof(sNC));
     sNC.pParse = pParse;
     srcTab = -1;
-    useTempTable = 0;
+    assert( useTempTable==0 );
     nColumn = pList ? pList->nExpr : 0;
     for(i=0; i<nColumn; i++){
       if( sqlite3ExprResolveNames(&sNC, pList->a[i].pExpr) ){
