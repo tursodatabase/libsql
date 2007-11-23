@@ -1,9 +1,7 @@
 #!/bin/sh
 #
-# This script is used to compile SQLite and all its documentation and
-# ship everything up to the SQLite website.  This script will only work
-# on the system "zadok" at the Hwaci offices.  But others might find
-# the script useful as an example.
+# This script is used to compile SQLite and package everything up
+# so that it is ready to move to the SQLite website.
 #
 
 # Set srcdir to the name of the directory that contains the publish.sh
@@ -124,6 +122,6 @@ mv $HOME/rpm/SRPMS/sqlite-$vers*.rpm doc
 # Build the website
 #
 #cp $srcdir/../historical/* doc
-make doc
-cd doc
-chmod 644 *.gz
+#make doc
+#cd doc
+#chmod 644 *.gz
