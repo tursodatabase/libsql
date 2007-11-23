@@ -9,9 +9,9 @@
 #
 #***********************************************************************
 #
-# This test script checks that ticket #2784 has been fixed.
+# This test script checks that tickets #2784 and #2789 have been fixed.
 # 
-# $Id: mallocE.test,v 1.1 2007/11/21 15:24:01 drh Exp $
+# $Id: mallocE.test,v 1.2 2007/11/23 13:42:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -25,15 +25,24 @@ ifcapable !memdebug {
 }
 source $testdir/malloc_common.tcl
 
+# ticket #2784
+#
 set PREP { 
   PRAGMA page_size = 1024;
   CREATE TABLE t1(a, b, c);
   CREATE TABLE t2(x, y, z);
 }
-
 do_malloc_test mallocE-1 -sqlprep $PREP -sqlbody { 
   SELECT p, q FROM (SELECT a+b AS p, b+c AS q FROM t1, t2 WHERE c>5)
               LEFT JOIN t2 ON p=x;
 }
+
+# Ticket #2789
+#
+do_malloc_test mallocE-2 -sqlprep $PREP -sqlbody { 
+  SELECT x, y2 FROM (SELECT a+b AS x, b+c AS y2 FROM t1, t2 WHERE c>5)
+              LEFT JOIN t2 USING(x) WHERE y2>11;
+}
+
 
 finish_test
