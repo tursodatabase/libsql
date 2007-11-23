@@ -1,5 +1,5 @@
-C Add\sa\s#include\sof\ssqlite3.h\sto\sfts3_hash.c.\s\sTickets\s#2762\sand\s#2777.\s(CVS\s4555)
-D 2007-11-23T18:01:08
+C Do\snot\srequire\sSQLITE_ENABLE_BROKEN_FTS2\sif\sFTS2\sis\snot\senabled.\nThe\ssame\sfor\sFTS1.\s\sTicket\s#2777.\s(CVS\s4556)
+D 2007-11-23T18:06:23
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -25,7 +25,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c e45ff77a01524470ae1c2837e201654627ff1f19
+F ext/fts1/fts1.c 878951b8e9ee3af6afe918acd047727a9eb2ddce
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -38,7 +38,7 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 2ff290e0a130f6e7611f2e608cb3b5aaea721abc
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 9c7d635a3d48874c326d2376d900abf66a298d0f
+F ext/fts2/fts2.c 0f978f0c3bd1b993abe902c0a84f303785dbd9fc
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c cafebb4620d19684c4c9872530012441df60f503
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -590,7 +590,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 460af6bb668094c99a1d4dc1540b44b6d1d036b6
-R 916326d1f18d5f8fba0cd45d1c850a60
+P c8485eb8bc62c810ec9f73e103468c57116fd94c
+R 85158c45fe0f0fa8b2db9d8f4ecdc0ea
 U drh
-Z ca5c7d7b02377afc1f4866a212e70d6d
+Z 248bc72c249d49a5e6a1450796292c2d

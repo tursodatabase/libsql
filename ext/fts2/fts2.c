@@ -3,7 +3,8 @@
 ** fts3 (or higher).  If you believe that your use of fts2 is safe,
 ** add -DSQLITE_ENABLE_BROKEN_FTS2=1 to your CFLAGS.
 */
-#ifndef SQLITE_ENABLE_BROKEN_FTS2
+#if (!defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS2)) \
+        && !defined(SQLITE_ENABLE_BROKEN_FTS2)
 #error fts2 has a design flaw and has been deprecated.
 #endif
 /* The flaw is that fts2 uses the content table's unaliased rowid as
