@@ -1323,7 +1323,7 @@ static void checkActiveVdbeCnt(sqlite3 *db){
 ** the state of the cursor.  We have to invalidate the cursor
 ** so that it is never used again.
 */
-void invalidateCursorsOnModifiedBtrees(sqlite3 *db){
+static void invalidateCursorsOnModifiedBtrees(sqlite3 *db){
   int i;
   for(i=0; i<db->nDb; i++){
     Btree *p = db->aDb[i].pBt;
