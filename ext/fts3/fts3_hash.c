@@ -131,13 +131,13 @@ static int fts3BinCompare(const void *pKey1, int n1, const void *pKey2, int n2){
 ** The C syntax in this function definition may be unfamilar to some 
 ** programmers, so we provide the following additional explanation:
 **
-** The name of the function is "hashFunction".  The function takes a
-** single parameter "keyClass".  The return value of hashFunction()
+** The name of the function is "ftsHashFunction".  The function takes a
+** single parameter "keyClass".  The return value of ftsHashFunction()
 ** is a pointer to another function.  Specifically, the return value
-** of hashFunction() is a pointer to a function that takes two parameters
+** of ftsHashFunction() is a pointer to a function that takes two parameters
 ** with types "const void*" and "int" and returns an "int".
 */
-static int (*hashFunction(int keyClass))(const void*,int){
+static int (*ftsHashFunction(int keyClass))(const void*,int){
   if( keyClass==FTS3_HASH_STRING ){
     return &fts3StrHash;
   }else{
@@ -152,7 +152,7 @@ static int (*hashFunction(int keyClass))(const void*,int){
 ** For help in interpreted the obscure C code in the function definition,
 ** see the header comment on the previous function.
 */
-static int (*compareFunction(int keyClass))(const void*,int,const void*,int){
+static int (*ftsCompareFunction(int keyClass))(const void*,int,const void*,int){
   if( keyClass==FTS3_HASH_STRING ){
     return &fts3StrCompare;
   }else{
@@ -202,7 +202,7 @@ static void fts3Rehash(fts3Hash *pH, int new_size){
   fts3HashFree(pH->ht);
   pH->ht = new_ht;
   pH->htsize = new_size;
-  xHash = hashFunction(pH->keyClass);
+  xHash = ftsHashFunction(pH->keyClass);
   for(elem=pH->first, pH->first=0; elem; elem = next_elem){
     int h = (*xHash)(elem->pKey, elem->nKey) & (new_size-1);
     next_elem = elem->next;
@@ -228,7 +228,7 @@ static fts3HashElem *fts3FindElementByHash(
     struct _fts3ht *pEntry = &pH->ht[h];
     elem = pEntry->chain;
     count = pEntry->count;
-    xCompare = compareFunction(pH->keyClass);
+    xCompare = ftsCompareFunction(pH->keyClass);
     while( count-- && elem ){
       if( (*xCompare)(elem->pKey,elem->nKey,pKey,nKey)==0 ){ 
         return elem;
@@ -286,7 +286,7 @@ void *sqlite3Fts3HashFind(const fts3Hash *pH, const void *pKey, int nKey){
   int (*xHash)(const void*,int);  /* The hash function */
 
   if( pH==0 || pH->ht==0 ) return 0;
-  xHash = hashFunction(pH->keyClass);
+  xHash = ftsHashFunction(pH->keyClass);
   assert( xHash!=0 );
   h = (*xHash)(pKey,nKey);
   assert( (pH->htsize & (pH->htsize-1))==0 );
@@ -322,7 +322,7 @@ void *sqlite3Fts3HashInsert(
   int (*xHash)(const void*,int);  /* The hash function */
 
   assert( pH!=0 );
-  xHash = hashFunction(pH->keyClass);
+  xHash = ftsHashFunction(pH->keyClass);
   assert( xHash!=0 );
   hraw = (*xHash)(pKey, nKey);
   assert( (pH->htsize & (pH->htsize-1))==0 );

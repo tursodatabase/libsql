@@ -25,8 +25,6 @@
 */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
-
-#include "sqlite3.h"
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 

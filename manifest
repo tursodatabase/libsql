@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\schange\sto\sall.test\sfrom\searlier\stoday.\s(CVS\s4557)
-D 2007-11-23T18:19:22
+C The\sFTS3\samalgamation\scan\snow\sbe\sappended\sto\sthe\sSQLite\samalgamation\sto\ngenerate\sa\ssingle\ssource\sfile\sthat\scontains\sboth\scomponents.\s(CVS\s4558)
+D 2007-11-24T00:41:52
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -50,13 +50,13 @@ F ext/fts2/fts2_tokenizer1.c 8a545c232bdffafd117c4eeaf59789691909f26a
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.tokenizers a97c9a55b3422f6cb04af9de9296fe2447ea4a78
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 2ea2aead0d342a9844f522d9b51e24d47614b06b
+F ext/fts3/fts3.c b95b4b62211335cf74d2485a7c17925a9f8338f8
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3_hash.c 76506de426f8df5527254f5e0bc1abf05e83a2b8
+F ext/fts3/fts3_hash.c 83e7bb4042106b32811681dd2859b4577a7a6b35
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
 F ext/fts3/fts3_icu.c e676f8f0c472cfbb3194febf0eadc1cea6ff0d0c
 F ext/fts3/fts3_porter.c 3063da945fb0a935781c135f7575f39166173eca
-F ext/fts3/fts3_tokenizer.c 81e7604555b24dce6bc487d8169ca4ef51c71e4c
+F ext/fts3/fts3_tokenizer.c d777c079eaa76996e8493596b1124898d5692271
 F ext/fts3/fts3_tokenizer.h 7eb79de4f991a77f43c517e209e5fae95dfa7369
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
 F ext/fts3/mkfts3amal.tcl 8282b56f11d008b9fa1f09ad3f7eca513949575e
@@ -590,7 +590,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f94cdcfd1171fd110ed9cd4c47f1fb5fa7e99ca9
-R cf810e1e41ea0c1ce9c3cdeb8ac44a5e
+P 8c0b2157f2a2f8ecfa641a041279faf21aedd4e0
+R cdfb152187a9296f913494eaf2c01ee9
 U drh
-Z b72934b154618065708efb065dded2b6
+Z eba6c82b1c5d7dceb4b3e7cae88033fd
