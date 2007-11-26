@@ -4,9 +4,9 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-# This file runs all tests.
+# This file runs all out-of-memory tests.
 #
-# $Id: quick.test,v 1.67 2007/11/26 13:36:00 drh Exp $
+# $Id: mallocAll.test,v 1.1 2007/11/26 13:36:00 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -18,9 +18,6 @@ while {[set arg [lshift argv]] != ""} {
   switch -- $arg {
     -sharedpagercache {
       sqlite3_enable_shared_cache 1
-    }
-    -soak {
-       set SOAKTEST 1
     }
     default {
       set argv [linsert $argv 0 $arg]
@@ -36,49 +33,7 @@ proc finish_test {} {}
 set ISQUICK 1
 
 set EXCLUDE {
-  all.test
-  async.test
-  async2.test
-  btree2.test
-  btree3.test
-  btree4.test
-  btree5.test
-  btree6.test
-  corrupt.test
-  crash.test
-  crash2.test
-  crash3.test
-  exclusive3.test
-  fts3.test
-  fuzz.test
-  fuzz_malloc.test
-  in2.test
-  loadext.test
   mallocAll.test
-  malloc.test
-  malloc2.test
-  malloc3.test
-  malloc4.test
-  memleak.test
-  misc7.test
-  misuse.test
-  onefile.test
-  quick.test
-  soak.test
-  speed1.test
-  speed2.test
-  speed4.test
-  sqllimits1.test
-
-  thread001.test
-  thread002.test
-
-  incrvacuum_ioerr.test
-  autovacuum_crash.test
-  btree8.test
-  utf16.test
-  shared_err.test
-  vtab_err.test
 }
 
 if {[sqlite3 -has-codec]} {
@@ -93,7 +48,7 @@ if {[sqlite3 -has-codec]} {
 set INCLUDE {
 }
 
-foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
+foreach testfile [lsort -dictionary [glob $testdir/*malloc*.test]] {
   set tail [file tail $testfile]
   if {[lsearch -exact $EXCLUDE $tail]>=0} continue
   if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue

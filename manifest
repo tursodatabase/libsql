@@ -1,5 +1,5 @@
-C Declare\sthe\sinvalidateCursorsOnModifiedBtrees\sfunction\sto\sbe\sstatic.\nTicket\s#2792.\s(CVS\s4559)
-D 2007-11-24T10:23:45
+C Additional\sout-of-memory\stesting.\s\sFix\sbugs\scaused\sby\smalloc\sfailures\sin\nwhere.c.\s\sTickets\s#2794,\s#2795,\s#2796,\sand\s#2797.\s(CVS\s4560)
+D 2007-11-26T13:36:00
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -175,10 +175,10 @@ F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 123994fcd344993d2fb050a83b91b341bbbd08b4
 F src/vtab.c f819d55ef638d45e09ce00009d435da8bf16f528
-F src/where.c ddcbc5c419e9851906c9a9e76839086c98e7cea4
+F src/where.c 82e2cb76d7e15d79a5b19eaef23284c31868d4ee
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
-F test/all.test f069885276df58fa2876bb54b3f9bd379eafa919
+F test/all.test 23c2231ff0361b86cd7278d107208646bbc20196
 F test/alter.test a87b7933d41c713c53341abe4eb014d0e273119e
 F test/alter2.test 4e0c502214daa710a0a9d7ec9689a0326b1a4e2a
 F test/alter3.test 8ce6b9c5605b3cfe7b901f454ecaf174c4f93e31
@@ -365,10 +365,12 @@ F test/malloc7.test 0d71bb6520b99934b551fa36a9c591404aeaad61
 F test/malloc8.test addc27d907fec1af429551b95c72caa47fce2974
 F test/malloc9.test 95d7069ad4fa262bf33bc4c5ca0a46f2bb2391cb
 F test/mallocA.test 5ee8d42ff90e5b1aeee6fb645e73ffcb35bffd21
+F test/mallocAll.test 2a2222a5e447be6c6579055a9a26e507e4586f4e
 F test/mallocB.test 83bdbea443cc81758a57b0287807b0941218819a
 F test/mallocC.test 6f02fa2b4baa943bc6d6db323d5d07067967e728
 F test/mallocD.test d638fb8f214b47fd31edfae8af738b92bd943dc0
 F test/mallocE.test e15333c394d7c330c8372a7cdf7b0f7c16573082
+F test/mallocF.test 249860dd3357fe37855f8b86e105953457795e24
 F test/malloc_common.tcl b47137fb36e95fdafb0267745afefcd6b0a5b9dc
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
@@ -397,7 +399,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 6bf1a86c6a1e45536f72d782bf44c8e3c76510f8
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 38ae1806833d72d9a81a6121322e274f24937e18
-F test/quick.test 18727c9a480fe87143c5e7f381a38df8d1203d44
+F test/quick.test e4aa7c0c4fb6085ad7a3921da98741b5ce824633
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -590,7 +592,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0fc61f99b54bd269fcc011f448b9b971e902cb01
-R a314c7a29cbfffced0c652613fe340e1
+P 94f25fc1129c7fb8697a67e509ab9de54a173a58
+R 6d662c50cad0936ec8482eb8accdbc47
 U drh
-Z ef78acb28db3ec4e15d6c19b7209bfc1
+Z c43df1a7af430a19f4c80905dfdc39c8

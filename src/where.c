@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.262 2007/11/05 05:12:53 danielk1977 Exp $
+** $Id: where.c,v 1.263 2007/11/26 13:36:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -234,6 +234,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, int flags){
       if( flags & TERM_DYNAMIC ){
         sqlite3ExprDelete(p);
       }
+      pWC->a = pOld;
       return 0;
     }
     memcpy(pWC->a, pOld, sizeof(pWC->a[0])*pWC->nTerm);
@@ -552,7 +553,10 @@ static int isLikeOrGlob(
   }
   sqlite3DequoteExpr(db, pRight);
   z = (char *)pRight->token.z;
-  for(cnt=0; (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2]; cnt++){}
+  cnt = 0;
+  if( z ){
+    while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){ cnt++; }
+  }
   if( cnt==0 || 255==(u8)z[cnt] ){
     return 0;
   }
@@ -707,9 +711,9 @@ static void exprAnalyze(
   WhereClause *pWC,         /* the WHERE clause */
   int idxTerm               /* Index of the term to be analyzed */
 ){
-  WhereTerm *pTerm = &pWC->a[idxTerm];
-  ExprMaskSet *pMaskSet = pWC->pMaskSet;
-  Expr *pExpr = pTerm->pExpr;
+  WhereTerm *pTerm;
+  ExprMaskSet *pMaskSet;
+  Expr *pExpr;
   Bitmask prereqLeft;
   Bitmask prereqAll;
   int nPattern;
@@ -718,7 +722,12 @@ static void exprAnalyze(
   Parse *pParse = pWC->pParse;
   sqlite3 *db = pParse->db;
 
-  if( db->mallocFailed ) return;
+  if( db->mallocFailed ){
+    return;
+  }
+  pTerm = &pWC->a[idxTerm];
+  pMaskSet = pWC->pMaskSet;
+  pExpr = pTerm->pExpr;
   prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
   op = pExpr->op;
   if( op==TK_IN ){
@@ -895,7 +904,7 @@ or_not_possible:
       pStr1->flags = EP_Dequoted;
     }
     pStr2 = sqlite3ExprDup(db, pStr1);
-    if( pStr2 ){
+    if( !db->mallocFailed ){
       assert( pStr2->token.dyn );
       ++*(u8*)&pStr2->token.z[nPattern-1];
     }

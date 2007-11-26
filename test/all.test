@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.50 2007/11/23 18:19:22 drh Exp $
+# $Id: all.test,v 1.51 2007/11/26 13:36:00 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -65,6 +65,7 @@ lappend EXCLUDE memleak.test           ;# Alternate test driver script
 lappend EXCLUDE fuzz.test
 lappend EXCLUDE soak.test              ;# Takes a very long time (default 1 hr)
 lappend EXCLUDE fts3.test              ;# Wrapper for muliple fts3*.tests
+lappend EXCLUSE mallocAll.test         ;# Wrapper for running all malloc tests
 
 # Files to include in the test.  If this list is empty then everything
 # that is not in the EXCLUDE list is run.
