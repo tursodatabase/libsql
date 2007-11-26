@@ -1,5 +1,5 @@
-C Additional\sout-of-memory\stesting.\s\sFix\sbugs\scaused\sby\smalloc\sfailures\sin\nwhere.c.\s\sTickets\s#2794,\s#2795,\s#2796,\sand\s#2797.\s(CVS\s4560)
-D 2007-11-26T13:36:00
+C Use\smacro\s__DARWIN__\srather\sthan\s__MACOS__\sfor\sconditional\ncompilation\sof\sMacOSX\sspecific\sfeatures.\s\sTicket\s#2780.\s(CVS\s4561)
+D 2007-11-26T22:54:27
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,10 +131,10 @@ F src/printf.c 96c8d55315a13fc53cb3754cb15046f3ff891ea2
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 7c0ab94b8f287eb94fdb1eb101be603832ecfc34
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 5b950381f6fb030f123fcd41ae3fdf431c9b0689
+F src/shell.c c97be281cfc3dcb14902f45e4b16f20038eb83ff
 F src/sqlite.h.in 75ae0863db3a0b074868a6157e34b646dbe143dd
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
-F src/sqliteInt.h 4e6fdeb5630ead97bcec60b941e7a72203c64b9e
+F src/sqliteInt.h 4498ab4210ee3481a0a785e5e9020a412f7d1156
 F src/sqliteLimit.h 15ffe2116746c27ace2b428a26a4fcd6dba6fa65
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 9923abeffc9b3d7dad58e92b319661521f60debf
@@ -592,7 +592,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 94f25fc1129c7fb8697a67e509ab9de54a173a58
-R 6d662c50cad0936ec8482eb8accdbc47
+P 5e02dbabcfa42173adff234c086df1e962824c92
+R 48a06aa36c83561109ee0fdfde0fed78
 U drh
-Z c43df1a7af430a19f4c80905dfdc39c8
+Z 6e81ebc36d92b688936576124ed71082

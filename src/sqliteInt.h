@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.618 2007/11/12 09:50:26 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.619 2007/11/26 22:54:27 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -115,7 +115,7 @@
 **
 ** See also ticket #2741.
 */
-#if !defined(_XOPEN_SOURCE) && !defined(__MACOS__) && SQLITE_THREADSAFE
+#if !defined(_XOPEN_SOURCE) && !defined(__DARWIN__) && SQLITE_THREADSAFE
 #  define _XOPEN_SOURCE 500  /* Needed to enable pthread recursive mutexes */
 #endif
 

@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.169 2007/11/12 21:09:11 chw Exp $
+** $Id: shell.c,v 1.170 2007/11/26 22:54:27 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -22,20 +22,11 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#if !defined(_WIN32) && !defined(WIN32) && !defined(__MACOS__) && !defined(__OS2__)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__)
 # include <signal.h>
 # include <pwd.h>
 # include <unistd.h>
 # include <sys/types.h>
-#endif
-
-#ifdef __MACOS__
-# include <console.h>
-# include <signal.h>
-# include <unistd.h>
-# include <extras.h>
-# include <Files.h>
-# include <Folders.h>
 #endif
 
 #ifdef __OS2__
@@ -1767,17 +1758,12 @@ static int process_input(struct callback_data *p, FILE *in){
 static char *find_home_dir(void){
   char *home_dir = NULL;
 
-#if !defined(_WIN32) && !defined(WIN32) && !defined(__MACOS__) && !defined(__OS2__) && !defined(_WIN32_WCE)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__) && !defined(_WIN32_WCE)
   struct passwd *pwent;
   uid_t uid = getuid();
   if( (pwent=getpwuid(uid)) != NULL) {
     home_dir = pwent->pw_dir;
   }
-#endif
-
-#ifdef __MACOS__
-  char home_path[_MAX_PATH+1];
-  home_dir = getcwd(home_path, _MAX_PATH);
 #endif
 
 #if defined(_WIN32_WCE)
@@ -1918,10 +1904,6 @@ int main(int argc, char **argv){
   char *zFirstCmd = 0;
   int i;
   int rc = 0;
-
-#ifdef __MACOS__
-  argc = ccommand(&argv);
-#endif
 
   Argv0 = argv[0];
   main_init(&data);
