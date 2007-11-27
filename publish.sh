@@ -28,7 +28,7 @@ make fts3amal.c
 cat fts3amal.c >>sqlite3.c
 CFLAGS="-Os -DSQLITE_ENABLE_FTS3=1 -DSQLITE_THREADSAFE=0"
 echo '***** '"COMPILING sqlite3-$VERS.bin..."
-gcc $CFLAGS -Itsrc sqlite3.c tsrc/shell.c -o sqlite3 -ldl -lpthread
+gcc $CFLAGS -Itsrc sqlite3.c tsrc/shell.c -o sqlite3 -ldl
 strip sqlite3
 mv sqlite3 sqlite3-$VERS.bin
 gzip sqlite3-$VERS.bin

@@ -1,5 +1,5 @@
-C Add\sthe\spublish_osx.sh\sscript\sfor\sbuilding\sbinaries\sfor\sOSX\s(CVS\s4568)
-D 2007-11-27T18:30:38
+C Omit\sthe\ssuperfluous\s-lpthread\soption\sin\spublish.sh.\s\sTicket\s#2800.\s(CVS\s4569)
+D 2007-11-27T18:45:32
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -71,7 +71,7 @@ F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
 F mkopcodec.awk 3fb9bf077053c968451f4dd03d11661ac373f9d1
 F mkopcodeh.awk 799a299eaf3173c0f8ac0bd7c4b49c0f4d4590ca
 F mkso.sh 24bde4c09e6fe80f718db3c31c068f45e13a2f2c
-F publish.sh 4e1b331bd7f7b6a8d8a9db2a84e3d673ff66f299
+F publish.sh ea1178b310dd69e24b18c71ecf43af40381f1e35
 F publish_osx.sh efe4cb6502e81139ac77bc1f5c1b682ebfee1e79
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
@@ -593,7 +593,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2f748318fbb8ac4614c07629506b3955ce4fe20d
-R 4941b1ac021b5038e43b90b71e52d884
+P 9bd7c31496d1d2959761c09a4cfa94662891b81c
+R d910629fdc7143bbd347e6eb23b379d8
 U drh
-Z a890a0c3f15bc2f31c80b6f6987769d6
+Z a938369259e91bb2323f566d51a3c72d
