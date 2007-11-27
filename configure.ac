@@ -92,7 +92,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.30 $
+# $Revision: 1.31 $
 
 #########
 # Programs needed
@@ -244,7 +244,7 @@ if test "$enable_releasemode" = "no"; then
   ALLOWRELEASE=""
   AC_MSG_RESULT([no])
 else
-  ALLOWRELEASE="-release `cat VERSION`"
+  ALLOWRELEASE="-release `cat $srcdir/VERSION`"
   AC_MSG_RESULT([yes])
 fi
 AC_SUBST(ALLOWRELEASE)
