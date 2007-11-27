@@ -1,5 +1,5 @@
-C Bug\sfix\sin\sthe\sconfigure\sscript.\s\sTicket\s#2799.\nThe\sconfigure\sscript\sis\sa\sreal\smess\sand\nneeds\sto\sbe\scompletely\srewritten.\s(CVS\s4564)
-D 2007-11-27T14:50:07
+C Fix\sa\sbug\sthat\scan\scause\sa\ssegfault\son\swin32\ssystems\sfollowing\san\nI/O\serror.\s(CVS\s4565)
+D 2007-11-27T16:55:08
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -122,7 +122,7 @@ F src/os_unix.c db6755454c84004d0041eb1b2194c90b35db0a5b
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 1fb40eb62fb0719ea578d69edcb1a2974f04d214
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c c5ffa55c299663b579fbcb430752c1e79d302c5b
+F src/pager.c b1eaca429cf9a4e35bed12f6f326d39a82ee8a33
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
 F src/parse.y a780b33ef45dd7b3272319cf91e609d6f109a31c
 F src/pragma.c cb1486e76dbcad757968afc4083d3472032e62b5
@@ -592,7 +592,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f4c8f2d1918f24514f02cae9172c77f6957d32c1
-R bbaa02b7395da923c226aeaf46587efc
+P 9d15f0330d685e62fbf4a1a1ad18dfecdc511bf8
+R 089796694c6a301d0c6f684ee346f02f
 U drh
-Z 56eefc0d674544da0d9f5e22b963fd17
+Z 100037c53ee3474c3899859b5b1319f4

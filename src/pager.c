@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.394 2007/11/05 15:30:13 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.395 2007/11/27 16:55:08 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3007,6 +3007,7 @@ static PgHdr *pager_get_all_dirty_pages(Pager *pPager){
 static int hasHotJournal(Pager *pPager){
   sqlite3_vfs *pVfs = pPager->pVfs;
   if( !pPager->useJournal ) return 0;
+  if( !pPager->fd->pMethods ) return 0;
   if( !sqlite3OsAccess(pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS) ){
     return 0;
   }
