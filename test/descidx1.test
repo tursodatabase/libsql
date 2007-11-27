@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is descending indices.
 #
-# $Id: descidx1.test,v 1.7 2006/07/11 14:17:52 drh Exp $
+# $Id: descidx1.test,v 1.8 2007/11/27 23:36:59 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -319,6 +319,13 @@ do_test descidx1-6.3 {
   }
   get_file_format
 } {1}
+ifcapable vacuum {
+  # Verify that the file format is preserved across a vacuum.
+  do_test descidx1-6.3.1 {
+    execsql {VACUUM}
+    get_file_format
+  } {1}
+}
 do_test descidx1-6.4 {
   db close
   file delete -force test.db test.db-journal
@@ -332,6 +339,13 @@ do_test descidx1-6.5 {
   }
   get_file_format
 } {4}
+ifcapable vacuum {
+  # Verify that the file format is preserved across a vacuum.
+  do_test descidx1-6.6 {
+    execsql {VACUUM}
+    get_file_format
+  } {4}
+}
 
 
 finish_test
