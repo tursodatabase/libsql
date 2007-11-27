@@ -7,11 +7,14 @@
 # library that is loaded into TCL in order to run SQLite.
 #
 make sqlite3.c
+make fts3amal.c
+cat fts3amal.c >>sqlite3.c
 PATH=$PATH:/opt/mingw/bin
 TCLDIR=/home/drh/tcltk/846/win/846win
 TCLSTUBLIB=$TCLDIR/libtcl84stub.a
-OPTS='-DUSE_TCL_STUBS=1 -DTHREADSAFE=1 -DBUILD_sqlite=1 -DOS_WIN=1'
-CC="i386-mingw32msvc-gcc -O2 $OPTS -Itsrc -I$TCLDIR"
+OPTS='-DUSE_TCL_STUBS=1 -DSQLITE_THREADSAFE=1 -DBUILD_sqlite=1 -DOS_WIN=1'
+OPTS="$OPTS -DSQLITE_ENABLE_FTS3=1"
+CC="i386-mingw32msvc-gcc -Os $OPTS -Itsrc -I$TCLDIR"
 NM="i386-mingw32msvc-nm"
 CMD="$CC -c sqlite3.c"
 echo $CMD
