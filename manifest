@@ -1,5 +1,5 @@
-C Remove\ssuperfluous\s-lpthread\sfrom\spublish_osx.sh.\sTicket\s#2801.\nFix\sa\sbug\sin\smkdll.sh.\s(CVS\s4570)
-D 2007-11-27T21:44:30
+C Use\sthe\shexio\stest\sutility\srather\sthan\sTCL's\sbinary\sI/O\sto\savoid\n32/64-bit\sproblems\sin\sio.test.\s\sTicket\s#2803.\s\s(This\sis\sa\schange\nto\sthe\stest\sharness\sonly\s-\snot\sto\sSQLite.)\s(CVS\s4571)
+D 2007-11-27T23:11:45
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -336,7 +336,7 @@ F test/insert4.test 6919ddacd79c2cfeb9785b0f84217f9cb14853b5
 F test/insert5.test e8d5ba31283db5b0315ada9774dd99b6e9fe2122
 F test/interrupt.test 81555fb0f8179bb2d0dc7151fd75428223f93cf2
 F test/intpkey.test af4fd826c4784ec5c93b444de07adea0254d0d30
-F test/io.test 835b0ec66166312ff743e2fd11a878c65068de9f
+F test/io.test 80a7a7f1a2792e037d447b03e8c22ee1f6eaf339
 F test/ioerr.test ae429185a3a11a318aa7ec64e2188e6119e43bca
 F test/ioerr2.test e3d52c40f43f9b61da9b38951a737e7b84ebae96
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
@@ -593,7 +593,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4f09f233f0603696aac80f1a4f86bcc803a00daf
-R 3be5fb77281a8e7163111b23a1f8b7d1
+P 8d6e8fd381d26b9f14464f545c37363218206391
+R 06c20329a63cf714616c5a4f6d4f7b29
 U drh
-Z 1771ab6251ed57e44bbb1065a231547d
+Z 1fd27d5d1474b3f357c5293f3106001a
