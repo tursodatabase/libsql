@@ -1,5 +1,5 @@
-C Add\san\simplementation\sof\srecursive\smutexes\sfor\sunix\ssystems\sthat\nlack\spthreads\srecursive\smutexes\s(ex:\sSolaris\s2.6).\s\sModern\sunix\nsystems\scontinue\sto\suse\sthe\srecursive\smutexes\sprovided\sby\spthreads.\s(CVS\s4573)
-D 2007-11-28T00:51:35
+C Preset\sthe\slegacy_file_format\spragma\sto\sthe\svalue\sof\sthe\sprimary\ndatabase\sso\sthat\sa\sVACUUM\swill\snot\sunknowingly\salter\sthe\ssetting.\nTicket\s#2804.\s(CVS\s4574)
+D 2007-11-28T13:43:17
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -127,7 +127,7 @@ F src/pager.c b1eaca429cf9a4e35bed12f6f326d39a82ee8a33
 F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
 F src/parse.y a780b33ef45dd7b3272319cf91e609d6f109a31c
 F src/pragma.c cb1486e76dbcad757968afc4083d3472032e62b5
-F src/prepare.c 5dd06102c4c538fcbb9c71d35e505abb9fcbd269
+F src/prepare.c f811fdb6fd4a82cca673a6e1d5b041d6caf567f1
 F src/printf.c 96c8d55315a13fc53cb3754cb15046f3ff891ea2
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 7c0ab94b8f287eb94fdb1eb101be603832ecfc34
@@ -181,7 +181,7 @@ F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test ee350b9ab15b175fc0a8fb51bf2141ed3a3b9cba
 F test/alter.test a87b7933d41c713c53341abe4eb014d0e273119e
-F test/alter2.test 4e0c502214daa710a0a9d7ec9689a0326b1a4e2a
+F test/alter2.test 9d9850064b5c572991ea744a88ea650045f4ac6a
 F test/alter3.test 8ce6b9c5605b3cfe7b901f454ecaf174c4f93e31
 F test/altermalloc.test 29d4a8400277efb4ba8ffe90804c6dc2fdfbf063
 F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
@@ -248,7 +248,7 @@ F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test 57533e88e886608bf5ae0f394e14c2eb1b1f7754
 F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
-F test/descidx1.test 4537cac47b3bccf485ec44fcaa95206dd32b67d4
+F test/descidx1.test 6c9d528b60d883a8cf8f539c722df6b763c774c0
 F test/descidx2.test eb3a2882ec58aa6e1e8131d9bb54436e5b4a3ce2
 F test/descidx3.test 3a55b8d73bc3e9ad084e0da7fec781cf0d2a0356
 F test/diskfull.test 34ef53e88372c5b5e488ad1581514559a224c2b1
@@ -593,7 +593,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 57400f50c600a59b56ba6eadfdc740235c194cd6
-R 8dde434a6ff58760125bd11cf8e8307f
+P f366a776c1b2dda42b4f10fdb8be66029165d084
+R f8726377bf1d2f12ba17ef1e3030e09a
 U drh
-Z d10de234723bedb4b88498db89c73bc6
+Z 4b43ff400d6268b573f303c0eaf9af93

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.64 2007/11/14 06:48:48 danielk1977 Exp $
+** $Id: prepare.c,v 1.65 2007/11/28 13:43:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -288,6 +288,14 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     return SQLITE_ERROR;
   }
 
+  /* Ticket #2804:  When we open a database in the newer file format,
+  ** clear the legacy_file_format pragma flag so that a VACUUM will
+  ** not downgrade the database and thus invalidate any descending
+  ** indices that the user might have created.
+  */
+  if( iDb==0 && meta[1]>=4 ){
+    db->flags &= ~SQLITE_LegacyFileFmt;
+  }
 
   /* Read the schema information out of the schema tables
   */
