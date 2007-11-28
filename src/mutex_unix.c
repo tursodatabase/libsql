@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for pthreads
 **
-** $Id: mutex_unix.c,v 1.3 2007/11/28 00:51:35 drh Exp $
+** $Id: mutex_unix.c,v 1.4 2007/11/28 13:55:55 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -94,7 +94,7 @@ sqlite3_mutex *sqlite3_mutex_alloc(int iType){
     case SQLITE_MUTEX_RECURSIVE: {
       p = sqlite3MallocZero( sizeof(*p) );
       if( p ){
-#ifdef PTHREAD_MUTEX_RECURSIVE
+#ifndef SQLITE_HOMEGROWN_RECURSIVE_MUTEX
         /* Use a recursive mutex if it is available */
         pthread_mutexattr_t recursiveAttr;
         pthread_mutexattr_init(&recursiveAttr);
@@ -158,9 +158,8 @@ void sqlite3_mutex_enter(sqlite3_mutex *p){
   assert( p );
   assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
 
-#ifdef PTHREAD_MUTEX_RECURSIVE
+#ifndef SQLITE_HOMEGROWN_RECURSIVE_MUTEX
   /* Use the built-in recursive mutexes if they are available.
-  ** That they are not available on all systems.
   */
   pthread_mutex_lock(&p->mutex);
   p->owner = pthread_self();
@@ -171,6 +170,10 @@ void sqlite3_mutex_enter(sqlite3_mutex *p){
   ** is atomic - that it cannot be deceived into thinking self
   ** and p->owner are equal if p->owner changes between two values
   ** that are not equal to self while the comparison is taking place.
+  ** This implementation also assumes a coherent cache - that 
+  ** separate processes cannot read different values from the same
+  ** address at the same time.  If either of these two conditions
+  ** are not met, then the mutexes will fail and problems will result.
   */
   {
     pthread_t self = pthread_self();
@@ -196,9 +199,8 @@ int sqlite3_mutex_try(sqlite3_mutex *p){
   assert( p );
   assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
 
-#ifdef PTHREAD_MUTEX_RECURSIVE
+#ifndef SQLITE_HOMEGROWN_RECURSIVE_MUTEX
   /* Use the built-in recursive mutexes if they are available.
-  ** That they are not available on all systems.
   */
   if( pthread_mutex_trylock(&p->mutex)==0 ){
     p->owner = pthread_self();
@@ -213,6 +215,10 @@ int sqlite3_mutex_try(sqlite3_mutex *p){
   ** is atomic - that it cannot be deceived into thinking self
   ** and p->owner are equal if p->owner changes between two values
   ** that are not equal to self while the comparison is taking place.
+  ** This implementation also assumes a coherent cache - that 
+  ** separate processes cannot read different values from the same
+  ** address at the same time.  If either of these two conditions
+  ** are not met, then the mutexes will fail and problems will result.
   */
   {
     pthread_t self = pthread_self();
