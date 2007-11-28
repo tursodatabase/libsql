@@ -1,5 +1,5 @@
-C Clarify\sthe\sconditions\sunder\swhich\shomegrown\srecursive\smutexes\swork\n(they\srequire\sa\scoherent\scache)\sand\sonly\senable\sthem\sif\sthere\sis\san\nexplicit\s#define\sso\sas\sto\savoid\saccidental\suse\son\splatforms\sthat\sdo\nnot\smeet\sthe\sconstraints.\s\sTicket\s#2805.\s(CVS\s4575)
-D 2007-11-28T13:55:55
+C Reorganize\sthe\scode\sfor\sthe\shomegrown\srecursive\smutexes.\s\sFix\sa\splace\nin\sthe\sprevious\scheck-in\swhere\sthe\s#ifdef\slabel\swas\sincorrect.\nTicket\s#2804.\s(CVS\s4576)
+D 2007-11-28T14:04:57
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -110,7 +110,7 @@ F src/mem3.c a9857cf92c9e4c889184b2cf1ca1839c801fc942
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 7fe4773e98ed74a63b2e54fc557929eb155f6269
-F src/mutex_unix.c 94da6981f99f541fa712eae2394a02abe28d8d81
+F src/mutex_unix.c a6e111947a3cdaa2cda394ed060d7f496fcb4af8
 F src/mutex_w32.c 6e197765f283815496193e78e9548b5d0e53b68e
 F src/os.c 8360932f1450b2b45edb608a3b184b031f7d00cc
 F src/os.h b75506ab40d222300f38023acb56fe08df5ffe33
@@ -593,7 +593,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f731fa6bb398d8af621af17dc0677dd0f715c4a7
-R 4e1efce73c2c2dbd0b0a966f60aca236
+P 80299eebddba9aac4c1bc36ffa2b440bffbf1751
+R 91aabeff7afc14d1c39bb734a20c5788
 U drh
-Z e8231964a01316a62ce8f3b57c4b7533
+Z 5760708bd767145f7cd934d8b8502186
