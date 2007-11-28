@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.19 2007/10/09 08:29:33 danielk1977 Exp $
+# $Id: sqllimits1.test,v 1.20 2007/11/28 22:36:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -127,6 +127,19 @@ do_test sqllimits-1.14.2 {
 do_test sqllimits-1.14.3 {
   sqlite3_finalize $::STMT 
 } {SQLITE_TOOBIG}
+
+do_test sqllimits-1.15 {
+  execsql {
+    CREATE TABLE t4(x);
+    INSERT INTO t4 VALUES(1);
+    INSERT INTO t4 VALUES(2);
+    INSERT INTO t4 SELECT 2+x FROM t4;
+  }
+  catchsql {
+    SELECT group_concat(hex(randomblob(20000))) FROM t4;
+  }
+} {1 {string or blob too big}}
+db eval {DROP TABLE t4}
 
 #--------------------------------------------------------------------
 # Test cases sqllimits-2.* test that the SQLITE_MAX_SQL_LENGTH limit

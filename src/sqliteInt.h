@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.620 2007/11/27 02:38:01 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.621 2007/11/28 22:36:41 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -363,6 +363,7 @@ typedef struct NameContext NameContext;
 typedef struct Parse Parse;
 typedef struct Select Select;
 typedef struct SrcList SrcList;
+typedef struct StrAccum StrAccum;
 typedef struct Table Table;
 typedef struct TableLock TableLock;
 typedef struct Token Token;
@@ -1574,6 +1575,20 @@ struct DbFixer {
 };
 
 /*
+** An objected used to accumulate the text of a string where we
+** do not necessarily know how big the string will be in the end.
+*/
+struct StrAccum {
+  char *zBase;     /* A base allocation.  Not from malloc. */
+  char *zText;     /* The string collected so far */
+  int  nChar;      /* Length of the string so far */
+  int  nAlloc;     /* Amount of space allocated in zText */
+  u8   mallocFailed;   /* Becomes true if any memory allocation fails */
+  u8   useMalloc;      /* True if zText is enlargable using realloc */
+  u8   tooBig;         /* Becomes true if string size exceeds limits */
+};
+
+/*
 ** A pointer to this structure is used to communicate information
 ** from sqlite3Init and OP_ParseSchema into the sqlite3InitCallback.
 */
@@ -1878,6 +1893,10 @@ int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
 int sqlite3ApiExit(sqlite3 *db, int);
 void sqlite3AbortOtherActiveVdbes(sqlite3 *, Vdbe *);
 int sqlite3OpenTempDatabase(Parse *);
+
+void sqlite3StrAccumAppend(StrAccum*,const char*,int);
+char *sqlite3StrAccumFinish(StrAccum*);
+void sqlite3StrAccumReset(StrAccum*);
 
 
 /*
