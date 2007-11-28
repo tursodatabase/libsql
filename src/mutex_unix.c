@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for pthreads
 **
-** $Id: mutex_unix.c,v 1.2 2007/08/28 22:24:35 drh Exp $
+** $Id: mutex_unix.c,v 1.3 2007/11/28 00:51:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -25,6 +25,7 @@
 #ifdef SQLITE_MUTEX_PTHREADS
 
 #include <pthread.h>
+
 
 /*
 ** Each recursive mutex is an instance of the following structure.
@@ -93,11 +94,18 @@ sqlite3_mutex *sqlite3_mutex_alloc(int iType){
     case SQLITE_MUTEX_RECURSIVE: {
       p = sqlite3MallocZero( sizeof(*p) );
       if( p ){
+#ifdef PTHREAD_MUTEX_RECURSIVE
+        /* Use a recursive mutex if it is available */
         pthread_mutexattr_t recursiveAttr;
         pthread_mutexattr_init(&recursiveAttr);
         pthread_mutexattr_settype(&recursiveAttr, PTHREAD_MUTEX_RECURSIVE);
         pthread_mutex_init(&p->mutex, &recursiveAttr);
         pthread_mutexattr_destroy(&recursiveAttr);
+#else
+        /* If recursive mutexes are not available, we will have to
+        ** build our own.  See below. */
+        pthread_mutex_init(&p->mutex, 0);
+#endif
         p->id = iType;
       }
       break;
@@ -149,9 +157,34 @@ void sqlite3_mutex_free(sqlite3_mutex *p){
 void sqlite3_mutex_enter(sqlite3_mutex *p){
   assert( p );
   assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
+
+#ifdef PTHREAD_MUTEX_RECURSIVE
+  /* Use the built-in recursive mutexes if they are available.
+  ** That they are not available on all systems.
+  */
   pthread_mutex_lock(&p->mutex);
   p->owner = pthread_self();
   p->nRef++;
+#else
+  /* If recursive mutexes are not available, then we have to grow
+  ** our own.  This implementation assumes that pthread_equal()
+  ** is atomic - that it cannot be deceived into thinking self
+  ** and p->owner are equal if p->owner changes between two values
+  ** that are not equal to self while the comparison is taking place.
+  */
+  {
+    pthread_t self = pthread_self();
+    if( p->nRef>0 && pthread_equal(p->owner, self) ){
+      p->nRef++;
+    }else{
+      pthread_mutex_lock(&p->mutex);
+      assert( p->nRef==0 );
+      p->owner = self;
+      p->nRef = 1;
+    }
+  }
+#endif
+
 #ifdef SQLITE_DEBUG
   if( p->trace ){
     printf("enter mutex %p (%d) with nRef=%d\n", p, p->trace, p->nRef);
@@ -162,18 +195,46 @@ int sqlite3_mutex_try(sqlite3_mutex *p){
   int rc;
   assert( p );
   assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
+
+#ifdef PTHREAD_MUTEX_RECURSIVE
+  /* Use the built-in recursive mutexes if they are available.
+  ** That they are not available on all systems.
+  */
   if( pthread_mutex_trylock(&p->mutex)==0 ){
     p->owner = pthread_self();
     p->nRef++;
     rc = SQLITE_OK;
-#ifdef SQLITE_DEBUG
-    if( p->trace ){
-      printf("enter mutex %p (%d) with nRef=%d\n", p, p->trace, p->nRef);
-    }
-#endif
   }else{
     rc = SQLITE_BUSY;
   }
+#else
+  /* If recursive mutexes are not available, then we have to grow
+  ** our own.  This implementation assumes that pthread_equal()
+  ** is atomic - that it cannot be deceived into thinking self
+  ** and p->owner are equal if p->owner changes between two values
+  ** that are not equal to self while the comparison is taking place.
+  */
+  {
+    pthread_t self = pthread_self();
+    if( p->nRef>0 && pthread_equal(p->owner, self) ){
+      p->nRef++;
+      rc = SQLITE_OK;
+    }else if( pthread_mutex_lock(&p->mutex)==0 ){
+      assert( p->nRef==0 );
+      p->owner = self;
+      p->nRef = 1;
+      rc = SQLITE_OK;
+    }else{
+      rc = SQLITE_BUSY;
+    }
+  }
+#endif
+
+#ifdef SQLITE_DEBUG
+  if( rc==SQLITE_OK && p->trace ){
+    printf("enter mutex %p (%d) with nRef=%d\n", p, p->trace, p->nRef);
+  }
+#endif
   return rc;
 }
 
@@ -188,12 +249,20 @@ void sqlite3_mutex_leave(sqlite3_mutex *p){
   assert( sqlite3_mutex_held(p) );
   p->nRef--;
   assert( p->nRef==0 || p->id==SQLITE_MUTEX_RECURSIVE );
+
+#ifdef PTHREAD_RECURSIVE_MUTEX
+  pthread_mutex_unlock(&p->mutex);
+#else
+  if( p->nRef==0 ){
+    pthread_mutex_unlock(&p->mutex);
+  }
+#endif
+
 #ifdef SQLITE_DEBUG
   if( p->trace ){
     printf("leave mutex %p (%d) with nRef=%d\n", p, p->trace, p->nRef);
   }
 #endif
-  pthread_mutex_unlock(&p->mutex);
 }
 
 /*

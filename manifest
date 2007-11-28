@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\sverify\sthat\sthe\sfile\sformat\sis\spreserved\sacross\nVACUUM.\s\sTicket\s#2804.\s(CVS\s4572)
-D 2007-11-27T23:36:59
+C Add\san\simplementation\sof\srecursive\smutexes\sfor\sunix\ssystems\sthat\nlack\spthreads\srecursive\smutexes\s(ex:\sSolaris\s2.6).\s\sModern\sunix\nsystems\scontinue\sto\suse\sthe\srecursive\smutexes\sprovided\sby\spthreads.\s(CVS\s4573)
+D 2007-11-28T00:51:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -110,7 +110,7 @@ F src/mem3.c a9857cf92c9e4c889184b2cf1ca1839c801fc942
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 7fe4773e98ed74a63b2e54fc557929eb155f6269
-F src/mutex_unix.c ff77650261a245035b79c5c8a174f4e05d3cae8a
+F src/mutex_unix.c 69e996b7c26bb50619c79c173dbba21658b65d2f
 F src/mutex_w32.c 6e197765f283815496193e78e9548b5d0e53b68e
 F src/os.c 8360932f1450b2b45edb608a3b184b031f7d00cc
 F src/os.h b75506ab40d222300f38023acb56fe08df5ffe33
@@ -593,7 +593,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 07f7dde8a636aa05b917daa6b248c6f98654aab8
-R 3c60f3c335bef3e1e830e41efbe0e631
+P 57400f50c600a59b56ba6eadfdc740235c194cd6
+R 8dde434a6ff58760125bd11cf8e8307f
 U drh
-Z 6de36b7ac21f25e08677d9c3cdbdc203
+Z d10de234723bedb4b88498db89c73bc6
