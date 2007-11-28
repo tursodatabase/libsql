@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.395 2007/11/27 16:55:08 drh Exp $
+** @(#) $Id: pager.c,v 1.396 2007/11/28 16:19:56 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2330,6 +2330,18 @@ int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize){
   }
   *pPageSize = pPager->pageSize;
   return rc;
+}
+
+/*
+** Return a pointer to the "temporary page" buffer held internally
+** by the pager.  This is a buffer that is big enough to hold the
+** entire content of a database page.  This buffer is used internally
+** during rollback and will be overwritten whenever a rollback
+** occurs.  But other modules are free to use it too, as long as
+** no rollbacks are happening.
+*/
+void *sqlite3PagerTempSpace(Pager *pPager){
+  return pPager->pTmpSpace;
 }
 
 /*

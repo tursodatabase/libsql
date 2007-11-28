@@ -1,5 +1,5 @@
-C Reorganize\sthe\scode\sfor\sthe\shomegrown\srecursive\smutexes.\s\sFix\sa\splace\nin\sthe\sprevious\scheck-in\swhere\sthe\s#ifdef\slabel\swas\sincorrect.\nTicket\s#2804.\s(CVS\s4576)
-D 2007-11-28T14:04:57
+C Change\sthe\sBTree\sso\sthat\sit\suses\sthe\sPagers\stemporary\spage\sspace\swhen\nreorganizing\sthe\srows\son\sa\spage,\srather\sthan\smallocing\sfor\sspace\sof\nits\sown.\s\sIn\sthis\sway,\swe\savoid\shaving\sto\sdeal\swith\sa\smalloc\sfailure\ndeep\sdown\sinside\sthe\spage\sreorganizer.\s\sTicket\s#2806\s(CVS\s4577)
+D 2007-11-28T16:19:56
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -83,7 +83,7 @@ F src/analyze.c fd1a3d756c1a20fca3c505bed0398f4cdca83cb8
 F src/attach.c a01d55157d46a1234909f3a7f21fb09549c947bd
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/btmutex.c 442be6f068d77ca9ffd69899cf0a3943c244548c
-F src/btree.c 008ce6b6bbcf00dfa3b1eca41bd3560fb287fd52
+F src/btree.c c5844bb4bbe997a7c8400a714fcf304d91855383
 F src/btree.h d0736ebca4b6eafbdd823c46a8de574cea078211
 F src/btreeInt.h 4330c19b8314545fdb209cc77e2a57f6a5290e9c
 F src/build.c b58dd7c7a763a228196022ec0d51781ed6995cde
@@ -123,8 +123,8 @@ F src/os_unix.c db6755454c84004d0041eb1b2194c90b35db0a5b
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 1fb40eb62fb0719ea578d69edcb1a2974f04d214
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c b1eaca429cf9a4e35bed12f6f326d39a82ee8a33
-F src/pager.h d783e7f184afdc33adff37ba58d4e029bd8793b3
+F src/pager.c bb524fe4b501a60762d07d6d0d33fd548b176cf6
+F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
 F src/parse.y a780b33ef45dd7b3272319cf91e609d6f109a31c
 F src/pragma.c cb1486e76dbcad757968afc4083d3472032e62b5
 F src/prepare.c f811fdb6fd4a82cca673a6e1d5b041d6caf567f1
@@ -593,7 +593,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 80299eebddba9aac4c1bc36ffa2b440bffbf1751
-R 91aabeff7afc14d1c39bb734a20c5788
+P 542e11f954983ae26fef4ea850c8b2a20f738edd
+R 21c1d3a78e0cb66c070fb743696cb747
 U drh
-Z 5760708bd767145f7cd934d8b8502186
+Z 6091ee38d7896a754234ddd4a74396ad

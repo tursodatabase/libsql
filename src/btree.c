@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.430 2007/11/05 15:30:13 danielk1977 Exp $
+** $Id: btree.c,v 1.431 2007/11/28 16:19:56 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -677,8 +677,7 @@ static int defragmentPage(MemPage *pPage){
   assert( pPage->pBt->usableSize <= SQLITE_MAX_PAGE_SIZE );
   assert( pPage->nOverflow==0 );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  temp = sqlite3_malloc( pPage->pBt->pageSize );
-  if( temp==0 ) return SQLITE_NOMEM;
+  temp = sqlite3PagerTempSpace(pPage->pBt->pPager);
   data = pPage->aData;
   hdr = pPage->hdrOffset;
   cellOffset = pPage->cellOffset;
@@ -705,7 +704,6 @@ static int defragmentPage(MemPage *pPage){
   data[hdr+7] = 0;
   addr = cellOffset+2*nCell;
   memset(&data[addr], 0, brk-addr);
-  sqlite3_free(temp);
   return SQLITE_OK;
 }
 
