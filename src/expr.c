@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.316 2007/11/12 09:50:26 danielk1977 Exp $
+** $Id: expr.c,v 1.317 2007/11/29 17:05:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1522,6 +1522,143 @@ struct QueryCoder {
   NameContext *pNC;    /* Namespace of first enclosing query */
 };
 
+#ifdef SQLITE_TEST
+  int sqlite3_enable_in_opt = 1;
+#else
+  #define sqlite3_enable_in_opt 1
+#endif
+
+/*
+** This function is used by the implementation of the IN (...) operator.
+** It's job is to find or create a b-tree structure that may be used
+** either to test for membership of the (...) set or to iterate through
+** it's members, skipping duplicates.
+**
+** The cursor opened on the structure (database table, database index 
+** or ephermal table) is stored in pX->iTable before this function returns.
+** The returned value indicates the structure type, as follows:
+**
+**   IN_INDEX_ROWID - The cursor was opened on a database table.
+**   IN_INDEX_INDEX - The cursor was opened on a database indec.
+**   IN_INDEX_EPH -   The cursor was opened on a specially created and
+**                    populated epheremal table.
+**
+** An existing structure may only be used if the SELECT is of the simple
+** form:
+**
+**     SELECT <column> FROM <table>
+**
+** If the mustBeUnique parameter is false, the structure will be used 
+** for fast set membership tests. In this case an epheremal table must 
+** be used unless <column> is an INTEGER PRIMARY KEY or an index can 
+** be found with <column> as it's left-most column.
+**
+** If mustBeUnique is true, then the structure will be used to iterate
+** through the set members, skipping any duplicates. In this case an
+** epheremal table must be used unless the selected <column> is guaranteed
+** to be unique - either because it is an INTEGER PRIMARY KEY or it
+** is unique by virtue of a constraint or implicit index.
+*/
+int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
+  Select *p;
+  int eType = 0;
+  int iTab = pParse->nTab++;
+
+  /* The follwing if(...) expression is true if the SELECT is of the 
+  ** simple form:
+  **
+  **     SELECT <column> FROM <table>
+  **
+  ** If this is the case, it may be possible to use an existing table
+  ** or index instead of generating an epheremal table.
+  */
+  if( sqlite3_enable_in_opt
+   && (p=pX->pSelect) && !p->pPrior
+   && !p->isDistinct && !p->isAgg && !p->pGroupBy
+   && p->pSrc && p->pSrc->nSrc==1 && !p->pSrc->a[0].pSelect
+   && !p->pSrc->a[0].pTab->pSelect                                  
+   && p->pEList->nExpr==1 && p->pEList->a[0].pExpr->op==TK_COLUMN
+   && !p->pLimit && !p->pOffset && !p->pWhere
+  ){
+    sqlite3 *db = pParse->db;
+    Index *pIdx;
+    Expr *pExpr = p->pEList->a[0].pExpr;
+    int iCol = pExpr->iColumn;
+    Vdbe *v = sqlite3GetVdbe(pParse);
+
+    /* This function is only called from two places. In both cases the vdbe
+    ** has already been allocated. So assume sqlite3GetVdbe() is always
+    ** successful here.
+    */
+    assert(v);
+    if( iCol<0 ){
+      int iMem = pParse->nMem++;
+      int iAddr;
+      Table *pTab = p->pSrc->a[0].pTab;
+      int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+      sqlite3VdbeUsesBtree(v, iDb);
+
+      sqlite3VdbeAddOp(v, OP_MemLoad, iMem, 0);
+      iAddr = sqlite3VdbeAddOp(v, OP_If, 0, iMem);
+      sqlite3VdbeAddOp(v, OP_MemInt, 1, iMem);
+
+      sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
+      eType = IN_INDEX_ROWID;
+
+      sqlite3VdbeJumpHere(v, iAddr);
+    }else{
+      /* The collation sequence used by the comparison. If an index is to 
+      ** be used in place of a temp-table, it must be ordered according
+      ** to this collation sequence.
+      */
+      CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pExpr);
+
+      /* Check that the affinity that will be used to perform the 
+      ** comparison is the same as the affinity of the column. If
+      ** it is not, it is not possible to use any index.
+      */
+      Table *pTab = p->pSrc->a[0].pTab;
+      char aff = comparisonAffinity(pX);
+      int affinity_ok = (pTab->aCol[iCol].affinity==aff||aff==SQLITE_AFF_NONE);
+
+      for(pIdx=pTab->pIndex; pIdx && eType==0 && affinity_ok; pIdx=pIdx->pNext){
+        if( (pIdx->aiColumn[0]==iCol)
+         && (pReq==sqlite3FindCollSeq(db, ENC(db), pIdx->azColl[0], -1, 0))
+         && (!mustBeUnique || (pIdx->nColumn==1 && pIdx->onError!=OE_None))
+        ){
+          int iDb;
+          int iMem = pParse->nMem++;
+          int iAddr;
+          char *pKey;
+  
+          pKey = (char *)sqlite3IndexKeyinfo(pParse, pIdx);
+          iDb = sqlite3SchemaToIndex(db, pIdx->pSchema);
+          sqlite3VdbeUsesBtree(v, iDb);
+
+          sqlite3VdbeAddOp(v, OP_MemLoad, iMem, 0);
+          iAddr = sqlite3VdbeAddOp(v, OP_If, 0, iMem);
+          sqlite3VdbeAddOp(v, OP_MemInt, 1, iMem);
+  
+          sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
+          VdbeComment((v, "# %s", pIdx->zName));
+          sqlite3VdbeOp3(v,OP_OpenRead,iTab,pIdx->tnum,pKey,P3_KEYINFO_HANDOFF);
+          eType = IN_INDEX_INDEX;
+          sqlite3VdbeAddOp(v, OP_SetNumColumns, iTab, pIdx->nColumn);
+
+          sqlite3VdbeJumpHere(v, iAddr);
+        }
+      }
+    }
+  }
+
+  if( eType==0 ){
+    sqlite3CodeSubselect(pParse, pX);
+    eType = IN_INDEX_EPH;
+  }else{
+    pX->iTable = iTab;
+  }
+  return eType;
+}
 
 /*
 ** Generate code for scalar subqueries used as an expression
@@ -2036,7 +2173,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       int addr;
       char affinity;
       int ckOffset = pParse->ckOffset;
-      sqlite3CodeSubselect(pParse, pExpr);
+      int eType;
+      int iLabel = sqlite3VdbeMakeLabel(v);
+
+      eType = sqlite3FindInIndex(pParse, pExpr, 0);
 
       /* Figure out the affinity to use to create a key from the results
       ** of the expression. affinityStr stores a static string suitable for
@@ -2055,10 +2195,18 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       sqlite3VdbeAddOp(v, OP_NotNull, -1, addr+4);            /* addr + 0 */
       sqlite3VdbeAddOp(v, OP_Pop, 2, 0);
       sqlite3VdbeAddOp(v, OP_Null, 0, 0);
-      sqlite3VdbeAddOp(v, OP_Goto, 0, addr+7);
-      sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &affinity, 1);   /* addr + 4 */
-      sqlite3VdbeAddOp(v, OP_Found, pExpr->iTable, addr+7);
+      sqlite3VdbeAddOp(v, OP_Goto, 0, iLabel);
+      if( eType==IN_INDEX_ROWID ){
+        int iAddr = sqlite3VdbeCurrentAddr(v)+3;
+        sqlite3VdbeAddOp(v, OP_MustBeInt, 1, iAddr);
+        sqlite3VdbeAddOp(v, OP_NotExists, pExpr->iTable, iAddr);
+        sqlite3VdbeAddOp(v, OP_Goto, pExpr->iTable, iLabel);
+      }else{
+        sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &affinity, 1);   /* addr + 4 */
+        sqlite3VdbeAddOp(v, OP_Found, pExpr->iTable, iLabel);
+      }
       sqlite3VdbeAddOp(v, OP_AddImm, -1, 0);                  /* addr + 6 */
+      sqlite3VdbeResolveLabel(v, iLabel);
 
       break;
     }

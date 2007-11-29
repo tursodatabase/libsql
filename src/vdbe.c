@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.654 2007/11/12 08:09:35 danielk1977 Exp $
+** $Id: vdbe.c,v 1.655 2007/11/29 17:05:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1436,7 +1436,7 @@ case OP_ForceInt: {            /* no-push */
 ** 
 ** Force the top of the stack to be an integer.  If the top of the
 ** stack is not an integer and cannot be converted into an integer
-** with out data loss, then jump immediately to P2, or if P2==0
+** without data loss, then jump immediately to P2, or if P2==0
 ** raise an SQLITE_MISMATCH exception.
 **
 ** If the top of the stack is not an integer and P2 is not zero and
@@ -3056,11 +3056,14 @@ case OP_MoveGt: {       /* no-push */
 ** if it exists.  The blob is popped off the top of the stack.
 **
 ** This instruction is used to implement the IN operator where the
-** left-hand side is a SELECT statement.  P1 is not a true index but
-** is instead a temporary index that holds the results of the SELECT
-** statement.  This instruction just checks to see if the left-hand side
-** of the IN operator (stored on the top of the stack) exists in the
-** result of the SELECT statement.
+** left-hand side is a SELECT statement.  P1 may be a true index, or it
+** may be a temporary index that holds the results of the SELECT
+** statement. 
+**
+** This instruction checks if index P1 contains a record for which 
+** the first N serialised values exactly match the N serialised values
+** in the record on the stack, where N is the total number of values in
+** the stack record (stack record is a prefix of the P1 record). 
 **
 ** See also: Distinct, NotFound, MoveTo, IsUnique, NotExists
 */
@@ -3090,7 +3093,11 @@ case OP_Found: {        /* no-push */
     assert( pC->isTable==0 );
     assert( pTos->flags & MEM_Blob );
     Stringify(pTos, encoding);
+    if( pOp->opcode==OP_Found ){
+      pC->pKeyInfo->prefixIsEqual = 1;
+    }
     rc = sqlite3BtreeMoveto(pC->pCursor, pTos->z, pTos->n, 0, &res);
+    pC->pKeyInfo->prefixIsEqual = 0;
     if( rc!=SQLITE_OK ){
       break;
     }

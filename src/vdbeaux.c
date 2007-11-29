@@ -2111,10 +2111,12 @@ int sqlite3VdbeRecordCompare(
   if( rc==0 ){
     if( pKeyInfo->incrKey ){
       rc = -1;
-    }else if( d1<nKey1 ){
-      rc = 1;
-    }else if( d2<nKey2 ){
-      rc = -1;
+    }else if( !pKeyInfo->prefixIsEqual ){
+      if( d1<nKey1 ){
+        rc = 1;
+      }else if( d2<nKey2 ){
+        rc = -1;
+      }
     }
   }else if( pKeyInfo->aSortOrder && i<pKeyInfo->nField
                && pKeyInfo->aSortOrder[i] ){
