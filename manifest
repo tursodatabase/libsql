@@ -1,7 +1,7 @@
-C When\susing\san\sindex\sto\sscan\sa\sdatabase\stable,\sread\scolumn\sdata\sfrom\sthe\sindex\sin\spreference\sto\sthe\stable.\sThis\sincreases\sthe\slikelihood\sthat\sthe\stable\swill\snot\sbe\srequired\sat\sall.\s(CVS\s4580)
-D 2007-11-29T17:43:28
+C Add\sthe\soptional\s(and\sexperimental)\smmap()\smemory\sallocator\sin\sthe\nmem4.c\smodule.\s(CVS\s4581)
+D 2007-11-29T18:36:49
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in 35396fd58890420b29edcf27b6c0e2d054862a6b
+F Makefile.in d9419c71360931f0711d572e06f726f29656bfc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 37c652fc2532226ab2fef7184de9500dafa52d7d
@@ -64,7 +64,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 297e32b77abde73e5638e048d474a86617bc40af
+F main.mk ba3fca8903c6f3ca26cf4fa7a123c0d3eb2fe151
 F mkdll.sh 5f8438dcac98e795d7df6529159a1ec566de0183
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -104,9 +104,10 @@ F src/loadext.c 124e566563d1c03e68e1396cb44df9870612c6e9
 F src/main.c 994a6b6914d91dc6dea5012667ec0a52e74d3bca
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
-F src/mem1.c ad348eedd829528e66f4a5aead464d88e6b08d69
-F src/mem2.c 2a1da2e8debcfd0097188470f04573107a018116
-F src/mem3.c a9857cf92c9e4c889184b2cf1ca1839c801fc942
+F src/mem1.c 6d1a11864963d249c67e72ad5f6533b040333880
+F src/mem2.c a9400e06b41ad5b5189e8416239833212de2c8c7
+F src/mem3.c 34ffb9f7dd7645bece4b022c5f48766550b68886
+F src/mem4.c 36ecd536a8b7acfe4cbf011353dae6ea68121e40
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 7fe4773e98ed74a63b2e54fc557929eb155f6269
@@ -594,7 +595,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 56d0e32677744df8570b519fae1c04da4ea4984d
-R 36e691e0ba7fd3d68c366765c689ffb2
-U danielk1977
-Z 64a9f02b9181db1b1e3b35c33464441d
+P 061608c72ac0a96eacf3b64d638235e4739f96ba
+R 1c1c1bbe1258e7de094daae06d9ba74e
+U drh
+Z 1c04b0f4f3c446511a85e32381699825

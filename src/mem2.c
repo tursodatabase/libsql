@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.17 2007/11/05 17:54:17 drh Exp $
+** $Id: mem2.c,v 1.18 2007/11/29 18:36:49 drh Exp $
 */
 
 /*
@@ -20,7 +20,7 @@
 ** SQLITE_MEMDEBUG macro is defined and SQLITE_OMIT_MEMORY_ALLOCATION
 ** is not defined.
 */
-#if defined(SQLITE_MEMDEBUG) && !defined(SQLITE_MEMORY_SIZE)
+#if defined(SQLITE_MEMDEBUG)
 
 /*
 ** We will eventually construct multiple memory allocation subsystems
