@@ -1,5 +1,5 @@
-C Add\sthe\soptional\s(and\sexperimental)\smmap()\smemory\sallocator\sin\sthe\nmem4.c\smodule.\s(CVS\s4581)
-D 2007-11-29T18:36:49
+C Make\ssure\swe\snever\stry\sto\s"truncate"\sa\sfile\sto\sa\slarger\ssize.\s(CVS\s4582)
+D 2007-11-29T18:44:27
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in d9419c71360931f0711d572e06f726f29656bfc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -124,7 +124,7 @@ F src/os_unix.c db6755454c84004d0041eb1b2194c90b35db0a5b
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 1fb40eb62fb0719ea578d69edcb1a2974f04d214
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c bb524fe4b501a60762d07d6d0d33fd548b176cf6
+F src/pager.c 65298fee4e815c269fb374d3fe3cd1cf4f05ad94
 F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
 F src/parse.y a780b33ef45dd7b3272319cf91e609d6f109a31c
 F src/pragma.c cb1486e76dbcad757968afc4083d3472032e62b5
@@ -595,7 +595,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 061608c72ac0a96eacf3b64d638235e4739f96ba
-R 1c1c1bbe1258e7de094daae06d9ba74e
+P cfd683ac80fd043343e0f0af90805058daa3818d
+R efe61aec0ac9fa4f2be861c956b27113
 U drh
-Z 1c04b0f4f3c446511a85e32381699825
+Z fd3607ea80d91b437bccfba278c95b97

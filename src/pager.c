@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.396 2007/11/28 16:19:56 drh Exp $
+** @(#) $Id: pager.c,v 1.397 2007/11/29 18:44:27 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1646,11 +1646,24 @@ static void pager_truncate_cache(Pager *pPager);
 /*
 ** Truncate the main file of the given pager to the number of pages
 ** indicated. Also truncate the cached representation of the file.
+**
+** Might might be the case that the file on disk is smaller than nPage.
+** This can happen, for example, if we are in the middle of a transaction
+** which has extended the file size and the new pages are still all held
+** in cache, then an INSERT or UPDATE does a statement rollback.  Some
+** operating system implementations can get confused if you try to
+** truncate a file to some size that is larger than it currently is,
+** so detect this case and do not do the truncation.
 */
 static int pager_truncate(Pager *pPager, int nPage){
   int rc = SQLITE_OK;
   if( pPager->state>=PAGER_EXCLUSIVE && pPager->fd->pMethods ){
-    rc = sqlite3OsTruncate(pPager->fd, pPager->pageSize*(i64)nPage);
+    i64 currentSize, newSize;
+    rc = sqlite3OsFileSize(pPager->fd, &currentSize);
+    newSize = pPager->pageSize*(i64)nPage;
+    if( rc==SQLITE_OK && currentSize>newSize ){
+      rc = sqlite3OsTruncate(pPager->fd, newSize);
+    }
   }
   if( rc==SQLITE_OK ){
     pPager->dbSize = nPage;
