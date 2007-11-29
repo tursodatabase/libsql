@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.264 2007/11/29 17:05:18 danielk1977 Exp $
+** $Id: where.c,v 1.265 2007/11/29 17:43:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2215,10 +2215,6 @@ WhereInfo *sqlite3WhereBegin(
       VdbeComment((v, "# %s", pIx->zName));
       sqlite3VdbeOp3(v, OP_OpenRead, iIdxCur, pIx->tnum,
                      (char*)pKey, P3_KEYINFO_HANDOFF);
-    }
-    if( (pLevel->flags & (WHERE_IDX_ONLY|WHERE_COLUMN_RANGE))!=0 ){
-      /* Only call OP_SetNumColumns on the index if we might later use
-      ** OP_Column on the index. */
       sqlite3VdbeAddOp(v, OP_SetNumColumns, iIdxCur, pIx->nColumn+1);
     }
     sqlite3CodeVerifySchema(pParse, iDb);
@@ -2742,8 +2738,12 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       sqlite3VdbeAddOp(v, OP_Close, pLevel->iIdxCur, 0);
     }
 
-    /* Make cursor substitutions for cases where we want to use
-    ** just the index and never reference the table.
+    /* If this scan uses an index, make code substitutions to read data
+    ** from the index in preference to the table. Sometimes, this means
+    ** the table need never be read from. This is a performance boost,
+    ** as the vdbe level waits until the table is read before actually
+    ** seeking the table cursor to the record corresponding to the current
+    ** position in the index.
     ** 
     ** Calls to the code generator in between sqlite3WhereBegin and
     ** sqlite3WhereEnd will have created code that references the table
@@ -2751,10 +2751,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     ** that reference the table and converts them into opcodes that
     ** reference the index.
     */
-    if( pLevel->flags & WHERE_IDX_ONLY ){
+    if( pLevel->pIdx ){
       int k, j, last;
       VdbeOp *pOp;
       Index *pIdx = pLevel->pIdx;
+      int useIndexOnly = pLevel->flags & WHERE_IDX_ONLY;
 
       assert( pIdx!=0 );
       pOp = sqlite3VdbeGetOp(v, pWInfo->iTop);
@@ -2762,17 +2763,18 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       for(k=pWInfo->iTop; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
         if( pOp->opcode==OP_Column ){
-          pOp->p1 = pLevel->iIdxCur;
           for(j=0; j<pIdx->nColumn; j++){
             if( pOp->p2==pIdx->aiColumn[j] ){
               pOp->p2 = j;
+              pOp->p1 = pLevel->iIdxCur;
               break;
             }
           }
+          assert(!useIndexOnly || j<pIdx->nColumn);
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;
           pOp->opcode = OP_IdxRowid;
-        }else if( pOp->opcode==OP_NullRow ){
+        }else if( pOp->opcode==OP_NullRow && useIndexOnly ){
           pOp->opcode = OP_Noop;
         }
       }

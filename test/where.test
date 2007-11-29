@@ -1,4 +1,4 @@
-# 2001 September 15
+# 4 2001 September 15
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.43 2007/06/25 16:29:34 danielk1977 Exp $
+# $Id: where.test,v 1.44 2007/11/29 17:43:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -184,7 +184,7 @@ do_test where-1.25 {
 
 do_test where-1.27 {
   count {SELECT w FROM t1 WHERE x=3 AND y+1==122}
-} {10 17}
+} {10 10}
 
 do_test where-1.28 {
   count {SELECT w FROM t1 WHERE x+1=4 AND y+1==122}
@@ -358,7 +358,7 @@ ifcapable subquery {
     count {
       SELECT * FROM t1 WHERE rowid+0 IN (1,2,3,1234) order by 1;
     }
-  } {1 0 4 2 1 9 3 1 16 199}
+  } {1 0 4 2 1 9 3 1 16 102}
   do_test where-5.3 {
     count {
       SELECT * FROM t1 WHERE w IN (-1,1,2,3) order by 1;
@@ -368,7 +368,7 @@ ifcapable subquery {
     count {
       SELECT * FROM t1 WHERE w+0 IN (-1,1,2,3) order by 1;
     }
-  } {1 0 4 2 1 9 3 1 16 199}
+  } {1 0 4 2 1 9 3 1 16 102}
   do_test where-5.5 {
     count {
       SELECT * FROM t1 WHERE rowid IN 
@@ -382,7 +382,7 @@ ifcapable subquery {
          (select rowid from t1 where rowid IN (-1,2,4))
       ORDER BY 1;
     }
-  } {2 1 9 4 2 25 201}
+  } {2 1 9 4 2 25 103}
   do_test where-5.7 {
     count {
       SELECT * FROM t1 WHERE w IN 
@@ -396,7 +396,7 @@ ifcapable subquery {
          (select rowid from t1 where rowid IN (-1,2,4))
       ORDER BY 1;
     }
-  } {2 1 9 4 2 25 201}
+  } {2 1 9 4 2 25 103}
   do_test where-5.9 {
     count {
       SELECT * FROM t1 WHERE x IN (1,7) ORDER BY 1;

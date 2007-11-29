@@ -13,7 +13,7 @@
 # This file implements tests for the special processing associated
 # with INTEGER PRIMARY KEY columns.
 #
-# $Id: intpkey.test,v 1.23 2005/07/21 03:48:20 drh Exp $
+# $Id: intpkey.test,v 1.24 2007/11/29 17:43:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -293,7 +293,7 @@ do_test intpkey-3.8 {
   count {
     SELECT * FROM t1 WHERE c=='world' AND a>7;
   }
-} {11 hello world 5}
+} {11 hello world 4}
 do_test intpkey-3.9 {
   count {
     SELECT * FROM t1 WHERE 7<a;
