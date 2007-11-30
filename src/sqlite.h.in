@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.271 2007/11/21 15:24:01 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.272 2007/11/30 01:06:17 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -63,13 +63,13 @@ extern "C" {
 #endif
 
 /*
-** CAPI3REF: Compile-Time Library Version Numbers
+** CAPI3REF: Compile-Time Library Version Numbers {F10100}
 **
-** The version of the SQLite library is contained in the sqlite3.h
-** header file in a #define named SQLITE_VERSION.  The SQLITE_VERSION
+** {F10101} The version of the SQLite library is contained in the sqlite3.h
+** header file in a #define named SQLITE_VERSION. {F10102} The SQLITE_VERSION
 ** macro resolves to a string constant.
 **
-** The format of the version string is "X.Y.Z", where
+** {F10103} The format of the SQLITE_VERSION string is "X.Y.Z", where
 ** X is the major version number, Y is the minor version number and Z
 ** is the release number.  The X.Y.Z might be followed by "alpha" or "beta".
 ** For example "3.1.1beta".
@@ -81,11 +81,11 @@ extern "C" {
 ** but not backwards compatible.  The Z value is incremented with
 ** each release but resets back to 0 when Y is incremented.
 **
-** The SQLITE_VERSION_NUMBER is an integer with the value 
-** (X*1000000 + Y*1000 + Z). For example, for version "3.1.1beta", 
-** SQLITE_VERSION_NUMBER is set to 3001001. To detect if they are using 
-** version 3.1.1 or greater at compile time, programs may use the test 
-** (SQLITE_VERSION_NUMBER>=3001001).
+** {F10104} The #define named SQLITE_VERSION_NUMBER is an integer with
+** the value (X*1000000 + Y*1000 + Z). For example, for version "3.5.3", 
+** SQLITE_VERSION_NUMBER is set to 3005003. To detect if they are using 
+** version 3.5.3 or greater at compile time, programs may use the test 
+** (SQLITE_VERSION_NUMBER>=3005003). {END}
 **
 ** See also: [sqlite3_libversion()] and [sqlite3_libversion_number()].
 */
@@ -93,18 +93,19 @@ extern "C" {
 #define SQLITE_VERSION_NUMBER --VERSION-NUMBER--
 
 /*
-** CAPI3REF: Run-Time Library Version Numbers
+** CAPI3REF: Run-Time Library Version Numbers {F10110}
 **
-** These routines return values equivalent to the header constants
+** {F10111} The sqlite3_libversion() and sqlite3_libversion_number()
+** routines return values equivalent to the header constants
 ** [SQLITE_VERSION] and [SQLITE_VERSION_NUMBER].  The values returned
 ** by this routines should only be different from the header values
 ** if you compile your program using an sqlite3.h header from a
 ** different version of SQLite that the version of the library you
 ** link against.
 **
-** The sqlite3_version[] string constant contains the text of the
+** {F10112} The sqlite3_version[] string constant contains the text of the
 ** [SQLITE_VERSION] string.  The sqlite3_libversion() function returns
-** a poiner to the sqlite3_version[] string constant.  The function
+** a pointer to the sqlite3_version[] string constant.  The function
 ** is provided for DLL users who can only access functions and not
 ** constants within the DLL.
 */
@@ -113,9 +114,10 @@ const char *sqlite3_libversion(void);
 int sqlite3_libversion_number(void);
 
 /*
-** CAPI3REF: Test To See If The Library Is Threadsafe
+** CAPI3REF: Test To See If The Library Is Threadsafe {F10200}
 **
-** This routine returns TRUE (nonzero) if SQLite was compiled with
+** {F10201} The sqlite3_threadsafe() routine returns TRUE (nonzero) 
+** if SQLite was compiled with
 ** all of its mutexes enabled and is thus threadsafe.  It returns
 ** zero if the particular build is for single-threaded operation
 ** only.
@@ -137,7 +139,7 @@ int sqlite3_libversion_number(void);
 int sqlite3_threadsafe(void);
 
 /*
-** CAPI3REF: Database Connection Handle
+** CAPI3REF: Database Connection Handle {F11000}
 **
 ** Each open SQLite database is represented by pointer to an instance of the
 ** opaque structure named "sqlite3".  It is useful to think of an sqlite3
@@ -152,7 +154,7 @@ typedef struct sqlite3 sqlite3;
 
 
 /*
-** CAPI3REF: 64-Bit Integer Types
+** CAPI3REF: 64-Bit Integer Types {F10300}
 **
 ** Some compilers do not support the "long long" datatype.  So we have
 ** to do compiler-specific typedefs for 64-bit signed and unsigned integers.
@@ -182,23 +184,22 @@ typedef sqlite_uint64 sqlite3_uint64;
 #endif
 
 /*
-** CAPI3REF: Closing A Database Connection
+** CAPI3REF: Closing A Database Connection {F11100}
 **
-** Call this function with a pointer to a structure that was previously
-** returned from [sqlite3_open()], [sqlite3_open16()], or
-** [sqlite3_open_v2()] and the corresponding database will by
-** closed.
+** {F11101} The sqlite3_close() interface is the destructor for
+** the [sqlite3] object.
 **
-** All SQL statements prepared using [sqlite3_prepare_v2()] or
+** {F11102} All SQL statements prepared using [sqlite3_prepare_v2()] or
 ** [sqlite3_prepare16_v2()] must be destroyed using [sqlite3_finalize()]
-** before this routine is called. Otherwise, SQLITE_BUSY is returned and the
-** database connection remains open.
+** before sqlite3_close() is called. Otherwise, sqlite3_close() returns
+** SQLITE_BUSY and database connection remains open.
 **
-** Passing this routine a database connection that has already been
-** closed results in undefined behavior.  If other interfaces that
-** reference the same database connection are pending (either in the
-** same thread or in different threads) when this routine is called,
-** then the behavior is undefined and is almost certainly undesirable.
+** {U11103} Calling sqlite3_close on a database connection that has 
+** already been closed results in undefined behavior.  {U11104} If 
+** other interfaces that reference the same database connection are 
+** pending (either in the same thread or in different threads) when 
+** sqlite3_close() is called, then the behavior is undefined and is
+** almost certainly undesirable.
 */
 int sqlite3_close(sqlite3 *);
 
