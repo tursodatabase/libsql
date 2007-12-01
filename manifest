@@ -1,7 +1,7 @@
-C Add\sa\sfew\sfunction\srequirements\snumbers\sto\sinterfaces\sin\sthe\scomments\nof\ssqlite3.h.in.\s\sThis\sis\sexperimental.\s(CVS\s4583)
-D 2007-11-30T01:06:17
+C Bug\sfix\sto\sMakefile.in\sto\sallow\sit\sto\swork\swith\smingw.\s(CVS\s4584)
+D 2007-12-01T09:32:54
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in d9419c71360931f0711d572e06f726f29656bfc3
+F Makefile.in 44c3179a7dcf801bb49e2b523c500de513467ff5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 37c652fc2532226ab2fef7184de9500dafa52d7d
@@ -595,7 +595,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7d2f6a1d6c5ab89a3b65fbcaf172abf6d81e206b
-R 7dcc2a7d5ec1c8a9e267a3bf49b6ac94
+P b829a64515e88e83aecd339342bad3b140c86bb0
+R 67436f0cc595ee00eb2a2a76c9d30ebf
 U drh
-Z 16eb3aedea7a38e849b48842d4f0e5b5
+Z 748592aeb7ad96c8527969d784f95f97
