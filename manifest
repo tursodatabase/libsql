@@ -1,5 +1,5 @@
-C Bug\sfix\sto\sMakefile.in\sto\sallow\sit\sto\swork\swith\smingw.\s(CVS\s4584)
-D 2007-12-01T09:32:54
+C Beginning\sattempts\sat\scasting\sthe\ssqlite.h.in\sdocumentation\sinto\nformal\srequirements.\s(CVS\s4585)
+D 2007-12-01T19:23:20
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 44c3179a7dcf801bb49e2b523c500de513467ff5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -134,7 +134,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 7c0ab94b8f287eb94fdb1eb101be603832ecfc34
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c c97be281cfc3dcb14902f45e4b16f20038eb83ff
-F src/sqlite.h.in 0d6d4b9d18f1d0b058a7a543ffa777bd5fbf4a99
+F src/sqlite.h.in 44ae290a261b4498b921ed45f0eff16a72245c9b
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h f5d5b5f0dcfcd2098131c57c08ece6e314e47697
 F src/sqliteLimit.h 15ffe2116746c27ace2b428a26a4fcd6dba6fa65
@@ -595,7 +595,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b829a64515e88e83aecd339342bad3b140c86bb0
-R 67436f0cc595ee00eb2a2a76c9d30ebf
+P fdca98d1eb44c05ffb3c42acb9f87f57460c4cc8
+R 3756a1c3115d4376eaeab07df26a7961
 U drh
-Z 748592aeb7ad96c8527969d784f95f97
+Z 83858b2badc05c58fd14426d0ed4fe8f
