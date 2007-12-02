@@ -1,5 +1,5 @@
-C Another\sfix\sto\sMakefile.in\sfor\smingw.\s(CVS\s4586)
-D 2007-12-01T19:25:17
+C When\sparsing\sCREATE\sINDEX\sstatements\sfrom\sthe\ssqlite_master\stable,\sdo\snot\ssearch\sthe\stemp\sdatabase\sschema\sfor\sthe\scorresponding\stable.\sOnly\sconsider\sthe\sdatabase\sfor\swhich\sthe\sschema\sis\sbeing\sparsed.\sTicket\s#2817.\s(CVS\s4587)
+D 2007-12-02T11:46:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -86,7 +86,7 @@ F src/btmutex.c 442be6f068d77ca9ffd69899cf0a3943c244548c
 F src/btree.c c5844bb4bbe997a7c8400a714fcf304d91855383
 F src/btree.h d0736ebca4b6eafbdd823c46a8de574cea078211
 F src/btreeInt.h 4330c19b8314545fdb209cc77e2a57f6a5290e9c
-F src/build.c b58dd7c7a763a228196022ec0d51781ed6995cde
+F src/build.c 04e0783a105d4d65c1850815adfdfe7403dcb592
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
@@ -476,6 +476,7 @@ F test/tkt2640.test c513e7992a602a87ef3a2cc9ca1cba4146924e9b
 F test/tkt2643.test 3f3ebb743da00d4fed4fcf6daed92a0e18e57813
 F test/tkt2686.test 8815c3eeae7c8363bd7c2889349ec39e8bc8000d
 F test/tkt2767.test 6b02308d553d194f329a469bf5c157fe724738d4
+F test/tkt2817.test 709a2201a5590bf56cb97f6fb168a62282203fd1
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -595,7 +596,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2ea78d2cbd86edda6f998fbb364800d3ecf76479
-R 808f25179a2f4966fb39356145e52393
-U drh
-Z 7c18109dc26100992632a8107a593428
+P cfaeb02554ab86fffbfb8eb2a78c7d8a59a9cba5
+R 5cda7c44dd11110e2cde6ba16b60c752
+U danielk1977
+Z 91a21dbc4e72424cd2223f173c611bb3
