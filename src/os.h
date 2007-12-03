@@ -129,16 +129,6 @@
 #endif
 
 /*
-** If using an alternative OS interface, then we must have an "os_other.h"
-** header file available for that interface.  Presumably the "os_other.h"
-** header file contains #defines similar to those above.
-*/
-#if OS_OTHER
-# include "os_other.h"
-#endif
-
-
-/*
 ** The following values may be passed as the second argument to
 ** sqlite3OsLock(). The various locks exhibit the following semantics:
 **

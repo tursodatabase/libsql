@@ -1,5 +1,5 @@
-C When\sparsing\sCREATE\sINDEX\sstatements\sfrom\sthe\ssqlite_master\stable,\sdo\snot\ssearch\sthe\stemp\sdatabase\sschema\sfor\sthe\scorresponding\stable.\sOnly\sconsider\sthe\sdatabase\sfor\swhich\sthe\sschema\sis\sbeing\sparsed.\sTicket\s#2817.\s(CVS\s4587)
-D 2007-12-02T11:46:35
+C Do\snot\srequire\sos_other.h\sif\scompiling\swith\s-DOS_OTHER=1.\s(CVS\s4588)
+D 2007-12-03T21:52:09
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/mutex_os2.c 7fe4773e98ed74a63b2e54fc557929eb155f6269
 F src/mutex_unix.c a6e111947a3cdaa2cda394ed060d7f496fcb4af8
 F src/mutex_w32.c 6e197765f283815496193e78e9548b5d0e53b68e
 F src/os.c 8360932f1450b2b45edb608a3b184b031f7d00cc
-F src/os.h b75506ab40d222300f38023acb56fe08df5ffe33
+F src/os.h d04706d54a072c7a30ab9e346ad916ef28c842d5
 F src/os_common.h 98862f120ca6bf7a48ce8b16f158b77d00bc9d2f
 F src/os_os2.c 98f5486f033a98406ac10619b2dde21aac9ff75e
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
@@ -596,7 +596,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P cfaeb02554ab86fffbfb8eb2a78c7d8a59a9cba5
-R 5cda7c44dd11110e2cde6ba16b60c752
-U danielk1977
-Z 91a21dbc4e72424cd2223f173c611bb3
+P e6f02aa5ae6da0befdf98fdd5884345f3cb7f5ea
+R 02478a1714f918c98e0c5188a3fd7e8a
+U drh
+Z 7d2f82ae22c8601446acf49b501fdd4a
