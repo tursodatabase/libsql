@@ -12,7 +12,7 @@
 # of this test is reading and writing to the database from within a
 # virtual table xSync() callback.
 #
-# $Id: vtab7.test,v 1.3 2007/10/09 08:29:33 danielk1977 Exp $
+# $Id: vtab7.test,v 1.4 2007/12/04 16:54:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -114,15 +114,22 @@ do_test vtab7-2.5 {
 } {abc abc2 log newtab}
 
 # Drop a database table from within xSync callback.
+# This is not allowed.  Tables cannot be dropped while
+# any other statement is active.
+#
 do_test vtab7-2.6 {
   set ::callbacks(xSync,abc) {
-    execsql { DROP TABLE newtab }
+    set ::rc [catchsql { DROP TABLE newtab }]
   }
   execsql {
     INSERT INTO abc2 VALUES(1, 2, 3);
     SELECT name FROM sqlite_master ORDER BY name;
   }
-} {abc abc2 log}
+} {abc abc2 log newtab}
+do_test vtab7-2.6.1 {
+  set ::rc
+} {1 {database table is locked}}
+execsql {DROP TABLE newtab}
 
 # Write to an attached database from xSync().
 ifcapable attach {
@@ -198,4 +205,3 @@ trace remove variable ::echo_module write echo_module_trace
 unset -nocomplain ::callbacks
 
 finish_test
-

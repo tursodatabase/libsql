@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sTCL\scode\sfor\ssqlite3_analyzer.\s(CVS\s4590)
-D 2007-12-04T13:41:51
+C Make\ssure\sstatement\sjournals\sare\sinitiated\swhen\sdoing\sDROP\soperations\n(since\sthe\sDROP\smight\sfail\safter\ssqlite_master\schanges).\s\sAlso\smake\nsure\sstatement\sjournals\sare\sinitiated\sif\sthere\sare\spending\sSELECT\nstatements.\s\sTicket\s#2820.\s(CVS\s4591)
+D 2007-12-04T16:54:53
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -86,7 +86,7 @@ F src/btmutex.c 442be6f068d77ca9ffd69899cf0a3943c244548c
 F src/btree.c c5844bb4bbe997a7c8400a714fcf304d91855383
 F src/btree.h d0736ebca4b6eafbdd823c46a8de574cea078211
 F src/btreeInt.h 4330c19b8314545fdb209cc77e2a57f6a5290e9c
-F src/build.c 04e0783a105d4d65c1850815adfdfe7403dcb592
+F src/build.c 580561a0d9e070ff2741f3b115cae51c1ef08260
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
@@ -168,11 +168,11 @@ F src/update.c 2add92a6159fa73128653706574afbcd8fd1dd80
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c a5e51c77370c1a6445e86d42abfc43867cdd482d
-F src/vdbe.c 9859467b3762a1c05f956b5f556fb922e139ff9f
+F src/vdbe.c a99beac1162fa490c4b75ac36ed97146ab181837
 F src/vdbe.h 79e09ff13b85457abe437d9814454534ebbc1fe3
 F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
 F src/vdbeapi.c dd2c43317294e0a013e9f634ee4209a3ea459b43
-F src/vdbeaux.c 285f113364134f7c1571456723dcb84be89e6c3f
+F src/vdbeaux.c 5bc14ff3da6c6b3b7f643cbc3d50a344e9b599f8
 F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 123994fcd344993d2fb050a83b91b341bbbd08b4
@@ -477,6 +477,7 @@ F test/tkt2643.test 3f3ebb743da00d4fed4fcf6daed92a0e18e57813
 F test/tkt2686.test 8815c3eeae7c8363bd7c2889349ec39e8bc8000d
 F test/tkt2767.test 6b02308d553d194f329a469bf5c157fe724738d4
 F test/tkt2817.test 709a2201a5590bf56cb97f6fb168a62282203fd1
+F test/tkt2820.test 017fdee33aaef7abc092beab6088816f1942304b
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -504,7 +505,7 @@ F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
 F test/vtab5.test 26bc7a0a52c5c2bcfa849ba327f8a0d4abccdb23
 F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
-F test/vtab7.test 9249e8e31f4f1a44f07984b402d12ce3e63be4f3
+F test/vtab7.test a8c3c3cb3eb60be364991bd714e4927e26c4cd85
 F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
 F test/vtabA.test 9cb6b1afead6fdd91bbdf1ca65c44ccfd9b10936
@@ -596,7 +597,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 78f359dffa6f4af4d5b7e4523f451e0e405350c0
-R cfc28c51a4620cec082dc386c8465836
+P 7c2cf4542852a81daf29a930ab103c52bb678326
+R c111fb18ebb6378f510e950ea7f7ef09
 U drh
-Z c95254d1012df22f0a03f3a42376bc6c
+Z 60a6d3adb97dfb253eaa60aa3a1f2c5c

@@ -270,10 +270,17 @@ int sqlite3VdbeOpcodeNoPush(u8 op){
 ** entries that static analysis reveals this program might need.
 **
 ** This routine also does the following optimization:  It scans for
-** Halt instructions where P1==SQLITE_CONSTRAINT or P2==OE_Abort or for
-** IdxInsert instructions where P2!=0.  If no such instruction is
-** found, then every Statement instruction is changed to a Noop.  In
-** this way, we avoid creating the statement journal file unnecessarily.
+** instructions that might cause a statement rollback.  Such instructions
+** are:
+**
+**   *  OP_Halt with P1=SQLITE_CONSTRAINT and P2=OE_Abort.
+**   *  OP_Destroy
+**   *  OP_VUpdate
+**   *  OP_VRename
+**
+** If no such instruction is found, then every Statement instruction 
+** is changed to a Noop.  In this way, we avoid creating the statement 
+** journal file unnecessarily.
 */
 static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
   int i;
@@ -299,6 +306,8 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
       }
     }else if( opcode==OP_Statement ){
       hasStatementBegin = 1;
+    }else if( opcode==OP_Destroy ){
+      doesStatementRollback = 1;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     }else if( opcode==OP_VUpdate || opcode==OP_VRename ){
       doesStatementRollback = 1;
@@ -1387,7 +1396,7 @@ int sqlite3VdbeHalt(Vdbe *p){
     /* Check for one of the special errors */
     mrc = p->rc & 0xff;
     isSpecialError = mrc==SQLITE_NOMEM || mrc==SQLITE_IOERR
-                     || mrc==SQLITE_INTERRUPT || mrc==SQLITE_FULL ;
+                     || mrc==SQLITE_INTERRUPT || mrc==SQLITE_FULL;
     if( isSpecialError ){
       /* This loop does static analysis of the query to see which of the
       ** following three categories it falls into:
