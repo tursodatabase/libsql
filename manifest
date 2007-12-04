@@ -1,5 +1,5 @@
-C Do\snot\srequire\sos_other.h\sif\scompiling\swith\s-DOS_OTHER=1.\s(CVS\s4588)
-D 2007-12-03T21:52:09
+C Clarify\sthe\soperation\sof\ssqlite3_blob_close()\sin\sthe\sAPI\sdocumentation.\r\nTicket\s#2815.\s(CVS\s4589)
+D 2007-12-04T13:22:44
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -134,7 +134,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 7c0ab94b8f287eb94fdb1eb101be603832ecfc34
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c c97be281cfc3dcb14902f45e4b16f20038eb83ff
-F src/sqlite.h.in 44ae290a261b4498b921ed45f0eff16a72245c9b
+F src/sqlite.h.in 28e78e9191a655fd2aa728c1f55d35e9f644103a
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h f5d5b5f0dcfcd2098131c57c08ece6e314e47697
 F src/sqliteLimit.h 15ffe2116746c27ace2b428a26a4fcd6dba6fa65
@@ -596,7 +596,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e6f02aa5ae6da0befdf98fdd5884345f3cb7f5ea
-R 02478a1714f918c98e0c5188a3fd7e8a
+P 96ec39031e0b0b9a69e7b5647580326a87f94d2e
+R 64ed9e7dcaec1c7b07c2e69b2ecd3f2c
 U drh
-Z 7d2f82ae22c8601446acf49b501fdd4a
+Z 34627d860f21f382f905570c77940ed3
