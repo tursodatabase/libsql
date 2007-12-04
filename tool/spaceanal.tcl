@@ -63,7 +63,11 @@ set tabledef\
 mem eval $tabledef
 
 proc integerify {real} {
-  return [expr int($real)]
+  if {[string is double -strict $real]} {
+    return [expr {int($real)}]
+  } else {
+    return 0
+  }
 }
 mem function int integerify
 
