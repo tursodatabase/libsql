@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum2.test,v 1.3 2007/07/19 16:35:17 drh Exp $
+# $Id: vacuum2.test,v 1.4 2007/12/05 01:38:24 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -56,5 +56,87 @@ do_test vacuum2-2.1 {
   }
   hexio_get_int [hexio_read test.db 24 4]
 } [expr {[hexio_get_int [hexio_read test.db 24 4]]+1}]
+
+############################################################################
+# Verify that we can use the auto_vacuum pragma to request a new
+# autovacuum setting, do a VACUUM, and the new setting takes effect.
+# Make sure this happens correctly even if there are multiple open
+# connections to the same database file.
+#
+sqlite3 db2 test.db
+set pageSize [db eval {pragma page_size}]
+
+# Compute a checksum on the content of a database
+#
+proc cksum {{db db}} {
+  set sql "SELECT name, type, sql FROM sqlite_master ORDER BY name, type"
+  set txt [$db eval $sql]\n
+  set sql "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+  foreach tbl [$db eval $sql] {
+    append txt [$db eval "SELECT * FROM $tbl"]\n
+  }
+  foreach prag {default_cache_size} {
+    append txt $prag-[$db eval "PRAGMA $prag"]\n
+  }
+  set cksum [string length $txt]-[md5 $txt]
+  return $cksum
+}
+
+# We are currently not autovacuuming so the database should be 3 pages
+# in size.  1 page for each of sqlite_master, t1, and t2.
+#
+do_test vacuum2-3.1 {
+  execsql {
+    INSERT INTO t1 VALUES('hello');
+    INSERT INTO t2 VALUES('out there');
+  }
+  expr {[file size test.db]/$pageSize}
+} {3}
+set cksum [cksum]
+do_test vacuum2-3.2 {
+  cksum db2
+} $cksum
+
+# Convert the database to an autovacuumed database.
+do_test vacuum2-3.3 {
+  execsql {
+    PRAGMA auto_vacuum=FULL;
+    VACUUM;
+  }
+  expr {[file size test.db]/$pageSize}
+} {4}
+do_test vacuum2-3.4 {
+  cksum db2
+} $cksum
+do_test vacuum2-3.5 {
+  cksum
+} $cksum
+do_test vacuum2-3.6 {
+  execsql {PRAGMA integrity_check} db2
+} {ok}
+do_test vacuum2-3.7 {
+  execsql {PRAGMA integrity_check} db
+} {ok}
+
+# Convert the database back to a non-autovacuumed database.
+do_test vacuum2-3.13 {
+  execsql {
+    PRAGMA auto_vacuum=NONE;
+    VACUUM;
+  }
+  expr {[file size test.db]/$pageSize}
+} {3}
+do_test vacuum2-3.14 {
+  cksum db2
+} $cksum
+do_test vacuum2-3.15 {
+  cksum
+} $cksum
+do_test vacuum2-3.16 {
+  execsql {PRAGMA integrity_check} db2
+} {ok}
+do_test vacuum2-3.17 {
+  execsql {PRAGMA integrity_check} db
+} {ok}
 
 finish_test

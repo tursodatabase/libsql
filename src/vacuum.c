@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.74 2007/10/20 20:58:57 drh Exp $
+** $Id: vacuum.c,v 1.75 2007/12/05 01:38:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -125,7 +125,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   }
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
-  sqlite3BtreeSetAutoVacuum(pTemp, sqlite3BtreeGetAutoVacuum(pMain));
+  sqlite3BtreeSetAutoVacuum(pTemp, db->nextAutovac>=0 ? db->nextAutovac :
+                                           sqlite3BtreeGetAutoVacuum(pMain));
 #endif
 
   /* Begin a transaction */

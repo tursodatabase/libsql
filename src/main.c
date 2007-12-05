@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.407 2007/10/12 19:35:49 drh Exp $
+** $Id: main.c,v 1.408 2007/12/05 01:38:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -965,6 +965,7 @@ static int openDatabase(
   db->magic = SQLITE_MAGIC_BUSY;
   db->aDb = db->aDbStatic;
   db->autoCommit = 1;
+  db->nextAutovac = -1;
   db->flags |= SQLITE_ShortColNames
 #if SQLITE_DEFAULT_FILE_FORMAT<4
                  | SQLITE_LegacyFileFmt
