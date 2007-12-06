@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum2.test,v 1.4 2007/12/05 01:38:24 drh Exp $
+# $Id: vacuum2.test,v 1.5 2007/12/06 17:41:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -138,5 +138,7 @@ do_test vacuum2-3.16 {
 do_test vacuum2-3.17 {
   execsql {PRAGMA integrity_check} db
 } {ok}
+
+db2 close
 
 finish_test
