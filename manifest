@@ -1,5 +1,5 @@
-C Continuing\swork\son\sthe\sC/C++\sinterface\srequirements\sthat\sappears\sas\ncomments\sin\ssqlite.h.in.\s(CVS\s4594)
-D 2007-12-06T02:42:08
+C Use\sthe\sspecified\sbuffer\slength,\snot\sthe\smaximum\sbuffer\slength\sin\nunixFullPathname()\sand\srelated\sfunctions.\s(CVS\s4595)
+D 2007-12-06T13:26:21
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -120,9 +120,9 @@ F src/os_os2.c 98f5486f033a98406ac10619b2dde21aac9ff75e
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c db6755454c84004d0041eb1b2194c90b35db0a5b
+F src/os_unix.c 10641ed959b960915deaf2d053105e1ee9849d88
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
-F src/os_win.c 1fb40eb62fb0719ea578d69edcb1a2974f04d214
+F src/os_win.c a92769a7ec45ff908ca5e83553c8582215bb58c5
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 65298fee4e815c269fb374d3fe3cd1cf4f05ad94
 F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
@@ -597,7 +597,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ae1936aadf00bec91750d41be7507cf1b81fc411
-R 7ac7d80a2d75b3b7bb12edb35b1b87a6
+P 2130e7125187ca46df3f65237f933b0e568a36ed
+R 46d58c2b825acbbc2f0f22d13d04f251
 U drh
-Z ee325aa2259ef8ee38a408857daf2088
+Z 23c4660610c4748ff4d4c40cb59d832a
