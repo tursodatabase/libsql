@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.177 2007/11/28 22:36:41 drh Exp $
+** $Id: func.c,v 1.178 2007/12/07 18:39:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -405,6 +405,19 @@ struct compareInfo {
   u8 noCase;
 };
 
+/*
+** For LIKE and GLOB matching on EBCDIC machines, assume that every
+** character is exactly one byte in size.  Also, all characters are
+** able to participate in upper-case-to-lower-case mappings in EBCDIC
+** whereas only characters less than 0x80 do in ASCII.
+*/
+#if defined(SQLITE_EBCDIC)
+# define sqlite3Utf8Read(A,B,C)  (*(A++))
+# define UpperToLower(A)         A = sqlite3UpperToLower[A]
+#else
+# define UpperToLower(A)         if( A<0x80 ){ A = sqlite3UpperToLower[A]; }
+#endif
+
 static const struct compareInfo globInfo = { '*', '?', '[', 0 };
 /* The correct SQL-92 behavior is for the LIKE operator to ignore
 ** case.  Thus  'a' LIKE 'A' would be true. */
@@ -481,11 +494,11 @@ static int patternCompare(
       }
       while( (c2 = sqlite3Utf8Read(zString,0,&zString))!=0 ){
         if( noCase ){
-          c2 = c2<0x80 ? sqlite3UpperToLower[c2] : c2;
-          c = c<0x80 ? sqlite3UpperToLower[c] : c;
+          UpperToLower(c2);
+          UpperToLower(c);
           while( c2 != 0 && c2 != c ){
             c2 = sqlite3Utf8Read(zString, 0, &zString);
-            if( c2<0x80 ) c2 = sqlite3UpperToLower[c2];
+            UpperToLower(c2);
           }
         }else{
           while( c2 != 0 && c2 != c ){
@@ -537,8 +550,8 @@ static int patternCompare(
     }else{
       c2 = sqlite3Utf8Read(zString, 0, &zString);
       if( noCase ){
-        c = c<0x80 ? sqlite3UpperToLower[c] : c;
-        c2 = c2<0x80 ? sqlite3UpperToLower[c2] : c2;
+        UpperToLower(c);
+        UpperToLower(c2);
       }
       if( c!=c2 ){
         return 0;
