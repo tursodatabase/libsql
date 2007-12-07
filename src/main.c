@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.408 2007/12/05 01:38:23 drh Exp $
+** $Id: main.c,v 1.409 2007/12/07 18:55:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -766,7 +766,6 @@ int sqlite3BtreeFactory(
   }
   rc = sqlite3BtreeOpen(zFilename, (sqlite3 *)db, ppBtree, btFlags, vfsFlags);
   if( rc==SQLITE_OK ){
-    sqlite3BtreeSetBusyHandler(*ppBtree, (void*)&db->busyHandler);
     sqlite3BtreeSetCacheSize(*ppBtree, nCache);
   }
   return rc;

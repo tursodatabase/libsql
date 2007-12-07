@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.623 2007/12/05 01:38:24 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.624 2007/12/07 18:55:29 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1620,8 +1620,10 @@ typedef struct {
 #ifdef SQLITE_DEBUG
   int sqlite3Corrupt(void);
 # define SQLITE_CORRUPT_BKPT sqlite3Corrupt()
+# define DEBUGONLY(X)        X
 #else
 # define SQLITE_CORRUPT_BKPT SQLITE_CORRUPT
+# define DEBUGONLY(X)
 #endif
 
 /*

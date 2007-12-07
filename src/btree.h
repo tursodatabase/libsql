@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.93 2007/09/03 15:19:35 drh Exp $
+** @(#) $Id: btree.h,v 1.94 2007/12/07 18:55:28 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -82,7 +82,6 @@ int sqlite3BtreeOpen(
 #define BTREE_PRIVATE      64  /* Never share with other connections */
 
 int sqlite3BtreeClose(Btree*);
-int sqlite3BtreeSetBusyHandler(Btree*,BusyHandler*);
 int sqlite3BtreeSetCacheSize(Btree*,int);
 int sqlite3BtreeSetSafetyLevel(Btree*,int,int);
 int sqlite3BtreeSyncDisabled(Btree*);

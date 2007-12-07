@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: btmutex.c,v 1.7 2007/08/30 01:19:59 drh Exp $
+** $Id: btmutex.c,v 1.8 2007/12/07 18:55:28 drh Exp $
 **
 ** This file contains code used to implement mutexes on Btree objects.
 ** This code really belongs in btree.c.  But btree.c is getting too
@@ -46,8 +46,8 @@ void sqlite3BtreeEnter(Btree *p){
   ** the same connection. Only shared Btrees are on the list. */
   assert( p->pNext==0 || p->pNext->pBt>p->pBt );
   assert( p->pPrev==0 || p->pPrev->pBt<p->pBt );
-  assert( p->pNext==0 || p->pNext->pSqlite==p->pSqlite );
-  assert( p->pPrev==0 || p->pPrev->pSqlite==p->pSqlite );
+  assert( p->pNext==0 || p->pNext->db==p->db );
+  assert( p->pPrev==0 || p->pPrev->db==p->db );
   assert( p->sharable || (p->pNext==0 && p->pPrev==0) );
 
   /* Check for locking consistency */
@@ -55,7 +55,7 @@ void sqlite3BtreeEnter(Btree *p){
   assert( p->sharable || p->wantToLock==0 );
 
   /* We should already hold a lock on the database connection */
-  assert( sqlite3_mutex_held(p->pSqlite->mutex) );
+  assert( sqlite3_mutex_held(p->db->mutex) );
 
   if( !p->sharable ) return;
   p->wantToLock++;
@@ -278,7 +278,7 @@ void sqlite3BtreeMutexArrayEnter(BtreeMutexArray *pArray){
     assert( !p->locked || p->wantToLock>0 );
 
     /* We should already hold a lock on the database connection */
-    assert( sqlite3_mutex_held(p->pSqlite->mutex) );
+    assert( sqlite3_mutex_held(p->db->mutex) );
 
     p->wantToLock++;
     if( !p->locked && p->sharable ){
@@ -301,7 +301,7 @@ void sqlite3BtreeMutexArrayLeave(BtreeMutexArray *pArray){
     assert( p->wantToLock>0 );
 
     /* We should already hold a lock on the database connection */
-    assert( sqlite3_mutex_held(p->pSqlite->mutex) );
+    assert( sqlite3_mutex_held(p->db->mutex) );
 
     p->wantToLock--;
     if( p->wantToLock==0 && p->locked ){

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.397 2007/11/29 18:44:27 drh Exp $
+** @(#) $Id: pager.c,v 1.398 2007/12/07 18:55:28 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3151,6 +3151,7 @@ int sqlite3PagerReleaseMemory(int nReq){
   int nReleased = 0;          /* Bytes of memory released so far */
   sqlite3_mutex *mutex;       /* The MEM2 mutex */
   Pager *pPager;              /* For looping over pagers */
+  BusyHandler *savedBusy;     /* Saved copy of the busy handler */
   int rc = SQLITE_OK;
 
   /* Acquire the memory-management mutex
@@ -3195,7 +3196,10 @@ int sqlite3PagerReleaseMemory(int nReq){
     assert(!pPg->needSync || pPg==pPager->lru.pFirst);
     assert(pPg->needSync || pPg==pPager->lru.pFirstSynced);
   
+    savedBusy = pPager->pBusyHandler;
+    pPager->pBusyHandler = 0;
     rc = pager_recycle(pPager, &pRecycled);
+    pPager->pBusyHandler = savedBusy;
     assert(pRecycled==pPg || rc!=SQLITE_OK);
     if( rc==SQLITE_OK ){
       /* We've found a page to free. At this point the page has been 
