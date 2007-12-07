@@ -1,5 +1,5 @@
-C In\sshared-cache\smode,\smake\ssure\sthe\sbusy\shander\sinvoked\sis\sthe\nbusy\shandler\sassociated\swith\sthe\sdatabase\sconnection\sthat\scaused\nthe\slock\scontention\sin\sthe\sfirst\splace.\s(CVS\s4598)
-D 2007-12-07T18:55:28
+C Change\sprefix\ssearch\sfrom\sO(N*M)\sto\sO(NlogM).\s\sThe\sprevious\scode\nlinearly\smerged\sthe\sdoclists,\sso\sas\sthe\saccumulated\slist\sgot\slarge,\nthings\sgot\sslow\s(the\sM\sterm,\sa\sfucntion\sof\sthe\snumber\sof\sdocuments\sin\nthe\sindex).\s\sThis\schange\sdoes\spairwise\smerges\suntil\sa\ssingle\sdoclist\nremains.\s\sA\stest\ssearch\sof\s't*'\sagainst\sa\sdatabase\sof\sRFC\stext\nimproves\sfrom\s1m16s\sto\s4.75s.\s(CVS\s4599)
+D 2007-12-07T23:47:53
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -50,7 +50,7 @@ F ext/fts2/fts2_tokenizer1.c 8a545c232bdffafd117c4eeaf59789691909f26a
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.tokenizers a97c9a55b3422f6cb04af9de9296fe2447ea4a78
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c b95b4b62211335cf74d2485a7c17925a9f8338f8
+F ext/fts3/fts3.c 0992fca534de44c1f72efb080c6cd48726906eab
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3_hash.c 83e7bb4042106b32811681dd2859b4577a7a6b35
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
@@ -597,7 +597,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 754298a74e3d889f3767daba058262613d20a601
-R 0ae36f66eb071af9c23c05039a009307
-U drh
-Z 974b15de4ea104f24852fc03b178d3ac
+P c9eb65912f61ce0a6b66fe253652a1827e46b12a
+R 0fafe177127549f06d346814ea671cc8
+U shess
+Z d10cd33d2eea817a0c124609ae700d66

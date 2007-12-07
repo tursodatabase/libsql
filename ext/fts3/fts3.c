@@ -437,6 +437,7 @@ static int fts3GetVarint32(const char *p, int *pi){
 ** dataBufferInit - create a buffer with given initial capacity.
 ** dataBufferReset - forget buffer's data, retaining capacity.
 ** dataBufferDestroy - free buffer's data.
+** dataBufferSwap - swap contents of two buffers.
 ** dataBufferExpand - expand capacity without adding data.
 ** dataBufferAppend - append data.
 ** dataBufferAppend2 - append two pieces of data at once.
@@ -460,6 +461,11 @@ static void dataBufferReset(DataBuffer *pBuffer){
 static void dataBufferDestroy(DataBuffer *pBuffer){
   if( pBuffer->pData!=NULL ) sqlite3_free(pBuffer->pData);
   SCRAMBLE(pBuffer);
+}
+static void dataBufferSwap(DataBuffer *pBuffer1, DataBuffer *pBuffer2){
+  DataBuffer tmp = *pBuffer1;
+  *pBuffer1 = *pBuffer2;
+  *pBuffer2 = tmp;
 }
 static void dataBufferExpand(DataBuffer *pBuffer, int nAddCapacity){
   assert( nAddCapacity>0 );
@@ -5555,6 +5561,26 @@ static int segmentMerge(fulltext_vtab *v, int iLevel){
   return rc;
 }
 
+/* Accumulate the union of *acc and *pData into *acc. */
+static void docListAccumulateUnion(DataBuffer *acc,
+                                   const char *pData, int nData) {
+  DataBuffer tmp = *acc;
+  dataBufferInit(acc, tmp.nData+nData);
+  docListUnion(tmp.pData, tmp.nData, pData, nData, acc);
+  dataBufferDestroy(&tmp);
+}
+
+/* TODO(shess) It might be interesting to explore different merge
+** strategies, here.  For instance, since this is a sorted merge, we
+** could easily merge many doclists in parallel.  With some
+** comprehension of the storage format, we could merge all of the
+** doclists within a leaf node directly from the leaf node's storage.
+** It may be worthwhile to merge smaller doclists before larger
+** doclists, since they can be traversed more quickly - but the
+** results may have less overlap, making them more expensive in a
+** different way.
+*/
+
 /* Scan pReader for pTerm/nTerm, and merge the term's doclist over
 ** *out (any doclists with duplicate docids overwrite those in *out).
 ** Internal function for loadSegmentLeaf().
@@ -5562,39 +5588,116 @@ static int segmentMerge(fulltext_vtab *v, int iLevel){
 static int loadSegmentLeavesInt(fulltext_vtab *v, LeavesReader *pReader,
                                 const char *pTerm, int nTerm, int isPrefix,
                                 DataBuffer *out){
+  /* doclist data is accumulated into pBuffers similar to how one does
+  ** increment in binary arithmetic.  If index 0 is empty, the data is
+  ** stored there.  If there is data there, it is merged and the
+  ** results carried into position 1, with further merge-and-carry
+  ** until an empty position is found.
+  */
+  DataBuffer *pBuffers = NULL;
+  int nBuffers = 0, nMaxBuffers = 0, rc;
+
   assert( nTerm>0 );
 
-  /* Process while the prefix matches. */
-  while( !leavesReaderAtEnd(pReader) ){
+  for(rc=SQLITE_OK; rc==SQLITE_OK && !leavesReaderAtEnd(pReader);
+      rc=leavesReaderStep(v, pReader)){
     /* TODO(shess) Really want leavesReaderTermCmp(), but that name is
     ** already taken to compare the terms of two LeavesReaders.  Think
     ** on a better name.  [Meanwhile, break encapsulation rather than
     ** use a confusing name.]
     */
-    int rc;
     int c = leafReaderTermCmp(&pReader->leafReader, pTerm, nTerm, isPrefix);
+    if( c>0 ) break;      /* Past any possible matches. */
     if( c==0 ){
       const char *pData = leavesReaderData(pReader);
-      int nData = leavesReaderDataBytes(pReader);
-      if( out->nData==0 ){
-        dataBufferReplace(out, pData, nData);
+      int iBuffer, nData = leavesReaderDataBytes(pReader);
+
+      /* Find the first empty buffer. */
+      for(iBuffer=0; iBuffer<nBuffers; ++iBuffer){
+        if( 0==pBuffers[iBuffer].nData ) break;
+      }
+
+      /* Out of buffers, add an empty one. */
+      if( iBuffer==nBuffers ){
+        if( nBuffers==nMaxBuffers ){
+          DataBuffer *p;
+          nMaxBuffers += 20;
+
+          /* Manual realloc so we can handle NULL appropriately. */
+          p = sqlite3_malloc(nMaxBuffers*sizeof(*pBuffers));
+          if( p==NULL ){
+            rc = SQLITE_NOMEM;
+            break;
+          }
+
+          if( nBuffers>0 ){
+            assert(pBuffers!=NULL);
+            memcpy(p, pBuffers, nBuffers*sizeof(*pBuffers));
+            sqlite3_free(pBuffers);
+          }
+          pBuffers = p;
+        }
+        dataBufferInit(&(pBuffers[nBuffers]), 0);
+        nBuffers++;
+      }
+
+      /* At this point, must have an empty at iBuffer. */
+      assert(iBuffer<nBuffers && pBuffers[iBuffer].nData==0);
+
+      /* If empty was first buffer, no need for merge logic. */
+      if( iBuffer==0 ){
+        dataBufferReplace(&(pBuffers[0]), pData, nData);
       }else{
-        DataBuffer result;
-        dataBufferInit(&result, out->nData+nData);
-        docListUnion(out->pData, out->nData, pData, nData, &result);
-        dataBufferDestroy(out);
-        *out = result;
-        /* TODO(shess) Rather than destroy out, we could retain it for
-        ** later reuse.
+        /* pAcc is the empty buffer the merged data will end up in. */
+        DataBuffer *pAcc = &(pBuffers[iBuffer]);
+        DataBuffer *p = &(pBuffers[0]);
+
+        /* Handle position 0 specially to avoid need to prime pAcc
+        ** with pData/nData.
         */
+        dataBufferSwap(p, pAcc);
+        docListAccumulateUnion(pAcc, pData, nData);
+
+        /* Accumulate remaining doclists into pAcc. */
+        for(++p; p<pAcc; ++p){
+          docListAccumulateUnion(pAcc, p->pData, p->nData);
+
+          /* dataBufferReset() could allow a large doclist to blow up
+          ** our memory requirements.
+          */
+          if( p->nCapacity<1024 ){
+            dataBufferReset(p);
+          }else{
+            dataBufferDestroy(p);
+            dataBufferInit(p, 0);
+          }
+        }
       }
     }
-    if( c>0 ) break;      /* Past any possible matches. */
-
-    rc = leavesReaderStep(v, pReader);
-    if( rc!=SQLITE_OK ) return rc;
   }
-  return SQLITE_OK;
+
+  /* Union all the doclists together into *out. */
+  /* TODO(shess) What if *out is big?  Sigh. */
+  if( rc==SQLITE_OK && nBuffers>0 ){
+    int iBuffer;
+    for(iBuffer=0; iBuffer<nBuffers; ++iBuffer){
+      if( pBuffers[iBuffer].nData>0 ){
+        if( out->nData==0 ){
+          dataBufferSwap(out, &(pBuffers[iBuffer]));
+        }else{
+          docListAccumulateUnion(out, pBuffers[iBuffer].pData,
+                                 pBuffers[iBuffer].nData);
+        }
+      }
+    }
+  }
+
+  while( nBuffers-- ){
+    dataBufferDestroy(&(pBuffers[nBuffers]));
+  }
+  if( pBuffers!=NULL ) sqlite3_free(pBuffers);
+
+  return rc;
 }
 
 /* Call loadSegmentLeavesInt() with pData/nData as input. */
