@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.363 2007/11/23 13:42:52 drh Exp $
+** $Id: select.c,v 1.364 2007/12/08 21:10:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1412,6 +1412,15 @@ static int prepSelectStmt(Parse *pParse, Select *p){
   return rc;
 }
 
+/*
+** During the process of matching ORDER BY terms to columns of the 
+** result set, the Exprlist.a[].done flag can be set to one of the
+** following values:
+*/
+#define ORDERBY_MATCH_NONE     0   /* No match found */
+#define ORDERBY_MATCH_PARTIAL  1   /* A good match, but not perfect */
+#define ORDERBY_MATCH_EXACT    2   /* An exact match seen */
+
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
 ** This routine associates entries in an ORDER BY expression list with
@@ -1431,33 +1440,43 @@ static int matchOrderbyToColumn(
   Select *pSelect,        /* Match to result columns of this SELECT */
   ExprList *pOrderBy,     /* The ORDER BY values to match against columns */
   int iTable,             /* Insert this value in iTable */
-  int mustComplete        /* If TRUE all ORDER BYs must match */
+  int rightMost           /* TRUE for outermost recursive invocation */
 ){
   int nErr = 0;
   int i, j;
   ExprList *pEList;
   sqlite3 *db = pParse->db;
+  NameContext nc;
 
   if( pSelect==0 || pOrderBy==0 ) return 1;
-  if( mustComplete ){
-    for(i=0; i<pOrderBy->nExpr; i++){ pOrderBy->a[i].done = 0; }
-  }
-  if( prepSelectStmt(pParse, pSelect) ){
-    return 1;
-  }
-  if( pSelect->pPrior ){
-    if( matchOrderbyToColumn(pParse, pSelect->pPrior, pOrderBy, iTable, 0) ){
-      return 1;
+  if( rightMost ){
+    assert( pSelect->pOrderBy==pOrderBy );
+    for(i=0; i<pOrderBy->nExpr; i++){
+      pOrderBy->a[i].done = ORDERBY_MATCH_NONE;
     }
   }
-  pEList = pSelect->pEList;
-  for(i=0; i<pOrderBy->nExpr; i++){
+  if( pSelect->pPrior
+      && matchOrderbyToColumn(pParse, pSelect->pPrior, pOrderBy, iTable, 0) ){
+    return 1;
+  }
+  if( sqlite3SelectResolve(pParse, pSelect, 0) ){
+    return 1;
+  }
+  memset(&nc, 0, sizeof(nc));
+  nc.pParse = pParse;
+  nc.pSrcList = pSelect->pSrc;
+  nc.pEList = pEList = pSelect->pEList;
+  nc.allowAgg = 1;
+  for(i=0; nErr==0 && i<pOrderBy->nExpr; i++){
     struct ExprList_item *pItem;
     Expr *pE = pOrderBy->a[i].pExpr;
     int iCol = -1;
-    char *zLabel;
+    int match = ORDERBY_MATCH_NONE;
+    Expr *pDup;
 
-    if( pOrderBy->a[i].done ) continue;
+    if( pOrderBy->a[i].done==ORDERBY_MATCH_EXACT ){
+      continue;
+    }
     if( sqlite3ExprIsInteger(pE, &iCol) ){
       if( iCol<=0 || iCol>pEList->nExpr ){
         sqlite3ErrorMsg(pParse,
@@ -1466,34 +1485,38 @@ static int matchOrderbyToColumn(
         nErr++;
         break;
       }
-      if( !mustComplete ) continue;
+      if( !rightMost ) continue;
       iCol--;
+      match = ORDERBY_MATCH_EXACT;
     }
-    if( iCol<0 && (zLabel = sqlite3NameFromToken(db, &pE->token))!=0 ){
-      for(j=0, pItem=pEList->a; j<pEList->nExpr; j++, pItem++){
-        char *zName;
-        int isMatch;
-        if( pItem->zName ){
-          zName = sqlite3DbStrDup(db, pItem->zName);
-        }else{
-          zName = sqlite3NameFromToken(db, &pItem->pExpr->token);
-        }
-        isMatch = zName && sqlite3StrICmp(zName, zLabel)==0;
-        sqlite3_free(zName);
-        if( isMatch ){
-          iCol = j;
-          break;
+    if( !match && pParse->nErr==0 && (pDup = sqlite3ExprDup(db, pE))!=0 ){
+      nc.nErr = 0;
+      assert( pParse->zErrMsg==0 );
+      if( sqlite3ExprResolveNames(&nc, pDup) ){
+        sqlite3ErrorClear(pParse);
+      }else{
+        for(j=0, pItem=pEList->a; j<pEList->nExpr; j++, pItem++){
+          if( sqlite3ExprCompare(pItem->pExpr, pDup) ){
+            iCol = j;
+            match = ORDERBY_MATCH_PARTIAL;
+            break;
+          }
         }
       }
-      sqlite3_free(zLabel);
+      sqlite3ExprDelete(pDup);
     }
-    if( iCol>=0 ){
+    if( match ){
       pE->op = TK_COLUMN;
-      pE->iColumn = iCol;
       pE->iTable = iTable;
       pE->iAgg = -1;
-      pOrderBy->a[i].done = 1;
-    }else if( mustComplete ){
+      if( pOrderBy->a[i].done!=ORDERBY_MATCH_NONE && pE->iColumn!=iCol ){
+        sqlite3ErrorMsg(pParse,
+          "ORDER BY term number %d is ambiguous", i+1);
+        nErr++;
+      }
+      pE->iColumn = iCol;
+      pOrderBy->a[i].done = match;
+    }else if( rightMost && pOrderBy->a[i].done==ORDERBY_MATCH_NONE ){
       sqlite3ErrorMsg(pParse,
         "ORDER BY term number %d does not match any result column", i+1);
       nErr++;
@@ -2720,11 +2743,11 @@ int sqlite3SelectResolve(
      sqlite3ExprResolveNames(&sNC, p->pHaving) ){
     return SQLITE_ERROR;
   }
-  if( p->pPrior==0 ){
-    if( processOrderGroupBy(&sNC, p->pOrderBy, "ORDER") ||
-        processOrderGroupBy(&sNC, pGroupBy, "GROUP") ){
-      return SQLITE_ERROR;
-    }
+  if( p->pPrior==0 && processOrderGroupBy(&sNC, p->pOrderBy, "ORDER") ){
+    return SQLITE_ERROR;
+  }
+  if( processOrderGroupBy(&sNC, pGroupBy, "GROUP") ){
+    return SQLITE_ERROR;
   }
 
   if( pParse->db->mallocFailed ){
