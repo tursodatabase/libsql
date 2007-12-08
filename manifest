@@ -1,5 +1,5 @@
-C Change\sprefix\ssearch\sfrom\sO(N*M)\sto\sO(NlogM).\s\sThe\sprevious\scode\nlinearly\smerged\sthe\sdoclists,\sso\sas\sthe\saccumulated\slist\sgot\slarge,\nthings\sgot\sslow\s(the\sM\sterm,\sa\sfucntion\sof\sthe\snumber\sof\sdocuments\sin\nthe\sindex).\s\sThis\schange\sdoes\spairwise\smerges\suntil\sa\ssingle\sdoclist\nremains.\s\sA\stest\ssearch\sof\s't*'\sagainst\sa\sdatabase\sof\sRFC\stext\nimproves\sfrom\s1m16s\sto\s4.75s.\s(CVS\s4599)
-D 2007-12-07T23:47:53
+C Fix\sa\sbug\sin\sthe\sdebugging\sprintf\slogic.\s(CVS\s4600)
+D 2007-12-08T17:55:36
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -129,7 +129,7 @@ F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
 F src/parse.y a780b33ef45dd7b3272319cf91e609d6f109a31c
 F src/pragma.c 0246032dbe681dded8710ac43eaf654eead1434e
 F src/prepare.c f811fdb6fd4a82cca673a6e1d5b041d6caf567f1
-F src/printf.c 0d7ad185914c952bfa6235ac8f5f019db5ad37e5
+F src/printf.c c94a2571a828b927c64f5e3ed3584da8a91fcaec
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 7c0ab94b8f287eb94fdb1eb101be603832ecfc34
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
@@ -597,7 +597,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c9eb65912f61ce0a6b66fe253652a1827e46b12a
-R 0fafe177127549f06d346814ea671cc8
-U shess
-Z d10cd33d2eea817a0c124609ae700d66
+P feef1b15d645d638b4a05742f214b0445fa7e176
+R b339a7ea6c28f4b6ee6a4c188d3c15c4
+U drh
+Z c74d5cd18bfa04a5ccaf7b0db6ea5a33
