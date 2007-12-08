@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc4.test,v 1.22 2007/08/13 15:28:35 danielk1977 Exp $
+# $Id: misc4.test,v 1.23 2007/12/08 18:01:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -98,7 +98,6 @@ do_test misc4-2.4 {
 
 # Ticket #966
 #
-ifcapable compound {
 do_test misc4-3.1 {
   execsql { 
     CREATE TABLE Table1(ID integer primary key, Value TEXT);
@@ -106,18 +105,33 @@ do_test misc4-3.1 {
     CREATE TABLE Table2(ID integer NOT NULL, Value TEXT);
     INSERT INTO Table2 VALUES(1, 'z');
     INSERT INTO Table2 VALUES (1, 'a');
-    SELECT ID, Value FROM Table1
-       UNION SELECT ID, max(Value) FROM Table2 GROUP BY 1
-    ORDER BY 1, 2;
   }
-} {1 x 1 z}
-do_test misc4-3.2 {
   catchsql { 
-    SELECT ID, Value FROM Table1
-       UNION SELECT ID, max(Value) FROM Table2 GROUP BY 1, 2
-    ORDER BY 1, 2;
+    SELECT ID, max(Value) FROM Table2 GROUP BY 1, 2 ORDER BY 1, 2;
   }
 } {1 {aggregate functions are not allowed in the GROUP BY clause}}
+ifcapable compound {
+  do_test misc4-3.2 {
+    execsql {
+      SELECT ID, Value FROM Table1
+         UNION SELECT ID, max(Value) FROM Table2 GROUP BY 1
+      ORDER BY 1, 2;
+    }
+  } {1 x 1 z}
+  do_test misc4-3.3 {
+    catchsql { 
+      SELECT ID, Value FROM Table1
+         UNION SELECT ID, max(Value) FROM Table2 GROUP BY 1, 2
+      ORDER BY 1, 2;
+    }
+  } {1 {aggregate functions are not allowed in the GROUP BY clause}}
+  do_test misc4-3.4 {
+    catchsql { 
+      SELECT ID, max(Value) FROM Table2 GROUP BY 1, 2
+         UNION SELECT ID, Value FROM Table1
+      ORDER BY 1, 2;
+    }
+  } {1 {aggregate functions are not allowed in the GROUP BY clause}}
 } ;# ifcapable compound
 
 # Ticket #1047.  Make sure column types are preserved in subqueries.
