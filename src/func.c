@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.178 2007/12/07 18:39:05 drh Exp $
+** $Id: func.c,v 1.179 2007/12/10 18:07:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -413,9 +413,9 @@ struct compareInfo {
 */
 #if defined(SQLITE_EBCDIC)
 # define sqlite3Utf8Read(A,B,C)  (*(A++))
-# define UpperToLower(A)         A = sqlite3UpperToLower[A]
+# define GlogUpperToLower(A)     A = sqlite3UpperToLower[A]
 #else
-# define UpperToLower(A)         if( A<0x80 ){ A = sqlite3UpperToLower[A]; }
+# define GlogUpperToLower(A)     if( A<0x80 ){ A = sqlite3UpperToLower[A]; }
 #endif
 
 static const struct compareInfo globInfo = { '*', '?', '[', 0 };
@@ -494,11 +494,11 @@ static int patternCompare(
       }
       while( (c2 = sqlite3Utf8Read(zString,0,&zString))!=0 ){
         if( noCase ){
-          UpperToLower(c2);
-          UpperToLower(c);
+          GlogUpperToLower(c2);
+          GlogUpperToLower(c);
           while( c2 != 0 && c2 != c ){
             c2 = sqlite3Utf8Read(zString, 0, &zString);
-            UpperToLower(c2);
+            GlogUpperToLower(c2);
           }
         }else{
           while( c2 != 0 && c2 != c ){
@@ -550,8 +550,8 @@ static int patternCompare(
     }else{
       c2 = sqlite3Utf8Read(zString, 0, &zString);
       if( noCase ){
-        UpperToLower(c);
-        UpperToLower(c2);
+        GlogUpperToLower(c);
+        GlogUpperToLower(c2);
       }
       if( c!=c2 ){
         return 0;
