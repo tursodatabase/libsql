@@ -13,10 +13,15 @@
 #
 #     <value> IN (SELECT <column> FROM <table>)
 #
-# $Id: in3.test,v 1.1 2007/11/29 17:05:18 danielk1977 Exp $
+# $Id: in3.test,v 1.2 2007/12/10 05:03:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !subquery {
+  finish_test
+  return
+}
 
 # Return the number of OpenEphemeral instructions used in the
 # implementation of the sql statement passed as a an argument.

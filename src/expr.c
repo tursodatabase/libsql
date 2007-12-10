@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.317 2007/11/29 17:05:18 danielk1977 Exp $
+** $Id: expr.c,v 1.318 2007/12/10 05:03:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1559,6 +1559,7 @@ struct QueryCoder {
 ** to be unique - either because it is an INTEGER PRIMARY KEY or it
 ** is unique by virtue of a constraint or implicit index.
 */
+#ifndef SQLITE_OMIT_SUBQUERY
 int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
   Select *p;
   int eType = 0;
@@ -1659,6 +1660,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
   }
   return eType;
 }
+#endif
 
 /*
 ** Generate code for scalar subqueries used as an expression

@@ -15,7 +15,7 @@
 # that IS NULL phrases are correctly optimized.  But you can never
 # have too many tests, so some other tests are thrown in as well.
 #
-# $Id: where4.test,v 1.5 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: where4.test,v 1.6 2007/12/10 05:03:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -181,6 +181,7 @@ do_test where4-4.4 {
 
 # Ticket #2273.  Problems with IN operators and NULLs.
 #
+ifcapable subquery {
 do_test where4-5.1 {
   execsql {
     CREATE TABLE t4(x,y,z,PRIMARY KEY(x,y));
@@ -266,5 +267,7 @@ do_test where4-7.2 {
     )) FROM t7;
   }
 } {{}}
+
+}; #ifcapable subquery
 
 finish_test

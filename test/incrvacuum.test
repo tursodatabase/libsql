@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.14 2007/09/01 10:01:13 danielk1977 Exp $
+# $Id: incrvacuum.test,v 1.15 2007/12/10 05:03:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -297,6 +297,11 @@ set TestScriptList [list {
   INSERT INTO t3 VALUES('hello', 'world');
 }
 ]
+
+# If this build omit's subqueries, step 2 in the above list will not
+# work. Replace it with "" in this case. 
+#
+ifcapable !subquery { lset TestScriptList 2 "" }
 
 # Compare the contents of databases $A and $B.
 #

@@ -12,10 +12,15 @@
 # The tests in this file ensure that a temporary table is used
 # when required by an "INSERT INTO ... SELECT ..." statement.
 #
-# $Id: insert5.test,v 1.1 2007/11/23 15:02:19 drh Exp $
+# $Id: insert5.test,v 1.2 2007/12/10 05:03:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !subquery {
+  finish_test
+  return
+}
 
 # Return true if the compilation of the sql passed as an argument 
 # includes the opcode OpenEphemeral. An "INSERT INTO ... SELECT"

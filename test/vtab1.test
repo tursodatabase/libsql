@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.48 2007/11/05 05:12:53 danielk1977 Exp $
+# $Id: vtab1.test,v 1.49 2007/12/10 05:03:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -430,6 +430,8 @@ do_test vtab1-3.13 {
   set echo_module
 } [list xBestIndex {SELECT rowid, * FROM 'treal'} \
         xFilter    {SELECT rowid, * FROM 'treal'}]
+ifcapable subquery {
+# The echo module uses a subquery internally to implement the MATCH operator.
 do_test vtab1-3.14 {
   set echo_module ""
   execsql {
@@ -443,6 +445,7 @@ do_test vtab1-3.15 {
         xFilter \
         {SELECT rowid, * FROM 'treal' WHERE b LIKE (SELECT '%'||?||'%')} \
         string ]
+}; #ifcapable subquery
 
 #----------------------------------------------------------------------
 # Test case vtab1-3 test table scans and the echo module's 

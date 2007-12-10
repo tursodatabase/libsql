@@ -12,7 +12,7 @@
 # focus of this file is testing the use of indices in WHERE clauses
 # based on recent changes to the optimizer.
 #
-# $Id: where2.test,v 1.12 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: where2.test,v 1.13 2007/12/10 05:03:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -328,7 +328,12 @@ do_test where2-6.11.4 {
     SELECT * FROM t2249b CROSS JOIN t2249a WHERE a='hello' OR b=a;
   }
 } {123 0123 nosort t2249b {} t2249a {}}
-ifcapable explain {
+ifcapable explain&&subquery {
+  # These tests are not run if subquery support is not included in the
+  # build. This is because these tests test the "a = 1 OR a = 2" to
+  # "a IN (1, 2)" optimisation transformation, which is not enabled if
+  # subqueries and the IN operator is not available.
+  #
   do_test where2-6.12 {
     # In this case, the +b disables the affinity conflict and allows
     # the OR optimization to be used again.  The result is now an empty
@@ -345,8 +350,6 @@ ifcapable explain {
       SELECT * FROM t2249b CROSS JOIN t2249a WHERE a='hello' OR +b=a;
     }
   } {nosort t2249b {} {} sqlite_autoindex_t2249a_1}
-}
-ifcapable explain {
   do_test where2-6.12.3 {
     # In this case, the +b disables the affinity conflict and allows
     # the OR optimization to be used again.  The result is now an empty
@@ -371,7 +374,12 @@ do_test where2-6.20 {
     SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE x.a=y.a
   }
 } {0123 0123 nosort x {} {} sqlite_autoindex_t2249a_1}
-ifcapable explain {
+ifcapable explain&&subquery {
+  # These tests are not run if subquery support is not included in the
+  # build. This is because these tests test the "a = 1 OR a = 2" to
+  # "a IN (1, 2)" optimisation transformation, which is not enabled if
+  # subqueries and the IN operator is not available.
+  #
   do_test where2-6.21 {
     queryplan {
       SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE x.a=y.a OR y.a='hello'
@@ -604,11 +612,13 @@ ifcapable or_opt&&tclvar {
       SELECT count(*) FROM t10;
     }
   } 1000
-  do_test where2-9.2 {
-    count {
-      SELECT * FROM t10 WHERE a=1 AND (b=2 OR b=3)
-    }
-  } {1 2 2 1 3 3 7}
+  ifcapable subquery {
+    do_test where2-9.2 {
+      count {
+        SELECT * FROM t10 WHERE a=1 AND (b=2 OR b=3)
+      }
+    } {1 2 2 1 3 3 7}
+  }
 }
 
 finish_test

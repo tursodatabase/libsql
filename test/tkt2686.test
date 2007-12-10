@@ -11,11 +11,16 @@
 #
 # This file is to test that ticket #2686 has been fixed.
 #
-# $Id: tkt2686.test,v 1.1 2007/10/04 18:52:15 drh Exp $
+# $Id: tkt2686.test,v 1.2 2007/12/10 05:03:48 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !subquery {
+  finish_test
+  return
+}
 
 db eval {
   PRAGMA page_size=1024;
