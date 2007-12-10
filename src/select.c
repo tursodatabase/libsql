@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.364 2007/12/08 21:10:20 drh Exp $
+** $Id: select.c,v 1.365 2007/12/10 18:51:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1412,15 +1412,6 @@ static int prepSelectStmt(Parse *pParse, Select *p){
   return rc;
 }
 
-/*
-** During the process of matching ORDER BY terms to columns of the 
-** result set, the Exprlist.a[].done flag can be set to one of the
-** following values:
-*/
-#define ORDERBY_MATCH_NONE     0   /* No match found */
-#define ORDERBY_MATCH_PARTIAL  1   /* A good match, but not perfect */
-#define ORDERBY_MATCH_EXACT    2   /* An exact match seen */
-
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
 ** This routine associates entries in an ORDER BY expression list with
@@ -1429,9 +1420,6 @@ static int prepSelectStmt(Parse *pParse, Select *p){
 ** the top-level node is filled in with column number and the iTable
 ** value of the top-level node is filled with iTable parameter.
 **
-** If there are prior SELECT clauses, they are processed first.  A match
-** in an earlier SELECT takes precedence over a later SELECT.
-**
 ** Any entry that does not match is flagged as an error.  The number
 ** of errors is returned.
 */
@@ -1439,91 +1427,83 @@ static int matchOrderbyToColumn(
   Parse *pParse,          /* A place to leave error messages */
   Select *pSelect,        /* Match to result columns of this SELECT */
   ExprList *pOrderBy,     /* The ORDER BY values to match against columns */
-  int iTable,             /* Insert this value in iTable */
-  int rightMost           /* TRUE for outermost recursive invocation */
+  int iTable              /* Insert this value in iTable */
 ){
   int nErr = 0;
   int i, j;
-  ExprList *pEList;
   sqlite3 *db = pParse->db;
-  NameContext nc;
+  int nExpr;
 
   if( pSelect==0 || pOrderBy==0 ) return 1;
-  if( rightMost ){
-    assert( pSelect->pOrderBy==pOrderBy );
-    for(i=0; i<pOrderBy->nExpr; i++){
-      pOrderBy->a[i].done = ORDERBY_MATCH_NONE;
-    }
-  }
-  if( pSelect->pPrior
-      && matchOrderbyToColumn(pParse, pSelect->pPrior, pOrderBy, iTable, 0) ){
-    return 1;
-  }
   if( sqlite3SelectResolve(pParse, pSelect, 0) ){
     return 1;
   }
-  memset(&nc, 0, sizeof(nc));
-  nc.pParse = pParse;
-  nc.pSrcList = pSelect->pSrc;
-  nc.pEList = pEList = pSelect->pEList;
-  nc.allowAgg = 1;
+
+  nExpr = pSelect->pEList->nExpr;
   for(i=0; nErr==0 && i<pOrderBy->nExpr; i++){
-    struct ExprList_item *pItem;
     Expr *pE = pOrderBy->a[i].pExpr;
     int iCol = -1;
-    int match = ORDERBY_MATCH_NONE;
-    Expr *pDup;
 
-    if( pOrderBy->a[i].done==ORDERBY_MATCH_EXACT ){
-      continue;
-    }
     if( sqlite3ExprIsInteger(pE, &iCol) ){
-      if( iCol<=0 || iCol>pEList->nExpr ){
+      if( iCol<=0 || iCol>nExpr ){
         sqlite3ErrorMsg(pParse,
           "ORDER BY position %d should be between 1 and %d",
-          iCol, pEList->nExpr);
+          iCol, nExpr);
         nErr++;
         break;
       }
-      if( !rightMost ) continue;
       iCol--;
-      match = ORDERBY_MATCH_EXACT;
-    }
-    if( !match && pParse->nErr==0 && (pDup = sqlite3ExprDup(db, pE))!=0 ){
-      nc.nErr = 0;
-      assert( pParse->zErrMsg==0 );
-      if( sqlite3ExprResolveNames(&nc, pDup) ){
-        sqlite3ErrorClear(pParse);
-      }else{
-        for(j=0, pItem=pEList->a; j<pEList->nExpr; j++, pItem++){
-          if( sqlite3ExprCompare(pItem->pExpr, pDup) ){
-            iCol = j;
-            match = ORDERBY_MATCH_PARTIAL;
-            break;
+    }else{
+      Select *p;
+      for(p=pSelect; p; p=p->pPrior){
+        ExprList *pEList = p->pEList;
+        Expr *pDup = sqlite3ExprDup(db, pE);
+
+        NameContext nc;
+
+        memset(&nc, 0, sizeof(nc));
+        nc.pParse = pParse;
+        nc.pSrcList = p->pSrc;
+        nc.pEList = pEList;
+        nc.allowAgg = 1;
+        nc.nErr = 0;
+        if( sqlite3ExprResolveNames(&nc, pDup) ){
+          sqlite3ErrorClear(pParse);
+        }else{
+          struct ExprList_item *pItem;
+          for(j=0, pItem=pEList->a; j<pEList->nExpr; j++, pItem++){
+            if( sqlite3ExprCompare(pItem->pExpr, pDup) ){
+              if( iCol>=0 && iCol!=j ){
+                sqlite3ErrorMsg(
+                    pParse, "ORDER BY term number %d is ambiguous", i+1
+                );
+              }else{
+                iCol = j;
+              }
+            }
           }
         }
+        sqlite3ExprDelete(pDup);
       }
-      sqlite3ExprDelete(pDup);
     }
-    if( match ){
+
+    if( iCol<0 ){
+      sqlite3ErrorMsg(pParse,
+        "ORDER BY term number %d does not match any result column", i+1);
+    }else{
       pE->op = TK_COLUMN;
       pE->iTable = iTable;
       pE->iAgg = -1;
-      if( pOrderBy->a[i].done!=ORDERBY_MATCH_NONE && pE->iColumn!=iCol ){
-        sqlite3ErrorMsg(pParse,
-          "ORDER BY term number %d is ambiguous", i+1);
-        nErr++;
-      }
       pE->iColumn = iCol;
-      pOrderBy->a[i].done = match;
-    }else if( rightMost && pOrderBy->a[i].done==ORDERBY_MATCH_NONE ){
-      sqlite3ErrorMsg(pParse,
-        "ORDER BY term number %d does not match any result column", i+1);
-      nErr++;
-      break;
+      pOrderBy->a[i].done = 1;
+    }
+
+    if( pParse->nErr ){
+      return pParse->nErr;
     }
   }
-  return nErr;  
+
+  return SQLITE_OK;
 }
 #endif /* #ifndef SQLITE_OMIT_COMPOUND_SELECT */
 
@@ -1788,7 +1768,7 @@ static int multiSelect(
         ** intermediate results.
         */
         unionTab = pParse->nTab++;
-        if( pOrderBy && matchOrderbyToColumn(pParse, p, pOrderBy, unionTab,1) ){
+        if( pOrderBy && matchOrderbyToColumn(pParse, p, pOrderBy, unionTab) ){
           rc = 1;
           goto multi_select_end;
         }
@@ -1885,7 +1865,7 @@ static int multiSelect(
       */
       tab1 = pParse->nTab++;
       tab2 = pParse->nTab++;
-      if( pOrderBy && matchOrderbyToColumn(pParse,p,pOrderBy,tab1,1) ){
+      if( pOrderBy && matchOrderbyToColumn(pParse,p,pOrderBy,tab1) ){
         rc = 1;
         goto multi_select_end;
       }

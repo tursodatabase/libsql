@@ -1,5 +1,5 @@
-C Fix\sa\smacro\sin\sfunc.c\sthat\scauses\sproblems\sfor\sthe\samalgamation.\s(CVS\s4605)
-D 2007-12-10T18:07:21
+C Further\smodifications\sto\sdo\swith\sORDER\sBY\sand\scompound\sSELECT\squeries.\sRelated\sto\sticket\s#2822.\s(CVS\s4606)
+D 2007-12-10T18:51:48
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/pragma.c 0246032dbe681dded8710ac43eaf654eead1434e
 F src/prepare.c f811fdb6fd4a82cca673a6e1d5b041d6caf567f1
 F src/printf.c c94a2571a828b927c64f5e3ed3584da8a91fcaec
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
-F src/select.c 2c08239b55cf93c03a79cbdedf1ac89967fd6acb
+F src/select.c b7408624b55f58e5aa8521edb177b26ad72f968b
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c c97be281cfc3dcb14902f45e4b16f20038eb83ff
 F src/sqlite.h.in 544587c10005dde0ad8f132dd9b7816b132b2bea
@@ -414,7 +414,7 @@ F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
 F test/select1.test 79784038f0e7df66bb420e149c6fb91e61e11fb7
 F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
 F test/select3.test 47439f28862489626b483b0c718cfb0562e6f6d5
-F test/select4.test 4192e6c712194d53b4b77f094eb9d880b8d5ac0e
+F test/select4.test 2dd28cfea6f50281fb29cf136cf50df8ead6a5d2
 F test/select5.test 0b47058d3e916c1fc9fe81f44b438e02bade21ce
 F test/select6.test 399f14b9ba37b768afe5d2cd8c12e4f340a69db8
 F test/select7.test 7906735805cfbee4dddc0bed4c14e68d7f5f9c5f
@@ -478,6 +478,7 @@ F test/tkt2686.test 3022db0eee8ecf501f516557c77ef1c4039399cd
 F test/tkt2767.test 6b02308d553d194f329a469bf5c157fe724738d4
 F test/tkt2817.test 709a2201a5590bf56cb97f6fb168a62282203fd1
 F test/tkt2820.test 017fdee33aaef7abc092beab6088816f1942304b
+F test/tkt2822.test 782d6041b9ec10c74e28768f477cba722c43d88e
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -597,7 +598,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d384810a95c97b868a87d090f8dcb903cc82cbf7
-R 02ccd20331c3a0f99f895b6e82412309
-U drh
-Z f800f34be093e13e0ebe3d12e796a99d
+P 6adbe91efffc6b3f53dae87494430ede61d40ecc
+R c5664694f29e5838b66b78cd136777a8
+U danielk1977
+Z 0cfc5f38f552087a6f749e4e8561ad47

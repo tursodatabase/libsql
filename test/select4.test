@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.21 2007/12/08 21:10:20 drh Exp $
+# $Id: select4.test,v 1.22 2007/12/10 18:51:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -572,13 +572,14 @@ do_test select4-9.7 {
 } ;# ifcapable subquery
 
 do_test select4-9.8 {
-  execsql2 {
+  catchsql {
     SELECT 0 AS x, 1 AS y
     UNION
     SELECT 2 AS y, -3 AS x
     ORDER BY x LIMIT 1;
   }
-} {x 0 y 1}
+} {1 {ORDER BY term number 1 is ambiguous}}
+
 do_test select4-9.9.1 {
   execsql2 {
     SELECT 1 AS a, 2 AS b UNION ALL SELECT 3 AS b, 4 AS a
