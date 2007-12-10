@@ -1103,8 +1103,7 @@ static int winOpen(
   }else{
     dwShareMode = 0;
   }
-  if( flags & (SQLITE_OPEN_TEMP_DB | SQLITE_OPEN_TEMP_JOURNAL
-                    | SQLITE_OPEN_SUBJOURNAL) ){
+  if( flags & SQLITE_OPEN_DELETEONCLOSE ){
 #if OS_WINCE
     dwFlagsAndAttributes = FILE_ATTRIBUTE_HIDDEN;
 #else
