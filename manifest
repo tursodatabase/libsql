@@ -1,5 +1,5 @@
-C Fix\scompilation/testing\swith\sOMIT_SUBQUERY\sdefined.\sTicket\s#2828.\s(CVS\s4603)
-D 2007-12-10T05:03:47
+C Fix\sa\sbug\sin\sthe\scompilation\sprocedures\sfor\sthe\sLinux\sshared\slibrary\nthat\sincludes\sthe\sTCL\sbindings.\s(CVS\s4604)
+D 2007-12-10T17:55:16
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -71,7 +71,7 @@ F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
 F mkopcodec.awk 3fb9bf077053c968451f4dd03d11661ac373f9d1
 F mkopcodeh.awk 799a299eaf3173c0f8ac0bd7c4b49c0f4d4590ca
 F mkso.sh 24bde4c09e6fe80f718db3c31c068f45e13a2f2c
-F publish.sh ea1178b310dd69e24b18c71ecf43af40381f1e35
+F publish.sh 1c0658c63d70f182a8f5e17cc28422f1b237f51d
 F publish_osx.sh eca87df1e3d43d128d97d3261fd48b3d6877996e
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
@@ -597,7 +597,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 62a78d212c53a9cb1759d03134653a75f3a086b6
-R 68268cf2b01556c7a9e0f2599b467528
-U danielk1977
-Z 01b288bc59bf6c1f76e93bf4213ad9d1
+P 0b34a18651764e650faba983be8593992ab2f4a9
+R 0e6b235d88b8af7d2e1dcd9ac0a3132e
+U drh
+Z 4b31417da2d9baee44ae10642701026a

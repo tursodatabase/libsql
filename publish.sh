@@ -26,6 +26,7 @@ make clean
 make sqlite3.c
 make fts3amal.c
 cat fts3amal.c >>sqlite3.c
+cat fts3amal.c >>tclsqlite3.c
 CFLAGS="-Os -DSQLITE_ENABLE_FTS3=1 -DSQLITE_THREADSAFE=0"
 echo '***** '"COMPILING sqlite3-$VERS.bin..."
 gcc $CFLAGS -Itsrc sqlite3.c tsrc/shell.c -o sqlite3 -ldl
@@ -55,14 +56,13 @@ TCLDIR=/home/drh/tcltk/846/linux/846linux
 TCLSTUBLIB=$TCLDIR/libtclstub8.4g.a
 CFLAGS="-Os -DSQLITE_ENABLE_FTS3=1"
 echo '***** BUILDING shared libraries for linux'
-gcc $CFLAGS -shared -Itsrc sqlite3.c tsrc/tclsqlite.c $TCLSTUBLIB \
-    -o tclsqlite3.so
+gcc $CFLAGS -shared tclsqlite3.c $TCLSTUBLIB -o tclsqlite3.so -lpthread
 strip tclsqlite3.so
 chmod 644 tclsqlite3.so
 mv tclsqlite3.so tclsqlite-$VERS.so
 gzip tclsqlite-$VERS.so
 mv tclsqlite-$VERS.so.gz doc
-gcc $CFLAGS -shared -Itsrc sqlite3.c -o sqlite3.so
+gcc $CFLAGS -shared sqlite3.c -o sqlite3.so -lpthread
 strip sqlite3.so
 chmod 644 sqlite3.so
 mv sqlite3.so sqlite-$VERS.so
