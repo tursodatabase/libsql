@@ -1,5 +1,5 @@
-C Build\sthe\sCLI\susing\sthe\samalgamation.\s\sRelax\sthe\slimit\son\sSQL\sstatement\nlength\swhen\sbuilding\sthe\sCLI.\s(CVS\s4609)
-D 2007-12-11T19:34:45
+C Fix\sa\scomment\son\sthe\sSQLITE_SQL_MAX_LENGTH\sdefinition.\s(CVS\s4610)
+D 2007-12-11T20:04:15
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 0590398f62fc2c456ff4c45e9741f5a718b7e2ac
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/shell.c c97be281cfc3dcb14902f45e4b16f20038eb83ff
 F src/sqlite.h.in 544587c10005dde0ad8f132dd9b7816b132b2bea
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 5c390e902c88648035110d0fe156a279dcace271
-F src/sqliteLimit.h 15ffe2116746c27ace2b428a26a4fcd6dba6fa65
+F src/sqliteLimit.h 3657c8eb75addce54a46354a29050a9673845a85
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 9923abeffc9b3d7dad58e92b319661521f60debf
 F src/test1.c ba01f4b8bb742ec5869167bbc87491eaafb7da3f
@@ -598,7 +598,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 64787d78b99a549a87bc2baeff8ae87691612b77
-R 3e068966c3112f87d80204beb2f1eb85
+P a5d81cd371913dff4b1337a9586645f967371ab9
+R 9aa809bc379c72ad772ca59009ebf8cd
 U drh
-Z fdba4a6d0b544d4b7441db6a0e74a7af
+Z eacdefd348173555cb556821f0cee5bc
