@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.179 2007/12/10 18:07:21 drh Exp $
+** $Id: func.c,v 1.180 2007/12/11 04:23:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -878,7 +878,7 @@ static void trimFunc(
   int flags;                        /* 1: trimleft  2: trimright  3: trim */
   int i;                            /* Loop counter */
   unsigned char *aLen;              /* Length of each character in zCharSet */
-  const unsigned char **azChar;     /* Individual characters in zCharSet */
+  unsigned char **azChar;           /* Individual characters in zCharSet */
   int nChar;                        /* Number of characters in zCharSet */
 
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
@@ -893,7 +893,7 @@ static void trimFunc(
     static const unsigned char *azOne[] = { (u8*)" " };
     nChar = 1;
     aLen = (u8*)lenOne;
-    azChar = azOne;
+    azChar = (unsigned char **)azOne;
     zCharSet = 0;
   }else if( (zCharSet = sqlite3_value_text(argv[1]))==0 ){
     return;
@@ -909,7 +909,7 @@ static void trimFunc(
       }
       aLen = (unsigned char*)&azChar[nChar];
       for(z=zCharSet, nChar=0; *z; nChar++){
-        azChar[nChar] = z;
+        azChar[nChar] = (unsigned char *)z;
         SQLITE_SKIP_UTF8(z);
         aLen[nChar] = z - azChar[nChar];
       }
