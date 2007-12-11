@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.398 2007/12/07 18:55:28 drh Exp $
+** @(#) $Id: pager.c,v 1.399 2007/12/11 19:34:45 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -5106,7 +5106,7 @@ int sqlite3PagerLockingMode(Pager *pPager, int eMode){
   return (int)pPager->exclusiveMode;
 }
 
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_TEST
 /*
 ** Print a listing of all referenced pages and their ref count.
 */

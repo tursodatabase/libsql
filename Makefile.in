@@ -317,10 +317,12 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
                 -rpath $(libdir)/sqlite \
 		-version-info "8:6:8"
 
-sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
-	$(LTLINK) $(READLINE_FLAGS) $(LIBPTHREAD) \
-		-o $@ $(TOP)/src/shell.c libsqlite3.la \
-		$(LIBREADLINE) $(TLIBS)
+sqlite3$(EXE):	$(TOP)/src/shell.c sqlite3.c sqlite3.h
+	$(LTLINK) $(READLINE_FLAGS) -o $@                          \
+		-DSQLITE_MAX_SQL_LENGTH=1000000000                  \
+		-USQLITE_THREADSAFE -DSQLITE_THREADSAFE=0           \
+		$(TOP)/src/shell.c sqlite3.c                        \
+		$(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to

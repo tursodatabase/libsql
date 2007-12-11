@@ -277,10 +277,12 @@ libsqlite3.a:	$(LIBOBJ)
 	$(AR) libsqlite3.a $(LIBOBJ)
 	$(RANLIB) libsqlite3.a
 
-sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
+sqlite3$(EXE):	$(TOP)/src/shell.c sqlite3.c sqlite3.h
 	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE)                  \
-		$(TOP)/src/shell.c                                  \
-		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
+		-DSQLITE_MAX_SQL_LENGTH=1000000000                  \
+		-USQLITE_THREADSAFE -DSQLITE_THREADSAFE=0           \
+		$(TOP)/src/shell.c sqlite3.c                        \
+		$(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
 objects: $(LIBOBJ_ORIG)
 
@@ -295,6 +297,7 @@ target_source:	$(SRC)
 	mkdir tsrc
 	cp -f $(SRC) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
+	touch target_source
 
 sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
 	tclsh $(TOP)/tool/mksqlite3c.tcl
@@ -477,6 +480,6 @@ clean:
 	rm -f lemon lempar.c parse.* sqlite*.tar.gz mkkeywordhash keywordhash.h
 	rm -f $(PUBLISH)
 	rm -f *.da *.bb *.bbg gmon.out
-	rm -rf tsrc
+	rm -rf tsrc target_source
 	rm -f testloadext.dll libtestloadext.so
 	rm -f sqlite3.c fts?amal.c
