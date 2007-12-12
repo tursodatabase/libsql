@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.194 2007/11/27 14:46:42 drh Exp $
+** $Id: insert.c,v 1.195 2007/12/12 17:42:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -509,6 +509,7 @@ void sqlite3Insert(
       */
       srcTab = pParse->nTab++;
       sqlite3VdbeResolveLabel(v, iInsertBlock);
+      sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
       sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
       sqlite3VdbeAddOp(v, OP_NewRowid, srcTab, 0);
       sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
@@ -641,6 +642,7 @@ void sqlite3Insert(
   }else if( pSelect ){
     sqlite3VdbeAddOp(v, OP_Goto, 0, iSelectLoop);
     sqlite3VdbeResolveLabel(v, iInsertBlock);
+    sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
   }
 
   /* Run the BEFORE and INSTEAD OF triggers, if there are any
