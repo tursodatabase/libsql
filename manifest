@@ -1,5 +1,5 @@
-C Fix\sdatabase\scorrupting\scode\sgeneration\serror\sfor\sUPDATE\sOR\sREPLACE.\nticket\s#2832.\s\sStill\sneed\sto\sadd\stest\scases\sand\sadditional\sdefensive\nlogic\sto\savoid\sfuture\soccurrences\sof\ssimilar\sproblems.\s(CVS\s4613)
-D 2007-12-12T12:25:22
+C Test\sfile\scontaining\sminimal\sexample\sof\sbug\s#2832.\s(CVS\s4614)
+D 2007-12-12T14:46:58
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 0590398f62fc2c456ff4c45e9741f5a718b7e2ac
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -479,6 +479,7 @@ F test/tkt2767.test 6b02308d553d194f329a469bf5c157fe724738d4
 F test/tkt2817.test 709a2201a5590bf56cb97f6fb168a62282203fd1
 F test/tkt2820.test 017fdee33aaef7abc092beab6088816f1942304b
 F test/tkt2822.test 09033348a14f5a5729724b0db7c1687cfc876b9f
+F test/tkt2832.test c16f3f7f49bdb4d33a72a5165730e0e7ed41d34f
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -598,7 +599,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3fd6a267533cedcca9b8ba3533c107d7341a06c6
-R 081880c7952df79e05f4ff6e88d91ef6
-U drh
-Z a213eb601b7b5c0d087dc591ecfb53fa
+P 18e10f816782ca7842f651e9b2a23da1aab645c8
+R 17fe7dbdc7be62239db13f722fc18035
+U danielk1977
+Z 2a4a2427e0221a3ee3b043134f983d09
