@@ -1,5 +1,5 @@
-C Test\sfile\scontaining\sminimal\sexample\sof\sbug\s#2832.\s(CVS\s4614)
-D 2007-12-12T14:46:58
+C Fix\ssome\sproblems\ssimilar\sto\s#2832,\sbut\scaused\sby\striggers\sinstead\sof\san\sOR\sREPLACE\sclause.\s(CVS\s4615)
+D 2007-12-12T16:06:23
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 0590398f62fc2c456ff4c45e9741f5a718b7e2ac
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -90,7 +90,7 @@ F src/build.c 580561a0d9e070ff2741f3b115cae51c1ef08260
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
-F src/delete.c 034b87768c4135a22038a86a205f9d2d5f68a143
+F src/delete.c 889a3aacc81b68505b68d5e6b8872313dda3bc33
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 7c8e3295ddeb835ed081b8573caaf8c3fd7c9f9c
 F src/func.c 9c87ddf907e72ac1990146ff2d68dce21d68b419
@@ -164,7 +164,7 @@ F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c a98d69cae883e53d3686fc25889a5fa5f51439f8
 F src/tokenize.c 67e42600ab34f976f2b1288c499ad6c98d652f0e
 F src/trigger.c 66695e1375b969ea41a38dec9f40ea28bb0ac767
-F src/update.c e773be79b616532bbc093c2f02564ca1ee803308
+F src/update.c 57c07b63410cdd3d14888e33439aa1955a3514c1
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 25ffbd766f25bca099ead1c1e11f5528c86102b8
@@ -479,7 +479,7 @@ F test/tkt2767.test 6b02308d553d194f329a469bf5c157fe724738d4
 F test/tkt2817.test 709a2201a5590bf56cb97f6fb168a62282203fd1
 F test/tkt2820.test 017fdee33aaef7abc092beab6088816f1942304b
 F test/tkt2822.test 09033348a14f5a5729724b0db7c1687cfc876b9f
-F test/tkt2832.test c16f3f7f49bdb4d33a72a5165730e0e7ed41d34f
+F test/tkt2832.test 536bec5de015651eee160325619de3227556ab3c
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -599,7 +599,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 18e10f816782ca7842f651e9b2a23da1aab645c8
-R 17fe7dbdc7be62239db13f722fc18035
+P ed2e61a9fab6a9a102031c10bc6f89e78b4c7447
+R 836a6292677e4b1390bbceac9e74ab95
 U danielk1977
-Z 2a4a2427e0221a3ee3b043134f983d09
+Z cf94711319107941195920b73881749c
