@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.132 2007/12/12 16:06:23 danielk1977 Exp $
+** $Id: delete.c,v 1.133 2007/12/12 17:19:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -217,7 +217,6 @@ void sqlite3DeleteFrom(
     if( db->flags & SQLITE_CountRows ){
       /* If counting rows deleted, just count the total number of
       ** entries in the table. */
-      int endOfLoop = sqlite3VdbeMakeLabel(v);
       int addr2;
       if( !isView ){
         sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
@@ -225,7 +224,6 @@ void sqlite3DeleteFrom(
       sqlite3VdbeAddOp(v, OP_Rewind, iCur, sqlite3VdbeCurrentAddr(v)+2);
       addr2 = sqlite3VdbeAddOp(v, OP_MemIncr, 1, memCnt);
       sqlite3VdbeAddOp(v, OP_Next, iCur, addr2);
-      sqlite3VdbeResolveLabel(v, endOfLoop);
       sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
     }
     if( !isView ){

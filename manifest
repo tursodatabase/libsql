@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\ssimilar\sto\s#2832,\sbut\scaused\sby\striggers\sinstead\sof\san\sOR\sREPLACE\sclause.\s(CVS\s4615)
-D 2007-12-12T16:06:23
+C Remove\sa\scouple\sof\slines\sin\sdelete.c\sthat\sweren't\sdoing\sanything.\s(CVS\s4616)
+D 2007-12-12T17:19:27
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 0590398f62fc2c456ff4c45e9741f5a718b7e2ac
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -90,7 +90,7 @@ F src/build.c 580561a0d9e070ff2741f3b115cae51c1ef08260
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
-F src/delete.c 889a3aacc81b68505b68d5e6b8872313dda3bc33
+F src/delete.c 8c696d287ab2d17e0a38f3cad154f48d3b92fffb
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 7c8e3295ddeb835ed081b8573caaf8c3fd7c9f9c
 F src/func.c 9c87ddf907e72ac1990146ff2d68dce21d68b419
@@ -599,7 +599,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ed2e61a9fab6a9a102031c10bc6f89e78b4c7447
-R 836a6292677e4b1390bbceac9e74ab95
+P ee98ae17187296f7b0181c3d4d2b942d5cd4bc8f
+R f07fe36c79aef9b4c5a7e4c619f02545
 U danielk1977
-Z cf94711319107941195920b73881749c
+Z 3c54ca661ceb916252bfa90a4eafc09b
