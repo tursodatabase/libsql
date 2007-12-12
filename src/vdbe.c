@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.658 2007/12/12 12:25:22 drh Exp $
+** $Id: vdbe.c,v 1.659 2007/12/12 22:24:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -701,9 +701,10 @@ case OP_Halt: {            /* no-push */
 ** This opcode is used for internal consistency checking.
 */
 case OP_StackDepth: {       /* no-push */
+  int n = pTos - p->aStack + 1;
   if( pOp->p1<0 ){
-    pOp->p1 = pTos - p->aStack + 1;
-  }else if( pOp->p1!=pTos - p->aStack + 1 ){
+    pOp->p1 = n;
+  }else if( pOp->p1!=n ){
     p->pTos = pTos;
     p->rc = rc = SQLITE_INTERNAL;
     p->pc = pc;
