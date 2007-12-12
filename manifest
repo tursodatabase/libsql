@@ -1,5 +1,5 @@
-C Fix\sa\scomment\son\sthe\sSQLITE_SQL_MAX_LENGTH\sdefinition.\s(CVS\s4610)
-D 2007-12-11T20:04:15
+C Fix\stest\snumbering\sin\stkt2822.test.\sTicket\s#2830.\s(CVS\s4611)
+D 2007-12-12T04:38:27
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 0590398f62fc2c456ff4c45e9741f5a718b7e2ac
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -478,7 +478,7 @@ F test/tkt2686.test 3022db0eee8ecf501f516557c77ef1c4039399cd
 F test/tkt2767.test 6b02308d553d194f329a469bf5c157fe724738d4
 F test/tkt2817.test 709a2201a5590bf56cb97f6fb168a62282203fd1
 F test/tkt2820.test 017fdee33aaef7abc092beab6088816f1942304b
-F test/tkt2822.test 782d6041b9ec10c74e28768f477cba722c43d88e
+F test/tkt2822.test 09033348a14f5a5729724b0db7c1687cfc876b9f
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -598,7 +598,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a5d81cd371913dff4b1337a9586645f967371ab9
-R 9aa809bc379c72ad772ca59009ebf8cd
-U drh
-Z eacdefd348173555cb556821f0cee5bc
+P 9335c940504f5979066b70ec445b57acfb251713
+R d03a5445f8be128fa7f48f15551925f2
+U danielk1977
+Z bf201abd015205614969c923308ec87e
