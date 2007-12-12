@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.141 2007/11/11 18:36:34 drh Exp $
+** $Id: update.c,v 1.142 2007/12/12 12:00:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -330,6 +330,7 @@ void sqlite3Update(
     /* The top of the update loop for when there are triggers.
     */
     addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, 0);
+    sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
     mem1 = pParse->nMem++;
     sqlite3VdbeAddOp(v, OP_MemStore, mem1, 0);
     
@@ -427,6 +428,7 @@ void sqlite3Update(
     */
     if( !triggers_exist ){
       addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, 0);
+      sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
       sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
     }
     sqlite3VdbeAddOp(v, OP_NotExists, iCur, addr);
