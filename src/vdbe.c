@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.657 2007/12/12 12:00:46 drh Exp $
+** $Id: vdbe.c,v 1.658 2007/12/12 12:25:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -705,10 +705,10 @@ case OP_StackDepth: {       /* no-push */
     pOp->p1 = pTos - p->aStack + 1;
   }else if( pOp->p1!=pTos - p->aStack + 1 ){
     p->pTos = pTos;
-    p->rc = SQLITE_ERROR;
+    p->rc = rc = SQLITE_INTERNAL;
     p->pc = pc;
     p->errorAction = OE_Rollback;
-    sqlite3SetString(&p->zErrMsg, "internal VDBE stack overflow", (char*)0);
+    sqlite3SetString(&p->zErrMsg, "internal error: VDBE stack leak", (char*)0);
     goto vdbe_return;
   }
   break;

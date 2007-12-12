@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.276 2007/12/06 02:42:08 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.277 2007/12/12 12:25:22 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -298,7 +298,7 @@ int sqlite3_exec(
 #define SQLITE_OK           0   /* Successful result */
 /* beginning-of-error-codes */
 #define SQLITE_ERROR        1   /* SQL error or missing database */
-#define SQLITE_INTERNAL     2   /* NOT USED. Internal logic error in SQLite */
+#define SQLITE_INTERNAL     2   /* Internal logic error in SQLite */
 #define SQLITE_PERM         3   /* Access permission denied */
 #define SQLITE_ABORT        4   /* Callback routine requested an abort */
 #define SQLITE_BUSY         5   /* The database file is locked */

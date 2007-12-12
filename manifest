@@ -1,5 +1,5 @@
-C Add\sa\snew\sOP_StackDepth\sopcode\sto\shelp\sdetect\sVDBE\sstack\sleaks\searly,\r\nbefore\sthey\scause\sdamage.\s\sFor\sdiagnostics\sin\sticket\s#2832.\s(CVS\s4612)
-D 2007-12-12T12:00:46
+C Fix\sdatabase\scorrupting\scode\sgeneration\serror\sfor\sUPDATE\sOR\sREPLACE.\nticket\s#2832.\s\sStill\sneed\sto\sadd\stest\scases\sand\sadditional\sdefensive\nlogic\sto\savoid\sfuture\soccurrences\sof\ssimilar\sproblems.\s(CVS\s4613)
+D 2007-12-12T12:25:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 0590398f62fc2c456ff4c45e9741f5a718b7e2ac
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -134,7 +134,7 @@ F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c b7408624b55f58e5aa8521edb177b26ad72f968b
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c c97be281cfc3dcb14902f45e4b16f20038eb83ff
-F src/sqlite.h.in 544587c10005dde0ad8f132dd9b7816b132b2bea
+F src/sqlite.h.in b16a7127dad4a3e5b1b26b3d64241f3373aa12ea
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 5c390e902c88648035110d0fe156a279dcace271
 F src/sqliteLimit.h 3657c8eb75addce54a46354a29050a9673845a85
@@ -164,11 +164,11 @@ F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c a98d69cae883e53d3686fc25889a5fa5f51439f8
 F src/tokenize.c 67e42600ab34f976f2b1288c499ad6c98d652f0e
 F src/trigger.c 66695e1375b969ea41a38dec9f40ea28bb0ac767
-F src/update.c 3725377d6226f6a1f15885e112435df3a5e4770d
+F src/update.c e773be79b616532bbc093c2f02564ca1ee803308
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 25ffbd766f25bca099ead1c1e11f5528c86102b8
-F src/vdbe.c 24376fd0c28a52ebb410292a2261e5174d862cc0
+F src/vdbe.c 94d41ad149e29ffdbd000637e5b71c4f1a9d8ab5
 F src/vdbe.h 79e09ff13b85457abe437d9814454534ebbc1fe3
 F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
 F src/vdbeapi.c dd2c43317294e0a013e9f634ee4209a3ea459b43
@@ -598,7 +598,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8fe8e9c460e0f8ebc4267de96b0c971cb6370861
-R 6bd8f89e70a38f2a5c36552ce2b40f8f
+P 3fd6a267533cedcca9b8ba3533c107d7341a06c6
+R 081880c7952df79e05f4ff6e88d91ef6
 U drh
-Z 14e8caa139e0c85a2dd57b679935e880
+Z a213eb601b7b5c0d087dc591ecfb53fa
