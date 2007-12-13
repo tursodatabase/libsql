@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: icu.c,v 1.6 2007/06/22 15:21:16 danielk1977 Exp $
+** $Id: icu.c,v 1.7 2007/12/13 21:54:11 drh Exp $
 **
 ** This file implements an integration between the ICU library 
 ** ("International Components for Unicode", an open-source library 
@@ -298,7 +298,7 @@ static void icuRegexpFunc(sqlite3_context *p, int nArg, sqlite3_value **apArg){
 
 /*
 ** Implementations of scalar functions for case mapping - upper() and 
-** lower(). Function upper() converts it's input to upper-case (ABC).
+** lower(). Function upper() converts its input to upper-case (ABC).
 ** Function lower() converts to lower-case (abc).
 **
 ** ICU provides two types of case mapping, "general" case mapping and

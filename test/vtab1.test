@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.49 2007/12/10 05:03:48 danielk1977 Exp $
+# $Id: vtab1.test,v 1.50 2007/12/13 21:54:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -953,7 +953,7 @@ do_test vtab1.12-6 {
 # on a virtual table was causing an assert() to fail in the compiler.
 #
 # "IS NULL" clauses should not be passed through to the virtual table
-# implementation. They are handled by SQLite after the vtab returns it's
+# implementation. They are handled by SQLite after the vtab returns its
 # data.
 #
 do_test vtab1.13-1 {

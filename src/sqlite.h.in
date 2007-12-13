@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.277 2007/12/12 12:25:22 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.278 2007/12/13 21:54:11 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2333,7 +2333,7 @@ int sqlite3_finalize(sqlite3_stmt *pStmt);
 **
 ** The sqlite3_reset() function is called to reset a 
 ** [sqlite3_stmt | compiled SQL statement] object.
-** back to it's initial state, ready to be re-executed.
+** back to its initial state, ready to be re-executed.
 ** Any SQL statement variables that had values bound to them using
 ** the [sqlite3_bind_blob | sqlite3_bind_*() API] retain their values.
 ** Use [sqlite3_clear_bindings()] to reset the bindings.

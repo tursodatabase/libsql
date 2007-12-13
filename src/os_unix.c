@@ -128,7 +128,7 @@ struct unixFile {
 ** The DJGPP compiler environment looks mostly like Unix, but it
 ** lacks the fcntl() system call.  So redefine fcntl() to be something
 ** that always succeeds.  This means that locking does not occur under
-** DJGPP.  But it's DOS - what did you expect?
+** DJGPP.  But it is DOS - what did you expect?
 */
 #ifdef __DJGPP__
 # define fcntl(A,B,C) 0
@@ -567,7 +567,7 @@ static sqlite3LockingStyle sqlite3TestLockingStyle(
 /* 
 ** Examines the f_fstypename entry in the statfs structure as returned by 
 ** stat() for the file system hosting the database file, assigns the 
-** appropriate locking style based on it's value.  These values and 
+** appropriate locking style based on its value.  These values and 
 ** assignments are based on Darwin/OSX behavior and have not been tested on 
 ** other systems.
 */
@@ -2035,7 +2035,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 **
 ** SQLite code assumes this function cannot fail. It also assumes that
 ** if two files are created in the same file-system directory (i.e.
-** a database and it's journal file) that the sector size will be the
+** a database and its journal file) that the sector size will be the
 ** same for both.
 */
 static int unixSectorSize(sqlite3_file *id){

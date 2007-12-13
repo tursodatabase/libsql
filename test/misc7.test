@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.16 2007/10/05 15:53:29 danielk1977 Exp $
+# $Id: misc7.test,v 1.17 2007/12/13 21:54:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -38,7 +38,7 @@ do_test misc7-4 {
   list $rc $msg
 } {1 {unable to open database file}}
 
-# Try to open a file with a directory where it's journal file should be.
+# Try to open a file with a directory where its journal file should be.
 #
 do_test misc7-5 {
   file delete mydir

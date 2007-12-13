@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.65 2007/11/28 13:43:17 drh Exp $
+** $Id: prepare.c,v 1.66 2007/12/13 21:54:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -342,7 +342,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     ** will attempt to compile the supplied statement against whatever subset
     ** of the schema was loaded before the error occured. The primary
     ** purpose of this is to allow access to the sqlite_master table
-    ** even when it's contents have been corrupted.
+    ** even when its contents have been corrupted.
     */
     DbSetProperty(db, iDb, DB_SchemaLoaded);
     rc = SQLITE_OK;

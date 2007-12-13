@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.318 2007/12/10 05:03:47 danielk1977 Exp $
+** $Id: expr.c,v 1.319 2007/12/13 21:54:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1532,7 +1532,7 @@ struct QueryCoder {
 ** This function is used by the implementation of the IN (...) operator.
 ** It's job is to find or create a b-tree structure that may be used
 ** either to test for membership of the (...) set or to iterate through
-** it's members, skipping duplicates.
+** its members, skipping duplicates.
 **
 ** The cursor opened on the structure (database table, database index 
 ** or ephermal table) is stored in pX->iTable before this function returns.
@@ -1551,7 +1551,7 @@ struct QueryCoder {
 ** If the mustBeUnique parameter is false, the structure will be used 
 ** for fast set membership tests. In this case an epheremal table must 
 ** be used unless <column> is an INTEGER PRIMARY KEY or an index can 
-** be found with <column> as it's left-most column.
+** be found with <column> as its left-most column.
 **
 ** If mustBeUnique is true, then the structure will be used to iterate
 ** through the set members, skipping any duplicates. In this case an

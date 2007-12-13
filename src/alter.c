@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.34 2007/12/13 08:15:31 danielk1977 Exp $
+** $Id: alter.c,v 1.35 2007/12/13 21:54:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -69,7 +69,7 @@ static void renameTableFunc(
       tname.n = len;
 
       /* Advance zCsr to the next token. Store that token type in 'token',
-      ** and it's length in 'len' (to be used next iteration of this loop).
+      ** and its length in 'len' (to be used next iteration of this loop).
       */
       do {
         zCsr += len;
@@ -127,7 +127,7 @@ static void renameTriggerFunc(
       tname.n = len;
 
       /* Advance zCsr to the next token. Store that token type in 'token',
-      ** and it's length in 'len' (to be used next iteration of this loop).
+      ** and its length in 'len' (to be used next iteration of this loop).
       */
       do {
         zCsr += len;

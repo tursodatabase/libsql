@@ -250,7 +250,7 @@
 ** even with many segments.
 **
 ** TODO(shess) That said, it would be nice to have a better query-side
-** argument for MERGE_COUNT of 16.  Also, it's possible/likely that
+** argument for MERGE_COUNT of 16.  Also, it is possible/likely that
 ** optimizations to things like doclist merging will swing the sweet
 ** spot around.
 **
@@ -682,7 +682,7 @@ static void dlrDestroy(DLReader *pReader){
 
 #ifndef NDEBUG
 /* Verify that the doclist can be validly decoded.  Also returns the
-** last docid found because it's convenient in other assertions for
+** last docid found because it is convenient in other assertions for
 ** DLWriter.
 */
 static void docListValidate(DocListType iType, const char *pData, int nData,
@@ -1045,7 +1045,7 @@ typedef struct DLCollector {
 /* TODO(shess) This could also be done by calling plwTerminate() and
 ** dataBufferAppend().  I tried that, expecting nominal performance
 ** differences, but it seemed to pretty reliably be worth 1% to code
-** it this way.  I suspect it's the incremental malloc overhead (some
+** it this way.  I suspect it is the incremental malloc overhead (some
 ** percentage of the plwTerminate() calls will cause a realloc), so
 ** this might be worth revisiting if the DataBuffer implementation
 ** changes.
@@ -1720,7 +1720,7 @@ static char *string_dup_n(const char *s, int n){
 }
 
 /* Duplicate a string; the caller must free() the returned string.
- * (We don't use strdup() since it's not part of the standard C library and
+ * (We don't use strdup() since it is not part of the standard C library and
  * may not be available everywhere.) */
 static char *string_dup(const char *s){
   return string_dup_n(s, strlen(s));
@@ -1803,7 +1803,7 @@ typedef struct fulltext_vtab fulltext_vtab;
 ** following query:
 **
 ** The QueryTerm.iPhrase variable stores the index of the token within
-** it's phrase, indexed starting at 1, or 1 if the token is not part 
+** its phrase, indexed starting at 1, or 1 if the token is not part 
 ** of any phrase.
 **
 ** For example, the data structure used to represent the following query:
@@ -5748,7 +5748,7 @@ static int loadSegmentLeaves(fulltext_vtab *v,
 /* TODO(shess) The calling code may already know that the end child is
 ** not worth calculating, because the end may be in a later sibling
 ** node.  Consider whether breaking symmetry is worthwhile.  I suspect
-** it's not worthwhile.
+** it is not worthwhile.
 */
 static void getChildrenContaining(const char *pData, int nData,
                                   const char *pTerm, int nTerm, int isPrefix,
@@ -6091,7 +6091,7 @@ static int initPendingTerms(fulltext_vtab *v, sqlite_int64 iDocid){
   return SQLITE_OK;
 }
 
-/* This function implements the xUpdate callback; it's the top-level entry
+/* This function implements the xUpdate callback; it is the top-level entry
  * point for inserting, deleting or updating a row in a full-text table. */
 static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
                           sqlite_int64 *pRowid){

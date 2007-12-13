@@ -542,7 +542,7 @@ static int os2FileControl(sqlite3_file *id, int op, void *pArg){
 **
 ** SQLite code assumes this function cannot fail. It also assumes that
 ** if two files are created in the same file-system directory (i.e.
-** a database and it's journal file) that the sector size will be the
+** a database and its journal file) that the sector size will be the
 ** same for both.
 */
 static int os2SectorSize(sqlite3_file *id){

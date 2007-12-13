@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.56 2007/10/23 18:55:50 drh Exp $
+# $Id: capi3.test,v 1.57 2007/12/13 21:54:11 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -917,8 +917,8 @@ do_test capi3-11.21 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
-# The following tests - capi3-12.* - check that it's Ok to start a
-# transaction while other VMs are active, and that it's Ok to execute
+# The following tests - capi3-12.* - check that its Ok to start a
+# transaction while other VMs are active, and that its Ok to execute
 # atomic updates in the same situation 
 #
 do_test capi3-12.1 {

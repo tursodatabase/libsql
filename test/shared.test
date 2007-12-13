@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.28 2007/10/09 08:29:33 danielk1977 Exp $
+# $Id: shared.test,v 1.29 2007/12/13 21:54:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -574,7 +574,7 @@ do_test shared-$av.7.1 {
 } {}
 do_test shared-$av.7.2 {
   # This test case deletes the contents of table t1 (the one at the start of
-  # the file) while many cursors are open on table t2 and it's index. All of
+  # the file) while many cursors are open on table t2 and its index. All of
   # the non-root pages will be moved from the end to the start of the file
   # when the DELETE is committed - this test verifies that moving the pages
   # does not disturb the open cursors.

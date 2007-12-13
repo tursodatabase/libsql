@@ -75,7 +75,7 @@
   for some applications in some locales, but not all. If more complex
   processing is required, for example to implement stemming or 
   discard punctuation, this can be done by creating a tokenizer 
-  implementation that uses the ICU tokenizer as part of it's implementation.
+  implementation that uses the ICU tokenizer as part of its implementation.
 
   When using the ICU tokenizer this way, it is safe to overwrite the
   contents of the strings returned by the xNext() method (see
@@ -131,4 +131,3 @@
       
         return sqlite3_finalize(pStmt);
       }
-

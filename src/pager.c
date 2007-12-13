@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.399 2007/12/11 19:34:45 drh Exp $
+** @(#) $Id: pager.c,v 1.400 2007/12/13 21:54:11 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -47,9 +47,9 @@
 ** The following two macros are used within the PAGERTRACEX() macros above
 ** to print out file-descriptors. 
 **
-** PAGERID() takes a pointer to a Pager struct as it's argument. The
+** PAGERID() takes a pointer to a Pager struct as its argument. The
 ** associated file-descriptor is returned. FILEHANDLEID() takes an sqlite3_file
-** struct as it's argument.
+** struct as its argument.
 */
 #define PAGERID(p) ((int)(p->fd))
 #define FILEHANDLEID(fd) ((int)fd)
@@ -145,7 +145,7 @@ typedef struct PgHdr PgHdr;
 **
 ** In both cases, the PagerLruList.pFirstSynced variable points to
 ** the first page in the corresponding list that does not require an
-** fsync() operation before it's memory can be reclaimed. If no such
+** fsync() operation before its memory can be reclaimed. If no such
 ** page exists, PagerLruList.pFirstSynced is set to NULL.
 */
 typedef struct PagerLruList PagerLruList;
@@ -1822,7 +1822,7 @@ static int pager_playback(Pager *pPager, int isHot){
     }
 
     /* If this is the first header read from the journal, truncate the
-    ** database file back to it's original size.
+    ** database file back to its original size.
     */
     if( pPager->journalOff==JOURNAL_HDR_SZ(pPager) ){
       rc = pager_truncate(pPager, mxPg);
@@ -2486,7 +2486,7 @@ static void clearHistory(PgHistory *pHist){
 static int syncJournal(Pager*);
 
 /*
-** Unlink pPg from it's hash chain. Also set the page number to 0 to indicate
+** Unlink pPg from its hash chain. Also set the page number to 0 to indicate
 ** that the page is not part of any hash chain. This is required because the
 ** sqlite3PagerMovepage() routine can leave a page in the 
 ** pNextFree/pPrevFree list that is not a part of any hash-chain.
@@ -3343,7 +3343,7 @@ static int pagerSharedLock(Pager *pPager){
         ** 
         ** Because the intermediate RESERVED lock is not requested, the
         ** second process will get to this point in the code and fail to
-        ** obtain it's own EXCLUSIVE lock on the database file.
+        ** obtain its own EXCLUSIVE lock on the database file.
         */
         if( pPager->state<EXCLUSIVE_LOCK ){
           rc = sqlite3OsLock(pPager->fd, EXCLUSIVE_LOCK);
@@ -4586,7 +4586,7 @@ sync_exit:
   if( rc==SQLITE_IOERR_BLOCKED ){
     /* pager_incr_changecounter() may attempt to obtain an exclusive
      * lock to spill the cache and return IOERR_BLOCKED. But since 
-     * there is no chance the cache is inconsistent, it's
+     * there is no chance the cache is inconsistent, it is
      * better to return SQLITE_BUSY.
      */
     rc = SQLITE_BUSY;
@@ -5001,11 +5001,11 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
     assert( pPager->needSync );
   }
 
-  /* Unlink pPg from it's hash-chain */
+  /* Unlink pPg from its hash-chain */
   unlinkHashChain(pPager, pPg);
 
   /* If the cache contains a page with page-number pgno, remove it
-  ** from it's hash chain. Also, if the PgHdr.needSync was set for 
+  ** from its hash chain. Also, if the PgHdr.needSync was set for 
   ** page pgno before the 'move' operation, it needs to be retained 
   ** for the page moved there.
   */

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.57 2007/09/03 15:03:21 danielk1977 Exp $
+** $Id: test8.c,v 1.58 2007/12/13 21:54:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -697,7 +697,7 @@ static void string_concat(char **pzStr, char *zAppend, int doFree, int *pRc){
 **
 ** then the echo module handles WHERE or ORDER BY clauses that refer
 ** to the column "b", but not "a" or "c". If a multi-column index is
-** present, only it's left most column is considered. 
+** present, only its left most column is considered. 
 **
 ** This xBestIndex method encodes the proposed search strategy as
 ** an SQL query on the real table underlying the virtual echo module 

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.280 2007/11/29 17:05:18 danielk1977 Exp $
+** $Id: test1.c,v 1.281 2007/12/13 21:54:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -779,7 +779,7 @@ static void sqlite3ExecFunc(
 ** * It calls sqlite3_value_text() 3 times on the argument sqlite3_value*.
 **   If the three pointers returned are not the same an SQL error is raised.
 **
-** * Otherwise it returns a copy of the text representation of it's 
+** * Otherwise it returns a copy of the text representation of its 
 **   argument in such a way as the VDBE representation is a Mem* cell 
 **   with the MEM_Term flag clear. 
 **

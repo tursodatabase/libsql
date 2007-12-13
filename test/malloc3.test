@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.17 2007/10/09 08:29:33 danielk1977 Exp $
+# $Id: malloc3.test,v 1.18 2007/12/13 21:54:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -104,16 +104,16 @@ ifcapable !memdebug {
 # TEST. Each primitive has a single argument. Primitives are processed in
 # the order they are specified in the file.
 #
-# A TEST primitive specifies a TCL script as it's argument. When a TEST
+# A TEST primitive specifies a TCL script as its argument. When a TEST
 # directive is encountered the Tcl script is evaluated. Usually, this Tcl
 # script contains one or more calls to [do_test].
 #
-# A PREP primitive specifies an SQL script as it's argument. When a PREP
+# A PREP primitive specifies an SQL script as its argument. When a PREP
 # directive is encountered the SQL is evaluated using database connection
 # [db].
 #
 # The SQL primitives are where the action happens. An SQL primitive must
-# contain a single, valid SQL statement as it's argument. When an SQL
+# contain a single, valid SQL statement as its argument. When an SQL
 # primitive is encountered, it is evaluated one or more times to test the
 # behaviour of the system when malloc() fails during preparation or
 # execution of said statement. The Nth time the statement is executed,
@@ -203,7 +203,7 @@ TEST 2 {
   } {abc}
 }
 
-# Insert a couple of rows into the table. each insert is in it's own
+# Insert a couple of rows into the table. each insert is in its own
 # transaction. test that the table is unpopulated before running the inserts
 # (and hence after each failure of the first insert), and that it has been
 # populated correctly after the final insert succeeds.

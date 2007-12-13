@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.180 2007/12/11 04:23:20 danielk1977 Exp $
+** $Id: func.c,v 1.181 2007/12/13 21:54:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1172,7 +1172,7 @@ static void test_auxdata(
 #ifdef SQLITE_TEST
 /*
 ** A function to test error reporting from user functions. This function
-** returns a copy of it's first argument as an error.
+** returns a copy of its first argument as an error.
 */
 static void test_error(
   sqlite3_context *pCtx, 

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.659 2007/12/12 22:24:13 drh Exp $
+** $Id: vdbe.c,v 1.660 2007/12/13 21:54:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3477,7 +3477,7 @@ case OP_NewRowid: {
 ** If the OPFLAG_NCHANGE flag of P2 is set, then the row change count is
 ** incremented (otherwise not).  If the OPFLAG_LASTROWID flag of P2 is set,
 ** then rowid is stored for subsequent return by the
-** sqlite3_last_insert_rowid() function (otherwise it's unmodified).
+** sqlite3_last_insert_rowid() function (otherwise it is unmodified).
 **
 ** Parameter P3 may point to a string containing the table-name, or
 ** may be NULL. If it is not NULL, then the update-hook 

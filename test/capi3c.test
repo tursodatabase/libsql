@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.12 2007/09/03 07:31:10 danielk1977 Exp $
+# $Id: capi3c.test,v 1.13 2007/12/13 21:54:11 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -912,8 +912,8 @@ do_test capi3c-11.21 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
-# The following tests - capi3c-12.* - check that it's Ok to start a
-# transaction while other VMs are active, and that it's Ok to execute
+# The following tests - capi3c-12.* - check that its Ok to start a
+# transaction while other VMs are active, and that its Ok to execute
 # atomic updates in the same situation 
 #
 do_test capi3c-12.1 {

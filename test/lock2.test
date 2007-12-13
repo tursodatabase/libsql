@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks between competing processes.
 #
-# $Id: lock2.test,v 1.8 2007/08/12 20:07:59 drh Exp $
+# $Id: lock2.test,v 1.9 2007/12/13 21:54:11 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -49,7 +49,7 @@ proc testfixture {chan cmd} {
 # Write the main loop for the child testfixture processes into file
 # tf_main.tcl. The parent (this script) interacts with the child processes
 # via a two way pipe. The parent writes a script to the stdin of the child
-# process, followed by the word "OVER" on a line of it's own. The child
+# process, followed by the word "OVER" on a line of its own. The child
 # process evaluates the script and writes the results to stdout, followed
 # by an "OVER" of its own.
 set f [open tf_main.tcl w]

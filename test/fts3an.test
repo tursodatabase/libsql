@@ -6,7 +6,7 @@
 # This file implements tests for prefix-searching in the fts3
 # component of the SQLite library.
 #
-# $Id: fts3an.test,v 1.1 2007/08/20 17:38:42 shess Exp $
+# $Id: fts3an.test,v 1.2 2007/12/13 21:54:11 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -190,7 +190,7 @@ do_test fts3an-3.1 {
 # time.  Prefix hits can cross leaves, which the code above _should_
 # hit by virtue of size.  There are two variations on this.  If the
 # tree is 2 levels high, the code will find the leaf-node extent
-# directly, but if it's higher, the code will have to follow two
+# directly, but if it is higher, the code will have to follow two
 # separate interior branches down the tree.  Both should be tested.
 
 finish_test

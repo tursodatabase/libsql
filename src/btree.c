@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.432 2007/12/07 18:55:28 drh Exp $
+** $Id: btree.c,v 1.433 2007/12/13 21:54:11 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -350,7 +350,7 @@ static void clearCursorPosition(BtCursor *pCur){
 ** saveCursorPosition().
 **
 ** If the second argument argument - doSeek - is false, then instead of 
-** returning the cursor to it's saved position, any saved position is deleted
+** returning the cursor to its saved position, any saved position is deleted
 ** and the cursor state set to CURSOR_INVALID.
 */
 int sqlite3BtreeRestoreOrClearCursorPosition(BtCursor *pCur){
@@ -2023,7 +2023,7 @@ static int relocatePage(
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pDbPage->pBt==pBt );
 
-  /* Move page iDbPage from it's current location to page number iFreePage */
+  /* Move page iDbPage from its current location to page number iFreePage */
   TRACE(("AUTOVACUUM: Moving %d to free page %d (ptr page %d type %d)\n", 
       iDbPage, iFreePage, iPtrPage, eType));
   rc = sqlite3PagerMovepage(pPager, pDbPage->pDbPage, iFreePage);
@@ -2897,7 +2897,7 @@ int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
 **
 ** Unless pPgnoNext is NULL, the page number of the next overflow 
 ** page in the linked list is written to *pPgnoNext. If page ovfl
-** is the last page in it's linked list, *pPgnoNext is set to zero. 
+** is the last page in its linked list, *pPgnoNext is set to zero. 
 **
 ** If ppPage is not NULL, *ppPage is set to the MemPage* handle
 ** for page ovfl. The underlying pager page may have been requested
@@ -5220,10 +5220,10 @@ static int balance_nonroot(MemPage *pPage){
         iSpace += sz;
         assert( iSpace<=pBt->pageSize*5 );
         /* Obscure case for non-leaf-data trees: If the cell at pCell was
-        ** previously stored on a leaf node, and it's reported size was 4
+        ** previously stored on a leaf node, and its reported size was 4
         ** bytes, then it may actually be smaller than this 
         ** (see sqlite3BtreeParseCellPtr(), 4 bytes is the minimum size of
-        ** any cell). But it's important to pass the correct size to 
+        ** any cell). But it is important to pass the correct size to 
         ** insertCell(), so reparse the cell now.
         **
         ** Note that this can never happen in an SQLite data file, as all
@@ -5675,7 +5675,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     return rc;
   }
 
-  /* Locate the cell within it's page and leave pCell pointing to the
+  /* Locate the cell within its page and leave pCell pointing to the
   ** data. The clearCell() call frees any overflow pages associated with the
   ** cell. The cell itself is still intact.
   */
@@ -6790,7 +6790,7 @@ int sqlite3BtreeIsInReadTrans(Btree *p){
 
 /*
 ** This function returns a pointer to a blob of memory associated with
-** a single shared-btree. The memory is used by client code for it's own
+** a single shared-btree. The memory is used by client code for its own
 ** purposes (for example, to store a high-level schema associated with 
 ** the shared-btree). The btree layer manages reference counting issues.
 **

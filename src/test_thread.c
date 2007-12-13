@@ -14,7 +14,7 @@
 ** test that sqlite3 database handles may be concurrently accessed by 
 ** multiple threads. Right now this only works on unix.
 **
-** $Id: test_thread.c,v 1.5 2007/12/13 18:29:36 drh Exp $
+** $Id: test_thread.c,v 1.6 2007/12/13 21:54:11 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -131,7 +131,7 @@ static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
 /*
 ** sqlthread spawn VARNAME SCRIPT
 **
-**     Spawn a new thread with it's own Tcl interpreter and run the
+**     Spawn a new thread with its own Tcl interpreter and run the
 **     specified SCRIPT(s) in it. The thread terminates after running
 **     the script. The result of the script is stored in the variable
 **     VARNAME.

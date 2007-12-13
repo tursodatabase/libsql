@@ -877,7 +877,7 @@ static char *string_dup_n(const char *s, int n){
 }
 
 /* Duplicate a string; the caller must free() the returned string.
- * (We don't use strdup() since it's not part of the standard C library and
+ * (We don't use strdup() since it is not part of the standard C library and
  * may not be available everywhere.) */
 static char *string_dup(const char *s){
   return string_dup_n(s, strlen(s));
@@ -3146,7 +3146,7 @@ static int index_update(fulltext_vtab *v, sqlite_int64 iRow,
   return insertTerms(v, pTerms, iRow, pValues);
 }
 
-/* This function implements the xUpdate callback; it's the top-level entry
+/* This function implements the xUpdate callback; it is the top-level entry
  * point for inserting, deleting or updating a row in a full-text table. */
 static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
                    sqlite_int64 *pRowid){
