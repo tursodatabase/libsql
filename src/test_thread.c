@@ -14,14 +14,14 @@
 ** test that sqlite3 database handles may be concurrently accessed by 
 ** multiple threads. Right now this only works on unix.
 **
-** $Id: test_thread.c,v 1.4 2007/09/10 10:53:02 danielk1977 Exp $
+** $Id: test_thread.c,v 1.5 2007/12/13 18:29:36 drh Exp $
 */
 
 #include "sqliteInt.h"
+#include <tcl.h>
 
 #if SQLITE_THREADSAFE && defined(TCL_THREADS)
 
-#include <tcl.h>
 #include <errno.h>
 #include <unistd.h>
 
@@ -330,4 +330,3 @@ int SqlitetestThread_Init(Tcl_Interp *interp){
   return TCL_OK;
 }
 #endif
-

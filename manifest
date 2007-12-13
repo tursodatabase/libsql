@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\serrors\sin\s"IN(SELECT\s...)"\sexpressions\swhere\sthe\sSELECT\sstatement\sis\sa\scompound\sSELECT.\sNo\sfaults\sfound.\s(CVS\s4626)
-D 2007-12-13T18:24:22
+C Fix\sthe\slocation\sof\sa\s#include\sin\stest_thread.c.\s\sticket\s#2826.\s(CVS\s4627)
+D 2007-12-13T18:29:36
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in e66cf1239b8009b073156b36f92e68657d4755da
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/test_onefile.c d877baba46837587345933376c00c656f58d6fb6
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
-F src/test_thread.c a98d69cae883e53d3686fc25889a5fa5f51439f8
+F src/test_thread.c 84830462132938c6b069a3054d322112d41dffaa
 F src/tokenize.c 67e42600ab34f976f2b1288c499ad6c98d652f0e
 F src/trigger.c 66695e1375b969ea41a38dec9f40ea28bb0ac767
 F src/update.c 57c07b63410cdd3d14888e33439aa1955a3514c1
@@ -600,7 +600,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b6f04e5b93bb65287bfb697f2f059dd34c13102a
-R 5cc904e5bc9f83891fe81bff3ae57100
-U danielk1977
-Z 1eae098b23de6eb32777ca1bcfba9fb8
+P 49b67adfe9f15dfac34cb30f965920bf61bceee7
+R 6fead2df8c6a290b78ec55564e2f4b5d
+U drh
+Z d1655bfb7a138064325a9c5e291da80a
