@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.368 2007/12/13 07:58:51 danielk1977 Exp $
+** $Id: select.c,v 1.369 2007/12/13 19:15:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1465,6 +1465,7 @@ static int matchOrderByTermToExprList(
     sqlite3 *db = pParse->db;
     char *zCol = sqlite3NameFromToken(db, &pE->token);
     if( db->mallocFailed ){
+      sqlite3_free(zCol);
       return -1;
     }
     for(i=0; i<pEList->nExpr; i++){
