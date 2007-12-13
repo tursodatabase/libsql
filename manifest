@@ -1,5 +1,5 @@
-C Add\snew\smakefile\starget\sfor\s"testcli"\sthat\sbuilds\sa\sCLI\susing\sindividual\nsource\sfiles\sinstead\sof\sthe\samalgamation.\s\sTicket\s#2838.\s(CVS\s4625)
-D 2007-12-13T18:20:46
+C Add\stest\scases\sfor\serrors\sin\s"IN(SELECT\s...)"\sexpressions\swhere\sthe\sSELECT\sstatement\sis\sa\scompound\sSELECT.\sNo\sfaults\sfound.\s(CVS\s4626)
+D 2007-12-13T18:24:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in e66cf1239b8009b073156b36f92e68657d4755da
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -320,7 +320,7 @@ F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
 F test/fuzz_malloc.test 166b58dfd77cc04f6afeeaef0cfc1087abf134d1
 F test/hook.test 3870abead2ee75d2c03585c916256ca8b5584679
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
-F test/in.test 369cb2aa1eab02296b4ec470732fe8c131260b1d
+F test/in.test 87270d14e2dd870da77d178985b43fea4675eb56
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/in3.test e335959db24d71d6cfdff9553c90ce2b56fb978c
 F test/incrblob.test 602dbfa956904d6e58c45635b58850ad0f02d927
@@ -600,7 +600,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8f184e40ff79c3c5ef98337615f58a4a6d0249dd
-R 6bad6caa2383e3aa8a396a85f0146a5c
-U drh
-Z c69ad200fab9c01740cad90490ab2754
+P b6f04e5b93bb65287bfb697f2f059dd34c13102a
+R 5cc904e5bc9f83891fe81bff3ae57100
+U danielk1977
+Z 1eae098b23de6eb32777ca1bcfba9fb8
