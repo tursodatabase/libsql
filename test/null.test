@@ -153,11 +153,26 @@ do_test null-5.1 {
 # as distinct
 #
 ifcapable compound {
-do_test null-6.1 {
-  execsql {
-    select b from t1 union select c from t1 order by c;
-  }
-} {{} 0 1}
+  do_test null-6.1 {
+    execsql {
+      select b from t1 union select c from t1 order by b;
+    }
+  } {{} 0 1}
+  do_test null-6.2 {
+    execsql {
+      select b from t1 union select c from t1 order by 1;
+    }
+  } {{} 0 1}
+  do_test null-6.3 {
+    execsql {
+      select b from t1 union select c from t1 order by t1.b;
+    }
+  } {{} 0 1}
+  do_test null-6.4 {
+    execsql {
+      select b from t1 union select c from t1 order by main.t1.b;
+    }
+  } {{} 0 1}
 } ;# ifcapable compound
 
 # The UNIQUE constraint only applies to non-null values

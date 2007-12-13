@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.365 2007/12/10 18:51:48 danielk1977 Exp $
+** $Id: select.c,v 1.366 2007/12/13 02:45:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1412,100 +1412,222 @@ static int prepSelectStmt(Parse *pParse, Select *p){
   return rc;
 }
 
-#ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
-** This routine associates entries in an ORDER BY expression list with
-** columns in a result.  For each ORDER BY expression, the opcode of
-** the top-level node is changed to TK_COLUMN and the iColumn value of
-** the top-level node is filled in with column number and the iTable
-** value of the top-level node is filled with iTable parameter.
+** pE is a pointer to an expression which is a single term in
+** ORDER BY or GROUP BY clause.
 **
-** Any entry that does not match is flagged as an error.  The number
-** of errors is returned.
+** If pE evaluates to an integer constant i, then return i.
+** This is an indication to the caller that it should sort
+** by the i-th column of the result set.
+**
+** If pE is a well-formed expression and the SELECT statement
+** is not compound, then return 0.  This indicates to the
+** caller that it should sort by the value of the ORDER BY
+** expression.
+**
+** If the SELECT is compound, then attempt to match pE against
+** result set columns in the left-most SELECT statement.  Return
+** the index i of the matching column, as an indication to the 
+** caller that it should sort by the i-th column.  If there is
+** no match, return -1 and leave an error message in pParse.
 */
-static int matchOrderbyToColumn(
-  Parse *pParse,          /* A place to leave error messages */
-  Select *pSelect,        /* Match to result columns of this SELECT */
-  ExprList *pOrderBy,     /* The ORDER BY values to match against columns */
-  int iTable              /* Insert this value in iTable */
+static int matchOrderByTermToExprList(
+  Parse *pParse,     /* Parsing context for error messages */
+  Select *pSelect,   /* The SELECT statement with the ORDER BY clause */
+  Expr *pE,          /* The specific ORDER BY term */
+  int idx,           /* When ORDER BY term is this */
+  int isCompound,    /* True if this is a compound SELECT */
+  u8 *pHasAgg        /* True if expression contains aggregate functions */
 ){
-  int nErr = 0;
-  int i, j;
-  sqlite3 *db = pParse->db;
-  int nExpr;
+  int i;             /* Loop counter */
+  ExprList *pEList;  /* The columns of the result set */
+  NameContext nc;    /* Name context for resolving pE */
 
-  if( pSelect==0 || pOrderBy==0 ) return 1;
-  if( sqlite3SelectResolve(pParse, pSelect, 0) ){
+
+  /* If the term is an integer constant, return the value of that
+  ** constant */
+  pEList = pSelect->pEList;
+  if( sqlite3ExprIsInteger(pE, &i) ){
+    if( i<=0 ){
+      /* If i is too small, make it too big.  That way the calling
+      ** function still sees a value that is out of range, but does
+      ** not confuse the column number with 0 or -1 result code.
+      */
+      i = pEList->nExpr+1;
+    }
+    return i;
+  }
+
+  /* If the term is a simple identifier that try to match that identifier
+  ** against a column name in the result set.
+  */
+  if( pE->op==TK_ID || (pE->op==TK_STRING && pE->token.z[0]!='\'') ){
+    sqlite3 *db = pParse->db;
+    char *zCol = sqlite3NameFromToken(db, &pE->token);
+    if( db->mallocFailed ){
+      return -1;
+    }
+    for(i=0; i<pEList->nExpr; i++){
+      char *zAs = pEList->a[i].zName;
+      if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
+        sqlite3_free(zCol);
+        return i+1;
+      }
+    }
+    sqlite3_free(zCol);
+  }
+
+  /* Resolve all names in the ORDER BY term expression
+  */
+  memset(&nc, 0, sizeof(nc));
+  nc.pParse = pParse;
+  nc.pSrcList = pSelect->pSrc;
+  nc.pEList = pEList;
+  nc.allowAgg = 1;
+  nc.nErr = 0;
+  if( sqlite3ExprResolveNames(&nc, pE) ){
+    return -1;
+  }
+  if( nc.hasAgg && pHasAgg ){
+    *pHasAgg = 1;
+  }
+
+  /* For a compound SELECT, we need to try to match the ORDER BY
+  ** expression against an expression in the result set
+  */
+  if( isCompound ){
+    for(i=0; i<pEList->nExpr; i++){
+      if( sqlite3ExprCompare(pEList->a[i].pExpr, pE) ){
+        return i+1;
+      }
+    }
+    sqlite3ErrorMsg(pParse, "%r ORDER BY term does not match any "
+       "column in the result set of the left-most SELECT", idx);
+    return -1;
+  }else{
+    return 0;
+  }
+}
+
+
+/*
+** Analyze and ORDER BY or GROUP BY clause in a simple SELECT statement.
+** Return the number of errors seen.
+**
+** Every term of the ORDER BY or GROUP BY clause needs to be an
+** expression.  If any expression is an integer constant, then
+** that expression is replaced by the corresponding 
+** expression from the result set.
+*/
+static int processOrderGroupBy(
+  Parse *pParse,        /* Parsing context.  Leave error messages here */
+  Select *pSelect,      /* The SELECT statement containing the clause */
+  ExprList *pOrderBy,   /* The ORDER BY or GROUP BY clause to be processed */
+  int isOrder,          /* 1 for ORDER BY.  0 for GROUP BY */
+  u8 *pHasAgg           /* Set to TRUE if any term contains an aggregate */
+){
+  int i;
+  sqlite3 *db = pParse->db;
+  ExprList *pEList;
+
+  if( pOrderBy==0 ) return 0;
+  if( pOrderBy->nExpr>SQLITE_MAX_COLUMN ){
+    const char *zType = isOrder ? "ORDER" : "GROUP";
+    sqlite3ErrorMsg(pParse, "too many terms in %s BY clause", zType);
     return 1;
   }
-
-  nExpr = pSelect->pEList->nExpr;
-  for(i=0; nErr==0 && i<pOrderBy->nExpr; i++){
+  pEList = pSelect->pEList;
+  if( pEList==0 ){
+    return 0;
+  }
+  for(i=0; i<pOrderBy->nExpr; i++){
+    int iCol;
     Expr *pE = pOrderBy->a[i].pExpr;
-    int iCol = -1;
-
-    if( sqlite3ExprIsInteger(pE, &iCol) ){
-      if( iCol<=0 || iCol>nExpr ){
-        sqlite3ErrorMsg(pParse,
-          "ORDER BY position %d should be between 1 and %d",
-          iCol, nExpr);
-        nErr++;
-        break;
-      }
-      iCol--;
-    }else{
-      Select *p;
-      for(p=pSelect; p; p=p->pPrior){
-        ExprList *pEList = p->pEList;
-        Expr *pDup = sqlite3ExprDup(db, pE);
-
-        NameContext nc;
-
-        memset(&nc, 0, sizeof(nc));
-        nc.pParse = pParse;
-        nc.pSrcList = p->pSrc;
-        nc.pEList = pEList;
-        nc.allowAgg = 1;
-        nc.nErr = 0;
-        if( sqlite3ExprResolveNames(&nc, pDup) ){
-          sqlite3ErrorClear(pParse);
-        }else{
-          struct ExprList_item *pItem;
-          for(j=0, pItem=pEList->a; j<pEList->nExpr; j++, pItem++){
-            if( sqlite3ExprCompare(pItem->pExpr, pDup) ){
-              if( iCol>=0 && iCol!=j ){
-                sqlite3ErrorMsg(
-                    pParse, "ORDER BY term number %d is ambiguous", i+1
-                );
-              }else{
-                iCol = j;
-              }
-            }
-          }
-        }
-        sqlite3ExprDelete(pDup);
-      }
-    }
-
+    iCol = matchOrderByTermToExprList(pParse, pSelect, pE, i+1, 0, pHasAgg);
     if( iCol<0 ){
-      sqlite3ErrorMsg(pParse,
-        "ORDER BY term number %d does not match any result column", i+1);
-    }else{
-      pE->op = TK_COLUMN;
-      pE->iTable = iTable;
-      pE->iAgg = -1;
-      pE->iColumn = iCol;
-      pOrderBy->a[i].done = 1;
+      return 1;
     }
-
-    if( pParse->nErr ){
-      return pParse->nErr;
+    if( iCol>pEList->nExpr ){
+      const char *zType = isOrder ? "ORDER" : "GROUP";
+      sqlite3ErrorMsg(pParse, 
+         "%r %s BY term out of range - should be "
+         "between 1 and %d", i+1, zType, pEList->nExpr);
+      return 1;
+    }
+    if( iCol>0 ){
+      CollSeq *pColl = pE->pColl;
+      int flags = pE->flags & EP_ExpCollate;
+      sqlite3ExprDelete(pE);
+      pE = sqlite3ExprDup(db, pEList->a[iCol-1].pExpr);
+      pOrderBy->a[i].pExpr = pE;
+      if( pColl && flags ){
+        pE->pColl = pColl;
+        pE->flags |= flags;
+      }
     }
   }
-
-  return SQLITE_OK;
+  return 0;
 }
-#endif /* #ifndef SQLITE_OMIT_COMPOUND_SELECT */
+
+/*
+** Analyze and ORDER BY or GROUP BY clause in a SELECT statement.  Return
+** the number of errors seen.
+**
+** The processing depends on whether the SELECT is simple or compound.
+** For a simple SELECT statement, evry term of the ORDER BY or GROUP BY
+** clause needs to be an expression.  If any expression is an integer
+** constant, then that expression is replaced by the corresponding 
+** expression from the result set.
+**
+** For compound SELECT statements, every expression needs to be of
+** type TK_COLUMN with a iTable value as given in the 4th parameter.
+** If any expression is an integer, that becomes the column number.
+** Otherwise, match the expression against result set columns from
+** the left-most SELECT.
+*/
+static int processCompoundOrderBy(
+  Parse *pParse,        /* Parsing context.  Leave error messages here */
+  Select *pSelect,      /* The SELECT statement containing the ORDER BY */
+  int iTable            /* Output table for compound SELECT statements */
+){
+  int i;
+  ExprList *pOrderBy;
+  ExprList *pEList;
+
+  pOrderBy = pSelect->pOrderBy;
+  if( pOrderBy==0 ) return 0;
+  if( pOrderBy->nExpr>SQLITE_MAX_COLUMN ){
+    sqlite3ErrorMsg(pParse, "too many terms in ORDER BY clause");
+    return 1;
+  }
+  while( pSelect->pPrior ){
+    pSelect = pSelect->pPrior;
+  }
+  pEList = pSelect->pEList;
+  if( pEList==0 ){
+    return 1;
+  }
+  for(i=0; i<pOrderBy->nExpr; i++){
+    int iCol;
+    Expr *pE = pOrderBy->a[i].pExpr;
+    iCol = matchOrderByTermToExprList(pParse, pSelect, pE, i+1, 1, 0);
+    if( iCol<0 ){
+      return 1;
+    }
+    if( iCol>pEList->nExpr ){
+      sqlite3ErrorMsg(pParse, 
+         "%r ORDER BY term out of range - should be "
+         "between 1 and %d", i+1, pEList->nExpr);
+      return 1;
+    }
+    pE->op = TK_COLUMN;
+    pE->iTable = iTable;
+    pE->iAgg = -1;
+    pE->iColumn = iCol-1;
+    pE->pTab = 0;
+  }
+  return 0;
+}
 
 /*
 ** Get a VDBE for the given parser context.  Create a new one if necessary.
@@ -1768,7 +1890,7 @@ static int multiSelect(
         ** intermediate results.
         */
         unionTab = pParse->nTab++;
-        if( pOrderBy && matchOrderbyToColumn(pParse, p, pOrderBy, unionTab) ){
+        if( processCompoundOrderBy(pParse, p, unionTab) ){
           rc = 1;
           goto multi_select_end;
         }
@@ -1865,7 +1987,7 @@ static int multiSelect(
       */
       tab1 = pParse->nTab++;
       tab2 = pParse->nTab++;
-      if( pOrderBy && matchOrderbyToColumn(pParse,p,pOrderBy,tab1) ){
+      if( processCompoundOrderBy(pParse, p, tab1) ){
         rc = 1;
         goto multi_select_end;
       }
@@ -2580,57 +2702,6 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, int eDest, int iParm){
 }
 
 /*
-** Analyze and ORDER BY or GROUP BY clause in a SELECT statement.  Return
-** the number of errors seen.
-**
-** An ORDER BY or GROUP BY is a list of expressions.  If any expression
-** is an integer constant, then that expression is replaced by the
-** corresponding entry in the result set.
-*/
-static int processOrderGroupBy(
-  NameContext *pNC,     /* Name context of the SELECT statement. */
-  ExprList *pOrderBy,   /* The ORDER BY or GROUP BY clause to be processed */
-  const char *zType     /* Either "ORDER" or "GROUP", as appropriate */
-){
-  int i;
-  ExprList *pEList = pNC->pEList;     /* The result set of the SELECT */
-  Parse *pParse = pNC->pParse;     /* The result set of the SELECT */
-  assert( pEList );
-
-  if( pOrderBy==0 ) return 0;
-  if( pOrderBy->nExpr>SQLITE_MAX_COLUMN ){
-    sqlite3ErrorMsg(pParse, "too many terms in %s BY clause", zType);
-    return 1;
-  }
-  for(i=0; i<pOrderBy->nExpr; i++){
-    int iCol;
-    Expr *pE = pOrderBy->a[i].pExpr;
-    if( sqlite3ExprIsInteger(pE, &iCol) ){
-      if( iCol>0 && iCol<=pEList->nExpr ){
-        CollSeq *pColl = pE->pColl;
-        int flags = pE->flags & EP_ExpCollate;
-        sqlite3ExprDelete(pE);
-        pE = sqlite3ExprDup(pParse->db, pEList->a[iCol-1].pExpr);
-        pOrderBy->a[i].pExpr = pE;
-        if( pColl && flags ){
-          pE->pColl = pColl;
-          pE->flags |= flags;
-        }
-      }else{
-        sqlite3ErrorMsg(pParse, 
-           "%s BY column number %d out of range - should be "
-           "between 1 and %d", zType, iCol, pEList->nExpr);
-        return 1;
-      }
-    }
-    if( sqlite3ExprResolveNames(pNC, pE) ){
-      return 1;
-    }
-  }
-  return 0;
-}
-
-/*
 ** This routine resolves any names used in the result set of the
 ** supplied SELECT statement. If the SELECT statement being resolved
 ** is a sub-select, then pOuterNC is a pointer to the NameContext 
@@ -2723,10 +2794,12 @@ int sqlite3SelectResolve(
      sqlite3ExprResolveNames(&sNC, p->pHaving) ){
     return SQLITE_ERROR;
   }
-  if( p->pPrior==0 && processOrderGroupBy(&sNC, p->pOrderBy, "ORDER") ){
-    return SQLITE_ERROR;
+  if( p->pPrior==0 ){
+    if( processOrderGroupBy(pParse, p, p->pOrderBy, 0, &sNC.hasAgg) ){
+      return SQLITE_ERROR;
+    }
   }
-  if( processOrderGroupBy(&sNC, pGroupBy, "GROUP") ){
+  if( processOrderGroupBy(pParse, p, pGroupBy, 0, &sNC.hasAgg) ){
     return SQLITE_ERROR;
   }
 
@@ -2946,6 +3019,15 @@ int sqlite3Select(
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
   memset(&sAggInfo, 0, sizeof(sAggInfo));
 
+  pOrderBy = p->pOrderBy;
+  if( IgnorableOrderby(eDest) ){
+    p->pOrderBy = 0;
+  }
+  if( sqlite3SelectResolve(pParse, p, 0) ){
+    goto select_end;
+  }
+  p->pOrderBy = pOrderBy;
+
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
   /* If there is are a sequence of queries, do the earlier ones first.
   */
@@ -2964,15 +3046,6 @@ int sqlite3Select(
     return multiSelect(pParse, p, eDest, iParm, aff);
   }
 #endif
-
-  pOrderBy = p->pOrderBy;
-  if( IgnorableOrderby(eDest) ){
-    p->pOrderBy = 0;
-  }
-  if( sqlite3SelectResolve(pParse, p, 0) ){
-    goto select_end;
-  }
-  p->pOrderBy = pOrderBy;
 
   /* Make local copies of the parameters for this query.
   */

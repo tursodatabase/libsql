@@ -74,6 +74,7 @@
 #define etSRCLIST    14 /* a pointer to a SrcList */
 #define etPOINTER    15 /* The %p conversion */
 #define etSQLESCAPE3 16 /* %w -> Strings with '\"' doubled */
+#define etORDINAL    17 /* %r -> 1st, 2nd, 3rd, 4th, etc.  English only */
 
 
 /*
@@ -133,6 +134,7 @@ static const et_info fmtinfo[] = {
   {  'p', 16, 0, etPOINTER,    0,  1 },
   {  'T',  0, 2, etTOKEN,      0,  0 },
   {  'S',  0, 2, etSRCLIST,    0,  0 },
+  {  'r', 10, 3, etORDINAL,    0,  0 },
 };
 #define etNINFO  (sizeof(fmtinfo)/sizeof(fmtinfo[0]))
 
@@ -384,6 +386,7 @@ static void vxprintf(
         flag_longlong = sizeof(char*)==sizeof(i64);
         flag_long = sizeof(char*)==sizeof(long int);
         /* Fall through into the next case */
+      case etORDINAL:
       case etRADIX:
         if( infop->flags & FLAG_SIGNED ){
           i64 v;
@@ -410,6 +413,9 @@ static void vxprintf(
           precision = width-(prefix!=0);
         }
         bufpt = &buf[etBUFSIZE-1];
+        if( xtype==etORDINAL ){
+          bufpt -= 2;
+        }
         {
           register const char *cset;      /* Use registers for speed */
           register int base;
@@ -419,6 +425,13 @@ static void vxprintf(
             *(--bufpt) = cset[longvalue%base];
             longvalue = longvalue/base;
           }while( longvalue>0 );
+        }
+        if( xtype==etORDINAL ){
+          static const char zOrd[] = "thstndrd";
+          int x = buf[etBUFSIZE-4] - '0';
+          if( x>=4 ) x = 0;
+          buf[etBUFSIZE-3] = zOrd[x*2];
+          buf[etBUFSIZE-2] = zOrd[x*2+1];
         }
         length = &buf[etBUFSIZE-1]-bufpt;
         for(idx=precision-length; idx>0; idx--){
