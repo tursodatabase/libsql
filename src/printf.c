@@ -414,6 +414,13 @@ static void vxprintf(
         }
         bufpt = &buf[etBUFSIZE-1];
         if( xtype==etORDINAL ){
+          static const char zOrd[] = "thstndrd";
+          int x = longvalue % 10;
+          if( x>=4 || (longvalue/10)%10==1 ){
+            x = 0;
+          }
+          buf[etBUFSIZE-3] = zOrd[x*2];
+          buf[etBUFSIZE-2] = zOrd[x*2+1];
           bufpt -= 2;
         }
         {
@@ -425,13 +432,6 @@ static void vxprintf(
             *(--bufpt) = cset[longvalue%base];
             longvalue = longvalue/base;
           }while( longvalue>0 );
-        }
-        if( xtype==etORDINAL ){
-          static const char zOrd[] = "thstndrd";
-          int x = buf[etBUFSIZE-4] - '0';
-          if( x>=4 ) x = 0;
-          buf[etBUFSIZE-3] = zOrd[x*2];
-          buf[etBUFSIZE-2] = zOrd[x*2+1];
         }
         length = &buf[etBUFSIZE-1]-bufpt;
         for(idx=precision-length; idx>0; idx--){

@@ -1,5 +1,5 @@
-C Return\san\serror\sif\sthe\suser\sattempts\sto\srename\sa\sview.\sRelated\sto\s(but\snot\sa\sfix\sfor)\s#2831.\s(CVS\s4623)
-D 2007-12-13T08:15:31
+C Additional\stest\scases\sfor\stkt2822.\s\sFix\sa\srelated\sbug\sin\sprintf().\s(CVS\s4624)
+D 2007-12-13T17:50:23
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 0590398f62fc2c456ff4c45e9741f5a718b7e2ac
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -129,7 +129,7 @@ F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
 F src/parse.y a780b33ef45dd7b3272319cf91e609d6f109a31c
 F src/pragma.c 0246032dbe681dded8710ac43eaf654eead1434e
 F src/prepare.c f811fdb6fd4a82cca673a6e1d5b041d6caf567f1
-F src/printf.c 5732e393c45be7c09bfca9a786daef017e0066ef
+F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 14c4a8e9d784bfc4bfbb1576226f2bc0b9fbfd10
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
@@ -479,7 +479,7 @@ F test/tkt2686.test 3022db0eee8ecf501f516557c77ef1c4039399cd
 F test/tkt2767.test 6b02308d553d194f329a469bf5c157fe724738d4
 F test/tkt2817.test 709a2201a5590bf56cb97f6fb168a62282203fd1
 F test/tkt2820.test 017fdee33aaef7abc092beab6088816f1942304b
-F test/tkt2822.test 1260ab1c84edccdb7dc27954bd555852d6877f2e
+F test/tkt2822.test 8b1526b1e5b0d38a1a993f7828fbb81759093686
 F test/tkt2832.test cd56dc66bb31898b7eb2146baa5bde2eb80f96fe
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
@@ -600,7 +600,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2f88b9b3e3c9abc3ae4a5dcef82707dd74f8aace
-R c81a64bbb6406c1577adc63cf75c1142
-U danielk1977
-Z edcd429ac1cef28184ff735c983803e3
+P 19d56d997f50be81ac2baace16b7e7a1b674301a
+R 4b5d2fa59d2200569cc8c7fc8474c6f8
+U drh
+Z 31e1271ce8ebb5157a897446124f0d35
