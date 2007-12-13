@@ -1,7 +1,7 @@
-C Additional\stest\scases\sfor\stkt2822.\s\sFix\sa\srelated\sbug\sin\sprintf().\s(CVS\s4624)
-D 2007-12-13T17:50:23
+C Add\snew\smakefile\starget\sfor\s"testcli"\sthat\sbuilds\sa\sCLI\susing\sindividual\nsource\sfiles\sinstead\sof\sthe\samalgamation.\s\sTicket\s#2838.\s(CVS\s4625)
+D 2007-12-13T18:20:46
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in 0590398f62fc2c456ff4c45e9741f5a718b7e2ac
+F Makefile.in e66cf1239b8009b073156b36f92e68657d4755da
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 37c652fc2532226ab2fef7184de9500dafa52d7d
@@ -64,7 +64,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 61a345d8126686aa3487aa8d2d0f68abd655f7a4
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 89d3e2796cd3be0e784184eab97b5964af5dc5c0
+F main.mk c7c4fa7703f650f5191dd8d8817c2c6c08144257
 F mkdll.sh 5f8438dcac98e795d7df6529159a1ec566de0183
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -600,7 +600,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 19d56d997f50be81ac2baace16b7e7a1b674301a
-R 4b5d2fa59d2200569cc8c7fc8474c6f8
+P 8f184e40ff79c3c5ef98337615f58a4a6d0249dd
+R 6bad6caa2383e3aa8a396a85f0146a5c
 U drh
-Z 31e1271ce8ebb5157a897446124f0d35
+Z c69ad200fab9c01740cad90490ab2754

@@ -277,6 +277,11 @@ libsqlite3.a:	$(LIBOBJ)
 	$(AR) libsqlite3.a $(LIBOBJ)
 	$(RANLIB) libsqlite3.a
 
+testcli$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
+	$(TCCX) $(READLINE_FLAGS) -o testcli$(EXE)                  \
+		$(TOP)/src/shell.c                                  \
+		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
+
 sqlite3$(EXE):	$(TOP)/src/shell.c sqlite3.c sqlite3.h
 	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE)                  \
 		-DSQLITE_MAX_SQL_LENGTH=1000000000                  \

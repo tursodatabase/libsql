@@ -317,6 +317,11 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
                 -rpath $(libdir)/sqlite \
 		-version-info "8:6:8"
 
+testcli$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
+	$(LTLINK) $(READLINE_FLAGS) $(LIBPTHREAD) \
+		-o $@ $(TOP)/src/shell.c libsqlite3.la \
+		$(LIBREADLINE) $(TLIBS)
+
 sqlite3$(EXE):	$(TOP)/src/shell.c sqlite3.c sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) -o $@                          \
 		-DSQLITE_MAX_SQL_LENGTH=1000000000                  \
