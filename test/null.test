@@ -150,7 +150,13 @@ do_test null-5.1 {
 } {{} 0 1}
 
 # A UNION to two queries should treat NULL values
-# as distinct
+# as distinct.
+#
+# (Later:)  We also take this opportunity to test the ability
+# of an ORDER BY clause to bind to either SELECT of a UNION.
+# The left-most SELECT is preferred.  In standard SQL, only
+# the left SELECT can be used.  The ability to match an ORDER
+# BY term to the right SELECT is an SQLite extension.
 #
 ifcapable compound {
   do_test null-6.1 {
@@ -171,6 +177,16 @@ ifcapable compound {
   do_test null-6.4 {
     execsql {
       select b from t1 union select c from t1 order by main.t1.b;
+    }
+  } {{} 0 1}
+  do_test null-6.5 {
+    execsql {
+      select b from t1 union select c from t1 order by t1.a;
+    }
+  } {{} 0 1}
+  do_test null-6.6 {
+    execsql {
+      select b from t1 union select c from t1 order by main.t1.a;
     }
   } {{} 0 1}
 } ;# ifcapable compound

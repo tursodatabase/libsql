@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.366 2007/12/13 02:45:31 drh Exp $
+** $Id: select.c,v 1.367 2007/12/13 03:45:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1486,7 +1486,12 @@ static int matchOrderByTermToExprList(
   nc.allowAgg = 1;
   nc.nErr = 0;
   if( sqlite3ExprResolveNames(&nc, pE) ){
-    return -1;
+    if( isCompound ){
+      sqlite3ErrorClear(pParse);
+      return 0;
+    }else{
+      return -1;
+    }
   }
   if( nc.hasAgg && pHasAgg ){
     *pHasAgg = 1;
@@ -1501,12 +1506,8 @@ static int matchOrderByTermToExprList(
         return i+1;
       }
     }
-    sqlite3ErrorMsg(pParse, "%r ORDER BY term does not match any "
-       "column in the result set of the left-most SELECT", idx);
-    return -1;
-  }else{
-    return 0;
   }
+  return 0;
 }
 
 
@@ -1593,6 +1594,8 @@ static int processCompoundOrderBy(
   int i;
   ExprList *pOrderBy;
   ExprList *pEList;
+  sqlite3 *db;
+  int moreToDo = 1;
 
   pOrderBy = pSelect->pOrderBy;
   if( pOrderBy==0 ) return 0;
@@ -1600,31 +1603,58 @@ static int processCompoundOrderBy(
     sqlite3ErrorMsg(pParse, "too many terms in ORDER BY clause");
     return 1;
   }
+  db = pParse->db;
+  for(i=0; i<pOrderBy->nExpr; i++){
+    pOrderBy->a[i].done = 0;
+  }
   while( pSelect->pPrior ){
     pSelect = pSelect->pPrior;
   }
-  pEList = pSelect->pEList;
-  if( pEList==0 ){
-    return 1;
+  while( pSelect && moreToDo ){
+    moreToDo = 0;
+    for(i=0; i<pOrderBy->nExpr; i++){
+      int iCol;
+      Expr *pE;
+      if( pOrderBy->a[i].done ) continue;
+      pE = pOrderBy->a[i].pExpr;
+      Expr *pDup = sqlite3ExprDup(db, pE);
+      if( pDup==0 ){
+        return 1;
+      }
+      iCol = matchOrderByTermToExprList(pParse, pSelect, pDup, i+1, 1, 0);
+      sqlite3ExprDelete(pDup);
+      if( iCol<0 ){
+        return 1;
+      }
+      pEList = pSelect->pEList;
+      if( pEList==0 ){
+        return 1;
+      }
+      if( iCol>pEList->nExpr ){
+        sqlite3ErrorMsg(pParse, 
+           "%r ORDER BY term out of range - should be "
+           "between 1 and %d", i+1, pEList->nExpr);
+        return 1;
+      }
+      if( iCol>0 ){
+        pE->op = TK_COLUMN;
+        pE->iTable = iTable;
+        pE->iAgg = -1;
+        pE->iColumn = iCol-1;
+        pE->pTab = 0;
+        pOrderBy->a[i].done = 1;
+      }else{
+        moreToDo = 1;
+      }
+    }
+    pSelect = pSelect->pNext;
   }
   for(i=0; i<pOrderBy->nExpr; i++){
-    int iCol;
-    Expr *pE = pOrderBy->a[i].pExpr;
-    iCol = matchOrderByTermToExprList(pParse, pSelect, pE, i+1, 1, 0);
-    if( iCol<0 ){
+    if( pOrderBy->a[i].done==0 ){
+      sqlite3ErrorMsg(pParse, "%r ORDER BY term does not match any "
+            "column in the result set", i+1);
       return 1;
     }
-    if( iCol>pEList->nExpr ){
-      sqlite3ErrorMsg(pParse, 
-         "%r ORDER BY term out of range - should be "
-         "between 1 and %d", i+1, pEList->nExpr);
-      return 1;
-    }
-    pE->op = TK_COLUMN;
-    pE->iTable = iTable;
-    pE->iAgg = -1;
-    pE->iColumn = iCol-1;
-    pE->pTab = 0;
   }
   return 0;
 }
@@ -3033,10 +3063,12 @@ int sqlite3Select(
   */
   if( p->pPrior ){
     if( p->pRightmost==0 ){
-      Select *pLoop;
+      Select *pLoop, *pRight = 0;
       int cnt = 0;
       for(pLoop=p; pLoop; pLoop=pLoop->pPrior, cnt++){
         pLoop->pRightmost = p;
+        pLoop->pNext = pRight;
+        pRight = pLoop;
       }
       if( SQLITE_MAX_COMPOUND_SELECT>0 && cnt>SQLITE_MAX_COMPOUND_SELECT ){
         sqlite3ErrorMsg(pParse, "too many terms in compound SELECT");
