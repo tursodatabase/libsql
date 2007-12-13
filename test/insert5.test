@@ -12,7 +12,7 @@
 # The tests in this file ensure that a temporary table is used
 # when required by an "INSERT INTO ... SELECT ..." statement.
 #
-# $Id: insert5.test,v 1.2 2007/12/10 05:03:48 danielk1977 Exp $
+# $Id: insert5.test,v 1.3 2007/12/13 07:58:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -85,12 +85,23 @@ do_test insert5-2.8 {
     SELECT * FROM main WHERE id > 10 AND max(id1, (SELECT id FROM b)) > 10;
   }
 } {1}
+
+# UPDATE: Using a column from the outer query (main.id) in the GROUP BY
+# or ORDER BY of a sub-query is no longer supported.
+#
+# do_test insert5-2.9 {
+#   uses_temp_table { 
+#     INSERT INTO b 
+#     SELECT * FROM main 
+#     WHERE id > 10 AND (SELECT count(*) FROM v2 GROUP BY main.id)
+#   }
+# } {}
 do_test insert5-2.9 {
-  uses_temp_table { 
+  catchsql { 
     INSERT INTO b 
     SELECT * FROM main 
     WHERE id > 10 AND (SELECT count(*) FROM v2 GROUP BY main.id)
   }
-} {1}
+} {1 {no such column: main.id}}
 
 finish_test

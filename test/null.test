@@ -180,15 +180,15 @@ ifcapable compound {
     }
   } {{} 0 1}
   do_test null-6.5 {
-    execsql {
+    catchsql {
       select b from t1 union select c from t1 order by t1.a;
     }
-  } {{} 0 1}
+  } {1 {1st ORDER BY term does not match any column in the result set}}
   do_test null-6.6 {
-    execsql {
+    catchsql {
       select b from t1 union select c from t1 order by main.t1.a;
     }
-  } {{} 0 1}
+  } {1 {1st ORDER BY term does not match any column in the result set}}
 } ;# ifcapable compound
 
 # The UNIQUE constraint only applies to non-null values

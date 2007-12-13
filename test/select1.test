@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.56 2007/12/10 05:03:48 danielk1977 Exp $
+# $Id: select1.test,v 1.57 2007/12/13 07:58:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -306,7 +306,7 @@ do_test select1-4.3 {
 do_test select1-4.4 {
   set v [catch {execsql {SELECT f1 FROM test1 ORDER BY min(f1)}} msg]
   lappend v $msg
-} {1 {misuse of aggregate function min()}}
+} {1 {misuse of aggregate: min(f1)}}
 
 # The restriction not allowing constants in the ORDER BY clause
 # has been removed.  See ticket #1768
@@ -374,12 +374,12 @@ do_test select1-4.10.1 {
   catchsql {
     SELECT * FROM t5 ORDER BY 3;
   }
-} {1 {ORDER BY column number 3 out of range - should be between 1 and 2}}
+} {1 {1st ORDER BY term out of range - should be between 1 and 2}}
 do_test select1-4.10.2 {
   catchsql {
     SELECT * FROM t5 ORDER BY -1;
   }
-} {1 {ORDER BY column number -1 out of range - should be between 1 and 2}}
+} {1 {1st ORDER BY term out of range - should be between 1 and 2}}
 do_test select1-4.11 {
   execsql {
     INSERT INTO t5 VALUES(3,10);
@@ -520,7 +520,7 @@ do_test select1-6.11 {
     ORDER BY f2+101;
   }} msg]
   lappend v $msg
-} {1 {ORDER BY term number 1 does not match any result column}}
+} {1 {1st ORDER BY term does not match any column in the result set}}
 
 # Ticket #2296
 ifcapable subquery {

@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.23 2007/12/13 03:45:08 drh Exp $
+# $Id: select4.test,v 1.24 2007/12/13 07:58:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -298,7 +298,7 @@ do_test select4-5.2c {
     ORDER BY "xyzzy";
   }} msg]
   lappend v $msg
-} {1 {ORDER BY term number 1 does not match any result column}}
+} {1 {1st ORDER BY term does not match any column in the result set}}
 do_test select4-5.2d {
   set v [catch {execsql {
     SELECT DISTINCT log FROM t1
@@ -307,7 +307,7 @@ do_test select4-5.2d {
     ORDER BY "xyzzy";
   }} msg]
   lappend v $msg
-} {1 {ORDER BY term number 1 does not match any result column}}
+} {1 {1st ORDER BY term does not match any column in the result set}}
 do_test select4-5.2e {
   set v [catch {execsql {
     SELECT DISTINCT log FROM t1
@@ -340,7 +340,7 @@ do_test select4-5.2h {
     SELECT n FROM t1 WHERE log=3
     ORDER BY 2;
   }
-} {1 {ORDER BY position 2 should be between 1 and 1}}
+} {1 {1st ORDER BY term out of range - should be between 1 and 1}}
 do_test select4-5.2i {
   catchsql {
     SELECT DISTINCT 1, log FROM t1
@@ -575,13 +575,13 @@ do_test select4-9.7 {
 } ;# ifcapable subquery
 
 do_test select4-9.8 {
-  catchsql {
+  execsql {
     SELECT 0 AS x, 1 AS y
     UNION
     SELECT 2 AS y, -3 AS x
     ORDER BY x LIMIT 1;
   }
-} {1 {ORDER BY term number 1 is ambiguous}}
+} {0 1}
 
 do_test select4-9.9.1 {
   execsql2 {

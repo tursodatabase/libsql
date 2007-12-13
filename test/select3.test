@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.21 2007/06/20 12:18:31 drh Exp $
+# $Id: select3.test,v 1.22 2007/12/13 07:58:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -93,12 +93,12 @@ do_test select3-2.10 {
   catchsql {
     SELECT log, count(*) FROM t1 GROUP BY 0 ORDER BY log;
   }
-} {1 {GROUP BY column number 0 out of range - should be between 1 and 2}}
+} {1 {1st GROUP BY term out of range - should be between 1 and 2}}
 do_test select3-2.11 {
   catchsql {
     SELECT log, count(*) FROM t1 GROUP BY 3 ORDER BY log;
   }
-} {1 {GROUP BY column number 3 out of range - should be between 1 and 2}}
+} {1 {1st GROUP BY term out of range - should be between 1 and 2}}
 do_test select3-2.12 {
   catchsql {
     SELECT log, count(*) FROM t1 GROUP BY 1 ORDER BY log;

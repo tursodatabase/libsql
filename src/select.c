@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.367 2007/12/13 03:45:08 drh Exp $
+** $Id: select.c,v 1.368 2007/12/13 07:58:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2825,7 +2825,7 @@ int sqlite3SelectResolve(
     return SQLITE_ERROR;
   }
   if( p->pPrior==0 ){
-    if( processOrderGroupBy(pParse, p, p->pOrderBy, 0, &sNC.hasAgg) ){
+    if( processOrderGroupBy(pParse, p, p->pOrderBy, 1, &sNC.hasAgg) ){
       return SQLITE_ERROR;
     }
   }

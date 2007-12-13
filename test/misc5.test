@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc5.test,v 1.18 2007/11/12 15:29:19 danielk1977 Exp $
+# $Id: misc5.test,v 1.19 2007/12/13 07:58:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -558,12 +558,12 @@ ifcapable subquery&&compound {
       CREATE TABLE logs(msg TEXT, timestamp INTEGER, dbtime TEXT);
     }
     catchsql {
-      SELECT * FROM logs WHERE logs.id >= (SELECT head FROM logs_base) 
+      SELECT * FROM logs WHERE logs.oid >= (SELECT head FROM logs_base) 
       UNION ALL 
       SELECT * FROM logs 
       LIMIT (SELECT lmt FROM logs_base) ;
     }
-  } {1 {no such column: logs.id}}
+  } {1 {no such table: logs_base}}
 }
 
 # Overflow the lemon parser stack by providing an overly complex
