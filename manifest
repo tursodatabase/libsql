@@ -1,5 +1,5 @@
-C Adjust\sthe\stest\ssuite\sto\saccount\sfor\srecent\schanges\srelated\sto\s#2822.\sMost\schanges\sare\srelated\sto\sEnglish\slanguage\serror\smessages\sonly.\s(CVS\s4622)
-D 2007-12-13T07:58:51
+C Return\san\serror\sif\sthe\suser\sattempts\sto\srename\sa\sview.\sRelated\sto\s(but\snot\sa\sfix\sfor)\s#2831.\s(CVS\s4623)
+D 2007-12-13T08:15:31
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 0590398f62fc2c456ff4c45e9741f5a718b7e2ac
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -78,7 +78,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in abed4664817e1cd500f2276142c71958087c16bc
-F src/alter.c 8512ed319aa5f7b9bbbd4e17953809e3ff398fdd
+F src/alter.c 451da14ff9ffaceaac2d2a7d866cd67a5903478a
 F src/analyze.c fd1a3d756c1a20fca3c505bed0398f4cdca83cb8
 F src/attach.c a01d55157d46a1234909f3a7f21fb09549c947bd
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
@@ -181,7 +181,7 @@ F src/where.c 4d71db7ee641cd28cdef88cc6149bd3a51d2e671
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test ee350b9ab15b175fc0a8fb51bf2141ed3a3b9cba
-F test/alter.test a87b7933d41c713c53341abe4eb014d0e273119e
+F test/alter.test 345648dcd1801cc0287cd996076db512d1dcdabe
 F test/alter2.test 9d9850064b5c572991ea744a88ea650045f4ac6a
 F test/alter3.test 8ce6b9c5605b3cfe7b901f454ecaf174c4f93e31
 F test/altermalloc.test 29d4a8400277efb4ba8ffe90804c6dc2fdfbf063
@@ -600,7 +600,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 56063ec84b130bcdb0e90bc76fabca394d0d867f
-R f457ed8bb872aba62e47c1fbbf619525
+P 2f88b9b3e3c9abc3ae4a5dcef82707dd74f8aace
+R c81a64bbb6406c1577adc63cf75c1142
 U danielk1977
-Z 9c40edbf16b75a2e3c6478efc41069ac
+Z edcd429ac1cef28184ff735c983803e3

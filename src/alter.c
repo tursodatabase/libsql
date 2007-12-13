@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.33 2007/10/20 20:58:57 drh Exp $
+** $Id: alter.c,v 1.34 2007/12/13 08:15:31 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -319,6 +319,13 @@ void sqlite3AlterRenameTable(
   if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
     goto exit_rename_table;
   }
+
+#ifndef SQLITE_OMIT_VIEW
+  if( pTab->pSelect ){
+    sqlite3ErrorMsg(pParse, "view %s may not be altered", pTab->zName);
+    goto exit_rename_table;
+  }
+#endif
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   /* Invoke the authorization callback. */

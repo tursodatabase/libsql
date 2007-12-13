@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.27 2007/10/23 15:39:46 drh Exp $
+# $Id: alter.test,v 1.28 2007/12/13 08:15:31 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -37,6 +37,8 @@ ifcapable !altertable {
 # alter-2.*: Test error conditions and messages.
 # alter-3.*: Test ALTER TABLE on tables that have TRIGGERs attached to them.
 # alter-4.*: Test ALTER TABLE on tables that have AUTOINCREMENT fields.
+# ...
+# alter-12.*: Test ALTER TABLE on views.
 #
 
 # Create some tables to rename.  Be sure to include some TEMP tables
@@ -757,6 +759,31 @@ if {!$isutf16} {
     sqlite3_exec db {SELECT "%81%82%83" AS xyz, abc FROM t11c}
   } {0 {xyz abc 5 6}}
 }
+
+do_test alter-12.1 {
+  execsql {
+    CREATE TABLE t12(a, b, c);
+    CREATE VIEW v1 AS SELECT * FROM t12;
+  }
+} {}
+do_test alter-12.2 {
+  catchsql {
+    ALTER TABLE v1 RENAME TO v2;
+  }
+} {1 {view v1 may not be altered}}
+do_test alter-12.3 {
+  execsql { SELECT * FROM v1; }
+} {}
+do_test alter-12.4 {
+  db close
+  sqlite3 db test.db
+  execsql { SELECT * FROM v1; }
+} {}
+do_test alter-12.5 {
+  catchsql { 
+    ALTER TABLE v1 ADD COLUMN new_column;
+  }
+} {1 {Cannot add a column to a view}}
 
 
 finish_test
