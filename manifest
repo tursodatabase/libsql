@@ -1,5 +1,5 @@
-C Update\slibrary\sversion\snumber\sto\s3.5.4.\s(CVS\s4634)
-D 2007-12-14T17:24:59
+C Version\s3.5.4\s(CVS\s4635)
+D 2007-12-14T17:39:24
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in e66cf1239b8009b073156b36f92e68657d4755da
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -600,7 +600,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4a00805014a5f4ad862bde0bb55fac934bab41dd
+P 5c653bfc7ffafcd3572d399aba05e39ea839068a
 R ff47409f2a9a3518644e7f89b8fb52de
 U drh
-Z 8cf0cdb1b6436f0d668f8331761e041f
+Z 41bedfa8d554f94c72f67c2e02cbe860
