@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.371 2007/12/14 16:11:09 drh Exp $
+** $Id: select.c,v 1.372 2007/12/14 17:24:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1614,10 +1614,10 @@ static int processCompoundOrderBy(
     moreToDo = 0;
     for(i=0; i<pOrderBy->nExpr; i++){
       int iCol;
-      Expr *pE;
+      Expr *pE, *pDup;
       if( pOrderBy->a[i].done ) continue;
       pE = pOrderBy->a[i].pExpr;
-      Expr *pDup = sqlite3ExprDup(db, pE);
+      pDup = sqlite3ExprDup(db, pE);
       if( pDup==0 ){
         return 1;
       }
