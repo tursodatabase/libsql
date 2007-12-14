@@ -12,7 +12,7 @@
 # This test script checks that tickets #2794, #2795, #2796, and #2797
 # have been fixed.
 # 
-# $Id: mallocF.test,v 1.1 2007/11/26 13:36:00 drh Exp $
+# $Id: mallocF.test,v 1.2 2007/12/14 15:12:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -59,6 +59,18 @@ set PREP {
 }
 do_malloc_test malloeF-3 -sqlprep $PREP -sqlbody {
   SELECT x FROM t1 WHERE y BETWEEN 10 AND 29
+}
+
+# Ticket #2843
+#
+set PREP {
+  CREATE TABLE t1(x);
+  CREATE TRIGGER r1 BEFORE INSERT ON t1 BEGIN
+    SELECT 'hello';
+  END;
+}
+do_malloc_test mallocF-4 -sqlprep $PREP -sqlbody {
+  INSERT INTO t1 VALUES(random());
 }
 
 finish_test

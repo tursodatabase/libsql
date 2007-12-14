@@ -1,5 +1,5 @@
-C Change\sall\sinstances\sof\s"it's"\sin\scomments\sto\seither\s"its"\sor\s"it\sis",\nas\sappropriate,\sin\scase\sthe\scomments\sare\sever\sagain\sread\sby\sa\spedantic\ngrammarian.\s\sTicket\s#2840.\s(CVS\s4629)
-D 2007-12-13T21:54:10
+C Fix\san\sout-of-memory\sNULL\spointer\sdefer\sin\sthe\scode\sgenerator.\s\sTicket\s#2843.\s(CVS\s4630)
+D 2007-12-14T15:12:21
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in e66cf1239b8009b073156b36f92e68657d4755da
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -92,11 +92,11 @@ F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
 F src/delete.c 1f957c4acb2270772c6fab8411459e7dd43d585f
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 045ba74471616f5d619ae95194cb4b9cbbe36cee
+F src/expr.c 43807e139e14957330095d9ac183f7ad449ce907
 F src/func.c 996071cf0af9d967e58b69fce1909555059ebc7d
 F src/hash.c 45a7005aac044b6c86bd7e49c44bc15d30006d6c
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
-F src/insert.c c7e1867a6a162c074d47786f1f0152b9583e8c01
+F src/insert.c dc29839e489fcbef57f05a7df20b5178ede87988
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
@@ -373,7 +373,7 @@ F test/mallocB.test 83bdbea443cc81758a57b0287807b0941218819a
 F test/mallocC.test 6f02fa2b4baa943bc6d6db323d5d07067967e728
 F test/mallocD.test d638fb8f214b47fd31edfae8af738b92bd943dc0
 F test/mallocE.test e15333c394d7c330c8372a7cdf7b0f7c16573082
-F test/mallocF.test 249860dd3357fe37855f8b86e105953457795e24
+F test/mallocF.test e1804792a6365ad43589b26608850a38e491170a
 F test/malloc_common.tcl b47137fb36e95fdafb0267745afefcd6b0a5b9dc
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
@@ -600,7 +600,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 993a213024964f4411a9c25c10810543c8089d07
-R 22708bddd0f834ba6f15107d672277c5
+P 4e91a267febda572e7239f0f1cc66b3102558c36
+R 54e75e21053846fd523e8fe53c1b5635
 U drh
-Z 2dc3963a41d285ba0556b60d69ae1106
+Z d37be7f202b08432b08e54bc9d000878
