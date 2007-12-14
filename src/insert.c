@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.196 2007/12/14 15:12:21 drh Exp $
+** $Id: insert.c,v 1.197 2007/12/14 16:11:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -110,7 +110,7 @@ static int readsTable(Vdbe *v, int iStartAddr, int iDb, Table *pTab){
   int iEnd = sqlite3VdbeCurrentAddr(v);
   for(i=iStartAddr; i<iEnd; i++){
     VdbeOp *pOp = sqlite3VdbeGetOp(v, i);
-    assert( pOp==0 );
+    assert( pOp!=0 );
     if( pOp->opcode==OP_OpenRead ){
       VdbeOp *pPrior = &pOp[-1];
       int tnum = pOp->p2;

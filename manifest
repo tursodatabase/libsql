@@ -1,5 +1,5 @@
-C Fix\san\sout-of-memory\sNULL\spointer\sdefer\sin\sthe\scode\sgenerator.\s\sTicket\s#2843.\s(CVS\s4630)
-D 2007-12-14T15:12:21
+C Fix\sa\stypo\sin\sthe\sprevious\scheck-in.\s\sAlso\ssimplify\sa\sline\sin\sselect.c.\s(CVS\s4631)
+D 2007-12-14T16:11:09
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in e66cf1239b8009b073156b36f92e68657d4755da
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/expr.c 43807e139e14957330095d9ac183f7ad449ce907
 F src/func.c 996071cf0af9d967e58b69fce1909555059ebc7d
 F src/hash.c 45a7005aac044b6c86bd7e49c44bc15d30006d6c
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
-F src/insert.c dc29839e489fcbef57f05a7df20b5178ede87988
+F src/insert.c 2b145fca8e538b7f2c2de429e931c1501e55e5ac
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
@@ -131,7 +131,7 @@ F src/pragma.c 2a5f6439994ec1f7ff7f235d4ac9d37c6cc381ed
 F src/prepare.c 75418527ca84305284ec98974ee9e285088aa7bf
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
-F src/select.c e8cfdc85ef317881343292e08dce6aa15708fe13
+F src/select.c bb0a08eceb0384a78ea8992e0e5dfe823d453e28
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c c97be281cfc3dcb14902f45e4b16f20038eb83ff
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
@@ -600,7 +600,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4e91a267febda572e7239f0f1cc66b3102558c36
-R 54e75e21053846fd523e8fe53c1b5635
+P b821b6ed176b4259e1d4b56c8eb548933b6f530a
+R 46a084b351de2e6a0b297607457a3c21
 U drh
-Z d37be7f202b08432b08e54bc9d000878
+Z 9e228fd6a0235e5def51d8d2007e8ceb
