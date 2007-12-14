@@ -339,6 +339,9 @@ static int writeListAppend(
   assert((zBuf && nBuf) || (!nBuf && !zBuf));
 
   pNew = (WriteBuffer *)sqlite3MallocZero(sizeof(WriteBuffer) + nBuf);
+  if( pNew==0 ){
+    fprintf(stderr, "out of memory in the crash simulator\n");
+  }
   pNew->iOffset = iOffset;
   pNew->nBuf = nBuf;
   pNew->pFile = (CrashFile *)pFile;

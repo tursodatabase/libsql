@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sprevious\scheck-in.\s\sAlso\ssimplify\sa\sline\sin\sselect.c.\s(CVS\s4631)
-D 2007-12-14T16:11:09
+C Change\sto\sthe\scrash\ssimulator\sto\sgive\sbetter\sdiagnostics\sin\scase\sit\nruns\sout\sof\smemory\swhile\susing\sthe\smem3.c\sallocator.\s(CVS\s4632)
+D 2007-12-14T17:22:23
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in e66cf1239b8009b073156b36f92e68657d4755da
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -145,7 +145,7 @@ F src/test2.c 77b34303883b9d722c65a6879bb0163a400e3789
 F src/test3.c df62cd5c971dc1ae0be0a1842f9df3390934e7a6
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
-F src/test6.c a9fc983d32d6f262eab300d742e49ff239b0bdbd
+F src/test6.c f40e41e1808d743e995a5016dc9a56702d1632bd
 F src/test7.c acec2256c7c2d279db5a8b5fa1a2a68fcc942c67
 F src/test8.c 6399d2f0561f1f65785c63e94f2cdd36fb248872
 F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
@@ -600,7 +600,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b821b6ed176b4259e1d4b56c8eb548933b6f530a
-R 46a084b351de2e6a0b297607457a3c21
+P 86f45d7bb6f7d9e5c177be76d8a7ace754d52bcd
+R 8f4793405372ebc37b745e183e14ec72
 U drh
-Z 9e228fd6a0235e5def51d8d2007e8ceb
+Z 45c849037df0a38f5e21823b2a650906
