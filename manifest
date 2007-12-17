@@ -1,7 +1,7 @@
-C Version\s3.5.4\s(CVS\s4635)
-D 2007-12-14T17:39:24
+C When\sSQLITE_MAX_SQL_LENGTH\sis\s0,\sdisable\sthe\slimit.\s\sMake\sthe\sdefault\s0.\nOnce\sagain\sbuild\sthe\ssqlite3\sCLI\sfrom\sindividual\ssource\sfiles\sso\sthat\nit\scan\sbe\sbuilt\son\ssystems\sthat\slack\stclsh.\s\sTickets\s#2845\sand\s#2846.\s(CVS\s4636)
+D 2007-12-17T16:20:07
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in e66cf1239b8009b073156b36f92e68657d4755da
+F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 6055d543dbd832b5c0209d6cc787413c1814efdc
@@ -64,7 +64,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk c7c4fa7703f650f5191dd8d8817c2c6c08144257
+F main.mk 90104c59b05cd2d907613533f982cf57d012df3e
 F mkdll.sh 5f8438dcac98e795d7df6529159a1ec566de0183
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -137,7 +137,7 @@ F src/shell.c c97be281cfc3dcb14902f45e4b16f20038eb83ff
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 445530263725d19d6315f137f234aea08ad59303
-F src/sqliteLimit.h e9831389adb60e1d6091d75a4c37322c1efa1684
+F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 9923abeffc9b3d7dad58e92b319661521f60debf
 F src/test1.c 537fea45996bd33d4885c3c1f53761da14011e9b
@@ -162,13 +162,13 @@ F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
-F src/tokenize.c 67e42600ab34f976f2b1288c499ad6c98d652f0e
+F src/tokenize.c a4e04438c11fed2c67ec47fe3edbef9cca2d1b48
 F src/trigger.c 66695e1375b969ea41a38dec9f40ea28bb0ac767
 F src/update.c 57c07b63410cdd3d14888e33439aa1955a3514c1
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 25ffbd766f25bca099ead1c1e11f5528c86102b8
-F src/vdbe.c cd669cd873e12ec248469b834d183a17bc84491d
+F src/vdbe.c b2f1bcd4b9c9db31dbd79f387139d6740627fa8c
 F src/vdbe.h 79e09ff13b85457abe437d9814454534ebbc1fe3
 F src/vdbeInt.h 630145b9bfaa19190ab491f52658a7db550f2247
 F src/vdbeapi.c dd2c43317294e0a013e9f634ee4209a3ea459b43
@@ -432,7 +432,7 @@ F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test 20d8ea20bea3ca09c3ef3b5ec820a17e58e132cb
-F test/sqllimits1.test e7a6c34f6915c334a66db8065484d686dbabece0
+F test/sqllimits1.test ede9874fc0ffbfa1ebfbc84cbe5d283cfa00f772
 F test/subquery.test 8203f85db56ba022a57a0589890090c8feed4e59
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
@@ -600,7 +600,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5c653bfc7ffafcd3572d399aba05e39ea839068a
-R ff47409f2a9a3518644e7f89b8fb52de
+P cf4a11b2a8afcbc9cdcf5fa907ddb9865847ed11
+R 2fb1f868f422a022f8eefcb02651a201
 U drh
-Z 41bedfa8d554f94c72f67c2e02cbe860
+Z 786f0cda535230caba90f27262a5a98a

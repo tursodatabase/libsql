@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.20 2007/11/28 22:36:41 drh Exp $
+# $Id: sqllimits1.test,v 1.21 2007/12/17 16:20:07 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -141,16 +141,42 @@ do_test sqllimits-1.15 {
 } {1 {string or blob too big}}
 db eval {DROP TABLE t4}
 
+set ::SQLITE_MAX_SQL_LENGTH 0
+set strvalue [string repeat A $::SQLITE_MAX_LENGTH]
+do_test sqllimits-1.16 {
+  catchsql "SELECT '$strvalue'"
+} [list 0 $strvalue]
+do_test sqllimits-1.17 {
+  catchsql "SELECT 'A$strvalue'"
+} [list 1 {string or blob too big}]
+set blobvalue [string repeat 41 $::SQLITE_MAX_LENGTH]
+do_test sqllimits-1.18 {
+  catchsql "SELECT x'$blobvalue'"
+} [list 0 $strvalue]
+do_test sqllimits-1.19 {
+  catchsql "SELECT '41$blobvalue'"
+} [list 1 {string or blob too big}]
+unset strvalue
+unset blobvalue
+
 #--------------------------------------------------------------------
 # Test cases sqllimits-2.* test that the SQLITE_MAX_SQL_LENGTH limit
 # is enforced.
 #
 do_test sqllimits-2.1 {
-  set    sql "SELECT 1 WHERE 1==1"
-  set N [expr {$::SQLITE_MAX_SQL_LENGTH / [string length " AND 1==1"]}]
-  append sql [string repeat " AND 1==1" $N]
+  set ::SQLITE_MAX_SQL_LENGTH 50000
+  set sql "SELECT 1 WHERE 1==1"
+  set tail " /* A comment to take up space in order to make the string\
+                longer without increasing the expression depth */\
+                AND   1  ==  1"
+  set N [expr {($::SQLITE_MAX_SQL_LENGTH / [string length $tail])+1}]
+  append sql [string repeat $tail $N]
   catchsql $sql
 } {1 {String or BLOB exceeded size limit}}
+do_test sqllimits-2.2 {
+  set ::SQLITE_MAX_SQL_LENGTH 0
+  catchsql $sql
+} {0 1}
 
 #--------------------------------------------------------------------
 # Test cases sqllimits-3.* test that the limit set using the

@@ -12,7 +12,7 @@
 ** 
 ** This file defines various limits of what SQLite can process.
 **
-** @(#) $Id: sqliteLimit.h,v 1.5 2007/12/13 21:54:11 drh Exp $
+** @(#) $Id: sqliteLimit.h,v 1.6 2007/12/17 16:20:07 drh Exp $
 */
 
 /*
@@ -49,10 +49,10 @@
 
 /*
 ** The maximum length of a single SQL statement in bytes.
-** The hard limit is 1 million.
+** A value of zero means there is no limit.
 */
 #ifndef SQLITE_MAX_SQL_LENGTH
-# define SQLITE_MAX_SQL_LENGTH 1000000
+# define SQLITE_MAX_SQL_LENGTH 0
 #endif
 
 /*
