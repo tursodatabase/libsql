@@ -1,5 +1,5 @@
-C When\sSQLITE_MAX_SQL_LENGTH\sis\s0,\sdisable\sthe\slimit.\s\sMake\sthe\sdefault\s0.\nOnce\sagain\sbuild\sthe\ssqlite3\sCLI\sfrom\sindividual\ssource\sfiles\sso\sthat\nit\scan\sbe\sbuilt\son\ssystems\sthat\slack\stclsh.\s\sTickets\s#2845\sand\s#2846.\s(CVS\s4636)
-D 2007-12-17T16:20:07
+C Fix\sfor\stypo\sin\smain.mk:\sthe\soutput\sof\starget\ssqlite3\swas\stestcli.\s(CVS\s4637)
+D 2007-12-18T11:19:36
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -64,7 +64,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk 90104c59b05cd2d907613533f982cf57d012df3e
+F main.mk fdf2d0c24ac01a17d3a608e7c86e9d6a399f5a43
 F mkdll.sh 5f8438dcac98e795d7df6529159a1ec566de0183
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -600,7 +600,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P cf4a11b2a8afcbc9cdcf5fa907ddb9865847ed11
-R 2fb1f868f422a022f8eefcb02651a201
-U drh
-Z 786f0cda535230caba90f27262a5a98a
+P 07aeca3b9c51e538ba7939950a970f62e51bd3ea
+R d2b6f10127f038ee449d534d56b54663
+U danielk1977
+Z ea06aba96818072332bedca968603b4d
