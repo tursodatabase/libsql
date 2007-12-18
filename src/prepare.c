@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.66 2007/12/13 21:54:11 drh Exp $
+** $Id: prepare.c,v 1.67 2007/12/18 17:50:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -530,7 +530,9 @@ int sqlite3Prepare(
   sParse.db = db;
   if( nBytes>=0 && zSql[nBytes]!=0 ){
     char *zSqlCopy;
-    if( nBytes>SQLITE_MAX_SQL_LENGTH ){
+    if( SQLITE_MAX_SQL_LENGTH>0 && nBytes>SQLITE_MAX_SQL_LENGTH ){
+      sqlite3Error(db, SQLITE_TOOBIG, "statement too long");
+      sqlite3SafetyOff(db);
       return SQLITE_TOOBIG;
     }
     zSqlCopy = sqlite3DbStrNDup(db, zSql, nBytes);
@@ -601,7 +603,6 @@ int sqlite3Prepare(
   }
 
   rc = sqlite3ApiExit(db, rc);
-  /* sqlite3ReleaseThreadData(); */
   assert( (rc&db->errMask)==rc );
   return rc;
 }
