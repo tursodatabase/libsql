@@ -1,5 +1,5 @@
-C Fix\sfor\stypo\sin\smain.mk:\sthe\soutput\sof\starget\ssqlite3\swas\stestcli.\s(CVS\s4637)
-D 2007-12-18T11:19:36
+C In\sthe\sCLI,\squote\sstrings\sthat\scontain\sthe\sseparator\scharacter.\nTicket\s#2850.\s(CVS\s4638)
+D 2007-12-18T15:41:44
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -133,7 +133,7 @@ F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 5a137027415a74e950603baddbbcbe9d3f8bc5a5
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c c97be281cfc3dcb14902f45e4b16f20038eb83ff
+F src/shell.c 77895a54c2082157e169c857a2e244525ec25af7
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 445530263725d19d6315f137f234aea08ad59303
@@ -600,7 +600,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 07aeca3b9c51e538ba7939950a970f62e51bd3ea
-R d2b6f10127f038ee449d534d56b54663
-U danielk1977
-Z ea06aba96818072332bedca968603b4d
+P 15675dc518dbcf2ce2daa0bbcaf8daf3329ead75
+R 7df473269d55337eaf1c2164ee79279e
+U drh
+Z 17ffea682be2dd31aa5472716e6a62a2
