@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sSQLITE_MAX_SQL_LENGTH\sintroduced\sby\scheck-in\s(4636).\nTicket\s#2851\s(CVS\s4639)
-D 2007-12-18T17:50:33
+C Add\sthe\sioerr3.test\sfile,\sthat\sfound\san\serror\sin\sbr3317.\sThe\serror\sis\snot\spresent\sin\sthis\sbranch.\s(CVS\s4640)
+D 2007-12-19T09:20:42
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -341,6 +341,7 @@ F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
 F test/io.test 80a7a7f1a2792e037d447b03e8c22ee1f6eaf339
 F test/ioerr.test ae429185a3a11a318aa7ec64e2188e6119e43bca
 F test/ioerr2.test e3d52c40f43f9b61da9b38951a737e7b84ebae96
+F test/ioerr3.test 6f62c1b40365e87d58589def770f35b5d63539e1
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -600,7 +601,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 493a17c46a66d2febc11205c052bf949a3f22bd8
-R 1a3744f4614d5f0fcbc4196d34717f55
-U drh
-Z 04e343312b9266e8d0bb12ee1ead5c56
+P cdd866f59797b81b573c68d5c625f9bd9f0f6fde
+R ff63d5a53b9b64a61cb53c7cb7cd3109
+U danielk1977
+Z 8a273e2b803f60fa9acf4e5a0f85217b
