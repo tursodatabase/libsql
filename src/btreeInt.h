@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.14 2007/12/07 18:55:28 drh Exp $
+** $Id: btreeInt.h,v 1.15 2007/12/21 04:47:26 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -395,6 +395,7 @@ struct BtShared {
   int nRef;             /* Number of references to this structure */
   BtShared *pNext;      /* Next on a list of sharable BtShared structs */
   BtLock *pLock;        /* List of locks held on this shared-btree struct */
+  Btree *pExclusive;    /* Btree with an EXCLUSIVE lock on the whole db */
 #endif
 };
 

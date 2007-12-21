@@ -1,5 +1,5 @@
-C Fix\ssome\sissues\swith\slemon.\s\sTickets\s#2852\sand\s#2835.\s(CVS\s4641)
-D 2007-12-21T00:02:11
+C Fix\sfor\s#2854.\s"BEGIN\sEXCLUSIVE"\sexcludes\sother\sshared\scache\susers\sfrom\susing\sthe\sdatabase.\s(CVS\s4642)
+D 2007-12-21T04:47:26
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -83,9 +83,9 @@ F src/analyze.c fd1a3d756c1a20fca3c505bed0398f4cdca83cb8
 F src/attach.c a01d55157d46a1234909f3a7f21fb09549c947bd
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/btmutex.c 5d39da37c9d1282f3c6f9967afae6a34ee36b7ff
-F src/btree.c 10cc24011d5602ad332fa8c579a036e678274ee8
+F src/btree.c bef8ceec858b167bd0ce0863fe0bdd527126c213
 F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
-F src/btreeInt.h 68ec997e34e426093f706da965c147ece75185b9
+F src/btreeInt.h 1c5a9da165718ef7de81e35ce9ab5d9ba9283f76
 F src/build.c 580561a0d9e070ff2741f3b115cae51c1ef08260
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
@@ -482,6 +482,7 @@ F test/tkt2817.test 709a2201a5590bf56cb97f6fb168a62282203fd1
 F test/tkt2820.test 017fdee33aaef7abc092beab6088816f1942304b
 F test/tkt2822.test 8b1526b1e5b0d38a1a993f7828fbb81759093686
 F test/tkt2832.test cd56dc66bb31898b7eb2146baa5bde2eb80f96fe
+F test/tkt2854.test aebd5a9904d36d1ef7a074fc5e7c7da3ab00c32a
 F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -601,7 +602,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d3efec148968538e225f5716359a6a25e8941362
-R 85004d42a22e2eebf7a2858fba477cd5
-U drh
-Z ad03768828df010e4ad9480b93fc71b4
+P 5283e0d1467e0fc0ebbd1be553b5a8762e9c7975
+R e37b64edde771d68293d63348dff6a3a
+U danielk1977
+Z 9a8d28eb42d02907bda6dd836ef8b3b4

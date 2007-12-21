@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.433 2007/12/13 21:54:11 drh Exp $
+** $Id: btree.c,v 1.434 2007/12/21 04:47:26 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -101,6 +101,13 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
   /* This is a no-op if the shared-cache is not enabled */
   if( !p->sharable ){
     return SQLITE_OK;
+  }
+
+  /* If some other connection is holding an exclusive lock, the
+  ** requested lock may not be obtained.
+  */
+  if( pBt->pExclusive && pBt->pExclusive!=p ){
+    return SQLITE_LOCKED;
   }
 
   /* This (along with lockTable()) is where the ReadUncommitted flag is
@@ -212,19 +219,25 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
 ** procedure) held by Btree handle p.
 */
 static void unlockAllTables(Btree *p){
-  BtLock **ppIter = &p->pBt->pLock;
+  BtShared *pBt = p->pBt;
+  BtLock **ppIter = &pBt->pLock;
 
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( p->sharable || 0==*ppIter );
 
   while( *ppIter ){
     BtLock *pLock = *ppIter;
+    assert( pBt->pExclusive==0 || pBt->pExclusive==pLock->pBtree );
     if( pLock->pBtree==p ){
       *ppIter = pLock->pNext;
       sqlite3_free(pLock);
     }else{
       ppIter = &pLock->pNext;
     }
+  }
+
+  if( pBt->pExclusive==p ){
+    pBt->pExclusive = 0;
   }
 }
 #endif /* SQLITE_OMIT_SHARED_CACHE */
@@ -1850,6 +1863,18 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
     goto trans_begun;
   }
 
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  if( wrflag>1 ){
+    BtLock *pIter;
+    for(pIter=pBt->pLock; pIter; pIter=pIter->pNext){
+      if( pIter->pBtree!=p ){
+        rc = SQLITE_BUSY;
+        goto trans_begun;
+      }
+    }
+  }
+#endif
+
   do {
     if( pBt->pPage1==0 ){
       rc = lockBtree(pBt);
@@ -1882,6 +1907,12 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
     if( p->inTrans>pBt->inTransaction ){
       pBt->inTransaction = p->inTrans;
     }
+#ifndef SQLITE_OMIT_SHARED_CACHE
+    if( wrflag>1 ){
+      assert( !pBt->pExclusive );
+      pBt->pExclusive = p;
+    }
+#endif
   }
 
 
