@@ -1,5 +1,5 @@
-C Add\sthe\sioerr3.test\sfile,\sthat\sfound\san\serror\sin\sbr3317.\sThe\serror\sis\snot\spresent\sin\sthis\sbranch.\s(CVS\s4640)
-D 2007-12-19T09:20:42
+C Fix\ssome\sissues\swith\slemon.\s\sTickets\s#2852\sand\s#2835.\s(CVS\s4641)
+D 2007-12-21T00:02:11
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -524,7 +524,7 @@ F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/zeroblob.test 7d1854ea79d048e023e5f2e38106a7e99a17435c
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/lemon.c 5b243377708d5fadb7ed4795ad6b2e9c379e1f0f
+F tool/lemon.c 1c5a788bdeccfcc61f2e11665e77cc74fd5ca92f
 F tool/lempar.c 8f998bf8d08e2123149c2cc5d0597cd5d5d1abdd
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -601,7 +601,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P cdd866f59797b81b573c68d5c625f9bd9f0f6fde
-R ff63d5a53b9b64a61cb53c7cb7cd3109
-U danielk1977
-Z 8a273e2b803f60fa9acf4e5a0f85217b
+P d3efec148968538e225f5716359a6a25e8941362
+R 85004d42a22e2eebf7a2858fba477cd5
+U drh
+Z ad03768828df010e4ad9480b93fc71b4
