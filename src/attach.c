@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.63 2007/10/03 08:46:44 danielk1977 Exp $
+** $Id: attach.c,v 1.64 2007/12/27 15:12:17 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -187,7 +187,9 @@ static void attachFunc(
   */
   if( rc==SQLITE_OK ){
     sqlite3SafetyOn(db);
+    sqlite3BtreeEnterAll(db);
     rc = sqlite3Init(db, &zErrDyn);
+    sqlite3BtreeLeaveAll(db);
     sqlite3SafetyOff(db);
   }
   if( rc ){

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.450 2007/12/04 16:54:53 drh Exp $
+** $Id: build.c,v 1.451 2007/12/27 15:12:17 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -403,17 +403,22 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
 */
 void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
   int i, j;
-
   assert( iDb>=0 && iDb<db->nDb );
+
+  if( iDb==0 ){
+    sqlite3BtreeEnterAll(db);
+  }
   for(i=iDb; i<db->nDb; i++){
     Db *pDb = &db->aDb[i];
     if( pDb->pSchema ){
+      assert(i==1 || (pDb->pBt && sqlite3BtreeHoldsMutex(pDb->pBt)));
       sqlite3SchemaFree(pDb->pSchema);
     }
     if( iDb>0 ) return;
   }
   assert( iDb==0 );
   db->flags &= ~SQLITE_InternChanges;
+  sqlite3BtreeLeaveAll(db);
 
   /* If one or more of the auxiliary database files has been closed,
   ** then remove them from the auxiliary database list.  We take the

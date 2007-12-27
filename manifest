@@ -1,5 +1,5 @@
-C Fix\sfor\s#2854.\s"BEGIN\sEXCLUSIVE"\sexcludes\sother\sshared\scache\susers\sfrom\susing\sthe\sdatabase.\s(CVS\s4642)
-D 2007-12-21T04:47:26
+C Fix\sa\srace\scondition\sthat\scan\soccur\swhen\sreloading\sthe\sdatabase\sschema\sin\sshared-cache\smode.\s(CVS\s4643)
+D 2007-12-27T15:12:17
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -80,13 +80,13 @@ F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in abed4664817e1cd500f2276142c71958087c16bc
 F src/alter.c 23d18ec53ef27fcb5e5ae9ca050217231ae15a0d
 F src/analyze.c fd1a3d756c1a20fca3c505bed0398f4cdca83cb8
-F src/attach.c a01d55157d46a1234909f3a7f21fb09549c947bd
+F src/attach.c 95658e74e3e0d1cbdb8658817516d4d1467fc13d
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/btmutex.c 5d39da37c9d1282f3c6f9967afae6a34ee36b7ff
 F src/btree.c bef8ceec858b167bd0ce0863fe0bdd527126c213
 F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
 F src/btreeInt.h 1c5a9da165718ef7de81e35ce9ab5d9ba9283f76
-F src/build.c 580561a0d9e070ff2741f3b115cae51c1ef08260
+F src/build.c cbfd98ceb95c61c226cd60a845fa7967b66c8931
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
@@ -128,7 +128,7 @@ F src/pager.c 0cb6ccea4b9615627d61d7c4417cedc45776d429
 F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
 F src/parse.y a780b33ef45dd7b3272319cf91e609d6f109a31c
 F src/pragma.c 2a5f6439994ec1f7ff7f235d4ac9d37c6cc381ed
-F src/prepare.c ff6c3e4cc87c07b27be309a2e38518d86cbddaa2
+F src/prepare.c 7aeba7851773fbe3950a26b35d3389bef0eb1c62
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 5a137027415a74e950603baddbbcbe9d3f8bc5a5
@@ -602,7 +602,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5283e0d1467e0fc0ebbd1be553b5a8762e9c7975
-R e37b64edde771d68293d63348dff6a3a
+P 2e59b1d07ee422bd799b5b7aeea44ebc998d9481
+R 5bd516206ebd671871e7320e9a1200f1
 U danielk1977
-Z 9a8d28eb42d02907bda6dd836ef8b3b4
+Z dd8ce1dc14e82839f90b40a6a75e58bb
