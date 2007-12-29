@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.55 2007/10/09 08:29:33 danielk1977 Exp $
+# $Id: pragma.test,v 1.56 2007/12/29 13:39:21 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -314,6 +314,9 @@ ifcapable attach {
       close $out
       execsql {REINDEX t2}
       execsql {PRAGMA integrity_check}
+    } {ok}
+    do_test pragma-3.8.1 {
+      execsql {PRAGMA quick_check}
     } {ok}
     do_test pragma-3.9 {
       execsql {

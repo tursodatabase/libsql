@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.152 2007/12/13 21:54:11 drh Exp $
+** $Id: pragma.c,v 1.153 2007/12/29 13:39:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -815,7 +815,13 @@ void sqlite3Pragma(
 #endif
 
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
-  if( sqlite3StrICmp(zLeft, "integrity_check")==0 ){
+  /* Pragma "quick_check" is an experimental reduced version of 
+  ** integrity_check designed to detect most database corruption
+  ** without most of the overhead of a full integrity-check.
+  */
+  if( sqlite3StrICmp(zLeft, "integrity_check")==0
+   || sqlite3StrICmp(zLeft, "quick_check")==0 
+  ){
     int i, j, addr, mxErr;
 
     /* Code that appears at the end of the integrity check.  If no error
@@ -829,6 +835,8 @@ void sqlite3Pragma(
       { OP_String8,     0, 0,        "ok"},
       { OP_Callback,    1, 0,        0},
     };
+
+    int isQuick = (zLeft[0]=='q');
 
     /* Initialize the VDBE program */
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
@@ -884,7 +892,7 @@ void sqlite3Pragma(
 
       /* Make sure all the indices are constructed correctly.
       */
-      for(x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
+      for(x=sqliteHashFirst(pTbls); x && !isQuick; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);
         Index *pIdx;
         int loopTop;

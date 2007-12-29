@@ -1,5 +1,5 @@
-C Mem3.c\senhanced\sso\sthat\san\sallocation\sof\sN\sbytes\sonly\srequires\s(N+11)&~7\sbytes\ninstead\sof\s(N+15)&~7\sbytes\sof\sheap\sstorage.\s\sMinimum\sheap\susage\sper\nallocation\sis\sstill\s16\sbytes.\s\s8-byte\salignment\sis\spreserved.\s(CVS\s4644)
-D 2007-12-29T13:18:22
+C Add\sexperimental\spragma\s"quick_check",\sa\sreduced\sversion\sof\sintegrity_check\sthat\sruns\swithout\smost\sof\sthe\soverhead\sof\sthe\sfull\sintegrity_check.\s(CVS\s4645)
+D 2007-12-29T13:39:20
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -127,7 +127,7 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 0cb6ccea4b9615627d61d7c4417cedc45776d429
 F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
 F src/parse.y a780b33ef45dd7b3272319cf91e609d6f109a31c
-F src/pragma.c 2a5f6439994ec1f7ff7f235d4ac9d37c6cc381ed
+F src/pragma.c dd5b1983168eacba1a5084571775b904ea95404f
 F src/prepare.c 7aeba7851773fbe3950a26b35d3389bef0eb1c62
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
@@ -398,7 +398,7 @@ F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 51e3c091bc2992f5098f7576e3594e1908988939
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
-F test/pragma.test ab9ba0fb289ae25982b20bdfa9b4f009de82d49f
+F test/pragma.test bb77b00e82b25d48140b5ce14dbf5d0b8ebeef63
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 6bf1a86c6a1e45536f72d782bf44c8e3c76510f8
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
@@ -602,7 +602,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b37babef913fcceae7f0bd461a3105e184518d62
-R 23e5448ae2a7985218ce775037fc1bde
-U drh
-Z 35c211bb02af69f0b63aa7693059e094
+P d027f91cea0a6fd1e04d2b3853f21348da601a17
+R b2472fa3df143069ae6966cfe67521e2
+U danielk1977
+Z 7858b14d46e4debbc8d1681247be9ca5
