@@ -1,5 +1,5 @@
-C Fix\sa\srace\scondition\sthat\scan\soccur\swhen\sreloading\sthe\sdatabase\sschema\sin\sshared-cache\smode.\s(CVS\s4643)
-D 2007-12-27T15:12:17
+C Mem3.c\senhanced\sso\sthat\san\sallocation\sof\sN\sbytes\sonly\srequires\s(N+11)&~7\sbytes\ninstead\sof\s(N+15)&~7\sbytes\sof\sheap\sstorage.\s\sMinimum\sheap\susage\sper\nallocation\sis\sstill\s16\sbytes.\s\s8-byte\salignment\sis\spreserved.\s(CVS\s4644)
+D 2007-12-29T13:18:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c 6d1a11864963d249c67e72ad5f6533b040333880
 F src/mem2.c a9400e06b41ad5b5189e8416239833212de2c8c7
-F src/mem3.c 34ffb9f7dd7645bece4b022c5f48766550b68886
+F src/mem3.c 9d80034bb004c1bddc28d6befe1ddb044d18deab
 F src/mem4.c 36ecd536a8b7acfe4cbf011353dae6ea68121e40
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
@@ -602,7 +602,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2e59b1d07ee422bd799b5b7aeea44ebc998d9481
-R 5bd516206ebd671871e7320e9a1200f1
-U danielk1977
-Z dd8ce1dc14e82839f90b40a6a75e58bb
+P b37babef913fcceae7f0bd461a3105e184518d62
+R 23e5448ae2a7985218ce775037fc1bde
+U drh
+Z 35c211bb02af69f0b63aa7693059e094
