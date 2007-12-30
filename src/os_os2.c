@@ -747,7 +747,8 @@ static int os2GetTempname( sqlite3_vfs *pVfs, int nBuf, char *zBuf ){
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";
   int i, j;
-  PSZ zTempPath = "";
+  char zTempPathBuf[3];
+  PSZ zTempPath = (PSZ)&zTempPathBuf;
   if( DosScanEnv( (PSZ)"TEMP", &zTempPath ) ){
     if( DosScanEnv( (PSZ)"TMP", &zTempPath ) ){
       if( DosScanEnv( (PSZ)"TMPDIR", &zTempPath ) ){
