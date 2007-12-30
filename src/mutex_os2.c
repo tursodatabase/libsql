@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for OS/2
 **
-** $Id: mutex_os2.c,v 1.3 2007/10/02 19:56:04 pweilbacher Exp $
+** $Id: mutex_os2.c,v 1.4 2007/12/30 23:29:07 pweilbacher Exp $
 */
 #include "sqliteInt.h"
 
@@ -103,8 +103,8 @@ sqlite3_mutex *sqlite3_mutex_alloc(int iType){
         DosEnterCritSec();
         lock++;
         if( lock == 1 ) {
-          DosExitCritSec();
           int i;
+          DosExitCritSec();
           for(i = 0; i < sizeof(staticMutexes)/sizeof(staticMutexes[0]); i++) {
             staticMutexes[i].mutexName = (PSZ)malloc(mutex_name_len + 1);
             sqlite3_snprintf(mutex_name_len + 1, /* one more for the number */

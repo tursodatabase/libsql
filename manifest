@@ -1,5 +1,5 @@
-C Add\sexperimental\spragma\s"quick_check",\sa\sreduced\sversion\sof\sintegrity_check\sthat\sruns\swithout\smost\sof\sthe\soverhead\sof\sthe\sfull\sintegrity_check.\s(CVS\s4645)
-D 2007-12-29T13:39:20
+C move\svariable\sdeclaration\sto\sbe\sable\sto\scompile\ssqlite3_mutex_alloc()\swith\solder\scompilers\s(like\sEMX/gcc\s2.8.1)\s(CVS\s4646)
+D 2007-12-30T23:29:07
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -110,7 +110,7 @@ F src/mem3.c 9d80034bb004c1bddc28d6befe1ddb044d18deab
 F src/mem4.c 36ecd536a8b7acfe4cbf011353dae6ea68121e40
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
-F src/mutex_os2.c 7fe4773e98ed74a63b2e54fc557929eb155f6269
+F src/mutex_os2.c 4058d04e81a6c1e240020d299a3192d92352c7ef
 F src/mutex_unix.c a6e111947a3cdaa2cda394ed060d7f496fcb4af8
 F src/mutex_w32.c 6e197765f283815496193e78e9548b5d0e53b68e
 F src/os.c 8360932f1450b2b45edb608a3b184b031f7d00cc
@@ -602,7 +602,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d027f91cea0a6fd1e04d2b3853f21348da601a17
-R b2472fa3df143069ae6966cfe67521e2
-U danielk1977
-Z 7858b14d46e4debbc8d1681247be9ca5
+P 2ddc8d72723e5a294e850491fcd9c1fb7474a9c3
+R f1fcd7030dfb95382f484d98c6273742
+U pweilbacher
+Z 98dbe4ac09bff8828bc39f790ed936c9
