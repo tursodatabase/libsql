@@ -1,0 +1,147 @@
+# 2008 January 1
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. Specifically,
+# it tests some compiler optimizations for SQL statements featuring
+# triggers:
+#
+#
+#
+
+# trigger9-1.* -   Test that if there are no references to OLD.* cols, or a
+#                  reference to only OLD.rowid, the data is not loaded.
+#
+# trigger9-2.* -   Test that for NEW.* records populated by UPDATE 
+#                  statements, unused fields are populated with NULL values. 
+#
+# trigger9-3.* -   Test that the temporary tables used for OLD.* references
+#                  in "INSTEAD OF" triggers have NULL values in unused 
+#                  fields.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+ifcapable {!trigger} {
+  finish_test
+  return
+}
+
+proc has_rowdata {sql} {
+  expr {[lsearch [execsql "explain $sql"] RowData]>=0}
+}
+
+do_test trigger9-1.1 {
+  execsql {
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(x, y, z);
+    INSERT INTO t1 VALUES('1', randstr(10000,10000), '2');
+    INSERT INTO t1 VALUES('2', randstr(10000,10000), '4');
+    INSERT INTO t1 VALUES('3', randstr(10000,10000), '6');
+    CREATE TABLE t2(x);
+  }
+} {}
+
+do_test trigger9-1.2.1 {
+  sqlite3 db test.db
+  execsql {
+    BEGIN;
+      CREATE TRIGGER trig1 BEFORE DELETE ON t1 BEGIN
+        INSERT INTO t2 VALUES(old.rowid);
+      END;
+      DELETE FROM t1;
+      SELECT * FROM t2;
+  }
+} {1 2 3}
+do_test trigger9-1.2.3 {
+  has_rowdata {DELETE FROM t1}
+} 0
+do_test trigger9-1.2.4 { execsql { ROLLBACK } } {}
+
+do_test trigger9-1.3.1 {
+  sqlite3 db test.db
+  execsql {
+    BEGIN;
+      CREATE TRIGGER trig1 BEFORE DELETE ON t1 BEGIN
+        INSERT INTO t2 VALUES(old.x);
+      END;
+      DELETE FROM t1;
+      SELECT * FROM t2;
+  }
+} {1 2 3}
+do_test trigger9-1.3.2 {
+  has_rowdata {DELETE FROM t1}
+} 1
+do_test trigger9-1.3.3 { execsql { ROLLBACK } } {}
+
+do_test trigger9-1.4.1 {
+  sqlite3 db test.db
+  execsql {
+    BEGIN;
+      CREATE TRIGGER trig1 BEFORE DELETE ON t1 WHEN old.x='1' BEGIN
+        INSERT INTO t2 VALUES(old.rowid);
+      END;
+      DELETE FROM t1;
+      SELECT * FROM t2;
+  }
+} {1}
+do_test trigger9-1.4.2 {
+  has_rowdata {DELETE FROM t1}
+} 1
+do_test trigger9-1.4.3 { execsql { ROLLBACK } } {}
+
+do_test trigger9-1.5.1 {
+  sqlite3 db test.db
+  execsql {
+    BEGIN;
+      CREATE TRIGGER trig1 BEFORE UPDATE ON t1 BEGIN
+        INSERT INTO t2 VALUES(old.rowid);
+      END;
+      UPDATE t1 SET y = '';
+      SELECT * FROM t2;
+  }
+} {1 2 3}
+do_test trigger9-1.5.2 {
+  has_rowdata {UPDATE t1 SET y = ''}
+} 0
+do_test trigger9-1.5.3 { execsql { ROLLBACK } } {}
+
+do_test trigger9-1.6.1 {
+  sqlite3 db test.db
+  execsql {
+    BEGIN;
+      CREATE TRIGGER trig1 BEFORE UPDATE ON t1 BEGIN
+        INSERT INTO t2 VALUES(old.x);
+      END;
+      UPDATE t1 SET y = '';
+      SELECT * FROM t2;
+  }
+} {1 2 3}
+do_test trigger9-1.6.2 {
+  has_rowdata {UPDATE t1 SET y = ''}
+} 1
+do_test trigger9-1.6.3 { execsql { ROLLBACK } } {}
+
+do_test trigger9-1.7.1 {
+  sqlite3 db test.db
+  execsql {
+    BEGIN;
+      CREATE TRIGGER trig1 BEFORE UPDATE ON t1 WHEN old.x>='2' BEGIN
+        INSERT INTO t2 VALUES(old.x);
+      END;
+      UPDATE t1 SET y = '';
+      SELECT * FROM t2;
+  }
+} {2 3}
+do_test trigger9-1.7.2 {
+  has_rowdata {UPDATE t1 SET y = ''}
+} 1
+do_test trigger9-1.7.3 { execsql { ROLLBACK } } {}
+
+finish_test

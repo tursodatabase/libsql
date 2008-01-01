@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.320 2007/12/14 15:12:21 drh Exp $
+** $Id: expr.c,v 1.321 2008/01/01 19:02:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1107,14 +1107,17 @@ static int lookupName(
     if( zDb==0 && zTab!=0 && cnt==0 && pParse->trigStack!=0 ){
       TriggerStack *pTriggerStack = pParse->trigStack;
       Table *pTab = 0;
+      u32 *piColMask;
       if( pTriggerStack->newIdx != -1 && sqlite3StrICmp("new", zTab) == 0 ){
         pExpr->iTable = pTriggerStack->newIdx;
         assert( pTriggerStack->pTab );
         pTab = pTriggerStack->pTab;
+        piColMask = &(pTriggerStack->newColMask);
       }else if( pTriggerStack->oldIdx != -1 && sqlite3StrICmp("old", zTab)==0 ){
         pExpr->iTable = pTriggerStack->oldIdx;
         assert( pTriggerStack->pTab );
         pTab = pTriggerStack->pTab;
+        piColMask = &(pTriggerStack->oldColMask);
       }
 
       if( pTab ){ 
@@ -1133,6 +1136,9 @@ static int lookupName(
               pExpr->pColl = sqlite3FindCollSeq(db, ENC(db), zColl,-1, 0);
             }
             pExpr->pTab = pTab;
+            if( iCol>=0 ){
+              *piColMask |= ((u32)1<<iCol) | (iCol>=32?0xffffffff:0);
+            }
             break;
           }
         }

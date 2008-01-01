@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.134 2007/12/12 17:42:53 danielk1977 Exp $
+** $Id: delete.c,v 1.135 2008/01/01 19:02:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -113,6 +113,11 @@ void sqlite3DeleteFrom(
   int isView;                  /* True if attempting to delete from a view */
   int triggers_exist = 0;      /* True if any triggers exist */
 #endif
+  int iBeginAfterTrigger;      /* Address of after trigger program */
+  int iEndAfterTrigger;        /* Exit of after trigger program */
+  int iBeginBeforeTrigger;     /* Address of before trigger program */
+  int iEndBeforeTrigger;       /* Exit of before trigger program */
+  u32 old_col_mask = 0;        /* Mask of OLD.* columns in use */
 
   sContext.pParse = 0;
   db = pParse->db;
@@ -192,11 +197,28 @@ void sqlite3DeleteFrom(
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
   sqlite3BeginWriteOperation(pParse, triggers_exist, iDb);
 
+  if( triggers_exist ){
+    int iGoto = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+    addr = sqlite3VdbeMakeLabel(v);
+    iBeginBeforeTrigger = sqlite3VdbeCurrentAddr(v);
+    (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TRIGGER_BEFORE, pTab,
+        -1, oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
+        addr, &old_col_mask, 0);
+    iEndBeforeTrigger = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+    iBeginAfterTrigger = sqlite3VdbeCurrentAddr(v);
+    (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TRIGGER_AFTER, pTab, -1,
+        oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
+        addr, &old_col_mask, 0);
+    iEndAfterTrigger = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+    sqlite3VdbeJumpHere(v, iGoto);
+  }
+
   /* If we are trying to delete from a view, realize that view into
   ** a ephemeral table.
   */
   if( isView ){
     Select *pView = sqlite3SelectDup(db, pTab->pSelect);
+    sqlite3SelectMask(pParse, pView, old_col_mask);
     sqlite3Select(pParse, pView, SRT_EphemTab, iCur, 0, 0, 0, 0);
     sqlite3SelectDelete(pView);
   }
@@ -276,6 +298,9 @@ void sqlite3DeleteFrom(
     */
     if( triggers_exist ){
       int mem1 = pParse->nMem++;
+      int addr_rowdata;
+      u32 mask;
+      sqlite3VdbeResolveLabel(v, addr);
       addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, end);
       sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
       sqlite3VdbeAddOp(v, OP_MemStore, mem1, 0);
@@ -284,15 +309,20 @@ void sqlite3DeleteFrom(
       }
       sqlite3VdbeAddOp(v, OP_NotExists, iCur, addr);
       sqlite3VdbeAddOp(v, OP_Rowid, iCur, 0);
-      sqlite3VdbeAddOp(v, OP_RowData, iCur, 0);
+      if( old_col_mask ){
+        sqlite3VdbeAddOp(v, OP_RowData, iCur, 0);
+      }else{
+        sqlite3VdbeAddOp(v, OP_Null, 0, 0);
+      }
       sqlite3VdbeAddOp(v, OP_Insert, oldIdx, 0);
       if( !isView ){
         sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
       }
 
-      (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TRIGGER_BEFORE, pTab,
-          -1, oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
-          addr);
+      /* Jump back and run the BEFORE triggers */
+      sqlite3VdbeAddOp(v, OP_Goto, 0, iBeginBeforeTrigger);
+      sqlite3VdbeJumpHere(v, iEndBeforeTrigger);
+
       if( !isView ){
         sqlite3VdbeAddOp(v, OP_MemLoad, mem1, 0);
       }
@@ -336,9 +366,10 @@ void sqlite3DeleteFrom(
         }
         sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
       }
-      (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TRIGGER_AFTER, pTab, -1,
-          oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
-          addr);
+
+      /* Jump back and run the AFTER triggers */
+      sqlite3VdbeAddOp(v, OP_Goto, 0, iBeginAfterTrigger);
+      sqlite3VdbeJumpHere(v, iEndAfterTrigger);
     }
 
     /* End of the delete loop */

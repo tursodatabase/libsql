@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.144 2007/12/12 16:06:23 danielk1977 Exp $
+** $Id: update.c,v 1.145 2008/01/01 19:02:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -111,6 +111,12 @@ void sqlite3Update(
   int isView;                  /* Trying to update a view */
   int triggers_exist = 0;      /* True if any row triggers exist */
 #endif
+  int iBeginAfterTrigger;      /* Address of after trigger program */
+  int iEndAfterTrigger;        /* Exit of after trigger program */
+  int iBeginBeforeTrigger;     /* Address of before trigger program */
+  int iEndBeforeTrigger;       /* Exit of before trigger program */
+  u32 old_col_mask = 0;        /* Mask of OLD.* columns in use */
+  u32 new_col_mask = 0;        /* Mask of NEW.* columns in use */
 
   int newIdx      = -1;  /* index of trigger "new" temp table       */
   int oldIdx      = -1;  /* index of trigger "old" temp table       */
@@ -288,12 +294,33 @@ void sqlite3Update(
     sqlite3AuthContextPush(pParse, &sContext, pTab->zName);
   }
 
+  /* Generate the code for triggers.
+  */
+  if( triggers_exist ){
+    int iGoto = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+    addr = sqlite3VdbeMakeLabel(v);
+    iBeginBeforeTrigger = sqlite3VdbeCurrentAddr(v);
+    if( sqlite3CodeRowTrigger(pParse, TK_UPDATE, pChanges, TRIGGER_BEFORE, pTab,
+          newIdx, oldIdx, onError, addr, &old_col_mask, &new_col_mask) ){
+      goto update_cleanup;
+    }
+    iEndBeforeTrigger = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+    iBeginAfterTrigger = sqlite3VdbeCurrentAddr(v);
+    if( sqlite3CodeRowTrigger(pParse, TK_UPDATE, pChanges, TRIGGER_AFTER, pTab, 
+          newIdx, oldIdx, onError, addr, &old_col_mask, &new_col_mask) ){
+      goto update_cleanup;
+    }
+    iEndAfterTrigger = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+    sqlite3VdbeJumpHere(v, iGoto);
+  }
+
   /* If we are trying to update a view, realize that view into
   ** a ephemeral table.
   */
   if( isView ){
     Select *pView;
     pView = sqlite3SelectDup(db, pTab->pSelect);
+    sqlite3SelectMask(pParse, pView, old_col_mask|new_col_mask);
     sqlite3Select(pParse, pView, SRT_EphemTab, iCur, 0, 0, 0, 0);
     sqlite3SelectDelete(pView);
   }
@@ -320,7 +347,6 @@ void sqlite3Update(
   }
 
   if( triggers_exist ){
-    
     /* Create pseudo-tables for NEW and OLD
     */
     sqlite3VdbeAddOp(v, OP_OpenPseudo, oldIdx, 0);
@@ -330,6 +356,7 @@ void sqlite3Update(
 
     /* The top of the update loop for when there are triggers.
     */
+    sqlite3VdbeResolveLabel(v, addr);
     addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, 0);
     sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, mem1, 0);
@@ -345,7 +372,11 @@ void sqlite3Update(
     /* Generate the OLD table
     */
     sqlite3VdbeAddOp(v, OP_Rowid, iCur, 0);
-    sqlite3VdbeAddOp(v, OP_RowData, iCur, 0);
+    if( !old_col_mask ){
+      sqlite3VdbeAddOp(v, OP_Null, 0, 0);
+    }else{
+      sqlite3VdbeAddOp(v, OP_RowData, iCur, 0);
+    }
     sqlite3VdbeAddOp(v, OP_Insert, oldIdx, 0);
 
     /* Generate the NEW table
@@ -361,11 +392,15 @@ void sqlite3Update(
         continue;
       }
       j = aXRef[i];
-      if( j<0 ){
-        sqlite3VdbeAddOp(v, OP_Column, iCur, i);
-        sqlite3ColumnDefault(v, pTab, i);
+      if( new_col_mask&((u32)1<<i) || new_col_mask==0xffffffff ){
+        if( j<0 ){
+          sqlite3VdbeAddOp(v, OP_Column, iCur, i);
+          sqlite3ColumnDefault(v, pTab, i);
+        }else{
+          sqlite3ExprCodeAndCache(pParse, pChanges->a[j].pExpr);
+        }
       }else{
-        sqlite3ExprCodeAndCache(pParse, pChanges->a[j].pExpr);
+        sqlite3VdbeAddOp(v, OP_Null, 0, 0);
       }
     }
     sqlite3VdbeAddOp(v, OP_MakeRecord, pTab->nCol, 0);
@@ -378,13 +413,9 @@ void sqlite3Update(
       sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
     }
 
-    /* Fire the BEFORE and INSTEAD OF triggers
-    */
-    if( sqlite3CodeRowTrigger(pParse, TK_UPDATE, pChanges, TRIGGER_BEFORE, pTab,
-          newIdx, oldIdx, onError, addr) ){
-      goto update_cleanup;
-    }
-    
+    sqlite3VdbeAddOp(v, OP_Goto, 0, iBeginBeforeTrigger);
+    sqlite3VdbeJumpHere(v, iEndBeforeTrigger);
+
     if( !isView ){
       sqlite3VdbeAddOp(v, OP_MemLoad, mem1, 0);
     }
@@ -495,10 +526,8 @@ void sqlite3Update(
       }
       sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
     }
-    if( sqlite3CodeRowTrigger(pParse, TK_UPDATE, pChanges, TRIGGER_AFTER, pTab, 
-          newIdx, oldIdx, onError, addr) ){
-      goto update_cleanup;
-    }
+    sqlite3VdbeAddOp(v, OP_Goto, 0, iBeginAfterTrigger);
+    sqlite3VdbeJumpHere(v, iEndAfterTrigger);
   }
 
   /* Repeat the above with the next record to be updated, until

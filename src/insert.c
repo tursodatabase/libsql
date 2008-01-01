@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.197 2007/12/14 16:11:09 drh Exp $
+** $Id: insert.c,v 1.198 2008/01/01 19:02:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -708,7 +708,7 @@ void sqlite3Insert(
 
     /* Fire BEFORE or INSTEAD OF triggers */
     if( sqlite3CodeRowTrigger(pParse, TK_INSERT, 0, TRIGGER_BEFORE, pTab, 
-        newIdx, -1, onError, endOfLoop) ){
+        newIdx, -1, onError, endOfLoop, 0, 0) ){
       goto insert_cleanup;
     }
   }
@@ -837,7 +837,7 @@ void sqlite3Insert(
 
     /* Code AFTER triggers */
     if( sqlite3CodeRowTrigger(pParse, TK_INSERT, 0, TRIGGER_AFTER, pTab,
-          newIdx, -1, onError, endOfLoop) ){
+          newIdx, -1, onError, endOfLoop, 0, 0) ){
       goto insert_cleanup;
     }
   }

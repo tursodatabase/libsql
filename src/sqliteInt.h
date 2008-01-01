@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.626 2007/12/13 03:45:08 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.627 2008/01/01 19:02:09 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1558,6 +1558,8 @@ struct TriggerStack {
   Table *pTab;         /* Table that triggers are currently being coded on */
   int newIdx;          /* Index of vdbe cursor to "new" temp table */
   int oldIdx;          /* Index of vdbe cursor to "old" temp table */
+  u32 newColMask;
+  u32 oldColMask;
   int orconf;          /* Current orconf policy */
   int ignoreJump;      /* where to jump to for a RAISE(IGNORE) */
   Trigger *pTrigger;   /* The trigger currently being coded */
@@ -1716,6 +1718,7 @@ int sqlite3Select(Parse*, Select*, int, int, Select*, int, int*, char *aff);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
                          Expr*,ExprList*,int,Expr*,Expr*);
 void sqlite3SelectDelete(Select*);
+int sqlite3SelectMask(Parse *, Select *, u32);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);
 int sqlite3IsReadOnly(Parse*, Table*, int);
 void sqlite3OpenTable(Parse*, int iCur, int iDb, Table*, int);
@@ -1783,7 +1786,7 @@ void sqlite3ChangeCookie(sqlite3*, Vdbe*, int);
   void sqlite3DropTriggerPtr(Parse*, Trigger*);
   int sqlite3TriggersExist(Parse*, Table*, int, ExprList*);
   int sqlite3CodeRowTrigger(Parse*, int, ExprList*, int, Table *, int, int, 
-                           int, int);
+                           int, int, u32*, u32*);
   void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
   void sqlite3DeleteTriggerStep(TriggerStep*);
   TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*);
@@ -1798,7 +1801,7 @@ void sqlite3ChangeCookie(sqlite3*, Vdbe*, int);
 # define sqlite3DeleteTrigger(A)
 # define sqlite3DropTriggerPtr(A,B)
 # define sqlite3UnlinkAndDeleteTrigger(A,B,C)
-# define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I) 0
+# define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I,J,K) 0
 #endif
 
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);

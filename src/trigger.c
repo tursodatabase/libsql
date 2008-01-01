@@ -751,6 +751,13 @@ static int codeTriggerProgram(
 **    a row containing values to be substituted for old.* expressions in the
 **    trigger program(s).
 **
+** If they are not NULL, the piOldColMask and piNewColMask output variables
+** are set to values that describe the columns used by the trigger program
+** in the OLD.* and NEW.* tables respectively. If column N of the 
+** pseudo-table is read at least once, the corresponding bit of the output
+** mask is set. If a column with an index greater than 32 is read, the
+** output mask is set to the special value 0xffffffff.
+**
 */
 int sqlite3CodeRowTrigger(
   Parse *pParse,       /* Parse context */
@@ -761,10 +768,15 @@ int sqlite3CodeRowTrigger(
   int newIdx,          /* The indice of the "new" row to access */
   int oldIdx,          /* The indice of the "old" row to access */
   int orconf,          /* ON CONFLICT policy */
-  int ignoreJump       /* Instruction to jump to for RAISE(IGNORE) */
+  int ignoreJump,      /* Instruction to jump to for RAISE(IGNORE) */
+  u32 *piOldColMask,   /* OUT: Mask of columns used from the OLD.* table */
+  u32 *piNewColMask    /* OUT: Mask of columns used from the NEW.* table */
 ){
   Trigger *p;
   TriggerStack trigStackEntry;
+
+  trigStackEntry.oldColMask = 0;
+  trigStackEntry.newColMask = 0;
 
   assert(op == TK_UPDATE || op == TK_INSERT || op == TK_DELETE);
   assert(tr_tm == TRIGGER_BEFORE || tr_tm == TRIGGER_AFTER );
@@ -835,6 +847,8 @@ int sqlite3CodeRowTrigger(
       sqlite3VdbeResolveLabel(pParse->pVdbe, endTrigger);
     }
   }
+  if( piOldColMask ) *piOldColMask |= trigStackEntry.oldColMask;
+  if( piNewColMask ) *piNewColMask |= trigStackEntry.newColMask;
   return 0;
 }
 #endif /* !defined(SQLITE_OMIT_TRIGGER) */
