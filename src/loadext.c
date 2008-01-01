@@ -14,7 +14,9 @@
 */
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 
-#define SQLITE_CORE 1  /* Disable the API redefinition in sqlite3ext.h */
+#ifndef SQLITE_CORE
+  #define SQLITE_CORE 1  /* Disable the API redefinition in sqlite3ext.h */
+#endif
 #include "sqlite3ext.h"
 #include "sqliteInt.h"
 #include <string.h>

@@ -69,6 +69,7 @@ puts $out [subst \
 **
 ** This amalgamation was generated on $today.
 */
+#define SQLITE_CORE 1
 #define SQLITE_AMALGAMATION 1}]
 if {$addstatic} {
   puts $out \
