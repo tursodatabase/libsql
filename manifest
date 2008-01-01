@@ -1,5 +1,5 @@
-C Define\sSQLITE_CORE=1\sat\sthe\sstart\sof\sthe\samalgamation\sfile\sfor\sthe\sbenefit\sof\sany\sextension\ssource\scode\s(i.e.\sfts3)\sappended\sto\sit.\sTicket\s#2858.\s(CVS\s4649)
-D 2008-01-01T05:49:08
+C Silence\sa\sharmless\sunitialised\svariable\swarning\sin\sbtree.c.\sTicket\s#2862.\s(CVS\s4650)
+D 2008-01-01T06:19:02
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -83,7 +83,7 @@ F src/analyze.c fd1a3d756c1a20fca3c505bed0398f4cdca83cb8
 F src/attach.c 95658e74e3e0d1cbdb8658817516d4d1467fc13d
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/btmutex.c 5d39da37c9d1282f3c6f9967afae6a34ee36b7ff
-F src/btree.c bef8ceec858b167bd0ce0863fe0bdd527126c213
+F src/btree.c 6c3ded4f31046de72993a440921ad50a7eb4a65d
 F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
 F src/btreeInt.h 1c5a9da165718ef7de81e35ce9ab5d9ba9283f76
 F src/build.c cbfd98ceb95c61c226cd60a845fa7967b66c8931
@@ -602,7 +602,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9719a063942256e34395868d974ed2d53b81b697
-R 9be79ed58ebd0f628a8fa2891c3b46c3
+P 6dea8c16384443ed4ab59d1e2694534992ec3118
+R 782ae7c60f2ef919b3a8af5b140614e6
 U danielk1977
-Z 83c9ac93b067590bdb714d00af8d91e3
+Z 52c90bef75d1e50f96fdd91d4d73d155
