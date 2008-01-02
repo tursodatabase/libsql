@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.199 2008/01/02 00:34:37 drh Exp $
+** $Id: insert.c,v 1.200 2008/01/02 11:50:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -625,8 +625,8 @@ void sqlite3Insert(
     sqlite3VdbeAddOp(v, OP_MemInt, 0, iCntMem);
   }
 
-  /* Open tables and indices if there are no row triggers */
-  if( !triggers_exist ){
+  /* If this is not a view, open the table and and all indices */
+  if( !isView ){
     base = pParse->nTab;
     sqlite3OpenTableAndIndices(pParse, pTab, base, OP_OpenWrite);
   }
@@ -711,14 +711,6 @@ void sqlite3Insert(
         newIdx, -1, onError, endOfLoop, 0, 0) ){
       goto insert_cleanup;
     }
-  }
-
-  /* If any triggers exists, the opening of tables and indices is deferred
-  ** until now.
-  */
-  if( triggers_exist && !isView ){
-    base = pParse->nTab;
-    sqlite3OpenTableAndIndices(pParse, pTab, base, OP_OpenWrite);
   }
 
   /* Push the record number for the new entry onto the stack.  The
@@ -827,14 +819,6 @@ void sqlite3Insert(
   }
 
   if( triggers_exist ){
-    /* Close all tables opened */
-    if( !isView ){
-      sqlite3VdbeAddOp(v, OP_Close, base, 0);
-      for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-        sqlite3VdbeAddOp(v, OP_Close, idx+base, 0);
-      }
-    }
-
     /* Code AFTER triggers */
     if( sqlite3CodeRowTrigger(pParse, TK_INSERT, 0, TRIGGER_AFTER, pTab,
           newIdx, -1, onError, endOfLoop, 0, 0) ){
@@ -855,7 +839,7 @@ void sqlite3Insert(
     sqlite3VdbeResolveLabel(v, iCleanup);
   }
 
-  if( !triggers_exist && !IsVirtual(pTab) ){
+  if( !IsVirtual(pTab) && !isView ){
     /* Close all tables opened */
     sqlite3VdbeAddOp(v, OP_Close, base, 0);
     for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){

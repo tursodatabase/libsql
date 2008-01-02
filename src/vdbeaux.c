@@ -701,10 +701,12 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
     }
   }
   assert( zP3!=0 );
+#ifdef SQLITE_DEBUG
   if( pOp->zComment && zP3==zTemp && (nP3 = strlen(zP3))<nTemp ){
     sqlite3_snprintf(nTemp-nP3, &zP3[nP3], "%s# %s",
                      nP3>0 ? " " : "", pOp->zComment);
   }
+#endif
   return zP3;
 }
 #endif

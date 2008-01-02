@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.435 2008/01/01 06:19:02 danielk1977 Exp $
+** $Id: btree.c,v 1.436 2008/01/02 11:50:51 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6229,7 +6229,9 @@ int sqlite3BtreeFlags(BtCursor *pCur){
   /* TODO: What about CURSOR_REQUIRESEEK state? Probably need to call
   ** restoreOrClearCursorPosition() here.
   */
-  MemPage *pPage = pCur->pPage;
+  MemPage *pPage;
+  restoreOrClearCursorPosition(pCur);
+  pPage = pCur->pPage;
   assert( cursorHoldsMutex(pCur) );
   assert( pPage->pBt==pCur->pBt );
   return pPage ? pPage->aData[pPage->hdrOffset] : 0;

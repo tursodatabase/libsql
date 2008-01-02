@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.136 2008/01/02 00:34:37 drh Exp $
+** $Id: delete.c,v 1.137 2008/01/02 11:50:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -175,6 +175,9 @@ void sqlite3DeleteFrom(
   */
   assert( pTabList->nSrc==1 );
   iCur = pTabList->a[0].iCursor = pParse->nTab++;
+  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    pParse->nTab++;
+  }
   memset(&sNC, 0, sizeof(sNC));
   sNC.pParse = pParse;
   sNC.pSrcList = pTabList;
@@ -293,19 +296,26 @@ void sqlite3DeleteFrom(
     */
     end = sqlite3VdbeMakeLabel(v);
 
-    /* This is the beginning of the delete loop when there are
-    ** row triggers.
+    if( !isView ){
+      /* Open cursors for the table we are deleting from and 
+      ** all its indices.
+      */
+      sqlite3OpenTableAndIndices(pParse, pTab, iCur, OP_OpenWrite);
+    }
+
+    /* This is the beginning of the delete loop. If a trigger encounters
+    ** an IGNORE constraint, it jumps back to here.
     */
     if( triggers_exist ){
-      int mem1 = pParse->nMem++;
-      int addr_rowdata;
-      u32 mask;
       sqlite3VdbeResolveLabel(v, addr);
-      addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, end);
-      sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
-      sqlite3VdbeAddOp(v, OP_MemStore, mem1, 0);
+    }
+    addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, end);
+    sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
+
+    if( triggers_exist ){
+      int mem1 = pParse->nMem++;
       if( !isView ){
-        sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
+        sqlite3VdbeAddOp(v, OP_MemStore, mem1, 0);
       }
       sqlite3VdbeAddOp(v, OP_NotExists, iCur, addr);
       sqlite3VdbeAddOp(v, OP_Rowid, iCur, 0);
@@ -329,21 +339,6 @@ void sqlite3DeleteFrom(
     }
 
     if( !isView ){
-      /* Open cursors for the table we are deleting from and all its
-      ** indices.  If there are row triggers, this happens inside the
-      ** OP_FifoRead loop because the cursor have to all be closed
-      ** before the trigger fires.  If there are no row triggers, the
-      ** cursors are opened only once on the outside the loop.
-      */
-      sqlite3OpenTableAndIndices(pParse, pTab, iCur, OP_OpenWrite);
-
-      /* This is the beginning of the delete loop when there are no
-      ** row triggers */
-      if( !triggers_exist ){ 
-        addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, end);
-        sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
-      }
-
       /* Delete the row */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       if( IsVirtual(pTab) ){
@@ -360,13 +355,6 @@ void sqlite3DeleteFrom(
     ** the AFTER triggers
     */
     if( triggers_exist ){
-      if( !isView ){
-        for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-          sqlite3VdbeAddOp(v, OP_Close, iCur + i, pIdx->tnum);
-        }
-        sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
-      }
-
       /* Jump back and run the AFTER triggers */
       sqlite3VdbeAddOp(v, OP_Goto, 0, iBeginAfterTrigger);
       sqlite3VdbeJumpHere(v, iEndAfterTrigger);
@@ -377,7 +365,7 @@ void sqlite3DeleteFrom(
     sqlite3VdbeResolveLabel(v, end);
 
     /* Close the cursors after the loop if there are no row triggers */
-    if( !triggers_exist && !IsVirtual(pTab) ){
+    if( !isView  && !IsVirtual(pTab) ){
       for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
         sqlite3VdbeAddOp(v, OP_Close, iCur + i, pIdx->tnum);
       }

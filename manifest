@@ -1,5 +1,5 @@
-C Add\ssome\sextra\stests\sfor\sthe\srecent\strigger\scompilation\soptimization.\s(CVS\s4653)
-D 2008-01-02T04:41:25
+C Take\sadvantage\sof\sthe\sfact\sthat\sb-tree\scursors\sneed\snot\sbe\sclosed\swhile\sother\scursors\smodify\stheir\stables\sto\ssimplify\strigger\sprogram\sgeneration\scode.\s(CVS\s4654)
+D 2008-01-02T11:50:51
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -83,20 +83,20 @@ F src/analyze.c cb25936f0148ee65c825a49f8064292a98050a50
 F src/attach.c 95658e74e3e0d1cbdb8658817516d4d1467fc13d
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/btmutex.c 5d39da37c9d1282f3c6f9967afae6a34ee36b7ff
-F src/btree.c 6c3ded4f31046de72993a440921ad50a7eb4a65d
+F src/btree.c 5164b32950cfd41f2c5c31e8ff82c4a499918aef
 F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
 F src/btreeInt.h 1c5a9da165718ef7de81e35ce9ab5d9ba9283f76
 F src/build.c cbfd98ceb95c61c226cd60a845fa7967b66c8931
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
-F src/delete.c a4843531af1354882ea7dbe53fa5f46b581ae73c
+F src/delete.c e750b537a77da4971c39e3fbb569de55fe4cf095
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c c3fb939d6801071ce19243521ca444eca40b057a
 F src/func.c 996071cf0af9d967e58b69fce1909555059ebc7d
 F src/hash.c 45a7005aac044b6c86bd7e49c44bc15d30006d6c
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
-F src/insert.c 355c482603c8c5151b23c3c7661cf1044ec34d29
+F src/insert.c 1946d8c7431fc2b614a4b15155f960f999b14ba5
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
@@ -164,7 +164,7 @@ F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c a4e04438c11fed2c67ec47fe3edbef9cca2d1b48
 F src/trigger.c f8e2d42cf1782ffc14a9d7cee1d1a406f9b0c8c4
-F src/update.c fee857007be57b68a7539c26cc5563d8fbaf3f82
+F src/update.c 24ab2157d360bc20ac4447f50d3a70cd993a7d98
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 25ffbd766f25bca099ead1c1e11f5528c86102b8
@@ -172,7 +172,7 @@ F src/vdbe.c 56a6e80d3357622305cffe6ea509e5d643e7dadb
 F src/vdbe.h a042e6d3b567ac81f182ca5b4639807621355822
 F src/vdbeInt.h 2985f1369273e635898cf5952237efcb3fdb21f3
 F src/vdbeapi.c 4acfaab3e10c99eb66c5332979d7b14a1c3505ae
-F src/vdbeaux.c bca64691ad6bb11e45b5ccf494d9f088d23b3575
+F src/vdbeaux.c 9c2ce05e86502ac3dd148ed13535886e82678e04
 F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 123994fcd344993d2fb050a83b91b341bbbd08b4
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 051ec01f2799e095516015f2ef0180e50fac387c
-R b1162a1e7d20a24c20501e40bc7dde0f
+P de54dad800f0b62740ad4ebb3780464b44eb6dff
+R a86b5c6a0f11cd9be312d89f90e2feb5
 U danielk1977
-Z 75dbf0acf2e3e5d3feebf07dfd171fca
+Z 5595cb26a9237dd9d189ded057a3e630

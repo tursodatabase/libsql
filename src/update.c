@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.146 2008/01/02 00:34:37 drh Exp $
+** $Id: update.c,v 1.147 2008/01/02 11:50:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -298,7 +298,16 @@ void sqlite3Update(
   /* Generate the code for triggers.
   */
   if( triggers_exist ){
-    int iGoto = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+    int iGoto;
+
+    /* Create pseudo-tables for NEW and OLD
+    */
+    sqlite3VdbeAddOp(v, OP_OpenPseudo, oldIdx, 0);
+    sqlite3VdbeAddOp(v, OP_SetNumColumns, oldIdx, pTab->nCol);
+    sqlite3VdbeAddOp(v, OP_OpenPseudo, newIdx, 0);
+    sqlite3VdbeAddOp(v, OP_SetNumColumns, newIdx, pTab->nCol);
+
+    iGoto = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
     addr = sqlite3VdbeMakeLabel(v);
     iBeginBeforeTrigger = sqlite3VdbeCurrentAddr(v);
     if( sqlite3CodeRowTrigger(pParse, TK_UPDATE, pChanges, TRIGGER_BEFORE, pTab,
@@ -347,27 +356,50 @@ void sqlite3Update(
     sqlite3VdbeAddOp(v, OP_MemInt, 0, memCnt);
   }
 
-  if( triggers_exist ){
-    /* Create pseudo-tables for NEW and OLD
+  if( !isView && !IsVirtual(pTab) ){
+    /* 
+    ** Open every index that needs updating.  Note that if any
+    ** index could potentially invoke a REPLACE conflict resolution 
+    ** action, then we need to open all indices because we might need
+    ** to be deleting some records.
     */
-    sqlite3VdbeAddOp(v, OP_OpenPseudo, oldIdx, 0);
-    sqlite3VdbeAddOp(v, OP_SetNumColumns, oldIdx, pTab->nCol);
-    sqlite3VdbeAddOp(v, OP_OpenPseudo, newIdx, 0);
-    sqlite3VdbeAddOp(v, OP_SetNumColumns, newIdx, pTab->nCol);
-
-    /* The top of the update loop for when there are triggers.
-    */
-    sqlite3VdbeResolveLabel(v, addr);
-    addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, 0);
-    sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
-    sqlite3VdbeAddOp(v, OP_MemStore, mem1, 0);
-    
-    if( !isView ){
-      /* Open a cursor and make it point to the record that is
-      ** being updated.
-      */
-      sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
+    sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenWrite); 
+    if( onError==OE_Replace ){
+      openAll = 1;
+    }else{
+      openAll = 0;
+      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+        if( pIdx->onError==OE_Replace ){
+          openAll = 1;
+          break;
+        }
+      }
     }
+    for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
+      if( openAll || aIdxUsed[i] ){
+        KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
+        sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
+        sqlite3VdbeOp3(v, OP_OpenWrite, iCur+i+1, pIdx->tnum,
+                       (char*)pKey, P3_KEYINFO_HANDOFF);
+        assert( pParse->nTab>iCur+i+1 );
+      }
+    }
+
+  }
+  
+  /* Jump back to this point if a trigger encounters an IGNORE constraint. */
+  if( triggers_exist ){
+    sqlite3VdbeResolveLabel(v, addr);
+  }
+
+  /* Top of the update loop */
+  addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, 0);
+  sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
+  sqlite3VdbeAddOp(v, OP_MemStore, mem1, 0);
+
+  if( triggers_exist ){
+    /* Make cursor iCur point to the record that is being updated.
+    */
     sqlite3VdbeAddOp(v, OP_NotExists, iCur, addr);
 
     /* Generate the OLD table
@@ -410,9 +442,6 @@ void sqlite3Update(
     }
     if( pParse->nErr ) goto update_cleanup;
     sqlite3VdbeAddOp(v, OP_Insert, newIdx, 0);
-    if( !isView ){
-      sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
-    }
 
     sqlite3VdbeAddOp(v, OP_Goto, 0, iBeginBeforeTrigger);
     sqlite3VdbeJumpHere(v, iEndBeforeTrigger);
@@ -423,33 +452,6 @@ void sqlite3Update(
   }
 
   if( !isView && !IsVirtual(pTab) ){
-    /* 
-    ** Open every index that needs updating.  Note that if any
-    ** index could potentially invoke a REPLACE conflict resolution 
-    ** action, then we need to open all indices because we might need
-    ** to be deleting some records.
-    */
-    sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenWrite); 
-    if( onError==OE_Replace ){
-      openAll = 1;
-    }else{
-      openAll = 0;
-      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-        if( pIdx->onError==OE_Replace ){
-          openAll = 1;
-          break;
-        }
-      }
-    }
-    for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-      if( openAll || aIdxUsed[i] ){
-        KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
-        sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
-        sqlite3VdbeOp3(v, OP_OpenWrite, iCur+i+1, pIdx->tnum,
-                       (char*)pKey, P3_KEYINFO_HANDOFF);
-        assert( pParse->nTab>iCur+i+1 );
-      }
-    }
 
     /* Loop over every record that needs updating.  We have to load
     ** the old data for each record to be updated because some columns
@@ -457,11 +459,6 @@ void sqlite3Update(
     ** Also, the old data is needed to delete the old index entries.
     ** So make the cursor point at the old record.
     */
-    if( !triggers_exist ){
-      addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, 0);
-      sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
-      sqlite3VdbeAddOp(v, OP_MemStore, mem1, 0);
-    }
     sqlite3VdbeAddOp(v, OP_NotExists, iCur, addr);
     sqlite3VdbeAddOp(v, OP_MemLoad, mem1, 0);
 
@@ -520,13 +517,6 @@ void sqlite3Update(
   ** through the loop.  The fire the after triggers.
   */
   if( triggers_exist ){
-    if( !isView ){
-      for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-        if( openAll || aIdxUsed[i] )
-          sqlite3VdbeAddOp(v, OP_Close, iCur+i+1, 0);
-      }
-      sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
-    }
     sqlite3VdbeAddOp(v, OP_Goto, 0, iBeginAfterTrigger);
     sqlite3VdbeJumpHere(v, iEndAfterTrigger);
   }
@@ -537,15 +527,14 @@ void sqlite3Update(
   sqlite3VdbeAddOp(v, OP_Goto, 0, addr);
   sqlite3VdbeJumpHere(v, addr);
 
-  /* Close all tables if there were no FOR EACH ROW triggers */
-  if( !triggers_exist ){
-    for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-      if( openAll || aIdxUsed[i] ){
-        sqlite3VdbeAddOp(v, OP_Close, iCur+i+1, 0);
-      }
+  /* Close all tables */
+  for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
+    if( openAll || aIdxUsed[i] ){
+      sqlite3VdbeAddOp(v, OP_Close, iCur+i+1, 0);
     }
-    sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
-  }else{
+  }
+  sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
+  if( triggers_exist ){
     sqlite3VdbeAddOp(v, OP_Close, newIdx, 0);
     sqlite3VdbeAddOp(v, OP_Close, oldIdx, 0);
   }
