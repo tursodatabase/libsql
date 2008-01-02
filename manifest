@@ -1,5 +1,5 @@
-C Take\sadvantage\sof\sthe\sfact\sthat\sb-tree\scursors\sneed\snot\sbe\sclosed\swhile\sother\scursors\smodify\stheir\stables\sto\ssimplify\strigger\sprogram\sgeneration\scode.\s(CVS\s4654)
-D 2008-01-02T11:50:51
+C Remove\sa\ssurplus\sOP_Close\sfrom\sdelete.c.\s\sFixes\sa\sproblem\swith\s(4654).\s(CVS\s4655)
+D 2008-01-02T13:05:51
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -90,7 +90,7 @@ F src/build.c cbfd98ceb95c61c226cd60a845fa7967b66c8931
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
-F src/delete.c e750b537a77da4971c39e3fbb569de55fe4cf095
+F src/delete.c 9a98d854ac2613d14616f5023577a6bec53b2d0e
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c c3fb939d6801071ce19243521ca444eca40b057a
 F src/func.c 996071cf0af9d967e58b69fce1909555059ebc7d
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P de54dad800f0b62740ad4ebb3780464b44eb6dff
-R a86b5c6a0f11cd9be312d89f90e2feb5
-U danielk1977
-Z 5595cb26a9237dd9d189ded057a3e630
+P f1966a8a47fca85f7862c0797a527ab01ac8b0c1
+R 087c5875afd19f460dd964b443ff0b13
+U drh
+Z 539bcbd7c9fe31e2d5dc24d68f84bb81

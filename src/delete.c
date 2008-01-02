@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.137 2008/01/02 11:50:51 danielk1977 Exp $
+** $Id: delete.c,v 1.138 2008/01/02 13:05:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -325,9 +325,6 @@ void sqlite3DeleteFrom(
         sqlite3VdbeAddOp(v, OP_Null, 0, 0);
       }
       sqlite3VdbeAddOp(v, OP_Insert, oldIdx, 0);
-      if( !isView ){
-        sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
-      }
 
       /* Jump back and run the BEFORE triggers */
       sqlite3VdbeAddOp(v, OP_Goto, 0, iBeginBeforeTrigger);
