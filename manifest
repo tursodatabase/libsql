@@ -1,5 +1,5 @@
-C Minor\soptimizations\sfor\ssub-selects\sin\sEXISTS(...)\sexpressions:\sDiscard\sany\sDISTINCT\sor\sORDER\sBY\sclauses\sand\sdo\snot\scalculate\sany\scolumn\svalues.\s(CVS\s4658)
-D 2008-01-02T17:11:14
+C Add\soperands\sp4\sand\sp5\sto\sthe\sVdbeOp\sstructure.\s(CVS\s4659)
+D 2008-01-02T17:25:55
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -169,7 +169,7 @@ F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 25ffbd766f25bca099ead1c1e11f5528c86102b8
 F src/vdbe.c 85e44649ad750d4c249751693ca93b4f57737b0f
-F src/vdbe.h a042e6d3b567ac81f182ca5b4639807621355822
+F src/vdbe.h 5c9ed634212361091bfc92ca689374d211f384b7
 F src/vdbeInt.h 2985f1369273e635898cf5952237efcb3fdb21f3
 F src/vdbeapi.c 4acfaab3e10c99eb66c5332979d7b14a1c3505ae
 F src/vdbeaux.c 9c2ce05e86502ac3dd148ed13535886e82678e04
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 86dcdfe6d7d629618ccb3c3ff0ca09f2da2d06c7
-R 982c17244c2079cbd0e5e4196c9007ad
-U danielk1977
-Z 3000de620d66b1fa18c8d40dc95b7145
+P fbd17a8976cc9b4dd7c7c903d8beade9a7ef095f
+R 959deef8458a4ade4a9b18649b5cc232
+U drh
+Z 63670bfa755df999b8dac508860cddb8
