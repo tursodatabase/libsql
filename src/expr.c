@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.322 2008/01/02 00:34:37 drh Exp $
+** $Id: expr.c,v 1.323 2008/01/02 14:28:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1798,14 +1798,14 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       */
       static const Token one = { (u8*)"1", 0, 1 };
       Select *pSel;
-      int iMem;
       int sop;
+      int iMem;
 
-      pExpr->iColumn = iMem = pParse->nMem++;
       pSel = pExpr->pSelect;
+      iMem = pParse->nMem++;
       if( pExpr->op==TK_SELECT ){
         sop = SRT_Mem;
-        sqlite3VdbeAddOp(v, OP_MemNull, iMem, 0);
+        sqlite3VdbeAddOp(v, OP_MemNull, 0, iMem);
         VdbeComment((v, "Init subquery result"));
       }else{
         sop = SRT_Exists;
@@ -1817,6 +1817,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       if( sqlite3Select(pParse, pSel, sop, iMem, 0, 0, 0, 0) ){
         return;
       }
+      pExpr->iColumn = iMem;
       break;
     }
   }

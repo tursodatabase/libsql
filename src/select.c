@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.374 2008/01/02 00:34:37 drh Exp $
+** $Id: select.c,v 1.375 2008/01/02 14:28:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -436,7 +436,7 @@ static void codeOffset(
 ** A jump to addrRepeat is made and the N+1 values are popped from the
 ** stack if the top N elements are not distinct.
 */
-static void codeDistinct(
+static void codeDistinct_OLD(
   Vdbe *v,           /* Generate code into this VM */
   int iTab,          /* A sorting index used to test for distinctness */
   int addrRepeat,    /* Jump to here if not distinct */
@@ -445,6 +445,29 @@ static void codeDistinct(
   sqlite3VdbeAddOp(v, OP_MakeRecord, -N, 0);
   sqlite3VdbeAddOp(v, OP_Distinct, iTab, sqlite3VdbeCurrentAddr(v)+3);
   sqlite3VdbeAddOp(v, OP_Pop, N+1, 0);
+  sqlite3VdbeAddOp(v, OP_Goto, 0, addrRepeat);
+  VdbeComment((v, "skip indistinct records"));
+  sqlite3VdbeAddOp(v, OP_IdxInsert, iTab, 0);
+}
+
+/*
+** Add code that will check to make sure the top N elements of the
+** stack are distinct.  iTab is a sorting index that holds previously
+** seen combinations of the N values.  A new entry is made in iTab
+** if the current N values are new.
+**
+** A jump to addrRepeat is made and the N+1 values are popped from the
+** stack if the top N elements are not distinct.
+*/
+static void codeDistinct(
+  Vdbe *v,           /* Generate code into this VM */
+  int iTab,          /* A sorting index used to test for distinctness */
+  int addrRepeat,    /* Jump to here if not distinct */
+  int iMem           /* First element */
+){
+  sqlite3VdbeAddOp(v, OP_RegMakeRec, iMem, 0);
+  sqlite3VdbeAddOp(v, OP_Distinct, iTab, sqlite3VdbeCurrentAddr(v)+3);
+  sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
   sqlite3VdbeAddOp(v, OP_Goto, 0, addrRepeat);
   VdbeComment((v, "skip indistinct records"));
   sqlite3VdbeAddOp(v, OP_IdxInsert, iTab, 0);
@@ -490,8 +513,9 @@ static int selectInnerLoop(
   char *aff               /* affinity string if eDest is SRT_Union */
 ){
   Vdbe *v = pParse->pVdbe;
-  int i;
+  int i, n;
   int hasDistinct;        /* True if the DISTINCT keyword is present */
+  int iMem;               /* Start of memory holding result set */
 
   if( v==0 ) return 0;
   assert( pEList!=0 );
@@ -507,13 +531,23 @@ static int selectInnerLoop(
   /* Pull the requested columns.
   */
   if( nColumn>0 ){
+    n = nColumn;
+  }else{
+    n = pEList->nExpr;
+  }
+  iMem = pParse->nMem;
+  pParse->nMem += n+1;
+  sqlite3VdbeAddOp(v, OP_MemInt, n, iMem);
+  if( nColumn>0 ){
     for(i=0; i<nColumn; i++){
-      sqlite3VdbeAddOp(v, OP_Column, srcTab, i);
+      sqlite3VdbeOp3Int(v, OP_Column, srcTab, i, iMem+i+1);
     }
   }else{
-    nColumn = pEList->nExpr;
-    sqlite3ExprCodeExprList(pParse, pEList);
+    for(i=0; i<n; i++){
+      sqlite3ExprIntoReg(pParse, pEList->a[i].pExpr, iMem+i+1);
+    }
   }
+  nColumn = n;
 
   /* If the DISTINCT keyword was present on the SELECT statement
   ** and this row has been seen before, then do not make this row
@@ -522,7 +556,7 @@ static int selectInnerLoop(
   if( hasDistinct ){
     assert( pEList!=0 );
     assert( pEList->nExpr==nColumn );
-    codeDistinct(v, distinct, iContinue, nColumn);
+    codeDistinct(v, distinct, iContinue, iMem);
     if( pOrderBy==0 ){
       codeOffset(v, p, iContinue, nColumn);
     }
@@ -538,7 +572,7 @@ static int selectInnerLoop(
     */
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
     case SRT_Union: {
-      sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+      sqlite3VdbeAddOp(v, OP_RegMakeRec, iMem, 0);
       if( aff ){
         sqlite3VdbeChangeP3(v, -1, aff, P3_STATIC);
       }
@@ -552,7 +586,7 @@ static int selectInnerLoop(
     */
     case SRT_Except: {
       int addr;
-      addr = sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+      addr = sqlite3VdbeAddOp(v, OP_RegMakeRec, iMem, 0);
       sqlite3VdbeChangeP3(v, -1, aff, P3_STATIC);
       sqlite3VdbeAddOp(v, OP_NotFound, iParm, addr+3);
       sqlite3VdbeAddOp(v, OP_Delete, iParm, 0);
@@ -564,7 +598,7 @@ static int selectInnerLoop(
     */
     case SRT_Table:
     case SRT_EphemTab: {
-      sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+      sqlite3VdbeAddOp(v, OP_RegMakeRec, iMem, 0);
       if( pOrderBy ){
         pushOntoSorter(pParse, pOrderBy, p);
       }else{
@@ -581,22 +615,20 @@ static int selectInnerLoop(
     ** item into the set table with bogus data.
     */
     case SRT_Set: {
-      int addr1 = sqlite3VdbeCurrentAddr(v);
       int addr2;
 
       assert( nColumn==1 );
-      sqlite3VdbeAddOp(v, OP_NotNull, -1, addr1+3);
-      sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
-      addr2 = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+      addr2 = sqlite3VdbeAddOp(v, OP_IfMemNull, iMem+1, 0);
       p->affinity = sqlite3CompareAffinity(pEList->a[0].pExpr,(iParm>>16)&0xff);
       if( pOrderBy ){
         /* At first glance you would think we could optimize out the
         ** ORDER BY in this case since the order of entries in the set
         ** does not matter.  But there might be a LIMIT clause, in which
         ** case the order does matter */
+        sqlite3VdbeAddOp(v, OP_MemLoad, iMem+1, 0);
         pushOntoSorter(pParse, pOrderBy, p);
       }else{
-        sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &p->affinity, 1);
+        sqlite3VdbeOp3(v, OP_RegMakeRec, iMem, 0, &p->affinity, 1);
         sqlite3VdbeAddOp(v, OP_IdxInsert, (iParm&0x0000FFFF), 0);
       }
       sqlite3VdbeJumpHere(v, addr2);
@@ -607,7 +639,6 @@ static int selectInnerLoop(
     */
     case SRT_Exists: {
       sqlite3VdbeAddOp(v, OP_MemInt, 1, iParm);
-      sqlite3VdbeAddOp(v, OP_Pop, nColumn, 0);
       /* The LIMIT clause will terminate the loop for us */
       break;
     }
@@ -618,6 +649,7 @@ static int selectInnerLoop(
     */
     case SRT_Mem: {
       assert( nColumn==1 );
+      sqlite3VdbeAddOp(v, OP_MemLoad, iMem+1, 0);
       if( pOrderBy ){
         pushOntoSorter(pParse, pOrderBy, p);
       }else{
@@ -635,12 +667,13 @@ static int selectInnerLoop(
     case SRT_Subroutine:
     case SRT_Callback: {
       if( pOrderBy ){
-        sqlite3VdbeAddOp(v, OP_MakeRecord, nColumn, 0);
+        sqlite3VdbeAddOp(v, OP_RegMakeRec, iMem, 0);
         pushOntoSorter(pParse, pOrderBy, p);
       }else if( eDest==SRT_Subroutine ){
+        for(i=0; i<nColumn; i++) sqlite3VdbeAddOp(v, OP_MemLoad, iMem+i+1, 0);
         sqlite3VdbeAddOp(v, OP_Gosub, 0, iParm);
       }else{
-        sqlite3VdbeAddOp(v, OP_Callback, nColumn, 0);
+        sqlite3VdbeAddOp(v, OP_ResultRow, iMem+1, nColumn);
       }
       break;
     }
@@ -653,7 +686,6 @@ static int selectInnerLoop(
     */
     default: {
       assert( eDest==SRT_Discard );
-      sqlite3VdbeAddOp(v, OP_Pop, nColumn, 0);
       break;
     }
 #endif
@@ -2876,10 +2908,10 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
     return;
   }
   for(i=0; i<pAggInfo->nColumn; i++){
-    sqlite3VdbeAddOp(v, OP_MemNull, pAggInfo->aCol[i].iMem, 0);
+    sqlite3VdbeAddOp(v, OP_MemNull, 0, pAggInfo->aCol[i].iMem);
   }
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
-    sqlite3VdbeAddOp(v, OP_MemNull, pFunc->iMem, 0);
+    sqlite3VdbeAddOp(v, OP_MemNull, 0, pFunc->iMem);
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pExpr;
       if( pE->pList==0 || pE->pList->nExpr!=1 ){
@@ -2934,7 +2966,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     if( pF->iDistinct>=0 ){
       addrNext = sqlite3VdbeMakeLabel(v);
       assert( nArg==1 );
-      codeDistinct(v, pF->iDistinct, addrNext, 1);
+      codeDistinct_OLD(v, pF->iDistinct, addrNext, 1);
     }
     if( pF->pFunc->needCollSeq ){
       CollSeq *pColl = 0;

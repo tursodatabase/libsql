@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.662 2008/01/02 00:34:37 drh Exp $
+** $Id: vdbe.c,v 1.663 2008/01/02 14:28:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2384,6 +2384,7 @@ case OP_MakeRecord: {
   u32 serial_type;       /* Type field */
   int containsNull = 0;  /* True if any of the data fields are NULL */
   Mem *pData0;           /* Bottom of the stack */
+  Mem *pLast;            /* Top of the stack */
   int leaveOnStack;      /* If true, leave the entries on the stack */
   int nField;            /* Number of fields in the record */
   int jumpIfNull;        /* Jump here if non-zero and any entries are NULL. */
@@ -2411,11 +2412,13 @@ case OP_MakeRecord: {
     pCount = &p->aMem[nField];
     assert( pCount->flags & MEM_Int );
     assert( pCount->u.i>=0 && pCount->u.i+nField<p->nMem );
-    assert( leaveOnStack==1 );
+    leaveOnStack = 1;
     nField = pCount->u.i;
     pData0 = &pCount[1];
+    pLast = &pData0[nField-1];
   }else{
     pData0 = &pTos[1-nField];
+    pLast = pTos;
     assert( pData0>=p->aStack );
   }
   containsNull = 0;
@@ -2424,7 +2427,7 @@ case OP_MakeRecord: {
   /* Loop through the elements that will make up the record to figure
   ** out how much space is required for the new record.
   */
-  for(pRec=pData0; pRec<=pTos; pRec++){
+  for(pRec=pData0; pRec<=pLast; pRec++){
     int len;
     if( zAffinity ){
       applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
@@ -2484,14 +2487,14 @@ case OP_MakeRecord: {
 
   /* Write the record */
   i = sqlite3PutVarint(zNewRecord, nHdr);
-  for(pRec=pData0; pRec<=pTos; pRec++){
+  for(pRec=pData0; pRec<=pLast; pRec++){
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     i += sqlite3PutVarint(&zNewRecord[i], serial_type);      /* serial type */
   }
   if( addRowid ){
     i += sqlite3PutVarint(&zNewRecord[i], sqlite3VdbeSerialType(pRowid, 0));
   }
-  for(pRec=pData0; pRec<=pTos; pRec++){  /* serial data */
+  for(pRec=pData0; pRec<=pLast; pRec++){  /* serial data */
     i += sqlite3VdbeSerialPut(&zNewRecord[i], nByte-i, pRec, file_format);
   }
   if( addRowid ){
@@ -4719,13 +4722,26 @@ case OP_IfMemZero: {        /* no-push */
   break;
 }
 
-/* Opcode: MemNull P1 * *
+/* Opcode: IfMemNull P1 P2 *
 **
-** Store a NULL in memory cell P1
+** If the value of memory cell P1 is NULL, jump to P2. 
+*/
+case OP_IfMemNull: {        /* no-push */
+  int i = pOp->p1;
+  assert( i>=0 && i<p->nMem );
+  if( p->aMem[i].flags & MEM_Null ){
+     pc = pOp->p2 - 1;
+  }
+  break;
+}
+
+/* Opcode: MemNull * P2 *
+**
+** Store a NULL in memory cell P2
 */
 case OP_MemNull: {
-  assert( pOp->p1>=0 && pOp->p1<p->nMem );
-  sqlite3VdbeMemSetNull(&p->aMem[pOp->p1]);
+  assert( pOp->p2>=0 && pOp->p2<p->nMem );
+  sqlite3VdbeMemSetNull(&p->aMem[pOp->p2]);
   break;
 }
 
