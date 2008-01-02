@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.200 2008/01/02 11:50:51 danielk1977 Exp $
+** $Id: insert.c,v 1.201 2008/01/02 16:27:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -476,13 +476,15 @@ void sqlite3Insert(
   if( pSelect ){
     /* Data is coming from a SELECT.  Generate code to implement that SELECT
     */
+    SelectDest dest = {SRT_Subroutine, 0, 0};
     int rc, iInitCode;
     iInitCode = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
     iSelectLoop = sqlite3VdbeCurrentAddr(v);
     iInsertBlock = sqlite3VdbeMakeLabel(v);
+    dest.iParm = iInsertBlock;
 
     /* Resolve the expressions in the SELECT statement and execute it. */
-    rc = sqlite3Select(pParse, pSelect, SRT_Subroutine, iInsertBlock,0,0,0,0);
+    rc = sqlite3Select(pParse, pSelect, &dest, 0, 0, 0, 0);
     if( rc || pParse->nErr || db->mallocFailed ){
       goto insert_cleanup;
     }

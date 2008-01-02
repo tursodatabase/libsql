@@ -685,8 +685,9 @@ static int codeTriggerProgram(
       case TK_SELECT: {
         Select *ss = sqlite3SelectDup(db, pTriggerStep->pSelect);
         if( ss ){
+          SelectDest dest = {SRT_Discard, 0, 0};
           sqlite3SelectResolve(pParse, ss, 0);
-          sqlite3Select(pParse, ss, SRT_Discard, 0, 0, 0, 0, 0);
+          sqlite3Select(pParse, ss, &dest, 0, 0, 0, 0);
           sqlite3SelectDelete(ss);
         }
         break;

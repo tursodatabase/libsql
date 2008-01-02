@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.628 2008/01/02 00:34:37 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.629 2008/01/02 16:27:10 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1333,7 +1333,7 @@ struct Select {
 #define SRT_Discard      3  /* Do not save the results anywhere */
 
 /* The ORDER BY clause is ignored for all of the above */
-#define IgnorableOrderby(X) (X<=SRT_Discard)
+#define IgnorableOrderby(X) ((X->eDest)<=SRT_Discard)
 
 #define SRT_Callback     4  /* Invoke a callback with each row of result */
 #define SRT_Mem          5  /* Store result in a memory cell */
@@ -1342,6 +1342,17 @@ struct Select {
 #define SRT_EphemTab     8  /* Create transient tab and store like SRT_Table */
 #define SRT_Subroutine   9  /* Call a subroutine to handle results */
 #define SRT_Exists      10  /* Store 1 if the result is not empty */
+
+/*
+** A structure used to customize the behaviour of sqlite3Select(). See
+** comments above sqlite3Select() for details.
+*/
+typedef struct SelectDest SelectDest;
+struct SelectDest {
+  int eDest;        /* How to dispose of the results */
+  int iParm;        /* A parameter used by the eDest disposal method */
+  int affinity;     /* Affinity used when eDest==SRT_Set */
+};
 
 /*
 ** An SQL parser context.  A copy of this structure is passed through
@@ -1714,7 +1725,7 @@ void sqlite3SrcListDelete(SrcList*);
 void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
                         Token*, int, int);
 void sqlite3DropIndex(Parse*, SrcList*, int);
-int sqlite3Select(Parse*, Select*, int, int, Select*, int, int*, char *aff);
+int sqlite3Select(Parse*, Select*, SelectDest*, Select*, int, int*, char *aff);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
                          Expr*,ExprList*,int,Expr*,Expr*);
 void sqlite3SelectDelete(Select*);
