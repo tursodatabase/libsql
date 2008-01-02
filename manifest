@@ -1,5 +1,5 @@
-C Begin\ssetting\sa\sfoundation\son\swhich\sto\sconvert\sthe\sVM\sfrom\sa\sstack-based\nto\sa\sregister-based\smachine.\s\sEverything\sis\sstill\smostly\sstack\sbased\swith\nthis\scheck-in.\s\sThis\schange\smerely\sbegins\sadding\sinfrastructure\sto\ssupport\na\sregister-based\sarchitecture.\s(CVS\s4652)
-D 2008-01-02T00:34:37
+C Add\ssome\sextra\stests\sfor\sthe\srecent\strigger\scompilation\soptimization.\s(CVS\s4653)
+D 2008-01-02T04:41:25
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -493,7 +493,7 @@ F test/trigger5.test 619391a3e9fc194081d22cefd830d811e7badf83
 F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
 F test/trigger7.test 0afa870be2ce1b132cdb85b17a4a4ef45aa8cece
 F test/trigger8.test 3a09275aa2214fdff56f731b1e775d8dfee4408a
-F test/trigger9.test 49c7cb761e9d3617ed868717b90b545e9bae8e73
+F test/trigger9.test b42703c378916d52a5e240ba98b25b155d3927a3
 F test/types.test 98e7a631bddf0806204358b452b02d0e319318a6
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test b730a7db03ef69f0fdb85b2addc20d1a0a04039b
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e08a33ed7255c22ce2805363f44a1d7770acb2dd
-R 31f346602d71de9f0cbdcecc99b8f06d
-U drh
-Z 1c9d96c8f34a418a83b5bab17073581f
+P 051ec01f2799e095516015f2ef0180e50fac387c
+R b1162a1e7d20a24c20501e40bc7dde0f
+U danielk1977
+Z 75dbf0acf2e3e5d3feebf07dfd171fca
