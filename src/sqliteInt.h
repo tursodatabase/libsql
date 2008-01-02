@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.629 2008/01/02 16:27:10 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.630 2008/01/02 17:11:14 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1330,18 +1330,18 @@ struct Select {
 */
 #define SRT_Union        1  /* Store result as keys in an index */
 #define SRT_Except       2  /* Remove result from a UNION index */
-#define SRT_Discard      3  /* Do not save the results anywhere */
+#define SRT_Exists       3  /* Store 1 if the result is not empty */
+#define SRT_Discard      4  /* Do not save the results anywhere */
 
 /* The ORDER BY clause is ignored for all of the above */
 #define IgnorableOrderby(X) ((X->eDest)<=SRT_Discard)
 
-#define SRT_Callback     4  /* Invoke a callback with each row of result */
-#define SRT_Mem          5  /* Store result in a memory cell */
-#define SRT_Set          6  /* Store non-null results as keys in an index */
-#define SRT_Table        7  /* Store result as data with an automatic rowid */
-#define SRT_EphemTab     8  /* Create transient tab and store like SRT_Table */
-#define SRT_Subroutine   9  /* Call a subroutine to handle results */
-#define SRT_Exists      10  /* Store 1 if the result is not empty */
+#define SRT_Callback     5  /* Invoke a callback with each row of result */
+#define SRT_Mem          6  /* Store result in a memory cell */
+#define SRT_Set          7  /* Store non-null results as keys in an index */
+#define SRT_Table        8  /* Store result as data with an automatic rowid */
+#define SRT_EphemTab     9  /* Create transient tab and store like SRT_Table */
+#define SRT_Subroutine  10  /* Call a subroutine to handle results */
 
 /*
 ** A structure used to customize the behaviour of sqlite3Select(). See

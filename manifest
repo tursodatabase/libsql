@@ -1,5 +1,5 @@
-C Combine\sthe\seDest\sand\siParm\sarguments\sto\ssqlite3Select()\sinto\sa\ssingle\stype\s-\s"SelectDest".\s(CVS\s4657)
-D 2008-01-02T16:27:10
+C Minor\soptimizations\sfor\ssub-selects\sin\sEXISTS(...)\sexpressions:\sDiscard\sany\sDISTINCT\sor\sORDER\sBY\sclauses\sand\sdo\snot\scalculate\sany\scolumn\svalues.\s(CVS\s4658)
+D 2008-01-02T17:11:14
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,12 +131,12 @@ F src/pragma.c 4a7f377a509eb14e35b09d4bf7b808ef647aad0b
 F src/prepare.c 7aeba7851773fbe3950a26b35d3389bef0eb1c62
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
-F src/select.c 6a3790a03f10b2dfce9011d93e817b2cff7746d4
+F src/select.c cc4064f931c32139f97b43572180a99eff08e759
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 77895a54c2082157e169c857a2e244525ec25af7
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
-F src/sqliteInt.h ff7a5de4ac31a974eab8cc5286fef01d4ed2e148
+F src/sqliteInt.h dc0f9180d4aa50fce261d7ae7387952e02752165
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 9923abeffc9b3d7dad58e92b319661521f60debf
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4c7f35da7751c61a9b61b1d95adddcc37fff3266
-R cf4761a43ed1fe7db5bce1f482fb074b
+P 86dcdfe6d7d629618ccb3c3ff0ca09f2da2d06c7
+R 982c17244c2079cbd0e5e4196c9007ad
 U danielk1977
-Z 493527b5521ff75db65bcee76afc559a
+Z 3000de620d66b1fa18c8d40dc95b7145
