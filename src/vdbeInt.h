@@ -323,7 +323,7 @@ struct Vdbe {
   char **azResColumn;     /* Values for one row of result */ 
   int popStack;           /* Pop the stack this much on entry to VdbeExec() */
   char *zErrMsg;          /* Error message written here */
-  u8 resOnStack;          /* True if there are result values on the stack */
+  Mem *pResultSet;        /* Pointer to an array of results */
   u8 explain;             /* True if EXPLAIN present on SQL command */
   u8 changeCntOn;         /* True to update the change-counter */
   u8 aborted;             /* True if ROLLBACK in another VM causes an abort */

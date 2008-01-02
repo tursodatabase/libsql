@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.145 2008/01/01 19:02:09 danielk1977 Exp $
+** $Id: update.c,v 1.146 2008/01/02 00:34:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -59,12 +59,13 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i){
     sqlite3_value *pValue;
     u8 enc = ENC(sqlite3VdbeDb(v));
     Column *pCol = &pTab->aCol[i];
+    VdbeComment((v, "%s.%s", pTab->zName, pCol->zName));
     assert( i<pTab->nCol );
-    sqlite3ValueFromExpr(sqlite3VdbeDb(v), pCol->pDflt, enc, pCol->affinity, &pValue);
+    sqlite3ValueFromExpr(sqlite3VdbeDb(v), pCol->pDflt, enc, 
+                         pCol->affinity, &pValue);
     if( pValue ){
+      sqlite3VdbeAddOp(v, OP_DfltValue, 0, 0);
       sqlite3VdbeChangeP3(v, -1, (const char *)pValue, P3_MEM);
-    }else{
-      VdbeComment((v, "# %s.%s", pTab->zName, pCol->zName));
     }
   }
 }
@@ -555,8 +556,7 @@ void sqlite3Update(
   ** invoke the callback function.
   */
   if( db->flags & SQLITE_CountRows && !pParse->trigStack && pParse->nested==0 ){
-    sqlite3VdbeAddOp(v, OP_MemLoad, memCnt, 0);
-    sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
+    sqlite3VdbeAddOp(v, OP_ResultRow, memCnt, 1);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows updated", P3_STATIC);
   }

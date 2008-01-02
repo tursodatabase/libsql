@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.266 2007/12/12 17:42:53 danielk1977 Exp $
+** $Id: where.c,v 1.267 2008/01/02 00:34:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1744,7 +1744,7 @@ static void codeEqualityTerm(
     eType = sqlite3FindInIndex(pParse, pX, 1);
     iTab = pX->iTable;
     sqlite3VdbeAddOp(v, OP_Rewind, iTab, 0);
-    VdbeComment((v, "# %.*s", pX->span.n, pX->span.z));
+    VdbeComment((v, "%.*s", pX->span.n, pX->span.z));
     if( pLevel->nIn==0 ){
       pLevel->nxt = sqlite3VdbeMakeLabel(v);
     }
@@ -2212,7 +2212,7 @@ WhereInfo *sqlite3WhereBegin(
       KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIx);
       assert( pIx->pSchema==pTab->pSchema );
       sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
-      VdbeComment((v, "# %s", pIx->zName));
+      VdbeComment((v, "%s", pIx->zName));
       sqlite3VdbeOp3(v, OP_OpenRead, iIdxCur, pIx->tnum,
                      (char*)pKey, P3_KEYINFO_HANDOFF);
       sqlite3VdbeAddOp(v, OP_SetNumColumns, iIdxCur, pIx->nColumn+1);
@@ -2263,7 +2263,7 @@ WhereInfo *sqlite3WhereBegin(
       if( !pParse->nMem ) pParse->nMem++;
       pLevel->iLeftJoin = pParse->nMem++;
       sqlite3VdbeAddOp(v, OP_MemInt, 0, pLevel->iLeftJoin);
-      VdbeComment((v, "# init LEFT JOIN no-match flag"));
+      VdbeComment((v, "init LEFT JOIN no-match flag"));
     }
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -2606,7 +2606,7 @@ WhereInfo *sqlite3WhereBegin(
     if( pLevel->iLeftJoin ){
       pLevel->top = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp(v, OP_MemInt, 1, pLevel->iLeftJoin);
-      VdbeComment((v, "# record LEFT JOIN hit"));
+      VdbeComment((v, "record LEFT JOIN hit"));
       for(pTerm=wc.a, j=0; j<wc.nTerm; j++, pTerm++){
         if( pTerm->flags & (TERM_VIRTUAL|TERM_CODED) ) continue;
         if( (pTerm->prereqAll & notReady)!=0 ) continue;

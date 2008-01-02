@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.198 2008/01/01 19:02:09 danielk1977 Exp $
+** $Id: insert.c,v 1.199 2008/01/02 00:34:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -129,8 +129,8 @@ static int readsTable(Vdbe *v, int iStartAddr, int iDb, Table *pTab){
       }
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    if( pOp->opcode==OP_VOpen && pOp->p3==(const char*)pTab->pVtab ){
-      assert( pOp->p3!=0 );
+    if( pOp->opcode==OP_VOpen && pOp->p3.p==(const char*)pTab->pVtab ){
+      assert( pOp->p3.p!=0 );
       assert( pOp->p3type==P3_VTAB );
       return 1;
     }
@@ -875,8 +875,7 @@ void sqlite3Insert(
   ** invoke the callback function.
   */
   if( db->flags & SQLITE_CountRows && pParse->nested==0 && !pParse->trigStack ){
-    sqlite3VdbeAddOp(v, OP_MemLoad, iCntMem, 0);
-    sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
+    sqlite3VdbeAddOp(v, OP_ResultRow, iCntMem, 1);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows inserted", P3_STATIC);
   }
@@ -1298,7 +1297,7 @@ void sqlite3OpenTableAndIndices(
     KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
     assert( pIdx->pSchema==pTab->pSchema );
     sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
-    VdbeComment((v, "# %s", pIdx->zName));
+    VdbeComment((v, "%s", pIdx->zName));
     sqlite3VdbeOp3(v, op, i+base, pIdx->tnum, (char*)pKey, P3_KEYINFO_HANDOFF);
   }
   if( pParse->nTab<=base+i ){
@@ -1597,12 +1596,12 @@ static int xferOptimization(
     sqlite3VdbeAddOp(v, OP_Close, iDest, 0);
     sqlite3VdbeAddOp(v, OP_Integer, iDbSrc, 0);
     pKey = sqlite3IndexKeyinfo(pParse, pSrcIdx);
-    VdbeComment((v, "# %s", pSrcIdx->zName));
+    VdbeComment((v, "%s", pSrcIdx->zName));
     sqlite3VdbeOp3(v, OP_OpenRead, iSrc, pSrcIdx->tnum, 
                    (char*)pKey, P3_KEYINFO_HANDOFF);
     sqlite3VdbeAddOp(v, OP_Integer, iDbDest, 0);
     pKey = sqlite3IndexKeyinfo(pParse, pDestIdx);
-    VdbeComment((v, "# %s", pDestIdx->zName));
+    VdbeComment((v, "%s", pDestIdx->zName));
     sqlite3VdbeOp3(v, OP_OpenWrite, iDest, pDestIdx->tnum, 
                    (char*)pKey, P3_KEYINFO_HANDOFF);
     addr1 = sqlite3VdbeAddOp(v, OP_Rewind, iSrc, 0);

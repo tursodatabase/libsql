@@ -293,10 +293,10 @@ static int sqlite3Step(Vdbe *p){
     if( db->xTrace && !db->init.busy ){
       assert( p->nOp>0 );
       assert( p->aOp[p->nOp-1].opcode==OP_Noop );
-      assert( p->aOp[p->nOp-1].p3!=0 );
+      assert( p->aOp[p->nOp-1].p3.p!=0 );
       assert( p->aOp[p->nOp-1].p3type==P3_DYNAMIC );
       sqlite3SafetyOff(db);
-      db->xTrace(db->pTraceArg, p->aOp[p->nOp-1].p3);
+      db->xTrace(db->pTraceArg, p->aOp[p->nOp-1].p3.p);
       if( sqlite3SafetyOn(db) ){
         p->rc = SQLITE_MISUSE;
         return SQLITE_MISUSE;
@@ -314,7 +314,7 @@ static int sqlite3Step(Vdbe *p){
     */
 #ifdef SQLITE_DEBUG
     if( (db->flags & SQLITE_SqlTrace)!=0 ){
-      sqlite3DebugPrintf("SQL-trace: %s\n", p->aOp[p->nOp-1].p3);
+      sqlite3DebugPrintf("SQL-trace: %s\n", p->aOp[p->nOp-1].p3.p);
     }
 #endif /* SQLITE_DEBUG */
 
@@ -345,9 +345,9 @@ static int sqlite3Step(Vdbe *p){
     elapseTime = (rNow - (int)rNow)*3600.0*24.0*1000000000.0 - p->startTime;
     assert( p->nOp>0 );
     assert( p->aOp[p->nOp-1].opcode==OP_Noop );
-    assert( p->aOp[p->nOp-1].p3!=0 );
+    assert( p->aOp[p->nOp-1].p3.p!=0 );
     assert( p->aOp[p->nOp-1].p3type==P3_DYNAMIC );
-    db->xProfile(db->pProfileArg, p->aOp[p->nOp-1].p3, elapseTime);
+    db->xProfile(db->pProfileArg, p->aOp[p->nOp-1].p3.p, elapseTime);
   }
 #endif
 
@@ -564,7 +564,7 @@ int sqlite3_column_count(sqlite3_stmt *pStmt){
 */
 int sqlite3_data_count(sqlite3_stmt *pStmt){
   Vdbe *pVm = (Vdbe *)pStmt;
-  if( pVm==0 || !pVm->resOnStack ) return 0;
+  if( pVm==0 || pVm->pResultSet==0 ) return 0;
   return pVm->nResColumn;
 }
 
@@ -581,10 +581,10 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   Mem *pOut;
 
   pVm = (Vdbe *)pStmt;
-  if( pVm && pVm->resOnStack && i<pVm->nResColumn && i>=0 ){
+  if( pVm && pVm->pResultSet!=0 && i<pVm->nResColumn && i>=0 ){
     sqlite3_mutex_enter(pVm->db->mutex);
     vals = sqlite3_data_count(pStmt);
-    pOut = &pVm->pTos[(1-vals)+i];
+    pOut = &pVm->pResultSet[i];
   }else{
     static const Mem nullMem = {{0}, 0.0, 0, "", 0, MEM_Null, SQLITE_NULL };
     if( pVm->db ){
@@ -1001,7 +1001,7 @@ static void createVarMap(Vdbe *p){
       for(j=0, pOp=p->aOp; j<p->nOp; j++, pOp++){
         if( pOp->opcode==OP_Variable ){
           assert( pOp->p1>0 && pOp->p1<=p->nVar );
-          p->azVar[pOp->p1-1] = pOp->p3;
+          p->azVar[pOp->p1-1] = pOp->p3.p;
         }
       }
       p->okVar = 1;

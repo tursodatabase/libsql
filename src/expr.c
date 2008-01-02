@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.321 2008/01/01 19:02:09 danielk1977 Exp $
+** $Id: expr.c,v 1.322 2008/01/02 00:34:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1647,7 +1647,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
           sqlite3VdbeAddOp(v, OP_MemInt, 1, iMem);
   
           sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
-          VdbeComment((v, "# %s", pIdx->zName));
+          VdbeComment((v, "%s", pIdx->zName));
           sqlite3VdbeOp3(v,OP_OpenRead,iTab,pIdx->tnum,pKey,P3_KEYINFO_HANDOFF);
           eType = IN_INDEX_INDEX;
           sqlite3VdbeAddOp(v, OP_SetNumColumns, iTab, pIdx->nColumn);
@@ -1806,11 +1806,11 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       if( pExpr->op==TK_SELECT ){
         sop = SRT_Mem;
         sqlite3VdbeAddOp(v, OP_MemNull, iMem, 0);
-        VdbeComment((v, "# Init subquery result"));
+        VdbeComment((v, "Init subquery result"));
       }else{
         sop = SRT_Exists;
         sqlite3VdbeAddOp(v, OP_MemInt, 0, iMem);
-        VdbeComment((v, "# Init EXISTS result"));
+        VdbeComment((v, "Init EXISTS result"));
       }
       sqlite3ExprDelete(pSel->pLimit);
       pSel->pLimit = sqlite3PExpr(pParse, TK_INTEGER, 0, 0, &one);
@@ -2174,7 +2174,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
         sqlite3CodeSubselect(pParse, pExpr);
       }
       sqlite3VdbeAddOp(v, OP_MemLoad, pExpr->iColumn, 0);
-      VdbeComment((v, "# load subquery result"));
+      VdbeComment((v, "load subquery result"));
       break;
     }
     case TK_IN: {
@@ -2301,7 +2301,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
          assert( pExpr->iColumn == OE_Ignore );
          sqlite3VdbeAddOp(v, OP_ContextPop, 0, 0);
          sqlite3VdbeAddOp(v, OP_Goto, 0, pParse->trigStack->ignoreJump);
-         VdbeComment((v, "# raise(IGNORE)"));
+         VdbeComment((v, "raise(IGNORE)"));
       }
       stackChng = 0;
       break;
@@ -2343,6 +2343,26 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr){
   }
 }
 #endif
+
+/*
+** Generate code to evaluate an expression and store the result in
+** a designated register.  If the target register number is negative,
+** allocate a new register to store the result.  Return the target
+** register number regardless.
+**
+** The current implementation is a rough prototype for experimental
+** purposes.  There are many optimization opportunities here.
+*/
+int sqlite3ExprIntoReg(Parse *pParse, Expr *pExpr, int target){
+  Vdbe *v = pParse->pVdbe;
+  if( v==0 ) return -1;
+  sqlite3ExprCode(pParse, pExpr);
+  if( target<0 ){
+    target = pParse->nMem++;
+  }
+  sqlite3VdbeAddOp(v, OP_MemStore, target, 1);
+  return target;
+}
 
 /*
 ** Generate code that pushes the value of every element of the given

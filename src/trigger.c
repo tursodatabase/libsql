@@ -677,7 +677,7 @@ static int codeTriggerProgram(
   assert( pTriggerStep!=0 );
   assert( v!=0 );
   sqlite3VdbeAddOp(v, OP_ContextPush, 0, 0);
-  VdbeComment((v, "# begin trigger %s", pStepList->pTrig->name));
+  VdbeComment((v, "begin trigger %s", pStepList->pTrig->name));
   while( pTriggerStep ){
     orconf = (orconfin == OE_Default)?pTriggerStep->orconf:orconfin;
     pParse->trigStack->orconf = orconf;
@@ -727,7 +727,7 @@ static int codeTriggerProgram(
     pTriggerStep = pTriggerStep->pNext;
   }
   sqlite3VdbeAddOp(v, OP_ContextPop, 0, 0);
-  VdbeComment((v, "# end trigger %s", pStepList->pTrig->name));
+  VdbeComment((v, "end trigger %s", pStepList->pTrig->name));
 
   return 0;
 }

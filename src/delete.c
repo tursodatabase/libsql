@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.135 2008/01/01 19:02:09 danielk1977 Exp $
+** $Id: delete.c,v 1.136 2008/01/02 00:34:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -76,7 +76,7 @@ void sqlite3OpenTable(
   assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
   sqlite3TableLock(p, iDb, pTab->tnum, (opcode==OP_OpenWrite), pTab->zName);
   sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
-  VdbeComment((v, "# %s", pTab->zName));
+  VdbeComment((v, "%s", pTab->zName));
   sqlite3VdbeAddOp(v, opcode, iCur, pTab->tnum);
   sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, pTab->nCol);
 }
@@ -391,8 +391,7 @@ void sqlite3DeleteFrom(
   ** invoke the callback function.
   */
   if( db->flags & SQLITE_CountRows && pParse->nested==0 && !pParse->trigStack ){
-    sqlite3VdbeAddOp(v, OP_MemLoad, memCnt, 0);
-    sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
+    sqlite3VdbeAddOp(v, OP_ResultRow, memCnt, 1);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows deleted", P3_STATIC);
   }

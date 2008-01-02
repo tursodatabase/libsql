@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.24 2007/11/15 13:10:23 danielk1977 Exp $
+** @(#) $Id: analyze.c,v 1.25 2008/01/02 00:34:37 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -123,7 +123,7 @@ static void analyzeOneTable(
     */
     assert( iDb==sqlite3SchemaToIndex(pParse->db, pIdx->pSchema) );
     sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
-    VdbeComment((v, "# %s", pIdx->zName));
+    VdbeComment((v, "%s", pIdx->zName));
     sqlite3VdbeOp3(v, OP_OpenRead, iIdxCur, pIdx->tnum,
         (char *)pKey, P3_KEYINFO_HANDOFF);
     nCol = pIdx->nColumn;

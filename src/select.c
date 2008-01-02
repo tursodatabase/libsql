@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.373 2008/01/01 19:02:09 danielk1977 Exp $
+** $Id: select.c,v 1.374 2008/01/02 00:34:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -422,7 +422,7 @@ static void codeOffset(
       sqlite3VdbeAddOp(v, OP_Pop, nPop, 0);
     }
     sqlite3VdbeAddOp(v, OP_Goto, 0, iContinue);
-    VdbeComment((v, "# skip OFFSET records"));
+    VdbeComment((v, "skip OFFSET records"));
     sqlite3VdbeJumpHere(v, addr);
   }
 }
@@ -446,7 +446,7 @@ static void codeDistinct(
   sqlite3VdbeAddOp(v, OP_Distinct, iTab, sqlite3VdbeCurrentAddr(v)+3);
   sqlite3VdbeAddOp(v, OP_Pop, N+1, 0);
   sqlite3VdbeAddOp(v, OP_Goto, 0, addrRepeat);
-  VdbeComment((v, "# skip indistinct records"));
+  VdbeComment((v, "skip indistinct records"));
   sqlite3VdbeAddOp(v, OP_IdxInsert, iTab, 0);
 }
 
@@ -1710,7 +1710,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
     sqlite3ExprCode(pParse, p->pLimit);
     sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iLimit, 1);
-    VdbeComment((v, "# LIMIT counter"));
+    VdbeComment((v, "LIMIT counter"));
     sqlite3VdbeAddOp(v, OP_IfMemZero, iLimit, iBreak);
     sqlite3VdbeAddOp(v, OP_MemLoad, iLimit, 0);
   }
@@ -1721,7 +1721,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
     sqlite3ExprCode(pParse, p->pOffset);
     sqlite3VdbeAddOp(v, OP_MustBeInt, 0, 0);
     sqlite3VdbeAddOp(v, OP_MemStore, iOffset, p->pLimit==0);
-    VdbeComment((v, "# OFFSET counter"));
+    VdbeComment((v, "OFFSET counter"));
     addr1 = sqlite3VdbeAddOp(v, OP_IfMemPos, iOffset, 0);
     sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
     sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
@@ -1737,7 +1737,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
     addr2 = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
     sqlite3VdbeJumpHere(v, addr1);
     sqlite3VdbeAddOp(v, OP_MemStore, iLimit+1, 1);
-    VdbeComment((v, "# LIMIT+OFFSET"));
+    VdbeComment((v, "LIMIT+OFFSET"));
     sqlite3VdbeJumpHere(v, addr2);
   }
 }
@@ -1887,7 +1887,7 @@ static int multiSelect(
         p->iOffset = pPrior->iOffset;
         if( p->iLimit>=0 ){
           addr = sqlite3VdbeAddOp(v, OP_IfMemZero, p->iLimit, 0);
-          VdbeComment((v, "# Jump ahead if LIMIT reached"));
+          VdbeComment((v, "Jump ahead if LIMIT reached"));
         }
         rc = sqlite3Select(pParse, p, eDest, iParm, 0, 0, 0, aff);
         p->pPrior = pPrior;
@@ -3381,9 +3381,9 @@ int sqlite3Select(
       iBMem = pParse->nMem;
       pParse->nMem += pGroupBy->nExpr;
       sqlite3VdbeAddOp(v, OP_MemInt, 0, iAbortFlag);
-      VdbeComment((v, "# clear abort flag"));
+      VdbeComment((v, "clear abort flag"));
       sqlite3VdbeAddOp(v, OP_MemInt, 0, iUseFlag);
-      VdbeComment((v, "# indicate accumulator empty"));
+      VdbeComment((v, "indicate accumulator empty"));
       sqlite3VdbeAddOp(v, OP_Goto, 0, addrInitializeLoop);
 
       /* Generate a subroutine that outputs a single row of the result
@@ -3395,11 +3395,11 @@ int sqlite3Select(
       */
       addrSetAbort = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp(v, OP_MemInt, 1, iAbortFlag);
-      VdbeComment((v, "# set abort flag"));
+      VdbeComment((v, "set abort flag"));
       sqlite3VdbeAddOp(v, OP_Return, 0, 0);
       addrOutputRow = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp(v, OP_IfMemPos, iUseFlag, addrOutputRow+2);
-      VdbeComment((v, "# Groupby result generator entry point"));
+      VdbeComment((v, "Groupby result generator entry point"));
       sqlite3VdbeAddOp(v, OP_Return, 0, 0);
       finalizeAggFunctions(pParse, &sAggInfo);
       if( pHaving ){
@@ -3412,7 +3412,7 @@ int sqlite3Select(
         goto select_end;
       }
       sqlite3VdbeAddOp(v, OP_Return, 0, 0);
-      VdbeComment((v, "# end groupby result generator"));
+      VdbeComment((v, "end groupby result generator"));
 
       /* Generate a subroutine that will reset the group-by accumulator
       */
@@ -3456,7 +3456,7 @@ int sqlite3Select(
         sqlite3VdbeAddOp(v, OP_IdxInsert, sAggInfo.sortingIdx, 0);
         sqlite3WhereEnd(pWInfo);
         sqlite3VdbeAddOp(v, OP_Sort, sAggInfo.sortingIdx, addrEnd);
-        VdbeComment((v, "# GROUP BY sort"));
+        VdbeComment((v, "GROUP BY sort"));
         sAggInfo.useSortingIdx = 1;
       }
 
@@ -3502,11 +3502,11 @@ int sqlite3Select(
         sqlite3VdbeAddOp(v, OP_MemMove, iAMem+j, iBMem+j);
       }
       sqlite3VdbeAddOp(v, OP_Gosub, 0, addrOutputRow);
-      VdbeComment((v, "# output one row"));
+      VdbeComment((v, "output one row"));
       sqlite3VdbeAddOp(v, OP_IfMemPos, iAbortFlag, addrEnd);
-      VdbeComment((v, "# check abort flag"));
+      VdbeComment((v, "check abort flag"));
       sqlite3VdbeAddOp(v, OP_Gosub, 0, addrReset);
-      VdbeComment((v, "# reset accumulator"));
+      VdbeComment((v, "reset accumulator"));
 
       /* Update the aggregate accumulators based on the content of
       ** the current row
@@ -3514,7 +3514,7 @@ int sqlite3Select(
       sqlite3VdbeResolveLabel(v, addrProcessRow);
       updateAccumulator(pParse, &sAggInfo);
       sqlite3VdbeAddOp(v, OP_MemInt, 1, iUseFlag);
-      VdbeComment((v, "# indicate data in accumulator"));
+      VdbeComment((v, "indicate data in accumulator"));
 
       /* End of the loop
       */
@@ -3528,7 +3528,7 @@ int sqlite3Select(
       /* Output the final row of result
       */
       sqlite3VdbeAddOp(v, OP_Gosub, 0, addrOutputRow);
-      VdbeComment((v, "# output final row"));
+      VdbeComment((v, "output final row"));
       
     } /* endif pGroupBy */
     else {
