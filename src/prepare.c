@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.69 2008/01/03 00:01:24 drh Exp $
+** $Id: prepare.c,v 1.70 2008/01/03 07:09:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -572,12 +572,15 @@ int sqlite3Prepare(
       sqlite3VdbeSetColName(sParse.pVdbe, 1, COLNAME_NAME, "from", P4_STATIC);
       sqlite3VdbeSetColName(sParse.pVdbe, 2, COLNAME_NAME, "detail", P4_STATIC);
     }else{
-      sqlite3VdbeSetNumCols(sParse.pVdbe, 5);
+      sqlite3VdbeSetNumCols(sParse.pVdbe, 8);
       sqlite3VdbeSetColName(sParse.pVdbe, 0, COLNAME_NAME, "addr", P4_STATIC);
       sqlite3VdbeSetColName(sParse.pVdbe, 1, COLNAME_NAME, "opcode", P4_STATIC);
       sqlite3VdbeSetColName(sParse.pVdbe, 2, COLNAME_NAME, "p1", P4_STATIC);
       sqlite3VdbeSetColName(sParse.pVdbe, 3, COLNAME_NAME, "p2", P4_STATIC);
       sqlite3VdbeSetColName(sParse.pVdbe, 4, COLNAME_NAME, "p3", P4_STATIC);
+      sqlite3VdbeSetColName(sParse.pVdbe, 5, COLNAME_NAME, "p4", P4_STATIC);
+      sqlite3VdbeSetColName(sParse.pVdbe, 6, COLNAME_NAME, "p5", P4_STATIC);
+      sqlite3VdbeSetColName(sParse.pVdbe, 7, COLNAME_NAME, "comment",P4_STATIC);
     }
   }
 #endif

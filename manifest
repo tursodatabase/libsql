@@ -1,5 +1,5 @@
-C Revamp\ssqlite3VdbeAddOpList()\sso\sthat\sthe\sstructure\sholds\sinteger\svalues\nfor\sP1,\sP2,\sand\sP3.\s(CVS\s4661)
-D 2008-01-03T01:28:59
+C Fix\sEXPLAIN\sand\sEXPLAIN\squery\splan\sto\swork\swith\snew\sopcode\sformat.\s(CVS\s4662)
+D 2008-01-03T07:09:48
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -128,12 +128,12 @@ F src/pager.c 0cb6ccea4b9615627d61d7c4417cedc45776d429
 F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
 F src/parse.y 2ae06e8d3190faace49c5b82e7cea1fc60d084a1
 F src/pragma.c 61b9d171a6d53d36a77c66cb921d47a5c09a8441
-F src/prepare.c 31ce0903040ec6f71da10c74869e10137890d981
+F src/prepare.c f1bb8eb642082e618a359c08e3e107490eafe0e3
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c fb57c9f49f5a117a1680dd4dd517e1e8631baf68
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 77895a54c2082157e169c857a2e244525ec25af7
+F src/shell.c 5391e889384d2062249f668110d64ed16f601c4b
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 2e30ff7e6ee65743d38447f00ef873ce058be7be
@@ -168,11 +168,11 @@ F src/update.c 39ac597c81b1d7d0396d5571d620bfa694f21151
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c fd5f6fc98eda1c1664cb1bfd09479ec3fb642139
+F src/vdbe.c 83dfa6980067dca0750b87d374a898ea199c4fa5
 F src/vdbe.h 0d29000e30e60714f8de9fd4373ec8569c728e07
 F src/vdbeInt.h 2985f1369273e635898cf5952237efcb3fdb21f3
 F src/vdbeapi.c bf615ff2cf2b121f1609cbadd4f52720289733b5
-F src/vdbeaux.c cd0a3f702bb90a76adba3581005a9dc7853565f9
+F src/vdbeaux.c 5d04881cd87f0efa51bc0dd3a9b2db261ab0e9c2
 F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 123994fcd344993d2fb050a83b91b341bbbd08b4
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 027875e4d4c4bd7686dc880c6917a968049b2fec
-R bafbb97261d5cb777f4a74b378e386c4
-U drh
-Z 286f034de62a5f2d303f92883ddc5640
+P 4dc507d87b242619fe32606452227900e16a6de7
+R 125024a4bb4ac98d08154804cd32abf6
+U danielk1977
+Z 42b14c9552be08386812f3638911e78b

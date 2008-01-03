@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.664 2008/01/03 00:01:25 drh Exp $
+** $Id: vdbe.c,v 1.665 2008/01/03 07:09:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2037,7 +2037,8 @@ case OP_SetNumColumns: {       /* no-push */
 ** values in the record, extract a NULL.
 **
 ** The value extracted is pushed onto the stack.  Or if P3 is a positive
-** integer register number, then the value is written into that register.
+** non-zero integer register number, then the value is written into that
+** register.
 **
 ** If the KeyAsData opcode has previously executed on this cursor, then the
 ** field might be extracted from the key rather than the data.

@@ -615,7 +615,6 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
 */
 static char *displayP4(Op *pOp, char *zTemp, int nTemp){
   char *zP4 = zTemp;
-  int nP4;
   assert( nTemp>=20 );
   switch( pOp->p4type ){
     case P4_KEYINFO: {
@@ -698,12 +697,6 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
   }
   assert( zP4!=0 );
-#ifdef SQLITE_DEBUG
-  if( pOp->zComment && zP4==zTemp && (nP4 = strlen(zP4))<nTemp ){
-    sqlite3_snprintf(nTemp-nP4, &zP4[nP4], "%s# %s",
-                     nP4>0 ? " " : "", pOp->zComment);
-  }
-#endif
   return zP4;
 }
 #endif
@@ -794,18 +787,20 @@ int sqlite3VdbeList(
   }else{
     Op *pOp = &p->aOp[i];
     Mem *pMem = p->pResultSet = p->aStack;
-    pMem->flags = MEM_Int;
-    pMem->type = SQLITE_INTEGER;
-    pMem->u.i = i;                                /* Program counter */
-    pMem++;
-
-    pMem->flags = MEM_Static|MEM_Str|MEM_Term;
-    pMem->z = (char*)sqlite3OpcodeName(pOp->opcode);  /* Opcode */
-    assert( pMem->z!=0 );
-    pMem->n = strlen(pMem->z);
-    pMem->type = SQLITE_TEXT;
-    pMem->enc = SQLITE_UTF8;
-    pMem++;
+    if( p->explain==1 ){
+      pMem->flags = MEM_Int;
+      pMem->type = SQLITE_INTEGER;
+      pMem->u.i = i;                                /* Program counter */
+      pMem++;
+  
+      pMem->flags = MEM_Static|MEM_Str|MEM_Term;
+      pMem->z = (char*)sqlite3OpcodeName(pOp->opcode);  /* Opcode */
+      assert( pMem->z!=0 );
+      pMem->n = strlen(pMem->z);
+      pMem->type = SQLITE_TEXT;
+      pMem->enc = SQLITE_UTF8;
+      pMem++;
+    }
 
     pMem->flags = MEM_Int;
     pMem->u.i = pOp->p1;                          /* P1 */
@@ -817,14 +812,39 @@ int sqlite3VdbeList(
     pMem->type = SQLITE_INTEGER;
     pMem++;
 
+    if( p->explain==1 ){
+      pMem->flags = MEM_Int;
+      pMem->u.i = pOp->p3;                          /* P3 */
+      pMem->type = SQLITE_INTEGER;
+      pMem++;
+    }
+
     pMem->flags = MEM_Ephem|MEM_Str|MEM_Term;     /* P4 */
     pMem->z = displayP4(pOp, pMem->zShort, sizeof(pMem->zShort));
     assert( pMem->z!=0 );
     pMem->n = strlen(pMem->z);
     pMem->type = SQLITE_TEXT;
     pMem->enc = SQLITE_UTF8;
+    pMem++;
 
-    p->nResColumn = 5 - 2*(p->explain-1);
+    if( p->explain==1 ){
+      pMem->flags = MEM_Str|MEM_Term|MEM_Short;
+      pMem->n = sprintf(pMem->zShort, "%.2x", pOp->p5);   /* P5 */
+      pMem->z = pMem->zShort;
+      pMem->type = SQLITE_TEXT;
+      pMem->enc = SQLITE_UTF8;
+      pMem++;
+  
+      pMem->flags = MEM_Null;                       /* Comment */
+      if( pOp->zComment ){
+        pMem->flags = MEM_Str|MEM_Term;
+        pMem->z = pOp->zComment;
+        pMem->n = strlen(pMem->z);
+        pMem->enc = SQLITE_UTF8;
+      }
+    }
+
+    p->nResColumn = 8 - 5*(p->explain-1);
     p->pTos = pMem;
     p->rc = SQLITE_OK;
     rc = SQLITE_ROW;

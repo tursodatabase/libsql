@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.171 2007/12/18 15:41:44 drh Exp $
+** $Id: shell.c,v 1.172 2008/01/03 07:09:48 danielk1977 Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -337,6 +337,7 @@ struct callback_data {
 #define MODE_Tcl      6  /* Generate ANSI-C or TCL quoted elements */
 #define MODE_Csv      7  /* Quote strings, numbers are plain */
 #define MODE_NUM_OF   8  /* The number of modes (not a mode itself) */
+#define MODE_Explain  9  /* Like MODE_Column, but do not truncate data */
 
 static const char *modeDescr[MODE_NUM_OF] = {
   "line",
@@ -526,14 +527,15 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       }
       break;
     }
+    case MODE_Explain:
     case MODE_Column: {
       if( p->cnt++==0 ){
         for(i=0; i<nArg; i++){
           int w, n;
           if( i<ArraySize(p->colWidth) ){
-             w = p->colWidth[i];
+            w = p->colWidth[i];
           }else{
-             w = 0;
+            w = 0;
           }
           if( w<=0 ){
             w = strlen(azCol[i] ? azCol[i] : "");
@@ -569,6 +571,9 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
            w = p->actualWidth[i];
         }else{
            w = 10;
+        }
+        if( p->mode==MODE_Explain && azArg[i] && strlen(azArg[i])>w ){
+          w = strlen(azArg[i]);
         }
         fprintf(p->out,"%-*.*s%s",w,w,
             azArg[i] ? azArg[i] : p->nullvalue, i==nArg-1 ? "\n": "  ");
@@ -1145,14 +1150,17 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       ** did an .explain followed by a .width, .mode or .header
       ** command.
       */
-      p->mode = MODE_Column;
+      p->mode = MODE_Explain;
       p->showHeader = 1;
       memset(p->colWidth,0,ArraySize(p->colWidth));
-      p->colWidth[0] = 4;
-      p->colWidth[1] = 14;
-      p->colWidth[2] = 10;
-      p->colWidth[3] = 10;
-      p->colWidth[4] = 33;
+      p->colWidth[0] = 4;                  /* addr */
+      p->colWidth[1] = 14;                 /* opcode */
+      p->colWidth[2] = 10;                 /* P1 */
+      p->colWidth[3] = 10;                 /* P2 */
+      p->colWidth[4] = 10;                 /* P3 */
+      p->colWidth[5] = 20;                 /* P4 */
+      p->colWidth[6] = 2;                  /* P5 */
+      p->colWidth[7] = 7;                  /* Comment */
     }else if (p->explainPrev.valid) {
       p->explainPrev.valid = 0;
       p->mode = p->explainPrev.mode;
