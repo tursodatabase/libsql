@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.207 2008/01/03 18:03:09 drh Exp $
+** $Id: insert.c,v 1.208 2008/01/03 23:44:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -660,7 +660,7 @@ void sqlite3Insert(
       sqlite3VdbeAddOp2(v, OP_Column, srcTab, keyColumn);
     }else{
       assert( pSelect==0 );  /* Otherwise useTempTable is true */
-      sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr);
+      sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, 0);
       sqlite3VdbeAddOp2(v, OP_NotNull, -1, sqlite3VdbeCurrentAddr(v)+3);
       sqlite3VdbeAddOp2(v, OP_Pop, 1, 0);
       sqlite3VdbeAddOp2(v, OP_Integer, -1, 0);
@@ -683,7 +683,7 @@ void sqlite3Insert(
         }
       }
       if( pColumn && j>=pColumn->nId ){
-        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt);
+        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, 0);
       }else if( useTempTable ){
         sqlite3VdbeAddOp2(v, OP_Column, srcTab, j); 
       }else{
@@ -727,7 +727,7 @@ void sqlite3Insert(
         sqlite3VdbeAddOp2(v, OP_Dup, nColumn - keyColumn - 1, 1);
       }else{
         VdbeOp *pOp;
-        sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr);
+        sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, 0);
         pOp = sqlite3VdbeGetOp(v, sqlite3VdbeCurrentAddr(v) - 1);
         if( pOp && pOp->opcode==OP_Null ){
           appendFlag = 1;
@@ -780,13 +780,13 @@ void sqlite3Insert(
         }
       }
       if( j<0 || nColumn==0 || (pColumn && j>=pColumn->nId) ){
-        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt);
+        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, 0);
       }else if( useTempTable ){
         sqlite3VdbeAddOp2(v, OP_Column, srcTab, j); 
       }else if( pSelect ){
         sqlite3VdbeAddOp2(v, OP_Dup, i+nColumn-j+IsVirtual(pTab), 1);
       }else{
-        sqlite3ExprCode(pParse, pList->a[j].pExpr);
+        sqlite3ExprCode(pParse, pList->a[j].pExpr, 0);
       }
     }
 
@@ -1012,7 +1012,7 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
       case OE_Replace: {
-        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt);
+        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, 0);
         sqlite3VdbeAddOp2(v, OP_Push, nCol-i, 0);
         break;
       }

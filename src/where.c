@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.271 2008/01/03 18:39:42 danielk1977 Exp $
+** $Id: where.c,v 1.272 2008/01/03 23:44:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1731,7 +1731,7 @@ static void codeEqualityTerm(
   Expr *pX = pTerm->pExpr;
   Vdbe *v = pParse->pVdbe;
   if( pX->op==TK_EQ ){
-    sqlite3ExprCode(pParse, pX->pRight);
+    sqlite3ExprCode(pParse, pX->pRight, 0);
   }else if( pX->op==TK_ISNULL ){
     sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
 #ifndef SQLITE_OMIT_SUBQUERY
@@ -2284,7 +2284,7 @@ WhereInfo *sqlite3WhereBegin(
         for(k=0; k<nConstraint; k++){
           if( aUsage[k].argvIndex==j ){
             int iTerm = aConstraint[k].iTermOffset;
-            sqlite3ExprCode(pParse, wc.a[iTerm].pExpr->pRight);
+            sqlite3ExprCode(pParse, wc.a[iTerm].pExpr->pRight, 0);
             break;
           }
         }
@@ -2347,7 +2347,7 @@ WhereInfo *sqlite3WhereBegin(
         pX = pStart->pExpr;
         assert( pX!=0 );
         assert( pStart->leftCursor==iCur );
-        sqlite3ExprCode(pParse, pX->pRight);
+        sqlite3ExprCode(pParse, pX->pRight, 0);
         sqlite3VdbeAddOp2(v, OP_ForceInt, pX->op==TK_LE || pX->op==TK_GT, brk);
         sqlite3VdbeAddOp2(v, bRev ? OP_MoveLt : OP_MoveGe, iCur, brk);
         VdbeComment((v, "pk"));
@@ -2360,7 +2360,7 @@ WhereInfo *sqlite3WhereBegin(
         pX = pEnd->pExpr;
         assert( pX!=0 );
         assert( pEnd->leftCursor==iCur );
-        sqlite3ExprCode(pParse, pX->pRight);
+        sqlite3ExprCode(pParse, pX->pRight, 0);
         pLevel->iMem = ++pParse->nMem;
         sqlite3VdbeAddOp2(v, OP_MemStore, pLevel->iMem, 1);
         if( pX->op==TK_LT || pX->op==TK_GT ){
@@ -2442,7 +2442,7 @@ WhereInfo *sqlite3WhereBegin(
         assert( pTerm!=0 );
         pX = pTerm->pExpr;
         assert( (pTerm->flags & TERM_CODED)==0 );
-        sqlite3ExprCode(pParse, pX->pRight);
+        sqlite3ExprCode(pParse, pX->pRight, 0);
         sqlite3VdbeAddOp2(v, OP_IsNull, -(nEq*2+1), nxt);
         topEq = pTerm->eOperator & (WO_LE|WO_GE);
         disableTerm(pLevel, pTerm);
@@ -2481,7 +2481,7 @@ WhereInfo *sqlite3WhereBegin(
         assert( pTerm!=0 );
         pX = pTerm->pExpr;
         assert( (pTerm->flags & TERM_CODED)==0 );
-        sqlite3ExprCode(pParse, pX->pRight);
+        sqlite3ExprCode(pParse, pX->pRight, 0);
         sqlite3VdbeAddOp2(v, OP_IsNull, -(nEq+1), nxt);
         btmEq = pTerm->eOperator & (WO_LE|WO_GE);
         disableTerm(pLevel, pTerm);

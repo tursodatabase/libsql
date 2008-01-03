@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.382 2008/01/03 18:44:59 drh Exp $
+** $Id: select.c,v 1.383 2008/01/03 23:44:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -387,7 +387,7 @@ static void pushOntoSorter(
   Select *pSelect        /* The whole SELECT statement */
 ){
   Vdbe *v = pParse->pVdbe;
-  sqlite3ExprCodeExprList(pParse, pOrderBy);
+  sqlite3ExprCodeExprList(pParse, pOrderBy, 0);
   sqlite3VdbeAddOp2(v, OP_Sequence, pOrderBy->iECursor, 0);
   sqlite3VdbeAddOp2(v, OP_Pull, pOrderBy->nExpr + 1, 0);
   sqlite3VdbeAddOp2(v, OP_MakeRecord, pOrderBy->nExpr + 2, 0);
@@ -553,7 +553,7 @@ static int selectInnerLoop(
     ** values returned by the SELECT are not required.
     */
     for(i=0; i<n; i++){
-      sqlite3ExprIntoReg(pParse, pEList->a[i].pExpr, iMem+i+1);
+      sqlite3ExprCode(pParse, pEList->a[i].pExpr, iMem+i+1);
     }
   }
   nColumn = n;
@@ -1750,7 +1750,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
     pParse->nMem++;
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) return;
-    sqlite3ExprCode(pParse, p->pLimit);
+    sqlite3ExprCode(pParse, p->pLimit, 0);
     sqlite3VdbeAddOp2(v, OP_MustBeInt, 0, 0);
     sqlite3VdbeAddOp2(v, OP_MemStore, iLimit, 1);
     VdbeComment((v, "LIMIT counter"));
@@ -1761,7 +1761,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
     p->iOffset = iOffset = ++pParse->nMem;
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) return;
-    sqlite3ExprCode(pParse, p->pOffset);
+    sqlite3ExprCode(pParse, p->pOffset, 0);
     sqlite3VdbeAddOp2(v, OP_MustBeInt, 0, 0);
     sqlite3VdbeAddOp2(v, OP_MemStore, iOffset, p->pLimit==0);
     VdbeComment((v, "OFFSET counter"));
@@ -2978,7 +2978,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     ExprList *pList = pF->pExpr->pList;
     if( pList ){
       nArg = pList->nExpr;
-      sqlite3ExprCodeExprList(pParse, pList);
+      sqlite3ExprCodeExprList(pParse, pList, 0);
     }else{
       nArg = 0;
     }
@@ -3007,8 +3007,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     }
   }
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
-    sqlite3ExprCode(pParse, pC->pExpr);
-    sqlite3VdbeAddOp2(v, OP_MemStore, pC->iMem, 1);
+    sqlite3ExprCode(pParse, pC->pExpr, pC->iMem);
   }
   pAggInfo->directMode = 0;
 }
@@ -3518,7 +3517,7 @@ int sqlite3Select(
         ** in sorted order
         */
         groupBySort = 1;
-        sqlite3ExprCodeExprList(pParse, pGroupBy);
+        sqlite3ExprCodeExprList(pParse, pGroupBy, 0);
         sqlite3VdbeAddOp2(v, OP_Sequence, sAggInfo.sortingIdx, 0);
         j = pGroupBy->nExpr+1;
         for(i=0; i<sAggInfo.nColumn; i++){
@@ -3546,7 +3545,7 @@ int sqlite3Select(
           sqlite3VdbeAddOp2(v, OP_Column, sAggInfo.sortingIdx, j);
         }else{
           sAggInfo.directMode = 1;
-          sqlite3ExprCode(pParse, pGroupBy->a[j].pExpr);
+          sqlite3ExprCode(pParse, pGroupBy->a[j].pExpr, 0);
         }
         sqlite3VdbeAddOp2(v, OP_MemStore, iBMem+j, j<pGroupBy->nExpr-1);
       }
