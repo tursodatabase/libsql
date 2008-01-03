@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.155 2008/01/03 00:01:24 drh Exp $
+** $Id: pragma.c,v 1.156 2008/01/03 01:28:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -833,7 +833,7 @@ void sqlite3Pragma(
       { OP_MemLoad,     0, 0,        0},
       { OP_Integer,     0, 0,        0},
       { OP_Ne,          0, 0,        0},    /* 2 */
-      { OP_String8,     0, 0,        "ok"},
+      { OP_String8,     0, 0,        0},    /* 3 */
       { OP_Callback,    1, 0,        0},
     };
 
@@ -910,9 +910,9 @@ void sqlite3Pragma(
           int jmp2;
           static const VdbeOpList idxErr[] = {
             { OP_MemIncr,    -1,  0,  0},
-            { OP_String8,     0,  0,  "rowid "},
+            { OP_String8,     0,  0,  0},    /* 1 */
             { OP_Rowid,       1,  0,  0},
-            { OP_String8,     0,  0,  " missing from index "},
+            { OP_String8,     0,  0,  0},    /* 3 */
             { OP_String8,     0,  0,  0},    /* 4 */
             { OP_Concat,      2,  0,  0},
             { OP_Callback,    1,  0,  0},
@@ -920,6 +920,8 @@ void sqlite3Pragma(
           sqlite3GenerateIndexKey(v, pIdx, 1);
           jmp2 = sqlite3VdbeAddOp2(v, OP_Found, j+2, 0);
           addr = sqlite3VdbeAddOpList(v, ArraySize(idxErr), idxErr);
+          sqlite3VdbeChangeP4(v, addr+1, "rowid ", P4_STATIC);
+          sqlite3VdbeChangeP4(v, addr+3, " missing from index ", P4_STATIC);
           sqlite3VdbeChangeP4(v, addr+4, pIdx->zName, P4_STATIC);
           sqlite3VdbeJumpHere(v, jmp2);
         }
@@ -935,7 +937,7 @@ void sqlite3Pragma(
              { OP_MemLoad,      2,  0,  0},
              { OP_Eq,           0,  0,  0},  /* 6 */
              { OP_MemIncr,     -1,  0,  0},
-             { OP_String8,      0,  0,  "wrong # of entries in index "},
+             { OP_String8,      0,  0,  0},  /* 8 */
              { OP_String8,      0,  0,  0},  /* 9 */
              { OP_Concat,       0,  0,  0},
              { OP_Callback,     1,  0,  0},
@@ -950,12 +952,15 @@ void sqlite3Pragma(
           sqlite3VdbeChangeP1(v, addr+3, j+2);
           sqlite3VdbeChangeP2(v, addr+3, addr+2);
           sqlite3VdbeJumpHere(v, addr+6);
+          sqlite3VdbeChangeP4(v, addr+8, 
+                     "wrong # of entries in index ", P4_STATIC);
           sqlite3VdbeChangeP4(v, addr+9, pIdx->zName, P4_STATIC);
         }
       } 
     }
     addr = sqlite3VdbeAddOpList(v, ArraySize(endCode), endCode);
     sqlite3VdbeChangeP1(v, addr+1, mxErr);
+    sqlite3VdbeChangeP4(v, addr+3, "ok", P4_STATIC);
     sqlite3VdbeJumpHere(v, addr+2);
   }else
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */

@@ -229,14 +229,14 @@ void sqlite3FinishTrigger(
   if( !db->init.busy ){
     static const VdbeOpList insertTrig[] = {
       { OP_NewRowid,   0, 0,  0          },
-      { OP_String8,    0, 0,  "trigger"  },
+      { OP_String8,    0, 0,  0          },  /* 1: "trigger" */
       { OP_String8,    0, 0,  0          },  /* 2: trigger name */
       { OP_String8,    0, 0,  0          },  /* 3: table name */
       { OP_Integer,    0, 0,  0          },
-      { OP_String8,    0, 0,  "CREATE TRIGGER "},
+      { OP_String8,    0, 0,  0          },  /* 5: "CREATE TRIGGER " */
       { OP_String8,    0, 0,  0          },  /* 6: SQL */
       { OP_Concat,     0, 0,  0          }, 
-      { OP_MakeRecord, 5, 0,  "aaada"    },
+      { OP_MakeRecord, 5, 0,  0          },  /* 8: "aaada" */
       { OP_Insert,     0, 0,  0          },
     };
     int addr;
@@ -248,9 +248,12 @@ void sqlite3FinishTrigger(
     sqlite3BeginWriteOperation(pParse, 0, iDb);
     sqlite3OpenMasterTable(pParse, iDb);
     addr = sqlite3VdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
+    sqlite3VdbeChangeP4(v, addr+1, "trigger", P4_STATIC);
     sqlite3VdbeChangeP4(v, addr+2, pTrig->name, 0); 
-    sqlite3VdbeChangeP4(v, addr+3, pTrig->table, 0); 
+    sqlite3VdbeChangeP4(v, addr+3, pTrig->table, 0);
+    sqlite3VdbeChangeP4(v, addr+5, "CREATE TRIGGER ", P4_STATIC); 
     sqlite3VdbeChangeP4(v, addr+6, (char*)pAll->z, pAll->n);
+    sqlite3VdbeChangeP4(v, addr+8, "aaada", P4_STATIC);
     sqlite3ChangeCookie(db, v, iDb);
     sqlite3VdbeAddOp2(v, OP_Close, 0, 0);
     sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0, sqlite3MPrintf(
@@ -538,7 +541,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
       { OP_String8,    0, 0,        0}, /* 1 */
       { OP_Column,     0, 1,        0},
       { OP_Ne,         0, ADDR(8),  0},
-      { OP_String8,    0, 0,        "trigger"},
+      { OP_String8,    0, 0,        0}, /* 4: "trigger" */
       { OP_Column,     0, 0,        0},
       { OP_Ne,         0, ADDR(8),  0},
       { OP_Delete,     0, 0,        0},
@@ -549,6 +552,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
     sqlite3OpenMasterTable(pParse, iDb);
     base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
     sqlite3VdbeChangeP4(v, base+1, pTrigger->name, 0);
+    sqlite3VdbeChangeP4(v, base+4, "trigger", P4_STATIC);
     sqlite3ChangeCookie(db, v, iDb);
     sqlite3VdbeAddOp2(v, OP_Close, 0, 0);
     sqlite3VdbeAddOp4(v, OP_DropTrigger, iDb, 0, 0, pTrigger->name, 0);

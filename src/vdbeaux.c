@@ -397,8 +397,10 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       pOut->opcode = pIn->opcode;
       pOut->p1 = pIn->p1;
       pOut->p2 = p2<0 ? addr + ADDR(p2) : p2;
-      pOut->p4.p = pIn->p3;
-      pOut->p4type = pIn->p3 ? P4_STATIC : P4_NOTUSED;
+      pOut->p3 = pIn->p3;
+      pOut->p4type = P4_NOTUSED;
+      pOut->p4.p = 0;
+      pOut->p5 = 0;
 #ifdef SQLITE_DEBUG
       if( sqlite3_vdbe_addop_trace ){
         sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
