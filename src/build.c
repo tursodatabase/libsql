@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.455 2008/01/03 09:51:55 danielk1977 Exp $
+** $Id: build.c,v 1.456 2008/01/03 18:03:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2628,7 +2628,7 @@ void sqlite3CreateIndex(
   else if( db->init.busy==0 ){
     Vdbe *v;
     char *zStmt;
-    int iMem = pParse->nMem++;
+    int iMem = ++pParse->nMem;
 
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto exit_create_index;

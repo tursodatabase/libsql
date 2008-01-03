@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.269 2008/01/03 07:54:24 danielk1977 Exp $
+** $Id: where.c,v 1.270 2008/01/03 18:03:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1808,7 +1808,7 @@ static void codeAllEqualityTerms(
   ** value.  If there are IN operators we'll need one for each == or
   ** IN constraint.
   */
-  pLevel->iMem = pParse->nMem++;
+  pLevel->iMem = ++pParse->nMem;
   if( pLevel->flags & WHERE_COLUMN_IN ){
     pParse->nMem += pLevel->nEq;
     termsInMem = 1;
@@ -2260,8 +2260,7 @@ WhereInfo *sqlite3WhereBegin(
     ** row of the left table of the join.
     */
     if( pLevel->iFrom>0 && (pTabItem[0].jointype & JT_LEFT)!=0 ){
-      if( !pParse->nMem ) pParse->nMem++;
-      pLevel->iLeftJoin = pParse->nMem++;
+      pLevel->iLeftJoin = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_MemInt, 0, pLevel->iLeftJoin);
       VdbeComment((v, "init LEFT JOIN no-match flag"));
     }
@@ -2358,7 +2357,7 @@ WhereInfo *sqlite3WhereBegin(
         assert( pX!=0 );
         assert( pEnd->leftCursor==iCur );
         sqlite3ExprCode(pParse, pX->pRight);
-        pLevel->iMem = pParse->nMem++;
+        pLevel->iMem = ++pParse->nMem;
         sqlite3VdbeAddOp2(v, OP_MemStore, pLevel->iMem, 1);
         if( pX->op==TK_LT || pX->op==TK_GT ){
           testOp = bRev ? OP_Le : OP_Ge;
@@ -2450,7 +2449,7 @@ WhereInfo *sqlite3WhereBegin(
       }
       if( testOp!=OP_Noop ){
         int nCol = nEq + topLimit;
-        pLevel->iMem = pParse->nMem++;
+        pLevel->iMem = ++pParse->nMem;
         buildIndexProbe(v, nCol, pIdx);
         if( bRev ){
           int op = topEq ? OP_MoveLe : OP_MoveLt;
@@ -2489,7 +2488,7 @@ WhereInfo *sqlite3WhereBegin(
         int nCol = nEq + btmLimit;
         buildIndexProbe(v, nCol, pIdx);
         if( bRev ){
-          pLevel->iMem = pParse->nMem++;
+          pLevel->iMem = ++pParse->nMem;
           sqlite3VdbeAddOp2(v, OP_MemStore, pLevel->iMem, 1);
           testOp = OP_IdxLT;
         }else{

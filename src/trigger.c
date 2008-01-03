@@ -243,8 +243,8 @@ void sqlite3FinishTrigger(
     };
     int addr;
     Vdbe *v;
-    int iKey = pParse->nMem++;
-    int iData = pParse->nMem++;
+    int iKey = ++pParse->nMem;
+    int iData = ++pParse->nMem;
 
     /* Make an entry in the sqlite_master table */
     v = sqlite3GetVdbe(pParse);

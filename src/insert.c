@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.206 2008/01/03 17:31:45 danielk1977 Exp $
+** $Id: insert.c,v 1.207 2008/01/03 18:03:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -146,7 +146,7 @@ static int readsTable(Vdbe *v, int iStartAddr, int iDb, Table *pTab){
 ** This routine returns the index of the mem[] cell that contains
 ** the maximum rowid counter.
 **
-** Two memory cells are allocated.  The next memory cell after the
+** Two memory cells are allocated.  The next memory cell befor the
 ** one returned holds the rowid in sqlite_sequence where we will
 ** write back the revised maximum rowid.
 */
@@ -163,8 +163,8 @@ static int autoIncBegin(
     int addr;
     assert( v );
     addr = sqlite3VdbeCurrentAddr(v);
-    memId = pParse->nMem+1;
     pParse->nMem += 2;
+    memId = pParse->nMem;
     sqlite3OpenTable(pParse, iCur, iDb, pDb->pSchema->pSeqTab, OP_OpenRead);
     sqlite3VdbeAddOp2(v, OP_Rewind, iCur, addr+12);
     sqlite3VdbeAddOp2(v, OP_Column, iCur, 0);
@@ -618,7 +618,7 @@ void sqlite3Insert(
   /* Initialize the count of rows to be inserted
   */
   if( db->flags & SQLITE_CountRows ){
-    iCntMem = pParse->nMem++;
+    iCntMem = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_MemInt, 0, iCntMem);
   }
 

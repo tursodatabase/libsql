@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.29 2008/01/03 09:51:55 danielk1977 Exp $
+** @(#) $Id: analyze.c,v 1.30 2008/01/03 18:03:09 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -241,7 +241,7 @@ static void analyzeDatabase(Parse *pParse, int iDb){
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   iStatCur = pParse->nTab++;
   openStatTable(pParse, iDb, iStatCur, 0);
-  iMem = pParse->nMem;
+  iMem = pParse->nMem+1;
   for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
     Table *pTab = (Table*)sqliteHashData(k);
     analyzeOneTable(pParse, pTab, iStatCur, iMem);
@@ -263,7 +263,7 @@ static void analyzeTable(Parse *pParse, Table *pTab){
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   iStatCur = pParse->nTab++;
   openStatTable(pParse, iDb, iStatCur, pTab->zName);
-  analyzeOneTable(pParse, pTab, iStatCur, pParse->nMem);
+  analyzeOneTable(pParse, pTab, iStatCur, pParse->nMem+1);
   loadAnalysis(pParse, iDb);
 }
 

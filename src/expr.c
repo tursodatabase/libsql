@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.326 2008/01/03 07:54:24 danielk1977 Exp $
+** $Id: expr.c,v 1.327 2008/01/03 18:03:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -307,7 +307,7 @@ Expr *sqlite3RegisterExpr(Parse *pParse, Token *pToken){
     return 0;  /* Malloc failed */
   }
   depth = atoi((char*)&pToken->z[1]);
-  p->iTable = pParse->nMem++;
+  p->iTable = ++pParse->nMem;
   sqlite3VdbeAddOp1(v, OP_Dup, depth);
   sqlite3VdbeAddOp2(v, OP_MemStore, p->iTable, 1);
   return p;
@@ -1600,7 +1600,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
     */
     assert(v);
     if( iCol<0 ){
-      int iMem = pParse->nMem++;
+      int iMem = ++pParse->nMem;
       int iAddr;
       Table *pTab = p->pSrc->a[0].pTab;
       int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
@@ -1635,7 +1635,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
          && (!mustBeUnique || (pIdx->nColumn==1 && pIdx->onError!=OE_None))
         ){
           int iDb;
-          int iMem = pParse->nMem++;
+          int iMem = ++pParse->nMem;
           int iAddr;
           char *pKey;
   
@@ -1699,7 +1699,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   ** save the results, and reuse the same result on subsequent invocations.
   */
   if( !ExprHasAnyProperty(pExpr, EP_VarSelect) && !pParse->trigStack ){
-    int mem = pParse->nMem++;
+    int mem = ++pParse->nMem;
     sqlite3VdbeAddOp1(v, OP_MemLoad, mem);
     testAddr = sqlite3VdbeAddOp0(v, OP_If);
     assert( testAddr>0 || pParse->db->mallocFailed );
@@ -1804,7 +1804,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       SelectDest dest;
 
       pSel = pExpr->pSelect;
-      dest.iParm = pParse->nMem++;
+      dest.iParm = ++pParse->nMem;
       if( pExpr->op==TK_SELECT ){
         dest.eDest = SRT_Mem;
         sqlite3VdbeAddOp2(v, OP_MemNull, 0, dest.iParm);
@@ -2343,7 +2343,7 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr){
   addr2 = sqlite3VdbeCurrentAddr(v);
   if( addr2>addr1+1
    || ((pOp = sqlite3VdbeGetOp(v, addr1))!=0 && pOp->opcode==OP_Function) ){
-    iMem = pExpr->iTable = pParse->nMem++;
+    iMem = pExpr->iTable = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_MemStore, iMem, 0);
     pExpr->op = TK_REGISTER;
   }
@@ -2364,7 +2364,7 @@ int sqlite3ExprIntoReg(Parse *pParse, Expr *pExpr, int target){
   if( v==0 ) return -1;
   sqlite3ExprCode(pParse, pExpr);
   if( target<0 ){
-    target = pParse->nMem++;
+    target = ++pParse->nMem;
   }
   sqlite3VdbeAddOp2(v, OP_MemStore, target, 1);
   return target;
@@ -2724,7 +2724,7 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
               pCol->pTab = pExpr->pTab;
               pCol->iTable = pExpr->iTable;
               pCol->iColumn = pExpr->iColumn;
-              pCol->iMem = pParse->nMem++;
+              pCol->iMem = ++pParse->nMem;
               pCol->iSorterColumn = -1;
               pCol->pExpr = pExpr;
               if( pAggInfo->pGroupBy ){
@@ -2780,7 +2780,7 @@ static int analyzeAggregate(void *pArg, Expr *pExpr){
           if( i>=0 ){
             pItem = &pAggInfo->aFunc[i];
             pItem->pExpr = pExpr;
-            pItem->iMem = pParse->nMem++;
+            pItem->iMem = ++pParse->nMem;
             pItem->pFunc = sqlite3FindFunction(pParse->db,
                    (char*)pExpr->token.z, pExpr->token.n,
                    pExpr->pList ? pExpr->pList->nExpr : 0, enc, 0);

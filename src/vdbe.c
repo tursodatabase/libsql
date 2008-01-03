@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.670 2008/01/03 17:31:45 danielk1977 Exp $
+** $Id: vdbe.c,v 1.671 2008/01/03 18:03:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1040,8 +1040,8 @@ case OP_ResultRow: {            /* no-push */
   Mem *pMem;
   int i;
   assert( p->nResColumn==pOp->p2 );
-  assert( pOp->p1>=0 );
-  assert( pOp->p1+pOp->p2<p->nMem );
+  assert( pOp->p1>0 );
+  assert( pOp->p1+pOp->p2<=p->nMem );
 
   /* Data in the pager might be moved or changed out from under us
   ** in between the return from this sqlite3_step() call and the
@@ -2391,10 +2391,10 @@ case OP_MakeRecord: {
 
   if( pOp->opcode==OP_RegMakeRec || pOp->opcode==OP_RegMakeIRec ){
     Mem *pCount;
-    assert( nField>=0 && nField<p->nMem );
+    assert( nField>0 && nField<=p->nMem );
     pCount = &p->aMem[nField];
     assert( pCount->flags & MEM_Int );
-    assert( pCount->u.i>=0 && pCount->u.i+nField<p->nMem );
+    assert( pCount->u.i>0 && pCount->u.i+nField<=p->nMem );
     leaveOnStack = 1;
     nField = pCount->u.i;
     pData0 = &pCount[1];
@@ -3501,7 +3501,7 @@ case OP_NewRowid: {
 #ifndef SQLITE_OMIT_AUTOINCREMENT
       if( pOp->p2 ){
         Mem *pMem;
-        assert( pOp->p2>0 && pOp->p2<p->nMem );  /* P2 is a valid memory cell */
+        assert( pOp->p2>0 && pOp->p2<=p->nMem ); /* P2 is a valid memory cell */
         pMem = &p->aMem[pOp->p2];
         sqlite3VdbeMemIntegerify(pMem);
         assert( (pMem->flags & MEM_Int)!=0 );  /* mem(P2) holds an integer */
@@ -4452,7 +4452,7 @@ case OP_IntegrityCk: {
   aRoot = sqlite3_malloc( sizeof(int)*(nRoot+1) );
   if( aRoot==0 ) goto no_mem;
   j = pOp->p1;
-  assert( j>=0 && j<p->nMem );
+  assert( j>0 && j<=p->nMem );
   pnErr = &p->aMem[j];
   assert( (pnErr->flags & MEM_Int)!=0 );
   for(j=0; j<nRoot; j++){
@@ -4573,7 +4573,7 @@ case OP_ContextPop: {        /* no-push */
 */
 case OP_MemStore: {        /* no-push */
   assert( pTos>=p->aStack );
-  assert( pOp->p1>=0 && pOp->p1<p->nMem );
+  assert( pOp->p1>0 && pOp->p1<=p->nMem );
   rc = sqlite3VdbeMemMove(&p->aMem[pOp->p1], pTos);
   pTos--;
 
@@ -4595,7 +4595,7 @@ case OP_MemStore: {        /* no-push */
 */
 case OP_MemLoad: {
   int i = pOp->p1;
-  assert( i>=0 && i<p->nMem );
+  assert( i>0 && i<=p->nMem );
   pTos++;
   sqlite3VdbeMemShallowCopy(pTos, &p->aMem[i], MEM_Ephem);
   break;
@@ -4614,7 +4614,7 @@ case OP_MemMax: {        /* no-push */
   int i = pOp->p1;
   Mem *pMem;
   assert( pTos>=p->aStack );
-  assert( i>=0 && i<p->nMem );
+  assert( i>0 && i<=p->nMem );
   pMem = &p->aMem[i];
   sqlite3VdbeMemIntegerify(pMem);
   sqlite3VdbeMemIntegerify(pTos);
@@ -4635,7 +4635,7 @@ case OP_MemMax: {        /* no-push */
 case OP_MemIncr: {        /* no-push */
   int i = pOp->p2;
   Mem *pMem;
-  assert( i>=0 && i<p->nMem );
+  assert( i>0 && i<=p->nMem );
   pMem = &p->aMem[i];
   assert( pMem->flags==MEM_Int );
   pMem->u.i += pOp->p1;
@@ -4652,7 +4652,7 @@ case OP_MemIncr: {        /* no-push */
 case OP_IfMemPos: {        /* no-push */
   int i = pOp->p1;
   Mem *pMem;
-  assert( i>=0 && i<p->nMem );
+  assert( i>0 && i<=p->nMem );
   pMem = &p->aMem[i];
   assert( pMem->flags==MEM_Int );
   if( pMem->u.i>0 ){
@@ -4671,7 +4671,7 @@ case OP_IfMemPos: {        /* no-push */
 case OP_IfMemNeg: {        /* no-push */
   int i = pOp->p1;
   Mem *pMem;
-  assert( i>=0 && i<p->nMem );
+  assert( i>0 && i<=p->nMem );
   pMem = &p->aMem[i];
   assert( pMem->flags==MEM_Int );
   if( pMem->u.i<0 ){
@@ -4690,7 +4690,7 @@ case OP_IfMemNeg: {        /* no-push */
 case OP_IfMemZero: {        /* no-push */
   int i = pOp->p1;
   Mem *pMem;
-  assert( i>=0 && i<p->nMem );
+  assert( i>0 && i<=p->nMem );
   pMem = &p->aMem[i];
   assert( pMem->flags==MEM_Int );
   if( pMem->u.i==0 ){
@@ -4705,7 +4705,7 @@ case OP_IfMemZero: {        /* no-push */
 */
 case OP_IfMemNull: {        /* no-push */
   int i = pOp->p1;
-  assert( i>=0 && i<p->nMem );
+  assert( i>0 && i<=p->nMem );
   if( p->aMem[i].flags & MEM_Null ){
      pc = pOp->p2 - 1;
   }
@@ -4717,7 +4717,7 @@ case OP_IfMemNull: {        /* no-push */
 ** Store a NULL in memory cell P2
 */
 case OP_MemNull: {
-  assert( pOp->p2>=0 && pOp->p2<p->nMem );
+  assert( pOp->p2>0 && pOp->p2<=p->nMem );
   sqlite3VdbeMemSetNull(&p->aMem[pOp->p2]);
   break;
 }
@@ -4727,7 +4727,7 @@ case OP_MemNull: {
 ** Store the integer value P1 in memory cell P2.
 */
 case OP_MemInt: {
-  assert( pOp->p2>=0 && pOp->p2<p->nMem );
+  assert( pOp->p2>0 && pOp->p2<=p->nMem );
   sqlite3VdbeMemSetInt64(&p->aMem[pOp->p2], pOp->p1);
   break;
 }
@@ -4739,8 +4739,8 @@ case OP_MemInt: {
 ** containing a NULL.
 */
 case OP_MemMove: {
-  assert( pOp->p1>=0 && pOp->p1<p->nMem );
-  assert( pOp->p2>=0 && pOp->p2<p->nMem );
+  assert( pOp->p1>0 && pOp->p1<=p->nMem );
+  assert( pOp->p2>0 && pOp->p2<=p->nMem );
   rc = sqlite3VdbeMemMove(&p->aMem[pOp->p1], &p->aMem[pOp->p2]);
   break;
 }
@@ -4771,7 +4771,7 @@ case OP_AggStep: {        /* no-push */
     storeTypeInfo(pRec, encoding);
   }
   ctx.pFunc = pOp->p4.pFunc;
-  assert( pOp->p1>=0 && pOp->p1<p->nMem );
+  assert( pOp->p1>0 && pOp->p1<=p->nMem );
   ctx.pMem = pMem = &p->aMem[pOp->p1];
   pMem->n++;
   ctx.s.flags = MEM_Null;
@@ -4810,7 +4810,7 @@ case OP_AggStep: {        /* no-push */
 */
 case OP_AggFinal: {        /* no-push */
   Mem *pMem;
-  assert( pOp->p1>=0 && pOp->p1<p->nMem );
+  assert( pOp->p1>0 && pOp->p1<=p->nMem );
   pMem = &p->aMem[pOp->p1];
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
   rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);

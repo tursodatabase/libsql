@@ -971,7 +971,7 @@ void sqlite3VdbeMakeReady(
     assert( nVar>=0 );
     assert( nStack<p->nOp );
     if( isExplain ){
-      nStack = 10;
+      nStack = 16;
     }
     p->aStack = sqlite3DbMallocZero(db,
         nStack*sizeof(p->aStack[0])    /* aStack */
@@ -979,12 +979,12 @@ void sqlite3VdbeMakeReady(
       + nVar*sizeof(Mem)               /* aVar */
       + nVar*sizeof(char*)             /* azVar */
       + nMem*sizeof(Mem)               /* aMem */
-      + nCursor*sizeof(Cursor*)        /* apCsr */
+      + nCursor*sizeof(Cursor*) + 1    /* apCsr */
     );
     if( !db->mallocFailed ){
-      p->aMem = &p->aStack[nStack];
-      p->nMem = nMem;
-      p->aVar = &p->aMem[nMem];
+      p->aMem = &p->aStack[nStack-1];  /* aMem[] goes from 1..nMem */
+      p->nMem = nMem;                  /*       not from 0..nMem-1 */
+      p->aVar = &p->aMem[nMem+1];
       p->nVar = nVar;
       p->okVar = 0;
       p->apArg = (Mem**)&p->aVar[nVar];
@@ -1000,7 +1000,7 @@ void sqlite3VdbeMakeReady(
       }
     }
   }
-  for(n=0; n<p->nMem; n++){
+  for(n=1; n<=p->nMem; n++){
     p->aMem[n].flags = MEM_Null;
     p->aMem[n].db = db;
   }
@@ -1089,7 +1089,7 @@ static void Cleanup(Vdbe *p){
     p->pTos = &p->aStack[-1];
   }
   closeAllCursorsExceptActiveVtabs(p);
-  releaseMemArray(p->aMem, p->nMem);
+  releaseMemArray(&p->aMem[1], p->nMem);
   sqlite3VdbeFifoClear(&p->sFifo);
   if( p->contextStack ){
     for(i=0; i<p->contextStackTop; i++){

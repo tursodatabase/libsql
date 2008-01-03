@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.380 2008/01/03 09:51:55 danielk1977 Exp $
+** $Id: select.c,v 1.381 2008/01/03 18:03:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -541,7 +541,7 @@ static int selectInnerLoop(
   }else{
     n = pEList->nExpr;
   }
-  iMem = pParse->nMem;
+  iMem = ++pParse->nMem;
   pParse->nMem += n+1;
   sqlite3VdbeAddOp2(v, OP_MemInt, n, iMem);
   if( nColumn>0 ){
@@ -1746,8 +1746,8 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   ** no rows.
   */
   if( p->pLimit ){
-    p->iLimit = iLimit = pParse->nMem;
-    pParse->nMem += 2;
+    p->iLimit = iLimit = ++pParse->nMem;
+    pParse->nMem++;
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) return;
     sqlite3ExprCode(pParse, p->pLimit);
@@ -1758,7 +1758,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
     sqlite3VdbeAddOp2(v, OP_MemLoad, iLimit, 0);
   }
   if( p->pOffset ){
-    p->iOffset = iOffset = pParse->nMem++;
+    p->iOffset = iOffset = ++pParse->nMem;
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) return;
     sqlite3ExprCode(pParse, p->pOffset);
@@ -3449,11 +3449,11 @@ int sqlite3Select(
 
       /* Initialize memory locations used by GROUP BY aggregate processing
       */
-      iUseFlag = pParse->nMem++;
-      iAbortFlag = pParse->nMem++;
-      iAMem = pParse->nMem;
+      iUseFlag = ++pParse->nMem;
+      iAbortFlag = ++pParse->nMem;
+      iAMem = pParse->nMem + 1;
       pParse->nMem += pGroupBy->nExpr;
-      iBMem = pParse->nMem;
+      iBMem = pParse->nMem + 1;
       pParse->nMem += pGroupBy->nExpr;
       sqlite3VdbeAddOp2(v, OP_MemInt, 0, iAbortFlag);
       VdbeComment((v, "clear abort flag"));

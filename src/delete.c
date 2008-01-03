@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.143 2008/01/03 17:31:45 danielk1977 Exp $
+** $Id: delete.c,v 1.144 2008/01/03 18:03:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -65,8 +65,8 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
 ** reads the key and data to insert from memory cells.
 */
 void sqlite3CodeInsert(Parse *p, int iCur, u8 flags){
-  int iData = p->nMem++;
-  int iKey = p->nMem++;
+  int iData = ++p->nMem;
+  int iKey = ++p->nMem;
   Vdbe *v = sqlite3GetVdbe(p);
   sqlite3VdbeAddOp2(v, OP_MemStore, iData, 1);
   sqlite3VdbeAddOp2(v, OP_MemStore, iKey, 1);
@@ -82,7 +82,7 @@ void sqlite3CodeInsert(Parse *p, int iCur, u8 flags){
 */
 int sqlite3StackToReg(Parse *p, int nVal){
   int i;
-  int iRet = p->nMem;
+  int iRet = p->nMem+1;
   Vdbe *v = sqlite3GetVdbe(p);
   assert(v);
   p->nMem += nVal;
@@ -263,7 +263,7 @@ void sqlite3DeleteFrom(
   ** we are counting rows.
   */
   if( db->flags & SQLITE_CountRows ){
-    memCnt = pParse->nMem++;
+    memCnt = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_MemInt, 0, memCnt);
   }
 
@@ -346,7 +346,7 @@ void sqlite3DeleteFrom(
     sqlite3VdbeAddOp1(v, OP_StackDepth, -1);
 
     if( triggers_exist ){
-      int mem1 = pParse->nMem++;
+      int mem1 = ++pParse->nMem;
       if( !isView ){
         sqlite3VdbeAddOp1(v, OP_MemStore, mem1);
       }
