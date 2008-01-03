@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.204 2008/01/03 09:51:55 danielk1977 Exp $
+** $Id: insert.c,v 1.205 2008/01/03 11:50:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -124,8 +124,8 @@ static int readsTable(Vdbe *v, int iStartAddr, int iDb, Table *pTab){
       }
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    if( pOp->opcode==OP_VOpen && pOp->p4.p==(const char*)pTab->pVtab ){
-      assert( pOp->p4.p!=0 );
+    if( pOp->opcode==OP_VOpen && pOp->p4.pVtab==pTab->pVtab ){
+      assert( pOp->p4.pVtab!=0 );
       assert( pOp->p4type==P4_VTAB );
       return 1;
     }

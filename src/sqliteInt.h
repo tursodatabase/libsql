@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.632 2008/01/03 09:51:55 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.633 2008/01/03 11:50:30 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -309,15 +309,6 @@ struct BusyHandler {
 };
 
 /*
-** Defer sourcing vdbe.h and btree.h until after the "u8" and 
-** "BusyHandler typedefs.
-*/
-#include "btree.h"
-#include "vdbe.h"
-#include "pager.h"
-
-
-/*
 ** Name of the master database table.  The master database table
 ** is a special table that holds the names and attributes of all
 ** user tables and indices.
@@ -372,6 +363,15 @@ typedef struct TriggerStep TriggerStep;
 typedef struct Trigger Trigger;
 typedef struct WhereInfo WhereInfo;
 typedef struct WhereLevel WhereLevel;
+
+/*
+** Defer sourcing vdbe.h and btree.h until after the "u8" and 
+** "BusyHandler" typedefs. vdbe.h also requires a few of the opaque
+** pointer types (i.e. FuncDef) defined above.
+*/
+#include "btree.h"
+#include "vdbe.h"
+#include "pager.h"
 
 #include "os.h"
 #include "mutex.h"

@@ -132,7 +132,6 @@ struct Mem {
   void (*xDel)(void *);  /* If not null, call this function to delete Mem.z */
   char zShort[NBFS];  /* Space for short strings */
 };
-typedef struct Mem Mem;
 
 /* One or more of the following flags are set to indicate the validOK
 ** representations of the value stored in the Mem struct.
@@ -191,7 +190,6 @@ struct VdbeFunc {
     void (*xDelete)(void *);      /* Destructor for the aux data */
   } apAux[1];                   /* One slot for each function argument */
 };
-typedef struct VdbeFunc VdbeFunc;
 
 /*
 ** The "context" argument for a installable function.  A pointer to an

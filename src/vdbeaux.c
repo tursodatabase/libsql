@@ -577,7 +577,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     nField = ((KeyInfo*)zP4)->nField;
     nByte = sizeof(*pKeyInfo) + (nField-1)*sizeof(pKeyInfo->aColl[0]) + nField;
     pKeyInfo = sqlite3_malloc( nByte );
-    pOp->p4.p = (char*)pKeyInfo;
+    pOp->p4.pKeyInfo = pKeyInfo;
     if( pKeyInfo ){
       unsigned char *aSortOrder;
       memcpy(pKeyInfo, zP4, nByte);
@@ -592,14 +592,14 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
       pOp->p4type = P4_NOTUSED;
     }
   }else if( n==P4_KEYINFO_HANDOFF ){
-    pOp->p4.p = (char*)zP4;
+    pOp->p4.p = (void*)zP4;
     pOp->p4type = P4_KEYINFO;
   }else if( n<0 ){
-    pOp->p4.p = (char*)zP4;
+    pOp->p4.p = (void*)zP4;
     pOp->p4type = n;
   }else{
     if( n==0 ) n = strlen(zP4);
-    pOp->p4.p = sqlite3DbStrNDup(p->db, zP4, n);
+    pOp->p4.z = sqlite3DbStrNDup(p->db, zP4, n);
     pOp->p4type = P4_DYNAMIC;
   }
 }
@@ -639,7 +639,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
   switch( pOp->p4type ){
     case P4_KEYINFO: {
       int i, j;
-      KeyInfo *pKeyInfo = (KeyInfo*)pOp->p4.p;
+      KeyInfo *pKeyInfo = pOp->p4.pKeyInfo;
       sqlite3_snprintf(nTemp, zTemp, "keyinfo(%d", pKeyInfo->nField);
       i = strlen(zTemp);
       for(j=0; j<pKeyInfo->nField; j++){
@@ -667,17 +667,17 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       break;
     }
     case P4_COLLSEQ: {
-      CollSeq *pColl = (CollSeq*)pOp->p4.p;
+      CollSeq *pColl = pOp->p4.pColl;
       sqlite3_snprintf(nTemp, zTemp, "collseq(%.20s)", pColl->zName);
       break;
     }
     case P4_FUNCDEF: {
-      FuncDef *pDef = (FuncDef*)pOp->p4.p;
+      FuncDef *pDef = pOp->p4.pFunc;
       sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
     case P4_INT64: {
-      sqlite3_snprintf(nTemp, zTemp, "%lld", *(sqlite3_int64*)pOp->p4.p);
+      sqlite3_snprintf(nTemp, zTemp, "%lld", *pOp->p4.pI64);
       break;
     }
     case P4_INT32: {
@@ -685,11 +685,11 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       break;
     }
     case P4_REAL: {
-      sqlite3_snprintf(nTemp, zTemp, "%.16g", *(double*)pOp->p4.p);
+      sqlite3_snprintf(nTemp, zTemp, "%.16g", *pOp->p4.pReal);
       break;
     }
     case P4_MEM: {
-      Mem *pMem = (Mem*)pOp->p4.p;
+      Mem *pMem = pOp->p4.pMem;
       if( pMem->flags & MEM_Str ){
         zP4 = pMem->z;
       }else if( pMem->flags & MEM_Int ){
@@ -703,13 +703,13 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     case P4_VTAB: {
-      sqlite3_vtab *pVtab = (sqlite3_vtab*)pOp->p4.p;
+      sqlite3_vtab *pVtab = pOp->p4.pVtab;
       sqlite3_snprintf(nTemp, zTemp, "vtab:%p:%p", pVtab, pVtab->pModule);
       break;
     }
 #endif
     default: {
-      zP4 = pOp->p4.p;
+      zP4 = pOp->p4.z;
       if( zP4==0 || pOp->opcode==OP_Noop ){
         zP4 = zTemp;
         zTemp[0] = 0;
@@ -882,8 +882,8 @@ void sqlite3VdbePrintSql(Vdbe *p){
   VdbeOp *pOp;
   if( nOp<1 ) return;
   pOp = &p->aOp[nOp-1];
-  if( pOp->opcode==OP_Noop && pOp->p4.p!=0 ){
-    const char *z = pOp->p4.p;
+  if( pOp->opcode==OP_Noop && pOp->p4.z!=0 ){
+    const char *z = pOp->p4.z;
     while( isspace(*(u8*)z) ) z++;
     printf("SQL: [%s]\n", z);
   }
