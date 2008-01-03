@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.671 2008/01/03 18:03:09 drh Exp $
+** $Id: vdbe.c,v 1.672 2008/01/03 18:39:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4988,7 +4988,7 @@ case OP_VOpen: {   /* no-push */
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VFilter P1 P2 P4
+/* Opcode: VFilter P1 P2 P3 P4 *
 **
 ** P1 is a cursor opened using VOpen.  P2 is an address to jump to if
 ** the filtered result set is empty.
@@ -4998,31 +4998,29 @@ case OP_VOpen: {   /* no-push */
 ** to the module implementation.
 **
 ** This opcode invokes the xFilter method on the virtual table specified
-** by P1.  The integer query plan parameter to xFilter is the top of the
-** stack.  Next down on the stack is the argc parameter.  Beneath the
-** next of stack are argc additional parameters which are passed to
-** xFilter as argv. The topmost parameter (i.e. 3rd element popped from
-** the stack) becomes argv[argc-1] when passed to xFilter.
+** by P1.  The integer query plan parameter to xFilter is stored in register
+** P3. Register P3+1 stores the argc parameter to be passed to the
+** xFilter method. Registers P3+2..P3+1+argc are the argc additional
+** parametersneath additional parameters which are passed to
+** xFilter as argv. Register P3+2 becomes argv[0] when passed to xFilter.
 **
-** The integer query plan parameter, argc, and all argv stack values 
-** are popped from the stack before this instruction completes.
-**
-** A jump is made to P2 if the result set after filtering would be 
-** empty.
+** A jump is made to P2 if the result set after filtering would be empty.
 */
 case OP_VFilter: {   /* no-push */
   int nArg;
-
+  int iQuery;
   const sqlite3_module *pModule;
+  Mem *pQuery = &p->aMem[pOp->p3];
+  Mem *pArgc = &pQuery[1];
 
   Cursor *pCur = p->apCsr[pOp->p1];
   assert( pCur->pVtabCursor );
   pModule = pCur->pVtabCursor->pVtab->pModule;
 
   /* Grab the index number and argc parameters off the top of the stack. */
-  assert( (&pTos[-1])>=p->aStack );
-  assert( (pTos[0].flags&MEM_Int)!=0 && pTos[-1].flags==MEM_Int );
-  nArg = pTos[-1].u.i;
+  assert( (pQuery->flags&MEM_Int)!=0 && pArgc->flags==MEM_Int );
+  nArg = pArgc->u.i;
+  iQuery = pQuery->u.i;
 
   /* Invoke the xFilter method */
   {
@@ -5030,13 +5028,13 @@ case OP_VFilter: {   /* no-push */
     int i;
     Mem **apArg = p->apArg;
     for(i = 0; i<nArg; i++){
-      apArg[i] = &pTos[i+1-2-nArg];
+      apArg[i] = &pArgc[i+1];
       storeTypeInfo(apArg[i], 0);
     }
 
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
     p->inVtabMethod = 1;
-    rc = pModule->xFilter(pCur->pVtabCursor, pTos->u.i, pOp->p4.z, nArg, apArg);
+    rc = pModule->xFilter(pCur->pVtabCursor, iQuery, pOp->p4.z, nArg, apArg);
     p->inVtabMethod = 0;
     if( rc==SQLITE_OK ){
       res = pModule->xEof(pCur->pVtabCursor);
@@ -5048,8 +5046,6 @@ case OP_VFilter: {   /* no-push */
     }
   }
 
-  /* Pop the index number, argc value and parameters off the stack */
-  popStack(&pTos, 2+nArg);
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -5173,26 +5169,25 @@ case OP_VNext: {   /* no-push */
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VRename * * P4
+/* Opcode: VRename P1 * P4
 **
 ** P4 is a pointer to a virtual table object, an sqlite3_vtab structure.
 ** This opcode invokes the corresponding xRename method. The value
-** on the top of the stack is popped and passed as the zName argument
-** to the xRename method.
+** in register P1 is passed as the zName argument to the xRename method.
 */
 case OP_VRename: {   /* no-push */
   sqlite3_vtab *pVtab = pOp->p4.pVtab;
+  Mem *pName = &p->aMem[pOp->p1];
   assert( pVtab->pModule->xRename );
 
-  Stringify(pTos, encoding);
+  Stringify(pName, encoding);
 
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   sqlite3VtabLock(pVtab);
-  rc = pVtab->pModule->xRename(pVtab, pTos->z);
+  rc = pVtab->pModule->xRename(pVtab, pName->z);
   sqlite3VtabUnlock(db, pVtab);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
 
-  popStack(&pTos, 1);
   break;
 }
 #endif

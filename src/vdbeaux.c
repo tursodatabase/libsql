@@ -333,8 +333,8 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
     }else if( opcode==OP_VFilter ){
       int n;
       assert( p->nOp - i >= 3 );
-      assert( pOp[-2].opcode==OP_Integer );
-      n = pOp[-2].p1;
+      assert( pOp[-1].opcode==OP_MemInt );
+      n = pOp[-1].p1;
       if( n>nMaxArgs ) nMaxArgs = n;
 #endif
     }

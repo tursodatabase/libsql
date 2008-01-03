@@ -1,5 +1,5 @@
-C Registers\s(aka\smemory\scells)\sin\sthe\sVM\sare\snow\snumbered\sstarting\swith\s1\ninstead\sof\s0.\s\sA\sregister\snumber\sof\s0\smeans\s"no\ssuch\sregister".\s(CVS\s4669)
-D 2008-01-03T18:03:09
+C Modify\sVFilter\sand\sVRename\sto\suse\sregisters\sinstead\sof\sthe\svdbe\sstack\sfor\sinputs.\s(CVS\s4670)
+D 2008-01-03T18:39:42
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -78,7 +78,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in abed4664817e1cd500f2276142c71958087c16bc
-F src/alter.c b58ed3becc77885e2aec6754c689255534f2734c
+F src/alter.c f95b19dab6e77978da5d75675f5cde7c6d3df120
 F src/analyze.c addc8e75cc43eb7ad699cd3ffc0a9157b4bf9405
 F src/attach.c 4b214b411237531491e1186211e005e4de73630d
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
@@ -168,16 +168,16 @@ F src/update.c b4aa2e8b6bda3b4d917c9427568fe5c85b4a0ea8
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c 4e72b3a23a017c68f7847b369b5bba7b5aaaa7a7
+F src/vdbe.c 0fa40511ae71f0acac07782c323ed4cdac73b4b0
 F src/vdbe.h bb128757b84280504a1243c450fd13ead248ede5
 F src/vdbeInt.h 869d0f550354c1364dde1d3611d770bd1c767505
 F src/vdbeapi.c f14174843bf4be2c9afdf2ef48b61e7c3ac62d7c
-F src/vdbeaux.c 54b7ad5d95ff3ac52f97a9a362c93b4f8c01440a
+F src/vdbeaux.c 2b5aa5820daffb3cf90d3462b0854c1026f7534f
 F src/vdbeblob.c b90f7494c408d47ce6835000b01e40b371e27baf
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 123994fcd344993d2fb050a83b91b341bbbd08b4
 F src/vtab.c 03014b2bfa8096ecac5fcdc80d34cd76e06af52a
-F src/where.c f02ecb55e58465055a1fd2f3143deb449b49bb93
+F src/where.c 10c0616d30112732cf4b13b8cd06d7ceefb6d985
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test ee350b9ab15b175fc0a8fb51bf2141ed3a3b9cba
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 955b15a020e9ea6401fe03a36f5139a03ea80b8a
-R 1925857a0a0640a748c55cd88d09327a
-U drh
-Z 06e0ffbaabe30d8dbe94386b95a09746
+P 0b849805c3a0f562d50623f406279b400d335639
+R 13147325b139cd4d2f4693ae66738f7d
+U danielk1977
+Z fbbaf889648e9db07fda0b9d48b503d1

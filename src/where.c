@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.270 2008/01/03 18:03:09 drh Exp $
+** $Id: where.c,v 1.271 2008/01/03 18:39:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2271,6 +2271,7 @@ WhereInfo *sqlite3WhereBegin(
       **          to access the data.
       */
       int j;
+      int iReg;   /* P3 Value for OP_VFilter */
       sqlite3_index_info *pBestIdx = pLevel->pBestIdx;
       int nConstraint = pBestIdx->nConstraint;
       struct sqlite3_index_constraint_usage *aUsage =
@@ -2289,9 +2290,12 @@ WhereInfo *sqlite3WhereBegin(
         }
         if( k==nConstraint ) break;
       }
-      sqlite3VdbeAddOp2(v, OP_Integer, j-1, 0);
-      sqlite3VdbeAddOp2(v, OP_Integer, pBestIdx->idxNum, 0);
-      sqlite3VdbeAddOp4(v, OP_VFilter, iCur, brk, 0, pBestIdx->idxStr,
+      iReg = ++pParse->nMem;
+      pParse->nMem++;
+      sqlite3StackToReg(pParse, j-1);
+      sqlite3VdbeAddOp2(v, OP_MemInt, pBestIdx->idxNum, iReg);
+      sqlite3VdbeAddOp2(v, OP_MemInt, j-1, iReg+1);
+      sqlite3VdbeAddOp4(v, OP_VFilter, iCur, brk, iReg, pBestIdx->idxStr,
                         pBestIdx->needToFreeIdxStr ? P4_MPRINTF : P4_STATIC);
       pBestIdx->needToFreeIdxStr = 0;
       for(j=0; j<pBestIdx->nConstraint; j++){
