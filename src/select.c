@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.378 2008/01/03 00:01:25 drh Exp $
+** $Id: select.c,v 1.379 2008/01/03 07:54:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2749,8 +2749,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, SelectDest *pDest){
     KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
     iIdx = pParse->nTab++;
     assert( pIdx->pSchema==pTab->pSchema );
-    sqlite3VdbeAddOp2(v, OP_Integer, iDb, 0);
-    sqlite3VdbeAddOp4(v, OP_OpenRead, iIdx, pIdx->tnum, 0,
+    sqlite3VdbeAddOp4(v, OP_OpenRead, iIdx, pIdx->tnum, iDb,
         (char*)pKey, P4_KEYINFO_HANDOFF);
     if( seekOp==OP_Rewind ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, 0);

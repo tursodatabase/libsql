@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.202 2008/01/03 00:01:24 drh Exp $
+** $Id: insert.c,v 1.203 2008/01/03 07:54:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -111,20 +111,15 @@ static int readsTable(Vdbe *v, int iStartAddr, int iDb, Table *pTab){
   for(i=iStartAddr; i<iEnd; i++){
     VdbeOp *pOp = sqlite3VdbeGetOp(v, i);
     assert( pOp!=0 );
-    if( pOp->opcode==OP_OpenRead ){
-      VdbeOp *pPrior = &pOp[-1];
+    if( pOp->opcode==OP_OpenRead && pOp->p3==iDb ){
+      Index *pIndex;
       int tnum = pOp->p2;
-      assert( i>iStartAddr );
-      assert( pPrior->opcode==OP_Integer );
-      if( pPrior->p1==iDb ){
-        Index *pIndex;
-        if( tnum==pTab->tnum ){
+      if( tnum==pTab->tnum ){
+        return 1;
+      }
+      for(pIndex=pTab->pIndex; pIndex; pIndex=pIndex->pNext){
+        if( tnum==pIndex->tnum ){
           return 1;
-        }
-        for(pIndex=pTab->pIndex; pIndex; pIndex=pIndex->pNext){
-          if( tnum==pIndex->tnum ){
-            return 1;
-          }
         }
       }
     }
@@ -171,16 +166,16 @@ static int autoIncBegin(
     memId = pParse->nMem+1;
     pParse->nMem += 2;
     sqlite3OpenTable(pParse, iCur, iDb, pDb->pSchema->pSeqTab, OP_OpenRead);
-    sqlite3VdbeAddOp2(v, OP_Rewind, iCur, addr+13);
+    sqlite3VdbeAddOp2(v, OP_Rewind, iCur, addr+12);
     sqlite3VdbeAddOp2(v, OP_Column, iCur, 0);
     sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pTab->zName, 0);
-    sqlite3VdbeAddOp2(v, OP_Ne, 0x100, addr+12);
+    sqlite3VdbeAddOp2(v, OP_Ne, 0x100, addr+11);
     sqlite3VdbeAddOp2(v, OP_Rowid, iCur, 0);
     sqlite3VdbeAddOp2(v, OP_MemStore, memId-1, 1);
     sqlite3VdbeAddOp2(v, OP_Column, iCur, 1);
     sqlite3VdbeAddOp2(v, OP_MemStore, memId, 1);
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, addr+13);
-    sqlite3VdbeAddOp2(v, OP_Next, iCur, addr+4);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addr+12);
+    sqlite3VdbeAddOp2(v, OP_Next, iCur, addr+3);
     sqlite3VdbeAddOp2(v, OP_Close, iCur, 0);
   }
   return memId;
@@ -220,7 +215,7 @@ static void autoIncEnd(
     addr = sqlite3VdbeCurrentAddr(v);
     sqlite3OpenTable(pParse, iCur, iDb, pDb->pSchema->pSeqTab, OP_OpenWrite);
     sqlite3VdbeAddOp2(v, OP_MemLoad, memId-1, 0);
-    sqlite3VdbeAddOp2(v, OP_NotNull, -1, addr+7);
+    sqlite3VdbeAddOp2(v, OP_NotNull, -1, addr+6);
     sqlite3VdbeAddOp2(v, OP_Pop, 1, 0);
     sqlite3VdbeAddOp2(v, OP_NewRowid, iCur, 0);
     sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pTab->zName, 0);
@@ -1282,10 +1277,9 @@ void sqlite3OpenTableAndIndices(
   for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
     assert( pIdx->pSchema==pTab->pSchema );
-    sqlite3VdbeAddOp2(v, OP_Integer, iDb, 0);
-    VdbeComment((v, "%s", pIdx->zName));
-    sqlite3VdbeAddOp4(v, op, i+base, pIdx->tnum, 0,
+    sqlite3VdbeAddOp4(v, op, i+base, pIdx->tnum, iDb,
                       (char*)pKey, P4_KEYINFO_HANDOFF);
+    VdbeComment((v, "%s", pIdx->zName));
   }
   if( pParse->nTab<=base+i ){
     pParse->nTab = base+i;
@@ -1581,16 +1575,14 @@ static int xferOptimization(
     assert( pSrcIdx );
     sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);
     sqlite3VdbeAddOp2(v, OP_Close, iDest, 0);
-    sqlite3VdbeAddOp2(v, OP_Integer, iDbSrc, 0);
     pKey = sqlite3IndexKeyinfo(pParse, pSrcIdx);
+    sqlite3VdbeAddOp4(v, OP_OpenRead, iSrc, pSrcIdx->tnum, iDbSrc,
+                      (char*)pKey, P4_KEYINFO_HANDOFF);
     VdbeComment((v, "%s", pSrcIdx->zName));
-    sqlite3VdbeAddOp4(v, OP_OpenRead, iSrc, pSrcIdx->tnum, 0,
-                      (char*)pKey, P4_KEYINFO_HANDOFF);
-    sqlite3VdbeAddOp2(v, OP_Integer, iDbDest, 0);
     pKey = sqlite3IndexKeyinfo(pParse, pDestIdx);
-    VdbeComment((v, "%s", pDestIdx->zName));
-    sqlite3VdbeAddOp4(v, OP_OpenWrite, iDest, pDestIdx->tnum, 0,
+    sqlite3VdbeAddOp4(v, OP_OpenWrite, iDest, pDestIdx->tnum, iDbDest,
                       (char*)pKey, P4_KEYINFO_HANDOFF);
+    VdbeComment((v, "%s", pDestIdx->zName));
     addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iSrc, 0);
     sqlite3VdbeAddOp2(v, OP_RowKey, iSrc, 0);
     sqlite3VdbeAddOp2(v, OP_IdxInsert, iDest, 1);

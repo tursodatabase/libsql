@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.453 2008/01/03 00:01:24 drh Exp $
+** $Id: build.c,v 1.454 2008/01/03 07:54:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -600,8 +600,7 @@ char *sqlite3NameFromToken(sqlite3 *db, Token *pName){
 void sqlite3OpenMasterTable(Parse *p, int iDb){
   Vdbe *v = sqlite3GetVdbe(p);
   sqlite3TableLock(p, iDb, MASTER_ROOT, 1, SCHEMA_TABLE(iDb));
-  sqlite3VdbeAddOp1(v, OP_Integer, iDb);
-  sqlite3VdbeAddOp2(v, OP_OpenWrite, 0, MASTER_ROOT);
+  sqlite3VdbeAddOp3(v, OP_OpenWrite, 0, MASTER_ROOT, iDb);
   sqlite3VdbeAddOp2(v, OP_SetNumColumns, 0, 5); /* sqlite_master has 5 columns */
 }
 
@@ -1495,8 +1494,7 @@ void sqlite3EndTable(
       SelectDest dest = {SRT_Table, 1, 0};
       Table *pSelTab;
       sqlite3VdbeAddOp1(v, OP_Dup, 0);
-      sqlite3VdbeAddOp1(v, OP_Integer, iDb);
-      sqlite3VdbeAddOp2(v, OP_OpenWrite, 1, 0);
+      sqlite3VdbeAddOp3(v, OP_OpenWrite, 1, 0, iDb);
       pParse->nTab = 2;
       sqlite3Select(pParse, pSelect, &dest, 0, 0, 0, 0);
       sqlite3VdbeAddOp1(v, OP_Close, 1);
@@ -2243,9 +2241,8 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     tnum = pIndex->tnum;
     sqlite3VdbeAddOp2(v, OP_Clear, tnum, iDb);
   }
-  sqlite3VdbeAddOp1(v, OP_Integer, iDb);
   pKey = sqlite3IndexKeyinfo(pParse, pIndex);
-  sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, tnum, 0, 
+  sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, tnum, iDb, 
                     (char *)pKey, P4_KEYINFO_HANDOFF);
   sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
   addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);

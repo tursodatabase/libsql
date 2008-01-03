@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.325 2008/01/03 00:01:24 drh Exp $
+** $Id: expr.c,v 1.326 2008/01/03 07:54:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1647,10 +1647,9 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
           iAddr = sqlite3VdbeAddOp2(v, OP_If, 0, iMem);
           sqlite3VdbeAddOp2(v, OP_MemInt, 1, iMem);
   
-          sqlite3VdbeAddOp1(v, OP_Integer, iDb);
-          VdbeComment((v, "%s", pIdx->zName));
-          sqlite3VdbeAddOp4(v, OP_OpenRead, iTab, pIdx->tnum, 0,
+          sqlite3VdbeAddOp4(v, OP_OpenRead, iTab, pIdx->tnum, iDb,
                                pKey,P4_KEYINFO_HANDOFF);
+          VdbeComment((v, "%s", pIdx->zName));
           eType = IN_INDEX_INDEX;
           sqlite3VdbeAddOp2(v, OP_SetNumColumns, iTab, pIdx->nColumn);
 

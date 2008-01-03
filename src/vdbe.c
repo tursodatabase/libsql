@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.665 2008/01/03 07:09:48 danielk1977 Exp $
+** $Id: vdbe.c,v 1.666 2008/01/03 07:54:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2796,17 +2796,16 @@ case OP_VerifyCookie: {       /* no-push */
   break;
 }
 
-/* Opcode: OpenRead P1 P2 P4
+/* Opcode: OpenRead P1 P2 P3 P4 *
 **
 ** Open a read-only cursor for the database table whose root page is
-** P2 in a database file.  The database file is determined by an 
-** integer from the top of the stack.  0 means the main database and
-** 1 means the database used for temporary tables.  Give the new 
-** cursor an identifier of P1.  The P1 values need not be contiguous
-** but all P1 values should be small integers.  It is an error for
-** P1 to be negative.
+** P2 in a database file.  The database file is determined by P3. 
+** 0 means the main database and 1 means the database used for 
+** temporary tables.  Give the new cursor an identifier of P1.  The P1
+** values need not be contiguous but all P1 values should be small integers.
+** It is an error for P1 to be negative.
 **
-** If P2==0 then take the root page number from the next of the stack.
+** If P2==0 then take the root page number from the top of the stack.
 **
 ** There will be a read lock on the database whenever there is an
 ** open cursor.  If the database was unlocked prior to this instruction
@@ -2823,7 +2822,7 @@ case OP_VerifyCookie: {       /* no-push */
 **
 ** See also OpenWrite.
 */
-/* Opcode: OpenWrite P1 P2 P4
+/* Opcode: OpenWrite P1 P2 P3 P4 *
 **
 ** Open a read/write cursor named P1 on the table or index whose root
 ** page is P2.  If P2==0 then take the root page number from the stack.
@@ -2842,17 +2841,12 @@ case OP_OpenRead:          /* no-push */
 case OP_OpenWrite: {       /* no-push */
   int i = pOp->p1;
   int p2 = pOp->p2;
+  int iDb = pOp->p3;
   int wrFlag;
   Btree *pX;
-  int iDb;
   Cursor *pCur;
   Db *pDb;
   
-  assert( pTos>=p->aStack );
-  sqlite3VdbeMemIntegerify(pTos);
-  iDb = pTos->u.i;
-  assert( (pTos->flags & MEM_Dyn)==0 );
-  pTos--;
   assert( iDb>=0 && iDb<db->nDb );
   assert( (p->btreeMask & (1<<iDb))!=0 );
   pDb = &db->aDb[iDb];
@@ -2896,7 +2890,7 @@ case OP_OpenWrite: {       /* no-push */
     case SQLITE_BUSY: {
       p->pc = pc;
       p->rc = rc = SQLITE_BUSY;
-      p->pTos = &pTos[1 + (pOp->p2<=0)]; /* Operands must remain on stack */
+      p->pTos = &pTos[(pOp->p2<=0)]; /* Operands must remain on stack */
       goto vdbe_return;
     }
     case SQLITE_OK: {

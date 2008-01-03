@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.27 2008/01/03 00:01:24 drh Exp $
+** @(#) $Id: analyze.c,v 1.28 2008/01/03 07:54:24 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -72,8 +72,7 @@ static void openStatTable(
   if( iRootPage>0 ){
     sqlite3TableLock(pParse, iDb, iRootPage, 1, "sqlite_stat1");
   }
-  sqlite3VdbeAddOp1(v, OP_Integer, iDb);
-  sqlite3VdbeAddOp2(v, OP_OpenWrite, iStatCur, iRootPage);
+  sqlite3VdbeAddOp3(v, OP_OpenWrite, iStatCur, iRootPage, iDb);
   sqlite3VdbeAddOp2(v, OP_SetNumColumns, iStatCur, 3);
 }
 
@@ -122,10 +121,9 @@ static void analyzeOneTable(
     /* Open a cursor to the index to be analyzed
     */
     assert( iDb==sqlite3SchemaToIndex(pParse->db, pIdx->pSchema) );
-    sqlite3VdbeAddOp1(v, OP_Integer, iDb);
-    VdbeComment((v, "%s", pIdx->zName));
-    sqlite3VdbeAddOp4(v, OP_OpenRead, iIdxCur, pIdx->tnum, 0,
+    sqlite3VdbeAddOp4(v, OP_OpenRead, iIdxCur, pIdx->tnum, iDb,
         (char *)pKey, P4_KEYINFO_HANDOFF);
+    VdbeComment((v, "%s", pIdx->zName));
     nCol = pIdx->nColumn;
     if( iMem+nCol*2>=pParse->nMem ){
       pParse->nMem = iMem+nCol*2+1;

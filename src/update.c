@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.149 2008/01/03 00:01:25 drh Exp $
+** $Id: update.c,v 1.150 2008/01/03 07:54:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -380,8 +380,7 @@ void sqlite3Update(
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       if( openAll || aIdxUsed[i] ){
         KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
-        sqlite3VdbeAddOp2(v, OP_Integer, iDb, 0);
-        sqlite3VdbeAddOp4(v, OP_OpenWrite, iCur+i+1, pIdx->tnum, 0,
+        sqlite3VdbeAddOp4(v, OP_OpenWrite, iCur+i+1, pIdx->tnum, iDb,
                        (char*)pKey, P4_KEYINFO_HANDOFF);
         assert( pParse->nTab>iCur+i+1 );
       }
