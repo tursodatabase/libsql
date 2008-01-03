@@ -448,7 +448,7 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, int val){
 }
 
 /*
-** Change the value of the P3 operand for a specific instruction.
+** Change the value of the P5 operand for a specific instruction.
 */
 void sqlite3VdbeChangeP5(Vdbe *p, int addr, u8 val){
   assert( p==0 || p->magic==VDBE_MAGIC_INIT );

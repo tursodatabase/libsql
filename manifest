@@ -1,5 +1,5 @@
-C Update\sOP_Rowid,\sOP_Column\sand\srelated\sopcodes\sto\suse\sregisters.\s(CVS\s4671)
-D 2008-01-03T18:44:59
+C Fix\stypo\sin\scomment.\sTicket\s#2870.\s(CVS\s4672)
+D 2008-01-03T18:56:26
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -172,7 +172,7 @@ F src/vdbe.c b49db80b9f38c333fd52c5c879f0ee04aaf18d27
 F src/vdbe.h bb128757b84280504a1243c450fd13ead248ede5
 F src/vdbeInt.h 869d0f550354c1364dde1d3611d770bd1c767505
 F src/vdbeapi.c f14174843bf4be2c9afdf2ef48b61e7c3ac62d7c
-F src/vdbeaux.c 2b5aa5820daffb3cf90d3462b0854c1026f7534f
+F src/vdbeaux.c eaf5bef96a4564eb0a9b473aa8628b3b5889839d
 F src/vdbeblob.c b90f7494c408d47ce6835000b01e40b371e27baf
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 123994fcd344993d2fb050a83b91b341bbbd08b4
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 253ed40aa36247fc846cc41c8612cd29899d9f8f
-R e098bb2688e6d77b10a1673326b22bcb
-U drh
-Z e08561688fc1cefafc1989e1679d8673
+P 4f3967073d2df9eae5a61b9770d5de2e1af47b4c
+R 4f52a37c5fa32ca6d78b4ef42fbde779
+U danielk1977
+Z 0337ebe6152fe10004220ecc78a15376
