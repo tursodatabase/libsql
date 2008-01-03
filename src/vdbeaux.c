@@ -438,13 +438,22 @@ void sqlite3VdbeChangeP2(Vdbe *p, int addr, int val){
 }
 
 /*
-** Change the value of the P2 operand for a specific instruction.
-** This routine is useful for setting a jump destination.
+** Change the value of the P3 operand for a specific instruction.
 */
 void sqlite3VdbeChangeP3(Vdbe *p, int addr, int val){
   assert( p==0 || p->magic==VDBE_MAGIC_INIT );
   if( p && addr>=0 && p->nOp>addr && p->aOp ){
     p->aOp[addr].p3 = val;
+  }
+}
+
+/*
+** Change the value of the P3 operand for a specific instruction.
+*/
+void sqlite3VdbeChangeP5(Vdbe *p, int addr, u8 val){
+  assert( p==0 || p->magic==VDBE_MAGIC_INIT );
+  if( p && addr>=0 && p->nOp>addr && p->aOp ){
+    p->aOp[addr].p5 = val;
   }
 }
 

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.141 2008/01/03 07:54:24 danielk1977 Exp $
+** $Id: delete.c,v 1.142 2008/01/03 09:51:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -58,6 +58,20 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
   }
 #endif
   return 0;
+}
+
+/*
+** This function is a temporary measure required because OP_Insert now
+** reads the key and data to insert from memory cells.
+*/
+void sqlite3CodeInsert(Parse *p, int iCur, u8 flags){
+  int iData = p->nMem++;
+  int iKey = p->nMem++;
+  Vdbe *v = sqlite3GetVdbe(p);
+  sqlite3VdbeAddOp2(v, OP_MemStore, iData, 1);
+  sqlite3VdbeAddOp2(v, OP_MemStore, iKey, 1);
+  sqlite3VdbeAddOp3(v, OP_Insert, iCur, iData, iKey);
+  sqlite3VdbeChangeP5(v, sqlite3VdbeCurrentAddr(v)-1, flags);
 }
 
 /*
@@ -325,7 +339,7 @@ void sqlite3DeleteFrom(
       }else{
         sqlite3VdbeAddOp0(v, OP_Null);
       }
-      sqlite3VdbeAddOp1(v, OP_Insert, oldIdx);
+      sqlite3CodeInsert(pParse, oldIdx, 0);
 
       /* Jump back and run the BEFORE triggers */
       sqlite3VdbeAddOp2(v, OP_Goto, 0, iBeginBeforeTrigger);

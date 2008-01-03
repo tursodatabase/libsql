@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.667 2008/01/03 08:08:40 danielk1977 Exp $
+** $Id: vdbe.c,v 1.668 2008/01/03 09:51:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2043,12 +2043,9 @@ case OP_SetNumColumns: {       /* no-push */
 ** If the KeyAsData opcode has previously executed on this cursor, then the
 ** field might be extracted from the key rather than the data.
 **
-** If the column contains fewer than P2 fields, then extract a NULL.  Or
-** if the next instruction is OP_DfltValue then the P4 argument to the
-** OP_DfltValue instruction will be a P4_MEM.  Use the P4 argument of
-** the OP_DfltValue instruction as the extracted value instead of NULL.
-** The OP_DfltValue P4 value will be a default value for a column 
-** that has been added using the ALTER TABLE ADD COLUMN command.
+** If the column contains fewer than P2 fields, then extract a NULL.  Or,
+** if the P4 argument is a P4_MEM use the value of the P4 argument as
+** the result.
 */
 case OP_Column: {
   u32 payloadSize;   /* Number of bytes in the record */
@@ -3560,16 +3557,16 @@ case OP_NewRowid: {
   break;
 }
 
-/* Opcode: Insert P1 P2 P4
+/* Opcode: Insert P1 P2 P3 P4 P5
 **
 ** Write an entry into the table of cursor P1.  A new entry is
 ** created if it doesn't already exist or the data for an existing
-** entry is overwritten.  The data is the value on the top of the
-** stack.  The key is the next value down on the stack.  The key must
-** be an integer.  The stack is popped twice by this instruction.
+** entry is overwritten.  The data is the value stored register
+** number P2. The key is stored in register P3. The key must
+** be an integer.
 **
-** If the OPFLAG_NCHANGE flag of P2 is set, then the row change count is
-** incremented (otherwise not).  If the OPFLAG_LASTROWID flag of P2 is set,
+** If the OPFLAG_NCHANGE flag of P5 is set, then the row change count is
+** incremented (otherwise not).  If the OPFLAG_LASTROWID flag of P5 is set,
 ** then rowid is stored for subsequent return by the
 ** sqlite3_last_insert_rowid() function (otherwise it is unmodified).
 **
@@ -3581,55 +3578,56 @@ case OP_NewRowid: {
 ** for indices is OP_IdxInsert.
 */
 case OP_Insert: {         /* no-push */
-  Mem *pNos = &pTos[-1];
+  Mem *pData = &p->aMem[pOp->p2];
+  Mem *pKey = &p->aMem[pOp->p3];
+
   int i = pOp->p1;
   Cursor *pC;
-  assert( pNos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
   if( ((pC = p->apCsr[i])->pCursor!=0 || pC->pseudoTable) ){
     i64 iKey;   /* The integer ROWID or key for the record to be inserted */
 
-    assert( pNos->flags & MEM_Int );
+    assert( pKey->flags & MEM_Int );
     assert( pC->isTable );
-    iKey = intToKey(pNos->u.i);
+    iKey = intToKey(pKey->u.i);
 
-    if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
-    if( pOp->p2 & OPFLAG_LASTROWID ) db->lastRowid = pNos->u.i;
-    if( pC->nextRowidValid && pNos->u.i>=pC->nextRowid ){
+    if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
+    if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = pKey->u.i;
+    if( pC->nextRowidValid && pKey->u.i>=pC->nextRowid ){
       pC->nextRowidValid = 0;
     }
-    if( pTos->flags & MEM_Null ){
-      pTos->z = 0;
-      pTos->n = 0;
+    if( pData->flags & MEM_Null ){
+      pData->z = 0;
+      pData->n = 0;
     }else{
-      assert( pTos->flags & (MEM_Blob|MEM_Str) );
+      assert( pData->flags & (MEM_Blob|MEM_Str) );
     }
     if( pC->pseudoTable ){
       sqlite3_free(pC->pData);
       pC->iKey = iKey;
-      pC->nData = pTos->n;
-      if( pTos->flags & MEM_Dyn ){
-        pC->pData = pTos->z;
-        pTos->flags = MEM_Null;
+      pC->nData = pData->n;
+      if( pData->flags & MEM_Dyn ){
+        pC->pData = pData->z;
+        pData->flags = MEM_Null;
       }else{
         pC->pData = sqlite3_malloc( pC->nData+2 );
         if( !pC->pData ) goto no_mem;
-        memcpy(pC->pData, pTos->z, pC->nData);
+        memcpy(pC->pData, pData->z, pC->nData);
         pC->pData[pC->nData] = 0;
         pC->pData[pC->nData+1] = 0;
       }
       pC->nullRow = 0;
     }else{
       int nZero;
-      if( pTos->flags & MEM_Zero ){
-        nZero = pTos->u.i;
+      if( pData->flags & MEM_Zero ){
+        nZero = pData->u.i;
       }else{
         nZero = 0;
       }
       rc = sqlite3BtreeInsert(pC->pCursor, 0, iKey,
-                              pTos->z, pTos->n, nZero,
-                              pOp->p2 & OPFLAG_APPEND);
+                              pData->z, pData->n, nZero,
+                              pOp->p5 & OPFLAG_APPEND);
     }
     
     pC->rowidIsValid = 0;
@@ -3640,13 +3638,12 @@ case OP_Insert: {         /* no-push */
     if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p4.p ){
       const char *zDb = db->aDb[pC->iDb].zName;
       const char *zTbl = pOp->p4.p;
-      int op = ((pOp->p2 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
+      int op = ((pOp->p5 & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_INSERT);
       assert( pC->isTable );
       db->xUpdateCallback(db->pUpdateArg, op, zDb, zTbl, iKey);
       assert( pC->iDb>=0 );
     }
   }
-  popStack(&pTos, 2);
 
   break;
 }

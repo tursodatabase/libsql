@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.454 2008/01/03 07:54:24 danielk1977 Exp $
+** $Id: build.c,v 1.455 2008/01/03 09:51:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -883,7 +883,7 @@ void sqlite3StartTable(
     sqlite3VdbeAddOp0(v, OP_NewRowid);
     sqlite3VdbeAddOp0(v, OP_Dup);
     sqlite3VdbeAddOp0(v, OP_Null);
-    sqlite3VdbeAddOp2(v, OP_Insert, 0, OPFLAG_APPEND);
+    sqlite3CodeInsert(pParse, 0, OPFLAG_APPEND);
     sqlite3VdbeAddOp0(v, OP_Close);
     sqlite3VdbeAddOp1(v, OP_Pull, 1);
   }

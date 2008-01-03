@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.203 2008/01/03 07:54:24 danielk1977 Exp $
+** $Id: insert.c,v 1.204 2008/01/03 09:51:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -221,7 +221,7 @@ static void autoIncEnd(
     sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pTab->zName, 0);
     sqlite3VdbeAddOp2(v, OP_MemLoad, memId, 0);
     sqlite3VdbeAddOp2(v, OP_MakeRecord, 2, 0);
-    sqlite3VdbeAddOp2(v, OP_Insert, iCur, OPFLAG_APPEND);
+    sqlite3CodeInsert(pParse, iCur, OPFLAG_APPEND);
     sqlite3VdbeAddOp2(v, OP_Close, iCur, 0);
   }
 }
@@ -511,7 +511,7 @@ void sqlite3Insert(
       sqlite3VdbeAddOp2(v, OP_MakeRecord, nColumn, 0);
       sqlite3VdbeAddOp2(v, OP_NewRowid, srcTab, 0);
       sqlite3VdbeAddOp2(v, OP_Pull, 1, 0);
-      sqlite3VdbeAddOp2(v, OP_Insert, srcTab, OPFLAG_APPEND);
+      sqlite3CodeInsert(pParse, srcTab, OPFLAG_APPEND);
       sqlite3VdbeAddOp2(v, OP_Return, 0, 0);
 
       /* The following code runs first because the GOTO at the very top
@@ -701,7 +701,7 @@ void sqlite3Insert(
     if( !isView ){
       sqlite3TableAffinityStr(v, pTab);
     }
-    sqlite3VdbeAddOp2(v, OP_Insert, newIdx, 0);
+    sqlite3CodeInsert(pParse, newIdx, OPFLAG_APPEND);
 
     /* Fire BEFORE or INSTEAD OF triggers */
     if( sqlite3CodeRowTrigger(pParse, TK_INSERT, 0, TRIGGER_BEFORE, pTab, 
@@ -1231,7 +1231,7 @@ void sqlite3CompleteInsertion(
   if( newIdx>=0 ){
     sqlite3VdbeAddOp2(v, OP_Dup, 1, 0);
     sqlite3VdbeAddOp2(v, OP_Dup, 1, 0);
-    sqlite3VdbeAddOp2(v, OP_Insert, newIdx, 0);
+    sqlite3CodeInsert(pParse, newIdx, 0);
   }
 #endif
   if( pParse->nested ){
@@ -1243,7 +1243,7 @@ void sqlite3CompleteInsertion(
   if( appendBias ){
     pik_flags |= OPFLAG_APPEND;
   }
-  sqlite3VdbeAddOp2(v, OP_Insert, base, pik_flags);
+  sqlite3CodeInsert(pParse, base, pik_flags);
   if( !pParse->nested ){
     sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
   }
@@ -1563,9 +1563,8 @@ static int xferOptimization(
     assert( pDest->autoInc==0 );
   }
   sqlite3VdbeAddOp2(v, OP_RowData, iSrc, 0);
-  sqlite3VdbeAddOp4(v, OP_Insert, iDest, 0,
-                    OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND,
-                    pDest->zName, 0);
+  sqlite3CodeInsert(pParse,iDest,OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND);
+  sqlite3VdbeChangeP4(v, -1, pDest->zName, 0);
   sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1);
   autoIncEnd(pParse, iDbDest, pDest, counterMem);
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.631 2008/01/03 00:01:25 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.632 2008/01/03 09:51:55 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1918,6 +1918,7 @@ int sqlite3OpenTempDatabase(Parse *);
 void sqlite3StrAccumAppend(StrAccum*,const char*,int);
 char *sqlite3StrAccumFinish(StrAccum*);
 void sqlite3StrAccumReset(StrAccum*);
+void sqlite3CodeInsert(Parse *, int, u8);
 
 
 /*
