@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.142 2008/01/03 09:51:55 danielk1977 Exp $
+** $Id: delete.c,v 1.143 2008/01/03 17:31:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -72,6 +72,24 @@ void sqlite3CodeInsert(Parse *p, int iCur, u8 flags){
   sqlite3VdbeAddOp2(v, OP_MemStore, iKey, 1);
   sqlite3VdbeAddOp3(v, OP_Insert, iCur, iData, iKey);
   sqlite3VdbeChangeP5(v, sqlite3VdbeCurrentAddr(v)-1, flags);
+}
+
+/*
+** Allocate nVal contiguous memory cells and return the index of the
+** first. Also pop nVal elements from the stack and store them in the 
+** registers. The element on the top of the stack is stored in the
+** register with the largest index.
+*/
+int sqlite3StackToReg(Parse *p, int nVal){
+  int i;
+  int iRet = p->nMem;
+  Vdbe *v = sqlite3GetVdbe(p);
+  assert(v);
+  p->nMem += nVal;
+  for(i=nVal-1; i>=0; i--){
+    sqlite3VdbeAddOp2(v, OP_MemStore, iRet+i, 1);
+  }
+  return iRet;
 }
 
 /*
@@ -354,8 +372,9 @@ void sqlite3DeleteFrom(
       /* Delete the row */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       if( IsVirtual(pTab) ){
+        int iReg = sqlite3StackToReg(pParse, 1);
         pParse->pVirtualLock = pTab;
-        sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, 0,
+        sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iReg,
                           (const char*)pTab->pVtab, P4_VTAB);
       }else
 #endif

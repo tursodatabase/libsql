@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.669 2008/01/03 11:50:30 danielk1977 Exp $
+** $Id: vdbe.c,v 1.670 2008/01/03 17:31:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -5198,21 +5198,21 @@ case OP_VRename: {   /* no-push */
 #endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VUpdate P1 P2 P4
+/* Opcode: VUpdate P1 P2 P3 P4
 **
 ** P4 is a pointer to a virtual table object, an sqlite3_vtab structure.
 ** This opcode invokes the corresponding xUpdate method. P2 values
-** are taken from the stack to pass to the xUpdate invocation. The
-** value on the top of the stack corresponds to the p2th element 
-** of the argv array passed to xUpdate.
+** are contiguous memory cells starting at P3 to pass to the xUpdate 
+** invocation. The value in register (P3+P2-1) corresponds to the 
+** p2th element of the argv array passed to xUpdate.
 **
 ** The xUpdate method will do a DELETE or an INSERT or both.
-** The argv[0] element (which corresponds to the P2-th element down
-** on the stack) is the rowid of a row to delete.  If argv[0] is
-** NULL then no deletion occurs.  The argv[1] element is the rowid
-** of the new row.  This can be NULL to have the virtual table
-** select the new rowid for itself.  The higher elements in the
-** stack are the values of columns in the new row.
+** The argv[0] element (which corresponds to memory cell P3)
+** is the rowid of a row to delete.  If argv[0] is NULL then no 
+** deletion occurs.  The argv[1] element is the rowid of the new 
+** row.  This can be NULL to have the virtual table select the new 
+** rowid for itself.  The subsequent elements in the array are 
+** the values of columns in the new row.
 **
 ** If P2==1 then no insert is performed.  argv[0] is the rowid of
 ** a row to delete.
@@ -5233,10 +5233,11 @@ case OP_VUpdate: {   /* no-push */
     int i;
     sqlite_int64 rowid;
     Mem **apArg = p->apArg;
-    Mem *pX = &pTos[1-nArg];
-    for(i = 0; i<nArg; i++, pX++){
+    Mem *pX = &p->aMem[pOp->p3];
+    for(i=0; i<nArg; i++){
       storeTypeInfo(pX, 0);
       apArg[i] = pX;
+      pX++;
     }
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
     sqlite3VtabLock(pVtab);
@@ -5248,7 +5249,6 @@ case OP_VUpdate: {   /* no-push */
       db->lastRowid = rowid;
     }
   }
-  popStack(&pTos, nArg);
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
