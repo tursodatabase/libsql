@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.26 2008/01/02 14:28:13 drh Exp $
+** @(#) $Id: analyze.c,v 1.27 2008/01/03 00:01:24 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -61,7 +61,7 @@ static void openStatTable(
   }else{
     /* The sqlite_stat1 table already exists.  Delete all rows. */
     iRootPage = pStat->tnum;
-    sqlite3VdbeAddOp(v, OP_Clear, pStat->tnum, iDb);
+    sqlite3VdbeAddOp2(v, OP_Clear, pStat->tnum, iDb);
   }
 
   /* Open the sqlite_stat1 table for writing. Unless it was created
@@ -72,9 +72,9 @@ static void openStatTable(
   if( iRootPage>0 ){
     sqlite3TableLock(pParse, iDb, iRootPage, 1, "sqlite_stat1");
   }
-  sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
-  sqlite3VdbeAddOp(v, OP_OpenWrite, iStatCur, iRootPage);
-  sqlite3VdbeAddOp(v, OP_SetNumColumns, iStatCur, 3);
+  sqlite3VdbeAddOp1(v, OP_Integer, iDb);
+  sqlite3VdbeAddOp2(v, OP_OpenWrite, iStatCur, iRootPage);
+  sqlite3VdbeAddOp2(v, OP_SetNumColumns, iStatCur, 3);
 }
 
 /*
@@ -122,15 +122,15 @@ static void analyzeOneTable(
     /* Open a cursor to the index to be analyzed
     */
     assert( iDb==sqlite3SchemaToIndex(pParse->db, pIdx->pSchema) );
-    sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
+    sqlite3VdbeAddOp1(v, OP_Integer, iDb);
     VdbeComment((v, "%s", pIdx->zName));
-    sqlite3VdbeOp3(v, OP_OpenRead, iIdxCur, pIdx->tnum,
-        (char *)pKey, P3_KEYINFO_HANDOFF);
+    sqlite3VdbeAddOp4(v, OP_OpenRead, iIdxCur, pIdx->tnum, 0,
+        (char *)pKey, P4_KEYINFO_HANDOFF);
     nCol = pIdx->nColumn;
     if( iMem+nCol*2>=pParse->nMem ){
       pParse->nMem = iMem+nCol*2+1;
     }
-    sqlite3VdbeAddOp(v, OP_SetNumColumns, iIdxCur, nCol+1);
+    sqlite3VdbeAddOp2(v, OP_SetNumColumns, iIdxCur, nCol+1);
 
     /* Memory cells are used as follows:
     **
@@ -146,33 +146,33 @@ static void analyzeOneTable(
     ** are initialized to NULL.
     */
     for(i=0; i<=nCol; i++){
-      sqlite3VdbeAddOp(v, OP_MemInt, 0, iMem+i);
+      sqlite3VdbeAddOp2(v, OP_MemInt, 0, iMem+i);
     }
     for(i=0; i<nCol; i++){
-      sqlite3VdbeAddOp(v, OP_MemNull, 0, iMem+nCol+i+1);
+      sqlite3VdbeAddOp2(v, OP_MemNull, 0, iMem+nCol+i+1);
     }
 
     /* Do the analysis.
     */
     endOfLoop = sqlite3VdbeMakeLabel(v);
-    sqlite3VdbeAddOp(v, OP_Rewind, iIdxCur, endOfLoop);
+    sqlite3VdbeAddOp2(v, OP_Rewind, iIdxCur, endOfLoop);
     topOfLoop = sqlite3VdbeCurrentAddr(v);
-    sqlite3VdbeAddOp(v, OP_MemIncr, 1, iMem);
+    sqlite3VdbeAddOp2(v, OP_MemIncr, 1, iMem);
     for(i=0; i<nCol; i++){
-      sqlite3VdbeAddOp(v, OP_Column, iIdxCur, i);
-      sqlite3VdbeAddOp(v, OP_MemLoad, iMem+nCol+i+1, 0);
-      sqlite3VdbeAddOp(v, OP_Ne, 0x100, 0);
+      sqlite3VdbeAddOp2(v, OP_Column, iIdxCur, i);
+      sqlite3VdbeAddOp1(v, OP_MemLoad, iMem+nCol+i+1);
+      sqlite3VdbeAddOp1(v, OP_Ne, 0x100);
     }
-    sqlite3VdbeAddOp(v, OP_Goto, 0, endOfLoop);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
-      addr = sqlite3VdbeAddOp(v, OP_MemIncr, 1, iMem+i+1);
+      addr = sqlite3VdbeAddOp2(v, OP_MemIncr, 1, iMem+i+1);
       sqlite3VdbeChangeP2(v, topOfLoop + 3*i + 3, addr);
-      sqlite3VdbeAddOp(v, OP_Column, iIdxCur, i);
-      sqlite3VdbeAddOp(v, OP_MemStore, iMem+nCol+i+1, 1);
+      sqlite3VdbeAddOp2(v, OP_Column, iIdxCur, i);
+      sqlite3VdbeAddOp2(v, OP_MemStore, iMem+nCol+i+1, 1);
     }
     sqlite3VdbeResolveLabel(v, endOfLoop);
-    sqlite3VdbeAddOp(v, OP_Next, iIdxCur, topOfLoop);
-    sqlite3VdbeAddOp(v, OP_Close, iIdxCur, 0);
+    sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, topOfLoop);
+    sqlite3VdbeAddOp1(v, OP_Close, iIdxCur);
 
     /* Store the results.  
     **
@@ -192,29 +192,29 @@ static void analyzeOneTable(
     ** If K>0 then it is always the case the D>0 so division by zero
     ** is never possible.
     */
-    sqlite3VdbeAddOp(v, OP_MemLoad, iMem, 0);
-    addr = sqlite3VdbeAddOp(v, OP_IfNot, 0, 0);
-    sqlite3VdbeAddOp(v, OP_NewRowid, iStatCur, 0);
-    sqlite3VdbeOp3(v, OP_String8, 0, 0, pTab->zName, 0);
-    sqlite3VdbeOp3(v, OP_String8, 0, 0, pIdx->zName, 0);
-    sqlite3VdbeAddOp(v, OP_MemLoad, iMem, 0);
-    sqlite3VdbeOp3(v, OP_String8, 0, 0, " ", 0);
+    sqlite3VdbeAddOp1(v, OP_MemLoad, iMem);
+    addr = sqlite3VdbeAddOp0(v, OP_IfNot);
+    sqlite3VdbeAddOp1(v, OP_NewRowid, iStatCur);
+    sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pTab->zName, 0);
+    sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pIdx->zName, 0);
+    sqlite3VdbeAddOp1(v, OP_MemLoad, iMem);
+    sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, " ", 0);
     for(i=0; i<nCol; i++){
-      sqlite3VdbeAddOp(v, OP_MemLoad, iMem, 0);
-      sqlite3VdbeAddOp(v, OP_MemLoad, iMem+i+1, 0);
-      sqlite3VdbeAddOp(v, OP_Add, 0, 0);
-      sqlite3VdbeAddOp(v, OP_AddImm, -1, 0);
-      sqlite3VdbeAddOp(v, OP_MemLoad, iMem+i+1, 0);
-      sqlite3VdbeAddOp(v, OP_Divide, 0, 0);
-      sqlite3VdbeAddOp(v, OP_ToInt, 0, 0);
+      sqlite3VdbeAddOp1(v, OP_MemLoad, iMem);
+      sqlite3VdbeAddOp1(v, OP_MemLoad, iMem+i+1);
+      sqlite3VdbeAddOp0(v, OP_Add);
+      sqlite3VdbeAddOp1(v, OP_AddImm, -1);
+      sqlite3VdbeAddOp1(v, OP_MemLoad, iMem+i+1);
+      sqlite3VdbeAddOp0(v, OP_Divide);
+      sqlite3VdbeAddOp0(v, OP_ToInt);
       if( i==nCol-1 ){
-        sqlite3VdbeAddOp(v, OP_Concat, nCol*2-1, 0);
+        sqlite3VdbeAddOp1(v, OP_Concat, nCol*2-1);
       }else{
-        sqlite3VdbeAddOp(v, OP_Dup, 1, 0);
+        sqlite3VdbeAddOp1(v, OP_Dup, 1);
       }
     }
-    sqlite3VdbeOp3(v, OP_MakeRecord, 3, 0, "aaa", 0);
-    sqlite3VdbeAddOp(v, OP_Insert, iStatCur, OPFLAG_APPEND);
+    sqlite3VdbeAddOp4(v, OP_MakeRecord, 3, 0, 0, "aaa", 0);
+    sqlite3VdbeAddOp2(v, OP_Insert, iStatCur, OPFLAG_APPEND);
     sqlite3VdbeJumpHere(v, addr);
   }
 }
@@ -226,7 +226,7 @@ static void analyzeOneTable(
 static void loadAnalysis(Parse *pParse, int iDb){
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v ){
-    sqlite3VdbeAddOp(v, OP_LoadAnalysis, iDb, 0);
+    sqlite3VdbeAddOp1(v, OP_LoadAnalysis, iDb);
   }
 }
 

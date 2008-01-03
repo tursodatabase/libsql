@@ -129,13 +129,13 @@ static void resizeOpArray(Vdbe *p, int N){
 **
 **    op              The opcode for this instruction
 **
-**    p1, p2          First two of the three possible operands.
+**    p1, p2, p3      Operands
 **
 ** Use the sqlite3VdbeResolveLabel() function to fix an address and
-** the sqlite3VdbeChangeP3() function to change the value of the P3
+** the sqlite3VdbeChangeP4() function to change the value of the P4
 ** operand.
 */
-int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
+int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   int i;
   VdbeOp *pOp;
 
@@ -152,45 +152,40 @@ int sqlite3VdbeAddOp(Vdbe *p, int op, int p1, int p2){
   pOp->opcode = op;
   pOp->p1 = p1;
   pOp->p2 = p2;
-  pOp->p3.p = 0;
-  pOp->p3type = P3_NOTUSED;
+  pOp->p3 = p3;
+  pOp->p4.p = 0;
+  pOp->p4type = P4_NOTUSED;
   p->expired = 0;
 #ifdef SQLITE_DEBUG
   if( sqlite3_vdbe_addop_trace ) sqlite3VdbePrintOp(0, i, &p->aOp[i]);
 #endif
   return i;
 }
-
-/*
-** Add an opcode that includes the p3 value as a pointer.
-*/
-int sqlite3VdbeOp3(
-  Vdbe *p,            /* Add the opcode to this VM */
-  int op,             /* The new opcode */
-  int p1, int p2,     /* P1 and P2 operands */
-  const char *zP3,    /* The P3 operand */
-  int p3type          /* P3 operand type */
-){
-  int addr = sqlite3VdbeAddOp(p, op, p1, p2);
-  sqlite3VdbeChangeP3(p, addr, zP3, p3type);
-  return addr;
+int sqlite3VdbeAddOp0(Vdbe *p, int op){
+  return sqlite3VdbeAddOp3(p, op, 0, 0, 0);
+}
+int sqlite3VdbeAddOp1(Vdbe *p, int op, int p1){
+  return sqlite3VdbeAddOp3(p, op, p1, 0, 0);
+}
+int sqlite3VdbeAddOp2(Vdbe *p, int op, int p1, int p2){
+  return sqlite3VdbeAddOp3(p, op, p1, p2, 0);
 }
 
+
 /*
-** Add an opcode that includes the p3 value as an integer.
+** Add an opcode that includes the p4 value as a pointer.
 */
-int sqlite3VdbeOp3Int(
+int sqlite3VdbeAddOp4(
   Vdbe *p,            /* Add the opcode to this VM */
   int op,             /* The new opcode */
-  int p1, int p2,     /* P1 and P2 operands */
-  int p3              /* The P3 operand */
+  int p1,             /* The P1 operand */
+  int p2,             /* The P2 operand */
+  int p3,             /* The P3 operand */
+  const char *zP4,    /* The P4 operand */
+  int p4type          /* P4 operand type */
 ){
-  int addr = sqlite3VdbeAddOp(p, op, p1, p2);
-  if( !p->db->mallocFailed ){
-    Op *pOp = &p->aOp[addr];
-    pOp->p3.i = p3;
-    pOp->p3type = P3_INT32;
-  }
+  int addr = sqlite3VdbeAddOp3(p, op, p1, p2, p3);
+  sqlite3VdbeChangeP4(p, addr, zP4, p4type);
   return addr;
 }
 
@@ -402,8 +397,8 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       pOut->opcode = pIn->opcode;
       pOut->p1 = pIn->p1;
       pOut->p2 = p2<0 ? addr + ADDR(p2) : p2;
-      pOut->p3.p = pIn->p3;
-      pOut->p3type = pIn->p3 ? P3_STATIC : P3_NOTUSED;
+      pOut->p4.p = pIn->p3;
+      pOut->p4type = pIn->p3 ? P4_STATIC : P4_NOTUSED;
 #ifdef SQLITE_DEBUG
       if( sqlite3_vdbe_addop_trace ){
         sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
@@ -460,32 +455,32 @@ static void freeEphemeralFunction(FuncDef *pDef){
 }
 
 /*
-** Delete a P3 value if necessary.
+** Delete a P4 value if necessary.
 */
-static void freeP3(int p3type, void *p3){
+static void freeP4(int p4type, void *p3){
   if( p3 ){
-    switch( p3type ){
-      case P3_REAL:
-      case P3_INT64:
-      case P3_MPRINTF:
-      case P3_DYNAMIC:
-      case P3_KEYINFO:
-      case P3_KEYINFO_HANDOFF: {
+    switch( p4type ){
+      case P4_REAL:
+      case P4_INT64:
+      case P4_MPRINTF:
+      case P4_DYNAMIC:
+      case P4_KEYINFO:
+      case P4_KEYINFO_HANDOFF: {
         sqlite3_free(p3);
         break;
       }
-      case P3_VDBEFUNC: {
+      case P4_VDBEFUNC: {
         VdbeFunc *pVdbeFunc = (VdbeFunc *)p3;
         freeEphemeralFunction(pVdbeFunc->pFunc);
         sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
         sqlite3_free(pVdbeFunc);
         break;
       }
-      case P3_FUNCDEF: {
+      case P4_FUNCDEF: {
         freeEphemeralFunction((FuncDef*)p3);
         break;
       }
-      case P3_MEM: {
+      case P4_MEM: {
         sqlite3ValueFree((sqlite3_value*)p3);
         break;
       }
@@ -501,7 +496,7 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr, int N){
   if( p && p->aOp ){
     VdbeOp *pOp = &p->aOp[addr];
     while( N-- ){
-      freeP3(pOp->p3type, pOp->p3.p);
+      freeP4(pOp->p4type, pOp->p4.p);
       memset(pOp, 0, sizeof(pOp[0]));
       pOp->opcode = OP_Noop;
       pOp++;
@@ -510,36 +505,36 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr, int N){
 }
 
 /*
-** Change the value of the P3 operand for a specific instruction.
+** Change the value of the P4 operand for a specific instruction.
 ** This routine is useful when a large program is loaded from a
 ** static array using sqlite3VdbeAddOpList but we want to make a
 ** few minor changes to the program.
 **
-** If n>=0 then the P3 operand is dynamic, meaning that a copy of
+** If n>=0 then the P4 operand is dynamic, meaning that a copy of
 ** the string is made into memory obtained from sqlite3_malloc().
-** A value of n==0 means copy bytes of zP3 up to and including the
-** first null byte.  If n>0 then copy n+1 bytes of zP3.
+** A value of n==0 means copy bytes of zP4 up to and including the
+** first null byte.  If n>0 then copy n+1 bytes of zP4.
 **
-** If n==P3_KEYINFO it means that zP3 is a pointer to a KeyInfo structure.
+** If n==P4_KEYINFO it means that zP4 is a pointer to a KeyInfo structure.
 ** A copy is made of the KeyInfo structure into memory obtained from
 ** sqlite3_malloc, to be freed when the Vdbe is finalized.
-** n==P3_KEYINFO_HANDOFF indicates that zP3 points to a KeyInfo structure
+** n==P4_KEYINFO_HANDOFF indicates that zP4 points to a KeyInfo structure
 ** stored in memory that the caller has obtained from sqlite3_malloc. The 
 ** caller should not free the allocation, it will be freed when the Vdbe is
 ** finalized.
 ** 
-** Other values of n (P3_STATIC, P3_COLLSEQ etc.) indicate that zP3 points
+** Other values of n (P4_STATIC, P4_COLLSEQ etc.) indicate that zP4 points
 ** to a string or structure that is guaranteed to exist for the lifetime of
 ** the Vdbe. In these cases we can just copy the pointer.
 **
-** If addr<0 then change P3 on the most recently inserted instruction.
+** If addr<0 then change P4 on the most recently inserted instruction.
 */
-void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
+void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   Op *pOp;
   assert( p==0 || p->magic==VDBE_MAGIC_INIT );
   if( p==0 || p->aOp==0 || p->db->mallocFailed ){
-    if (n != P3_KEYINFO) {
-      freeP3(n, (void*)*(char**)&zP3);
+    if (n != P4_KEYINFO) {
+      freeP4(n, (void*)*(char**)&zP4);
     }
     return;
   }
@@ -548,42 +543,42 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
     if( addr<0 ) return;
   }
   pOp = &p->aOp[addr];
-  freeP3(pOp->p3type, pOp->p3.p);
-  pOp->p3.p = 0;
-  if( zP3==0 ){
-    pOp->p3.p = 0;
-    pOp->p3type = P3_NOTUSED;
-  }else if( n==P3_KEYINFO ){
+  freeP4(pOp->p4type, pOp->p4.p);
+  pOp->p4.p = 0;
+  if( zP4==0 ){
+    pOp->p4.p = 0;
+    pOp->p4type = P4_NOTUSED;
+  }else if( n==P4_KEYINFO ){
     KeyInfo *pKeyInfo;
     int nField, nByte;
 
-    nField = ((KeyInfo*)zP3)->nField;
+    nField = ((KeyInfo*)zP4)->nField;
     nByte = sizeof(*pKeyInfo) + (nField-1)*sizeof(pKeyInfo->aColl[0]) + nField;
     pKeyInfo = sqlite3_malloc( nByte );
-    pOp->p3.p = (char*)pKeyInfo;
+    pOp->p4.p = (char*)pKeyInfo;
     if( pKeyInfo ){
       unsigned char *aSortOrder;
-      memcpy(pKeyInfo, zP3, nByte);
+      memcpy(pKeyInfo, zP4, nByte);
       aSortOrder = pKeyInfo->aSortOrder;
       if( aSortOrder ){
         pKeyInfo->aSortOrder = (unsigned char*)&pKeyInfo->aColl[nField];
         memcpy(pKeyInfo->aSortOrder, aSortOrder, nField);
       }
-      pOp->p3type = P3_KEYINFO;
+      pOp->p4type = P4_KEYINFO;
     }else{
       p->db->mallocFailed = 1;
-      pOp->p3type = P3_NOTUSED;
+      pOp->p4type = P4_NOTUSED;
     }
-  }else if( n==P3_KEYINFO_HANDOFF ){
-    pOp->p3.p = (char*)zP3;
-    pOp->p3type = P3_KEYINFO;
+  }else if( n==P4_KEYINFO_HANDOFF ){
+    pOp->p4.p = (char*)zP4;
+    pOp->p4type = P4_KEYINFO;
   }else if( n<0 ){
-    pOp->p3.p = (char*)zP3;
-    pOp->p3type = n;
+    pOp->p4.p = (char*)zP4;
+    pOp->p4type = n;
   }else{
-    if( n==0 ) n = strlen(zP3);
-    pOp->p3.p = sqlite3DbStrNDup(p->db, zP3, n);
-    pOp->p3type = P3_DYNAMIC;
+    if( n==0 ) n = strlen(zP4);
+    pOp->p4.p = sqlite3DbStrNDup(p->db, zP4, n);
+    pOp->p4type = P4_DYNAMIC;
   }
 }
 
@@ -613,17 +608,17 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
 #if !defined(SQLITE_OMIT_EXPLAIN) || !defined(NDEBUG) \
      || defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
 /*
-** Compute a string that describes the P3 parameter for an opcode.
+** Compute a string that describes the P4 parameter for an opcode.
 ** Use zTemp for any required temporary buffer space.
 */
-static char *displayP3(Op *pOp, char *zTemp, int nTemp){
-  char *zP3 = zTemp;
-  int nP3;
+static char *displayP4(Op *pOp, char *zTemp, int nTemp){
+  char *zP4 = zTemp;
+  int nP4;
   assert( nTemp>=20 );
-  switch( pOp->p3type ){
-    case P3_KEYINFO: {
+  switch( pOp->p4type ){
+    case P4_KEYINFO: {
       int i, j;
-      KeyInfo *pKeyInfo = (KeyInfo*)pOp->p3.p;
+      KeyInfo *pKeyInfo = (KeyInfo*)pOp->p4.p;
       sqlite3_snprintf(nTemp, zTemp, "keyinfo(%d", pKeyInfo->nField);
       i = strlen(zTemp);
       for(j=0; j<pKeyInfo->nField; j++){
@@ -650,32 +645,32 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
       assert( i<nTemp );
       break;
     }
-    case P3_COLLSEQ: {
-      CollSeq *pColl = (CollSeq*)pOp->p3.p;
+    case P4_COLLSEQ: {
+      CollSeq *pColl = (CollSeq*)pOp->p4.p;
       sqlite3_snprintf(nTemp, zTemp, "collseq(%.20s)", pColl->zName);
       break;
     }
-    case P3_FUNCDEF: {
-      FuncDef *pDef = (FuncDef*)pOp->p3.p;
+    case P4_FUNCDEF: {
+      FuncDef *pDef = (FuncDef*)pOp->p4.p;
       sqlite3_snprintf(nTemp, zTemp, "%s(%d)", pDef->zName, pDef->nArg);
       break;
     }
-    case P3_INT64: {
-      sqlite3_snprintf(nTemp, zTemp, "%lld", *(sqlite3_int64*)pOp->p3.p);
+    case P4_INT64: {
+      sqlite3_snprintf(nTemp, zTemp, "%lld", *(sqlite3_int64*)pOp->p4.p);
       break;
     }
-    case P3_INT32: {
-      sqlite3_snprintf(nTemp, zTemp, "%d", pOp->p3.i);
+    case P4_INT32: {
+      sqlite3_snprintf(nTemp, zTemp, "%d", pOp->p4.i);
       break;
     }
-    case P3_REAL: {
-      sqlite3_snprintf(nTemp, zTemp, "%.16g", *(double*)pOp->p3.p);
+    case P4_REAL: {
+      sqlite3_snprintf(nTemp, zTemp, "%.16g", *(double*)pOp->p4.p);
       break;
     }
-    case P3_MEM: {
-      Mem *pMem = (Mem*)pOp->p3.p;
+    case P4_MEM: {
+      Mem *pMem = (Mem*)pOp->p4.p;
       if( pMem->flags & MEM_Str ){
-        zP3 = pMem->z;
+        zP4 = pMem->z;
       }else if( pMem->flags & MEM_Int ){
         sqlite3_snprintf(nTemp, zTemp, "%lld", pMem->u.i);
       }else if( pMem->flags & MEM_Real ){
@@ -686,28 +681,28 @@ static char *displayP3(Op *pOp, char *zTemp, int nTemp){
       break;
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    case P3_VTAB: {
-      sqlite3_vtab *pVtab = (sqlite3_vtab*)pOp->p3.p;
+    case P4_VTAB: {
+      sqlite3_vtab *pVtab = (sqlite3_vtab*)pOp->p4.p;
       sqlite3_snprintf(nTemp, zTemp, "vtab:%p:%p", pVtab, pVtab->pModule);
       break;
     }
 #endif
     default: {
-      zP3 = pOp->p3.p;
-      if( zP3==0 || pOp->opcode==OP_Noop ){
-        zP3 = zTemp;
+      zP4 = pOp->p4.p;
+      if( zP4==0 || pOp->opcode==OP_Noop ){
+        zP4 = zTemp;
         zTemp[0] = 0;
       }
     }
   }
-  assert( zP3!=0 );
+  assert( zP4!=0 );
 #ifdef SQLITE_DEBUG
-  if( pOp->zComment && zP3==zTemp && (nP3 = strlen(zP3))<nTemp ){
-    sqlite3_snprintf(nTemp-nP3, &zP3[nP3], "%s# %s",
-                     nP3>0 ? " " : "", pOp->zComment);
+  if( pOp->zComment && zP4==zTemp && (nP4 = strlen(zP4))<nTemp ){
+    sqlite3_snprintf(nTemp-nP4, &zP4[nP4], "%s# %s",
+                     nP4>0 ? " " : "", pOp->zComment);
   }
 #endif
-  return zP3;
+  return zP4;
 }
 #endif
 
@@ -732,13 +727,13 @@ void sqlite3VdbeUsesBtree(Vdbe *p, int i){
 ** Print a single opcode.  This routine is used for debugging only.
 */
 void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
-  char *zP3;
+  char *zP4;
   char zPtr[50];
   static const char *zFormat1 = "%4d %-13s %4d %4d %s\n";
   if( pOut==0 ) pOut = stdout;
-  zP3 = displayP3(pOp, zPtr, sizeof(zPtr));
+  zP4 = displayP4(pOp, zPtr, sizeof(zPtr));
   fprintf(pOut, zFormat1,
-      pc, sqlite3OpcodeName(pOp->opcode), pOp->p1, pOp->p2, zP3);
+      pc, sqlite3OpcodeName(pOp->opcode), pOp->p1, pOp->p2, zP4);
   fflush(pOut);
 }
 #endif
@@ -820,8 +815,8 @@ int sqlite3VdbeList(
     pMem->type = SQLITE_INTEGER;
     pMem++;
 
-    pMem->flags = MEM_Ephem|MEM_Str|MEM_Term;     /* P3 */
-    pMem->z = displayP3(pOp, pMem->zShort, sizeof(pMem->zShort));
+    pMem->flags = MEM_Ephem|MEM_Str|MEM_Term;     /* P4 */
+    pMem->z = displayP4(pOp, pMem->zShort, sizeof(pMem->zShort));
     assert( pMem->z!=0 );
     pMem->n = strlen(pMem->z);
     pMem->type = SQLITE_TEXT;
@@ -845,8 +840,8 @@ void sqlite3VdbePrintSql(Vdbe *p){
   VdbeOp *pOp;
   if( nOp<1 ) return;
   pOp = &p->aOp[nOp-1];
-  if( pOp->opcode==OP_Noop && pOp->p3.p!=0 ){
-    const char *z = pOp->p3.p;
+  if( pOp->opcode==OP_Noop && pOp->p4.p!=0 ){
+    const char *z = pOp->p4.p;
     while( isspace(*(u8*)z) ) z++;
     printf("SQL: [%s]\n", z);
   }
@@ -863,10 +858,10 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
   if( sqlite3_io_trace==0 ) return;
   if( nOp<1 ) return;
   pOp = &p->aOp[nOp-1];
-  if( pOp->opcode==OP_Noop && pOp->p3.p!=0 ){
+  if( pOp->opcode==OP_Noop && pOp->p4.p!=0 ){
     int i, j;
     char z[1000];
-    sqlite3_snprintf(sizeof(z), z, "%s", pOp->p3.p);
+    sqlite3_snprintf(sizeof(z), z, "%s", pOp->p4.p);
     for(i=0; isspace((unsigned char)z[i]); i++){}
     for(j=0; z[i]; i++){
       if( isspace((unsigned char)z[i]) ){
@@ -1097,8 +1092,8 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
 **
 ** This call must be made after a call to sqlite3VdbeSetNumCols().
 **
-** If N==P3_STATIC  it means that zName is a pointer to a constant static
-** string and we can just copy the pointer. If it is P3_DYNAMIC, then 
+** If N==P4_STATIC  it means that zName is a pointer to a constant static
+** string and we can just copy the pointer. If it is P4_DYNAMIC, then 
 ** the string is freed using sqlite3_free() when the vdbe is finished with
 ** it. Otherwise, N bytes of zName are copied.
 */
@@ -1110,12 +1105,12 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, int var, const char *zName, int N){
   if( p->db->mallocFailed ) return SQLITE_NOMEM;
   assert( p->aColName!=0 );
   pColName = &(p->aColName[idx+var*p->nResColumn]);
-  if( N==P3_DYNAMIC || N==P3_STATIC ){
+  if( N==P4_DYNAMIC || N==P4_STATIC ){
     rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, SQLITE_STATIC);
   }else{
     rc = sqlite3VdbeMemSetStr(pColName, zName, N, SQLITE_UTF8,SQLITE_TRANSIENT);
   }
-  if( rc==SQLITE_OK && N==P3_DYNAMIC ){
+  if( rc==SQLITE_OK && N==P4_DYNAMIC ){
     pColName->flags = (pColName->flags&(~MEM_Static))|MEM_Dyn;
     pColName->xDel = 0;
   }
@@ -1728,7 +1723,7 @@ void sqlite3VdbeDelete(Vdbe *p){
   if( p->aOp ){
     Op *pOp = p->aOp;
     for(i=0; i<p->nOp; i++, pOp++){
-      freeP3(pOp->p3type, pOp->p3.p);
+      freeP4(pOp->p4type, pOp->p4.p);
 #ifdef SQLITE_DEBUG
       sqlite3_free(pOp->zComment);
 #endif     

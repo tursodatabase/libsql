@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.630 2008/01/02 17:11:14 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.631 2008/01/03 00:01:25 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -701,7 +701,7 @@ struct CollSeq {
 **
 ** But rather than start with 0 or 1, we begin with 'a'.  That way,
 ** when multiple affinity types are concatenated into a string and
-** used as the P3 operand, they will be more readable.
+** used as the P4 operand, they will be more readable.
 **
 ** Note also that the numeric types are grouped together so that testing
 ** for a numeric type is a single comparison.
@@ -1294,7 +1294,7 @@ struct NameContext {
 **
 ** addrOpenEphm[] entries contain the address of OP_OpenEphemeral opcodes.
 ** These addresses must be stored so that we can go back and fill in
-** the P3_KEYINFO and P2 parameters later.  Neither the KeyInfo nor
+** the P4_KEYINFO and P2 parameters later.  Neither the KeyInfo nor
 ** the number of columns in P2 can be computed at the same time
 ** as the OP_OpenEphm instruction is coded because not
 ** enough information about the compound query is known at that point.

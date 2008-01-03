@@ -248,13 +248,13 @@ void sqlite3FinishTrigger(
     sqlite3BeginWriteOperation(pParse, 0, iDb);
     sqlite3OpenMasterTable(pParse, iDb);
     addr = sqlite3VdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
-    sqlite3VdbeChangeP3(v, addr+2, pTrig->name, 0); 
-    sqlite3VdbeChangeP3(v, addr+3, pTrig->table, 0); 
-    sqlite3VdbeChangeP3(v, addr+6, (char*)pAll->z, pAll->n);
+    sqlite3VdbeChangeP4(v, addr+2, pTrig->name, 0); 
+    sqlite3VdbeChangeP4(v, addr+3, pTrig->table, 0); 
+    sqlite3VdbeChangeP4(v, addr+6, (char*)pAll->z, pAll->n);
     sqlite3ChangeCookie(db, v, iDb);
-    sqlite3VdbeAddOp(v, OP_Close, 0, 0);
-    sqlite3VdbeOp3(v, OP_ParseSchema, iDb, 0, sqlite3MPrintf(
-        db, "type='trigger' AND name='%q'", pTrig->name), P3_DYNAMIC
+    sqlite3VdbeAddOp2(v, OP_Close, 0, 0);
+    sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0, sqlite3MPrintf(
+        db, "type='trigger' AND name='%q'", pTrig->name), P4_DYNAMIC
     );
   }
 
@@ -548,10 +548,10 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
     sqlite3BeginWriteOperation(pParse, 0, iDb);
     sqlite3OpenMasterTable(pParse, iDb);
     base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
-    sqlite3VdbeChangeP3(v, base+1, pTrigger->name, 0);
+    sqlite3VdbeChangeP4(v, base+1, pTrigger->name, 0);
     sqlite3ChangeCookie(db, v, iDb);
-    sqlite3VdbeAddOp(v, OP_Close, 0, 0);
-    sqlite3VdbeOp3(v, OP_DropTrigger, iDb, 0, pTrigger->name, 0);
+    sqlite3VdbeAddOp2(v, OP_Close, 0, 0);
+    sqlite3VdbeAddOp4(v, OP_DropTrigger, iDb, 0, 0, pTrigger->name, 0);
   }
 }
 
@@ -676,7 +676,7 @@ static int codeTriggerProgram(
 
   assert( pTriggerStep!=0 );
   assert( v!=0 );
-  sqlite3VdbeAddOp(v, OP_ContextPush, 0, 0);
+  sqlite3VdbeAddOp2(v, OP_ContextPush, 0, 0);
   VdbeComment((v, "begin trigger %s", pStepList->pTrig->name));
   while( pTriggerStep ){
     orconf = (orconfin == OE_Default)?pTriggerStep->orconf:orconfin;
@@ -695,31 +695,31 @@ static int codeTriggerProgram(
       case TK_UPDATE: {
         SrcList *pSrc;
         pSrc = targetSrcList(pParse, pTriggerStep);
-        sqlite3VdbeAddOp(v, OP_ResetCount, 0, 0);
+        sqlite3VdbeAddOp2(v, OP_ResetCount, 0, 0);
         sqlite3Update(pParse, pSrc,
                 sqlite3ExprListDup(db, pTriggerStep->pExprList), 
                 sqlite3ExprDup(db, pTriggerStep->pWhere), orconf);
-        sqlite3VdbeAddOp(v, OP_ResetCount, 1, 0);
+        sqlite3VdbeAddOp2(v, OP_ResetCount, 1, 0);
         break;
       }
       case TK_INSERT: {
         SrcList *pSrc;
         pSrc = targetSrcList(pParse, pTriggerStep);
-        sqlite3VdbeAddOp(v, OP_ResetCount, 0, 0);
+        sqlite3VdbeAddOp2(v, OP_ResetCount, 0, 0);
         sqlite3Insert(pParse, pSrc,
           sqlite3ExprListDup(db, pTriggerStep->pExprList), 
           sqlite3SelectDup(db, pTriggerStep->pSelect), 
           sqlite3IdListDup(db, pTriggerStep->pIdList), orconf);
-        sqlite3VdbeAddOp(v, OP_ResetCount, 1, 0);
+        sqlite3VdbeAddOp2(v, OP_ResetCount, 1, 0);
         break;
       }
       case TK_DELETE: {
         SrcList *pSrc;
-        sqlite3VdbeAddOp(v, OP_ResetCount, 0, 0);
+        sqlite3VdbeAddOp2(v, OP_ResetCount, 0, 0);
         pSrc = targetSrcList(pParse, pTriggerStep);
         sqlite3DeleteFrom(pParse, pSrc, 
                           sqlite3ExprDup(db, pTriggerStep->pWhere));
-        sqlite3VdbeAddOp(v, OP_ResetCount, 1, 0);
+        sqlite3VdbeAddOp2(v, OP_ResetCount, 1, 0);
         break;
       }
       default:
@@ -727,7 +727,7 @@ static int codeTriggerProgram(
     } 
     pTriggerStep = pTriggerStep->pNext;
   }
-  sqlite3VdbeAddOp(v, OP_ContextPop, 0, 0);
+  sqlite3VdbeAddOp2(v, OP_ContextPop, 0, 0);
   VdbeComment((v, "end trigger %s", pStepList->pTrig->name));
 
   return 0;

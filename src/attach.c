@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.64 2007/12/27 15:12:17 danielk1977 Exp $
+** $Id: attach.c,v 1.65 2008/01/03 00:01:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -332,15 +332,15 @@ static void codeAttach(
 
   assert( v || db->mallocFailed );
   if( v ){
-    sqlite3VdbeAddOp(v, OP_Function, 0, nFunc);
+    sqlite3VdbeAddOp2(v, OP_Function, 0, nFunc);
     pFunc = sqlite3FindFunction(db, zFunc, strlen(zFunc), nFunc, SQLITE_UTF8,0);
-    sqlite3VdbeChangeP3(v, -1, (char *)pFunc, P3_FUNCDEF);
+    sqlite3VdbeChangeP4(v, -1, (char *)pFunc, P4_FUNCDEF);
 
     /* Code an OP_Expire. For an ATTACH statement, set P1 to true (expire this
     ** statement only). For DETACH, set it to false (expire all existing
     ** statements).
     */
-    sqlite3VdbeAddOp(v, OP_Expire, (type==SQLITE_ATTACH), 0);
+    sqlite3VdbeAddOp1(v, OP_Expire, (type==SQLITE_ATTACH));
   }
   
 attach_end:

@@ -293,10 +293,10 @@ static int sqlite3Step(Vdbe *p){
     if( db->xTrace && !db->init.busy ){
       assert( p->nOp>0 );
       assert( p->aOp[p->nOp-1].opcode==OP_Noop );
-      assert( p->aOp[p->nOp-1].p3.p!=0 );
-      assert( p->aOp[p->nOp-1].p3type==P3_DYNAMIC );
+      assert( p->aOp[p->nOp-1].p4.p!=0 );
+      assert( p->aOp[p->nOp-1].p4type==P4_DYNAMIC );
       sqlite3SafetyOff(db);
-      db->xTrace(db->pTraceArg, p->aOp[p->nOp-1].p3.p);
+      db->xTrace(db->pTraceArg, p->aOp[p->nOp-1].p4.p);
       if( sqlite3SafetyOn(db) ){
         p->rc = SQLITE_MISUSE;
         return SQLITE_MISUSE;
@@ -314,7 +314,7 @@ static int sqlite3Step(Vdbe *p){
     */
 #ifdef SQLITE_DEBUG
     if( (db->flags & SQLITE_SqlTrace)!=0 ){
-      sqlite3DebugPrintf("SQL-trace: %s\n", p->aOp[p->nOp-1].p3.p);
+      sqlite3DebugPrintf("SQL-trace: %s\n", p->aOp[p->nOp-1].p4.p);
     }
 #endif /* SQLITE_DEBUG */
 
@@ -345,9 +345,9 @@ static int sqlite3Step(Vdbe *p){
     elapseTime = (rNow - (int)rNow)*3600.0*24.0*1000000000.0 - p->startTime;
     assert( p->nOp>0 );
     assert( p->aOp[p->nOp-1].opcode==OP_Noop );
-    assert( p->aOp[p->nOp-1].p3.p!=0 );
-    assert( p->aOp[p->nOp-1].p3type==P3_DYNAMIC );
-    db->xProfile(db->pProfileArg, p->aOp[p->nOp-1].p3.p, elapseTime);
+    assert( p->aOp[p->nOp-1].p4.p!=0 );
+    assert( p->aOp[p->nOp-1].p4type==P4_DYNAMIC );
+    db->xProfile(db->pProfileArg, p->aOp[p->nOp-1].p4.p, elapseTime);
   }
 #endif
 
@@ -1001,7 +1001,7 @@ static void createVarMap(Vdbe *p){
       for(j=0, pOp=p->aOp; j<p->nOp; j++, pOp++){
         if( pOp->opcode==OP_Variable ){
           assert( pOp->p1>0 && pOp->p1<=p->nVar );
-          p->azVar[pOp->p1-1] = pOp->p3.p;
+          p->azVar[pOp->p1-1] = pOp->p4.p;
         }
       }
       p->okVar = 1;

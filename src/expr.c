@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.324 2008/01/02 16:27:10 danielk1977 Exp $
+** $Id: expr.c,v 1.325 2008/01/03 00:01:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -216,7 +216,8 @@ static int codeCompare(
 ){
   int p1 = binaryCompareP1(pLeft, pRight, jumpIfNull);
   CollSeq *p3 = sqlite3BinaryCompareCollSeq(pParse, pLeft, pRight);
-  return sqlite3VdbeOp3(pParse->pVdbe, opcode, p1, dest, (void*)p3, P3_COLLSEQ);
+  return sqlite3VdbeAddOp4(pParse->pVdbe, opcode, p1, dest, 0,
+                           (void*)p3, P4_COLLSEQ);
 }
 
 /*
@@ -307,8 +308,8 @@ Expr *sqlite3RegisterExpr(Parse *pParse, Token *pToken){
   }
   depth = atoi((char*)&pToken->z[1]);
   p->iTable = pParse->nMem++;
-  sqlite3VdbeAddOp(v, OP_Dup, depth, 0);
-  sqlite3VdbeAddOp(v, OP_MemStore, p->iTable, 1);
+  sqlite3VdbeAddOp1(v, OP_Dup, depth);
+  sqlite3VdbeAddOp2(v, OP_MemStore, p->iTable, 1);
   return p;
 }
 
@@ -1605,9 +1606,9 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
       int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       sqlite3VdbeUsesBtree(v, iDb);
 
-      sqlite3VdbeAddOp(v, OP_MemLoad, iMem, 0);
-      iAddr = sqlite3VdbeAddOp(v, OP_If, 0, iMem);
-      sqlite3VdbeAddOp(v, OP_MemInt, 1, iMem);
+      sqlite3VdbeAddOp1(v, OP_MemLoad, iMem);
+      iAddr = sqlite3VdbeAddOp2(v, OP_If, 0, iMem);
+      sqlite3VdbeAddOp2(v, OP_MemInt, 1, iMem);
 
       sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
       eType = IN_INDEX_ROWID;
@@ -1642,15 +1643,16 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
           iDb = sqlite3SchemaToIndex(db, pIdx->pSchema);
           sqlite3VdbeUsesBtree(v, iDb);
 
-          sqlite3VdbeAddOp(v, OP_MemLoad, iMem, 0);
-          iAddr = sqlite3VdbeAddOp(v, OP_If, 0, iMem);
-          sqlite3VdbeAddOp(v, OP_MemInt, 1, iMem);
+          sqlite3VdbeAddOp1(v, OP_MemLoad, iMem);
+          iAddr = sqlite3VdbeAddOp2(v, OP_If, 0, iMem);
+          sqlite3VdbeAddOp2(v, OP_MemInt, 1, iMem);
   
-          sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
+          sqlite3VdbeAddOp1(v, OP_Integer, iDb);
           VdbeComment((v, "%s", pIdx->zName));
-          sqlite3VdbeOp3(v,OP_OpenRead,iTab,pIdx->tnum,pKey,P3_KEYINFO_HANDOFF);
+          sqlite3VdbeAddOp4(v, OP_OpenRead, iTab, pIdx->tnum, 0,
+                               pKey,P4_KEYINFO_HANDOFF);
           eType = IN_INDEX_INDEX;
-          sqlite3VdbeAddOp(v, OP_SetNumColumns, iTab, pIdx->nColumn);
+          sqlite3VdbeAddOp2(v, OP_SetNumColumns, iTab, pIdx->nColumn);
 
           sqlite3VdbeJumpHere(v, iAddr);
         }
@@ -1699,10 +1701,10 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   */
   if( !ExprHasAnyProperty(pExpr, EP_VarSelect) && !pParse->trigStack ){
     int mem = pParse->nMem++;
-    sqlite3VdbeAddOp(v, OP_MemLoad, mem, 0);
-    testAddr = sqlite3VdbeAddOp(v, OP_If, 0, 0);
+    sqlite3VdbeAddOp1(v, OP_MemLoad, mem);
+    testAddr = sqlite3VdbeAddOp0(v, OP_If);
     assert( testAddr>0 || pParse->db->mallocFailed );
-    sqlite3VdbeAddOp(v, OP_MemInt, 1, mem);
+    sqlite3VdbeAddOp2(v, OP_MemInt, 1, mem);
   }
 
   switch( pExpr->op ){
@@ -1727,10 +1729,10 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       ** is used.
       */
       pExpr->iTable = pParse->nTab++;
-      addr = sqlite3VdbeAddOp(v, OP_OpenEphemeral, pExpr->iTable, 0);
+      addr = sqlite3VdbeAddOp1(v, OP_OpenEphemeral, pExpr->iTable);
       memset(&keyInfo, 0, sizeof(keyInfo));
       keyInfo.nField = 1;
-      sqlite3VdbeAddOp(v, OP_SetNumColumns, pExpr->iTable, 1);
+      sqlite3VdbeAddOp2(v, OP_SetNumColumns, pExpr->iTable, 1);
 
       if( pExpr->pSelect ){
         /* Case 1:     expr IN (SELECT ...)
@@ -1784,11 +1786,11 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
 
           /* Evaluate the expression and insert it into the temp table */
           sqlite3ExprCode(pParse, pE2);
-          sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &affinity, 1);
-          sqlite3VdbeAddOp(v, OP_IdxInsert, pExpr->iTable, 0);
+          sqlite3VdbeAddOp4(v, OP_MakeRecord, 1, 0, 0, &affinity, 1);
+          sqlite3VdbeAddOp1(v, OP_IdxInsert, pExpr->iTable);
         }
       }
-      sqlite3VdbeChangeP3(v, addr, (void *)&keyInfo, P3_KEYINFO);
+      sqlite3VdbeChangeP4(v, addr, (void *)&keyInfo, P4_KEYINFO);
       break;
     }
 
@@ -1806,11 +1808,11 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       dest.iParm = pParse->nMem++;
       if( pExpr->op==TK_SELECT ){
         dest.eDest = SRT_Mem;
-        sqlite3VdbeAddOp(v, OP_MemNull, 0, dest.iParm);
+        sqlite3VdbeAddOp2(v, OP_MemNull, 0, dest.iParm);
         VdbeComment((v, "Init subquery result"));
       }else{
         dest.eDest = SRT_Exists;
-        sqlite3VdbeAddOp(v, OP_MemInt, 0, dest.iParm);
+        sqlite3VdbeAddOp2(v, OP_MemInt, 0, dest.iParm);
         VdbeComment((v, "Init EXISTS result"));
       }
       sqlite3ExprDelete(pSel->pLimit);
@@ -1859,7 +1861,7 @@ static void codeReal(Vdbe *v, const char *z, int n, int negateFlag){
     sqlite3AtoF(z, &value);
     if( negateFlag ) value = -value;
     zV = dup8bytes(v, (char*)&value);
-    sqlite3VdbeOp3(v, OP_Real, 0, 0, zV, P3_REAL);
+    sqlite3VdbeAddOp4(v, OP_Real, 0, 0, 0, zV, P4_REAL);
   }
 }
 
@@ -1879,14 +1881,14 @@ static void codeInteger(Vdbe *v, const char *z, int n, int negateFlag){
     assert( !isdigit(z[n]) );
     if( sqlite3GetInt32(z, &i) ){
       if( negateFlag ) i = -i;
-      sqlite3VdbeAddOp(v, OP_Integer, i, 0);
+      sqlite3VdbeAddOp1(v, OP_Integer, i);
     }else if( sqlite3FitsIn64Bits(z, negateFlag) ){
       i64 value;
       char *zV;
       sqlite3Atoi64(z, &value);
       if( negateFlag ) value = -value;
       zV = dup8bytes(v, (char*)&value);
-      sqlite3VdbeOp3(v, OP_Int64, 0, 0, zV, P3_INT64);
+      sqlite3VdbeAddOp4(v, OP_Int64, 0, 0, 0, zV, P4_INT64);
     }else{
       codeReal(v, z, n, negateFlag);
     }
@@ -1903,16 +1905,16 @@ static void codeInteger(Vdbe *v, const char *z, int n, int negateFlag){
 void sqlite3ExprCodeGetColumn(Vdbe *v, Table *pTab, int iColumn, int iTable){
   if( iColumn<0 ){
     int op = (pTab && IsVirtual(pTab)) ? OP_VRowid : OP_Rowid;
-    sqlite3VdbeAddOp(v, op, iTable, 0);
+    sqlite3VdbeAddOp1(v, op, iTable);
   }else if( pTab==0 ){
-    sqlite3VdbeAddOp(v, OP_Column, iTable, iColumn);
+    sqlite3VdbeAddOp2(v, OP_Column, iTable, iColumn);
   }else{
     int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
-    sqlite3VdbeAddOp(v, op, iTable, iColumn);
+    sqlite3VdbeAddOp2(v, op, iTable, iColumn);
     sqlite3ColumnDefault(v, pTab, iColumn);
 #ifndef SQLITE_OMIT_FLOATING_POINT
     if( pTab->aCol[iColumn].affinity==SQLITE_AFF_REAL ){
-      sqlite3VdbeAddOp(v, OP_RealAffinity, 0, 0);
+      sqlite3VdbeAddOp0(v, OP_RealAffinity);
     }
 #endif
   }
@@ -1935,7 +1937,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
 
   if( v==0 ) return;
   if( pExpr==0 ){
-    sqlite3VdbeAddOp(v, OP_Null, 0, 0);
+    sqlite3VdbeAddOp0(v, OP_Null);
     return;
   }
   op = pExpr->op;
@@ -1944,10 +1946,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       AggInfo *pAggInfo = pExpr->pAggInfo;
       struct AggInfo_col *pCol = &pAggInfo->aCol[pExpr->iAgg];
       if( !pAggInfo->directMode ){
-        sqlite3VdbeAddOp(v, OP_MemLoad, pCol->iMem, 0);
+        sqlite3VdbeAddOp1(v, OP_MemLoad, pCol->iMem);
         break;
       }else if( pAggInfo->useSortingIdx ){
-        sqlite3VdbeAddOp(v, OP_Column, pAggInfo->sortingIdx,
+        sqlite3VdbeAddOp2(v, OP_Column, pAggInfo->sortingIdx,
                               pCol->iSorterColumn);
         break;
       }
@@ -1957,7 +1959,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       if( pExpr->iTable<0 ){
         /* This only happens when coding check constraints */
         assert( pParse->ckOffset>0 );
-        sqlite3VdbeAddOp(v, OP_Dup, pParse->ckOffset-pExpr->iColumn-1, 1);
+        sqlite3VdbeAddOp2(v, OP_Dup, pParse->ckOffset-pExpr->iColumn-1, 1);
       }else{
         sqlite3ExprCodeGetColumn(v, pExpr->pTab, pExpr->iColumn, pExpr->iTable);
       }
@@ -1973,11 +1975,12 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
     }
     case TK_STRING: {
       sqlite3DequoteExpr(pParse->db, pExpr);
-      sqlite3VdbeOp3(v,OP_String8, 0, 0, (char*)pExpr->token.z, pExpr->token.n);
+      sqlite3VdbeAddOp4(v,OP_String8, 0, 0, 0,
+                        (char*)pExpr->token.z, pExpr->token.n);
       break;
     }
     case TK_NULL: {
-      sqlite3VdbeAddOp(v, OP_Null, 0, 0);
+      sqlite3VdbeAddOp0(v, OP_Null);
       break;
     }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
@@ -1991,19 +1994,19 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       if( n==0 ){
         z = "";
       }
-      sqlite3VdbeOp3(v, op, 0, 0, z, n);
+      sqlite3VdbeAddOp4(v, op, 0, 0, 0, z, n);
       break;
     }
 #endif
     case TK_VARIABLE: {
-      sqlite3VdbeAddOp(v, OP_Variable, pExpr->iTable, 0);
+      sqlite3VdbeAddOp1(v, OP_Variable, pExpr->iTable);
       if( pExpr->token.n>1 ){
-        sqlite3VdbeChangeP3(v, -1, (char*)pExpr->token.z, pExpr->token.n);
+        sqlite3VdbeChangeP4(v, -1, (char*)pExpr->token.z, pExpr->token.n);
       }
       break;
     }
     case TK_REGISTER: {
-      sqlite3VdbeAddOp(v, OP_MemLoad, pExpr->iTable, 0);
+      sqlite3VdbeAddOp1(v, OP_MemLoad, pExpr->iTable);
       break;
     }
 #ifndef SQLITE_OMIT_CAST
@@ -2018,7 +2021,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       assert( to_op==OP_ToNumeric || aff!=SQLITE_AFF_NUMERIC );
       assert( to_op==OP_ToInt     || aff!=SQLITE_AFF_INTEGER );
       assert( to_op==OP_ToReal    || aff!=SQLITE_AFF_REAL    );
-      sqlite3VdbeAddOp(v, to_op, 0, 0);
+      sqlite3VdbeAddOp0(v, to_op);
       stackChng = 0;
       break;
     }
@@ -2066,7 +2069,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       assert( TK_CONCAT==OP_Concat );
       sqlite3ExprCode(pParse, pExpr->pLeft);
       sqlite3ExprCode(pParse, pExpr->pRight);
-      sqlite3VdbeAddOp(v, op, 0, 0);
+      sqlite3VdbeAddOp0(v, op);
       stackChng = -1;
       break;
     }
@@ -2089,7 +2092,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       assert( TK_BITNOT==OP_BitNot );
       assert( TK_NOT==OP_Not );
       sqlite3ExprCode(pParse, pExpr->pLeft);
-      sqlite3VdbeAddOp(v, op, 0, 0);
+      sqlite3VdbeAddOp0(v, op);
       stackChng = 0;
       break;
     }
@@ -2098,11 +2101,11 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       int dest;
       assert( TK_ISNULL==OP_IsNull );
       assert( TK_NOTNULL==OP_NotNull );
-      sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
+      sqlite3VdbeAddOp1(v, OP_Integer, 1);
       sqlite3ExprCode(pParse, pExpr->pLeft);
       dest = sqlite3VdbeCurrentAddr(v) + 2;
-      sqlite3VdbeAddOp(v, op, 1, dest);
-      sqlite3VdbeAddOp(v, OP_AddImm, -1, 0);
+      sqlite3VdbeAddOp2(v, op, 1, dest);
+      sqlite3VdbeAddOp1(v, OP_AddImm, -1);
       stackChng = 0;
       break;
     }
@@ -2112,7 +2115,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
         sqlite3ErrorMsg(pParse, "misuse of aggregate: %T",
             &pExpr->span);
       }else{
-        sqlite3VdbeAddOp(v, OP_MemLoad, pInfo->aFunc[pExpr->iAgg].iMem, 0);
+        sqlite3VdbeAddOp1(v, OP_MemLoad, pInfo->aFunc[pExpr->iAgg].iMem);
       }
       break;
     }
@@ -2163,9 +2166,10 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       }
       if( pDef->needCollSeq ){
         if( !pColl ) pColl = pParse->db->pDfltColl; 
-        sqlite3VdbeOp3(v, OP_CollSeq, 0, 0, (char *)pColl, P3_COLLSEQ);
+        sqlite3VdbeAddOp4(v, OP_CollSeq, 0, 0, 0, (char *)pColl, P4_COLLSEQ);
       }
-      sqlite3VdbeOp3(v, OP_Function, constMask, nExpr, (char*)pDef, P3_FUNCDEF);
+      sqlite3VdbeAddOp4(v, OP_Function, constMask, nExpr, 0,
+                        (char*)pDef, P4_FUNCDEF);
       stackChng = 1-nExpr;
       break;
     }
@@ -2175,7 +2179,7 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       if( pExpr->iColumn==0 ){
         sqlite3CodeSubselect(pParse, pExpr);
       }
-      sqlite3VdbeAddOp(v, OP_MemLoad, pExpr->iColumn, 0);
+      sqlite3VdbeAddOp1(v, OP_MemLoad, pExpr->iColumn);
       VdbeComment((v, "load subquery result"));
       break;
     }
@@ -2190,11 +2194,11 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
 
       /* Figure out the affinity to use to create a key from the results
       ** of the expression. affinityStr stores a static string suitable for
-      ** P3 of OP_MakeRecord.
+      ** P4 of OP_MakeRecord.
       */
       affinity = comparisonAffinity(pExpr);
 
-      sqlite3VdbeAddOp(v, OP_Integer, 1, 0);
+      sqlite3VdbeAddOp1(v, OP_Integer, 1);
       pParse->ckOffset = (ckOffset ? (ckOffset+1) : 0);
 
       /* Code the <expr> from "<expr> IN (...)". The temporary table
@@ -2202,20 +2206,21 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       */
       sqlite3ExprCode(pParse, pExpr->pLeft);
       addr = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeAddOp(v, OP_NotNull, -1, addr+4);            /* addr + 0 */
-      sqlite3VdbeAddOp(v, OP_Pop, 2, 0);
-      sqlite3VdbeAddOp(v, OP_Null, 0, 0);
-      sqlite3VdbeAddOp(v, OP_Goto, 0, iLabel);
+      sqlite3VdbeAddOp2(v, OP_NotNull, -1, addr+4);            /* addr + 0 */
+      sqlite3VdbeAddOp1(v, OP_Pop, 2);
+      sqlite3VdbeAddOp0(v, OP_Null);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, iLabel);
       if( eType==IN_INDEX_ROWID ){
         int iAddr = sqlite3VdbeCurrentAddr(v)+3;
-        sqlite3VdbeAddOp(v, OP_MustBeInt, 1, iAddr);
-        sqlite3VdbeAddOp(v, OP_NotExists, pExpr->iTable, iAddr);
-        sqlite3VdbeAddOp(v, OP_Goto, pExpr->iTable, iLabel);
+        sqlite3VdbeAddOp2(v, OP_MustBeInt, 1, iAddr);
+        sqlite3VdbeAddOp2(v, OP_NotExists, pExpr->iTable, iAddr);
+        sqlite3VdbeAddOp2(v, OP_Goto, pExpr->iTable, iLabel);
       }else{
-        sqlite3VdbeOp3(v, OP_MakeRecord, 1, 0, &affinity, 1);   /* addr + 4 */
-        sqlite3VdbeAddOp(v, OP_Found, pExpr->iTable, iLabel);
+        sqlite3VdbeAddOp4(v, OP_MakeRecord, 1, 0, 0,
+                             &affinity, 1);   /* addr + 4 */
+        sqlite3VdbeAddOp2(v, OP_Found, pExpr->iTable, iLabel);
       }
-      sqlite3VdbeAddOp(v, OP_AddImm, -1, 0);                  /* addr + 6 */
+      sqlite3VdbeAddOp1(v, OP_AddImm, -1);                     /* addr + 6 */
       sqlite3VdbeResolveLabel(v, iLabel);
 
       break;
@@ -2226,15 +2231,15 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       struct ExprList_item *pLItem = pExpr->pList->a;
       Expr *pRight = pLItem->pExpr;
       sqlite3ExprCode(pParse, pLeft);
-      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
+      sqlite3VdbeAddOp0(v, OP_Dup);
       sqlite3ExprCode(pParse, pRight);
       codeCompare(pParse, pLeft, pRight, OP_Ge, 0, 0);
-      sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
+      sqlite3VdbeAddOp1(v, OP_Pull, 1);
       pLItem++;
       pRight = pLItem->pExpr;
       sqlite3ExprCode(pParse, pRight);
       codeCompare(pParse, pLeft, pRight, OP_Le, 0, 0);
-      sqlite3VdbeAddOp(v, OP_And, 0, 0);
+      sqlite3VdbeAddOp0(v, OP_And);
       break;
     }
     case TK_UPLUS: {
@@ -2263,24 +2268,24 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
       for(i=0; i<nExpr; i=i+2){
         sqlite3ExprCode(pParse, aListelem[i].pExpr);
         if( pExpr->pLeft ){
-          sqlite3VdbeAddOp(v, OP_Dup, 1, 1);
+          sqlite3VdbeAddOp2(v, OP_Dup, 1, 1);
           jumpInst = codeCompare(pParse, pExpr->pLeft, aListelem[i].pExpr,
                                  OP_Ne, 0, 1);
-          sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
+          sqlite3VdbeAddOp1(v, OP_Pop, 1);
         }else{
-          jumpInst = sqlite3VdbeAddOp(v, OP_IfNot, 1, 0);
+          jumpInst = sqlite3VdbeAddOp2(v, OP_IfNot, 1, 0);
         }
         sqlite3ExprCode(pParse, aListelem[i+1].pExpr);
-        sqlite3VdbeAddOp(v, OP_Goto, 0, expr_end_label);
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, expr_end_label);
         sqlite3VdbeJumpHere(v, jumpInst);
       }
       if( pExpr->pLeft ){
-        sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
+        sqlite3VdbeAddOp2(v, OP_Pop, 1, 0);
       }
       if( pExpr->pRight ){
         sqlite3ExprCode(pParse, pExpr->pRight);
       }else{
-        sqlite3VdbeAddOp(v, OP_Null, 0, 0);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
       }
       sqlite3VdbeResolveLabel(v, expr_end_label);
       break;
@@ -2297,12 +2302,12 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
                  pExpr->iColumn == OE_Abort ||
                  pExpr->iColumn == OE_Fail );
          sqlite3DequoteExpr(pParse->db, pExpr);
-         sqlite3VdbeOp3(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->iColumn,
+         sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->iColumn, 0,
                         (char*)pExpr->token.z, pExpr->token.n);
       } else {
          assert( pExpr->iColumn == OE_Ignore );
-         sqlite3VdbeAddOp(v, OP_ContextPop, 0, 0);
-         sqlite3VdbeAddOp(v, OP_Goto, 0, pParse->trigStack->ignoreJump);
+         sqlite3VdbeAddOp2(v, OP_ContextPop, 0, 0);
+         sqlite3VdbeAddOp2(v, OP_Goto, 0, pParse->trigStack->ignoreJump);
          VdbeComment((v, "raise(IGNORE)"));
       }
       stackChng = 0;
@@ -2340,7 +2345,7 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr){
   if( addr2>addr1+1
    || ((pOp = sqlite3VdbeGetOp(v, addr1))!=0 && pOp->opcode==OP_Function) ){
     iMem = pExpr->iTable = pParse->nMem++;
-    sqlite3VdbeAddOp(v, OP_MemStore, iMem, 0);
+    sqlite3VdbeAddOp2(v, OP_MemStore, iMem, 0);
     pExpr->op = TK_REGISTER;
   }
 }
@@ -2362,7 +2367,7 @@ int sqlite3ExprIntoReg(Parse *pParse, Expr *pExpr, int target){
   if( target<0 ){
     target = pParse->nMem++;
   }
-  sqlite3VdbeAddOp(v, OP_MemStore, target, 1);
+  sqlite3VdbeAddOp2(v, OP_MemStore, target, 1);
   return target;
 }
 
@@ -2445,7 +2450,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       assert( TK_ISNULL==OP_IsNull );
       assert( TK_NOTNULL==OP_NotNull );
       sqlite3ExprCode(pParse, pExpr->pLeft);
-      sqlite3VdbeAddOp(v, op, 1, dest);
+      sqlite3VdbeAddOp2(v, op, 1, dest);
       break;
     }
     case TK_BETWEEN: {
@@ -2459,7 +2464,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       Expr *pLeft = pExpr->pLeft;
       Expr *pRight = pExpr->pList->a[0].pExpr;
       sqlite3ExprCode(pParse, pLeft);
-      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
+      sqlite3VdbeAddOp2(v, OP_Dup, 0, 0);
       sqlite3ExprCode(pParse, pRight);
       addr = codeCompare(pParse, pLeft, pRight, OP_Lt, 0, !jumpIfNull);
 
@@ -2467,14 +2472,14 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       sqlite3ExprCode(pParse, pRight);
       codeCompare(pParse, pLeft, pRight, OP_Le, dest, jumpIfNull);
 
-      sqlite3VdbeAddOp(v, OP_Integer, 0, 0);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, 0);
       sqlite3VdbeJumpHere(v, addr);
-      sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
+      sqlite3VdbeAddOp2(v, OP_Pop, 1, 0);
       break;
     }
     default: {
       sqlite3ExprCode(pParse, pExpr);
-      sqlite3VdbeAddOp(v, OP_If, jumpIfNull, dest);
+      sqlite3VdbeAddOp2(v, OP_If, jumpIfNull, dest);
       break;
     }
   }
@@ -2557,7 +2562,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_ISNULL:
     case TK_NOTNULL: {
       sqlite3ExprCode(pParse, pExpr->pLeft);
-      sqlite3VdbeAddOp(v, op, 1, dest);
+      sqlite3VdbeAddOp2(v, op, 1, dest);
       break;
     }
     case TK_BETWEEN: {
@@ -2571,13 +2576,13 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       Expr *pLeft = pExpr->pLeft;
       Expr *pRight = pExpr->pList->a[0].pExpr;
       sqlite3ExprCode(pParse, pLeft);
-      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
+      sqlite3VdbeAddOp2(v, OP_Dup, 0, 0);
       sqlite3ExprCode(pParse, pRight);
       addr = sqlite3VdbeCurrentAddr(v);
       codeCompare(pParse, pLeft, pRight, OP_Ge, addr+3, !jumpIfNull);
 
-      sqlite3VdbeAddOp(v, OP_Pop, 1, 0);
-      sqlite3VdbeAddOp(v, OP_Goto, 0, dest);
+      sqlite3VdbeAddOp2(v, OP_Pop, 1, 0);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, dest);
       pRight = pExpr->pList->a[1].pExpr;
       sqlite3ExprCode(pParse, pRight);
       codeCompare(pParse, pLeft, pRight, OP_Gt, dest, jumpIfNull);
@@ -2585,7 +2590,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     }
     default: {
       sqlite3ExprCode(pParse, pExpr);
-      sqlite3VdbeAddOp(v, OP_IfNot, jumpIfNull, dest);
+      sqlite3VdbeAddOp2(v, OP_IfNot, jumpIfNull, dest);
       break;
     }
   }

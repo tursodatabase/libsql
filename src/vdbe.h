@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.117 2008/01/02 17:25:55 drh Exp $
+** $Id: vdbe.h,v 1.118 2008/01/03 00:01:25 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -35,15 +35,16 @@ typedef struct Vdbe Vdbe;
 */
 struct VdbeOp {
   u8 opcode;          /* What operation to perform */
-  char p3type;        /* One of the P3_xxx constants defined below */
-  char p4type;        /* One of the P3_xxx constants for p4 */
+  char p4type;        /* One of the P4_xxx constants for p4 */
+  u8 flags;           /* Flags for internal use */
   u8 p5;              /* Fifth parameter is an unsigned character */
   int p1;             /* First operand */
   int p2;             /* Second parameter (often the jump destination) */
-  union {             /* Third and forth parameters */
-    int i;              /* Integer value if p3type==P3_INT32 */
+  int p3;             /* The third parameter */
+  union {             /* forth parameter */
+    int i;              /* Integer value if p3type==P4_INT32 */
     char *p;            /* A pointer for all other value sof p3type */
-  } p3, p4;
+  } p4;
 #ifdef SQLITE_DEBUG
   char *zComment;     /* Comment to improve readability */
 #endif
@@ -69,29 +70,29 @@ typedef struct VdbeOpList VdbeOpList;
 /*
 ** Allowed values of VdbeOp.p3type
 */
-#define P3_NOTUSED    0   /* The P3 parameter is not used */
-#define P3_DYNAMIC  (-1)  /* Pointer to a string obtained from sqliteMalloc() */
-#define P3_STATIC   (-2)  /* Pointer to a static string */
-#define P3_COLLSEQ  (-4)  /* P3 is a pointer to a CollSeq structure */
-#define P3_FUNCDEF  (-5)  /* P3 is a pointer to a FuncDef structure */
-#define P3_KEYINFO  (-6)  /* P3 is a pointer to a KeyInfo structure */
-#define P3_VDBEFUNC (-7)  /* P3 is a pointer to a VdbeFunc structure */
-#define P3_MEM      (-8)  /* P3 is a pointer to a Mem*    structure */
-#define P3_TRANSIENT (-9) /* P3 is a pointer to a transient string */
-#define P3_VTAB     (-10) /* P3 is a pointer to an sqlite3_vtab structure */
-#define P3_MPRINTF  (-11) /* P3 is a string obtained from sqlite3_mprintf() */
-#define P3_REAL     (-12) /* P3 is a 64-bit floating point value */
-#define P3_INT64    (-13) /* P3 is a 64-bit signed integer */
-#define P3_INT32    (-14) /* P3 is a 32-bit signed integer */
+#define P4_NOTUSED    0   /* The P4 parameter is not used */
+#define P4_DYNAMIC  (-1)  /* Pointer to a string obtained from sqliteMalloc() */
+#define P4_STATIC   (-2)  /* Pointer to a static string */
+#define P4_COLLSEQ  (-4)  /* P4 is a pointer to a CollSeq structure */
+#define P4_FUNCDEF  (-5)  /* P4 is a pointer to a FuncDef structure */
+#define P4_KEYINFO  (-6)  /* P4 is a pointer to a KeyInfo structure */
+#define P4_VDBEFUNC (-7)  /* P4 is a pointer to a VdbeFunc structure */
+#define P4_MEM      (-8)  /* P4 is a pointer to a Mem*    structure */
+#define P4_TRANSIENT (-9) /* P4 is a pointer to a transient string */
+#define P4_VTAB     (-10) /* P4 is a pointer to an sqlite3_vtab structure */
+#define P4_MPRINTF  (-11) /* P4 is a string obtained from sqlite3_mprintf() */
+#define P4_REAL     (-12) /* P4 is a 64-bit floating point value */
+#define P4_INT64    (-13) /* P4 is a 64-bit signed integer */
+#define P4_INT32    (-14) /* P4 is a 32-bit signed integer */
 
-/* When adding a P3 argument using P3_KEYINFO, a copy of the KeyInfo structure
+/* When adding a P4 argument using P4_KEYINFO, a copy of the KeyInfo structure
 ** is made.  That copy is freed when the Vdbe is finalized.  But if the
-** argument is P3_KEYINFO_HANDOFF, the passed in pointer is used.  It still
+** argument is P4_KEYINFO_HANDOFF, the passed in pointer is used.  It still
 ** gets freed when the Vdbe is finalized so it still should be obtained
 ** from a single sqliteMalloc().  But no copy is made and the calling
 ** function should *not* try to free the KeyInfo.
 */
-#define P3_KEYINFO_HANDOFF (-9)
+#define P4_KEYINFO_HANDOFF (-9)
 
 /*
 ** The Vdbe.aColName array contains 5n Mem structures, where n is the 
@@ -123,15 +124,17 @@ typedef struct VdbeOpList VdbeOpList;
 ** for a description of what each of these routines does.
 */
 Vdbe *sqlite3VdbeCreate(sqlite3*);
-int sqlite3VdbeAddOp(Vdbe*,int,int,int);
-int sqlite3VdbeOp3(Vdbe*,int,int,int,const char *zP3,int);
-int sqlite3VdbeOp3Int(Vdbe*,int,int,int,int);
+int sqlite3VdbeAddOp0(Vdbe*,int);
+int sqlite3VdbeAddOp1(Vdbe*,int,int);
+int sqlite3VdbeAddOp2(Vdbe*,int,int,int);
+int sqlite3VdbeAddOp3(Vdbe*,int,int,int,int);
+int sqlite3VdbeAddOp4(Vdbe*,int,int,int,int,const char *zP4,int);
 int sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp);
 void sqlite3VdbeChangeP1(Vdbe*, int addr, int P1);
 void sqlite3VdbeChangeP2(Vdbe*, int addr, int P2);
 void sqlite3VdbeJumpHere(Vdbe*, int addr);
 void sqlite3VdbeChangeToNoop(Vdbe*, int addr, int N);
-void sqlite3VdbeChangeP3(Vdbe*, int addr, const char *zP1, int N);
+void sqlite3VdbeChangeP4(Vdbe*, int addr, const char *zP4, int N);
 void sqlite3VdbeUsesBtree(Vdbe*, int);
 VdbeOp *sqlite3VdbeGetOp(Vdbe*, int);
 int sqlite3VdbeMakeLabel(Vdbe*);

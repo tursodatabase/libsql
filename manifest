@@ -1,5 +1,5 @@
-C Add\soperands\sp4\sand\sp5\sto\sthe\sVdbeOp\sstructure.\s(CVS\s4659)
-D 2008-01-02T17:25:55
+C Refactoring\sthe\sVM.\s\sThe\sP3\sparameter\sis\schanged\sto\sP4.\s\sA\sP5\sparameter\sis\nadded\s(though\snot\scurrently\sused.)\s\sAdd\sroutines\ssqlite3VdbeAddOpX()\swhere\nX\sis\sone\sof\s0,\s1,\s2,\s3,\sor\s4.\s(CVS\s4660)
+D 2008-01-03T00:01:24
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -78,25 +78,25 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in abed4664817e1cd500f2276142c71958087c16bc
-F src/alter.c 23d18ec53ef27fcb5e5ae9ca050217231ae15a0d
-F src/analyze.c 40806c79cf2cd4fd0f6396d3d283fa05711439d1
-F src/attach.c 95658e74e3e0d1cbdb8658817516d4d1467fc13d
+F src/alter.c b58ed3becc77885e2aec6754c689255534f2734c
+F src/analyze.c 09e55b6bd3fe6a05fac7f471d21da344e9a0a92b
+F src/attach.c 4b214b411237531491e1186211e005e4de73630d
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/btmutex.c 5d39da37c9d1282f3c6f9967afae6a34ee36b7ff
 F src/btree.c 5164b32950cfd41f2c5c31e8ff82c4a499918aef
 F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
 F src/btreeInt.h 1c5a9da165718ef7de81e35ce9ab5d9ba9283f76
-F src/build.c 640c2a2a22baa16622c0aa74ae948a3643c1d6d6
+F src/build.c 043c36a387e5bb73b14209b7a0cfeb1f7892d3a2
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
-F src/delete.c 0114a9582305e2348bed4bc94ffa3e603da489ff
+F src/delete.c 4d3e382146a1753b7de27c0554fc366cffef8b16
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c c5c784ffdd8e55d6e9730fbaebe482a34136ab60
+F src/expr.c 4bfb33eeef12c373ecf477aef199ec9e114b09dc
 F src/func.c 996071cf0af9d967e58b69fce1909555059ebc7d
 F src/hash.c 45a7005aac044b6c86bd7e49c44bc15d30006d6c
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
-F src/insert.c 5b8061104f91f74f96427e7b7962ed623ccf73df
+F src/insert.c 6c8bbffdfaf74dfd558dafe6109a4d17533502a8
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
@@ -127,16 +127,16 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 0cb6ccea4b9615627d61d7c4417cedc45776d429
 F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
 F src/parse.y 2ae06e8d3190faace49c5b82e7cea1fc60d084a1
-F src/pragma.c 4a7f377a509eb14e35b09d4bf7b808ef647aad0b
-F src/prepare.c 7aeba7851773fbe3950a26b35d3389bef0eb1c62
+F src/pragma.c 036e49b88c4f5079a8d9d536a7cc2928583f163f
+F src/prepare.c 31ce0903040ec6f71da10c74869e10137890d981
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
-F src/select.c cc4064f931c32139f97b43572180a99eff08e759
+F src/select.c fb57c9f49f5a117a1680dd4dd517e1e8631baf68
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 77895a54c2082157e169c857a2e244525ec25af7
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
-F src/sqliteInt.h dc0f9180d4aa50fce261d7ae7387952e02752165
+F src/sqliteInt.h 2e30ff7e6ee65743d38447f00ef873ce058be7be
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 9923abeffc9b3d7dad58e92b319661521f60debf
@@ -157,27 +157,27 @@ F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c 72ceed192f7b229db34a2869ff9285b41a5cb796
 F src/test_md5.c c107c96637123239c3518b5fbe97a79130f4d32e
-F src/test_onefile.c d877baba46837587345933376c00c656f58d6fb6
+F src/test_onefile.c 54282b6796d55d7acc489be83b89b8715e7d3756
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c a4e04438c11fed2c67ec47fe3edbef9cca2d1b48
-F src/trigger.c 907b819d87eb3a15d1372ecd81e4ca969f5bcf1a
-F src/update.c 608ecf1f508442d8b05cc258a0573e6fe3573b8b
+F src/trigger.c 3267e5d6e3c1e8b688db5844278d71acc0f00996
+F src/update.c 39ac597c81b1d7d0396d5571d620bfa694f21151
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
-F src/vacuum.c 25ffbd766f25bca099ead1c1e11f5528c86102b8
-F src/vdbe.c 85e44649ad750d4c249751693ca93b4f57737b0f
-F src/vdbe.h 5c9ed634212361091bfc92ca689374d211f384b7
+F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
+F src/vdbe.c fd5f6fc98eda1c1664cb1bfd09479ec3fb642139
+F src/vdbe.h c50dd0ad14ae4a2cc0b69f61263dcc732274d231
 F src/vdbeInt.h 2985f1369273e635898cf5952237efcb3fdb21f3
-F src/vdbeapi.c 4acfaab3e10c99eb66c5332979d7b14a1c3505ae
-F src/vdbeaux.c 9c2ce05e86502ac3dd148ed13535886e82678e04
+F src/vdbeapi.c bf615ff2cf2b121f1609cbadd4f52720289733b5
+F src/vdbeaux.c 5601e73eaf893c14effb0b2fd921128b605d83c3
 F src/vdbeblob.c 82f51cdf9b0c0af729732fde48c824e498c0a1ca
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 123994fcd344993d2fb050a83b91b341bbbd08b4
-F src/vtab.c f819d55ef638d45e09ce00009d435da8bf16f528
-F src/where.c 49901aac9ad568c9c92f914150e91c1663f3978d
+F src/vtab.c 03014b2bfa8096ecac5fcdc80d34cd76e06af52a
+F src/where.c 09edd04e2c6eeb6dcb6f634eef4a1d062d103988
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test ee350b9ab15b175fc0a8fb51bf2141ed3a3b9cba
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P fbd17a8976cc9b4dd7c7c903d8beade9a7ef095f
-R 959deef8458a4ade4a9b18649b5cc232
+P ad528735e41ce2ec2e680b12e562d4ddb6650985
+R ace653b10b899d3bff1e4800e5ac3a83
 U drh
-Z 63670bfa755df999b8dac508860cddb8
+Z fe84d7f6c2377b705fae1be2a7ddde3c

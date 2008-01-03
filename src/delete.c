@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.139 2008/01/02 16:27:10 danielk1977 Exp $
+** $Id: delete.c,v 1.140 2008/01/03 00:01:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -75,10 +75,10 @@ void sqlite3OpenTable(
   v = sqlite3GetVdbe(p);
   assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
   sqlite3TableLock(p, iDb, pTab->tnum, (opcode==OP_OpenWrite), pTab->zName);
-  sqlite3VdbeAddOp(v, OP_Integer, iDb, 0);
+  sqlite3VdbeAddOp1(v, OP_Integer, iDb);
   VdbeComment((v, "%s", pTab->zName));
-  sqlite3VdbeAddOp(v, opcode, iCur, pTab->tnum);
-  sqlite3VdbeAddOp(v, OP_SetNumColumns, iCur, pTab->nCol);
+  sqlite3VdbeAddOp2(v, opcode, iCur, pTab->tnum);
+  sqlite3VdbeAddOp2(v, OP_SetNumColumns, iCur, pTab->nCol);
 }
 
 
@@ -201,18 +201,18 @@ void sqlite3DeleteFrom(
   sqlite3BeginWriteOperation(pParse, triggers_exist, iDb);
 
   if( triggers_exist ){
-    int iGoto = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+    int iGoto = sqlite3VdbeAddOp0(v, OP_Goto);
     addr = sqlite3VdbeMakeLabel(v);
     iBeginBeforeTrigger = sqlite3VdbeCurrentAddr(v);
     (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TRIGGER_BEFORE, pTab,
         -1, oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
         addr, &old_col_mask, 0);
-    iEndBeforeTrigger = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+    iEndBeforeTrigger = sqlite3VdbeAddOp0(v, OP_Goto);
     iBeginAfterTrigger = sqlite3VdbeCurrentAddr(v);
     (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TRIGGER_AFTER, pTab, -1,
         oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
         addr, &old_col_mask, 0);
-    iEndAfterTrigger = sqlite3VdbeAddOp(v, OP_Goto, 0, 0);
+    iEndAfterTrigger = sqlite3VdbeAddOp0(v, OP_Goto);
     sqlite3VdbeJumpHere(v, iGoto);
   }
 
@@ -233,7 +233,7 @@ void sqlite3DeleteFrom(
   */
   if( db->flags & SQLITE_CountRows ){
     memCnt = pParse->nMem++;
-    sqlite3VdbeAddOp(v, OP_MemInt, 0, memCnt);
+    sqlite3VdbeAddOp2(v, OP_MemInt, 0, memCnt);
   }
 
   /* Special case: A DELETE without a WHERE clause deletes everything.
@@ -248,19 +248,19 @@ void sqlite3DeleteFrom(
       if( !isView ){
         sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
       }
-      sqlite3VdbeAddOp(v, OP_Rewind, iCur, sqlite3VdbeCurrentAddr(v)+2);
-      addr2 = sqlite3VdbeAddOp(v, OP_MemIncr, 1, memCnt);
-      sqlite3VdbeAddOp(v, OP_Next, iCur, addr2);
-      sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
+      sqlite3VdbeAddOp2(v, OP_Rewind, iCur, sqlite3VdbeCurrentAddr(v)+2);
+      addr2 = sqlite3VdbeAddOp2(v, OP_MemIncr, 1, memCnt);
+      sqlite3VdbeAddOp2(v, OP_Next, iCur, addr2);
+      sqlite3VdbeAddOp1(v, OP_Close, iCur);
     }
     if( !isView ){
-      sqlite3VdbeAddOp(v, OP_Clear, pTab->tnum, iDb);
+      sqlite3VdbeAddOp2(v, OP_Clear, pTab->tnum, iDb);
       if( !pParse->nested ){
-        sqlite3VdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
+        sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
       }
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         assert( pIdx->pSchema==pTab->pSchema );
-        sqlite3VdbeAddOp(v, OP_Clear, pIdx->tnum, iDb);
+        sqlite3VdbeAddOp2(v, OP_Clear, pIdx->tnum, iDb);
       }
     }
   } 
@@ -275,10 +275,10 @@ void sqlite3DeleteFrom(
 
     /* Remember the rowid of every item to be deleted.
     */
-    sqlite3VdbeAddOp(v, IsVirtual(pTab) ? OP_VRowid : OP_Rowid, iCur, 0);
-    sqlite3VdbeAddOp(v, OP_FifoWrite, 0, 0);
+    sqlite3VdbeAddOp1(v, IsVirtual(pTab) ? OP_VRowid : OP_Rowid, iCur);
+    sqlite3VdbeAddOp0(v, OP_FifoWrite);
     if( db->flags & SQLITE_CountRows ){
-      sqlite3VdbeAddOp(v, OP_MemIncr, 1, memCnt);
+      sqlite3VdbeAddOp2(v, OP_MemIncr, 1, memCnt);
     }
 
     /* End the database scan loop.
@@ -288,8 +288,8 @@ void sqlite3DeleteFrom(
     /* Open the pseudo-table used to store OLD if there are triggers.
     */
     if( triggers_exist ){
-      sqlite3VdbeAddOp(v, OP_OpenPseudo, oldIdx, 0);
-      sqlite3VdbeAddOp(v, OP_SetNumColumns, oldIdx, pTab->nCol);
+      sqlite3VdbeAddOp1(v, OP_OpenPseudo, oldIdx);
+      sqlite3VdbeAddOp2(v, OP_SetNumColumns, oldIdx, pTab->nCol);
     }
 
     /* Delete every item whose key was written to the list during the
@@ -311,29 +311,29 @@ void sqlite3DeleteFrom(
     if( triggers_exist ){
       sqlite3VdbeResolveLabel(v, addr);
     }
-    addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, end);
-    sqlite3VdbeAddOp(v, OP_StackDepth, -1, 0);
+    addr = sqlite3VdbeAddOp2(v, OP_FifoRead, 0, end);
+    sqlite3VdbeAddOp1(v, OP_StackDepth, -1);
 
     if( triggers_exist ){
       int mem1 = pParse->nMem++;
       if( !isView ){
-        sqlite3VdbeAddOp(v, OP_MemStore, mem1, 0);
+        sqlite3VdbeAddOp1(v, OP_MemStore, mem1);
       }
-      sqlite3VdbeAddOp(v, OP_NotExists, iCur, addr);
-      sqlite3VdbeAddOp(v, OP_Rowid, iCur, 0);
+      sqlite3VdbeAddOp2(v, OP_NotExists, iCur, addr);
+      sqlite3VdbeAddOp1(v, OP_Rowid, iCur);
       if( old_col_mask ){
-        sqlite3VdbeAddOp(v, OP_RowData, iCur, 0);
+        sqlite3VdbeAddOp1(v, OP_RowData, iCur);
       }else{
-        sqlite3VdbeAddOp(v, OP_Null, 0, 0);
+        sqlite3VdbeAddOp0(v, OP_Null);
       }
-      sqlite3VdbeAddOp(v, OP_Insert, oldIdx, 0);
+      sqlite3VdbeAddOp1(v, OP_Insert, oldIdx);
 
       /* Jump back and run the BEFORE triggers */
-      sqlite3VdbeAddOp(v, OP_Goto, 0, iBeginBeforeTrigger);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, iBeginBeforeTrigger);
       sqlite3VdbeJumpHere(v, iEndBeforeTrigger);
 
       if( !isView ){
-        sqlite3VdbeAddOp(v, OP_MemLoad, mem1, 0);
+        sqlite3VdbeAddOp1(v, OP_MemLoad, mem1);
       }
     }
 
@@ -342,7 +342,8 @@ void sqlite3DeleteFrom(
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       if( IsVirtual(pTab) ){
         pParse->pVirtualLock = pTab;
-        sqlite3VdbeOp3(v, OP_VUpdate, 0, 1, (const char*)pTab->pVtab, P3_VTAB);
+        sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, 0,
+                          (const char*)pTab->pVtab, P4_VTAB);
       }else
 #endif
       {
@@ -355,20 +356,20 @@ void sqlite3DeleteFrom(
     */
     if( triggers_exist ){
       /* Jump back and run the AFTER triggers */
-      sqlite3VdbeAddOp(v, OP_Goto, 0, iBeginAfterTrigger);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, iBeginAfterTrigger);
       sqlite3VdbeJumpHere(v, iEndAfterTrigger);
     }
 
     /* End of the delete loop */
-    sqlite3VdbeAddOp(v, OP_Goto, 0, addr);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addr);
     sqlite3VdbeResolveLabel(v, end);
 
     /* Close the cursors after the loop if there are no row triggers */
     if( !isView  && !IsVirtual(pTab) ){
       for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
-        sqlite3VdbeAddOp(v, OP_Close, iCur + i, pIdx->tnum);
+        sqlite3VdbeAddOp2(v, OP_Close, iCur + i, pIdx->tnum);
       }
-      sqlite3VdbeAddOp(v, OP_Close, iCur, 0);
+      sqlite3VdbeAddOp1(v, OP_Close, iCur);
     }
   }
 
@@ -378,9 +379,9 @@ void sqlite3DeleteFrom(
   ** invoke the callback function.
   */
   if( db->flags & SQLITE_CountRows && pParse->nested==0 && !pParse->trigStack ){
-    sqlite3VdbeAddOp(v, OP_ResultRow, memCnt, 1);
+    sqlite3VdbeAddOp2(v, OP_ResultRow, memCnt, 1);
     sqlite3VdbeSetNumCols(v, 1);
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows deleted", P3_STATIC);
+    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows deleted", P4_STATIC);
   }
 
 delete_from_cleanup:
@@ -418,11 +419,11 @@ void sqlite3GenerateRowDelete(
   int count          /* Increment the row change counter */
 ){
   int addr;
-  addr = sqlite3VdbeAddOp(v, OP_NotExists, iCur, 0);
+  addr = sqlite3VdbeAddOp1(v, OP_NotExists, iCur);
   sqlite3GenerateRowIndexDelete(v, pTab, iCur, 0);
-  sqlite3VdbeAddOp(v, OP_Delete, iCur, (count?OPFLAG_NCHANGE:0));
+  sqlite3VdbeAddOp2(v, OP_Delete, iCur, (count?OPFLAG_NCHANGE:0));
   if( count ){
-    sqlite3VdbeChangeP3(v, -1, pTab->zName, P3_STATIC);
+    sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
   }
   sqlite3VdbeJumpHere(v, addr);
 }
@@ -455,7 +456,7 @@ void sqlite3GenerateRowIndexDelete(
   for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
     if( aIdxUsed!=0 && aIdxUsed[i-1]==0 ) continue;
     sqlite3GenerateIndexKey(v, pIdx, iCur);
-    sqlite3VdbeAddOp(v, OP_IdxDelete, iCur+i, 0);
+    sqlite3VdbeAddOp1(v, OP_IdxDelete, iCur+i);
   }
 }
 
@@ -473,16 +474,16 @@ void sqlite3GenerateIndexKey(
   int j;
   Table *pTab = pIdx->pTable;
 
-  sqlite3VdbeAddOp(v, OP_Rowid, iCur, 0);
+  sqlite3VdbeAddOp1(v, OP_Rowid, iCur);
   for(j=0; j<pIdx->nColumn; j++){
     int idx = pIdx->aiColumn[j];
     if( idx==pTab->iPKey ){
-      sqlite3VdbeAddOp(v, OP_Dup, j, 0);
+      sqlite3VdbeAddOp1(v, OP_Dup, j);
     }else{
-      sqlite3VdbeAddOp(v, OP_Column, iCur, idx);
+      sqlite3VdbeAddOp2(v, OP_Column, iCur, idx);
       sqlite3ColumnDefault(v, pTab, idx);
     }
   }
-  sqlite3VdbeAddOp(v, OP_MakeIdxRec, pIdx->nColumn, 0);
+  sqlite3VdbeAddOp1(v, OP_MakeIdxRec, pIdx->nColumn);
   sqlite3IndexAffinityStr(v, pIdx);
 }

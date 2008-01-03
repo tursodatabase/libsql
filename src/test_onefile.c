@@ -822,4 +822,3 @@ int fs_register(){
 #ifdef SQLITE_TEST
   int SqlitetestOnefile_Init() {return fs_register();}
 #endif
-
