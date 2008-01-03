@@ -1,5 +1,5 @@
-C Change\sOP_OpenRead\sand\sOP_OpenWrite\sso\sthat\sthe\sdatabase\snumber\sis\sread\sfrom\sthe\sP3\soperand,\snot\sthe\sstack.\s(CVS\s4663)
-D 2008-01-03T07:54:24
+C Combine\sthe\sOP_Column\sand\sOP_DfltValue\sopcodes.\s(CVS\s4664)
+D 2008-01-03T08:08:40
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -164,11 +164,11 @@ F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c a4e04438c11fed2c67ec47fe3edbef9cca2d1b48
 F src/trigger.c e7642cf61056655905aaba8db1ca51d299a1003b
-F src/update.c c67129529717f420f2955d735e04bb4d28aa2e7b
+F src/update.c 587df2777e78a47d2c4399059cdd7a2cea5e0b19
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c 847acbfd9d55a59725fb02c004af8158a9cd09a0
+F src/vdbe.c 429493ced32e5bb3d17fabd4f893374ebe5ffdf2
 F src/vdbe.h ad5fd7aa694928e54efa84ac8f8133b77053c97d
 F src/vdbeInt.h 2985f1369273e635898cf5952237efcb3fdb21f3
 F src/vdbeapi.c bf615ff2cf2b121f1609cbadd4f52720289733b5
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b166c33a7b9a58d571619d2248019eda09651dd2
-R 8be529e6a54294a6d1844c01bcfcfc53
+P 35da261daf602b1e938f05bbad1ff99213d9f4b9
+R 20b90fa8179664d61eeec8c990a7aa2a
 U danielk1977
-Z d1a83a5d28422a97fb0c22148135704a
+Z 86771e92c9dc1d8cb50d685596a6b3c2

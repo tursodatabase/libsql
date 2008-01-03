@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.666 2008/01/03 07:54:24 danielk1977 Exp $
+** $Id: vdbe.c,v 1.667 2008/01/03 08:08:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2028,7 +2028,7 @@ case OP_SetNumColumns: {       /* no-push */
   break;
 }
 
-/* Opcode: Column P1 P2 P3 *
+/* Opcode: Column P1 P2 P3 P4 *
 **
 ** Interpret the data that cursor P1 points to as a structure built using
 ** the MakeRecord instruction.  (See the MakeRecord opcode for additional
@@ -2259,9 +2259,8 @@ case OP_Column: {
     sqlite3VdbeSerialGet((u8*)zData, aType[p2], pDest);
     pDest->enc = encoding;
   }else{
-    if( pOp[1].opcode==OP_DfltValue ){
-      assert( pOp[1].p4type==P4_MEM );
-      sqlite3VdbeMemShallowCopy(pDest, (Mem *)(pOp[1].p4.p), MEM_Static);
+    if( pOp->p4type==P4_MEM ){
+      sqlite3VdbeMemShallowCopy(pDest, (Mem *)(pOp->p4.p), MEM_Static);
     }else{
       assert( pDest->flags==MEM_Null );
     }
@@ -2286,20 +2285,7 @@ case OP_Column: {
   rc = sqlite3VdbeMemMakeWriteable(pDest);
 
 op_column_out:
-  if( pOp[1].opcode==OP_DfltValue ){
-    pc++;
-  }
   break;
-}
-
-/* Opcode: DfltValue * * P4
-**
-** This instruction always follows an OP_Column.  This instruction
-** does nothing by itself.  It is just a place holder for the default
-** value for the previous OP_Column instruction.
-*/
-case OP_DfltValue: {       /* no-push */
-  assert( 0 );
 }
 
 /* Opcode: MakeRecord P1 P2 P4
