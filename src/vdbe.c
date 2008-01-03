@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.672 2008/01/03 18:39:42 danielk1977 Exp $
+** $Id: vdbe.c,v 1.673 2008/01/03 18:44:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1537,9 +1537,9 @@ case OP_MustBeInt: {            /* no-push */
   break;
 }
 
-/* Opcode: RealAffinity * * *
+/* Opcode: RealAffinity P1 * *
 **
-** If the top of the stack is an integer, convert it to a real value.
+** If register P1 holds an integer convert it to a real value.
 **
 ** This opcode is used when extracting information from a column that
 ** has REAL affinity.  Such column values may still be stored as
@@ -1547,9 +1547,16 @@ case OP_MustBeInt: {            /* no-push */
 ** to have only a real value.
 */
 case OP_RealAffinity: {                  /* no-push */
-  assert( pTos>=p->aStack );
-  if( pTos->flags & MEM_Int ){
-    sqlite3VdbeMemRealify(pTos);
+  assert( pOp->p1>=0 && pOp->p1<=p->nMem );
+  if( pOp->p1==0 ){
+    if( pTos->flags & MEM_Int ){
+      sqlite3VdbeMemRealify(pTos);
+    }
+  }else{
+    Mem *pX = &p->aMem[pOp->p1];
+    if( pX->flags & MEM_Int ){
+      sqlite3VdbeMemRealify(pX);
+    }
   }
   break;
 }
@@ -3802,36 +3809,43 @@ case OP_RowData: {
   break;
 }
 
-/* Opcode: Rowid P1 * *
+/* Opcode: Rowid P1 P2 * * *
 **
-** Push onto the stack an integer which is the key of the table entry that
-** P1 is currently point to.
+** Store in register P2 an integer which is the key of the table entry that
+** P1 is currently point to.  If p2==0 then pust the integer.
 */
 case OP_Rowid: {
   int i = pOp->p1;
   Cursor *pC;
   i64 v;
+  Mem *pDest;
 
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
   assert( pC!=0 );
   rc = sqlite3VdbeCursorMoveto(pC);
   if( rc ) goto abort_due_to_error;
-  pTos++;
+  if( pOp->p2>0 ){
+    assert( pOp->p2<=p->nMem );
+    pDest = &p->aMem[pOp->p2];
+    sqlite3VdbeMemRelease(pDest);
+  }else{
+    pDest = ++pTos;
+  }
   if( pC->rowidIsValid ){
     v = pC->lastRowid;
   }else if( pC->pseudoTable ){
     v = keyToInt(pC->iKey);
   }else if( pC->nullRow || pC->pCursor==0 ){
-    pTos->flags = MEM_Null;
+    pDest->flags = MEM_Null;
     break;
   }else{
     assert( pC->pCursor!=0 );
     sqlite3BtreeKeySize(pC->pCursor, &v);
     v = keyToInt(v);
   }
-  pTos->u.i = v;
-  pTos->flags = MEM_Int;
+  pDest->u.i = v;
+  pDest->flags = MEM_Int;
   break;
 }
 
@@ -4051,9 +4065,9 @@ case OP_IdxDelete: {        /* no-push */
   break;
 }
 
-/* Opcode: IdxRowid P1 * *
+/* Opcode: IdxRowid P1 P2 * * *
 **
-** Push onto the stack an integer which is the last entry in the record at
+** Write into register P2 an integer which is the last entry in the record at
 ** the end of the index key pointed to by cursor P1.  This integer should be
 ** the rowid of the table entry to which this index entry points.
 **
@@ -4063,25 +4077,32 @@ case OP_IdxRowid: {
   int i = pOp->p1;
   BtCursor *pCrsr;
   Cursor *pC;
+  Mem *pDest;
 
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
-  pTos++;
-  pTos->flags = MEM_Null;
+  if( pOp->p2>0 ){
+    assert( pOp->p2<=p->nMem );
+    pDest = &p->aMem[pOp->p2];
+    sqlite3VdbeMemRelease(pDest);
+  }else{
+    pDest = ++pTos;
+  }
+  pDest->flags = MEM_Null;
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     i64 rowid;
 
     assert( pC->deferredMoveto==0 );
     assert( pC->isTable==0 );
     if( pC->nullRow ){
-      pTos->flags = MEM_Null;
+      pDest->flags = MEM_Null;
     }else{
       rc = sqlite3VdbeIdxRowid(pCrsr, &rowid);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
       }
-      pTos->flags = MEM_Int;
-      pTos->u.i = rowid;
+      pDest->flags = MEM_Int;
+      pDest->u.i = rowid;
     }
   }
   break;
@@ -5051,10 +5072,11 @@ case OP_VFilter: {   /* no-push */
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VRowid P1 * *
+/* Opcode: VRowid P1 P2 *
 **
-** Push an integer onto the stack which is the rowid of
+** Store into register P2  the rowid of
 ** the virtual-table that the P1 cursor is pointing to.
+** If P2==0, push the value onto the stack.
 */
 case OP_VRowid: {
   const sqlite3_module *pModule;
@@ -5067,14 +5089,21 @@ case OP_VRowid: {
     rc = SQLITE_ERROR;
   } else {
     sqlite_int64 iRow;
+    Mem *pDest;
 
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
     rc = pModule->xRowid(pCur->pVtabCursor, &iRow);
     if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
 
-    pTos++;
-    pTos->flags = MEM_Int;
-    pTos->u.i = iRow;
+    if( pOp->p2>0 ){
+      assert( pOp->p2<=p->nMem );
+      pDest = &p->aMem[pOp->p2];
+      sqlite3VdbeMemRelease(pDest);
+    }else{
+      pDest = ++pTos;
+    }
+    pDest->flags = MEM_Int;
+    pDest->u.i = iRow;
   }
 
   break;
@@ -5082,10 +5111,12 @@ case OP_VRowid: {
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VColumn P1 P2 *
+/* Opcode: VColumn P1 P2 P3
 **
-** Push onto the stack the value of the P2-th column of
-** the row of the virtual-table that the P1 cursor is pointing to.
+** Store the value of the P2-th column of
+** the row of the virtual-table that the 
+** P1 cursor is pointing to into register P3.
+** Or if P3==0 push the value onto the stack.
 */
 case OP_VColumn: {
   const sqlite3_module *pModule;
@@ -5097,6 +5128,7 @@ case OP_VColumn: {
     sqlite3SetString(&p->zErrMsg, "Unsupported module operation: xColumn", 0);
     rc = SQLITE_ERROR;
   } else {
+    Mem *pDest;
     sqlite3_context sContext;
     memset(&sContext, 0, sizeof(sContext));
     sContext.s.flags = MEM_Null;
@@ -5109,14 +5141,19 @@ case OP_VColumn: {
     ** dynamic allocation in sContext.s (a Mem struct) is  released.
     */
     sqlite3VdbeChangeEncoding(&sContext.s, encoding);
-    pTos++;
-    pTos->flags = 0;
-    sqlite3VdbeMemMove(pTos, &sContext.s);
+    if( pOp->p3>0 ){
+      assert( pOp->p3<=p->nMem );
+      pDest = &p->aMem[pOp->p3];
+    }else{
+      pDest = ++pTos;
+      pDest->flags = 0;
+    }
+    sqlite3VdbeMemMove(pDest, &sContext.s);
 
     if( sqlite3SafetyOn(db) ){
       goto abort_due_to_misuse;
     }
-    if( sqlite3VdbeMemTooBig(pTos) ){
+    if( sqlite3VdbeMemTooBig(pDest) ){
       goto too_big;
     }
   }

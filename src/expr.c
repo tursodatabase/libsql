@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.327 2008/01/03 18:03:09 drh Exp $
+** $Id: expr.c,v 1.328 2008/01/03 18:44:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1897,23 +1897,29 @@ static void codeInteger(Vdbe *v, const char *z, int n, int negateFlag){
 
 /*
 ** Generate code that will extract the iColumn-th column from
-** table pTab and push that column value on the stack.  There
-** is an open cursor to pTab in iTable.  If iColumn<0 then
-** code is generated that extracts the rowid.
+** table pTab and store the column value in register iMem, or on
+** the stack if iMem==0.  There is an open cursor to pTab in 
+** iTable.  If iColumn<0 then code is generated that extracts the rowid.
 */
-void sqlite3ExprCodeGetColumn(Vdbe *v, Table *pTab, int iColumn, int iTable){
+void sqlite3ExprCodeGetColumn(
+  Vdbe *v,         /* The VM being created */
+  Table *pTab,     /* Description of the table we are reading from */
+  int iColumn,     /* Index of the table column */
+  int iTable,      /* The cursor pointing to the table */
+  int iReg         /* Store results here */
+){
   if( iColumn<0 ){
     int op = (pTab && IsVirtual(pTab)) ? OP_VRowid : OP_Rowid;
-    sqlite3VdbeAddOp1(v, op, iTable);
+    sqlite3VdbeAddOp2(v, op, iTable, iReg);
   }else if( pTab==0 ){
-    sqlite3VdbeAddOp2(v, OP_Column, iTable, iColumn);
+    sqlite3VdbeAddOp3(v, OP_Column, iTable, iColumn, iReg);
   }else{
     int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
-    sqlite3VdbeAddOp2(v, op, iTable, iColumn);
+    sqlite3VdbeAddOp3(v, op, iTable, iColumn, iReg);
     sqlite3ColumnDefault(v, pTab, iColumn);
 #ifndef SQLITE_OMIT_FLOATING_POINT
     if( pTab->aCol[iColumn].affinity==SQLITE_AFF_REAL ){
-      sqlite3VdbeAddOp0(v, OP_RealAffinity);
+      sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
     }
 #endif
   }
@@ -1960,7 +1966,8 @@ void sqlite3ExprCode(Parse *pParse, Expr *pExpr){
         assert( pParse->ckOffset>0 );
         sqlite3VdbeAddOp2(v, OP_Dup, pParse->ckOffset-pExpr->iColumn-1, 1);
       }else{
-        sqlite3ExprCodeGetColumn(v, pExpr->pTab, pExpr->iColumn, pExpr->iTable);
+        sqlite3ExprCodeGetColumn(v, pExpr->pTab,
+                                 pExpr->iColumn, pExpr->iTable, 0);
       }
       break;
     }
@@ -2361,12 +2368,19 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr){
 */
 int sqlite3ExprIntoReg(Parse *pParse, Expr *pExpr, int target){
   Vdbe *v = pParse->pVdbe;
-  if( v==0 ) return -1;
-  sqlite3ExprCode(pParse, pExpr);
-  if( target<0 ){
+  assert( v!=0 || pParse->db->mallocFailed );
+  assert( pExpr!=0 || pParse->db->mallocFailed );
+  if( v==0 || pExpr==0 ) return -1;
+  if( target<=0 ){
     target = ++pParse->nMem;
   }
-  sqlite3VdbeAddOp2(v, OP_MemStore, target, 1);
+  if( pExpr->op==TK_COLUMN && pExpr->iTable>=0 ){
+    sqlite3ExprCodeGetColumn(v, pExpr->pTab,
+                             pExpr->iColumn, pExpr->iTable, target);
+  }else{
+    sqlite3ExprCode(pParse, pExpr);
+    sqlite3VdbeAddOp2(v, OP_MemStore, target, 1);
+  }
   return target;
 }
 
