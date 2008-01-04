@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.676 2008/01/04 13:57:26 danielk1977 Exp $
+** $Id: vdbe.c,v 1.677 2008/01/04 16:50:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -170,6 +170,31 @@ static void _storeTypeInfo(Mem *pMem){
   }else{
     pMem->type = SQLITE_BLOB;
   }
+}
+
+/*
+** Properties of opcodes.  The OPFLG_INITIALIZER macro is
+** created by mkopcodeh.awk during compilation.  Data is obtained
+** from the comments following the "case OP_xxxx:" statements in
+** this file.  
+**
+**      jump:      OPFLG_JUMP
+**      out1:      OPFLG_OUT1
+**      out2:      OPFLG_OUT2
+**      out3:      OPFLG_OUT3
+**      in1:       OPFLG_IN1
+**      in2:       OPFLG_IN2
+**      in3:       OPFLG_IN3
+*/
+static unsigned char opcodeProperty[] = OPFLG_INITIALIZER;
+
+/*
+** Return true if an opcode has any of the OPFLG_xxx properties
+** specified by mask.
+*/
+int sqlite3VdbeOpcodeHasProperty(int opcode, int mask){
+  assert( opcode>0 && opcode<sizeof(opcodeProperty) );
+  return (opcodeProperty[opcode]&mask)!=0;
 }
 
 /*
@@ -559,18 +584,11 @@ int sqlite3VdbeExec(
 #endif
 
 #ifndef NDEBUG
-    /* This is to check that the return value of static function
-    ** opcodeNoPush() (see vdbeaux.c) returns values that match the
-    ** implementation of the virtual machine in this file. If
-    ** opcodeNoPush() returns non-zero, then the stack is guarenteed
-    ** not to grow when the opcode is executed. If it returns zero, then
-    ** the stack may grow by at most 1.
-    **
-    ** The global wrapper function sqlite3VdbeOpcodeUsesStack() is not 
-    ** available if NDEBUG is defined at build time.
+    /* This is to check to make sure that the OPFLG_PUSH property
+    ** is set correctly on all opcodes.
     */ 
     pStackLimit = pTos;
-    if( !sqlite3VdbeOpcodeNoPush(pOp->opcode) ){
+    if( sqlite3VdbeOpcodeHasProperty(pOp->opcode, OPFLG_PUSH) ){
       pStackLimit++;
     }
 #endif
@@ -619,7 +637,7 @@ int sqlite3VdbeExec(
 ** the one at index P2 from the beginning of
 ** the program.
 */
-case OP_Goto: {             /* no-push */
+case OP_Goto: {             /* no-push, jump */
   CHECK_FOR_INTERRUPT;
   pc = pOp->p2 - 1;
   break;
@@ -635,7 +653,7 @@ case OP_Goto: {             /* no-push */
 ** the return address stack will fill up and processing will abort
 ** with a fatal error.
 */
-case OP_Gosub: {            /* no-push */
+case OP_Gosub: {            /* no-push, jump */
   assert( p->returnDepth<sizeof(p->returnStack)/sizeof(p->returnStack[0]) );
   p->returnStack[p->returnDepth++] = pc+1;
   pc = pOp->p2 - 1;
@@ -1483,7 +1501,7 @@ case OP_AddImm: {            /* no-push */
 ** current value if P1==0, or to the least integer that is strictly
 ** greater than its current value if P1==1.
 */
-case OP_ForceInt: {            /* no-push */
+case OP_ForceInt: {            /* no-push, jump */
   i64 v;
   assert( pTos>=p->aStack );
   applyAffinity(pTos, SQLITE_AFF_NUMERIC, encoding);
@@ -1519,7 +1537,7 @@ case OP_ForceInt: {            /* no-push */
 ** P1 is 1, then the stack is popped.  In all other cases, the depth
 ** of the stack is unchanged.
 */
-case OP_MustBeInt: {            /* no-push */
+case OP_MustBeInt: {            /* no-push, jump */
   assert( pTos>=p->aStack );
   applyAffinity(pTos, SQLITE_AFF_NUMERIC, encoding);
   if( (pTos->flags & MEM_Int)==0 ){
@@ -1724,12 +1742,12 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, no-push */
 ** the 2nd element down on the stack is greater than or equal to the
 ** top of the stack.  See the Eq opcode for additional information.
 */
-case OP_Eq:               /* same as TK_EQ, no-push */
-case OP_Ne:               /* same as TK_NE, no-push */
-case OP_Lt:               /* same as TK_LT, no-push */
-case OP_Le:               /* same as TK_LE, no-push */
-case OP_Gt:               /* same as TK_GT, no-push */
-case OP_Ge: {             /* same as TK_GE, no-push */
+case OP_Eq:               /* same as TK_EQ, no-push, jump */
+case OP_Ne:               /* same as TK_NE, no-push, jump */
+case OP_Lt:               /* same as TK_LT, no-push, jump */
+case OP_Le:               /* same as TK_LE, no-push, jump */
+case OP_Gt:               /* same as TK_GT, no-push, jump */
+case OP_Ge: {             /* same as TK_GE, no-push, jump */
   Mem *pNos;
   int flags;
   int res;
@@ -1957,8 +1975,8 @@ case OP_Noop: {            /* no-push */
 ** If the value popped of the stack is NULL, then take the jump if P1
 ** is true and fall through if P1 is false.
 */
-case OP_If:                 /* no-push */
-case OP_IfNot: {            /* no-push */
+case OP_If:                 /* no-push, jump */
+case OP_IfNot: {            /* no-push, jump */
   int c;
   assert( pTos>=p->aStack );
   if( pTos->flags & MEM_Null ){
@@ -1985,7 +2003,7 @@ case OP_IfNot: {            /* no-push */
 ** pop -P1 elements from the stack only if the jump is taken and leave
 ** the stack unchanged if the jump is not taken.
 */
-case OP_IsNull: {            /* same as TK_ISNULL, no-push */
+case OP_IsNull: {            /* same as TK_ISNULL, no-push, jump */
   if( pTos->flags & MEM_Null ){
     pc = pOp->p2-1;
     if( pOp->p1<0 ){
@@ -2005,7 +2023,7 @@ case OP_IsNull: {            /* same as TK_ISNULL, no-push */
 ** P1 times if P1 is greater than zero.  But if P1 is negative,
 ** leave the stack unchanged.
 */
-case OP_NotNull: {            /* same as TK_NOTNULL, no-push */
+case OP_NotNull: {            /* same as TK_NOTNULL, no-push, jump */
   int i, cnt;
   cnt = pOp->p1;
   if( cnt<0 ) cnt = -cnt;
@@ -2346,8 +2364,8 @@ op_column_out:
 */
 case OP_RegMakeRec:
 case OP_RegMakeIRec:
-case OP_MakeIdxRec:
-case OP_MakeRecord: {
+case OP_MakeIdxRec:          /* jump */
+case OP_MakeRecord: {        /* jump */
   /* Assuming the record contains N fields, the record format looks
   ** like this:
   **
@@ -3068,10 +3086,10 @@ case OP_Close: {       /* no-push */
 **
 ** See also: Found, NotFound, Distinct, MoveGt, MoveGe, MoveLt
 */
-case OP_MoveLt:         /* no-push */
-case OP_MoveLe:         /* no-push */
-case OP_MoveGe:         /* no-push */
-case OP_MoveGt: {       /* no-push */
+case OP_MoveLt:         /* no-push, jump */
+case OP_MoveLe:         /* no-push, jump */
+case OP_MoveGe:         /* no-push, jump */
+case OP_MoveGt: {       /* no-push, jump */
   int i = pOp->p1;
   Cursor *pC;
 
@@ -3201,9 +3219,9 @@ case OP_MoveGt: {       /* no-push */
 **
 ** See also: Distinct, Found, MoveTo, NotExists, IsUnique
 */
-case OP_Distinct:       /* no-push */
-case OP_NotFound:       /* no-push */
-case OP_Found: {        /* no-push */
+case OP_Distinct:       /* no-push, jump */
+case OP_NotFound:       /* no-push, jump */
+case OP_Found: {        /* no-push, jump */
   int i = pOp->p1;
   int alreadyExists = 0;
   Cursor *pC;
@@ -3260,7 +3278,7 @@ case OP_Found: {        /* no-push */
 **
 ** See also: Distinct, NotFound, NotExists, Found
 */
-case OP_IsUnique: {        /* no-push */
+case OP_IsUnique: {        /* no-push, jump */
   int i = pOp->p1;
   Mem *pNos = &pTos[-1];
   Cursor *pCx;
@@ -3360,7 +3378,7 @@ case OP_IsUnique: {        /* no-push */
 **
 ** See also: Distinct, Found, MoveTo, NotFound, IsUnique
 */
-case OP_NotExists: {        /* no-push */
+case OP_NotExists: {        /* no-push, jump */
   int i = pOp->p1;
   Cursor *pC;
   BtCursor *pCrsr;
@@ -3895,7 +3913,7 @@ case OP_NullRow: {        /* no-push */
 ** If P2 is 0 or if the table or index is not empty, fall through
 ** to the following instruction.
 */
-case OP_Last: {        /* no-push */
+case OP_Last: {        /* no-push, jump */
   int i = pOp->p1;
   Cursor *pC;
   BtCursor *pCrsr;
@@ -3931,7 +3949,7 @@ case OP_Last: {        /* no-push */
 ** regression tests can determine whether or not the optimizer is
 ** correctly optimizing out sorts.
 */
-case OP_Sort: {        /* no-push */
+case OP_Sort: {        /* no-push, jump */
 #ifdef SQLITE_TEST
   sqlite3_sort_count++;
   sqlite3_search_count--;
@@ -3946,7 +3964,7 @@ case OP_Sort: {        /* no-push */
 ** If P2 is 0 or if the table or index is not empty, fall through
 ** to the following instruction.
 */
-case OP_Rewind: {        /* no-push */
+case OP_Rewind: {        /* no-push, jump */
   int i = pOp->p1;
   Cursor *pC;
   BtCursor *pCrsr;
@@ -3986,8 +4004,8 @@ case OP_Rewind: {        /* no-push */
 ** to the following instruction.  But if the cursor backup was successful,
 ** jump immediately to P2.
 */
-case OP_Prev:          /* no-push */
-case OP_Next: {        /* no-push */
+case OP_Prev:          /* no-push, jump */
+case OP_Next: {        /* no-push, jump */
   Cursor *pC;
   BtCursor *pCrsr;
 
@@ -4172,9 +4190,9 @@ case OP_IdxRowid: {
 ** an epsilon prior to the comparison.  This makes the opcode work
 ** like IdxLE.
 */
-case OP_IdxLT:          /* no-push */
-case OP_IdxGT:          /* no-push */
-case OP_IdxGE: {        /* no-push */
+case OP_IdxLT:          /* no-push, jump */
+case OP_IdxGT:          /* no-push, jump */
+case OP_IdxGE: {        /* no-push, jump */
   int i= pOp->p1;
   Cursor *pC;
 
@@ -4546,7 +4564,7 @@ case OP_FifoWrite: {        /* no-push */
 ** If the Fifo is empty do not push an entry onto the stack or set
 ** a memory register but instead jump to P2.
 */
-case OP_FifoRead: {
+case OP_FifoRead: {         /* jump */
   i64 v;
   CHECK_FOR_INTERRUPT;
   if( sqlite3VdbeFifoPop(&p->sFifo, &v)==SQLITE_DONE ){
@@ -4691,7 +4709,7 @@ case OP_MemIncr: {        /* no-push */
 ** It is illegal to use this instruction on a memory cell that does
 ** not contain an integer.  An assertion fault will result if you try.
 */
-case OP_IfMemPos: {        /* no-push */
+case OP_IfMemPos: {        /* no-push, jump */
   int i = pOp->p1;
   Mem *pMem;
   assert( i>0 && i<=p->nMem );
@@ -4710,7 +4728,7 @@ case OP_IfMemPos: {        /* no-push */
 ** It is illegal to use this instruction on a memory cell that does
 ** not contain an integer.  An assertion fault will result if you try.
 */
-case OP_IfMemNeg: {        /* no-push */
+case OP_IfMemNeg: {        /* no-push, jump */
   int i = pOp->p1;
   Mem *pMem;
   assert( i>0 && i<=p->nMem );
@@ -4729,7 +4747,7 @@ case OP_IfMemNeg: {        /* no-push */
 ** It is illegal to use this instruction on a memory cell that does
 ** not contain an integer.  An assertion fault will result if you try.
 */
-case OP_IfMemZero: {        /* no-push */
+case OP_IfMemZero: {        /* no-push, jump */
   int i = pOp->p1;
   Mem *pMem;
   assert( i>0 && i<=p->nMem );
@@ -4745,7 +4763,7 @@ case OP_IfMemZero: {        /* no-push */
 **
 ** If the value of memory cell P1 is NULL, jump to P2. 
 */
-case OP_IfMemNull: {        /* no-push */
+case OP_IfMemNull: {        /* no-push, jump */
   int i = pOp->p1;
   assert( i>0 && i<=p->nMem );
   if( p->aMem[i].flags & MEM_Null ){
@@ -4900,7 +4918,7 @@ case OP_Vacuum: {        /* no-push */
 ** the P1 database. If the vacuum has finished, jump to instruction
 ** P2. Otherwise, fall through to the next instruction.
 */
-case OP_IncrVacuum: {        /* no-push */
+case OP_IncrVacuum: {        /* no-push, jump */
   Btree *pBt;
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
@@ -5060,7 +5078,7 @@ case OP_VOpen: {   /* no-push */
 **
 ** A jump is made to P2 if the result set after filtering would be empty.
 */
-case OP_VFilter: {   /* no-push */
+case OP_VFilter: {   /* no-push, jump */
   int nArg;
   int iQuery;
   const sqlite3_module *pModule;
@@ -5202,7 +5220,7 @@ case OP_VColumn: {
 ** jump to instruction P2.  Or, if the virtual table has reached
 ** the end of its result set, then fall through to the next instruction.
 */
-case OP_VNext: {   /* no-push */
+case OP_VNext: {   /* no-push, jump */
   const sqlite3_module *pModule;
   int res = 0;
 

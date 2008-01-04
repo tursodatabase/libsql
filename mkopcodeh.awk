@@ -50,6 +50,13 @@
   sub(/:/,"",name)
   sub("\r","",name)
   op[name] = -1
+  out1[name] = 0
+  out2[name] = 0
+  out3[name] = 0
+  jump[name] = 0
+  in1[name] = 0
+  in2[name] = 0
+  in3[name] = 0
   for(i=3; i<NF; i++){
     if($i=="same" && $(i+1)=="as"){
       sym = $(i+2)
@@ -58,8 +65,23 @@
       used[op[name]] = 1
       sameas[op[name]] = sym
     }
+    sub(",","",$i)
     if($i=="no-push"){
       nopush[name] = 1
+    }else if($i=="out1"){
+      out1[name] = 1
+    }else if($i=="out2"){
+      out2[name] = 2
+    }else if($i=="out3"){
+      out3[name] = 3
+    }else if($i=="in1"){
+      in1[name] = 1
+    }else if($i=="in2"){
+      in2[name] = 1
+    }else if($i=="in3"){
+      in3[name] = 1
+    }else if($i=="jump"){
+      jump[name] = 1
     }
   }
 }
@@ -96,32 +118,46 @@ END {
     }
   }
 
-  # Generate the 10 16-bit bitmasks used by function opcodeUsesStack()
-  # in vdbeaux.c. See comments in that function for details.
-  # 
-  nopush[0] = 0              # 0..15
-  nopush[1] = 0              # 16..31
-  nopush[2] = 0              # 32..47
-  nopush[3] = 0              # 48..63
-  nopush[4] = 0              # 64..79
-  nopush[5] = 0              # 80..95
-  nopush[6] = 0              # 96..111
-  nopush[7] = 0              # 112..127
-  nopush[8] = 0              # 128..143
-  nopush[9] = 0              # 144..159
+  # Generate the bitvectors:
+  #
+  #  bit 0:     jump
+  #  bit 1:     output on P1
+  #  bit 2:     output on P2
+  #  bit 3:     output on P3
+  #  bit 4:     input on P1
+  #  bit 5:     input on P2
+  #  bit 6:     input on P3
+  #  bit 7:     pushes a result onto stack
+  #
+  for(i=0; i<=max; i++) bv[i] = 0;
   for(name in op){
-    if( nopush[name] ){
-      n = op[name]
-      j = n%16
-      i = ((n - j)/16)
-      nopush[i] = nopush[i] + (2^j)
-    }
+    x = op[name]
+    if( jump[name] ) bv[x] += 0x01;
+    if( out1[name] ) bv[x] += 0x02;
+    if( out2[name] ) bv[x] += 0x04;
+    if( out3[name] ) bv[x] += 0x08;
+    if( in1[name] ) bv[x] += 0x10;
+    if( in2[name] ) bv[x] += 0x20;
+    if( in3[name] ) bv[x] += 0x40;
+    if( !nopush[name] ) bv[x] += 0x80;
   }
-  printf "\n"
-  print "/* Opcodes that are guaranteed to never push a value onto the stack"
-  print "** contain a 1 their corresponding position of the following mask"
-  print "** set.  See the opcodeNoPush() function in vdbeaux.c  */"
-  for(i=0; i<10; i++){
-    printf "#define NOPUSH_MASK_%d 0x%04x\n", i, nopush[i]
+  print "\n"
+  print "/* Properties such as \"out2\" or \"jump\" that are specified in"
+  print "** comments following the "case" for each opcode in the vdbe.c"
+  print "** are encoded into bitvectors as follows:"
+  print "*/"
+  print "#define OPFLG_JUMP     0x01    /* jump:  P2 holds a jump target */"
+  print "#define OPFLG_OUT1     0x02    /* out1:  P1 specifies output reg */"
+  print "#define OPFLG_OUT2     0x04    /* out2:  P2 specifies output reg */"
+  print "#define OPFLG_OUT3     0x08    /* out3:  P3 specifies output reg */"
+  print "#define OPFLG_IN1      0x10    /* in1:   P1 is an input reg */"
+  print "#define OPFLG_IN2      0x20    /* in2:   P2 is an input reg */"
+  print "#define OPFLG_IN3      0x40    /* in3:   P3 is an input reg */"
+  print "#define OPFLG_PUSH     0x80    /* omits no-push:  Does not push */"
+  print "#define OPFLG_INITIALIZER {\\"
+  for(i=0; i<=max; i++){
+    printf " 0x%02x,", bv[i]
+    if( i%10==9 ) printf("\\\n");
   }
+  print "}"
 }

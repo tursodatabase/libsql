@@ -400,10 +400,10 @@ int sqlite3VdbeMemFromBtree(BtCursor*,int,int,int,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
 int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 const char *sqlite3OpcodeName(int);
+int sqlite3VdbeOpcodeHasProperty(int, int);
 
 #ifndef NDEBUG
   void sqlite3VdbeMemSanity(Mem*);
-  int sqlite3VdbeOpcodeNoPush(u8);
 #endif
 int sqlite3VdbeMemTranslate(Mem*, u8);
 #ifdef SQLITE_DEBUG
