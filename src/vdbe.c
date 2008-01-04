@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.674 2008/01/04 11:01:04 danielk1977 Exp $
+** $Id: vdbe.c,v 1.675 2008/01/04 13:24:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3344,12 +3344,14 @@ case OP_IsUnique: {        /* no-push */
   break;
 }
 
-/* Opcode: NotExists P1 P2 *
+/* Opcode: NotExists P1 P2 P3
 **
-** Use the top of the stack as a integer key.  If a record with that key
-** does not exist in table of P1, then jump to P2.  If the record
-** does exist, then fall thru.  The cursor is left pointing to the
-** record if it exists.  The integer key is popped from the stack.
+** Use the top of the stack as a integer key. Or, if P3 is non-zero,
+** use the contents of memory cell P3 as an integer key. If a record 
+** with that key does not exist in table of P1, then jump to P2. 
+** If the record does exist, then fall thru.  The cursor is left 
+** pointing to the record if it exists. The integer key is popped 
+** from the stack (unless it was read from a memory cell).
 **
 ** The difference between this operation and NotFound is that this
 ** operation assumes the key is an integer and that P1 is a table whereas
@@ -3362,17 +3364,24 @@ case OP_NotExists: {        /* no-push */
   int i = pOp->p1;
   Cursor *pC;
   BtCursor *pCrsr;
-  assert( pTos>=p->aStack );
+  Mem *pKey;
+  if( pOp->p3 ){
+    assert( pOp->p3<=p->nMem );
+    pKey = &p->aMem[pOp->p3];
+  }else{
+    pKey = pTos;
+    assert( pTos>=p->aStack );
+  }
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int res;
     u64 iKey;
-    assert( pTos->flags & MEM_Int );
+    assert( pKey->flags & MEM_Int );
     assert( p->apCsr[i]->isTable );
-    iKey = intToKey(pTos->u.i);
+    iKey = intToKey(pKey->u.i);
     rc = sqlite3BtreeMoveto(pCrsr, 0, iKey, 0,&res);
-    pC->lastRowid = pTos->u.i;
+    pC->lastRowid = pKey->u.i;
     pC->rowidIsValid = res==0;
     pC->nullRow = 0;
     pC->cacheStatus = CACHE_STALE;
@@ -3386,8 +3395,10 @@ case OP_NotExists: {        /* no-push */
       pC->rowidIsValid = 0;
     }
   }
-  Release(pTos);
-  pTos--;
+  if( pOp->p3==0 ){
+    Release(pTos);
+    pTos--;
+  }
   break;
 }
 
@@ -3727,20 +3738,24 @@ case OP_ResetCount: {        /* no-push */
   break;
 }
 
-/* Opcode: RowData P1 * *
+/* Opcode: RowData P1 * P3
 **
-** Push onto the stack the complete row data for cursor P1.
-** There is no interpretation of the data.  It is just copied
-** onto the stack exactly as it is found in the database file.
+** Push onto the stack the complete row data for cursor P1. Or if P3 
+** is a positive non-zero integer register number, then the value 
+** is written into that register. There is no interpretation of the data.  
+** It is just copied onto the stack or into the memory cell exactly as 
+** it is found in the database file.
 **
-** If the cursor is not pointing to a valid row, a NULL is pushed
-** onto the stack.
+** If the cursor is not pointing to a valid row, a NULL value is
+** pushed/inserted instead.
 */
-/* Opcode: RowKey P1 * *
+/* Opcode: RowKey P1 * P3
 **
-** Push onto the stack the complete row key for cursor P1.
-** There is no interpretation of the key.  It is just copied
-** onto the stack exactly as it is found in the database file.
+** Push onto the stack the complete row key for cursor P1. Or if P3 
+** is a positive non-zero integer register number, then the value 
+** is written into that register. There is no interpretation of the data.  
+** It is just copied onto the stack or into the memory cell exactly as 
+** it is found in the database file.
 **
 ** If the cursor is not pointing to a valid row, a NULL is pushed
 ** onto the stack.
@@ -3750,22 +3765,27 @@ case OP_RowData: {
   int i = pOp->p1;
   Cursor *pC;
   u32 n;
+  Mem *pOut;
 
   /* Note that RowKey and RowData are really exactly the same instruction */
-  pTos++;
+  if( pOp->p3 ){
+    pOut = &p->aMem[pOp->p3];
+  }else{
+    pOut = ++pTos;
+  }
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
   assert( pC->isTable || pOp->opcode==OP_RowKey );
   assert( pC->isIndex || pOp->opcode==OP_RowData );
   assert( pC!=0 );
   if( pC->nullRow ){
-    pTos->flags = MEM_Null;
+    pOut->flags = MEM_Null;
   }else if( pC->pCursor!=0 ){
     BtCursor *pCrsr = pC->pCursor;
     rc = sqlite3VdbeCursorMoveto(pC);
     if( rc ) goto abort_due_to_error;
     if( pC->nullRow ){
-      pTos->flags = MEM_Null;
+      pOut->flags = MEM_Null;
       break;
     }else if( pC->isIndex ){
       i64 n64;
@@ -3781,31 +3801,31 @@ case OP_RowData: {
     if( n>SQLITE_MAX_LENGTH ){
       goto too_big;
     }
-    pTos->n = n;
+    pOut->n = n;
     if( n<=NBFS ){
-      pTos->flags = MEM_Blob | MEM_Short;
-      pTos->z = pTos->zShort;
+      pOut->flags = MEM_Blob | MEM_Short;
+      pOut->z = pOut->zShort;
     }else{
       char *z = sqlite3_malloc( n );
       if( z==0 ) goto no_mem;
-      pTos->flags = MEM_Blob | MEM_Dyn;
-      pTos->xDel = 0;
-      pTos->z = z;
+      pOut->flags = MEM_Blob | MEM_Dyn;
+      pOut->xDel = 0;
+      pOut->z = z;
     }
     if( pC->isIndex ){
-      rc = sqlite3BtreeKey(pCrsr, 0, n, pTos->z);
+      rc = sqlite3BtreeKey(pCrsr, 0, n, pOut->z);
     }else{
-      rc = sqlite3BtreeData(pCrsr, 0, n, pTos->z);
+      rc = sqlite3BtreeData(pCrsr, 0, n, pOut->z);
     }
   }else if( pC->pseudoTable ){
-    pTos->n = pC->nData;
+    pOut->n = pC->nData;
     assert( pC->nData<=SQLITE_MAX_LENGTH );
-    pTos->z = pC->pData;
-    pTos->flags = MEM_Blob|MEM_Ephem;
+    pOut->z = pC->pData;
+    pOut->flags = MEM_Blob|MEM_Ephem;
   }else{
-    pTos->flags = MEM_Null;
+    pOut->flags = MEM_Null;
   }
-  pTos->enc = SQLITE_UTF8;  /* In case the blob is ever cast to text */
+  pOut->enc = SQLITE_UTF8;  /* In case the blob is ever cast to text */
   break;
 }
 
@@ -4505,8 +4525,7 @@ case OP_IntegrityCk: {
 
 /* Opcode: FifoWrite * * *
 **
-** Write the integer on the top of the stack
-** into the Fifo.
+** Write the integer on the top of the stack into the Fifo.
 */
 case OP_FifoWrite: {        /* no-push */
   assert( pTos>=p->aStack );
@@ -4519,11 +4538,14 @@ case OP_FifoWrite: {        /* no-push */
   break;
 }
 
-/* Opcode: FifoRead * P2 *
+/* Opcode: FifoRead P1 P2 *
 **
-** Attempt to read a single integer from the Fifo
-** and push it onto the stack.  If the Fifo is empty
-** push nothing but instead jump to P2.
+** Attempt to read a single integer from the Fifo. If P1 is zero,
+** push the result onto the stack. Otherwise, store the read integer 
+** in register P1.
+** 
+** If the Fifo is empty do not push an entry onto the stack or set
+** a memory register but instead jump to P2.
 */
 case OP_FifoRead: {
   i64 v;
@@ -4531,9 +4553,13 @@ case OP_FifoRead: {
   if( sqlite3VdbeFifoPop(&p->sFifo, &v)==SQLITE_DONE ){
     pc = pOp->p2 - 1;
   }else{
-    pTos++;
-    pTos->u.i = v;
-    pTos->flags = MEM_Int;
+    Mem *pOut;
+    if( pOp->p1 ){
+      pOut = &p->aMem[pOp->p1];
+    }else{
+      pOut = ++pTos;
+    }
+    sqlite3VdbeMemSetInt64(pOut, v);
   }
   break;
 }

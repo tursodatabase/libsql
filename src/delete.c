@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.144 2008/01/03 18:03:09 drh Exp $
+** $Id: delete.c,v 1.145 2008/01/04 13:24:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -299,6 +299,8 @@ void sqlite3DeleteFrom(
   ** the table and pick which records to delete.
   */
   else{
+    int iRowid = ++pParse->nMem;    /* Used for storing value read from fifo */
+
     /* Begin the database scan
     */
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0);
@@ -342,44 +344,41 @@ void sqlite3DeleteFrom(
     if( triggers_exist ){
       sqlite3VdbeResolveLabel(v, addr);
     }
-    addr = sqlite3VdbeAddOp2(v, OP_FifoRead, 0, end);
+    addr = sqlite3VdbeAddOp2(v, OP_FifoRead, iRowid, end);
     sqlite3VdbeAddOp1(v, OP_StackDepth, -1);
 
     if( triggers_exist ){
-      int mem1 = ++pParse->nMem;
-      if( !isView ){
-        sqlite3VdbeAddOp1(v, OP_MemStore, mem1);
-      }
-      sqlite3VdbeAddOp2(v, OP_NotExists, iCur, addr);
-      sqlite3VdbeAddOp1(v, OP_Rowid, iCur);
+      int iData = ++pParse->nMem;   /* For storing row data of OLD table */
+
+      /* If the record is no longer present in the table, jump to the
+      ** next iteration of the loop through the contents of the fifo.
+      */
+      sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addr, iRowid);
+
+      /* Populate the OLD.* pseudo-table */
       if( old_col_mask ){
-        sqlite3VdbeAddOp1(v, OP_RowData, iCur);
+        sqlite3VdbeAddOp3(v, OP_RowData, iCur, 0, iData);
       }else{
-        sqlite3VdbeAddOp0(v, OP_Null);
+        sqlite3VdbeAddOp2(v, OP_MemNull, 0, iData);
       }
-      sqlite3CodeInsert(pParse, oldIdx, 0);
+      sqlite3VdbeAddOp3(v, OP_Insert, oldIdx, iData, iRowid);
 
       /* Jump back and run the BEFORE triggers */
       sqlite3VdbeAddOp2(v, OP_Goto, 0, iBeginBeforeTrigger);
       sqlite3VdbeJumpHere(v, iEndBeforeTrigger);
-
-      if( !isView ){
-        sqlite3VdbeAddOp1(v, OP_MemLoad, mem1);
-      }
     }
 
     if( !isView ){
       /* Delete the row */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       if( IsVirtual(pTab) ){
-        int iReg = sqlite3StackToReg(pParse, 1);
+        const char *pVtab = (const char *)pTab->pVtab;
         pParse->pVirtualLock = pTab;
-        sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iReg,
-                          (const char*)pTab->pVtab, P4_VTAB);
+        sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iRowid, pVtab, P4_VTAB);
       }else
 #endif
       {
-        sqlite3GenerateRowDelete(db, v, pTab, iCur, pParse->nested==0);
+        sqlite3GenerateRowDelete(db, v, pTab, iCur, iRowid, pParse->nested==0);
       }
     }
 
@@ -436,8 +435,8 @@ delete_from_cleanup:
 **   2.  Read/write cursors for all indices of pTab must be open as
 **       cursor number base+i for the i-th index.
 **
-**   3.  The record number of the row to be deleted must be on the top
-**       of the stack.
+**   3.  The record number of the row to be deleted must be stored in
+**       memory cell iRowid.
 **
 ** This routine pops the top of the stack to remove the record number
 ** and then generates code to remove both the table record and all index
@@ -448,10 +447,11 @@ void sqlite3GenerateRowDelete(
   Vdbe *v,           /* Generate code into this VDBE */
   Table *pTab,       /* Table containing the row to be deleted */
   int iCur,          /* Cursor number for the table */
+  int iRowid,        /* Memory cell that contains the rowid to delete */
   int count          /* Increment the row change counter */
 ){
   int addr;
-  addr = sqlite3VdbeAddOp1(v, OP_NotExists, iCur);
+  addr = sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, iRowid);
   sqlite3GenerateRowIndexDelete(v, pTab, iCur, 0);
   sqlite3VdbeAddOp2(v, OP_Delete, iCur, (count?OPFLAG_NCHANGE:0));
   if( count ){
