@@ -300,9 +300,10 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
       nMaxStack--;
     }
 
-    if( pOp->p2>=0 ) continue;
-    assert( -1-pOp->p2<p->nLabel );
-    pOp->p2 = aLabel[-1-pOp->p2];
+    if( sqlite3VdbeOpcodeHasProperty(opcode, OPFLG_JUMP) && pOp->p2<0 ){
+      assert( -1-pOp->p2<p->nLabel );
+      pOp->p2 = aLabel[-1-pOp->p2];
+    }
   }
   sqlite3_free(p->aLabel);
   p->aLabel = 0;

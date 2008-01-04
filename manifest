@@ -1,5 +1,5 @@
-C Fix\smkopcodeh.awk\sso\sthat\sit\sworks\son\sa\smac.\s(CVS\s4679)
-D 2008-01-04T19:12:36
+C Allow\sthe\sP2\soperand\sto\sbe\snegative\son\sopcodes\sthat\sare\snot\sjumps.\s(CVS\s4680)
+D 2008-01-04T19:33:49
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -172,7 +172,7 @@ F src/vdbe.c 9ccdc8ab9cb027f7ef759259f515ead5e89c5bb3
 F src/vdbe.h bb128757b84280504a1243c450fd13ead248ede5
 F src/vdbeInt.h 31bd686595356284d5484592e2dc6e58025aa346
 F src/vdbeapi.c f14174843bf4be2c9afdf2ef48b61e7c3ac62d7c
-F src/vdbeaux.c 02fef605e37abe4bcec3dbfa42925aac638e5e2b
+F src/vdbeaux.c 83262e81a0390fb52990ea52c54d6be49bf60ea5
 F src/vdbeblob.c b90f7494c408d47ce6835000b01e40b371e27baf
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 123994fcd344993d2fb050a83b91b341bbbd08b4
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d9ac6beef538376d0ea0a1daa95cf1dfe36143cf
-R bb1afb0cece51bb03fc32298acfa1a05
+P 59d3dfa41f99e99b836649a0870cbfc1c275a654
+R 9c7ea80dc841cb7f5d5845a6354029fd
 U drh
-Z e43057f61cf41de45bd869c414681b5e
+Z 42f5b8efcd6264386055bebf1bee5cb4
