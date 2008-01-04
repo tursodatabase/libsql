@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.637 2008/01/04 13:24:29 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.638 2008/01/04 19:10:29 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1919,6 +1919,7 @@ char *sqlite3StrAccumFinish(StrAccum*);
 void sqlite3StrAccumReset(StrAccum*);
 void sqlite3CodeInsert(Parse *, int, u8);
 int sqlite3StackToReg(Parse *, int);
+void sqlite3RegToStack(Parse *, int, int);
 
 /*
 ** The interface to the LEMON-generated parser

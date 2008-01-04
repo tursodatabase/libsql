@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.146 2008/01/04 13:57:26 danielk1977 Exp $
+** $Id: delete.c,v 1.147 2008/01/04 19:10:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -90,6 +90,14 @@ int sqlite3StackToReg(Parse *p, int nVal){
     sqlite3VdbeAddOp2(v, OP_MemStore, iRet+i, 1);
   }
   return iRet;
+}
+void sqlite3RegToStack(Parse *p, int iReg, int nVal){
+  int i;
+  Vdbe *v = sqlite3GetVdbe(p);
+  assert(v);
+  for(i=0; i<nVal; i++){
+    sqlite3VdbeAddOp2(v, OP_MemLoad, iReg+i, 0);
+  }
 }
 
 /*

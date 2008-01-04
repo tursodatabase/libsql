@@ -57,6 +57,7 @@
   in1[name] = 0
   in2[name] = 0
   in3[name] = 0
+  nopush[name] = 0
   for(i=3; i<NF; i++){
     if($i=="same" && $(i+1)=="as"){
       sym = $(i+2)
@@ -131,7 +132,6 @@ END {
   #
   for(i=0; i<=max; i++) bv[i] = 0;
   for(name in op){
-    x = op[name]
     if( jump[name] ) bv[x] += 0x01;
     if( out1[name] ) bv[x] += 0x02;
     if( out2[name] ) bv[x] += 0x04;
@@ -139,7 +139,7 @@ END {
     if( in1[name] ) bv[x] += 0x10;
     if( in2[name] ) bv[x] += 0x20;
     if( in3[name] ) bv[x] += 0x40;
-    if( !nopush[name] ) bv[x] += 0x80;
+    if( 0 == nopush[name] ) bv[x] = bv[x] + 0x80;
   }
   print "\n"
   print "/* Properties such as \"out2\" or \"jump\" that are specified in"

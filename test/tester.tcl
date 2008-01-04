@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.94 2007/10/23 14:49:59 drh Exp $
+# $Id: tester.tcl,v 1.95 2008/01/04 19:10:29 danielk1977 Exp $
 
 
 set tcl_precision 15
@@ -238,10 +238,12 @@ proc catchsql {sql {db db}} {
 #
 proc explain {sql {db db}} {
   puts ""
-  puts "addr  opcode        p1       p2     p3             "
-  puts "----  ------------  ------  ------  ---------------"
+  puts "addr  opcode        p1      p2      p3      p4               p5  #"
+  puts "----  ------------  ------  ------  ------  ---------------  --  -"
   $db eval "explain $sql" {} {
-    puts [format {%-4d  %-12.12s  %-6d  %-6d  %s} $addr $opcode $p1 $p2 $p3]
+    puts [format {%-4d  %-12.12s  %-6d  %-6d  %-6d  % -17s %s  %s} \
+      $addr $opcode $p1 $p2 $p3 $p4 $p5 $comment
+    ]
   }
 }
 

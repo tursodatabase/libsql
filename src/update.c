@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.156 2008/01/04 13:57:26 danielk1977 Exp $
+** $Id: update.c,v 1.157 2008/01/04 19:10:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -592,7 +592,9 @@ static void updateVirtualTable(
   int ephemTab;             /* Table holding the result of the SELECT */
   int i;                    /* Loop counter */
   int addr;                 /* Address of top of loop */
+  int iReg;                 /* First register in set passed to OP_VUpdate */
   sqlite3 *db = pParse->db; /* Database connection */
+  const char *pVtab = (const char*)pTab->pVtab;
   SelectDest dest = {SRT_Table, 0, 0};
 
   /* Construct the SELECT statement that will find the new values for
@@ -627,26 +629,18 @@ static void updateVirtualTable(
   dest.iParm = ephemTab;
   sqlite3Select(pParse, pSelect, &dest, 0, 0, 0, 0);
 
-  /*
-  ** Generate code to scan the ephemeral table and call VDelete and
-  ** VInsert
-  */
+  /* Generate code to scan the ephemeral table and call VUpdate. */
+  iReg = ++pParse->nMem;
+  pParse->nMem += pTab->nCol+1;
   sqlite3VdbeAddOp2(v, OP_Rewind, ephemTab, 0);
   addr = sqlite3VdbeCurrentAddr(v);
-  sqlite3VdbeAddOp2(v, OP_Column,  ephemTab, 0);
-  if( pRowid ){
-    sqlite3VdbeAddOp2(v, OP_Column, ephemTab, 1);
-  }else{
-    sqlite3VdbeAddOp2(v, OP_Dup, 0, 0);
-  }
+  sqlite3VdbeAddOp3(v, OP_Column,  ephemTab, 0, iReg);
+  sqlite3VdbeAddOp3(v, OP_Column, ephemTab, (pRowid?1:0), iReg+1);
   for(i=0; i<pTab->nCol; i++){
-    sqlite3VdbeAddOp2(v, OP_Column, ephemTab, i+1+(pRowid!=0));
+    sqlite3VdbeAddOp3(v, OP_Column, ephemTab, i+1+(pRowid!=0), iReg+2+i);
   }
   pParse->pVirtualLock = pTab;
-  sqlite3VdbeAddOp4(v, OP_VUpdate, 0, pTab->nCol+2, 
-      sqlite3StackToReg(pParse, pTab->nCol+2), 
-      (const char*)pTab->pVtab, P4_VTAB
-  );
+  sqlite3VdbeAddOp4(v, OP_VUpdate, 0, pTab->nCol+2, iReg, pVtab, P4_VTAB);
   sqlite3VdbeAddOp2(v, OP_Next, ephemTab, addr);
   sqlite3VdbeJumpHere(v, addr-1);
   sqlite3VdbeAddOp2(v, OP_Close, ephemTab, 0);

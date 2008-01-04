@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.677 2008/01/04 16:50:09 drh Exp $
+** $Id: vdbe.c,v 1.678 2008/01/04 19:10:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -591,6 +591,7 @@ int sqlite3VdbeExec(
     if( sqlite3VdbeOpcodeHasProperty(pOp->opcode, OPFLG_PUSH) ){
       pStackLimit++;
     }
+    assert( pTos>=&p->aStack[-1] && pTos<=pStackLimit );
 #endif
 
     switch( pOp->opcode ){
@@ -1526,7 +1527,7 @@ case OP_ForceInt: {            /* no-push, jump */
   break;
 }
 
-/* Opcode: MustBeInt P1 P2 *
+/* Opcode: MustBeInt P1 P2 P3
 ** 
 ** Force the top of the stack to be an integer.  If the top of the
 ** stack is not an integer and cannot be converted into an integer
@@ -1536,21 +1537,26 @@ case OP_ForceInt: {            /* no-push, jump */
 ** If the top of the stack is not an integer and P2 is not zero and
 ** P1 is 1, then the stack is popped.  In all other cases, the depth
 ** of the stack is unchanged.
+**
+** If P3 is not zero, then act on the value in register P3 instead
+** of using the stack.
 */
 case OP_MustBeInt: {            /* no-push, jump */
-  assert( pTos>=p->aStack );
-  applyAffinity(pTos, SQLITE_AFF_NUMERIC, encoding);
-  if( (pTos->flags & MEM_Int)==0 ){
+  Mem *pMem = ((pOp->p3==0)?pTos:&p->aMem[pOp->p3]);
+  assert( pOp->p3 || pTos>=p->aStack );
+  assert( pOp->p3>=0 && pOp->p3<=p->nMem );
+  applyAffinity(pMem, SQLITE_AFF_NUMERIC, encoding);
+  if( (pMem->flags & MEM_Int)==0 ){
     if( pOp->p2==0 ){
       rc = SQLITE_MISMATCH;
       goto abort_due_to_error;
-    }else{
+    }else if( pMem==pTos ){
       if( pOp->p1 ) popStack(&pTos, 1);
       pc = pOp->p2 - 1;
     }
   }else{
-    Release(pTos);
-    pTos->flags = MEM_Int;
+    Release(pMem);
+    pMem->flags = MEM_Int;
   }
   break;
 }
@@ -3438,12 +3444,12 @@ case OP_Sequence: {
 }
 
 
-/* Opcode: NewRowid P1 P2 *
+/* Opcode: NewRowid P1 P2 P3
 **
 ** Get a new integer record number (a.k.a "rowid") used as the key to a table.
 ** The record number is not previously used as a key in the database
 ** table that cursor P1 points to.  The new record number is pushed 
-** onto the stack.
+** onto the stack if P3 is 0 or written to memory cell P3 otherwise.
 **
 ** If P2>0 then P2 is a memory cell that holds the largest previously
 ** generated record number.  No new record numbers are allowed to be less
@@ -3587,9 +3593,13 @@ case OP_NewRowid: {
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
   }
-  pTos++;
-  pTos->u.i = v;
-  pTos->flags = MEM_Int;
+  if( pOp->p3 ){
+    sqlite3VdbeMemSetInt64(&p->aMem[pOp->p3], v);
+  }else{
+    pTos++;
+    pTos->u.i = v;
+    pTos->flags = MEM_Int;
+  }
   break;
 }
 
@@ -4662,10 +4672,11 @@ case OP_MemLoad: {
 }
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT
-/* Opcode: MemMax P1 * *
+/* Opcode: MemMax P1 P2 *
 **
 ** Set the value of memory cell P1 to the maximum of its current value
-** and the value on the top of the stack.  The stack is unchanged.
+** and the value in cell P2, or the value on the top of the stack if P2
+** is zero. The stack is unchanged in either case.
 **
 ** This instruction throws an error if the memory cell is not initially
 ** an integer.
@@ -4673,13 +4684,14 @@ case OP_MemLoad: {
 case OP_MemMax: {        /* no-push */
   int i = pOp->p1;
   Mem *pMem;
-  assert( pTos>=p->aStack );
+  Mem *pNew = (pOp->p2?(&p->aMem[pOp->p2]):pTos);
+  assert( pOp->p2 || pTos>=p->aStack );
   assert( i>0 && i<=p->nMem );
   pMem = &p->aMem[i];
   sqlite3VdbeMemIntegerify(pMem);
-  sqlite3VdbeMemIntegerify(pTos);
-  if( pMem->u.i<pTos->u.i){
-    pMem->u.i = pTos->u.i;
+  sqlite3VdbeMemIntegerify(pNew);
+  if( pMem->u.i<pNew->u.i){
+    pMem->u.i = pNew->u.i;
   }
   break;
 }
@@ -5352,7 +5364,7 @@ default: {
     }
 
     /* Make sure the stack limit was not exceeded */
-    assert( pTos<=pStackLimit );
+    assert( pTos>=&p->aStack[-1] && pTos<=pStackLimit );
 
 #ifdef VDBE_PROFILE
     {

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.209 2008/01/04 13:24:29 danielk1977 Exp $
+** $Id: insert.c,v 1.210 2008/01/04 19:10:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -189,9 +189,9 @@ static int autoIncBegin(
 ** larger than the maximum rowid in the memId memory cell, then the
 ** memory cell is updated.  The stack is unchanged.
 */
-static void autoIncStep(Parse *pParse, int memId){
+static void autoIncStep(Parse *pParse, int memId, int iRowid){
   if( memId>0 ){
-    sqlite3VdbeAddOp2(pParse->pVdbe, OP_MemMax, memId, 0);
+    sqlite3VdbeAddOp2(pParse->pVdbe, OP_MemMax, memId, iRowid);
   }
 }
 
@@ -231,7 +231,7 @@ static void autoIncEnd(
 ** above are all no-ops
 */
 # define autoIncBegin(A,B,C) (0)
-# define autoIncStep(A,B)
+# define autoIncStep(A,B,C)
 # define autoIncEnd(A,B,C,D)
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
@@ -716,15 +716,21 @@ void sqlite3Insert(
   ** case the record number is the same as that column. 
   */
   if( !isView ){
+    int iReg = pParse->nMem+1;
+    int iRowid = iReg+(IsVirtual(pTab)?1:0);
+    pParse->nMem += pTab->nCol + (IsVirtual(pTab)?2:1);
+
     if( IsVirtual(pTab) ){
-      /* The row that the VUpdate opcode will delete:  none */
-      sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
+      /* The row that the VUpdate opcode will delete: none */
+      sqlite3VdbeAddOp2(v, OP_MemNull, 0, iReg);
     }
     if( keyColumn>=0 ){
       if( useTempTable ){
-        sqlite3VdbeAddOp2(v, OP_Column, srcTab, keyColumn);
+        sqlite3VdbeAddOp3(v, OP_Column, srcTab, keyColumn, iRowid);
       }else if( pSelect ){
-        sqlite3VdbeAddOp2(v, OP_Dup, nColumn - keyColumn - 1, 1);
+        sqlite3VdbeAddOp3(v, OP_Dup, nColumn - keyColumn - 1, 1, iRowid);
+        /* TODO: Avoid this use of the stack. */
+        sqlite3VdbeAddOp2(v, OP_MemStore, iRowid, 1);
       }else{
         VdbeOp *pOp;
         sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, 0);
@@ -734,36 +740,42 @@ void sqlite3Insert(
           pOp->opcode = OP_NewRowid;
           pOp->p1 = base;
           pOp->p2 = counterMem;
+          pOp->p3 = iRowid;
+        }else{
+          /* TODO: Avoid this use of the stack. */
+          sqlite3VdbeAddOp2(v, OP_MemStore, iRowid, 1);
         }
       }
       /* If the PRIMARY KEY expression is NULL, then use OP_NewRowid
       ** to generate a unique primary key value.
       */
       if( !appendFlag ){
-        sqlite3VdbeAddOp2(v, OP_NotNull, -1, sqlite3VdbeCurrentAddr(v)+3);
-        sqlite3VdbeAddOp2(v, OP_Pop, 1, 0);
-        sqlite3VdbeAddOp2(v, OP_NewRowid, base, counterMem);
-        sqlite3VdbeAddOp2(v, OP_MustBeInt, 0, 0);
+        sqlite3VdbeAddOp2(v, OP_IfMemNull, iRowid, sqlite3VdbeCurrentAddr(v)+2);
+        sqlite3VdbeAddOp2(v, OP_Goto, -1, sqlite3VdbeCurrentAddr(v)+2);
+        sqlite3VdbeAddOp3(v, OP_NewRowid, base, counterMem, iRowid);
+        sqlite3VdbeAddOp3(v, OP_MustBeInt, 0, 0, iRowid);
       }
     }else if( IsVirtual(pTab) ){
-      sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
+      sqlite3VdbeAddOp2(v, OP_MemNull, 0, iRowid);
     }else{
       sqlite3VdbeAddOp2(v, OP_NewRowid, base, counterMem);
+      sqlite3VdbeAddOp2(v, OP_MemStore, iRowid, 1);
       appendFlag = 1;
     }
-    autoIncStep(pParse, counterMem);
+    autoIncStep(pParse, counterMem, iRowid);
 
     /* Push onto the stack, data for all columns of the new entry, beginning
     ** with the first column.
     */
     nHidden = 0;
     for(i=0; i<pTab->nCol; i++){
+      int iRegStore = iRowid+1+i;
       if( i==pTab->iPKey ){
         /* The value of the INTEGER PRIMARY KEY column is always a NULL.
         ** Whenever this column is read, the record number will be substituted
         ** in its place.  So will fill this column with a NULL to avoid
         ** taking up data space with information that will never be used. */
-        sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
+        sqlite3VdbeAddOp2(v, OP_MemNull, 0, iRegStore);
         continue;
       }
       if( pColumn==0 ){
@@ -780,13 +792,15 @@ void sqlite3Insert(
         }
       }
       if( j<0 || nColumn==0 || (pColumn && j>=pColumn->nId) ){
-        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, 0);
+        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, iRegStore);
       }else if( useTempTable ){
-        sqlite3VdbeAddOp2(v, OP_Column, srcTab, j); 
+        sqlite3VdbeAddOp3(v, OP_Column, srcTab, j, iRegStore); 
       }else if( pSelect ){
-        sqlite3VdbeAddOp2(v, OP_Dup, i+nColumn-j+IsVirtual(pTab), 1);
+        sqlite3VdbeAddOp2(v, OP_Dup, nColumn-j-1, 1);
+        /* TODO: Avoid this use of the stack */
+        sqlite3VdbeAddOp2(v, OP_MemStore, iRegStore, 1);
       }else{
-        sqlite3ExprCode(pParse, pList->a[j].pExpr, 0);
+        sqlite3ExprCode(pParse, pList->a[j].pExpr, iRegStore);
       }
     }
 
@@ -795,13 +809,13 @@ void sqlite3Insert(
     */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( IsVirtual(pTab) ){
-      int iReg = sqlite3StackToReg(pParse, pTab->nCol+2);
       pParse->pVirtualLock = pTab;
       sqlite3VdbeAddOp4(v, OP_VUpdate, 1, pTab->nCol+2, iReg,
                      (const char*)pTab->pVtab, P4_VTAB);
     }else
 #endif
     {
+      sqlite3RegToStack(pParse, iReg, pTab->nCol+1);
       sqlite3GenerateConstraintChecks(pParse, pTab, base, 0, keyColumn>=0,
                                      0, onError, endOfLoop);
       sqlite3CompleteInsertion(pParse, pTab, base, 0,0,0,
@@ -1557,7 +1571,7 @@ static int xferOptimization(
     sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, onError, 0,
                       "PRIMARY KEY must be unique", P4_STATIC);
     sqlite3VdbeJumpHere(v, addr2);
-    autoIncStep(pParse, counterMem);
+    autoIncStep(pParse, counterMem, 0);
   }else if( pDest->pIndex==0 ){
     addr1 = sqlite3VdbeAddOp2(v, OP_NewRowid, iDest, 0);
   }else{
