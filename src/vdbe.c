@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.673 2008/01/03 18:44:59 drh Exp $
+** $Id: vdbe.c,v 1.674 2008/01/04 11:01:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4763,6 +4763,18 @@ case OP_MemMove: {
   assert( pOp->p1>0 && pOp->p1<=p->nMem );
   assert( pOp->p2>0 && pOp->p2<=p->nMem );
   rc = sqlite3VdbeMemMove(&p->aMem[pOp->p1], &p->aMem[pOp->p2]);
+  break;
+}
+
+/* Opcode: MemSet P1 * * P4
+**
+** The P4 should be set to contain a P4_MEM value. The value is copied
+** to memory cell P1.
+*/
+case OP_MemSet: {
+  assert( pOp->p1>0 && pOp->p1<=p->nMem );
+  assert( pOp->p4type==P4_MEM );
+  rc = sqlite3VdbeMemCopy(&p->aMem[pOp->p1], pOp->p4.pMem);
   break;
 }
 

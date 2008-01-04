@@ -1,5 +1,5 @@
-C Change\sthe\ssqlite3ExprCode()\sfunction\sso\sthat\scallers\scan\srequest\sthat\nthe\sresult\sof\sthe\sexpression\sbe\sleft\son\sthe\sstack\sor\sin\sa\sregister.\s(CVS\s4673)
-D 2008-01-03T23:44:53
+C Add\sOP_MemSet,\sfor\ssetting\sa\smemory\scell\sto\sa\sstring\svalue.\s(CVS\s4674)
+D 2008-01-04T11:01:04
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -78,7 +78,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in abed4664817e1cd500f2276142c71958087c16bc
-F src/alter.c f95b19dab6e77978da5d75675f5cde7c6d3df120
+F src/alter.c b59c881008f5d32d3d6dde6cf49735467cf5aac4
 F src/analyze.c addc8e75cc43eb7ad699cd3ffc0a9157b4bf9405
 F src/attach.c 1c96631e56cdc51d3d70736bf61f1fe01c62cbea
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
@@ -168,7 +168,7 @@ F src/update.c a68e11e766376bf0fbec93d70c9389c4c502dd55
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c b49db80b9f38c333fd52c5c879f0ee04aaf18d27
+F src/vdbe.c 09caf5753f176603ad4965d92c7ff32786c1cc2b
 F src/vdbe.h bb128757b84280504a1243c450fd13ead248ede5
 F src/vdbeInt.h 869d0f550354c1364dde1d3611d770bd1c767505
 F src/vdbeapi.c f14174843bf4be2c9afdf2ef48b61e7c3ac62d7c
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e97e4578671d85b634072b8931cf55516bbd4ca8
-R d8d82fb96584ffb5e00eae859b1e26e3
-U drh
-Z bf1918304aac944329f9dd57da302e51
+P 61bfb77c4267b99ac8a8ef49355bcbc395a1a37b
+R edd05b654f5ed425ebc77621c6cc523e
+U danielk1977
+Z 55c192a0d96eb126863103cbe98ffaaa
