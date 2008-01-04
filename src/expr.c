@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.329 2008/01/03 23:44:53 drh Exp $
+** $Id: expr.c,v 1.330 2008/01/04 22:01:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1608,7 +1608,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
 
       sqlite3VdbeAddOp1(v, OP_MemLoad, iMem);
       iAddr = sqlite3VdbeAddOp2(v, OP_If, 0, iMem);
-      sqlite3VdbeAddOp2(v, OP_MemInt, 1, iMem);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, iMem);
 
       sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
       eType = IN_INDEX_ROWID;
@@ -1645,7 +1645,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
 
           sqlite3VdbeAddOp1(v, OP_MemLoad, iMem);
           iAddr = sqlite3VdbeAddOp2(v, OP_If, 0, iMem);
-          sqlite3VdbeAddOp2(v, OP_MemInt, 1, iMem);
+          sqlite3VdbeAddOp2(v, OP_Integer, 1, iMem);
   
           sqlite3VdbeAddOp4(v, OP_OpenRead, iTab, pIdx->tnum, iDb,
                                pKey,P4_KEYINFO_HANDOFF);
@@ -1703,7 +1703,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     sqlite3VdbeAddOp1(v, OP_MemLoad, mem);
     testAddr = sqlite3VdbeAddOp0(v, OP_If);
     assert( testAddr>0 || pParse->db->mallocFailed );
-    sqlite3VdbeAddOp2(v, OP_MemInt, 1, mem);
+    sqlite3VdbeAddOp2(v, OP_Integer, 1, mem);
   }
 
   switch( pExpr->op ){
@@ -1807,11 +1807,11 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       dest.iParm = ++pParse->nMem;
       if( pExpr->op==TK_SELECT ){
         dest.eDest = SRT_Mem;
-        sqlite3VdbeAddOp2(v, OP_MemNull, 0, dest.iParm);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, dest.iParm);
         VdbeComment((v, "Init subquery result"));
       }else{
         dest.eDest = SRT_Exists;
-        sqlite3VdbeAddOp2(v, OP_MemInt, 0, dest.iParm);
+        sqlite3VdbeAddOp2(v, OP_Integer, 0, dest.iParm);
         VdbeComment((v, "Init EXISTS result"));
       }
       sqlite3ExprDelete(pSel->pLimit);

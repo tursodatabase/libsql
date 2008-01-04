@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.383 2008/01/03 23:44:53 drh Exp $
+** $Id: select.c,v 1.384 2008/01/04 22:01:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -543,7 +543,7 @@ static int selectInnerLoop(
   }
   iMem = ++pParse->nMem;
   pParse->nMem += n+1;
-  sqlite3VdbeAddOp2(v, OP_MemInt, n, iMem);
+  sqlite3VdbeAddOp2(v, OP_Integer, n, iMem);
   if( nColumn>0 ){
     for(i=0; i<nColumn; i++){
       sqlite3VdbeAddOp3(v, OP_Column, srcTab, i, iMem+i+1);
@@ -611,7 +611,7 @@ static int selectInnerLoop(
       if( pOrderBy ){
         pushOntoSorter(pParse, pOrderBy, p);
       }else{
-        sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, 0);
+        sqlite3VdbeAddOp1(v, OP_NewRowid, iParm);
         sqlite3VdbeAddOp2(v, OP_Pull, 1, 0);
         sqlite3CodeInsert(pParse, iParm, OPFLAG_APPEND);
       }
@@ -647,7 +647,7 @@ static int selectInnerLoop(
     /* If any row exist in the result set, record that fact and abort.
     */
     case SRT_Exists: {
-      sqlite3VdbeAddOp2(v, OP_MemInt, 1, iParm);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, iParm);
       /* The LIMIT clause will terminate the loop for us */
       break;
     }
@@ -789,7 +789,7 @@ static void generateSortTail(
   switch( eDest ){
     case SRT_Table:
     case SRT_EphemTab: {
-      sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, 0);
+      sqlite3VdbeAddOp1(v, OP_NewRowid, iParm);
       sqlite3VdbeAddOp2(v, OP_Pull, 1, 0);
       sqlite3CodeInsert(pParse, iParm, OPFLAG_APPEND);
       break;
@@ -1776,7 +1776,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   if( p->pLimit ){
     addr1 = sqlite3VdbeAddOp2(v, OP_IfMemPos, iLimit, 0);
     sqlite3VdbeAddOp2(v, OP_Pop, 1, 0);
-    sqlite3VdbeAddOp2(v, OP_MemInt, -1, iLimit+1);
+    sqlite3VdbeAddOp2(v, OP_Integer, -1, iLimit+1);
     addr2 = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
     sqlite3VdbeJumpHere(v, addr1);
     sqlite3VdbeAddOp2(v, OP_MemStore, iLimit+1, 1);
@@ -2927,10 +2927,10 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
     return;
   }
   for(i=0; i<pAggInfo->nColumn; i++){
-    sqlite3VdbeAddOp2(v, OP_MemNull, 0, pAggInfo->aCol[i].iMem);
+    sqlite3VdbeAddOp2(v, OP_Null, 0, pAggInfo->aCol[i].iMem);
   }
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
-    sqlite3VdbeAddOp2(v, OP_MemNull, 0, pFunc->iMem);
+    sqlite3VdbeAddOp2(v, OP_Null, 0, pFunc->iMem);
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pExpr;
       if( pE->pList==0 || pE->pList->nExpr!=1 ){
@@ -3454,9 +3454,9 @@ int sqlite3Select(
       pParse->nMem += pGroupBy->nExpr;
       iBMem = pParse->nMem + 1;
       pParse->nMem += pGroupBy->nExpr;
-      sqlite3VdbeAddOp2(v, OP_MemInt, 0, iAbortFlag);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, iAbortFlag);
       VdbeComment((v, "clear abort flag"));
-      sqlite3VdbeAddOp2(v, OP_MemInt, 0, iUseFlag);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, iUseFlag);
       VdbeComment((v, "indicate accumulator empty"));
       sqlite3VdbeAddOp2(v, OP_Goto, 0, addrInitializeLoop);
 
@@ -3468,7 +3468,7 @@ int sqlite3Select(
       ** order to signal the caller to abort.
       */
       addrSetAbort = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeAddOp2(v, OP_MemInt, 1, iAbortFlag);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, iAbortFlag);
       VdbeComment((v, "set abort flag"));
       sqlite3VdbeAddOp2(v, OP_Return, 0, 0);
       addrOutputRow = sqlite3VdbeCurrentAddr(v);
@@ -3587,7 +3587,7 @@ int sqlite3Select(
       */
       sqlite3VdbeResolveLabel(v, addrProcessRow);
       updateAccumulator(pParse, &sAggInfo);
-      sqlite3VdbeAddOp2(v, OP_MemInt, 1, iUseFlag);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, iUseFlag);
       VdbeComment((v, "indicate data in accumulator"));
 
       /* End of the loop

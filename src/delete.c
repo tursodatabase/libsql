@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.147 2008/01/04 19:10:29 danielk1977 Exp $
+** $Id: delete.c,v 1.148 2008/01/04 22:01:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -274,7 +274,7 @@ void sqlite3DeleteFrom(
   */
   if( db->flags & SQLITE_CountRows ){
     memCnt = ++pParse->nMem;
-    sqlite3VdbeAddOp2(v, OP_MemInt, 0, memCnt);
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, memCnt);
   }
 
   /* Special case: A DELETE without a WHERE clause deletes everything.
@@ -369,7 +369,7 @@ void sqlite3DeleteFrom(
       if( old_col_mask ){
         sqlite3VdbeAddOp3(v, OP_RowData, iCur, 0, iData);
       }else{
-        sqlite3VdbeAddOp2(v, OP_MemNull, 0, iData);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, iData);
       }
       sqlite3VdbeAddOp3(v, OP_Insert, oldIdx, iData, iRowid);
 

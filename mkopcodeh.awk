@@ -50,14 +50,9 @@
   sub(/:/,"",name)
   sub("\r","",name)
   op[name] = -1
-  out1[name] = 0
-  out2[name] = 0
-  out3[name] = 0
   jump[name] = 0
-  in1[name] = 0
-  in2[name] = 0
-  in3[name] = 0
   nopush[name] = 0
+  out2_prerelease[name] = 0
   for(i=3; i<NF; i++){
     if($i=="same" && $(i+1)=="as"){
       sym = $(i+2)
@@ -70,20 +65,10 @@
     sub(",","",x)
     if(x=="no-push"){
       nopush[name] = 1
-    }else if(x=="out1"){
-      out1[name] = 1
-    }else if(x=="out2"){
-      out2[name] = 2
-    }else if(x=="out3"){
-      out3[name] = 3
-    }else if(x=="in1"){
-      in1[name] = 1
-    }else if(x=="in2"){
-      in2[name] = 1
-    }else if(x=="in3"){
-      in3[name] = 1
     }else if(x=="jump"){
       jump[name] = 1
+    }else if(x=="out2-prerelease"){
+      out2_prerelease[name] = 1
     }
   }
 }
@@ -123,26 +108,16 @@ END {
   # Generate the bitvectors:
   #
   #  bit 0:     jump
-  #  bit 1:     output on P1
-  #  bit 2:     output on P2
-  #  bit 3:     output on P3
-  #  bit 4:     input on P1
-  #  bit 5:     input on P2
-  #  bit 6:     input on P3
-  #  bit 7:     pushes a result onto stack
+  #  bit 1:     pushes a result onto stack
+  #  bit 2:     output to p1.  release p1 before opcode runs
   #
   for(i=0; i<=max; i++) bv[i] = 0;
   for(name in op){
     x = op[name]
     a0 = a1 = a2 = a3 = a4 = a5 = a6 = a7 = 0
     if( jump[name] ) a0 = 1;
-    if( out1[name] ) a1 = 2;
-    if( out2[name] ) a2 = 4;
-    if( out3[name] ) a3 = 8;
-    if( in1[name] ) a4 = 16;
-    if( in2[name] ) a5 = 32;
-    if( in3[name] ) a6 = 64;
-    if( nopush[name]==0 ) a7 = 128;
+    if( nopush[name]==0 ) a1 = 2;
+    if( out2_prerelease[name] ) a2 = 4;
     bv[x] = a0+a1+a2+a3+a4+a5+a6+a7;
   }
   print "\n"
@@ -150,18 +125,13 @@ END {
   print "** comments following the "case" for each opcode in the vdbe.c"
   print "** are encoded into bitvectors as follows:"
   print "*/"
-  print "#define OPFLG_JUMP     0x01    /* jump:  P2 holds a jump target */"
-  print "#define OPFLG_OUT1     0x02    /* out1:  P1 specifies output reg */"
-  print "#define OPFLG_OUT2     0x04    /* out2:  P2 specifies output reg */"
-  print "#define OPFLG_OUT3     0x08    /* out3:  P3 specifies output reg */"
-  print "#define OPFLG_IN1      0x10    /* in1:   P1 is an input reg */"
-  print "#define OPFLG_IN2      0x20    /* in2:   P2 is an input reg */"
-  print "#define OPFLG_IN3      0x40    /* in3:   P3 is an input reg */"
-  print "#define OPFLG_PUSH     0x80    /* omits no-push:  Does not push */"
+  print "#define OPFLG_JUMP            0x01    /* jump:  P2 holds jmp target */"
+  print "#define OPFLG_PUSH            0x02    /* ~no-push:  Does not push */"
+  print "#define OPFLG_OUT2_PRERELEASE 0x04    /* out2-prerelease: */"
   print "#define OPFLG_INITIALIZER {\\"
   for(i=0; i<=max; i++){
     printf " 0x%02x,", bv[i]
-    if( i%10==9 ) printf("\\\n");
+    if( i%8==7 ) printf("\\\n");
   }
   print "}"
 }

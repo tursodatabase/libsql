@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.272 2008/01/03 23:44:53 drh Exp $
+** $Id: where.c,v 1.273 2008/01/04 22:01:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2261,7 +2261,7 @@ WhereInfo *sqlite3WhereBegin(
     */
     if( pLevel->iFrom>0 && (pTabItem[0].jointype & JT_LEFT)!=0 ){
       pLevel->iLeftJoin = ++pParse->nMem;
-      sqlite3VdbeAddOp2(v, OP_MemInt, 0, pLevel->iLeftJoin);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLeftJoin);
       VdbeComment((v, "init LEFT JOIN no-match flag"));
     }
 
@@ -2293,8 +2293,8 @@ WhereInfo *sqlite3WhereBegin(
       iReg = ++pParse->nMem;
       pParse->nMem++;
       sqlite3StackToReg(pParse, j-1);
-      sqlite3VdbeAddOp2(v, OP_MemInt, pBestIdx->idxNum, iReg);
-      sqlite3VdbeAddOp2(v, OP_MemInt, j-1, iReg+1);
+      sqlite3VdbeAddOp2(v, OP_Integer, pBestIdx->idxNum, iReg);
+      sqlite3VdbeAddOp2(v, OP_Integer, j-1, iReg+1);
       sqlite3VdbeAddOp4(v, OP_VFilter, iCur, brk, iReg, pBestIdx->idxStr,
                         pBestIdx->needToFreeIdxStr ? P4_MPRINTF : P4_STATIC);
       pBestIdx->needToFreeIdxStr = 0;
@@ -2608,7 +2608,7 @@ WhereInfo *sqlite3WhereBegin(
     */
     if( pLevel->iLeftJoin ){
       pLevel->top = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeAddOp2(v, OP_MemInt, 1, pLevel->iLeftJoin);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, pLevel->iLeftJoin);
       VdbeComment((v, "record LEFT JOIN hit"));
       for(pTerm=wc.a, j=0; j<wc.nTerm; j++, pTerm++){
         if( pTerm->flags & (TERM_VIRTUAL|TERM_CODED) ) continue;

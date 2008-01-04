@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.456 2008/01/03 18:03:09 drh Exp $
+** $Id: build.c,v 1.457 2008/01/04 22:01:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -851,7 +851,7 @@ void sqlite3StartTable(
     /* If the file format and encoding in the database have not been set, 
     ** set them now.
     */
-    sqlite3VdbeAddOp2(v, OP_ReadCookie, iDb, 1);   /* file_format */
+    sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, 0, 1);   /* file_format */
     sqlite3VdbeUsesBtree(v, iDb);
     lbl = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp2(v, OP_If, 0, lbl);
@@ -2719,7 +2719,7 @@ void sqlite3MinimumFileFormat(Parse *pParse, int iDb, int minFormat){
   Vdbe *v;
   v = sqlite3GetVdbe(pParse);
   if( v ){
-    sqlite3VdbeAddOp2(v, OP_ReadCookie, iDb, 1);
+    sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, 0, 1);
     sqlite3VdbeUsesBtree(v, iDb);
     sqlite3VdbeAddOp1(v, OP_Integer, minFormat);
     sqlite3VdbeAddOp2(v, OP_Ge, 0, sqlite3VdbeCurrentAddr(v)+3);

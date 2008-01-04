@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.210 2008/01/04 19:10:29 danielk1977 Exp $
+** $Id: insert.c,v 1.211 2008/01/04 22:01:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -217,7 +217,7 @@ static void autoIncEnd(
     sqlite3VdbeAddOp2(v, OP_MemLoad, memId-1, 0);
     sqlite3VdbeAddOp2(v, OP_NotNull, -1, addr+6);
     sqlite3VdbeAddOp2(v, OP_Pop, 1, 0);
-    sqlite3VdbeAddOp2(v, OP_NewRowid, iCur, 0);
+    sqlite3VdbeAddOp1(v, OP_NewRowid, iCur);
     sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pTab->zName, 0);
     sqlite3VdbeAddOp2(v, OP_MemLoad, memId, 0);
     sqlite3VdbeAddOp2(v, OP_MakeRecord, 2, 0);
@@ -509,7 +509,7 @@ void sqlite3Insert(
       sqlite3VdbeResolveLabel(v, iInsertBlock);
       sqlite3VdbeAddOp2(v, OP_StackDepth, -1, 0);
       sqlite3VdbeAddOp2(v, OP_MakeRecord, nColumn, 0);
-      sqlite3VdbeAddOp2(v, OP_NewRowid, srcTab, 0);
+      sqlite3VdbeAddOp1(v, OP_NewRowid, srcTab);
       sqlite3VdbeAddOp2(v, OP_Pull, 1, 0);
       sqlite3CodeInsert(pParse, srcTab, OPFLAG_APPEND);
       sqlite3VdbeAddOp2(v, OP_Return, 0, 0);
@@ -619,7 +619,7 @@ void sqlite3Insert(
   */
   if( db->flags & SQLITE_CountRows ){
     iCntMem = ++pParse->nMem;
-    sqlite3VdbeAddOp2(v, OP_MemInt, 0, iCntMem);
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, iCntMem);
   }
 
   /* If this is not a view, open the table and and all indices */
@@ -722,7 +722,7 @@ void sqlite3Insert(
 
     if( IsVirtual(pTab) ){
       /* The row that the VUpdate opcode will delete: none */
-      sqlite3VdbeAddOp2(v, OP_MemNull, 0, iReg);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, iReg);
     }
     if( keyColumn>=0 ){
       if( useTempTable ){
@@ -739,8 +739,8 @@ void sqlite3Insert(
           appendFlag = 1;
           pOp->opcode = OP_NewRowid;
           pOp->p1 = base;
-          pOp->p2 = counterMem;
-          pOp->p3 = iRowid;
+          pOp->p2 = iRowid;
+          pOp->p3 = counterMem;
         }else{
           /* TODO: Avoid this use of the stack. */
           sqlite3VdbeAddOp2(v, OP_MemStore, iRowid, 1);
@@ -752,13 +752,13 @@ void sqlite3Insert(
       if( !appendFlag ){
         sqlite3VdbeAddOp2(v, OP_IfMemNull, iRowid, sqlite3VdbeCurrentAddr(v)+2);
         sqlite3VdbeAddOp2(v, OP_Goto, -1, sqlite3VdbeCurrentAddr(v)+2);
-        sqlite3VdbeAddOp3(v, OP_NewRowid, base, counterMem, iRowid);
+        sqlite3VdbeAddOp3(v, OP_NewRowid, base, iRowid, counterMem);
         sqlite3VdbeAddOp3(v, OP_MustBeInt, 0, 0, iRowid);
       }
     }else if( IsVirtual(pTab) ){
-      sqlite3VdbeAddOp2(v, OP_MemNull, 0, iRowid);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, iRowid);
     }else{
-      sqlite3VdbeAddOp2(v, OP_NewRowid, base, counterMem);
+      sqlite3VdbeAddOp3(v, OP_NewRowid, base, 0, counterMem);
       sqlite3VdbeAddOp2(v, OP_MemStore, iRowid, 1);
       appendFlag = 1;
     }
@@ -775,7 +775,7 @@ void sqlite3Insert(
         ** Whenever this column is read, the record number will be substituted
         ** in its place.  So will fill this column with a NULL to avoid
         ** taking up data space with information that will never be used. */
-        sqlite3VdbeAddOp2(v, OP_MemNull, 0, iRegStore);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, iRegStore);
         continue;
       }
       if( pColumn==0 ){
@@ -1573,7 +1573,7 @@ static int xferOptimization(
     sqlite3VdbeJumpHere(v, addr2);
     autoIncStep(pParse, counterMem, 0);
   }else if( pDest->pIndex==0 ){
-    addr1 = sqlite3VdbeAddOp2(v, OP_NewRowid, iDest, 0);
+    addr1 = sqlite3VdbeAddOp1(v, OP_NewRowid, iDest);
   }else{
     addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, 0);
     assert( pDest->autoInc==0 );

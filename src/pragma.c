@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.157 2008/01/03 18:03:09 drh Exp $
+** $Id: pragma.c,v 1.158 2008/01/04 22:01:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -148,7 +148,7 @@ static int changeTempStorage(Parse *pParse, const char *zStorageType){
 static void returnSingleInt(Parse *pParse, const char *zLabel, int value){
   Vdbe *v = sqlite3GetVdbe(pParse);
   int mem = ++pParse->nMem;
-  sqlite3VdbeAddOp2(v, OP_MemInt, value, mem);
+  sqlite3VdbeAddOp2(v, OP_Integer, value, mem);
   if( pParse->explain==0 ){
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLabel, P4_STATIC);
@@ -298,7 +298,7 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft,"default_cache_size")==0 ){
     static const VdbeOpList getCacheSize[] = {
-      { OP_ReadCookie,  0, 2,        0},  /* 0 */
+      { OP_ReadCookie,  0, 0,        2},  /* 0 */
       { OP_AbsValue,    0, 0,        0},
       { OP_Dup,         0, 0,        0},
       { OP_Integer,     0, 0,        0},
@@ -320,7 +320,7 @@ void sqlite3Pragma(
       if( size<0 ) size = -size;
       sqlite3BeginWriteOperation(pParse, 0, iDb);
       sqlite3VdbeAddOp2(v, OP_Integer, size, 0);
-      sqlite3VdbeAddOp2(v, OP_ReadCookie, iDb, 2);
+      sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, 0, 2);
       addr = sqlite3VdbeAddOp2(v, OP_Integer, 0, 0);
       sqlite3VdbeAddOp2(v, OP_Ge, 0, addr+3);
       sqlite3VdbeAddOp2(v, OP_Negative, 0, 0);
@@ -457,7 +457,7 @@ void sqlite3Pragma(
           */
           static const VdbeOpList setMeta6[] = {
             { OP_Transaction,    0,               1,        0},    /* 0 */
-            { OP_ReadCookie,     0,               3,        0},    /* 1 */
+            { OP_ReadCookie,     0,               0,        3},    /* 1 */
             { OP_If,             0,               0,        0},    /* 2 */
             { OP_Halt,           SQLITE_OK,       OE_Abort, 0},    /* 3 */
             { OP_Integer,        0,               0,        0},    /* 4 */
@@ -492,7 +492,7 @@ void sqlite3Pragma(
       iLimit = 0x7fffffff;
     }
     sqlite3BeginWriteOperation(pParse, 0, iDb);
-    sqlite3VdbeAddOp2(v, OP_MemInt, iLimit, 1);
+    sqlite3VdbeAddOp2(v, OP_Integer, iLimit, 1);
     addr = sqlite3VdbeAddOp2(v, OP_IncrVacuum, iDb, 0);
     sqlite3VdbeAddOp2(v, OP_Callback, 0, 0);
     sqlite3VdbeAddOp2(v, OP_MemIncr, -1, 1);
@@ -852,7 +852,7 @@ void sqlite3Pragma(
         mxErr = SQLITE_INTEGRITY_CHECK_ERROR_MAX;
       }
     }
-    sqlite3VdbeAddOp2(v, OP_MemInt, mxErr, 1);
+    sqlite3VdbeAddOp2(v, OP_Integer, mxErr, 1);
 
     /* Do an integrity check on each database file */
     for(i=0; i<db->nDb; i++){
@@ -903,7 +903,7 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
         sqlite3VdbeJumpHere(v, addr);
         sqlite3OpenTableAndIndices(pParse, pTab, 1, OP_OpenRead);
-        sqlite3VdbeAddOp2(v, OP_MemInt, 0, 2);
+        sqlite3VdbeAddOp2(v, OP_Integer, 0, 2);
         loopTop = sqlite3VdbeAddOp2(v, OP_Rewind, 1, 0);
         sqlite3VdbeAddOp2(v, OP_MemIncr, 1, 2);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
@@ -929,7 +929,7 @@ void sqlite3Pragma(
         sqlite3VdbeJumpHere(v, loopTop);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           static const VdbeOpList cntIdx[] = {
-             { OP_MemInt,       0,  3,  0},
+             { OP_Integer,      0,  3,  0},
              { OP_Rewind,       0,  0,  0},  /* 1 */
              { OP_MemIncr,      1,  3,  0},
              { OP_Next,         0,  0,  0},  /* 3 */
@@ -1107,7 +1107,7 @@ void sqlite3Pragma(
       };
       int addr = sqlite3VdbeAddOpList(v, ArraySize(readCookie), readCookie);
       sqlite3VdbeChangeP1(v, addr, iDb);
-      sqlite3VdbeChangeP2(v, addr, iCookie);
+      sqlite3VdbeChangeP3(v, addr, iCookie);
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLeft, P4_TRANSIENT);
     }
