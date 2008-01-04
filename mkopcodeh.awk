@@ -66,22 +66,23 @@
       used[op[name]] = 1
       sameas[op[name]] = sym
     }
-    sub(",","",$i)
-    if($i=="no-push"){
+    x = $i
+    sub(",","",x)
+    if(x=="no-push"){
       nopush[name] = 1
-    }else if($i=="out1"){
+    }else if(x=="out1"){
       out1[name] = 1
-    }else if($i=="out2"){
+    }else if(x=="out2"){
       out2[name] = 2
-    }else if($i=="out3"){
+    }else if(x=="out3"){
       out3[name] = 3
-    }else if($i=="in1"){
+    }else if(x=="in1"){
       in1[name] = 1
-    }else if($i=="in2"){
+    }else if(x=="in2"){
       in2[name] = 1
-    }else if($i=="in3"){
+    }else if(x=="in3"){
       in3[name] = 1
-    }else if($i=="jump"){
+    }else if(x=="jump"){
       jump[name] = 1
     }
   }
@@ -132,14 +133,17 @@ END {
   #
   for(i=0; i<=max; i++) bv[i] = 0;
   for(name in op){
-    if( jump[name] ) bv[x] += 0x01;
-    if( out1[name] ) bv[x] += 0x02;
-    if( out2[name] ) bv[x] += 0x04;
-    if( out3[name] ) bv[x] += 0x08;
-    if( in1[name] ) bv[x] += 0x10;
-    if( in2[name] ) bv[x] += 0x20;
-    if( in3[name] ) bv[x] += 0x40;
-    if( 0 == nopush[name] ) bv[x] = bv[x] + 0x80;
+    x = op[name]
+    a0 = a1 = a2 = a3 = a4 = a5 = a6 = a7 = 0
+    if( jump[name] ) a0 = 1;
+    if( out1[name] ) a1 = 2;
+    if( out2[name] ) a2 = 4;
+    if( out3[name] ) a3 = 8;
+    if( in1[name] ) a4 = 16;
+    if( in2[name] ) a5 = 32;
+    if( in3[name] ) a6 = 64;
+    if( nopush[name]==0 ) a7 = 128;
+    bv[x] = a0+a1+a2+a3+a4+a5+a6+a7;
   }
   print "\n"
   print "/* Properties such as \"out2\" or \"jump\" that are specified in"
