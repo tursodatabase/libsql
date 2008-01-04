@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.155 2008/01/03 23:44:53 drh Exp $
+** $Id: update.c,v 1.156 2008/01/04 13:57:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -106,6 +106,7 @@ void sqlite3Update(
   int iDb;               /* Database containing the table being updated */
   int memCnt = 0;        /* Memory cell used for counting rows changed */
   int mem1;      /* Memory address storing the rowid for next row to update */
+  int iRowid;            /* Memory address storing rowids */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* Trying to update a view */
@@ -343,8 +344,9 @@ void sqlite3Update(
 
   /* Remember the rowid of every item to be updated.
   */
-  sqlite3VdbeAddOp2(v, IsVirtual(pTab) ? OP_VRowid : OP_Rowid, iCur, 0);
-  sqlite3VdbeAddOp2(v, OP_FifoWrite, 0, 0);
+  iRowid = ++pParse->nMem;
+  sqlite3VdbeAddOp2(v, IsVirtual(pTab) ? OP_VRowid : OP_Rowid, iCur, iRowid);
+  sqlite3VdbeAddOp2(v, OP_FifoWrite, iRowid, 0);
 
   /* End the database scan loop.
   */
@@ -384,7 +386,6 @@ void sqlite3Update(
         assert( pParse->nTab>iCur+i+1 );
       }
     }
-
   }
   
   /* Jump back to this point if a trigger encounters an IGNORE constraint. */
@@ -393,14 +394,13 @@ void sqlite3Update(
   }
 
   /* Top of the update loop */
-  addr = sqlite3VdbeAddOp2(v, OP_FifoRead, 0, 0);
+  addr = sqlite3VdbeAddOp2(v, OP_FifoRead, iRowid, 0);
   sqlite3VdbeAddOp2(v, OP_StackDepth, -1, 0);
-  sqlite3VdbeAddOp2(v, OP_MemStore, mem1, 0);
 
   if( triggers_exist ){
     /* Make cursor iCur point to the record that is being updated.
     */
-    sqlite3VdbeAddOp2(v, OP_NotExists, iCur, addr);
+    sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addr, iRowid);
 
     /* Generate the OLD table
     */
@@ -445,10 +445,6 @@ void sqlite3Update(
 
     sqlite3VdbeAddOp2(v, OP_Goto, 0, iBeginBeforeTrigger);
     sqlite3VdbeJumpHere(v, iEndBeforeTrigger);
-
-    if( !isView ){
-      sqlite3VdbeAddOp2(v, OP_MemLoad, mem1, 0);
-    }
   }
 
   if( !isView && !IsVirtual(pTab) ){
@@ -459,8 +455,8 @@ void sqlite3Update(
     ** Also, the old data is needed to delete the old index entries.
     ** So make the cursor point at the old record.
     */
-    sqlite3VdbeAddOp2(v, OP_NotExists, iCur, addr);
-    sqlite3VdbeAddOp2(v, OP_MemLoad, mem1, 0);
+    sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addr, iRowid);
+    sqlite3VdbeAddOp2(v, OP_MemLoad, iRowid, 0);
 
     /* If the record number will change, push the record number as it
     ** will be after the update. (The old record number is currently

@@ -1,5 +1,5 @@
-C Modify\sthe\scode\sgenerated\sfor\sa\sDELETE\sto\suse\sregisters\sinstead\sof\sthe\svdbe\sstack.\s(CVS\s4675)
-D 2008-01-04T13:24:29
+C Modify\sFifoRead\sand\sFifoWrite\sto\swork\sexclusively\swith\smemory\scells.\s(CVS\s4676)
+D 2008-01-04T13:57:26
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -90,7 +90,7 @@ F src/build.c b7874b45716fa56e6fd1291ffb0b97a55e470728
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
-F src/delete.c 36193a3a10e636d3ee4fe1fdfac57982d5471623
+F src/delete.c 5601acbbad10e0a6190e6d1822a776ad058c661d
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c e60ee4f48194469bf7b101fb7a14e56abea3daa4
 F src/func.c 996071cf0af9d967e58b69fce1909555059ebc7d
@@ -164,11 +164,11 @@ F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c a4e04438c11fed2c67ec47fe3edbef9cca2d1b48
 F src/trigger.c 713b501b12ea41bf0297a2cf78f7d954c4a25d13
-F src/update.c a68e11e766376bf0fbec93d70c9389c4c502dd55
+F src/update.c eaacf59269bd076adca6fab6f5d16ce53419380b
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c 55e1a0541f87e2c73fa4c4d73649c3d6cd39b9a3
+F src/vdbe.c c562e01b491b589f6e0f830bec7ab1507d1ac844
 F src/vdbe.h bb128757b84280504a1243c450fd13ead248ede5
 F src/vdbeInt.h 869d0f550354c1364dde1d3611d770bd1c767505
 F src/vdbeapi.c f14174843bf4be2c9afdf2ef48b61e7c3ac62d7c
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8bb9f970dd71cbf19e45774fc822aa1efebc1724
-R 991771337c0268b312b29969927e9c60
+P 173f281334d340290e1978abea5d1ea804141910
+R 94a66c73f79f80d8b0a98041731b34af
 U danielk1977
-Z 58a58785d108e95cb589bb5d4ad7f5cb
+Z fb5d354c01f2e7900c511aa6a77f6954

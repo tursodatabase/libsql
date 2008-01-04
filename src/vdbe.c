@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.675 2008/01/04 13:24:29 danielk1977 Exp $
+** $Id: vdbe.c,v 1.676 2008/01/04 13:57:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4523,18 +4523,17 @@ case OP_IntegrityCk: {
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
-/* Opcode: FifoWrite * * *
+/* Opcode: FifoWrite P1 * *
 **
-** Write the integer on the top of the stack into the Fifo.
+** Write the integer from memory cell P1 into the Fifo.
 */
 case OP_FifoWrite: {        /* no-push */
-  assert( pTos>=p->aStack );
-  sqlite3VdbeMemIntegerify(pTos);
-  if( sqlite3VdbeFifoPush(&p->sFifo, pTos->u.i)==SQLITE_NOMEM ){
+  Mem *pReg = &p->aMem[pOp->p1];
+  assert( pOp->p1>0 && pOp->p1<=p->nMem );
+  sqlite3VdbeMemIntegerify(pReg);
+  if( sqlite3VdbeFifoPush(&p->sFifo, pReg->u.i)==SQLITE_NOMEM ){
     goto no_mem;
   }
-  assert( (pTos->flags & MEM_Dyn)==0 );
-  pTos--;
   break;
 }
 
@@ -4553,12 +4552,8 @@ case OP_FifoRead: {
   if( sqlite3VdbeFifoPop(&p->sFifo, &v)==SQLITE_DONE ){
     pc = pOp->p2 - 1;
   }else{
-    Mem *pOut;
-    if( pOp->p1 ){
-      pOut = &p->aMem[pOp->p1];
-    }else{
-      pOut = ++pTos;
-    }
+    Mem *pOut = &p->aMem[pOp->p1];
+    assert( pOp->p1>0 && pOp->p1<=p->nMem );
     sqlite3VdbeMemSetInt64(pOut, v);
   }
   break;

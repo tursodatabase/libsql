@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.145 2008/01/04 13:24:29 danielk1977 Exp $
+** $Id: delete.c,v 1.146 2008/01/04 13:57:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -232,18 +232,20 @@ void sqlite3DeleteFrom(
   sqlite3BeginWriteOperation(pParse, triggers_exist, iDb);
 
   if( triggers_exist ){
+    int orconf = ((pParse->trigStack)?pParse->trigStack->orconf:OE_Default);
     int iGoto = sqlite3VdbeAddOp0(v, OP_Goto);
     addr = sqlite3VdbeMakeLabel(v);
+
     iBeginBeforeTrigger = sqlite3VdbeCurrentAddr(v);
     (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TRIGGER_BEFORE, pTab,
-        -1, oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
-        addr, &old_col_mask, 0);
+        -1, oldIdx, orconf, addr, &old_col_mask, 0);
     iEndBeforeTrigger = sqlite3VdbeAddOp0(v, OP_Goto);
+
     iBeginAfterTrigger = sqlite3VdbeCurrentAddr(v);
     (void)sqlite3CodeRowTrigger(pParse, TK_DELETE, 0, TRIGGER_AFTER, pTab, -1,
-        oldIdx, (pParse->trigStack)?pParse->trigStack->orconf:OE_Default,
-        addr, &old_col_mask, 0);
+        oldIdx, orconf, addr, &old_col_mask, 0);
     iEndAfterTrigger = sqlite3VdbeAddOp0(v, OP_Goto);
+
     sqlite3VdbeJumpHere(v, iGoto);
   }
 
@@ -299,7 +301,7 @@ void sqlite3DeleteFrom(
   ** the table and pick which records to delete.
   */
   else{
-    int iRowid = ++pParse->nMem;    /* Used for storing value read from fifo */
+    int iRowid = ++pParse->nMem;    /* Used for storing rowid values. */
 
     /* Begin the database scan
     */
@@ -308,8 +310,8 @@ void sqlite3DeleteFrom(
 
     /* Remember the rowid of every item to be deleted.
     */
-    sqlite3VdbeAddOp1(v, IsVirtual(pTab) ? OP_VRowid : OP_Rowid, iCur);
-    sqlite3VdbeAddOp0(v, OP_FifoWrite);
+    sqlite3VdbeAddOp2(v, IsVirtual(pTab) ? OP_VRowid : OP_Rowid, iCur, iRowid);
+    sqlite3VdbeAddOp1(v, OP_FifoWrite, iRowid);
     if( db->flags & SQLITE_CountRows ){
       sqlite3VdbeAddOp2(v, OP_MemIncr, 1, memCnt);
     }
