@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.148 2008/01/04 22:01:03 drh Exp $
+** $Id: delete.c,v 1.149 2008/01/05 04:06:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -68,8 +68,8 @@ void sqlite3CodeInsert(Parse *p, int iCur, u8 flags){
   int iData = ++p->nMem;
   int iKey = ++p->nMem;
   Vdbe *v = sqlite3GetVdbe(p);
-  sqlite3VdbeAddOp2(v, OP_MemStore, iData, 1);
-  sqlite3VdbeAddOp2(v, OP_MemStore, iKey, 1);
+  sqlite3VdbeAddOp2(v, OP_Move, 0, iData);
+  sqlite3VdbeAddOp2(v, OP_Move, 0, iKey);
   sqlite3VdbeAddOp3(v, OP_Insert, iCur, iData, iKey);
   sqlite3VdbeChangeP5(v, sqlite3VdbeCurrentAddr(v)-1, flags);
 }
@@ -87,7 +87,7 @@ int sqlite3StackToReg(Parse *p, int nVal){
   assert(v);
   p->nMem += nVal;
   for(i=nVal-1; i>=0; i--){
-    sqlite3VdbeAddOp2(v, OP_MemStore, iRet+i, 1);
+    sqlite3VdbeAddOp2(v, OP_Move, 0, iRet+i);
   }
   return iRet;
 }
@@ -96,7 +96,7 @@ void sqlite3RegToStack(Parse *p, int iReg, int nVal){
   Vdbe *v = sqlite3GetVdbe(p);
   assert(v);
   for(i=0; i<nVal; i++){
-    sqlite3VdbeAddOp2(v, OP_MemLoad, iReg+i, 0);
+    sqlite3VdbeAddOp2(v, OP_SCopy, iReg+i, 0);
   }
 }
 
@@ -520,7 +520,7 @@ void sqlite3GenerateIndexKey(
   for(j=0; j<pIdx->nColumn; j++){
     int idx = pIdx->aiColumn[j];
     if( idx==pTab->iPKey ){
-      sqlite3VdbeAddOp1(v, OP_Dup, j);
+      sqlite3VdbeAddOp1(v, OP_Copy, -j);
     }else{
       sqlite3VdbeAddOp2(v, OP_Column, iCur, idx);
       sqlite3ColumnDefault(v, pTab, idx);

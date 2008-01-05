@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.31 2008/01/04 22:01:03 drh Exp $
+** @(#) $Id: analyze.c,v 1.32 2008/01/05 04:06:04 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -158,15 +158,14 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_MemIncr, 1, iMem);
     for(i=0; i<nCol; i++){
       sqlite3VdbeAddOp2(v, OP_Column, iIdxCur, i);
-      sqlite3VdbeAddOp1(v, OP_MemLoad, iMem+nCol+i+1);
+      sqlite3VdbeAddOp1(v, OP_SCopy, iMem+nCol+i+1);
       sqlite3VdbeAddOp1(v, OP_Ne, 0x100);
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
       addr = sqlite3VdbeAddOp2(v, OP_MemIncr, 1, iMem+i+1);
       sqlite3VdbeChangeP2(v, topOfLoop + 3*i + 3, addr);
-      sqlite3VdbeAddOp2(v, OP_Column, iIdxCur, i);
-      sqlite3VdbeAddOp2(v, OP_MemStore, iMem+nCol+i+1, 1);
+      sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, iMem+nCol+i+1);
     }
     sqlite3VdbeResolveLabel(v, endOfLoop);
     sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, topOfLoop);
@@ -190,25 +189,25 @@ static void analyzeOneTable(
     ** If K>0 then it is always the case the D>0 so division by zero
     ** is never possible.
     */
-    sqlite3VdbeAddOp1(v, OP_MemLoad, iMem);
+    sqlite3VdbeAddOp1(v, OP_SCopy, iMem);
     addr = sqlite3VdbeAddOp0(v, OP_IfNot);
     sqlite3VdbeAddOp1(v, OP_NewRowid, iStatCur);
     sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pTab->zName, 0);
     sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pIdx->zName, 0);
-    sqlite3VdbeAddOp1(v, OP_MemLoad, iMem);
+    sqlite3VdbeAddOp1(v, OP_SCopy, iMem);
     sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, " ", 0);
     for(i=0; i<nCol; i++){
-      sqlite3VdbeAddOp1(v, OP_MemLoad, iMem);
-      sqlite3VdbeAddOp1(v, OP_MemLoad, iMem+i+1);
+      sqlite3VdbeAddOp1(v, OP_SCopy, iMem);
+      sqlite3VdbeAddOp1(v, OP_SCopy, iMem+i+1);
       sqlite3VdbeAddOp0(v, OP_Add);
       sqlite3VdbeAddOp1(v, OP_AddImm, -1);
-      sqlite3VdbeAddOp1(v, OP_MemLoad, iMem+i+1);
+      sqlite3VdbeAddOp1(v, OP_SCopy, iMem+i+1);
       sqlite3VdbeAddOp0(v, OP_Divide);
       sqlite3VdbeAddOp0(v, OP_ToInt);
       if( i==nCol-1 ){
         sqlite3VdbeAddOp1(v, OP_Concat, nCol*2-1);
       }else{
-        sqlite3VdbeAddOp1(v, OP_Dup, 1);
+        sqlite3VdbeAddOp1(v, OP_Copy, -1);
       }
     }
     sqlite3VdbeAddOp4(v, OP_MakeRecord, 3, 0, 0, "aaa", 0);

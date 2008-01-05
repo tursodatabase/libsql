@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.330 2008/01/04 22:01:03 drh Exp $
+** $Id: expr.c,v 1.331 2008/01/05 04:06:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -308,8 +308,7 @@ Expr *sqlite3RegisterExpr(Parse *pParse, Token *pToken){
   }
   depth = atoi((char*)&pToken->z[1]);
   p->iTable = ++pParse->nMem;
-  sqlite3VdbeAddOp1(v, OP_Dup, depth);
-  sqlite3VdbeAddOp2(v, OP_MemStore, p->iTable, 1);
+  sqlite3VdbeAddOp2(v, OP_Copy, -depth, p->iTable);
   return p;
 }
 
@@ -1606,7 +1605,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
       int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       sqlite3VdbeUsesBtree(v, iDb);
 
-      sqlite3VdbeAddOp1(v, OP_MemLoad, iMem);
+      sqlite3VdbeAddOp1(v, OP_SCopy, iMem);
       iAddr = sqlite3VdbeAddOp2(v, OP_If, 0, iMem);
       sqlite3VdbeAddOp2(v, OP_Integer, 1, iMem);
 
@@ -1643,7 +1642,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
           iDb = sqlite3SchemaToIndex(db, pIdx->pSchema);
           sqlite3VdbeUsesBtree(v, iDb);
 
-          sqlite3VdbeAddOp1(v, OP_MemLoad, iMem);
+          sqlite3VdbeAddOp1(v, OP_SCopy, iMem);
           iAddr = sqlite3VdbeAddOp2(v, OP_If, 0, iMem);
           sqlite3VdbeAddOp2(v, OP_Integer, 1, iMem);
   
@@ -1700,7 +1699,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   */
   if( !ExprHasAnyProperty(pExpr, EP_VarSelect) && !pParse->trigStack ){
     int mem = ++pParse->nMem;
-    sqlite3VdbeAddOp1(v, OP_MemLoad, mem);
+    sqlite3VdbeAddOp1(v, OP_SCopy, mem);
     testAddr = sqlite3VdbeAddOp0(v, OP_If);
     assert( testAddr>0 || pParse->db->mallocFailed );
     sqlite3VdbeAddOp2(v, OP_Integer, 1, mem);
@@ -1966,7 +1965,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       AggInfo *pAggInfo = pExpr->pAggInfo;
       struct AggInfo_col *pCol = &pAggInfo->aCol[pExpr->iAgg];
       if( !pAggInfo->directMode ){
-        sqlite3VdbeAddOp1(v, OP_MemLoad, pCol->iMem);
+        sqlite3VdbeAddOp1(v, OP_SCopy, pCol->iMem);
         break;
       }else if( pAggInfo->useSortingIdx ){
         sqlite3VdbeAddOp3(v, OP_Column, pAggInfo->sortingIdx,
@@ -1980,7 +1979,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       if( pExpr->iTable<0 ){
         /* This only happens when coding check constraints */
         assert( pParse->ckOffset>0 );
-        sqlite3VdbeAddOp2(v, OP_Dup, pParse->ckOffset-pExpr->iColumn-1, 1);
+        sqlite3VdbeAddOp1(v, OP_SCopy, -(pParse->ckOffset-pExpr->iColumn-1));
       }else{
         sqlite3ExprCodeGetColumn(v, pExpr->pTab,
                                  pExpr->iColumn, pExpr->iTable, target);
@@ -2029,7 +2028,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_REGISTER: {
-      sqlite3VdbeAddOp1(v, OP_MemLoad, pExpr->iTable);
+      sqlite3VdbeAddOp1(v, OP_SCopy, pExpr->iTable);
       break;
     }
 #ifndef SQLITE_OMIT_CAST
@@ -2138,7 +2137,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
         sqlite3ErrorMsg(pParse, "misuse of aggregate: %T",
             &pExpr->span);
       }else{
-        sqlite3VdbeAddOp1(v, OP_MemLoad, pInfo->aFunc[pExpr->iAgg].iMem);
+        sqlite3VdbeAddOp1(v, OP_SCopy, pInfo->aFunc[pExpr->iAgg].iMem);
       }
       break;
     }
@@ -2202,7 +2201,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       if( pExpr->iColumn==0 ){
         sqlite3CodeSubselect(pParse, pExpr);
       }
-      sqlite3VdbeAddOp1(v, OP_MemLoad, pExpr->iColumn);
+      sqlite3VdbeAddOp1(v, OP_SCopy, pExpr->iColumn);
       VdbeComment((v, "load subquery result"));
       break;
     }
@@ -2254,7 +2253,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       struct ExprList_item *pLItem = pExpr->pList->a;
       Expr *pRight = pLItem->pExpr;
       sqlite3ExprCode(pParse, pLeft, 0);
-      sqlite3VdbeAddOp0(v, OP_Dup);
+      sqlite3VdbeAddOp0(v, OP_Copy);
       sqlite3ExprCode(pParse, pRight, 0);
       codeCompare(pParse, pLeft, pRight, OP_Ge, 0, 0);
       sqlite3VdbeAddOp1(v, OP_Pull, 1);
@@ -2291,7 +2290,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       for(i=0; i<nExpr; i=i+2){
         sqlite3ExprCode(pParse, aListelem[i].pExpr, 0);
         if( pExpr->pLeft ){
-          sqlite3VdbeAddOp2(v, OP_Dup, 1, 1);
+          sqlite3VdbeAddOp1(v, OP_SCopy, -1);
           jumpInst = codeCompare(pParse, pExpr->pLeft, aListelem[i].pExpr,
                                  OP_Ne, 0, 1);
           sqlite3VdbeAddOp1(v, OP_Pop, 1);
@@ -2339,7 +2338,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
 #endif
   }
   if( target && !inReg ){
-    sqlite3VdbeAddOp2(v, OP_MemStore, target, 1);
+    sqlite3VdbeAddOp2(v, OP_Move, 0, target);
     stackChng = 0;
   }
   if( pParse->ckOffset ){
@@ -2372,7 +2371,7 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr){
   if( addr2>addr1+1
    || ((pOp = sqlite3VdbeGetOp(v, addr1))!=0 && pOp->opcode==OP_Function) ){
     iMem = pExpr->iTable = ++pParse->nMem;
-    sqlite3VdbeAddOp2(v, OP_MemStore, iMem, 0);
+    sqlite3VdbeAddOp2(v, OP_Copy, 0, iMem);
     pExpr->op = TK_REGISTER;
   }
 }
@@ -2479,7 +2478,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       Expr *pLeft = pExpr->pLeft;
       Expr *pRight = pExpr->pList->a[0].pExpr;
       sqlite3ExprCode(pParse, pLeft, 0);
-      sqlite3VdbeAddOp2(v, OP_Dup, 0, 0);
+      sqlite3VdbeAddOp0(v, OP_Copy);
       sqlite3ExprCode(pParse, pRight, 0);
       addr = codeCompare(pParse, pLeft, pRight, OP_Lt, 0, !jumpIfNull);
 
@@ -2591,7 +2590,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       Expr *pLeft = pExpr->pLeft;
       Expr *pRight = pExpr->pList->a[0].pExpr;
       sqlite3ExprCode(pParse, pLeft, 0);
-      sqlite3VdbeAddOp2(v, OP_Dup, 0, 0);
+      sqlite3VdbeAddOp0(v, OP_Copy);
       sqlite3ExprCode(pParse, pRight, 0);
       addr = sqlite3VdbeCurrentAddr(v);
       codeCompare(pParse, pLeft, pRight, OP_Ge, addr+3, !jumpIfNull);

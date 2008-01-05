@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.158 2008/01/04 22:01:03 drh Exp $
+** $Id: pragma.c,v 1.159 2008/01/05 04:06:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -300,7 +300,7 @@ void sqlite3Pragma(
     static const VdbeOpList getCacheSize[] = {
       { OP_ReadCookie,  0, 0,        2},  /* 0 */
       { OP_AbsValue,    0, 0,        0},
-      { OP_Dup,         0, 0,        0},
+      { OP_Copy,        0, 0,        0},
       { OP_Integer,     0, 0,        0},
       { OP_Ne,          0, 6,        0},
       { OP_Integer,     0, 0,        0},  /* 5 */
@@ -830,7 +830,7 @@ void sqlite3Pragma(
     ** error message
     */
     static const VdbeOpList endCode[] = {
-      { OP_MemLoad,     1, 0,        0},
+      { OP_SCopy,       1, 0,        0},
       { OP_Integer,     0, 0,        0},
       { OP_Ne,          0, 0,        0},    /* 2 */
       { OP_String8,     0, 0,        0},    /* 3 */
@@ -933,8 +933,8 @@ void sqlite3Pragma(
              { OP_Rewind,       0,  0,  0},  /* 1 */
              { OP_MemIncr,      1,  3,  0},
              { OP_Next,         0,  0,  0},  /* 3 */
-             { OP_MemLoad,      2,  0,  0},
-             { OP_MemLoad,      3,  0,  0},
+             { OP_SCopy,        2,  0,  0},
+             { OP_SCopy,        3,  0,  0},
              { OP_Eq,           0,  0,  0},  /* 6 */
              { OP_MemIncr,     -1,  1,  0},
              { OP_String8,      0,  0,  0},  /* 8 */

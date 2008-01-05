@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.273 2008/01/04 22:01:03 drh Exp $
+** $Id: where.c,v 1.274 2008/01/05 04:06:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1827,7 +1827,7 @@ static void codeAllEqualityTerms(
       sqlite3VdbeAddOp2(v, OP_IsNull, termsInMem ? -1 : -(j+1), pLevel->brk);
     }
     if( termsInMem ){
-      sqlite3VdbeAddOp2(v, OP_MemStore, pLevel->iMem+j+1, 1);
+      sqlite3VdbeAddOp2(v, OP_Move, 0, pLevel->iMem+j+1);
     }
   }
 
@@ -1835,7 +1835,7 @@ static void codeAllEqualityTerms(
   */
   if( termsInMem ){
     for(j=0; j<nEq; j++){
-      sqlite3VdbeAddOp2(v, OP_MemLoad, pLevel->iMem+j+1, 0);
+      sqlite3VdbeAddOp2(v, OP_SCopy, pLevel->iMem+j+1, 0);
     }
   }
 }
@@ -2362,7 +2362,7 @@ WhereInfo *sqlite3WhereBegin(
         assert( pEnd->leftCursor==iCur );
         sqlite3ExprCode(pParse, pX->pRight, 0);
         pLevel->iMem = ++pParse->nMem;
-        sqlite3VdbeAddOp2(v, OP_MemStore, pLevel->iMem, 1);
+        sqlite3VdbeAddOp2(v, OP_Move, 0, pLevel->iMem);
         if( pX->op==TK_LT || pX->op==TK_GT ){
           testOp = bRev ? OP_Le : OP_Ge;
         }else{
@@ -2376,7 +2376,7 @@ WhereInfo *sqlite3WhereBegin(
       pLevel->p2 = start;
       if( testOp!=OP_Noop ){
         sqlite3VdbeAddOp2(v, OP_Rowid, iCur, 0);
-        sqlite3VdbeAddOp2(v, OP_MemLoad, pLevel->iMem, 0);
+        sqlite3VdbeAddOp2(v, OP_SCopy, pLevel->iMem, 0);
         sqlite3VdbeAddOp2(v, testOp, SQLITE_AFF_NUMERIC|0x100, brk);
       }
     }else if( pLevel->flags & WHERE_COLUMN_RANGE ){
@@ -2410,7 +2410,7 @@ WhereInfo *sqlite3WhereBegin(
       ** start key.
       */
       for(j=0; j<nEq; j++){
-        sqlite3VdbeAddOp2(v, OP_Dup, nEq-1, 0);
+        sqlite3VdbeAddOp1(v, OP_Copy, 1-nEq);
       }
 
       /* Figure out what comparison operators to use for top and bottom 
@@ -2459,7 +2459,7 @@ WhereInfo *sqlite3WhereBegin(
           int op = topEq ? OP_MoveLe : OP_MoveLt;
           sqlite3VdbeAddOp2(v, op, iIdxCur, nxt);
         }else{
-          sqlite3VdbeAddOp2(v, OP_MemStore, pLevel->iMem, 1);
+          sqlite3VdbeAddOp2(v, OP_Move, 0, pLevel->iMem);
         }
       }else if( bRev ){
         sqlite3VdbeAddOp2(v, OP_Last, iIdxCur, brk);
@@ -2493,7 +2493,7 @@ WhereInfo *sqlite3WhereBegin(
         buildIndexProbe(v, nCol, pIdx);
         if( bRev ){
           pLevel->iMem = ++pParse->nMem;
-          sqlite3VdbeAddOp2(v, OP_MemStore, pLevel->iMem, 1);
+          sqlite3VdbeAddOp2(v, OP_Move, 0, pLevel->iMem);
           testOp = OP_IdxLT;
         }else{
           int op = btmEq ? OP_MoveGe : OP_MoveGt;
@@ -2511,7 +2511,7 @@ WhereInfo *sqlite3WhereBegin(
       */
       start = sqlite3VdbeCurrentAddr(v);
       if( testOp!=OP_Noop ){
-        sqlite3VdbeAddOp2(v, OP_MemLoad, pLevel->iMem, 0);
+        sqlite3VdbeAddOp2(v, OP_SCopy, pLevel->iMem, 0);
         sqlite3VdbeAddOp2(v, testOp, iIdxCur, nxt);
         if( (topEq && !bRev) || (!btmEq && bRev) ){
           sqlite3VdbeChangeP4(v, -1, "+", P4_STATIC);
@@ -2548,7 +2548,7 @@ WhereInfo *sqlite3WhereBegin(
       ** the search
       */
       buildIndexProbe(v, nEq, pIdx);
-      sqlite3VdbeAddOp2(v, OP_MemStore, pLevel->iMem, 0);
+      sqlite3VdbeAddOp2(v, OP_Copy, 0, pLevel->iMem);
 
       /* Generate code (1) to move to the first matching element of the table.
       ** Then generate code (2) that jumps to "nxt" after the cursor is past
@@ -2558,13 +2558,13 @@ WhereInfo *sqlite3WhereBegin(
       if( bRev ){
         /* Scan in reverse order */
         sqlite3VdbeAddOp2(v, OP_MoveLe, iIdxCur, nxt);
-        start = sqlite3VdbeAddOp2(v, OP_MemLoad, pLevel->iMem, 0);
+        start = sqlite3VdbeAddOp2(v, OP_SCopy, pLevel->iMem, 0);
         sqlite3VdbeAddOp2(v, OP_IdxLT, iIdxCur, nxt);
         pLevel->op = OP_Prev;
       }else{
         /* Scan in the forward order */
         sqlite3VdbeAddOp2(v, OP_MoveGe, iIdxCur, nxt);
-        start = sqlite3VdbeAddOp2(v, OP_MemLoad, pLevel->iMem, 0);
+        start = sqlite3VdbeAddOp2(v, OP_SCopy, pLevel->iMem, 0);
         sqlite3VdbeAddOp4(v, OP_IdxGE, iIdxCur, nxt, 0, "+", P4_STATIC);
         pLevel->op = OP_Next;
       }

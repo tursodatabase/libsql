@@ -237,8 +237,8 @@ void sqlite3FinishTrigger(
       { OP_String8,    0, 0,  0          },  /* 6: SQL */
       { OP_Concat,     0, 0,  0          }, 
       { OP_MakeRecord, 5, 0,  0          },  /* 8: "aaada" */
-      { OP_MemStore,   0, 1,  0          },  /* 9: Store data */
-      { OP_MemStore,   0, 1,  0          },  /* 10: Store key */
+      { OP_Move,       0, 0,  0          },  /* 9: Store data */
+      { OP_Move,       0, 0,  0          },  /* 10: Store key */
       { OP_Insert,     0, 0,  0          },
     };
     int addr;
@@ -258,9 +258,9 @@ void sqlite3FinishTrigger(
     sqlite3VdbeChangeP4(v, addr+5, "CREATE TRIGGER ", P4_STATIC); 
     sqlite3VdbeChangeP4(v, addr+6, (char*)pAll->z, pAll->n);
     sqlite3VdbeChangeP4(v, addr+8, "aaada", P4_STATIC);
-    sqlite3VdbeChangeP1(v, addr+9, iData);
+    sqlite3VdbeChangeP2(v, addr+9, iData);
+    sqlite3VdbeChangeP2(v, addr+10, iKey);
     sqlite3VdbeChangeP2(v, addr+11, iData);
-    sqlite3VdbeChangeP1(v, addr+10, iKey);
     sqlite3VdbeChangeP3(v, addr+11, iKey);
     sqlite3ChangeCookie(db, v, iDb);
     sqlite3VdbeAddOp2(v, OP_Close, 0, 0);

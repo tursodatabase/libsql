@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.457 2008/01/04 22:01:03 drh Exp $
+** $Id: build.c,v 1.458 2008/01/05 04:06:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -881,7 +881,7 @@ void sqlite3StartTable(
     }
     sqlite3OpenMasterTable(pParse, iDb);
     sqlite3VdbeAddOp0(v, OP_NewRowid);
-    sqlite3VdbeAddOp0(v, OP_Dup);
+    sqlite3VdbeAddOp0(v, OP_Copy);
     sqlite3VdbeAddOp0(v, OP_Null);
     sqlite3CodeInsert(pParse, 0, OPFLAG_APPEND);
     sqlite3VdbeAddOp0(v, OP_Close);
@@ -1493,7 +1493,7 @@ void sqlite3EndTable(
     if( pSelect ){
       SelectDest dest = {SRT_Table, 1, 0};
       Table *pSelTab;
-      sqlite3VdbeAddOp1(v, OP_Dup, 0);
+      sqlite3VdbeAddOp0(v, OP_Copy);
       sqlite3VdbeAddOp3(v, OP_OpenWrite, 1, 0, iDb);
       pParse->nTab = 2;
       sqlite3Select(pParse, pSelect, &dest, 0, 0, 0, 0);
@@ -2235,7 +2235,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
   if( memRootPage>=0 ){
-    sqlite3VdbeAddOp1(v, OP_MemLoad, memRootPage);
+    sqlite3VdbeAddOp1(v, OP_SCopy, memRootPage);
     tnum = 0;
   }else{
     tnum = pIndex->tnum;
@@ -2638,7 +2638,7 @@ void sqlite3CreateIndex(
     */
     sqlite3BeginWriteOperation(pParse, 1, iDb);
     sqlite3VdbeAddOp1(v, OP_CreateIndex, iDb);
-    sqlite3VdbeAddOp2(v, OP_MemStore, iMem, 0);
+    sqlite3VdbeAddOp2(v, OP_Copy, 0, iMem);
 
     /* Gather the complete text of the CREATE INDEX statement into
     ** the zStmt variable

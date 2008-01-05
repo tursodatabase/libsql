@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.679 2008/01/04 22:01:03 drh Exp $
+** $Id: vdbe.c,v 1.680 2008/01/05 04:06:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -470,6 +470,7 @@ int sqlite3VdbeExec(
   Mem *pIn1, *pIn2;          /* Input operands */
   Mem *pOut;                 /* Output operand */
   int nPop = 0;              /* Number of times to pop the stack */
+  u8 opProperty;
 #ifdef VDBE_PROFILE
   unsigned long long start;  /* CPU clock count at start of opcode */
   int origPc;                /* Program counter at start of opcode */
@@ -596,7 +597,8 @@ int sqlite3VdbeExec(
     ** then the output is pushed onto the stack.  The P2 operand
     ** is initialized to a NULL.
     */
-    if( (opcodeProperty[pOp->opcode]&OPFLG_OUT2_PRERELEASE)!=0 ){
+    opProperty = opcodeProperty[pOp->opcode];
+    if( (opProperty & OPFLG_OUT2_PRERELEASE)!=0 ){
       assert( pOp->p2>=0 );
       if( pOp->p2==0 ){
         pOut = ++pTos;
@@ -606,6 +608,71 @@ int sqlite3VdbeExec(
         sqlite3VdbeMemRelease(pOut);
       }
       pOut->flags = MEM_Null;
+    }else
+ 
+    /* Do common setup for opcodes marked with one of the following
+    ** combinations of properties.
+    **
+    **           in1
+    **           in1 in2
+    **           in1 in2 out3
+    **           in1 in3
+    **           in1 out2
+    **
+    ** Variables pIn1 and pIn2 are made to point to the first two
+    ** inputs and pOut points to the output.  Variable nPop holds the
+    ** number of times that the stack should be popped after the
+    ** the instruction.
+    */
+    if( (opProperty & OPFLG_IN1)!=0 ){
+      assert( pOp->p1>=0 );
+      if( pOp->p1==0 ){
+        pIn1 = pTos;
+        nPop = 1;
+      }else{
+        assert( pOp->p1<=p->nMem );
+        pIn1 = &p->aMem[pOp->p1];
+      }
+      if( (opProperty & OPFLG_IN2)!=0 ){
+        assert( pOp->p2>=0 );
+        if( pOp->p2==0 ){
+          pIn2 = &pTos[-nPop];
+          nPop++;
+        }else{
+          assert( pOp->p2<=p->nMem );
+          pIn2 = &p->aMem[pOp->p2];
+        }
+        if( (opProperty & OPFLG_OUT3)!=0 ){
+          assert( pOp->p3>=0 );
+          if( pOp->p3==0 ){
+            pTos++;
+            pOut = &pTos[-nPop];
+            pOut->flags = MEM_Null;
+          }else{
+            assert( pOp->p3<=p->nMem );
+            pOut = &p->aMem[pOp->p3];
+          }
+        }
+      }else if( (opProperty & OPFLG_IN3)!=0 ){
+        assert( pOp->p3>=0 );
+        if( pOp->p3==0 ){
+          pIn2 = &pTos[-nPop];
+          nPop++;
+        }else{
+          assert( pOp->p3<=p->nMem );
+          pIn2 = &p->aMem[pOp->p3];
+        }
+      }else if( (opProperty & OPFLG_OUT2)!=0 ){
+        assert( pOp->p2>=0 );
+        if( pOp->p2==0 ){
+          pTos++;
+          pOut = &pTos[-nPop];
+          pOut->flags = MEM_Null;
+        }else{
+          assert( pOp->p2<=p->nMem );
+          pOut = &p->aMem[pOp->p2];
+        }
+      }
     }
 
     switch( pOp->opcode ){
@@ -926,28 +993,77 @@ case OP_Pop: {            /* no-push */
   break;
 }
 
-/* Opcode: Dup P1 P2 *
+/* Opcode: Move P1 P2 * * *
 **
-** A copy of the P1-th element of the stack 
-** is made and pushed onto the top of the stack.
-** The top of the stack is element 0.  So the
-** instruction "Dup 0 0 0" will make a copy of the
-** top of the stack.
+** Move the value in P1 into P2.  If P1 is positive then read from the
+** P1-th register.  If P1 is zero or negative read from the stack.
+** When P1 is 0 read from the top the stack.  When P1 is -1 read from
+** the next entry down on the stack.  And so forth.
 **
-** If the content of the P1-th element is a dynamically
-** allocated string, then a new copy of that string
-** is made if P2==0.  If P2!=0, then just a pointer
-** to the string is copied.
+** If P2 is zero, push the new value onto the top of the stack.  
+** If P2 is positive, write into the P2-th register.
 **
-** Also see the Pull instruction.
+** If P1 is zero then the stack is popped once.  The stack is
+** unchanged for all other values of P1.  The P1 value contains
+** a NULL after this operation.
 */
-case OP_Dup: {
-  Mem *pFrom = &pTos[-pOp->p1];
-  assert( pFrom<=pTos && pFrom>=p->aStack );
-  pTos++;
-  sqlite3VdbeMemShallowCopy(pTos, pFrom, MEM_Ephem);
-  if( pOp->p2 ){
-    Deephemeralize(pTos);
+/* Opcode: Copy P1 P2 * * *
+**
+** Make a copy of P1 into P2.  If P1 is positive then read from the
+** P1-th register.  If P1 is zero or negative read from the stack.
+** When P1 is 0 read from the top the stack.  When P1 is -1 read from
+** the next entry down on the stack.  And so forth.
+**
+** If P2 is zero, push the new value onto the top of the stack.  
+** If P2 is positive, write into the P2-th register.
+**
+** This instruction makes a deep copy of the value.  A duplicate
+** is made of any string or blob constant.  See also OP_SCopy.
+*/
+/* Opcode: SCopy P1 P2 * * *
+**
+** Make a shallow copy of P1 into P2.  If P1 is positive then read from the
+** P1-th register.  If P1 is zero or negative read from the stack.
+** When P1 is 0 read from the top the stack.  When P1 is -1 read from
+** the next entry down on the stack.  And so forth.
+**
+** If P2 is zero, push the new value onto the top of the stack.  
+** If P2 is positive, write into the P2-th register.
+**
+** This instruction makes a shallow copy of the value.  If the value
+** is a string or blob, then the copy is only a pointer to the
+** original and hence if the original changes so will the copy.
+** Worse, if the original is deallocated, the copy becomes invalid.
+** Thus the program must guarantee that the original will not change
+** during the lifetime of the copy.  Use OP_Copy to make a complete
+** copy.
+*/
+case OP_Move:
+case OP_Copy:
+case OP_SCopy: {
+  if( pOp->p1<=0 ){
+    pIn1 = &pTos[pOp->p1];
+    assert( pIn1>=p->aStack );
+  }else{
+    assert( pOp->p1<=p->nMem );
+    pIn1 = &p->aMem[pOp->p1];
+  }
+  assert( pOp->p2>=0 );
+  if( pOp->p2==0 ){
+    pOut = ++pTos;
+    pOut->flags = MEM_Null;
+  }else{
+    assert( pOp->p2<=p->nMem );
+    pOut = &p->aMem[pOp->p2];
+  }
+  if( pOp->opcode==OP_Move ){
+    rc = sqlite3VdbeMemMove(pOut, pIn1);
+    if( pOp->p1==0 ) pTos--;
+  }else{
+    sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
+    if( pOp->opcode==OP_Copy ){
+      Deephemeralize(pOut);
+    }
   }
   break;
 }
@@ -959,8 +1075,6 @@ case OP_Dup: {
 ** top of the stack is element 0, so "Pull 0 0 0" is
 ** a no-op.  "Pull 1 0 0" swaps the top two elements of
 ** the stack.
-**
-** See also the Dup instruction.
 */
 case OP_Pull: {            /* no-push */
   Mem *pFrom = &pTos[-pOp->p1];
@@ -2681,7 +2795,7 @@ case OP_Transaction: {       /* no-push */
   break;
 }
 
-/* Opcode: ReadCookie P1 P2 P3
+/* Opcode: ReadCookie P1 P2 P3 * *
 **
 ** Read cookie number P3 from database P1 and write it into register
 ** P2 or push it onto the stack if P2==0.
@@ -4615,46 +4729,6 @@ case OP_ContextPop: {        /* no-push */
 }
 #endif /* #ifndef SQLITE_OMIT_TRIGGER */
 
-/* Opcode: MemStore P1 P2 *
-**
-** Write the top of the stack into memory location P1.
-** P1 should be a small integer since space is allocated
-** for all memory locations between 0 and P1 inclusive.
-**
-** After the data is stored in the memory location, the
-** stack is popped once if P2 is 1.  If P2 is zero, then
-** the original data remains on the stack.
-*/
-case OP_MemStore: {        /* no-push */
-  assert( pTos>=p->aStack );
-  assert( pOp->p1>0 && pOp->p1<=p->nMem );
-  rc = sqlite3VdbeMemMove(&p->aMem[pOp->p1], pTos);
-  pTos--;
-
-  /* If P2 is 0 then fall thru to the next opcode, OP_MemLoad, that will
-  ** restore the top of the stack to its original value.
-  */
-  if( pOp->p2 ){
-    break;
-  }
-}
-/* Opcode: MemLoad P1 * *
-**
-** Push a copy of the value in memory location P1 onto the stack.
-**
-** If the value is a string, then the value pushed is a pointer to
-** the string that is stored in the memory location.  If the memory
-** location is subsequently changed (using OP_MemStore) then the
-** value pushed onto the stack will change too.
-*/
-case OP_MemLoad: {
-  int i = pOp->p1;
-  assert( i>0 && i<=p->nMem );
-  pTos++;
-  sqlite3VdbeMemShallowCopy(pTos, &p->aMem[i], MEM_Ephem);
-  break;
-}
-
 #ifndef SQLITE_OMIT_AUTOINCREMENT
 /* Opcode: MemMax P1 P2 *
 **
@@ -4765,19 +4839,6 @@ case OP_IfMemNull: {        /* no-push, jump */
   if( p->aMem[i].flags & MEM_Null ){
      pc = pOp->p2 - 1;
   }
-  break;
-}
-
-/* Opcode: MemMove P1 P2 *
-**
-** Move the content of memory cell P2 over to memory cell P1.
-** Any prior content of P1 is erased.  Memory cell P2 is left
-** containing a NULL.
-*/
-case OP_MemMove: {
-  assert( pOp->p1>0 && pOp->p1<=p->nMem );
-  assert( pOp->p2>0 && pOp->p2<=p->nMem );
-  rc = sqlite3VdbeMemMove(&p->aMem[pOp->p1], &p->aMem[pOp->p2]);
   break;
 }
 
@@ -5304,6 +5365,12 @@ default: {
 ** readability.  From this point on down, the normal indentation rules are
 ** restored.
 *****************************************************************************/
+    }
+
+    /* Pop the stack if necessary */
+    if( nPop ){
+      popStack(&pTos, nPop);
+      nPop = 0;
     }
 
     /* Make sure the stack limit was not exceeded */
