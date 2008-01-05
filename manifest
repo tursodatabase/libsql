@@ -1,5 +1,5 @@
-C Register-ify\sthe\sOP_AddImm\sand\sall\scasting\sopcodes.\s\sOmit\sthe\nOP_MemIncr\sopcode.\s(CVS\s4683)
-D 2008-01-05T05:20:10
+C Register-ify\sthe\sOP_ForceInt\sopcode.\s(CVS\s4684)
+D 2008-01-05T05:38:21
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -168,7 +168,7 @@ F src/update.c ac6cdfebf88340fd68550b1d7fd6a15ad7144fd8
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c f8aabf9ae1e013ae837e2620d39533189396fa58
+F src/vdbe.c d96c341f070f7f683fd1a34114c19dbecdf49647
 F src/vdbe.h bb128757b84280504a1243c450fd13ead248ede5
 F src/vdbeInt.h 31bd686595356284d5484592e2dc6e58025aa346
 F src/vdbeapi.c f14174843bf4be2c9afdf2ef48b61e7c3ac62d7c
@@ -177,7 +177,7 @@ F src/vdbeblob.c b90f7494c408d47ce6835000b01e40b371e27baf
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 123994fcd344993d2fb050a83b91b341bbbd08b4
 F src/vtab.c 03014b2bfa8096ecac5fcdc80d34cd76e06af52a
-F src/where.c af005c6a5875b230648e7f1a38993cd848161313
+F src/where.c 941635bb007484330bc1a0f3cc013b67f1c41864
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test ee350b9ab15b175fc0a8fb51bf2141ed3a3b9cba
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P cc149eb9ca3c672cc6fea3528353234ac2ed5745
-R 9381db31828d60007b12e8ca022919a2
+P 3e8a07dd3cc9921ad39e379576abb0b485a42202
+R 5fa8eccc6a1d8f273459b71d7e4508a7
 U drh
-Z 6bb8ea814574f175721b7ff6434341e5
+Z 54cf213cacf40b4b6524baf65c0d27ec

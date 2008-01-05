@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.681 2008/01/05 05:20:10 drh Exp $
+** $Id: vdbe.c,v 1.682 2008/01/05 05:38:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1614,38 +1614,35 @@ case OP_AddImm: {            /* no-push, in1 */
   break;
 }
 
-/* Opcode: ForceInt P1 P2 *
+/* Opcode: ForceInt P1 P2 P3 * *
 **
-** Convert the top of the stack into an integer.  If the current top of
-** the stack is not numeric (meaning that is is a NULL or a string that
-** does not look like an integer or floating point number) then pop the
-** stack and jump to P2.  If the top of the stack is numeric then
+** Convert value in register P1 into an integer.  If the value 
+** in P1 is not numeric (meaning that is is a NULL or a string that
+** does not look like an integer or floating point number) then
+** jump to P2.  If the value in P1 is numeric then
 ** convert it into the least integer that is greater than or equal to its
-** current value if P1==0, or to the least integer that is strictly
-** greater than its current value if P1==1.
+** current value if P3==0, or to the least integer that is strictly
+** greater than its current value if P3==1.
 */
-case OP_ForceInt: {            /* no-push, jump */
+case OP_ForceInt: {            /* no-push, jump, in1 */
   i64 v;
-  assert( pTos>=p->aStack );
-  applyAffinity(pTos, SQLITE_AFF_NUMERIC, encoding);
-  if( (pTos->flags & (MEM_Int|MEM_Real))==0 ){
-    Release(pTos);
-    pTos--;
+  applyAffinity(pIn1, SQLITE_AFF_NUMERIC, encoding);
+  if( (pIn1->flags & (MEM_Int|MEM_Real))==0 ){
     pc = pOp->p2 - 1;
     break;
   }
-  if( pTos->flags & MEM_Int ){
-    v = pTos->u.i + (pOp->p1!=0);
+  nPop = 0;
+  if( pIn1->flags & MEM_Int ){
+    v = pIn1->u.i + (pOp->p3!=0);
   }else{
-    /* FIX ME:  should this not be assert( pTos->flags & MEM_Real ) ??? */
-    sqlite3VdbeMemRealify(pTos);
-    v = (int)pTos->r;
-    if( pTos->r>(double)v ) v++;
-    if( pOp->p1 && pTos->r==(double)v ) v++;
+    assert( pIn1->flags & MEM_Real );
+    v = (sqlite3_int64)pIn1->r;
+    if( pIn1->r>(double)v ) v++;
+    if( pOp->p3 && pIn1->r==(double)v ) v++;
   }
-  Release(pTos);
-  pTos->u.i = v;
-  pTos->flags = MEM_Int;
+  Release(pIn1);
+  pIn1->u.i = v;
+  pIn1->flags = MEM_Int;
   break;
 }
 
