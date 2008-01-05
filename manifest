@@ -1,5 +1,5 @@
-C First\spass\sat\soptimizing\smax()/min()\sas\sdescribed\sin\s#2853.\sSome\srefinements\sto\scome.\s(CVS\s4687)
-D 2008-01-05T17:39:30
+C Fix\sa\smemory\sleak\sintroduced\swith\s#4687.\s(CVS\s4688)
+D 2008-01-05T18:44:29
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/pragma.c dfb200ec383b5ab3e81cd7bc4e1305e71053ef9a
 F src/prepare.c f1bb8eb642082e618a359c08e3e107490eafe0e3
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
-F src/select.c 33c60380c81283c16414040d034b76f1732ffb4e
+F src/select.c fcde4b33ef106b64685ce842dc05e56e1c1116eb
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 5391e889384d2062249f668110d64ed16f601c4b
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
@@ -172,7 +172,7 @@ F src/vdbe.c 0c16e643e83c8f14364213c6862864f31dbadca3
 F src/vdbe.h bb128757b84280504a1243c450fd13ead248ede5
 F src/vdbeInt.h 31bd686595356284d5484592e2dc6e58025aa346
 F src/vdbeapi.c f14174843bf4be2c9afdf2ef48b61e7c3ac62d7c
-F src/vdbeaux.c b5437d3afb5552675603ed73058b3a7184dc81df
+F src/vdbeaux.c 75b7d3e42c94310f28f6f7d3e08b69797fbe8a78
 F src/vdbeblob.c b90f7494c408d47ce6835000b01e40b371e27baf
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 123994fcd344993d2fb050a83b91b341bbbd08b4
@@ -604,7 +604,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 66396d2f0289e36b5fc0af5078c08d1b17f342ae
-R b1dacf0522dc83de3d6ddccfc407074e
+P c449e04f1870b1ff726c95c0bf1c6c6a22ca588a
+R 7feff0f8e24ec4a4191ddc4ce03d03a2
 U danielk1977
-Z 85372970e5aef600b6f97b67c85860f6
+Z 92958faf5e34756c3b8dada9d72fd997

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.387 2008/01/05 17:39:30 danielk1977 Exp $
+** $Id: select.c,v 1.388 2008/01/05 18:44:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -3638,6 +3638,7 @@ int sqlite3Select(
     } /* endif pGroupBy */
     else {
       ExprList *pMinMax = 0;
+      ExprList *pDel = 0;
       u8 flag;
 
       flag = minMaxQuery(pParse, p);
@@ -3647,6 +3648,7 @@ int sqlite3Select(
           pMinMax->a[0].sortOrder = ((flag==ORDERBY_MIN)?0:1);
           pMinMax->a[0].pExpr->op = TK_COLUMN;
         }
+	pDel = pMinMax;
       }
 
       /* This case runs if the aggregate has no GROUP BY clause.  The
@@ -3655,7 +3657,10 @@ int sqlite3Select(
       */
       resetAccumulator(pParse, &sAggInfo);
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pMinMax, flag);
-      if( pWInfo==0 ) goto select_end;
+      if( pWInfo==0 ){
+        sqlite3ExprListDelete(pMinMax);
+        goto select_end;
+      }
       updateAccumulator(pParse, &sAggInfo);
       if( !pMinMax && flag ){
         sqlite3VdbeAddOp2(v, OP_Goto, 0, pWInfo->iBreak);
@@ -3670,7 +3675,7 @@ int sqlite3Select(
       selectInnerLoop(pParse, p, p->pEList, 0, 0, 0, -1, 
                       pDest, addrEnd, addrEnd, aff);
 
-      sqlite3ExprListDelete(pMinMax);
+      sqlite3ExprListDelete(pDel);
     }
     sqlite3VdbeResolveLabel(v, addrEnd);
     
