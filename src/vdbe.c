@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.680 2008/01/05 04:06:04 drh Exp $
+** $Id: vdbe.c,v 1.681 2008/01/05 05:20:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1600,17 +1600,17 @@ case OP_ShiftRight: {           /* same as TK_RSHIFT, no-push */
   break;
 }
 
-/* Opcode: AddImm  P1 * *
+/* Opcode: AddImm  P1 P2 * * *
 ** 
-** Add the value P1 to whatever is on top of the stack.  The result
-** is always an integer.
+** Add P2 the value in register P1.
+** The result is always an integer.
 **
-** To force the top of the stack to be an integer, just add 0.
+** To force any register to be an integer, just add 0.
 */
-case OP_AddImm: {            /* no-push */
-  assert( pTos>=p->aStack );
-  sqlite3VdbeMemIntegerify(pTos);
-  pTos->u.i += pOp->p1;
+case OP_AddImm: {            /* no-push, in1 */
+  nPop = 0;
+  sqlite3VdbeMemIntegerify(pIn1);
+  pIn1->u.i += pOp->p2;
   break;
 }
 
@@ -1683,7 +1683,7 @@ case OP_MustBeInt: {            /* no-push, jump */
   break;
 }
 
-/* Opcode: RealAffinity P1 * *
+/* Opcode: RealAffinity P1 * * * *
 **
 ** If register P1 holds an integer convert it to a real value.
 **
@@ -1692,67 +1692,60 @@ case OP_MustBeInt: {            /* no-push, jump */
 ** integers, for space efficiency, but after extraction we want them
 ** to have only a real value.
 */
-case OP_RealAffinity: {                  /* no-push */
-  assert( pOp->p1>=0 && pOp->p1<=p->nMem );
-  if( pOp->p1==0 ){
-    if( pTos->flags & MEM_Int ){
-      sqlite3VdbeMemRealify(pTos);
-    }
-  }else{
-    Mem *pX = &p->aMem[pOp->p1];
-    if( pX->flags & MEM_Int ){
-      sqlite3VdbeMemRealify(pX);
-    }
+case OP_RealAffinity: {                  /* no-push, in1 */
+  nPop = 0;
+  if( pIn1->flags & MEM_Int ){
+    sqlite3VdbeMemRealify(pIn1);
   }
   break;
 }
 
 #ifndef SQLITE_OMIT_CAST
-/* Opcode: ToText * * *
+/* Opcode: ToText P1 * * * *
 **
-** Force the value on the top of the stack to be text.
+** Force the value in register P1 to be text.
 ** If the value is numeric, convert it to a string using the
 ** equivalent of printf().  Blob values are unchanged and
 ** are afterwards simply interpreted as text.
 **
 ** A NULL value is not changed by this routine.  It remains NULL.
 */
-case OP_ToText: {                  /* same as TK_TO_TEXT, no-push */
-  assert( pTos>=p->aStack );
-  if( pTos->flags & MEM_Null ) break;
+case OP_ToText: {                  /* same as TK_TO_TEXT, no-push, in1 */
+  nPop = 0;
+  if( pIn1->flags & MEM_Null ) break;
   assert( MEM_Str==(MEM_Blob>>3) );
-  pTos->flags |= (pTos->flags&MEM_Blob)>>3;
-  applyAffinity(pTos, SQLITE_AFF_TEXT, encoding);
-  rc = ExpandBlob(pTos);
-  assert( pTos->flags & MEM_Str );
-  pTos->flags &= ~(MEM_Int|MEM_Real|MEM_Blob);
+  pIn1->flags |= (pIn1->flags&MEM_Blob)>>3;
+  applyAffinity(pIn1, SQLITE_AFF_TEXT, encoding);
+  rc = ExpandBlob(pIn1);
+  assert( pIn1->flags & MEM_Str );
+  pIn1->flags &= ~(MEM_Int|MEM_Real|MEM_Blob);
   break;
 }
 
-/* Opcode: ToBlob * * *
+/* Opcode: ToBlob P1 * * * *
 **
-** Force the value on the top of the stack to be a BLOB.
+** Force the value in register P1 to be a BLOB.
 ** If the value is numeric, convert it to a string first.
 ** Strings are simply reinterpreted as blobs with no change
 ** to the underlying data.
 **
 ** A NULL value is not changed by this routine.  It remains NULL.
 */
-case OP_ToBlob: {                  /* same as TK_TO_BLOB, no-push */
-  assert( pTos>=p->aStack );
-  if( pTos->flags & MEM_Null ) break;
-  if( (pTos->flags & MEM_Blob)==0 ){
-    applyAffinity(pTos, SQLITE_AFF_TEXT, encoding);
-    assert( pTos->flags & MEM_Str );
-    pTos->flags |= MEM_Blob;
+case OP_ToBlob: {                  /* same as TK_TO_BLOB, no-push, in1 */
+  nPop = 0;
+  if( pIn1->flags & MEM_Null ) break;
+  if( (pIn1->flags & MEM_Blob)==0 ){
+    applyAffinity(pIn1, SQLITE_AFF_TEXT, encoding);
+    assert( pIn1->flags & MEM_Str );
+    pIn1->flags |= MEM_Blob;
   }
-  pTos->flags &= ~(MEM_Int|MEM_Real|MEM_Str);
+  pIn1->flags &= ~(MEM_Int|MEM_Real|MEM_Str);
   break;
 }
 
-/* Opcode: ToNumeric * * *
+/* Opcode: ToNumeric P1 * * * *
 **
-** Force the value on the top of the stack to be numeric (either an
+** Force the value in register P1 to be numeric (either an
 ** integer or a floating-point number.)
 ** If the value is text or blob, try to convert it to an using the
 ** equivalent of atoi() or atof() and store 0 if no such conversion 
@@ -1760,46 +1753,46 @@ case OP_ToBlob: {                  /* same as TK_TO_BLOB, no-push */
 **
 ** A NULL value is not changed by this routine.  It remains NULL.
 */
-case OP_ToNumeric: {                  /* same as TK_TO_NUMERIC, no-push */
-  assert( pTos>=p->aStack );
-  if( (pTos->flags & (MEM_Null|MEM_Int|MEM_Real))==0 ){
-    sqlite3VdbeMemNumerify(pTos);
+case OP_ToNumeric: {                  /* same as TK_TO_NUMERIC, no-push, in1 */
+  nPop = 0;
+  if( (pIn1->flags & (MEM_Null|MEM_Int|MEM_Real))==0 ){
+    sqlite3VdbeMemNumerify(pIn1);
   }
   break;
 }
 #endif /* SQLITE_OMIT_CAST */
 
-/* Opcode: ToInt * * *
+/* Opcode: ToInt P1 * * * *
 **
-** Force the value on the top of the stack to be an integer.  If
+** Force the value in register P1 be an integer.  If
 ** The value is currently a real number, drop its fractional part.
 ** If the value is text or blob, try to convert it to an integer using the
 ** equivalent of atoi() and store 0 if no such conversion is possible.
 **
 ** A NULL value is not changed by this routine.  It remains NULL.
 */
-case OP_ToInt: {                  /* same as TK_TO_INT, no-push */
-  assert( pTos>=p->aStack );
-  if( (pTos->flags & MEM_Null)==0 ){
-    sqlite3VdbeMemIntegerify(pTos);
+case OP_ToInt: {                  /* same as TK_TO_INT, no-push, in1 */
+  nPop = 0;
+  if( (pIn1->flags & MEM_Null)==0 ){
+    sqlite3VdbeMemIntegerify(pIn1);
   }
   break;
 }
 
 #ifndef SQLITE_OMIT_CAST
-/* Opcode: ToReal * * *
+/* Opcode: ToReal P1 * * * *
 **
-** Force the value on the top of the stack to be a floating point number.
+** Force the value in register P1 to be a floating point number.
 ** If The value is currently an integer, convert it.
 ** If the value is text or blob, try to convert it to an integer using the
 ** equivalent of atoi() and store 0 if no such conversion is possible.
 **
 ** A NULL value is not changed by this routine.  It remains NULL.
 */
-case OP_ToReal: {                  /* same as TK_TO_REAL, no-push */
-  assert( pTos>=p->aStack );
-  if( (pTos->flags & MEM_Null)==0 ){
-    sqlite3VdbeMemRealify(pTos);
+case OP_ToReal: {                  /* same as TK_TO_REAL, no-push, in1 */
+  nPop = 0;
+  if( (pIn1->flags & MEM_Null)==0 ){
+    sqlite3VdbeMemRealify(pIn1);
   }
   break;
 }
@@ -4754,23 +4747,6 @@ case OP_MemMax: {        /* no-push */
   break;
 }
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
-
-/* Opcode: MemIncr P1 P2 *
-**
-** Increment the integer valued memory cell P2 by the value in P1.
-**
-** It is illegal to use this instruction on a memory cell that does
-** not contain an integer.  An assertion fault will result if you try.
-*/
-case OP_MemIncr: {        /* no-push */
-  int i = pOp->p2;
-  Mem *pMem;
-  assert( i>0 && i<=p->nMem );
-  pMem = &p->aMem[i];
-  assert( pMem->flags==MEM_Int );
-  pMem->u.i += pOp->p1;
-  break;
-}
 
 /* Opcode: IfMemPos P1 P2 *
 **

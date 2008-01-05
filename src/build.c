@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.458 2008/01/05 04:06:04 drh Exp $
+** $Id: build.c,v 1.459 2008/01/05 05:20:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2252,7 +2252,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     int addr2 = curaddr+4;
     sqlite3VdbeChangeP2(v, curaddr-1, addr2);
     sqlite3VdbeAddOp1(v, OP_Rowid, iTab);
-    sqlite3VdbeAddOp1(v, OP_AddImm, 1);
+    sqlite3VdbeAddOp2(v, OP_AddImm, 0, 1);
     sqlite3VdbeAddOp2(v, OP_IsUnique, iIdx, addr2);
     sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, OE_Abort, 0,
                     "indexed columns are not unique", P4_STATIC);

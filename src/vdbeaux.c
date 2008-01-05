@@ -355,7 +355,11 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       VdbeOp *pOut = &p->aOp[i+addr];
       pOut->opcode = pIn->opcode;
       pOut->p1 = pIn->p1;
-      pOut->p2 = p2<0 ? addr + ADDR(p2) : p2;
+      if( p2<0 && sqlite3VdbeOpcodeHasProperty(pOut->opcode, OPFLG_JUMP) ){
+        pOut->p2 = addr + ADDR(p2);
+      }else{
+        pOut->p2 = p2;
+      }
       pOut->p3 = pIn->p3;
       pOut->p4type = P4_NOTUSED;
       pOut->p4.p = 0;

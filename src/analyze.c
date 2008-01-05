@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.32 2008/01/05 04:06:04 drh Exp $
+** @(#) $Id: analyze.c,v 1.33 2008/01/05 05:20:10 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -155,7 +155,7 @@ static void analyzeOneTable(
     endOfLoop = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp2(v, OP_Rewind, iIdxCur, endOfLoop);
     topOfLoop = sqlite3VdbeCurrentAddr(v);
-    sqlite3VdbeAddOp2(v, OP_MemIncr, 1, iMem);
+    sqlite3VdbeAddOp2(v, OP_AddImm, iMem, 1);
     for(i=0; i<nCol; i++){
       sqlite3VdbeAddOp2(v, OP_Column, iIdxCur, i);
       sqlite3VdbeAddOp1(v, OP_SCopy, iMem+nCol+i+1);
@@ -163,7 +163,7 @@ static void analyzeOneTable(
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
-      addr = sqlite3VdbeAddOp2(v, OP_MemIncr, 1, iMem+i+1);
+      addr = sqlite3VdbeAddOp2(v, OP_AddImm, iMem+i+1, 1);
       sqlite3VdbeChangeP2(v, topOfLoop + 3*i + 3, addr);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, iMem+nCol+i+1);
     }
@@ -200,7 +200,7 @@ static void analyzeOneTable(
       sqlite3VdbeAddOp1(v, OP_SCopy, iMem);
       sqlite3VdbeAddOp1(v, OP_SCopy, iMem+i+1);
       sqlite3VdbeAddOp0(v, OP_Add);
-      sqlite3VdbeAddOp1(v, OP_AddImm, -1);
+      sqlite3VdbeAddOp2(v, OP_AddImm, 0, -1);
       sqlite3VdbeAddOp1(v, OP_SCopy, iMem+i+1);
       sqlite3VdbeAddOp0(v, OP_Divide);
       sqlite3VdbeAddOp0(v, OP_ToInt);

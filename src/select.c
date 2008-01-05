@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.385 2008/01/05 04:06:04 drh Exp $
+** $Id: select.c,v 1.386 2008/01/05 05:20:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -395,7 +395,7 @@ static void pushOntoSorter(
   if( pSelect->iLimit>=0 ){
     int addr1, addr2;
     addr1 = sqlite3VdbeAddOp2(v, OP_IfMemZero, pSelect->iLimit+1, 0);
-    sqlite3VdbeAddOp2(v, OP_MemIncr, -1, pSelect->iLimit+1);
+    sqlite3VdbeAddOp2(v, OP_AddImm, pSelect->iLimit+1, -1);
     addr2 = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
     sqlite3VdbeJumpHere(v, addr1);
     sqlite3VdbeAddOp2(v, OP_Last, pOrderBy->iECursor, 0);
@@ -416,7 +416,7 @@ static void codeOffset(
 ){
   if( p->iOffset>=0 && iContinue!=0 ){
     int addr;
-    sqlite3VdbeAddOp2(v, OP_MemIncr, -1, p->iOffset);
+    sqlite3VdbeAddOp2(v, OP_AddImm, p->iOffset, -1);
     addr = sqlite3VdbeAddOp2(v, OP_IfMemNeg, p->iOffset, 0);
     if( nPop>0 ){
       sqlite3VdbeAddOp2(v, OP_Pop, nPop, 0);
@@ -703,7 +703,7 @@ static int selectInnerLoop(
   /* Jump to the end of the loop if the LIMIT is reached.
   */
   if( p->iLimit>=0 && pOrderBy==0 ){
-    sqlite3VdbeAddOp2(v, OP_MemIncr, -1, p->iLimit);
+    sqlite3VdbeAddOp2(v, OP_AddImm, p->iLimit, -1);
     sqlite3VdbeAddOp2(v, OP_IfMemZero, p->iLimit, iBreak);
   }
   return 0;
@@ -834,7 +834,7 @@ static void generateSortTail(
   /* Jump to the end of the loop when the LIMIT is reached
   */
   if( p->iLimit>=0 ){
-    sqlite3VdbeAddOp2(v, OP_MemIncr, -1, p->iLimit);
+    sqlite3VdbeAddOp2(v, OP_AddImm, p->iLimit, -1);
     sqlite3VdbeAddOp2(v, OP_IfMemZero, p->iLimit, brk);
   }
 
