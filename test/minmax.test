@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.19 2006/03/26 01:21:23 drh Exp $
+# $Id: minmax.test,v 1.20 2008/01/05 17:39:30 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -68,14 +68,14 @@ do_test minmax-1.5 {
 } {1}
 do_test minmax-1.6 {
   set sqlite_search_count
-} {2}
+} {1}
 do_test minmax-1.7 {
   set sqlite_search_count 0
   execsql {SELECT max(x) FROM t1}
 } {20}
 do_test minmax-1.8 {
   set sqlite_search_count
-} {1}
+} {0}
 do_test minmax-1.9 {
   set sqlite_search_count 0
   execsql {SELECT max(y) FROM t1}

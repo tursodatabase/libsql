@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.638 2008/01/04 19:10:29 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.639 2008/01/05 17:39:30 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1229,6 +1229,10 @@ struct WhereLevel {
   sqlite3_index_info *pIdxInfo;  /* Index info for n-th source table */
 };
 
+#define ORDERBY_NORMAL 0
+#define ORDERBY_MIN    1
+#define ORDERBY_MAX    2
+
 /*
 ** The WHERE clause processing routine has two halves.  The
 ** first part does the start of the WHERE loop and the second
@@ -1735,7 +1739,7 @@ int sqlite3IsReadOnly(Parse*, Table*, int);
 void sqlite3OpenTable(Parse*, int iCur, int iDb, Table*, int);
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
-WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**);
+WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**, u8);
 void sqlite3WhereEnd(WhereInfo*);
 void sqlite3ExprCodeGetColumn(Vdbe*, Table*, int, int, int);
 int sqlite3ExprCode(Parse*, Expr*, int);

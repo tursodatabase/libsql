@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.386 2008/01/05 05:20:10 drh Exp $
+** $Id: select.c,v 1.387 2008/01/05 17:39:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2626,6 +2626,33 @@ static int flattenSubquery(
 #endif /* SQLITE_OMIT_VIEW */
 
 /*
+** Analyze the SELECT statement passed as an argument to see if it
+** is a min() or max() query. Return ORDERBY_MIN or ORDERBY_MAX if 
+** it is, or 0 otherwise. At present, a query is considered to be
+** a min()/max() query if:
+**
+**   1. The result set contains exactly one element, either 
+**      min(x) or max(x), where x is a column identifier.
+*/
+static int minMaxQuery(Parse *pParse, Select *p){
+  Expr *pExpr;
+  ExprList *pEList = p->pEList;
+
+  if( pEList->nExpr!=1 ) return ORDERBY_NORMAL;
+  pExpr = pEList->a[0].pExpr;
+  pEList = pExpr->pList;
+  if( pExpr->op!=TK_AGG_FUNCTION || pEList==0 || pEList->nExpr!=1 ) return 0;
+  if( pEList->a[0].pExpr->op!=TK_AGG_COLUMN ) return ORDERBY_NORMAL;
+  if( pExpr->token.n!=3 ) return ORDERBY_NORMAL;
+  if( sqlite3StrNICmp((char*)pExpr->token.z,"min",3)==0 ){
+    return ORDERBY_MIN;
+  }else if( sqlite3StrNICmp((char*)pExpr->token.z,"max",3)==0 ){
+    return ORDERBY_MAX;
+  }
+  return ORDERBY_NORMAL;
+}
+
+/*
 ** Analyze the SELECT statement passed in as an argument to see if it
 ** is a simple min() or max() query.  If it is and this query can be
 ** satisfied using a single seek to the beginning or end of an index,
@@ -2645,6 +2672,7 @@ static int flattenSubquery(
 ** The parameters to this routine are the same as for sqlite3Select().
 ** See the header comment on that routine for additional information.
 */
+#if 0
 static int simpleMinMaxQuery(Parse *pParse, Select *p, SelectDest *pDest){
   Expr *pExpr;
   int iCol;
@@ -2781,6 +2809,7 @@ static int simpleMinMaxQuery(Parse *pParse, Select *p, SelectDest *pDest){
   
   return 1;
 }
+#endif 
 
 /*
 ** This routine resolves any names used in the result set of the
@@ -3268,10 +3297,12 @@ int sqlite3Select(
   /* Check for the special case of a min() or max() function by itself
   ** in the result set.
   */
+#if 0
   if( simpleMinMaxQuery(pParse, p, pDest) ){
     rc = 0;
     goto select_end;
   }
+#endif
 
   /* Check to see if this is a subquery that can be "flattened" into its parent.
   ** If flattening is a possiblity, do so and return immediately.  
@@ -3345,7 +3376,7 @@ int sqlite3Select(
     /* This case is for non-aggregate queries
     ** Begin the database scan
     */
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pOrderBy);
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pOrderBy, 0);
     if( pWInfo==0 ) goto select_end;
 
     /* If sorting index that was created by a prior OP_OpenEphemeral 
@@ -3501,7 +3532,7 @@ int sqlite3Select(
       */
       sqlite3VdbeResolveLabel(v, addrInitializeLoop);
       sqlite3VdbeAddOp2(v, OP_Gosub, 0, addrReset);
-      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy);
+      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy, 0);
       if( pWInfo==0 ) goto select_end;
       if( pGroupBy==0 ){
         /* The optimizer is able to deliver rows in group by order so
@@ -3606,14 +3637,30 @@ int sqlite3Select(
       
     } /* endif pGroupBy */
     else {
+      ExprList *pMinMax = 0;
+      u8 flag;
+
+      flag = minMaxQuery(pParse, p);
+      if( flag ){
+        pMinMax = sqlite3ExprListDup(db, p->pEList->a[0].pExpr->pList);
+        if( pMinMax ){
+          pMinMax->a[0].sortOrder = ((flag==ORDERBY_MIN)?0:1);
+          pMinMax->a[0].pExpr->op = TK_COLUMN;
+        }
+      }
+
       /* This case runs if the aggregate has no GROUP BY clause.  The
       ** processing is much simpler since there is only a single row
       ** of output.
       */
       resetAccumulator(pParse, &sAggInfo);
-      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0);
+      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pMinMax, flag);
       if( pWInfo==0 ) goto select_end;
       updateAccumulator(pParse, &sAggInfo);
+      if( !pMinMax && flag ){
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, pWInfo->iBreak);
+        VdbeComment((v, "%s() by index", (flag==ORDERBY_MIN?"min":"max")));
+      }
       sqlite3WhereEnd(pWInfo);
       finalizeAggFunctions(pParse, &sAggInfo);
       pOrderBy = 0;
@@ -3622,6 +3669,8 @@ int sqlite3Select(
       }
       selectInnerLoop(pParse, p, p->pEList, 0, 0, 0, -1, 
                       pDest, addrEnd, addrEnd, aff);
+
+      sqlite3ExprListDelete(pMinMax);
     }
     sqlite3VdbeResolveLabel(v, addrEnd);
     

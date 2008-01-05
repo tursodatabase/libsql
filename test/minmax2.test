@@ -15,7 +15,7 @@
 # optimization works right in the presence of descending
 # indices.  Ticket #2514.
 #
-# $Id: minmax2.test,v 1.1 2007/07/18 18:17:12 drh Exp $
+# $Id: minmax2.test,v 1.2 2008/01/05 17:39:30 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -71,14 +71,14 @@ do_test minmax2-1.5 {
 } {1}
 do_test minmax2-1.6 {
   set sqlite_search_count
-} {2}
+} {1}
 do_test minmax2-1.7 {
   set sqlite_search_count 0
   execsql {SELECT max(x) FROM t1}
 } {20}
 do_test minmax2-1.8 {
   set sqlite_search_count
-} {1}
+} {0}
 do_test minmax2-1.9 {
   set sqlite_search_count 0
   execsql {SELECT max(y) FROM t1}

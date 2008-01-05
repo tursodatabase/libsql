@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.275 2008/01/05 05:38:21 drh Exp $
+** $Id: where.c,v 1.276 2008/01/05 17:39:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1969,7 +1969,8 @@ WhereInfo *sqlite3WhereBegin(
   Parse *pParse,        /* The parser context */
   SrcList *pTabList,    /* A list of all tables to be scanned */
   Expr *pWhere,         /* The WHERE clause */
-  ExprList **ppOrderBy  /* An ORDER BY clause, or NULL */
+  ExprList **ppOrderBy, /* An ORDER BY clause, or NULL */
+  u8 obflag             /* One of ORDERBY_MIN, ORDERBY_MAX or ORDERBY_NORMAL */
 ){
   int i;                     /* Loop counter */
   WhereInfo *pWInfo;         /* Will become the return value of this function */
@@ -1984,6 +1985,7 @@ WhereInfo *sqlite3WhereBegin(
   int iFrom;                      /* First unused FROM clause element */
   int andFlags;              /* AND-ed combination of all wc.a[].flags */
   sqlite3 *db;               /* Database connection */
+  ExprList *pOrderBy = 0;
 
   /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask 
@@ -1991,6 +1993,10 @@ WhereInfo *sqlite3WhereBegin(
   if( pTabList->nSrc>BMS ){
     sqlite3ErrorMsg(pParse, "at most %d tables in a join", BMS);
     return 0;
+  }
+
+  if( ppOrderBy ){
+    pOrderBy = *ppOrderBy;
   }
 
   /* Split the WHERE clause into separate subexpressions where each
@@ -2400,6 +2406,7 @@ WhereInfo *sqlite3WhereBegin(
       int testOp;
       int topLimit = (pLevel->flags & WHERE_TOP_LIMIT)!=0;
       int btmLimit = (pLevel->flags & WHERE_BTM_LIMIT)!=0;
+      int isMinQuery = 0;      /* If this is an optimized SELECT min(x) ... */
 
       /* Generate code to evaluate all constraint terms using == or IN
       ** and level the values of those terms on the stack.
@@ -2428,6 +2435,22 @@ WhereInfo *sqlite3WhereBegin(
         SWAP(int, topLimit, btmLimit);
       }
 
+      /* If this loop satisfies a sort order (pOrderBy) request that 
+      ** was passed to this function to implement a "SELECT min(x) ..." 
+      ** query, then the caller will only allow the loop to run for
+      ** a single iteration. This means that the first row returned
+      ** should not have a NULL value stored in 'x'. If column 'x' is
+      ** the first one after the nEq equality constraints in the index,
+      ** this requires some special handling.
+      */
+      if( (obflag==ORDERBY_MIN)
+       && (pLevel->flags&WHERE_ORDERBY)
+       && (pIdx->nColumn>nEq)
+       && (pOrderBy->a[0].pExpr->iColumn==pIdx->aiColumn[nEq])
+      ){
+        isMinQuery = 1;
+      }
+
       /* Generate the termination key.  This is the key value that
       ** will end the search.  There is no termination key if there
       ** are no equality terms and no "X<..." term.
@@ -2452,9 +2475,14 @@ WhereInfo *sqlite3WhereBegin(
         testOp = nEq>0 ? OP_IdxGE : OP_Noop;
         topEq = 1;
       }
-      if( testOp!=OP_Noop ){
+      if( testOp!=OP_Noop || (isMinQuery&&bRev) ){
         int nCol = nEq + topLimit;
         pLevel->iMem = ++pParse->nMem;
+        if( isMinQuery && !topLimit ){
+          nCol++;
+          sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
+          topEq = 0;
+        }
         buildIndexProbe(v, nCol, pIdx);
         if( bRev ){
           int op = topEq ? OP_MoveLe : OP_MoveLt;
@@ -2465,7 +2493,7 @@ WhereInfo *sqlite3WhereBegin(
       }else if( bRev ){
         sqlite3VdbeAddOp2(v, OP_Last, iIdxCur, brk);
       }
-
+   
       /* Generate the start key.  This is the key that defines the lower
       ** bound on the search.  There is no start key if there are no
       ** equality terms and if there is no "X>..." term.  In
@@ -2489,8 +2517,13 @@ WhereInfo *sqlite3WhereBegin(
       }else{
         btmEq = 1;
       }
-      if( nEq>0 || btmLimit ){
+      if( nEq>0 || btmLimit || (isMinQuery&&!bRev) ){
         int nCol = nEq + btmLimit;
+        if( isMinQuery && !btmLimit ){
+          nCol++;
+          sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
+          btmEq = 0;
+        }
         buildIndexProbe(v, nCol, pIdx);
         if( bRev ){
           pLevel->iMem = ++pParse->nMem;
@@ -2538,6 +2571,7 @@ WhereInfo *sqlite3WhereBegin(
       */
       int start;
       int nEq = pLevel->nEq;
+      int isMinQuery = 0;      /* If this is an optimized SELECT min(x) ... */
 
       /* Generate code to evaluate all constraint terms using == or IN
       ** and leave the values of those terms on the stack.
@@ -2545,11 +2579,28 @@ WhereInfo *sqlite3WhereBegin(
       codeAllEqualityTerms(pParse, pLevel, &wc, notReady);
       nxt = pLevel->nxt;
 
-      /* Generate a single key that will be used to both start and terminate
-      ** the search
-      */
-      buildIndexProbe(v, nEq, pIdx);
-      sqlite3VdbeAddOp2(v, OP_Copy, 0, pLevel->iMem);
+      if( (obflag==ORDERBY_MIN)
+       && (pLevel->flags&WHERE_ORDERBY) 
+       && (pIdx->nColumn>nEq)
+       && (pOrderBy->a[0].pExpr->iColumn==pIdx->aiColumn[nEq])
+      ){
+        int h;
+        isMinQuery = 1;
+        for(h=0; h<nEq; h++){
+          sqlite3VdbeAddOp1(v, OP_Copy, 1-nEq);
+        }
+        buildIndexProbe(v, nEq, pIdx);
+        sqlite3VdbeAddOp2(v, OP_Copy, 0, pLevel->iMem);
+        sqlite3VdbeAddOp2(v, OP_Pop, 1, 0);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
+        buildIndexProbe(v, nEq+1, pIdx);
+      }else{
+        /* Generate a single key that will be used to both start and 
+        ** terminate the search
+        */
+        buildIndexProbe(v, nEq, pIdx);
+        sqlite3VdbeAddOp2(v, OP_Copy, 0, pLevel->iMem);
+      }
 
       /* Generate code (1) to move to the first matching element of the table.
       ** Then generate code (2) that jumps to "nxt" after the cursor is past
@@ -2558,13 +2609,13 @@ WhereInfo *sqlite3WhereBegin(
       ** iteration of the scan to see if the scan has finished. */
       if( bRev ){
         /* Scan in reverse order */
-        sqlite3VdbeAddOp2(v, OP_MoveLe, iIdxCur, nxt);
+        sqlite3VdbeAddOp2(v, (isMinQuery?OP_MoveLt:OP_MoveLe), iIdxCur, nxt);
         start = sqlite3VdbeAddOp2(v, OP_SCopy, pLevel->iMem, 0);
         sqlite3VdbeAddOp2(v, OP_IdxLT, iIdxCur, nxt);
         pLevel->op = OP_Prev;
       }else{
         /* Scan in the forward order */
-        sqlite3VdbeAddOp2(v, OP_MoveGe, iIdxCur, nxt);
+        sqlite3VdbeAddOp2(v, (isMinQuery?OP_MoveGt:OP_MoveGe), iIdxCur, nxt);
         start = sqlite3VdbeAddOp2(v, OP_SCopy, pLevel->iMem, 0);
         sqlite3VdbeAddOp4(v, OP_IdxGE, iIdxCur, nxt, 0, "+", P4_STATIC);
         pLevel->op = OP_Next;
