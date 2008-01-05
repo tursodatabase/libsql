@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.333 2008/01/05 06:51:30 drh Exp $
+** $Id: expr.c,v 1.334 2008/01/05 16:29:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2086,6 +2086,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
     case TK_LSHIFT:
     case TK_RSHIFT: 
     case TK_CONCAT: {
+      int r1, r2;
       assert( TK_AND==OP_And );
       assert( TK_OR==OP_Or );
       assert( TK_PLUS==OP_Add );
@@ -2097,10 +2098,13 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       assert( TK_LSHIFT==OP_ShiftLeft );
       assert( TK_RSHIFT==OP_ShiftRight );
       assert( TK_CONCAT==OP_Concat );
-      sqlite3ExprCode(pParse, pExpr->pLeft, 0);
-      sqlite3ExprCode(pParse, pExpr->pRight, 0);
-      sqlite3VdbeAddOp0(v, op);
-      stackChng = -1;
+      r1 = sqlite3ExprCode(pParse, pExpr->pLeft, 0);
+      r2 = sqlite3ExprCode(pParse, pExpr->pRight, 0);
+      sqlite3VdbeAddOp3(v, op, r2, r1, target);
+      if( r1==0 ) stackChng--;
+      if( r2==0 ) stackChng--;
+      if( target==0 ) stackChng++;
+      inReg = target;
       break;
     }
     case TK_UMINUS: {
@@ -2349,8 +2353,12 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
     }
 #endif
   }
-  if( inReg!=target && origTarget!=-1 ){
-    sqlite3VdbeAddOp2(v, (inReg>0 ? OP_SCopy : OP_Move), inReg, target);
+  if( inReg!=target ){
+    if( origTarget!=-1 ){
+      sqlite3VdbeAddOp2(v, (inReg>0 ? OP_SCopy : OP_Move), inReg, target);
+    }else{
+      target = inReg;
+    }
     stackChng = 0;
   }
   if( pParse->ckOffset ){

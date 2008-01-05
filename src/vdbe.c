@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.683 2008/01/05 06:51:32 drh Exp $
+** $Id: vdbe.c,v 1.684 2008/01/05 16:29:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -178,7 +178,7 @@ static void _storeTypeInfo(Mem *pMem){
 ** from the comments following the "case OP_xxxx:" statements in
 ** this file.  
 */
-static unsigned char opcodeProperty[] = OPFLG_INITIALIZER;
+static unsigned short opcodeProperty[] = OPFLG_INITIALIZER;
 
 /*
 ** Return true if an opcode has any of the OPFLG_xxx properties
@@ -396,6 +396,39 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
 }
 #endif
 
+#ifdef SQLITE_DEBUG
+/*
+** Print the value of a register for tracing purposes:
+*/
+static void memTracePrint(FILE *out, Mem *p){
+  if( p->flags & MEM_Null ){
+    fprintf(out, " NULL");
+  }else if( (p->flags & (MEM_Int|MEM_Str))==(MEM_Int|MEM_Str) ){
+    fprintf(out, " si:%lld", p->u.i);
+  }else if( p->flags & MEM_Int ){
+    fprintf(out, " i:%lld", p->u.i);
+  }else if( p->flags & MEM_Real ){
+    fprintf(out, " r:%g", p->r);
+  }else{
+    char zBuf[200];
+    sqlite3VdbeMemPrettyPrint(p, zBuf);
+    fprintf(out, " ");
+    fprintf(out, "%s", zBuf);
+  }
+}
+static void registerTrace(FILE *out, int iReg, Mem *p){
+  fprintf(out, "REG[%d] = ", iReg);
+  memTracePrint(out, p);
+  fprintf(out, "\n");
+}
+#endif
+
+#ifdef SQLITE_DEBUG
+#  define REGISTER_TRACE(R,M) if(p->trace&&R>0)registerTrace(p->trace,R,M)
+#else
+#  define REGISTER_TRACE(R,M)
+#endif
+
 
 #ifdef VDBE_PROFILE
 /*
@@ -467,7 +500,7 @@ int sqlite3VdbeExec(
   sqlite3 *db = p->db;       /* The database */
   u8 encoding = ENC(db);     /* The database encoding */
   Mem *pTos;                 /* Top entry in the operand stack */
-  Mem *pIn1, *pIn2;          /* Input operands */
+  Mem *pIn1, *pIn2, *pIn3;   /* Input operands */
   Mem *pOut;                 /* Output operand */
   int nPop = 0;              /* Number of times to pop the stack */
   u8 opProperty;
@@ -632,6 +665,7 @@ int sqlite3VdbeExec(
       }else{
         assert( pOp->p1<=p->nMem );
         pIn1 = &p->aMem[pOp->p1];
+        REGISTER_TRACE(pOp->p1, pIn1);
       }
       if( (opProperty & OPFLG_IN2)!=0 ){
         assert( pOp->p2>=0 );
@@ -641,13 +675,18 @@ int sqlite3VdbeExec(
         }else{
           assert( pOp->p2<=p->nMem );
           pIn2 = &p->aMem[pOp->p2];
+          REGISTER_TRACE(pOp->p2, pIn2);
         }
         if( (opProperty & OPFLG_OUT3)!=0 ){
           assert( pOp->p3>=0 );
           if( pOp->p3==0 ){
-            pTos++;
+            nPop--;
+            if( nPop<0 ){
+              assert( nPop==(-1) );
+              pTos++;
+              nPop = 0;
+            }
             pOut = &pTos[-nPop];
-            pOut->flags = MEM_Null;
           }else{
             assert( pOp->p3<=p->nMem );
             pOut = &p->aMem[pOp->p3];
@@ -656,18 +695,23 @@ int sqlite3VdbeExec(
       }else if( (opProperty & OPFLG_IN3)!=0 ){
         assert( pOp->p3>=0 );
         if( pOp->p3==0 ){
-          pIn2 = &pTos[-nPop];
+          pIn3 = &pTos[-nPop];
           nPop++;
         }else{
           assert( pOp->p3<=p->nMem );
-          pIn2 = &p->aMem[pOp->p3];
+          pIn3 = &p->aMem[pOp->p3];
+          REGISTER_TRACE(pOp->p3, pIn3);
         }
       }else if( (opProperty & OPFLG_OUT2)!=0 ){
         assert( pOp->p2>=0 );
         if( pOp->p2==0 ){
-          pTos++;
+          nPop--;
+          if( nPop<0 ){
+            assert( nPop==(-1) );
+            pTos++;
+            nPop = 0;
+          }
           pOut = &pTos[-nPop];
-          pOut->flags = MEM_Null;
         }else{
           assert( pOp->p2<=p->nMem );
           pOut = &p->aMem[pOp->p2];
@@ -1047,6 +1091,7 @@ case OP_SCopy: {
   }else{
     assert( pOp->p1<=p->nMem );
     pIn1 = &p->aMem[pOp->p1];
+    REGISTER_TRACE(pOp->p1, pIn1);
   }
   assert( pOp->p2>=0 );
   if( pOp->p2==0 ){
@@ -1065,6 +1110,7 @@ case OP_SCopy: {
       Deephemeralize(pOut);
     }
   }
+  REGISTER_TRACE(pOp->p2, pOut);
   break;
 }
 
@@ -1217,79 +1263,43 @@ case OP_ResultRow: {            /* no-push */
   goto vdbe_return;
 }
 
-/* Opcode: Concat P1 P2 *
+/* Opcode: Concat P1 P2 P3 * *
 **
-** Look at the first P1+2 elements of the stack.  Append them all 
-** together with the lowest element first.  The original P1+2 elements
-** are popped from the stack if P2==0 and retained if P2==1.  If
-** any element of the stack is NULL, then the result is NULL.
-**
-** When P1==1, this routine makes a copy of the top stack element
-** into memory obtained from sqlite3_malloc().
+** Add the text in register P1 onto the end of the text in
+** register P2 and store the result in register P3.
+** If either the P1 or P2 text are NULL then store NULL in P3.
 */
-case OP_Concat: {           /* same as TK_CONCAT */
+case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
   char *zNew;
   i64 nByte;
-  int nField;
-  int i, j;
-  Mem *pTerm;
 
-  /* Loop through the stack elements to see how long the result will be. */
-  nField = pOp->p1 + 2;
-  pTerm = &pTos[1-nField];
-  nByte = 0;
-  for(i=0; i<nField; i++, pTerm++){
-    assert( pOp->p2==0 || (pTerm->flags&MEM_Str) );
-    if( pTerm->flags&MEM_Null ){
-      nByte = -1;
-      break;
-    }
-    ExpandBlob(pTerm);
-    Stringify(pTerm, encoding);
-    nByte += pTerm->n;
+  if( (pIn1->flags | pIn2->flags) & MEM_Null ){
+    Release(pOut);
+    pOut->flags = MEM_Null;
+    break;
   }
-
-  if( nByte<0 ){
-    /* If nByte is less than zero, then there is a NULL value on the stack.
-    ** In this case just pop the values off the stack (if required) and
-    ** push on a NULL.
-    */
-    if( pOp->p2==0 ){
-      popStack(&pTos, nField);
-    }
-    pTos++;
-    pTos->flags = MEM_Null;
-  }else{
-    /* Otherwise malloc() space for the result and concatenate all the
-    ** stack values.
-    */
-    if( nByte+2>SQLITE_MAX_LENGTH ){
-      goto too_big;
-    }
-    zNew = sqlite3DbMallocRaw(db, nByte+2 );
-    if( zNew==0 ) goto no_mem;
-    j = 0;
-    pTerm = &pTos[1-nField];
-    for(i=j=0; i<nField; i++, pTerm++){
-      int n = pTerm->n;
-      assert( pTerm->flags & (MEM_Str|MEM_Blob) );
-      memcpy(&zNew[j], pTerm->z, n);
-      j += n;
-    }
-    zNew[j] = 0;
-    zNew[j+1] = 0;
-    assert( j==nByte );
-
-    if( pOp->p2==0 ){
-      popStack(&pTos, nField);
-    }
-    pTos++;
-    pTos->n = j;
-    pTos->flags = MEM_Str|MEM_Dyn|MEM_Term;
-    pTos->xDel = 0;
-    pTos->enc = encoding;
-    pTos->z = zNew;
+  ExpandBlob(pIn1);
+  Stringify(pIn1, encoding);
+  ExpandBlob(pIn2);
+  Stringify(pIn2, encoding);
+  nByte = pIn1->n + pIn2->n;
+  if( nByte>SQLITE_MAX_LENGTH ){
+    goto too_big;
   }
+  zNew = sqlite3DbMallocRaw(db, nByte+2);
+  if( zNew==0 ){
+    goto no_mem;
+  }
+  memcpy(zNew, pIn2->z, pIn2->n);
+  memcpy(&zNew[pIn2->n], pIn1->z, pIn1->n);
+  zNew[nByte] = 0;
+  zNew[nByte+1] = 0;
+  Release(pOut);
+  pOut->n = nByte;
+  pOut->flags = MEM_Str|MEM_Dyn|MEM_Term;
+  pOut->xDel = 0;
+  pOut->enc = encoding;
+  pOut->z = zNew;
   break;
 }
 
@@ -1339,24 +1349,20 @@ case OP_Concat: {           /* same as TK_CONCAT */
 ** function before the division.  Division by zero returns NULL.
 ** If either operand is NULL, the result is NULL.
 */
-case OP_Add:                   /* same as TK_PLUS, no-push */
-case OP_Subtract:              /* same as TK_MINUS, no-push */
-case OP_Multiply:              /* same as TK_STAR, no-push */
-case OP_Divide:                /* same as TK_SLASH, no-push */
-case OP_Remainder: {           /* same as TK_REM, no-push */
-  Mem *pNos = &pTos[-1];
+case OP_Add:                   /* same as TK_PLUS, in1, in2, out3 */
+case OP_Subtract:              /* same as TK_MINUS, in1, in2, out3 */
+case OP_Multiply:              /* same as TK_STAR, in1, in2, out3 */
+case OP_Divide:                /* same as TK_SLASH, in1, in2, out3 */
+case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
   int flags;
-  assert( pNos>=p->aStack );
-  flags = pTos->flags | pNos->flags;
+  flags = pIn1->flags | pIn2->flags;
   if( (flags & MEM_Null)!=0 ){
-    Release(pTos);
-    pTos--;
-    Release(pTos);
-    pTos->flags = MEM_Null;
-  }else if( (pTos->flags & pNos->flags & MEM_Int)==MEM_Int ){
+    Release(pOut);
+    pOut->flags = MEM_Null;
+  }else if( (pIn1->flags & pIn2->flags & MEM_Int)==MEM_Int ){
     i64 a, b;
-    a = pTos->u.i;
-    b = pNos->u.i;
+    a = pIn1->u.i;
+    b = pIn2->u.i;
     switch( pOp->opcode ){
       case OP_Add:         b += a;       break;
       case OP_Subtract:    b -= a;       break;
@@ -1381,15 +1387,13 @@ case OP_Remainder: {           /* same as TK_REM, no-push */
         break;
       }
     }
-    Release(pTos);
-    pTos--;
-    Release(pTos);
-    pTos->u.i = b;
-    pTos->flags = MEM_Int;
+    Release(pOut);
+    pOut->u.i = b;
+    pOut->flags = MEM_Int;
   }else{
     double a, b;
-    a = sqlite3VdbeRealValue(pTos);
-    b = sqlite3VdbeRealValue(pNos);
+    a = sqlite3VdbeRealValue(pIn1);
+    b = sqlite3VdbeRealValue(pIn2);
     switch( pOp->opcode ){
       case OP_Add:         b += a;       break;
       case OP_Subtract:    b -= a;       break;
@@ -1411,22 +1415,18 @@ case OP_Remainder: {           /* same as TK_REM, no-push */
     if( sqlite3_isnan(b) ){
       goto divide_by_zero;
     }
-    Release(pTos);
-    pTos--;
-    Release(pTos);
-    pTos->r = b;
-    pTos->flags = MEM_Real;
+    Release(pOut);
+    pOut->r = b;
+    pOut->flags = MEM_Real;
     if( (flags & MEM_Real)==0 ){
-      sqlite3VdbeIntegerAffinity(pTos);
+      sqlite3VdbeIntegerAffinity(pOut);
     }
   }
   break;
 
 divide_by_zero:
-  Release(pTos);
-  pTos--;
-  Release(pTos);
-  pTos->flags = MEM_Null;
+  Release(pOut);
+  pOut->flags = MEM_Null;
   break;
 }
 
@@ -1569,22 +1569,19 @@ case OP_Function: {
 ** right by N bits where N is the top element on the stack.
 ** If either operand is NULL, the result is NULL.
 */
-case OP_BitAnd:                 /* same as TK_BITAND, no-push */
-case OP_BitOr:                  /* same as TK_BITOR, no-push */
-case OP_ShiftLeft:              /* same as TK_LSHIFT, no-push */
-case OP_ShiftRight: {           /* same as TK_RSHIFT, no-push */
-  Mem *pNos = &pTos[-1];
+case OP_BitAnd:                 /* same as TK_BITAND, in1, in2, out3 */
+case OP_BitOr:                  /* same as TK_BITOR, in1, in2, out3 */
+case OP_ShiftLeft:              /* same as TK_LSHIFT, in1, in2, out3 */
+case OP_ShiftRight: {           /* same as TK_RSHIFT, in1, in2, out3 */
   i64 a, b;
 
-  assert( pNos>=p->aStack );
-  if( (pTos->flags | pNos->flags) & MEM_Null ){
-    popStack(&pTos, 2);
-    pTos++;
-    pTos->flags = MEM_Null;
+  if( (pIn1->flags | pIn2->flags) & MEM_Null ){
+    Release(pOut);
+    pOut->flags = MEM_Null;
     break;
   }
-  a = sqlite3VdbeIntValue(pNos);
-  b = sqlite3VdbeIntValue(pTos);
+  a = sqlite3VdbeIntValue(pIn2);
+  b = sqlite3VdbeIntValue(pIn1);
   switch( pOp->opcode ){
     case OP_BitAnd:      a &= b;     break;
     case OP_BitOr:       a |= b;     break;
@@ -1592,11 +1589,9 @@ case OP_ShiftRight: {           /* same as TK_RSHIFT, no-push */
     case OP_ShiftRight:  a >>= b;    break;
     default:   /* CANT HAPPEN */     break;
   }
-  Release(pTos);
-  pTos--;
-  Release(pTos);
-  pTos->u.i = a;
-  pTos->flags = MEM_Int;
+  Release(pOut);
+  pOut->u.i = a;
+  pOut->flags = MEM_Int;
   break;
 }
 
@@ -1664,6 +1659,7 @@ case OP_MustBeInt: {            /* no-push, jump */
   Mem *pMem = ((pOp->p3==0)?pTos:&p->aMem[pOp->p3]);
   assert( pOp->p3 || pTos>=p->aStack );
   assert( pOp->p3>=0 && pOp->p3<=p->nMem );
+  REGISTER_TRACE(pOp->p3, pMem);
   applyAffinity(pMem, SQLITE_AFF_NUMERIC, encoding);
   if( (pMem->flags & MEM_Int)==0 ){
     if( pOp->p2==0 ){
@@ -1943,50 +1939,51 @@ case OP_Ge: {             /* same as TK_GE, no-push, jump */
   break;
 }
 
-/* Opcode: And * * *
+/* Opcode: And P1 P2 P3 * *
 **
-** Pop two values off the stack.  Take the logical AND of the
-** two values and push the resulting boolean value back onto the
-** stack. 
-*/
-/* Opcode: Or * * *
+** Take the logical AND of the values in registers P1 and P2 and
+** write the result into register P3.
 **
-** Pop two values off the stack.  Take the logical OR of the
-** two values and push the resulting boolean value back onto the
-** stack. 
+** If either P1 or P2 is 0 (false) then the result is 0 even if
+** the other input is NULL.  A NULL and true or two NULLs give
+** a NULL output.
 */
-case OP_And:              /* same as TK_AND, no-push */
-case OP_Or: {             /* same as TK_OR, no-push */
-  Mem *pNos = &pTos[-1];
-  int v1, v2;    /* 0==TRUE, 1==FALSE, 2==UNKNOWN or NULL */
+/* Opcode: Or P1 P2 P3 * *
+**
+** Take the logical OR of the values in register P1 and P2 and
+** store the answer in register P3.
+**
+** If either P1 or P2 is nonzero (true) then the result is 1 (true)
+** even if the other input is NULL.  A NULL and false or two NULLs
+** give a NULL output.
+*/
+case OP_And:              /* same as TK_AND, in1, in2, out3 */
+case OP_Or: {             /* same as TK_OR, in1, in2, out3 */
+  int v1, v2;    /* 0==FALSE, 1==TRUE, 2==UNKNOWN or NULL */
 
-  assert( pNos>=p->aStack );
-  if( pTos->flags & MEM_Null ){
+  if( pIn1->flags & MEM_Null ){
     v1 = 2;
   }else{
-    sqlite3VdbeMemIntegerify(pTos);
-    v1 = pTos->u.i==0;
+    v1 = sqlite3VdbeIntValue(pIn1)!=0;
   }
-  if( pNos->flags & MEM_Null ){
+  if( pIn2->flags & MEM_Null ){
     v2 = 2;
   }else{
-    sqlite3VdbeMemIntegerify(pNos);
-    v2 = pNos->u.i==0;
+    v2 = sqlite3VdbeIntValue(pIn2)!=0;
   }
   if( pOp->opcode==OP_And ){
-    static const unsigned char and_logic[] = { 0, 1, 2, 1, 1, 1, 2, 1, 2 };
+    static const unsigned char and_logic[] = { 0, 0, 0, 0, 1, 2, 0, 2, 2 };
     v1 = and_logic[v1*3+v2];
   }else{
-    static const unsigned char or_logic[] = { 0, 0, 0, 0, 1, 2, 0, 2, 2 };
+    static const unsigned char or_logic[] = { 0, 1, 2, 1, 1, 1, 2, 1, 2 };
     v1 = or_logic[v1*3+v2];
   }
-  popStack(&pTos, 2);
-  pTos++;
+  Release(pOut);
   if( v1==2 ){
-    pTos->flags = MEM_Null;
+    pOut->flags = MEM_Null;
   }else{
-    pTos->u.i = v1==0;
-    pTos->flags = MEM_Int;
+    pOut->u.i = v1;
+    pOut->flags = MEM_Int;
   }
   break;
 }
@@ -2425,6 +2422,7 @@ case OP_Column: {
   rc = sqlite3VdbeMemMakeWriteable(pDest);
 
 op_column_out:
+  REGISTER_TRACE(pOp->p3, pDest);
   break;
 }
 
@@ -3504,6 +3502,7 @@ case OP_NotExists: {        /* no-push, jump */
   if( pOp->p3 ){
     assert( pOp->p3<=p->nMem );
     pKey = &p->aMem[pOp->p3];
+    REGISTER_TRACE(pOp->p3, pKey);
   }else{
     pKey = pTos;
     assert( pTos>=p->aStack );
@@ -3658,6 +3657,7 @@ case OP_NewRowid: {           /* out2-prerelease */
         Mem *pMem;
         assert( pOp->p3>0 && pOp->p3<=p->nMem ); /* P3 is a valid memory cell */
         pMem = &p->aMem[pOp->p3];
+	REGISTER_TRACE(pOp->p3, pMem);
         sqlite3VdbeMemIntegerify(pMem);
         assert( (pMem->flags & MEM_Int)!=0 );  /* mem(P3) holds an integer */
         if( pMem->u.i==MAX_ROWID || pC->useRandomRowid ){
@@ -3739,6 +3739,8 @@ case OP_Insert: {         /* no-push */
   Cursor *pC;
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
+  REGISTER_TRACE(pOp->p2, pData);
+  REGISTER_TRACE(pOp->p3, pKey);
   if( ((pC = p->apCsr[i])->pCursor!=0 || pC->pseudoTable) ){
     i64 iKey;   /* The integer ROWID or key for the record to be inserted */
 
@@ -3962,6 +3964,7 @@ case OP_RowData: {
     pOut->flags = MEM_Null;
   }
   pOut->enc = SQLITE_UTF8;  /* In case the blob is ever cast to text */
+  REGISTER_TRACE(pOp->p3, pOut);
   break;
 }
 
@@ -4646,6 +4649,7 @@ case OP_IntegrityCk: {
 case OP_FifoWrite: {        /* no-push */
   Mem *pReg = &p->aMem[pOp->p1];
   assert( pOp->p1>0 && pOp->p1<=p->nMem );
+  REGISTER_TRACE(pOp->p1, pReg);
   sqlite3VdbeMemIntegerify(pReg);
   if( sqlite3VdbeFifoPush(&p->sFifo, pReg->u.i)==SQLITE_NOMEM ){
     goto no_mem;
@@ -4671,6 +4675,7 @@ case OP_FifoRead: {         /* jump */
     Mem *pOut = &p->aMem[pOp->p1];
     assert( pOp->p1>0 && pOp->p1<=p->nMem );
     sqlite3VdbeMemSetInt64(pOut, v);
+    REGISTER_TRACE(pOp->p1, pOut);
   }
   break;
 }
@@ -5084,6 +5089,8 @@ case OP_VFilter: {   /* no-push, jump */
   Mem *pArgc = &pQuery[1];
 
   Cursor *pCur = p->apCsr[pOp->p1];
+
+  REGISTER_TRACE(pOp->p3, pQuery);
   assert( pCur->pVtabCursor );
   pModule = pCur->pVtabCursor->pVtab->pModule;
 
@@ -5184,6 +5191,7 @@ case OP_VColumn: {
     if( pOp->p3>0 ){
       assert( pOp->p3<=p->nMem );
       pDest = &p->aMem[pOp->p3];
+      REGISTER_TRACE(pOp->p3, pDest);
     }else{
       pDest = ++pTos;
       pDest->flags = 0;
@@ -5256,6 +5264,7 @@ case OP_VRename: {   /* no-push */
   sqlite3_vtab *pVtab = pOp->p4.pVtab;
   Mem *pName = &p->aMem[pOp->p1];
   assert( pVtab->pModule->xRename );
+  REGISTER_TRACE(pOp->p1, pName);
 
   Stringify(pName, encoding);
 
@@ -5391,27 +5400,22 @@ default: {
 
 #ifdef SQLITE_DEBUG
     /* Code for tracing the vdbe stack. */
-    if( p->trace && pTos>=p->aStack ){
-      int i;
-      fprintf(p->trace, "Stack:");
-      for(i=0; i>-5 && &pTos[i]>=p->aStack; i--){
-        if( pTos[i].flags & MEM_Null ){
-          fprintf(p->trace, " NULL");
-        }else if( (pTos[i].flags & (MEM_Int|MEM_Str))==(MEM_Int|MEM_Str) ){
-          fprintf(p->trace, " si:%lld", pTos[i].u.i);
-        }else if( pTos[i].flags & MEM_Int ){
-          fprintf(p->trace, " i:%lld", pTos[i].u.i);
-        }else if( pTos[i].flags & MEM_Real ){
-          fprintf(p->trace, " r:%g", pTos[i].r);
-        }else{
-          char zBuf[200];
-          sqlite3VdbeMemPrettyPrint(&pTos[i], zBuf);
-          fprintf(p->trace, " ");
-          fprintf(p->trace, "%s", zBuf);
-        }
+    if( p->trace ){
+      if( rc!=0 ) fprintf(p->trace,"rc=%d\n",rc);
+      if( (opProperty&(OPFLG_OUT2_PRERELEASE|OPFLG_OUT2))!=0 && pOp->p2>0 ){
+        registerTrace(p->trace, pOp->p2, pOut);
       }
-      if( rc!=0 ) fprintf(p->trace," rc=%d",rc);
-      fprintf(p->trace,"\n");
+      if( (opProperty&OPFLG_OUT3)!=0 && pOp->p3>0 ){
+        registerTrace(p->trace, pOp->p3, pOut);
+      }
+      if( pTos>=p->aStack ){
+        int i;
+        fprintf(p->trace, "Stack:");
+        for(i=0; i>-5 && &pTos[i]>=p->aStack; i--){
+          memTracePrint(p->trace, &pTos[i]);
+        }
+        fprintf(p->trace,"\n");
+      }
     }
 #endif  /* SQLITE_DEBUG */
 #endif  /* NDEBUG */

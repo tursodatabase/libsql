@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.33 2008/01/05 05:20:10 drh Exp $
+** @(#) $Id: analyze.c,v 1.34 2008/01/05 16:29:28 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -159,7 +159,7 @@ static void analyzeOneTable(
     for(i=0; i<nCol; i++){
       sqlite3VdbeAddOp2(v, OP_Column, iIdxCur, i);
       sqlite3VdbeAddOp1(v, OP_SCopy, iMem+nCol+i+1);
-      sqlite3VdbeAddOp1(v, OP_Ne, 0x100);
+      sqlite3VdbeAddOp1(v, OP_Ne, 0x100);  /* FIX ME: use collating sequence */
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
@@ -195,20 +195,14 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pTab->zName, 0);
     sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pIdx->zName, 0);
     sqlite3VdbeAddOp1(v, OP_SCopy, iMem);
-    sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, " ", 0);
     for(i=0; i<nCol; i++){
-      sqlite3VdbeAddOp1(v, OP_SCopy, iMem);
-      sqlite3VdbeAddOp1(v, OP_SCopy, iMem+i+1);
-      sqlite3VdbeAddOp0(v, OP_Add);
+      sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, " ", 0);
+      sqlite3VdbeAddOp0(v, OP_Concat);
+      sqlite3VdbeAddOp2(v, OP_Add, iMem, iMem+i+1);
       sqlite3VdbeAddOp2(v, OP_AddImm, 0, -1);
-      sqlite3VdbeAddOp1(v, OP_SCopy, iMem+i+1);
-      sqlite3VdbeAddOp0(v, OP_Divide);
+      sqlite3VdbeAddOp2(v, OP_Divide, iMem+i+1, 0);
       sqlite3VdbeAddOp0(v, OP_ToInt);
-      if( i==nCol-1 ){
-        sqlite3VdbeAddOp1(v, OP_Concat, nCol*2-1);
-      }else{
-        sqlite3VdbeAddOp1(v, OP_Copy, -1);
-      }
+      sqlite3VdbeAddOp0(v, OP_Concat);
     }
     sqlite3VdbeAddOp4(v, OP_MakeRecord, 3, 0, 0, "aaa", 0);
     sqlite3CodeInsert(pParse, iStatCur, OPFLAG_APPEND);

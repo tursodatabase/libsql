@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.160 2008/01/05 05:20:10 drh Exp $
+** $Id: pragma.c,v 1.161 2008/01/05 16:29:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -887,7 +887,7 @@ void sqlite3Pragma(
          sqlite3MPrintf(db, "*** in database %s ***\n", db->aDb[i].zName),
          P4_DYNAMIC);
       sqlite3VdbeAddOp2(v, OP_Pull, 1, 0);
-      sqlite3VdbeAddOp2(v, OP_Concat, 0, 0);
+      sqlite3VdbeAddOp0(v, OP_Concat);
       sqlite3VdbeAddOp2(v, OP_Callback, 1, 0);
       sqlite3VdbeJumpHere(v, addr);
 
@@ -914,7 +914,9 @@ void sqlite3Pragma(
             { OP_Rowid,       1,  0,  0},
             { OP_String8,     0,  0,  0},    /* 3 */
             { OP_String8,     0,  0,  0},    /* 4 */
-            { OP_Concat,      2,  0,  0},
+            { OP_Concat,      0,  0,  0},
+            { OP_Concat,      0,  0,  0},
+            { OP_Concat,      0,  0,  0},
             { OP_Callback,    1,  0,  0},
           };
           sqlite3GenerateIndexKey(v, pIdx, 1);
