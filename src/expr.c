@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.332 2008/01/05 05:20:10 drh Exp $
+** $Id: expr.c,v 1.333 2008/01/05 06:51:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1850,7 +1850,7 @@ static char *dup8bytes(Vdbe *v, const char *in){
 ** z[n] character is guaranteed to be something that does not look
 ** like the continuation of the number.
 */
-static void codeReal(Vdbe *v, const char *z, int n, int negateFlag){
+static void codeReal(Vdbe *v, const char *z, int n, int negateFlag, int iMem){
   assert( z || v==0 || sqlite3VdbeDb(v)->mallocFailed );
   if( z ){
     double value;
@@ -1859,7 +1859,7 @@ static void codeReal(Vdbe *v, const char *z, int n, int negateFlag){
     sqlite3AtoF(z, &value);
     if( negateFlag ) value = -value;
     zV = dup8bytes(v, (char*)&value);
-    sqlite3VdbeAddOp4(v, OP_Real, 0, 0, 0, zV, P4_REAL);
+    sqlite3VdbeAddOp4(v, OP_Real, 0, iMem, 0, zV, P4_REAL);
   }
 }
 
@@ -1872,23 +1872,23 @@ static void codeReal(Vdbe *v, const char *z, int n, int negateFlag){
 ** z[n] character is guaranteed to be something that does not look
 ** like the continuation of the number.
 */
-static void codeInteger(Vdbe *v, const char *z, int n, int negateFlag){
+static void codeInteger(Vdbe *v, const char *z, int n, int negFlag, int iMem){
   assert( z || v==0 || sqlite3VdbeDb(v)->mallocFailed );
   if( z ){
     int i;
     assert( !isdigit(z[n]) );
     if( sqlite3GetInt32(z, &i) ){
-      if( negateFlag ) i = -i;
-      sqlite3VdbeAddOp1(v, OP_Integer, i);
-    }else if( sqlite3FitsIn64Bits(z, negateFlag) ){
+      if( negFlag ) i = -i;
+      sqlite3VdbeAddOp2(v, OP_Integer, i, iMem);
+    }else if( sqlite3FitsIn64Bits(z, negFlag) ){
       i64 value;
       char *zV;
       sqlite3Atoi64(z, &value);
-      if( negateFlag ) value = -value;
+      if( negFlag ) value = -value;
       zV = dup8bytes(v, (char*)&value);
-      sqlite3VdbeAddOp4(v, OP_Int64, 0, 0, 0, zV, P4_INT64);
+      sqlite3VdbeAddOp4(v, OP_Int64, 0, iMem, 0, zV, P4_INT64);
     }else{
-      codeReal(v, z, n, negateFlag);
+      codeReal(v, z, n, negFlag, iMem);
     }
   }
 }
@@ -1944,7 +1944,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
   int op;
   int inReg = 0;
   int stackChng = 0;
-  int subtarget = -1;
+  int origTarget = target;
 
   assert( v!=0 || pParse->db->mallocFailed );
   if( v==0 ) return 0;
@@ -1952,7 +1952,6 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
     target = ++pParse->nMem;
   }else if( target==0 ){
     stackChng = 1;
-    subtarget = 0;
   }
 
   if( pExpr==0 ){
@@ -1965,12 +1964,13 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       AggInfo *pAggInfo = pExpr->pAggInfo;
       struct AggInfo_col *pCol = &pAggInfo->aCol[pExpr->iAgg];
       if( !pAggInfo->directMode ){
-        sqlite3VdbeAddOp1(v, OP_SCopy, pCol->iMem);
+        assert( pCol->iMem>0 );
+        inReg = pCol->iMem;
         break;
       }else if( pAggInfo->useSortingIdx ){
         sqlite3VdbeAddOp3(v, OP_Column, pAggInfo->sortingIdx,
                               pCol->iSorterColumn, target);
-        inReg = 1;
+        inReg = target;
         break;
       }
       /* Otherwise, fall thru into the TK_COLUMN case */
@@ -1980,29 +1980,34 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
         /* This only happens when coding check constraints */
         assert( pParse->ckOffset>0 );
         sqlite3VdbeAddOp1(v, OP_SCopy, -(pParse->ckOffset-pExpr->iColumn-1));
+        /* inReg = -(pParse->ckOffset-pExpr->iColumn-1); */
       }else{
         sqlite3ExprCodeGetColumn(v, pExpr->pTab,
                                  pExpr->iColumn, pExpr->iTable, target);
-        inReg = 1;
+        inReg = target;
       }
       break;
     }
     case TK_INTEGER: {
-      codeInteger(v, (char*)pExpr->token.z, pExpr->token.n, 0);
+      codeInteger(v, (char*)pExpr->token.z, pExpr->token.n, 0, target);
+      inReg = target;
       break;
     }
     case TK_FLOAT: {
-      codeReal(v, (char*)pExpr->token.z, pExpr->token.n, 0);
+      codeReal(v, (char*)pExpr->token.z, pExpr->token.n, 0, target);
+      inReg = target;
       break;
     }
     case TK_STRING: {
       sqlite3DequoteExpr(pParse->db, pExpr);
-      sqlite3VdbeAddOp4(v,OP_String8, 0, 0, 0,
+      sqlite3VdbeAddOp4(v,OP_String8, 0, target, 0,
                         (char*)pExpr->token.z, pExpr->token.n);
+      inReg = target;
       break;
     }
     case TK_NULL: {
-      sqlite3VdbeAddOp0(v, OP_Null);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, target);
+      inReg = target;
       break;
     }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
@@ -2016,26 +2021,28 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       if( n==0 ){
         z = "";
       }
-      sqlite3VdbeAddOp4(v, op, 0, 0, 0, z, n);
+      sqlite3VdbeAddOp4(v, op, 0, target, 0, z, n);
+      inReg = target;
       break;
     }
 #endif
     case TK_VARIABLE: {
-      sqlite3VdbeAddOp1(v, OP_Variable, pExpr->iTable);
+      sqlite3VdbeAddOp2(v, OP_Variable, pExpr->iTable, target);
       if( pExpr->token.n>1 ){
         sqlite3VdbeChangeP4(v, -1, (char*)pExpr->token.z, pExpr->token.n);
       }
+      inReg = target;
       break;
     }
     case TK_REGISTER: {
-      sqlite3VdbeAddOp1(v, OP_SCopy, pExpr->iTable);
+      inReg = pExpr->iTable;
       break;
     }
 #ifndef SQLITE_OMIT_CAST
     case TK_CAST: {
       /* Expressions of the form:   CAST(pLeft AS token) */
       int aff, to_op;
-      sqlite3ExprCode(pParse, pExpr->pLeft, 0);
+      sqlite3ExprCode(pParse, pExpr->pLeft, target);
       aff = sqlite3AffinityType(&pExpr->token);
       to_op = aff - SQLITE_AFF_TEXT + OP_ToText;
       assert( to_op==OP_ToText    || aff!=SQLITE_AFF_TEXT    );
@@ -2043,8 +2050,9 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       assert( to_op==OP_ToNumeric || aff!=SQLITE_AFF_NUMERIC );
       assert( to_op==OP_ToInt     || aff!=SQLITE_AFF_INTEGER );
       assert( to_op==OP_ToReal    || aff!=SQLITE_AFF_REAL    );
-      sqlite3VdbeAddOp0(v, to_op);
+      sqlite3VdbeAddOp1(v, to_op, target);
       stackChng = 0;
+      inReg = target;
       break;
     }
 #endif /* SQLITE_OMIT_CAST */
@@ -2101,10 +2109,11 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       if( pLeft->op==TK_FLOAT || pLeft->op==TK_INTEGER ){
         Token *p = &pLeft->token;
         if( pLeft->op==TK_FLOAT ){
-          codeReal(v, (char*)p->z, p->n, 1);
+          codeReal(v, (char*)p->z, p->n, 1, target);
         }else{
-          codeInteger(v, (char*)p->z, p->n, 1);
+          codeInteger(v, (char*)p->z, p->n, 1, target);
         }
+        inReg = target;
         break;
       }
       /* Fall through into TK_NOT */
@@ -2123,12 +2132,13 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       int dest;
       assert( TK_ISNULL==OP_IsNull );
       assert( TK_NOTNULL==OP_NotNull );
-      sqlite3VdbeAddOp1(v, OP_Integer, 1);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
       sqlite3ExprCode(pParse, pExpr->pLeft, 0);
       dest = sqlite3VdbeCurrentAddr(v) + 2;
       sqlite3VdbeAddOp2(v, op, 1, dest);
-      sqlite3VdbeAddOp2(v, OP_AddImm, 0, -1);
+      sqlite3VdbeAddOp2(v, OP_AddImm, target, -1);
       stackChng = 0;
+      inReg = target;
       break;
     }
     case TK_AGG_FUNCTION: {
@@ -2137,7 +2147,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
         sqlite3ErrorMsg(pParse, "misuse of aggregate: %T",
             &pExpr->span);
       }else{
-        sqlite3VdbeAddOp1(v, OP_SCopy, pInfo->aFunc[pExpr->iAgg].iMem);
+        inReg = pInfo->aFunc[pExpr->iAgg].iMem;
       }
       break;
     }
@@ -2201,8 +2211,9 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       if( pExpr->iColumn==0 ){
         sqlite3CodeSubselect(pParse, pExpr);
       }
-      sqlite3VdbeAddOp1(v, OP_SCopy, pExpr->iColumn);
-      VdbeComment((v, "load subquery result"));
+      inReg = pExpr->iColumn;
+      /* sqlite3VdbeAddOp1(v, OP_SCopy, pExpr->iColumn);
+      VdbeComment((v, "load subquery result")); */
       break;
     }
     case TK_IN: {
@@ -2265,7 +2276,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_UPLUS: {
-      sqlite3ExprCode(pParse, pExpr->pLeft, 0);
+      inReg = sqlite3ExprCode(pParse, pExpr->pLeft, origTarget);
       stackChng = 0;
       break;
     }
@@ -2297,7 +2308,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
         }else{
           jumpInst = sqlite3VdbeAddOp2(v, OP_IfNot, 1, 0);
         }
-        sqlite3ExprCode(pParse, aListelem[i+1].pExpr, 0);
+        sqlite3ExprCode(pParse, aListelem[i+1].pExpr, target);
         sqlite3VdbeAddOp2(v, OP_Goto, 0, expr_end_label);
         sqlite3VdbeJumpHere(v, jumpInst);
       }
@@ -2305,11 +2316,12 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
         sqlite3VdbeAddOp2(v, OP_Pop, 1, 0);
       }
       if( pExpr->pRight ){
-        sqlite3ExprCode(pParse, pExpr->pRight, 0);
+        sqlite3ExprCode(pParse, pExpr->pRight, target);
       }else{
-        sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       }
       sqlite3VdbeResolveLabel(v, expr_end_label);
+      inReg = target;
       break;
     }
 #ifndef SQLITE_OMIT_TRIGGER
@@ -2337,8 +2349,8 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
     }
 #endif
   }
-  if( target && !inReg ){
-    sqlite3VdbeAddOp2(v, OP_Move, 0, target);
+  if( inReg!=target && origTarget!=-1 ){
+    sqlite3VdbeAddOp2(v, (inReg>0 ? OP_SCopy : OP_Move), inReg, target);
     stackChng = 0;
   }
   if( pParse->ckOffset ){

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.682 2008/01/05 05:38:21 drh Exp $
+** $Id: vdbe.c,v 1.683 2008/01/05 06:51:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -942,10 +942,10 @@ case OP_HexBlob: {            /* same as TK_BLOB, out2-prerelease */
   /* Fall through to the next case, OP_Blob. */
 }
 
-/* Opcode: Blob P1 * P4
+/* Opcode: Blob P1 P2 * P4
 **
-** P4 points to a blob of data P1 bytes long. Push this
-** value onto the stack. This instruction is not coded directly
+** P4 points to a blob of data P1 bytes long.  Store this
+** blob in register P2. This instruction is not coded directly
 ** by the compiler. Instead, the compiler layer specifies
 ** an OP_HexBlob opcode, with the hex string representation of
 ** the blob as P4. This opcode is transformed to an OP_Blob
@@ -954,7 +954,7 @@ case OP_HexBlob: {            /* same as TK_BLOB, out2-prerelease */
 case OP_Blob: {                /* out2-prerelease */
   assert( pOp->p1 <= SQLITE_MAX_LENGTH );
   sqlite3VdbeMemSetStr(pOut, pOp->p4.z, pOp->p1, 0, 0);
-  pTos->enc = encoding;
+  pOut->enc = encoding;
   break;
 }
 #endif /* SQLITE_OMIT_BLOB_LITERAL */

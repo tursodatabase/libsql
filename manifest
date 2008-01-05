@@ -1,5 +1,5 @@
-C Register-ify\sthe\sOP_ForceInt\sopcode.\s(CVS\s4684)
-D 2008-01-05T05:38:21
+C Expression\scode\sgenerator\stakes\sadvantage\sof\srecent\sopcode\schanges.\s(CVS\s4685)
+D 2008-01-05T06:51:30
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -92,7 +92,7 @@ F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
 F src/delete.c cb1d5be17c99e41d1675763a57848bb5dd45191c
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 743e8f1da26816cf0767fb7cfb442a2d8996154d
+F src/expr.c 991ae77f4e78584553d8d6c8b10537bec021b0a9
 F src/func.c 996071cf0af9d967e58b69fce1909555059ebc7d
 F src/hash.c 45a7005aac044b6c86bd7e49c44bc15d30006d6c
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
@@ -168,7 +168,7 @@ F src/update.c ac6cdfebf88340fd68550b1d7fd6a15ad7144fd8
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c d96c341f070f7f683fd1a34114c19dbecdf49647
+F src/vdbe.c 5174adfb84a5db3881b53096da32d8329cb121d3
 F src/vdbe.h bb128757b84280504a1243c450fd13ead248ede5
 F src/vdbeInt.h 31bd686595356284d5484592e2dc6e58025aa346
 F src/vdbeapi.c f14174843bf4be2c9afdf2ef48b61e7c3ac62d7c
@@ -603,7 +603,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3e8a07dd3cc9921ad39e379576abb0b485a42202
-R 5fa8eccc6a1d8f273459b71d7e4508a7
+P 32380dcabcd3839e79f91430b0c250d6e02d9243
+R 23d7fd092a9617107d94aa7f01f63d28
 U drh
-Z 54cf213cacf40b4b6524baf65c0d27ec
+Z 806d577e383a52170c44489fe3b3b0e5
