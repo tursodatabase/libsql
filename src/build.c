@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.459 2008/01/05 05:20:10 drh Exp $
+** $Id: build.c,v 1.460 2008/01/05 18:48:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1491,7 +1491,7 @@ void sqlite3EndTable(
     ** be redundant.
     */
     if( pSelect ){
-      SelectDest dest = {SRT_Table, 1, 0};
+      SelectDest dest = {SRT_Table, 0, 1};
       Table *pSelTab;
       sqlite3VdbeAddOp0(v, OP_Copy);
       sqlite3VdbeAddOp3(v, OP_OpenWrite, 1, 0, iDb);

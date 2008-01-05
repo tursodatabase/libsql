@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.684 2008/01/05 16:29:28 drh Exp $
+** $Id: vdbe.c,v 1.685 2008/01/05 18:48:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2131,6 +2131,25 @@ case OP_IsNull: {            /* same as TK_ISNULL, no-push, jump */
   break;
 }
 
+/* Opcode: AnyNull P1 P2 P3 * *
+**
+** Check P3 registers beginning with P1.  If any are NULL then jump
+** to P2.
+*/
+case OP_AnyNull: {            /* no-push, jump, in1 */
+  int n = pOp->p3;
+  assert( n>0 && pOp->p1+n<=p->nMem );
+  while( n>0 ){
+    if( pIn1->flags & MEM_Null ){
+      pc = pOp->p2-1;
+      break;
+    }
+    n--;
+    pIn1++;
+  }
+  break;
+}
+
 /* Opcode: NotNull P1 P2 *
 **
 ** Jump to P2 if the top abs(P1) values on the stack are all not NULL.  
@@ -2463,12 +2482,13 @@ op_column_out:
 ** This results in an index key.
 */
 /*
-** Opcode: RegMakeRec P1 P2 P4
+** Opcode: RegMakeRec P1 P2 P3 P4 *
 **
-** Works like OP_MakeRecord except data is taken from registers
-** rather than from the stack.  The P1 register is an integer which
-** is the number of register to use in building the new record.
-** Data is taken from P1+1, P1+2, ..., P1+mem[P1].
+** Builds a record like OP_MakeRecord.  But the data is taken from
+** P2 registers beginning with P1:  P1, P1+1, P1+2, ..., P1+P2-1.
+** The result is written into P3 or pushed onto the stack if P3 is zero.
+** There is no jump on NULL - that can be done with a separate
+** OP_AnyNull opcode.
 */
 /*
 ** Opcode: RegMakeIRec P1 P2 P4
@@ -2526,21 +2546,18 @@ case OP_MakeRecord: {        /* jump */
     leaveOnStack = 0;
     nField = pOp->p1;
   }
-  jumpIfNull = pOp->p2;
   addRowid = pOp->opcode==OP_MakeIdxRec || pOp->opcode==OP_RegMakeIRec;
   zAffinity = pOp->p4.z;
 
   if( pOp->opcode==OP_RegMakeRec || pOp->opcode==OP_RegMakeIRec ){
-    Mem *pCount;
-    assert( nField>0 && nField<=p->nMem );
-    pCount = &p->aMem[nField];
-    assert( pCount->flags & MEM_Int );
-    assert( pCount->u.i>0 && pCount->u.i+nField<=p->nMem );
+    assert( nField>0 && pOp->p2>0 && pOp->p2+nField<=p->nMem );
+    pData0 = &p->aMem[nField];
+    nField = pOp->p2;
     leaveOnStack = 1;
-    nField = pCount->u.i;
-    pData0 = &pCount[1];
+    jumpIfNull = 0;
     pLast = &pData0[nField-1];
   }else{
+    jumpIfNull = pOp->p2;
     pData0 = &pTos[1-nField];
     pLast = pTos;
     assert( pData0>=p->aStack );
@@ -2630,24 +2647,29 @@ case OP_MakeRecord: {        /* jump */
   if( !leaveOnStack ){
     popStack(&pTos, nField+addRowid);
   }
-  pTos++;
-  pTos->n = nByte;
+  if( pOp->p3==0 ){
+    pOut = ++pTos;
+  }else{
+    pOut = &p->aMem[pOp->p3];
+    Release(pOut);
+  }
+  pOut->n = nByte;
   if( nByte<=sizeof(zTemp) ){
     assert( zNewRecord==(unsigned char *)zTemp );
-    pTos->z = pTos->zShort;
-    memcpy(pTos->zShort, zTemp, nByte);
-    pTos->flags = MEM_Blob | MEM_Short;
+    pOut->z = pOut->zShort;
+    memcpy(pOut->zShort, zTemp, nByte);
+    pOut->flags = MEM_Blob | MEM_Short;
   }else{
     assert( zNewRecord!=(unsigned char *)zTemp );
-    pTos->z = (char*)zNewRecord;
-    pTos->flags = MEM_Blob | MEM_Dyn;
-    pTos->xDel = 0;
+    pOut->z = (char*)zNewRecord;
+    pOut->flags = MEM_Blob | MEM_Dyn;
+    pOut->xDel = 0;
   }
   if( nZero ){
-    pTos->u.i = nZero;
-    pTos->flags |= MEM_Zero;
+    pOut->u.i = nZero;
+    pOut->flags |= MEM_Zero;
   }
-  pTos->enc = SQLITE_UTF8;  /* In case the blob is ever converted to text */
+  pOut->enc = SQLITE_UTF8;  /* In case the blob is ever converted to text */
 
   /* If a NULL was encountered and jumpIfNull is non-zero, take the jump. */
   if( jumpIfNull && containsNull ){

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.639 2008/01/05 17:39:30 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.640 2008/01/05 18:48:24 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1353,9 +1353,9 @@ struct Select {
 */
 typedef struct SelectDest SelectDest;
 struct SelectDest {
-  int eDest;        /* How to dispose of the results */
+  u8 eDest;         /* How to dispose of the results */
+  u8 affinity;      /* Affinity used when eDest==SRT_Set */
   int iParm;        /* A parameter used by the eDest disposal method */
-  int affinity;     /* Affinity used when eDest==SRT_Set */
 };
 
 /*
