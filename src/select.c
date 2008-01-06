@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.389 2008/01/05 18:48:24 drh Exp $
+** $Id: select.c,v 1.390 2008/01/06 00:25:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -31,6 +31,16 @@ static void clearSelect(Select *p){
   sqlite3SelectDelete(p->pPrior);
   sqlite3ExprDelete(p->pLimit);
   sqlite3ExprDelete(p->pOffset);
+}
+
+/*
+** Initialize a SelectDest structure.
+*/
+void sqlite3SelectDestInit(SelectDest *pDest, int eDest, int iParm){
+  pDest->eDest = eDest;
+  pDest->iParm = iParm;
+  pDest->affinity = 0;
+  pDest->iMem = 0;
 }
 
 
@@ -542,8 +552,12 @@ static int selectInnerLoop(
   }else{
     n = pEList->nExpr;
   }
-  iMem = pParse->nMem+1;
-  pParse->nMem += n;
+  if( pDest->iMem>0 ){
+    iMem = pDest->iMem;
+  }else{
+    pDest->iMem = iMem = pParse->nMem+1;
+    pParse->nMem += n;
+  }
   if( nColumn>0 ){
     for(i=0; i<nColumn; i++){
       sqlite3VdbeAddOp3(v, OP_Column, srcTab, i, iMem+i);
@@ -679,7 +693,6 @@ static int selectInnerLoop(
         sqlite3VdbeAddOp2(v, OP_RegMakeRec, iMem, nColumn);
         pushOntoSorter(pParse, pOrderBy, p);
       }else if( eDest==SRT_Subroutine ){
-        for(i=0; i<nColumn; i++) sqlite3VdbeAddOp2(v, OP_SCopy, iMem+i, 0);
         sqlite3VdbeAddOp2(v, OP_Gosub, 0, iParm);
       }else{
         sqlite3VdbeAddOp2(v, OP_ResultRow, iMem, nColumn);
@@ -816,10 +829,10 @@ static void generateSortTail(
       int i;
       sqlite3CodeInsert(pParse, pseudoTab, 0);
       for(i=0; i<nColumn; i++){
-        sqlite3VdbeAddOp2(v, OP_Column, pseudoTab, i);
+        sqlite3VdbeAddOp3(v, OP_Column, pseudoTab, i, pDest->iMem+i);
       }
       if( eDest==SRT_Callback ){
-        sqlite3VdbeAddOp2(v, OP_Callback, nColumn, 0);
+        sqlite3VdbeAddOp2(v, OP_ResultRow, pDest->iMem, nColumn);
       }else{
         sqlite3VdbeAddOp2(v, OP_Gosub, 0, iParm);
       }
@@ -1867,11 +1880,9 @@ static int multiSelect(
   ExprList *pOrderBy;   /* The ORDER BY clause on p */
   int aSetP2[2];        /* Set P2 value of these op to number of columns */
   int nSetP2 = 0;       /* Number of slots in aSetP2[] used */
+  SelectDest dest;      /* Alternative data destination */
 
-  SelectDest dest;
-  dest.eDest = pDest->eDest;
-  dest.iParm = pDest->iParm;
-  dest.affinity = pDest->affinity;
+  dest = *pDest;
 
   /* Make sure there is no ORDER BY or LIMIT clause on prior SELECTs.  Only
   ** the last (right-most) SELECT in the series may have an ORDER BY or LIMIT.
@@ -1988,8 +1999,7 @@ static int multiSelect(
       /* Code the SELECT statements to our left
       */
       assert( !pPrior->pOrderBy );
-      uniondest.eDest = priorOp;
-      uniondest.iParm = unionTab;
+      sqlite3SelectDestInit(&uniondest, priorOp, unionTab);
       rc = sqlite3Select(pParse, pPrior, &uniondest, 0, 0, 0, aff);
       if( rc ){
         goto multi_select_end;
@@ -2060,7 +2070,7 @@ static int multiSelect(
       int iCont, iBreak, iStart;
       Expr *pLimit, *pOffset;
       int addr;
-      SelectDest intersectdest = {SRT_Union, 0, 0};
+      SelectDest intersectdest;
 
       /* INTERSECT is different from the others since it requires
       ** two temporary tables.  Hence it has its own case.  Begin
@@ -2082,7 +2092,7 @@ static int multiSelect(
 
       /* Code the SELECTs to our left into temporary table "tab1".
       */
-      intersectdest.iParm = tab1;
+      sqlite3SelectDestInit(&intersectdest, SRT_Union, tab1);
       rc = sqlite3Select(pParse, pPrior, &intersectdest, 0, 0, 0, aff);
       if( rc ){
         goto multi_select_end;
@@ -2256,6 +2266,7 @@ static int multiSelect(
   }
 
 multi_select_end:
+  pDest->iMem = dest.iMem;
   return rc;
 }
 #endif /* SQLITE_OMIT_COMPOUND_SELECT */
@@ -3252,7 +3263,7 @@ int sqlite3Select(
     const char *zSavedAuthContext = 0;
     int needRestoreContext;
     struct SrcList_item *pItem = &pTabList->a[i];
-    SelectDest dest = {SRT_EphemTab, 0, 0};
+    SelectDest dest;
 
     if( pItem->pSelect==0 || pItem->isPopulated ) continue;
     if( pItem->zName!=0 ){
@@ -3272,7 +3283,7 @@ int sqlite3Select(
     */
     pParse->nHeight += sqlite3SelectExprHeight(p);
 #endif
-    dest.iParm = pItem->iCursor;
+    sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
     sqlite3Select(pParse, pItem->pSelect, &dest, p, i, &isAgg, 0);
     if( db->mallocFailed ){
       goto select_end;
@@ -3647,8 +3658,8 @@ int sqlite3Select(
         if( pMinMax ){
           pMinMax->a[0].sortOrder = ((flag==ORDERBY_MIN)?0:1);
           pMinMax->a[0].pExpr->op = TK_COLUMN;
+          pDel = pMinMax;
         }
-	pDel = pMinMax;
       }
 
       /* This case runs if the aggregate has no GROUP BY clause.  The
@@ -3658,7 +3669,7 @@ int sqlite3Select(
       resetAccumulator(pParse, &sAggInfo);
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pMinMax, flag);
       if( pWInfo==0 ){
-        sqlite3ExprListDelete(pMinMax);
+        sqlite3ExprListDelete(pDel);
         goto select_end;
       }
       updateAccumulator(pParse, &sAggInfo);

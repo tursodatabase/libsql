@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.161 2008/01/05 17:39:30 danielk1977 Exp $
+** $Id: update.c,v 1.162 2008/01/06 00:25:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -329,10 +329,11 @@ void sqlite3Update(
   */
   if( isView ){
     Select *pView;
-    SelectDest dest = {SRT_EphemTab, 0, 0};
+    SelectDest dest;
+
     pView = sqlite3SelectDup(db, pTab->pSelect);
     sqlite3SelectMask(pParse, pView, old_col_mask|new_col_mask);
-    dest.iParm = iCur;
+    sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
     sqlite3Select(pParse, pView, &dest, 0, 0, 0, 0);
     sqlite3SelectDelete(pView);
   }
@@ -595,7 +596,7 @@ static void updateVirtualTable(
   int iReg;                 /* First register in set passed to OP_VUpdate */
   sqlite3 *db = pParse->db; /* Database connection */
   const char *pVtab = (const char*)pTab->pVtab;
-  SelectDest dest = {SRT_Table, 0, 0};
+  SelectDest dest;
 
   /* Construct the SELECT statement that will find the new values for
   ** all updated rows. 
@@ -626,7 +627,7 @@ static void updateVirtualTable(
 
   /* fill the ephemeral table 
   */
-  dest.iParm = ephemTab;
+  sqlite3SelectDestInit(&dest, SRT_Table, ephemTab);
   sqlite3Select(pParse, pSelect, &dest, 0, 0, 0, 0);
 
   /* Generate code to scan the ephemeral table and call VUpdate. */

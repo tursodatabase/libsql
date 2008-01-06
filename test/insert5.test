@@ -12,7 +12,7 @@
 # The tests in this file ensure that a temporary table is used
 # when required by an "INSERT INTO ... SELECT ..." statement.
 #
-# $Id: insert5.test,v 1.3 2007/12/13 07:58:51 danielk1977 Exp $
+# $Id: insert5.test,v 1.4 2008/01/06 00:25:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -52,10 +52,9 @@ do_test insert5-1.1 {
     INSERT INTO B 
       SELECT * FROM B UNION ALL 
       SELECT * FROM MAIN WHERE exists (select * FROM B WHERE B.Id = MAIN.Id);
-    SELECT * FROM B;
+      SELECT * FROM B;
   }
 } {2 3 2 3 2 3}
-
 do_test insert5-2.1 {
   uses_temp_table { INSERT INTO b SELECT * FROM main }
 } {0}

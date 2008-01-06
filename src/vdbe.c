@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.685 2008/01/05 18:48:24 drh Exp $
+** $Id: vdbe.c,v 1.686 2008/01/06 00:25:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2670,6 +2670,7 @@ case OP_MakeRecord: {        /* jump */
     pOut->flags |= MEM_Zero;
   }
   pOut->enc = SQLITE_UTF8;  /* In case the blob is ever converted to text */
+  REGISTER_TRACE(pOp->p3, pOut);
 
   /* If a NULL was encountered and jumpIfNull is non-zero, take the jump. */
   if( jumpIfNull && containsNull ){

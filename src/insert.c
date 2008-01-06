@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.213 2008/01/05 05:20:10 drh Exp $
+** $Id: insert.c,v 1.214 2008/01/06 00:25:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -359,6 +359,7 @@ void sqlite3Insert(
   int iCleanup = 0;     /* Address of the cleanup code */
   int iInsertBlock = 0; /* Address of the subroutine used to insert data */
   int iCntMem = 0;      /* Memory cell used for the row counter */
+  int iBaseReg;         /* Base register for data */
   int newIdx = -1;      /* Cursor for the NEW table */
   Db *pDb;              /* The database containing table being inserted into */
   int counterMem = 0;   /* Memory cell holding AUTOINCREMENT counter */
@@ -471,12 +472,13 @@ void sqlite3Insert(
   if( pSelect ){
     /* Data is coming from a SELECT.  Generate code to implement that SELECT
     */
-    SelectDest dest = {SRT_Subroutine, 0, 0};
+    SelectDest dest;
     int rc, iInitCode;
+
     iInitCode = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
     iSelectLoop = sqlite3VdbeCurrentAddr(v);
     iInsertBlock = sqlite3VdbeMakeLabel(v);
-    dest.iParm = iInsertBlock;
+    sqlite3SelectDestInit(&dest, SRT_Subroutine, iInsertBlock);
 
     /* Resolve the expressions in the SELECT statement and execute it. */
     rc = sqlite3Select(pParse, pSelect, &dest, 0, 0, 0, 0);
@@ -484,6 +486,7 @@ void sqlite3Insert(
       goto insert_cleanup;
     }
 
+    iBaseReg = dest.iMem;
     iCleanup = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, iCleanup);
     assert( pSelect->pEList );
@@ -507,8 +510,7 @@ void sqlite3Insert(
       */
       srcTab = pParse->nTab++;
       sqlite3VdbeResolveLabel(v, iInsertBlock);
-      sqlite3VdbeAddOp2(v, OP_StackDepth, -1, 0);
-      sqlite3VdbeAddOp2(v, OP_MakeRecord, nColumn, 0);
+      sqlite3VdbeAddOp2(v, OP_RegMakeRec, iBaseReg, nColumn);
       sqlite3VdbeAddOp1(v, OP_NewRowid, srcTab);
       sqlite3VdbeAddOp2(v, OP_Pull, 1, 0);
       sqlite3CodeInsert(pParse, srcTab, OPFLAG_APPEND);
@@ -640,6 +642,7 @@ void sqlite3Insert(
   }else if( pSelect ){
     sqlite3VdbeAddOp2(v, OP_Goto, 0, iSelectLoop);
     sqlite3VdbeResolveLabel(v, iInsertBlock);
+    sqlite3RegToStack(pParse, iBaseReg, nColumn);
     sqlite3VdbeAddOp2(v, OP_StackDepth, -1, 0);
   }
 

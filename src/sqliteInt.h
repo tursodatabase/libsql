@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.640 2008/01/05 18:48:24 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.641 2008/01/06 00:25:22 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1356,6 +1356,7 @@ struct SelectDest {
   u8 eDest;         /* How to dispose of the results */
   u8 affinity;      /* Affinity used when eDest==SRT_Set */
   int iParm;        /* A parameter used by the eDest disposal method */
+  int iMem;         /* Base register where results are written */
 };
 
 /*
@@ -1924,6 +1925,7 @@ void sqlite3StrAccumReset(StrAccum*);
 void sqlite3CodeInsert(Parse *, int, u8);
 int sqlite3StackToReg(Parse *, int);
 void sqlite3RegToStack(Parse *, int, int);
+void sqlite3SelectDestInit(SelectDest*,int,int);
 
 /*
 ** The interface to the LEMON-generated parser

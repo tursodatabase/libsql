@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.334 2008/01/05 16:29:28 drh Exp $
+** $Id: expr.c,v 1.335 2008/01/06 00:25:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1738,10 +1738,11 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
         ** Generate code to write the results of the select into the temporary
         ** table allocated and opened above.
         */
-        SelectDest dest = {SRT_Set, 0, 0};
-        dest.iParm = pExpr->iTable;
-        dest.affinity = (int)affinity;
+        SelectDest dest;
         ExprList *pEList;
+
+        sqlite3SelectDestInit(&dest, SRT_Set, pExpr->iTable);
+        dest.affinity = (int)affinity;
         assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
         if( sqlite3Select(pParse, pExpr->pSelect, &dest, 0, 0, 0, 0) ){
           return;
@@ -1803,7 +1804,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       SelectDest dest;
 
       pSel = pExpr->pSelect;
-      dest.iParm = ++pParse->nMem;
+      sqlite3SelectDestInit(&dest, 0, ++pParse->nMem);
       if( pExpr->op==TK_SELECT ){
         dest.eDest = SRT_Mem;
         sqlite3VdbeAddOp2(v, OP_Null, 0, dest.iParm);
