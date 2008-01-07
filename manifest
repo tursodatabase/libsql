@@ -1,5 +1,5 @@
-C Registerify\sthe\sSRT_Subroutine\sdestination\sfor\sSELECT\sresults.\s(CVS\s4690)
-D 2008-01-06T00:25:22
+C Comment\schanges\sin\sselect.c.\s(CVS\s4691)
+D 2008-01-07T10:16:41
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/pragma.c dfb200ec383b5ab3e81cd7bc4e1305e71053ef9a
 F src/prepare.c f1bb8eb642082e618a359c08e3e107490eafe0e3
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
-F src/select.c 3dc81bc22d54b4b08a825f926587e1f96ded57c3
+F src/select.c 31faeb619940082085e75f4cbef3f44c5e0f12d5
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 5391e889384d2062249f668110d64ed16f601c4b
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
@@ -604,7 +604,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6bb1b1bc1858028b743a4f660d42d5e9595dc022
-R b9dfb6958eba47fbda8ba22262d4cfe6
-U drh
-Z 16b2a7371bc928893099feda1e3b8325
+P 8201f71729c3afbb41764cea3cda65b03150cb0c
+R e1386487a1716925644579ddb593d24b
+U danielk1977
+Z f79dec53250d0fbc0e2807bb20650e3c

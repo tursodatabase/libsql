@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.390 2008/01/06 00:25:22 drh Exp $
+** $Id: select.c,v 1.391 2008/01/07 10:16:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2642,8 +2642,10 @@ static int flattenSubquery(
 ** it is, or 0 otherwise. At present, a query is considered to be
 ** a min()/max() query if:
 **
-**   1. The result set contains exactly one element, either 
-**      min(x) or max(x), where x is a column identifier.
+**   1. There is a single object in the FROM clause.
+**
+**   2. There is a single expression in the result set, and it is
+**      either min(x) or max(x), where x is a column reference.
 */
 static int minMaxQuery(Parse *pParse, Select *p){
   Expr *pExpr;
@@ -3652,6 +3654,31 @@ int sqlite3Select(
       ExprList *pDel = 0;
       u8 flag;
 
+      /* Check if the query is of one of the following forms:
+      **
+      **   SELECT min(x) FROM ...
+      **   SELECT max(x) FROM ...
+      **
+      ** If it is, then ask the code in where.c to attempt to sort results
+      ** as if there was an "ORDER ON x" or "ORDER ON x DESC" clause. 
+      ** If where.c is able to produce results sorted in this order, then
+      ** add vdbe code to break out of the processing loop after the 
+      ** first iteration (since the first iteration of the loop is 
+      ** guaranteed to operate on the row with the minimum or maximum 
+      ** value of x, the only row required).
+      **
+      ** A special flag must be passed to sqlite3WhereBegin() to slightly
+      ** modify behaviour as follows:
+      **
+      **   + If the query is a "SELECT min(x)", then the loop coded by
+      **     where.c should not iterate over any values with a NULL value
+      **     for x.
+      **
+      **   + The optimizer code in where.c (the thing that decides which
+      **     index or indices to use) should place a different priority on 
+      **     satisfying the 'ORDER BY' clause than it does in other cases.
+      **     Refer to code and comments in where.c for details.
+      */
       flag = minMaxQuery(pParse, p);
       if( flag ){
         pMinMax = sqlite3ExprListDup(db, p->pEList->a[0].pExpr->pList);
