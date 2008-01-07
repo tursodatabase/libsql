@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.335 2008/01/06 00:25:22 drh Exp $
+** $Id: expr.c,v 1.336 2008/01/07 19:20:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2134,14 +2134,14 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
     }
     case TK_ISNULL:
     case TK_NOTNULL: {
-      int dest;
+      int addr;
       assert( TK_ISNULL==OP_IsNull );
       assert( TK_NOTNULL==OP_NotNull );
       sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
       sqlite3ExprCode(pParse, pExpr->pLeft, 0);
-      dest = sqlite3VdbeCurrentAddr(v) + 2;
-      sqlite3VdbeAddOp2(v, op, 1, dest);
+      addr = sqlite3VdbeAddOp0(v, op);
       sqlite3VdbeAddOp2(v, OP_AddImm, target, -1);
+      sqlite3VdbeJumpHere(v, addr);
       stackChng = 0;
       inReg = target;
       break;
@@ -2222,11 +2222,10 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_IN: {
-      int addr;
+      int j1, j2, j3, j4, j5;
       char affinity;
       int ckOffset = pParse->ckOffset;
       int eType;
-      int iLabel = sqlite3VdbeMakeLabel(v);
 
       eType = sqlite3FindInIndex(pParse, pExpr, 0);
 
@@ -2243,24 +2242,25 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       ** pExpr->iTable contains the values that make up the (...) set.
       */
       sqlite3ExprCode(pParse, pExpr->pLeft, 0);
-      addr = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeAddOp2(v, OP_NotNull, -1, addr+4);            /* addr + 0 */
+      sqlite3VdbeAddOp0(v, OP_SCopy);
+      j1 = sqlite3VdbeAddOp0(v, OP_NotNull);
       sqlite3VdbeAddOp1(v, OP_Pop, 2);
       sqlite3VdbeAddOp0(v, OP_Null);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, iLabel);
+      j2  = sqlite3VdbeAddOp0(v, OP_Goto);
+      sqlite3VdbeJumpHere(v, j1);
       if( eType==IN_INDEX_ROWID ){
-        int iAddr = sqlite3VdbeCurrentAddr(v)+3;
-        sqlite3VdbeAddOp2(v, OP_MustBeInt, 1, iAddr);
-        sqlite3VdbeAddOp2(v, OP_NotExists, pExpr->iTable, iAddr);
-        sqlite3VdbeAddOp2(v, OP_Goto, pExpr->iTable, iLabel);
+        j3 = sqlite3VdbeAddOp1(v, OP_MustBeInt, 1);
+        j4 = sqlite3VdbeAddOp1(v, OP_NotExists, pExpr->iTable);
+        j5 = sqlite3VdbeAddOp0(v, OP_Goto);
+        sqlite3VdbeJumpHere(v, j3);
+        sqlite3VdbeJumpHere(v, j4);
       }else{
-        sqlite3VdbeAddOp4(v, OP_MakeRecord, 1, 0, 0,
-                             &affinity, 1);   /* addr + 4 */
-        sqlite3VdbeAddOp2(v, OP_Found, pExpr->iTable, iLabel);
+        sqlite3VdbeAddOp4(v, OP_MakeRecord, 1, 0, 0, &affinity, 1);
+        j5 = sqlite3VdbeAddOp1(v, OP_Found, pExpr->iTable);
       }
-      sqlite3VdbeAddOp2(v, OP_AddImm, 0, -1);                  /* addr + 6 */
-      sqlite3VdbeResolveLabel(v, iLabel);
-
+      sqlite3VdbeAddOp2(v, OP_AddImm, 0, -1);
+      sqlite3VdbeJumpHere(v, j2);
+      sqlite3VdbeJumpHere(v, j5);
       break;
     }
 #endif
@@ -2485,7 +2485,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       assert( TK_ISNULL==OP_IsNull );
       assert( TK_NOTNULL==OP_NotNull );
       sqlite3ExprCode(pParse, pExpr->pLeft, 0);
-      sqlite3VdbeAddOp2(v, op, 1, dest);
+      sqlite3VdbeAddOp2(v, op, 0, dest);
       break;
     }
     case TK_BETWEEN: {
@@ -2597,7 +2597,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_ISNULL:
     case TK_NOTNULL: {
       sqlite3ExprCode(pParse, pExpr->pLeft, 0);
-      sqlite3VdbeAddOp2(v, op, 1, dest);
+      sqlite3VdbeAddOp2(v, op, 0, dest);
       break;
     }
     case TK_BETWEEN: {

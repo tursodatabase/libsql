@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.686 2008/01/06 00:25:22 drh Exp $
+** $Id: vdbe.c,v 1.687 2008/01/07 19:20:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2110,7 +2110,7 @@ case OP_IfNot: {            /* no-push, jump */
   break;
 }
 
-/* Opcode: IsNull P1 P2 *
+/* Opcode: StackIsNull P1 P2 *
 **
 ** Check the top of the stack and jump to P2 if the top of the stack
 ** is NULL.  If P1 is positive, then pop P1 elements from the stack
@@ -2118,7 +2118,7 @@ case OP_IfNot: {            /* no-push, jump */
 ** pop -P1 elements from the stack only if the jump is taken and leave
 ** the stack unchanged if the jump is not taken.
 */
-case OP_IsNull: {            /* same as TK_ISNULL, no-push, jump */
+case OP_StackIsNull: {            /* no-push, jump */
   if( pTos->flags & MEM_Null ){
     pc = pOp->p2-1;
     if( pOp->p1<0 ){
@@ -2131,40 +2131,31 @@ case OP_IsNull: {            /* same as TK_ISNULL, no-push, jump */
   break;
 }
 
-/* Opcode: AnyNull P1 P2 P3 * *
+/* Opcode: IsNull P1 P2 *
 **
-** Check P3 registers beginning with P1.  If any are NULL then jump
-** to P2.
+** Jump to P2 if the value in register P1 is NULL.
+**
+** If P1 is 0 then use the top of the stack instead of a register
+** and pop the stack regardless of whether or not the jump is taken.
 */
-case OP_AnyNull: {            /* no-push, jump, in1 */
-  int n = pOp->p3;
-  assert( n>0 && pOp->p1+n<=p->nMem );
-  while( n>0 ){
-    if( pIn1->flags & MEM_Null ){
-      pc = pOp->p2-1;
-      break;
-    }
-    n--;
-    pIn1++;
+case OP_IsNull: {            /* same as TK_ISNULL, no-push, jump, in1 */
+  if( (pIn1->flags & MEM_Null)!=0 ){
+    pc = pOp->p2 - 1;
   }
   break;
 }
 
 /* Opcode: NotNull P1 P2 *
 **
-** Jump to P2 if the top abs(P1) values on the stack are all not NULL.  
-** Regardless of whether or not the jump is taken, pop the stack
-** P1 times if P1 is greater than zero.  But if P1 is negative,
-** leave the stack unchanged.
+** Jump to P2 if the value in register P1 is not NULL.  
+**
+** If P1 is 0 then use the top of the stack instead of a register
+** and pop the stack regardless of whether or not the jump is taken.
 */
-case OP_NotNull: {            /* same as TK_NOTNULL, no-push, jump */
-  int i, cnt;
-  cnt = pOp->p1;
-  if( cnt<0 ) cnt = -cnt;
-  assert( &pTos[1-cnt] >= p->aStack );
-  for(i=0; i<cnt && (pTos[1+i-cnt].flags & MEM_Null)==0; i++){}
-  if( i>=cnt ) pc = pOp->p2-1;
-  if( pOp->p1>0 ) popStack(&pTos, cnt);
+case OP_NotNull: {            /* same as TK_NOTNULL, no-push, jump, in1 */
+  if( (pIn1->flags & MEM_Null)==0 ){
+    pc = pOp->p2 - 1;
+  }
   break;
 }
 

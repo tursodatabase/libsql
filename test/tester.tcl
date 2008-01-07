@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.95 2008/01/04 19:10:29 danielk1977 Exp $
+# $Id: tester.tcl,v 1.96 2008/01/07 19:20:25 drh Exp $
 
 
 set tcl_precision 15
@@ -51,6 +51,20 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
   }
 }
 
+# 
+# Check the command-line arguments to set the maximum number of
+# errors tolerated before halting.
+#
+if {![info exists maxErr]} {
+  set maxErr 1000
+}
+for {set i 0} {$i<[llength $argv]} {incr i} {
+  if {[regexp {^--maxerror=(\d+)$} [lindex $argv $i] all maxErr]} {
+    set argv [lreplace $argv $i $i]
+  }
+}
+#puts "Max error = $maxErr"
+
 
 # Use the pager codec if it is available
 #
@@ -86,7 +100,6 @@ set nErr 0
 set nTest 0
 set skip_test 0
 set failList {}
-set maxErr 1000
 if {![info exists speedTest]} {
   set speedTest 0
 }

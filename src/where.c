@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.276 2008/01/05 17:39:30 danielk1977 Exp $
+** $Id: where.c,v 1.277 2008/01/07 19:20:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1757,7 +1757,7 @@ static void codeEqualityTerm(
       pIn += pLevel->nIn - 1;
       pIn->iCur = iTab;
       pIn->topAddr = sqlite3VdbeAddOp2(v, op, iTab, 0);
-      sqlite3VdbeAddOp2(v, OP_IsNull, -1, 0);
+      sqlite3VdbeAddOp2(v, OP_StackIsNull, -1, 0);
     }else{
       pLevel->nIn = 0;
     }
@@ -1824,7 +1824,7 @@ static void codeAllEqualityTerms(
     assert( (pTerm->flags & TERM_CODED)==0 );
     codeEqualityTerm(pParse, pTerm, pLevel);
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
-      sqlite3VdbeAddOp2(v, OP_IsNull, termsInMem ? -1 : -(j+1), pLevel->brk);
+      sqlite3VdbeAddOp2(v, OP_StackIsNull, termsInMem ? -1 : -(j+1), pLevel->brk);
     }
     if( termsInMem ){
       sqlite3VdbeAddOp2(v, OP_Move, 0, pLevel->iMem+j+1);
@@ -2467,7 +2467,7 @@ WhereInfo *sqlite3WhereBegin(
         pX = pTerm->pExpr;
         assert( (pTerm->flags & TERM_CODED)==0 );
         sqlite3ExprCode(pParse, pX->pRight, 0);
-        sqlite3VdbeAddOp2(v, OP_IsNull, -(nEq*2+1), nxt);
+        sqlite3VdbeAddOp2(v, OP_StackIsNull, -(nEq*2+1), nxt);
         topEq = pTerm->eOperator & (WO_LE|WO_GE);
         disableTerm(pLevel, pTerm);
         testOp = OP_IdxGE;
@@ -2511,7 +2511,7 @@ WhereInfo *sqlite3WhereBegin(
         pX = pTerm->pExpr;
         assert( (pTerm->flags & TERM_CODED)==0 );
         sqlite3ExprCode(pParse, pX->pRight, 0);
-        sqlite3VdbeAddOp2(v, OP_IsNull, -(nEq+1), nxt);
+        sqlite3VdbeAddOp2(v, OP_StackIsNull, -(nEq+1), nxt);
         btmEq = pTerm->eOperator & (WO_LE|WO_GE);
         disableTerm(pLevel, pTerm);
       }else{
@@ -2553,7 +2553,7 @@ WhereInfo *sqlite3WhereBegin(
       }
       if( topLimit | btmLimit ){
         sqlite3VdbeAddOp2(v, OP_Column, iIdxCur, nEq);
-        sqlite3VdbeAddOp2(v, OP_IsNull, 1, cont);
+        sqlite3VdbeAddOp2(v, OP_StackIsNull, 1, cont);
       }
       if( !omitTable ){
         sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, 0);
