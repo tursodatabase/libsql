@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.163 2008/01/08 02:57:56 drh Exp $
+** $Id: update.c,v 1.164 2008/01/08 18:57:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -102,9 +102,6 @@ void sqlite3Update(
   AuthContext sContext;  /* The authorization context */
   NameContext sNC;       /* The name-context to resolve expressions in */
   int iDb;               /* Database containing the table being updated */
-  int memCnt = 0;        /* Memory cell used for counting rows changed */
-  int mem1;      /* Memory address storing the rowid for next row to update */
-  int iRowid;            /* Memory address storing rowids */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* Trying to update a view */
@@ -119,6 +116,12 @@ void sqlite3Update(
 
   int newIdx      = -1;  /* index of trigger "new" temp table       */
   int oldIdx      = -1;  /* index of trigger "old" temp table       */
+
+  /* Register Allocations */
+  int regRowCount = 0;   /* A count of rows changed */
+  int regOldRowid;       /* The old rowid */
+  int regNewRowid;       /* The new rowid */
+  int regData;           /* New data for the row */
 
   sContext.pParse = 0;
   db = pParse->db;
@@ -251,13 +254,28 @@ void sqlite3Update(
     aRegIdx[j] = reg;
   }
 
+  /* Allocate a block of register used to store the change record
+  ** sent to sqlite3GenerateConstraintChecks().  There are either
+  ** one or two registers for holding the rowid.  One rowid register
+  ** is used if chngRowid is false and two are used if chngRowid is
+  ** true.  Following these are pTab->nCol register holding column
+  ** data.
+  */
+  regOldRowid = regNewRowid = pParse->nMem + 1;
+  pParse->nMem += pTab->nCol + 1;
+  if( chngRowid ){
+    regNewRowid++;
+    pParse->nMem++;
+  }
+  regData = regNewRowid+1;
+ 
+
   /* Begin generating code.
   */
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) goto update_cleanup;
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
   sqlite3BeginWriteOperation(pParse, 1, iDb);
-  mem1 = ++pParse->nMem;
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   /* Virtual tables must be handled separately */
@@ -333,9 +351,8 @@ void sqlite3Update(
 
   /* Remember the rowid of every item to be updated.
   */
-  iRowid = ++pParse->nMem;
-  sqlite3VdbeAddOp2(v, IsVirtual(pTab) ? OP_VRowid : OP_Rowid, iCur, iRowid);
-  sqlite3VdbeAddOp2(v, OP_FifoWrite, iRowid, 0);
+  sqlite3VdbeAddOp2(v, IsVirtual(pTab) ? OP_VRowid : OP_Rowid,iCur,regOldRowid);
+  sqlite3VdbeAddOp2(v, OP_FifoWrite, regOldRowid, 0);
 
   /* End the database scan loop.
   */
@@ -344,8 +361,8 @@ void sqlite3Update(
   /* Initialize the count of updated rows
   */
   if( db->flags & SQLITE_CountRows && !pParse->trigStack ){
-    memCnt = ++pParse->nMem;
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, memCnt);
+    regRowCount = ++pParse->nMem;
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowCount);
   }
 
   if( !isView && !IsVirtual(pTab) ){
@@ -383,13 +400,13 @@ void sqlite3Update(
   }
 
   /* Top of the update loop */
-  addr = sqlite3VdbeAddOp2(v, OP_FifoRead, iRowid, 0);
+  addr = sqlite3VdbeAddOp2(v, OP_FifoRead, regOldRowid, 0);
   sqlite3VdbeAddOp2(v, OP_StackDepth, -1, 0);
 
   if( triggers_exist ){
     /* Make cursor iCur point to the record that is being updated.
     */
-    sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addr, iRowid);
+    sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addr, regOldRowid);
 
     /* Generate the OLD table
     */
@@ -437,45 +454,44 @@ void sqlite3Update(
   }
 
   if( !isView && !IsVirtual(pTab) ){
-
     /* Loop over every record that needs updating.  We have to load
     ** the old data for each record to be updated because some columns
     ** might not change and we will need to copy the old value.
     ** Also, the old data is needed to delete the old index entries.
     ** So make the cursor point at the old record.
     */
-    sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addr, iRowid);
-    sqlite3VdbeAddOp2(v, OP_SCopy, iRowid, 0);
+    sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addr, regOldRowid);
 
     /* If the record number will change, push the record number as it
     ** will be after the update. (The old record number is currently
     ** on top of the stack.)
     */
     if( chngRowid ){
-      sqlite3ExprCode(pParse, pRowidExpr, 0);
-      sqlite3VdbeAddOp2(v, OP_MustBeInt, 0, 0);
+      sqlite3ExprCode(pParse, pRowidExpr, regNewRowid);
+      sqlite3VdbeAddOp3(v, OP_MustBeInt, 0, 0, regNewRowid);
     }
 
     /* Compute new data for this record.  
     */
     for(i=0; i<pTab->nCol; i++){
       if( i==pTab->iPKey ){
-        sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, regData+i);
         continue;
       }
       j = aXRef[i];
       if( j<0 ){
-        sqlite3VdbeAddOp2(v, OP_Column, iCur, i);
+        sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regData+i);
         sqlite3ColumnDefault(v, pTab, i);
       }else{
-        sqlite3ExprCode(pParse, pChanges->a[j].pExpr, 0);
+        sqlite3ExprCode(pParse, pChanges->a[j].pExpr, regData+i);
       }
     }
 
     /* Do constraint checks
     */
-    sqlite3GenerateConstraintChecks(pParse, pTab, iCur, aRegIdx, chngRowid, 1,
-                                   onError, addr);
+    sqlite3GenerateConstraintChecks(pParse, pTab, iCur, regNewRowid,
+                                    aRegIdx, chngRowid, 1,
+                                    onError, addr);
 
     /* Delete the old indices for the current record.
     */
@@ -489,13 +505,14 @@ void sqlite3Update(
 
     /* Create the new index entries and the new record.
     */
-    sqlite3CompleteInsertion(pParse, pTab, iCur, aRegIdx, chngRowid, 1, -1, 0);
+    sqlite3CompleteInsertion(pParse, pTab, iCur, regNewRowid, 
+                             aRegIdx, chngRowid, 1, -1, 0);
   }
 
   /* Increment the row counter 
   */
   if( db->flags & SQLITE_CountRows && !pParse->trigStack){
-    sqlite3VdbeAddOp2(v, OP_AddImm, memCnt, 1);
+    sqlite3VdbeAddOp2(v, OP_AddImm, regRowCount, 1);
   }
 
   /* If there are triggers, close all the cursors after each iteration
@@ -530,7 +547,7 @@ void sqlite3Update(
   ** invoke the callback function.
   */
   if( db->flags & SQLITE_CountRows && !pParse->trigStack && pParse->nested==0 ){
-    sqlite3VdbeAddOp2(v, OP_ResultRow, memCnt, 1);
+    sqlite3VdbeAddOp2(v, OP_ResultRow, regRowCount, 1);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows updated", P4_STATIC);
   }

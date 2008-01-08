@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.642 2008/01/08 02:57:56 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.643 2008/01/08 18:57:50 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1776,8 +1776,9 @@ int sqlite3IsRowid(const char*);
 void sqlite3GenerateRowDelete(sqlite3*, Vdbe*, Table*, int, int, int);
 void sqlite3GenerateRowIndexDelete(Vdbe*, Table*, int, int*);
 void sqlite3GenerateIndexKey(Vdbe*, Index*, int);
-void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int*,int,int,int,int);
-void sqlite3CompleteInsertion(Parse*, Table*, int, int*, int, int, int, int);
+void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,
+                                     int*,int,int,int,int);
+void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*,int,int,int,int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
 void sqlite3BeginWriteOperation(Parse*, int, int);
 Expr *sqlite3ExprDup(sqlite3*,Expr*);
