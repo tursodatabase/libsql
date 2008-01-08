@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.162 2008/01/06 00:25:22 drh Exp $
+** $Id: update.c,v 1.163 2008/01/08 02:57:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -90,11 +90,9 @@ void sqlite3Update(
   Vdbe *v;               /* The virtual database engine */
   Index *pIdx;           /* For looping over indices */
   int nIdx;              /* Number of indices that need updating */
-  int nIdxTotal;         /* Total number of indices */
   int iCur;              /* VDBE Cursor number of pTab */
   sqlite3 *db;           /* The database structure */
-  Index **apIdx = 0;     /* An array of indices that need updating too */
-  char *aIdxUsed = 0;    /* aIdxUsed[i]==1 if the i-th index is used */
+  int *aRegIdx = 0;      /* One register assigned to each index to be updated */
   int *aXRef = 0;        /* aXRef[i] is the index in pChanges->a[] of the
                          ** an expression for the i-th column of the table.
                          ** aXRef[i]==-1 if the i-th column is not changed. */
@@ -227,40 +225,30 @@ void sqlite3Update(
 #endif
   }
 
-  /* Allocate memory for the array apIdx[] and fill it with pointers to every
-  ** index that needs to be updated.  Indices only need updating if their
-  ** key includes one of the columns named in pChanges or if the record
-  ** number of the original table entry is changing.
+  /* Allocate memory for the array aRegIdx[].  There is one entry in the
+  ** array for each index associated with table being updated.  Fill in
+  ** the value with a register number for indices that are to be used
+  ** and with zero for unused indices.
   */
-  for(nIdx=nIdxTotal=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdxTotal++){
+  for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdx++){}
+  if( nIdx>0 ){
+    aRegIdx = sqlite3DbMallocRaw(db, sizeof(Index*) * nIdx );
+    if( aRegIdx==0 ) goto update_cleanup;
+  }
+  for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
+    int reg;
     if( chngRowid ){
-      i = 0;
-    }else {
+      reg = ++pParse->nMem;
+    }else{
+      reg = 0;
       for(i=0; i<pIdx->nColumn; i++){
-        if( aXRef[pIdx->aiColumn[i]]>=0 ) break;
+        if( aXRef[pIdx->aiColumn[i]]>=0 ){
+          reg = ++pParse->nMem;
+          break;
+        }
       }
     }
-    if( i<pIdx->nColumn ) nIdx++;
-  }
-  if( nIdxTotal>0 ){
-    apIdx = sqlite3DbMallocRaw(db, sizeof(Index*) * nIdx + nIdxTotal );
-    if( apIdx==0 ) goto update_cleanup;
-    aIdxUsed = (char*)&apIdx[nIdx];
-  }
-  for(nIdx=j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
-    if( chngRowid ){
-      i = 0;
-    }else{
-      for(i=0; i<pIdx->nColumn; i++){
-        if( aXRef[pIdx->aiColumn[i]]>=0 ) break;
-      }
-    }
-    if( i<pIdx->nColumn ){
-      apIdx[nIdx++] = pIdx;
-      aIdxUsed[j] = 1;
-    }else{
-      aIdxUsed[j] = 0;
-    }
+    aRegIdx[j] = reg;
   }
 
   /* Begin generating code.
@@ -380,7 +368,7 @@ void sqlite3Update(
       }
     }
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-      if( openAll || aIdxUsed[i] ){
+      if( openAll || aRegIdx[i]>0 ){
         KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
         sqlite3VdbeAddOp4(v, OP_OpenWrite, iCur+i+1, pIdx->tnum, iDb,
                        (char*)pKey, P4_KEYINFO_HANDOFF);
@@ -486,12 +474,12 @@ void sqlite3Update(
 
     /* Do constraint checks
     */
-    sqlite3GenerateConstraintChecks(pParse, pTab, iCur, aIdxUsed, chngRowid, 1,
+    sqlite3GenerateConstraintChecks(pParse, pTab, iCur, aRegIdx, chngRowid, 1,
                                    onError, addr);
 
     /* Delete the old indices for the current record.
     */
-    sqlite3GenerateRowIndexDelete(v, pTab, iCur, aIdxUsed);
+    sqlite3GenerateRowIndexDelete(v, pTab, iCur, aRegIdx);
 
     /* If changing the record number, delete the old record.
     */
@@ -501,7 +489,7 @@ void sqlite3Update(
 
     /* Create the new index entries and the new record.
     */
-    sqlite3CompleteInsertion(pParse, pTab, iCur, aIdxUsed, chngRowid, 1, -1, 0);
+    sqlite3CompleteInsertion(pParse, pTab, iCur, aRegIdx, chngRowid, 1, -1, 0);
   }
 
   /* Increment the row counter 
@@ -526,7 +514,7 @@ void sqlite3Update(
 
   /* Close all tables */
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-    if( openAll || aIdxUsed[i] ){
+    if( openAll || aRegIdx[i]>0 ){
       sqlite3VdbeAddOp2(v, OP_Close, iCur+i+1, 0);
     }
   }
@@ -549,7 +537,7 @@ void sqlite3Update(
 
 update_cleanup:
   sqlite3AuthContextPop(&sContext);
-  sqlite3_free(apIdx);
+  sqlite3_free(aRegIdx);
   sqlite3_free(aXRef);
   sqlite3SrcListDelete(pTabList);
   sqlite3ExprListDelete(pChanges);

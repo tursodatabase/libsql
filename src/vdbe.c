@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.687 2008/01/07 19:20:25 drh Exp $
+** $Id: vdbe.c,v 1.688 2008/01/08 02:57:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -716,6 +716,26 @@ int sqlite3VdbeExec(
           assert( pOp->p2<=p->nMem );
           pOut = &p->aMem[pOp->p2];
         }
+      }
+    }else if( (opProperty & OPFLG_IN2)!=0 ){
+      assert( pOp->p2>=0 );
+      if( pOp->p2==0 ){
+        pIn2 = pTos;
+        nPop = 1;
+      }else{
+        assert( pOp->p2<=p->nMem );
+        pIn2 = &p->aMem[pOp->p2];
+        REGISTER_TRACE(pOp->p2, pIn2);
+      }
+    }else if( (opProperty & OPFLG_IN3)!=0 ){
+      assert( pOp->p3>=0 );
+      if( pOp->p3==0 ){
+        pIn3 = pTos;
+        nPop = 1;
+      }else{
+        assert( pOp->p3<=p->nMem );
+        pIn3 = &p->aMem[pOp->p3];
+        REGISTER_TRACE(pOp->p3, pIn3);
       }
     }
 
@@ -4166,67 +4186,60 @@ case OP_Next: {        /* no-push, jump */
   break;
 }
 
-/* Opcode: IdxInsert P1 P2 *
+/* Opcode: IdxInsert P1 P2 P3
 **
-** The top of the stack holds a SQL index key made using either the
-** MakeIdxRec or MakeRecord instructions.  This opcode writes that key
+** Register P2 holds a SQL index key made using the
+** MakeIdxRec instructions.  This opcode writes that key
 ** into the index P1.  Data for the entry is nil.
 **
-** P2 is a flag that provides a hint to the b-tree layer that this
+** P3 is a flag that provides a hint to the b-tree layer that this
 ** insert is likely to be an append.
 **
 ** This instruction only works for indices.  The equivalent instruction
 ** for tables is OP_Insert.
 */
-case OP_IdxInsert: {        /* no-push */
+case OP_IdxInsert: {        /* no-push, in2 */
   int i = pOp->p1;
   Cursor *pC;
   BtCursor *pCrsr;
-  assert( pTos>=p->aStack );
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
-  assert( pTos->flags & MEM_Blob );
+  assert( pIn2->flags & MEM_Blob );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     assert( pC->isTable==0 );
-    rc = ExpandBlob(pTos);
+    rc = ExpandBlob(pIn2);
     if( rc==SQLITE_OK ){
-      int nKey = pTos->n;
-      const char *zKey = pTos->z;
-      rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, 0, pOp->p2);
+      int nKey = pIn2->n;
+      const char *zKey = pIn2->z;
+      rc = sqlite3BtreeInsert(pCrsr, zKey, nKey, "", 0, 0, pOp->p3);
       assert( pC->deferredMoveto==0 );
       pC->cacheStatus = CACHE_STALE;
     }
   }
-  Release(pTos);
-  pTos--;
   break;
 }
 
-/* Opcode: IdxDelete P1 * *
+/* Opcode: IdxDelete P1 P2 *
 **
-** The top of the stack is an index key built using the either the
-** MakeIdxRec or MakeRecord opcodes.
-** This opcode removes that entry from the index.
+** The content of register P2 is an index key built using the either the
+** MakeIdxRec opcode.  Removes that entry from the index.
 */
-case OP_IdxDelete: {        /* no-push */
+case OP_IdxDelete: {        /* no-push, in2 */
   int i = pOp->p1;
   Cursor *pC;
   BtCursor *pCrsr;
-  assert( pTos>=p->aStack );
-  assert( pTos->flags & MEM_Blob );
+  assert( pIn2->flags & MEM_Blob );
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int res;
-    rc = sqlite3BtreeMoveto(pCrsr, pTos->z, pTos->n, 0, &res);
+    rc = sqlite3BtreeMoveto(pCrsr, pIn2->z, pIn2->n, 0, &res);
     if( rc==SQLITE_OK && res==0 ){
       rc = sqlite3BtreeDelete(pCrsr);
     }
     assert( pC->deferredMoveto==0 );
     pC->cacheStatus = CACHE_STALE;
   }
-  Release(pTos);
-  pTos--;
   break;
 }
 

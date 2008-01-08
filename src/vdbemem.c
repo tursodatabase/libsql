@@ -529,7 +529,7 @@ int sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
   }
   pFrom->flags = MEM_Null;
   pFrom->xDel = 0;
-  if( pTo->flags & MEM_Ephem ){
+  if( 0 /* pTo->flags & MEM_Ephem */ ){
     rc = sqlite3VdbeMemMakeWriteable(pTo);
   }else{
     rc = SQLITE_OK;

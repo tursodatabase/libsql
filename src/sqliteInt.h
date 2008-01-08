@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.641 2008/01/06 00:25:22 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.642 2008/01/08 02:57:56 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1389,7 +1389,7 @@ struct Parse {
   int nTab;            /* Number of previously allocated VDBE cursors */
   int nMem;            /* Number of memory cells used so far */
   int nSet;            /* Number of sets used so far */
-  int ckOffset;        /* Stack offset to data used by CHECK constraints */
+  int ckBase;          /* Base register of data during check constraints */
   u32 writeMask;       /* Start a write transaction on these databases */
   u32 cookieMask;      /* Bitmask of schema verified databases */
   int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
@@ -1774,11 +1774,11 @@ int sqlite3ExprIsConstantOrFunction(Expr*);
 int sqlite3ExprIsInteger(Expr*, int*);
 int sqlite3IsRowid(const char*);
 void sqlite3GenerateRowDelete(sqlite3*, Vdbe*, Table*, int, int, int);
-void sqlite3GenerateRowIndexDelete(Vdbe*, Table*, int, char*);
+void sqlite3GenerateRowIndexDelete(Vdbe*, Table*, int, int*);
 void sqlite3GenerateIndexKey(Vdbe*, Index*, int);
-void sqlite3GenerateConstraintChecks(Parse*,Table*,int,char*,int,int,int,int);
-void sqlite3CompleteInsertion(Parse*, Table*, int, char*, int, int, int, int);
-void sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
+void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int*,int,int,int,int);
+void sqlite3CompleteInsertion(Parse*, Table*, int, int*, int, int, int, int);
+int sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
 void sqlite3BeginWriteOperation(Parse*, int, int);
 Expr *sqlite3ExprDup(sqlite3*,Expr*);
 void sqlite3TokenCopy(sqlite3*,Token*, Token*);

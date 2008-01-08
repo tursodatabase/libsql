@@ -1,5 +1,5 @@
-C Registerify\sthe\sAUTOINCREMENT\sprocessing\sand\sthe\sOP_IsNull\sand\sOP_NotNull\noperators.\s(CVS\s4692)
-D 2008-01-07T19:20:25
+C Progress\stoward\sregisterification\sof\sthe\sconstraint\schecking\slogic\sfor\nINSERT\sand\sUPDATE.\s(CVS\s4693)
+D 2008-01-08T02:57:56
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -90,13 +90,13 @@ F src/build.c 22b50a462d7b2be82e29071069d1c3daf29e953f
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
-F src/delete.c 09c7b312a061d08df8a95b1f75cb10c6af14114a
+F src/delete.c d78e46b259a94a5f98a1bceee206c5fd21276ae7
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c f84b4901dff3bacd08ece3f0de09318a5a298121
+F src/expr.c 6f2a852227ba2abd5ad0916f539c1f2159da28b4
 F src/func.c 996071cf0af9d967e58b69fce1909555059ebc7d
 F src/hash.c 45a7005aac044b6c86bd7e49c44bc15d30006d6c
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
-F src/insert.c 9c1a6501d79c9c4e674e0e2c3bc4a5207f9b3b95
+F src/insert.c 3a45102002b611aa1707bb6c6c5c148547d2630a
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
@@ -136,7 +136,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 5391e889384d2062249f668110d64ed16f601c4b
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
-F src/sqliteInt.h 95cdddce11ee871fad1d91d6b6e405969dcc405f
+F src/sqliteInt.h 964754dcd508ddf0dd0b326072ad80678452e5c2
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 9923abeffc9b3d7dad58e92b319661521f60debf
@@ -164,18 +164,18 @@ F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c a4e04438c11fed2c67ec47fe3edbef9cca2d1b48
 F src/trigger.c 33071215111825634b85567bfc36c14094eebe54
-F src/update.c 38e9e4c27896df2d189927e3b483cadf5641f47c
+F src/update.c acd1c38dbbf253183fe2a8e5be0b3f3fee59be15
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c 3d849013558e52b2c85134fc6ed655d6dc00ace7
+F src/vdbe.c e71595acce83c585c31ac0551cee1c8cf9540fd2
 F src/vdbe.h bb128757b84280504a1243c450fd13ead248ede5
 F src/vdbeInt.h 31bd686595356284d5484592e2dc6e58025aa346
 F src/vdbeapi.c f14174843bf4be2c9afdf2ef48b61e7c3ac62d7c
-F src/vdbeaux.c 75b7d3e42c94310f28f6f7d3e08b69797fbe8a78
+F src/vdbeaux.c b6241be0277795ecd902743366434704f03b7636
 F src/vdbeblob.c b90f7494c408d47ce6835000b01e40b371e27baf
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
-F src/vdbemem.c 123994fcd344993d2fb050a83b91b341bbbd08b4
+F src/vdbemem.c a94f3e9e85578ba457133ad3446fc6114a03ec5a
 F src/vtab.c 03014b2bfa8096ecac5fcdc80d34cd76e06af52a
 F src/where.c 306fafa709ced14b1c816d38b96a8f4446ec1eeb
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -604,7 +604,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 38020592f15c072e0d221ae2e0df13508ac4bd49
-R dde2d5dbca593f8bc201758cd5d40a3d
+P aa48867cfa04da265b906e5b583bc7ac6b6a1157
+R af4f73c6bffdbedd3861a3c5eb6d920e
 U drh
-Z 07f47472df3751ae71471b817e3e70f7
+Z 313f66697e8ae592eab31fdd061363d6

@@ -821,12 +821,14 @@ int sqlite3VdbeList(
       pMem++;
   
       pMem->flags = MEM_Null;                       /* Comment */
+#ifdef SQLITE_DEBUG
       if( pOp->zComment ){
         pMem->flags = MEM_Str|MEM_Term;
         pMem->z = pOp->zComment;
         pMem->n = strlen(pMem->z);
         pMem->enc = SQLITE_UTF8;
       }
+#endif
     }
 
     p->nResColumn = 8 - 5*(p->explain-1);
