@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.217 2008/01/08 18:57:50 drh Exp $
+** $Id: insert.c,v 1.218 2008/01/08 23:54:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -173,7 +173,8 @@ static int autoIncBegin(
     sqlite3VdbeAddOp2(v, OP_Rewind, iCur, addr+8);
     sqlite3VdbeAddOp2(v, OP_Column, iCur, 0);
     sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pTab->zName, 0);
-    sqlite3VdbeAddOp2(v, OP_Ne, 0x100, addr+7);
+    sqlite3VdbeAddOp2(v, OP_Ne, 0, addr+7);
+    sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
     sqlite3VdbeAddOp2(v, OP_Rowid, iCur, memId+1);
     sqlite3VdbeAddOp3(v, OP_Column, iCur, 1, memId);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, addr+8);
@@ -222,7 +223,7 @@ static void autoIncEnd(
     sqlite3VdbeAddOp4(v, OP_String8, 0, memId-1, 0, pTab->zName, 0);
     sqlite3VdbeAddOp3(v, OP_RegMakeRec, memId-1, 2, memId-1);
     sqlite3VdbeAddOp3(v, OP_Insert, iCur, memId-1, memId+1);
-    sqlite3VdbeChangeP5(v, -1, OPFLAG_APPEND);
+    sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeAddOp1(v, OP_Close, iCur);
   }
 }
@@ -1082,7 +1083,7 @@ void sqlite3GenerateConstraintChecks(
   if( pTab->pCheck && (pParse->db->flags & SQLITE_IgnoreChecks)==0 ){
     int allOk = sqlite3VdbeMakeLabel(v);
     pParse->ckBase = regData;
-    sqlite3ExprIfTrue(pParse, pTab->pCheck, allOk, 1);
+    sqlite3ExprIfTrue(pParse, pTab->pCheck, allOk, SQLITE_JUMPIFNULL);
     onError = overrideError!=OE_Default ? overrideError : OE_Abort;
     if( onError==OE_Ignore ){
       sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);

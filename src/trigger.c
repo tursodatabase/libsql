@@ -850,7 +850,7 @@ int sqlite3CodeRowTrigger(
         sqlite3ExprDelete(whenExpr);
         return 1;
       }
-      sqlite3ExprIfFalse(pParse, whenExpr, endTrigger, 1);
+      sqlite3ExprIfFalse(pParse, whenExpr, endTrigger, SQLITE_JUMPIFNULL);
       sqlite3ExprDelete(whenExpr);
 
       codeTriggerProgram(pParse, p->step_list, orconf); 

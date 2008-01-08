@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.688 2008/01/08 02:57:56 drh Exp $
+** $Id: vdbe.c,v 1.689 2008/01/08 23:54:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1168,21 +1168,6 @@ case OP_Pull: {            /* no-push */
   break;
 }
 
-/* Opcode: Push P1 * *
-**
-** Overwrite the value of the P1-th element down on the
-** stack (P1==0 is the top of the stack) with the value
-** of the top of the stack.  Then pop the top of the stack.
-*/
-case OP_Push: {            /* no-push */
-  Mem *pTo = &pTos[-pOp->p1];
-
-  assert( pTo>=p->aStack );
-  sqlite3VdbeMemMove(pTo, pTos);
-  pTos--;
-  break;
-}
-
 /* Opcode: Callback P1 * *
 **
 ** The top P1 values on the stack represent a single result row from
@@ -1811,132 +1796,129 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, no-push, in1 */
 }
 #endif /* SQLITE_OMIT_CAST */
 
-/* Opcode: Eq P1 P2 P4
+/* Opcode: Lt P1 P2 P3 P4 P5
 **
-** Pop the top two elements from the stack.  If they are equal, then
-** jump to instruction P2.  Otherwise, continue to the next instruction.
+** Compare the values in register P1 and P3.  If reg(P3)<reg(P1) then
+** jump to address P2.  
 **
-** If the 0x100 bit of P1 is true and either operand is NULL then take the
-** jump.  If the 0x100 bit of P1 is clear then fall thru if either operand
-** is NULL.
+** If the SQLITE_JUMPIFNULL bit of P5 is set and either reg(P1) or
+** reg(P3) is NULL then take the jump.  If the SQLITE_JUMPIFNULL 
+** bit is clear then fall thru if either operand is NULL.
 **
-** If the 0x200 bit of P1 is set and either operand is NULL then
-** both operands are converted to integers prior to comparison.
-** NULL operands are converted to zero and non-NULL operands are
-** converted to 1.  Thus, for example, with 0x200 set,  NULL==NULL is true
-** whereas it would normally be NULL.  Similarly,  NULL==123 is false when
-** 0x200 is set but is NULL when the 0x200 bit of P1 is clear.
+** If the SQLITE_NULLEQUAL bit of P5 is set then treat NULL operands
+** as being equal to one another.  Normally NULLs are not equal to 
+** anything including other NULLs.
 **
-** The least significant byte of P1 (mask 0xff) must be an affinity character -
+** The SQLITE_AFF_MASK portion of P5 must be an affinity character -
 ** SQLITE_AFF_TEXT, SQLITE_AFF_INTEGER, and so forth. An attempt is made 
-** to coerce both values
-** according to the affinity before the comparison is made. If the byte is
-** 0x00, then numeric affinity is used.
+** to coerce both operands according to this affinity before the
+** comparison is made. If the SQLITE_AFF_MASK is 0x00, then numeric
+** affinity is used.
 **
 ** Once any conversions have taken place, and neither value is NULL, 
-** the values are compared. If both values are blobs, or both are text,
-** then memcmp() is used to determine the results of the comparison. If
-** both values are numeric, then a numeric comparison is used. If the
-** two values are of different types, then they are inequal.
+** the values are compared. If both values are blobs then memcmp() is
+** used to determine the results of the comparison.  If both values
+** are text, then the appropriate collating function specified in
+** P4 is  used to do the comparison.  If P4 is not specified then
+** memcmp() is used to compare text string.  If both values are
+** numeric, then a numeric comparison is used. If the two values
+** are of different types, then numbers are considered less than
+** strings and strings are considered less than blobs.
 **
-** If P2 is zero, do not jump.  Instead, push an integer 1 onto the
-** stack if the jump would have been taken, or a 0 if not.  Push a
-** NULL if either operand was NULL.
-**
-** If P4 is not NULL it is a pointer to a collating sequence (a CollSeq
-** structure) that defines how to compare text.
+** If the SQLITE_STOREP2 bit of P5 is set, then do not jump.  Instead,
+** store a boolean result (either 0, or 1, or NULL) in register P2.
 */
 /* Opcode: Ne P1 P2 P4
 **
-** This works just like the Eq opcode except that the jump is taken if
-** the operands from the stack are not equal.  See the Eq opcode for
+** This works just like the Lt opcode except that the jump is taken if
+** the operands in registers P1 and P3 are not equal.  See the Lt opcode for
 ** additional information.
 */
-/* Opcode: Lt P1 P2 P4
+/* Opcode: Eq P1 P2 P4
 **
-** This works just like the Eq opcode except that the jump is taken if
-** the 2nd element down on the stack is less than the top of the stack.
-** See the Eq opcode for additional information.
+** This works just like the Lt opcode except that the jump is taken if
+** the operands in registers P1 and P3 are equal.
+** See the Lt opcode for additional information.
 */
 /* Opcode: Le P1 P2 P4
 **
-** This works just like the Eq opcode except that the jump is taken if
-** the 2nd element down on the stack is less than or equal to the
-** top of the stack.  See the Eq opcode for additional information.
+** This works just like the Lt opcode except that the jump is taken if
+** the content of register P3 is less than or equal to the content of
+** register P1.  See the Lt opcode for additional information.
 */
 /* Opcode: Gt P1 P2 P4
 **
-** This works just like the Eq opcode except that the jump is taken if
-** the 2nd element down on the stack is greater than the top of the stack.
-** See the Eq opcode for additional information.
+** This works just like the Lt opcode except that the jump is taken if
+** the content of register P3 is greater than the content of
+** register P1.  See the Lt opcode for additional information.
 */
 /* Opcode: Ge P1 P2 P4
 **
-** This works just like the Eq opcode except that the jump is taken if
-** the 2nd element down on the stack is greater than or equal to the
-** top of the stack.  See the Eq opcode for additional information.
+** This works just like the Lt opcode except that the jump is taken if
+** the content of register P3 is greater than or equal to the content of
+** register P1.  See the Lt opcode for additional information.
 */
-case OP_Eq:               /* same as TK_EQ, no-push, jump */
-case OP_Ne:               /* same as TK_NE, no-push, jump */
-case OP_Lt:               /* same as TK_LT, no-push, jump */
-case OP_Le:               /* same as TK_LE, no-push, jump */
-case OP_Gt:               /* same as TK_GT, no-push, jump */
-case OP_Ge: {             /* same as TK_GE, no-push, jump */
-  Mem *pNos;
+case OP_Eq:               /* same as TK_EQ, no-push, jump, in1, in3 */
+case OP_Ne:               /* same as TK_NE, no-push, jump, in1, in3 */
+case OP_Lt:               /* same as TK_LT, no-push, jump, in1, in3 */
+case OP_Le:               /* same as TK_LE, no-push, jump, in1, in3 */
+case OP_Gt:               /* same as TK_GT, no-push, jump, in1, in3 */
+case OP_Ge: {             /* same as TK_GE, no-push, jump, in1, in3 */
   int flags;
   int res;
   char affinity;
+  Mem x1, x3;
 
-  pNos = &pTos[-1];
-  flags = pTos->flags|pNos->flags;
+  flags = pIn1->flags|pIn3->flags;
 
   /* If either value is a NULL P2 is not zero, take the jump if the least
   ** significant byte of P1 is true. If P2 is zero, then push a NULL onto
   ** the stack.
   */
   if( flags&MEM_Null ){
-    if( (pOp->p1 & 0x200)!=0 ){
-      /* The 0x200 bit of P1 means, roughly "do not treat NULL as the
-      ** magic SQL value it normally is - treat it as if it were another
-      ** integer".
-      **
-      ** With 0x200 set, if either operand is NULL then both operands
-      ** are converted to integers prior to being passed down into the
-      ** normal comparison logic below.  NULL operands are converted to
-      ** zero and non-NULL operands are converted to 1.  Thus, for example,
-      ** with 0x200 set,  NULL==NULL is true whereas it would normally
-      ** be NULL.  Similarly,  NULL!=123 is true.
+    if( (pOp->p5 & SQLITE_NULLEQUAL)!=0 ){
+      /*
+      ** When SQLITE_NULLEQUAL set and either operand is NULL
+      ** then both operands are converted to integers prior to being 
+      ** passed down into the normal comparison logic below.  
+      ** NULL operands are converted to zero and non-NULL operands
+      ** are converted to 1.  Thus, for example, with SQLITE_NULLEQUAL
+      ** set,  NULL==NULL is true whereas it would normally NULL.
+      ** Similarly,  NULL!=123 is true.
       */
-      sqlite3VdbeMemSetInt64(pTos, (pTos->flags & MEM_Null)==0);
-      sqlite3VdbeMemSetInt64(pNos, (pNos->flags & MEM_Null)==0);
+      x1.flags = MEM_Int;
+      x1.u.i = (pIn1->flags & MEM_Null)==0;
+      pIn1 = &x1;
+      x3.flags = MEM_Int;
+      x3.u.i = (pIn3->flags & MEM_Null)==0;
+      pIn3 = &x3;
     }else{
-      /* If the 0x200 bit of P1 is clear and either operand is NULL then
-      ** the result is always NULL.  The jump is taken if the 0x100 bit
-      ** of P1 is set.
+      /* If the SQLITE_NULLEQUAL bit is clear and either operand is NULL then
+      ** the result is always NULL.  The jump is taken if the 
+      ** SQLITE_JUMPIFNULL bit is set.
       */
-      popStack(&pTos, 2);
-      if( pOp->p2 ){
-        if( pOp->p1 & 0x100 ){
-          pc = pOp->p2-1;
-        }
-      }else{
-        pTos++;
-        pTos->flags = MEM_Null;
+      if( pOp->p5 & SQLITE_STOREP2 ){
+        pOut = &p->aMem[pOp->p2];
+        Release(pOut);
+        pOut->flags = MEM_Null;
+        REGISTER_TRACE(pOp->p2, pOut);
+      }else if( pOp->p5 & SQLITE_JUMPIFNULL ){
+        pc = pOp->p2-1;
       }
       break;
     }
   }
 
-  affinity = pOp->p1 & 0xFF;
+  affinity = pOp->p5 & SQLITE_AFF_MASK;
   if( affinity ){
-    applyAffinity(pNos, affinity, encoding);
-    applyAffinity(pTos, affinity, encoding);
+    applyAffinity(pIn1, affinity, encoding);
+    applyAffinity(pIn3, affinity, encoding);
   }
 
   assert( pOp->p4type==P4_COLLSEQ || pOp->p4.pColl==0 );
-  ExpandBlob(pNos);
-  ExpandBlob(pTos);
-  res = sqlite3MemCompare(pNos, pTos, pOp->p4.pColl);
+  ExpandBlob(pIn1);
+  ExpandBlob(pIn3);
+  res = sqlite3MemCompare(pIn3, pIn1, pOp->p4.pColl);
   switch( pOp->opcode ){
     case OP_Eq:    res = res==0;     break;
     case OP_Ne:    res = res!=0;     break;
@@ -1946,15 +1928,14 @@ case OP_Ge: {             /* same as TK_GE, no-push, jump */
     default:       res = res>=0;     break;
   }
 
-  popStack(&pTos, 2);
-  if( pOp->p2 ){
-    if( res ){
-      pc = pOp->p2-1;
-    }
-  }else{
-    pTos++;
-    pTos->flags = MEM_Int;
-    pTos->u.i = res;
+  if( pOp->p5 & SQLITE_STOREP2 ){
+    pOut = &p->aMem[pOp->p2];
+    Release(pOut);
+    pOut->flags = MEM_Int;
+    pOut->u.i = res;
+    REGISTER_TRACE(pOp->p2, pOut);
+  }else if( res ){
+    pc = pOp->p2-1;
   }
   break;
 }

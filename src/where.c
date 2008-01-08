@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.277 2008/01/07 19:20:25 drh Exp $
+** $Id: where.c,v 1.278 2008/01/08 23:54:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2024,7 +2024,7 @@ WhereInfo *sqlite3WhereBegin(
   ** expression and either jump over all of the code or fall thru.
   */
   if( pWhere && (pTabList->nSrc==0 || sqlite3ExprIsConstantNotJoin(pWhere)) ){
-    sqlite3ExprIfFalse(pParse, pWhere, pWInfo->iBreak, 1);
+    sqlite3ExprIfFalse(pParse, pWhere, pWInfo->iBreak, SQLITE_JUMPIFNULL);
     pWhere = 0;
   }
 
@@ -2384,7 +2384,8 @@ WhereInfo *sqlite3WhereBegin(
       if( testOp!=OP_Noop ){
         sqlite3VdbeAddOp2(v, OP_Rowid, iCur, 0);
         sqlite3VdbeAddOp2(v, OP_SCopy, pLevel->iMem, 0);
-        sqlite3VdbeAddOp2(v, testOp, SQLITE_AFF_NUMERIC|0x100, brk);
+        sqlite3VdbeAddOp2(v, testOp, 0, brk);
+        sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC | SQLITE_JUMPIFNULL);
       }
     }else if( pLevel->flags & WHERE_COLUMN_RANGE ){
       /* Case 3: The WHERE clause term that refers to the right-most
@@ -2651,7 +2652,7 @@ WhereInfo *sqlite3WhereBegin(
       if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
         continue;
       }
-      sqlite3ExprIfFalse(pParse, pE, cont, 1);
+      sqlite3ExprIfFalse(pParse, pE, cont, SQLITE_JUMPIFNULL);
       pTerm->flags |= TERM_CODED;
     }
 
@@ -2666,7 +2667,7 @@ WhereInfo *sqlite3WhereBegin(
         if( pTerm->flags & (TERM_VIRTUAL|TERM_CODED) ) continue;
         if( (pTerm->prereqAll & notReady)!=0 ) continue;
         assert( pTerm->pExpr );
-        sqlite3ExprIfFalse(pParse, pTerm->pExpr, cont, 1);
+        sqlite3ExprIfFalse(pParse, pTerm->pExpr, cont, SQLITE_JUMPIFNULL);
         pTerm->flags |= TERM_CODED;
       }
     }

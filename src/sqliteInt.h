@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.643 2008/01/08 18:57:50 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.644 2008/01/08 23:54:25 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -713,6 +713,20 @@ struct CollSeq {
 #define SQLITE_AFF_REAL     'e'
 
 #define sqlite3IsNumericAffinity(X)  ((X)>=SQLITE_AFF_NUMERIC)
+
+/*
+** The SQLITE_AFF_MASK values masks off the significant bits of an
+** affinity value. 
+*/
+#define SQLITE_AFF_MASK     0x67
+
+/*
+** Additional bit values that can be ORed with an affinity without
+** changing the affinity.
+*/
+#define SQLITE_JUMPIFNULL   0x08  /* jumps if either operand is NULL */
+#define SQLITE_NULLEQUAL    0x10  /* compare NULLs equal */
+#define SQLITE_STOREP2      0x80  /* Store result in reg[P2] rather than jump */
 
 /*
 ** Each SQL table is represented in memory by an instance of the

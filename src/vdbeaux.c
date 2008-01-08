@@ -411,12 +411,14 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, int val){
 }
 
 /*
-** Change the value of the P5 operand for a specific instruction.
+** Change the value of the P5 operand for the most recently
+** added operation.
 */
-void sqlite3VdbeChangeP5(Vdbe *p, int addr, u8 val){
+void sqlite3VdbeChangeP5(Vdbe *p, u8 val){
   assert( p==0 || p->magic==VDBE_MAGIC_INIT );
-  if( p && addr>=0 && p->nOp>addr && p->aOp ){
-    p->aOp[addr].p5 = val;
+  if( p && p->aOp ){
+    assert( p->nOp>0 );
+    p->aOp[p->nOp-1].p5 = val;
   }
 }
 
