@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.97 2008/01/08 15:18:52 drh Exp $
+# $Id: tester.tcl,v 1.98 2008/01/08 16:03:50 drh Exp $
 
 
 set tcl_precision 15
@@ -353,6 +353,7 @@ proc crashsql {args} {
   set blocksize ""
   set crashdelay 1
   set prngseed 0
+  set tclbody {}
   set crashfile ""
   set dc ""
   set sql [lindex $args end]
@@ -365,6 +366,7 @@ proc crashsql {args} {
     if     {$n>1 && [string first $z -delay]==0}     {set crashdelay $z2} \
     elseif {$n>1 && [string first $z -seed]==0}      {set prngseed $z2} \
     elseif {$n>1 && [string first $z -file]==0}      {set crashfile $z2}  \
+    elseif {$n>1 && [string first $z -tclbody]==0}   {set tclbody $z2}  \
     elseif {$n>1 && [string first $z -blocksize]==0} {set blocksize "-s $z2" } \
     elseif {$n>1 && [string first $z -characteristics]==0} {set dc "-c {$z2}" } \
     else   { error "Unrecognized option: $z" }
@@ -394,9 +396,14 @@ proc crashsql {args} {
     puts $f "db eval {SELECT randomblob($seed)}"
   }
 
-  puts $f "db eval {"
-  puts $f   "$sql"
-  puts $f "}"
+  if {[string length $tclbody]>0} {
+    puts $f $tclbody
+  }
+  if {[string length $sql]>0} {
+    puts $f "db eval {"
+    puts $f   "$sql"
+    puts $f "}"
+  }
   close $f
 
   set r [catch {
