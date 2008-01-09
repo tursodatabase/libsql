@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.689 2008/01/08 23:54:25 drh Exp $
+** $Id: vdbe.c,v 1.690 2008/01/09 02:15:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -913,7 +913,7 @@ case OP_Real: {            /* same as TK_FLOAT, out2-prerelease */
   break;
 }
 
-/* Opcode: String8 * * P4
+/* Opcode: String8 * P2 * P4 *
 **
 ** P4 points to a nul terminated UTF-8 string. This opcode is transformed 
 ** into an OP_String before it is executed for the first time.
@@ -1023,7 +1023,7 @@ case OP_Blob: {                /* out2-prerelease */
 }
 #endif /* SQLITE_OMIT_BLOB_LITERAL */
 
-/* Opcode: Variable P1 * *
+/* Opcode: Variable P1 P2 * * *
 **
 ** The value of variable P1 is written into register P2 or pushed
 ** onto the stack if P2 is zero.  A variable is
@@ -1046,7 +1046,7 @@ case OP_Variable: {           /* out2-prerelease */
   break;
 }
 
-/* Opcode: Pop P1 * *
+/* Opcode: Pop P1 * * * *
 **
 ** P1 elements are popped off of the top of stack and discarded.
 */
@@ -1308,50 +1308,34 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
   break;
 }
 
-/* Opcode: Add * * *
+/* Opcode: Add P1 P2 P3 * *
 **
-** Pop the top two elements from the stack, add them together,
-** and push the result back onto the stack.  If either element
-** is a string then it is converted to a double using the atof()
-** function before the addition.
+** Add the value in P1 to the value in P2 and store the result in P3.
 ** If either operand is NULL, the result is NULL.
 */
-/* Opcode: Multiply * * *
+/* Opcode: Multiply P1 P2 P3 * *
 **
-** Pop the top two elements from the stack, multiply them together,
-** and push the result back onto the stack.  If either element
-** is a string then it is converted to a double using the atof()
-** function before the multiplication.
+**
+** Multiply the value in P1 by the value in P2 and store the result in P3.
 ** If either operand is NULL, the result is NULL.
 */
-/* Opcode: Subtract * * *
+/* Opcode: Subtract P1 P2 P3 * *
 **
-** Pop the top two elements from the stack, subtract the
-** first (what was on top of the stack) from the second (the
-** next on stack)
-** and push the result back onto the stack.  If either element
-** is a string then it is converted to a double using the atof()
-** function before the subtraction.
+** Subtract the value in P1 from the value in P2 and store the result
+** in P3.
 ** If either operand is NULL, the result is NULL.
 */
 /* Opcode: Divide * * *
 **
-** Pop the top two elements from the stack, divide the
-** first (what was on top of the stack) from the second (the
-** next on stack)
-** and push the result back onto the stack.  If either element
-** is a string then it is converted to a double using the atof()
-** function before the division.  Division by zero returns NULL.
+** Divide the value in P1 by the value in P2 and store the result
+** in P3.  If the value in P2 is zero, then the result is NULL.
 ** If either operand is NULL, the result is NULL.
 */
 /* Opcode: Remainder * * *
 **
-** Pop the top two elements from the stack, divide the
-** first (what was on top of the stack) from the second (the
-** next on stack)
-** and push the remainder after division onto the stack.  If either element
-** is a string then it is converted to a double using the atof()
-** function before the division.  Division by zero returns NULL.
+** Compute the remainder after integer division of the value in
+** register P1 by the value in register P2 and store the result in P3. 
+** If the value in register P2 is zero the result is NULL.
 ** If either operand is NULL, the result is NULL.
 */
 case OP_Add:                   /* same as TK_PLUS, in1, in2, out3 */
@@ -1648,35 +1632,32 @@ case OP_ForceInt: {            /* no-push, jump, in1 */
 
 /* Opcode: MustBeInt P1 P2 P3
 ** 
-** Force the top of the stack to be an integer.  If the top of the
-** stack is not an integer and cannot be converted into an integer
+** Force the value in register P1 to be an integer.  If P1==0 then
+** use the top of the stack.  If the value in P1 
+** is not an integer and cannot be converted into an integer
 ** without data loss, then jump immediately to P2, or if P2==0
 ** raise an SQLITE_MISMATCH exception.
 **
-** If the top of the stack is not an integer and P2 is not zero and
-** P1 is 1, then the stack is popped.  In all other cases, the depth
-** of the stack is unchanged.
-**
-** If P3 is not zero, then act on the value in register P3 instead
-** of using the stack.
+** If the P1==0 and the top of the stack is not an integer
+** and P2 is not zero and P3 is 1, then the stack is popped.
+** In all other cases, the depth of the stack is unchanged.
 */
-case OP_MustBeInt: {            /* no-push, jump */
-  Mem *pMem = ((pOp->p3==0)?pTos:&p->aMem[pOp->p3]);
-  assert( pOp->p3 || pTos>=p->aStack );
-  assert( pOp->p3>=0 && pOp->p3<=p->nMem );
-  REGISTER_TRACE(pOp->p3, pMem);
-  applyAffinity(pMem, SQLITE_AFF_NUMERIC, encoding);
-  if( (pMem->flags & MEM_Int)==0 ){
+case OP_MustBeInt: {            /* no-push, jump, in1 */
+  nPop = 0;
+  applyAffinity(pIn1, SQLITE_AFF_NUMERIC, encoding);
+  if( (pIn1->flags & MEM_Int)==0 ){
     if( pOp->p2==0 ){
       rc = SQLITE_MISMATCH;
       goto abort_due_to_error;
-    }else if( pMem==pTos ){
-      if( pOp->p1 ) popStack(&pTos, 1);
+    }else{
+      if( pOp->p3 && pOp->p1==0 ){
+        popStack(&pTos, 1);
+      }
       pc = pOp->p2 - 1;
     }
   }else{
-    Release(pMem);
-    pMem->flags = MEM_Int;
+    Release(pIn1);
+    pIn1->flags = MEM_Int;
   }
   break;
 }
@@ -1989,53 +1970,19 @@ case OP_Or: {             /* same as TK_OR, in1, in2, out3 */
   break;
 }
 
-/* Opcode: Negative * * *
-**
-** Treat the top of the stack as a numeric quantity.  Replace it
-** with its additive inverse.  If the top of the stack is NULL
-** its value is unchanged.
-*/
-/* Opcode: AbsValue * * *
-**
-** Treat the top of the stack as a numeric quantity.  Replace it
-** with its absolute value. If the top of the stack is NULL
-** its value is unchanged.
-*/
-case OP_Negative:              /* same as TK_UMINUS, no-push */
-case OP_AbsValue: {
-  assert( pTos>=p->aStack );
-  if( (pTos->flags & (MEM_Real|MEM_Int|MEM_Null))==0 ){
-    sqlite3VdbeMemNumerify(pTos);
-  }
-  if( pTos->flags & MEM_Real ){
-    Release(pTos);
-    if( pOp->opcode==OP_Negative || pTos->r<0.0 ){
-      pTos->r = -pTos->r;
-    }
-    pTos->flags = MEM_Real;
-  }else if( pTos->flags & MEM_Int ){
-    Release(pTos);
-    if( pOp->opcode==OP_Negative || pTos->u.i<0 ){
-      pTos->u.i = -pTos->u.i;
-    }
-    pTos->flags = MEM_Int;
-  }
-  break;
-}
-
 /* Opcode: Not * * *
 **
 ** Interpret the top of the stack as a boolean value.  Replace it
 ** with its complement.  If the top of the stack is NULL its value
 ** is unchanged.
 */
-case OP_Not: {                /* same as TK_NOT, no-push */
-  assert( pTos>=p->aStack );
-  if( pTos->flags & MEM_Null ) break;  /* Do nothing to NULLs */
-  sqlite3VdbeMemIntegerify(pTos);
-  assert( (pTos->flags & MEM_Dyn)==0 );
-  pTos->u.i = !pTos->u.i;
-  pTos->flags = MEM_Int;
+case OP_Not: {                /* same as TK_NOT, no-push, in1 */
+  nPop = 0;
+  if( pIn1->flags & MEM_Null ) break;  /* Do nothing to NULLs */
+  sqlite3VdbeMemIntegerify(pIn1);
+  assert( (pIn1->flags & MEM_Dyn)==0 );
+  pIn1->u.i = !pTos->u.i;
+  pIn1->flags = MEM_Int;
   break;
 }
 
@@ -2045,13 +1992,13 @@ case OP_Not: {                /* same as TK_NOT, no-push */
 ** with its ones-complement.  If the top of the stack is NULL its
 ** value is unchanged.
 */
-case OP_BitNot: {             /* same as TK_BITNOT, no-push */
-  assert( pTos>=p->aStack );
-  if( pTos->flags & MEM_Null ) break;  /* Do nothing to NULLs */
-  sqlite3VdbeMemIntegerify(pTos);
-  assert( (pTos->flags & MEM_Dyn)==0 );
-  pTos->u.i = ~pTos->u.i;
-  pTos->flags = MEM_Int;
+case OP_BitNot: {             /* same as TK_BITNOT, no-push, in1 */
+  nPop = 0;
+  if( pIn1->flags & MEM_Null ) break;  /* Do nothing to NULLs */
+  sqlite3VdbeMemIntegerify(pIn1);
+  assert( (pIn1->flags & MEM_Dyn)==0 );
+  pIn1->u.i = ~pTos->u.i;
+  pIn1->flags = MEM_Int;
   break;
 }
 
@@ -2071,43 +2018,34 @@ case OP_Noop: {            /* no-push */
   break;
 }
 
-/* Opcode: If P1 P2 *
+/* Opcode: If P1 P2 P3 * *
 **
-** Pop a single boolean from the stack.  If the boolean popped is
-** true, then jump to p2.  Otherwise continue to the next instruction.
-** An integer is false if zero and true otherwise.  A string is
-** false if it has zero length and true otherwise.
-**
-** If the value popped of the stack is NULL, then take the jump if P1
-** is true and fall through if P1 is false.
+** Jump to P2 if the value in register P1 is true.  The value is
+** is considered true if it is numeric and non-zero.  If the value
+** in P1 is NULL then take the jump if P3 is true.
 */
-/* Opcode: IfNot P1 P2 *
+/* Opcode: IfNot P1 P2 P3 * *
 **
-** Pop a single boolean from the stack.  If the boolean popped is
-** false, then jump to p2.  Otherwise continue to the next instruction.
-** An integer is false if zero and true otherwise.  A string is
-** false if it has zero length and true otherwise.
-**
-** If the value popped of the stack is NULL, then take the jump if P1
-** is true and fall through if P1 is false.
+** Jump to P2 if the value in register P1 is False.  The value is
+** is considered true if it has a numeric value of zero.  If the value
+** in P1 is NULL then take the jump if P3 is true.
 */
-case OP_If:                 /* no-push, jump */
-case OP_IfNot: {            /* no-push, jump */
+case OP_If:                 /* no-push, jump, in1 */
+case OP_IfNot: {            /* no-push, jump, in1 */
   int c;
-  assert( pTos>=p->aStack );
-  if( pTos->flags & MEM_Null ){
-    c = pOp->p1;
+  if( pIn1->flags & MEM_Null ){
+    c = pOp->p3;
   }else{
 #ifdef SQLITE_OMIT_FLOATING_POINT
-    c = sqlite3VdbeIntValue(pTos);
+    c = sqlite3VdbeIntValue(pIn1);
 #else
-    c = sqlite3VdbeRealValue(pTos)!=0.0;
+    c = sqlite3VdbeRealValue(pIn1)!=0.0;
 #endif
     if( pOp->opcode==OP_IfNot ) c = !c;
   }
-  Release(pTos);
-  pTos--;
-  if( c ) pc = pOp->p2-1;
+  if( c ){
+    pc = pOp->p2-1;
+  }
   break;
 }
 
@@ -4758,71 +4696,46 @@ case OP_MemMax: {        /* no-push */
 }
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
-/* Opcode: IfMemPos P1 P2 *
+/* Opcode: IfPos P1 P2 *
 **
 ** If the value of memory cell P1 is 1 or greater, jump to P2.
 **
 ** It is illegal to use this instruction on a memory cell that does
 ** not contain an integer.  An assertion fault will result if you try.
 */
-case OP_IfMemPos: {        /* no-push, jump */
-  int i = pOp->p1;
-  Mem *pMem;
-  assert( i>0 && i<=p->nMem );
-  pMem = &p->aMem[i];
-  assert( pMem->flags==MEM_Int );
-  if( pMem->u.i>0 ){
+case OP_IfPos: {        /* no-push, jump, in1 */
+  assert( pIn1->flags==MEM_Int );
+  if( pIn1->u.i>0 ){
      pc = pOp->p2 - 1;
   }
   break;
 }
 
-/* Opcode: IfMemNeg P1 P2 *
+/* Opcode: IfNeg P1 P2 *
 **
 ** If the value of memory cell P1 is less than zero, jump to P2. 
 **
 ** It is illegal to use this instruction on a memory cell that does
 ** not contain an integer.  An assertion fault will result if you try.
 */
-case OP_IfMemNeg: {        /* no-push, jump */
-  int i = pOp->p1;
-  Mem *pMem;
-  assert( i>0 && i<=p->nMem );
-  pMem = &p->aMem[i];
-  assert( pMem->flags==MEM_Int );
-  if( pMem->u.i<0 ){
+case OP_IfNeg: {        /* no-push, jump, in1 */
+  assert( pIn1->flags==MEM_Int );
+  if( pIn1->u.i<0 ){
      pc = pOp->p2 - 1;
   }
   break;
 }
 
-/* Opcode: IfMemZero P1 P2 *
+/* Opcode: IfZero P1 P2 *
 **
 ** If the value of memory cell P1 is exactly 0, jump to P2. 
 **
 ** It is illegal to use this instruction on a memory cell that does
 ** not contain an integer.  An assertion fault will result if you try.
 */
-case OP_IfMemZero: {        /* no-push, jump */
-  int i = pOp->p1;
-  Mem *pMem;
-  assert( i>0 && i<=p->nMem );
-  pMem = &p->aMem[i];
-  assert( pMem->flags==MEM_Int );
-  if( pMem->u.i==0 ){
-     pc = pOp->p2 - 1;
-  }
-  break;
-}
-
-/* Opcode: IfMemNull P1 P2 *
-**
-** If the value of memory cell P1 is NULL, jump to P2. 
-*/
-case OP_IfMemNull: {        /* no-push, jump */
-  int i = pOp->p1;
-  assert( i>0 && i<=p->nMem );
-  if( p->aMem[i].flags & MEM_Null ){
+case OP_IfZero: {        /* no-push, jump, in1 */
+  assert( pIn1->flags==MEM_Int );
+  if( pIn1->u.i==0 ){
      pc = pOp->p2 - 1;
   }
   break;

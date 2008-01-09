@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.164 2008/01/08 18:57:50 drh Exp $
+** $Id: update.c,v 1.165 2008/01/09 02:15:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -468,7 +468,7 @@ void sqlite3Update(
     */
     if( chngRowid ){
       sqlite3ExprCode(pParse, pRowidExpr, regNewRowid);
-      sqlite3VdbeAddOp3(v, OP_MustBeInt, 0, 0, regNewRowid);
+      sqlite3VdbeAddOp1(v, OP_MustBeInt, regNewRowid);
     }
 
     /* Compute new data for this record.  

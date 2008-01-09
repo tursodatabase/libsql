@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.162 2008/01/07 19:20:25 drh Exp $
+** $Id: pragma.c,v 1.163 2008/01/09 02:15:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -298,13 +298,13 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft,"default_cache_size")==0 ){
     static const VdbeOpList getCacheSize[] = {
-      { OP_ReadCookie,  0, 0,        2},  /* 0 */
-      { OP_AbsValue,    0, 0,        0},
-      { OP_Copy,        0, 0,        0},
-      { OP_Integer,     0, 0,        0},
-      { OP_Ne,          0, 6,        0},
-      { OP_Integer,     0, 0,        0},  /* 5 */
-      { OP_Callback,    1, 0,        0},
+      { OP_ReadCookie,  0, 1,        2},  /* 0 */
+      { OP_IfPos,       1, 6,        0},
+      { OP_Integer,     0, 2,        0},
+      { OP_Subtract,    1, 2,        1},
+      { OP_IfPos,       1, 6,        0},
+      { OP_Integer,     0, 1,        0},  /* 5 */
+      { OP_ResultRow,   1, 1,        0},
     };
     int addr;
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
@@ -312,6 +312,7 @@ void sqlite3Pragma(
     if( !zRight ){
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "cache_size", P4_STATIC);
+      pParse->nMem += 2;
       addr = sqlite3VdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
       sqlite3VdbeChangeP1(v, addr, iDb);
       sqlite3VdbeChangeP1(v, addr+5, SQLITE_DEFAULT_CACHE_SIZE);
@@ -319,11 +320,11 @@ void sqlite3Pragma(
       int size = atoi(zRight);
       if( size<0 ) size = -size;
       sqlite3BeginWriteOperation(pParse, 0, iDb);
-      sqlite3VdbeAddOp2(v, OP_Integer, size, 0);
+      sqlite3VdbeAddOp1(v, OP_Integer, size);
       sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, 0, 2);
-      addr = sqlite3VdbeAddOp2(v, OP_Integer, 0, 0);
-      sqlite3VdbeAddOp2(v, OP_Ge, 0, addr+3);
-      sqlite3VdbeAddOp2(v, OP_Negative, 0, 0);
+      addr = sqlite3VdbeAddOp2(v, OP_IfPos, 0, 0);
+      sqlite3VdbeAddOp1(v, OP_Integer, -size);
+      sqlite3VdbeJumpHere(v, addr);
       sqlite3VdbeAddOp2(v, OP_SetCookie, iDb, 2);
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
@@ -493,10 +494,10 @@ void sqlite3Pragma(
     }
     sqlite3BeginWriteOperation(pParse, 0, iDb);
     sqlite3VdbeAddOp2(v, OP_Integer, iLimit, 1);
-    addr = sqlite3VdbeAddOp2(v, OP_IncrVacuum, iDb, 0);
-    sqlite3VdbeAddOp2(v, OP_Callback, 0, 0);
+    addr = sqlite3VdbeAddOp1(v, OP_IncrVacuum, iDb);
+    sqlite3VdbeAddOp0(v, OP_Callback);
     sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1);
-    sqlite3VdbeAddOp2(v, OP_IfMemPos, 1, addr);
+    sqlite3VdbeAddOp2(v, OP_IfPos, 1, addr);
     sqlite3VdbeJumpHere(v, addr);
   }else
 #endif
@@ -863,7 +864,7 @@ void sqlite3Pragma(
       if( OMIT_TEMPDB && i==1 ) continue;
 
       sqlite3CodeVerifySchema(pParse, i);
-      addr = sqlite3VdbeAddOp2(v, OP_IfMemPos, 1, 0);
+      addr = sqlite3VdbeAddOp1(v, OP_IfPos, 1);
       sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
       sqlite3VdbeJumpHere(v, addr);
 
@@ -899,7 +900,7 @@ void sqlite3Pragma(
         int loopTop;
 
         if( pTab->pIndex==0 ) continue;
-        addr = sqlite3VdbeAddOp2(v, OP_IfMemPos, 1, 0);
+        addr = sqlite3VdbeAddOp1(v, OP_IfPos, 1);
         sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
         sqlite3VdbeJumpHere(v, addr);
         sqlite3OpenTableAndIndices(pParse, pTab, 1, OP_OpenRead);
@@ -945,7 +946,7 @@ void sqlite3Pragma(
              { OP_Callback,     1,  0,  0},
           };
           if( pIdx->tnum==0 ) continue;
-          addr = sqlite3VdbeAddOp2(v, OP_IfMemPos, 1, 0);
+          addr = sqlite3VdbeAddOp1(v, OP_IfPos, 1);
           sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
           sqlite3VdbeJumpHere(v, addr);
           addr = sqlite3VdbeAddOpList(v, ArraySize(cntIdx), cntIdx);

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.338 2008/01/08 23:54:25 drh Exp $
+** $Id: expr.c,v 1.339 2008/01/09 02:15:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2121,10 +2121,14 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
         }else{
           codeInteger(v, (char*)p->z, p->n, 1, target);
         }
-        inReg = target;
-        break;
+      }else{
+        int r1 = ++pParse->nMem;
+        sqlite3VdbeAddOp2(v, OP_Integer, 0, r1);
+        sqlite3ExprCode(pParse, pExpr->pLeft, target);
+        sqlite3VdbeAddOp3(v, OP_Subtract, target, r1, target);
       }
-      /* Fall through into TK_NOT */
+      inReg = target;
+      break;
     }
     case TK_BITNOT:
     case TK_NOT: {
@@ -2245,7 +2249,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       j2  = sqlite3VdbeAddOp0(v, OP_Goto);
       sqlite3VdbeJumpHere(v, j1);
       if( eType==IN_INDEX_ROWID ){
-        j3 = sqlite3VdbeAddOp1(v, OP_MustBeInt, 1);
+        j3 = sqlite3VdbeAddOp3(v, OP_MustBeInt, 0, 0, 1);
         j4 = sqlite3VdbeAddOp1(v, OP_NotExists, pExpr->iTable);
         j5 = sqlite3VdbeAddOp0(v, OP_Goto);
         sqlite3VdbeJumpHere(v, j3);
@@ -2314,7 +2318,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
                                  OP_Ne, 0, 0, 0, SQLITE_JUMPIFNULL);
           sqlite3VdbeAddOp1(v, OP_Pop, 1);
         }else{
-          jumpInst = sqlite3VdbeAddOp2(v, OP_IfNot, 1, 0);
+          jumpInst = sqlite3VdbeAddOp3(v, OP_IfNot, 0, 0, 1);
         }
         sqlite3ExprCode(pParse, aListelem[i+1].pExpr, target);
         sqlite3VdbeAddOp2(v, OP_Goto, 0, expr_end_label);
@@ -2513,7 +2517,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     }
     default: {
       sqlite3ExprCode(pParse, pExpr, 0);
-      sqlite3VdbeAddOp2(v, OP_If, jumpIfNull, dest);
+      sqlite3VdbeAddOp3(v, OP_If, 0, dest, jumpIfNull!=0);
       break;
     }
   }
@@ -2627,7 +2631,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     }
     default: {
       sqlite3ExprCode(pParse, pExpr, 0);
-      sqlite3VdbeAddOp2(v, OP_IfNot, jumpIfNull, dest);
+      sqlite3VdbeAddOp3(v, OP_IfNot, 0, dest, jumpIfNull!=0);
       break;
     }
   }

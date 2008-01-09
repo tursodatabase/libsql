@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.278 2008/01/08 23:54:26 drh Exp $
+** $Id: where.c,v 1.279 2008/01/09 02:15:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2329,7 +2329,7 @@ WhereInfo *sqlite3WhereBegin(
       assert( omitTable==0 );
       codeEqualityTerm(pParse, pTerm, pLevel);
       nxt = pLevel->nxt;
-      sqlite3VdbeAddOp2(v, OP_MustBeInt, 1, nxt);
+      sqlite3VdbeAddOp3(v, OP_MustBeInt, 0, nxt, 1);
       sqlite3VdbeAddOp2(v, OP_NotExists, iCur, nxt);
       VdbeComment((v, "pk"));
       pLevel->op = OP_Noop;
@@ -2766,10 +2766,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     sqlite3VdbeResolveLabel(v, pLevel->brk);
     if( pLevel->iLeftJoin ){
       int addr;
-      addr = sqlite3VdbeAddOp2(v, OP_IfMemPos, pLevel->iLeftJoin, 0);
-      sqlite3VdbeAddOp2(v, OP_NullRow, pTabList->a[i].iCursor, 0);
+      addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin);
+      sqlite3VdbeAddOp1(v, OP_NullRow, pTabList->a[i].iCursor);
       if( pLevel->iIdxCur>=0 ){
-        sqlite3VdbeAddOp2(v, OP_NullRow, pLevel->iIdxCur, 0);
+        sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iIdxCur);
       }
       sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->top);
       sqlite3VdbeJumpHere(v, addr);
@@ -2789,10 +2789,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     assert( pTab!=0 );
     if( pTab->isEphem || pTab->pSelect ) continue;
     if( (pLevel->flags & WHERE_IDX_ONLY)==0 ){
-      sqlite3VdbeAddOp2(v, OP_Close, pTabItem->iCursor, 0);
+      sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
     }
     if( pLevel->pIdx!=0 ){
-      sqlite3VdbeAddOp2(v, OP_Close, pLevel->iIdxCur, 0);
+      sqlite3VdbeAddOp1(v, OP_Close, pLevel->iIdxCur);
     }
 
     /* If this scan uses an index, make code substitutions to read data
