@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.461 2008/01/06 00:25:22 drh Exp $
+** $Id: build.c,v 1.462 2008/01/09 23:04:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1496,6 +1496,7 @@ void sqlite3EndTable(
 
       sqlite3VdbeAddOp0(v, OP_Copy);
       sqlite3VdbeAddOp3(v, OP_OpenWrite, 1, 0, iDb);
+      sqlite3VdbeChangeP5(v, 1);
       pParse->nTab = 2;
       sqlite3SelectDestInit(&dest, SRT_Table, 1);
       sqlite3Select(pParse, pSelect, &dest, 0, 0, 0, 0);
@@ -1834,7 +1835,7 @@ void sqlite3RootPageMoved(Db *pDb, int iFrom, int iTo){
 */ 
 static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   Vdbe *v = sqlite3GetVdbe(pParse);
-  sqlite3VdbeAddOp2(v, OP_Destroy, iTable, iDb);
+  sqlite3VdbeAddOp3(v, OP_Destroy, iTable, 0, iDb);
 #ifndef SQLITE_OMIT_AUTOVACUUM
   /* OP_Destroy pushes an integer onto the stack. If this integer
   ** is non-zero, then it is the root page number of a table moved to
@@ -2246,6 +2247,9 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   pKey = sqlite3IndexKeyinfo(pParse, pIndex);
   sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, tnum, iDb, 
                     (char *)pKey, P4_KEYINFO_HANDOFF);
+  if( memRootPage>=0 ){
+    sqlite3VdbeChangeP5(v, 1);
+  }
   sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
   addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
   sqlite3GenerateIndexKey(v, pIndex, iTab);
@@ -2255,7 +2259,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     sqlite3VdbeChangeP2(v, curaddr-1, addr2);
     sqlite3VdbeAddOp1(v, OP_Rowid, iTab);
     sqlite3VdbeAddOp2(v, OP_AddImm, 0, 1);
-    sqlite3VdbeAddOp2(v, OP_IsUnique, iIdx, addr2);
+    sqlite3VdbeAddOp4(v, OP_IsUnique, iIdx, addr2, 0, 0, P4_INT32);
     sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, OE_Abort, 0,
                     "indexed columns are not unique", P4_STATIC);
     assert( db->mallocFailed || addr2==sqlite3VdbeCurrentAddr(v) );

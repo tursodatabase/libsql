@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.394 2008/01/09 02:15:42 drh Exp $
+** $Id: select.c,v 1.395 2008/01/09 23:04:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -438,31 +438,8 @@ static void codeOffset(
 }
 
 /*
-** Add code that will check to make sure the top N elements of the
-** stack are distinct.  iTab is a sorting index that holds previously
-** seen combinations of the N values.  A new entry is made in iTab
-** if the current N values are new.
-**
-** A jump to addrRepeat is made and the N+1 values are popped from the
-** stack if the top N elements are not distinct.
-*/
-static void codeDistinct_OLD(
-  Vdbe *v,           /* Generate code into this VM */
-  int iTab,          /* A sorting index used to test for distinctness */
-  int addrRepeat,    /* Jump to here if not distinct */
-  int N              /* The top N elements of the stack must be distinct */
-){
-  sqlite3VdbeAddOp2(v, OP_MakeRecord, -N, 0);
-  sqlite3VdbeAddOp2(v, OP_Distinct, iTab, sqlite3VdbeCurrentAddr(v)+3);
-  sqlite3VdbeAddOp2(v, OP_Pop, N+1, 0);
-  sqlite3VdbeAddOp2(v, OP_Goto, 0, addrRepeat);
-  VdbeComment((v, "skip indistinct records"));
-  sqlite3VdbeAddOp2(v, OP_IdxInsert, iTab, 0);
-}
-
-/*
-** Add code that will check to make sure the top N elements of the
-** stack are distinct.  iTab is a sorting index that holds previously
+** Add code that will check to make sure the N registers starting at iMem
+** form a distinct entry.  iTab is a sorting index that holds previously
 ** seen combinations of the N values.  A new entry is made in iTab
 ** if the current N values are new.
 **
@@ -2135,7 +2112,7 @@ static int multiSelect(
       iCont = sqlite3VdbeMakeLabel(v);
       computeLimitRegisters(pParse, p, iBreak);
       sqlite3VdbeAddOp2(v, OP_Rewind, tab1, iBreak);
-      iStart = sqlite3VdbeAddOp2(v, OP_RowKey, tab1, 0);
+      iStart = sqlite3VdbeAddOp1(v, OP_RowKey, tab1);
       sqlite3VdbeAddOp2(v, OP_NotFound, tab2, iCont);
       rc = selectInnerLoop(pParse, p, p->pEList, tab1, p->pEList->nExpr,
                              pOrderBy, -1, &dest, iCont, iBreak, 0);
@@ -3021,17 +2998,20 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
     int nArg;
     int addrNext = 0;
+    int regAgg;
     ExprList *pList = pF->pExpr->pList;
     if( pList ){
       nArg = pList->nExpr;
       sqlite3ExprCodeExprList(pParse, pList, 0);
+      regAgg = sqlite3StackToReg(pParse, nArg);
     }else{
       nArg = 0;
+      regAgg = 0;
     }
     if( pF->iDistinct>=0 ){
       addrNext = sqlite3VdbeMakeLabel(v);
       assert( nArg==1 );
-      codeDistinct_OLD(v, pF->iDistinct, addrNext, 1);
+      codeDistinct(v, pF->iDistinct, addrNext, 1, regAgg);
     }
     if( pF->pFunc->needCollSeq ){
       CollSeq *pColl = 0;
@@ -3046,8 +3026,9 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
       }
       sqlite3VdbeAddOp4(v, OP_CollSeq, 0, 0, 0, (char *)pColl, P4_COLLSEQ);
     }
-    sqlite3VdbeAddOp4(v, OP_AggStep, pF->iMem, nArg, 0, 
+    sqlite3VdbeAddOp4(v, OP_AggStep, 0, regAgg, pF->iMem,
                       (void*)pF->pFunc, P4_FUNCDEF);
+    sqlite3VdbeChangeP5(v, nArg);
     if( addrNext ){
       sqlite3VdbeResolveLabel(v, addrNext);
     }

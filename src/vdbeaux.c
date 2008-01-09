@@ -270,7 +270,9 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
-    if( opcode==OP_Function || opcode==OP_AggStep 
+    if( opcode==OP_Function ){
+      if( pOp->p5>nMaxArgs ) nMaxArgs = pOp->p5;
+    }else if( opcode==OP_AggStep 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         || opcode==OP_VUpdate
 #endif
@@ -532,7 +534,10 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   pOp = &p->aOp[addr];
   freeP4(pOp->p4type, pOp->p4.p);
   pOp->p4.p = 0;
-  if( zP4==0 ){
+  if( n==P4_INT32 ){
+    pOp->p4.i = (int)zP4;
+    pOp->p4type = n;
+  }else if( zP4==0 ){
     pOp->p4.p = 0;
     pOp->p4type = P4_NOTUSED;
   }else if( n==P4_KEYINFO ){

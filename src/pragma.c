@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.163 2008/01/09 02:15:39 drh Exp $
+** $Id: pragma.c,v 1.164 2008/01/09 23:04:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -854,6 +854,7 @@ void sqlite3Pragma(
       }
     }
     sqlite3VdbeAddOp2(v, OP_Integer, mxErr, 1);
+    pParse->nMem = 1;
 
     /* Do an integrity check on each database file */
     for(i=0; i<db->nDb; i++){
@@ -874,22 +875,25 @@ void sqlite3Pragma(
       for(x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);
         Index *pIdx;
-        sqlite3VdbeAddOp2(v, OP_Integer, pTab->tnum, 0);
+        sqlite3VdbeAddOp2(v, OP_Integer, pTab->tnum, 2+cnt);
         cnt++;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-          sqlite3VdbeAddOp2(v, OP_Integer, pIdx->tnum, 0);
+          sqlite3VdbeAddOp2(v, OP_Integer, pIdx->tnum, 2+cnt);
           cnt++;
         }
       }
       if( cnt==0 ) continue;
-      sqlite3VdbeAddOp2(v, OP_IntegrityCk, 1, i);
-      addr = sqlite3VdbeAddOp2(v, OP_StackIsNull, -1, 0);
-      sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0,
+      if( pParse->nMem < cnt+3 ){
+        pParse->nMem = cnt+3;
+      }
+      sqlite3VdbeAddOp3(v, OP_IntegrityCk, 2, cnt, 1);
+      sqlite3VdbeChangeP5(v, i);
+      addr = sqlite3VdbeAddOp1(v, OP_IsNull, 2);
+      sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,
          sqlite3MPrintf(db, "*** in database %s ***\n", db->aDb[i].zName),
          P4_DYNAMIC);
-      sqlite3VdbeAddOp2(v, OP_Pull, 1, 0);
-      sqlite3VdbeAddOp0(v, OP_Concat);
-      sqlite3VdbeAddOp2(v, OP_Callback, 1, 0);
+      sqlite3VdbeAddOp3(v, OP_Concat, 2, 3, 2);
+      sqlite3VdbeAddOp2(v, OP_ResultRow, 2, 1);
       sqlite3VdbeJumpHere(v, addr);
 
       /* Make sure all the indices are constructed correctly.

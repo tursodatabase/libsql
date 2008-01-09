@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.35 2008/01/08 23:54:25 drh Exp $
+** @(#) $Id: analyze.c,v 1.36 2008/01/09 23:04:12 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -73,6 +73,9 @@ static void openStatTable(
     sqlite3TableLock(pParse, iDb, iRootPage, 1, "sqlite_stat1");
   }
   sqlite3VdbeAddOp3(v, OP_OpenWrite, iStatCur, iRootPage, iDb);
+  if( iRootPage==0 ){
+    sqlite3VdbeChangeP5(v, 1);
+  }
   sqlite3VdbeAddOp2(v, OP_SetNumColumns, iStatCur, 3);
 }
 

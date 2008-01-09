@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.219 2008/01/09 02:15:39 drh Exp $
+** $Id: insert.c,v 1.220 2008/01/09 23:04:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1184,7 +1184,7 @@ void sqlite3GenerateConstraintChecks(
     /* Check to see if the new index entry will be unique */
     sqlite3VdbeAddOp1(v, OP_SCopy, aRegIdx[iCur]);
     sqlite3VdbeAddOp1(v, OP_SCopy, regRowid-hasTwoRowids);
-    j3 = sqlite3VdbeAddOp2(v, OP_IsUnique, baseCur+iCur+1, 0);
+    j3 = sqlite3VdbeAddOp4(v, OP_IsUnique, baseCur+iCur+1, 0, 0, 0, P4_INT32);
 
     /* Generate code that executes if the new index entry is not unique */
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
@@ -1617,7 +1617,7 @@ static int xferOptimization(
     addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, 0);
     assert( pDest->autoInc==0 );
   }
-  sqlite3VdbeAddOp2(v, OP_RowData, iSrc, 0);
+  sqlite3VdbeAddOp1(v, OP_RowData, iSrc);
   sqlite3CodeInsert(pParse,iDest,OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND);
   sqlite3VdbeChangeP4(v, -1, pDest->zName, 0);
   sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1);
@@ -1638,7 +1638,7 @@ static int xferOptimization(
                       (char*)pKey, P4_KEYINFO_HANDOFF);
     VdbeComment((v, "%s", pDestIdx->zName));
     addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iSrc, 0);
-    sqlite3VdbeAddOp2(v, OP_RowKey, iSrc, 0);
+    sqlite3VdbeAddOp1(v, OP_RowKey, iSrc);
     sqlite3VdbeAddOp3(v, OP_IdxInsert, iDest, 0, 1);
     sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1+1);
     sqlite3VdbeJumpHere(v, addr1);
