@@ -1,5 +1,5 @@
-C All\sessential\sopcodes\scan\snow\soperate\sout\sof\sregisters\sand\scompletely\navoid\sthe\sstack.\s\sMany\sstill\soptionally\suse\sthe\sstack\sto\ssupport\slegacy\ncode\sgeneration,\sbut\sthe\sstack\sis\snot\srequired.\s\sThe\snext\sstep\sis\sto\nupdate\sall\scode\sgeneration\sto\savoid\susing\sthe\sstack.\s(CVS\s4700)
-D 2008-01-09T23:04:12
+C Fix\sa\stest\sscript\sproblem\sassociated\swith\sthe\snew\scrash4.test\sfile.\nTicket\s#2882.\s(CVS\s4701)
+D 2008-01-09T23:21:25
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -242,7 +242,7 @@ F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 26d7a4c5520201e5de2c696ea51ab946b59dc0e9
 F test/crash3.test 0b09687ae1a3ccbcefdfaeb4b963e26e36255d76
-F test/crash4.test 97c5b44f432b7b00d58edea76b8e9823e38ce825
+F test/crash4.test d9fefcede579aba418777d81a49f122d0a52369e
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/date.test b2bd57ff2ab6185b9322306f7b68fa647d63c857
@@ -605,7 +605,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 47672af0c658573c6b305d224c6901058b8c0e00
-R 6d8b60c5adc02caf36922454c955c896
+P e3cf1c1c114bcda8fe577beb5ee55b4a651b96db
+R 8c9d6bdbcbd5a14126261bcc06d252cc
 U drh
-Z d27dfd6a1a930c2fffbab0aa79d70acf
+Z c3c2e177ab159551751e71eb77af0549
