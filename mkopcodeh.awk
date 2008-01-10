@@ -143,7 +143,7 @@ END {
   }
   print "\n"
   print "/* Properties such as \"out2\" or \"jump\" that are specified in"
-  print "** comments following the "case" for each opcode in the vdbe.c"
+  print "** comments following the \"case\" for each opcode in the vdbe.c"
   print "** are encoded into bitvectors as follows:"
   print "*/"
   print "#define OPFLG_JUMP            0x0001  /* jump:  P2 holds jmp target */"
