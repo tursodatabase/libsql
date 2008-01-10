@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.645 2008/01/09 23:04:12 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.646 2008/01/10 03:46:36 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1399,6 +1399,10 @@ struct Parse {
   u8 checkSchema;      /* Causes schema cookie check after an error */
   u8 nested;           /* Number of nested calls to the parser/code generator */
   u8 parseError;       /* True after a parsing error.  Ticket #1794 */
+  u8 nTempReg;         /* Number of temporary registers in aTempReg[] */
+  int aTempReg[8];     /* Holding area for temporary registers */
+  int nRangeReg;       /* Size of the temporary register block */
+  int iRangeReg;       /* First register in temporary register block */
   int nErr;            /* Number of errors seen */
   int nTab;            /* Number of previously allocated VDBE cursors */
   int nMem;            /* Number of memory cells used so far */
@@ -1692,6 +1696,10 @@ void sqlite3DequoteExpr(sqlite3*, Expr*);
 int sqlite3KeywordCode(const unsigned char*, int);
 int sqlite3RunParser(Parse*, const char*, char **);
 void sqlite3FinishCoding(Parse*);
+int sqlite3GetTempReg(Parse*);
+void sqlite3ReleaseTempReg(Parse*,int);
+int sqlite3GetTempRange(Parse*,int);
+void sqlite3ReleaseTempRange(Parse*,int,int);
 Expr *sqlite3Expr(sqlite3*, int, Expr*, Expr*, const Token*);
 Expr *sqlite3PExpr(Parse*, int, Expr*, Expr*, const Token*);
 Expr *sqlite3RegisterExpr(Parse*,Token*);

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.395 2008/01/09 23:04:12 drh Exp $
+** $Id: select.c,v 1.396 2008/01/10 03:46:36 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -397,11 +397,16 @@ static void pushOntoSorter(
   Select *pSelect        /* The whole SELECT statement */
 ){
   Vdbe *v = pParse->pVdbe;
-  sqlite3ExprCodeExprList(pParse, pOrderBy, 0);
-  sqlite3VdbeAddOp1(v, OP_Sequence, pOrderBy->iECursor);
-  sqlite3VdbeAddOp1(v, OP_Pull, pOrderBy->nExpr + 1);
-  sqlite3VdbeAddOp1(v, OP_MakeRecord, pOrderBy->nExpr + 2);
-  sqlite3VdbeAddOp1(v, OP_IdxInsert, pOrderBy->iECursor);
+  int nExpr = pOrderBy->nExpr;
+  int regBase = sqlite3GetTempRange(pParse, nExpr+2);
+  int regRecord = sqlite3GetTempReg(pParse);
+  sqlite3ExprCodeExprList(pParse, pOrderBy, regBase);
+  sqlite3VdbeAddOp2(v, OP_Sequence, pOrderBy->iECursor, regBase+nExpr);
+  sqlite3VdbeAddOp2(v, OP_Move, 0, regBase+nExpr+1);
+  sqlite3VdbeAddOp3(v, OP_RegMakeRec, regBase, nExpr + 2, regRecord);
+  sqlite3VdbeAddOp2(v, OP_IdxInsert, pOrderBy->iECursor, regRecord);
+  sqlite3ReleaseTempReg(pParse, regRecord);
+  sqlite3ReleaseTempRange(pParse, regBase, nExpr+2);
   if( pSelect->iLimit>=0 ){
     int addr1, addr2;
     addr1 = sqlite3VdbeAddOp1(v, OP_IfZero, pSelect->iLimit+1);
@@ -3002,8 +3007,8 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     ExprList *pList = pF->pExpr->pList;
     if( pList ){
       nArg = pList->nExpr;
-      sqlite3ExprCodeExprList(pParse, pList, 0);
-      regAgg = sqlite3StackToReg(pParse, nArg);
+      regAgg = sqlite3GetTempRange(pParse, nArg);
+      sqlite3ExprCodeExprList(pParse, pList, regAgg);
     }else{
       nArg = 0;
       regAgg = 0;
@@ -3029,6 +3034,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     sqlite3VdbeAddOp4(v, OP_AggStep, 0, regAgg, pF->iMem,
                       (void*)pF->pFunc, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, nArg);
+    sqlite3ReleaseTempRange(pParse, regAgg, nArg);
     if( addrNext ){
       sqlite3VdbeResolveLabel(v, addrNext);
     }
@@ -3545,18 +3551,38 @@ int sqlite3Select(
         ** then loop over the sorting index in order to get the output
         ** in sorted order
         */
+        int regBase;
+        int regRecord;
+        int nCol;
+        int nGroupBy;
+
         groupBySort = 1;
-        sqlite3ExprCodeExprList(pParse, pGroupBy, 0);
-        sqlite3VdbeAddOp2(v, OP_Sequence, sAggInfo.sortingIdx, 0);
-        j = pGroupBy->nExpr+1;
+        nGroupBy = pGroupBy->nExpr;
+        nCol = nGroupBy + 1;
+        j = nGroupBy+1;
+        for(i=0; i<sAggInfo.nColumn; i++){
+          if( sAggInfo.aCol[i].iSorterColumn>=j ){
+            nCol++;
+            j++;
+          }
+        }
+        regBase = sqlite3GetTempRange(pParse, nCol);
+        sqlite3ExprCodeExprList(pParse, pGroupBy, regBase);
+        sqlite3VdbeAddOp2(v, OP_Sequence, sAggInfo.sortingIdx,regBase+nGroupBy);
+        j = nGroupBy+1;
         for(i=0; i<sAggInfo.nColumn; i++){
           struct AggInfo_col *pCol = &sAggInfo.aCol[i];
-          if( pCol->iSorterColumn<j ) continue;
-          sqlite3ExprCodeGetColumn(v, pCol->pTab, pCol->iColumn,pCol->iTable,0);
-          j++;
+          if( pCol->iSorterColumn>=j ){
+            sqlite3ExprCodeGetColumn(v, pCol->pTab, pCol->iColumn, pCol->iTable,
+                                     j + regBase);
+            j++;
+          }
         }
-        sqlite3VdbeAddOp2(v, OP_MakeRecord, j, 0);
-        sqlite3VdbeAddOp2(v, OP_IdxInsert, sAggInfo.sortingIdx, 0);
+        regRecord = sqlite3GetTempReg(pParse);
+        sqlite3VdbeAddOp3(v, OP_RegMakeRec, regBase, nCol, regRecord);
+        sqlite3VdbeAddOp2(v, OP_IdxInsert, sAggInfo.sortingIdx, regRecord);
+        sqlite3ReleaseTempReg(pParse, regRecord);
+        sqlite3ReleaseTempRange(pParse, regBase, nCol);
         sqlite3WhereEnd(pWInfo);
         sqlite3VdbeAddOp2(v, OP_Sort, sAggInfo.sortingIdx, addrEnd);
         VdbeComment((v, "GROUP BY sort"));

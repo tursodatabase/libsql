@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.340 2008/01/09 23:04:12 drh Exp $
+** $Id: expr.c,v 1.341 2008/01/10 03:46:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1610,8 +1610,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
       int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       sqlite3VdbeUsesBtree(v, iDb);
 
-      sqlite3VdbeAddOp1(v, OP_SCopy, iMem);
-      iAddr = sqlite3VdbeAddOp2(v, OP_If, 0, iMem);
+      iAddr = sqlite3VdbeAddOp1(v, OP_If, iMem);
       sqlite3VdbeAddOp2(v, OP_Integer, 1, iMem);
 
       sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
@@ -1647,8 +1646,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
           iDb = sqlite3SchemaToIndex(db, pIdx->pSchema);
           sqlite3VdbeUsesBtree(v, iDb);
 
-          sqlite3VdbeAddOp1(v, OP_SCopy, iMem);
-          iAddr = sqlite3VdbeAddOp2(v, OP_If, 0, iMem);
+          iAddr = sqlite3VdbeAddOp1(v, OP_If, iMem);
           sqlite3VdbeAddOp2(v, OP_Integer, 1, iMem);
   
           sqlite3VdbeAddOp4(v, OP_OpenRead, iTab, pIdx->tnum, iDb,
@@ -1704,10 +1702,9 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   */
   if( !ExprHasAnyProperty(pExpr, EP_VarSelect) && !pParse->trigStack ){
     int mem = ++pParse->nMem;
-    sqlite3VdbeAddOp1(v, OP_SCopy, mem);
-    testAddr = sqlite3VdbeAddOp0(v, OP_If);
+    sqlite3VdbeAddOp1(v, OP_If, mem);
+    testAddr = sqlite3VdbeAddOp2(v, OP_Integer, 1, mem);
     assert( testAddr>0 || pParse->db->mallocFailed );
-    sqlite3VdbeAddOp2(v, OP_Integer, 1, mem);
   }
 
   switch( pExpr->op ){
@@ -1783,8 +1780,8 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
           ** this code only executes once.  Because for a non-constant
           ** expression we need to rerun this code each time.
           */
-          if( testAddr>0 && !sqlite3ExprIsConstant(pE2) ){
-            sqlite3VdbeChangeToNoop(v, testAddr-1, 3);
+          if( testAddr && !sqlite3ExprIsConstant(pE2) ){
+            sqlite3VdbeChangeToNoop(v, testAddr-1, 2);
             testAddr = 0;
           }
 
@@ -1830,7 +1827,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   }
 
   if( testAddr ){
-    sqlite3VdbeJumpHere(v, testAddr);
+    sqlite3VdbeJumpHere(v, testAddr-1);
   }
 
   return;
@@ -2178,7 +2175,12 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       nId = pExpr->token.n;
       pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, enc, 0);
       assert( pDef!=0 );
-      nExpr = sqlite3ExprCodeExprList(pParse, pList, 0);
+      if( pList ){
+        nExpr = pList->nExpr;
+        sqlite3ExprCodeExprList(pParse, pList, 0);
+      }else{
+        nExpr = 0;
+      }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       /* Possibly overload the function if the first argument is
       ** a virtual table column.
@@ -2402,9 +2404,10 @@ void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr){
 
 /*
 ** Generate code that pushes the value of every element of the given
-** expression list onto the stack.
+** expression list onto the stack if target==0 or into a sequence of
+** registers beginning at target.
 **
-** Return the number of elements pushed onto the stack.
+** Return the number of elements evaluated.
 */
 int sqlite3ExprCodeExprList(
   Parse *pParse,     /* Parsing context */
@@ -2413,12 +2416,13 @@ int sqlite3ExprCodeExprList(
 ){
   struct ExprList_item *pItem;
   int i, n, incr = 1;
-  if( pList==0 ) return 0;
+  assert( pList!=0 || pParse->db->mallocFailed );
+  if( pList==0 ){
+    return 0;
+  }
+  assert( target>=0 );
   n = pList->nExpr;
-  if( target<0 ){
-    target = pParse->nMem+1;
-    pParse->nMem += n;
-  }else if( target==0 ){
+  if( target==0 ){
     incr = 0;
   }
   for(pItem=pList->a, i=n; i>0; i--, pItem++){
@@ -2887,4 +2891,42 @@ int sqlite3ExprAnalyzeAggList(NameContext *pNC, ExprList *pList){
     }
   }
   return nErr;
+}
+
+/*
+** Allocate or deallocate temporary use registers during code generation.
+*/
+int sqlite3GetTempReg(Parse *pParse){
+  if( pParse->nTempReg ){
+    return pParse->aTempReg[--pParse->nTempReg];
+  }else{
+    return ++pParse->nMem;
+  }
+}
+void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
+  if( pParse->nTempReg<sizeof(pParse->aTempReg)/sizeof(pParse->aTempReg[0]) ){
+    pParse->aTempReg[pParse->nTempReg++] = iReg;
+  }
+}
+
+/*
+** Allocate or deallocate a block of nReg consecutive registers
+*/
+int sqlite3GetTempRange(Parse *pParse, int nReg){
+  int i;
+  if( nReg<=pParse->nRangeReg ){
+    i  = pParse->iRangeReg;
+    pParse->iRangeReg += nReg;
+    pParse->nRangeReg -= nReg;
+  }else{
+    i = pParse->nMem+1;
+    pParse->nMem += nReg;
+  }
+  return i;
+}
+void sqlite3ReleaseTempRange(Parse *pParse, int iReg, int nReg){
+  if( nReg>pParse->nRangeReg ){
+    pParse->nRangeReg = nReg;
+    pParse->iRangeReg = iReg;
+  }
 }

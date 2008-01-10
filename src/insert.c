@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.220 2008/01/09 23:04:12 drh Exp $
+** $Id: insert.c,v 1.221 2008/01/10 03:46:36 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1107,9 +1107,7 @@ void sqlite3GenerateConstraintChecks(
     }
     
     if( isUpdate ){
-      sqlite3VdbeAddOp1(v, OP_SCopy, regRowid-1);
-      sqlite3VdbeAddOp1(v, OP_SCopy, regRowid);
-      j2 = sqlite3VdbeAddOp2(v, OP_Eq, 0, 0);
+      j2 = sqlite3VdbeAddOp3(v, OP_Eq, regRowid, 0, regRowid-1);
     }
     j3 = sqlite3VdbeAddOp3(v, OP_NotExists, baseCur, 0, regRowid);
     switch( onError ){
@@ -1127,8 +1125,7 @@ void sqlite3GenerateConstraintChecks(
       case OE_Replace: {
         sqlite3GenerateRowIndexDelete(v, pTab, baseCur, 0);
         if( isUpdate ){
-          sqlite3VdbeAddOp1(v, OP_SCopy, regRowid-hasTwoRowids);
-          sqlite3VdbeAddOp2(v, OP_MoveGe, baseCur, 0);
+          sqlite3VdbeAddOp3(v, OP_MoveGe, baseCur, 0, regRowid-hasTwoRowids);
         }
         seenReplace = 1;
         break;
@@ -1142,8 +1139,7 @@ void sqlite3GenerateConstraintChecks(
     sqlite3VdbeJumpHere(v, j3);
     if( isUpdate ){
       sqlite3VdbeJumpHere(v, j2);
-      sqlite3VdbeAddOp1(v, OP_SCopy, regRowid-1);
-      sqlite3VdbeAddOp2(v, OP_MoveGe, baseCur, 0);
+      sqlite3VdbeAddOp3(v, OP_MoveGe, baseCur, 0, regRowid-1);
     }
   }
 
