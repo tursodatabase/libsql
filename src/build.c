@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.462 2008/01/09 23:04:12 drh Exp $
+** $Id: build.c,v 1.463 2008/01/10 23:50:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2222,6 +2222,8 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   int tnum;                      /* Root page of index */
   Vdbe *v;                       /* Generate code into this virtual machine */
   KeyInfo *pKey;                 /* KeyInfo for index */
+  int regIdxKey;                 /* Registers containing the index key */
+  int regRecord;                 /* Register holding assemblied index record */
   sqlite3 *db = pParse->db;      /* The database connection */
   int iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
 
@@ -2252,19 +2254,23 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   }
   sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
   addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
-  sqlite3GenerateIndexKey(v, pIndex, iTab);
+  regRecord = sqlite3GetTempReg(pParse);
+  regIdxKey = sqlite3GenerateIndexKey(pParse, pIndex, iTab, regRecord);
   if( pIndex->onError!=OE_None ){
-    int curaddr = sqlite3VdbeCurrentAddr(v);
-    int addr2 = curaddr+4;
-    sqlite3VdbeChangeP2(v, curaddr-1, addr2);
-    sqlite3VdbeAddOp1(v, OP_Rowid, iTab);
-    sqlite3VdbeAddOp2(v, OP_AddImm, 0, 1);
-    sqlite3VdbeAddOp4(v, OP_IsUnique, iIdx, addr2, 0, 0, P4_INT32);
+    int j1, j2;
+    int regRowid;
+
+    regRowid = regIdxKey + pIndex->nColumn;
+    j1 = sqlite3VdbeAddOp3(v, OP_IsNull, regIdxKey, 0, pIndex->nColumn);
+    j2 = sqlite3VdbeAddOp4(v, OP_IsUnique, iIdx,
+                           0, regRowid, (char*)regRecord, P4_INT32);
     sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, OE_Abort, 0,
                     "indexed columns are not unique", P4_STATIC);
-    assert( db->mallocFailed || addr2==sqlite3VdbeCurrentAddr(v) );
+    sqlite3VdbeJumpHere(v, j1);
+    sqlite3VdbeJumpHere(v, j2);
   }
-  sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdx, 0);
+  sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdx, regRecord);
+  sqlite3ReleaseTempReg(pParse, regRecord);
   sqlite3VdbeAddOp2(v, OP_Next, iTab, addr1+1);
   sqlite3VdbeJumpHere(v, addr1);
   sqlite3VdbeAddOp1(v, OP_Close, iTab);

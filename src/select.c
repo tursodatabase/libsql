@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.396 2008/01/10 03:46:36 drh Exp $
+** $Id: select.c,v 1.397 2008/01/10 23:50:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -769,6 +769,9 @@ static void generateSortTail(
   int eDest = pDest->eDest;
   int iParm = pDest->iParm;
 
+  int regRow;
+  int regRowid;
+
   iTab = pOrderBy->iECursor;
   if( eDest==SRT_Callback || eDest==SRT_Subroutine ){
     pseudoTab = pParse->nTab++;
@@ -777,35 +780,30 @@ static void generateSortTail(
   }
   addr = 1 + sqlite3VdbeAddOp2(v, OP_Sort, iTab, brk);
   codeOffset(v, p, cont, 0);
-  if( eDest==SRT_Callback || eDest==SRT_Subroutine ){
-    sqlite3VdbeAddOp2(v, OP_Integer, 1, 0);
-  }
-  sqlite3VdbeAddOp2(v, OP_Column, iTab, pOrderBy->nExpr + 1);
+  regRow = sqlite3GetTempReg(pParse);
+  regRowid = sqlite3GetTempReg(pParse);
+  sqlite3VdbeAddOp3(v, OP_Column, iTab, pOrderBy->nExpr + 1, regRow);
   switch( eDest ){
     case SRT_Table:
     case SRT_EphemTab: {
-      sqlite3VdbeAddOp1(v, OP_NewRowid, iParm);
-      sqlite3VdbeAddOp2(v, OP_Pull, 1, 0);
-      sqlite3CodeInsert(pParse, iParm, OPFLAG_APPEND);
+      sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, regRowid);
+      sqlite3VdbeAddOp3(v, OP_Insert, iParm, regRow, regRowid);
+      sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
       break;
     }
 #ifndef SQLITE_OMIT_SUBQUERY
     case SRT_Set: {
-      int j1, j2;
+      int j1;
       assert( nColumn==1 );
-      sqlite3VdbeAddOp0(v, OP_SCopy);
-      j1 = sqlite3VdbeAddOp0(v, OP_NotNull);
-      sqlite3VdbeAddOp1(v, OP_Pop, 1);
-      j2 = sqlite3VdbeAddOp0(v, OP_Goto);
+      j1 = sqlite3VdbeAddOp1(v, OP_IsNull, regRow);
+      sqlite3VdbeAddOp4(v, OP_RegMakeRec, regRow, 1, regRow, &p->affinity, 1);
+      sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, regRow);
       sqlite3VdbeJumpHere(v, j1);
-      sqlite3VdbeAddOp4(v, OP_MakeRecord, 1, 0, 0, &p->affinity, 1);
-      sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, 0);
-      sqlite3VdbeJumpHere(v, j2);
       break;
     }
     case SRT_Mem: {
       assert( nColumn==1 );
-      sqlite3VdbeAddOp2(v, OP_Move, 0, iParm);
+      sqlite3VdbeAddOp2(v, OP_Move, regRow, iParm);
       /* The LIMIT clause will terminate the loop for us */
       break;
     }
@@ -813,7 +811,8 @@ static void generateSortTail(
     case SRT_Callback:
     case SRT_Subroutine: {
       int i;
-      sqlite3CodeInsert(pParse, pseudoTab, 0);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, regRowid);
+      sqlite3VdbeAddOp3(v, OP_Insert, pseudoTab, regRow, regRowid);
       for(i=0; i<nColumn; i++){
         sqlite3VdbeAddOp3(v, OP_Column, pseudoTab, i, pDest->iMem+i);
       }
@@ -829,6 +828,8 @@ static void generateSortTail(
       break;
     }
   }
+  sqlite3ReleaseTempReg(pParse, regRow);
+  sqlite3ReleaseTempReg(pParse, regRowid);
 
   /* Jump to the end of the loop when the LIMIT is reached
   */
@@ -2650,165 +2651,6 @@ static int minMaxQuery(Parse *pParse, Select *p){
   }
   return ORDERBY_NORMAL;
 }
-
-/*
-** Analyze the SELECT statement passed in as an argument to see if it
-** is a simple min() or max() query.  If it is and this query can be
-** satisfied using a single seek to the beginning or end of an index,
-** then generate the code for this SELECT and return 1.  If this is not a 
-** simple min() or max() query, then return 0;
-**
-** A simply min() or max() query looks like this:
-**
-**    SELECT min(a) FROM table;
-**    SELECT max(a) FROM table;
-**
-** The query may have only a single table in its FROM argument.  There
-** can be no GROUP BY or HAVING or WHERE clauses.  The result set must
-** be the min() or max() of a single column of the table.  The column
-** in the min() or max() function must be indexed.
-**
-** The parameters to this routine are the same as for sqlite3Select().
-** See the header comment on that routine for additional information.
-*/
-#if 0
-static int simpleMinMaxQuery(Parse *pParse, Select *p, SelectDest *pDest){
-  Expr *pExpr;
-  int iCol;
-  Table *pTab;
-  Index *pIdx;
-  int base;
-  Vdbe *v;
-  int seekOp;
-  ExprList *pEList, *pList, eList;
-  struct ExprList_item eListItem;
-  SrcList *pSrc;
-  int brk;
-  int iDb;
-
-  /* Check to see if this query is a simple min() or max() query.  Return
-  ** zero if it is  not.
-  */
-  if( p->pGroupBy || p->pHaving || p->pWhere ) return 0;
-  pSrc = p->pSrc;
-  if( pSrc->nSrc!=1 ) return 0;
-  pEList = p->pEList;
-  if( pEList->nExpr!=1 ) return 0;
-  pExpr = pEList->a[0].pExpr;
-  if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
-  pList = pExpr->pList;
-  if( pList==0 || pList->nExpr!=1 ) return 0;
-  if( pExpr->token.n!=3 ) return 0;
-  if( sqlite3StrNICmp((char*)pExpr->token.z,"min",3)==0 ){
-    seekOp = OP_Rewind;
-  }else if( sqlite3StrNICmp((char*)pExpr->token.z,"max",3)==0 ){
-    seekOp = OP_Last;
-  }else{
-    return 0;
-  }
-  pExpr = pList->a[0].pExpr;
-  if( pExpr->op!=TK_COLUMN ) return 0;
-  iCol = pExpr->iColumn;
-  pTab = pSrc->a[0].pTab;
-
-  /* This optimization cannot be used with virtual tables. */
-  if( IsVirtual(pTab) ) return 0;
-
-  /* If we get to here, it means the query is of the correct form.
-  ** Check to make sure we have an index and make pIdx point to the
-  ** appropriate index.  If the min() or max() is on an INTEGER PRIMARY
-  ** key column, no index is necessary so set pIdx to NULL.  If no
-  ** usable index is found, return 0.
-  */
-  if( iCol<0 ){
-    pIdx = 0;
-  }else{
-    CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
-    if( pColl==0 ) return 0;
-    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      assert( pIdx->nColumn>=1 );
-      if( pIdx->aiColumn[0]==iCol && 
-          0==sqlite3StrICmp(pIdx->azColl[0], pColl->zName) ){
-        break;
-      }
-    }
-    if( pIdx==0 ) return 0;
-  }
-
-  /* Identify column types if we will be using the callback.  This
-  ** step is skipped if the output is going to a table or a memory cell.
-  ** The column names have already been generated in the calling function.
-  */
-  v = sqlite3GetVdbe(pParse);
-  if( v==0 ) return 0;
-
-  /* If the output is destined for a temporary table, open that table.
-  */
-  if( pDest->eDest==SRT_EphemTab ){
-    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pDest->iParm, 1);
-  }
-
-  /* Generating code to find the min or the max.  Basically all we have
-  ** to do is find the first or the last entry in the chosen index.  If
-  ** the min() or max() is on the INTEGER PRIMARY KEY, then find the first
-  ** or last entry in the main table.
-  */
-  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
-  assert( iDb>=0 || pTab->isEphem );
-  sqlite3CodeVerifySchema(pParse, iDb);
-  sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
-  base = pSrc->a[0].iCursor;
-  brk = sqlite3VdbeMakeLabel(v);
-  computeLimitRegisters(pParse, p, brk);
-  if( pSrc->a[0].pSelect==0 ){
-    sqlite3OpenTable(pParse, base, iDb, pTab, OP_OpenRead);
-  }
-  if( pIdx==0 ){
-    sqlite3VdbeAddOp2(v, seekOp, base, 0);
-  }else{
-    /* Even though the cursor used to open the index here is closed
-    ** as soon as a single value has been read from it, allocate it
-    ** using (pParse->nTab++) to prevent the cursor id from being 
-    ** reused. This is important for statements of the form 
-    ** "INSERT INTO x SELECT max() FROM x".
-    */
-    int iIdx;
-    KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
-    iIdx = pParse->nTab++;
-    assert( pIdx->pSchema==pTab->pSchema );
-    sqlite3VdbeAddOp4(v, OP_OpenRead, iIdx, pIdx->tnum, iDb,
-        (char*)pKey, P4_KEYINFO_HANDOFF);
-    if( seekOp==OP_Rewind ){
-      sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
-      sqlite3VdbeAddOp2(v, OP_MakeRecord, 1, 0);
-      seekOp = OP_MoveGt;
-    }
-    if( pIdx->aSortOrder[0]==SQLITE_SO_DESC ){
-      /* Ticket #2514: invert the seek operator if we are using
-      ** a descending index. */
-      if( seekOp==OP_Last ){
-        seekOp = OP_Rewind;
-      }else{
-        assert( seekOp==OP_MoveGt );
-        seekOp = OP_MoveLt;
-      }
-    }
-    sqlite3VdbeAddOp2(v, seekOp, iIdx, 0);
-    sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdx, 0);
-    sqlite3VdbeAddOp2(v, OP_Close, iIdx, 0);
-    sqlite3VdbeAddOp2(v, OP_MoveGe, base, 0);
-  }
-  eList.nExpr = 1;
-  memset(&eListItem, 0, sizeof(eListItem));
-  eList.a = &eListItem;
-  eList.a[0].pExpr = pExpr;
-  selectInnerLoop(pParse, p, &eList, 0, 0, 0, -1, pDest, brk, brk, 0);
-  sqlite3VdbeResolveLabel(v, brk);
-  sqlite3VdbeAddOp2(v, OP_Close, base, 0);
-  
-  return 1;
-}
-#endif 
 
 /*
 ** This routine resolves any names used in the result set of the

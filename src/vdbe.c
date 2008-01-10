@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.691 2008/01/09 23:04:12 drh Exp $
+** $Id: vdbe.c,v 1.692 2008/01/10 23:50:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1121,10 +1121,12 @@ case OP_SCopy: {
     assert( pOp->p2<=p->nMem );
     pOut = &p->aMem[pOp->p2];
   }
+  assert( pOut!=pIn1 );
   if( pOp->opcode==OP_Move ){
     rc = sqlite3VdbeMemMove(pOut, pIn1);
     if( pOp->p1==0 ) pTos--;
   }else{
+    Release(pOut);
     sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
     if( pOp->opcode==OP_Copy ){
       Deephemeralize(pOut);
@@ -1166,56 +1168,6 @@ case OP_Pull: {            /* no-push */
     pTos->z = pTos->zShort;
   }
   break;
-}
-
-/* Opcode: Callback P1 * *
-**
-** The top P1 values on the stack represent a single result row from
-** a query.  This opcode causes the sqlite3_step() call to terminate
-** with an SQLITE_ROW return code and it sets up the sqlite3_stmt
-** structure to provide access to the top P1 values as the result
-** row.  When the sqlite3_step() function is run again, the top P1
-** values will be automatically popped from the stack before the next
-** instruction executes.
-*/
-case OP_Callback: {            /* no-push */
-  Mem *pMem;
-  Mem *pFirstColumn;
-  assert( p->nResColumn==pOp->p1 );
-
-  /* Data in the pager might be moved or changed out from under us
-  ** in between the return from this sqlite3_step() call and the
-  ** next call to sqlite3_step().  So deephermeralize everything on 
-  ** the stack.  Note that ephemeral data is never stored in memory 
-  ** cells so we do not have to worry about them.
-  */
-  pFirstColumn = &pTos[1-pOp->p1];
-  for(pMem = p->aStack; pMem<pFirstColumn; pMem++){
-    Deephemeralize(pMem);
-  }
-
-  /* Invalidate all ephemeral cursor row caches */
-  p->cacheCtr = (p->cacheCtr + 2)|1;
-
-  /* Make sure the results of the current row are \000 terminated
-  ** and have an assigned type.  The results are deephemeralized as
-  ** as side effect.
-  */
-  for(; pMem<=pTos; pMem++ ){
-    sqlite3VdbeMemNulTerminate(pMem);
-    storeTypeInfo(pMem, encoding);
-  }
-
-  /* Set up the statement structure so that it will pop the current
-  ** results from the stack when the statement returns.
-  */
-  p->pResultSet = pFirstColumn;
-  p->nCallback++;
-  p->popStack = pOp->p1;
-  p->pc = pc + 1;
-  p->pTos = pTos;
-  rc = SQLITE_ROW;
-  goto vdbe_return;
 }
 
 /* Opcode: ResultRow P1 P2 *
@@ -1988,9 +1940,8 @@ case OP_Not: {                /* same as TK_NOT, no-push, in1 */
   nPop = 0;
   if( pIn1->flags & MEM_Null ) break;  /* Do nothing to NULLs */
   sqlite3VdbeMemIntegerify(pIn1);
-  assert( (pIn1->flags & MEM_Dyn)==0 );
   pIn1->u.i = !pIn1->u.i;
-  pIn1->flags = MEM_Int;
+  assert( pIn1->flags==MEM_Int );
   break;
 }
 
@@ -2004,9 +1955,8 @@ case OP_BitNot: {             /* same as TK_BITNOT, no-push, in1 */
   nPop = 0;
   if( pIn1->flags & MEM_Null ) break;  /* Do nothing to NULLs */
   sqlite3VdbeMemIntegerify(pIn1);
-  assert( (pIn1->flags & MEM_Dyn)==0 );
   pIn1->u.i = ~pIn1->u.i;
-  pIn1->flags = MEM_Int;
+  assert( pIn1->flags==MEM_Int );
   break;
 }
 
@@ -2078,17 +2028,25 @@ case OP_StackIsNull: {            /* no-push, jump */
   break;
 }
 
-/* Opcode: IsNull P1 P2 * * *
+/* Opcode: IsNull P1 P2 P3 * *
 **
-** Jump to P2 if the value in register P1 is NULL.
+** Jump to P2 if the value in register P1 is NULL.  If P3 is greater
+** than zero, then check all values reg(P1), reg(P1+1), 
+** reg(P1+2), ..., reg(P1+P3-1).
 **
 ** If P1 is 0 then use the top of the stack instead of a register
 ** and pop the stack regardless of whether or not the jump is taken.
 */
 case OP_IsNull: {            /* same as TK_ISNULL, no-push, jump, in1 */
-  if( (pIn1->flags & MEM_Null)!=0 ){
-    pc = pOp->p2 - 1;
-  }
+  int n = pOp->p3;
+  assert( pOp->p3==0 || pOp->p1>0 );
+  do{
+    if( (pIn1->flags & MEM_Null)!=0 ){
+      pc = pOp->p2 - 1;
+      break;
+    }
+    pIn1++;
+  }while( --n > 0 );
   break;
 }
 
@@ -2409,15 +2367,6 @@ op_column_out:
 ** macros defined in sqliteInt.h.
 **
 ** If P4 is NULL then all index fields have the affinity NONE.
-**
-** See also OP_MakeIdxRec
-*/
-/* Opcode: MakeIdxRec P1 P2 P4
-**
-** This opcode works just OP_MakeRecord except that it reads an extra
-** integer from the stack (thus reading a total of abs(P1+1) entries)
-** and appends that extra integer to the end of the record as a varint.
-** This results in an index key.
 */
 /*
 ** Opcode: RegMakeRec P1 P2 P3 P4 *
@@ -2428,17 +2377,7 @@ op_column_out:
 ** There is no jump on NULL - that can be done with a separate
 ** OP_AnyNull opcode.
 */
-/*
-** Opcode: RegMakeIRec P1 P2 P4
-**
-** Works like OP_MakeIdxRec except data is taken from registers
-** rather than from the stack.  The P1 register is an integer which
-** is the number of register to use in building the new record.
-** Data is taken from P1+1, P1+2, ..., P1+mem[P1].
-*/
 case OP_RegMakeRec:
-case OP_RegMakeIRec:
-case OP_MakeIdxRec:          /* jump */
 case OP_MakeRecord: {        /* jump */
   /* Assuming the record contains N fields, the record format looks
   ** like this:
@@ -2457,7 +2396,6 @@ case OP_MakeRecord: {        /* jump */
   */
   u8 *zNewRecord;        /* A buffer to hold the data for the new record */
   Mem *pRec;             /* The new record */
-  Mem *pRowid = 0;       /* Rowid appended to the new record */
   u64 nData = 0;         /* Number of bytes of data space */
   int nHdr = 0;          /* Number of bytes of header space */
   u64 nByte = 0;         /* Data space required for this record */
@@ -2470,24 +2408,22 @@ case OP_MakeRecord: {        /* jump */
   int leaveOnStack;      /* If true, leave the entries on the stack */
   int nField;            /* Number of fields in the record */
   int jumpIfNull;        /* Jump here if non-zero and any entries are NULL. */
-  int addRowid;          /* True to append a rowid column at the end */
   char *zAffinity;       /* The affinity string for the record */
   int file_format;       /* File format to use for encoding */
   int i;                 /* Space used in zNewRecord[] */
   char zTemp[NBFS];      /* Space to hold small records */
 
   if( pOp->p1<0 ){
-    assert( pOp->opcode==OP_MakeRecord || pOp->opcode==OP_MakeIdxRec );
+    assert( pOp->opcode==OP_MakeRecord );
     leaveOnStack = 1;
     nField = -pOp->p1;
   }else{
     leaveOnStack = 0;
     nField = pOp->p1;
   }
-  addRowid = pOp->opcode==OP_MakeIdxRec || pOp->opcode==OP_RegMakeIRec;
   zAffinity = pOp->p4.z;
 
-  if( pOp->opcode==OP_RegMakeRec || pOp->opcode==OP_RegMakeIRec ){
+  if( pOp->opcode==OP_RegMakeRec ){
     assert( nField>0 && pOp->p2>0 && pOp->p2+nField<=p->nMem );
     pData0 = &p->aMem[nField];
     nField = pOp->p2;
@@ -2530,20 +2466,6 @@ case OP_MakeRecord: {        /* jump */
     }
   }
 
-  /* If we have to append a varint rowid to this record, set pRowid
-  ** to the value of the rowid and increase nByte by the amount of space
-  ** required to store it.
-  */
-  if( addRowid ){
-    pRowid = &pData0[-1];
-    assert( pRowid>=p->aStack );
-    sqlite3VdbeMemIntegerify(pRowid);
-    serial_type = sqlite3VdbeSerialType(pRowid, 0);
-    nData += sqlite3VdbeSerialTypeLen(serial_type);
-    nHdr += sqlite3VarintLen(serial_type);
-    nZero = 0;
-  }
-
   /* Add the initial header varint and total the size */
   nHdr += nVarint = sqlite3VarintLen(nHdr);
   if( nVarint<sqlite3VarintLen(nHdr) ){
@@ -2570,20 +2492,14 @@ case OP_MakeRecord: {        /* jump */
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     i += sqlite3PutVarint(&zNewRecord[i], serial_type);      /* serial type */
   }
-  if( addRowid ){
-    i += sqlite3PutVarint(&zNewRecord[i], sqlite3VdbeSerialType(pRowid, 0));
-  }
   for(pRec=pData0; pRec<=pLast; pRec++){  /* serial data */
     i += sqlite3VdbeSerialPut(&zNewRecord[i], nByte-i, pRec, file_format);
-  }
-  if( addRowid ){
-    i += sqlite3VdbeSerialPut(&zNewRecord[i], nByte-i, pRowid, 0);
   }
   assert( i==nByte );
 
   /* Pop entries off the stack if required. Push the new record on. */
   if( !leaveOnStack ){
-    popStack(&pTos, nField+addRowid);
+    popStack(&pTos, nField);
   }
   if( pOp->p3==0 ){
     pOut = ++pTos;
@@ -3434,7 +3350,7 @@ case OP_IsUnique: {        /* no-push, jump, in3 */
     */
     nPop = 0;
     pIn3->u.i = v;
-    pIn3->flags = MEM_Int;
+    assert( pIn3->flags==MEM_Int );
   }
   break;
 }

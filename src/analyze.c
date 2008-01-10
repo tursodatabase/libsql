@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.36 2008/01/09 23:04:12 drh Exp $
+** @(#) $Id: analyze.c,v 1.37 2008/01/10 23:50:11 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -120,6 +120,12 @@ static void analyzeOneTable(
   iIdxCur = pParse->nTab;
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
+    int regFields;    /* Register block for building records */
+    int regRec;       /* Register holding completed record */
+    int regTemp;      /* Temporary use register */
+    int regCol;       /* Content of a column from the table being analyzed */
+    int regRowid;     /* Rowid for the inserted record */
+    int regF2;
 
     /* Open a cursor to the index to be analyzed
     */
@@ -128,8 +134,11 @@ static void analyzeOneTable(
         (char *)pKey, P4_KEYINFO_HANDOFF);
     VdbeComment((v, "%s", pIdx->zName));
     nCol = pIdx->nColumn;
-    if( iMem+nCol*2>=pParse->nMem ){
-      pParse->nMem = iMem+nCol*2+1;
+    regFields = iMem+nCol*2;
+    regTemp = regRowid = regCol = regFields+3;
+    regRec = regCol+1;
+    if( regRec>pParse->nMem ){
+      pParse->nMem = regRec;
     }
     sqlite3VdbeAddOp2(v, OP_SetNumColumns, iIdxCur, nCol+1);
 
@@ -160,15 +169,15 @@ static void analyzeOneTable(
     topOfLoop = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp2(v, OP_AddImm, iMem, 1);
     for(i=0; i<nCol; i++){
-      sqlite3VdbeAddOp2(v, OP_Column, iIdxCur, i);
-      sqlite3VdbeAddOp1(v, OP_SCopy, iMem+nCol+i+1);
-      sqlite3VdbeAddOp0(v, OP_Ne );  /* Use Collating sequence */
+      sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regCol);
+      sqlite3VdbeAddOp3(v, OP_Ne, regCol, 0, iMem+nCol+i+1);
+      /**** TODO:  add collating sequence *****/
       sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
-      addr = sqlite3VdbeAddOp2(v, OP_AddImm, iMem+i+1, 1);
-      sqlite3VdbeChangeP2(v, topOfLoop + 3*i + 3, addr);
+      sqlite3VdbeJumpHere(v, topOfLoop + 2*(i + 1));
+      sqlite3VdbeAddOp2(v, OP_AddImm, iMem+i+1, 1);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, iMem+nCol+i+1);
     }
     sqlite3VdbeResolveLabel(v, endOfLoop);
@@ -193,23 +202,24 @@ static void analyzeOneTable(
     ** If K>0 then it is always the case the D>0 so division by zero
     ** is never possible.
     */
-    sqlite3VdbeAddOp1(v, OP_SCopy, iMem);
-    addr = sqlite3VdbeAddOp0(v, OP_IfNot);
-    sqlite3VdbeAddOp1(v, OP_NewRowid, iStatCur);
-    sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pTab->zName, 0);
-    sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pIdx->zName, 0);
-    sqlite3VdbeAddOp1(v, OP_SCopy, iMem);
+    addr = sqlite3VdbeAddOp1(v, OP_IfNot, iMem);
+    sqlite3VdbeAddOp4(v, OP_String8, 0, regFields, 0, pTab->zName, 0);
+    sqlite3VdbeAddOp4(v, OP_String8, 0, regFields+1, 0, pIdx->zName, 0);
+    regF2 = regFields+2;
+    sqlite3VdbeAddOp2(v, OP_SCopy, iMem, regF2);
     for(i=0; i<nCol; i++){
-      sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, " ", 0);
-      sqlite3VdbeAddOp0(v, OP_Concat);
-      sqlite3VdbeAddOp2(v, OP_Add, iMem, iMem+i+1);
-      sqlite3VdbeAddOp2(v, OP_AddImm, 0, -1);
-      sqlite3VdbeAddOp2(v, OP_Divide, iMem+i+1, 0);
-      sqlite3VdbeAddOp0(v, OP_ToInt);
-      sqlite3VdbeAddOp0(v, OP_Concat);
+      sqlite3VdbeAddOp4(v, OP_String8, 0, regTemp, 0, " ", 0);
+      sqlite3VdbeAddOp3(v, OP_Concat, regTemp, regF2, regF2);
+      sqlite3VdbeAddOp3(v, OP_Add, iMem, iMem+i+1, regTemp);
+      sqlite3VdbeAddOp2(v, OP_AddImm, regTemp, -1);
+      sqlite3VdbeAddOp3(v, OP_Divide, iMem+i+1, regTemp, regTemp);
+      sqlite3VdbeAddOp1(v, OP_ToInt, regTemp);
+      sqlite3VdbeAddOp3(v, OP_Concat, regTemp, regF2, regF2);
     }
-    sqlite3VdbeAddOp4(v, OP_MakeRecord, 3, 0, 0, "aaa", 0);
-    sqlite3CodeInsert(pParse, iStatCur, OPFLAG_APPEND);
+    sqlite3VdbeAddOp4(v, OP_RegMakeRec, regFields, 3, regRec, "aaa", 0);
+    sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regRowid);
+    sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regRec, regRowid);
+    sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeJumpHere(v, addr);
   }
 }

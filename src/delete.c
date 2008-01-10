@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.155 2008/01/09 23:04:12 drh Exp $
+** $Id: delete.c,v 1.156 2008/01/10 23:50:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -390,7 +390,7 @@ void sqlite3DeleteFrom(
       }else
 #endif
       {
-        sqlite3GenerateRowDelete(db, v, pTab, iCur, iRowid, pParse->nested==0);
+        sqlite3GenerateRowDelete(pParse, pTab, iCur, iRowid, pParse->nested==0);
       }
     }
 
@@ -455,16 +455,18 @@ delete_from_cleanup:
 ** entries that point to that record.
 */
 void sqlite3GenerateRowDelete(
-  sqlite3 *db,       /* The database containing the index */
-  Vdbe *v,           /* Generate code into this VDBE */
+  Parse *pParse,     /* Parsing context */
   Table *pTab,       /* Table containing the row to be deleted */
   int iCur,          /* Cursor number for the table */
   int iRowid,        /* Memory cell that contains the rowid to delete */
   int count          /* Increment the row change counter */
 ){
   int addr;
+  Vdbe *v;
+
+  v = pParse->pVdbe;
   addr = sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, iRowid);
-  sqlite3GenerateRowIndexDelete(v, pTab, iCur, 0);
+  sqlite3GenerateRowIndexDelete(pParse, pTab, iCur, 0);
   sqlite3VdbeAddOp2(v, OP_Delete, iCur, (count?OPFLAG_NCHANGE:0));
   if( count ){
     sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
@@ -489,7 +491,7 @@ void sqlite3GenerateRowDelete(
 **       deleted.
 */
 void sqlite3GenerateRowIndexDelete(
-  Vdbe *v,           /* Generate code into this VDBE */
+  Parse *pParse,     /* Parsing and code generating context */
   Table *pTab,       /* Table containing the row to be deleted */
   int iCur,          /* Cursor number for the table */
   int *aRegIdx       /* Only delete if aRegIdx!=0 && aRegIdx[i]>0 */
@@ -499,8 +501,8 @@ void sqlite3GenerateRowIndexDelete(
 
   for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
     if( aRegIdx!=0 && aRegIdx[i-1]==0 ) continue;
-    sqlite3GenerateIndexKey(v, pIdx, iCur);
-    sqlite3VdbeAddOp1(v, OP_IdxDelete, iCur+i);
+    sqlite3GenerateIndexKey(pParse, pIdx, iCur, 0);
+    sqlite3VdbeAddOp2(pParse->pVdbe, OP_IdxDelete, iCur+i, 0);
   }
 }
 
@@ -509,25 +511,38 @@ void sqlite3GenerateRowIndexDelete(
 ** of the tack.  The key with be for index pIdx which is an index on pTab.
 ** iCur is the index of a cursor open on the pTab table and pointing to
 ** the entry that needs indexing.
+**
+** Return a register number which is the first in a block of
+** registers that holds the elements of the index key.  The
+** block of registers has already been deallocated by the time
+** this routine returns.
 */
-void sqlite3GenerateIndexKey(
-  Vdbe *v,           /* Generate code into this VDBE */
+int sqlite3GenerateIndexKey(
+  Parse *pParse,     /* Parsing context */
   Index *pIdx,       /* The index for which to generate a key */
-  int iCur           /* Cursor number for the pIdx->pTable table */
+  int iCur,          /* Cursor number for the pIdx->pTable table */
+  int regOut         /* Write the new index key to this register */
 ){
+  Vdbe *v = pParse->pVdbe;
   int j;
   Table *pTab = pIdx->pTable;
+  int regBase;
+  int nCol;
 
-  sqlite3VdbeAddOp1(v, OP_Rowid, iCur);
-  for(j=0; j<pIdx->nColumn; j++){
+  nCol = pIdx->nColumn;
+  regBase = sqlite3GetTempRange(pParse, nCol+1);
+  sqlite3VdbeAddOp2(v, OP_Rowid, iCur, regBase+nCol);
+  for(j=0; j<nCol; j++){
     int idx = pIdx->aiColumn[j];
     if( idx==pTab->iPKey ){
-      sqlite3VdbeAddOp1(v, OP_Copy, -j);
+      sqlite3VdbeAddOp2(v, OP_SCopy, regBase+nCol, regBase+j);
     }else{
-      sqlite3VdbeAddOp2(v, OP_Column, iCur, idx);
+      sqlite3VdbeAddOp3(v, OP_Column, iCur, idx, regBase+j);
       sqlite3ColumnDefault(v, pTab, idx);
     }
   }
-  sqlite3VdbeAddOp1(v, OP_MakeIdxRec, pIdx->nColumn);
+  sqlite3VdbeAddOp3(v, OP_RegMakeRec, regBase, nCol+1, regOut);
   sqlite3IndexAffinityStr(v, pIdx);
+  sqlite3ReleaseTempRange(pParse, regBase, nCol+1);
+  return regBase;
 }

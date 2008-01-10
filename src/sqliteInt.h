@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.646 2008/01/10 03:46:36 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.647 2008/01/10 23:50:11 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1766,7 +1766,7 @@ WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**, u8);
 void sqlite3WhereEnd(WhereInfo*);
 void sqlite3ExprCodeGetColumn(Vdbe*, Table*, int, int, int);
 int sqlite3ExprCode(Parse*, Expr*, int);
-void sqlite3ExprCodeAndCache(Parse*, Expr*);
+void sqlite3ExprCodeAndCache(Parse*, Expr*, int);
 int sqlite3ExprCodeExprList(Parse*, ExprList*, int);
 void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
@@ -1795,9 +1795,9 @@ int sqlite3ExprIsConstantNotJoin(Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*);
 int sqlite3ExprIsInteger(Expr*, int*);
 int sqlite3IsRowid(const char*);
-void sqlite3GenerateRowDelete(sqlite3*, Vdbe*, Table*, int, int, int);
-void sqlite3GenerateRowIndexDelete(Vdbe*, Table*, int, int*);
-void sqlite3GenerateIndexKey(Vdbe*, Index*, int);
+void sqlite3GenerateRowDelete(Parse*, Table*, int, int, int);
+void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int*);
+int sqlite3GenerateIndexKey(Parse*, Index*, int, int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,
                                      int*,int,int,int,int);
 void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*,int,int,int,int);

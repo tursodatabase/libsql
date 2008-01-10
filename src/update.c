@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.166 2008/01/09 23:04:12 drh Exp $
+** $Id: update.c,v 1.167 2008/01/10 23:50:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -404,50 +404,60 @@ void sqlite3Update(
   sqlite3VdbeAddOp2(v, OP_StackDepth, -1, 0);
 
   if( triggers_exist ){
+    int regRowid;
+    int regRow;
+    int regCols;
+
     /* Make cursor iCur point to the record that is being updated.
     */
     sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addr, regOldRowid);
 
     /* Generate the OLD table
     */
-    sqlite3VdbeAddOp2(v, OP_Rowid, iCur, 0);
+    regRowid = sqlite3GetTempReg(pParse);
+    regRow = sqlite3GetTempReg(pParse);
+    sqlite3VdbeAddOp2(v, OP_Rowid, iCur, regRowid);
     if( !old_col_mask ){
-      sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, regRow);
     }else{
-      sqlite3VdbeAddOp1(v, OP_RowData, iCur);
+      sqlite3VdbeAddOp2(v, OP_RowData, iCur, regRow);
     }
-    sqlite3CodeInsert(pParse, oldIdx, 0);
+    sqlite3VdbeAddOp3(v, OP_Insert, oldIdx, regRow, regRowid);
 
     /* Generate the NEW table
     */
     if( chngRowid ){
-      sqlite3ExprCodeAndCache(pParse, pRowidExpr);
+      sqlite3ExprCodeAndCache(pParse, pRowidExpr, regRowid);
     }else{
-      sqlite3VdbeAddOp2(v, OP_Rowid, iCur, 0);
+      sqlite3VdbeAddOp2(v, OP_Rowid, iCur, regRowid);
     }
+    regCols = sqlite3GetTempRange(pParse, pTab->nCol);
     for(i=0; i<pTab->nCol; i++){
       if( i==pTab->iPKey ){
-        sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, regCols+i);
         continue;
       }
       j = aXRef[i];
       if( new_col_mask&((u32)1<<i) || new_col_mask==0xffffffff ){
         if( j<0 ){
-          sqlite3VdbeAddOp2(v, OP_Column, iCur, i);
+          sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regCols+i);
           sqlite3ColumnDefault(v, pTab, i);
         }else{
-          sqlite3ExprCodeAndCache(pParse, pChanges->a[j].pExpr);
+          sqlite3ExprCodeAndCache(pParse, pChanges->a[j].pExpr, regCols+i);
         }
       }else{
-        sqlite3VdbeAddOp2(v, OP_Null, 0, 0);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, regCols+i);
       }
     }
-    sqlite3VdbeAddOp2(v, OP_MakeRecord, pTab->nCol, 0);
+    sqlite3VdbeAddOp3(v, OP_RegMakeRec, regCols, pTab->nCol, regRow);
     if( !isView ){
       sqlite3TableAffinityStr(v, pTab);
     }
+    sqlite3ReleaseTempRange(pParse, regCols, pTab->nCol);
     if( pParse->nErr ) goto update_cleanup;
-    sqlite3CodeInsert(pParse, newIdx, 0);
+    sqlite3VdbeAddOp3(v, OP_Insert, newIdx, regRow, regRowid);
+    sqlite3ReleaseTempReg(pParse, regRowid);
+    sqlite3ReleaseTempReg(pParse, regRow);
 
     sqlite3VdbeAddOp2(v, OP_Goto, 0, iBeginBeforeTrigger);
     sqlite3VdbeJumpHere(v, iEndBeforeTrigger);
@@ -495,7 +505,7 @@ void sqlite3Update(
 
     /* Delete the old indices for the current record.
     */
-    sqlite3GenerateRowIndexDelete(v, pTab, iCur, aRegIdx);
+    sqlite3GenerateRowIndexDelete(pParse, pTab, iCur, aRegIdx);
 
     /* If changing the record number, delete the old record.
     */

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.341 2008/01/10 03:46:36 drh Exp $
+** $Id: expr.c,v 1.342 2008/01/10 23:50:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1550,7 +1550,7 @@ struct QueryCoder {
 ** The returned value indicates the structure type, as follows:
 **
 **   IN_INDEX_ROWID - The cursor was opened on a database table.
-**   IN_INDEX_INDEX - The cursor was opened on a database indec.
+**   IN_INDEX_INDEX - The cursor was opened on a database index.
 **   IN_INDEX_EPH -   The cursor was opened on a specially created and
 **                    populated epheremal table.
 **
@@ -1765,6 +1765,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
         int i;
         ExprList *pList = pExpr->pList;
         struct ExprList_item *pItem;
+        int r1, r2;
 
         if( !affinity ){
           affinity = SQLITE_AFF_NONE;
@@ -1772,6 +1773,8 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
         keyInfo.aColl[0] = pExpr->pLeft->pColl;
 
         /* Loop through each expression in <exprlist>. */
+        r1 = sqlite3GetTempReg(pParse);
+        r2 = sqlite3GetTempReg(pParse);
         for(i=pList->nExpr, pItem=pList->a; i>0; i--, pItem++){
           Expr *pE2 = pItem->pExpr;
 
@@ -1786,10 +1789,12 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
           }
 
           /* Evaluate the expression and insert it into the temp table */
-          sqlite3ExprCode(pParse, pE2, 0);
-          sqlite3VdbeAddOp4(v, OP_MakeRecord, 1, 0, 0, &affinity, 1);
-          sqlite3VdbeAddOp1(v, OP_IdxInsert, pExpr->iTable);
+          sqlite3ExprCode(pParse, pE2, r1);
+          sqlite3VdbeAddOp4(v, OP_RegMakeRec, r1, 1, r2, &affinity, 1);
+          sqlite3VdbeAddOp2(v, OP_IdxInsert, pExpr->iTable, r2);
         }
+        sqlite3ReleaseTempReg(pParse, r1);
+        sqlite3ReleaseTempReg(pParse, r2);
       }
       sqlite3VdbeChangeP4(v, addr, (void *)&keyInfo, P4_KEYINFO);
       break;
@@ -2230,6 +2235,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       int j1, j2, j3, j4, j5;
       char affinity;
       int eType;
+      int r1, r2, r3;
 
       eType = sqlite3FindInIndex(pParse, pExpr, 0);
 
@@ -2239,29 +2245,35 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       */
       affinity = comparisonAffinity(pExpr);
 
-      sqlite3VdbeAddOp1(v, OP_Integer, 1);
+      if( target ){
+        r1 = target;
+      }else{
+        r1 = sqlite3GetTempReg(pParse);
+      }
+      inReg = r1;
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, r1);
 
       /* Code the <expr> from "<expr> IN (...)". The temporary table
       ** pExpr->iTable contains the values that make up the (...) set.
       */
-      sqlite3ExprCode(pParse, pExpr->pLeft, 0);
-      sqlite3VdbeAddOp0(v, OP_SCopy);
-      j1 = sqlite3VdbeAddOp0(v, OP_NotNull);
-      sqlite3VdbeAddOp1(v, OP_Pop, 2);
-      sqlite3VdbeAddOp0(v, OP_Null);
+      r2 = sqlite3ExprCode(pParse, pExpr->pLeft, -1);
+      j1 = sqlite3VdbeAddOp1(v, OP_NotNull, r2);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, r1);
       j2  = sqlite3VdbeAddOp0(v, OP_Goto);
       sqlite3VdbeJumpHere(v, j1);
       if( eType==IN_INDEX_ROWID ){
-        j3 = sqlite3VdbeAddOp3(v, OP_MustBeInt, 0, 0, 1);
-        j4 = sqlite3VdbeAddOp1(v, OP_NotExists, pExpr->iTable);
+        j3 = sqlite3VdbeAddOp3(v, OP_MustBeInt, r2, 0, 1);
+        j4 = sqlite3VdbeAddOp3(v, OP_NotExists, pExpr->iTable, 0, r2);
         j5 = sqlite3VdbeAddOp0(v, OP_Goto);
         sqlite3VdbeJumpHere(v, j3);
         sqlite3VdbeJumpHere(v, j4);
       }else{
-        sqlite3VdbeAddOp4(v, OP_MakeRecord, 1, 0, 0, &affinity, 1);
-        j5 = sqlite3VdbeAddOp1(v, OP_Found, pExpr->iTable);
+        r3 = sqlite3GetTempReg(pParse);
+        sqlite3VdbeAddOp4(v, OP_RegMakeRec, r2, 1, r3, &affinity, 1);
+        j5 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r3);
+        sqlite3ReleaseTempReg(pParse, r3);
       }
-      sqlite3VdbeAddOp2(v, OP_AddImm, 0, -1);
+      sqlite3VdbeAddOp2(v, OP_AddImm, r1, -1);
       sqlite3VdbeJumpHere(v, j2);
       sqlite3VdbeJumpHere(v, j5);
       break;
@@ -2384,19 +2396,19 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
 ** not cached.  If the expression is cached, its result is stored in a 
 ** memory location.
 */
-void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr){
+void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
   Vdbe *v = pParse->pVdbe;
   VdbeOp *pOp;
   int iMem;
   int addr1, addr2;
   if( v==0 ) return;
   addr1 = sqlite3VdbeCurrentAddr(v);
-  sqlite3ExprCode(pParse, pExpr, 0);
+  sqlite3ExprCode(pParse, pExpr, target);
   addr2 = sqlite3VdbeCurrentAddr(v);
   if( addr2>addr1+1
    || ((pOp = sqlite3VdbeGetOp(v, addr1))!=0 && pOp->opcode==OP_Function) ){
     iMem = pExpr->iTable = ++pParse->nMem;
-    sqlite3VdbeAddOp2(v, OP_Copy, 0, iMem);
+    sqlite3VdbeAddOp2(v, OP_Copy, target, iMem);
     pExpr->op = TK_REGISTER;
   }
 }

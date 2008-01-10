@@ -227,43 +227,20 @@ void sqlite3FinishTrigger(
   ** build the sqlite_master entry
   */
   if( !db->init.busy ){
-    static const VdbeOpList insertTrig[] = {
-      { OP_NewRowid,   0, 0,  0          },
-      { OP_String8,    0, 0,  0          },  /* 1: "trigger" */
-      { OP_String8,    0, 0,  0          },  /* 2: trigger name */
-      { OP_String8,    0, 0,  0          },  /* 3: table name */
-      { OP_Integer,    0, 0,  0          },
-      { OP_String8,    0, 0,  0          },  /* 5: "CREATE TRIGGER " */
-      { OP_String8,    0, 0,  0          },  /* 6: SQL */
-      { OP_Concat,     0, 0,  0          }, 
-      { OP_MakeRecord, 5, 0,  0          },  /* 8: "aaada" */
-      { OP_Move,       0, 0,  0          },  /* 9: Store data */
-      { OP_Move,       0, 0,  0          },  /* 10: Store key */
-      { OP_Insert,     0, 0,  0          },
-    };
-    int addr;
     Vdbe *v;
-    int iKey = ++pParse->nMem;
-    int iData = ++pParse->nMem;
+    char *z;
 
     /* Make an entry in the sqlite_master table */
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) goto triggerfinish_cleanup;
     sqlite3BeginWriteOperation(pParse, 0, iDb);
-    sqlite3OpenMasterTable(pParse, iDb);
-    addr = sqlite3VdbeAddOpList(v, ArraySize(insertTrig), insertTrig);
-    sqlite3VdbeChangeP4(v, addr+1, "trigger", P4_STATIC);
-    sqlite3VdbeChangeP4(v, addr+2, pTrig->name, 0); 
-    sqlite3VdbeChangeP4(v, addr+3, pTrig->table, 0);
-    sqlite3VdbeChangeP4(v, addr+5, "CREATE TRIGGER ", P4_STATIC); 
-    sqlite3VdbeChangeP4(v, addr+6, (char*)pAll->z, pAll->n);
-    sqlite3VdbeChangeP4(v, addr+8, "aaada", P4_STATIC);
-    sqlite3VdbeChangeP2(v, addr+9, iData);
-    sqlite3VdbeChangeP2(v, addr+10, iKey);
-    sqlite3VdbeChangeP2(v, addr+11, iData);
-    sqlite3VdbeChangeP3(v, addr+11, iKey);
+    z = sqlite3DbStrNDup(db, (char*)pAll->z, pAll->n);
+    sqlite3NestedParse(pParse,
+       "INSERT INTO %Q.%s VALUES('trigger',%Q,%Q,0,'CREATE TRIGGER %q')",
+       db->aDb[iDb].zName, SCHEMA_TABLE(iDb), pTrig->name,
+       pTrig->table, z);
+    sqlite3_free(z);
     sqlite3ChangeCookie(db, v, iDb);
-    sqlite3VdbeAddOp2(v, OP_Close, 0, 0);
     sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0, sqlite3MPrintf(
         db, "type='trigger' AND name='%q'", pTrig->name), P4_DYNAMIC
     );

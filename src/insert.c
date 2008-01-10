@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.221 2008/01/10 03:46:36 drh Exp $
+** $Id: insert.c,v 1.222 2008/01/10 23:50:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -28,6 +28,9 @@
 **  'c'            NUMERIC
 **  'd'            INTEGER
 **  'e'            REAL
+**
+** An extra 'b' is appended to the end of the string to cover the
+** rowid that appears as the last column in every index.
 */
 void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
   if( !pIdx->zColAff ){
@@ -42,14 +45,15 @@ void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
     int n;
     Table *pTab = pIdx->pTable;
     sqlite3 *db = sqlite3VdbeDb(v);
-    pIdx->zColAff = (char *)sqlite3DbMallocZero(db, pIdx->nColumn+1);
+    pIdx->zColAff = (char *)sqlite3DbMallocZero(db, pIdx->nColumn+2);
     if( !pIdx->zColAff ){
       return;
     }
     for(n=0; n<pIdx->nColumn; n++){
       pIdx->zColAff[n] = pTab->aCol[pIdx->aiColumn[n]].affinity;
     }
-    pIdx->zColAff[pIdx->nColumn] = '\0';
+    pIdx->zColAff[n++] = SQLITE_AFF_NONE;
+    pIdx->zColAff[n] = 0;
   }
  
   sqlite3VdbeChangeP4(v, -1, pIdx->zColAff, 0);
@@ -679,6 +683,9 @@ void sqlite3Insert(
   */
   endOfLoop = sqlite3VdbeMakeLabel(v);
   if( triggers_exist & TRIGGER_BEFORE ){
+    int regRowid;
+    int regCols;
+    int regRec;
 
     /* build the NEW.* reference row.  Note that if there is an INTEGER
     ** PRIMARY KEY into which a NULL is being inserted, that NULL will be
@@ -686,20 +693,19 @@ void sqlite3Insert(
     ** we do not know what the unique ID will be (because the insert has
     ** not happened yet) so we substitute a rowid of -1
     */
+    regRowid = sqlite3GetTempReg(pParse);
     if( keyColumn<0 ){
-      sqlite3VdbeAddOp2(v, OP_Integer, -1, 0);
+      sqlite3VdbeAddOp2(v, OP_Integer, -1, regRowid);
     }else if( useTempTable ){
-      sqlite3VdbeAddOp2(v, OP_Column, srcTab, keyColumn);
+      sqlite3VdbeAddOp3(v, OP_Column, srcTab, keyColumn, regRowid);
     }else{
       int j1;
       assert( pSelect==0 );  /* Otherwise useTempTable is true */
-      sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, 0);
-      sqlite3VdbeAddOp0(v, OP_SCopy);
-      j1 = sqlite3VdbeAddOp0(v, OP_NotNull);
-      sqlite3VdbeAddOp1(v, OP_Pop, 1);
-      sqlite3VdbeAddOp1(v, OP_Integer, -1);
+      sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, regRowid);
+      j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regRowid);
+      sqlite3VdbeAddOp2(v, OP_Integer, -1, regRowid);
       sqlite3VdbeJumpHere(v, j1);
-      sqlite3VdbeAddOp0(v, OP_MustBeInt);
+      sqlite3VdbeAddOp1(v, OP_MustBeInt, regRowid);
     }
 
     /* Cannot have triggers on a virtual table. If it were possible,
@@ -709,6 +715,7 @@ void sqlite3Insert(
 
     /* Create the new column data
     */
+    regCols = sqlite3GetTempRange(pParse, pTab->nCol);
     for(i=0; i<pTab->nCol; i++){
       if( pColumn==0 ){
         j = i;
@@ -718,15 +725,16 @@ void sqlite3Insert(
         }
       }
       if( pColumn && j>=pColumn->nId ){
-        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, 0);
+        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regCols+i);
       }else if( useTempTable ){
-        sqlite3VdbeAddOp2(v, OP_Column, srcTab, j); 
+        sqlite3VdbeAddOp3(v, OP_Column, srcTab, j, regCols+i); 
       }else{
         assert( pSelect==0 ); /* Otherwise useTempTable is true */
-        sqlite3ExprCodeAndCache(pParse, pList->a[j].pExpr);
+        sqlite3ExprCodeAndCache(pParse, pList->a[j].pExpr, regCols+i);
       }
     }
-    sqlite3VdbeAddOp2(v, OP_MakeRecord, pTab->nCol, 0);
+    regRec = sqlite3GetTempReg(pParse);
+    sqlite3VdbeAddOp3(v, OP_RegMakeRec, regCols, pTab->nCol, regRec);
 
     /* If this is an INSERT on a view with an INSTEAD OF INSERT trigger,
     ** do not attempt any conversions before assembling the record.
@@ -736,7 +744,10 @@ void sqlite3Insert(
     if( !isView ){
       sqlite3TableAffinityStr(v, pTab);
     }
-    sqlite3CodeInsert(pParse, newIdx, OPFLAG_APPEND);
+    sqlite3VdbeAddOp3(v, OP_Insert, newIdx, regRec, regRowid);
+    sqlite3ReleaseTempReg(pParse, regRec);
+    sqlite3ReleaseTempReg(pParse, regRowid);
+    sqlite3ReleaseTempRange(pParse, regCols, pTab->nCol);
 
     /* Fire BEFORE or INSTEAD OF triggers */
     if( sqlite3CodeRowTrigger(pParse, TK_INSERT, 0, TRIGGER_BEFORE, pTab, 
@@ -1123,7 +1134,7 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
       case OE_Replace: {
-        sqlite3GenerateRowIndexDelete(v, pTab, baseCur, 0);
+        sqlite3GenerateRowIndexDelete(pParse, pTab, baseCur, 0);
         if( isUpdate ){
           sqlite3VdbeAddOp3(v, OP_MoveGe, baseCur, 0, regRowid-hasTwoRowids);
         }
@@ -1148,20 +1159,25 @@ void sqlite3GenerateConstraintChecks(
   ** Add the new records to the indices as we go.
   */
   for(iCur=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, iCur++){
+    int regIdx;
+    int regR;
+
     if( aRegIdx[iCur]==0 ) continue;  /* Skip unused indices */
 
     /* Create a key for accessing the index entry */
-    sqlite3VdbeAddOp1(v, OP_SCopy, regRowid);
+    regIdx = sqlite3GetTempRange(pParse, pIdx->nColumn+1);
     for(i=0; i<pIdx->nColumn; i++){
       int idx = pIdx->aiColumn[i];
       if( idx==pTab->iPKey ){
-        sqlite3VdbeAddOp1(v, OP_SCopy, regRowid);
+        sqlite3VdbeAddOp2(v, OP_SCopy, regRowid, regIdx+i);
       }else{
-        sqlite3VdbeAddOp1(v, OP_SCopy, regData+idx);
+        sqlite3VdbeAddOp2(v, OP_SCopy, regData+idx, regIdx+i);
       }
     }
-    j2 = sqlite3VdbeAddOp3(v, OP_MakeIdxRec, pIdx->nColumn, 0, aRegIdx[iCur]);
+    sqlite3VdbeAddOp2(v, OP_SCopy, regRowid, regIdx+i);
+    sqlite3VdbeAddOp3(v, OP_RegMakeRec, regIdx, pIdx->nColumn+1, aRegIdx[iCur]);
     sqlite3IndexAffinityStr(v, pIdx);
+    sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn+1);
 
     /* Find out what action to take in case there is an indexing conflict */
     onError = pIdx->onError;
@@ -1178,9 +1194,11 @@ void sqlite3GenerateConstraintChecks(
     
 
     /* Check to see if the new index entry will be unique */
-    sqlite3VdbeAddOp1(v, OP_SCopy, aRegIdx[iCur]);
-    sqlite3VdbeAddOp1(v, OP_SCopy, regRowid-hasTwoRowids);
-    j3 = sqlite3VdbeAddOp4(v, OP_IsUnique, baseCur+iCur+1, 0, 0, 0, P4_INT32);
+    j2 = sqlite3VdbeAddOp3(v, OP_IsNull, regIdx, 0, pIdx->nColumn);
+    regR = sqlite3GetTempReg(pParse);
+    sqlite3VdbeAddOp2(v, OP_SCopy, regRowid-hasTwoRowids, regR);
+    j3 = sqlite3VdbeAddOp4(v, OP_IsUnique, baseCur+iCur+1, 0,
+                           regR, (char*)aRegIdx[iCur], P4_INT32);
 
     /* Generate code that executes if the new index entry is not unique */
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
@@ -1217,26 +1235,21 @@ void sqlite3GenerateConstraintChecks(
       }
       case OE_Ignore: {
         assert( seenReplace==0 );
-        sqlite3VdbeAddOp1(v, OP_Pop, 2+hasTwoRowids);
         sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
         break;
       }
       case OE_Replace: {
-        int iRowid = sqlite3StackToReg(pParse, 1);
-        sqlite3GenerateRowDelete(pParse->db, v, pTab, baseCur, iRowid, 0);
+        sqlite3GenerateRowDelete(pParse, pTab, baseCur, regR, 0);
         if( isUpdate ){
-          sqlite3VdbeAddOp1(v, OP_SCopy, regRowid-hasTwoRowids);
-          sqlite3VdbeAddOp2(v, OP_MoveGe, baseCur, 0);
+          sqlite3VdbeAddOp3(v, OP_MoveGe, baseCur, 0, regRowid-hasTwoRowids);
         }
         seenReplace = 1;
         break;
       }
     }
-    sqlite3VdbeJumpHere(v, j3);
-    sqlite3VdbeAddOp1(v, OP_Pop, 1);
-#if NULL_DISTINCT_FOR_UNIQUE
     sqlite3VdbeJumpHere(v, j2);
-#endif
+    sqlite3VdbeJumpHere(v, j3);
+    sqlite3ReleaseTempReg(pParse, regR);
   }
 }
 
