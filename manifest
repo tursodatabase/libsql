@@ -1,5 +1,5 @@
-C More\swork\stoward\sconverting\sthe\sVM\sinto\sa\sregister-based\smachine.\s(CVS\s4704)
-D 2008-01-10T23:50:11
+C Attempt\sto\swork\saround\sa\sbug\sin\sthe\sBorland\sBCC\s5.5.1\scompiler.\s\sTicket\s#2880.\s(CVS\s4705)
+D 2008-01-11T00:06:11
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -175,7 +175,7 @@ F src/vdbeapi.c f14174843bf4be2c9afdf2ef48b61e7c3ac62d7c
 F src/vdbeaux.c db33a4c2477546da05e772352be43896d24d51d5
 F src/vdbeblob.c e386d49d8354aa5a58f0a7f2794303442c149120
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
-F src/vdbemem.c a94f3e9e85578ba457133ad3446fc6114a03ec5a
+F src/vdbemem.c 3da7f7fa7f2ab06a5cbaff132898b07e4d095220
 F src/vtab.c 03014b2bfa8096ecac5fcdc80d34cd76e06af52a
 F src/where.c 9705df3c2b78ea8e02a768be8ac5d3f7a2902f1e
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -605,7 +605,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 173698c963473ab1b9db88b23a2de82e4097b96d
-R 8bf48b53bfdac6453062e461bf371d81
+P 8cbd46517f407b3b1ce187b623db10f00aa415ea
+R 911083b5c48b851385eee47775792145
 U drh
-Z e7ee9d7977b0629978f5e3008b2a0c6d
+Z ec1836639b43428a4a6ed94e2aced93a

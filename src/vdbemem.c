@@ -355,7 +355,26 @@ double sqlite3VdbeRealValue(Mem *pMem){
 void sqlite3VdbeIntegerAffinity(Mem *pMem){
   assert( pMem->flags & MEM_Real );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+
+  /* It is reported (in ticket #2880) that the BCC 5.5.1 compiler
+  ** will corrupt a floating point number on the right-hand side
+  ** of an assignment if the lvalue for the assignment is an integer.
+  **
+  ** We will attempt to work around this bug in the Borland compiler
+  ** by moving the value into a temporary variable first so that if
+  ** the assignment into the integer really does corrupt the right-hand
+  ** side value, it will corrupt a temporary variable that we do not
+  ** care about.
+  */
+#ifdef __BORLANDC__
+  {
+    double r = pMem->r;
+    pMem->u.i = r;
+  }
+#else
   pMem->u.i = pMem->r;
+#endif
+
   if( ((double)pMem->u.i)==pMem->r ){
     pMem->flags |= MEM_Int;
   }
