@@ -289,6 +289,38 @@ void sqlite3VdbeMemRelease(Mem *p){
 }
 
 /*
+** Convert a 64-bit IEEE double into a 64-bit signed integer.
+** If the double is too large, return 0x8000000000000000.
+**
+** Most systems appear to do this simply by assigning
+** variables and without the extra range tests.  But
+** there are reports that windows throws an expection
+** if the floating point value is out of range. (See ticket #2880.)
+** Because we do not completely understand the problem, we will
+** take the conservative approach and always do range tests
+** before attempting the conversion.
+*/
+static i64 doubleToInt64(double r){
+  /*
+  ** Many compilers we encounter do not define constants for the
+  ** minimum and maximum 64-bit integers, or they define them
+  ** inconsistently.  And many do not understand the "LL" notation.
+  ** So we define our own static constants here using nothing
+  ** larger than a 32-bit integer constant.
+  */
+  static const i64 maxInt = (((i64)0x7fffffff)<<32)|0xffffffff;
+  static const i64 minInt = ((i64)0x80000000)<<32;
+
+  if( r<(double)minInt ){
+    return minInt;
+  }else if( r>(double)maxInt ){
+    return minInt;
+  }else{
+    return (i64)r;
+  }
+}
+
+/*
 ** Return some kind of integer value which is the best we can do
 ** at representing the value that *pMem describes as an integer.
 ** If pMem is an integer, then the value is exact.  If pMem is
@@ -305,7 +337,7 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
   if( flags & MEM_Int ){
     return pMem->u.i;
   }else if( flags & MEM_Real ){
-    return (i64)pMem->r;
+    return doubleToInt64(pMem->r);
   }else if( flags & (MEM_Str|MEM_Blob) ){
     i64 value;
     pMem->flags |= MEM_Str;
@@ -356,26 +388,8 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
   assert( pMem->flags & MEM_Real );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
 
-  /* It is reported (in ticket #2880) that the BCC 5.5.1 compiler
-  ** will corrupt a floating point number on the right-hand side
-  ** of an assignment if the lvalue for the assignment is an integer.
-  **
-  ** We will attempt to work around this bug in the Borland compiler
-  ** by moving the value into a temporary variable first so that if
-  ** the assignment into the integer really does corrupt the right-hand
-  ** side value, it will corrupt a temporary variable that we do not
-  ** care about.
-  */
-#ifdef __BORLANDC__
-  {
-    double r = pMem->r;
-    pMem->u.i = r;
-  }
-#else
-  pMem->u.i = pMem->r;
-#endif
-
-  if( ((double)pMem->u.i)==pMem->r ){
+  pMem->u.i = doubleToInt64(pMem->r);
+  if( pMem->r==(double)pMem->u.i ){
     pMem->flags |= MEM_Int;
   }
 }
@@ -414,7 +428,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
   assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   r1 = sqlite3VdbeRealValue(pMem);
-  i = (i64)r1;
+  i = doubleToInt64(r1);
   r2 = (double)i;
   if( r1==r2 ){
     sqlite3VdbeMemIntegerify(pMem);
