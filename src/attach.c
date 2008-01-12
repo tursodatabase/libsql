@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.67 2008/01/09 23:04:12 drh Exp $
+** $Id: attach.c,v 1.68 2008/01/12 19:03:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -297,6 +297,7 @@ static void codeAttach(
   Vdbe *v;
   FuncDef *pFunc;
   sqlite3* db = pParse->db;
+  int regArgs;
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   assert( db->mallocFailed || pAuthArg );
@@ -326,13 +327,14 @@ static void codeAttach(
   }
 
   v = sqlite3GetVdbe(pParse);
-  sqlite3ExprCode(pParse, pFilename, 0);
-  sqlite3ExprCode(pParse, pDbname, 0);
-  sqlite3ExprCode(pParse, pKey, 0);
+  regArgs = sqlite3GetTempRange(pParse, nFunc);
+  sqlite3ExprCode(pParse, pFilename, regArgs);
+  sqlite3ExprCode(pParse, pDbname, regArgs+1);
+  sqlite3ExprCode(pParse, pKey, regArgs+2);
 
   assert( v || db->mallocFailed );
   if( v ){
-    sqlite3VdbeAddOp0(v, OP_Function);
+    sqlite3VdbeAddOp3(v, OP_Function, 0, regArgs+3-nFunc, regArgs);
     sqlite3VdbeChangeP5(v, nFunc);
     pFunc = sqlite3FindFunction(db, zFunc, strlen(zFunc), nFunc, SQLITE_UTF8,0);
     sqlite3VdbeChangeP4(v, -1, (char *)pFunc, P4_FUNCDEF);

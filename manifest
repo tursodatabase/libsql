@@ -1,5 +1,5 @@
-C Continuing\swork\stoward\sconverting\sthe\sVM\sinto\sa\sregister\smachine.\s(CVS\s4707)
-D 2008-01-12T12:48:08
+C Continuing\swork\stoward\sconverting\sthe\sVM\sto\sa\sregister\smachine.\s(CVS\s4708)
+D 2008-01-12T19:03:49
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -80,7 +80,7 @@ F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in abed4664817e1cd500f2276142c71958087c16bc
 F src/alter.c 5a54f58d9481ac14c4e58b702f3f8758dee84d04
 F src/analyze.c 5aa93f191b365ea308795f62ca6f2e8caa9de3e1
-F src/attach.c 61f0cae7b1a0e7c3b5f5286be5dc1a7c4d7112d2
+F src/attach.c 71f5c886004a9740fc6e6033d4e1ce0517ab6574
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/btmutex.c 5d39da37c9d1282f3c6f9967afae6a34ee36b7ff
 F src/btree.c 5164b32950cfd41f2c5c31e8ff82c4a499918aef
@@ -92,7 +92,7 @@ F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
 F src/delete.c 00e536847b8eedc5d35f89f7f38a8a7c1d2a22f9
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 68bcc07517c763cc7601be45d60084bc11ee0212
+F src/expr.c 14130c27fba6fa3c14dcfc4891c534a8ee71cc3c
 F src/func.c 996071cf0af9d967e58b69fce1909555059ebc7d
 F src/hash.c 45a7005aac044b6c86bd7e49c44bc15d30006d6c
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
@@ -131,12 +131,12 @@ F src/pragma.c 1d3d9deefcf325e14a99b94f9f506f1a90a9232b
 F src/prepare.c c31a879d6795f4765fd0b113675c6debbc96b7fd
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
-F src/select.c 9e3c65ca3d2508b585b6786dbcbe6cd65560b013
+F src/select.c fc9cebb2033a84b31472405114ad36d73c30b967
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 5391e889384d2062249f668110d64ed16f601c4b
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
-F src/sqliteInt.h b143c53760aeb4feeb4eaf8cb10eb26ad5b6c89e
+F src/sqliteInt.h c3f43826e48b0d2928b9e6fa3aca887317285392
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 9923abeffc9b3d7dad58e92b319661521f60debf
@@ -168,7 +168,7 @@ F src/update.c aad823f97a930e6982264299863837d4c6107d3b
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c 20bd088657280d75b630d299c59cdb3c6a5c9b9e
+F src/vdbe.c a05947fba057311149cb0635cccdee9bed42f3cb
 F src/vdbe.h a9166e1601f5b74c20516a74182773a20baee43e
 F src/vdbeInt.h 31bd686595356284d5484592e2dc6e58025aa346
 F src/vdbeapi.c f14174843bf4be2c9afdf2ef48b61e7c3ac62d7c
@@ -177,7 +177,7 @@ F src/vdbeblob.c e386d49d8354aa5a58f0a7f2794303442c149120
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c a86119b5ccc41ab8653e4746f83d591ff0ae892e
 F src/vtab.c 7f206d148f6e76f427f008f589610c72a4b9336c
-F src/where.c 9705df3c2b78ea8e02a768be8ac5d3f7a2902f1e
+F src/where.c 27e40d32b7b47e70db9ac61b91a3a46c8dc6b47d
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test ee350b9ab15b175fc0a8fb51bf2141ed3a3b9cba
@@ -314,7 +314,7 @@ F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3near.test 2d4dadcaac5025ab65bb87e66c45f39e92966194
-F test/func.test 4d54202f6a1c8498444d9efe460851b02a1e8e4f
+F test/func.test 307b335a47a555bc1e5df94d7f4d6172df25f944
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
@@ -606,7 +606,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4744257d3cd2dd96485fde6d9f60542714383421
-R 9fded3f0e818ece501c0ececcbd26a94
+P a6dddebcc5ccbbf3009c9d06163a8b59036331de
+R 537e4808d9b23703b914b666ccd36884
 U drh
-Z fe475f28d0df336b5a859493e9293538
+Z 1569ded7274b37b8c39c0600e4142054

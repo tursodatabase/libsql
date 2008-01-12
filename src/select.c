@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.398 2008/01/12 12:48:08 drh Exp $
+** $Id: select.c,v 1.399 2008/01/12 19:03:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -455,18 +455,21 @@ static void codeOffset(
 ** stack if the top N elements are not distinct.
 */
 static void codeDistinct(
-  Vdbe *v,           /* Generate code into this VM */
+  Parse *pParse,     /* Parsing and code generating context */
   int iTab,          /* A sorting index used to test for distinctness */
   int addrRepeat,    /* Jump to here if not distinct */
   int N,             /* Number of elements */
   int iMem           /* First element */
 ){
-  sqlite3VdbeAddOp2(v, OP_RegMakeRec, iMem, N);
-  sqlite3VdbeAddOp2(v, OP_Distinct, iTab, sqlite3VdbeCurrentAddr(v)+3);
-  sqlite3VdbeAddOp2(v, OP_Pop, 1, 0);
-  sqlite3VdbeAddOp2(v, OP_Goto, 0, addrRepeat);
-  VdbeComment((v, "skip indistinct records"));
-  sqlite3VdbeAddOp2(v, OP_IdxInsert, iTab, 0);
+  Vdbe *v;
+  int r1;
+
+  v = pParse->pVdbe;
+  r1 = sqlite3GetTempReg(pParse);
+  sqlite3VdbeAddOp3(v, OP_RegMakeRec, iMem, N, r1);
+  sqlite3VdbeAddOp3(v, OP_Found, iTab, addrRepeat, r1);
+  sqlite3VdbeAddOp2(v, OP_IdxInsert, iTab, r1);
+  sqlite3ReleaseTempReg(pParse, r1);
 }
 
 /*
@@ -564,7 +567,7 @@ static int selectInnerLoop(
   if( hasDistinct ){
     assert( pEList!=0 );
     assert( pEList->nExpr==nColumn );
-    codeDistinct(v, distinct, iContinue, nColumn, iMem);
+    codeDistinct(pParse, distinct, iContinue, nColumn, iMem);
     if( pOrderBy==0 ){
       codeOffset(v, p, iContinue);
     }
@@ -2859,7 +2862,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     if( pF->iDistinct>=0 ){
       addrNext = sqlite3VdbeMakeLabel(v);
       assert( nArg==1 );
-      codeDistinct(v, pF->iDistinct, addrNext, 1, regAgg);
+      codeDistinct(pParse, pF->iDistinct, addrNext, 1, regAgg);
     }
     if( pF->pFunc->needCollSeq ){
       CollSeq *pColl = 0;
@@ -3440,22 +3443,17 @@ int sqlite3Select(
       addrTopOfLoop = sqlite3VdbeCurrentAddr(v);
       for(j=0; j<pGroupBy->nExpr; j++){
         if( groupBySort ){
-          sqlite3VdbeAddOp2(v, OP_Column, sAggInfo.sortingIdx, j);
+          sqlite3VdbeAddOp3(v, OP_Column, sAggInfo.sortingIdx, j, iBMem+j);
         }else{
           sAggInfo.directMode = 1;
-          sqlite3ExprCode(pParse, pGroupBy->a[j].pExpr, 0);
+          sqlite3ExprCode(pParse, pGroupBy->a[j].pExpr, iBMem+j);
         }
-        sqlite3VdbeAddOp2(v, j<pGroupBy->nExpr-1?OP_Move:OP_Copy, 0, iBMem+j);
       }
       for(j=pGroupBy->nExpr-1; j>=0; j--){
-        if( j<pGroupBy->nExpr-1 ){
-          sqlite3VdbeAddOp2(v, OP_SCopy, iBMem+j, 0);
-        }
-        sqlite3VdbeAddOp2(v, OP_SCopy, iAMem+j, 0);
         if( j==0 ){
-          sqlite3VdbeAddOp2(v, OP_Eq, 0, addrProcessRow);
+          sqlite3VdbeAddOp3(v, OP_Eq, iAMem+j, addrProcessRow, iBMem+j);
         }else{
-          sqlite3VdbeAddOp2(v, OP_Ne, 0, addrGroupByChange);
+          sqlite3VdbeAddOp3(v, OP_Ne, iAMem+j, addrGroupByChange, iBMem+j);
         }
         sqlite3VdbeChangeP4(v, -1, (void*)pKeyInfo->aColl[j], P4_COLLSEQ);
         sqlite3VdbeChangeP5(v, SQLITE_NULLEQUAL);

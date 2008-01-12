@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.693 2008/01/12 12:48:08 drh Exp $
+** $Id: vdbe.c,v 1.694 2008/01/12 19:03:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1062,17 +1062,6 @@ case OP_Variable: {           /* out2-prerelease */
   break;
 }
 
-/* Opcode: Pop P1 * * * *
-**
-** P1 elements are popped off of the top of stack and discarded.
-*/
-case OP_Pop: {            /* no-push */
-  assert( pOp->p1>=0 );
-  popStack(&pTos, pOp->p1);
-  assert( pTos>=&p->aStack[-1] );
-  break;
-}
-
 /* Opcode: Move P1 P2 * * *
 **
 ** Move the value in P1 into P2.  If P1 is positive then read from the
@@ -1404,6 +1393,7 @@ case OP_Function: {
   for(i=0; i<n; i++, pArg++){
     apVal[i] = pArg;
     storeTypeInfo(pArg, encoding);
+    REGISTER_TRACE(pOp->p2, pArg);
   }
 
   assert( pOp->p4type==P4_FUNCDEF || pOp->p4type==P4_VDBEFUNC );
@@ -1472,6 +1462,7 @@ case OP_Function: {
   if( sqlite3VdbeMemTooBig(pOut) ){
     goto too_big;
   }
+  REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
@@ -3149,44 +3140,26 @@ case OP_MoveGt: {       /* no-push, jump, in3 */
   break;
 }
 
-/* Opcode: Distinct P1 P2 P3 * *
-**
-** Use register P3 as a record created using MakeRecord.  P1 is a
-** cursor on a table that declared as an index.  If that table contains an
-** entry that matches the top of the stack fall thru.  If the top of the stack
-** matches no entry in P1 then jump to P2.
-**
-** The cursor is left pointing at the matching entry if it exists.  The
-** record on the top of the stack is not popped.
-**
-** This instruction is similar to NotFound except that this operation
-** does not pop the key from the stack when P3==0.
-**
-** The instruction is used to implement the DISTINCT operator on SELECT
-** statements.  The P1 table is not a true index but rather a record of
-** all results that have produced so far.  
-**
-** See also: Found, NotFound, MoveTo, IsUnique, NotExists
-*/
 /* Opcode: Found P1 P2 P3 * *
 **
 ** Register P3 holds a blob constructed by MakeRecord.  P1 is an index.
 ** If an entry that matches the top of the stack exists in P1 then
 ** jump to P2.  If the top of the stack does not match any entry in P1
 ** then fall thru.  The P1 cursor is left pointing at the matching entry
-** if it exists.  The blob is popped off the top of the stack.
+** if it exists.
 **
 ** This instruction is used to implement the IN operator where the
 ** left-hand side is a SELECT statement.  P1 may be a true index, or it
 ** may be a temporary index that holds the results of the SELECT
-** statement. 
+** statement.   This instruction is also used to implement the
+** DISTINCT keyword in SELECT statements.
 **
 ** This instruction checks if index P1 contains a record for which 
 ** the first N serialised values exactly match the N serialised values
 ** in the record on the stack, where N is the total number of values in
 ** the stack record (stack record is a prefix of the P1 record). 
 **
-** See also: Distinct, NotFound, MoveTo, IsUnique, NotExists
+** See also: NotFound, MoveTo, IsUnique, NotExists
 */
 /* Opcode: NotFound P1 P2 P3 * *
 **
@@ -3200,7 +3173,6 @@ case OP_MoveGt: {       /* no-push, jump, in3 */
 **
 ** See also: Distinct, Found, MoveTo, NotExists, IsUnique
 */
-case OP_Distinct:       /* no-push, jump, in3 */
 case OP_NotFound:       /* no-push, jump, in3 */
 case OP_Found: {        /* no-push, jump, in3 */
   int i = pOp->p1;
@@ -3228,9 +3200,6 @@ case OP_Found: {        /* no-push, jump, in3 */
     if( alreadyExists ) pc = pOp->p2 - 1;
   }else{
     if( !alreadyExists ) pc = pOp->p2 - 1;
-  }
-  if( pOp->opcode==OP_Distinct ){
-    nPop = 0;
   }
   break;
 }
