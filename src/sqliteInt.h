@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.647 2008/01/10 23:50:11 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.648 2008/01/12 12:48:08 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1420,6 +1420,8 @@ struct Parse {
   /* Above is constant between recursions.  Below is reset before and after
   ** each recursion */
 
+  int regRowid;        /* Register holding rowid of CREATE TABLE entry */
+  int regRoot;         /* Register holding root page number for new objects */
   int nVar;            /* Number of '?' variables seen in the SQL so far */
   int nVarExpr;        /* Number of used slots in apVarExpr[] */
   int nVarExprAlloc;   /* Number of allocated slots in apVarExpr[] */
@@ -1945,9 +1947,7 @@ int sqlite3OpenTempDatabase(Parse *);
 void sqlite3StrAccumAppend(StrAccum*,const char*,int);
 char *sqlite3StrAccumFinish(StrAccum*);
 void sqlite3StrAccumReset(StrAccum*);
-void sqlite3CodeInsert(Parse *, int, u8);
 int sqlite3StackToReg(Parse *, int);
-void sqlite3RegToStack(Parse *, int, int);
 void sqlite3SelectDestInit(SelectDest*,int,int);
 
 /*

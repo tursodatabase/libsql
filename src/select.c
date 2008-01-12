@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.397 2008/01/10 23:50:11 drh Exp $
+** $Id: select.c,v 1.398 2008/01/12 12:48:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -394,7 +394,8 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
 static void pushOntoSorter(
   Parse *pParse,         /* Parser context */
   ExprList *pOrderBy,    /* The ORDER BY clause */
-  Select *pSelect        /* The whole SELECT statement */
+  Select *pSelect,       /* The whole SELECT statement */
+  int regData            /* Register holding data to be sorted */
 ){
   Vdbe *v = pParse->pVdbe;
   int nExpr = pOrderBy->nExpr;
@@ -402,15 +403,21 @@ static void pushOntoSorter(
   int regRecord = sqlite3GetTempReg(pParse);
   sqlite3ExprCodeExprList(pParse, pOrderBy, regBase);
   sqlite3VdbeAddOp2(v, OP_Sequence, pOrderBy->iECursor, regBase+nExpr);
-  sqlite3VdbeAddOp2(v, OP_Move, 0, regBase+nExpr+1);
+  sqlite3VdbeAddOp2(v, OP_Move, regData, regBase+nExpr+1);
   sqlite3VdbeAddOp3(v, OP_RegMakeRec, regBase, nExpr + 2, regRecord);
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pOrderBy->iECursor, regRecord);
   sqlite3ReleaseTempReg(pParse, regRecord);
   sqlite3ReleaseTempRange(pParse, regBase, nExpr+2);
   if( pSelect->iLimit>=0 ){
     int addr1, addr2;
-    addr1 = sqlite3VdbeAddOp1(v, OP_IfZero, pSelect->iLimit+1);
-    sqlite3VdbeAddOp2(v, OP_AddImm, pSelect->iLimit+1, -1);
+    int iLimit;
+    if( pSelect->pOffset ){
+      iLimit = pSelect->iOffset+1;
+    }else{
+      iLimit = pSelect->iLimit;
+    }
+    addr1 = sqlite3VdbeAddOp1(v, OP_IfZero, iLimit);
+    sqlite3VdbeAddOp2(v, OP_AddImm, iLimit, -1);
     addr2 = sqlite3VdbeAddOp0(v, OP_Goto);
     sqlite3VdbeJumpHere(v, addr1);
     sqlite3VdbeAddOp1(v, OP_Last, pOrderBy->iECursor);
@@ -426,16 +433,12 @@ static void pushOntoSorter(
 static void codeOffset(
   Vdbe *v,          /* Generate code into this VM */
   Select *p,        /* The SELECT statement being coded */
-  int iContinue,    /* Jump here to skip the current record */
-  int nPop          /* Number of times to pop stack when jumping */
+  int iContinue     /* Jump here to skip the current record */
 ){
   if( p->iOffset>=0 && iContinue!=0 ){
     int addr;
     sqlite3VdbeAddOp2(v, OP_AddImm, p->iOffset, -1);
     addr = sqlite3VdbeAddOp1(v, OP_IfNeg, p->iOffset);
-    if( nPop>0 ){
-      sqlite3VdbeAddOp1(v, OP_Pop, nPop);
-    }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, iContinue);
     VdbeComment((v, "skip OFFSET records"));
     sqlite3VdbeJumpHere(v, addr);
@@ -524,7 +527,7 @@ static int selectInnerLoop(
   */
   hasDistinct = distinct>=0 && pEList->nExpr>0;
   if( pOrderBy==0 && !hasDistinct ){
-    codeOffset(v, p, iContinue, 0);
+    codeOffset(v, p, iContinue);
   }
 
   /* Pull the requested columns.
@@ -563,7 +566,7 @@ static int selectInnerLoop(
     assert( pEList->nExpr==nColumn );
     codeDistinct(v, distinct, iContinue, nColumn, iMem);
     if( pOrderBy==0 ){
-      codeOffset(v, p, iContinue, nColumn);
+      codeOffset(v, p, iContinue);
     }
   }
 
@@ -603,14 +606,18 @@ static int selectInnerLoop(
     */
     case SRT_Table:
     case SRT_EphemTab: {
-      sqlite3VdbeAddOp2(v, OP_RegMakeRec, iMem, nColumn);
+      int r1 = sqlite3GetTempReg(pParse);
+      sqlite3VdbeAddOp3(v, OP_RegMakeRec, iMem, nColumn, r1);
       if( pOrderBy ){
-        pushOntoSorter(pParse, pOrderBy, p);
+        pushOntoSorter(pParse, pOrderBy, p, r1);
       }else{
-        sqlite3VdbeAddOp1(v, OP_NewRowid, iParm);
-        sqlite3VdbeAddOp2(v, OP_Pull, 1, 0);
-        sqlite3CodeInsert(pParse, iParm, OPFLAG_APPEND);
+        int r2 = sqlite3GetTempReg(pParse);
+        sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, r2);
+        sqlite3VdbeAddOp3(v, OP_Insert, iParm, r1, r2);
+        sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
+        sqlite3ReleaseTempReg(pParse, r2);
       }
+      sqlite3ReleaseTempReg(pParse, r1);
       break;
     }
 
@@ -630,11 +637,12 @@ static int selectInnerLoop(
         ** ORDER BY in this case since the order of entries in the set
         ** does not matter.  But there might be a LIMIT clause, in which
         ** case the order does matter */
-        sqlite3VdbeAddOp2(v, OP_SCopy, iMem, 0);
-        pushOntoSorter(pParse, pOrderBy, p);
+        pushOntoSorter(pParse, pOrderBy, p, iMem);
       }else{
-        sqlite3VdbeAddOp4(v, OP_RegMakeRec, iMem, 1, 0, &p->affinity, 1);
-        sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, 0);
+        int r1 = sqlite3GetTempReg(pParse);
+        sqlite3VdbeAddOp4(v, OP_RegMakeRec, iMem, 1, r1, &p->affinity, 1);
+        sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, r1);
+        sqlite3ReleaseTempReg(pParse, r1);
       }
       sqlite3VdbeJumpHere(v, addr2);
       break;
@@ -654,11 +662,10 @@ static int selectInnerLoop(
     */
     case SRT_Mem: {
       assert( nColumn==1 );
-      sqlite3VdbeAddOp2(v, OP_SCopy, iMem, 0);
       if( pOrderBy ){
-        pushOntoSorter(pParse, pOrderBy, p);
+        pushOntoSorter(pParse, pOrderBy, p, iMem);
       }else{
-        sqlite3VdbeAddOp2(v, OP_Move, 0, iParm);
+        sqlite3VdbeAddOp2(v, OP_Move, iMem, iParm);
         /* The LIMIT clause will jump out of the loop for us */
       }
       break;
@@ -672,8 +679,10 @@ static int selectInnerLoop(
     case SRT_Subroutine:
     case SRT_Callback: {
       if( pOrderBy ){
-        sqlite3VdbeAddOp2(v, OP_RegMakeRec, iMem, nColumn);
-        pushOntoSorter(pParse, pOrderBy, p);
+        int r1 = sqlite3GetTempReg(pParse);
+        sqlite3VdbeAddOp3(v, OP_RegMakeRec, iMem, nColumn, r1);
+        pushOntoSorter(pParse, pOrderBy, p, r1);
+        sqlite3ReleaseTempReg(pParse, r1);
       }else if( eDest==SRT_Subroutine ){
         sqlite3VdbeAddOp2(v, OP_Gosub, 0, iParm);
       }else{
@@ -779,7 +788,7 @@ static void generateSortTail(
     sqlite3VdbeAddOp2(v, OP_SetNumColumns, pseudoTab, nColumn);
   }
   addr = 1 + sqlite3VdbeAddOp2(v, OP_Sort, iTab, brk);
-  codeOffset(v, p, cont, 0);
+  codeOffset(v, p, cont);
   regRow = sqlite3GetTempReg(pParse);
   regRowid = sqlite3GetTempReg(pParse);
   sqlite3VdbeAddOp3(v, OP_Column, iTab, pOrderBy->nExpr + 1, regRow);
@@ -1737,7 +1746,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   Vdbe *v = 0;
   int iLimit = 0;
   int iOffset;
-  int addr1, addr2;
+  int addr1;
 
   /* 
   ** "LIMIT -1" always shows all rows.  There is some
@@ -1747,41 +1756,33 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   */
   if( p->pLimit ){
     p->iLimit = iLimit = ++pParse->nMem;
-    pParse->nMem++;
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) return;
-    sqlite3ExprCode(pParse, p->pLimit, 0);
-    sqlite3VdbeAddOp0(v, OP_MustBeInt);
-    sqlite3VdbeAddOp2(v, OP_Move, 0, iLimit);
+    sqlite3ExprCode(pParse, p->pLimit, iLimit);
+    sqlite3VdbeAddOp1(v, OP_MustBeInt, iLimit);
     VdbeComment((v, "LIMIT counter"));
     sqlite3VdbeAddOp2(v, OP_IfZero, iLimit, iBreak);
-    sqlite3VdbeAddOp2(v, OP_SCopy, iLimit, 0);
   }
   if( p->pOffset ){
     p->iOffset = iOffset = ++pParse->nMem;
+    if( p->pLimit ){
+      pParse->nMem++;   /* Allocate an extra register for limit+offset */
+    }
     v = sqlite3GetVdbe(pParse);
     if( v==0 ) return;
-    sqlite3ExprCode(pParse, p->pOffset, 0);
-    sqlite3VdbeAddOp0(v, OP_MustBeInt);
-    sqlite3VdbeAddOp2(v, p->pLimit==0 ? OP_Move : OP_Copy, 0, iOffset);
+    sqlite3ExprCode(pParse, p->pOffset, iOffset);
+    sqlite3VdbeAddOp1(v, OP_MustBeInt, iOffset);
     VdbeComment((v, "OFFSET counter"));
     addr1 = sqlite3VdbeAddOp1(v, OP_IfPos, iOffset);
-    sqlite3VdbeAddOp2(v, OP_Pop, 1, 0);
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, 0);
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, iOffset);
     sqlite3VdbeJumpHere(v, addr1);
     if( p->pLimit ){
-      sqlite3VdbeAddOp2(v, OP_Add, 0, 0);
+      sqlite3VdbeAddOp3(v, OP_Add, iLimit, iOffset, iOffset+1);
+      VdbeComment((v, "LIMIT+OFFSET"));
+      addr1 = sqlite3VdbeAddOp1(v, OP_IfPos, iLimit);
+      sqlite3VdbeAddOp2(v, OP_Integer, -1, iOffset+1);
+      sqlite3VdbeJumpHere(v, addr1);
     }
-  }
-  if( p->pLimit ){
-    addr1 = sqlite3VdbeAddOp1(v, OP_IfPos, iLimit);
-    sqlite3VdbeAddOp1(v, OP_Pop, 1);
-    sqlite3VdbeAddOp2(v, OP_Integer, -1, iLimit+1);
-    addr2 = sqlite3VdbeAddOp0(v, OP_Goto);
-    sqlite3VdbeJumpHere(v, addr1);
-    sqlite3VdbeAddOp2(v, OP_Move, 0, iLimit+1);
-    VdbeComment((v, "LIMIT+OFFSET"));
-    sqlite3VdbeJumpHere(v, addr2);
   }
 }
 

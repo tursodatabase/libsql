@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.692 2008/01/10 23:50:11 drh Exp $
+** $Id: vdbe.c,v 1.693 2008/01/12 12:48:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -92,6 +92,18 @@ int sqlite3_sort_count = 0;
 */
 #ifdef SQLITE_TEST
 int sqlite3_max_blobsize = 0;
+#endif
+
+/*
+** Test a register to see if it exceeds the current maximum blob size.
+** If it does, record the new maximum blob size.
+*/
+#ifdef SQLITE_TEST
+# define UPDATE_MAX_BLOBSIZE(P)  if( ((P)->flags&(MEM_Str|MEM_Blob))!=0 \
+                                      && (P)->n>sqlite3_max_blobsize ) \
+                                          {sqlite3_max_blobsize = (P)->n;}
+#else
+# define UPDATE_MAX_BLOBSIZE(P)
 #endif
 
 /*
@@ -939,6 +951,7 @@ case OP_String8: {         /* same as TK_STRING, out2-prerelease */
     if( pOp->p1>SQLITE_MAX_LENGTH ){
       goto too_big;
     }
+    UPDATE_MAX_BLOBSIZE(pOut);
     break;
   }
 #endif
@@ -959,6 +972,7 @@ case OP_String: {          /* out2-prerelease */
   pOut->z = pOp->p4.z;
   pOut->n = pOp->p1;
   pOut->enc = encoding;
+  UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
 
@@ -1019,6 +1033,7 @@ case OP_Blob: {                /* out2-prerelease */
   assert( pOp->p1 <= SQLITE_MAX_LENGTH );
   sqlite3VdbeMemSetStr(pOut, pOp->p4.z, pOp->p1, 0, 0);
   pOut->enc = encoding;
+  UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
 #endif /* SQLITE_OMIT_BLOB_LITERAL */
@@ -1043,6 +1058,7 @@ case OP_Variable: {           /* out2-prerelease */
     goto too_big;
   }
   sqlite3VdbeMemShallowCopy(pOut, &p->aVar[j], MEM_Static);
+  UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
 
@@ -1136,40 +1152,6 @@ case OP_SCopy: {
   break;
 }
 
-/* Opcode: Pull P1 * *
-**
-** The P1-th element is removed from its current location on 
-** the stack and pushed back on top of the stack.  The
-** top of the stack is element 0, so "Pull 0 0 0" is
-** a no-op.  "Pull 1 0 0" swaps the top two elements of
-** the stack.
-*/
-case OP_Pull: {            /* no-push */
-  Mem *pFrom = &pTos[-pOp->p1];
-  int i;
-  Mem ts;
-
-  ts = *pFrom;
-  Deephemeralize(pTos);
-  for(i=0; i<pOp->p1; i++, pFrom++){
-    Deephemeralize(&pFrom[1]);
-    assert( (pFrom[1].flags & MEM_Ephem)==0 );
-    *pFrom = pFrom[1];
-    if( pFrom->flags & MEM_Short ){
-      assert( pFrom->flags & (MEM_Str|MEM_Blob) );
-      assert( pFrom->z==pFrom[1].zShort );
-      pFrom->z = pFrom->zShort;
-    }
-  }
-  *pTos = ts;
-  if( pTos->flags & MEM_Short ){
-    assert( pTos->flags & (MEM_Str|MEM_Blob) );
-    assert( pTos->z==pTos[-pOp->p1].zShort );
-    pTos->z = pTos->zShort;
-  }
-  break;
-}
-
 /* Opcode: ResultRow P1 P2 *
 **
 ** The registers P1 throught P1+P2-1 contain a single row of
@@ -1257,6 +1239,7 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
   pOut->xDel = 0;
   pOut->enc = encoding;
   pOut->z = zNew;
+  UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
 
@@ -1489,6 +1472,7 @@ case OP_Function: {
   if( sqlite3VdbeMemTooBig(pOut) ){
     goto too_big;
   }
+  UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
 
@@ -1658,6 +1642,7 @@ case OP_ToText: {                  /* same as TK_TO_TEXT, no-push, in1 */
   rc = ExpandBlob(pIn1);
   assert( pIn1->flags & MEM_Str );
   pIn1->flags &= ~(MEM_Int|MEM_Real|MEM_Blob);
+  UPDATE_MAX_BLOBSIZE(pIn1);
   break;
 }
 
@@ -1679,6 +1664,7 @@ case OP_ToBlob: {                  /* same as TK_TO_BLOB, no-push, in1 */
     pIn1->flags |= MEM_Blob;
   }
   pIn1->flags &= ~(MEM_Int|MEM_Real|MEM_Str);
+  UPDATE_MAX_BLOBSIZE(pIn1);
   break;
 }
 
@@ -2337,6 +2323,7 @@ case OP_Column: {
   rc = sqlite3VdbeMemMakeWriteable(pDest);
 
 op_column_out:
+  UPDATE_MAX_BLOBSIZE(pDest);
   REGISTER_TRACE(pOp->p3, pDest);
   break;
 }
@@ -2525,6 +2512,7 @@ case OP_MakeRecord: {        /* jump */
   }
   pOut->enc = SQLITE_UTF8;  /* In case the blob is ever converted to text */
   REGISTER_TRACE(pOp->p3, pOut);
+  UPDATE_MAX_BLOBSIZE(pOut);
 
   /* If a NULL was encountered and jumpIfNull is non-zero, take the jump. */
   if( jumpIfNull && containsNull ){
@@ -2683,7 +2671,7 @@ case OP_ReadCookie: {               /* out2-prerelease */
   int iDb = pOp->p1;
   int iCookie = pOp->p3;
 
-  assert( pOp->p2<SQLITE_N_BTREE_META );
+  assert( pOp->p3<SQLITE_N_BTREE_META );
   if( iDb<0 ){
     iDb = (-1*(iDb+1));
     iCookie *= -1;
@@ -3819,6 +3807,7 @@ case OP_RowData: {          /* out2-prerelease */
     pOut->flags = MEM_Null;
   }
   pOut->enc = SQLITE_UTF8;  /* In case the blob is ever cast to text */
+  UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
 
@@ -4440,6 +4429,7 @@ case OP_IntegrityCk: {
     pIn1->xDel = 0;
   }
   pIn1->enc = SQLITE_UTF8;
+  UPDATE_MAX_BLOBSIZE(pIn1);
   sqlite3VdbeChangeEncoding(pIn1, encoding);
   sqlite3_free(aRoot);
   break;
@@ -4656,6 +4646,7 @@ case OP_AggFinal: {        /* no-push */
   if( rc==SQLITE_ERROR ){
     sqlite3SetString(&p->zErrMsg, sqlite3_value_text(pMem), (char*)0);
   }
+  UPDATE_MAX_BLOBSIZE(pMem);
   if( sqlite3VdbeMemTooBig(pMem) ){
     goto too_big;
   }
@@ -4961,6 +4952,7 @@ case OP_VColumn: {
       pDest->flags = 0;
     }
     sqlite3VdbeMemMove(pDest, &sContext.s);
+    UPDATE_MAX_BLOBSIZE(pDest);
 
     if( sqlite3SafetyOn(db) ){
       goto abort_due_to_misuse;
@@ -5131,16 +5123,6 @@ default: {
         fprintf(stdout, "%10lld ", elapse);
         sqlite3VdbePrintOp(stdout, origPc, &p->aOp[origPc]);
 #endif
-    }
-#endif
-
-#ifdef SQLITE_TEST
-    /* Keep track of the size of the largest BLOB or STR that has appeared
-    ** on the top of the VDBE stack.
-    */
-    if( pTos>=p->aStack && (pTos->flags & (MEM_Blob|MEM_Str))!=0
-         && pTos->n>sqlite3_max_blobsize ){
-      sqlite3_max_blobsize = pTos->n;
     }
 #endif
 

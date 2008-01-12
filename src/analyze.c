@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.37 2008/01/10 23:50:11 drh Exp $
+** @(#) $Id: analyze.c,v 1.38 2008/01/12 12:48:08 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -33,6 +33,7 @@ static void openStatTable(
   sqlite3 *db = pParse->db;
   Db *pDb;
   int iRootPage;
+  int createStat1 = 0;
   Table *pStat;
   Vdbe *v = sqlite3GetVdbe(pParse);
 
@@ -43,13 +44,14 @@ static void openStatTable(
   if( (pStat = sqlite3FindTable(db, "sqlite_stat1", pDb->zName))==0 ){
     /* The sqlite_stat1 tables does not exist.  Create it.  
     ** Note that a side-effect of the CREATE TABLE statement is to leave
-    ** the rootpage of the new table on the top of the stack.  This is
+    ** the rootpage of the new table in register pParse->regRoot.  This is
     ** important because the OpenWrite opcode below will be needing it. */
     sqlite3NestedParse(pParse,
       "CREATE TABLE %Q.sqlite_stat1(tbl,idx,stat)",
       pDb->zName
     );
-    iRootPage = 0;  /* Cause rootpage to be taken from top of stack */
+    iRootPage = pParse->regRoot;
+    createStat1 = 1;  /* Cause rootpage to be taken from top of stack */
   }else if( zWhere ){
     /* The sqlite_stat1 table exists.  Delete all entries associated with
     ** the table zWhere. */
@@ -69,13 +71,11 @@ static void openStatTable(
   ** If this vdbe did create the sqlite_stat1 table, then it must have 
   ** already obtained a schema-lock, making the write-lock redundant.
   */
-  if( iRootPage>0 ){
+  if( !createStat1 ){
     sqlite3TableLock(pParse, iDb, iRootPage, 1, "sqlite_stat1");
   }
   sqlite3VdbeAddOp3(v, OP_OpenWrite, iStatCur, iRootPage, iDb);
-  if( iRootPage==0 ){
-    sqlite3VdbeChangeP5(v, 1);
-  }
+  sqlite3VdbeChangeP5(v, createStat1);
   sqlite3VdbeAddOp2(v, OP_SetNumColumns, iStatCur, 3);
 }
 

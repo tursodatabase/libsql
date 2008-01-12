@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.156 2008/01/10 23:50:11 drh Exp $
+** $Id: delete.c,v 1.157 2008/01/12 12:48:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -61,20 +61,6 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
 }
 
 /*
-** This function is a temporary measure required because OP_Insert now
-** reads the key and data to insert from memory cells.
-*/
-void sqlite3CodeInsert(Parse *p, int iCur, u8 flags){
-  int iData = ++p->nMem;
-  int iKey = ++p->nMem;
-  Vdbe *v = sqlite3GetVdbe(p);
-  sqlite3VdbeAddOp2(v, OP_Move, 0, iData);
-  sqlite3VdbeAddOp2(v, OP_Move, 0, iKey);
-  sqlite3VdbeAddOp3(v, OP_Insert, iCur, iData, iKey);
-  sqlite3VdbeChangeP5(v, flags);
-}
-
-/*
 ** Allocate nVal contiguous memory cells and return the index of the
 ** first. Also pop nVal elements from the stack and store them in the 
 ** registers. The element on the top of the stack is stored in the
@@ -90,14 +76,6 @@ int sqlite3StackToReg(Parse *p, int nVal){
     sqlite3VdbeAddOp2(v, OP_Move, 0, iRet+i);
   }
   return iRet;
-}
-void sqlite3RegToStack(Parse *p, int iReg, int nVal){
-  int i;
-  Vdbe *v = sqlite3GetVdbe(p);
-  assert(v);
-  for(i=0; i<nVal; i++){
-    sqlite3VdbeAddOp2(v, OP_SCopy, iReg+i, 0);
-  }
 }
 
 /*

@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.24 2007/12/13 07:58:51 danielk1977 Exp $
+# $Id: select4.test,v 1.25 2008/01/12 12:48:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -617,5 +617,56 @@ do_test select4-9.12 {
 } ;# ifcapable subquery
 
 } ;# ifcapable compound
+
+# Try combining DISTINCT, LIMIT, and OFFSET.  Make sure they all work
+# together.
+#
+do_test select4-10.1 {
+  execsql {
+    SELECT DISTINCT log FROM t1 ORDER BY log
+  }
+} {0 1 2 3 4 5}
+do_test select4-10.2 {
+  execsql {
+    SELECT DISTINCT log FROM t1 ORDER BY log LIMIT 4
+  }
+} {0 1 2 3}
+do_test select4-10.3 {
+  execsql {
+    SELECT DISTINCT log FROM t1 ORDER BY log LIMIT 0
+  }
+} {}
+do_test select4-10.4 {
+  execsql {
+    SELECT DISTINCT log FROM t1 ORDER BY log LIMIT -1
+  }
+} {0 1 2 3 4 5}
+do_test select4-10.5 {
+  execsql {
+    SELECT DISTINCT log FROM t1 ORDER BY log LIMIT -1 OFFSET 2
+  }
+} {2 3 4 5}
+do_test select4-10.6 {
+  execsql {
+    SELECT DISTINCT log FROM t1 ORDER BY log LIMIT 3 OFFSET 2
+  }
+} {2 3 4}
+do_test select4-10.7 {
+  execsql {
+    SELECT DISTINCT log FROM t1 ORDER BY +log LIMIT 3 OFFSET 20
+  }
+} {}
+do_test select4-10.8 {
+  execsql {
+    SELECT DISTINCT log FROM t1 ORDER BY log LIMIT 0 OFFSET 3
+  }
+} {}
+do_test select4-10.9 {
+breakpoint
+  execsql {
+    SELECT DISTINCT max(n), log FROM t1 ORDER BY +log; -- LIMIT 2 OFFSET 1
+  }
+} {31 5}
+
 
 finish_test

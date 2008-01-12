@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.463 2008/01/10 23:50:11 drh Exp $
+** $Id: build.c,v 1.464 2008/01/12 12:48:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -838,8 +838,9 @@ void sqlite3StartTable(
   ** now.
   */
   if( !db->init.busy && (v = sqlite3GetVdbe(pParse))!=0 ){
-    int lbl;
+    int j1;
     int fileFormat;
+    int reg1, reg2, reg3;
     sqlite3BeginWriteOperation(pParse, 0, iDb);
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -851,17 +852,19 @@ void sqlite3StartTable(
     /* If the file format and encoding in the database have not been set, 
     ** set them now.
     */
-    sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, 0, 1);   /* file_format */
+    reg1 = pParse->regRowid = ++pParse->nMem;
+    reg2 = pParse->regRoot = ++pParse->nMem;
+    reg3 = ++pParse->nMem;
+    sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, reg3, 1);   /* file_format */
     sqlite3VdbeUsesBtree(v, iDb);
-    lbl = sqlite3VdbeMakeLabel(v);
-    sqlite3VdbeAddOp2(v, OP_If, 0, lbl);
+    j1 = sqlite3VdbeAddOp1(v, OP_If, reg3);
     fileFormat = (db->flags & SQLITE_LegacyFileFmt)!=0 ?
                   1 : SQLITE_MAX_FILE_FORMAT;
-    sqlite3VdbeAddOp1(v, OP_Integer, fileFormat);
-    sqlite3VdbeAddOp2(v, OP_SetCookie, iDb, 1);
-    sqlite3VdbeAddOp1(v, OP_Integer, ENC(db));
-    sqlite3VdbeAddOp2(v, OP_SetCookie, iDb, 4);
-    sqlite3VdbeResolveLabel(v, lbl);
+    sqlite3VdbeAddOp2(v, OP_Integer, fileFormat, reg3);
+    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, 1, reg3);
+    sqlite3VdbeAddOp2(v, OP_Integer, ENC(db), reg3);
+    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, 4, reg3);
+    sqlite3VdbeJumpHere(v, j1);
 
     /* This just creates a place-holder record in the sqlite_master table.
     ** The record created does not contain anything yet.  It will be replaced
@@ -873,19 +876,18 @@ void sqlite3StartTable(
     */
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
     if( isView || isVirtual ){
-      sqlite3VdbeAddOp0(v, OP_Integer);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, reg2);
     }else
 #endif
     {
-      sqlite3VdbeAddOp1(v, OP_CreateTable, iDb);
+      sqlite3VdbeAddOp2(v, OP_CreateTable, iDb, reg2);
     }
     sqlite3OpenMasterTable(pParse, iDb);
-    sqlite3VdbeAddOp0(v, OP_NewRowid);
-    sqlite3VdbeAddOp0(v, OP_Copy);
-    sqlite3VdbeAddOp0(v, OP_Null);
-    sqlite3CodeInsert(pParse, 0, OPFLAG_APPEND);
+    sqlite3VdbeAddOp2(v, OP_NewRowid, 0, reg1);
+    sqlite3VdbeAddOp2(v, OP_Null, 0, reg3);
+    sqlite3VdbeAddOp3(v, OP_Insert, 0, reg3, reg1);
+    sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeAddOp0(v, OP_Close);
-    sqlite3VdbeAddOp1(v, OP_Pull, 1);
   }
 
   /* Normal (non-error) return. */
@@ -1494,8 +1496,7 @@ void sqlite3EndTable(
       SelectDest dest;
       Table *pSelTab;
 
-      sqlite3VdbeAddOp0(v, OP_Copy);
-      sqlite3VdbeAddOp3(v, OP_OpenWrite, 1, 0, iDb);
+      sqlite3VdbeAddOp3(v, OP_OpenWrite, 1, pParse->regRoot, iDb);
       sqlite3VdbeChangeP5(v, 1);
       pParse->nTab = 2;
       sqlite3SelectDestInit(&dest, SRT_Table, 1);
@@ -1531,13 +1532,15 @@ void sqlite3EndTable(
     */
     sqlite3NestedParse(pParse,
       "UPDATE %Q.%s "
-         "SET type='%s', name=%Q, tbl_name=%Q, rootpage=#0, sql=%Q "
-       "WHERE rowid=#1",
+         "SET type='%s', name=%Q, tbl_name=%Q, rootpage=#%d, sql=%Q "
+       "WHERE rowid=#%d",
       db->aDb[iDb].zName, SCHEMA_TABLE(iDb),
       zType,
       p->zName,
       p->zName,
-      zStmt
+      pParse->regRoot,
+      zStmt,
+      pParse->regRowid
     );
     sqlite3_free(zStmt);
     sqlite3ChangeCookie(db, v, iDb);
@@ -1835,20 +1838,22 @@ void sqlite3RootPageMoved(Db *pDb, int iFrom, int iTo){
 */ 
 static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   Vdbe *v = sqlite3GetVdbe(pParse);
-  sqlite3VdbeAddOp3(v, OP_Destroy, iTable, 0, iDb);
+  int r1 = sqlite3GetTempReg(pParse);
+  sqlite3VdbeAddOp3(v, OP_Destroy, iTable, r1, iDb);
 #ifndef SQLITE_OMIT_AUTOVACUUM
-  /* OP_Destroy pushes an integer onto the stack. If this integer
+  /* OP_Destroy stores an in integer r1. If this integer
   ** is non-zero, then it is the root page number of a table moved to
   ** location iTable. The following code modifies the sqlite_master table to
   ** reflect this.
   **
-  ** The "#0" in the SQL is a special constant that means whatever value
+  ** The "#%d" in the SQL is a special constant that means whatever value
   ** is on the top of the stack.  See sqlite3RegisterExpr().
   */
   sqlite3NestedParse(pParse, 
-     "UPDATE %Q.%s SET rootpage=%d WHERE #0 AND rootpage=#0",
-     pParse->db->aDb[iDb].zName, SCHEMA_TABLE(iDb), iTable);
+     "UPDATE %Q.%s SET rootpage=%d WHERE #%d AND rootpage=#%d",
+     pParse->db->aDb[iDb].zName, SCHEMA_TABLE(iDb), iTable, r1, r1);
 #endif
+  sqlite3ReleaseTempReg(pParse, r1);
 }
 
 /*
@@ -2649,8 +2654,7 @@ void sqlite3CreateIndex(
     /* Create the rootpage for the index
     */
     sqlite3BeginWriteOperation(pParse, 1, iDb);
-    sqlite3VdbeAddOp1(v, OP_CreateIndex, iDb);
-    sqlite3VdbeAddOp2(v, OP_Copy, 0, iMem);
+    sqlite3VdbeAddOp2(v, OP_CreateIndex, iDb, iMem);
 
     /* Gather the complete text of the CREATE INDEX statement into
     ** the zStmt variable
@@ -2670,13 +2674,13 @@ void sqlite3CreateIndex(
     /* Add an entry in sqlite_master for this index
     */
     sqlite3NestedParse(pParse, 
-        "INSERT INTO %Q.%s VALUES('index',%Q,%Q,#0,%Q);",
+        "INSERT INTO %Q.%s VALUES('index',%Q,%Q,#%d,%Q);",
         db->aDb[iDb].zName, SCHEMA_TABLE(iDb),
         pIndex->zName,
         pTab->zName,
+        iMem,
         zStmt
     );
-    sqlite3VdbeAddOp1(v, OP_Pop, 1);
     sqlite3_free(zStmt);
 
     /* Fill the index with data and reparse the schema. Code an OP_Expire
