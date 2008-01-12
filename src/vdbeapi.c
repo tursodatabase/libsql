@@ -288,35 +288,12 @@ static int sqlite3Step(Vdbe *p){
     }
 
 #ifndef SQLITE_OMIT_TRACE
-    /* Invoke the trace callback if there is one
-    */
-    if( db->xTrace && !db->init.busy ){
-      assert( p->nOp>0 );
-      assert( p->aOp[p->nOp-1].opcode==OP_Noop );
-      assert( p->aOp[p->nOp-1].p4.z!=0 );
-      assert( p->aOp[p->nOp-1].p4type==P4_DYNAMIC );
-      sqlite3SafetyOff(db);
-      db->xTrace(db->pTraceArg, p->aOp[p->nOp-1].p4.z);
-      if( sqlite3SafetyOn(db) ){
-        p->rc = SQLITE_MISUSE;
-        return SQLITE_MISUSE;
-      }
-    }
     if( db->xProfile && !db->init.busy ){
       double rNow;
       sqlite3OsCurrentTime(db->pVfs, &rNow);
       p->startTime = (rNow - (int)rNow)*3600.0*24.0*1000000000.0;
     }
 #endif
-
-    /* Print a copy of SQL as it is executed if the SQL_TRACE pragma is turned
-    ** on in debugging mode.
-    */
-#ifdef SQLITE_DEBUG
-    if( (db->flags & SQLITE_SqlTrace)!=0 ){
-      sqlite3DebugPrintf("SQL-trace: %s\n", p->aOp[p->nOp-1].p4.z);
-    }
-#endif /* SQLITE_DEBUG */
 
     db->activeVdbeCnt++;
     p->pc = 0;
@@ -337,17 +314,14 @@ static int sqlite3Step(Vdbe *p){
 #ifndef SQLITE_OMIT_TRACE
   /* Invoke the profile callback if there is one
   */
-  if( rc!=SQLITE_ROW && db->xProfile && !db->init.busy ){
+  if( rc!=SQLITE_ROW && db->xProfile && !db->init.busy && p->nOp>0
+           && p->aOp[0].opcode==OP_Trace && p->aOp[0].p4.z!=0 ){
     double rNow;
     u64 elapseTime;
 
     sqlite3OsCurrentTime(db->pVfs, &rNow);
     elapseTime = (rNow - (int)rNow)*3600.0*24.0*1000000000.0 - p->startTime;
-    assert( p->nOp>0 );
-    assert( p->aOp[p->nOp-1].opcode==OP_Noop );
-    assert( p->aOp[p->nOp-1].p4.z!=0 );
-    assert( p->aOp[p->nOp-1].p4type==P4_DYNAMIC );
-    db->xProfile(db->pProfileArg, p->aOp[p->nOp-1].p4.z, elapseTime);
+    db->xProfile(db->pProfileArg, p->aOp[0].p4.z, elapseTime);
   }
 #endif
 

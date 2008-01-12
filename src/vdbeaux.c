@@ -681,7 +681,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
 #endif
     default: {
       zP4 = pOp->p4.z;
-      if( zP4==0 || pOp->opcode==OP_Noop ){
+      if( zP4==0 ){
         zP4 = zTemp;
         zTemp[0] = 0;
       }
@@ -854,8 +854,8 @@ void sqlite3VdbePrintSql(Vdbe *p){
   int nOp = p->nOp;
   VdbeOp *pOp;
   if( nOp<1 ) return;
-  pOp = &p->aOp[nOp-1];
-  if( pOp->opcode==OP_Noop && pOp->p4.z!=0 ){
+  pOp = &p->aOp[0];
+  if( pOp->opcode==OP_Trace && pOp->p4.z!=0 ){
     const char *z = pOp->p4.z;
     while( isspace(*(u8*)z) ) z++;
     printf("SQL: [%s]\n", z);
@@ -872,11 +872,11 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
   VdbeOp *pOp;
   if( sqlite3_io_trace==0 ) return;
   if( nOp<1 ) return;
-  pOp = &p->aOp[nOp-1];
-  if( pOp->opcode==OP_Noop && pOp->p4.p!=0 ){
+  pOp = &p->aOp[0];
+  if( pOp->opcode==OP_Trace && pOp->p4.z!=0 ){
     int i, j;
     char z[1000];
-    sqlite3_snprintf(sizeof(z), z, "%s", pOp->p4.p);
+    sqlite3_snprintf(sizeof(z), z, "%s", pOp->p4.z);
     for(i=0; isspace((unsigned char)z[i]); i++){}
     for(j=0; z[i]; i++){
       if( isspace((unsigned char)z[i]) ){

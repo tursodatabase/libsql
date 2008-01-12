@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.464 2008/01/12 12:48:08 drh Exp $
+** $Id: build.c,v 1.465 2008/01/12 21:35:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -184,14 +184,15 @@ void sqlite3FinishCoding(Parse *pParse){
     }
 
 #ifndef SQLITE_OMIT_TRACE
-    /* Add a No-op that contains the complete text of the compiled SQL
-    ** statement as its P4 argument.  This does not change the functionality
-    ** of the program. 
-    **
-    ** This is used to implement sqlite3_trace().
-    */
-    sqlite3VdbeAddOp4(v, OP_Noop, 0, 0, 0,
-                      pParse->zSql, pParse->zTail-pParse->zSql);
+    if( !db->init.busy ){
+      /* Change the P4 argument of the first opcode (which will always be
+      ** an OP_Trace) to be the complete text of the current SQL statement.
+      */
+      VdbeOp *pOp = sqlite3VdbeGetOp(v, 0);
+      if( pOp && pOp->opcode==OP_Trace ){
+        sqlite3VdbeChangeP4(v, 0, pParse->zSql, pParse->zTail-pParse->zSql);
+      }
+    }
 #endif /* SQLITE_OMIT_TRACE */
   }
 

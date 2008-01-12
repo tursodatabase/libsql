@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.694 2008/01/12 19:03:49 drh Exp $
+** $Id: vdbe.c,v 1.695 2008/01/12 21:35:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -5058,6 +5058,27 @@ case OP_VUpdate: {   /* no-push */
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_TRACE
+/* Opcode: Trace * * * P4 *
+**
+** If tracing is enabled (by the sqlite3_trace()) interface, then
+** the UTF-8 string contained in P4 is emitted on the trace callback.
+*/
+case OP_Trace: {
+  if( pOp->p4.z ){
+    if( db->xTrace ){
+      db->xTrace(db->pTraceArg, pOp->p4.z);
+    }
+#ifdef SQLITE_DEBUG
+    if( (db->flags & SQLITE_SqlTrace)!=0 ){
+      sqlite3DebugPrintf("SQL-trace: %s\n", pOp->p4.z);
+    }
+#endif /* SQLITE_DEBUG */
+  }
+  break;
+}
+#endif
 
 /* An other opcode is illegal...
 */

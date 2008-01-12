@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.165 2008/01/10 23:50:11 drh Exp $
+** $Id: pragma.c,v 1.166 2008/01/12 21:35:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -250,7 +250,7 @@ void sqlite3Pragma(
   int iDb;               /* Database index for <database> */
   sqlite3 *db = pParse->db;
   Db *pDb;
-  Vdbe *v = sqlite3GetVdbe(pParse);
+  Vdbe *v = pParse->pVdbe = sqlite3VdbeCreate(db);
   if( v==0 ) return;
   pParse->nMem = 1;
 

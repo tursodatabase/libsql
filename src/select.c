@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.399 2008/01/12 19:03:49 drh Exp $
+** $Id: select.c,v 1.400 2008/01/12 21:35:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1722,6 +1722,11 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
   Vdbe *v = pParse->pVdbe;
   if( v==0 ){
     v = pParse->pVdbe = sqlite3VdbeCreate(pParse->db);
+#ifndef SQLITE_OMIT_TRACE
+    if( v ){
+      sqlite3VdbeAddOp0(v, OP_Trace);
+    }
+#endif
   }
   return v;
 }

@@ -1,5 +1,5 @@
-C Continuing\swork\stoward\sconverting\sthe\sVM\sto\sa\sregister\smachine.\s(CVS\s4708)
-D 2008-01-12T19:03:49
+C The\ssqlite3_trace()\scallback\snow\sprints\sa\smessage\sas\seach\strigger\sfires\nwithin\sa\sstatement.\s(CVS\s4709)
+D 2008-01-12T21:35:57
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -86,7 +86,7 @@ F src/btmutex.c 5d39da37c9d1282f3c6f9967afae6a34ee36b7ff
 F src/btree.c 5164b32950cfd41f2c5c31e8ff82c4a499918aef
 F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
 F src/btreeInt.h 1c5a9da165718ef7de81e35ce9ab5d9ba9283f76
-F src/build.c 353cce0f4e773b0889d94663dca6dc99598d6b3d
+F src/build.c c0f9dba7028d415fb8d282e34a8ebcf69614befd
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
@@ -127,11 +127,11 @@ F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c 0cb6ccea4b9615627d61d7c4417cedc45776d429
 F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
 F src/parse.y 2ae06e8d3190faace49c5b82e7cea1fc60d084a1
-F src/pragma.c 1d3d9deefcf325e14a99b94f9f506f1a90a9232b
+F src/pragma.c b4e77e057990bb2c295c63327406d9bcbf6c9c08
 F src/prepare.c c31a879d6795f4765fd0b113675c6debbc96b7fd
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
-F src/select.c fc9cebb2033a84b31472405114ad36d73c30b967
+F src/select.c 34c138d90771a5919fa181f7ddde75277d6a9fc6
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 5391e889384d2062249f668110d64ed16f601c4b
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
@@ -163,16 +163,16 @@ F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c a4e04438c11fed2c67ec47fe3edbef9cca2d1b48
-F src/trigger.c 69df777f7626507d04ef23b9cb185d31ebd8e91a
+F src/trigger.c da3e11df34d34c4341d9417d8033facbae16d9e8
 F src/update.c aad823f97a930e6982264299863837d4c6107d3b
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c 05f31144bbd3f1a24f4139ae029c42545cb72624
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c a05947fba057311149cb0635cccdee9bed42f3cb
+F src/vdbe.c f36700465fe35af303d33d59fef03779d93b2570
 F src/vdbe.h a9166e1601f5b74c20516a74182773a20baee43e
 F src/vdbeInt.h 31bd686595356284d5484592e2dc6e58025aa346
-F src/vdbeapi.c f14174843bf4be2c9afdf2ef48b61e7c3ac62d7c
-F src/vdbeaux.c db33a4c2477546da05e772352be43896d24d51d5
+F src/vdbeapi.c cb8c427a3ab646490c83204a98e94eff03ee2e89
+F src/vdbeaux.c ac5d274b175e078eb90b1ad7c8f45419c485e92b
 F src/vdbeblob.c e386d49d8354aa5a58f0a7f2794303442c149120
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c a86119b5ccc41ab8653e4746f83d591ff0ae892e
@@ -486,7 +486,7 @@ F test/tkt2820.test 017fdee33aaef7abc092beab6088816f1942304b
 F test/tkt2822.test 8b1526b1e5b0d38a1a993f7828fbb81759093686
 F test/tkt2832.test cd56dc66bb31898b7eb2146baa5bde2eb80f96fe
 F test/tkt2854.test aebd5a9904d36d1ef7a074fc5e7c7da3ab00c32a
-F test/trace.test 75ffc1b992c780d054748a656e3e7fd674f18567
+F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
 F test/trigger2.test 33bf8ae9b788013be194efe5f66c04a202facbb4
@@ -606,7 +606,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a6dddebcc5ccbbf3009c9d06163a8b59036331de
-R 537e4808d9b23703b914b666ccd36884
+P 426f31ecdd05d1179a2e49c2ca1666011cede9c6
+R 3435d52d4f2b4750bec1183c99c98b94
 U drh
-Z 1569ded7274b37b8c39c0600e4142054
+Z 0d14628a3647710d605d98d6d56b6e09

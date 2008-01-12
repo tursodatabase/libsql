@@ -806,6 +806,11 @@ int sqlite3CodeRowTrigger(
       AuthContext sContext;
       NameContext sNC;
 
+#ifndef SQLITE_OMIT_TRACE
+      sqlite3VdbeAddOp4(pParse->pVdbe, OP_Trace, 0, 0, 0,
+                        sqlite3_mprintf("-- TRIGGER %s", p->name),
+                        P4_DYNAMIC);
+#endif
       memset(&sNC, 0, sizeof(sNC));
       sNC.pParse = pParse;
 
