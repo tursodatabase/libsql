@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.344 2008/01/12 19:03:49 drh Exp $
+** $Id: expr.c,v 1.345 2008/01/13 19:02:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2418,7 +2418,8 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
 */
 int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
   int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
-  if( inReg!=target ){
+  assert( pParse->pVdbe || pParse->db->mallocFailed );
+  if( inReg!=target && pParse->pVdbe ){
     sqlite3VdbeAddOp2(pParse->pVdbe, (inReg>0 ? OP_SCopy : OP_Move), 
                       inReg, target);
   }

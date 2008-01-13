@@ -765,6 +765,7 @@ int sqlite3CodeRowTrigger(
   u32 *piNewColMask    /* OUT: Mask of columns used from the NEW.* table */
 ){
   Trigger *p;
+  sqlite3 *db = pParse->db;
   TriggerStack trigStackEntry;
 
   trigStackEntry.oldColMask = 0;
@@ -777,7 +778,6 @@ int sqlite3CodeRowTrigger(
 
   for(p=pTab->pTrigger; p; p=p->pNext){
     int fire_this = 0;
-    sqlite3 *db = pParse->db;
 
     /* Determine whether we should code this trigger */
     if( 
@@ -808,7 +808,7 @@ int sqlite3CodeRowTrigger(
 
 #ifndef SQLITE_OMIT_TRACE
       sqlite3VdbeAddOp4(pParse->pVdbe, OP_Trace, 0, 0, 0,
-                        sqlite3_mprintf("-- TRIGGER %s", p->name),
+                        sqlite3MPrintf(db, "-- TRIGGER %s", p->name),
                         P4_DYNAMIC);
 #endif
       memset(&sNC, 0, sizeof(sNC));
