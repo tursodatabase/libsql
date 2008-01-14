@@ -1,5 +1,5 @@
-C Fix\ssome\sissues\swith\sout-of-memory\srecovery.\s(CVS\s4710)
-D 2008-01-13T19:02:11
+C Fix\sfor\sticket\s#2883.\s(CVS\s4711)
+D 2008-01-14T15:20:08
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -133,7 +133,7 @@ F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
 F src/select.c 16ba6ec0b3de4971579e66964ba2f25e0b43c78b
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 5391e889384d2062249f668110d64ed16f601c4b
+F src/shell.c 0691a3d52dc37cf6ac2f74838e5ff8ae1055ac9b
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h c3f43826e48b0d2928b9e6fa3aca887317285392
@@ -606,7 +606,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 110c000d86bd4a0b4b946c62d11a435426b02d16
-R f95030f95502c6367aca6894c92c5e05
+P 23181f86896e7c9e993e00032e735e67ee6b2e71
+R 57416ebd786a2a3840c925dcabd6419f
 U drh
-Z 562fbfe4435b61e96b57af5488c68d5b
+Z da698677dd64357916b70ef21d1f5593
