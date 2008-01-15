@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.401 2008/01/13 19:02:11 drh Exp $
+** $Id: select.c,v 1.402 2008/01/15 02:22:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3539,11 +3539,10 @@ int sqlite3Select(
       */
       flag = minMaxQuery(pParse, p);
       if( flag ){
-        pMinMax = sqlite3ExprListDup(db, p->pEList->a[0].pExpr->pList);
+        pDel = pMinMax = sqlite3ExprListDup(db, p->pEList->a[0].pExpr->pList);
         if( pMinMax && !db->mallocFailed ){
           pMinMax->a[0].sortOrder = ((flag==ORDERBY_MIN)?0:1);
           pMinMax->a[0].pExpr->op = TK_COLUMN;
-          pDel = pMinMax;
         }
       }
 

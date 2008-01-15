@@ -582,8 +582,10 @@ void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
   assert( p->nOp>0 || p->aOp==0 );
   assert( p->aOp==0 || p->aOp[p->nOp-1].zComment==0 || p->db->mallocFailed );
   if( p->nOp ){
+    char **pz = &p->aOp[p->nOp-1].zComment;
     va_start(ap, zFormat);
-    p->aOp[p->nOp-1].zComment = sqlite3VMPrintf(p->db, zFormat, ap);
+    sqlite3_free(*pz);
+    *pz = sqlite3VMPrintf(p->db, zFormat, ap);
     va_end(ap);
   }
 }

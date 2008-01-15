@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#2883.\s(CVS\s4711)
-D 2008-01-14T15:20:08
+C Fix\sfor\sa\scouple\sof\sminor\smemory\sleaks.\s(CVS\s4712)
+D 2008-01-15T02:22:24
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/pragma.c b4e77e057990bb2c295c63327406d9bcbf6c9c08
 F src/prepare.c c31a879d6795f4765fd0b113675c6debbc96b7fd
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 4a22746501bf36b0a088c66e38dde5daba6a35da
-F src/select.c 16ba6ec0b3de4971579e66964ba2f25e0b43c78b
+F src/select.c 578f7b01047b20349ead5a36d7e64274a61bea80
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 0691a3d52dc37cf6ac2f74838e5ff8ae1055ac9b
 F src/sqlite.h.in 2a7e3776534bbe6ff2cdc058f3abebe91e7e429f
@@ -172,7 +172,7 @@ F src/vdbe.c f36700465fe35af303d33d59fef03779d93b2570
 F src/vdbe.h a9166e1601f5b74c20516a74182773a20baee43e
 F src/vdbeInt.h 31bd686595356284d5484592e2dc6e58025aa346
 F src/vdbeapi.c cb8c427a3ab646490c83204a98e94eff03ee2e89
-F src/vdbeaux.c ac5d274b175e078eb90b1ad7c8f45419c485e92b
+F src/vdbeaux.c 1bf7dbab24af0be35855abd5e4d9c6290e38f4ce
 F src/vdbeblob.c e386d49d8354aa5a58f0a7f2794303442c149120
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c a86119b5ccc41ab8653e4746f83d591ff0ae892e
@@ -606,7 +606,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 23181f86896e7c9e993e00032e735e67ee6b2e71
-R 57416ebd786a2a3840c925dcabd6419f
+P 187f41f54d7cfbaa9f6ce3be4d213a454b600749
+R 94d8fffe25a18201bc94ce39941579d6
 U drh
-Z da698677dd64357916b70ef21d1f5593
+Z 79adf324172785bd88656a478d418020
