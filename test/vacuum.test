@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.38 2006/10/04 11:55:50 drh Exp $
+# $Id: vacuum.test,v 1.39 2008/01/16 17:46:38 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -29,27 +29,6 @@ if $AUTOVACUUM {
 }
 
 set fcnt 1
-proc cksum {{db db}} {
-  set sql "SELECT name, type, sql FROM sqlite_master ORDER BY name, type"
-  set txt [$db eval $sql]\n
-  set sql "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-  foreach tbl [$db eval $sql] {
-    append txt [$db eval "SELECT * FROM $tbl"]\n
-  }
-  foreach prag {default_cache_size} {
-    append txt $prag-[$db eval "PRAGMA $prag"]\n
-  }
-  if 0 {
-    global fcnt
-    set fd [open dump$fcnt.txt w]
-    puts -nonewline $fd $txt
-    close $fd
-    incr fcnt
-  }
-  set cksum [string length $txt]-[md5 $txt]
-  # puts $cksum-[file size test.db]
-  return $cksum
-}
 do_test vacuum-1.1 {
   execsql {
     BEGIN;
@@ -70,14 +49,14 @@ do_test vacuum-1.1 {
     DROP TABLE t2;
   }
   set ::size1 [file size test.db]
-  set ::cksum [cksum]
+  set ::cksum [allcksum]
   expr {$::cksum!=""}
 } {1}
 do_test vacuum-1.2 {
   execsql {
     VACUUM;
   }
-  cksum
+  allcksum
 } $cksum
 ifcapable vacuum {
   do_test vacuum-1.3 {
@@ -105,14 +84,14 @@ do_test vacuum-1.4 {
   }
   execsql $sql_script
   set ::size1 [file size test.db]
-  set ::cksum [cksum]
+  set ::cksum [allcksum]
   expr {$::cksum!=""}
 } {1}
 do_test vacuum-1.5 {
   execsql {
     VACUUM;
   }
-  cksum
+  allcksum
 } $cksum
 
 ifcapable vacuum {
@@ -140,17 +119,17 @@ do_test vacuum-2.2 {
     DROP TABLE t4;
     DROP TABLE t5;
   } db2
-  set ::cksum [cksum db2]
+  set ::cksum [allcksum db2]
   catchsql {
     VACUUM
   }
 } {0 {}}
 do_test vacuum-2.3 {
-  cksum
+  allcksum
 } $cksum
 do_test vacuum-2.4 {
   catch {db2 eval {SELECT count(*) FROM sqlite_master}}
-  cksum db2
+  allcksum db2
 } $cksum
 
 # Make sure the schema cookie is incremented by vacuum.
@@ -329,28 +308,28 @@ ifcapable {autoinc} {
       INSERT INTO autoinc(b) VALUES('there');
       DELETE FROM autoinc;
     }
-    set ::cksum [cksum]
+    set ::cksum [allcksum]
     expr {$::cksum!=""}
   } {1}
   do_test vacuum-9.2 {
     execsql {
       VACUUM;
     }
-    cksum
+    allcksum
   } $::cksum
   do_test vacuum-9.3 {
     execsql {
       INSERT INTO autoinc(b) VALUES('one');
       INSERT INTO autoinc(b) VALUES('two');
     }
-    set ::cksum [cksum]
+    set ::cksum [allcksum]
     expr {$::cksum!=""}
   } {1}
   do_test vacuum-9.4 {
     execsql {
       VACUUM;
     }
-    cksum
+    allcksum
   } $::cksum
 }
 

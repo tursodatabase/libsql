@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.281 2007/12/13 21:54:11 drh Exp $
+** $Id: test1.c,v 1.282 2008/01/16 17:46:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4241,6 +4241,46 @@ static int vfs_unlink_test(
   return TCL_OK;
 }
 
+/*
+** tclcmd:  save_prng_state
+*/
+static int save_prng_state(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  extern void sqlite3SavePrngState(void);
+  sqlite3SavePrngState();
+  return TCL_OK;
+}
+/*
+** tclcmd:  restore_prng_state
+*/
+static int restore_prng_state(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  extern void sqlite3RestorePrngState(void);
+  sqlite3RestorePrngState();
+  return TCL_OK;
+}
+/*
+** tclcmd:  reset_prng_state
+*/
+static int reset_prng_state(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  extern void sqlite3ResetPrngState(void);
+  sqlite3ResetPrngState();
+  return TCL_OK;
+}
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -4342,6 +4382,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_load_extension",        test_load_extension,     0},
      { "sqlite3_enable_load_extension", test_enable_load,        0},
      { "sqlite3_extended_result_codes", test_extended_result_codes, 0},
+
+     { "save_prng_state",               save_prng_state,    0 },
+     { "restore_prng_state",            restore_prng_state, 0 },
+     { "reset_prng_state",              reset_prng_state,   0 },
 
      /* sqlite3_column_*() API */
      { "sqlite3_column_count",          test_column_count  ,0 },

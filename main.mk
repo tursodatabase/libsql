@@ -229,7 +229,8 @@ TESTSRC2 = \
   $(TOP)/src/expr.c $(TOP)/src/func.c $(TOP)/src/insert.c $(TOP)/src/os.c      \
   $(TOP)/src/os_os2.c $(TOP)/src/os_unix.c $(TOP)/src/os_win.c                 \
   $(TOP)/src/pager.c $(TOP)/src/pragma.c $(TOP)/src/prepare.c                  \
-  $(TOP)/src/printf.c $(TOP)/src/select.c $(TOP)/src/tokenize.c                \
+  $(TOP)/src/printf.c $(TOP)/src/random.c                                      \
+  $(TOP)/src/select.c $(TOP)/src/tokenize.c                                    \
   $(TOP)/src/utf.c $(TOP)/src/util.c $(TOP)/src/vdbeapi.c $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbe.c $(TOP)/src/vdbemem.c $(TOP)/src/where.c parse.c
 

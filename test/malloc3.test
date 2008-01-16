@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.18 2007/12/13 21:54:11 drh Exp $
+# $Id: malloc3.test,v 1.19 2008/01/16 17:46:38 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -149,6 +149,7 @@ ifcapable !memdebug {
 set ::run_test_script [list]
 proc TEST {id t} {lappend ::run_test_script -test [list $id $t]}
 proc PREP {p} {lappend ::run_test_script -prep [string trim $p]}
+proc DEBUG {s} {lappend ::run_test_script -debug $s}
 
 # SQL --
 #
@@ -256,7 +257,7 @@ TEST 5 {
 set sql {
   BEGIN;DELETE FROM abc;
 }
-for {set i 1} {$i < 100} {incr i} {
+for {set i 1} {$i < 15} {incr i} {
   set a $i
   set b "String value $i"
   set c [string repeat X $i]
@@ -545,16 +546,14 @@ proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
   while {$pc*2 < [llength $arglist]} {
 
     # Id of this iteration:
-    set iterid "(pc $pc).(iFail $iFail)"
     set k [lindex $arglist [expr 2 * $pc]]
+    set iterid "pc=$pc.iFail=$iFail$k"
     set v [lindex $arglist [expr 2 * $pc + 1]]
 
     switch -- $k {
 
       -test { 
         foreach {id script} $v {}
-        set testid "malloc3-(test $id).$iterid"
-        eval $script
         incr pc
       }
 
@@ -629,6 +628,11 @@ proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
 
       -prep {
         db eval $v
+        incr pc
+      }
+
+      -debug {
+        eval $v
         incr pc
       }
 

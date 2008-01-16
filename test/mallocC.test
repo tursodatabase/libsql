@@ -12,7 +12,7 @@
 # This file tests aspects of the malloc failure while parsing
 # CREATE TABLE statements in auto_vacuum mode.
 #
-# $Id: mallocC.test,v 1.7 2007/10/03 08:46:45 danielk1977 Exp $
+# $Id: mallocC.test,v 1.8 2008/01/16 17:46:38 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -25,37 +25,9 @@ ifcapable !memdebug||!compound {
    return
 }
 
-# Generate a checksum based on the contents of the database. If the
-# checksum of two databases is the same, and the integrity-check passes
-# for both, the two databases are identical.
-#
-proc cksum {db} {
-  set ret [list]
-  ifcapable tempdb {
-    set sql {
-      SELECT name FROM sqlite_master WHERE type = 'table' UNION
-      SELECT name FROM sqlite_temp_master WHERE type = 'table' UNION
-      SELECT 'sqlite_master' UNION
-      SELECT 'sqlite_temp_master'
-    }
-  } else {
-    set sql {
-      SELECT name FROM sqlite_master WHERE type = 'table' UNION
-      SELECT 'sqlite_master'
-    }
-  }
-  set tbllist [$db eval $sql]
-  set txt {}
-  foreach tbl $tbllist {
-    append txt [$db eval "SELECT * FROM $tbl"]
-  }
-  # puts txt=$txt
-  return [md5 $txt]
-}
-
 proc do_mallocC_test {tn args} {
   array set ::mallocopts $args
-  set sum [cksum db]
+  #set sum [allcksum db]
 
   for {set ::n 1} {true} {incr ::n} {
 
@@ -99,7 +71,7 @@ proc do_mallocC_test {tn args} {
 
     # Checksum the database.
     #do_test mallocC-$tn.$::n.3 {
-    #  cksum db
+    #  allcksum db
     #} $sum
 
     #integrity_check mallocC-$tn.$::n.4

@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.99 2008/01/16 08:24:46 danielk1977 Exp $
+# $Id: tester.tcl,v 1.100 2008/01/16 17:46:38 drh Exp $
 
 
 set tcl_precision 15
@@ -460,6 +460,8 @@ proc do_ioerr_test {testname args} {
   array set ::ioerropts $args
 
   set ::go 1
+  #reset_prng_state
+  save_prng_state
   for {set n $::ioerropts(-start)} {$::go} {incr n} {
     set ::TN $n
     incr ::ioerropts(-count) -1
@@ -469,6 +471,7 @@ proc do_ioerr_test {testname args} {
     if {[info exists ::ioerropts(-exclude)]} {
       if {[lsearch $::ioerropts(-exclude) $n]!=-1} continue
     }
+    restore_prng_state
 
     # Delete the files test.db and test2.db, then execute the TCL and 
     # SQL (in that order) to prepare for the test case.
@@ -494,7 +497,7 @@ proc do_ioerr_test {testname args} {
     if {$::ioerropts(-cksum)} {
       set checksum [cksum]
     }
-  
+
     # Set the Nth IO error to fail.
     do_test $testname.$n.2 [subst {
       set ::sqlite_io_error_persist $::ioerropts(-persist)
@@ -533,8 +536,19 @@ proc do_ioerr_test {testname args} {
           return $rc
         }
       }
-      # The test repeats as long as $::go is true.  
-      set ::go [expr {$::sqlite_io_error_pending<=0}]
+      # The test repeats as long as $::go is non-zero.  $::go starts out
+      # as 1.  When a test runs to completion without hitting an I/O
+      # error, that means there is no point in continuing with this test
+      # case so set $::go to zero.
+      #
+      if {$::sqlite_io_error_pending>0} {
+        set ::go 0
+        set q 0
+        set ::sqlite_io_error_pending 0
+      } else {
+        set q 1
+      }
+
       set s [expr $::sqlite_io_error_hit==0]
       set ::sqlite_io_error_hit 0
 
@@ -542,7 +556,7 @@ proc do_ioerr_test {testname args} {
       #   1.  We never hit the IO error and the SQL returned OK
       #   2.  An IO error was hit and the SQL failed
       #
-      expr { ($s && !$r && !$::go) || (!$s && $r && $::go) }
+      expr { ($s && !$r && !$q) || (!$s && $r && $q) }
     } {1}
 
     # If an IO error occured, then the checksum of the database should
@@ -565,7 +579,8 @@ proc do_ioerr_test {testname args} {
   unset ::ioerropts
 }
 
-# Return a checksum based on the contents of database 'db'.
+# Return a checksum based on the contents of the main database associated
+# with connection $db
 #
 proc cksum {{db db}} {
   set txt [$db eval {
@@ -583,6 +598,39 @@ proc cksum {{db db}} {
   # puts $cksum-[file size test.db]
   return $cksum
 }
+
+# Generate a checksum based on the contents of the main and temp tables
+# database $db. If the checksum of two databases is the same, and the
+# integrity-check passes for both, the two databases are identical.
+#
+proc allcksum {db} {
+  set ret [list]
+  ifcapable tempdb {
+    set sql {
+      SELECT name FROM sqlite_master WHERE type = 'table' UNION
+      SELECT name FROM sqlite_temp_master WHERE type = 'table' UNION
+      SELECT 'sqlite_master' UNION
+      SELECT 'sqlite_temp_master' ORDER BY 1
+    }
+  } else {
+    set sql {
+      SELECT name FROM sqlite_master WHERE type = 'table' UNION
+      SELECT 'sqlite_master' ORDER BY 1
+    }
+  }
+  set tbllist [$db eval $sql]
+  set txt {}
+  foreach tbl $tbllist {
+    append txt [$db eval "SELECT * FROM $tbl"]
+  }
+  foreach prag {default_cache_size} {
+    append txt $prag-[$db eval "PRAGMA $prag"]\n
+  }
+  # puts txt=$txt
+  return [md5 $txt]
+}
+
+
 
 # Copy file $from into $to. This is used because some versions of
 # TCL for windows (notably the 8.4.1 binary package shipped with the

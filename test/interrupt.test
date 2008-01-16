@@ -11,27 +11,12 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is the sqlite_interrupt() API.
 #
-# $Id: interrupt.test,v 1.15 2007/06/13 16:49:49 danielk1977 Exp $
+# $Id: interrupt.test,v 1.16 2008/01/16 17:46:38 drh Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set DB [sqlite3_connection_pointer db]
-
-# Compute a checksum on the entire database.
-#
-proc cksum {{db db}} {
-  set txt [$db eval {SELECT name, type, sql FROM sqlite_master}]\n
-  foreach tbl [$db eval {SELECT name FROM sqlite_master WHERE type='table'}] {
-    append txt [$db eval "SELECT * FROM $tbl"]\n
-  }
-  foreach prag {default_synchronous default_cache_size} {
-    append txt $prag-[$db eval "PRAGMA $prag"]\n
-  }
-  set cksum [string length $txt]-[md5 $txt]
-  # puts $cksum-[file size test.db]
-  return $cksum
-}
 
 # This routine attempts to execute the sql in $sql.  It triggers an
 # interrupt at progressively later and later points during the processing

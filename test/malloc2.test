@@ -16,7 +16,7 @@
 # Recovery from malloc() failures is automatic.  But we keep these
 # tests around because you can never have too many test cases.
 #
-# $Id: malloc2.test,v 1.9 2007/11/05 15:30:13 danielk1977 Exp $
+# $Id: malloc2.test,v 1.10 2008/01/16 17:46:38 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -31,37 +31,9 @@ ifcapable !memdebug {
 
 sqlite3_extended_result_codes db 1
 
-# Generate a checksum based on the contents of the database. If the
-# checksum of two databases is the same, and the integrity-check passes
-# for both, the two databases are identical.
-#
-proc cksum {db} {
-  set ret [list]
-  ifcapable tempdb {
-    set sql {
-      SELECT name FROM sqlite_master WHERE type = 'table' UNION
-      SELECT name FROM sqlite_temp_master WHERE type = 'table' UNION
-      SELECT 'sqlite_master' UNION
-      SELECT 'sqlite_temp_master'
-    }
-  } else {
-    set sql {
-      SELECT name FROM sqlite_master WHERE type = 'table' UNION
-      SELECT 'sqlite_master'
-    }
-  }
-  set tbllist [$db eval $sql]
-  set txt {}
-  foreach tbl $tbllist {
-    append txt [$db eval "SELECT * FROM $tbl"]
-  }
-  # puts txt=$txt
-  return [md5 $txt]
-}
-
 proc do_malloc2_test {tn args} {
   array set ::mallocopts $args
-  set sum [cksum db]
+  set sum [allcksum db]
 
   for {set ::n 1} {true} {incr ::n} {
 
@@ -116,7 +88,7 @@ proc do_malloc2_test {tn args} {
 
     # Checksum the database.
     do_test malloc2-$tn.$::n.5 {
-      cksum db
+      allcksum db
     } $sum
 
     integrity_check malloc2-$tn.$::n.6

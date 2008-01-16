@@ -1032,8 +1032,8 @@ static int unixSync(sqlite3_file *id, int flags){
 static int unixTruncate(sqlite3_file *id, i64 nByte){
   int rc;
   assert( id );
+  SimulateIOError( return SQLITE_IOERR_TRUNCATE );
   rc = ftruncate(((unixFile*)id)->h, (off_t)nByte);
-  SimulateIOError( rc=1 );
   if( rc ){
     return SQLITE_IOERR_TRUNCATE;
   }else{

@@ -12,7 +12,7 @@
 # This file contains additional tests to verify that SQLite database
 # file survive a power loss or OS crash.
 #
-# $Id: crash4.test,v 1.2 2008/01/09 23:21:25 drh Exp $
+# $Id: crash4.test,v 1.3 2008/01/16 17:46:38 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -22,32 +22,6 @@ ifcapable !crashtest {
   return
 }
 
-# Generate a checksum based on the contents of the database. If the
-# checksum of two databases is the same, and the integrity-check passes
-# for both, the two databases are identical.
-#
-proc cksum {{db db}} {
-  set ret [list]
-  ifcapable tempdb {
-    set sql {
-      SELECT name FROM sqlite_master WHERE type = 'table' UNION
-      SELECT name FROM sqlite_temp_master WHERE type = 'table' UNION
-      SELECT 'sqlite_master' UNION
-      SELECT 'sqlite_temp_master'
-    }
-  } else {
-    set sql {
-      SELECT name FROM sqlite_master WHERE type = 'table' UNION
-      SELECT 'sqlite_master'
-    }
-  }
-  set tbllist [$db eval $sql]
-  set txt {}
-  foreach tbl $tbllist {
-    append txt [$db eval "SELECT * FROM $tbl"]
-  }
-  return [md5 $txt]
-}
 
 # A sequence of SQL commands:
 #
@@ -72,10 +46,10 @@ set sql_cmd_list {
 # the state of the database prior to any of these statements.
 #
 set crash4_cksum_set {}
-lappend crash4_cksum_set [cksum db]
+lappend crash4_cksum_set [allcksum db]
 foreach cmd $sql_cmd_list {
   db eval $cmd
-  lappend crash4_cksum_set [cksum db]
+  lappend crash4_cksum_set [allcksum db]
 }
 
 # Run the sequence of SQL statements shown above repeatedly.
@@ -120,7 +94,7 @@ for {set cnt 1; set fin 0} {!$fin} {incr cnt} {
   sqlite3 db test.db
   integrity_check crash4-1.$cnt.2
   do_test crash4-1.$cnt.3 {
-    set x [lsearch $::crash4_cksum_set [cksum db]]
+    set x [lsearch $::crash4_cksum_set [allcksum db]]
     expr {$x>=0}
   } {1}
 }
