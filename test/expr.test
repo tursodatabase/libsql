@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.59 2007/09/01 18:24:55 danielk1977 Exp $
+# $Id: expr.test,v 1.60 2008/01/16 18:20:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -511,7 +511,7 @@ test_expr expr-case.13 {i1=7} \
 execsql {DROP TABLE test1}
 execsql {CREATE TABLE test1(a int, b int);}
 for {set i 1} {$i<=20} {incr i} {
-  execsql "INSERT INTO test1 VALUES($i,[expr {int(pow(2,$i))}])"
+  execsql "INSERT INTO test1 VALUES($i,[expr {1<<$i}])"
 }
 execsql "INSERT INTO test1 VALUES(NULL,0)"
 do_test expr-7.1 {

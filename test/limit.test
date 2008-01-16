@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.30 2006/06/20 11:01:09 danielk1977 Exp $
+# $Id: limit.test,v 1.31 2008/01/16 18:20:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -24,7 +24,7 @@ execsql {
   BEGIN;
 }
 for {set i 1} {$i<=32} {incr i} {
-  for {set j 0} {pow(2,$j)<$i} {incr j} {}
+  for {set j 0} {(1<<$j)<$i} {incr j} {}
   execsql "INSERT INTO t1 VALUES([expr {32-$i}],[expr {10-$j}])"
 }
 execsql {

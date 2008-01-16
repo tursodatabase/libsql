@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select3.test,v 1.22 2007/12/13 07:58:51 danielk1977 Exp $
+# $Id: select3.test,v 1.23 2008/01/16 18:20:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -25,7 +25,7 @@ do_test select3-1.0 {
     BEGIN;
   }
   for {set i 1} {$i<32} {incr i} {
-    for {set j 0} {pow(2,$j)<$i} {incr j} {}
+    for {set j 0} {(1<<$j)<$i} {incr j} {}
     execsql "INSERT INTO t1 VALUES($i,$j)"
   }
   execsql {

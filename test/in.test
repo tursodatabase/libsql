@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the IN and BETWEEN operator.
 #
-# $Id: in.test,v 1.18 2007/12/13 18:24:22 danielk1977 Exp $
+# $Id: in.test,v 1.19 2008/01/16 18:20:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -24,7 +24,7 @@ do_test in-1.0 {
     CREATE TABLE t1(a int, b int);
   }
   for {set i 1} {$i<=10} {incr i} {
-    execsql "INSERT INTO t1 VALUES($i,[expr {int(pow(2,$i))}])"
+    execsql "INSERT INTO t1 VALUES($i,[expr {1<<$i}])"
   }
   execsql {
     COMMIT;

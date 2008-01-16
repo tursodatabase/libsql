@@ -12,7 +12,7 @@
 # focus of this file is testing the INSERT statement that takes is
 # result from a SELECT.
 #
-# $Id: insert2.test,v 1.18 2005/10/05 11:35:09 drh Exp $
+# $Id: insert2.test,v 1.19 2008/01/16 18:20:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -22,7 +22,7 @@ source $testdir/tester.tcl
 do_test insert2-1.0 {
   execsql {CREATE TABLE d1(n int, log int);}
   for {set i 1} {$i<=20} {incr i} {
-    for {set j 0} {pow(2,$j)<$i} {incr j} {}
+    for {set j 0} {(1<<$j)<$i} {incr j} {}
     execsql "INSERT INTO d1 VALUES($i,$j)"
   }
   execsql {SELECT * FROM d1 ORDER BY n}

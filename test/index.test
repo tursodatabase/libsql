@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE INDEX statement.
 #
-# $Id: index.test,v 1.42 2006/03/29 00:24:07 drh Exp $
+# $Id: index.test,v 1.43 2008/01/16 18:20:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -114,7 +114,7 @@ do_test index-3.3 {
 do_test index-4.1 {
   execsql {CREATE TABLE test1(cnt int, power int)}
   for {set i 1} {$i<20} {incr i} {
-    execsql "INSERT INTO test1 VALUES($i,[expr {int(pow(2,$i))}])"
+    execsql "INSERT INTO test1 VALUES($i,[expr {1<<$i}])"
   }
   execsql {CREATE INDEX index9 ON test1(cnt)}
   execsql {CREATE INDEX indext ON test1(power)}
@@ -221,7 +221,7 @@ integrity_check index-6.5
 do_test index-7.1 {
   execsql {CREATE TABLE test1(f1 int, f2 int primary key)}
   for {set i 1} {$i<20} {incr i} {
-    execsql "INSERT INTO test1 VALUES($i,[expr {int(pow(2,$i))}])"
+    execsql "INSERT INTO test1 VALUES($i,[expr {1<<$i}])"
   }
   execsql {SELECT count(*) FROM test1}
 } {19}

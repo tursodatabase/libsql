@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.68 2008/01/08 18:57:50 drh Exp $
+# $Id: quick.test,v 1.69 2008/01/16 18:20:42 danielk1977 Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -111,3 +111,5 @@ source $testdir/misuse.test
 
 set sqlite_open_file_count 0
 really_finish_test
+
+

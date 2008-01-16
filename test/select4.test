@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.25 2008/01/12 12:48:09 drh Exp $
+# $Id: select4.test,v 1.26 2008/01/16 18:20:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -29,7 +29,7 @@ execsql {
   BEGIN;
 }
 for {set i 1} {$i<32} {incr i} {
-  for {set j 0} {pow(2,$j)<$i} {incr j} {}
+  for {set j 0} {(1<<$j)<$i} {incr j} {}
   execsql "INSERT INTO t1 VALUES($i,$j)"
 }
 execsql {
