@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.404 2008/01/17 16:22:15 drh Exp $
+** $Id: select.c,v 1.405 2008/01/17 17:15:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -516,11 +516,13 @@ static int selectInnerLoop(
   char *aff               /* affinity string if eDest is SRT_Union */
 ){
   Vdbe *v = pParse->pVdbe;
-  int i, n;
+  int i;
   int hasDistinct;        /* True if the DISTINCT keyword is present */
-  int iMem;               /* Start of memory holding result set */
-  int eDest = pDest->eDest;
-  int iParm = pDest->iParm;
+  int regResult;              /* Start of memory holding result set */
+  int eDest = pDest->eDest;   /* How to dispose of results */
+  int iParm = pDest->iParm;   /* First argument to disposal method */
+  int nResultCol;             /* Number of result columns */
+  int nToFree;                /* Number of result columns to release */
 
   if( v==0 ) return 0;
   assert( pEList!=0 );
@@ -536,29 +538,30 @@ static int selectInnerLoop(
   /* Pull the requested columns.
   */
   if( nColumn>0 ){
-    n = nColumn;
+    nResultCol = nColumn;
   }else{
-    n = pEList->nExpr;
+    nResultCol = pEList->nExpr;
   }
   if( pDest->iMem>0 ){
-    iMem = pDest->iMem;
+    regResult = pDest->iMem;
+    nToFree = 0;
   }else{
-    pDest->iMem = iMem = pParse->nMem+1;
-    pParse->nMem += n;
+    pDest->iMem = regResult = sqlite3GetTempRange(pParse, nResultCol);
+    nToFree = nResultCol;
   }
   if( nColumn>0 ){
     for(i=0; i<nColumn; i++){
-      sqlite3VdbeAddOp3(v, OP_Column, srcTab, i, iMem+i);
+      sqlite3VdbeAddOp3(v, OP_Column, srcTab, i, regResult+i);
     }
   }else if( eDest!=SRT_Exists ){
     /* If the destination is an EXISTS(...) expression, the actual
     ** values returned by the SELECT are not required.
     */
-    for(i=0; i<n; i++){
-      sqlite3ExprCode(pParse, pEList->a[i].pExpr, iMem+i);
+    for(i=0; i<nResultCol; i++){
+      sqlite3ExprCode(pParse, pEList->a[i].pExpr, regResult+i);
     }
   }
-  nColumn = n;
+  nColumn = nResultCol;
 
   /* If the DISTINCT keyword was present on the SELECT statement
   ** and this row has been seen before, then do not make this row
@@ -567,7 +570,7 @@ static int selectInnerLoop(
   if( hasDistinct ){
     assert( pEList!=0 );
     assert( pEList->nExpr==nColumn );
-    codeDistinct(pParse, distinct, iContinue, nColumn, iMem);
+    codeDistinct(pParse, distinct, iContinue, nColumn, regResult);
     if( pOrderBy==0 ){
       codeOffset(v, p, iContinue);
     }
@@ -585,7 +588,7 @@ static int selectInnerLoop(
     case SRT_Union: {
       int r1;
       r1 = sqlite3GetTempReg(pParse);
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, iMem, nColumn, r1);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
       if( aff ){
         sqlite3VdbeChangeP4(v, -1, aff, P4_STATIC);
       }
@@ -601,7 +604,7 @@ static int selectInnerLoop(
     case SRT_Except: {
       int addr, r1;
       r1 = sqlite3GetTempReg(pParse);
-      addr = sqlite3VdbeAddOp3(v, OP_MakeRecord, iMem, nColumn, r1);
+      addr = sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
       sqlite3VdbeChangeP4(v, -1, aff, P4_STATIC);
       sqlite3VdbeAddOp3(v, OP_NotFound, iParm, addr+3, r1);
       sqlite3VdbeAddOp1(v, OP_Delete, iParm);
@@ -615,7 +618,7 @@ static int selectInnerLoop(
     case SRT_Table:
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, iMem, nColumn, r1);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
       if( pOrderBy ){
         pushOntoSorter(pParse, pOrderBy, p, r1);
       }else{
@@ -638,17 +641,17 @@ static int selectInnerLoop(
       int addr2;
 
       assert( nColumn==1 );
-      addr2 = sqlite3VdbeAddOp2(v, OP_IsNull, iMem, 0);
+      addr2 = sqlite3VdbeAddOp1(v, OP_IsNull, regResult);
       p->affinity = sqlite3CompareAffinity(pEList->a[0].pExpr, pDest->affinity);
       if( pOrderBy ){
         /* At first glance you would think we could optimize out the
         ** ORDER BY in this case since the order of entries in the set
         ** does not matter.  But there might be a LIMIT clause, in which
         ** case the order does matter */
-        pushOntoSorter(pParse, pOrderBy, p, iMem);
+        pushOntoSorter(pParse, pOrderBy, p, regResult);
       }else{
         int r1 = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp4(v, OP_MakeRecord, iMem, 1, r1, &p->affinity, 1);
+        sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult, 1, r1, &p->affinity, 1);
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, r1);
         sqlite3ReleaseTempReg(pParse, r1);
       }
@@ -671,9 +674,9 @@ static int selectInnerLoop(
     case SRT_Mem: {
       assert( nColumn==1 );
       if( pOrderBy ){
-        pushOntoSorter(pParse, pOrderBy, p, iMem);
+        pushOntoSorter(pParse, pOrderBy, p, regResult);
       }else{
-        sqlite3VdbeAddOp2(v, OP_Move, iMem, iParm);
+        sqlite3VdbeAddOp2(v, OP_Move, regResult, iParm);
         /* The LIMIT clause will jump out of the loop for us */
       }
       break;
@@ -688,13 +691,14 @@ static int selectInnerLoop(
     case SRT_Callback: {
       if( pOrderBy ){
         int r1 = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp3(v, OP_MakeRecord, iMem, nColumn, r1);
+        sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
         pushOntoSorter(pParse, pOrderBy, p, r1);
         sqlite3ReleaseTempReg(pParse, r1);
       }else if( eDest==SRT_Subroutine ){
+        nToFree = 0;  /* Preserve registers. Subroutine will need them. */
         sqlite3VdbeAddOp2(v, OP_Gosub, 0, iParm);
       }else{
-        sqlite3VdbeAddOp2(v, OP_ResultRow, iMem, nColumn);
+        sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nColumn);
       }
       break;
     }
@@ -718,6 +722,7 @@ static int selectInnerLoop(
     sqlite3VdbeAddOp2(v, OP_AddImm, p->iLimit, -1);
     sqlite3VdbeAddOp2(v, OP_IfZero, p->iLimit, iBreak);
   }
+  sqlite3ReleaseTempRange(pParse, regResult, nToFree);
   return 0;
 }
 

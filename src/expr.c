@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.347 2008/01/17 16:22:15 drh Exp $
+** $Id: expr.c,v 1.348 2008/01/17 17:15:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2162,7 +2162,7 @@ static int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         r1 = sqlite3GetTempRange(pParse, nExpr);
         sqlite3ExprCodeExprList(pParse, pList, r1);
       }else{
-        nExpr = 0;
+        nExpr = r1 = 0;
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       /* Possibly overload the function if the first argument is
