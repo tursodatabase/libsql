@@ -1,5 +1,5 @@
-C Remove\sunused\sp4\selement\sfrom\sthe\s{quote:\sVdbeOpList}\sobject.\s(CVS\s4720)
-D 2008-01-17T17:27:31
+C Improved\stest\scoverage\sin\sdate.c.\s\sReport\san\serror\sif\sa\smalloc\nfails\swithin\sstrftime().\s(CVS\s4721)
+D 2008-01-17T20:26:47
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -89,7 +89,7 @@ F src/btreeInt.h 1c5a9da165718ef7de81e35ce9ab5d9ba9283f76
 F src/build.c 27a3be10a7186515915ac73c40667dc55beacbac
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
-F src/date.c 49c5a6d2de6c12000905b4d36868b07d3011bbf6
+F src/date.c a5bf94263a39dd564de8262a60bc4f6dd4b3d26c
 F src/delete.c 739ccbab8fa7478762bded5c9cc67f16a4d09dbe
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c f13ad688f64d93efe6c4f86c46e9d172d9166217
@@ -371,7 +371,7 @@ F test/malloc8.test addc27d907fec1af429551b95c72caa47fce2974
 F test/malloc9.test 95d7069ad4fa262bf33bc4c5ca0a46f2bb2391cb
 F test/mallocA.test 5ee8d42ff90e5b1aeee6fb645e73ffcb35bffd21
 F test/mallocAll.test 2a2222a5e447be6c6579055a9a26e507e4586f4e
-F test/mallocB.test 83bdbea443cc81758a57b0287807b0941218819a
+F test/mallocB.test 82ecf4d3fa6c389cabc747daa2deddfe94af2a74
 F test/mallocC.test 9daac0aa8e5b0afa7b0a3fb0cd792f02fe0cc838
 F test/mallocD.test d638fb8f214b47fd31edfae8af738b92bd943dc0
 F test/mallocE.test e15333c394d7c330c8372a7cdf7b0f7c16573082
@@ -436,7 +436,7 @@ F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test 20d8ea20bea3ca09c3ef3b5ec820a17e58e132cb
-F test/sqllimits1.test ede9874fc0ffbfa1ebfbc84cbe5d283cfa00f772
+F test/sqllimits1.test 81827ef286ff0d156cad84fb192590d69337c393
 F test/subquery.test 8203f85db56ba022a57a0589890090c8feed4e59
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
@@ -606,7 +606,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5ba4e5adf638c6812a2813961ea30a11a670409c
-R c2cc34fbdef9000303cf7b466bf89705
+P 1c37d7b69b672987a6974f4193f933666f4f0c3a
+R d9967355fe21baab9dd2f21a45527aae
 U drh
-Z c67edfa23b46c452d34849b066f8c018
+Z 81650e99db9d29986d19577b6d69f753

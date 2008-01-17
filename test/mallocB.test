@@ -13,7 +13,7 @@
 # that they have little in common.
 #
 #
-# $Id: mallocB.test,v 1.6 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: mallocB.test,v 1.7 2008/01/17 20:26:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -43,5 +43,9 @@ ifcapable subquery {
 # that it really matters.
 #
 do_malloc_test mallocB-6 -sqlbody { SELECT test_auxdata('hello world'); }
+
+do_malloc_test mallocB-7 -sqlbody {
+  SELECT strftime(hex(randomblob(50)) || '%Y', 'now')
+}
 
 finish_test
