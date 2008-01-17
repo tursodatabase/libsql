@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.74 2008/01/17 20:26:47 drh Exp $
+** $Id: date.c,v 1.75 2008/01/17 22:27:54 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -653,6 +653,9 @@ static int parseModifier(const char *zMod, DateTime *p){
 ** argv[1] and following are modifiers.  Parse them all and write
 ** the resulting time into the DateTime structure p.  Return 0
 ** on success and 1 if there are any errors.
+**
+** If there are zero parameters (if even argv[0] is undefined)
+** then assume a default value of "now" for argv[0].
 */
 static int isDate(
   sqlite3_context *context, 
@@ -662,8 +665,12 @@ static int isDate(
 ){
   int i;
   const unsigned char *z;
-  if( argc==0 ) return 1;
-  z = sqlite3_value_text(argv[0]);
+  static const unsigned char zDflt[] = "now";
+  if( argc==0 ){
+    z = zDflt;
+  }else{
+    z = sqlite3_value_text(argv[0]);
+  }
   if( !z || parseDateOrTime(context, (char*)z, p) ){
     return 1;
   }
@@ -885,7 +892,7 @@ static void strftimeFunc(
         case 'S':  sqlite3_snprintf(3,&z[j],"%02d",(int)x.s); j+=2; break;
         case 'w':  z[j++] = (((int)(x.rJD+1.5)) % 7) + '0'; break;
         case 'Y':  sqlite3_snprintf(5,&z[j],"%04d",x.Y); j+=strlen(&z[j]);break;
-        case '%':  z[j++] = '%'; break;
+        default:   z[j++] = '%'; break;
       }
     }
   }
@@ -904,12 +911,7 @@ static void ctimeFunc(
   int argc,
   sqlite3_value **argv
 ){
-  sqlite3_value *pVal = sqlite3ValueNew(0);
-  if( pVal ){
-    sqlite3ValueSetStr(pVal, -1, "now", SQLITE_UTF8, SQLITE_STATIC);
-    timeFunc(context, 1, &pVal);
-    sqlite3ValueFree(pVal);
-  }
+  timeFunc(context, 0, 0);
 }
 
 /*
@@ -922,12 +924,7 @@ static void cdateFunc(
   int argc,
   sqlite3_value **argv
 ){
-  sqlite3_value *pVal = sqlite3ValueNew(0);
-  if( pVal ){
-    sqlite3ValueSetStr(pVal, -1, "now", SQLITE_UTF8, SQLITE_STATIC);
-    dateFunc(context, 1, &pVal);
-    sqlite3ValueFree(pVal);
-  }
+  dateFunc(context, 0, 0);
 }
 
 /*
@@ -940,12 +937,7 @@ static void ctimestampFunc(
   int argc,
   sqlite3_value **argv
 ){
-  sqlite3_value *pVal = sqlite3ValueNew(0);
-  if( pVal ){
-    sqlite3ValueSetStr(pVal, -1, "now", SQLITE_UTF8, SQLITE_STATIC);
-    datetimeFunc(context, 1, &pVal);
-    sqlite3ValueFree(pVal);
-  }
+  datetimeFunc(context, 0, 0);
 }
 #endif /* !defined(SQLITE_OMIT_DATETIME_FUNCS) */
 

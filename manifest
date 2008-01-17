@@ -1,5 +1,5 @@
-C Improved\stest\scoverage\sin\sdate.c.\s\sReport\san\serror\sif\sa\smalloc\nfails\swithin\sstrftime().\s(CVS\s4721)
-D 2008-01-17T20:26:47
+C Test\scoverage\sfor\sdate.c.\s(CVS\s4722)
+D 2008-01-17T22:27:54
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -89,7 +89,7 @@ F src/btreeInt.h 1c5a9da165718ef7de81e35ce9ab5d9ba9283f76
 F src/build.c 27a3be10a7186515915ac73c40667dc55beacbac
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
-F src/date.c a5bf94263a39dd564de8262a60bc4f6dd4b3d26c
+F src/date.c 8ce763c68143b1e8fb6f79dcfc8b801853c97017
 F src/delete.c 739ccbab8fa7478762bded5c9cc67f16a4d09dbe
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c f13ad688f64d93efe6c4f86c46e9d172d9166217
@@ -245,7 +245,7 @@ F test/crash3.test 0b09687ae1a3ccbcefdfaeb4b963e26e36255d76
 F test/crash4.test 02ff4f15c149ca1e88a5c299b4896c84d9450c3b
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
-F test/date.test b2bd57ff2ab6185b9322306f7b68fa647d63c857
+F test/date.test 51734f3798f338e3f75107aff5a057ae0ff7006c
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test 57533e88e886608bf5ae0f394e14c2eb1b1f7754
 F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
@@ -606,7 +606,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1c37d7b69b672987a6974f4193f933666f4f0c3a
-R d9967355fe21baab9dd2f21a45527aae
+P 495fb41626dfbfbeeb748675b9476a4f7cec6c7a
+R 44b7cf7c7631ced0327987df0e419a17
 U drh
-Z 81650e99db9d29986d19577b6d69f753
+Z 08c8b2a3ecf57a5c9fe6eb42188de03e

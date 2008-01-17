@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.23 2007/08/31 17:42:48 danielk1977 Exp $
+# $Id: date.test,v 1.24 2008/01/17 22:27:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -119,11 +119,14 @@ datetest 2.36 {datetime('2003-10-22 12:24','+1 abcdef')} NULL
 datetest 2.37 {datetime('2003-10-22 12:24','+1 abcdefg')} NULL
 datetest 2.38 {datetime('2003-10-22 12:24','+1 abcdefgh')} NULL
 datetest 2.39 {datetime('2003-10-22 12:24','+1 abcdefghi')} NULL
-datetest 2.40 {datetime()} NULL
+set sqlite_current_time 1199243045
+datetest 2.40 {datetime()} {2008-01-02 03:04:05}
+set sqlite_current_time 0
 
 
 datetest 3.1 {strftime('%d','2003-10-31 12:34:56.432')} 31
-datetest 3.2 {strftime('%f','2003-10-31 12:34:56.432')} 56.432
+datetest 3.2.1 {strftime('%f','2003-10-31 12:34:56.432')} 56.432
+datetest 3.2.2 {strftime('%f','2003-10-31 12:34:59.9999999')} 59.999
 datetest 3.3 {strftime('%H','2003-10-31 12:34:56.432')} 12
 datetest 3.4 {strftime('%j','2003-10-31 12:34:56.432')} 304
 datetest 3.5 {strftime('%J','2003-10-31 12:34:56.432')} 2452944.02426426
