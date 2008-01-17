@@ -1,4 +1,4 @@
-C Registerification\sof\sthe\sWHERE\sclause\slogic.\s(CVS\s4716)
+C Registerification\sof\sthe\sWHERE\sclause\slogic.\s(CVS\s4717)
 D 2008-01-17T02:36:28
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
@@ -606,7 +606,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3a289b6d28bcf399845586b15f100d7c3a78b550
+P b3a141b2b0c09bf3c7704deeade290d71b7c9b77
 R 9b81ffae960f644182cd49ff81018f5f
 U drh
-Z ae8f3f9d0f33bb8446db7603cd67f9f8
+Z e206730fa35a583eeb4dac70ee5ed4f0
