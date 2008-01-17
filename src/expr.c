@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.345 2008/01/13 19:02:11 drh Exp $
+** $Id: expr.c,v 1.346 2008/01/17 02:36:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1786,7 +1786,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
 
           /* Evaluate the expression and insert it into the temp table */
           sqlite3ExprCode(pParse, pE2, r1);
-          sqlite3VdbeAddOp4(v, OP_RegMakeRec, r1, 1, r2, &affinity, 1);
+          sqlite3VdbeAddOp4(v, OP_MakeRecord, r1, 1, r2, &affinity, 1);
           sqlite3VdbeAddOp2(v, OP_IdxInsert, pExpr->iTable, r2);
         }
         sqlite3ReleaseTempReg(pParse, r1);
@@ -2246,7 +2246,7 @@ static int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         sqlite3VdbeJumpHere(v, j4);
       }else{
         r2 = regFree2 = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp4(v, OP_RegMakeRec, r1, 1, r2, &affinity, 1);
+        sqlite3VdbeAddOp4(v, OP_MakeRecord, r1, 1, r2, &affinity, 1);
         j5 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r2);
       }
       sqlite3VdbeAddOp2(v, OP_AddImm, target, -1);

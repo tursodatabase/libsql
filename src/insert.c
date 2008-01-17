@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.223 2008/01/12 12:48:08 drh Exp $
+** $Id: insert.c,v 1.224 2008/01/17 02:36:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -174,15 +174,15 @@ static int autoIncBegin(
     pParse->nMem++;
     sqlite3OpenTable(pParse, iCur, iDb, pDb->pSchema->pSeqTab, OP_OpenRead);
     addr = sqlite3VdbeCurrentAddr(v);
+    sqlite3VdbeAddOp4(v, OP_String8, 0, memId-1, 0, pTab->zName, 0);
     sqlite3VdbeAddOp2(v, OP_Rewind, iCur, addr+8);
-    sqlite3VdbeAddOp2(v, OP_Column, iCur, 0);
-    sqlite3VdbeAddOp4(v, OP_String8, 0, 0, 0, pTab->zName, 0);
-    sqlite3VdbeAddOp2(v, OP_Ne, 0, addr+7);
+    sqlite3VdbeAddOp3(v, OP_Column, iCur, 0, memId);
+    sqlite3VdbeAddOp3(v, OP_Ne, memId-1, addr+7, memId);
     sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
     sqlite3VdbeAddOp2(v, OP_Rowid, iCur, memId+1);
     sqlite3VdbeAddOp3(v, OP_Column, iCur, 1, memId);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, addr+8);
-    sqlite3VdbeAddOp2(v, OP_Next, iCur, addr+1);
+    sqlite3VdbeAddOp2(v, OP_Next, iCur, addr+2);
     sqlite3VdbeAddOp2(v, OP_Close, iCur, 0);
   }
   return memId;
@@ -224,8 +224,7 @@ static void autoIncEnd(
     j1 = sqlite3VdbeAddOp1(v, OP_NotNull, memId+1);
     sqlite3VdbeAddOp2(v, OP_NewRowid, iCur, memId+1);
     sqlite3VdbeJumpHere(v, j1);
-    sqlite3VdbeAddOp4(v, OP_String8, 0, memId-1, 0, pTab->zName, 0);
-    sqlite3VdbeAddOp3(v, OP_RegMakeRec, memId-1, 2, memId-1);
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, memId-1, 2, memId-1);
     sqlite3VdbeAddOp3(v, OP_Insert, iCur, memId-1, memId+1);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeAddOp1(v, OP_Close, iCur);
@@ -525,7 +524,7 @@ void sqlite3Insert(
       regRec = sqlite3GetTempReg(pParse);
       regRowid = sqlite3GetTempReg(pParse);
       sqlite3VdbeResolveLabel(v, iInsertBlock);
-      sqlite3VdbeAddOp3(v, OP_RegMakeRec, regFromSelect, nColumn, regRec);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regFromSelect, nColumn, regRec);
       sqlite3VdbeAddOp2(v, OP_NewRowid, srcTab, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, srcTab, regRec, regRowid);
       sqlite3VdbeAddOp2(v, OP_Return, 0, 0);
@@ -738,7 +737,7 @@ void sqlite3Insert(
       }
     }
     regRec = sqlite3GetTempReg(pParse);
-    sqlite3VdbeAddOp3(v, OP_RegMakeRec, regCols, pTab->nCol, regRec);
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regCols, pTab->nCol, regRec);
 
     /* If this is an INSERT on a view with an INSTEAD OF INSERT trigger,
     ** do not attempt any conversions before assembling the record.
@@ -777,7 +776,7 @@ void sqlite3Insert(
         sqlite3VdbeAddOp2(v, OP_SCopy, regFromSelect+keyColumn, regRowid);
       }else{
         VdbeOp *pOp;
-        sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, 0);
+        sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, regRowid);
         pOp = sqlite3VdbeGetOp(v, sqlite3VdbeCurrentAddr(v) - 1);
         if( pOp && pOp->opcode==OP_Null ){
           appendFlag = 1;
@@ -785,18 +784,16 @@ void sqlite3Insert(
           pOp->p1 = baseCur;
           pOp->p2 = regRowid;
           pOp->p3 = regAutoinc;
-        }else{
-          /* TODO: Avoid this use of the stack. */
-          sqlite3VdbeAddOp2(v, OP_Move, 0, regRowid);
         }
       }
       /* If the PRIMARY KEY expression is NULL, then use OP_NewRowid
       ** to generate a unique primary key value.
       */
       if( !appendFlag ){
-        sqlite3VdbeAddOp2(v, OP_IsNull, regRowid, sqlite3VdbeCurrentAddr(v)+2);
-        sqlite3VdbeAddOp2(v, OP_Goto, -1, sqlite3VdbeCurrentAddr(v)+2);
+        int j1;
+        j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regRowid);
         sqlite3VdbeAddOp3(v, OP_NewRowid, baseCur, regRowid, regAutoinc);
+        sqlite3VdbeJumpHere(v, j1);
         sqlite3VdbeAddOp1(v, OP_MustBeInt, regRowid);
       }
     }else if( IsVirtual(pTab) ){
@@ -1178,7 +1175,7 @@ void sqlite3GenerateConstraintChecks(
       }
     }
     sqlite3VdbeAddOp2(v, OP_SCopy, regRowid, regIdx+i);
-    sqlite3VdbeAddOp3(v, OP_RegMakeRec, regIdx, pIdx->nColumn+1, aRegIdx[iCur]);
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn+1, aRegIdx[iCur]);
     sqlite3IndexAffinityStr(v, pIdx);
     sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn+1);
 
@@ -1294,7 +1291,7 @@ void sqlite3CompleteInsertion(
   }
   regData = regRowid + 1;
   regRec = sqlite3GetTempReg(pParse);
-  sqlite3VdbeAddOp3(v, OP_RegMakeRec, regData, pTab->nCol, regRec);
+  sqlite3VdbeAddOp3(v, OP_MakeRecord, regData, pTab->nCol, regRec);
   sqlite3TableAffinityStr(v, pTab);
 #ifndef SQLITE_OMIT_TRIGGER
   if( newIdx>=0 ){

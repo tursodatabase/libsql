@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.696 2008/01/16 17:46:38 drh Exp $
+** $Id: vdbe.c,v 1.697 2008/01/17 02:36:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1984,27 +1984,6 @@ case OP_IfNot: {            /* no-push, jump, in1 */
   break;
 }
 
-/* Opcode: StackIsNull P1 P2 *
-**
-** Check the top of the stack and jump to P2 if the top of the stack
-** is NULL.  If P1 is positive, then pop P1 elements from the stack
-** regardless of whether or not the jump is taken.  If P1 is negative,
-** pop -P1 elements from the stack only if the jump is taken and leave
-** the stack unchanged if the jump is not taken.
-*/
-case OP_StackIsNull: {            /* no-push, jump */
-  if( pTos->flags & MEM_Null ){
-    pc = pOp->p2-1;
-    if( pOp->p1<0 ){
-      popStack(&pTos, -pOp->p1);
-    }
-  }
-  if( pOp->p1>0 ){
-    popStack(&pTos, pOp->p1);
-  }
-  break;
-}
-
 /* Opcode: IsNull P1 P2 P3 * *
 **
 ** Jump to P2 if the value in register P1 is NULL.  If P3 is greater
@@ -2319,22 +2298,15 @@ op_column_out:
   break;
 }
 
-/* Opcode: MakeRecord P1 P2 P4
+/* Opcode: MakeRecord P1 P2 P3 P4 *
 **
-** Convert the top abs(P1) entries of the stack into a single entry
+** Convert P2 registers beginning with P1 into a single entry
 ** suitable for use as a data record in a database table or as a key
 ** in an index.  The details of the format are irrelavant as long as
 ** the OP_Column opcode can decode the record later and as long as the
 ** sqlite3VdbeRecordCompare function will correctly compare two encoded
 ** records.  Refer to source code comments for the details of the record
 ** format.
-**
-** The original stack entries are popped from the stack if P1>0 but
-** remain on the stack if P1<0.
-**
-** If P2 is not zero and one or more of the entries are NULL, then jump
-** to the address given by P2.  This feature can be used to skip a
-** uniqueness test on indices.
 **
 ** P4 may be a string that is P1 characters long.  The nth character of the
 ** string indicates the column affinity that should be used for the nth
@@ -2346,17 +2318,7 @@ op_column_out:
 **
 ** If P4 is NULL then all index fields have the affinity NONE.
 */
-/*
-** Opcode: RegMakeRec P1 P2 P3 P4 *
-**
-** Builds a record like OP_MakeRecord.  But the data is taken from
-** P2 registers beginning with P1:  P1, P1+1, P1+2, ..., P1+P2-1.
-** The result is written into P3 or pushed onto the stack if P3 is zero.
-** There is no jump on NULL - that can be done with a separate
-** OP_AnyNull opcode.
-*/
-case OP_RegMakeRec:
-case OP_MakeRecord: {        /* jump */
+case OP_MakeRecord: {
   /* Assuming the record contains N fields, the record format looks
   ** like this:
   **
@@ -2380,41 +2342,20 @@ case OP_MakeRecord: {        /* jump */
   int nZero = 0;         /* Number of zero bytes at the end of the record */
   int nVarint;           /* Number of bytes in a varint */
   u32 serial_type;       /* Type field */
-  int containsNull = 0;  /* True if any of the data fields are NULL */
-  Mem *pData0;           /* Bottom of the stack */
-  Mem *pLast;            /* Top of the stack */
-  int leaveOnStack;      /* If true, leave the entries on the stack */
+  Mem *pData0;           /* First field to be combined into the record */
+  Mem *pLast;            /* Last field of the record */
   int nField;            /* Number of fields in the record */
-  int jumpIfNull;        /* Jump here if non-zero and any entries are NULL. */
   char *zAffinity;       /* The affinity string for the record */
   int file_format;       /* File format to use for encoding */
   int i;                 /* Space used in zNewRecord[] */
   char zTemp[NBFS];      /* Space to hold small records */
 
-  if( pOp->p1<0 ){
-    assert( pOp->opcode==OP_MakeRecord );
-    leaveOnStack = 1;
-    nField = -pOp->p1;
-  }else{
-    leaveOnStack = 0;
-    nField = pOp->p1;
-  }
+  nField = pOp->p1;
   zAffinity = pOp->p4.z;
-
-  if( pOp->opcode==OP_RegMakeRec ){
-    assert( nField>0 && pOp->p2>0 && pOp->p2+nField<=p->nMem );
-    pData0 = &p->aMem[nField];
-    nField = pOp->p2;
-    leaveOnStack = 1;
-    jumpIfNull = 0;
-    pLast = &pData0[nField-1];
-  }else{
-    jumpIfNull = pOp->p2;
-    pData0 = &pTos[1-nField];
-    pLast = pTos;
-    assert( pData0>=p->aStack );
-  }
-  containsNull = 0;
+  assert( nField>0 && pOp->p2>0 && pOp->p2+nField<=p->nMem );
+  pData0 = &p->aMem[nField];
+  nField = pOp->p2;
+  pLast = &pData0[nField-1];
   file_format = p->minWriteFileFormat;
 
   /* Loop through the elements that will make up the record to figure
@@ -2424,9 +2365,6 @@ case OP_MakeRecord: {        /* jump */
     int len;
     if( zAffinity ){
       applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
-    }
-    if( pRec->flags&MEM_Null ){
-      containsNull = 1;
     }
     if( pRec->flags&MEM_Zero && pRec->n>0 ){
       ExpandBlob(pRec);
@@ -2475,10 +2413,6 @@ case OP_MakeRecord: {        /* jump */
   }
   assert( i==nByte );
 
-  /* Pop entries off the stack if required. Push the new record on. */
-  if( !leaveOnStack ){
-    popStack(&pTos, nField);
-  }
   if( pOp->p3==0 ){
     pOut = ++pTos;
   }else{
@@ -2504,11 +2438,6 @@ case OP_MakeRecord: {        /* jump */
   pOut->enc = SQLITE_UTF8;  /* In case the blob is ever converted to text */
   REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
-
-  /* If a NULL was encountered and jumpIfNull is non-zero, take the jump. */
-  if( jumpIfNull && containsNull ){
-    pc = jumpIfNull - 1;
-  }
   break;
 }
 

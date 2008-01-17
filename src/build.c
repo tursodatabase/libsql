@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.465 2008/01/12 21:35:57 drh Exp $
+** $Id: build.c,v 1.466 2008/01/17 02:36:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2215,7 +2215,7 @@ void sqlite3DeferForeignKey(Parse *pParse, int isDeferred){
 ** content of an index in response to a REINDEX command.
 **
 ** if memRootPage is not negative, it means that the index is newly
-** created.  The memory cell specified by memRootPage contains the
+** created.  The register specified by memRootPage contains the
 ** root page number of the index.  If memRootPage is negative, then
 ** the index already exists and must be cleared before being refilled and
 ** the root page number of the index is taken from pIndex->tnum.
@@ -2246,8 +2246,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
   if( memRootPage>=0 ){
-    sqlite3VdbeAddOp1(v, OP_SCopy, memRootPage);
-    tnum = 0;
+    tnum = memRootPage;
   }else{
     tnum = pIndex->tnum;
     sqlite3VdbeAddOp2(v, OP_Clear, tnum, iDb);
@@ -2736,12 +2735,17 @@ void sqlite3MinimumFileFormat(Parse *pParse, int iDb, int minFormat){
   Vdbe *v;
   v = sqlite3GetVdbe(pParse);
   if( v ){
-    sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, 0, 1);
+    int r1 = sqlite3GetTempReg(pParse);
+    int r2 = sqlite3GetTempReg(pParse);
+    int j1;
+    sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, r1, 1);
     sqlite3VdbeUsesBtree(v, iDb);
-    sqlite3VdbeAddOp1(v, OP_Integer, minFormat);
-    sqlite3VdbeAddOp2(v, OP_Ge, 0, sqlite3VdbeCurrentAddr(v)+3);
-    sqlite3VdbeAddOp1(v, OP_Integer, minFormat);
-    sqlite3VdbeAddOp2(v, OP_SetCookie, iDb, 1);
+    sqlite3VdbeAddOp2(v, OP_Integer, minFormat, r2);
+    j1 = sqlite3VdbeAddOp3(v, OP_Ge, r2, 0, r1);
+    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, 1, r2);
+    sqlite3VdbeJumpHere(v, j1);
+    sqlite3ReleaseTempReg(pParse, r1);
+    sqlite3ReleaseTempReg(pParse, r2);
   }
 }
 

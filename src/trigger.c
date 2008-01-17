@@ -523,12 +523,12 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
     int base;
     static const VdbeOpList dropTrigger[] = {
       { OP_Rewind,     0, ADDR(9),  0},
-      { OP_String8,    0, 0,        0}, /* 1 */
-      { OP_Column,     0, 1,        0},
-      { OP_Ne,         0, ADDR(8),  0},
-      { OP_String8,    0, 0,        0}, /* 4: "trigger" */
-      { OP_Column,     0, 0,        0},
-      { OP_Ne,         0, ADDR(8),  0},
+      { OP_String8,    0, 1,        0}, /* 1 */
+      { OP_Column,     0, 1,        2},
+      { OP_Ne,         2, ADDR(8),  1},
+      { OP_String8,    0, 1,        0}, /* 4: "trigger" */
+      { OP_Column,     0, 0,        2},
+      { OP_Ne,         2, ADDR(8),  1},
       { OP_Delete,     0, 0,        0},
       { OP_Next,       0, ADDR(1),  0}, /* 8 */
     };

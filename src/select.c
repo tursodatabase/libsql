@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.402 2008/01/15 02:22:24 drh Exp $
+** $Id: select.c,v 1.403 2008/01/17 02:36:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -404,7 +404,7 @@ static void pushOntoSorter(
   sqlite3ExprCodeExprList(pParse, pOrderBy, regBase);
   sqlite3VdbeAddOp2(v, OP_Sequence, pOrderBy->iECursor, regBase+nExpr);
   sqlite3VdbeAddOp2(v, OP_Move, regData, regBase+nExpr+1);
-  sqlite3VdbeAddOp3(v, OP_RegMakeRec, regBase, nExpr + 2, regRecord);
+  sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nExpr + 2, regRecord);
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pOrderBy->iECursor, regRecord);
   sqlite3ReleaseTempReg(pParse, regRecord);
   sqlite3ReleaseTempRange(pParse, regBase, nExpr+2);
@@ -466,7 +466,7 @@ static void codeDistinct(
 
   v = pParse->pVdbe;
   r1 = sqlite3GetTempReg(pParse);
-  sqlite3VdbeAddOp3(v, OP_RegMakeRec, iMem, N, r1);
+  sqlite3VdbeAddOp3(v, OP_MakeRecord, iMem, N, r1);
   sqlite3VdbeAddOp3(v, OP_Found, iTab, addrRepeat, r1);
   sqlite3VdbeAddOp2(v, OP_IdxInsert, iTab, r1);
   sqlite3ReleaseTempReg(pParse, r1);
@@ -583,7 +583,7 @@ static int selectInnerLoop(
     */
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
     case SRT_Union: {
-      sqlite3VdbeAddOp2(v, OP_RegMakeRec, iMem, nColumn);
+      sqlite3VdbeAddOp2(v, OP_MakeRecord, iMem, nColumn);
       if( aff ){
         sqlite3VdbeChangeP4(v, -1, aff, P4_STATIC);
       }
@@ -597,7 +597,7 @@ static int selectInnerLoop(
     */
     case SRT_Except: {
       int addr;
-      addr = sqlite3VdbeAddOp2(v, OP_RegMakeRec, iMem, nColumn);
+      addr = sqlite3VdbeAddOp2(v, OP_MakeRecord, iMem, nColumn);
       sqlite3VdbeChangeP4(v, -1, aff, P4_STATIC);
       sqlite3VdbeAddOp2(v, OP_NotFound, iParm, addr+3);
       sqlite3VdbeAddOp2(v, OP_Delete, iParm, 0);
@@ -610,7 +610,7 @@ static int selectInnerLoop(
     case SRT_Table:
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
-      sqlite3VdbeAddOp3(v, OP_RegMakeRec, iMem, nColumn, r1);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, iMem, nColumn, r1);
       if( pOrderBy ){
         pushOntoSorter(pParse, pOrderBy, p, r1);
       }else{
@@ -643,7 +643,7 @@ static int selectInnerLoop(
         pushOntoSorter(pParse, pOrderBy, p, iMem);
       }else{
         int r1 = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp4(v, OP_RegMakeRec, iMem, 1, r1, &p->affinity, 1);
+        sqlite3VdbeAddOp4(v, OP_MakeRecord, iMem, 1, r1, &p->affinity, 1);
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, r1);
         sqlite3ReleaseTempReg(pParse, r1);
       }
@@ -683,7 +683,7 @@ static int selectInnerLoop(
     case SRT_Callback: {
       if( pOrderBy ){
         int r1 = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp3(v, OP_RegMakeRec, iMem, nColumn, r1);
+        sqlite3VdbeAddOp3(v, OP_MakeRecord, iMem, nColumn, r1);
         pushOntoSorter(pParse, pOrderBy, p, r1);
         sqlite3ReleaseTempReg(pParse, r1);
       }else if( eDest==SRT_Subroutine ){
@@ -808,7 +808,7 @@ static void generateSortTail(
       int j1;
       assert( nColumn==1 );
       j1 = sqlite3VdbeAddOp1(v, OP_IsNull, regRow);
-      sqlite3VdbeAddOp4(v, OP_RegMakeRec, regRow, 1, regRow, &p->affinity, 1);
+      sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, 1, regRow, &p->affinity, 1);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, regRow);
       sqlite3VdbeJumpHere(v, j1);
       break;
@@ -3430,7 +3430,7 @@ int sqlite3Select(
           }
         }
         regRecord = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp3(v, OP_RegMakeRec, regBase, nCol, regRecord);
+        sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol, regRecord);
         sqlite3VdbeAddOp2(v, OP_IdxInsert, sAggInfo.sortingIdx, regRecord);
         sqlite3ReleaseTempReg(pParse, regRecord);
         sqlite3ReleaseTempRange(pParse, regBase, nCol);

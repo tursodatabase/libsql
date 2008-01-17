@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.166 2008/01/12 21:35:57 drh Exp $
+** $Id: pragma.c,v 1.167 2008/01/17 02:36:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -459,11 +459,11 @@ void sqlite3Pragma(
           */
           static const VdbeOpList setMeta6[] = {
             { OP_Transaction,    0,               1,        0},    /* 0 */
-            { OP_ReadCookie,     0,               0,        3},    /* 1 */
-            { OP_If,             0,               0,        0},    /* 2 */
+            { OP_ReadCookie,     0,               1,        3},    /* 1 */
+            { OP_If,             1,               0,        0},    /* 2 */
             { OP_Halt,           SQLITE_OK,       OE_Abort, 0},    /* 3 */
-            { OP_Integer,        0,               0,        0},    /* 4 */
-            { OP_SetCookie,      0,               6,        0},    /* 5 */
+            { OP_Integer,        0,               1,        0},    /* 4 */
+            { OP_SetCookie,      0,               6,        1},    /* 5 */
           };
           int iAddr;
           iAddr = sqlite3VdbeAddOpList(v, ArraySize(setMeta6), setMeta6);

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum.test,v 1.39 2008/01/16 17:46:38 drh Exp $
+# $Id: vacuum.test,v 1.40 2008/01/17 02:36:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -49,14 +49,14 @@ do_test vacuum-1.1 {
     DROP TABLE t2;
   }
   set ::size1 [file size test.db]
-  set ::cksum [allcksum]
+  set ::cksum [cksum]
   expr {$::cksum!=""}
 } {1}
 do_test vacuum-1.2 {
   execsql {
     VACUUM;
   }
-  allcksum
+  cksum
 } $cksum
 ifcapable vacuum {
   do_test vacuum-1.3 {
@@ -84,14 +84,14 @@ do_test vacuum-1.4 {
   }
   execsql $sql_script
   set ::size1 [file size test.db]
-  set ::cksum [allcksum]
+  set ::cksum [cksum]
   expr {$::cksum!=""}
 } {1}
 do_test vacuum-1.5 {
   execsql {
     VACUUM;
   }
-  allcksum
+  cksum
 } $cksum
 
 ifcapable vacuum {
@@ -119,17 +119,17 @@ do_test vacuum-2.2 {
     DROP TABLE t4;
     DROP TABLE t5;
   } db2
-  set ::cksum [allcksum db2]
+  set ::cksum [cksum db2]
   catchsql {
     VACUUM
   }
 } {0 {}}
 do_test vacuum-2.3 {
-  allcksum
+  cksum
 } $cksum
 do_test vacuum-2.4 {
   catch {db2 eval {SELECT count(*) FROM sqlite_master}}
-  allcksum db2
+  cksum db2
 } $cksum
 
 # Make sure the schema cookie is incremented by vacuum.
@@ -308,28 +308,28 @@ ifcapable {autoinc} {
       INSERT INTO autoinc(b) VALUES('there');
       DELETE FROM autoinc;
     }
-    set ::cksum [allcksum]
+    set ::cksum [cksum]
     expr {$::cksum!=""}
   } {1}
   do_test vacuum-9.2 {
     execsql {
       VACUUM;
     }
-    allcksum
+    cksum
   } $::cksum
   do_test vacuum-9.3 {
     execsql {
       INSERT INTO autoinc(b) VALUES('one');
       INSERT INTO autoinc(b) VALUES('two');
     }
-    set ::cksum [allcksum]
+    set ::cksum [cksum]
     expr {$::cksum!=""}
   } {1}
   do_test vacuum-9.4 {
     execsql {
       VACUUM;
     }
-    allcksum
+    cksum
   } $::cksum
 }
 

@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.100 2008/01/16 17:46:38 drh Exp $
+# $Id: tester.tcl,v 1.101 2008/01/17 02:36:28 drh Exp $
 
 
 set tcl_precision 15
@@ -603,7 +603,7 @@ proc cksum {{db db}} {
 # database $db. If the checksum of two databases is the same, and the
 # integrity-check passes for both, the two databases are identical.
 #
-proc allcksum {db} {
+proc allcksum {{db db}} {
   set ret [list]
   ifcapable tempdb {
     set sql {

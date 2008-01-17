@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the VACUUM statement.
 #
-# $Id: vacuum2.test,v 1.6 2008/01/16 17:46:38 drh Exp $
+# $Id: vacuum2.test,v 1.7 2008/01/17 02:36:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -76,9 +76,9 @@ do_test vacuum2-3.1 {
   }
   expr {[file size test.db]/$pageSize}
 } {3}
-set cksum [allcksum]
+set cksum [cksum]
 do_test vacuum2-3.2 {
-  allcksum db2
+  cksum db2
 } $cksum
 
 # Convert the database to an autovacuumed database.
@@ -90,10 +90,10 @@ do_test vacuum2-3.3 {
   expr {[file size test.db]/$pageSize}
 } {4}
 do_test vacuum2-3.4 {
-  allcksum db2
+  cksum db2
 } $cksum
 do_test vacuum2-3.5 {
-  allcksum
+  cksum
 } $cksum
 do_test vacuum2-3.6 {
   execsql {PRAGMA integrity_check} db2
@@ -111,10 +111,10 @@ do_test vacuum2-3.13 {
   expr {[file size test.db]/$pageSize}
 } {3}
 do_test vacuum2-3.14 {
-  allcksum db2
+  cksum db2
 } $cksum
 do_test vacuum2-3.15 {
-  allcksum
+  cksum
 } $cksum
 do_test vacuum2-3.16 {
   execsql {PRAGMA integrity_check} db2

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.167 2008/01/10 23:50:11 drh Exp $
+** $Id: update.c,v 1.168 2008/01/17 02:36:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -449,7 +449,7 @@ void sqlite3Update(
         sqlite3VdbeAddOp2(v, OP_Null, 0, regCols+i);
       }
     }
-    sqlite3VdbeAddOp3(v, OP_RegMakeRec, regCols, pTab->nCol, regRow);
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regCols, pTab->nCol, regRow);
     if( !isView ){
       sqlite3TableAffinityStr(v, pTab);
     }

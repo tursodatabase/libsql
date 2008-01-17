@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.157 2008/01/12 12:48:08 drh Exp $
+** $Id: delete.c,v 1.158 2008/01/17 02:36:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -58,24 +58,6 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
   }
 #endif
   return 0;
-}
-
-/*
-** Allocate nVal contiguous memory cells and return the index of the
-** first. Also pop nVal elements from the stack and store them in the 
-** registers. The element on the top of the stack is stored in the
-** register with the largest index.
-*/
-int sqlite3StackToReg(Parse *p, int nVal){
-  int i;
-  int iRet = p->nMem+1;
-  Vdbe *v = sqlite3GetVdbe(p);
-  assert(v);
-  p->nMem += nVal;
-  for(i=nVal-1; i>=0; i--){
-    sqlite3VdbeAddOp2(v, OP_Move, 0, iRet+i);
-  }
-  return iRet;
 }
 
 /*
@@ -519,7 +501,7 @@ int sqlite3GenerateIndexKey(
       sqlite3ColumnDefault(v, pTab, idx);
     }
   }
-  sqlite3VdbeAddOp3(v, OP_RegMakeRec, regBase, nCol+1, regOut);
+  sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol+1, regOut);
   sqlite3IndexAffinityStr(v, pIdx);
   sqlite3ReleaseTempRange(pParse, regBase, nCol+1);
   return regBase;
