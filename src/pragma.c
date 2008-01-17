@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.167 2008/01/17 02:36:28 drh Exp $
+** $Id: pragma.c,v 1.168 2008/01/17 16:22:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -252,7 +252,7 @@ void sqlite3Pragma(
   Db *pDb;
   Vdbe *v = pParse->pVdbe = sqlite3VdbeCreate(db);
   if( v==0 ) return;
-  pParse->nMem = 1;
+  pParse->nMem = 2;
 
   /* Interpret the [database.] part of the pragma statement. iDb is the
   ** index of the database this pragma is being applied to in db.aDb[]. */
@@ -321,12 +321,12 @@ void sqlite3Pragma(
       int size = atoi(zRight);
       if( size<0 ) size = -size;
       sqlite3BeginWriteOperation(pParse, 0, iDb);
-      sqlite3VdbeAddOp1(v, OP_Integer, size);
-      sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, 0, 2);
-      addr = sqlite3VdbeAddOp2(v, OP_IfPos, 0, 0);
-      sqlite3VdbeAddOp1(v, OP_Integer, -size);
+      sqlite3VdbeAddOp2(v, OP_Integer, size, 1);
+      sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, 2, 2);
+      addr = sqlite3VdbeAddOp2(v, OP_IfPos, 2, 0);
+      sqlite3VdbeAddOp2(v, OP_Integer, -size, 1);
       sqlite3VdbeJumpHere(v, addr);
-      sqlite3VdbeAddOp2(v, OP_SetCookie, iDb, 2);
+      sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, 2, 1);
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
     }
@@ -1109,8 +1109,8 @@ void sqlite3Pragma(
       /* Write the specified cookie value */
       static const VdbeOpList setCookie[] = {
         { OP_Transaction,    0,  1,  0},    /* 0 */
-        { OP_Integer,        0,  0,  0},    /* 1 */
-        { OP_SetCookie,      0,  0,  0},    /* 2 */
+        { OP_Integer,        0,  1,  0},    /* 1 */
+        { OP_SetCookie,      0,  0,  1},    /* 2 */
       };
       int addr = sqlite3VdbeAddOpList(v, ArraySize(setCookie), setCookie);
       sqlite3VdbeChangeP1(v, addr, iDb);

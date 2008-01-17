@@ -233,18 +233,15 @@ void sqlite3VdbeResolveLabel(Vdbe *p, int x){
 }
 
 /*
-** Loop through the program looking for P2 values that are negative.
-** Each such value is a label.  Resolve the label by setting the P2
-** value to its correct non-zero value.
+** Loop through the program looking for P2 values that are negative
+** on jump instructions.  Each such value is a label.  Resolve the
+** label by setting the P2 value to its correct non-zero value.
 **
 ** This routine is called once after all opcodes have been inserted.
 **
 ** Variable *pMaxFuncArgs is set to the maximum value of any P2 argument 
 ** to an OP_Function, OP_AggStep or OP_VFilter opcode. This is used by 
 ** sqlite3VdbeMakeReady() to size the Vdbe.apArg[] array.
-**
-** The integer *pMaxStack is set to the maximum number of vdbe stack
-** entries that static analysis reveals this program might need.
 **
 ** This routine also does the following optimization:  It scans for
 ** instructions that might cause a statement rollback.  Such instructions
@@ -259,10 +256,9 @@ void sqlite3VdbeResolveLabel(Vdbe *p, int x){
 ** is changed to a Noop.  In this way, we avoid creating the statement 
 ** journal file unnecessarily.
 */
-static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
+static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   int i;
   int nMaxArgs = 0;
-  int nMaxStack = p->nOp;
   Op *pOp;
   int *aLabel = p->aLabel;
   int doesStatementRollback = 0;
@@ -298,9 +294,6 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
       if( n>nMaxArgs ) nMaxArgs = n;
 #endif
     }
-    if( !sqlite3VdbeOpcodeHasProperty(opcode, OPFLG_PUSH) ){
-      nMaxStack--;
-    }
 
     if( sqlite3VdbeOpcodeHasProperty(opcode, OPFLG_JUMP) && pOp->p2<0 ){
       assert( -1-pOp->p2<p->nLabel );
@@ -311,7 +304,6 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs, int *pMaxStack){
   p->aLabel = 0;
 
   *pMaxFuncArgs = nMaxArgs;
-  *pMaxStack = nMaxStack;
 
   /* If we never rollback a statement transaction, then statement
   ** transactions are not needed.  So change every OP_Statement
@@ -739,7 +731,7 @@ static void releaseMemArray(Mem *p, int N){
   if( p ){
     while( N-->0 ){
       assert( N<2 || p[0].db==p[1].db );
-      sqlite3VdbeMemRelease(p++);
+      sqlite3VdbeMemSetNull(p++);
     }
   }
 }
@@ -751,6 +743,11 @@ static void releaseMemArray(Mem *p, int N){
 ** The interface is the same as sqlite3VdbeExec().  But instead of
 ** running the code, it invokes the callback once for each instruction.
 ** This feature is used to implement "EXPLAIN".
+**
+** When p->explain==1, each instruction is listed.  When
+** p->explain==2, only OP_Explain instructions are listed and these
+** are shown in a different format.  p->explain==2 is used to implement
+** EXPLAIN QUERY PLAN.
 */
 int sqlite3VdbeList(
   Vdbe *p                   /* The VDBE */
@@ -758,20 +755,18 @@ int sqlite3VdbeList(
   sqlite3 *db = p->db;
   int i;
   int rc = SQLITE_OK;
+  Mem *pMem = p->pResultSet = &p->aMem[1];
 
   assert( p->explain );
   if( p->magic!=VDBE_MAGIC_RUN ) return SQLITE_MISUSE;
   assert( db->magic==SQLITE_MAGIC_BUSY );
   assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
 
-  /* Even though this opcode does not put dynamic strings onto the
-  ** the stack, they may become dynamic if the user calls
+  /* Even though this opcode does not use dynamic strings for
+  ** the result, result columns may become dynamic if the user calls
   ** sqlite3_column_text16(), causing a translation to UTF-16 encoding.
   */
-  if( p->pResultSet ){
-    releaseMemArray(p->pResultSet, 5);
-    p->pResultSet = 0;
-  }
+  releaseMemArray(pMem, p->nMem);
 
   do{
     i = p->pc++;
@@ -785,7 +780,6 @@ int sqlite3VdbeList(
     sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(p->rc), (char*)0);
   }else{
     Op *pOp = &p->aOp[i];
-    Mem *pMem = p->pResultSet = p->aStack;
     if( p->explain==1 ){
       pMem->flags = MEM_Int;
       pMem->type = SQLITE_INTEGER;
@@ -846,7 +840,6 @@ int sqlite3VdbeList(
     }
 
     p->nResColumn = 8 - 5*(p->explain-1);
-    p->pTos = pMem;
     p->rc = SQLITE_OK;
     rc = SQLITE_ROW;
   }
@@ -935,36 +928,27 @@ void sqlite3VdbeMakeReady(
    */
   p->magic = VDBE_MAGIC_RUN;
 
-  /* No instruction ever pushes more than a single element onto the
-  ** stack.  And the stack never grows on successive executions of the
-  ** same loop.  So the total number of instructions is an upper bound
-  ** on the maximum stack depth required.  (Added later:)  The
-  ** resolveP2Values() call computes a tighter upper bound on the
-  ** stack size.
-  **
-  ** Allocation all the stack space we will ever need.
+  /*
+  ** Allocation space for registers.
   */
-  if( p->aStack==0 ){
+  if( p->aMem==0 ){
     int nArg;       /* Maximum number of args passed to a user function. */
-    int nStack;     /* Maximum number of stack entries required */
-    resolveP2Values(p, &nArg, &nStack);
+    resolveP2Values(p, &nArg);
     resizeOpArray(p, p->nOp);
     assert( nVar>=0 );
-    assert( nStack<p->nOp );
-    if( isExplain ){
-      nStack = 16;
+    if( isExplain && nMem<10 ){
+      p->nMem = nMem = 10;
     }
-    p->aStack = sqlite3DbMallocZero(db,
-        nStack*sizeof(p->aStack[0])    /* aStack */
-      + nArg*sizeof(Mem*)              /* apArg */
+    p->aMem = sqlite3DbMallocZero(db,
+        nMem*sizeof(Mem)               /* aMem */
       + nVar*sizeof(Mem)               /* aVar */
+      + nArg*sizeof(Mem*)              /* apArg */
       + nVar*sizeof(char*)             /* azVar */
-      + nMem*sizeof(Mem)               /* aMem */
       + nCursor*sizeof(Cursor*) + 1    /* apCsr */
     );
     if( !db->mallocFailed ){
-      p->aMem = &p->aStack[nStack-1];  /* aMem[] goes from 1..nMem */
-      p->nMem = nMem;                  /*       not from 0..nMem-1 */
+      p->aMem--;             /* aMem[] goes from 1..nMem */
+      p->nMem = nMem;        /*       not from 0..nMem-1 */
       p->aVar = &p->aMem[nMem+1];
       p->nVar = nVar;
       p->okVar = 0;
@@ -976,23 +960,24 @@ void sqlite3VdbeMakeReady(
         p->aVar[n].flags = MEM_Null;
         p->aVar[n].db = db;
       }
-      for(n=0; n<nStack; n++){
-        p->aStack[n].db = db;
+      for(n=1; n<=nMem; n++){
+        p->aMem[n].flags = MEM_Null;
+        p->aMem[n].db = db;
       }
     }
   }
-  for(n=1; n<=p->nMem; n++){
-    p->aMem[n].flags = MEM_Null;
-    p->aMem[n].db = db;
+#ifdef SQLITE_DEBUG
+  for(n=1; n<p->nMem; n++){
+    assert( p->aMem[n].db==db );
+    assert( p->aMem[n].flags==MEM_Null );
   }
+#endif
 
-  p->pTos = &p->aStack[-1];
   p->pc = -1;
   p->rc = SQLITE_OK;
   p->uniqueCnt = 0;
   p->returnDepth = 0;
   p->errorAction = OE_Abort;
-  p->popStack =  0;
   p->explain |= isExplain;
   p->magic = VDBE_MAGIC_RUN;
   p->nChange = 0;
@@ -1065,10 +1050,6 @@ static void closeAllCursorsExceptActiveVtabs(Vdbe *p){
 */
 static void Cleanup(Vdbe *p){
   int i;
-  if( p->aStack ){
-    releaseMemArray(p->aStack, 1 + (p->pTos - p->aStack));
-    p->pTos = &p->aStack[-1];
-  }
   closeAllCursorsExceptActiveVtabs(p);
   releaseMemArray(&p->aMem[1], p->nMem);
   sqlite3VdbeFifoClear(&p->sFifo);
@@ -1664,7 +1645,6 @@ int sqlite3VdbeReset(Vdbe *p){
 
   /* Save profiling information from this VDBE run.
   */
-  assert( p->pTos<&p->aStack[p->pc<0?0:p->pc] || !p->aStack );
 #ifdef VDBE_PROFILE
   {
     FILE *out = fopen("vdbe_profile.out", "a");
@@ -1755,7 +1735,9 @@ void sqlite3VdbeDelete(Vdbe *p){
   }
   releaseMemArray(p->aVar, p->nVar);
   sqlite3_free(p->aLabel);
-  sqlite3_free(p->aStack);
+  if( p->aMem ){
+    sqlite3_free(&p->aMem[1]);
+  }
   releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
   sqlite3_free(p->aColName);
   sqlite3_free(p->zSql);

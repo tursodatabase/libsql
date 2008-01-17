@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.68 2008/01/12 19:03:49 drh Exp $
+** $Id: attach.c,v 1.69 2008/01/17 16:22:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -327,7 +327,7 @@ static void codeAttach(
   }
 
   v = sqlite3GetVdbe(pParse);
-  regArgs = sqlite3GetTempRange(pParse, nFunc);
+  regArgs = sqlite3GetTempRange(pParse, 3);
   sqlite3ExprCode(pParse, pFilename, regArgs);
   sqlite3ExprCode(pParse, pDbname, regArgs+1);
   sqlite3ExprCode(pParse, pKey, regArgs+2);

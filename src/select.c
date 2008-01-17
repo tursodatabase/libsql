@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.403 2008/01/17 02:36:28 drh Exp $
+** $Id: select.c,v 1.404 2008/01/17 16:22:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -583,11 +583,14 @@ static int selectInnerLoop(
     */
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
     case SRT_Union: {
-      sqlite3VdbeAddOp2(v, OP_MakeRecord, iMem, nColumn);
+      int r1;
+      r1 = sqlite3GetTempReg(pParse);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, iMem, nColumn, r1);
       if( aff ){
         sqlite3VdbeChangeP4(v, -1, aff, P4_STATIC);
       }
-      sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, 0);
+      sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, r1);
+      sqlite3ReleaseTempReg(pParse, r1);
       break;
     }
 
@@ -596,11 +599,13 @@ static int selectInnerLoop(
     ** the temporary table iParm.
     */
     case SRT_Except: {
-      int addr;
-      addr = sqlite3VdbeAddOp2(v, OP_MakeRecord, iMem, nColumn);
+      int addr, r1;
+      r1 = sqlite3GetTempReg(pParse);
+      addr = sqlite3VdbeAddOp3(v, OP_MakeRecord, iMem, nColumn, r1);
       sqlite3VdbeChangeP4(v, -1, aff, P4_STATIC);
-      sqlite3VdbeAddOp2(v, OP_NotFound, iParm, addr+3);
-      sqlite3VdbeAddOp2(v, OP_Delete, iParm, 0);
+      sqlite3VdbeAddOp3(v, OP_NotFound, iParm, addr+3, r1);
+      sqlite3VdbeAddOp1(v, OP_Delete, iParm);
+      sqlite3ReleaseTempReg(pParse, r1);
       break;
     }
 #endif
@@ -2067,6 +2072,7 @@ static int multiSelect(
       Expr *pLimit, *pOffset;
       int addr;
       SelectDest intersectdest;
+      int r1;
 
       /* INTERSECT is different from the others since it requires
       ** two temporary tables.  Hence it has its own case.  Begin
@@ -2127,8 +2133,10 @@ static int multiSelect(
       iCont = sqlite3VdbeMakeLabel(v);
       computeLimitRegisters(pParse, p, iBreak);
       sqlite3VdbeAddOp2(v, OP_Rewind, tab1, iBreak);
-      iStart = sqlite3VdbeAddOp1(v, OP_RowKey, tab1);
-      sqlite3VdbeAddOp2(v, OP_NotFound, tab2, iCont);
+      r1 = sqlite3GetTempReg(pParse);
+      iStart = sqlite3VdbeAddOp2(v, OP_RowKey, tab1, r1);
+      sqlite3VdbeAddOp3(v, OP_NotFound, tab2, iCont, r1);
+      sqlite3ReleaseTempReg(pParse, r1);
       rc = selectInnerLoop(pParse, p, p->pEList, tab1, p->pEList->nExpr,
                              pOrderBy, -1, &dest, iCont, iBreak, 0);
       if( rc ){

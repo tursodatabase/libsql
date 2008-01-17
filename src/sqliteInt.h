@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.650 2008/01/17 02:36:28 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.651 2008/01/17 16:22:15 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1819,7 +1819,7 @@ void sqlite3RegisterDateTimeFunctions(sqlite3*);
 int sqlite3SafetyOn(sqlite3*);
 int sqlite3SafetyOff(sqlite3*);
 int sqlite3SafetyCheck(sqlite3*);
-void sqlite3ChangeCookie(sqlite3*, Vdbe*, int);
+void sqlite3ChangeCookie(Parse*, int);
 
 #ifndef SQLITE_OMIT_TRIGGER
   void sqlite3BeginTrigger(Parse*, Token*,Token*,int,int,IdList*,SrcList*,

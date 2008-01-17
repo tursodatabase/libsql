@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.158 2008/01/17 02:36:28 drh Exp $
+** $Id: delete.c,v 1.159 2008/01/17 16:22:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -317,7 +317,6 @@ void sqlite3DeleteFrom(
       sqlite3VdbeResolveLabel(v, addr);
     }
     addr = sqlite3VdbeAddOp2(v, OP_FifoRead, iRowid, end);
-    sqlite3VdbeAddOp1(v, OP_StackDepth, -1);
 
     if( triggers_exist ){
       int iData = ++pParse->nMem;   /* For storing row data of OLD table */
@@ -458,12 +457,15 @@ void sqlite3GenerateRowIndexDelete(
 ){
   int i;
   Index *pIdx;
+  int r1;
 
+  r1 = sqlite3GetTempReg(pParse);
   for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
     if( aRegIdx!=0 && aRegIdx[i-1]==0 ) continue;
-    sqlite3GenerateIndexKey(pParse, pIdx, iCur, 0);
-    sqlite3VdbeAddOp2(pParse->pVdbe, OP_IdxDelete, iCur+i, 0);
+    sqlite3GenerateIndexKey(pParse, pIdx, iCur, r1);
+    sqlite3VdbeAddOp2(pParse->pVdbe, OP_IdxDelete, iCur+i, r1);
   }
+  sqlite3ReleaseTempReg(pParse, r1);
 }
 
 /*

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.61 2008/01/12 12:48:08 drh Exp $
+** $Id: vtab.c,v 1.62 2008/01/17 16:22:15 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -276,7 +276,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     );
     sqlite3_free(zStmt);
     v = sqlite3GetVdbe(pParse);
-    sqlite3ChangeCookie(db, v, iDb);
+    sqlite3ChangeCookie(pParse, iDb);
 
     sqlite3VdbeAddOp2(v, OP_Expire, 0, 0);
     zWhere = sqlite3MPrintf(db, "name='%q'", pTab->zName);

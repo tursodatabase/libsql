@@ -291,8 +291,6 @@ struct Vdbe {
   int nLabel;         /* Number of labels used */
   int nLabelAlloc;    /* Number of slots allocated in aLabel[] */
   int *aLabel;        /* Space to hold the labels */
-  Mem *aStack;        /* The operand stack, except string values */
-  Mem *pTos;          /* Top entry in the operand stack */
   Mem **apArg;        /* Arguments to currently executing user function */
   Mem *aColName;      /* Column names to return */
   int nCursor;        /* Number of slots in apCsr[] */
@@ -319,7 +317,6 @@ struct Vdbe {
   int returnDepth;        /* Next unused element in returnStack[] */
   int nResColumn;         /* Number of columns in one row of the result set */
   char **azResColumn;     /* Values for one row of result */ 
-  int popStack;           /* Pop the stack this much on entry to VdbeExec() */
   char *zErrMsg;          /* Error message written here */
   Mem *pResultSet;        /* Pointer to an array of results */
   u8 explain;             /* True if EXPLAIN present on SQL command */

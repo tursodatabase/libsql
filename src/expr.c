@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.346 2008/01/17 02:36:28 drh Exp $
+** $Id: expr.c,v 1.347 2008/01/17 16:22:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1848,7 +1848,7 @@ static char *dup8bytes(Vdbe *v, const char *in){
 
 /*
 ** Generate an instruction that will put the floating point
-** value described by z[0..n-1] on the stack.
+** value described by z[0..n-1] into register iMem.
 **
 ** The z[] string will probably not be zero-terminated.  But the 
 ** z[n] character is guaranteed to be something that does not look
@@ -1870,7 +1870,7 @@ static void codeReal(Vdbe *v, const char *z, int n, int negateFlag, int iMem){
 
 /*
 ** Generate an instruction that will put the integer describe by
-** text z[0..n-1] on the stack.
+** text z[0..n-1] into register iMem.
 **
 ** The z[] string will probably not be zero-terminated.  But the 
 ** z[n] character is guaranteed to be something that does not look
@@ -1900,8 +1900,8 @@ static void codeInteger(Vdbe *v, const char *z, int n, int negFlag, int iMem){
 
 /*
 ** Generate code that will extract the iColumn-th column from
-** table pTab and store the column value in register iMem, or on
-** the stack if iMem==0.  There is an open cursor to pTab in 
+** table pTab and store the column value in register iReg.
+** There is an open cursor to pTab in 
 ** iTable.  If iColumn<0 then code is generated that extracts the rowid.
 */
 void sqlite3ExprCodeGetColumn(
@@ -1948,7 +1948,7 @@ static int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
   int r1, r2, r3;           /* Various register numbers */
 
   assert( v!=0 || pParse->db->mallocFailed );
-  assert( target>=0 );
+  assert( target>0 && target<=pParse->nMem );
   if( v==0 ) return 0;
 
   if( pExpr==0 ){
@@ -2417,11 +2417,13 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
 ** in register target.
 */
 int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
-  int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
+  int inReg;
+
+  assert( target>0 && target<=pParse->nMem );
+  inReg = sqlite3ExprCodeTarget(pParse, pExpr, target);
   assert( pParse->pVdbe || pParse->db->mallocFailed );
   if( inReg!=target && pParse->pVdbe ){
-    sqlite3VdbeAddOp2(pParse->pVdbe, (inReg>0 ? OP_SCopy : OP_Move), 
-                      inReg, target);
+    sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, inReg, target);
   }
   return target;
 }
@@ -2461,8 +2463,7 @@ int sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
 
 /*
 ** Generate code that pushes the value of every element of the given
-** expression list onto the stack if target==0 or into a sequence of
-** registers beginning at target.
+** expression list into a sequence of registers beginning at target.
 **
 ** Return the number of elements evaluated.
 */
@@ -2472,19 +2473,16 @@ int sqlite3ExprCodeExprList(
   int target         /* Where to write results */
 ){
   struct ExprList_item *pItem;
-  int i, n, incr = 1;
+  int i, n;
   assert( pList!=0 || pParse->db->mallocFailed );
   if( pList==0 ){
     return 0;
   }
-  assert( target>=0 );
+  assert( target>0 );
   n = pList->nExpr;
-  if( target==0 ){
-    incr = 0;
-  }
   for(pItem=pList->a, i=n; i>0; i--, pItem++){
     sqlite3ExprCode(pParse, pItem->pExpr, target);
-    target += incr; 
+    target++;
   }
   return n;
 }

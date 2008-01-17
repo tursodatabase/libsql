@@ -240,7 +240,7 @@ void sqlite3FinishTrigger(
        db->aDb[iDb].zName, SCHEMA_TABLE(iDb), pTrig->name,
        pTrig->table, z);
     sqlite3_free(z);
-    sqlite3ChangeCookie(db, v, iDb);
+    sqlite3ChangeCookie(pParse, iDb);
     sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0, sqlite3MPrintf(
         db, "type='trigger' AND name='%q'", pTrig->name), P4_DYNAMIC
     );
@@ -538,7 +538,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
     base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
     sqlite3VdbeChangeP4(v, base+1, pTrigger->name, 0);
     sqlite3VdbeChangeP4(v, base+4, "trigger", P4_STATIC);
-    sqlite3ChangeCookie(db, v, iDb);
+    sqlite3ChangeCookie(pParse, iDb);
     sqlite3VdbeAddOp2(v, OP_Close, 0, 0);
     sqlite3VdbeAddOp4(v, OP_DropTrigger, iDb, 0, 0, pTrigger->name, 0);
   }

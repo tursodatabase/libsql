@@ -13,7 +13,7 @@
 #
 #     <value> IN (SELECT <column> FROM <table>)
 #
-# $Id: in3.test,v 1.2 2007/12/10 05:03:48 danielk1977 Exp $
+# $Id: in3.test,v 1.3 2008/01/17 16:22:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -266,4 +266,3 @@ do_test in3-4.6 {
 } {}
 
 finish_test
-

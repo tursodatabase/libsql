@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.466 2008/01/17 02:36:28 drh Exp $
+** $Id: build.c,v 1.467 2008/01/17 16:22:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1277,9 +1277,13 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
 ** and the probability of hitting the same cookie value is only
 ** 1 chance in 2^32.  So we're safe enough.
 */
-void sqlite3ChangeCookie(sqlite3 *db, Vdbe *v, int iDb){
-  sqlite3VdbeAddOp2(v, OP_Integer, db->aDb[iDb].pSchema->schema_cookie+1, 0);
-  sqlite3VdbeAddOp2(v, OP_SetCookie, iDb, 0);
+void sqlite3ChangeCookie(Parse *pParse, int iDb){
+  int r1 = sqlite3GetTempReg(pParse);
+  sqlite3 *db = pParse->db;
+  Vdbe *v = pParse->pVdbe;
+  sqlite3VdbeAddOp2(v, OP_Integer, db->aDb[iDb].pSchema->schema_cookie+1, r1);
+  sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, 0, r1);
+  sqlite3ReleaseTempReg(pParse, r1);
 }
 
 /*
@@ -1544,7 +1548,7 @@ void sqlite3EndTable(
       pParse->regRowid
     );
     sqlite3_free(zStmt);
-    sqlite3ChangeCookie(db, v, iDb);
+    sqlite3ChangeCookie(pParse, iDb);
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT
     /* Check to see if we need to create an sqlite_sequence table for
@@ -2066,7 +2070,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
       sqlite3VdbeAddOp4(v, OP_VDestroy, iDb, 0, 0, pTab->zName, 0);
     }
     sqlite3VdbeAddOp4(v, OP_DropTable, iDb, 0, 0, pTab->zName, 0);
-    sqlite3ChangeCookie(db, v, iDb);
+    sqlite3ChangeCookie(pParse, iDb);
   }
   sqliteViewResetAll(db, iDb);
 
@@ -2688,7 +2692,7 @@ void sqlite3CreateIndex(
     */
     if( pTblName ){
       sqlite3RefillIndex(pParse, pIndex, iMem);
-      sqlite3ChangeCookie(db, v, iDb);
+      sqlite3ChangeCookie(pParse, iDb);
       sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0,
          sqlite3MPrintf(db, "name='%q'", pIndex->zName), P4_DYNAMIC);
       sqlite3VdbeAddOp1(v, OP_Expire, 0);
@@ -2840,7 +2844,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
        db->aDb[iDb].zName, SCHEMA_TABLE(iDb),
        pIndex->zName
     );
-    sqlite3ChangeCookie(db, v, iDb);
+    sqlite3ChangeCookie(pParse, iDb);
     destroyRootPage(pParse, pIndex->tnum, iDb);
     sqlite3VdbeAddOp4(v, OP_DropIndex, iDb, 0, 0, pIndex->zName, 0);
   }

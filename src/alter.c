@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.39 2008/01/04 22:01:03 drh Exp $
+** $Id: alter.c,v 1.40 2008/01/17 16:22:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -353,7 +353,7 @@ void sqlite3AlterRenameTable(
     goto exit_rename_table;
   }
   sqlite3BeginWriteOperation(pParse, isVirtualRename, iDb);
-  sqlite3ChangeCookie(db, v, iDb);
+  sqlite3ChangeCookie(pParse, iDb);
 
   /* If this is a virtual table, invoke the xRename() function if
   ** one is defined. The xRename() callback will modify the names
@@ -621,7 +621,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   v = sqlite3GetVdbe(pParse);
   if( !v ) goto exit_begin_add_column;
-  sqlite3ChangeCookie(db, v, iDb);
+  sqlite3ChangeCookie(pParse, iDb);
 
 exit_begin_add_column:
   sqlite3SrcListDelete(pSrc);
