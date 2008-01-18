@@ -155,6 +155,16 @@ static CrashGlobal g = {0, 0, SQLITE_DEFAULT_SECTOR_SIZE, 0, 0};
 */
 static int sqlite3CrashTestEnable = 0;
 
+static void *crash_malloc(int nByte){
+  return (void *)Tcl_Alloc((size_t)nByte);
+}
+static void crash_free(void *p){
+  Tcl_Free(p);
+}
+static void *crash_realloc(void *p, int n){
+  return (void *)Tcl_Realloc(p, (size_t)n);
+}
+
 /*
 ** Flush the write-list as if xSync() had been called on file handle
 ** pFile. If isCrash is true, simulate a crash.
@@ -263,7 +273,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
           );
         }
 #endif
-        sqlite3_free(pWrite);
+        crash_free(pWrite);
         break;
       }
       case 2: {               /* Do nothing */
@@ -290,7 +300,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
         );
 #endif
 
-        zGarbage = sqlite3_malloc(g.iSectorSize);
+        zGarbage = crash_malloc(g.iSectorSize);
         if( zGarbage ){
           sqlite3_int64 i;
           for(i=iFirst; rc==SQLITE_OK && i<=iLast; i++){
@@ -299,7 +309,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
               pRealFile, zGarbage, g.iSectorSize, i*g.iSectorSize
             );
           }
-          sqlite3_free(zGarbage);
+          crash_free(zGarbage);
         }else{
           rc = SQLITE_NOMEM;
         }
@@ -338,10 +348,11 @@ static int writeListAppend(
 
   assert((zBuf && nBuf) || (!nBuf && !zBuf));
 
-  pNew = (WriteBuffer *)sqlite3MallocZero(sizeof(WriteBuffer) + nBuf);
+  pNew = (WriteBuffer *)crash_malloc(sizeof(WriteBuffer) + nBuf);
   if( pNew==0 ){
     fprintf(stderr, "out of memory in the crash simulator\n");
   }
+  memset(pNew, 0, sizeof(WriteBuffer)+nBuf);
   pNew->iOffset = iOffset;
   pNew->nBuf = nBuf;
   pNew->pFile = (CrashFile *)pFile;
@@ -407,7 +418,7 @@ static int cfWrite(
   while( pCrash->iSize>pCrash->nData ){
     u8 *zNew;
     int nNew = (pCrash->nData*2) + 4096;
-    zNew = sqlite3_realloc(pCrash->zData, nNew);
+    zNew = crash_realloc(pCrash->zData, nNew);
     if( !zNew ){
       return SQLITE_NOMEM;
     }
@@ -549,7 +560,7 @@ static int cfOpen(
   }
   if( rc==SQLITE_OK ){
     pWrapper->nData = (4096 + pWrapper->iSize);
-    pWrapper->zData = sqlite3_malloc(pWrapper->nData);
+    pWrapper->zData = crash_malloc(pWrapper->nData);
     if( pWrapper->zData ){
       memset(pWrapper->zData, 0, pWrapper->nData);
       rc = sqlite3OsRead(pReal, pWrapper->zData, pWrapper->iSize, 0); 

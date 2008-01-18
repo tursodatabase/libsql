@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.401 2008/01/18 11:33:16 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.402 2008/01/18 13:42:55 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -5052,6 +5052,13 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
     ** Pager.aInJournal bit has been set. This needs to be remedied by loading
     ** the page into the pager-cache and setting the PgHdr.needSync flag.
     **
+    ** If the attempt to load the page into the page-cache fails, (due
+    ** to a malloc() or IO failure), clear the bit in the aInJournal[]
+    ** array. Otherwise, if the page is loaded and written again in
+    ** this transaction, it may be written to the database file before
+    ** it is synced into the journal file. This way, it may end up in
+    ** the journal file twice, but that is not a problem.
+    **
     ** The sqlite3PagerGet() call may cause the journal to sync. So make
     ** sure the Pager.needSync flag is set too.
     */
@@ -5060,6 +5067,9 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
     assert( pPager->needSync );
     rc = sqlite3PagerGet(pPager, needSyncPgno, &pPgHdr);
     if( rc!=SQLITE_OK ){
+      if( pPager->aInJournal && (int)needSyncPgno<=pPager->origDbSize ){
+        pPager->aInJournal[needSyncPgno/8] &= ~(1<<(needSyncPgno&7));
+      }
       pagerLeave(pPager);
       return rc;
     }
