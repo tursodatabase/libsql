@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\stest\sscripts\sthat\swas\spreventing\smany\sscripts\sfrom\nrunning\swith\sall.test.\s\sLots\sof\shidden\sfailures\snow\scome\sto\slight.\s(CVS\s4723)
-D 2008-01-18T02:31:56
+C Add\sa\scouple\sof\smissing\scalls\sto\spagerLeave().\s(CVS\s4724)
+D 2008-01-18T11:33:16
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -124,7 +124,7 @@ F src/os_unix.c e4daef7628f690fa2b188af3632fb18f96525946
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c832d528ea774c7094d887749d71884984c9034c
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 0cb6ccea4b9615627d61d7c4417cedc45776d429
+F src/pager.c cf40ab8f57884ce1b5a355c0e42cdbaceaa42de0
 F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
 F src/parse.y 2ae06e8d3190faace49c5b82e7cea1fc60d084a1
 F src/pragma.c 155315ee3e6a861a0060ba4d184dfffd08ebbc03
@@ -606,7 +606,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a676f949b68c968d7e71aceb060c1639b42ba680
-R 93839145c08ea324c5b675c4f45479fc
-U drh
-Z 1ea0b43eccaa7ba550cce0e2e929012f
+P 251c78a982a33194a052897c37a2a79ae9654452
+R c0ed04846e95ed3c4b78c2b81c8b73fe
+U danielk1977
+Z a0c52f569e9f496fa4f45cbe77dad52f

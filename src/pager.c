@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.400 2007/12/13 21:54:11 drh Exp $
+** @(#) $Id: pager.c,v 1.401 2008/01/18 11:33:16 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4385,8 +4385,11 @@ void sqlite3PagerDontRollback(DbPage *pPg){
 
   pagerEnter(pPager);
   assert( pPager->state>=PAGER_RESERVED );
-  if( pPager->journalOpen==0 ) return;
-  if( pPg->alwaysRollback || pPager->alwaysRollback || MEMDB ) return;
+  if( pPager->journalOpen==0 || pPg->alwaysRollback 
+   || pPager->alwaysRollback || MEMDB ){
+    pagerLeave(pPager);
+    return;
+  }
   if( !pPg->inJournal && (int)pPg->pgno <= pPager->origDbSize ){
     assert( pPager->aInJournal!=0 );
     pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
@@ -4638,6 +4641,7 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
 #endif
     pPager->pStmt = 0;
     pPager->state = PAGER_SHARED;
+    pagerLeave(pPager);
     return SQLITE_OK;
   }
   assert( pPager->journalOpen || !pPager->dirtyCache );
@@ -4965,7 +4969,7 @@ void sqlite3PagerSetCodec(
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
-** Move the page pPg to location pgno in the file. 
+** Move the page pPg to location pgno in the file.
 **
 ** There must be no references to the page previously located at
 ** pgno (which we call pPgOld) though that page is allowed to be
@@ -5055,7 +5059,10 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
     PgHdr *pPgHdr;
     assert( pPager->needSync );
     rc = sqlite3PagerGet(pPager, needSyncPgno, &pPgHdr);
-    if( rc!=SQLITE_OK ) return rc;
+    if( rc!=SQLITE_OK ){
+      pagerLeave(pPager);
+      return rc;
+    }
     pPager->needSync = 1;
     pPgHdr->needSync = 1;
     pPgHdr->inJournal = 1;
