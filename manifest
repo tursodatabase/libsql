@@ -1,5 +1,5 @@
-C Test\scoverage\sfor\sdate.c.\s(CVS\s4722)
-D 2008-01-17T22:27:54
+C Fix\sa\sbug\sin\sthe\stest\sscripts\sthat\swas\spreventing\smany\sscripts\sfrom\nrunning\swith\sall.test.\s\sLots\sof\shidden\sfailures\snow\scome\sto\slight.\s(CVS\s4723)
+D 2008-01-18T02:31:56
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -92,7 +92,7 @@ F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 8ce763c68143b1e8fb6f79dcfc8b801853c97017
 F src/delete.c 739ccbab8fa7478762bded5c9cc67f16a4d09dbe
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c f13ad688f64d93efe6c4f86c46e9d172d9166217
+F src/expr.c 3162c112a327bb81aa5c38d6416b31af3569e7cd
 F src/func.c 996071cf0af9d967e58b69fce1909555059ebc7d
 F src/hash.c 45a7005aac044b6c86bd7e49c44bc15d30006d6c
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
@@ -393,7 +393,7 @@ F test/misc7.test b7f829bc371981503de5229683c078e793c39c96
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
-F test/onefile.test b9cce375fd2a41ee3afa79a0a808954046b74458
+F test/onefile.test 5af2867a8097cea08f15de5382b8d57d1219d8e3
 F test/openv2.test f5dd6b23e4dce828eb211649b600763c42a668df
 F test/pager.test 60303481b22b240c18d6dd1b64edcecc2f4b5a97
 F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
@@ -606,7 +606,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 495fb41626dfbfbeeb748675b9476a4f7cec6c7a
-R 44b7cf7c7631ced0327987df0e419a17
+P a676f949b68c968d7e71aceb060c1639b42ba680
+R 93839145c08ea324c5b675c4f45479fc
 U drh
-Z 08c8b2a3ecf57a5c9fe6eb42188de03e
+Z 1ea0b43eccaa7ba550cce0e2e929012f

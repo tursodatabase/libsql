@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.348 2008/01/17 17:15:56 drh Exp $
+** $Id: expr.c,v 1.349 2008/01/18 02:31:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2054,9 +2054,6 @@ static int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       assert( TK_GE==OP_Ge );
       assert( TK_EQ==OP_Eq );
       assert( TK_NE==OP_Ne );
-      if( target==0 ){
-        inReg = ++pParse->nMem;
-      }
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
@@ -2225,9 +2222,6 @@ static int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       */
       affinity = comparisonAffinity(pExpr);
 
-      if( target==0 ){
-        target = inReg = ++pParse->nMem;
-      }
       sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
 
       /* Code the <expr> from "<expr> IN (...)". The temporary table
@@ -2271,9 +2265,6 @@ static int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       struct ExprList_item *pLItem = pExpr->pList->a;
       Expr *pRight = pLItem->pExpr;
 
-      if( target==0 ){
-        inReg = target = ++pParse->nMem;
-      }
       r1 = sqlite3ExprCodeTemp(pParse, pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pRight, &regFree2);
       r3 = sqlite3GetTempReg(pParse);

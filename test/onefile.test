@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: onefile.test,v 1.2 2007/10/03 08:46:45 danielk1977 Exp $
+# $Id: onefile.test,v 1.3 2008/01/18 02:31:56 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -18,7 +18,7 @@ proc finish_test {} {
 }
 set ISQUICK 1
 
-set INCLUDE {
+set onefile_INCLUDE {
   conflict.test
   insert.test
   insert2.test
@@ -29,7 +29,7 @@ set INCLUDE {
   select3.test
   temptable.test
 }
-#set INCLUDE insert2.test
+#set onefile_INCLUDE insert2.test
 
 rename sqlite3 really_sqlite3
 proc sqlite3 {args} {
@@ -46,7 +46,7 @@ proc do_test {name args} {
 
 foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
   set tail [file tail $testfile]
-  if {[lsearch -exact $INCLUDE $tail]<0} continue
+  if {[lsearch -exact $onefile_INCLUDE $tail]<0} continue
   source $testfile
 }
 
