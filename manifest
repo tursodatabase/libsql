@@ -1,5 +1,5 @@
-C Remove\sthe\sOP_HexBlob\sinstruction\sand\scode\sOP_Blob\sdirectly.\s\sReduce\nthe\samount\sof\smemory\sallocation\srequired\sto\sencode\sblob\sliterals.\nRemove\sthe\s"out2"\sinstruction\stype.\s\sOther\sminor\soptimizations.\s(CVS\s4726)
-D 2008-01-18T14:08:24
+C Remove\san\sabsolute\spath\sfrom\scrash5.test.\s(CVS\s4727)
+D 2008-01-18T14:17:21
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -243,7 +243,7 @@ F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 26d7a4c5520201e5de2c696ea51ab946b59dc0e9
 F test/crash3.test 0b09687ae1a3ccbcefdfaeb4b963e26e36255d76
 F test/crash4.test 02ff4f15c149ca1e88a5c299b4896c84d9450c3b
-F test/crash5.test 0a20b3c310323f1c6595e2866e238aa4c467eef3
+F test/crash5.test c7ddcf7ca83abc19901b977732144234ac72a938
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/date.test 51734f3798f338e3f75107aff5a057ae0ff7006c
@@ -607,7 +607,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 65245d9904db19568d5092926b27f0c193c9ef0b
-R c6c3d74ac2d09449d8755683e74bd3ff
-U drh
-Z c2b446e375b2c9192c3331b9823798c0
+P 0e50c0200a3c1c04e63cbb55a7255cdbbd225347
+R 3753b0c2de5fbbcc041b9b25fee133ae
+U danielk1977
+Z b72303278d403e250382104a3d30e8dd
