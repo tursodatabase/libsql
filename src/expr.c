@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.349 2008/01/18 02:31:56 drh Exp $
+** $Id: expr.c,v 1.350 2008/01/18 14:08:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2004,14 +2004,15 @@ static int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_BLOB: {
       int n;
       const char *z;
-      assert( TK_BLOB==OP_HexBlob );
+      char *zBlob;
+      assert( pExpr->token.n>=3 );
+      assert( pExpr->token.z[0]=='x' || pExpr->token.z[0]=='X' );
+      assert( pExpr->token.z[1]=='\'' );
+      assert( pExpr->token.z[pExpr->token.n-1]=='\'' );
       n = pExpr->token.n - 3;
       z = (char*)pExpr->token.z + 2;
-      assert( n>=0 );
-      if( n==0 ){
-        z = "";
-      }
-      sqlite3VdbeAddOp4(v, op, 0, target, 0, z, n);
+      zBlob = sqlite3HexToBlob(sqlite3VdbeDb(v), z, n);
+      sqlite3VdbeAddOp4(v, OP_Blob, n/2, target, 0, zBlob, P4_DYNAMIC);
       break;
     }
 #endif

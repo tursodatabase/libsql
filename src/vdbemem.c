@@ -989,13 +989,15 @@ int sqlite3ValueFromExpr(
 #ifndef SQLITE_OMIT_BLOB_LITERAL
   else if( op==TK_BLOB ){
     int nVal;
+    assert( pExpr->token.n>=3 );
+    assert( pExpr->token.z[0]=='x' || pExpr->token.z[0]=='X' );
+    assert( pExpr->token.z[1]=='\'' );
+    assert( pExpr->token.z[pExpr->token.n-1]=='\'' );
     pVal = sqlite3ValueNew(db);
-    zVal = sqlite3StrNDup((char*)pExpr->token.z+1, pExpr->token.n-1);
-    if( !zVal || !pVal ) goto no_mem;
-    sqlite3Dequote(zVal);
-    nVal = strlen(zVal)/2;
-    sqlite3VdbeMemSetStr(pVal, sqlite3HexToBlob(db, zVal), nVal,0,sqlite3_free);
-    sqlite3_free(zVal);
+    nVal = pExpr->token.n - 3;
+    zVal = (char*)pExpr->token.z + 2;
+    sqlite3VdbeMemSetStr(pVal, sqlite3HexToBlob(db, zVal, nVal), nVal/2,
+                         0, sqlite3_free);
   }
 #endif
 

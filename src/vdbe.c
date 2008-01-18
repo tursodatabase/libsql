@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.698 2008/01/17 16:22:15 drh Exp $
+** $Id: vdbe.c,v 1.699 2008/01/18 14:08:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -92,6 +92,11 @@ int sqlite3_sort_count = 0;
 */
 #ifdef SQLITE_TEST
 int sqlite3_max_blobsize = 0;
+static void updateMaxBlobsize(Mem *p){
+  if( (p->flags & (MEM_Str|MEM_Blob))!=0 && p->n>sqlite3_max_blobsize ){
+    sqlite3_max_blobsize = p->n;
+  }
+}
 #endif
 
 /*
@@ -99,9 +104,7 @@ int sqlite3_max_blobsize = 0;
 ** If it does, record the new maximum blob size.
 */
 #ifdef SQLITE_TEST
-# define UPDATE_MAX_BLOBSIZE(P)  if( ((P)->flags&(MEM_Str|MEM_Blob))!=0 \
-                                      && (P)->n>sqlite3_max_blobsize ) \
-                                          {sqlite3_max_blobsize = (P)->n;}
+# define UPDATE_MAX_BLOBSIZE(P)  updateMaxBlobsize(P)
 #else
 # define UPDATE_MAX_BLOBSIZE(P)
 #endif
@@ -509,7 +512,7 @@ int sqlite3VdbeExec(
   int nProgressOps = 0;      /* Opcodes executed since progress callback. */
 #endif
 
-  if( p->magic!=VDBE_MAGIC_RUN ) return SQLITE_MISUSE;
+  assert( p->magic==VDBE_MAGIC_RUN );  /* sqlite3_step() verifies this */
   assert( db->magic==SQLITE_MAGIC_BUSY );
   sqlite3BtreeMutexArrayEnter(&p->aMutex);
   if( p->rc==SQLITE_NOMEM ){
@@ -621,7 +624,6 @@ int sqlite3VdbeExec(
     **           in1 in2
     **           in1 in2 out3
     **           in1 in3
-    **           in1 out2
     **
     ** Variables pIn1, pIn2, and pIn3 are made to point to appropriate
     ** registers for inputs.  Variable pOut points to the output register.
@@ -646,10 +648,6 @@ int sqlite3VdbeExec(
         assert( pOp->p3<=p->nMem );
         pIn3 = &p->aMem[pOp->p3];
         REGISTER_TRACE(pOp->p3, pIn3);
-      }else if( (opProperty & OPFLG_OUT2)!=0 ){
-        assert( pOp->p2>0 );
-        assert( pOp->p2<=p->nMem );
-        pOut = &p->aMem[pOp->p2];
       }
     }else if( (opProperty & OPFLG_IN2)!=0 ){
       assert( pOp->p2>0 );
@@ -872,39 +870,6 @@ case OP_Null: {           /* out2-prerelease */
 
 
 #ifndef SQLITE_OMIT_BLOB_LITERAL
-/* Opcode: HexBlob * P2 * P4 *
-**
-** P4 is an UTF-8 SQL hex encoding of a blob. The blob is stored in
-** register P2.
-**
-** The first time this instruction executes, in transforms itself into a
-** 'Blob' opcode with a binary blob as P4.
-*/
-case OP_HexBlob: {            /* same as TK_BLOB, out2-prerelease */
-  pOp->opcode = OP_Blob;
-  pOp->p1 = strlen(pOp->p4.z)/2;
-  if( pOp->p1>SQLITE_MAX_LENGTH ){
-    goto too_big;
-  }
-  if( pOp->p1 ){
-    char *zBlob = sqlite3HexToBlob(db, pOp->p4.z);
-    if( !zBlob ) goto no_mem;
-    if( pOp->p4type==P4_DYNAMIC ){
-      sqlite3_free(pOp->p4.z);
-    }
-    pOp->p4.z = zBlob;
-    pOp->p4type = P4_DYNAMIC;
-  }else{
-    if( pOp->p4type==P4_DYNAMIC ){
-      sqlite3_free(pOp->p4.z);
-    }
-    pOp->p4type = P4_STATIC;
-    pOp->p4.z = "";
-  }
-
-  /* Fall through to the next case, OP_Blob. */
-}
-
 /* Opcode: Blob P1 P2 * P4
 **
 ** P4 points to a blob of data P1 bytes long.  Store this
@@ -4814,10 +4779,10 @@ default: {
 #ifdef SQLITE_DEBUG
     if( p->trace ){
       if( rc!=0 ) fprintf(p->trace,"rc=%d\n",rc);
-      if( (opProperty&(OPFLG_OUT2_PRERELEASE|OPFLG_OUT2))!=0 && pOp->p2>0 ){
+      if( opProperty & OPFLG_OUT2_PRERELEASE ){
         registerTrace(p->trace, pOp->p2, pOut);
       }
-      if( (opProperty&OPFLG_OUT3)!=0 && pOp->p3>0 ){
+      if( opProperty & OPFLG_OUT3 ){
         registerTrace(p->trace, pOp->p3, pOut);
       }
     }

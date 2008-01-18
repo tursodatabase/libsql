@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.651 2008/01/17 16:22:15 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.652 2008/01/18 14:08:24 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1889,7 +1889,7 @@ int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
 char sqlite3ExprAffinity(Expr *pExpr);
 int sqlite3Atoi64(const char*, i64*);
 void sqlite3Error(sqlite3*, int, const char*,...);
-void *sqlite3HexToBlob(sqlite3*, const char *z);
+void *sqlite3HexToBlob(sqlite3*, const char *z, int n);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 const char *sqlite3ErrStr(int);
 int sqlite3ReadSchema(Parse *pParse);
