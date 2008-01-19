@@ -508,11 +508,12 @@ int sqlite3VdbeMemTooBig(Mem *p){
 
 /*
 ** Make an shallow copy of pFrom into pTo.  Prior contents of
-** pTo are overwritten.  The pFrom->z field is not duplicated.  If
+** pTo are freed.  The pFrom->z field is not duplicated.  If
 ** pFrom->z is used, then pTo->z points to the same thing as pFrom->z
 ** and flags gets srcType (either MEM_Ephem or MEM_Static).
 */
 void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
+  sqlite3VdbeMemRelease(pTo);
   memcpy(pTo, pFrom, sizeof(*pFrom)-sizeof(pFrom->zShort));
   pTo->xDel = 0;
   if( pTo->flags & (MEM_Str|MEM_Blob) ){
@@ -528,9 +529,6 @@ void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
 */
 int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   int rc;
-  if( pTo->flags & MEM_Dyn ){
-    sqlite3VdbeMemRelease(pTo);
-  }
   sqlite3VdbeMemShallowCopy(pTo, pFrom, MEM_Ephem);
   if( pTo->flags & MEM_Ephem ){
     rc = sqlite3VdbeMemMakeWriteable(pTo);

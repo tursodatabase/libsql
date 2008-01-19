@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.405 2008/01/17 17:15:56 drh Exp $
+** $Id: select.c,v 1.406 2008/01/19 03:35:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -602,12 +602,11 @@ static int selectInnerLoop(
     ** the temporary table iParm.
     */
     case SRT_Except: {
-      int addr, r1;
+      int r1;
       r1 = sqlite3GetTempReg(pParse);
-      addr = sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
       sqlite3VdbeChangeP4(v, -1, aff, P4_STATIC);
-      sqlite3VdbeAddOp3(v, OP_NotFound, iParm, addr+3, r1);
-      sqlite3VdbeAddOp1(v, OP_Delete, iParm);
+      sqlite3VdbeAddOp2(v, OP_IdxDelete, iParm, r1);
       sqlite3ReleaseTempReg(pParse, r1);
       break;
     }
