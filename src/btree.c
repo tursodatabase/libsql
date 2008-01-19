@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.436 2008/01/02 11:50:51 danielk1977 Exp $
+** $Id: btree.c,v 1.437 2008/01/19 23:50:26 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1747,12 +1747,15 @@ static void unlockBtreeIfUnused(BtShared *pBt){
   assert( sqlite3_mutex_held(pBt->mutex) );
   if( pBt->inTransaction==TRANS_NONE && pBt->pCursor==0 && pBt->pPage1!=0 ){
     if( sqlite3PagerRefcount(pBt->pPager)>=1 ){
+      assert( pBt->pPage1->aData );
+#if 0
       if( pBt->pPage1->aData==0 ){
         MemPage *pPage = pBt->pPage1;
         pPage->aData = sqlite3PagerGetData(pPage->pDbPage);
         pPage->pBt = pBt;
         pPage->pgno = 1;
       }
+#endif
       releasePage(pBt->pPage1);
     }
     pBt->pPage1 = 0;

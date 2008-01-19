@@ -13,7 +13,7 @@
 # The focus of this file is testing of the proper handling of conversions
 # to the native text representation.
 #
-# $Id: enc3.test,v 1.6 2007/05/10 21:14:03 drh Exp $
+# $Id: enc3.test,v 1.7 2008/01/19 23:50:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -77,5 +77,26 @@ ifcapable {bloblit && utf16} {
   } {1}
 }
 
+# Try to attach a database with a different encoding.
+#
+ifcapable {utf16} {
+  file delete -force test8.db test8.db-journal
+  sqlite3 dbaux test8.db
+  do_test enc3-3.1 {
+    dbaux eval {
+      PRAGMA encoding='utf8';
+      CREATE TABLE t1(x);
+      PRAGMA encoding
+    }
+  } {UTF-8}
+  do_test enc3-3.2 {
+    catchsql {
+      ATTACH 'test.db' AS utf16;
+      SELECT 1 FROM utf16.sqlite_master LIMIT 1;
+    } dbaux
+  } {1 {attached databases must use the same text encoding as main database}}
+  catch {dbaux close}
+  file delete -force test8.db test8.db-journal
+}
 
 finish_test

@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.17 2008/01/19 20:11:26 drh Exp $
+# $Id: misc3.test,v 1.18 2008/01/19 23:50:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -262,7 +262,11 @@ ifcapable {explain} {
   # Do some additional EXPLAIN operations to exercise the displayP4 logic.
   do_test misc3-6.10 {
     set x [execsql {
-      CREATE TABLE ex1(a INTEGER, b TEXT DEFAULT "hello", c);
+      CREATE TABLE ex1(
+        a INTEGER DEFAULT 54321,
+        b TEXT DEFAULT "hello",
+        c REAL DEFAULT 3.1415926
+      );
       CREATE UNIQUE INDEX ex1i1 ON ex1(a);
       EXPLAIN REINDEX;
     }]

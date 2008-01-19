@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.701 2008/01/19 20:11:26 drh Exp $
+** $Id: vdbe.c,v 1.702 2008/01/19 23:50:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3364,8 +3364,8 @@ case OP_ResetCount: {
 ** It is just copied onto the P2 register exactly as 
 ** it is found in the database file.
 **
-** If the cursor is not pointing to a valid row, a NULL value is
-** written into P2.
+** If the P1 cursor must be pointing to a valid row (not a NULL row)
+** of a real table, not a pseudo-table.
 */
 /* Opcode: RowKey P1 P2 * * *
 **
@@ -3374,13 +3374,14 @@ case OP_ResetCount: {
 ** The key is copied onto the P3 register exactly as 
 ** it is found in the database file.
 **
-** If the cursor is not pointing to a valid row, a NULL is
-** written into P2.
+** If the P1 cursor must be pointing to a valid row (not a NULL row)
+** of a real table, not a pseudo-table.
 */
 case OP_RowKey:             /* out2-prerelease */
 case OP_RowData: {          /* out2-prerelease */
   int i = pOp->p1;
   Cursor *pC;
+  BtCursor *pCrsr;
   u32 n;
 
   /* Note that RowKey and RowData are really exactly the same instruction */
@@ -3389,48 +3390,41 @@ case OP_RowData: {          /* out2-prerelease */
   assert( pC->isTable || pOp->opcode==OP_RowKey );
   assert( pC->isIndex || pOp->opcode==OP_RowData );
   assert( pC!=0 );
-  if( pC->nullRow ){
-    pOut->flags = MEM_Null;
-  }else if( pC->pCursor!=0 ){
-    BtCursor *pCrsr = pC->pCursor;
-    rc = sqlite3VdbeCursorMoveto(pC);
-    if( rc ) goto abort_due_to_error;
-    if( pC->isIndex ){
-      i64 n64;
-      assert( !pC->isTable );
-      sqlite3BtreeKeySize(pCrsr, &n64);
-      if( n64>SQLITE_MAX_LENGTH ){
-        goto too_big;
-      }
-      n = n64;
-    }else{
-      sqlite3BtreeDataSize(pCrsr, &n);
+  assert( pC->nullRow==0 );
+  assert( pC->pseudoTable==0 );
+  assert( pC->pCursor!=0 );
+  pCrsr = pC->pCursor;
+  rc = sqlite3VdbeCursorMoveto(pC);
+  if( rc ) goto abort_due_to_error;
+  if( pC->isIndex ){
+    i64 n64;
+    assert( !pC->isTable );
+    sqlite3BtreeKeySize(pCrsr, &n64);
+    if( n64>SQLITE_MAX_LENGTH ){
+      goto too_big;
     }
+    n = n64;
+  }else{
+    sqlite3BtreeDataSize(pCrsr, &n);
     if( n>SQLITE_MAX_LENGTH ){
       goto too_big;
     }
-    pOut->n = n;
-    if( n<=NBFS ){
-      pOut->flags = MEM_Blob | MEM_Short;
-      pOut->z = pOut->zShort;
-    }else{
-      char *z = sqlite3_malloc( n );
-      if( z==0 ) goto no_mem;
-      pOut->flags = MEM_Blob | MEM_Dyn;
-      pOut->xDel = 0;
-      pOut->z = z;
-    }
-    if( pC->isIndex ){
-      rc = sqlite3BtreeKey(pCrsr, 0, n, pOut->z);
-    }else{
-      rc = sqlite3BtreeData(pCrsr, 0, n, pOut->z);
-    }
+  }
+  pOut->n = n;
+  if( n<=NBFS ){
+    pOut->flags = MEM_Blob | MEM_Short;
+    pOut->z = pOut->zShort;
   }else{
-    assert( pC->pseudoTable );
-    pOut->n = pC->nData;
-    assert( pC->nData<=SQLITE_MAX_LENGTH );
-    pOut->z = pC->pData;
-    pOut->flags = MEM_Blob|MEM_Ephem;
+    char *z = sqlite3_malloc( n );
+    if( z==0 ) goto no_mem;
+    pOut->flags = MEM_Blob | MEM_Dyn;
+    pOut->xDel = 0;
+    pOut->z = z;
+  }
+  if( pC->isIndex ){
+    rc = sqlite3BtreeKey(pCrsr, 0, n, pOut->z);
+  }else{
+    rc = sqlite3BtreeData(pCrsr, 0, n, pOut->z);
   }
   pOut->enc = SQLITE_UTF8;  /* In case the blob is ever cast to text */
   UPDATE_MAX_BLOBSIZE(pOut);
@@ -4502,23 +4496,17 @@ case OP_VFilter: {   /* jump */
 */
 case OP_VRowid: {             /* out2-prerelease */
   const sqlite3_module *pModule;
-
+  sqlite_int64 iRow;
   Cursor *pCur = p->apCsr[pOp->p1];
+
   assert( pCur->pVtabCursor );
   pModule = pCur->pVtabCursor->pVtab->pModule;
-  if( pModule->xRowid==0 ){
-    sqlite3SetString(&p->zErrMsg, "Unsupported module operation: xRowid", 0);
-    rc = SQLITE_ERROR;
-  } else {
-    sqlite_int64 iRow;
-
-    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
-    rc = pModule->xRowid(pCur->pVtabCursor, &iRow);
-    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
-    pOut->flags = MEM_Int;
-    pOut->u.i = iRow;
-  }
-
+  assert( pModule->xRowid );
+  if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+  rc = pModule->xRowid(pCur->pVtabCursor, &iRow);
+  if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
+  pOut->flags = MEM_Int;
+  pOut->u.i = iRow;
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -4532,41 +4520,36 @@ case OP_VRowid: {             /* out2-prerelease */
 */
 case OP_VColumn: {
   const sqlite3_module *pModule;
+  Mem *pDest;
+  sqlite3_context sContext;
 
   Cursor *pCur = p->apCsr[pOp->p1];
   assert( pCur->pVtabCursor );
   pModule = pCur->pVtabCursor->pVtab->pModule;
-  if( pModule->xColumn==0 ){
-    sqlite3SetString(&p->zErrMsg, "Unsupported module operation: xColumn", 0);
-    rc = SQLITE_ERROR;
-  } else {
-    Mem *pDest;
-    sqlite3_context sContext;
-    memset(&sContext, 0, sizeof(sContext));
-    sContext.s.flags = MEM_Null;
-    sContext.s.db = db;
-    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
-    rc = pModule->xColumn(pCur->pVtabCursor, &sContext, pOp->p2);
+  assert( pModule->xColumn );
+  memset(&sContext, 0, sizeof(sContext));
+  sContext.s.flags = MEM_Null;
+  sContext.s.db = db;
+  if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+  rc = pModule->xColumn(pCur->pVtabCursor, &sContext, pOp->p2);
 
-    /* Copy the result of the function to the P3 register. We
-    ** do this regardless of whether or not an error occured to ensure any
-    ** dynamic allocation in sContext.s (a Mem struct) is  released.
-    */
-    sqlite3VdbeChangeEncoding(&sContext.s, encoding);
-    assert( pOp->p3>0 && pOp->p3<=p->nMem );
-    pDest = &p->aMem[pOp->p3];
-    REGISTER_TRACE(pOp->p3, pDest);
-    sqlite3VdbeMemMove(pDest, &sContext.s);
-    UPDATE_MAX_BLOBSIZE(pDest);
+  /* Copy the result of the function to the P3 register. We
+  ** do this regardless of whether or not an error occured to ensure any
+  ** dynamic allocation in sContext.s (a Mem struct) is  released.
+  */
+  sqlite3VdbeChangeEncoding(&sContext.s, encoding);
+  assert( pOp->p3>0 && pOp->p3<=p->nMem );
+  pDest = &p->aMem[pOp->p3];
+  REGISTER_TRACE(pOp->p3, pDest);
+  sqlite3VdbeMemMove(pDest, &sContext.s);
+  UPDATE_MAX_BLOBSIZE(pDest);
 
-    if( sqlite3SafetyOn(db) ){
-      goto abort_due_to_misuse;
-    }
-    if( sqlite3VdbeMemTooBig(pDest) ){
-      goto too_big;
-    }
+  if( sqlite3SafetyOn(db) ){
+    goto abort_due_to_misuse;
   }
-  
+  if( sqlite3VdbeMemTooBig(pDest) ){
+    goto too_big;
+  }
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -4585,31 +4568,27 @@ case OP_VNext: {   /* jump */
   Cursor *pCur = p->apCsr[pOp->p1];
   assert( pCur->pVtabCursor );
   pModule = pCur->pVtabCursor->pVtab->pModule;
-  if( pModule->xNext==0 ){
-    sqlite3SetString(&p->zErrMsg, "Unsupported module operation: xNext", 0);
-    rc = SQLITE_ERROR;
-  } else {
-    /* Invoke the xNext() method of the module. There is no way for the
-    ** underlying implementation to return an error if one occurs during
-    ** xNext(). Instead, if an error occurs, true is returned (indicating that 
-    ** data is available) and the error code returned when xColumn or
-    ** some other method is next invoked on the save virtual table cursor.
-    */
-    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
-    p->inVtabMethod = 1;
-    rc = pModule->xNext(pCur->pVtabCursor);
-    p->inVtabMethod = 0;
-    if( rc==SQLITE_OK ){
-      res = pModule->xEof(pCur->pVtabCursor);
-    }
-    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
+  assert( pModule->xNext );
 
-    if( !res ){
-      /* If there is data, jump to P2 */
-      pc = pOp->p2 - 1;
-    }
+  /* Invoke the xNext() method of the module. There is no way for the
+  ** underlying implementation to return an error if one occurs during
+  ** xNext(). Instead, if an error occurs, true is returned (indicating that 
+  ** data is available) and the error code returned when xColumn or
+  ** some other method is next invoked on the save virtual table cursor.
+  */
+  if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+  p->inVtabMethod = 1;
+  rc = pModule->xNext(pCur->pVtabCursor);
+  p->inVtabMethod = 0;
+  if( rc==SQLITE_OK ){
+    res = pModule->xEof(pCur->pVtabCursor);
   }
+  if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
 
+  if( !res ){
+    /* If there is data, jump to P2 */
+    pc = pOp->p2 - 1;
+  }
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

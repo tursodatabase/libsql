@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.54 2008/01/16 17:46:38 drh Exp $
+# $Id: malloc.test,v 1.55 2008/01/19 23:50:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,6 +28,14 @@ ifcapable !memdebug {
    finish_test
    return
 }
+
+# Do a couple of memory dumps just to exercise the memory dump logic
+# that that we can say that we have.
+#
+puts stderr "This is a test.  Ignore the error that follows:"
+sqlite3_memdebug_dump $testdir
+puts "Memory dump to file memdump.txt..."
+sqlite3_memdebug_dump memdump.txt
 
 source $testdir/malloc_common.tcl
 

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.350 2008/01/18 14:08:24 drh Exp $
+** $Id: expr.c,v 1.351 2008/01/19 23:50:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1227,23 +1227,16 @@ static int lookupName(
   ** more matches.  Either way, we have an error.
   */
   if( cnt!=1 ){
-    char *z = 0;
-    char *zErr;
-    zErr = cnt==0 ? "no such column: %s" : "ambiguous column name: %s";
+    const char *zErr;
+    zErr = cnt==0 ? "no such column" : "ambiguous column name";
     if( zDb ){
-      sqlite3SetString(&z, zDb, ".", zTab, ".", zCol, (char*)0);
+      sqlite3ErrorMsg(pParse, "%s: %s.%s.%s", zErr, zDb, zTab, zCol);
     }else if( zTab ){
-      sqlite3SetString(&z, zTab, ".", zCol, (char*)0);
+      sqlite3ErrorMsg(pParse, "%s: %s.%s", zErr, zTab, zCol);
     }else{
-      z = sqlite3StrDup(zCol);
+      sqlite3ErrorMsg(pParse, "%s: %s", zErr, zCol);
     }
-    if( z ){
-      sqlite3ErrorMsg(pParse, zErr, z);
-      sqlite3_free(z);
-      pTopNC->nErr++;
-    }else{
-      db->mallocFailed = 1;
-    }
+    pTopNC->nErr++;
   }
 
   /* If a column from a table in pSrcList is referenced, then record
@@ -2422,9 +2415,7 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
 
 /*
 ** Generate code that evalutes the given expression and puts the result
-** in register target.  If target==-1, then allocate a temporary register
-** in which to store the result.  In either case, return the register
-** number where the result is stored.
+** in register target.
 **
 ** Also make a copy of the expression results into another "cache" register
 ** and modify the expression so that the next time it is evaluated,
@@ -2438,14 +2429,11 @@ int sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
   Vdbe *v = pParse->pVdbe;
   int inReg;
   inReg = sqlite3ExprCode(pParse, pExpr, target);
+  assert( target>0 );
   if( pExpr->op!=TK_REGISTER ){  
     int iMem;
-    if( target<0 ){
-      iMem = inReg;
-    }else{
-      iMem = ++pParse->nMem;
-      sqlite3VdbeAddOp2(v, OP_Copy, inReg, iMem);
-    }
+    iMem = ++pParse->nMem;
+    sqlite3VdbeAddOp2(v, OP_Copy, inReg, iMem);
     pExpr->iTable = iMem;
     pExpr->op = TK_REGISTER;
   }

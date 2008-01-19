@@ -12,7 +12,7 @@
 # focus of this file is testing for correct handling of I/O errors
 # in conjunction with very small soft-heap-limit values.
 #
-# $Id: ioerr3.test,v 1.1 2007/12/19 09:20:42 danielk1977 Exp $
+# $Id: ioerr3.test,v 1.2 2008/01/19 23:50:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -31,6 +31,10 @@ do_ioerr_test ioerr3-1 -sqlprep {
     }
   }
   execsql COMMIT
+}
+
+do_ioerr_test ioerr3-2 -sqlbody {
+  CREATE TEMP TABLE t1(x,y);
 }
 
 sqlite3_soft_heap_limit 0
