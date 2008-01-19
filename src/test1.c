@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.282 2008/01/16 17:46:38 drh Exp $
+** $Id: test1.c,v 1.283 2008/01/19 20:11:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4220,8 +4220,49 @@ static int vfs_unlink_test(
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   int i;
+  sqlite3_vfs *pMain;
   sqlite3_vfs *apVfs[20];
+  sqlite3_vfs one, two;
 
+  sqlite3_vfs_unregister(0);   /* Unregister of NULL is harmless */
+  one.zName = "__one";
+  two.zName = "__two";
+
+  /* Calling sqlite3_vfs_register with 2nd argument of 0 does not
+  ** change the default VFS
+  */
+  pMain = sqlite3_vfs_find(0);
+  sqlite3_vfs_register(&one, 0);
+  assert( pMain==0 || pMain==sqlite3_vfs_find(0) );
+  sqlite3_vfs_register(&two, 0);
+  assert( pMain==0 || pMain==sqlite3_vfs_find(0) );
+
+  /* We can find a VFS by its name */
+  assert( sqlite3_vfs_find("__one")==&one );
+  assert( sqlite3_vfs_find("__two")==&two );
+
+  /* Calling sqlite_vfs_register with non-zero second parameter changes the
+  ** default VFS, even if the 1st parameter is an existig VFS that is
+  ** previously registered as the non-default.
+  */
+  sqlite3_vfs_register(&one, 1);
+  assert( sqlite3_vfs_find("__one")==&one );
+  assert( sqlite3_vfs_find("__two")==&two );
+  assert( sqlite3_vfs_find(0)==&one );
+  sqlite3_vfs_register(&two, 1);
+  assert( sqlite3_vfs_find("__one")==&one );
+  assert( sqlite3_vfs_find("__two")==&two );
+  assert( sqlite3_vfs_find(0)==&two );
+  if( pMain ){
+    sqlite3_vfs_register(pMain, 1);
+    assert( sqlite3_vfs_find("__one")==&one );
+    assert( sqlite3_vfs_find("__two")==&two );
+    assert( sqlite3_vfs_find(0)==pMain );
+  }
+  
+  /* Unlink the default VFS.  Repeat until there are no more VFSes
+  ** registered.
+  */
   for(i=0; i<sizeof(apVfs)/sizeof(apVfs[0]); i++){
     apVfs[i] = sqlite3_vfs_find(0);
     if( apVfs[i] ){
@@ -4231,6 +4272,8 @@ static int vfs_unlink_test(
     }
   }
   assert( 0==sqlite3_vfs_find(0) );
+
+  /* Relink all VFSes in reverse order. */  
   for(i=sizeof(apVfs)/sizeof(apVfs[0])-1; i>=0; i--){
     if( apVfs[i] ){
       sqlite3_vfs_register(apVfs[i], 1);
@@ -4238,6 +4281,21 @@ static int vfs_unlink_test(
       assert( apVfs[i]==sqlite3_vfs_find(apVfs[i]->zName) );
     }
   }
+
+  /* Unregister out sample VFSes. */
+  sqlite3_vfs_unregister(&one);
+  sqlite3_vfs_unregister(&two);
+
+  /* Unregistering a VFS that is not currently registered is harmless */
+  sqlite3_vfs_unregister(&one);
+  sqlite3_vfs_unregister(&two);
+  assert( sqlite3_vfs_find("__one")==0 );
+  assert( sqlite3_vfs_find("__two")==0 );
+
+  /* We should be left with the original default VFS back as the
+  ** original */
+  assert( sqlite3_vfs_find(0)==pMain );
+
   return TCL_OK;
 }
 

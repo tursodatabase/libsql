@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.700 2008/01/19 03:35:59 drh Exp $
+** $Id: vdbe.c,v 1.701 2008/01/19 20:11:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2697,6 +2697,13 @@ case OP_Close: {
 ** If there are no records greater than or equal to the key and P2 
 ** is not zero, then jump to P2.
 **
+** A special feature of this opcode (and different from the
+** related OP_MoveGt, OP_MoveLt, and OP_MoveLe) is that if P2 is
+** zero and P1 is an SQL table (a b-tree with integer keys) then
+** the seek is deferred until it is actually needed.  It might be
+** the case that the cursor is never accessed.  By deferring the
+** seek, we avoid unnecessary seeks.
+**
 ** See also: Found, NotFound, Distinct, MoveLt, MoveGt, MoveLe
 */
 /* Opcode: MoveGt P1 P2 P3 * *
@@ -2704,7 +2711,7 @@ case OP_Close: {
 ** Use the value in register P3 as a key.  Reposition
 ** cursor P1 so that it points to the smallest entry that is greater
 ** than the key in register P3.
-** If there are no records greater than the key and P2 is not zero,
+** If there are no records greater than the key 
 ** then jump to P2.
 **
 ** See also: Found, NotFound, Distinct, MoveLt, MoveGe, MoveLe
@@ -2714,7 +2721,7 @@ case OP_Close: {
 ** Use the value in register P3 as a key.  Reposition
 ** cursor P1 so that it points to the largest entry that is less
 ** than the key in register P3.
-** If there are no records less than the key and P2 is not zero,
+** If there are no records less than the key
 ** then jump to P2.
 **
 ** See also: Found, NotFound, Distinct, MoveGt, MoveGe, MoveLe
@@ -2724,7 +2731,7 @@ case OP_Close: {
 ** Use the value in register P3 as a key.  Reposition
 ** cursor P1 so that it points to the largest entry that is less than
 ** or equal to the key.
-** If there are no records less than or eqal to the key and P2 is not zero,
+** If there are no records less than or eqal to the key
 ** then jump to P2.
 **
 ** See also: Found, NotFound, Distinct, MoveGt, MoveGe, MoveLt
@@ -2746,8 +2753,10 @@ case OP_MoveGt: {       /* jump, in3 */
     *pC->pIncrKey = oc==OP_MoveGt || oc==OP_MoveLe;
     if( pC->isTable ){
       i64 iKey = sqlite3VdbeIntValue(pIn3);
-      if( pOp->p2==0 && pOp->opcode==OP_MoveGe ){
+      if( pOp->p2==0 ){
+        assert( pOp->opcode==OP_MoveGe );
         pC->movetoTarget = iKey;
+        pC->rowidIsValid = 0;
         pC->deferredMoveto = 1;
         break;
       }
@@ -2793,12 +2802,9 @@ case OP_MoveGt: {       /* jump, in3 */
         res = sqlite3BtreeEof(pC->pCursor);
       }
     }
+    assert( pOp->p2>0 );
     if( res ){
-      if( pOp->p2>0 ){
-        pc = pOp->p2 - 1;
-      }else{
-        pC->nullRow = 1;
-      }
+      pc = pOp->p2 - 1;
     }
   }
   break;
@@ -3006,7 +3012,7 @@ case OP_NotExists: {        /* jump, in3 */
     ** running ioerr.test and similar failure-recovery test scripts.) */
     if( res!=0 ){
       pc = pOp->p2 - 1;
-      pC->rowidIsValid = 0;
+      assert( pC->rowidIsValid==0 );
     }
   }
   break;
@@ -3156,19 +3162,17 @@ case OP_NewRowid: {           /* out2-prerelease */
       v = db->priorNewRowid;
       cnt = 0;
       do{
-        if( v==0 || cnt>2 ){
+        if( cnt==0 && (v&0xffffff)==v ){
+          v++;
+        }else{
           sqlite3Randomness(sizeof(v), &v);
           if( cnt<5 ) v &= 0xffffff;
-        }else{
-          unsigned char r;
-          sqlite3Randomness(1, &r);
-          v += r + 1;
         }
         if( v==0 ) continue;
         x = intToKey(v);
         rx = sqlite3BtreeMoveto(pC->pCursor, 0, (u64)x, 0, &res);
         cnt++;
-      }while( cnt<1000 && rx==SQLITE_OK && res==0 );
+      }while( cnt<100 && rx==SQLITE_OK && res==0 );
       db->priorNewRowid = v;
       if( rx==SQLITE_OK && res==0 ){
         rc = SQLITE_FULL;
@@ -3294,46 +3298,45 @@ case OP_Insert: {
 ** If the OPFLAG_NCHANGE flag of P2 is set, then the row change count is
 ** incremented (otherwise not).
 **
-** If P1 is a pseudo-table, then this instruction is a no-op.
+** P1 must not be pseudo-table.  It has to be a real table with
+** multiple rows.
+**
+** If P4 is not NULL, then it is the name of the table that P1 is
+** pointing to.  The update hook will be invoked, if it exists.
+** If P4 is not NULL then the P1 cursor must have been positioned
+** using OP_NotFound prior to invoking this opcode.
 */
 case OP_Delete: {
   int i = pOp->p1;
+  i64 iKey;
   Cursor *pC;
+
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
   assert( pC!=0 );
-  if( pC->pCursor!=0 ){
-    i64 iKey;
+  assert( pC->pCursor!=0 );  /* Only valid for real tables, no pseudotables */
 
-    /* If the update-hook will be invoked, set iKey to the rowid of the
-    ** row being deleted.
-    */
-    if( db->xUpdateCallback && pOp->p4.z ){
-      assert( pC->isTable );
-      if( pC->rowidIsValid ){
-        iKey = pC->lastRowid;
-      }else{
-        rc = sqlite3BtreeKeySize(pC->pCursor, &iKey);
-        if( rc ){
-          goto abort_due_to_error;
-        }
-        iKey = keyToInt(iKey);
-      }
-    }
+  /* If the update-hook will be invoked, set iKey to the rowid of the
+  ** row being deleted.
+  */
+  if( db->xUpdateCallback && pOp->p4.z ){
+    assert( pC->isTable );
+    assert( pC->rowidIsValid );  /* lastRowid set by previous OP_NotFound */
+    iKey = pC->lastRowid;
+  }
 
-    rc = sqlite3VdbeCursorMoveto(pC);
-    if( rc ) goto abort_due_to_error;
-    rc = sqlite3BtreeDelete(pC->pCursor);
-    pC->nextRowidValid = 0;
-    pC->cacheStatus = CACHE_STALE;
+  rc = sqlite3VdbeCursorMoveto(pC);
+  if( rc ) goto abort_due_to_error;
+  rc = sqlite3BtreeDelete(pC->pCursor);
+  pC->nextRowidValid = 0;
+  pC->cacheStatus = CACHE_STALE;
 
-    /* Invoke the update-hook if required. */
-    if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p4.z ){
-      const char *zDb = db->aDb[pC->iDb].zName;
-      const char *zTbl = pOp->p4.z;
-      db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, zTbl, iKey);
-      assert( pC->iDb>=0 );
-    }
+  /* Invoke the update-hook if required. */
+  if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p4.z ){
+    const char *zDb = db->aDb[pC->iDb].zName;
+    const char *zTbl = pOp->p4.z;
+    db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, zTbl, iKey);
+    assert( pC->iDb>=0 );
   }
   if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
   break;
@@ -4713,10 +4716,19 @@ case OP_Trace: {
 }
 #endif
 
-/* An other opcode is illegal...
+
+/* Opcode: Noop * * * * *
+**
+** Do nothing.  This instruction is often useful as a jump
+** destination.
 */
-default: {
-  assert( 0 );
+/*
+** The magic Explain opcode are only inserted when explain==2 (which
+** is to say when the EXPLAIN QUERY PLAN syntax is used.)
+** This opcode records information from the optimizer.  It is the
+** the same as a no-op.  This opcodesnever appears in a real VM program.
+*/
+default: {          /* This is really OP_Noop and OP_Explain */
   break;
 }
 

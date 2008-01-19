@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.16 2005/01/21 03:12:16 danielk1977 Exp $
+# $Id: misc3.test,v 1.17 2008/01/19 20:11:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -258,6 +258,26 @@ ifcapable {explain} {
     execsql {BEGIN; EXPLAIN ROLLBACK}
     catchsql {ROLLBACK}
   } {0 {}}
+
+  # Do some additional EXPLAIN operations to exercise the displayP4 logic.
+  do_test misc3-6.10 {
+    set x [execsql {
+      CREATE TABLE ex1(a INTEGER, b TEXT DEFAULT "hello", c);
+      CREATE UNIQUE INDEX ex1i1 ON ex1(a);
+      EXPLAIN REINDEX;
+    }]
+    regexp { IsUnique \d+ \d+ \d+ \d+ } $x
+  } {1}
+  do_test misc3-6.11 {
+    set x [execsql {
+      EXPLAIN SELECT a+123456789012, b*4.5678, c FROM ex1 ORDER BY a, b DESC
+    }]
+    set y [regexp { 123456789012 } $x]
+    lappend y [regexp { 4.5678 } $x]
+    lappend y [regexp { hello } $x]
+    lappend y [regexp {,-BINARY} $x]
+  } {1 1 1 1}
+
 }
 
 ifcapable {trigger} {

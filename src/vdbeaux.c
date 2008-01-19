@@ -511,14 +511,16 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr, int N){
 */
 void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   Op *pOp;
-  assert( p==0 || p->magic==VDBE_MAGIC_INIT );
-  if( p==0 || p->aOp==0 || p->db->mallocFailed ){
+  assert( p!=0 );
+  assert( p->magic==VDBE_MAGIC_INIT );
+  if( p->aOp==0 || p->db->mallocFailed ){
     if (n != P4_KEYINFO) {
       freeP4(n, (void*)*(char**)&zP4);
     }
     return;
   }
-  if( addr<0 || addr>=p->nOp ){
+  assert( addr<p->nOp );
+  if( addr<0 ){
     addr = p->nOp - 1;
     if( addr<0 ) return;
   }
@@ -540,13 +542,19 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     pKeyInfo = sqlite3_malloc( nByte );
     pOp->p4.pKeyInfo = pKeyInfo;
     if( pKeyInfo ){
-      unsigned char *aSortOrder;
       memcpy(pKeyInfo, zP4, nByte);
+      /* In the current implementation, P4_KEYINFO is only ever used on
+      ** KeyInfo structures that have no aSortOrder component.  Elements
+      ** with an aSortOrder always use P4_KEYINFO_HANDOFF.  So we do not
+      ** need to bother with duplicating the aSortOrder. */
+      assert( pKeyInfo->aSortOrder==0 );
+#if 0
       aSortOrder = pKeyInfo->aSortOrder;
       if( aSortOrder ){
         pKeyInfo->aSortOrder = (unsigned char*)&pKeyInfo->aColl[nField];
         memcpy(pKeyInfo->aSortOrder, aSortOrder, nField);
       }
+#endif
       pOp->p4type = P4_KEYINFO;
     }else{
       p->db->mallocFailed = 1;

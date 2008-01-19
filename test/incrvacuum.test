@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.16 2007/12/13 21:54:11 drh Exp $
+# $Id: incrvacuum.test,v 1.17 2008/01/19 20:11:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -549,7 +549,6 @@ do_test incrvacuum-10.4 {
 } {22}
 
 do_test incrvacuum-10.5 {
-breakpoint
   execsql {
     PRAGMA incremental_vacuum("+3");
   }
@@ -568,6 +567,19 @@ do_test incrvacuum-10.7 {
   # be interpreted as "free all possible space".
   execsql {
     PRAGMA incremental_vacuum(2147483649);
+  }
+  expr [file size test.db] / 1024
+} {1}
+
+do_test incrvacuum-10.8 {
+  execsql {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(hex(randomblob(1000)));
+    DROP TABLE t1;
+  }
+  # A negative number means free all possible space.
+  execsql {
+    PRAGMA incremental_vacuum=-1;
   }
   expr [file size test.db] / 1024
 } {1}

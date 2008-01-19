@@ -88,6 +88,8 @@ END {
   max = 0
   print "/* Automatically generated.  Do not edit */"
   print "/* See the mkopcodeh.awk script for details */"
+  op["OP_Noop"] = -1;
+  op["OP_Explain"] = -1;
   for(name in op){
     if( op[name]<0 ){
       cnt++

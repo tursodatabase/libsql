@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.101 2008/01/17 02:36:28 drh Exp $
+# $Id: tester.tcl,v 1.102 2008/01/19 20:11:26 drh Exp $
 
 
 set tcl_precision 15
@@ -221,7 +221,8 @@ proc finalize_testing {} {
       sqlite3_memdebug_dump ./memusage.txt
     }
   }
-  puts "Maximum memory usage: [sqlite3_memory_highwater] bytes"
+  puts "Maximum memory usage: [sqlite3_memory_highwater 1] bytes"
+  puts "Current memory usage: [sqlite3_memory_highwater] bytes"
   foreach f [glob -nocomplain test.db-*-journal] {
     file delete -force $f
   }

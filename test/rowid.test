@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.19 2007/04/25 11:32:30 drh Exp $
+# $Id: rowid.test,v 1.20 2008/01/19 20:11:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -657,6 +657,12 @@ do_test rowid-11.4 {
 # Test the automatic generation of rowids when the table already contains
 # a rowid with the maximum value.
 #
+# Once the the maximum rowid is taken, rowids are normally chosen at
+# random.  By by reseting the random number generator, we can cause
+# the rowid guessing loop to collide with prior rowids, and test the
+# loop out to its limit of 100 iterations.  After 100 collisions, the
+# rowid guesser gives up and reports SQLITE_FULL.
+#
 do_test rowid-12.1 {
   execsql {
     CREATE TABLE t7(x INTEGER PRIMARY KEY, y);
@@ -665,10 +671,31 @@ do_test rowid-12.1 {
   }
 } {a}
 do_test rowid-12.2 {
+  db close
+  sqlite3 db test.db
+  save_prng_state
   execsql {
     INSERT INTO t7 VALUES(NULL,'b');
-    SELECT y FROM t7;
+    SELECT x, y FROM t7;
   }
-} {b a}
+} {1 b 9223372036854775807 a}
+execsql {INSERT INTO t7 VALUES(2,'y');}
+for {set i 1} {$i<=101} {incr i} {
+  do_test rowid-12.3.$i {
+    restore_prng_state
+    execsql {
+      INSERT INTO t7 VALUES(NULL,'x');
+      INSERT OR IGNORE INTO t7 VALUES(last_insert_rowid()+1,'y');
+      SELECT count(*) FROM t7 WHERE y=='x';
+    }
+  } $i
+}
+do_test rowid-12.4 {
+  restore_prng_state
+  catchsql {
+    INSERT INTO t7 VALUES(NULL,'x');
+  }
+} {1 {database or disk is full}}
+
 
 finish_test

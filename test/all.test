@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.52 2007/11/27 14:46:42 drh Exp $
+# $Id: all.test,v 1.53 2008/01/19 20:11:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -92,6 +92,7 @@ for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
     set tail [file tail $testfile]
     if {[lsearch -exact $EXCLUDE $tail]>=0} continue
     if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue
+    reset_prng_state
     source $testfile
     catch {db close}
     if {$sqlite_open_file_count>0} {
