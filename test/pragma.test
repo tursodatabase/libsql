@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.56 2007/12/29 13:39:21 danielk1977 Exp $
+# $Id: pragma.test,v 1.57 2008/01/20 23:19:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -978,13 +978,13 @@ ifcapable schema_pragmas {
     execsql2 {
       pragma collation_list;
     }
-  } {seq 0 name NOCASE seq 1 name BINARY}
+  } {seq 0 name NOCASE seq 1 name RTRIM seq 2 name BINARY}
   do_test pragma-11.2 {
     db collate New_Collation blah...
     execsql {
       pragma collation_list;
     }
-  } {0 New_Collation 1 NOCASE 2 BINARY}
+  } {0 New_Collation 1 NOCASE 2 RTRIM 3 BINARY}
 }
 
 ifcapable schema_pragmas&&tempdb {
