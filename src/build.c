@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.467 2008/01/17 16:22:15 drh Exp $
+** $Id: build.c,v 1.468 2008/01/21 16:22:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3206,15 +3206,7 @@ int sqlite3OpenTempDatabase(Parse *pParse){
       pParse->rc = rc;
       return 1;
     }
-    if( db->flags & !db->autoCommit ){
-      rc = sqlite3BtreeBeginTrans(db->aDb[1].pBt, 1);
-      if( rc!=SQLITE_OK ){
-        sqlite3ErrorMsg(pParse, "unable to get a write lock on "
-          "the temporary database file");
-        pParse->rc = rc;
-        return 1;
-      }
-    }
+    assert( (db->flags & SQLITE_InTrans)==0 || db->autoCommit );
     assert( db->aDb[1].pSchema );
   }
   return 0;

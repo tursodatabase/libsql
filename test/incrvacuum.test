@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.17 2008/01/19 20:11:26 drh Exp $
+# $Id: incrvacuum.test,v 1.18 2008/01/21 16:22:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -712,5 +712,20 @@ do_test incrvacuum-13.5 {
   }
 } {0}
 
+
+# Verify that the incremental_vacuum pragma fails gracefully if it
+# is used against an invalid database file.
+#
+do_test incrvacuum-14.1 {
+  set out [open invalid.db w]
+  puts $out "This is not an SQLite database file"
+  close $out
+  sqlite3 db3 invalid.db
+  catchsql {
+    PRAGMA incremental_vacuum(10);
+  } db3
+} {1 {file is encrypted or is not a database}}
+
 db2 close
+db3 close
 finish_test

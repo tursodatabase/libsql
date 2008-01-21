@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.182 2008/01/19 23:50:26 drh Exp $
+** $Id: func.c,v 1.183 2008/01/21 16:22:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1149,10 +1149,7 @@ static void test_auxdata(
       char *zAux = sqlite3_get_auxdata(pCtx, i);
       if( zAux ){
         zRet[i*2] = '1';
-        if( strcmp(zAux, z) ){
-          sqlite3_result_error(pCtx, "auxdata corruption", -1);
-          return;
-        }
+        assert( strcmp(zAux,z)==0 );
       }else {
         zRet[i*2] = '0';
       }

@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.173 2008/01/14 15:20:08 drh Exp $
+** $Id: shell.c,v 1.174 2008/01/21 16:22:46 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1154,13 +1154,13 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       p->showHeader = 1;
       memset(p->colWidth,0,ArraySize(p->colWidth));
       p->colWidth[0] = 4;                  /* addr */
-      p->colWidth[1] = 14;                 /* opcode */
-      p->colWidth[2] = 10;                 /* P1 */
-      p->colWidth[3] = 10;                 /* P2 */
-      p->colWidth[4] = 10;                 /* P3 */
-      p->colWidth[5] = 20;                 /* P4 */
+      p->colWidth[1] = 13;                 /* opcode */
+      p->colWidth[2] = 4;                  /* P1 */
+      p->colWidth[3] = 4;                  /* P2 */
+      p->colWidth[4] = 4;                  /* P3 */
+      p->colWidth[5] = 13;                 /* P4 */
       p->colWidth[6] = 2;                  /* P5 */
-      p->colWidth[7] = 7;                  /* Comment */
+      p->colWidth[7] = 13;                  /* Comment */
     }else if (p->explainPrev.valid) {
       p->explainPrev.valid = 0;
       p->mode = p->explainPrev.mode;
