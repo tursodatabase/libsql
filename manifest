@@ -1,5 +1,5 @@
-C Miscellaneous\stest\scoverage\simprovements.\s(CVS\s4734)
-D 2008-01-21T16:22:46
+C Additional\stest\scases\sfor\sthe\sRTRIM\scollation.\s(CVS\s4735)
+D 2008-01-21T16:47:16
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -233,7 +233,7 @@ F test/collate6.test 8be65a182abaac8011a622131486dafb8076e907
 F test/collate7.test e23677b1fd271505302643a98178952bb65b6f21
 F test/collate8.test 7ed2461305ac959886a064dc1e3cf15e155a183f
 F test/collate9.test 0867eabc1222ab0bc308fc09a7fb30770334c3cd
-F test/collateA.test e86542420ef1b9fd98bbe6d857ea8eec20c177bb
+F test/collateA.test 84ff3239d530c1a2c784159594b2ae05238e3ff7
 F test/colmeta.test 6505c73ab58796afcb7c89ba9f429d573fbc6e53
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
@@ -609,7 +609,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3d4252b06b42151874ee437c3a484e818232a5c9
-R 0e6133fb44fd0259245f9422ed93f88d
+P 720bc20a11275ffe139df9203f23e0683b9b4db1
+R d03e78e82114013abb8d1522ad14c7c0
 U drh
-Z 709a57783bc2736f970ed40cdf181568
+Z 7f13ab757cd6e736d87dbada7e62ee4e
