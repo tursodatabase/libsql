@@ -1,5 +1,5 @@
-C Add\sthe\sRTRIM\scollating\ssequence.\s\sOnly\simplemented\sfor\sUTF8.\s\sStill\nconsidered\sexperimental\sand\smay\sbe\sremoved\sif\swe\sfind\sadverse\simpact\nelsewhere\sin\sthe\ssystem.\s(CVS\s4732)
-D 2008-01-20T23:19:57
+C Remove\ssome\sunused\sbranches\sfrom\sinternal\sfunction\ssqlite3PagerDontRollback().\s(CVS\s4733)
+D 2008-01-21T13:04:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 30789bf70614bad659351660d76b8e533f3340e9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -124,7 +124,7 @@ F src/os_unix.c e4daef7628f690fa2b188af3632fb18f96525946
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c832d528ea774c7094d887749d71884984c9034c
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c a55923e2de46b81868da9e6e6f348e2978d477b9
+F src/pager.c fae75270b4e2b2542b905791087f0c52142974f8
 F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
 F src/parse.y 2ae06e8d3190faace49c5b82e7cea1fc60d084a1
 F src/pragma.c 155315ee3e6a861a0060ba4d184dfffd08ebbc03
@@ -608,7 +608,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 010f7b780cb9c8f21af9ce810494fbd2be98a13f
-R a77c92cd50edbd9b3113d32c480fb532
-U drh
-Z 428dd7074c3ab6d6dfe6113da7ace6b5
+P 0bf4e7fefdbbf7be4e32195473563158f22f1869
+R 431eb43674e4abe644622d49d27f61d8
+U danielk1977
+Z 19f9e86a1ac105470be774b290b8b793

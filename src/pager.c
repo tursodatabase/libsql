@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.402 2008/01/18 13:42:55 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.403 2008/01/21 13:04:35 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4379,36 +4379,51 @@ void sqlite3PagerDontWrite(DbPage *pDbPage){
 ** the PgHdr.needRead flag is set) then this routine acts as a promise
 ** that we will never need to read the page content in the future.
 ** so the needRead flag can be cleared at this point.
+**
+** This routine is only called from a single place in the sqlite btree
+** code (when a leaf is removed from the free-list). This allows the
+** following assumptions to be made about pPg:
+**
+**   1. PagerDontWrite() has been called on the page, OR 
+**      PagerWrite() has not yet been called on the page.
+**
+**   2. The page existed when the transaction was started.
+**
+** Details: DontRollback() (this routine) is only called when a leaf is
+** removed from the free list. DontWrite() is called whenever a page 
+** becomes a free-list leaf.
 */
 void sqlite3PagerDontRollback(DbPage *pPg){
   Pager *pPager = pPg->pPager;
 
   pagerEnter(pPager);
   assert( pPager->state>=PAGER_RESERVED );
-  if( pPager->journalOpen==0 || pPg->alwaysRollback 
-   || pPager->alwaysRollback || MEMDB ){
+
+  /* If the journal file is not open, or DontWrite() has been called on
+  ** this page (DontWrite() sets the alwaysRollback flag), then this
+  ** function is a no-op.
+  */
+  if( pPager->journalOpen==0 || pPg->alwaysRollback || pPager->alwaysRollback ){
     pagerLeave(pPager);
     return;
   }
-  if( !pPg->inJournal && (int)pPg->pgno <= pPager->origDbSize ){
-    assert( pPager->aInJournal!=0 );
-    pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-    pPg->inJournal = 1;
-    pPg->needRead = 0;
-    if( pPager->stmtInUse ){
-      pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
-    }
-    PAGERTRACE3("DONT_ROLLBACK page %d of %d\n", pPg->pgno, PAGERID(pPager));
-    IOTRACE(("GARBAGE %p %d\n", pPager, pPg->pgno))
-  }
-  if( pPager->stmtInUse 
-   && !pageInStatement(pPg) 
-   && (int)pPg->pgno<=pPager->stmtSize 
-  ){
-    assert( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize );
-    assert( pPager->aInStmt!=0 );
+  assert( !MEMDB );    /* For a memdb, pPager->journalOpen is always 0 */
+
+  /* Check that PagerWrite() has not yet been called on this page, and
+  ** that the page existed when the transaction started.
+  */
+  assert( !pPg->inJournal && (int)pPg->pgno <= pPager->origDbSize );
+
+  assert( pPager->aInJournal!=0 );
+  pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
+  pPg->inJournal = 1;
+  pPg->needRead = 0;
+  if( pPager->stmtInUse ){
+    assert( pPager->stmtSize <= pPager->origDbSize );
     pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
   }
+  PAGERTRACE3("DONT_ROLLBACK page %d of %d\n", pPg->pgno, PAGERID(pPager));
+  IOTRACE(("GARBAGE %p %d\n", pPager, pPg->pgno))
   pagerLeave(pPager);
 }
 
