@@ -1,5 +1,5 @@
-C Add\sthe\sfault\sinjector\smodule\sin\sfault.c.\s\sUse\sit\sas\sa\sbasis\sfor\smemory\nallocation\sfailure\stesting.\s(CVS\s4742)
-D 2008-01-22T21:30:53
+C Improved\stest\scoverage\sfor\sthe\stokenizer\sand\ssqlite3_complete()\sinterface.\nFix\sbugs\sin\sparsing\sblob\sliterals\sand\sSQL\svariables\sbeginning\swith\s$.\s(CVS\s4743)
+D 2008-01-22T23:37:10
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -127,7 +127,7 @@ F src/os_win.c c832d528ea774c7094d887749d71884984c9034c
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c d8c2f06c3ce225dd14816cd02f07d7c65aff1f53
 F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
-F src/parse.y bcc6092d2577f4b525e09928b3ed164965e35c54
+F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
 F src/pragma.c 2bb8d6882b9a330e041acd05fb6aff5a01bf0a08
 F src/prepare.c 05433874e7f161124d29877f83d246efb3a10dd7
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
@@ -153,7 +153,7 @@ F src/test9.c b46c8fe02ac7cca1a7316436d8d38d50c66f4b2f
 F src/test_async.c 5f21392d66869a4c87dc9153e40d0dc0e085261f
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
-F src/test_config.c c0917656ada90c4aa23c52d1ade39815a930ee18
+F src/test_config.c a3ac9faf2e3c032bb0bdb9e3f2fd36a1e17a6cce
 F src/test_devsym.c 6341971bf1c7769c740501b36bc6192cd975c335
 F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
@@ -164,7 +164,7 @@ F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
-F src/tokenize.c a4e04438c11fed2c67ec47fe3edbef9cca2d1b48
+F src/tokenize.c c4b79fd48ddb709b2b8522b7d93a5a3d98168ca4
 F src/trigger.c 9bd3b6fa0beff4a02d262c96466f752ec15a7fc3
 F src/update.c 31edd9c9764e80753930bd5f9b43e0edb404636f
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
@@ -209,7 +209,7 @@ F test/bigfile.test 9a6a8346e4042d9c781ed6cb6553ac871ae30618
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 261fd1603613e7f877a516d29f281c9d8c2ecf52
 F test/bindxfer.test b9a57f66dbd317feeefa28bd65b6576f1592ee98
-F test/blob.test 28c3b25150684ee3d108bb78cfb67a472deef2f0
+F test/blob.test f2dbdbf1159674283645c2636436839313ee7131
 F test/btree.test 41c328449887a4a532650db28cf346556ff70d4e
 F test/btree2.test 4b56a2a4a4f84d68c77aef271223a713bf5ebafc
 F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
@@ -366,7 +366,7 @@ F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test f358fa835dff485d462072eee991111f09e87441
-F test/main.test 05f585bb70c05caac3e047903b517cbb319ed204
+F test/main.test 82c222989e02ea09abd58d453828ffd71806b6bf
 F test/malloc.test 010b60540ce24d90c00bcd46762f06beb80f165d
 F test/malloc2.test bacb55551f6f4dc58c538589a8d3e29b127ef8d0
 F test/malloc3.test 5d3839afd98bff92b82d13405f41c96e77ac2a6b
@@ -538,7 +538,7 @@ F test/zeroblob.test 7d1854ea79d048e023e5f2e38106a7e99a17435c
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/lemon.c 5d1731de7eb31238e42ff424c0c78efb4a7be635
-F tool/lempar.c feab108e39e9bd65e3cadb18e5c1d6e857075b28
+F tool/lempar.c 2dafd3da7fba7ccecc3af58fb512f0cbfb8058a4
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
@@ -614,7 +614,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c8394ac24b87707fa7f2e3cb43ad8efb65d2595e
-R 21d4a739d8a6a8ab5aa325f6376c5db5
+P 1a335e180183b414fcc3510ce28b98b21cd134a6
+R 1823b998eac2ea2abc6d95d39900dbcf
 U drh
-Z 7682f023570ed6783cc7782294e94c3e
+Z 8b71aeae0977a8f741811bf53f9ebac4

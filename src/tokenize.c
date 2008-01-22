@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.137 2007/12/17 16:20:07 drh Exp $
+** $Id: tokenize.c,v 1.138 2008/01/22 23:37:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -292,7 +292,7 @@ static int getToken(const unsigned char *z, int *tokenType){
     }
     case '[': {
       for(i=1, c=z[0]; c!=']' && (c=z[i])!=0; i++){}
-      *tokenType = TK_ID;
+      *tokenType = c==']' ? TK_ID : TK_ILLEGAL;
       return i;
     }
     case '?': {
@@ -344,19 +344,14 @@ static int getToken(const unsigned char *z, int *tokenType){
     }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
     case 'x': case 'X': {
-      if( (c=z[1])=='\'' || c=='"' ){
-        int delim = c;
+      if( z[1]=='\'' ){
         *tokenType = TK_BLOB;
-        for(i=2; (c=z[i])!=0; i++){
-          if( c==delim ){
-            if( i%2 ) *tokenType = TK_ILLEGAL;
-            break;
-          }
+        for(i=2; (c=z[i])!=0 && c!='\''; i++){
           if( !isxdigit(c) ){
             *tokenType = TK_ILLEGAL;
-            return i;
           }
         }
+        if( i%2 || !c ) *tokenType = TK_ILLEGAL;
         if( c ) i++;
         return i;
       }
@@ -477,7 +472,7 @@ abort_parse:
       sqlite3_free(pParse->zErrMsg);
     }
     pParse->zErrMsg = 0;
-    if( !nErr ) nErr++;
+    nErr++;
   }
   if( pParse->pVdbe && pParse->nErr>0 && pParse->nested==0 ){
     sqlite3VdbeDelete(pParse->pVdbe);

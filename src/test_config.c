@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.17 2008/01/22 21:30:53 drh Exp $
+** $Id: test_config.c,v 1.18 2008/01/22 23:37:10 drh Exp $
 */
 
 #include "sqliteLimit.h"
@@ -368,8 +368,10 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
 
 #if SQLITE_THREADSAFE
   Tcl_SetVar2(interp, "sqlite_options", "threadsafe", "1", TCL_GLOBAL_ONLY);
+  assert( sqlite3_threadsafe() );
 #else
   Tcl_SetVar2(interp, "sqlite_options", "threadsafe", "0", TCL_GLOBAL_ONLY);
+  assert( !sqlite3_threadsafe() );
 #endif
 
 #ifdef SQLITE_OMIT_TRACE

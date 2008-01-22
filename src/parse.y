@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.239 2008/01/22 14:50:17 drh Exp $
+** @(#) $Id: parse.y,v 1.240 2008/01/22 23:37:10 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -32,11 +32,9 @@
 // This code runs whenever there is a syntax error
 //
 %syntax_error {
-  if( !pParse->parseError ){
-    assert( TOKEN.z[0] );  /* The tokenizer always gives us a token */
-    sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &TOKEN);
-    pParse->parseError = 1;
-  }
+  assert( TOKEN.z[0] );  /* The tokenizer always gives us a token */
+  sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &TOKEN);
+  pParse->parseError = 1;
 }
 %stack_overflow {
   sqlite3ErrorMsg(pParse, "parser stack overflow");

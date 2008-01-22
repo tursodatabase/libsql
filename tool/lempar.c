@@ -562,7 +562,8 @@ static void yy_reduce(
     {
       yy_shift(yypParser,yyact,yygoto,&yygotominor);
     }
-  }else if( yyact == YYNSTATE + YYNRULE + 1 ){
+  }else{
+    assert( yyact == YYNSTATE + YYNRULE + 1 );
     yy_accept(yypParser);
   }
 }

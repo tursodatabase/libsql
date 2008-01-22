@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.27 2007/09/03 15:42:48 drh Exp $
+# $Id: main.test,v 1.28 2008/01/22 23:37:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -133,26 +133,26 @@ ifcapable {trigger} {
   do_test main-1.25 {
     db complete {
       CREATE TRIGGER xyz AFTER DELETE backend BEGIN
-         UPDATE pqr SET a=[;end;];;;
+         UPDATE cantor SET a=[;end;];;;
     }
   } {0}
   do_test main-1.26 {
     db complete {
       CREATE -- a comment
-      TRIGGER xyz AFTER DELETE backend BEGIN
+      TRIGGER exy AFTER DELETE backend BEGIN
          UPDATE pqr SET a=5;
     }
   } {0}
   do_test main-1.27.1 {
     db complete {
       CREATE -- a comment
-      TRIGGERX xyz AFTER DELETE backend BEGIN
+      TRIGGERX tangentxx AFTER DELETE backend BEGIN
          UPDATE pqr SET a=5;
     }
   } {1}
   do_test main-1.27.2 {
     db complete {
-      CREATE/**/TRIGGER xyz AFTER DELETE backend BEGIN
+      CREATE/**/TRIGGER tiger00 AFTER DELETE backend BEGIN
          UPDATE pqr SET a=5;
     }
   } {0}
@@ -160,7 +160,7 @@ ifcapable {trigger} {
     do_test main-1.27.3 {
       db complete {
         /* */ EXPLAIN -- A comment
-        CREATE/**/TRIGGER xyz AFTER DELETE backend BEGIN
+        CREATE/**/TRIGGER ezxyz12 AFTER DELETE backend BEGIN
            UPDATE pqr SET a=5;
       }
     } {0}
@@ -194,6 +194,9 @@ ifcapable {trigger} {
          EXPLAIN select * from xyz;
     }
   } {0}
+
+} ;# end ifcapable {complete}
+
 }
 do_test main-1.30 {
   db complete {
@@ -242,8 +245,26 @@ do_test main-1.35 {
 do_test main-1.36 {
   db complete {hi there/***/;}
 } {1}
+do_test main-1.37 {
+  db complete {hi there/**}
+} {0}
+do_test main-1.38 {
+  db complete {hi [there}
+} {0}
 
-} ;# end ifcapable {complete}
+ifcapable {trigger} {
+  # Characters less than \040 can never be part of an identifier.
+  # Characters greater than \u177 are always identifier characters.
+  do_test main-1.100 {
+    db complete "create \037\036\035\034trigger\001\002;"
+  } {1}
+  do_test main-1.101 {
+    db complete "create trigger\200;"
+  } {1}
+  do_test main-1.102 {
+    db complete "create \200trigger;"
+  } {1}
+}
 
 
 # Try to open a database with a corrupt database file.
@@ -282,6 +303,112 @@ do_test main-3.2.2 {
 do_test main-3.2.3 {
   catchsql {select "abc}
 } {1 {unrecognized token: ""abc"}}
+do_test main-3.2.4 {
+  catchsql {select [abc}
+} {1 {unrecognized token: "[abc"}}
+do_test main-3.2.5 {
+  catchsql {select x'4869}
+} {1 {unrecognized token: "x'4869"}}
+do_test main-3.2.6 {
+  catchsql {select x'4869'}
+} {0 Hi}
+do_test main-3.2.7 {
+  catchsql {select x'48695'}
+} {1 {unrecognized token: "x'48695'"}}
+do_test main-3.2.8 {
+  catchsql {select x'486x'}
+} {1 {unrecognized token: "x'486x'"}}
+do_test main-3.2.9 {
+  catchsql {select $abc(}
+} {1 {unrecognized token: "$abc("}}
+do_test main-3.2.10 {
+  catchsql {select $abc(x}
+} {1 {unrecognized token: "$abc(x"}}
+set xyz 123
+do_test main-3.2.11 {
+  catchsql {select $::xyz}
+} {0 123}
+namespace eval ::testnamespace {
+  variable xyz 321
+}
+do_test main-3.2.12 {
+  catchsql {select $testnamespace::xyz}
+} {0 321}
+do_test main-3.2.13 {
+  catchsql {select $(abc)}
+} {1 {unrecognized token: "$"}}
+breakpoint
+do_test main-3.2.14 {
+  set hi\u1234x 987
+  db eval "select \$hi\u1234x"
+} {987}
+do_test main-3.2.15 {
+  catchsql "select 456\u1234"
+} [list 1 "unrecognized token: \"456\u1234\""]
+do_test main-3.2.16 {
+  catchsql {select cast(3.14e+4 AS integer)}
+} {0 31400}
+do_test main-3.2.17 {
+  catchsql {select cast(3.14e+04 AS integer)}
+} {0 31400}
+do_test main-3.2.18 {
+  catchsql {select cast(3.14e+004 AS integer)}
+} {0 31400}
+do_test main-3.2.19 {
+  catchsql {select cast(3.14e4 AS integer)}
+} {0 31400}
+do_test main-3.2.20 {
+  catchsql {select cast(3.14e04 AS integer)}
+} {0 31400}
+do_test main-3.2.21 {
+  catchsql {select cast(3.14e004 AS integer)}
+} {0 31400}
+do_test main-3.2.16 {
+  catchsql {select cast(3.14E+4 AS integer)}
+} {0 31400}
+do_test main-3.2.17 {
+  catchsql {select cast(3.14E+04 AS integer)}
+} {0 31400}
+do_test main-3.2.18 {
+  catchsql {select cast(3.14E+004 AS integer)}
+} {0 31400}
+do_test main-3.2.19 {
+  catchsql {select cast(3.14E4 AS integer)}
+} {0 31400}
+do_test main-3.2.20 {
+  catchsql {select cast(3.14E04 AS integer)}
+} {0 31400}
+do_test main-3.2.21 {
+  catchsql {select cast(3.14E004 AS integer)}
+} {0 31400}
+do_test main-3.2.22 {
+  catchsql {select cast(3.14e-4 * 1e8 AS integer)}
+} {0 31400}
+do_test main-3.2.23 {
+  catchsql {select cast(3.14E-04 * 1E08 AS integer)}
+} {0 31400}
+do_test main-3.2.24 {
+  catchsql {select cast(3.14e-004 * 01.0E+8 AS integer)}
+} {0 31400}
+do_test main-3.2.25 {
+  catchsql {select 123/*abc}
+} {0 123}
+do_test main-3.2.26 {
+  catchsql {select 123/***abc}
+} {0 123}
+do_test main-3.2.27 {
+  catchsql {select 123/*/*2}
+} {0 123}
+do_test main-3.2.28 {
+  catchsql {select 123/**/*2}
+} {0 246}
+do_test main-3.2.29 {
+  catchsql {select 123/}
+} {1 {near "/": syntax error}}
+do_test main-3.2.30 {
+  catchsql {select 123--5}
+} {0 123}
+
 
 do_test main-3.3 {
   catch {db close}
