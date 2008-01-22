@@ -1,5 +1,5 @@
-C Move\sthe\stest\s(sqlite3_simulate_device)\sfunctionality\sout\sof\sthe\smain\scode\sand\sinto\sa\stest\svfs.\s(CVS\s4737)
-D 2008-01-22T11:50:13
+C Remove\sdead\scode\sfrom\sthe\slemon-generated\sparser.\s\sBetter\stesting\nof\sthe\ssqlite3_file_control()\sinterface,\sand\sin\sparticular\smake\ssure\nthe\sinterface\sworks\son\s:memory:\sdatabases.\s(CVS\s4738)
+D 2008-01-22T14:50:17
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 936bcacced594b24b8fdcfc0fc0efc00e15de8a8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -86,7 +86,7 @@ F src/btmutex.c 5d39da37c9d1282f3c6f9967afae6a34ee36b7ff
 F src/btree.c a3125bd53a4112f2f259af858ef2eff63e397c9b
 F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
 F src/btreeInt.h 1c5a9da165718ef7de81e35ce9ab5d9ba9283f76
-F src/build.c b228a333d7de41e80c1f7cd442483e59e97543e1
+F src/build.c a073dde21738ea3a79d953975173a1a0d86912a3
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c 8ce763c68143b1e8fb6f79dcfc8b801853c97017
@@ -101,7 +101,7 @@ F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c d17a0f760d6866aacf5262f97d8efaaad379cdd7
-F src/main.c 05bba9097e39b14ad03c345baaef3a47b4588cbf
+F src/main.c f17abe4d28c442749ec892fc466d7e5727af04f2
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c 6d1a11864963d249c67e72ad5f6533b040333880
@@ -126,7 +126,7 @@ F src/os_win.c c832d528ea774c7094d887749d71884984c9034c
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
 F src/pager.c fae75270b4e2b2542b905791087f0c52142974f8
 F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
-F src/parse.y 0a0878dd99b12056799802a97b6a529f4b37c15f
+F src/parse.y bcc6092d2577f4b525e09928b3ed164965e35c54
 F src/pragma.c 2bb8d6882b9a330e041acd05fb6aff5a01bf0a08
 F src/prepare.c 505afbfebcca809f655e04725832bfbfdf1ce697
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
@@ -140,7 +140,7 @@ F src/sqliteInt.h 9c3384439e402016037115ad143ed0c3adbd1c93
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 1aeb9eab57b4235db86fe15a35dec76fb445a9c4
 F src/tclsqlite.c 9923abeffc9b3d7dad58e92b319661521f60debf
-F src/test1.c 157f46f5945840dd89b959b8e72cc3410a075ed9
+F src/test1.c 7e620caf76fe1c9d78e2c062c90f387caab2b40d
 F src/test2.c 77b34303883b9d722c65a6879bb0163a400e3789
 F src/test3.c 6b49ddb0946907a07210998810807ace51be00a5
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -167,7 +167,7 @@ F src/tokenize.c a4e04438c11fed2c67ec47fe3edbef9cca2d1b48
 F src/trigger.c 9bd3b6fa0beff4a02d262c96466f752ec15a7fc3
 F src/update.c 31edd9c9764e80753930bd5f9b43e0edb404636f
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
-F src/util.c deda8c5a400530e1c27c03619cc4cd1a06fc5281
+F src/util.c ca0e3820ce9b0e0ff9bf21f4b726a81163d7b417
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
 F src/vdbe.c e7ec3089f1e2ee5ab47b66d2be940f4e8b0029a7
 F src/vdbe.h 58a7d931ffb704e034b2a725981cfa5bd406fad9
@@ -266,6 +266,7 @@ F test/exclusive2.test d13bf66753dca46e61241d35d36ab7c868b0d313
 F test/exclusive3.test 0e49c35b7e7cb8e7280b4ce3f0359d30b207d2ff
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test 5c606f12045dd640ede7f840270340baf5ef1450
+F test/filectrl.test 524853082d5d7fb442599730ec3a0f3f84a3a936
 F test/filefmt.test 053b622009fbbb74dd37921ffad374d852c13cd8
 F test/fkey1.test dcb4f28eb22d5141f15161d6bdca9a4f58c95729
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -535,7 +536,7 @@ F test/zeroblob.test 7d1854ea79d048e023e5f2e38106a7e99a17435c
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/lemon.c 5d1731de7eb31238e42ff424c0c78efb4a7be635
-F tool/lempar.c 71f92c138d8288f1a36b438ad39d94cc6835afb7
+F tool/lempar.c feab108e39e9bd65e3cadb18e5c1d6e857075b28
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
@@ -611,7 +612,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2a0bc1e186532a0bfe36ca18fda74a5e7a199227
-R 8aeac68813d7cfbc6958a810d0c1e1d8
-U danielk1977
-Z 298f0f8d954eedc2b3f36fd2e741cf3e
+P 17e7bd6c3f507ffc6b56f54ae8c70730e8246f39
+R 14b9fd5f5ecc09fd70e45747e2da0096
+U drh
+Z fed5347d72dd07a023e0d7f58e92c261

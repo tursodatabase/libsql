@@ -1,0 +1,31 @@
+# 2008 Jan 22
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: filectrl.test,v 1.1 2008/01/22 14:50:17 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+
+do_test filectrl-1.1 {
+  file_control_test db
+} {}
+do_test filectrl-1.2 {
+  db eval {CREATE TEMP TABLE x(y);}
+  file_control_test db
+} {}
+do_test filectrl-1.3 {
+  db close
+  sqlite3 db :memory:
+  file_control_test db
+} {}
+
+finish_test

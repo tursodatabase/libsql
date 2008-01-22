@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.214 2008/01/18 14:08:25 drh Exp $
+** $Id: util.c,v 1.215 2008/01/22 14:50:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -444,25 +444,6 @@ int sqlite3GetInt32(const char *zNum, int *pValue){
 }
 
 /*
-** Check to make sure we have a valid db pointer.  This test is not
-** foolproof but it does provide some measure of protection against
-** misuse of the interface such as passing in db pointers that are
-** NULL or which have been previously closed.  If this routine returns
-** TRUE it means that the db pointer is invalid and should not be
-** dereferenced for any reason.  The calling function should invoke
-** SQLITE_MISUSE immediately.
-*/
-int sqlite3SafetyCheck(sqlite3 *db){
-  int magic;
-  if( db==0 ) return 1;
-  magic = db->magic;
-  if( magic!=SQLITE_MAGIC_CLOSED &&
-         magic!=SQLITE_MAGIC_OPEN &&
-         magic!=SQLITE_MAGIC_BUSY ) return 1;
-  return 0;
-}
-
-/*
 ** The variable-length integer encoding is as follows:
 **
 ** KEY:
@@ -704,4 +685,23 @@ int sqlite3SafetyOff(sqlite3 *db){
     db->u1.isInterrupted = 1;
     return 1;
   }
+}
+
+/*
+** Check to make sure we have a valid db pointer.  This test is not
+** foolproof but it does provide some measure of protection against
+** misuse of the interface such as passing in db pointers that are
+** NULL or which have been previously closed.  If this routine returns
+** TRUE it means that the db pointer is invalid and should not be
+** dereferenced for any reason.  The calling function should invoke
+** SQLITE_MISUSE immediately.
+*/
+int sqlite3SafetyCheck(sqlite3 *db){
+  int magic;
+  if( db==0 ) return 1;
+  magic = db->magic;
+  if( magic!=SQLITE_MAGIC_CLOSED &&
+         magic!=SQLITE_MAGIC_OPEN &&
+         magic!=SQLITE_MAGIC_BUSY ) return 1;
+  return 0;
 }

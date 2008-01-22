@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.284 2008/01/19 23:50:26 drh Exp $
+** $Id: test1.c,v 1.285 2008/01/22 14:50:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4304,6 +4304,39 @@ static int vfs_unlink_test(
 }
 
 /*
+** tclcmd:   file_control_test DB
+**
+** This TCL command runs the sqlite3_file_control interface and
+** verifies correct operation of the same.
+*/
+static int file_control_test(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int iArg = 0;
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  rc = sqlite3_file_control(db, 0, 0, &iArg);
+  assert( rc==SQLITE_ERROR );
+  rc = sqlite3_file_control(db, "notadatabase", SQLITE_FCNTL_LOCKSTATE, &iArg);
+  assert( rc==SQLITE_ERROR );
+  rc = sqlite3_file_control(db, "main", -1, &iArg);
+  assert( rc==SQLITE_ERROR );
+  rc = sqlite3_file_control(db, "temp", -1, &iArg);
+  assert( rc==SQLITE_ERROR );
+  return TCL_OK;  
+}
+
+/*
 ** tclcmd:  save_prng_state
 */
 static int save_prng_state(
@@ -4484,6 +4517,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_global_recover",     test_global_recover, 0   },
      { "working_64bit_int",          working_64bit_int,   0   },
      { "vfs_unlink_test",            vfs_unlink_test,     0   },
+     { "file_control_test",          file_control_test,   0   },
 
      /* Functions from os.h */
 #ifndef SQLITE_OMIT_DISKIO

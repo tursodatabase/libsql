@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.469 2008/01/22 01:48:06 drh Exp $
+** $Id: build.c,v 1.470 2008/01/22 14:50:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
