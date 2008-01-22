@@ -1,4 +1,4 @@
-C Detect\sand\sreport\sa\sparticular\stype\sof\sdatabase\scorruption\sthat\swould\nformerly\scause\sa\ssegfault.\s(CVS\s4739)
+C Detect\sand\sreport\sa\sparticular\stype\sof\sdatabase\scorruption\sthat\swould\nformerly\scause\sa\ssegfault.\s(CVS\s4740)
 D 2008-01-22T16:35:37
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 936bcacced594b24b8fdcfc0fc0efc00e15de8a8
@@ -613,7 +613,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 83ca4fc7dc18d6deca58fe4181905eb9754e03da
+P 6ed2d9f82e2c81d5f6c22a4e05c1a2cb5eedd10c
 R 3417650ecd944a7908b0954ce87245ba
 U drh
-Z 1684be0f0cf3c808fc0b04aa7d971ebc
+Z 5a68e339af1e0ff47a118a7e9273f20b
