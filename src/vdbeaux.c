@@ -663,14 +663,13 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
     case P4_MEM: {
       Mem *pMem = pOp->p4.pMem;
+      assert( (pMem->flags & MEM_Null)==0 );
       if( pMem->flags & MEM_Str ){
         zP4 = pMem->z;
       }else if( pMem->flags & MEM_Int ){
         sqlite3_snprintf(nTemp, zTemp, "%lld", pMem->u.i);
       }else if( pMem->flags & MEM_Real ){
         sqlite3_snprintf(nTemp, zTemp, "%.16g", pMem->r);
-      }else if( pMem->flags & MEM_Null ){
-        sqlite3_snprintf(nTemp, zTemp, "NULL");
       }
       break;
     }
@@ -2111,6 +2110,9 @@ int sqlite3VdbeSerialGet(
 ** or positive integer if {nKey1, pKey1} is less than, equal to or 
 ** greater than {nKey2, pKey2}.  Both Key1 and Key2 must be byte strings
 ** composed by the OP_MakeRecord opcode of the VDBE.
+**
+** Key1 and Key2 do not have to contain the same number of fields.
+** But if the lengths differ, Key2 must be the shorter of the two.
 */
 int sqlite3VdbeRecordCompare(
   void *userData,
@@ -2176,7 +2178,7 @@ int sqlite3VdbeRecordCompare(
       if( d1<nKey1 ){
         rc = 1;
       }else if( d2<nKey2 ){
-        rc = -1;
+        rc = -1;  /* Only occurs on a corrupt database file */
       }
     }
   }else if( pKeyInfo->aSortOrder && i<pKeyInfo->nField

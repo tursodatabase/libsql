@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.168 2008/01/17 16:22:15 drh Exp $
+** $Id: pragma.c,v 1.169 2008/01/22 01:48:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1156,7 +1156,7 @@ void sqlite3Pragma(
       pBt = db->aDb[i].pBt;
       if( pBt==0 || (pPager = sqlite3BtreePager(pBt))==0 ){
         zState = "closed";
-      }else if( sqlite3_file_control(db, db->aDb[i].zName, 
+      }else if( sqlite3_file_control(db, i ? db->aDb[i].zName : 0, 
                                      SQLITE_FCNTL_LOCKSTATE, &j)==SQLITE_OK ){
          zState = azLockName[j];
       }

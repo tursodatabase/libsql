@@ -944,7 +944,7 @@ sqlite3_value *sqlite3ValueNew(sqlite3 *db){
 ** Create a new sqlite3_value object, containing the value of pExpr.
 **
 ** This only works for very simple expressions that consist of one constant
-** token (i.e. "5", "5.1", "NULL", "'a string'"). If the expression can
+** token (i.e. "5", "5.1", "'a string'"). If the expression can
 ** be converted directly into a value, then the value is allocated and
 ** a pointer written to *ppVal. The caller is responsible for deallocating
 ** the value by passing it to sqlite3ValueFree() later on. If the expression

@@ -647,7 +647,9 @@ void Parse(
   YYMINORTYPE yyminorunion;
   int yyact;            /* The parser action. */
   int yyendofinput;     /* True if we are at the end of input */
+#ifdef YYERRORSYMBOL
   int yyerrorhit = 0;   /* True if yymajor has invoked an error */
+#endif
   yyParser *yypParser;  /* The parser */
 
   /* (re)initialize the parser, if necessary */
@@ -687,8 +689,11 @@ void Parse(
       }
     }else if( yyact < YYNSTATE + YYNRULE ){
       yy_reduce(yypParser,yyact-YYNSTATE);
-    }else if( yyact == YY_ERROR_ACTION ){
+    }else{
+      assert( yyact == YY_ERROR_ACTION );
+#ifdef YYERRORSYMBOL
       int yymx;
+#endif
 #ifndef NDEBUG
       if( yyTraceFILE ){
         fprintf(yyTraceFILE,"%sSyntax Error!\n",yyTracePrompt);
@@ -769,9 +774,6 @@ void Parse(
       }
       yymajor = YYNOCODE;
 #endif
-    }else{
-      yy_accept(yypParser);
-      yymajor = YYNOCODE;
     }
   }while( yymajor!=YYNOCODE && yypParser->yyidx>=0 );
   return;

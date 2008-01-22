@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.57 2007/12/13 21:54:11 drh Exp $
+# $Id: capi3.test,v 1.58 2008/01/22 01:48:09 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1112,5 +1112,38 @@ do_test capi3-17.2 {
 do_test capi3-17.3 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
+
+# Verify that sqlite3_step() fails with an SQLITE_SCHEMA error
+# when the statement is prepared with sqlite3_prepare() (not
+# sqlite3_prepare_v2()) and the schema has changed.
+#
+do_test capi3-18.1 {
+  set STMT [sqlite3_prepare db {SELECT * FROM t2} -1 TAIL]
+  sqlite3 db2 test.db
+  db2 eval {CREATE TABLE t3(x)}
+  db2 close
+breakpoint
+  sqlite3_step $STMT
+} {SQLITE_ERROR}
+do_test capi3-18.2 {
+  sqlite3_reset $STMT
+  sqlite3_errcode db
+} {SQLITE_SCHEMA}
+do_test capi3-18.3 {
+  sqlite3_errmsg db
+} {database schema has changed}
+# The error persist on retry when sqlite3_prepare() has been used.
+do_test capi3-18.4 {
+  sqlite3_step $STMT
+} {SQLITE_ERROR}
+do_test capi3-18.5 {
+  sqlite3_reset $STMT
+  sqlite3_errcode db
+} {SQLITE_SCHEMA}
+do_test capi3-18.6 {
+  sqlite3_errmsg db
+} {database schema has changed}
+sqlite3_finalize $STMT
+
 
 finish_test

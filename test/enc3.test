@@ -13,7 +13,7 @@
 # The focus of this file is testing of the proper handling of conversions
 # to the native text representation.
 #
-# $Id: enc3.test,v 1.7 2008/01/19 23:50:26 drh Exp $
+# $Id: enc3.test,v 1.8 2008/01/22 01:48:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -79,9 +79,13 @@ ifcapable {bloblit && utf16} {
 
 # Try to attach a database with a different encoding.
 #
-ifcapable {utf16} {
+ifcapable {utf16 && shared_cache} {
+  db close
   file delete -force test8.db test8.db-journal
+  set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
   sqlite3 dbaux test8.db
+  sqlite3 db test.db
+  db eval {SELECT 1 FROM sqlite_master LIMIT 1}
   do_test enc3-3.1 {
     dbaux eval {
       PRAGMA encoding='utf8';
@@ -95,8 +99,9 @@ ifcapable {utf16} {
       SELECT 1 FROM utf16.sqlite_master LIMIT 1;
     } dbaux
   } {1 {attached databases must use the same text encoding as main database}}
-  catch {dbaux close}
+  dbaux close
   file delete -force test8.db test8.db-journal
+  sqlite3_enable_shared_cache $::enable_shared_cache
 }
 
 finish_test

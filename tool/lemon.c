@@ -131,6 +131,7 @@ struct symbol {
   } assoc;                 /* Associativity if predecence is defined */
   char *firstset;          /* First-set for all rules of this symbol */
   Boolean lambda;          /* True if NT and can generate an empty string */
+  int useCnt;              /* Number of times used */
   char *destructor;        /* Code which executes whenever this symbol is
                            ** popped from the stack during error processing */
   int destructorln;        /* Line number of destructor code */
@@ -1437,6 +1438,7 @@ char **argv;
   lem.basisflag = basisflag;
   Symbol_new("$");
   lem.errsym = Symbol_new("error");
+  lem.errsym->useCnt = 0;
 
   /* Parse the input file */
   Parse(&lem);
@@ -2136,7 +2138,7 @@ to follow the previous rule.");
       }else if( isalpha(x[0]) ){
         if( psp->nrhs>=MAXRHS ){
           ErrorMsg(psp->filename,psp->tokenlineno,
-            "Too many symbols on RHS or rule beginning at \"%s\".",
+            "Too many symbols on RHS of rule beginning at \"%s\".",
             x);
           psp->errorcnt++;
           psp->state = RESYNC_AFTER_RULE_ERROR;
@@ -3430,7 +3432,9 @@ int mhflag;                 /* True if generating makeheaders output */
     fprintf(out,"  %s yy%d;\n",types[i],i+1); lineno++;
     free(types[i]);
   }
-  fprintf(out,"  int yy%d;\n",lemp->errsym->dtnum); lineno++;
+  if( lemp->errsym->useCnt ){
+    fprintf(out,"  int yy%d;\n",lemp->errsym->dtnum); lineno++;
+  }
   free(stddt);
   free(types);
   fprintf(out,"} YYMINORTYPE;\n"); lineno++;
@@ -3479,6 +3483,25 @@ static int axset_compare(const void *a, const void *b){
   struct axset *p2 = (struct axset*)b;
   return p2->nAction - p1->nAction;
 }
+
+/*
+** Write text on "out" that describes the rule "rp".
+*/
+static void writeRuleText(FILE *out, struct rule *rp){
+  int j;
+  fprintf(out,"%s ::=", rp->lhs->name);
+  for(j=0; j<rp->nrhs; j++){
+    struct symbol *sp = rp->rhs[j];
+    fprintf(out," %s", sp->name);
+    if( sp->type==MULTITERMINAL ){
+      int k;
+      for(k=1; k<sp->nsubsym; k++){
+        fprintf(out,"|%s",sp->subsym[k]->name);
+      }
+    }
+  }
+}
+
 
 /* Generate C source code for the parser */
 void ReportTable(lemp, mhflag)
@@ -3575,8 +3598,10 @@ int mhflag;     /* Output in makeheaders format if true */
   }
   fprintf(out,"#define YYNSTATE %d\n",lemp->nstate);  lineno++;
   fprintf(out,"#define YYNRULE %d\n",lemp->nrule);  lineno++;
-  fprintf(out,"#define YYERRORSYMBOL %d\n",lemp->errsym->index);  lineno++;
-  fprintf(out,"#define YYERRSYMDT yy%d\n",lemp->errsym->dtnum);  lineno++;
+  if( lemp->errsym->useCnt ){
+    fprintf(out,"#define YYERRORSYMBOL %d\n",lemp->errsym->index);  lineno++;
+    fprintf(out,"#define YYERRSYMDT yy%d\n",lemp->errsym->dtnum);  lineno++;
+  }
   if( lemp->has_fallback ){
     fprintf(out,"#define YYFALLBACK 1\n");  lineno++;
   }
@@ -3775,17 +3800,8 @@ int mhflag;     /* Output in makeheaders format if true */
   */
   for(i=0, rp=lemp->rule; rp; rp=rp->next, i++){
     assert( rp->index==i );
-    fprintf(out," /* %3d */ \"%s ::=", i, rp->lhs->name);
-    for(j=0; j<rp->nrhs; j++){
-      struct symbol *sp = rp->rhs[j];
-      fprintf(out," %s", sp->name);
-      if( sp->type==MULTITERMINAL ){
-        int k;
-        for(k=1; k<sp->nsubsym; k++){
-          fprintf(out,"|%s",sp->subsym[k]->name);
-        }
-      }
-    }
+    fprintf(out," /* %3d */ \"", i);
+    writeRuleText(out, rp);
     fprintf(out,"\",\n"); lineno++;
   }
   tplt_xfer(lemp->name,in,out,&lineno);
@@ -3798,7 +3814,8 @@ int mhflag;     /* Output in makeheaders format if true */
     for(i=0; i<lemp->nsymbol; i++){
       struct symbol *sp = lemp->symbols[i];
       if( sp==0 || sp->type!=TERMINAL ) continue;
-      fprintf(out,"    case %d:\n",sp->index); lineno++;
+      fprintf(out,"    case %d: /* %s */\n",
+              sp->index, sp->name); lineno++;
     }
     for(i=0; i<lemp->nsymbol && lemp->symbols[i]->type!=TERMINAL; i++);
     if( i<lemp->nsymbol ){
@@ -3812,7 +3829,8 @@ int mhflag;     /* Output in makeheaders format if true */
       struct symbol *sp = lemp->symbols[i];
       if( sp==0 || sp->type==TERMINAL ||
           sp->index<=0 || sp->destructor!=0 ) continue;
-      fprintf(out,"    case %d:\n",sp->index); lineno++;
+      fprintf(out,"    case %d: /* %s */\n",
+              sp->index, sp->name); lineno++;
       dflt_sp = sp;
     }
     if( dflt_sp!=0 ){
@@ -3823,7 +3841,8 @@ int mhflag;     /* Output in makeheaders format if true */
   for(i=0; i<lemp->nsymbol; i++){
     struct symbol *sp = lemp->symbols[i];
     if( sp==0 || sp->type==TERMINAL || sp->destructor==0 ) continue;
-    fprintf(out,"    case %d:\n",sp->index); lineno++;
+    fprintf(out,"    case %d: /* %s */\n",
+            sp->index, sp->name); lineno++;
 
     /* Combine duplicate destructors into a single case */
     for(j=i+1; j<lemp->nsymbol; j++){
@@ -3831,7 +3850,8 @@ int mhflag;     /* Output in makeheaders format if true */
       if( sp2 && sp2->type!=TERMINAL && sp2->destructor
           && sp2->dtnum==sp->dtnum
           && strcmp(sp->destructor,sp2->destructor)==0 ){
-         fprintf(out,"    case %d:\n",sp2->index); lineno++;
+         fprintf(out,"    case %d: /* %s */\n",
+                 sp2->index, sp2->name); lineno++;
          sp2->destructor = 0;
       }
     }
@@ -3862,10 +3882,14 @@ int mhflag;     /* Output in makeheaders format if true */
   for(rp=lemp->rule; rp; rp=rp->next){
     struct rule *rp2;
     if( rp->code==0 ) continue;
-    fprintf(out,"      case %d:\n",rp->index); lineno++;
+    fprintf(out,"      case %d: /* ", rp->index);
+    writeRuleText(out, rp);
+    fprintf(out, " */\n"); lineno++;
     for(rp2=rp->next; rp2; rp2=rp2->next){
       if( rp2->code==rp->code ){
-        fprintf(out,"      case %d:\n",rp2->index); lineno++;
+        fprintf(out,"      case %d: /* ", rp2->index);
+        writeRuleText(out, rp2);
+        fprintf(out," */\n"); lineno++;
         rp2->code = 0;
       }
     }
@@ -4291,8 +4315,10 @@ char *x;
     sp->lambda = LEMON_FALSE;
     sp->destructor = 0;
     sp->datatype = 0;
+    sp->useCnt = 0;
     Symbol_insert(sp,sp->name);
   }
+  sp->useCnt++;
   return sp;
 }
 
