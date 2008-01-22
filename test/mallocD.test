@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: mallocD.test,v 1.4 2007/10/09 08:29:33 danielk1977 Exp $
+# $Id: mallocD.test,v 1.5 2008/01/22 11:50:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -23,7 +23,9 @@ ifcapable !memdebug {
 }
 source $testdir/malloc_common.tcl
 
+db close
 sqlite3_simulate_device -char atomic
+sqlite3 db test.db -vfs devsym
 
 set PREP { 
   PRAGMA page_size = 1024;

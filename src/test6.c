@@ -849,22 +849,15 @@ static int devSymObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-
-  extern int sqlite3_test_device_characteristics;
-  extern int sqlite3_test_sector_size;
+  void devsym_register(int iDeviceChar, int iSectorSize);
 
   int iDc = -1;
   int iSectorSize = -1;
+
   if( processDevSymArgs(interp, objc-1, &objv[1], &iDc, &iSectorSize) ){
     return TCL_ERROR;
   }
-
-  if( iDc>=0 ){
-    sqlite3_test_device_characteristics = iDc;
-  }
-  if( iSectorSize>=0 ){
-    sqlite3_test_sector_size = iSectorSize;
-  }
+  devsym_register(iDc, iSectorSize);
 
   return TCL_OK;
 }

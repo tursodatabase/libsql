@@ -212,6 +212,7 @@ TESTSRC = \
   $(TOP)/src/test_async.c \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
+  $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_hexio.c \
   $(TOP)/src/test_malloc.c \
   $(TOP)/src/test_md5.c \

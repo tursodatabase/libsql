@@ -89,35 +89,13 @@ int sqlite3OsCheckReservedLock(sqlite3_file *id){
 int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
   return id->pMethods->xFileControl(id,op,pArg);
 }
-
-#ifdef SQLITE_TEST
-  /* The following two variables are used to override the values returned
-  ** by the xSectorSize() and xDeviceCharacteristics() vfs methods for
-  ** testing purposes. They are usually set by a test command implemented
-  ** in test6.c.
-  */
-  int sqlite3_test_sector_size = 0;
-  int sqlite3_test_device_characteristics = 0;
-  int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
-    int dc = id->pMethods->xDeviceCharacteristics(id);
-    return dc | sqlite3_test_device_characteristics;
-  }
-  int sqlite3OsSectorSize(sqlite3_file *id){
-    if( sqlite3_test_sector_size==0 ){
-      int (*xSectorSize)(sqlite3_file*) = id->pMethods->xSectorSize;
-      return (xSectorSize ? xSectorSize(id) : SQLITE_DEFAULT_SECTOR_SIZE);
-    }
-    return sqlite3_test_sector_size;
-  }
-#else
-  int sqlite3OsSectorSize(sqlite3_file *id){
-    int (*xSectorSize)(sqlite3_file*) = id->pMethods->xSectorSize;
-    return (xSectorSize ? xSectorSize(id) : SQLITE_DEFAULT_SECTOR_SIZE);
-  }
-  int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
-    return id->pMethods->xDeviceCharacteristics(id);
-  }
-#endif
+int sqlite3OsSectorSize(sqlite3_file *id){
+  int (*xSectorSize)(sqlite3_file*) = id->pMethods->xSectorSize;
+  return (xSectorSize ? xSectorSize(id) : SQLITE_DEFAULT_SECTOR_SIZE);
+}
+int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
+  return id->pMethods->xDeviceCharacteristics(id);
+}
 
 /*
 ** The next group of routines are convenience wrappers around the
