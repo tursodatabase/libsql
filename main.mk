@@ -50,7 +50,7 @@ TCCX = $(TCC) $(OPTS) -I. -I$(TOP)/src
 #
 LIBOBJ+= alter.o analyze.o attach.o auth.o btmutex.o btree.o build.o \
          callback.o complete.o date.o delete.o \
-         expr.o func.o hash.o insert.o journal.o loadext.o \
+         expr.o fault.o func.o hash.o insert.o journal.o loadext.o \
          main.o malloc.o mem1.o mem2.o mem3.o mem4.o mutex.o mutex_os2.o \
          mutex_unix.o mutex_w32.o \
          opcodes.o os.o os_os2.o os_unix.o os_win.o \
@@ -95,6 +95,7 @@ SRC = \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
+  $(TOP)/src/fault.c \
   $(TOP)/src/func.c \
   $(TOP)/src/hash.c \
   $(TOP)/src/hash.h \

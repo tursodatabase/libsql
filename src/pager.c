@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.403 2008/01/21 13:04:35 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.404 2008/01/22 21:30:53 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -699,8 +699,9 @@ static void pager_resize_hash_table(Pager *pPager, int N){
   PgHdr **aHash, *pPg;
   assert( N>0 && (N&(N-1))==0 );
   pagerLeave(pPager);
-  sqlite3MallocBenignFailure((int)pPager->aHash);
+  sqlite3FaultBenign(SQLITE_FAULTINJECTOR_MALLOC, pPager->aHash!=0);
   aHash = sqlite3MallocZero( sizeof(aHash[0])*N );
+  sqlite3FaultBenign(SQLITE_FAULTINJECTOR_MALLOC, 0);
   pagerEnter(pPager);
   if( aHash==0 ){
     /* Failure to rehash is not an error.  It is only a performance hit. */

@@ -542,12 +542,9 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
 ** Transfer the contents of pFrom to pTo. Any existing value in pTo is
 ** freed. If pFrom contains ephemeral data, a copy is made.
 **
-** pFrom contains an SQL NULL when this routine returns.  SQLITE_NOMEM
-** might be returned if pFrom held ephemeral data and we were unable
-** to allocate enough space to make a copy.
+** pFrom contains an SQL NULL when this routine returns.
 */
-int sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
-  int rc;
+void sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
   assert( pFrom->db==0 || sqlite3_mutex_held(pFrom->db->mutex) );
   assert( pTo->db==0 || sqlite3_mutex_held(pTo->db->mutex) );
   assert( pFrom->db==0 || pTo->db==0 || pFrom->db==pTo->db );
@@ -560,12 +557,6 @@ int sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
   }
   pFrom->flags = MEM_Null;
   pFrom->xDel = 0;
-  if( 0 /* pTo->flags & MEM_Ephem */ ){
-    rc = sqlite3VdbeMemMakeWriteable(pTo);
-  }else{
-    rc = SQLITE_OK;
-  }
-  return rc;
 }
 
 /*

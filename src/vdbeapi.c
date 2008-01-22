@@ -1041,9 +1041,7 @@ int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
   }
   sqlite3_mutex_enter(pTo->db->mutex);
   for(i=0; rc==SQLITE_OK && i<pFrom->nVar; i++){
-    sqlite3MallocDisallow();
-    rc = sqlite3VdbeMemMove(&pTo->aVar[i], &pFrom->aVar[i]);
-    sqlite3MallocAllow();
+    sqlite3VdbeMemMove(&pTo->aVar[i], &pFrom->aVar[i]);
   }
   sqlite3_mutex_leave(pTo->db->mutex);
   assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );

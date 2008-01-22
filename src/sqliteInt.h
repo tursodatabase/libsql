@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.652 2008/01/18 14:08:24 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.653 2008/01/22 21:30:53 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1976,26 +1976,6 @@ void sqlite3Parser(void*, int, Token, Parse*);
   int sqlite3Utf8To8(unsigned char*);
 #endif
 
-/*
-** The MallocDisallow() and MallocAllow() routines are like asserts.
-** Call them around a section of code that you do not expect to do
-** any memory allocation.
-*/
-#ifdef SQLITE_MEMDEBUG
-  void sqlite3MallocDisallow(void);
-  void sqlite3MallocAllow(void);
-  void sqlite3MallocBenignFailure(int);
-  void sqlite3MallocEnterBenignBlock(int isBenign);
-  void sqlite3MallocLeaveBenignBlock();
-#else
-# define sqlite3MallocDisallow()
-# define sqlite3MallocAllow()
-# define sqlite3MallocBenignFailure(x)
-# define sqlite3MallocEnterBenignBlock(x);
-# define sqlite3MallocLeaveBenignBlock();
-#endif
-
-
 #ifdef SQLITE_OMIT_VIRTUALTABLE
 #  define sqlite3VtabClear(X)
 #  define sqlite3VtabSync(X,Y) (Y)
@@ -2022,6 +2002,37 @@ void sqlite3InvalidFunction(sqlite3_context*,int,sqlite3_value**);
 int sqlite3Reprepare(Vdbe*);
 void sqlite3ExprListCheckLength(Parse*, ExprList*, int, const char*);
 CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
+
+
+/*
+** Available fault injectors.  Should be numbered beginning with 0.
+*/
+#define SQLITE_FAULTINJECTOR_MALLOC     0
+#define SQLITE_FAULTINJECTOR_SAFETY     1
+#define SQLITE_FAULTINJECTOR_COUNT      2
+
+/*
+** The interface to the fault injector subsystem.  If the fault injector
+** mechanism is disabled at compile-time then set up macros so that no
+** unnecessary code is generated.
+*/
+#ifndef SQLITE_OMIT_FAULTINJECTOR
+  void sqlite3FaultConfig(int,int,int);
+  int sqlite3FaultFailures(int);
+  int sqlite3FaultBenignFailures(int);
+  int sqlite3FaultPending(int);
+  void sqlite3FaultBenign(int,int);
+  int sqlite3FaultStep(int);
+#else
+# define sqlite3FaultConfig(A,B,C)
+# define sqlite3FaultFailures(A)         0
+# define sqlite3FaultBenignFailures(A)   0
+# define sqlite3FaultPending(A)          (-1)
+# define sqlite3FaultBenign(A,B)
+# define sqlite3FaultStep(A)             0
+#endif
+  
+  
 
 #define IN_INDEX_ROWID           1
 #define IN_INDEX_EPH             2

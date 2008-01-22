@@ -201,6 +201,7 @@ foreach file {
    date.c
    os.c
 
+   fault.c
    mem1.c
    mem2.c
    mem3.c

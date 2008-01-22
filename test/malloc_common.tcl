@@ -12,7 +12,7 @@
 # This file contains common code used by many different malloc tests
 # within the test suite.
 #
-# $Id: malloc_common.tcl,v 1.11 2008/01/18 17:03:33 drh Exp $
+# $Id: malloc_common.tcl,v 1.12 2008/01/22 21:30:53 drh Exp $
 
 # If we did not compile with malloc testing enabled, then do nothing.
 #
@@ -63,7 +63,7 @@ proc do_malloc_test {tn args} {
   }
   save_prng_state
 
-  foreach ::iRepeat {0 1} {
+  foreach ::iRepeat {0 10000000} {
     set ::go 1
     for {set ::n $start} {$::go && $::n <= $end} {incr ::n} {
 
@@ -125,6 +125,7 @@ proc do_malloc_test {tn args} {
         #
         set isFail [catch $::mallocbody msg]
         set nFail [sqlite3_memdebug_fail -1 -benigncnt nBenign]
+        # puts -nonewline " (isFail=$isFail nFail=$nFail nBenign=$nBenign) "
 
         # If one or more mallocs failed, run this loop body again.
         #

@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.18 2007/11/29 18:36:49 drh Exp $
+** $Id: mem2.c,v 1.19 2008/01/22 21:30:53 drh Exp $
 */
 
 /*
@@ -136,18 +136,6 @@ static struct {
   int nTitle;        /* Bytes of zTitle to save.  Includes '\0' and padding */
   char zTitle[100];  /* The title text */
 
-  /*
-  ** These values are used to simulate malloc failures.  When
-  ** iFail is 1, simulate a malloc failures and reset the value
-  ** to iReset.
-  */
-  int iFail;    /* Decrement and fail malloc when this is 1 */
-  int iReset;   /* When malloc fails set iiFail to this value */
-  int iFailCnt;         /* Number of failures */
-  int iBenignFailCnt;   /* Number of benign failures */
-  int iNextIsBenign;    /* True if the next call to malloc may fail benignly */
-  int iIsBenign;        /* All malloc calls may fail benignly */
-
   /* 
   ** sqlite3MallocDisallow() increments the following counter.
   ** sqlite3MallocAllow() decrements it.
@@ -256,17 +244,6 @@ static struct MemBlockHdr *sqlite3MemsysGetHeader(void *pAllocation){
 }
 
 /*
-** This routine is called once the first time a simulated memory
-** failure occurs.  The sole purpose of this routine is to provide
-** a convenient place to set a debugger breakpoint when debugging
-** errors related to malloc() failures.
-*/
-static void sqlite3MemsysFailed(void){
-  mem.iFailCnt = 0;
-  mem.iBenignFailCnt = 0;
-}
-
-/*
 ** Allocate nByte bytes of memory.
 */
 void *sqlite3_malloc(int nByte){
@@ -291,21 +268,8 @@ void *sqlite3_malloc(int nByte){
     }
     totalSize = nByte + sizeof(*pHdr) + sizeof(int) +
                  mem.nBacktrace*sizeof(void*) + mem.nTitle;
-    if( mem.iFail>0 ){
-      if( mem.iFail==1 ){
-        p = 0;
-        mem.iFail = mem.iReset;
-        if( mem.iFailCnt==0 ){
-          sqlite3MemsysFailed();  /* A place to set a breakpoint */
-        }
-        mem.iFailCnt++;
-        if( mem.iNextIsBenign || mem.iIsBenign ){
-          mem.iBenignFailCnt++;
-        }
-      }else{
-        p = malloc(totalSize);
-        mem.iFail--;
-      }
+    if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ){
+      p = 0;
     }else{
       p = malloc(totalSize);
       if( p==0 ){
@@ -350,7 +314,6 @@ void *sqlite3_malloc(int nByte){
     }
     sqlite3_mutex_leave(mem.mutex);
   }
-  mem.iNextIsBenign = 0;
   return p; 
 }
 
@@ -489,85 +452,5 @@ void sqlite3_memdebug_dump(const char *zFilename){
   fclose(out);
 }
 
-/*
-** This routine is used to simulate malloc failures.
-**
-** After calling this routine, there will be iFail successful
-** memory allocations and then a failure.  If iRepeat is 1
-** all subsequent memory allocations will fail.  If iRepeat is
-** 0, only a single allocation will fail.  If iRepeat is negative
-** then the previous setting for iRepeat is unchanged.
-**
-** Each call to this routine overrides the previous.  To disable
-** the simulated allocation failure mechanism, set iFail to -1.
-**
-** This routine returns the number of simulated failures that have
-** occurred since the previous call.
-*/
-int sqlite3_memdebug_fail(int iFail, int iRepeat, int *piBenign){
-  int n = mem.iFailCnt;
-  if( piBenign ){
-    *piBenign = mem.iBenignFailCnt;
-  }
-  mem.iFail = iFail+1;
-  if( iRepeat>=0 ){
-    mem.iReset = iRepeat;
-  }
-  mem.iFailCnt = 0;
-  mem.iBenignFailCnt = 0;
-  return n;
-}
-
-int sqlite3_memdebug_pending(){
-  return (mem.iFail-1);
-}
-
-/*
-** The following three functions are used to indicate to the test 
-** infrastructure which malloc() calls may fail benignly without
-** affecting functionality. This can happen when resizing hash tables 
-** (failing to resize a hash-table is a performance hit, but not an 
-** error) or sometimes during a rollback operation.
-**
-** If the argument is true, sqlite3MallocBenignFailure() indicates that the
-** next call to allocate memory may fail benignly.
-**
-** If sqlite3MallocEnterBenignBlock() is called with a non-zero argument,
-** then all memory allocations requested before the next call to
-** sqlite3MallocLeaveBenignBlock() may fail benignly.
-*/
-void sqlite3MallocBenignFailure(int isBenign){
-  if( isBenign ){
-    mem.iNextIsBenign = 1;
-  }
-}
-void sqlite3MallocEnterBenignBlock(int isBenign){
-  if( isBenign ){
-    mem.iIsBenign = 1;
-  }
-}
-void sqlite3MallocLeaveBenignBlock(){
-  mem.iIsBenign = 0;
-}
-
-/*
-** The following two routines are used to assert that no memory
-** allocations occur between one call and the next.  The use of
-** these routines does not change the computed results in any way.
-** These routines are like asserts.
-*/
-void sqlite3MallocDisallow(void){
-  assert( mem.mutex!=0 );
-  sqlite3_mutex_enter(mem.mutex);
-  mem.disallow++;
-  sqlite3_mutex_leave(mem.mutex);
-}
-void sqlite3MallocAllow(void){
-  assert( mem.mutex );
-  sqlite3_mutex_enter(mem.mutex);
-  assert( mem.disallow>0 );
-  mem.disallow--;
-  sqlite3_mutex_leave(mem.mutex);
-}
 
 #endif /* SQLITE_MEMDEBUG && !SQLITE_OMIT_MEMORY_ALLOCATION */

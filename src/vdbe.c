@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.703 2008/01/21 16:22:46 drh Exp $
+** $Id: vdbe.c,v 1.704 2008/01/22 21:30:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -948,7 +948,7 @@ case OP_SCopy: {
   pOut = &p->aMem[pOp->p2];
   assert( pOut!=pIn1 );
   if( pOp->opcode==OP_Move ){
-    rc = sqlite3VdbeMemMove(pOut, pIn1);
+    sqlite3VdbeMemMove(pOut, pIn1);
   }else{
     sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
     if( pOp->opcode==OP_Copy ){
