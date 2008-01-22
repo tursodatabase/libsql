@@ -1,5 +1,5 @@
-C Detect\sand\sreport\sa\sparticular\stype\sof\sdatabase\scorruption\sthat\swould\nformerly\scause\sa\ssegfault.\s(CVS\s4740)
-D 2008-01-22T16:35:37
+C Fix\sa\sbug\sintroduced\sby\scheckin\s(4739).\s(CVS\s4741)
+D 2008-01-22T19:34:28
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 936bcacced594b24b8fdcfc0fc0efc00e15de8a8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -128,7 +128,7 @@ F src/pager.c fae75270b4e2b2542b905791087f0c52142974f8
 F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
 F src/parse.y bcc6092d2577f4b525e09928b3ed164965e35c54
 F src/pragma.c 2bb8d6882b9a330e041acd05fb6aff5a01bf0a08
-F src/prepare.c f0e9e0f25aad4bf9acf489874c5d8d87887a39e7
+F src/prepare.c 05433874e7f161124d29877f83d246efb3a10dd7
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 02ef38b469237482f1ea14a78b2087cfbaec48bd
 F src/select.c 9fb094cc0c8acdcbf3581fdfc4490e997b5d1d1e
@@ -613,7 +613,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6ed2d9f82e2c81d5f6c22a4e05c1a2cb5eedd10c
-R 3417650ecd944a7908b0954ce87245ba
+P f47cf3cc5c70ffb70795e9412e6eaeaf044c3559
+R 71bc19b9323f20366a9e6c74fd0d62a0
 U drh
-Z 5a68e339af1e0ff47a118a7e9273f20b
+Z 7ffec562f9d034046208e1f4dd82239a

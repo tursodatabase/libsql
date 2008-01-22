@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.73 2008/01/22 16:35:37 drh Exp $
+** $Id: prepare.c,v 1.74 2008/01/22 19:34:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -86,7 +86,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
       sqlite3_free(zErr);
       return 1;
     }
-  }else if( argv[2]==0 ){
+  }else if( argv[0]==0 ){
     corruptSchema(pData, 0);
   }else{
     /* If the SQL column is blank it means this is an index that
