@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.56 2008/01/23 15:44:51 danielk1977 Exp $
+# $Id: malloc.test,v 1.57 2008/01/23 17:13:41 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -570,6 +570,14 @@ ifcapable {pager_pragmas} {
   } -cleanup {
     set e [db eval {PRAGMA integrity_check}]
     if {$e ne "ok"} {error $e}
+  }
+}
+
+ifcapable compound {
+  do_malloc_test 24 -start 19 -sqlprep {
+    CREATE TABLE t1(a, b, c)
+  } -sqlbody {
+    SELECT 1 FROM t1 UNION SELECT 2 FROM t1 ORDER BY 1
   }
 }
 
