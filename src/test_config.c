@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.18 2008/01/22 23:37:10 drh Exp $
+** $Id: test_config.c,v 1.19 2008/01/23 12:52:41 drh Exp $
 */
 
 #include "sqliteLimit.h"
@@ -44,6 +44,8 @@ int sqlite3MAX_LIKE_PATTERN_LENGTH = SQLITE_MAX_LIKE_PATTERN_LENGTH;
 ** procedures use this to determine when tests should be omitted.
 */
 static void set_options(Tcl_Interp *interp){
+  int rc = 0;
+
 #ifdef SQLITE_32BIT_ROWID
   Tcl_SetVar2(interp, "sqlite_options", "rowid32", "1", TCL_GLOBAL_ONLY);
 #else
@@ -366,12 +368,13 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp, "sqlite_options", "tclvar", "1", TCL_GLOBAL_ONLY);
 #endif
 
+  rc = sqlite3_threadsafe();
 #if SQLITE_THREADSAFE
   Tcl_SetVar2(interp, "sqlite_options", "threadsafe", "1", TCL_GLOBAL_ONLY);
-  assert( sqlite3_threadsafe() );
+  assert( rc );
 #else
   Tcl_SetVar2(interp, "sqlite_options", "threadsafe", "0", TCL_GLOBAL_ONLY);
-  assert( !sqlite3_threadsafe() );
+  assert( !rc );
 #endif
 
 #ifdef SQLITE_OMIT_TRACE

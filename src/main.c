@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.413 2008/01/23 03:03:05 drh Exp $
+** $Id: main.c,v 1.414 2008/01/23 12:52:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -374,9 +374,6 @@ int sqlite3_busy_handler(
   int (*xBusy)(void*,int),
   void *pArg
 ){
-  if( !sqlite3SafetyCheckOk(db) ){
-    return SQLITE_MISUSE;
-  }
   sqlite3_mutex_enter(db->mutex);
   db->busyHandler.xFunc = xBusy;
   db->busyHandler.pArg = pArg;
@@ -419,9 +416,6 @@ void sqlite3_progress_handler(
 ** specified number of milliseconds before returning 0.
 */
 int sqlite3_busy_timeout(sqlite3 *db, int ms){
-  if( !sqlite3SafetyCheckOk(db) ){
-    return SQLITE_MISUSE;
-  }
   if( ms>0 ){
     db->busyTimeout = ms;
     sqlite3_busy_handler(db, sqliteDefaultBusyCallback, (void*)db);
@@ -461,9 +455,6 @@ int sqlite3CreateFunc(
   int nName;
 
   assert( sqlite3_mutex_held(db->mutex) );
-  if( !sqlite3SafetyCheckOk(db) ){
-    return SQLITE_MISUSE;
-  }
   if( zFunctionName==0 ||
       (xFunc && (xFinal || xStep)) || 
       (!xFunc && (xFinal && !xStep)) ||
@@ -849,11 +840,11 @@ const void *sqlite3_errmsg16(sqlite3 *db){
 ** passed to this function, we assume a malloc() failed during sqlite3_open().
 */
 int sqlite3_errcode(sqlite3 *db){
-  if( !db || db->mallocFailed ){
-    return SQLITE_NOMEM;
-  }
   if( !sqlite3SafetyCheckSickOrOk(db) ){
     return SQLITE_MISUSE;
+  }
+  if( !db || db->mallocFailed ){
+    return SQLITE_NOMEM;
   }
   return db->errCode & db->errMask;
 }
@@ -873,9 +864,6 @@ static int createCollation(
   CollSeq *pColl;
   int enc2;
   
-  if( !sqlite3SafetyCheckOk(db) ){
-    return SQLITE_MISUSE;
-  }
   assert( sqlite3_mutex_held(db->mutex) );
 
   /* If SQLITE_UTF16 is specified as the encoding type, transform this
@@ -1217,7 +1205,7 @@ int sqlite3_create_collation16(
   int(*xCompare)(void*,int,const void*,int,const void*)
 ){
   int rc = SQLITE_OK;
-  char *zName8; 
+  char *zName8;
   sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
   zName8 = sqlite3Utf16to8(db, zName, -1);
@@ -1240,9 +1228,6 @@ int sqlite3_collation_needed(
   void *pCollNeededArg, 
   void(*xCollNeeded)(void*,sqlite3*,int eTextRep,const char*)
 ){
-  if( !sqlite3SafetyCheckOk(db) ){
-    return SQLITE_MISUSE;
-  }
   sqlite3_mutex_enter(db->mutex);
   db->xCollNeeded = xCollNeeded;
   db->xCollNeeded16 = 0;
@@ -1261,9 +1246,6 @@ int sqlite3_collation_needed16(
   void *pCollNeededArg, 
   void(*xCollNeeded16)(void*,sqlite3*,int eTextRep,const void*)
 ){
-  if( !sqlite3SafetyCheckOk(db) ){
-    return SQLITE_MISUSE;
-  }
   sqlite3_mutex_enter(db->mutex);
   db->xCollNeeded = 0;
   db->xCollNeeded16 = xCollNeeded16;
@@ -1345,9 +1327,7 @@ int sqlite3_table_column_metadata(
   int autoinc = 0;
 
   /* Ensure the database schema has been loaded */
-  if( !sqlite3SafetyCheckOk(db) || sqlite3SafetyOn(db) ){
-    return SQLITE_MISUSE;
-  }
+  (void)sqlite3SafetyOn(db);
   sqlite3_mutex_enter(db->mutex);
   rc = sqlite3Init(db, &zErrMsg);
   if( SQLITE_OK!=rc ){
@@ -1405,9 +1385,7 @@ int sqlite3_table_column_metadata(
   }
 
 error_out:
-  if( sqlite3SafetyOff(db) ){
-    rc = SQLITE_MISUSE;
-  }
+  (void)sqlite3SafetyOff(db);
 
   /* Whether the function call succeeded or failed, set the output parameters
   ** to whatever their local counterparts contain. If an error did occur,

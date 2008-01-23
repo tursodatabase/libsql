@@ -13,7 +13,7 @@
 # in particular the optimizations that occur to help those operators
 # run faster.
 #
-# $Id: like.test,v 1.7 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: like.test,v 1.8 2008/01/23 12:52:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -396,5 +396,11 @@ do_test like-6.1 {
     SELECT * FROM t2 WHERE x LIKE '''a%'
   }
 } {'abc 'ax}
+
+do_test like-7.1 {
+  execsql {
+    SELECT * FROM t1 WHERE rowid GLOB '1*';
+  }
+} {a}
 
 finish_test

@@ -10,14 +10,14 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.17 2007/12/13 21:54:11 drh Exp $
+# $Id: misc7.test,v 1.18 2008/01/23 12:52:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-#do_test misc7-1 {
-#  c_misuse_test
-#} {}
+do_test misc7-1-misuse {
+  c_misuse_test
+} {}
 
 do_test misc7-2 {
   c_realloc_test

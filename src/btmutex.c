@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: btmutex.c,v 1.8 2007/12/07 18:55:28 drh Exp $
+** $Id: btmutex.c,v 1.9 2008/01/23 12:52:41 drh Exp $
 **
 ** This file contains code used to implement mutexes on Btree objects.
 ** This code really belongs in btree.c.  But btree.c is getting too
@@ -61,6 +61,7 @@ void sqlite3BtreeEnter(Btree *p){
   p->wantToLock++;
   if( p->locked ) return;
 
+#ifndef SQLITE_MUTEX_NOOP
   /* In most cases, we should be able to acquire the lock we
   ** want without having to go throught the ascending lock
   ** procedure that follows.  Just be sure not to block.
@@ -92,6 +93,7 @@ void sqlite3BtreeEnter(Btree *p){
       pLater->locked = 1;
     }
   }
+#endif /* SQLITE_MUTEX_NOOP */
 }
 
 /*

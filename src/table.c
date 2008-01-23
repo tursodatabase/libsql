@@ -75,12 +75,14 @@ static int sqlite3_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
       }else{
         z = sqlite3_mprintf("%s", colv[i]);
       }
+      if( z==0 ) goto malloc_failed;
       p->azResult[p->nData++] = z;
     }
   }else if( p->nColumn!=nCol ){
-    sqlite3SetString(&p->zErrMsg,
-       "sqlite3_get_table() called with two or more incompatible queries",
-       (char*)0);
+    sqlite3_free(p->zErrMsg);
+    p->zErrMsg = sqlite3_mprintf(
+       "sqlite3_get_table() called with two or more incompatible queries"
+    );
     p->rc = SQLITE_ERROR;
     return 1;
   }
@@ -139,15 +141,13 @@ int sqlite3_get_table(
   res.nData = 1;
   res.nAlloc = 20;
   res.rc = SQLITE_OK;
-  res.azResult = sqlite3_malloc( sizeof(char*)*res.nAlloc );
-  if( res.azResult==0 ) return SQLITE_NOMEM;
+  res.azResult = sqlite3_malloc(sizeof(char*)*res.nAlloc );
+  if( res.azResult==0 ){
+     db->errCode = SQLITE_NOMEM;
+     return SQLITE_NOMEM;
+  }
   res.azResult[0] = 0;
   rc = sqlite3_exec(db, zSql, sqlite3_get_table_cb, &res, pzErrMsg);
-#ifndef NDEBUG
-  sqlite3_mutex_enter(db->mutex);
-  assert((rc&db->errMask)==rc && (res.rc&db->errMask)==res.rc);
-  sqlite3_mutex_leave(db->mutex);
-#endif
   if( res.azResult ){
     assert( sizeof(res.azResult[0])>= sizeof(res.nData) );
     res.azResult[0] = (char*)res.nData;
@@ -161,9 +161,7 @@ int sqlite3_get_table(
       }
       sqlite3_free(res.zErrMsg);
     }
-    sqlite3_mutex_enter(db->mutex);
-    db->errCode = res.rc;
-    sqlite3_mutex_leave(db->mutex);
+    db->errCode = res.rc;  /* Assume 32-bit assignment is atomic */
     return res.rc;
   }
   sqlite3_free(res.zErrMsg);
@@ -176,6 +174,7 @@ int sqlite3_get_table(
     azNew = sqlite3_realloc( res.azResult, sizeof(char*)*(res.nData+1) );
     if( azNew==0 ){
       sqlite3_free_table(&res.azResult[1]);
+      db->errCode = SQLITE_NOMEM;
       return SQLITE_NOMEM;
     }
     res.nAlloc = res.nData+1;

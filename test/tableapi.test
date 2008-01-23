@@ -12,7 +12,7 @@
 # focus of this file is testing the sqlite_exec_printf() and
 # sqlite_get_table_printf() APIs.
 #
-# $Id: tableapi.test,v 1.13 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: tableapi.test,v 1.14 2008/01/23 12:52:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -61,6 +61,11 @@ do_test tableapi-2.3.2 {
     SELECT * FROM xyz WHERE a>47 ORDER BY a
   } {}
 } {0 3 2 a b 48 (48) 49 (49) 50 (50)}
+do_test tableapi-2.3.3 {
+  sqlite3_get_table_printf $::dbx {
+    SELECT * FROM xyz WHERE a>47 ORDER BY a; invalid
+  } {}
+} {1 {near "invalid": syntax error}}
 do_test tableapi-2.4 {
   set manyquote ''''''''
   append manyquote $manyquote
@@ -210,6 +215,20 @@ ifcapable schema_pragmas {
   do_test tableapi-6.1 {
     sqlite3_get_table_printf $::dbx {PRAGMA user_version} {}
   } {0 1 1 user_version 0}
+}
+
+ifcapable memdebug {
+  source $testdir/malloc_common.tcl
+  do_malloc_test tableapi-7 -sqlprep {
+    CREATE TABLE t1(a,b);
+    INSERT INTO t1 VALUES(1,2);
+    INSERT INTO t1 VALUES(3,4);
+    INSERT INTO t1 SELECT a+4, b+4 FROM t1;
+    INSERT INTO t1 SELECT a+8, b+8 FROM t1;
+  } -tclbody {
+    set r [sqlite3_get_table_printf db {SELECT rowid, a, b FROM t1} {}]
+    if {[llength $r]<26} {error "out of memory"}
+  }
 }
 
 do_test tableapi-99.0 {

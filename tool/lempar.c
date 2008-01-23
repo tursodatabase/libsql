@@ -349,9 +349,7 @@ static int yy_find_shift_action(
   if( stateno>YY_SHIFT_MAX || (i = yy_shift_ofst[stateno])==YY_SHIFT_USE_DFLT ){
     return yy_default[stateno];
   }
-  if( iLookAhead==YYNOCODE ){
-    return YY_NO_ACTION;
-  }
+  assert( iLookAhead!=YYNOCODE );
   i += iLookAhead;
   if( i<0 || i>=YY_SZ_ACTTAB || yy_lookahead[i]!=iLookAhead ){
     if( iLookAhead>0 ){
@@ -402,21 +400,14 @@ static int yy_find_reduce_action(
   YYCODETYPE iLookAhead     /* The look-ahead token */
 ){
   int i;
-  /* int stateno = pParser->yystack[pParser->yyidx].stateno; */
- 
-  if( stateno>YY_REDUCE_MAX ||
-      (i = yy_reduce_ofst[stateno])==YY_REDUCE_USE_DFLT ){
-    return yy_default[stateno];
-  }
-  if( iLookAhead==YYNOCODE ){
-    return YY_NO_ACTION;
-  }
+  assert( stateno<=YY_REDUCE_MAX );
+  i = yy_reduce_ofst[stateno];
+  assert( i!=YY_REDUCE_USE_DFLT );
+  assert( iLookAhead!=YYNOCODE );
   i += iLookAhead;
-  if( i<0 || i>=YY_SZ_ACTTAB || yy_lookahead[i]!=iLookAhead ){
-    return yy_default[stateno];
-  }else{
-    return yy_action[i];
-  }
+  assert( i>=0 && i<YY_SZ_ACTTAB );
+  assert( yy_lookahead[i]==iLookAhead );
+  return yy_action[i];
 }
 
 /*

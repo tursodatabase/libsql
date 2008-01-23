@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.285 2008/01/23 03:03:05 drh Exp $
+** $Id: where.c,v 1.286 2008/01/23 12:52:41 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -540,11 +540,9 @@ static int isLikeOrGlob(
     return 0;
   }
   pColl = pLeft->pColl;
+  assert( pColl!=0 || pLeft->iColumn==-1 );
   if( pColl==0 ){
-    /* TODO: Coverage testing doesn't get this case. Is it actually possible
-    ** for an expression of type TK_COLUMN to not have an assigned collation 
-    ** sequence at this point?
-    */
+    /* No collation is defined for the ROWID.  Use the default. */
     pColl = db->pDfltColl;
   }
   if( (pColl->type!=SQLITE_COLL_BINARY || noCase) &&
@@ -1859,13 +1857,7 @@ static void whereInfoFree(WhereInfo *pWInfo){
     for(i=0; i<pWInfo->nLevel; i++){
       sqlite3_index_info *pInfo = pWInfo->a[i].pIdxInfo;
       if( pInfo ){
-        if( pInfo->needToFreeIdxStr ){
-          /* Coverage: Don't think this can be reached. By the time this
-          ** function is called, the index-strings have been passed
-          ** to the vdbe layer for deletion.
-          */
-          sqlite3_free(pInfo->idxStr);
-        }
+        assert( pInfo->needToFreeIdxStr==0 );
         sqlite3_free(pInfo);
       }
     }
