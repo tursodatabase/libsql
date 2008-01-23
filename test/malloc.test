@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.55 2008/01/19 23:50:26 drh Exp $
+# $Id: malloc.test,v 1.56 2008/01/23 15:44:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -60,6 +60,7 @@ ifcapable bloblit&&subquery {
     SELECT avg(b) FROM t1 GROUP BY a HAVING b>20.0;
     DELETE FROM t1 WHERE a IN (SELECT min(a) FROM t1);
     SELECT count(*), group_concat(e) FROM t1;
+    SELECT b FROM t1 ORDER BY 1 COLLATE nocase;
   } 
 }
 
