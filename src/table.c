@@ -70,11 +70,7 @@ static int sqlite3_get_table_cb(void *pArg, int nCol, char **argv, char **colv){
   if( p->nRow==0 ){
     p->nColumn = nCol;
     for(i=0; i<nCol; i++){
-      if( colv[i]==0 ){
-        z = sqlite3_mprintf("");
-      }else{
-        z = sqlite3_mprintf("%s", colv[i]);
-      }
+      z = sqlite3_mprintf("%s", colv[i]);
       if( z==0 ) goto malloc_failed;
       p->azResult[p->nData++] = z;
     }
@@ -130,7 +126,7 @@ int sqlite3_get_table(
 ){
   int rc;
   TabResult res;
-  if( pazResult==0 ){ return SQLITE_ERROR; }
+
   *pazResult = 0;
   if( pnColumn ) *pnColumn = 0;
   if( pnRow ) *pnRow = 0;
@@ -148,10 +144,8 @@ int sqlite3_get_table(
   }
   res.azResult[0] = 0;
   rc = sqlite3_exec(db, zSql, sqlite3_get_table_cb, &res, pzErrMsg);
-  if( res.azResult ){
-    assert( sizeof(res.azResult[0])>= sizeof(res.nData) );
-    res.azResult[0] = (char*)res.nData;
-  }
+  assert( sizeof(res.azResult[0])>= sizeof(res.nData) );
+  res.azResult[0] = (char*)res.nData;
   if( (rc&0xff)==SQLITE_ABORT ){
     sqlite3_free_table(&res.azResult[1]);
     if( res.zErrMsg ){
@@ -195,7 +189,7 @@ void sqlite3_free_table(
   if( azResult ){
     int i, n;
     azResult--;
-    if( azResult==0 ) return;
+    assert( azResult!=0 );
     n = (int)azResult[0];
     for(i=1; i<n; i++){ if( azResult[i] ) sqlite3_free(azResult[i]); }
     sqlite3_free(azResult);

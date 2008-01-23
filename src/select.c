@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.406 2008/01/19 03:35:59 drh Exp $
+** $Id: select.c,v 1.407 2008/01/23 14:51:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -502,7 +502,7 @@ static int checkForMultiColumnSelectError(
 ** then data is pulled from srcTab and pEList is used only to get the
 ** datatypes for each column.
 */
-static int selectInnerLoop(
+static void selectInnerLoop(
   Parse *pParse,          /* The parser context */
   Select *p,              /* The complete select statement being coded */
   ExprList *pEList,       /* List of values being extracted */
@@ -524,7 +524,7 @@ static int selectInnerLoop(
   int nResultCol;             /* Number of result columns */
   int nToFree;                /* Number of result columns to release */
 
-  if( v==0 ) return 0;
+  if( v==0 ) return;
   assert( pEList!=0 );
 
   /* If there was a LIMIT clause on the SELECT statement, then do the check
@@ -577,7 +577,7 @@ static int selectInnerLoop(
   }
 
   if( checkForMultiColumnSelectError(pParse, pDest, pEList->nExpr) ){
-    return 0;
+    return;
   }
 
   switch( eDest ){
@@ -722,7 +722,6 @@ static int selectInnerLoop(
     sqlite3VdbeAddOp2(v, OP_IfZero, p->iLimit, iBreak);
   }
   sqlite3ReleaseTempRange(pParse, regResult, nToFree);
-  return 0;
 }
 
 /*
@@ -2057,12 +2056,8 @@ static int multiSelect(
         computeLimitRegisters(pParse, p, iBreak);
         sqlite3VdbeAddOp2(v, OP_Rewind, unionTab, iBreak);
         iStart = sqlite3VdbeCurrentAddr(v);
-        rc = selectInnerLoop(pParse, p, p->pEList, unionTab, p->pEList->nExpr,
-                             pOrderBy, -1, &dest, iCont, iBreak, 0);
-        if( rc ){
-          rc = 1;
-          goto multi_select_end;
-        }
+        selectInnerLoop(pParse, p, p->pEList, unionTab, p->pEList->nExpr,
+                        pOrderBy, -1, &dest, iCont, iBreak, 0);
         sqlite3VdbeResolveLabel(v, iCont);
         sqlite3VdbeAddOp2(v, OP_Next, unionTab, iStart);
         sqlite3VdbeResolveLabel(v, iBreak);
@@ -2141,12 +2136,8 @@ static int multiSelect(
       iStart = sqlite3VdbeAddOp2(v, OP_RowKey, tab1, r1);
       sqlite3VdbeAddOp3(v, OP_NotFound, tab2, iCont, r1);
       sqlite3ReleaseTempReg(pParse, r1);
-      rc = selectInnerLoop(pParse, p, p->pEList, tab1, p->pEList->nExpr,
-                             pOrderBy, -1, &dest, iCont, iBreak, 0);
-      if( rc ){
-        rc = 1;
-        goto multi_select_end;
-      }
+      selectInnerLoop(pParse, p, p->pEList, tab1, p->pEList->nExpr,
+                      pOrderBy, -1, &dest, iCont, iBreak, 0);
       sqlite3VdbeResolveLabel(v, iCont);
       sqlite3VdbeAddOp2(v, OP_Next, tab1, iStart);
       sqlite3VdbeResolveLabel(v, iBreak);
@@ -2919,13 +2910,11 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
 ** corresponding bit in argument mask is not set. If mask takes the
 ** special value 0xffffffff, then all columns are populated.
 */
-int sqlite3SelectMask(Parse *pParse, Select *p, u32 mask){
+void sqlite3SelectMask(Parse *pParse, Select *p, u32 mask){
   if( !p->pPrior && !p->isDistinct && mask!=0xffffffff ){
     ExprList *pEList;
     int i;
-    if( sqlite3SelectResolve(pParse, p, 0) ){
-      return SQLITE_ERROR;
-    }
+    sqlite3SelectResolve(pParse, p, 0);
     pEList = p->pEList;
     for(i=0; i<pEList->nExpr && i<32; i++){
       if( !(mask&((u32)1<<i)) ){
@@ -2934,7 +2923,6 @@ int sqlite3SelectMask(Parse *pParse, Select *p, u32 mask){
       }
     }
   }
-  return SQLITE_OK;
 }
 #endif
 
@@ -3201,9 +3189,6 @@ int sqlite3Select(
   */
   if( pOrderBy ){
     KeyInfo *pKeyInfo;
-    if( pParse->nErr ){
-      goto select_end;
-    }
     pKeyInfo = keyInfoFromExprList(pParse, pOrderBy);
     pOrderBy->iECursor = pParse->nTab++;
     p->addrOpenEphm[2] = addrSortIndex =
@@ -3258,10 +3243,8 @@ int sqlite3Select(
     /* Use the standard inner loop
     */
     assert(!isDistinct);
-    if( selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, -1, pDest,
-                    pWInfo->iContinue, pWInfo->iBreak, aff) ){
-       goto select_end;
-    }
+    selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, -1, pDest,
+                    pWInfo->iContinue, pWInfo->iBreak, aff);
 
     /* End the database scan loop.
     */
@@ -3302,20 +3285,14 @@ int sqlite3Select(
     sNC.pAggInfo = &sAggInfo;
     sAggInfo.nSortingColumn = pGroupBy ? pGroupBy->nExpr+1 : 0;
     sAggInfo.pGroupBy = pGroupBy;
-    if( sqlite3ExprAnalyzeAggList(&sNC, pEList) ){
-      goto select_end;
-    }
-    if( sqlite3ExprAnalyzeAggList(&sNC, pOrderBy) ){
-      goto select_end;
-    }
-    if( pHaving && sqlite3ExprAnalyzeAggregates(&sNC, pHaving) ){
-      goto select_end;
+    sqlite3ExprAnalyzeAggList(&sNC, pEList);
+    sqlite3ExprAnalyzeAggList(&sNC, pOrderBy);
+    if( pHaving ){
+      sqlite3ExprAnalyzeAggregates(&sNC, pHaving);
     }
     sAggInfo.nAccumulator = sAggInfo.nColumn;
     for(i=0; i<sAggInfo.nFunc; i++){
-      if( sqlite3ExprAnalyzeAggList(&sNC, sAggInfo.aFunc[i].pExpr->pList) ){
-        goto select_end;
-      }
+      sqlite3ExprAnalyzeAggList(&sNC, sAggInfo.aFunc[i].pExpr->pList);
     }
     if( db->mallocFailed ) goto select_end;
 
@@ -3377,12 +3354,9 @@ int sqlite3Select(
       if( pHaving ){
         sqlite3ExprIfFalse(pParse, pHaving, addrOutputRow+1, SQLITE_JUMPIFNULL);
       }
-      rc = selectInnerLoop(pParse, p, p->pEList, 0, 0, pOrderBy,
-                           distinct, pDest,
-                           addrOutputRow+1, addrSetAbort, aff);
-      if( rc ){
-        goto select_end;
-      }
+      selectInnerLoop(pParse, p, p->pEList, 0, 0, pOrderBy,
+                      distinct, pDest,
+                      addrOutputRow+1, addrSetAbort, aff);
       sqlite3VdbeAddOp2(v, OP_Return, 0, 0);
       VdbeComment((v, "end groupby result generator"));
 

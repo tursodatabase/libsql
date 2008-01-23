@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.286 2008/01/22 21:30:53 drh Exp $
+** $Id: test1.c,v 1.287 2008/01/23 14:51:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -494,7 +494,7 @@ static int test_snprintf_int(
 }
 
 /*
-** Usage:  sqlite3_get_table_printf  DB  FORMAT  STRING
+** Usage:  sqlite3_get_table_printf  DB  FORMAT  STRING  ?--no-counts?
 **
 ** Invoke the sqlite3_get_table_printf() interface using the open database
 ** DB.  The SQL is the string FORMAT.  The format string should contain
@@ -515,24 +515,35 @@ static int test_get_table_printf(
   int i;
   char zBuf[30];
   char *zSql;
-  if( argc!=4 ){
+  int resCount = -1;
+  if( argc==5 ){
+    if( Tcl_GetInt(interp, argv[4], &resCount) ) return TCL_ERROR;
+  }
+  if( argc!=4 && argc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
-       " DB FORMAT STRING", 0);
+       " DB FORMAT STRING ?COUNT?", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   Tcl_DStringInit(&str);
   zSql = sqlite3_mprintf(argv[2],argv[3]);
-  rc = sqlite3_get_table(db, zSql, &aResult, &nRow, &nCol, &zErr);
+  if( argc==5 ){
+    rc = sqlite3_get_table(db, zSql, &aResult, 0, 0, &zErr);
+  }else{
+    rc = sqlite3_get_table(db, zSql, &aResult, &nRow, &nCol, &zErr);
+    resCount = (nRow+1)*nCol;
+  }
   sqlite3_free(zSql);
   sprintf(zBuf, "%d", rc);
   Tcl_AppendElement(interp, zBuf);
   if( rc==SQLITE_OK ){
-    sprintf(zBuf, "%d", nRow);
-    Tcl_AppendElement(interp, zBuf);
-    sprintf(zBuf, "%d", nCol);
-    Tcl_AppendElement(interp, zBuf);
-    for(i=0; i<(nRow+1)*nCol; i++){
+    if( argc==4 ){
+      sprintf(zBuf, "%d", nRow);
+      Tcl_AppendElement(interp, zBuf);
+      sprintf(zBuf, "%d", nCol);
+      Tcl_AppendElement(interp, zBuf);
+    }
+    for(i=0; i<resCount; i++){
       Tcl_AppendElement(interp, aResult[i] ? aResult[i] : "NULL");
     }
   }else{

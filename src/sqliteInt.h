@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.654 2008/01/23 03:03:05 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.655 2008/01/23 14:51:50 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1760,7 +1760,7 @@ int sqlite3Select(Parse*, Select*, SelectDest*, Select*, int, int*, char *aff);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
                          Expr*,ExprList*,int,Expr*,Expr*);
 void sqlite3SelectDelete(Select*);
-int sqlite3SelectMask(Parse *, Select *, u32);
+void sqlite3SelectMask(Parse *, Select *, u32);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);
 int sqlite3IsReadOnly(Parse*, Table*, int);
 void sqlite3OpenTable(Parse*, int iCur, int iDb, Table*, int);
@@ -1785,8 +1785,8 @@ int sqlite3RunVacuum(char**, sqlite3*);
 char *sqlite3NameFromToken(sqlite3*, Token*);
 int sqlite3ExprCompare(Expr*, Expr*);
 int sqlite3ExprResolveNames(NameContext *, Expr *);
-int sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
-int sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
+void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
+void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 Vdbe *sqlite3GetVdbe(Parse*);
 Expr *sqlite3CreateIdExpr(Parse *, const char*);
 void sqlite3Randomness(int, void*);
