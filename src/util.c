@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.215 2008/01/22 14:50:17 drh Exp $
+** $Id: util.c,v 1.216 2008/01/23 03:03:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -660,6 +660,7 @@ void *sqlite3HexToBlob(sqlite3 *db, const char *z, int n){
 ** call to sqlite3_close(db) and db has been deallocated.  And we do
 ** not want to write into deallocated memory.
 */
+#ifdef SQLITE_DEBUG
 int sqlite3SafetyOn(sqlite3 *db){
   if( db->magic==SQLITE_MAGIC_OPEN ){
     db->magic = SQLITE_MAGIC_BUSY;
@@ -670,38 +671,54 @@ int sqlite3SafetyOn(sqlite3 *db){
   }
   return 1;
 }
+#endif
 
 /*
 ** Change the magic from SQLITE_MAGIC_BUSY to SQLITE_MAGIC_OPEN.
 ** Return an error (non-zero) if the magic was not SQLITE_MAGIC_BUSY
 ** when this routine is called.
 */
+#ifdef SQLITE_DEBUG
 int sqlite3SafetyOff(sqlite3 *db){
   if( db->magic==SQLITE_MAGIC_BUSY ){
     db->magic = SQLITE_MAGIC_OPEN;
     return 0;
-  }else {
+  }else{
     db->magic = SQLITE_MAGIC_ERROR;
     db->u1.isInterrupted = 1;
     return 1;
   }
 }
+#endif
 
 /*
 ** Check to make sure we have a valid db pointer.  This test is not
 ** foolproof but it does provide some measure of protection against
 ** misuse of the interface such as passing in db pointers that are
 ** NULL or which have been previously closed.  If this routine returns
-** TRUE it means that the db pointer is invalid and should not be
+** 1 it means that the db pointer is valid and 0 if it should not be
 ** dereferenced for any reason.  The calling function should invoke
 ** SQLITE_MISUSE immediately.
+**
+** sqlite3SafetyCheckOk() requires that the db pointer be valid for
+** use.  sqlite3SafetyCheckSickOrOk() allows a db pointer that failed to
+** open properly and is not fit for general use but which can be
+** used as an argument to sqlite3_errmsg() or sqlite3_close().
 */
-int sqlite3SafetyCheck(sqlite3 *db){
+int sqlite3SafetyCheckOk(sqlite3 *db){
   int magic;
-  if( db==0 ) return 1;
+  if( db==0 ) return 0;
   magic = db->magic;
-  if( magic!=SQLITE_MAGIC_CLOSED &&
-         magic!=SQLITE_MAGIC_OPEN &&
-         magic!=SQLITE_MAGIC_BUSY ) return 1;
-  return 0;
+  if( magic!=SQLITE_MAGIC_OPEN &&
+      magic!=SQLITE_MAGIC_BUSY ) return 0;
+  return 1;
+}
+int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
+  int magic;
+  if( db==0 ) return 0;
+  magic = db->magic;
+  if( magic!=SQLITE_MAGIC_SICK &&
+      magic!=SQLITE_MAGIC_OPEN &&
+      magic!=SQLITE_MAGIC_BUSY ) return 0;
+  return 1;
 }

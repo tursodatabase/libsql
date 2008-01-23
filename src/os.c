@@ -191,7 +191,9 @@ static sqlite3_vfs *vfsList = 0;
 ** first VFS on the list.
 */
 sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
+#ifndef SQLITE_MUTEX_NOOP
   sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+#endif
   sqlite3_vfs *pVfs = 0;
   static int isInit = 0;
   sqlite3_mutex_enter(mutex);
@@ -233,7 +235,9 @@ static void vfsUnlink(sqlite3_vfs *pVfs){
 ** true.
 */
 int sqlite3_vfs_register(sqlite3_vfs *pVfs, int makeDflt){
+#ifndef SQLITE_MUTEX_NOOP
   sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+#endif
   sqlite3_vfs_find(0);  /* Make sure we are initialized */
   sqlite3_mutex_enter(mutex);
   vfsUnlink(pVfs);
@@ -253,7 +257,9 @@ int sqlite3_vfs_register(sqlite3_vfs *pVfs, int makeDflt){
 ** Unregister a VFS so that it is no longer accessible.
 */
 int sqlite3_vfs_unregister(sqlite3_vfs *pVfs){
+#ifndef SQLITE_MUTEX_NOOP
   sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+#endif
   sqlite3_mutex_enter(mutex);
   vfsUnlink(pVfs);
   sqlite3_mutex_leave(mutex);

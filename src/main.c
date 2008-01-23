@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.412 2008/01/22 21:30:53 drh Exp $
+** $Id: main.c,v 1.413 2008/01/23 03:03:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -134,7 +134,7 @@ int sqlite3_close(sqlite3 *db){
   if( !db ){
     return SQLITE_OK;
   }
-  if( sqlite3SafetyCheck(db) ){
+  if( !sqlite3SafetyCheckSickOrOk(db) ){
     return SQLITE_MISUSE;
   }
   sqlite3_mutex_enter(db->mutex);
@@ -164,21 +164,7 @@ int sqlite3_close(sqlite3 *db){
     sqlite3_mutex_leave(db->mutex);
     return SQLITE_BUSY;
   }
-  assert( !sqlite3SafetyCheck(db) );
-
-  /* FIX ME: db->magic may be set to SQLITE_MAGIC_CLOSED if the database
-  ** cannot be opened for some reason. So this routine needs to run in
-  ** that case. But maybe there should be an extra magic value for the
-  ** "failed to open" state.
-  **
-  ** TODO: Coverage tests do not test the case where this condition is
-  ** true. It's hard to see how to cause it without messing with threads.
-  */
-  if( db->magic!=SQLITE_MAGIC_CLOSED && sqlite3SafetyOn(db) ){
-    /* printf("DID NOT CLOSE\n"); fflush(stdout); */
-    sqlite3_mutex_leave(db->mutex);
-    return SQLITE_ERROR;
-  }
+  assert( sqlite3SafetyCheckSickOrOk(db) );
 
   for(j=0; j<db->nDb; j++){
     struct Db *pDb = &db->aDb[j];
@@ -240,6 +226,7 @@ int sqlite3_close(sqlite3 *db){
   */
   sqlite3_free(db->aDb[1].pSchema);
   sqlite3_mutex_leave(db->mutex);
+  db->magic = SQLITE_MAGIC_CLOSED;
   sqlite3_mutex_free(db->mutex);
   sqlite3_free(db);
   return SQLITE_OK;
@@ -387,7 +374,7 @@ int sqlite3_busy_handler(
   int (*xBusy)(void*,int),
   void *pArg
 ){
-  if( sqlite3SafetyCheck(db) ){
+  if( !sqlite3SafetyCheckOk(db) ){
     return SQLITE_MISUSE;
   }
   sqlite3_mutex_enter(db->mutex);
@@ -410,7 +397,7 @@ void sqlite3_progress_handler(
   int (*xProgress)(void*), 
   void *pArg
 ){
-  if( !sqlite3SafetyCheck(db) ){
+  if( sqlite3SafetyCheckOk(db) ){
     sqlite3_mutex_enter(db->mutex);
     if( nOps>0 ){
       db->xProgress = xProgress;
@@ -432,7 +419,7 @@ void sqlite3_progress_handler(
 ** specified number of milliseconds before returning 0.
 */
 int sqlite3_busy_timeout(sqlite3 *db, int ms){
-  if( sqlite3SafetyCheck(db) ){
+  if( !sqlite3SafetyCheckOk(db) ){
     return SQLITE_MISUSE;
   }
   if( ms>0 ){
@@ -448,7 +435,7 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
 ** Cause any pending operation to stop at its earliest opportunity.
 */
 void sqlite3_interrupt(sqlite3 *db){
-  if( db && (db->magic==SQLITE_MAGIC_OPEN || db->magic==SQLITE_MAGIC_BUSY) ){
+  if( sqlite3SafetyCheckOk(db) ){
     db->u1.isInterrupted = 1;
   }
 }
@@ -474,7 +461,7 @@ int sqlite3CreateFunc(
   int nName;
 
   assert( sqlite3_mutex_held(db->mutex) );
-  if( sqlite3SafetyCheck(db) ){
+  if( !sqlite3SafetyCheckOk(db) ){
     return SQLITE_MISUSE;
   }
   if( zFunctionName==0 ||
@@ -798,7 +785,7 @@ const char *sqlite3_errmsg(sqlite3 *db){
   if( !db ){
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
-  if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
+  if( !sqlite3SafetyCheckSickOrOk(db) || db->errCode==SQLITE_MISUSE ){
     return sqlite3ErrStr(SQLITE_MISUSE);
   }
   sqlite3_mutex_enter(db->mutex);
@@ -840,7 +827,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   if( !db ){
     return (void *)(&outOfMemBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
   }
-  if( sqlite3SafetyCheck(db) || db->errCode==SQLITE_MISUSE ){
+  if( !sqlite3SafetyCheckSickOrOk(db) || db->errCode==SQLITE_MISUSE ){
     return (void *)(&misuseBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
   }
   sqlite3_mutex_enter(db->mutex);
@@ -865,7 +852,7 @@ int sqlite3_errcode(sqlite3 *db){
   if( !db || db->mallocFailed ){
     return SQLITE_NOMEM;
   }
-  if( sqlite3SafetyCheck(db) ){
+  if( !sqlite3SafetyCheckSickOrOk(db) ){
     return SQLITE_MISUSE;
   }
   return db->errCode & db->errMask;
@@ -886,7 +873,7 @@ static int createCollation(
   CollSeq *pColl;
   int enc2;
   
-  if( sqlite3SafetyCheck(db) ){
+  if( !sqlite3SafetyCheckOk(db) ){
     return SQLITE_MISUSE;
   }
   assert( sqlite3_mutex_held(db->mutex) );
@@ -1000,7 +987,7 @@ static int openDatabase(
   db->pVfs = sqlite3_vfs_find(zVfs);
   if( !db->pVfs ){
     rc = SQLITE_ERROR;
-    db->magic = SQLITE_MAGIC_CLOSED;
+    db->magic = SQLITE_MAGIC_SICK;
     sqlite3Error(db, rc, "no such vfs: %s", (zVfs?zVfs:"(null)"));
     goto opendb_out;
   }
@@ -1016,7 +1003,7 @@ static int openDatabase(
       (db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 6, 0))==0 
   ){
     assert( db->mallocFailed );
-    db->magic = SQLITE_MAGIC_CLOSED;
+    db->magic = SQLITE_MAGIC_SICK;
     goto opendb_out;
   }
 
@@ -1037,7 +1024,7 @@ static int openDatabase(
                            &db->aDb[0].pBt);
   if( rc!=SQLITE_OK ){
     sqlite3Error(db, rc, 0);
-    db->magic = SQLITE_MAGIC_CLOSED;
+    db->magic = SQLITE_MAGIC_SICK;
     goto opendb_out;
   }
   db->aDb[0].pSchema = sqlite3SchemaGet(db, db->aDb[0].pBt);
@@ -1253,7 +1240,7 @@ int sqlite3_collation_needed(
   void *pCollNeededArg, 
   void(*xCollNeeded)(void*,sqlite3*,int eTextRep,const char*)
 ){
-  if( sqlite3SafetyCheck(db) ){
+  if( !sqlite3SafetyCheckOk(db) ){
     return SQLITE_MISUSE;
   }
   sqlite3_mutex_enter(db->mutex);
@@ -1274,7 +1261,7 @@ int sqlite3_collation_needed16(
   void *pCollNeededArg, 
   void(*xCollNeeded16)(void*,sqlite3*,int eTextRep,const void*)
 ){
-  if( sqlite3SafetyCheck(db) ){
+  if( !sqlite3SafetyCheckOk(db) ){
     return SQLITE_MISUSE;
   }
   sqlite3_mutex_enter(db->mutex);
@@ -1358,7 +1345,7 @@ int sqlite3_table_column_metadata(
   int autoinc = 0;
 
   /* Ensure the database schema has been loaded */
-  if( sqlite3SafetyOn(db) ){
+  if( !sqlite3SafetyCheckOk(db) || sqlite3SafetyOn(db) ){
     return SQLITE_MISUSE;
   }
   sqlite3_mutex_enter(db->mutex);

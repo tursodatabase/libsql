@@ -1021,9 +1021,9 @@ void sqlite3VdbeFreeCursor(Vdbe *p, Cursor *pCx){
     sqlite3_vtab_cursor *pVtabCursor = pCx->pVtabCursor;
     const sqlite3_module *pModule = pCx->pModule;
     p->inVtabMethod = 1;
-    sqlite3SafetyOff(p->db);
+    (void)sqlite3SafetyOff(p->db);
     pModule->xClose(pVtabCursor);
-    sqlite3SafetyOn(p->db);
+    (void)sqlite3SafetyOn(p->db);
     p->inVtabMethod = 0;
   }
 #endif
@@ -1167,9 +1167,9 @@ static int vdbeCommit(sqlite3 *db){
 
   /* If there are any write-transactions at all, invoke the commit hook */
   if( needXcommit && db->xCommitCallback ){
-    sqlite3SafetyOff(db);
+    (void)sqlite3SafetyOff(db);
     rc = db->xCommitCallback(db->pCommitArg);
-    sqlite3SafetyOn(db);
+    (void)sqlite3SafetyOn(db);
     if( rc ){
       return SQLITE_CONSTRAINT;
     }
@@ -1617,9 +1617,9 @@ int sqlite3VdbeReset(Vdbe *p){
   ** error, then it might not have been halted properly.  So halt
   ** it now.
   */
-  sqlite3SafetyOn(db);
+  (void)sqlite3SafetyOn(db);
   sqlite3VdbeHalt(p);
-  sqlite3SafetyOff(db);
+  (void)sqlite3SafetyOff(db);
 
   /* If the VDBE has be run even partially, then transfer the error code
   ** and error message from the VDBE into the main database structure.  But

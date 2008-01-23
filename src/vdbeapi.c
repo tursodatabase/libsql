@@ -44,7 +44,9 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
     rc = SQLITE_OK;
   }else{
     Vdbe *v = (Vdbe*)pStmt;
+#ifndef SQLITE_MUTEX_NOOP
     sqlite3_mutex *mutex = v->db->mutex;
+#endif
     sqlite3_mutex_enter(mutex);
     rc = sqlite3VdbeFinalize(v);
     sqlite3_mutex_leave(mutex);
@@ -81,12 +83,14 @@ int sqlite3_reset(sqlite3_stmt *pStmt){
 int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
   int i;
   int rc = SQLITE_OK;
-  Vdbe *v = (Vdbe*)pStmt;
-  sqlite3_mutex_enter(v->db->mutex);
+#ifndef SQLITE_MUTEX_NOOP
+  sqlite3_mutex *mutex = ((Vdbe*)pStmt)->db->mutex;
+#endif
+  sqlite3_mutex_enter(mutex);
   for(i=1; rc==SQLITE_OK && i<=sqlite3_bind_parameter_count(pStmt); i++){
     rc = sqlite3_bind_null(pStmt, i);
   }
-  sqlite3_mutex_leave(v->db->mutex);
+  sqlite3_mutex_leave(mutex);
   return rc;
 }
 

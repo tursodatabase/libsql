@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.74 2008/01/22 19:34:28 drh Exp $
+** $Id: prepare.c,v 1.75 2008/01/23 03:03:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -174,7 +174,6 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   zMasterName = SCHEMA_TABLE(iDb);
 
   /* Construct the schema tables.  */
-  sqlite3SafetyOff(db);
   azArg[0] = zMasterName;
   azArg[1] = "1";
   azArg[2] = zMasterSchema;
@@ -182,9 +181,10 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   initData.db = db;
   initData.iDb = iDb;
   initData.pzErrMsg = pzErrMsg;
+  (void)sqlite3SafetyOff(db);
   rc = sqlite3InitCallback(&initData, 3, (char **)azArg, 0);
+  (void)sqlite3SafetyOn(db);
   if( rc ){
-    sqlite3SafetyOn(db);
     rc = initData.rc;
     goto error_out;
   }
@@ -192,7 +192,6 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   if( pTab ){
     pTab->readOnly = 1;
   }
-  sqlite3SafetyOn(db);
 
   /* Create a cursor to hold the database open
   */
@@ -312,7 +311,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     zSql = sqlite3MPrintf(db, 
         "SELECT name, rootpage, sql FROM '%q'.%s",
         db->aDb[iDb].zName, zMasterName);
-    sqlite3SafetyOff(db);
+    (void)sqlite3SafetyOff(db);
 #ifndef SQLITE_OMIT_AUTHORIZATION
     {
       int (*xAuth)(void*,int,const char*,const char*,const char*,const char*);
@@ -325,7 +324,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     }
 #endif
     if( rc==SQLITE_ABORT ) rc = initData.rc;
-    sqlite3SafetyOn(db);
+    (void)sqlite3SafetyOn(db);
     sqlite3_free(zSql);
 #ifndef SQLITE_OMIT_ANALYZE
     if( rc==SQLITE_OK ){
@@ -524,7 +523,7 @@ int sqlite3Prepare(
       if( rc ){
         const char *zDb = db->aDb[i].zName;
         sqlite3Error(db, SQLITE_LOCKED, "database schema is locked: %s", zDb);
-        sqlite3SafetyOff(db);
+        (void)sqlite3SafetyOff(db);
         return SQLITE_LOCKED;
       }
     }
@@ -536,7 +535,7 @@ int sqlite3Prepare(
     char *zSqlCopy;
     if( SQLITE_MAX_SQL_LENGTH>0 && nBytes>SQLITE_MAX_SQL_LENGTH ){
       sqlite3Error(db, SQLITE_TOOBIG, "statement too long");
-      sqlite3SafetyOff(db);
+      (void)sqlite3SafetyOff(db);
       return SQLITE_TOOBIG;
     }
     zSqlCopy = sqlite3DbStrNDup(db, zSql, nBytes);
@@ -622,7 +621,7 @@ static int sqlite3LockAndPrepare(
   const char **pzTail       /* OUT: End of parsed string */
 ){
   int rc;
-  if( sqlite3SafetyCheck(db) ){
+  if( !sqlite3SafetyCheckOk(db) ){
     return SQLITE_MISUSE;
   }
   sqlite3_mutex_enter(db->mutex);
@@ -715,7 +714,7 @@ static int sqlite3Prepare16(
   const char *zTail8 = 0;
   int rc = SQLITE_OK;
 
-  if( sqlite3SafetyCheck(db) ){
+  if( !sqlite3SafetyCheckOk(db) ){
     return SQLITE_MISUSE;
   }
   sqlite3_mutex_enter(db->mutex);

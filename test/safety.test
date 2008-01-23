@@ -13,10 +13,16 @@
 # functions.  Those routines are not strictly necessary - they are
 # designed to detect misuse of the library.
 #
-# $Id: safety.test,v 1.2 2006/01/03 00:33:50 drh Exp $
+# $Id: safety.test,v 1.3 2008/01/23 03:03:05 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !debug {
+  puts "Skipping safety tests since SQLITE_DEBUG is off"
+  finish_test
+  return
+}
 
 do_test safety-1.1 {
   set DB [sqlite3_connection_pointer db]
