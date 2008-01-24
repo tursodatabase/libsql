@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.409 2008/01/23 17:13:41 danielk1977 Exp $
+** $Id: select.c,v 1.410 2008/01/24 14:27:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2911,12 +2911,12 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
 ** special value 0xffffffff, then all columns are populated.
 */
 void sqlite3SelectMask(Parse *pParse, Select *p, u32 mask){
-  if( !p->pPrior && !p->isDistinct && mask!=0xffffffff ){
+  if( p && !p->pPrior && !p->isDistinct && mask!=0xffffffff ){
     ExprList *pEList;
     int i;
     sqlite3SelectResolve(pParse, p, 0);
     pEList = p->pEList;
-    for(i=0; i<pEList->nExpr && i<32; i++){
+    for(i=0; pEList && i<pEList->nExpr && i<32; i++){
       if( !(mask&((u32)1<<i)) ){
         sqlite3ExprDelete(pEList->a[i].pExpr);
         pEList->a[i].pExpr = sqlite3Expr(pParse->db, TK_NULL, 0, 0, 0);

@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.57 2008/01/23 17:13:41 danielk1977 Exp $
+# $Id: malloc.test,v 1.58 2008/01/24 14:27:44 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -574,10 +574,24 @@ ifcapable {pager_pragmas} {
 }
 
 ifcapable compound {
-  do_malloc_test 24 -start 19 -sqlprep {
+  do_malloc_test 24 -sqlprep {
     CREATE TABLE t1(a, b, c)
   } -sqlbody {
     SELECT 1 FROM t1 UNION SELECT 2 FROM t1 ORDER BY 1
+  }
+}
+
+ifcapable view&&trigger {
+  do_malloc_test 25 -sqlprep {
+    CREATE TABLE t1(a, b, c);
+    CREATE VIEW v1 AS SELECT * FROM t1;
+    CREATE TRIGGER v1t1 INSTEAD OF DELETE ON v1 BEGIN SELECT 1; END;
+    CREATE TRIGGER v1t2 INSTEAD OF INSERT ON v1 BEGIN SELECT 1; END;
+    CREATE TRIGGER v1t3 INSTEAD OF UPDATE ON v1 BEGIN SELECT 1; END;
+  } -sqlbody {
+    DELETE FROM v1 WHERE a = 1;
+    INSERT INTO v1 VALUES(1, 2, 3);
+    UPDATE v1 SET a = 1 WHERE b = 2;
   }
 }
 
