@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.410 2008/01/24 14:27:44 danielk1977 Exp $
+** $Id: select.c,v 1.411 2008/01/25 15:04:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1306,7 +1306,7 @@ static int prepSelectStmt(Parse *pParse, Select *p){
       /* An ordinary table or view name in the FROM clause */
       assert( pFrom->pTab==0 );
       pFrom->pTab = pTab = 
-        sqlite3LocateTable(pParse,pFrom->zName,pFrom->zDatabase);
+        sqlite3LocateTable(pParse,0,pFrom->zName,pFrom->zDatabase);
       if( pTab==0 ){
         return 1;
       }

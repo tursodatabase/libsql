@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.34 2007/10/09 08:29:33 danielk1977 Exp $
+# $Id: view.test,v 1.35 2008/01/25 15:04:50 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -499,5 +499,20 @@ do_test view-16.3 {
     DROP VIEW IF EXISTS nosuchview
   }
 } {0 {}}
+
+# correct error message when attempting to drop a view that does not
+# exist.
+#
+do_test view-17.1 {
+  catchsql {
+    DROP VIEW nosuchview
+  }
+} {1 {no such view: nosuchview}}
+do_test view-17.2 {
+  catchsql {
+    DROP VIEW main.nosuchview
+  }
+} {1 {no such view: main.nosuchview}}
+
 
 finish_test

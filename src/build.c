@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.470 2008/01/22 14:50:17 drh Exp $
+** $Id: build.c,v 1.471 2008/01/25 15:04:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -291,7 +291,12 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
 ** routine leaves an error message in pParse->zErrMsg where
 ** sqlite3FindTable() does not.
 */
-Table *sqlite3LocateTable(Parse *pParse, const char *zName, const char *zDbase){
+Table *sqlite3LocateTable(
+  Parse *pParse,         /* context in which to report errors */
+  int isView,            /* True if looking for a VIEW rather than a TABLE */
+  const char *zName,     /* Name of the table we are looking for */
+  const char *zDbase     /* Name of the database.  Might be NULL */
+){
   Table *p;
 
   /* Read the database schema. If an error occurs, leave an error message
@@ -302,10 +307,11 @@ Table *sqlite3LocateTable(Parse *pParse, const char *zName, const char *zDbase){
 
   p = sqlite3FindTable(pParse->db, zName, zDbase);
   if( p==0 ){
+    const char *zMsg = isView ? "no such view" : "no such table";
     if( zDbase ){
-      sqlite3ErrorMsg(pParse, "no such table: %s.%s", zDbase, zName);
+      sqlite3ErrorMsg(pParse, "%s: %s.%s", zMsg, zDbase, zName);
     }else{
-      sqlite3ErrorMsg(pParse, "no such table: %s", zName);
+      sqlite3ErrorMsg(pParse, "%s: %s", zMsg, zName);
     }
     pParse->checkSchema = 1;
   }
@@ -1935,7 +1941,8 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     goto exit_drop_table;
   }
   assert( pName->nSrc==1 );
-  pTab = sqlite3LocateTable(pParse, pName->a[0].zName, pName->a[0].zDatabase);
+  pTab = sqlite3LocateTable(pParse, isView, 
+                            pName->a[0].zName, pName->a[0].zDatabase);
 
   if( pTab==0 ){
     if( noErr ){
@@ -2365,7 +2372,7 @@ void sqlite3CreateIndex(
       ** sqlite3FixSrcList can never fail. */
       assert(0);
     }
-    pTab = sqlite3LocateTable(pParse, pTblName->a[0].zName, 
+    pTab = sqlite3LocateTable(pParse, 0, pTblName->a[0].zName, 
         pTblName->a[0].zDatabase);
     if( !pTab ) goto exit_create_index;
     assert( db->aDb[iDb].pSchema==pTab->pSchema );

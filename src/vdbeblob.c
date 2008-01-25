@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.19 2008/01/23 03:03:05 drh Exp $
+** $Id: vdbeblob.c,v 1.20 2008/01/25 15:04:50 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -102,7 +102,7 @@ int sqlite3_blob_open(
     }
 
     sqlite3BtreeEnterAll(db);
-    pTab = sqlite3LocateTable(&sParse, zTable, zDb);
+    pTab = sqlite3LocateTable(&sParse, 0, zTable, zDb);
     if( !pTab ){
       if( sParse.zErrMsg ){
         sqlite3_snprintf(sizeof(zErr), zErr, "%s", sParse.zErrMsg);

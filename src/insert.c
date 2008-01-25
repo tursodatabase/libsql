@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.227 2008/01/21 16:22:46 drh Exp $
+** $Id: insert.c,v 1.228 2008/01/25 15:04:50 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1518,7 +1518,7 @@ static int xferOptimization(
   ** we have to check the semantics.
   */
   pItem = pSelect->pSrc->a;
-  pSrc = sqlite3LocateTable(pParse, pItem->zName, pItem->zDatabase);
+  pSrc = sqlite3LocateTable(pParse, 0, pItem->zName, pItem->zDatabase);
   if( pSrc==0 ){
     return 0;   /* FROM clause does not contain a real table */
   }
