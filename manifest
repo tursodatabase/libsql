@@ -1,5 +1,5 @@
-C Error\smessages\ssays\s"no\ssuch\sview"\sinstead\sof\s"no\ssuch\stable"\swhen\ntrying\sto\sDROP\sa\sVIEW\sthat\sdoes\snot\sexist.\s(CVS\s4750)
-D 2008-01-25T15:04:48
+C remove\san\sunused\svariable\s(CVS\s4751)
+D 2008-01-27T10:35:57
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -537,7 +537,7 @@ F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/zeroblob.test 7d1854ea79d048e023e5f2e38106a7e99a17435c
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/lemon.c 5d1731de7eb31238e42ff424c0c78efb4a7be635
+F tool/lemon.c 1dc8d53c5ac40f4186ea1bd6ec87a974e18f35a0
 F tool/lempar.c ac41fdc42337c0831fa4c7c848801dccb3fbdd4d
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -614,7 +614,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c6635a71dbb2a06d56a0cfce7f0383325e12dc01
-R 09fe183a8cec7794073c235a3cbc1615
-U drh
-Z e6a7ef262496d485d92eb80331e39c95
+P 50815a82e0ec9a5c1399f5fe6ef416434b55a821
+R e939e7b209c484b51b822b920f07941a
+U rse
+Z 16e0c94defa923bc5322ce7cef61c0da
