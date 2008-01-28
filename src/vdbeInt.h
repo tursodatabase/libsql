@@ -125,7 +125,7 @@ struct Mem {
   double r;           /* Real value */
   sqlite3 *db;        /* The associated database connection */
   char *z;            /* String or BLOB value */
-  int n;              /* Number of characters in string value, including '\0' */
+  int n;              /* Number of characters in string value, excluding '\0' */
   u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
   u8  type;           /* One of SQLITE_NULL, SQLITE_TEXT, SQLITE_INTEGER, etc */
   u8  enc;            /* SQLITE_UTF8, SQLITE_UTF16BE, SQLITE_UTF16LE */

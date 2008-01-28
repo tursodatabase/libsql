@@ -1,5 +1,5 @@
-C remove\san\sunused\svariable\s(CVS\s4751)
-D 2008-01-27T10:35:57
+C Fix\san\sincorrect\scomment\son\sthe\sMem\sobject\sin\svdbeInt.h.\s(CVS\s4752)
+D 2008-01-28T15:19:27
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -172,7 +172,7 @@ F src/util.c c56e41ed4769c1f2b8af9ffde4757a7b4fb08ed1
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
 F src/vdbe.c 299e18e4262ba4104710a7fac21d80b2a14eb666
 F src/vdbe.h 58a7d931ffb704e034b2a725981cfa5bd406fad9
-F src/vdbeInt.h 6b4a438198f98a2a2233cc228ed0f120a18628e7
+F src/vdbeInt.h b7a18349e9b29eca4b642aee6233ac02dd63ad87
 F src/vdbeapi.c 93c72ed24d59ed86a634b6d593cdec8376b24513
 F src/vdbeaux.c 771b9ffd7b42cbb4bd029d7a9414a7cb03f924a7
 F src/vdbeblob.c 63c750acc7b5012479f508c0e9627372a82cb65d
@@ -614,7 +614,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 50815a82e0ec9a5c1399f5fe6ef416434b55a821
-R e939e7b209c484b51b822b920f07941a
-U rse
-Z 16e0c94defa923bc5322ce7cef61c0da
+P 88846195474e620d0c3029d464d074aea6e82a22
+R 50c53a3df8eb157bbf9566226033461a
+U drh
+Z 211f220f7b64d9a4480ccb15732125a2
