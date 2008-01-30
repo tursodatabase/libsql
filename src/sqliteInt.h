@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.657 2008/01/28 22:09:24 aswift Exp $
+** @(#) $Id: sqliteInt.h,v 1.658 2008/01/30 16:14:23 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -22,7 +22,7 @@
 ** a boolean expression that is usually true.  GCC is able to
 ** use these hints to generate better code, sometimes.
 */
-#if defined(__GNUC__)
+#if defined(__GNUC__) && 0
 # define likely(X)    __builtin_expect((X),1)
 # define unlikely(X)  __builtin_expect((X),0)
 #else
