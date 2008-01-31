@@ -1,5 +1,5 @@
-C Add\s"return\src;"\sto\sthe\send\sof\ssqlite3_test_control().\s(CVS\s4760)
-D 2008-01-31T15:31:02
+C Make\ssure\svirtual\stable\sinterfaces\sare\snot\sinvoked\safter\sEOF\swhen\nthe\svirtual\stable\sappears\sin\san\souter\sjoin.\s\sTicket\s#2894.\s(CVS\s4761)
+D 2008-01-31T15:53:45
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -170,7 +170,7 @@ F src/update.c 31edd9c9764e80753930bd5f9b43e0edb404636f
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c c56e41ed4769c1f2b8af9ffde4757a7b4fb08ed1
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c 299e18e4262ba4104710a7fac21d80b2a14eb666
+F src/vdbe.c a21942ef4369df8c1251dd128278c376aea4781d
 F src/vdbe.h 58a7d931ffb704e034b2a725981cfa5bd406fad9
 F src/vdbeInt.h b7a18349e9b29eca4b642aee6233ac02dd63ad87
 F src/vdbeapi.c 93c72ed24d59ed86a634b6d593cdec8376b24513
@@ -517,7 +517,7 @@ F test/vacuum2.test d3b9691541fe6ed5c711f547a1c7d70e9760ac6f
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/view.test 4864e3841ab3213a95297718b94d5d6a8d3bc78b
 F test/vtab1.test bd905d1d43637a700308da6ffcc4e014c27e2f0a
-F test/vtab2.test 94bb3bf691ac10e34cf7dad46b1cf94b861d513c
+F test/vtab2.test 1da49b015582965a8fc386aa23d051a5a622b08e
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
 F test/vtab5.test 26bc7a0a52c5c2bcfa849ba327f8a0d4abccdb23
@@ -614,7 +614,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9b207d1a6690206a6d7a10fcb517579b8bdadca2
-R 207291ef309d70bb1999aed272070043
-U danielk1977
-Z ae0f74993961c2dd5a21d43c2be5a879
+P b547e7ea75294997de4298e30af813f36dfa3b05
+R e903897809b4e69e604c108cab7fed0d
+U drh
+Z d25fc7ca7545d6d1f72f5f699e12446b

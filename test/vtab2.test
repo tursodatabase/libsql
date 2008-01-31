@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: vtab2.test,v 1.7 2007/02/14 09:19:37 danielk1977 Exp $
+# $Id: vtab2.test,v 1.8 2008/01/31 15:53:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -86,5 +86,23 @@ do_test vtab2-2.3 {
 } $result
 unset result
 unset var
+
+# Ticket #2894.
+#
+# Make sure we do call Column(), and Rowid() methods of
+# a virtual table when that table is in a LEFT JOIN.
+#
+do_test vtab2-3.1 {
+  execsql {
+    SELECT * FROM schema WHERE dflt_value IS NULL LIMIT 1
+  }
+} {main schema 0 database {} 0 {} 0}
+do_test vtab2-3.2 {
+  execsql {
+    SELECT *, b.rowid
+      FROM schema a LEFT JOIN schema b ON a.dflt_value=b.dflt_value
+     WHERE a.rowid=1
+  }
+} {main schema 0 database {} 0 {} 0 {} {} {} {} {} {} {} {} {}}
 
 finish_test
