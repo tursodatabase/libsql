@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.10 2008/01/22 21:30:53 drh Exp $
+** $Id: test_malloc.c,v 1.11 2008/01/31 14:43:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -410,9 +410,12 @@ static int test_memdebug_fail(
     }
   }
   
-  nBenign = sqlite3FaultBenignFailures(SQLITE_FAULTINJECTOR_MALLOC);
-  nFail = sqlite3FaultFailures(SQLITE_FAULTINJECTOR_MALLOC);
-  sqlite3FaultConfig(SQLITE_FAULTINJECTOR_MALLOC, iFail, nRepeat);
+  nBenign = sqlite3_test_control(SQLITE_TESTCTRL_FAULT_BENIGN_FAILURES,
+                                 SQLITE_FAULTINJECTOR_MALLOC);
+  nFail = sqlite3_test_control(SQLITE_TESTCTRL_FAULT_FAILURES,
+                               SQLITE_FAULTINJECTOR_MALLOC);
+  sqlite3_test_control(SQLITE_TESTCTRL_FAULT_CONFIG,
+                       SQLITE_FAULTINJECTOR_MALLOC, iFail, nRepeat);
   if( pBenignCnt ){
     Tcl_ObjSetVar2(interp, pBenignCnt, 0, Tcl_NewIntObj(nBenign), 0);
   }
@@ -440,9 +443,9 @@ static int test_memdebug_pending(
 
 #ifdef SQLITE_MEMDEBUG
   {
-    Tcl_SetObjResult(interp, 
-       Tcl_NewIntObj(sqlite3FaultPending(SQLITE_FAULTINJECTOR_MALLOC))
-    );
+    int nPending = sqlite3_test_control(SQLITE_TESTCTRL_FAULT_PENDING,
+                                        SQLITE_FAULTINJECTOR_MALLOC);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(nPending));
   }
 #endif
   return TCL_OK;

@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.280 2008/01/31 12:26:50 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.281 2008/01/31 14:43:24 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4747,6 +4747,45 @@ int sqlite3_mutex_notheld(sqlite3_mutex*);
 ** See also: [SQLITE_FCNTL_LOCKSTATE]
 */
 int sqlite3_file_control(sqlite3*, const char *zDbName, int op, void*);
+
+/*
+** CAPI3REF: Testing Interface {F11400}
+**
+** The sqlite3_test_control() interface is used to read out internal
+** state of SQLite and to inject faults into SQLite for testing
+** purposes.  The first parameter a operation code that determines
+** the number, meaning, and operation of all subsequent parameters.
+**
+** This interface is not for use by applications.  It exists solely
+** for verifying the correct operation of the SQLite library.  Depending
+** on how the SQLite library is compiled, this interface might not exist.
+**
+** The details of the operation codes, their meanings, the parameters
+** they take, and what they do are all subject to change without notice.
+** Unlike most of the SQLite API, this function is not guaranteed to
+** operate consistently from one release to the next.
+*/
+int sqlite3_test_control(int op, ...);
+
+/*
+** CAPI3REF: Testing Interface Operation Codes {F11410}
+**
+** These constants are the valid operation code parameters used
+** as the first argument to [sqlite3_test_control()].
+**
+** These parameters and their meansing are subject to change
+** without notice.  These values are for testing purposes only.
+** Applications should not use any of these parameters or the
+** [sqlite3_test_control()] interface.
+*/
+#define SQLITE_TESTCTRL_FAULT_CONFIG             1
+#define SQLITE_TESTCTRL_FAULT_FAILURES           2
+#define SQLITE_TESTCTRL_FAULT_BENIGN_FAILURES    3
+#define SQLITE_TESTCTRL_FAULT_PENDING            4
+
+
+
+
 
 /*
 ** Undo the hack that converts floating point types to integer for
