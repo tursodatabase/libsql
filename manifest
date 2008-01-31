@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_test_control()\sAPI.\s\sUse\sit\sto\scontrol\sthe\sfault\sinjector.\s(CVS\s4758)
-D 2008-01-31T14:43:24
+C Fix\sassertion\sfault\sin\ssqllimits1.test\sencountered\swhen\sauto_vacuum\sis\nenabled.\s\sCorrect\sthe\ssqllimit1\stests\sto\saccount\sfor\sextra\spages\sinserted\nby\sauto_vacuum.\s(CVS\s4759)
+D 2008-01-31T14:54:44
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -83,7 +83,7 @@ F src/analyze.c a78ac494668581fe7f54ee63700815bb0ea34261
 F src/attach.c 2a0b199467c6c0212fae26a6b51bef132680f881
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c a3125bd53a4112f2f259af858ef2eff63e397c9b
+F src/btree.c 29ea577155f39be65bdec1c7782301ff2ee9eb3f
 F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
 F src/btreeInt.h 1c5a9da165718ef7de81e35ce9ab5d9ba9283f76
 F src/build.c 7d93ee565b5676746d014acdc638adee87cfd27e
@@ -444,7 +444,7 @@ F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test 20d8ea20bea3ca09c3ef3b5ec820a17e58e132cb
-F test/sqllimits1.test f861e6179aa985d8ee168233a65d745f7aaca2e4
+F test/sqllimits1.test 29d87be26425de0dd185f6dc24a0440418646a0f
 F test/subquery.test 8203f85db56ba022a57a0589890090c8feed4e59
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
@@ -614,7 +614,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 72411043e60d5358d5a7adf566d662d65d3b3336
-R 869aa95ac306ab28b66d2cbeb9340567
+P 413ddade6a13f993cddc57389d1107d82fa19972
+R 1da7221227258d36a5951251aefce79d
 U drh
-Z b39878f0b1c59992e9b7955387e6c156
+Z 3796a9c0b1703857e2146a0762b44324

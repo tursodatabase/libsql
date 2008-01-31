@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.437 2008/01/19 23:50:26 drh Exp $
+** $Id: btree.c,v 1.438 2008/01/31 14:54:44 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4098,6 +4098,7 @@ static int allocateBtreePage(
       TRACE(("ALLOCATE: %d from end of file (pointer-map page)\n", *pPgno));
       assert( *pPgno!=PENDING_BYTE_PAGE(pBt) );
       (*pPgno)++;
+      if( *pPgno==PENDING_BYTE_PAGE(pBt) ){ (*pPgno)++; }
     }
     if( pBt->nTrunc ){
       pBt->nTrunc = *pPgno;
@@ -5833,7 +5834,7 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags){
     /* The new root-page may not be allocated on a pointer-map page, or the
     ** PENDING_BYTE page.
     */
-    if( pgnoRoot==PTRMAP_PAGENO(pBt, pgnoRoot) ||
+    while( pgnoRoot==PTRMAP_PAGENO(pBt, pgnoRoot) ||
         pgnoRoot==PENDING_BYTE_PAGE(pBt) ){
       pgnoRoot++;
     }
