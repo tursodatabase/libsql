@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.281 2008/01/31 14:43:24 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.282 2008/01/31 16:36:40 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3117,7 +3117,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 **
 ** {F13803} The [sqlite3_column_blob(S,N)] interface converts the
 **          Nth column in the current row of the result set for
-**          [prepared_statement] S into a blob and then returns a
+**          [prepared statement] S into a blob and then returns a
 **          pointer to the converted value.
 **
 ** {F13806} The [sqlite3_column_bytes(S,N)] interface returns the
@@ -3133,40 +3133,40 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 **
 ** {F13812} The [sqlite3_column_double(S,N)] interface converts the
 **          Nth column in the current row of the result set for
-**          [prepared_statement] S into a floating point value and
+**          [prepared statement] S into a floating point value and
 **          returns a copy of that value.
 **
 ** {F13815} The [sqlite3_column_int(S,N)] interface converts the
 **          Nth column in the current row of the result set for
-**          [prepared_statement] S into a 32-bit signed integer and
+**          [prepared statement] S into a 32-bit signed integer and
 **          returns a copy of that integer.
 **
 ** {F13818} The [sqlite3_column_int64(S,N)] interface converts the
 **          Nth column in the current row of the result set for
-**          [prepared_statement] S into a 64-bit signed integer and
+**          [prepared statement] S into a 64-bit signed integer and
 **          returns a copy of that integer.
 **
 ** {F13821} The [sqlite3_column_text(S,N)] interface converts the
 **          Nth column in the current row of the result set for
-**          [prepared_statement] S into a zero-terminated UTF-8 
+**          [prepared statement] S into a zero-terminated UTF-8 
 **          string and returns a pointer to that string.
 **
 ** {F13824} The [sqlite3_column_text16(S,N)] interface converts the
 **          Nth column in the current row of the result set for
-**          [prepared_statement] S into a zero-terminated 2-byte
+**          [prepared statement] S into a zero-terminated 2-byte
 **          aligned UTF-16 native byte order
 **          string and returns a pointer to that string.
 **
 ** {F13827} The [sqlite3_column_type(S,N)] interface returns
-**          one of [SQLITE_NULL], [SQLITE_INTEGER], [SQLITE_REAL],
+**          one of [SQLITE_NULL], [SQLITE_INTEGER], [SQLITE_FLOAT],
 **          [SQLITE_TEXT], or [SQLITE_BLOB] as appropriate for
 **          the Nth column in the current row of the result set for
-**          [prepared_statement] S.
+**          [prepared statement] S.
 **
 ** {F13830} The [sqlite3_column_value(S,N)] interface returns a
 **          pointer to the [sqlite3_value] object that for the
 **          Nth column in the current row of the result set for
-**          [prepared_statement] S.
+**          [prepared statement] S.
 */
 const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);
 int sqlite3_column_bytes(sqlite3_stmt*, int iCol);

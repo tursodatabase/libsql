@@ -24,9 +24,6 @@ echo "VERSIONS: $VERS $VERSW"
 #
 make clean
 make sqlite3.c
-make fts3amal.c
-cat fts3amal.c >>sqlite3.c
-cat fts3amal.c >>tclsqlite3.c
 CFLAGS="-Os -DSQLITE_ENABLE_FTS3=1 -DSQLITE_THREADSAFE=0"
 echo '***** '"COMPILING sqlite3-$VERS.bin..."
 gcc $CFLAGS -Itsrc sqlite3.c tsrc/shell.c -o sqlite3 -ldl
@@ -41,7 +38,7 @@ mv sqlite3-$VERS.bin.gz doc
 make target_source
 cd tsrc
 echo '***** BUILDING preprocessed source archives'
-rm fts* icu*
+rm fts[12]* icu*
 rm -f ../doc/sqlite-source-$VERSW.zip
 zip ../doc/sqlite-source-$VERSW.zip *
 cd ..
@@ -54,7 +51,7 @@ zip doc/sqlite-amalgamation-$VERSW.zip sqlite3.c sqlite3.h sqlite3ext.h
 #
 TCLDIR=/home/drh/tcltk/846/linux/846linux
 TCLSTUBLIB=$TCLDIR/libtclstub8.4g.a
-CFLAGS="-Os -DSQLITE_ENABLE_FTS3=1"
+CFLAGS="-Os -DSQLITE_ENABLE_FTS3=1 -DHAVE_LOCALTIME_R=1 -DHAVE_GMTIME_R=1"
 echo '***** BUILDING shared libraries for linux'
 gcc $CFLAGS -shared tclsqlite3.c $TCLSTUBLIB -o tclsqlite3.so -lpthread
 strip tclsqlite3.so

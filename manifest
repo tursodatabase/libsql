@@ -1,5 +1,5 @@
-C Make\ssure\svirtual\stable\sinterfaces\sare\snot\sinvoked\safter\sEOF\swhen\nthe\svirtual\stable\sappears\sin\san\souter\sjoin.\s\sTicket\s#2894.\s(CVS\s4761)
-D 2008-01-31T15:53:45
+C Fixes\sto\sAPI\sdefinition\scomments\sin\ssqlite.h.in.\s\sUpdates\sto\sthe\nbuild\sscript\s-\sticket\s#2874.\s(CVS\s4762)
+D 2008-01-31T16:36:40
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -71,7 +71,7 @@ F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
 F mkopcodec.awk 3fb9bf077053c968451f4dd03d11661ac373f9d1
 F mkopcodeh.awk 513946ce4429bf2723aef0d640eb4d2493deb68e
 F mkso.sh 24bde4c09e6fe80f718db3c31c068f45e13a2f2c
-F publish.sh 1c0658c63d70f182a8f5e17cc28422f1b237f51d
+F publish.sh 3ecffcfa9d4718b20fc8f1891ac529056636d37f
 F publish_osx.sh eca87df1e3d43d128d97d3261fd48b3d6877996e
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
@@ -135,7 +135,7 @@ F src/random.c 02ef38b469237482f1ea14a78b2087cfbaec48bd
 F src/select.c 1a5d0aaf8f420b164eb775d3b1ba2bfb79597f65
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ca06cb687c40a8bff6307b5fad41a0e86a0f8558
-F src/sqlite.h.in eeb3617be89c7004b8a2936d5a46e5138fe02ab9
+F src/sqlite.h.in 7d8596b5b4f8bfd4e171ba2fdfec1da1de71465e
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h b006a4d887af1ce273683cc4874a506254068dbd
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
@@ -614,7 +614,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b547e7ea75294997de4298e30af813f36dfa3b05
-R e903897809b4e69e604c108cab7fed0d
+P face510bc14f440fc08dd5a354882ae05499bfa7
+R 2ecd31ad08cc305dd5a7c7f5c9076dd5
 U drh
-Z d25fc7ca7545d6d1f72f5f699e12446b
+Z 40c301baed59af8803100e4b6c98d355
