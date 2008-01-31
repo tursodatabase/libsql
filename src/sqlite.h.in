@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.282 2008/01/31 16:36:40 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.283 2008/01/31 17:21:22 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2348,7 +2348,6 @@ typedef struct sqlite3_context sqlite3_context;
 ** for "?NNN" parameters is the value of NNN.
 ** The NNN value must be between 1 and the compile-time
 ** parameter SQLITE_MAX_VARIABLE_NUMBER (default value: 999).
-** See <a href="limits.html">limits.html</a> for additional information.
 **
 ** The third argument is the value to bind to the parameter.
 **

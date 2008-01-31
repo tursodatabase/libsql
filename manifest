@@ -1,5 +1,5 @@
-C Fixes\sto\sAPI\sdefinition\scomments\sin\ssqlite.h.in.\s\sUpdates\sto\sthe\nbuild\sscript\s-\sticket\s#2874.\s(CVS\s4762)
-D 2008-01-31T16:36:40
+C Remove\sa\sbroken\shyperlink\sfrom\sthe\sAPI\sdocumentation.\s(CVS\s4763)
+D 2008-01-31T17:21:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/random.c 02ef38b469237482f1ea14a78b2087cfbaec48bd
 F src/select.c 1a5d0aaf8f420b164eb775d3b1ba2bfb79597f65
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ca06cb687c40a8bff6307b5fad41a0e86a0f8558
-F src/sqlite.h.in 7d8596b5b4f8bfd4e171ba2fdfec1da1de71465e
+F src/sqlite.h.in be6caded9ecc1d0da60670334edfb3426cc256d2
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h b006a4d887af1ce273683cc4874a506254068dbd
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
@@ -614,7 +614,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P face510bc14f440fc08dd5a354882ae05499bfa7
-R 2ecd31ad08cc305dd5a7c7f5c9076dd5
+P c23f51de61398b08a9f02cc65befcbfe506137c0
+R 364e82c6efd0347de00dcbae563ca888
 U drh
-Z 40c301baed59af8803100e4b6c98d355
+Z 554550254dd536e1c78a3afea1187977
