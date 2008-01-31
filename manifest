@@ -1,5 +1,5 @@
-C Fix\sassertion\sfault\sin\ssqllimits1.test\sencountered\swhen\sauto_vacuum\sis\nenabled.\s\sCorrect\sthe\ssqllimit1\stests\sto\saccount\sfor\sextra\spages\sinserted\nby\sauto_vacuum.\s(CVS\s4759)
-D 2008-01-31T14:54:44
+C Add\s"return\src;"\sto\sthe\send\sof\ssqlite3_test_control().\s(CVS\s4760)
+D 2008-01-31T15:31:02
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,7 +102,7 @@ F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 4ac53191fad2e3c4d59bde1228879b2dc5a96d66
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c d17a0f760d6866aacf5262f97d8efaaad379cdd7
-F src/main.c ecdc7669cd23c2e914b56e35b1fa14b47f6eee9e
+F src/main.c b4014b71979a58d6aa79549fdf87175ab7bdf1cc
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c 6d1a11864963d249c67e72ad5f6533b040333880
@@ -614,7 +614,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 413ddade6a13f993cddc57389d1107d82fa19972
-R 1da7221227258d36a5951251aefce79d
-U drh
-Z 3796a9c0b1703857e2146a0762b44324
+P 9b207d1a6690206a6d7a10fcb517579b8bdadca2
+R 207291ef309d70bb1999aed272070043
+U danielk1977
+Z ae0f74993961c2dd5a21d43c2be5a879

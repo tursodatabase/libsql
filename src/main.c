@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.416 2008/01/31 14:43:24 drh Exp $
+** $Id: main.c,v 1.417 2008/01/31 15:31:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -843,7 +843,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
 ** passed to this function, we assume a malloc() failed during sqlite3_open().
 */
 int sqlite3_errcode(sqlite3 *db){
-  if( !sqlite3SafetyCheckSickOrOk(db) ){
+  if( db && !sqlite3SafetyCheckSickOrOk(db) ){
     return SQLITE_MISUSE;
   }
   if( !db || db->mallocFailed ){
@@ -1505,4 +1505,5 @@ int sqlite3_test_control(int op, ...){
 #endif /* SQLITE_OMIT_FAULTINJECTOR */
   }
   va_end(ap);
+  return rc;
 }
