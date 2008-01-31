@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.706 2008/01/31 15:53:45 drh Exp $
+** $Id: vdbe.c,v 1.707 2008/01/31 19:34:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4476,6 +4476,7 @@ case OP_VFilter: {   /* jump */
       pc = pOp->p2 - 1;
     }
   }
+  pCur->nullRow = 0;
 
   break;
 }
