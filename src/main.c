@@ -14,10 +14,13 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.414 2008/01/23 12:52:41 drh Exp $
+** $Id: main.c,v 1.415 2008/01/31 13:35:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
+#ifdef SQLITE_ENABLE_FTS3
+# include "fts3.h"
+#endif
 
 /*
 ** The version of the library
@@ -1065,7 +1068,6 @@ static int openDatabase(
 
 #ifdef SQLITE_ENABLE_FTS3
   if( !db->mallocFailed && rc==SQLITE_OK ){
-    extern int sqlite3Fts3Init(sqlite3*);
     rc = sqlite3Fts3Init(db);
   }
 #endif

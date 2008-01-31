@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.471 2008/01/25 15:04:49 drh Exp $
+** $Id: build.c,v 1.472 2008/01/31 13:35:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1337,7 +1337,7 @@ static void identPut(char *z, int *pIdx, char *zSignedIdent){
 ** table.  Memory to hold the text of the statement is obtained
 ** from sqliteMalloc() and must be freed by the calling function.
 */
-static char *createTableStmt(Table *p, int isTemp){
+static char *createTableStmt(sqlite3 *db, Table *p, int isTemp){
   int i, k, n;
   char *zStmt;
   char *zSep, *zSep2, *zEnd, *z;
@@ -1362,7 +1362,10 @@ static char *createTableStmt(Table *p, int isTemp){
   }
   n += 35 + 6*p->nCol;
   zStmt = sqlite3_malloc( n );
-  if( zStmt==0 ) return 0;
+  if( zStmt==0 ){
+    db->mallocFailed = 1;
+    return 0;
+  }
   sqlite3_snprintf(n, zStmt,
                   !OMIT_TEMPDB&&isTemp ? "CREATE TEMP TABLE ":"CREATE TABLE ");
   k = strlen(zStmt);
@@ -1528,7 +1531,7 @@ void sqlite3EndTable(
 
     /* Compute the complete text of the CREATE statement */
     if( pSelect ){
-      zStmt = createTableStmt(p, p->pSchema==db->aDb[1].pSchema);
+      zStmt = createTableStmt(db, p, p->pSchema==db->aDb[1].pSchema);
     }else{
       n = pEnd->z - pParse->sNameToken.z + 1;
       zStmt = sqlite3MPrintf(db, 

@@ -824,7 +824,7 @@ int sqlite3VdbeMemFromBtree(
   return SQLITE_OK;
 }
 
-#ifndef NDEBUG
+#if 0
 /*
 ** Perform various checks on the memory cell pMem. An assert() will
 ** fail if pMem is internally inconsistent.

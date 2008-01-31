@@ -16,7 +16,7 @@
 # Recovery from malloc() failures is automatic.  But we keep these
 # tests around because you can never have too many test cases.
 #
-# $Id: malloc2.test,v 1.10 2008/01/16 17:46:38 drh Exp $
+# $Id: malloc2.test,v 1.11 2008/01/31 13:35:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,11 +34,13 @@ sqlite3_extended_result_codes db 1
 proc do_malloc2_test {tn args} {
   array set ::mallocopts $args
   set sum [allcksum db]
+  save_prng_state
 
-  for {set ::n 1} {true} {incr ::n} {
+  for {set ::n 784} {true} {incr ::n} {
 
     # Run the SQL. Malloc number $::n is set to fail. A malloc() failure
     # may or may not be reported.
+    restore_prng_state
     sqlite3_memdebug_fail $::n -repeat 1
     do_test malloc2-$tn.$::n.2 {
       set res [catchsql [string trim $::mallocopts(-sql)]]
