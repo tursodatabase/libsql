@@ -24,8 +24,6 @@ echo "VERSIONS: $VERS $VERSW"
 #
 make clean
 make sqlite3.c
-make fts3amal.c
-cat fts3amal.c >>sqlite3.c
 CFLAGS="-Os -DSQLITE_ENABLE_FTS3=1 -DSQLITE_THREADSAFE=0"
 NAME=sqlite3-$VERS-osx-x86.bin
 echo '***** '"COMPILING $NAME..."

@@ -7,9 +7,6 @@
 # library that is loaded into TCL in order to run SQLite.
 #
 make sqlite3.c
-make fts3amal.c
-cat fts3amal.c >>sqlite3.c
-cat fts3amal.c >>tclsqlite3.c
 PATH=$PATH:/opt/mingw/bin
 TCLDIR=/home/drh/tcltk/846/win/846win
 TCLSTUBLIB=$TCLDIR/libtcl84stub.a
