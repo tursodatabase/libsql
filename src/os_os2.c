@@ -165,15 +165,10 @@ int os2Write(
 */
 int os2Truncate( sqlite3_file *id, i64 nByte ){
   APIRET rc = NO_ERROR;
-  ULONG filePosition = 0L;
   os2File *pFile = (os2File*)id;
   OSTRACE3( "TRUNCATE %d %lld\n", pFile->h, nByte );
   SimulateIOError( return SQLITE_IOERR_TRUNCATE );
-  rc = DosSetFilePtr( pFile->h, nByte, FILE_BEGIN, &filePosition );
-  if( rc != NO_ERROR ){
-    return SQLITE_IOERR;
-  }
-  rc = DosSetFilePtr( pFile->h, 0L, FILE_END, &filePosition );
+  rc = DosSetFileSize( pFile->h, nByte );
   return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
 }
 
@@ -790,24 +785,8 @@ static int os2FullPathname(
   int nFull,                  /* Size of output buffer in bytes */
   char *zFull                 /* Output buffer */
 ){
-  if( strchr(zRelative, ':') ){
-    sqlite3_snprintf( nFull, zFull, "%s", zRelative );
-  }else{
-    ULONG ulDriveNum = 0;
-    ULONG ulDriveMap = 0;
-    ULONG cbzBufLen = SQLITE_TEMPNAME_SIZE;
-    char *zBuff = (char*)malloc( cbzBufLen );
-    if( zBuff == 0 ){
-      return SQLITE_NOMEM;
-    }
-    DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
-    if( DosQueryCurrentDir( ulDriveNum, (PBYTE)zBuff, &cbzBufLen ) == NO_ERROR ){
-      sqlite3_snprintf( nFull, zFull, "%c:\\%s\\%s",
-                               (char)('A' + ulDriveNum - 1), zBuff, zRelative);
-    }
-    free( zBuff );
-  }
-  return SQLITE_OK;
+  APIRET rc = DosQueryPathInfo( zRelative, FIL_QUERYFULLNAME, zFull, nFull );
+  return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
 }
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
