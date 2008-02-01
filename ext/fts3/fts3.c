@@ -288,7 +288,7 @@
 #include "fts3_hash.h"
 #include "fts3_tokenizer.h"
 #ifndef SQLITE_CORE 
-  #include "sqlite3ext.h"
+# include "sqlite3ext.h"
   SQLITE_EXTENSION_INIT1
 #endif
 

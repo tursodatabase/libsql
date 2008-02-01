@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild\sscripts\sfor\swindows\sbinaries.\s\sticket\s#2916.\s(CVS\s4768)
-D 2008-02-01T13:44:33
+C Minor\sfixes\sto\sFTS3\sso\sthat\sit\sworks\sbetter\swhen\sappended\sto\sthe\send\nof\sthe\samalgamation.\s(CVS\s4769)
+D 2008-02-01T15:34:10
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -50,13 +50,13 @@ F ext/fts2/fts2_tokenizer1.c 8a545c232bdffafd117c4eeaf59789691909f26a
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.tokenizers 226644a0eab97724e8de83061912e8bb248461b6
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 7d0bdfa46f1a85759cd4f8480a616963dd825f7a
+F ext/fts3/fts3.c 34da63e76132e1147bb854b63dec51ecd2e03067
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3_hash.c 83e7bb4042106b32811681dd2859b4577a7a6b35
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
 F ext/fts3/fts3_icu.c e676f8f0c472cfbb3194febf0eadc1cea6ff0d0c
 F ext/fts3/fts3_porter.c 3063da945fb0a935781c135f7575f39166173eca
-F ext/fts3/fts3_tokenizer.c d777c079eaa76996e8493596b1124898d5692271
+F ext/fts3/fts3_tokenizer.c fcc8fdb5c161df7d61c77285ec2991da131f0181
 F ext/fts3/fts3_tokenizer.h 7eb79de4f991a77f43c517e209e5fae95dfa7369
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
@@ -614,7 +614,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 514d7e474391278a121af285dc4aca6216358ad7
-R 8a651a60f5d2df2c2ab78753f4f283a4
+P c336b2318a56c1deb94c41107754f5f622a9b1ee
+R 21445e001f0b9559aceb264d61ee0e1d
 U drh
-Z 6264ed1b3be033c23a63985b221c4f40
+Z ca3eea9585d8ee2592a2134b916f159f

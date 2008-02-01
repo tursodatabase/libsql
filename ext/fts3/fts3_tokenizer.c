@@ -26,7 +26,9 @@
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
 #include "sqlite3ext.h"
-SQLITE_EXTENSION_INIT1
+#ifndef SQLITE_CORE
+  SQLITE_EXTENSION_INIT1
+#endif
 
 #include "fts3_hash.h"
 #include "fts3_tokenizer.h"
