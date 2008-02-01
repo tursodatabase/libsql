@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for OS/2
 **
-** $Id: mutex_os2.c,v 1.4 2007/12/30 23:29:07 pweilbacher Exp $
+** $Id: mutex_os2.c,v 1.5 2008/02/01 19:42:38 pweilbacher Exp $
 */
 #include "sqliteInt.h"
 
@@ -31,12 +31,13 @@
 ** Each recursive mutex is an instance of the following structure.
 */
 struct sqlite3_mutex {
-  PSZ  mutexName;   /* Mutex name controlling the lock */
   HMTX mutex;       /* Mutex controlling the lock */
   int  id;          /* Mutex type */
   int  nRef;        /* Number of references */
   TID  owner;       /* Thread holding this mutex */
 };
+
+#define OS2_MUTEX_INITIALIZER   0,0,0,0
 
 /*
 ** The sqlite3_mutex_alloc() routine allocates a new
@@ -78,46 +79,55 @@ struct sqlite3_mutex {
 ** the same type number.
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int iType){
-  PSZ mutex_name = "\\SEM32\\SQLITE\\MUTEX";
-  int mutex_name_len = strlen(mutex_name) + 1; /* name length + null byte */
-  sqlite3_mutex *p;
-
+  sqlite3_mutex *p = NULL;
   switch( iType ){
     case SQLITE_MUTEX_FAST:
     case SQLITE_MUTEX_RECURSIVE: {
       p = sqlite3MallocZero( sizeof(*p) );
       if( p ){
-        p->mutexName = (PSZ)malloc(mutex_name_len);
-        sqlite3_snprintf(mutex_name_len, p->mutexName, "%s", mutex_name);
         p->id = iType;
-        DosCreateMutexSem(p->mutexName, &p->mutex, 0, FALSE);
-        DosOpenMutexSem(p->mutexName, &p->mutex);
+        if( DosCreateMutexSem( 0, &p->mutex, 0, FALSE ) != NO_ERROR ){
+          sqlite3_free( p );
+          p = NULL;
+        }
       }
       break;
     }
     default: {
-      static sqlite3_mutex staticMutexes[5];
-      static int isInit = 0;
-      while( !isInit ) {
-        static long lock = 0;
-        DosEnterCritSec();
-        lock++;
-        if( lock == 1 ) {
-          int i;
-          DosExitCritSec();
-          for(i = 0; i < sizeof(staticMutexes)/sizeof(staticMutexes[0]); i++) {
-            staticMutexes[i].mutexName = (PSZ)malloc(mutex_name_len + 1);
-            sqlite3_snprintf(mutex_name_len + 1, /* one more for the number */
-                             staticMutexes[i].mutexName, "%s%1d", mutex_name, i);
-            DosCreateMutexSem(staticMutexes[i].mutexName,
-                              &staticMutexes[i].mutex, 0, FALSE);
-            DosOpenMutexSem(staticMutexes[i].mutexName,
-                            &staticMutexes[i].mutex);
+      static volatile int isInit = 0;
+      static sqlite3_mutex staticMutexes[] = {
+        { OS2_MUTEX_INITIALIZER, },
+        { OS2_MUTEX_INITIALIZER, },
+        { OS2_MUTEX_INITIALIZER, },
+        { OS2_MUTEX_INITIALIZER, },
+        { OS2_MUTEX_INITIALIZER, },
+      };
+      if ( !isInit ){
+        APIRET rc;
+        PTIB ptib;
+        PPIB ppib;
+        HMTX mutex;
+        char name[32];
+        DosGetInfoBlocks( &ptib, &ppib );
+        sqlite3_snprintf( sizeof(name), name, "\\SEM32\\SQLITE%04x",
+                          ppib->pib_ulpid );
+        while( !isInit ){
+          mutex = 0;
+          rc = DosCreateMutexSem( name, &mutex, 0, FALSE);
+          if( rc == NO_ERROR ){
+            int i;
+            if( !isInit ){
+              for( i = 0; i < sizeof(staticMutexes)/sizeof(staticMutexes[0]); i++ ){
+                DosCreateMutexSem( 0, &staticMutexes[i].mutex, 0, FALSE );
+              }
+              isInit = 1;
+            }
+            DosCloseMutexSem( mutex );
+          }else if( rc == ERROR_DUPLICATE_NAME ){
+            DosSleep( 1 );
+          }else{
+            return p;
           }
-          isInit = 1;
-        } else {
-          DosExitCritSec();
-          DosSleep(1);
         }
       }
       assert( iType-2 >= 0 );
@@ -139,9 +149,8 @@ void sqlite3_mutex_free(sqlite3_mutex *p){
   assert( p );
   assert( p->nRef==0 );
   assert( p->id==SQLITE_MUTEX_FAST || p->id==SQLITE_MUTEX_RECURSIVE );
-  DosCloseMutexSem(p->mutex);
-  free(p->mutexName);
-  sqlite3_free(p);
+  DosCloseMutexSem( p->mutex );
+  sqlite3_free( p );
 }
 
 /*

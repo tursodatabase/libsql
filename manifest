@@ -1,5 +1,5 @@
-C Minor\sfixes\sto\sFTS3\sso\sthat\sit\sworks\sbetter\swhen\sappended\sto\sthe\send\nof\sthe\samalgamation.\s(CVS\s4769)
-D 2008-02-01T15:34:10
+C fix\sbroken\sOS/2\smutex\simplementation\s(Ticket\s#2905)\s(CVS\s4770)
+D 2008-02-01T19:42:38
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -111,7 +111,7 @@ F src/mem3.c 9d80034bb004c1bddc28d6befe1ddb044d18deab
 F src/mem4.c 36ecd536a8b7acfe4cbf011353dae6ea68121e40
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
-F src/mutex_os2.c 4058d04e81a6c1e240020d299a3192d92352c7ef
+F src/mutex_os2.c 19ab15764736f13b94b4f70e53f77547cbddd47a
 F src/mutex_unix.c a6e111947a3cdaa2cda394ed060d7f496fcb4af8
 F src/mutex_w32.c 6e197765f283815496193e78e9548b5d0e53b68e
 F src/os.c 50c0c1706c35f872db312815aaecc4b5ebcd6a4c
@@ -614,7 +614,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c336b2318a56c1deb94c41107754f5f622a9b1ee
-R 21445e001f0b9559aceb264d61ee0e1d
-U drh
-Z ca3eea9585d8ee2592a2134b916f159f
+P 62ede6699d8f116921a5a0baddca5e7e63740cd3
+R a3c12d2656e30bd09a6226afe41e9199
+U pweilbacher
+Z 90ac1767b82b52f948a282a45e6b19e8
