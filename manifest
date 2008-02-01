@@ -1,5 +1,5 @@
-C fix\sbroken\sOS/2\smutex\simplementation\s(Ticket\s#2905)\s(CVS\s4770)
-D 2008-02-01T19:42:38
+C Use\sthe\sbuffer\ssize\sas\slimit\sfor\stemp\sfile\snames.\sThis\sis\sdone\sfor\swindows\stoo,\ssee\scheck-in\s(4595).\s(CVS\s4771)
+D 2008-02-01T19:44:29
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -117,7 +117,7 @@ F src/mutex_w32.c 6e197765f283815496193e78e9548b5d0e53b68e
 F src/os.c 50c0c1706c35f872db312815aaecc4b5ebcd6a4c
 F src/os.h d04706d54a072c7a30ab9e346ad916ef28c842d5
 F src/os_common.h 98862f120ca6bf7a48ce8b16f158b77d00bc9d2f
-F src/os_os2.c 0c3e3f98ae76a59d42f6a72bbf2999eff3b059da
+F src/os_os2.c bf1cd3d4f42c1b1ab059c12732cd9f7be4e718a6
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
@@ -614,7 +614,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 62ede6699d8f116921a5a0baddca5e7e63740cd3
-R a3c12d2656e30bd09a6226afe41e9199
+P 05afd86e2d25a219843be48c21c212e84f94e7ef
+R e0ef2809a0bb8ddbb62cd5e17894cb33
 U pweilbacher
-Z 90ac1767b82b52f948a282a45e6b19e8
+Z b8e67c7c5c9b3156fa617921de22ad01

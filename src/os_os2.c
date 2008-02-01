@@ -760,8 +760,7 @@ static int os2GetTempname( sqlite3_vfs *pVfs, int nBuf, char *zBuf ){
     j--;
   }
   zTempPath[j] = '\0';
-  assert( nBuf>=pVfs->mxPathname );
-  sqlite3_snprintf( pVfs->mxPathname-30, zBuf,
+  sqlite3_snprintf( nBuf-30, zBuf,
                     "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath );
   j = strlen( zBuf );
   sqlite3Randomness( 20, &zBuf[j] );
