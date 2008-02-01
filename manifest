@@ -1,5 +1,5 @@
-C make\sos2Truncate()\sactually\sdo\ssomething\sand\sfix\sos2FullPathname()\sto\sbe\smore\selegant\sand\swork\smore\scorrectly\sin\sall\scases\s(Ticket\s#2904)\s(CVS\s4766)
-D 2008-02-01T00:31:59
+C Modify\sthe\sprintf\stest\sscript\sso\sthat\sit\sdoes\snot\sdepend\son\sthe\splatform\nprintf,\sso\sthat\swe\sdo\snot\sspurious\stest\sfailures\swhen\smoving\sfrom\sone\nplatform\sto\sanother.\s(CVS\s4767)
+D 2008-02-01T01:19:54
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -410,7 +410,7 @@ F test/pageropt.test 51e3c091bc2992f5098f7576e3594e1908988939
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
 F test/pragma.test d9f3d80583b80708aa270e8c5038dee949190d78
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
-F test/printf.test 6bf1a86c6a1e45536f72d782bf44c8e3c76510f8
+F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 38ae1806833d72d9a81a6121322e274f24937e18
 F test/quick.test 771a6b3a88fdd0e7e813ce013ceda29037bc9462
@@ -614,7 +614,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ebeac2a499ce16ac7e6d12daa5ce9d41e9067d28
-R c6eab2721dc7a2503f5dba9236f9ecde
-U pweilbacher
-Z 3abc0ef4950723d8e67f5617acc8d019
+P 921c7a0ac4581255ea5061980ff7991088b9b78a
+R b1327994ea4ef6104e894bbd336c0d1e
+U drh
+Z 0522006ecf7d01deef5d03f9f2608874
