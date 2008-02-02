@@ -1,5 +1,5 @@
-C Use\sthe\sbuffer\ssize\sas\slimit\sfor\stemp\sfile\snames.\sThis\sis\sdone\sfor\swindows\stoo,\ssee\scheck-in\s(4595).\s(CVS\s4771)
-D 2008-02-01T19:44:29
+C Add\smore\stest\scases\sto\sprove\sthat\sticket\s#2920\sdoes\snot\sexist\sin\r\nCVS\sHEAD.\s\sThe\sproblem\swas\spreviously\sfixed\sby\sthe\schanges\sto\r\nticket\s#2686.\s\sTicket\s#2920\sis\sa\sduplicate\sof\s#2686.\s(CVS\s4772)
+D 2008-02-02T02:48:52
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -487,13 +487,14 @@ F test/tkt2409.test 20318bf6acd9b834b4420548f277b8e3a7420cd1
 F test/tkt2450.test 77ed94863f2049c1420288ddfea2d41e5e0971d6
 F test/tkt2640.test 6e81ebd7d986ff1e9ed570c4c92ca0aa2b3a5848
 F test/tkt2643.test 3f3ebb743da00d4fed4fcf6daed92a0e18e57813
-F test/tkt2686.test 3022db0eee8ecf501f516557c77ef1c4039399cd
+F test/tkt2686.test 08f0f584461bc4990376936daa0a9bd3e6e81671
 F test/tkt2767.test 6b02308d553d194f329a469bf5c157fe724738d4
 F test/tkt2817.test 709a2201a5590bf56cb97f6fb168a62282203fd1
 F test/tkt2820.test 017fdee33aaef7abc092beab6088816f1942304b
 F test/tkt2822.test 8b1526b1e5b0d38a1a993f7828fbb81759093686
 F test/tkt2832.test cd56dc66bb31898b7eb2146baa5bde2eb80f96fe
 F test/tkt2854.test aebd5a9904d36d1ef7a074fc5e7c7da3ab00c32a
+F test/tkt2920.test a8737380e4ae6424e00c0273dc12775704efbebf
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -614,7 +615,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 05afd86e2d25a219843be48c21c212e84f94e7ef
-R e0ef2809a0bb8ddbb62cd5e17894cb33
-U pweilbacher
-Z b8e67c7c5c9b3156fa617921de22ad01
+P 99275bcd624c57585fc962235082fb0ca213d9c0
+R 3aafbcc2e0daae76937330670eed789c
+U drh
+Z 7068964cc85c01db363987a4b72bce80
