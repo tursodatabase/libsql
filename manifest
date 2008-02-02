@@ -1,5 +1,5 @@
-C When\sOMIT_TRIGGER\sis\sdefined,\sprovide\sa\sno-op\smacro\sfor\ssqlite3SelectMask().\sFix\sfor\s#2918.\s(CVS\s4773)
-D 2008-02-02T04:47:09
+C Delete\sunused\s"pager3_refinfo_enable"\sflag\sand\sits\sassociated\sdebugging\nmacros.\s\sTicket\s#2923.\s(CVS\s4774)
+D 2008-02-02T20:47:38
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,8 +125,8 @@ F src/os_unix.c e4daef7628f690fa2b188af3632fb18f96525946
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c832d528ea774c7094d887749d71884984c9034c
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c d8c2f06c3ce225dd14816cd02f07d7c65aff1f53
-F src/pager.h f504f7ae84060fee0416a853e368d3d113c3d6fa
+F src/pager.c 2ed81808091ce42ceb1cf209e4ce87922a0065c8
+F src/pager.h 8174615ffd14ccc2cad2b081b919a398fa95e3f9
 F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
 F src/pragma.c 2bb8d6882b9a330e041acd05fb6aff5a01bf0a08
 F src/prepare.c 1b0601ca3f97a9d253cc08697484e3045a1678e9
@@ -143,7 +143,7 @@ F src/table.c 46ccf9b7892a86f57420ae7bac69ecd5e72d26b5
 F src/tclsqlite.c 9923abeffc9b3d7dad58e92b319661521f60debf
 F src/test1.c 5363a117741f26e84b85e30757f0f4414331c46f
 F src/test2.c 77b34303883b9d722c65a6879bb0163a400e3789
-F src/test3.c 6b49ddb0946907a07210998810807ace51be00a5
+F src/test3.c 4557ee13c6e5921eb28979ff77cdbd913bfde6be
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
 F src/test6.c f8b34a6ff04937092327798ddf0ab46863535bc5
@@ -210,7 +210,7 @@ F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 261fd1603613e7f877a516d29f281c9d8c2ecf52
 F test/bindxfer.test b9a57f66dbd317feeefa28bd65b6576f1592ee98
 F test/blob.test f2dbdbf1159674283645c2636436839313ee7131
-F test/btree.test 41c328449887a4a532650db28cf346556ff70d4e
+F test/btree.test d22b1b2cc9becc36f6b1f2f91b9fca1e48060979
 F test/btree2.test 4b56a2a4a4f84d68c77aef271223a713bf5ebafc
 F test/btree4.test 3797b4305694c7af6828675b0f4b1424b8ca30e4
 F test/btree5.test 8e5ff32c02e685d36516c6499add9375fe1377f2
@@ -615,7 +615,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b3259e872124fd7e17bbc23e582aa4d802044837
-R c877ed8f96aadcd477a6ce4dd7db5292
-U danielk1977
-Z 5f5693316b3f12ee903c9144552eb569
+P 1d478e9091ef5775297ca4d50c85e39ccdf9e245
+R 271ed5b5d67fc1b6c6bee774d9b672d0
+U drh
+Z 6f8d1336c7b203985a0086e6d71252ce

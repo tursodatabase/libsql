@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.404 2008/01/22 21:30:53 drh Exp $
+** @(#) $Id: pager.c,v 1.405 2008/02/02 20:47:38 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -530,25 +530,6 @@ static const unsigned char aJournalMagic[] = {
 #else
 # define pagerEnter(X)
 # define pagerLeave(X)
-#endif
-
-/*
-** Enable reference count tracking (for debugging) here:
-*/
-#ifdef SQLITE_DEBUG
-  int pager3_refinfo_enable = 0;
-  static void pager_refinfo(PgHdr *p){
-    static int cnt = 0;
-    if( !pager3_refinfo_enable ) return;
-    sqlite3DebugPrintf(
-       "REFCNT: %4d addr=%p nRef=%-3d total=%d\n",
-       p->pgno, PGHDR_TO_DATA(p), p->nRef, p->pPager->nRef
-    );
-    cnt++;   /* Something to set a breakpoint on */
-  }
-# define REFINFO(X)  pager_refinfo(X)
-#else
-# define REFINFO(X)
 #endif
 
 /*
@@ -2720,7 +2701,6 @@ static void _page_ref(PgHdr *pPg){
     pPg->pPager->nRef++;
   }
   pPg->nRef++;
-  REFINFO(pPg);
 }
 #ifdef SQLITE_DEBUG
   static void page_ref(PgHdr *pPg){
@@ -2728,7 +2708,6 @@ static void _page_ref(PgHdr *pPg){
       _page_ref(pPg);
     }else{
       pPg->nRef++;
-      REFINFO(pPg);
     }
   }
 #else
@@ -3649,7 +3628,6 @@ static int pagerAcquire(
 
     makeClean(pPg);
     pPg->nRef = 1;
-    REFINFO(pPg);
 
     pPager->nRef++;
     if( pPager->nExtra>0 ){
@@ -3770,7 +3748,6 @@ int sqlite3PagerUnref(DbPage *pPg){
   assert( pPg->nRef>0 );
   pagerEnter(pPg->pPager);
   pPg->nRef--;
-  REFINFO(pPg);
 
   CHECK_PAGE(pPg);
 

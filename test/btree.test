@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is btree database backend
 #
-# $Id: btree.test,v 1.42 2008/01/19 23:50:26 drh Exp $
+# $Id: btree.test,v 1.43 2008/02/02 20:47:38 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -696,16 +696,10 @@ do_test btree-9.1 {
     btree_insert $::c1 $key $data
   }
 } {}
-#btree_tree_dump $::b1 2
-#btree_pager_ref_dump $::b1
-#set pager_refinfo_enable 1
 do_test btree-9.2 {
   btree_insert $::c1 020 {*** 020 *** 020 *** 020 *** 020 ***}
   select_keys $::c1
 } {001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 017 018 019 020}
-#btree_page_dump $::b1 2
-#btree_pager_ref_dump $::b1
-#set pager_refinfo_enable 0
 
 # The previous "select_keys" command left the cursor pointing at the root
 # page.  So there should only be two pages checked out.  2 (the root) and
