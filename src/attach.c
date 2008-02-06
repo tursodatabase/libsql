@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.70 2008/01/23 03:03:05 drh Exp $
+** $Id: attach.c,v 1.71 2008/02/06 14:11:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -222,6 +222,7 @@ attach_error:
     zErr[sizeof(zErr)-1] = 0;
     sqlite3_result_error(context, zErr, -1);
   }
+  if( rc ) sqlite3_result_error_code(context, rc);
 }
 
 /*

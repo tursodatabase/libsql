@@ -163,13 +163,13 @@ void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
 }
 void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
-  pCtx->isError = 1;
+  pCtx->isError = SQLITE_ERROR;
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, SQLITE_TRANSIENT);
 }
 #ifndef SQLITE_OMIT_UTF16
 void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
-  pCtx->isError = 1;
+  pCtx->isError = SQLITE_ERROR;
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, SQLITE_TRANSIENT);
 }
 #endif
@@ -231,6 +231,9 @@ void sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetZeroBlob(&pCtx->s, n);
 }
+void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
+  pCtx->isError = errCode;
+}
 
 /* Force an SQLITE_TOOBIG error. */
 void sqlite3_result_error_toobig(sqlite3_context *pCtx){
@@ -242,7 +245,7 @@ void sqlite3_result_error_toobig(sqlite3_context *pCtx){
 void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetNull(&pCtx->s);
-  pCtx->isError = 1;
+  pCtx->isError = SQLITE_NOMEM;
   pCtx->s.db->mallocFailed = 1;
 }
 

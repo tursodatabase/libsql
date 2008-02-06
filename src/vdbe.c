@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.707 2008/01/31 19:34:52 drh Exp $
+** $Id: vdbe.c,v 1.708 2008/02/06 14:11:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1245,7 +1245,7 @@ case OP_Function: {
   /* If the function returned an error, throw an exception */
   if( ctx.isError ){
     sqlite3SetString(&p->zErrMsg, sqlite3_value_text(&ctx.s), (char*)0);
-    rc = SQLITE_ERROR;
+    rc = ctx.isError;
   }
 
   /* Copy the result of the function into register P3 */
@@ -4218,7 +4218,7 @@ case OP_AggStep: {
   (ctx.pFunc->xStep)(&ctx, n, apVal);
   if( ctx.isError ){
     sqlite3SetString(&p->zErrMsg, sqlite3_value_text(&ctx.s), (char*)0);
-    rc = SQLITE_ERROR;
+    rc = ctx.isError;
   }
   sqlite3VdbeMemRelease(&ctx.s);
   break;

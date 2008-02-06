@@ -209,7 +209,7 @@ struct sqlite3_context {
   VdbeFunc *pVdbeFunc;  /* Auxilary data, if created. */
   Mem s;                /* The return value is stored here */
   Mem *pMem;            /* Memory cell used to store aggregate context */
-  u8 isError;           /* Set to true for an error */
+  int isError;          /* Error code returned by the function. */
   CollSeq *pColl;       /* Collating sequence */
 };
 

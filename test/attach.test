@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.47 2007/10/09 08:29:32 danielk1977 Exp $
+# $Id: attach.test,v 1.48 2008/02/06 14:11:35 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -118,6 +118,9 @@ do_test attach-1.12 {
     ATTACH 'test.db' as db2;
   }
 } {1 {database db2 is already in use}}
+do_test attach-1.12.2 {
+  db errorcode
+} {1}
 do_test attach-1.13 {
   catchsql {
     ATTACH 'test.db' as db5;
@@ -156,6 +159,9 @@ do_test attach-1.19 {
     ATTACH 'test.db' as db12;
   }
 } {1 {too many attached databases - max 10}}
+do_test attach-1.19.1 {
+  db errorcode
+} {1}
 do_test attach-1.20.1 {
   execsql {
     DETACH db5;
@@ -180,6 +186,9 @@ do_test attach-1.22 {
     ATTACH 'test.db' as db13;
   }
 } {1 {too many attached databases - max 10}}
+do_test attach-1.22.1 {
+  db errorcode
+} {1}
 do_test attach-1.23 {
   catchsql {
     DETACH "db14";
@@ -724,6 +733,9 @@ if {$tcl_platform(platform)=="unix"} {
       ATTACH DATABASE 'cannot-read' AS noread;
     }
   } {1 {unable to open database: cannot-read}}
+  do_test attach-6.2.2 {
+    db errorcode
+  } {14}
   file delete -force cannot-read
 }
 
@@ -752,4 +764,34 @@ ifcapable subquery {
   } {1 {invalid name: "RAISE ( IGNORE ) IN ( SELECT "AAAAAA" . * ORDER BY 
       REGISTER LIMIT "AAAAAA" . "AAAAAA" OFFSET RAISE ( IGNORE ) NOT NULL )"}}
 }
+
+# Create a malformed file (a file that is not a valid database)
+# and try to attach it
+#
+do_test attach-8.1 {
+  set fd [open test2.db w]
+  puts $fd "This file is not a valid SQLite database"
+  close $fd
+  catchsql {
+    ATTACH 'test2.db' AS t2;
+  }
+} {1 {file is encrypted or is not a database}}
+do_test attach-8.2 {
+  db errorcode
+} {26}
+file delete -force test2.db
+do_test attach-8.3 {
+  sqlite3 db2 test2.db
+  db2 eval {CREATE TABLE t1(x); BEGIN EXCLUSIVE}
+  catchsql {
+    ATTACH 'test2.db' AS t2;
+  }
+} {1 {database is locked}}
+do_test attach-8.4 {
+  db errorcode
+} {5}
+db2 close
+file delete -force test2.db
+
+
 finish_test

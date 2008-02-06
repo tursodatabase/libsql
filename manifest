@@ -1,5 +1,5 @@
-C Delete\sunused\s"pager3_refinfo_enable"\sflag\sand\sits\sassociated\sdebugging\nmacros.\s\sTicket\s#2923.\s(CVS\s4774)
-D 2008-02-02T20:47:38
+C Add\sthe\ssqlite3_result_error_code()\sapplication\sinterface.\s\sUse\sit\sin\sthe\nATTACH\sfunction\sso\sthat\sa\sfailed\sattach\sreturns\sa\sproper\serror\scode.\nTicket\s#2914.\s(CVS\s4775)
+D 2008-02-06T14:11:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -80,7 +80,7 @@ F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in abed4664817e1cd500f2276142c71958087c16bc
 F src/alter.c 8a34c900811eec29725ab08ad46cc9dcec714867
 F src/analyze.c a78ac494668581fe7f54ee63700815bb0ea34261
-F src/attach.c 2a0b199467c6c0212fae26a6b51bef132680f881
+F src/attach.c 90665c7ef5145e066570f66d7f0f15cdd0a4d14b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
 F src/btree.c 29ea577155f39be65bdec1c7782301ff2ee9eb3f
@@ -135,7 +135,7 @@ F src/random.c 02ef38b469237482f1ea14a78b2087cfbaec48bd
 F src/select.c 1a5d0aaf8f420b164eb775d3b1ba2bfb79597f65
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ca06cb687c40a8bff6307b5fad41a0e86a0f8558
-F src/sqlite.h.in be6caded9ecc1d0da60670334edfb3426cc256d2
+F src/sqlite.h.in 690736613958e0f462e08ae2a9136fa335214edc
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 9dabb5a68e1952a556b78558c87e26af2fdb5ddb
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
@@ -170,10 +170,10 @@ F src/update.c 31edd9c9764e80753930bd5f9b43e0edb404636f
 F src/utf.c ef4b7d83bae533b76c3e1bf635b113fdad86a736
 F src/util.c c56e41ed4769c1f2b8af9ffde4757a7b4fb08ed1
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c 451ead624d98c95dd9dd41c38afab85bba00122a
+F src/vdbe.c 1049375248b494e626598abffeeb31052c660c78
 F src/vdbe.h 58a7d931ffb704e034b2a725981cfa5bd406fad9
-F src/vdbeInt.h b7a18349e9b29eca4b642aee6233ac02dd63ad87
-F src/vdbeapi.c 93c72ed24d59ed86a634b6d593cdec8376b24513
+F src/vdbeInt.h 969d360acc85f7b2069a8169b4f8a3e1fbaccd44
+F src/vdbeapi.c 61b37dbe11baa221baea7f93c01780705d2419ed
 F src/vdbeaux.c 771b9ffd7b42cbb4bd029d7a9414a7cb03f924a7
 F src/vdbeblob.c 63c750acc7b5012479f508c0e9627372a82cb65d
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
@@ -191,7 +191,7 @@ F test/analyze.test 2f55535aa335785db1a2f97d3f3831c16c09f8b0
 F test/async.test aecaa46ed0618a3c338f3651ca4f10fbb4021044
 F test/async2.test 8998e089b0fbb3d84cdd51c25a78833486d721af
 F test/async3.test 9ffa0977a78cc6351862a1583be2b1eecd41736d
-F test/attach.test 72529edb04115675894a7399609983ea46b73ba6
+F test/attach.test 4ab582932e3c815689f61afcdb9bce245f0bac53
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test 7b92dc8e40c1ebca9732ca6f2d3fefbd46f196df
 F test/attachmalloc.test 56c5e55563dba6d64641ef2f70ce06900df16912
@@ -615,7 +615,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1d478e9091ef5775297ca4d50c85e39ccdf9e245
-R 271ed5b5d67fc1b6c6bee774d9b672d0
+P fccb217d91d08c5a2f5d51b21c6035474931957b
+R 824bd1a91af55f8de7934eee79d69c99
 U drh
-Z 6f8d1336c7b203985a0086e6d71252ce
+Z 2d09480bf715861bf09008aeafdc8195
