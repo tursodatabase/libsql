@@ -1,10 +1,10 @@
-C Add\sthe\ssqlite3_result_error_code()\sapplication\sinterface.\s\sUse\sit\sin\sthe\nATTACH\sfunction\sso\sthat\sa\sfailed\sattach\sreturns\sa\sproper\serror\scode.\nTicket\s#2914.\s(CVS\s4775)
-D 2008-02-06T14:11:35
+C Bump\sthe\sversion\snumber\sto\s3.5.6.\s(CVS\s4776)
+D 2008-02-06T14:14:45
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
-F VERSION 7984810cf3e9a6af2e9fc281093a3e5e6bbf6008
+F VERSION 2e206fc9458bf10a8c3ba2d13bf521a04ef441c6
 F aclocal.m4 d20ba55930a05197b484809fba1d2b603f4e67a6
 F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -615,7 +615,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P fccb217d91d08c5a2f5d51b21c6035474931957b
-R 824bd1a91af55f8de7934eee79d69c99
+P c24616204307936d03d39d2ef0fe6856113f6977
+R 73930ec2f92f5a7b40b836d05a1f5880
 U drh
-Z 2d09480bf715861bf09008aeafdc8195
+Z 86aa60e9706fb315e56eea6cbe5010f3
