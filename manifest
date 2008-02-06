@@ -1,5 +1,5 @@
-C Bump\sthe\sversion\snumber\sto\s3.5.6.\s(CVS\s4776)
-D 2008-02-06T14:14:45
+C Version\s3.5.6\s(CVS\s4777)
+D 2008-02-06T16:58:28
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -615,7 +615,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c24616204307936d03d39d2ef0fe6856113f6977
+P 3444efabfc3d9a30b7ef22f40ecfa401d033d43f
 R 73930ec2f92f5a7b40b836d05a1f5880
 U drh
-Z 86aa60e9706fb315e56eea6cbe5010f3
+Z 984cc6ab4f49b36fd57cbb663a11c64f
