@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.411 2008/01/25 15:04:50 drh Exp $
+** $Id: select.c,v 1.412 2008/02/06 23:52:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -522,7 +522,6 @@ static void selectInnerLoop(
   int eDest = pDest->eDest;   /* How to dispose of results */
   int iParm = pDest->iParm;   /* First argument to disposal method */
   int nResultCol;             /* Number of result columns */
-  int nToFree;                /* Number of result columns to release */
 
   if( v==0 ) return;
   assert( pEList!=0 );
@@ -542,13 +541,10 @@ static void selectInnerLoop(
   }else{
     nResultCol = pEList->nExpr;
   }
-  if( pDest->iMem>0 ){
-    regResult = pDest->iMem;
-    nToFree = 0;
-  }else{
-    pDest->iMem = regResult = sqlite3GetTempRange(pParse, nResultCol);
-    nToFree = nResultCol;
+  if( pDest->iMem==0 ){
+    pDest->iMem = sqlite3GetTempRange(pParse, nResultCol);
   }
+  regResult = pDest->iMem;
   if( nColumn>0 ){
     for(i=0; i<nColumn; i++){
       sqlite3VdbeAddOp3(v, OP_Column, srcTab, i, regResult+i);
@@ -694,7 +690,6 @@ static void selectInnerLoop(
         pushOntoSorter(pParse, pOrderBy, p, r1);
         sqlite3ReleaseTempReg(pParse, r1);
       }else if( eDest==SRT_Subroutine ){
-        nToFree = 0;  /* Preserve registers. Subroutine will need them. */
         sqlite3VdbeAddOp2(v, OP_Gosub, 0, iParm);
       }else{
         sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nColumn);
@@ -721,7 +716,6 @@ static void selectInnerLoop(
     sqlite3VdbeAddOp2(v, OP_AddImm, p->iLimit, -1);
     sqlite3VdbeAddOp2(v, OP_IfZero, p->iLimit, iBreak);
   }
-  sqlite3ReleaseTempRange(pParse, regResult, nToFree);
 }
 
 /*
