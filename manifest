@@ -1,5 +1,5 @@
-C Do\snot\srelease\sregisters\sused\sto\shold\sthe\sresults\sof\sa\scompound\sselect\nafter\sjust\sthe\sfirst\sselect\shas\srun.\s\sTicket\s#2927.\s\sFor\snow,\swe\swill\nnever\srelease\sthe\sregisters\sused\sto\shold\sthe\sresult\sset,\ssince\sthe\ssame\nregister\sset\swill\sbe\sused\sfor\seach\sselect.\s\sThis\sis\snot\san\sunacceptable\nregister\sleak\sand\sit\sis\sthe\ssafest\sapproach.\s(CVS\s4778)
-D 2008-02-06T23:52:37
+C Change\sthe\stest\scode\sused\sfor\sspeed\stests\sso\sthat\sit\sdoes\snot\sthrow\san\sexception\sif\sthe\stime\scommand\sreturns\s"0\smicroseconds\sper\siteration".\s(CVS\s4779)
+D 2008-02-08T18:25:30
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -453,7 +453,7 @@ F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
 F test/tableapi.test 4546eb710d979db023bfcc16b0c108b1557fcb43
 F test/tclsqlite.test 3fac87cb1059c46b8fa8a60b553f4f1adb0fb6d9
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl 6a6600646341b910f2fbfd02db1ef0274479366c
+F test/tester.tcl bfad4d2acf0659c6afbf48a98556b0433d2906dc
 F test/thread001.test 8fbd9559da0bbdc273e00318c7fd66c162020af7
 F test/thread002.test 2c4ad2c386f60f6fe268cd91c769ee35b3c1fd0b
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -616,7 +616,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1d82ab6987e567fff051cf4dd7b1a0bf6d174145
-R 27d406015aaf8a169469efe427569dc7
-U drh
-Z f7375f9f0a761af4d5cb2ddfe36898ea
+P e9fcb793998be07eaea01404407087b71c29853d
+R 70ead63ccadfd7470f5282ac9933c25a
+U danielk1977
+Z 62fa664db6db5497dee6bdf8c562feb5
