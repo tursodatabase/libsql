@@ -1,5 +1,5 @@
-C Change\sthe\stest\scode\sused\sfor\sspeed\stests\sso\sthat\sit\sdoes\snot\sthrow\san\sexception\sif\sthe\stime\scommand\sreturns\s"0\smicroseconds\sper\siteration".\s(CVS\s4779)
-D 2008-02-08T18:25:30
+C Modify\sshared.test\sto\sdo\scase\sindependent\scomparison\sof\sfilenames.\sTo\saccount\sfor\sthe\sfact\sthat\s"c:/test.db"\sand\s"C:/test.db"\sare\sthe\ssame\sfile.\s(CVS\s4780)
+D 2008-02-08T18:25:48
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -431,7 +431,7 @@ F test/select6.test 399f14b9ba37b768afe5d2cd8c12e4f340a69db8
 F test/select7.test 7906735805cfbee4dddc0bed4c14e68d7f5f9c5f
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
-F test/shared.test 9a1e81629efaebaad2247e9e81aa33570fba8f13
+F test/shared.test f4501cfdff9236191ac1f9e84e6597a63d0d9600
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
 F test/shared_err.test 202ce115a4bfab2b41da5d4c9431f68a474134a6
@@ -616,7 +616,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e9fcb793998be07eaea01404407087b71c29853d
-R 70ead63ccadfd7470f5282ac9933c25a
+P f37e8637d234e50436760497f8001c33975510ce
+R 625c28c9a32cbf3ec6251a314e035925
 U danielk1977
-Z 62fa664db6db5497dee6bdf8c562feb5
+Z 8ca2b45ed3bcd38aecc15ea7fe4278e2
