@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.41 2008/01/25 15:04:48 drh Exp $
+** $Id: alter.c,v 1.42 2008/02/09 14:30:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -78,7 +78,7 @@ static void renameTableFunc(
       assert( len>0 );
     } while( token!=TK_LP && token!=TK_USING );
 
-    zRet = sqlite3MPrintf(db, "%.*s%Q%s", tname.z - zSql, zSql, 
+    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", tname.z - zSql, zSql, 
        zTableName, tname.z+tname.n);
     sqlite3_result_text(context, zRet, -1, sqlite3_free);
   }
@@ -153,7 +153,7 @@ static void renameTriggerFunc(
     /* Variable tname now contains the token that is the old table-name
     ** in the CREATE TRIGGER statement.
     */
-    zRet = sqlite3MPrintf(db, "%.*s%Q%s", tname.z - zSql, zSql, 
+    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", tname.z - zSql, zSql, 
        zTableName, tname.z+tname.n);
     sqlite3_result_text(context, zRet, -1, sqlite3_free);
   }
@@ -403,7 +403,7 @@ void sqlite3AlterRenameTable(
   */
   if( sqlite3FindTable(db, "sqlite_sequence", zDb) ){
     sqlite3NestedParse(pParse,
-        "UPDATE %Q.sqlite_sequence set name = %Q WHERE name = %Q",
+        "UPDATE \"%w\".sqlite_sequence set name = %Q WHERE name = %Q",
         zDb, zName, pTab->zName);
   }
 #endif
@@ -522,7 +522,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
       *zEnd-- = '\0';
     }
     sqlite3NestedParse(pParse, 
-        "UPDATE %Q.%s SET "
+        "UPDATE \"%w\".%s SET "
           "sql = substr(sql,1,%d) || ', ' || %Q || substr(sql,%d) "
         "WHERE type = 'table' AND name = %Q", 
       zDb, SCHEMA_TABLE(iDb), pNew->addColOffset, zCol, pNew->addColOffset+1,

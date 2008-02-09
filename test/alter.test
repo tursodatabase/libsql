@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.28 2007/12/13 08:15:31 danielk1977 Exp $
+# $Id: alter.test,v 1.29 2008/02/09 14:30:30 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -596,7 +596,7 @@ do_test alter-6.3 {
   execsql "
     SELECT sql FROM sqlite_master WHERE oid = $::oid
   "
-} "{CREATE TABLE '${::tbl_name2}'(a, b, c)}"
+} "{CREATE TABLE \"${::tbl_name2}\"(a, b, c)}"
 do_test alter-6.4 {
   execsql "
     ALTER TABLE $::tbl_name2 RENAME TO $::tbl_name
@@ -604,7 +604,7 @@ do_test alter-6.4 {
   execsql "
     SELECT sql FROM sqlite_master WHERE oid = $::oid
   "
-} "{CREATE TABLE '${::tbl_name}'(a, b, c)}"
+} "{CREATE TABLE \"${::tbl_name}\"(a, b, c)}"
 set ::col_name ghi\1234\jkl
 do_test alter-6.5 {
   execsql "
@@ -613,7 +613,7 @@ do_test alter-6.5 {
   execsql "
     SELECT sql FROM sqlite_master WHERE oid = $::oid
   "
-} "{CREATE TABLE '${::tbl_name}'(a, b, c, $::col_name VARCHAR)}"
+} "{CREATE TABLE \"${::tbl_name}\"(a, b, c, $::col_name VARCHAR)}"
 set ::col_name2 B\3421\A
 do_test alter-6.6 {
   db close
@@ -624,7 +624,7 @@ do_test alter-6.6 {
   execsql "
     SELECT sql FROM sqlite_master WHERE oid = $::oid
   "
-} "{CREATE TABLE '${::tbl_name}'(a, b, c, $::col_name VARCHAR, $::col_name2)}"
+} "{CREATE TABLE \"${::tbl_name}\"(a, b, c, $::col_name VARCHAR, $::col_name2)}"
 do_test alter-6.7 {
   execsql "
     INSERT INTO ${::tbl_name} VALUES(1, 2, 3, 4, 5);

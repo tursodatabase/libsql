@@ -1,5 +1,5 @@
-C Modify\sshared.test\sto\sdo\scase\sindependent\scomparison\sof\sfilenames.\sTo\saccount\sfor\sthe\sfact\sthat\s"c:/test.db"\sand\s"C:/test.db"\sare\sthe\ssame\sfile.\s(CVS\s4780)
-D 2008-02-08T18:25:48
+C ALTER\sTABLE\suses\sdouble-quotes\sfor\squoting\stable\snames.\s(CVS\s4781)
+D 2008-02-09T14:30:30
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -78,7 +78,7 @@ F sqlite.pc.in 30552343140c53304c2a658c080fbe810cd09ca2
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a96c1d0d39362b763d2ddba220a32da41a15c4b4
 F sqlite3.pc.in abed4664817e1cd500f2276142c71958087c16bc
-F src/alter.c 8a34c900811eec29725ab08ad46cc9dcec714867
+F src/alter.c b494a50f239a760565ce6220ee316e96956ec054
 F src/analyze.c a78ac494668581fe7f54ee63700815bb0ea34261
 F src/attach.c 90665c7ef5145e066570f66d7f0f15cdd0a4d14b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
@@ -183,7 +183,7 @@ F src/where.c 7ff0ca021cc77086e367ed3b6308fbc6bc9e1a31
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d12210212bada2bde6d5aeb90969b86c1aa977d2
-F test/alter.test 345648dcd1801cc0287cd996076db512d1dcdabe
+F test/alter.test 1426bb4c8609731622a9bf9dd48c39f5931c4d7d
 F test/alter2.test 9d9850064b5c572991ea744a88ea650045f4ac6a
 F test/alter3.test 8ce6b9c5605b3cfe7b901f454ecaf174c4f93e31
 F test/altermalloc.test 29d4a8400277efb4ba8ffe90804c6dc2fdfbf063
@@ -616,7 +616,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f37e8637d234e50436760497f8001c33975510ce
-R 625c28c9a32cbf3ec6251a314e035925
-U danielk1977
-Z 8ca2b45ed3bcd38aecc15ea7fe4278e2
+P 63915b54cfb41c2361c387636aa904145b166411
+R 4cb42b2925ae8f45e9151c56cf51f1f9
+U drh
+Z 3b52650fd58593f0d3eb3e17a3cd9c37
