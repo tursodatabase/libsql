@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.170 2008/01/19 03:35:59 drh Exp $
+** $Id: update.c,v 1.171 2008/02/12 16:52:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -289,13 +289,6 @@ void sqlite3Update(
   }
 #endif
 
-  /* Resolve the column names in all the expressions in the
-  ** WHERE clause.
-  */
-  if( sqlite3ExprResolveNames(&sNC, pWhere) ){
-    goto update_cleanup;
-  }
-
   /* Start the view context
   */
   if( isView ){
@@ -335,14 +328,15 @@ void sqlite3Update(
   ** a ephemeral table.
   */
   if( isView ){
-    Select *pView;
-    SelectDest dest;
+    sqlite3MaterializeView(pParse, pTab->pSelect, pWhere,
+                           old_col_mask|new_col_mask, iCur);
+  }
 
-    pView = sqlite3SelectDup(db, pTab->pSelect);
-    sqlite3SelectMask(pParse, pView, old_col_mask|new_col_mask);
-    sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
-    sqlite3Select(pParse, pView, &dest, 0, 0, 0, 0);
-    sqlite3SelectDelete(pView);
+  /* Resolve the column names in all the expressions in the
+  ** WHERE clause.
+  */
+  if( sqlite3ExprResolveNames(&sNC, pWhere) ){
+    goto update_cleanup;
   }
 
   /* Begin the database scan

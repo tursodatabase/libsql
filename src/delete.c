@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.160 2008/01/25 15:04:50 drh Exp $
+** $Id: delete.c,v 1.161 2008/02/12 16:52:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -79,6 +79,39 @@ void sqlite3OpenTable(
   VdbeComment((v, "%s", pTab->zName));
   sqlite3VdbeAddOp2(v, OP_SetNumColumns, iCur, pTab->nCol);
 }
+
+
+#if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
+/*
+** Evaluate a view and store its result in an ephemeral table.  The
+** pWhere argument is an optional WHERE clause that restricts the
+** set of rows in the view that are to be added to the ephemeral table.
+*/
+void sqlite3MaterializeView(
+  Parse *pParse,       /* Parsing context */
+  Select *pView,       /* View definition */
+  Expr *pWhere,        /* Optional WHERE clause to be added */
+  u32 col_mask,        /* Render only the columns in this mask. */
+  int iCur             /* Cursor number for ephemerial table */
+){
+  SelectDest dest;
+  Select *pDup;
+  sqlite3 *db = pParse->db;
+
+  pDup = sqlite3SelectDup(db, pView);
+  if( pWhere ){
+    SrcList *pFrom;
+    
+    pWhere = sqlite3ExprDup(db, pWhere);
+    pFrom = sqlite3SrcListAppendFromTerm(pParse, 0, 0, 0, 0, pDup, 0, 0);
+    pDup = sqlite3SelectNew(pParse, 0, pFrom, pWhere, 0, 0, 0, 0, 0, 0);
+  }
+  sqlite3SelectMask(pParse, pDup, col_mask);
+  sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
+  sqlite3Select(pParse, pDup, &dest, 0, 0, 0, 0);
+  sqlite3SelectDelete(pDup);
+}
+#endif /* !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER) */
 
 
 /*
@@ -170,18 +203,12 @@ void sqlite3DeleteFrom(
     oldIdx = pParse->nTab++;
   }
 
-  /* Resolve the column names in the WHERE clause.
+  /* Assign  cursor number to the table and all its indices.
   */
   assert( pTabList->nSrc==1 );
   iCur = pTabList->a[0].iCursor = pParse->nTab++;
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     pParse->nTab++;
-  }
-  memset(&sNC, 0, sizeof(sNC));
-  sNC.pParse = pParse;
-  sNC.pSrcList = pTabList;
-  if( sqlite3ExprResolveNames(&sNC, pWhere) ){
-    goto delete_from_cleanup;
   }
 
   /* Start the view context
@@ -221,14 +248,16 @@ void sqlite3DeleteFrom(
   ** a ephemeral table.
   */
   if( isView ){
-    SelectDest dest;
-    Select *pView;
+    sqlite3MaterializeView(pParse, pTab->pSelect, pWhere, old_col_mask, iCur);
+  }
 
-    pView = sqlite3SelectDup(db, pTab->pSelect);
-    sqlite3SelectMask(pParse, pView, old_col_mask);
-    sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
-    sqlite3Select(pParse, pView, &dest, 0, 0, 0, 0);
-    sqlite3SelectDelete(pView);
+  /* Resolve the column names in the WHERE clause.
+  */
+  memset(&sNC, 0, sizeof(sNC));
+  sNC.pParse = pParse;
+  sNC.pSrcList = pTabList;
+  if( sqlite3ExprResolveNames(&sNC, pWhere) ){
+    goto delete_from_cleanup;
   }
 
   /* Initialize the counter of the number of rows deleted, if

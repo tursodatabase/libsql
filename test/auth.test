@@ -12,7 +12,7 @@
 # focus of this script is testing the sqlite3_set_authorizer() API
 # and related functionality.
 #
-# $Id: auth.test,v 1.40 2008/01/01 19:02:09 danielk1977 Exp $
+# $Id: auth.test,v 1.41 2008/02/12 16:52:14 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -2245,13 +2245,15 @@ do_test auth-4.3 {
   set authargs
 } [list \
   SQLITE_UPDATE v1     x  main {} \
-  SQLITE_READ   v1     x  main {} \
   SQLITE_INSERT v1chng {} main r2 \
   SQLITE_READ   v1     x  main r2 \
   SQLITE_READ   v1     x  main r2 \
   SQLITE_READ   t2     a  main v1 \
   SQLITE_READ   t2     b  main v1 \
-  SQLITE_SELECT {}     {} {}   v1]
+  SQLITE_SELECT {}     {} {}   v1 \
+  SQLITE_SELECT {}     {} {}   v1 \
+  SQLITE_READ   v1     x  main v1 \
+]
 do_test auth-4.4 {
   execsql {
     CREATE TRIGGER r3 INSTEAD OF DELETE ON v1 BEGIN
@@ -2268,12 +2270,14 @@ do_test auth-4.5 {
   set authargs
 } [list \
   SQLITE_DELETE v1     {} main {} \
-  SQLITE_READ   v1     x  main {} \
   SQLITE_INSERT v1chng {} main r3 \
   SQLITE_READ   v1     x  main r3 \
   SQLITE_READ   t2     a  main v1 \
   SQLITE_READ   t2     b  main v1 \
-  SQLITE_SELECT {}     {} {}   v1]
+  SQLITE_SELECT {}     {} {}   v1 \
+  SQLITE_SELECT {}     {} {}   v1 \
+  SQLITE_READ   v1     x  main v1 \
+]
 
 } ;# ifcapable view && trigger
 
