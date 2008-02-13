@@ -641,15 +641,8 @@ static int os2Open(
     OSTRACE1( "OPEN normal file attribute\n" );
   }
 
-  //ulOpenMode |= flags & (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_TEMP_DB) ?
-  //                  OPEN_FLAGS_RANDOM : OPEN_FLAGS_SEQUENTIAL;
-  if( flags & (SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_TEMP_DB) ){
-    ulOpenMode |= OPEN_FLAGS_RANDOM;
-    OSTRACE1( "OPEN random access\n" );
-  }else{
-    ulOpenMode |= OPEN_FLAGS_SEQUENTIAL;
-    OSTRACE1( "OPEN sequential access\n" );
-  }
+  /* always open in random access mode for possibly better speed */
+  ulOpenMode |= OPEN_FLAGS_RANDOM;
   ulOpenMode |= OPEN_FLAGS_FAIL_ON_ERROR;
 
   rc = DosOpen( (PSZ)zName,
