@@ -944,6 +944,7 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
   if( rc==SQLITE_OK ){
     rc = sqlite3VdbeMemCopy(&p->aVar[i-1], pValue);
   }
+  rc = sqlite3ApiExit(p->db, rc);
   sqlite3_mutex_leave(p->db->mutex);
   return rc;
 }

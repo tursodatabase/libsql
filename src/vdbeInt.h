@@ -95,13 +95,6 @@ struct Cursor {
 typedef struct Cursor Cursor;
 
 /*
-** Number of bytes of string storage space available to each stack
-** layer without having to malloc.  NBFS is short for Number of Bytes
-** For Strings.
-*/
-#define NBFS 32
-
-/*
 ** A value for Cursor.cacheValid that means the cache is always invalid.
 */
 #define CACHE_STALE 0
@@ -130,7 +123,6 @@ struct Mem {
   u8  type;           /* One of SQLITE_NULL, SQLITE_TEXT, SQLITE_INTEGER, etc */
   u8  enc;            /* SQLITE_UTF8, SQLITE_UTF16BE, SQLITE_UTF16LE */
   void (*xDel)(void *);  /* If not null, call this function to delete Mem.z */
-  char zShort[NBFS];  /* Space for short strings */
 };
 
 /* One or more of the following flags are set to indicate the validOK
@@ -154,6 +146,9 @@ struct Mem {
 #define MEM_Real      0x0008   /* Value is a real number */
 #define MEM_Blob      0x0010   /* Value is a BLOB */
 
+#define MemSetTypeFlag(p, f) \
+  ((p)->flags = ((p)->flags&~(MEM_Int|MEM_Real|MEM_Null|MEM_Blob|MEM_Str))|f)
+
 /* Whenever Mem contains a valid string or blob representation, one of
 ** the following flags must be set to determine the memory management
 ** policy for Mem.z.  The MEM_Term flag tells us whether or not the
@@ -163,7 +158,6 @@ struct Mem {
 #define MEM_Dyn       0x0040   /* Need to call sqliteFree() on Mem.z */
 #define MEM_Static    0x0080   /* Mem.z points to a static string */
 #define MEM_Ephem     0x0100   /* Mem.z points to an ephemeral string */
-#define MEM_Short     0x0200   /* Mem.z points to Mem.zShort */
 #define MEM_Agg       0x0400   /* Mem.z points to an agg function context */
 #define MEM_Zero      0x0800   /* Mem.i contains count of 0s appended to blob */
 
@@ -398,6 +392,7 @@ void sqlite3VdbeMemRelease(Mem *p);
 int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 const char *sqlite3OpcodeName(int);
 int sqlite3VdbeOpcodeHasProperty(int, int);
+int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
 
 #ifndef NDEBUG
   void sqlite3VdbeMemSanity(Mem*);

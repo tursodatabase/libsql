@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.19 2008/01/22 21:30:53 drh Exp $
+** $Id: mem2.c,v 1.20 2008/02/13 18:25:27 danielk1977 Exp $
 */
 
 /*
@@ -244,6 +244,18 @@ static struct MemBlockHdr *sqlite3MemsysGetHeader(void *pAllocation){
 }
 
 /*
+** Return the number of bytes currently allocated at address p.
+*/
+int sqlite3MallocSize(void *p){
+  struct MemBlockHdr *pHdr;
+  if( !p ){
+    return 0;
+  }
+  pHdr = sqlite3MemsysGetHeader(p);
+  return pHdr->iSize;
+}
+
+/*
 ** Allocate nByte bytes of memory.
 */
 void *sqlite3_malloc(int nByte){
@@ -450,6 +462,18 @@ void sqlite3_memdebug_dump(const char *zFilename){
     fprintf(out, "  >%3d: %d\n", NCSIZE*8, mem.sizeCnt[NCSIZE-1]);
   }
   fclose(out);
+}
+
+/*
+** Return the number of times sqlite3_malloc() has been called.
+*/
+int sqlite3_memdebug_malloc_count(){
+  int i;
+  int nTotal = 0;
+  for(i=0; i<NCSIZE; i++){
+    nTotal += mem.sizeCnt[i];
+  }
+  return nTotal;
 }
 
 

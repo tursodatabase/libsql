@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.11 2008/01/31 14:43:24 drh Exp $
+** $Id: test_malloc.c,v 1.12 2008/02/13 18:25:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -343,6 +343,32 @@ static int test_memdebug_dump(
   return TCL_OK;
 }
 
+/*
+** Usage:    sqlite3_memdebug_malloc_count
+**
+** Return the total number of times malloc() has been called.
+*/
+static int test_memdebug_malloc_count(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int nMalloc = -1;
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+#if defined(SQLITE_MEMDEBUG)
+  {
+    extern int sqlite3_memdebug_malloc_count();
+    nMalloc = sqlite3_memdebug_malloc_count();
+  }
+#endif
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(nMalloc));
+  return TCL_OK;
+}
+
 
 /*
 ** Usage:    sqlite3_memdebug_fail  COUNTER  ?OPTIONS?
@@ -504,6 +530,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_memdebug_fail",      test_memdebug_fail            },
      { "sqlite3_memdebug_pending",   test_memdebug_pending         },
      { "sqlite3_memdebug_settitle",  test_memdebug_settitle        },
+     { "sqlite3_memdebug_malloc_count", test_memdebug_malloc_count },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

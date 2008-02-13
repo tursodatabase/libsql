@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.207 2007/11/14 06:48:48 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.208 2008/02/13 18:25:27 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -1702,7 +1702,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
           switch( sqlite3_column_type(pStmt, i) ){
             case SQLITE_BLOB: {
               int bytes = sqlite3_column_bytes(pStmt, i);
-              pVal = Tcl_NewByteArrayObj(sqlite3_column_blob(pStmt, i), bytes);
+              char *zBlob = sqlite3_column_blob(pStmt, i);
+              if( !zBlob ) bytes = 0;
+              pVal = Tcl_NewByteArrayObj(zBlob, bytes);
               break;
             }
             case SQLITE_INTEGER: {

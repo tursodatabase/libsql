@@ -1,4 +1,4 @@
- /*
+/*
 ** 2005 November 29
 **
 ** The author disclaims copyright to this source code.  In place of

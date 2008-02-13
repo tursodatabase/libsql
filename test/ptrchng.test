@@ -21,7 +21,7 @@
 #     sqlite3_value_bytes()
 #     sqlite3_value_bytes16()
 #
-# $Id: ptrchng.test,v 1.2 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: ptrchng.test,v 1.3 2008/02/13 18:25:27 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -52,6 +52,8 @@ do_test ptrchng-1.1 {
 # For the short entries that fit in the Mem.zBuf[], the pointer should
 # never change regardless of what type conversions occur.
 #
+# UPDATE: No longer true, as Mem.zBuf[] has been removed.
+#
 do_test ptrchng-2.1 {
   execsql {
     SELECT pointer_change(y, 'text', 'noop', 'blob') FROM t1 WHERE x=1
@@ -61,18 +63,18 @@ do_test ptrchng-2.2 {
   execsql {
     SELECT pointer_change(y, 'blob', 'noop', 'text') FROM t1 WHERE x=1
   }
-} {0}
+} {1}
 ifcapable utf16 {
   do_test ptrchng-2.3 {
     execsql {
       SELECT pointer_change(y, 'text', 'noop', 'text16') FROM t1 WHERE x=1
     }
-  } {0}
+  } {1}
   do_test ptrchng-2.4 {
     execsql {
       SELECT pointer_change(y, 'blob', 'noop', 'text16') FROM t1 WHERE x=1
     }
-  } {0}
+  } {1}
   do_test ptrchng-2.5 {
     execsql {
       SELECT pointer_change(y, 'text16', 'noop', 'blob') FROM t1 WHERE x=1
@@ -82,7 +84,7 @@ ifcapable utf16 {
     execsql {
       SELECT pointer_change(y, 'text16', 'noop', 'text') FROM t1 WHERE x=1
     }
-  } {0}
+  } {1}
 }
 do_test ptrchng-2.11 {
   execsql {
@@ -93,18 +95,18 @@ do_test ptrchng-2.12 {
   execsql {
     SELECT pointer_change(y, 'blob', 'noop', 'text') FROM t1 WHERE x=3
   }
-} {0}
+} {1}
 ifcapable utf16 {
   do_test ptrchng-2.13 {
     execsql {
       SELECT pointer_change(y, 'text', 'noop', 'text16') FROM t1 WHERE x=3
     }
-  } {0}
+  } {1}
   do_test ptrchng-2.14 {
     execsql {
       SELECT pointer_change(y, 'blob', 'noop', 'text16') FROM t1 WHERE x=3
     }
-  } {0}
+  } {1}
   do_test ptrchng-2.15 {
     execsql {
       SELECT pointer_change(y, 'text16', 'noop', 'blob') FROM t1 WHERE x=3
@@ -115,7 +117,7 @@ btree_breakpoint
     execsql {
       SELECT pointer_change(y, 'text16', 'noop', 'text') FROM t1 WHERE x=3
     }
-  } {0}
+  } {1}
 }
 
 # For the long entries that do not fit in the Mem.zBuf[], the pointer
@@ -130,7 +132,7 @@ do_test ptrchng-3.2 {
   execsql {
     SELECT pointer_change(y, 'blob', 'noop', 'text') FROM t1 WHERE x=2
   }
-} {0}
+} {1}
 ifcapable utf16 {
   do_test ptrchng-3.3 {
     execsql {
@@ -162,7 +164,7 @@ do_test ptrchng-3.12 {
   execsql {
     SELECT pointer_change(y, 'blob', 'noop', 'text') FROM t1 WHERE x=4
   }
-} {0}
+} {1}
 ifcapable utf16 {
   do_test ptrchng-3.13 {
     execsql {

@@ -20,7 +20,7 @@
 ** This version of the memory allocation subsystem is used if
 ** and only if SQLITE_MEMORY_SIZE is defined.
 **
-** $Id: mem3.c,v 1.8 2007/12/29 13:18:22 drh Exp $
+** $Id: mem3.c,v 1.9 2008/02/13 18:25:27 danielk1977 Exp $
 */
 
 /*
@@ -291,7 +291,7 @@ static void memsys3OutOfMemory(int nByte){
 ** size returned omits the 8-byte header overhead.  This only
 ** works for chunks that are currently checked out.
 */
-static int memsys3Size(void *p){
+int sqlite3MallocSize(void *p){
   Mem3Block *pBlock = (Mem3Block*)p;
   assert( (pBlock[-1].u.hdr.size4x&1)!=0 );
   return (pBlock[-1].u.hdr.size4x&~3)*2 - 4;
@@ -556,7 +556,7 @@ void *sqlite3_realloc(void *pPrior, int nBytes){
     return 0;
   }
   assert( mem.mutex!=0 );
-  nOld = memsys3Size(pPrior);
+  nOld = sqlite3MallocSize(pPrior);
   if( nBytes<=nOld && nBytes>=nOld-128 ){
     return pPrior;
   }

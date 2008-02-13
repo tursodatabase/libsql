@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem1.c,v 1.14 2007/11/29 18:36:49 drh Exp $
+** $Id: mem1.c,v 1.15 2008/02/13 18:25:27 danielk1977 Exp $
 */
 
 /*
@@ -187,6 +187,16 @@ void sqlite3_free(void *pPrior){
   mem.nowUsed -= nByte;
   free(p);
   sqlite3_mutex_leave(mem.mutex);  
+}
+
+/*
+** Return the number of bytes allocated at p.
+*/
+int sqlite3MallocSize(void *p){
+  sqlite3_int64 *pInt;
+  if( !p ) return 0;
+  pInt = p;
+  return pInt[-1];
 }
 
 /*

@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.59 2007/10/03 08:46:45 danielk1977 Exp $
+** $Id: utf.c,v 1.60 2008/02/13 18:25:27 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -188,7 +188,6 @@ int sqlite3Utf8Read(
 ** encoding, or if *pMem does not contain a string value.
 */
 int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
-  unsigned char zShort[NBFS]; /* Temporary short output buffer */
   int len;                    /* Maximum length of output string in bytes */
   unsigned char *zOut;                  /* Output buffer */
   unsigned char *zIn;                   /* Input iterator */
@@ -254,19 +253,14 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   /* Set zIn to point at the start of the input buffer and zTerm to point 1
   ** byte past the end.
   **
-  ** Variable zOut is set to point at the output buffer. This may be space
-  ** obtained from sqlite3_malloc(), or Mem.zShort, if it large enough and
-  ** not in use, or the zShort array on the stack (see above).
+  ** Variable zOut is set to point at the output buffer, space obtained
+  ** from sqlite3_malloc().
   */
   zIn = (u8*)pMem->z;
   zTerm = &zIn[pMem->n];
-  if( len>NBFS ){
-    zOut = sqlite3DbMallocRaw(pMem->db, len);
-    if( !zOut ){
-      return SQLITE_NOMEM;
-    }
-  }else{
-    zOut = zShort;
+  zOut = sqlite3DbMallocRaw(pMem->db, len);
+  if( !zOut ){
+    return SQLITE_NOMEM;
   }
   z = zOut;
 
@@ -308,15 +302,9 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   assert( (pMem->n+(desiredEnc==SQLITE_UTF8?1:2))<=len );
 
   sqlite3VdbeMemRelease(pMem);
-  pMem->flags &= ~(MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short);
+  pMem->flags &= ~(MEM_Static|MEM_Dyn|MEM_Ephem);
   pMem->enc = desiredEnc;
-  if( zOut==zShort ){
-    memcpy(pMem->zShort, zOut, len);
-    zOut = (u8*)pMem->zShort;
-    pMem->flags |= (MEM_Term|MEM_Short);
-  }else{
-    pMem->flags |= (MEM_Term|MEM_Dyn);
-  }
+  pMem->flags |= (MEM_Term|MEM_Dyn);
   pMem->z = (char*)zOut;
 
 translate_out:
@@ -355,24 +343,14 @@ int sqlite3VdbeMemHandleBom(Mem *pMem){
   }
   
   if( bom ){
-    /* This function is called as soon as a string is stored in a Mem*,
-    ** from within sqlite3VdbeMemSetStr(). At that point it is not possible
-    ** for the string to be stored in Mem.zShort, or for it to be stored
-    ** in dynamic memory with no destructor.
-    */
-    assert( !(pMem->flags&MEM_Short) );
-    assert( !(pMem->flags&MEM_Dyn) || pMem->xDel );
-    if( pMem->flags & MEM_Dyn ){
-      void (*xDel)(void*) = pMem->xDel;
-      char *z = pMem->z;
-      pMem->z = 0;
-      pMem->xDel = 0;
-      rc = sqlite3VdbeMemSetStr(pMem, &z[2], pMem->n-2, bom, 
-          SQLITE_TRANSIENT);
-      xDel(z);
-    }else{
-      rc = sqlite3VdbeMemSetStr(pMem, &pMem->z[2], pMem->n-2, bom, 
-          SQLITE_TRANSIENT);
+    rc = sqlite3VdbeMemMakeWriteable(pMem);
+    if( rc==SQLITE_OK ){
+      pMem->n -= 2;
+      memmove(pMem->z, &pMem->z[2], pMem->n);
+      pMem->z[pMem->n] = '\0';
+      pMem->z[pMem->n+1] = '\0';
+      pMem->flags |= MEM_Term;
+      pMem->enc = bom;
     }
   }
   return rc;

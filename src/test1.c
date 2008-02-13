@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.287 2008/01/23 14:51:50 drh Exp $
+** $Id: test1.c,v 1.288 2008/02/13 18:25:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -954,16 +954,17 @@ static int test_create_function(
   /* Use the sqlite3_create_function16() API here. Mainly for fun, but also 
   ** because it is not tested anywhere else. */
   if( rc==SQLITE_OK ){
+    void *zUtf16;
     sqlite3_value *pVal;
     sqlite3_mutex_enter(db->mutex);
     pVal = sqlite3ValueNew(db);
     sqlite3ValueSetStr(pVal, -1, "x_sqlite_exec", SQLITE_UTF8, SQLITE_STATIC);
+    zUtf16 = sqlite3ValueText(pVal, SQLITE_UTF16NATIVE);
     if( db->mallocFailed ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = sqlite3_create_function16(db, 
-              sqlite3ValueText(pVal, SQLITE_UTF16NATIVE),
-              1, SQLITE_UTF16, db, sqlite3ExecFunc, 0, 0);
+      rc = sqlite3_create_function16(db, zUtf16, 
+                1, SQLITE_UTF16, db, sqlite3ExecFunc, 0, 0);
     }
     sqlite3ValueFree(pVal);
     sqlite3_mutex_leave(db->mutex);
@@ -2152,6 +2153,7 @@ static int test_collate(
   rc = sqlite3_create_collation(db, "test_collate", SQLITE_UTF8, 
           (void *)SQLITE_UTF8, val?test_collate_func:0);
   if( rc==SQLITE_OK ){
+    void *zUtf16;
     if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[3], &val) ) return TCL_ERROR;
     rc = sqlite3_create_collation(db, "test_collate", SQLITE_UTF16LE, 
             (void *)SQLITE_UTF16LE, val?test_collate_func:0);
@@ -2165,11 +2167,11 @@ static int test_collate(
     sqlite3_mutex_enter(db->mutex);
     pVal = sqlite3ValueNew(db);
     sqlite3ValueSetStr(pVal, -1, "test_collate", SQLITE_UTF8, SQLITE_STATIC);
+    zUtf16 = sqlite3ValueText(pVal, SQLITE_UTF16NATIVE);
     if( db->mallocFailed ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = sqlite3_create_collation16(db, 
-          sqlite3ValueText(pVal, SQLITE_UTF16NATIVE), SQLITE_UTF16BE, 
+      rc = sqlite3_create_collation16(db, zUtf16, SQLITE_UTF16BE, 
           (void *)SQLITE_UTF16BE, val?test_collate_func:0);
     }
     sqlite3ValueFree(pVal);
