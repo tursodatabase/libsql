@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.405 2008/02/02 20:47:38 drh Exp $
+** @(#) $Id: pager.c,v 1.406 2008/02/14 23:26:56 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1209,6 +1209,7 @@ static void pager_reset(Pager *pPager){
     PAGER_INCR(sqlite3_pager_pgfree_count);
     pNext = pPg->pNextAll;
     lruListRemove(pPg);
+    sqlite3_free(pPg->pData);
     sqlite3_free(pPg);
   }
   assert(pPager->lru.pFirst==0);
@@ -2539,6 +2540,7 @@ static void pager_truncate_cache(Pager *pPager){
       PAGER_INCR(sqlite3_pager_pgfree_count);
       unlinkPage(pPg);
       makeClean(pPg);
+      sqlite3_free(pPg->pData);
       sqlite3_free(pPg);
       pPager->nPage--;
     }
@@ -3205,6 +3207,7 @@ int sqlite3PagerReleaseMemory(int nReq){
       );
       IOTRACE(("PGFREE %p %d *\n", pPager, pPg->pgno));
       PAGER_INCR(sqlite3_pager_pgfree_count);
+      sqlite3_free(pPg->pData);
       sqlite3_free(pPg);
       pPager->nPage--;
     }else{
@@ -3476,6 +3479,7 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
    || MEMDB
    || (pPager->lru.pFirstSynced==0 && pPager->doNotSync)
   ){
+    void *pData;
     if( pPager->nPage>=pPager->nHash ){
       pager_resize_hash_table(pPager,
          pPager->nHash<256 ? 256 : pPager->nHash*2);
@@ -3487,14 +3491,21 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
     pagerLeave(pPager);
     nByteHdr = sizeof(*pPg) + sizeof(u32) + pPager->nExtra
               + MEMDB*sizeof(PgHistory);
-    pPg = sqlite3_malloc( nByteHdr + pPager->pageSize );
+    pPg = sqlite3_malloc( nByteHdr );
+    if( pPg ){
+      pData = sqlite3_malloc( pPager->pageSize );
+      if( pData==0 ){
+        sqlite3_free(pPg);
+        pPg = 0;
+      }
+    }
     pagerEnter(pPager);
     if( pPg==0 ){
       rc = SQLITE_NOMEM;
       goto pager_allocate_out;
     }
     memset(pPg, 0, nByteHdr);
-    pPg->pData = (void*)(nByteHdr + (char*)pPg);
+    pPg->pData = pData;
     pPg->pPager = pPager;
     pPg->pNextAll = pPager->pAll;
     pPager->pAll = pPg;

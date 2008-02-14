@@ -12,38 +12,15 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.20 2008/02/13 18:25:27 danielk1977 Exp $
+** $Id: mem2.c,v 1.21 2008/02/14 23:26:56 drh Exp $
 */
+#include "sqliteInt.h"
 
 /*
 ** This version of the memory allocator is used only if the
-** SQLITE_MEMDEBUG macro is defined and SQLITE_OMIT_MEMORY_ALLOCATION
-** is not defined.
+** SQLITE_MEMDEBUG macro is defined
 */
-#if defined(SQLITE_MEMDEBUG)
-
-/*
-** We will eventually construct multiple memory allocation subsystems
-** suitable for use in various contexts:
-**
-**    *  Normal multi-threaded builds
-**    *  Normal single-threaded builds
-**    *  Debugging builds
-**
-** This version is suitable for use in debugging builds.
-**
-** Features:
-**
-**    * Every allocate has guards at both ends.
-**    * New allocations are initialized with randomness
-**    * Allocations are overwritten with randomness when freed
-**    * Optional logs of malloc activity generated
-**    * Summary of outstanding allocations with backtraces to the
-**      point of allocation.
-**    * The ability to simulate memory allocation failure
-*/
-#include "sqliteInt.h"
-#include <stdio.h>
+#ifdef SQLITE_MEMDEBUG
 
 /*
 ** The backtrace functionality is only available with GLIBC
@@ -55,6 +32,7 @@
 # define backtrace(A,B) 0
 # define backtrace_symbols_fd(A,B,C)
 #endif
+#include <stdio.h>
 
 /*
 ** Each memory allocation looks like this:
@@ -477,4 +455,4 @@ int sqlite3_memdebug_malloc_count(){
 }
 
 
-#endif /* SQLITE_MEMDEBUG && !SQLITE_OMIT_MEMORY_ALLOCATION */
+#endif /* SQLITE_MEMDEBUG */

@@ -15,20 +15,20 @@
 ** This version of the memory allocation subsystem omits all
 ** use of malloc().  All dynamically allocatable memory is
 ** contained in a static array, mem.aPool[].  The size of this
-** fixed memory pool is SQLITE_MEMORY_SIZE bytes.
+** fixed memory pool is SQLITE_POW2_MEMORY_SIZE bytes.
 **
 ** This version of the memory allocation subsystem is used if
-** and only if SQLITE_MEMORY_SIZE is defined.
+** and only if SQLITE_POW2_MEMORY_SIZE is defined.
 **
-** $Id: mem3.c,v 1.11 2008/02/14 23:26:56 drh Exp $
+** $Id: mem5.c,v 1.1 2008/02/14 23:26:56 drh Exp $
 */
 #include "sqliteInt.h"
 
 /*
 ** This version of the memory allocator is used only when 
-** SQLITE_MEMORY_SIZE is defined.
+** SQLITE_POW2_MEMORY_SIZE is defined.
 */
-#ifdef SQLITE_MEMORY_SIZE
+#ifdef SQLITE_POW2_MEMORY_SIZE
 
 /*
 ** Maximum size (in Mem3Blocks) of a "small" chunk.
@@ -118,6 +118,11 @@ static struct {
   u32 iMaster;
   u32 szMaster;
 
+
+u64 totalAlloc;
+u64 totalExcess;
+int nAlloc;
+
   /*
   ** Array of lists of free blocks according to the block size 
   ** for smaller chunks, or a hash on the block size for larger
@@ -129,7 +134,7 @@ static struct {
   /*
   ** Memory available for allocation
   */
-  Mem3Block aPool[SQLITE_MEMORY_SIZE/sizeof(Mem3Block)+2];
+  Mem3Block aPool[SQLITE_POW2_MEMORY_SIZE/sizeof(Mem3Block)+2];
 } mem;
 
 /*
@@ -215,11 +220,11 @@ static void memsys3Link(u32 i){
 static void memsys3Enter(void){
   if( mem.mutex==0 ){
     mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
-    mem.aPool[0].u.hdr.size4x = SQLITE_MEMORY_SIZE/2 + 2;
-    mem.aPool[SQLITE_MEMORY_SIZE/8].u.hdr.prevSize = SQLITE_MEMORY_SIZE/8;
-    mem.aPool[SQLITE_MEMORY_SIZE/8].u.hdr.size4x = 1;
+    mem.aPool[0].u.hdr.size4x = SQLITE_POW2_MEMORY_SIZE/2 + 2;
+    mem.aPool[SQLITE_POW2_MEMORY_SIZE/8].u.hdr.prevSize = SQLITE_POW2_MEMORY_SIZE/8;
+    mem.aPool[SQLITE_POW2_MEMORY_SIZE/8].u.hdr.size4x = 1;
     mem.iMaster = 1;
-    mem.szMaster = SQLITE_MEMORY_SIZE/8;
+    mem.szMaster = SQLITE_POW2_MEMORY_SIZE/8;
     mem.mnMaster = mem.szMaster;
   }
   sqlite3_mutex_enter(mem.mutex);
@@ -231,7 +236,7 @@ static void memsys3Enter(void){
 sqlite3_int64 sqlite3_memory_used(void){
   sqlite3_int64 n;
   memsys3Enter();
-  n = SQLITE_MEMORY_SIZE - mem.szMaster*8;
+  n = SQLITE_POW2_MEMORY_SIZE - mem.szMaster*8;
   sqlite3_mutex_leave(mem.mutex);  
   return n;
 }
@@ -244,10 +249,12 @@ sqlite3_int64 sqlite3_memory_used(void){
 sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
   sqlite3_int64 n;
   memsys3Enter();
-  n = SQLITE_MEMORY_SIZE - mem.mnMaster*8;
+  n = SQLITE_POW2_MEMORY_SIZE - mem.mnMaster*8;
   if( resetFlag ){
     mem.mnMaster = mem.szMaster;
   }
+printf("alloc-cnt=%d avg-size=%lld avg-excess=%lld\n",
+mem.nAlloc, mem.totalAlloc/mem.nAlloc, mem.totalExcess/mem.nAlloc);
   sqlite3_mutex_leave(mem.mutex);  
   return n;
 }
@@ -258,7 +265,7 @@ sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
 ** This is a no-op for the static memory allocator.  The purpose
 ** of the memory alarm is to support sqlite3_soft_heap_limit().
 ** But with this memory allocator, the soft_heap_limit is really
-** a hard limit that is fixed at SQLITE_MEMORY_SIZE.
+** a hard limit that is fixed at SQLITE_POW2_MEMORY_SIZE.
 */
 int sqlite3_memory_alarm(
   void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
@@ -405,14 +412,16 @@ static void *memsys3Malloc(int nByte){
   u32 i;
   int nBlock;
   int toFree;
+  int x;
 
   assert( sqlite3_mutex_held(mem.mutex) );
   assert( sizeof(Mem3Block)==8 );
-  if( nByte<=12 ){
-    nBlock = 2;
-  }else{
-    nBlock = (nByte + 11)/8;
-  }
+  for(x=256; x<nByte; x *= 2){}
+mem.nAlloc++;
+mem.totalAlloc += x;
+mem.totalExcess += x - nByte;
+  nByte = x;
+  nBlock = (nByte + 11)/8;
   assert( nBlock >= 2 );
 
   /* STEP 1:
@@ -452,7 +461,7 @@ static void *memsys3Malloc(int nByte){
   ** of the end of the master chunk.  This step happens very
   ** rarely (we hope!)
   */
-  for(toFree=nBlock*16; toFree<SQLITE_MEMORY_SIZE*2; toFree *= 2){
+  for(toFree=nBlock*16; toFree<SQLITE_POW2_MEMORY_SIZE*2; toFree *= 2){
     memsys3OutOfMemory(toFree);
     if( mem.iMaster ){
       memsys3Link(mem.iMaster);
@@ -485,11 +494,11 @@ void memsys3Free(void *pOld){
   int i;
   u32 size, x;
   assert( sqlite3_mutex_held(mem.mutex) );
-  assert( p>mem.aPool && p<&mem.aPool[SQLITE_MEMORY_SIZE/8] );
+  assert( p>mem.aPool && p<&mem.aPool[SQLITE_POW2_MEMORY_SIZE/8] );
   i = p - mem.aPool;
   assert( (mem.aPool[i-1].u.hdr.size4x&1)==1 );
   size = mem.aPool[i-1].u.hdr.size4x/4;
-  assert( i+size<=SQLITE_MEMORY_SIZE/8+1 );
+  assert( i+size<=SQLITE_POW2_MEMORY_SIZE/8+1 );
   mem.aPool[i-1].u.hdr.size4x &= ~1;
   mem.aPool[i+size-1].u.hdr.prevSize = size;
   mem.aPool[i+size-1].u.hdr.size4x &= ~2;
@@ -595,7 +604,7 @@ void sqlite3_memdebug_dump(const char *zFilename){
   }
   memsys3Enter();
   fprintf(out, "CHUNKS:\n");
-  for(i=1; i<=SQLITE_MEMORY_SIZE/8; i+=size/4){
+  for(i=1; i<=SQLITE_POW2_MEMORY_SIZE/8; i+=size/4){
     size = mem.aPool[i-1].u.hdr.size4x;
     if( size/4<=1 ){
       fprintf(out, "%p size error\n", &mem.aPool[i]);
@@ -638,8 +647,8 @@ void sqlite3_memdebug_dump(const char *zFilename){
     fprintf(out, "\n"); 
   }
   fprintf(out, "master=%d\n", mem.iMaster);
-  fprintf(out, "nowUsed=%d\n", SQLITE_MEMORY_SIZE - mem.szMaster*8);
-  fprintf(out, "mxUsed=%d\n", SQLITE_MEMORY_SIZE - mem.mnMaster*8);
+  fprintf(out, "nowUsed=%d\n", SQLITE_POW2_MEMORY_SIZE - mem.szMaster*8);
+  fprintf(out, "mxUsed=%d\n", SQLITE_POW2_MEMORY_SIZE - mem.mnMaster*8);
   sqlite3_mutex_leave(mem.mutex);
   if( out==stdout ){
     fflush(stdout);
@@ -650,4 +659,4 @@ void sqlite3_memdebug_dump(const char *zFilename){
 }
 
 
-#endif /* !SQLITE_MEMORY_SIZE */
+#endif /* !SQLITE_POW2_MEMORY_SIZE */
