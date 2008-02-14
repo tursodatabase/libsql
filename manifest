@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\smem5.c\smemory\sallocator.\s\sAllocate\sthe\scontent\spart\nof\scache\spages\sseparately\sfrom\sthe\sheader.\s\s(See\scheck-ins\s(4495)\sand\s(4409)).\s(CVS\s4789)
-D 2008-02-14T23:26:56
+C Fix\sa\sbug\sin\sEXPLAIN\sgrowing\sout\sof\sthe\snew\sMem\simplementation.\s(CVS\s4790)
+D 2008-02-14T23:44:14
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -175,7 +175,7 @@ F src/vdbe.c a172f5134d19ae910134e28987bf7906523c9b6f
 F src/vdbe.h 58a7d931ffb704e034b2a725981cfa5bd406fad9
 F src/vdbeInt.h 76c81d057a39813de0fda3cad1498655d53ec69d
 F src/vdbeapi.c cf9fc963efae3cdf5de08e2a9718b487059c7fc5
-F src/vdbeaux.c 36d4db24659146606a1c755650f2a70cf88eec25
+F src/vdbeaux.c 758e5f4e31d322c155c5db506dfbf93ae1df54a0
 F src/vdbeblob.c 63c750acc7b5012479f508c0e9627372a82cb65d
 F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
 F src/vdbemem.c 73a4dd9e4ac185d7582486585cdc501f6b832dcb
@@ -618,7 +618,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 65e66dd81cd821364a2d95a9078d174fd9486288
-R 6ff5217afe1707040720fe27516205be
+P 669ece8c82bfa69add852589dd1211751cb26fb2
+R cc04ce9e397a2238bd5d8ea817f1a9da
 U drh
-Z 6ab02326c39954da923fa8b7ecd38a1d
+Z 2c8ee1e11248569a5dd84e07edd7c948
