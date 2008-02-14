@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.284 2008/02/06 14:11:35 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.285 2008/02/14 23:24:16 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -69,7 +69,7 @@ extern "C" {
 ** the sqlite3.h file specify the version of SQLite with which
 ** that header file is associated.
 **
-** The "version" of SQLite is a strong of the form "X.Y.Z".
+** The "version" of SQLite is a string of the form "X.Y.Z".
 ** The phrase "alpha" or "beta" might be appended after the Z.
 ** The X value is major version number always 3 in SQLite3.
 ** The X value only changes when  backwards compatibility is

@@ -1,5 +1,5 @@
-C Fix\ssome\sVdbeMemCopy()\srelated\sproblems.\s(CVS\s4787)
-D 2008-02-14T15:31:52
+C Fix\sa\stypo\sin\sa\scomment\sused\sto\sgenerate\sdocumentation.\s(CVS\s4788)
+D 2008-02-14T23:24:16
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/random.c 02ef38b469237482f1ea14a78b2087cfbaec48bd
 F src/select.c 1d780691071af7d58b83a6b38517c2687dd83c5b
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ca06cb687c40a8bff6307b5fad41a0e86a0f8558
-F src/sqlite.h.in 690736613958e0f462e08ae2a9136fa335214edc
+F src/sqlite.h.in 74e71510ce5967333a36329212eca0833f6300bd
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 822045362bdddd303a0b17aa09679ba735ffbaa1
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
@@ -617,7 +617,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 30a45f078421bc89da9218528110e3bd90054bbf
-R 163aea8d5ee05b32aa9b90b719599c4c
-U danielk1977
-Z f9c60c6b01c0aaa4a339262c14d0294b
+P aca2bee8662c3adaa47b3e70b1ef35347111f9eb
+R c4ed434e338bc60f75c5f2a5d865d5c6
+U drh
+Z 746cf76953f3d41bcc6c125a1c516040
