@@ -21,7 +21,7 @@
 #     sqlite3_value_bytes()
 #     sqlite3_value_bytes16()
 #
-# $Id: ptrchng.test,v 1.3 2008/02/13 18:25:27 danielk1977 Exp $
+# $Id: ptrchng.test,v 1.4 2008/02/14 05:44:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -63,7 +63,7 @@ do_test ptrchng-2.2 {
   execsql {
     SELECT pointer_change(y, 'blob', 'noop', 'text') FROM t1 WHERE x=1
   }
-} {1}
+} {0}
 ifcapable utf16 {
   do_test ptrchng-2.3 {
     execsql {
@@ -95,7 +95,7 @@ do_test ptrchng-2.12 {
   execsql {
     SELECT pointer_change(y, 'blob', 'noop', 'text') FROM t1 WHERE x=3
   }
-} {1}
+} {0}
 ifcapable utf16 {
   do_test ptrchng-2.13 {
     execsql {
@@ -132,7 +132,7 @@ do_test ptrchng-3.2 {
   execsql {
     SELECT pointer_change(y, 'blob', 'noop', 'text') FROM t1 WHERE x=2
   }
-} {1}
+} {0}
 ifcapable utf16 {
   do_test ptrchng-3.3 {
     execsql {
@@ -164,7 +164,7 @@ do_test ptrchng-3.12 {
   execsql {
     SELECT pointer_change(y, 'blob', 'noop', 'text') FROM t1 WHERE x=4
   }
-} {1}
+} {0}
 ifcapable utf16 {
   do_test ptrchng-3.13 {
     execsql {
