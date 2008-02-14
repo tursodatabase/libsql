@@ -540,10 +540,12 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   ** in local variable zBuf. This function attempts to avoid freeing
   ** this buffer.
   */
-  if( pTo->xDel ){
-    sqlite3VdbeMemRelease(pTo);
-  }else if( pTo->flags&MEM_Dyn ){
-    zBuf = pTo->z;
+  if( pTo->flags&MEM_Dyn ){
+    if( pTo->xDel ){
+      sqlite3VdbeMemRelease(pTo);
+    }else{
+      zBuf = pTo->z;
+    }
   }
 
   /* Copy the contents of *pFrom to *pTo */
