@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.413 2008/02/13 18:25:27 danielk1977 Exp $
+** $Id: select.c,v 1.414 2008/02/15 14:33:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2417,6 +2417,10 @@ static void substSelect(
 **        subquery does not have both an ORDER BY and a LIMIT clause.
 **        (See ticket #2339)
 **
+**  (16)  The outer query is not an aggregate or the subquery does
+**        not contain ORDER BY.  (Ticket #2942)  This used to not matter
+**        until we introduced the group_concat() function.  
+**
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
 ** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
@@ -2474,6 +2478,7 @@ static int flattenSubquery(
   if( (p->disallowOrderBy || p->pOrderBy) && pSub->pOrderBy ){
      return 0;                                           /* Restriction (11) */
   }
+  if( isAgg && pSub->pOrderBy ) return 0;                /* Restriction (16) */
 
   /* Restriction 3:  If the subquery is a join, make sure the subquery is 
   ** not used as the right operand of an outer join.  Examples of why this
@@ -3140,16 +3145,6 @@ int sqlite3Select(
     pGroupBy = p->pGroupBy;
     pHaving = p->pHaving;
     isDistinct = p->isDistinct;
-  }
-#endif
-
-  /* Check for the special case of a min() or max() function by itself
-  ** in the result set.
-  */
-#if 0
-  if( simpleMinMaxQuery(pParse, p, pDest) ){
-    rc = 0;
-    goto select_end;
   }
 #endif
 

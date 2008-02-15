@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sEXPLAIN\sgrowing\sout\sof\sthe\snew\sMem\simplementation.\s(CVS\s4790)
-D 2008-02-14T23:44:14
+C Do\snot\sapply\sthe\squery\sflattening\soptimization\swhen\sthe\souter\squery\sis\san\r\naggregate\sand\sthe\sinner\squery\scontains\san\sORDER\sBY\sclause.\s\sTicket\s#2943.\s(CVS\s4791)
+D 2008-02-15T14:33:04
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -133,7 +133,7 @@ F src/pragma.c e3f39f8576234887ecd0c1de43dc51af5855930c
 F src/prepare.c 1b0601ca3f97a9d253cc08697484e3045a1678e9
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 02ef38b469237482f1ea14a78b2087cfbaec48bd
-F src/select.c 1d780691071af7d58b83a6b38517c2687dd83c5b
+F src/select.c aef06a4b157cc7defe8f99255f9a13cf693c8f13
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c ca06cb687c40a8bff6307b5fad41a0e86a0f8558
 F src/sqlite.h.in 74e71510ce5967333a36329212eca0833f6300bd
@@ -497,6 +497,7 @@ F test/tkt2832.test cd56dc66bb31898b7eb2146baa5bde2eb80f96fe
 F test/tkt2854.test aebd5a9904d36d1ef7a074fc5e7c7da3ab00c32a
 F test/tkt2920.test a8737380e4ae6424e00c0273dc12775704efbebf
 F test/tkt2927.test 492c6a9a14b2fc7bdbb17ce8e497d82df627f64d
+F test/tkt2942.test c5c87d179799ca6d1fbe83c815510b87cd5ec7ce
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -618,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 669ece8c82bfa69add852589dd1211751cb26fb2
-R cc04ce9e397a2238bd5d8ea817f1a9da
+P 4df62a55d6fc92c3d0a416c9c03d86d76478feb6
+R 171d3738564305862c44644c7b059e59
 U drh
-Z 2c8ee1e11248569a5dd84e07edd7c948
+Z c1c355e8e6620694fb23b02247622eef
