@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.12 2008/02/13 18:25:27 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.13 2008/02/16 16:21:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -334,7 +334,8 @@ static int test_memdebug_dump(
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
     return TCL_ERROR;
   }
-#if defined(SQLITE_MEMDEBUG) || defined(SQLITE_MEMORY_SIZE)
+#if defined(SQLITE_MEMDEBUG) || defined(SQLITE_MEMORY_SIZE) \
+     || defined(SQLITE_POW2_MEMORY_SIZE)
   {
     extern void sqlite3_memdebug_dump(const char*);
     sqlite3_memdebug_dump(Tcl_GetString(objv[1]));

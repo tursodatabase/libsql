@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.104 2008/02/13 18:25:27 danielk1977 Exp $
+# $Id: tester.tcl,v 1.105 2008/02/16 16:21:46 drh Exp $
 
 
 set tcl_precision 15
@@ -215,13 +215,13 @@ proc finalize_testing {} {
   if {[sqlite3_memory_used]>0} {
     puts "Unfreed memory: [sqlite3_memory_used] bytes"
     incr nErr
-    ifcapable memdebug||(mem3&&debug) {
+    ifcapable memdebug||mem5||(mem3&&debug) {
       puts "Writing unfreed memory log to \"./memleak.txt\""
       sqlite3_memdebug_dump ./memleak.txt
     }
   } else {
     puts "All memory allocations freed - no leaks"
-    ifcapable memdebug {
+    ifcapable memdebug||mem5 {
       sqlite3_memdebug_dump ./memusage.txt
     }
   }

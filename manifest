@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\s".show"\scommand\sof\sthe\sCLI.\s\sTicket\s#2942.\s(CVS\s4792)
-D 2008-02-15T17:38:06
+C The\spower-of-two\sfirst-fit\smemory\sallocator\sis\snow\sworking.\s(CVS\s4793)
+D 2008-02-16T16:21:46
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/mem1.c 62a821702d3292809ca78e7c55c3ca04b05a3757
 F src/mem2.c 021eecbb210cfe90a8e7be9f04b01329d2c38851
 F src/mem3.c 979191678eb1aac0af7e5df9ab3897a07410ff4c
 F src/mem4.c 45c328ec6dcb7e8d319cb383615b5fe547ca5409
-F src/mem5.c addb464d2328ad5dcd38a127a19a10fb654e1349
+F src/mem5.c e15148be341ba68af22cf62c59d03ad369a448fd
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 19ab15764736f13b94b4f70e53f77547cbddd47a
@@ -154,11 +154,11 @@ F src/test9.c 4615ef08750245a2d96aaa7cbe2fb4aff2b57acc
 F src/test_async.c 5f21392d66869a4c87dc9153e40d0dc0e085261f
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
-F src/test_config.c e7db7a46833d0df98ae6c9a11f70dada1bcca249
+F src/test_config.c 9223ff4a7b8b97c9d12965b0123db1cbd6757efb
 F src/test_devsym.c fd8884c2269fb7e0db2c52d21ec59d31a33790ba
 F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
-F src/test_malloc.c f57e6327a9c32dc71fb2c15941f64d4e91461d3b
+F src/test_malloc.c 6a47772a8530dbf3f6578a53e96303ac1dc3244a
 F src/test_md5.c c107c96637123239c3518b5fbe97a79130f4d32e
 F src/test_onefile.c 54282b6796d55d7acc489be83b89b8715e7d3756
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
@@ -454,7 +454,7 @@ F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
 F test/tableapi.test 4546eb710d979db023bfcc16b0c108b1557fcb43
 F test/tclsqlite.test 3fac87cb1059c46b8fa8a60b553f4f1adb0fb6d9
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl 70ed4c0dda3e2277bac9e0bf38e60df9dc360d08
+F test/tester.tcl 7760c4101448e5595b2ee095e540643fa31a1610
 F test/thread001.test 8fbd9559da0bbdc273e00318c7fd66c162020af7
 F test/thread002.test 2c4ad2c386f60f6fe268cd91c769ee35b3c1fd0b
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -549,7 +549,7 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl c315696c91d0a986e696dce14b0db1ea93e2c2d0
+F tool/mksqlite3c.tcl c1876ef95be512ce466f09d7b2d1157f9766f2b1
 F tool/mksqlite3internalh.tcl 47737a925fb02fce43e2c0a14b3cc17574a4d44a
 F tool/omittest.tcl 7d1fdf469e2f4d175f70c36e469db64a1626fabb
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -619,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6d33cbd99cb0db680767ceb31ec6345e90a805bc
-R 278e440ef39be86aca5c9fcf37732ebc
+P dedf5f230bf34a207f2ee0a8349a2ea602a38aba
+R cf36f2227f0aebc7182206911a7828ca
 U drh
-Z 27b6c195ad861a325b1d53c0c1393102
+Z 7f0671ff9d8e2cc545c59a85da0cd625
