@@ -142,7 +142,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   i = p->nOp;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->nOpAlloc<=i ){
-    resizeOpArray(p, p->nOpAlloc*2 + 100);
+    resizeOpArray(p, p->nOpAlloc ? p->nOpAlloc*2 : 1024/sizeof(Op));
     if( p->db->mallocFailed ){
       return 0;
     }
@@ -335,7 +335,8 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
   int addr;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->nOp + nOp > p->nOpAlloc ){
-    resizeOpArray(p, p->nOp*2 + nOp);
+    resizeOpArray(p, p->nOpAlloc ? p->nOpAlloc*2 : 1024/sizeof(Op));
+    assert( p->nOp+nOp<=p->nOpAlloc || p->db->mallocFailed );
   }
   if( p->db->mallocFailed ){
     return 0;

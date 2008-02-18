@@ -1,5 +1,5 @@
-C Add\sthe\sBitvec\sobject\sfor\stracking\swhich\spages\shave\sbeen\sjournalled.\nThis\sreduces\smemory\sconsumption\sand\sruns\sfaster\sthan\sthe\sbitmap\sapproach\nit\sreplaced.\s(CVS\s4794)
-D 2008-02-18T14:47:34
+C Add\sthe\smemory\sfault\ssimulator\sto\smem5.c.\s\sEnable\ssoft\sheap\slimit\son\smem5.c.\nLimit\sthe\ssize\sof\shash\stables\sand\sthe\svdbefifo\swhen\susing\smem5.c.\s(CVS\s4795)
+D 2008-02-18T22:24:58
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c e6fb42c6e55fd9526174b1cb8296b69a60a6688a
 F src/fault.c 049b88b8ba0a1db3240aeaf9695cd08b9a3ba9e1
 F src/func.c 8e3d0c59961dc403716767308ee764504179054b
-F src/hash.c 2dc6afe7478a0b739499af360c8863c900ea11a8
+F src/hash.c 53655c312280211444bfe23af6490a460aec2980
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
 F src/insert.c b313f5ecadf82dda15b1aa6780b0310eceb9e776
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
@@ -110,7 +110,7 @@ F src/mem1.c 62a821702d3292809ca78e7c55c3ca04b05a3757
 F src/mem2.c 021eecbb210cfe90a8e7be9f04b01329d2c38851
 F src/mem3.c 979191678eb1aac0af7e5df9ab3897a07410ff4c
 F src/mem4.c 45c328ec6dcb7e8d319cb383615b5fe547ca5409
-F src/mem5.c e15148be341ba68af22cf62c59d03ad369a448fd
+F src/mem5.c 13ddb3073c5ad55251730b692c663acc468d0eff
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 19ab15764736f13b94b4f70e53f77547cbddd47a
@@ -127,7 +127,7 @@ F src/os_unix.c e4daef7628f690fa2b188af3632fb18f96525946
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c832d528ea774c7094d887749d71884984c9034c
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c d9aeb0a131ca432f5cf06693a729d0ff818fc9c2
+F src/pager.c caa7c06d6c98df0fc6e0e797ee9cef7420fb59fa
 F src/pager.h 8174615ffd14ccc2cad2b081b919a398fa95e3f9
 F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
 F src/pragma.c e3f39f8576234887ecd0c1de43dc51af5855930c
@@ -139,11 +139,11 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c c1ef4eb7872afb7417e52d6ec3f2d15be90cba8a
 F src/sqlite.h.in 74e71510ce5967333a36329212eca0833f6300bd
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
-F src/sqliteInt.h 729101936ddcae387e39b2be0adcaa7ffed234d4
+F src/sqliteInt.h 073801285d2650b22033a20c2389241c5e0361d6
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 46ccf9b7892a86f57420ae7bac69ecd5e72d26b5
-F src/tclsqlite.c 0d4483e37c6a1e87f80565e50d977df6dd2bf732
-F src/test1.c 28b135491b436b1df6390a8b53834da2f94efca4
+F src/tclsqlite.c d95e0e74c7167b2807f9f4f73bf45f7c58096297
+F src/test1.c 785e737ff4dac36c384633501402a4437eb027a6
 F src/test2.c 355d5693ca3ee705548fa7f795592a37b2372b70
 F src/test3.c 4557ee13c6e5921eb28979ff77cdbd913bfde6be
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -159,7 +159,7 @@ F src/test_config.c 9223ff4a7b8b97c9d12965b0123db1cbd6757efb
 F src/test_devsym.c fd8884c2269fb7e0db2c52d21ec59d31a33790ba
 F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
-F src/test_malloc.c 6a47772a8530dbf3f6578a53e96303ac1dc3244a
+F src/test_malloc.c cd0ac01205056b6690563ff6b68d91fbd6a27d8a
 F src/test_md5.c c107c96637123239c3518b5fbe97a79130f4d32e
 F src/test_onefile.c 54282b6796d55d7acc489be83b89b8715e7d3756
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
@@ -176,9 +176,9 @@ F src/vdbe.c a172f5134d19ae910134e28987bf7906523c9b6f
 F src/vdbe.h 58a7d931ffb704e034b2a725981cfa5bd406fad9
 F src/vdbeInt.h 76c81d057a39813de0fda3cad1498655d53ec69d
 F src/vdbeapi.c cf9fc963efae3cdf5de08e2a9718b487059c7fc5
-F src/vdbeaux.c 758e5f4e31d322c155c5db506dfbf93ae1df54a0
+F src/vdbeaux.c 628751c5530ecbc77efebf5e343dfc714d5fdce0
 F src/vdbeblob.c 63c750acc7b5012479f508c0e9627372a82cb65d
-F src/vdbefifo.c 334c838c8f42d61a94813d136019ee566b5dc2f6
+F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 73a4dd9e4ac185d7582486585cdc501f6b832dcb
 F src/vtab.c dc8947c9c79780b19ee6d6bae4ea624a2a303353
 F src/where.c 7ff0ca021cc77086e367ed3b6308fbc6bc9e1a31
@@ -370,24 +370,24 @@ F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test f358fa835dff485d462072eee991111f09e87441
 F test/main.test 82c222989e02ea09abd58d453828ffd71806b6bf
-F test/malloc.test 13ab98fb05dbc260a9a1bd6f92a071572b0069da
-F test/malloc2.test be2186160d92670d690ed212f733d523fe344c16
-F test/malloc3.test 5d3839afd98bff92b82d13405f41c96e77ac2a6b
-F test/malloc4.test f0e5e0f639f61e2776a6c3f5308f836b3ad8b3c7
-F test/malloc5.test 18f3f71756e775a17ce4d0c49d76fb0027dda066
-F test/malloc6.test d05fd71ef3c5983d10e0a6d728ea4a502a45a9e4
-F test/malloc7.test 0d71bb6520b99934b551fa36a9c591404aeaad61
-F test/malloc8.test addc27d907fec1af429551b95c72caa47fce2974
-F test/malloc9.test 95d7069ad4fa262bf33bc4c5ca0a46f2bb2391cb
-F test/mallocA.test 5ee8d42ff90e5b1aeee6fb645e73ffcb35bffd21
+F test/malloc.test 7da6e318b030eef91a19bf6aca5555f927c92317
+F test/malloc2.test 6f2abc0617a7df210381272681d598488a3bf943
+F test/malloc3.test c724bc1c5fe7b8686be0f56c181c7fa4515d7bd7
+F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
+F test/malloc5.test 1a68e56e513eab54d8c4cd1b769ff1d14e3f99f4
+F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
+F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
+F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
+F test/malloc9.test d90bae1a4ee9b288a55ac0ea8fcad93eedafebf6
+F test/mallocA.test 4b650c745aab289079454f4d1c02abe5c97ab6b3
 F test/mallocAll.test 2a2222a5e447be6c6579055a9a26e507e4586f4e
-F test/mallocB.test d4a91e7d9cc916d009e0fec08537b3be299ee514
-F test/mallocC.test 9daac0aa8e5b0afa7b0a3fb0cd792f02fe0cc838
-F test/mallocD.test 24c1d07a00e605831d0d627b036bd690b2952416
-F test/mallocE.test e15333c394d7c330c8372a7cdf7b0f7c16573082
-F test/mallocF.test 6f25bc474f2b29954e5fac274d0e6ed9d86efea5
-F test/mallocG.test 5d88decca0444424d7c8d8e156ed1cdf2dfc67d0
-F test/malloc_common.tcl 5c5f7ee985c9ef3480f441efb6329aeefbf9380c
+F test/mallocB.test bc475ab850cda896142ab935bbfbc74c24e51ed6
+F test/mallocC.test 05c0bde2e41cdbdef26b9c17b8e48c935b46f611
+F test/mallocD.test f78c295e8e18ea3029e65ca08278690e00c22100
+F test/mallocE.test db1ed69d7eded1b080952e2a7c37f364ad241b08
+F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
+F test/mallocG.test b295dc03b6d8d705ce425ff4d1ce6bbeb1c5ab33
+F test/malloc_common.tcl bb48df8df8c3ae75a9cb2d3626d54202b2ba2401
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d134d29cea971eb01a0e0fd94341ab79e2d5b57a
-R 7f46679eadc481e9280dcd7ae7ce6455
+P 7c57bdbcdb84d95419ec7029d2e13c593854a8d8
+R 0bada69c2b0e42668cf12f285946c6e2
 U drh
-Z dc5ae8e1fa2e180c4555dfd11cef133e
+Z af6bec9b1fbe082648fe2162d8c6bd6a

@@ -10,19 +10,19 @@
 #***********************************************************************
 # This file attempts to check the library in an out-of-memory situation.
 #
-# $Id: malloc6.test,v 1.4 2007/10/03 08:46:45 danielk1977 Exp $
+# $Id: malloc6.test,v 1.5 2008/02/18 22:24:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
 
 # Only run these tests if memory debugging is turned on.
 #
-ifcapable !memdebug {
+if {!$MEMDEBUG} {
    puts "Skipping malloc6 tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
 }
-source $testdir/malloc_common.tcl
 
 
 set sqlite_os_trace 0

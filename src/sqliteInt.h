@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.663 2008/02/18 14:47:34 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.664 2008/02/18 22:24:58 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -141,6 +141,14 @@
     defined(SQLITE_MEMORY_SIZE)+defined(SQLITE_MMAP_HEAP_SIZE)+\
     defined(SQLITE_POW2_MEMORY_SIZE)==0
 # define SQLITE_SYSTEM_MALLOC 1
+#endif
+
+/*
+** If SQLITE_MALLOC_SOFT_LIMIT is defined, then try to keep the
+** sizes of memory allocations below this value where possible.
+*/
+#if defined(SQLITE_POW2_MEMORY_SIZE) && !defined(SQLITE_MALLOC_SOFT_LIMIT)
+# define SQLITE_MALLOC_SOFT_LIMIT 1024
 #endif
 
 /*
@@ -402,6 +410,7 @@ typedef struct WhereLevel WhereLevel;
 
 #include "os.h"
 #include "mutex.h"
+
 
 /*
 ** Each database file to be accessed by the system is an instance

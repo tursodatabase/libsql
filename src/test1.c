@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.288 2008/02/13 18:25:27 danielk1977 Exp $
+** $Id: test1.c,v 1.289 2008/02/18 22:24:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -954,7 +954,7 @@ static int test_create_function(
   /* Use the sqlite3_create_function16() API here. Mainly for fun, but also 
   ** because it is not tested anywhere else. */
   if( rc==SQLITE_OK ){
-    void *zUtf16;
+    const void *zUtf16;
     sqlite3_value *pVal;
     sqlite3_mutex_enter(db->mutex);
     pVal = sqlite3ValueNew(db);
@@ -2153,7 +2153,7 @@ static int test_collate(
   rc = sqlite3_create_collation(db, "test_collate", SQLITE_UTF8, 
           (void *)SQLITE_UTF8, val?test_collate_func:0);
   if( rc==SQLITE_OK ){
-    void *zUtf16;
+    const void *zUtf16;
     if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[3], &val) ) return TCL_ERROR;
     rc = sqlite3_create_collation(db, "test_collate", SQLITE_UTF16LE, 
             (void *)SQLITE_UTF16LE, val?test_collate_func:0);

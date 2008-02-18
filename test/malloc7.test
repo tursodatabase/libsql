@@ -11,19 +11,19 @@
 # This file contains additional out-of-memory checks (see malloc.tcl)
 # added to expose a bug in out-of-memory handling for sqlite3_prepare16().
 #
-# $Id: malloc7.test,v 1.4 2007/09/03 16:12:10 drh Exp $
+# $Id: malloc7.test,v 1.5 2008/02/18 22:24:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
 
 # Only run these tests if memory debugging is turned on.
 #
-ifcapable !memdebug {
+if {!$MEMDEBUG} {
    puts "Skipping malloc7 tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
 }
-source $testdir/malloc_common.tcl
 
 
 do_malloc_test malloc7-1 -sqlprep {

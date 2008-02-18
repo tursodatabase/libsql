@@ -12,19 +12,19 @@
 # This test script checks that tickets #2794, #2795, #2796, and #2797
 # have been fixed.
 # 
-# $Id: mallocF.test,v 1.3 2008/01/22 01:48:09 drh Exp $
+# $Id: mallocF.test,v 1.4 2008/02/18 22:24:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
 
 # Only run these tests if memory debugging is turned on.
 #
-ifcapable !memdebug {
+if {!$MEMDEBUG} {
    puts "Skipping mallocF tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
 }
-source $testdir/malloc_common.tcl
 
 # tickets #2794 and #2795 and #2797
 #

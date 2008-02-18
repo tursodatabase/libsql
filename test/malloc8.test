@@ -11,20 +11,20 @@
 # This file contains additional out-of-memory checks (see malloc.tcl)
 # added to expose a bug in out-of-memory handling for sqlite3_value_text()
 #
-# $Id: malloc8.test,v 1.6 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: malloc8.test,v 1.7 2008/02/18 22:24:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
 
 # Only run these tests if memory debugging is turned on.
 #
-ifcapable !memdebug {
+if {!$MEMDEBUG} {
    puts "Skipping malloc8 tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
 }
 
-source $testdir/malloc_common.tcl
 
 # The setup is a database with UTF-16 encoding that contains a single
 # large string.  We will be running lots of queries against this 

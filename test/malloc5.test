@@ -12,7 +12,7 @@
 # This file contains test cases focused on the two memory-management APIs, 
 # sqlite3_soft_heap_limit() and sqlite3_release_memory().
 #
-# $Id: malloc5.test,v 1.17 2007/10/03 09:43:55 danielk1977 Exp $
+# $Id: malloc5.test,v 1.18 2008/02/18 22:24:58 drh Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -22,11 +22,12 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
 db close
 
 # Only run these tests if memory debugging is turned on.
 #
-ifcapable !memdebug {
+if {!$MEMDEBUG} {
    puts "Skipping malloc5 tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return

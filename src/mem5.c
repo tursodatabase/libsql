@@ -20,7 +20,7 @@
 ** This version of the memory allocation subsystem is used if
 ** and only if SQLITE_POW2_MEMORY_SIZE is defined.
 **
-** $Id: mem5.c,v 1.2 2008/02/16 16:21:46 drh Exp $
+** $Id: mem5.c,v 1.3 2008/02/18 22:24:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -93,8 +93,15 @@ struct Mem5Block {
 */
 static struct {
   /*
-  ** True if we are evaluating an out-of-memory callback.
+  ** The alarm callback and its arguments.  The mem.mutex lock will
+  ** be held while the callback is running.  Recursive calls into
+  ** the memory subsystem are allowed, but no new callbacks will be
+  ** issued.  The alarmBusy variable is set to prevent recursive
+  ** callbacks.
   */
+  sqlite3_int64 alarmThreshold;
+  void (*alarmCallback)(void*, sqlite3_int64,int);
+  void *alarmArg;
   int alarmBusy;
   
   /*
@@ -221,6 +228,25 @@ sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
   return n;
 }
 
+
+/*
+** Trigger the alarm 
+*/
+static void memsys5Alarm(int nByte){
+  void (*xCallback)(void*,sqlite3_int64,int);
+  sqlite3_int64 nowUsed;
+  void *pArg;
+  if( mem.alarmCallback==0 || mem.alarmBusy  ) return;
+  mem.alarmBusy = 1;
+  xCallback = mem.alarmCallback;
+  nowUsed = mem.currentOut;
+  pArg = mem.alarmArg;
+  sqlite3_mutex_leave(mem.mutex);
+  xCallback(pArg, nowUsed, nByte);
+  sqlite3_mutex_enter(mem.mutex);
+  mem.alarmBusy = 0;
+}
+
 /*
 ** Change the alarm callback.
 **
@@ -234,21 +260,12 @@ int sqlite3_memory_alarm(
   void *pArg,
   sqlite3_int64 iThreshold
 ){
+  memsys5Enter();
+  mem.alarmCallback = xCallback;
+  mem.alarmArg = pArg;
+  mem.alarmThreshold = iThreshold;
+  sqlite3_mutex_leave(mem.mutex);
   return SQLITE_OK;
-}
-
-/*
-** Called when we are unable to satisfy an allocation of nBytes.
-*/
-static void memsys5OutOfMemory(int nByte){
-  if( !mem.alarmBusy ){
-    mem.alarmBusy = 1;
-    assert( sqlite3_mutex_held(mem.mutex) );
-    sqlite3_mutex_leave(mem.mutex);
-    sqlite3_release_memory(nByte);
-    sqlite3_mutex_enter(mem.mutex);
-    mem.alarmBusy = 0;
-  }
 }
 
 /*
@@ -296,10 +313,30 @@ static void *memsys5Malloc(int nByte){
   int iLogsize;    /* Log2 of iFullSz/POW2_MIN */
 
   assert( sqlite3_mutex_held(mem.mutex) );
-  if( nByte>mem.maxRequest ) mem.maxRequest = nByte;
+
+  /* Keep track of the maximum allocation request.  Even unfulfilled
+  ** requests are counted */
+  if( nByte>mem.maxRequest ){
+    mem.maxRequest = nByte;
+  }
+
+  /* Simulate a memory allocation fault */
+  if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ) return 0;
+
+  /* Round nByte up to the next valid power of two */
   if( nByte>POW2_MAX ) return 0;
   for(iFullSz=POW2_MIN, iLogsize=0; iFullSz<nByte; iFullSz *= 2, iLogsize++){}
 
+  /* If we will be over the memory alarm threshold after this allocation,
+  ** then trigger the memory overflow alarm */
+  if( mem.alarmCallback!=0 && mem.currentOut+iFullSz>=mem.alarmThreshold ){
+    memsys5Alarm(iFullSz);
+  }
+
+  /* Make sure mem.aiFreelist[iLogsize] contains at least one free
+  ** block.  If not, then split a block of the next larger power of
+  ** two in order to create a new free block of size iLogsize.
+  */
   for(iBin=iLogsize; mem.aiFreelist[iBin]<0 && iBin<NSIZE; iBin++){}
   if( iBin>=NSIZE ) return 0;
   i = memsys5UnlinkFirst(iBin);
@@ -313,6 +350,7 @@ static void *memsys5Malloc(int nByte){
   }
   mem.aCtrl[i] = iLogsize;
 
+  /* Update allocator performance statistics. */
   mem.nAlloc++;
   mem.totalAlloc += iFullSz;
   mem.totalExcess += iFullSz - nByte;
@@ -321,6 +359,7 @@ static void *memsys5Malloc(int nByte){
   if( mem.maxCount<mem.currentCount ) mem.maxCount = mem.currentCount;
   if( mem.maxOut<mem.currentOut ) mem.maxOut = mem.currentOut;
 
+  /* Return a pointer to the allocated memory. */
   return (void*)&mem.aPool[i];
 }
 

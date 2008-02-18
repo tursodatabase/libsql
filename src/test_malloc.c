@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.13 2008/02/16 16:21:46 drh Exp $
+** $Id: test_malloc.c,v 1.14 2008/02/18 22:24:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -468,7 +468,7 @@ static int test_memdebug_pending(
     return TCL_ERROR;
   }
 
-#ifdef SQLITE_MEMDEBUG
+#if defined(SQLITE_MEMDEBUG) || defined(SQLITE_POW2_MEMORY_SIZE)
   {
     int nPending = sqlite3_test_control(SQLITE_TESTCTRL_FAULT_PENDING,
                                         SQLITE_FAULTINJECTOR_MALLOC);

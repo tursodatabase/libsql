@@ -10,20 +10,20 @@
 #***********************************************************************
 # This file contains additional out-of-memory checks (see malloc.tcl).
 #
-# $Id: mallocA.test,v 1.7 2007/11/15 13:10:23 danielk1977 Exp $
+# $Id: mallocA.test,v 1.8 2008/02/18 22:24:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
 
 # Only run these tests if memory debugging is turned on.
 #
-ifcapable !memdebug {
+if {!$MEMDEBUG} {
    puts "Skipping mallocA tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
 }
 
-source $testdir/malloc_common.tcl
 
 # Construct a test database
 #

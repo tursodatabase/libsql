@@ -16,13 +16,25 @@
 #include "vdbeInt.h"
 
 /*
+** Constants FIFOSIZE_FIRST and FIFOSIZE_MAX are the initial
+** number of entries in a fifo page and the maximum number of
+** entries in a fifo page.
+*/
+#define FIFOSIZE_FIRST (((128-sizeof(FifoPage))/8)+1)
+#ifdef SQLITE_MALLOC_SOFT_LIMIT
+# define FIFOSIZE_MAX   (((SQLITE_MALLOC_SOFT_LIMIT-sizeof(FifoPage))/8)+1)
+#else
+# define FIFOSIZE_MAX   (((262144-sizeof(FifoPage))/8)+1)
+#endif
+
+/*
 ** Allocate a new FifoPage and return a pointer to it.  Return NULL if
 ** we run out of memory.  Leave space on the page for nEntry entries.
 */
 static FifoPage *allocateFifoPage(int nEntry){
   FifoPage *pPage;
-  if( nEntry>32767 ){
-    nEntry = 32767;
+  if( nEntry>FIFOSIZE_MAX ){
+    nEntry = FIFOSIZE_MAX;
   }
   pPage = sqlite3_malloc( sizeof(FifoPage) + sizeof(i64)*(nEntry-1) );
   if( pPage ){
@@ -50,7 +62,7 @@ int sqlite3VdbeFifoPush(Fifo *pFifo, i64 val){
   FifoPage *pPage;
   pPage = pFifo->pLast;
   if( pPage==0 ){
-    pPage = pFifo->pLast = pFifo->pFirst = allocateFifoPage(20);
+    pPage = pFifo->pLast = pFifo->pFirst = allocateFifoPage(FIFOSIZE_FIRST);
     if( pPage==0 ){
       return SQLITE_NOMEM;
     }

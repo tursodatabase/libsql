@@ -16,14 +16,15 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.58 2008/01/24 14:27:44 danielk1977 Exp $
+# $Id: malloc.test,v 1.59 2008/02/18 22:24:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Only run these tests if memory debugging is turned on.
 #
-ifcapable !memdebug {
+source $testdir/malloc_common.tcl
+if {!$MEMDEBUG} {
    puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
    finish_test
    return
@@ -37,7 +38,6 @@ sqlite3_memdebug_dump $testdir
 puts "Memory dump to file memdump.txt..."
 sqlite3_memdebug_dump memdump.txt
 
-source $testdir/malloc_common.tcl
 
 ifcapable bloblit&&subquery {
   do_malloc_test 1 -tclprep {

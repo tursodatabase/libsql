@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.407 2008/02/18 14:47:34 drh Exp $
+** @(#) $Id: pager.c,v 1.408 2008/02/18 22:24:58 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -677,6 +677,12 @@ static int pageInStatement(PgHdr *pPg){
 static void pager_resize_hash_table(Pager *pPager, int N){
   PgHdr **aHash, *pPg;
   assert( N>0 && (N&(N-1))==0 );
+#ifdef SQLITE_MALLOC_SOFT_LIMIT
+  if( N*sizeof(aHash[0])>SQLITE_MALLOC_SOFT_LIMIT ){
+    N = SQLITE_MALLOC_SOFT_LIMIT/sizeof(aHash[0]);
+  }
+  if( N==pPager->nHash ) return;
+#endif
   pagerLeave(pPager);
   sqlite3FaultBenign(SQLITE_FAULTINJECTOR_MALLOC, pPager->aHash!=0);
   aHash = sqlite3MallocZero( sizeof(aHash[0])*N );
