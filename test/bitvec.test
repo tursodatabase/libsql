@@ -1,0 +1,207 @@
+# 2008 February 18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Unit testing of the Bitvec object.
+#
+# $Id: bitvec.test,v 1.1 2008/02/18 14:47:34 drh Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+#ifcapable !subquery {
+#  finish_test
+#  return
+#}
+
+do_test bitvec-1.1 {
+  set PTR [sqlite3BitvecCreate 4000]
+  for {set i 1} {$i<=4000} {incr i} {
+    if {$i%1000==999} continue
+    sqlite3BitvecSet $PTR $i
+  }
+  set r {}
+  for {set i 1} {$i<=4000} {incr i} {
+    if {![sqlite3BitvecTest $PTR $i]} {lappend r $i}
+  }
+  sqlite3BitvecDestroy $PTR
+  set r
+} {999 1999 2999 3999}
+do_test bitvec-1.2 {
+  set PTR [sqlite3BitvecCreate 4001]
+  for {set i 1} {$i<=4001} {incr i} {
+    if {$i%1000==999} continue
+    sqlite3BitvecSet $PTR $i
+  }
+  set r {}
+  for {set i 1} {$i<=4001} {incr i} {
+    if {![sqlite3BitvecTest $PTR $i]} {lappend r $i}
+  }
+  sqlite3BitvecDestroy $PTR
+  set r
+} {999 1999 2999 3999}
+do_test bitvec-1.3 {
+  set PTR [sqlite3BitvecCreate 40000]
+  for {set i 1} {$i<=40000} {incr i} {
+    if {$i%10000==9999} continue
+    sqlite3BitvecSet $PTR $i
+  }
+  set r {}
+  for {set i 1} {$i<=40000} {incr i} {
+    if {![sqlite3BitvecTest $PTR $i]} {lappend r $i}
+  }
+  sqlite3BitvecDestroy $PTR
+  set r
+} {9999 19999 29999 39999}
+do_test bitvec-1.4 {
+  set PTR [sqlite3BitvecCreate 2000000000]
+  for {set i 1000000} {$i<=1001000} {incr i} {
+    if {$i%1000==789} continue
+    sqlite3BitvecSet $PTR $i
+  }
+  set r {}
+  for {set i 1000000} {$i<=1001000} {incr i} {
+    if {![sqlite3BitvecTest $PTR $i]} {lappend r $i}
+  }
+  sqlite3BitvecDestroy $PTR
+  set r
+} {1000789}
+
+do_test bitvec-2.1 {
+  set PTR [sqlite3BitvecCreate 4000]
+  for {set i 1} {$i<=4000} {incr i 2} {
+    sqlite3BitvecSet $PTR $i
+  }
+  for {set i 1} {$i<=4000} {incr i} {
+    sqlite3BitvecClear $PTR $i
+  }
+  set r {}
+  for {set i 1} {$i<=4000} {incr i} {
+    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
+  }
+  sqlite3BitvecDestroy $PTR
+  set r
+} {}
+do_test bitvec-2.2 {
+  set PTR [sqlite3BitvecCreate 4001]
+  for {set i 1} {$i<=101} {incr i 2} {
+    sqlite3BitvecSet $PTR $i
+  }
+  for {set i 1} {$i<=99} {incr i} {
+    sqlite3BitvecClear $PTR $i
+  }
+  set r {}
+  for {set i 1} {$i<=4000} {incr i} {
+    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
+  }
+  sqlite3BitvecDestroy $PTR
+  set r
+} {101}
+do_test bitvec-2.3 {
+  set PTR [sqlite3BitvecCreate 4001]
+  for {set i 1} {$i<=101} {incr i} {
+    sqlite3BitvecSet $PTR $i
+  }
+  for {set i 1} {$i<=99} {incr i} {
+    sqlite3BitvecClear $PTR $i
+  }
+  set r {}
+  for {set i 1} {$i<=4000} {incr i} {
+    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
+  }
+  sqlite3BitvecDestroy $PTR
+  set r
+} {100 101}
+do_test bitvec-2.4 {
+  set PTR [sqlite3BitvecCreate 5000]
+  for {set i 1} {$i<=5000} {incr i} {
+    sqlite3BitvecSet $PTR $i
+    if {$i%1000!=456} {sqlite3BitvecClear $PTR $i}
+  }
+  set r {}
+  for {set i 1} {$i<=5000} {incr i} {
+    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
+  }
+  sqlite3BitvecDestroy $PTR
+  set r
+} {456 1456 2456 3456 4456}
+
+do_test bitvec-3.1 {
+  set PTR [sqlite3BitvecCreate 2000000000]
+  for {set i 2000000} {$i<=3000000} {incr i 100000} {
+    for {set j $i} {$j<=$i+50} {incr j} {
+      sqlite3BitvecSet $PTR $i
+    }
+    for {set j $i} {$j<=$i+50} {incr j} {
+      sqlite3BitvecClear $PTR $i
+    }
+  }
+  set r {}
+  for {set i 2000000} {$i<=3000000} {incr i} {
+    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
+  }
+  sqlite3BitvecDestroy $PTR
+  set r
+} {}
+do_test bitvec-3.2 {
+  set PTR [sqlite3BitvecCreate 200000]
+  for {set i 1000} {$i<=190000} {incr i 10000} {
+    for {set j $i} {$j<=$i+50} {incr j} {
+      sqlite3BitvecSet $PTR $i
+    }
+    for {set j $i} {$j<=$i+50} {incr j} {
+      sqlite3BitvecClear $PTR $i
+    }
+  }
+  set r {}
+  for {set i 1} {$i<=200000} {incr i} {
+    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
+  }
+  sqlite3BitvecDestroy $PTR
+  set r
+} {}
+do_test bitvec-3.3 {
+  set PTR [sqlite3BitvecCreate 200000]
+  for {set i 1000} {$i<=190000} {incr i 10000} {
+    for {set j $i} {$j<=$i+500} {incr j} {
+      sqlite3BitvecSet $PTR $i
+    }
+    for {set j $i} {$j<=$i+500} {incr j} {
+      sqlite3BitvecClear $PTR $i
+    }
+  }
+  set r {}
+  for {set i 1} {$i<=200000} {incr i} {
+    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
+  }
+  sqlite3BitvecDestroy $PTR
+  set r
+} {}
+do_test bitvec-3.4 {
+  set PTR [sqlite3BitvecCreate 2000]
+  for {set i 10} {$i<=1900} {incr i 100} {
+    for {set j $i} {$j<=$i+50} {incr j} {
+      sqlite3BitvecSet $PTR $i
+    }
+    for {set j $i} {$j<=$i+50} {incr j} {
+      sqlite3BitvecClear $PTR $i
+    }
+  }
+  set r {}
+  for {set i 1} {$i<=2000} {incr i} {
+    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
+  }
+  sqlite3BitvecDestroy $PTR
+  set r
+} {}
+
+
+finish_test

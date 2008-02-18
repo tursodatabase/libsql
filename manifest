@@ -1,5 +1,5 @@
-C The\spower-of-two\sfirst-fit\smemory\sallocator\sis\snow\sworking.\s(CVS\s4793)
-D 2008-02-16T16:21:46
+C Add\sthe\sBitvec\sobject\sfor\stracking\swhich\spages\shave\sbeen\sjournalled.\nThis\sreduces\smemory\sconsumption\sand\sruns\sfaster\sthan\sthe\sbitmap\sapproach\nit\sreplaced.\s(CVS\s4794)
+D 2008-02-18T14:47:34
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -64,7 +64,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk e5649378177ca11d8a115a09e4284d14ffdc64d6
+F main.mk 648992e13f77f6039b2824bd97c8853beea20dbd
 F mkdll.sh 712e74f3efe08a6ba12b2945d018a29a89d7fe3b
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -82,6 +82,7 @@ F src/alter.c b494a50f239a760565ce6220ee316e96956ec054
 F src/analyze.c a78ac494668581fe7f54ee63700815bb0ea34261
 F src/attach.c e13d62597e8725075b27186817f7e745122af24e
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
+F src/bitvec.c bc5b52a590dc38a48fdded1f098b84af673448c9
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
 F src/btree.c 29ea577155f39be65bdec1c7782301ff2ee9eb3f
 F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
@@ -126,7 +127,7 @@ F src/os_unix.c e4daef7628f690fa2b188af3632fb18f96525946
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c c832d528ea774c7094d887749d71884984c9034c
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 1960545a871f9b57a80e485e5969ee045b7a00d8
+F src/pager.c d9aeb0a131ca432f5cf06693a729d0ff818fc9c2
 F src/pager.h 8174615ffd14ccc2cad2b081b919a398fa95e3f9
 F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
 F src/pragma.c e3f39f8576234887ecd0c1de43dc51af5855930c
@@ -138,12 +139,12 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c c1ef4eb7872afb7417e52d6ec3f2d15be90cba8a
 F src/sqlite.h.in 74e71510ce5967333a36329212eca0833f6300bd
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
-F src/sqliteInt.h c82511830758350ed4cedd0815add7cbb145e08d
+F src/sqliteInt.h 729101936ddcae387e39b2be0adcaa7ffed234d4
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 46ccf9b7892a86f57420ae7bac69ecd5e72d26b5
 F src/tclsqlite.c 0d4483e37c6a1e87f80565e50d977df6dd2bf732
 F src/test1.c 28b135491b436b1df6390a8b53834da2f94efca4
-F src/test2.c 77b34303883b9d722c65a6879bb0163a400e3789
+F src/test2.c 355d5693ca3ee705548fa7f795592a37b2372b70
 F src/test3.c 4557ee13c6e5921eb28979ff77cdbd913bfde6be
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
@@ -210,6 +211,7 @@ F test/bigfile.test 9a6a8346e4042d9c781ed6cb6553ac871ae30618
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 261fd1603613e7f877a516d29f281c9d8c2ecf52
 F test/bindxfer.test b9a57f66dbd317feeefa28bd65b6576f1592ee98
+F test/bitvec.test 52a1caf5b4f037982f0e7720ffff6296f20940a6
 F test/blob.test f2dbdbf1159674283645c2636436839313ee7131
 F test/btree.test d22b1b2cc9becc36f6b1f2f91b9fca1e48060979
 F test/btree2.test 4b56a2a4a4f84d68c77aef271223a713bf5ebafc
@@ -549,7 +551,7 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl c1876ef95be512ce466f09d7b2d1157f9766f2b1
+F tool/mksqlite3c.tcl a50378947f5bdad7b2d2d08960a0c7c52b7c47c1
 F tool/mksqlite3internalh.tcl 47737a925fb02fce43e2c0a14b3cc17574a4d44a
 F tool/omittest.tcl 7d1fdf469e2f4d175f70c36e469db64a1626fabb
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -619,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P dedf5f230bf34a207f2ee0a8349a2ea602a38aba
-R cf36f2227f0aebc7182206911a7828ca
+P d134d29cea971eb01a0e0fd94341ab79e2d5b57a
+R 7f46679eadc481e9280dcd7ae7ce6455
 U drh
-Z 7f0671ff9d8e2cc545c59a85da0cd625
+Z dc5ae8e1fa2e180c4555dfd11cef133e

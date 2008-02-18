@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.406 2008/02/14 23:26:56 drh Exp $
+** @(#) $Id: pager.c,v 1.407 2008/02/18 14:47:34 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -213,9 +213,9 @@ struct PagerLruLink {
 **     has been synced to disk.  For pages that are in the original
 **     database file, the following expression should always be true:
 **
-**       inJournal = (pPager->aInJournal[(pgno-1)/8] & (1<<((pgno-1)%8))!=0
+**       inJournal = sqlite3BitvecTest(pPager->pInJournal, pgno)
 **
-**     The pPager->aInJournal[] array is only valid for the original
+**     The pPager->pInJournal object is only valid for the original
 **     pages of the database, not new pages that are added to the end
 **     of the database, so obviously the above expression cannot be
 **     valid for new pages.  For new pages inJournal is always 0.
@@ -365,8 +365,8 @@ struct Pager {
   int nRef;                   /* Number of in-memory pages with PgHdr.nRef>0 */
   int mxPage;                 /* Maximum number of pages to hold in cache */
   Pgno mxPgno;                /* Maximum allowed size of the database */
-  u8 *aInJournal;             /* One bit for each page in the database file */
-  u8 *aInStmt;                /* One bit for each page in the database */
+  Bitvec *pInJournal;         /* One bit for each page in the database file */
+  Bitvec *pInStmt;            /* One bit for each page in the database */
   char *zFilename;            /* Name of the database file */
   char *zJournal;             /* Name of the journal file */
   char *zDirectory;           /* Directory hold database and journal files */
@@ -666,9 +666,7 @@ static int pageInStatement(PgHdr *pPg){
   if( MEMDB ){
     return PGHDR_TO_HIST(pPg, pPager)->inStmt;
   }else{
-    Pgno pgno = pPg->pgno;
-    u8 *a = pPager->aInStmt;
-    return (a && (int)pgno<=pPager->stmtSize && (a[pgno/8] & (1<<(pgno&7))));
+    return sqlite3BitvecTest(pPager->pInStmt, pPg->pgno);
   }
 }
 
@@ -1252,14 +1250,14 @@ static void pager_unlock(Pager *pPager){
         pager_reset(pPager);
         if( pPager->stmtOpen ){
           sqlite3OsClose(pPager->stfd);
-          sqlite3_free(pPager->aInStmt);
-          pPager->aInStmt = 0;
+          sqlite3BitvecDestroy(pPager->pInStmt);
+          pPager->pInStmt = 0;
         }
         if( pPager->journalOpen ){
           sqlite3OsClose(pPager->jfd);
           pPager->journalOpen = 0;
-          sqlite3_free(pPager->aInJournal);
-          pPager->aInJournal = 0;
+          sqlite3BitvecDestroy(pPager->pInJournal);
+          pPager->pInJournal = 0;
         }
         pPager->stmtOpen = 0;
         pPager->stmtInUse = 0;
@@ -1334,8 +1332,8 @@ static int pager_end_transaction(Pager *pPager){
         rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
       }
     }
-    sqlite3_free( pPager->aInJournal );
-    pPager->aInJournal = 0;
+    sqlite3BitvecDestroy(pPager->pInJournal);
+    pPager->pInJournal = 0;
     for(pPg=pPager->pAll; pPg; pPg=pPg->pNextAll){
       pPg->inJournal = 0;
       pPg->dirty = 0;
@@ -1349,7 +1347,7 @@ static int pager_end_transaction(Pager *pPager){
     pPager->dirtyCache = 0;
     pPager->nRec = 0;
   }else{
-    assert( pPager->aInJournal==0 );
+    assert( pPager->pInJournal==0 );
     assert( pPager->dirtyCache==0 || pPager->useJournal==0 );
   }
 
@@ -2661,7 +2659,7 @@ int sqlite3PagerClose(Pager *pPager){
   if( pPager->journalOpen ){
     sqlite3OsClose(pPager->jfd);
   }
-  sqlite3_free(pPager->aInJournal);
+  sqlite3BitvecDestroy(pPager->pInJournal);
   if( pPager->stmtOpen ){
     sqlite3OsClose(pPager->stfd);
   }
@@ -3625,17 +3623,8 @@ static int pagerAcquire(
 
     pPg->pgno = pgno;
     assert( !MEMDB || pgno>pPager->stmtSize );
-    if( pPager->aInJournal && (int)pgno<=pPager->origDbSize ){
-#if 0
-      sqlite3CheckMemory(pPager->aInJournal, pgno/8);
-#endif
-      assert( pPager->journalOpen );
-      pPg->inJournal = (pPager->aInJournal[pgno/8] & (1<<(pgno&7)))!=0;
-      pPg->needSync = 0;
-    }else{
-      pPg->inJournal = 0;
-      pPg->needSync = 0;
-    }
+    pPg->inJournal = sqlite3BitvecTest(pPager->pInJournal, pgno);
+    pPg->needSync = 0;
 
     makeClean(pPg);
     pPg->nRef = 1;
@@ -3801,12 +3790,12 @@ static int pager_open_journal(Pager *pPager){
   assert( pPager->state>=PAGER_RESERVED );
   assert( pPager->journalOpen==0 );
   assert( pPager->useJournal );
-  assert( pPager->aInJournal==0 );
+  assert( pPager->pInJournal==0 );
   sqlite3PagerPagecount(pPager);
   pagerLeave(pPager);
-  pPager->aInJournal = sqlite3MallocZero( pPager->dbSize/8 + 1 );
+  pPager->pInJournal = sqlite3BitvecCreate(pPager->dbSize);
   pagerEnter(pPager);
-  if( pPager->aInJournal==0 ){
+  if( pPager->pInJournal==0 ){
     rc = SQLITE_NOMEM;
     goto failed_to_open_journal;
   }
@@ -3858,8 +3847,8 @@ static int pager_open_journal(Pager *pPager){
   return rc;
 
 failed_to_open_journal:
-  sqlite3_free(pPager->aInJournal);
-  pPager->aInJournal = 0;
+  sqlite3BitvecDestroy(pPager->pInJournal);
+  pPager->pInJournal = 0;
   return rc;
 }
 
@@ -3897,7 +3886,7 @@ int sqlite3PagerBegin(DbPage *pPg, int exFlag){
   assert( pPg->nRef>0 );
   assert( pPager->state!=PAGER_UNLOCK );
   if( pPager->state==PAGER_SHARED ){
-    assert( pPager->aInJournal==0 );
+    assert( pPager->pInJournal==0 );
     if( MEMDB ){
       pPager->state = PAGER_EXCLUSIVE;
       pPager->origDbSize = pPager->dbSize;
@@ -3927,12 +3916,12 @@ int sqlite3PagerBegin(DbPage *pPg, int exFlag){
     */
     assert( pPager->nRec==0 );
     assert( pPager->origDbSize==0 );
-    assert( pPager->aInJournal==0 );
+    assert( pPager->pInJournal==0 );
     sqlite3PagerPagecount(pPager);
     pagerLeave(pPager);
-    pPager->aInJournal = sqlite3MallocZero( pPager->dbSize/8 + 1 );
+    pPager->pInJournal = sqlite3BitvecCreate( pPager->dbSize );
     pagerEnter(pPager);
-    if( !pPager->aInJournal ){
+    if( !pPager->pInJournal ){
       rc = SQLITE_NOMEM;
     }else{
       pPager->origDbSize = pPager->dbSize;
@@ -4108,11 +4097,11 @@ static int pager_write(PgHdr *pPg){
           }
 
           pPager->nRec++;
-          assert( pPager->aInJournal!=0 );
-          pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
+          assert( pPager->pInJournal!=0 );
+          sqlite3BitvecSet(pPager->pInJournal, pPg->pgno);
           pPg->needSync = !pPager->noSync;
           if( pPager->stmtInUse ){
-            pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
+            sqlite3BitvecSet(pPager->pInStmt, pPg->pgno);
           }
         }
       }else{
@@ -4157,8 +4146,8 @@ static int pager_write(PgHdr *pPg){
           return rc;
         }
         pPager->stmtNRec++;
-        assert( pPager->aInStmt!=0 );
-        pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
+        assert( pPager->pInStmt!=0 );
+        sqlite3BitvecSet(pPager->pInStmt, pPg->pgno);
       }
     }
   }
@@ -4227,9 +4216,7 @@ int sqlite3PagerWrite(DbPage *pDbPage){
     for(ii=0; ii<nPage && rc==SQLITE_OK; ii++){
       Pgno pg = pg1+ii;
       PgHdr *pPage;
-      if( !pPager->aInJournal || pg==pPg->pgno || 
-          pg>pPager->origDbSize || !(pPager->aInJournal[pg/8]&(1<<(pg&7)))
-      ) {
+      if( pg==pPg->pgno || !sqlite3BitvecTest(pPager->pInJournal, pg) ){
         if( pg!=PAGER_MJ_PGNO(pPager) ){
           rc = sqlite3PagerGet(pPager, pg, &pPage);
           if( rc==SQLITE_OK ){
@@ -4403,13 +4390,13 @@ void sqlite3PagerDontRollback(DbPage *pPg){
   */
   assert( !pPg->inJournal && (int)pPg->pgno <= pPager->origDbSize );
 
-  assert( pPager->aInJournal!=0 );
-  pPager->aInJournal[pPg->pgno/8] |= 1<<(pPg->pgno&7);
+  assert( pPager->pInJournal!=0 );
+  sqlite3BitvecSet(pPager->pInJournal, pPg->pgno);
   pPg->inJournal = 1;
   pPg->needRead = 0;
   if( pPager->stmtInUse ){
     assert( pPager->stmtSize <= pPager->origDbSize );
-    pPager->aInStmt[pPg->pgno/8] |= 1<<(pPg->pgno&7);
+    sqlite3BitvecSet(pPager->pInStmt, pPg->pgno);
   }
   PAGERTRACE3("DONT_ROLLBACK page %d of %d\n", pPg->pgno, PAGERID(pPager));
   IOTRACE(("GARBAGE %p %d\n", pPager, pPg->pgno))
@@ -4545,7 +4532,7 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
         Pgno i;
         int iSkip = PAGER_MJ_PGNO(pPager);
         for( i=nTrunc+1; i<=pPager->origDbSize; i++ ){
-          if( !(pPager->aInJournal[i/8] & (1<<(i&7))) && i!=iSkip ){
+          if( !sqlite3BitvecTest(pPager->pInJournal, i) && i!=iSkip ){
             rc = sqlite3PagerGet(pPager, i, &pPg);
             if( rc!=SQLITE_OK ) goto sync_exit;
             rc = sqlite3PagerWrite(pPg);
@@ -4803,10 +4790,10 @@ static int pagerStmtBegin(Pager *pPager){
   }
   assert( pPager->journalOpen );
   pagerLeave(pPager);
-  assert( pPager->aInStmt==0 );
-  pPager->aInStmt = sqlite3MallocZero( pPager->dbSize/8 + 1 );
+  assert( pPager->pInStmt==0 );
+  pPager->pInStmt = sqlite3BitvecCreate(pPager->dbSize);
   pagerEnter(pPager);
-  if( pPager->aInStmt==0 ){
+  if( pPager->pInStmt==0 ){
     /* sqlite3OsLock(pPager->fd, SHARED_LOCK); */
     return SQLITE_NOMEM;
   }
@@ -4832,9 +4819,9 @@ static int pagerStmtBegin(Pager *pPager){
   return SQLITE_OK;
  
 stmt_begin_failed:
-  if( pPager->aInStmt ){
-    sqlite3_free(pPager->aInStmt);
-    pPager->aInStmt = 0;
+  if( pPager->pInStmt ){
+    sqlite3BitvecDestroy(pPager->pInStmt);
+    pPager->pInStmt = 0;
   }
   return rc;
 }
@@ -4856,8 +4843,8 @@ int sqlite3PagerStmtCommit(Pager *pPager){
     PAGERTRACE2("STMT-COMMIT %d\n", PAGERID(pPager));
     if( !MEMDB ){
       /* sqlite3OsTruncate(pPager->stfd, 0); */
-      sqlite3_free( pPager->aInStmt );
-      pPager->aInStmt = 0;
+      sqlite3BitvecDestroy(pPager->pInStmt);
+      pPager->pInStmt = 0;
     }else{
       for(pPg=pPager->pStmt; pPg; pPg=pNext){
         PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
@@ -5027,12 +5014,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
   }else{
     pPg->needSync = 0;
   }
-  if( pPager->aInJournal && (int)pgno<=pPager->origDbSize ){
-    pPg->inJournal =  (pPager->aInJournal[pgno/8] & (1<<(pgno&7)))!=0;
-  }else{
-    pPg->inJournal = 0;
-    assert( pPg->needSync==0 || (int)pgno>pPager->origDbSize );
-  }
+  pPg->inJournal = sqlite3BitvecTest(pPager->pInJournal, pgno);
 
   /* Change the page number for pPg and insert it into the new hash-chain. */
   assert( pgno!=0 );
@@ -5053,11 +5035,11 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
     /* If needSyncPgno is non-zero, then the journal file needs to be 
     ** sync()ed before any data is written to database file page needSyncPgno.
     ** Currently, no such page exists in the page-cache and the 
-    ** Pager.aInJournal bit has been set. This needs to be remedied by loading
+    ** Pager.pInJournal bit has been set. This needs to be remedied by loading
     ** the page into the pager-cache and setting the PgHdr.needSync flag.
     **
     ** If the attempt to load the page into the page-cache fails, (due
-    ** to a malloc() or IO failure), clear the bit in the aInJournal[]
+    ** to a malloc() or IO failure), clear the bit in the pInJournal[]
     ** array. Otherwise, if the page is loaded and written again in
     ** this transaction, it may be written to the database file before
     ** it is synced into the journal file. This way, it may end up in
@@ -5071,8 +5053,8 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
     assert( pPager->needSync );
     rc = sqlite3PagerGet(pPager, needSyncPgno, &pPgHdr);
     if( rc!=SQLITE_OK ){
-      if( pPager->aInJournal && (int)needSyncPgno<=pPager->origDbSize ){
-        pPager->aInJournal[needSyncPgno/8] &= ~(1<<(needSyncPgno&7));
+      if( pPager->pInJournal && (int)needSyncPgno<=pPager->origDbSize ){
+        sqlite3BitvecClear(pPager->pInJournal, needSyncPgno);
       }
       pagerLeave(pPager);
       return rc;

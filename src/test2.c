@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.52 2007/09/03 15:19:35 drh Exp $
+** $Id: test2.c,v 1.53 2008/02/18 14:47:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -562,6 +562,104 @@ static int fake_big_file(
 #endif
 
 /*
+**   sqlite3BitvecCreate SIZE
+**   sqlite3BitvecTest POINTER N
+**   sqlite3BitvecSet POINTER N
+**   sqlite3BitvecClear POINTER N
+**   sqlite3BitvecDestroy POINTER
+*/
+static int testBitvecCreate(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  int size;
+  Bitvec *p;
+  char zBuf[100];
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " N\"", 
+           (void*)0);
+  }
+  if( Tcl_GetInt(interp, argv[1], &size) ) return TCL_ERROR;
+  p = sqlite3BitvecCreate(size);
+  sqlite3_snprintf(sizeof(zBuf),zBuf,"%p",p);
+  Tcl_AppendResult(interp, zBuf, 0);
+  return TCL_OK;
+}  
+static int testBitvecTest(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  int N;
+  Bitvec *p;
+  char zBuf[100];
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " PTR N\"", 
+           (void*)0);
+  }
+  p = (Bitvec*)sqlite3TextToPtr(argv[1]);
+  if( Tcl_GetInt(interp, argv[2], &N) ) return TCL_ERROR;
+  sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",sqlite3BitvecTest(p,N));
+  Tcl_AppendResult(interp, zBuf, 0);
+  return TCL_OK;
+}  
+static int testBitvecSet(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  int N;
+  Bitvec *p;
+  char zBuf[100];
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " PTR N\"", 
+           (void*)0);
+  }
+  p = (Bitvec*)sqlite3TextToPtr(argv[1]);
+  if( Tcl_GetInt(interp, argv[2], &N) ) return TCL_ERROR;
+  sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",sqlite3BitvecSet(p,N));
+  Tcl_AppendResult(interp, zBuf, 0);
+  return TCL_OK;
+}  
+static int testBitvecClear(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  int N;
+  Bitvec *p;
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " PTR N\"", 
+           (void*)0);
+  }
+  p = (Bitvec*)sqlite3TextToPtr(argv[1]);
+  if( Tcl_GetInt(interp, argv[2], &N) ) return TCL_ERROR;
+  sqlite3BitvecClear(p,N);
+  return TCL_OK;
+}  
+static int testBitvecDestroy(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  Bitvec *p;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " PTR\"", 
+           (void*)0);
+  }
+  p = (Bitvec*)sqlite3TextToPtr(argv[1]);
+  sqlite3BitvecDestroy(p);
+  return TCL_OK;
+}  
+       
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest2_Init(Tcl_Interp *interp){
@@ -594,6 +692,11 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_DISKIO
     { "fake_big_file",           (Tcl_CmdProc*)fake_big_file       },
 #endif
+    { "sqlite3BitvecCreate",     (Tcl_CmdProc*)testBitvecCreate    },
+    { "sqlite3BitvecTest",       (Tcl_CmdProc*)testBitvecTest      },
+    { "sqlite3BitvecSet",        (Tcl_CmdProc*)testBitvecSet       },
+    { "sqlite3BitvecClear",      (Tcl_CmdProc*)testBitvecClear     },
+    { "sqlite3BitvecDestroy",    (Tcl_CmdProc*)testBitvecDestroy   },
   };
   int i;
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){

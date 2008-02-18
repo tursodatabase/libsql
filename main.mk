@@ -48,7 +48,7 @@ TCCX = $(TCC) $(OPTS) -I. -I$(TOP)/src
 
 # Object files for the SQLite library.
 #
-LIBOBJ+= alter.o analyze.o attach.o auth.o btmutex.o btree.o build.o \
+LIBOBJ+= alter.o analyze.o attach.o auth.o bitvec.o btmutex.o btree.o build.o \
          callback.o complete.o date.o delete.o \
          expr.o fault.o func.o hash.o insert.o journal.o loadext.o \
          main.o malloc.o mem1.o mem2.o mem3.o mem4.o mem5.o \
@@ -85,6 +85,7 @@ SRC = \
   $(TOP)/src/analyze.c \
   $(TOP)/src/attach.c \
   $(TOP)/src/auth.c \
+  $(TOP)/src/bitvec.c \
   $(TOP)/src/btmutex.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/btree.h \

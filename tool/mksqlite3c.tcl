@@ -225,6 +225,7 @@ foreach file {
    os_unix.c
    os_win.c
 
+   bitvec.c
    pager.c
 
    btmutex.c   
