@@ -1,5 +1,5 @@
-C Avoid\sthe\suse\sof\sUTF16\sfunctions\sin\scode\sthat\sis\spart\sof\sa\sbuild\swhen\nUTF16\ssupport\sis\somitted.\s\sTicket\s#2949.\s(CVS\s4799)
-D 2008-02-19T15:44:10
+C Remove\san\sinstance\sof\ssprintf()\sfrom\sthe\sVM\simplementation.\s\sSQLite\sshould\nnot\suse\ssprintf()\sfrom\sthe\sC\slibrary\s-\sit\shas\sits\sown\simplementation.\s(CVS\s4800)
+D 2008-02-19T18:28:14
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -176,7 +176,7 @@ F src/vdbe.c a172f5134d19ae910134e28987bf7906523c9b6f
 F src/vdbe.h 58a7d931ffb704e034b2a725981cfa5bd406fad9
 F src/vdbeInt.h 76c81d057a39813de0fda3cad1498655d53ec69d
 F src/vdbeapi.c cf9fc963efae3cdf5de08e2a9718b487059c7fc5
-F src/vdbeaux.c 628751c5530ecbc77efebf5e343dfc714d5fdce0
+F src/vdbeaux.c bf20bbb4ac744eb716d66786593dc7b269502dca
 F src/vdbeblob.c 63c750acc7b5012479f508c0e9627372a82cb65d
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 2d87d65430519dfb2103498b76bf15e4038b12b0
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 33e26f6adf2ec2ab2e2711a8f86ce4cb11544e61
-R 8becfbde2bb5a1946626308b2a19a0f6
+P 9db346dede59e7185afcd7f21b2f578c9a4f949e
+R b23de96abb4d44d9a8e1d8fb87ef9128
 U drh
-Z 788a690a2850451b60592545b860b910
+Z e446824e18bb60941b9ff0ea385ca6ef

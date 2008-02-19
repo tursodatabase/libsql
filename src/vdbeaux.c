@@ -842,12 +842,13 @@ int sqlite3VdbeList(
     pMem++;
 
     if( p->explain==1 ){
-      if( sqlite3VdbeMemGrow(pMem, 32, 0) ){
+      if( sqlite3VdbeMemGrow(pMem, 4, 0) ){
         p->db->mallocFailed = 1;
         return SQLITE_NOMEM;
       }
       pMem->flags = MEM_Dyn|MEM_Str|MEM_Term;
-      pMem->n = sprintf(pMem->z, "%.2x", pOp->p5);   /* P5 */
+      pMem->n = 2;
+      sqlite3_snprintf(3, pMem->z, "%.2x", pOp->p5);   /* P5 */
       pMem->type = SQLITE_TEXT;
       pMem->enc = SQLITE_UTF8;
       pMem++;
