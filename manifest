@@ -1,5 +1,5 @@
-C Add\sthe\smemory\sfault\ssimulator\sto\smem5.c.\s\sEnable\ssoft\sheap\slimit\son\smem5.c.\nLimit\sthe\ssize\sof\shash\stables\sand\sthe\svdbefifo\swhen\susing\smem5.c.\s(CVS\s4795)
-D 2008-02-18T22:24:58
+C Use\s16-bit\sintegers\sfor\sindexing\swithin\sa\spage\sin\sbtree.\s\sTighter\nbounds\son\sthe\smaximum\snumber\sof\scells\swithin\sone\spage.\s(CVS\s4796)
+D 2008-02-19T14:59:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -84,9 +84,9 @@ F src/attach.c e13d62597e8725075b27186817f7e745122af24e
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c bc5b52a590dc38a48fdded1f098b84af673448c9
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 29ea577155f39be65bdec1c7782301ff2ee9eb3f
+F src/btree.c 134a152a27e049ba6093333aa22e5f6d5013d7ae
 F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
-F src/btreeInt.h 1c5a9da165718ef7de81e35ce9ab5d9ba9283f76
+F src/btreeInt.h 97a68823481e769874f9a61ef43719c856c71860
 F src/build.c 7d93ee565b5676746d014acdc638adee87cfd27e
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7c57bdbcdb84d95419ec7029d2e13c593854a8d8
-R 0bada69c2b0e42668cf12f285946c6e2
+P 63da5d97542e4f54c33329833477c8d96ce05dd0
+R c8ab8ac21acd2b72e6ae16ee8ae7de7c
 U drh
-Z af6bec9b1fbe082648fe2162d8c6bd6a
+Z a0e228bb49973ef017165e1ce93bd308

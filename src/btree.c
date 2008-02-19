@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.438 2008/01/31 14:54:44 drh Exp $
+** $Id: btree.c,v 1.439 2008/02/19 14:59:35 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -622,13 +622,13 @@ void sqlite3BtreeParseCell(
 ** the space used by the cell pointer.
 */
 #ifndef NDEBUG
-static int cellSize(MemPage *pPage, int iCell){
+static u16 cellSize(MemPage *pPage, int iCell){
   CellInfo info;
   sqlite3BtreeParseCell(pPage, iCell, &info);
   return info.nSize;
 }
 #endif
-static int cellSizePtr(MemPage *pPage, u8 *pCell){
+static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
   CellInfo info;
   sqlite3BtreeParseCellPtr(pPage, pCell, &info);
   return info.nSize;
@@ -4593,7 +4593,7 @@ static void assemblePage(
   MemPage *pPage,   /* The page to be assemblied */
   int nCell,        /* The number of cells to add to this page */
   u8 **apCell,      /* Pointers to cell bodies */
-  int *aSize        /* Sizes of the cells */
+  u16 *aSize        /* Sizes of the cells */
 ){
   int i;            /* Loop counter */
   int totalSize;    /* Total size of all cells */
@@ -4671,7 +4671,7 @@ static int balance_quick(MemPage *pPage, MemPage *pParent){
   MemPage *pNew;
   Pgno pgnoNew;
   u8 *pCell;
-  int szCell;
+  u16 szCell;
   CellInfo info;
   BtShared *pBt = pPage->pBt;
   int parentIdx = pParent->nCell;   /* pParent new divider cell index */
@@ -4797,7 +4797,7 @@ static int balance_nonroot(MemPage *pPage){
   int cntNew[NB+2];            /* Index in aCell[] of cell after i-th page */
   int szNew[NB+2];             /* Combined size of cells place on i-th page */
   u8 **apCell = 0;             /* All cells begin balanced */
-  int *szCell;                 /* Local size of all cells in apCell[] */
+  u16 *szCell;                 /* Local size of all cells in apCell[] */
   u8 *aCopy[NB];               /* Space for holding data of apCopy[] */
   u8 *aSpace;                  /* Space to hold copies of dividers cells */
 #ifndef SQLITE_OMIT_AUTOVACUUM
@@ -4910,25 +4910,25 @@ static int balance_nonroot(MemPage *pPage){
     nMaxCells += 1+apOld[i]->nCell+apOld[i]->nOverflow;
   }
 
-  /* Make nMaxCells a multiple of 2 in order to preserve 8-byte
+  /* Make nMaxCells a multiple of 4 in order to preserve 8-byte
   ** alignment */
-  nMaxCells = (nMaxCells + 1)&~1;
+  nMaxCells = (nMaxCells + 3)&~3;
 
   /*
   ** Allocate space for memory structures
   */
   apCell = sqlite3_malloc( 
-       nMaxCells*sizeof(u8*)                           /* apCell */
-     + nMaxCells*sizeof(int)                           /* szCell */
-     + ROUND8(sizeof(MemPage))*NB                      /* aCopy */
-     + pBt->pageSize*(5+NB)                            /* aSpace */
-     + (ISAUTOVACUUM ? nMaxCells : 0)                  /* aFrom */
+       nMaxCells*sizeof(u8*)                       /* apCell */
+     + nMaxCells*sizeof(u16)                       /* szCell */
+     + (ROUND8(sizeof(MemPage))+pBt->pageSize)*NB  /* aCopy */
+     + pBt->pageSize*5                             /* aSpace */
+     + (ISAUTOVACUUM ? nMaxCells : 0)              /* aFrom */
   );
   if( apCell==0 ){
     rc = SQLITE_NOMEM;
     goto balance_cleanup;
   }
-  szCell = (int*)&apCell[nMaxCells];
+  szCell = (u16*)&apCell[nMaxCells];
   aCopy[0] = (u8*)&szCell[nMaxCells];
   assert( ((aCopy[0] - (u8*)apCell) & 7)==0 ); /* 8-byte alignment required */
   for(i=1; i<NB; i++){
@@ -4997,7 +4997,7 @@ static int balance_nonroot(MemPage *pPage){
       nCell++;
     }
     if( i<nOld-1 ){
-      int sz = cellSizePtr(pParent, apDiv[i]);
+      u16 sz = cellSizePtr(pParent, apDiv[i]);
       if( leafData ){
         /* With the LEAFDATA flag, pParent cells hold only INTKEYs that
         ** are duplicates of keys on the child pages.  We need to remove
@@ -5351,16 +5351,16 @@ static int balance_shallower(MemPage *pPage){
   BtShared *pBt;                  /* The main BTree structure */
   int mxCellPerPage;           /* Maximum number of cells per page */
   u8 **apCell;                 /* All cells from pages being balanced */
-  int *szCell;                 /* Local size of all cells */
+  u16 *szCell;                 /* Local size of all cells */
 
   assert( pPage->pParent==0 );
   assert( pPage->nCell==0 );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   pBt = pPage->pBt;
   mxCellPerPage = MX_CELL(pBt);
-  apCell = sqlite3_malloc( mxCellPerPage*(sizeof(u8*)+sizeof(int)) );
+  apCell = sqlite3_malloc( mxCellPerPage*(sizeof(u8*)+sizeof(u16)) );
   if( apCell==0 ) return SQLITE_NOMEM;
-  szCell = (int*)&apCell[mxCellPerPage];
+  szCell = (u16*)&apCell[mxCellPerPage];
   if( pPage->leaf ){
     /* The table is completely empty */
     TRACE(("BALANCE: empty table %d\n", pPage->pgno));
@@ -5630,7 +5630,7 @@ int sqlite3BtreeInsert(
   assert( szNew==cellSizePtr(pPage, newCell) );
   assert( szNew<=MX_CELL_SIZE(pBt) );
   if( loc==0 && CURSOR_VALID==pCur->eState ){
-    int szOld;
+    u16 szOld;
     assert( pCur->idx>=0 && pCur->idx<pPage->nCell );
     rc = sqlite3PagerWrite(pPage->pDbPage);
     if( rc ){
@@ -5742,7 +5742,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
       rc = sqlite3PagerWrite(leafCur.pPage->pDbPage);
     }
     if( rc==SQLITE_OK ){
-      int szNext;
+      u16 szNext;
       TRACE(("DELETE: table=%d delete internal from %d replace from leaf %d\n",
          pCur->pgnoRoot, pPage->pgno, leafCur.pPage->pgno));
       dropCell(pPage, pCur->idx, cellSizePtr(pPage, pCell));
@@ -6527,7 +6527,7 @@ static int checkTreePage(
     cellStart = hdr + 12 - 4*pPage->leaf;
     for(i=0; i<nCell; i++){
       int pc = get2byte(&data[cellStart+i*2]);
-      int size = cellSizePtr(pPage, &data[pc]);
+      u16 size = cellSizePtr(pPage, &data[pc]);
       int j;
       if( (pc+size-1)>=usableSize || pc<0 ){
         checkAppendMsg(pCheck, 0, 
