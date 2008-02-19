@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.21 2008/02/14 23:26:56 drh Exp $
+** $Id: mem2.c,v 1.22 2008/02/19 15:15:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -382,7 +382,7 @@ void *sqlite3_realloc(void *pPrior, int nByte){
 ** A value of zero turns of backtracing.  The number is always rounded
 ** up to a multiple of 2.
 */
-void sqlite3_memdebug_backtrace(int depth){
+void sqlite3MemdebugBacktrace(int depth){
   if( depth<0 ){ depth = 0; }
   if( depth>20 ){ depth = 20; }
   depth = (depth+1)&0xfe;
@@ -392,7 +392,7 @@ void sqlite3_memdebug_backtrace(int depth){
 /*
 ** Set the title string for subsequent allocations.
 */
-void sqlite3_memdebug_settitle(const char *zTitle){
+void sqlite3MemdebugSettitle(const char *zTitle){
   int n = strlen(zTitle) + 1;
   enterMem();
   if( n>=sizeof(mem.zTitle) ) n = sizeof(mem.zTitle)-1;
@@ -406,7 +406,7 @@ void sqlite3_memdebug_settitle(const char *zTitle){
 ** Open the file indicated and write a log of all unfreed memory 
 ** allocations into that log.
 */
-void sqlite3_memdebug_dump(const char *zFilename){
+void sqlite3MemdebugDump(const char *zFilename){
   FILE *out;
   struct MemBlockHdr *pHdr;
   void **pBt;
@@ -445,7 +445,7 @@ void sqlite3_memdebug_dump(const char *zFilename){
 /*
 ** Return the number of times sqlite3_malloc() has been called.
 */
-int sqlite3_memdebug_malloc_count(){
+int sqlite3MemdebugMallocCount(){
   int i;
   int nTotal = 0;
   for(i=0; i<NCSIZE; i++){

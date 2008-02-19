@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.14 2008/02/18 22:24:58 drh Exp $
+** $Id: test_malloc.c,v 1.15 2008/02/19 15:15:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -312,8 +312,8 @@ static int test_memdebug_backtrace(
   if( Tcl_GetIntFromObj(interp, objv[1], &depth) ) return TCL_ERROR;
 #ifdef SQLITE_MEMDEBUG
   {
-    extern void sqlite3_memdebug_backtrace(int);
-    sqlite3_memdebug_backtrace(depth);
+    extern void sqlite3MemdebugBacktrace(int);
+    sqlite3MemdebugBacktrace(depth);
   }
 #endif
   return TCL_OK;
@@ -337,8 +337,8 @@ static int test_memdebug_dump(
 #if defined(SQLITE_MEMDEBUG) || defined(SQLITE_MEMORY_SIZE) \
      || defined(SQLITE_POW2_MEMORY_SIZE)
   {
-    extern void sqlite3_memdebug_dump(const char*);
-    sqlite3_memdebug_dump(Tcl_GetString(objv[1]));
+    extern void sqlite3MemdebugDump(const char*);
+    sqlite3MemdebugDump(Tcl_GetString(objv[1]));
   }
 #endif
   return TCL_OK;
@@ -362,8 +362,8 @@ static int test_memdebug_malloc_count(
   }
 #if defined(SQLITE_MEMDEBUG)
   {
-    extern int sqlite3_memdebug_malloc_count();
-    nMalloc = sqlite3_memdebug_malloc_count();
+    extern int sqlite3MemdebugMallocCount();
+    nMalloc = sqlite3MemdebugMallocCount();
   }
 #endif
   Tcl_SetObjResult(interp, Tcl_NewIntObj(nMalloc));
@@ -503,8 +503,8 @@ static int test_memdebug_settitle(
   zTitle = Tcl_GetString(objv[1]);
 #ifdef SQLITE_MEMDEBUG
   {
-    extern int sqlite3_memdebug_settitle(const char*);
-    sqlite3_memdebug_settitle(zTitle);
+    extern int sqlite3MemdebugSettitle(const char*);
+    sqlite3MemdebugSettitle(zTitle);
   }
 #endif
   return TCL_OK;

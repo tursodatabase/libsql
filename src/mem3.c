@@ -20,7 +20,7 @@
 ** This version of the memory allocation subsystem is used if
 ** and only if SQLITE_MEMORY_SIZE is defined.
 **
-** $Id: mem3.c,v 1.11 2008/02/14 23:26:56 drh Exp $
+** $Id: mem3.c,v 1.12 2008/02/19 15:15:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -578,7 +578,7 @@ void *sqlite3_realloc(void *pPrior, int nBytes){
 ** Open the file indicated and write a log of all unfreed memory 
 ** allocations into that log.
 */
-void sqlite3_memdebug_dump(const char *zFilename){
+void sqlite3MemdebugDump(const char *zFilename){
 #ifdef SQLITE_DEBUG
   FILE *out;
   int i, j;

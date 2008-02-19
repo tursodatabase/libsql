@@ -1,5 +1,5 @@
-C Use\s16-bit\sintegers\sfor\sindexing\swithin\sa\spage\sin\sbtree.\s\sTighter\nbounds\son\sthe\smaximum\snumber\sof\scells\swithin\sone\spage.\s(CVS\s4796)
-D 2008-02-19T14:59:35
+C Change\snon-exported\smemory\sinterfaces\sto\sfollowing\sthe\snaming\sconventions.\s(CVS\s4797)
+D 2008-02-19T15:15:16
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -107,10 +107,10 @@ F src/main.c b4014b71979a58d6aa79549fdf87175ab7bdf1cc
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c 62a821702d3292809ca78e7c55c3ca04b05a3757
-F src/mem2.c 021eecbb210cfe90a8e7be9f04b01329d2c38851
-F src/mem3.c 979191678eb1aac0af7e5df9ab3897a07410ff4c
+F src/mem2.c a17fd71f39e593f46445282c36077231e70a31eb
+F src/mem3.c 52547678a2ae50c203d54be1a5bf51eb02438a3f
 F src/mem4.c 45c328ec6dcb7e8d319cb383615b5fe547ca5409
-F src/mem5.c 13ddb3073c5ad55251730b692c663acc468d0eff
+F src/mem5.c 11d98b76f77873aab86b543cbd1a8ddc4e680d58
 F src/mutex.c 3259f62c2429967aee6dc112117a6d2f499ef061
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 19ab15764736f13b94b4f70e53f77547cbddd47a
@@ -159,7 +159,7 @@ F src/test_config.c 9223ff4a7b8b97c9d12965b0123db1cbd6757efb
 F src/test_devsym.c fd8884c2269fb7e0db2c52d21ec59d31a33790ba
 F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
-F src/test_malloc.c cd0ac01205056b6690563ff6b68d91fbd6a27d8a
+F src/test_malloc.c 85e702341c752810017c94c40f2a1ac92128abc0
 F src/test_md5.c c107c96637123239c3518b5fbe97a79130f4d32e
 F src/test_onefile.c 54282b6796d55d7acc489be83b89b8715e7d3756
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 63da5d97542e4f54c33329833477c8d96ce05dd0
-R c8ab8ac21acd2b72e6ae16ee8ae7de7c
+P 8fdbe4abab4e9c292111579b03471f68c1e855fb
+R ffd2f20a735264530a3840b731c9c29f
 U drh
-Z a0e228bb49973ef017165e1ce93bd308
+Z c45d168ad6e6cadeaabc43c10b516ff1
