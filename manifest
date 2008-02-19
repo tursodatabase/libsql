@@ -1,5 +1,5 @@
-C Make\ssure\sSQLITE_OPEN_DELETEONCLOSE\sis\signored\sby\ssqlite3_open_v2().\s(CVS\s4798)
-D 2008-02-19T15:20:44
+C Avoid\sthe\suse\sof\sUTF16\sfunctions\sin\scode\sthat\sis\spart\sof\sa\sbuild\swhen\nUTF16\ssupport\sis\somitted.\s\sTicket\s#2949.\s(CVS\s4799)
+D 2008-02-19T15:44:10
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -179,7 +179,7 @@ F src/vdbeapi.c cf9fc963efae3cdf5de08e2a9718b487059c7fc5
 F src/vdbeaux.c 628751c5530ecbc77efebf5e343dfc714d5fdce0
 F src/vdbeblob.c 63c750acc7b5012479f508c0e9627372a82cb65d
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
-F src/vdbemem.c 73a4dd9e4ac185d7582486585cdc501f6b832dcb
+F src/vdbemem.c 2d87d65430519dfb2103498b76bf15e4038b12b0
 F src/vtab.c dc8947c9c79780b19ee6d6bae4ea624a2a303353
 F src/where.c 7ff0ca021cc77086e367ed3b6308fbc6bc9e1a31
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 94774b41429c8bfa3582e30c09f414b9e5669575
-R 293540c23c15806e7d5dede170b832e5
+P 33e26f6adf2ec2ab2e2711a8f86ce4cb11544e61
+R 8becfbde2bb5a1946626308b2a19a0f6
 U drh
-Z 96dc1027991fc57641f419200eb92fc3
+Z 788a690a2850451b60592545b860b910

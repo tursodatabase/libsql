@@ -627,7 +627,11 @@ int sqlite3VdbeMemSetStr(
   flags = (enc==0?MEM_Blob:MEM_Str);
   if( nByte<0 ){
     assert( enc!=0 );
-    nByte = ((enc==SQLITE_UTF8)?strlen(z):sqlite3Utf16ByteLen(z, -1));
+    if( enc==SQLITE_UTF8 ){
+      for(nByte=0; z[nByte]; nByte++){}
+    }else{
+      for(nByte=0; z[nByte] | z[nByte+1]; nByte+=2){}
+    }
     flags |= MEM_Term;
   }
 
