@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.417 2008/01/31 15:31:02 danielk1977 Exp $
+** $Id: main.c,v 1.418 2008/02/19 15:20:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -943,6 +943,17 @@ static int openDatabase(
   sqlite3 *db;
   int rc;
   CollSeq *pColl;
+
+  /* Remove harmful bits from the flags parameter */
+  flags &=  ~( SQLITE_OPEN_DELETEONCLOSE |
+               SQLITE_OPEN_MAIN_DB |
+               SQLITE_OPEN_TEMP_DB | 
+               SQLITE_OPEN_TRANSIENT_DB | 
+               SQLITE_OPEN_MAIN_JOURNAL | 
+               SQLITE_OPEN_TEMP_JOURNAL | 
+               SQLITE_OPEN_SUBJOURNAL | 
+               SQLITE_OPEN_MASTER_JOURNAL
+             );
 
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
