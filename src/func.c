@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.183 2008/01/21 16:22:46 drh Exp $
+** $Id: func.c,v 1.184 2008/02/19 18:29:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1146,6 +1146,7 @@ static void test_auxdata(
   for(i=0; i<nArg; i++){
     char const *z = (char*)sqlite3_value_text(argv[i]);
     if( z ){
+      int n;
       char *zAux = sqlite3_get_auxdata(pCtx, i);
       if( zAux ){
         zRet[i*2] = '1';
@@ -1153,10 +1154,10 @@ static void test_auxdata(
       }else {
         zRet[i*2] = '0';
       }
-
-      zAux = contextMalloc(pCtx, strlen(z)+1);
+      n = strlen(z) + 1;
+      zAux = contextMalloc(pCtx, n);
       if( zAux ){
-        strcpy(zAux, z);
+        memcpy(zAux, z, n);
         sqlite3_set_auxdata(pCtx, i, zAux, free_test_auxdata);
       }
       zRet[i*2+1] = ' ';

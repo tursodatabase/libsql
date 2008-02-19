@@ -1,5 +1,5 @@
-C Remove\san\sinstance\sof\ssprintf()\sfrom\sthe\sVM\simplementation.\s\sSQLite\sshould\nnot\suse\ssprintf()\sfrom\sthe\sC\slibrary\s-\sit\shas\sits\sown\simplementation.\s(CVS\s4800)
-D 2008-02-19T18:28:14
+C Remove\sinstances\sof\sstrcpy()\sfrom\stest\scode.\sUse\smemcpy()\sor\nsqlite3_snprintf()\sinstead.\s(CVS\s4801)
+D 2008-02-19T18:29:07
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/delete.c fa13c296262e89c32d28949f15be275e52d7f524
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c e6fb42c6e55fd9526174b1cb8296b69a60a6688a
 F src/fault.c 049b88b8ba0a1db3240aeaf9695cd08b9a3ba9e1
-F src/func.c 8e3d0c59961dc403716767308ee764504179054b
+F src/func.c 194cd8a9549be77d7b2a93eeaeb8ede893277293
 F src/hash.c 53655c312280211444bfe23af6490a460aec2980
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
 F src/insert.c b313f5ecadf82dda15b1aa6780b0310eceb9e776
@@ -143,7 +143,7 @@ F src/sqliteInt.h 073801285d2650b22033a20c2389241c5e0361d6
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 46ccf9b7892a86f57420ae7bac69ecd5e72d26b5
 F src/tclsqlite.c d95e0e74c7167b2807f9f4f73bf45f7c58096297
-F src/test1.c 785e737ff4dac36c384633501402a4437eb027a6
+F src/test1.c c7763d9bf747c94d04254bd6cc18ecbb2c565ad2
 F src/test2.c 355d5693ca3ee705548fa7f795592a37b2372b70
 F src/test3.c 4557ee13c6e5921eb28979ff77cdbd913bfde6be
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9db346dede59e7185afcd7f21b2f578c9a4f949e
-R b23de96abb4d44d9a8e1d8fb87ef9128
+P 68f5ddddf0d1b5c8ed97dda0a32362a55637b5f2
+R 95dcd7a2db6ff273a951495091bfa925
 U drh
-Z e446824e18bb60941b9ff0ea385ca6ef
+Z 94dde115ea93b6ad849adc1b17145e45
