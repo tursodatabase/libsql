@@ -606,9 +606,17 @@ static int winClose(sqlite3_file *id){
     rc = CloseHandle(pFile->h);
   }while( rc==0 && cnt++ < MX_CLOSE_ATTEMPT && (Sleep(100), 1) );
 #if OS_WINCE
+#define WINCE_DELETION_ATTEMPTS 3
   winceDestroyLock(pFile);
   if( pFile->zDeleteOnClose ){
-    DeleteFileW(pFile->zDeleteOnClose);
+    int cnt = 0;
+    while(
+           DeleteFileW(pFile->zDeleteOnClose)==0
+        && GetFileAttributesW(pFile->zDeleteOnClose)!=0xffffffff 
+        && cnt++ < WINCE_DELETION_ATTEMPTS
+    ){
+       Sleep(100);  /* Wait a little before trying again */
+    }
     free(pFile->zDeleteOnClose);
   }
 #endif
