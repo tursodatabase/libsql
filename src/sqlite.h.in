@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.286 2008/02/21 02:09:45 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.287 2008/02/21 20:17:07 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -94,7 +94,7 @@ extern "C" {
 **          Z are the major version, minor version, and release number.
 */
 #define SQLITE_VERSION         "--VERS--"
-#define SQLITE_VERSION_NUMBER --VERSION-NUMBER--
+#define SQLITE_VERSION_NUMBER  --VERSION-NUMBER--
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers {F10020}
@@ -334,7 +334,8 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 **          *errmsg if errmsg is NULL or if there are no errors.
 **
 ** {F12137} The [sqlite3_exec()] function sets the error code and message
-**          accessible via [sqlite3_errcode()] and [sqlite3_errmsg()].
+**          accessible via [sqlite3_errcode()], [sqlite3_errmsg()], and
+**          [sqlite3_errmsg16()].
 **
 ** LIMITATIONS:
 **
@@ -686,7 +687,7 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** structure used by this VFS.  mxPathname is the maximum length of
 ** a pathname in this VFS.
 **
-** Registered vfs modules are kept on a linked list formed by
+** Registered sqlite3_vfs objects are kept on a linked list formed by
 ** the pNext pointer.  The [sqlite3_vfs_register()]
 ** and [sqlite3_vfs_unregister()] interfaces manage this list
 ** in a thread-safe way.  The [sqlite3_vfs_find()] interface
@@ -2077,24 +2078,16 @@ int sqlite3_open_v2(
 ** {F12801} The [sqlite3_errcode(D)] interface returns the numeric
 **          [SQLITE_OK | result code] or
 **          [SQLITE_IOERR_READ | extended result code]
-**          for the most recent failed interface call associated
-**          with [sqlite3] handle D.
-**
-** {U12802} If a prior API call failed but the most recent API call
-**          succeeded, the return value from [sqlite3_errcode()],
-**          [sqlite3_errmsg()], and [sqlite3_errmsg16()] are undefined.
+**          for the most recently failed interface call associated
+**          with [database connection] D.
 **
 ** {F12803} The [sqlite3_errmsg(D)] and [sqlite3_errmsg16(D)]
 **          interfaces return English-language text that describes
 **          the error in the mostly recently failed interface call,
 **          encoded as either UTF8 or UTF16 respectively.
 **
-** {U12804} The strings returned by [sqlite3_errmsg()] and [sqlite3_errmsg16()]
-**          are only valid until the next SQLite interface call.
-**
-** {F12807} Calls to [sqlite3_errcode()], [sqlite3_errmsg()], and
-**          [sqlite3_errmsg16()] themselves do not affect the
-**          results of future invocations of these routines.
+** {F12807} The strings returned by [sqlite3_errmsg()] and [sqlite3_errmsg16()]
+**          are valid until the next SQLite interface call.
 **
 ** {F12808} Calls to API routines that do not return an error code
 **          (example: [sqlite3_data_count()]) do not
@@ -4660,6 +4653,9 @@ typedef struct sqlite3_vtab_cursor sqlite3_vtab_cursor;
 typedef struct sqlite3_module sqlite3_module;
 
 /*
+** CAPI3REF: Virtual Table Object {F18000}
+** KEYWORDS: sqlite3_module
+**
 ** A module is a class of virtual tables.  Each module is defined
 ** by an instance of the following structure.  This structure consists
 ** mostly of methods for the module.
@@ -4696,6 +4692,9 @@ struct sqlite3_module {
 };
 
 /*
+** CAPI3REF: Virtual Table Indexing Information {F18100}
+** KEYWORDS: sqlite3_index_info
+**
 ** The sqlite3_index_info structure and its substructures is used to
 ** pass information into and receive the reply from the xBestIndex
 ** method of an sqlite3_module.  The fields under **Inputs** are the
@@ -4776,6 +4775,8 @@ struct sqlite3_index_info {
 #define SQLITE_INDEX_CONSTRAINT_MATCH 64
 
 /*
+** CAPI3REF: Register A Virtual Table Implementation {F18200}
+**
 ** This routine is used to register a new module name with an SQLite
 ** connection.  Module names must be registered before creating new
 ** virtual tables on the module, or before using preexisting virtual
@@ -4789,6 +4790,8 @@ int sqlite3_create_module(
 );
 
 /*
+** CAPI3REF: Register A Virtual Table Implementation {F18210}
+**
 ** This routine is identical to the sqlite3_create_module() method above,
 ** except that it allows a destructor function to be specified. It is
 ** even more experimental than the rest of the virtual tables API.
@@ -4802,6 +4805,9 @@ int sqlite3_create_module_v2(
 );
 
 /*
+** CAPI3REF: Virtual Table Instance Object {F18010}
+** KEYWORDS: sqlite3_vtab
+**
 ** Every module implementation uses a subclass of the following structure
 ** to describe a particular instance of the module.  Each subclass will
 ** be tailored to the specific needs of the module implementation.   The
@@ -4825,7 +4831,11 @@ struct sqlite3_vtab {
   /* Virtual table implementations will typically add additional fields */
 };
 
-/* Every module implementation uses a subclass of the following structure
+/*
+** CAPI3REF: Virtual Table Cursor Object  {F18020}
+** KEYWORDS: sqlite3_vtab_cursor
+**
+** Every module implementation uses a subclass of the following structure
 ** to describe cursors that point into the virtual table and are used
 ** to loop through the virtual table.  Cursors are created using the
 ** xOpen method of the module.  Each module implementation will define
@@ -4840,6 +4850,8 @@ struct sqlite3_vtab_cursor {
 };
 
 /*
+** CAPI3REF: Declare The Schema Of A Virtual Table {F18280}
+**
 ** The xCreate and xConnect methods of a module use the following API
 ** to declare the format (the names and datatypes of the columns) of
 ** the virtual tables they implement.
@@ -4847,6 +4859,8 @@ struct sqlite3_vtab_cursor {
 int sqlite3_declare_vtab(sqlite3*, const char *zCreateTable);
 
 /*
+** CAPI3REF: Overload A Function For A Virtual Table {F18300}
+**
 ** Virtual tables can provide alternative implementations of functions
 ** using the xFindFunction method.  But global versions of those functions
 ** must exist in order to be overloaded.
@@ -4879,8 +4893,9 @@ int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
 /*
 ** CAPI3REF: A Handle To An Open BLOB {F17800}
 **
-** An instance of the following opaque structure is used to 
-** represent an blob-handle.  A blob-handle is created by
+** An instance of this object represents an open BLOB on which
+** incremental I/O can be preformed.
+** Objects of this type are created by
 ** [sqlite3_blob_open()] and destroyed by [sqlite3_blob_close()].
 ** The [sqlite3_blob_read()] and [sqlite3_blob_write()] interfaces
 ** can be used to read or write small subsections of the blob.
@@ -4892,7 +4907,7 @@ typedef struct sqlite3_blob sqlite3_blob;
 /*
 ** CAPI3REF: Open A BLOB For Incremental I/O {F17810}
 **
-** {F17811} This interfaces opens a handle to the blob located
+** This interfaces opens a handle to the blob located
 ** in row iRow,, column zColumn, table zTable in database zDb;
 ** in other words,  the same blob that would be selected by:
 **
@@ -4900,18 +4915,38 @@ typedef struct sqlite3_blob sqlite3_blob;
 **     SELECT zColumn FROM zDb.zTable WHERE rowid = iRow;
 ** </pre> {END}
 **
-** {F17812} If the flags parameter is non-zero, the blob is opened for 
+** If the flags parameter is non-zero, the blob is opened for 
 ** read and write access. If it is zero, the blob is opened for read 
-** access. {END}
+** access.
 **
-** {F17813} On success, [SQLITE_OK] is returned and the new 
+** On success, [SQLITE_OK] is returned and the new 
 ** [sqlite3_blob | blob handle] is written to *ppBlob. 
-** {F17814} Otherwise an error code is returned and 
+** Otherwise an error code is returned and 
 ** any value written to *ppBlob should not be used by the caller.
-** {F17815} This function sets the database-handle error code and message
+** This function sets the database-handle error code and message
 ** accessible via [sqlite3_errcode()] and [sqlite3_errmsg()].
-** <todo>We should go through and mark all interfaces that behave this
-** way with a similar statement</todo>
+** 
+** INVARIANTS:
+**
+** {F17813} A successful invocation of the [sqlite3_blob_open(D,B,T,C,R,F,P)]
+**          interface opens an [sqlite3_blob] object P on the blob
+**          in column C of table T in database B on [database connection] D.
+**
+** {F17814} A successful invocation of [sqlite3_blob_open(D,...)] starts
+**          a new transaction on [database connection] D if that connection
+**          is not already in a transaction.
+**
+** {F17816} The [sqlite3_blob_open(D,B,T,C,R,F,P)] interface opens the blob
+**          for read and write access if and only if the F parameter
+**          is non-zero.
+**
+** {F17819} The [sqlite3_blob_open()] interface returns [SQLITE_OK] on 
+**          success and an appropriate [error code] on failure.
+**
+** {F17821} If an error occurs during evaluation of [sqlite3_blob_open(D,...)]
+**          then subsequent calls to [sqlite3_errcode(D)],
+**          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] will return
+**          information approprate for that error.
 */
 int sqlite3_blob_open(
   sqlite3*,
@@ -4928,26 +4963,50 @@ int sqlite3_blob_open(
 **
 ** Close an open [sqlite3_blob | blob handle].
 **
-** {F17831} Closing a BLOB shall cause the current transaction to commit
+** Closing a BLOB shall cause the current transaction to commit
 ** if there are no other BLOBs, no pending prepared statements, and the
 ** database connection is in autocommit mode.
-** {F17832} If any writes were made to the BLOB, they might be held in cache
+** If any writes were made to the BLOB, they might be held in cache
 ** until the close operation if they will fit. {END}
 ** Closing the BLOB often forces the changes
 ** out to disk and so if any I/O errors occur, they will likely occur
 ** at the time when the BLOB is closed.  {F17833} Any errors that occur during
 ** closing are reported as a non-zero return value.
 **
-** {F17839} The BLOB is closed unconditionally.  Even if this routine returns
+** The BLOB is closed unconditionally.  Even if this routine returns
 ** an error code, the BLOB is still closed.
+**
+** INVARIANTS:
+**
+** {F17833} The [sqlite3_blob_close(P)] interface closes an
+**          [sqlite3_blob] object P previously opened using
+**          [sqlite3_blob_open()].
+**
+** {F17836} Closing an [sqlite3_blob] object using
+**          [sqlite3_blob_close()] shall cause the current transaction to
+**          commit if there are no other open [sqlite3_blob] objects
+**          or [prepared statements] on the same [database connection] and
+**          the [database connection] is in
+**          [sqlite3_get_autocommit | autocommit mode].
+**
+** {F17839} The [sqlite3_blob_close(P)] interfaces closes the 
+**          [sqlite3_blob] object P unconditionally, even if
+**          [sqlite3_blob_close(P)] returns something other than [SQLITE_OK].
+**          
 */
 int sqlite3_blob_close(sqlite3_blob *);
 
 /*
-** CAPI3REF:  Return The Size Of An Open BLOB {F17805}
+** CAPI3REF:  Return The Size Of An Open BLOB {F17840}
 **
-** {F16806} Return the size in bytes of the blob accessible via the open 
-** [sqlite3_blob | blob-handle] passed as an argument.
+** Return the size in bytes of the blob accessible via the open 
+** [sqlite3_blob] object in its only argument.
+**
+** INVARIANTS:
+**
+** {F17843} The [sqlite3_blob_bytes(P)] interface returns the size
+**          in bytes of the BLOB that the [sqlite3_blob] object P
+**          refers to.
 */
 int sqlite3_blob_bytes(sqlite3_blob *);
 
@@ -4956,38 +5015,96 @@ int sqlite3_blob_bytes(sqlite3_blob *);
 **
 ** This function is used to read data from an open 
 ** [sqlite3_blob | blob-handle] into a caller supplied buffer.
-** {F17851} n bytes of data are copied into buffer
-** z from the open blob, starting at offset iOffset.
+** N bytes of data are copied into buffer
+** Z from the open blob, starting at offset iOffset.
 **
-** {F17852} If offset iOffset is less than n bytes from the end of the blob, 
-** [SQLITE_ERROR] is returned and no data is read.  {F17853} If n is
+** If offset iOffset is less than N bytes from the end of the blob, 
+** [SQLITE_ERROR] is returned and no data is read.  If N or iOffset is
 ** less than zero [SQLITE_ERROR] is returned and no data is read.
 **
-** {F17854} On success, SQLITE_OK is returned. Otherwise, an 
+** On success, SQLITE_OK is returned. Otherwise, an 
 ** [error code] or an [extended error code] is returned.
+**
+** INVARIANTS:
+**
+** {F17853} The [sqlite3_blob_read(P,Z,N,X)] interface reads N bytes
+**          beginning at offset X from
+**          the blob that [sqlite3_blob] object P refers to
+**          and writes those N bytes into buffer Z.
+**
+** {F17856} In [sqlite3_blob_read(P,Z,N,X)] if the size of the blob
+**          is less than N+X bytes, then the function returns [SQLITE_ERROR]
+**          and nothing is read from the blob.
+**
+** {F17859} In [sqlite3_blob_read(P,Z,N,X)] if X or N is less than zero
+**          then the function returns [SQLITE_ERROR]
+**          and nothing is read from the blob.
+**
+** {F17862} The [sqlite3_blob_read(P,Z,N,X)] interface returns [SQLITE_OK]
+**          if N bytes where successfully read into buffer Z.
+**
+** {F17865} If the requested read could not be completed,
+**          the [sqlite3_blob_read(P,Z,N,X)] interface returns an
+**          appropriate [error code] or [extended error code].
+**
+** {F17868} If an error occurs during evaluation of [sqlite3_blob_read(D,...)]
+**          then subsequent calls to [sqlite3_errcode(D)],
+**          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] will return
+**          information approprate for that error.
 */
-int sqlite3_blob_read(sqlite3_blob *, void *z, int n, int iOffset);
+int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 
 /*
 ** CAPI3REF:  Write Data Into A BLOB Incrementally {F17870}
 **
 ** This function is used to write data into an open 
 ** [sqlite3_blob | blob-handle] from a user supplied buffer.
-** {F17871} n bytes of data are copied from the buffer
+** n bytes of data are copied from the buffer
 ** pointed to by z into the open blob, starting at offset iOffset.
 **
-** {F17872} If the [sqlite3_blob | blob-handle] passed as the first argument
+** If the [sqlite3_blob | blob-handle] passed as the first argument
 ** was not opened for writing (the flags parameter to [sqlite3_blob_open()]
 *** was zero), this function returns [SQLITE_READONLY].
 **
-** {F17873} This function may only modify the contents of the blob; it is
+** This function may only modify the contents of the blob; it is
 ** not possible to increase the size of a blob using this API.
-** {F17874} If offset iOffset is less than n bytes from the end of the blob, 
-** [SQLITE_ERROR] is returned and no data is written.  {F17875} If n is
+** If offset iOffset is less than n bytes from the end of the blob, 
+** [SQLITE_ERROR] is returned and no data is written.  If n is
 ** less than zero [SQLITE_ERROR] is returned and no data is written.
 **
-** {F17876} On success, SQLITE_OK is returned. Otherwise, an 
+** On success, SQLITE_OK is returned. Otherwise, an 
 ** [error code] or an [extended error code] is returned.
+**
+** INVARIANTS:
+**
+** {F17873} The [sqlite3_blob_write(P,Z,N,X)] interface writes N bytes
+**          from buffer Z into
+**          the blob that [sqlite3_blob] object P refers to
+**          beginning at an offset of X into the blob.
+**
+** {F17875} The [sqlite3_blob_write(P,Z,N,X)] interface returns
+**          [SQLITE_READONLY] if the [sqlite3_blob] object P was
+**          [sqlite3_blob_open | opened] for reading only.
+**
+** {F17876} In [sqlite3_blob_write(P,Z,N,X)] if the size of the blob
+**          is less than N+X bytes, then the function returns [SQLITE_ERROR]
+**          and nothing is written into the blob.
+**
+** {F17879} In [sqlite3_blob_write(P,Z,N,X)] if X or N is less than zero
+**          then the function returns [SQLITE_ERROR]
+**          and nothing is written into the blob.
+**
+** {F17882} The [sqlite3_blob_write(P,Z,N,X)] interface returns [SQLITE_OK]
+**          if N bytes where successfully written into blob.
+**
+** {F17885} If the requested write could not be completed,
+**          the [sqlite3_blob_write(P,Z,N,X)] interface returns an
+**          appropriate [error code] or [extended error code].
+**
+** {F17888} If an error occurs during evaluation of [sqlite3_blob_write(D,...)]
+**          then subsequent calls to [sqlite3_errcode(D)],
+**          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] will return
+**          information approprate for that error.
 */
 int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
 
@@ -4996,30 +5113,57 @@ int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
 **
 ** A virtual filesystem (VFS) is an [sqlite3_vfs] object
 ** that SQLite uses to interact
-** with the underlying operating system.  Most builds come with a
+** with the underlying operating system.  Most SQLite builds come with a
 ** single default VFS that is appropriate for the host computer.
 ** New VFSes can be registered and existing VFSes can be unregistered.
 ** The following interfaces are provided.
 **
-** {F11201} The sqlite3_vfs_find() interface returns a pointer to 
-** a VFS given its name.  {F11202} Names are case sensitive.
-** {F11203} Names are zero-terminated UTF-8 strings.
-** {F11204} If there is no match, a NULL
-** pointer is returned. {F11205} If zVfsName is NULL then the default 
-** VFS is returned. {END}
+** The sqlite3_vfs_find() interface returns a pointer to 
+** a VFS given its name.  Names are case sensitive.
+** Names are zero-terminated UTF-8 strings.
+** If there is no match, a NULL
+** pointer is returned.  If zVfsName is NULL then the default 
+** VFS is returned. 
 **
-** {F11210} New VFSes are registered with sqlite3_vfs_register().
-** {F11211} Each new VFS becomes the default VFS if the makeDflt flag is set.
-** {F11212} The same VFS can be registered multiple times without injury.
-** {F11213} To make an existing VFS into the default VFS, register it again
-** with the makeDflt flag set. {U11214} If two different VFSes with the
-** same name are registered, the behavior is undefined.  {U11215} If a
+** New VFSes are registered with sqlite3_vfs_register().
+** Each new VFS becomes the default VFS if the makeDflt flag is set.
+** The same VFS can be registered multiple times without injury.
+** To make an existing VFS into the default VFS, register it again
+** with the makeDflt flag set.  If two different VFSes with the
+** same name are registered, the behavior is undefined.  If a
 ** VFS is registered with a name that is NULL or an empty string,
 ** then the behavior is undefined.
 ** 
-** {F11220} Unregister a VFS with the sqlite3_vfs_unregister() interface.
-** {F11221} If the default VFS is unregistered, another VFS is chosen as
+** Unregister a VFS with the sqlite3_vfs_unregister() interface.
+** If the default VFS is unregistered, another VFS is chosen as
 ** the default.  The choice for the new VFS is arbitrary.
+**
+** INVARIANTS:
+**
+** {F11203} The [sqlite3_vfs_find(N)] interface returns a pointer to the
+**          registered [sqlite3_vfs] object whose name exactly matches
+**          the zero-terminated UTF-8 string N, or it returns NULL if
+**          there is no match.
+**
+** {F11206} If the N parameter to [sqlite3_vfs_find(N)] is NULL then
+**          the function returns a pointer to the default [sqlite3_vfs]
+**          object if there is one, or NULL if there is no default 
+**          [sqlite3_vfs] object.
+**
+** {F11209} The [sqlite3_vfs_register(P,F)] interface registers the
+**          well-formed [sqlite3_vfs] object P using the name given
+**          by the zName field of the object.
+**
+** {F11212} Using the [sqlite3_vfs_register(P,F)] interface to register
+**          the same [sqlite3_vfs] object multiple times is a harmless no-op.
+**
+** {F11215} The [sqlite3_vfs_register(P,F)] interface makes the
+**          the [sqlite3_vfs] object P the default [sqlite3_vfs] object
+**          if F is non-zero.
+**
+** {F11218} The [sqlite3_vfs_unregister(P)] interface unregisters the
+**          [sqlite3_vfs] object P so that it is no longer returned by
+**          subsequent calls to [sqlite3_vfs_find()].
 */
 sqlite3_vfs *sqlite3_vfs_find(const char *zVfsName);
 int sqlite3_vfs_register(sqlite3_vfs*, int makeDflt);

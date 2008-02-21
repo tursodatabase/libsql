@@ -1,5 +1,5 @@
-C Test\scoverage\sand\sdocumentation\simprovements.\s(CVS\s4803)
-D 2008-02-21T02:09:45
+C Updates\sto\sAPI\sdocumentation\scontained\sin\scomments\sof\ssqlite.h.in.\s(CVS\s4804)
+D 2008-02-21T20:17:07
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/random.c 02ef38b469237482f1ea14a78b2087cfbaec48bd
 F src/select.c aef06a4b157cc7defe8f99255f9a13cf693c8f13
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c c1ef4eb7872afb7417e52d6ec3f2d15be90cba8a
-F src/sqlite.h.in 70a7551163f040aae634a8ca3e6f1e4dc1479560
+F src/sqlite.h.in a978a185ef747b0d2edd0a076f67b0d47e052203
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 073801285d2650b22033a20c2389241c5e0361d6
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5bc8e564e3499ada01a6c3d74b1e6d6906d2a118
-R c60eb118d842593683b494d3dbc6ff57
+P e0baceac412b85348e67f2376ea10000e1f76ab8
+R e570a50bbec8e6f96cc3d8ea4bc61a43
 U drh
-Z 7b14a05f63dd7eed7fd29bfaca5ab4ed
+Z d863c10026954c8f485f02ede9d18d3b
