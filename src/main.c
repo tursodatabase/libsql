@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.418 2008/02/19 15:20:44 drh Exp $
+** $Id: main.c,v 1.419 2008/02/21 02:09:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -990,7 +990,7 @@ static int openDatabase(
   if( !db->pVfs ){
     rc = SQLITE_ERROR;
     db->magic = SQLITE_MAGIC_SICK;
-    sqlite3Error(db, rc, "no such vfs: %s", (zVfs?zVfs:"(null)"));
+    sqlite3Error(db, rc, "no such vfs: %s", zVfs);
     goto opendb_out;
   }
 
@@ -998,10 +998,11 @@ static int openDatabase(
   ** and UTF-16, so add a version for each to avoid any unnecessary
   ** conversions. The only error that can occur here is a malloc() failure.
   */
-  if( createCollation(db, "BINARY", SQLITE_UTF8, 0, binCollFunc, 0) ||
-      createCollation(db, "BINARY", SQLITE_UTF16BE, 0, binCollFunc, 0) ||
-      createCollation(db, "BINARY", SQLITE_UTF16LE, 0, binCollFunc, 0) ||
-      createCollation(db, "RTRIM", SQLITE_UTF8, (void*)1, binCollFunc, 0) ||
+  createCollation(db, "BINARY", SQLITE_UTF8, 0, binCollFunc, 0);
+  createCollation(db, "BINARY", SQLITE_UTF16BE, 0, binCollFunc, 0);
+  createCollation(db, "BINARY", SQLITE_UTF16LE, 0, binCollFunc, 0);
+  createCollation(db, "RTRIM", SQLITE_UTF8, (void*)1, binCollFunc, 0);
+  if( db->mallocFailed ||
       (db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 6, 0))==0 
   ){
     assert( db->mallocFailed );
@@ -1102,7 +1103,8 @@ static int openDatabase(
 #endif
 
 opendb_out:
-  if( db && db->mutex ){
+  if( db ){
+    assert( db->mutex!=0 );
     sqlite3_mutex_leave(db->mutex);
   }
   if( SQLITE_NOMEM==(rc = sqlite3_errcode(db)) ){
@@ -1153,7 +1155,8 @@ int sqlite3_open16(
   if( zFilename8 ){
     rc = openDatabase(zFilename8, ppDb,
                       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
-    if( rc==SQLITE_OK && *ppDb ){
+    assert( *ppDb || rc==SQLITE_NOMEM );
+    if( rc==SQLITE_OK ){
       rc = sqlite3_exec(*ppDb, "PRAGMA encoding = 'UTF-16'", 0, 0, 0);
       if( rc!=SQLITE_OK ){
         sqlite3_close(*ppDb);
