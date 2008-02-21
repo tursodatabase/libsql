@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.75 2008/01/17 22:27:54 drh Exp $
+** $Id: date.c,v 1.76 2008/02/21 20:40:44 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -131,23 +131,32 @@ end_getDigits:
 **
 **        (+/-)HH:MM
 **
+** Or the "zulu" notation:
+**
+**        Z
+**
 ** If the parse is successful, write the number of minutes
-** of change in *pnMin and return 0.  If a parser error occurs,
-** return 0.
+** of change in p->tz and return 0.  If a parser error occurs,
+** return non-zero.
 **
 ** A missing specifier is not considered an error.
 */
 static int parseTimezone(const char *zDate, DateTime *p){
   int sgn = 0;
   int nHr, nMn;
+  int c;
   while( isspace(*(u8*)zDate) ){ zDate++; }
   p->tz = 0;
-  if( *zDate=='-' ){
+  c = *zDate;
+  if( c=='-' ){
     sgn = -1;
-  }else if( *zDate=='+' ){
+  }else if( c=='+' ){
     sgn = +1;
+  }else if( c=='Z' || c=='z' ){
+    zDate++;
+    goto zulu_time;
   }else{
-    return *zDate!=0;
+    return c!=0;
   }
   zDate++;
   if( getDigits(zDate, 2, 0, 14, ':', &nHr, 2, 0, 59, 0, &nMn)!=2 ){
@@ -155,6 +164,7 @@ static int parseTimezone(const char *zDate, DateTime *p){
   }
   zDate += 5;
   p->tz = sgn*(nMn + nHr*60);
+zulu_time:
   while( isspace(*(u8*)zDate) ){ zDate++; }
   return *zDate!=0;
 }

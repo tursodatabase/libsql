@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.24 2008/01/17 22:27:54 drh Exp $
+# $Id: date.test,v 1.25 2008/02/21 20:40:44 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -191,8 +191,16 @@ datetest 5.2 {datetime('1994-04-16 14:00:00 -05:15')} {1994-04-16 19:15:00}
 datetest 5.3 {datetime('1994-04-16 05:00:00 +08:30')} {1994-04-15 20:30:00}
 datetest 5.4 {datetime('1994-04-16 14:00:00 -11:55')} {1994-04-17 01:55:00}
 datetest 5.5 {datetime('1994-04-16 14:00:00 -11:60')} NULL
-datetest 5.4 {datetime('1994-04-16 14:00:00 -11:55  ')} {1994-04-17 01:55:00}
-datetest 5.4 {datetime('1994-04-16 14:00:00 -11:55 x')} NULL
+datetest 5.6 {datetime('1994-04-16 14:00:00 -11:55  ')} {1994-04-17 01:55:00}
+datetest 5.7 {datetime('1994-04-16 14:00:00 -11:55 x')} NULL
+datetest 5.8 {datetime('1994-04-16T14:00:00Z')} {1994-04-16 14:00:00}
+datetest 5.9 {datetime('1994-04-16 14:00:00z')} {1994-04-16 14:00:00}
+datetest 5.10 {datetime('1994-04-16 14:00:00 Z')} {1994-04-16 14:00:00}
+datetest 5.11 {datetime('1994-04-16 14:00:00z    ')} {1994-04-16 14:00:00}
+datetest 5.12 {datetime('1994-04-16 14:00:00     z    ')} {1994-04-16 14:00:00}
+datetest 5.13 {datetime('1994-04-16 14:00:00Zulu')} NULL
+datetest 5.14 {datetime('1994-04-16 14:00:00Z +05:00')} NULL
+datetest 5.15 {datetime('1994-04-16 14:00:00 +05:00 Z')} NULL
 
 # localtime->utc and utc->localtime conversions.  These tests only work
 # if the localtime is in the US Eastern Time (the time in Charlotte, NC

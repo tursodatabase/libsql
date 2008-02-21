@@ -1,5 +1,5 @@
-C Updates\sto\sAPI\sdocumentation\scontained\sin\scomments\sof\ssqlite.h.in.\s(CVS\s4804)
-D 2008-02-21T20:17:07
+C Accept\s"Z"\sas\sthe\szulu\stimezone\sat\sthe\send\sof\sdate\sstrings.\s(CVS\s4805)
+D 2008-02-21T20:40:44
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -90,7 +90,7 @@ F src/btreeInt.h 97a68823481e769874f9a61ef43719c856c71860
 F src/build.c 7d93ee565b5676746d014acdc638adee87cfd27e
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
-F src/date.c 8ce763c68143b1e8fb6f79dcfc8b801853c97017
+F src/date.c 187cad26eaaecd7bcdccd49d5a70c5aa3010bc74
 F src/delete.c fa13c296262e89c32d28949f15be275e52d7f524
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c e6fb42c6e55fd9526174b1cb8296b69a60a6688a
@@ -253,7 +253,7 @@ F test/crash4.test 02ff4f15c149ca1e88a5c299b4896c84d9450c3b
 F test/crash5.test c7ddcf7ca83abc19901b977732144234ac72a938
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
-F test/date.test 51734f3798f338e3f75107aff5a057ae0ff7006c
+F test/date.test 8db95a0ba2c8f4c8762ce66859a036c51959a6be
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test 57533e88e886608bf5ae0f394e14c2eb1b1f7754
 F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e0baceac412b85348e67f2376ea10000e1f76ab8
-R e570a50bbec8e6f96cc3d8ea4bc61a43
+P 08276df3fdd63f210d502c414390f1efd8ebbbb7
+R fbd8410911af3170ba7036428f73329b
 U drh
-Z d863c10026954c8f485f02ede9d18d3b
+Z 2bd7a33d27840649099691bbdad59fdc
