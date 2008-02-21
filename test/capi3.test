@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.58 2008/01/22 01:48:09 drh Exp $
+# $Id: capi3.test,v 1.59 2008/02/21 21:30:07 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -163,6 +163,14 @@ ifcapable {utf16} {
     utf8 [sqlite3_errmsg16 $db2]
   } {library routine called out of sequence}
 }
+
+do_test capi3-3.7 {
+  set db2 [sqlite3_open]
+  sqlite3_errcode $db2
+} {SQLITE_OK}
+do_test capi3-3.8 {
+  sqlite3_close $db2
+} {SQLITE_OK}
 
 # rename sqlite3_open ""
 # rename sqlite3_open_old sqlite3_open
