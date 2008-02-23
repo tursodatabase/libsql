@@ -1,5 +1,5 @@
-C Additional\stest\scases.\s(CVS\s4806)
-D 2008-02-21T21:30:07
+C Fix\sa\sbug\sin\sthe\sLIKE\soptimizer\sthat\soccurs\swhen\sthe\slast\scharacter\nbefore\sthe\swildcard\sis\san\supper-case\s'Z'.\s\sTicket\s#2959.\s(CVS\s4807)
+D 2008-02-23T21:55:40
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -181,7 +181,7 @@ F src/vdbeblob.c 63c750acc7b5012479f508c0e9627372a82cb65d
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 2d87d65430519dfb2103498b76bf15e4038b12b0
 F src/vtab.c dc8947c9c79780b19ee6d6bae4ea624a2a303353
-F src/where.c 7ff0ca021cc77086e367ed3b6308fbc6bc9e1a31
+F src/where.c f899a98f9823b965730d94b1c7c425f9ba914c12
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d12210212bada2bde6d5aeb90969b86c1aa977d2
@@ -361,7 +361,7 @@ F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
-F test/like.test d2d5efc471db314f662a6f0cfa52c6ec2d4fed8b
+F test/like.test 2a3ddbd5d91503f914eabae67a47c4196fe33a58
 F test/limit.test ca61a9fc520f54470edb3a771167fe4b68abc247
 F test/loadext.test 1911e7365a6d31d77ba00dd3a8a31b7f2111a670
 F test/loadext2.test 95ca7e2cb03fd3e068de97c3a2fe58dbdfd769e1
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4c9a7b42b797f42f2b1e2e8d6a260044bd22ef2d
-R 15fbbd63bac94bf4cf3996d2a4103198
+P 74126bf4e605dc875adbf5a0ee83bf8112891e35
+R 61ff14acc658996aa4f2c96b0d9cdcfb
 U drh
-Z 3ade4f046651b84bc599a69e7912090d
+Z bc51f98ef19af3970b42d08ccd4bf327

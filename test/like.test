@@ -13,7 +13,7 @@
 # in particular the optimizations that occur to help those operators
 # run faster.
 #
-# $Id: like.test,v 1.8 2008/01/23 12:52:41 drh Exp $
+# $Id: like.test,v 1.9 2008/02/23 21:55:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -381,6 +381,114 @@ do_test like-5.7 {
 do_test like-5.8 {
   set sqlite_like_count
 } 12
+do_test like-5.11 {
+  execsql {PRAGMA case_sensitive_like=off}
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'ABC%' ORDER BY 1
+  }
+} {ABC {ABC abc xyz} abc abcd nosort {} i1}
+do_test like-5.12 {
+  set sqlite_like_count
+} 12
+do_test like-5.13 {
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t2 WHERE x LIKE 'ABC%' ORDER BY 1
+  }
+} {abc ABC {ABC abc xyz} abcd nosort {} i2}
+do_test like-5.14 {
+  set sqlite_like_count
+} 0
+do_test like-5.15 {
+  execsql {
+    PRAGMA case_sensitive_like=on;
+  }
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t2 WHERE x LIKE 'ABC%' ORDER BY 1
+  }
+} {ABC {ABC abc xyz} nosort {} i2}
+do_test like-5.16 {
+  set sqlite_like_count
+} 12
+do_test like-5.17 {
+  execsql {
+    PRAGMA case_sensitive_like=off;
+  }
+  set sqlite_like_count 0
+  queryplan {
+    SELECT x FROM t2 WHERE x GLOB 'ABC*' ORDER BY 1
+  }
+} {ABC {ABC abc xyz} nosort {} i2}
+do_test like-5.18 {
+  set sqlite_like_count
+} 12
+
+# Boundary case.  The prefix for a LIKE comparison is rounded up
+# when constructing the comparison.  Example:  "ab" becomes "ac".
+# In other words, the last character is increased by one.
+#
+# Make sure this happens correctly when the last character is a 
+# "z" and we are doing case-insensitive comparisons.
+#
+# Ticket #2959
+#
+do_test like-5.21 {
+  execsql {
+    PRAGMA case_sensitive_like=off;
+    INSERT INTO t2 VALUES('ZZ-upper-upper');
+    INSERT INTO t2 VALUES('zZ-lower-upper');
+    INSERT INTO t2 VALUES('Zz-upper-lower');
+    INSERT INTO t2 VALUES('zz-lower-lower');
+  }
+  queryplan {
+    SELECT x FROM t2 WHERE x LIKE 'zz%';
+  }
+} {zz-lower-lower zZ-lower-upper Zz-upper-lower ZZ-upper-upper nosort {} i2}
+do_test like-5.22 {
+  queryplan {
+    SELECT x FROM t2 WHERE x LIKE 'zZ%';
+  }
+} {zz-lower-lower zZ-lower-upper Zz-upper-lower ZZ-upper-upper nosort {} i2}
+do_test like-5.23 {
+  queryplan {
+    SELECT x FROM t2 WHERE x LIKE 'Zz%';
+  }
+} {zz-lower-lower zZ-lower-upper Zz-upper-lower ZZ-upper-upper nosort {} i2}
+do_test like-5.24 {
+  queryplan {
+    SELECT x FROM t2 WHERE x LIKE 'ZZ%';
+  }
+} {zz-lower-lower zZ-lower-upper Zz-upper-lower ZZ-upper-upper nosort {} i2}
+do_test like-5.25 {
+  queryplan {
+    PRAGMA case_sensitive_like=on;
+    CREATE TABLE t3(x);
+    CREATE INDEX i3 ON t3(x);
+    INSERT INTO t3 VALUES('ZZ-upper-upper');
+    INSERT INTO t3 VALUES('zZ-lower-upper');
+    INSERT INTO t3 VALUES('Zz-upper-lower');
+    INSERT INTO t3 VALUES('zz-lower-lower');
+    SELECT x FROM t3 WHERE x LIKE 'zz%';
+  }
+} {zz-lower-lower nosort {} i3}
+do_test like-5.26 {
+  queryplan {
+    SELECT x FROM t3 WHERE x LIKE 'zZ%';
+  }
+} {zZ-lower-upper nosort {} i3}
+do_test like-5.27 {
+  queryplan {
+    SELECT x FROM t3 WHERE x LIKE 'Zz%';
+  }
+} {Zz-upper-lower nosort {} i3}
+do_test like-5.28 {
+  queryplan {
+    SELECT x FROM t3 WHERE x LIKE 'ZZ%';
+  }
+} {ZZ-upper-upper nosort {} i3}
+
 
 # ticket #2407
 #
