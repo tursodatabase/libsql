@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.409 2008/02/26 06:05:31 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.410 2008/02/26 14:46:05 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3004,6 +3004,19 @@ static int pager_write_pagelist(PgHdr *pList){
 ** collected even if they are still in use.
 */
 static PgHdr *pager_get_all_dirty_pages(Pager *pPager){
+
+#ifndef NDEBUG
+  /* Verify the sanity of the dirty list when we are running
+  ** in debugging mode.  This is expensive, so do not
+  ** do this on a normal build. */
+  int n1 = 0;
+  int n2 = 0;
+  PgHdr *p;
+  for(p=pPager->pAll; p; p=p->pNextAll){ if( p->dirty ) n1++; }
+  for(p=pPager->pDirty; p; p=p->pDirty){ n2++; }
+  assert( n1==n2 );
+#endif
+
   return pPager->pDirty;
 }
 
