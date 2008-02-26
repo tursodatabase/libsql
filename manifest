@@ -1,5 +1,5 @@
-C Add\sbitvec\sto\sbuild\s(CVS\s4808)
-D 2008-02-26T03:46:00
+C Have\ssqlite3PagerPagecount()\sreturn\s-1\swhen\sthe\spager\sis\sin\serror\sstate.\sFix\sfor\s#2961.\s(CVS\s4809)
+D 2008-02-26T06:05:31
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 6be8d7c60afa918807e77ec4459f8aff68c996d9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -127,7 +127,7 @@ F src/os_unix.c e4daef7628f690fa2b188af3632fb18f96525946
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c aa3f4bbee3b8c182d25a33fbc319f486857c12c1
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c caa7c06d6c98df0fc6e0e797ee9cef7420fb59fa
+F src/pager.c 80d9294a6b359267e02ed6d60613a215d9acc763
 F src/pager.h 8174615ffd14ccc2cad2b081b919a398fa95e3f9
 F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
 F src/pragma.c e3f39f8576234887ecd0c1de43dc51af5855930c
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 610574b23b5e73b71be71df66e084c5bf37f6ccd
-R bab28a4a3db4a1cb3ceb5a6dec45e576
-U mlcreech
-Z e4de6dec0da13beb83ac4a18974a9d20
+P c690dd68f20aa2137562dff573031ac041a29a4e
+R 84baef0ea27579230067dbd5ae0526da
+U danielk1977
+Z 3f476918e04ef03a88fceb0a4aada738
