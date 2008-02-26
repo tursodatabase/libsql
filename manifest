@@ -1,7 +1,7 @@
-C Fix\sa\sbug\sin\sthe\sLIKE\soptimizer\sthat\soccurs\swhen\sthe\slast\scharacter\nbefore\sthe\swildcard\sis\san\supper-case\s'Z'.\s\sTicket\s#2959.\s(CVS\s4807)
-D 2008-02-23T21:55:40
+C Add\sbitvec\sto\sbuild\s(CVS\s4808)
+D 2008-02-26T03:46:00
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in bc2b5df3e3d0d4b801b824b7ef6dec43812b049b
+F Makefile.in 6be8d7c60afa918807e77ec4459f8aff68c996d9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 2e206fc9458bf10a8c3ba2d13bf521a04ef441c6
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 74126bf4e605dc875adbf5a0ee83bf8112891e35
-R 61ff14acc658996aa4f2c96b0d9cdcfb
-U drh
-Z bc51f98ef19af3970b42d08ccd4bf327
+P 610574b23b5e73b71be71df66e084c5bf37f6ccd
+R bab28a4a3db4a1cb3ceb5a6dec45e576
+U mlcreech
+Z e4de6dec0da13beb83ac4a18974a9d20
