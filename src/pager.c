@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.411 2008/02/26 16:16:45 drh Exp $
+** @(#) $Id: pager.c,v 1.412 2008/02/26 18:40:12 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2117,7 +2117,7 @@ int sqlite3PagerOpen(
   pPager = sqlite3MallocZero(
     sizeof(*pPager) +           /* Pager structure */
     journalFileSize +           /* The journal file structure */ 
-    pVfs->szOsFile * 2 +        /* The db and stmt journal files */ 
+    pVfs->szOsFile * 3 +        /* The main db and two journal files */ 
     4*nPathname + 40            /* zFilename, zDirectory, zJournal, zStmtJrnl */
   );
   if( !pPager ){

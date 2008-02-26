@@ -1,5 +1,5 @@
-C Add\scommentary\sto\sclarify\swhat\sis\shappening\swhen\san\sI/O\serror\soccurs\swhile\nwriting\sdirty\spages\sto\sthe\sdatabase\sfile.\s(CVS\s4811)
-D 2008-02-26T16:16:45
+C Fix\sa\smath\serror\swhen\scomputing\show\smuch\smemory\sto\sallocate\sfor\na\snew\spager.\s(CVS\s4812)
+D 2008-02-26T18:40:12
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 6be8d7c60afa918807e77ec4459f8aff68c996d9
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -127,7 +127,7 @@ F src/os_unix.c e4daef7628f690fa2b188af3632fb18f96525946
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c aa3f4bbee3b8c182d25a33fbc319f486857c12c1
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c ee55f9c201d1df44e684aa42b31f47c5a8ec8ff0
+F src/pager.c d09885bb88e9868a5c322a0181d4022cf294d98b
 F src/pager.h 8174615ffd14ccc2cad2b081b919a398fa95e3f9
 F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
 F src/pragma.c e3f39f8576234887ecd0c1de43dc51af5855930c
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 942daf94ef1f8ac678988e175ef968a2d3f801e9
-R 78628a049bcafa60db998c6268ba7168
+P afe49d81f479715e13f18a97170d414a853a6cfe
+R 649927922b07188c537964c6ead196eb
 U drh
-Z 794fa50c5e327e7a323854fb5d8e9a99
+Z 243dd7f11074028b0dbe322629885744
