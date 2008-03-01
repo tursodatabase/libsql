@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.287 2008/02/21 20:17:07 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.288 2008/03/01 23:34:47 mlcreech Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2070,7 +2070,7 @@ int sqlite3_open_v2(
 ** text that describes the error, as either UTF8 or UTF16 respectively.
 ** Memory to hold the error message string is managed internally.
 ** The application does not need to worry with freeing the result.
-** However, the error string might be overwritten or deallocated b
+** However, the error string might be overwritten or deallocated by
 ** subsequent calls to other SQLite interface functions.
 **
 ** INVARIANTS:

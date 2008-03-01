@@ -1,5 +1,5 @@
-C Add\sbitvec.lo\sto\sLIBOBJS\sand\scorresponding\smake\srule\s(CVS\s4813)
-D 2008-02-27T03:22:49
+C Fix\stypo\sfor\s#2968\s(CVS\s4814)
+D 2008-03-01T23:34:47
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 7a58cbeeb384716b1cee15bd357a4c7fbf2e63ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/random.c 02ef38b469237482f1ea14a78b2087cfbaec48bd
 F src/select.c aef06a4b157cc7defe8f99255f9a13cf693c8f13
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c c1ef4eb7872afb7417e52d6ec3f2d15be90cba8a
-F src/sqlite.h.in a978a185ef747b0d2edd0a076f67b0d47e052203
+F src/sqlite.h.in 16c6ed1b8e7a2bcdff41306f5115cbe5ed0c8c23
 F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
 F src/sqliteInt.h 073801285d2650b22033a20c2389241c5e0361d6
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 690d05cedae236251778a71fdd32319846580fdf
-R f3c2098ae057326edc65d31d29ceb722
+P 1d68f3af362f8bb5cdfbf60c60fb218bc316c5d0
+R 8b4ab686286108816b2cbe6a23335fa2
 U mlcreech
-Z c066edc23db8a3edab8c73bb4ea8b2ef
+Z 76164aeba184bfec51b18617c860bed4
