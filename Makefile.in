@@ -213,6 +213,28 @@ SRC += \
   $(TOP)/ext/fts1/fts1_porter.c \
   $(TOP)/ext/fts1/fts1_tokenizer.h \
   $(TOP)/ext/fts1/fts1_tokenizer1.c
+SRC += \
+  $(TOP)/ext/fts2/fts2.c \
+  $(TOP)/ext/fts2/fts2.h \
+  $(TOP)/ext/fts2/fts2_hash.c \
+  $(TOP)/ext/fts2/fts2_hash.h \
+  $(TOP)/ext/fts2/fts2_icu.c \
+  $(TOP)/ext/fts2/fts2_porter.c \
+  $(TOP)/ext/fts2/fts2_tokenizer.h \
+  $(TOP)/ext/fts2/fts2_tokenizer.c \
+  $(TOP)/ext/fts2/fts2_tokenizer1.c
+SRC += \
+  $(TOP)/ext/fts3/fts3.c \
+  $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3_hash.c \
+  $(TOP)/ext/fts3/fts3_hash.h \
+  $(TOP)/ext/fts3/fts3_icu.c \
+  $(TOP)/ext/fts3/fts3_porter.c \
+  $(TOP)/ext/fts3/fts3_tokenizer.h \
+  $(TOP)/ext/fts3/fts3_tokenizer.c \
+  $(TOP)/ext/fts3/fts3_tokenizer1.c
+SRC += \
+  $(TOP)/ext/icu/icu.c
 
 
 # Source code to the test files.
@@ -292,6 +314,14 @@ HDR += \
   $(TOP)/ext/fts1/fts1.h \
   $(TOP)/ext/fts1/fts1_hash.h \
   $(TOP)/ext/fts1/fts1_tokenizer.h
+HDR += \
+  $(TOP)/ext/fts2/fts2.h \
+  $(TOP)/ext/fts2/fts2_hash.h \
+  $(TOP)/ext/fts2/fts2_tokenizer.h
+HDR += \
+  $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3_hash.h \
+  $(TOP)/ext/fts3/fts3_tokenizer.h
 
 # Header files used by the VDBE submodule
 #

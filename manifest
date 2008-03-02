@@ -1,7 +1,7 @@
-C Add\smem5.c\sto\ssource\sfiles\sin\sautoconf-generated\sMakefile\s(CVS\s4816)
-D 2008-03-02T05:34:11
+C Add\sfts2/3\sfiles\sto\sautoconf-generated\sMakefile\s(needed\sfor\samalgamation)\s(CVS\s4817)
+D 2008-03-02T05:40:06
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in a67419435880ba82534e7e8bd938833a95eefb46
+F Makefile.in 671087b1907a3c3f2afa18d4fd9e8d180d28adfc
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 2e206fc9458bf10a8c3ba2d13bf521a04ef441c6
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P bbf9f0e6e23ce6c2729843535b8599c7bacb0f83
-R d58c06fd878d6d67a8cd0b2b8536ae04
+P 8c1b6357f0bc86645017913e8b6ea8e82473f7df
+R 0f28afaa044cd07bdf94dc35bfef7299
 U mlcreech
-Z 6e7e6ab512a3d000d5d422553feb974c
+Z 095a32a308b58ef01f8c4afd9a830ab2
