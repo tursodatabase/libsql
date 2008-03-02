@@ -1,5 +1,5 @@
-C Fix\stypo\sfor\s#2968\s(CVS\s4814)
-D 2008-03-01T23:34:47
+C Trivial\stext\scleanups\s(CVS\s4815)
+D 2008-03-02T03:32:05
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 7a58cbeeb384716b1cee15bd357a4c7fbf2e63ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/select.c aef06a4b157cc7defe8f99255f9a13cf693c8f13
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c c1ef4eb7872afb7417e52d6ec3f2d15be90cba8a
 F src/sqlite.h.in 16c6ed1b8e7a2bcdff41306f5115cbe5ed0c8c23
-F src/sqlite3ext.h a93f59cdee3638dc0c9c086f80df743a4e68c3cb
+F src/sqlite3ext.h 50c70a894ffe8e6ada5948c89b91db0a80a6b2a7
 F src/sqliteInt.h 073801285d2650b22033a20c2389241c5e0361d6
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 46ccf9b7892a86f57420ae7bac69ecd5e72d26b5
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1d68f3af362f8bb5cdfbf60c60fb218bc316c5d0
-R 8b4ab686286108816b2cbe6a23335fa2
+P d1f6b243822c0dcbc4acf153e682b841cf6c22c2
+R d8c75cb8e25f3476726399e8aa22def2
 U mlcreech
-Z 76164aeba184bfec51b18617c860bed4
+Z c69e8bbe0c438ec123c40c9d2f07f8a7

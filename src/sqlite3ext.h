@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.17 2007/08/31 16:11:36 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.18 2008/03/02 03:32:05 mlcreech Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -24,13 +24,13 @@
 typedef struct sqlite3_api_routines sqlite3_api_routines;
 
 /*
-** The following structure hold pointers to all of the SQLite API
+** The following structure holds pointers to all of the SQLite API
 ** routines.
 **
 ** WARNING:  In order to maintain backwards compatibility, add new
 ** interfaces to the end of this structure only.  If you insert new
 ** interfaces in the middle of this structure, then older different
-** versions of SQLite will not be able to load each others shared
+** versions of SQLite will not be able to load each others' shared
 ** libraries!
 */
 struct sqlite3_api_routines {
