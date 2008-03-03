@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.288 2008/03/01 23:34:47 mlcreech Exp $
+** @(#) $Id: sqlite.h.in,v 1.289 2008/03/03 18:47:28 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2157,7 +2157,7 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** uncompiled.
 **
 ** *ppStmt is left pointing to a compiled [prepared statement] that can be
-** executed using [sqlite3_step()].  Or if there is an error, *ppStmt may be
+** executed using [sqlite3_step()].  Or if there is an error, *ppStmt is
 ** set to NULL.  If the input text contains no SQL (if the input
 ** is and empty string or a comment) then *ppStmt is set to NULL.
 ** {U13018} The calling procedure is responsible for deleting the
@@ -2231,6 +2231,10 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 **
 ** {F13019} The [sqlite3_prepare_v2()] interface and its variants return
 **          [SQLITE_OK] or an appropriate [error code] upon failure.
+**
+** {F13021} Before [sqlite3_prepare(db,zSql,nByte,ppStmt,pzTail)] or its
+**          variants returns an error (any value other than [SQLITE_OK])
+**          it first sets *ppStmt to NULL.
 */
 int sqlite3_prepare(
   sqlite3 *db,            /* Database handle */

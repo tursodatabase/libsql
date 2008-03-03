@@ -1,5 +1,5 @@
-C Add\sfts2/3\sfiles\sto\sautoconf-generated\sMakefile\s(needed\sfor\samalgamation)\s(CVS\s4817)
-D 2008-03-02T05:40:06
+C Additional\sdocumentation\sand\stests\smaking\sit\sclear\sthat\swhenever\nsqlite3_prepare()\sfails\sit\ssets\s*ppStmt\sto\sNULL.\s(CVS\s4818)
+D 2008-03-03T18:47:28
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 671087b1907a3c3f2afa18d4fd9e8d180d28adfc
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,13 +131,13 @@ F src/pager.c d09885bb88e9868a5c322a0181d4022cf294d98b
 F src/pager.h 8174615ffd14ccc2cad2b081b919a398fa95e3f9
 F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
 F src/pragma.c e3f39f8576234887ecd0c1de43dc51af5855930c
-F src/prepare.c 1b0601ca3f97a9d253cc08697484e3045a1678e9
+F src/prepare.c 98c763fb124769473c6dc1622803db2d45fbff4e
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 02ef38b469237482f1ea14a78b2087cfbaec48bd
 F src/select.c aef06a4b157cc7defe8f99255f9a13cf693c8f13
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c c1ef4eb7872afb7417e52d6ec3f2d15be90cba8a
-F src/sqlite.h.in 16c6ed1b8e7a2bcdff41306f5115cbe5ed0c8c23
+F src/sqlite.h.in b8158aa606f0b39426d63132ae0530d91c021abb
 F src/sqlite3ext.h 50c70a894ffe8e6ada5948c89b91db0a80a6b2a7
 F src/sqliteInt.h 073801285d2650b22033a20c2389241c5e0361d6
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8c1b6357f0bc86645017913e8b6ea8e82473f7df
-R 0f28afaa044cd07bdf94dc35bfef7299
-U mlcreech
-Z 095a32a308b58ef01f8c4afd9a830ab2
+P 89666f94906c0ad651a444800dcf8ac886fe0c22
+R e97d51235ba5646643ee97dc2217d740
+U drh
+Z 9cd6c366577fcadd7704c59f2f60a3cb
