@@ -118,20 +118,30 @@ NAWK = @AWK@
 ###############################################################################
 TCC += -DSQLITE_OMIT_LOAD_EXTENSION=1
 
-# Object files for the SQLite library.
+# Object files for the SQLite library (non-amalgamation).
 #
-LIBOBJ = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo btree.lo \
-         build.lo callback.lo complete.lo date.lo \
-         delete.lo expr.lo fault.lo func.lo \
-         hash.lo journal.lo insert.lo loadext.lo \
-         main.lo malloc.lo mem1.lo mem2.lo mem3.lo mem4.lo mem5.lo mutex.lo \
-         mutex_os2.lo mutex_unix.lo mutex_w32.lo \
-         opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
-         pager.lo parse.lo pragma.lo prepare.lo printf.lo random.lo \
-         select.lo table.lo tokenize.lo trigger.lo update.lo \
-         util.lo vacuum.lo \
-         vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbefifo.lo vdbemem.lo \
-         where.lo utf.lo legacy.lo vtab.lo
+OBJS0 = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo \
+        btree.lo build.lo callback.lo complete.lo date.lo \
+        delete.lo expr.lo fault.lo func.lo \
+        hash.lo journal.lo insert.lo loadext.lo \
+        main.lo malloc.lo mem1.lo mem2.lo mem3.lo mem4.lo mem5.lo mutex.lo \
+        mutex_os2.lo mutex_unix.lo mutex_w32.lo \
+        opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
+        pager.lo parse.lo pragma.lo prepare.lo printf.lo random.lo \
+        select.lo table.lo tokenize.lo trigger.lo update.lo \
+        util.lo vacuum.lo \
+        vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbefifo.lo vdbemem.lo \
+        where.lo utf.lo legacy.lo vtab.lo
+
+# Object files for the amalgamation.
+#
+OBJS1 = sqlite3.lo
+
+# Determine the real value of LIBOBJ based on the 'configure' script
+#
+USE_AMALGAMATION = @USE_AMALGAMATION@
+LIBOBJ = $(OBJS$(USE_AMALGAMATION))
+
 
 # All of the source code files.
 #
@@ -365,14 +375,15 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-target_source:	$(SRC) parse.c opcodes.c keywordhash.h $(VDBEHDR) 
+.target_source:	$(SRC) parse.c opcodes.c keywordhash.h $(VDBEHDR) 
 	rm -rf tsrc
 	mkdir -p tsrc
 	cp $(SRC) $(VDBEHDR) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
 	cp parse.c opcodes.c keywordhash.h tsrc
+	touch .target_source
 
-sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
+sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 	tclsh $(TOP)/tool/mksqlite3c.tcl
 
 # Rules to build the LEMON compiler generator
@@ -381,6 +392,11 @@ lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o lemon$(BEXE) $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
 
+
+# Rule to build the amalgamation
+#
+sqlite3.lo:	sqlite3.c
+	$(LTCOMPILE) -c $(TOP)/sqlite3.c
 
 # Rules to build individual files
 #
@@ -645,6 +661,7 @@ clean:
 	rm -f testfixture$(TEXE) test.db
 	rm -f common.tcl
 	rm -f sqlite3.dll sqlite3.lib sqlite3.def
+	rm -f .target_source
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile config.h sqlite3.pc

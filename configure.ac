@@ -92,7 +92,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.31 $
+# $Revision: 1.32 $
 
 #########
 # Programs needed
@@ -561,6 +561,18 @@ else
   TARGET_DEBUG="-DNDEBUG"
 fi
 AC_SUBST(TARGET_DEBUG)
+
+#########
+# See whether we should use the amalgamation to build
+AC_ARG_ENABLE(amalgamation, AC_HELP_STRING([--disable-amalgamation],
+      [Disable the amalgamation and instead build all files separately (currently needed to build the test fixture)]),
+      [use_amalgamation=$enableval],[use_amalgamation=yes])
+if test "${use_amalgamation}" = "yes" ; then
+  USE_AMALGAMATION=1
+else
+  USE_AMALGAMATION=0
+fi
+AC_SUBST(USE_AMALGAMATION)
 
 #########
 # Figure out whether or not we have a "usleep()" function.
