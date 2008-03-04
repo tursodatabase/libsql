@@ -22,11 +22,11 @@
 
 /*
 ** When debugging the code generator in a symbolic debugger, one can
-** set the sqlite3_vdbe_addop_trace to 1 and all opcodes will be printed
+** set the sqlite3VdbeAddopTrace to 1 and all opcodes will be printed
 ** as they are added to the instruction stream.
 */
 #ifdef SQLITE_DEBUG
-int sqlite3_vdbe_addop_trace = 0;
+int sqlite3VdbeAddopTrace = 0;
 #endif
 
 
@@ -157,7 +157,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   pOp->p4type = P4_NOTUSED;
   p->expired = 0;
 #ifdef SQLITE_DEBUG
-  if( sqlite3_vdbe_addop_trace ) sqlite3VdbePrintOp(0, i, &p->aOp[i]);
+  if( sqlite3VdbeAddopTrace ) sqlite3VdbePrintOp(0, i, &p->aOp[i]);
 #endif
   return i;
 }
@@ -360,7 +360,7 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       pOut->p4.p = 0;
       pOut->p5 = 0;
 #ifdef SQLITE_DEBUG
-      if( sqlite3_vdbe_addop_trace ){
+      if( sqlite3VdbeAddopTrace ){
         sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
       }
 #endif
@@ -899,7 +899,7 @@ void sqlite3VdbePrintSql(Vdbe *p){
 void sqlite3VdbeIOTraceSql(Vdbe *p){
   int nOp = p->nOp;
   VdbeOp *pOp;
-  if( sqlite3_io_trace==0 ) return;
+  if( sqlite3IoTrace==0 ) return;
   if( nOp<1 ) return;
   pOp = &p->aOp[0];
   if( pOp->opcode==OP_Trace && pOp->p4.z!=0 ){
@@ -917,7 +917,7 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
       }
     }
     z[j] = 0;
-    sqlite3_io_trace("SQL %s\n", z);
+    sqlite3IoTrace("SQL %s\n", z);
   }
 }
 #endif /* !SQLITE_OMIT_TRACE && SQLITE_ENABLE_IOTRACE */

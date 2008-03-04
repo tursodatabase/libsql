@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.414 2008/02/15 14:33:04 drh Exp $
+** $Id: select.c,v 1.415 2008/03/04 17:45:01 mlcreech Exp $
 */
 #include "sqliteInt.h"
 
@@ -3612,7 +3612,7 @@ select_end:
 ** code base.  Then are intended to be called from within the debugger
 ** or from temporary "printf" statements inserted for debugging.
 */
-void sqlite3PrintExpr(Expr *p){
+static void sqlite3PrintExpr(Expr *p){
   if( p->token.z && p->token.n>0 ){
     sqlite3DebugPrintf("(%.*s", p->token.n, p->token.z);
   }else{
@@ -3628,7 +3628,7 @@ void sqlite3PrintExpr(Expr *p){
   }
   sqlite3DebugPrintf(")");
 }
-void sqlite3PrintExprList(ExprList *pList){
+static void sqlite3PrintExprList(ExprList *pList){
   int i;
   for(i=0; i<pList->nExpr; i++){
     sqlite3PrintExpr(pList->a[i].pExpr);
@@ -3637,7 +3637,7 @@ void sqlite3PrintExprList(ExprList *pList){
     }
   }
 }
-void sqlite3PrintSelect(Select *p, int indent){
+static void sqlite3PrintSelect(Select *p, int indent){
   sqlite3DebugPrintf("%*sSELECT(%p) ", indent, "", p);
   sqlite3PrintExprList(p->pEList);
   sqlite3DebugPrintf("\n");

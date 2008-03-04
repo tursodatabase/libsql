@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.16 2008/02/19 14:59:35 drh Exp $
+** $Id: btreeInt.h,v 1.17 2008/03/04 17:45:01 mlcreech Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -484,11 +484,11 @@ struct BtCursor {
 
 /*
 ** The TRACE macro will print high-level status information about the
-** btree operation when the global variable sqlite3_btree_trace is
+** btree operation when the global variable sqlite3BtreeTrace is
 ** enabled.
 */
 #if SQLITE_TEST
-# define TRACE(X)   if( sqlite3_btree_trace ){ printf X; fflush(stdout); }
+# define TRACE(X)   if( sqlite3BtreeTrace ){ printf X; fflush(stdout); }
 #else
 # define TRACE(X)
 #endif

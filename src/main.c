@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.419 2008/02/21 02:09:45 drh Exp $
+** $Id: main.c,v 1.420 2008/03/04 17:45:01 mlcreech Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -36,7 +36,7 @@ int sqlite3_threadsafe(void){ return SQLITE_THREADSAFE; }
 ** I/O active are written using this function.  These messages
 ** are intended for debugging activity only.
 */
-void (*sqlite3_io_trace)(const char*, ...) = 0;
+void (*sqlite3IoTrace)(const char*, ...) = 0;
 
 /*
 ** If the following global variable points to a string which is the

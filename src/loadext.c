@@ -119,7 +119,7 @@
 ** also check to make sure that the pointer to the function is
 ** not NULL before calling it.
 */
-const sqlite3_api_routines sqlite3_apis = {
+const sqlite3_api_routines sqlite3Apis = {
   sqlite3_aggregate_context,
   sqlite3_aggregate_count,
   sqlite3_bind_blob,
@@ -360,7 +360,7 @@ static int sqlite3LoadExtension(
       sqlite3OsDlClose(pVfs, handle);
     }
     return SQLITE_ERROR;
-  }else if( xInit(db, &zErrmsg, &sqlite3_apis) ){
+  }else if( xInit(db, &zErrmsg, &sqlite3Apis) ){
     if( pzErrMsg ){
       *pzErrMsg = sqlite3_mprintf("error during initialization: %s", zErrmsg);
     }
@@ -504,7 +504,7 @@ int sqlite3AutoLoadExtensions(sqlite3 *db){
               autoext.aExt[i];
     }
     sqlite3_mutex_leave(mutex);
-    if( xInit && xInit(db, &zErrmsg, &sqlite3_apis) ){
+    if( xInit && xInit(db, &zErrmsg, &sqlite3Apis) ){
       sqlite3Error(db, SQLITE_ERROR,
             "automatic extension loading failed: %s", zErrmsg);
       go = 0;

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.76 2008/03/03 18:47:28 drh Exp $
+** $Id: prepare.c,v 1.77 2008/03/04 17:45:01 mlcreech Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -491,7 +491,7 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
 /*
 ** Compile the UTF-8 encoded SQL statement zSql into a statement handle.
 */
-int sqlite3Prepare(
+static int sqlite3Prepare(
   sqlite3 *db,              /* Database handle. */
   const char *zSql,         /* UTF-8 encoded SQL statement. */
   int nBytes,               /* Length of zSql in bytes. */

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.291 2008/02/21 02:09:45 drh Exp $
+** $Id: test1.c,v 1.292 2008/03/04 17:45:02 mlcreech Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -257,7 +257,7 @@ static int test_io_trace(
       fclose(iotrace_file);
     }
     iotrace_file = 0;
-    sqlite3_io_trace = 0;
+    sqlite3IoTrace = 0;
   }
   if( argv[1][0] ){
     if( strcmp(argv[1],"stdout")==0 ){
@@ -267,7 +267,7 @@ static int test_io_trace(
     }else{
       iotrace_file = fopen(argv[1], "w");
     }
-    sqlite3_io_trace = io_trace_callback;
+    sqlite3IoTrace = io_trace_callback;
   }
   return SQLITE_OK;
 }
@@ -4412,7 +4412,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_stack_used",            (Tcl_CmdProc*)test_stack_used       },
      { "sqlite3_busy_timeout",          (Tcl_CmdProc*)test_busy_timeout     },
      { "printf",                        (Tcl_CmdProc*)test_printf           },
-     { "sqlite3_io_trace",              (Tcl_CmdProc*)test_io_trace         },
+     { "sqlite3IoTrace",              (Tcl_CmdProc*)test_io_trace         },
   };
   static struct {
      char *zName;
@@ -4550,9 +4550,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_os_type;
 #endif
 #ifdef SQLITE_DEBUG
-  extern int sqlite3_where_trace;
-  extern int sqlite3_os_trace;
-  extern int sqlite3_vdbe_addop_trace;
+  extern int sqlite3WhereTrace;
+  extern int sqlite3OSTrace;
+  extern int sqlite3VdbeAddopTrace;
 #endif
 #ifdef SQLITE_TEST
   extern int sqlite3_enable_in_opt;
@@ -4613,11 +4613,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
 #ifdef SQLITE_DEBUG
   Tcl_LinkVar(interp, "sqlite_addop_trace",
-      (char*)&sqlite3_vdbe_addop_trace, TCL_LINK_INT);
+      (char*)&sqlite3VdbeAddopTrace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_where_trace",
-      (char*)&sqlite3_where_trace, TCL_LINK_INT);
+      (char*)&sqlite3WhereTrace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_os_trace",
-      (char*)&sqlite3_os_trace, TCL_LINK_INT);
+      (char*)&sqlite3OSTrace, TCL_LINK_INT);
 #endif
 #ifndef SQLITE_OMIT_DISKIO
   Tcl_LinkVar(interp, "sqlite_opentemp_count",

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.90 2008/02/02 20:47:38 drh Exp $
+** $Id: test3.c,v 1.91 2008/03/04 17:45:02 mlcreech Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -1605,7 +1605,7 @@ static int btree_set_cache_size(
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest3_Init(Tcl_Interp *interp){
-  extern int sqlite3_btree_trace;
+  extern int sqlite3BtreeTrace;
   static struct {
      char *zName;
      Tcl_CmdProc *xProc;
@@ -1656,7 +1656,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
     Tcl_CreateCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
   }
-  Tcl_LinkVar(interp, "btree_trace", (char*)&sqlite3_btree_trace,
+  Tcl_LinkVar(interp, "btree_trace", (char*)&sqlite3BtreeTrace,
      TCL_LINK_INT);
 
   /* The btree_insert command is implemented using the tcl 'object'

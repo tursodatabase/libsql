@@ -37,16 +37,16 @@ unsigned int sqlite3_pending_byte = 0x40000000;
 #endif
 
 #ifdef SQLITE_DEBUG
-int sqlite3_os_trace = 0;
-#define OSTRACE1(X)         if( sqlite3_os_trace ) sqlite3DebugPrintf(X)
-#define OSTRACE2(X,Y)       if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y)
-#define OSTRACE3(X,Y,Z)     if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z)
-#define OSTRACE4(X,Y,Z,A)   if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z,A)
-#define OSTRACE5(X,Y,Z,A,B) if( sqlite3_os_trace ) sqlite3DebugPrintf(X,Y,Z,A,B)
+int sqlite3OSTrace = 0;
+#define OSTRACE1(X)         if( sqlite3OSTrace ) sqlite3DebugPrintf(X)
+#define OSTRACE2(X,Y)       if( sqlite3OSTrace ) sqlite3DebugPrintf(X,Y)
+#define OSTRACE3(X,Y,Z)     if( sqlite3OSTrace ) sqlite3DebugPrintf(X,Y,Z)
+#define OSTRACE4(X,Y,Z,A)   if( sqlite3OSTrace ) sqlite3DebugPrintf(X,Y,Z,A)
+#define OSTRACE5(X,Y,Z,A,B) if( sqlite3OSTrace ) sqlite3DebugPrintf(X,Y,Z,A,B)
 #define OSTRACE6(X,Y,Z,A,B,C) \
-    if(sqlite3_os_trace) sqlite3DebugPrintf(X,Y,Z,A,B,C)
+    if(sqlite3OSTrace) sqlite3DebugPrintf(X,Y,Z,A,B,C)
 #define OSTRACE7(X,Y,Z,A,B,C,D) \
-    if(sqlite3_os_trace) sqlite3DebugPrintf(X,Y,Z,A,B,C,D)
+    if(sqlite3OSTrace) sqlite3DebugPrintf(X,Y,Z,A,B,C,D)
 #else
 #define OSTRACE1(X)
 #define OSTRACE2(X,Y)

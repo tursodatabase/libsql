@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.175 2008/02/15 17:38:06 drh Exp $
+** $Id: shell.c,v 1.176 2008/03/04 17:45:01 mlcreech Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1311,21 +1311,21 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 
 #ifdef SQLITE_ENABLE_IOTRACE
   if( c=='i' && strncmp(azArg[0], "iotrace", n)==0 ){
-    extern void (*sqlite3_io_trace)(const char*, ...);
+    extern void (*sqlite3IoTrace)(const char*, ...);
     if( iotrace && iotrace!=stdout ) fclose(iotrace);
     iotrace = 0;
     if( nArg<2 ){
-      sqlite3_io_trace = 0;
+      sqlite3IoTrace = 0;
     }else if( strcmp(azArg[1], "-")==0 ){
-      sqlite3_io_trace = iotracePrintf;
+      sqlite3IoTrace = iotracePrintf;
       iotrace = stdout;
     }else{
       iotrace = fopen(azArg[1], "w");
       if( iotrace==0 ){
         fprintf(stderr, "cannot open \"%s\"\n", azArg[1]);
-        sqlite3_io_trace = 0;
+        sqlite3IoTrace = 0;
       }else{
-        sqlite3_io_trace = iotracePrintf;
+        sqlite3IoTrace = iotracePrintf;
       }
     }
   }else

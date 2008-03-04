@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.439 2008/02/19 14:59:35 drh Exp $
+** $Id: btree.c,v 1.440 2008/03/04 17:45:01 mlcreech Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -28,7 +28,7 @@ static const char zMagicHeader[] = SQLITE_FILE_HEADER;
 ** macro.
 */
 #if SQLITE_TEST
-int sqlite3_btree_trace=0;  /* True to enable tracing */
+int sqlite3BtreeTrace=0;  /* True to enable tracing */
 #endif
 
 

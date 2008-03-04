@@ -120,8 +120,8 @@ TCC += -DSQLITE_OMIT_LOAD_EXTENSION=1
 
 # Object files for the SQLite library.
 #
-LIBOBJ = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo btree.lo build.lo \
-         callback.lo complete.lo date.lo \
+LIBOBJ = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo btree.lo \
+         build.lo callback.lo complete.lo date.lo \
          delete.lo expr.lo fault.lo func.lo \
          hash.lo journal.lo insert.lo loadext.lo \
          main.lo malloc.lo mem1.lo mem2.lo mem3.lo mem4.lo mem5.lo mutex.lo \

@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.287 2008/02/23 21:55:40 drh Exp $
+** $Id: where.c,v 1.288 2008/03/04 17:45:02 mlcreech Exp $
 */
 #include "sqliteInt.h"
 
@@ -29,8 +29,8 @@
 ** Trace output macros
 */
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
-int sqlite3_where_trace = 0;
-# define WHERETRACE(X)  if(sqlite3_where_trace) sqlite3DebugPrintf X
+int sqlite3WhereTrace = 0;
+# define WHERETRACE(X)  if(sqlite3WhereTrace) sqlite3DebugPrintf X
 #else
 # define WHERETRACE(X)
 #endif
@@ -1176,7 +1176,7 @@ static double estLog(double N){
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_DEBUG)
 static void TRACE_IDX_INPUTS(sqlite3_index_info *p){
   int i;
-  if( !sqlite3_where_trace ) return;
+  if( !sqlite3WhereTrace ) return;
   for(i=0; i<p->nConstraint; i++){
     sqlite3DebugPrintf("  constraint[%d]: col=%d termid=%d op=%d usabled=%d\n",
        i,
@@ -1194,7 +1194,7 @@ static void TRACE_IDX_INPUTS(sqlite3_index_info *p){
 }
 static void TRACE_IDX_OUTPUTS(sqlite3_index_info *p){
   int i;
-  if( !sqlite3_where_trace ) return;
+  if( !sqlite3WhereTrace ) return;
   for(i=0; i<p->nConstraint; i++){
     sqlite3DebugPrintf("  usage[%d]: argvIdx=%d omit=%d\n",
        i,
