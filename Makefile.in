@@ -26,7 +26,7 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = @CC@ @CPPFLAGS@ @CFLAGS@ -I. -I${TOP}/src -DSQLITE_STANDARD_BUILD=1
+TCC = @CC@ @CPPFLAGS@ @CFLAGS@ -I. -I${TOP}/src
 
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
 # Omitting the define will cause extra debugging code to be inserted and
@@ -158,7 +158,6 @@ SRC = \
   $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
-  $(TOP)/src/common.h \
   $(TOP)/src/complete.c \
   $(TOP)/src/config.h \
   $(TOP)/src/date.c \
@@ -321,7 +320,6 @@ HDR = \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/vdbe.h \
    parse.h \
-   $(TOP)/src/common.h \
    $(TOP)/src/config.h
 
 # Header files used by extensions

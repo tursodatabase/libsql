@@ -11,7 +11,7 @@
 *************************************************************************
 ** Configuration header template to be filled in by 'configure' script
 **
-** @(#) $Id: config.h.in,v 1.1 2008/03/06 07:36:18 mlcreech Exp $
+** @(#) $Id: config.h.in,v 1.2 2008/03/06 16:28:58 mlcreech Exp $
 */
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
@@ -45,6 +45,15 @@
 
 /* Define as 1 if you have the uintptr_t type */
 #undef HAVE_UINTPTR_T
+
+/* Define as 1 if you have the sys/types.h header */
+#undef HAVE_SYS_TYPES_H
+
+/* Define as 1 if you have the stdlib.h header */
+#undef HAVE_STDLIB_H
+
+/* Define as 1 if you have the stdint.h header */
+#undef HAVE_STDINT_H
 
 /* Define as 1 if you have the inttypes.h header */
 #undef HAVE_INTTYPES_H
