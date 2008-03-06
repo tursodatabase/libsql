@@ -87,12 +87,12 @@
 # you don't need (for example BLT) by erasing or commenting out
 # the corresponding code.
 #
-AC_INIT(src/sqlite.h.in)
+AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.33 $
+# $Revision: 1.34 $
 
 #########
 # Programs needed
@@ -100,6 +100,15 @@ dnl show in in configure.
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 AC_PROG_AWK
+
+#########
+# Check for needed/wanted data types
+AC_CHECK_TYPES([int8_t, int16_t, int32_t, int64_t, intptr_t, uint8_t,
+                uint16_t, uint32_t, uint64_t, uintptr_t])
+
+#########
+# Check for needed/wanted headers
+AC_CHECK_HEADERS(sys/types.h, stdlib.h, stdint.h, inttypes.h)
 
 #########
 # Set up an appropriate program prefix
@@ -596,6 +605,10 @@ AC_CHECK_FUNC(usleep, [TARGET_CFLAGS="$TARGET_CFLAGS -DHAVE_USLEEP=1"])
 #--------------------------------------------------------------------
 
 AC_CHECK_FUNC(fdatasync, [TARGET_CFLAGS="$TARGET_CFLAGS -DHAVE_FDATASYNC=1"])
+
+#########
+# Output the config header
+AC_CONFIG_HEADERS(src/config.h)
 
 #########
 # Generate the output files.

@@ -158,7 +158,9 @@ SRC = \
   $(TOP)/src/btree.h \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
+  $(TOP)/src/common.h \
   $(TOP)/src/complete.c \
+  $(TOP)/src/config.h \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -318,7 +320,9 @@ HDR = \
    $(TOP)/src/sqlite3ext.h \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/vdbe.h \
-   parse.h
+   parse.h \
+   $(TOP)/src/common.h \
+   $(TOP)/src/config.h
 
 # Header files used by extensions
 #
@@ -666,7 +670,7 @@ clean:
 	rm -f .target_source
 
 distclean:	clean
-	rm -f config.log config.status libtool Makefile config.h sqlite3.pc
+	rm -f config.log config.status libtool Makefile sqlite3.pc
 
 #
 # Windows section
