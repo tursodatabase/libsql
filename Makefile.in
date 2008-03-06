@@ -659,7 +659,7 @@ tcl_install:	libtclsqlite3.la
 clean:	
 	rm -f *.lo *.la *.o sqlite3$(TEXE) libsqlite3.la
 	rm -f sqlite3.h opcodes.*
-	rm -rf .libs .deps 
+	rm -rf .libs .deps tsrc
 	rm -f lemon$(BEXE) lempar.c parse.* sqlite*.tar.gz
 	rm -f mkkeywordhash$(BEXE) keywordhash.h
 	rm -f $(PUBLISH)
@@ -667,7 +667,7 @@ clean:
 	rm -f testfixture$(TEXE) test.db
 	rm -f common.tcl
 	rm -f sqlite3.dll sqlite3.lib sqlite3.def
-	rm -f .target_source
+	rm -f sqlite3.c .target_source
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile sqlite3.pc

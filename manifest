@@ -1,7 +1,7 @@
-C Miscellaneous\sautoconf\scleanups\s-\sget\srid\sof\sTARGET_CFLAGS,\sfix\sheader\slist\s(CVS\s4828)
-D 2008-03-06T08:54:38
+C Remove\samalgamation\son\s"make\sclean"\s(fixes\s#2559)\s(CVS\s4829)
+D 2008-03-06T09:03:21
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in bc8853a2bd55e1e5ba90592a4472e5877d51a340
+F Makefile.in c8c35f20dd24aad9ba71e4ca8c2b99cc8c84ed0a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 2e206fc9458bf10a8c3ba2d13bf521a04ef441c6
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 48c9fa97b9d9000f6fba5adb04c1026b162eb3ab
-R b1cf16a44aab375d9aadd095245a0690
+P a674f76db9035375772706b6ff1cfaa2a459ffb0
+R 936cdc026fe874433af5593aab111821
 U mlcreech
-Z 1cf558167ea68317b2fa78036d64d8b7
+Z e266b9b33c2411a276147aff041cd46d
