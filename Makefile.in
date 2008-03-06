@@ -73,6 +73,9 @@ TLIBS = @LIBS@
 #
 TEMP_STORE = -DTEMP_STORE=@TEMP_STORE@
 
+# Enable/disable loadable extensions based on configuration
+TCC += @LOADEXTENSION_FLAGS@
+
 # Version numbers and release number for the SQLite being compiled.
 #
 VERSION = @VERSION@
@@ -116,7 +119,6 @@ NAWK = @AWK@
 
 # You should not have to change anything below this line
 ###############################################################################
-TCC += -DSQLITE_OMIT_LOAD_EXTENSION=1
 
 # Object files for the SQLite library (non-amalgamation).
 #

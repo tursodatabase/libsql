@@ -1,7 +1,7 @@
-C Build\samalgamation\sby\sdefault\son\sautoconf-driven\sbuilds,\sadd\n--disable-amalgamation\soption\sto\sconfigure\sscript\s(CVS\s4820)
-D 2008-03-04T19:03:08
+C Make\sextension\sloading\smore\seasily\sconfigurable.\s\sFixes\s#2977\s(CVS\s4821)
+D 2008-03-06T04:14:18
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in e18597f1f36c530260692d52a4e3785825265d60
+F Makefile.in 334e3d1d47539d5a310d7cd956ac0aeed9968059
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 2e206fc9458bf10a8c3ba2d13bf521a04ef441c6
@@ -16,8 +16,8 @@ F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess dba2d1300ec8f8cd00c6fb44b9edde21c14e960c
 F config.sub 9a842e7c332ed65cef3f2c20354e06dc998b2796
-F configure f8b0454f30c4d3beb4b4978b97743381b51c6494 x
-F configure.ac e39ab14107eb49ba9c342155e05f1d987f5b1a61
+F configure e430b461770bdbc090f3a249189c3ca701024b92 x
+F configure.ac 2ef55e74f130264d03d6704b04292dda936b9fee
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9c6694bb61a8ecdbfb2d05e5e05a8cc97b792240
-R f6b04bb89c3105668b926378100c262b
+P f9391fa06f22aea5c6af9e1c76d7f5404483189a
+R d067dc088f0abfde86142238a6e140db
 U mlcreech
-Z 19aacec2cb03987f02ce862f80a0df8d
+Z cff6fb75208e02bf05a1eb4dc14e3304

@@ -873,6 +873,7 @@ TARGET_READLINE_INC
 TARGET_HAVE_READLINE
 TARGET_DEBUG
 USE_AMALGAMATION
+LOADEXTENSION_FLAGS
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -1482,6 +1483,7 @@ Optional Features:
   --disable-amalgamation  Disable the amalgamation and instead build all files
                           separately (currently needed to build the test
                           fixture)
+  --enable-load-extension Enable loading of external extensions
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1935,7 +1937,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.46 $
+# $Revision: 1.47 $
 
 #########
 # Programs needed
@@ -3686,7 +3688,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 3689 "configure"' > conftest.$ac_ext
+  echo '#line 3691 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6365,11 +6367,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6368: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6370: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6372: \$? = $ac_status" >&5
+   echo "$as_me:6374: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6633,11 +6635,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6636: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6638: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6640: \$? = $ac_status" >&5
+   echo "$as_me:6642: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6737,11 +6739,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6740: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6742: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6744: \$? = $ac_status" >&5
+   echo "$as_me:6746: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9082,7 +9084,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9085 "configure"
+#line 9087 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9182,7 +9184,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9185 "configure"
+#line 9187 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11518,11 +11520,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11521: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11523: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11525: \$? = $ac_status" >&5
+   echo "$as_me:11527: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -11622,11 +11624,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11625: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11627: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11629: \$? = $ac_status" >&5
+   echo "$as_me:11631: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13229,11 +13231,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13232: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13234: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13236: \$? = $ac_status" >&5
+   echo "$as_me:13238: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13333,11 +13335,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13336: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13338: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13340: \$? = $ac_status" >&5
+   echo "$as_me:13342: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15568,11 +15570,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15571: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15573: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15575: \$? = $ac_status" >&5
+   echo "$as_me:15577: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15836,11 +15838,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15839: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15841: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15843: \$? = $ac_status" >&5
+   echo "$as_me:15845: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15940,11 +15942,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15943: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15945: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15947: \$? = $ac_status" >&5
+   echo "$as_me:15949: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -19868,6 +19870,22 @@ fi
 
 
 #########
+# See whether we should allow loadable extensions
+# Check whether --enable-load-extension was given.
+if test "${enable_load_extension+set}" = set; then
+  enableval=$enable_load_extension; use_loadextension=$enableval
+else
+  use_loadextension=no
+fi
+
+if test "${use_loadextension}" = "yes" ; then
+  LOADEXTENSION_FLAGS=""
+else
+  LOADEXTENSION_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
+fi
+
+
+#########
 # Figure out whether or not we have a "usleep()" function.
 #
 { echo "$as_me:$LINENO: checking for usleep" >&5
@@ -20828,11 +20846,12 @@ TARGET_READLINE_INC!$TARGET_READLINE_INC$ac_delim
 TARGET_HAVE_READLINE!$TARGET_HAVE_READLINE$ac_delim
 TARGET_DEBUG!$TARGET_DEBUG$ac_delim
 USE_AMALGAMATION!$USE_AMALGAMATION$ac_delim
+LOADEXTENSION_FLAGS!$LOADEXTENSION_FLAGS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 11; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 12; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

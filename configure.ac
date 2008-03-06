@@ -92,7 +92,7 @@ AC_INIT(src/sqlite.h.in)
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.32 $
+# $Revision: 1.33 $
 
 #########
 # Programs needed
@@ -573,6 +573,18 @@ else
   USE_AMALGAMATION=0
 fi
 AC_SUBST(USE_AMALGAMATION)
+
+#########
+# See whether we should allow loadable extensions
+AC_ARG_ENABLE(load-extension, AC_HELP_STRING([--enable-load-extension],
+      [Enable loading of external extensions]),
+      [use_loadextension=$enableval],[use_loadextension=no])
+if test "${use_loadextension}" = "yes" ; then
+  LOADEXTENSION_FLAGS=""
+else
+  LOADEXTENSION_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
+fi
+AC_SUBST(LOADEXTENSION_FLAGS)
 
 #########
 # Figure out whether or not we have a "usleep()" function.
