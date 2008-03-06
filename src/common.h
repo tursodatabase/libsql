@@ -11,7 +11,7 @@
 *************************************************************************
 ** Common includes/defines based on output of configure script
 **
-** @(#) $Id: common.h,v 1.1 2008/03/06 07:36:18 mlcreech Exp $
+** @(#) $Id: common.h,v 1.2 2008/03/06 09:58:50 mlcreech Exp $
 */
 #ifndef _COMMON_H_
 #define _COMMON_H_
@@ -47,11 +47,9 @@
 ** practically it's == sizeof(void *)).  We fall back to an int if this type
 ** isn't defined.
 */
-#ifndef HAVE_INTPTR_T
-  typedef int intptr_t;
-#endif
-#ifndef HAVE_UINTPTR_T
-  typedef unsigned int uintptr_t;
+#ifdef HAVE_INTPTR_T
+  typedef intptr_t sqlite3_intptr_t;
+# define __sqlite3_intptr_defined
 #endif
 
 #endif

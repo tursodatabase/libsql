@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.668 2008/03/06 09:19:00 mlcreech Exp $
+** @(#) $Id: sqliteInt.h,v 1.669 2008/03/06 09:58:50 mlcreech Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -21,7 +21,12 @@
 ** the SQLite source tree.
 */
 #ifdef SQLITE_STANDARD_BUILD
-#include "common.h"
+# include "common.h"
+#endif
+
+#ifndef __sqlite3_intptr_defined
+  /* Fallbacks if doing a standalone build... */
+  typedef int sqlite3_intptr_t;
 #endif
 
 /*
