@@ -1,4 +1,4 @@
-C Make\sextension\sloading\smore\seasily\sconfigurable.\s\sFixes\s#2977\s(CVS\s4821)
+C Make\sextension\sloading\smore\seasily\sconfigurable.\s\sFixes\s#2977\s(CVS\s4822)
 D 2008-03-06T04:14:18
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 334e3d1d47539d5a310d7cd956ac0aeed9968059
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f9391fa06f22aea5c6af9e1c76d7f5404483189a
+P 2a2e8b64df3ff9ea5831b226984ab2c85771131e
 R d067dc088f0abfde86142238a6e140db
 U mlcreech
-Z cff6fb75208e02bf05a1eb4dc14e3304
+Z 9f38542528503021061d26737ac140cc
