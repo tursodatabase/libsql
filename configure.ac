@@ -92,7 +92,7 @@ AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.35 $
+# $Revision: 1.36 $
 
 #########
 # Programs needed
@@ -108,7 +108,7 @@ AC_CHECK_TYPES([int8_t, int16_t, int32_t, int64_t, intptr_t, uint8_t,
 
 #########
 # Check for needed/wanted headers
-AC_CHECK_HEADERS(sys/types.h, stdlib.h, stdint.h, inttypes.h)
+AC_CHECK_HEADERS(sys/types.h stdlib.h stdint.h inttypes.h)
 
 #########
 # Set up an appropriate program prefix
@@ -181,7 +181,6 @@ else
 	fi
 fi
 AC_SUBST(BUILD_CC)
-AC_SUBST(BUILD_CFLAGS)
 
 ##########
 # Do we want to support multithreaded use of sqlite
@@ -319,9 +318,9 @@ if test "$TARGET_EXEEXT" = ".exe"; then
     OS_UNIX=0
     OS_WIN=0
     OS_OS2=1
-    TARGET_CFLAGS="$TARGET_CFLAGS -DOS_OS2=1"
+    CFLAGS="$CFLAGS -DOS_OS2=1"
     if test "$ac_compiler_gnu" == "yes" ; then
-      TARGET_CFLAGS="$TARGET_CFLAGS -Zomf -Zexe -Zmap"
+      CFLAGS="$CFLAGS -Zomf -Zexe -Zmap"
       BUILD_CFLAGS="$BUILD_CFLAGS -Zomf -Zexe"
     fi
   else
@@ -329,14 +328,14 @@ if test "$TARGET_EXEEXT" = ".exe"; then
     OS_WIN=1
     OS_OS2=0
     tclsubdir=win
-    TARGET_CFLAGS="$TARGET_CFLAGS -DOS_WIN=1"
+    CFLAGS="$CFLAGS -DOS_WIN=1"
   fi
 else
   OS_UNIX=1
   OS_WIN=0
   OS_OS2=0
   tclsubdir=unix
-  TARGET_CFLAGS="$TARGET_CFLAGS -DOS_UNIX=1"
+  CFLAGS="$CFLAGS -DOS_UNIX=1"
 fi
 
 AC_SUBST(BUILD_EXEEXT)
@@ -598,13 +597,13 @@ AC_SUBST(LOADEXTENSION_FLAGS)
 #########
 # Figure out whether or not we have a "usleep()" function.
 #
-AC_CHECK_FUNC(usleep, [TARGET_CFLAGS="$TARGET_CFLAGS -DHAVE_USLEEP=1"])
+AC_CHECK_FUNC(usleep, [CFLAGS="$CFLAGS -DHAVE_USLEEP=1"])
 
 #--------------------------------------------------------------------
 # Redefine fdatasync as fsync on systems that lack fdatasync
 #--------------------------------------------------------------------
 
-AC_CHECK_FUNC(fdatasync, [TARGET_CFLAGS="$TARGET_CFLAGS -DHAVE_FDATASYNC=1"])
+AC_CHECK_FUNC(fdatasync, [CFLAGS="$CFLAGS -DHAVE_FDATASYNC=1"])
 
 #########
 # Output the config header
@@ -613,7 +612,7 @@ AC_CONFIG_HEADERS(src/config.h)
 #########
 # Generate the output files.
 #
-AC_SUBST(TARGET_CFLAGS)
+AC_SUBST(BUILD_CFLAGS)
 AC_OUTPUT([
 Makefile
 sqlite3.pc

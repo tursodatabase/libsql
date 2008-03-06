@@ -1,7 +1,7 @@
-C Respect\suser's\sconfigured\sbindir/libdir/includedir\sif\spresent\s(fixes\s#558)\s(CVS\s4827)
-D 2008-03-06T08:09:13
+C Miscellaneous\sautoconf\scleanups\s-\sget\srid\sof\sTARGET_CFLAGS,\sfix\sheader\slist\s(CVS\s4828)
+D 2008-03-06T08:54:38
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in e723047d366acbd396ecc99514922d0249d8c0f1
+F Makefile.in bc8853a2bd55e1e5ba90592a4472e5877d51a340
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 2e206fc9458bf10a8c3ba2d13bf521a04ef441c6
@@ -16,8 +16,8 @@ F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess dba2d1300ec8f8cd00c6fb44b9edde21c14e960c
 F config.sub 9a842e7c332ed65cef3f2c20354e06dc998b2796
-F configure 2fc632fb3eaafd1328d90a940b362dfca1336483 x
-F configure.ac 156b3bf36819565a1c30f06a3a0154b99ea30868
+F configure ff2b1ee24b75c386a493bd013dcf18b500a4888a x
+F configure.ac 95fa89bde2948222857c2a341968a6e9c2c335b7
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P dda3d658998b00748f0e7693b3756d45400e8c8a
-R 6dc57a11ceade735e566593074ae3cf5
+P 48c9fa97b9d9000f6fba5adb04c1026b162eb3ab
+R b1cf16a44aab375d9aadd095245a0690
 U mlcreech
-Z 42b2d355b6f48cd1237d5937762bc500
+Z 1cf558167ea68317b2fa78036d64d8b7
