@@ -1,5 +1,5 @@
-C Use\sintptr_t\sdefinition\sto\ssilence\swarnings\sabout\sptr-int\scasts\s(CVS\s4824)
-D 2008-03-06T07:35:22
+C Add\sheaders\sfor\suse\swith\sautoconf\s(missing\sfrom\sprevious\scheckin)\s(CVS\s4825)
+D 2008-03-06T07:36:18
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5a9dd0d69099728e0fca1a9cf2823226d276969a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -89,7 +89,10 @@ F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
 F src/btreeInt.h d7d2f4d9d7f2e72c455326d48b2b478b842a81f6
 F src/build.c 19990e2ce78806e854b5baaa18a77b540a476bbb
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
+F src/common.h 25fa5524ee3d2617986a3ec1ba59fef195d2d009
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
+F src/config.h b60286b542f5284d529b659adcb9c9d25eecab20
+F src/config.h.in 276f8e51e2daf0a19136c28678ec93542ac0ebe7
 F src/date.c 187cad26eaaecd7bcdccd49d5a70c5aa3010bc74
 F src/delete.c fa13c296262e89c32d28949f15be275e52d7f524
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
@@ -621,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 88698fbdd5387b195e1c04c0c597f3c7458757c5
-R 319f02e97f65970946b1dcad66344da4
+P 54839a84e6ce080ea8a0f6ce32acaa053d20f311
+R ba6f603fbcf69a52cea4b01ecdf772c7
 U mlcreech
-Z 98d99414f33d762bf04af83dd32456ee
+Z 267ef6d6906a66247cc6933cc3edc0d5
