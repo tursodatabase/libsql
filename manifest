@@ -1,7 +1,7 @@
-C Remove\samalgamation\son\s"make\sclean"\s(fixes\s#2559)\s(CVS\s4829)
-D 2008-03-06T09:03:21
+C Don't\stry\sand\sinclude\scommon.h\son\sstand-alone\samalgamation\sbuilds\s(CVS\s4830)
+D 2008-03-06T09:16:24
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in c8c35f20dd24aad9ba71e4ca8c2b99cc8c84ed0a
+F Makefile.in dbb064b7fca107aff4a722a3ee801af26dcda270
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 2e206fc9458bf10a8c3ba2d13bf521a04ef441c6
@@ -142,7 +142,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in b8158aa606f0b39426d63132ae0530d91c021abb
 F src/sqlite3ext.h 50c70a894ffe8e6ada5948c89b91db0a80a6b2a7
-F src/sqliteInt.h 65c6c06549ec8c4fb415075cff9c91d51f8e255a
+F src/sqliteInt.h cd7421befc5fc0db2e6b69f69baaad3af2816a72
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c c688f2679d3b2221bc122afdc6771fa34813493d
 F src/tclsqlite.c d95e0e74c7167b2807f9f4f73bf45f7c58096297
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a674f76db9035375772706b6ff1cfaa2a459ffb0
-R 936cdc026fe874433af5593aab111821
+P e03802f362307ee91fcecaeab6b8f3b43a61d4ca
+R 9795ac2df701f0b1959754aee2850b67
 U mlcreech
-Z e266b9b33c2411a276147aff041cd46d
+Z 8692aac4f87a1a74a3370cfdd79a8c27

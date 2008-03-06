@@ -11,12 +11,18 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.666 2008/03/06 07:19:20 mlcreech Exp $
+** @(#) $Id: sqliteInt.h,v 1.667 2008/03/06 09:16:24 mlcreech Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
 
+/*
+** Do not try to include this file when building the amalgamation outside of
+** the SQLite source tree.
+*/
+#ifdef SQLITE_STANDARD_BUILD
 #include "common.h"
+#endif
 
 /*
 ** The macro unlikely() is a hint that surrounds a boolean
