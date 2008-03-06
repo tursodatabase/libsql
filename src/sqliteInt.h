@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.667 2008/03/06 09:16:24 mlcreech Exp $
+** @(#) $Id: sqliteInt.h,v 1.668 2008/03/06 09:19:00 mlcreech Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -320,7 +320,7 @@ typedef UINT8_TYPE i8;             /* 1-byte signed integer */
 ** evaluated at runtime.
 */
 #ifdef SQLITE_AMALGAMATION
-const int sqlite3One;
+const int sqlite3one;
 #else
 extern const int sqlite3one;
 #endif

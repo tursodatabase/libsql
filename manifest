@@ -1,5 +1,5 @@
-C Don't\stry\sand\sinclude\scommon.h\son\sstand-alone\samalgamation\sbuilds\s(CVS\s4830)
-D 2008-03-06T09:16:24
+C Typo\sin\samalgamation\snon-x86\sbuilds\s(CVS\s4831)
+D 2008-03-06T09:19:00
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dbb064b7fca107aff4a722a3ee801af26dcda270
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in b8158aa606f0b39426d63132ae0530d91c021abb
 F src/sqlite3ext.h 50c70a894ffe8e6ada5948c89b91db0a80a6b2a7
-F src/sqliteInt.h cd7421befc5fc0db2e6b69f69baaad3af2816a72
+F src/sqliteInt.h 9dad69a38bab6d9284af99d57004c416437db76a
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c c688f2679d3b2221bc122afdc6771fa34813493d
 F src/tclsqlite.c d95e0e74c7167b2807f9f4f73bf45f7c58096297
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e03802f362307ee91fcecaeab6b8f3b43a61d4ca
-R 9795ac2df701f0b1959754aee2850b67
+P 9898320be05cdbe78dac799f3fef34dccb644ca8
+R 50f5338f0bca04916e37025aa0109e81
 U mlcreech
-Z 8692aac4f87a1a74a3370cfdd79a8c27
+Z c37d237b5c24169a3424e40b047eb89c
