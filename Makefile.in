@@ -102,9 +102,9 @@ SHLIB_SUFFIX = @TCL_SHLIB_SUFFIX@
 
 # Some standard variables and programs
 #
-prefix = @prefix@
-exec_prefix = @exec_prefix@
 libdir = @libdir@
+bindir = @bindir@
+includedir = @includedir@
 INSTALL = @INSTALL@
 LIBTOOL = ./libtool
 ALLOWRELEASE = @ALLOWRELEASE@
@@ -645,11 +645,11 @@ sqlite3_analyzer$(TEXE):	$(TOP)/src/tclsqlite.c libtclsqlite3.la \
 install:	sqlite3$(BEXE) libsqlite3.la sqlite3.h ${HAVE_TCL:1=tcl_install}
 	$(INSTALL) -d $(DESTDIR)$(libdir)
 	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
-	$(INSTALL) -d $(DESTDIR)$(exec_prefix)/bin
-	$(LTINSTALL) sqlite3$(BEXE) $(DESTDIR)$(exec_prefix)/bin
-	$(INSTALL) -d $(DESTDIR)$(prefix)/include
-	$(INSTALL) -m 0644 sqlite3.h $(DESTDIR)$(prefix)/include
-	$(INSTALL) -m 0644 $(TOP)/src/sqlite3ext.h $(DESTDIR)$(prefix)/include
+	$(INSTALL) -d $(DESTDIR)$(bindir)
+	$(LTINSTALL) sqlite3$(BEXE) $(DESTDIR)$(bindir)
+	$(INSTALL) -d $(DESTDIR)$(includedir)
+	$(INSTALL) -m 0644 sqlite3.h $(DESTDIR)$(includedir)
+	$(INSTALL) -m 0644 $(TOP)/src/sqlite3ext.h $(DESTDIR)$(includedir)
 	$(INSTALL) -d $(DESTDIR)$(libdir)/pkgconfig; 
 	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(libdir)/pkgconfig; 
 

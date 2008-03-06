@@ -1,7 +1,7 @@
-C Actually\suse\sTARGET_CFLAGS\son\sautoconf-driven\sbuilds\s(CVS\s4826)
-D 2008-03-06T07:51:15
+C Respect\suser's\sconfigured\sbindir/libdir/includedir\sif\spresent\s(fixes\s#558)\s(CVS\s4827)
+D 2008-03-06T08:09:13
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in 4ddc37cce8d315ea0f4567296312161a1f100498
+F Makefile.in e723047d366acbd396ecc99514922d0249d8c0f1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
 F VERSION 2e206fc9458bf10a8c3ba2d13bf521a04ef441c6
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4513a5f493bb612134d04685c0d6777e0d5c65bc
-R e603c6bf696a8215ab3d4d3d0e7281bd
+P dda3d658998b00748f0e7693b3756d45400e8c8a
+R 6dc57a11ceade735e566593074ae3cf5
 U mlcreech
-Z 81b6bfce66b43213aed86854f5b611c4
+Z 42b2d355b6f48cd1237d5937762bc500
