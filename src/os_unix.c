@@ -1326,6 +1326,7 @@ static int unixUnlock(sqlite3_file *id, int locktype){
   struct flock lock;
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
+  int h;
 
   assert( pFile );
   OSTRACE7("UNLOCK  %d %d was %d(%d,%d) pid=%d\n", pFile->h, locktype,
@@ -1339,17 +1340,20 @@ static int unixUnlock(sqlite3_file *id, int locktype){
     return SQLITE_MISUSE;
   }
   enterMutex();
+  h = pFile->h;
   pLock = pFile->pLock;
   assert( pLock->cnt!=0 );
   if( pFile->locktype>SHARED_LOCK ){
     assert( pLock->locktype==pFile->locktype );
+    SimulateIOErrorBenign(1);
+    SimulateIOError( h=(-1) )
+    SimulateIOErrorBenign(0);
     if( locktype==SHARED_LOCK ){
       lock.l_type = F_RDLCK;
       lock.l_whence = SEEK_SET;
       lock.l_start = SHARED_FIRST;
       lock.l_len = SHARED_SIZE;
-      if( fcntl(pFile->h, F_SETLK, &lock)==(-1) ){
-        /* This should never happen */
+      if( fcntl(h, F_SETLK, &lock)==(-1) ){
         rc = SQLITE_IOERR_RDLOCK;
       }
     }
@@ -1357,10 +1361,10 @@ static int unixUnlock(sqlite3_file *id, int locktype){
     lock.l_whence = SEEK_SET;
     lock.l_start = PENDING_BYTE;
     lock.l_len = 2L;  assert( PENDING_BYTE+1==RESERVED_BYTE );
-    if( fcntl(pFile->h, F_SETLK, &lock)!=(-1) ){
+    if( fcntl(h, F_SETLK, &lock)!=(-1) ){
       pLock->locktype = SHARED_LOCK;
     }else{
-      rc = SQLITE_IOERR_UNLOCK;  /* This should never happen */
+      rc = SQLITE_IOERR_UNLOCK;
     }
   }
   if( locktype==NO_LOCK ){
@@ -1375,10 +1379,14 @@ static int unixUnlock(sqlite3_file *id, int locktype){
       lock.l_type = F_UNLCK;
       lock.l_whence = SEEK_SET;
       lock.l_start = lock.l_len = 0L;
-      if( fcntl(pFile->h, F_SETLK, &lock)!=(-1) ){
+      SimulateIOErrorBenign(1);
+      SimulateIOError( h=(-1) )
+      SimulateIOErrorBenign(0);
+      if( fcntl(h, F_SETLK, &lock)!=(-1) ){
         pLock->locktype = NO_LOCK;
       }else{
-        rc = SQLITE_IOERR_UNLOCK;  /* This should never happen */
+        rc = SQLITE_IOERR_UNLOCK;
+        pLock->cnt = 1;
       }
     }
 
@@ -1386,21 +1394,23 @@ static int unixUnlock(sqlite3_file *id, int locktype){
     ** count reaches zero, close any other file descriptors whose close
     ** was deferred because of outstanding locks.
     */
-    pOpen = pFile->pOpen;
-    pOpen->nLock--;
-    assert( pOpen->nLock>=0 );
-    if( pOpen->nLock==0 && pOpen->nPending>0 ){
-      int i;
-      for(i=0; i<pOpen->nPending; i++){
-        close(pOpen->aPending[i]);
+    if( rc==SQLITE_OK ){
+      pOpen = pFile->pOpen;
+      pOpen->nLock--;
+      assert( pOpen->nLock>=0 );
+      if( pOpen->nLock==0 && pOpen->nPending>0 ){
+        int i;
+        for(i=0; i<pOpen->nPending; i++){
+          close(pOpen->aPending[i]);
+        }
+        free(pOpen->aPending);
+        pOpen->nPending = 0;
+        pOpen->aPending = 0;
       }
-      free(pOpen->aPending);
-      pOpen->nPending = 0;
-      pOpen->aPending = 0;
     }
   }
   leaveMutex();
-  pFile->locktype = locktype;
+  if( rc==SQLITE_OK ) pFile->locktype = locktype;
   return rc;
 }
 
@@ -1454,8 +1464,8 @@ static int unixClose(sqlite3_file *id){
  */
 typedef struct afpLockingContext afpLockingContext;
 struct afpLockingContext {
-  unsigned long long sharedLockByte;  /* Byte offset of shared lock byte */
-  const char *filePath;               /* Name of the file */
+  unsigned long long sharedLockByte;
+  char *filePath;
 };
 
 struct ByteRangeLockPB2
@@ -1752,7 +1762,9 @@ static int afpUnixClose(sqlite3_file *id) {
   sqlite3_free(pFile->lockingContext);
   if( pFile->dirfd>=0 ) close(pFile->dirfd);
   pFile->dirfd = -1;
+  enterMutex();
   close(pFile->h);
+  leaveMutex();
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
   memset(pFile, 0, sizeof(unixFile));
@@ -1843,7 +1855,10 @@ static int flockUnixClose(sqlite3_file *id) {
   
   if( pFile->dirfd>=0 ) close(pFile->dirfd);
   pFile->dirfd = -1;
+
+  enterMutex();
   close(pFile->h);  
+  leaveMutex();
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
   memset(pFile, 0, sizeof(unixFile));
@@ -1953,7 +1968,9 @@ static int dotlockUnixClose(sqlite3_file *id) {
   sqlite3_free(pFile->lockingContext);
   if( pFile->dirfd>=0 ) close(pFile->dirfd);
   pFile->dirfd = -1;
+  enterMutex();  
   close(pFile->h);
+  leaveMutex();
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
   memset(pFile, 0, sizeof(unixFile));
@@ -1989,7 +2006,9 @@ static int nolockUnixClose(sqlite3_file *id) {
   if( !pFile ) return SQLITE_OK;
   if( pFile->dirfd>=0 ) close(pFile->dirfd);
   pFile->dirfd = -1;
+  enterMutex();
   close(pFile->h);
+  leaveMutex();
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
   memset(pFile, 0, sizeof(unixFile));

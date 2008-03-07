@@ -1,5 +1,5 @@
-C Cleanup\sthe\slocking-style\scode\sin\sos_unix.c.\s(CVS\s4837)
-D 2008-03-07T15:34:11
+C Correctly\shandle\sI/O\serrors\sthat\soccur\sduring\sOsUnlock().\s\sBefore\sthis\nfix,\san\sI/O\serror\sduring\sOsUnlock()\scould\slead\sto\sdatabase\scorruption.\nThat\sis\snot\sa\sserious\sproblem,\sthough,\ssince\serrors\sduring\sOsUnlock()\nare\snot\spossible\son\smost\ssystems.\s(CVS\s4838)
+D 2008-03-07T19:51:14
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in d521464011d6965bbda1b699f1850c6e33141c73
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -120,16 +120,16 @@ F src/mutex_unix.c a6e111947a3cdaa2cda394ed060d7f496fcb4af8
 F src/mutex_w32.c 6e197765f283815496193e78e9548b5d0e53b68e
 F src/os.c 2f2753b8d33f79d169c43d6bb0b25b3c58fd33de
 F src/os.h d04706d54a072c7a30ab9e346ad916ef28c842d5
-F src/os_common.h a66179e3b9a2686ba0f17a26d065d3e29202b7b8
+F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 10b23539e0050bdfc9f136242086a5c18c70c6f8
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c bf339cd689054c8edc603c0209d91f62444c1477
+F src/os_unix.c 04ff58d84ae02d4ef732103455bfe36ce7780738
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c aa3f4bbee3b8c182d25a33fbc319f486857c12c1
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c d09885bb88e9868a5c322a0181d4022cf294d98b
+F src/pager.c 803d361f7aabfea1eebf8951916492c77d3781a2
 F src/pager.h 8174615ffd14ccc2cad2b081b919a398fa95e3f9
 F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
 F src/pragma.c e3f39f8576234887ecd0c1de43dc51af5855930c
@@ -146,7 +146,7 @@ F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
 F src/tclsqlite.c d95e0e74c7167b2807f9f4f73bf45f7c58096297
 F src/test1.c c3d43a6bd299f3c115f6617af6715004819ca5cb
-F src/test2.c 355d5693ca3ee705548fa7f795592a37b2372b70
+F src/test2.c 89793e863188028b49bd259026a73820426539b3
 F src/test3.c 5c7452038ab27aa698070799b10132f26cdd2a80
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
@@ -353,7 +353,7 @@ F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
 F test/io.test f2e9890eb3f159973fcb11008054596b0caeca4f
 F test/ioerr.test 5382046b2ef19b9084652e7d2d1e82ab33c0deda
-F test/ioerr2.test e3d52c40f43f9b61da9b38951a737e7b84ebae96
+F test/ioerr2.test b9c9a0491a812707762a7c002876553be54d9969
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
@@ -458,7 +458,7 @@ F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
 F test/tableapi.test 4546eb710d979db023bfcc16b0c108b1557fcb43
 F test/tclsqlite.test 3fac87cb1059c46b8fa8a60b553f4f1adb0fb6d9
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl 7760c4101448e5595b2ee095e540643fa31a1610
+F test/tester.tcl 8f1df98df42667d05ee56ac4ba1ee58f9bb1e885
 F test/thread001.test 8fbd9559da0bbdc273e00318c7fd66c162020af7
 F test/thread002.test 2c4ad2c386f60f6fe268cd91c769ee35b3c1fd0b
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9819cefbd7032fe6884c6c891e8e399000e0821f
-R 94e0b03717c8cb302d6990c16331816e
+P 40f55c09dbd31f861b9f9c7641cce92553d94e35
+R 862dd7b7066eb395b14356fb582df1d4
 U drh
-Z c7afd0fbb52cbc7669e22683bc9d24e9
+Z aa58e6aa52b1bd4468d6e2d048a914af

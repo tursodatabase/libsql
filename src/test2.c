@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.53 2008/02/18 14:47:34 drh Exp $
+** $Id: test2.c,v 1.54 2008/03/07 19:51:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -666,6 +666,7 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
   extern int sqlite3_io_error_persist;
   extern int sqlite3_io_error_pending;
   extern int sqlite3_io_error_hit;
+  extern int sqlite3_io_error_hardhit;
   extern int sqlite3_diskfull_pending;
   extern int sqlite3_diskfull;
   extern int sqlite3_pager_n_sort_bucket;
@@ -708,6 +709,8 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
      (char*)&sqlite3_io_error_persist, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_io_error_hit",
      (char*)&sqlite3_io_error_hit, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite_io_error_hardhit",
+     (char*)&sqlite3_io_error_hardhit, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_diskfull_pending",
      (char*)&sqlite3_diskfull_pending, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_diskfull",

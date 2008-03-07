@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.105 2008/02/16 16:21:46 drh Exp $
+# $Id: tester.tcl,v 1.106 2008/03/07 19:51:15 drh Exp $
 
 
 set tcl_precision 15
@@ -526,7 +526,10 @@ proc do_ioerr_test {testname args} {
     # there are at least N IO operations performed by SQLite as
     # a result of the script, the Nth will fail.
     do_test $testname.$n.3 {
+      set ::sqlite_io_error_hit 0
+      set ::sqlite_io_error_hardhit 0
       set r [catch $::ioerrorbody msg]
+      set ::errseen $r
       set rc [sqlite3_errcode $::DB]
       if {$::ioerropts(-erc)} {
         # If we are in extended result code mode, make sure all of the
@@ -558,6 +561,9 @@ proc do_ioerr_test {testname args} {
       }
 
       set s [expr $::sqlite_io_error_hit==0]
+      if {$::sqlite_io_error_hit>$::sqlite_io_error_hardhit && $r==0} {
+        set r 1
+      }
       set ::sqlite_io_error_hit 0
 
       # One of two things must have happened. either
@@ -569,7 +575,7 @@ proc do_ioerr_test {testname args} {
 
     # If an IO error occured, then the checksum of the database should
     # be the same as before the script that caused the IO error was run.
-    if {$::go && $::ioerropts(-cksum)} {
+    if {$::go && $::sqlite_io_error_hardhit && $::ioerropts(-cksum)} {
       do_test $testname.$n.4 {
         catch {db close}
         set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
@@ -577,6 +583,7 @@ proc do_ioerr_test {testname args} {
       } $checksum
     }
 
+    set ::sqlite_io_error_hardhit 0
     set ::sqlite_io_error_pending 0
     if {[info exists ::ioerropts(-cleanup)]} {
       catch $::ioerropts(-cleanup)
