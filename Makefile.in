@@ -102,6 +102,8 @@ SHLIB_SUFFIX = @TCL_SHLIB_SUFFIX@
 
 # Some standard variables and programs
 #
+prefix = @prefix@
+exec_prefix = @exec_prefix@
 libdir = @libdir@
 bindir = @bindir@
 includedir = @includedir@

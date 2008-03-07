@@ -1,7 +1,7 @@
-C Updates\sto\sthe\slocking-style\scode\sin\sos_unix.c.\s\sNot\syet\sworking.\s(CVS\s4834)
-D 2008-03-07T00:27:10
+C Add\smissing\sprefix\s&\sexec_prefix\sto\sMakefile\s-\sfixes\s#2979.\s(CVS\s4835)
+D 2008-03-07T02:20:57
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in 724ca16b1b62dd123344b2945b906f9e6d922ff8
+F Makefile.in d521464011d6965bbda1b699f1850c6e33141c73
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 2e206fc9458bf10a8c3ba2d13bf521a04ef441c6
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8044623062e9aa43593c46e3e5d5bc7361ea7418
-R 0ade21cdb2beced327069a3136a9d80f
-U drh
-Z 33a6ec815f80c4e0995bb3a35a490baa
+P 6ebce3b798c60050fb3c583d805570bb06837108
+R 5a209571ae05392be15c187e2628a20a
+U mlcreech
+Z dc5ddeca7e7a10617e051ee18db0b672
