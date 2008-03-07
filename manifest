@@ -1,5 +1,5 @@
-C Trivial\sdocumentation\sfixes\s(CVS\s4836)
-D 2008-03-07T03:20:32
+C Cleanup\sthe\slocking-style\scode\sin\sos_unix.c.\s(CVS\s4837)
+D 2008-03-07T15:34:11
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in d521464011d6965bbda1b699f1850c6e33141c73
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,7 +125,7 @@ F src/os_os2.c 10b23539e0050bdfc9f136242086a5c18c70c6f8
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c b21695b8cc529f9aad7507bdc0d31cfa72623159
+F src/os_unix.c bf339cd689054c8edc603c0209d91f62444c1477
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c aa3f4bbee3b8c182d25a33fbc319f486857c12c1
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4cda019b63e8ba9f1101fb296a7d745c69e84e00
-R c15bb445f4066eaf2e9cf0566419d3fb
-U mlcreech
-Z 485b426fb4816fce857c16a85c39d37f
+P 9819cefbd7032fe6884c6c891e8e399000e0821f
+R 94e0b03717c8cb302d6990c16331816e
+U drh
+Z c7afd0fbb52cbc7669e22683bc9d24e9
