@@ -1,5 +1,5 @@
-C Correctly\shandle\sI/O\serrors\sthat\soccur\sduring\sOsUnlock().\s\sBefore\sthis\nfix,\san\sI/O\serror\sduring\sOsUnlock()\scould\slead\sto\sdatabase\scorruption.\nThat\sis\snot\sa\sserious\sproblem,\sthough,\ssince\serrors\sduring\sOsUnlock()\nare\snot\spossible\son\smost\ssystems.\s(CVS\s4838)
-D 2008-03-07T19:51:14
+C Another\sfix\sto\sthe\sOsUnlock\sI/O\serror\slogic.\s(CVS\s4839)
+D 2008-03-07T20:14:39
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in d521464011d6965bbda1b699f1850c6e33141c73
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,11 +125,11 @@ F src/os_os2.c 10b23539e0050bdfc9f136242086a5c18c70c6f8
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 49833426101f99aee4bb5f6a44b7c4b2029fda1c
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
-F src/os_unix.c 04ff58d84ae02d4ef732103455bfe36ce7780738
+F src/os_unix.c 4cdd17e768888b865047805ca49beeacf0929683
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c aa3f4bbee3b8c182d25a33fbc319f486857c12c1
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 803d361f7aabfea1eebf8951916492c77d3781a2
+F src/pager.c d8690e166a5e3a3c65a04a35a96bbebeb368a6c7
 F src/pager.h 8174615ffd14ccc2cad2b081b919a398fa95e3f9
 F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
 F src/pragma.c e3f39f8576234887ecd0c1de43dc51af5855930c
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 40f55c09dbd31f861b9f9c7641cce92553d94e35
-R 862dd7b7066eb395b14356fb582df1d4
+P b4c1258edb4a40501d13c9da674d0366d5a8c694
+R 298c7b7df0446685a75fea13d6a4378a
 U drh
-Z aa58e6aa52b1bd4468d6e2d048a914af
+Z 7417e691146a77b72d5f4d9f4e297416

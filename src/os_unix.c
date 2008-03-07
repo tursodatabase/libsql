@@ -1465,7 +1465,7 @@ static int unixClose(sqlite3_file *id){
 typedef struct afpLockingContext afpLockingContext;
 struct afpLockingContext {
   unsigned long long sharedLockByte;
-  char *filePath;
+  const char *filePath;
 };
 
 struct ByteRangeLockPB2

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.413 2008/03/07 19:51:14 drh Exp $
+** @(#) $Id: pager.c,v 1.414 2008/03/07 20:14:39 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1242,7 +1242,7 @@ static void pager_unlock(Pager *pPager){
   if( !pPager->exclusiveMode ){
     if( !MEMDB ){
       int rc = osUnlock(pPager->fd, NO_LOCK);
-      if( rc ) pager_error(pPager, rc);
+      if( rc ) pPager->errCode = rc;
       pPager->dbSize = -1;
       IOTRACE(("UNLOCK %p\n", pPager))
 
