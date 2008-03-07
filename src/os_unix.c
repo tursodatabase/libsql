@@ -1745,10 +1745,10 @@ static int afpUnixUnlock(sqlite3_file *id, int locktype) {
  ** Close a file & cleanup AFP specific locking context 
  */
 static int afpUnixClose(sqlite3_file *id) {
-  unixFile *pFile = (unixFile*)pId;
+  unixFile *pFile = (unixFile*)id;
 
   if( !pFile ) return SQLITE_OK;
-  afpUnixUnlock(*pId, NO_LOCK);
+  afpUnixUnlock(id, NO_LOCK);
   /* free the AFP locking structure */
   if (pFile->lockingContext != NULL) {
     if (((afpLockingContext *)pFile->lockingContext)->filePath != NULL)
@@ -1758,9 +1758,12 @@ static int afpUnixClose(sqlite3_file *id) {
 
   if( pFile->dirfd>=0 ) close(pFile->dirfd);
   pFile->dirfd = -1;
+  enterMutex();
   close(pFile->h);
+  leaveMutex();
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
+  memset(pFile, 0, sizeof(unixFile));
   return SQLITE_OK;
 }
 
@@ -1840,20 +1843,21 @@ static int flockUnixUnlock(sqlite3_file *id, int locktype) {
 /*
  ** Close a file.
  */
-static int flockUnixClose(sqlite3_file *pId) {
-  unixFile *pFile = (unixFile*)*pId;
+static int flockUnixClose(sqlite3_file *id) {
+  unixFile *pFile = (unixFile*)id;
   
   if( !pFile ) return SQLITE_OK;
-  flockUnixUnlock(*pId, NO_LOCK);
+  flockUnixUnlock(id, NO_LOCK);
   
   if( pFile->dirfd>=0 ) close(pFile->dirfd);
   pFile->dirfd = -1;
+
   enterMutex();
-  
   close(pFile->h);  
   leaveMutex();
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
+  memset(pFile, 0, sizeof(unixFile));
   return SQLITE_OK;
 }
 
@@ -1952,7 +1956,7 @@ static int dotlockUnixClose(sqlite3_file *id) {
   unixFile *pFile = (unixFile*)id;
   
   if( !pFile ) return SQLITE_OK;
-  dotlockUnixUnlock(*pId, NO_LOCK);
+  dotlockUnixUnlock(id, NO_LOCK);
   /* free the dotlock locking structure */
   if (pFile->lockingContext != NULL) {
     if (((dotlockLockingContext *)pFile->lockingContext)->lockPath != NULL)
@@ -1963,13 +1967,12 @@ static int dotlockUnixClose(sqlite3_file *id) {
   
   if( pFile->dirfd>=0 ) close(pFile->dirfd);
   pFile->dirfd = -1;
-  enterMutex();
-  
+  enterMutex();  
   close(pFile->h);
-  
   leaveMutex();
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
+  memset(pFile, 0, sizeof(unixFile));
   return SQLITE_OK;
 }
 
@@ -2003,12 +2006,11 @@ static int nolockUnixClose(sqlite3_file *id) {
   if( pFile->dirfd>=0 ) close(pFile->dirfd);
   pFile->dirfd = -1;
   enterMutex();
-  
   close(pFile->h);
-  
   leaveMutex();
   OSTRACE2("CLOSE   %-3d\n", pFile->h);
   OpenCounter(-1);
+  memset(pFile, 0, sizeof(unixFile));
   return SQLITE_OK;
 }
 
@@ -2076,7 +2078,7 @@ static const sqlite3_io_methods sqlite3UnixIoMethod = {
 */
 static const sqlite3_io_methods sqlite3AFPLockingUnixIoMethod = {
   1,                        /* iVersion */
-  unixClose,
+  afpUnixClose,
   unixRead,
   unixWrite,
   unixTruncate,
@@ -2167,22 +2169,26 @@ static const sqlite3_io_methods sqlite3NolockLockingUnixIoMethod = {
 static int fillInUnixFile(
   int h,                  /* Open file descriptor of file being opened */
   int dirfd,              /* Directory file descriptor */
-  sqlite3_file *pId,      /* Write completed initialization here */
-  const char *zFilename,  /* Name of the file being opened */
+  sqlite3_file *pId,      /* Write to the unixFile structure here */
+  const char *zFilename   /* Name of the file being opened */
 ){
   sqlite3LockingStyle lockingStyle;
   unixFile *pNew = (unixFile *)pId;
   int rc;
 
-  memset(pNew, 0, sizeof(unixFile));
+#ifdef FD_CLOEXEC
+  fcntl(h, F_SETFD, fcntl(h, F_GETFD, 0) | FD_CLOEXEC);
+#endif
+
   lockingStyle = sqlite3DetectLockingStyle(zFilename, h);
   if ( lockingStyle == posixLockingStyle ) {
+      
     enterMutex();
     rc = findLockInfo(h, &pNew->pLock, &pNew->pOpen);
     leaveMutex();
     if( rc ){
+      if( dirfd>=0 ) close(dirfd);
       close(h);
-      unlink(zFilename);
       return SQLITE_NOMEM;
     }
   } else {
@@ -2190,65 +2196,59 @@ static int fillInUnixFile(
     pNew->pLock = NULL;
     pNew->pOpen = NULL;
   }
+
+  OSTRACE3("OPEN    %-3d %s\n", h, zFilename);    
   pNew->dirfd = -1;
   pNew->h = h;
+  pNew->dirfd = dirfd;
   SET_THREADID(pNew);
-  pNew = sqlite3_malloc( sizeof(unixFile) );
-  if( pNew==0 ){
-    close(h);
-    enterMutex();
-    releaseLockInfo(pNew->pLock);
-    releaseOpenCnt(pNew->pOpen);
-    leaveMutex();
-    return SQLITE_NOMEM;
-  }else{
-    switch(lockingStyle) {
-      case afpLockingStyle: {
-        /* afp locking uses the file path so it needs to be included in
-        ** the afpLockingContext */
-        int nFilename;
-        pNew->pMethod = &sqlite3AFPLockingUnixIoMethod;
-        pNew->lockingContext = 
-          sqlite3_malloc(sizeof(afpLockingContext));
-        nFilename = strlen(zFilename)+1;
-        ((afpLockingContext *)pNew->lockingContext)->filePath = 
-          sqlite3_malloc(nFilename);
-        memcpy(((afpLockingContext *)pNew->lockingContext)->filePath, 
-               zFilename, nFilename);
-        srandomdev();
-        break;
-      }
-      case flockLockingStyle:
-        /* flock locking doesn't need additional lockingContext information */
-        pNew->pMethod = &sqlite3FlockLockingUnixIoMethod;
-        break;
-      case dotlockLockingStyle: {
-        /* dotlock locking uses the file path so it needs to be included in
-         ** the dotlockLockingContext */
-        int nFilename;
-        pNew->pMethod = &sqlite3DotlockLockingUnixIoMethod;
-        pNew->lockingContext = sqlite3_malloc(
-          sizeof(dotlockLockingContext));
-        nFilename = strlen(zFilename) + 6;
-        ((dotlockLockingContext *)pNew->lockingContext)->lockPath = 
-            sqlite3_malloc( nFilename );
-        sqlite3_snprintf(nFilename, 
-                ((dotlockLockingContext *)pNew->lockingContext)->lockPath, 
-                "%s.lock", zFilename);
-        break;
-      }
-      case posixLockingStyle:
-        /* posix locking doesn't need additional lockingContext information */
-        pNew->pMethod = &sqlite3UnixIoMethod;
-        break;
-      case noLockingStyle:
-      case unsupportedLockingStyle:
-      default: 
-        pNew->pMethod = &sqlite3NolockLockingUnixIoMethod;
+    
+  switch(lockingStyle) {
+    case afpLockingStyle: {
+      /* afp locking uses the file path so it needs to be included in
+      ** the afpLockingContext */
+      int nFilename;
+      pNew->pMethod = &sqlite3AFPLockingUnixIoMethod;
+      pNew->lockingContext = 
+        sqlite3_malloc(sizeof(afpLockingContext));
+      nFilename = strlen(zFilename)+1;
+      ((afpLockingContext *)pNew->lockingContext)->filePath = 
+        sqlite3_malloc(nFilename);
+      memcpy(((afpLockingContext *)pNew->lockingContext)->filePath, 
+             zFilename, nFilename);
+      srandomdev();
+      break;
     }
-    OpenCounter(+1);
-    return SQLITE_OK;
+    case flockLockingStyle:
+      /* flock locking doesn't need additional lockingContext information */
+      pNew->pMethod = &sqlite3FlockLockingUnixIoMethod;
+      break;
+    case dotlockLockingStyle: {
+      /* dotlock locking uses the file path so it needs to be included in
+       ** the dotlockLockingContext */
+      int nFilename;
+      pNew->pMethod = &sqlite3DotlockLockingUnixIoMethod;
+      pNew->lockingContext = sqlite3_malloc(
+        sizeof(dotlockLockingContext));
+      nFilename = strlen(zFilename) + 6;
+      ((dotlockLockingContext *)pNew->lockingContext)->lockPath = 
+          sqlite3_malloc( nFilename );
+      sqlite3_snprintf(nFilename, 
+              ((dotlockLockingContext *)pNew->lockingContext)->lockPath, 
+              "%s.lock", zFilename);
+      break;
+    }
+    case posixLockingStyle:
+      /* posix locking doesn't need additional lockingContext information */
+      pNew->pMethod = &sqlite3UnixIoMethod;
+      break;
+    case noLockingStyle:
+    case unsupportedLockingStyle:
+    default: 
+      pNew->pMethod = &sqlite3NolockLockingUnixIoMethod;
   }
+  OpenCounter(+1);
+  return SQLITE_OK;
 }
 #else /* SQLITE_ENABLE_LOCKING_STYLE */
 static int fillInUnixFile(
