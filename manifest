@@ -1,5 +1,5 @@
-C Another\sfix\sto\sthe\sOsUnlock\sI/O\serror\slogic.\s(CVS\s4839)
-D 2008-03-07T20:14:39
+C Fix\san\salignment\sproblem\sin\stest_async.c.\s(CVS\s4840)
+D 2008-03-07T21:04:02
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in d521464011d6965bbda1b699f1850c6e33141c73
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +154,7 @@ F src/test6.c f8b34a6ff04937092327798ddf0ab46863535bc5
 F src/test7.c acec2256c7c2d279db5a8b5fa1a2a68fcc942c67
 F src/test8.c 25e127f0e21f59da24fa33cdbc645851cfb933f1
 F src/test9.c 4615ef08750245a2d96aaa7cbe2fb4aff2b57acc
-F src/test_async.c 5f21392d66869a4c87dc9153e40d0dc0e085261f
+F src/test_async.c 3147c64c34721f088d5ab20f85dabd5d7732c007
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c 9223ff4a7b8b97c9d12965b0123db1cbd6757efb
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b4c1258edb4a40501d13c9da674d0366d5a8c694
-R 298c7b7df0446685a75fea13d6a4378a
+P 22bd537ee2af6779ecb38502513ae533f85f7c2e
+R 3b613a4e5d518502eb16045917016772
 U drh
-Z 7417e691146a77b72d5f4d9f4e297416
+Z 70fa27f643cacfbef43393a47b3e31b3

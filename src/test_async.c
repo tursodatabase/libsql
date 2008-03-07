@@ -1011,6 +1011,7 @@ static int asyncOpen(
   int nByte;
   AsyncFileData *pData;
   AsyncLock *pLock = 0;
+  char *z;
   int isExclusive = (flags&SQLITE_OPEN_EXCLUSIVE);
 
   nByte = (
@@ -1018,15 +1019,19 @@ static int asyncOpen(
     2 * pVfs->szOsFile +           /* AsyncFileData.pBaseRead and pBaseWrite */
     nName                          /* AsyncFileData.zName */
   ); 
-  pData = sqlite3_malloc(nByte);
-  if( !pData ){
+  z = sqlite3_malloc(nByte);
+  if( !z ){
     return SQLITE_NOMEM;
   }
-  memset(pData, 0, nByte);
-  pData->zName = (char *)&pData[1];
+  memset(z, 0, nByte);
+  pData = (AsyncFileData*)z;
+  z += sizeof(pData[0]);
+  pData->pBaseRead = (sqlite3_file*)z;
+  z += pVfs->szOsFile;
+  pData->pBaseWrite = (sqlite3_file*)z;
+  z += pVfs->szOsFile;
+  pData->zName = z;
   pData->nName = nName;
-  pData->pBaseRead = (sqlite3_file *)&pData->zName[nName];
-  pData->pBaseWrite = (sqlite3_file *)&pData->zName[nName+pVfs->szOsFile];
   pData->close.pFileData = pData;
   pData->close.op = ASYNC_CLOSE;
   memcpy(pData->zName, zName, nName);
