@@ -1,5 +1,5 @@
-C Fix\san\salignment\sproblem\sin\stest_async.c.\s(CVS\s4840)
-D 2008-03-07T21:04:02
+C Make\ssure\sall\snecessary\smutexes\sare\sheld\sprior\sto\sinitializing\sthe\nschema\sin\ssqlite3_table_column_metadata().\s(CVS\s4841)
+D 2008-03-07T21:37:19
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in d521464011d6965bbda1b699f1850c6e33141c73
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -105,7 +105,7 @@ F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c cb1939fdeb91ea88fb44fbd2768a10e14bc44650
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c eceaebcff9807519ed9494056648d0d879f93ed3
-F src/main.c 4f2a8a889e65d359fca0a032536438f587f79f25
+F src/main.c 15db7dda6703f9a41a70337466215bf1a0e1fdcf
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c 62a821702d3292809ca78e7c55c3ca04b05a3757
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 22bd537ee2af6779ecb38502513ae533f85f7c2e
-R 3b613a4e5d518502eb16045917016772
+P 752d8e21bb250d7df58a3abc945fcd7a3b38ad15
+R 9e4a0124c9704bd26a7cbe40ea909ed1
 U drh
-Z 70fa27f643cacfbef43393a47b3e31b3
+Z eab5abe0c56f409cb610e17d80b567b9

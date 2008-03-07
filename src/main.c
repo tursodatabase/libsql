@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.420 2008/03/04 17:45:01 mlcreech Exp $
+** $Id: main.c,v 1.421 2008/03/07 21:37:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1345,7 +1345,9 @@ int sqlite3_table_column_metadata(
   /* Ensure the database schema has been loaded */
   (void)sqlite3SafetyOn(db);
   sqlite3_mutex_enter(db->mutex);
+  sqlite3BtreeEnterAll(db);
   rc = sqlite3Init(db, &zErrMsg);
+  sqlite3BtreeLeaveAll(db);
   if( SQLITE_OK!=rc ){
     goto error_out;
   }
