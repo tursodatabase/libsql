@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.289 2008/03/03 18:47:28 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.290 2008/03/07 03:20:32 mlcreech Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -132,7 +132,7 @@ int sqlite3_libversion_number(void);
 **
 ** SQLite can be compiled with or without mutexes.  When
 ** the SQLITE_THREADSAFE C preprocessor macro is true, mutexes
-** are enabled and SQLite is threadsafe.  When that macro os false,
+** are enabled and SQLite is threadsafe.  When that macro is false,
 ** the mutexes are omitted.  Without the mutexes, it is not safe
 ** to use SQLite from more than one thread.
 **
@@ -434,7 +434,7 @@ int sqlite3_exec(
 ** {F10225} Extended result code names contain two or more "_" characters.
 **
 ** {F10226} The numeric value of an extended result code contains the
-**          numeric value of its corresponding primary result code it
+**          numeric value of its corresponding primary result code in
 **          its least significant 8 bits.
 */
 #define SQLITE_IOERR_READ          (SQLITE_IOERR | (1<<8))
@@ -453,7 +453,7 @@ int sqlite3_exec(
 /*
 ** CAPI3REF: Flags For File Open Operations {F10230}
 **
-** These bit values are intended for use in then
+** These bit values are intended for use in the
 ** 3rd parameter to the [sqlite3_open_v2()] interface and
 ** in the 4th parameter to the xOpen method of the
 ** [sqlite3_vfs] object.
@@ -520,12 +520,12 @@ int sqlite3_exec(
 ** CAPI3REF: Synchronization Type Flags {F10260}
 **
 ** When SQLite invokes the xSync() method of an
-** [sqlite3_io_methods] object it uses a combination of the
+** [sqlite3_io_methods] object it uses a combination of
 ** these integer values as the second argument.
 **
 ** When the SQLITE_SYNC_DATAONLY flag is used, it means that the
 ** sync operation only needs to flush data to mass storage.  Inode
-** information need not be flushed. The SQLITE_SYNC_NORMAL means 
+** information need not be flushed. The SQLITE_SYNC_NORMAL flag means 
 ** to use normal fsync() semantics. The SQLITE_SYNC_FULL flag means 
 ** to use Mac OS-X style fullsync instead of fsync().
 */
@@ -553,7 +553,7 @@ struct sqlite3_file {
 ** CAPI3REF: OS Interface File Virtual Methods Object {F11120}
 **
 ** Every file opened by the [sqlite3_vfs] xOpen method contains a pointer to
-** an instance of the this object.  This object defines the
+** an instance of this object.  This object defines the
 ** methods used to perform various operations against the open file.
 **
 ** The flags argument to xSync may be one of [SQLITE_SYNC_NORMAL] or
@@ -651,7 +651,7 @@ struct sqlite3_io_methods {
 ** interface.
 **
 ** The [SQLITE_FCNTL_LOCKSTATE] opcode is used for debugging.  This
-** opcode cases the xFileControl method to write the current state of
+** opcode causes the xFileControl method to write the current state of
 ** the lock (one of [SQLITE_LOCK_NONE], [SQLITE_LOCK_SHARED],
 ** [SQLITE_LOCK_RESERVED], [SQLITE_LOCK_PENDING], or [SQLITE_LOCK_EXCLUSIVE])
 ** into an integer that the pArg argument points to. This capability
@@ -693,7 +693,7 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** in a thread-safe way.  The [sqlite3_vfs_find()] interface
 ** searches the list.
 **
-** The pNext field is the only fields in the sqlite3_vfs 
+** The pNext field is the only field in the sqlite3_vfs 
 ** structure that SQLite will ever modify.  SQLite will only access
 ** or modify this field while holding a particular static mutex.
 ** The application should never modify anything within the sqlite3_vfs
@@ -731,12 +731,12 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 **
 ** The file I/O implementation can use the object type flags to
 ** changes the way it deals with files.  For example, an application
-** that does not care about crash recovery or rollback, might make
-** the open of a journal file a no-op.  Writes to this journal are
-** also a no-op.  Any attempt to read the journal return SQLITE_IOERR.
-** Or the implementation might recognize the a database file will
-** be doing page-aligned sector reads and writes in a random order
-** and set up its I/O subsystem accordingly.
+** that does not care about crash recovery or rollback might make
+** the open of a journal file a no-op.  Writes to this journal would
+** also be no-ops, and any attempt to read the journal would return 
+** SQLITE_IOERR.  Or the implementation might recognize that a database 
+** file will be doing page-aligned sector reads and writes in a random 
+** order and set up its I/O subsystem accordingly.
 ** 
 ** SQLite might also add one of the following flags to the xOpen
 ** method:
@@ -753,7 +753,7 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** for exclusive access.  This flag is set for all files except
 ** for the main database file. {END}
 ** 
-** {F11148} At least szOsFile bytes of memory is allocated by SQLite 
+** {F11148} At least szOsFile bytes of memory are allocated by SQLite 
 ** to hold the  [sqlite3_file] structure passed as the third 
 ** argument to xOpen.  {END}  The xOpen method does not have to
 ** allocate the structure; it should just fill it in.
@@ -765,7 +765,7 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** to test to see if a file is at least readable.  {END} The file can be a 
 ** directory.
 ** 
-** {F11150} SQLite will always allocate at least mxPathname+1 byte for
+** {F11150} SQLite will always allocate at least mxPathname+1 bytes for
 ** the output buffers for xGetTempname and xFullPathname. {F11151} The exact
 ** size of the output buffer is also passed as a parameter to both 
 ** methods. {END} If the output buffer is not large enough, SQLITE_CANTOPEN
@@ -779,7 +779,7 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** The xRandomness() function attempts to return nBytes bytes
 ** of good-quality randomness into zOut.  The return value is
 ** the actual number of bytes of randomness obtained.  The
-** xSleep() method cause the calling thread to sleep for at
+** xSleep() method causes the calling thread to sleep for at
 ** least the number of microseconds given.  The xCurrentTime()
 ** method returns a Julian Day Number for the current date and
 ** time.
@@ -814,7 +814,7 @@ struct sqlite3_vfs {
 **
 ** {F11191} These integer constants can be used as the third parameter to
 ** the xAccess method of an [sqlite3_vfs] object. {END}  They determine
-** the kind of what kind of permissions the xAccess method is
+** what kind of permissions the xAccess method is
 ** looking for.  {F11192} With SQLITE_ACCESS_EXISTS, the xAccess method
 ** simply checks to see if the file exists. {F11193} With
 ** SQLITE_ACCESS_READWRITE, the xAccess method checks to see
@@ -855,7 +855,7 @@ int sqlite3_extended_result_codes(sqlite3*, int onoff);
 ** as an undeclared column named ROWID, OID, or _ROWID_ as long as those
 ** names are not also used by explicitly declared columns. If
 ** the table has a column of type INTEGER PRIMARY KEY then that column
-** is another an alias for the rowid.
+** is another alias for the rowid.
 **
 ** This routine returns the rowid of the most recent
 ** successful INSERT into the database from the database connection
@@ -895,7 +895,7 @@ int sqlite3_extended_result_codes(sqlite3*, int onoff);
 **
 ** LIMITATIONS:
 **
-** {U12232} If separate thread does a new insert on the same
+** {U12232} If a separate thread does a new insert on the same
 **          database connection while the [sqlite3_last_insert_rowid()]
 **          function is running and thus changes the last insert rowid,
 **          then the value returned by [sqlite3_last_insert_rowid()] is
@@ -915,7 +915,7 @@ sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 ** triggers are not counted. Use the [sqlite3_total_changes()] function
 ** to find the total number of changes including changes caused by triggers.
 **
-** A "row changes" is a change to a single row of a single table
+** A "row change" is a change to a single row of a single table
 ** caused by an INSERT, DELETE, or UPDATE statement.  Rows that
 ** are changed as side effects of REPLACE constraint resolution,
 ** rollback, ABORT processing, DROP TABLE, or by any other
@@ -987,7 +987,7 @@ int sqlite3_changes(sqlite3*);
 ** SQLite implements the command "DELETE FROM table" without
 ** a WHERE clause by dropping and recreating the table.  (This is much
 ** faster than going
-** through and deleting individual elements form the table.)  Because of
+** through and deleting individual elements from the table.)  Because of
 ** this optimization, the change count for "DELETE FROM table" will be
 ** zero regardless of the number of elements that were originally in the
 ** table. To get an accurate count of the number of rows deleted, use

@@ -1,5 +1,5 @@
-C Add\smissing\sprefix\s&\sexec_prefix\sto\sMakefile\s-\sfixes\s#2979.\s(CVS\s4835)
-D 2008-03-07T02:20:57
+C Trivial\sdocumentation\sfixes\s(CVS\s4836)
+D 2008-03-07T03:20:32
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in d521464011d6965bbda1b699f1850c6e33141c73
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -139,7 +139,7 @@ F src/random.c 02ef38b469237482f1ea14a78b2087cfbaec48bd
 F src/select.c d0a1e01a2a6c05bd60324e843c7e4581d3605950
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
-F src/sqlite.h.in b8158aa606f0b39426d63132ae0530d91c021abb
+F src/sqlite.h.in 140a7c2f8a74b52d5e42b714bd79ce4c5df21538
 F src/sqlite3ext.h 50c70a894ffe8e6ada5948c89b91db0a80a6b2a7
 F src/sqliteInt.h 6b9ee2df064c05b53c33eadc2e15bb2b23d60c89
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6ebce3b798c60050fb3c583d805570bb06837108
-R 5a209571ae05392be15c187e2628a20a
+P 4cda019b63e8ba9f1101fb296a7d745c69e84e00
+R c15bb445f4066eaf2e9cf0566419d3fb
 U mlcreech
-Z dc5ddeca7e7a10617e051ee18db0b672
+Z 485b426fb4816fce857c16a85c39d37f
