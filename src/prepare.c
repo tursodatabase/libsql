@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.77 2008/03/04 17:45:01 mlcreech Exp $
+** $Id: prepare.c,v 1.78 2008/03/08 12:23:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -683,7 +683,7 @@ int sqlite3_prepare(
 ){
   int rc;
   rc = sqlite3LockAndPrepare(db,zSql,nBytes,0,ppStmt,pzTail);
-  assert( rc==SQLITE_OK || *ppStmt==0 );  /* VERIFY: F13021 */
+  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
   return rc;
 }
 int sqlite3_prepare_v2(
@@ -695,7 +695,7 @@ int sqlite3_prepare_v2(
 ){
   int rc;
   rc = sqlite3LockAndPrepare(db,zSql,nBytes,1,ppStmt,pzTail);
-  assert( rc==SQLITE_OK || *ppStmt==0 );  /* VERIFY: F13021 */
+  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
   return rc;
 }
 
@@ -761,7 +761,7 @@ int sqlite3_prepare16(
 ){
   int rc;
   rc = sqlite3Prepare16(db,zSql,nBytes,0,ppStmt,pzTail);
-  assert( rc==SQLITE_OK || *ppStmt==0 );  /* VERIFY: F13021 */
+  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
   return rc;
 }
 int sqlite3_prepare16_v2(
@@ -773,7 +773,7 @@ int sqlite3_prepare16_v2(
 ){
   int rc;
   rc = sqlite3Prepare16(db,zSql,nBytes,1,ppStmt,pzTail);
-  assert( rc==SQLITE_OK || *ppStmt==0 );  /* VERIFY: F13021 */
+  assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
   return rc;
 }
 
