@@ -1,5 +1,5 @@
-C Fix\sasserts\sin\sprepare.c\sto\shandle\sthe\smisuse\scase\sof\sppStmt==0.\s(CVS\s4843)
-D 2008-03-08T12:23:31
+C Clarify\sthe\slanguage\sin\sthe\ssqlite3_create_function()\sdocumentation.\nTicket\s#2980.\s(CVS\s4844)
+D 2008-03-08T12:37:31
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in d521464011d6965bbda1b699f1850c6e33141c73
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -139,7 +139,7 @@ F src/random.c 02ef38b469237482f1ea14a78b2087cfbaec48bd
 F src/select.c d0a1e01a2a6c05bd60324e843c7e4581d3605950
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
-F src/sqlite.h.in 140a7c2f8a74b52d5e42b714bd79ce4c5df21538
+F src/sqlite.h.in 1cf531c45f20cedf0786f4dc5dedc8dcc33b5df3
 F src/sqlite3ext.h 50c70a894ffe8e6ada5948c89b91db0a80a6b2a7
 F src/sqliteInt.h 31a6b927cf10822ec9189e12a7900b896d8e8dfd
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0ca14399b19ee22870394065c5c6a136ea41418d
-R f724733ce9da103ef0d5a8a19acd670c
+P 788b2c6b537809a496bf30550a12e743c1697eb7
+R 42e58aaa9e82db0d60a7d5fb1cd58f74
 U drh
-Z b1684d65fbc0a9268f5ee0a51882c1dc
+Z 3b84cfb1e1199a74209324686efe968d

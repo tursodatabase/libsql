@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.290 2008/03/07 03:20:32 mlcreech Exp $
+** @(#) $Id: sqlite.h.in,v 1.291 2008/03/08 12:37:31 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3243,11 +3243,10 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** name of the (scalar) function or aggregate, is encoded in UTF-8 for
 ** sqlite3_create_function() and UTF-16 for sqlite3_create_function16().
 **
-** The first argument is the [database connection] that holds the
-** SQL function or aggregate is to be added or redefined. If a single
-** program uses more than one database handle internally, then SQL
-** functions or aggregates must be added individually to each database
-** handle with which they will be used.
+** The first parameter is the [database connection] to which the SQL
+** function is to be added.  If a single
+** program uses more than one [database connection] internally, then SQL
+** functions must be added individually to each [database connection].
 **
 ** The second parameter is the name of the SQL function to be created
 ** or redefined.
