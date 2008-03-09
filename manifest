@@ -1,5 +1,5 @@
-C Use\sautoconf\sto\sdetect\spresence\sof\sgmtime_r()\sand\slocaltime_r()\s(CVS\s4846)
-D 2008-03-09T01:38:09
+C Change\s<sqlite3.h>\sto\s"sqlite3.h"\sin\s#includes\s(CVS\s4847)
+D 2008-03-09T02:00:20
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in d521464011d6965bbda1b699f1850c6e33141c73
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -158,12 +158,12 @@ F src/test_async.c 3147c64c34721f088d5ab20f85dabd5d7732c007
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c 9223ff4a7b8b97c9d12965b0123db1cbd6757efb
-F src/test_devsym.c fd8884c2269fb7e0db2c52d21ec59d31a33790ba
+F src/test_devsym.c cee1aecaa90c895030399ca4ae38f84a08038f8a
 F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c 85e702341c752810017c94c40f2a1ac92128abc0
 F src/test_md5.c c107c96637123239c3518b5fbe97a79130f4d32e
-F src/test_onefile.c 54282b6796d55d7acc489be83b89b8715e7d3756
+F src/test_onefile.c 2fea6d22f13f5f286356c80c77ffd41f995f2b7a
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f134c282ea841fe35f322a1f8c326242c6ad7b24
-R ba3a515450d42ee359837a3678ae8eb8
+P 9894d2ce418180b874406a7407e019dc872f289a
+R dddbe4a2ad5e6cb4902a9c11cece403b
 U mlcreech
-Z 74e3803d4de5a1f765d15ea72757db1d
+Z 990a18886adc61b96972dd27d203a36e

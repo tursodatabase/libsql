@@ -16,7 +16,7 @@
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
-#include <sqlite3.h>
+#include "sqlite3.h"
 #include "sqliteInt.h"
 
 /*

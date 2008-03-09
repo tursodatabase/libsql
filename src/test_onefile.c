@@ -79,7 +79,7 @@
 **   time using this demo vfs.
 */
 
-#include <sqlite3.h>
+#include "sqlite3.h"
 #include <assert.h>
 #include <string.h>
 
