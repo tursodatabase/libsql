@@ -1,5 +1,5 @@
-C Replace\sSQLITE_EXTERN\swith\sSQLITE_API\sin\sexported\svariables\swhen\sgenerating\nthe\samalgamation.\s\sShould\sfix\s#2982\s(CVS\s4845)
-D 2008-03-09T01:14:42
+C Use\sautoconf\sto\sdetect\spresence\sof\sgmtime_r()\sand\slocaltime_r()\s(CVS\s4846)
+D 2008-03-09T01:38:09
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in d521464011d6965bbda1b699f1850c6e33141c73
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -16,8 +16,8 @@ F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess dba2d1300ec8f8cd00c6fb44b9edde21c14e960c
 F config.sub 9a842e7c332ed65cef3f2c20354e06dc998b2796
-F configure ff2b1ee24b75c386a493bd013dcf18b500a4888a x
-F configure.ac 95fa89bde2948222857c2a341968a6e9c2c335b7
+F configure fa502784b1efa3038d4d8ae0ab2eecd100102a1b x
+F configure.ac 63c0c01703f4c19ee9d65998ddfcbd6496982210
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -91,7 +91,7 @@ F src/build.c fa70bc0fb02e4d08202dd6a752ab5f5df5676e50
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/config.h b60286b542f5284d529b659adcb9c9d25eecab20
-F src/config.h.in 46fc486f4c162bc9b3f641a6cfdeaa6bd1c011aa
+F src/config.h.in 343f19cacc74d4baf84a4af701b5bb44419642ff
 F src/date.c 187cad26eaaecd7bcdccd49d5a70c5aa3010bc74
 F src/delete.c fa13c296262e89c32d28949f15be275e52d7f524
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2db43738bfcd2db29167ff02f4291e74324225d7
-R fb841dfcda6d1a0d05bee7105302b4c8
+P f134c282ea841fe35f322a1f8c326242c6ad7b24
+R ba3a515450d42ee359837a3678ae8eb8
 U mlcreech
-Z 3ad0903ec0700d3cf59532ddb2d43fdb
+Z 74e3803d4de5a1f765d15ea72757db1d

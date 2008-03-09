@@ -92,7 +92,7 @@ AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.36 $
+# $Revision: 1.37 $
 
 #########
 # Programs needed
@@ -108,7 +108,13 @@ AC_CHECK_TYPES([int8_t, int16_t, int32_t, int64_t, intptr_t, uint8_t,
 
 #########
 # Check for needed/wanted headers
-AC_CHECK_HEADERS(sys/types.h stdlib.h stdint.h inttypes.h)
+AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h])
+
+#########
+# Figure out whether or not we have these functions
+#
+AC_CHECK_FUNCS([usleep fdatasync localtime_r gmtime_r])
+
 
 #########
 # Set up an appropriate program prefix
@@ -594,16 +600,6 @@ else
 fi
 AC_SUBST(LOADEXTENSION_FLAGS)
 
-#########
-# Figure out whether or not we have a "usleep()" function.
-#
-AC_CHECK_FUNC(usleep, [CFLAGS="$CFLAGS -DHAVE_USLEEP=1"])
-
-#--------------------------------------------------------------------
-# Redefine fdatasync as fsync on systems that lack fdatasync
-#--------------------------------------------------------------------
-
-AC_CHECK_FUNC(fdatasync, [CFLAGS="$CFLAGS -DHAVE_FDATASYNC=1"])
 
 #########
 # Output the config header
