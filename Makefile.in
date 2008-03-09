@@ -91,6 +91,11 @@ TEXE = @TARGET_EXEEXT@
 #
 HAVE_TCL = @HAVE_TCL@
 
+# This is the command to use for tclsh - normally just "tclsh", but we may
+# know the specific version we want to use
+#
+TCLSH_CMD = @TCLSH_CMD@
+
 # The suffix used on shared libraries.  Ex:  ".dll", ".so", ".dylib"
 #
 SHLIB_SUFFIX = @TCL_SHLIB_SUFFIX@
@@ -387,7 +392,7 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 	touch .target_source
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
-	tclsh $(TOP)/tool/mksqlite3c.tcl
+	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl
 
 # Rules to build the LEMON compiler generator
 #
@@ -651,7 +656,7 @@ install:	sqlite3$(BEXE) libsqlite3.la sqlite3.h ${HAVE_TCL:1=tcl_install}
 	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(libdir)/pkgconfig; 
 
 tcl_install:	libtclsqlite3.la
-	tclsh $(TOP)/tclinstaller.tcl $(VERSION)
+	$(TCLSH_CMD) $(TOP)/tclinstaller.tcl $(VERSION)
 
 clean:	
 	rm -f *.lo *.la *.o sqlite3$(TEXE) libsqlite3.la
