@@ -844,7 +844,6 @@ RELEASE
 VERSION_NUMBER
 BUILD_CC
 SQLITE_THREADSAFE
-TARGET_THREAD_LIB
 XTHREADCONNECT
 THREADSOVERRIDELOCKS
 ALLOWRELEASE
@@ -1946,7 +1945,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.51 $
+# $Revision: 1.52 $
 
 #########
 # Programs needed
@@ -3697,7 +3696,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 3700 "configure"' > conftest.$ac_ext
+  echo '#line 3699 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6376,11 +6375,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6379: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6378: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6383: \$? = $ac_status" >&5
+   echo "$as_me:6382: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6644,11 +6643,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6647: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6646: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6651: \$? = $ac_status" >&5
+   echo "$as_me:6650: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6748,11 +6747,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6751: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6750: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6755: \$? = $ac_status" >&5
+   echo "$as_me:6754: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9093,7 +9092,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9096 "configure"
+#line 9095 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9193,7 +9192,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9196 "configure"
+#line 9195 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11529,11 +11528,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11532: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11531: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11536: \$? = $ac_status" >&5
+   echo "$as_me:11535: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -11633,11 +11632,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11636: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11635: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11640: \$? = $ac_status" >&5
+   echo "$as_me:11639: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13240,11 +13239,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13243: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13242: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13247: \$? = $ac_status" >&5
+   echo "$as_me:13246: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13344,11 +13343,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13347: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13346: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13351: \$? = $ac_status" >&5
+   echo "$as_me:13350: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15579,11 +15578,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15582: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15581: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15586: \$? = $ac_status" >&5
+   echo "$as_me:15585: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15847,11 +15846,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15850: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15849: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15854: \$? = $ac_status" >&5
+   echo "$as_me:15853: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15951,11 +15950,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15954: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15953: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15958: \$? = $ac_status" >&5
+   echo "$as_me:15957: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -19776,15 +19775,12 @@ fi
 
 
 if test "$SQLITE_THREADSAFE" = "1"; then
-  LIBS=""
-
-{ echo "$as_me:$LINENO: checking for pthread_create in -lpthread" >&5
-echo $ECHO_N "checking for pthread_create in -lpthread... $ECHO_C" >&6; }
-if test "${ac_cv_lib_pthread_pthread_create+set}" = set; then
+  { echo "$as_me:$LINENO: checking for library containing pthread_create" >&5
+echo $ECHO_N "checking for library containing pthread_create... $ECHO_C" >&6; }
+if test "${ac_cv_search_pthread_create+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpthread  $LIBS"
+  ac_func_search_save_LIBS=$LIBS
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -19807,7 +19803,14 @@ return pthread_create ();
   return 0;
 }
 _ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
+for ac_lib in '' pthread; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  rm -f conftest.$ac_objext conftest$ac_exeext
 if { (ac_try="$ac_link"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
@@ -19825,35 +19828,37 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test ! -s conftest.err
        } && test -s conftest$ac_exeext &&
        $as_test_x conftest$ac_exeext; then
-  ac_cv_lib_pthread_pthread_create=yes
+  ac_cv_search_pthread_create=$ac_res
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	ac_cv_lib_pthread_pthread_create=no
+
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+      conftest$ac_exeext
+  if test "${ac_cv_search_pthread_create+set}" = set; then
+  break
 fi
-{ echo "$as_me:$LINENO: result: $ac_cv_lib_pthread_pthread_create" >&5
-echo "${ECHO_T}$ac_cv_lib_pthread_pthread_create" >&6; }
-if test $ac_cv_lib_pthread_pthread_create = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBPTHREAD 1
-_ACEOF
-
-  LIBS="-lpthread $LIBS"
-
-fi
-
-  TARGET_THREAD_LIB="$LIBS"
-  LIBS=""
+done
+if test "${ac_cv_search_pthread_create+set}" = set; then
+  :
 else
-  TARGET_THREAD_LIB=""
+  ac_cv_search_pthread_create=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_search_pthread_create" >&5
+echo "${ECHO_T}$ac_cv_search_pthread_create" >&6; }
+ac_res=$ac_cv_search_pthread_create
+if test "$ac_res" != no; then
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
 fi
 
+fi
 
 ##########
 # Do we want to allow a connection created in one thread to be used
@@ -21462,7 +21467,6 @@ RELEASE!$RELEASE$ac_delim
 VERSION_NUMBER!$VERSION_NUMBER$ac_delim
 BUILD_CC!$BUILD_CC$ac_delim
 SQLITE_THREADSAFE!$SQLITE_THREADSAFE$ac_delim
-TARGET_THREAD_LIB!$TARGET_THREAD_LIB$ac_delim
 XTHREADCONNECT!$XTHREADCONNECT$ac_delim
 THREADSOVERRIDELOCKS!$THREADSOVERRIDELOCKS$ac_delim
 ALLOWRELEASE!$ALLOWRELEASE$ac_delim
@@ -21481,6 +21485,7 @@ TCL_LIB_FILE!$TCL_LIB_FILE$ac_delim
 TCL_LIB_FLAG!$TCL_LIB_FLAG$ac_delim
 TCL_LIB_SPEC!$TCL_LIB_SPEC$ac_delim
 TCL_STUB_LIB_FILE!$TCL_STUB_LIB_FILE$ac_delim
+TCL_STUB_LIB_FLAG!$TCL_STUB_LIB_FLAG$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -21522,7 +21527,6 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
-TCL_STUB_LIB_FLAG!$TCL_STUB_LIB_FLAG$ac_delim
 TCL_STUB_LIB_SPEC!$TCL_STUB_LIB_SPEC$ac_delim
 HAVE_TCL!$HAVE_TCL$ac_delim
 TARGET_READLINE_LIBS!$TARGET_READLINE_LIBS$ac_delim
@@ -21536,7 +21540,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 12; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 11; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

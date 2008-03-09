@@ -92,7 +92,7 @@ AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.37 $
+# $Revision: 1.38 $
 
 #########
 # Programs needed
@@ -204,14 +204,8 @@ fi
 AC_SUBST(SQLITE_THREADSAFE)
 
 if test "$SQLITE_THREADSAFE" = "1"; then
-  LIBS=""
-  AC_CHECK_LIB(pthread, pthread_create)
-  TARGET_THREAD_LIB="$LIBS"
-  LIBS=""
-else
-  TARGET_THREAD_LIB=""
+  AC_SEARCH_LIBS(pthread_create, pthread)
 fi
-AC_SUBST(TARGET_THREAD_LIB)
 
 ##########
 # Do we want to allow a connection created in one thread to be used

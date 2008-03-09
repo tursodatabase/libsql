@@ -1,7 +1,7 @@
-C Change\s<sqlite3.h>\sto\s"sqlite3.h"\sin\s#includes\s(CVS\s4847)
-D 2008-03-09T02:00:20
+C Fix\sfor\s#1802,\s#2041,\sand\s#2270\s-\slink\slibsqlite\swith\s-lrt\s(CVS\s4848)
+D 2008-03-09T02:20:11
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in d521464011d6965bbda1b699f1850c6e33141c73
+F Makefile.in 43632cf376a6aa25c91711a50a3c584fc4e0f36f
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 2e206fc9458bf10a8c3ba2d13bf521a04ef441c6
@@ -16,8 +16,8 @@ F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess dba2d1300ec8f8cd00c6fb44b9edde21c14e960c
 F config.sub 9a842e7c332ed65cef3f2c20354e06dc998b2796
-F configure fa502784b1efa3038d4d8ae0ab2eecd100102a1b x
-F configure.ac 63c0c01703f4c19ee9d65998ddfcbd6496982210
+F configure 4bb2a7714734900dd8f49e0eb0e2556c2bf129e1 x
+F configure.ac d587b392e1b92ad60cf14dacf74806e773f83d6c
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9894d2ce418180b874406a7407e019dc872f289a
-R dddbe4a2ad5e6cb4902a9c11cece403b
+P 98e55fa4d32c4579d54b3a8cc26abdb3c8148e13
+R 1e7314b15a5dee3b574fd286539e39a5
 U mlcreech
-Z 990a18886adc61b96972dd27d203a36e
+Z 21663c7e9ed3939bafa77fde47a22a2e
