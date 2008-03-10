@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.414 2008/03/07 20:14:39 drh Exp $
+** @(#) $Id: pager.c,v 1.415 2008/03/10 14:12:53 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4252,7 +4252,7 @@ int sqlite3PagerWrite(DbPage *pDbPage){
             sqlite3PagerUnref(pPage);
           }
         }
-      }else if( (pPage = pager_lookup(pPager, pg)) ){
+      }else if( (pPage = pager_lookup(pPager, pg))!=0 ){
         if( pPage->needSync ){
           needSync = 1;
         }

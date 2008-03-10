@@ -1,5 +1,5 @@
-C Fix\sfor\s#2981\s-\sspecifically\suse\s"tclsh8.4"\sif\sit's\savailable\s(CVS\s4849)
-D 2008-03-09T02:51:10
+C Add\sexplicit\s!=0\stests\sin\sorder\sto\ssuppress\swarning\smessages\sin\nBorland-C.\s\sTicket\s#2985\s(CVS\s4850)
+D 2008-03-10T14:12:53
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 3e2eb2b4a4148aff92bbc6d8496d0696c36bf0b6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/config.h.in 343f19cacc74d4baf84a4af701b5bb44419642ff
 F src/date.c 187cad26eaaecd7bcdccd49d5a70c5aa3010bc74
 F src/delete.c fa13c296262e89c32d28949f15be275e52d7f524
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c e6fb42c6e55fd9526174b1cb8296b69a60a6688a
+F src/expr.c 4531fb111f8addb74f785435efa05699d906c269
 F src/fault.c 049b88b8ba0a1db3240aeaf9695cd08b9a3ba9e1
 F src/func.c a4f06d8a1d7e4c8c8755a59d1310141b7c090bd9
 F src/hash.c 53655c312280211444bfe23af6490a460aec2980
@@ -129,7 +129,7 @@ F src/os_unix.c 4cdd17e768888b865047805ca49beeacf0929683
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c aa3f4bbee3b8c182d25a33fbc319f486857c12c1
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c d8690e166a5e3a3c65a04a35a96bbebeb368a6c7
+F src/pager.c 8c709d6f7b1bc32418f3366439960177b38f1ab9
 F src/pager.h 8174615ffd14ccc2cad2b081b919a398fa95e3f9
 F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
 F src/pragma.c e3f39f8576234887ecd0c1de43dc51af5855930c
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ccd70a6ee495a02362161b4004597fa191d46bc2
-R f364dcf434ea36e9239ab41a8128f033
-U mlcreech
-Z a0359037534c978f504280999f73cf1b
+P 8ced1d6464585ea81227b31f7bfcd0874076aeaa
+R a2818aca1a31512ec5525adc95922581
+U drh
+Z 0fb4e9855518cf9f22f1105f56bec864

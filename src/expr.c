@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.352 2008/01/23 14:51:49 drh Exp $
+** $Id: expr.c,v 1.353 2008/03/10 14:12:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1574,7 +1574,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
   ** or index instead of generating an epheremal table.
   */
   if( sqlite3_enable_in_opt
-   && (p=pX->pSelect) && !p->pPrior
+   && (p=pX->pSelect)!=0 && !p->pPrior
    && !p->isDistinct && !p->isAgg && !p->pGroupBy
    && p->pSrc && p->pSrc->nSrc==1 && !p->pSrc->a[0].pSelect
    && !p->pSrc->a[0].pTab->pSelect                                  
