@@ -1,5 +1,5 @@
-C Add\sexplicit\s!=0\stests\sin\sorder\sto\ssuppress\swarning\smessages\sin\nBorland-C.\s\sTicket\s#2985\s(CVS\s4850)
-D 2008-03-10T14:12:53
+C Remove\sthe\s#includes\sof\sstdlib.h\sand\ssys/types.h\sfrom\ssqliteInt.h\ssince\nthey\sare\snever\sused\sand\sbecause\sthey\sbroke\sthe\sbuild.\s(CVS\s4851)
+D 2008-03-10T16:17:59
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 3e2eb2b4a4148aff92bbc6d8496d0696c36bf0b6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in 1cf531c45f20cedf0786f4dc5dedc8dcc33b5df3
 F src/sqlite3ext.h 50c70a894ffe8e6ada5948c89b91db0a80a6b2a7
-F src/sqliteInt.h 31a6b927cf10822ec9189e12a7900b896d8e8dfd
+F src/sqliteInt.h 341120a615fc0042251de78e782a03f67d29f729
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
 F src/tclsqlite.c d95e0e74c7167b2807f9f4f73bf45f7c58096297
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8ced1d6464585ea81227b31f7bfcd0874076aeaa
-R a2818aca1a31512ec5525adc95922581
+P d4ab14b974f2249d9d9e5a78ae47f3764a88b657
+R 330d190e018b7f270491ee554b4b8318
 U drh
-Z 0fb4e9855518cf9f22f1105f56bec864
+Z 5acd248fe44ad892846de9bcf6cb6d7d

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.671 2008/03/08 06:16:30 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.672 2008/03/10 16:17:59 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -28,12 +28,6 @@
 /*
 ** Include standard header files as necessary
 */
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
