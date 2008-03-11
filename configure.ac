@@ -92,7 +92,7 @@ AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.39 $
+# $Revision: 1.40 $
 
 #########
 # Programs needed
@@ -116,11 +116,23 @@ AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h])
 AC_CHECK_FUNCS([usleep fdatasync localtime_r gmtime_r])
 
 #########
+# By default, we use the amalgamation (this may be changed below...)
+#
+USE_AMALGAMATION=1
+
+#########
 # See whether we can run specific tclsh versions known to work well;
 # if not, then we fall back to plain tclsh.
 # TODO: try other versions before falling back?
 # 
-AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.4 tclsh], tclsh)
+AC_CHECK_PROGS(TCLSH_CMD, [tclsh8.4 tclsh], none)
+if test "$TCLSH_CMD" = "none"; then
+  # If we can't find a local tclsh, then building the amalgamation will fail.
+  # We act as though --disable-amalgamation has been used.
+  echo "Warning: can't find tclsh - defaulting to non-amalgamation build."
+  USE_AMALGAMATION=0
+  TCLSH_CMD="tclsh"
+fi
 AC_SUBST(TCLSH_CMD)
 
 
@@ -583,9 +595,7 @@ AC_SUBST(TARGET_DEBUG)
 AC_ARG_ENABLE(amalgamation, AC_HELP_STRING([--disable-amalgamation],
       [Disable the amalgamation and instead build all files separately (currently needed to build the test fixture)]),
       [use_amalgamation=$enableval],[use_amalgamation=yes])
-if test "${use_amalgamation}" = "yes" ; then
-  USE_AMALGAMATION=1
-else
+if test "${use_amalgamation}" != "yes" ; then
   USE_AMALGAMATION=0
 fi
 AC_SUBST(USE_AMALGAMATION)

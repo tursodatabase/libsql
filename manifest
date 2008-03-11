@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.5.7\sin\santicipation\sof\sthe\snext\srelease.\s(CVS\s4852)
-D 2008-03-11T15:41:14
+C If\stclsh\sis\snot\sfound,\sdon't\sdefault\sto\sbuilding\sthe\samalgamation\s(CVS\s4853)
+D 2008-03-11T18:03:31
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 3e2eb2b4a4148aff92bbc6d8496d0696c36bf0b6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -16,8 +16,8 @@ F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess dba2d1300ec8f8cd00c6fb44b9edde21c14e960c
 F config.sub 9a842e7c332ed65cef3f2c20354e06dc998b2796
-F configure ac36a81e1cc848904411e18c33ce33d30a85baa2 x
-F configure.ac 1011a165d6a4a81a309320f83c6df6b9aa4ae45c
+F configure 69ee9f4ee66e801e05ff5460e6c262721ece5e0d x
+F configure.ac 7fbcc49117d98dbdf6902812baf1f9eab1efe0ec
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2668000fc8e23a98fb3e104474032d6c70eeee38
-R 69c35c0f0038b9294652eca92d4b8118
-U drh
-Z 5dd3c2314110de8cfe763dd3277b58e9
+P c85e97e4f0f02219b567e1ab2d4602c5680e7331
+R 42b36528a0cb8e883f6272aeb9d7392d
+U mlcreech
+Z 3d1016d08e7c01fa0b2f470b327e4eb8
