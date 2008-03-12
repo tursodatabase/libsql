@@ -1,5 +1,5 @@
-C If\stclsh\sis\snot\sfound,\sdon't\sdefault\sto\sbuilding\sthe\samalgamation\s(CVS\s4853)
-D 2008-03-11T18:03:31
+C Do\snot\ssegfault\safter\sa\sparse\serror\sin\sa\ssub-select\sin\sa\sstatement\sof\sthe\sform\s"DELETE\sWHERE\s...\sIN(sub-select)".\sTicket\s#2991.\s(CVS\s4854)
+D 2008-03-12T10:39:00
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 3e2eb2b4a4148aff92bbc6d8496d0696c36bf0b6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/config.h.in 343f19cacc74d4baf84a4af701b5bb44419642ff
 F src/date.c 187cad26eaaecd7bcdccd49d5a70c5aa3010bc74
 F src/delete.c fa13c296262e89c32d28949f15be275e52d7f524
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 4531fb111f8addb74f785435efa05699d906c269
+F src/expr.c 242f2f57a32f6909270e4a22ce1c810a150f5a17
 F src/fault.c 049b88b8ba0a1db3240aeaf9695cd08b9a3ba9e1
 F src/func.c a4f06d8a1d7e4c8c8755a59d1310141b7c090bd9
 F src/hash.c 53655c312280211444bfe23af6490a460aec2980
@@ -335,7 +335,7 @@ F test/hook.test e17d4ed2843ba4ef9b234aa63e6f056bf88f9a19
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 763a29007a4850d611ac4441bfa488fb9969ad30
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
-F test/in3.test 2f829007cc8d25d17b859f7fe882ef2bd2e2eb49
+F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 854c23b7ff8dd3822f675936b22c094655b3c739
 F test/incrblob_err.test 5273097dc7c97f9b7008423a6ffd5c80d21923cb
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c85e97e4f0f02219b567e1ab2d4602c5680e7331
-R 42b36528a0cb8e883f6272aeb9d7392d
-U mlcreech
-Z 3d1016d08e7c01fa0b2f470b327e4eb8
+P cbc0167556bd0abd16eb24d1c840ecbc530fd854
+R 22c03be44b71ef0fcc59e63ea4db9d89
+U danielk1977
+Z 280e42674eeeed7c685a5a302f638bf0

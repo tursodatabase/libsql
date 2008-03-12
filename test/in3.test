@@ -13,7 +13,7 @@
 #
 #     <value> IN (SELECT <column> FROM <table>)
 #
-# $Id: in3.test,v 1.3 2008/01/17 16:22:16 drh Exp $
+# $Id: in3.test,v 1.4 2008/03/12 10:39:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -264,5 +264,24 @@ do_test in3-4.5 {
 do_test in3-4.6 {
   execsql { DROP INDEX t3_i2 }
 } {}
+
+# The following two test cases verify that ticket #2991 has been fixed.
+#
+do_test in3-5.1 {
+  execsql {
+    CREATE TABLE Folders(
+      folderid INTEGER PRIMARY KEY, 
+      parentid INTEGER, 
+      rootid INTEGER, 
+      path VARCHAR(255)
+    );
+  }
+} {}
+do_test in3-5.2 {
+  catchsql {
+    DELETE FROM Folders WHERE folderid IN
+    (SELECT folderid FROM Folder WHERE path LIKE 'C:\MP3\Albums\' || '%');
+  }
+} {1 {no such table: Folder}}
 
 finish_test
