@@ -1,5 +1,5 @@
-C Do\snot\ssegfault\safter\sa\sparse\serror\sin\sa\ssub-select\sin\sa\sstatement\sof\sthe\sform\s"DELETE\sWHERE\s...\sIN(sub-select)".\sTicket\s#2991.\s(CVS\s4854)
-D 2008-03-12T10:39:00
+C Eliminate\sa\srace\scondition\sfrom\slock4.test.\s(CVS\s4855)
+D 2008-03-13T04:53:53
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 3e2eb2b4a4148aff92bbc6d8496d0696c36bf0b6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -370,7 +370,7 @@ F test/loadext2.test 95ca7e2cb03fd3e068de97c3a2fe58dbdfd769e1
 F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
-F test/lock4.test f358fa835dff485d462072eee991111f09e87441
+F test/lock4.test 206ed8928d8ee090f547eabc11cb733b4f5df9b8
 F test/main.test 82c222989e02ea09abd58d453828ffd71806b6bf
 F test/malloc.test 7da6e318b030eef91a19bf6aca5555f927c92317
 F test/malloc2.test 6f2abc0617a7df210381272681d598488a3bf943
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P cbc0167556bd0abd16eb24d1c840ecbc530fd854
-R 22c03be44b71ef0fcc59e63ea4db9d89
+P 3f9f81e908aad6cdc0a16ec52f4ec46d89fd78bc
+R e89d33aafd8495592eda5de8513bddc3
 U danielk1977
-Z 280e42674eeeed7c685a5a302f638bf0
+Z cb17f3c51f7983db13d961825b5ac980
