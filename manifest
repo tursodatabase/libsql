@@ -1,5 +1,5 @@
-C Apply\spatch\sfor\s#2915\sto\sadd\starget\sextension\sfor\sexecutables\s(CVS\s4858)
-D 2008-03-13T23:28:23
+C One\sadditional\sintptr_t\sconversion\s(in\sthe\ssame\svein\sas\scheck-in\s4824)\s(CVS\s4859)
+D 2008-03-13T23:34:38
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in da3dc38c02b8ea7ba4a9b2e8cfe7d636590b709f
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -181,7 +181,7 @@ F src/vdbeapi.c cf9fc963efae3cdf5de08e2a9718b487059c7fc5
 F src/vdbeaux.c 83e34e38706889a16fbd77fce3777390d425af79
 F src/vdbeblob.c 63c750acc7b5012479f508c0e9627372a82cb65d
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
-F src/vdbemem.c b77819155eb2f07bd369e590544e3b2ca4526745
+F src/vdbemem.c 16c924eec121a6d12b35a9f4cbef8be848427a6d
 F src/vtab.c 00cd16317b29495c185ff40e4b227917d5a371b2
 F src/where.c c5eaca1f2d9caa20c5c7096434ccde2be03b325c
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5076d480337145f2e4b36798c6c13b9810f62721
-R 52f56c17ec433ee900b8cb633616deaa
+P 63fc7b72078b1e12de39893dc8374a7e24703d2e
+R 6912bc0a7d50353ae7880c54b007ae1c
 U mlcreech
-Z 4fbc0987f749661d2be76eec289cdd37
+Z 6e50ae0269a44e135ed99d615cdc8ddd
