@@ -373,11 +373,11 @@ last_change:	$(SRC)
           | $(NAWK) '{print $$5,$$6}' >last_change
 
 libsqlite3.la:	$(LIBOBJ)
-	$(LTLINK) -o libsqlite3.la $(LIBOBJ) $(TLIBS) \
+	$(LTLINK) -o $@ $(LIBOBJ) $(TLIBS) \
 		${ALLOWRELEASE} -rpath "$(libdir)" -version-info "8:6:8"
 
 libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
-	$(LTLINK) -o libtclsqlite3.la tclsqlite.lo \
+	$(LTLINK) -o $@ tclsqlite.lo \
 		$(LIBOBJ) @TCL_STUB_LIB_SPEC@ $(TLIBS) \
                 -rpath "$(libdir)/sqlite" \
 		-version-info "8:6:8"
@@ -406,7 +406,7 @@ sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 # Rules to build the LEMON compiler generator
 #
 lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
-	$(BCC) -o lemon$(BEXE) $(TOP)/tool/lemon.c
+	$(BCC) -o $@ $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
 
 
@@ -622,22 +622,22 @@ tclsqlite-shell.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 tclsqlite-stubs.lo:	$(TOP)/src/tclsqlite.c $(HDR)
 	$(LTCOMPILE) -DTCL_USE_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c
 
-tclsqlite3:	tclsqlite-shell.lo libsqlite3.la
-	$(LTLINK) -o tclsqlite3 tclsqlite-shell.lo \
+tclsqlite3$(TEXE):	tclsqlite-shell.lo libsqlite3.la
+	$(LTLINK) -o $@ tclsqlite-shell.lo \
 		 libsqlite3.la $(LIBTCL)
 
 testfixture$(TEXE):	$(TOP)/src/tclsqlite.c libsqlite3.la $(TESTSRC)
 	$(LTLINK) -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
                 -DSQLITE_NO_SYNC=1 $(TEMP_STORE) \
-		-o testfixture $(TESTSRC) $(TOP)/src/tclsqlite.c \
+		-o $@ $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libsqlite3.la $(LIBTCL)
 
 
 fulltest:	testfixture$(TEXE) sqlite3$(TEXE)
-	./testfixture $(TOP)/test/all.test
+	./testfixture$(TEXE) $(TOP)/test/all.test
 
 test:	testfixture$(TEXE) sqlite3$(TEXE)
-	./testfixture $(TOP)/test/quick.test
+	./testfixture$(TEXE) $(TOP)/test/quick.test
 
 sqlite3_analyzer$(TEXE):	$(TOP)/src/tclsqlite.c libtclsqlite3.la \
 				$(TESTSRC) $(TOP)/tool/spaceanal.tcl
@@ -649,7 +649,7 @@ sqlite3_analyzer$(TEXE):	$(TOP)/src/tclsqlite.c libtclsqlite3.la \
 	  -e 's,$$,\\n",' \
 	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
 	$(LTLINK) -DTCLSH=2 -DSQLITE_TEST=1 $(TEMP_STORE)\
-                -o sqlite3_analyzer$(EXE) $(TESTSRC) $(TOP)/src/tclsqlite.c \
+                -o $@ $(TESTSRC) $(TOP)/src/tclsqlite.c \
 		libtclsqlite3.la $(LIBTCL)
 
 
@@ -698,5 +698,5 @@ sqlite3.def: $(REAL_LIBOBJ)
 		| sed 's/^.* _//' >>sqlite3.def
 
 sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
-	$(TCC) -shared -o sqlite3.dll sqlite3.def \
+	$(TCC) -shared -o $@ sqlite3.def \
 		-Wl,"--strip-all" $(REAL_LIBOBJ)
