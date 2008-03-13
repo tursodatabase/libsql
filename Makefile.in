@@ -160,6 +160,7 @@ SRC = \
   $(TOP)/src/btmutex.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/btree.h \
+  $(TOP)/src/btreeInt.h \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
   $(TOP)/src/complete.c \
@@ -183,10 +184,13 @@ SRC = \
   $(TOP)/src/mem4.c \
   $(TOP)/src/mem5.c \
   $(TOP)/src/mutex.c \
+  $(TOP)/src/mutex.h \
   $(TOP)/src/mutex_os2.c \
   $(TOP)/src/mutex_unix.c \
   $(TOP)/src/mutex_w32.c \
   $(TOP)/src/os.c \
+  $(TOP)/src/os.h \
+  $(TOP)/src/os_common.h \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/os_os2.c \
@@ -200,7 +204,9 @@ SRC = \
   $(TOP)/src/select.c \
   $(TOP)/src/shell.c \
   $(TOP)/src/sqlite.h.in \
+  $(TOP)/src/sqlite3ext.h \
   $(TOP)/src/sqliteInt.h \
+  $(TOP)/src/sqliteLimit.h \
   $(TOP)/src/table.c \
   $(TOP)/src/tclsqlite.c \
   $(TOP)/src/tokenize.c \
@@ -219,6 +225,16 @@ SRC = \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
   $(TOP)/src/where.c
+
+# Generated source code files
+#
+SRC += \
+  keywordhash.h \
+  opcodes.c \
+  opcodes.h \
+  parse.c \
+  parse.h \
+  sqlite3.h
 
 # Source code for extensions
 #
@@ -252,7 +268,6 @@ SRC += \
   $(TOP)/ext/fts3/fts3_tokenizer1.c
 SRC += \
   $(TOP)/ext/icu/icu.c
-
 
 # Source code to the test files.
 #
@@ -323,6 +338,7 @@ HDR = \
    $(TOP)/src/sqlite3ext.h \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/vdbe.h \
+   $(TOP)/src/vdbeInt.h \
    parse.h \
    $(TOP)/src/config.h
 
@@ -340,12 +356,6 @@ HDR += \
   $(TOP)/ext/fts3/fts3.h \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_tokenizer.h
-
-# Header files used by the VDBE submodule
-#
-VDBEHDR = \
-   $(HDR) \
-   $(TOP)/src/vdbeInt.h
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -383,12 +393,11 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-.target_source:	$(SRC) parse.c opcodes.c keywordhash.h $(VDBEHDR) 
+.target_source:	$(SRC)
 	rm -rf tsrc
 	mkdir -p tsrc
-	cp $(SRC) $(VDBEHDR) tsrc
+	cp $(SRC) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
-	cp parse.c opcodes.c keywordhash.h tsrc
 	touch .target_source
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
@@ -583,25 +592,25 @@ util.lo:	$(TOP)/src/util.c $(HDR)
 vacuum.lo:	$(TOP)/src/vacuum.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/vacuum.c
 
-vdbe.lo:	$(TOP)/src/vdbe.c $(VDBEHDR)
+vdbe.lo:	$(TOP)/src/vdbe.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/vdbe.c
 
-vdbeapi.lo:	$(TOP)/src/vdbeapi.c $(VDBEHDR)
+vdbeapi.lo:	$(TOP)/src/vdbeapi.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/vdbeapi.c
 
-vdbeaux.lo:	$(TOP)/src/vdbeaux.c $(VDBEHDR)
+vdbeaux.lo:	$(TOP)/src/vdbeaux.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/vdbeaux.c
 
-vdbeblob.lo:	$(TOP)/src/vdbeblob.c $(VDBEHDR)
+vdbeblob.lo:	$(TOP)/src/vdbeblob.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/vdbeblob.c
 
-vdbefifo.lo:	$(TOP)/src/vdbefifo.c $(VDBEHDR)
+vdbefifo.lo:	$(TOP)/src/vdbefifo.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/vdbefifo.c
 
-vdbemem.lo:	$(TOP)/src/vdbemem.c $(VDBEHDR)
+vdbemem.lo:	$(TOP)/src/vdbemem.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/vdbemem.c
 
-vtab.lo:	$(TOP)/src/vtab.c $(VDBEHDR)
+vtab.lo:	$(TOP)/src/vtab.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/vtab.c
 
 where.lo:	$(TOP)/src/where.c $(HDR)
