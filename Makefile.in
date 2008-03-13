@@ -374,18 +374,18 @@ last_change:	$(SRC)
 
 libsqlite3.la:	$(LIBOBJ)
 	$(LTLINK) -o libsqlite3.la $(LIBOBJ) $(TLIBS) \
-		${ALLOWRELEASE} -rpath $(libdir) -version-info "8:6:8"
+		${ALLOWRELEASE} -rpath "$(libdir)" -version-info "8:6:8"
 
 libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 	$(LTLINK) -o libtclsqlite3.la tclsqlite.lo \
 		$(LIBOBJ) @TCL_STUB_LIB_SPEC@ $(TLIBS) \
-                -rpath $(libdir)/sqlite \
+                -rpath "$(libdir)/sqlite" \
 		-version-info "8:6:8"
 
 sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) \
 		-o $@ $(TOP)/src/shell.c libsqlite3.la \
-		$(LIBREADLINE) $(TLIBS)
+		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to

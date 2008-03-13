@@ -1,7 +1,7 @@
-C Add/move\sfiles\sin\sMakefile.in\sto\sbring\sit\smore\sin\sline\swith\smain.mk\s(CVS\s4856)
-D 2008-03-13T18:28:04
+C Specify\sinstallation\slib\sin\s'rpath'\soptions\sfor\ssqlite3\sexecutable\s(CVS\s4857)
+D 2008-03-13T19:55:20
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in 6640fb5fb5a6b85170ed01188bed30d64b22637d
+F Makefile.in 83d7b574d44848fba2eb0a5200ebdaaf88d9421e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 7a41970464b74225915bcaf9d76efd01f26e08f9
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 85585f11049c4c3278dc2732676b0caa44cf1e9d
-R be1eab5cdc46226b0bbd551808ef1f93
+P b57fc81c3d5f6c7091bdd37f8164887f990a5128
+R b89397cbdaa98f0be7833b910b414abd
 U mlcreech
-Z 676a611a1be445df78b935d8e115bd76
+Z 1e14a53dec4509e0beda84bfd89ccbe4
