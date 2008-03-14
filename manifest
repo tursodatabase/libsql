@@ -1,5 +1,5 @@
-C Allow\sthe\stestfixture\sto\sbe\sbuilt\seven\swhen\susing\sthe\samalgamation\s(CVS\s4860)
-D 2008-03-14T04:11:03
+C Fix\sa\ssecond\srace\scondition\sin\slock4.test.\s(CVS\s4861)
+D 2008-03-14T08:57:42
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -370,7 +370,7 @@ F test/loadext2.test 95ca7e2cb03fd3e068de97c3a2fe58dbdfd769e1
 F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
-F test/lock4.test 206ed8928d8ee090f547eabc11cb733b4f5df9b8
+F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/main.test 82c222989e02ea09abd58d453828ffd71806b6bf
 F test/malloc.test 7da6e318b030eef91a19bf6aca5555f927c92317
 F test/malloc2.test 6f2abc0617a7df210381272681d598488a3bf943
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2777ca788204c37ae5607f7acabe78f414255fa2
-R f16776db0cff304bef450ff1d0d825d3
-U mlcreech
-Z 1f7928f0ce2ed78d708ad783393a6c28
+P 8a726e3731cd19cc52c6dab16d032d7237b7450b
+R 4dcfb55457de268e049e3f884cf30fb9
+U danielk1977
+Z 77e13abccbb84eb815a0bdf10106a670
