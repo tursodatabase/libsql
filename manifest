@@ -1,5 +1,5 @@
-C Change\san\sinstance\sof\sintptr_t\sto\ssqlite3_intptr_t.\s(CVS\s4863)
-D 2008-03-14T19:17:55
+C Reset\sthe\sbusy\scallback\siteration\scounter\sat\sthe\sbeginning\sof\seach\nlock\stest\sloop.\s(CVS\s4864)
+D 2008-03-14T19:33:06
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -129,7 +129,7 @@ F src/os_unix.c 4cdd17e768888b865047805ca49beeacf0929683
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c aa3f4bbee3b8c182d25a33fbc319f486857c12c1
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 8c709d6f7b1bc32418f3366439960177b38f1ab9
+F src/pager.c c2cabad85f50c895430cd317c46b43fe87ccb95b
 F src/pager.h 8174615ffd14ccc2cad2b081b919a398fa95e3f9
 F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
 F src/pragma.c e3f39f8576234887ecd0c1de43dc51af5855930c
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a3c12dbe95c8fb93f5b9006bf5d2c5b933fc5e87
-R 6a03c8ba37f932ba000bf40f85f91ca9
+P 6db7186c304ed5e06afb207ce11ebc2a47e491b0
+R 87d443b39169d76481a95bb272b47f45
 U drh
-Z 8e9f2258de90dc9ea109b62a14d9710e
+Z 7ebbab3c09843c4d2af968290634f99a
