@@ -32,16 +32,19 @@
 ** start of a transaction, and is thus usually less than a few thousand,
 ** but can be as large as 2 billion for a really big database.
 **
-** @(#) $Id: bitvec.c,v 1.1 2008/02/18 14:47:34 drh Exp $
+** @(#) $Id: bitvec.c,v 1.2 2008/03/14 13:02:08 mlcreech Exp $
 */
 #include "sqliteInt.h"
 
 #define BITVEC_SZ        512
-#define BITVEC_NCHAR     (BITVEC_SZ-12)
+/* Round the union size down to the nearest pointer boundary, since that's how 
+** it will be aligned within the Bitvec struct. */
+#define BITVEC_USIZE     (((BITVEC_SZ-12)/sizeof(Bitvec *))*sizeof(Bitvec *))
+#define BITVEC_NCHAR     BITVEC_USIZE
 #define BITVEC_NBIT      (BITVEC_NCHAR*8)
-#define BITVEC_NINT      ((BITVEC_SZ-12)/4)
+#define BITVEC_NINT      (BITVEC_USIZE/4)
 #define BITVEC_MXHASH    (BITVEC_NINT/2)
-#define BITVEC_NPTR      ((BITVEC_SZ-12)/8)
+#define BITVEC_NPTR      (BITVEC_USIZE/sizeof(Bitvec *))
 
 #define BITVEC_HASH(X)   (((X)*37)%BITVEC_NINT)
 
