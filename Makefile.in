@@ -269,9 +269,9 @@ SRC += \
 SRC += \
   $(TOP)/ext/icu/icu.c
 
-# Source code to the test files.
+# Source code to the library files needed by the test fixture
 #
-TESTSRC = \
+TESTSRC2 = \
   $(TOP)/src/attach.c \
   $(TOP)/src/bitvec.c \
   $(TOP)/src/btree.c \
@@ -291,6 +291,19 @@ TESTSRC = \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
   $(TOP)/src/select.c \
+  $(TOP)/src/tokenize.c \
+  $(TOP)/src/utf.c \
+  $(TOP)/src/util.c \
+  $(TOP)/src/vdbe.c \
+  $(TOP)/src/vdbeapi.c \
+  $(TOP)/src/vdbeaux.c \
+  $(TOP)/src/vdbemem.c \
+  $(TOP)/src/where.c \
+  parse.c
+
+# Source code to the actual test files.
+#
+TESTSRC = \
   $(TOP)/src/test1.c \
   $(TOP)/src/test2.c \
   $(TOP)/src/test3.c \
@@ -312,16 +325,7 @@ TESTSRC = \
   $(TOP)/src/test_schema.c \
   $(TOP)/src/test_server.c \
   $(TOP)/src/test_tclvar.c \
-  $(TOP)/src/test_thread.c \
-  $(TOP)/src/tokenize.c \
-  $(TOP)/src/utf.c \
-  $(TOP)/src/util.c \
-  $(TOP)/src/vdbe.c \
-  $(TOP)/src/vdbeapi.c \
-  $(TOP)/src/vdbeaux.c \
-  $(TOP)/src/vdbemem.c \
-  $(TOP)/src/where.c \
-  parse.c
+  $(TOP)/src/test_thread.c
 
 # Header files used by all library source files.
 #
@@ -356,6 +360,16 @@ HDR += \
   $(TOP)/ext/fts3/fts3.h \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_tokenizer.h
+
+# If using the amalgamation, use sqlite3.c directly to build the test
+# fixture.  Otherwise link against libsqlite3.la.  (This distinction is
+# necessary because the test fixture requires non-API symbols which are
+# hidden when the library is built via the amalgamation).
+#
+TESTFIXTURE_SRC0 = $(TESTSRC2) libsqlite3.la
+TESTFIXTURE_SRC1 = sqlite3.c
+TESTFIXTURE_SRC = $(TESTSRC) $(TOP)/src/tclsqlite.c $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
+
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -626,11 +640,10 @@ tclsqlite3$(TEXE):	tclsqlite-shell.lo libsqlite3.la
 	$(LTLINK) -o $@ tclsqlite-shell.lo \
 		 libsqlite3.la $(LIBTCL)
 
-testfixture$(TEXE):	$(TOP)/src/tclsqlite.c libsqlite3.la $(TESTSRC)
+testfixture$(TEXE):	$(TESTFIXTURE_SRC)
 	$(LTLINK) -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
-                -DSQLITE_NO_SYNC=1 $(TEMP_STORE) \
-		-o $@ $(TESTSRC) $(TOP)/src/tclsqlite.c \
-		libsqlite3.la $(LIBTCL)
+                -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE $(TEMP_STORE) \
+		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL)
 
 
 fulltest:	testfixture$(TEXE) sqlite3$(TEXE)
@@ -639,8 +652,7 @@ fulltest:	testfixture$(TEXE) sqlite3$(TEXE)
 test:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/quick.test
 
-sqlite3_analyzer$(TEXE):	$(TOP)/src/tclsqlite.c libtclsqlite3.la \
-				$(TESTSRC) $(TOP)/tool/spaceanal.tcl
+sqlite3_analyzer$(TEXE):	$(TESTFIXTURE_SRC) $(TOP)/tool/spaceanal.tcl
 	sed \
 	  -e '/^#/d' \
 	  -e 's,\\,\\\\,g' \
@@ -648,9 +660,9 @@ sqlite3_analyzer$(TEXE):	$(TOP)/src/tclsqlite.c libtclsqlite3.la \
 	  -e 's,^,",' \
 	  -e 's,$$,\\n",' \
 	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
-	$(LTLINK) -DTCLSH=2 -DSQLITE_TEST=1 $(TEMP_STORE)\
-                -o $@ $(TESTSRC) $(TOP)/src/tclsqlite.c \
-		libtclsqlite3.la $(LIBTCL)
+	$(LTLINK) -DTCLSH=2 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
+		-DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE \
+		$(TEMP_STORE) -o $@ $(TESTFIXTURE_SRC) $(LIBTCL)
 
 
 install:	sqlite3$(BEXE) libsqlite3.la sqlite3.h ${HAVE_TCL:1=tcl_install}
