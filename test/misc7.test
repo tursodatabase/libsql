@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.18 2008/01/23 12:52:41 drh Exp $
+# $Id: misc7.test,v 1.19 2008/03/15 14:53:05 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -363,60 +363,69 @@ set sqlite_pager_n_sort_bucket 0
 # windows file system.
 #
 if {$tcl_platform(platform)!="windows"} {
-do_test misc7-17.1 {
-  execsql {
-    BEGIN;
-    DELETE FROM t3 WHERE (oid%3)==0;
-  }
-  copy_file test.db bak.db
-  copy_file test.db-journal bak.db-journal
-  execsql {
-    COMMIT;
-  }
 
-  db close
-  copy_file bak.db test.db
-  copy_file bak.db-journal test.db-journal
-  sqlite3 db test.db
+  # Some network filesystems (ex: AFP) do not support setting read-only
+  # permissions.  Only run these tests if full unix permission setting
+  # capabilities are supported.
+  #
+  file attributes test.db -permissions rw-r--r--
+  if {[file attributes test.db -permissions]==0644} {
 
-  catch {file attributes test.db-journal -permissions r--------}
-  catch {file attributes test.db-journal -readonly 1}
-  catchsql {
-    SELECT count(*) FROM t3;
+    do_test misc7-17.1 {
+      execsql {
+        BEGIN;
+        DELETE FROM t3 WHERE (oid%3)==0;
+      }
+      copy_file test.db bak.db
+      copy_file test.db-journal bak.db-journal
+      execsql {
+        COMMIT;
+      }
+    
+      db close
+      copy_file bak.db test.db
+      copy_file bak.db-journal test.db-journal
+      sqlite3 db test.db
+    
+      catch {file attributes test.db-journal -permissions r--------}
+      catch {file attributes test.db-journal -readonly 1}
+      catchsql {
+        SELECT count(*) FROM t3;
+      }
+    } {1 {database is locked}}
+    do_test misc7-17.2 {
+      # Note that the -readonly flag must be cleared before the -permissions
+      # are set. Otherwise, when using tcl 8.5 on mac, the fact that the 
+      # -readonly flag is set causes the attempt to set the permissions
+      # to fail.
+      catch {file attributes test.db-journal -readonly 0}
+      catch {file attributes test.db-journal -permissions rw-------}
+      catchsql {
+        SELECT count(*) FROM t3;
+      }
+    } {0 32}
+    
+    set ::pending_byte_page [expr ($::sqlite_pending_byte / 1024) + 1]
+    do_test misc7-17.3 {
+      db eval {
+        pragma writable_schema = true;
+        UPDATE sqlite_master 
+          SET rootpage = $pending_byte_page
+          WHERE type = 'table' AND name = 't3';
+      }
+      execsql {
+        SELECT rootpage FROM sqlite_master WHERE type = 'table' AND name = 't3';
+      }
+    } $::pending_byte_page
+    
+    do_test misc7-17.4 {
+      db close
+      sqlite3 db test.db
+      catchsql {
+        SELECT count(*) FROM t3;
+      } 
+    } {1 {database disk image is malformed}}
   }
-} {1 {database is locked}}
-do_test misc7-17.2 {
-  # Note that the -readonly flag must be cleared before the -permissions
-  # are set. Otherwise, when using tcl 8.5 on mac, the fact that the 
-  # -readonly flag is set causes the attempt to set the permissions
-  # to fail.
-  catch {file attributes test.db-journal -readonly 0}
-  catch {file attributes test.db-journal -permissions rw-------}
-  catchsql {
-    SELECT count(*) FROM t3;
-  }
-} {0 32}
-
-set ::pending_byte_page [expr ($::sqlite_pending_byte / 1024) + 1]
-do_test misc7-17.3 {
-  db eval {
-    pragma writable_schema = true;
-    UPDATE sqlite_master 
-      SET rootpage = $pending_byte_page
-      WHERE type = 'table' AND name = 't3';
-  }
-  execsql {
-    SELECT rootpage FROM sqlite_master WHERE type = 'table' AND name = 't3';
-  }
-} $::pending_byte_page
-
-do_test misc7-17.4 {
-  db close
-  sqlite3 db test.db
-  catchsql {
-    SELECT count(*) FROM t3;
-  } 
-} {1 {database disk image is malformed}}
 }
 
 # Ticket #2470
