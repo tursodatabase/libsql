@@ -1,5 +1,5 @@
-C Modify\sthe\stableapi.test\sscript\sso\sthat\sit\sworks\sunder\swindows.\s(CVS\s4869)
-D 2008-03-17T15:09:48
+C Label\stest\scase\sbindxfer-1.9\sas\sa\smisuse\stest\scase,\ssince\sit\sis\sone.\s(CVS\s4870)
+D 2008-03-17T16:23:27
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -212,7 +212,7 @@ F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test 9a6a8346e4042d9c781ed6cb6553ac871ae30618
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 261fd1603613e7f877a516d29f281c9d8c2ecf52
-F test/bindxfer.test b9a57f66dbd317feeefa28bd65b6576f1592ee98
+F test/bindxfer.test 995d2cf8df61204d748cde6960443121c4ccd2e1
 F test/bitvec.test 52a1caf5b4f037982f0e7720ffff6296f20940a6
 F test/blob.test f2dbdbf1159674283645c2636436839313ee7131
 F test/btree.test d22b1b2cc9becc36f6b1f2f91b9fca1e48060979
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 72c40726932695a2cf5c593707d098c8fb6e8875
-R e83dc61c6309735d8d05991e6d06e234
+P 89e06b4e083e7fd2c053c1cefc0063a5b772d7f8
+R 1b686c256df9ea9950884b4efeddb8c6
 U drh
-Z 137a3c6e300c6fa8621ff8f9f4bb92c8
+Z 3efcefeb88c5c6e237ed62f7d1082454
