@@ -1,5 +1,5 @@
-C Put\sthe\sstatement\sjournal\sin\sthe\stemp-file\sdirectory\ssince\sthat\ndirectory\sis\soften\son\soptimized\sstorage\ssuch\sas\sRAM\sdisk\sand\sbecause\nunlike\sthe\smain\sjournal,\sthe\sstatement\sjournal\sdoes\snot\sneed\sto\nbe\scolocated\swith\sthe\sdatabase\sfile.\s(CVS\s4868)
-D 2008-03-17T13:50:58
+C Modify\sthe\stableapi.test\sscript\sso\sthat\sit\sworks\sunder\swindows.\s(CVS\s4869)
+D 2008-03-17T15:09:48
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -455,7 +455,7 @@ F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
-F test/tableapi.test 4546eb710d979db023bfcc16b0c108b1557fcb43
+F test/tableapi.test 791f7e3891d9b70bdb43b311694bf5e9befcbc34
 F test/tclsqlite.test 3fac87cb1059c46b8fa8a60b553f4f1adb0fb6d9
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
 F test/tester.tcl 8f1df98df42667d05ee56ac4ba1ee58f9bb1e885
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ffd470279540b1b8e3fdce6eb14001bae489b16d
-R b0594243937ab6c61e858122dd1f0c8e
+P 72c40726932695a2cf5c593707d098c8fb6e8875
+R e83dc61c6309735d8d05991e6d06e234
 U drh
-Z 1448a749c8158f88c0270cbac8188569
+Z 137a3c6e300c6fa8621ff8f9f4bb92c8
