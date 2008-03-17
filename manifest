@@ -1,5 +1,5 @@
-C Detect\sthe\sfailure\sto\szero-terminate\sa\sresult\sstring\sdue\sto\sa\smalloc\nfailure.\s(CVS\s4871)
-D 2008-03-17T16:54:02
+C Abandon\sthe\sOR\soptimization\sfollowing\sa\smemory\sallocation\sfailure,\nto\savoid\sreferencing\suninitialized\smemory.\s(CVS\s4872)
+D 2008-03-17T17:08:33
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -183,7 +183,7 @@ F src/vdbeblob.c 63c750acc7b5012479f508c0e9627372a82cb65d
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 7a39ad5579e0a9e7305a8fe9a2095840f0ab8454
 F src/vtab.c 00cd16317b29495c185ff40e4b227917d5a371b2
-F src/where.c dd72c822a96967fd7218abec498a70f94986adb0
+F src/where.c 78d6689d7154d8d41c1a913e17bce9a320981653
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d12210212bada2bde6d5aeb90969b86c1aa977d2
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7b99122632f467cd0c34ad1a91e18fee8833980b
-R 571a543d12ff0dfea36aeece8b8d1783
+P 57db14067ff7d519291bebe695dcf991a9462372
+R 699373a396df6a54fc588940387e885f
 U drh
-Z 62d2740d9601abbcc408e4e7ca00e977
+Z c0e8c93c30926c71487668b2f03cf719

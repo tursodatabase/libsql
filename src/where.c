@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.289 2008/03/17 09:36:45 danielk1977 Exp $
+** $Id: where.c,v 1.290 2008/03/17 17:08:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -838,6 +838,7 @@ static void exprAnalyze(
     exprAnalyzeAll(pSrc, &sOr);
     assert( sOr.nTerm>=2 );
     j = 0;
+    if( db->mallocFailed ) goto or_not_possible;
     do{
       assert( j<sOr.nTerm );
       iColumn = sOr.a[j].leftColumn;
