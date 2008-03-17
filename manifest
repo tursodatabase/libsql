@@ -1,5 +1,5 @@
-C Return\san\serror\swhen\san\sxBestIndex()\smethod\sindicates\sthat\sit\sintends\sto\suse\sthe\svalue\sof\san\sunusable\sconstraint.\sRelated\sto\s#2998.\s(CVS\s4867)
-D 2008-03-17T09:36:45
+C Put\sthe\sstatement\sjournal\sin\sthe\stemp-file\sdirectory\ssince\sthat\ndirectory\sis\soften\son\soptimized\sstorage\ssuch\sas\sRAM\sdisk\sand\sbecause\nunlike\sthe\smain\sjournal,\sthe\sstatement\sjournal\sdoes\snot\sneed\sto\nbe\scolocated\swith\sthe\sdatabase\sfile.\s(CVS\s4868)
+D 2008-03-17T13:50:58
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -129,7 +129,7 @@ F src/os_unix.c 4cdd17e768888b865047805ca49beeacf0929683
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c aa3f4bbee3b8c182d25a33fbc319f486857c12c1
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c c2cabad85f50c895430cd317c46b43fe87ccb95b
+F src/pager.c 2ebd895730163721d0b470aca47afbe28039c5e7
 F src/pager.h 8174615ffd14ccc2cad2b081b919a398fa95e3f9
 F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
 F src/pragma.c e3f39f8576234887ecd0c1de43dc51af5855930c
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5589b9d395fb8267a124d56dd5d7987e57505e3d
-R 5404f9fa9fd8ab644119c7147401ab02
-U danielk1977
-Z c0d9e9f0eaef6302049326fc96233904
+P ffd470279540b1b8e3fdce6eb14001bae489b16d
+R b0594243937ab6c61e858122dd1f0c8e
+U drh
+Z 1448a749c8158f88c0270cbac8188569

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.416 2008/03/14 19:33:06 drh Exp $
+** @(#) $Id: pager.c,v 1.417 2008/03/17 13:50:58 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2083,13 +2083,15 @@ int sqlite3PagerOpen(
   int nDefaultPage = SQLITE_DEFAULT_PAGE_SIZE;
   char *zPathname;
   int nPathname;
+  char *zStmtJrnl;
+  int nStmtJrnl;
 
   /* The default return is a NULL pointer */
   *ppPager = 0;
 
   /* Compute the full pathname */
   nPathname = pVfs->mxPathname+1;
-  zPathname = sqlite3_malloc(nPathname);
+  zPathname = sqlite3_malloc(nPathname*2);
   if( zPathname==0 ){
     return SQLITE_NOMEM;
   }
@@ -2112,12 +2114,26 @@ int sqlite3PagerOpen(
   }
   nPathname = strlen(zPathname);
 
+  /* Put the statement journal in temporary disk space since this is
+  ** sometimes RAM disk or other optimized storage.  Unlikely the main
+  ** main journal file, the statement journal does not need to be 
+  ** colocated with the database nor does it need to be persistent.
+  */
+  zStmtJrnl = &zPathname[nPathname+1];
+  rc = sqlite3OsGetTempname(pVfs, pVfs->mxPathname+1, zStmtJrnl);
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(zPathname);
+    return rc;
+  }
+  nStmtJrnl = strlen(zStmtJrnl);
+
   /* Allocate memory for the pager structure */
   pPager = sqlite3MallocZero(
     sizeof(*pPager) +           /* Pager structure */
     journalFileSize +           /* The journal file structure */ 
     pVfs->szOsFile * 3 +        /* The main db and two journal files */ 
-    4*nPathname + 40            /* zFilename, zDirectory, zJournal, zStmtJrnl */
+    3*nPathname + 40 +          /* zFilename, zDirectory, zJournal */
+    nStmtJrnl                   /* zStmtJrnl */
   );
   if( !pPager ){
     sqlite3_free(zPathname);
@@ -2134,6 +2150,7 @@ int sqlite3PagerOpen(
   pPager->zStmtJrnl = &pPager->zJournal[nPathname+10];
   pPager->pVfs = pVfs;
   memcpy(pPager->zFilename, zPathname, nPathname+1);
+  memcpy(pPager->zStmtJrnl, zStmtJrnl, nStmtJrnl+1);
   sqlite3_free(zPathname);
 
   /* Open the pager file.
@@ -2209,11 +2226,9 @@ int sqlite3PagerOpen(
   for(i=strlen(pPager->zDirectory); i>0 && pPager->zDirectory[i-1]!='/'; i--){}
   if( i>0 ) pPager->zDirectory[i-1] = 0;
 
-  /* Fill in Pager.zJournal[] and Pager.zStmtJrnl[] */
+  /* Fill in Pager.zJournal[] */
   memcpy(pPager->zJournal, pPager->zFilename, nPathname);
   memcpy(&pPager->zJournal[nPathname], "-journal", 9);
-  memcpy(pPager->zStmtJrnl, pPager->zFilename, nPathname);
-  memcpy(&pPager->zStmtJrnl[nPathname], "-stmtjrnl", 10);
 
   /* pPager->journalOpen = 0; */
   pPager->useJournal = useJournal && !memDb;
