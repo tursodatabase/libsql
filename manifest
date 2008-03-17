@@ -1,5 +1,5 @@
-C Skip\stests\sthat\srequire\ssetting\sdetailed\sunix\spermissions\son\sfiles\swhen\nrunning\son\sfilesystems\ssuch\sas\sAFP\sthat\sdo\snot\ssupport\sthat\scapability.\s(CVS\s4866)
-D 2008-03-15T14:53:05
+C Return\san\serror\swhen\san\sxBestIndex()\smethod\sindicates\sthat\sit\sintends\sto\suse\sthe\svalue\sof\san\sunusable\sconstraint.\sRelated\sto\s#2998.\s(CVS\s4867)
+D 2008-03-17T09:36:45
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +152,7 @@ F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
 F src/test6.c f8b34a6ff04937092327798ddf0ab46863535bc5
 F src/test7.c acec2256c7c2d279db5a8b5fa1a2a68fcc942c67
-F src/test8.c 25e127f0e21f59da24fa33cdbc645851cfb933f1
+F src/test8.c 7933b27f8d300512546ef6bdd25f2fe64c3c13f3
 F src/test9.c 4615ef08750245a2d96aaa7cbe2fb4aff2b57acc
 F src/test_async.c 3147c64c34721f088d5ab20f85dabd5d7732c007
 F src/test_autoext.c 855157d97aa28cf84233847548bfacda21807436
@@ -183,7 +183,7 @@ F src/vdbeblob.c 63c750acc7b5012479f508c0e9627372a82cb65d
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 7a39ad5579e0a9e7305a8fe9a2095840f0ab8454
 F src/vtab.c 00cd16317b29495c185ff40e4b227917d5a371b2
-F src/where.c c5eaca1f2d9caa20c5c7096434ccde2be03b325c
+F src/where.c dd72c822a96967fd7218abec498a70f94986adb0
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d12210212bada2bde6d5aeb90969b86c1aa977d2
@@ -530,7 +530,7 @@ F test/vtab2.test 1da49b015582965a8fc386aa23d051a5a622b08e
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
 F test/vtab5.test 26bc7a0a52c5c2bcfa849ba327f8a0d4abccdb23
-F test/vtab6.test ec0036f29f8a803da9935206f2d9d1b6a8026392
+F test/vtab6.test 8273e2c6e13c6f8d39b66cb7fc2591f4b97a9d44
 F test/vtab7.test a8c3c3cb3eb60be364991bd714e4927e26c4cd85
 F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5e4df441815ed7d02e9ad8ee2e1c2f937ee675d7
-R 4fc01bc578742338cb6e67ff251ecd70
-U drh
-Z 787508c13d0cfaee6008fe2953e61687
+P 5589b9d395fb8267a124d56dd5d7987e57505e3d
+R 5404f9fa9fd8ab644119c7147401ab02
+U danielk1977
+Z c0d9e9f0eaef6302049326fc96233904

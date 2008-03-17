@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.60 2008/02/13 18:25:27 danielk1977 Exp $
+** $Id: test8.c,v 1.61 2008/03/17 09:36:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -730,6 +730,11 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int useCost = 0;
   double cost;
 
+  int isIgnoreUsable = 0;
+  if( Tcl_GetVar(interp, "echo_module_ignore_usable", TCL_GLOBAL_ONLY) ){
+    isIgnoreUsable = 1;
+  }
+
   /* Determine the number of rows in the table and store this value in local
   ** variable nRow. The 'estimated-cost' of the scan will be the number of
   ** rows in the table for a linear scan, or the log (base 2) of the 
@@ -767,6 +772,8 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 
     pConstraint = &pIdxInfo->aConstraint[ii];
     pUsage = &pIdxInfo->aConstraintUsage[ii];
+
+    if( !isIgnoreUsable && !pConstraint->usable ) continue;
 
     iCol = pConstraint->iColumn;
     if( pVtab->aIndex[iCol] ){

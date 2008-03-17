@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.288 2008/03/04 17:45:02 mlcreech Exp $
+** $Id: where.c,v 1.289 2008/03/17 09:36:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1400,6 +1400,16 @@ static double bestVirtualIndex(
   TRACE_IDX_INPUTS(pIdxInfo);
   rc = pTab->pVtab->pModule->xBestIndex(pTab->pVtab, pIdxInfo);
   TRACE_IDX_OUTPUTS(pIdxInfo);
+  (void)sqlite3SafetyOn(pParse->db);
+
+  for(i=0; i<pIdxInfo->nConstraint; i++){
+    if( !pIdxInfo->aConstraint[i].usable && pUsage[i].argvIndex>0 ){
+      sqlite3ErrorMsg(pParse, 
+          "table %s: xBestIndex returned an invalid plan", pTab->zName);
+      return 0.0;
+    }
+  }
+
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM ){
       pParse->db->mallocFailed = 1;
@@ -1407,7 +1417,6 @@ static double bestVirtualIndex(
       sqlite3ErrorMsg(pParse, "%s", sqlite3ErrStr(rc));
     }
   }
-  (void)sqlite3SafetyOn(pParse->db);
   *(int*)&pIdxInfo->nOrderBy = nOrderBy;
 
   return pIdxInfo->estimatedCost;
