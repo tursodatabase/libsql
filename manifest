@@ -1,5 +1,5 @@
-C Label\stest\scase\sbindxfer-1.9\sas\sa\smisuse\stest\scase,\ssince\sit\sis\sone.\s(CVS\s4870)
-D 2008-03-17T16:23:27
+C Detect\sthe\sfailure\sto\szero-terminate\sa\sresult\sstring\sdue\sto\sa\smalloc\nfailure.\s(CVS\s4871)
+D 2008-03-17T16:54:02
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -174,7 +174,7 @@ F src/update.c 9b3be169cd2a0b065717164aa0f90aa48f34aed1
 F src/utf.c 32b00d6e19010025e58f2ecb2f921d5e126771b4
 F src/util.c c56e41ed4769c1f2b8af9ffde4757a7b4fb08ed1
 F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
-F src/vdbe.c a172f5134d19ae910134e28987bf7906523c9b6f
+F src/vdbe.c abb9232dbb05a53cce997aa95e67587d8d95729e
 F src/vdbe.h 58a7d931ffb704e034b2a725981cfa5bd406fad9
 F src/vdbeInt.h 76c81d057a39813de0fda3cad1498655d53ec69d
 F src/vdbeapi.c cf9fc963efae3cdf5de08e2a9718b487059c7fc5
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 89e06b4e083e7fd2c053c1cefc0063a5b772d7f8
-R 1b686c256df9ea9950884b4efeddb8c6
+P 7b99122632f467cd0c34ad1a91e18fee8833980b
+R 571a543d12ff0dfea36aeece8b8d1783
 U drh
-Z 3efcefeb88c5c6e237ed62f7d1082454
+Z 62d2740d9601abbcc408e4e7ca00e977

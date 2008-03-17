@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.709 2008/02/13 18:25:27 danielk1977 Exp $
+** $Id: vdbe.c,v 1.710 2008/03/17 16:54:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -985,6 +985,7 @@ case OP_ResultRow: {
     sqlite3VdbeMemNulTerminate(&pMem[i]);
     storeTypeInfo(&pMem[i], encoding);
   }
+  if( db->mallocFailed ) goto no_mem;
 
   /* Return SQLITE_ROW
   */
