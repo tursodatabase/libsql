@@ -1,5 +1,5 @@
-C Test\sscript\schanges\sthat\sgo\swith\sthe\scoverage\senhancements\sof\sthe\nprevious\scheck-in.\s(CVS\s4878)
-D 2008-03-18T13:46:53
+C Update\sthe\sdocumentation\sto\sdistinguish\sbetween\sprotected\sand\sunprotected\nsqlite3_value\sobjects.\s(CVS\s4879)
+D 2008-03-18T13:47:21
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -139,7 +139,7 @@ F src/random.c 02ef38b469237482f1ea14a78b2087cfbaec48bd
 F src/select.c d0a1e01a2a6c05bd60324e843c7e4581d3605950
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
-F src/sqlite.h.in 1cf531c45f20cedf0786f4dc5dedc8dcc33b5df3
+F src/sqlite.h.in 34368f76fb43122dffb97188c2a5166aa11ad8e5
 F src/sqlite3ext.h 50c70a894ffe8e6ada5948c89b91db0a80a6b2a7
 F src/sqliteInt.h 2726f01ca494e518542732ee57a490806f92bace
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P edd207b9a9df5d73ec34474a4e90fcb592f06cf1
-R 4c32224dd22a5f74d7f84201633ed292
+P f87ddf83a5d1340652f222972a7d75f4fdbe776b
+R 4eff51fa0e2146019ac3cf43f90b51e7
 U drh
-Z 6ec7b57f051cece6980e6912c8801c48
+Z eaeb575bf3bebac1f6b6f099c0feb83e

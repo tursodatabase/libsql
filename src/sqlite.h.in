@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.291 2008/03/08 12:37:31 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.292 2008/03/18 13:47:21 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2294,12 +2294,39 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF:  Dynamically Typed Value Object  {F15000}
+** KEYWORDS: {protected sqlite3_value} {unprotected sqlite3_value}
 **
 ** SQLite uses the sqlite3_value object to represent all values
-** that are or can be stored in a database table.
+** that can be stored in a database table.
 ** SQLite uses dynamic typing for the values it stores.  
 ** Values stored in sqlite3_value objects can be
 ** be integers, floating point values, strings, BLOBs, or NULL.
+**
+** An sqlite3_value object may be either "protected" or "unprotected".
+** Some interfaces require a protected sqlite3_value.  Other interfaces
+** will accept either a protected or an unprotected sqlite3_value.
+** Every interface that accepts sqlite3_value arguments specifies 
+** whether or not it requires a protected sqlite3_value.
+**
+** The terms "protected" and "unprotected" refer to whether or not
+** a mutex is held.  A internal mutex is held for a protected
+** sqlite3_value object but no mutex is held for an unprotected
+** sqlite3_value object.  If SQLite is compiled to be single-threaded
+** (with SQLITE_THREADSAFE=0 and with [sqlite3_threadsafe()] returning 0)
+** then there is no distinction between
+** protected and unprotected sqlite3_value objects and they can be
+** used interchangable.  However, for maximum code portability it
+** is recommended that applications make the distinction between
+** between protected and unprotected sqlite3_value objects even if
+** they are single threaded.
+**
+** The sqlite3_value objects that are passed as parameters into the
+** implementation of application-defined SQL functions are protected.
+** The sqlite3_value object returned by
+** [sqlite3_column_value()] is unprotected.
+** Unprotected sqlite3_value objects may only be used with
+** [sqlite3_result_value()] and [sqlite3_bind_value()].  All other
+** interfaces that use sqlite3_value require protected sqlite3_value objects.
 */
 typedef struct Mem sqlite3_value;
 
@@ -2461,6 +2488,10 @@ typedef struct sqlite3_context sqlite3_context;
 **
 ** {F13548} In calls to [sqlite3_bind_zeroblob(S,N,V,L)] the value bound
 **          is a blob of L bytes, or a zero-length blob if L is negative.
+**
+** {F13551} In calls to [sqlite3_bind_value(S,N,V)] the V argument may
+**          be either a [protected sqlite3_value] object or an
+**          [unprotected sqlite3_value] object.
 */
 int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
 int sqlite3_bind_double(sqlite3_stmt*, int, double);
@@ -3019,6 +3050,15 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** but leaves the result in UTF-16 in native byte order instead of UTF-8.  
 ** The zero terminator is not included in this count.
 **
+** The object returned by [sqlite3_column_value()] is an
+** [unprotected sqlite3_value] object.  An unprotected sqlite3_value object
+** may only be used with [sqlite3_bind_value()] and [sqlite3_result_value()].
+** If the [unprotected sqlite3_value] object returned by
+** [sqlite3_column_value()] is used in any other way, including calls
+** to routines like 
+** [sqlite3_value_int()], [sqlite3_value_text()], or [sqlite3_value_bytes()],
+** then the behavior is undefined.
+**
 ** These routines attempt to convert the value where appropriate.  For
 ** example, if the internal representation is FLOAT and a text result
 ** is requested, [sqlite3_snprintf()] is used internally to do the conversion
@@ -3160,7 +3200,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 **          [prepared statement] S.
 **
 ** {F13830} The [sqlite3_column_value(S,N)] interface returns a
-**          pointer to the [sqlite3_value] object that for the
+**          pointer to an [unprotected sqlite3_value] object for the
 **          Nth column in the current row of the result set for
 **          [prepared statement] S.
 */
@@ -3350,6 +3390,12 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 **          [sqlite3_create_function(D,X,N,E,P,0,S,L)] the finializer
 **          function L will always be invoked exactly once if the
 **          step function S is called one or more times.
+**
+** {F16142} When SQLite invokes either the xFunc or xStep function of
+**          an application-defined SQL function or aggregate created
+**          by [sqlite3_create_function()] or [sqlite3_create_function16()],
+**          then the array of [sqlite3_value] objects passed as the
+**          third parameter are always [protected sqlite3_value] objects.
 */
 int sqlite3_create_function(
   sqlite3 *db,
@@ -3412,14 +3458,18 @@ int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
 ** to [sqlite3_create_function()] and [sqlite3_create_function16()]
 ** define callbacks that implement the SQL functions and aggregates.
 ** The 4th parameter to these callbacks is an array of pointers to
-** [sqlite3_value] objects.  There is one [sqlite3_value] object for
+** [protected sqlite3_value] objects.  There is one [sqlite3_value] object for
 ** each parameter to the SQL function.  These routines are used to
 ** extract values from the [sqlite3_value] objects.
 **
+** These routines work only with [protected sqlite3_value] objects.
+** Any attempt to use these routines on an [unprotected sqlite3_value]
+** object results in undefined behavior.
+**
 ** These routines work just like the corresponding 
 ** [sqlite3_column_blob | sqlite3_column_* routines] except that 
-** these routines take a single [sqlite3_value*] pointer instead
-** of an [sqlite3_stmt*] pointer and an integer column number.
+** these routines take a single [protected sqlite3_value] object pointer
+** instead of an [sqlite3_stmt*] pointer and an integer column number.
 **
 ** The sqlite3_value_text16() interface extracts a UTF16 string
 ** in the native byte-order of the host machine.  The
@@ -3441,16 +3491,13 @@ int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
 ** or [sqlite3_value_text16()].  
 **
 ** These routines must be called from the same thread as
-** the SQL function that supplied the sqlite3_value* parameters.
-** Or, if the sqlite3_value* argument comes from the [sqlite3_column_value()]
-** interface, then these routines should be called from the same thread
-** that ran [sqlite3_column_value()].
+** the SQL function that supplied the [sqlite3_value*] parameters.
 **
 **
 ** INVARIANTS:
 **
 ** {F15103} The [sqlite3_value_blob(V)] interface converts the
-**          [sqlite3_value] object V into a blob and then returns a
+**          [protected sqlite3_value] object V into a blob and then returns a
 **          pointer to the converted value.
 **
 ** {F15106} The [sqlite3_value_bytes(V)] interface returns the
@@ -3466,33 +3513,33 @@ int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
 **          [sqlite3_value_text16be(V)], or [sqlite3_value_text16le(V)].
 **
 ** {F15112} The [sqlite3_value_double(V)] interface converts the
-**          [sqlite3_value] object V into a floating point value and
+**          [protected sqlite3_value] object V into a floating point value and
 **          returns a copy of that value.
 **
 ** {F15115} The [sqlite3_value_int(V)] interface converts the
-**          [sqlite3_value] object V into a 64-bit signed integer and
+**          [protected sqlite3_value] object V into a 64-bit signed integer and
 **          returns the lower 32 bits of that integer.
 **
 ** {F15118} The [sqlite3_value_int64(V)] interface converts the
-**          [sqlite3_value] object V into a 64-bit signed integer and
+**          [protected sqlite3_value] object V into a 64-bit signed integer and
 **          returns a copy of that integer.
 **
 ** {F15121} The [sqlite3_value_text(V)] interface converts the
-**          [sqlite3_value] object V into a zero-terminated UTF-8 
+**          [protected sqlite3_value] object V into a zero-terminated UTF-8 
 **          string and returns a pointer to that string.
 **
 ** {F15124} The [sqlite3_value_text16(V)] interface converts the
-**          [sqlite3_value] object V into a zero-terminated 2-byte
+**          [protected sqlite3_value] object V into a zero-terminated 2-byte
 **          aligned UTF-16 native byte order
 **          string and returns a pointer to that string.
 **
 ** {F15127} The [sqlite3_value_text16be(V)] interface converts the
-**          [sqlite3_value] object V into a zero-terminated 2-byte
+**          [protected sqlite3_value] object V into a zero-terminated 2-byte
 **          aligned UTF-16 big-endian
 **          string and returns a pointer to that string.
 **
 ** {F15130} The [sqlite3_value_text16le(V)] interface converts the
-**          [sqlite3_value] object V into a zero-terminated 2-byte
+**          [protected sqlite3_value] object V into a zero-terminated 2-byte
 **          aligned UTF-16 little-endian
 **          string and returns a pointer to that string.
 **
@@ -3502,12 +3549,12 @@ int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
 **          the [sqlite3_value] object V.
 **
 ** {F15136} The [sqlite3_value_numeric_type(V)] interface converts
-**          the [sqlite3_value] object V into either an integer or
+**          the [protected sqlite3_value] object V into either an integer or
 **          a floating point value if it can do so without loss of
 **          information, and returns one of [SQLITE_NULL],
 **          [SQLITE_INTEGER], [SQLITE_FLOAT], [SQLITE_TEXT], or
 **          [SQLITE_BLOB] as appropriate for
-**          the [sqlite3_value] object V after the conversion attempt.
+**          the [protected sqlite3_value] object V after the conversion attempt.
 */
 const void *sqlite3_value_blob(sqlite3_value*);
 int sqlite3_value_bytes(sqlite3_value*);
@@ -3777,11 +3824,14 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** from [sqlite3_malloc()] before it returns.
 **
 ** The sqlite3_result_value() interface sets the result of
-** the application-defined function to be a copy the [sqlite3_value]
-** object specified by the 2nd parameter.  The
+** the application-defined function to be a copy the
+** [unprotected sqlite3_value] object specified by the 2nd parameter.  The
 ** sqlite3_result_value() interface makes a copy of the [sqlite3_value]
 ** so that [sqlite3_value] specified in the parameter may change or
 ** be deallocated after sqlite3_result_value() returns without harm.
+** A [protected sqlite3_value] object may always be used where an
+** [unprotected sqlite3_value] object is required, so either
+** kind of [sqlite3_value] object can be used with this interface.
 **
 ** If these routines are called from within the different thread 
 ** than the one containing the application-defined function that recieved
@@ -3851,7 +3901,8 @@ typedef void (*sqlite3_destructor_type)(void*);
 **          is positive.
 **
 ** {F16448} The [sqlite3_result_value(C,V)] interface changes the
-**          return value of function C to be [sqlite3_value] object V.
+**          return value of function C to be [unprotected sqlite3_value]
+**          object V.
 **
 ** {F16451} The [sqlite3_result_zeroblob(C,N)] interface changes the
 **          return value of function C to be an N-byte blob of all zeros.
