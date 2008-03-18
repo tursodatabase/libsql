@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem1.c,v 1.16 2008/02/14 23:26:56 drh Exp $
+** $Id: mem1.c,v 1.17 2008/03/18 00:07:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -137,10 +137,14 @@ void *sqlite3_malloc(int nBytes){
     if( mem.alarmCallback!=0 && mem.nowUsed+nBytes>=mem.alarmThreshold ){
       sqlite3MemsysAlarm(nBytes);
     }
-    p = malloc(nBytes+8);
-    if( p==0 ){
-      sqlite3MemsysAlarm(nBytes);
+    if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ){
+      p = 0;
+    }else{
       p = malloc(nBytes+8);
+      if( p==0 ){
+        sqlite3MemsysAlarm(nBytes);
+        p = malloc(nBytes+8);
+      }
     }
     if( p ){
       p[0] = nBytes;
@@ -205,12 +209,16 @@ void *sqlite3_realloc(void *pPrior, int nBytes){
   if( mem.nowUsed+nBytes-nOld>=mem.alarmThreshold ){
     sqlite3MemsysAlarm(nBytes-nOld);
   }
-  p = realloc(p, nBytes+8);
-  if( p==0 ){
-    sqlite3MemsysAlarm(nBytes);
-    p = pPrior;
-    p--;
+  if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ){
+    p = 0;
+  }else{
     p = realloc(p, nBytes+8);
+    if( p==0 ){
+      sqlite3MemsysAlarm(nBytes);
+      p = pPrior;
+      p--;
+      p = realloc(p, nBytes+8);
+    }
   }
   if( p ){
     p[0] = nBytes;

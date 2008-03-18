@@ -1,5 +1,5 @@
-C Version\s3.5.7\s(CVS\s4874)
-D 2008-03-17T19:03:04
+C Add\sthe\sability\sto\ssimulate\sout-of-memory\serrors\swhen\susing\sthe\sdefault\nmemory\sallocator,\smem1.c.\s\sFix\sa\sbug\sthat\sthis\senhancement\srevealed.\s(CVS\s4875)
+D 2008-03-18T00:07:11
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -108,7 +108,7 @@ F src/loadext.c eceaebcff9807519ed9494056648d0d879f93ed3
 F src/main.c 15db7dda6703f9a41a70337466215bf1a0e1fdcf
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
-F src/mem1.c 62a821702d3292809ca78e7c55c3ca04b05a3757
+F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
 F src/mem2.c a17fd71f39e593f46445282c36077231e70a31eb
 F src/mem3.c 52547678a2ae50c203d54be1a5bf51eb02438a3f
 F src/mem4.c 45c328ec6dcb7e8d319cb383615b5fe547ca5409
@@ -161,7 +161,7 @@ F src/test_config.c 9223ff4a7b8b97c9d12965b0123db1cbd6757efb
 F src/test_devsym.c cee1aecaa90c895030399ca4ae38f84a08038f8a
 F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
-F src/test_malloc.c 85e702341c752810017c94c40f2a1ac92128abc0
+F src/test_malloc.c cdad54dc6a4152ba2681073cb21f74e76da95551
 F src/test_md5.c c107c96637123239c3518b5fbe97a79130f4d32e
 F src/test_onefile.c 2fea6d22f13f5f286356c80c77ffd41f995f2b7a
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
@@ -181,7 +181,7 @@ F src/vdbeapi.c cf9fc963efae3cdf5de08e2a9718b487059c7fc5
 F src/vdbeaux.c 83e34e38706889a16fbd77fce3777390d425af79
 F src/vdbeblob.c 63c750acc7b5012479f508c0e9627372a82cb65d
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
-F src/vdbemem.c 7a39ad5579e0a9e7305a8fe9a2095840f0ab8454
+F src/vdbemem.c eca1f7ae77f5de66cd6809800d98f6a9186e0f47
 F src/vtab.c 00cd16317b29495c185ff40e4b227917d5a371b2
 F src/where.c 78d6689d7154d8d41c1a913e17bce9a320981653
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -389,7 +389,7 @@ F test/mallocD.test f78c295e8e18ea3029e65ca08278690e00c22100
 F test/mallocE.test db1ed69d7eded1b080952e2a7c37f364ad241b08
 F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
 F test/mallocG.test b295dc03b6d8d705ce425ff4d1ce6bbeb1c5ab33
-F test/malloc_common.tcl bb48df8df8c3ae75a9cb2d3626d54202b2ba2401
+F test/malloc_common.tcl 5f7b853b2203bd61c9e3c504d461bc3202d13972
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P fcf3d0a3d5d3a71155ab0aa5f533da72063d54f0
-R 1dda9680613a1b8479a4668dc28f14c0
+P 9a6583d375a1b922e88eed888e54e51cbc85f400
+R 31d912fc5305f78d6110f0f1f2963749
 U drh
-Z fbb5cb4a11e45c4a408698a49a0c8107
+Z 80b52909a8b7e1801c400c7055de8bb6

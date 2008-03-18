@@ -81,7 +81,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
        || (f & (MEM_Dyn|MEM_Static|MEM_Ephem))==MEM_Static 
   );
 
-  if( ((f&MEM_Dyn)==0 || pMem->xDel || sqlite3MallocSize(pMem->z)<n) ){
+  if( (f&MEM_Dyn)==0 || pMem->xDel || sqlite3MallocSize(pMem->z)<n ){
 
     /* Allocate the new buffer. The minimum allocation size is 32 bytes. */
     char *z = 0;
@@ -94,6 +94,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
         z = sqlite3DbMallocRaw(pMem->db, (n>32?n:32));
       }
       if( !z ){
+        pMem->flags = MEM_Null;
         return SQLITE_NOMEM;
       }
     }
