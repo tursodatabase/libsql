@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sintroduced\sby\sthe\sprevious\sbug\sfix.\s(CVS\s4876)
-D 2008-03-18T00:54:22
+C Minor\stest\scoverage\senhancements.\s(CVS\s4877)
+D 2008-03-18T13:01:38
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -105,7 +105,7 @@ F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c cb1939fdeb91ea88fb44fbd2768a10e14bc44650
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c eceaebcff9807519ed9494056648d0d879f93ed3
-F src/main.c 15db7dda6703f9a41a70337466215bf1a0e1fdcf
+F src/main.c 39fb36d59289a4c0f425bbde57a6d3d044b2fb9a
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
@@ -161,8 +161,8 @@ F src/test_config.c 9223ff4a7b8b97c9d12965b0123db1cbd6757efb
 F src/test_devsym.c cee1aecaa90c895030399ca4ae38f84a08038f8a
 F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
-F src/test_malloc.c cdad54dc6a4152ba2681073cb21f74e76da95551
-F src/test_md5.c c107c96637123239c3518b5fbe97a79130f4d32e
+F src/test_malloc.c bba50714c0aa75552bc535473afb8213f18c2fe6
+F src/test_md5.c bca40b727c57462ddb415e57c5323445a1bb1a40
 F src/test_onefile.c 2fea6d22f13f5f286356c80c77ffd41f995f2b7a
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d55a5e1c11ef90534abd2e5f18d06dd4739ade70
-R 8038a6869da25c8407656ca46ace7bfe
+P b9c5dce34985f7e6d1b6314ae8674f07d0bf518b
+R 67aaf9a613e3c2a3d49f99caa50102da
 U drh
-Z 08840e24e9d36f24a7b459d649a2a623
+Z 4730a7cecf64579e388237eb2277c2bb

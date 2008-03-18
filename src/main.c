@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.421 2008/03/07 21:37:19 drh Exp $
+** $Id: main.c,v 1.422 2008/03/18 13:01:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1002,13 +1002,12 @@ static int openDatabase(
   createCollation(db, "BINARY", SQLITE_UTF16BE, 0, binCollFunc, 0);
   createCollation(db, "BINARY", SQLITE_UTF16LE, 0, binCollFunc, 0);
   createCollation(db, "RTRIM", SQLITE_UTF8, (void*)1, binCollFunc, 0);
-  if( db->mallocFailed ||
-      (db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 6, 0))==0 
-  ){
-    assert( db->mallocFailed );
+  if( db->mallocFailed ){
     db->magic = SQLITE_MAGIC_SICK;
     goto opendb_out;
   }
+  db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 6, 0);
+  assert( db->pDfltColl!=0 );
 
   /* Also add a UTF-8 case-insensitive collation sequence. */
   createCollation(db, "NOCASE", SQLITE_UTF8, 0, nocaseCollatingFunc, 0);

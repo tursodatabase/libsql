@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.16 2008/03/18 00:07:11 drh Exp $
+** $Id: test_malloc.c,v 1.17 2008/03/18 13:01:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -437,6 +437,7 @@ static int test_memdebug_fail(
     }
   }
   
+  sqlite3_test_control(-12345); /* Just to stress the test_control interface */
   nBenign = sqlite3_test_control(SQLITE_TESTCTRL_FAULT_BENIGN_FAILURES,
                                  SQLITE_FAULTINJECTOR_MALLOC);
   nFail = sqlite3_test_control(SQLITE_TESTCTRL_FAULT_FAILURES,
