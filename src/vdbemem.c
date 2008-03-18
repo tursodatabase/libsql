@@ -94,6 +94,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
         z = sqlite3DbMallocRaw(pMem->db, (n>32?n:32));
       }
       if( !z ){
+        sqlite3VdbeMemRelease(pMem);
         pMem->flags = MEM_Null;
         return SQLITE_NOMEM;
       }

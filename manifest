@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\ssimulate\sout-of-memory\serrors\swhen\susing\sthe\sdefault\nmemory\sallocator,\smem1.c.\s\sFix\sa\sbug\sthat\sthis\senhancement\srevealed.\s(CVS\s4875)
-D 2008-03-18T00:07:11
+C Fix\sa\smemory\sleak\sintroduced\sby\sthe\sprevious\sbug\sfix.\s(CVS\s4876)
+D 2008-03-18T00:54:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -181,7 +181,7 @@ F src/vdbeapi.c cf9fc963efae3cdf5de08e2a9718b487059c7fc5
 F src/vdbeaux.c 83e34e38706889a16fbd77fce3777390d425af79
 F src/vdbeblob.c 63c750acc7b5012479f508c0e9627372a82cb65d
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
-F src/vdbemem.c eca1f7ae77f5de66cd6809800d98f6a9186e0f47
+F src/vdbemem.c 2aff1e7cf3755c332819ef1e573d66a7fefd9c9a
 F src/vtab.c 00cd16317b29495c185ff40e4b227917d5a371b2
 F src/where.c 78d6689d7154d8d41c1a913e17bce9a320981653
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9a6583d375a1b922e88eed888e54e51cbc85f400
-R 31d912fc5305f78d6110f0f1f2963749
+P d55a5e1c11ef90534abd2e5f18d06dd4739ade70
+R 8038a6869da25c8407656ca46ace7bfe
 U drh
-Z 80b52909a8b7e1801c400c7055de8bb6
+Z 08840e24e9d36f24a7b459d649a2a623
