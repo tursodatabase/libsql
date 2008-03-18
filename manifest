@@ -1,5 +1,5 @@
-C Minor\stest\scoverage\senhancements.\s(CVS\s4877)
-D 2008-03-18T13:01:38
+C Test\sscript\schanges\sthat\sgo\swith\sthe\scoverage\senhancements\sof\sthe\nprevious\scheck-in.\s(CVS\s4878)
+D 2008-03-18T13:46:53
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 5be94fea84f1599672e5041de03b97990baca593
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -413,7 +413,7 @@ F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 51e3c091bc2992f5098f7576e3594e1908988939
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
-F test/pragma.test d9f3d80583b80708aa270e8c5038dee949190d78
+F test/pragma.test a16e6c08d4b85d1eb0ecfb490f6fa1e2d6342043
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
@@ -424,7 +424,7 @@ F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
 F test/rollback.test 0bd29070ba2f76da939347773fbda53337ebd61c
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
-F test/safety.test 1b585c4311c85a6a7aa747b7b45a6bbc6d04fbe0
+F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
 F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
 F test/select1.test 871df931cbbc0e78170605628e8b5fc60765e265
@@ -623,7 +623,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b9c5dce34985f7e6d1b6314ae8674f07d0bf518b
-R 67aaf9a613e3c2a3d49f99caa50102da
+P edd207b9a9df5d73ec34474a4e90fcb592f06cf1
+R 4c32224dd22a5f74d7f84201633ed292
 U drh
-Z 4730a7cecf64579e388237eb2277c2bb
+Z 6ec7b57f051cece6980e6912c8801c48

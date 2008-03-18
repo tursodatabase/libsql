@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.57 2008/01/20 23:19:58 drh Exp $
+# $Id: pragma.test,v 1.58 2008/03/18 13:46:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -813,6 +813,23 @@ do_test pragma-8.2.15 {
 } {-450}
 } ; # ifcapable schema_version
 
+# Check to see if TEMP_STORE is memory or disk.  Return strings
+# "memory" or "disk" as appropriate.
+#
+proc check_temp_store {} {
+  db eval {CREATE TEMP TABLE IF NOT EXISTS a(b)}
+  db eval {PRAGMA database_list} {
+    if {$name=="temp"} {
+      if {$file==""} {
+        return "memory"
+      } else {
+        return "disk"
+      }
+    }
+  }
+  return "unknown"
+}
+
 
 # Test temp_store and temp_store_directory pragmas
 #
@@ -824,18 +841,54 @@ do_test pragma-9.1 {
     PRAGMA temp_store;
   }
 } {0}
+if {$TEMP_STORE<=1} {
+  do_test pragma-9.1.1 {
+    check_temp_store
+  } {disk}
+} else {
+  do_test pragma-9.1.1 {
+    check_temp_store
+  } {memory}
+}
+
 do_test pragma-9.2 {
+  db close
+  sqlite3 db test.db
   execsql {
     PRAGMA temp_store=file;
     PRAGMA temp_store;
   }
 } {1}
+if {$TEMP_STORE==3} {
+  # When TEMP_STORE is 3, always use memory regardless of pragma settings.
+  do_test pragma-9.2.1 {
+    check_temp_store
+  } {memory}
+} else {
+  do_test pragma-9.2.1 {
+    check_temp_store
+  } {disk}
+}
+
 do_test pragma-9.3 {
+  db close
+  sqlite3 db test.db
   execsql {
     PRAGMA temp_store=memory;
     PRAGMA temp_store;
   }
 } {2}
+if {$TEMP_STORE==0} {
+  # When TEMP_STORE is 0, always use the disk regardless of pragma settings.
+  do_test pragma-9.3.1 {
+    check_temp_store
+  } {disk}
+} else {
+  do_test pragma-9.3.1 {
+    check_temp_store
+  } {memory}
+}
+
 do_test pragma-9.4 {
   execsql {
     PRAGMA temp_store_directory;
