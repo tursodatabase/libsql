@@ -1,5 +1,5 @@
-C Initialize\sthe\sMD5\sSQL\sfunctions\sfrom\stest_func.c\sinstead\sof\susing\nconditional\scompilation\sin\stclsqlite.c.\s(CVS\s4885)
-D 2008-03-19T19:01:22
+C Update\sthe\sloadable\sextension\smodule\sto\sinclude\srecently\sadded\sinterfaces.\s(CVS\s4886)
+D 2008-03-19T19:55:55
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 31182aff7a39a0a0fc41e2e68562d20d57a8b16e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/insert.c 3eb3d0b739eb318c7435b9da35330e2e893e3b78
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c cb1939fdeb91ea88fb44fbd2768a10e14bc44650
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
-F src/loadext.c 6f1105d8e156983f6986534e55d2e60394544e76
+F src/loadext.c cf7de78e1ee6c29697207eea291454c93ea2b892
 F src/main.c bb31f65f7b1870825a4c9a31f19354d566b7633c
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
@@ -140,7 +140,7 @@ F src/select.c d0a1e01a2a6c05bd60324e843c7e4581d3605950
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in 7f1438fb2bef8eb1fdd4f09b4e709a39d53e6963
-F src/sqlite3ext.h 0d07b81ce98fb4d7d331961feeedfdb274266908
+F src/sqlite3ext.h 7a0def838426a4062fb619d789ead172f025f02e
 F src/sqliteInt.h e7596d5491f65aafe00c0f63f41aedf2a8e007a3
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P bb7218657f3b06d810ad710fe64e5c9984aa518c
-R d7533fd3a07871fe54477a23d093d278
+P 801a0e3c9972c1fc9f55a9c55cd0ff19fd79fa37
+R 709b06dac86b4fddf4060ff93bacd2d0
 U drh
-Z 0c406a0ea8017bfc1be4191b2d5b142c
+Z ece5727084bf51d7f31130119b6d1a93

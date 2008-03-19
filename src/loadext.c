@@ -296,6 +296,10 @@ const sqlite3_api_routines sqlite3Apis = {
   /*
   ** Added for 3.5.8
   */
+  sqlite3_threadsafe,
+  sqlite3_result_zeroblob,
+  sqlite3_result_error_code,
+  sqlite3_test_control,
   sqlite3_randomness,
 };
 
