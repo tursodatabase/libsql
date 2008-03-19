@@ -2527,7 +2527,7 @@ static int unixGetTempname(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
     assert( pVfs->mxPathname==MAX_PATHNAME );
     sqlite3_snprintf(nBuf-17, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX, zDir);
     j = strlen(zBuf);
-    sqlite3Randomness(15, &zBuf[j]);
+    sqlite3_randomness(15, &zBuf[j]);
     for(i=0; i<15; i++, j++){
       zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
     }

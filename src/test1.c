@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.292 2008/03/04 17:45:02 mlcreech Exp $
+** $Id: test1.c,v 1.293 2008/03/19 14:15:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4329,8 +4329,7 @@ static int save_prng_state(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  extern void sqlite3SavePrngState(void);
-  sqlite3SavePrngState();
+  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SAVE);
   return TCL_OK;
 }
 /*
@@ -4342,8 +4341,7 @@ static int restore_prng_state(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  extern void sqlite3RestorePrngState(void);
-  sqlite3RestorePrngState();
+  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_RESTORE);
   return TCL_OK;
 }
 /*
@@ -4355,8 +4353,7 @@ static int reset_prng_state(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  extern void sqlite3ResetPrngState(void);
-  sqlite3ResetPrngState();
+  sqlite3_test_control(SQLITE_TESTCTRL_PRNG_RESET);
   return TCL_OK;
 }
 

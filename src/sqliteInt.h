@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.673 2008/03/14 13:02:08 mlcreech Exp $
+** @(#) $Id: sqliteInt.h,v 1.674 2008/03/19 14:15:35 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1883,7 +1883,9 @@ void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 Vdbe *sqlite3GetVdbe(Parse*);
 Expr *sqlite3CreateIdExpr(Parse *, const char*);
-void sqlite3Randomness(int, void*);
+void sqlite3PrngSaveState(void);
+void sqlite3PrngRestoreState(void);
+void sqlite3PrngResetState(void);
 void sqlite3RollbackAll(sqlite3*);
 void sqlite3CodeVerifySchema(Parse*, int);
 void sqlite3BeginTransaction(Parse*, int);
@@ -2119,7 +2121,7 @@ CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
 ** mechanism is disabled at compile-time then set up macros so that no
 ** unnecessary code is generated.
 */
-#ifndef SQLITE_OMIT_FAULTINJECTOR
+#ifndef SQLITE_OMIT_TESTLOGIC
   void sqlite3FaultConfig(int,int,int);
   int sqlite3FaultFailures(int);
   int sqlite3FaultBenignFailures(int);

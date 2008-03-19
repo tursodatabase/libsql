@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.422 2008/03/18 13:01:38 drh Exp $
+** $Id: main.c,v 1.423 2008/03/19 14:15:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1490,11 +1490,11 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
 ** Interface to the testing logic.
 */
 int sqlite3_test_control(int op, ...){
-  va_list ap;
   int rc = 0;
+#ifndef SQLITE_OMIT_TESTLOGIC
+  va_list ap;
   va_start(ap, op);
   switch( op ){
-#ifndef SQLITE_OMIT_FAULTINJECTOR
     case SQLITE_TESTCTRL_FAULT_CONFIG: {
       int id = va_arg(ap, int);
       int nDelay = va_arg(ap, int);
@@ -1517,8 +1517,20 @@ int sqlite3_test_control(int op, ...){
       rc = sqlite3FaultPending(id);
       break;
     }
-#endif /* SQLITE_OMIT_FAULTINJECTOR */
+    case SQLITE_TESTCTRL_PRNG_SAVE: {
+      sqlite3PrngSaveState();
+      break;
+    }
+    case SQLITE_TESTCTRL_PRNG_RESTORE: {
+      sqlite3PrngRestoreState();
+      break;
+    }
+    case SQLITE_TESTCTRL_PRNG_RESET: {
+      sqlite3PrngResetState();
+      break;
+    }
   }
   va_end(ap);
+#endif /* SQLITE_OMIT_TESTLOGIC */
   return rc;
 }

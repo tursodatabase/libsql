@@ -194,7 +194,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
     int nWrite = 0;
     int iFinal;
     for(pWrite=g.pWriteList; pWrite; pWrite=pWrite->pNext) nWrite++;
-    sqlite3Randomness(sizeof(int), &iFinal);
+    sqlite3_randomness(sizeof(int), &iFinal);
     iFinal = ((iFinal<0)?-1*iFinal:iFinal)%nWrite;
     for(pWrite=g.pWriteList; iFinal>0; pWrite=pWrite->pNext) iFinal--;
     pFinal = pWrite;
@@ -220,7 +220,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
       }
     }else{
       char random;
-      sqlite3Randomness(1, &random);
+      sqlite3_randomness(1, &random);
 
       /* Do not select option 3 (sector trashing) if the IOCAP_ATOMIC flag 
       ** is set or this is an OsTruncate(), not an Oswrite().
@@ -304,7 +304,7 @@ static int writeListSync(CrashFile *pFile, int isCrash){
         if( zGarbage ){
           sqlite3_int64 i;
           for(i=iFirst; rc==SQLITE_OK && i<=iLast; i++){
-            sqlite3Randomness(g.iSectorSize, zGarbage); 
+            sqlite3_randomness(g.iSectorSize, zGarbage); 
             rc = sqlite3OsWrite(
               pRealFile, zGarbage, g.iSectorSize, i*g.iSectorSize
             );

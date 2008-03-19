@@ -212,7 +212,7 @@ static int writeCache2(OsTestFile *pFile, int crash){
       int trash = 0;
       if( crash ){
         char random;
-        sqlite3Randomness(1, &random);
+        sqlite3_randomness(1, &random);
         if( random & 0x01 ){
           if( random & 0x02 ){
             trash = 1;
@@ -241,7 +241,7 @@ printf("Writing block %d of %s\n", i, pFile->zName);
         }
         if( len>0 ){
           if( trash ){
-            sqlite3Randomness(len, p);
+            sqlite3_randomness(len, p);
           }
           rc = sqlite3RealWrite(&pFile->fd, p, len);
         }

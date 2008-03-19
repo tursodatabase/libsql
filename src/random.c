@@ -15,7 +15,7 @@
 ** Random numbers are used by some of the database backends in order
 ** to generate random integer keys for tables or random filenames.
 **
-** $Id: random.c,v 1.21 2008/01/16 17:46:38 drh Exp $
+** $Id: random.c,v 1.22 2008/03/19 14:15:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -90,7 +90,7 @@ static int randomByte(void){
 /*
 ** Return N random bytes.
 */
-void sqlite3Randomness(int N, void *pBuf){
+void sqlite3_randomness(int N, void *pBuf){
   unsigned char *zBuf = pBuf;
   static sqlite3_mutex *mutex = 0;
   if( mutex==0 ){
@@ -103,19 +103,21 @@ void sqlite3Randomness(int N, void *pBuf){
   sqlite3_mutex_leave(mutex);
 }
 
-#ifdef SQLITE_TEST
+#ifndef SQLITE_OMIT_TESTLOGIC
 /*
 ** For testing purposes, we sometimes want to preserve the state of
 ** PRNG and restore the PRNG to its saved state at a later time.
+** The sqlite3_test_control() interface calls these routines to
+** control the PRNG.
 */
 static struct sqlite3PrngType sqlite3SavedPrng;
-void sqlite3SavePrngState(void){
+void sqlite3PrngSaveState(void){
   memcpy(&sqlite3SavedPrng, &sqlite3Prng, sizeof(sqlite3Prng));
 }
-void sqlite3RestorePrngState(void){
+void sqlite3PrngRestoreState(void){
   memcpy(&sqlite3Prng, &sqlite3SavedPrng, sizeof(sqlite3Prng));
 }
-void sqlite3ResetPrngState(void){
+void sqlite3PrngResetState(void){
   sqlite3Prng.isInit = 0;
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_OMIT_TESTLOGIC */

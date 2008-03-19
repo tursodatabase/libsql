@@ -292,6 +292,11 @@ const sqlite3_api_routines sqlite3Apis = {
   sqlite3_vfs_find,
   sqlite3_vfs_register,
   sqlite3_vfs_unregister,
+
+  /*
+  ** Added for 3.5.8
+  */
+  sqlite3_randomness,
 };
 
 /*

@@ -19,7 +19,7 @@
 ** allocation failures or I/O errors.
 **
 ** The fault injector is omitted from the code if SQLite is
-** compiled with -DSQLITE_OMIT_FAULTINJECTOR=1.  There is a very
+** compiled with -DSQLITE_OMIT_TESTLOGIC=1.  There is a very
 ** small performance hit for leaving the fault injector in the code.
 ** Commerical products will probably want to omit the fault injector
 ** from production builds.  But safety-critical systems who work
@@ -28,7 +28,7 @@
 */
 #include "sqliteInt.h"
 
-#ifndef SQLITE_OMIT_FAULTINJECTOR
+#ifndef SQLITE_OMIT_TESTLOGIC
 
 /*
 ** There can be various kinds of faults.  For example, there can be
@@ -144,4 +144,4 @@ int sqlite3FaultStep(int id){
   return 1;  
 }
 
-#endif /* SQLITE_OMIT_FAULTINJECTOR */
+#endif /* SQLITE_OMIT_TESTLOGIC */

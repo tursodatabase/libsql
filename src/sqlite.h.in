@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.292 2008/03/18 13:47:21 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.293 2008/03/19 14:15:35 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1589,6 +1589,31 @@ void sqlite3_free(void*);
 */
 sqlite3_int64 sqlite3_memory_used(void);
 sqlite3_int64 sqlite3_memory_highwater(int resetFlag);
+
+/*
+** CAPI3REF: Pseudo-Random Number Generator {F17390}
+**
+** SQLite contains a high-quality pseudo-random number generator (PRNG) used to
+** select random ROWIDs when inserting new records into a table that
+** already uses the largest possible ROWID.  The PRNG is also used for
+** the build-in random() and randomblob() SQL functions.  This interface allows
+** appliations to access the same PRNG for other purposes.
+**
+** A call to this routine stores N bytes of randomness into buffer P.
+**
+** The first time this routine is invoked (either internally or by
+** the application) the PRNG is seeded using randomness obtained
+** from the xRandomness method of the default [sqlite3_vfs] object.
+** On all subsequent invocations, the pseudo-randomness is generated
+** internally and without recourse to the [sqlite3_vfs] xRandomness
+** method.
+**
+** INVARIANTS:
+**
+** {F17392} The [sqlite3_randomness(N,P)] interface writes N bytes of
+**          high-quality pseudo-randomness into buffer P.
+*/
+void sqlite3_randomness(int N, void *P);
 
 /*
 ** CAPI3REF: Compile-Time Authorization Callbacks {F12500}
@@ -5445,9 +5470,9 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_FAULT_FAILURES           2
 #define SQLITE_TESTCTRL_FAULT_BENIGN_FAILURES    3
 #define SQLITE_TESTCTRL_FAULT_PENDING            4
-
-
-
+#define SQLITE_TESTCTRL_PRNG_SAVE                5
+#define SQLITE_TESTCTRL_PRNG_RESTORE             6
+#define SQLITE_TESTCTRL_PRNG_RESET               7
 
 
 /*

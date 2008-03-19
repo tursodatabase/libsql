@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.417 2008/03/17 13:50:58 drh Exp $
+** @(#) $Id: pager.c,v 1.418 2008/03/19 14:15:35 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1017,7 +1017,7 @@ static int writeJournalHdr(Pager *pPager){
   }
 
   /* The random check-hash initialiser */ 
-  sqlite3Randomness(sizeof(pPager->cksumInit), &pPager->cksumInit);
+  sqlite3_randomness(sizeof(pPager->cksumInit), &pPager->cksumInit);
   put32bits(&zHeader[sizeof(aJournalMagic)+4], pPager->cksumInit);
   /* The initial database size */
   put32bits(&zHeader[sizeof(aJournalMagic)+8], pPager->dbSize);

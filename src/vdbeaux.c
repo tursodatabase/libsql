@@ -1251,7 +1251,7 @@ static int vdbeCommit(sqlite3 *db){
     do {
       u32 random;
       sqlite3_free(zMaster);
-      sqlite3Randomness(sizeof(random), &random);
+      sqlite3_randomness(sizeof(random), &random);
       zMaster = sqlite3MPrintf(db, "%s-mj%08X", zMainFile, random&0x7fffffff);
       if( !zMaster ){
         return SQLITE_NOMEM;

@@ -780,7 +780,7 @@ static int getReadLock(winFile *pFile){
                      0, SHARED_SIZE, 0, &ovlp);
   }else{
     int lk;
-    sqlite3Randomness(sizeof(lk), &lk);
+    sqlite3_randomness(sizeof(lk), &lk);
     pFile->sharedLockByte = (lk & 0x7fffffff)%(SHARED_SIZE - 1);
     res = LockFile(pFile->h, SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
   }
@@ -1314,7 +1314,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   sqlite3_snprintf(nBuf-30, zBuf,
                    "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath);
   j = strlen(zBuf);
-  sqlite3Randomness(20, &zBuf[j]);
+  sqlite3_randomness(20, &zBuf[j]);
   for(i=0; i<20; i++, j++){
     zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
   }
