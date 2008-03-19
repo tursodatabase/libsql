@@ -430,6 +430,17 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
   return SQLITE_OK;
 }
 
+#endif /* SQLITE_OMIT_LOADEXTENSION */
+
+/*
+** The following code is added regardless of whether or not extension
+** loading is supported.
+*/
+#ifdef SQLITE_OMIT_LOAD_EXTENSTION
+const sqlite3_api_routines sqlite3Apis = { 0 };
+#endif
+
+
 /*
 ** The following object holds the list of automatically loaded
 ** extensions.
@@ -519,5 +530,3 @@ int sqlite3AutoLoadExtensions(sqlite3 *db){
   }
   return rc;
 }
-
-#endif /* SQLITE_OMIT_LOAD_EXTENSION */

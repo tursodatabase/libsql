@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.106 2008/03/07 19:51:15 drh Exp $
+# $Id: tester.tcl,v 1.107 2008/03/19 16:08:54 drh Exp $
 
 
 set tcl_precision 15
@@ -187,6 +187,7 @@ proc finalize_testing {} {
   sqlite3 db {}
   # sqlite3_clear_tsd_memdebug
   db close
+  sqlite3_reset_auto_extension
   set heaplimit [sqlite3_soft_heap_limit]
   if {$heaplimit!=$::soft_limit} {
     puts "soft-heap-limit changed by this script\

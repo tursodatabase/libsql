@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.423 2008/03/19 14:15:34 drh Exp $
+** $Id: main.c,v 1.424 2008/03/19 16:08:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -541,7 +541,6 @@ int sqlite3_create_function(
 ){
   int rc;
   sqlite3_mutex_enter(db->mutex);
-  assert( !db->mallocFailed );
   rc = sqlite3CreateFunc(db, zFunctionName, nArg, enc, p, xFunc, xStep, xFinal);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
@@ -1495,6 +1494,14 @@ int sqlite3_test_control(int op, ...){
   va_list ap;
   va_start(ap, op);
   switch( op ){
+    /*
+    ** sqlite3_test_control(FAULT_CONFIG, fault_id, nDelay, nRepeat)
+    **
+    ** Configure a fault injector.  The specific fault injector is
+    ** identified by the fault_id argument.  (ex: SQLITE_FAULTINJECTOR_MALLOC)
+    ** The fault will occur after a delay of nDelay calls.  The fault
+    ** will repeat nRepeat times.
+    */
     case SQLITE_TESTCTRL_FAULT_CONFIG: {
       int id = va_arg(ap, int);
       int nDelay = va_arg(ap, int);
@@ -1502,29 +1509,67 @@ int sqlite3_test_control(int op, ...){
       sqlite3FaultConfig(id, nDelay, nRepeat);
       break;
     }
+
+    /*
+    ** sqlite3_test_control(FAULT_FAILURES, fault_id)
+    **
+    ** Return the number of faults (both hard and benign faults) that have
+    ** occurred since the injector identified by fault_id) was last configured.
+    */
     case SQLITE_TESTCTRL_FAULT_FAILURES: {
       int id = va_arg(ap, int);
       rc = sqlite3FaultFailures(id);
       break;
     }
+
+    /*
+    ** sqlite3_test_control(FAULT_BENIGN_FAILURES, fault_id)
+    **
+    ** Return the number of benign faults that have occurred since the
+    ** injector identified by fault_id was last configured.
+    */
     case SQLITE_TESTCTRL_FAULT_BENIGN_FAILURES: {
       int id = va_arg(ap, int);
       rc = sqlite3FaultBenignFailures(id);
       break;
     }
+
+    /*
+    ** sqlite3_test_control(FAULT_PENDING, fault_id)
+    **
+    ** Return the number of successes that will occur before the next
+    ** scheduled failure on fault injector fault_id.
+    ** If no failures are scheduled, return -1.
+    */
     case SQLITE_TESTCTRL_FAULT_PENDING: {
       int id = va_arg(ap, int);
       rc = sqlite3FaultPending(id);
       break;
     }
+
+    /*
+    ** Save the current state of the PRNG.
+    */
     case SQLITE_TESTCTRL_PRNG_SAVE: {
       sqlite3PrngSaveState();
       break;
     }
+
+    /*
+    ** Restore the state of the PRNG to the last state saved using
+    ** PRNG_SAVE.  If PRNG_SAVE has never before been called, then
+    ** this verb acts like PRNG_RESET.
+    */
     case SQLITE_TESTCTRL_PRNG_RESTORE: {
       sqlite3PrngRestoreState();
       break;
     }
+
+    /*
+    ** Reset the PRNG back to its uninitialized state.  The next call
+    ** to sqlite3_randomness() will reseed the PRNG using a single call
+    ** to the xRandomness method of the default VFS.
+    */
     case SQLITE_TESTCTRL_PRNG_RESET: {
       sqlite3PrngResetState();
       break;

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.187 2008/03/19 14:15:34 drh Exp $
+** $Id: func.c,v 1.188 2008/03/19 16:08:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1020,166 +1020,6 @@ static void loadExt(sqlite3_context *context, int argc, sqlite3_value **argv){
 }
 #endif
 
-#ifdef SQLITE_TEST
-/*
-** This function generates a string of random characters.  Used for
-** generating test data.
-*/
-static void randStr(sqlite3_context *context, int argc, sqlite3_value **argv){
-  static const unsigned char zSrc[] = 
-     "abcdefghijklmnopqrstuvwxyz"
-     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-     "0123456789"
-     ".-!,:*^+=_|?/<> ";
-  int iMin, iMax, n, r, i;
-  unsigned char zBuf[1000];
-
-  /* It used to be possible to call randstr() with any number of arguments,
-  ** but now it is registered with SQLite as requiring exactly 2.
-  */
-  assert(argc==2);
-
-  iMin = sqlite3_value_int(argv[0]);
-  if( iMin<0 ) iMin = 0;
-  if( iMin>=sizeof(zBuf) ) iMin = sizeof(zBuf)-1;
-  iMax = sqlite3_value_int(argv[1]);
-  if( iMax<iMin ) iMax = iMin;
-  if( iMax>=sizeof(zBuf) ) iMax = sizeof(zBuf)-1;
-  n = iMin;
-  if( iMax>iMin ){
-    sqlite3_randomness(sizeof(r), &r);
-    r &= 0x7fffffff;
-    n += r%(iMax + 1 - iMin);
-  }
-  assert( n<sizeof(zBuf) );
-  sqlite3_randomness(n, zBuf);
-  for(i=0; i<n; i++){
-    zBuf[i] = zSrc[zBuf[i]%(sizeof(zSrc)-1)];
-  }
-  zBuf[n] = 0;
-  sqlite3_result_text(context, (char*)zBuf, n, SQLITE_TRANSIENT);
-}
-#endif /* SQLITE_TEST */
-
-#ifdef SQLITE_TEST
-/*
-** The following two SQL functions are used to test returning a text
-** result with a destructor. Function 'test_destructor' takes one argument
-** and returns the same argument interpreted as TEXT. A destructor is
-** passed with the sqlite3_result_text() call.
-**
-** SQL function 'test_destructor_count' returns the number of outstanding 
-** allocations made by 'test_destructor';
-**
-** WARNING: Not threadsafe.
-*/
-static int test_destructor_count_var = 0;
-static void destructor(void *p){
-  char *zVal = (char *)p;
-  assert(zVal);
-  zVal--;
-  sqlite3_free(zVal);
-  test_destructor_count_var--;
-}
-static void test_destructor(
-  sqlite3_context *pCtx, 
-  int nArg,
-  sqlite3_value **argv
-){
-  char *zVal;
-  int len;
-  sqlite3 *db = sqlite3_user_data(pCtx);
- 
-  test_destructor_count_var++;
-  assert( nArg==1 );
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
-  len = sqlite3ValueBytes(argv[0], ENC(db)); 
-  zVal = contextMalloc(pCtx, len+3);
-  if( !zVal ){
-    return;
-  }
-  zVal[len+1] = 0;
-  zVal[len+2] = 0;
-  zVal++;
-  memcpy(zVal, sqlite3ValueText(argv[0], ENC(db)), len);
-  if( ENC(db)==SQLITE_UTF8 ){
-    sqlite3_result_text(pCtx, zVal, -1, destructor);
-#ifndef SQLITE_OMIT_UTF16
-  }else if( ENC(db)==SQLITE_UTF16LE ){
-    sqlite3_result_text16le(pCtx, zVal, -1, destructor);
-  }else{
-    sqlite3_result_text16be(pCtx, zVal, -1, destructor);
-#endif /* SQLITE_OMIT_UTF16 */
-  }
-}
-static void test_destructor_count(
-  sqlite3_context *pCtx, 
-  int nArg,
-  sqlite3_value **argv
-){
-  sqlite3_result_int(pCtx, test_destructor_count_var);
-}
-#endif /* SQLITE_TEST */
-
-#ifdef SQLITE_TEST
-/*
-** Routines for testing the sqlite3_get_auxdata() and sqlite3_set_auxdata()
-** interface.
-**
-** The test_auxdata() SQL function attempts to register each of its arguments
-** as auxiliary data.  If there are no prior registrations of aux data for
-** that argument (meaning the argument is not a constant or this is its first
-** call) then the result for that argument is 0.  If there is a prior
-** registration, the result for that argument is 1.  The overall result
-** is the individual argument results separated by spaces.
-*/
-static void free_test_auxdata(void *p) {sqlite3_free(p);}
-static void test_auxdata(
-  sqlite3_context *pCtx, 
-  int nArg,
-  sqlite3_value **argv
-){
-  int i;
-  char *zRet = contextMalloc(pCtx, nArg*2);
-  if( !zRet ) return;
-  memset(zRet, 0, nArg*2);
-  for(i=0; i<nArg; i++){
-    char const *z = (char*)sqlite3_value_text(argv[i]);
-    if( z ){
-      int n;
-      char *zAux = sqlite3_get_auxdata(pCtx, i);
-      if( zAux ){
-        zRet[i*2] = '1';
-        assert( strcmp(zAux,z)==0 );
-      }else {
-        zRet[i*2] = '0';
-      }
-      n = strlen(z) + 1;
-      zAux = contextMalloc(pCtx, n);
-      if( zAux ){
-        memcpy(zAux, z, n);
-        sqlite3_set_auxdata(pCtx, i, zAux, free_test_auxdata);
-      }
-      zRet[i*2+1] = ' ';
-    }
-  }
-  sqlite3_result_text(pCtx, zRet, 2*nArg-1, free_test_auxdata);
-}
-#endif /* SQLITE_TEST */
-
-#ifdef SQLITE_TEST
-/*
-** A function to test error reporting from user functions. This function
-** returns a copy of its first argument as an error.
-*/
-static void test_error(
-  sqlite3_context *pCtx, 
-  int nArg,
-  sqlite3_value **argv
-){
-  sqlite3_result_error(pCtx, (char*)sqlite3_value_text(argv[0]), 0);
-}
-#endif /* SQLITE_TEST */
 
 /*
 ** An instance of the following structure holds the context of a
@@ -1424,13 +1264,6 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
     { "load_extension",     1, 0xff, SQLITE_UTF8, 0, loadExt },
     { "load_extension",     2, 0xff, SQLITE_UTF8, 0, loadExt },
-#endif
-#ifdef SQLITE_TEST
-    { "randstr",               2, 0,    SQLITE_UTF8, 0, randStr    },
-    { "test_destructor",       1, 0xff, SQLITE_UTF8, 0, test_destructor},
-    { "test_destructor_count", 0, 0,    SQLITE_UTF8, 0, test_destructor_count},
-    { "test_auxdata",         -1, 0,    SQLITE_UTF8, 0, test_auxdata},
-    { "test_error",            1, 0,    SQLITE_UTF8, 0, test_error},
 #endif
   };
   static const struct {

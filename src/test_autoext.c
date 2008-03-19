@@ -11,7 +11,7 @@
 *************************************************************************
 ** Test extension for testing the sqlite3_auto_extension() function.
 **
-** $Id: test_autoext.c,v 1.2 2006/12/19 18:57:11 drh Exp $
+** $Id: test_autoext.c,v 1.3 2008/03/19 16:08:54 drh Exp $
 */
 #include "tcl.h"
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
@@ -157,8 +157,8 @@ int Sqlitetest_autoext_Init(Tcl_Interp *interp){
           autoExtCubeObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_auto_extension_broken",
           autoExtBrokenObjCmd, 0, 0);
+#endif
   Tcl_CreateObjCommand(interp, "sqlite3_reset_auto_extension",
           resetAutoExtObjCmd, 0, 0);
-#endif
   return TCL_OK;
 }
