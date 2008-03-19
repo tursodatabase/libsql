@@ -1,5 +1,5 @@
-C Create\sthe\stest_destructor16()\stest\sSQL\sfunction\sto\senhance\stest\scoverage.\nPrior\sto\scheck-in\s(4883),\sthe\stest_destructor()\sfunction\swas\ssufficient,\nbut\swe\snow\sneed\sseparate\sfunctions\ssince\sthe\simplementation\sis\srestricted\nto\susing\sthe\spublished\sAPI.\s(CVS\s4884)
-D 2008-03-19T16:35:24
+C Initialize\sthe\sMD5\sSQL\sfunctions\sfrom\stest_func.c\sinstead\sof\susing\nconditional\scompilation\sin\stclsqlite.c.\s(CVS\s4885)
+D 2008-03-19T19:01:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 31182aff7a39a0a0fc41e2e68562d20d57a8b16e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,7 +144,7 @@ F src/sqlite3ext.h 0d07b81ce98fb4d7d331961feeedfdb274266908
 F src/sqliteInt.h e7596d5491f65aafe00c0f63f41aedf2a8e007a3
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
-F src/tclsqlite.c dcaedb102d53b151f31c69b6bb0f2920ffc5eeff
+F src/tclsqlite.c d42912617d4734b8f9195416badf5b27e512ded2
 F src/test1.c 935f327fe989694a3aa07ab78ae5c00705651b34
 F src/test2.c 443ccc1bd5717b1001e5558b6f6b33bd34f8b81b
 F src/test3.c 5c7452038ab27aa698070799b10132f26cdd2a80
@@ -159,7 +159,7 @@ F src/test_autoext.c 1d128825bdf413330f66f4cf3a4d03e8a15b8231
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c 4c1fe5184b1e9db8a4bb130889f3a2e91f07508b
 F src/test_devsym.c cee1aecaa90c895030399ca4ae38f84a08038f8a
-F src/test_func.c 107219bee0e88f8faaf09eb654b9b0e62957da23
+F src/test_func.c 9e9b33ff083b65da91c389cece903bc32de06f01
 F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c bba50714c0aa75552bc535473afb8213f18c2fe6
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e90c4cc8a89838161f218739bc821126e247498c
-R bbb60371430e134505830c425c96a6e9
+P bb7218657f3b06d810ad710fe64e5c9984aa518c
+R d7533fd3a07871fe54477a23d093d278
 U drh
-Z 81b689bc2b2f5d2866ef76d9cf37733f
+Z 0c406a0ea8017bfc1be4191b2d5b142c

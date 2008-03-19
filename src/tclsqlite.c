@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.210 2008/03/19 16:08:54 drh Exp $
+** $Id: tclsqlite.c,v 1.211 2008/03/19 19:01:22 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2392,16 +2392,6 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     sqlite3_close(p->db);
     p->db = 0;
   }
-#ifdef SQLITE_TEST
-  if( p->db ){
-    extern int Md5_Register(sqlite3*);
-    if( Md5_Register(p->db)==SQLITE_NOMEM ){
-      zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(p->db));
-      sqlite3_close(p->db);
-      p->db = 0;
-    }
-  }
-#endif  
 #ifdef SQLITE_HAS_CODEC
   if( p->db ){
     sqlite3_key(p->db, pKey, nKey);

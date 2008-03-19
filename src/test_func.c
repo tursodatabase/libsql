@@ -12,7 +12,7 @@
 ** Code for testing all sorts of SQLite interfaces.  This code
 ** implements new SQL functions used by the test scripts.
 **
-** $Id: test_func.c,v 1.2 2008/03/19 16:35:24 drh Exp $
+** $Id: test_func.c,v 1.3 2008/03/19 19:01:22 drh Exp $
 */
 #include "sqlite3.h"
 #include "tcl.h"
@@ -215,11 +215,13 @@ static int registerTestFunctions(sqlite3 *db){
     { "test_error",            1, SQLITE_UTF8, test_error},
   };
   int i;
+  extern int Md5_Register(sqlite3*);
 
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
     sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg,
         aFuncs[i].eTextRep, 0, aFuncs[i].xFunc, 0, 0);
   }
+  Md5_Register(db);
   return SQLITE_OK;
 }
 
