@@ -428,7 +428,7 @@ lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 # Rule to build the amalgamation
 #
 sqlite3.lo:	sqlite3.c
-	$(LTCOMPILE) -c $(TOP)/sqlite3.c
+	$(LTCOMPILE) -c sqlite3.c
 
 # Rules to build individual files
 #

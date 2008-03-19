@@ -1,7 +1,7 @@
-C Add\sa\snew\sinterface,\ssqlite3_context_db_handle(),\sthat\sreturns\sthe\sdatabase\nconnection\spointer\sfor\san\sapplication-defined\sfunction.\s(CVS\s4889)
-D 2008-03-19T21:45:51
+C Don't\swrongly\slook\sfor\sthe\samalgamation\sin\s$(TOP)\s(CVS\s4890)
+D 2008-03-19T23:15:38
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in 31182aff7a39a0a0fc41e2e68562d20d57a8b16e
+F Makefile.in 90256feffbc822b56e4ad0ebaa62f5871c8f0334
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 7a41970464b74225915bcaf9d76efd01f26e08f9
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a42caa8f83ce19af1e569c4545ea8b2449152430
-R b8b61f236a175c9fc88a201d83ba74e4
-U drh
-Z 21fe871d94106aa8de33714f83ee397a
+P 54c55cae556af5a16c0ce8be1a96d2932db80ad8
+R 7e61bb6e4e967339e4a75ce4dc843eb0
+U mlcreech
+Z 7f010621b3ceba2944f64512a57bb30d
