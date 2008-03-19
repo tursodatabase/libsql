@@ -1,5 +1,5 @@
-C Don't\swrongly\slook\sfor\sthe\samalgamation\sin\s$(TOP)\s(CVS\s4890)
-D 2008-03-19T23:15:38
+C Fix\sbuild\swhether\scompiling\swith\sor\swithout\sauto-extension\senabled\s(CVS\s4891)
+D 2008-03-19T23:52:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 90256feffbc822b56e4ad0ebaa62f5871c8f0334
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/insert.c 358c80592c20a61a8d5b4a127215b5e25de652f4
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c cb1939fdeb91ea88fb44fbd2768a10e14bc44650
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
-F src/loadext.c 4acd067b2e67608b42abeff50e39b6042eaae9f8
+F src/loadext.c 841cf403aa17b9f81655575ea1319bfa256906ad
 F src/main.c bb31f65f7b1870825a4c9a31f19354d566b7633c
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
@@ -155,7 +155,7 @@ F src/test7.c acec2256c7c2d279db5a8b5fa1a2a68fcc942c67
 F src/test8.c 7933b27f8d300512546ef6bdd25f2fe64c3c13f3
 F src/test9.c 4615ef08750245a2d96aaa7cbe2fb4aff2b57acc
 F src/test_async.c 3147c64c34721f088d5ab20f85dabd5d7732c007
-F src/test_autoext.c 1d128825bdf413330f66f4cf3a4d03e8a15b8231
+F src/test_autoext.c 5e892ab84aece3f0428920bf46923f16ac83962a
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c 4c1fe5184b1e9db8a4bb130889f3a2e91f07508b
 F src/test_devsym.c cee1aecaa90c895030399ca4ae38f84a08038f8a
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 54c55cae556af5a16c0ce8be1a96d2932db80ad8
-R 7e61bb6e4e967339e4a75ce4dc843eb0
+P 41d6ca31acbc0bd8555e5487ba3b695db5c9a81a
+R 693688e3ad80e102aa500e44231d652a
 U mlcreech
-Z 7f010621b3ceba2944f64512a57bb30d
+Z 7c18fbe1ac8b3b0218100603a8bf0e3e

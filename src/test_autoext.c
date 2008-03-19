@@ -11,11 +11,12 @@
 *************************************************************************
 ** Test extension for testing the sqlite3_auto_extension() function.
 **
-** $Id: test_autoext.c,v 1.3 2008/03/19 16:08:54 drh Exp $
+** $Id: test_autoext.c,v 1.4 2008/03/19 23:52:35 mlcreech Exp $
 */
 #include "tcl.h"
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
 #include "sqlite3ext.h"
+
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
 static SQLITE_EXTENSION_INIT1
 
 /*
@@ -128,6 +129,9 @@ static int autoExtBrokenObjCmd(
   return SQLITE_OK;
 }
 
+#endif /* SQLITE_OMIT_LOAD_EXTENSION */
+
+
 /*
 ** tclcmd:   sqlite3_reset_auto_extension
 **
@@ -143,8 +147,6 @@ static int resetAutoExtObjCmd(
   return SQLITE_OK;
 }
 
-
-#endif /* SQLITE_OMIT_LOAD_EXTENSION */
 
 /*
 ** This procedure registers the TCL procs defined in this file.

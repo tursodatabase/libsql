@@ -12,7 +12,6 @@
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
 */
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
 
 #ifndef SQLITE_CORE
   #define SQLITE_CORE 1  /* Disable the API redefinition in sqlite3ext.h */
@@ -21,6 +20,8 @@
 #include "sqliteInt.h"
 #include <string.h>
 #include <ctype.h>
+
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
 
 /*
 ** Some API routines are omitted when various features are
@@ -500,6 +501,9 @@ void sqlite3_reset_auto_extension(void){
   sqlite3_mutex_leave(mutex);
 }
 
+
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+
 /*
 ** Load all automatic extensions.
 */
@@ -535,3 +539,5 @@ int sqlite3AutoLoadExtensions(sqlite3 *db){
   }
   return rc;
 }
+
+#endif /* SQLITE_OMIT_LOADEXTENSION */
