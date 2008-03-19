@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is descending indices.
 #
-# $Id: descidx1.test,v 1.9 2007/11/28 13:43:17 drh Exp $
+# $Id: descidx1.test,v 1.10 2008/03/19 00:21:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -23,24 +23,19 @@ db eval {PRAGMA legacy_file_format=OFF}
 # to $newval. Also, the schema cookie is incremented.
 # 
 proc set_file_format {newval} {
-  set bt [btree_open test.db 10 0]
-  btree_begin_transaction $bt
-  set meta [btree_get_meta $bt]
-  lset meta 2 $newval                    ;# File format
-  lset meta 1 [expr [lindex $meta 1]+1]  ;# Schema cookie
-  eval "btree_update_meta $bt $meta"
-  btree_commit $bt
-  btree_close $bt
+  hexio_write test.db 44 [hexio_render_int32 $newval]
+  set schemacookie [hexio_get_int [hexio_read test.db 40 4]]
+  incr schemacookie
+  hexio_write test.db 40 [hexio_render_int32 $schemacookie]
+  return {}
 }
 
 # This procedure returns the value of the file-format in file 'test.db'.
 # 
 proc get_file_format {{fname test.db}} {
-  set bt [btree_open $fname 10 0]
-  set meta [btree_get_meta $bt]
-  btree_close $bt
-  lindex $meta 2
+  return [hexio_get_int [hexio_read $fname 44 4]]
 }
+
 
 # Verify that the file format starts as 4.
 #

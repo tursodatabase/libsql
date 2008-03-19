@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.14 2008/01/19 23:50:26 drh Exp $
+# $Id: capi3c.test,v 1.15 2008/03/19 00:21:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -594,10 +594,8 @@ set ::ENC [execsql {pragma encoding}]
 db close
 
 do_test capi3c-6.0 {
-btree_breakpoint
   sqlite3 db test.db
   set DB [sqlite3_connection_pointer db]
-btree_breakpoint
   sqlite3_key $DB xyzzy
   set sql {SELECT a FROM t1 order by rowid}
   set STMT [sqlite3_prepare_v2 $DB $sql -1 TAIL]
@@ -622,17 +620,27 @@ do_test capi3c-6.99-misuse {
   db close
 } {}
 
+# This procedure sets the value of the file-format in file 'test.db'
+# to $newval. Also, the schema cookie is incremented.
+# 
+proc set_file_format {newval} {
+  hexio_write test.db 44 [hexio_render_int32 $newval]
+  set schemacookie [hexio_get_int [hexio_read test.db 40 4]]
+  incr schemacookie
+  hexio_write test.db 40 [hexio_render_int32 $schemacookie]
+  return {}
+}
+
+# This procedure returns the value of the file-format in file 'test.db'.
+# 
+proc get_file_format {{fname test.db}} {
+  return [hexio_get_int [hexio_read $fname 44 4]]
+}
+
 if {![sqlite3 -has-codec]} {
   # Test what happens when the library encounters a newer file format.
-  # Do this by updating the file format via the btree layer.
   do_test capi3c-7.1 {
-    set ::bt [btree_open test.db 10 0]
-    btree_begin_transaction $::bt
-    set meta [btree_get_meta $::bt]
-    lset meta 2 5
-    eval [concat btree_update_meta $::bt [lrange $meta 0 end]]
-    btree_commit $::bt
-    btree_close $::bt
+    set_file_format 5
   } {}
   do_test capi3c-7.2 {
     sqlite3 db test.db
@@ -647,8 +655,7 @@ if {![sqlite3 -has-codec]} {
   # Now test that the library correctly handles bogus entries in the
   # sqlite_master table (schema corruption).
   do_test capi3c-8.1 {
-    file delete -force test.db
-    file delete -force test.db-journal
+    file delete -force test.db test.db-journal
     sqlite3 db test.db
     execsql {
       CREATE TABLE t1(a);
@@ -656,19 +663,12 @@ if {![sqlite3 -has-codec]} {
     db close
   } {}
   do_test capi3c-8.2 {
-    set ::bt [btree_open test.db 10 0]
-    btree_begin_transaction $::bt
-    set ::bc [btree_cursor $::bt 1 1]
-
-    # Build a 5-field row record consisting of 5 null records. This is
-    # officially black magic.
-    catch {unset data}
-    set data [binary format c6 {6 0 0 0 0 0}]
-    btree_insert $::bc 5 $data
-
-    btree_close_cursor $::bc
-    btree_commit $::bt
-    btree_close $::bt
+    sqlite3 db test.db
+    execsql {
+      PRAGMA writable_schema=ON;
+      INSERT INTO sqlite_master VALUES(NULL,NULL,NULL,NULL,NULL);
+    }
+    db close
   } {}
   do_test capi3c-8.3 {
     sqlite3 db test.db
@@ -677,28 +677,19 @@ if {![sqlite3 -has-codec]} {
     }
   } {1 {malformed database schema}}
   do_test capi3c-8.4 {
-    set ::bt [btree_open test.db 10 0]
-    btree_begin_transaction $::bt
-    set ::bc [btree_cursor $::bt 1 1]
-  
     # Build a 5-field row record. The first field is a string 'table', and
-    # subsequent fields are all NULL. Replace the other broken record with
-    # this one and try to read the schema again. The broken record uses
-    # either UTF-8 or native UTF-16 (if this file is being run by
-    # utf16.test).
-    if { [string match UTF-16* $::ENC] } {
-      set data [binary format c6a10 {6 33 0 0 0 0} [utf16 table]]
-    } else {
-      set data [binary format c6a5 {6 23 0 0 0 0} table]
+    # subsequent fields are all NULL.
+    db close
+    file delete -force test.db test.db-journal
+    sqlite3 db test.db
+    execsql {
+      CREATE TABLE t1(a);
+      PRAGMA writable_schema=ON;
+      INSERT INTO sqlite_master VALUES('table',NULL,NULL,NULL,NULL);
     }
-    btree_insert $::bc 5 $data
-  
-    btree_close_cursor $::bc
-    btree_commit $::bt
-    btree_close $::bt
+    db close
   } {};
   do_test capi3c-8.5 {
-    db close 
     sqlite3 db test.db
     catchsql {
       SELECT * FROM sqlite_master;

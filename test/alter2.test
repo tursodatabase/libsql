@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter2.test,v 1.12 2007/11/28 13:43:17 drh Exp $
+# $Id: alter2.test,v 1.13 2008/03/19 00:21:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -22,8 +22,7 @@ source $testdir/tester.tcl
 # We have to have pragmas in order to do this test
 ifcapable {!pragma} return
 
-# These tests do not work if there is a codec.  The
-# btree_open command does not know how to handle codecs.
+# These tests do not work if there is a codec. 
 #
 #if {[catch {sqlite3 -has_codec} r] || $r} return
 
@@ -42,23 +41,17 @@ ifcapable {!pragma} return
 # to $newval. Also, the schema cookie is incremented.
 # 
 proc set_file_format {newval} {
-  set bt [btree_open test.db 10 0]
-  btree_begin_transaction $bt
-  set meta [btree_get_meta $bt]
-  lset meta 2 $newval                    ;# File format
-  lset meta 1 [expr [lindex $meta 1]+1]  ;# Schema cookie
-  eval "btree_update_meta $bt $meta"
-  btree_commit $bt
-  btree_close $bt
+  hexio_write test.db 44 [hexio_render_int32 $newval]
+  set schemacookie [hexio_get_int [hexio_read test.db 40 4]]
+  incr schemacookie
+  hexio_write test.db 40 [hexio_render_int32 $schemacookie]
+  return {}
 }
 
 # This procedure returns the value of the file-format in file 'test.db'.
 # 
 proc get_file_format {{fname test.db}} {
-  set bt [btree_open $fname 10 0]
-  set meta [btree_get_meta $bt]
-  btree_close $bt
-  lindex $meta 2
+  return [hexio_get_int [hexio_read $fname 44 4]]
 }
 
 # This procedure sets the SQL statement stored for table $tbl in the
@@ -236,7 +229,9 @@ ifcapable trigger {
 # file format requires incrementing the schema cookie.
 #
 do_test alter2-4.1 {
+  db close
   set_file_format 5
+  sqlite3 db test.db
 } {}
 do_test alter2-4.2 {
   # We have to run two queries here because the Tcl interface uses
@@ -255,7 +250,7 @@ do_test alter2-4.2 {
   catchsql { SELECT * FROM sqlite_master; }
 } {1 {unsupported file format}}
 do_test alter2-4.3 {
-  sqlite3_errcode $::DB
+  sqlite3_errcode db
 } {SQLITE_ERROR}
 do_test alter2-4.4 {
   set ::DB [sqlite3_connection_pointer db]
@@ -264,7 +259,7 @@ do_test alter2-4.4 {
   }
 } {1 {unsupported file format}}
 do_test alter2-4.5 {
-  sqlite3_errcode $::DB
+  sqlite3_errcode db
 } {SQLITE_ERROR}
 
 #---------------------------------------------------------------------
@@ -275,6 +270,8 @@ set default_file_format [expr $SQLITE_DEFAULT_FILE_FORMAT==4 ? 4 : 1]
 ifcapable vacuum {
   do_test alter2-5.1 {
     set_file_format 2
+    db close
+    sqlite3 db test.db
     execsql {SELECT 1 FROM sqlite_master LIMIT 1;}
     get_file_format
   } {2}
@@ -296,7 +293,6 @@ do_test alter2-6.1 {
   db close
   set_file_format 2
   sqlite3 db test.db
-  set ::DB [sqlite3_connection_pointer db]
   get_file_format
 } {2}
 ifcapable attach {

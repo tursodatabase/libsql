@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter3.test,v 1.10 2007/10/09 08:29:32 danielk1977 Exp $
+# $Id: alter3.test,v 1.11 2008/03/19 00:21:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -50,10 +50,7 @@ if {[catch {sqlite3 -has_codec} r] || $r} {
 # This procedure returns the value of the file-format in file 'test.db'.
 # 
 proc get_file_format {{fname test.db}} {
-  set bt [btree_open $fname 10 0]
-  set meta [btree_get_meta $bt]
-  btree_close $bt
-  lindex $meta 2
+  return [hexio_get_int [hexio_read $fname 44 4]]
 }
 
 do_test alter3-1.1 {

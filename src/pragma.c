@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.170 2008/02/13 18:25:27 danielk1977 Exp $
+** $Id: pragma.c,v 1.171 2008/03/19 00:21:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -937,6 +937,8 @@ void sqlite3Pragma(
             { OP_Concat,      5,  3,  3},
             { OP_Concat,      6,  3,  3},
             { OP_ResultRow,   3,  1,  0},
+            { OP_IfPos,       1,  0,  0},    /* 9 */
+            { OP_Halt,        0,  0,  0},
           };
           sqlite3GenerateIndexKey(pParse, pIdx, 1, 3);
           jmp2 = sqlite3VdbeAddOp3(v, OP_Found, j+2, 0, 3);
@@ -944,6 +946,7 @@ void sqlite3Pragma(
           sqlite3VdbeChangeP4(v, addr+1, "rowid ", P4_STATIC);
           sqlite3VdbeChangeP4(v, addr+3, " missing from index ", P4_STATIC);
           sqlite3VdbeChangeP4(v, addr+4, pIdx->zName, P4_STATIC);
+          sqlite3VdbeJumpHere(v, addr+9);
           sqlite3VdbeJumpHere(v, jmp2);
         }
         sqlite3VdbeAddOp2(v, OP_Next, 1, loopTop+1);

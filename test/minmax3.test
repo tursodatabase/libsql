@@ -8,7 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-# $Id: minmax3.test,v 1.1 2008/01/05 17:39:30 danielk1977 Exp $
+# $Id: minmax3.test,v 1.2 2008/03/19 00:21:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -24,26 +24,22 @@ proc count sql {
 # to $newval. Also, the schema cookie is incremented.
 # 
 proc set_file_format {newval} {
-  set bt [btree_open test.db 10 0]
-  btree_begin_transaction $bt
-  set meta [btree_get_meta $bt]
-  lset meta 2 $newval                    ;# File format
-  lset meta 1 [expr [lindex $meta 1]+1]  ;# Schema cookie
-  eval "btree_update_meta $bt $meta"
-  btree_commit $bt
-  btree_close $bt
+  hexio_write test.db 44 [hexio_render_int32 $newval]
+  set schemacookie [hexio_get_int [hexio_read test.db 40 4]]
+  incr schemacookie
+  hexio_write test.db 40 [hexio_render_int32 $schemacookie]
+  return {}
 }
-
-# Create the file as file-format 4 (DESC index support). This is 
-# required to exercise a few cases in where.c.
-#
-execsql { select * from sqlite_master }
-set_file_format 4
 
 do_test minmax3-1.0 {
   execsql {
-    BEGIN;
     CREATE TABLE t1(x, y, z);
+  }
+  db close
+  set_file_format 4
+  sqlite3 db test.db
+  execsql {
+    BEGIN;
     INSERT INTO t1 VALUES('1', 'I',   'one');
     INSERT INTO t1 VALUES('2', 'IV',  'four');
     INSERT INTO t1 VALUES('2', NULL,  'three');
@@ -141,4 +137,3 @@ do_test minmax3-1.4.4 {
 
 
 finish_test
-

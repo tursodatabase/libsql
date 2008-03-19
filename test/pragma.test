@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.58 2008/03/18 13:46:53 drh Exp $
+# $Id: pragma.test,v 1.59 2008/03/19 00:21:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -262,16 +262,17 @@ do_test pragma-3.1 {
 ifcapable attach {
   if {![sqlite3 -has-codec] && $sqlite_options(integrityck)} {
     do_test pragma-3.2 {
-      set rootpage [execsql {SELECT rootpage FROM sqlite_master WHERE name='i2'}]
-      set db [btree_open test.db 100 0]
-      btree_begin_transaction $db
-      set c [btree_cursor $db $rootpage 1]
-      btree_first $c
-      btree_delete $c
-      btree_commit $db
-      btree_close $db
+      db eval {SELECT rootpage FROM sqlite_master WHERE name='i2'} break
+      set pgsz [db eval {PRAGMA page_size}]
+      # overwrite the header on the rootpage of the index in order to
+      # make the index appear to be empty.
+      #
+      set offset [expr {$pgsz*($rootpage-1)}]
+      hexio_write test.db $offset 0a00000000040000000000
+      db close
+      sqlite3 db test.db
       execsql {PRAGMA integrity_check}
-    } {{rowid 1 missing from index i2} {wrong # of entries in index i2}}
+    } {{rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
     do_test pragma-3.3 {
       execsql {PRAGMA integrity_check=1}
     } {{rowid 1 missing from index i2}}
@@ -280,22 +281,22 @@ ifcapable attach {
         ATTACH DATABASE 'test.db' AS t2;
         PRAGMA integrity_check
       }
-    } {{rowid 1 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
+    } {{rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
     do_test pragma-3.5 {
       execsql {
-        PRAGMA integrity_check=3
+        PRAGMA integrity_check=4
       }
-    } {{rowid 1 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2}}
+    } {{rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2}}
     do_test pragma-3.6 {
       execsql {
         PRAGMA integrity_check=xyz
       }
-    } {{rowid 1 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
+    } {{rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
     do_test pragma-3.7 {
       execsql {
         PRAGMA integrity_check=0
       }
-    } {{rowid 1 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
+    } {{rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
   
     # Add additional corruption by appending unused pages to the end of
     # the database file testerr.db
@@ -326,7 +327,7 @@ ifcapable attach {
     } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
+Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
     do_test pragma-3.10 {
       execsql {
         PRAGMA integrity_check=1
@@ -340,7 +341,7 @@ Page 4 is never used}}
     } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
+Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from index i2}}
     do_test pragma-3.12 {
       execsql {
         PRAGMA integrity_check=4
@@ -372,29 +373,29 @@ Page 5 is never used}}
     } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
+Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2} {wrong # of entries in index i2}}
+Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
     do_test pragma-3.16 {
       execsql {
-        PRAGMA integrity_check(9)
+        PRAGMA integrity_check(10)
       }
     } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
+Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
 Page 4 is never used
 Page 5 is never used
 Page 6 is never used} {rowid 1 missing from index i2}}
     do_test pragma-3.17 {
       execsql {
-        PRAGMA integrity_check=7
+        PRAGMA integrity_check=8
       }
     } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
+Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
 Page 4 is never used
 Page 5 is never used}}
     do_test pragma-3.18 {
