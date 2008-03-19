@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.76 2008/02/21 20:40:44 drh Exp $
+** $Id: date.c,v 1.77 2008/03/19 20:18:28 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -970,18 +970,13 @@ static void currentTimeFunc(
 ){
   time_t t;
   char *zFormat = (char *)sqlite3_user_data(context);
+  sqlite3_vfs *pVfs;
+  double rT;
   char zBuf[20];
 
-  time(&t);
-#ifdef SQLITE_TEST
-  {
-    extern int sqlite3_current_time;  /* See os_XXX.c */
-    if( sqlite3_current_time ){
-      t = sqlite3_current_time;
-    }
-  }
-#endif
-
+  pVfs = sqlite3_vfs_find(0);
+  sqlite3OsCurrentTime(pVfs, &rT);
+  t = 86400.0*(rT - 2440587.5) + 0.5;
 #ifdef HAVE_GMTIME_R
   {
     struct tm sNow;

@@ -1,5 +1,5 @@
-C Update\sthe\sloadable\sextension\smodule\sto\sinclude\srecently\sadded\sinterfaces.\s(CVS\s4886)
-D 2008-03-19T19:55:55
+C Use\sthe\sxCurrentTime\smethod\sof\sthe\sdefault\sVFS\sinstead\sof\sstdlib\stime()\sto\nget\sthe\scurrent\stime\swhen\scompiling\swith\sSQLITE_OMIT_DATETIME_FUNCS.\s(CVS\s4887)
+D 2008-03-19T20:18:28
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 31182aff7a39a0a0fc41e2e68562d20d57a8b16e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -92,7 +92,7 @@ F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/config.h b60286b542f5284d529b659adcb9c9d25eecab20
 F src/config.h.in 343f19cacc74d4baf84a4af701b5bb44419642ff
-F src/date.c 187cad26eaaecd7bcdccd49d5a70c5aa3010bc74
+F src/date.c 4c026b335c529210aa17dc067b174655eda3559f
 F src/delete.c fa13c296262e89c32d28949f15be275e52d7f524
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 242f2f57a32f6909270e4a22ce1c810a150f5a17
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 801a0e3c9972c1fc9f55a9c55cd0ff19fd79fa37
-R 709b06dac86b4fddf4060ff93bacd2d0
+P bf1cecede88d2a21eb4891a343f3c19bb5416263
+R f610a182ba68c47797ba9da24c64c703
 U drh
-Z ece5727084bf51d7f31130119b6d1a93
+Z becce19e573165b3fab37f5c87a1b814
