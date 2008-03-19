@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.231 2008/03/06 09:58:50 mlcreech Exp $
+** $Id: insert.c,v 1.232 2008/03/19 20:42:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1663,3 +1663,8 @@ static int xferOptimization(
   }
 }
 #endif /* SQLITE_OMIT_XFER_OPT */
+
+/* Make sure "isView" gets undefined in case this file becomes part of
+** the amalgamation - so that subsequent files do not see isView as a
+** macro. */
+#undef isView

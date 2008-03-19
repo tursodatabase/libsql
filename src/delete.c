@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.161 2008/02/12 16:52:14 drh Exp $
+** $Id: delete.c,v 1.162 2008/03/19 20:42:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -537,3 +537,8 @@ int sqlite3GenerateIndexKey(
   sqlite3ReleaseTempRange(pParse, regBase, nCol+1);
   return regBase;
 }
+
+/* Make sure "isView" gets undefined in case this file becomes part of
+** the amalgamation - so that subsequent files do not see isView as a
+** macro. */
+#undef isView

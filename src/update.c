@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.171 2008/02/12 16:52:14 drh Exp $
+** $Id: update.c,v 1.172 2008/03/19 20:42:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -661,3 +661,8 @@ static void updateVirtualTable(
   sqlite3SelectDelete(pSelect);  
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+/* Make sure "isView" gets undefined in case this file becomes part of
+** the amalgamation - so that subsequent files do not see isView as a
+** macro. */
+#undef isView
