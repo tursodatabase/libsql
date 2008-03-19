@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.72 2008/01/12 19:03:49 drh Exp $
+# $Id: func.test,v 1.73 2008/03/19 16:35:24 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -426,11 +426,19 @@ do_test func-11.1 {
 # value. Function test_destructor_count() returns the number of outstanding
 # destructor calls for values returned by test_destructor().
 #
-do_test func-12.1 {
-  execsql {
-    SELECT test_destructor('hello world'), test_destructor_count();
-  }
-} {{hello world} 1}
+if {[db eval {PRAGMA encoding}]=="UTF-8"} {
+  do_test func-12.1-utf8 {
+    execsql {
+      SELECT test_destructor('hello world'), test_destructor_count();
+    }
+  } {{hello world} 1}
+} else {
+  do_test func-12.1-utf16 {
+    execsql {
+      SELECT test_destructor16('hello world'), test_destructor_count();
+    }
+  } {{hello world} 1}
+}
 do_test func-12.2 {
   execsql {
     SELECT test_destructor_count();

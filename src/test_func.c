@@ -12,7 +12,7 @@
 ** Code for testing all sorts of SQLite interfaces.  This code
 ** implements new SQL functions used by the test scripts.
 **
-** $Id: test_func.c,v 1.1 2008/03/19 16:08:54 drh Exp $
+** $Id: test_func.c,v 1.2 2008/03/19 16:35:24 drh Exp $
 */
 #include "sqlite3.h"
 #include "tcl.h"
@@ -114,6 +114,28 @@ static void test_destructor(
   memcpy(zVal, sqlite3_value_text(argv[0]), len);
   sqlite3_result_text(pCtx, zVal, -1, destructor);
 }
+static void test_destructor16(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+  char *zVal;
+  int len;
+  
+  test_destructor_count_var++;
+  assert( nArg==1 );
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  len = sqlite3_value_bytes16(argv[0]); 
+  zVal = testContextMalloc(pCtx, len+3);
+  if( !zVal ){
+    return;
+  }
+  zVal[len+1] = 0;
+  zVal[len+2] = 0;
+  zVal++;
+  memcpy(zVal, sqlite3_value_text16(argv[0]), len);
+  sqlite3_result_text16(pCtx, zVal, -1, destructor);
+}
 static void test_destructor_count(
   sqlite3_context *pCtx, 
   int nArg,
@@ -187,6 +209,7 @@ static int registerTestFunctions(sqlite3 *db){
   } aFuncs[] = {
     { "randstr",               2, SQLITE_UTF8, randStr    },
     { "test_destructor",       1, SQLITE_UTF8, test_destructor},
+    { "test_destructor16",     1, SQLITE_UTF8, test_destructor16},
     { "test_destructor_count", 0, SQLITE_UTF8, test_destructor_count},
     { "test_auxdata",         -1, SQLITE_UTF8, test_auxdata},
     { "test_error",            1, SQLITE_UTF8, test_error},

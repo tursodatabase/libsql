@@ -1,5 +1,5 @@
-C Move\sSQL\sfunctions\sused\sfor\stesting\sonly\sout\sof\sfunc.c\sand\sinto\sa\snew\ntest\sfile\snamed\stest_func.c.\s\sUse\ssqlite3_auto_extension()\sto\smake\ssure\nthe\stest\sfunctions\sappear\sin\severy\sdatabase\sconnection.\s(CVS\s4883)
-D 2008-03-19T16:08:54
+C Create\sthe\stest_destructor16()\stest\sSQL\sfunction\sto\senhance\stest\scoverage.\nPrior\sto\scheck-in\s(4883),\sthe\stest_destructor()\sfunction\swas\ssufficient,\nbut\swe\snow\sneed\sseparate\sfunctions\ssince\sthe\simplementation\sis\srestricted\nto\susing\sthe\spublished\sAPI.\s(CVS\s4884)
+D 2008-03-19T16:35:24
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 31182aff7a39a0a0fc41e2e68562d20d57a8b16e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -159,7 +159,7 @@ F src/test_autoext.c 1d128825bdf413330f66f4cf3a4d03e8a15b8231
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c 4c1fe5184b1e9db8a4bb130889f3a2e91f07508b
 F src/test_devsym.c cee1aecaa90c895030399ca4ae38f84a08038f8a
-F src/test_func.c 4e791ce3569792de9123343e077f5aadcef4a2d4
+F src/test_func.c 107219bee0e88f8faaf09eb654b9b0e62957da23
 F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c bba50714c0aa75552bc535473afb8213f18c2fe6
@@ -327,7 +327,7 @@ F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3near.test 2d4dadcaac5025ab65bb87e66c45f39e92966194
-F test/func.test 307b335a47a555bc1e5df94d7f4d6172df25f944
+F test/func.test c805453a6fc95b20266682eb10a6325b4e7d8bd3
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 15110ea02768bfe977a57eccd6b941a36ebd6b32
-R af21ad725b424534724b574d9d688864
+P e90c4cc8a89838161f218739bc821126e247498c
+R bbb60371430e134505830c425c96a6e9
 U drh
-Z f919f779e5c636162ff7df98711c7fdb
+Z 81b689bc2b2f5d2866ef76d9cf37733f
