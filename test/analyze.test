@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.
 # This file implements tests for the ANALYZE command.
 #
-# $Id: analyze.test,v 1.5 2005/09/10 22:40:54 drh Exp $
+# $Id: analyze.test,v 1.6 2008/03/19 13:03:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -251,7 +251,7 @@ do_test analyze-99.1 {
   catchsql {
     ANALYZE
   }
-} {1 {malformed database schema - near "nonsense": syntax error}}
+} {1 {malformed database schema (sqlite_stat1) - near "nonsense": syntax error}}
 
 
 finish_test

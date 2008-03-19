@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt5.test,v 1.1 2008/01/22 16:35:37 drh Exp $
+# $Id: corrupt5.test,v 1.2 2008/03/19 13:03:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -39,6 +39,6 @@ do_test corrupt5-1.1 {
   catchsql {
     SELECT * FROM t1
   }
-} {1 {malformed database schema}}
+} {1 {malformed database schema (?)}}
 
 finish_test

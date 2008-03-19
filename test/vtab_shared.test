@@ -11,7 +11,7 @@
 # This file tests interactions between the virtual table and
 # shared-schema functionality.
 #
-# $Id: vtab_shared.test,v 1.1 2007/04/16 15:49:42 danielk1977 Exp $
+# $Id: vtab_shared.test,v 1.2 2008/03/19 13:03:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -54,9 +54,8 @@ do_test vtab_shared-1.2 {
     SELECT * FROM t1;
   }
 } [list 1 \
-  {malformed database schema - Cannot use virtual tables in shared-cache mode}]
+  {malformed database schema (t1) - Cannot use virtual tables in shared-cache mode}]
 
 db close
 sqlite3_enable_shared_cache 0
 finish_test
-

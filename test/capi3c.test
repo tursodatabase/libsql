@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.15 2008/03/19 00:21:31 drh Exp $
+# $Id: capi3c.test,v 1.16 2008/03/19 13:03:34 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -675,7 +675,7 @@ if {![sqlite3 -has-codec]} {
     catchsql {
       SELECT * FROM sqlite_master;
     }
-  } {1 {malformed database schema}}
+  } {1 {malformed database schema (?)}}
   do_test capi3c-8.4 {
     # Build a 5-field row record. The first field is a string 'table', and
     # subsequent fields are all NULL.
@@ -694,7 +694,7 @@ if {![sqlite3 -has-codec]} {
     catchsql {
       SELECT * FROM sqlite_master;
     }
-  } {1 {malformed database schema}}
+  } {1 {malformed database schema (?)}}
   db close
 }
 file delete -force test.db

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.78 2008/03/08 12:23:31 drh Exp $
+** $Id: prepare.c,v 1.79 2008/03/19 13:03:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -22,9 +22,14 @@
 ** Fill the InitData structure with an error message that indicates
 ** that the database is corrupt.
 */
-static void corruptSchema(InitData *pData, const char *zExtra){
+static void corruptSchema(
+  InitData *pData,     /* Initialization context */
+  const char *zObj,    /* Object being parsed at the point of error */
+  const char *zExtra   /* Error information */
+){
   if( !pData->db->mallocFailed ){
-    sqlite3SetString(pData->pzErrMsg, "malformed database schema",
+    if( zObj==0 ) zObj = "?";
+    sqlite3SetString(pData->pzErrMsg, "malformed database schema (",  zObj, ")",
        zExtra!=0 && zExtra[0]!=0 ? " - " : (char*)0, zExtra, (char*)0);
   }
   pData->rc = SQLITE_CORRUPT;
@@ -51,14 +56,14 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
   pData->rc = SQLITE_OK;
   DbClearProperty(db, iDb, DB_Empty);
   if( db->mallocFailed ){
-    corruptSchema(pData, 0);
+    corruptSchema(pData, argv[0], 0);
     return SQLITE_NOMEM;
   }
 
   assert( argc==3 );
   if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
   if( argv[1]==0 ){
-    corruptSchema(pData, 0);
+    corruptSchema(pData, argv[0], 0);
     return 1;
   }
   assert( iDb>=0 && iDb<db->nDb );
@@ -81,13 +86,13 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
       if( rc==SQLITE_NOMEM ){
         db->mallocFailed = 1;
       }else if( rc!=SQLITE_INTERRUPT ){
-        corruptSchema(pData, zErr);
+        corruptSchema(pData, argv[0], zErr);
       }
       sqlite3_free(zErr);
       return 1;
     }
   }else if( argv[0]==0 ){
-    corruptSchema(pData, 0);
+    corruptSchema(pData, 0, 0);
   }else{
     /* If the SQL column is blank it means this is an index that
     ** was created to be the PRIMARY KEY or to fulfill a UNIQUE

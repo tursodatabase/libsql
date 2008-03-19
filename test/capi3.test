@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.60 2008/03/19 00:21:31 drh Exp $
+# $Id: capi3.test,v 1.61 2008/03/19 13:03:34 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -690,7 +690,7 @@ if {![sqlite3 -has-codec]} {
     catchsql {
       SELECT * FROM sqlite_master;
     }
-  } {1 {malformed database schema}}
+  } {1 {malformed database schema (?)}}
   do_test capi3-8.4 {
     # Build a 5-field row record. The first field is a string 'table', and
     # subsequent fields are all NULL.
@@ -709,7 +709,7 @@ if {![sqlite3 -has-codec]} {
     catchsql {
       SELECT * FROM sqlite_master;
     }
-  } {1 {malformed database schema}}
+  } {1 {malformed database schema (?)}}
   db close
 }
 file delete -force test.db
