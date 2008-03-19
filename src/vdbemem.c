@@ -503,6 +503,7 @@ void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
 ** too large - whose size exceeds SQLITE_MAX_LENGTH.
 */
 int sqlite3VdbeMemTooBig(Mem *p){
+  assert( p->db!=0 );
   if( p->flags & (MEM_Str|MEM_Blob) ){
     int n = p->n;
     if( p->flags & MEM_Zero ){

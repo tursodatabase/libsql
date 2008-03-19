@@ -301,6 +301,7 @@ const sqlite3_api_routines sqlite3Apis = {
   sqlite3_result_error_code,
   sqlite3_test_control,
   sqlite3_randomness,
+  sqlite3_context_db_handle,
 };
 
 /*

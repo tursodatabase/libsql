@@ -414,6 +414,15 @@ void *sqlite3_user_data(sqlite3_context *p){
 }
 
 /*
+** Extract the user data from a sqlite3_context structure and return a
+** pointer to it.
+*/
+sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
+  assert( p && p->pFunc );
+  return p->s.db;
+}
+
+/*
 ** The following is the implementation of an SQL function that always
 ** fails with an error message stating that the function is used in the
 ** wrong context.  The sqlite3_overload_function() API might construct

@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.42 2008/02/09 14:30:30 drh Exp $
+** $Id: alter.c,v 1.43 2008/03/19 21:45:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -51,7 +51,7 @@ static void renameTableFunc(
   int len = 0;
   char *zRet;
 
-  sqlite3 *db = sqlite3_user_data(context);
+  sqlite3 *db = sqlite3_context_db_handle(context);
 
   /* The principle used to locate the table name in the CREATE TABLE 
   ** statement is that the table name is the first token that is immediatedly
@@ -107,7 +107,7 @@ static void renameTriggerFunc(
   int len = 0;
   char *zRet;
 
-  sqlite3 *db = sqlite3_user_data(context);
+  sqlite3 *db = sqlite3_context_db_handle(context);
 
   /* The principle used to locate the table name in the CREATE TRIGGER 
   ** statement is that the table name is the first token that is immediatedly
@@ -178,7 +178,7 @@ void sqlite3AlterFunctions(sqlite3 *db){
 
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
     sqlite3CreateFunc(db, aFuncs[i].zName, aFuncs[i].nArg,
-        SQLITE_UTF8, (void *)db, aFuncs[i].xFunc, 0, 0);
+        SQLITE_UTF8, 0, aFuncs[i].xFunc, 0, 0);
   }
 }
 

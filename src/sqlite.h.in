@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.293 2008/03/19 14:15:35 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.294 2008/03/19 21:45:51 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3662,6 +3662,25 @@ void *sqlite3_aggregate_context(sqlite3_context*, int nBytes);
 **          [sqlite3_context] C.
 */
 void *sqlite3_user_data(sqlite3_context*);
+
+/*
+** CAPI3REF: Database Connection For Functions {F16250}
+**
+** The sqlite3_context_db_handle() interface returns a copy of
+** the pointer to the [database connection] (the 1st parameter)
+** of the the [sqlite3_create_function()]
+** and [sqlite3_create_function16()] routines that originally
+** registered the application defined function.
+**
+** INVARIANTS:
+**
+** {F16253} The [sqlite3_context_db_handle(C)] interface returns a copy of the
+**          D pointer from the [sqlite3_create_function(D,X,N,E,P,F,S,L)]
+**          or [sqlite3_create_function16(D,X,N,E,P,F,S,L)] call that
+**          registered the SQL function associated with 
+**          [sqlite3_context] C.
+*/
+sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 
 /*
 ** CAPI3REF: Function Auxiliary Data {F16270}

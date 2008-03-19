@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.712 2008/03/19 14:15:35 drh Exp $
+** $Id: vdbe.c,v 1.713 2008/03/19 21:45:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1212,7 +1212,7 @@ case OP_Function: {
   assert( pOp->p3>0 && pOp->p3<=p->nMem );
   pOut = &p->aMem[pOp->p3];
   ctx.s.flags = MEM_Null;
-  ctx.s.db = 0;
+  ctx.s.db = db;
 
   /* The output cell may already have a buffer allocated. Move
   ** the pointer to ctx.s so in case the user-function can use

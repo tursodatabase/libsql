@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.188 2008/03/19 16:08:54 drh Exp $
+** $Id: func.c,v 1.189 2008/03/19 21:45:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -365,7 +365,7 @@ static void last_insert_rowid(
   int arg, 
   sqlite3_value **argv
 ){
-  sqlite3 *db = sqlite3_user_data(context);
+  sqlite3 *db = sqlite3_context_db_handle(context);
   sqlite3_result_int64(context, sqlite3_last_insert_rowid(db));
 }
 
@@ -378,7 +378,7 @@ static void changes(
   int arg,
   sqlite3_value **argv
 ){
-  sqlite3 *db = sqlite3_user_data(context);
+  sqlite3 *db = sqlite3_context_db_handle(context);
   sqlite3_result_int(context, sqlite3_changes(db));
 }
 
@@ -391,7 +391,7 @@ static void total_changes(
   int arg,
   sqlite3_value **argv
 ){
-  sqlite3 *db = sqlite3_user_data(context);
+  sqlite3 *db = sqlite3_context_db_handle(context);
   sqlite3_result_int(context, sqlite3_total_changes(db));
 }
 
@@ -1005,7 +1005,7 @@ static void soundexFunc(
 static void loadExt(sqlite3_context *context, int argc, sqlite3_value **argv){
   const char *zFile = (const char *)sqlite3_value_text(argv[0]);
   const char *zProc;
-  sqlite3 *db = sqlite3_user_data(context);
+  sqlite3 *db = sqlite3_context_db_handle(context);
   char *zErrMsg = 0;
 
   if( argc==2 ){
@@ -1219,7 +1219,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
   static const struct {
      char *zName;
      signed char nArg;
-     u8 argType;           /* ff: db   1: 0, 2: 1, 3: 2,...  N:  N-1. */
+     u8 argType;           /* 1: 0, 2: 1, 3: 2,...  N:  N-1. */
      u8 eTextRep;          /* 1: UTF-16.  0: UTF-8 */
      u8 needCollSeq;
      void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
@@ -1247,9 +1247,9 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "nullif",             2, 0, SQLITE_UTF8,    1, nullifFunc },
     { "sqlite_version",     0, 0, SQLITE_UTF8,    0, versionFunc},
     { "quote",              1, 0, SQLITE_UTF8,    0, quoteFunc  },
-    { "last_insert_rowid",  0, 0xff, SQLITE_UTF8, 0, last_insert_rowid },
-    { "changes",            0, 0xff, SQLITE_UTF8, 0, changes           },
-    { "total_changes",      0, 0xff, SQLITE_UTF8, 0, total_changes     },
+    { "last_insert_rowid",  0, 0, SQLITE_UTF8, 0, last_insert_rowid },
+    { "changes",            0, 0, SQLITE_UTF8, 0, changes           },
+    { "total_changes",      0, 0, SQLITE_UTF8, 0, total_changes     },
     { "replace",            3, 0, SQLITE_UTF8,    0, replaceFunc       },
     { "ltrim",              1, 1, SQLITE_UTF8,    0, trimFunc          },
     { "ltrim",              2, 1, SQLITE_UTF8,    0, trimFunc          },
@@ -1262,8 +1262,8 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "soundex",            1, 0, SQLITE_UTF8,    0, soundexFunc},
 #endif
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
-    { "load_extension",     1, 0xff, SQLITE_UTF8, 0, loadExt },
-    { "load_extension",     2, 0xff, SQLITE_UTF8, 0, loadExt },
+    { "load_extension",     1, 0, SQLITE_UTF8, 0, loadExt },
+    { "load_extension",     2, 0, SQLITE_UTF8, 0, loadExt },
 #endif
   };
   static const struct {
@@ -1289,11 +1289,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
     void *pArg;
     u8 argType = aFuncs[i].argType;
-    if( argType==0xff ){
-      pArg = db;
-    }else{
-      pArg = (void*)(sqlite3_intptr_t)argType;
-    }
+    pArg = (void*)(sqlite3_intptr_t)argType;
     sqlite3CreateFunc(db, aFuncs[i].zName, aFuncs[i].nArg,
         aFuncs[i].eTextRep, pArg, aFuncs[i].xFunc, 0, 0);
     if( aFuncs[i].needCollSeq ){
