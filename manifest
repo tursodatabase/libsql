@@ -1,5 +1,5 @@
-C Initial\simplementation\sof\sper-connection\slimits\sand\sthe\ssqlite3_limit()\sAPI.\nThe\ssqllimits1.test\sscript\scrashes.\s\sSQLITE_LIMIT_PAGE_COUNT\sand\nSQLITE_LIMIT_VDBE_OP\sare\scurrently\signored.\s(CVS\s4897)
-D 2008-03-20T14:03:29
+C Do\snot\srun\scrash7.test\sas\spart\sof\sa\squick\stest.\s(CVS\s4898)
+D 2008-03-20T16:26:49
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -419,7 +419,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 83150cb7b513e33cce90fdc68f4b1817551857c0
-F test/quick.test 3626d353162d0cfbe0959a73c5f9cf171c126091
+F test/quick.test ee53085c09446208c70694bcc25dc717e1aa393f
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 871df0e7c36a88f175cfc63797745e52a1b1796b
-R 4c7da889f1547b07b3861cee6e60887d
-U drh
-Z 1218328931920895e6af9308ec904100
+P 60c77882b2de9f6a45f8bd87c9c6a0cc613f8373
+R 470ea6093d2c3208cc1c3a8559153543
+U danielk1977
+Z bc9accc34d4c081a01d0d05b853c649a
