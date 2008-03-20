@@ -16,22 +16,10 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.21 2008/03/19 14:15:35 drh Exp $
+** $Id: test_config.c,v 1.22 2008/03/20 14:03:29 drh Exp $
 */
 
 #include "sqliteLimit.h"
-
-int sqlite3MAX_LENGTH = SQLITE_MAX_LENGTH;
-int sqlite3MAX_COLUMN = SQLITE_MAX_COLUMN;
-int sqlite3MAX_SQL_LENGTH = SQLITE_MAX_SQL_LENGTH;
-int sqlite3MAX_EXPR_DEPTH = SQLITE_MAX_EXPR_DEPTH;
-int sqlite3MAX_COMPOUND_SELECT = SQLITE_MAX_COMPOUND_SELECT;
-int sqlite3MAX_VDBE_OP = SQLITE_MAX_VDBE_OP;
-int sqlite3MAX_FUNCTION_ARG = SQLITE_MAX_FUNCTION_ARG;
-int sqlite3MAX_VARIABLE_NUMBER = SQLITE_MAX_VARIABLE_NUMBER;
-int sqlite3MAX_PAGE_SIZE = SQLITE_MAX_PAGE_SIZE;
-int sqlite3MAX_PAGE_COUNT = SQLITE_MAX_PAGE_COUNT;
-int sqlite3MAX_LIKE_PATTERN_LENGTH = SQLITE_MAX_LIKE_PATTERN_LENGTH;
 
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -425,8 +413,10 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp, "sqlite_options", "vtab", "1", TCL_GLOBAL_ONLY);
 #endif
 
-#define LINKVAR(x) \
-    Tcl_LinkVar(interp, "SQLITE_" #x, (char *)&(sqlite3 ## x), TCL_LINK_INT)
+#define LINKVAR(x) { \
+    static const int cv_ ## x = SQLITE_ ## x; \
+    Tcl_LinkVar(interp, "SQLITE_" #x, (char *)&(cv_ ## x), \
+                TCL_LINK_INT | TCL_LINK_READ_ONLY); }
 
   LINKVAR( MAX_LENGTH );
   LINKVAR( MAX_COLUMN );
@@ -439,37 +429,16 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   LINKVAR( MAX_PAGE_SIZE );
   LINKVAR( MAX_PAGE_COUNT );
   LINKVAR( MAX_LIKE_PATTERN_LENGTH );
+  LINKVAR( DEFAULT_TEMP_CACHE_SIZE );
+  LINKVAR( DEFAULT_CACHE_SIZE );
+  LINKVAR( DEFAULT_PAGE_SIZE );
+  LINKVAR( DEFAULT_FILE_FORMAT );
+  LINKVAR( MAX_ATTACHED );
 
   {
-    static int sqlite_default_temp_cache_size = SQLITE_DEFAULT_TEMP_CACHE_SIZE;
-    Tcl_LinkVar(interp, "SQLITE_DEFAULT_TEMP_CACHE_SIZE",
-           (char*)&sqlite_default_temp_cache_size,
-           TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_default_cache_size = SQLITE_DEFAULT_CACHE_SIZE;
-    Tcl_LinkVar(interp, "SQLITE_DEFAULT_CACHE_SIZE",
-           (char*)&sqlite_default_cache_size, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_default_page_size = SQLITE_DEFAULT_PAGE_SIZE;
-    Tcl_LinkVar(interp, "SQLITE_DEFAULT_PAGE_SIZE",
-           (char*)&sqlite_default_page_size, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int temp_store = TEMP_STORE;
-    Tcl_LinkVar(interp, "TEMP_STORE",
-           (char*)&temp_store, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_default_file_format = SQLITE_DEFAULT_FILE_FORMAT;
-    Tcl_LinkVar(interp, "SQLITE_DEFAULT_FILE_FORMAT",
-           (char*)&sqlite_default_file_format, TCL_LINK_INT|TCL_LINK_READ_ONLY);
-  }
-  {
-    static int sqlite_max_attached = SQLITE_MAX_ATTACHED;
-    Tcl_LinkVar(interp, "SQLITE_MAX_ATTACHED",
-           (char*)&sqlite_max_attached, TCL_LINK_INT|TCL_LINK_READ_ONLY);
+    static const int cv_TEMP_STORE = TEMP_STORE;
+    Tcl_LinkVar(interp, "TEMP_STORE", (char *)&(cv_TEMP_STORE),
+                TCL_LINK_INT | TCL_LINK_READ_ONLY);
   }
 }
 

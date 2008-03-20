@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.425 2008/03/20 11:04:21 danielk1977 Exp $
+** $Id: main.c,v 1.426 2008/03/20 14:03:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -929,6 +929,93 @@ static int createCollation(
 
 
 /*
+** This array defines hard upper bounds on limit values.  The
+** initializer must be kept in sync with the SQLITE_LIMIT_*
+** #defines in sqlite3.h.
+*/
+static const aHardLimit[] = {
+  SQLITE_MAX_LENGTH,
+  SQLITE_MAX_SQL_LENGTH,
+  SQLITE_MAX_COLUMN,
+  SQLITE_MAX_EXPR_DEPTH,
+  SQLITE_MAX_COMPOUND_SELECT,
+  SQLITE_MAX_VDBE_OP,
+  SQLITE_MAX_FUNCTION_ARG,
+  SQLITE_MAX_ATTACHED,
+  SQLITE_MAX_PAGE_COUNT,
+  SQLITE_MAX_LIKE_PATTERN_LENGTH,
+  SQLITE_MAX_VARIABLE_NUMBER,
+};
+
+/*
+** Make sure the hard limits are set to reasonable values
+*/
+#if SQLITE_MAX_LENGTH<100
+# error SQLITE_MAX_LENGTH must be at least 100
+#endif
+#if SQLITE_MAX_SQL_LENGTH<100
+# error SQLITE_MAX_SQL_LENGTH must be at least 100
+#endif
+#if SQLITE_MAX_SQL_LENGTH>SQLITE_MAX_LENGTH
+# error SQLITE_MAX_SQL_LENGTH must not be greater than SQLITE_MAX_LENGTH
+#endif
+#if SQLITE_MAX_COLUMN<1
+# error SQLITE_MAX_COLUMN must be at least 1
+#endif
+#if SQLITE_MAX_EXPR_DEPTH<1
+# error SQLITE_MAX_EXPR_DEPTH must be at least 1
+#endif
+#if SQLITE_MAX_COMPOUND_SELECT<2
+# error SQLITE_MAX_COMPOUND_SELECT must be at least 2
+#endif
+#if SQLITE_MAX_VDBE_OP<40
+# error SQLITE_MAX_VDBE_OP must be at least 40
+#endif
+#if SQLITE_MAX_FUNCTION_ARG<0 || SQLITE_MAX_FUNCTION_ARG>255
+# error SQLITE_MAX_FUNCTION_ARG must be between 0 and 255
+#endif
+#if SQLITE_MAX_ATTACH<0 || SQLITE_MAX_ATTACH>30
+# error SQLITE_MAX_ATTACH must be between 0 and 30
+#endif
+#if SQLITE_MAX_PAGE_COUNT<1
+# error SQLITE_MAX_PAGE_COUNT must be at least 1
+#endif
+#if SQLITE_MAX_LIKE_PATTERN_LENGTH<1
+# error SQLITE_MAX_LIKE_PATTERN_LENGTH must be at least 1
+#endif
+#if SQLITE_MAX_VARIABLE_NUMBER<1
+# error SQLITE_MAX_VARIABLE_NUMBER must be at least 1
+#endif
+
+
+/*
+** Change the value of a limit.  Report the old value.
+** If an invalid limit index is supplied, report -1.
+** Make no changes but still report the old value if the
+** new limit is negative.
+**
+** A new lower limit does not shrink existing constructs.
+** It merely prevents new constructs that exceed the limit
+** from forming.
+*/
+int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
+  int oldLimit;
+  if( limitId<0 || limitId>SQLITE_N_LIMIT ){
+    return -1;
+  }
+  oldLimit = db->aLimit[limitId];
+  if( newLimit>=0 ){
+    if( newLimit==0 ){
+      newLimit = aHardLimit[limitId];
+    }else if( aHardLimit[limitId]>0 && newLimit>aHardLimit[limitId] ){
+      newLimit = aHardLimit[limitId];
+    }
+    db->aLimit[limitId] = newLimit;
+  }
+  return oldLimit;
+}
+
+/*
 ** This routine does the work of opening a database on behalf of
 ** sqlite3_open() and sqlite3_open16(). The database filename "zFilename"  
 ** is UTF-8 encoded.
@@ -969,6 +1056,8 @@ static int openDatabase(
   db->nDb = 2;
   db->magic = SQLITE_MAGIC_BUSY;
   db->aDb = db->aDbStatic;
+  assert( sizeof(db->aLimit)==sizeof(aHardLimit) );
+  memcpy(db->aLimit, aHardLimit, sizeof(db->aLimit));
   db->autoCommit = 1;
   db->nextAutovac = -1;
   db->nextPagesize = 0;

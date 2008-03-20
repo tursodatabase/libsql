@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.73 2008/03/19 16:35:24 drh Exp $
+# $Id: func.test,v 1.74 2008/03/20 14:03:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -337,7 +337,6 @@ if {$encoding=="UTF-16le"} {
   do_test func-9.12-utf16le {
     execsql {SELECT hex(replace('abcdefg','','12'))}
   } {{}}
-  breakpoint
   do_test func-9.13-utf16le {
     execsql {SELECT hex(replace('aabcdefg','a','aaa'))}
   } {610061006100610061006100620063006400650066006700}
@@ -348,7 +347,6 @@ if {$encoding=="UTF-16le"} {
   do_test func-9.12-utf8 {
     execsql {SELECT hex(replace('abcdefg','','12'))}
   } {{}}
-  breakpoint
   do_test func-9.13-utf8 {
     execsql {SELECT hex(replace('aabcdefg','a','aaa'))}
   } {616161616161626364656667}

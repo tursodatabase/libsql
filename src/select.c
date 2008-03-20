@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.415 2008/03/04 17:45:01 mlcreech Exp $
+** $Id: select.c,v 1.416 2008/03/20 14:03:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1459,10 +1459,12 @@ static int prepSelectStmt(Parse *pParse, Select *p){
     sqlite3ExprListDelete(pEList);
     p->pEList = pNew;
   }
-  if( p->pEList && p->pEList->nExpr>SQLITE_MAX_COLUMN ){
+#if SQLITE_MAX_COLUMN
+  if( p->pEList && p->pEList->nExpr>db->aLimit[SQLITE_LIMIT_COLUMN] ){
     sqlite3ErrorMsg(pParse, "too many columns in result set");
     rc = SQLITE_ERROR;
   }
+#endif
   if( db->mallocFailed ){
     rc = SQLITE_NOMEM;
   }
@@ -1589,11 +1591,13 @@ static int processOrderGroupBy(
   ExprList *pEList;
 
   if( pOrderBy==0 || pParse->db->mallocFailed ) return 0;
-  if( pOrderBy->nExpr>SQLITE_MAX_COLUMN ){
+#if SQLITE_MAX_COLUMN
+  if( pOrderBy->nExpr>db->aLimit[SQLITE_LIMIT_COLUMN] ){
     const char *zType = isOrder ? "ORDER" : "GROUP";
     sqlite3ErrorMsg(pParse, "too many terms in %s BY clause", zType);
     return 1;
   }
+#endif
   pEList = pSelect->pEList;
   if( pEList==0 ){
     return 0;
@@ -1656,11 +1660,13 @@ static int processCompoundOrderBy(
 
   pOrderBy = pSelect->pOrderBy;
   if( pOrderBy==0 ) return 0;
-  if( pOrderBy->nExpr>SQLITE_MAX_COLUMN ){
+  db = pParse->db;
+#if SQLITE_MAX_COLUMN
+  if( pOrderBy->nExpr>db->aLimit[SQLITE_LIMIT_COLUMN] ){
     sqlite3ErrorMsg(pParse, "too many terms in ORDER BY clause");
     return 1;
   }
-  db = pParse->db;
+#endif
   for(i=0; i<pOrderBy->nExpr; i++){
     pOrderBy->a[i].done = 0;
   }
@@ -3048,12 +3054,14 @@ int sqlite3Select(
     if( p->pRightmost==0 ){
       Select *pLoop, *pRight = 0;
       int cnt = 0;
+      int mxSelect;
       for(pLoop=p; pLoop; pLoop=pLoop->pPrior, cnt++){
         pLoop->pRightmost = p;
         pLoop->pNext = pRight;
         pRight = pLoop;
       }
-      if( SQLITE_MAX_COMPOUND_SELECT>0 && cnt>SQLITE_MAX_COMPOUND_SELECT ){
+      mxSelect = db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT];
+      if( mxSelect && cnt>mxSelect ){
         sqlite3ErrorMsg(pParse, "too many terms in compound SELECT");
         return 1;
       }
@@ -3116,7 +3124,6 @@ int sqlite3Select(
     }else{
       needRestoreContext = 0;
     }
-#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
     /* Increment Parse.nHeight by the height of the largest expression
     ** tree refered to by this, the parent select. The child select
     ** may contain expression trees of at most
@@ -3125,15 +3132,12 @@ int sqlite3Select(
     ** an exact limit.
     */
     pParse->nHeight += sqlite3SelectExprHeight(p);
-#endif
     sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
     sqlite3Select(pParse, pItem->pSelect, &dest, p, i, &isAgg, 0);
     if( db->mallocFailed ){
       goto select_end;
     }
-#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
     pParse->nHeight -= sqlite3SelectExprHeight(p);
-#endif
     if( needRestoreContext ){
       pParse->zAuthContext = zSavedAuthContext;
     }

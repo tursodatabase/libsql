@@ -12,7 +12,7 @@
 ** 
 ** This file defines various limits of what SQLite can process.
 **
-** @(#) $Id: sqliteLimit.h,v 1.6 2007/12/17 16:20:07 drh Exp $
+** @(#) $Id: sqliteLimit.h,v 1.7 2008/03/20 14:03:29 drh Exp $
 */
 
 /*
@@ -49,18 +49,24 @@
 
 /*
 ** The maximum length of a single SQL statement in bytes.
-** A value of zero means there is no limit.
+**
+** It used to be the case that setting this value to zero would
+** turn the limit off.  That is no longer true.  It is not possible
+** to turn this limit off.
 */
 #ifndef SQLITE_MAX_SQL_LENGTH
-# define SQLITE_MAX_SQL_LENGTH 0
+# define SQLITE_MAX_SQL_LENGTH 1000000000
 #endif
 
 /*
 ** The maximum depth of an expression tree. This is limited to 
 ** some extent by SQLITE_MAX_SQL_LENGTH. But sometime you might 
 ** want to place more severe limits on the complexity of an 
-** expression. A value of 0 (the default) means do not enforce
-** any limitation on expression tree depth.
+** expression.
+**
+** A value of 0 used to mean that the limit was not enforced.
+** But that is no longer true.  The limit is now strictly enforced
+** at all times.
 */
 #ifndef SQLITE_MAX_EXPR_DEPTH
 # define SQLITE_MAX_EXPR_DEPTH 1000

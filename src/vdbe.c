@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.713 2008/03/19 21:45:51 drh Exp $
+** $Id: vdbe.c,v 1.714 2008/03/20 14:03:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -832,14 +832,14 @@ case OP_String8: {         /* same as TK_STRING, out2-prerelease */
     pOp->p4type = P4_DYNAMIC;
     pOp->p4.z = pOut->z;
     pOp->p1 = pOut->n;
-    if( pOp->p1>SQLITE_MAX_LENGTH ){
+    if( pOp->p1>db->aLimit[SQLITE_LIMIT_LENGTH] ){
       goto too_big;
     }
     UPDATE_MAX_BLOBSIZE(pOut);
     break;
   }
 #endif
-  if( pOp->p1>SQLITE_MAX_LENGTH ){
+  if( pOp->p1>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
   /* Fall through to the next case, OP_String */
@@ -1020,7 +1020,7 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
   ExpandBlob(pIn2);
   Stringify(pIn2, encoding);
   nByte = pIn1->n + pIn2->n;
-  if( nByte>SQLITE_MAX_LENGTH ){
+  if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
   MemSetTypeFlag(pOut, MEM_Str);
@@ -1884,7 +1884,7 @@ case OP_Column: {
     assert( pDest->flags&MEM_Null );
     goto op_column_out;
   }
-  if( payloadSize>SQLITE_MAX_LENGTH ){
+  if( payloadSize>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
 
@@ -2137,7 +2137,7 @@ case OP_MakeRecord: {
     nHdr++;
   }
   nByte = nHdr+nData-nZero;
-  if( nByte>SQLITE_MAX_LENGTH ){
+  if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
 
@@ -3394,13 +3394,13 @@ case OP_RowData: {
     i64 n64;
     assert( !pC->isTable );
     sqlite3BtreeKeySize(pCrsr, &n64);
-    if( n64>SQLITE_MAX_LENGTH ){
+    if( n64>db->aLimit[SQLITE_LIMIT_LENGTH] ){
       goto too_big;
     }
     n = n64;
   }else{
     sqlite3BtreeDataSize(pCrsr, &n);
-    if( n>SQLITE_MAX_LENGTH ){
+    if( n>db->aLimit[SQLITE_LIMIT_LENGTH] ){
       goto too_big;
     }
   }

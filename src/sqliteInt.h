@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.676 2008/03/20 11:04:21 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.677 2008/03/20 14:03:29 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -21,6 +21,7 @@
 ** (otherwise we get an empty default).
 */
 #include "config.h"
+#include "sqliteLimit.h"
 
 /* Needed for various definitions... */
 #define _GNU_SOURCE
@@ -88,51 +89,6 @@
 #   define _FILE_OFFSET_BITS 64
 # endif
 # define _LARGEFILE_SOURCE 1
-#endif
-
-
-#include "sqliteLimit.h"
-
-/*
-** For testing purposes, the various size limit constants are really
-** variables that we can modify in the testfixture.
-*/
-#ifdef SQLITE_TEST
-  #undef SQLITE_MAX_LENGTH
-  #undef SQLITE_MAX_COLUMN
-  #undef SQLITE_MAX_SQL_LENGTH
-  #undef SQLITE_MAX_EXPR_DEPTH
-  #undef SQLITE_MAX_COMPOUND_SELECT
-  #undef SQLITE_MAX_VDBE_OP
-  #undef SQLITE_MAX_FUNCTION_ARG
-  #undef SQLITE_MAX_VARIABLE_NUMBER
-  #undef SQLITE_MAX_PAGE_SIZE
-  #undef SQLITE_MAX_PAGE_COUNT
-  #undef SQLITE_MAX_LIKE_PATTERN_LENGTH
-
-  #define SQLITE_MAX_LENGTH              sqlite3MAX_LENGTH
-  #define SQLITE_MAX_COLUMN              sqlite3MAX_COLUMN
-  #define SQLITE_MAX_SQL_LENGTH          sqlite3MAX_SQL_LENGTH
-  #define SQLITE_MAX_EXPR_DEPTH          sqlite3MAX_EXPR_DEPTH
-  #define SQLITE_MAX_COMPOUND_SELECT     sqlite3MAX_COMPOUND_SELECT
-  #define SQLITE_MAX_VDBE_OP             sqlite3MAX_VDBE_OP
-  #define SQLITE_MAX_FUNCTION_ARG        sqlite3MAX_FUNCTION_ARG
-  #define SQLITE_MAX_VARIABLE_NUMBER     sqlite3MAX_VARIABLE_NUMBER
-  #define SQLITE_MAX_PAGE_SIZE           sqlite3MAX_PAGE_SIZE
-  #define SQLITE_MAX_PAGE_COUNT          sqlite3MAX_PAGE_COUNT
-  #define SQLITE_MAX_LIKE_PATTERN_LENGTH sqlite3MAX_LIKE_PATTERN_LENGTH
-
-  extern int sqlite3MAX_LENGTH;
-  extern int sqlite3MAX_COLUMN;
-  extern int sqlite3MAX_SQL_LENGTH;
-  extern int sqlite3MAX_EXPR_DEPTH;
-  extern int sqlite3MAX_COMPOUND_SELECT;
-  extern int sqlite3MAX_VDBE_OP;
-  extern int sqlite3MAX_FUNCTION_ARG;
-  extern int sqlite3MAX_VARIABLE_NUMBER;
-  extern int sqlite3MAX_PAGE_SIZE;
-  extern int sqlite3MAX_PAGE_COUNT;
-  extern int sqlite3MAX_LIKE_PATTERN_LENGTH;
 #endif
 
 
@@ -1721,6 +1677,7 @@ struct StrAccum {
   char *zText;     /* The string collected so far */
   int  nChar;      /* Length of the string so far */
   int  nAlloc;     /* Amount of space allocated in zText */
+  int  mxAlloc;        /* Maximum allowed string length */
   u8   mallocFailed;   /* Becomes true if any memory allocation fails */
   u8   useMalloc;      /* True if zText is enlargable using realloc */
   u8   tooBig;         /* Becomes true if string size exceeds limits */

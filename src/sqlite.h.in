@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.295 2008/03/20 00:32:20 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.296 2008/03/20 14:03:29 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2173,6 +2173,16 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** constant SQLITE_MAX_XYZ.  Attempts to increase a limit above its
 ** hard upper bound are silently truncated.
 **
+** Run time limits are intended for use in applications that manage
+** both their own internal database and also databases that are controlled
+** by untrusted external sources.  An example application might be a
+** webbrowser that has its own databases for storing history and
+** separate databases controlled by javascript applications downloaded
+** of the internet.  The internal databases can be given the
+** large, default limits.  Databases managed by external sources can
+** be given much smaller limits designed to prevent a denial of service
+** attach.
+**
 ** This interface is currently considered experimental and is subject
 ** to change or removal without prior notice.
 **
@@ -2180,13 +2190,13 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 **
 ** {F12763} A successful call to [sqlite3_limit(D,C,V)] where V is
 **          positive changes the
-**          limit on the size of construct C in [database connetion] D
+**          limit on the size of construct C in [database connection] D
 **          to the lessor of V and the hard upper bound on the size
 **          of C that is set at compile-time.
 **
 ** {F12763} A successful call to [sqlite3_limit(D,C,V)] where V is zero
 **          changes the limit on the size of construct C in
-**          [database connetion] D to be the hard upper bound on the size
+**          [database connection] D to be the hard upper bound on the size
 **          of C that is set at compile-time.
 **
 ** {F12766} A successful call to [sqlite3_limit(D,C,V)] where V is negative
@@ -2194,7 +2204,7 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 **
 ** {F12769} A successful call to [sqlite3_limit(D,C,V)] returns the
 **          value of the limit on the size of construct C in
-**          in [database connetion] D as it was prior to the call.
+**          in [database connection] D as it was prior to the call.
 */
 int sqlite3_limit(sqlite3*, int id, int newVal);
 
@@ -2204,6 +2214,48 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** 
 ** These constants define various aspects of a [database connection]
 ** that can be limited in size by calls to [sqlite3_limit()].
+** The meanings of the various limits are as follows:
+**
+** <dl>
+** <dt>SQLITE_LIMIT_LENGTH</dt>
+** <dd>The maximum size of any
+** string or blob or table row.<dd>
+**
+** <dt>SQLITE_LIMIT_SQL_LENGTH</dt>
+** <dd>The maximum length of an SQL statement.</dd>
+**
+** <dt>SQLITE_LIMIT_COLUMN</dt>
+** <dd>The maximum number of columns in a table definition or in the
+** result set of a SELECT or the maximum number of columns in an index
+** or in an ORDER BY or GROUP BY clause.</dd>
+**
+** <dt>SQLITE_LIMIT_EXPR_DEPTH</dt>
+** <dd>The maximum depth of the parse tree on any expression.</dd>
+**
+** <dt>SQLITE_LIMIT_COMPOUND_SELECT</dt>
+** <dd>The maximum number of terms in a compound SELECT statement.</dd>
+**
+** <dt>SQLITE_LIMIT_VDBE_OP</dt>
+** <dd>The maximum number of instructions in a virtual machine program
+** used to implement an SQL statement.</dd>
+**
+** <dt>SQLITE_LIMIT_FUNCTION_ARG</dt>
+** <dd>The maximum number of arguments on a function.</dd>
+**
+** <dt>SQLITE_LIMIT_ATTACHED</dt>
+** <dd>The maximum number of attached databases.</dd>
+**
+** <dt>SQLITE_LIMIT_PAGE_COUNT</dt>
+** <dd>The maximum number of pages in a database.</dd>
+**
+** <dt>SQLITE_LIMIT_LIKE_PATTERN_LENGTH</dt>
+** <dd>The maximum length of the pattern argument to the LIKE or
+** GLOB operators.</dd>
+**
+** <dt>SQLITE_LIMIT_VARIABLE_NUMBER</dt>
+** <dd>The maximum number of variables in an SQL statement that can
+** be bound.</dd>
+** </dl>
 */
 #define SQLITE_LIMIT_LENGTH                    0
 #define SQLITE_LIMIT_SQL_LENGTH                1

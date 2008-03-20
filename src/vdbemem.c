@@ -509,7 +509,7 @@ int sqlite3VdbeMemTooBig(Mem *p){
     if( p->flags & MEM_Zero ){
       n += p->u.i;
     }
-    return n>SQLITE_MAX_LENGTH;
+    return n>p->db->aLimit[SQLITE_LIMIT_LENGTH];
   }
   return 0; 
 }

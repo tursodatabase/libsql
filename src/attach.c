@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.73 2008/03/19 21:45:51 drh Exp $
+** $Id: attach.c,v 1.74 2008/03/20 14:03:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -87,10 +87,10 @@ static void attachFunc(
   **     * Transaction currently open
   **     * Specified database name already being used.
   */
-  if( db->nDb>=SQLITE_MAX_ATTACHED+2 ){
+  if( db->nDb>=db->aLimit[SQLITE_LIMIT_ATTACHED]+2 ){
     sqlite3_snprintf(
       sizeof(zErr), zErr, "too many attached databases - max %d", 
-      SQLITE_MAX_ATTACHED
+      db->aLimit[SQLITE_LIMIT_ATTACHED]
     );
     goto attach_error;
   }

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.189 2008/03/19 21:45:51 drh Exp $
+** $Id: func.c,v 1.190 2008/03/20 14:03:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -188,7 +188,7 @@ static void substrFunc(
   if( argc==3 ){
     p2 = sqlite3_value_int(argv[2]);
   }else{
-    p2 = SQLITE_MAX_LENGTH;
+    p2 = sqlite3_context_db_handle(context)->aLimit[SQLITE_LIMIT_LENGTH];
   }
   if( p1<0 ){
     p1 += len;
@@ -244,9 +244,15 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 ** the database handle that malloc() has failed.
 */
 static void *contextMalloc(sqlite3_context *context, int nByte){
-  char *z = sqlite3_malloc(nByte);
-  if( !z && nByte>0 ){
-    sqlite3_result_error_nomem(context);
+  char *z;
+  if( nByte>sqlite3_context_db_handle(context)->aLimit[SQLITE_LIMIT_LENGTH] ){
+    sqlite3_result_error_toobig(context);
+    z = 0;
+  }else{
+    z = sqlite3_malloc(nByte);
+    if( !z && nByte>0 ){
+      sqlite3_result_error_nomem(context);
+    }
   }
   return z;
 }
@@ -344,10 +350,6 @@ static void randomBlob(
   n = sqlite3_value_int(argv[0]);
   if( n<1 ){
     n = 1;
-  }
-  if( n>SQLITE_MAX_LENGTH ){
-    sqlite3_result_error_toobig(context);
-    return;
   }
   p = contextMalloc(context, n);
   if( p ){
@@ -591,6 +593,7 @@ static void likeFunc(
 ){
   const unsigned char *zA, *zB;
   int escape = 0;
+  sqlite3 *db = sqlite3_context_db_handle(context);
 
   zB = sqlite3_value_text(argv[0]);
   zA = sqlite3_value_text(argv[1]);
@@ -598,7 +601,8 @@ static void likeFunc(
   /* Limit the length of the LIKE or GLOB pattern to avoid problems
   ** of deep recursion and N*N behavior in patternCompare().
   */
-  if( sqlite3_value_bytes(argv[0])>SQLITE_MAX_LIKE_PATTERN_LENGTH ){
+  if( sqlite3_value_bytes(argv[0]) >
+        db->aLimit[SQLITE_LIMIT_LIKE_PATTERN_LENGTH] ){
     sqlite3_result_error(context, "LIKE or GLOB pattern too complex", -1);
     return;
   }
@@ -690,11 +694,6 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       char const *zBlob = sqlite3_value_blob(argv[0]);
       int nBlob = sqlite3_value_bytes(argv[0]);
       assert( zBlob==sqlite3_value_blob(argv[0]) ); /* No encoding change */
-
-      if( 2*nBlob+4>SQLITE_MAX_LENGTH ){
-        sqlite3_result_error_toobig(context);
-        return;
-      }
       zText = (char *)contextMalloc(context, (2*nBlob)+4); 
       if( zText ){
         int i;
@@ -719,10 +718,6 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 
       if( zArg==0 ) return;
       for(i=0, n=0; zArg[i]; i++){ if( zArg[i]=='\'' ) n++; }
-      if( i+n+3>SQLITE_MAX_LENGTH ){
-        sqlite3_result_error_toobig(context);
-        return;
-      }
       z = contextMalloc(context, i+n+3);
       if( z ){
         z[0] = '\'';
@@ -755,10 +750,6 @@ static void hexFunc(
   assert( argc==1 );
   pBlob = sqlite3_value_blob(argv[0]);
   n = sqlite3_value_bytes(argv[0]);
-  if( n*2+1>SQLITE_MAX_LENGTH ){
-    sqlite3_result_error_toobig(context);
-    return;
-  }
   assert( pBlob==sqlite3_value_blob(argv[0]) );  /* No encoding change */
   z = zHex = contextMalloc(context, n*2 + 1);
   if( zHex ){
@@ -837,8 +828,9 @@ static void replaceFunc(
       zOut[j++] = zStr[i];
     }else{
       u8 *zOld;
+      sqlite3 *db = sqlite3_context_db_handle(context);
       nOut += nRep - nPattern;
-      if( nOut>=SQLITE_MAX_LENGTH ){
+      if( nOut>=db->aLimit[SQLITE_LIMIT_LENGTH] ){
         sqlite3_result_error_toobig(context);
         sqlite3_free(zOut);
         return;
@@ -1179,7 +1171,9 @@ static void groupConcatStep(
   pAccum = (StrAccum*)sqlite3_aggregate_context(context, sizeof(*pAccum));
 
   if( pAccum ){
+    sqlite3 *db = sqlite3_context_db_handle(context);
     pAccum->useMalloc = 1;
+    pAccum->mxAlloc = db->aLimit[SQLITE_LIMIT_LENGTH];
     if( pAccum->nChar ){
       if( argc==2 ){
         zSep = (char*)sqlite3_value_text(argv[1]);

@@ -238,7 +238,9 @@ void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
 /* Force an SQLITE_TOOBIG error. */
 void sqlite3_result_error_toobig(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
-  sqlite3VdbeMemSetZeroBlob(&pCtx->s, SQLITE_MAX_LENGTH+1);
+  pCtx->isError = SQLITE_TOOBIG;
+  sqlite3VdbeMemSetStr(&pCtx->s, "string or blob too big", -1, 
+                       SQLITE_UTF8, SQLITE_STATIC);
 }
 
 /* An SQLITE_NOMEM error. */

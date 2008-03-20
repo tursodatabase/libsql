@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.354 2008/03/12 10:39:00 danielk1977 Exp $
+** $Id: expr.c,v 1.355 2008/03/20 14:03:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -400,9 +400,9 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
     ** use it as the variable number */
     int i;
     pExpr->iTable = i = atoi((char*)&pToken->z[1]);
-    if( i<1 || i>SQLITE_MAX_VARIABLE_NUMBER ){
+    if( i<1 || i>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
       sqlite3ErrorMsg(pParse, "variable number must be between ?1 and ?%d",
-          SQLITE_MAX_VARIABLE_NUMBER);
+          db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]);
     }
     if( i>pParse->nVar ){
       pParse->nVar = i;
@@ -440,7 +440,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
       }
     }
   } 
-  if( !pParse->nErr && pParse->nVar>SQLITE_MAX_VARIABLE_NUMBER ){
+  if( !pParse->nErr && pParse->nVar>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
     sqlite3ErrorMsg(pParse, "too many SQL variables");
   }
 }
@@ -705,7 +705,6 @@ void sqlite3ExprListCheckLength(
 }
 
 
-#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
 /* The following three functions, heightOfExpr(), heightOfExprList()
 ** and heightOfSelect(), are used to determine the maximum height
 ** of any expression tree referenced by the structure passed as the
@@ -768,7 +767,6 @@ int sqlite3SelectExprHeight(Select *p){
   heightOfSelect(p, &nHeight);
   return nHeight;
 }
-#endif
 
 /*
 ** Delete an entire expression list.
@@ -1484,21 +1482,24 @@ int sqlite3ExprResolveNames(
   Expr *pExpr             /* The expression to be analyzed. */
 ){
   int savedHasAgg;
+
   if( pExpr==0 ) return 0;
-#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
-  if( (pExpr->nHeight+pNC->pParse->nHeight)>SQLITE_MAX_EXPR_DEPTH ){
-    sqlite3ErrorMsg(pNC->pParse, 
-       "Expression tree is too large (maximum depth %d)",
-       SQLITE_MAX_EXPR_DEPTH
-    );
-    return 1;
+#if SQLITE_MAX_EXPR_DEPTH>0
+  {
+    int mxDepth = pNC->pParse->db->aLimit[SQLITE_LIMIT_EXPR_DEPTH];
+    if( (pExpr->nHeight+pNC->pParse->nHeight)>mxDepth ){
+      sqlite3ErrorMsg(pNC->pParse, 
+         "Expression tree is too large (maximum depth %d)", mxDepth
+      );
+      return 1;
+    }
+    pNC->pParse->nHeight += pExpr->nHeight;
   }
-  pNC->pParse->nHeight += pExpr->nHeight;
 #endif
   savedHasAgg = pNC->hasAgg;
   pNC->hasAgg = 0;
   walkExprTree(pExpr, nameResolverStep, pNC);
-#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
+#if SQLITE_MAX_EXPR_DEPTH>0
   pNC->pParse->nHeight -= pExpr->nHeight;
 #endif
   if( pNC->nErr>0 ){
