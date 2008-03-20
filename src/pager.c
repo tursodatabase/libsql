@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.418 2008/03/19 14:15:35 drh Exp $
+** @(#) $Id: pager.c,v 1.419 2008/03/20 04:45:49 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -971,11 +971,12 @@ static void seekJournalHdr(Pager *pPager){
 ** - 4 bytes: Random number used for page hash.
 ** - 4 bytes: Initial database page count.
 ** - 4 bytes: Sector size used by the process that wrote this journal.
+** - 4 bytes: Database page size.
 ** 
-** Followed by (JOURNAL_HDR_SZ - 24) bytes of unused space.
+** Followed by (JOURNAL_HDR_SZ - 28) bytes of unused space.
 */
 static int writeJournalHdr(Pager *pPager){
-  char zHeader[sizeof(aJournalMagic)+16];
+  char zHeader[sizeof(aJournalMagic)+20];
   int rc;
 
   if( pPager->stmtHdrOff==0 ){
@@ -1023,6 +1024,10 @@ static int writeJournalHdr(Pager *pPager){
   put32bits(&zHeader[sizeof(aJournalMagic)+8], pPager->dbSize);
   /* The assumed sector size for this process */
   put32bits(&zHeader[sizeof(aJournalMagic)+12], pPager->sectorSize);
+  if( pPager->journalHdr==0 ){
+    /* The page size */
+    put32bits(&zHeader[sizeof(aJournalMagic)+16], pPager->pageSize);
+  }
   IOTRACE(("JHDR %p %lld %d\n", pPager, pPager->journalHdr, sizeof(zHeader)))
   rc = sqlite3OsWrite(pPager->jfd, zHeader, sizeof(zHeader),pPager->journalOff);
   pPager->journalOff += JOURNAL_HDR_SZ(pPager);
@@ -1062,6 +1067,7 @@ static int readJournalHdr(
   int rc;
   unsigned char aMagic[8]; /* A buffer to hold the magic header */
   i64 jrnlOff;
+  int iPageSize;
 
   seekJournalHdr(pPager);
   if( pPager->journalOff+JOURNAL_HDR_SZ(pPager) > journalSize ){
@@ -1084,6 +1090,17 @@ static int readJournalHdr(
   if( rc ) return rc;
 
   rc = read32bits(pPager->jfd, jrnlOff+8, pDbSize);
+  if( rc ) return rc;
+
+  rc = read32bits(pPager->jfd, jrnlOff+16, (u32 *)&iPageSize);
+  if( rc==SQLITE_OK 
+   && iPageSize>=512 
+   && iPageSize<=SQLITE_MAX_PAGE_SIZE 
+   && ((iPageSize-1)&iPageSize)==0 
+  ){
+    u16 pagesize = iPageSize;
+    rc = sqlite3PagerSetPagesize(pPager, &pagesize);
+  }
   if( rc ) return rc;
 
   /* Update the assumed sector-size to match the value used by 
