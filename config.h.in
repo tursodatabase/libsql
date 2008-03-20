@@ -11,7 +11,7 @@
 *************************************************************************
 ** Configuration header template to be filled in by 'configure' script
 **
-** @(#) $Id: config.h.in,v 1.3 2008/03/09 01:38:10 mlcreech Exp $
+** @(#) $Id: config.h.in,v 1.1 2008/03/20 02:25:35 mlcreech Exp $
 */
 #ifndef _CONFIG_H_
 #define _CONFIG_H_

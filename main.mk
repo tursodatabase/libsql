@@ -44,7 +44,7 @@
 
 # This is how we compile
 #
-TCCX = $(TCC) $(OPTS) -I. -I$(TOP)/src
+TCCX = $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP)
 
 # Object files for the SQLite library.
 #
@@ -93,7 +93,7 @@ SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
   $(TOP)/src/complete.c \
-  $(TOP)/src/config.h \
+  $(TOP)/config.h \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -259,7 +259,7 @@ HDR = \
    $(TOP)/src/sqliteLimit.h \
    $(TOP)/src/vdbe.h \
    $(TOP)/src/vdbeInt.h \
-   $(TOP)/src/config.h
+   $(TOP)/config.h
 
 # Header files used by extensions
 #
@@ -322,16 +322,16 @@ lemon:	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
 	$(BCC) -o lemon $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
 
-# Rules to build individual *.o files from files in the src directory.
-#
-%.o: %.c $(HDR)
-	$(TCCX) -c $<
-
 # Rules to build individual *.o files from generated *.c files. This
 # applies to:
 #
 #     parse.o
 #     opcodes.o
+#
+%.o: %.c $(HDR)
+	$(TCCX) -c $<
+
+# Rules to build individual *.o files from files in the src directory.
 #
 %.o: $(TOP)/src/%.c $(HDR)
 	$(TCCX) -c $<

@@ -1945,7 +1945,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.55 $
+# $Revision: 1.56 $
 
 #########
 # Programs needed
@@ -20823,7 +20823,7 @@ fi
 
 #########
 # Output the config header
-ac_config_headers="$ac_config_headers src/config.h"
+ac_config_headers="$ac_config_headers config.h"
 
 
 #########
@@ -21385,7 +21385,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "src/config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/config.h" ;;
+    "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "sqlite3.pc") CONFIG_FILES="$CONFIG_FILES sqlite3.pc" ;;
 

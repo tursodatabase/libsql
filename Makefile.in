@@ -164,7 +164,6 @@ SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
   $(TOP)/src/complete.c \
-  $(TOP)/src/config.h \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -234,6 +233,7 @@ SRC += \
   opcodes.h \
   parse.c \
   parse.h \
+  config.h \
   sqlite3.h
 
 # Source code for extensions
@@ -345,7 +345,7 @@ HDR = \
    $(TOP)/src/vdbe.h \
    $(TOP)/src/vdbeInt.h \
    parse.h \
-   $(TOP)/src/config.h
+   config.h
 
 # Header files used by extensions
 #

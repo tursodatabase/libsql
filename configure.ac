@@ -92,7 +92,7 @@ AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.41 $
+# $Revision: 1.42 $
 
 #########
 # Programs needed
@@ -615,7 +615,7 @@ AC_SUBST(LOADEXTENSION_FLAGS)
 
 #########
 # Output the config header
-AC_CONFIG_HEADERS(src/config.h)
+AC_CONFIG_HEADERS(config.h)
 
 #########
 # Generate the output files.

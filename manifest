@@ -1,7 +1,7 @@
-C Fix\sthe\sload-extension\smechanism\sso\sthat\stests\sbuild\swith\sor\swithout\sit.\nThis\scheck-in\salso\sincludes\sprototypes\sfor\sthe\snew\ssqlite3_limit()\ninterface,\sbut\sno\simplementation.\s(CVS\s4892)
-D 2008-03-20T00:32:20
+C Make\sout-of-tree\sbuilds\swork\sas\sexpected\swhen\susing\sconfigure\sscript\s(CVS\s4893)
+D 2008-03-20T02:25:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in 90256feffbc822b56e4ad0ebaa62f5871c8f0334
+F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 7a41970464b74225915bcaf9d76efd01f26e08f9
@@ -15,9 +15,11 @@ F art/SQLite_big.gif 2b8e4603b91ba2a2c7062a82ff570d945034bb30
 F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess dba2d1300ec8f8cd00c6fb44b9edde21c14e960c
+F config.h 5e461e321e0a56f1762da44eece1fe971ebdba3e
+F config.h.in feb93ab9f7703907947aadd3bcff7c6e790920bd
 F config.sub 9a842e7c332ed65cef3f2c20354e06dc998b2796
-F configure d9527c8194653e4f53034f7eb81455d9359d18ab x
-F configure.ac 19f513f0020508f5216e92549a734e5be12cba44
+F configure b32b2b216a0c7804b5031953c217e32fb0effd41 x
+F configure.ac 18befb6052e69653b1914a3d3d6ee4d25ba75674
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -64,7 +66,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk e6715c0ad8d7350d7ec9e1d8693c665b52fa1c5c
+F main.mk fb8589de4dff06de85d456ba9d6191447111a61b
 F mkdll.sh 712e74f3efe08a6ba12b2945d018a29a89d7fe3b
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -90,8 +92,6 @@ F src/btreeInt.h d7d2f4d9d7f2e72c455326d48b2b478b842a81f6
 F src/build.c fa70bc0fb02e4d08202dd6a752ab5f5df5676e50
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
-F src/config.h b60286b542f5284d529b659adcb9c9d25eecab20
-F src/config.h.in 343f19cacc74d4baf84a4af701b5bb44419642ff
 F src/date.c 7b80383c47beafd9b49f2c1be65a72747593c4e1
 F src/delete.c 217cd5559e00bb135dc626d4ea4ac713604729e8
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7b9682c65f545b09d410173cf282f7c4f4438097
-R 76d2140ea564d8c5d493dbf1333aa75b
-U drh
-Z b969d76f2e36df97ac59ac53a61f759c
+P bee38c2dda50592fef5fedab01311d5486240b95
+R 04225780a6551fd57e8d1ce57e5e35c1
+U mlcreech
+Z fbdd87a89edb04e0bf69569a65fa198b

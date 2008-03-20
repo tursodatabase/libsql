@@ -11,7 +11,7 @@
 *************************************************************************
 ** Default configuration header in case the 'configure' script is not used
 **
-** @(#) $Id: config.h,v 1.1 2008/03/06 07:36:18 mlcreech Exp $
+** @(#) $Id: config.h,v 1.1 2008/03/20 02:25:35 mlcreech Exp $
 */
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
