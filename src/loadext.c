@@ -436,13 +436,15 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
   return SQLITE_OK;
 }
 
-#endif /* SQLITE_OMIT_LOADEXTENSION */
+#endif /* SQLITE_OMIT_LOAD_EXTENSION */
 
 /*
-** The following code is added regardless of whether or not extension
-** loading is supported.
+** The auto-extension code added regardless of whether or not extension
+** loading is supported.  We need a dummy sqlite3Apis pointer for that
+** code if regular extension loading is not available.  This is that
+** dummy pointer.
 */
-#ifdef SQLITE_OMIT_LOAD_EXTENSTION
+#ifdef SQLITE_OMIT_LOAD_EXTENSION
 const sqlite3_api_routines sqlite3Apis = { 0 };
 #endif
 
@@ -501,9 +503,6 @@ void sqlite3_reset_auto_extension(void){
   sqlite3_mutex_leave(mutex);
 }
 
-
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
-
 /*
 ** Load all automatic extensions.
 */
@@ -539,5 +538,3 @@ int sqlite3AutoLoadExtensions(sqlite3 *db){
   }
   return rc;
 }
-
-#endif /* SQLITE_OMIT_LOADEXTENSION */

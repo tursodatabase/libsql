@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.294 2008/03/19 21:45:51 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.295 2008/03/20 00:32:20 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2154,6 +2154,68 @@ const void *sqlite3_errmsg16(sqlite3*);
 ** information.
 */
 typedef struct sqlite3_stmt sqlite3_stmt;
+
+/*
+** CAPI3REF: Run-time Limits {F12760}
+**
+** This interface allows the size of various constructs to be limited
+** on a connection by connection basis.  The first parameter is the
+** [database connection] whose limit is to be set or queried.  The
+** second parameter is one of the [limit categories] that define a
+** class of constructs to be size limited.  The third parameter is the
+** new limit for that construct.  The function returns the old limit.
+**
+** If the new limit is a negative number, the limit is unchanged.
+** If the new limit is zero, the construct becomes unlimited.  Actually,
+** there is a hard upper bound on the size of all constructs that
+** is determined at compile-time.  For the limit category of 
+** SQLITE_LIMIT_XYZ the hard upper bound is the compile-time
+** constant SQLITE_MAX_XYZ.  Attempts to increase a limit above its
+** hard upper bound are silently truncated.
+**
+** This interface is currently considered experimental and is subject
+** to change or removal without prior notice.
+**
+** INVARIANTS:
+**
+** {F12763} A successful call to [sqlite3_limit(D,C,V)] where V is
+**          positive changes the
+**          limit on the size of construct C in [database connetion] D
+**          to the lessor of V and the hard upper bound on the size
+**          of C that is set at compile-time.
+**
+** {F12763} A successful call to [sqlite3_limit(D,C,V)] where V is zero
+**          changes the limit on the size of construct C in
+**          [database connetion] D to be the hard upper bound on the size
+**          of C that is set at compile-time.
+**
+** {F12766} A successful call to [sqlite3_limit(D,C,V)] where V is negative
+**          leaves the state of [database connection] D unchanged.
+**
+** {F12769} A successful call to [sqlite3_limit(D,C,V)] returns the
+**          value of the limit on the size of construct C in
+**          in [database connetion] D as it was prior to the call.
+*/
+int sqlite3_limit(sqlite3*, int id, int newVal);
+
+/*
+** CAPI3REF: Run-Time Limit Categories {F12790}
+** KEYWORDS: {limit category} {limit categories}
+** 
+** These constants define various aspects of a [database connection]
+** that can be limited in size by calls to [sqlite3_limit()].
+*/
+#define SQLITE_LIMIT_LENGTH                    0
+#define SQLITE_LIMIT_SQL_LENGTH                1
+#define SQLITE_LIMIT_COLUMN                    2
+#define SQLITE_LIMIT_EXPR_DEPTH                3
+#define SQLITE_LIMIT_COMPOUND_SELECT           4
+#define SQLITE_LIMIT_VDBE_OP                   5
+#define SQLITE_LIMIT_FUNCTION_ARG              6
+#define SQLITE_LIMIT_ATTACHED                  7
+#define SQLITE_LIMIT_PAGE_COUNT                8
+#define SQLITE_LIMIT_LIKE_PATTERN_LENGTH       9
+#define SQLITE_LIMIT_VARIABLE_NUMBER          10
 
 /*
 ** CAPI3REF: Compiling An SQL Statement {F13010}

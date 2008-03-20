@@ -1,5 +1,5 @@
-C Fix\sbuild\swhether\scompiling\swith\sor\swithout\sauto-extension\senabled\s(CVS\s4891)
-D 2008-03-19T23:52:35
+C Fix\sthe\sload-extension\smechanism\sso\sthat\stests\sbuild\swith\sor\swithout\sit.\nThis\scheck-in\salso\sincludes\sprototypes\sfor\sthe\snew\ssqlite3_limit()\ninterface,\sbut\sno\simplementation.\s(CVS\s4892)
+D 2008-03-20T00:32:20
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 90256feffbc822b56e4ad0ebaa62f5871c8f0334
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/insert.c 358c80592c20a61a8d5b4a127215b5e25de652f4
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c cb1939fdeb91ea88fb44fbd2768a10e14bc44650
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
-F src/loadext.c 841cf403aa17b9f81655575ea1319bfa256906ad
+F src/loadext.c f26b22f7c84153c9d5dbd7c240848823c6e6b6dc
 F src/main.c bb31f65f7b1870825a4c9a31f19354d566b7633c
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
@@ -139,9 +139,9 @@ F src/random.c 8b6ab5418cf0f4dde551730825d67da1457c2b3c
 F src/select.c d0a1e01a2a6c05bd60324e843c7e4581d3605950
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
-F src/sqlite.h.in d8acd2881bdd1def5dfcc280ebc86a60f248ba0b
+F src/sqlite.h.in c82088b99b3262c017ddadc14d45b2d5877cbeae
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h e7596d5491f65aafe00c0f63f41aedf2a8e007a3
+F src/sqliteInt.h ed823fb087e57a09762bc1f4e0935761a8d57c7b
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
 F src/tclsqlite.c d42912617d4734b8f9195416badf5b27e512ded2
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 41d6ca31acbc0bd8555e5487ba3b695db5c9a81a
-R 693688e3ad80e102aa500e44231d652a
-U mlcreech
-Z 7c18fbe1ac8b3b0218100603a8bf0e3e
+P 7b9682c65f545b09d410173cf282f7c4f4438097
+R 76d2140ea564d8c5d493dbf1333aa75b
+U drh
+Z b969d76f2e36df97ac59ac53a61f759c

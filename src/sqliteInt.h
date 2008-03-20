@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.674 2008/03/19 14:15:35 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.675 2008/03/20 00:32:20 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -531,6 +531,11 @@ struct Schema {
 #define DB_UnresetViews    0x0002  /* Some views have defined column names */
 #define DB_Empty           0x0004  /* The file is empty (length 0 bytes) */
 
+/*
+** The number of different kinds of things that can be limited
+** using the sqlite3_limit() interface.
+*/
+#define SQLITE_N_LIMIT (SQLITE_LIMIT_VARIABLE_NUMBER+1)
 
 /*
 ** Each database is an instance of the following structure.
@@ -578,6 +583,7 @@ struct sqlite3 {
   int nChange;                  /* Value returned by sqlite3_changes() */
   int nTotalChange;             /* Value returned by sqlite3_total_changes() */
   sqlite3_mutex *mutex;         /* Connection mutex */
+  int aLimit[SQLITE_N_LIMIT];   /* Limits */
   struct sqlite3InitInfo {      /* Information used during initialization */
     int iDb;                    /* When back is being initialized */
     int newTnum;                /* Rootpage of table being initialized */
@@ -2064,12 +2070,11 @@ void *sqlite3ParserAlloc(void*(*)(size_t));
 void sqlite3ParserFree(void*, void(*)(void*));
 void sqlite3Parser(void*, int, Token, Parse*);
 
+int sqlite3AutoLoadExtensions(sqlite3*);
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   void sqlite3CloseExtensions(sqlite3*);
-  int sqlite3AutoLoadExtensions(sqlite3*);
 #else
 # define sqlite3CloseExtensions(X)
-# define sqlite3AutoLoadExtensions(X)  SQLITE_OK
 #endif
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
