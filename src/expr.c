@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.355 2008/03/20 14:03:29 drh Exp $
+** $Id: expr.c,v 1.356 2008/03/20 16:30:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -696,10 +696,10 @@ no_mem:
 void sqlite3ExprListCheckLength(
   Parse *pParse,
   ExprList *pEList,
-  int iLimit,
   const char *zObject
 ){
-  if( pEList && pEList->nExpr>iLimit ){
+  int mx = pParse->db->aLimit[SQLITE_LIMIT_COLUMN];
+  if( pEList && pEList->nExpr>mx ){
     sqlite3ErrorMsg(pParse, "too many columns in %s", zObject);
   }
 }

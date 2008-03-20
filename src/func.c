@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.190 2008/03/20 14:03:29 drh Exp $
+** $Id: func.c,v 1.191 2008/03/20 16:30:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -243,7 +243,7 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 ** allocation fails, call sqlite3_result_error_nomem() to notify
 ** the database handle that malloc() has failed.
 */
-static void *contextMalloc(sqlite3_context *context, int nByte){
+static void *contextMalloc(sqlite3_context *context, i64 nByte){
   char *z;
   if( nByte>sqlite3_context_db_handle(context)->aLimit[SQLITE_LIMIT_LENGTH] ){
     sqlite3_result_error_toobig(context);
@@ -270,7 +270,7 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   /* Verify that the call to _bytes() does not invalidate the _text() pointer */
   assert( z2==(char*)sqlite3_value_text(argv[0]) );
   if( z2 ){
-    z1 = contextMalloc(context, n+1);
+    z1 = contextMalloc(context, ((i64)n)+1);
     if( z1 ){
       memcpy(z1, z2, n+1);
       for(i=0; z1[i]; i++){
@@ -290,7 +290,7 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   /* Verify that the call to _bytes() does not invalidate the _text() pointer */
   assert( z2==(char*)sqlite3_value_text(argv[0]) );
   if( z2 ){
-    z1 = contextMalloc(context, n+1);
+    z1 = contextMalloc(context, ((i64)n)+1);
     if( z1 ){
       memcpy(z1, z2, n+1);
       for(i=0; z1[i]; i++){
@@ -694,7 +694,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       char const *zBlob = sqlite3_value_blob(argv[0]);
       int nBlob = sqlite3_value_bytes(argv[0]);
       assert( zBlob==sqlite3_value_blob(argv[0]) ); /* No encoding change */
-      zText = (char *)contextMalloc(context, (2*nBlob)+4); 
+      zText = (char *)contextMalloc(context, (2*(i64)nBlob)+4); 
       if( zText ){
         int i;
         for(i=0; i<nBlob; i++){
@@ -718,7 +718,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 
       if( zArg==0 ) return;
       for(i=0, n=0; zArg[i]; i++){ if( zArg[i]=='\'' ) n++; }
-      z = contextMalloc(context, i+n+3);
+      z = contextMalloc(context, ((i64)i)+((i64)n)+3);
       if( z ){
         z[0] = '\'';
         for(i=0, j=1; zArg[i]; i++){
@@ -751,7 +751,7 @@ static void hexFunc(
   pBlob = sqlite3_value_blob(argv[0]);
   n = sqlite3_value_bytes(argv[0]);
   assert( pBlob==sqlite3_value_blob(argv[0]) );  /* No encoding change */
-  z = zHex = contextMalloc(context, n*2 + 1);
+  z = zHex = contextMalloc(context, ((i64)n)*2 + 1);
   if( zHex ){
     for(i=0; i<n; i++, pBlob++){
       unsigned char c = *pBlob;
@@ -818,7 +818,7 @@ static void replaceFunc(
   assert( zRep==sqlite3_value_text(argv[2]) );
   nOut = nStr + 1;
   assert( nOut<SQLITE_MAX_LENGTH );
-  zOut = contextMalloc(context, (int)nOut);
+  zOut = contextMalloc(context, (i64)nOut);
   if( zOut==0 ){
     return;
   }
@@ -895,7 +895,7 @@ static void trimFunc(
       SQLITE_SKIP_UTF8(z);
     }
     if( nChar>0 ){
-      azChar = contextMalloc(context, nChar*(sizeof(char*)+1));
+      azChar = contextMalloc(context, ((i64)nChar)*(sizeof(char*)+1));
       if( azChar==0 ){
         return;
       }

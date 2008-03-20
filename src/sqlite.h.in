@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.296 2008/03/20 14:03:29 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.297 2008/03/20 16:30:18 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2245,9 +2245,6 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** <dt>SQLITE_LIMIT_ATTACHED</dt>
 ** <dd>The maximum number of attached databases.</dd>
 **
-** <dt>SQLITE_LIMIT_PAGE_COUNT</dt>
-** <dd>The maximum number of pages in a database.</dd>
-**
 ** <dt>SQLITE_LIMIT_LIKE_PATTERN_LENGTH</dt>
 ** <dd>The maximum length of the pattern argument to the LIKE or
 ** GLOB operators.</dd>
@@ -2265,9 +2262,8 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 #define SQLITE_LIMIT_VDBE_OP                   5
 #define SQLITE_LIMIT_FUNCTION_ARG              6
 #define SQLITE_LIMIT_ATTACHED                  7
-#define SQLITE_LIMIT_PAGE_COUNT                8
-#define SQLITE_LIMIT_LIKE_PATTERN_LENGTH       9
-#define SQLITE_LIMIT_VARIABLE_NUMBER          10
+#define SQLITE_LIMIT_LIKE_PATTERN_LENGTH       8
+#define SQLITE_LIMIT_VARIABLE_NUMBER           9
 
 /*
 ** CAPI3REF: Compiling An SQL Statement {F13010}

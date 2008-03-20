@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.426 2008/03/20 14:03:29 drh Exp $
+** $Id: main.c,v 1.427 2008/03/20 16:30:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -933,7 +933,7 @@ static int createCollation(
 ** initializer must be kept in sync with the SQLITE_LIMIT_*
 ** #defines in sqlite3.h.
 */
-static const aHardLimit[] = {
+static const int aHardLimit[] = {
   SQLITE_MAX_LENGTH,
   SQLITE_MAX_SQL_LENGTH,
   SQLITE_MAX_COLUMN,
@@ -942,7 +942,6 @@ static const aHardLimit[] = {
   SQLITE_MAX_VDBE_OP,
   SQLITE_MAX_FUNCTION_ARG,
   SQLITE_MAX_ATTACHED,
-  SQLITE_MAX_PAGE_COUNT,
   SQLITE_MAX_LIKE_PATTERN_LENGTH,
   SQLITE_MAX_VARIABLE_NUMBER,
 };
@@ -976,9 +975,6 @@ static const aHardLimit[] = {
 #endif
 #if SQLITE_MAX_ATTACH<0 || SQLITE_MAX_ATTACH>30
 # error SQLITE_MAX_ATTACH must be between 0 and 30
-#endif
-#if SQLITE_MAX_PAGE_COUNT<1
-# error SQLITE_MAX_PAGE_COUNT must be at least 1
 #endif
 #if SQLITE_MAX_LIKE_PATTERN_LENGTH<1
 # error SQLITE_MAX_LIKE_PATTERN_LENGTH must be at least 1

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.293 2008/03/19 14:15:35 drh Exp $
+** $Id: test1.c,v 1.294 2008/03/20 16:30:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4321,6 +4321,62 @@ static int file_control_test(
 }
 
 /*
+** tclcmd:   sqlite3_limit DB ID VALUE
+**
+** This TCL command runs the sqlite3_limit interface and
+** verifies correct operation of the same.
+*/
+static int test_limit(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  int rc;
+  static const struct {
+     char *zName;
+     int id;
+  } aId[] = {
+    { "SQLITE_LIMIT_LENGTH",              SQLITE_LIMIT_LENGTH               },
+    { "SQLITE_LIMIT_SQL_LENGTH",          SQLITE_LIMIT_SQL_LENGTH           },
+    { "SQLITE_LIMIT_COLUMN",              SQLITE_LIMIT_COLUMN               },
+    { "SQLITE_LIMIT_EXPR_DEPTH",          SQLITE_LIMIT_EXPR_DEPTH           },
+    { "SQLITE_LIMIT_COMPOUND_SELECT",     SQLITE_LIMIT_COMPOUND_SELECT      },
+    { "SQLITE_LIMIT_VDBE_OP",             SQLITE_LIMIT_VDBE_OP              },
+    { "SQLITE_LIMIT_FUNCTION_ARG",        SQLITE_LIMIT_FUNCTION_ARG         },
+    { "SQLITE_LIMIT_ATTACHED",            SQLITE_LIMIT_ATTACHED             },
+    { "SQLITE_LIMIT_LIKE_PATTERN_LENGTH", SQLITE_LIMIT_LIKE_PATTERN_LENGTH  },
+    { "SQLITE_LIMIT_VARIABLE_NUMBER",     SQLITE_LIMIT_VARIABLE_NUMBER      },
+  };
+  int i, id;
+  int val;
+  const char *zId;
+
+  if( objc!=4 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " DB ID VALUE", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zId = Tcl_GetString(objv[2]);
+  for(i=0; i<sizeof(aId)/sizeof(aId[0]); i++){
+    if( strcmp(zId, aId[i].zName)==0 ){
+      id = aId[i].id;
+      break;
+    }
+  }
+  if( i>=sizeof(aId)/sizeof(aId[0]) ){
+    Tcl_AppendResult(interp, "unknown limit type: ", zId, (char*)0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[3], &val) ) return TCL_ERROR;
+  rc = sqlite3_limit(db, id, val);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;  
+}
+
+/*
 ** tclcmd:  save_prng_state
 */
 static int save_prng_state(
@@ -4456,6 +4512,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_load_extension",        test_load_extension,     0},
      { "sqlite3_enable_load_extension", test_enable_load,        0},
      { "sqlite3_extended_result_codes", test_extended_result_codes, 0},
+     { "sqlite3_limit",                 test_limit,                 0},
 
      { "save_prng_state",               save_prng_state,    0 },
      { "restore_prng_state",            restore_prng_state, 0 },

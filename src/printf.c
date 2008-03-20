@@ -735,14 +735,17 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
         return;
       }
     }else{
-      p->nAlloc += p->nAlloc + N + 1;
-      if( p->nAlloc > p->mxAlloc ){
+      i64 szNew = p->nAlloc;
+      szNew += N + 1;
+      if( szNew > p->mxAlloc ){
         p->nAlloc = p->mxAlloc;
-        if( p->nChar+N >= p->nAlloc ){
+        if( ((i64)p->nChar)+((i64)N) >= p->nAlloc ){
           sqlite3StrAccumReset(p);
           p->tooBig = 1;
           return;
         }
+      }else{
+        p->nAlloc = szNew;
       }
       zNew = sqlite3_malloc( p->nAlloc );
       if( zNew ){
