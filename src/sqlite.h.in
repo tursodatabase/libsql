@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.297 2008/03/20 16:30:18 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.298 2008/03/20 18:00:49 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1619,14 +1619,14 @@ void sqlite3_randomness(int N, void *P);
 ** CAPI3REF: Compile-Time Authorization Callbacks {F12500}
 **
 ** This routine registers a authorizer callback with a particular
-** database connection, supplied in the first argument.
+** [database connection], supplied in the first argument.
 ** The authorizer callback is invoked as SQL statements are being compiled
 ** by [sqlite3_prepare()] or its variants [sqlite3_prepare_v2()],
 ** [sqlite3_prepare16()] and [sqlite3_prepare16_v2()].  At various
 ** points during the compilation process, as logic is being created
 ** to perform various actions, the authorizer callback is invoked to
 ** see if those actions are allowed.  The authorizer callback should
-** return SQLITE_OK to allow the action, [SQLITE_IGNORE] to disallow the
+** return [SQLITE_OK] to allow the action, [SQLITE_IGNORE] to disallow the
 ** specific action but allow the SQL statement to continue to be
 ** compiled, or [SQLITE_DENY] to cause the entire SQL statement to be
 ** rejected with an error.   If the authorizer callback returns
@@ -1639,9 +1639,9 @@ void sqlite3_randomness(int N, void *P);
 ** [sqlite3_prepare_v2()] or equivalent call that triggered the
 ** authorizer will fail with an error message explaining that
 ** access is denied.  If the authorizer code is [SQLITE_READ]
-** and the callback returns [SQLITE_IGNORE] then the prepared
-** statement is constructed to insert a NULL value in place of
-** the table column that would have
+** and the callback returns [SQLITE_IGNORE] then the
+** [prepared statement] statement is constructed to substitute
+** a NULL value in place of the table column that would have
 ** been read if [SQLITE_OK] had been returned.  The [SQLITE_IGNORE]
 ** return can be used to deny an untrusted user access to individual
 ** columns of a table.
@@ -1654,7 +1654,8 @@ void sqlite3_randomness(int N, void *P);
 ** parameters to the callback are zero-terminated strings that contain 
 ** additional details about the action to be authorized.
 **
-** An authorizer is used when preparing SQL statements from an untrusted
+** An authorizer is used when [sqlite3_prepare | preparing]
+** SQL statements from an untrusted
 ** source, to ensure that the SQL statements do not try to access data
 ** that they are not allowed to see, or that they do not try to
 ** execute malicious statements that damage the database.  For
@@ -1662,8 +1663,13 @@ void sqlite3_randomness(int N, void *P);
 ** SQL queries for evaluation by a database.  But the application does
 ** not want the user to be able to make arbitrary changes to the
 ** database.  An authorizer could then be put in place while the
-** user-entered SQL is being prepared that disallows everything
-** except SELECT statements.  
+** user-entered SQL is being [sqlite3_prepare | prepared] that
+** disallows everything except [SELECT] statements.
+**
+** Applications that need to process SQL from untrusted sources
+** might also consider lowering resource limits using [sqlite3_limit()]
+** and limiting database size using the [max_page_count] [PRAGMA]
+** in addition to using an authorizer.
 **
 ** Only a single authorizer can be in place on a database connection
 ** at a time.  Each call to sqlite3_set_authorizer overrides the
@@ -2166,35 +2172,37 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** new limit for that construct.  The function returns the old limit.
 **
 ** If the new limit is a negative number, the limit is unchanged.
-** If the new limit is zero, the construct becomes unlimited.  Actually,
-** there is a hard upper bound on the size of all constructs that
-** is determined at compile-time.  For the limit category of 
-** SQLITE_LIMIT_XYZ the hard upper bound is the compile-time
-** constant SQLITE_MAX_XYZ.  Attempts to increase a limit above its
-** hard upper bound are silently truncated.
+** For the limit category of SQLITE_LIMIT_XYZ there is a hard upper
+** bound set by a compile-time C-preprocess macro named SQLITE_MAX_XYZ.
+** (The "_LIMIT_" in the name is changed to "_MAX_".)
+** Attempts to increase a limit above its hard upper bound are
+** silently truncated to the hard upper limit.
 **
 ** Run time limits are intended for use in applications that manage
 ** both their own internal database and also databases that are controlled
 ** by untrusted external sources.  An example application might be a
 ** webbrowser that has its own databases for storing history and
 ** separate databases controlled by javascript applications downloaded
-** of the internet.  The internal databases can be given the
+** off the internet.  The internal databases can be given the
 ** large, default limits.  Databases managed by external sources can
 ** be given much smaller limits designed to prevent a denial of service
-** attach.
+** attach.  Developers might also want to use the [sqlite3_set_authorizer()]
+** interface to further control untrusted SQL.  The size of the database
+** created by an untrusted script can be contained using the
+** [max_page_count] [PRAGMA].
 **
 ** This interface is currently considered experimental and is subject
 ** to change or removal without prior notice.
 **
 ** INVARIANTS:
 **
-** {F12763} A successful call to [sqlite3_limit(D,C,V)] where V is
+** {F12762} A successful call to [sqlite3_limit(D,C,V)] where V is
 **          positive changes the
 **          limit on the size of construct C in [database connection] D
 **          to the lessor of V and the hard upper bound on the size
 **          of C that is set at compile-time.
 **
-** {F12763} A successful call to [sqlite3_limit(D,C,V)] where V is zero
+** {F12764} A successful call to [sqlite3_limit(D,C,V)] where V is zero
 **          changes the limit on the size of construct C in
 **          [database connection] D to be the hard upper bound on the size
 **          of C that is set at compile-time.

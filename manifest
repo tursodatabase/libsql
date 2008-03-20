@@ -1,5 +1,5 @@
-C Reinstate\stest\scases\sfor\sthe\slimit\stests.\s\sThe\ssqlite3_limit()\sAPI\sis\snow\ntested\sand\sworking.\s(CVS\s4899)
-D 2008-03-20T16:30:18
+C In\sthe\ssqlite3_limit()\sinterface,\stake\sout\sthe\sfeature\swhere\szero\smeans\nuse\sthe\shard\supper\sbound.\s\sIf\san\sapplication\swants\sthe\shard\supper\sbound,\nit\scan\sset\sthe\slimit\sto\s0x7fffffff\sand\sthe\sbound\swill\sbe\sautomatically\ntruncated.\s(CVS\s4900)
+D 2008-03-20T18:00:49
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/insert.c 358c80592c20a61a8d5b4a127215b5e25de652f4
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c cb1939fdeb91ea88fb44fbd2768a10e14bc44650
 F src/loadext.c f26b22f7c84153c9d5dbd7c240848823c6e6b6dc
-F src/main.c 24711c8e40107aad521eaa56ddf16068222061db
+F src/main.c f9c9a666f0cc5f5a4b768e48d12c1d1e65bf9b36
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
@@ -138,7 +138,7 @@ F src/random.c 8b6ab5418cf0f4dde551730825d67da1457c2b3c
 F src/select.c 2a0f383a16c780b8ee8108e994c2f6c4f82233a9
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
-F src/sqlite.h.in 8c9d194ccb6b2b0d00078192c2c4f92d46a7abe4
+F src/sqlite.h.in b18c4cb006f16237aa044200ddd6a16cf4b7457c
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h c96aca7c69ba463ee09eac19b1ac9974752b467e
 F src/sqliteLimit.h eecbc288b410ae5565e71aaa4a439aae57bb0707
@@ -450,7 +450,7 @@ F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test 20d8ea20bea3ca09c3ef3b5ec820a17e58e132cb
-F test/sqllimits1.test 9ecac01f2f51e3f5f7407a53af2483d096a3f540
+F test/sqllimits1.test 844c594775e5e34b3fdfea09ff52e2ea273834bf
 F test/subquery.test 8203f85db56ba022a57a0589890090c8feed4e59
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 53b4a09040341a981b2f33399a1ddcee952ba3ef
-R aff205d8a20c135ccafeedae04a2e788
+P 4c4be4c3c8aae97f1d85442b25afba9f0b02c8b3
+R 10f06e62355868edd7f0d48570d09623
 U drh
-Z e01b238f8fcef143071d3d310a36fa66
+Z 5ee7e525e24d3023d636da94fdb9521e
