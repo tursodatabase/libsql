@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.76 2008/01/03 00:01:25 drh Exp $
+** $Id: vacuum.c,v 1.77 2008/03/20 11:04:21 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -85,6 +85,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   char *zSql = 0;         /* SQL statements */
   int saved_flags;        /* Saved value of the db->flags */
   Db *pDb = 0;            /* Database to detach at end of vacuum */
+  int nRes;
 
   /* Save the current value of the write-schema flag before setting it. */
   saved_flags = db->flags;
@@ -112,13 +113,15 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   pDb = &db->aDb[db->nDb-1];
   assert( strcmp(db->aDb[db->nDb-1].zName,"vacuum_db")==0 );
   pTemp = db->aDb[db->nDb-1].pBt;
-  sqlite3BtreeSetPageSize(pTemp, sqlite3BtreeGetPageSize(pMain),
-     sqlite3BtreeGetReserve(pMain));
-  if( db->mallocFailed ){
+
+  nRes = sqlite3BtreeGetReserve(pMain);
+  if( sqlite3BtreeSetPageSize(pTemp, sqlite3BtreeGetPageSize(pMain), nRes)
+   || sqlite3BtreeSetPageSize(pTemp, db->nextPagesize, nRes)
+   || db->mallocFailed 
+  ){
     rc = SQLITE_NOMEM;
     goto end_of_vacuum;
   }
-  assert( sqlite3BtreeGetPageSize(pTemp)==sqlite3BtreeGetPageSize(pMain) );
   rc = execSql(db, "PRAGMA vacuum_db.synchronous=OFF");
   if( rc!=SQLITE_OK ){
     goto end_of_vacuum;
@@ -235,6 +238,10 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
     rc = sqlite3BtreeCommit(pTemp);
     if( rc!=SQLITE_OK ) goto end_of_vacuum;
     rc = sqlite3BtreeCommit(pMain);
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3BtreeSetPageSize(pMain, sqlite3BtreeGetPageSize(pTemp), nRes);
   }
 
 end_of_vacuum:

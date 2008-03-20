@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.675 2008/03/20 00:32:20 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.676 2008/03/20 11:04:21 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -575,6 +575,7 @@ struct sqlite3 {
   u8 temp_store;                /* 1: file 2: memory 0: default */
   u8 mallocFailed;              /* True if we have seen a malloc failure */
   signed char nextAutovac;      /* Autovac setting after VACUUM if >=0 */
+  int nextPagesize;             /* Pagesize after VACUUM if >0 */
   int nTable;                   /* Number of tables in the database */
   CollSeq *pDfltColl;           /* The default collating sequence (BINARY) */
   i64 lastRowid;                /* ROWID of most recent insert (see above) */

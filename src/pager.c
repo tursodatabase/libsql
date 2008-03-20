@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.419 2008/03/20 04:45:49 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.420 2008/03/20 11:04:21 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4502,6 +4502,17 @@ static int pager_incr_changecounter(Pager *pPager, int isDirect){
 }
 
 /*
+** Sync the pager file to disk.
+*/
+int sqlite3PagerSync(Pager *pPager){
+  int rc;
+  pagerEnter(pPager);
+  rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
+  pagerLeave(pPager);
+  return rc;
+}
+
+/*
 ** Sync the database file for the pager pPager. zMaster points to the name
 ** of a master journal file that should be written into the individual
 ** journal file. zMaster may be NULL, which is interpreted as no master
@@ -4517,8 +4528,18 @@ static int pager_incr_changecounter(Pager *pPager, int isDirect){
 **
 ** If parameter nTrunc is non-zero, then the pager file is truncated to
 ** nTrunc pages (this is used by auto-vacuum databases).
+**
+** If the final parameter - noSync - is true, then the database file itself
+** is not synced. The caller must call sqlite3PagerSync() directly to
+** sync the database file before calling CommitPhaseTwo() to delete the
+** journal file in this case.
 */
-int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
+int sqlite3PagerCommitPhaseOne(
+  Pager *pPager, 
+  const char *zMaster, 
+  Pgno nTrunc,
+  int noSync
+){
   int rc = SQLITE_OK;
 
   PAGERTRACE4("DATABASE SYNC: File=%s zMaster=%s nTrunc=%d\n", 
@@ -4630,7 +4651,7 @@ int sqlite3PagerCommitPhaseOne(Pager *pPager, const char *zMaster, Pgno nTrunc){
     pPager->pDirty = 0;
 
     /* Sync the database file. */
-    if( !pPager->noSync ){
+    if( !pPager->noSync && !noSync ){
       rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
     }
     IOTRACE(("DBSYNC %p\n", pPager))

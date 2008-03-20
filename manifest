@@ -1,5 +1,5 @@
-C stick\severything\sthat\ssqlite\slinks\sagainst\sinto\sLibs.private\s(CVS\s4895)
-D 2008-03-20T10:44:43
+C Allow\sa\sVACUUM\soperation\sto\schange\sthe\spage-size\sin\sthe\ssame\sway\sas\sit\scan\sbe\sused\sto\schange\sa\sdatabase\sbetween\sauto-vacuum\sand\snormal\smode.\s(CVS\s4896)
+D 2008-03-20T11:04:21
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -86,7 +86,7 @@ F src/attach.c e7cf4ae2a2c8ebd554dc6ca06859b587fa7197c2
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c fac68429a9916a50229c4ab88abb69c00c438f7f
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 439e2684892d2b70996dc3c5fba25e07949e1d84
+F src/btree.c 77304a2086a9089fe5e5ee8861248b72d6cca5d6
 F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
 F src/btreeInt.h d7d2f4d9d7f2e72c455326d48b2b478b842a81f6
 F src/build.c fa70bc0fb02e4d08202dd6a752ab5f5df5676e50
@@ -105,7 +105,7 @@ F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c cb1939fdeb91ea88fb44fbd2768a10e14bc44650
 F src/limits.h 71ab25f17e35e0a9f3f6f234b8ed49cc56731d35
 F src/loadext.c f26b22f7c84153c9d5dbd7c240848823c6e6b6dc
-F src/main.c bb31f65f7b1870825a4c9a31f19354d566b7633c
+F src/main.c 9dd4646a7dadcde7efa36c2904792f992872b2bc
 F src/malloc.c 60e392a4c12c839517f9b0db7b995f825444fb35
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
@@ -129,10 +129,10 @@ F src/os_unix.c fdec4e5ee5dd555a6ad4a69f38ab35f0788536b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c d3448e060afc840be75b09c83501e5f8c13bac54
-F src/pager.h 8174615ffd14ccc2cad2b081b919a398fa95e3f9
+F src/pager.c 22241b59c80ca083a96816df434adb8c097afcd4
+F src/pager.h b1e2258f03878c14b06a95bfa362e8c5c9638170
 F src/parse.y 00f2698c8ae84f315be5e3f10b63c94f531fdd6d
-F src/pragma.c 09128fe3e2b5108d322a66b19a6f2974dac64479
+F src/pragma.c f64eed914518c28d1863356163dea1e6f58e28f2
 F src/prepare.c 88e32e985921e9fb5d3ca22ccc74e054ebfe49f2
 F src/printf.c eb27822ba2eec669161409ca31279a24c26ac910
 F src/random.c 8b6ab5418cf0f4dde551730825d67da1457c2b3c
@@ -141,12 +141,12 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in c82088b99b3262c017ddadc14d45b2d5877cbeae
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h ed823fb087e57a09762bc1f4e0935761a8d57c7b
+F src/sqliteInt.h 160aadae3b44b53b9176d615bbada6b0ba7d00c4
 F src/sqliteLimit.h ee4430f88f69bf63527967bb35ca52af7b0ccb1e
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
 F src/tclsqlite.c d42912617d4734b8f9195416badf5b27e512ded2
 F src/test1.c 935f327fe989694a3aa07ab78ae5c00705651b34
-F src/test2.c 443ccc1bd5717b1001e5558b6f6b33bd34f8b81b
+F src/test2.c da3c4016fc1e08fa1a133ca81591ee8ca99ce8e7
 F src/test3.c 5c7452038ab27aa698070799b10132f26cdd2a80
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
@@ -174,7 +174,7 @@ F src/trigger.c 9bd3b6fa0beff4a02d262c96466f752ec15a7fc3
 F src/update.c d2c59643af98f966c2a04d392463089b715ca18f
 F src/utf.c 32b00d6e19010025e58f2ecb2f921d5e126771b4
 F src/util.c dba9e04121eb17ec4643d6ca231ff859452cf0e2
-F src/vacuum.c 3f34f278809bf3eb0b62ec46ff779e9c385b28f0
+F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
 F src/vdbe.c 86033e43d89892ea6a817e8bcd4e6273bc1ebdf5
 F src/vdbe.h 58a7d931ffb704e034b2a725981cfa5bd406fad9
 F src/vdbeInt.h 76c81d057a39813de0fda3cad1498655d53ec69d
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 79f573cc7be89b3dd5540c45ef132b5cedc98e9b
-R 9c4651c8bf3b341af0787aed67123442
-U vapier
-Z edba339a7453fff69aec5101a9514ca7
+P 8b198617f572d35f04d119ba688e0f5c67f81144
+R a308dd47ecbf55342f9cd3c4b73f760c
+U danielk1977
+Z ca52892929aebf794b5fd5229c74cc6b
