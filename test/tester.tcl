@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.107 2008/03/19 16:08:54 drh Exp $
+# $Id: tester.tcl,v 1.108 2008/03/21 14:22:44 danielk1977 Exp $
 
 
 set tcl_precision 15
@@ -646,7 +646,90 @@ proc allcksum {{db db}} {
   return [md5 $txt]
 }
 
+proc memdebug_log_sql {database} {
+  set data [sqlite3_memdebug_log dump]
+  set nFrame [expr [llength [lindex $data 0]]-2]
 
+  if {$nFrame < 0} { return "" }
+
+  set tbl "CREATE TABLE ${database}.malloc(nCall, nByte"
+  for {set ii 1} {$ii <= $nFrame} {incr ii} {
+    append tbl ", f${ii}"
+  }
+  append tbl ");\n"
+
+  set sql ""
+  foreach e $data {
+    append sql "INSERT INTO ${database}.malloc VALUES([join $e ,]);\n"
+    foreach f [lrange $e 2 end] {
+      set frames($f) 1
+    }
+  }
+
+  set tbl2 "CREATE TABLE ${database}.frame(frame INTEGER PRIMARY KEY, line);\n"
+
+  foreach f [array names frames] {
+    set addr [format %x $f]
+    set cmd "addr2line -e [info nameofexec] $addr"
+    set line [eval exec $cmd]
+    append sql "INSERT INTO ${database}.frame VALUES($f, '$line');\n"
+  }
+
+  return "BEGIN; ${tbl}${tbl2}${sql} ; COMMIT;"
+}
+proc memdebug_log_pp2 {db iLevel iParentFrame iDepth} {
+  set extra 1
+  if {$iParentFrame != 0} {
+    set extra "f[expr $iLevel-1] = $iParentFrame"
+  }
+  set leader [string repeat "         " [expr $iLevel -1]]
+  $db eval "
+    select 
+      sum(ncall) calls, 
+      sum(nbyte) as bytes, 
+      frame,
+      line FROM malloc, 
+      frame WHERE f${iLevel}=frame AND $extra
+      GROUP BY f${iLevel} ORDER BY calls DESC
+  " {
+    puts [format "%s%-10s %10s %s" $leader $calls $bytes $line]
+    if {$iLevel < $iDepth} {
+      memdebug_log_pp2 $db [expr $iLevel + 1] $frame $iDepth
+    }
+  }
+}
+proc memdebug_log_strip {db} {
+  set nFrame [expr [llength [$db eval "SELECT * FROM malloc LIMIT 1"]] - 2]
+
+  set update "UPDATE malloc SET "
+  for {set ii 1} {$ii <= $nFrame} {incr ii} {
+    if {$ii == $nFrame} {
+      append update "f${ii} = 0"
+    } else {
+      append update "f${ii} = f[expr $ii+1], "
+    }
+  }
+  append update "
+    WHERE 
+      (SELECT line FROM frame WHERE frame = f1) LIKE '%malloc.c:%' OR
+      (SELECT line FROM frame WHERE frame = f1) LIKE '%mem2.c:%'
+  "
+
+  $db eval $update
+  $db eval $update
+  $db eval $update
+}
+proc memdebug_log_pp {{iDepth 1}} {
+  set sql [memdebug_log_sql main]
+  if {$sql eq ""} return
+
+  sqlite3 mddb :memory:
+  mddb eval $sql
+  memdebug_log_strip mddb
+
+  memdebug_log_pp2 mddb 1 0 $iDepth
+  mddb close
+}
 
 # Copy file $from into $to. This is used because some versions of
 # TCL for windows (notably the 8.4.1 binary package shipped with the

@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.22 2008/02/19 15:15:16 drh Exp $
+** $Id: mem2.c,v 1.23 2008/03/21 14:22:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -107,6 +107,7 @@ static struct {
   ** The number of levels of backtrace to save in new allocations.
   */
   int nBacktrace;
+  void (*xBacktrace)(int, int, void **);
 
   /*
   ** Title text to insert in front of each block
@@ -286,6 +287,9 @@ void *sqlite3_malloc(int nByte){
         void *aAddr[40];
         pHdr->nBacktrace = backtrace(aAddr, mem.nBacktrace+1)-1;
         memcpy(pBt, &aAddr[1], pHdr->nBacktrace*sizeof(void*));
+	if( mem.xBacktrace ){
+          mem.xBacktrace(nByte, pHdr->nBacktrace-1, &aAddr[1]);
+	}
       }else{
         pHdr->nBacktrace = 0;
       }
@@ -387,6 +391,10 @@ void sqlite3MemdebugBacktrace(int depth){
   if( depth>20 ){ depth = 20; }
   depth = (depth+1)&0xfe;
   mem.nBacktrace = depth;
+}
+
+void sqlite3MemdebugBacktraceCallback(void (*xBacktrace)(int, int, void **)){
+  mem.xBacktrace = xBacktrace;
 }
 
 /*
