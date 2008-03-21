@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.108 2008/03/21 14:22:44 danielk1977 Exp $
+# $Id: tester.tcl,v 1.109 2008/03/21 17:29:38 danielk1977 Exp $
 
 
 set tcl_precision 15
@@ -44,6 +44,15 @@ sqlite3_soft_heap_limit $soft_limit
 # See the sqlite3_memdebug_backtrace() function in mem2.c or
 # test_malloc.c for additional information.
 #
+for {set i 0} {$i<[llength $argv]} {incr i} {
+  if {[lindex $argv $i] eq "--malloctrace"} {
+    set argv [lreplace $argv $i $i]
+    sqlite3_memdebug_backtrace 5
+    sqlite3_memdebug_log start
+    set argv [lreplace $argv $i $i]
+    set tester_do_malloctrace 1
+  }
+}
 for {set i 0} {$i<[llength $argv]} {incr i} {
   if {[regexp {^--backtrace=(\d+)$} [lindex $argv $i] all value]} {
     sqlite3_memdebug_backtrace $value
@@ -230,6 +239,12 @@ proc finalize_testing {} {
   puts "Current memory usage: [sqlite3_memory_highwater] bytes"
   if {[info commands sqlite3_memdebug_malloc_count] ne ""} {
     puts "Number of malloc()  : [sqlite3_memdebug_malloc_count] calls"
+  }
+  if {[info exists ::tester_do_malloctrace]} {
+    puts "Writing mallocs.sql..."
+    memdebug_log_sql
+    sqlite3_memdebug_log stop
+    sqlite3_memdebug_log clear
   }
   foreach f [glob -nocomplain test.db-*-journal] {
     file delete -force $f
@@ -646,11 +661,13 @@ proc allcksum {{db db}} {
   return [md5 $txt]
 }
 
-proc memdebug_log_sql {database} {
+proc memdebug_log_sql {{filename mallocs.sql}} {
+
   set data [sqlite3_memdebug_log dump]
   set nFrame [expr [llength [lindex $data 0]]-2]
-
   if {$nFrame < 0} { return "" }
+
+  set database temp
 
   set tbl "CREATE TABLE ${database}.malloc(nCall, nByte"
   for {set ii 1} {$ii <= $nFrame} {incr ii} {
@@ -667,68 +684,32 @@ proc memdebug_log_sql {database} {
   }
 
   set tbl2 "CREATE TABLE ${database}.frame(frame INTEGER PRIMARY KEY, line);\n"
+  set tbl3 "CREATE TABLE ${database}.file(name PRIMARY KEY, content);\n"
 
   foreach f [array names frames] {
     set addr [format %x $f]
     set cmd "addr2line -e [info nameofexec] $addr"
     set line [eval exec $cmd]
     append sql "INSERT INTO ${database}.frame VALUES($f, '$line');\n"
+
+    set file [lindex [split $line :] 0]
+    set files($file) 1
   }
 
-  return "BEGIN; ${tbl}${tbl2}${sql} ; COMMIT;"
-}
-proc memdebug_log_pp2 {db iLevel iParentFrame iDepth} {
-  set extra 1
-  if {$iParentFrame != 0} {
-    set extra "f[expr $iLevel-1] = $iParentFrame"
-  }
-  set leader [string repeat "         " [expr $iLevel -1]]
-  $db eval "
-    select 
-      sum(ncall) calls, 
-      sum(nbyte) as bytes, 
-      frame,
-      line FROM malloc, 
-      frame WHERE f${iLevel}=frame AND $extra
-      GROUP BY f${iLevel} ORDER BY calls DESC
-  " {
-    puts [format "%s%-10s %10s %s" $leader $calls $bytes $line]
-    if {$iLevel < $iDepth} {
-      memdebug_log_pp2 $db [expr $iLevel + 1] $frame $iDepth
+  foreach f [array names files] {
+    set contents ""
+    catch {
+      set fd [open $f]
+      set contents [read $fd]
+      close $fd
     }
+    set contents [string map {' ''} $contents]
+    append sql "INSERT INTO ${database}.file VALUES('$f', '$contents');\n"
   }
-}
-proc memdebug_log_strip {db} {
-  set nFrame [expr [llength [$db eval "SELECT * FROM malloc LIMIT 1"]] - 2]
 
-  set update "UPDATE malloc SET "
-  for {set ii 1} {$ii <= $nFrame} {incr ii} {
-    if {$ii == $nFrame} {
-      append update "f${ii} = 0"
-    } else {
-      append update "f${ii} = f[expr $ii+1], "
-    }
-  }
-  append update "
-    WHERE 
-      (SELECT line FROM frame WHERE frame = f1) LIKE '%malloc.c:%' OR
-      (SELECT line FROM frame WHERE frame = f1) LIKE '%mem2.c:%'
-  "
-
-  $db eval $update
-  $db eval $update
-  $db eval $update
-}
-proc memdebug_log_pp {{iDepth 1}} {
-  set sql [memdebug_log_sql main]
-  if {$sql eq ""} return
-
-  sqlite3 mddb :memory:
-  mddb eval $sql
-  memdebug_log_strip mddb
-
-  memdebug_log_pp2 mddb 1 0 $iDepth
-  mddb close
+  set fd [open $filename w]
+  puts $fd "BEGIN; ${tbl}${tbl2}${tbl3}${sql} ; COMMIT;"
+  close $fd
 }
 
 # Copy file $from into $to. This is used because some versions of
