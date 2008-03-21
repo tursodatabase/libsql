@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.714 2008/03/20 14:03:29 drh Exp $
+** $Id: vdbe.c,v 1.715 2008/03/21 17:13:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4236,6 +4236,7 @@ case OP_AggFinal: {
   if( rc==SQLITE_ERROR ){
     sqlite3SetString(&p->zErrMsg, sqlite3_value_text(pMem), (char*)0);
   }
+  sqlite3VdbeChangeEncoding(pMem, encoding);
   UPDATE_MAX_BLOBSIZE(pMem);
   if( sqlite3VdbeMemTooBig(pMem) ){
     goto too_big;

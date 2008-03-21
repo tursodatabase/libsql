@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.74 2008/03/20 14:03:29 drh Exp $
+# $Id: func.test,v 1.75 2008/03/21 17:13:13 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -917,5 +917,10 @@ do_test func-24.5 {
     SELECT group_concat(t1,NULL) FROM tbl1
   }
 } {thisprogramisfreesoftware}
+do_test func-24.6 {
+  execsql {
+    SELECT 'BEGIN-'||group_concat(t1) FROM tbl1
+  }
+} {BEGIN-this,program,is,free,software}
 
 finish_test

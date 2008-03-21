@@ -1,5 +1,5 @@
-C Add\sa\scompletely\snew\stesting\ssystem\sfor\sthe\sBitvec\sobject.\s\sThe\snew\ntesting\ssystem\suses\ssqlite3_test_control()\sinstead\sof\sunpublished\nAPIs.\s\sNow\sprovides\s100%\scondition/decision\scoverage.\s\sObscure\sbugs\nin\sBitvec\sfound\sand\sfixed\sas\sa\sresult\sof\sthe\senhanced\scoverage.\s(CVS\s4902)
-D 2008-03-21T16:45:47
+C Make\ssure\sthe\stext\sresult\sof\san\saggregate\sfunction\shas\sthe\scorrect\nencoding.\s\sTicket\s#3009.\s(CVS\s4903)
+D 2008-03-21T17:13:13
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -174,7 +174,7 @@ F src/update.c d2c59643af98f966c2a04d392463089b715ca18f
 F src/utf.c 32b00d6e19010025e58f2ecb2f921d5e126771b4
 F src/util.c dba9e04121eb17ec4643d6ca231ff859452cf0e2
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
-F src/vdbe.c 5ac49cf526843436ed295f5150a508a38b192b89
+F src/vdbe.c 43b261f50be60c758430a9072f960715f2ff0852
 F src/vdbe.h 58a7d931ffb704e034b2a725981cfa5bd406fad9
 F src/vdbeInt.h 76c81d057a39813de0fda3cad1498655d53ec69d
 F src/vdbeapi.c a3bddeee0f011faadb20316926cc97f95efa6415
@@ -327,7 +327,7 @@ F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3near.test 2d4dadcaac5025ab65bb87e66c45f39e92966194
-F test/func.test 03502ed9cbf3acc0cddf5f41efa61fdb05d03139
+F test/func.test 4118b1010187b8c7c96a30e1f94e424b482289b2
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
@@ -624,7 +624,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 79738f582fbac87f2d335e0c6b7f53e3054b41ba
-R 344a09e57d57d3bd52a8653f304b056c
+P 2498d3ea36ecab6d9c0f04ef1c49d76a7a215a4f
+R 717f664aa004ee99c89cb098a0645aa5
 U drh
-Z 248ddc23a8b5ab000e802a066f25ef83
+Z 3c56c09bf585f991755dd8086487319b
