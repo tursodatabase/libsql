@@ -12,11 +12,11 @@
 # This file contains common code used by many different malloc tests
 # within the test suite.
 #
-# $Id: malloc_common.tcl,v 1.15 2008/03/19 14:15:35 drh Exp $
+# $Id: malloc_common.tcl,v 1.16 2008/03/21 16:45:48 drh Exp $
 
 # If we did not compile with malloc testing enabled, then do nothing.
 #
-ifcapable testlogic {
+ifcapable builtin_test {
   set MEMDEBUG 1
 } else {
   set MEMDEBUG 0

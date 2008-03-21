@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.678 2008/03/20 16:30:18 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.679 2008/03/21 16:45:47 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1790,6 +1790,7 @@ int sqlite3BitvecTest(Bitvec*, u32);
 int sqlite3BitvecSet(Bitvec*, u32);
 void sqlite3BitvecClear(Bitvec*, u32);
 void sqlite3BitvecDestroy(Bitvec*);
+int sqlite3BitvecBuiltinTest(int,int*);
 
 void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int,int);
 
@@ -2084,7 +2085,7 @@ CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
 ** mechanism is disabled at compile-time then set up macros so that no
 ** unnecessary code is generated.
 */
-#ifndef SQLITE_OMIT_TESTLOGIC
+#ifndef SQLITE_OMIT_BUILTIN_TEST
   void sqlite3FaultConfig(int,int,int);
   int sqlite3FaultFailures(int);
   int sqlite3FaultBenignFailures(int);

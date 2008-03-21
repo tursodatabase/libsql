@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.22 2008/03/20 14:03:29 drh Exp $
+** $Id: test_config.c,v 1.23 2008/03/21 16:45:48 drh Exp $
 */
 
 #include "sqliteLimit.h"
@@ -133,6 +133,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "between_opt", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "between_opt", "1", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_OMIT_BUILTIN_TEST
+  Tcl_SetVar2(interp, "sqlite_options", "builtin_test", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "builtin_test", "1", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_OMIT_BLOB_LITERAL
@@ -354,12 +360,6 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp, "sqlite_options", "tclvar", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "tclvar", "1", TCL_GLOBAL_ONLY);
-#endif
-
-#ifdef SQLITE_OMIT_TESTLOGIC
-  Tcl_SetVar2(interp, "sqlite_options", "testlogic", "0", TCL_GLOBAL_ONLY);
-#else
-  Tcl_SetVar2(interp, "sqlite_options", "testlogic", "1", TCL_GLOBAL_ONLY);
 #endif
 
   rc = sqlite3_threadsafe();

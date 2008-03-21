@@ -11,197 +11,181 @@
 #
 # Unit testing of the Bitvec object.
 #
-# $Id: bitvec.test,v 1.1 2008/02/18 14:47:34 drh Exp $
+# $Id: bitvec.test,v 1.2 2008/03/21 16:45:48 drh Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-#ifcapable !subquery {
-#  finish_test
-#  return
-#}
+# The built-in test logic must be operational in order for
+# this test to work.
+ifcapable !builtin_test {
+  finish_test
+  return
+}
 
+# Test that sqlite3BitvecBuiltinTest correctly reports errors
+# that are deliberately introduced.
+#
+do_test bitvec-1.0.1 {
+  sqlite3BitvecBuiltinTest 400 {5 1 1 1 0}
+} 1
+do_test bitvec-1.0.2 {
+  sqlite3BitvecBuiltinTest 400 {5 1 234 1 0}
+} 234
+
+# Run test cases that set every bit in vectors of various sizes.
+# for larger cases, this should cycle the bit vector representation
+# from hashing into subbitmaps.  The subbitmaps should start as
+# hashes then change to either subbitmaps or linear maps, depending
+# on their size.
+#
 do_test bitvec-1.1 {
-  set PTR [sqlite3BitvecCreate 4000]
-  for {set i 1} {$i<=4000} {incr i} {
-    if {$i%1000==999} continue
-    sqlite3BitvecSet $PTR $i
-  }
-  set r {}
-  for {set i 1} {$i<=4000} {incr i} {
-    if {![sqlite3BitvecTest $PTR $i]} {lappend r $i}
-  }
-  sqlite3BitvecDestroy $PTR
-  set r
-} {999 1999 2999 3999}
+  sqlite3BitvecBuiltinTest 400 {1 400 1 1 0}
+} 0
 do_test bitvec-1.2 {
-  set PTR [sqlite3BitvecCreate 4001]
-  for {set i 1} {$i<=4001} {incr i} {
-    if {$i%1000==999} continue
-    sqlite3BitvecSet $PTR $i
-  }
-  set r {}
-  for {set i 1} {$i<=4001} {incr i} {
-    if {![sqlite3BitvecTest $PTR $i]} {lappend r $i}
-  }
-  sqlite3BitvecDestroy $PTR
-  set r
-} {999 1999 2999 3999}
+  sqlite3BitvecBuiltinTest 4000 {1 4000 1 1 0}
+} 0
 do_test bitvec-1.3 {
-  set PTR [sqlite3BitvecCreate 40000]
-  for {set i 1} {$i<=40000} {incr i} {
-    if {$i%10000==9999} continue
-    sqlite3BitvecSet $PTR $i
-  }
-  set r {}
-  for {set i 1} {$i<=40000} {incr i} {
-    if {![sqlite3BitvecTest $PTR $i]} {lappend r $i}
-  }
-  sqlite3BitvecDestroy $PTR
-  set r
-} {9999 19999 29999 39999}
+  sqlite3BitvecBuiltinTest 40000 {1 40000 1 1 0}
+} 0
 do_test bitvec-1.4 {
-  set PTR [sqlite3BitvecCreate 2000000000]
-  for {set i 1000000} {$i<=1001000} {incr i} {
-    if {$i%1000==789} continue
-    sqlite3BitvecSet $PTR $i
-  }
-  set r {}
-  for {set i 1000000} {$i<=1001000} {incr i} {
-    if {![sqlite3BitvecTest $PTR $i]} {lappend r $i}
-  }
-  sqlite3BitvecDestroy $PTR
-  set r
-} {1000789}
+  sqlite3BitvecBuiltinTest 400000 {1 400000 1 1 0}
+} 0
 
+# By specifying a larger increments, we spread the load around.
+#
+do_test bitvec-1.5 {
+  sqlite3BitvecBuiltinTest 400 {1 400 1 7 0}
+} 0
+do_test bitvec-1.6 {
+  sqlite3BitvecBuiltinTest 4000 {1 4000 1 7 0}
+} 0
+do_test bitvec-1.7 {
+  sqlite3BitvecBuiltinTest 40000 {1 40000 1 7 0}
+} 0
+do_test bitvec-1.8 {
+  sqlite3BitvecBuiltinTest 400000 {1 400000 1 7 0}
+} 0
+
+# First fill up the bitmap with ones,  then go through and
+# clear all the bits.  This will stress the clearing mechanism.
+#
+do_test bitvec-1.9 {
+  sqlite3BitvecBuiltinTest 400 {1 400 1 1 2 400 1 1 0}
+} 0
+do_test bitvec-1.10 {
+  sqlite3BitvecBuiltinTest 4000 {1 4000 1 1 2 4000 1 1 0}
+} 0
+do_test bitvec-1.11 {
+  sqlite3BitvecBuiltinTest 40000 {1 40000 1 1 2 40000 1 1 0}
+} 0
+do_test bitvec-1.12 {
+  sqlite3BitvecBuiltinTest 400000 {1 400000 1 1 2 400000 1 1 0}
+} 0
+
+do_test bitvec-1.13 {
+  sqlite3BitvecBuiltinTest 400 {1 400 1 1 2 400 1 7 0}
+} 0
+do_test bitvec-1.15 {
+  sqlite3BitvecBuiltinTest 4000 {1 4000 1 1 2 4000 1 7 0}
+} 0
+do_test bitvec-1.16 {
+  sqlite3BitvecBuiltinTest 40000 {1 40000 1 1 2 40000 1 77 0}
+} 0
+do_test bitvec-1.17 {
+  sqlite3BitvecBuiltinTest 400000 {1 400000 1 1 2 400000 1 777 0}
+} 0
+
+do_test bitvec-1.18 {
+  sqlite3BitvecBuiltinTest 400000 {1 5000 100000 1 2 400000 1 37 0}
+} 0
+
+# Attempt to induce hash collisions.  
+#
+unset -nocomplain start
+unset -nocomplain incr
+foreach start {1 2 3 4 5 6 7 8} {
+  foreach incr {124 125} {
+    do_test bitvec-1.20.$start.$incr {
+      set prog [list 1 60 $::start $::incr 2 5000 1 1 0]
+      sqlite3BitvecBuiltinTest 5000 $prog
+    } 0
+  }
+}
+
+do_test bitvec-1.30.big_and_slow {
+  sqlite3BitvecBuiltinTest 17000000 {1 17000000 1 1 2 17000000 1 1 0}
+} 0
+
+
+# Test setting and clearing a random subset of bits.
+#
 do_test bitvec-2.1 {
-  set PTR [sqlite3BitvecCreate 4000]
-  for {set i 1} {$i<=4000} {incr i 2} {
-    sqlite3BitvecSet $PTR $i
-  }
-  for {set i 1} {$i<=4000} {incr i} {
-    sqlite3BitvecClear $PTR $i
-  }
-  set r {}
-  for {set i 1} {$i<=4000} {incr i} {
-    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
-  }
-  sqlite3BitvecDestroy $PTR
-  set r
-} {}
+  sqlite3BitvecBuiltinTest 4000 {3 2000 4 2000 0}
+} 0
 do_test bitvec-2.2 {
-  set PTR [sqlite3BitvecCreate 4001]
-  for {set i 1} {$i<=101} {incr i 2} {
-    sqlite3BitvecSet $PTR $i
-  }
-  for {set i 1} {$i<=99} {incr i} {
-    sqlite3BitvecClear $PTR $i
-  }
-  set r {}
-  for {set i 1} {$i<=4000} {incr i} {
-    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
-  }
-  sqlite3BitvecDestroy $PTR
-  set r
-} {101}
+  sqlite3BitvecBuiltinTest 4000 {3 1000 4 1000 3 1000 4 1000 3 1000 4 1000
+                                 3 1000 4 1000 3 1000 4 1000 3 1000 4 1000 0}
+} 0
 do_test bitvec-2.3 {
-  set PTR [sqlite3BitvecCreate 4001]
-  for {set i 1} {$i<=101} {incr i} {
-    sqlite3BitvecSet $PTR $i
-  }
-  for {set i 1} {$i<=99} {incr i} {
-    sqlite3BitvecClear $PTR $i
-  }
-  set r {}
-  for {set i 1} {$i<=4000} {incr i} {
-    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
-  }
-  sqlite3BitvecDestroy $PTR
-  set r
-} {100 101}
+  sqlite3BitvecBuiltinTest 400000 {3 10 0}
+} 0
 do_test bitvec-2.4 {
-  set PTR [sqlite3BitvecCreate 5000]
-  for {set i 1} {$i<=5000} {incr i} {
-    sqlite3BitvecSet $PTR $i
-    if {$i%1000!=456} {sqlite3BitvecClear $PTR $i}
-  }
-  set r {}
-  for {set i 1} {$i<=5000} {incr i} {
-    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
-  }
-  sqlite3BitvecDestroy $PTR
-  set r
-} {456 1456 2456 3456 4456}
+  sqlite3BitvecBuiltinTest 4000 {3 10 2 4000 1 1 0}
+} 0
+do_test bitvec-2.5 {
+  sqlite3BitvecBuiltinTest 5000 {3 20 2 5000 1 1 0}
+} 0
+do_test bitvec-2.6 {
+  sqlite3BitvecBuiltinTest 50000 {3 60 2 50000 1 1 0}
+} 0
 
-do_test bitvec-3.1 {
-  set PTR [sqlite3BitvecCreate 2000000000]
-  for {set i 2000000} {$i<=3000000} {incr i 100000} {
-    for {set j $i} {$j<=$i+50} {incr j} {
-      sqlite3BitvecSet $PTR $i
+# This procedure runs sqlite3BitvecBuiltinTest with argments "n" and
+# "program".  But it also causes a malloc error to occur after the
+# "failcnt"-th malloc.  The result should be "0" if no malloc failure
+# occurs or "-1" if there is a malloc failure.
+#
+proc bitvec_malloc_test {label failcnt n program} {
+  do_test $label [subst {
+    sqlite3_memdebug_fail $failcnt
+    set x \[sqlite3BitvecBuiltinTest $n [list $program]\]
+    set nFail \[sqlite3_memdebug_fail -1\]
+    if {\$nFail==0} {
+      set ::go 0
+      set x -1
     }
-    for {set j $i} {$j<=$i+50} {incr j} {
-      sqlite3BitvecClear $PTR $i
-    }
+    set x
+  }] -1
+}
+
+# Make sure malloc failures are handled sanily.
+#
+unset -nocomplain n
+unset -nocomplain go
+set go 1
+save_prng_state
+for {set n 0} {$go} {incr n} {
+  restore_prng_state
+  bitvec_malloc_test bitvec-3.1.$n $n 5000 {
+      3 60 2 5000 1 1 3 60 2 5000 1 1 3 60 2 5000 1 1 0
   }
-  set r {}
-  for {set i 2000000} {$i<=3000000} {incr i} {
-    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
+}
+set go 1
+for {set n 0} {$go} {incr n} {
+  restore_prng_state
+  bitvec_malloc_test bitvec-3.2.$n $n 5000 {
+      3 600 2 5000 1 1 3 600 2 5000 1 1 3 600 2 5000 1 1 0
   }
-  sqlite3BitvecDestroy $PTR
-  set r
-} {}
-do_test bitvec-3.2 {
-  set PTR [sqlite3BitvecCreate 200000]
-  for {set i 1000} {$i<=190000} {incr i 10000} {
-    for {set j $i} {$j<=$i+50} {incr j} {
-      sqlite3BitvecSet $PTR $i
-    }
-    for {set j $i} {$j<=$i+50} {incr j} {
-      sqlite3BitvecClear $PTR $i
-    }
-  }
-  set r {}
-  for {set i 1} {$i<=200000} {incr i} {
-    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
-  }
-  sqlite3BitvecDestroy $PTR
-  set r
-} {}
-do_test bitvec-3.3 {
-  set PTR [sqlite3BitvecCreate 200000]
-  for {set i 1000} {$i<=190000} {incr i 10000} {
-    for {set j $i} {$j<=$i+500} {incr j} {
-      sqlite3BitvecSet $PTR $i
-    }
-    for {set j $i} {$j<=$i+500} {incr j} {
-      sqlite3BitvecClear $PTR $i
-    }
-  }
-  set r {}
-  for {set i 1} {$i<=200000} {incr i} {
-    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
-  }
-  sqlite3BitvecDestroy $PTR
-  set r
-} {}
-do_test bitvec-3.4 {
-  set PTR [sqlite3BitvecCreate 2000]
-  for {set i 10} {$i<=1900} {incr i 100} {
-    for {set j $i} {$j<=$i+50} {incr j} {
-      sqlite3BitvecSet $PTR $i
-    }
-    for {set j $i} {$j<=$i+50} {incr j} {
-      sqlite3BitvecClear $PTR $i
-    }
-  }
-  set r {}
-  for {set i 1} {$i<=2000} {incr i} {
-    if {[sqlite3BitvecTest $PTR $i]} {lappend r $i}
-  }
-  sqlite3BitvecDestroy $PTR
-  set r
-} {}
+}
+set go 1
+for {set n 1} {$go} {incr n} {
+  bitvec_malloc_test bitvec-3.3.$n $n 50000 {1 50000 1 1 0}
+}
+
+finish_test
+return
+
 
 
 finish_test

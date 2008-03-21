@@ -32,14 +32,14 @@
 ** start of a transaction, and is thus usually less than a few thousand,
 ** but can be as large as 2 billion for a really big database.
 **
-** @(#) $Id: bitvec.c,v 1.2 2008/03/14 13:02:08 mlcreech Exp $
+** @(#) $Id: bitvec.c,v 1.3 2008/03/21 16:45:47 drh Exp $
 */
 #include "sqliteInt.h"
 
 #define BITVEC_SZ        512
 /* Round the union size down to the nearest pointer boundary, since that's how 
 ** it will be aligned within the Bitvec struct. */
-#define BITVEC_USIZE     (((BITVEC_SZ-12)/sizeof(Bitvec *))*sizeof(Bitvec *))
+#define BITVEC_USIZE     (((BITVEC_SZ-12)/sizeof(Bitvec*))*sizeof(Bitvec*))
 #define BITVEC_NCHAR     BITVEC_USIZE
 #define BITVEC_NBIT      (BITVEC_NCHAR*8)
 #define BITVEC_NINT      (BITVEC_USIZE/4)
@@ -101,9 +101,8 @@ Bitvec *sqlite3BitvecCreate(u32 iSize){
 ** i is out of range, then return false.
 */
 int sqlite3BitvecTest(Bitvec *p, u32 i){
-  assert( i>0 );
   if( p==0 ) return 0;
-  if( i>p->iSize ) return 0;
+  if( i>p->iSize || i==0 ) return 0;
   if( p->iSize<=BITVEC_NBIT ){
     i--;
     return (p->u.aBitmap[i/8] & (1<<(i&7)))!=0;
@@ -130,6 +129,7 @@ int sqlite3BitvecTest(Bitvec *p, u32 i){
 int sqlite3BitvecSet(Bitvec *p, u32 i){
   u32 h;
   assert( p!=0 );
+  assert( i>0 );
   if( p->iSize<=BITVEC_NBIT ){
     i--;
     p->u.aBitmap[i/8] |= 1 << (i&7);
@@ -159,8 +159,8 @@ int sqlite3BitvecSet(Bitvec *p, u32 i){
     memcpy(aiValues, p->u.aHash, sizeof(aiValues));
     memset(p->u.apSub, 0, sizeof(p->u.apSub[0])*BITVEC_NPTR);
     p->iDivisor = (p->iSize + BITVEC_NPTR - 1)/BITVEC_NPTR;
-    sqlite3BitvecSet(p, i);
-    for(rc=j=0; j<BITVEC_NINT; j++){
+    rc = sqlite3BitvecSet(p, i);
+    for(j=0; j<BITVEC_NINT; j++){
       if( aiValues[j] ) rc |= sqlite3BitvecSet(p, aiValues[j]);
     }
     return rc;
@@ -175,6 +175,7 @@ int sqlite3BitvecSet(Bitvec *p, u32 i){
 */
 void sqlite3BitvecClear(Bitvec *p, u32 i){
   assert( p!=0 );
+  assert( i>0 );
   if( p->iSize<=BITVEC_NBIT ){
     i--;
     p->u.aBitmap[i/8] &= ~(1 << (i&7));
@@ -191,7 +192,9 @@ void sqlite3BitvecClear(Bitvec *p, u32 i){
     memset(p->u.aHash, 0, sizeof(p->u.aHash[0])*BITVEC_NINT);
     p->nSet = 0;
     for(j=0; j<BITVEC_NINT; j++){
-      if( aiValues[j] && aiValues[j]!=i ) sqlite3BitvecSet(p, aiValues[j]);
+      if( aiValues[j] && aiValues[j]!=i ){
+        sqlite3BitvecSet(p, aiValues[j]);
+      }
     }
   }
 }
@@ -209,3 +212,113 @@ void sqlite3BitvecDestroy(Bitvec *p){
   }
   sqlite3_free(p);
 }
+
+#ifndef SQLITE_OMIT_BUILTIN_TEST
+/*
+** Let V[] be an array of unsigned characters sufficient to hold
+** up to N bits.  Let I be an integer between 0 and N.  0<=I<N.
+** Then the following macros can be used to set, clear, or test
+** individual bits within V.
+*/
+#define SETBIT(V,I)      V[I>>3] |= (1<<(I&7))
+#define CLEARBIT(V,I)    V[I>>3] &= ~(1<<(I&7))
+#define TESTBIT(V,I)     (V[I>>3]&(1<<(I&7)))!=0
+
+/*
+** This routine runs an extensive test of the Bitvec code.
+**
+** The input is an array of integers that acts as a program
+** to test the Bitvec.  The integers are opcodes followed
+** by 0, 1, or 3 operands, depending on the opcode.  Another
+** opcode follows immediately after the last operand.
+**
+** There are 6 opcodes numbered from 0 through 5.  0 is the
+** "halt" opcode and causes the test to end.
+**
+**    0          Halt and return the number of errors
+**    1 N S X    Set N bits beginning with S and incrementing by X
+**    2 N S X    Clear N bits beginning with S and incrementing by X
+**    3 N        Set N randomly chosen bits
+**    4 N        Clear N randomly chosen bits
+**    5 N S X    Set N bits from S increment X in array only, not in bitvec
+**
+** The opcodes 1 through 4 perform set and clear operations are performed
+** on both a Bitvec object and on a linear array of bits obtained from malloc.
+** Opcode 5 works on the linear array only, not on the Bitvec.
+** Opcode 5 is used to deliberately induce a fault in order to
+** confirm that error detection works.
+**
+** At the conclusion of the test the linear array is compared
+** against the Bitvec object.  If there are any differences,
+** an error is returned.  If they are the same, zero is returned.
+**
+** If a memory allocation error occurs, return -1.
+*/
+int sqlite3BitvecBuiltinTest(int sz, int *aOp){
+  Bitvec *pBitvec = 0;
+  unsigned char *pV = 0;
+  int rc = -1;
+  int i, nx, pc, op;
+
+  /* Allocate the Bitvec to be tested and a linear array of
+  ** bits to act as the reference */
+  pBitvec = sqlite3BitvecCreate( sz );
+  pV = sqlite3_malloc( (sz+7)/8 + 1 );
+  if( pBitvec==0 || pV==0 ) goto bitvec_end;
+  memset(pV, 0, (sz+7)/8 + 1);
+
+  /* Run the program */
+  pc = 0;
+  while( (op = aOp[pc])!=0 ){
+    switch( op ){
+      case 1:
+      case 2:
+      case 5: {
+        nx = 4;
+        i = aOp[pc+2] - 1;
+        aOp[pc+2] += aOp[pc+3];
+        break;
+      }
+      case 3:
+      case 4: 
+      default: {
+        nx = 2;
+        sqlite3_randomness(sizeof(i), &i);
+        break;
+      }
+    }
+    if( (--aOp[pc+1]) > 0 ) nx = 0;
+    pc += nx;
+    i = (i & 0x7fffffff)%sz;
+    if( (op & 1)!=0 ){
+      SETBIT(pV, (i+1));
+      if( op!=5 ){
+        if( sqlite3BitvecSet(pBitvec, i+1) ) goto bitvec_end;
+      }
+    }else{
+      CLEARBIT(pV, (i+1));
+      sqlite3BitvecClear(pBitvec, i+1);
+    }
+  }
+
+  /* Test to make sure the linear array exactly matches the
+  ** Bitvec object.  Start with the assumption that they do
+  ** match (rc==0).  Change rc to non-zero if a discrepancy
+  ** is found.
+  */
+  rc = sqlite3BitvecTest(0,0) + sqlite3BitvecTest(pBitvec, sz+1)
+          + sqlite3BitvecTest(pBitvec, 0);
+  for(i=1; i<=sz; i++){
+    if(  (TESTBIT(pV,i))!=sqlite3BitvecTest(pBitvec,i) ){
+      rc = i;
+      break;
+    }
+  }
+
+  /* Free allocated structure */
+bitvec_end:
+  sqlite3_free(pV);
+  sqlite3BitvecDestroy(pBitvec);
+  return rc;
+}
+#endif /* SQLITE_OMIT_BUILTIN_TEST */

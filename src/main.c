@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.428 2008/03/20 18:00:49 drh Exp $
+** $Id: main.c,v 1.429 2008/03/21 16:45:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1574,7 +1574,7 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
 */
 int sqlite3_test_control(int op, ...){
   int rc = 0;
-#ifndef SQLITE_OMIT_TESTLOGIC
+#ifndef SQLITE_OMIT_BUILTIN_TEST
   va_list ap;
   va_start(ap, op);
   switch( op ){
@@ -1658,8 +1658,23 @@ int sqlite3_test_control(int op, ...){
       sqlite3PrngResetState();
       break;
     }
+
+    /*
+    **  sqlite3_test_control(BITVEC_TEST, size, program)
+    **
+    ** Run a test against a Bitvec object of size.  The program argument
+    ** is an array of integers that defines the test.  Return -1 on a
+    ** memory allocation error, 0 on success, or non-zero for an error.
+    ** See the sqlite3BitvecBuiltinTest() for additional information.
+    */
+    case SQLITE_TESTCTRL_BITVEC_TEST: {
+      int sz = va_arg(ap, int);
+      int *aProg = va_arg(ap, int*);
+      rc = sqlite3BitvecBuiltinTest(sz, aProg);
+      break;
+    }
   }
   va_end(ap);
-#endif /* SQLITE_OMIT_TESTLOGIC */
+#endif /* SQLITE_OMIT_BUILTIN_TEST */
   return rc;
 }

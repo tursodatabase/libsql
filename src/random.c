@@ -15,7 +15,7 @@
 ** Random numbers are used by some of the database backends in order
 ** to generate random integer keys for tables or random filenames.
 **
-** $Id: random.c,v 1.22 2008/03/19 14:15:35 drh Exp $
+** $Id: random.c,v 1.23 2008/03/21 16:45:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -103,7 +103,7 @@ void sqlite3_randomness(int N, void *pBuf){
   sqlite3_mutex_leave(mutex);
 }
 
-#ifndef SQLITE_OMIT_TESTLOGIC
+#ifndef SQLITE_OMIT_BUILTIN_TEST
 /*
 ** For testing purposes, we sometimes want to preserve the state of
 ** PRNG and restore the PRNG to its saved state at a later time.
@@ -120,4 +120,4 @@ void sqlite3PrngRestoreState(void){
 void sqlite3PrngResetState(void){
   sqlite3Prng.isInit = 0;
 }
-#endif /* SQLITE_OMIT_TESTLOGIC */
+#endif /* SQLITE_OMIT_BUILTIN_TEST */
