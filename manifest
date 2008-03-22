@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_OMIT_DECLTYPE\scompile-time\soption.\s\sRemove\smore\scode\swhen\nSQLITE_ENABLE_COLUMN_METADATA\sis\snot\sdefined.\s(CVS\s4906)
-D 2008-03-22T01:07:18
+C Add\sthe\sspeed1p.test\sscript.\s\sLike\sspeed1.test\sexcept\sthat\sit\stries\sto\stake\nadvantage\sof\sprepared\sstatements.\s(CVS\s4907)
+D 2008-03-22T01:08:01
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -419,7 +419,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 83150cb7b513e33cce90fdc68f4b1817551857c0
-F test/quick.test ee53085c09446208c70694bcc25dc717e1aa393f
+F test/quick.test 037a953ccc4e5419c89528e7b93742db29bc3ec1
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -447,6 +447,7 @@ F test/soak.test 64f9b27fbcdec43335a88c546ce1983e6ba40d7b
 F test/softheap1.test c9146eda576eedb62192b771293a2115d9af8456
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
+F test/speed1p.test 2c0144604a7c5d32493c4075c46d9a5a0f90ceba
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test 20d8ea20bea3ca09c3ef3b5ec820a17e58e132cb
@@ -459,7 +460,7 @@ F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
 F test/tableapi.test 791f7e3891d9b70bdb43b311694bf5e9befcbc34
 F test/tclsqlite.test 3fac87cb1059c46b8fa8a60b553f4f1adb0fb6d9
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl 7e6e28cf813e132b84336cdd33804c1be2a1bc80
+F test/tester.tcl e7cc5f340ebd9107773e8684f5d7e10af6e63e0b
 F test/thread001.test 8fbd9559da0bbdc273e00318c7fd66c162020af7
 F test/thread002.test 2c4ad2c386f60f6fe268cd91c769ee35b3c1fd0b
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -624,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d8686abcdf9e566571033f2f137142f742df9357
-R aa65ee25792b35b0b257992140c3f662
+P 8ef26646cff9be75c584a9abfcfffcfdb49b3969
+R b10313284d733514a20b3e021e1c404e
 U drh
-Z 466acf301fdb80b8f45999c2ef27b0df
+Z 8edc416c1b9e2d24a4a52d0eea438ec4

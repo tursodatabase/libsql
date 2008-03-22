@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.71 2008/03/20 16:26:49 danielk1977 Exp $
+# $Id: quick.test,v 1.72 2008/03/22 01:08:01 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -69,6 +69,7 @@ set EXCLUDE {
   quick.test
   soak.test
   speed1.test
+  speed1p.test
   speed2.test
   speed4.test
   sqllimits1.test
@@ -113,5 +114,3 @@ source $testdir/misuse.test
 
 set sqlite_open_file_count 0
 really_finish_test
-
-

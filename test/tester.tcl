@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.109 2008/03/21 17:29:38 danielk1977 Exp $
+# $Id: tester.tcl,v 1.110 2008/03/22 01:08:01 drh Exp $
 
 
 set tcl_precision 15
@@ -160,6 +160,21 @@ proc speed_trial {name numstmt units sql} {
   puts -nonewline [format {%-21.21s } $name...]
   flush stdout
   set speed [time {sqlite3_exec_nr db $sql}]
+  set tm [lindex $speed 0]
+  if {$tm == 0} {
+    set rate [format %20s "many"]
+  } else {
+    set rate [format %20.5f [expr {1000000.0*$numstmt/$tm}]]
+  }
+  set u2 $units/s
+  puts [format {%12d uS %s %s} $tm $rate $u2]
+  global total_time
+  set total_time [expr {$total_time+$tm}]
+}
+proc speed_trial_tcl {name numstmt units script} {
+  puts -nonewline [format {%-21.21s } $name...]
+  flush stdout
+  set speed [time {eval $script}]
   set tm [lindex $speed 0]
   if {$tm == 0} {
     set rate [format %20s "many"]
