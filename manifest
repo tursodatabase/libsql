@@ -1,5 +1,5 @@
-C Add\sthe\sspeed1p.test\sscript.\s\sLike\sspeed1.test\sexcept\sthat\sit\stries\sto\stake\nadvantage\sof\sprepared\sstatements.\s(CVS\s4907)
-D 2008-03-22T01:08:01
+C Bug\sfix\sin\sthe\snewly\srevised\ssqllimit1.test\sscript.\s(CVS\s4908)
+D 2008-03-22T23:59:58
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -451,7 +451,7 @@ F test/speed1p.test 2c0144604a7c5d32493c4075c46d9a5a0f90ceba
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test 20d8ea20bea3ca09c3ef3b5ec820a17e58e132cb
-F test/sqllimits1.test 844c594775e5e34b3fdfea09ff52e2ea273834bf
+F test/sqllimits1.test cebd870957dbf8d931c5c9cadf757e0d31a3f71a
 F test/subquery.test 8203f85db56ba022a57a0589890090c8feed4e59
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8ef26646cff9be75c584a9abfcfffcfdb49b3969
-R b10313284d733514a20b3e021e1c404e
+P ece4fb9f7b93dc3e3cb77e40b011d013d0750dcf
+R 9a62f067dc0c83ef0cbb3eb49d355619
 U drh
-Z 8edc416c1b9e2d24a4a52d0eea438ec4
+Z 3d64a9911ad1f4e9f76a5bc35ae7dfff

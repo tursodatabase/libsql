@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.26 2008/03/20 18:00:49 drh Exp $
+# $Id: sqllimits1.test,v 1.27 2008/03/22 23:59:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -288,7 +288,7 @@ do_test sqllimits1-5.13 {
 } {1 {string or blob too big}}
 
 do_test sqllimits1-5.14.1 {
-  set ::STMT [sqlite3_prepare $::DB "SELECT ?" -1 TAIL]
+  set ::STMT [sqlite3_prepare db "SELECT ?" -1 TAIL]
   sqlite3_bind_zeroblob $::STMT 1 [expr {$SQLITE_LIMIT_LENGTH + 1}]
 } {}
 do_test sqllimits1-5.14.2 {
@@ -363,11 +363,11 @@ do_test sqllimits1-6.3 {
   append sql [string repeat $tail $N]
   set nbytes [string length $sql]
   append sql { AND 0}
-  set rc [catch {sqlite3_prepare $DB $sql $nbytes TAIL} STMT]
+  set rc [catch {sqlite3_prepare db $sql $nbytes TAIL} STMT]
   lappend rc $STMT
 } {1 {(18) statement too long}}
 do_test sqllimits1-6.4 {
-  sqlite3_errmsg $DB
+  sqlite3_errmsg db
 } {statement too long}
 
 #--------------------------------------------------------------------
