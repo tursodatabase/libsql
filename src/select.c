@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.416 2008/03/20 14:03:29 drh Exp $
+** $Id: select.c,v 1.417 2008/03/22 01:07:18 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1005,6 +1005,7 @@ static void generateColumnTypes(
   SrcList *pTabList,  /* List of tables */
   ExprList *pEList    /* Expressions defining the result set */
 ){
+#ifndef SQLITE_OMIT_DECLTYPE
   Vdbe *v = pParse->pVdbe;
   int i;
   NameContext sNC;
@@ -1012,20 +1013,26 @@ static void generateColumnTypes(
   sNC.pParse = pParse;
   for(i=0; i<pEList->nExpr; i++){
     Expr *p = pEList->a[i].pExpr;
+    const char *zType;
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
     const char *zOrigDb = 0;
     const char *zOrigTab = 0;
     const char *zOrigCol = 0;
-    const char *zType = columnType(&sNC, p, &zOrigDb, &zOrigTab, &zOrigCol);
+    zType = columnType(&sNC, p, &zOrigDb, &zOrigTab, &zOrigCol);
 
     /* The vdbe must make its own copy of the column-type and other 
     ** column specific strings, in case the schema is reset before this
     ** virtual machine is deleted.
     */
-    sqlite3VdbeSetColName(v, i, COLNAME_DECLTYPE, zType, P4_TRANSIENT);
     sqlite3VdbeSetColName(v, i, COLNAME_DATABASE, zOrigDb, P4_TRANSIENT);
     sqlite3VdbeSetColName(v, i, COLNAME_TABLE, zOrigTab, P4_TRANSIENT);
     sqlite3VdbeSetColName(v, i, COLNAME_COLUMN, zOrigCol, P4_TRANSIENT);
+#else
+    zType = columnType(&sNC, p, 0, 0, 0);
+#endif
+    sqlite3VdbeSetColName(v, i, COLNAME_DECLTYPE, zType, P4_TRANSIENT);
   }
+#endif /* SQLITE_OMIT_DECLTYPE */
 }
 
 /*

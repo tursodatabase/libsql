@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.125 2008/01/17 17:27:31 drh Exp $
+** $Id: vdbe.h,v 1.126 2008/03/22 01:07:18 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -119,7 +119,15 @@ typedef struct VdbeOpList VdbeOpList;
 #define COLNAME_DATABASE 2
 #define COLNAME_TABLE    3
 #define COLNAME_COLUMN   4
-#define COLNAME_N        5      /* Number of COLNAME_xxx symbols */
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
+# define COLNAME_N        5      /* Number of COLNAME_xxx symbols */
+#else
+# ifdef SQLITE_OMIT_DECLTYPE
+#   define COLNAME_N      1      /* Store only the name */
+# else
+#   define COLNAME_N      2      /* Store the name and decltype */
+# endif
+#endif
 
 /*
 ** The following macro converts a relative address in the p2 field

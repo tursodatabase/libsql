@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.294 2008/03/20 16:30:18 drh Exp $
+** $Id: test1.c,v 1.295 2008/03/22 01:07:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4526,10 +4526,12 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_column_double",         test_column_double ,0 },
      { "sqlite3_column_int64",          test_column_int64  ,0 },
      { "sqlite3_column_text",       test_stmt_utf8,  sqlite3_column_text      },
-     { "sqlite3_column_decltype",   test_stmt_utf8,  sqlite3_column_decltype  },
      { "sqlite3_column_name",       test_stmt_utf8,  sqlite3_column_name      },
      { "sqlite3_column_int",        test_stmt_int,   sqlite3_column_int       },
      { "sqlite3_column_bytes",      test_stmt_int,   sqlite3_column_bytes     },
+#ifndef SQLITE_OMIT_DECLTYPE
+     { "sqlite3_column_decltype",   test_stmt_utf8,  sqlite3_column_decltype  },
+#endif
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
 { "sqlite3_column_database_name", test_stmt_utf8, sqlite3_column_database_name},
 { "sqlite3_column_table_name", test_stmt_utf8, sqlite3_column_table_name},
@@ -4539,9 +4541,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_UTF16
      { "sqlite3_column_bytes16",    test_stmt_int,   sqlite3_column_bytes16   },
      { "sqlite3_column_text16",     test_stmt_utf16, sqlite3_column_text16    },
-     { "sqlite3_column_decltype16", test_stmt_utf16, sqlite3_column_decltype16},
      { "sqlite3_column_name16",     test_stmt_utf16, sqlite3_column_name16    },
      { "add_alignment_test_collations", add_alignment_test_collations, 0      },
+#ifndef SQLITE_OMIT_DECLTYPE
+     { "sqlite3_column_decltype16", test_stmt_utf16, sqlite3_column_decltype16},
+#endif
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
 {"sqlite3_column_database_name16",
   test_stmt_utf16, sqlite3_column_database_name16},

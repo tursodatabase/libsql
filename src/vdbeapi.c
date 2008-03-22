@@ -753,6 +753,16 @@ const void *sqlite3_column_name16(sqlite3_stmt *pStmt, int N){
 #endif
 
 /*
+** Constraint:  If you have ENABLE_COLUMN_METADATA then you must
+** not define OMIT_DECLTYPE.
+*/
+#if defined(SQLITE_OMIT_DECLTYPE) && defined(SQLITE_ENABLE_COLUMN_METADATA)
+# error "Must not define both SQLITE_OMIT_DECLTYPE \
+         and SQLITE_ENABLE_COLUMN_METADATA"
+#endif
+
+#ifndef SQLITE_OMIT_DECLTYPE
+/*
 ** Return the column declaration type (if applicable) of the 'i'th column
 ** of the result set of SQL statement pStmt.
 */
@@ -766,6 +776,7 @@ const void *sqlite3_column_decltype16(sqlite3_stmt *pStmt, int N){
       pStmt, N, (const void*(*)(Mem*))sqlite3_value_text16, COLNAME_DECLTYPE);
 }
 #endif /* SQLITE_OMIT_UTF16 */
+#endif /* SQLITE_OMIT_DECLTYPE */
 
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
 /*
