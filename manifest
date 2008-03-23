@@ -1,5 +1,5 @@
-C Bug\sfix\sin\sthe\snewly\srevised\ssqllimit1.test\sscript.\s(CVS\s4908)
-D 2008-03-22T23:59:58
+C Remove\sredundant\stests\sfrom\sthe\sreparenter\sin\sthe\sbtree\smodule.\s(CVS\s4909)
+D 2008-03-23T00:20:36
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -86,7 +86,7 @@ F src/attach.c bdc75e759ca25a16f4dc7fbdbc6d37ad2561bb24
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 49817d442e51e4123585f3cf3c2afc293a3c91e2
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 77304a2086a9089fe5e5ee8861248b72d6cca5d6
+F src/btree.c 15424f41344ad96ab56a3322f5930cfb7a8ee24e
 F src/btree.h 19dcf5ad23c17b98855da548e9a8e3eb4429d5eb
 F src/btreeInt.h d7d2f4d9d7f2e72c455326d48b2b478b842a81f6
 F src/build.c 31ed5af4e8ac40c30bb0f88d7fec75e72cc16e0e
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ece4fb9f7b93dc3e3cb77e40b011d013d0750dcf
-R 9a62f067dc0c83ef0cbb3eb49d355619
+P 2a89fb3c3e991b2c02e07b8b86b67b8d80e0360d
+R 54a05ecb037f5a5d52bb71d90fc4ab07
 U drh
-Z 3d64a9911ad1f4e9f76a5bc35ae7dfff
+Z 6f60803aaca5183cf67d90c8ccfc1a04

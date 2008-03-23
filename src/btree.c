@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.441 2008/03/20 11:04:21 danielk1977 Exp $
+** $Id: btree.c,v 1.442 2008/03/23 00:20:36 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4455,16 +4455,12 @@ static int reparentChildPages(MemPage *pPage){
 
   for(i=0; i<pPage->nCell; i++){
     u8 *pCell = findCell(pPage, i);
-    if( !pPage->leaf ){
-      rc = reparentPage(pBt, get4byte(pCell), pPage, i);
-      if( rc!=SQLITE_OK ) return rc;
-    }
+    rc = reparentPage(pBt, get4byte(pCell), pPage, i);
+    if( rc!=SQLITE_OK ) return rc;
   }
-  if( !pPage->leaf ){
-    rc = reparentPage(pBt, get4byte(&pPage->aData[pPage->hdrOffset+8]), 
-       pPage, i);
-    pPage->idxShift = 0;
-  }
+  rc = reparentPage(pBt, get4byte(&pPage->aData[pPage->hdrOffset+8]), 
+                    pPage, i);
+  pPage->idxShift = 0;
   return rc;
 }
 
