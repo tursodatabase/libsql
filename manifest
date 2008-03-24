@@ -1,5 +1,5 @@
-C Remove\sredundant\stests\sfrom\sthe\sreparenter\sin\sthe\sbtree\smodule.\s(CVS\s4909)
-D 2008-03-23T00:20:36
+C Improved\sdocumentation\sof\ssqlite3_blob_open().\s(CVS\s4910)
+D 2008-03-24T12:51:46
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 35063b078beafe9aa35344a8ce039210920d7fea
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
-F src/sqlite.h.in da2ab729b5c590c7dfa5418477ed181d52ab9c82
+F src/sqlite.h.in 61d8d1cefcbf0803c03c2179be138a78bfd1d335
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 07b472437b2d7297c300f8b7cea5205984fa64d1
 F src/sqliteLimit.h eecbc288b410ae5565e71aaa4a439aae57bb0707
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2a89fb3c3e991b2c02e07b8b86b67b8d80e0360d
-R 54a05ecb037f5a5d52bb71d90fc4ab07
+P a807e7184b857414ce203af129ac1adf2012096c
+R 4101d535e06a9619e1c68b648b338bf6
 U drh
-Z 6f60803aaca5183cf67d90c8ccfc1a04
+Z c87ff7d608d92b0ae8912212b9742706

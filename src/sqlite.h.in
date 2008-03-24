@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.299 2008/03/21 16:45:47 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.300 2008/03/24 12:51:46 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -5124,7 +5124,7 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** CAPI3REF: Open A BLOB For Incremental I/O {F17810}
 **
 ** This interfaces opens a handle to the blob located
-** in row iRow,, column zColumn, table zTable in database zDb;
+** in row iRow, column zColumn, table zTable in database zDb;
 ** in other words,  the same blob that would be selected by:
 **
 ** <pre>
@@ -5134,6 +5134,12 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** If the flags parameter is non-zero, the blob is opened for 
 ** read and write access. If it is zero, the blob is opened for read 
 ** access.
+**
+** Note that the database name is not the filename that contains
+** the database but rather the symbolic name of the database that
+** is assigned when the database is connected using [ATTACH].
+** For the main database file, the database name is "main".  For
+** TEMP tables, the database name is "temp".
 **
 ** On success, [SQLITE_OK] is returned and the new 
 ** [sqlite3_blob | blob handle] is written to *ppBlob. 
