@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.18 2008/03/21 14:22:44 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.19 2008/03/25 09:47:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -507,7 +507,7 @@ static int test_memdebug_settitle(
   return TCL_OK;
 }
 
-#define MALLOC_LOG_FRAMES 5
+#define MALLOC_LOG_FRAMES 10 
 static Tcl_HashTable aMallocLog;
 static int mallocLogEnabled = 0;
 

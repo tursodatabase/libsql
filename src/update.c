@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.172 2008/03/19 20:42:14 drh Exp $
+** $Id: update.c,v 1.173 2008/03/25 09:47:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -302,10 +302,10 @@ void sqlite3Update(
 
     /* Create pseudo-tables for NEW and OLD
     */
+    sqlite3VdbeAddOp2(v, OP_SetNumColumns, 0, pTab->nCol);
     sqlite3VdbeAddOp2(v, OP_OpenPseudo, oldIdx, 0);
-    sqlite3VdbeAddOp2(v, OP_SetNumColumns, oldIdx, pTab->nCol);
+    sqlite3VdbeAddOp2(v, OP_SetNumColumns, 0, pTab->nCol);
     sqlite3VdbeAddOp2(v, OP_OpenPseudo, newIdx, 0);
-    sqlite3VdbeAddOp2(v, OP_SetNumColumns, newIdx, pTab->nCol);
 
     iGoto = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
     addr = sqlite3VdbeMakeLabel(v);

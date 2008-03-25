@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.81 2008/03/25 00:22:21 drh Exp $
+** $Id: prepare.c,v 1.82 2008/03/25 09:47:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -207,12 +207,16 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     }
     return SQLITE_OK;
   }
+  curMain = sqlite3MallocZero(sqlite3BtreeCursorSize());
+  if( !curMain ){
+    rc = SQLITE_NOMEM;
+    goto error_out;
+  }
   sqlite3BtreeEnter(pDb->pBt);
-  rc = sqlite3BtreeCursor(pDb->pBt, MASTER_ROOT, 0, 0, &curMain);
+  rc = sqlite3BtreeCursor(pDb->pBt, MASTER_ROOT, 0, 0, curMain);
   if( rc!=SQLITE_OK && rc!=SQLITE_EMPTY ){
     sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
-    sqlite3BtreeLeave(pDb->pBt);
-    goto error_out;
+    goto leave_error_out;
   }
 
   /* Get the database meta information.
@@ -239,9 +243,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     }
     if( rc ){
       sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
-      sqlite3BtreeCloseCursor(curMain);
-      sqlite3BtreeLeave(pDb->pBt);
-      goto error_out;
+      goto leave_error_out;
     }
   }else{
     memset(meta, 0, sizeof(meta));
@@ -261,11 +263,10 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     }else{
       /* If opening an attached database, the encoding much match ENC(db) */
       if( meta[4]!=ENC(db) ){
-        sqlite3BtreeCloseCursor(curMain);
         sqlite3SetString(pzErrMsg, "attached databases must use the same"
             " text encoding as main database", (char*)0);
-        sqlite3BtreeLeave(pDb->pBt);
-        return SQLITE_ERROR;
+        rc = SQLITE_ERROR;
+        goto leave_error_out;
       }
     }
   }else{
@@ -290,10 +291,9 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     pDb->pSchema->file_format = 1;
   }
   if( pDb->pSchema->file_format>SQLITE_MAX_FILE_FORMAT ){
-    sqlite3BtreeCloseCursor(curMain);
     sqlite3SetString(pzErrMsg, "unsupported file format", (char*)0);
-    sqlite3BtreeLeave(pDb->pBt);
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+    goto leave_error_out;
   }
 
   /* Ticket #2804:  When we open a database in the newer file format,
@@ -336,7 +336,6 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
       sqlite3AnalysisLoad(db, iDb);
     }
 #endif
-    sqlite3BtreeCloseCursor(curMain);
   }
   if( db->mallocFailed ){
     /* sqlite3SetString(pzErrMsg, "out of memory", (char*)0); */
@@ -355,6 +354,14 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     DbSetProperty(db, iDb, DB_SchemaLoaded);
     rc = SQLITE_OK;
   }
+
+  /* Jump here for an error that occurs after successfully allocating
+  ** curMain and calling sqlite3BtreeEnter(). For an error that occurs
+  ** before that point, jump to error_out.
+  */
+leave_error_out:
+  sqlite3BtreeCloseCursor(curMain);
+  sqlite3_free(curMain);
   sqlite3BtreeLeave(pDb->pBt);
 
 error_out:
@@ -441,23 +448,32 @@ static int schemaIsValid(sqlite3 *db){
   int cookie;
   int allOk = 1;
 
-  assert( sqlite3_mutex_held(db->mutex) );
-  for(iDb=0; allOk && iDb<db->nDb; iDb++){
-    Btree *pBt;
-    pBt = db->aDb[iDb].pBt;
-    if( pBt==0 ) continue;
-    rc = sqlite3BtreeCursor(pBt, MASTER_ROOT, 0, 0, &curTemp);
-    if( rc==SQLITE_OK ){
-      rc = sqlite3BtreeGetMeta(pBt, 1, (u32 *)&cookie);
-      if( rc==SQLITE_OK && cookie!=db->aDb[iDb].pSchema->schema_cookie ){
-        allOk = 0;
+  curTemp = (BtCursor *)sqlite3_malloc(sqlite3BtreeCursorSize());
+  if( curTemp ){
+    assert( sqlite3_mutex_held(db->mutex) );
+    for(iDb=0; allOk && iDb<db->nDb; iDb++){
+      Btree *pBt;
+      pBt = db->aDb[iDb].pBt;
+      if( pBt==0 ) continue;
+      memset(curTemp, 0, sqlite3BtreeCursorSize());
+      rc = sqlite3BtreeCursor(pBt, MASTER_ROOT, 0, 0, curTemp);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3BtreeGetMeta(pBt, 1, (u32 *)&cookie);
+        if( rc==SQLITE_OK && cookie!=db->aDb[iDb].pSchema->schema_cookie ){
+          allOk = 0;
+        }
+        sqlite3BtreeCloseCursor(curTemp);
       }
-      sqlite3BtreeCloseCursor(curTemp);
+      if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
+        db->mallocFailed = 1;
+      }
     }
-    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
-      db->mallocFailed = 1;
-    }
+    sqlite3_free(curTemp);
+  }else{
+    allOk = 0;
+    db->mallocFailed = 1;
   }
+
   return allOk;
 }
 

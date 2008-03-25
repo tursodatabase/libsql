@@ -958,6 +958,17 @@ void sqlite3VdbeMakeReady(
    */
   p->magic = VDBE_MAGIC_RUN;
 
+  /* For each cursor required, also allocate a memory cell. Memory
+  ** cells (nMem+1-nCursor)..nMem, inclusive, will never be used by
+  ** the vdbe program. Instead they are used to allocate space for
+  ** Cursor/BtCursor structures. The blob of memory associated with 
+  ** cursor 0 is stored in memory cell nMem. Memory cell (nMem-1)
+  ** stores the blob of memory associated with cursor 1, etc.
+  **
+  ** See also: allocateCursor().
+  */
+  nMem += nCursor;
+
   /*
   ** Allocation space for registers.
   */
@@ -1026,8 +1037,8 @@ void sqlite3VdbeMakeReady(
 }
 
 /*
-** Close a VDBE cursor and release all the resources that cursor happens
-** to hold.
+** Close a VDBE cursor and release all the resources that cursor 
+** happens to hold.
 */
 void sqlite3VdbeFreeCursor(Vdbe *p, Cursor *pCx){
   if( pCx==0 ){
@@ -1051,8 +1062,9 @@ void sqlite3VdbeFreeCursor(Vdbe *p, Cursor *pCx){
   }
 #endif
   sqlite3_free(pCx->pData);
-  sqlite3_free(pCx->aType);
-  sqlite3_free(pCx);
+  memset(pCx, 0, sizeof(Cursor));
+  /* sqlite3_free(pCx->aType); */
+  /* sqlite3_free(pCx); */
 }
 
 /*
@@ -1084,6 +1096,7 @@ static void Cleanup(Vdbe *p){
   for(i=1; i<=p->nMem; i++){
     MemSetTypeFlag(&p->aMem[i], MEM_Null);
   }
+
   releaseMemArray(&p->aMem[1], p->nMem);
   sqlite3VdbeFifoClear(&p->sFifo);
   if( p->contextStack ){

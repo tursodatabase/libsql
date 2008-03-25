@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.716 2008/03/25 00:22:21 drh Exp $
+** $Id: vdbe.c,v 1.717 2008/03/25 09:47:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -208,15 +208,66 @@ int sqlite3VdbeOpcodeHasProperty(int opcode, int mask){
 ** Allocate cursor number iCur.  Return a pointer to it.  Return NULL
 ** if we run out of memory.
 */
-static Cursor *allocateCursor(Vdbe *p, int iCur, int iDb){
-  Cursor *pCx;
+static Cursor *allocateCursor(
+  Vdbe *p, 
+  int iCur, 
+  Op *pOp,
+  int iDb, 
+  int isBtreeCursor
+){
+  /* Find the memory cell that will be used to store the blob of memory
+  ** required for this Cursor structure. It is convenient to use a 
+  ** vdbe memory cell to manage the memory allocation required for a
+  ** Cursor structure for the following reasons:
+  **
+  **   * Sometimes cursor numbers are used for a couple of different
+  **     purposes in a vdbe program. The different uses might require
+  **     different sized allocations. Memory cells provide growable
+  **     allocations.
+  **
+  **   * When using ENABLE_MEMORY_MANAGEMENT, memory cell buffers can
+  **     be freed lazily via the sqlite3_release_memory() API. This
+  **     minimizes the number of malloc calls made by the system.
+  **
+  ** Memory cells for cursors are allocated at the top of the address
+  ** space. Memory cell (p->nMem) corresponds to cursor 0. Space for
+  ** cursor 1 is managed by memory cell (p->nMem-1), etc.
+  */
+  Mem *pMem = &p->aMem[p->nMem-iCur];
+
+  Cursor *pCx = 0;
+  /* If the opcode of pOp is OP_SetNumColumns, then pOp->p2 contains
+  ** the number of fields in the records contained in the table or
+  ** index being opened. Use this to reserve space for the 
+  ** Cursor.aType[] array.
+  */
+  int nField = 0;
+  if( pOp->opcode==OP_SetNumColumns || pOp->opcode==OP_OpenEphemeral ){
+    nField = pOp->p2;
+  }
+
+
+  int nByte = 
+      sizeof(Cursor) + 
+      (isBtreeCursor?sqlite3BtreeCursorSize():0) + 
+      2*nField*sizeof(u32);
+
   assert( iCur<p->nCursor );
   if( p->apCsr[iCur] ){
     sqlite3VdbeFreeCursor(p, p->apCsr[iCur]);
+    p->apCsr[iCur] = 0;
   }
-  p->apCsr[iCur] = pCx = sqlite3MallocZero( sizeof(Cursor) );
-  if( pCx ){
+  if( SQLITE_OK==sqlite3VdbeMemGrow(pMem, nByte, 0) ){
+    p->apCsr[iCur] = pCx = (Cursor *)pMem->z;
+    memset(pMem->z, 0, nByte);
     pCx->iDb = iDb;
+    pCx->nField = nField;
+    if( nField ){
+      pCx->aType = (u32 *)&pMem->z[sizeof(Cursor)];
+    }
+    if( isBtreeCursor ){
+      pCx->pCursor = (BtCursor *)&pMem->z[sizeof(Cursor)+2*nField*sizeof(u32)];
+    }
   }
   return pCx;
 }
@@ -1773,22 +1824,23 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
   break;
 }
 
-/* Opcode: SetNumColumns P1 P2 * * *
+/* Opcode: SetNumColumns * P2 * * *
 **
-** Before the OP_Column opcode can be executed on a cursor, this
-** opcode must be called to set the number of fields in the table.
+** This opcode sets the number of columns for the cursor opened by the
+** following instruction to P2.
 **
-** This opcode sets the number of columns for cursor P1 to P2.
+** An OP_SetNumColumns is only useful if it occurs immediately before 
+** one of the following opcodes:
 **
-** If OP_KeyAsData is to be applied to cursor P1, it must be executed
-** before this op-code.
+**     OpenRead
+**     OpenWrite
+**     OpenPseudo
+**
+** If the OP_Column opcode is to be executed on a cursor, then
+** this opcode must be present immediately before the opcode that
+** opens the cursor.
 */
 case OP_SetNumColumns: {
-  Cursor *pC;
-  assert( (pOp->p1)<p->nCursor );
-  assert( p->apCsr[pOp->p1]!=0 );
-  pC = p->apCsr[pOp->p1];
-  pC->nField = pOp->p2;
   break;
 }
 
@@ -1893,8 +1945,8 @@ case OP_Column: {
   /* Read and parse the table header.  Store the results of the parse
   ** into the record header cache fields of the cursor.
   */
+  aType = pC->aType;
   if( pC->cacheStatus==p->cacheCtr ){
-    aType = pC->aType;
     aOffset = pC->aOffset;
   }else{
     u8 *zIdx;        /* Index into header */
@@ -1903,13 +1955,7 @@ case OP_Column: {
     int szHdrSz;     /* Size of the header size field at start of record */
     int avail;       /* Number of bytes of available data */
 
-    aType = pC->aType;
-    if( aType==0 ){
-      pC->aType = aType = sqlite3DbMallocRaw(db, 2*nField*sizeof(aType) );
-    }
-    if( aType==0 ){
-      goto no_mem;
-    }
+    assert(aType);
     pC->aOffset = aOffset = &aType[nField];
     pC->payloadSize = payloadSize;
     pC->cacheStatus = p->cacheCtr;
@@ -2515,10 +2561,10 @@ case OP_OpenWrite: {
     assert( p2>=2 );
   }
   assert( i>=0 );
-  pCur = allocateCursor(p, i, iDb);
+  pCur = allocateCursor(p, i, &pOp[-1], iDb, 1);
   if( pCur==0 ) goto no_mem;
   pCur->nullRow = 1;
-  rc = sqlite3BtreeCursor(pX, p2, wrFlag, pOp->p4.p, &pCur->pCursor);
+  rc = sqlite3BtreeCursor(pX, p2, wrFlag, pOp->p4.p, pCur->pCursor);
   if( pOp->p4type==P4_KEYINFO ){
     pCur->pKeyInfo = pOp->p4.pKeyInfo;
     pCur->pIncrKey = &pCur->pKeyInfo->incrKey;
@@ -2561,6 +2607,7 @@ case OP_OpenWrite: {
     case SQLITE_EMPTY: {
       pCur->isTable = pOp->p4type!=P4_KEYINFO;
       pCur->isIndex = !pCur->isTable;
+      pCur->pCursor = 0;
       rc = SQLITE_OK;
       break;
     }
@@ -2600,7 +2647,7 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_TRANSIENT_DB;
 
   assert( i>=0 );
-  pCx = allocateCursor(p, i, -1);
+  pCx = allocateCursor(p, i, pOp, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   rc = sqlite3BtreeFactory(db, 0, 1, SQLITE_DEFAULT_TEMP_CACHE_SIZE, openFlags,
@@ -2621,19 +2668,18 @@ case OP_OpenEphemeral: {
       if( rc==SQLITE_OK ){
         assert( pgno==MASTER_ROOT+1 );
         rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, 
-                                (KeyInfo*)pOp->p4.z, &pCx->pCursor);
+                                (KeyInfo*)pOp->p4.z, pCx->pCursor);
         pCx->pKeyInfo = pOp->p4.pKeyInfo;
         pCx->pKeyInfo->enc = ENC(p->db);
         pCx->pIncrKey = &pCx->pKeyInfo->incrKey;
       }
       pCx->isTable = 0;
     }else{
-      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, &pCx->pCursor);
+      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, pCx->pCursor);
       pCx->isTable = 1;
       pCx->pIncrKey = &pCx->bogusIncrKey;
     }
   }
-  pCx->nField = pOp->p2;
   pCx->isIndex = !pCx->isTable;
   break;
 }
@@ -2654,7 +2700,7 @@ case OP_OpenPseudo: {
   int i = pOp->p1;
   Cursor *pCx;
   assert( i>=0 );
-  pCx = allocateCursor(p, i, -1);
+  pCx = allocateCursor(p, i, &pOp[-1], -1, 0);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   pCx->pseudoTable = 1;
@@ -4390,7 +4436,7 @@ case OP_VOpen: {
     pVtabCursor->pVtab = pVtab;
 
     /* Initialise vdbe cursor object */
-    pCur = allocateCursor(p, pOp->p1, -1);
+    pCur = allocateCursor(p, pOp->p1, &pOp[-1], -1, 0);
     if( pCur ){
       pCur->pVtabCursor = pVtabCursor;
       pCur->pModule = pVtabCursor->pVtab->pModule;

@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.95 2008/03/25 00:22:21 drh Exp $
+** @(#) $Id: btree.h,v 1.96 2008/03/25 09:47:35 danielk1977 Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -128,12 +128,13 @@ int sqlite3BtreeUpdateMeta(Btree*, int idx, u32 value);
 void sqlite3BtreeTripAllCursors(Btree*, int);
 
 int sqlite3BtreeCursor(
-  Btree*,                  /* BTree containing table to open */
-  int iTable,              /* Index of root page */
-  int wrFlag,              /* 1 for writing.  0 for read-only */
-  struct KeyInfo*,         /* First argument to compare function */
-  BtCursor **ppCursor      /* Returned cursor */
+  Btree*,                              /* BTree containing table to open */
+  int iTable,                          /* Index of root page */
+  int wrFlag,                          /* 1 for writing.  0 for read-only */
+  struct KeyInfo*,                     /* First argument to compare function */
+  BtCursor *pCursor                    /* Space to write cursor structure */
 );
+int sqlite3BtreeCursorSize();
 
 int sqlite3BtreeCloseCursor(BtCursor*);
 int sqlite3BtreeMoveto(BtCursor*,const void *pKey,i64 nKey,int bias,int *pRes);

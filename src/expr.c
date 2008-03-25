@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.356 2008/03/20 16:30:18 drh Exp $
+** $Id: expr.c,v 1.357 2008/03/25 09:47:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1639,11 +1639,11 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
           iAddr = sqlite3VdbeAddOp1(v, OP_If, iMem);
           sqlite3VdbeAddOp2(v, OP_Integer, 1, iMem);
   
+          sqlite3VdbeAddOp2(v, OP_SetNumColumns, 0, pIdx->nColumn);
           sqlite3VdbeAddOp4(v, OP_OpenRead, iTab, pIdx->tnum, iDb,
                                pKey,P4_KEYINFO_HANDOFF);
           VdbeComment((v, "%s", pIdx->zName));
           eType = IN_INDEX_INDEX;
-          sqlite3VdbeAddOp2(v, OP_SetNumColumns, iTab, pIdx->nColumn);
 
           sqlite3VdbeJumpHere(v, iAddr);
         }
@@ -1719,10 +1719,9 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       ** is used.
       */
       pExpr->iTable = pParse->nTab++;
-      addr = sqlite3VdbeAddOp1(v, OP_OpenEphemeral, pExpr->iTable);
+      addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pExpr->iTable, 1);
       memset(&keyInfo, 0, sizeof(keyInfo));
       keyInfo.nField = 1;
-      sqlite3VdbeAddOp2(v, OP_SetNumColumns, pExpr->iTable, 1);
 
       if( pExpr->pSelect ){
         /* Case 1:     expr IN (SELECT ...)

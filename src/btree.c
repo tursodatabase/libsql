@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.443 2008/03/25 00:22:21 drh Exp $
+** $Id: btree.c,v 1.444 2008/03/25 09:47:35 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2677,18 +2677,16 @@ int sqlite3BtreeRollbackStmt(Btree *p){
 ** will not work correctly.
 */
 static int btreeCursor(
-  Btree *p,                       /* The btree */
-  int iTable,                     /* Root page of table to open */
-  int wrFlag,                     /* 1 to write. 0 read-only */
-  struct KeyInfo *pKeyInfo,       /* First arg to comparison function */
-  BtCursor **ppCur                /* Write new cursor here */
+  Btree *p,                              /* The btree */
+  int iTable,                            /* Root page of table to open */
+  int wrFlag,                            /* 1 to write. 0 read-only */
+  struct KeyInfo *pKeyInfo,              /* First arg to comparison function */
+  BtCursor *pCur                         /* Space for new cursor */
 ){
   int rc;
-  BtCursor *pCur;
   BtShared *pBt = p->pBt;
 
   assert( sqlite3BtreeHoldsMutex(p) );
-  *ppCur = 0;
   if( wrFlag ){
     if( pBt->readOnly ){
       return SQLITE_READONLY;
@@ -2706,11 +2704,6 @@ static int btreeCursor(
     if( pBt->readOnly && wrFlag ){
       return SQLITE_READONLY;
     }
-  }
-  pCur = sqlite3MallocZero( sizeof(*pCur) );
-  if( pCur==0 ){
-    rc = SQLITE_NOMEM;
-    goto create_cursor_exception;
   }
   pCur->pgnoRoot = (Pgno)iTable;
   if( iTable==1 && sqlite3PagerPagecount(pBt->pPager)==0 ){
@@ -2736,32 +2729,34 @@ static int btreeCursor(
   }
   pBt->pCursor = pCur;
   pCur->eState = CURSOR_INVALID;
-  *ppCur = pCur;
 
   return SQLITE_OK;
 
 create_cursor_exception:
   if( pCur ){
     releasePage(pCur->pPage);
-    sqlite3_free(pCur);
   }
   unlockBtreeIfUnused(pBt);
   return rc;
 }
 int sqlite3BtreeCursor(
-  Btree *p,                   /* The btree */
-  int iTable,                 /* Root page of table to open */
-  int wrFlag,                 /* 1 to write. 0 read-only */
-  struct KeyInfo *pKeyInfo,   /* First arg to xCompare() */
-  BtCursor **ppCur            /* Write new cursor here */
+  Btree *p,                                   /* The btree */
+  int iTable,                                 /* Root page of table to open */
+  int wrFlag,                                 /* 1 to write. 0 read-only */
+  struct KeyInfo *pKeyInfo,                   /* First arg to xCompare() */
+  BtCursor *pCur                              /* Write new cursor here */
 ){
   int rc;
   sqlite3BtreeEnter(p);
   p->pBt->db = p->db;
-  rc = btreeCursor(p, iTable, wrFlag, pKeyInfo, ppCur);
+  rc = btreeCursor(p, iTable, wrFlag, pKeyInfo, pCur);
   sqlite3BtreeLeave(p);
   return rc;
 }
+int sqlite3BtreeCursorSize(){
+  return sizeof(BtCursor);
+}
+
 
 
 /*
@@ -2769,25 +2764,26 @@ int sqlite3BtreeCursor(
 ** when the last cursor is closed.
 */
 int sqlite3BtreeCloseCursor(BtCursor *pCur){
-  BtShared *pBt = pCur->pBt;
   Btree *pBtree = pCur->pBtree;
-
-  sqlite3BtreeEnter(pBtree);
-  pBt->db = pBtree->db;
-  clearCursorPosition(pCur);
-  if( pCur->pPrev ){
-    pCur->pPrev->pNext = pCur->pNext;
-  }else{
-    pBt->pCursor = pCur->pNext;
+  if( pBtree ){
+    BtShared *pBt = pCur->pBt;
+    sqlite3BtreeEnter(pBtree);
+    pBt->db = pBtree->db;
+    clearCursorPosition(pCur);
+    if( pCur->pPrev ){
+      pCur->pPrev->pNext = pCur->pNext;
+    }else{
+      pBt->pCursor = pCur->pNext;
+    }
+    if( pCur->pNext ){
+      pCur->pNext->pPrev = pCur->pPrev;
+    }
+    releasePage(pCur->pPage);
+    unlockBtreeIfUnused(pBt);
+    invalidateOverflowCache(pCur);
+    /* sqlite3_free(pCur); */
+    sqlite3BtreeLeave(pBtree);
   }
-  if( pCur->pNext ){
-    pCur->pNext->pPrev = pCur->pPrev;
-  }
-  releasePage(pCur->pPage);
-  unlockBtreeIfUnused(pBt);
-  invalidateOverflowCache(pCur);
-  sqlite3_free(pCur);
-  sqlite3BtreeLeave(pBtree);
   return SQLITE_OK;
 }
 

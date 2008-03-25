@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.41 2008/01/25 15:04:49 drh Exp $
+** @(#) $Id: analyze.c,v 1.42 2008/03/25 09:47:35 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -74,9 +74,9 @@ static void openStatTable(
   if( !createStat1 ){
     sqlite3TableLock(pParse, iDb, iRootPage, 1, "sqlite_stat1");
   }
+  sqlite3VdbeAddOp2(v, OP_SetNumColumns, 0, 3);
   sqlite3VdbeAddOp3(v, OP_OpenWrite, iStatCur, iRootPage, iDb);
   sqlite3VdbeChangeP5(v, createStat1);
-  sqlite3VdbeAddOp2(v, OP_SetNumColumns, iStatCur, 3);
 }
 
 /*
@@ -130,17 +130,17 @@ static void analyzeOneTable(
     /* Open a cursor to the index to be analyzed
     */
     assert( iDb==sqlite3SchemaToIndex(pParse->db, pIdx->pSchema) );
+    nCol = pIdx->nColumn;
+    sqlite3VdbeAddOp2(v, OP_SetNumColumns, 0, nCol+1);
     sqlite3VdbeAddOp4(v, OP_OpenRead, iIdxCur, pIdx->tnum, iDb,
         (char *)pKey, P4_KEYINFO_HANDOFF);
     VdbeComment((v, "%s", pIdx->zName));
-    nCol = pIdx->nColumn;
     regFields = iMem+nCol*2;
     regTemp = regRowid = regCol = regFields+3;
     regRec = regCol+1;
     if( regRec>pParse->nMem ){
       pParse->nMem = regRec;
     }
-    sqlite3VdbeAddOp2(v, OP_SetNumColumns, iIdxCur, nCol+1);
 
     /* Memory cells are used as follows:
     **
