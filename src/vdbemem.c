@@ -636,6 +636,14 @@ int sqlite3VdbeMemSetStr(
       for(nByte=0; z[nByte] | z[nByte+1]; nByte+=2){}
     }
     flags |= MEM_Term;
+  }else if( enc==SQLITE_UTF8 && nByte>0 && z[nByte-1]=='\0' ){
+    nByte--;
+    flags |= MEM_Term;
+#ifndef SQLITE_OMIT_UTF16
+  }else if( enc && nByte>1 && z[nByte-1]=='\0' && z[nByte-2]=='\0' ){
+    nByte -= 2;
+    flags |= MEM_Term;
+#endif
   }
 
   /* The following block sets the new values of Mem.z and Mem.xDel. It
