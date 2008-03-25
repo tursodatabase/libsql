@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.476 2008/03/25 09:47:35 danielk1977 Exp $
+** $Id: build.c,v 1.477 2008/03/25 17:23:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2278,7 +2278,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
   addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
   regRecord = sqlite3GetTempReg(pParse);
-  regIdxKey = sqlite3GenerateIndexKey(pParse, pIndex, iTab, regRecord);
+  regIdxKey = sqlite3GenerateIndexKey(pParse, pIndex, iTab, regRecord, 1);
   if( pIndex->onError!=OE_None ){
     int j1, j2;
     int regRowid;

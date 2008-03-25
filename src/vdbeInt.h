@@ -336,6 +336,28 @@ struct Vdbe {
 };
 
 /*
+** An instance of the following structure holds information about a
+** single index record that has already been parsed out into individual
+** values.
+**
+** A record is an object that contains one or more fields of data.
+** Records are used to store the content of a table row and to store
+** the key of an index.  A blob encoding of a record is created by
+** the OP_MakeRecord opcode of the VDBE and is disassemblied by the
+** OP_Column opcode.
+**
+** This structure holds a record that has already been disassembled
+** into its constitutent fields.
+*/
+struct UnpackedRecord {
+  KeyInfo *pKeyInfo;  /* Collation and sort-order information */
+  u16 nField;         /* Number of entries in apMem[] */
+  u8 needFree;        /* True if memory obtained from sqlite3_malloc() */
+  u8 needDestroy;     /* True if apMem[]s should be destroyed on close */
+  Mem *aMem;          /* Values */
+};
+
+/*
 ** The following are allowed values for Vdbe.magic
 */
 #define VDBE_MAGIC_INIT     0x26bceaa5    /* Building a VDBE program */

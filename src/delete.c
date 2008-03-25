@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.163 2008/03/25 09:47:35 danielk1977 Exp $
+** $Id: delete.c,v 1.164 2008/03/25 17:23:33 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -488,18 +488,16 @@ void sqlite3GenerateRowIndexDelete(
   Index *pIdx;
   int r1;
 
-  r1 = sqlite3GetTempReg(pParse);
   for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
     if( aRegIdx!=0 && aRegIdx[i-1]==0 ) continue;
-    sqlite3GenerateIndexKey(pParse, pIdx, iCur, r1);
-    sqlite3VdbeAddOp2(pParse->pVdbe, OP_IdxDelete, iCur+i, r1);
+    r1 = sqlite3GenerateIndexKey(pParse, pIdx, iCur, r1, 0);
+    sqlite3VdbeAddOp3(pParse->pVdbe, OP_IdxDelete, iCur+i, r1,pIdx->nColumn+1);
   }
-  sqlite3ReleaseTempReg(pParse, r1);
 }
 
 /*
-** Generate code that will assemble an index key and put it on the top
-** of the tack.  The key with be for index pIdx which is an index on pTab.
+** Generate code that will assemble an index key and put it in register
+** regOut.  The key with be for index pIdx which is an index on pTab.
 ** iCur is the index of a cursor open on the pTab table and pointing to
 ** the entry that needs indexing.
 **
@@ -512,7 +510,8 @@ int sqlite3GenerateIndexKey(
   Parse *pParse,     /* Parsing context */
   Index *pIdx,       /* The index for which to generate a key */
   int iCur,          /* Cursor number for the pIdx->pTable table */
-  int regOut         /* Write the new index key to this register */
+  int regOut,        /* Write the new index key to this register */
+  int doMakeRec      /* Run the OP_MakeRecord instruction if true */
 ){
   Vdbe *v = pParse->pVdbe;
   int j;
@@ -532,8 +531,10 @@ int sqlite3GenerateIndexKey(
       sqlite3ColumnDefault(v, pTab, idx);
     }
   }
-  sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol+1, regOut);
-  sqlite3IndexAffinityStr(v, pIdx);
+  if( doMakeRec ){
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol+1, regOut);
+    sqlite3IndexAffinityStr(v, pIdx);
+  }
   sqlite3ReleaseTempRange(pParse, regBase, nCol+1);
   return regBase;
 }

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.717 2008/03/25 09:47:35 danielk1977 Exp $
+** $Id: vdbe.c,v 1.718 2008/03/25 17:23:33 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2794,7 +2794,7 @@ case OP_MoveGt: {       /* jump, in3 */
         pC->deferredMoveto = 1;
         break;
       }
-      rc = sqlite3BtreeMoveto(pC->pCursor, 0, (u64)iKey, 0, &res);
+      rc = sqlite3BtreeMoveto(pC->pCursor, 0, 0, (u64)iKey, 0, &res);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
       }
@@ -2803,7 +2803,7 @@ case OP_MoveGt: {       /* jump, in3 */
     }else{
       assert( pIn3->flags & MEM_Blob );
       ExpandBlob(pIn3);
-      rc = sqlite3BtreeMoveto(pC->pCursor, pIn3->z, pIn3->n, 0, &res);
+      rc = sqlite3BtreeMoveto(pC->pCursor, pIn3->z, 0, pIn3->n, 0, &res);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
       }
@@ -2888,7 +2888,7 @@ case OP_Found: {        /* jump, in3 */
     if( pOp->opcode==OP_Found ){
       pC->pKeyInfo->prefixIsEqual = 1;
     }
-    rc = sqlite3BtreeMoveto(pC->pCursor, pIn3->z, pIn3->n, 0, &res);
+    rc = sqlite3BtreeMoveto(pC->pCursor, pIn3->z, 0, pIn3->n, 0, &res);
     pC->pKeyInfo->prefixIsEqual = 0;
     if( rc!=SQLITE_OK ){
       break;
@@ -2965,7 +2965,7 @@ case OP_IsUnique: {        /* jump, in3 */
     */
     assert( pCx->deferredMoveto==0 );
     pCx->cacheStatus = CACHE_STALE;
-    rc = sqlite3BtreeMoveto(pCrsr, zKey, len, 0, &res);
+    rc = sqlite3BtreeMoveto(pCrsr, zKey, 0, len, 0, &res);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
     }
@@ -3033,7 +3033,7 @@ case OP_NotExists: {        /* jump, in3 */
     assert( pIn3->flags & MEM_Int );
     assert( p->apCsr[i]->isTable );
     iKey = intToKey(pIn3->u.i);
-    rc = sqlite3BtreeMoveto(pCrsr, 0, iKey, 0,&res);
+    rc = sqlite3BtreeMoveto(pCrsr, 0, 0, iKey, 0,&res);
     pC->lastRowid = pIn3->u.i;
     pC->rowidIsValid = res==0;
     pC->nullRow = 0;
@@ -3203,7 +3203,7 @@ case OP_NewRowid: {           /* out2-prerelease */
         }
         if( v==0 ) continue;
         x = intToKey(v);
-        rx = sqlite3BtreeMoveto(pC->pCursor, 0, (u64)x, 0, &res);
+        rx = sqlite3BtreeMoveto(pC->pCursor, 0, 0, (u64)x, 0, &res);
         cnt++;
       }while( cnt<100 && rx==SQLITE_OK && res==0 );
       db->priorNewRowid = v;
@@ -3676,22 +3676,29 @@ case OP_IdxInsert: {        /* in2 */
   break;
 }
 
-/* Opcode: IdxDelete P1 P2 * * *
+/* Opcode: IdxDeleteM P1 P2 P3 * *
 **
-** The content of register P2 is an index key built using the 
-** MakeIdxRec opcode. This opcode removes that entry from the 
+** The content of P3 registers starting at register P2 form
+** an unpacked index key. This opcode removes that entry from the 
 ** index opened by cursor P1.
 */
-case OP_IdxDelete: {        /* in2 */
+case OP_IdxDelete: {
   int i = pOp->p1;
   Cursor *pC;
   BtCursor *pCrsr;
-  assert( pIn2->flags & MEM_Blob );
+  assert( pOp->p3>0 );
+  assert( pOp->p2>0 && pOp->p2+pOp->p3<=p->nMem );
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
     int res;
-    rc = sqlite3BtreeMoveto(pCrsr, pIn2->z, pIn2->n, 0, &res);
+    UnpackedRecord r;
+    r.pKeyInfo = pC->pKeyInfo;
+    r.nField = pOp->p3;
+    r.needFree = 0;
+    r.needDestroy = 0;
+    r.aMem = &p->aMem[pOp->p2];
+    rc = sqlite3BtreeMoveto(pCrsr, 0, &r, 0, 0, &res);
     if( rc==SQLITE_OK && res==0 ){
       rc = sqlite3BtreeDelete(pCrsr);
     }
