@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.445 2008/03/25 09:56:45 danielk1977 Exp $
+** $Id: btree.c,v 1.446 2008/03/25 14:24:57 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1440,6 +1440,7 @@ int sqlite3BtreeClose(Btree *p){
       pBt->xFreeSchema(pBt->pSchema);
     }
     sqlite3_free(pBt->pSchema);
+    sqlite3_free(pBt->pTmpSpace);
     sqlite3_free(pBt);
   }
 
@@ -1544,6 +1545,8 @@ int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve){
     assert( (pageSize & 7)==0 );
     assert( !pBt->pPage1 && !pBt->pCursor );
     pBt->pageSize = pageSize;
+    sqlite3_free(pBt->pTmpSpace);
+    pBt->pTmpSpace = 0;
     rc = sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize);
   }
   pBt->usableSize = pBt->pageSize - nReserve;
@@ -1678,6 +1681,8 @@ static int lockBtree(BtShared *pBt){
       releasePage(pPage1);
       pBt->usableSize = usableSize;
       pBt->pageSize = pageSize;
+      sqlite3_free(pBt->pTmpSpace);
+      pBt->pTmpSpace = 0;
       sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize);
       return SQLITE_OK;
     }
@@ -5559,6 +5564,16 @@ static int checkReadLocks(Btree *pBtree, Pgno pgnoRoot, BtCursor *pExclude){
 }
 
 /*
+** Make sure pBt->pTmpSpace points to an allocation of 
+** MX_CELL_SIZE(pBt) bytes.
+*/
+static void allocateTempSpace(BtShared *pBt){
+  if( !pBt->pTmpSpace ){
+    pBt->pTmpSpace = sqlite3_malloc(MX_CELL_SIZE(pBt));
+  }
+}
+
+/*
 ** Insert a new record into the BTree.  The key is given by (pKey,nKey)
 ** and the data is given by (pData,nData).  The cursor is used only to
 ** define what table the record should be inserted into.  The cursor
@@ -5616,7 +5631,8 @@ int sqlite3BtreeInsert(
           pCur->pgnoRoot, nKey, nData, pPage->pgno,
           loc==0 ? "overwrite" : "new entry"));
   assert( pPage->isInit );
-  newCell = sqlite3_malloc( MX_CELL_SIZE(pBt) );
+  allocateTempSpace(pBt);
+  newCell = pBt->pTmpSpace;
   if( newCell==0 ) return SQLITE_NOMEM;
   rc = fillInCell(pPage, newCell, pKey, nKey, pData, nData, nZero, &szNew);
   if( rc ) goto end_insert;
@@ -5653,7 +5669,6 @@ int sqlite3BtreeInsert(
     moveToRoot(pCur);
   }
 end_insert:
-  sqlite3_free(newCell);
   return rc;
 }
 
@@ -5742,7 +5757,8 @@ int sqlite3BtreeDelete(BtCursor *pCur){
       pNext = findCell(leafCur.pPage, leafCur.idx);
       szNext = cellSizePtr(leafCur.pPage, pNext);
       assert( MX_CELL_SIZE(pBt)>=szNext+4 );
-      tempCell = sqlite3_malloc( MX_CELL_SIZE(pBt) );
+      allocateTempSpace(pBt);
+      tempCell = pBt->pTmpSpace;
       if( tempCell==0 ){
         rc = SQLITE_NOMEM;
       }
@@ -5758,7 +5774,6 @@ int sqlite3BtreeDelete(BtCursor *pCur){
         rc = balance(leafCur.pPage, 0);
       }
     }
-    sqlite3_free(tempCell);
     sqlite3BtreeReleaseTempCursor(&leafCur);
   }else{
     TRACE(("DELETE: table=%d delete from leaf %d\n",
