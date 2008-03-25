@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.444 2008/03/25 09:47:35 danielk1977 Exp $
+** $Id: btree.c,v 1.445 2008/03/25 09:56:45 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3644,7 +3644,10 @@ int sqlite3BtreeMoveto(
           c = sqlite3VdbeRecordCompareParsed(nCellKey, pCellKey, pPKey);
         }else{
           pCellKey = sqlite3_malloc( nCellKey );
-          if( pCellKey==0 ) return SQLITE_NOMEM;
+          if( pCellKey==0 ){
+            rc = SQLITE_NOMEM;
+            goto moveto_finish;
+          }
           rc = sqlite3BtreeKey(pCur, 0, nCellKey, (void *)pCellKey);
           c = sqlite3VdbeRecordCompareParsed(nCellKey, pCellKey, pPKey);
           sqlite3_free(pCellKey);

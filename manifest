@@ -1,5 +1,5 @@
-C Use\sa\svdbe\smemory\scell\sto\sallocate\sthe\sspace\srequired\sfor\svdbe\scursors.\s(CVS\s4912)
-D 2008-03-25T09:47:35
+C Fix\sfor\smemory\sleak\sin\smalloc3.test.\s(CVS\s4913)
+D 2008-03-25T09:56:45
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -86,7 +86,7 @@ F src/attach.c bdc75e759ca25a16f4dc7fbdbc6d37ad2561bb24
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 49817d442e51e4123585f3cf3c2afc293a3c91e2
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 5e3f25567d0d7228d151620637c3df9243ab324e
+F src/btree.c 0a170b7bb69035f6e5c4d722e907b908c5480e83
 F src/btree.h e02869e1e7753ad5b3c7cb7852e952c95c2e609a
 F src/btreeInt.h c2deca3e778e2a1e6196343b8087a868f4faa19a
 F src/build.c d0715b3454b140cb405412e3029ec7c0fb434efd
@@ -617,7 +617,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0e1d84f2f456e7680bb667266745b629ddf3605f
-R 284330e7bdf139254e19bec086a6e3bc
+P 047153648155654b0cd70b811935209d2e21776c
+R fe7778c82934f6b01597127050469d93
 U danielk1977
-Z a0d2b0847845caa52b53bf4be4058830
+Z cbb9339bf69751e7040fab28fe7c6c53
