@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.442 2008/03/23 00:20:36 drh Exp $
+** $Id: btree.c,v 1.443 2008/03/25 00:22:21 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2650,23 +2650,6 @@ int sqlite3BtreeRollbackStmt(Btree *p){
 }
 
 /*
-** Default key comparison function to be used if no comparison function
-** is specified on the sqlite3BtreeCursor() call.
-*/
-static int dfltCompare(
-  void *NotUsed,             /* User data is not used */
-  int n1, const void *p1,    /* First key to compare */
-  int n2, const void *p2     /* Second key to compare */
-){
-  int c;
-  c = memcmp(p1, p2, n1<n2 ? n1 : n2);
-  if( c==0 ){
-    c = n1 - n2;
-  }
-  return c;
-}
-
-/*
 ** Create a new cursor for the BTree whose root is on the page
 ** iTable.  The act of acquiring a cursor gets a read lock on 
 ** the database file.
@@ -2692,20 +2675,13 @@ static int dfltCompare(
 ** No checking is done to make sure that page iTable really is the
 ** root page of a b-tree.  If it is not, then the cursor acquired
 ** will not work correctly.
-**
-** The comparison function must be logically the same for every cursor
-** on a particular table.  Changing the comparison function will result
-** in incorrect operations.  If the comparison function is NULL, a
-** default comparison function is used.  The comparison function is
-** always ignored for INTKEY tables.
 */
 static int btreeCursor(
-  Btree *p,                                   /* The btree */
-  int iTable,                                 /* Root page of table to open */
-  int wrFlag,                                 /* 1 to write. 0 read-only */
-  int (*xCmp)(void*,int,const void*,int,const void*), /* Key Comparison func */
-  void *pArg,                                 /* First arg to xCompare() */
-  BtCursor **ppCur                            /* Write new cursor here */
+  Btree *p,                       /* The btree */
+  int iTable,                     /* Root page of table to open */
+  int wrFlag,                     /* 1 to write. 0 read-only */
+  struct KeyInfo *pKeyInfo,       /* First arg to comparison function */
+  BtCursor **ppCur                /* Write new cursor here */
 ){
   int rc;
   BtCursor *pCur;
@@ -2750,8 +2726,7 @@ static int btreeCursor(
   ** variables, link the cursor into the BtShared list and set *ppCur (the
   ** output argument to this function).
   */
-  pCur->xCompare = xCmp ? xCmp : dfltCompare;
-  pCur->pArg = pArg;
+  pCur->pKeyInfo = pKeyInfo;
   pCur->pBtree = p;
   pCur->pBt = pBt;
   pCur->wrFlag = wrFlag;
@@ -2774,17 +2749,16 @@ create_cursor_exception:
   return rc;
 }
 int sqlite3BtreeCursor(
-  Btree *p,                                   /* The btree */
-  int iTable,                                 /* Root page of table to open */
-  int wrFlag,                                 /* 1 to write. 0 read-only */
-  int (*xCmp)(void*,int,const void*,int,const void*), /* Key Comparison func */
-  void *pArg,                                 /* First arg to xCompare() */
-  BtCursor **ppCur                            /* Write new cursor here */
+  Btree *p,                   /* The btree */
+  int iTable,                 /* Root page of table to open */
+  int wrFlag,                 /* 1 to write. 0 read-only */
+  struct KeyInfo *pKeyInfo,   /* First arg to xCompare() */
+  BtCursor **ppCur            /* Write new cursor here */
 ){
   int rc;
   sqlite3BtreeEnter(p);
   p->pBt->db = p->db;
-  rc = btreeCursor(p, iTable, wrFlag, xCmp, pArg, ppCur);
+  rc = btreeCursor(p, iTable, wrFlag, pKeyInfo, ppCur);
   sqlite3BtreeLeave(p);
   return rc;
 }
@@ -3578,8 +3552,7 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 **
 ** For INTKEY tables, only the nKey parameter is used.  pKey is
 ** ignored.  For other tables, nKey is the number of bytes of data
-** in pKey.  The comparison function specified when the cursor was
-** created is used to compare keys.
+** in pKey.
 **
 ** If an exact match is not found, then the cursor is always
 ** left pointing at a leaf page which would hold the entry if it
@@ -3609,6 +3582,8 @@ int sqlite3BtreeMoveto(
   int *pRes              /* Search result flag */
 ){
   int rc;
+  VdbeParsedRecord *pPKey;
+  char aSpace[200];
 
   assert( cursorHoldsMutex(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
@@ -3623,6 +3598,13 @@ int sqlite3BtreeMoveto(
     assert( pCur->pPage->nCell==0 );
     return SQLITE_OK;
   }
+  if( pCur->pPage->intKey ){
+    pPKey = 0;
+  }else{
+    pPKey = sqlite3VdbeRecordParse(pCur->pKeyInfo, nKey, pKey,
+                                   aSpace, sizeof(aSpace));
+    if( pPKey==0 ) return SQLITE_NOMEM;
+  }
   for(;;){
     int lwr, upr;
     Pgno chldPg;
@@ -3631,7 +3613,8 @@ int sqlite3BtreeMoveto(
     lwr = 0;
     upr = pPage->nCell-1;
     if( !pPage->intKey && pKey==0 ){
-      return SQLITE_CORRUPT_BKPT;
+      rc = SQLITE_CORRUPT_BKPT;
+      goto moveto_finish;
     }
     if( biasRight ){
       pCur->idx = upr;
@@ -3662,16 +3645,14 @@ int sqlite3BtreeMoveto(
         pCellKey = (void *)fetchPayload(pCur, &available, 0);
         nCellKey = pCur->info.nKey;
         if( available>=nCellKey ){
-          c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
+          c = sqlite3VdbeRecordCompareParsed(nCellKey, pCellKey, pPKey);
         }else{
           pCellKey = sqlite3_malloc( nCellKey );
           if( pCellKey==0 ) return SQLITE_NOMEM;
           rc = sqlite3BtreeKey(pCur, 0, nCellKey, (void *)pCellKey);
-          c = pCur->xCompare(pCur->pArg, nCellKey, pCellKey, nKey, pKey);
+          c = sqlite3VdbeRecordCompareParsed(nCellKey, pCellKey, pPKey);
           sqlite3_free(pCellKey);
-          if( rc ){
-            return rc;
-          }
+          if( rc ) goto moveto_finish;
         }
       }
       if( c==0 ){
@@ -3681,7 +3662,8 @@ int sqlite3BtreeMoveto(
           break;
         }else{
           if( pRes ) *pRes = 0;
-          return SQLITE_OK;
+          rc = SQLITE_OK;
+          goto moveto_finish;
         }
       }
       if( c<0 ){
@@ -3706,16 +3688,17 @@ int sqlite3BtreeMoveto(
     if( chldPg==0 ){
       assert( pCur->idx>=0 && pCur->idx<pCur->pPage->nCell );
       if( pRes ) *pRes = c;
-      return SQLITE_OK;
+      rc = SQLITE_OK;
+      goto moveto_finish;
     }
     pCur->idx = lwr;
     pCur->info.nSize = 0;
     rc = moveToChild(pCur, chldPg);
-    if( rc ){
-      return rc;
-    }
+    if( rc ) goto moveto_finish;
   }
-  /* NOT REACHED */
+moveto_finish:
+  sqlite3VdbeRecordUnparse(pPKey);
+  return rc;
 }
 
 

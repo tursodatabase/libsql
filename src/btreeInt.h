@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.17 2008/03/04 17:45:01 mlcreech Exp $
+** $Id: btreeInt.h,v 1.18 2008/03/25 00:22:21 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -435,8 +435,7 @@ struct BtCursor {
   Btree *pBtree;            /* The Btree to which this cursor belongs */
   BtShared *pBt;            /* The BtShared this cursor points to */
   BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
-  int (*xCompare)(void*,int,const void*,int,const void*); /* Key comp func */
-  void *pArg;               /* First arg to xCompare() */
+  struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
   Pgno pgnoRoot;            /* The root page of this tree */
   MemPage *pPage;           /* Page that contains the entry */
   int idx;                  /* Index of the entry in pPage->aCell[] */

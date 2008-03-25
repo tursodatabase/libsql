@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.91 2008/03/04 17:45:02 mlcreech Exp $
+** $Id: test3.c,v 1.92 2008/03/25 00:22:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -712,7 +712,7 @@ static int btree_cursor(
   if( Tcl_GetInt(interp, argv[2], &iTable) ) return TCL_ERROR;
   if( Tcl_GetBoolean(interp, argv[3], &wrFlag) ) return TCL_ERROR;
   sqlite3BtreeEnter(pBt);
-  rc = sqlite3BtreeCursor(pBt, iTable, wrFlag, 0, 0, &pCur);
+  rc = sqlite3BtreeCursor(pBt, iTable, wrFlag, 0, &pCur);
   sqlite3BtreeLeave(pBt);
   if( rc ){
     Tcl_AppendResult(interp, errorName(rc), 0);

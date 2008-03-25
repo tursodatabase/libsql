@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.80 2008/03/20 14:03:29 drh Exp $
+** $Id: prepare.c,v 1.81 2008/03/25 00:22:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -208,7 +208,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     return SQLITE_OK;
   }
   sqlite3BtreeEnter(pDb->pBt);
-  rc = sqlite3BtreeCursor(pDb->pBt, MASTER_ROOT, 0, 0, 0, &curMain);
+  rc = sqlite3BtreeCursor(pDb->pBt, MASTER_ROOT, 0, 0, &curMain);
   if( rc!=SQLITE_OK && rc!=SQLITE_EMPTY ){
     sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
     sqlite3BtreeLeave(pDb->pBt);
@@ -446,7 +446,7 @@ static int schemaIsValid(sqlite3 *db){
     Btree *pBt;
     pBt = db->aDb[iDb].pBt;
     if( pBt==0 ) continue;
-    rc = sqlite3BtreeCursor(pBt, MASTER_ROOT, 0, 0, 0, &curTemp);
+    rc = sqlite3BtreeCursor(pBt, MASTER_ROOT, 0, 0, &curTemp);
     if( rc==SQLITE_OK ){
       rc = sqlite3BtreeGetMeta(pBt, 1, (u32 *)&cookie);
       if( rc==SQLITE_OK && cookie!=db->aDb[iDb].pSchema->schema_cookie ){

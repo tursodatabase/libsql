@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.715 2008/03/21 17:13:13 drh Exp $
+** $Id: vdbe.c,v 1.716 2008/03/25 00:22:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2054,9 +2054,8 @@ op_column_out:
 ** Convert P2 registers beginning with P1 into a single entry
 ** suitable for use as a data record in a database table or as a key
 ** in an index.  The details of the format are irrelavant as long as
-** the OP_Column opcode can decode the record later and as long as the
-** sqlite3VdbeRecordCompare function will correctly compare two encoded
-** records.  Refer to source code comments for the details of the record
+** the OP_Column opcode can decode the record later.
+** Refer to source code comments for the details of the record
 ** format.
 **
 ** P4 may be a string that is P1 characters long.  The nth character of the
@@ -2519,11 +2518,7 @@ case OP_OpenWrite: {
   pCur = allocateCursor(p, i, iDb);
   if( pCur==0 ) goto no_mem;
   pCur->nullRow = 1;
-  /* We always provide a key comparison function.  If the table being
-  ** opened is of type INTKEY, the comparision function will be ignored. */
-  rc = sqlite3BtreeCursor(pX, p2, wrFlag,
-           sqlite3VdbeRecordCompare, pOp->p4.p,
-           &pCur->pCursor);
+  rc = sqlite3BtreeCursor(pX, p2, wrFlag, pOp->p4.p, &pCur->pCursor);
   if( pOp->p4type==P4_KEYINFO ){
     pCur->pKeyInfo = pOp->p4.pKeyInfo;
     pCur->pIncrKey = &pCur->pKeyInfo->incrKey;
@@ -2625,15 +2620,15 @@ case OP_OpenEphemeral: {
       rc = sqlite3BtreeCreateTable(pCx->pBt, &pgno, BTREE_ZERODATA); 
       if( rc==SQLITE_OK ){
         assert( pgno==MASTER_ROOT+1 );
-        rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, sqlite3VdbeRecordCompare,
-            pOp->p4.z, &pCx->pCursor);
+        rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, 
+                                (KeyInfo*)pOp->p4.z, &pCx->pCursor);
         pCx->pKeyInfo = pOp->p4.pKeyInfo;
         pCx->pKeyInfo->enc = ENC(p->db);
         pCx->pIncrKey = &pCx->pKeyInfo->incrKey;
       }
       pCx->isTable = 0;
     }else{
-      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, 0, &pCx->pCursor);
+      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, &pCx->pCursor);
       pCx->isTable = 1;
       pCx->pIncrKey = &pCx->bogusIncrKey;
     }

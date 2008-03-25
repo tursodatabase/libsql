@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.72 2008/03/22 01:08:01 drh Exp $
+# $Id: quick.test,v 1.73 2008/03/25 00:22:22 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -39,11 +39,6 @@ set EXCLUDE {
   all.test
   async.test
   async2.test
-  btree2.test
-  btree3.test
-  btree4.test
-  btree5.test
-  btree6.test
   corrupt.test
   crash.test
   crash2.test

@@ -2130,6 +2130,7 @@ int sqlite3VdbeSerialGet(
 */
 #define GetVarint(A,B)  ((B = *(A))<=0x7f ? 1 : sqlite3GetVarint32(A, &B))
 
+#if 0
 /*
 ** This function compares the two table rows or index records specified by 
 ** {nKey1, pKey1} and {nKey2, pKey2}, returning a negative, zero
@@ -2216,6 +2217,190 @@ int sqlite3VdbeRecordCompare(
 
   return rc;
 }
+#endif
+
+/*
+** An instance of the following structure holds information about a
+** single index record that has already been parsed out into individual
+** values.
+**
+** A record is an object that contains one or more fields of data.
+** Records are used to store the content of a table row and to store
+** the key of an index.  A blob encoding of a record is created by
+** the OP_MakeRecord opcode of the VDBE and is disassemblied by the
+** OP_Column opcode.
+**
+** This structure holds a record that has already been disassembled
+** into its constitutent fields.
+*/
+struct VdbeParsedRecord {
+  KeyInfo *pKeyInfo;  /* Collation and sort-order information */
+  u16 nField;         /* Number of entries in apMem[] */
+  u8 needFree;        /* True if memory obtained from sqlite3_malloc() */
+  u8 needDestroy;     /* True if apMem[]s should be destroyed on close */
+  Mem *apMem[1];      /* Values */
+};
+
+/*
+** Given the nKey-byte encoding of a record in pKey[], parse the
+** record into a VdbeParsedRecord structure.  Return a pointer to
+** that structure.
+**
+** The calling function might provide szSpace bytes of memory
+** space at pSpace.  This space can be used to hold the returned
+** VDbeParsedRecord structure if it is large enough.  If it is
+** not big enough, space is obtained from sqlite3_malloc().
+**
+** The returned structure should be closed by a call to
+** sqlite3VdbeRecordUnparse().
+*/ 
+VdbeParsedRecord *sqlite3VdbeRecordParse(
+  KeyInfo *pKeyInfo,     /* Information about the record format */
+  int nKey,              /* Size of the binary record */
+  const void *pKey,      /* The binary record */
+  void *pSpace,          /* Space available to hold resulting object */
+  int szSpace            /* Size of pSpace[] in bytes */
+){
+  const unsigned char *aKey = (const unsigned char *)pKey;
+  VdbeParsedRecord *p;
+  int nByte;
+  int i, idx, d;
+  u32 szHdr;
+  Mem *pMem;
+  
+  nByte = sizeof(*p) + sizeof(Mem*)*pKeyInfo->nField
+                     + sizeof(Mem)*(pKeyInfo->nField+1);
+  if( nByte>szSpace ){
+    p = sqlite3DbMallocRaw(pKeyInfo->db, nByte);
+    if( p==0 ) return 0;
+    p->needFree = 1;
+  }else{
+    p = pSpace;
+    p->needFree = 0;
+  }
+  p->pKeyInfo = pKeyInfo;
+  p->nField = pKeyInfo->nField + 1;
+  p->needDestroy = 1;
+  pMem = (Mem*)&p->apMem[pKeyInfo->nField+1];
+  idx = GetVarint(aKey, szHdr);
+  d = szHdr;
+  i = 0;
+  while( idx<szHdr && i<p->nField ){
+    u32 serial_type;
+
+    idx += GetVarint( aKey+idx, serial_type);
+    if( d>=nKey && sqlite3VdbeSerialTypeLen(serial_type)>0 ) break;
+    pMem->enc = pKeyInfo->enc;
+    pMem->db = pKeyInfo->db;
+    pMem->flags = 0;
+    d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
+    p->apMem[i++] = pMem++;
+  }
+  p->nField = i;
+  return (void*)p;
+}
+
+/*
+** This routine destroys a VdbeParsedRecord object
+*/
+void sqlite3VdbeRecordUnparse(VdbeParsedRecord *p){
+  if( p ){
+    if( p->needDestroy ){
+      int i;
+      for(i=0; i<p->nField; i++){
+        if( p->apMem[i]->flags & MEM_Dyn ){
+          sqlite3VdbeMemRelease(p->apMem[i]);
+        }
+      }
+    }
+    if( p->needFree ){
+      sqlite3_free(p);
+    }
+  }
+}
+
+/*
+** This function compares the two table rows or index records
+** specified by {nKey1, pKey1} and pPKey2.  It returns a negative, zero
+** or positive integer if {nKey1, pKey1} is less than, equal to or 
+** greater than pPKey2.  The {nKey1, pKey1} key must be a blob
+** created by th OP_MakeRecord opcode of the VDBE.  The pPKey2
+** key must be a parsed key such as obtained from
+** sqlite3VdbeParseRecord.
+**
+** Key1 and Key2 do not have to contain the same number of fields.
+** But if the lengths differ, Key2 must be the shorter of the two.
+**
+** Historical note: In earlier versions of this routine both Key1
+** and Key2 were blobs obtained from OP_MakeRecord.  But we found
+** that in typical use the same Key2 would be submitted multiple times
+** in a row.  So an optimization was added to parse the Key2 key
+** separately and submit the parsed version.  In this way, we avoid
+** parsing the same Key2 multiple times in a row.
+*/
+int sqlite3VdbeRecordCompareParsed(
+  int nKey1, const void *pKey1, 
+  VdbeParsedRecord *pPKey2
+){
+  u32 d1;            /* Offset into aKey[] of next data element */
+  u32 idx1;          /* Offset into aKey[] of next header element */
+  u32 szHdr1;        /* Number of bytes in header */
+  int i = 0;
+  int nField;
+  int rc = 0;
+  const unsigned char *aKey1 = (const unsigned char *)pKey1;
+  KeyInfo *pKeyInfo;
+  Mem mem1;
+
+  pKeyInfo = pPKey2->pKeyInfo;
+  mem1.enc = pKeyInfo->enc;
+  mem1.db = pKeyInfo->db;
+  mem1.flags = 0;
+  
+  idx1 = GetVarint(aKey1, szHdr1);
+  d1 = szHdr1;
+  nField = pKeyInfo->nField;
+  while( idx1<szHdr1 && i<pPKey2->nField ){
+    u32 serial_type1;
+
+    /* Read the serial types for the next element in each key. */
+    idx1 += GetVarint( aKey1+idx1, serial_type1 );
+    if( d1>=nKey1 && sqlite3VdbeSerialTypeLen(serial_type1)>0 ) break;
+
+    /* Extract the values to be compared.
+    */
+    d1 += sqlite3VdbeSerialGet(&aKey1[d1], serial_type1, &mem1);
+
+    /* Do the comparison
+    */
+    rc = sqlite3MemCompare(&mem1, pPKey2->apMem[i],
+                           i<nField ? pKeyInfo->aColl[i] : 0);
+    if( mem1.flags&MEM_Dyn ) sqlite3VdbeMemRelease(&mem1);
+    if( rc!=0 ){
+      break;
+    }
+    i++;
+  }
+
+  /* One of the keys ran out of fields, but all the fields up to that point
+  ** were equal. If the incrKey flag is true, then the second key is
+  ** treated as larger.
+  */
+  if( rc==0 ){
+    if( pKeyInfo->incrKey ){
+      rc = -1;
+    }else if( !pKeyInfo->prefixIsEqual ){
+      if( d1<nKey1 ){
+        rc = 1;
+      }
+    }
+  }else if( pKeyInfo->aSortOrder && i<pKeyInfo->nField
+               && pKeyInfo->aSortOrder[i] ){
+    rc = -rc;
+  }
+
+  return rc;
+}
 
 /*
 ** The argument is an index entry composed using the OP_MakeRecord opcode.
@@ -2285,6 +2470,8 @@ int sqlite3VdbeIdxKeyCompare(
   BtCursor *pCur = pC->pCursor;
   int lenRowid;
   Mem m;
+  VdbeParsedRecord *pRec;
+  char zSpace[200];
 
   sqlite3BtreeKeySize(pCur, &nCellKey);
   if( nCellKey<=0 ){
@@ -2298,7 +2485,13 @@ int sqlite3VdbeIdxKeyCompare(
     return rc;
   }
   lenRowid = sqlite3VdbeIdxRowidLen((u8*)m.z);
-  *res = sqlite3VdbeRecordCompare(pC->pKeyInfo, m.n-lenRowid, m.z, nKey, pKey);
+  pRec = sqlite3VdbeRecordParse(pC->pKeyInfo, nKey, pKey,
+                                zSpace, sizeof(zSpace));
+  if( pRec==0 ){
+    return SQLITE_NOMEM;
+  }
+  *res = sqlite3VdbeRecordCompareParsed(m.n-lenRowid, m.z, pRec);
+  sqlite3VdbeRecordUnparse(pRec);
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
 }
