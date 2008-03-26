@@ -1,5 +1,5 @@
-C Make\ssure\san\simbalance\sin\sthe\snumber\sof\scolumns\son\sa\scompound\sSELECT\sis\r\ndetected\sand\sreported\sas\san\serror\sbefore\sit\scan\scause\san\sassertion\sfault\r\nor\sarray-bounds\soverflow\sin\sthe\scode\sgenerator.\r\nOops:\spart\sof\sthe\sfix\sfor\sticket\s#3015\sgot\sincluded\swith\sthis\r\ncheck-in\sby\smistake.\s(CVS\s4917)
-D 2008-03-26T12:46:24
+C Comment\schange\son\sthe\sprevious\scheck-in.\s\sNo\schanges\sto\scode.\s(CVS\s4918)
+D 2008-03-26T12:50:15
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/pragma.c 99cec6d99d0241436494aab15b05da97b0e70683
 F src/prepare.c 185fb47f1fb3e45a345d523eb391d673f5eb367c
 F src/printf.c 05d2b44d7b5b80c8a4a09108ddad9c20e254370d
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
-F src/select.c 84f9392a7b39bae8351b19cde74d6806e2c51984
+F src/select.c 5b5197016a0b751fdb78758370ba127175d3f786
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in 61d8d1cefcbf0803c03c2179be138a78bfd1d335
@@ -617,7 +617,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ee381b43563e1b0637ee74389d076dff77deddf9
-R f3e75355d329511babf6e18fb8f87503
+P 50de87dc808820a70d3a99277f532e418a2f97e2
+R a9214388e1bd4f84433e05f4820411e2
 U drh
-Z bd0897ff66b66f3a439dad571ea8c95d
+Z 2631d714b3b1ed6116e6910f891b739c
