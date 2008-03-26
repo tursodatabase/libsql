@@ -333,6 +333,10 @@ struct Vdbe {
   int fetchId;          /* Statement number used by sqlite3_fetch_statement */
   int lru;              /* Counter used for LRU cache replacement */
 #endif
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  Vdbe *pLruPrev;
+  Vdbe *pLruNext;
+#endif
 };
 
 /*
@@ -414,6 +418,7 @@ int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 const char *sqlite3OpcodeName(int);
 int sqlite3VdbeOpcodeHasProperty(int, int);
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
+int sqlite3VdbeReleaseBuffers(Vdbe *p);
 
 #ifndef NDEBUG
   void sqlite3VdbeMemSanity(Mem*);

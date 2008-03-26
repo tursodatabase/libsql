@@ -737,18 +737,38 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
 /*
 ** Release an array of N Mem elements
 */
-static void releaseMemArray(Mem *p, int N){
+static void releaseMemArray(Mem *p, int N, int freebuffers){
   if( p && N ){
     sqlite3 *db = p->db;
     int malloc_failed = db->mallocFailed;
     while( N-->0 ){
       assert( N<2 || p[0].db==p[1].db );
-      sqlite3VdbeMemRelease(p);
-      p++->flags = MEM_Null;
+      if( freebuffers || p->xDel ){
+        sqlite3VdbeMemRelease(p);
+        p->flags = MEM_Null;
+      }
+      p++;
     }
     db->mallocFailed = malloc_failed;
   }
 }
+
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+int sqlite3VdbeReleaseBuffers(Vdbe *p){
+  int ii;
+  int nFree = 0;
+  assert( sqlite3_mutex_held(p->db->mutex) );
+  for(ii=1; ii<=p->nMem; ii++){
+    Mem *pMem = &p->aMem[ii];
+    if( pMem->z && pMem->flags&MEM_Dyn ){
+      assert( !pMem->xDel );
+      nFree += sqlite3MallocSize(pMem->z);
+      sqlite3VdbeMemRelease(pMem);
+    }
+  }
+  return nFree;
+}
+#endif
 
 #ifndef SQLITE_OMIT_EXPLAIN
 /*
@@ -780,7 +800,7 @@ int sqlite3VdbeList(
   ** the result, result columns may become dynamic if the user calls
   ** sqlite3_column_text16(), causing a translation to UTF-16 encoding.
   */
-  releaseMemArray(pMem, p->nMem);
+  releaseMemArray(pMem, p->nMem, 1);
 
   do{
     i = p->pc++;
@@ -1010,7 +1030,7 @@ void sqlite3VdbeMakeReady(
 #ifdef SQLITE_DEBUG
   for(n=1; n<p->nMem; n++){
     assert( p->aMem[n].db==db );
-    assert( p->aMem[n].flags==MEM_Null );
+    //assert( p->aMem[n].flags==MEM_Null );
   }
 #endif
 
@@ -1090,14 +1110,13 @@ static void closeAllCursorsExceptActiveVtabs(Vdbe *p){
 ** sorters that were left open.  It also deletes the values of
 ** variables in the aVar[] array.
 */
-static void Cleanup(Vdbe *p){
+static void Cleanup(Vdbe *p, int freebuffers){
   int i;
   closeAllCursorsExceptActiveVtabs(p);
   for(i=1; i<=p->nMem; i++){
     MemSetTypeFlag(&p->aMem[i], MEM_Null);
   }
-
-  releaseMemArray(&p->aMem[1], p->nMem);
+  releaseMemArray(&p->aMem[1], p->nMem, freebuffers);
   sqlite3VdbeFifoClear(&p->sFifo);
   if( p->contextStack ){
     for(i=0; i<p->contextStackTop; i++){
@@ -1123,7 +1142,7 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
   Mem *pColName;
   int n;
 
-  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
+  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N, 1);
   sqlite3_free(p->aColName);
   n = nResColumn*COLNAME_N;
   p->nResColumn = nResColumn;
@@ -1648,7 +1667,7 @@ void sqlite3VdbeResetStepResult(Vdbe *p){
 ** virtual machine from VDBE_MAGIC_RUN or VDBE_MAGIC_HALT back to
 ** VDBE_MAGIC_INIT.
 */
-int sqlite3VdbeReset(Vdbe *p){
+int sqlite3VdbeReset(Vdbe *p, int freebuffers){
   sqlite3 *db;
   db = p->db;
 
@@ -1687,7 +1706,7 @@ int sqlite3VdbeReset(Vdbe *p){
 
   /* Reclaim all memory used by the VDBE
   */
-  Cleanup(p);
+  Cleanup(p, freebuffers);
 
   /* Save profiling information from this VDBE run.
   */
@@ -1725,11 +1744,12 @@ int sqlite3VdbeReset(Vdbe *p){
 int sqlite3VdbeFinalize(Vdbe *p){
   int rc = SQLITE_OK;
   if( p->magic==VDBE_MAGIC_RUN || p->magic==VDBE_MAGIC_HALT ){
-    rc = sqlite3VdbeReset(p);
+    rc = sqlite3VdbeReset(p, 1);
     assert( (rc & p->db->errMask)==rc );
   }else if( p->magic!=VDBE_MAGIC_INIT ){
     return SQLITE_MISUSE;
   }
+  releaseMemArray(&p->aMem[1], p->nMem, 1);
   sqlite3VdbeDelete(p);
   return rc;
 }
@@ -1759,7 +1779,7 @@ void sqlite3VdbeDeleteAuxData(VdbeFunc *pVdbeFunc, int mask){
 void sqlite3VdbeDelete(Vdbe *p){
   int i;
   if( p==0 ) return;
-  Cleanup(p);
+  Cleanup(p, 1);
   if( p->pPrev ){
     p->pPrev->pNext = p->pNext;
   }else{
@@ -1779,12 +1799,12 @@ void sqlite3VdbeDelete(Vdbe *p){
     }
     sqlite3_free(p->aOp);
   }
-  releaseMemArray(p->aVar, p->nVar);
+  releaseMemArray(p->aVar, p->nVar, 1);
   sqlite3_free(p->aLabel);
   if( p->aMem ){
     sqlite3_free(&p->aMem[1]);
   }
-  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
+  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N, 1);
   sqlite3_free(p->aColName);
   sqlite3_free(p->zSql);
   p->magic = VDBE_MAGIC_DEAD;

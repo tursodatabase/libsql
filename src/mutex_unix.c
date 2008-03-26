@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for pthreads
 **
-** $Id: mutex_unix.c,v 1.5 2007/11/28 14:04:57 drh Exp $
+** $Id: mutex_unix.c,v 1.6 2008/03/26 18:34:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -83,6 +83,7 @@ struct sqlite3_mutex {
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int iType){
   static sqlite3_mutex staticMutexes[] = {
+    { PTHREAD_MUTEX_INITIALIZER, },
     { PTHREAD_MUTEX_INITIALIZER, },
     { PTHREAD_MUTEX_INITIALIZER, },
     { PTHREAD_MUTEX_INITIALIZER, },

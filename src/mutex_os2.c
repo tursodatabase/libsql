@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for OS/2
 **
-** $Id: mutex_os2.c,v 1.5 2008/02/01 19:42:38 pweilbacher Exp $
+** $Id: mutex_os2.c,v 1.6 2008/03/26 18:34:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -96,6 +96,7 @@ sqlite3_mutex *sqlite3_mutex_alloc(int iType){
     default: {
       static volatile int isInit = 0;
       static sqlite3_mutex staticMutexes[] = {
+        { OS2_MUTEX_INITIALIZER, },
         { OS2_MUTEX_INITIALIZER, },
         { OS2_MUTEX_INITIALIZER, },
         { OS2_MUTEX_INITIALIZER, },

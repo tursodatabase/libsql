@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.5 2007/10/05 15:08:01 drh Exp $
+** $Id: mutex_w32.c,v 1.6 2008/03/26 18:34:43 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -111,7 +111,7 @@ sqlite3_mutex *sqlite3_mutex_alloc(int iType){
       break;
     }
     default: {
-      static sqlite3_mutex staticMutexes[5];
+      static sqlite3_mutex staticMutexes[6];
       static int isInit = 0;
       while( !isInit ){
         static long lock = 0;
