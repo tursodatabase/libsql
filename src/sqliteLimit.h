@@ -12,7 +12,7 @@
 ** 
 ** This file defines various limits of what SQLite can process.
 **
-** @(#) $Id: sqliteLimit.h,v 1.7 2008/03/20 14:03:29 drh Exp $
+** @(#) $Id: sqliteLimit.h,v 1.8 2008/03/26 15:56:22 drh Exp $
 */
 
 /*
@@ -111,11 +111,9 @@
 #endif
 
 /*
-** The maximum number of attached databases.  This must be at least 2
-** in order to support the main database file (0) and the file used to
-** hold temporary tables (1).  And it must be less than 32 because
-** we use a bitmask of databases with a u32 in places (for example
-** the Parse.cookieMask field).
+** The maximum number of attached databases.  This must be between 0
+** and 30.  The upper bound on 30 is because a 32-bit integer bitmap
+** is used internally to track attached databases.
 */
 #ifndef SQLITE_MAX_ATTACHED
 # define SQLITE_MAX_ATTACHED 10
