@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.26 2008/01/16 18:20:42 danielk1977 Exp $
+# $Id: select4.test,v 1.27 2008/03/26 12:46:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -662,11 +662,135 @@ do_test select4-10.8 {
   }
 } {}
 do_test select4-10.9 {
-breakpoint
   execsql {
     SELECT DISTINCT max(n), log FROM t1 ORDER BY +log; -- LIMIT 2 OFFSET 1
   }
 } {31 5}
 
+# Make sure compound SELECTs with wildly different numbers of columns
+# do not cause assertion faults due to register allocation issues.
+#
+do_test select4-11.1 {
+  catchsql {
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+    UNION
+    SELECT x FROM t2
+  }
+} {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
+do_test select4-11.2 {
+  catchsql {
+    SELECT x FROM t2
+    UNION
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+  }
+} {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
+do_test select4-11.3 {
+  catchsql {
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+    UNION ALL
+    SELECT x FROM t2
+  }
+} {1 {SELECTs to the left and right of UNION ALL do not have the same number of result columns}}
+do_test select4-11.4 {
+  catchsql {
+    SELECT x FROM t2
+    UNION ALL
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+  }
+} {1 {SELECTs to the left and right of UNION ALL do not have the same number of result columns}}
+do_test select4-11.5 {
+  catchsql {
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+    EXCEPT
+    SELECT x FROM t2
+  }
+} {1 {SELECTs to the left and right of EXCEPT do not have the same number of result columns}}
+do_test select4-11.6 {
+  catchsql {
+    SELECT x FROM t2
+    EXCEPT
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+  }
+} {1 {SELECTs to the left and right of EXCEPT do not have the same number of result columns}}
+do_test select4-11.7 {
+  catchsql {
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+    INTERSECT
+    SELECT x FROM t2
+  }
+} {1 {SELECTs to the left and right of INTERSECT do not have the same number of result columns}}
+do_test select4-11.8 {
+  catchsql {
+    SELECT x FROM t2
+    INTERSECT
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+  }
+} {1 {SELECTs to the left and right of INTERSECT do not have the same number of result columns}}
+
+do_test select4-11.11 {
+  catchsql {
+    SELECT x FROM t2
+    UNION
+    SELECT x FROM t2
+    UNION ALL
+    SELECT x FROM t2
+    EXCEPT
+    SELECT x FROM t2
+    INTERSECT
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+  }
+} {1 {SELECTs to the left and right of INTERSECT do not have the same number of result columns}}
+do_test select4-11.12 {
+  catchsql {
+    SELECT x FROM t2
+    UNION
+    SELECT x FROM t2
+    UNION ALL
+    SELECT x FROM t2
+    EXCEPT
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+    EXCEPT
+    SELECT x FROM t2
+  }
+} {1 {SELECTs to the left and right of EXCEPT do not have the same number of result columns}}
+do_test select4-11.13 {
+  catchsql {
+    SELECT x FROM t2
+    UNION
+    SELECT x FROM t2
+    UNION ALL
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+    UNION ALL
+    SELECT x FROM t2
+    EXCEPT
+    SELECT x FROM t2
+  }
+} {1 {SELECTs to the left and right of UNION ALL do not have the same number of result columns}}
+do_test select4-11.14 {
+  catchsql {
+    SELECT x FROM t2
+    UNION
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+    UNION
+    SELECT x FROM t2
+    UNION ALL
+    SELECT x FROM t2
+    EXCEPT
+    SELECT x FROM t2
+  }
+} {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
+do_test select4-11.15 {
+  catchsql {
+    SELECT x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x FROM t2
+    UNION
+    SELECT x FROM t2
+    INTERSECT
+    SELECT x FROM t2
+    UNION ALL
+    SELECT x FROM t2
+    EXCEPT
+    SELECT x FROM t2
+  }
+} {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
 
 finish_test

@@ -1,5 +1,5 @@
-C Modify\sthe\s{quote:\sIdxDelete}\sopcode\sso\sthat\sit\stakes\san\sarray\sof\sregisters\srather\r\nthan\sa\srecord\sformed\susing\s{quote:\sMakeRecord.}\s\sThis\savoids\sa\sneedless\spacking\r\nand\sunpacking\sof\sthe\srecord\sto\sbe\sdeleted.\s(CVS\s4916)
-D 2008-03-25T17:23:33
+C Make\ssure\san\simbalance\sin\sthe\snumber\sof\scolumns\son\sa\scompound\sSELECT\sis\r\ndetected\sand\sreported\sas\san\serror\sbefore\sit\scan\scause\san\sassertion\sfault\r\nor\sarray-bounds\soverflow\sin\sthe\scode\sgenerator.\r\nOops:\spart\sof\sthe\sfix\sfor\sticket\s#3015\sgot\sincluded\swith\sthis\r\ncheck-in\sby\smistake.\s(CVS\s4917)
+D 2008-03-26T12:46:24
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,12 +135,12 @@ F src/pragma.c 99cec6d99d0241436494aab15b05da97b0e70683
 F src/prepare.c 185fb47f1fb3e45a345d523eb391d673f5eb367c
 F src/printf.c 05d2b44d7b5b80c8a4a09108ddad9c20e254370d
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
-F src/select.c 831714d4f09f4b9f4be43d2399eff12dcf281c86
+F src/select.c 84f9392a7b39bae8351b19cde74d6806e2c51984
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in 61d8d1cefcbf0803c03c2179be138a78bfd1d335
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h 50a9313829041721d34f20c8be4562c3197dcff9
+F src/sqliteInt.h db668a07004d53a47c5d570963842489c6c4c3f3
 F src/sqliteLimit.h eecbc288b410ae5565e71aaa4a439aae57bb0707
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
 F src/tclsqlite.c 1367762764772a233643524c3585b4711a9adcda
@@ -423,7 +423,7 @@ F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
 F test/select1.test 871df931cbbc0e78170605628e8b5fc60765e265
 F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
-F test/select4.test ba1c276ce20376c3bfe682ad8233c0a63fac04c6
+F test/select4.test 7cc135c8343e6e433bdad185de6a720b112c40e7
 F test/select5.test 5ad14ea338aada2e6394ba98fa9aa40e3e50aec0
 F test/select6.test 399f14b9ba37b768afe5d2cd8c12e4f340a69db8
 F test/select7.test 7906735805cfbee4dddc0bed4c14e68d7f5f9c5f
@@ -617,7 +617,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 24c3ebc0c5c53c234516d16dce761d713fb29578
-R 66dfc33f9c0d1eba54064363b17cc27e
+P ee381b43563e1b0637ee74389d076dff77deddf9
+R f3e75355d329511babf6e18fb8f87503
 U drh
-Z 040d5190ae2e9926a42f3065a9864529
+Z bd0897ff66b66f3a439dad571ea8c95d

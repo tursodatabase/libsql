@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.419 2008/03/25 17:23:33 drh Exp $
+** $Id: select.c,v 1.420 2008/03/26 12:46:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -41,6 +41,7 @@ void sqlite3SelectDestInit(SelectDest *pDest, int eDest, int iParm){
   pDest->iParm = iParm;
   pDest->affinity = 0;
   pDest->iMem = 0;
+  pDest->nMem = 0;
 }
 
 
@@ -235,7 +236,8 @@ static void addWhereTerm(
   const Table *pTab2,      /* Second table */
   const char *zAlias2,     /* Alias for second table.  May be NULL */
   int iRightJoinTable,     /* VDBE cursor for the right table */
-  Expr **ppExpr            /* Add the equality term to this expression */
+  Expr **ppExpr,           /* Add the equality term to this expression */
+  int isOuterJoin          /* True if dealing with an OUTER join */
 ){
   Expr *pE1a, *pE1b, *pE1c;
   Expr *pE2a, *pE2b, *pE2c;
@@ -254,7 +256,7 @@ static void addWhereTerm(
   pE1c = sqlite3PExpr(pParse, TK_DOT, pE1b, pE1a, 0);
   pE2c = sqlite3PExpr(pParse, TK_DOT, pE2b, pE2a, 0);
   pE = sqlite3PExpr(pParse, TK_EQ, pE1c, pE2c, 0);
-  if( pE ){
+  if( pE && isOuterJoin ){
     ExprSetProperty(pE, EP_FromJoin);
     pE->iRightJoinTable = iRightJoinTable;
   }
@@ -322,8 +324,10 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
   for(i=0; i<pSrc->nSrc-1; i++, pRight++, pLeft++){
     Table *pLeftTab = pLeft->pTab;
     Table *pRightTab = pRight->pTab;
+    int isOuter;
 
     if( pLeftTab==0 || pRightTab==0 ) continue;
+    isOuter = (pRight->jointype & JT_OUTER)!=0;
 
     /* When the NATURAL keyword is present, add WHERE clause terms for
     ** every column that the two tables have in common.
@@ -339,7 +343,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
         if( columnIndex(pRightTab, zName)>=0 ){
           addWhereTerm(pParse, zName, pLeftTab, pLeft->zAlias, 
                               pRightTab, pRight->zAlias,
-                              pRight->iCursor, &p->pWhere);
+                              pRight->iCursor, &p->pWhere, isOuter);
           
         }
       }
@@ -357,7 +361,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     ** an AND operator.
     */
     if( pRight->pOn ){
-      setJoinExpr(pRight->pOn, pRight->iCursor);
+      if( isOuter ) setJoinExpr(pRight->pOn, pRight->iCursor);
       p->pWhere = sqlite3ExprAnd(pParse->db, p->pWhere, pRight->pOn);
       pRight->pOn = 0;
     }
@@ -380,7 +384,7 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
         }
         addWhereTerm(pParse, zName, pLeftTab, pLeft->zAlias, 
                             pRightTab, pRight->zAlias,
-                            pRight->iCursor, &p->pWhere);
+                            pRight->iCursor, &p->pWhere, isOuter);
       }
     }
   }
@@ -543,6 +547,9 @@ static void selectInnerLoop(
   }
   if( pDest->iMem==0 ){
     pDest->iMem = sqlite3GetTempRange(pParse, nResultCol);
+    pDest->nMem = nResultCol;
+  }else if( pDest->nMem!=nResultCol ){
+    return;
   }
   regResult = pDest->iMem;
   if( nColumn>0 ){
@@ -2268,6 +2275,7 @@ static int multiSelect(
 
 multi_select_end:
   pDest->iMem = dest.iMem;
+  pDest->nMem = dest.nMem;
   return rc;
 }
 #endif /* SQLITE_OMIT_COMPOUND_SELECT */
