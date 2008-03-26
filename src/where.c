@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.291 2008/03/25 09:47:35 danielk1977 Exp $
+** $Id: where.c,v 1.292 2008/03/26 14:56:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -743,7 +743,10 @@ static void exprAnalyze(
   }
   prereqAll = exprTableUsage(pMaskSet, pExpr);
   if( ExprHasProperty(pExpr, EP_FromJoin) ){
-    prereqAll |= getMask(pMaskSet, pExpr->iRightJoinTable);
+    Bitmask x = getMask(pMaskSet, pExpr->iRightJoinTable);
+    prereqAll |= x;
+    pTerm->prereqRight |= x-1; /* ON clause terms may not be used with an index
+                               ** on left table of a LEFT JOIN.  Ticket #3015 */
   }
   pTerm->prereqAll = prereqAll;
   pTerm->leftCursor = -1;
@@ -2043,14 +2046,36 @@ WhereInfo *sqlite3WhereBegin(
     pWhere = 0;
   }
 
+  /* Assign a bit from the bitmask to every term in the FROM clause.
+  **
+  ** When assigning bitmask values to FROM clause cursors, it must be
+  ** the case that if X is the bitmask for the N-th FROM clause term then
+  ** the bitmask for all FROM clause terms to the left of the N-th term
+  ** is (X-1).   An expression from the ON clause of a LEFT JOIN can use
+  ** its Expr.iRightJoinTable value to find the bitmask of the right table
+  ** of the join.  Subtracting one from the right table bitmask gives a
+  ** bitmask for all tables to the left of the join.  Knowing the bitmask
+  ** for all tables to the left of a left join is important.  Ticket #3015.
+  */
+  for(i=0; i<pTabList->nSrc; i++){
+    createMask(&maskSet, pTabList->a[i].iCursor);
+  }
+#ifndef NDEBUG
+  {
+    Bitmask toTheLeft = 0;
+    for(i=0; i<pTabList->nSrc; i++){
+      Bitmask m = getMask(&maskSet, pTabList->a[i].iCursor);
+      assert( (m-1)==toTheLeft );
+      toTheLeft |= m;
+    }
+  }
+#endif
+
   /* Analyze all of the subexpressions.  Note that exprAnalyze() might
   ** add new virtual terms onto the end of the WHERE clause.  We do not
   ** want to analyze these virtual terms, so start analyzing at the end
   ** and work forward so that the added virtual terms are never processed.
   */
-  for(i=0; i<pTabList->nSrc; i++){
-    createMask(&maskSet, pTabList->a[i].iCursor);
-  }
   exprAnalyzeAll(pTabList, &wc);
   if( db->mallocFailed ){
     goto whereBeginNoMem;
