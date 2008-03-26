@@ -1,5 +1,5 @@
-C Change\scomment\sin\ssqliteLimit.h\sto\scorrectly\sdescribe\sthe\nSQLITE_MAX_ATTACHED\s#define.\s\sTicket\s#3016.\s(CVS\s4920)
-D 2008-03-26T15:56:22
+C Work\saround\sproblems\swith\scompilers\sthat\sdo\snot\sallow\sC\spreprocessor\nmacros\swith\sempty\sarguments.\s(CVS\s4921)
+D 2008-03-26T17:18:48
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -117,8 +117,8 @@ F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 19ab15764736f13b94b4f70e53f77547cbddd47a
 F src/mutex_unix.c a6e111947a3cdaa2cda394ed060d7f496fcb4af8
 F src/mutex_w32.c 6e197765f283815496193e78e9548b5d0e53b68e
-F src/os.c 2f2753b8d33f79d169c43d6bb0b25b3c58fd33de
-F src/os.h d04706d54a072c7a30ab9e346ad916ef28c842d5
+F src/os.c 9b943f71aaa1519f26cd45693a91b429b63aa042
+F src/os.h 497bf5f0f2648461ef65940cfb59ba427430f3fc
 F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 85c443333761d5b58f041489a7b21ae918993e4f
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
@@ -618,7 +618,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3fafa562593b51d38f58e7a691c193d34a812a05
-R 8a089ad8bbd59da1e6d02cd27ce05b46
+P d016d0784097e6657de26ccc6bece34913093fb0
+R 6a30be694ce8b9a07ddf6aceb1a9f0a1
 U drh
-Z a607ac3a03415d8747bf70bcad45eb82
+Z e985441f36301e76052987bf9e15f80e

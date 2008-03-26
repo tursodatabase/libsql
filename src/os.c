@@ -115,7 +115,9 @@ int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   return pVfs->xDelete(pVfs, zPath, dirSync);
 }
 int sqlite3OsAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
-  return pVfs->xAccess(pVfs, zPath, flags);
+  int rc = pVfs->xAccess(pVfs, zPath, flags);
+  assert( rc==0 || rc==1 );
+  return rc;
 }
 int sqlite3OsGetTempname(sqlite3_vfs *pVfs, int nBufOut, char *zBufOut){
   return pVfs->xGetTempname(pVfs, nBufOut, zBufOut);
@@ -265,3 +267,11 @@ int sqlite3_vfs_unregister(sqlite3_vfs *pVfs){
   sqlite3_mutex_leave(mutex);
   return SQLITE_OK;
 }
+
+/*
+** Provide a default sqlite3OsDefaultVfs() implementation in the
+** cases where none of the standard backends are used.
+*/
+#if !OS_UNIX && !OS_WIN && !OS_OS2
+sqlite3_vfs *sqlite3OsDefaultVfs(void){ return 0; }
+#endif
