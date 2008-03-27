@@ -115,7 +115,13 @@ int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   return pVfs->xDelete(pVfs, zPath, dirSync);
 }
 int sqlite3OsAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
-  int rc = pVfs->xAccess(pVfs, zPath, flags);
+  int rc;
+#ifdef SQLITE_TEST
+  void *pTstAlloc = sqlite3_malloc(10);
+  if (!pTstAlloc) return -1;
+  sqlite3_free(pTstAlloc);
+#endif
+  rc = pVfs->xAccess(pVfs, zPath, flags);
   assert( rc==0 || rc==1 );
   return rc;
 }

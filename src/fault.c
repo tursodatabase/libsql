@@ -42,7 +42,7 @@ static struct FaultInjector {
   int nBenign;      /* Number of benign failures seen since last config */
   int nFail;        /* Number of failures seen since last config */
   u8 enable;        /* True if enabled */
-  u8 benign;        /* Ture if next failure will be benign */
+  u8 benign;        /* True if next failure will be benign */
 } aFault[SQLITE_FAULTINJECTOR_COUNT];
 
 /*
@@ -105,8 +105,14 @@ int sqlite3FaultPending(int id){
 ** a hash table resize is a benign fault.  
 */
 void sqlite3FaultBenign(int id, int enable){
-  assert( id>=0 && id<SQLITE_FAULTINJECTOR_COUNT );
-  aFault[id].benign = enable;
+  if( id<0 ){
+    for(id=0; id<SQLITE_FAULTINJECTOR_COUNT; id++){
+      aFault[id].benign = enable;
+    }
+  }else{
+    assert( id>=0 && id<SQLITE_FAULTINJECTOR_COUNT );
+    aFault[id].benign = enable;
+  }
 }
 
 /*

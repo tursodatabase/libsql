@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.420 2008/03/20 11:04:21 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.421 2008/03/27 22:42:52 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1602,7 +1602,12 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
 
     zJournal = zMasterJournal;
     while( (zJournal-zMasterJournal)<nMasterJournal ){
-      if( sqlite3OsAccess(pVfs, zJournal, SQLITE_ACCESS_EXISTS) ){
+      rc = sqlite3OsAccess(pVfs, zJournal, SQLITE_ACCESS_EXISTS);
+      if( rc!=0 && rc!=1 ){
+        rc = SQLITE_IOERR_NOMEM;
+        goto delmaster_out;
+      }
+      if( rc==1 ){
         /* One of the journals pointed to by the master journal exists.
         ** Open it and check if it points at the master journal. If
         ** so, return without deleting the master journal file.
@@ -1773,12 +1778,10 @@ static int pager_playback(Pager *pPager, int isHot){
   */
   zMaster = pPager->pTmpSpace;
   rc = readMasterJournal(pPager->jfd, zMaster, pPager->pVfs->mxPathname+1);
-  assert( rc!=SQLITE_DONE );
   if( rc!=SQLITE_OK 
-   || (zMaster[0] && !sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS)) 
+   || (zMaster[0] && sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS)==0 ) 
   ){
     zMaster = 0;
-    if( rc==SQLITE_DONE ) rc = SQLITE_OK;
     goto end_playback;
   }
   pPager->journalOff = 0;
@@ -3053,19 +3056,23 @@ static PgHdr *pager_get_all_dirty_pages(Pager *pPager){
 }
 
 /*
-** Return TRUE if there is a hot journal on the given pager.
+** Return 1 if there is a hot journal on the given pager.
 ** A hot journal is one that needs to be played back.
 **
 ** If the current size of the database file is 0 but a journal file
 ** exists, that is probably an old journal left over from a prior
 ** database with the same name.  Just delete the journal.
+**
+** Return negative if unable to determine the status of the journal.
 */
 static int hasHotJournal(Pager *pPager){
   sqlite3_vfs *pVfs = pPager->pVfs;
+  int rc;
   if( !pPager->useJournal ) return 0;
   if( !pPager->fd->pMethods ) return 0;
-  if( !sqlite3OsAccess(pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS) ){
-    return 0;
+  rc = sqlite3OsAccess(pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS);
+  if( rc<=0 ){
+    return rc;
   }
   if( sqlite3OsCheckReservedLock(pPager->fd) ){
     return 0;
@@ -3365,7 +3372,11 @@ static int pagerSharedLock(Pager *pPager){
       /* If a journal file exists, and there is no RESERVED lock on the
       ** database file, then it either needs to be played back or deleted.
       */
-      if( hasHotJournal(pPager) || isHot ){
+      rc = hasHotJournal(pPager);
+      if( rc<0 ){
+        return pager_error(pPager, SQLITE_IOERR_NOMEM);
+      }
+      if( rc==1 || isHot ){
         /* Get an EXCLUSIVE lock on the database file. At this point it is
         ** important that a RESERVED lock is not obtained on the way to the
         ** EXCLUSIVE lock. If it were, another process might open the
@@ -3402,7 +3413,7 @@ static int pagerSharedLock(Pager *pPager){
         */
         if( !isHot ){
           rc = SQLITE_BUSY;
-          if( sqlite3OsAccess(pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS) ){
+          if( sqlite3OsAccess(pVfs, pPager->zJournal,SQLITE_ACCESS_EXISTS)==1 ){
             int fout = 0;
             int f = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
             assert( !pPager->tempFile );

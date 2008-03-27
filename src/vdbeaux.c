@@ -1290,13 +1290,17 @@ static int vdbeCommit(sqlite3 *db){
       if( !zMaster ){
         return SQLITE_NOMEM;
       }
-    }while( sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS) );
-
-    /* Open the master journal. */
-    rc = sqlite3OsOpenMalloc(pVfs, zMaster, &pMaster, 
-        SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|
-        SQLITE_OPEN_EXCLUSIVE|SQLITE_OPEN_MASTER_JOURNAL, 0
-    );
+      rc = sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS);
+    }while( rc==1 );
+    if( rc!=0 ){
+      rc = SQLITE_IOERR_NOMEM;
+    }else{
+      /* Open the master journal. */
+      rc = sqlite3OsOpenMalloc(pVfs, zMaster, &pMaster, 
+          SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|
+          SQLITE_OPEN_EXCLUSIVE|SQLITE_OPEN_MASTER_JOURNAL, 0
+      );
+    }
     if( rc!=SQLITE_OK ){
       sqlite3_free(zMaster);
       return rc;
