@@ -1,5 +1,5 @@
-C Added\sthe\sspeed4p.test\sscript\sfor\stesting\sperformance\sof\sviews\sand\striggers.\s(CVS\s4923)
-D 2008-03-27T15:07:05
+C Allow\screation\sof\sephemeral\spseudo-tables\s-\spseudo-tables\sthat\scopy\sa\spointer\sto\sa\srow\swhen\sinserted\sinstead\sof\scopying\sthe\srow\sdata.\s(CVS\s4924)
+D 2008-03-27T17:59:02
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/pragma.c 99cec6d99d0241436494aab15b05da97b0e70683
 F src/prepare.c 185fb47f1fb3e45a345d523eb391d673f5eb367c
 F src/printf.c 05d2b44d7b5b80c8a4a09108ddad9c20e254370d
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
-F src/select.c 5b5197016a0b751fdb78758370ba127175d3f786
+F src/select.c f47faa4af940d0acd0cff92a1a77ebb27331a31a
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in b1ac824d9fc163a5d2226ebf5990b09a02a11117
@@ -174,11 +174,11 @@ F src/update.c 2aefd3c9277792e9fa2414dfe14202119fa49fe7
 F src/utf.c 32b00d6e19010025e58f2ecb2f921d5e126771b4
 F src/util.c dba9e04121eb17ec4643d6ca231ff859452cf0e2
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
-F src/vdbe.c 0068703495a197e7b77dbdff604b42896722a1cc
+F src/vdbe.c f8e6d7f96f27c273e252c475a54d485943f0bb24
 F src/vdbe.h f72201a0657d5f3d6cc008d1f8d9cc65768518c9
-F src/vdbeInt.h 2584494757e7d8e7015754d4017b36f758c2adef
+F src/vdbeInt.h 73a3162979585cc15d02e47cec2a1033df768246
 F src/vdbeapi.c f74189e4cae0d93b2744386b9ac57f5ab60c5133
-F src/vdbeaux.c c77a88c97cf5836eb1f68ca6fea967569472712b
+F src/vdbeaux.c 0bdcfad81941f7f6b0b5f2f489d65804d4bdaf02
 F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c d48a71d66a7afd564b6537ab7e7442f7729fa5af
@@ -619,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8c2f69521f13bc24cf005520efbe0589eeadd763
-R 0fca44539a2917afad155100f6434a4c
-U drh
-Z 074101a796f99fca1a50c6aac650887e
+P adf7645f9a1e12389a7511d2adca9013b7f330fa
+R c27119a978dd6220ce607704acf25a98
+U danielk1977
+Z 2fd91019f3a606466497fa3759b61fc9

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.718 2008/03/25 17:23:33 drh Exp $
+** $Id: vdbe.c,v 1.719 2008/03/27 17:59:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2684,7 +2684,7 @@ case OP_OpenEphemeral: {
   break;
 }
 
-/* Opcode: OpenPseudo P1 * * * *
+/* Opcode: OpenPseudo P1 P2 * * *
 **
 ** Open a new cursor that points to a fake table that contains a single
 ** row of data.  Any attempt to write a second row of data causes the
@@ -2695,6 +2695,14 @@ case OP_OpenEphemeral: {
 ** NEW or OLD tables in a trigger.  Also used to hold the a single
 ** row output from the sorter so that the row can be decomposed into
 ** individual columns using the OP_Column opcode.
+**
+** When OP_Insert is executed to insert a row in to the pseudo table,
+** the pseudo-table cursor may or may not make it's own copy of the
+** original row data. If P2 is 0, then the pseudo-table will copy the
+** original row data. Otherwise, a pointer to the original memory cell
+** is stored. In this case, the vdbe program must ensure that the 
+** memory cell containing the row data is not overwritten until the
+** pseudo table is closed (or a new row is inserted into it).
 */
 case OP_OpenPseudo: {
   int i = pOp->p1;
@@ -2704,6 +2712,7 @@ case OP_OpenPseudo: {
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   pCx->pseudoTable = 1;
+  pCx->ephemPseudoTable = pOp->p2;
   pCx->pIncrKey = &pCx->bogusIncrKey;
   pCx->isTable = 1;
   pCx->isIndex = 0;
@@ -3276,13 +3285,17 @@ case OP_Insert: {
     assert( pData->flags & (MEM_Blob|MEM_Str) );
   }
   if( pC->pseudoTable ){
-    sqlite3_free(pC->pData);
+    if( !pC->ephemPseudoTable ){
+      sqlite3_free(pC->pData);
+    }
     pC->iKey = iKey;
     pC->nData = pData->n;
     if( pData->flags & MEM_Dyn ){
       pC->pData = pData->z;
-      pData->flags &= ~MEM_Dyn;
-      pData->flags |= MEM_Ephem;
+      if( !pC->ephemPseudoTable ){
+        pData->flags &= ~MEM_Dyn;
+        pData->flags |= MEM_Ephem;
+      }
     }else{
       pC->pData = sqlite3_malloc( pC->nData+2 );
       if( !pC->pData ) goto no_mem;
