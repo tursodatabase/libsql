@@ -1,5 +1,5 @@
-C Changes\sto\sdelay\sfreeing\sbuffers\sassociated\swith\svdbe\smemory\scells\suntil\seither\ssqlite3_finalize()\sor\ssqlite3_release_memory()\sis\scalled.\s(CVS\s4922)
-D 2008-03-26T18:34:43
+C Added\sthe\sspeed4p.test\sscript\sfor\stesting\sperformance\sof\sviews\sand\striggers.\s(CVS\s4923)
+D 2008-03-27T15:07:05
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -411,7 +411,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 83150cb7b513e33cce90fdc68f4b1817551857c0
-F test/quick.test fcd8fb7aeee4b8bc7a5be56c25104f6f39258eb1
+F test/quick.test 164584ef7c350b6c439d29f248fc582d5262e71c
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -443,6 +443,7 @@ F test/speed1p.test 2c0144604a7c5d32493c4075c46d9a5a0f90ceba
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test 20d8ea20bea3ca09c3ef3b5ec820a17e58e132cb
+F test/speed4p.test c2633dc73f4206deffd8e8c34fe5a2dc0ab97800
 F test/sqllimits1.test cebd870957dbf8d931c5c9cadf757e0d31a3f71a
 F test/subquery.test 8203f85db56ba022a57a0589890090c8feed4e59
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
@@ -618,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P afe1963ec5588d2195f027fa438cf63d49c89cd9
-R 214d193014a5eff088fafe70f8060fb1
-U danielk1977
-Z ddfa33c54c6e0388e4067b98a41cbe5a
+P 8c2f69521f13bc24cf005520efbe0589eeadd763
+R 0fca44539a2917afad155100f6434a4c
+U drh
+Z 074101a796f99fca1a50c6aac650887e
