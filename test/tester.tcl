@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.111 2008/03/28 07:42:54 danielk1977 Exp $
+# $Id: tester.tcl,v 1.112 2008/03/28 15:44:10 danielk1977 Exp $
 
 
 set tcl_precision 15
@@ -47,7 +47,7 @@ sqlite3_soft_heap_limit $soft_limit
 for {set i 0} {$i<[llength $argv]} {incr i} {
   if {[lindex $argv $i] eq "--malloctrace"} {
     set argv [lreplace $argv $i $i]
-    sqlite3_memdebug_backtrace 5
+    sqlite3_memdebug_backtrace 10
     sqlite3_memdebug_log start
     set argv [lreplace $argv $i $i]
     set tester_do_malloctrace 1

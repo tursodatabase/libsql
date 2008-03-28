@@ -743,10 +743,12 @@ static void releaseMemArray(Mem *p, int N, int freebuffers){
     int malloc_failed = db->mallocFailed;
     while( N-->0 ){
       assert( N<2 || p[0].db==p[1].db );
-      if( freebuffers || p->xDel ){
+      if( freebuffers ){
         sqlite3VdbeMemRelease(p);
-        p->flags = MEM_Null;
+      }else{
+        sqlite3VdbeMemReleaseExternal(p);
       }
+      p->flags = MEM_Null;
       p++;
     }
     db->mallocFailed = malloc_failed;
@@ -1030,7 +1032,6 @@ void sqlite3VdbeMakeReady(
 #ifdef SQLITE_DEBUG
   for(n=1; n<p->nMem; n++){
     assert( p->aMem[n].db==db );
-    //assert( p->aMem[n].flags==MEM_Null );
   }
 #endif
 
@@ -1182,8 +1183,8 @@ int sqlite3VdbeSetColName(Vdbe *p, int idx, int var, const char *zName, int N){
     rc = sqlite3VdbeMemSetStr(pColName, zName, N, SQLITE_UTF8,SQLITE_TRANSIENT);
   }
   if( rc==SQLITE_OK && N==P4_DYNAMIC ){
-    pColName->flags = (pColName->flags&(~MEM_Static))|MEM_Dyn;
-    pColName->xDel = 0;
+    pColName->flags &= (~MEM_Static);
+    pColName->zMalloc = pColName->z;
   }
   return rc;
 }
@@ -2220,6 +2221,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
     pMem->enc = pKeyInfo->enc;
     pMem->db = pKeyInfo->db;
     pMem->flags = 0;
+    pMem->zMalloc = 0;
     d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     pMem++;
     i++;
@@ -2237,7 +2239,7 @@ void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord *p){
       int i;
       Mem *pMem;
       for(i=0, pMem=p->aMem; i<p->nField; i++, pMem++){
-        if( pMem->flags & MEM_Dyn ){
+        if( pMem->zMalloc ){
           sqlite3VdbeMemRelease(pMem);
         }
       }
@@ -2285,6 +2287,7 @@ int sqlite3VdbeRecordCompare(
   mem1.enc = pKeyInfo->enc;
   mem1.db = pKeyInfo->db;
   mem1.flags = 0;
+  mem1.zMalloc = 0;
   
   idx1 = GetVarint(aKey1, szHdr1);
   d1 = szHdr1;
@@ -2304,12 +2307,12 @@ int sqlite3VdbeRecordCompare(
     */
     rc = sqlite3MemCompare(&mem1, &pPKey2->aMem[i],
                            i<nField ? pKeyInfo->aColl[i] : 0);
-    if( mem1.flags&MEM_Dyn ) sqlite3VdbeMemRelease(&mem1);
     if( rc!=0 ){
       break;
     }
     i++;
   }
+  if( mem1.zMalloc ) sqlite3VdbeMemRelease(&mem1);
 
   /* One of the keys ran out of fields, but all the fields up to that point
   ** were equal. If the incrKey flag is true, then the second key is
@@ -2366,6 +2369,7 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   }
   m.flags = 0;
   m.db = 0;
+  m.zMalloc = 0;
   rc = sqlite3VdbeMemFromBtree(pCur, 0, nCellKey, 1, &m);
   if( rc ){
     return rc;
@@ -2409,6 +2413,7 @@ int sqlite3VdbeIdxKeyCompare(
   }
   m.db = 0;
   m.flags = 0;
+  m.zMalloc = 0;
   rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, nCellKey, 1, &m);
   if( rc ){
     return rc;

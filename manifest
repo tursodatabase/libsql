@@ -1,5 +1,5 @@
-C Patch\sto\sthe\snew\smemory\stracing\slogic\sthat\sallows\sit\sto\sbuild\seven\sif\nmemory\sdebugging\sis\sturned\soff.\s(CVS\s4927)
-D 2008-03-28T12:53:38
+C Changes\sto\sthe\sMem\sstructure\sto\sreduce\sthe\sfrequency\sof\sfreeing\sand\sreallocating\sthe\sdynamic\sbuffer.\s(CVS\s4928)
+D 2008-03-28T15:44:10
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/test_devsym.c cee1aecaa90c895030399ca4ae38f84a08038f8a
 F src/test_func.c 9e9b33ff083b65da91c389cece903bc32de06f01
 F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
-F src/test_malloc.c 3be391afbfccaeaeba8a5fdb349348d2740cc9cc
+F src/test_malloc.c c92a65e8f9b31bb2b332448d92d2016c000a963d
 F src/test_md5.c bca40b727c57462ddb415e57c5323445a1bb1a40
 F src/test_onefile.c 2fea6d22f13f5f286356c80c77ffd41f995f2b7a
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
@@ -171,17 +171,17 @@ F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c 13113f94bd1c15dea9e922f08b10f3eee6863474
 F src/trigger.c 9bd3b6fa0beff4a02d262c96466f752ec15a7fc3
 F src/update.c 2aefd3c9277792e9fa2414dfe14202119fa49fe7
-F src/utf.c 32b00d6e19010025e58f2ecb2f921d5e126771b4
+F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c dba9e04121eb17ec4643d6ca231ff859452cf0e2
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
-F src/vdbe.c ecad5d197fe9a0f91c348fd3e776fc149aec1ae7
+F src/vdbe.c a1413f2dd70718cbea922ae58828426504b1184a
 F src/vdbe.h f72201a0657d5f3d6cc008d1f8d9cc65768518c9
-F src/vdbeInt.h 73a3162979585cc15d02e47cec2a1033df768246
-F src/vdbeapi.c f74189e4cae0d93b2744386b9ac57f5ab60c5133
-F src/vdbeaux.c bb810c1c5450bd7887a39d5eb44f5902e01416f8
+F src/vdbeInt.h 0b96efdeecb0803e504bf1c16b198f87c91d6019
+F src/vdbeapi.c e03b846adf7fb938b3945019dc6c4c49ed86bb0e
+F src/vdbeaux.c 519ec819a8e549d087899f0c9a912afcdda762b4
 F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
-F src/vdbemem.c d48a71d66a7afd564b6537ab7e7442f7729fa5af
+F src/vdbemem.c 004c5e1eb8336b22b9abfc535976026ef324ab71
 F src/vtab.c 00cd16317b29495c185ff40e4b227917d5a371b2
 F src/where.c 7aeeec6731dc2f423e6a77ff2964bc3c38985625
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -411,7 +411,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 83150cb7b513e33cce90fdc68f4b1817551857c0
-F test/quick.test 164584ef7c350b6c439d29f248fc582d5262e71c
+F test/quick.test 1ab788b4ad66cc385d06d2dd1f0714ccfb52fb61
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -453,7 +453,7 @@ F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
 F test/tableapi.test 791f7e3891d9b70bdb43b311694bf5e9befcbc34
 F test/tclsqlite.test 3fac87cb1059c46b8fa8a60b553f4f1adb0fb6d9
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl d967b34306776a7488c3cbaf22cc4410c144ccce
+F test/tester.tcl bf793fcea043ba3c0c081224bdb808efccbc8fb3
 F test/thread001.test 8fbd9559da0bbdc273e00318c7fd66c162020af7
 F test/thread002.test 2c4ad2c386f60f6fe268cd91c769ee35b3c1fd0b
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -619,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f1b97ed93183378ff56b4fe7ae8ea269c24092fc
-R f8436b96b881dc0b3a43307cb3273c3d
-U drh
-Z bd7953b885d6238223aab5e76018f9c2
+P 0a9c63b227b9c6d2bd0e7b491245947ffc83c828
+R 4bbd70b6d864c91be4417b22dd9d1d4c
+U danielk1977
+Z 85774c3fc13d70f3eca1b91a57f3702c

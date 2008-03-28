@@ -614,13 +614,16 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
   pMem = p->pMem;
   if( (pMem->flags & MEM_Agg)==0 ){
     if( nByte==0 ){
-      assert( pMem->flags==MEM_Null );
+      sqlite3VdbeMemReleaseExternal(pMem);
+      pMem->flags = MEM_Null;
       pMem->z = 0;
     }else{
+      sqlite3VdbeMemGrow(pMem, nByte, 0);
       pMem->flags = MEM_Agg;
-      pMem->xDel = sqlite3_free;
       pMem->u.pDef = p->pFunc;
-      pMem->z = sqlite3DbMallocZero(p->s.db, nByte);
+      if( pMem->z ){
+        memset(pMem->z, 0, nByte);
+      }
     }
   }
   return (void*)pMem->z;

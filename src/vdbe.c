@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.720 2008/03/27 22:42:52 drh Exp $
+** $Id: vdbe.c,v 1.721 2008/03/28 15:44:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -235,6 +235,7 @@ static Cursor *allocateCursor(
   */
   Mem *pMem = &p->aMem[p->nMem-iCur];
 
+  int nByte;
   Cursor *pCx = 0;
   /* If the opcode of pOp is OP_SetNumColumns, then pOp->p2 contains
   ** the number of fields in the records contained in the table or
@@ -245,9 +246,7 @@ static Cursor *allocateCursor(
   if( pOp->opcode==OP_SetNumColumns || pOp->opcode==OP_OpenEphemeral ){
     nField = pOp->p2;
   }
-
-
-  int nByte = 
+  nByte = 
       sizeof(Cursor) + 
       (isBtreeCursor?sqlite3BtreeCursorSize():0) + 
       2*nField*sizeof(u32);
@@ -668,7 +667,7 @@ int sqlite3VdbeExec(
       assert( pOp->p2>0 );
       assert( pOp->p2<=p->nMem );
       pOut = &p->aMem[pOp->p2];
-      sqlite3VdbeMemRelease(pOut);
+      sqlite3VdbeMemReleaseExternal(pOut);
       pOut->flags = MEM_Null;
     }else
  
@@ -880,7 +879,7 @@ case OP_String8: {         /* same as TK_STRING, out2-prerelease */
     sqlite3VdbeMemSetStr(pOut, pOp->p4.z, -1, SQLITE_UTF8, SQLITE_STATIC);
     if( SQLITE_OK!=sqlite3VdbeChangeEncoding(pOut, encoding) ) goto no_mem;
     if( SQLITE_OK!=sqlite3VdbeMemDynamicify(pOut) ) goto no_mem;
-    pOut->flags &= ~(MEM_Dyn);
+    pOut->zMalloc = 0;
     pOut->flags |= MEM_Static;
     if( pOp->p4type==P4_DYNAMIC ){
       sqlite3_free(pOp->p4.z);
@@ -1003,7 +1002,10 @@ case OP_SCopy: {
   pOut = &p->aMem[pOp->p2];
   assert( pOut!=pIn1 );
   if( pOp->opcode==OP_Move ){
+    char *zMalloc = pOut->zMalloc;
+    pOut->zMalloc = 0;
     sqlite3VdbeMemMove(pOut, pIn1);
+    pIn1->zMalloc = zMalloc;
   }else{
     sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
     if( pOp->opcode==OP_Copy ){
@@ -1269,6 +1271,8 @@ case OP_Function: {
   pOut = &p->aMem[pOp->p3];
   ctx.s.flags = MEM_Null;
   ctx.s.db = db;
+  ctx.s.xDel = 0;
+  ctx.s.zMalloc = 0;
 
   /* The output cell may already have a buffer allocated. Move
   ** the pointer to ctx.s so in case the user-function can use
@@ -1884,6 +1888,7 @@ case OP_Column: {
 
   sMem.flags = 0;
   sMem.db = 0;
+  sMem.zMalloc = 0;
   assert( p1<p->nCursor );
   assert( pOp->p3>0 && pOp->p3<=p->nMem );
   pDest = &p->aMem[pOp->p3];
@@ -2029,7 +2034,7 @@ case OP_Column: {
         aOffset[i] = 0;
       }
     }
-    Release(&sMem);
+    sqlite3VdbeMemRelease(&sMem);
     sMem.flags = MEM_Null;
 
     /* If we have read more header data than was contained in the header,
@@ -2054,8 +2059,11 @@ case OP_Column: {
       if( pDest->flags&MEM_Dyn ){
         sqlite3VdbeSerialGet((u8 *)&zRec[aOffset[p2]], aType[p2], &sMem);
         sMem.db = db; 
-        sqlite3VdbeMemCopy(pDest, &sMem);
+        rc = sqlite3VdbeMemCopy(pDest, &sMem);
         assert( !(sMem.flags&MEM_Dyn) );
+        if( rc!=SQLITE_OK ){
+          goto op_column_out;
+        }
       }else{
         sqlite3VdbeSerialGet((u8 *)&zRec[aOffset[p2]], aType[p2], pDest);
       }
@@ -2083,13 +2091,14 @@ case OP_Column: {
   ** dynamically allocated space over to the pDest structure.
   ** This prevents a memory copy.
   */
-  if( (sMem.flags & MEM_Dyn)!=0 ){
-    assert( !sMem.xDel );
+  if( sMem.zMalloc ){
+    assert( sMem.z==sMem.zMalloc );
     assert( !(pDest->flags & MEM_Dyn) );
     assert( !(pDest->flags & (MEM_Blob|MEM_Str)) || pDest->z==sMem.z );
     pDest->flags &= ~(MEM_Ephem|MEM_Static);
-    pDest->flags |= MEM_Dyn|MEM_Term;
+    pDest->flags |= MEM_Term;
     pDest->z = sMem.z;
+    pDest->zMalloc = sMem.zMalloc;
   }
 
   rc = sqlite3VdbeMemMakeWriteable(pDest);
@@ -3295,11 +3304,12 @@ case OP_Insert: {
     }
     pC->iKey = iKey;
     pC->nData = pData->n;
-    if( pData->flags & MEM_Dyn ){
+    if( pData->z==pData->zMalloc || pC->ephemPseudoTable ){
       pC->pData = pData->z;
       if( !pC->ephemPseudoTable ){
         pData->flags &= ~MEM_Dyn;
         pData->flags |= MEM_Ephem;
+        pData->zMalloc = 0;
       }
     }else{
       pC->pData = sqlite3_malloc( pC->nData+2 );
@@ -4262,6 +4272,7 @@ case OP_AggStep: {
   pMem->n++;
   ctx.s.flags = MEM_Null;
   ctx.s.z = 0;
+  ctx.s.zMalloc = 0;
   ctx.s.xDel = 0;
   ctx.s.db = db;
   ctx.isError = 0;

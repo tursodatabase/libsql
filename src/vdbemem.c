@@ -73,50 +73,35 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 ** not set, Mem.n is zeroed.
 */
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
-  int f = pMem->flags;
-
-  assert( (f & (MEM_Dyn|MEM_Static|MEM_Ephem))==0 
-       || (f & (MEM_Dyn|MEM_Static|MEM_Ephem))==MEM_Dyn 
-       || (f & (MEM_Dyn|MEM_Static|MEM_Ephem))==MEM_Ephem 
-       || (f & (MEM_Dyn|MEM_Static|MEM_Ephem))==MEM_Static 
+  assert( 1 >=
+    ((pMem->zMalloc && pMem->zMalloc==pMem->z) ? 1 : 0) +
+    (((pMem->flags&MEM_Dyn)&&pMem->xDel) ? 1 : 0) + 
+    ((pMem->flags&MEM_Ephem) ? 1 : 0) + 
+    ((pMem->flags&MEM_Static) ? 1 : 0)
   );
 
-  if( (f&MEM_Dyn)==0 || pMem->xDel || sqlite3MallocSize(pMem->z)<n ){
-
-    /* Allocate the new buffer. The minimum allocation size is 32 bytes. */
-    char *z = 0;
-    if( n>0 ){
-      if( preserve && (f&MEM_Dyn) && !pMem->xDel ){
-        z = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
-        pMem->z = 0;
-        preserve = 0;
-      }else{
-        z = sqlite3DbMallocRaw(pMem->db, (n>32?n:32));
-      }
-      if( !z ){
-        sqlite3VdbeMemRelease(pMem);
-        pMem->flags = MEM_Null;
-        return SQLITE_NOMEM;
-      }
+  if( sqlite3MallocSize(pMem->zMalloc)<n ){
+    n = (n>32?n:32);
+    if( preserve && pMem->z==pMem->zMalloc ){
+      pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
+      preserve = 0;
+    }else{
+      sqlite3_free(pMem->zMalloc);
+      pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, n);
     }
-
-    /* If the value is currently a string or blob and the preserve flag
-    ** is true, copy the content to the new buffer. 
-    */
-    if( pMem->flags&(MEM_Blob|MEM_Str) && preserve ){
-      int nCopy = (pMem->n>n?n:pMem->n);
-      memcpy(z, pMem->z, nCopy);
-    }
- 
-    /* Release the old buffer. */
-    sqlite3VdbeMemRelease(pMem);
-
-    pMem->z = z;
-    pMem->flags |= MEM_Dyn;
-    pMem->flags &= ~(MEM_Ephem|MEM_Static);
-    pMem->xDel = 0;
   }
-  return SQLITE_OK;
+
+  if( preserve && pMem->z && pMem->zMalloc && pMem->z!=pMem->zMalloc ){
+    memcpy(pMem->zMalloc, pMem->z, pMem->n);
+  }
+  if( pMem->xDel && pMem->flags&MEM_Dyn){
+    pMem->xDel((void *)(pMem->z));
+  }
+
+  pMem->z = pMem->zMalloc;
+  pMem->flags &= ~(MEM_Ephem|MEM_Static);
+  pMem->xDel = 0;
+  return (pMem->z ? SQLITE_OK : SQLITE_NOMEM);
 }
 
 /*
@@ -129,7 +114,7 @@ int sqlite3VdbeMemDynamicify(Mem *pMem){
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   expandBlob(pMem);
   f = pMem->flags;
-  if( (f&(MEM_Str|MEM_Blob)) && ((f&MEM_Dyn)==0 || pMem->xDel) ){
+  if( (f&(MEM_Str|MEM_Blob)) && pMem->z!=pMem->zMalloc ){
     if( sqlite3VdbeMemGrow(pMem, pMem->n + 2, 1) ){
       return SQLITE_NOMEM;
     }
@@ -259,17 +244,34 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
     ctx.s.flags = MEM_Null;
     ctx.s.db = pMem->db;
+    ctx.s.zMalloc = 0;
     ctx.pMem = pMem;
     ctx.pFunc = pFunc;
     ctx.isError = 0;
     pFunc->xFinalize(&ctx);
-    if( pMem->z ){
-      sqlite3_free( pMem->z );
-    }
+    assert( !pMem->xDel || 0==(pMem->flags&MEM_Dyn) );
+    sqlite3_free(pMem->zMalloc);
     *pMem = ctx.s;
     rc = (ctx.isError?SQLITE_ERROR:SQLITE_OK);
   }
   return rc;
+}
+
+/*
+** If the memory cell contains a string value that must be freed by
+** invoking an external callback, free it now. Calling this function
+** does not free any Mem.zMalloc buffer.
+*/
+void sqlite3VdbeMemReleaseExternal(Mem *p){
+  assert( p->db==0 || sqlite3_mutex_held(p->db->mutex) );
+  if( p->flags&MEM_Agg ){
+    sqlite3VdbeMemFinalize(p, p->u.pDef);
+    assert( (p->flags & MEM_Agg)==0 );
+    sqlite3VdbeMemRelease(p);
+  }else if( p->xDel && p->flags&MEM_Dyn ){
+    p->xDel((void *)p->z);
+    p->xDel = 0;
+  }
 }
 
 /*
@@ -278,22 +280,11 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
 ** (Mem.type==SQLITE_TEXT).
 */
 void sqlite3VdbeMemRelease(Mem *p){
-  assert( p->db==0 || sqlite3_mutex_held(p->db->mutex) );
-  if( p->flags & (MEM_Dyn|MEM_Agg) ){
-    if( p->xDel ){
-      if( p->flags & MEM_Agg ){
-        sqlite3VdbeMemFinalize(p, p->u.pDef);
-        assert( (p->flags & MEM_Agg)==0 );
-        sqlite3VdbeMemRelease(p);
-      }else{
-        p->xDel((void *)p->z);
-      }
-    }else{
-      sqlite3_free(p->z);
-    }
-    p->z = 0;
-    p->xDel = 0;
-  }
+  sqlite3VdbeMemReleaseExternal(p);
+  sqlite3_free(p->zMalloc);
+  p->z = 0;
+  p->zMalloc = 0;
+  p->xDel = 0;
 }
 
 /*
@@ -514,6 +505,8 @@ int sqlite3VdbeMemTooBig(Mem *p){
   return 0; 
 }
 
+#define MEMCELLSIZE (int)(&(((Mem *)0)->zMalloc))
+
 /*
 ** Make an shallow copy of pFrom into pTo.  Prior contents of
 ** pTo are freed.  The pFrom->z field is not duplicated.  If
@@ -521,10 +514,10 @@ int sqlite3VdbeMemTooBig(Mem *p){
 ** and flags gets srcType (either MEM_Ephem or MEM_Static).
 */
 void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
-  sqlite3VdbeMemRelease(pTo);
-  memcpy(pTo, pFrom, sizeof(*pFrom));
+  sqlite3VdbeMemReleaseExternal(pTo);
+  memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->xDel = 0;
-  if( pTo->flags&MEM_Dyn ){
+  if( pFrom->xDel || pFrom->z==pFrom->zMalloc ){
     pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Ephem);
     assert( srcType==MEM_Ephem || srcType==MEM_Static );
     pTo->flags |= srcType;
@@ -537,48 +530,18 @@ void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
 */
 int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   int rc = SQLITE_OK;
-  char *zBuf = 0;
 
-  /* If cell pTo currently has a reusable buffer, save a pointer to it
-  ** in local variable zBuf. This function attempts to avoid freeing
-  ** this buffer.
-  */
-  if( pTo->flags&MEM_Dyn ){
-    if( pTo->xDel ){
-      sqlite3VdbeMemRelease(pTo);
-    }else{
-      zBuf = pTo->z;
+  sqlite3VdbeMemReleaseExternal(pTo);
+  memcpy(pTo, pFrom, MEMCELLSIZE);
+  pTo->flags &= ~MEM_Dyn;
+
+  if( pTo->flags&(MEM_Str|MEM_Blob) ){
+    if( 0==(pFrom->flags&MEM_Static) ){
+      pTo->flags |= MEM_Ephem;
+      rc = sqlite3VdbeMemMakeWriteable(pTo);
     }
   }
 
-  /* Copy the contents of *pFrom to *pTo */
-  memcpy(pTo, pFrom, sizeof(*pFrom));
-
-  if( pTo->flags&(MEM_Str|MEM_Blob) && pTo->flags&MEM_Static ){
-    /* pFrom contained a pointer to a static string. In this case,
-    ** free any dynamically allocated buffer associated with pTo.
-    */
-    sqlite3_free(zBuf);
-  }else{
-    char *zData = pTo->z;
-
-    pTo->z = zBuf;
-    pTo->flags &= ~(MEM_Static|MEM_Ephem);
-    pTo->flags |= MEM_Dyn;
-    pTo->xDel = 0;
- 
-    if( pTo->flags&(MEM_Str|MEM_Blob) ){
-      if( sqlite3VdbeMemGrow(pTo, pTo->n+2, 0) ){
-        pTo->n = 0;
-        rc = SQLITE_NOMEM;
-      }else{
-        memcpy(pTo->z, zData, pTo->n);
-        pTo->z[pTo->n] = '\0';
-        pTo->z[pTo->n+1] = '\0';
-        pTo->flags |= MEM_Term;
-      }
-    }
-  }
   return rc;
 }
 
@@ -592,12 +555,12 @@ void sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
   assert( pFrom->db==0 || sqlite3_mutex_held(pFrom->db->mutex) );
   assert( pTo->db==0 || sqlite3_mutex_held(pTo->db->mutex) );
   assert( pFrom->db==0 || pTo->db==0 || pFrom->db==pTo->db );
-  if( pTo->flags & MEM_Dyn ){
-    sqlite3VdbeMemRelease(pTo);
-  }
+
+  sqlite3VdbeMemRelease(pTo);
   memcpy(pTo, pFrom, sizeof(Mem));
   pFrom->flags = MEM_Null;
   pFrom->xDel = 0;
+  pFrom->zMalloc = 0;
 }
 
 /*
@@ -659,7 +622,6 @@ int sqlite3VdbeMemSetStr(
       return SQLITE_NOMEM;
     }
     memcpy(pMem->z, z, nAlloc);
-    flags |= MEM_Dyn;
   }else{
     sqlite3VdbeMemRelease(pMem);
     pMem->z = (char *)z;

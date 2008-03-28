@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.74 2008/03/27 15:07:05 drh Exp $
+# $Id: quick.test,v 1.75 2008/03/28 15:44:10 danielk1977 Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -21,6 +21,9 @@ while {[set arg [lshift argv]] != ""} {
     }
     -soak {
        set SOAKTEST 1
+    }
+    -start {
+       set STARTAT "[lshift argv]*"
     }
     default {
       set argv [linsert $argv 0 $arg]
@@ -97,6 +100,8 @@ foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
   set tail [file tail $testfile]
   if {[lsearch -exact $EXCLUDE $tail]>=0} continue
   if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue
+  if {[info exists STARTAT] && [string match $STARTAT $tail]} {unset STARTAT}
+  if {[info exists STARTAT]} continue
   source $testfile
   catch {db close}
   if {$sqlite_open_file_count>0} {

@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.21 2008/03/28 12:53:38 drh Exp $
+** $Id: test_malloc.c,v 1.22 2008/03/28 15:44:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -546,7 +546,7 @@ static void test_memdebug_callback(int nByte, int nFrame, void **aFrame){
   }
 }
 
-static int test_memdebug_log_clear(){
+static void test_memdebug_log_clear(){
   Tcl_HashSearch search;
   Tcl_HashEntry *pEntry;
   for(
