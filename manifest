@@ -1,5 +1,5 @@
-C Change\sthe\spager's\ssector\ssize\salgorithm\sto\sthe\smaximum\sof\sthe\ssize\nreported\sby\sxSectorSize()\sfrom\sthe\sVFS\sand\s512.\s\sIt\swas\susing\sthe\nmaximum\sof\sxSectorSize()\sand\sthe\scurrent\spage\ssize,\sbut\sthat\swas\sadding\nan\sextra\s512\sbytes\sto\sthe\ssize\sof\sthe\sjournal\sfile\sin\sthe\scommon\scase.\s(CVS\s4929)
-D 2008-03-28T17:41:14
+C Fix\sfor\s#3022.\sHandle\squeries\slike\s"SELECT\smin(b)\sFROM\sT\sWHERE\sa\s=\sX\sAND\sb\s>\sX"\swhen\sthere\sis\san\sindex\son\s(a,b).\s(CVS\s4930)
+D 2008-03-28T18:11:17
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -181,9 +181,9 @@ F src/vdbeapi.c e03b846adf7fb938b3945019dc6c4c49ed86bb0e
 F src/vdbeaux.c 519ec819a8e549d087899f0c9a912afcdda762b4
 F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
-F src/vdbemem.c 004c5e1eb8336b22b9abfc535976026ef324ab71
+F src/vdbemem.c 05f231580c528ccb7bef190568453140e79e4a2e
 F src/vtab.c 00cd16317b29495c185ff40e4b227917d5a371b2
-F src/where.c 7aeeec6731dc2f423e6a77ff2964bc3c38985625
+F src/where.c aa7ca84521e44925a5f5afa4a0572444a61befe9
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d12210212bada2bde6d5aeb90969b86c1aa977d2
@@ -388,7 +388,7 @@ F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
 F test/minmax.test 5d56f08a7765dfb5c1fb303333f7444dacb37bef
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
-F test/minmax3.test 1b092b09965e596d31e2694e501a3c58a0df3894
+F test/minmax3.test 05f35e79a2d7e554945fbc64c90caec736d0b99b
 F test/misc1.test 1b89c02c4a33b49dee4cd1d20d161aaaba719075
 F test/misc2.test 1ee89298de9c16b61454658b24999c403e86afe4
 F test/misc3.test aea079f4c3d93e9962186f45c0ff0954310e6b11
@@ -619,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d0bf73d81453da1d8e602e0445064d9f5e348063
-R a00f3c4bc7b82caa5bfcce9be035dea6
-U drh
-Z bb8fa8fe977715569e1f6bf0fa970fc0
+P 17ea0c97a8bac1b34af1f9183d93a2f2a6af9690
+R 14a3c26edfb03c14e19492751537ee30
+U danielk1977
+Z 72270d20c33f439db7efde990ae31655
