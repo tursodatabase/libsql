@@ -1,5 +1,5 @@
-C If\smemory\sis\sleaked\swhen\srunning\sa\stest\sscript\swith\sthe\s--malloctrace\soption,\swrite\sout\sa\sfile\scalled\sleaks.sql\sin\sthe\ssame\sformat\sas\smallocs.sql\scontaining\sth\se\sleaked\sapplications.\sThe\ssame\stools\scan\sthen\sbe\sused\sto\sexamine\sthe\sstack\straces\sassociated\swith\sleaked\sallocations.\s(CVS\s4926)
-D 2008-03-28T07:42:54
+C Patch\sto\sthe\snew\smemory\stracing\slogic\sthat\sallows\sit\sto\sbuild\seven\sif\nmemory\sdebugging\sis\sturned\soff.\s(CVS\s4927)
+D 2008-03-28T12:53:38
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/test_devsym.c cee1aecaa90c895030399ca4ae38f84a08038f8a
 F src/test_func.c 9e9b33ff083b65da91c389cece903bc32de06f01
 F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
-F src/test_malloc.c dd79eafc4966d4637acbd9a28b82d2a38eae8aa8
+F src/test_malloc.c 3be391afbfccaeaeba8a5fdb349348d2740cc9cc
 F src/test_md5.c bca40b727c57462ddb415e57c5323445a1bb1a40
 F src/test_onefile.c 2fea6d22f13f5f286356c80c77ffd41f995f2b7a
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
@@ -619,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3cb704c4c439425781644b1b653b7e50f02fd91e
-R d37bb7bf406d962e1027710a2ee372e9
-U danielk1977
-Z ad981f759d6865750c0365a2e743adfb
+P f1b97ed93183378ff56b4fe7ae8ea269c24092fc
+R f8436b96b881dc0b3a43307cb3273c3d
+U drh
+Z bd7953b885d6238223aab5e76018f9c2

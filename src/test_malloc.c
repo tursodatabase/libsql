@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.20 2008/03/28 07:42:54 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.21 2008/03/28 12:53:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -636,10 +636,12 @@ static int test_memdebug_log(
     }
 
     case MB_LOG_SYNC: {
+#ifdef SQLITE_MEMDEBUG
       extern void sqlite3MemdebugSync();
       test_memdebug_log_clear();
       mallocLogEnabled = 1;
       sqlite3MemdebugSync();
+#endif
       break;
     }
   }
