@@ -80,7 +80,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
     ((pMem->flags&MEM_Static) ? 1 : 0)
   );
 
-  if( sqlite3MallocSize(pMem->zMalloc)<n ){
+  if( !pMem->zMalloc || sqlite3MallocSize(pMem->zMalloc)<n ){
     n = (n>32?n:32);
     if( preserve && pMem->z==pMem->zMalloc ){
       pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
