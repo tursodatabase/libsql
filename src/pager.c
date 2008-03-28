@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.421 2008/03/27 22:42:52 drh Exp $
+** @(#) $Id: pager.c,v 1.422 2008/03/28 17:41:14 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1683,8 +1683,8 @@ static int pager_truncate(Pager *pPager, int nPage){
 /*
 ** Set the sectorSize for the given pager.
 **
-** The sector size is the larger of the sector size reported
-** by sqlite3OsSectorSize() and the pageSize.
+** The sector size is at least as big as the sector size reported
+** by sqlite3OsSectorSize().  The minimum sector size is 512.
 */
 static void setSectorSize(Pager *pPager){
   assert(pPager->fd->pMethods||pPager->tempFile);
@@ -1695,8 +1695,8 @@ static void setSectorSize(Pager *pPager){
     */
     pPager->sectorSize = sqlite3OsSectorSize(pPager->fd);
   }
-  if( pPager->sectorSize<pPager->pageSize ){
-    pPager->sectorSize = pPager->pageSize;
+  if( pPager->sectorSize<512 ){
+    pPager->sectorSize = 512;
   }
 }
 
@@ -1714,20 +1714,23 @@ static void setSectorSize(Pager *pPager){
 **       sanity checksum.
 **  (4)  4 byte integer which is the number of pages to truncate the
 **       database to during a rollback.
-**  (5)  4 byte integer which is the number of bytes in the master journal
+**  (5)  4 byte big-endian integer which is the sector size.  The header
+**       is this many bytes in size.
+**  (6)  4 byte big-endian integer which is the page case.
+**  (7)  4 byte integer which is the number of bytes in the master journal
 **       name.  The value may be zero (indicate that there is no master
 **       journal.)
-**  (6)  N bytes of the master journal name.  The name will be nul-terminated
+**  (8)  N bytes of the master journal name.  The name will be nul-terminated
 **       and might be shorter than the value read from (5).  If the first byte
 **       of the name is \000 then there is no master journal.  The master
 **       journal name is stored in UTF-8.
-**  (7)  Zero or more pages instances, each as follows:
+**  (9)  Zero or more pages instances, each as follows:
 **        +  4 byte page number.
 **        +  pPager->pageSize bytes of data.
 **        +  4 byte checksum
 **
-** When we speak of the journal header, we mean the first 6 items above.
-** Each entry in the journal is an instance of the 7th item.
+** When we speak of the journal header, we mean the first 8 items above.
+** Each entry in the journal is an instance of the 9th item.
 **
 ** Call the value from the second bullet "nRec".  nRec is the number of
 ** valid page entries in the journal.  In most cases, you can compute the

@@ -1,5 +1,5 @@
-C Changes\sto\sthe\sMem\sstructure\sto\sreduce\sthe\sfrequency\sof\sfreeing\sand\sreallocating\sthe\sdynamic\sbuffer.\s(CVS\s4928)
-D 2008-03-28T15:44:10
+C Change\sthe\spager's\ssector\ssize\salgorithm\sto\sthe\smaximum\sof\sthe\ssize\nreported\sby\sxSectorSize()\sfrom\sthe\sVFS\sand\s512.\s\sIt\swas\susing\sthe\nmaximum\sof\sxSectorSize()\sand\sthe\scurrent\spage\ssize,\sbut\sthat\swas\sadding\nan\sextra\s512\sbytes\sto\sthe\ssize\sof\sthe\sjournal\sfile\sin\sthe\scommon\scase.\s(CVS\s4929)
+D 2008-03-28T17:41:14
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -128,7 +128,7 @@ F src/os_unix.c fdec4e5ee5dd555a6ad4a69f38ab35f0788536b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 1cfa9b04f583a141b84af7995b88906e4d90edad
+F src/pager.c f8f61c344d6a2406754f761cc223dd31b344830b
 F src/pager.h b1e2258f03878c14b06a95bfa362e8c5c9638170
 F src/parse.y b0ee84d94218046ea88c2a6561005710d127ca7d
 F src/pragma.c e659c9e443d11854cff2fd250012365ae0ca81ba
@@ -344,7 +344,7 @@ F test/insert4.test 6e382eaf7295a4463e6f29ea20fcd8e63d097eeb
 F test/insert5.test 509017213328147d3acdfa2c441bfd82362dda41
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
-F test/io.test f2e9890eb3f159973fcb11008054596b0caeca4f
+F test/io.test cfb907b433a46d5cc3266b292cbfc7cd56ae1234
 F test/ioerr.test 5382046b2ef19b9084652e7d2d1e82ab33c0deda
 F test/ioerr2.test b9c9a0491a812707762a7c002876553be54d9969
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -619,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0a9c63b227b9c6d2bd0e7b491245947ffc83c828
-R 4bbd70b6d864c91be4417b22dd9d1d4c
-U danielk1977
-Z 85774c3fc13d70f3eca1b91a57f3702c
+P d0bf73d81453da1d8e602e0445064d9f5e348063
+R a00f3c4bc7b82caa5bfcce9be035dea6
+U drh
+Z bb8fa8fe977715569e1f6bf0fa970fc0
