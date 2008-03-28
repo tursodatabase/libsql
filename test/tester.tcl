@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.110 2008/03/22 01:08:01 drh Exp $
+# $Id: tester.tcl,v 1.111 2008/03/28 07:42:54 danielk1977 Exp $
 
 
 set tcl_precision 15
@@ -260,6 +260,12 @@ proc finalize_testing {} {
     memdebug_log_sql
     sqlite3_memdebug_log stop
     sqlite3_memdebug_log clear
+
+    if {[sqlite3_memory_used]>0} {
+      puts "Writing leaks.sql..."
+      sqlite3_memdebug_log sync
+      memdebug_log_sql leaks.sql
+    }
   }
   foreach f [glob -nocomplain test.db-*-journal] {
     file delete -force $f

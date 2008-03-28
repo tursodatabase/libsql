@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.19 2008/03/25 09:47:35 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.20 2008/03/28 07:42:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -546,6 +546,21 @@ static void test_memdebug_callback(int nByte, int nFrame, void **aFrame){
   }
 }
 
+static int test_memdebug_log_clear(){
+  Tcl_HashSearch search;
+  Tcl_HashEntry *pEntry;
+  for(
+    pEntry=Tcl_FirstHashEntry(&aMallocLog, &search);
+    pEntry;
+    pEntry=Tcl_NextHashEntry(&search)
+  ){
+    MallocLog *pLog = (MallocLog *)Tcl_GetHashValue(pEntry);
+    Tcl_Free((char *)pLog);
+  }
+  Tcl_DeleteHashTable(&aMallocLog);
+  Tcl_InitHashTable(&aMallocLog, MALLOC_LOG_FRAMES);
+}
+
 static int test_memdebug_log(
   void * clientData,
   Tcl_Interp *interp,
@@ -555,8 +570,10 @@ static int test_memdebug_log(
   static int isInit = 0;
   int iSub;
 
-  enum MB_enum { MB_LOG_START, MB_LOG_STOP, MB_LOG_DUMP, MB_LOG_CLEAR };
-  static const char *MB_strs[] = { "start", "stop", "dump", "clear" };
+  static const char *MB_strs[] = { "start", "stop", "dump", "clear", "sync" };
+  enum MB_enum { 
+      MB_LOG_START, MB_LOG_STOP, MB_LOG_DUMP, MB_LOG_CLEAR, MB_LOG_SYNC 
+  };
 
   if( !isInit ){
 #ifdef SQLITE_MEMDEBUG
@@ -614,18 +631,16 @@ static int test_memdebug_log(
       break;
     }
     case MB_LOG_CLEAR: {
-      Tcl_HashSearch search;
-      Tcl_HashEntry *pEntry;
-      for(
-        pEntry=Tcl_FirstHashEntry(&aMallocLog, &search);
-        pEntry;
-        pEntry=Tcl_NextHashEntry(&search)
-      ){
-        MallocLog *pLog = (MallocLog *)Tcl_GetHashValue(pEntry);
-        Tcl_Free((char *)pLog);
-      }
-      Tcl_DeleteHashTable(&aMallocLog);
-      Tcl_InitHashTable(&aMallocLog, MALLOC_LOG_FRAMES);
+      test_memdebug_log_clear();
+      break;
+    }
+
+    case MB_LOG_SYNC: {
+      extern void sqlite3MemdebugSync();
+      test_memdebug_log_clear();
+      mallocLogEnabled = 1;
+      sqlite3MemdebugSync();
+      break;
     }
   }
 

@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.23 2008/03/21 14:22:44 danielk1977 Exp $
+** $Id: mem2.c,v 1.24 2008/03/28 07:42:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -408,6 +408,15 @@ void sqlite3MemdebugSettitle(const char *zTitle){
   mem.zTitle[n] = 0;
   mem.nTitle = (n+3)&~3;
   sqlite3_mutex_leave(mem.mutex);
+}
+
+void sqlite3MemdebugSync(){
+  struct MemBlockHdr *pHdr;
+  for(pHdr=mem.pFirst; pHdr; pHdr=pHdr->pNext){
+    void **pBt = (void**)pHdr;
+    pBt -= pHdr->nBacktraceSlots;
+    mem.xBacktrace(pHdr->iSize, pHdr->nBacktrace-1, &pBt[1]);
+  }
 }
 
 /*
