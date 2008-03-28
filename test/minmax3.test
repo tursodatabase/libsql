@@ -8,7 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-# $Id: minmax3.test,v 1.3 2008/03/28 18:11:17 danielk1977 Exp $
+# $Id: minmax3.test,v 1.4 2008/03/28 19:16:57 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -139,6 +139,46 @@ do_test minmax3-2.1 {
   execsql {
     CREATE TABLE t2(a, b);
     CREATE INDEX i3 ON t2(a, b);
+    INSERT INTO t2 VALUES(1, NULL);
+    INSERT INTO t2 VALUES(1, 1);
+    INSERT INTO t2 VALUES(1, 2);
+    INSERT INTO t2 VALUES(1, 3);
+    INSERT INTO t2 VALUES(2, NULL);
+    INSERT INTO t2 VALUES(2, 1);
+    INSERT INTO t2 VALUES(2, 2);
+    INSERT INTO t2 VALUES(2, 3);
+    INSERT INTO t2 VALUES(3, 1);
+    INSERT INTO t2 VALUES(3, 2);
+    INSERT INTO t2 VALUES(3, 3);
+  }
+} {}
+do_test minmax3-2.2 {
+  execsql { SELECT min(b) FROM t2 WHERE a = 1; }
+} {1}
+do_test minmax3-2.3 {
+  execsql { SELECT min(b) FROM t2 WHERE a = 1 AND b>1; }
+} {2}
+do_test minmax3-2.4 {
+  execsql { SELECT min(b) FROM t2 WHERE a = 1 AND b>-1; }
+} {1}
+do_test minmax3-2.5 {
+  execsql { SELECT min(b) FROM t2 WHERE a = 1; }
+} {1}
+do_test minmax3-2.6 {
+  execsql { SELECT min(b) FROM t2 WHERE a = 1 AND b<2; }
+} {1}
+do_test minmax3-2.7 {
+  execsql { SELECT min(b) FROM t2 WHERE a = 1 AND b<1; }
+} {{}}
+do_test minmax3-2.8 {
+  execsql { SELECT min(b) FROM t2 WHERE a = 3 AND b<1; }
+} {{}}
+
+do_test minmax3-2.1 {
+  execsql {
+    DROP TABLE t2;
+    CREATE TABLE t2(a, b);
+    CREATE INDEX i3 ON t2(a, b DESC);
     INSERT INTO t2 VALUES(1, NULL);
     INSERT INTO t2 VALUES(1, 1);
     INSERT INTO t2 VALUES(1, 2);
