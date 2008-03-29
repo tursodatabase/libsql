@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for pthreads
 **
-** $Id: mutex_unix.c,v 1.6 2008/03/26 18:34:43 danielk1977 Exp $
+** $Id: mutex_unix.c,v 1.7 2008/03/29 12:47:27 rse Exp $
 */
 #include "sqliteInt.h"
 
@@ -39,6 +39,11 @@ struct sqlite3_mutex {
   int trace;                 /* True to trace changes */
 #endif
 };
+#ifdef SQLITE_DEBUG
+#define SQLITE3_MUTEX_INITIALIZER { PTHREAD_MUTEX_INITIALIZER, 0, 0, (pthread_t)0, 0 }
+#else
+#define SQLITE3_MUTEX_INITIALIZER { PTHREAD_MUTEX_INITIALIZER, 0, 0, (pthread_t)0 }
+#endif
 
 /*
 ** The sqlite3_mutex_alloc() routine allocates a new
@@ -83,12 +88,12 @@ struct sqlite3_mutex {
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int iType){
   static sqlite3_mutex staticMutexes[] = {
-    { PTHREAD_MUTEX_INITIALIZER, },
-    { PTHREAD_MUTEX_INITIALIZER, },
-    { PTHREAD_MUTEX_INITIALIZER, },
-    { PTHREAD_MUTEX_INITIALIZER, },
-    { PTHREAD_MUTEX_INITIALIZER, },
-    { PTHREAD_MUTEX_INITIALIZER, },
+    SQLITE3_MUTEX_INITIALIZER,
+    SQLITE3_MUTEX_INITIALIZER,
+    SQLITE3_MUTEX_INITIALIZER,
+    SQLITE3_MUTEX_INITIALIZER,
+    SQLITE3_MUTEX_INITIALIZER,
+    SQLITE3_MUTEX_INITIALIZER
   };
   sqlite3_mutex *p;
   switch( iType ){

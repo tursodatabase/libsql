@@ -1,5 +1,5 @@
-C add\sthree\smissing\sinitializers\s(CVS\s4935)
-D 2008-03-29T12:39:39
+C eliminate\scompile-time\swarnings\srelated\sto\smissing\sfield\sinitializations\s(CVS\s4936)
+D 2008-03-29T12:47:27
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/mem5.c 11d98b76f77873aab86b543cbd1a8ddc4e680d58
 F src/mutex.c d455f0876d5aad9935a23d01e6ae1bf4bd462d6a
 F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 2911ea96955ab6cba734cc4ad903fe76f834b39e
-F src/mutex_unix.c c54275523ba4d9b00d6c7783602929b5556dbaf9
+F src/mutex_unix.c 466d20378a0645fea64c3f2e2669c33b7802df56
 F src/mutex_w32.c 133698096a2c4e81cd11ea6f4de7891c66f7b9f7
 F src/os.c 7bc8d9b187836b87befcc5ae13158a7c55f82329
 F src/os.h 497bf5f0f2648461ef65940cfb59ba427430f3fc
@@ -619,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 37dfcdf529378a8ef37ed8672e28339a7d9e9da6
-R 3fab5323830c9e5f851ba62a5a7e4363
+P f45f0593cf5dd8c0172b13c300a4a9393540e0d7
+R 2bc6a03eb48ceb5b75a14804df20ae59
 U rse
-Z b91c4d837768cbc5dcbf9f5608097187
+Z 6f338dc4b9adf1e8fe817f7710421312
