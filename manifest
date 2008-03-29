@@ -1,5 +1,5 @@
-C Add\sthe\s--pause\soption\sto\sthe\smain\stest\sdriver.\s(CVS\s4934)
-D 2008-03-29T11:00:55
+C add\sthree\smissing\sinitializers\s(CVS\s4935)
+D 2008-03-29T12:39:39
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -177,7 +177,7 @@ F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
 F src/vdbe.c 09dd6f4c5e69f17f7633d22e3f45edbafe83eeaf
 F src/vdbe.h f72201a0657d5f3d6cc008d1f8d9cc65768518c9
 F src/vdbeInt.h 0b96efdeecb0803e504bf1c16b198f87c91d6019
-F src/vdbeapi.c e03b846adf7fb938b3945019dc6c4c49ed86bb0e
+F src/vdbeapi.c ab6e99f8a6b7fcb82c2c698da7a36762a7593f0a
 F src/vdbeaux.c 519ec819a8e549d087899f0c9a912afcdda762b4
 F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
@@ -619,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 39705b617a775d4299e98ac88fab4525a64d8b78
-R a8d11eb9a5c39cc6cf028af2ce3e5192
-U drh
-Z 8599e48a8262797dc0549dd31b3ef5e5
+P 37dfcdf529378a8ef37ed8672e28339a7d9e9da6
+R 3fab5323830c9e5f851ba62a5a7e4363
+U rse
+Z b91c4d837768cbc5dcbf9f5608097187
