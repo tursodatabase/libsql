@@ -11,8 +11,20 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.112 2008/03/28 15:44:10 danielk1977 Exp $
+# $Id: tester.tcl,v 1.113 2008/03/29 11:00:55 drh Exp $
 
+#
+# What for user input before continuing.  This gives an opportunity
+# to connect profiling tools to the process.
+#
+for {set i 0} {$i<[llength $argv]} {incr i} {
+  if {[regexp {^-+pause$} [lindex $argv $i] all value]} {
+    puts -nonewline "Press RETURN to begin..."
+    flush stdout
+    gets stdin
+    set argv [lreplace $argv $i $i]
+  }
+}
 
 set tcl_precision 15
 set sqlite_pending_byte 0x0010000
