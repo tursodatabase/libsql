@@ -1,5 +1,5 @@
-C Make\sthe\ssqlite3BtreeMoveto\sroutine\sa\sno-op\sif\sthe\scursor\sis\salready\spointing\nat\sthe\scell\swe\sare\strying\sto\smove\sto.\s(CVS\s4938)
-D 2008-03-29T16:01:04
+C Set\sexclusive\slocking\smode\sby\sdefault\son\sthe\sspeed4p\stest.\s(CVS\s4939)
+D 2008-03-29T17:26:02
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -443,7 +443,7 @@ F test/speed1p.test 2c0144604a7c5d32493c4075c46d9a5a0f90ceba
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test 20d8ea20bea3ca09c3ef3b5ec820a17e58e132cb
-F test/speed4p.test c2633dc73f4206deffd8e8c34fe5a2dc0ab97800
+F test/speed4p.test 577685cc25cb66390a2dc2957d87d4d78e5af120
 F test/sqllimits1.test cebd870957dbf8d931c5c9cadf757e0d31a3f71a
 F test/subquery.test 8203f85db56ba022a57a0589890090c8feed4e59
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
@@ -619,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P bf28f1c260b3efbec3b031edb97ccb7b4b039947
-R d9c5da155dc2408c6037314f48ac3576
+P 9b567ab61e7542141b7bc9c3c053c2d1180da92d
+R b375f831a556a14b3cedf2f939dab204
 U drh
-Z c9db9f5c48d0f08888b8f4af1ebe4788
+Z 1931c28b60471617d06c6e5842f4d51d

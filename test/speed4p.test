@@ -17,7 +17,7 @@
 #   * sub-selects
 #   * triggers
 #
-# $Id: speed4p.test,v 1.1 2008/03/27 15:07:05 drh Exp $
+# $Id: speed4p.test,v 1.2 2008/03/29 17:26:02 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -90,6 +90,9 @@ proc number_name {n} {
 # Set up the schema. Each of the tables t1, t2 and t3 contain 50,000 rows.
 # This creates a database of around 16MB.
 execsql {
+  PRAGMA page_size=1024;
+  PRAGMA cache_size=8192;
+  PRAGMA locking_mode=EXCLUSIVE;
   BEGIN;
   CREATE TABLE t1(rowid INTEGER PRIMARY KEY, i INTEGER, t TEXT);
   CREATE TABLE t2(rowid INTEGER PRIMARY KEY, i INTEGER, t TEXT);
