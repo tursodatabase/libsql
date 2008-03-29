@@ -508,7 +508,7 @@ int sqlite3VdbeMemTooBig(Mem *p){
 /*
 ** Size of struct Mem not including the Mem.zMalloc member.
 */
-#define MEMCELLSIZE (int)(&(((Mem *)0)->zMalloc))
+#define MEMCELLSIZE (size_t)(&(((Mem *)0)->zMalloc))
 
 /*
 ** Make an shallow copy of pFrom into pTo.  Prior contents of
