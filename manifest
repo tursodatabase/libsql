@@ -1,5 +1,5 @@
-C add\stwo\smissing\sinitializer\svalues\s(CVS\s4937)
-D 2008-03-29T12:50:33
+C Make\sthe\ssqlite3BtreeMoveto\sroutine\sa\sno-op\sif\sthe\scursor\sis\salready\spointing\nat\sthe\scell\swe\sare\strying\sto\smove\sto.\s(CVS\s4938)
+D 2008-03-29T16:01:04
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -86,9 +86,9 @@ F src/attach.c bdc75e759ca25a16f4dc7fbdbc6d37ad2561bb24
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 49817d442e51e4123585f3cf3c2afc293a3c91e2
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 6e60d634d236232efbb289b800dd76e72a5ecf9d
+F src/btree.c 20d51e14297a249408d9cc4bea433e23a72ef125
 F src/btree.h c66cb17c6fffa84a88926dbef173bab4ae692fd4
-F src/btreeInt.h d232be68a7ab2a24376dc6332a869e717551b0bd
+F src/btreeInt.h 8a2718652ed9413dc6acbb02a5c5a23a35a6e983
 F src/build.c 4e6321d112f0ed1070c579677573e4eb76cda1fd
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
@@ -619,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d6a34d983e2181f1d1763bd3821a1e63f1e18818
-R 205889753b1d77cef56f1f56cb8995e0
-U rse
-Z a5f43d0478b1df89fabbb68795899e63
+P bf28f1c260b3efbec3b031edb97ccb7b4b039947
+R d9c5da155dc2408c6037314f48ac3576
+U drh
+Z c9db9f5c48d0f08888b8f4af1ebe4788

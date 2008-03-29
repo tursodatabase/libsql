@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.447 2008/03/25 17:23:33 drh Exp $
+** $Id: btree.c,v 1.448 2008/03/29 16:01:04 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2847,6 +2847,7 @@ void sqlite3BtreeReleaseTempCursor(BtCursor *pCur){
   static void getCellInfo(BtCursor *pCur){
     if( pCur->info.nSize==0 ){
       sqlite3BtreeParseCell(pCur->pPage, pCur->idx, &pCur->info);
+      pCur->validNKey = 1;
     }else{
       assertCellInfo(pCur);
     }
@@ -2856,6 +2857,7 @@ void sqlite3BtreeReleaseTempCursor(BtCursor *pCur){
 #define getCellInfo(pCur)                                               \
   if( pCur->info.nSize==0 ){                                            \
     sqlite3BtreeParseCell(pCur->pPage, pCur->idx, &pCur->info);         \
+    pCur->validNKey = 1;                                                \
   }else{                                                                \
     assertCellInfo(pCur);                                               \
   }
@@ -3349,6 +3351,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   pCur->pPage = pNewPage;
   pCur->idx = 0;
   pCur->info.nSize = 0;
+  pCur->validNKey = 0;
   if( pNewPage->nCell<1 ){
     return SQLITE_CORRUPT_BKPT;
   }
@@ -3400,6 +3403,7 @@ void sqlite3BtreeMoveToParent(BtCursor *pCur){
   releasePage(pPage);
   pCur->pPage = pParent;
   pCur->info.nSize = 0;
+  pCur->validNKey = 0;
   assert( pParent->idxShift==0 );
   pCur->idx = idxParent;
 }
@@ -3438,6 +3442,8 @@ static int moveToRoot(BtCursor *pCur){
   }
   pCur->idx = 0;
   pCur->info.nSize = 0;
+  pCur->atLast = 0;
+  pCur->validNKey = 0;
   if( pRoot->nCell==0 && !pRoot->leaf ){
     Pgno subpage;
     assert( pRoot->pgno==1 );
@@ -3497,6 +3503,7 @@ static int moveToRightmost(BtCursor *pCur){
   if( rc==SQLITE_OK ){
     pCur->idx = pPage->nCell - 1;
     pCur->info.nSize = 0;
+    pCur->validNKey = 0;
   }
   return SQLITE_OK;
 }
@@ -3543,6 +3550,8 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
       assert( pCur->eState==CURSOR_VALID );
       *pRes = 0;
       rc = moveToRightmost(pCur);
+      getCellInfo(pCur);
+      pCur->atLast = rc==SQLITE_OK;
     }
   }
   return rc;
@@ -3589,6 +3598,21 @@ int sqlite3BtreeMoveto(
 
   assert( cursorHoldsMutex(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
+
+  /* If the cursor is already positioned at the point we are trying
+  ** to move to, then just return without doing any work */
+  if( pCur->eState==CURSOR_VALID && pCur->validNKey && pCur->pPage->intKey ){
+    if( pCur->info.nKey==nKey ){
+      *pRes = 0;
+      return SQLITE_OK;
+    }
+    if( pCur->atLast && pCur->info.nKey<nKey ){
+      *pRes = -1;
+      return SQLITE_OK;
+    }
+  }
+
+
   rc = moveToRoot(pCur);
   if( rc ){
     return rc;
@@ -3638,6 +3662,7 @@ int sqlite3BtreeMoveto(
       void *pCellKey;
       i64 nCellKey;
       pCur->info.nSize = 0;
+      pCur->validNKey = 1;
       if( pPage->intKey ){
         u8 *pCell;
         pCell = findCell(pPage, pCur->idx) + pPage->childPtrSize;
@@ -3645,7 +3670,7 @@ int sqlite3BtreeMoveto(
           u32 dummy;
           pCell += getVarint32(pCell, &dummy);
         }
-        getVarint(pCell, (u64 *)&nCellKey);
+        getVarint(pCell, (u64*)&nCellKey);
         if( nCellKey<nKey ){
           c = -1;
         }else if( nCellKey>nKey ){
@@ -3672,6 +3697,7 @@ int sqlite3BtreeMoveto(
         }
       }
       if( c==0 ){
+        pCur->info.nKey = nCellKey;
         if( pPage->leafData && !pPage->leaf ){
           lwr = pCur->idx;
           upr = lwr - 1;
@@ -3688,6 +3714,7 @@ int sqlite3BtreeMoveto(
         upr = pCur->idx-1;
       }
       if( lwr>upr ){
+        pCur->info.nKey = nCellKey;
         break;
       }
       pCur->idx = (lwr+upr)/2;
@@ -3709,6 +3736,7 @@ int sqlite3BtreeMoveto(
     }
     pCur->idx = lwr;
     pCur->info.nSize = 0;
+    pCur->validNKey = 0;
     rc = moveToChild(pCur, chldPg);
     if( rc ) goto moveto_finish;
   }
@@ -3778,6 +3806,7 @@ static int btreeNext(BtCursor *pCur, int *pRes){
 
   pCur->idx++;
   pCur->info.nSize = 0;
+  pCur->validNKey = 0;
   if( pCur->idx>=pPage->nCell ){
     if( !pPage->leaf ){
       rc = moveToChild(pCur, get4byte(&pPage->aData[pPage->hdrOffset+8]));
@@ -3834,6 +3863,7 @@ static int btreePrevious(BtCursor *pCur, int *pRes){
   if( rc!=SQLITE_OK ){
     return rc;
   }
+  pCur->atLast = 0;
   if( CURSOR_INVALID==pCur->eState ){
     *pRes = 1;
     return SQLITE_OK;
@@ -3867,6 +3897,7 @@ static int btreePrevious(BtCursor *pCur, int *pRes){
     }
     pCur->idx--;
     pCur->info.nSize = 0;
+    pCur->validNKey = 0;
     if( pPage->leafData && !pPage->leaf ){
       rc = sqlite3BtreePrevious(pCur, pRes);
     }else{
@@ -5673,6 +5704,7 @@ int sqlite3BtreeInsert(
     assert( pPage->leaf );
     pCur->idx++;
     pCur->info.nSize = 0;
+    pCur->validNKey = 0;
   }else{
     assert( pPage->leaf );
   }
