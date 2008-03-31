@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.423 2008/03/31 17:41:18 danielk1977 Exp $
+** $Id: select.c,v 1.424 2008/03/31 23:48:05 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -241,7 +241,6 @@ Expr *sqlite3CreateIdExpr(Parse *pParse, const char *zName){
   return sqlite3PExpr(pParse, TK_ID, 0, 0, &dummy);
 }
 
-
 /*
 ** Add a term to the WHERE expression in *ppExpr that requires the
 ** zCol column to be equal in the two tables pTab1 and pTab2.
@@ -425,7 +424,7 @@ static void pushOntoSorter(
   int regRecord = sqlite3GetTempReg(pParse);
   sqlite3ExprCodeExprList(pParse, pOrderBy, regBase);
   sqlite3VdbeAddOp2(v, OP_Sequence, pOrderBy->iECursor, regBase+nExpr);
-  sqlite3VdbeAddOp2(v, OP_Move, regData, regBase+nExpr+1);
+  sqlite3ExprCodeMove(pParse, regData, regBase+nExpr+1);
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nExpr + 2, regRecord);
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pOrderBy->iECursor, regRecord);
   sqlite3ReleaseTempReg(pParse, regRecord);
@@ -670,6 +669,7 @@ static void selectInnerLoop(
       }else{
         int r1 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult, 1, r1, &p->affinity, 1);
+        sqlite3ExprExpireColumnCacheLines(pParse, regResult, regResult);
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, r1);
         sqlite3ReleaseTempReg(pParse, r1);
       }
@@ -694,7 +694,7 @@ static void selectInnerLoop(
       if( pOrderBy ){
         pushOntoSorter(pParse, pOrderBy, p, regResult);
       }else{
-        sqlite3VdbeAddOp2(v, OP_Move, regResult, iParm);
+        sqlite3ExprCodeMove(pParse, regResult, iParm);
         /* The LIMIT clause will jump out of the loop for us */
       }
       break;
@@ -716,6 +716,7 @@ static void selectInnerLoop(
         sqlite3VdbeAddOp2(v, OP_Gosub, 0, iParm);
       }else{
         sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nColumn);
+        sqlite3ExprExpireColumnCacheLines(pParse,regResult,regResult+nColumn-1);
       }
       break;
     }
@@ -834,13 +835,14 @@ static void generateSortTail(
       assert( nColumn==1 );
       j1 = sqlite3VdbeAddOp1(v, OP_IsNull, regRow);
       sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, 1, regRowid, &p->affinity, 1);
+      sqlite3ExprExpireColumnCacheLines(pParse, regRow, regRow);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, regRowid);
       sqlite3VdbeJumpHere(v, j1);
       break;
     }
     case SRT_Mem: {
       assert( nColumn==1 );
-      sqlite3VdbeAddOp2(v, OP_Move, regRow, iParm);
+      sqlite3ExprCodeMove(pParse, regRow, iParm);
       /* The LIMIT clause will terminate the loop for us */
       break;
     }
@@ -856,6 +858,8 @@ static void generateSortTail(
       }
       if( eDest==SRT_Callback ){
         sqlite3VdbeAddOp2(v, OP_ResultRow, pDest->iMem, nColumn);
+        sqlite3ExprExpireColumnCacheLines(pParse, pDest->iMem,
+                                                  pDest->iMem+nColumn-1);
       }else{
         sqlite3VdbeAddOp2(v, OP_Gosub, 0, iParm);
       }
@@ -2926,6 +2930,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
                       (void*)pF->pFunc, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, nArg);
     sqlite3ReleaseTempRange(pParse, regAgg, nArg);
+    sqlite3ExprExpireColumnCacheLines(pParse, regAgg, regAgg+nArg-1);
     if( addrNext ){
       sqlite3VdbeResolveLabel(v, addrNext);
     }
@@ -3434,8 +3439,12 @@ int sqlite3Select(
         for(i=0; i<sAggInfo.nColumn; i++){
           struct AggInfo_col *pCol = &sAggInfo.aCol[i];
           if( pCol->iSorterColumn>=j ){
-            sqlite3ExprCodeGetColumn(v, pCol->pTab, pCol->iColumn, pCol->iTable,
-                                     j + regBase);
+            int r1 = j + regBase;
+            int r2 = sqlite3ExprCodeGetColumn(pParse, 
+                               pCol->pTab, pCol->iColumn,  pCol->iTable, r1);
+            if( r1!=r2 ){
+              sqlite3VdbeAddOp2(v, OP_SCopy, r2, r1);
+            }
             j++;
           }
         }
@@ -3485,7 +3494,7 @@ int sqlite3Select(
       */
       sqlite3VdbeResolveLabel(v, addrGroupByChange);
       for(j=0; j<pGroupBy->nExpr; j++){
-        sqlite3VdbeAddOp2(v, OP_Move, iBMem+j, iAMem+j);
+        sqlite3ExprCodeMove(pParse, iBMem+j, iAMem+j);
       }
       sqlite3VdbeAddOp2(v, OP_Gosub, 0, addrOutputRow);
       VdbeComment((v, "output one row"));

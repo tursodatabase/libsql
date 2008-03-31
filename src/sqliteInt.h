@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.682 2008/03/31 18:19:54 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.683 2008/03/31 23:48:05 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1463,6 +1463,14 @@ struct Parse {
   int nMem;            /* Number of memory cells used so far */
   int nSet;            /* Number of sets used so far */
   int ckBase;          /* Base register of data during check constraints */
+  int disableColCache; /* True to disable adding to column cache */
+  int nColCache;       /* Number of entries in the column cache */
+  int iColCache;       /* Next entry of the cache to replace */
+  struct {
+    int iTable;           /* Table cursor number */
+    int iColumn;          /* Table column number */
+    int iReg;             /* Register holding value of this column */
+  } aColCache[10];     /* One for each valid column cache entry */
   u32 writeMask;       /* Start a write transaction on these databases */
   u32 cookieMask;      /* Bitmask of schema verified databases */
   int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
@@ -1829,7 +1837,11 @@ void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**, u8);
 void sqlite3WhereEnd(WhereInfo*);
-void sqlite3ExprCodeGetColumn(Vdbe*, Table*, int, int, int);
+int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int);
+void sqlite3ExprCodeMove(Parse*, int, int);
+void sqlite3ExprClearColumnCache(Parse*, int);
+void sqlite3ExprColumnCacheDisable(Parse*, int);
+void sqlite3ExprExpireColumnCacheLines(Parse*, int, int);
 int sqlite3ExprCode(Parse*, Expr*, int);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
 int sqlite3ExprCodeTarget(Parse*, Expr*, int);

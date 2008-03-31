@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.295 2008/03/31 18:19:54 drh Exp $
+** $Id: where.c,v 1.296 2008/03/31 23:48:05 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1729,16 +1729,19 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
 ** problem.
 */
 static void buildIndexProbe(
-  Vdbe *v,        /* Generate code into this VM */
+  Parse *pParse,  /* Parsing and code generation context */
   int nColumn,    /* The number of columns to check for NULL */
   Index *pIdx,    /* Index that we will be searching */
   int regSrc,     /* Take values from this register */
   int regDest     /* Write the result into this register */
 ){
+  Vdbe *v = pParse->pVdbe;
   assert( regSrc>0 );
   assert( regDest>0 );
+  assert( v!=0 );
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regSrc, nColumn, regDest);
   sqlite3IndexAffinityStr(v, pIdx);
+  sqlite3ExprExpireColumnCacheLines(pParse, regSrc, regSrc+nColumn-1);
 }
 
 
@@ -2532,7 +2535,7 @@ WhereInfo *sqlite3WhereBegin(
           nCol++;
           topEq = 0;
         }
-        buildIndexProbe(v, nCol, pIdx, regBase, pLevel->iMem);
+        buildIndexProbe(pParse, nCol, pIdx, regBase, pLevel->iMem);
         if( bRev ){
           int op = topEq ? OP_MoveLe : OP_MoveLt;
           sqlite3VdbeAddOp3(v, op, iIdxCur, nxt, pLevel->iMem);
@@ -2577,7 +2580,7 @@ WhereInfo *sqlite3WhereBegin(
         }else{
           r1 = sqlite3GetTempReg(pParse);
         }
-        buildIndexProbe(v, nCol, pIdx, regBase, r1);
+        buildIndexProbe(pParse, nCol, pIdx, regBase, r1);
         if( !bRev ){
           int op = btmEq ? OP_MoveGe : OP_MoveGt;
           sqlite3VdbeAddOp3(v, op, iIdxCur, nxt, r1);
@@ -2638,16 +2641,16 @@ WhereInfo *sqlite3WhereBegin(
        && (pOrderBy->a[0].pExpr->iColumn==pIdx->aiColumn[nEq])
       ){
         isMinQuery = 1;
-        buildIndexProbe(v, nEq, pIdx, regBase, pLevel->iMem);
+        buildIndexProbe(pParse, nEq, pIdx, regBase, pLevel->iMem);
         sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
         r1 = ++pParse->nMem;
-        buildIndexProbe(v, nEq+1, pIdx, regBase, r1);
+        buildIndexProbe(pParse, nEq+1, pIdx, regBase, r1);
       }else{
         /* Generate a single key that will be used to both start and 
         ** terminate the search
         */
         r1 = pLevel->iMem;
-        buildIndexProbe(v, nEq, pIdx, regBase, r1);
+        buildIndexProbe(pParse, nEq, pIdx, regBase, r1);
       }
 
       /* Generate code (1) to move to the first matching element of the table.
@@ -2722,6 +2725,8 @@ WhereInfo *sqlite3WhereBegin(
       pLevel->top = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp2(v, OP_Integer, 1, pLevel->iLeftJoin);
       VdbeComment((v, "record LEFT JOIN hit"));
+      sqlite3ExprClearColumnCache(pParse, pLevel->iTabCur);
+      sqlite3ExprClearColumnCache(pParse, pLevel->iIdxCur);
       for(pTerm=wc.a, j=0; j<wc.nTerm; j++, pTerm++){
         if( pTerm->flags & (TERM_VIRTUAL|TERM_CODED) ) continue;
         if( (pTerm->prereqAll & notReady)!=0 ) continue;
@@ -2805,6 +2810,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Generate loop termination code.
   */
+  sqlite3ExprClearColumnCache(pWInfo->pParse, -1);
   for(i=pTabList->nSrc-1; i>=0; i--){
     pLevel = &pWInfo->a[i];
     sqlite3VdbeResolveLabel(v, pLevel->cont);
