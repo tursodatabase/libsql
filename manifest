@@ -1,5 +1,5 @@
-C Avoid\sduplicate\sOP_Column\sopcodes\sby\sremembering\sprior\sresults.\nThis\sis\ssimilar\sto\sCSE,\sbut\sonly\sapplies\sto\scolumns.\s(CVS\s4943)
-D 2008-03-31T23:48:04
+C Add\sthe\sveryquick.test\sscript\sfor\sa\svery\sfast\soverview\stest\sthat\somits\nall\si/o\sand\smalloc\stesting.\s(CVS\s4944)
+D 2008-03-31T23:51:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -186,7 +186,7 @@ F src/vtab.c 00cd16317b29495c185ff40e4b227917d5a371b2
 F src/where.c 811fd1e5c67902499866d942dfa5f44550501adf
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
-F test/all.test d12210212bada2bde6d5aeb90969b86c1aa977d2
+F test/all.test d56a3ca8acdf761204aff0a2e7aa5eb8e11b31e6
 F test/alter.test 1426bb4c8609731622a9bf9dd48c39f5931c4d7d
 F test/alter2.test dd55146e812622c8fc51fd2216bcd8dca8880752
 F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
@@ -411,7 +411,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 83150cb7b513e33cce90fdc68f4b1817551857c0
-F test/quick.test 1ab788b4ad66cc385d06d2dd1f0714ccfb52fb61
+F test/quick.test 3a71af14d9ec0d06e75468de69c71a1a5c059157
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -519,6 +519,7 @@ F test/utf16align.test 7360e84472095518c56746f76b1f9d4dce99fb4d
 F test/vacuum.test f67853a15caa120af591f819670f01a11fcc2bfc
 F test/vacuum2.test d3b9691541fe6ed5c711f547a1c7d70e9760ac6f
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
+F test/veryquick.test 9bba6886026bb58a7332b6c96fd8270469f02177
 F test/view.test 4864e3841ab3213a95297718b94d5d6a8d3bc78b
 F test/vtab1.test bd905d1d43637a700308da6ffcc4e014c27e2f0a
 F test/vtab2.test 1da49b015582965a8fc386aa23d051a5a622b08e
@@ -619,7 +620,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2126db39854c751aea6c95c67894ed9b9dfc0763
-R 4b1f8c1e4e6f9db1b293f92989ff9195
+P c29ee0fed23dcdbd9dde6b1e42b603100ea2389c
+R ea5dee7bb1231c90f372bc524dc68887
 U drh
-Z ab18e0e600a8f0ab348be2f5f3f1ef8e
+Z 9099251370f41c7219918acc2b43b496

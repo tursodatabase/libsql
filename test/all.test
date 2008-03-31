@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.53 2008/01/19 20:11:26 drh Exp $
+# $Id: all.test,v 1.54 2008/03/31 23:51:35 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -59,6 +59,7 @@ lappend EXCLUDE crash.test             ;# Run seperately later.
 lappend EXCLUDE crash2.test            ;# Run seperately later.
 lappend EXCLUDE autovacuum_crash.test  ;# Run seperately later.
 lappend EXCLUDE quick.test             ;# Alternate test driver script
+lappend EXCLUDE veryquick.test         ;# Alternate test driver script
 lappend EXCLUDE malloc.test            ;# Run seperately later.
 lappend EXCLUDE misuse.test            ;# Run seperately later.
 lappend EXCLUDE memleak.test           ;# Alternate test driver script

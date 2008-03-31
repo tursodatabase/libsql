@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.76 2008/03/31 23:51:35 drh Exp $
+# $Id: veryquick.test,v 1.1 2008/03/31 23:51:35 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -42,6 +42,12 @@ set EXCLUDE {
   all.test
   async.test
   async2.test
+  altermalloc.test
+  attachmalloc.test
+  autovacuum_crash.test
+  autovacuum_ioerr.test
+  autovacuum_ioerr2.test
+  bitvec.test
   corrupt.test
   crash.test
   crash2.test
@@ -49,17 +55,33 @@ set EXCLUDE {
   crash4.test
   crash6.test
   crash7.test
+  diskfull.test
   exclusive3.test
   fts3.test
   fuzz.test
   fuzz_malloc.test
   in2.test
+  interrupt.test
+  ioerr.test
+  ioerr2.test
   loadext.test
   mallocAll.test
   malloc.test
   malloc2.test
   malloc3.test
   malloc4.test
+  malloc5.test
+  malloc6.test
+  malloc7.test
+  malloc8.test
+  malloc9.test
+  mallocA.test
+  mallocB.test
+  mallocC.test
+  mallocD.test
+  mallocE.test
+  mallocF.test
+  mallocG.test
   memleak.test
   misc7.test
   misuse.test
@@ -69,10 +91,12 @@ set EXCLUDE {
   speed1.test
   speed1p.test
   speed2.test
+  speed3.test
   speed4.test
-  soeed4p.test
+  speed4p.test
   sqllimits1.test
 
+  tkt2686.test
   thread001.test
   thread002.test
 
