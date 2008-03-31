@@ -1,5 +1,5 @@
-C Minor\scleanup:\sUse\ssize_t\sfor\sstruct\ssize\scast\s(CVS\s4940)
-D 2008-03-29T23:25:27
+C In\ssetQuotedToken(),\sonly\smake\sa\smalloced\scopy\sif\sthe\sargument\scontains\sone\sor\smore\s"\scharacters.\s(CVS\s4941)
+D 2008-03-31T17:41:18
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/pragma.c e659c9e443d11854cff2fd250012365ae0ca81ba
 F src/prepare.c 185fb47f1fb3e45a345d523eb391d673f5eb367c
 F src/printf.c 05d2b44d7b5b80c8a4a09108ddad9c20e254370d
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
-F src/select.c f47faa4af940d0acd0cff92a1a77ebb27331a31a
+F src/select.c 61fcc616b6c50da1a8f5604f9766e352f69760a8
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in b1ac824d9fc163a5d2226ebf5990b09a02a11117
@@ -619,7 +619,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2d9fea95335ab8f399868f63c51bee89ed7633fa
-R d3d2e40b36f2816c97d23232dd10b170
-U mlcreech
-Z 6f382d3423b61a9e7296357f5beb1835
+P 618df68b8b78d376d30cea79a273fd39140f5033
+R 90b5f03ff5ebb83c1c1b0247d291a8ab
+U danielk1977
+Z 3148119d5b8a2206c0e723ccd87c91b1

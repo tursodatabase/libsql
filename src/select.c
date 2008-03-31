@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.422 2008/03/27 17:59:02 danielk1977 Exp $
+** $Id: select.c,v 1.423 2008/03/31 17:41:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -205,12 +205,30 @@ static void setToken(Token *p, const char *z){
 **    {a"bc}  ->  {"a""bc"}
 */
 static void setQuotedToken(Parse *pParse, Token *p, const char *z){
-  p->z = (u8 *)sqlite3MPrintf(0, "\"%w\"", z);
-  p->dyn = 1;
-  if( p->z ){
-    p->n = strlen((char *)p->z);
+
+  /* Check if the string contains any " characters. If it does, then
+  ** this function will malloc space to create a quoted version of
+  ** the string in. Otherwise, save a call to sqlite3MPrintf() by
+  ** just copying the pointer to the string.
+  */
+  const char *z2 = z;
+  while( *z2 ){
+    if( *z2=='"' ) break;
+    z2++;
+  }
+
+  if( *z2 ){
+    /* String contains " characters - copy and quote the string. */
+    p->z = (u8 *)sqlite3MPrintf(pParse->db, "\"%w\"", z);
+    if( p->z ){
+      p->n = strlen((char *)p->z);
+      p->dyn = 1;
+    }
   }else{
-    pParse->db->mallocFailed = 1;
+    /* String contains no " characters - copy the pointer. */
+    p->z = (u8*)z;
+    p->n = (z2 - z);
+    p->dyn = 0;
   }
 }
 
