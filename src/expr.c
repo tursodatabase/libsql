@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.357 2008/03/25 09:47:35 danielk1977 Exp $
+** $Id: expr.c,v 1.358 2008/03/31 18:19:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -786,7 +786,8 @@ void sqlite3ExprListDelete(ExprList *pList){
 }
 
 /*
-** Walk an expression tree.  Call xFunc for each node visited.
+** Walk an expression tree.  Call xFunc for each node visited.  xFunc
+** is called on the node before xFunc is called on the nodes children.
 **
 ** The return value from xFunc determines whether the tree walk continues.
 ** 0 means continue walking the tree.  1 means do not walk children
@@ -1932,13 +1933,13 @@ void sqlite3ExprCodeGetColumn(
 ** must check the return code and move the results to the desired
 ** register.
 */
-static int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
+int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
   Vdbe *v = pParse->pVdbe;  /* The VM under construction */
   int op;                   /* The opcode being coded */
   int inReg = target;       /* Results stored in register inReg */
   int regFree1 = 0;         /* If non-zero free this temporary register */
   int regFree2 = 0;         /* If non-zero free this temporary register */
-  int r1, r2, r3;           /* Various register numbers */
+  int r1, r2, r3, r4;       /* Various register numbers */
 
   assert( v!=0 || pParse->db->mallocFailed );
   assert( target>0 && target<=pParse->nMem );
@@ -2227,7 +2228,7 @@ static int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       j2  = sqlite3VdbeAddOp0(v, OP_Goto);
       sqlite3VdbeJumpHere(v, j1);
       if( eType==IN_INDEX_ROWID ){
-        j3 = sqlite3VdbeAddOp3(v, OP_MustBeInt, r1, 0, 1);
+        j3 = sqlite3VdbeAddOp1(v, OP_MustBeInt, r1);
         j4 = sqlite3VdbeAddOp3(v, OP_NotExists, pExpr->iTable, 0, r1);
         j5 = sqlite3VdbeAddOp0(v, OP_Goto);
         sqlite3VdbeJumpHere(v, j3);
@@ -2262,15 +2263,17 @@ static int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       r1 = sqlite3ExprCodeTemp(pParse, pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pRight, &regFree2);
       r3 = sqlite3GetTempReg(pParse);
+      r4 = sqlite3GetTempReg(pParse);
       codeCompare(pParse, pLeft, pRight, OP_Ge,
                   r1, r2, r3, SQLITE_STOREP2);
       pLItem++;
       pRight = pLItem->pExpr;
       sqlite3ReleaseTempReg(pParse, regFree2);
       r2 = sqlite3ExprCodeTemp(pParse, pRight, &regFree2);
-      codeCompare(pParse, pLeft, pRight, OP_Le, r1, r2, r2, SQLITE_STOREP2);
-      sqlite3VdbeAddOp3(v, OP_And, r3, r2, target);
+      codeCompare(pParse, pLeft, pRight, OP_Le, r1, r2, r4, SQLITE_STOREP2);
+      sqlite3VdbeAddOp3(v, OP_And, r3, r4, target);
       sqlite3ReleaseTempReg(pParse, r3);
+      sqlite3ReleaseTempReg(pParse, r4);
       break;
     }
     case TK_UPLUS: {
@@ -2322,6 +2325,7 @@ static int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         cacheX = *pX;
         cacheX.iTable = sqlite3ExprCodeTemp(pParse, pX, &regFree1);
         cacheX.op = TK_REGISTER;
+        cacheX.iColumn = 0;
         opCompare.op = TK_EQ;
         opCompare.pLeft = &cacheX;
         pTest = &opCompare;
@@ -2381,7 +2385,7 @@ static int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 ** are stored.
 **
 ** If the register is a temporary register that can be deallocated,
-** then write its number into *pReg.  If the result register is no
+** then write its number into *pReg.  If the result register is not
 ** a temporary, then set *pReg to zero.
 */
 int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
@@ -2435,9 +2439,42 @@ int sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
     iMem = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Copy, inReg, iMem);
     pExpr->iTable = iMem;
+    pExpr->iColumn = pExpr->op;
     pExpr->op = TK_REGISTER;
   }
   return inReg;
+}
+
+/*
+** If pExpr is a constant expression, then evaluate the expression
+** into a register and convert the expression into a TK_REGISTER
+** expression.
+*/
+static int evalConstExpr(void *pArg, Expr *pExpr){
+  Parse *pParse = (Parse*)pArg;
+  if( pExpr->op==TK_REGISTER ){
+    return 1;
+  }
+  if( sqlite3ExprIsConstantNotJoin(pExpr) ){
+    int r1 = ++pParse->nMem;
+    int r2;
+    r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
+    if( r1!=r2 ) pParse->nMem--;
+    pExpr->iColumn = pExpr->op;
+    pExpr->op = TK_REGISTER;
+    pExpr->iTable = r2;
+    return 1;
+  }
+  return 0;
+}
+
+/*
+** Preevaluate constant subexpressions within pExpr and store the
+** results in registers.  Modify pExpr so that the constant subexpresions
+** are TK_REGISTER opcodes that refer to the precomputed values.
+*/
+void sqlite3ExprCodeConstants(Parse *pParse, Expr *pExpr){
+   walkExprTree(pExpr, evalConstExpr, pParse);
 }
 
 

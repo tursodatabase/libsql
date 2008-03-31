@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.722 2008/03/28 19:16:34 danielk1977 Exp $
+** $Id: vdbe.c,v 1.723 2008/03/31 18:19:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -103,7 +103,7 @@ static void updateMaxBlobsize(Mem *p){
 ** Test a register to see if it exceeds the current maximum blob size.
 ** If it does, record the new maximum blob size.
 */
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) && !defined(SQLITE_OMIT_BUILTIN_TEST)
 # define UPDATE_MAX_BLOBSIZE(P)  updateMaxBlobsize(P)
 #else
 # define UPDATE_MAX_BLOBSIZE(P)

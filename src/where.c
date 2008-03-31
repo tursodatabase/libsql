@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.294 2008/03/28 19:16:57 danielk1977 Exp $
+** $Id: where.c,v 1.295 2008/03/31 18:19:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -535,7 +535,8 @@ static int isLikeOrGlob(
 #endif
   pList = pExpr->pList;
   pRight = pList->a[0].pExpr;
-  if( pRight->op!=TK_STRING ){
+  if( pRight->op!=TK_STRING
+   && (pRight->op!=TK_REGISTER || pRight->iColumn!=TK_STRING) ){
     return 0;
   }
   pLeft = pList->a[1].pExpr;
@@ -1752,19 +1753,23 @@ static void buildIndexProbe(
 ** result is left on the stack.  For constraints of the form X IN (...)
 ** this routine sets up a loop that will iterate over all values of X.
 */
-static void codeEqualityTerm(
+static int codeEqualityTerm(
   Parse *pParse,      /* The parsing context */
   WhereTerm *pTerm,   /* The term of the WHERE clause to be coded */
   WhereLevel *pLevel, /* When level of the FROM clause we are working on */
-  int iReg            /* Leave results in this register */
+  int iTarget         /* Attempt to leave results in this register */
 ){
   Expr *pX = pTerm->pExpr;
   Vdbe *v = pParse->pVdbe;
+  int iReg;                  /* Register holding results */
 
-  assert( iReg>0 && iReg<=pParse->nMem );
+  if( iTarget<=0 ){
+    iReg = iTarget = sqlite3GetTempReg(pParse);
+  }
   if( pX->op==TK_EQ ){
-    sqlite3ExprCode(pParse, pX->pRight, iReg);
+    iReg = sqlite3ExprCodeTarget(pParse, pX->pRight, iTarget);
   }else if( pX->op==TK_ISNULL ){
+    iReg = iTarget;
     sqlite3VdbeAddOp2(v, OP_Null, 0, iReg);
 #ifndef SQLITE_OMIT_SUBQUERY
   }else{
@@ -1773,6 +1778,7 @@ static void codeEqualityTerm(
     struct InLoop *pIn;
 
     assert( pX->op==TK_IN );
+    iReg = iTarget;
     eType = sqlite3FindInIndex(pParse, pX, 1);
     iTab = pX->iTable;
     sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
@@ -1799,6 +1805,7 @@ static void codeEqualityTerm(
 #endif
   }
   disableTerm(pLevel, pTerm);
+  return iReg;
 }
 
 /*
@@ -1852,11 +1859,15 @@ static int codeAllEqualityTerms(
   */
   assert( pIdx->nColumn>=nEq );
   for(j=0; j<nEq; j++){
+    int r1;
     int k = pIdx->aiColumn[j];
     pTerm = findTerm(pWC, iCur, k, notReady, pLevel->flags, pIdx);
     if( pTerm==0 ) break;
     assert( (pTerm->flags & TERM_CODED)==0 );
-    codeEqualityTerm(pParse, pTerm, pLevel, regBase+j);
+    r1 = codeEqualityTerm(pParse, pTerm, pLevel, regBase+j);
+    if( r1!=regBase+j ){
+      sqlite3VdbeAddOp2(v, OP_SCopy, r1, regBase+j);
+    }
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
       sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->brk);
     }
@@ -2022,6 +2033,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   initMaskSet(&maskSet);
   whereClauseInit(&wc, pParse, &maskSet);
+  sqlite3ExprCodeConstants(pParse, pWhere);
   whereSplit(&wc, pWhere, TK_AND);
     
   /* Allocate and initialize the WhereInfo structure that will become the
@@ -2367,13 +2379,11 @@ WhereInfo *sqlite3WhereBegin(
       assert( pTerm->pExpr!=0 );
       assert( pTerm->leftCursor==iCur );
       assert( omitTable==0 );
-      r1 = sqlite3GetTempReg(pParse);
-      codeEqualityTerm(pParse, pTerm, pLevel, r1);
+      r1 = codeEqualityTerm(pParse, pTerm, pLevel, 0);
       nxt = pLevel->nxt;
-      sqlite3VdbeAddOp3(v, OP_MustBeInt, r1, nxt, 1);
+      sqlite3VdbeAddOp2(v, OP_MustBeInt, r1, nxt);
       sqlite3VdbeAddOp3(v, OP_NotExists, iCur, nxt, r1);
       VdbeComment((v, "pk"));
-      sqlite3ReleaseTempReg(pParse, r1);
       pLevel->op = OP_Noop;
     }else if( pLevel->flags & WHERE_ROWID_RANGE ){
       /* Case 2:  We have an inequality comparison against the ROWID field.

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.681 2008/03/26 12:46:24 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.682 2008/03/31 18:19:54 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1130,15 +1130,16 @@ struct Expr {
 /*
 ** The following are the meanings of bits in the Expr.flags field.
 */
-#define EP_FromJoin     0x01  /* Originated in ON or USING clause of a join */
-#define EP_Agg          0x02  /* Contains one or more aggregate functions */
-#define EP_Resolved     0x04  /* IDs have been resolved to COLUMNs */
-#define EP_Error        0x08  /* Expression contains one or more errors */
-#define EP_Distinct     0x10  /* Aggregate function with DISTINCT keyword */
-#define EP_VarSelect    0x20  /* pSelect is correlated, not constant */
-#define EP_Dequoted     0x40  /* True if the string has been dequoted */
-#define EP_InfixFunc    0x80  /* True for an infix function: LIKE, GLOB, etc */
-#define EP_ExpCollate  0x100  /* Collating sequence specified explicitly */
+#define EP_FromJoin   0x0001  /* Originated in ON or USING clause of a join */
+#define EP_Agg        0x0002  /* Contains one or more aggregate functions */
+#define EP_Resolved   0x0004  /* IDs have been resolved to COLUMNs */
+#define EP_Error      0x0008  /* Expression contains one or more errors */
+#define EP_Distinct   0x0010  /* Aggregate function with DISTINCT keyword */
+#define EP_VarSelect  0x0020  /* pSelect is correlated, not constant */
+#define EP_Dequoted   0x0040  /* True if the string has been dequoted */
+#define EP_InfixFunc  0x0080  /* True for an infix function: LIKE, GLOB, etc */
+#define EP_ExpCollate 0x0100  /* Collating sequence specified explicitly */
+#define EP_Constant   0x0200  /* A constant expression */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
@@ -1831,7 +1832,9 @@ void sqlite3WhereEnd(WhereInfo*);
 void sqlite3ExprCodeGetColumn(Vdbe*, Table*, int, int, int);
 int sqlite3ExprCode(Parse*, Expr*, int);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
+int sqlite3ExprCodeTarget(Parse*, Expr*, int);
 int sqlite3ExprCodeAndCache(Parse*, Expr*, int);
+void sqlite3ExprCodeConstants(Parse*, Expr*);
 int sqlite3ExprCodeExprList(Parse*, ExprList*, int);
 void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
