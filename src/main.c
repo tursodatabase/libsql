@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.429 2008/03/21 16:45:47 drh Exp $
+** $Id: main.c,v 1.430 2008/04/01 15:06:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -46,6 +46,16 @@ void (*sqlite3IoTrace)(const char*, ...) = 0;
 ** See also the "PRAGMA temp_store_directory" SQL command.
 */
 char *sqlite3_temp_directory = 0;
+
+/*
+** Routine needed to support the testcase() macro.
+*/
+#ifdef SQLITE_COVERAGE_TEST
+void sqlite3Coverage(int x){
+  static int dummy = 0;
+  dummy += x;
+}
+#endif
 
 
 /*

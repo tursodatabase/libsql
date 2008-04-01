@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.363 2008/04/01 12:24:11 drh Exp $
+** $Id: expr.c,v 1.364 2008/04/01 15:06:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -428,6 +428,10 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
     ** use it as the variable number */
     int i;
     pExpr->iTable = i = atoi((char*)&pToken->z[1]);
+    testcase( i==0 );
+    testcase( i==1 );
+    testcase( i==db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]-1 );
+    testcase( i==db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] );
     if( i<1 || i>db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER] ){
       sqlite3ErrorMsg(pParse, "variable number must be between ?1 and ?%d",
           db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]);
@@ -727,6 +731,8 @@ void sqlite3ExprListCheckLength(
   const char *zObject
 ){
   int mx = pParse->db->aLimit[SQLITE_LIMIT_COLUMN];
+  testcase( pEList && pEList->nExpr==mx );
+  testcase( pEList && pEList->nExpr==mx+1 );
   if( pEList && pEList->nExpr>mx ){
     sqlite3ErrorMsg(pParse, "too many columns in %s", zObject);
   }
@@ -909,7 +915,14 @@ static int exprNodeIsConstant(void *pArg, Expr *pExpr){
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_SELECT:
     case TK_EXISTS:
+      testcase( pExpr->op==TK_SELECT );
+      testcase( pExpr->op==TK_EXISTS );
 #endif
+      testcase( pExpr->op==TK_ID );
+      testcase( pExpr->op==TK_COLUMN );
+      testcase( pExpr->op==TK_DOT );
+      testcase( pExpr->op==TK_AGG_FUNCTION );
+      testcase( pExpr->op==TK_AGG_COLUMN );
       *pN = 0;
       return 2;
     case TK_IN:
@@ -1165,6 +1178,8 @@ static int lookupName(
             }
             pExpr->pTab = pTab;
             if( iCol>=0 ){
+              testcase( iCol==31 );
+              testcase( iCol==32 );
               *piColMask |= ((u32)1<<iCol) | (iCol>=32?0xffffffff:0);
             }
             break;
@@ -1274,6 +1289,7 @@ static int lookupName(
   */
   if( pExpr->iColumn>=0 && pMatch!=0 ){
     int n = pExpr->iColumn;
+    testcase( n==sizeof(Bitmask)*8-1 );
     if( n>=sizeof(Bitmask)*8 ){
       n = sizeof(Bitmask)*8-1;
     }
@@ -1809,6 +1825,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
           /* Evaluate the expression and insert it into the temp table */
           pParse->disableColCache++;
           sqlite3ExprCode(pParse, pE2, r1);
+          assert( pParse->disableColCache>0 );
           pParse->disableColCache--;
           sqlite3VdbeAddOp4(v, OP_MakeRecord, r1, 1, r2, &affinity, 1);
           sqlite3ExprCacheAffinityChange(pParse, r1, 1);
@@ -1982,21 +1999,13 @@ int sqlite3ExprCodeGetColumn(
     p->iTable = iTable;
     p->iColumn = iColumn;
     p->iReg = iReg;
+    p->affChange = 0;
     i++;
     if( i>=ArraySize(pParse->aColCache) ) i = 0;
     if( i>pParse->nColCache ) pParse->nColCache = i;
     pParse->iColCache = i;
   }
   return iReg;
-}
-
-/*
-** Disable (+1) or enable (-1) the adding of new column cache entries.
-*/
-void sqlite3ExprColumnCacheDisable(Parse *pParse, int disable){
-  assert( disable==-1 || disable==+1 );
-  assert( pParse->disableColCache>0 || disable==1 );
-  pParse->disableColCache += disable;
 }
 
 /*
@@ -2011,6 +2020,7 @@ void sqlite3ExprClearColumnCache(Parse *pParse, int iTable){
     int i;
     for(i=0; i<pParse->nColCache; i++){
       if( pParse->aColCache[i].iTable==iTable ){
+        testcase( i==pParse->nColCache-1 );
         pParse->aColCache[i] = pParse->aColCache[--pParse->nColCache];
         pParse->iColCache = pParse->nColCache;
       }
@@ -2140,6 +2150,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         assert( pParse->ckBase>0 );
         inReg = pExpr->iColumn + pParse->ckBase;
       }else{
+        testcase( (pExpr->flags & EP_AnyAff)!=0 );
         inReg = sqlite3ExprCodeGetColumn(pParse, pExpr->pTab,
                                  pExpr->iColumn, pExpr->iTable, target,
                                  pExpr->flags & EP_AnyAff);
@@ -2203,7 +2214,13 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       assert( to_op==OP_ToNumeric || aff!=SQLITE_AFF_NUMERIC );
       assert( to_op==OP_ToInt     || aff!=SQLITE_AFF_INTEGER );
       assert( to_op==OP_ToReal    || aff!=SQLITE_AFF_REAL    );
+      testcase( to_op==OP_ToText );
+      testcase( to_op==OP_ToBlob );
+      testcase( to_op==OP_ToNumeric );
+      testcase( to_op==OP_ToInt );
+      testcase( to_op==OP_ToReal );
       sqlite3VdbeAddOp1(v, to_op, inReg);
+      testcase( usedAsColumnCache(pParse, inReg, inReg) );
       sqlite3ExprCacheAffinityChange(pParse, inReg, 1);
       break;
     }
@@ -2220,10 +2237,18 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       assert( TK_GE==OP_Ge );
       assert( TK_EQ==OP_Eq );
       assert( TK_NE==OP_Ne );
+      testcase( op==TK_LT );
+      testcase( op==TK_LE );
+      testcase( op==TK_GT );
+      testcase( op==TK_GE );
+      testcase( op==TK_EQ );
+      testcase( op==TK_NE );
       codeCompareOperands(pParse, pExpr->pLeft, &r1, &regFree1,
                                   pExpr->pRight, &r2, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
                   r1, r2, inReg, SQLITE_STOREP2);
+      testcase( regFree1==0 );
+      testcase( regFree2==0 );
       break;
     }
     case TK_AND:
@@ -2249,9 +2274,22 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       assert( TK_LSHIFT==OP_ShiftLeft );
       assert( TK_RSHIFT==OP_ShiftRight );
       assert( TK_CONCAT==OP_Concat );
+      testcase( op==TK_AND );
+      testcase( op==TK_OR );
+      testcase( op==TK_PLUS );
+      testcase( op==TK_MINUS );
+      testcase( op==TK_REM );
+      testcase( op==TK_BITAND );
+      testcase( op==TK_BITOR );
+      testcase( op==TK_SLASH );
+      testcase( op==TK_LSHIFT );
+      testcase( op==TK_RSHIFT );
+      testcase( op==TK_CONCAT );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       sqlite3VdbeAddOp3(v, op, r2, r1, target);
+      testcase( regFree1==0 );
+      testcase( regFree2==0 );
       break;
     }
     case TK_UMINUS: {
@@ -2269,6 +2307,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         sqlite3VdbeAddOp2(v, OP_Integer, 0, r1);
         r2 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree2);
         sqlite3VdbeAddOp3(v, OP_Subtract, r2, r1, target);
+        testcase( regFree2==0 );
       }
       inReg = target;
       break;
@@ -2277,7 +2316,11 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_NOT: {
       assert( TK_BITNOT==OP_BitNot );
       assert( TK_NOT==OP_Not );
+      testcase( op==TK_BITNOT );
+      testcase( op==TK_NOT );
       inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
+      testcase( inReg==target );
+      testcase( usedAsColumnCache(pParse, inReg, inReg) );
       inReg = sqlite3ExprWritableRegister(pParse, inReg, target);
       sqlite3VdbeAddOp1(v, op, inReg);
       break;
@@ -2287,8 +2330,11 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       int addr;
       assert( TK_ISNULL==OP_IsNull );
       assert( TK_NOTNULL==OP_NotNull );
+      testcase( op==TK_ISNULL );
+      testcase( op==TK_NOTNULL );
       sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
+      testcase( regFree1==0 );
       addr = sqlite3VdbeAddOp1(v, op, r1);
       sqlite3VdbeAddOp2(v, OP_AddImm, target, -1);
       sqlite3VdbeJumpHere(v, addr);
@@ -2317,6 +2363,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       u8 enc = ENC(db);
       CollSeq *pColl = 0;
 
+      testcase( op==TK_CONST_FUNC );
+      testcase( op==TK_FUNCTION );
       zId = (char*)pExpr->token.z;
       nId = pExpr->token.n;
       pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, enc, 0);
@@ -2371,6 +2419,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 #ifndef SQLITE_OMIT_SUBQUERY
     case TK_EXISTS:
     case TK_SELECT: {
+      testcase( op==TK_EXISTS );
+      testcase( op==TK_SELECT );
       if( pExpr->iColumn==0 ){
         sqlite3CodeSubselect(pParse, pExpr);
       }
@@ -2396,6 +2446,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       ** pExpr->iTable contains the values that make up the (...) set.
       */
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
+      testcase( regFree1==0 );
       j1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1);
       sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       j2  = sqlite3VdbeAddOp0(v, OP_Goto);
@@ -2436,6 +2487,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 
       codeCompareOperands(pParse, pLeft, &r1, &regFree1,
                                   pRight, &r2, &regFree2);
+      testcase( regFree1==0 );
+      testcase( regFree2==0 );
       r3 = sqlite3GetTempReg(pParse);
       r4 = sqlite3GetTempReg(pParse);
       codeCompare(pParse, pLeft, pRight, OP_Ge,
@@ -2444,6 +2497,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       pRight = pLItem->pExpr;
       sqlite3ReleaseTempReg(pParse, regFree2);
       r2 = sqlite3ExprCodeTemp(pParse, pRight, &regFree2);
+      testcase( regFree2==0 );
       codeCompare(pParse, pLeft, pRight, OP_Le, r1, r2, r4, SQLITE_STOREP2);
       sqlite3VdbeAddOp3(v, OP_And, r3, r4, target);
       sqlite3ReleaseTempReg(pParse, r3);
@@ -2497,14 +2551,16 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       endLabel = sqlite3VdbeMakeLabel(v);
       if( (pX = pExpr->pLeft)!=0 ){
         cacheX = *pX;
+        testcase( pX->op==TK_COLUMN || pX->op==TK_REGISTER );
         cacheX.iTable = sqlite3ExprCodeTemp(pParse, pX, &regFree1);
+        testcase( regFree1==0 );
         cacheX.op = TK_REGISTER;
         cacheX.iColumn = 0;
         opCompare.op = TK_EQ;
         opCompare.pLeft = &cacheX;
         pTest = &opCompare;
       }
-      sqlite3ExprColumnCacheDisable(pParse, 1);
+      pParse->disableColCache++;
       for(i=0; i<nExpr; i=i+2){
         if( pX ){
           opCompare.pRight = aListelem[i].pExpr;
@@ -2512,7 +2568,10 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
           pTest = aListelem[i].pExpr;
         }
         nextCase = sqlite3VdbeMakeLabel(v);
+        testcase( pTest->op==TK_COLUMN || pTest->op==TK_REGISTER );
         sqlite3ExprIfFalse(pParse, pTest, nextCase, SQLITE_JUMPIFNULL);
+        testcase( aListelem[i+1].pExpr->op==TK_COLUMN );
+        testcase( aListelem[i+1].pExpr->op==TK_REGISTER );
         sqlite3ExprCode(pParse, aListelem[i+1].pExpr, target);
         sqlite3VdbeAddOp2(v, OP_Goto, 0, endLabel);
         sqlite3VdbeResolveLabel(v, nextCase);
@@ -2523,7 +2582,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       }
       sqlite3VdbeResolveLabel(v, endLabel);
-      sqlite3ExprColumnCacheDisable(pParse, -1);
+      assert( pParse->disableColCache>0 );
+      pParse->disableColCache--;
       break;
     }
 #ifndef SQLITE_OMIT_TRIGGER
@@ -2635,7 +2695,7 @@ static int evalConstExpr(void *pArg, Expr *pExpr){
     int r1 = ++pParse->nMem;
     int r2;
     r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
-    if( r1!=r2 ) pParse->nMem--;
+    if( r1!=r2 ) sqlite3ReleaseTempReg(pParse, r1);
     pExpr->iColumn = pExpr->op;
     pExpr->op = TK_REGISTER;
     pExpr->iTable = r2;
@@ -2707,21 +2767,28 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
   switch( op ){
     case TK_AND: {
       int d2 = sqlite3VdbeMakeLabel(v);
+      testcase( jumpIfNull==0 );
+      testcase( pParse->disableColCache==0 );
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, d2,jumpIfNull^SQLITE_JUMPIFNULL);
       pParse->disableColCache++;
       sqlite3ExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
+      assert( pParse->disableColCache>0 );
       pParse->disableColCache--;
       sqlite3VdbeResolveLabel(v, d2);
       break;
     }
     case TK_OR: {
+      testcase( jumpIfNull==0 );
+      testcase( pParse->disableColCache==0 );
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest, jumpIfNull);
       pParse->disableColCache++;
       sqlite3ExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
+      assert( pParse->disableColCache>0 );
       pParse->disableColCache--;
       break;
     }
     case TK_NOT: {
+      testcase( jumpIfNull==0 );
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest, jumpIfNull);
       break;
     }
@@ -2737,18 +2804,30 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       assert( TK_GE==OP_Ge );
       assert( TK_EQ==OP_Eq );
       assert( TK_NE==OP_Ne );
+      testcase( op==TK_LT );
+      testcase( op==TK_LE );
+      testcase( op==TK_GT );
+      testcase( op==TK_GE );
+      testcase( op==TK_EQ );
+      testcase( op==TK_NE );
+      testcase( jumpIfNull==0 );
       codeCompareOperands(pParse, pExpr->pLeft, &r1, &regFree1,
                                   pExpr->pRight, &r2, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
                   r1, r2, dest, jumpIfNull);
+      testcase( regFree1==0 );
+      testcase( regFree2==0 );
       break;
     }
     case TK_ISNULL:
     case TK_NOTNULL: {
       assert( TK_ISNULL==OP_IsNull );
       assert( TK_NOTNULL==OP_NotNull );
+      testcase( op==TK_ISNULL );
+      testcase( op==TK_NOTNULL );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       sqlite3VdbeAddOp2(v, op, r1, dest);
+      testcase( regFree1==0 );
       break;
     }
     case TK_BETWEEN: {
@@ -2777,13 +2856,17 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       compRight.pLeft = &exprX;
       compRight.pRight = pExpr->pList->a[1].pExpr;
       exprX.iTable = sqlite3ExprCodeTemp(pParse, &exprX, &regFree1);
+      testcase( regFree1==0 );
       exprX.op = TK_REGISTER;
+      testcase( jumpIfNull==0 );
       sqlite3ExprIfTrue(pParse, &exprAnd, dest, jumpIfNull);
       break;
     }
     default: {
       r1 = sqlite3ExprCodeTemp(pParse, pExpr, &regFree1);
       sqlite3VdbeAddOp3(v, OP_If, r1, dest, jumpIfNull!=0);
+      testcase( regFree1==0 );
+      testcase( jumpIfNull==0 );
       break;
     }
   }
@@ -2843,17 +2926,23 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
 
   switch( pExpr->op ){
     case TK_AND: {
+      testcase( jumpIfNull==0 );
+      testcase( pParse->disableColCache==0 );
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest, jumpIfNull);
       pParse->disableColCache++;
       sqlite3ExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
+      assert( pParse->disableColCache>0 );
       pParse->disableColCache--;
       break;
     }
     case TK_OR: {
       int d2 = sqlite3VdbeMakeLabel(v);
+      testcase( jumpIfNull==0 );
+      testcase( pParse->disableColCache==0 );
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, d2, jumpIfNull^SQLITE_JUMPIFNULL);
       pParse->disableColCache++;
       sqlite3ExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
+      assert( pParse->disableColCache>0 );
       pParse->disableColCache--;
       sqlite3VdbeResolveLabel(v, d2);
       break;
@@ -2868,16 +2957,28 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
+      testcase( op==TK_LT );
+      testcase( op==TK_LE );
+      testcase( op==TK_GT );
+      testcase( op==TK_GE );
+      testcase( op==TK_EQ );
+      testcase( op==TK_NE );
+      testcase( jumpIfNull==0 );
       codeCompareOperands(pParse, pExpr->pLeft, &r1, &regFree1,
                                   pExpr->pRight, &r2, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
                   r1, r2, dest, jumpIfNull);
+      testcase( regFree1==0 );
+      testcase( regFree2==0 );
       break;
     }
     case TK_ISNULL:
     case TK_NOTNULL: {
+      testcase( op==TK_ISNULL );
+      testcase( op==TK_NOTNULL );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       sqlite3VdbeAddOp2(v, op, r1, dest);
+      testcase( regFree1==0 );
       break;
     }
     case TK_BETWEEN: {
@@ -2906,13 +3007,17 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       compRight.pLeft = &exprX;
       compRight.pRight = pExpr->pList->a[1].pExpr;
       exprX.iTable = sqlite3ExprCodeTemp(pParse, &exprX, &regFree1);
+      testcase( regFree1==0 );
       exprX.op = TK_REGISTER;
+      testcase( jumpIfNull==0 );
       sqlite3ExprIfFalse(pParse, &exprAnd, dest, jumpIfNull);
       break;
     }
     default: {
       r1 = sqlite3ExprCodeTemp(pParse, pExpr, &regFree1);
       sqlite3VdbeAddOp3(v, OP_IfNot, r1, dest, jumpIfNull!=0);
+      testcase( regFree1==0 );
+      testcase( jumpIfNull==0 );
       break;
     }
   }
@@ -3187,7 +3292,6 @@ int sqlite3GetTempReg(Parse *pParse){
 }
 void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
   if( iReg && pParse->nTempReg<ArraySize(pParse->aTempReg) ){
-    assert( iReg>0 );
     pParse->aTempReg[pParse->nTempReg++] = iReg;
   }
 }

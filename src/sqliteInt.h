@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.686 2008/04/01 05:07:15 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.687 2008/04/01 15:06:34 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -46,6 +46,20 @@
   typedef intptr_t sqlite3_intptr_t;
 #else
   typedef int sqlite3_intptr_t;
+#endif
+
+/*
+** A macro used to aid in coverage testing.  When doing coverage
+** testing, the condition inside the argument must be evaluated 
+** both true and false in order to get full branch coverage.
+** This macro can be inserted to ensure adequate test coverage
+** in places where simple condition/decision coverage is inadequate.
+*/
+#ifdef SQLITE_COVERAGE_TEST
+  void sqlite3Coverage(int);
+# define testcase(X)  if( X ){ sqlite3Coverage(__LINE__); }
+#else
+# define testcase(X)
 #endif
 
 
@@ -1841,7 +1855,6 @@ void sqlite3WhereEnd(WhereInfo*);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int);
 void sqlite3ExprClearColumnCache(Parse*, int);
-void sqlite3ExprColumnCacheDisable(Parse*, int);
 void sqlite3ExprCacheAffinityChange(Parse*, int, int);
 int sqlite3ExprWritableRegister(Parse*,int,int);
 int sqlite3ExprCode(Parse*, Expr*, int);
