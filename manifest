@@ -1,5 +1,5 @@
-C Add\sthe\sveryquick.test\sscript\sfor\sa\svery\sfast\soverview\stest\sthat\somits\nall\si/o\sand\smalloc\stesting.\s(CVS\s4944)
-D 2008-03-31T23:51:35
+C Break\sup\sthe\simplementation\sof\sOP_Move,\sOP_Copy,\sand\sOP_SCopy\sto\sreduce\nthe\snumber\sof\sbranch\sinstructions.\s(CVS\s4945)
+D 2008-04-01T00:36:10
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -174,7 +174,7 @@ F src/update.c e23e83cf481b25d5fc7beb92efbb71d297712fd3
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c dba9e04121eb17ec4643d6ca231ff859452cf0e2
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
-F src/vdbe.c 07f500db3880a8555f7d76ef5f3cc405725ae9b8
+F src/vdbe.c 1a8f3ececaa93d4932d27ba87946a6907625338c
 F src/vdbe.h f72201a0657d5f3d6cc008d1f8d9cc65768518c9
 F src/vdbeInt.h 0b96efdeecb0803e504bf1c16b198f87c91d6019
 F src/vdbeapi.c ab6e99f8a6b7fcb82c2c698da7a36762a7593f0a
@@ -620,7 +620,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c29ee0fed23dcdbd9dde6b1e42b603100ea2389c
-R ea5dee7bb1231c90f372bc524dc68887
+P f61df8daa89f07dad2a0ded00c326ef35dead257
+R 70671ac2da4a3b5255caf0a8bf9dc874
 U drh
-Z 9099251370f41c7219918acc2b43b496
+Z cb426daa3c0350483da8130288b38568
