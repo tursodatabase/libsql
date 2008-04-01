@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.361 2008/04/01 03:27:39 drh Exp $
+** $Id: expr.c,v 1.362 2008/04/01 05:07:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -202,6 +202,30 @@ CollSeq *sqlite3BinaryCompareCollSeq(
 }
 
 /*
+** Generate the operands for a comparison operation.  Before
+** generating the code for each operand, set the EP_AnyAff
+** flag on the expression so that it will be able to used a
+** cached column value that has previously undergone an
+** affinity change.
+*/
+static void codeCompareOperands(
+  Parse *pParse,    /* Parsing and code generating context */
+  Expr *pLeft,      /* The left operand */
+  int *pRegLeft,    /* Register where left operand is stored */
+  int *pFreeLeft,   /* Free this register when done */
+  Expr *pRight,     /* The right operand */
+  int *pRegRight,   /* Register where right operand is stored */
+  int *pFreeRight   /* Write temp register for right operand there */
+){
+  while( pLeft->op==TK_UPLUS ) pLeft = pLeft->pLeft;
+  pLeft->flags |= EP_AnyAff;
+  *pRegLeft = sqlite3ExprCodeTemp(pParse, pLeft, pFreeLeft);
+  while( pRight->op==TK_UPLUS ) pRight = pRight->pLeft;
+  pRight->flags |= EP_AnyAff;
+  *pRegRight = sqlite3ExprCodeTemp(pParse, pRight, pFreeRight);
+}
+
+/*
 ** Generate code for a comparison operator.
 */
 static int codeCompare(
@@ -223,8 +247,8 @@ static int codeCompare(
                            (void*)p4, P4_COLLSEQ);
   sqlite3VdbeChangeP5(pParse->pVdbe, p5);
   if( p5 & SQLITE_AFF_MASK ){
-    sqlite3ExprExpireColumnCacheLines(pParse, in1, in1);
-    sqlite3ExprExpireColumnCacheLines(pParse, in2, in2);
+    sqlite3ExprCacheAffinityChange(pParse, in1, 1);
+    sqlite3ExprCacheAffinityChange(pParse, in2, 1);
   }
   return addr;
 }
@@ -1787,7 +1811,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
           sqlite3ExprCode(pParse, pE2, r1);
           pParse->disableColCache--;
           sqlite3VdbeAddOp4(v, OP_MakeRecord, r1, 1, r2, &affinity, 1);
-          sqlite3ExprExpireColumnCacheLines(pParse, r1, r1);
+          sqlite3ExprCacheAffinityChange(pParse, r1, 1);
           sqlite3VdbeAddOp2(v, OP_IdxInsert, pExpr->iTable, r2);
         }
         sqlite3ReleaseTempReg(pParse, r1);
@@ -1907,26 +1931,33 @@ static void codeInteger(Vdbe *v, const char *z, int n, int negFlag, int iMem){
 **
 ** There must be an open cursor to pTab in iTable when this routine
 ** is called.  If iColumn<0 then code is generated that extracts the rowid.
+**
+** This routine might attempt to reuse the value of the column that
+** has already been loaded into a register.  The value will always
+** be used if it has not undergone any affinity changes.  But if
+** an affinity change has occurred, then the cached value will only be
+** used if allowAffChng is true.
 */
 int sqlite3ExprCodeGetColumn(
   Parse *pParse,   /* Parsing and code generating context */
   Table *pTab,     /* Description of the table we are reading from */
   int iColumn,     /* Index of the table column */
   int iTable,      /* The cursor pointing to the table */
-  int iReg         /* Store results here */
+  int iReg,        /* Store results here */
+  int allowAffChng /* True if prior affinity changes are OK */
 ){
   Vdbe *v = pParse->pVdbe;
   int i;
+  struct yColCache *p;
 
-  for(i=0; i<pParse->nColCache; i++){
-    if( pParse->aColCache[i].iTable==iTable
-     && pParse->aColCache[i].iColumn==iColumn ){
+  for(i=0, p=pParse->aColCache; i<pParse->nColCache; i++, p++){
+    if( p->iTable==iTable && p->iColumn==iColumn
+           && (!p->affChange || allowAffChng) ){
 #if 0
       sqlite3VdbeAddOp0(v, OP_Noop);
-      VdbeComment((v, "OPT: tab%d.col%d -> r%d",
-                       iTable, iColumn, pParse->aColCache[i].iReg));
+      VdbeComment((v, "OPT: tab%d.col%d -> r%d", iTable, iColumn, p->iReg));
 #endif
-      return pParse->aColCache[i].iReg;
+      return p->iReg;
     }
   }  
   assert( v!=0 );
@@ -1947,9 +1978,10 @@ int sqlite3ExprCodeGetColumn(
   }
   if( pParse->disableColCache==0 ){
     i = pParse->iColCache;
-    pParse->aColCache[i].iTable = iTable;
-    pParse->aColCache[i].iColumn = iColumn;
-    pParse->aColCache[i].iReg = iReg;
+    p = &pParse->aColCache[i];
+    p->iTable = iTable;
+    p->iColumn = iColumn;
+    p->iReg = iReg;
     i++;
     if( i>=ArraySize(pParse->aColCache) ) i = 0;
     if( i>pParse->nColCache ) pParse->nColCache = i;
@@ -1980,30 +2012,25 @@ void sqlite3ExprClearColumnCache(Parse *pParse, int iTable){
     for(i=0; i<pParse->nColCache; i++){
       if( pParse->aColCache[i].iTable==iTable ){
         pParse->aColCache[i] = pParse->aColCache[--pParse->nColCache];
+        pParse->iColCache = pParse->nColCache;
       }
     }
-    pParse->iColCache = pParse->nColCache;
   }
 }
 
 /*
-** Expire all column cache entry associated with register between
-** iFrom and iTo, inclusive.  If there are no column cache entries 
-** on those registers then this routine is a no-op.
-**
-** Call this routine when register contents are overwritten to
-** make sure the new register value is not used in place of the
-** value that was overwritten.
+** Record the fact that an affinity change has occurred on iCount
+** registers starting with iStart.
 */
-void sqlite3ExprExpireColumnCacheLines(Parse *pParse, int iFrom, int iTo){
+void sqlite3ExprCacheAffinityChange(Parse *pParse, int iStart, int iCount){
+  int iEnd = iStart + iCount - 1;
   int i;
   for(i=0; i<pParse->nColCache; i++){
     int r = pParse->aColCache[i].iReg;
-    if( r>=iFrom && r<=iTo ){
-      pParse->aColCache[i] = pParse->aColCache[--pParse->nColCache];
+    if( r>=iStart && r<=iEnd ){
+      pParse->aColCache[i].affChange = 1;
     }
   }
-  pParse->iColCache = pParse->nColCache;
 }
 
 /*
@@ -2047,6 +2074,7 @@ static int usedAsColumnCache(Parse *pParse, int iFrom, int iTo){
 ** Return the register that the value ends up in.
 */
 int sqlite3ExprWritableRegister(Parse *pParse, int iCurrent, int iTarget){
+  int i;
   assert( pParse->pVdbe!=0 );
   if( !usedAsColumnCache(pParse, iCurrent, iCurrent) ){
     return iCurrent;
@@ -2054,7 +2082,12 @@ int sqlite3ExprWritableRegister(Parse *pParse, int iCurrent, int iTarget){
   if( iCurrent!=iTarget ){
     sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, iCurrent, iTarget);
   }
-  sqlite3ExprExpireColumnCacheLines(pParse, iTarget, iTarget);
+  for(i=0; i<pParse->nColCache; i++){
+    if( pParse->aColCache[i].iReg==iTarget ){
+      pParse->aColCache[i] = pParse->aColCache[--pParse->nColCache];
+      pParse->iColCache = pParse->nColCache;
+    }
+  }
   return iTarget;
 }
 
@@ -2108,7 +2141,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         inReg = pExpr->iColumn + pParse->ckBase;
       }else{
         inReg = sqlite3ExprCodeGetColumn(pParse, pExpr->pTab,
-                                 pExpr->iColumn, pExpr->iTable, target);
+                                 pExpr->iColumn, pExpr->iTable, target,
+                                 pExpr->flags & EP_AnyAff);
       }
       break;
     }
@@ -2185,8 +2219,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       assert( TK_GE==OP_Ge );
       assert( TK_EQ==OP_Eq );
       assert( TK_NE==OP_Ne );
-      r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
+      codeCompareOperands(pParse, pExpr->pLeft, &r1, &regFree1,
+                                  pExpr->pRight, &r2, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
                   r1, r2, inReg, SQLITE_STOREP2);
       break;
@@ -2330,7 +2364,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       if( nExpr ){
         sqlite3ReleaseTempRange(pParse, r1, nExpr);
       }
-      sqlite3ExprExpireColumnCacheLines(pParse, r1, r1+nExpr-1);
+      sqlite3ExprCacheAffinityChange(pParse, r1, nExpr);
       break;
     }
 #ifndef SQLITE_OMIT_SUBQUERY
@@ -2374,7 +2408,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       }else{
         r2 = regFree2 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp4(v, OP_MakeRecord, r1, 1, r2, &affinity, 1);
-        sqlite3ExprExpireColumnCacheLines(pParse, r1, r1);
+        sqlite3ExprCacheAffinityChange(pParse, r1, 1);
         j5 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r2);
       }
       sqlite3VdbeAddOp2(v, OP_AddImm, target, -1);
@@ -2399,8 +2433,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       struct ExprList_item *pLItem = pExpr->pList->a;
       Expr *pRight = pLItem->pExpr;
 
-      r1 = sqlite3ExprCodeTemp(pParse, pLeft, &regFree1);
-      r2 = sqlite3ExprCodeTemp(pParse, pRight, &regFree2);
+      codeCompareOperands(pParse, pLeft, &r1, &regFree1,
+                                  pRight, &r2, &regFree2);
       r3 = sqlite3GetTempReg(pParse);
       r4 = sqlite3GetTempReg(pParse);
       codeCompare(pParse, pLeft, pRight, OP_Ge,
@@ -2702,8 +2736,8 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       assert( TK_GE==OP_Ge );
       assert( TK_EQ==OP_Eq );
       assert( TK_NE==OP_Ne );
-      r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
+      codeCompareOperands(pParse, pExpr->pLeft, &r1, &regFree1,
+                                  pExpr->pRight, &r2, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
                   r1, r2, dest, jumpIfNull);
       break;
@@ -2833,8 +2867,8 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
-      r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
+      codeCompareOperands(pParse, pExpr->pLeft, &r1, &regFree1,
+                                  pExpr->pRight, &r2, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
                   r1, r2, dest, jumpIfNull);
       break;

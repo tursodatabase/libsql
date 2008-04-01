@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.424 2008/03/31 23:48:05 drh Exp $
+** $Id: select.c,v 1.425 2008/04/01 05:07:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -669,7 +669,7 @@ static void selectInnerLoop(
       }else{
         int r1 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult, 1, r1, &p->affinity, 1);
-        sqlite3ExprExpireColumnCacheLines(pParse, regResult, regResult);
+        sqlite3ExprCacheAffinityChange(pParse, regResult, 1);
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, r1);
         sqlite3ReleaseTempReg(pParse, r1);
       }
@@ -716,7 +716,7 @@ static void selectInnerLoop(
         sqlite3VdbeAddOp2(v, OP_Gosub, 0, iParm);
       }else{
         sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nColumn);
-        sqlite3ExprExpireColumnCacheLines(pParse,regResult,regResult+nColumn-1);
+        sqlite3ExprCacheAffinityChange(pParse, regResult, nColumn);
       }
       break;
     }
@@ -835,7 +835,7 @@ static void generateSortTail(
       assert( nColumn==1 );
       j1 = sqlite3VdbeAddOp1(v, OP_IsNull, regRow);
       sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, 1, regRowid, &p->affinity, 1);
-      sqlite3ExprExpireColumnCacheLines(pParse, regRow, regRow);
+      sqlite3ExprCacheAffinityChange(pParse, regRow, 1);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, regRowid);
       sqlite3VdbeJumpHere(v, j1);
       break;
@@ -858,8 +858,7 @@ static void generateSortTail(
       }
       if( eDest==SRT_Callback ){
         sqlite3VdbeAddOp2(v, OP_ResultRow, pDest->iMem, nColumn);
-        sqlite3ExprExpireColumnCacheLines(pParse, pDest->iMem,
-                                                  pDest->iMem+nColumn-1);
+        sqlite3ExprCacheAffinityChange(pParse, pDest->iMem, nColumn);
       }else{
         sqlite3VdbeAddOp2(v, OP_Gosub, 0, iParm);
       }
@@ -2930,7 +2929,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
                       (void*)pF->pFunc, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, nArg);
     sqlite3ReleaseTempRange(pParse, regAgg, nArg);
-    sqlite3ExprExpireColumnCacheLines(pParse, regAgg, regAgg+nArg-1);
+    sqlite3ExprCacheAffinityChange(pParse, regAgg, nArg);
     if( addrNext ){
       sqlite3VdbeResolveLabel(v, addrNext);
     }
@@ -3441,7 +3440,7 @@ int sqlite3Select(
           if( pCol->iSorterColumn>=j ){
             int r1 = j + regBase;
             int r2 = sqlite3ExprCodeGetColumn(pParse, 
-                               pCol->pTab, pCol->iColumn,  pCol->iTable, r1);
+                               pCol->pTab, pCol->iColumn, pCol->iTable, r1, 0);
             if( r1!=r2 ){
               sqlite3VdbeAddOp2(v, OP_SCopy, r2, r1);
             }

@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.296 2008/03/31 23:48:05 drh Exp $
+** $Id: where.c,v 1.297 2008/04/01 05:07:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1741,7 +1741,7 @@ static void buildIndexProbe(
   assert( v!=0 );
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regSrc, nColumn, regDest);
   sqlite3IndexAffinityStr(v, pIdx);
-  sqlite3ExprExpireColumnCacheLines(pParse, regSrc, regSrc+nColumn-1);
+  sqlite3ExprCacheAffinityChange(pParse, regSrc, nColumn);
 }
 
 

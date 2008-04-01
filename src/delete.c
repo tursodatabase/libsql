@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.165 2008/03/31 23:48:04 drh Exp $
+** $Id: delete.c,v 1.166 2008/04/01 05:07:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -534,7 +534,7 @@ int sqlite3GenerateIndexKey(
   if( doMakeRec ){
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol+1, regOut);
     sqlite3IndexAffinityStr(v, pIdx);
-    sqlite3ExprExpireColumnCacheLines(pParse, regBase, regBase+nCol);
+    sqlite3ExprCacheAffinityChange(pParse, regBase, nCol+1);
   }
   sqlite3ReleaseTempRange(pParse, regBase, nCol+1);
   return regBase;

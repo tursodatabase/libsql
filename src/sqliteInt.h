@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.685 2008/04/01 03:27:39 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.686 2008/04/01 05:07:15 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1139,7 +1139,7 @@ struct Expr {
 #define EP_Dequoted   0x0040  /* True if the string has been dequoted */
 #define EP_InfixFunc  0x0080  /* True for an infix function: LIKE, GLOB, etc */
 #define EP_ExpCollate 0x0100  /* Collating sequence specified explicitly */
-#define EP_Constant   0x0200  /* A constant expression */
+#define EP_AnyAff     0x0200  /* Can take a cached column of any affinity */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
@@ -1469,7 +1469,7 @@ struct Parse {
   struct yColCache {
     int iTable;           /* Table cursor number */
     int iColumn;          /* Table column number */
-    char aff;             /* Affinity.  Or 0 if none specified */
+    char affChange;       /* True if this register has had an affinity change */
     int iReg;             /* Register holding value of this column */
   } aColCache[10];     /* One for each valid column cache entry */
   u32 writeMask;       /* Start a write transaction on these databases */
@@ -1838,11 +1838,11 @@ void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**, u8);
 void sqlite3WhereEnd(WhereInfo*);
-int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int);
+int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int);
 void sqlite3ExprClearColumnCache(Parse*, int);
 void sqlite3ExprColumnCacheDisable(Parse*, int);
-void sqlite3ExprExpireColumnCacheLines(Parse*, int, int);
+void sqlite3ExprCacheAffinityChange(Parse*, int, int);
 int sqlite3ExprWritableRegister(Parse*,int,int);
 int sqlite3ExprCode(Parse*, Expr*, int);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
