@@ -13,7 +13,7 @@
 # factoring constant expressions out of loops and for
 # common subexpression eliminations.
 #
-# $Id: cse.test,v 1.2 2008/04/01 03:27:39 drh Exp $
+# $Id: cse.test,v 1.3 2008/04/01 12:24:11 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -64,6 +64,19 @@ do_test cse-1.8 {
     SELECT a, a%a, a==a, a!=a, a<a, a<=a, a IS NULL, a NOT NULL, a FROM t1
   }
 } {1 0 1 0 0 1 0 1 1 2 0 1 0 0 1 0 1 2}
+do_test cse-1.9 {
+  execsql {
+    SELECT NOT b, ~b, NOT NOT b, b FROM t1
+  }
+} {0 -12 1 11 0 -22 1 21}
+do_test cse-1.10 {
+  explain {
+    SELECT CAST(b AS integer), typeof(b), CAST(b AS text), typeof(b) FROM t1
+  }
+  execsql {
+    SELECT CAST(b AS integer), typeof(b), CAST(b AS text), typeof(b) FROM t1
+  }
+} {11 integer 11 integer 21 integer 21 integer}
 
 # Overflow the column cache.  Create queries involving more and more
 # columns until the cache overflows.  Verify correct operation throughout.
