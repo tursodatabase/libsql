@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.477 2008/03/25 17:23:33 drh Exp $
+** $Id: build.c,v 1.478 2008/04/01 03:27:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -205,6 +205,7 @@ void sqlite3FinishCoding(Parse *pParse){
     FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stdout : 0;
     sqlite3VdbeTrace(v, trace);
 #endif
+    assert( pParse->disableColCache==0 );  /* Disables and re-enables match */
     sqlite3VdbeMakeReady(v, pParse->nVar, pParse->nMem+3,
                          pParse->nTab+3, pParse->explain);
     pParse->rc = SQLITE_DONE;

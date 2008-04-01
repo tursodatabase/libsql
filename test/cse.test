@@ -13,7 +13,7 @@
 # factoring constant expressions out of loops and for
 # common subexpression eliminations.
 #
-# $Id: cse.test,v 1.1 2008/04/01 01:42:41 drh Exp $
+# $Id: cse.test,v 1.2 2008/04/01 03:27:39 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -65,5 +65,40 @@ do_test cse-1.8 {
   }
 } {1 0 1 0 0 1 0 1 1 2 0 1 0 0 1 0 1 2}
 
+# Overflow the column cache.  Create queries involving more and more
+# columns until the cache overflows.  Verify correct operation throughout.
+#
+do_test cse-2.1 {
+  execsql {
+    CREATE TABLE t2(a0,a1,a2,a3,a4,a5,a6,a7,a8,a9,
+                    a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,
+                    a20,a21,a22,a23,a24,a25,a26,a27,a28,a29,
+                    a30,a31,a32,a33,a34,a35,a36,a37,a38,a39,
+                    a40,a41,a42,a43,a44,a45,a46,a47,a48,a49);
+    INSERT INTO t2 VALUES(0,1,2,3,4,5,6,7,8,9,
+                    10,11,12,13,14,15,16,17,18,19,
+                    20,21,22,23,24,25,26,27,28,29,
+                    30,31,32,33,34,35,36,37,38,39,
+                    40,41,42,43,44,45,46,47,48,49);
+    SELECT * FROM t2;
+  }
+} {0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49}
+
+for {set i 1} {$i<100} {incr i} {
+  set n [expr {int(rand()*44)+5}]
+  set colset {}
+  set answer {}
+  for {set j 0} {$j<$n} {incr j} {
+    set r [expr {$j+int(rand()*5)}]
+    if {$r>49} {set r [expr {99-$r}]}
+    lappend colset a$j a$r 
+    lappend answer $j $r
+  }
+  set sql "SELECT [join $colset ,] FROM t2"
+  do_test cse-2.2.$i {
+    # explain $::sql
+    execsql $::sql
+  } $answer
+}
 
 finish_test

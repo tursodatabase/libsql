@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.360 2008/04/01 01:42:41 drh Exp $
+** $Id: expr.c,v 1.361 2008/04/01 03:27:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -222,6 +222,10 @@ static int codeCompare(
   addr = sqlite3VdbeAddOp4(pParse->pVdbe, opcode, in2, dest, in1,
                            (void*)p4, P4_COLLSEQ);
   sqlite3VdbeChangeP5(pParse->pVdbe, p5);
+  if( p5 & SQLITE_AFF_MASK ){
+    sqlite3ExprExpireColumnCacheLines(pParse, in1, in1);
+    sqlite3ExprExpireColumnCacheLines(pParse, in2, in2);
+  }
   return addr;
 }
 
@@ -1947,8 +1951,9 @@ int sqlite3ExprCodeGetColumn(
     pParse->aColCache[i].iColumn = iColumn;
     pParse->aColCache[i].iReg = iReg;
     i++;
-    if( i>ArraySize(pParse->aColCache) ) i = 0;
+    if( i>=ArraySize(pParse->aColCache) ) i = 0;
     if( i>pParse->nColCache ) pParse->nColCache = i;
+    pParse->iColCache = i;
   }
   return iReg;
 }
@@ -2046,7 +2051,9 @@ int sqlite3ExprWritableRegister(Parse *pParse, int iCurrent, int iTarget){
   if( !usedAsColumnCache(pParse, iCurrent, iCurrent) ){
     return iCurrent;
   }
-  sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, iCurrent, iTarget);
+  if( iCurrent!=iTarget ){
+    sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, iCurrent, iTarget);
+  }
   sqlite3ExprExpireColumnCacheLines(pParse, iTarget, iTarget);
   return iTarget;
 }

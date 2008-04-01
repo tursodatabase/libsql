@@ -1,5 +1,5 @@
-C Add\sa\sconfigure\soption\sfor\susing\sgcov\s(makes\sthings\seasier\sfor\sversions\sof\nGCC\sthat\sfail\sto\sbuild\sotherwise)\s(CVS\s4947)
-D 2008-04-01T02:45:22
+C More\stest\scases\sand\sbug\sfixes\swith\sCSE.\s(CVS\s4948)
+D 2008-04-01T03:27:39
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -89,13 +89,13 @@ F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
 F src/btree.c 20d51e14297a249408d9cc4bea433e23a72ef125
 F src/btree.h c66cb17c6fffa84a88926dbef173bab4ae692fd4
 F src/btreeInt.h 8a2718652ed9413dc6acbb02a5c5a23a35a6e983
-F src/build.c 4e6321d112f0ed1070c579677573e4eb76cda1fd
+F src/build.c fb042279457b4908d6f8e6b11855696218ecaa73
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c e41ce4513fb0e359dc678d6bddb4ace135fe365d
 F src/delete.c 9573b07fbdaef0e68d63eb218e5874c7a162c727
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 35cccadd28e34079b00117494b0edf841c6b1b75
+F src/expr.c 86aeb607d44c086fc66b2fdfd2a11a067b0e7f6e
 F src/fault.c 83057e86815d473e526f7df0b0108dfdd022ff23
 F src/func.c c9e8c7ff4c45027edee89bde7adbf86a3a3b2afe
 F src/hash.c 53655c312280211444bfe23af6490a460aec2980
@@ -140,7 +140,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in b1ac824d9fc163a5d2226ebf5990b09a02a11117
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h a04fe63ec5edda772a9313ac84d4b698ae73930b
+F src/sqliteInt.h f7ee48df1dd85dfa5342a2be7c48eb1da2858ca8
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
 F src/tclsqlite.c 1367762764772a233643524c3585b4711a9adcda
@@ -248,7 +248,7 @@ F test/crash5.test c7ddcf7ca83abc19901b977732144234ac72a938
 F test/crash6.test 873d851c5ba2a46e0f9974c54e1d4a77d9a587d5
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
-F test/cse.test 963d0658bb6851e6e266b7dbeb66ef968f6926c6
+F test/cse.test ad21bab7f66328a90dd429ebd3009c3a927ba8ab
 F test/date.test 8db95a0ba2c8f4c8762ce66859a036c51959a6be
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test 57533e88e886608bf5ae0f394e14c2eb1b1f7754
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e5aff09ac693946dc7ebb2f245b6434995b12155
-R f89fe1f05f380574fb061473087a9073
-U mlcreech
-Z 73c30e61e03eb0f5f81deae273244d4d
+P 7d1e79716246b0dd4a64d7c9575b2300e0f6123e
+R d317ffb6476a001df9ffa7c9574eac3a
+U drh
+Z 0847abdee1058424d9b79886f0c468bd
