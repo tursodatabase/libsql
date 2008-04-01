@@ -92,7 +92,7 @@ AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.42 $
+# $Revision: 1.43 $
 
 #########
 # Programs needed
@@ -611,6 +611,18 @@ else
   LOADEXTENSION_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
 fi
 AC_SUBST(LOADEXTENSION_FLAGS)
+
+#########
+# See whether we should allow loadable extensions
+AC_ARG_ENABLE(gcov, AC_HELP_STRING([--enable-gcov],
+      [Enable coverage testing using gcov]),
+      [use_gcov=$enableval],[use_gcov=no])
+if test "${use_gcov}" = "yes" ; then
+  USE_GCOV=1
+else
+  USE_GCOV=0
+fi
+AC_SUBST(USE_GCOV)
 
 
 #########

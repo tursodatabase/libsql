@@ -100,6 +100,24 @@ TCLSH_CMD = @TCLSH_CMD@
 #
 SHLIB_SUFFIX = @TCL_SHLIB_SUFFIX@
 
+# If gcov support was enabled by the configure script, add the appropriate
+# flags here.  It's not always as easy as just having the user add the right
+# CFLAGS / LDFLAGS, because libtool wants to use CFLAGS when linking, which
+# causes build errors with -fprofile-arcs -ftest-coverage with some GCCs.  
+# Supposedly GCC does the right thing if you use --coverage, but in 
+# practice it still fails.  See:
+#
+# http://www.mail-archive.com/debian-gcc@lists.debian.org/msg26197.html
+#
+# for more info.
+#
+GCOV_CFLAGS1 = -fprofile-arcs -ftest-coverage
+GCOV_LDFLAGS1 = -lgcov
+USE_GCOV = @USE_GCOV@
+LTCOMPILE_EXTRAS += $(GCOV_CFLAGS$(USE_GCOV))
+LTLINK_EXTRAS += $(GCOV_LDFLAGS$(USE_GCOV))
+
+
 # The directory into which to store package information for
 
 # Some standard variables and programs
@@ -114,8 +132,8 @@ LIBTOOL = ./libtool
 ALLOWRELEASE = @ALLOWRELEASE@
 
 # libtool compile/link/install
-LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC)
-LTLINK = $(LIBTOOL) --mode=link $(TCC) @LDFLAGS@
+LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(TCC) $(LTCOMPILE_EXTRAS)
+LTLINK = $(LIBTOOL) --mode=link $(TCC) @LDFLAGS@ $(LTLINK_EXTRAS)
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 
 # nawk compatible awk.

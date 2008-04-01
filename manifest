@@ -1,7 +1,7 @@
-C Initial\stest\scases\sand\sbug\sfixes\sin\sthe\sCSE\slogic.\s(CVS\s4946)
-D 2008-04-01T01:42:41
+C Add\sa\sconfigure\soption\sfor\susing\sgcov\s(makes\sthings\seasier\sfor\sversions\sof\nGCC\sthat\sfail\sto\sbuild\sotherwise)\s(CVS\s4947)
+D 2008-04-01T02:45:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
+F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 7a41970464b74225915bcaf9d76efd01f26e08f9
@@ -18,8 +18,8 @@ F config.guess dba2d1300ec8f8cd00c6fb44b9edde21c14e960c
 F config.h 5e461e321e0a56f1762da44eece1fe971ebdba3e
 F config.h.in feb93ab9f7703907947aadd3bcff7c6e790920bd
 F config.sub 9a842e7c332ed65cef3f2c20354e06dc998b2796
-F configure b32b2b216a0c7804b5031953c217e32fb0effd41 x
-F configure.ac 18befb6052e69653b1914a3d3d6ee4d25ba75674
+F configure 945584d7c8926c2305828e3a7c2b33195cda27f7 x
+F configure.ac 1d76f7c88052f5018123b5e142f1048cdf090622
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 53e533d3a764d1973c24bffaacc505ea4b61a2b9
-R 00d768189a7178d88ec40a726cdc13f3
-U drh
-Z 64e3c6f629ca2210e1712a4840620137
+P e5aff09ac693946dc7ebb2f245b6434995b12155
+R f89fe1f05f380574fb061473087a9073
+U mlcreech
+Z 73c30e61e03eb0f5f81deae273244d4d
