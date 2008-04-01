@@ -13,7 +13,7 @@
 # factoring constant expressions out of loops and for
 # common subexpression eliminations.
 #
-# $Id: cse.test,v 1.4 2008/04/01 15:06:34 drh Exp $
+# $Id: cse.test,v 1.5 2008/04/01 18:04:11 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -49,11 +49,31 @@ do_test cse-1.5 {
     SELECT CASE a WHEN 1 THEN b WHEN 2 THEN c ELSE d END, b, c, d FROM t1
   }
 } {11 11 12 13 22 21 22 23}
-do_test cse-1.6 {
+do_test cse-1.6.1 {
   execsql {
     SELECT CASE b WHEN 11 THEN -b WHEN 21 THEN -c ELSE -d END, b, c, d FROM t1
   }
 } {-11 11 12 13 -22 21 22 23}
+do_test cse-1.6.2 {
+  execsql {
+    SELECT CASE b+1 WHEN c THEN d WHEN e THEN f ELSE 999 END, b, c, d FROM t1
+  }
+} {13 11 12 13 23 21 22 23}
+do_test cse-1.6.3 {
+  execsql {
+    SELECT CASE WHEN b THEN d WHEN e THEN f ELSE 999 END, b, c, d FROM t1
+  }
+} {13 11 12 13 23 21 22 23}
+do_test cse-1.6.4 {
+  execsql {
+    SELECT b, c, d, CASE WHEN b THEN d WHEN e THEN f ELSE 999 END FROM t1
+  }
+} {11 12 13 13 21 22 23 23}
+do_test cse-1.6.5 {
+  execsql {
+    SELECT b, c, d, CASE WHEN 0 THEN d WHEN e THEN f ELSE 999 END FROM t1
+  }
+} {11 12 13 15 21 22 23 25}
 do_test cse-1.7 {
   execsql {
     SELECT a, -a, ~a, NOT a, NOT NOT a, a-a, a+a, a*a, a/a, a FROM t1
@@ -89,17 +109,11 @@ do_test cse-1.12 {
   }
 } {21 2 21 22 23 24 14 14 13 12 11 1}
 do_test cse-1.13 {
-  explain {
-     SELECT upper(b), typeof(b), b FROM t1
-  }
   execsql {
      SELECT upper(b), typeof(b), b FROM t1
   }
 } {11 integer 11 21 integer 21}
 do_test cse-1.14 {
-  explain {
-     SELECT b, typeof(b), upper(b), typeof(b), b FROM t1
-  }
   execsql {
      SELECT b, typeof(b), upper(b), typeof(b), b FROM t1
   }

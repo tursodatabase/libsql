@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.364 2008/04/01 15:06:34 drh Exp $
+** $Id: expr.c,v 1.365 2008/04/01 18:04:11 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2682,16 +2682,95 @@ int sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
 }
 
 /*
-** If pExpr is a constant expression, then evaluate the expression
+** Return TRUE if pExpr is an constant expression that is appropriate
+** for factoring out of a loop.  Appropriate expressions are:
+**
+**    *  Any expression that evaluates to two or more opcodes.
+**
+**    *  Any OP_Integer, OP_Real, OP_String, OP_Blob, OP_Null, 
+**       or OP_Variable that does not need to be placed in a 
+**       specific register.
+**
+** There is no point in factoring out single-instruction constant
+** expressions that need to be placed in a particular register.  
+** We could factor them out, but then we would end up adding an
+** OP_SCopy instruction to move the value into the correct register
+** later.  We might as well just use the original instruction and
+** avoid the OP_SCopy.
+*/
+static int isAppropriateForFactoring(Expr *p){
+  if( !sqlite3ExprIsConstantNotJoin(p) ){
+    return 0;  /* Only constant expressions are appropriate for factoring */
+  }
+  if( (p->flags & EP_FixedDest)==0 ){
+    return 1;  /* Any constant without a fixed destination is appropriate */
+  }
+  while( p->op==TK_UPLUS ) p = p->pLeft;
+  switch( p->op ){
+#ifndef SQLITE_OMIT_BLOB_LITERAL
+    case TK_BLOB:
+#endif
+    case TK_VARIABLE:
+    case TK_INTEGER:
+    case TK_FLOAT:
+    case TK_NULL:
+    case TK_STRING: {
+      testcase( p->op==TK_BLOB );
+      testcase( p->op==TK_VARIABLE );
+      testcase( p->op==TK_INTEGER );
+      testcase( p->op==TK_FLOAT );
+      testcase( p->op==TK_NULL );
+      testcase( p->op==TK_STRING );
+      /* Single-instruction constants with a fixed destination are
+      ** better done in-line.  If we factor them, they will just end
+      ** up generating an OP_SCopy to move the value to the destination
+      ** register. */
+      return 0;
+    }
+    case TK_UMINUS: {
+       if( p->pLeft->op==TK_FLOAT || p->pLeft->op==TK_INTEGER ){
+         return 0;
+       }
+       break;
+    }
+    default: {
+      break;
+    }
+  }
+  return 1;
+}
+
+/*
+** If pExpr is a constant expression that is appropriate for
+** factoring out of a loop, then evaluate the expression
 ** into a register and convert the expression into a TK_REGISTER
 ** expression.
 */
 static int evalConstExpr(void *pArg, Expr *pExpr){
   Parse *pParse = (Parse*)pArg;
-  if( pExpr->op==TK_REGISTER ){
-    return 1;
+  switch( pExpr->op ){
+    case TK_REGISTER: {
+      return 1;
+    }
+    case TK_FUNCTION:
+    case TK_AGG_FUNCTION:
+    case TK_CONST_FUNC: {
+      /* The arguments to a function have a fixed destination.
+      ** Mark them this way to avoid generated unneeded OP_SCopy
+      ** instructions. 
+      */
+      ExprList *pList = pExpr->pList;
+      if( pList ){
+        int i = pList->nExpr;
+        struct ExprList_item *pItem = pList->a;
+        for(; i>0; i--, pItem++){
+          if( pItem->pExpr ) pItem->pExpr->flags |= EP_FixedDest;
+        }
+      }
+      break;
+    }
   }
-  if( sqlite3ExprIsConstantNotJoin(pExpr) ){
+  if( isAppropriateForFactoring(pExpr) ){
     int r1 = ++pParse->nMem;
     int r2;
     r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);

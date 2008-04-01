@@ -1,5 +1,5 @@
-C Add\sthe\stestcase()\smacro.\s\sAdditional\sCSE\stest\scoverage.\s(CVS\s4951)
-D 2008-04-01T15:06:34
+C Avoid\sfactoring\ssingle-instruction\sconstants\sthat\send\sup\sgetting\sreplaced\nby\san\sSCopy\sinstruction.\s(CVS\s4952)
+D 2008-04-01T18:04:11
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c e41ce4513fb0e359dc678d6bddb4ace135fe365d
 F src/delete.c 74d5c9c824848a14d7dee37264ec302b168c4ddb
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c bc7ab980abcc211083148eeaea571c4511f41238
+F src/expr.c acc695135dc7f7a3080139ae48c16b92d1fa54fb
 F src/fault.c 83057e86815d473e526f7df0b0108dfdd022ff23
 F src/func.c c9e8c7ff4c45027edee89bde7adbf86a3a3b2afe
 F src/hash.c 53655c312280211444bfe23af6490a460aec2980
@@ -140,7 +140,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in b1ac824d9fc163a5d2226ebf5990b09a02a11117
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h 3b9a1f2338d6b0d4361b1901543c830a45a45637
+F src/sqliteInt.h cfe0b6c4b1a9b4be22f856ca8058ccd1bf0e41a8
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
 F src/tclsqlite.c 1367762764772a233643524c3585b4711a9adcda
@@ -248,7 +248,7 @@ F test/crash5.test c7ddcf7ca83abc19901b977732144234ac72a938
 F test/crash6.test 873d851c5ba2a46e0f9974c54e1d4a77d9a587d5
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
-F test/cse.test cb548fa3000a246c80fde7adaa0ee4bd85cbc5e9
+F test/cse.test 4b8a49decaefccb835ecc67249277be491713f6c
 F test/date.test 8db95a0ba2c8f4c8762ce66859a036c51959a6be
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test 57533e88e886608bf5ae0f394e14c2eb1b1f7754
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e25939fb25ec8bde8500a672ca5be3cbb514ac3a
-R 739e5874578bdbb30904d6eb328630e7
+P 492490f9c86e52c7a706d9e1bf0ba216d5bb8aba
+R 7e48962315256c1abf42d78eded0235b
 U drh
-Z 3436b9a596d9596333afb3b553896141
+Z 215272a1406ad9bddb53b4c21cd1bc47

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.687 2008/04/01 15:06:34 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.688 2008/04/01 18:04:11 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1154,6 +1154,7 @@ struct Expr {
 #define EP_InfixFunc  0x0080  /* True for an infix function: LIKE, GLOB, etc */
 #define EP_ExpCollate 0x0100  /* Collating sequence specified explicitly */
 #define EP_AnyAff     0x0200  /* Can take a cached column of any affinity */
+#define EP_FixedDest  0x0400  /* Result needed in a specific register */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
