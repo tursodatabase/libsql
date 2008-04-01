@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.359 2008/03/31 23:48:04 drh Exp $
+** $Id: expr.c,v 1.360 2008/04/01 01:42:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2017,6 +2017,41 @@ void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo){
 }
 
 /*
+** Return true if any register in the range iFrom..iTo (inclusive)
+** is used as part of the column cache.
+*/
+static int usedAsColumnCache(Parse *pParse, int iFrom, int iTo){
+  int i;
+  for(i=0; i<pParse->nColCache; i++){
+    int r = pParse->aColCache[i].iReg;
+    if( r>=iFrom && r<=iTo ) return 1;
+  }
+  return 0;
+}
+
+/*
+** Theres is a value in register iCurrent.  We ultimately want
+** the value to be in register iTarget.  It might be that
+** iCurrent and iTarget are the same register.
+**
+** We are going to modify the value, so we need to make sure it
+** is not a cached register.  If iCurrent is a cached register,
+** then try to move the value over to iTarget.  If iTarget is a
+** cached register, then clear the corresponding cache line.
+**
+** Return the register that the value ends up in.
+*/
+int sqlite3ExprWritableRegister(Parse *pParse, int iCurrent, int iTarget){
+  assert( pParse->pVdbe!=0 );
+  if( !usedAsColumnCache(pParse, iCurrent, iCurrent) ){
+    return iCurrent;
+  }
+  sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, iCurrent, iTarget);
+  sqlite3ExprExpireColumnCacheLines(pParse, iTarget, iTarget);
+  return iTarget;
+}
+
+/*
 ** Generate code into the current Vdbe to evaluate the given
 ** expression.  Attempt to store the results in register "target".
 ** Return the register where results are stored.
@@ -2201,6 +2236,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       assert( TK_BITNOT==OP_BitNot );
       assert( TK_NOT==OP_Not );
       inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
+      inReg = sqlite3ExprWritableRegister(pParse, inReg, target);
       sqlite3VdbeAddOp1(v, op, inReg);
       break;
     }
@@ -2417,7 +2453,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       aListelem = pEList->a;
       nExpr = pEList->nExpr;
       endLabel = sqlite3VdbeMakeLabel(v);
-      sqlite3ExprColumnCacheDisable(pParse, 1);
       if( (pX = pExpr->pLeft)!=0 ){
         cacheX = *pX;
         cacheX.iTable = sqlite3ExprCodeTemp(pParse, pX, &regFree1);
@@ -2427,6 +2462,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         opCompare.pLeft = &cacheX;
         pTest = &opCompare;
       }
+      sqlite3ExprColumnCacheDisable(pParse, 1);
       for(i=0; i<nExpr; i=i+2){
         if( pX ){
           opCompare.pRight = aListelem[i].pExpr;
@@ -3084,19 +3120,6 @@ void sqlite3ExprAnalyzeAggList(NameContext *pNC, ExprList *pList){
       sqlite3ExprAnalyzeAggregates(pNC, pItem->pExpr);
     }
   }
-}
-
-/*
-** Return true if any register in the range iFrom..iTo (inclusive)
-** is used as part of the column cache.
-*/
-static int usedAsColumnCache(Parse *pParse, int iFrom, int iTo){
-  int i;
-  for(i=0; i<pParse->nColCache; i++){
-    int r = pParse->aColCache[i].iReg;
-    if( r>=iFrom && r<=iTo ) return 1;
-  }
-  return 0;
 }
 
 /*

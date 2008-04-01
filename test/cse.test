@@ -1,0 +1,69 @@
+# 2008 April 1
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test cases designed to exercise and verify the logic for
+# factoring constant expressions out of loops and for
+# common subexpression eliminations.
+#
+# $Id: cse.test,v 1.1 2008/04/01 01:42:41 drh Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_test cse-1.1 {
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d, e, f);
+    INSERT INTO t1 VALUES(1,11,12,13,14,15);
+    INSERT INTO t1 VALUES(2,21,22,23,24,25);
+  }
+  execsql {
+    SELECT b, -b, ~b, NOT b, NOT NOT b, b-b, b+b, b*b, b/b, b FROM t1
+  }
+} {11 -11 -12 0 1 0 22 121 1 11 21 -21 -22 0 1 0 42 441 1 21}
+do_test cse-1.2 {
+  execsql {
+    SELECT b, b%b, b==b, b!=b, b<b, b<=b, b IS NULL, b NOT NULL, b FROM t1
+  }
+} {11 0 1 0 0 1 0 1 11 21 0 1 0 0 1 0 1 21}
+do_test cse-1.3 {
+  execsql {
+    SELECT b, abs(b), coalesce(b,-b,NOT b,c,NOT c), c, -c FROM t1;
+  }
+} {11 11 11 12 -12 21 21 21 22 -22}
+do_test cse-1.4 {
+  execsql {
+    SELECT CASE WHEN a==1 THEN b ELSE c END, b, c FROM t1
+  }
+} {11 11 12 22 21 22}
+do_test cse-1.5 {
+  execsql {
+    SELECT CASE a WHEN 1 THEN b WHEN 2 THEN c ELSE d END, b, c, d FROM t1
+  }
+} {11 11 12 13 22 21 22 23}
+do_test cse-1.6 {
+  execsql {
+    SELECT CASE b WHEN 11 THEN -b WHEN 21 THEN -c ELSE -d END, b, c, d FROM t1
+  }
+} {-11 11 12 13 -22 21 22 23}
+do_test cse-1.7 {
+  execsql {
+    SELECT a, -a, ~a, NOT a, NOT NOT a, a-a, a+a, a*a, a/a, a FROM t1
+  }
+} {1 -1 -2 0 1 0 2 1 1 1 2 -2 -3 0 1 0 4 4 1 2}
+do_test cse-1.8 {
+  execsql {
+    SELECT a, a%a, a==a, a!=a, a<a, a<=a, a IS NULL, a NOT NULL, a FROM t1
+  }
+} {1 0 1 0 0 1 0 1 1 2 0 1 0 0 1 0 1 2}
+
+
+finish_test

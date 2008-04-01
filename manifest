@@ -1,5 +1,5 @@
-C Break\sup\sthe\simplementation\sof\sOP_Move,\sOP_Copy,\sand\sOP_SCopy\sto\sreduce\nthe\snumber\sof\sbranch\sinstructions.\s(CVS\s4945)
-D 2008-04-01T00:36:10
+C Initial\stest\scases\sand\sbug\sfixes\sin\sthe\sCSE\slogic.\s(CVS\s4946)
+D 2008-04-01T01:42:41
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in cf434ce8ca902e69126ae0f94fc9f7dc7428a5fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c e41ce4513fb0e359dc678d6bddb4ace135fe365d
 F src/delete.c 9573b07fbdaef0e68d63eb218e5874c7a162c727
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c 787f5fd4ee5ca58d4470603626f1b43ac2348faa
+F src/expr.c 35cccadd28e34079b00117494b0edf841c6b1b75
 F src/fault.c 83057e86815d473e526f7df0b0108dfdd022ff23
 F src/func.c c9e8c7ff4c45027edee89bde7adbf86a3a3b2afe
 F src/hash.c 53655c312280211444bfe23af6490a460aec2980
@@ -140,7 +140,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in b1ac824d9fc163a5d2226ebf5990b09a02a11117
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h 79f4a09bc1e5b3ea50dae581294d8681b345a165
+F src/sqliteInt.h a04fe63ec5edda772a9313ac84d4b698ae73930b
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
 F src/tclsqlite.c 1367762764772a233643524c3585b4711a9adcda
@@ -248,6 +248,7 @@ F test/crash5.test c7ddcf7ca83abc19901b977732144234ac72a938
 F test/crash6.test 873d851c5ba2a46e0f9974c54e1d4a77d9a587d5
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
+F test/cse.test 963d0658bb6851e6e266b7dbeb66ef968f6926c6
 F test/date.test 8db95a0ba2c8f4c8762ce66859a036c51959a6be
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test 57533e88e886608bf5ae0f394e14c2eb1b1f7754
@@ -620,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f61df8daa89f07dad2a0ded00c326ef35dead257
-R 70671ac2da4a3b5255caf0a8bf9dc874
+P 53e533d3a764d1973c24bffaacc505ea4b61a2b9
+R 00d768189a7178d88ec40a726cdc13f3
 U drh
-Z cb426daa3c0350483da8130288b38568
+Z 64e3c6f629ca2210e1712a4840620137
