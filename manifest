@@ -1,5 +1,5 @@
-C Avoid\sfactoring\ssingle-instruction\sconstants\sthat\send\sup\sgetting\sreplaced\nby\san\sSCopy\sinstruction.\s(CVS\s4952)
-D 2008-04-01T18:04:11
+C Set\sflags\s=\sMEM_Null\son\sallocation\sfailure\sin\ssqlite3VdbeMemGrow\s(CVS\s4953)
+D 2008-04-02T04:23:32
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -181,7 +181,7 @@ F src/vdbeapi.c ab6e99f8a6b7fcb82c2c698da7a36762a7593f0a
 F src/vdbeaux.c 519ec819a8e549d087899f0c9a912afcdda762b4
 F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
-F src/vdbemem.c b96fea7b98cc662ad7b587f28560b0c5649ac39f
+F src/vdbemem.c 4877da1901b147a36afbf836894a94e053bf130d
 F src/vtab.c 00cd16317b29495c185ff40e4b227917d5a371b2
 F src/where.c 86b042dcd57f8428a75ddb59e6289eded6f6af09
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 492490f9c86e52c7a706d9e1bf0ba216d5bb8aba
-R 7e48962315256c1abf42d78eded0235b
-U drh
-Z 215272a1406ad9bddb53b4c21cd1bc47
+P e84ff57b6217afa84d60547dcc3a270b5e116818
+R 95e2b93a8ea0781361c08c3a2bd00060
+U mlcreech
+Z 9bfc93788b7cbc8f268a5810ac95123b
