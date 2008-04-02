@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.449 2008/04/02 16:29:31 drh Exp $
+** $Id: btree.c,v 1.450 2008/04/02 18:33:08 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3671,12 +3671,13 @@ int sqlite3BtreeMoveto(
           pCell += getVarint32(pCell, &dummy);
         }
         getVarint(pCell, (u64*)&nCellKey);
-        if( nCellKey<nKey ){
-          c = -1;
-        }else if( nCellKey>nKey ){
-          c = +1;
-        }else{
+        if( nCellKey==nKey ){
           c = 0;
+        }else if( nCellKey<nKey ){
+          c = -1;
+        }else{
+          assert( nCellKey>nKey );
+          c = +1;
         }
       }else{
         int available;
