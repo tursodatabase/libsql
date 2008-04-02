@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.448 2008/03/29 16:01:04 drh Exp $
+** $Id: btree.c,v 1.449 2008/04/02 16:29:31 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7075,13 +7075,17 @@ int sqlite3BtreeSchemaLocked(Btree *p){
 */
 int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
   int rc = SQLITE_OK;
-  u8 lockType = (isWriteLock?WRITE_LOCK:READ_LOCK);
-  sqlite3BtreeEnter(p);
-  rc = queryTableLock(p, iTab, lockType);
-  if( rc==SQLITE_OK ){
-    rc = lockTable(p, iTab, lockType);
+  if( p->sharable ){
+    u8 lockType = READ_LOCK + isWriteLock;
+    assert( READ_LOCK+1==WRITE_LOCK );
+    assert( isWriteLock==0 || isWriteLock==1 );
+    sqlite3BtreeEnter(p);
+    rc = queryTableLock(p, iTab, lockType);
+    if( rc==SQLITE_OK ){
+      rc = lockTable(p, iTab, lockType);
+    }
+    sqlite3BtreeLeave(p);
   }
-  sqlite3BtreeLeave(p);
   return rc;
 }
 #endif

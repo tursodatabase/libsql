@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.478 2008/04/01 03:27:39 drh Exp $
+** $Id: build.c,v 1.479 2008/04/02 16:29:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -111,10 +111,8 @@ static void codeTableLocks(Parse *pParse){
   for(i=0; i<pParse->nTableLock; i++){
     TableLock *p = &pParse->aTableLock[i];
     int p1 = p->iDb;
-    if( p->isWriteLock ){
-      p1 = -1*(p1+1);
-    }
-    sqlite3VdbeAddOp4(pVdbe, OP_TableLock, p1, p->iTab, 0, p->zName, P4_STATIC);
+    sqlite3VdbeAddOp4(pVdbe, OP_TableLock, p1, p->iTab, p->isWriteLock,
+                      p->zName, P4_STATIC);
   }
 }
 #else

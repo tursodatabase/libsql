@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.724 2008/04/01 00:36:10 drh Exp $
+** $Id: vdbe.c,v 1.725 2008/04/02 16:29:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4402,16 +4402,14 @@ case OP_Expire: {
 }
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
-/* Opcode: TableLock P1 P2 * P4 *
+/* Opcode: TableLock P1 P2 P3 P4 *
 **
 ** Obtain a lock on a particular table. This instruction is only used when
 ** the shared-cache feature is enabled. 
 **
-** If P1 is not negative, then it is the index of the database
-** in sqlite3.aDb[] and a read-lock is required. If P1 is negative, a 
-** write-lock is required. In this case the index of the database is the 
-** absolute value of P1 minus one (iDb = abs(P1) - 1;) and a write-lock is
-** required. 
+** If P1 is  the index of the database in sqlite3.aDb[] of the database
+** on which the lock is acquired.  A readlock is obtained if P3==0 or
+** a write lock if P3==1.
 **
 ** P2 contains the root-page of the table to lock.
 **
@@ -4420,12 +4418,10 @@ case OP_Expire: {
 */
 case OP_TableLock: {
   int p1 = pOp->p1; 
-  u8 isWriteLock = (p1<0);
-  if( isWriteLock ){
-    p1 = (-1*p1)-1;
-  }
+  u8 isWriteLock = pOp->p3;
   assert( p1>=0 && p1<db->nDb );
   assert( (p->btreeMask & (1<<p1))!=0 );
+  assert( isWriteLock==0 || isWriteLock==1 );
   rc = sqlite3BtreeLockTable(db->aDb[p1].pBt, pOp->p2, isWriteLock);
   if( rc==SQLITE_LOCKED ){
     const char *z = pOp->p4.z;
