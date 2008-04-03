@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.301 2008/03/26 18:34:43 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.302 2008/04/03 14:36:26 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2292,7 +2292,11 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** If nByte is non-negative, then it is the maximum number of 
 ** bytes read from zSql.  When nByte is non-negative, the
 ** zSql string ends at either the first '\000' or '\u0000' character or 
-** until the nByte-th byte, whichever comes first. {END}
+** until the nByte-th byte, whichever comes first. If the caller knows
+** that the supplied string is nul-terminated, then there is a small
+** performance advantage to be had by passing an nByte parameter that 
+** is equal to the number of bytes in the input string <i>including</i> 
+** the nul-terminator bytes.{END}
 **
 ** *pzTail is made to point to the first byte past the end of the
 ** first SQL statement in zSql.  These routines only compiles the first
