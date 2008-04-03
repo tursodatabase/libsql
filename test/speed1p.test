@@ -13,7 +13,7 @@
 #
 # This is a copy of speed1.test modified to user prepared statements.
 #
-# $Id: speed1p.test,v 1.1 2008/03/22 01:08:01 drh Exp $
+# $Id: speed1p.test,v 1.2 2008/04/03 19:40:59 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -22,12 +22,6 @@ speed_trial_init speed1
 
 # Set a uniform random seed
 expr srand(0)
-
-set sqlout [open speed1.txt w]
-proc tracesql {sql} {
-  puts $::sqlout $sql\;
-}
-#db trace tracesql
 
 # The number_name procedure below converts its argment (an integer)
 # into a string which is the English-language name for that number.

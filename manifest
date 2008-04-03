@@ -1,5 +1,5 @@
-C Changes\sspeedtest8\sand\sspeedtest16\sso\sthat\sthe\sdatabase\sfile\scan\sbe\sspecified\non\sthe\scommand-line.\s\sAllows\sspeed\stesting\sagainst\sa\s:memory:\sdatabase.\s(CVS\s4960)
-D 2008-04-03T17:57:25
+C Use\san\simproved\sRDTSC\saccess\sroutine.\s(CVS\s4961)
+D 2008-04-03T19:40:59
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -174,7 +174,7 @@ F src/update.c 6d5f7728ec254c4a36a06a744f45b232b2eef857
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c dba9e04121eb17ec4643d6ca231ff859452cf0e2
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
-F src/vdbe.c 1f8c02fc583df90d20bc638ca07ff0bfb0b4c0e5
+F src/vdbe.c da3f91d8f663902d85862186de88b18af747baa7
 F src/vdbe.h f72201a0657d5f3d6cc008d1f8d9cc65768518c9
 F src/vdbeInt.h 0b96efdeecb0803e504bf1c16b198f87c91d6019
 F src/vdbeapi.c ab6e99f8a6b7fcb82c2c698da7a36762a7593f0a
@@ -441,7 +441,7 @@ F test/soak.test 64f9b27fbcdec43335a88c546ce1983e6ba40d7b
 F test/softheap1.test c9146eda576eedb62192b771293a2115d9af8456
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
-F test/speed1p.test 2c0144604a7c5d32493c4075c46d9a5a0f90ceba
+F test/speed1p.test 5f79987671f930a8aa651091c2952c1782b0df83
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test 20d8ea20bea3ca09c3ef3b5ec820a17e58e132cb
@@ -564,9 +564,9 @@ F tool/soak1.tcl 85a4a7826c77351bfe1c005ae3cff2ef59123557
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
 F tool/spaceanal.tcl b87db46ae29e3116411b1686e136b9b994d7de39
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
-F tool/speedtest16.c 6e0f8c2f8826989ac351a0f269d36b0eaea221d7
+F tool/speedtest16.c 66d5882728c92ba6ab45c223c5812a473da70fe0
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
-F tool/speedtest8.c 9a614005cf2cad4fe922952db3fdeaccd2c09c3a
+F tool/speedtest8.c 608f39682983735bc16c993008c2b6ecfa4c604a
 F www/34to35.tcl 942e479aa7740b55d714dce0f0b2cb6ca91c3f20
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
 F www/arch.gif f845a64772062e82d17980a349f95f1f0b4c8054
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 33a12e737c343dbc452a25321a63456c1a8f7548
-R 1b9d6571f04e3f2e90317d2d7e6f6132
+P 64badc50531668de45d76a3dcd90db17e1fe1ab1
+R 25bc5c99942bd3474afe17471012ea72
 U drh
-Z ad27df22dc86b86d653d16cbbba127a5
+Z 7ecc5921005df095a20c39986dd214cd

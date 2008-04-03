@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <unistd.h>
 #include "sqlite3.h"
 
 
@@ -34,11 +36,13 @@
 ** profiling.
 */
 __inline__ unsigned long long int hwtime(void){
-  unsigned long long int x;
-  __asm__("rdtsc\n\t"
-          "mov %%edx, %%ecx\n\t"
-          :"=A" (x));
-  return x;
+   unsigned int lo, hi;
+   __asm__ __volatile__ (      // serialize
+     "xorl %%eax,%%eax \n        cpuid"
+     ::: "%rax", "%rbx", "%rcx", "%rdx");
+   /* We cannot use "=A", since this would use %rax on x86_64 */
+   __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+   return (unsigned long long int)hi << 32 | lo;
 }
 
 /*

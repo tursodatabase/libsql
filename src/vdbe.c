@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.725 2008/04/02 16:29:31 drh Exp $
+** $Id: vdbe.c,v 1.726 2008/04/03 19:40:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -489,11 +489,13 @@ static void registerTrace(FILE *out, int iReg, Mem *p){
 ** profiling.
 */
 __inline__ unsigned long long int hwtime(void){
-  unsigned long long int x;
-  __asm__("rdtsc\n\t"
-          "mov %%edx, %%ecx\n\t"
-          :"=A" (x));
-  return x;
+   unsigned int lo, hi;
+   __asm__ __volatile__ (      // serialize
+     "xorl %%eax,%%eax \n        cpuid"
+     ::: "%rax", "%rbx", "%rcx", "%rdx");
+   /* We cannot use "=A", since this would use %rax on x86_64 */
+   __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+   return (unsigned long long int)hi << 32 | lo;
 }
 #endif
 
