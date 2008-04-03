@@ -19,7 +19,7 @@
 ** Then run this program with a single argument which is the name of
 ** a file containing SQL script that you want to test:
 **
-**     ./a.out test.sql
+**     ./a.out test.db  test.sql
 */
 #include <stdio.h>
 #include <string.h>
@@ -89,14 +89,16 @@ int main(int argc, char **argv){
   FILE *in;
   unsigned long long int iStart, iElapse;
   unsigned long long int iSetup = 0;
+  int nStmt = 0;
+  int nByte = 0;
 
-  if( argc!=2 ){
-    fprintf(stderr, "Usage: %s SQL-SCRIPT\n"
+  if( argc!=3 ){
+    fprintf(stderr, "Usage: %s FILENAME SQL-SCRIPT\n"
                     "Runs SQL-SCRIPT against a UTF8 database\n",
                     argv[0]);
     exit(1);
   }
-  in = fopen(argv[1], "r");
+  in = fopen(argv[2], "r");
   fseek(in, 0L, SEEK_END);
   nSql = ftell(in);
   zSql = malloc( nSql+1 );
@@ -105,10 +107,9 @@ int main(int argc, char **argv){
   zSql[nSql] = 0;
 
   printf("SQLite version: %d\n", sqlite3_libversion_number());
-  unlink("test.db");
-  unlink("test.db-journal");
+  unlink(argv[1]);
   iStart = hwtime();
-  rc = sqlite3_open("test.db", &db);
+  rc = sqlite3_open(argv[1], &db);
   iElapse = hwtime() - iStart;
   iSetup = iElapse;
   printf("sqlite3_open() returns %d in %llu cycles\n", rc, iElapse);
@@ -123,6 +124,8 @@ int main(int argc, char **argv){
         zSql[j] = 0;
         while( i<j && isspace(zSql[i]) ){ i++; }
         if( i<j ){
+          nStmt++;
+          nByte += j-i;
           prepareAndRun(db, &zSql[i]);
         }
         zSql[j] = ';';
@@ -136,6 +139,8 @@ int main(int argc, char **argv){
   iSetup += iElapse;
   printf("sqlite3_close() returns in %llu cycles\n", iElapse);
   printf("\n");
+  printf("Statements run:       %15d\n", nStmt);
+  printf("Bytes of SQL text:    %15d\n", nByte);
   printf("Total prepare time:   %15llu cycles\n", prepTime);
   printf("Total run time:       %15llu cycles\n", runTime);
   printf("Total finalize time:  %15llu cycles\n", finalizeTime);
