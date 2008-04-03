@@ -1,5 +1,5 @@
-C Add\sthe\sspeedtest8.c\sand\sspeedtest16.c\sfiles\sto\sthe\stools\ssubdirectory.\s(CVS\s4958)
-D 2008-04-03T16:01:28
+C Instead\sof\scalling\ssqlite3_exec()\sto\sevaluate\s"PRAGMA\sencoding\s=\sUTF16"\sin\ssqlite3_open16(),\sset\sthe\sconnection\sencoding\sflag\sdirectly.\s(CVS\s4959)
+D 2008-04-03T16:28:25
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/insert.c 6974a1d02f2dcd616d00eef4996d4872495fad0f
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 8267890e6a0a71f13b680794520999c642299081
 F src/loadext.c f26b22f7c84153c9d5dbd7c240848823c6e6b6dc
-F src/main.c b499fa9fa2551d0963404e1b582747ef92754dd0
+F src/main.c afcd42ba14d144034ed0e285bee100594f00b8fa
 F src/malloc.c 12c1ae98ef1eff34b13c9eb526e0b7b479e1e820
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c287a7b29410be12cf88f886e8e2525a42aa9c03
-R 9d9b96d2bd32dc055499d78c524c19f5
-U drh
-Z 1c72cd047a86a988a7649faaab8ab44b
+P b8d211a76fa56d812fc1758b58d65eef832494cb
+R 8c44dce20057b42a443a4b9f7f4dfd9c
+U danielk1977
+Z 259f442ab55cd26c4a285d05c392d693
