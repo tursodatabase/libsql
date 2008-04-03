@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.450 2008/04/02 18:33:08 drh Exp $
+** $Id: btree.c,v 1.451 2008/04/03 21:46:57 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3780,7 +3780,7 @@ sqlite3 *sqlite3BtreeCursorDb(const BtCursor *pCur){
 ** was already pointing to the last entry in the database before
 ** this routine was called, then set *pRes=1.
 */
-static int btreeNext(BtCursor *pCur, int *pRes){
+int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   int rc;
   MemPage *pPage;
 
@@ -3840,12 +3840,6 @@ static int btreeNext(BtCursor *pCur, int *pRes){
   rc = moveToLeftmost(pCur);
   return rc;
 }
-int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
-  int rc;
-  assert( cursorHoldsMutex(pCur) );
-  rc = btreeNext(pCur, pRes);
-  return rc;
-}
 
 
 /*
@@ -3854,7 +3848,7 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
 ** was already pointing to the first entry in the database before
 ** this routine was called, then set *pRes=1.
 */
-static int btreePrevious(BtCursor *pCur, int *pRes){
+int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   int rc;
   Pgno pgno;
   MemPage *pPage;
@@ -3906,12 +3900,6 @@ static int btreePrevious(BtCursor *pCur, int *pRes){
     }
   }
   *pRes = 0;
-  return rc;
-}
-int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
-  int rc;
-  assert( cursorHoldsMutex(pCur) );
-  rc = btreePrevious(pCur, pRes);
   return rc;
 }
 

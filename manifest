@@ -1,5 +1,5 @@
-C Make\ssure\sthe\szTail\sreturn\sfrom\ssqlite3_prepare()\sis\sinitialized\seven\nif\sthere\sis\sa\smalloc\sfailure.\s(CVS\s4963)
-D 2008-04-03T21:42:21
+C Remove\ssuperfluous\scode\sfrom\sbtree.c.\s(CVS\s4964)
+D 2008-04-03T21:46:57
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -86,7 +86,7 @@ F src/attach.c bdc75e759ca25a16f4dc7fbdbc6d37ad2561bb24
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 49817d442e51e4123585f3cf3c2afc293a3c91e2
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 680c357b178146dd37910f42f9e6e8a2a7b1e61d
+F src/btree.c ee340ad90103fe70526f7b0c3728d185dd470f20
 F src/btree.h c66cb17c6fffa84a88926dbef173bab4ae692fd4
 F src/btreeInt.h 8a2718652ed9413dc6acbb02a5c5a23a35a6e983
 F src/build.c 5d36a6041202a1f3a8b2eee3a631cbce74e5f696
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1d67f41c885d052ab10a33892938a85b56882b3d
-R fc70bbceae3dbd97e8cb18355cf2864b
+P 040cffe2727936ce9228666fce5b00db47493e7d
+R b5169b7863cd504077cbda35abe0563a
 U drh
-Z 2d7d7824dd62626268f381b72c76b1f6
+Z 7be2f0423e0cd7f7d3a718451f5f8fd0
