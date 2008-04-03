@@ -1,0 +1,171 @@
+/*
+** Performance test for SQLite.
+**
+** This program reads ASCII text from a file named on the command-line.
+** It converts each SQL statement into UTF16 and submits it to SQLite
+** for evaluation.  A new UTF16 database is created at the beginning of
+** the program.  All statements are timed using the high-resolution timer
+** built into Intel-class processors.
+**
+** To compile this program, first compile the SQLite library separately
+** will full optimizations.  For example:
+**
+**     gcc -c -O6 -DSQLITE_THREADSAFE=0 sqlite3.c
+**
+** Then link against this program.  But to do optimize this program
+** because that defeats the hi-res timer.
+**
+**     gcc speedtest16.c sqlite3.o -ldl
+**
+** Then run this program with a single argument which is the name of
+** a file containing SQL script that you want to test:
+**
+**     ./a.out test.sql
+*/
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "sqlite3.h"
+
+
+/*
+** The following routine only works on pentium-class processors.
+** It uses the RDTSC opcode to read the cycle count value out of the
+** processor and returns that value.  This can be used for high-res
+** profiling.
+*/
+__inline__ unsigned long long int hwtime(void){
+  unsigned long long int x;
+  __asm__("rdtsc\n\t"
+          "mov %%edx, %%ecx\n\t"
+          :"=A" (x));
+  return x;
+}
+
+/*
+** Convert a zero-terminated ASCII string into a zero-terminated
+** UTF-16le string.  Memory to hold the returned string comes 
+** from malloc() and should be freed by the caller.
+*/
+static void *asciiToUtf16le(const char *z){
+  int n = strlen(z);
+  char *z16;
+  int i, j;
+
+  z16 = malloc( n*2 + 2 );
+  for(i=j=0; i<=n; i++){
+    z16[j++] = z[i];
+    z16[j++] = 0;
+  }
+  return (void*)z16;
+}
+
+/*
+** Timers
+*/
+static unsigned long long int prepTime = 0;
+static unsigned long long int runTime = 0;
+static unsigned long long int finalizeTime = 0;
+
+/*
+** Prepare and run a single statement of SQL.
+*/
+static void prepareAndRun(sqlite3 *db, const char *zSql){
+  void *utf16;
+  sqlite3_stmt *pStmt;
+  const void *stmtTail;
+  unsigned long long int iStart, iElapse;
+  int rc;
+  
+  printf("****************************************************************\n");
+  printf("SQL statement: [%s]\n", zSql);
+  utf16 = asciiToUtf16le(zSql);
+  iStart = hwtime();
+  rc = sqlite3_prepare16_v2(db, utf16, -1, &pStmt, &stmtTail);
+  iElapse = hwtime() - iStart;
+  prepTime += iElapse;
+  printf("sqlite3_prepare16_v2() returns %d in %llu cycles\n", rc, iElapse);
+  if( rc==SQLITE_OK ){
+    int nRow = 0;
+    iStart = hwtime();
+    while( (rc=sqlite3_step(pStmt))==SQLITE_ROW ){ nRow++; }
+    iElapse = hwtime() - iStart;
+    runTime += iElapse;
+    printf("sqlite3_step() returns %d after %d rows in %llu cycles\n",
+           rc, nRow, iElapse);
+    iStart = hwtime();
+    rc = sqlite3_finalize(pStmt);
+    iElapse = hwtime() - iStart;
+    finalizeTime += iElapse;
+    printf("sqlite3_finalize() returns %d in %llu cycles\n", rc, iElapse);
+  }
+  free(utf16);
+}
+
+int main(int argc, char **argv){
+  void *utf16;
+  sqlite3 *db;
+  int rc;
+  int nSql;
+  char *zSql;
+  int i, j;
+  FILE *in;
+  unsigned long long int iStart, iElapse;
+  unsigned long long int iSetup = 0;
+
+  if( argc!=2 ){
+    fprintf(stderr, "Usage: %s SQL-SCRIPT\n"
+                    "Runs SQL-SCRIPT as UTF16 against a UTF16 database\n",
+                    argv[0]);
+    exit(1);
+  }
+  in = fopen(argv[1], "r");
+  fseek(in, 0L, SEEK_END);
+  nSql = ftell(in);
+  zSql = malloc( nSql+1 );
+  fseek(in, 0L, SEEK_SET);
+  nSql = fread(zSql, 1, nSql, in);
+  zSql[nSql] = 0;
+
+  printf("SQLite version: %d\n", sqlite3_libversion_number());
+  unlink("test.db");
+  unlink("test.db-journal");
+  utf16 = asciiToUtf16le("test.db");
+  iStart = hwtime();
+  rc = sqlite3_open16(utf16, &db);
+  iElapse = hwtime() - iStart;
+  iSetup = iElapse;
+  printf("sqlite3_open16() returns %d in %llu cycles\n", rc, iElapse);
+  free(utf16);
+  for(i=j=0; j<nSql; j++){
+    if( zSql[j]==';' ){
+      int isComplete;
+      char c = zSql[j+1];
+      zSql[j+1] = 0;
+      isComplete = sqlite3_complete(&zSql[i]);
+      zSql[j+1] = c;
+      if( isComplete ){
+        zSql[j] = 0;
+        while( i<j && isspace(zSql[i]) ){ i++; }
+        if( i<j ){
+          prepareAndRun(db, &zSql[i]);
+        }
+        zSql[j] = ';';
+        i = j+1;
+      }
+    }
+  }
+  iStart = hwtime();
+  sqlite3_close(db);
+  iElapse = hwtime() - iStart;
+  iSetup += iElapse;
+  printf("sqlite3_close() returns in %llu cycles\n", iElapse);
+  printf("\n");
+  printf("Total prepare time:   %15llu cycles\n", prepTime);
+  printf("Total run time:       %15llu cycles\n", runTime);
+  printf("Total finalize time:  %15llu cycles\n", finalizeTime);
+  printf("Open/Close time:      %15llu cycles\n", iSetup);
+  printf("Total Time:           %15llu cycles\n",
+      prepTime + runTime + finalizeTime + iSetup);
+  return 0;
+}
