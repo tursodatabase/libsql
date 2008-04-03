@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.422 2008/03/28 17:41:14 drh Exp $
+** @(#) $Id: pager.c,v 1.423 2008/04/03 10:13:01 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1763,6 +1763,7 @@ static int pager_playback(Pager *pPager, int isHot){
   int i;                   /* Loop counter */
   Pgno mxPg = 0;           /* Size of the original file in pages */
   int rc;                  /* Result code of a subroutine */
+  int res = 0;             /* Value returned by sqlite3OsAccess() */
   char *zMaster = 0;       /* Name of master journal file if any */
 
   /* Figure out how many records are in the journal.  Abort early if
@@ -1781,14 +1782,18 @@ static int pager_playback(Pager *pPager, int isHot){
   */
   zMaster = pPager->pTmpSpace;
   rc = readMasterJournal(pPager->jfd, zMaster, pPager->pVfs->mxPathname+1);
-  if( rc!=SQLITE_OK 
-   || (zMaster[0] && sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS)==0 ) 
+  if( rc!=SQLITE_OK || (zMaster[0] 
+   && (res=sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS))==0 ) 
   ){
     zMaster = 0;
     goto end_playback;
   }
-  pPager->journalOff = 0;
   zMaster = 0;
+  if( res<0 ){
+    rc = SQLITE_IOERR_NOMEM;
+    goto end_playback;
+  }
+  pPager->journalOff = 0;
 
   /* This loop terminates either when the readJournalHdr() call returns
   ** SQLITE_DONE or an IO error occurs. */
@@ -3415,8 +3420,8 @@ static int pagerSharedLock(Pager *pPager){
         ** a read/write file handle.
         */
         if( !isHot ){
-          rc = SQLITE_BUSY;
-          if( sqlite3OsAccess(pVfs, pPager->zJournal,SQLITE_ACCESS_EXISTS)==1 ){
+          int res = sqlite3OsAccess(pVfs,pPager->zJournal,SQLITE_ACCESS_EXISTS);
+          if( res==1 ){
             int fout = 0;
             int f = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
             assert( !pPager->tempFile );
@@ -3426,6 +3431,8 @@ static int pagerSharedLock(Pager *pPager){
               rc = SQLITE_BUSY;
               sqlite3OsClose(pPager->jfd);
             }
+          }else{
+            rc = (res==0?SQLITE_BUSY:SQLITE_IOERR_NOMEM);
           }
         }
         if( rc!=SQLITE_OK ){

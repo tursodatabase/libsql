@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.59 2008/02/18 22:24:58 drh Exp $
+# $Id: malloc.test,v 1.60 2008/04/03 10:13:01 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -37,7 +37,6 @@ puts stderr "This is a test.  Ignore the error that follows:"
 sqlite3_memdebug_dump $testdir
 puts "Memory dump to file memdump.txt..."
 sqlite3_memdebug_dump memdump.txt
-
 
 ifcapable bloblit&&subquery {
   do_malloc_test 1 -tclprep {

@@ -1,5 +1,5 @@
-C Minor\soptimizations.\s(CVS\s4955)
-D 2008-04-02T18:33:08
+C Change\sthe\sallocator\sin\smem2.c\s(used\swhen\sSQLITE_MEMDEBUG\sis\sdefined)\sso\sthat\sallocations\sare\snot\srounded\sup\sto\sthe\snearest\s4\sbyte\sboundary.\sFix\sa\scouple\sof\serrors\sin\smalloc.test\srelated\sto\ssqlite3OsAccess()\sreturning\s-1.\s(CVS\s4956)
+D 2008-04-03T10:13:01
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -108,7 +108,7 @@ F src/main.c b499fa9fa2551d0963404e1b582747ef92754dd0
 F src/malloc.c 12c1ae98ef1eff34b13c9eb526e0b7b479e1e820
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
-F src/mem2.c 37c410e289cc81e0ca3d76ba803f11973a02638a
+F src/mem2.c 84f7ac94dbf55b9ecec85980e74c6f3a87da795d
 F src/mem3.c 52547678a2ae50c203d54be1a5bf51eb02438a3f
 F src/mem4.c 45c328ec6dcb7e8d319cb383615b5fe547ca5409
 F src/mem5.c 11d98b76f77873aab86b543cbd1a8ddc4e680d58
@@ -128,7 +128,7 @@ F src/os_unix.c fdec4e5ee5dd555a6ad4a69f38ab35f0788536b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c f8f61c344d6a2406754f761cc223dd31b344830b
+F src/pager.c 7b302d90674ea411d0856057af9699fe003318e3
 F src/pager.h b1e2258f03878c14b06a95bfa362e8c5c9638170
 F src/parse.y bc1b1cc6f86a0e0b669abdd88ddbdc7c8b67318d
 F src/pragma.c e659c9e443d11854cff2fd250012365ae0ca81ba
@@ -181,7 +181,7 @@ F src/vdbeapi.c ab6e99f8a6b7fcb82c2c698da7a36762a7593f0a
 F src/vdbeaux.c 519ec819a8e549d087899f0c9a912afcdda762b4
 F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
-F src/vdbemem.c 4877da1901b147a36afbf836894a94e053bf130d
+F src/vdbemem.c 095e18f84b3171a5f2d71fa93a4bfc64220c1cfe
 F src/vtab.c 00cd16317b29495c185ff40e4b227917d5a371b2
 F src/where.c 86b042dcd57f8428a75ddb59e6289eded6f6af09
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -366,7 +366,7 @@ F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/main.test 82c222989e02ea09abd58d453828ffd71806b6bf
-F test/malloc.test 7da6e318b030eef91a19bf6aca5555f927c92317
+F test/malloc.test 7b9eb0617fab5b2028ad6982941268ce9240a250
 F test/malloc2.test 6f2abc0617a7df210381272681d598488a3bf943
 F test/malloc3.test c724bc1c5fe7b8686be0f56c181c7fa4515d7bd7
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
@@ -621,7 +621,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 66c5d715bbb732b0861a8a6f994cb4a8f259f2f8
-R dd2bdb1a317a2780511925890196cf96
-U drh
-Z c96cbc0506d0e982c38b7e2dc6d52960
+P e8529455803e0dab167f4faba5846fa1eafef741
+R ad2bb86bdc9a3800369a1a0fec7f9426
+U danielk1977
+Z 8a37a96ffe96147a3305789b321aea9b
