@@ -11,7 +11,7 @@
 # This file contains additional out-of-memory checks (see malloc.tcl)
 # added to expose a bug in out-of-memory handling for sqlite3_prepare().
 #
-# $Id: malloc9.test,v 1.4 2008/02/18 22:24:58 drh Exp $
+# $Id: malloc9.test,v 1.5 2008/04/04 12:21:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -26,7 +26,7 @@ if {!$MEMDEBUG} {
 }
 
 
-do_malloc_test 1 -tclprep {
+do_malloc_test malloc-9.1 -tclprep {
   set sql {CREATE TABLE t1(x)}
   set sqlbytes [string length $sql]
   append sql {; INSERT INTO t1 VALUES(1)}
@@ -43,7 +43,7 @@ do_malloc_test 1 -tclprep {
 }
 
 # Ensure that no file descriptors were leaked.
-do_test malloc-99.X {
+do_test malloc9-99.X {
   catch {db close}
   set sqlite_open_file_count
 } {0}

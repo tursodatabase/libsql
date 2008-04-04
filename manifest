@@ -1,5 +1,5 @@
-C Fix\sthe\sTCL\sinterface\sso\sthat\sit\sdoes\snot\suse\sunpublished\sinterfaces.\s(CVS\s4965)
-D 2008-04-04T12:21:09
+C Fix\sthe\soutput\slabels\son\sthe\stests\sin\smalloc9.\s(CVS\s4966)
+D 2008-04-04T12:21:26
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -375,7 +375,7 @@ F test/malloc5.test 1a68e56e513eab54d8c4cd1b769ff1d14e3f99f4
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
-F test/malloc9.test d90bae1a4ee9b288a55ac0ea8fcad93eedafebf6
+F test/malloc9.test 2307c6ee3703b0a21391f3ea92388b4b73f9105e
 F test/mallocA.test 4b650c745aab289079454f4d1c02abe5c97ab6b3
 F test/mallocAll.test 2a2222a5e447be6c6579055a9a26e507e4586f4e
 F test/mallocB.test bc475ab850cda896142ab935bbfbc74c24e51ed6
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 40173010706fb52ecd60197ce6e97d51a1899267
-R 38203f7b1cba84ebf35aac6b8851c7e3
+P 046a98a8c88be7389c1571a819ccf1907a3f7217
+R c2eb8a3e99b84237743b30cf9d3410ed
 U drh
-Z 5b48f2f47a356e78b4cf2a247abc108d
+Z 8168e0c974d32f7ba3946f548ac61cf1
