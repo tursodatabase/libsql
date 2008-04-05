@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.727 2008/04/03 20:09:07 drh Exp $
+** $Id: vdbe.c,v 1.728 2008/04/05 18:41:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2236,10 +2236,10 @@ case OP_MakeRecord: {
   zNewRecord = (u8 *)pOut->z;
 
   /* Write the record */
-  i = sqlite3PutVarint(zNewRecord, nHdr);
+  i = sqlite3PutVarint32(zNewRecord, nHdr);
   for(pRec=pData0; pRec<=pLast; pRec++){
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
-    i += sqlite3PutVarint(&zNewRecord[i], serial_type);      /* serial type */
+    i += sqlite3PutVarint32(&zNewRecord[i], serial_type);      /* serial type */
   }
   for(pRec=pData0; pRec<=pLast; pRec++){  /* serial data */
     i += sqlite3VdbeSerialPut(&zNewRecord[i], nByte-i, pRec, file_format);

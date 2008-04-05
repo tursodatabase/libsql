@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.218 2008/04/04 15:12:22 drh Exp $
+** $Id: util.c,v 1.219 2008/04/05 18:41:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -495,6 +495,24 @@ int sqlite3PutVarint(unsigned char *p, u64 v){
     p[i] = buf[j];
   }
   return n;
+}
+
+/*
+** This routine is a faster version of sqlite3PutVarint() that only
+** works for 32-bit positive integers and which is optimized for
+** the common case of small integers.
+*/
+int sqlite3PutVarint32(unsigned char *p, u32 v){
+  if( (v & ~0x7f)==0 ){
+    p[0] = v;
+    return 1;
+  }else if( (v & ~0x3fff)==0 ){
+    p[0] = (v>>7) | 0x80;
+    p[1] = v & 0x7f;
+    return 2;
+  }else{
+    return sqlite3PutVarint(p, v);
+  }
 }
 
 /*

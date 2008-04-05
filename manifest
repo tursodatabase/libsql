@@ -1,5 +1,5 @@
-C Smaller\sand\shopefully\sfaster\sroutine\sfor\sconverting\sblob\sliterals\sinto\sbinary.\s(CVS\s4967)
-D 2008-04-04T15:12:22
+C Add\sthe\ssqlite3PutVarint32\sroutine\sas\san\salternative\sto\ssqlite3PutVarint.\nGives\s0.5%\sspeed\sincrease.\s(CVS\s4968)
+D 2008-04-05T18:41:43
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in 5364513316e0c36cb02b27c479643b400dbde9c7
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h cfe0b6c4b1a9b4be22f856ca8058ccd1bf0e41a8
+F src/sqliteInt.h 0f571303e19ccd61b2112d9d2613cd36e2166e89
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
 F src/tclsqlite.c d272cbd208f87712f67ae7462d2d6cffbb28a676
@@ -168,13 +168,13 @@ F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
-F src/tokenize.c d642f36a07e3c38703f52b609f13cd534897a57e
+F src/tokenize.c a96abe15a8db6fea2e964cdce2acba9ed17bc26f
 F src/trigger.c 9bd3b6fa0beff4a02d262c96466f752ec15a7fc3
 F src/update.c 6d5f7728ec254c4a36a06a744f45b232b2eef857
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
-F src/util.c 9a435395c8e03fa0b1658f59ff44e552844ac6c6
+F src/util.c 02c57c302ef738ff5b554953c12d8f919e501583
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
-F src/vdbe.c 66ca98cce0f5776006eb5fcaa95a6d90b341646e
+F src/vdbe.c edee197463d2505e38e4bf23adca8306e919dd18
 F src/vdbe.h f72201a0657d5f3d6cc008d1f8d9cc65768518c9
 F src/vdbeInt.h 0b96efdeecb0803e504bf1c16b198f87c91d6019
 F src/vdbeapi.c ab6e99f8a6b7fcb82c2c698da7a36762a7593f0a
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9987a7b193095dc90a83666bdac5e23105909cba
-R ef205f0a77d72d2ab92875e08b608793
+P 92d49499ee3371db64267c7e2ba72a5e12ea76f3
+R af4a6a88bcb53a36e6b44d639f315a8f
 U drh
-Z c22c0013da67b67c72be28004cc0d047
+Z 3946a13aed6fbd48a24a47287ad78c71

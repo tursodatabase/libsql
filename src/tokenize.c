@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.140 2008/04/03 21:42:21 drh Exp $
+** $Id: tokenize.c,v 1.141 2008/04/05 18:41:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -120,7 +120,7 @@ const char sqlite3IsEbcdicIdChar[] = {
 ** Return the length of the token that begins at z[0]. 
 ** Store the token type in *tokenType before returning.
 */
-static int getToken(const unsigned char *z, int *tokenType){
+int sqlite3GetToken(const unsigned char *z, int *tokenType){
   int i, c;
   switch( *z ){
     case ' ': case '\t': case '\n': case '\f': case '\r': {
@@ -370,9 +370,6 @@ static int getToken(const unsigned char *z, int *tokenType){
   *tokenType = TK_ILLEGAL;
   return 1;
 }
-int sqlite3GetToken(const unsigned char *z, int *tokenType){
-  return getToken(z, tokenType);
-}
 
 /*
 ** Run the parser on the given SQL string.  The parser structure is
@@ -412,7 +409,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     assert( i>=0 );
     pParse->sLastToken.z = (u8*)&zSql[i];
     assert( pParse->sLastToken.dyn==0 );
-    pParse->sLastToken.n = getToken((unsigned char*)&zSql[i],&tokenType);
+    pParse->sLastToken.n = sqlite3GetToken((unsigned char*)&zSql[i],&tokenType);
     i += pParse->sLastToken.n;
     if( i>mxSqlLen ){
       pParse->rc = SQLITE_TOOBIG;
