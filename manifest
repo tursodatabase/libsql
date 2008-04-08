@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3PutVarint32\sroutine\sas\san\salternative\sto\ssqlite3PutVarint.\nGives\s0.5%\sspeed\sincrease.\s(CVS\s4968)
-D 2008-04-05T18:41:43
+C Add\stest\scase\sfor\sempty\sVFS\slist\s(CVS\s4969)
+D 2008-04-08T03:07:55
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,7 +144,7 @@ F src/sqliteInt.h 0f571303e19ccd61b2112d9d2613cd36e2166e89
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
 F src/tclsqlite.c d272cbd208f87712f67ae7462d2d6cffbb28a676
-F src/test1.c 318bed2bfc24b9f454af09c408ffe4a94d03b9e9
+F src/test1.c aada95d7a7229366e51c71055d5764c920d3364c
 F src/test2.c f0808cc643528b9620e4059ca9bda8346f526121
 F src/test3.c c715b5a8a6415d7b2c67f97c394eef488b6f7e63
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 92d49499ee3371db64267c7e2ba72a5e12ea76f3
-R af4a6a88bcb53a36e6b44d639f315a8f
-U drh
-Z 3946a13aed6fbd48a24a47287ad78c71
+P b2517a7d8f7275943d44cc301f9d54fc8a4653e7
+R 3476840ec7995f11ff8bdcc348ba74fd
+U mlcreech
+Z bb635e59b8e5189ffb45b8fcccc2f735

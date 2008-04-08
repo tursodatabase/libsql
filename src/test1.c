@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.296 2008/04/03 14:36:26 danielk1977 Exp $
+** $Id: test1.c,v 1.297 2008/04/08 03:07:55 mlcreech Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4262,6 +4262,16 @@ static int vfs_unlink_test(
       assert( 0==sqlite3_vfs_find(apVfs[i]->zName) );
     }
   }
+  assert( 0==sqlite3_vfs_find(0) );
+  
+  /* Register the main VFS as non-default (will be made default, since
+  ** it'll be the only one in existence).
+  */
+  sqlite3_vfs_register(pMain, 0);
+  assert( sqlite3_vfs_find(0)==pMain );
+  
+  /* Un-register the main VFS again to restore an empty VFS list */
+  sqlite3_vfs_unregister(pMain);
   assert( 0==sqlite3_vfs_find(0) );
 
   /* Relink all VFSes in reverse order. */  
