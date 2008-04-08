@@ -1,5 +1,5 @@
-C Add\stest\scase\sfor\sempty\sVFS\slist\s(CVS\s4969)
-D 2008-04-08T03:07:55
+C Replace\salways-true\scondition\swith\sassertion\s(CVS\s4970)
+D 2008-04-08T03:09:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -117,7 +117,7 @@ F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 2911ea96955ab6cba734cc4ad903fe76f834b39e
 F src/mutex_unix.c 466d20378a0645fea64c3f2e2669c33b7802df56
 F src/mutex_w32.c 133698096a2c4e81cd11ea6f4de7891c66f7b9f7
-F src/os.c 7bc8d9b187836b87befcc5ae13158a7c55f82329
+F src/os.c d811a3e1a152e03c98d3dd85f2b7aff0d7630cea
 F src/os.h 497bf5f0f2648461ef65940cfb59ba427430f3fc
 F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 85c443333761d5b58f041489a7b21ae918993e4f
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b2517a7d8f7275943d44cc301f9d54fc8a4653e7
-R 3476840ec7995f11ff8bdcc348ba74fd
+P 6797814ec59fe819424e8e7f77779a719ecd82d3
+R f4880ee3fa791b584dcfcf7f9e7cac63
 U mlcreech
-Z bb635e59b8e5189ffb45b8fcccc2f735
+Z 81b2f2b4ead1c6fdebb8173c3322bb5b

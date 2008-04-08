@@ -180,10 +180,9 @@ int sqlite3OsOpenMalloc(
 }
 int sqlite3OsCloseFree(sqlite3_file *pFile){
   int rc = SQLITE_OK;
-  if( pFile ){
-    rc = sqlite3OsClose(pFile);
-    sqlite3_free(pFile);
-  }
+  assert( pFile );
+  rc = sqlite3OsClose(pFile);
+  sqlite3_free(pFile);
   return rc;
 }
 
