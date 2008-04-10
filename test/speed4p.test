@@ -17,7 +17,7 @@
 #   * sub-selects
 #   * triggers
 #
-# $Id: speed4p.test,v 1.3 2008/04/10 13:20:21 drh Exp $
+# $Id: speed4p.test,v 1.4 2008/04/10 13:32:37 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -162,6 +162,36 @@ set script {
   }
 }
 speed_trial_tcl speed4p-subselect1 10000 stmt $script
+
+# Single-row updates performance.
+#
+set script {
+  db eval BEGIN
+  for {set ii 1} {$ii < 10000} {incr ii} {
+    set v [expr {$ii*3}]
+    db eval {UPDATE t1 SET i=i+1 WHERE rowid=$ii}
+  }
+  db eval COMMIT
+}
+speed_trial_tcl speed4p-rowid-update 10000 stmt $script
+
+
+db eval {
+   CREATE TABLE t5(t TEXT PRIMARY KEY, i INTEGER);
+}
+speed_trial speed4p-insert-ignore 50000 row {
+  INSERT OR IGNORE INTO t5 SELECT t, i FROM t1;
+}
+
+set list [db eval {SELECT t FROM t5}]
+set script {
+  db eval BEGIN
+  foreach t $::list {
+    db eval {UPDATE t5 SET i=i+1 WHERE t=$t}
+  }
+  db eval COMMIT
+}
+speed_trial_tcl speed4p-unique-update [llength $list] stmt $script
 
 # The following block tests the speed of some DML statements that cause
 # triggers to fire.
