@@ -1,5 +1,5 @@
-C Verify\sthat\sa\sRAISE(ROLLBACK,...)\sworks\slike\sRAISE(FAIL,...)\swhen\snot\ninside\sa\stransaction.\s\sTicket\s#3035.\s(CVS\s4979)
-D 2008-04-10T15:12:46
+C Give\sfile\sscope\sto\sthe\ssqlite3Apis\sconstant.\s\sTicket\s#3024.\s(CVS\s4980)
+D 2008-04-10T16:01:10
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
 F src/insert.c 6974a1d02f2dcd616d00eef4996d4872495fad0f
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 8267890e6a0a71f13b680794520999c642299081
-F src/loadext.c f26b22f7c84153c9d5dbd7c240848823c6e6b6dc
+F src/loadext.c 5c20a5afeb154e68d62ed6d9c634add1b21387fd
 F src/main.c afcd42ba14d144034ed0e285bee100594f00b8fa
 F src/malloc.c 12c1ae98ef1eff34b13c9eb526e0b7b479e1e820
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
@@ -626,7 +626,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d11e8e307af906db75ae7aede790464fabd06422
-R 84e0c1267c062fed3903cc11136fede9
+P 87dc82d0436c6c3a9bd67544d52911012a5a7c66
+R d1560cb6802568ecbb9c997cf2f0227b
 U drh
-Z 9fd0b62dc6e6ae3612464ae727bab5b7
+Z 126a8ff46803faad6d7f0ea171a8dc26

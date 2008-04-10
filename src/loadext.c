@@ -120,7 +120,7 @@
 ** also check to make sure that the pointer to the function is
 ** not NULL before calling it.
 */
-const sqlite3_api_routines sqlite3Apis = {
+static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_aggregate_context,
   sqlite3_aggregate_count,
   sqlite3_bind_blob,
@@ -445,7 +445,7 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff){
 ** dummy pointer.
 */
 #ifdef SQLITE_OMIT_LOAD_EXTENSION
-const sqlite3_api_routines sqlite3Apis = { 0 };
+static const sqlite3_api_routines sqlite3Apis = { 0 };
 #endif
 
 
