@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.75 2008/03/21 17:13:13 drh Exp $
+# $Id: func.test,v 1.76 2008/04/10 17:14:07 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -535,10 +535,17 @@ do_test func-14.2 {
 } {1}
 
 do_test func-15.1 {
-  catchsql {
-    select test_error(NULL);
-  }
+  catchsql {select test_error(NULL)}
 } {1 {}}
+do_test func-15.2 {
+  catchsql {select test_error('this is the error message')}
+} {1 {this is the error message}}
+do_test func-15.3 {
+  catchsql {select test_error('this is the error message',12)}
+} {1 {this is the error message}}
+do_test func-15.4 {
+  db errorcode
+} {12}
 
 # Test the quote function for BLOB and NULL values.
 do_test func-16.1 {

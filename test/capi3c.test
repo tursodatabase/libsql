@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.16 2008/03/19 13:03:34 drh Exp $
+# $Id: capi3c.test,v 1.17 2008/04/10 17:14:07 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -87,6 +87,7 @@ do_test capi3c-1.6 {
 do_test capi3c-1.7 {
   sqlite3_errmsg $DB
 } {no such column: namex}
+
 
 ifcapable {utf16} {
   do_test capi3c-2.1 {
@@ -1243,6 +1244,27 @@ ifcapable progress {
   do_test capi3c-21.7 {
     sqlite3_errcode $DB
   } {SQLITE_INTERRUPT}
-}  
+}
+
+# Make sure sqlite3_result_error_code() returns the correct error code.
+# See ticket #2940
+#
+do_test capi3c-22.1 {
+  db progress 0 {}
+  set STMT [sqlite3_prepare_v2 db {SELECT test_error('the message',3)} -1 TAIL]
+  sqlite3_step $STMT
+} {SQLITE_PERM}
+sqlite3_finalize $STMT
+do_test capi3c-22.2 {
+  set STMT [sqlite3_prepare_v2 db {SELECT test_error('the message',4)} -1 TAIL]
+  sqlite3_step $STMT
+} {SQLITE_ABORT}
+sqlite3_finalize $STMT
+do_test capi3c-22.3 {
+  set STMT [sqlite3_prepare_v2 db {SELECT test_error('the message',16)} -1 TAIL]
+  sqlite3_step $STMT
+} {SQLITE_EMPTY}
+sqlite3_finalize $STMT
+
 
 finish_test
