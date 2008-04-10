@@ -215,6 +215,7 @@ static sqlite3_io_methods inst_io_methods = {
 ** processor and returns that value.  This can be used for high-res
 ** profiling.
 */
+#if defined(i386) || defined(__i386__) || defined(_M_IX86)
 __inline__ unsigned long long int hwtime(void){
   unsigned long long int x;
   __asm__("rdtsc\n\t"
@@ -222,6 +223,9 @@ __inline__ unsigned long long int hwtime(void){
           :"=A" (x));
   return x;
 }
+#else
+  static unsigned long long int hwtime(void){ return 0; }
+#endif
 
 #define OS_TIME_IO(eEvent, A, B, Call) {     \
   inst_file *p = (inst_file *)pFile;         \
@@ -518,6 +522,7 @@ void sqlite3_instvfs_configure(
 
 void sqlite3_instvfs_destroy(sqlite3_vfs *pVfs){
   sqlite3_vfs_unregister(pVfs);
+  sqlite3_instvfs_configure(pVfs, 0, 0, 0);
   sqlite3_free(pVfs);
 }
 
@@ -646,17 +651,24 @@ static int test_sqlite3_instvfs(
     case IV_CREATE: {
       char *zParent = 0;
       sqlite3_vfs *p;
-      if( objc!=4 && objc!=3 ){
-        Tcl_WrongNumArgs(interp, 2, objv, "NAME ?PARENT-VFS?");
+      int isDefault = 0;
+      if( objc>2 && 0==strcmp("-default", Tcl_GetString(objv[2])) ){
+        isDefault = 1;
+      }
+      if( (objc-isDefault)!=4 && (objc-isDefault)!=3 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "?-default? NAME ?PARENT-VFS?");
         return TCL_ERROR;
       }
-      if( objc==4 ){
-        zParent = Tcl_GetString(objv[3]);
+      if( objc==(4+isDefault) ){
+        zParent = Tcl_GetString(objv[3+isDefault]);
       }
-      p = sqlite3_instvfs_create(Tcl_GetString(objv[2]), zParent);
+      p = sqlite3_instvfs_create(Tcl_GetString(objv[2+isDefault]), zParent);
       if( !p ){
         Tcl_AppendResult(interp, "error creating vfs ", 0);
         return TCL_ERROR;
+      }
+      if( isDefault ){
+        sqlite3_vfs_register(p, 1);
       }
       Tcl_SetObjResult(interp, objv[2]);
       break;
