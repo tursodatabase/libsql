@@ -1,5 +1,5 @@
-C Add\ssource\sfile\stest_osinst.c.\sA\swrapper\svfs\swith\sinstrumentation\scapabilities.\s(CVS\s4977)
-D 2008-04-10T14:51:01
+C Make\ssure\sall\smemory\sallocations\sare\s8-byte\saligned.\s\sTicket\s#3040.\nNote\sthat\sthe\smem3.c\smemory\sallocator\sreturns\s4-byte\saligned\smemory\nallocations.\s\sBut\sas\smem3.c\sis\sintended\sfor\suse\sin\s32-bit\sembedded\nsystems,\swe\sare\snot\sgoing\sto\schange\sthat.\s(CVS\s4978)
+D 2008-04-10T14:57:25
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -108,7 +108,7 @@ F src/main.c afcd42ba14d144034ed0e285bee100594f00b8fa
 F src/malloc.c 12c1ae98ef1eff34b13c9eb526e0b7b479e1e820
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
-F src/mem2.c 84f7ac94dbf55b9ecec85980e74c6f3a87da795d
+F src/mem2.c 3656205111208a847e21d81a1d5b09a010164096
 F src/mem3.c 52547678a2ae50c203d54be1a5bf51eb02438a3f
 F src/mem4.c 45c328ec6dcb7e8d319cb383615b5fe547ca5409
 F src/mem5.c 11d98b76f77873aab86b543cbd1a8ddc4e680d58
@@ -179,7 +179,7 @@ F src/vdbe.c 444ab9ecc91f3c04b2b29ae604458426aa674fa6
 F src/vdbe.h f72201a0657d5f3d6cc008d1f8d9cc65768518c9
 F src/vdbeInt.h 0b96efdeecb0803e504bf1c16b198f87c91d6019
 F src/vdbeapi.c ab6e99f8a6b7fcb82c2c698da7a36762a7593f0a
-F src/vdbeaux.c 519ec819a8e549d087899f0c9a912afcdda762b4
+F src/vdbeaux.c 0aa2d8ede6bdb4379c36491c14d9779221bf196d
 F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 095e18f84b3171a5f2d71fa93a4bfc64220c1cfe
@@ -626,7 +626,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 55591fc49c8ab8146c1f3eff733e637501bff627
-R eb917bb84cf56955a047ec767653c982
-U danielk1977
-Z 1f007475942ab467fd58433a4982bf4d
+P d9a6b653d3cb608610f13d2492fe9b3887acb3b9
+R 5abecbe6fddd99e44f6149cafd5e65bd
+U drh
+Z cb5f0994d8c7c4628b79acd85cbbd54d

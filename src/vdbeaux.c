@@ -2065,6 +2065,9 @@ int sqlite3VdbeSerialGet(
   u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
 ){
+#ifndef SQLITE_MEMORY_SIZE
+  assert( (7&(int)pMem)==0 );   /* Verify 8-byte alignment.  Ticket #3040 */
+#endif
   switch( serial_type ){
     case 10:   /* Reserved for future use */
     case 11:   /* Reserved for future use */
@@ -2197,7 +2200,8 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
   u32 szHdr;
   Mem *pMem;
   
-  nByte = sizeof(*p) + sizeof(Mem)*(pKeyInfo->nField+1);
+  assert( sizeof(Mem)>sizeof(*p) );
+  nByte = sizeof(Mem)*(pKeyInfo->nField+2);
   if( nByte>szSpace ){
     p = sqlite3DbMallocRaw(pKeyInfo->db, nByte);
     if( p==0 ) return 0;
@@ -2209,7 +2213,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
   p->pKeyInfo = pKeyInfo;
   p->nField = pKeyInfo->nField + 1;
   p->needDestroy = 1;
-  p->aMem = pMem = (Mem*)&p[1];
+  p->aMem = pMem = &((Mem*)p)[1];
   idx = GetVarint(aKey, szHdr);
   d = szHdr;
   i = 0;

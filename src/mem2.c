@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.25 2008/04/03 10:13:01 danielk1977 Exp $
+** $Id: mem2.c,v 1.26 2008/04/10 14:57:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -48,8 +48,8 @@
 ** MemBlockHdr.
 */
 struct MemBlockHdr {
+  i64 iSize;                          /* Size of this allocation */
   struct MemBlockHdr *pNext, *pPrev;  /* Linked list of all unfreed memory */
-  int iSize;                          /* Size of this allocation */
   char nBacktrace;                    /* Number of backtraces on this alloc */
   char nBacktraceSlots;               /* Available backtrace slots */
   short nTitle;                       /* Bytes of title; includes '\0' */
@@ -218,7 +218,7 @@ static struct MemBlockHdr *sqlite3MemsysGetHeader(void *pAllocation){
   p = (struct MemBlockHdr*)pAllocation;
   p--;
   assert( p->iForeGuard==FOREGUARD );
-  nReserve = (p->iSize+3)&~3;
+  nReserve = (p->iSize+7)&~7;
   pInt = (int*)pAllocation;
   pU8 = (u8*)pAllocation;
   assert( pInt[nReserve/sizeof(int)]==REARGUARD );
@@ -258,7 +258,7 @@ void *sqlite3_malloc(int nByte){
     if( mem.alarmCallback!=0 && mem.nowUsed+nByte>=mem.alarmThreshold ){
       sqlite3MemsysAlarm(nByte);
     }
-    nReserve = (nByte+3)&~3;
+    nReserve = (nByte+7)&~7;
     if( nReserve/8>NCSIZE-1 ){
       mem.sizeCnt[NCSIZE-1]++;
     }else{
@@ -413,7 +413,7 @@ void sqlite3MemdebugSettitle(const char *zTitle){
   if( n>=sizeof(mem.zTitle) ) n = sizeof(mem.zTitle)-1;
   memcpy(mem.zTitle, zTitle, n);
   mem.zTitle[n] = 0;
-  mem.nTitle = (n+3)&~3;
+  mem.nTitle = (n+7)&~7;
   sqlite3_mutex_leave(mem.mutex);
 }
 
@@ -444,7 +444,7 @@ void sqlite3MemdebugDump(const char *zFilename){
   for(pHdr=mem.pFirst; pHdr; pHdr=pHdr->pNext){
     char *z = (char*)pHdr;
     z -= pHdr->nBacktraceSlots*sizeof(void*) + pHdr->nTitle;
-    fprintf(out, "**** %d bytes at %p from %s ****\n", 
+    fprintf(out, "**** %lld bytes at %p from %s ****\n", 
             pHdr->iSize, &pHdr[1], pHdr->nTitle ? z : "???");
     if( pHdr->nBacktrace ){
       fflush(out);
