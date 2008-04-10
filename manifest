@@ -1,5 +1,5 @@
-C Make\ssure\sall\smemory\sallocations\sare\s8-byte\saligned.\s\sTicket\s#3040.\nNote\sthat\sthe\smem3.c\smemory\sallocator\sreturns\s4-byte\saligned\smemory\nallocations.\s\sBut\sas\smem3.c\sis\sintended\sfor\suse\sin\s32-bit\sembedded\nsystems,\swe\sare\snot\sgoing\sto\schange\sthat.\s(CVS\s4978)
-D 2008-04-10T14:57:25
+C Verify\sthat\sa\sRAISE(ROLLBACK,...)\sworks\slike\sRAISE(FAIL,...)\swhen\snot\ninside\sa\stransaction.\s\sTicket\s#3035.\s(CVS\s4979)
+D 2008-04-10T15:12:46
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -504,7 +504,7 @@ F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
 F test/trigger2.test 33bf8ae9b788013be194efe5f66c04a202facbb4
-F test/trigger3.test 9102fd3933db294dc654b5aee9edfe9e94f2b9e2
+F test/trigger3.test 501b8489eb6b9cb5b005f60b071583c01a3c3041
 F test/trigger4.test 8e90ee98cba940cd5f96493f82e55083806ab8a0
 F test/trigger5.test 619391a3e9fc194081d22cefd830d811e7badf83
 F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
@@ -626,7 +626,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d9a6b653d3cb608610f13d2492fe9b3887acb3b9
-R 5abecbe6fddd99e44f6149cafd5e65bd
+P d11e8e307af906db75ae7aede790464fabd06422
+R 84e0c1267c062fed3903cc11136fede9
 U drh
-Z cb5f0994d8c7c4628b79acd85cbbd54d
+Z 9fd0b62dc6e6ae3612464ae727bab5b7
