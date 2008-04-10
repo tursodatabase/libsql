@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.690 2008/04/10 13:33:18 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.691 2008/04/10 16:47:42 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -22,6 +22,15 @@
 */
 #include "config.h"
 #include "sqliteLimit.h"
+
+/* Disable nuisance warnings on Borland compilers */
+#if defined(__BORLANDC__)
+#pragma warn -rch /* unreachable code */
+#pragma warn -ccc /* Condition is always true or false */
+#pragma warn -aus /* Assigned value is never used */
+#pragma warn -csu /* Comparing signed and unsigned */
+#pragma warn -spa /* Suspicous pointer arithmetic */
+#endif
 
 /* Needed for various definitions... */
 #define _GNU_SOURCE

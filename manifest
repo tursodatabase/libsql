@@ -1,5 +1,5 @@
-C Make\ssure\scheck-in\s(4976)\salso\sfixes\sticket\s#2935.\s(CVS\s4981)
-D 2008-04-10T16:42:59
+C Disable\snuisance\swarnings\son\sborland\scompilers.\s\sticket\s#2936.\s(CVS\s4982)
+D 2008-04-10T16:47:42
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
 F src/sqlite.h.in 60ae3e8b044332669cd554d0cc9d95cf43b4b857
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h 52c381c2f15054a5199e5359cf5deb6d48624ede
+F src/sqliteInt.h 6e6e847b7315e9609ab79dba6d68748b7ad3e214
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
 F src/tclsqlite.c c4892f48927cb3db19faeb448ea8abddfd4846a8
@@ -626,7 +626,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 30c5086068071385c13f02b3d33511127968335b
-R 78607dbbe0551d4eca07f082e399fc69
+P e3f798b1cafc3458941cf86ac4f9d4269fdf5b7e
+R a993d519e15248ee201aa1d487e9beb7
 U drh
-Z e56b8d76359d17f56aec02b51c666e61
+Z 0927a0ae0269e482fb9e0766967b1751
