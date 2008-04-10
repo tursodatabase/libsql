@@ -1,0 +1,38 @@
+# 2008 April 10
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is is verifying that a virtual table in the
+# TEMP database that is created and dropped within a transaction
+# is handled correctly.  Ticket #2994.
+
+#
+# $Id: vtabB.test,v 1.1 2008/04/10 18:35:22 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+
+do_test vtabB-1.1 {
+  register_echo_module [sqlite3_connection_pointer db]
+  execsql {
+    CREATE TABLE t1(x);
+    BEGIN;
+    CREATE VIRTUAL TABLE temp.echo_test1 USING echo(t1);
+    DROP TABLE echo_test1;
+    ROLLBACK;
+  }
+} {}
+
+finish_test
