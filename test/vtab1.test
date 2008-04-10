@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.51 2008/04/10 14:00:10 drh Exp $
+# $Id: vtab1.test,v 1.52 2008/04/10 16:42:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -608,10 +608,13 @@ do_test vtab1-6-2 {
     SELECT name FROM sqlite_master WHERE type = 'table';
   }
 } {treal techo}
-do_test vtab1-6-3.1 {
+do_test vtab1-6-3.1.1 {
   execsql {
+    PRAGMA count_changes=ON;
     INSERT INTO techo VALUES(1, 2, 3);
   }
+} {1}
+do_test vtab1-6-3.1.2 {
   db changes
 } {1}
 do_test vtab1-6-3.2 {
@@ -666,10 +669,12 @@ do_test vtab1-6-6.2 {
   }
 } {10}
 
-do_test vtab1-6-7.1 {
+do_test vtab1-6-7.1.1 {
   execsql {
     INSERT INTO techo VALUES(11,12,13);
   }
+} {1}
+do_test vtab1-6-7.1.2 {
   db changes
 } {1}
 do_test vtab1-6-7.2 {
@@ -712,6 +717,7 @@ do_test vtab1-6-8.4 {
     SELECT * FROM techo ORDER BY a;
   }
 } {}
+execsql {PRAGMA count_changes=OFF}
 
 file delete -force test2.db
 file delete -force test2.db-journal
