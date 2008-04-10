@@ -1,5 +1,5 @@
-C Correctly\shandle\svirtual\stables\sthat\sare\screated\sand\sdropped\sall\swithin\na\ssingle\stransaction.\s\sTicket\s#2994.\s(CVS\s4985)
-D 2008-04-10T18:35:22
+C Enhancements\sto\sthe\schange\scounter\stests.\s\sTicket\s#3013.\s(CVS\s4986)
+D 2008-04-10T18:44:36
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -516,7 +516,7 @@ F test/types.test 98e7a631bddf0806204358b452b02d0e319318a6
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test b730a7db03ef69f0fdb85b2addc20d1a0a04039b
 F test/unique.test 0253c4227a5dc533e312202ce21ecfad18058d18
-F test/update.test 24c1dcc025f7ef352759afe3f4a20e6fdfd43a97
+F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/utf16.test 20e2d9ba0d57e952a18b1ac8deab9ad49e082893
 F test/utf16align.test 7360e84472095518c56746f76b1f9d4dce99fb4d
 F test/vacuum.test f67853a15caa120af591f819670f01a11fcc2bfc
@@ -627,7 +627,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e1322415d0ca2d6b45f35ef9257b37161ec043e2
-R 960260f49432fa437b9ba29c71e0b40e
+P 0acb1b428d1181f597a2a665cae3eef5775f15f1
+R 0ab9090b08e44f6ff726ed5900963849
 U drh
-Z a3b69fd90c8092644f44487d1febdaf0
+Z 918a38b11853e443c6c24f50c9aec99c
