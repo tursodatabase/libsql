@@ -1,5 +1,5 @@
-C First\scut\sat\soptimizing\ssingle-row\supdates\sto\suse\sa\sone-pass\salgorithm.\s(CVS\s4973)
-D 2008-04-10T13:33:18
+C Document\sthe\sfast\sthat\sthe\sresult\sflag\scombinations\sto\nsqlite3_open_v2()\sthat\sare\snot\sdefined\sin\sthe\sdocumentation\sresults\nin\sundefined\sbehavior.\s\sTicket\s#3037.\s(CVS\s4974)
+D 2008-04-10T13:38:18
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 1abe53c844f536a79cc11b19127c8e6d47a87b20
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
-F src/sqlite.h.in 5364513316e0c36cb02b27c479643b400dbde9c7
+F src/sqlite.h.in 60ae3e8b044332669cd554d0cc9d95cf43b4b857
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 52c381c2f15054a5199e5359cf5deb6d48624ede
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a2da7f9ac24ed17329ce9bde2e521a5b945e4ec2
-R 7e441dc4d958d560f1e90cd3d12b42d2
+P fba97f7874d723111e873d1470fc1a95e64f922d
+R 0596477aefa3d1fe3dd350293239f850
 U drh
-Z cff67db9b3badb72e8bf8a1dd2f2e574
+Z 93568eff63a4a15794a74a2c4052e9e4
