@@ -1,5 +1,5 @@
-C Make\ssure\schanges\sto\svirtual\stables\sare\scounted\sthe\ssame\sas\sreal\stables.\nTicket\s#3038.\s(CVS\s4976)
-D 2008-04-10T14:00:10
+C Add\ssource\sfile\stest_osinst.c.\sA\swrapper\svfs\swith\sinstrumentation\scapabilities.\s(CVS\s4977)
+D 2008-04-10T14:51:01
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -66,7 +66,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
-F main.mk fb8589de4dff06de85d456ba9d6191447111a61b
+F main.mk bab1f708404c928af4769336aa97931062cfe987
 F mkdll.sh 712e74f3efe08a6ba12b2945d018a29a89d7fe3b
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -143,7 +143,7 @@ F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 52c381c2f15054a5199e5359cf5deb6d48624ede
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
-F src/tclsqlite.c 0d53336f1fc3c8a019adb56fb8daeb0f5b5238aa
+F src/tclsqlite.c c4892f48927cb3db19faeb448ea8abddfd4846a8
 F src/test1.c aada95d7a7229366e51c71055d5764c920d3364c
 F src/test2.c f0808cc643528b9620e4059ca9bda8346f526121
 F src/test3.c c715b5a8a6415d7b2c67f97c394eef488b6f7e63
@@ -164,6 +164,7 @@ F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c c92a65e8f9b31bb2b332448d92d2016c000a963d
 F src/test_md5.c bca40b727c57462ddb415e57c5323445a1bb1a40
 F src/test_onefile.c 2fea6d22f13f5f286356c80c77ffd41f995f2b7a
+F src/test_osinst.c b6ef38b4b363a83597f9228d8bf9f63d7dc1f801
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
@@ -625,7 +626,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6f07968ec4c9d773a852ecc8343df416d17af2a4
-R bd0175fc475a5bdf6485d3176fb40c11
-U drh
-Z 0137cb2b33b517f6dae0cbba0b9baee6
+P 55591fc49c8ab8146c1f3eff733e637501bff627
+R eb917bb84cf56955a047ec767653c982
+U danielk1977
+Z 1f007475942ab467fd58433a4982bf4d
