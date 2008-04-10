@@ -17,7 +17,7 @@
 #   * sub-selects
 #   * triggers
 #
-# $Id: speed4p.test,v 1.2 2008/03/29 17:26:02 drh Exp $
+# $Id: speed4p.test,v 1.3 2008/04/10 13:20:21 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -116,12 +116,6 @@ execsql {
   CREATE INDEX i3 ON t3(t);
   COMMIT;
 }
-
-# Before running these tests, disable the compiled statement cache built into
-# the Tcl interface. This is because we want to test the speed of SQL
-# compilation as well as execution.
-#
-db cache size 0
 
 # Join t1, t2, t3 on IPK.
 set sql "SELECT * FROM t1, t2, t3 WHERE t1.oid = t2.oid AND t2.oid = t3.oid"
