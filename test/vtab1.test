@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.50 2007/12/13 21:54:11 drh Exp $
+# $Id: vtab1.test,v 1.51 2008/04/10 14:00:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -608,40 +608,110 @@ do_test vtab1-6-2 {
     SELECT name FROM sqlite_master WHERE type = 'table';
   }
 } {treal techo}
-do_test vtab1-6-3 {
+do_test vtab1-6-3.1 {
   execsql {
     INSERT INTO techo VALUES(1, 2, 3);
+  }
+  db changes
+} {1}
+do_test vtab1-6-3.2 {
+  execsql {
     SELECT * FROM techo;
   }
 } {1 2 3}
-do_test vtab1-6-4 {
+do_test vtab1-6-4.1 {
   execsql {
     UPDATE techo SET a = 5;
+  }
+  db changes
+} {1}
+do_test vtab1-6-4.2 {
+  execsql {
+    SELECT * FROM techo;
+  }
+} {5 2 3}
+do_test vtab1-6-4.3 {
+  execsql {
+    UPDATE techo SET a=6 WHERE a<0;
+  }
+  db changes
+} {0}
+do_test vtab1-6-4.4 {
+  execsql {
     SELECT * FROM techo;
   }
 } {5 2 3}
 
-do_test vtab1-6-5 {
+do_test vtab1-6-5.1 {
  execsql {
    UPDATE techo set a = a||b||c;
+ }
+ db changes
+} {1}
+do_test vtab1-6-5.2 {
+ execsql {
    SELECT * FROM techo;
  }
 } {523 2 3}
 
-do_test vtab1-6-6 {
+do_test vtab1-6-6.1 {
   execsql {
     UPDATE techo set rowid = 10;
+  }
+  db changes
+} {1}
+do_test vtab1-6-6.2 {
+  execsql {
     SELECT rowid FROM techo;
   }
 } {10}
 
-do_test vtab1-6-7 {
+do_test vtab1-6-7.1 {
+  execsql {
+    INSERT INTO techo VALUES(11,12,13);
+  }
+  db changes
+} {1}
+do_test vtab1-6-7.2 {
+  execsql {
+    SELECT * FROM techo ORDER BY a;
+  }
+} {11 12 13 523 2 3}
+do_test vtab1-6-7.3 {
+  execsql {
+    UPDATE techo SET b=b+1000
+  }
+  db changes
+} {2}
+do_test vtab1-6-7.4 {
+  execsql {
+    SELECT * FROM techo ORDER BY a;
+  }
+} {11 1012 13 523 1002 3}
+
+
+do_test vtab1-6-8.1 {
+  execsql {
+    DELETE FROM techo WHERE a=5;
+  }
+  db changes
+} {0}
+do_test vtab1-6-8.2 {
+  execsql {
+    SELECT * FROM techo ORDER BY a;
+  }
+} {11 1012 13 523 1002 3}
+do_test vtab1-6-8.3 {
   execsql {
     DELETE FROM techo;
-    SELECT * FROM techo;
+  }
+  db changes
+} {2}
+do_test vtab1-6-8.4 {
+  execsql {
+    SELECT * FROM techo ORDER BY a;
   }
 } {}
-
 
 file delete -force test2.db
 file delete -force test2.db-journal

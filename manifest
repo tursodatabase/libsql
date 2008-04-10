@@ -1,5 +1,5 @@
-C Fix\sto\sthe\s"copy"\smethod\sin\sthe\sTCL\sinterface.\s\sTicket\s#3039.\s(CVS\s4975)
-D 2008-04-10T13:42:56
+C Make\ssure\schanges\sto\svirtual\stables\sare\scounted\sthe\ssame\sas\sreal\stables.\nTicket\s#3038.\s(CVS\s4976)
+D 2008-04-10T14:00:10
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -174,7 +174,7 @@ F src/update.c d6f214aad7eab5aaec5f966058b0828b3f7d6706
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 02c57c302ef738ff5b554953c12d8f919e501583
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
-F src/vdbe.c edee197463d2505e38e4bf23adca8306e919dd18
+F src/vdbe.c 444ab9ecc91f3c04b2b29ae604458426aa674fa6
 F src/vdbe.h f72201a0657d5f3d6cc008d1f8d9cc65768518c9
 F src/vdbeInt.h 0b96efdeecb0803e504bf1c16b198f87c91d6019
 F src/vdbeapi.c ab6e99f8a6b7fcb82c2c698da7a36762a7593f0a
@@ -524,7 +524,7 @@ F test/vacuum3.test 72fbc903b085cd5f8b3a513b23f8ce44f7e0b06f
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 93fd0500c367e6c03ea757071cfe4ca749533946
 F test/view.test 4864e3841ab3213a95297718b94d5d6a8d3bc78b
-F test/vtab1.test bd905d1d43637a700308da6ffcc4e014c27e2f0a
+F test/vtab1.test 4a2015dbf875112dacd96ab3fdaf6ff514d68e4c
 F test/vtab2.test 1da49b015582965a8fc386aa23d051a5a622b08e
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
@@ -625,7 +625,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b390e1f7f8d2b530a6765f2ab6804335c5550870
-R 05691c706afc7be18825eef92254ef73
+P 6f07968ec4c9d773a852ecc8343df416d17af2a4
+R bd0175fc475a5bdf6485d3176fb40c11
 U drh
-Z 9d91ed872ad230ff656f02026d9d6051
+Z 0137cb2b33b517f6dae0cbba0b9baee6
