@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.175 2008/04/01 05:07:15 drh Exp $
+** $Id: update.c,v 1.176 2008/04/10 13:33:18 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -103,6 +103,7 @@ void sqlite3Update(
   NameContext sNC;       /* The name-context to resolve expressions in */
   int iDb;               /* Database containing the table being updated */
   int j1;                /* Addresses of jump instructions */
+  int okOnePass;         /* True for one-pass algorithm without the FIFO */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* Trying to update a view */
@@ -341,13 +342,16 @@ void sqlite3Update(
 
   /* Begin the database scan
   */
-  pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0);
+  sqlite3VdbeAddOp2(v, OP_Null, 0, regOldRowid);
+  pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0,
+                             WHERE_ONEPASS_DESIRED);
   if( pWInfo==0 ) goto update_cleanup;
+  okOnePass = pWInfo->okOnePass;
 
   /* Remember the rowid of every item to be updated.
   */
-  sqlite3VdbeAddOp2(v, IsVirtual(pTab) ? OP_VRowid : OP_Rowid,iCur,regOldRowid);
-  sqlite3VdbeAddOp2(v, OP_FifoWrite, regOldRowid, 0);
+  sqlite3VdbeAddOp2(v, IsVirtual(pTab)?OP_VRowid:OP_Rowid, iCur, regOldRowid);
+  if( !okOnePass ) sqlite3VdbeAddOp2(v, OP_FifoWrite, regOldRowid, 0);
 
   /* End the database scan loop.
   */
@@ -367,7 +371,7 @@ void sqlite3Update(
     ** action, then we need to open all indices because we might need
     ** to be deleting some records.
     */
-    sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenWrite); 
+    if( !okOnePass ) sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenWrite); 
     if( onError==OE_Replace ){
       openAll = 1;
     }else{
@@ -395,7 +399,13 @@ void sqlite3Update(
   }
 
   /* Top of the update loop */
-  addr = sqlite3VdbeAddOp2(v, OP_FifoRead, regOldRowid, 0);
+  if( okOnePass ){
+    int a1 = sqlite3VdbeAddOp1(v, OP_NotNull, regOldRowid);
+    addr = sqlite3VdbeAddOp0(v, OP_Goto);
+    sqlite3VdbeJumpHere(v, a1);
+  }else{
+    addr = sqlite3VdbeAddOp2(v, OP_FifoRead, regOldRowid, 0);
+  }
 
   if( triggers_exist ){
     int regRowid;

@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.297 2008/04/01 05:07:15 drh Exp $
+** $Id: where.c,v 1.298 2008/04/10 13:33:18 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2002,7 +2002,7 @@ WhereInfo *sqlite3WhereBegin(
   SrcList *pTabList,    /* A list of all tables to be scanned */
   Expr *pWhere,         /* The WHERE clause */
   ExprList **ppOrderBy, /* An ORDER BY clause, or NULL */
-  u8 obflag             /* One of ORDERBY_MIN, ORDERBY_MAX or ORDERBY_NORMAL */
+  u8 wflags             /* One of the WHERE_* flags defined in sqliteInt.h */
 ){
   int i;                     /* Loop counter */
   WhereInfo *pWInfo;         /* Will become the return value of this function */
@@ -2210,6 +2210,17 @@ WhereInfo *sqlite3WhereBegin(
     *ppOrderBy = 0;
   }
 
+  /* If the caller is an UPDATE or DELETE statement that is requesting
+  ** to use a one-pass algorithm, determine if this is appropriate.
+  ** The one-pass algorithm only works if the WHERE clause constraints
+  ** the statement to update a single row.
+  */
+  assert( (wflags & WHERE_ONEPASS_DESIRED)==0 || pWInfo->nLevel==1 );
+  if( (wflags & WHERE_ONEPASS_DESIRED)!=0 && (andFlags & WHERE_UNIQUE)!=0 ){
+    pWInfo->okOnePass = 1;
+    pWInfo->a[0].flags &= ~WHERE_IDX_ONLY;
+  }
+
   /* Open all tables in the pTabList and any indices selected for
   ** searching those tables.
   */
@@ -2258,8 +2269,9 @@ WhereInfo *sqlite3WhereBegin(
     }else
 #endif
     if( (pLevel->flags & WHERE_IDX_ONLY)==0 ){
-      sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, OP_OpenRead);
-      if( pTab->nCol<(sizeof(Bitmask)*8) ){
+      int op = pWInfo->okOnePass ? OP_OpenWrite : OP_OpenRead;
+      sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, op);
+      if( !pWInfo->okOnePass && pTab->nCol<(sizeof(Bitmask)*8) ){
         Bitmask b = pTabItem->colUsed;
         int n = 0;
         for(; b; b=b>>1, n++){}
@@ -2496,7 +2508,7 @@ WhereInfo *sqlite3WhereBegin(
       ** the first one after the nEq equality constraints in the index,
       ** this requires some special handling.
       */
-      if( (obflag==ORDERBY_MIN)
+      if( (wflags&WHERE_ORDERBY_MIN)!=0
        && (pLevel->flags&WHERE_ORDERBY)
        && (pIdx->nColumn>nEq)
        && (pOrderBy->a[0].pExpr->iColumn==pIdx->aiColumn[nEq])
@@ -2635,7 +2647,7 @@ WhereInfo *sqlite3WhereBegin(
       regBase = codeAllEqualityTerms(pParse, pLevel, &wc, notReady, 1);
       nxt = pLevel->nxt;
 
-      if( (obflag==ORDERBY_MIN)
+      if( (wflags&WHERE_ORDERBY_MIN)!=0
        && (pLevel->flags&WHERE_ORDERBY) 
        && (pIdx->nColumn>nEq)
        && (pOrderBy->a[0].pExpr->iColumn==pIdx->aiColumn[nEq])
@@ -2853,7 +2865,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
     if( pTab->isEphem || pTab->pSelect ) continue;
-    if( (pLevel->flags & WHERE_IDX_ONLY)==0 ){
+    if( !pWInfo->okOnePass && (pLevel->flags & WHERE_IDX_ONLY)==0 ){
       sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
     }
     if( pLevel->pIdx!=0 ){

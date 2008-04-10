@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.425 2008/04/01 05:07:15 drh Exp $
+** $Id: select.c,v 1.426 2008/04/10 13:33:18 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2677,7 +2677,7 @@ static int flattenSubquery(
 
 /*
 ** Analyze the SELECT statement passed as an argument to see if it
-** is a min() or max() query. Return ORDERBY_MIN or ORDERBY_MAX if 
+** is a min() or max() query. Return WHERE_ORDERBY_MIN or WHERE_ORDERBY_MAX if 
 ** it is, or 0 otherwise. At present, a query is considered to be
 ** a min()/max() query if:
 **
@@ -2690,18 +2690,18 @@ static int minMaxQuery(Parse *pParse, Select *p){
   Expr *pExpr;
   ExprList *pEList = p->pEList;
 
-  if( pEList->nExpr!=1 ) return ORDERBY_NORMAL;
+  if( pEList->nExpr!=1 ) return WHERE_ORDERBY_NORMAL;
   pExpr = pEList->a[0].pExpr;
   pEList = pExpr->pList;
   if( pExpr->op!=TK_AGG_FUNCTION || pEList==0 || pEList->nExpr!=1 ) return 0;
-  if( pEList->a[0].pExpr->op!=TK_AGG_COLUMN ) return ORDERBY_NORMAL;
-  if( pExpr->token.n!=3 ) return ORDERBY_NORMAL;
+  if( pEList->a[0].pExpr->op!=TK_AGG_COLUMN ) return WHERE_ORDERBY_NORMAL;
+  if( pExpr->token.n!=3 ) return WHERE_ORDERBY_NORMAL;
   if( sqlite3StrNICmp((char*)pExpr->token.z,"min",3)==0 ){
-    return ORDERBY_MIN;
+    return WHERE_ORDERBY_MIN;
   }else if( sqlite3StrNICmp((char*)pExpr->token.z,"max",3)==0 ){
-    return ORDERBY_MAX;
+    return WHERE_ORDERBY_MAX;
   }
-  return ORDERBY_NORMAL;
+  return WHERE_ORDERBY_NORMAL;
 }
 
 /*
@@ -3559,7 +3559,7 @@ int sqlite3Select(
       if( flag ){
         pDel = pMinMax = sqlite3ExprListDup(db, p->pEList->a[0].pExpr->pList);
         if( pMinMax && !db->mallocFailed ){
-          pMinMax->a[0].sortOrder = ((flag==ORDERBY_MIN)?0:1);
+          pMinMax->a[0].sortOrder = ((flag==WHERE_ORDERBY_MIN)?0:1);
           pMinMax->a[0].pExpr->op = TK_COLUMN;
         }
       }
@@ -3577,7 +3577,7 @@ int sqlite3Select(
       updateAccumulator(pParse, &sAggInfo);
       if( !pMinMax && flag ){
         sqlite3VdbeAddOp2(v, OP_Goto, 0, pWInfo->iBreak);
-        VdbeComment((v, "%s() by index", (flag==ORDERBY_MIN?"min":"max")));
+        VdbeComment((v, "%s() by index", (flag==WHERE_ORDERBY_MIN?"min":"max")));
       }
       sqlite3WhereEnd(pWInfo);
       finalizeAggFunctions(pParse, &sAggInfo);
