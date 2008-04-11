@@ -108,7 +108,6 @@ void sqlite3VdbeTrace(Vdbe *p, FILE *trace){
 */
 static void resizeOpArray(Vdbe *p, int N){
   VdbeOp *pNew;
-  int oldSize = p->nOpAlloc;
   pNew = sqlite3DbRealloc(p->db, p->aOp, N*sizeof(Op));
   if( pNew ){
     p->nOpAlloc = N;
@@ -1089,7 +1088,7 @@ void sqlite3VdbeFreeCursor(Vdbe *p, Cursor *pCx){
   if( !pCx->ephemPseudoTable ){
     sqlite3_free(pCx->pData);
   }
-  memset(pCx, 0, sizeof(Cursor));
+  /* memset(pCx, 0, sizeof(Cursor)); */
   /* sqlite3_free(pCx->aType); */
   /* sqlite3_free(pCx); */
 }

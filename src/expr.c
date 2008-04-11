@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.365 2008/04/01 18:04:11 drh Exp $
+** $Id: expr.c,v 1.366 2008/04/11 15:36:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -266,7 +266,8 @@ Expr *sqlite3Expr(
   const Token *pToken     /* Argument token */
 ){
   Expr *pNew;
-  pNew = sqlite3DbMallocZero(db, sizeof(Expr));
+  static const Expr zeroExpr;
+  pNew = sqlite3DbMallocRaw(db, sizeof(Expr));
   if( pNew==0 ){
     /* When malloc fails, delete pLeft and pRight. Expressions passed to 
     ** this function must always be allocated with sqlite3Expr() for this 
@@ -276,6 +277,7 @@ Expr *sqlite3Expr(
     sqlite3ExprDelete(pRight);
     return 0;
   }
+  *pNew = zeroExpr;
   pNew->op = op;
   pNew->pLeft = pLeft;
   pNew->pRight = pRight;

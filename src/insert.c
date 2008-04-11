@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.235 2008/04/01 05:07:15 drh Exp $
+** $Id: insert.c,v 1.236 2008/04/11 15:36:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -45,7 +45,7 @@ void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
     int n;
     Table *pTab = pIdx->pTable;
     sqlite3 *db = sqlite3VdbeDb(v);
-    pIdx->zColAff = (char *)sqlite3DbMallocZero(db, pIdx->nColumn+2);
+    pIdx->zColAff = (char *)sqlite3DbMallocRaw(db, pIdx->nColumn+2);
     if( !pIdx->zColAff ){
       return;
     }
@@ -86,7 +86,7 @@ void sqlite3TableAffinityStr(Vdbe *v, Table *pTab){
     int i;
     sqlite3 *db = sqlite3VdbeDb(v);
 
-    zColAff = (char *)sqlite3DbMallocZero(db, pTab->nCol+1);
+    zColAff = (char *)sqlite3DbMallocRaw(db, pTab->nCol+1);
     if( !zColAff ){
       return;
     }
@@ -646,7 +646,7 @@ void sqlite3Insert(
 
     baseCur = pParse->nTab;
     nIdx = sqlite3OpenTableAndIndices(pParse, pTab, baseCur, OP_OpenWrite);
-    aRegIdx = sqlite3DbMallocZero(db, sizeof(int)*(nIdx+1));
+    aRegIdx = sqlite3DbMallocRaw(db, sizeof(int)*(nIdx+1));
     if( aRegIdx==0 ){
       goto insert_cleanup;
     }

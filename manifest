@@ -1,5 +1,5 @@
-C Speed\simprovements\sby\sremoving\sunnecessary\smemset()\soperations.\nAlso:\sdo\snot\sresize\sthe\sopcode\sarray\sof\sa\svirtual\smachine\sto\sits\nminimum\ssize\safter\scode\sgeneration\scompletes.\s\sThe\sextra\sresize\nmerely\suses\stime.\s(CVS\s4987)
-D 2008-04-11T14:56:53
+C Additional\sreductions\sin\sthe\suse\sof\smemset().\s(CVS\s4988)
+D 2008-04-11T15:36:03
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,12 +95,12 @@ F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c e41ce4513fb0e359dc678d6bddb4ace135fe365d
 F src/delete.c 74d5c9c824848a14d7dee37264ec302b168c4ddb
 F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
-F src/expr.c acc695135dc7f7a3080139ae48c16b92d1fa54fb
+F src/expr.c 4b6cc2496999bda069a9e00db9c2d7ccdf01a129
 F src/fault.c 83057e86815d473e526f7df0b0108dfdd022ff23
 F src/func.c c9e8c7ff4c45027edee89bde7adbf86a3a3b2afe
 F src/hash.c 522a8f5a23cf18fe5845afee7263c5be76c25ca2
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
-F src/insert.c 6974a1d02f2dcd616d00eef4996d4872495fad0f
+F src/insert.c 5208f16ddfc77d9e72bb30041a1d04a18b18a170
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 8267890e6a0a71f13b680794520999c642299081
 F src/loadext.c 5c20a5afeb154e68d62ed6d9c634add1b21387fd
@@ -179,7 +179,7 @@ F src/vdbe.c 444ab9ecc91f3c04b2b29ae604458426aa674fa6
 F src/vdbe.h bfd84bda447f39cb599302c7ec85067dae20453c
 F src/vdbeInt.h 0b96efdeecb0803e504bf1c16b198f87c91d6019
 F src/vdbeapi.c ab6e99f8a6b7fcb82c2c698da7a36762a7593f0a
-F src/vdbeaux.c 2d17d5bf32e174fb2f9c081e60fd7a7259e90576
+F src/vdbeaux.c c44aeac1f89695720c0e0aae9aadfe74b64d23fe
 F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 095e18f84b3171a5f2d71fa93a4bfc64220c1cfe
@@ -627,7 +627,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1aaed6a4694f60ebcec5dee98f09fe756c81dfa4
-R cd58c5c21bafed0b04ad6e97b420525e
+P 2589955507fc1717891c4e07d1d658eb41660b87
+R 5f1fdbfbc3f059f074e757b0a0ddca69
 U drh
-Z 23e7265ba068d3c833de7bfdbb30c033
+Z d3ce6c7669ecb46cdd062d07f32b98f2
