@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.76 2008/03/31 23:51:35 drh Exp $
+# $Id: quick.test,v 1.77 2008/04/11 14:56:53 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -69,8 +69,9 @@ set EXCLUDE {
   speed1.test
   speed1p.test
   speed2.test
+  speed3.test
   speed4.test
-  soeed4p.test
+  speed4p.test
   sqllimits1.test
 
   thread001.test

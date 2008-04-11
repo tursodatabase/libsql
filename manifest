@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\schange\scounter\stests.\s\sTicket\s#3013.\s(CVS\s4986)
-D 2008-04-10T18:44:36
+C Speed\simprovements\sby\sremoving\sunnecessary\smemset()\soperations.\nAlso:\sdo\snot\sresize\sthe\sopcode\sarray\sof\sa\svirtual\smachine\sto\sits\nminimum\ssize\safter\scode\sgeneration\scompletes.\s\sThe\sextra\sresize\nmerely\suses\stime.\s(CVS\s4987)
+D 2008-04-11T14:56:53
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -176,10 +176,10 @@ F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 02c57c302ef738ff5b554953c12d8f919e501583
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
 F src/vdbe.c 444ab9ecc91f3c04b2b29ae604458426aa674fa6
-F src/vdbe.h f72201a0657d5f3d6cc008d1f8d9cc65768518c9
+F src/vdbe.h bfd84bda447f39cb599302c7ec85067dae20453c
 F src/vdbeInt.h 0b96efdeecb0803e504bf1c16b198f87c91d6019
 F src/vdbeapi.c ab6e99f8a6b7fcb82c2c698da7a36762a7593f0a
-F src/vdbeaux.c 0aa2d8ede6bdb4379c36491c14d9779221bf196d
+F src/vdbeaux.c 2d17d5bf32e174fb2f9c081e60fd7a7259e90576
 F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 095e18f84b3171a5f2d71fa93a4bfc64220c1cfe
@@ -414,7 +414,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 83150cb7b513e33cce90fdc68f4b1817551857c0
-F test/quick.test 3a71af14d9ec0d06e75468de69c71a1a5c059157
+F test/quick.test 33e3eec31d9225e5997fbb27d89fee651bd6ed68
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -549,7 +549,7 @@ F test/zeroblob.test 7d1854ea79d048e023e5f2e38106a7e99a17435c
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/lemon.c 1dc8d53c5ac40f4186ea1bd6ec87a974e18f35a0
-F tool/lempar.c ac41fdc42337c0831fa4c7c848801dccb3fbdd4d
+F tool/lempar.c 5ebb066cdb849a7e0e88206a1b7574cac0f1b063
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
@@ -627,7 +627,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0acb1b428d1181f597a2a665cae3eef5775f15f1
-R 0ab9090b08e44f6ff726ed5900963849
+P 1aaed6a4694f60ebcec5dee98f09fe756c81dfa4
+R cd58c5c21bafed0b04ad6e97b420525e
 U drh
-Z 918a38b11853e443c6c24f50c9aec99c
+Z 23e7265ba068d3c833de7bfdbb30c033

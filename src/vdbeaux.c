@@ -113,9 +113,6 @@ static void resizeOpArray(Vdbe *p, int N){
   if( pNew ){
     p->nOpAlloc = N;
     p->aOp = pNew;
-    if( N>oldSize ){
-      memset(&p->aOp[oldSize], 0, (N-oldSize)*sizeof(Op));
-    }
   }
 }
 
@@ -150,6 +147,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   p->nOp++;
   pOp = &p->aOp[i];
   pOp->opcode = op;
+  pOp->p5 = 0;
   pOp->p1 = p1;
   pOp->p2 = p2;
   pOp->p3 = p3;
@@ -157,7 +155,12 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   pOp->p4type = P4_NOTUSED;
   p->expired = 0;
 #ifdef SQLITE_DEBUG
+  pOp->zComment = 0;
   if( sqlite3VdbeAddopTrace ) sqlite3VdbePrintOp(0, i, &p->aOp[i]);
+#endif
+#ifdef VDBE_PROFILE
+  pOp->cycles = 0;
+  pOp->cnt = 0;
 #endif
   return i;
 }
@@ -360,6 +363,7 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       pOut->p4.p = 0;
       pOut->p5 = 0;
 #ifdef SQLITE_DEBUG
+      pOut->zComment = 0;
       if( sqlite3VdbeAddopTrace ){
         sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
       }
@@ -997,7 +1001,7 @@ void sqlite3VdbeMakeReady(
   if( p->aMem==0 ){
     int nArg;       /* Maximum number of args passed to a user function. */
     resolveP2Values(p, &nArg);
-    resizeOpArray(p, p->nOp);
+    /*resizeOpArray(p, p->nOp);*/
     assert( nVar>=0 );
     if( isExplain && nMem<10 ){
       p->nMem = nMem = 10;

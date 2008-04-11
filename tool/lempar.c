@@ -60,6 +60,10 @@
 #define YY_ACCEPT_ACTION  (YYNSTATE+YYNRULE+1)
 #define YY_ERROR_ACTION   (YYNSTATE+YYNRULE)
 
+/* The yyzerominor constant is used to initialize instances of
+** YYMINORTYPE objects to zero. */
+static const YYMINORTYPE yyzerominor;
+
 /* Next are that tables used to determine what action to take based on the
 ** current state and lookahead token.  These tables are used to implement
 ** functions that take a state number and lookahead value and return an
@@ -518,7 +522,8 @@ static void yy_reduce(
   ** from wireshark this week.  Clearly they are stressing Lemon in ways
   ** that it has not been previously stressed...  (SQLite ticket #2172)
   */
-  memset(&yygotominor, 0, sizeof(yygotominor));
+  /*memset(&yygotominor, 0, sizeof(yygotominor));*/
+  yygotominor = yyzerominor;
 
 
   switch( yyruleno ){
@@ -649,7 +654,8 @@ void Parse(
   if( yypParser->yyidx<0 ){
 #if YYSTACKDEPTH<=0
     if( yypParser->yystksz <=0 ){
-      memset(&yyminorunion, 0, sizeof(yyminorunion));
+      /*memset(&yyminorunion, 0, sizeof(yyminorunion));*/
+      yyminorunion = yyzerominor;
       yyStackOverflow(yypParser, &yyminorunion);
       return;
     }
