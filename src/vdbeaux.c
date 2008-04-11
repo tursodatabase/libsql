@@ -2068,9 +2068,6 @@ int sqlite3VdbeSerialGet(
   u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
 ){
-#ifndef SQLITE_MEMORY_SIZE
-  assert( (7&(int)pMem)==0 );   /* Verify 8-byte alignment.  Ticket #3040 */
-#endif
   switch( serial_type ){
     case 10:   /* Reserved for future use */
     case 11:   /* Reserved for future use */
