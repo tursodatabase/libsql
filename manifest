@@ -1,5 +1,5 @@
-C Avoid\sthe\suse\sof\suninitialized\svariables\sin\ssqlite3GenerateRowIndexDelete.\nTicket\s#3048.\s(CVS\s4991)
-D 2008-04-11T19:18:25
+C Faster\simplementation\sof\shexToInt\sthat\suses\snot\sbranches.\s\sTicket\s#3047.\s(CVS\s4992)
+D 2008-04-11T19:37:56
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -173,7 +173,7 @@ F src/tokenize.c a96abe15a8db6fea2e964cdce2acba9ed17bc26f
 F src/trigger.c 9bd3b6fa0beff4a02d262c96466f752ec15a7fc3
 F src/update.c d6f214aad7eab5aaec5f966058b0828b3f7d6706
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
-F src/util.c 02c57c302ef738ff5b554953c12d8f919e501583
+F src/util.c 719bcd7f088badb19dfa10f2542f1ef54e673da5
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
 F src/vdbe.c 444ab9ecc91f3c04b2b29ae604458426aa674fa6
 F src/vdbe.h bfd84bda447f39cb599302c7ec85067dae20453c
@@ -627,7 +627,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 03c0279d7b004ccc4264143e366c793b4d774f9f
-R 72b1ed2a0366710f33a40f7fc1d822b1
+P a93b7a344a713a9ed9d72be4707eb28c2979648c
+R ad4db1f58ad5d1e909c90f01c6018ce9
 U drh
-Z 00cf749f4a1eca48ead98ab1077543fc
+Z edd38be2c3330bd5c64978b55d0e6a92
