@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.479 2008/04/02 16:29:31 drh Exp $
+** $Id: build.c,v 1.480 2008/04/11 17:11:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2072,6 +2072,14 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     sqlite3NestedParse(pParse, 
         "DELETE FROM %Q.%s WHERE tbl_name=%Q and type!='trigger'",
         pDb->zName, SCHEMA_TABLE(iDb), pTab->zName);
+
+    /* Drop any statistics from the sqlite_stat1 table, if it exists */
+    if( sqlite3FindTable(db, "sqlite_stat1", db->aDb[iDb].zName) ){
+      sqlite3NestedParse(pParse,
+        "DELETE FROM %Q.sqlite_stat1 WHERE tbl=%Q", pDb->zName, pTab->zName
+      );
+    }
+
     if( !isView && !IsVirtual(pTab) ){
       destroyTable(pParse, pTab);
     }
@@ -2857,6 +2865,12 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
        db->aDb[iDb].zName, SCHEMA_TABLE(iDb),
        pIndex->zName
     );
+    if( sqlite3FindTable(db, "sqlite_stat1", db->aDb[iDb].zName) ){
+      sqlite3NestedParse(pParse,
+        "DELETE FROM %Q.sqlite_stat1 WHERE idx=%Q",
+        db->aDb[iDb].zName, pIndex->zName
+      );
+    }
     sqlite3ChangeCookie(pParse, iDb);
     destroyRootPage(pParse, pIndex->tnum, iDb);
     sqlite3VdbeAddOp4(v, OP_DropIndex, iDb, 0, 0, pIndex->zName, 0);

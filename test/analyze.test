@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.
 # This file implements tests for the ANALYZE command.
 #
-# $Id: analyze.test,v 1.6 2008/03/19 13:03:34 drh Exp $
+# $Id: analyze.test,v 1.7 2008/04/11 17:11:27 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -165,7 +165,7 @@ do_test analyze-3.5 {
     ANALYZE t1;
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
   }
-} {t1i1 {5 3} t1i2 {5 2} t1i3 {5 3 1} t2i1 {5 3} t2i2 {5 2} t2i3 {5 3 1}}
+} {t1i1 {5 3} t1i2 {5 2} t1i3 {5 3 1} t2i1 {5 3} t2i2 {5 2}}
 do_test analyze-3.6 {
   execsql {
     ANALYZE t2;
@@ -187,7 +187,36 @@ do_test analyze-3.8 {
     CREATE INDEX t3i3 ON t3(d,b,c,a);
     DROP TABLE t1;
     DROP TABLE t2;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {}
+do_test analyze-3.9 {
+  execsql {
     ANALYZE;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {t3i1 {5 3} t3i2 {5 3 1 1 1} t3i3 {5 5 2 1 1}}
+
+do_test analyze-3.10 {
+  execsql {
+    CREATE TABLE [silly " name](a, b, c);
+    CREATE INDEX 'foolish '' name' ON [silly " name](a, b);
+    CREATE INDEX 'another foolish '' name' ON [silly " name](c);
+    INSERT INTO [silly " name] VALUES(1, 2, 3);
+    INSERT INTO [silly " name] VALUES(4, 5, 6);
+    ANALYZE;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {{another foolish ' name} {2 1} {foolish ' name} {2 1 1} t3i1 {5 3} t3i2 {5 3 1 1 1} t3i3 {5 5 2 1 1}}
+do_test analyze-3.11 {
+  execsql {
+    DROP INDEX "foolish ' name";
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+  }
+} {{another foolish ' name} {2 1} t3i1 {5 3} t3i2 {5 3 1 1 1} t3i3 {5 5 2 1 1}}
+do_test analyze-3.11 {
+  execsql {
+    DROP TABLE "silly "" name";
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
   }
 } {t3i1 {5 3} t3i2 {5 3 1 1 1} t3i3 {5 5 2 1 1}}
