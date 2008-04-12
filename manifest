@@ -1,5 +1,5 @@
-C Remove\sall\sinstances\sof\ssprintf()\sfrom\sthe\sFTS\smodules.\s\sTicket\s#3049.\s(CVS\s4996)
-D 2008-04-12T13:06:10
+C Modify\sspeedtest8.c\sso\sthat\sit\scan\suse\sthe\slogging\sfrom\stest_osinst.c\swhen\sHAVE_OSINST\sis\sdefined.\s(CVS\s4997)
+D 2008-04-12T16:03:37
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -164,7 +164,7 @@ F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c c92a65e8f9b31bb2b332448d92d2016c000a963d
 F src/test_md5.c bca40b727c57462ddb415e57c5323445a1bb1a40
 F src/test_onefile.c 2fea6d22f13f5f286356c80c77ffd41f995f2b7a
-F src/test_osinst.c 257403d3f5b25315a7348f4119f62264dd0bc080
+F src/test_osinst.c ff9bb856acc7ecaa21eb6920372594c3045a9a31
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
@@ -568,7 +568,7 @@ F tool/spaceanal.tcl b87db46ae29e3116411b1686e136b9b994d7de39
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
-F tool/speedtest8.c fe5c8aeba4f4d4a0159dadc1c3a0733c1b7e0417
+F tool/speedtest8.c c0b2587ce87e9e67db7e926d43eba864a53d7b1b
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
 F www/34to35.tcl 942e479aa7740b55d714dce0f0b2cb6ca91c3f20
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
@@ -628,7 +628,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3866a5da2bdcfafe956e1a9bf117f3277207de05
-R 40a5d13b55e5ef081321902e3d9af0e6
-U drh
-Z 56c81aa17b30b71c3deabfefd64b3068
+P 062bf5d44d53ae0ee2bf96eddcc8de09157aa789
+R acbe7f765f5e59e9c8330f514873e362
+U danielk1977
+Z 109ca7543e880caad3c790cf58ed5c5b

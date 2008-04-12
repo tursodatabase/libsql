@@ -93,12 +93,31 @@ int main(int argc, char **argv){
   int nStmt = 0;
   int nByte = 0;
 
+#ifdef HAVE_OSINST
+  extern sqlite3_vfs *sqlite3_instvfs_binarylog(char *, char *, char *);
+  extern void sqlite3_instvfs_destroy(sqlite3_vfs *);
+
+  sqlite3_vfs *pVfs = 0;
+  if( argc!=3 && (argc!=5 || strcmp("-log", argv[1])) ){
+    fprintf(stderr, "Usage: %s ?-log LOGFILE? FILENAME SQL-SCRIPT\n"
+                    "Runs SQL-SCRIPT against a UTF8 database\n",
+                    argv[0]);
+    exit(1);
+  }
+  if( argc==5 ){
+    pVfs = sqlite3_instvfs_binarylog("oslog", 0, argv[2]);
+    sqlite3_vfs_register(pVfs, 1);
+    argv += 2;
+  }
+#else
   if( argc!=3 ){
     fprintf(stderr, "Usage: %s FILENAME SQL-SCRIPT\n"
                     "Runs SQL-SCRIPT against a UTF8 database\n",
                     argv[0]);
     exit(1);
   }
+#endif
+
   in = fopen(argv[2], "r");
   fseek(in, 0L, SEEK_END);
   nSql = ftell(in);
@@ -148,5 +167,13 @@ int main(int argc, char **argv){
   printf("Open/Close time:      %15llu cycles\n", iSetup);
   printf("Total Time:           %15llu cycles\n",
       prepTime + runTime + finalizeTime + iSetup);
+
+#ifdef HAVE_OSINST
+  if( pVfs ){
+    sqlite3_instvfs_destroy(pVfs);
+    printf("vfs log written to %s\n", argv[0]);
+  }
+#endif
+
   return 0;
 }

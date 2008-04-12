@@ -243,7 +243,7 @@ __inline__ unsigned long long int osinst_hwtime(void){
   return rc;                                 \
 }
 
-#define OS_TIME_VFS(eEvent, Z, A, B, Call) {      \
+#define OS_TIME_VFS(eEvent, Z, flags, A, B, Call) {      \
   InstVfs *pInstVfs = (InstVfs *)pVfs;   \
   int rc;                                \
   sqlite3_int64 t = hwtime();                      \
@@ -252,7 +252,7 @@ __inline__ unsigned long long int osinst_hwtime(void){
   pInstVfs->aTime[eEvent] += t;          \
   pInstVfs->aCount[eEvent] += 1;         \
   if( pInstVfs->xCall ){                 \
-    pInstVfs->xCall(pInstVfs->pClient, eEvent, t, Z, 0, A, B); \
+    pInstVfs->xCall(pInstVfs->pClient, eEvent, t, Z, flags, A, B); \
   }                                      \
   return rc;                             \
 }
@@ -368,7 +368,7 @@ static int instOpen(
   p->zName = zName;
   p->flags = flags;
 
-  OS_TIME_VFS(OS_OPEN, zName, flags, 0,
+  OS_TIME_VFS(OS_OPEN, zName, flags, 0, 0,
     REALVFS(pVfs)->xOpen(REALVFS(pVfs), zName, p->pReal, flags, pOutFlags)
   );
 }
@@ -379,7 +379,7 @@ static int instOpen(
 ** returning.
 */
 static int instDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
-  OS_TIME_VFS(OS_DELETE, zPath, dirSync, 0,
+  OS_TIME_VFS(OS_DELETE, zPath, 0, dirSync, 0,
     REALVFS(pVfs)->xDelete(REALVFS(pVfs), zPath, dirSync) 
   );
 }
@@ -389,7 +389,7 @@ static int instDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 ** is available, or false otherwise.
 */
 static int instAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
-  OS_TIME_VFS(OS_ACCESS, zPath, flags, 0, 
+  OS_TIME_VFS(OS_ACCESS, zPath, 0, flags, 0, 
     REALVFS(pVfs)->xAccess(REALVFS(pVfs), zPath, flags) 
   );
 }
@@ -400,7 +400,7 @@ static int instAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
 ** at least (INST_MAX_PATHNAME+1) bytes.
 */
 static int instGetTempName(sqlite3_vfs *pVfs, int nOut, char *zBufOut){
-  OS_TIME_VFS( OS_GETTEMPNAME, 0, 0, 0,
+  OS_TIME_VFS( OS_GETTEMPNAME, 0, 0, 0, 0,
     REALVFS(pVfs)->xGetTempname(REALVFS(pVfs), nOut, zBufOut);
   );
 }
@@ -416,7 +416,7 @@ static int instFullPathname(
   int nOut, 
   char *zOut
 ){
-  OS_TIME_VFS( OS_FULLPATHNAME, zPath, 0, 0,
+  OS_TIME_VFS( OS_FULLPATHNAME, zPath, 0, 0, 0,
     REALVFS(pVfs)->xFullPathname(REALVFS(pVfs), zPath, nOut, zOut);
   );
 }
@@ -456,7 +456,7 @@ static void instDlClose(sqlite3_vfs *pVfs, void *pHandle){
 ** random data.
 */
 static int instRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
-  OS_TIME_VFS( OS_RANDOMNESS, 0, nByte, 0,
+  OS_TIME_VFS( OS_RANDOMNESS, 0, 0, nByte, 0,
     REALVFS(pVfs)->xRandomness(REALVFS(pVfs), nByte, zBufOut);
   );
 }
@@ -466,7 +466,7 @@ static int instRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
 ** actually slept.
 */
 static int instSleep(sqlite3_vfs *pVfs, int nMicro){
-  OS_TIME_VFS( OS_SLEEP, 0, nMicro, 0, 
+  OS_TIME_VFS( OS_SLEEP, 0, 0, nMicro, 0, 
     REALVFS(pVfs)->xSleep(REALVFS(pVfs), nMicro) 
   );
 }
@@ -475,7 +475,7 @@ static int instSleep(sqlite3_vfs *pVfs, int nMicro){
 ** Return the current time as a Julian Day number in *pTimeOut.
 */
 static int instCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
-  OS_TIME_VFS( OS_CURRENTTIME, 0, 0, 0,
+  OS_TIME_VFS( OS_CURRENTTIME, 0, 0, 0, 0,
     REALVFS(pVfs)->xCurrentTime(REALVFS(pVfs), pTimeOut) 
   );
 }
@@ -523,9 +523,11 @@ void sqlite3_instvfs_configure(
 }
 
 void sqlite3_instvfs_destroy(sqlite3_vfs *pVfs){
-  sqlite3_vfs_unregister(pVfs);
-  sqlite3_instvfs_configure(pVfs, 0, 0, 0);
-  sqlite3_free(pVfs);
+  if( pVfs ){
+    sqlite3_vfs_unregister(pVfs);
+    sqlite3_instvfs_configure(pVfs, 0, 0, 0);
+    sqlite3_free(pVfs);
+  }
 }
 
 void sqlite3_instvfs_reset(sqlite3_vfs *pVfs){
@@ -670,6 +672,7 @@ sqlite3_vfs *sqlite3_instvfs_binarylog(
   pParent->xFullPathname(pParent, zLog, pParent->mxPathname, p->zOut);
 
   flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MASTER_JOURNAL;
+  pParent->xDelete(pParent, p->zOut, 0);
   rc = pParent->xOpen(pParent, p->zOut, p->pOut, flags, &flags);
   if( rc==SQLITE_OK ){
     rc = p->pOut->pMethods->xWrite(p->pOut, "sqlite_ostrace1.....", 20, 0);
