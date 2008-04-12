@@ -14,10 +14,9 @@
 ** adds instrumentation to all vfs and file methods. C and Tcl interfaces
 ** are provided to control the instrumentation.
 */
-#if SQLITE_TEST          /* This file is used for testing only */
 
 /*
-** Public interface:
+** C interface:
 **
 **   sqlite3_instvfs_create()
 **   sqlite3_instvfs_destroy()
@@ -26,7 +25,9 @@
 **   sqlite3_instvfs_reset()
 **   sqlite3_instvfs_get()
 **
-** Tcl interface:
+**   sqlite3_instvfs_binarylog
+**
+** Tcl interface (omitted if SQLITE_TEST is not set):
 ** 
 **   sqlite3_instvfs create NAME ?PARENT?
 **
@@ -91,28 +92,27 @@
 
 
 /* File methods */
-#define OS_CLOSE              1
-#define OS_READ               2
-#define OS_WRITE              3
-#define OS_TRUNCATE           4
-#define OS_SYNC               5
-#define OS_FILESIZE           6
-#define OS_LOCK               7
-#define OS_UNLOCK             8
-#define OS_CHECKRESERVEDLOCK  9
-#define OS_FILECONTROL       10
-#define OS_SECTORSIZE        11
-#define OS_DEVCHAR           12
-
 /* Vfs methods */
-#define OS_OPEN              13
-#define OS_DELETE            14
-#define OS_ACCESS            15
-#define OS_GETTEMPNAME       16
-#define OS_FULLPATHNAME      17
-#define OS_RANDOMNESS        18
-#define OS_SLEEP             19
-#define OS_CURRENTTIME       20
+#define OS_ACCESS            1
+#define OS_CHECKRESERVEDLOCK 2
+#define OS_CLOSE             3
+#define OS_CURRENTTIME       4
+#define OS_DELETE            5
+#define OS_DEVCHAR           6
+#define OS_FILECONTROL       7
+#define OS_FILESIZE          8
+#define OS_FULLPATHNAME      9
+#define OS_GETTEMPNAME       10
+#define OS_LOCK              11
+#define OS_OPEN              12
+#define OS_RANDOMNESS        13
+#define OS_READ              14 
+#define OS_SECTORSIZE        15
+#define OS_SLEEP             16
+#define OS_SYNC              17
+#define OS_TRUNCATE          18
+#define OS_UNLOCK            19
+#define OS_WRITE             20
 
 #define OS_NUMEVENTS         21
 
@@ -122,7 +122,7 @@ struct InstVfs {
   
   void *pClient;
   void (*xDel)(void *);
-  void (*xCall)(void *, int, sqlite3_int64, const char *, int, sqlite3_int64);
+  void (*xCall)(void *, int, sqlite3_int64, const char *, int, int, sqlite3_int64);
 
   /* Counters */
   i64 aTime[OS_NUMEVENTS];
@@ -138,6 +138,7 @@ struct inst_file {
   sqlite3_file *pReal;
   InstVfs *pInstVfs;
   const char *zName;
+  int flags;
 };
 
 /*
@@ -217,11 +218,10 @@ static sqlite3_io_methods inst_io_methods = {
 */
 #if defined(i386) || defined(__i386__) || defined(_M_IX86)
 __inline__ unsigned long long int hwtime(void){
-  unsigned long long int x;
-  __asm__("rdtsc\n\t"
-          "mov %%edx, %%ecx\n\t"
-          :"=A" (x));
-  return x;
+   unsigned int lo, hi;
+   /* We cannot use "=A", since this would use %rax on x86_64 */
+   __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+   return (unsigned long long int)hi << 32 | lo;
 }
 #else
   static unsigned long long int hwtime(void){ return 0; }
@@ -237,7 +237,7 @@ __inline__ unsigned long long int hwtime(void){
   pInstVfs->aTime[eEvent] += t;              \
   pInstVfs->aCount[eEvent] += 1;             \
   if( pInstVfs->xCall ){                     \
-    pInstVfs->xCall(pInstVfs->pClient, eEvent, t, p->zName, A, B); \
+    pInstVfs->xCall(pInstVfs->pClient, eEvent, t, p->zName, p->flags, A, B); \
   }                                          \
   return rc;                                 \
 }
@@ -251,7 +251,7 @@ __inline__ unsigned long long int hwtime(void){
   pInstVfs->aTime[eEvent] += t;          \
   pInstVfs->aCount[eEvent] += 1;         \
   if( pInstVfs->xCall ){                 \
-    pInstVfs->xCall(pInstVfs->pClient, eEvent, t, Z, A, B); \
+    pInstVfs->xCall(pInstVfs->pClient, eEvent, t, Z, 0, A, B); \
   }                                      \
   return rc;                             \
 }
@@ -365,6 +365,7 @@ static int instOpen(
   p->pReal = (sqlite3_file *)&p[1];
   p->pInstVfs = (InstVfs *)pVfs;
   p->zName = zName;
+  p->flags = flags;
 
   OS_TIME_VFS(OS_OPEN, zName, flags, 0,
     sqlite3OsOpen(REALVFS(pVfs), zName, p->pReal, flags, pOutFlags)
@@ -478,7 +479,7 @@ static int instCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
   );
 }
 
-sqlite3_vfs *sqlite3_instvfs_create(char *zName, char *zParent){
+sqlite3_vfs *sqlite3_instvfs_create(const char *zName, const char *zParent){
   int nByte;
   InstVfs *p;
   sqlite3_vfs *pParent;
@@ -506,7 +507,7 @@ sqlite3_vfs *sqlite3_instvfs_create(char *zName, char *zParent){
 
 void sqlite3_instvfs_configure(
   sqlite3_vfs *pVfs,
-  void (*xCall)(void *, int, sqlite3_int64, const char *, int, sqlite3_int64),
+  void (*xCall)(void*, int, sqlite3_int64, const char*, int, int, i64),
   void *pClient,
   void (*xDel)(void *)
 ){
@@ -583,10 +584,111 @@ void sqlite3_instvfs_get(
   *pnCall = p->aCount[eEvent];
 }
 
+#define BINARYLOG_BUFFERSIZE 1024
+
+struct InstVfsBinaryLog {
+  int nBuf;
+  char *zBuf;
+  sqlite3_int64 iOffset;
+  sqlite3_file *pOut;
+};
+typedef struct InstVfsBinaryLog InstVfsBinaryLog;
+
+static void put32bits(unsigned char *p, u32 v){
+  p[0] = v>>24;
+  p[1] = v>>16;
+  p[2] = v>>8;
+  p[3] = v;
+}
+
+static void binarylog_xcall(
+  void *p,
+  int eEvent,
+  sqlite3_int64 nClick,
+  const char *zName,
+  int flags,
+  int nByte,
+  sqlite3_int64 iOffset
+){
+  InstVfsBinaryLog *pLog = (InstVfsBinaryLog *)p;
+  unsigned char *zRec;
+  if( (20+pLog->nBuf)>BINARYLOG_BUFFERSIZE ){
+    sqlite3_file *pFile = pLog->pOut;
+    pFile->pMethods->xWrite(pFile, pLog->zBuf, pLog->nBuf, pLog->iOffset);
+    pLog->iOffset += pLog->nBuf;
+    pLog->nBuf = 0;
+  }
+  zRec = (unsigned char *)&pLog->zBuf[pLog->nBuf];
+  put32bits(&zRec[0], eEvent);
+  put32bits(&zRec[4], (int)nClick);
+  put32bits(&zRec[8], flags);
+  put32bits(&zRec[12], nByte);
+  put32bits(&zRec[16], (int)iOffset);
+  pLog->nBuf += 20;
+}
+
+static void binarylog_xdel(void *p){
+  /* Close the log file and free the memory allocated for the 
+  ** InstVfsBinaryLog structure.
+  */
+  InstVfsBinaryLog *pLog = (InstVfsBinaryLog *)p;
+  sqlite3_file *pFile = pLog->pOut;
+  if( pLog->nBuf ){
+    pFile->pMethods->xWrite(pFile, pLog->zBuf, pLog->nBuf, pLog->iOffset);
+  }
+  pFile->pMethods->xClose(pFile);
+  sqlite3_free(pLog->zBuf);
+  sqlite3_free(pLog);
+}
+
+sqlite3_vfs *sqlite3_instvfs_binarylog(
+  const char *zVfs,
+  const char *zParentVfs, 
+  const char *zLog
+){
+  InstVfsBinaryLog *p;
+  sqlite3_vfs *pVfs;
+  sqlite3_vfs *pParent;
+  int nByte;
+  int flags;
+  int rc;
+
+  pParent = sqlite3_vfs_find(zParentVfs);
+  if( !pParent ){
+    return 0;
+  }
+
+  nByte = sizeof(InstVfsBinaryLog) + pParent->szOsFile;
+
+  p = (InstVfsBinaryLog *)sqlite3_malloc(nByte);
+  memset(p, 0, nByte);
+  p->zBuf = sqlite3_malloc(BINARYLOG_BUFFERSIZE);
+  p->pOut = (sqlite3_file *)&p[1];
+
+  flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MASTER_JOURNAL;
+  rc = pParent->xOpen(pParent, zLog, p->pOut, flags, &flags);
+  if( rc==SQLITE_OK ){
+    rc = p->pOut->pMethods->xWrite(p->pOut, "sqlite_ostrace1.....", 20, 0);
+    p->iOffset = 20;
+  }
+  if( rc ){
+    binarylog_xdel(p);
+    return 0;
+  }
+
+  pVfs = sqlite3_instvfs_create(zVfs, zParentVfs);
+  if( pVfs ){
+    sqlite3_instvfs_configure(pVfs, binarylog_xcall, p, binarylog_xdel);
+  }
+
+  return pVfs;
+}
+
 /**************************************************************************
 ***************************************************************************
 ** Tcl interface starts here.
 */
+#if SQLITE_TEST
 
 #include <tcl.h>
 
@@ -601,6 +703,7 @@ static void test_instvfs_xcall(
   int eEvent,
   sqlite3_int64 nClick,
   const char *zName,
+  int flags,
   int nByte,
   sqlite3_int64 iOffset
 ){
@@ -636,8 +739,8 @@ static int test_sqlite3_instvfs(
   Tcl_Obj *CONST objv[]
 ){
   static const char *IV_strs[] = 
-               { "create",  "destroy",  "reset",  "report", "configure", 0 };
-  enum IV_enum { IV_CREATE, IV_DESTROY, IV_RESET, IV_REPORT, IV_CONFIGURE };
+               { "create",  "destroy",  "reset",  "report", "configure", "binarylog", 0 };
+  enum IV_enum { IV_CREATE, IV_DESTROY, IV_RESET, IV_REPORT, IV_CONFIGURE, IV_BINARYLOG };
   int iSub;
 
   if( objc<2 ){
@@ -663,6 +766,31 @@ static int test_sqlite3_instvfs(
         zParent = Tcl_GetString(objv[3+isDefault]);
       }
       p = sqlite3_instvfs_create(Tcl_GetString(objv[2+isDefault]), zParent);
+      if( !p ){
+        Tcl_AppendResult(interp, "error creating vfs ", 0);
+        return TCL_ERROR;
+      }
+      if( isDefault ){
+        sqlite3_vfs_register(p, 1);
+      }
+      Tcl_SetObjResult(interp, objv[2]);
+      break;
+    }
+    case IV_BINARYLOG: {
+      char *zName = 0;
+      char *zLog = 0;
+      sqlite3_vfs *p;
+      int isDefault = 0;
+      if( objc>2 && 0==strcmp("-default", Tcl_GetString(objv[2])) ){
+        isDefault = 1;
+      }
+      if( (objc-isDefault)!=4 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "?-default? NAME LOGFILE");
+        return TCL_ERROR;
+      }
+      zName = Tcl_GetString(objv[2+isDefault]);
+      zLog = Tcl_GetString(objv[3+isDefault]);
+      p = sqlite3_instvfs_binarylog(zName, 0, zLog);
       if( !p ){
         Tcl_AppendResult(interp, "error creating vfs ", 0);
         return TCL_ERROR;
