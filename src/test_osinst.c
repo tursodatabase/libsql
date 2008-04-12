@@ -83,7 +83,8 @@
 */
 
 #include "sqlite3.h"
-#include "sqliteInt.h"
+#include <string.h>
+#include <assert.h>
 
 /*
 ** Maximum pathname length supported by the inst backend.
@@ -125,7 +126,7 @@ struct InstVfs {
   void (*xCall)(void *, int, sqlite3_int64, const char *, int, int, sqlite3_int64);
 
   /* Counters */
-  i64 aTime[OS_NUMEVENTS];
+  sqlite3_int64 aTime[OS_NUMEVENTS];
   int aCount[OS_NUMEVENTS];
 };
 typedef struct InstVfs InstVfs;
@@ -217,23 +218,23 @@ static sqlite3_io_methods inst_io_methods = {
 ** profiling.
 */
 #if defined(i386) || defined(__i386__) || defined(_M_IX86)
-__inline__ unsigned long long int hwtime(void){
+__inline__ unsigned long long int osinst_hwtime(void){
    unsigned int lo, hi;
    /* We cannot use "=A", since this would use %rax on x86_64 */
    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
    return (unsigned long long int)hi << 32 | lo;
 }
 #else
-  static unsigned long long int hwtime(void){ return 0; }
+  static unsigned long long int osinst_hwtime(void){ return 0; }
 #endif
 
 #define OS_TIME_IO(eEvent, A, B, Call) {     \
   inst_file *p = (inst_file *)pFile;         \
   InstVfs *pInstVfs = p->pInstVfs;           \
   int rc;                                    \
-  i64 t = hwtime();                          \
+  sqlite3_int64 t = osinst_hwtime();         \
   rc = Call;                                 \
-  t = hwtime() - t;                          \
+  t = osinst_hwtime() - t;                   \
   pInstVfs->aTime[eEvent] += t;              \
   pInstVfs->aCount[eEvent] += 1;             \
   if( pInstVfs->xCall ){                     \
@@ -245,7 +246,7 @@ __inline__ unsigned long long int hwtime(void){
 #define OS_TIME_VFS(eEvent, Z, A, B, Call) {      \
   InstVfs *pInstVfs = (InstVfs *)pVfs;   \
   int rc;                                \
-  i64 t = hwtime();                      \
+  sqlite3_int64 t = hwtime();                      \
   rc = Call;                             \
   t = hwtime() - t;                      \
   pInstVfs->aTime[eEvent] += t;          \
@@ -260,7 +261,7 @@ __inline__ unsigned long long int hwtime(void){
 ** Close an inst-file.
 */
 static int instClose(sqlite3_file *pFile){
-  OS_TIME_IO(OS_CLOSE, 0, 0, sqlite3OsClose(p->pReal));
+  OS_TIME_IO(OS_CLOSE, 0, 0, p->pReal->pMethods->xClose(p->pReal));
 }
 
 /*
@@ -272,7 +273,7 @@ static int instRead(
   int iAmt, 
   sqlite_int64 iOfst
 ){
-  OS_TIME_IO(OS_READ, iAmt, iOfst, sqlite3OsRead(p->pReal, zBuf, iAmt, iOfst));
+  OS_TIME_IO(OS_READ, iAmt, iOfst, p->pReal->pMethods->xRead(p->pReal, zBuf, iAmt, iOfst));
 }
 
 /*
@@ -284,70 +285,70 @@ static int instWrite(
   int iAmt,
   sqlite_int64 iOfst
 ){
-  OS_TIME_IO(OS_WRITE, iAmt, iOfst, sqlite3OsWrite(p->pReal, z, iAmt, iOfst));
+  OS_TIME_IO(OS_WRITE, iAmt, iOfst, p->pReal->pMethods->xWrite(p->pReal, z, iAmt, iOfst));
 }
 
 /*
 ** Truncate an inst-file.
 */
 static int instTruncate(sqlite3_file *pFile, sqlite_int64 size){
-  OS_TIME_IO(OS_TRUNCATE, 0, size, sqlite3OsTruncate(p->pReal, size));
+  OS_TIME_IO(OS_TRUNCATE, 0, size, p->pReal->pMethods->xTruncate(p->pReal, size));
 }
 
 /*
 ** Sync an inst-file.
 */
 static int instSync(sqlite3_file *pFile, int flags){
-  OS_TIME_IO(OS_SYNC, flags, 0, sqlite3OsSync(p->pReal, flags));
+  OS_TIME_IO(OS_SYNC, flags, 0, p->pReal->pMethods->xSync(p->pReal, flags));
 }
 
 /*
 ** Return the current file-size of an inst-file.
 */
 static int instFileSize(sqlite3_file *pFile, sqlite_int64 *pSize){
-  OS_TIME_IO(OS_FILESIZE, 0, 0, sqlite3OsFileSize(p->pReal, pSize));
+  OS_TIME_IO(OS_FILESIZE, 0, 0, p->pReal->pMethods->xFileSize(p->pReal, pSize));
 }
 
 /*
 ** Lock an inst-file.
 */
 static int instLock(sqlite3_file *pFile, int eLock){
-  OS_TIME_IO(OS_LOCK, eLock, 0, sqlite3OsLock(p->pReal, eLock));
+  OS_TIME_IO(OS_LOCK, eLock, 0, p->pReal->pMethods->xLock(p->pReal, eLock));
 }
 
 /*
 ** Unlock an inst-file.
 */
 static int instUnlock(sqlite3_file *pFile, int eLock){
-  OS_TIME_IO(OS_UNLOCK, eLock, 0, sqlite3OsUnlock(p->pReal, eLock));
+  OS_TIME_IO(OS_UNLOCK, eLock, 0, p->pReal->pMethods->xUnlock(p->pReal, eLock));
 }
 
 /*
 ** Check if another file-handle holds a RESERVED lock on an inst-file.
 */
 static int instCheckReservedLock(sqlite3_file *pFile){
-  OS_TIME_IO(OS_CHECKRESERVEDLOCK, 0, 0, sqlite3OsCheckReservedLock(p->pReal));
+  OS_TIME_IO(OS_CHECKRESERVEDLOCK, 0, 0, p->pReal->pMethods->xCheckReservedLock(p->pReal));
 }
 
 /*
 ** File control method. For custom operations on an inst-file.
 */
 static int instFileControl(sqlite3_file *pFile, int op, void *pArg){
-  OS_TIME_IO(OS_FILECONTROL, 0, 0, sqlite3OsFileControl(p->pReal, op, pArg));
+  OS_TIME_IO(OS_FILECONTROL, 0, 0, p->pReal->pMethods->xFileControl(p->pReal, op, pArg));
 }
 
 /*
 ** Return the sector-size in bytes for an inst-file.
 */
 static int instSectorSize(sqlite3_file *pFile){
-  OS_TIME_IO(OS_SECTORSIZE, 0, 0, sqlite3OsSectorSize(p->pReal));
+  OS_TIME_IO(OS_SECTORSIZE, 0, 0, p->pReal->pMethods->xSectorSize(p->pReal));
 }
 
 /*
 ** Return the device characteristic flags supported by an inst-file.
 */
 static int instDeviceCharacteristics(sqlite3_file *pFile){
-  OS_TIME_IO(OS_DEVCHAR, 0, 0, sqlite3OsDeviceCharacteristics(p->pReal));
+  OS_TIME_IO(OS_DEVCHAR, 0, 0, p->pReal->pMethods->xDeviceCharacteristics(p->pReal));
 }
 
 /*
@@ -368,7 +369,7 @@ static int instOpen(
   p->flags = flags;
 
   OS_TIME_VFS(OS_OPEN, zName, flags, 0,
-    sqlite3OsOpen(REALVFS(pVfs), zName, p->pReal, flags, pOutFlags)
+    REALVFS(pVfs)->xOpen(REALVFS(pVfs), zName, p->pReal, flags, pOutFlags)
   );
 }
 
@@ -379,7 +380,7 @@ static int instOpen(
 */
 static int instDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   OS_TIME_VFS(OS_DELETE, zPath, dirSync, 0,
-    sqlite3OsDelete(REALVFS(pVfs), zPath, dirSync) 
+    REALVFS(pVfs)->xDelete(REALVFS(pVfs), zPath, dirSync) 
   );
 }
 
@@ -389,7 +390,7 @@ static int instDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 */
 static int instAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
   OS_TIME_VFS(OS_ACCESS, zPath, flags, 0, 
-    sqlite3OsAccess(REALVFS(pVfs), zPath, flags) 
+    REALVFS(pVfs)->xAccess(REALVFS(pVfs), zPath, flags) 
   );
 }
 
@@ -400,7 +401,7 @@ static int instAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
 */
 static int instGetTempName(sqlite3_vfs *pVfs, int nOut, char *zBufOut){
   OS_TIME_VFS( OS_GETTEMPNAME, 0, 0, 0,
-    sqlite3OsGetTempname(REALVFS(pVfs), nOut, zBufOut);
+    REALVFS(pVfs)->xGetTempname(REALVFS(pVfs), nOut, zBufOut);
   );
 }
 
@@ -416,7 +417,7 @@ static int instFullPathname(
   char *zOut
 ){
   OS_TIME_VFS( OS_FULLPATHNAME, zPath, 0, 0,
-    sqlite3OsFullPathname(REALVFS(pVfs), zPath, nOut, zOut);
+    REALVFS(pVfs)->xFullPathname(REALVFS(pVfs), zPath, nOut, zOut);
   );
 }
 
@@ -424,7 +425,7 @@ static int instFullPathname(
 ** Open the dynamic library located at zPath and return a handle.
 */
 static void *instDlOpen(sqlite3_vfs *pVfs, const char *zPath){
-  return sqlite3OsDlOpen(REALVFS(pVfs), zPath);
+  return REALVFS(pVfs)->xDlOpen(REALVFS(pVfs), zPath);
 }
 
 /*
@@ -433,21 +434,21 @@ static void *instDlOpen(sqlite3_vfs *pVfs, const char *zPath){
 ** with dynamic libraries.
 */
 static void instDlError(sqlite3_vfs *pVfs, int nByte, char *zErrMsg){
-  sqlite3OsDlError(REALVFS(pVfs), nByte, zErrMsg);
+  REALVFS(pVfs)->xDlError(REALVFS(pVfs), nByte, zErrMsg);
 }
 
 /*
 ** Return a pointer to the symbol zSymbol in the dynamic library pHandle.
 */
 static void *instDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
-  return sqlite3OsDlSym(REALVFS(pVfs), pHandle, zSymbol);
+  return REALVFS(pVfs)->xDlSym(REALVFS(pVfs), pHandle, zSymbol);
 }
 
 /*
 ** Close the dynamic library handle pHandle.
 */
 static void instDlClose(sqlite3_vfs *pVfs, void *pHandle){
-  sqlite3OsDlClose(REALVFS(pVfs), pHandle);
+  REALVFS(pVfs)->xDlClose(REALVFS(pVfs), pHandle);
 }
 
 /*
@@ -456,7 +457,7 @@ static void instDlClose(sqlite3_vfs *pVfs, void *pHandle){
 */
 static int instRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
   OS_TIME_VFS( OS_RANDOMNESS, 0, nByte, 0,
-    sqlite3OsRandomness(REALVFS(pVfs), nByte, zBufOut);
+    REALVFS(pVfs)->xRandomness(REALVFS(pVfs), nByte, zBufOut);
   );
 }
 
@@ -466,7 +467,7 @@ static int instRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
 */
 static int instSleep(sqlite3_vfs *pVfs, int nMicro){
   OS_TIME_VFS( OS_SLEEP, 0, nMicro, 0, 
-    sqlite3OsSleep(REALVFS(pVfs), nMicro) 
+    REALVFS(pVfs)->xSleep(REALVFS(pVfs), nMicro) 
   );
 }
 
@@ -475,7 +476,7 @@ static int instSleep(sqlite3_vfs *pVfs, int nMicro){
 */
 static int instCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
   OS_TIME_VFS( OS_CURRENTTIME, 0, 0, 0,
-    sqlite3OsCurrentTime(REALVFS(pVfs), pTimeOut) 
+    REALVFS(pVfs)->xCurrentTime(REALVFS(pVfs), pTimeOut) 
   );
 }
 
@@ -507,7 +508,7 @@ sqlite3_vfs *sqlite3_instvfs_create(const char *zName, const char *zParent){
 
 void sqlite3_instvfs_configure(
   sqlite3_vfs *pVfs,
-  void (*xCall)(void*, int, sqlite3_int64, const char*, int, int, i64),
+  void (*xCall)(void*, int, sqlite3_int64, const char*, int, int, sqlite3_int64),
   void *pClient,
   void (*xDel)(void *)
 ){
@@ -530,7 +531,7 @@ void sqlite3_instvfs_destroy(sqlite3_vfs *pVfs){
 void sqlite3_instvfs_reset(sqlite3_vfs *pVfs){
   InstVfs *p = (InstVfs *)pVfs;
   assert( pVfs->xOpen==instOpen );
-  memset(p->aTime, 0, sizeof(i64)*OS_NUMEVENTS);
+  memset(p->aTime, 0, sizeof(sqlite3_int64)*OS_NUMEVENTS);
   memset(p->aCount, 0, sizeof(int)*OS_NUMEVENTS);
 }
 
@@ -591,10 +592,11 @@ struct InstVfsBinaryLog {
   char *zBuf;
   sqlite3_int64 iOffset;
   sqlite3_file *pOut;
+  char *zOut;                       /* Log file name */
 };
 typedef struct InstVfsBinaryLog InstVfsBinaryLog;
 
-static void put32bits(unsigned char *p, u32 v){
+static void put32bits(unsigned char *p, unsigned int v){
   p[0] = v>>24;
   p[1] = v>>16;
   p[2] = v>>8;
@@ -658,15 +660,17 @@ sqlite3_vfs *sqlite3_instvfs_binarylog(
     return 0;
   }
 
-  nByte = sizeof(InstVfsBinaryLog) + pParent->szOsFile;
+  nByte = sizeof(InstVfsBinaryLog) + pParent->szOsFile + pParent->mxPathname+1;
 
   p = (InstVfsBinaryLog *)sqlite3_malloc(nByte);
   memset(p, 0, nByte);
   p->zBuf = sqlite3_malloc(BINARYLOG_BUFFERSIZE);
-  p->pOut = (sqlite3_file *)&p[1];
+  p->zOut = (char *)&p[1];
+  p->pOut = (sqlite3_file *)&p->zOut[pParent->mxPathname+1];
+  pParent->xFullPathname(pParent, zLog, pParent->mxPathname, p->zOut);
 
   flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MASTER_JOURNAL;
-  rc = pParent->xOpen(pParent, zLog, p->pOut, flags, &flags);
+  rc = pParent->xOpen(pParent, p->zOut, p->pOut, flags, &flags);
   if( rc==SQLITE_OK ){
     rc = p->pOut->pMethods->xWrite(p->pOut, "sqlite_ostrace1.....", 20, 0);
     p->iOffset = 20;
@@ -855,7 +859,7 @@ static int test_sqlite3_instvfs(
         Tcl_Obj *pRet = Tcl_NewObj();
 
         const char *zName = (char *)1;
-        i64 nClick;
+        sqlite3_int64 nClick;
         int nCall;
         for(ii=1; zName; ii++){
           sqlite3_instvfs_get(p, ii, &zName, &nClick, &nCall);

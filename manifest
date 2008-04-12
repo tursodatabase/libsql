@@ -1,5 +1,5 @@
-C Add\sa\slogfile\soption\sto\stest_osinst.c.\s(CVS\s4994)
-D 2008-04-12T10:53:11
+C Modify\stest_osinst.c\sso\sthat\sit\sonly\suses\spublic\sinterfaces.\s(CVS\s4995)
+D 2008-04-12T11:30:13
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -164,7 +164,7 @@ F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c c92a65e8f9b31bb2b332448d92d2016c000a963d
 F src/test_md5.c bca40b727c57462ddb415e57c5323445a1bb1a40
 F src/test_onefile.c 2fea6d22f13f5f286356c80c77ffd41f995f2b7a
-F src/test_osinst.c be328c7c1e3ef671a1e833eb2b29048c22ebad73
+F src/test_osinst.c 257403d3f5b25315a7348f4119f62264dd0bc080
 F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
@@ -628,7 +628,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P baa8056c67c03ac78a1ed6da5a46fda793340739
-R c2ecb8d36d87497209adf45f490c6c49
+P f97d89458259978b7b1b5c5e5a0d19cabcb9e536
+R 4f4b5871608d014cc016556fc859f1d4
 U danielk1977
-Z f46f1d82d8c452c3cd3a8844ac5c2cb4
+Z d0c21e02e4a1da9a63cc65f9fbdebbc6
