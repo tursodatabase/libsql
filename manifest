@@ -1,5 +1,5 @@
-C Modify\stest_osinst.c\sso\sthat\sit\sonly\suses\spublic\sinterfaces.\s(CVS\s4995)
-D 2008-04-12T11:30:13
+C Remove\sall\sinstances\sof\ssprintf()\sfrom\sthe\sFTS\smodules.\s\sTicket\s#3049.\s(CVS\s4996)
+D 2008-04-12T13:06:10
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in b861627d91df5ee422c54237aa38296954dc0151
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -27,7 +27,7 @@ F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
 F ext/fts1/ft_hash.h 1a35e654a235c2c662d3ca0dfc3138ad60b8b7d5
-F ext/fts1/fts1.c b964a4e7034612e0eb0bb6713e50ab816a7dc90b
+F ext/fts1/fts1.c 2ecd182d67e934b7ca0706990f563a28f649c2e8
 F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
 F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
 F ext/fts1/fts1_hash.h 957d378355ed29f672cd5add012ce8b088a5e089
@@ -40,7 +40,7 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 21e3684ea5a095b55d70f6878b4ce6af5932dfb7
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c cdbace1cafb4486764ddce3f12463e067b7900c9
+F ext/fts2/fts2.c 015d44a43d2a3586cd31b29f7fc1c60f21628dc3
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c cafebb4620d19684c4c9872530012441df60f503
 F ext/fts2/fts2_hash.h e283308156018329f042816eb09334df714e105e
@@ -52,7 +52,7 @@ F ext/fts2/fts2_tokenizer1.c 8a545c232bdffafd117c4eeaf59789691909f26a
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.tokenizers 226644a0eab97724e8de83061912e8bb248461b6
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 34da63e76132e1147bb854b63dec51ecd2e03067
+F ext/fts3/fts3.c 9f52ff22ca64172a4e508de30994e9e811b205e0
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3_hash.c 83e7bb4042106b32811681dd2859b4577a7a6b35
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
@@ -628,7 +628,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f97d89458259978b7b1b5c5e5a0d19cabcb9e536
-R 4f4b5871608d014cc016556fc859f1d4
-U danielk1977
-Z d0c21e02e4a1da9a63cc65f9fbdebbc6
+P 3866a5da2bdcfafe956e1a9bf117f3277207de05
+R 40a5d13b55e5ef081321902e3d9af0e6
+U drh
+Z 56c81aa17b30b71c3deabfefd64b3068

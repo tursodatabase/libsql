@@ -3095,8 +3095,8 @@ static void snippetOffsetText(Snippet *p){
   for(i=0; i<p->nMatch; i++){
     struct snippetMatch *pMatch = &p->aMatch[i];
     zBuf[0] = ' ';
-    sprintf(&zBuf[cnt>0], "%d %d %d %d", pMatch->iCol,
-        pMatch->iTerm, pMatch->iStart, pMatch->nByte);
+    sqlite3_snprintf(sizeof(zBuf)-1, &zBuf[cnt>0], "%d %d %d %d",
+        pMatch->iCol, pMatch->iTerm, pMatch->iStart, pMatch->nByte);
     append(&sb, zBuf);
     cnt++;
   }
