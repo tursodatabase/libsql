@@ -246,9 +246,9 @@ __inline__ unsigned long long int osinst_hwtime(void){
 #define OS_TIME_VFS(eEvent, Z, flags, A, B, Call) {      \
   InstVfs *pInstVfs = (InstVfs *)pVfs;   \
   int rc;                                \
-  sqlite3_int64 t = hwtime();                      \
+  sqlite3_int64 t = osinst_hwtime();     \
   rc = Call;                             \
-  t = hwtime() - t;                      \
+  t = osinst_hwtime() - t;               \
   pInstVfs->aTime[eEvent] += t;          \
   pInstVfs->aCount[eEvent] += 1;         \
   if( pInstVfs->xCall ){                 \
