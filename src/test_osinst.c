@@ -641,6 +641,7 @@ static void binarylog_xdel(void *p){
     pFile->pMethods->xWrite(pFile, pLog->zBuf, pLog->nBuf, pLog->iOffset);
   }
   pFile->pMethods->xClose(pFile);
+  sqlite3_free(pLog->pOut);
   sqlite3_free(pLog->zBuf);
   sqlite3_free(pLog);
 }
@@ -662,15 +663,13 @@ sqlite3_vfs *sqlite3_instvfs_binarylog(
     return 0;
   }
 
-  nByte = sizeof(InstVfsBinaryLog) + pParent->szOsFile + pParent->mxPathname+1;
-
+  nByte = sizeof(InstVfsBinaryLog) + pParent->mxPathname+1;
   p = (InstVfsBinaryLog *)sqlite3_malloc(nByte);
   memset(p, 0, nByte);
   p->zBuf = sqlite3_malloc(BINARYLOG_BUFFERSIZE);
   p->zOut = (char *)&p[1];
-  p->pOut = (sqlite3_file *)&p->zOut[pParent->mxPathname+1];
+  p->pOut = (sqlite3_file *)sqlite3_malloc(pParent->szOsFile);
   pParent->xFullPathname(pParent, zLog, pParent->mxPathname, p->zOut);
-
   flags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MASTER_JOURNAL;
   pParent->xDelete(pParent, p->zOut, 0);
   rc = pParent->xOpen(pParent, p->zOut, p->pOut, flags, &flags);
