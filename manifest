@@ -1,5 +1,5 @@
-C Make\ssure\sthe\spage\ssize\sin\scrash6.test\sdoes\snot\sexceed\sthe\smaximum\nconfigured\spage\ssize.\s(CVS\s5003)
-D 2008-04-14T15:27:19
+C Do\snot\sset\sthe\spager\sto\spersistent\serror\sstate\sif\sa\scall\sto\sOsAccess()\sfails.\s(CVS\s5004)
+D 2008-04-14T16:37:10
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -128,7 +128,7 @@ F src/os_unix.c fdec4e5ee5dd555a6ad4a69f38ab35f0788536b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 1cd9efd9fcd0342b9b9d3a0e8eff13e830ca5926
+F src/pager.c e21ab9dd60bbb09e8ad26a520abf4113f21bae44
 F src/pager.h b1e2258f03878c14b06a95bfa362e8c5c9638170
 F src/parse.y bc1b1cc6f86a0e0b669abdd88ddbdc7c8b67318d
 F src/pragma.c e659c9e443d11854cff2fd250012365ae0ca81ba
@@ -628,7 +628,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0bedbe092aa3079dc49157a9bcaa7716b00e0bdb
-R 48563ba260846cbb1efc0fd56277115e
-U drh
-Z 4a14a73e6a540d19a16ebc886fe2e0c7
+P 36b6610b25997074f398a2f2ddcdd6ace8c83fba
+R 43bb36d879d26b952cfe1e8f8637ed28
+U danielk1977
+Z b02efe45adf04a6ce186ead764888427

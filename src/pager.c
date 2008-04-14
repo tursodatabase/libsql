@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.424 2008/04/14 01:00:58 drh Exp $
+** @(#) $Id: pager.c,v 1.425 2008/04/14 16:37:10 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3382,7 +3382,7 @@ static int pagerSharedLock(Pager *pPager){
       */
       rc = hasHotJournal(pPager);
       if( rc<0 ){
-        return pager_error(pPager, SQLITE_IOERR_NOMEM);
+        return SQLITE_IOERR_NOMEM;
       }
       if( rc==1 || isHot ){
         /* Get an EXCLUSIVE lock on the database file. At this point it is
