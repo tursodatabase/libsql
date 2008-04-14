@@ -224,7 +224,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt){
   }else{
     Vdbe *v = (Vdbe*)pStmt;
     sqlite3_mutex_enter(v->db->mutex);
-    rc = sqlite3VdbeReset(v, 0);
+    rc = sqlite3VdbeReset(v, 1);
     stmtLruAdd(v);
     sqlite3VdbeMakeReady(v, -1, 0, 0, 0);
     assert( (rc & (v->db->errMask))==rc );
