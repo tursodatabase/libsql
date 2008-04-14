@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.220 2008/04/11 19:37:56 drh Exp $
+** $Id: util.c,v 1.221 2008/04/14 14:34:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -620,9 +620,10 @@ void sqlite3Put4byte(unsigned char *p, u32 v){
 */
 static int hexToInt(int h){
   assert( (h>='0' && h<='9') ||  (h>='a' && h<='f') ||  (h>='A' && h<='F') );
-#if !defined(SQLITE_EBCDIC)
+#ifdef SQLITE_ASCII
   h += 9*(1&(h>>6));
-#else
+#endif
+#ifdef SQLITE_EBCDIC
   h += 9*(1&~(h>>4));
 #endif
   return h & 0xf;
