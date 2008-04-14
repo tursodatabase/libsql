@@ -11,7 +11,7 @@
 # This file tests that rollback journals for databases that use a 
 # page-size other than the default page-size can be rolled back Ok.
 #
-# $Id: crash6.test,v 1.1 2008/03/20 04:45:49 danielk1977 Exp $
+# $Id: crash6.test,v 1.2 2008/04/14 15:27:19 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -70,6 +70,9 @@ for {set ii 0} {$ii < 30} {incr ii} {
   sqlite3 db test.db
 
   set pagesize [expr 1024 << ($ii % 4)]
+  if {$pagesize>$::SQLITE_MAX_PAGE_SIZE} {
+    set pagesize $::SQLITE_MAX_PAGE_SIZE
+  }
   do_test crash6-3.$ii.0 {
     execsql "pragma page_size = $pagesize"
     execsql "pragma page_size"
