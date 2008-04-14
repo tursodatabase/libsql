@@ -1,5 +1,5 @@
-C Fix\sbuild\serrors\sin\stest_osinst\s(CVS\s4998)
-D 2008-04-13T23:13:40
+C Get\sthe\sSQLITE_SECURE_DELETE\scompile-time\soption\sworking\sagain.\nTicket\s#3050.\s(CVS\s4999)
+D 2008-04-14T01:00:58
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -84,7 +84,7 @@ F src/alter.c b42d782906fc3b92c331efbe06e9389617b47ce7
 F src/analyze.c 9ee63497ee720728abe630d169ab91323ac7519c
 F src/attach.c bdc75e759ca25a16f4dc7fbdbc6d37ad2561bb24
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
-F src/bitvec.c 49817d442e51e4123585f3cf3c2afc293a3c91e2
+F src/bitvec.c 8ec2212cfb702bc4f402c0b7ae7623d85320c714
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
 F src/btree.c ee340ad90103fe70526f7b0c3728d185dd470f20
 F src/btree.h c66cb17c6fffa84a88926dbef173bab4ae692fd4
@@ -128,7 +128,7 @@ F src/os_unix.c fdec4e5ee5dd555a6ad4a69f38ab35f0788536b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 7b302d90674ea411d0856057af9699fe003318e3
+F src/pager.c 1cd9efd9fcd0342b9b9d3a0e8eff13e830ca5926
 F src/pager.h b1e2258f03878c14b06a95bfa362e8c5c9638170
 F src/parse.y bc1b1cc6f86a0e0b669abdd88ddbdc7c8b67318d
 F src/pragma.c e659c9e443d11854cff2fd250012365ae0ca81ba
@@ -156,7 +156,7 @@ F src/test9.c 4615ef08750245a2d96aaa7cbe2fb4aff2b57acc
 F src/test_async.c 3147c64c34721f088d5ab20f85dabd5d7732c007
 F src/test_autoext.c 5e892ab84aece3f0428920bf46923f16ac83962a
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
-F src/test_config.c 097a49a8804815799dc3d2220e6af693ad54f59d
+F src/test_config.c b910754c5ba311abf149457cdbfd66144e715b35
 F src/test_devsym.c cee1aecaa90c895030399ca4ae38f84a08038f8a
 F src/test_func.c ef4ef3230b6346031bca2762bbc8b95ec7e0451a
 F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
@@ -407,7 +407,7 @@ F test/openv2.test f5dd6b23e4dce828eb211649b600763c42a668df
 F test/pager.test 60303481b22b240c18d6dd1b64edcecc2f4b5a97
 F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
-F test/pageropt.test 51e3c091bc2992f5098f7576e3594e1908988939
+F test/pageropt.test 6df72c441db0a037b7ec6990d16311c24fbea77b
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
 F test/pragma.test aec802c9599db3ec887b5fd96f0b08958129303e
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
@@ -628,7 +628,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7622d74ad6088de4d94cb727b60ac4a042c52016
-R eb34257922f461833483dfdf628f3806
-U mlcreech
-Z 95c5da5972df7da80d15bd9b995f9b6f
+P f047399799798e693ef75c472144f30a0175b662
+R 848996a4f6f1ddd4b94f81b02d93b615
+U drh
+Z 06e5004f2421fc62b11ad23f6ebe7551

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.423 2008/04/03 10:13:01 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.424 2008/04/14 01:00:58 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4434,19 +4434,6 @@ void sqlite3PagerDontWrite(DbPage *pDbPage){
 ** the PgHdr.needRead flag is set) then this routine acts as a promise
 ** that we will never need to read the page content in the future.
 ** so the needRead flag can be cleared at this point.
-**
-** This routine is only called from a single place in the sqlite btree
-** code (when a leaf is removed from the free-list). This allows the
-** following assumptions to be made about pPg:
-**
-**   1. PagerDontWrite() has been called on the page, OR 
-**      PagerWrite() has not yet been called on the page.
-**
-**   2. The page existed when the transaction was started.
-**
-** Details: DontRollback() (this routine) is only called when a leaf is
-** removed from the free list. DontWrite() is called whenever a page 
-** becomes a free-list leaf.
 */
 void sqlite3PagerDontRollback(DbPage *pPg){
   Pager *pPager = pPg->pPager;
@@ -4464,8 +4451,17 @@ void sqlite3PagerDontRollback(DbPage *pPg){
   }
   assert( !MEMDB );    /* For a memdb, pPager->journalOpen is always 0 */
 
-  /* Check that PagerWrite() has not yet been called on this page, and
-  ** that the page existed when the transaction started.
+#ifdef SQLITE_SECURE_DELETE
+  if( pPg->inJournal || (int)pPg->pgno > pPager->origDbSize ){
+    return;
+  }
+#endif
+
+  /* If SECURE_DELETE is disabled, then there is no way that this
+  ** routine can be called on a page for which sqlite3PagerDontWrite()
+  ** has not been previously called during the same transaction.
+  ** And if DontWrite() has previously been called, the following
+  ** conditions must be met.
   */
   assert( !pPg->inJournal && (int)pPg->pgno <= pPager->origDbSize );
 
@@ -4474,7 +4470,7 @@ void sqlite3PagerDontRollback(DbPage *pPg){
   pPg->inJournal = 1;
   pPg->needRead = 0;
   if( pPager->stmtInUse ){
-    assert( pPager->stmtSize <= pPager->origDbSize );
+    assert( pPager->stmtSize >= pPager->origDbSize );
     sqlite3BitvecSet(pPager->pInStmt, pPg->pgno);
   }
   PAGERTRACE3("DONT_ROLLBACK page %d of %d\n", pPg->pgno, PAGERID(pPager));

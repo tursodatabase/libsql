@@ -32,7 +32,7 @@
 ** start of a transaction, and is thus usually less than a few thousand,
 ** but can be as large as 2 billion for a really big database.
 **
-** @(#) $Id: bitvec.c,v 1.3 2008/03/21 16:45:47 drh Exp $
+** @(#) $Id: bitvec.c,v 1.4 2008/04/14 01:00:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -130,6 +130,7 @@ int sqlite3BitvecSet(Bitvec *p, u32 i){
   u32 h;
   assert( p!=0 );
   assert( i>0 );
+  assert( i<=p->iSize );
   if( p->iSize<=BITVEC_NBIT ){
     i--;
     p->u.aBitmap[i/8] |= 1 << (i&7);
