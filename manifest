@@ -1,5 +1,5 @@
-C Fix\salignment\sissue\sin\sinstrumentation\scode.\s(CVS\s5005)
-D 2008-04-14T17:42:42
+C Fix\s#3053:\sbashism\s(CVS\s5006)
+D 2008-04-14T22:57:55
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -18,8 +18,8 @@ F config.guess dba2d1300ec8f8cd00c6fb44b9edde21c14e960c
 F config.h 5e461e321e0a56f1762da44eece1fe971ebdba3e
 F config.h.in feb93ab9f7703907947aadd3bcff7c6e790920bd
 F config.sub 9a842e7c332ed65cef3f2c20354e06dc998b2796
-F configure 945584d7c8926c2305828e3a7c2b33195cda27f7 x
-F configure.ac 1d76f7c88052f5018123b5e142f1048cdf090622
+F configure d769aa0358804476359bf9c2bf3d15e14297b0e7 x
+F configure.ac de0e2dd7497ba6fa88b560c8d552818d4453dab4
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -628,7 +628,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P aa16eb572915632bfff88d544f9c428ca723346e
-R 6328e3f1bdbc17ecc3f68bba8e7f06fb
-U danielk1977
-Z 2265f9810d7446c460ed57d3921ef016
+P c9e0d625bcf3ff24229d7f011b4cfbd8d8140d16
+R b99584578ba71d73be93cc5ec611b93c
+U mlcreech
+Z 937fab50b0ba41d923f3f3b76e0967cc
