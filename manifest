@@ -1,5 +1,5 @@
-C Get\sthe\sSQLITE_SECURE_DELETE\scompile-time\soption\sworking\sagain.\nTicket\s#3050.\s(CVS\s4999)
-D 2008-04-14T01:00:58
+C Disable\sauto_vacuum\sduring\sthe\svacuum3\stest.\s(CVS\s5000)
+D 2008-04-14T13:42:40
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -521,7 +521,7 @@ F test/utf16.test 20e2d9ba0d57e952a18b1ac8deab9ad49e082893
 F test/utf16align.test 7360e84472095518c56746f76b1f9d4dce99fb4d
 F test/vacuum.test f67853a15caa120af591f819670f01a11fcc2bfc
 F test/vacuum2.test d3b9691541fe6ed5c711f547a1c7d70e9760ac6f
-F test/vacuum3.test 72fbc903b085cd5f8b3a513b23f8ce44f7e0b06f
+F test/vacuum3.test f22cd134cc43887514fb793e828d95c75a93e1cb
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 93fd0500c367e6c03ea757071cfe4ca749533946
 F test/view.test 4864e3841ab3213a95297718b94d5d6a8d3bc78b
@@ -628,7 +628,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f047399799798e693ef75c472144f30a0175b662
-R 848996a4f6f1ddd4b94f81b02d93b615
+P 40ba51fd4c621e29e7ff85495b1212c92f06ab31
+R 53a12131bcb799795d694e2c2832a836
 U drh
-Z 06e5004f2421fc62b11ad23f6ebe7551
+Z 417c26b7c6044c4e03fc8e60af432453

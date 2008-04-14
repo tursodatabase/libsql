@@ -12,7 +12,7 @@
 # focus of this file is changing the database page size using a 
 # VACUUM statement.
 #
-# $Id: vacuum3.test,v 1.1 2008/04/03 14:36:26 danielk1977 Exp $
+# $Id: vacuum3.test,v 1.2 2008/04/14 13:42:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,6 +32,7 @@ ifcapable !vacuum {
 #
 do_test vacuum3-1.1 {
   execsql {
+    PRAGMA auto_vacuum=OFF;
     PRAGMA page_size = 1024;
     CREATE TABLE t1(a, b, c);
     INSERT INTO t1 VALUES(1, 2, 3);
@@ -265,4 +266,3 @@ if {$MEMDEBUG} {
 }
 
 finish_test
-
