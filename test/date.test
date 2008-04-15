@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.25 2008/02/21 20:40:44 drh Exp $
+# $Id: date.test,v 1.26 2008/04/15 04:02:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -122,10 +122,20 @@ datetest 2.39 {datetime('2003-10-22 12:24','+1 abcdefghi')} NULL
 set sqlite_current_time 1199243045
 datetest 2.40 {datetime()} {2008-01-02 03:04:05}
 set sqlite_current_time 0
-
+datetest 2.41 {datetime('2003-10-22 12:24','23 seconds')} {2003-10-22 12:24:23}
+datetest 2.42 {datetime('2003-10-22 12:24','345 second')} {2003-10-22 12:29:45}
+datetest 2.43 {datetime('2003-10-22 12:24','4 second')} {2003-10-22 12:24:04}
+datetest 2.44 {datetime('2003-10-22 12:24','56 second')} {2003-10-22 12:24:56}
+datetest 2.45 {datetime('2003-10-22 12:24','60 second')} {2003-10-22 12:25:00}
+datetest 2.46 {datetime('2003-10-22 12:24','70 second')} {2003-10-22 12:25:10}
+datetest 2.47 {datetime('2003-10-22 12:24','8.6 seconds')} {2003-10-22 12:24:08}
+datetest 2.48 {datetime('2003-10-22 12:24','9.4 second')} {2003-10-22 12:24:09}
+datetest 2.49 {datetime('2003-10-22 12:24','0000 second')} {2003-10-22 12:24:00}
+datetest 2.50 {datetime('2003-10-22 12:24','0001 second')} {2003-10-22 12:24:01}
+datetest 2.51 {datetime('2003-10-22 12:24','nonsense')} NULL
 
 datetest 3.1 {strftime('%d','2003-10-31 12:34:56.432')} 31
-datetest 3.2.1 {strftime('%f','2003-10-31 12:34:56.432')} 56.432
+datetest 3.2.1 {strftime('pre%fpost','2003-10-31 12:34:56.432')} pre56.432post
 datetest 3.2.2 {strftime('%f','2003-10-31 12:34:59.9999999')} 59.999
 datetest 3.3 {strftime('%H','2003-10-31 12:34:56.432')} 12
 datetest 3.4 {strftime('%j','2003-10-31 12:34:56.432')} 304
@@ -139,7 +149,7 @@ datetest 3.11.1 {strftime('%W','2003-10-31 12:34:56.432')} 43
 datetest 3.11.2 {strftime('%W','2004-01-01')} 00
 datetest 3.11.3 {strftime('%W','2004-01-02')} 00
 datetest 3.11.4 {strftime('%W','2004-01-03')} 00
-datetest 3.11.5 {strftime('%W','2004-01-04')} 00
+datetest 3.11.5 {strftime('abc%Wxyz','2004-01-04')} abc00xyz
 datetest 3.11.6 {strftime('%W','2004-01-05')} 01
 datetest 3.11.7 {strftime('%W','2004-01-06')} 01
 datetest 3.11.8 {strftime('%W','2004-01-07')} 01
@@ -175,6 +185,12 @@ proc repeat {n txt} {
 datetest 3.16 "strftime('[repeat 200 %Y]','2003-10-31')" [repeat 200 2003]
 datetest 3.17 "strftime('[repeat 200 abc%m123]','2003-10-31')" \
     [repeat 200 abc10123]
+
+foreach c {a b c e g h i k l n o p q r t v x y z
+           A B C D E F G I K L N O P Q R T U V Z
+           0 1 2 3 4 5 6 6 7 9 _} {
+  datetest 3.18.$c "strftime('%$c','2003-10-31')" NULL
+}
 
 # Ticket #2276.  Make sure leading zeros are inserted where appropriate.
 #

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.432 2008/04/15 02:36:34 drh Exp $
+** $Id: main.c,v 1.433 2008/04/15 04:02:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -62,7 +62,7 @@ void sqlite3Coverage(int x){
 ** Return true if the buffer z[0..n-1] contains all spaces.
 */
 static int allSpaces(const char *z, int n){
-  while( n>0 && z[--n]==' ' ){}
+  while( n>0 && z[n-1]==' ' ){ n--; }
   return n==0;
 }
 
