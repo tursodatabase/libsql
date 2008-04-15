@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.17 2008/04/10 17:14:07 drh Exp $
+# $Id: capi3c.test,v 1.18 2008/04/15 12:14:22 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1266,5 +1266,36 @@ do_test capi3c-22.3 {
 } {SQLITE_EMPTY}
 sqlite3_finalize $STMT
 
+# For a multi-column result set where the same table column is repeated
+# in multiple columns of the output, verify that doing a UTF-8 to UTF-16
+# conversion (or vice versa) on one column does not change the value of
+# the second.
+#
+do_test capi3c-23.1 {
+  set STMT [sqlite3_prepare_v2 db {SELECT b,b,b,b FROM t1} -1 TAIL]
+  sqlite3_step $STMT
+} {SQLITE_ROW}
+do_test capi3c-23.2 {
+  sqlite3_column_text16 $STMT 0
+  sqlite3_column_text $STMT 1
+} {one}
+do_test capi3c-23.3 {
+  sqlite3_column_text16 $STMT 2
+  sqlite3_column_text $STMT 3
+} {one}
+sqlite3_finalize $STMT
+do_test capi3c-23.4 {
+  set STMT [sqlite3_prepare_v2 db {SELECT b||'x',b,b,b FROM t1} -1 TAIL]
+  sqlite3_step $STMT
+} {SQLITE_ROW}
+do_test capi3c-23.5 {
+  sqlite3_column_text16 $STMT 0
+  sqlite3_column_text $STMT 1
+} {one}
+do_test capi3c-23.6 {
+  sqlite3_column_text16 $STMT 2
+  sqlite3_column_text $STMT 3
+} {one}
+sqlite3_finalize $STMT
 
 finish_test

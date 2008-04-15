@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.76 2008/04/10 17:14:07 drh Exp $
+# $Id: func.test,v 1.77 2008/04/15 12:14:22 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -929,5 +929,12 @@ do_test func-24.6 {
     SELECT 'BEGIN-'||group_concat(t1) FROM tbl1
   }
 } {BEGIN-this,program,is,free,software}
+
+# Use the test_isolation function to make sure that type conversions
+# on function arguments do not effect subsequent arguments.
+#
+do_test func-25.1 {
+  execsql {SELECT test_isolation(t1,t1) FROM tbl1}
+} {this program is free software}
 
 finish_test

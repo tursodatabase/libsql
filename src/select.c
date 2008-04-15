@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.426 2008/04/10 13:33:18 drh Exp $
+** $Id: select.c,v 1.427 2008/04/15 12:14:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -422,7 +422,7 @@ static void pushOntoSorter(
   int nExpr = pOrderBy->nExpr;
   int regBase = sqlite3GetTempRange(pParse, nExpr+2);
   int regRecord = sqlite3GetTempReg(pParse);
-  sqlite3ExprCodeExprList(pParse, pOrderBy, regBase);
+  sqlite3ExprCodeExprList(pParse, pOrderBy, regBase, 0);
   sqlite3VdbeAddOp2(v, OP_Sequence, pOrderBy->iECursor, regBase+nExpr);
   sqlite3ExprCodeMove(pParse, regData, regBase+nExpr+1);
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nExpr + 2, regRecord);
@@ -580,9 +580,7 @@ static void selectInnerLoop(
     /* If the destination is an EXISTS(...) expression, the actual
     ** values returned by the SELECT are not required.
     */
-    for(i=0; i<nResultCol; i++){
-      sqlite3ExprCode(pParse, pEList->a[i].pExpr, regResult+i);
-    }
+    sqlite3ExprCodeExprList(pParse, pEList, regResult, eDest==SRT_Callback);
   }
   nColumn = nResultCol;
 
@@ -2902,7 +2900,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     if( pList ){
       nArg = pList->nExpr;
       regAgg = sqlite3GetTempRange(pParse, nArg);
-      sqlite3ExprCodeExprList(pParse, pList, regAgg);
+      sqlite3ExprCodeExprList(pParse, pList, regAgg, 0);
     }else{
       nArg = 0;
       regAgg = 0;
@@ -3432,7 +3430,7 @@ int sqlite3Select(
           }
         }
         regBase = sqlite3GetTempRange(pParse, nCol);
-        sqlite3ExprCodeExprList(pParse, pGroupBy, regBase);
+        sqlite3ExprCodeExprList(pParse, pGroupBy, regBase, 0);
         sqlite3VdbeAddOp2(v, OP_Sequence, sAggInfo.sortingIdx,regBase+nGroupBy);
         j = nGroupBy+1;
         for(i=0; i<sAggInfo.nColumn; i++){

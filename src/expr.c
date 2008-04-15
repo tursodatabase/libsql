@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.366 2008/04/11 15:36:03 drh Exp $
+** $Id: expr.c,v 1.367 2008/04/15 12:14:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2104,6 +2104,24 @@ int sqlite3ExprWritableRegister(Parse *pParse, int iCurrent, int iTarget){
 }
 
 /*
+** If the last instruction coded is an ephemeral copy of any of
+** the registers in the nReg registers beginning with iReg, then
+** convert the last instruction from OP_SCopy to OP_Copy.
+*/
+void sqlite3ExprHardCopy(Parse *pParse, int iReg, int nReg){
+  int addr;
+  VdbeOp *pOp;
+  Vdbe *v;
+
+  v = pParse->pVdbe;
+  addr = sqlite3VdbeCurrentAddr(v);
+  pOp = sqlite3VdbeGetOp(v, addr-1);
+  if( pOp->opcode==OP_SCopy && pOp->p1>=iReg && pOp->p1<iReg+nReg ){
+    pOp->opcode = OP_Copy;
+  }
+}
+
+/*
 ** Generate code into the current Vdbe to evaluate the given
 ** expression.  Attempt to store the results in register "target".
 ** Return the register where results are stored.
@@ -2374,7 +2392,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       if( pList ){
         nExpr = pList->nExpr;
         r1 = sqlite3GetTempRange(pParse, nExpr);
-        sqlite3ExprCodeExprList(pParse, pList, r1);
+        sqlite3ExprCodeExprList(pParse, pList, r1, 1);
       }else{
         nExpr = r1 = 0;
       }
@@ -2804,7 +2822,8 @@ void sqlite3ExprCodeConstants(Parse *pParse, Expr *pExpr){
 int sqlite3ExprCodeExprList(
   Parse *pParse,     /* Parsing context */
   ExprList *pList,   /* The expression list to be coded */
-  int target         /* Where to write results */
+  int target,        /* Where to write results */
+  int doHardCopy     /* Call sqlite3ExprHardCopy on each element if true */
 ){
   struct ExprList_item *pItem;
   int i, n;
@@ -2814,9 +2833,9 @@ int sqlite3ExprCodeExprList(
   }
   assert( target>0 );
   n = pList->nExpr;
-  for(pItem=pList->a, i=n; i>0; i--, pItem++){
-    sqlite3ExprCode(pParse, pItem->pExpr, target);
-    target++;
+  for(pItem=pList->a, i=0; i<n; i++, pItem++){
+    sqlite3ExprCode(pParse, pItem->pExpr, target+i);
+    if( doHardCopy ) sqlite3ExprHardCopy(pParse, target, n);
   }
   return n;
 }

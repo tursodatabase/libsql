@@ -12,7 +12,7 @@
 ** Code for testing all sorts of SQLite interfaces.  This code
 ** implements new SQL functions used by the test scripts.
 **
-** $Id: test_func.c,v 1.4 2008/04/10 17:14:07 drh Exp $
+** $Id: test_func.c,v 1.5 2008/04/15 12:14:22 drh Exp $
 */
 #include "sqlite3.h"
 #include "tcl.h"
@@ -204,6 +204,33 @@ static void test_error(
   }
 }
 
+/*
+** This function takes two arguments.  It performance UTF-8/16 type
+** conversions on the first argument then returns a copy of the second
+** argument.
+**
+** This function is used in cases such as the following:
+**
+**      SELECT test_isolation(x,x) FROM t1;
+**
+** We want to verify that the type conversions that occur on the
+** first argument do not invalidate the second argument.
+*/
+static void test_isolation(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+#ifndef SQLITE_OMIT_UTF16
+  sqlite3_value_text16(argv[0]);
+  sqlite3_value_text(argv[0]);
+  sqlite3_value_text16(argv[0]);
+  sqlite3_value_text(argv[0]);
+#endif
+  sqlite3_result_value(pCtx, argv[1]);
+}
+
+
 static int registerTestFunctions(sqlite3 *db){
   static const struct {
      char *zName;
@@ -218,6 +245,7 @@ static int registerTestFunctions(sqlite3 *db){
     { "test_auxdata",         -1, SQLITE_UTF8, test_auxdata},
     { "test_error",            1, SQLITE_UTF8, test_error},
     { "test_error",            2, SQLITE_UTF8, test_error},
+    { "test_isolation",        2, SQLITE_UTF8, test_isolation},
   };
   int i;
   extern int Md5_Register(sqlite3*);

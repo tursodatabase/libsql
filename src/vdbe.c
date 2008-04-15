@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.729 2008/04/10 14:00:10 drh Exp $
+** $Id: vdbe.c,v 1.730 2008/04/15 12:14:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -880,6 +880,7 @@ case OP_String8: {         /* same as TK_STRING, out2-prerelease */
     if( SQLITE_OK!=sqlite3VdbeMemDynamicify(pOut) ) goto no_mem;
     pOut->zMalloc = 0;
     pOut->flags |= MEM_Static;
+    pOut->flags &= ~MEM_Dyn;
     if( pOp->p4type==P4_DYNAMIC ){
       sqlite3_free(pOp->p4.z);
     }
