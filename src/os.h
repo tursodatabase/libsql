@@ -84,6 +84,7 @@
 # define INCL_DOSMODULEMGR
 # define INCL_DOSSEMAPHORES
 # include <os2.h>
+# include <uconv.h>
 # define SQLITE_TEMPNAME_SIZE (CCHMAXPATHCOMP)
 #else
 # define SQLITE_TEMPNAME_SIZE 200

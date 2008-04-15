@@ -1,5 +1,5 @@
-C Increment\sthe\sversion\snumber.\s(CVS\s5013)
-D 2008-04-15T14:37:51
+C Support\sUTF-8\sfilenames\son\sOS/2\sby\sconverting\sthem\sto\sand\sfrom\sthe\slocal\scodepage.\sTicket\s3052.\s(CVS\s5014)
+D 2008-04-15T18:50:02
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -118,9 +118,9 @@ F src/mutex_os2.c 2911ea96955ab6cba734cc4ad903fe76f834b39e
 F src/mutex_unix.c 466d20378a0645fea64c3f2e2669c33b7802df56
 F src/mutex_w32.c 133698096a2c4e81cd11ea6f4de7891c66f7b9f7
 F src/os.c d811a3e1a152e03c98d3dd85f2b7aff0d7630cea
-F src/os.h 497bf5f0f2648461ef65940cfb59ba427430f3fc
+F src/os.h 2ee8b0dec88f946c5371919ffa0f2fe4ac0de2e6
 F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
-F src/os_os2.c 85c443333761d5b58f041489a7b21ae918993e4f
+F src/os_os2.c 7a918c400ee9ed879b50fedc61e74985b285f2b0
 F src/os_os2.h c3f7d0af7e3453d1d7aa81b06c0a56f5a226530b
 F src/os_test.c 3074b10357ab6175caaab808c780e5e1f94a20b8
 F src/os_test.h 903c93554c23d88f34f667f1979e4a1cee792af3
@@ -137,7 +137,7 @@ F src/printf.c 05d2b44d7b5b80c8a4a09108ddad9c20e254370d
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 5b8824a326a923876827fa8771c5e4e9e3a7faa1
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c 22297fffa6f00a6c6d44020fa13b1184a1bb372d
+F src/shell.c be22ec05c8c4a43a95a6ad3b8068542200451e07
 F src/sqlite.h.in 824f823b341e9c979f82edebf710c87b74d1b7f5
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 625375d9327f0d79bf6f0f7864cc4a0543aec440
@@ -630,7 +630,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f5fc42e96d36b78797d7fa10b01d22b8501112b1
-R 71b9be4e3d499e4cd475e805a56af0fa
-U drh
-Z e324a3cc0d4912a74acebac21239e8ad
+P a12fa0252c1bc45a116d0123758ef639cc8e451b
+R d8de72a548d7f4403c57ee71816098c3
+U pweilbacher
+Z ca8f83b6ee28230fbc93d88b258246a7

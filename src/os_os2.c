@@ -291,7 +291,7 @@ int os2Lock( sqlite3_file *id, int locktype ){
 
   /* If there is already a lock of this type or more restrictive on the
   ** os2File, do nothing. Don't use the end_lock: exit path, as
-  ** sqlite3OsEnterMutex() hasn't been called yet.
+  ** sqlite3_mutex_enter() hasn't been called yet.
   */
   if( pFile->locktype>=locktype ){
     OSTRACE3( "LOCK %d %d ok (already held)\n", pFile->h, locktype );
@@ -554,6 +554,66 @@ static int os2DeviceCharacteristics(sqlite3_file *id){
 }
 
 /*
+** Helper function to convert UTF-8 filenames to local OS/2 codepage.
+** The two-step process: first convert the incoming UTF-8 string
+** into UCS-2 and then from UCS-2 to the current codepage.
+** The returned char pointer has to be freed.
+*/
+char *convertUtf8PathToCp(const char *in)
+{
+  UconvObject uconv;
+  UniChar ucsUtf8Cp[12],
+          tempPath[CCHMAXPATH];
+  char *out;
+  int rc = 0;
+
+  out = (char *)calloc(CCHMAXPATH, 1);
+
+  /* determine string for the conversion of UTF-8 which is CP1208 */
+  rc = UniMapCpToUcsCp(1208, ucsUtf8Cp, 12);
+  rc = UniCreateUconvObject(ucsUtf8Cp, &uconv);
+  rc = UniStrToUcs(uconv, tempPath, (char *)in, CCHMAXPATH);
+  rc = UniFreeUconvObject(uconv);
+
+  /* conversion for current codepage which can be used for paths */
+  rc = UniCreateUconvObject((UniChar *)L"@path=yes", &uconv);
+  rc = UniStrFromUcs(uconv, out, tempPath, CCHMAXPATH);
+  rc = UniFreeUconvObject(uconv);
+
+  return out;
+}
+
+/*
+** Helper function to convert filenames from local codepage to UTF-8.
+** The two-step process: first convert the incoming codepage-specific
+** string into UCS-2 and then from UCS-2 to the codepage of UTF-8.
+** The returned char pointer has to be freed.
+*/
+char *convertCpPathToUtf8(const char *in)
+{
+  UconvObject uconv;
+  UniChar ucsUtf8Cp[12],
+          tempPath[CCHMAXPATH];
+  char *out;
+  int rc = 0;
+
+  out = (char *)calloc(CCHMAXPATH, 1);
+
+  /* conversion for current codepage which can be used for paths */
+  rc = UniCreateUconvObject((UniChar *)L"@path=yes", &uconv);
+  rc = UniStrToUcs(uconv, tempPath, (char *)in, CCHMAXPATH);
+  rc = UniFreeUconvObject(uconv);
+
+  /* determine string for the conversion of UTF-8 which is CP1208 */
+  rc = UniMapCpToUcsCp(1208, ucsUtf8Cp, 12);
+  rc = UniCreateUconvObject(ucsUtf8Cp, &uconv);
+  rc = UniStrFromUcs(uconv, out, tempPath, CCHMAXPATH);
+  rc = UniFreeUconvObject(uconv);
+
+  return out;
+}
+
+/*
 ** This vector defines all the methods that can operate on an
 ** sqlite3_file for os2.
 */
@@ -597,7 +657,7 @@ static int os2Open(
   APIRET rc = NO_ERROR;
   ULONG ulAction;
 
-  memset(pFile, 0, sizeof(*pFile));
+  memset( pFile, 0, sizeof(*pFile) );
 
   OSTRACE2( "OPEN want %d\n", flags );
 
@@ -647,7 +707,8 @@ static int os2Open(
   ulOpenMode |= OPEN_FLAGS_RANDOM;
   ulOpenMode |= OPEN_FLAGS_FAIL_ON_ERROR;
 
-  rc = DosOpen( (PSZ)zName,
+  char *zNameCp = convertUtf8PathToCp( zName );
+  rc = DosOpen( (PSZ)zNameCp,
                 &h,
                 &ulAction,
                 0L,
@@ -655,6 +716,7 @@ static int os2Open(
                 ulOpenFlags,
                 ulOpenMode,
                 (PEAOP2)NULL );
+  free( zNameCp );
   if( rc != NO_ERROR ){
     OSTRACE7( "OPEN Invalid handle rc=%d: zName=%s, ulAction=%#lx, ulAttr=%#lx, ulFlags=%#lx, ulMode=%#lx\n",
               rc, zName, ulAction, ulFileAttribute, ulOpenFlags, ulOpenMode );
@@ -689,7 +751,9 @@ int os2Delete(
 ){
   APIRET rc = NO_ERROR;
   SimulateIOError(return SQLITE_IOERR_DELETE);
-  rc = DosDelete( (PSZ)zFilename );
+  char *zFilenameCp = convertUtf8PathToCp( zFilename );
+  rc = DosDelete( (PSZ)zFilenameCp );
+  free( zFilenameCp );
   OSTRACE2( "DELETE \"%s\"\n", zFilename );
   return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
 }
@@ -705,9 +769,11 @@ static int os2Access(
   FILESTATUS3 fsts3ConfigInfo;
   APIRET rc = NO_ERROR;
 
-  memset(&fsts3ConfigInfo, 0, sizeof(fsts3ConfigInfo));
-  rc = DosQueryPathInfo( (PSZ)zFilename, FIL_STANDARD,
+  memset( &fsts3ConfigInfo, 0, sizeof(fsts3ConfigInfo) );
+  char *zFilenameCp = convertUtf8PathToCp( zFilename );
+  rc = DosQueryPathInfo( (PSZ)zFilenameCp, FIL_STANDARD,
                          &fsts3ConfigInfo, sizeof(FILESTATUS3) );
+  free( zFilenameCp );
   OSTRACE4( "ACCESS fsts3ConfigInfo.attrFile=%d flags=%d rc=%d\n",
             fsts3ConfigInfo.attrFile, flags, rc );
   switch( flags ){
@@ -739,6 +805,7 @@ static int os2GetTempname( sqlite3_vfs *pVfs, int nBuf, char *zBuf ){
   int i, j;
   char zTempPathBuf[3];
   PSZ zTempPath = (PSZ)&zTempPathBuf;
+  char *zTempPathUTF;
   if( DosScanEnv( (PSZ)"TEMP", &zTempPath ) ){
     if( DosScanEnv( (PSZ)"TMP", &zTempPath ) ){
       if( DosScanEnv( (PSZ)"TMPDIR", &zTempPath ) ){
@@ -755,8 +822,10 @@ static int os2GetTempname( sqlite3_vfs *pVfs, int nBuf, char *zBuf ){
     j--;
   }
   zTempPath[j] = '\0';
+  zTempPathUTF = convertCpPathToUtf8( zTempPath );
   sqlite3_snprintf( nBuf-30, zBuf,
-                    "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath );
+                    "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPathUTF );
+  free( zTempPathUTF );
   j = strlen( zBuf );
   sqlite3_randomness( 20, &zBuf[j] );
   for( i = 0; i < 20; i++, j++ ){
@@ -779,7 +848,15 @@ static int os2FullPathname(
   int nFull,                  /* Size of output buffer in bytes */
   char *zFull                 /* Output buffer */
 ){
-  APIRET rc = DosQueryPathInfo( zRelative, FIL_QUERYFULLNAME, zFull, nFull );
+  char *zRelativeCp = convertUtf8PathToCp( zRelative );
+  char zFullCp[CCHMAXPATH];
+  char *zFullUTF;
+  APIRET rc = DosQueryPathInfo( zRelativeCp, FIL_QUERYFULLNAME, zFullCp,
+                                CCHMAXPATH );
+  free( zRelativeCp );
+  zFullUTF = convertCpPathToUtf8( zFullCp );
+  sqlite3_snprintf( nFull, zFull, zFullUTF );
+  free( zFullUTF );
   return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
 }
 
@@ -796,7 +873,9 @@ static void *os2DlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   UCHAR loadErr[256];
   HMODULE hmod;
   APIRET rc;
-  rc = DosLoadModule((PSZ)loadErr, sizeof(loadErr), zFilename, &hmod);
+  char *zFilenameCp = convertUtf8PathToCp(zFilename);
+  rc = DosLoadModule((PSZ)loadErr, sizeof(loadErr), zFilenameCp, &hmod);
+  free(zFilenameCp);
   return rc != NO_ERROR ? 0 : (void*)hmod;
 }
 /*
