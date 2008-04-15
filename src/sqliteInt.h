@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.692 2008/04/15 12:14:22 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.693 2008/04/15 14:36:42 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1935,7 +1935,7 @@ void sqlite3RegisterDateTimeFunctions(sqlite3*);
 int sqlite3SafetyCheckOk(sqlite3*);
 int sqlite3SafetyCheckSickOrOk(sqlite3*);
 void sqlite3ChangeCookie(Parse*, int);
-void sqlite3MaterializeView(Parse*, Select*, Expr*, u32, int);
+void sqlite3MaterializeView(Parse*, Select*, Expr*, int);
 
 #ifndef SQLITE_OMIT_TRIGGER
   void sqlite3BeginTrigger(Parse*, Token*,Token*,int,int,IdList*,SrcList*,
@@ -1955,14 +1955,12 @@ void sqlite3MaterializeView(Parse*, Select*, Expr*, u32, int);
   TriggerStep *sqlite3TriggerDeleteStep(sqlite3*,Token*, Expr*);
   void sqlite3DeleteTrigger(Trigger*);
   void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
-  void sqlite3SelectMask(Parse *, Select *, u32);
 #else
 # define sqlite3TriggersExist(A,B,C,D,E,F) 0
 # define sqlite3DeleteTrigger(A)
 # define sqlite3DropTriggerPtr(A,B)
 # define sqlite3UnlinkAndDeleteTrigger(A,B,C)
 # define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I,J,K) 0
-# define sqlite3SelectMask(A, B, C)
 #endif
 
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);

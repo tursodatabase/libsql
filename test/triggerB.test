@@ -1,0 +1,45 @@
+# 2008 April 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. Specifically,
+# it tests updating tables with constraints within a trigger.  Ticket #3055.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+ifcapable {!trigger} {
+  finish_test
+  return
+}
+
+# Create test tables with constraints.
+#
+do_test triggerB-1.1 {
+  execsql {
+    CREATE TABLE x(x INTEGER PRIMARY KEY, y INT NOT NULL);
+    INSERT INTO x(y) VALUES(1);
+    INSERT INTO x(y) VALUES(1);
+    CREATE TEMP VIEW vx AS SELECT x, y, 0 AS yy FROM x;
+    CREATE TEMP TRIGGER tx INSTEAD OF UPDATE OF y ON vx
+    BEGIN
+      UPDATE x SET y = new.y WHERE x = new.x;
+    END;
+    SELECT * FROM vx;
+  }
+} {1 1 0 2 1 0}
+do_test triggerB-1.2 {
+breakpoint
+  execsql {
+    UPDATE vx SET y = yy;
+    SELECT * FROM vx;
+  }
+} {1 0 0 2 0 0}
+
+finish_test

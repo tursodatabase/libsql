@@ -12,7 +12,7 @@
 # focus of this script is testing the sqlite3_set_authorizer() API
 # and related functionality.
 #
-# $Id: auth.test,v 1.41 2008/02/12 16:52:14 drh Exp $
+# $Id: auth.test,v 1.42 2008/04/15 14:36:42 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -2248,9 +2248,9 @@ do_test auth-4.3 {
   SQLITE_INSERT v1chng {} main r2 \
   SQLITE_READ   v1     x  main r2 \
   SQLITE_READ   v1     x  main r2 \
+  SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_READ   t2     a  main v1 \
   SQLITE_READ   t2     b  main v1 \
-  SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_READ   v1     x  main v1 \
 ]
@@ -2272,9 +2272,9 @@ do_test auth-4.5 {
   SQLITE_DELETE v1     {} main {} \
   SQLITE_INSERT v1chng {} main r3 \
   SQLITE_READ   v1     x  main r3 \
+  SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_READ   t2     a  main v1 \
   SQLITE_READ   t2     b  main v1 \
-  SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_READ   v1     x  main v1 \
 ]

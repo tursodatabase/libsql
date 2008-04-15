@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.167 2008/04/11 19:18:25 drh Exp $
+** $Id: delete.c,v 1.168 2008/04/15 14:36:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -91,7 +91,6 @@ void sqlite3MaterializeView(
   Parse *pParse,       /* Parsing context */
   Select *pView,       /* View definition */
   Expr *pWhere,        /* Optional WHERE clause to be added */
-  u32 col_mask,        /* Render only the columns in this mask. */
   int iCur             /* Cursor number for ephemerial table */
 ){
   SelectDest dest;
@@ -106,7 +105,6 @@ void sqlite3MaterializeView(
     pFrom = sqlite3SrcListAppendFromTerm(pParse, 0, 0, 0, 0, pDup, 0, 0);
     pDup = sqlite3SelectNew(pParse, 0, pFrom, pWhere, 0, 0, 0, 0, 0, 0);
   }
-  sqlite3SelectMask(pParse, pDup, col_mask);
   sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
   sqlite3Select(pParse, pDup, &dest, 0, 0, 0, 0);
   sqlite3SelectDelete(pDup);
@@ -248,7 +246,7 @@ void sqlite3DeleteFrom(
   ** a ephemeral table.
   */
   if( isView ){
-    sqlite3MaterializeView(pParse, pTab->pSelect, pWhere, old_col_mask, iCur);
+    sqlite3MaterializeView(pParse, pTab->pSelect, pWhere, iCur);
   }
 
   /* Resolve the column names in the WHERE clause.
