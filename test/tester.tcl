@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.114 2008/04/10 17:27:39 danielk1977 Exp $
+# $Id: tester.tcl,v 1.115 2008/04/15 02:36:34 drh Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -142,8 +142,16 @@ set nErr 0
 set nTest 0
 set skip_test 0
 set failList {}
+set omitList {}
 if {![info exists speedTest]} {
   set speedTest 0
+}
+
+# Record the fact that a sequence of tests were omitted.
+#
+proc omit_test {name reason} {
+  global omitList
+  lappend omitList [list $name $reason]
 }
 
 # Invoke the do_test procedure to run a single test 
@@ -234,7 +242,7 @@ proc finish_test {} {
   finalize_testing
 }
 proc finalize_testing {} {
-  global nTest nErr sqlite_open_file_count
+  global nTest nErr sqlite_open_file_count omitList
 
   catch {db close}
   catch {db2 close}
@@ -257,6 +265,15 @@ proc finalize_testing {} {
   puts "$nErr errors out of $nTest tests"
   if {$nErr>0} {
     puts "Failures on these tests: $::failList"
+  }
+  if {[llength $omitList]>0} {
+    puts "Omitted test cases:"
+    set prec {}
+    foreach {rec} [lsort $omitList] {
+      if {$rec==$prec} continue
+      set prec $rec
+      puts [format {  %-12s %s} [lindex $rec 0] [lindex $rec 1]]
+    }
   }
   if {$nErr>0 && ![working_64bit_int]} {
     puts "******************************************************************"

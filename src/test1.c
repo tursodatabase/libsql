@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.297 2008/04/08 03:07:55 mlcreech Exp $
+** $Id: test1.c,v 1.298 2008/04/15 02:36:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4361,6 +4361,10 @@ static int test_limit(
     { "SQLITE_LIMIT_ATTACHED",            SQLITE_LIMIT_ATTACHED             },
     { "SQLITE_LIMIT_LIKE_PATTERN_LENGTH", SQLITE_LIMIT_LIKE_PATTERN_LENGTH  },
     { "SQLITE_LIMIT_VARIABLE_NUMBER",     SQLITE_LIMIT_VARIABLE_NUMBER      },
+    
+    /* Out of range test cases */
+    { "SQLITE_LIMIT_TOOSMALL",            -1,                               },
+    { "SQLITE_LIMIT_TOOBIG",              SQLITE_LIMIT_VARIABLE_NUMBER+1    },
   };
   int i, id;
   int val;

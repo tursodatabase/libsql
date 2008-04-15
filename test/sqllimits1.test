@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.27 2008/03/22 23:59:58 drh Exp $
+# $Id: sqllimits1.test,v 1.28 2008/04/15 02:36:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -51,6 +51,22 @@ do_test sqllimits1-1.9 {
 do_test sqllimits1-1.10 {
   sqlite3_limit db SQLITE_LIMIT_VARIABLE_NUMBER -1
 } $SQLITE_MAX_VARIABLE_NUMBER
+
+# Limit parameters out of range.
+#
+do_test sqllimits1-1.20 {
+  sqlite3_limit db SQLITE_LIMIT_TOOSMALL 123
+} {-1}
+do_test sqllimits1-1.21 {
+  sqlite3_limit db SQLITE_LIMIT_TOOSMALL 123
+} {-1}
+do_test sqllimits1-1.22 {
+  sqlite3_limit db SQLITE_LIMIT_TOOBIG 123
+} {-1}
+do_test sqllimits1-1.23 {
+  sqlite3_limit db SQLITE_LIMIT_TOOBIG 123
+} {-1}
+
 
 # Decrease all limits by half.  Verify that the new limits take.
 #

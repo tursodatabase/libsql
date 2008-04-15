@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.431 2008/04/03 16:28:25 danielk1977 Exp $
+** $Id: main.c,v 1.432 2008/04/15 02:36:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1006,7 +1006,7 @@ static const int aHardLimit[] = {
 */
 int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
   int oldLimit;
-  if( limitId<0 || limitId>SQLITE_N_LIMIT ){
+  if( limitId<0 || limitId>=SQLITE_N_LIMIT ){
     return -1;
   }
   oldLimit = db->aLimit[limitId];
