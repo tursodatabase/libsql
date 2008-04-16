@@ -1,5 +1,5 @@
-C Add\sspeed-test\sscripts\sthat\salso\sshow\sEXPLAIN\soutput.\s(CVS\s5017)
-D 2008-04-16T12:57:48
+C Add\stests\sto\sverify\sthat\sstrings\smay\suse\sembedded\szero\scharacters.\nTicket\s#3056.\s(CVS\s5018)
+D 2008-04-16T12:58:54
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,7 +144,7 @@ F src/sqliteInt.h 625375d9327f0d79bf6f0f7864cc4a0543aec440
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
 F src/tclsqlite.c 2877726bf32f7d72ff057b37ed6c93485b667ea1
-F src/test1.c 8d633bcf3cd3b805c3393d58b5c1011d49b9b550
+F src/test1.c ab25cb2715a9e3f1d91cf99a7280ac7d8dd478e2
 F src/test2.c f0808cc643528b9620e4059ca9bda8346f526121
 F src/test3.c c715b5a8a6415d7b2c67f97c394eef488b6f7e63
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -212,7 +212,7 @@ F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test 9a6a8346e4042d9c781ed6cb6553ac871ae30618
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test 261fd1603613e7f877a516d29f281c9d8c2ecf52
+F test/bind.test 991d5738c64e9627c09576dc18ff6cda46075563
 F test/bindxfer.test 995d2cf8df61204d748cde6960443121c4ccd2e1
 F test/bitvec.test 62a512c3f7041d1df12558eb25990e5a19820571
 F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
@@ -322,7 +322,7 @@ F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3near.test 2d4dadcaac5025ab65bb87e66c45f39e92966194
-F test/func.test 5227e6e6e9df33f5e771ef164f634b7d4f6d6a55
+F test/func.test b9f4cd2171891c258d025b10413024bb9ebcf068
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
@@ -632,7 +632,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d35dea059e2cb936e4277f513f036b9b0bdfc4a5
-R c0b22004b0ac521d974e7b893302fd7e
+P d11f5dafdaf7c18c43615d0ac018c7d221460244
+R f57a0ca58b7ca1d3113ae2507d454a38
 U drh
-Z 1ac53e97ed99016f506aa1047f716fd9
+Z d36be6b864744b356a9ad22bb2e858e2

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.40 2007/05/10 17:23:12 drh Exp $
+# $Id: bind.test,v 1.41 2008/04/16 12:58:54 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -252,7 +252,7 @@ do_test bind-5.3 {
 do_test bind-6.1 {
   sqlite3_bind_text $VM 1 hellothere 5
   sqlite3_bind_text $VM 2 ".." 1
-  sqlite3_bind_text $VM 3 world -1
+  sqlite3_bind_text $VM 3 world\000 -1
   sqlite_step $VM N VALUES COLNAMES
   sqlite3_reset $VM
   execsql {SELECT rowid, * FROM t1}
@@ -261,6 +261,29 @@ do_test bind-6.2 {
   execsql {SELECT typeof(a), typeof(b), typeof(c) FROM t1}
 } {text text text}
 do_test bind-6.3 {
+  execsql {
+    DELETE FROM t1;
+  }
+} {}
+
+# Make sure zeros in a string work.
+#
+do_test bind-6.4 {
+  db eval {DELETE FROM t1}
+  sqlite3_bind_text $VM 1 hello\000there\000 12
+  sqlite3_bind_text $VM 2 hello\000there\000 11
+  sqlite3_bind_text $VM 3 hello\000there\000 -1
+  sqlite_step $VM N VALUES COLNAMES
+  sqlite3_reset $VM
+  execsql {SELECT  hex(a), hex(b), hex(c) FROM t1}
+} {68656C6C6F00746865726500 68656C6C6F007468657265 68656C6C6F}
+do_test bind-6.5 {
+  execsql {SELECT * FROM t1}
+} {hello hello hello}
+do_test bind-6.6 {
+  execsql {SELECT typeof(a), typeof(b), typeof(c) FROM t1}
+} {text text text}
+do_test bind-6.7 {
   execsql {
     DELETE FROM t1;
   }
@@ -279,11 +302,24 @@ ifcapable {utf16} {
   do_test bind-7.2 {
     execsql {SELECT typeof(a), typeof(b), typeof(c) FROM t1}
   } {text text text}
+  do_test bind-7.3 {
+    db eval {DELETE FROM t1}
+    sqlite3_bind_text16 $VM 1 [encoding convertto unicode hi\000yall\000] 16
+    sqlite3_bind_text16 $VM 2 [encoding convertto unicode hi\000yall\000] 14
+    sqlite3_bind_text16 $VM 3 [encoding convertto unicode hi\000yall\000] -1
+    sqlite_step $VM N VALUES COLNAMES
+    sqlite3_reset $VM
+    execsql {SELECT * FROM t1}
+  } {hi hi hi}
+  do_test bind-7.4 {
+    execsql {SELECT hex(a), hex(b), hex(c) FROM t1}
+  } {68690079616C6C00 68690079616C6C 6869}
+  do_test bind-7.5 {
+    execsql {SELECT typeof(a), typeof(b), typeof(c) FROM t1}
+  } {text text text}
 }
-do_test bind-7.3 {
-  execsql {
-    DELETE FROM t1;
-  }
+do_test bind-7.99 {
+  execsql {DELETE FROM t1;}
 } {}
 
 # Test that the 'out of range' error works.

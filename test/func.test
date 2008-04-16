@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.77 2008/04/15 12:14:22 drh Exp $
+# $Id: func.test,v 1.78 2008/04/16 12:58:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -514,7 +514,7 @@ do_test func-13.7 {
   set DB [sqlite3_connection_pointer db]
   set sql "SELECT test_auxdata( ? , a ) FROM t4;"
   set STMT [sqlite3_prepare $DB $sql -1 TAIL]
-  sqlite3_bind_text $STMT 1 hello -1
+  sqlite3_bind_text $STMT 1 hello\000 -1
   set res [list]
   while { "SQLITE_ROW"==[sqlite3_step $STMT] } {
     lappend res [sqlite3_column_text $STMT 0]
