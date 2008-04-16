@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sdatabase\sconnection\smutex\sis\sheld\sbefore\scalling\nsqlite3SafetyOn()\sor\ssqlite3SafetyOff().\s\sTicket\s#3059.\s(CVS\s5016)
-D 2008-04-16T00:49:12
+C Add\sspeed-test\sscripts\sthat\salso\sshow\sEXPLAIN\soutput.\s(CVS\s5017)
+D 2008-04-16T12:57:48
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -442,10 +442,12 @@ F test/soak.test 64f9b27fbcdec43335a88c546ce1983e6ba40d7b
 F test/softheap1.test c9146eda576eedb62192b771293a2115d9af8456
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
+F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
 F test/speed1p.test 5f79987671f930a8aa651091c2952c1782b0df83
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test 20d8ea20bea3ca09c3ef3b5ec820a17e58e132cb
+F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/sqllimits1.test 68f7eab0bfc27ef68d677864d37e37e38f67db00
 F test/subquery.test 8203f85db56ba022a57a0589890090c8feed4e59
@@ -630,7 +632,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P cce8deae2d556916e2817e0cb9748dceb162085d
-R 7a340507e41c10c8a2cb1cddf539eada
+P d35dea059e2cb936e4277f513f036b9b0bdfc4a5
+R c0b22004b0ac521d974e7b893302fd7e
 U drh
-Z ea939e8bf0d325aad906011ffe8ec67e
+Z 1ac53e97ed99016f506aa1047f716fd9
