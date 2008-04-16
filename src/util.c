@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.221 2008/04/14 14:34:44 drh Exp $
+** $Id: util.c,v 1.222 2008/04/16 00:49:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -683,6 +683,7 @@ void *sqlite3HexToBlob(sqlite3 *db, const char *z, int n){
 int sqlite3SafetyOn(sqlite3 *db){
   if( db->magic==SQLITE_MAGIC_OPEN ){
     db->magic = SQLITE_MAGIC_BUSY;
+    assert( sqlite3_mutex_held(db->mutex) );
     return 0;
   }else if( db->magic==SQLITE_MAGIC_BUSY ){
     db->magic = SQLITE_MAGIC_ERROR;
@@ -701,6 +702,7 @@ int sqlite3SafetyOn(sqlite3 *db){
 int sqlite3SafetyOff(sqlite3 *db){
   if( db->magic==SQLITE_MAGIC_BUSY ){
     db->magic = SQLITE_MAGIC_OPEN;
+    assert( sqlite3_mutex_held(db->mutex) );
     return 0;
   }else{
     db->magic = SQLITE_MAGIC_ERROR;

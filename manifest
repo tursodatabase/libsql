@@ -1,5 +1,5 @@
-C Back\sout\sthe\szero-terminator\soptimization\sintroduced\sin\scheck-in\s(4915).\nTicket\s#3056.\s(CVS\s5015)
-D 2008-04-16T00:28:14
+C Make\ssure\sthe\sdatabase\sconnection\smutex\sis\sheld\sbefore\scalling\nsqlite3SafetyOn()\sor\ssqlite3SafetyOff().\s\sTicket\s#3059.\s(CVS\s5016)
+D 2008-04-16T00:49:12
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/insert.c 5208f16ddfc77d9e72bb30041a1d04a18b18a170
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 8267890e6a0a71f13b680794520999c642299081
 F src/loadext.c 5c20a5afeb154e68d62ed6d9c634add1b21387fd
-F src/main.c e025166b656a33dfa091a3d8cb99fb1172876a5f
+F src/main.c 3300916fb626e3e3873c25e9cd966a3b311d1c68
 F src/malloc.c 12c1ae98ef1eff34b13c9eb526e0b7b479e1e820
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
@@ -173,7 +173,7 @@ F src/tokenize.c a96abe15a8db6fea2e964cdce2acba9ed17bc26f
 F src/trigger.c 9bd3b6fa0beff4a02d262c96466f752ec15a7fc3
 F src/update.c 57282dae1ffffaf4aedc3201ed77f8ef09be4f45
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
-F src/util.c 8b17ea7ad27914c6e2c4a377ca7db743fb7e29a8
+F src/util.c 943caa4071488b20ed90588f0704c6825f91836b
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
 F src/vdbe.c e4a3df1221a8ee8025c7132cf8ab6bc88eae4e02
 F src/vdbe.h bfd84bda447f39cb599302c7ec85067dae20453c
@@ -630,7 +630,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P cafa8ac2687890355a7faa751d71859eb0fadd01
-R 10d0ed716771909e41eeeb97e122c258
+P cce8deae2d556916e2817e0cb9748dceb162085d
+R 7a340507e41c10c8a2cb1cddf539eada
 U drh
-Z bf5879aa4a093fef323324323481ba2a
+Z ea939e8bf0d325aad906011ffe8ec67e
