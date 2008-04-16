@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.18 2008/01/05 04:06:04 drh Exp $
+# $Id: incrblob.test,v 1.19 2008/04/16 23:39:26 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -32,6 +32,7 @@ do_test incrblob-1.2.1 {
   set ::blob [db incrblob blobs v 1]
   string match incrblob_* $::blob
 } {1}
+unset -nocomplain data
 do_test incrblob-1.2.2 {
   binary scan [read $::blob] c* data
   set data

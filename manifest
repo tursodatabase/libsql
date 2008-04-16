@@ -1,5 +1,5 @@
-C Fix\sthe\sbind.test\stest\sscript\sso\sthat\sthe\stests\sfor\szeros\sembedded\sin\nstrings\swork\scorrectly\sfor\sUTF-16\sencoded\sdatabases.\s(CVS\s5020)
-D 2008-04-16T16:11:49
+C Clear\sa\sglobal\svariable\sin\sthe\sincrblob.test\sscript.\s\sTicket\s#3062.\s(CVS\s5021)
+D 2008-04-16T23:39:26
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -332,7 +332,7 @@ F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 763a29007a4850d611ac4441bfa488fb9969ad30
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
-F test/incrblob.test 854c23b7ff8dd3822f675936b22c094655b3c739
+F test/incrblob.test 529eeddb1bac919a17929b768ca2d04732f55847
 F test/incrblob_err.test 5273097dc7c97f9b7008423a6ffd5c80d21923cb
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test a958e378c193c4012cb3787804d863487f1dfad1
@@ -632,7 +632,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6a2e3eb26af63386ce32594e24f1ce5605cd1068
-R b06fc0287c1d61e8732f4939621e2c8f
+P 7c094c80b2439480ffc680b2d63031d1033b266a
+R 16c0b96c72bfdde54b6efada37047b9d
 U drh
-Z d6acd0c53329c6833eb13af2897a0d65
+Z cdd92c3ad1b7a3d9eaa79035050e2ddb
