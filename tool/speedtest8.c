@@ -81,6 +81,89 @@ static void prepareAndRun(sqlite3 *db, const char *zSql){
   }
 }
 
+/***************************************************************************
+** The "overwrite" VFS is an overlay over the default VFS.  It modifies
+** the xTruncate operation on journal files so that xTruncate merely
+** writes zeros into the first 50 bytes of the file rather than truely
+** truncating the file.
+**
+** The following variables are initialized to be the virtual function
+** tables for the overwrite VFS.
+*/
+static sqlite3_vfs overwrite_vfs;
+static sqlite3_io_methods overwrite_methods;
+
+/*
+** The truncate method for journal files in the overwrite VFS.
+*/
+static int overwriteTruncate(sqlite3_file *pFile, sqlite_int64 size){
+  int rc;
+  static const char buf[50];
+  if( size ){
+    return SQLITE_IOERR;
+  }
+  rc = pFile->pMethods->xWrite(pFile, buf, sizeof(buf), 0);
+  if( rc==SQLITE_OK ){
+    rc = pFile->pMethods->xSync(pFile, SQLITE_SYNC_NORMAL);
+  }
+  return rc;
+}
+
+/*
+** The delete method for journal files in the overwrite VFS.
+*/
+static int overwriteDelete(sqlite3_file *pFile){
+  return overwriteTruncate(pFile, 0);
+}
+
+/*
+** The open method for overwrite VFS.  If the file being opened is
+** a journal file then substitute the alternative xTruncate method.
+*/
+static int overwriteOpen(
+  sqlite3_vfs *pVfs,
+  const char *zName,
+  sqlite3_file *pFile,
+  int flags,
+  int *pOutFlags
+){
+  int rc;
+  sqlite3_vfs *pRealVfs;
+  int isJournal;
+
+  isJournal = (flags & (SQLITE_OPEN_MAIN_JOURNAL|SQLITE_OPEN_TEMP_JOURNAL))!=0;
+  pRealVfs = (sqlite3_vfs*)pVfs->pAppData;
+  rc = pRealVfs->xOpen(pRealVfs, zName, pFile, flags, pOutFlags);
+  if( rc==SQLITE_OK && isJournal ){
+    if( overwrite_methods.xTruncate==0 ){
+      sqlite3_io_methods temp;
+      memcpy(&temp, pFile->pMethods, sizeof(temp));
+      temp.xTruncate = overwriteTruncate;
+      memcpy(&overwrite_methods, &temp, sizeof(temp));
+    }
+    pFile->pMethods = &overwrite_methods;
+  }
+  return rc;
+}
+
+/*
+** Overlay the overwrite VFS over top of the current default VFS
+** and make the overlay VFS the new default.
+**
+** This routine can only be evaluated once.  On second and subsequent
+** executions it becomes a no-op.
+*/
+static void registerOverwriteVfs(void){
+  sqlite3_vfs *pBase;
+  if( overwrite_vfs.iVersion ) return;
+  pBase = sqlite3_vfs_find(0);
+  memcpy(&overwrite_vfs, pBase, sizeof(overwrite_vfs));
+  overwrite_vfs.pAppData = pBase;
+  overwrite_vfs.xOpen = overwriteOpen;
+  overwrite_vfs.zName = "overwriteVfs";
+  sqlite3_vfs_register(&overwrite_vfs, 1);
+}
+
 int main(int argc, char **argv){
   sqlite3 *db;
   int rc;
@@ -92,31 +175,41 @@ int main(int argc, char **argv){
   unsigned long long int iSetup = 0;
   int nStmt = 0;
   int nByte = 0;
+  const char *zArgv0 = argv[0];
 
 #ifdef HAVE_OSINST
   extern sqlite3_vfs *sqlite3_instvfs_binarylog(char *, char *, char *);
   extern void sqlite3_instvfs_destroy(sqlite3_vfs *);
-
   sqlite3_vfs *pVfs = 0;
-  if( argc!=3 && (argc!=5 || strcmp("-log", argv[1])) ){
-    fprintf(stderr, "Usage: %s ?-log LOGFILE? FILENAME SQL-SCRIPT\n"
-                    "Runs SQL-SCRIPT against a UTF8 database\n",
-                    argv[0]);
-    exit(1);
+#endif
+
+  if( argc>=4 && strcmp(argv[1], "-overwrite")==0 ){
+    registerOverwriteVfs();
+    argv++;
+    argc--;
   }
-  if( argc==5 ){
+
+#ifdef HAVE_OSINST
+  if( argc>=5 && strcmp(argv[1], "-log")==0 ){
     pVfs = sqlite3_instvfs_binarylog("oslog", 0, argv[2]);
     sqlite3_vfs_register(pVfs, 1);
     argv += 2;
-  }
-#else
-  if( argc!=3 ){
-    fprintf(stderr, "Usage: %s FILENAME SQL-SCRIPT\n"
-                    "Runs SQL-SCRIPT against a UTF8 database\n",
-                    argv[0]);
-    exit(1);
+    argc -= 2;
   }
 #endif
+
+  if( argc>=4 && strcmp(argv[1], "-overwrite")==0 ){
+    registerOverwriteVfs();
+    argv++;
+    argc--;
+  }
+
+  if( argc!=3 ){
+    fprintf(stderr, "Usage: %s [options] FILENAME SQL-SCRIPT\n"
+                    "Runs SQL-SCRIPT against a UTF8 database\n",
+                    zArgv0);
+    exit(1);
+  }
 
   in = fopen(argv[2], "r");
   fseek(in, 0L, SEEK_END);
@@ -144,8 +237,10 @@ int main(int argc, char **argv){
         zSql[j] = 0;
         while( i<j && isspace(zSql[i]) ){ i++; }
         if( i<j ){
+          int n = j - i;
+          if( n>=6 && memcmp(&zSql[i], ".crash",6)==0 ) exit(1);
           nStmt++;
-          nByte += j-i;
+          nByte += n;
           prepareAndRun(db, &zSql[i]);
         }
         zSql[j] = ';';
