@@ -1,5 +1,5 @@
-C Version\s3.5.8\s(CVS\s5019)
-D 2008-04-16T15:39:31
+C Fix\sthe\sbind.test\stest\sscript\sso\sthat\sthe\stests\sfor\szeros\sembedded\sin\nstrings\swork\scorrectly\sfor\sUTF-16\sencoded\sdatabases.\s(CVS\s5020)
+D 2008-04-16T16:11:49
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -212,7 +212,7 @@ F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test 9a6a8346e4042d9c781ed6cb6553ac871ae30618
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test 991d5738c64e9627c09576dc18ff6cda46075563
+F test/bind.test 93e0b1e501bc2123d97749787e6a2c8abeb9f599
 F test/bindxfer.test 995d2cf8df61204d748cde6960443121c4ccd2e1
 F test/bitvec.test 62a512c3f7041d1df12558eb25990e5a19820571
 F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
@@ -632,7 +632,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P bb0f9e92e427d4ae8ea143d3d3773c9552e63565
-R f57a0ca58b7ca1d3113ae2507d454a38
+P 6a2e3eb26af63386ce32594e24f1ce5605cd1068
+R b06fc0287c1d61e8732f4939621e2c8f
 U drh
-Z b5912b7e46dead7f8f9ec0397ea2e300
+Z d6acd0c53329c6833eb13af2897a0d65

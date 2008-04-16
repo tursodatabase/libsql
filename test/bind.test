@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.41 2008/04/16 12:58:54 drh Exp $
+# $Id: bind.test,v 1.42 2008/04/16 16:11:49 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -275,11 +275,26 @@ do_test bind-6.4 {
   sqlite3_bind_text $VM 3 hello\000there\000 -1
   sqlite_step $VM N VALUES COLNAMES
   sqlite3_reset $VM
-  execsql {SELECT  hex(a), hex(b), hex(c) FROM t1}
-} {68656C6C6F00746865726500 68656C6C6F007468657265 68656C6C6F}
-do_test bind-6.5 {
   execsql {SELECT * FROM t1}
 } {hello hello hello}
+set enc [db eval {PRAGMA encoding}]
+if {$enc=="UTF-8"} {
+  do_test bind-6.5 {
+    execsql {SELECT  hex(a), hex(b), hex(c) FROM t1}
+  } {68656C6C6F00746865726500 68656C6C6F007468657265 68656C6C6F}
+} elseif {$enc=="UTF-16le"} {
+  do_test bind-6.5 {
+    execsql {SELECT  hex(a), hex(b), hex(c) FROM t1}
+  } {680065006C006C006F000000740068006500720065000000 680065006C006C006F00000074006800650072006500 680065006C006C006F00}
+} elseif {$enc=="UTF-16be"} {
+  do_test bind-6.5 {
+    execsql {SELECT  hex(a), hex(b), hex(c) FROM t1}
+  } {00680065006C006C006F0000007400680065007200650000 00680065006C006C006F000000740068006500720065 00680065006C006C006F}
+} else {
+  do_test bind-6.5 {
+    set "Unknown database encoding: $::enc"
+  } {}
+}
 do_test bind-6.6 {
   execsql {SELECT typeof(a), typeof(b), typeof(c) FROM t1}
 } {text text text}
@@ -311,9 +326,19 @@ ifcapable {utf16} {
     sqlite3_reset $VM
     execsql {SELECT * FROM t1}
   } {hi hi hi}
-  do_test bind-7.4 {
-    execsql {SELECT hex(a), hex(b), hex(c) FROM t1}
-  } {68690079616C6C00 68690079616C6C 6869}
+  if {$enc=="UTF-8"} {
+    do_test bind-7.4 {
+      execsql {SELECT hex(a), hex(b), hex(c) FROM t1}
+    } {68690079616C6C00 68690079616C6C 6869}
+  } elseif {$enc=="UTF-16le"} {
+    do_test bind-7.4 {
+      execsql {SELECT hex(a), hex(b), hex(c) FROM t1}
+    } {680069000000790061006C006C000000 680069000000790061006C006C00 68006900}
+  } elseif {$enc=="UTF-16be"} {
+    do_test bind-7.4 {
+      execsql {SELECT hex(a), hex(b), hex(c) FROM t1}
+    } {00680069000000790061006C006C0000 00680069000000790061006C006C 00680069}
+  }
   do_test bind-7.5 {
     execsql {SELECT typeof(a), typeof(b), typeof(c) FROM t1}
   } {text text text}
