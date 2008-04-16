@@ -1,5 +1,5 @@
-C Support\sUTF-8\sfilenames\son\sOS/2\sby\sconverting\sthem\sto\sand\sfrom\sthe\slocal\scodepage.\sTicket\s3052.\s(CVS\s5014)
-D 2008-04-15T18:50:02
+C Back\sout\sthe\szero-terminator\soptimization\sintroduced\sin\scheck-in\s(4915).\nTicket\s#3056.\s(CVS\s5015)
+D 2008-04-16T00:28:14
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,12 +138,12 @@ F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 5b8824a326a923876827fa8771c5e4e9e3a7faa1
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c be22ec05c8c4a43a95a6ad3b8068542200451e07
-F src/sqlite.h.in 824f823b341e9c979f82edebf710c87b74d1b7f5
+F src/sqlite.h.in bbb063e9055d1833a3fe3926ffc2ef555cfd1da1
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 625375d9327f0d79bf6f0f7864cc4a0543aec440
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 2c48c575dd59b3a6c5c306bc55f51a9402cf429a
-F src/tclsqlite.c c4892f48927cb3db19faeb448ea8abddfd4846a8
+F src/tclsqlite.c 2877726bf32f7d72ff057b37ed6c93485b667ea1
 F src/test1.c 8d633bcf3cd3b805c3393d58b5c1011d49b9b550
 F src/test2.c f0808cc643528b9620e4059ca9bda8346f526121
 F src/test3.c c715b5a8a6415d7b2c67f97c394eef488b6f7e63
@@ -182,7 +182,7 @@ F src/vdbeapi.c 0e1b5a808bb0e556f2a975eb7d11fd3153e922bf
 F src/vdbeaux.c f7460fac0c61d90edb245c66b7ac35254868c8e5
 F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
-F src/vdbemem.c 095e18f84b3171a5f2d71fa93a4bfc64220c1cfe
+F src/vdbemem.c 237e61216381998ff71c6431e5e7bd03386f6225
 F src/vtab.c f5e78bf73df3b0c1b53861109c1b2e0800b108cc
 F src/where.c a686f1e04f1ce5515a801fb3f3a358ef2cbb6ed2
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -630,7 +630,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a12fa0252c1bc45a116d0123758ef639cc8e451b
-R d8de72a548d7f4403c57ee71816098c3
-U pweilbacher
-Z ca8f83b6ee28230fbc93d88b258246a7
+P cafa8ac2687890355a7faa751d71859eb0fadd01
+R 10d0ed716771909e41eeeb97e122c258
+U drh
+Z bf5879aa4a093fef323324323481ba2a

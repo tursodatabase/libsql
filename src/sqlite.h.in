@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.304 2008/04/10 17:14:07 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.305 2008/04/16 00:28:14 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2295,7 +2295,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** If nByte is non-negative, then it is the maximum number of 
 ** bytes read from zSql.  When nByte is non-negative, the
 ** zSql string ends at either the first '\000' or '\u0000' character or 
-** until the nByte-th byte, whichever comes first. If the caller knows
+** the nByte-th byte, whichever comes first. If the caller knows
 ** that the supplied string is nul-terminated, then there is a small
 ** performance advantage to be had by passing an nByte parameter that 
 ** is equal to the number of bytes in the input string <i>including</i> 
@@ -2365,7 +2365,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **          read from zSql is read up to the first zero terminator.
 **
 ** {F13014} If the nByte argument to [sqlite3_prepare_v2(db,zSql,nByte,...)]
-**          and its variants is non-negative, then nBytes bytes
+**          and its variants is non-negative, then at most nBytes bytes
 **          SQL text is read from zSql.
 **
 ** {F13015} In [sqlite3_prepare_v2(db,zSql,N,P,pzTail)] and its variants
@@ -2528,8 +2528,7 @@ typedef struct sqlite3_context sqlite3_context;
 ** In those
 ** routines that have a fourth argument, its value is the number of bytes
 ** in the parameter.  To be clear: the value is the number of <u>bytes</u>
-** in the value, not the number of characters.   The number
-** of bytes does not include the zero-terminator at the end of strings.
+** in the value, not the number of characters. 
 ** If the fourth parameter is negative, the length of the string is
 ** number of bytes up to the first zero terminator.
 **
@@ -4052,23 +4051,23 @@ typedef void (*sqlite3_destructor_type)(void*);
 **
 ** {F16436} The [sqlite3_result_text(C,V,N,D)] interface changes the
 **          return value of function C to be the UTF8 string
-**          V up through the first zero or until N bytes are read if N
-**          is positive.
+**          V up the first zero if N is negative
+**          or the first N bytes of V if N is non-negative.
 **
 ** {F16439} The [sqlite3_result_text16(C,V,N,D)] interface changes the
 **          return value of function C to be the UTF16 native byte order
-**          string  V up through the first zero or until N bytes are read if N
-**          is positive.
+**          string V up to the first zero if N is
+**          negative or the first N bytes of V if N is non-negative.
 **
 ** {F16442} The [sqlite3_result_text16be(C,V,N,D)] interface changes the
 **          return value of function C to be the UTF16 big-endian
-**          string  V up through the first zero or until N bytes are read if N
-**          is positive.
+**          string V up to the first zero if N is
+**          is negative or the first N bytes or V if N is non-negative.
 **
 ** {F16445} The [sqlite3_result_text16le(C,V,N,D)] interface changes the
 **          return value of function C to be the UTF16 little-endian
-**          string  V up through the first zero or until N bytes are read if N
-**          is positive.
+**          string V up to the first zero if N is
+**          negative or the first N bytes of V if N is non-negative.
 **
 ** {F16448} The [sqlite3_result_value(C,V)] interface changes the
 **          return value of function C to be [unprotected sqlite3_value]

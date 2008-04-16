@@ -97,7 +97,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
   if( preserve && pMem->z && pMem->zMalloc && pMem->z!=pMem->zMalloc ){
     memcpy(pMem->zMalloc, pMem->z, pMem->n);
   }
-  if( pMem->xDel && pMem->flags&MEM_Dyn){
+  if( pMem->flags&MEM_Dyn && pMem->xDel ){
     pMem->xDel((void *)(pMem->z));
   }
 
@@ -252,7 +252,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
     ctx.pFunc = pFunc;
     ctx.isError = 0;
     pFunc->xFinalize(&ctx);
-    assert( !pMem->xDel || 0==(pMem->flags&MEM_Dyn) );
+    assert( 0==(pMem->flags&MEM_Dyn) && !pMem->xDel );
     sqlite3_free(pMem->zMalloc);
     *pMem = ctx.s;
     rc = (ctx.isError?SQLITE_ERROR:SQLITE_OK);
@@ -271,7 +271,7 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
     sqlite3VdbeMemFinalize(p, p->u.pDef);
     assert( (p->flags & MEM_Agg)==0 );
     sqlite3VdbeMemRelease(p);
-  }else if( p->xDel && p->flags&MEM_Dyn ){
+  }else if( p->flags&MEM_Dyn && p->xDel ){
     p->xDel((void *)p->z);
     p->xDel = 0;
   }
@@ -523,7 +523,7 @@ void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   sqlite3VdbeMemReleaseExternal(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->xDel = 0;
-  if( pFrom->xDel || pFrom->z==pFrom->zMalloc ){
+  if( (pFrom->flags&MEM_Dyn)!=0 || pFrom->z==pFrom->zMalloc ){
     pTo->flags &= ~(MEM_Dyn|MEM_Static|MEM_Ephem);
     assert( srcType==MEM_Ephem || srcType==MEM_Static );
     pTo->flags |= srcType;
@@ -605,14 +605,6 @@ int sqlite3VdbeMemSetStr(
       for(nByte=0; z[nByte] | z[nByte+1]; nByte+=2){}
     }
     flags |= MEM_Term;
-  }else if( enc==SQLITE_UTF8 && nByte>0 && z[nByte-1]=='\0' ){
-    nByte--;
-    flags |= MEM_Term;
-#ifndef SQLITE_OMIT_UTF16
-  }else if( enc && nByte>1 && z[nByte-1]=='\0' && z[nByte-2]=='\0' ){
-    nByte -= 2;
-    flags |= MEM_Term;
-#endif
   }
 
   /* The following block sets the new values of Mem.z and Mem.xDel. It
