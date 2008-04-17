@@ -13,7 +13,7 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.70 2008/03/20 11:04:21 danielk1977 Exp $
+** @(#) $Id: pager.h,v 1.71 2008/04/17 17:02:01 drh Exp $
 */
 
 #ifndef _PAGER_H_
@@ -49,6 +49,14 @@ typedef struct PgHdr DbPage;
 #define PAGER_LOCKINGMODE_QUERY      -1
 #define PAGER_LOCKINGMODE_NORMAL      0
 #define PAGER_LOCKINGMODE_EXCLUSIVE   1
+
+/*
+** Valid values for the second argument to sqlite3PagerJournalMode().
+*/
+#define PAGER_JOURNALMODE_QUERY      -1
+#define PAGER_JOURNALMODE_DELETE      0   /* Commit by deleting journal file */
+#define PAGER_JOURNALMODE_PERSIST     1   /* Commit by zeroing journal header */
+#define PAGER_JOURNALMODE_OFF         2   /* Journal omitted.  */
 
 /*
 ** See source code comments for a detailed description of the following
@@ -94,6 +102,7 @@ int sqlite3PagerMovepage(Pager*,DbPage*,Pgno);
 void *sqlite3PagerGetData(DbPage *); 
 void *sqlite3PagerGetExtra(DbPage *); 
 int sqlite3PagerLockingMode(Pager *, int);
+int sqlite3PagerJournalMode(Pager *, int);
 void *sqlite3PagerTempSpace(Pager*);
 int sqlite3PagerSync(Pager *pPager);
 

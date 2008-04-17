@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.427 2008/04/17 14:16:42 drh Exp $
+** @(#) $Id: pager.c,v 1.428 2008/04/17 17:02:01 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -350,6 +350,7 @@ struct Pager {
   u8 setMaster;               /* True if a m-j name has been written to jrnl */
   u8 doNotSync;               /* Boolean. While true, do not spill the cache */
   u8 exclusiveMode;           /* Boolean. True if locking_mode==EXCLUSIVE */
+  u8 persistJournal;          /* True if persistent_journal=ON */
   u8 changeCountDone;         /* Set after incrementing the change-counter */
   u32 vfsFlags;               /* Flags for sqlite3_vfs.xOpen() */
   int errCode;                /* One of several kinds of errors */
@@ -5201,6 +5202,28 @@ int sqlite3PagerLockingMode(Pager *pPager, int eMode){
     pPager->exclusiveMode = eMode;
   }
   return (int)pPager->exclusiveMode;
+}
+
+/*
+** Get/set the journal-mode for this pager. Parameter eMode must be one
+** of PAGER_JOURNALMODE_QUERY, PAGER_JOURNALMODE_DELETE or 
+** PAGER_JOURNALMODE_PERSIST. If the parameter is not _QUERY, then
+** the journal-mode is set to the value specified.
+**
+** The returned value is either PAGER_JOURNALMODE_DELETE or
+** PAGER_JOURNALMODE_PERSIST, indicating the current (possibly updated)
+** journal-mode.
+*/
+int sqlite3PagerJournalMode(Pager *pPager, int eMode){
+  assert( eMode==PAGER_JOURNALMODE_QUERY
+            || eMode==PAGER_JOURNALMODE_DELETE
+            || eMode==PAGER_JOURNALMODE_PERSIST );
+  assert( PAGER_JOURNALMODE_QUERY<0 );
+  assert( PAGER_JOURNALMODE_DELETE>=0 && PAGER_JOURNALMODE_PERSIST>=0 );
+  if( eMode>=0 && !pPager->tempFile ){
+    pPager->persistJournal = eMode;
+  }
+  return (int)pPager->persistJournal;
 }
 
 #ifdef SQLITE_TEST

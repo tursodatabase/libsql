@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.174 2008/03/27 22:42:52 drh Exp $
+** $Id: pragma.c,v 1.175 2008/04/17 17:02:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -422,6 +422,61 @@ void sqlite3Pragma(
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "locking_mode", P4_STATIC);
     sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, zRet, 0);
+    sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
+  }else
+
+  /*
+  **  PRAGMA [database.]journal_mode
+  **  PRAGMA [database.]journal_mode = (delete|persist|off)
+  */
+  if( sqlite3StrICmp(zLeft,"journal_mode")==0 ){
+    int eMode;
+    static const char *azModeName[] = {"delete", "persist", "off"};
+
+    if( zRight==0 ){
+      eMode = PAGER_JOURNALMODE_QUERY;
+    }else{
+      int n = strlen(zRight);
+      eMode = 2;
+      while( eMode>=0 && sqlite3StrNICmp(zRight, azModeName[eMode], n)!=0 ){
+        eMode--;
+      }
+    }
+    if( pId2->n==0 && eMode==PAGER_JOURNALMODE_QUERY ){
+      /* Simple "PRAGMA persistent_journal;" statement. This is a query for
+      ** the current default journal mode (which may be different to
+      ** the journal-mode of the main database).
+      */
+      eMode = db->dfltJournalMode;
+    }else{
+      Pager *pPager;
+      if( pId2->n==0 ){
+        /* This indicates that no database name was specified as part
+        ** of the PRAGMA command. In this case the journal-mode must be
+        ** set on all attached databases, as well as the main db file.
+        **
+        ** Also, the sqlite3.dfltJournalMode variable is set so that
+        ** any subsequently attached databases also use the specified
+        ** journal mode.
+        */
+        int ii;
+        assert(pDb==&db->aDb[0]);
+        for(ii=2; ii<db->nDb; ii++){
+          pPager = sqlite3BtreePager(db->aDb[ii].pBt);
+          sqlite3PagerJournalMode(pPager, eMode);
+        }
+        db->dfltJournalMode = eMode;
+      }
+      pPager = sqlite3BtreePager(pDb->pBt);
+      eMode = sqlite3PagerJournalMode(pPager, eMode);
+    }
+    assert( eMode==PAGER_JOURNALMODE_DELETE
+              || eMode==PAGER_JOURNALMODE_PERSIST
+              || eMode==PAGER_JOURNALMODE_OFF );
+    sqlite3VdbeSetNumCols(v, 1);
+    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "journal_mode", P4_STATIC);
+    sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, 
+           azModeName[eMode], P4_STATIC);
     sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
   }else
 #endif /* SQLITE_OMIT_PAGER_PRAGMAS */
