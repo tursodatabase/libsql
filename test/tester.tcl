@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.115 2008/04/15 02:36:34 drh Exp $
+# $Id: tester.tcl,v 1.116 2008/04/17 19:14:02 drh Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -367,6 +367,15 @@ proc explain {sql {db db}} {
       $addr $opcode $p1 $p2 $p3 $p4 $p5 $comment
     ]
   }
+}
+
+# Show the VDBE program for an SQL statement but omit the Trace
+# opcode at the beginning.  This procedure can be used to prove
+# that different SQL statements generate exactly the same VDBE code.
+#
+proc explain_no_trace {sql} {
+  set tr [db eval "EXPLAIN $sql"]
+  return [lrange $tr 7 end]
 }
 
 # Another procedure to execute SQL.  This one includes the field
