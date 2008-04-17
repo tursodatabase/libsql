@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.60 2008/04/03 10:13:01 danielk1977 Exp $
+# $Id: malloc.test,v 1.61 2008/04/17 14:16:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -252,7 +252,6 @@ ifcapable utf16 {
 # This block tests that malloc() failures that occur whilst commiting
 # a multi-file transaction are handled correctly.
 #
-breakpoint
 do_malloc_test 9 -sqlprep {
   ATTACH 'test2.db' as test2;
   CREATE TABLE abc1(a, b, c);

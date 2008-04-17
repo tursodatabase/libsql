@@ -1390,12 +1390,14 @@ static int vdbeCommit(sqlite3 *db){
     ** may be lying around. Returning an error code won't help matters.
     */
     disable_simulated_io_errors();
+    sqlite3FaultBenign(SQLITE_FAULTINJECTOR_MALLOC, 1);
     for(i=0; i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
         sqlite3BtreeCommitPhaseTwo(pBt);
       }
     }
+    sqlite3FaultBenign(SQLITE_FAULTINJECTOR_MALLOC, 0);
     enable_simulated_io_errors();
 
     sqlite3VtabCommit(db);

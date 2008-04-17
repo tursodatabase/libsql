@@ -1,5 +1,5 @@
-C Add\sthe\s-overwrite\soption\sto\sspeedtest8.c.\s(CVS\s5022)
-D 2008-04-16T23:50:24
+C In\sexclusive\slocking\smode,\scommit\sby\szeroing\sthe\sfirst\s28\sbytes\sof\sthe\njournal\sfile,\snot\sby\struncating\sthe\sjournal.\s\sOverwriting\sis\smuch\sfaster\nthan\struncating.\s(CVS\s5023)
+D 2008-04-17T14:16:42
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -94,7 +94,6 @@ F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c e41ce4513fb0e359dc678d6bddb4ace135fe365d
 F src/delete.c e4bd53c46969c9fb05cfbba4abc0c93a923f8072
-F src/experimental.c 1b2d1a6cd62ecc39610e97670332ca073c50792b
 F src/expr.c 7aecda0fb4f078718281a9b56993677c1f45a399
 F src/fault.c 83057e86815d473e526f7df0b0108dfdd022ff23
 F src/func.c c9e8c7ff4c45027edee89bde7adbf86a3a3b2afe
@@ -128,7 +127,7 @@ F src/os_unix.c fdec4e5ee5dd555a6ad4a69f38ab35f0788536b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c fc7c415f2a5dee4f47ac3feb33d016c2ff2f09c0
+F src/pager.c 13f1aca7567854ea5470b04de6fd370981d4f11a
 F src/pager.h b1e2258f03878c14b06a95bfa362e8c5c9638170
 F src/parse.y bc1b1cc6f86a0e0b669abdd88ddbdc7c8b67318d
 F src/pragma.c e659c9e443d11854cff2fd250012365ae0ca81ba
@@ -179,7 +178,7 @@ F src/vdbe.c e4a3df1221a8ee8025c7132cf8ab6bc88eae4e02
 F src/vdbe.h bfd84bda447f39cb599302c7ec85067dae20453c
 F src/vdbeInt.h 0b96efdeecb0803e504bf1c16b198f87c91d6019
 F src/vdbeapi.c 0e1b5a808bb0e556f2a975eb7d11fd3153e922bf
-F src/vdbeaux.c f7460fac0c61d90edb245c66b7ac35254868c8e5
+F src/vdbeaux.c 54fc53eecf270e57957bcc596c2fe452527a8274
 F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 237e61216381998ff71c6431e5e7bd03386f6225
@@ -264,9 +263,9 @@ F test/distinctagg.test 2b89d1c5220d966a30ba4b40430338669301188b
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
-F test/exclusive.test ebaf72ce9ff8f7ab3a09bf8f58fd65393dfff386
+F test/exclusive.test 5390ddf1f90a6d055111c0ebe6311045dd3035e1
 F test/exclusive2.test d13bf66753dca46e61241d35d36ab7c868b0d313
-F test/exclusive3.test 0e49c35b7e7cb8e7280b4ce3f0359d30b207d2ff
+F test/exclusive3.test 4c54ad89bc70031ee36ed06d92f47e38c7801429
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test 5c606f12045dd640ede7f840270340baf5ef1450
 F test/filectrl.test 524853082d5d7fb442599730ec3a0f3f84a3a936
@@ -368,7 +367,7 @@ F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/main.test 82c222989e02ea09abd58d453828ffd71806b6bf
-F test/malloc.test 7b9eb0617fab5b2028ad6982941268ce9240a250
+F test/malloc.test fa208f99ed283b131ace2903f052375ab480de1a
 F test/malloc2.test 6f2abc0617a7df210381272681d598488a3bf943
 F test/malloc3.test c724bc1c5fe7b8686be0f56c181c7fa4515d7bd7
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
@@ -632,7 +631,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1c19854ae7790a8a1d5c9cfe8b2cb71e2c19ce50
-R aefba1bd9f7f39d7f799ac7524bcfdfa
+P 6765ea52b33270a323c620b060cffd4f59004db1
+R 4569523d5d602bd2203ece943294a1b5
 U drh
-Z fa920ea88ca3b0e0f21121fc24e21171
+Z 4fd5f97a9d54ecd6d758d13ff0d6babf

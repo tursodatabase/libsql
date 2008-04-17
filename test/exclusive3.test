@@ -12,7 +12,7 @@
 # This file runs the tests in the file ioerr.test with 
 # exclusive access mode enabled.
 #
-# $Id: exclusive3.test,v 1.3 2007/03/30 16:01:55 drh Exp $
+# $Id: exclusive3.test,v 1.4 2008/04/17 14:16:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -42,10 +42,9 @@ proc do_test {args} {
   eval $sc
 }
 
-#source $testdir/rollback.test
-#source $testdir/select1.test
-#source $testdir/select2.test
-
+source $testdir/rollback.test
+source $testdir/select1.test
+source $testdir/select2.test
 source $testdir/malloc.test
 source $testdir/ioerr.test
 

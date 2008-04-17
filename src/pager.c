@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.426 2008/04/14 23:13:46 drh Exp $
+** @(#) $Id: pager.c,v 1.427 2008/04/17 14:16:42 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -961,6 +961,20 @@ static void seekJournalHdr(Pager *pPager){
 }
 
 /*
+** Write zeros over the header of the journal file.  This has the
+** effect of invalidating the journal file and committing the
+** transaction.
+*/
+static int zeroJournalHdr(Pager *pPager){
+  int rc;
+  static const char zeroHdr[28];
+
+  IOTRACE(("JZEROHDR %p\n", pPager))
+  rc = sqlite3OsWrite(pPager->jfd, zeroHdr, sizeof(zeroHdr), 0);
+  return rc;
+}
+
+/*
 ** The journal file must be open when this routine is called. A journal
 ** header (JOURNAL_HDR_SZ bytes) is written into the journal file at the
 ** current location.
@@ -1343,8 +1357,7 @@ static int pager_end_transaction(Pager *pPager){
     pPager->stmtOpen = 0;
   }
   if( pPager->journalOpen ){
-    if( pPager->exclusiveMode 
-          && (rc = sqlite3OsTruncate(pPager->jfd, 0))==SQLITE_OK ){;
+    if( pPager->exclusiveMode && (rc = zeroJournalHdr(pPager))==SQLITE_OK ){
       pPager->journalOff = 0;
       pPager->journalStarted = 0;
     }else{
@@ -1913,14 +1926,6 @@ static int pager_stmt_playback(Pager *pPager){
   int rc;
 
   szJ = pPager->journalOff;
-#ifndef NDEBUG 
-  {
-    i64 os_szJ;
-    rc = sqlite3OsFileSize(pPager->jfd, &os_szJ);
-    if( rc!=SQLITE_OK ) return rc;
-    assert( szJ==os_szJ );
-  }
-#endif
 
   /* Set hdrOff to be the offset just after the end of the last journal
   ** page written before the first journal-header for this statement
@@ -2817,19 +2822,6 @@ static int syncJournal(Pager *pPager){
       int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
       assert( pPager->journalOpen );
 
-      /* assert( !pPager->noSync ); // noSync might be set if synchronous
-      ** was turned off after the transaction was started.  Ticket #615 */
-#ifndef NDEBUG
-      {
-        /* Make sure the pPager->nRec counter we are keeping agrees
-        ** with the nRec computed from the size of the journal file.
-        */
-        i64 jSz;
-        rc = sqlite3OsFileSize(pPager->jfd, &jSz);
-        if( rc!=0 ) return rc;
-        assert( pPager->journalOff==jSz );
-      }
-#endif
       if( 0==(iDc&SQLITE_IOCAP_SAFE_APPEND) ){
         /* Write the nRec value into the journal file header. If in
         ** full-synchronous mode, sync the journal first. This ensures that
@@ -4904,11 +4896,6 @@ static int pagerStmtBegin(Pager *pPager){
     /* sqlite3OsLock(pPager->fd, SHARED_LOCK); */
     return SQLITE_NOMEM;
   }
-#ifndef NDEBUG
-  rc = sqlite3OsFileSize(pPager->jfd, &pPager->stmtJSize);
-  if( rc ) goto stmt_begin_failed;
-  assert( pPager->stmtJSize == pPager->journalOff );
-#endif
   pPager->stmtJSize = pPager->journalOff;
   pPager->stmtSize = pPager->dbSize;
   pPager->stmtHdrOff = 0;

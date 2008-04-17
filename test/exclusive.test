@@ -12,7 +12,7 @@
 # of these tests is exclusive access mode (i.e. the thing activated by 
 # "PRAGMA locking_mode = EXCLUSIVE").
 #
-# $Id: exclusive.test,v 1.7 2007/10/09 08:29:32 danielk1977 Exp $
+# $Id: exclusive.test,v 1.8 2008/04/17 14:16:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -262,7 +262,9 @@ proc filestate {fname} {
   set content 0
   if {[file exists $fname]} {
     set exists 1
-    set content [expr {[file size $fname] > 0}]
+    set hdr [hexio_read $fname 0 28]
+    set content \
+      [expr {$hdr!="00000000000000000000000000000000000000000000000000000000"}]
   }
   list $exists $content
 }
