@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.305 2008/04/16 00:28:14 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.306 2008/04/17 17:03:26 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4051,7 +4051,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 **
 ** {F16436} The [sqlite3_result_text(C,V,N,D)] interface changes the
 **          return value of function C to be the UTF8 string
-**          V up the first zero if N is negative
+**          V up to the first zero if N is negative
 **          or the first N bytes of V if N is non-negative.
 **
 ** {F16439} The [sqlite3_result_text16(C,V,N,D)] interface changes the
