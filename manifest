@@ -1,5 +1,5 @@
-C Additional\swork\son\sticket\s#3015.\s\sThe\sprevious\sfix\s(check-in\s(4919))\sdid\nnot\sappear\sto\swork\sin\sall\scases\sand\sit\sdisabled\sindexing\sin\ssome\splaces\nwhere\sit\sshould\snot\shave.\s\sNew\stest\scases\sadded\sto\shelp\sinsure\sthat\sthe\ncurrent\sfix\sis\sbetter.\s(CVS\s5026)
-D 2008-04-17T19:14:02
+C Continuing\sprogress\son\sthe\sjournal_mode\spragma.\s\sIt\sstill\sdoes\snot\swork.\s(CVS\s5027)
+D 2008-04-17T20:59:38
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -89,7 +89,7 @@ F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
 F src/btree.c ee340ad90103fe70526f7b0c3728d185dd470f20
 F src/btree.h c66cb17c6fffa84a88926dbef173bab4ae692fd4
 F src/btreeInt.h 8a2718652ed9413dc6acbb02a5c5a23a35a6e983
-F src/build.c e6f17bbb031c78e55389e3b90cd5cb150efef2b1
+F src/build.c f56940d7b785cd2f9bcb7e5b6e17157f6feb9c4c
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c e41ce4513fb0e359dc678d6bddb4ace135fe365d
@@ -127,10 +127,10 @@ F src/os_unix.c fdec4e5ee5dd555a6ad4a69f38ab35f0788536b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 84dc8bc0aa6d010d5904680801f353c4bc83717e
+F src/pager.c 60c81c923ab40a2934fb8bc0993823e01688a3f3
 F src/pager.h 45ec2188593afd48a25c743529646771d75e83e4
-F src/parse.y bc1b1cc6f86a0e0b669abdd88ddbdc7c8b67318d
-F src/pragma.c 113f14da852b4f94edcf4af718702287b15641e8
+F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
+F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
 F src/prepare.c adc7e1fc08dfbab63cd213d4c0aff8f3fa70d477
 F src/printf.c 05d2b44d7b5b80c8a4a09108ddad9c20e254370d
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
@@ -631,7 +631,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 79571e2c74fa365b7f471428c48e1678375b8c9d
-R 520ded2b9978aef5a40facaf74c1da68
+P 0d2e258e1a3276e55903ba2ded987f8d8a18cacd
+R a3d09c936cfdc9f30d64221d6e47db54
 U drh
-Z 73173026efe001e86c69d0ed8d1aa811
+Z 6c3e52b390c6e8cd0898e3f15efd7bdb

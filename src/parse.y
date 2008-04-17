@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.242 2008/03/29 12:50:33 rse Exp $
+** @(#) $Id: parse.y,v 1.243 2008/04/17 20:59:38 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -932,8 +932,9 @@ cmd ::= VACUUM nm.             {sqlite3Vacuum(pParse);}
 ///////////////////////////// The PRAGMA command /////////////////////////////
 //
 %ifndef SQLITE_OMIT_PRAGMA
-cmd ::= PRAGMA nm(X) dbnm(Z) EQ nmnum(Y).  {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
-cmd ::= PRAGMA nm(X) dbnm(Z) EQ ON(Y).  {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
+cmd ::= PRAGMA nm(X) dbnm(Z) EQ nmnum(Y).   {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
+cmd ::= PRAGMA nm(X) dbnm(Z) EQ ON(Y).      {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
+cmd ::= PRAGMA nm(X) dbnm(Z) EQ DELETE(Y).  {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
 cmd ::= PRAGMA nm(X) dbnm(Z) EQ minus_num(Y). {
   sqlite3Pragma(pParse,&X,&Z,&Y,1);
 }

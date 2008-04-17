@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.480 2008/04/11 17:11:27 danielk1977 Exp $
+** $Id: build.c,v 1.481 2008/04/17 20:59:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3235,6 +3235,8 @@ int sqlite3OpenTempDatabase(Parse *pParse){
     }
     assert( (db->flags & SQLITE_InTrans)==0 || db->autoCommit );
     assert( db->aDb[1].pSchema );
+    sqlite3PagerJournalMode(sqlite3BtreePager(db->aDb[1].pBt),
+                            db->dfltJournalMode);
   }
   return 0;
 }

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.175 2008/04/17 17:02:02 drh Exp $
+** $Id: pragma.c,v 1.176 2008/04/17 20:59:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -461,9 +461,11 @@ void sqlite3Pragma(
         */
         int ii;
         assert(pDb==&db->aDb[0]);
-        for(ii=2; ii<db->nDb; ii++){
-          pPager = sqlite3BtreePager(db->aDb[ii].pBt);
-          sqlite3PagerJournalMode(pPager, eMode);
+        for(ii=1; ii<db->nDb; ii++){
+          if( db->aDb[ii].pBt ){
+            pPager = sqlite3BtreePager(db->aDb[ii].pBt);
+            sqlite3PagerJournalMode(pPager, eMode);
+          }
         }
         db->dfltJournalMode = eMode;
       }

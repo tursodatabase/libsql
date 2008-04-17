@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.428 2008/04/17 17:02:01 drh Exp $
+** @(#) $Id: pager.c,v 1.429 2008/04/17 20:59:38 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -350,7 +350,7 @@ struct Pager {
   u8 setMaster;               /* True if a m-j name has been written to jrnl */
   u8 doNotSync;               /* Boolean. While true, do not spill the cache */
   u8 exclusiveMode;           /* Boolean. True if locking_mode==EXCLUSIVE */
-  u8 persistJournal;          /* True if persistent_journal=ON */
+  u8 journalMode;             /* On of the PAGER_JOURNALMODE_* values */
   u8 changeCountDone;         /* Set after incrementing the change-counter */
   u32 vfsFlags;               /* Flags for sqlite3_vfs.xOpen() */
   int errCode;                /* One of several kinds of errors */
@@ -1318,13 +1318,15 @@ static void pager_unlock(Pager *pPager){
 ** do not attempt the rollback.
 */
 static void pagerUnlockAndRollback(Pager *p){
-  assert( p->state>=PAGER_RESERVED || p->journalOpen==0 );
+  /* assert( p->state>=PAGER_RESERVED || p->journalOpen==0 ); */
   if( p->errCode==SQLITE_OK && p->state>=PAGER_RESERVED ){
     sqlite3PagerRollback(p);
   }
   pager_unlock(p);
+#if 0
   assert( p->errCode || !p->journalOpen || (p->exclusiveMode&&!p->journalOff) );
   assert( p->errCode || !p->stmtOpen || p->exclusiveMode );
+#endif
 }
 
 /*
@@ -1358,7 +1360,9 @@ static int pager_end_transaction(Pager *pPager){
     pPager->stmtOpen = 0;
   }
   if( pPager->journalOpen ){
-    if( pPager->exclusiveMode && (rc = zeroJournalHdr(pPager))==SQLITE_OK ){
+    if( (pPager->exclusiveMode ||
+         pPager->journalMode==PAGER_JOURNALMODE_PERSIST) 
+       && (rc = zeroJournalHdr(pPager))==SQLITE_OK ){
       pPager->journalOff = 0;
       pPager->journalStarted = 0;
     }else{
@@ -2715,7 +2719,6 @@ int sqlite3PagerClose(Pager *pPager){
   enable_simulated_io_errors();
   PAGERTRACE2("CLOSE %d\n", PAGERID(pPager));
   IOTRACE(("CLOSE %p\n", pPager))
-  assert( pPager->errCode || (pPager->journalOpen==0 && pPager->stmtOpen==0) );
   if( pPager->journalOpen ){
     sqlite3OsClose(pPager->jfd);
   }
@@ -3865,7 +3868,6 @@ static int pager_open_journal(Pager *pPager){
   int rc;
   assert( !MEMDB );
   assert( pPager->state>=PAGER_RESERVED );
-  assert( pPager->journalOpen==0 );
   assert( pPager->useJournal );
   assert( pPager->pInJournal==0 );
   sqlite3PagerPagecount(pPager);
@@ -3877,27 +3879,29 @@ static int pager_open_journal(Pager *pPager){
     goto failed_to_open_journal;
   }
 
-  if( pPager->tempFile ){
-    flags |= (SQLITE_OPEN_DELETEONCLOSE|SQLITE_OPEN_TEMP_JOURNAL);
-  }else{
-    flags |= (SQLITE_OPEN_MAIN_JOURNAL);
-  }
-#ifdef SQLITE_ENABLE_ATOMIC_WRITE
-  rc = sqlite3JournalOpen(
-      pVfs, pPager->zJournal, pPager->jfd, flags, jrnlBufferSize(pPager)
-  );
-#else
-  rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, 0);
-#endif
-  assert( rc!=SQLITE_OK || pPager->jfd->pMethods );
-  pPager->journalOff = 0;
-  pPager->setMaster = 0;
-  pPager->journalHdr = 0;
-  if( rc!=SQLITE_OK ){
-    if( rc==SQLITE_NOMEM ){
-      sqlite3OsDelete(pVfs, pPager->zJournal, 0);
+  if( pPager->journalOpen==0 ){
+    if( pPager->tempFile ){
+      flags |= (SQLITE_OPEN_DELETEONCLOSE|SQLITE_OPEN_TEMP_JOURNAL);
+    }else{
+      flags |= (SQLITE_OPEN_MAIN_JOURNAL);
     }
-    goto failed_to_open_journal;
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
+    rc = sqlite3JournalOpen(
+        pVfs, pPager->zJournal, pPager->jfd, flags, jrnlBufferSize(pPager)
+    );
+#else
+    rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, 0);
+#endif
+    assert( rc!=SQLITE_OK || pPager->jfd->pMethods );
+    pPager->journalOff = 0;
+    pPager->setMaster = 0;
+    pPager->journalHdr = 0;
+    if( rc!=SQLITE_OK ){
+      if( rc==SQLITE_NOMEM ){
+        sqlite3OsDelete(pVfs, pPager->zJournal, 0);
+      }
+      goto failed_to_open_journal;
+    }
   }
   pPager->journalOpen = 1;
   pPager->journalStarted = 0;
@@ -3981,7 +3985,8 @@ int sqlite3PagerBegin(DbPage *pPg, int exFlag){
       }
       pPager->dirtyCache = 0;
       PAGERTRACE2("TRANSACTION %d\n", PAGERID(pPager));
-      if( pPager->useJournal && !pPager->tempFile ){
+      if( pPager->useJournal && !pPager->tempFile
+             && pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
         rc = pager_open_journal(pPager);
       }
     }
@@ -4118,18 +4123,18 @@ static int pager_write(PgHdr *pPg){
       return rc;
     }
     assert( pPager->state>=PAGER_RESERVED );
-    if( !pPager->journalOpen && pPager->useJournal ){
+    if( !pPager->journalOpen && pPager->useJournal
+          && pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
       rc = pager_open_journal(pPager);
       if( rc!=SQLITE_OK ) return rc;
     }
-    assert( pPager->journalOpen || !pPager->useJournal );
     pPager->dirtyCache = 1;
   
     /* The transaction journal now exists and we have a RESERVED or an
     ** EXCLUSIVE lock on the main database file.  Write the current page to
     ** the transaction journal if it is not there already.
     */
-    if( !pPg->inJournal && (pPager->useJournal || MEMDB) ){
+    if( !pPg->inJournal && (pPager->journalOpen || MEMDB) ){
       if( (int)pPg->pgno <= pPager->origDbSize ){
         if( MEMDB ){
           PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
@@ -5217,13 +5222,14 @@ int sqlite3PagerLockingMode(Pager *pPager, int eMode){
 int sqlite3PagerJournalMode(Pager *pPager, int eMode){
   assert( eMode==PAGER_JOURNALMODE_QUERY
             || eMode==PAGER_JOURNALMODE_DELETE
-            || eMode==PAGER_JOURNALMODE_PERSIST );
+            || eMode==PAGER_JOURNALMODE_PERSIST
+            || eMode==PAGER_JOURNALMODE_OFF );
   assert( PAGER_JOURNALMODE_QUERY<0 );
   assert( PAGER_JOURNALMODE_DELETE>=0 && PAGER_JOURNALMODE_PERSIST>=0 );
-  if( eMode>=0 && !pPager->tempFile ){
-    pPager->persistJournal = eMode;
+  if( eMode>=0 ){
+    pPager->journalMode = eMode;
   }
-  return (int)pPager->persistJournal;
+  return (int)pPager->journalMode;
 }
 
 #ifdef SQLITE_TEST
