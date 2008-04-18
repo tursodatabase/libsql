@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.732 2008/04/18 10:25:24 danielk1977 Exp $
+** $Id: vdbe.c,v 1.733 2008/04/18 11:31:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3832,34 +3832,31 @@ case OP_IdxRowid: {              /* out2-prerelease */
   break;
 }
 
-/* Opcode: IdxGE P1 P2 P3 * P5
+/* Opcode: IdxGE P1 P2 P3 P4 P5
 **
-** The value in register P3 is an index entry that omits the ROWID.  Compare
-** this value against the index that P1 is currently pointing to.
-** Ignore the ROWID on the P1 index.
+** The P4 register values beginning with P3 form an unpacked index 
+** key that omits the ROWID.  Compare this key value against the index 
+** that P1 is currently pointing to, ignoring the ROWID on the P1 index.
 **
-** If the P1 index entry is greater than or equal to the value in 
-** register P3 then jump to P2.  Otherwise fall through to the next 
-** instruction.
+** If the P1 index entry is greater than or equal to the key value
+** then jump to P2.  Otherwise fall through to the next instruction.
 **
-** If P5 is non-zero then the value in register P3 is temporarily
-** increased by an epsilon prior to the comparison.  This make the opcode work
-** like IdxGT except that if the key from register P3 is a prefix of
-** the key in the cursor, the result is false whereas it would be
-** true with IdxGT.
+** If P5 is non-zero then the key value is increased by an epsilon 
+** prior to the comparison.  This make the opcode work like IdxGT except
+** that if the key from register P3 is a prefix of the key in the cursor,
+** the result is false whereas it would be true with IdxGT.
 */
 /* Opcode: IdxLT P1 P2 P3 * P5
 **
-** The value in register P3 is an index entry that omits the ROWID.  Compare
-** the this value against the index that P1 is currently pointing to.
-** Ignore the ROWID on the P1 index.
+** The P4 register values beginning with P3 form an unpacked index 
+** key that omits the ROWID.  Compare this key value against the index 
+** that P1 is currently pointing to, ignoring the ROWID on the P1 index.
 **
-** If the P1 index entry is less than the register P3 value
-** then jump to P2.  Otherwise fall through to the next instruction.
+** If the P1 index entry is less than the key value then jump to P2.
+** Otherwise fall through to the next instruction.
 **
-** If P5 is non-zero then the index taken from register P3 is temporarily 
-** increased by an epsilon prior to the comparison.  This makes the opcode 
-** work like IdxLE.
+** If P5 is non-zero then the key value is increased by an epsilon prior 
+** to the comparison.  This makes the opcode work like IdxLE.
 */
 case OP_IdxLT:          /* jump, in3 */
 case OP_IdxGE: {        /* jump, in3 */
@@ -3870,27 +3867,18 @@ case OP_IdxGE: {        /* jump, in3 */
   assert( p->apCsr[i]!=0 );
   if( (pC = p->apCsr[i])->pCursor!=0 ){
     int res;
- 
+    UnpackedRecord r;
     assert( pC->deferredMoveto==0 );
     assert( pOp->p5==0 || pOp->p5==1 );
+    assert( pOp->p4type==P4_INT32 );
+    r.pKeyInfo = pC->pKeyInfo;
+    r.nField = pOp->p4.i;
+    r.needFree = 0;
+    r.needDestroy = 0;
+    r.aMem = &p->aMem[pOp->p3];
     *pC->pIncrKey = pOp->p5;
-    if( pOp->p4type!=P4_INT32 || pOp->p4.i==0 ){
-      assert( pIn3->flags & MEM_Blob );  /* Created using OP_MakeRecord */
-      ExpandBlob(pIn3);
-      rc = sqlite3VdbeIdxKeyCompare(pC, 0, pIn3->n, (u8*)pIn3->z, &res);
-    }else{
-      UnpackedRecord r;
-      r.pKeyInfo = pC->pKeyInfo;
-      r.nField = pOp->p4.i;
-      r.needFree = 0;
-      r.needDestroy = 0;
-      r.aMem = &p->aMem[pOp->p3];
-      rc = sqlite3VdbeIdxKeyCompare(pC, &r, 0, 0, &res);
-    }
+    rc = sqlite3VdbeIdxKeyCompare(pC, &r, 0, 0, &res);
     *pC->pIncrKey = 0;
-    if( rc!=SQLITE_OK ){
-      break;
-    }
     if( pOp->opcode==OP_IdxLT ){
       res = -res;
     }else{
