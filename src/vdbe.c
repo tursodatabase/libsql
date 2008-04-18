@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.731 2008/04/18 09:01:16 danielk1977 Exp $
+** $Id: vdbe.c,v 1.732 2008/04/18 10:25:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2148,6 +2148,7 @@ case OP_Affinity: {
   Mem *pRec;
 
   for(pRec=pData0; pRec<=pLast; pRec++){
+    ExpandBlob(pRec);
     applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
   }
   break;
@@ -2790,13 +2791,16 @@ case OP_Close: {
   break;
 }
 
-/* Opcode: MoveGe P1 P2 P3 * *
+/* Opcode: MoveGe P1 P2 P3 P4 *
 **
-** Use the value in register P3 as a key.  Reposition
-** cursor P1 so that it points to the smallest entry that is greater
-** than or equal to the key in register P3.
-** If there are no records greater than or equal to the key and P2 
-** is not zero, then jump to P2.
+** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
+** use the integer value in register P3 as a key. If cursor P1 refers 
+** to an SQL index, then P3 is the first in an array of P4 registers 
+** that are used as an unpacked index key. 
+**
+** Reposition cursor P1 so that  it points to the smallest entry that 
+** is greater than or equal to the key value. If there are no records 
+** greater than or equal to the key and P2 is not zero, then jump to P2.
 **
 ** A special feature of this opcode (and different from the
 ** related OP_MoveGt, OP_MoveLt, and OP_MoveLe) is that if P2 is
@@ -2807,37 +2811,42 @@ case OP_Close: {
 **
 ** See also: Found, NotFound, Distinct, MoveLt, MoveGt, MoveLe
 */
-/* Opcode: MoveGt P1 P2 P3 * *
+/* Opcode: MoveGt P1 P2 P3 P4 *
 **
-** Use the value in register P3 as a key.  Reposition
-** cursor P1 so that it points to the smallest entry that is greater
-** than the key in register P3.
-** If there are no records greater than the key 
-** then jump to P2.
+** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
+** use the integer value in register P3 as a key. If cursor P1 refers 
+** to an SQL index, then P3 is the first in an array of P4 registers 
+** that are used as an unpacked index key. 
+**
+** Reposition cursor P1 so that  it points to the smallest entry that 
+** is greater than the key value. If there are no records greater than 
+** the key and P2 is not zero, then jump to P2.
 **
 ** See also: Found, NotFound, Distinct, MoveLt, MoveGe, MoveLe
 */
-/* Opcode: MoveLt P1 P2 P3 * * 
+/* Opcode: MoveLt P1 P2 P3 P4 * 
 **
-** Use the value in register P3 as a key.  Reposition
-** cursor P1 so that it points to the largest entry that is less
-** than the key in register P3.
-** If there are no records less than the key
-** then jump to P2.
+** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
+** use the integer value in register P3 as a key. If cursor P1 refers 
+** to an SQL index, then P3 is the first in an array of P4 registers 
+** that are used as an unpacked index key. 
+**
+** Reposition cursor P1 so that  it points to the largest entry that 
+** is less than the key value. If there are no records less than 
+** the key and P2 is not zero, then jump to P2.
 **
 ** See also: Found, NotFound, Distinct, MoveGt, MoveGe, MoveLe
 */
 /* Opcode: MoveLe P1 P2 P3 P4 *
 **
-** P4 is always an integer value. If it is zero, then use the value in
-** register P3 as a key. Reposition cursor P1 so that it points to the
-** largest entry that is less than or equal to the key. If there are no 
-** records less than or eqal to the key then jump to P2.
+** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
+** use the integer value in register P3 as a key. If cursor P1 refers 
+** to an SQL index, then P3 is the first in an array of P4 registers 
+** that are used as an unpacked index key. 
 **
-** If the integer value in operand P4 is non-zero, then P3 is the first
-** of a contiguous array of P4 memory cells that form an unpacked index
-** key. In this case the unpacked key is used instead of the value of
-** register P3 in the procedure described above.
+** Reposition cursor P1 so that it points to the largest entry that 
+** is less than or equal to the key value. If there are no records 
+** less than or equal to the key and P2 is not zero, then jump to P2.
 **
 ** See also: Found, NotFound, Distinct, MoveGt, MoveGe, MoveLt
 */
@@ -2872,20 +2881,16 @@ case OP_MoveGt: {       /* jump, in3 */
       pC->lastRowid = iKey;
       pC->rowidIsValid = res==0;
     }else{
-      int nField = ((pOp->p4type==P4_INT32)?pOp->p4.i:0);
-      assert( pIn3->flags&MEM_Blob || nField>0 );
-      if( nField==0 ){
-        ExpandBlob(pIn3);
-        rc = sqlite3BtreeMoveto(pC->pCursor, pIn3->z, 0, pIn3->n, 0, &res);
-      }else{
-        UnpackedRecord r;
-        r.pKeyInfo = pC->pKeyInfo;
-        r.nField = nField;
-        r.needFree = 0;
-        r.needDestroy = 0;
-        r.aMem = &p->aMem[pOp->p3];
-        rc = sqlite3BtreeMoveto(pC->pCursor, 0, &r, 0, 0, &res);
-      }
+      UnpackedRecord r;
+      int nField = pOp->p4.i;
+      assert( pOp->p4type==P4_INT32 );
+      assert( nField>0 );
+      r.pKeyInfo = pC->pKeyInfo;
+      r.nField = nField;
+      r.needFree = 0;
+      r.needDestroy = 0;
+      r.aMem = &p->aMem[pOp->p3];
+      rc = sqlite3BtreeMoveto(pC->pCursor, 0, &r, 0, 0, &res);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
       }

@@ -1,5 +1,5 @@
-C Allow\sOP_MoveGt\sand\ssimilar\sto\suse\san\sarray\sof\sregisters\sinstead\sof\sa\sserialized\srecord.\sModify\sone\stype\sof\sindex\srange\sscan\sto\suse\sthis.\s(CVS\s5028)
-D 2008-04-18T09:01:16
+C Combine\scases\s3\sand\s4\sin\swhere.c,\ssince\scase\s4\sis\snow\sa\sspecial\scase\sof\scase\s3.\s(CVS\s5029)
+D 2008-04-18T10:25:24
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -174,7 +174,7 @@ F src/update.c 57282dae1ffffaf4aedc3201ed77f8ef09be4f45
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 943caa4071488b20ed90588f0704c6825f91836b
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
-F src/vdbe.c 6b3a2273255d7527f17a2f4c123bcaa02969ddc0
+F src/vdbe.c 892a871879c80a905eaa0d1f7bd24e0221bad56d
 F src/vdbe.h bfd84bda447f39cb599302c7ec85067dae20453c
 F src/vdbeInt.h 05316345da487b0cf540482576f9ae3337d133cd
 F src/vdbeapi.c 0e1b5a808bb0e556f2a975eb7d11fd3153e922bf
@@ -183,7 +183,7 @@ F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 237e61216381998ff71c6431e5e7bd03386f6225
 F src/vtab.c f5e78bf73df3b0c1b53861109c1b2e0800b108cc
-F src/where.c e6850aa2fbe655c15914e9b102a20abf2834ab89
+F src/where.c 011f866cf0f05c832eea5a30e079eb108253ac64
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d56a3ca8acdf761204aff0a2e7aa5eb8e11b31e6
@@ -631,7 +631,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4a72a7bb9c5793cdaf4ee038482053e042d8db54
-R 63ab958aeb1a64fb1b489284d8bf24a2
+P c448f15aa5ed3dec511426775e893efea324faa1
+R 2fd8586df4700418bc96607c52d60fc1
 U danielk1977
-Z ffb6897ecd3dcda79af541b97309bd4b
+Z 63b2d6660f8e65e3dba8e17623deefd8
