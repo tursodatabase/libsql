@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.730 2008/04/15 12:14:22 drh Exp $
+** $Id: vdbe.c,v 1.731 2008/04/18 09:01:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2133,6 +2133,26 @@ op_column_out:
   break;
 }
 
+/* Opcode: Affinity P1 P2 * P4 *
+**
+** Apply affinities to a range of P2 registers starting with P1.
+**
+** P4 is a string that is P2 characters long. The nth character of the
+** string indicates the column affinity that should be used for the nth
+** memory cell in the range.
+*/
+case OP_Affinity: {
+  char *zAffinity = pOp->p4.z;
+  Mem *pData0 = &p->aMem[pOp->p1];
+  Mem *pLast = &pData0[pOp->p2-1];
+  Mem *pRec;
+
+  for(pRec=pData0; pRec<=pLast; pRec++){
+    applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
+  }
+  break;
+}
+
 /* Opcode: MakeRecord P1 P2 P3 P4 *
 **
 ** Convert P2 registers beginning with P1 into a single entry
@@ -2142,7 +2162,7 @@ op_column_out:
 ** Refer to source code comments for the details of the record
 ** format.
 **
-** P4 may be a string that is P1 characters long.  The nth character of the
+** P4 may be a string that is P2 characters long.  The nth character of the
 ** string indicates the column affinity that should be used for the nth
 ** field of the index key.
 **
@@ -2807,13 +2827,17 @@ case OP_Close: {
 **
 ** See also: Found, NotFound, Distinct, MoveGt, MoveGe, MoveLe
 */
-/* Opcode: MoveLe P1 P2 P3 * *
+/* Opcode: MoveLe P1 P2 P3 P4 *
 **
-** Use the value in register P3 as a key.  Reposition
-** cursor P1 so that it points to the largest entry that is less than
-** or equal to the key.
-** If there are no records less than or eqal to the key
-** then jump to P2.
+** P4 is always an integer value. If it is zero, then use the value in
+** register P3 as a key. Reposition cursor P1 so that it points to the
+** largest entry that is less than or equal to the key. If there are no 
+** records less than or eqal to the key then jump to P2.
+**
+** If the integer value in operand P4 is non-zero, then P3 is the first
+** of a contiguous array of P4 memory cells that form an unpacked index
+** key. In this case the unpacked key is used instead of the value of
+** register P3 in the procedure described above.
 **
 ** See also: Found, NotFound, Distinct, MoveGt, MoveGe, MoveLt
 */
@@ -2848,9 +2872,20 @@ case OP_MoveGt: {       /* jump, in3 */
       pC->lastRowid = iKey;
       pC->rowidIsValid = res==0;
     }else{
-      assert( pIn3->flags & MEM_Blob );
-      ExpandBlob(pIn3);
-      rc = sqlite3BtreeMoveto(pC->pCursor, pIn3->z, 0, pIn3->n, 0, &res);
+      int nField = ((pOp->p4type==P4_INT32)?pOp->p4.i:0);
+      assert( pIn3->flags&MEM_Blob || nField>0 );
+      if( nField==0 ){
+        ExpandBlob(pIn3);
+        rc = sqlite3BtreeMoveto(pC->pCursor, pIn3->z, 0, pIn3->n, 0, &res);
+      }else{
+        UnpackedRecord r;
+        r.pKeyInfo = pC->pKeyInfo;
+        r.nField = nField;
+        r.needFree = 0;
+        r.needDestroy = 0;
+        r.aMem = &p->aMem[pOp->p3];
+        rc = sqlite3BtreeMoveto(pC->pCursor, 0, &r, 0, 0, &res);
+      }
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
       }
@@ -3023,7 +3058,7 @@ case OP_IsUnique: {        /* jump, in3 */
         break;
       }
     }
-    rc = sqlite3VdbeIdxKeyCompare(pCx, len, (u8*)zKey, &res); 
+    rc = sqlite3VdbeIdxKeyCompare(pCx, 0, len, (u8*)zKey, &res); 
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res>0 ){
       pc = pOp->p2 - 1;
@@ -3817,10 +3852,9 @@ case OP_IdxRowid: {              /* out2-prerelease */
 ** If the P1 index entry is less than the register P3 value
 ** then jump to P2.  Otherwise fall through to the next instruction.
 **
-** If P5 is non-zero then the
-** index taken from register P3 is temporarily increased by
-** an epsilon prior to the comparison.  This makes the opcode work
-** like IdxLE.
+** If P5 is non-zero then the index taken from register P3 is temporarily 
+** increased by an epsilon prior to the comparison.  This makes the opcode 
+** work like IdxLE.
 */
 case OP_IdxLT:          /* jump, in3 */
 case OP_IdxGE: {        /* jump, in3 */
@@ -3832,12 +3866,22 @@ case OP_IdxGE: {        /* jump, in3 */
   if( (pC = p->apCsr[i])->pCursor!=0 ){
     int res;
  
-    assert( pIn3->flags & MEM_Blob );  /* Created using OP_MakeRecord */
     assert( pC->deferredMoveto==0 );
-    ExpandBlob(pIn3);
     assert( pOp->p5==0 || pOp->p5==1 );
     *pC->pIncrKey = pOp->p5;
-    rc = sqlite3VdbeIdxKeyCompare(pC, pIn3->n, (u8*)pIn3->z, &res);
+    if( pOp->p4type!=P4_INT32 || pOp->p4.i==0 ){
+      assert( pIn3->flags & MEM_Blob );  /* Created using OP_MakeRecord */
+      ExpandBlob(pIn3);
+      rc = sqlite3VdbeIdxKeyCompare(pC, 0, pIn3->n, (u8*)pIn3->z, &res);
+    }else{
+      UnpackedRecord r;
+      r.pKeyInfo = pC->pKeyInfo;
+      r.nField = pOp->p4.i;
+      r.needFree = 0;
+      r.needDestroy = 0;
+      r.aMem = &p->aMem[pOp->p3];
+      rc = sqlite3VdbeIdxKeyCompare(pC, &r, 0, 0, &res);
+    }
     *pC->pIncrKey = 0;
     if( rc!=SQLITE_OK ){
       break;

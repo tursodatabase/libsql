@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.299 2008/04/17 19:14:02 drh Exp $
+** $Id: where.c,v 1.300 2008/04/18 09:01:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2475,36 +2475,40 @@ WhereInfo *sqlite3WhereBegin(
       **         constraints but an index is selected anyway, in order
       **         to force the output order to conform to an ORDER BY.
       */
-      int start;
+      int aStartOp[] = {
+        0,
+        0,
+        OP_Rewind,           /* 2: (!start_constraints && startEq && !bRev) */
+        OP_Last,             /* 3: (!start_constraints && startEq && bRev)  */
+        OP_MoveGt,           /* 4: (start_constraints  && !startEq && !bRev) */
+        OP_MoveLt,           /* 5: (start_constraints  && !startEq && bRev) */
+        OP_MoveGe,           /* 6: (start_constraints  &&  startEq && !bRev) */
+        OP_MoveLe            /* 7: (start_constraints  &&  startEq && bRev) */
+      };
+      int aEndOp[] = {
+        OP_Noop,             /* 0: () */
+        OP_IdxGE,            /* 1: (end_constraints && !bRev) */
+        OP_IdxLT             /* 2: (end_constraints && bRev) */
+      };
       int nEq = pLevel->nEq;
-      int topEq=0;        /* True if top limit uses ==. False is strictly < */
-      int btmEq=0;        /* True if btm limit uses ==. False if strictly > */
-      int topOp, btmOp;   /* Operators for the top and bottom search bounds */
-      int testOp;
-      int topLimit = (pLevel->flags & WHERE_TOP_LIMIT)!=0;
-      int btmLimit = (pLevel->flags & WHERE_BTM_LIMIT)!=0;
-      int isMinQuery = 0;      /* If this is an optimized SELECT min(x) ... */
-      int regBase;        /* Base register holding constraint values */
-      int r1;             /* Temp register */
+      int isMinQuery = 0;          /* If this is an optimized SELECT min(x).. */
+      int regBase;                 /* Base register holding constraint values */
+      int r1;                      /* Temp register */
+      WhereTerm *pRangeStart = 0;  /* Inequality constraint at range start */
+      WhereTerm *pRangeEnd = 0;    /* Inequality constraint at range end */
+      int startEq;                 /* True if range start uses ==, >= or <= */
+      int endEq;                   /* True if range end uses ==, >= or <= */
+      int start_constraints;       /* Start of range is constrained */
+      int k = pIdx->aiColumn[nEq]; /* Column for inequality constraints */
+      char *ptr;
+      int op;
 
       /* Generate code to evaluate all constraint terms using == or IN
-      ** and level the values of those terms on the stack.
+      ** and store the values of those terms in an array of registers
+      ** starting at regBase.
       */
       regBase = codeAllEqualityTerms(pParse, pLevel, &wc, notReady, 2);
-
-      /* Figure out what comparison operators to use for top and bottom 
-      ** search bounds. For an ascending index, the bottom bound is a > or >=
-      ** operator and the top bound is a < or <= operator.  For a descending
-      ** index the operators are reversed.
-      */
-      if( pIdx->aSortOrder[nEq]==SQLITE_SO_ASC ){
-        topOp = WO_LT|WO_LE;
-        btmOp = WO_GT|WO_GE;
-      }else{
-        topOp = WO_GT|WO_GE;
-        btmOp = WO_LT|WO_LE;
-        SWAP(int, topLimit, btmLimit);
-      }
+      nxt = pLevel->nxt;
 
       /* If this loop satisfies a sort order (pOrderBy) request that 
       ** was passed to this function to implement a "SELECT min(x) ..." 
@@ -2522,121 +2526,95 @@ WhereInfo *sqlite3WhereBegin(
         isMinQuery = 1;
       }
 
-      /* Generate the termination key.  This is the key value that
-      ** will end the search.  There is no termination key if there
-      ** are no equality terms and no "X<..." term.
-      **
-      ** 2002-Dec-04: On a reverse-order scan, the so-called "termination"
-      ** key computed here really ends up being the start key.
+      /* Find the inequality constraint terms for the start and end 
+      ** of the range. 
       */
-      nxt = pLevel->nxt;
-      if( topLimit ){
-        Expr *pX;
-        int k = pIdx->aiColumn[nEq];
-        pTerm = findTerm(&wc, iCur, k, notReady, topOp, pIdx);
-        assert( pTerm!=0 );
-        pX = pTerm->pExpr;
-        assert( (pTerm->flags & TERM_CODED)==0 );
-        sqlite3ExprCode(pParse, pX->pRight, regBase+nEq);
-        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, nxt);
-        topEq = pTerm->eOperator & (WO_LE|WO_GE);
-        disableTerm(pLevel, pTerm);
-        testOp = OP_IdxGE;
-      }else{
-        testOp = nEq>0 ? OP_IdxGE : OP_Noop;
-        topEq = 1;
+      if( pLevel->flags & WHERE_TOP_LIMIT ){
+        pRangeEnd = findTerm(&wc, iCur, k, notReady, (WO_LT|WO_LE), pIdx);
       }
-      if( testOp!=OP_Noop || (isMinQuery&&bRev) ){
-        int nCol = nEq + topLimit;
-        if( isMinQuery && bRev && !topLimit ){
-          sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nCol);
-          nCol++;
-          topEq = 0;
-        }
-        buildIndexProbe(pParse, nCol, pIdx, regBase, pLevel->iMem);
-        if( bRev ){
-          int op = topEq ? OP_MoveLe : OP_MoveLt;
-          sqlite3VdbeAddOp3(v, op, iIdxCur, nxt, pLevel->iMem);
-        }
-      }else if( bRev ){
-        sqlite3VdbeAddOp2(v, OP_Last, iIdxCur, brk);
-      }
-   
-      /* Generate the start key.  This is the key that defines the lower
-      ** bound on the search.  There is no start key if there are no
-      ** equality terms and if there is no "X>..." term.  In
-      ** that case, generate a "Rewind" instruction in place of the
-      ** start key search.
-      **
-      ** 2002-Dec-04: In the case of a reverse-order search, the so-called
-      ** "start" key really ends up being used as the termination key.
-      */
-      if( btmLimit ){
-        Expr *pX;
-        int k = pIdx->aiColumn[nEq];
-        pTerm = findTerm(&wc, iCur, k, notReady, btmOp, pIdx);
-        assert( pTerm!=0 );
-        pX = pTerm->pExpr;
-        assert( (pTerm->flags & TERM_CODED)==0 );
-        sqlite3ExprCode(pParse, pX->pRight, regBase+nEq);
-        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, nxt);
-        btmEq = pTerm->eOperator & (WO_LE|WO_GE);
-        disableTerm(pLevel, pTerm);
-      }else{
-        btmEq = 1;
-      }
-      if( nEq>0 || btmLimit || (isMinQuery&&!bRev) ){
-        int nCol = nEq + btmLimit;
-        if( isMinQuery && !bRev && !btmLimit ){
-          sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nCol);
-          nCol++;
-          btmEq = 0;
-        }
-        if( bRev ){
-          r1 = pLevel->iMem;
-          testOp = OP_IdxLT;
-        }else{
-          r1 = sqlite3GetTempReg(pParse);
-        }
-        buildIndexProbe(pParse, nCol, pIdx, regBase, r1);
-        if( !bRev ){
-          int op = btmEq ? OP_MoveGe : OP_MoveGt;
-          sqlite3VdbeAddOp3(v, op, iIdxCur, nxt, r1);
-          sqlite3ReleaseTempReg(pParse, r1);
-        }
-      }else if( bRev ){
-        testOp = OP_Noop;
-      }else{
-        sqlite3VdbeAddOp2(v, OP_Rewind, iIdxCur, brk);
+      if( pLevel->flags & WHERE_BTM_LIMIT ){
+        pRangeStart = findTerm(&wc, iCur, k, notReady, (WO_GT|WO_GE), pIdx);
       }
 
-      /* Generate the the top of the loop.  If there is a termination
-      ** key we have to test for that key and abort at the top of the
-      ** loop.
+      /* If we are doing a reverse order scan on an ascending index, or
+      ** a forward order scan on a descending index, interchange the 
+      ** start and end terms (pRangeStart and pRangeEnd).
       */
-      start = sqlite3VdbeCurrentAddr(v);
-      if( testOp!=OP_Noop ){
-        sqlite3VdbeAddOp3(v, testOp, iIdxCur, nxt, pLevel->iMem);
-        if( (topEq && !bRev) || (!btmEq && bRev) ){
-          sqlite3VdbeChangeP5(v, 1);
-        }
+      if( bRev==((pIdx->aSortOrder[nEq]==SQLITE_SO_ASC)?1:0) ){
+        SWAP(WhereTerm *, pRangeEnd, pRangeStart);
       }
+
+      startEq = ((!pRangeStart || pRangeStart->eOperator & (WO_LE|WO_GE))?1:0);
+      endEq = ((!pRangeEnd || pRangeEnd->eOperator & (WO_LE|WO_GE))?1:0);
+      start_constraints = ((pRangeStart || nEq>0)?1:0);
+
+      /* Seek the index cursor to the start of the range. */
+      ptr = (char *)(sqlite3_intptr_t)nEq;
+      if( pRangeStart ){
+        int dcc = pParse->disableColCache;
+        if( pRangeEnd ){
+          pParse->disableColCache = 1;
+        }
+        sqlite3ExprCode(pParse, pRangeStart->pExpr->pRight, regBase+nEq);
+        pParse->disableColCache = dcc;
+        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, nxt);
+        ptr++;
+      }else if( isMinQuery ){
+        sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
+        ptr++;
+        startEq = 0;
+        start_constraints = 1;
+      }
+      sqlite3VdbeAddOp2(v, OP_Affinity, regBase, (int)ptr);
+      sqlite3IndexAffinityStr(v, pIdx);
+      op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
+      sqlite3VdbeAddOp4(v, op, iIdxCur, nxt, regBase, ptr, P4_INT32);
+
+      /* Load the value for the inequality constraint at the end of the
+      ** range (if any).
+      */
+      ptr = (char *)(sqlite3_intptr_t)nEq;
+      if( pRangeEnd ){
+        sqlite3ExprCode(pParse, pRangeEnd->pExpr->pRight, regBase+nEq);
+        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, nxt);
+        ptr++;
+      }
+      sqlite3VdbeAddOp2(v, OP_Affinity, regBase, (int)ptr);
+      sqlite3IndexAffinityStr(v, pIdx);
+
+      /* Top of the loop body */
+      pLevel->p2 = sqlite3VdbeCurrentAddr(v);
+
+      /* Check if the index cursor is past the end of the range. */
+      op = aEndOp[((pRangeEnd || nEq)?1:0) * (1 + bRev)];
+      sqlite3VdbeAddOp4(v, op, iIdxCur, nxt, regBase, ptr, P4_INT32);
+      sqlite3VdbeChangeP5(v, endEq!=bRev);
+
+      /* If there are inequality constraints (there may not be if the
+      ** index is only being used to optimize ORDER BY), check that the
+      ** value of the table column the inequality contrains is not NULL.
+      ** If it is, jump to the next iteration of the loop.
+      */
       r1 = sqlite3GetTempReg(pParse);
-      if( topLimit | btmLimit ){
+      if( pLevel->flags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT) ){
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, nEq, r1);
         sqlite3VdbeAddOp2(v, OP_IsNull, r1, cont);
       }
+
+      /* Seek the table cursor, if required */
       if( !omitTable ){
         sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, r1);
         sqlite3VdbeAddOp3(v, OP_MoveGe, iCur, 0, r1);  /* Deferred seek */
       }
       sqlite3ReleaseTempReg(pParse, r1);
 
-      /* Record the instruction used to terminate the loop.
+      /* Record the instruction used to terminate the loop. Disable 
+      ** WHERE clause terms made redundant by the index range scan.
       */
       pLevel->op = bRev ? OP_Prev : OP_Next;
       pLevel->p1 = iIdxCur;
-      pLevel->p2 = start;
+      disableTerm(pLevel, pRangeStart);
+      disableTerm(pLevel, pRangeEnd);
     }else if( pLevel->flags & WHERE_COLUMN_EQ ){
       /* Case 4:  There is an index and all terms of the WHERE clause that
       **          refer to the index using the "==" or "IN" operators.

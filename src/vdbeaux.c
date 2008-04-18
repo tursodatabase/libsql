@@ -2401,6 +2401,7 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
 */
 int sqlite3VdbeIdxKeyCompare(
   Cursor *pC,                 /* The cursor to compare against */
+  UnpackedRecord *pUnpacked,
   int nKey, const u8 *pKey,   /* The key to compare */
   int *res                    /* Write the comparison result here */
 ){
@@ -2425,13 +2426,19 @@ int sqlite3VdbeIdxKeyCompare(
     return rc;
   }
   lenRowid = sqlite3VdbeIdxRowidLen((u8*)m.z);
-  pRec = sqlite3VdbeRecordUnpack(pC->pKeyInfo, nKey, pKey,
+  if( !pUnpacked ){
+    pRec = sqlite3VdbeRecordUnpack(pC->pKeyInfo, nKey, pKey,
                                 zSpace, sizeof(zSpace));
+  }else{
+    pRec = pUnpacked;
+  }
   if( pRec==0 ){
     return SQLITE_NOMEM;
   }
   *res = sqlite3VdbeRecordCompare(m.n-lenRowid, m.z, pRec);
-  sqlite3VdbeDeleteUnpackedRecord(pRec);
+  if( !pUnpacked ){
+    sqlite3VdbeDeleteUnpackedRecord(pRec);
+  }
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
 }
