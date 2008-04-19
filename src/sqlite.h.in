@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.306 2008/04/17 17:03:26 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.307 2008/04/19 14:06:28 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1984,7 +1984,7 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** The third options is behavior that is always used for [sqlite3_open()]
 ** and [sqlite3_open16()].
 **
-** If the 4th parameter to [sqlite3_open_v2()] is not one of the
+** If the 3rd parameter to [sqlite3_open_v2()] is not one of the
 ** combinations shown above then the behavior is undefined.
 **
 ** If the filename is ":memory:", then an private
