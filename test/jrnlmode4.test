@@ -12,7 +12,7 @@
 # This file runs the tests in the file ioerr.test with 
 # persistent journal mode enabled.
 #
-# $Id: jrnlmode3.test,v 1.2 2008/04/19 20:53:26 drh Exp $
+# $Id: jrnlmode4.test,v 1.1 2008/04/19 20:53:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -30,20 +30,25 @@ rename sqlite3 real_sqlite3
 proc sqlite3 {args} {
   set r [eval "real_sqlite3 $args"]
   if { [llength $args] == 2 } {
-    [lindex $args 0] eval {PRAGMA journal_mode = persist}
+    [lindex $args 0] eval {PRAGMA journal_mode = off}
   }
   set r
 }
 
 rename do_test really_do_test
 proc do_test {args} {
-  set sc [concat really_do_test "jrlnmode3-[lindex $args 0]" \
+  set sc [concat really_do_test "jrlnmode4-[lindex $args 0]" \
       [lrange $args 1 end]]
   eval $sc
 }
 
-source $testdir/malloc.test
-source $testdir/ioerr.test
+source $testdir/delete.test
+source $testdir/delete2.test
+source $testdir/insert.test
+source $testdir/select1.test
+source $testdir/select2.test
+source $testdir/update.test
+source $testdir/vacuum.test
 
 
 rename sqlite3 ""

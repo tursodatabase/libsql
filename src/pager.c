@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.430 2008/04/19 20:34:19 drh Exp $
+** @(#) $Id: pager.c,v 1.431 2008/04/19 20:53:26 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1393,7 +1393,6 @@ static int pager_end_transaction(Pager *pPager){
     pPager->nRec = 0;
   }else{
     assert( pPager->pInJournal==0 );
-    assert( pPager->dirtyCache==0 || pPager->useJournal==0 );
   }
 
   if( !pPager->exclusiveMode ){
@@ -4624,7 +4623,6 @@ int sqlite3PagerCommitPhaseOne(
     ** transaction the m-j name will have already been written.
     */
     if( !pPager->setMaster ){
-      assert( pPager->journalOpen );
       rc = pager_incr_changecounter(pPager, 0);
       if( rc!=SQLITE_OK ) goto sync_exit;
 #ifndef SQLITE_OMIT_AUTOVACUUM
@@ -4745,7 +4743,6 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
     pagerLeave(pPager);
     return SQLITE_OK;
   }
-  assert( pPager->journalOpen || !pPager->dirtyCache );
   assert( pPager->state==PAGER_SYNCED || !pPager->dirtyCache );
   rc = pager_end_transaction(pPager);
   rc = pager_error(pPager, rc);
