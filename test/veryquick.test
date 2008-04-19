@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: veryquick.test,v 1.2 2008/04/10 13:33:18 drh Exp $
+# $Id: veryquick.test,v 1.3 2008/04/19 20:34:19 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -64,6 +64,7 @@ set EXCLUDE {
   interrupt.test
   ioerr.test
   ioerr2.test
+  jrnlmode3.test
   loadext.test
   mallocAll.test
   malloc.test

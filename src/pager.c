@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.429 2008/04/17 20:59:38 drh Exp $
+** @(#) $Id: pager.c,v 1.430 2008/04/19 20:34:19 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1278,6 +1278,17 @@ static void pager_unlock(Pager *pPager){
       pPager->dbSize = -1;
       IOTRACE(("UNLOCK %p\n", pPager))
 
+      /* Always close the journal file when dropping the database lock.
+      ** Otherwise, another connection with journal_mode=delete might
+      ** delete the file out from under us.
+      */
+      if( pPager->journalOpen ){
+        sqlite3OsClose(pPager->jfd);
+        pPager->journalOpen = 0;
+        sqlite3BitvecDestroy(pPager->pInJournal);
+        pPager->pInJournal = 0;
+      }
+
       /* If Pager.errCode is set, the contents of the pager cache cannot be
       ** trusted. Now that the pager file is unlocked, the contents of the
       ** cache can be discarded and the error code safely cleared.
@@ -1289,12 +1300,6 @@ static void pager_unlock(Pager *pPager){
           sqlite3OsClose(pPager->stfd);
           sqlite3BitvecDestroy(pPager->pInStmt);
           pPager->pInStmt = 0;
-        }
-        if( pPager->journalOpen ){
-          sqlite3OsClose(pPager->jfd);
-          pPager->journalOpen = 0;
-          sqlite3BitvecDestroy(pPager->pInJournal);
-          pPager->pInJournal = 0;
         }
         pPager->stmtOpen = 0;
         pPager->stmtInUse = 0;
@@ -2712,11 +2717,13 @@ int sqlite3PagerClose(Pager *pPager){
 #endif
 
   disable_simulated_io_errors();
+  sqlite3FaultBenign(-1, 1);
   pPager->errCode = 0;
   pPager->exclusiveMode = 0;
   pager_reset(pPager);
   pagerUnlockAndRollback(pPager);
   enable_simulated_io_errors();
+  sqlite3FaultBenign(-1, 0);
   PAGERTRACE2("CLOSE %d\n", PAGERID(pPager));
   IOTRACE(("CLOSE %p\n", pPager))
   if( pPager->journalOpen ){
@@ -3406,21 +3413,13 @@ static int pagerSharedLock(Pager *pPager){
           pPager->state = PAGER_EXCLUSIVE;
         }
  
-        /* Open the journal for reading only.  Return SQLITE_BUSY if
-        ** we are unable to open the journal file. 
-        **
-        ** The journal file does not need to be locked itself.  The
-        ** journal file is never open unless the main database file holds
-        ** a write lock, so there is never any chance of two or more
-        ** processes opening the journal at the same time.
-        **
-        ** Open the journal for read/write access. This is because in 
+        /* Open the journal for read/write access. This is because in 
         ** exclusive-access mode the file descriptor will be kept open and
         ** possibly used for a transaction later on. On some systems, the
         ** OsTruncate() call used in exclusive-access mode also requires
         ** a read/write file handle.
         */
-        if( !isHot ){
+        if( !isHot && pPager->journalOpen==0 ){
           int res = sqlite3OsAccess(pVfs,pPager->zJournal,SQLITE_ACCESS_EXISTS);
           if( res==1 ){
             int fout = 0;
@@ -3432,8 +3431,14 @@ static int pagerSharedLock(Pager *pPager){
               rc = SQLITE_BUSY;
               sqlite3OsClose(pPager->jfd);
             }
+          }else if( res==0 ){
+            /* If the journal does not exist, that means some other process
+            ** has already rolled it back */
+            rc = SQLITE_BUSY;
           }else{
-            rc = (res==0?SQLITE_BUSY:SQLITE_IOERR_NOMEM);
+            /* If sqlite3OsAccess() returns a negative value, that means it
+            ** failed a memory allocation */
+            rc = SQLITE_IOERR_NOMEM;
           }
         }
         if( rc!=SQLITE_OK ){

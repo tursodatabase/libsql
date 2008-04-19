@@ -1,5 +1,5 @@
-C Comment\sand\svariable-name\scleanup\sin\swhere.c.\s\sAdd\stestcase()\smacros\sto\ninsure\sadequate\stest\scoverage\sof\stable-driven\slogic.\s(CVS\s5032)
-D 2008-04-19T14:40:44
+C Continuing\swork\son\sjournal_mode.\s\sJournal_mode=persist\snow\sappears\sto\sbe\nworking,\sthough\sadditional\stesting\swould\sbe\swelcomed.\s(CVS\s5033)
+D 2008-04-19T20:34:19
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -127,7 +127,7 @@ F src/os_unix.c fdec4e5ee5dd555a6ad4a69f38ab35f0788536b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 60c81c923ab40a2934fb8bc0993823e01688a3f3
+F src/pager.c c768b50502ba451abd0318bb9ba5485d410f7a56
 F src/pager.h 45ec2188593afd48a25c743529646771d75e83e4
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -356,6 +356,9 @@ F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
+F test/jrnlmode.test 89acaa81503e349a49da73570b1a104f8fd93de7
+F test/jrnlmode2.test 7a85f226203ef9ad9550ae87e810c2cc15a983cd
+F test/jrnlmode3.test 6d2abb167496eea53042defc0d1d8f4d2a4f4fc4
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
 F test/like.test 2a3ddbd5d91503f914eabae67a47c4196fe33a58
@@ -413,7 +416,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 83150cb7b513e33cce90fdc68f4b1817551857c0
-F test/quick.test 33e3eec31d9225e5997fbb27d89fee651bd6ed68
+F test/quick.test ebd2ed55075fadf8a44f4e64372091c7bc85e32d
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -503,7 +506,7 @@ F test/tkt2920.test a8737380e4ae6424e00c0273dc12775704efbebf
 F test/tkt2927.test 492c6a9a14b2fc7bdbb17ce8e497d82df627f64d
 F test/tkt2942.test c5c87d179799ca6d1fbe83c815510b87cd5ec7ce
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
-F test/trans.test b73289992b46d38d9479ecc4fdc03d8edb2413dc
+F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
 F test/trigger2.test 33bf8ae9b788013be194efe5f66c04a202facbb4
 F test/trigger3.test 501b8489eb6b9cb5b005f60b071583c01a3c3041
@@ -526,7 +529,7 @@ F test/vacuum.test 0bc75ee74ab9c69322d6563aa2287375697e630b
 F test/vacuum2.test d3b9691541fe6ed5c711f547a1c7d70e9760ac6f
 F test/vacuum3.test f22cd134cc43887514fb793e828d95c75a93e1cb
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
-F test/veryquick.test 93fd0500c367e6c03ea757071cfe4ca749533946
+F test/veryquick.test c08b303a9a6e5bbb27d0988858e919f3b70042aa
 F test/view.test 4864e3841ab3213a95297718b94d5d6a8d3bc78b
 F test/vtab1.test b1e4bf536efd83c24feb303699001fa886e2256b
 F test/vtab2.test 1da49b015582965a8fc386aa23d051a5a622b08e
@@ -631,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f7b62daa9fe71dc713bde107507fc7bcb812d62b
-R 6e41e3d0b22d62b812d3d07204f15026
+P adcef73b3925266a14a552cd9b06c14f22aaefc8
+R d27c89575f3638e072ac7a32dcbb259c
 U drh
-Z 179f0ff656646746a01845fdd389ea41
+Z 0ef93974814e7b17c541e821a40a0bd5

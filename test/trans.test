@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.37 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: trans.test,v 1.38 2008/04/19 20:34:19 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -794,17 +794,35 @@ puts $fd {
   sqlite_abort
 }
 close $fd
-file copy -force test.db test.db-bu1
 do_test trans-8.1 {
   catch {exec [info nameofexec] test.tcl}
-  file copy -force test.db test.db-bu2
-  file copy -force test.db-journal test.db-bu2-journal
   execsql {SELECT md5sum(x,y,z) FROM t2}
 } $checksum
 do_test trans-8.2 {
   execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
 } $checksum2
 integrity_check trans-8.3
+set fd [open test.tcl w]
+puts $fd {
+  sqlite3 db test.db
+  db eval {
+    PRAGMA journal_mode=persist;
+    PRAGMA default_cache_size=20;
+    BEGIN;
+    CREATE TABLE t3 AS SELECT * FROM t2;
+    DELETE FROM t2;
+  }
+  sqlite_abort
+}
+close $fd
+do_test trans-8.4 {
+  catch {exec [info nameofexec] test.tcl}
+  execsql {SELECT md5sum(x,y,z) FROM t2}
+} $checksum
+do_test trans-8.5 {
+  execsql {SELECT md5sum(type,name,tbl_name,rootpage,sql) FROM sqlite_master}
+} $checksum2
+integrity_check trans-8.6
 
 # In the following sequence of tests, compute the MD5 sum of the content
 # of a table, make lots of modifications to that table, then do a rollback.

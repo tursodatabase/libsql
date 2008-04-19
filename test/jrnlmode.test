@@ -1,0 +1,156 @@
+# 2008 April 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. The focus
+# of these tests is the journal mode pragma.
+#
+# $Id: jrnlmode.test,v 1.1 2008/04/19 20:34:19 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable {!pager_pragmas} {
+  finish_test
+  return
+}
+
+#----------------------------------------------------------------------
+# Test cases jrnlmode-1.X test the PRAGMA logic.
+#
+do_test jrnlmode-1.0 {
+  execsql {
+    PRAGMA journal_mode;
+    PRAGMA main.journal_mode;
+    PRAGMA temp.journal_mode;
+  } 
+} [list delete delete delete]
+do_test jrnlmode-1.1 {
+  execsql {
+    PRAGMA journal_mode = persist;
+  } 
+} {persist}
+do_test jrnlmode-1.2 {
+  execsql {
+    PRAGMA journal_mode;
+    PRAGMA main.journal_mode;
+    PRAGMA temp.journal_mode;
+  } 
+} [list persist persist persist]
+do_test jrnlmode-1.4 {
+  execsql {
+    PRAGMA journal_mode = off;
+  } 
+} {off}
+do_test jrnlmode-1.5 {
+  execsql {
+    PRAGMA journal_mode;
+    PRAGMA main.journal_mode;
+    PRAGMA temp.journal_mode;
+  } 
+} {off off off}
+do_test jrnlmode-1.6 {
+  execsql {
+    PRAGMA journal_mode = delete;
+  } 
+} {delete}
+do_test jrnlmode-1.7 {
+  execsql {
+    PRAGMA journal_mode;
+    PRAGMA main.journal_mode;
+    PRAGMA temp.journal_mode;
+  } 
+} {delete delete delete}
+do_test jrnlmode-1.8 {
+  execsql {
+    PRAGMA journal_mode = off;
+    PRAGMA journal_mode = invalid;
+  } 
+} {off off}
+ifcapable attach {
+  do_test jrnlmode-1.9 {
+    execsql {
+      PRAGMA journal_mode = persist;
+      ATTACH ':memory:' as aux1;
+    }
+    execsql {
+      PRAGMA main.journal_mode;
+      PRAGMA aux1.journal_mode;
+    }
+  } {persist persist}
+  do_test jrnlmode-1.10 {
+    execsql {
+      PRAGMA main.journal_mode = off;
+    }
+    execsql {
+      PRAGMA main.journal_mode;
+      PRAGMA temp.journal_mode;
+      PRAGMA aux1.journal_mode;
+    }
+  } {off persist persist}
+  do_test jrnlmode-1.11 {
+    execsql {
+      PRAGMA journal_mode;
+    }
+  } {persist}
+  do_test jrnlmode-1.12 {
+    execsql {
+      ATTACH ':memory:' as aux2;
+    }
+    execsql {
+      PRAGMA main.journal_mode;
+      PRAGMA aux1.journal_mode;
+      PRAGMA aux2.journal_mode;
+    }
+  } {off persist persist}
+  do_test jrnlmode-1.11 {
+    execsql {
+      PRAGMA aux1.journal_mode = delete;
+    }
+    execsql {
+      PRAGMA main.journal_mode;
+      PRAGMA aux1.journal_mode;
+      PRAGMA aux2.journal_mode;
+    }
+  } {off delete persist}
+  do_test jrnlmode-1.12 {
+    execsql {
+      PRAGMA journal_mode = delete;
+    }
+    execsql {
+      PRAGMA main.journal_mode;
+      PRAGMA temp.journal_mode;
+      PRAGMA aux1.journal_mode;
+      PRAGMA aux2.journal_mode;
+    }
+  } {delete delete delete delete}
+  do_test jrnlmode-1.13 {
+    execsql {
+      ATTACH ':memory:' as aux3;
+    }
+    execsql {
+      PRAGMA main.journal_mode;
+      PRAGMA temp.journal_mode;
+      PRAGMA aux1.journal_mode;
+      PRAGMA aux2.journal_mode;
+      PRAGMA aux3.journal_mode;
+    }
+  } {delete delete delete delete delete}
+  
+  do_test jrnlmode-1.99 {
+    execsql {
+      DETACH aux1;
+      DETACH aux2;
+      DETACH aux3;
+    }
+  } {}
+}
+
+
+finish_test
