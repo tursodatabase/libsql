@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.301 2008/04/18 10:25:24 danielk1977 Exp $
+** $Id: where.c,v 1.302 2008/04/19 14:40:44 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1272,8 +1272,10 @@ static double bestVirtualIndex(
     ** to this virtual table */
     for(i=nTerm=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
       if( pTerm->leftCursor != pSrc->iCursor ) continue;
-      if( pTerm->eOperator==WO_IN ) continue;
-      if( pTerm->eOperator==WO_ISNULL ) continue;
+      if( (pTerm->eOperator&(pTerm->eOperator-1))==0 );
+      testcase( pTerm->eOperator==WO_IN );
+      testcase( pTerm->eOperator==WO_ISNULL );
+      if( pTerm->eOperator & (WO_IN|WO_ISNULL) ) continue;
       nTerm++;
     }
 
@@ -1320,8 +1322,10 @@ static double bestVirtualIndex(
 
     for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
       if( pTerm->leftCursor != pSrc->iCursor ) continue;
-      if( pTerm->eOperator==WO_IN ) continue;
-      if( pTerm->eOperator==WO_ISNULL ) continue;
+      if( (pTerm->eOperator&(pTerm->eOperator-1))==0 );
+      testcase( pTerm->eOperator==WO_IN );
+      testcase( pTerm->eOperator==WO_ISNULL );
+      if( pTerm->eOperator & (WO_IN|WO_ISNULL) ) continue;
       pIdxCons[j].iColumn = pTerm->leftColumn;
       pIdxCons[j].iTermOffset = i;
       pIdxCons[j].op = pTerm->eOperator;
@@ -1867,6 +1871,8 @@ static int codeAllEqualityTerms(
     if( r1!=regBase+j ){
       sqlite3VdbeAddOp2(v, OP_SCopy, r1, regBase+j);
     }
+    testcase( pTerm->eOperator & WO_ISNULL );
+    testcase( pTerm->eOperator & WO_IN );
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
       sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->brk);
     }
@@ -2456,7 +2462,7 @@ WhereInfo *sqlite3WhereBegin(
     }else if( pLevel->flags & (WHERE_COLUMN_RANGE|WHERE_COLUMN_EQ) ){
       /* Case 3: A scan using an index.
       **
-      **         The WHERE clause may contain one or more equality 
+      **         The WHERE clause may contain zero or more equality 
       **         terms ("==" or "IN" operators) that refer to the N
       **         left-most columns of the index. It may also contain
       **         inequality constraints (>, <, >= or <=) on the indexed
@@ -2472,9 +2478,14 @@ WhereInfo *sqlite3WhereBegin(
       **            x=5 AND y>5 AND y<10
       **            x=5 AND y=5 AND z<=10
       **
-      **         This cannot be optimized:
+      **         The z<10 term of the following cannot be used, only
+      **         the x=5 term:
       **
       **            x=5 AND z<10
+      **
+      **         N may be zero if there are inequality constraints.
+      **         If there are no inequality constraints, then N is at
+      **         least one.
       **
       **         This case is also used when there are no WHERE clause
       **         constraints but an index is selected anyway, in order
@@ -2505,7 +2516,7 @@ WhereInfo *sqlite3WhereBegin(
       int endEq;                   /* True if range end uses ==, >= or <= */
       int start_constraints;       /* Start of range is constrained */
       int k = pIdx->aiColumn[nEq]; /* Column for inequality constraints */
-      char *ptr;
+      int nConstraint;             /* Number of constraint terms */
       int op;
 
       /* Generate code to evaluate all constraint terms using == or IN
@@ -2545,16 +2556,20 @@ WhereInfo *sqlite3WhereBegin(
       ** a forward order scan on a descending index, interchange the 
       ** start and end terms (pRangeStart and pRangeEnd).
       */
-      if( bRev==((pIdx->aSortOrder[nEq]==SQLITE_SO_ASC)?1:0) ){
+      if( bRev==(pIdx->aSortOrder[nEq]==SQLITE_SO_ASC) ){
         SWAP(WhereTerm *, pRangeEnd, pRangeStart);
       }
 
-      startEq = ((!pRangeStart || pRangeStart->eOperator & (WO_LE|WO_GE))?1:0);
-      endEq = ((!pRangeEnd || pRangeEnd->eOperator & (WO_LE|WO_GE))?1:0);
-      start_constraints = ((pRangeStart || nEq>0)?1:0);
+      testcase( pRangeStart && pRangeStart->eOperator & WO_LE );
+      testcase( pRangeStart && pRangeStart->eOperator & WO_GE );
+      testcase( pRangeEnd && pRangeEnd->eOperator & WO_LE );
+      testcase( pRangeEnd && pRangeEnd->eOperator & WO_GE );
+      startEq = !pRangeStart || pRangeStart->eOperator & (WO_LE|WO_GE);
+      endEq =   !pRangeEnd || pRangeEnd->eOperator & (WO_LE|WO_GE);
+      start_constraints = pRangeStart || nEq>0;
 
       /* Seek the index cursor to the start of the range. */
-      ptr = (char *)(sqlite3_intptr_t)nEq;
+      nConstraint = nEq;
       if( pRangeStart ){
         int dcc = pParse->disableColCache;
         if( pRangeEnd ){
@@ -2563,42 +2578,55 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3ExprCode(pParse, pRangeStart->pExpr->pRight, regBase+nEq);
         pParse->disableColCache = dcc;
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, nxt);
-        ptr++;
+        nConstraint++;
       }else if( isMinQuery ){
         sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
-        ptr++;
+        nConstraint++;
         startEq = 0;
         start_constraints = 1;
       }
-      codeApplyAffinity(pParse, regBase, (int)ptr, pIdx);
+      codeApplyAffinity(pParse, regBase, nConstraint, pIdx);
       op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
-      sqlite3VdbeAddOp4(v, op, iIdxCur, nxt, regBase, ptr, P4_INT32);
+      assert( op!=0 );
+      testcase( op==OP_Rewind );
+      testcase( op==OP_Last );
+      testcase( op==OP_MoveGt );
+      testcase( op==OP_MoveGe );
+      testcase( op==OP_MoveLe );
+      testcase( op==OP_MoveLt );
+      sqlite3VdbeAddOp4(v, op, iIdxCur, nxt, regBase, 
+                        (char*)nConstraint, P4_INT32);
 
       /* Load the value for the inequality constraint at the end of the
       ** range (if any).
       */
-      ptr = (char *)(sqlite3_intptr_t)nEq;
+      nConstraint = nEq;
       if( pRangeEnd ){
         sqlite3ExprCode(pParse, pRangeEnd->pExpr->pRight, regBase+nEq);
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, nxt);
         codeApplyAffinity(pParse, regBase, nEq+1, pIdx);
-        ptr++;
+        nConstraint++;
       }
 
       /* Top of the loop body */
       pLevel->p2 = sqlite3VdbeCurrentAddr(v);
 
       /* Check if the index cursor is past the end of the range. */
-      op = aEndOp[((pRangeEnd || nEq)?1:0) * (1 + bRev)];
-      sqlite3VdbeAddOp4(v, op, iIdxCur, nxt, regBase, ptr, P4_INT32);
+      op = aEndOp[(pRangeEnd || nEq) * (1 + bRev)];
+      testcase( op==OP_Noop );
+      testcase( op==OP_IdxGE );
+      testcase( op==OP_IdxLT );
+      sqlite3VdbeAddOp4(v, op, iIdxCur, nxt, regBase,
+                        (char*)nConstraint, P4_INT32);
       sqlite3VdbeChangeP5(v, endEq!=bRev);
 
-      /* If there are inequality constraints (there may not be if the
-      ** index is only being used to optimize ORDER BY), check that the
-      ** value of the table column the inequality contrains is not NULL.
+      /* If there are inequality constraints, check that the value
+      ** of the table column that the inequality contrains is not NULL.
       ** If it is, jump to the next iteration of the loop.
       */
       r1 = sqlite3GetTempReg(pParse);
+      testcase( pLevel->flags & WHERE_BTM_LIMIT );
+      testcase( pLevel->flags & WHERE_TOP_LIMIT );
       if( pLevel->flags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT) ){
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, nEq, r1);
         sqlite3VdbeAddOp2(v, OP_IsNull, r1, cont);
@@ -2619,7 +2647,7 @@ WhereInfo *sqlite3WhereBegin(
       disableTerm(pLevel, pRangeStart);
       disableTerm(pLevel, pRangeEnd);
     }else{
-      /* Case 5:  There is no usable index.  We must do a complete
+      /* Case 4:  There is no usable index.  We must do a complete
       **          scan of the entire table.
       */
       assert( omitTable==0 );
@@ -2635,6 +2663,8 @@ WhereInfo *sqlite3WhereBegin(
     */
     for(pTerm=wc.a, j=wc.nTerm; j>0; j--, pTerm++){
       Expr *pE;
+      testcase( pTerm->flags & TERM_VIRTUAL );
+      testcase( pTerm->flags & TERM_CODED );
       if( pTerm->flags & (TERM_VIRTUAL|TERM_CODED) ) continue;
       if( (pTerm->prereqAll & notReady)!=0 ) continue;
       pE = pTerm->pExpr;
@@ -2656,6 +2686,8 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3ExprClearColumnCache(pParse, pLevel->iTabCur);
       sqlite3ExprClearColumnCache(pParse, pLevel->iIdxCur);
       for(pTerm=wc.a, j=0; j<wc.nTerm; j++, pTerm++){
+        testcase( pTerm->flags & TERM_VIRTUAL );
+        testcase( pTerm->flags & TERM_CODED );
         if( pTerm->flags & (TERM_VIRTUAL|TERM_CODED) ) continue;
         if( (pTerm->prereqAll & notReady)!=0 ) continue;
         assert( pTerm->pExpr );
@@ -2690,6 +2722,8 @@ WhereInfo *sqlite3WhereBegin(
       }
       sqlite3_query_plan[nQPlan++] = ' ';
     }
+    testcase( pLevel->flags & WHERE_ROWID_EQ );
+    testcase( pLevel->flags & WHERE_ROWID_RANGE );
     if( pLevel->flags & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE) ){
       memcpy(&sqlite3_query_plan[nQPlan], "* ", 2);
       nQPlan += 2;

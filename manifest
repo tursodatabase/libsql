@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sdocumentation\son\ssqlite3_open_v2().\s(CVS\s5031)
-D 2008-04-19T14:06:28
+C Comment\sand\svariable-name\scleanup\sin\swhere.c.\s\sAdd\stestcase()\smacros\sto\ninsure\sadequate\stest\scoverage\sof\stable-driven\slogic.\s(CVS\s5032)
+D 2008-04-19T14:40:44
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -183,7 +183,7 @@ F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 237e61216381998ff71c6431e5e7bd03386f6225
 F src/vtab.c f5e78bf73df3b0c1b53861109c1b2e0800b108cc
-F src/where.c 011f866cf0f05c832eea5a30e079eb108253ac64
+F src/where.c 85719d58e0f680b5d8239dc6af82b159775d7376
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d56a3ca8acdf761204aff0a2e7aa5eb8e11b31e6
@@ -631,7 +631,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P df02175ec0f28d57942b8275b540ff855dfbeb09
-R 6299f6a06e93546f99df6a47ebb09453
+P f7b62daa9fe71dc713bde107507fc7bcb812d62b
+R 6e41e3d0b22d62b812d3d07204f15026
 U drh
-Z 385bf8bab63aafd1f261478c271df70c
+Z 179f0ff656646746a01845fdd389ea41
