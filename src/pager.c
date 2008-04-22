@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.432 2008/04/22 14:31:48 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.433 2008/04/22 17:15:18 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -972,6 +972,9 @@ static int zeroJournalHdr(Pager *pPager){
 
   IOTRACE(("JZEROHDR %p\n", pPager))
   rc = sqlite3OsWrite(pPager->jfd, zeroHdr, sizeof(zeroHdr), 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3OsSync(pPager->jfd, SQLITE_SYNC_DATAONLY | pPager->sync_flags);
+  }
   return rc;
 }
 
