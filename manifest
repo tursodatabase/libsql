@@ -1,5 +1,5 @@
-C Add\ssome\stests\sfor\sjournal_mode=off.\s\sNeed\sto\scome\sup\swith\sa\sway\sof\shandling\nrollback\sattempts\swhen\sthere\sis\sno\sjournal.\s(CVS\s5034)
-D 2008-04-19T20:53:26
+C Avoid\snon-contiguous\swrites\swhen\screating\sa\sjournal\sheader.\s(CVS\s5035)
+D 2008-04-22T14:31:48
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -127,7 +127,7 @@ F src/os_unix.c fdec4e5ee5dd555a6ad4a69f38ab35f0788536b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 008ec5a602d2e8c2f46fff64468fffd6537ed938
+F src/pager.c e164d0fc4160e5a34e7633aa493194e20c41ee8a
 F src/pager.h 45ec2188593afd48a25c743529646771d75e83e4
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -635,7 +635,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 277e4099cee9105e1801a6d7f5d477f0d2efa858
-R 91f87b04b1a638984e55a8af93bfa847
-U drh
-Z 5219086565bb85263845c2c6918f4999
+P e29b870ed0db6360a95fb017f56c0b5388efb437
+R 436443469e9b85c7665118e338b3a570
+U danielk1977
+Z 64c57677c26295d2b7511003088df817

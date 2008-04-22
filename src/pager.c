@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.431 2008/04/19 20:53:26 drh Exp $
+** @(#) $Id: pager.c,v 1.432 2008/04/22 14:31:48 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -991,8 +991,14 @@ static int zeroJournalHdr(Pager *pPager){
 ** Followed by (JOURNAL_HDR_SZ - 28) bytes of unused space.
 */
 static int writeJournalHdr(Pager *pPager){
-  char zHeader[sizeof(aJournalMagic)+20];
-  int rc;
+  int rc = SQLITE_OK;
+  char *zHeader = pPager->pTmpSpace;
+  int nHeader = pPager->pageSize;
+  int nWrite;
+
+  if( nHeader>JOURNAL_HDR_SZ(pPager) ){
+    nHeader = JOURNAL_HDR_SZ(pPager);
+  }
 
   if( pPager->stmtHdrOff==0 ){
     pPager->stmtHdrOff = pPager->journalOff;
@@ -1043,17 +1049,13 @@ static int writeJournalHdr(Pager *pPager){
     /* The page size */
     put32bits(&zHeader[sizeof(aJournalMagic)+16], pPager->pageSize);
   }
-  IOTRACE(("JHDR %p %lld %d\n", pPager, pPager->journalHdr, sizeof(zHeader)))
-  rc = sqlite3OsWrite(pPager->jfd, zHeader, sizeof(zHeader),pPager->journalOff);
-  pPager->journalOff += JOURNAL_HDR_SZ(pPager);
 
-  /* The journal header has been written successfully. Seek the journal
-  ** file descriptor to the end of the journal header sector.
-  */
-  if( rc==SQLITE_OK ){
-    IOTRACE(("JTAIL %p %lld\n", pPager, pPager->journalOff-1))
-    rc = sqlite3OsWrite(pPager->jfd, "\000", 1, pPager->journalOff-1);
+  for(nWrite=0; rc==SQLITE_OK&&nWrite<JOURNAL_HDR_SZ(pPager); nWrite+=nHeader){
+    IOTRACE(("JHDR %p %lld %d\n", pPager, pPager->journalHdr, nHeader))
+    rc = sqlite3OsWrite(pPager->jfd, zHeader, nHeader, pPager->journalOff);
+    pPager->journalOff += nHeader;
   }
+
   return rc;
 }
 
