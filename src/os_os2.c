@@ -706,6 +706,7 @@ static int os2Open(
   /* always open in random access mode for possibly better speed */
   ulOpenMode |= OPEN_FLAGS_RANDOM;
   ulOpenMode |= OPEN_FLAGS_FAIL_ON_ERROR;
+  ulOpenMode |= OPEN_FLAGS_NOINHERIT;
 
   char *zNameCp = convertUtf8PathToCp( zName );
   rc = DosOpen( (PSZ)zNameCp,
