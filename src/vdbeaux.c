@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.377 2008/04/24 08:31:52 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.378 2008/04/24 08:36:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1656,7 +1656,6 @@ int sqlite3VdbeHalt(Vdbe *p){
   if( p->db->mallocFailed ){
     p->rc = SQLITE_NOMEM;
   }
-  checkActiveVdbeCnt(db);
 
   return SQLITE_OK;
 }
