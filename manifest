@@ -1,5 +1,5 @@
-C Minor\schange\sto\scomment\son\ssqlite3_blob_read().\sNo\scode\schanges.\sTicket\s#3072.\s(CVS\s5040)
-D 2008-04-24T08:56:54
+C Ensure\sthat\sit\sis\snot\spossible\sto\sopen\seither\svirtual\stable\sor\sview\scolumns\susing\sthe\sblob\sAPI.\sTicket\s#3078.\s(CVS\s5041)
+D 2008-04-24T09:49:55
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -179,7 +179,7 @@ F src/vdbe.h bfd84bda447f39cb599302c7ec85067dae20453c
 F src/vdbeInt.h 05316345da487b0cf540482576f9ae3337d133cd
 F src/vdbeapi.c 0e1b5a808bb0e556f2a975eb7d11fd3153e922bf
 F src/vdbeaux.c f18c0d2c47877d2ac7bdbf694ecd7b031d43b43a
-F src/vdbeblob.c cc713c142c3d4952b380c98ee035f850830ddbdb
+F src/vdbeblob.c 554736781ee273a8089c776e96bdb53e66f57ce6
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 237e61216381998ff71c6431e5e7bd03386f6225
 F src/vtab.c f5e78bf73df3b0c1b53861109c1b2e0800b108cc
@@ -331,7 +331,7 @@ F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
 F test/in.test 763a29007a4850d611ac4441bfa488fb9969ad30
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
-F test/incrblob.test 529eeddb1bac919a17929b768ca2d04732f55847
+F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
 F test/incrblob_err.test 5273097dc7c97f9b7008423a6ffd5c80d21923cb
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test a958e378c193c4012cb3787804d863487f1dfad1
@@ -635,7 +635,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3cba1166076bf0506597e2d7686a271922817668
-R fa050ac165aaa728060330a28db7ce29
+P adb4bc5a7dd56e625b20c48a7416f2b3480f4de1
+R c0a5af2eeceba3da393758a0d20464af
 U danielk1977
-Z 77b3fb43d649518a5e8580bd41d6f27e
+Z 4057dbaa526fb9661eeca50f7e5178e4

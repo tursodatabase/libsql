@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.19 2008/04/16 23:39:26 drh Exp $
+# $Id: incrblob.test,v 1.20 2008/04/24 09:49:55 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -259,6 +259,9 @@ catch {close $::blob}
 #     4.8 - Attempt to open an indexed column for writing
 #     4.9 - Attempt to open an indexed column for reading (this works)
 #
+#     4.11 - Attempt to open a column of a view.
+#     4.12 - Attempt to open a column of a virtual table.
+#
 do_test incrblob-4.1 {
   set rc [catch {
     set ::blob [db incrblob blobs v 2]
@@ -332,9 +335,26 @@ do_test incrblob-4.10 {
   set rc [catch { sqlite3_blob_read $::blob 10 100 } msg]
   list $rc $msg
 } {1 SQLITE_ERROR}
-do_test incrblob-4.11 {
+do_test incrblob-4.10.2 {
   close $::blob
 } {}
+
+ifcapable view {
+  do_test incrblob-4.11 {
+    execsql { CREATE VIEW blobs_view AS SELECT k, v, i FROM blobs }
+    set rc [catch { db incrblob blobs_view v 3 } msg]
+    list $rc $msg
+  } {1 {cannot open view: blobs_view}}
+}
+ifcapable vtab {
+  register_echo_module [sqlite3_connection_pointer db]
+  do_test incrblob-4.12 {
+    execsql { CREATE VIRTUAL TABLE blobs_echo USING echo(blobs) }
+    set rc [catch { db incrblob blobs_echo v 3 } msg]
+    list $rc $msg
+  } {1 {cannot open virtual table: blobs_echo}}
+}
+
 
 #------------------------------------------------------------------------
 # incrblob-5.*: 
