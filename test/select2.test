@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select2.test,v 1.25 2005/07/21 03:15:01 drh Exp $
+# $Id: select2.test,v 1.26 2008/04/24 12:38:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -55,6 +55,7 @@ do_test select2-1.2 {
   }
   set r
 } {4: 2 3 4}
+unset data
 
 # Create a largish table. Do this twice, once using the TCL cache and once
 # without.  Compare the performance to make sure things go faster with the

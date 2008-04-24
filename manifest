@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sfailure\sthat\scan\soccur\sif\s"journal_mode=off"\sis\sused\sin\sa\sbuild\swith\sthe\satomic-write\soptimization\senabled.\s(CVS\s5043)
-D 2008-04-24T12:37:40
+C Fix\sa\sproblem\swith\sthe\stest\sscripts\scaused\sby\snot\scleaning\sup\sthe\sglobal\stcl\snamespace.\s(CVS\s5044)
+D 2008-04-24T12:38:29
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -427,7 +427,7 @@ F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
 F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
 F test/select1.test 871df931cbbc0e78170605628e8b5fc60765e265
-F test/select2.test f3c2678c3a9f3cf08ec4988a3845bda64be6d9e3
+F test/select2.test 06a2660de57673e2d076c29c0fd73f961a930f87
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test 7cc135c8343e6e433bdad185de6a720b112c40e7
 F test/select5.test 5ad14ea338aada2e6394ba98fa9aa40e3e50aec0
@@ -635,7 +635,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 85eedad186327a1f0b0983413b833efd41640d0e
-R 087210ad9cdbf484acaa720eedf1863a
+P 709d17b19d343f45aa6c7684685ab58c67d83da0
+R 55a29aaf7ba2dc87e2cd1a96447e77ac
 U danielk1977
-Z 7afb9a7733e0e859156833cb3385ab87
+Z f9598f73f38dcfab8f31d3b11ad90b4d
