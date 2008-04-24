@@ -13,6 +13,8 @@
 ** a VDBE (or an "sqlite3_stmt" as it is known to the outside world.)  Prior
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
+**
+** $Id: vdbeaux.c,v 1.377 2008/04/24 08:31:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
