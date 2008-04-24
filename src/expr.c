@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.367 2008/04/15 12:14:22 drh Exp $
+** $Id: expr.c,v 1.368 2008/04/24 12:36:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2116,7 +2116,8 @@ void sqlite3ExprHardCopy(Parse *pParse, int iReg, int nReg){
   v = pParse->pVdbe;
   addr = sqlite3VdbeCurrentAddr(v);
   pOp = sqlite3VdbeGetOp(v, addr-1);
-  if( pOp->opcode==OP_SCopy && pOp->p1>=iReg && pOp->p1<iReg+nReg ){
+  assert( pOp || pParse->db->mallocFailed );
+  if( pOp && pOp->opcode==OP_SCopy && pOp->p1>=iReg && pOp->p1<iReg+nReg ){
     pOp->opcode = OP_Copy;
   }
 }

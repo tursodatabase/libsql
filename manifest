@@ -1,5 +1,5 @@
-C Ensure\sthat\sit\sis\snot\spossible\sto\sopen\seither\svirtual\stable\sor\sview\scolumns\susing\sthe\sblob\sAPI.\sTicket\s#3078.\s(CVS\s5041)
-D 2008-04-24T09:49:55
+C Fix\sa\scrash\sthat\scan\sfollow\sa\smalloc()\sfailure\sin\smalloc7.test.\s(CVS\s5042)
+D 2008-04-24T12:36:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -94,7 +94,7 @@ F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c e41ce4513fb0e359dc678d6bddb4ace135fe365d
 F src/delete.c e4bd53c46969c9fb05cfbba4abc0c93a923f8072
-F src/expr.c 7aecda0fb4f078718281a9b56993677c1f45a399
+F src/expr.c d5733edd985926fd94e7d51b3763084f7915e2c3
 F src/fault.c 83057e86815d473e526f7df0b0108dfdd022ff23
 F src/func.c c9e8c7ff4c45027edee89bde7adbf86a3a3b2afe
 F src/hash.c 522a8f5a23cf18fe5845afee7263c5be76c25ca2
@@ -635,7 +635,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P adb4bc5a7dd56e625b20c48a7416f2b3480f4de1
-R c0a5af2eeceba3da393758a0d20464af
+P 6039328fe05aaf9380d545e84dfabccb32a4d8ea
+R f4eeaf9013dd9137ee2d4c5947b895d2
 U danielk1977
-Z 4057dbaa526fb9661eeca50f7e5178e4
+Z 8fa4d85c721391f2bcef9a82f5a12b06
