@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.733 2008/04/18 11:31:13 danielk1977 Exp $
+** $Id: vdbe.c,v 1.734 2008/04/24 19:15:11 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -122,23 +122,6 @@ static void updateMaxBlobsize(Mem *p){
 #define Stringify(P, enc) \
    if(((P)->flags&(MEM_Str|MEM_Blob))==0 && sqlite3VdbeMemStringify(P,enc)) \
      { goto no_mem; }
-
-/*
-** The header of a record consists of a sequence variable-length integers.
-** These integers are almost always small and are encoded as a single byte.
-** The following macro takes advantage this fact to provide a fast decode
-** of the integers in a record header.  It is faster for the common case
-** where the integer is a single byte.  It is a little slower when the
-** integer is two or more bytes.  But overall it is faster.
-**
-** The following expressions are equivalent:
-**
-**     x = sqlite3GetVarint32( A, &B );
-**
-**     x = GetVarint( A, B );
-**
-*/
-#define GetVarint(A,B)  ((B = *(A))<=0x7f ? 1 : sqlite3GetVarint32(A, &B))
 
 /*
 ** An ephemeral string value (signified by the MEM_Ephem flag) contains
@@ -2018,7 +2001,7 @@ case OP_Column: {
     /* The following assert is true in all cases accept when
     ** the database file has been corrupted externally.
     **    assert( zRec!=0 || avail>=payloadSize || avail>=9 ); */
-    szHdrSz = GetVarint((u8*)zData, offset);
+    szHdrSz = getVarint32((u8*)zData, offset);
 
     /* The KeyFetch() or DataFetch() above are fast and will get the entire
     ** record header in most cases.  But they will fail to get the complete
@@ -2046,7 +2029,7 @@ case OP_Column: {
     for(i=0; i<nField; i++){
       if( zIdx<zEndHdr ){
         aOffset[i] = offset;
-        zIdx += GetVarint(zIdx, aType[i]);
+        zIdx += getVarint32(zIdx, aType[i]);
         offset += sqlite3VdbeSerialTypeLen(aType[i]);
       }else{
         /* If i is less that nField, then there are less fields in this
@@ -2258,10 +2241,10 @@ case OP_MakeRecord: {
   zNewRecord = (u8 *)pOut->z;
 
   /* Write the record */
-  i = sqlite3PutVarint32(zNewRecord, nHdr);
+  i = putVarint32(zNewRecord, nHdr);
   for(pRec=pData0; pRec<=pLast; pRec++){
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
-    i += sqlite3PutVarint32(&zNewRecord[i], serial_type);      /* serial type */
+    i += putVarint32(&zNewRecord[i], serial_type);      /* serial type */
   }
   for(pRec=pData0; pRec<=pLast; pRec++){  /* serial data */
     i += sqlite3VdbeSerialPut(&zNewRecord[i], nByte-i, pRec, file_format);

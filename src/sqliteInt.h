@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.694 2008/04/17 17:02:02 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.695 2008/04/24 19:15:10 shane Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1995,11 +1995,41 @@ int sqlite3FitsIn64Bits(const char *, int);
 int sqlite3Utf16ByteLen(const void *pData, int nChar);
 int sqlite3Utf8CharLen(const char *pData, int nByte);
 int sqlite3Utf8Read(const u8*, const u8*, const u8**);
+
+/*
+** Routines to read and write variable-length integers.  These used to
+** be defined locally, but now we use the varint routines in the util.c
+** file.
+*/
 int sqlite3PutVarint(unsigned char*, u64);
 int sqlite3PutVarint32(unsigned char*, u32);
 int sqlite3GetVarint(const unsigned char *, u64 *);
 int sqlite3GetVarint32(const unsigned char *, u32 *);
 int sqlite3VarintLen(u64 v);
+
+/*
+** The header of a record consists of a sequence variable-length integers.
+** These integers are almost always small and are encoded as a single byte.
+** The following macros take advantage this fact to provide a fast encode
+** and decode of the integers in a record header.  It is faster for the common
+** case where the integer is a single byte.  It is a little slower when the
+** integer is two or more bytes.  But overall it is faster.
+**
+** The following expressions are equivalent:
+**
+**     x = sqlite3GetVarint32( A, &B );
+**     x = sqlite3PutVarint32( A, B );
+**
+**     x = getVarint32( A, B );
+**     x = putVarint32( A, B );
+**
+*/
+#define getVarint32(A,B)  ((*(A)<(unsigned char)0x80) ? ((B) = (u32)*(A)),1 : sqlite3GetVarint32((A), &(B)))
+#define putVarint32(A,B)  (((B)<(u32)0x80) ? (*(A) = (unsigned char)(B)),1 : sqlite3PutVarint32((A), (B)))
+#define getVarint    sqlite3GetVarint
+#define putVarint    sqlite3PutVarint
+
+
 void sqlite3IndexAffinityStr(Vdbe *, Index *);
 void sqlite3TableAffinityStr(Vdbe *, Table *);
 char sqlite3CompareAffinity(Expr *pExpr, char aff2);

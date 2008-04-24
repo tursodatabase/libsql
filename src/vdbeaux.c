@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.378 2008/04/24 08:36:51 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.379 2008/04/24 19:15:11 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2159,22 +2159,6 @@ int sqlite3VdbeSerialGet(
   return 0;
 }
 
-/*
-** The header of a record consists of a sequence variable-length integers.
-** These integers are almost always small and are encoded as a single byte.
-** The following macro takes advantage this fact to provide a fast decode
-** of the integers in a record header.  It is faster for the common case
-** where the integer is a single byte.  It is a little slower when the
-** integer is two or more bytes.  But overall it is faster.
-**
-** The following expressions are equivalent:
-**
-**     x = sqlite3GetVarint32( A, &B );
-**
-**     x = GetVarint( A, B );
-**
-*/
-#define GetVarint(A,B)  ((B = *(A))<=0x7f ? 1 : sqlite3GetVarint32(A, &B))
 
 /*
 ** Given the nKey-byte encoding of a record in pKey[], parse the
@@ -2217,13 +2201,13 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
   p->nField = pKeyInfo->nField + 1;
   p->needDestroy = 1;
   p->aMem = pMem = &((Mem*)p)[1];
-  idx = GetVarint(aKey, szHdr);
+  idx = getVarint32(aKey, szHdr);
   d = szHdr;
   i = 0;
   while( idx<szHdr && i<p->nField ){
     u32 serial_type;
 
-    idx += GetVarint( aKey+idx, serial_type);
+    idx += getVarint32( aKey+idx, serial_type);
     if( d>=nKey && sqlite3VdbeSerialTypeLen(serial_type)>0 ) break;
     pMem->enc = pKeyInfo->enc;
     pMem->db = pKeyInfo->db;
@@ -2296,14 +2280,14 @@ int sqlite3VdbeRecordCompare(
   mem1.flags = 0;
   mem1.zMalloc = 0;
   
-  idx1 = GetVarint(aKey1, szHdr1);
+  idx1 = getVarint32(aKey1, szHdr1);
   d1 = szHdr1;
   nField = pKeyInfo->nField;
   while( idx1<szHdr1 && i<pPKey2->nField ){
     u32 serial_type1;
 
     /* Read the serial types for the next element in each key. */
-    idx1 += GetVarint( aKey1+idx1, serial_type1 );
+    idx1 += getVarint32( aKey1+idx1, serial_type1 );
     if( d1>=nKey1 && sqlite3VdbeSerialTypeLen(serial_type1)>0 ) break;
 
     /* Extract the values to be compared.
@@ -2351,8 +2335,8 @@ int sqlite3VdbeIdxRowidLen(const u8 *aKey){
   u32 szHdr;        /* Size of the header */
   u32 typeRowid;    /* Serial type of the rowid */
 
-  sqlite3GetVarint32(aKey, &szHdr);
-  sqlite3GetVarint32(&aKey[szHdr-1], &typeRowid);
+  (void)getVarint32(aKey, szHdr);
+  (void)getVarint32(&aKey[szHdr-1], typeRowid);
   return sqlite3VdbeSerialTypeLen(typeRowid);
 }
   
@@ -2381,8 +2365,8 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   if( rc ){
     return rc;
   }
-  sqlite3GetVarint32((u8*)m.z, &szHdr);
-  sqlite3GetVarint32((u8*)&m.z[szHdr-1], &typeRowid);
+  (void)getVarint32((u8*)m.z, szHdr);
+  (void)getVarint32((u8*)&m.z[szHdr-1], typeRowid);
   lenRowid = sqlite3VdbeSerialTypeLen(typeRowid);
   sqlite3VdbeSerialGet((u8*)&m.z[m.n-lenRowid], typeRowid, &v);
   *rowid = v.u.i;

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.94 2008/03/25 17:23:33 drh Exp $
+** $Id: test3.c,v 1.95 2008/04/24 19:15:10 shane Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -1447,11 +1447,11 @@ static int btree_breakpoint(
 /*
 ** usage:   varint_test  START  MULTIPLIER  COUNT  INCREMENT
 **
-** This command tests the sqlite3PutVarint() and sqlite3GetVarint()
+** This command tests the putVarint() and getVarint()
 ** routines, both for accuracy and for speed.
 **
-** An integer is written using PutVarint() and read back with
-** GetVarint() and varified to be unchanged.  This repeats COUNT
+** An integer is written using putVarint() and read back with
+** getVarint() and varified to be unchanged.  This repeats COUNT
 ** times.  The first integer is START*MULTIPLIER.  Each iteration
 ** increases the integer by INCREMENT.
 **
@@ -1481,15 +1481,15 @@ static int btree_varint_test(
   in *= mult;
   for(i=0; i<count; i++){
     char zErr[200];
-    n1 = sqlite3PutVarint(zBuf, in);
+    n1 = putVarint(zBuf, in);
     if( n1>9 || n1<1 ){
-      sprintf(zErr, "PutVarint returned %d - should be between 1 and 9", n1);
+      sprintf(zErr, "putVarint returned %d - should be between 1 and 9", n1);
       Tcl_AppendResult(interp, zErr, 0);
       return TCL_ERROR;
     }
-    n2 = sqlite3GetVarint(zBuf, &out);
+    n2 = getVarint(zBuf, &out);
     if( n1!=n2 ){
-      sprintf(zErr, "PutVarint returned %d and GetVarint returned %d", n1, n2);
+      sprintf(zErr, "putVarint returned %d and getVarint returned %d", n1, n2);
       Tcl_AppendResult(interp, zErr, 0);
       return TCL_ERROR;
     }
@@ -1500,10 +1500,10 @@ static int btree_varint_test(
     }
     if( (in & 0xffffffff)==in ){
       u32 out32;
-      n2 = sqlite3GetVarint32(zBuf, &out32);
+      n2 = getVarint32(zBuf, out32);
       out = out32;
       if( n1!=n2 ){
-        sprintf(zErr, "PutVarint returned %d and GetVarint32 returned %d", 
+        sprintf(zErr, "putVarint returned %d and GetVarint32 returned %d", 
                   n1, n2);
         Tcl_AppendResult(interp, zErr, 0);
         return TCL_ERROR;
@@ -1521,7 +1521,7 @@ static int btree_varint_test(
     ** than putVarint.
     */
     for(j=0; j<19; j++){
-      sqlite3GetVarint(zBuf, &out);
+      getVarint(zBuf, &out);
     }
     in += incr;
   }

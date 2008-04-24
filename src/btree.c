@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.451 2008/04/03 21:46:57 drh Exp $
+** $Id: btree.c,v 1.452 2008/04/24 19:15:10 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -552,7 +552,7 @@ void sqlite3BtreeParseCellPtr(
   n = pPage->childPtrSize;
   assert( n==4-4*pPage->leaf );
   if( pPage->hasData ){
-    n += getVarint32(&pCell[n], &nPayload);
+    n += getVarint32(&pCell[n], nPayload);
   }else{
     nPayload = 0;
   }
@@ -561,7 +561,7 @@ void sqlite3BtreeParseCellPtr(
     n += getVarint(&pCell[n], (u64 *)&pInfo->nKey);
   }else{
     u32 x;
-    n += getVarint32(&pCell[n], &x);
+    n += getVarint32(&pCell[n], x);
     pInfo->nKey = x;
     nPayload += x;
   }
@@ -3668,7 +3668,7 @@ int sqlite3BtreeMoveto(
         pCell = findCell(pPage, pCur->idx) + pPage->childPtrSize;
         if( pPage->hasData ){
           u32 dummy;
-          pCell += getVarint32(pCell, &dummy);
+          pCell += getVarint32(pCell, dummy);
         }
         getVarint(pCell, (u64*)&nCellKey);
         if( nCellKey==nKey ){

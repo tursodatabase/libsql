@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.20 2008/03/29 16:01:04 drh Exp $
+** $Id: btreeInt.h,v 1.21 2008/04/24 19:15:10 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -494,15 +494,6 @@ struct BtCursor {
 #else
 # define TRACE(X)
 #endif
-
-/*
-** Routines to read and write variable-length integers.  These used to
-** be defined locally, but now we use the varint routines in the util.c
-** file.
-*/
-#define getVarint    sqlite3GetVarint
-#define getVarint32(A,B)  ((*B=*(A))<=0x7f?1:sqlite3GetVarint32(A,B))
-#define putVarint    sqlite3PutVarint
 
 /* The database page the PENDING_BYTE occupies. This page is never used.
 ** TODO: This macro is very similary to PAGER_MJ_PGNO() in pager.c. They
