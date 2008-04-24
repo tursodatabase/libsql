@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sthat\scan\sfollow\sa\smalloc()\sfailure\sin\smalloc7.test.\s(CVS\s5042)
-D 2008-04-24T12:36:35
+C Fix\san\sassert()\sfailure\sthat\scan\soccur\sif\s"journal_mode=off"\sis\sused\sin\sa\sbuild\swith\sthe\satomic-write\soptimization\senabled.\s(CVS\s5043)
+D 2008-04-24T12:37:40
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -127,7 +127,7 @@ F src/os_unix.c fdec4e5ee5dd555a6ad4a69f38ab35f0788536b4
 F src/os_unix.h 5768d56d28240d3fe4537fac08cc85e4fb52279e
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/os_win.h 41a946bea10f61c158ce8645e7646b29d44f122b
-F src/pager.c 21d426c65c9dcf5718423a967117e9450f238519
+F src/pager.c 90df64b9c18545e3eb6d8d1dccf95dafe3373b8f
 F src/pager.h 45ec2188593afd48a25c743529646771d75e83e4
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -635,7 +635,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6039328fe05aaf9380d545e84dfabccb32a4d8ea
-R f4eeaf9013dd9137ee2d4c5947b895d2
+P 85eedad186327a1f0b0983413b833efd41640d0e
+R 087210ad9cdbf484acaa720eedf1863a
 U danielk1977
-Z 8fa4d85c721391f2bcef9a82f5a12b06
+Z 7afb9a7733e0e859156833cb3385ab87

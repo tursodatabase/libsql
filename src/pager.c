@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.433 2008/04/22 17:15:18 drh Exp $
+** @(#) $Id: pager.c,v 1.434 2008/04/24 12:37:40 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4595,10 +4595,12 @@ int sqlite3PagerCommitPhaseOne(
     */
     int useAtomicWrite = (
         !zMaster && 
+        pPager->journalOpen &&
         pPager->journalOff==jrnlBufferSize(pPager) && 
         nTrunc==0 && 
         (0==pPager->pDirty || 0==pPager->pDirty->pDirty)
     );
+    assert( pPager->journalOpen || pPager->journalMode==PAGER_JOURNALMODE_OFF );
     if( useAtomicWrite ){
       /* Update the nRec field in the journal file. */
       int offset = pPager->journalHdr + sizeof(aJournalMagic);
