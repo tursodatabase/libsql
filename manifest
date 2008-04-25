@@ -1,5 +1,5 @@
-C Candidate\sfix\sfor\sticket\s#3082.\sTest\scases\sneeded.\s(CVS\s5047)
-D 2008-04-25T00:08:38
+C Add\stest\scases\sto\sprove\sthat\sticket\s#3082\shas\sbeen\sfixed.\s(CVS\s5048)
+D 2008-04-25T12:10:15
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -537,7 +537,7 @@ F test/vtab7.test a8c3c3cb3eb60be364991bd714e4927e26c4cd85
 F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
 F test/vtabA.test 9cb6b1afead6fdd91bbdf1ca65c44ccfd9b10936
-F test/vtabB.test a02264feac9e41a7696869dbd6f993a8b597f7c3
+F test/vtabB.test 04df5dc531b9f44d9ca65b9c1b79f12b5922a796
 F test/vtab_alter.test 3a299749fee97ca3d53bd55717f536e4a2284856
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test c19b2555b807ef2ee014c882cdda5bc8d84fcf48
@@ -630,7 +630,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a400faf51970b312e9d8c8b4fa099558cc620b69
-R 38bfb0a4f4b6d7e46cc483b5953eff78
+P f6313311ddfb1ee2d6660b9be99afe721a8a9aff
+R c1be9ae2c20e9ded54c75945b051f5cb
 U drh
-Z b2d1f6c45fdfbcc2b1867a8bfdc2ffb0
+Z 3138e5436c93d4ce1252743b1e0e1968
