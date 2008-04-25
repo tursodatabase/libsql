@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.734 2008/04/24 19:15:11 shane Exp $
+** $Id: vdbe.c,v 1.735 2008/04/25 12:25:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2268,10 +2268,20 @@ case OP_MakeRecord: {
 /* Opcode: Statement P1 * * * *
 **
 ** Begin an individual statement transaction which is part of a larger
-** BEGIN..COMMIT transaction.  This is needed so that the statement
+** transaction.  This is needed so that the statement
 ** can be rolled back after an error without having to roll back the
 ** entire transaction.  The statement transaction will automatically
 ** commit when the VDBE halts.
+**
+** If the database connection is currently in autocommit mode (that 
+** is to say, if it is in between BEGIN and COMMIT)
+** and if there are no other active statements on the same database
+** connection, then this operation is a no-op.  No statement transaction
+** is needed since any error can use the normal ROLLBACK process to
+** undo changes.
+**
+** If a statement transaction is started, then a statement journal file
+** will be allocated and initialized.
 **
 ** The statement is begun on the database file with index P1.  The main
 ** database file has an index of 0 and the file used for temporary tables

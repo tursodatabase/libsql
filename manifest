@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\sprove\sthat\sticket\s#3082\shas\sbeen\sfixed.\s(CVS\s5048)
-D 2008-04-25T12:10:15
+C Clarify\ssome\scomments.\s\sNo\schanges\sto\scode.\s(CVS\s5049)
+D 2008-04-25T12:25:42
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -122,7 +122,7 @@ F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 41015b3fa91568761eb10cbf6ca27a0624ba0bda
 F src/os_unix.c fdec4e5ee5dd555a6ad4a69f38ab35f0788536b4
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
-F src/pager.c 90df64b9c18545e3eb6d8d1dccf95dafe3373b8f
+F src/pager.c 2361c00a4cf7936ef7e1463c224214c6fe6ee2cd
 F src/pager.h 45ec2188593afd48a25c743529646771d75e83e4
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -169,7 +169,7 @@ F src/update.c 57282dae1ffffaf4aedc3201ed77f8ef09be4f45
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 943caa4071488b20ed90588f0704c6825f91836b
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
-F src/vdbe.c 062c597e167a2284985c0b64e2514b130abde49e
+F src/vdbe.c 2d75ac15ec69721340f0320e5b2fefbbd1aa2831
 F src/vdbe.h bfd84bda447f39cb599302c7ec85067dae20453c
 F src/vdbeInt.h 05316345da487b0cf540482576f9ae3337d133cd
 F src/vdbeapi.c 0e1b5a808bb0e556f2a975eb7d11fd3153e922bf
@@ -630,7 +630,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f6313311ddfb1ee2d6660b9be99afe721a8a9aff
-R c1be9ae2c20e9ded54c75945b051f5cb
+P 776e7024101dd2eeb29484a36c7e1ac751444ec8
+R 211bc01b0b10749f82de03c7c0880d70
 U drh
-Z 3138e5436c93d4ce1252743b1e0e1968
+Z 5d82caa22f30cf196f067fd76ef02178
