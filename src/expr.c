@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.368 2008/04/24 12:36:35 danielk1977 Exp $
+** $Id: expr.c,v 1.369 2008/04/25 00:08:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1577,6 +1577,45 @@ struct QueryCoder {
 #endif
 
 /*
+** Return true if the IN operator optimization is enabled and
+** the SELECT statement p exists and is of the
+** simple form:
+**
+**     SELECT <column> FROM <table>
+**
+** If this is the case, it may be possible to use an existing table
+** or index instead of generating an epheremal table.
+*/
+#ifndef SQLITE_OMIT_SUBQUERY
+static int isCandidateForInOpt(Select *p){
+  SrcList *pSrc;
+  ExprList *pEList;
+  Table *pTab;
+  if( !sqlite3_enable_in_opt ) return 0; /* IN optimization must be enabled */
+  if( p==0 ) return 0;                   /* right-hand side of IN is SELECT */
+  if( p->pPrior ) return 0;              /* Not a compound SELECT */
+  if( p->isDistinct ) return 0;          /* No DISTINCT keyword */
+  if( p->isAgg ) return 0;               /* Contains no aggregate functions */
+  if( p->pGroupBy ) return 0;            /* Has no GROUP BY clause */
+  if( p->pLimit ) return 0;              /* Has no LIMIT clause */
+  if( p->pOffset ) return 0;
+  if( p->pWhere ) return 0;              /* Has no WHERE clause */
+  pSrc = p->pSrc;
+  if( pSrc==0 ) return 0;                /* A single table in the FROM clause */
+  if( pSrc->nSrc!=1 ) return 0;
+  if( pSrc->a[0].pSelect ) return 0;     /* FROM clause is not a subquery */
+  pTab = pSrc->a[0].pTab;
+  if( pTab==0 ) return 0;
+  if( pTab->pSelect ) return 0;          /* FROM clause is not a view */
+  if( IsVirtual(pTab) ) return 0;        /* FROM clause not a virtual table */
+  pEList = p->pEList;
+  if( pEList->nExpr!=1 ) return 0;       /* One column in the result set */
+  if( pEList->a[0].pExpr->op!=TK_COLUMN ) return 0; /* Result is a column */
+  return 1;
+}
+#endif /* SQLITE_OMIT_SUBQUERY */
+
+/*
 ** This function is used by the implementation of the IN (...) operator.
 ** It's job is to find or create a b-tree structure that may be used
 ** either to test for membership of the (...) set or to iterate through
@@ -1621,14 +1660,8 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
   ** If this is the case, it may be possible to use an existing table
   ** or index instead of generating an epheremal table.
   */
-  if( sqlite3_enable_in_opt
-   && (p=pX->pSelect)!=0 && !p->pPrior
-   && !p->isDistinct && !p->isAgg && !p->pGroupBy
-   && p->pSrc && p->pSrc->nSrc==1 && !p->pSrc->a[0].pSelect
-   && p->pSrc->a[0].pTab && !p->pSrc->a[0].pTab->pSelect
-   && p->pEList->nExpr==1 && p->pEList->a[0].pExpr->op==TK_COLUMN
-   && !p->pLimit && !p->pOffset && !p->pWhere
-  ){
+  p = pX->pSelect;
+  if( isCandidateForInOpt(p) ){
     sqlite3 *db = pParse->db;
     Index *pIdx;
     Expr *pExpr = p->pEList->a[0].pExpr;

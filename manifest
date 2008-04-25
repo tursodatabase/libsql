@@ -1,5 +1,5 @@
-C Remove\stwo\smore\sunused\sfiles.\s(CVS\s5046)
-D 2008-04-24T22:57:29
+C Candidate\sfix\sfor\sticket\s#3082.\sTest\scases\sneeded.\s(CVS\s5047)
+D 2008-04-25T00:08:38
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -94,7 +94,7 @@ F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c e41ce4513fb0e359dc678d6bddb4ace135fe365d
 F src/delete.c e4bd53c46969c9fb05cfbba4abc0c93a923f8072
-F src/expr.c d5733edd985926fd94e7d51b3763084f7915e2c3
+F src/expr.c 6a6f37005921314b1ae7c3ed4fab03c58fd5e647
 F src/fault.c 83057e86815d473e526f7df0b0108dfdd022ff23
 F src/func.c c9e8c7ff4c45027edee89bde7adbf86a3a3b2afe
 F src/hash.c 522a8f5a23cf18fe5845afee7263c5be76c25ca2
@@ -630,7 +630,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0d04ccd97841bbbda564cc6ae5da057ee3888fa3
-R d5c9fc7dffd786a749d8abc27197263d
+P a400faf51970b312e9d8c8b4fa099558cc620b69
+R 38bfb0a4f4b6d7e46cc483b5953eff78
 U drh
-Z 7362658de5fb5aa041e57c1c0e6c3d9d
+Z b2d1f6c45fdfbcc2b1867a8bfdc2ffb0
