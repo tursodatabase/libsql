@@ -1,5 +1,5 @@
-C Clarify\ssome\scomments.\s\sNo\schanges\sto\scode.\s(CVS\s5049)
-D 2008-04-25T12:25:42
+C Use\s"(void)"\sfunction\sarguments\sin\sdeclarations\sinstead\sof\s"()".\s\sBoth\sare\nlegal\sbut\ssome\spedantic\scompilers\scomplain\sabout\sthe\slatter.\s\sTicket\s#3086.\s(CVS\s5050)
+D 2008-04-26T13:39:47
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -87,7 +87,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 8ec2212cfb702bc4f402c0b7ae7623d85320c714
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
 F src/btree.c 8b2294c64baeee6ae0519e1438c577fd601c02fb
-F src/btree.h c66cb17c6fffa84a88926dbef173bab4ae692fd4
+F src/btree.h 8826591bf54dd35fcf2e67473d5f1bae253861c7
 F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
 F src/build.c f56940d7b785cd2f9bcb7e5b6e17157f6feb9c4c
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
@@ -630,7 +630,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 776e7024101dd2eeb29484a36c7e1ac751444ec8
-R 211bc01b0b10749f82de03c7c0880d70
+P 7f80539225b17a62e4aa09e6d514e3e9e1b22c36
+R d59ff40ec9cfffd3c589ccc9ea8a1338
 U drh
-Z 5d82caa22f30cf196f067fd76ef02178
+Z 250e76797f2e8fea8feb6705a1e7036b
