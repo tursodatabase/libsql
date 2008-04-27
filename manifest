@@ -1,5 +1,5 @@
-C Fix\sthe\slemon\sparser\sgenerator\sso\sthat\sit\sworks\sagain\swith\sthe\s"error"\nsymbol.\s\sTicket\s#3079\s(CVS\s5052)
-D 2008-04-27T18:45:11
+C Allow\smultiple\soccurrances\sof\s%include\sin\slemon\sinput\sfiles.\nTicket\s#3001.\s(CVS\s5053)
+D 2008-04-27T22:19:45
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -550,7 +550,7 @@ F test/where6.test 42c4373595f4409d9c6a9987b4a60000ad664faf
 F test/zeroblob.test 7d1854ea79d048e023e5f2e38106a7e99a17435c
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/lemon.c 1dc8d53c5ac40f4186ea1bd6ec87a974e18f35a0
+F tool/lemon.c a9c51c1ede7f35dc8746894e7f8cc7e3704ecef8
 F tool/lempar.c aab54f1758c554e550ff5c4b191053a819279a2b
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -630,7 +630,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6a94d19747a05df2694d3720f76de3dab3836578
-R 79609f1a0af14b94afb1ca285dc546fb
+P 20ed749266d099eb35f40ca479db8baa75186b60
+R 9d5f4dcb5bf15e107c27eb9427f5ffc1
 U drh
-Z dae6fd0d3c11302374c3e38fa9845414
+Z e874612f1bcb163492c64e81d81fe5cd

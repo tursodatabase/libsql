@@ -134,7 +134,6 @@ struct symbol {
   int useCnt;              /* Number of times used */
   char *destructor;        /* Code which executes whenever this symbol is
                            ** popped from the stack during error processing */
-  int destructorln;        /* Line number of destructor code */
   char *datatype;          /* The data type of information held by this
                            ** object. Only used if type==NONTERMINAL */
   int dtnum;               /* The data type number.  In the parser, the value
@@ -250,21 +249,13 @@ struct lemon {
   char *start;             /* Name of the start symbol for the grammar */
   char *stacksize;         /* Size of the parser stack */
   char *include;           /* Code to put at the start of the C file */
-  int  includeln;          /* Line number for start of include code */
   char *error;             /* Code to execute when an error is seen */
-  int  errorln;            /* Line number for start of error code */
   char *overflow;          /* Code to execute on a stack overflow */
-  int  overflowln;         /* Line number for start of overflow code */
   char *failure;           /* Code to execute on parser failure */
-  int  failureln;          /* Line number for start of failure code */
   char *accept;            /* Code to execute when the parser excepts */
-  int  acceptln;           /* Line number for the start of accept code */
   char *extracode;         /* Code appended to the generated file */
-  int  extracodeln;        /* Line number for the start of the extra code */
   char *tokendest;         /* Code to execute to destroy token data */
-  int  tokendestln;        /* Line number for token destroyer code */
   char *vardest;           /* Code for the default non-terminal destructor */
-  int  vardestln;          /* Line number for default non-term destructor code*/
   char *filename;          /* Name of the input file */
   char *outname;           /* Name of the current output file */
   char *tokenprefix;       /* A prefix added to token names in the .h file */
@@ -1969,7 +1960,7 @@ struct pstate {
   struct rule *prevrule;     /* Previous rule parsed */
   char *declkeyword;         /* Keyword of a declaration */
   char **declargslot;        /* Where the declaration argument should be put */
-  int *decllnslot;           /* Where the declaration linenumber is put */
+  int insertLineMacro;       /* Add #line before declaration insert */
   enum e_assoc declassoc;    /* Assign this association to decl arguments */
   int preccounter;           /* Assign this precedence to decl arguments */
   struct rule *firstrule;    /* Pointer to first rule in the grammar */
@@ -2203,46 +2194,45 @@ to follow the previous rule.");
       if( isalpha(x[0]) ){
         psp->declkeyword = x;
         psp->declargslot = 0;
-        psp->decllnslot = 0;
+        psp->insertLineMacro = 1;
         psp->state = WAITING_FOR_DECL_ARG;
         if( strcmp(x,"name")==0 ){
           psp->declargslot = &(psp->gp->name);
+          psp->insertLineMacro = 0;
 	}else if( strcmp(x,"include")==0 ){
           psp->declargslot = &(psp->gp->include);
-          psp->decllnslot = &psp->gp->includeln;
 	}else if( strcmp(x,"code")==0 ){
           psp->declargslot = &(psp->gp->extracode);
-          psp->decllnslot = &psp->gp->extracodeln;
 	}else if( strcmp(x,"token_destructor")==0 ){
           psp->declargslot = &psp->gp->tokendest;
-          psp->decllnslot = &psp->gp->tokendestln;
 	}else if( strcmp(x,"default_destructor")==0 ){
           psp->declargslot = &psp->gp->vardest;
-          psp->decllnslot = &psp->gp->vardestln;
 	}else if( strcmp(x,"token_prefix")==0 ){
           psp->declargslot = &psp->gp->tokenprefix;
+          psp->insertLineMacro = 0;
 	}else if( strcmp(x,"syntax_error")==0 ){
           psp->declargslot = &(psp->gp->error);
-          psp->decllnslot = &psp->gp->errorln;
 	}else if( strcmp(x,"parse_accept")==0 ){
           psp->declargslot = &(psp->gp->accept);
-          psp->decllnslot = &psp->gp->acceptln;
 	}else if( strcmp(x,"parse_failure")==0 ){
           psp->declargslot = &(psp->gp->failure);
-          psp->decllnslot = &psp->gp->failureln;
 	}else if( strcmp(x,"stack_overflow")==0 ){
           psp->declargslot = &(psp->gp->overflow);
-          psp->decllnslot = &psp->gp->overflowln;
         }else if( strcmp(x,"extra_argument")==0 ){
           psp->declargslot = &(psp->gp->arg);
+          psp->insertLineMacro = 0;
         }else if( strcmp(x,"token_type")==0 ){
           psp->declargslot = &(psp->gp->tokentype);
+          psp->insertLineMacro = 0;
         }else if( strcmp(x,"default_type")==0 ){
           psp->declargslot = &(psp->gp->vartype);
+          psp->insertLineMacro = 0;
         }else if( strcmp(x,"stack_size")==0 ){
           psp->declargslot = &(psp->gp->stacksize);
+          psp->insertLineMacro = 0;
         }else if( strcmp(x,"start_symbol")==0 ){
           psp->declargslot = &(psp->gp->start);
+          psp->insertLineMacro = 0;
         }else if( strcmp(x,"left")==0 ){
           psp->preccounter++;
           psp->declassoc = LEFT;
@@ -2286,7 +2276,7 @@ to follow the previous rule.");
       }else{
         struct symbol *sp = Symbol_new(x);
         psp->declargslot = &sp->destructor;
-        psp->decllnslot = &sp->destructorln;
+        psp->insertLineMacro = 1;
         psp->state = WAITING_FOR_DECL_ARG;
       }
       break;
@@ -2299,7 +2289,7 @@ to follow the previous rule.");
       }else{
         struct symbol *sp = Symbol_new(x);
         psp->declargslot = &sp->datatype;
-        psp->decllnslot = 0;
+        psp->insertLineMacro = 0;
         psp->state = WAITING_FOR_DECL_ARG;
       }
       break;
@@ -2324,18 +2314,50 @@ to follow the previous rule.");
       }
       break;
     case WAITING_FOR_DECL_ARG:
-      if( (x[0]=='{' || x[0]=='\"' || isalnum(x[0])) ){
-        if( *(psp->declargslot)!=0 ){
-          ErrorMsg(psp->filename,psp->tokenlineno,
-            "The argument \"%s\" to declaration \"%%%s\" is not the first.",
-            x[0]=='\"' ? &x[1] : x,psp->declkeyword);
-          psp->errorcnt++;
-          psp->state = RESYNC_AFTER_DECL_ERROR;
-	}else{
-          *(psp->declargslot) = (x[0]=='\"' || x[0]=='{') ? &x[1] : x;
-          if( psp->decllnslot ) *psp->decllnslot = psp->tokenlineno;
-          psp->state = WAITING_FOR_DECL_OR_RULE;
-	}
+      if( x[0]=='{' || x[0]=='\"' || isalnum(x[0]) ){
+        char *zOld, *zNew, *zBuf, *z;
+        int nOld, n, nLine, nNew, nBack;
+        char zLine[50];
+        zNew = x;
+        if( zNew[0]=='"' || zNew[0]=='{' ) zNew++;
+        nNew = strlen(zNew);
+        if( *psp->declargslot ){
+          zOld = *psp->declargslot;
+        }else{
+          zOld = "";
+        }
+        nOld = strlen(zOld);
+        n = nOld + nNew + 20;
+        if( psp->insertLineMacro ){
+          for(z=psp->filename, nBack=0; *z; z++){
+            if( *z=='\\' ) nBack++;
+          }
+          sprintf(zLine, "#line %d ", psp->tokenlineno);
+          nLine = strlen(zLine);
+          n += nLine + strlen(psp->filename) + nBack;
+        }
+        *psp->declargslot = zBuf = realloc(*psp->declargslot, n);
+        zBuf += nOld;
+        if( psp->insertLineMacro ){
+          if( nOld && zBuf[-1]!='\n' ){
+            *(zBuf++) = '\n';
+          }
+          memcpy(zBuf, zLine, nLine);
+          zBuf += nLine;
+          *(zBuf++) = '"';
+          for(z=psp->filename; *z; z++){
+            if( *z=='\\' ){
+              *(zBuf++) = '\\';
+            }
+            *(zBuf++) = *z;
+          }
+          *(zBuf++) = '"';
+          *(zBuf++) = '\n';
+        }
+        memcpy(zBuf, zNew, nNew);
+        zBuf += nNew;
+        *zBuf = 0;
+        psp->state = WAITING_FOR_DECL_OR_RULE;
       }else{
         ErrorMsg(psp->filename,psp->tokenlineno,
           "Illegal argument to %%%s: %s",psp->declkeyword,x);
@@ -3073,15 +3095,13 @@ char *filename;
 }
 
 /* Print a string to the file and keep the linenumber up to date */
-PRIVATE void tplt_print(out,lemp,str,strln,lineno)
+PRIVATE void tplt_print(out,lemp,str,lineno)
 FILE *out;
 struct lemon *lemp;
 char *str;
-int strln;
 int *lineno;
 {
   if( str==0 ) return;
-  tplt_linedir(out,strln,lemp->filename);
   (*lineno)++;
   while( *str ){
     if( *str=='\n' ) (*lineno)++;
@@ -3113,17 +3133,14 @@ int *lineno;
  if( sp->type==TERMINAL ){
    cp = lemp->tokendest;
    if( cp==0 ) return;
-   tplt_linedir(out,lemp->tokendestln,lemp->filename);
-   fprintf(out,"{");
+   fprintf(out,"{\n"); (*lineno)++;
  }else if( sp->destructor ){
    cp = sp->destructor;
-   tplt_linedir(out,sp->destructorln,lemp->filename);
-   fprintf(out,"{");
+   fprintf(out,"{\n"); (*lineno)++;
  }else if( lemp->vardest ){
    cp = lemp->vardest;
    if( cp==0 ) return;
-   tplt_linedir(out,lemp->vardestln,lemp->filename);
-   fprintf(out,"{");
+   fprintf(out,"{\n"); (*lineno)++;
  }else{
    assert( 0 );  /* Cannot happen */
  }
@@ -3137,8 +3154,9 @@ int *lineno;
    fputc(*cp,out);
  }
  (*lineno) += 3 + linecnt;
- fprintf(out,"}\n");
+ fprintf(out,"\n");
  tplt_linedir(out,*lineno,lemp->outname);
+ fprintf(out,"}\n");
  return;
 }
 
@@ -3532,7 +3550,7 @@ int mhflag;     /* Output in makeheaders format if true */
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate the include code, if any */
-  tplt_print(out,lemp,lemp->include,lemp->includeln,&lineno);
+  tplt_print(out,lemp,lemp->include,&lineno);
   if( mhflag ){
     char *name = file_makename(lemp, ".h");
     fprintf(out,"#include \"%s\"\n", name); lineno++;
@@ -3862,7 +3880,7 @@ int mhflag;     /* Output in makeheaders format if true */
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate code which executes whenever the parser stack overflows */
-  tplt_print(out,lemp,lemp->overflow,lemp->overflowln,&lineno);
+  tplt_print(out,lemp,lemp->overflow,&lineno);
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate the table of rule information 
@@ -3899,19 +3917,19 @@ int mhflag;     /* Output in makeheaders format if true */
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate code which executes if a parse fails */
-  tplt_print(out,lemp,lemp->failure,lemp->failureln,&lineno);
+  tplt_print(out,lemp,lemp->failure,&lineno);
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate code which executes when a syntax error occurs */
-  tplt_print(out,lemp,lemp->error,lemp->errorln,&lineno);
+  tplt_print(out,lemp,lemp->error,&lineno);
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate code which executes when the parser accepts its input */
-  tplt_print(out,lemp,lemp->accept,lemp->acceptln,&lineno);
+  tplt_print(out,lemp,lemp->accept,&lineno);
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Append any addition code the user desires */
-  tplt_print(out,lemp,lemp->extracode,lemp->extracodeln,&lineno);
+  tplt_print(out,lemp,lemp->extracode,&lineno);
 
   fclose(in);
   fclose(out);
