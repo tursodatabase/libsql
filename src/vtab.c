@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.66 2008/04/10 18:35:22 drh Exp $
+** $Id: vtab.c,v 1.67 2008/04/27 18:40:12 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -618,7 +618,7 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab)
 **
 ** The array is cleared after invoking the callbacks. 
 */
-static void callFinaliser(sqlite3 *db, sqlite3_intptr_t offset){
+static void callFinaliser(sqlite3 *db, int offset){
   int i;
   if( db->aVTrans ){
     for(i=0; i<db->nVTrans && db->aVTrans[i]; i++){
@@ -671,7 +671,7 @@ int sqlite3VtabSync(sqlite3 *db, int rc2){
 ** sqlite3.aVTrans array. Then clear the array itself.
 */
 int sqlite3VtabRollback(sqlite3 *db){
-  callFinaliser(db, (sqlite3_intptr_t)(&((sqlite3_module *)0)->xRollback));
+  callFinaliser(db, offsetof(sqlite3_module,xRollback));
   return SQLITE_OK;
 }
 
@@ -680,7 +680,7 @@ int sqlite3VtabRollback(sqlite3 *db){
 ** sqlite3.aVTrans array. Then clear the array itself.
 */
 int sqlite3VtabCommit(sqlite3 *db){
-  callFinaliser(db, (sqlite3_intptr_t)(&((sqlite3_module *)0)->xCommit));
+  callFinaliser(db, offsetof(sqlite3_module,xCommit));
   return SQLITE_OK;
 }
 

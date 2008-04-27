@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.236 2008/04/11 15:36:03 drh Exp $
+** $Id: insert.c,v 1.237 2008/04/27 18:40:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1193,7 +1193,7 @@ void sqlite3GenerateConstraintChecks(
     regR = sqlite3GetTempReg(pParse);
     sqlite3VdbeAddOp2(v, OP_SCopy, regRowid-hasTwoRowids, regR);
     j3 = sqlite3VdbeAddOp4(v, OP_IsUnique, baseCur+iCur+1, 0,
-                           regR, (char*)(sqlite3_intptr_t)aRegIdx[iCur],
+                           regR, (char*)aRegIdx[iCur],
                            P4_INT32);
 
     /* Generate code that executes if the new index entry is not unique */

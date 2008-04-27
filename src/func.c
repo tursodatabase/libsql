@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.191 2008/03/20 16:30:18 drh Exp $
+** $Id: func.c,v 1.192 2008/04/27 18:40:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -867,7 +867,7 @@ static void trimFunc(
   const unsigned char *zIn;         /* Input string */
   const unsigned char *zCharSet;    /* Set of characters to trim */
   int nIn;                          /* Number of bytes in input */
-  sqlite3_intptr_t flags;           /* 1: trimleft  2: trimright  3: trim */
+  int flags;                        /* 1: trimleft  2: trimright  3: trim */
   int i;                            /* Loop counter */
   unsigned char *aLen;              /* Length of each character in zCharSet */
   unsigned char **azChar;           /* Individual characters in zCharSet */
@@ -908,7 +908,7 @@ static void trimFunc(
     }
   }
   if( nChar>0 ){
-    flags = (sqlite3_intptr_t)sqlite3_user_data(context);
+    flags = (int)sqlite3_user_data(context);
     if( flags & 1 ){
       while( nIn>0 ){
         int len;
@@ -1283,7 +1283,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
     void *pArg;
     u8 argType = aFuncs[i].argType;
-    pArg = (void*)(sqlite3_intptr_t)argType;
+    pArg = (void*)(int)argType;
     sqlite3CreateFunc(db, aFuncs[i].zName, aFuncs[i].nArg,
         aFuncs[i].eTextRep, pArg, aFuncs[i].xFunc, 0, 0);
     if( aFuncs[i].needCollSeq ){
@@ -1301,7 +1301,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
   sqlite3AttachFunctions(db);
 #endif
   for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
-    void *pArg = (void*)(sqlite3_intptr_t)aAggs[i].argType;
+    void *pArg = (void*)(int)aAggs[i].argType;
     sqlite3CreateFunc(db, aAggs[i].zName, aAggs[i].nArg, SQLITE_UTF8, 
         pArg, 0, aAggs[i].xStep, aAggs[i].xFinalize);
     if( aAggs[i].needCollSeq ){
