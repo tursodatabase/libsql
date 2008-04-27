@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.309 2008/04/27 22:29:02 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.310 2008/04/27 22:48:05 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2203,11 +2203,6 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 **          positive changes the
 **          limit on the size of construct C in [database connection] D
 **          to the lessor of V and the hard upper bound on the size
-**          of C that is set at compile-time.
-**
-** {F12764} A successful call to [sqlite3_limit(D,C,V)] where V is zero
-**          changes the limit on the size of construct C in
-**          [database connection] D to be the hard upper bound on the size
 **          of C that is set at compile-time.
 **
 ** {F12766} A successful call to [sqlite3_limit(D,C,V)] where V is negative
