@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.308 2008/04/24 08:56:54 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.309 2008/04/27 22:29:02 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2684,11 +2684,12 @@ int sqlite3_bind_parameter_count(sqlite3_stmt*);
 **
 ** This routine returns a pointer to the name of the n-th
 ** SQL parameter in a [prepared statement].
-** SQL parameters of the form ":AAA" or "@AAA" or "$AAA" have a name
-** which is the string ":AAA" or "@AAA" or "$VVV". 
-** In other words, the initial ":" or "$" or "@"
+** SQL parameters of the form "?NNN" or ":AAA" or "@AAA" or "$AAA"
+** have a name which is the string "?NNN" or ":AAA" or "@AAA" or "$AAA"
+** respectively.
+** In other words, the initial ":" or "$" or "@" or "?"
 ** is included as part of the name.
-** Parameters of the form "?" or "?NNN" have no name.
+** Parameters of the form "?" without a following integer have no name.
 **
 ** The first host parameter has an index of 1, not 0.
 **
@@ -2708,8 +2709,7 @@ int sqlite3_bind_parameter_count(sqlite3_stmt*);
 **          a UTF-8 rendering of the name of the SQL parameter in
 **          [prepared statement] S having index N, or
 **          NULL if there is no SQL parameter with index N or if the
-**          parameter with index N is an anonymous parameter "?" or
-**          a numbered parameter "?NNN".
+**          parameter with index N is an anonymous parameter "?".
 */
 const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int);
 

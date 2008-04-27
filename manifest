@@ -1,5 +1,5 @@
-C Allow\smultiple\soccurrances\sof\s%include\sin\slemon\sinput\sfiles.\nTicket\s#3001.\s(CVS\s5053)
-D 2008-04-27T22:19:45
+C Fix\sthe\sdocumentation\sto\sagree\swith\slong-standing\sbehavior\sfor\sthe\nsqlite3_bind_parameter_name()\sinterface\son\san\s?NNN\sparameter.\nTicket\s#2975.\s(CVS\s5054)
+D 2008-04-27T22:29:02
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -132,7 +132,7 @@ F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c b02ee16591f0194739e7deb12099d3e98e60b7f3
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c be22ec05c8c4a43a95a6ad3b8068542200451e07
-F src/sqlite.h.in 1064c85778f68f501ae91b46cd997084a31e0829
+F src/sqlite.h.in 4fcaad008e3b468d7202e749d5a8b81e59afcf5a
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 360bd20e5a16e0624db7e2d55d632fbad6f10e19
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -630,7 +630,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 20ed749266d099eb35f40ca479db8baa75186b60
-R 9d5f4dcb5bf15e107c27eb9427f5ffc1
+P f22fa11bde0b77cfc5ff438f2ec6ab95dc87c291
+R acdbb140dfdaf108d3e2b2a2ba9fe2d2
 U drh
-Z e874612f1bcb163492c64e81d81fe5cd
+Z 54ec6a4f4a59bea489b30c72b705b611
