@@ -404,13 +404,25 @@ static int yy_find_reduce_action(
   YYCODETYPE iLookAhead     /* The look-ahead token */
 ){
   int i;
+#ifdef YYERRORSYMBOL
+  if( stateno>YY_REDUCE_MAX ){
+    return yy_default[stateno];
+  }
+#else
   assert( stateno<=YY_REDUCE_MAX );
+#endif
   i = yy_reduce_ofst[stateno];
   assert( i!=YY_REDUCE_USE_DFLT );
   assert( iLookAhead!=YYNOCODE );
   i += iLookAhead;
+#ifdef YYERRORSYMBOL
+  if( i<0 || i>=YY_SZ_ACTTAB || yy_lookahead[i]!=iLookAhead ){
+    return yy_default[stateno];
+  }
+#else
   assert( i>=0 && i<YY_SZ_ACTTAB );
   assert( yy_lookahead[i]==iLookAhead );
+#endif
   return yy_action[i];
 }
 
