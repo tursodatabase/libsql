@@ -14,12 +14,20 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.222 2008/04/16 00:49:12 drh Exp $
+** $Id: util.c,v 1.223 2008/04/28 16:55:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
 #include <ctype.h>
 
+
+/*
+** Return true if the floating point value is Not a Number.
+*/
+int sqlite3IsNaN(double x){
+  volatile double y = x;
+  return x!=y;
+}
 
 /*
 ** Set the most recent error code and error string for the sqlite

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.697 2008/04/28 12:54:15 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.698 2008/04/28 16:55:26 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -190,8 +190,6 @@
 #include <string.h>
 #include <assert.h>
 #include <stddef.h>
-
-#define sqlite3_isnan(X)  ((X)!=(X))
 
 /*
 ** If compiling for a processor that lacks floating point support,
@@ -1765,6 +1763,8 @@ char *sqlite3DbStrNDup(sqlite3*,const char*, int);
 void *sqlite3DbReallocOrFree(sqlite3 *, void *, int);
 void *sqlite3DbRealloc(sqlite3 *, void *, int);
 int sqlite3MallocSize(void *);
+
+int sqlite3IsNaN(double);
 
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);

@@ -474,7 +474,7 @@ static void vxprintf(
         if( xtype==etFLOAT ) realvalue += rounder;
         /* Normalize realvalue to within 10.0 > realvalue >= 1.0 */
         exp = 0;
-        if( sqlite3_isnan(realvalue) ){
+        if( sqlite3IsNaN(realvalue) ){
           bufpt = "NaN";
           length = 3;
           break;
