@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.696 2008/04/27 18:40:12 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.697 2008/04/28 12:54:15 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -34,6 +34,16 @@
 
 /* Needed for various definitions... */
 #define _GNU_SOURCE
+
+/*
+** Include standard header files as necessary
+*/
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
 
 /*
 ** A macro used to aid in coverage testing.  When doing coverage

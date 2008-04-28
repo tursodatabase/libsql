@@ -1,5 +1,5 @@
-C Delete\srequirement\sF12764\sas\sit\shas\snever\sbeen\simplemented\sand\sthe\nsame\seffect\scan\sbe\seasily\sachieved\sby\sother\smeans.\s\sTicket\s#3085.\s(CVS\s5055)
-D 2008-04-27T22:48:05
+C Restore\sthe\s#include\sof\sstdint.h\sremoved\sin\s(5051).\s(CVS\s5056)
+D 2008-04-28T12:54:15
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -134,7 +134,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c be22ec05c8c4a43a95a6ad3b8068542200451e07
 F src/sqlite.h.in abb785d2afcf45bb9344fe6edc1c7b428e1b719f
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h 360bd20e5a16e0624db7e2d55d632fbad6f10e19
+F src/sqliteInt.h d038951808706ae039b05090e068674d307f3e3f
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 46ccf9b7892a86f57420ae7bac69ecd5e72d26b5
 F src/tclsqlite.c 2877726bf32f7d72ff057b37ed6c93485b667ea1
@@ -630,7 +630,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P df9991d5bbc6d90087f022c55b070c11dc510077
-R 0194808c2ddfe0f987f66ccad5fbfa60
+P fadeed998e63c2fd94811b911cf263713c5fcdca
+R 0bbef799550187d59ef3d072d8e957b3
 U drh
-Z 5b2d8c4ee0cbf7a0c9b5c92c778de6f1
+Z 499bba35fc31450c54ccf464ce06e4a5
