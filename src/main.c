@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.435 2008/04/28 16:19:35 danielk1977 Exp $
+** $Id: main.c,v 1.436 2008/04/28 20:35:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -967,12 +967,6 @@ static const int aHardLimit[] = {
 #endif
 #if SQLITE_MAX_SQL_LENGTH>SQLITE_MAX_LENGTH
 # error SQLITE_MAX_SQL_LENGTH must not be greater than SQLITE_MAX_LENGTH
-#endif
-#if SQLITE_MAX_COLUMN<1
-# error SQLITE_MAX_COLUMN must be at least 1
-#endif
-#if SQLITE_MAX_EXPR_DEPTH<1
-# error SQLITE_MAX_EXPR_DEPTH must be at least 1
 #endif
 #if SQLITE_MAX_COMPOUND_SELECT<2
 # error SQLITE_MAX_COMPOUND_SELECT must be at least 2

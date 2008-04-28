@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\sverify\sthat\smultiple\svirtual\stables\scan\sbe\supdated\nwithin\sa\strigger\sand\sthat\sxSync,\sxCommit,\sand\sxRollback\sare\snever\scalled\nexcept\sfollowing\sxBegin\sor\sxCreate.\s\sTicket\s#3083.\s(CVS\s5064)
-D 2008-04-28T20:27:54
+C Allow\sSQLITE_MAX_COLUMN\sto\sbe\sset\sto\szero\sat\scompile-time\sin\sorder\sto\ndisable\sthe\schecks.\s\sAlso\sSQLITE_MAX_EXPR_DEPTH.\s\sTicket\s#3069.\s(CVS\s5065)
+D 2008-04-28T20:35:49
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/insert.c 77f0829b3e2edd19e9238195c56b0d56ab000f17
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 8267890e6a0a71f13b680794520999c642299081
 F src/loadext.c 5c20a5afeb154e68d62ed6d9c634add1b21387fd
-F src/main.c 367b5806a04e0014101fa70e2e5265e12f6a7030
+F src/main.c 94c8bf6ad592aec60dae1c34d30c089fc9be1137
 F src/malloc.c 12c1ae98ef1eff34b13c9eb526e0b7b479e1e820
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
@@ -632,7 +632,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 133b7ee50ea6012739ebe0e334374c5d9b1fcc7f
-R d24a295d23f75ea44f2833f350b9f9f0
+P 76175199ac2fda57e616eb386ba0bad6aa9f74b4
+R dc8adbd3002ee68e412cd270901158fa
 U drh
-Z 635c743fe71c1f4dbacd2725b4d43e66
+Z 1669d55a9b3e668684a817ba98300199
