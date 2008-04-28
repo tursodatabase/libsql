@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.699 2008/04/28 17:41:31 shane Exp $
+** @(#) $Id: sqliteInt.h,v 1.700 2008/04/28 18:46:43 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1519,7 +1519,8 @@ struct Parse {
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   Token sArg;                /* Complete text of a module argument */
   u8 declareVtab;            /* True if inside sqlite3_declare_vtab() */
-  Table *pVirtualLock;       /* Require virtual table lock on this table */
+  int nVtabLock;             /* Number of virtual tables to lock */
+  Table **apVtabLock;        /* Pointer to virtual tables needing locking */
 #endif
 #if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
   int nHeight;            /* Expression tree height of current sub-select */
@@ -2124,6 +2125,7 @@ int sqlite3AutoLoadExtensions(sqlite3*);
    int sqlite3VtabRollback(sqlite3 *db);
    int sqlite3VtabCommit(sqlite3 *db);
 #endif
+void sqlite3VtabMakeWritable(Parse*,Table*);
 void sqlite3VtabLock(sqlite3_vtab*);
 void sqlite3VtabUnlock(sqlite3*, sqlite3_vtab*);
 void sqlite3VtabBeginParse(Parse*, Token*, Token*, Token*);

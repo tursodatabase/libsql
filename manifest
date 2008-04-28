@@ -1,5 +1,5 @@
-C Modified\sVarint32\sfunctions\sto\sdisable\scode\sfor\ssingle-byte\shandling\sas\sit\sis\salready\shandled\sby\stheir\srespective\smacro\sforms.\s(CVS\s5062)
-D 2008-04-28T17:41:31
+C Make\ssure\sthat\stransactions\sare\sstarted\son\sall\svirtual\stables\sthat\nchanges\sin\sa\ssingle\sstatement,\snot\sjust\sthe\sfirst.\s\sTicket\s#3083.\nNeed\sto\sadd\stest\scases.\s(CVS\s5063)
+D 2008-04-28T18:46:43
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -89,17 +89,17 @@ F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
 F src/btree.c 8b2294c64baeee6ae0519e1438c577fd601c02fb
 F src/btree.h 8826591bf54dd35fcf2e67473d5f1bae253861c7
 F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
-F src/build.c 8fd7fabaca0d0b307c7d2292c9501b5be13c6ff7
+F src/build.c 2cde01caed5abaec38f579fabe343d89eb2907f7
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c e41ce4513fb0e359dc678d6bddb4ace135fe365d
-F src/delete.c e4bd53c46969c9fb05cfbba4abc0c93a923f8072
+F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
 F src/expr.c 6a6f37005921314b1ae7c3ed4fab03c58fd5e647
 F src/fault.c 83057e86815d473e526f7df0b0108dfdd022ff23
 F src/func.c 77a910a1ca7613d291fd0b5cba3be14c02f0dce0
 F src/hash.c 522a8f5a23cf18fe5845afee7263c5be76c25ca2
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
-F src/insert.c 9d59bf8eb43ce8399e6f818eaf1612a4c1dfeb2e
+F src/insert.c 77f0829b3e2edd19e9238195c56b0d56ab000f17
 F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
 F src/legacy.c 8267890e6a0a71f13b680794520999c642299081
 F src/loadext.c 5c20a5afeb154e68d62ed6d9c634add1b21387fd
@@ -134,7 +134,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c be22ec05c8c4a43a95a6ad3b8068542200451e07
 F src/sqlite.h.in abb785d2afcf45bb9344fe6edc1c7b428e1b719f
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h 118dccd6689bb9f4f0cb3120258d822794d2f0b3
+F src/sqliteInt.h d629773dd5d00a2dc2cf8dd84f59b75075c3f8f5
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 46ccf9b7892a86f57420ae7bac69ecd5e72d26b5
 F src/tclsqlite.c 2877726bf32f7d72ff057b37ed6c93485b667ea1
@@ -163,9 +163,9 @@ F src/test_schema.c 12c9de7661d6294eec2d57afbb52e2af1128084f
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
-F src/tokenize.c a96abe15a8db6fea2e964cdce2acba9ed17bc26f
+F src/tokenize.c 8d77af8584cf027dc21375f0efa5818cb303c995
 F src/trigger.c 9bd3b6fa0beff4a02d262c96466f752ec15a7fc3
-F src/update.c 57282dae1ffffaf4aedc3201ed77f8ef09be4f45
+F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c a3907b05dcc3720a6d71bb39e61d67b0d994b51f
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
@@ -177,7 +177,7 @@ F src/vdbeaux.c 7a0d0f021ebc54ae581a4f1ba833a2bee576228e
 F src/vdbeblob.c 554736781ee273a8089c776e96bdb53e66f57ce6
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 8cdc5d4c9558338a2c5ae81135d0826136833b5e
-F src/vtab.c 13cd7f225c685a71aeba79c0ef521022913f185a
+F src/vtab.c e058c520c193d7a197c230c66a90efba660d8f9a
 F src/where.c 85719d58e0f680b5d8239dc6af82b159775d7376
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -631,7 +631,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d4d6eff353edd5680776436ab3406227b8c830b3
-R c0a8b8842bd1c2b98a5a18db82f010a9
-U shane
-Z 28b4405c00e027f4af4274ef602df8e0
+P be10f5dda6e9c245c05b51840c173e83ece6b245
+R d532e0634e4454f09b4dec2c285b448f
+U drh
+Z 4c6262b2a9c2a39caa1b707bf007c996

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.237 2008/04/27 18:40:12 drh Exp $
+** $Id: insert.c,v 1.238 2008/04/28 18:46:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -846,7 +846,7 @@ void sqlite3Insert(
     */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( IsVirtual(pTab) ){
-      pParse->pVirtualLock = pTab;
+      sqlite3VtabMakeWritable(pParse, pTab);
       sqlite3VdbeAddOp4(v, OP_VUpdate, 1, pTab->nCol+2, regIns,
                      (const char*)pTab->pVtab, P4_VTAB);
     }else

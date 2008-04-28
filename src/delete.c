@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.168 2008/04/15 14:36:42 drh Exp $
+** $Id: delete.c,v 1.169 2008/04/28 18:46:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -371,7 +371,7 @@ void sqlite3DeleteFrom(
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       if( IsVirtual(pTab) ){
         const char *pVtab = (const char *)pTab->pVtab;
-        pParse->pVirtualLock = pTab;
+        sqlite3VtabMakeWritable(pParse, pTab);
         sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iRowid, pVtab, P4_VTAB);
       }else
 #endif
