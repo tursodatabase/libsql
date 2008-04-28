@@ -1,5 +1,5 @@
-C Change\sthe\simplementation\sof\sthe\sNaN\srecognition\sto\sbe\smore\scross-platform.\nTicket\s#3089.\s(CVS\s5060)
-D 2008-04-28T16:55:26
+C Add\stests\sto\screate\sand\sdrop\sa\svirtual\stable\sduring\sa\srecursive\scall\sfrom\nan\sapplication-defined\sfunction.\s\sTicket\s#3080.\s(CVS\s5061)
+D 2008-04-28T17:12:11
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -501,6 +501,7 @@ F test/tkt2854.test aebd5a9904d36d1ef7a074fc5e7c7da3ab00c32a
 F test/tkt2920.test a8737380e4ae6424e00c0273dc12775704efbebf
 F test/tkt2927.test 492c6a9a14b2fc7bdbb17ce8e497d82df627f64d
 F test/tkt2942.test c5c87d179799ca6d1fbe83c815510b87cd5ec7ce
+F test/tkt3080.test 31a02e87a4c80ed443831c2c5b0e8216ff95ac14
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -630,7 +631,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 20946bf6dd704416c41edd863103e85fc7ab4ef2
-R 80368d71b836d83e7f2e7f2f1d8e19df
+P 07fd9a8c6ca0876f7ec447ce65173957005dc75c
+R 24b6d0f59b258269d57fca07ceb30dbf
 U drh
-Z 00d3002a00844183e10c99274d36883e
+Z 75f1283ab24ae4d1a6f389ac69754bf0
