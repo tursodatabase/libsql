@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.299 2008/04/16 12:58:54 drh Exp $
+** $Id: test1.c,v 1.300 2008/04/28 15:23:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2621,8 +2621,20 @@ static int test_bind_double(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
-  if( Tcl_GetDoubleFromObj(interp, objv[3], &value) ) return TCL_ERROR;
 
+  /* Intercept the string "NaN" and generate a NaN value for it.
+  ** All other strings are passed through to Tcl_GetDoubleFromObj().
+  ** Tcl_GetDoubleFromObj() should understand "NaN" but some versions
+  ** contain a bug.
+  */
+  if( strcmp(Tcl_GetString(objv[3]), "NaN")==0 ){
+    sqlite3_int64 i;
+    i = 0xfff80000;
+    i <<= 32;
+    value = *(double*)(char*)&i;
+  }else if( Tcl_GetDoubleFromObj(interp, objv[3], &value) ){
+    return TCL_ERROR;
+  }
   rc = sqlite3_bind_double(pStmt, idx, value);
   if( sqlite3TestErrCode(interp, StmtToDb(pStmt), rc) ) return TCL_ERROR;
   if( rc!=SQLITE_OK ){

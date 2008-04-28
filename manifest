@@ -1,5 +1,5 @@
-C Changes\sto\stest\sscripts\sto\saccommodate\sdifferent\sarchitectures\sand\sdifferent\nversions\sof\sTcl.\s(CVS\s5057)
-D 2008-04-28T13:02:58
+C Work\saround\sa\sNaN\sbug\sin\ssome\sversions\sof\sTcl.\s(CVS\s5058)
+D 2008-04-28T15:23:03
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/sqliteInt.h d038951808706ae039b05090e068674d307f3e3f
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 46ccf9b7892a86f57420ae7bac69ecd5e72d26b5
 F src/tclsqlite.c 2877726bf32f7d72ff057b37ed6c93485b667ea1
-F src/test1.c ab25cb2715a9e3f1d91cf99a7280ac7d8dd478e2
+F src/test1.c caf46aac174a51be7077110dea8a05a5563b85d1
 F src/test2.c f0808cc643528b9620e4059ca9bda8346f526121
 F src/test3.c f5328839e29631ed9eef8674994ad7341b2de59b
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -630,7 +630,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e96e8b9b4137c3ea239674683cf9fd8682851908
-R 0afe0dea2b4e388bca2da8c4bcd08b36
+P 8eb2c07c520c12c2cd4610596dbec451c8275e95
+R 0d20d66feeaace19e07473438052cbbe
 U drh
-Z be6a7bb7666069d4d03be120f2bd1f64
+Z 82e30186eb61b94a6ebb1cd09ee72fb5
