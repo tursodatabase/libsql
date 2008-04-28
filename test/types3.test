@@ -12,7 +12,7 @@
 # of this file is testing the interaction of SQLite manifest types
 # with Tcl dual-representations.
 #
-# $Id: types3.test,v 1.7 2007/06/26 22:42:56 drh Exp $
+# $Id: types3.test,v 1.8 2008/04/28 13:02:58 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -74,10 +74,11 @@ do_test types3-2.2 {
   set V [db one {SELECT 123}]
   tcl_variable_type V
 } int
+set Vx [expr {1+wide(123456789123456)}]
 do_test types3-2.3 {
   set V [db one {SELECT 1234567890123456}]
   tcl_variable_type V
-} wideInt
+} [tcl_variable_type Vx]
 do_test types3-2.4.1 {
   set V [db one {SELECT 1234567890123456.1}]
   tcl_variable_type V
