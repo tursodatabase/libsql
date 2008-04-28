@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.30 2008/02/08 18:25:48 danielk1977 Exp $
+# $Id: shared.test,v 1.31 2008/04/28 16:19:35 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -636,6 +636,7 @@ ifcapable utf16 {
   do_test shared-$av.8.1.2 {
     string range [execsql {PRAGMA encoding;}] 0 end-2
   } {UTF-16}
+
   do_test shared-$av.8.1.3 {
     sqlite3 db2 test.db
     execsql {
@@ -654,6 +655,7 @@ ifcapable utf16 {
       PRAGMA encoding;
     }
   } {UTF-8}
+
   file delete -force test2.db test2.db-journal
   do_test shared-$av.8.2.1 {
     execsql {
@@ -669,6 +671,35 @@ ifcapable utf16 {
     } db2
     string range [execsql {PRAGMA encoding;} db2] 0 end-2
   } {UTF-16}
+
+  catch {db close}
+  catch {db2 close}
+  file delete -force test.db test2.db
+
+  do_test shared-$av.8.3.2 {
+    sqlite3 db test.db
+    execsql { CREATE TABLE def(d, e, f) }
+    execsql { PRAGMA encoding }
+  } {UTF-8}
+  do_test shared-$av.8.3.3 {
+    set zDb16 "[encoding convertto unicode test.db]\x00\x00"
+    set db16 [sqlite3_open16 $zDb16 {}]
+
+    set stmt [sqlite3_prepare $db16 "SELECT sql FROM sqlite_master" -1 DUMMY]
+    sqlite3_step $stmt
+    set sql [sqlite3_column_text $stmt 0]
+    sqlite3_finalize $stmt
+    set sql
+  } {CREATE TABLE def(d, e, f)}
+  do_test shared-$av.8.3.4 {
+    set stmt [sqlite3_prepare $db16 "PRAGMA encoding" -1 DUMMY]
+    sqlite3_step $stmt
+    set enc [sqlite3_column_text $stmt 0]
+    sqlite3_finalize $stmt
+    set enc
+  } {UTF-8}
+
+  sqlite3_close $db16
 
 # Bug #2547 is causing this to fail.
 if 0 {
