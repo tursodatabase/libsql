@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.61 2008/03/17 09:36:45 danielk1977 Exp $
+** $Id: test8.c,v 1.62 2008/04/28 20:27:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -61,6 +61,7 @@ struct echo_vtab {
   sqlite3 *db;            /* Database connection */
 
   int isPattern;
+  int inTransaction;      /* True if within a transaction */
   char *zThis;            /* Name of the echo table */
   char *zTableName;       /* Name of the real table */
   char *zLogName;         /* Name of the log table */
@@ -465,6 +466,10 @@ static int echoCreate(
   if( *ppVtab && rc!=SQLITE_OK ){
     echoDestructor(*ppVtab);
     *ppVtab = 0;
+  }
+
+  if( rc==SQLITE_OK ){
+    (*(echo_vtab**)ppVtab)->inTransaction = 1;
   }
 
   return rc;
@@ -883,6 +888,10 @@ int echoUpdate(
 
   assert( nData==pVtab->nCol+2 || nData==1 );
 
+  /* Ticket #3083 - make sure we always start a transaction prior to
+  ** making any changes to a virtual table */
+  assert( pVtab->inTransaction );
+
   /* If apData[0] is an integer and nData>1 then do an UPDATE */
   if( nData>1 && sqlite3_value_type(apData[0])==SQLITE_INTEGER ){
     char *zSep = " SET";
@@ -1002,6 +1011,10 @@ static int echoBegin(sqlite3_vtab *tab){
   Tcl_Interp *interp = pVtab->interp;
   const char *zVal; 
 
+  /* Ticket #3083 - do not start a transaction if we are already in
+  ** a transaction */
+  assert( !pVtab->inTransaction );
+
   rc = echoTransactionCall(tab, "xBegin");
 
   if( rc==SQLITE_OK ){
@@ -1014,6 +1027,9 @@ static int echoBegin(sqlite3_vtab *tab){
       rc = SQLITE_ERROR;
     }
   }
+  if( rc==SQLITE_OK ){
+    pVtab->inTransaction = 1;
+  }
   return rc;
 }
 static int echoSync(sqlite3_vtab *tab){
@@ -1021,6 +1037,10 @@ static int echoSync(sqlite3_vtab *tab){
   echo_vtab *pVtab = (echo_vtab *)tab;
   Tcl_Interp *interp = pVtab->interp;
   const char *zVal; 
+
+  /* Ticket #3083 - Only call xSync if we have previously started a
+  ** transaction */
+  assert( pVtab->inTransaction );
 
   rc = echoTransactionCall(tab, "xSync");
 
@@ -1037,14 +1057,32 @@ static int echoSync(sqlite3_vtab *tab){
   return rc;
 }
 static int echoCommit(sqlite3_vtab *tab){
+  echo_vtab *pVtab = (echo_vtab*)tab;
   int rc;
+
+  /* Ticket #3083 - Only call xCommit if we have previously started
+  ** a transaction */
+  assert( pVtab->inTransaction );
+
   sqlite3FaultBenign(SQLITE_FAULTINJECTOR_MALLOC, 1);
   rc = echoTransactionCall(tab, "xCommit");
   sqlite3FaultBenign(SQLITE_FAULTINJECTOR_MALLOC, 0);
+  if( rc==SQLITE_OK ){
+    pVtab->inTransaction = 0;
+  }
   return rc;
 }
 static int echoRollback(sqlite3_vtab *tab){
-  return echoTransactionCall(tab, "xRollback");
+  int rc;
+  echo_vtab *pVtab = (echo_vtab*)tab;
+
+  /* Ticket #3083 - Only call xRollback if we have previously started
+  ** a transaction */
+  assert( pVtab->inTransaction );
+
+  rc = echoTransactionCall(tab, "xRollback");
+  pVtab->inTransaction = 0;
+  return rc;
 }
 
 /*

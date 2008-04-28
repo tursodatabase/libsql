@@ -1,5 +1,5 @@
-C Make\ssure\sthat\stransactions\sare\sstarted\son\sall\svirtual\stables\sthat\nchanges\sin\sa\ssingle\sstatement,\snot\sjust\sthe\sfirst.\s\sTicket\s#3083.\nNeed\sto\sadd\stest\scases.\s(CVS\s5063)
-D 2008-04-28T18:46:43
+C Add\stest\scases\sto\sverify\sthat\smultiple\svirtual\stables\scan\sbe\supdated\nwithin\sa\strigger\sand\sthat\sxSync,\sxCommit,\sand\sxRollback\sare\snever\scalled\nexcept\sfollowing\sxBegin\sor\sxCreate.\s\sTicket\s#3083.\s(CVS\s5064)
+D 2008-04-28T20:27:54
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -145,7 +145,7 @@ F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
 F src/test6.c 62281c0a9ac0265e579065942f7de4e080f8eb05
 F src/test7.c acec2256c7c2d279db5a8b5fa1a2a68fcc942c67
-F src/test8.c 7933b27f8d300512546ef6bdd25f2fe64c3c13f3
+F src/test8.c a7fdf75d7e6c06ca9aa77b026f6d76dbd41aef25
 F src/test9.c 4615ef08750245a2d96aaa7cbe2fb4aff2b57acc
 F src/test_async.c 3147c64c34721f088d5ab20f85dabd5d7732c007
 F src/test_autoext.c 5e892ab84aece3f0428920bf46923f16ac83962a
@@ -539,6 +539,7 @@ F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
 F test/vtabA.test 9cb6b1afead6fdd91bbdf1ca65c44ccfd9b10936
 F test/vtabB.test 04df5dc531b9f44d9ca65b9c1b79f12b5922a796
+F test/vtabC.test 9f2d9eb84bf65e606d6616f20977c5a32a11f548
 F test/vtab_alter.test 3a299749fee97ca3d53bd55717f536e4a2284856
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test c19b2555b807ef2ee014c882cdda5bc8d84fcf48
@@ -631,7 +632,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P be10f5dda6e9c245c05b51840c173e83ece6b245
-R d532e0634e4454f09b4dec2c285b448f
+P 133b7ee50ea6012739ebe0e334374c5d9b1fcc7f
+R d24a295d23f75ea44f2833f350b9f9f0
 U drh
-Z 4c6262b2a9c2a39caa1b707bf007c996
+Z 635c743fe71c1f4dbacd2725b4d43e66
