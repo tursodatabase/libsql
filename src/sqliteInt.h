@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.698 2008/04/28 16:55:26 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.699 2008/04/28 17:41:31 shane Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1987,7 +1987,9 @@ int sqlite3Utf8Read(const u8*, const u8*, const u8**);
 /*
 ** Routines to read and write variable-length integers.  These used to
 ** be defined locally, but now we use the varint routines in the util.c
-** file.
+** file.  Code should use the MACRO forms below, as the Varint32 versions
+** are coded to assume the single byte case is already handled (which 
+** the MACRO form does).
 */
 int sqlite3PutVarint(unsigned char*, u64);
 int sqlite3PutVarint32(unsigned char*, u32);

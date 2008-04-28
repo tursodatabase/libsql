@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.223 2008/04/28 16:55:26 drh Exp $
+** $Id: util.c,v 1.224 2008/04/28 17:41:31 shane Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -508,19 +508,24 @@ int sqlite3PutVarint(unsigned char *p, u64 v){
 /*
 ** This routine is a faster version of sqlite3PutVarint() that only
 ** works for 32-bit positive integers and which is optimized for
-** the common case of small integers.
+** the common case of small integers.  A MACRO version, putVarint32,
+** is provided which inlines the single-byte case.  All code should use
+** the MACRO version as this function assumes the single-byte case has
+** already been handled.
 */
 int sqlite3PutVarint32(unsigned char *p, u32 v){
+#ifndef putVarint32
   if( (v & ~0x7f)==0 ){
     p[0] = v;
     return 1;
-  }else if( (v & ~0x3fff)==0 ){
+  }
+#endif
+  if( (v & ~0x3fff)==0 ){
     p[0] = (v>>7) | 0x80;
     p[1] = v & 0x7f;
     return 2;
-  }else{
-    return sqlite3PutVarint(p, v);
   }
+  return sqlite3PutVarint(p, v);
 }
 
 /*
@@ -568,15 +573,20 @@ int sqlite3GetVarint(const unsigned char *p, u64 *v){
 /*
 ** Read a 32-bit variable-length integer from memory starting at p[0].
 ** Return the number of bytes read.  The value is stored in *v.
+** A MACRO version, getVarint32, is provided which inlines the 
+** single-byte case.  All code should use the MACRO version as 
+** this function assumes the single-byte case has already been handled.
 */
 int sqlite3GetVarint32(const unsigned char *p, u32 *v){
   u32 x;
   int n;
   unsigned char c;
+#ifndef getVarint32
   if( ((signed char*)p)[0]>=0 ){
     *v = p[0];
     return 1;
   }
+#endif
   x = p[0] & 0x7f;
   if( ((signed char*)p)[1]>=0 ){
     *v = (x<<7) | p[1];

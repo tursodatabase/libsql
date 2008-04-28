@@ -1,5 +1,5 @@
-C Add\stests\sto\screate\sand\sdrop\sa\svirtual\stable\sduring\sa\srecursive\scall\sfrom\nan\sapplication-defined\sfunction.\s\sTicket\s#3080.\s(CVS\s5061)
-D 2008-04-28T17:12:11
+C Modified\sVarint32\sfunctions\sto\sdisable\scode\sfor\ssingle-byte\shandling\sas\sit\sis\salready\shandled\sby\stheir\srespective\smacro\sforms.\s(CVS\s5062)
+D 2008-04-28T17:41:31
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -134,7 +134,7 @@ F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
 F src/shell.c be22ec05c8c4a43a95a6ad3b8068542200451e07
 F src/sqlite.h.in abb785d2afcf45bb9344fe6edc1c7b428e1b719f
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h 1884454ab9c29b331c31a659c56d73ff2af2e077
+F src/sqliteInt.h 118dccd6689bb9f4f0cb3120258d822794d2f0b3
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 46ccf9b7892a86f57420ae7bac69ecd5e72d26b5
 F src/tclsqlite.c 2877726bf32f7d72ff057b37ed6c93485b667ea1
@@ -167,7 +167,7 @@ F src/tokenize.c a96abe15a8db6fea2e964cdce2acba9ed17bc26f
 F src/trigger.c 9bd3b6fa0beff4a02d262c96466f752ec15a7fc3
 F src/update.c 57282dae1ffffaf4aedc3201ed77f8ef09be4f45
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
-F src/util.c 6b030399aa362338316ba5726cb625318ea74bed
+F src/util.c a3907b05dcc3720a6d71bb39e61d67b0d994b51f
 F src/vacuum.c 3524411bfb58aac0d87eadd3e5b7cd532772af30
 F src/vdbe.c 1e0ee231e5b035195c6d0043f059fe7f3df563da
 F src/vdbe.h bfd84bda447f39cb599302c7ec85067dae20453c
@@ -631,7 +631,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 07fd9a8c6ca0876f7ec447ce65173957005dc75c
-R 24b6d0f59b258269d57fca07ceb30dbf
-U drh
-Z 75f1283ab24ae4d1a6f389ac69754bf0
+P d4d6eff353edd5680776436ab3406227b8c830b3
+R c0a8b8842bd1c2b98a5a18db82f010a9
+U shane
+Z 28b4405c00e027f4af4274ef602df8e0
