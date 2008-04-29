@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.435 2008/04/25 12:25:42 drh Exp $
+** @(#) $Id: pager.c,v 1.436 2008/04/29 15:38:59 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2256,7 +2256,7 @@ int sqlite3PagerOpen(
   }
 
   if( pPager && rc==SQLITE_OK ){
-    pPager->pTmpSpace = (char *)sqlite3_malloc(nDefaultPage);
+    pPager->pTmpSpace = sqlite3MallocZero(nDefaultPage);
   }
 
   /* If an error occured in either of the blocks above.

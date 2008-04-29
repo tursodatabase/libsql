@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sbuffer\soverrun\sin\ssqlite3_mprintf()\swhen\sa\snon-terminated\nstring\sis\spassed\sto\sa\s"%s"\sformat\swith\sa\sprecision\sspecifying\sthe\snumber\nof\sbytes\sto\scopy.\s(CVS\s5067)
-D 2008-04-29T15:22:27
+C Zero\sthe\sper-pager\stemporary\sspace\sallocation\sto\savoid\swarnings\sfrom\nvalgrind.\s(CVS\s5068)
+D 2008-04-29T15:38:59
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -122,7 +122,7 @@ F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 41015b3fa91568761eb10cbf6ca27a0624ba0bda
 F src/os_unix.c fdec4e5ee5dd555a6ad4a69f38ab35f0788536b4
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
-F src/pager.c 2361c00a4cf7936ef7e1463c224214c6fe6ee2cd
+F src/pager.c 268be1208002fab9202b3f29b490ba35615a697d
 F src/pager.h 45ec2188593afd48a25c743529646771d75e83e4
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -633,7 +633,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 9b07e59e510e2de39c2081653662fbc654ca6fbb
-R 5793178ea6130e42720ac3eacd25bef7
+P 1f5b18419bb4e2552ac26593381e2eb866bb67fd
+R 6a7ccfeeb0015916b93125468973211a
 U drh
-Z 662aa440bf0ad4382085d54e6e7f7798
+Z 090b70d1bbb6df5e983e8c84abf88caa
