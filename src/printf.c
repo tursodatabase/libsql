@@ -627,8 +627,11 @@ static void vxprintf(
         }else if( xtype==etDYNSTRING ){
           zExtra = bufpt;
         }
-        length = strlen(bufpt);
-        if( precision>=0 && precision<length ) length = precision;
+        if( precision>=0 ){
+          for(length=0; length<precision && bufpt[length]; length++){}
+        }else{
+          length = strlen(bufpt);
+        }
         break;
       case etSQLESCAPE:
       case etSQLESCAPE2:
