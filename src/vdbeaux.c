@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.380 2008/04/27 18:40:12 drh Exp $
+** $Id: vdbeaux.c,v 1.381 2008/04/29 00:15:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2133,7 +2133,7 @@ int sqlite3VdbeSerialGet(
         assert( sizeof(x)==8 && sizeof(pMem->r)==8 );
         swapMixedEndianFloat(x);
         memcpy(&pMem->r, &x, sizeof(x));
-        pMem->flags = MEM_Real;
+        pMem->flags = sqlite3IsNaN(pMem->r) ? MEM_Null : MEM_Real;
       }
       return 8;
     }

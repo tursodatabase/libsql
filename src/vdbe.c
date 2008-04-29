@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.736 2008/04/28 16:55:26 drh Exp $
+** $Id: vdbe.c,v 1.737 2008/04/29 00:15:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -842,6 +842,7 @@ case OP_Int64: {           /* out2-prerelease */
 */
 case OP_Real: {            /* same as TK_FLOAT, out2-prerelease */
   pOut->flags = MEM_Real;
+  assert( !sqlite3IsNaN(*pOp->p4.pReal) );
   pOut->r = *pOp->p4.pReal;
   break;
 }
