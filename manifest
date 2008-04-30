@@ -1,5 +1,5 @@
-C Fix\stest\sfor\sbuffer\soverrun\sin\sunixGettempname().\sFix\sfor\s#3091.\s(CVS\s5069)
-D 2008-04-30T08:56:10
+C Improved\soption\shandling\sin\sspeedtest8.c.\s\sAdded\s-quiet\sand\s-priority\soptions.\s\sAdded\sreporting\sof\stotal\suser\sand\ssystem\stime.\s(CVS\s5070)
+D 2008-04-30T15:55:34
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -573,7 +573,7 @@ F tool/spaceanal.tcl b87db46ae29e3116411b1686e136b9b994d7de39
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
-F tool/speedtest8.c fd53bf13c7bbea4671faa2222cbb3286c14200f8
+F tool/speedtest8.c a7cd2b2dbb8f97b0c51c0e01f49116a9162071be
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
 F www/34to35.tcl 942e479aa7740b55d714dce0f0b2cb6ca91c3f20
 F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
@@ -633,7 +633,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f854ae576ee0b223b86a1169178fc4399e8d08ce
-R dc0d12af7248df7518eb5354b7eeb383
-U danielk1977
-Z 6533bd0cfc41b7cb37a38e5960f73499
+P fc0ca647bd1c7c953bb0f3eb7d3471572fd18c34
+R 8bd12bf8a3eaadb4e117c1f015393938
+U shane
+Z 09702a98c8183287a6fdc49d86797b33
