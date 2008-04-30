@@ -2520,9 +2520,14 @@ static int unixGetTempname(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
     zDir = azDirs[i];
     break;
   }
-  if( strlen(zDir) - sizeof(SQLITE_TEMP_FILE_PREFIX) - 17 <=0 ){
+
+  /* Check that the output buffer is large enough for the temporary file 
+  ** name. If it is not, return SQLITE_ERROR.
+  */
+  if( (strlen(zDir) + strlen(SQLITE_TEMP_FILE_PREFIX) + 17) >= nBuf ){
     return SQLITE_ERROR;
   }
+
   do{
     assert( pVfs->mxPathname==MAX_PATHNAME );
     sqlite3_snprintf(nBuf-17, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX, zDir);
