@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.77 2008/03/20 11:04:21 danielk1977 Exp $
+** $Id: vacuum.c,v 1.78 2008/04/30 16:38:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -106,6 +106,12 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   ** sqlite3BtreeCopyFile() is called.
   **
   ** An optimisation would be to use a non-journaled pager.
+  ** (Later:) I tried setting "PRAGMA vacuum_db.journal_mode=OFF" but
+  ** that actually made the VACUUM run slower.  Very little journalling
+  ** actually occurs when doing a vacuum since the vacuum_db is initially
+  ** empty.  Only the journal header is written.  Apparently it takes more
+  ** time to parse and run the PRAGMA to turn journalling off than it does
+  ** to write the journal header file.
   */
   zSql = "ATTACH '' AS vacuum_db;";
   rc = execSql(db, zSql);
