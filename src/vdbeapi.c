@@ -47,6 +47,7 @@ static struct StatementLruList sqlite3LruStatements;
 **
 **   assert( stmtLruCheck() );
 */
+#ifndef NDEBUG
 static int stmtLruCheck(){
   Vdbe *p;
   for(p=sqlite3LruStatements.pFirst; p; p=p->pLruNext){
@@ -57,6 +58,7 @@ static int stmtLruCheck(){
   }
   return 1;
 }
+#endif
 
 /*
 ** Add vdbe p to the end of the statement lru list. It is assumed that

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_schema.c,v 1.13 2007/08/16 04:30:40 drh Exp $
+** $Id: test_schema.c,v 1.14 2008/05/01 17:16:53 drh Exp $
 */
 
 /* The code in this file defines a sqlite3 virtual-table module that
@@ -65,6 +65,11 @@ struct schema_cursor {
   sqlite3_stmt *pColumnList;
   int rowid;
 };
+
+/*
+** None of this works unless we have virtual tables.
+*/
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 
 /*
 ** Table destructor for the schema module.
@@ -287,6 +292,7 @@ static sqlite3_module schemaModule = {
   0,                           /* xRename */
 };
 
+#endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) */
 
 #ifdef SQLITE_TEST
 

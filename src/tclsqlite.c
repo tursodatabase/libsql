@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.216 2008/04/16 00:28:14 drh Exp $
+** $Id: tclsqlite.c,v 1.217 2008/05/01 17:16:53 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -479,6 +479,7 @@ static int DbBusyHandler(void *cd, int nTries){
   return 1;
 }
 
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
 /*
 ** This routine is invoked as the 'progress callback' for the database.
 */
@@ -493,6 +494,7 @@ static int DbProgressHandler(void *cd){
   }
   return 0;
 }
+#endif
 
 #ifndef SQLITE_OMIT_TRACE
 /*

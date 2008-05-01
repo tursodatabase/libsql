@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.483 2008/04/28 18:46:43 drh Exp $
+** $Id: build.c,v 1.484 2008/05/01 17:16:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -159,7 +159,7 @@ void sqlite3FinishCoding(Parse *pParse){
     */
     if( pParse->cookieGoto>0 ){
       u32 mask;
-      int iDb, i;
+      int iDb;
       sqlite3VdbeJumpHere(v, pParse->cookieGoto-1);
       for(iDb=0, mask=1; iDb<db->nDb; mask<<=1, iDb++){
         if( (mask & pParse->cookieMask)==0 ) continue;
@@ -168,11 +168,14 @@ void sqlite3FinishCoding(Parse *pParse){
         sqlite3VdbeAddOp2(v,OP_VerifyCookie, iDb, pParse->cookieValue[iDb]);
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-      for(i=0; i<pParse->nVtabLock; i++){
-        char *vtab = (char *)pParse->apVtabLock[i]->pVtab;
-        sqlite3VdbeAddOp4(v, OP_VBegin, 0, 0, 0, vtab, P4_VTAB);
+      {
+        int i;
+        for(i=0; i<pParse->nVtabLock; i++){
+          char *vtab = (char *)pParse->apVtabLock[i]->pVtab;
+          sqlite3VdbeAddOp4(v, OP_VBegin, 0, 0, 0, vtab, P4_VTAB);
+        }
+        pParse->nVtabLock = 0;
       }
-      pParse->nVtabLock = 0;
 #endif
 
       /* Once all the cookies have been verified and transactions opened, 
