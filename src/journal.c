@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** @(#) $Id: journal.c,v 1.7 2007/09/06 13:49:37 drh Exp $
+** @(#) $Id: journal.c,v 1.8 2008/05/01 18:01:47 drh Exp $
 */
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
@@ -149,9 +149,10 @@ static int jrnlTruncate(sqlite3_file *pJfd, sqlite_int64 size){
 static int jrnlSync(sqlite3_file *pJfd, int flags){
   int rc;
   JournalFile *p = (JournalFile *)pJfd;
-  rc = createFile(p);
-  if( rc==SQLITE_OK ){
+  if( p->pReal ){
     rc = sqlite3OsSync(p->pReal, flags);
+  }else{
+    rc = SQLITE_OK;
   }
   return rc;
 }

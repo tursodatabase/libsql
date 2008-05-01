@@ -14,7 +14,7 @@
 # Make sure IEEE floating point NaN values are handled properly.
 # SQLite should always convert NaN into NULL.
 #
-# $Id: nan.test,v 1.1 2008/04/29 00:15:21 drh Exp $
+# $Id: nan.test,v 1.2 2008/05/01 18:01:47 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -34,6 +34,8 @@ set inf [string repeat 9 5000].0
 
 do_test nan-1.1 {
   db eval {
+    PRAGMA auto_vacuum=OFF;
+    PRAGMA page_size=1024;
     CREATE TABLE t1(x FLOAT);
   }
   db eval "INSERT INTO t1 VALUES($nan)"

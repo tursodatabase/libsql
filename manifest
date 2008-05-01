@@ -1,5 +1,5 @@
-C Fix\smore\scompiler\swarnings.\s(CVS\s5074)
-D 2008-05-01T17:16:53
+C Fix\sa\sproblem\swith\sjournal\sfiles\sbeing\screated\sunnecessarily\swhen\sdoing\nan\satomic\swrite\sin\sexclusive\saccess\slocking\smode.\s\sFix\sa\stest\sscript\sproblem.\s(CVS\s5075)
+D 2008-05-01T18:01:47
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -100,7 +100,7 @@ F src/func.c 77a910a1ca7613d291fd0b5cba3be14c02f0dce0
 F src/hash.c 522a8f5a23cf18fe5845afee7263c5be76c25ca2
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
 F src/insert.c 77f0829b3e2edd19e9238195c56b0d56ab000f17
-F src/journal.c 807bed7a158979ac8d63953e1774e8d85bff65e2
+F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 8267890e6a0a71f13b680794520999c642299081
 F src/loadext.c 48455156d6044141d7e332c1b0b4647b3b8b8e66
 F src/main.c d40ed2bf7b63002726b19951cae14d0bcf7debd9
@@ -341,7 +341,7 @@ F test/insert4.test 6e382eaf7295a4463e6f29ea20fcd8e63d097eeb
 F test/insert5.test 509017213328147d3acdfa2c441bfd82362dda41
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
-F test/io.test cfb907b433a46d5cc3266b292cbfc7cd56ae1234
+F test/io.test 833a1746518ec3005aa7792f9bcb8f01923ff544
 F test/ioerr.test 5382046b2ef19b9084652e7d2d1e82ab33c0deda
 F test/ioerr2.test b9c9a0491a812707762a7c002876553be54d9969
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -398,7 +398,7 @@ F test/misc5.test c1bc7b8cbc6694dccfc4c0b03c00c8f2dc55c46b
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 26e0d948a413bca61ed031159907a03d64647409
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/nan.test bda46bce39d14bbe23b97feb390a0b54961a0de9
+F test/nan.test c2a4562a3cbd5c78eb0592e08495bfdef077a76e
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/onefile.test 5af2867a8097cea08f15de5382b8d57d1219d8e3
@@ -633,7 +633,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 227a6f67c21c87a7cf98f84b9d57a6dc9da93ebb
-R 6c9957669f2cdfef69a7c4eb23ccdec1
+P 59568844e774dbe89fd20bbc8f49a3665cc54717
+R e2a57e4ed5ebffb17e923008220d6df9
 U drh
-Z 1e991c3831da5b5ff3ab383f3c915b8e
+Z 7cc0f21a84152e1247ee9d012e672d4f
