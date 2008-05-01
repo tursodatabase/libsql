@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.436 2008/04/29 15:38:59 drh Exp $
+** @(#) $Id: pager.c,v 1.437 2008/05/01 17:03:49 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4365,29 +4365,6 @@ int sqlite3PagerWrite(DbPage *pDbPage){
 #ifndef NDEBUG
 int sqlite3PagerIswriteable(DbPage *pPg){
   return pPg->dirty;
-}
-#endif
-
-#ifndef SQLITE_OMIT_VACUUM
-/*
-** Replace the content of a single page with the information in the third
-** argument.
-*/
-int sqlite3PagerOverwrite(Pager *pPager, Pgno pgno, void *pData){
-  PgHdr *pPg;
-  int rc;
-
-  pagerEnter(pPager);
-  rc = sqlite3PagerGet(pPager, pgno, &pPg);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3PagerWrite(pPg);
-    if( rc==SQLITE_OK ){
-      memcpy(sqlite3PagerGetData(pPg), pData, pPager->pageSize);
-    }
-    sqlite3PagerUnref(pPg);
-  }
-  pagerLeave(pPager);
-  return rc;
 }
 #endif
 

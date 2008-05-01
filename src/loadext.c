@@ -469,7 +469,9 @@ static struct {
 int sqlite3_auto_extension(void *xInit){
   int i;
   int rc = SQLITE_OK;
+#ifndef SQLITE_MUTEX_NOOP
   sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+#endif
   sqlite3_mutex_enter(mutex);
   for(i=0; i<autoext.nExt; i++){
     if( autoext.aExt[i]==xInit ) break;
@@ -495,7 +497,9 @@ int sqlite3_auto_extension(void *xInit){
 ** Reset the automatic extension loading mechanism.
 */
 void sqlite3_reset_auto_extension(void){
+#ifndef SQLITE_MUTEX_NOOP
   sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+#endif
   sqlite3_mutex_enter(mutex);
   sqlite3_free(autoext.aExt);
   autoext.aExt = 0;
@@ -518,7 +522,9 @@ int sqlite3AutoLoadExtensions(sqlite3 *db){
   }
   for(i=0; go; i++){
     char *zErrmsg = 0;
+#ifndef SQLITE_MUTEX_NOOP
     sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+#endif
     sqlite3_mutex_enter(mutex);
     if( i>=autoext.nExt ){
       xInit = 0;

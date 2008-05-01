@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.428 2008/04/17 19:14:02 drh Exp $
+** $Id: select.c,v 1.429 2008/05/01 17:03:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2938,7 +2938,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
   pAggInfo->directMode = 0;
 }
 
-#ifndef SQLITE_OMIT_TRIGGER
+#if 0
 /*
 ** This function is used when a SELECT statement is used to create a
 ** temporary table for iterating through when running an INSTEAD OF

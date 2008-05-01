@@ -61,26 +61,34 @@ static void prepareAndRun(sqlite3 *db, const char *zSql, int bQuiet){
   unsigned long long int iStart, iElapse;
   int rc;
   
-  if (!bQuiet) printf("****************************************************************\n");
+  if (!bQuiet){
+    printf("***************************************************************\n");
+  }
   if (!bQuiet) printf("SQL statement: [%s]\n", zSql);
   iStart = hwtime();
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &stmtTail);
   iElapse = hwtime() - iStart;
   prepTime += iElapse;
-  if (!bQuiet) printf("sqlite3_prepare_v2() returns %d in %llu cycles\n", rc, iElapse);
+  if (!bQuiet){
+    printf("sqlite3_prepare_v2() returns %d in %llu cycles\n", rc, iElapse);
+  }
   if( rc==SQLITE_OK ){
     int nRow = 0;
     iStart = hwtime();
     while( (rc=sqlite3_step(pStmt))==SQLITE_ROW ){ nRow++; }
     iElapse = hwtime() - iStart;
     runTime += iElapse;
-    if (!bQuiet) printf("sqlite3_step() returns %d after %d rows in %llu cycles\n",
-           rc, nRow, iElapse);
+    if (!bQuiet){
+      printf("sqlite3_step() returns %d after %d rows in %llu cycles\n",
+             rc, nRow, iElapse);
+    }
     iStart = hwtime();
     rc = sqlite3_finalize(pStmt);
     iElapse = hwtime() - iStart;
     finalizeTime += iElapse;
-    if (!bQuiet) printf("sqlite3_finalize() returns %d in %llu cycles\n", rc, iElapse);
+    if (!bQuiet){
+      printf("sqlite3_finalize() returns %d in %llu cycles\n", rc, iElapse);
+    }
   }
 }
 
@@ -209,9 +217,10 @@ int main(int argc, char **argv){
 #endif
 
     /*
-    ** Increasing the priority slightly above normal can help with repeatability
-    ** of testing.  Note that with Cygwin, -5 equates to "High", +5 equates to "Low",
-    ** and anything in between equates to "Normal".
+    ** Increasing the priority slightly above normal can help with
+    ** repeatability of testing.  Note that with Cygwin, -5 equates
+    ** to "High", +5 equates to "Low", and anything in between
+    ** equates to "Normal".
     */
     if( argc>4 && (strcmp(argv[1], "-priority")==0) ){
       struct sched_param myParam;
