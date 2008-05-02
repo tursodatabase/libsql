@@ -14,7 +14,7 @@
 # Verify that a busy callback waiting on a reserved lock resolves
 # once the lock clears.
 #
-# $Id: tkt3093.test,v 1.1 2008/05/02 14:08:56 drh Exp $
+# $Id: tkt3093.test,v 1.2 2008/05/02 14:23:55 drh Exp $
 #
 
 set testdir [file dirname $argv0]
