@@ -11,7 +11,7 @@
 #
 # This file is to test that ticket #2927 is fixed.
 #
-# $Id: tkt2927.test,v 1.1 2008/02/06 23:52:37 drh Exp $
+# $Id: tkt2927.test,v 1.2 2008/05/02 02:00:54 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -634,5 +634,37 @@ do_test tkt2927-6.16 {
     ORDER BY 1
   }
 } {1 11 2 22 3 33 4 44 5 55}
+
+# Ticket #3092 is the same bug.  But another test case never hurts.
+#
+do_test tkt2927-7.1 {
+  db eval {
+    CREATE TABLE host (
+     hostname text not null primary key,
+     consoleHost text,
+     consolePort text
+    );
+    INSERT INTO "host" VALUES('aald04','aalp03','4');
+    INSERT INTO "host" VALUES('aald17','aalp01','1');
+    CREATE VIEW consolemap1a as
+      select hostname, consolehost, '/dev/cuaD0.' || (consoleport-1) consoleport
+        from host where consolehost='aalp01';
+    CREATE VIEW consolemap1b as
+      select hostname hostname, consolehost consolehost, '/dev/cuaD' ||
+             substr('01',1+((consoleport-1)/16),1) ||
+             substr('0123456789abcdef',1+((consoleport-1)%16),1) consoleport
+        from host where consolehost='aalp03';
+    CREATE VIEW consolemap1 as
+      select * from consolemap1a
+      union
+      select * from consolemap1b;
+    SELECT * from consolemap1b;
+  }
+} {aald04 aalp03 /dev/cuaD03}
+do_test tkt2927-7.2 {
+  db eval {
+    SELECT * FROM consolemap1
+  }
+} {aald04 aalp03 /dev/cuaD03 aald17 aalp01 /dev/cuaD0.0}
 
 finish_test

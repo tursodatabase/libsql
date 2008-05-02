@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sjournal\sfiles\sbeing\screated\sunnecessarily\swhen\sdoing\nan\satomic\swrite\sin\sexclusive\saccess\slocking\smode.\s\sFix\sa\stest\sscript\sproblem.\s(CVS\s5075)
-D 2008-05-01T18:01:47
+C Add\sanother\stest\scase\sto\sverify\sthat\sticket\s#3092\shas\sbeen\sfixed.\s(CVS\s5076)
+D 2008-05-02T02:00:54
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -500,7 +500,7 @@ F test/tkt2822.test 8b1526b1e5b0d38a1a993f7828fbb81759093686
 F test/tkt2832.test cd56dc66bb31898b7eb2146baa5bde2eb80f96fe
 F test/tkt2854.test aebd5a9904d36d1ef7a074fc5e7c7da3ab00c32a
 F test/tkt2920.test a8737380e4ae6424e00c0273dc12775704efbebf
-F test/tkt2927.test 492c6a9a14b2fc7bdbb17ce8e497d82df627f64d
+F test/tkt2927.test a473c09eafa83d95579fc2b976f2afc11571ce7e
 F test/tkt2942.test c5c87d179799ca6d1fbe83c815510b87cd5ec7ce
 F test/tkt3080.test 31a02e87a4c80ed443831c2c5b0e8216ff95ac14
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
@@ -633,7 +633,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 59568844e774dbe89fd20bbc8f49a3665cc54717
-R e2a57e4ed5ebffb17e923008220d6df9
+P 70e708660fec0b6f6c41efc2e29f1d7ae6785b7e
+R 714aac9f8d3137c40cb007c56fa21ea2
 U drh
-Z 7cc0f21a84152e1247ee9d012e672d4f
+Z b9b04ac723ad1b47b83155a71bbe6504
