@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.118 2008/05/05 16:23:55 danielk1977 Exp $
+# $Id: tester.tcl,v 1.119 2008/05/05 17:14:54 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -706,6 +706,7 @@ proc do_ioerr_test {testname args} {
     #
     ifcapable pragma {
       if { [info commands db] ne ""
+        && $::ioerropts(-ckrefcount)
         && [db one {pragma locking_mode}] eq "normal"
         && [sqlite3_get_autocommit db]
       } {
@@ -723,7 +724,7 @@ proc do_ioerr_test {testname args} {
     # be the same as before the script that caused the IO error was run.
     #
     if {$::go && $::sqlite_io_error_hardhit && $::ioerropts(-cksum)} {
-      do_test $testname.$n.5 {
+      do_test $testname.$n.6 {
         catch {db close}
         set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
         cksum
