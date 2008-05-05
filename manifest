@@ -1,5 +1,5 @@
-C Do\snot\ssegfault\sin\sthe\sCLI\sif\ssqlite3_open()\sfails\sto\screate\sa\ndatabase\sconnection\sobject.\s\sTicket\s#3096.\s(CVS\s5084)
-D 2008-05-05T16:27:24
+C Better\serror\smessages\swhen\strying\sto\sopen\sa\slarge\sfile\susing\sa\sversion\nof\sSQLite\sthat\somits\slarge\sfile\ssupport.\s\sTickets\s#3096\sand\s#3094.\s(CVS\s5085)
+D 2008-05-05T16:56:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/insert.c 77f0829b3e2edd19e9238195c56b0d56ab000f17
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 8267890e6a0a71f13b680794520999c642299081
 F src/loadext.c 48455156d6044141d7e332c1b0b4647b3b8b8e66
-F src/main.c d40ed2bf7b63002726b19951cae14d0bcf7debd9
+F src/main.c 4c9ac364c1022b31ce3310ee5899e73e4b53db38
 F src/malloc.c 12c1ae98ef1eff34b13c9eb526e0b7b479e1e820
 F src/md5.c c5fdfa5c2593eaee2e32a5ce6c6927c986eaf217
 F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
@@ -120,7 +120,7 @@ F src/os.c d811a3e1a152e03c98d3dd85f2b7aff0d7630cea
 F src/os.h 2ee8b0dec88f946c5371919ffa0f2fe4ac0de2e6
 F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 41015b3fa91568761eb10cbf6ca27a0624ba0bda
-F src/os_unix.c 8cf512c4321c3114f053dc9eaae394db2dc03ebe
+F src/os_unix.c a810e2aefdaddacf479407f76f8f4ca381d231b2
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/pager.c 5ac6728cf575afd87f8c5afe88bb768d3a641e34
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
@@ -213,9 +213,9 @@ F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
 F test/capi2.test cc64df7560a96f848f919ea2926c60acf639684b
-F test/capi3.test 8113010cd06a94b7ac72524858968069b7cac8e3
+F test/capi3.test 1ca5912fdd3a51ea8ee148742532c6a81724f594
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
-F test/capi3c.test c024e42d2341026ddffd79a7dd864c3555d06ccd
+F test/capi3c.test 208713e5f3a63442c3574c55b83baa7cf8ac5f28
 F test/cast.test ce8f14fc80f70b30ed984480cc0d8914a459e8f9
 F test/check.test 024ed399600b799160378cf9d9f436bdf5dfd184
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4ad1809192b616d1c12499825bcd0967dea76864
-R bfbe4f20e4711eac7660528cdf81900f
+P 0bec7ebf41e9f52d3ef0449e27e3d631abfe948b
+R 720ec4e53fc1d1f5a57067d1318be9aa
 U drh
-Z 282ac40d5061e73766d751c019b02dae
+Z 82d70374903017357999aa8ebaf9b26f

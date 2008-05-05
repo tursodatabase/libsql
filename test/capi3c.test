@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.18 2008/04/15 12:14:22 drh Exp $
+# $Id: capi3c.test,v 1.19 2008/05/05 16:56:35 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -722,7 +722,7 @@ SQLITE_SCHEMA     {database schema has changed} \
 SQLITE_CONSTRAINT {constraint failed} \
 SQLITE_MISMATCH   {datatype mismatch} \
 SQLITE_MISUSE     {library routine called out of sequence} \
-SQLITE_NOLFS      {kernel lacks large file support} \
+SQLITE_NOLFS      {large file support is disabled} \
 SQLITE_AUTH       {authorization denied} \
 SQLITE_FORMAT     {auxiliary database format error} \
 SQLITE_RANGE      {bind or column index out of range} \
