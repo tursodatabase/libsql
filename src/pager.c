@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.438 2008/05/01 17:16:53 drh Exp $
+** @(#) $Id: pager.c,v 1.439 2008/05/05 16:23:55 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3401,6 +3401,7 @@ static int pagerSharedLock(Pager *pPager){
       if( !pPager->noReadlock ){
         rc = pager_wait_on_lock(pPager, SHARED_LOCK);
         if( rc!=SQLITE_OK ){
+          assert( pPager->state==PAGER_UNLOCK );
           return pager_error(pPager, rc);
         }
         assert( pPager->state>=SHARED_LOCK );
@@ -3411,7 +3412,8 @@ static int pagerSharedLock(Pager *pPager){
       */
       rc = hasHotJournal(pPager);
       if( rc<0 ){
-        return SQLITE_IOERR_NOMEM;
+        rc = SQLITE_IOERR_NOMEM;
+        goto failed;
       }
       if( rc==1 || isHot ){
         /* Get an EXCLUSIVE lock on the database file. At this point it is
@@ -3428,8 +3430,8 @@ static int pagerSharedLock(Pager *pPager){
         if( pPager->state<EXCLUSIVE_LOCK ){
           rc = sqlite3OsLock(pPager->fd, EXCLUSIVE_LOCK);
           if( rc!=SQLITE_OK ){
-            pager_unlock(pPager);
-            return pager_error(pPager, rc);
+            rc = pager_error(pPager, rc);
+            goto failed;
           }
           pPager->state = PAGER_EXCLUSIVE;
         }
@@ -3463,15 +3465,12 @@ static int pagerSharedLock(Pager *pPager){
           }
         }
         if( rc!=SQLITE_OK ){
-          pager_unlock(pPager);
-          switch( rc ){
-            case SQLITE_NOMEM:
-            case SQLITE_IOERR_UNLOCK:
-            case SQLITE_IOERR_NOMEM:
-              return rc;
-            default:
-              return SQLITE_BUSY;
+          if( rc!=SQLITE_NOMEM && rc!=SQLITE_IOERR_UNLOCK 
+           && rc!=SQLITE_IOERR_NOMEM 
+          ){
+            rc = SQLITE_BUSY;
           }
+          goto failed;
         }
         pPager->journalOpen = 1;
         pPager->journalStarted = 0;
@@ -3484,7 +3483,8 @@ static int pagerSharedLock(Pager *pPager){
         */
         rc = pager_playback(pPager, 1);
         if( rc!=SQLITE_OK ){
-          return pager_error(pPager, rc);
+          rc = pager_error(pPager, rc);
+          goto failed;
         }
         assert(pPager->state==PAGER_SHARED || 
             (pPager->exclusiveMode && pPager->state>PAGER_SHARED)
@@ -3512,14 +3512,15 @@ static int pagerSharedLock(Pager *pPager){
         sqlite3PagerPagecount(pPager);
 
         if( pPager->errCode ){
-          return pPager->errCode;
+          rc = pPager->errCode;
+          goto failed;
         }
 
         if( pPager->dbSize>0 ){
           IOTRACE(("CKVERS %p %d\n", pPager, sizeof(dbFileVers)));
           rc = sqlite3OsRead(pPager->fd, &dbFileVers, sizeof(dbFileVers), 24);
           if( rc!=SQLITE_OK ){
-            return rc;
+            goto failed;
           }
         }else{
           memset(dbFileVers, 0, sizeof(dbFileVers));
@@ -3536,6 +3537,11 @@ static int pagerSharedLock(Pager *pPager){
     }
   }
 
+ failed:
+  if( rc!=SQLITE_OK ){
+    /* pager_unlock() is a no-op for exclusive mode and in-memory databases. */
+    pager_unlock(pPager);
+  }
   return rc;
 }
 

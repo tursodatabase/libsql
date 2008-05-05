@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.117 2008/05/05 15:26:51 danielk1977 Exp $
+# $Id: tester.tcl,v 1.118 2008/05/05 16:23:55 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -684,10 +684,11 @@ proc do_ioerr_test {testname args} {
       expr { ($s && !$r && !$q) || (!$s && $r && $q) }
     } {1}
 
+    # Check that no page references were leaked. There should be 
+    # a single reference if there is still an active transaction, 
+    # or zero otherwise.
+    #
     if {$::go && $::sqlite_io_error_hardhit && $::ioerropts(-ckrefcount)} {
-      # Check that no page references were leaked. There should be 
-      # a single reference if there is still an active transaction, 
-      # or zero otherwise.
       do_test $testname.$n.4 {
         set bt [btree_from_db db]
         db_enter db
@@ -697,8 +698,30 @@ proc do_ioerr_test {testname args} {
       } [expr {[sqlite3_get_autocommit db]?0:1}]
     }
 
+    # If there is an open database handle and no open transaction, 
+    # and the pager is not running in exclusive-locking mode,
+    # check that the pager is in "unlocked" state. Theoretically,
+    # if a call to xUnlock() failed due to an IO error the underlying
+    # file may still be locked.
+    #
+    ifcapable pragma {
+      if { [info commands db] ne ""
+        && [db one {pragma locking_mode}] eq "normal"
+        && [sqlite3_get_autocommit db]
+      } {
+        do_test $testname.$n.5 {
+          set bt [btree_from_db db]
+          db_enter db
+          array set stats [btree_pager_stats $bt]
+          db_leave db
+          set stats(state)
+        } 0
+      }
+    }
+
     # If an IO error occured, then the checksum of the database should
     # be the same as before the script that caused the IO error was run.
+    #
     if {$::go && $::sqlite_io_error_hardhit && $::ioerropts(-cksum)} {
       do_test $testname.$n.5 {
         catch {db close}

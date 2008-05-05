@@ -1,5 +1,5 @@
-C Avoid\sleaking\spage\sreferences\safter\san\sIO\serror\sis\sencountered.\s(CVS\s5082)
-D 2008-05-05T15:26:51
+C If\san\sIO\serror\soccurs\swhile\slocking\sthe\sdatabase\sand\schecking\sthe\scache\svalidity,\sunlock\sthe\sdatabase\sbefore\sreturning.\sTicket\s#3030.\s(CVS\s5083)
+D 2008-05-05T16:23:55
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -122,7 +122,7 @@ F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 41015b3fa91568761eb10cbf6ca27a0624ba0bda
 F src/os_unix.c 8cf512c4321c3114f053dc9eaae394db2dc03ebe
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
-F src/pager.c 2d495e9a439e7f5db12f02cd8efe6ae417bff26a
+F src/pager.c 5ac6728cf575afd87f8c5afe88bb768d3a641e34
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -458,7 +458,7 @@ F test/tableapi.test 791f7e3891d9b70bdb43b311694bf5e9befcbc34
 F test/tclsqlite.test 3dfb48f46de4353376fad835390b493ba066b4dc
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl 3f476ad2a7d8532b8de3ad7b0ed95995ee78f45b
+F test/tester.tcl 392890469221c2410759bb048bef99f5e20741a6
 F test/thread001.test 8fbd9559da0bbdc273e00318c7fd66c162020af7
 F test/thread002.test 2c4ad2c386f60f6fe268cd91c769ee35b3c1fd0b
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2275fc6ee06b17da5808cecfa5570ac6439eaf74
-R 6d76420da4b019df82bc43b649a5cfb1
+P 198c395b01140ef48b6913c00188ba7168bfb081
+R 6e0e093a0f17c8e821e8c74c11e266a3
 U danielk1977
-Z 562dc8fb914e4c15e377eee1cc4d777b
+Z 67d910e4d419f070999a506a26c6b1be
