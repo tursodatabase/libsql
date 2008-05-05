@@ -1,5 +1,5 @@
-C If\san\sIO\serror\soccurs\swhile\slocking\sthe\sdatabase\sand\schecking\sthe\scache\svalidity,\sunlock\sthe\sdatabase\sbefore\sreturning.\sTicket\s#3030.\s(CVS\s5083)
-D 2008-05-05T16:23:55
+C Do\snot\ssegfault\sin\sthe\sCLI\sif\ssqlite3_open()\sfails\sto\screate\sa\ndatabase\sconnection\sobject.\s\sTicket\s#3096.\s(CVS\s5084)
+D 2008-05-05T16:27:24
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/printf.c 77c192ccc81117d68b21b449cd33396357aa266d
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c da43ce3080112aa77863e9c570c1df19a892acb8
 F src/server.c 087b92a39d883e3fa113cae259d64e4c7438bc96
-F src/shell.c be22ec05c8c4a43a95a6ad3b8068542200451e07
+F src/shell.c 668ad976716982eb658019eda489b6f55131dbe7
 F src/sqlite.h.in abb785d2afcf45bb9344fe6edc1c7b428e1b719f
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 6dbffa746c569b992e76051565d3531a07a54669
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 198c395b01140ef48b6913c00188ba7168bfb081
-R 6e0e093a0f17c8e821e8c74c11e266a3
-U danielk1977
-Z 67d910e4d419f070999a506a26c6b1be
+P 4ad1809192b616d1c12499825bcd0967dea76864
+R bfbe4f20e4711eac7660528cdf81900f
+U drh
+Z 282ac40d5061e73766d751c019b02dae

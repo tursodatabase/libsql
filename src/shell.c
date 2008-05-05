@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.177 2008/04/15 18:50:02 pweilbacher Exp $
+** $Id: shell.c,v 1.178 2008/05/05 16:27:24 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -955,9 +955,11 @@ static void open_db(struct callback_data *p){
   if( p->db==0 ){
     sqlite3_open(p->zDbFilename, &p->db);
     db = p->db;
-    sqlite3_create_function(db, "shellstatic", 0, SQLITE_UTF8, 0,
-        shellstaticFunc, 0, 0);
-    if( SQLITE_OK!=sqlite3_errcode(db) ){
+    if( db && sqlite3_errcode(db)==SQLITE_OK ){
+      sqlite3_create_function(db, "shellstatic", 0, SQLITE_UTF8, 0,
+          shellstaticFunc, 0, 0);
+    }
+    if( db==0 || SQLITE_OK!=sqlite3_errcode(db) ){
       fprintf(stderr,"Unable to open database \"%s\": %s\n", 
           p->zDbFilename, sqlite3_errmsg(db));
       exit(1);
