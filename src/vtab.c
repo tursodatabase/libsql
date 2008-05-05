@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.68 2008/04/28 18:46:43 drh Exp $
+** $Id: vtab.c,v 1.69 2008/05/05 13:23:04 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -818,6 +818,8 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
   pParse->apVtabLock = sqlite3_realloc(pParse->apVtabLock, n);
   if( pParse->apVtabLock ){
     pParse->apVtabLock[pParse->nVtabLock++] = pTab;
+  }else{
+    pParse->db->mallocFailed = 1;
   }
 }
 

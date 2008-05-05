@@ -1,5 +1,5 @@
-C Avoid\sleaking\spage\sreferences\swhen\sdatabase\scorruption\sis\sencountered.\s(CVS\s5080)
-D 2008-05-05T12:09:33
+C Fix\sa\scouple\sof\sminor\sproblems\swith\stransactions\sin\svirtual\stables.\s(CVS\s5081)
+D 2008-05-05T13:23:04
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -145,7 +145,7 @@ F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
 F src/test6.c 62281c0a9ac0265e579065942f7de4e080f8eb05
 F src/test7.c acec2256c7c2d279db5a8b5fa1a2a68fcc942c67
-F src/test8.c a7fdf75d7e6c06ca9aa77b026f6d76dbd41aef25
+F src/test8.c beca53180c42ee388c0c882a529739d3d1001f99
 F src/test9.c 4615ef08750245a2d96aaa7cbe2fb4aff2b57acc
 F src/test_async.c 3147c64c34721f088d5ab20f85dabd5d7732c007
 F src/test_autoext.c 5e892ab84aece3f0428920bf46923f16ac83962a
@@ -177,7 +177,7 @@ F src/vdbeaux.c aae523de91fb72a32a256253880739fe103ea76e
 F src/vdbeblob.c 554736781ee273a8089c776e96bdb53e66f57ce6
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 8cdc5d4c9558338a2c5ae81135d0826136833b5e
-F src/vtab.c e058c520c193d7a197c230c66a90efba660d8f9a
+F src/vtab.c ce9d19ca9053812a557010fd4be7e842f8ebba2d
 F src/where.c 85719d58e0f680b5d8239dc6af82b159775d7376
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8fa2bda4c594119cbbc489b9879c52b134a57711
-R 151ba0b2bb32ec7f98eb22eec73c5c65
-U danielk1977
-Z 01f35ec83f56376c6cddd2c6beaaf252
+P 270d47e8d0a20868879a95b66cb547e1e5b642d9
+R 384696721267b63cda5341ca180b7b1f
+U drh
+Z 11a335d880f2acd480b0e07b2674209e
