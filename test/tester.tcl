@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.116 2008/04/17 19:14:02 drh Exp $
+# $Id: tester.tcl,v 1.117 2008/05/05 15:26:51 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -575,6 +575,7 @@ proc do_ioerr_test {testname args} {
   set ::ioerropts(-erc) 0
   set ::ioerropts(-count) 100000000
   set ::ioerropts(-persist) 1
+  set ::ioerropts(-ckrefcount) 0
   array set ::ioerropts $args
 
   set ::go 1
@@ -683,10 +684,23 @@ proc do_ioerr_test {testname args} {
       expr { ($s && !$r && !$q) || (!$s && $r && $q) }
     } {1}
 
+    if {$::go && $::sqlite_io_error_hardhit && $::ioerropts(-ckrefcount)} {
+      # Check that no page references were leaked. There should be 
+      # a single reference if there is still an active transaction, 
+      # or zero otherwise.
+      do_test $testname.$n.4 {
+        set bt [btree_from_db db]
+        db_enter db
+        array set stats [btree_pager_stats $bt]
+        db_leave db
+        set stats(ref)
+      } [expr {[sqlite3_get_autocommit db]?0:1}]
+    }
+
     # If an IO error occured, then the checksum of the database should
     # be the same as before the script that caused the IO error was run.
     if {$::go && $::sqlite_io_error_hardhit && $::ioerropts(-cksum)} {
-      do_test $testname.$n.4 {
+      do_test $testname.$n.5 {
         catch {db close}
         set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
         cksum

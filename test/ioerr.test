@@ -15,11 +15,10 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.34 2008/01/16 17:46:38 drh Exp $
+# $Id: ioerr.test,v 1.35 2008/05/05 15:26:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-
 
 # If SQLITE_DEFAULT_AUTOVACUUM is set to true, then a simulated IO error
 # on the 8th IO operation in the SQL script below doesn't report an error.
@@ -28,7 +27,7 @@ source $testdir/tester.tcl
 # file when the file on disk is only 1 page. The pager layer detects that
 # this has happened and suppresses the error returned by the OS layer.
 #
-do_ioerr_test ioerr-1 -erc 1 -sqlprep {
+do_ioerr_test ioerr-1 -erc 1 -ckrefcount 1 -sqlprep {
   SELECT * FROM sqlite_master;
 } -sqlbody {
   CREATE TABLE t1(a,b,c);
@@ -56,7 +55,7 @@ do_ioerr_test ioerr-1 -erc 1 -sqlprep {
 # detected. Same reason as the 8th in the test case above.
 # 
 ifcapable vacuum {
-  do_ioerr_test ioerr-2 -cksum true -sqlprep { 
+  do_ioerr_test ioerr-2 -cksum true -ckrefcount true -sqlprep { 
     BEGIN; 
     CREATE TABLE t1(a, b, c); 
     INSERT INTO t1 VALUES(1, randstr(50,50), randstr(50,50)); 
@@ -78,7 +77,7 @@ ifcapable vacuum {
       1 [expr [string match [execsql {pragma auto_vacuum}] 1]?9:-1]]
 }
 
-do_ioerr_test ioerr-3 -tclprep {
+do_ioerr_test ioerr-3 -ckrefcount true -tclprep {
   execsql {
     PRAGMA cache_size = 10;
     BEGIN;
@@ -102,7 +101,7 @@ do_ioerr_test ioerr-3 -tclprep {
 
 # Test IO errors that can occur retrieving a record header that flows over
 # onto an overflow page.
-do_ioerr_test ioerr-4 -tclprep {
+do_ioerr_test ioerr-4 -ckrefcount true -tclprep {
   set sql "CREATE TABLE abc(a1"
   for {set i 2} {$i<1300} {incr i} {
     append sql ", a$i"
@@ -123,7 +122,7 @@ ifcapable attach {
   if {[string match [execsql {pragma auto_vacuum}] 1]} {
     set ex [list 4 17]
   }
-  do_ioerr_test ioerr-5 -sqlprep {
+  do_ioerr_test ioerr-5 -ckrefcount true -sqlprep {
     ATTACH 'test2.db' AS test2;
   } -sqlbody {
     BEGIN;
@@ -137,7 +136,7 @@ ifcapable attach {
 # transaction. This test only runs on UNIX.
 ifcapable crashtest&&attach {
   if {![catch {sqlite3 -has_codec} r] && !$r} {
-    do_ioerr_test ioerr-6 -tclprep {
+    do_ioerr_test ioerr-6 -ckrefcount true -tclprep {
       execsql {
         ATTACH 'test2.db' as aux;
         CREATE TABLE tx(a, b);
@@ -193,7 +192,7 @@ if {$tcl_platform(platform)!="windows"} {
 # short field (one that fits into a Mem buffer without mallocing
 # for space).
 #
-do_ioerr_test ioerr-8 -tclprep {
+do_ioerr_test ioerr-8 -ckrefcount true -tclprep {
   execsql {
     CREATE TABLE t1(a,b,c);
     INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
@@ -207,7 +206,7 @@ do_ioerr_test ioerr-8 -tclprep {
 # For test coverage: Cause an IO error whilst reading the master-journal
 # name from a journal file.
 if {$tcl_platform(platform)=="unix"} {
-  do_ioerr_test ioerr-9 -tclprep {
+  do_ioerr_test ioerr-9 -ckrefcount true -tclprep {
     execsql {
       CREATE TABLE t1(a,b,c);
       INSERT INTO t1 VALUES(randstr(200,200), randstr(1000,1000), 2);
@@ -232,7 +231,7 @@ if {$tcl_platform(platform)=="unix"} {
 
 # For test coverage: Cause an IO error during statement playback (i.e. 
 # a constraint).
-do_ioerr_test ioerr-10 -tclprep {
+do_ioerr_test ioerr-10 -ckrefcount true -tclprep {
   execsql {
     BEGIN;
     CREATE TABLE t1(a PRIMARY KEY, b);
@@ -260,7 +259,7 @@ do_ioerr_test ioerr-10 -tclprep {
 
 # Assertion fault bug reported by alex dimitrov.
 #
-do_ioerr_test ioerr-11 -erc 1 -sqlprep {
+do_ioerr_test ioerr-11 -ckrefcount true -erc 1 -sqlprep {
    CREATE TABLE A(Id INTEGER, Name TEXT);
    INSERT INTO A(Id, Name) VALUES(1, 'Name');
 } -sqlbody {
@@ -272,7 +271,7 @@ do_ioerr_test ioerr-11 -erc 1 -sqlprep {
 # memory-management is enabled.
 #
 ifcapable memorymanage {
-  do_ioerr_test memmanage-ioerr1 -sqlprep {
+  do_ioerr_test memmanage-ioerr1 -ckrefcount true -sqlprep {
     BEGIN;
     CREATE TABLE t1(a, b, c);
     INSERT INTO t1 VALUES(randstr(50,50), randstr(100,100), randstr(10,10));

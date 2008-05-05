@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.454 2008/05/05 12:09:33 danielk1977 Exp $
+** $Id: btree.c,v 1.455 2008/05/05 15:26:51 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6835,16 +6835,12 @@ static int btreeCopyFile(Btree *pTo, Btree *pFrom){
     ** present in pTo before the copy operation, journal page i from pTo.
     */
     if( i!=iSkip && i<=nToPage ){
-      DbPage *pDbPage;
+      DbPage *pDbPage = 0;
       rc = sqlite3PagerGet(pBtTo->pPager, i, &pDbPage);
-      if( rc ){
-        break;
+      if( rc==SQLITE_OK ){
+        rc = sqlite3PagerWrite(pDbPage);
       }
-      rc = sqlite3PagerWrite(pDbPage);
-      if( rc ){
-        break;
-      }
-      if( i>nFromPage ){
+      if( rc==SQLITE_OK && i>nFromPage ){
         /* Yeah.  It seems wierd to call DontWrite() right after Write(). But
         ** that is because the names of those procedures do not exactly 
         ** represent what they do.  Write() really means "put this page in the
