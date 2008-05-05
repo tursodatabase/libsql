@@ -1,5 +1,5 @@
-C Fix\sto\stest\scode\sto\sbuild\swhen\sENABLE_IOTRACE\sis\snot\sdefined.\s(CVS\s5079)
-D 2008-05-05T11:33:48
+C Avoid\sleaking\spage\sreferences\swhen\sdatabase\scorruption\sis\sencountered.\s(CVS\s5080)
+D 2008-05-05T12:09:33
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -86,7 +86,7 @@ F src/attach.c 496cc628b2e8c4d8db99d7c136761fcbebd8420b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 8ec2212cfb702bc4f402c0b7ae7623d85320c714
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 05c6bcb6d840d00f231514b253a2ed2f3987f88e
+F src/btree.c 6b16a43adb8f8c62b6344f5f364ead46b77e4cc6
 F src/btree.h 8826591bf54dd35fcf2e67473d5f1bae253861c7
 F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
 F src/build.c a52d9d51341444a2131e3431608f245db80d9591
@@ -230,7 +230,7 @@ F test/collate9.test 0867eabc1222ab0bc308fc09a7fb30770334c3cd
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
-F test/corrupt.test 18c7a995b1af76a8c8600b996257f2c7b7bff083
+F test/corrupt.test af069d971853dbe12af936910bfa49d92f7b16e9
 F test/corrupt2.test 8059c7354aaba91e7405b4503b79f456c816df8e
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3dc334aa4a394e85858d2441225d64d73664b5b5
-R 5785867203a16836410ee4201cdc9b1c
+P 8fa2bda4c594119cbbc489b9879c52b134a57711
+R 151ba0b2bb32ec7f98eb22eec73c5c65
 U danielk1977
-Z 6cf48111a8e0476a2bdecfe315c04c8b
+Z 01f35ec83f56376c6cddd2c6beaaf252

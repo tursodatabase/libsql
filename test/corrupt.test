@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt.test,v 1.8 2005/02/19 08:18:06 danielk1977 Exp $
+# $Id: corrupt.test,v 1.9 2008/05/05 12:09:33 danielk1977 Exp $
 
 catch {file delete -force test.db}
 catch {file delete -force test.db-journal}
@@ -110,6 +110,15 @@ for {set i [expr {1*256}]} {$i<$fsize-256} {incr i 256} {
     catchsql {PRAGMA integrity_check}
     set x {}
   } {}
+
+  # Check that no page references were leaked.
+  do_test corrupt-2.$tn.8 {
+    set bt [btree_from_db db]
+    db_enter db
+    array set stats [btree_pager_stats $bt]
+    db_leave db
+    set stats(ref)
+  } {0}
 }  
 
 #------------------------------------------------------------------------
