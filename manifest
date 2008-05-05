@@ -1,5 +1,5 @@
-C Make\ssure\sthat\swhen\sa\sconnection\sis\sblocking\son\sa\sRESERVED\slock\sthat\sit\ncontinues\safter\sthe\slock\sis\sreleased.\s\sTicket\s#3093.\s(CVS\s5078)
-D 2008-05-02T14:23:55
+C Fix\sto\stest\scode\sto\sbuild\swhen\sENABLE_IOTRACE\sis\snot\sdefined.\s(CVS\s5079)
+D 2008-05-05T11:33:48
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/sqliteInt.h 6dbffa746c569b992e76051565d3531a07a54669
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 46ccf9b7892a86f57420ae7bac69ecd5e72d26b5
 F src/tclsqlite.c c57e740e30bd6dda678796eed62c7f0e64689834
-F src/test1.c caf46aac174a51be7077110dea8a05a5563b85d1
+F src/test1.c 09062b31b89e3a74dd0a33d2af729b47678976f2
 F src/test2.c f0808cc643528b9620e4059ca9bda8346f526121
 F src/test3.c f5328839e29631ed9eef8674994ad7341b2de59b
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 288a7655c9a876abf53d92dc6599a9305399d562
-R 2ccc70e81b08cd2e7dd9d593658d1cd0
-U drh
-Z df24ea2862549271d3b6a0f98f01dab8
+P 3dc334aa4a394e85858d2441225d64d73664b5b5
+R 5785867203a16836410ee4201cdc9b1c
+U danielk1977
+Z 6cf48111a8e0476a2bdecfe315c04c8b
