@@ -1,11 +1,11 @@
-C Fix\srecently\sintroduced\stest\sscript\serror\scausing\sa\sfailure\sin\sincrblob_err.test.\s(CVS\s5086)
-D 2008-05-05T17:14:54
+C Add\sAC_SYS_LARGEFILE\sto\sensure\slarge\sfile\ssupport,\supdate\sautotools-related\sfiles.\r\nTicket\s#3094.\s(CVS\s5087)
+D 2008-05-05T22:52:56
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 9a4746fe2ac3dcfb6b571babe2cad3fcd3f72330
-F aclocal.m4 d20ba55930a05197b484809fba1d2b603f4e67a6
+F aclocal.m4 7d02b11fed45174e11156144227278deb6236eea
 F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
@@ -14,12 +14,12 @@ F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F art/SQLite_big.gif 2b8e4603b91ba2a2c7062a82ff570d945034bb30
 F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
-F config.guess dba2d1300ec8f8cd00c6fb44b9edde21c14e960c
+F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h 5e461e321e0a56f1762da44eece1fe971ebdba3e
 F config.h.in feb93ab9f7703907947aadd3bcff7c6e790920bd
-F config.sub 9a842e7c332ed65cef3f2c20354e06dc998b2796
-F configure d769aa0358804476359bf9c2bf3d15e14297b0e7 x
-F configure.ac de0e2dd7497ba6fa88b560c8d552818d4453dab4
+F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
+F configure e1ecb9e25edbd0ab2b46adb9905e2ed69c9fb8f9 x
+F configure.ac d106f5114a042ffbd43db0537ca22aa6c4c6dd4d
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -65,7 +65,7 @@ F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
-F ltmain.sh 56abb507100ed2d4261f6dd1653dec3cf4066387
+F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
 F main.mk bab1f708404c928af4769336aa97931062cfe987
 F mkdll.sh 712e74f3efe08a6ba12b2945d018a29a89d7fe3b
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
@@ -633,7 +633,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P bdd89cd231745e6bd498b2751d7ff2cf6169b3eb
-R cf2e07e18d46e8552021ffae90f2be92
-U danielk1977
-Z 61b026527a50c5f7240dbd8fdfa28a9f
+P 5e7c8ebd21915382280c146e7070481fa6a92eec
+R df8438cd192ab046c9a3d05409f33045
+U mlcreech
+Z d3a128d91920f1591c2a823b44cb060d

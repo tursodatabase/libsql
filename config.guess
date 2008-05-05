@@ -4,7 +4,7 @@
 #   2000, 2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation,
 #   Inc.
 
-timestamp='2007-01-15'
+timestamp='2007-07-22'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -347,7 +347,7 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
     sun4*:SunOS:5.*:* | tadpole*:SunOS:5.*:*)
 	echo sparc-sun-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
 	exit ;;
-    i86pc:SunOS:5.*:*)
+    i86pc:SunOS:5.*:* | i86xen:SunOS:5.*:*)
 	echo i386-pc-solaris2`echo ${UNAME_RELEASE}|sed -e 's/[^.]*//'`
 	exit ;;
     sun4*:SunOS:6*:*)
@@ -808,12 +808,15 @@ EOF
     i*:PW*:*)
 	echo ${UNAME_MACHINE}-pc-pw32
 	exit ;;
-    x86:Interix*:[3456]*)
-	echo i586-pc-interix${UNAME_RELEASE}
-	exit ;;
-    EM64T:Interix*:[3456]* | authenticamd:Interix*:[3456]*)
-	echo x86_64-unknown-interix${UNAME_RELEASE}
-	exit ;;
+    *:Interix*:[3456]*)
+    	case ${UNAME_MACHINE} in
+	    x86)
+		echo i586-pc-interix${UNAME_RELEASE}
+		exit ;;
+	    EM64T | authenticamd)
+		echo x86_64-unknown-interix${UNAME_RELEASE}
+		exit ;;
+	esac ;;
     [345]86:Windows_95:* | [345]86:Windows_98:* | [345]86:Windows_NT:*)
 	echo i${UNAME_MACHINE}-pc-mks
 	exit ;;
