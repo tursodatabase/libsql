@@ -688,10 +688,11 @@ static int os2Open(
 
   if( flags & (SQLITE_OPEN_TEMP_DB | SQLITE_OPEN_TEMP_JOURNAL
                | SQLITE_OPEN_SUBJOURNAL) ){
+    char pathUtf8[CCHMAXPATH];
     //ulFileAttribute = FILE_HIDDEN;  //for debugging, we want to make sure it is deleted
     ulFileAttribute = FILE_NORMAL;
-    pFile->pathToDel = (char*)malloc(sizeof(char) * pVfs->mxPathname);
-    sqlite3OsFullPathname(pVfs, zName, pVfs->mxPathname, pFile->pathToDel);
+    sqlite3OsFullPathname( pVfs, zName, CCHMAXPATH, pathUtf8 );
+    pFile->pathToDel = convertUtf8PathToCp( pathUtf8 );
     OSTRACE1( "OPEN hidden/delete on close file attributes\n" );
   }else{
     ulFileAttribute = FILE_ARCHIVED | FILE_NORMAL;
