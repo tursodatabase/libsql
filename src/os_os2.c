@@ -63,8 +63,7 @@ typedef struct os2File os2File;
 struct os2File {
   const sqlite3_io_methods *pMethod;  /* Always the first entry */
   HFILE h;                  /* Handle for accessing the file */
-  int delOnClose;           /* True if file is to be deleted on close */
-  char* pathToDel;          /* Name of file to delete on close */
+  char* pathToDel;          /* Name of file to delete on close, NULL if not */
   unsigned char locktype;   /* Type of lock currently held on this file */
 };
 
@@ -83,11 +82,10 @@ int os2Close( sqlite3_file *id ){
     OSTRACE2( "CLOSE %d\n", pFile->h );
     rc = DosClose( pFile->h );
     pFile->locktype = NO_LOCK;
-    if( pFile->delOnClose != 0 ){
+    if( pFile->pathToDel != NULL ){
       rc = DosForceDelete( (PSZ)pFile->pathToDel );
-    }
-    if( pFile->pathToDel ){
       free( pFile->pathToDel );
+      pFile->pathToDel = NULL;
     }
     id = 0;
     OpenCounter( -1 );
@@ -692,13 +690,11 @@ static int os2Open(
                | SQLITE_OPEN_SUBJOURNAL) ){
     //ulFileAttribute = FILE_HIDDEN;  //for debugging, we want to make sure it is deleted
     ulFileAttribute = FILE_NORMAL;
-    pFile->delOnClose = 1;
     pFile->pathToDel = (char*)malloc(sizeof(char) * pVfs->mxPathname);
     sqlite3OsFullPathname(pVfs, zName, pVfs->mxPathname, pFile->pathToDel);
     OSTRACE1( "OPEN hidden/delete on close file attributes\n" );
   }else{
     ulFileAttribute = FILE_ARCHIVED | FILE_NORMAL;
-    pFile->delOnClose = 0;
     pFile->pathToDel = NULL;
     OSTRACE1( "OPEN normal file attribute\n" );
   }
