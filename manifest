@@ -1,5 +1,5 @@
-C The\spathToDel\selement\sof\sthe\sos2File\sstructure\sshould\sbe\sin\sthe\slocal\scodepage\sinstead\sof\sUTF-8\sto\smake\sDosForceDelete()\swork.\s(CVS\s5091)
-D 2008-05-06T22:15:27
+C Fix\smost\sremaining\stestsuite\sfailures\son\sOS/2\sby\sswitching\sto\sexclusive\slocks\sthat\swe\smeant\sto\suse\sfrom\sthe\sstart.\s(CVS\s5092)
+D 2008-05-06T22:22:11
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/mutex_w32.c 133698096a2c4e81cd11ea6f4de7891c66f7b9f7
 F src/os.c d811a3e1a152e03c98d3dd85f2b7aff0d7630cea
 F src/os.h 2ee8b0dec88f946c5371919ffa0f2fe4ac0de2e6
 F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
-F src/os_os2.c dec26e64fb55587722e45b417b5df2a1b28d3b2a
+F src/os_os2.c 30c378b093d9c17387ebb0ebbf21b7d55a98202b
 F src/os_unix.c a810e2aefdaddacf479407f76f8f4ca381d231b2
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/pager.c 22a5a810a3eadf8fe84c3de479def9c0dadc5ff8
@@ -633,7 +633,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 02e123bb9b3da81bc8ee8bab7a2c54bbaadc5123
-R dbb02e03bb9d706015d0639a34b12757
+P 76028b5e5d220e1d44667b2fef8bdfc580c913b0
+R d3bede297c62f53ed2377cca5b29be9d
 U pweilbacher
-Z c75f0910bcf06125af020d4b55c1ab22
+Z 7de62f2956fd3ed219d59e579f766331
