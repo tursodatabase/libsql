@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.439 2008/05/05 16:23:55 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.440 2008/05/06 18:13:26 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1695,7 +1695,8 @@ static void pager_truncate_cache(Pager *pPager);
 ** in cache, then an INSERT or UPDATE does a statement rollback.  Some
 ** operating system implementations can get confused if you try to
 ** truncate a file to some size that is larger than it currently is,
-** so detect this case and do not do the truncation.
+** so detect this case and write a single zero byte to the end of the new
+** file instead.
 */
 static int pager_truncate(Pager *pPager, int nPage){
   int rc = SQLITE_OK;
@@ -1703,8 +1704,12 @@ static int pager_truncate(Pager *pPager, int nPage){
     i64 currentSize, newSize;
     rc = sqlite3OsFileSize(pPager->fd, &currentSize);
     newSize = pPager->pageSize*(i64)nPage;
-    if( rc==SQLITE_OK && currentSize>newSize ){
-      rc = sqlite3OsTruncate(pPager->fd, newSize);
+    if( rc==SQLITE_OK && currentSize!=newSize ){
+      if( currentSize>newSize ){
+        rc = sqlite3OsTruncate(pPager->fd, newSize);
+      }else{
+        rc = sqlite3OsWrite(pPager->fd, "", 1, newSize-1);
+      }
     }
   }
   if( rc==SQLITE_OK ){

@@ -1,5 +1,5 @@
-C Add\sdefines\sfor\s_FILE_OFFSET_BITS\sand\s_LARGE_FILES\sif\sneeded\sfor\slarge\sfile\ssupport.\r\nTicket\s#3094.\s(CVS\s5088)
-D 2008-05-06T02:28:06
+C Fix\sa\sbug\swhereby\sthe\sdatabase\sfile\swas\snot\salways\sbeing\sextended\sto\sits\soriginal\ssize\swhen\srolling\sback\san\sincremental-vacuum\soperation.\s(CVS\s5089)
+D 2008-05-06T18:13:26
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -122,7 +122,7 @@ F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 41015b3fa91568761eb10cbf6ca27a0624ba0bda
 F src/os_unix.c a810e2aefdaddacf479407f76f8f4ca381d231b2
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
-F src/pager.c 5ac6728cf575afd87f8c5afe88bb768d3a641e34
+F src/pager.c 22a5a810a3eadf8fe84c3de479def9c0dadc5ff8
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -329,7 +329,7 @@ F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
 F test/incrblob_err.test 5273097dc7c97f9b7008423a6ffd5c80d21923cb
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test a958e378c193c4012cb3787804d863487f1dfad1
-F test/incrvacuum_ioerr.test cb331403b8dea3c5bae6163861ff25037b0df56a
+F test/incrvacuum_ioerr.test 34297e36ef3399933064ee551ad55ba5d70c3a15
 F test/index.test cbf301cdb2da43e4eac636c3400c2439af1834ad
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 727d55dceb9a4ec36675057bb5becfc265e28ca6
@@ -633,7 +633,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2b1e455c46a184311a3a2e83b4f9345d2e34f497
-R aeee347795b87311a03bea5b7b9f7cfb
-U mlcreech
-Z 9fe7bc0a77d0030fd1330ee7f5b6aea5
+P 729e2f06ba4030cc771fc876ddfd41866b8c0d93
+R 397af0a306f96b692c322e18ab9ae1dc
+U danielk1977
+Z 0d3268afef5fc245ffa4cec2f875eaa5
