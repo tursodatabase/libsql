@@ -1,5 +1,5 @@
-C Add\sAC_SYS_LARGEFILE\sto\sensure\slarge\sfile\ssupport,\supdate\sautotools-related\sfiles.\r\nTicket\s#3094.\s(CVS\s5087)
-D 2008-05-05T22:52:56
+C Add\sdefines\sfor\s_FILE_OFFSET_BITS\sand\s_LARGE_FILES\sif\sneeded\sfor\slarge\sfile\ssupport.\r\nTicket\s#3094.\s(CVS\s5088)
+D 2008-05-06T02:28:06
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 25b3282a4ac39388632c2fb0e044ff494d490952
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -16,7 +16,7 @@ F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h 5e461e321e0a56f1762da44eece1fe971ebdba3e
-F config.h.in feb93ab9f7703907947aadd3bcff7c6e790920bd
+F config.h.in 7940ca68451e949b9b4c83814a7c719721eea6e1
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
 F configure e1ecb9e25edbd0ab2b46adb9905e2ed69c9fb8f9 x
 F configure.ac d106f5114a042ffbd43db0537ca22aa6c4c6dd4d
@@ -633,7 +633,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5e7c8ebd21915382280c146e7070481fa6a92eec
-R df8438cd192ab046c9a3d05409f33045
+P 2b1e455c46a184311a3a2e83b4f9345d2e34f497
+R aeee347795b87311a03bea5b7b9f7cfb
 U mlcreech
-Z d3a128d91920f1591c2a823b44cb060d
+Z 9fe7bc0a77d0030fd1330ee7f5b6aea5

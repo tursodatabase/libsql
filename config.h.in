@@ -11,7 +11,7 @@
 *************************************************************************
 ** Configuration header template to be filled in by 'configure' script
 **
-** @(#) $Id: config.h.in,v 1.1 2008/03/20 02:25:35 mlcreech Exp $
+** @(#) $Id: config.h.in,v 1.2 2008/05/06 02:28:06 mlcreech Exp $
 */
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
@@ -84,6 +84,14 @@
 
 /* Define as 1 if you have the localtime_r() function */
 #undef HAVE_LOCALTIME_R
+
+
+/*****************************
+** Large file support
+*****************************/
+
+#undef _FILE_OFFSET_BITS
+#undef _LARGE_FILES
 
 
 /* End of header */
