@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.441 2008/05/07 12:29:56 drh Exp $
+** @(#) $Id: pager.c,v 1.442 2008/05/07 12:45:41 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3858,7 +3858,10 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
 ** removed.
 */
 int sqlite3PagerUnref(DbPage *pPg){
-  Pager *pPager = pPg->pPager;
+  Pager *pPager;
+
+  if( pPg==0 ) return SQLITE_OK;
+  pPager = pPg->pPager;
 
   /* Decrement the reference count for this page
   */

@@ -1,5 +1,5 @@
-C Omit\smutex\svariables\sin\sthe\spager\swhen\sthreadsafe\sis\sdisabled.\s(CVS\s5095)
-D 2008-05-07T12:29:56
+C Fix\sa\snull-pointer\sdereference\sthat\scan\soccur\sfollowing\sa\sDISKFULL\serror\nwhile\srunning\sVACUUM.\s(CVS\s5096)
+D 2008-05-07T12:45:41
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -121,7 +121,7 @@ F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 30c378b093d9c17387ebb0ebbf21b7d55a98202b
 F src/os_unix.c a810e2aefdaddacf479407f76f8f4ca381d231b2
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
-F src/pager.c bc506fe98357d6be270c226f7593cdd7b7ef6f79
+F src/pager.c 547079d36fb3ca227e77e669268ea910c90774ef
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -632,7 +632,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ed98df24a3362c2d20f52bb1ce679787b3ee408b
-R b674e29d0c635e566d4d022cc3c91e32
+P d15d0bbab043e4366f7988423115babb550198a1
+R cc97a864eea5af3981d05a3f9edeedde
 U drh
-Z 2bfb50f482bb16c5a2226fe3210bd145
+Z 953a72f11c0f918cae5f87eb3c8317a8
