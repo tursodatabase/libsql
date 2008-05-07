@@ -28,6 +28,11 @@ BCC = @BUILD_CC@ @BUILD_CFLAGS@
 #
 TCC = @CC@ @CPPFLAGS@ @CFLAGS@ -I. -I${TOP}/src
 
+# Define this for the autoconf-based build, so that the code knows it can
+# include the generated config.h
+# 
+TCC += -D_HAVE_SQLITE_CONFIG_H
+
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
 # Omitting the define will cause extra debugging code to be inserted and
 # includes extra comments when "EXPLAIN stmt" is used.

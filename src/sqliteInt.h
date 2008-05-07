@@ -11,16 +11,19 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.701 2008/05/01 17:03:49 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.702 2008/05/07 02:42:03 mlcreech Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
 
 /*
-** Include the configuration header output by 'configure' if it was run
-** (otherwise we get an empty default).
+** Include the configuration header output by 'configure' if we're using the
+** autoconf-based build
 */
+#ifdef _HAVE_SQLITE_CONFIG_H
 #include "config.h"
+#endif
+
 #include "sqliteLimit.h"
 
 /* Disable nuisance warnings on Borland compilers */

@@ -93,7 +93,6 @@ SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
   $(TOP)/src/complete.c \
-  $(TOP)/config.h \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -259,8 +258,7 @@ HDR = \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/sqliteLimit.h \
    $(TOP)/src/vdbe.h \
-   $(TOP)/src/vdbeInt.h \
-   $(TOP)/config.h
+   $(TOP)/src/vdbeInt.h
 
 # Header files used by extensions
 #

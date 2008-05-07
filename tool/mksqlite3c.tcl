@@ -88,7 +88,6 @@ if {$addstatic} {
 foreach hdr {
    btree.h
    btreeInt.h
-   config.h
    fts3.h
    fts3_hash.h
    fts3_tokenizer.h
