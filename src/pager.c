@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.442 2008/05/07 12:45:41 drh Exp $
+** @(#) $Id: pager.c,v 1.443 2008/05/07 19:11:03 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -968,14 +968,20 @@ static void seekJournalHdr(Pager *pPager){
 ** effect of invalidating the journal file and committing the
 ** transaction.
 */
-static int zeroJournalHdr(Pager *pPager){
-  int rc;
+static int zeroJournalHdr(Pager *pPager, int doTruncate){
+  int rc = SQLITE_OK;
   static const char zeroHdr[28];
 
-  IOTRACE(("JZEROHDR %p\n", pPager))
-  rc = sqlite3OsWrite(pPager->jfd, zeroHdr, sizeof(zeroHdr), 0);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3OsSync(pPager->jfd, SQLITE_SYNC_DATAONLY | pPager->sync_flags);
+  if( pPager->journalOff ){
+    IOTRACE(("JZEROHDR %p\n", pPager))
+    if( doTruncate ){
+      rc = sqlite3OsTruncate(pPager->jfd, 0);
+    }else{
+      rc = sqlite3OsWrite(pPager->jfd, zeroHdr, sizeof(zeroHdr), 0);
+    }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3OsSync(pPager->jfd, SQLITE_SYNC_DATAONLY|pPager->sync_flags);
+    }
   }
   return rc;
 }
@@ -1163,6 +1169,7 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
   int len; 
   int i; 
   i64 jrnlOff;
+  i64 jrnlSize;
   u32 cksum = 0;
   char zBuf[sizeof(aJournalMagic)+2*4];
 
@@ -1196,7 +1203,25 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
   put32bits(&zBuf[4], cksum);
   memcpy(&zBuf[8], aJournalMagic, sizeof(aJournalMagic));
   rc = sqlite3OsWrite(pPager->jfd, zBuf, 8+sizeof(aJournalMagic), jrnlOff);
+  jrnlOff += 8+sizeof(aJournalMagic);
   pPager->needSync = !pPager->noSync;
+
+  /* If the pager is in peristent-journal mode, then the physical 
+  ** journal-file may extend past the end of the master-journal name
+  ** and 8 bytes of magic data just written to the file. This is 
+  ** dangerous because the code to rollback a hot-journal file
+  ** will not be able to find the master-journal name to determine 
+  ** whether or not the journal is hot. 
+  **
+  ** Easiest thing to do in this scenario is to truncate the journal 
+  ** file to the required size.
+  */ 
+  if( (rc==SQLITE_OK)
+   && (rc = sqlite3OsFileSize(pPager->jfd, &jrnlSize))==SQLITE_OK
+   && jrnlSize>jrnlOff
+  ){
+    rc = sqlite3OsTruncate(pPager->jfd, jrnlOff);
+  }
   return rc;
 }
 
@@ -1358,7 +1383,7 @@ static void pagerUnlockAndRollback(Pager *p){
 ** This might give a performance improvement on windows where opening
 ** a file is an expensive operation.
 */
-static int pager_end_transaction(Pager *pPager){
+static int pager_end_transaction(Pager *pPager, int hasMaster){
   PgHdr *pPg;
   int rc = SQLITE_OK;
   int rc2 = SQLITE_OK;
@@ -1374,7 +1399,7 @@ static int pager_end_transaction(Pager *pPager){
   if( pPager->journalOpen ){
     if( (pPager->exclusiveMode ||
          pPager->journalMode==PAGER_JOURNALMODE_PERSIST) 
-       && (rc = zeroJournalHdr(pPager))==SQLITE_OK ){
+       && (rc = zeroJournalHdr(pPager, hasMaster))==SQLITE_OK ){
       pPager->journalOff = 0;
       pPager->journalStarted = 0;
     }else{
@@ -1908,7 +1933,7 @@ end_playback:
     rc = readMasterJournal(pPager->jfd, zMaster, pPager->pVfs->mxPathname+1);
   }
   if( rc==SQLITE_OK ){
-    rc = pager_end_transaction(pPager);
+    rc = pager_end_transaction(pPager, zMaster[0]!='\0');
   }
   if( rc==SQLITE_OK && zMaster[0] ){
     /* If there was a master journal and this routine will return success,
@@ -3960,7 +3985,7 @@ static int pager_open_journal(Pager *pPager){
     rc = sqlite3PagerStmtBegin(pPager);
   }
   if( rc!=SQLITE_OK && rc!=SQLITE_NOMEM && rc!=SQLITE_IOERR_NOMEM ){
-    rc = pager_end_transaction(pPager);
+    rc = pager_end_transaction(pPager, 0);
     if( rc==SQLITE_OK ){
       rc = SQLITE_FULL;
     }
@@ -4759,7 +4784,7 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
     return SQLITE_OK;
   }
   assert( pPager->state==PAGER_SYNCED || !pPager->dirtyCache );
-  rc = pager_end_transaction(pPager);
+  rc = pager_end_transaction(pPager, pPager->setMaster);
   rc = pager_error(pPager, rc);
   pagerLeave(pPager);
   return rc;
@@ -4818,7 +4843,7 @@ int sqlite3PagerRollback(Pager *pPager){
 
   pagerEnter(pPager);
   if( !pPager->dirtyCache || !pPager->journalOpen ){
-    rc = pager_end_transaction(pPager);
+    rc = pager_end_transaction(pPager, pPager->setMaster);
     pagerLeave(pPager);
     return rc;
   }
@@ -4833,7 +4858,7 @@ int sqlite3PagerRollback(Pager *pPager){
   if( pPager->state==PAGER_RESERVED ){
     int rc2;
     rc = pager_playback(pPager, 0);
-    rc2 = pager_end_transaction(pPager);
+    rc2 = pager_end_transaction(pPager, pPager->setMaster);
     if( rc==SQLITE_OK ){
       rc = rc2;
     }

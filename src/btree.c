@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.456 2008/05/07 07:13:16 danielk1977 Exp $
+** $Id: btree.c,v 1.457 2008/05/07 19:11:03 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6839,20 +6839,20 @@ static int btreeCopyFile(Btree *pTo, Btree *pFrom){
       rc = sqlite3PagerGet(pBtTo->pPager, i, &pDbPage);
       if( rc==SQLITE_OK ){
         rc = sqlite3PagerWrite(pDbPage);
+        if( rc==SQLITE_OK && i>nFromPage ){
+          /* Yeah.  It seems wierd to call DontWrite() right after Write(). But
+          ** that is because the names of those procedures do not exactly 
+          ** represent what they do.  Write() really means "put this page in the
+          ** rollback journal and mark it as dirty so that it will be written
+          ** to the database file later."  DontWrite() undoes the second part of
+          ** that and prevents the page from being written to the database. The
+          ** page is still on the rollback journal, though.  And that is the 
+          ** whole point of this block: to put pages on the rollback journal. 
+          */
+          sqlite3PagerDontWrite(pDbPage);
+        }
+        sqlite3PagerUnref(pDbPage);
       }
-      if( rc==SQLITE_OK && i>nFromPage ){
-        /* Yeah.  It seems wierd to call DontWrite() right after Write(). But
-        ** that is because the names of those procedures do not exactly 
-        ** represent what they do.  Write() really means "put this page in the
-        ** rollback journal and mark it as dirty so that it will be written
-        ** to the database file later."  DontWrite() undoes the second part of
-        ** that and prevents the page from being written to the database. The
-        ** page is still on the rollback journal, though.  And that is the 
-        ** whole point of this block: to put pages on the rollback journal. 
-        */
-        sqlite3PagerDontWrite(pDbPage);
-      }
-      sqlite3PagerUnref(pDbPage);
     }
 
     /* Overwrite the data in page i of the target database */

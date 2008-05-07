@@ -1,5 +1,5 @@
-C Added\stest\scases\sfor\scorrupt\sSerialTypeLen\sheader\svalues,\sand\sadditional\scheck\sto\simprove\sdetection\sof\scorrupt\svalues.\s(CVS\s5101)
-D 2008-05-07T18:59:29
+C Fix\ssome\sproblems\swith\smulti-file\stransactions\sin\spersistent\sjournal\smode.\s(CVS\s5102)
+D 2008-05-07T19:11:03
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -85,7 +85,7 @@ F src/attach.c 496cc628b2e8c4d8db99d7c136761fcbebd8420b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 8ec2212cfb702bc4f402c0b7ae7623d85320c714
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 556adb8f6905303d6ea00d35a0d1e1fe8a07efe2
+F src/btree.c 7401bcbdabd87360351953e5009530c47e4fb305
 F src/btree.h 8826591bf54dd35fcf2e67473d5f1bae253861c7
 F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
 F src/build.c a52d9d51341444a2131e3431608f245db80d9591
@@ -121,7 +121,7 @@ F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 30c378b093d9c17387ebb0ebbf21b7d55a98202b
 F src/os_unix.c a810e2aefdaddacf479407f76f8f4ca381d231b2
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
-F src/pager.c 547079d36fb3ca227e77e669268ea910c90774ef
+F src/pager.c fc173b7ee0b9ee630688466adacd506225417eb7
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -351,7 +351,7 @@ F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
-F test/jrnlmode.test 89acaa81503e349a49da73570b1a104f8fd93de7
+F test/jrnlmode.test 5b650ba0630fc1089688e18bb7f0c9b8a33417ed
 F test/jrnlmode2.test e48ec49320a3f849a5036e3551bf2394112a4aae
 F test/jrnlmode3.test c77f9d4095945f234dddd60ca0f73c24802ed0c1
 F test/jrnlmode4.test 8ee031603fef8ed5deba0de8b012a82be6d5a6a0
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ed728104c8e77a5526a2fcb62fea577940731d90
-R 662f2572cbb8e504e1cbbe6b8cab0ff5
-U shane
-Z d87bdc7540c0da4b026b69711c54995d
+P 530c6360610f737e85608b23ede2646d69d1bc9a
+R b3765e5e9b24b682270f8e36c5449957
+U danielk1977
+Z 58d2f3d9b823776050be08ba53db12b8
