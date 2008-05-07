@@ -1,5 +1,5 @@
-C Modify\sthe\sheader\scomment\sin\sjrnlmode2.test.\sNo\scode\sor\stest\schanges.\s(CVS\s5100)
-D 2008-05-07T15:44:26
+C Added\stest\scases\sfor\scorrupt\sSerialTypeLen\sheader\svalues,\sand\sadditional\scheck\sto\simprove\sdetection\sof\scorrupt\svalues.\s(CVS\s5101)
+D 2008-05-07T18:59:29
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -167,7 +167,7 @@ F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 43a77ab79275991b819428ded8ac8dc868604ac7
 F src/vacuum.c c3b2b70677f874102b8753bf494c232e777f3998
-F src/vdbe.c 26964ba7ed76d2a1c52747d601aaf2dc5b09b651
+F src/vdbe.c 2bc3352c8109ef312ea129ae1cbad4c0328c5871
 F src/vdbe.h f4bb70962d9c13e0f65b215c90e8acea1ae6e8ee
 F src/vdbeInt.h 18aebaa7857de4507d92ced62d8fe0844671a681
 F src/vdbeapi.c c810f936b09a1cfcac6b3624ad237b7951ca1880
@@ -233,6 +233,7 @@ F test/corrupt2.test 8059c7354aaba91e7405b4503b79f456c816df8e
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
+F test/corrupt6.test 9c32c74e41a6c9c2964bad75dca3785f956e556a
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 26d7a4c5520201e5de2c696ea51ab946b59dc0e9
 F test/crash3.test 0b09687ae1a3ccbcefdfaeb4b963e26e36255d76
@@ -633,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0bf656a401b9fc16b33ecd49a6db9b769156494d
-R 8f0ba5ce595d9ce17b29f3fa13b18680
-U danielk1977
-Z 8ee24fcee9bfb70ecd48023f6f69896f
+P ed728104c8e77a5526a2fcb62fea577940731d90
+R 662f2572cbb8e504e1cbbe6b8cab0ff5
+U shane
+Z d87bdc7540c0da4b026b69711c54995d
