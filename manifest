@@ -1,5 +1,5 @@
-C Only\slook\sfor\sconfig.h\sif\sthe\sautoconf-based\sbuild\sis\sbeing\sused,\sand\sdon't\sinline\sit\sinto\sthe\samalgamation.\s(CVS\s5093)
-D 2008-05-07T02:42:01
+C Fix\sa\sproblem\scausing\sthe\sdatabase\sto\sbe\struncated\sto\sthe\swrong\ssize\safter\san\sincremental-vacuum\sis\sperformed\son\sa\sdatabase\sin\sfull\sauto-vacuum\smode.\s(CVS\s5094)
+D 2008-05-07T07:13:16
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -85,7 +85,7 @@ F src/attach.c 496cc628b2e8c4d8db99d7c136761fcbebd8420b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 8ec2212cfb702bc4f402c0b7ae7623d85320c714
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 638f450da27c3f66ad081aae6888dc1961f76fc5
+F src/btree.c 556adb8f6905303d6ea00d35a0d1e1fe8a07efe2
 F src/btree.h 8826591bf54dd35fcf2e67473d5f1bae253861c7
 F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
 F src/build.c a52d9d51341444a2131e3431608f245db80d9591
@@ -327,7 +327,7 @@ F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
 F test/incrblob_err.test 5273097dc7c97f9b7008423a6ffd5c80d21923cb
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
-F test/incrvacuum2.test a958e378c193c4012cb3787804d863487f1dfad1
+F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
 F test/incrvacuum_ioerr.test 34297e36ef3399933064ee551ad55ba5d70c3a15
 F test/index.test cbf301cdb2da43e4eac636c3400c2439af1834ad
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
@@ -632,7 +632,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5f682c9a68853f33aac6a2ad3f91b1cdf17dcd73
-R 56f0bae805d3584ec0aedf8c53cd40ab
-U mlcreech
-Z cac51a6fbca9efd2b50128065f8e0a6a
+P 7df9ef2c8216133d50bf4737482f51193e8579b0
+R 14f8a574b4483be783cee8a7650c2f1e
+U danielk1977
+Z 434c9485cd0945d9b455f8954f84eb61

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the incremental vacuum feature.
 #
-# $Id: incrvacuum2.test,v 1.4 2007/10/09 08:29:32 danielk1977 Exp $
+# $Id: incrvacuum2.test,v 1.5 2008/05/07 07:13:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,6 +32,7 @@ ifcapable !incrblob {
   proc zeroblob {n} { string repeat 0 $n }
   db function zeroblob zeroblob
 }
+
 
 # Create a database in incremental vacuum mode that has many
 # pages on the freelist.
@@ -122,6 +123,24 @@ ifcapable attach {
   } {26624 3072}
 }
 
- 
+do_test incrvacuum2-3.1 {
+  execsql {
+    PRAGMA auto_vacuum = 'full';
+    BEGIN;
+    CREATE TABLE abc(a);
+    INSERT INTO abc VALUES(randstr(1500,1500));
+    COMMIT;
+  }
+} {}
+do_test incrvacuum2-3.2 {
+  execsql {
+    BEGIN;
+    DELETE FROM abc;
+    PRAGMA incremental_vacuum;
+    COMMIT;
+  }
+} {}
+
+integrity_check incremental2-3.3
 
 finish_test
