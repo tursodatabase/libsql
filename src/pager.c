@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.440 2008/05/06 18:13:26 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.441 2008/05/07 12:29:56 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -515,8 +515,8 @@ static const unsigned char aJournalMagic[] = {
   static void pagerEnter(Pager *p){
     p->iInUseDB++;
     if( p->iInUseMM && p->iInUseDB==1 ){
-      sqlite3_mutex *mutex;
 #ifndef SQLITE_MUTEX_NOOP
+      sqlite3_mutex *mutex;
       mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM2);
 #endif
       p->iInUseDB = 0;
@@ -3227,7 +3227,6 @@ static int pager_recycle(Pager *pPager, PgHdr **ppPg){
 */
 int sqlite3PagerReleaseMemory(int nReq){
   int nReleased = 0;          /* Bytes of memory released so far */
-  sqlite3_mutex *mutex;       /* The MEM2 mutex */
   Pager *pPager;              /* For looping over pagers */
   BusyHandler *savedBusy;     /* Saved copy of the busy handler */
   int rc = SQLITE_OK;
@@ -3235,6 +3234,7 @@ int sqlite3PagerReleaseMemory(int nReq){
   /* Acquire the memory-management mutex
   */
 #ifndef SQLITE_MUTEX_NOOP
+  sqlite3_mutex *mutex;       /* The MEM2 mutex */
   mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM2);
 #endif
   sqlite3_mutex_enter(mutex);
