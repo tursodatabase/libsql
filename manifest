@@ -1,5 +1,5 @@
-C Add\sa\snew\sI/O\serror\stest:\sioerr4.\s(CVS\s5097)
-D 2008-05-07T13:28:38
+C If\san\serror\soccurs\swithin\sxAccess(),\sit\sshould\sreturn\s-1.\sRemove\san\sassert()\nthat\swas\spreventing\sit\sfrom\sdoing\sso.\s(CVS\s5098)
+D 2008-05-07T14:49:21
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 2911ea96955ab6cba734cc4ad903fe76f834b39e
 F src/mutex_unix.c 466d20378a0645fea64c3f2e2669c33b7802df56
 F src/mutex_w32.c 133698096a2c4e81cd11ea6f4de7891c66f7b9f7
-F src/os.c d811a3e1a152e03c98d3dd85f2b7aff0d7630cea
+F src/os.c f9708b7ebd902fe6969fee5660a71d50e0244cad
 F src/os.h 2ee8b0dec88f946c5371919ffa0f2fe4ac0de2e6
 F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 30c378b093d9c17387ebb0ebbf21b7d55a98202b
@@ -633,7 +633,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 438d77a762a6f3cc7438e4d688013cc26e3e9486
-R a2819e9c0d3d8d02d619e0bf904d581b
-U drh
-Z 99995189b6ca74e935f2f2147cae37c2
+P c3ab1a7e2e40eb8f51f1b11bf0591e251d69882b
+R 3b5d81437b7f8ede62f5ea916d69d75e
+U danielk1977
+Z 141289d33baced3b1f1e38ca427fd766

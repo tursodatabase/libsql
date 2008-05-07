@@ -122,7 +122,6 @@ int sqlite3OsAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
   sqlite3_free(pTstAlloc);
 #endif
   rc = pVfs->xAccess(pVfs, zPath, flags);
-  assert( rc==0 || rc==1 );
   return rc;
 }
 int sqlite3OsGetTempname(sqlite3_vfs *pVfs, int nBufOut, char *zBufOut){
