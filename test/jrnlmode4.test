@@ -9,10 +9,10 @@
 #
 #***********************************************************************
 #
-# This file runs the tests in the file ioerr.test with 
+# This file runs a few of the other test files (select1.test etc.) with
 # persistent journal mode enabled.
 #
-# $Id: jrnlmode4.test,v 1.1 2008/04/19 20:53:26 drh Exp $
+# $Id: jrnlmode4.test,v 1.2 2008/05/07 15:42:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

@@ -1,5 +1,5 @@
-C If\san\serror\soccurs\swithin\sxAccess(),\sit\sshould\sreturn\s-1.\sRemove\san\sassert()\nthat\swas\spreventing\sit\sfrom\sdoing\sso.\s(CVS\s5098)
-D 2008-05-07T14:49:21
+C Change\sthe\sheader\scomment\sin\sjrnlmode4.test.\sNo\schanges\sto\sany\scode\sor\stests.\s(CVS\s5099)
+D 2008-05-07T15:42:25
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -353,7 +353,7 @@ F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
 F test/jrnlmode.test 89acaa81503e349a49da73570b1a104f8fd93de7
 F test/jrnlmode2.test 0e88856faaf4ea7449751cd427ecd670bed92a31
 F test/jrnlmode3.test c77f9d4095945f234dddd60ca0f73c24802ed0c1
-F test/jrnlmode4.test ad08b0ee3e1470c10a32785959252ef0c7c4f479
+F test/jrnlmode4.test 9dc6b6d7c5d140fb9397f5dfd4b807e4224e3253
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
 F test/like.test 2a3ddbd5d91503f914eabae67a47c4196fe33a58
@@ -633,7 +633,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P c3ab1a7e2e40eb8f51f1b11bf0591e251d69882b
-R 3b5d81437b7f8ede62f5ea916d69d75e
+P 3fbcef46f7b6dcd20c1137692aa5bc0f64eaa3dd
+R 8165c33f3507a28156d24a235b7adf86
 U danielk1977
-Z 141289d33baced3b1f1e38ca427fd766
+Z e376f1822c5f15fbe832661f8bb0fd06
