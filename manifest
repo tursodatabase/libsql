@@ -1,5 +1,5 @@
-C Fix\sa\snull-pointer\sdereference\sthat\scan\soccur\sfollowing\sa\sDISKFULL\serror\nwhile\srunning\sVACUUM.\s(CVS\s5096)
-D 2008-05-07T12:45:41
+C Add\sa\snew\sI/O\serror\stest:\sioerr4.\s(CVS\s5097)
+D 2008-05-07T13:28:38
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -343,6 +343,7 @@ F test/io.test 833a1746518ec3005aa7792f9bcb8f01923ff544
 F test/ioerr.test 32cff40562447bda194ba67ad601170edbaed49b
 F test/ioerr2.test b9c9a0491a812707762a7c002876553be54d9969
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
+F test/ioerr4.test 2bfe11c7ad030eec7d2d848f8d8ddeecb7279cb0
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -632,7 +633,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P d15d0bbab043e4366f7988423115babb550198a1
-R cc97a864eea5af3981d05a3f9edeedde
+P 438d77a762a6f3cc7438e4d688013cc26e3e9486
+R a2819e9c0d3d8d02d619e0bf904d581b
 U drh
-Z 953a72f11c0f918cae5f87eb3c8317a8
+Z 99995189b6ca74e935f2f2147cae37c2
