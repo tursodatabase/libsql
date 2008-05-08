@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.119 2008/05/05 17:14:54 danielk1977 Exp $
+# $Id: tester.tcl,v 1.120 2008/05/08 15:58:06 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -88,7 +88,13 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
       append s "(method TEXT, clicks INT, file TEXT, i32 INT, i64 INT);"
       puts $ostrace_fd $s
       sqlite3_instvfs configure ostrace ostrace_call
+      sqlite3_instvfs configure ostrace ostrace_call
     }
+    set argv [lreplace $argv $i $i]
+  }
+  if {[lindex $argv $i] eq "--binarylog"} {
+    set tester_do_binarylog 1
+    sqlite3_instvfs binarylog -default binarylog ostrace.bin
     set argv [lreplace $argv $i $i]
   }
 }
@@ -159,6 +165,9 @@ proc omit_test {name reason} {
 proc do_test {name cmd expected} {
   global argv nErr nTest skip_test maxErr
   sqlite3_memdebug_settitle $name
+  if {$::tester_do_binarylog} {
+    sqlite3_instvfs marker binarylog "Start of $name"
+  }
   if {$skip_test} {
     set skip_test 0
     return
@@ -192,6 +201,9 @@ proc do_test {name cmd expected} {
     puts " Ok"
   }
   flush stdout
+  if {$::tester_do_binarylog} {
+    sqlite3_instvfs marker binarylog "End of $name"
+  }
 }
 
 # Run an SQL script.  
@@ -282,6 +294,9 @@ proc finalize_testing {} {
     puts "all of the test failures above might be a result from this defect"
     puts "in your TCL build."
     puts "******************************************************************"
+  }
+  if {[info exists ::tester_do_binarylog]} {
+    sqlite3_instvfs destroy binarylog
   }
   if {$sqlite_open_file_count} {
     puts "$sqlite_open_file_count files were left open"
