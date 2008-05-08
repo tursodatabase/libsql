@@ -1,5 +1,5 @@
-C Increment\sthe\sversion\snumber.\s(CVS\s5104)
-D 2008-05-08T13:54:05
+C Use\sa\s6-byte\srather\sthan\san\s8-byte\sencoding\sfor\sintegers\sbetween\n17592186044416\sand\s140737488355327.\s\sTicket\s#3100.\s(CVS\s5105)
+D 2008-05-08T15:18:10
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -171,7 +171,7 @@ F src/vdbe.c 2bc3352c8109ef312ea129ae1cbad4c0328c5871
 F src/vdbe.h f4bb70962d9c13e0f65b215c90e8acea1ae6e8ee
 F src/vdbeInt.h 18aebaa7857de4507d92ced62d8fe0844671a681
 F src/vdbeapi.c c810f936b09a1cfcac6b3624ad237b7951ca1880
-F src/vdbeaux.c aae523de91fb72a32a256253880739fe103ea76e
+F src/vdbeaux.c b98643abd85ae19318ee823f79168ae99b3a512e
 F src/vdbeblob.c 554736781ee273a8089c776e96bdb53e66f57ce6
 F src/vdbefifo.c a30c237b2a3577e1415fb6e288cbb6b8ed1e5736
 F src/vdbemem.c 8cdc5d4c9558338a2c5ae81135d0826136833b5e
@@ -394,7 +394,7 @@ F test/misc1.test 1b89c02c4a33b49dee4cd1d20d161aaaba719075
 F test/misc2.test 1ee89298de9c16b61454658b24999c403e86afe4
 F test/misc3.test aea079f4c3d93e9962186f45c0ff0954310e6b11
 F test/misc4.test 91e8ed25c092c2bb4e0bb01864631e2930f8d7de
-F test/misc5.test c1bc7b8cbc6694dccfc4c0b03c00c8f2dc55c46b
+F test/misc5.test 0b68dcb630d44af2dbcdca94dd2b17c8d580f6fa
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 26e0d948a413bca61ed031159907a03d64647409
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 75df2d3d506abfa4aa4875fb533a5cd160b3f521
-R b06563aa519e0d65df93bf7d0adde147
+P ed06d90d8c4ee70ea6e99359317ac7bc1dcc4828
+R ea249fc8a3a9b71ffa0c52cbea6c6669
 U drh
-Z b4e9e49e593f78bae8fac050dd13cedb
+Z 54cc5eff958cdf62777ff36a8bebe665
