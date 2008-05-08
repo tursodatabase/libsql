@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\swith\smulti-file\stransactions\sin\spersistent\sjournal\smode.\s(CVS\s5102)
-D 2008-05-07T19:11:03
+C Fix\sthe\snew\sioerr4.test\sso\sthat\sit\splays\swell\swith\sothers.\s(CVS\s5103)
+D 2008-05-08T01:11:42
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -344,7 +344,7 @@ F test/io.test 833a1746518ec3005aa7792f9bcb8f01923ff544
 F test/ioerr.test 32cff40562447bda194ba67ad601170edbaed49b
 F test/ioerr2.test b9c9a0491a812707762a7c002876553be54d9969
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
-F test/ioerr4.test 2bfe11c7ad030eec7d2d848f8d8ddeecb7279cb0
+F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 530c6360610f737e85608b23ede2646d69d1bc9a
-R b3765e5e9b24b682270f8e36c5449957
-U danielk1977
-Z 58d2f3d9b823776050be08ba53db12b8
+P e98a7f87f91c62676f94ad5a0c4980ab929ca79d
+R 6e4a1bd41d61e00e4d5ba026c754e3a0
+U drh
+Z b62d7152b5cc18da370b950689f8f09f

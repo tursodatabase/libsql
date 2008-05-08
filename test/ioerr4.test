@@ -12,7 +12,7 @@
 # focus of this file is testing for correct handling of I/O errors
 # during incremental vacuum with a shared cache.
 #
-# $Id: ioerr4.test,v 1.1 2008/05/07 13:28:38 drh Exp $
+# $Id: ioerr4.test,v 1.2 2008/05/08 01:11:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,7 +28,7 @@ ifcapable {!shared_cache || !autovacuum} {
 #
 do_test ioerr4-1.1 {
   db close
-  sqlite3_enable_shared_cache 1
+  set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 } {0}
 do_test ioerr4-1.2 {
   file delete -force test.db test.db-journal
@@ -92,5 +92,9 @@ do_ioerr_test ioerr4-2 -tclprep {
 } -tclbody {
   db eval {PRAGMA incremental_vacuum(5)}
 }
+
+db2 close
+file delete -force test.db-bu
+sqlite3_enable_shared_cache $::enable_shared_cache
 
 finish_test
