@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.120 2008/05/08 15:58:06 danielk1977 Exp $
+# $Id: tester.tcl,v 1.121 2008/05/08 16:51:12 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -165,7 +165,7 @@ proc omit_test {name reason} {
 proc do_test {name cmd expected} {
   global argv nErr nTest skip_test maxErr
   sqlite3_memdebug_settitle $name
-  if {$::tester_do_binarylog} {
+  if {[info exists ::tester_do_binarylog]} {
     sqlite3_instvfs marker binarylog "Start of $name"
   }
   if {$skip_test} {
@@ -201,7 +201,7 @@ proc do_test {name cmd expected} {
     puts " Ok"
   }
   flush stdout
-  if {$::tester_do_binarylog} {
+  if {[info exists ::tester_do_binarylog]} {
     sqlite3_instvfs marker binarylog "End of $name"
   }
 }
