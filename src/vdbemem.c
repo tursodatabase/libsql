@@ -310,8 +310,8 @@ static i64 doubleToInt64(double r){
   ** So we define our own static constants here using nothing
   ** larger than a 32-bit integer constant.
   */
-  static const i64 maxInt = (((i64)0x7fffffff)<<32)|0xffffffff;
-  static const i64 minInt = ((i64)0x80000000)<<32;
+  static const i64 maxInt = LARGEST_INT64;
+  static const i64 minInt = SMALLEST_INT64;
 
   if( r<(double)minInt ){
     return minInt;
