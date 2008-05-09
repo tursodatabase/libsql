@@ -1,5 +1,5 @@
-C Back\sout\scheck-in\s(5108).\s\sThe\soriginal\sisnan()\simplementation\sis\spreferred.\s\sTicket\s#3101\sand\s#3060.\s(CVS\s5109)
-D 2008-05-09T13:47:59
+C Fix\sthe\sALTER\sTABLE\sRENAME\salgorithm\sso\sthat\sit\sis\snot\sconfused\nby\scomments\sin\sthe\sCREATE\sTABLE\sstatement.\s\sTicket\s#3102.\s(CVS\s5110)
+D 2008-05-09T14:17:52
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -79,7 +79,7 @@ F sqlite.pc.in c322c6244c6395955dca34d87955aabde7df7623
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a1be7b9a4b8b51ac41c6ff6e8e44a14ef66b338b
 F sqlite3.pc.in 32b8a014799c2028c8e0c9cc5659718262fc493f
-F src/alter.c b42d782906fc3b92c331efbe06e9389617b47ce7
+F src/alter.c cc38b9e2a8cf19428f64e5da7ec4da35b7c02779
 F src/analyze.c 9ee63497ee720728abe630d169ab91323ac7519c
 F src/attach.c 496cc628b2e8c4d8db99d7c136761fcbebd8420b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
@@ -180,7 +180,7 @@ F src/where.c 85719d58e0f680b5d8239dc6af82b159775d7376
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d56a3ca8acdf761204aff0a2e7aa5eb8e11b31e6
-F test/alter.test 1426bb4c8609731622a9bf9dd48c39f5931c4d7d
+F test/alter.test 6353aae6839e486c9b7d8f73b1f4a1e98e57332c
 F test/alter2.test dd55146e812622c8fc51fd2216bcd8dca8880752
 F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
 F test/altermalloc.test 29d4a8400277efb4ba8ffe90804c6dc2fdfbf063
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 19ee2b3324461150d2c1600c67fe604114a1b69f
-R 8d099f80fb2f7dafcb5d0c712527b62c
+P 2349ae75dfdd626ed97db99ac6de4bdc5a395008
+R f36404afe38ae90063c0c43dc92e5da7
 U drh
-Z f6a0ef8be8db87133187cef718ae3189
+Z 2b92517d2da71a3352efb5891980e09b

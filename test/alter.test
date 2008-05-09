@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.29 2008/02/09 14:30:30 drh Exp $
+# $Id: alter.test,v 1.30 2008/05/09 14:17:52 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -785,5 +785,30 @@ do_test alter-12.5 {
   }
 } {1 {Cannot add a column to a view}}
 
+# Ticket #3102:
+# Verify that comments do not interfere with the table rename
+# algorithm.
+#
+do_test alter-13.1 {
+  execsql {
+    CREATE TABLE /* hi */ t3102a(x);
+    CREATE TABLE t3102b -- comment
+    (y);
+    CREATE INDEX t3102c ON t3102a(x);
+    SELECT name FROM sqlite_master WHERE name LIKE 't3102%' ORDER BY 1;
+  }
+} {t3102a t3102b t3102c}
+do_test alter-13.2 {
+  execsql {
+    ALTER TABLE t3102a RENAME TO t3102a_rename;
+    SELECT name FROM sqlite_master WHERE name LIKE 't3102%' ORDER BY 1;
+  }
+} {t3102a_rename t3102b t3102c}
+do_test alter-13.3 {
+  execsql {
+    ALTER TABLE t3102b RENAME TO t3102b_rename;
+    SELECT name FROM sqlite_master WHERE name LIKE 't3102%' ORDER BY 1;
+  }
+} {t3102a_rename t3102b_rename t3102c}
 
 finish_test
