@@ -1,5 +1,5 @@
-C Fix\srecently\sintroduced\sbug\sin\stester.tcl.\s(CVS\s5107)
-D 2008-05-08T16:51:12
+C Change\sthe\simplementation\sof\ssqlite3IsNaN()\sso\sthat\sit\sworks\seven\sif\ncompiled\susing\s-ffinite-math-only.\s\sTickets\s#3101\sand\s#3060.\s(CVS\s5108)
+D 2008-05-09T03:07:34
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -165,7 +165,7 @@ F src/tokenize.c 8d77af8584cf027dc21375f0efa5818cb303c995
 F src/trigger.c 9bd3b6fa0beff4a02d262c96466f752ec15a7fc3
 F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
-F src/util.c 43a77ab79275991b819428ded8ac8dc868604ac7
+F src/util.c 743a0d5e94eb5a55a38e97a74fc0d5ffaa48a1c0
 F src/vacuum.c c3b2b70677f874102b8753bf494c232e777f3998
 F src/vdbe.c 2bc3352c8109ef312ea129ae1cbad4c0328c5871
 F src/vdbe.h f4bb70962d9c13e0f65b215c90e8acea1ae6e8ee
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 8a99efc07f93bc11d21aa501349c81f0fd8abf7b
-R b74d8bc72e0ee5f251e922de4c137ed1
-U danielk1977
-Z 9f6028499912df37de9a263330ef2df9
+P 4b573d4e7dd8c3417cfdebe7d2885de7bdc522db
+R 79b226a56001cceb1de45a2f20e236c5
+U drh
+Z 36be44822c44ec8dd7529a9a89a5a5cb
