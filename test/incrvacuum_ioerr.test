@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: incrvacuum_ioerr.test,v 1.4 2008/05/09 16:57:51 danielk1977 Exp $
+# $Id: incrvacuum_ioerr.test,v 1.5 2008/05/09 18:03:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -26,8 +26,6 @@ ifcapable {!autovacuum} {
   finish_test
   return
 }
-
-if 0 {
 
 do_ioerr_test incrvacuum-ioerr-1 -cksum 1 -sqlprep {
   PRAGMA auto_vacuum = 'incremental';
@@ -104,8 +102,6 @@ do_ioerr_test incrvacuum-ioerr-3 -start 1 -cksum 1 -tclprep {
   sqlite3 db test.db
   integrity_check incrvacuum-ioerr-2.$n.integritycheck
   db close
-}
-
 }
 
 

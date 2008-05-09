@@ -1,5 +1,5 @@
-C Reformulate\sthe\sconstants\sfor\sthe\sminimum\sand\smaximum\s64-bit\ssigned\ninteger\sto\swork\sbetter\swith\ssome\scompilers.\s\sTicket\s#3105.\s(CVS\s5113)
-D 2008-05-09T18:03:14
+C Re-enable\stests\sthat\swere\saccidentally\sdisabled\sby\s(5112).\s(CVS\s5114)
+D 2008-05-09T18:03:28
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -329,7 +329,7 @@ F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
 F test/incrblob_err.test 5273097dc7c97f9b7008423a6ffd5c80d21923cb
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
-F test/incrvacuum_ioerr.test bc1253285d3a8f6a82a510a0596485dfb83d6ec1
+F test/incrvacuum_ioerr.test ebc94092ac1545d9ce518a673988aef88197ca4e
 F test/index.test cbf301cdb2da43e4eac636c3400c2439af1834ad
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 727d55dceb9a4ec36675057bb5becfc265e28ca6
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 7a44fb965b3477fb78901939ba35d569e5638c19
-R 6cbdb6f56493d0a72650ba12a767bbfe
-U drh
-Z b0ab4136f4eb66dad3b479b35f66c468
+P 18b1ee10b89bd0a98d1986dbb04b9d6cfc3dad39
+R 5c3cbbff8e8d7e1cb0958ce729640786
+U danielk1977
+Z 96d0849009ad2a098ed518c52437810b
