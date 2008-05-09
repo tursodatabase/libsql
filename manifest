@@ -1,5 +1,5 @@
-C Do\snot\sclear\sthe\serror\scode\sor\serror\smessage\sin\ssqlite3_clear_bindings().\nTicket\s#3063.\s(CVS\s5111)
-D 2008-05-09T14:39:45
+C Fix\sa\sproblem\swith\srecovering\sfrom\san\sIO\serror\sin\sexclusive-locking\smode.\s(CVS\s5112)
+D 2008-05-09T16:57:51
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -85,7 +85,7 @@ F src/attach.c 496cc628b2e8c4d8db99d7c136761fcbebd8420b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 8ec2212cfb702bc4f402c0b7ae7623d85320c714
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 7401bcbdabd87360351953e5009530c47e4fb305
+F src/btree.c 7bee6ba457f3e241911fab69b1602eb43c65b438
 F src/btree.h 8826591bf54dd35fcf2e67473d5f1bae253861c7
 F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
 F src/build.c a52d9d51341444a2131e3431608f245db80d9591
@@ -121,7 +121,7 @@ F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 30c378b093d9c17387ebb0ebbf21b7d55a98202b
 F src/os_unix.c a810e2aefdaddacf479407f76f8f4ca381d231b2
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
-F src/pager.c fc173b7ee0b9ee630688466adacd506225417eb7
+F src/pager.c c4e0bcb1f451d2b8601e1cf50e680d88bf175055
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -156,7 +156,7 @@ F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c c92a65e8f9b31bb2b332448d92d2016c000a963d
 F src/test_md5.c bca40b727c57462ddb415e57c5323445a1bb1a40
 F src/test_onefile.c 2fea6d22f13f5f286356c80c77ffd41f995f2b7a
-F src/test_osinst.c b2947f2ef6201ecc0a922cd2241880a955f5af0d
+F src/test_osinst.c f84ac00d61145af1be287754c153d04048b67888
 F src/test_schema.c e3f93725f7c5b2cff84a69dc4332040dfbc8f81a
 F src/test_server.c a6ece6c835e7eae835054124e09e947e422b1ac5
 F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
@@ -329,7 +329,7 @@ F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
 F test/incrblob_err.test 5273097dc7c97f9b7008423a6ffd5c80d21923cb
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
-F test/incrvacuum_ioerr.test 34297e36ef3399933064ee551ad55ba5d70c3a15
+F test/incrvacuum_ioerr.test bc1253285d3a8f6a82a510a0596485dfb83d6ec1
 F test/index.test cbf301cdb2da43e4eac636c3400c2439af1834ad
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 727d55dceb9a4ec36675057bb5becfc265e28ca6
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ab18b4e75916b05863b31bc63625aa64a104a42c
-R 18e63cebbbff2189e064184403f168a0
-U drh
-Z d4393eb7d22c3e8846462316d45daa10
+P 069f4560107246fdc31e1f15c3ad7d3dae2b9ad8
+R f45b51024a5e8c743be851676769c12e
+U danielk1977
+Z 6411c1571b3ff8cf23c5c624d3f8d386

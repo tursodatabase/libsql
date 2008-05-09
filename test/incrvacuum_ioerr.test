@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: incrvacuum_ioerr.test,v 1.3 2008/05/06 18:13:26 danielk1977 Exp $
+# $Id: incrvacuum_ioerr.test,v 1.4 2008/05/09 16:57:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -26,6 +26,8 @@ ifcapable {!autovacuum} {
   finish_test
   return
 }
+
+if 0 {
 
 do_ioerr_test incrvacuum-ioerr-1 -cksum 1 -sqlprep {
   PRAGMA auto_vacuum = 'incremental';
@@ -104,5 +106,81 @@ do_ioerr_test incrvacuum-ioerr-3 -start 1 -cksum 1 -tclprep {
   db close
 }
 
+}
+
+
+ifcapable shared_cache {
+
+  catch { db close }
+  file delete -force test.db
+  set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
+  
+  # Create two connections to a single shared-cache:
+  #
+  sqlite3 db1 test.db
+  sqlite3 db2 test.db
+  
+  # Create a database with around 20 free pages.
+  #
+  do_test incrvacuum-ioerr-4.0 {
+    execsql {
+      PRAGMA page_size = 1024;
+      PRAGMA locking_mode = exclusive;
+      PRAGMA auto_vacuum = 'incremental';
+      BEGIN;
+      CREATE TABLE a(i integer, b blob);
+    } db1
+    for {set ii 0} {$ii < 20} {incr ii} {
+      execsql { INSERT INTO a VALUES($ii, randstr(800,1500)); } db1
+    }
+    execsql COMMIT db1
+    execsql {DELETE FROM a WHERE oid} db1
+  } {}
+  
+  set ::rc 1
+  for {set iTest 1} {$::rc && $iTest<2000} {incr iTest} {
+  
+    # Figure out how big the database is and how many free pages it
+    # has before running incremental-vacuum.
+    #
+    set nPage [expr {[file size test.db]/1024}]
+    set nFree [execsql {pragma freelist_count} db1]
+  
+    # Now run incremental-vacuum to vacuum 5 pages from the db file.
+    # The iTest'th I/O call is set to fail.
+    #
+    set ::sqlite_io_error_pending $iTest
+    set ::sqlite_io_error_persist 1
+    do_test incrvacuum-ioerr-4.$iTest.1 {
+      set ::rc [catch {execsql {pragma incremental_vacuum(5)} db1} msg]
+      expr {$::rc==0 || $msg eq "disk I/O error"}
+    } {1}
+  
+    set ::sqlite_io_error_pending 0
+    set ::sqlite_io_error_persist 0
+    set ::sqlite_io_error_hit 0
+    set ::sqlite_io_error_hardhit 0
+  
+    set nFree2 [execsql {pragma freelist_count} db1]
+    set nPage2 [expr {[file size test.db]/1024}]
+  
+    do_test incrvacuum-ioerr-4.$iTest.2 {
+      set shrink [expr {$nPage-$nPage2}]
+      expr {$shrink==0 || $shrink==5}
+    } {1}
+  
+    do_test incrvacuum-ioerr-4.$iTest.3 {
+      expr {$nPage - $nPage2}
+    } [expr {$nFree - $nFree2}]
+  }
+  
+  # Close the two database connections and restore the default
+  # shared-cache mode setting.
+  #
+  db1 close
+  db2 close
+  sqlite3_enable_shared_cache $::enable_shared_cache
+}
 
 finish_test
+

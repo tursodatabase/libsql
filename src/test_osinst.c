@@ -303,7 +303,9 @@ static int instWrite(
 ** Truncate an inst-file.
 */
 static int instTruncate(sqlite3_file *pFile, sqlite_int64 size){
-  OS_TIME_IO(OS_TRUNCATE, 0, size, p->pReal->pMethods->xTruncate(p->pReal, size));
+  OS_TIME_IO(OS_TRUNCATE, 0, (int)size, 
+    p->pReal->pMethods->xTruncate(p->pReal, size)
+  );
 }
 
 /*
@@ -632,6 +634,34 @@ static void put32bits(unsigned char *p, unsigned int v){
   p[3] = v;
 }
 
+static void binarylog_flush(InstVfsBinaryLog *pLog){
+  sqlite3_file *pFile = pLog->pOut;
+
+#ifdef SQLITE_TEST
+  extern int sqlite3_io_error_pending;
+  extern int sqlite3_io_error_persist;
+  extern int sqlite3_diskfull_pending;
+
+  int pending = sqlite3_io_error_pending;
+  int persist = sqlite3_io_error_persist;
+  int diskfull = sqlite3_diskfull_pending;
+
+  sqlite3_io_error_pending = 0;
+  sqlite3_io_error_persist = 0;
+  sqlite3_diskfull_pending = 0;
+#endif
+
+  pFile->pMethods->xWrite(pFile, pLog->zBuf, pLog->nBuf, pLog->iOffset);
+  pLog->iOffset += pLog->nBuf;
+  pLog->nBuf = 0;
+
+#ifdef SQLITE_TEST
+  sqlite3_io_error_pending = pending;
+  sqlite3_io_error_persist = persist;
+  sqlite3_diskfull_pending = diskfull;
+#endif
+}
+
 static void binarylog_xcall(
   void *p,
   int eEvent,
@@ -646,10 +676,7 @@ static void binarylog_xcall(
   InstVfsBinaryLog *pLog = (InstVfsBinaryLog *)p;
   unsigned char *zRec;
   if( (28+pLog->nBuf)>BINARYLOG_BUFFERSIZE ){
-    sqlite3_file *pFile = pLog->pOut;
-    pFile->pMethods->xWrite(pFile, pLog->zBuf, pLog->nBuf, pLog->iOffset);
-    pLog->iOffset += pLog->nBuf;
-    pLog->nBuf = 0;
+    binarylog_flush(pLog);
   }
   zRec = (unsigned char *)&pLog->zBuf[pLog->nBuf];
   put32bits(&zRec[0], eEvent);
@@ -669,7 +696,7 @@ static void binarylog_xdel(void *p){
   InstVfsBinaryLog *pLog = (InstVfsBinaryLog *)p;
   sqlite3_file *pFile = pLog->pOut;
   if( pLog->nBuf ){
-    pFile->pMethods->xWrite(pFile, pLog->zBuf, pLog->nBuf, pLog->iOffset);
+    binarylog_flush(pLog);
   }
   pFile->pMethods->xClose(pFile);
   sqlite3_free(pLog->pOut);
@@ -698,10 +725,7 @@ static void binarylog_blob(
   nWrite = nBlob + 28;
 
   if( (nWrite+pLog->nBuf)>BINARYLOG_BUFFERSIZE ){
-    sqlite3_file *pFile = pLog->pOut;
-    pFile->pMethods->xWrite(pFile, pLog->zBuf, pLog->nBuf, pLog->iOffset);
-    pLog->iOffset += pLog->nBuf;
-    pLog->nBuf = 0;
+    binarylog_flush(pLog);
   }
 
   zRec = (unsigned char *)&pLog->zBuf[pLog->nBuf];
@@ -750,8 +774,9 @@ sqlite3_vfs *sqlite3_instvfs_binarylog(
   pParent->xDelete(pParent, p->zOut, 0);
   rc = pParent->xOpen(pParent, p->zOut, p->pOut, flags, &flags);
   if( rc==SQLITE_OK ){
-    rc = p->pOut->pMethods->xWrite(p->pOut, "sqlite_ostrace1.....", 20, 0);
-    p->iOffset = 20;
+    memcpy(p->zBuf, "sqlite_ostrace1.....", 20);
+    p->iOffset = 0;
+    p->nBuf = 20;
   }
   if( rc ){
     binarylog_xdel(p);
@@ -863,18 +888,31 @@ static int test_sqlite3_instvfs(
     case IV_BINARYLOG: {
       char *zName = 0;
       char *zLog = 0;
+      char *zParent = 0;
       sqlite3_vfs *p;
       int isDefault = 0;
-      if( objc>2 && 0==strcmp("-default", Tcl_GetString(objv[2])) ){
+      int argbase = 2;
+
+      if( objc>2 && 0==strcmp("-default", Tcl_GetString(objv[argbase])) ){
         isDefault = 1;
+        argbase++;
       }
-      if( (objc-isDefault)!=4 ){
-        Tcl_WrongNumArgs(interp, 2, objv, "?-default? NAME LOGFILE");
+      if( objc>(argbase+1) 
+       && 0==strcmp("-parent", Tcl_GetString(objv[argbase])) 
+      ){
+        zParent = Tcl_GetString(objv[argbase+1]);
+        argbase += 2;
+      }
+
+      if( (objc-argbase)!=2 ){
+        Tcl_WrongNumArgs(
+            interp, 2, objv, "?-default? ?-parent VFS? NAME LOGFILE"
+        );
         return TCL_ERROR;
       }
-      zName = Tcl_GetString(objv[2+isDefault]);
-      zLog = Tcl_GetString(objv[3+isDefault]);
-      p = sqlite3_instvfs_binarylog(zName, 0, zLog);
+      zName = Tcl_GetString(objv[argbase]);
+      zLog = Tcl_GetString(objv[argbase+1]);
+      p = sqlite3_instvfs_binarylog(zName, zParent, zLog);
       if( !p ){
         Tcl_AppendResult(interp, "error creating vfs ", 0);
         return TCL_ERROR;
