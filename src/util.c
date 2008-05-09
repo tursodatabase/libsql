@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.226 2008/05/09 03:07:34 drh Exp $
+** $Id: util.c,v 1.227 2008/05/09 13:47:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -25,19 +25,17 @@
 ** Return true if the floating point value is Not a Number.
 */
 int sqlite3IsNaN(double x){
-#if 0
-  /* This reportedly fails when compiled with -ffinite-math-only */
+  /* This NaN test sometimes fails if compiled on GCC with -ffast-math.
+  ** On the other hand, the use of -ffast-math comes with the following
+  ** warning:
+  **
+  **      This option [-ffast-math] should never be turned on by any
+  **      -O option since it can result in incorrect output for programs
+  **      which depend on an exact implementation of IEEE or ISO 
+  **      rules/specifications for math functions.
+  */
   volatile double y = x;
   return x!=y;
-#endif
-  /* We have to look at bit patterns to accurately determine NaN.
-  ** See ticket #3101 and
-  ** https://mail.mozilla.org/pipermail/tamarin-devel/2008-February/000325.html
-  */
-  sqlite3_uint64 y = *(sqlite3_uint64*)&x;
-  assert( sizeof(x)==sizeof(y) );
-  y &= (((sqlite3_uint64)0x80000000)<<32)-1;
-  return y > (((sqlite3_uint64)0x7ff00000)<<32);
 }
 
 /*
