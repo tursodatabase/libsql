@@ -1,5 +1,5 @@
-C Fix\sleaked\sfilename\sin\scase\sDosOpen()\sfails.\s(CVS\s5115)
-D 2008-05-09T19:38:24
+C New\stest\scases\sto\sverify\sthat\sSQLite\shandles\sbound\sNaN,\s+Inf,\sand\s-Inf\nfloating\spoint\svalues\scorrectly.\s\sImprovements\sto\sthe\stext->real\sconversion\nroutine\sso\sthat\sit\sgenerates\s+Inf\sand\s-Inf\sat\sappropriate\stimes.\nTickets\s#3101\sand\s#3060.\s(CVS\s5116)
+D 2008-05-11T11:07:07
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -130,13 +130,13 @@ F src/printf.c 77c192ccc81117d68b21b449cd33396357aa266d
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c da43ce3080112aa77863e9c570c1df19a892acb8
 F src/shell.c 668ad976716982eb658019eda489b6f55131dbe7
-F src/sqlite.h.in abb785d2afcf45bb9344fe6edc1c7b428e1b719f
+F src/sqlite.h.in bf986db272eebf11be5c2d49b187a0f9562e2ee4
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h c38fad42820bd3a68cdb185edbea9aff8bf5c18b
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 46ccf9b7892a86f57420ae7bac69ecd5e72d26b5
 F src/tclsqlite.c c57e740e30bd6dda678796eed62c7f0e64689834
-F src/test1.c 09062b31b89e3a74dd0a33d2af729b47678976f2
+F src/test1.c 86b31ca06489ed08687e460bf155c6b17958f83a
 F src/test2.c f0808cc643528b9620e4059ca9bda8346f526121
 F src/test3.c f5328839e29631ed9eef8674994ad7341b2de59b
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -165,7 +165,7 @@ F src/tokenize.c 8d77af8584cf027dc21375f0efa5818cb303c995
 F src/trigger.c 9bd3b6fa0beff4a02d262c96466f752ec15a7fc3
 F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
-F src/util.c 99e0f11500f5a11f4ec7c60b52f34bd0ff622cea
+F src/util.c 4f0125fa1ba77be12e30e1b234352fc1b5abfe00
 F src/vacuum.c c3b2b70677f874102b8753bf494c232e777f3998
 F src/vdbe.c 56c11eb1493296ef6da5bbc049e77b795824bdc7
 F src/vdbe.h f4bb70962d9c13e0f65b215c90e8acea1ae6e8ee
@@ -398,7 +398,7 @@ F test/misc5.test 0b68dcb630d44af2dbcdca94dd2b17c8d580f6fa
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 26e0d948a413bca61ed031159907a03d64647409
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/nan.test c2a4562a3cbd5c78eb0592e08495bfdef077a76e
+F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/onefile.test 5af2867a8097cea08f15de5382b8d57d1219d8e3
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P bf45a3ab7a295dcc399bdcf27965f1684b0a33b8
-R 57da237ef91fecaf24c595d9efd8c265
-U pweilbacher
-Z 0e3f04d9bb50f18e2eb4ea17dbbe751e
+P ecc6c739064922937ce66339f74403a0346aeedd
+R b636f115ca9e3f31cdc91f25e88091d1
+U drh
+Z 25e0008b9bf09460cd85318ac588b5de

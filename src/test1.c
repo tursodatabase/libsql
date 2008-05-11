@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.301 2008/05/05 11:33:48 danielk1977 Exp $
+** $Id: test1.c,v 1.302 2008/05/11 11:07:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2614,6 +2614,24 @@ static int test_bind_double(
   int idx;
   double value;
   int rc;
+  const char *zVal;
+  int i;
+  static const struct {
+    const char *zName;     /* Name of the special floating point value */
+    unsigned int iUpper;   /* Upper 32 bits */
+    unsigned int iLower;   /* Lower 32 bits */
+  } aSpecialFp[] = {
+    {  "NaN",      0x7fffffff, 0xffffffff },
+    {  "SNaN",     0x7ff7ffff, 0xffffffff },
+    {  "-NaN",     0xffffffff, 0xffffffff },
+    {  "-SNaN",    0xfff7ffff, 0xffffffff },
+    {  "+Inf",     0x7ff00000, 0x00000000 },
+    {  "-Inf",     0xfff00000, 0x00000000 },
+    {  "Epsilon",  0x00000000, 0x00000001 },
+    {  "-Epsilon", 0x80000000, 0x00000001 },
+    {  "NaN0",     0x7ff80000, 0x00000000 },
+    {  "-NaN0",    0xfff80000, 0x00000000 },
+  };
 
   if( objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -2629,12 +2647,19 @@ static int test_bind_double(
   ** Tcl_GetDoubleFromObj() should understand "NaN" but some versions
   ** contain a bug.
   */
-  if( strcmp(Tcl_GetString(objv[3]), "NaN")==0 ){
-    sqlite3_int64 i;
-    i = 0xfff80000;
-    i <<= 32;
-    value = *(double*)(char*)&i;
-  }else if( Tcl_GetDoubleFromObj(interp, objv[3], &value) ){
+  zVal = Tcl_GetString(objv[3]);
+  for(i=0; i<sizeof(aSpecialFp)/sizeof(aSpecialFp[0]); i++){
+    if( strcmp(aSpecialFp[i].zName, zVal)==0 ){
+      sqlite3_uint64 x;
+      x = aSpecialFp[i].iUpper;
+      x <<= 32;
+      x |= aSpecialFp[i].iLower;
+      value = *(double*)(char*)&x;
+      break;
+    }
+  }
+  if( i>=sizeof(aSpecialFp)/sizeof(aSpecialFp[0]) &&
+         Tcl_GetDoubleFromObj(interp, objv[3], &value) ){
     return TCL_ERROR;
   }
   rc = sqlite3_bind_double(pStmt, idx, value);
