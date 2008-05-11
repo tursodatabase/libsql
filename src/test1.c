@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.302 2008/05/11 11:07:07 drh Exp $
+** $Id: test1.c,v 1.303 2008/05/11 17:22:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2654,7 +2654,9 @@ static int test_bind_double(
       x = aSpecialFp[i].iUpper;
       x <<= 32;
       x |= aSpecialFp[i].iLower;
-      value = *(double*)(char*)&x;
+      assert( sizeof(value)==8 );
+      assert( sizeof(x)==8 );
+      memcpy(&value, &x, 8);
       break;
     }
   }

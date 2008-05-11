@@ -1,5 +1,5 @@
-C New\stest\scases\sto\sverify\sthat\sSQLite\shandles\sbound\sNaN,\s+Inf,\sand\s-Inf\nfloating\spoint\svalues\scorrectly.\s\sImprovements\sto\sthe\stext->real\sconversion\nroutine\sso\sthat\sit\sgenerates\s+Inf\sand\s-Inf\sat\sappropriate\stimes.\nTickets\s#3101\sand\s#3060.\s(CVS\s5116)
-D 2008-05-11T11:07:07
+C Use\smemcpy()\sinstead\sof\scasting\sto\scopy\sthe\scontent\sof\sa\slong\slong\sint\ninto\sa\sdouble.\s\sTicket\s#3101.\s(CVS\s5117)
+D 2008-05-11T17:22:01
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -136,7 +136,7 @@ F src/sqliteInt.h c38fad42820bd3a68cdb185edbea9aff8bf5c18b
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 46ccf9b7892a86f57420ae7bac69ecd5e72d26b5
 F src/tclsqlite.c c57e740e30bd6dda678796eed62c7f0e64689834
-F src/test1.c 86b31ca06489ed08687e460bf155c6b17958f83a
+F src/test1.c 168e78680b5b946378855042d30606015aa46fff
 F src/test2.c f0808cc643528b9620e4059ca9bda8346f526121
 F src/test3.c f5328839e29631ed9eef8674994ad7341b2de59b
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ecc6c739064922937ce66339f74403a0346aeedd
-R b636f115ca9e3f31cdc91f25e88091d1
+P 3ff2f1cdc9c57bca56de6cdc0ad5edc95b0606a0
+R 12312cbf44238ab6dcfab2629f94e5ab
 U drh
-Z 25e0008b9bf09460cd85318ac588b5de
+Z 06010fb56a627a08f69a7c44cb148169
