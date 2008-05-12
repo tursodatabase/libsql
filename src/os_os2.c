@@ -150,7 +150,7 @@ int os2Write(
   }
   assert( amt>0 );
   while( amt > 0 &&
-         ( rc = DosWrite( pFile->h, (PVOID)pBuf, amt, &wrote ) ) != NO_ERROR &&
+         ( rc = DosWrite( pFile->h, (PVOID)pBuf, amt, &wrote ) ) == NO_ERROR &&
          wrote > 0
   ){
     amt -= wrote;
