@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.122 2008/05/12 07:42:20 danielk1977 Exp $
+# $Id: tester.tcl,v 1.123 2008/05/12 10:57:02 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -702,6 +702,9 @@ proc do_ioerr_test {testname args} {
       #
       expr { ($s && !$r && !$q) || (!$s && $r && $q) }
     } {1}
+
+    set ::sqlite_io_error_hit 0
+    set ::sqlite_io_error_pending 0
 
     # Check that no page references were leaked. There should be 
     # a single reference if there is still an active transaction, 
