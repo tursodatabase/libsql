@@ -67,6 +67,8 @@ struct os2File {
   unsigned char locktype;   /* Type of lock currently held on this file */
 };
 
+#define LOCK_TIMEOUT 10L /* the default locking timeout */
+
 /*****************************************************************************
 ** The next group of routines implement the I/O methods specified
 ** by the sqlite3_io_methods object.
@@ -225,7 +227,7 @@ static int getReadLock( os2File *pFile ){
   LockArea.lRange = SHARED_SIZE;
   UnlockArea.lOffset = 0L;
   UnlockArea.lRange = 0L;
-  res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 1L );
+  res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 1L );
   OSTRACE3( "GETREADLOCK %d res=%d\n", pFile->h, res );
   return res;
 }
@@ -243,7 +245,7 @@ static int unlockReadLock( os2File *id ){
   LockArea.lRange = 0L;
   UnlockArea.lOffset = SHARED_FIRST;
   UnlockArea.lRange = SHARED_SIZE;
-  res = DosSetFileLocks( id->h, &UnlockArea, &LockArea, 2000L, 1L );
+  res = DosSetFileLocks( id->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 1L );
   OSTRACE3( "UNLOCK-READLOCK file handle=%d res=%d?\n", id->h, res );
   return res;
 }
@@ -310,23 +312,14 @@ int os2Lock( sqlite3_file *id, int locktype ){
   if( pFile->locktype==NO_LOCK
       || (locktype==EXCLUSIVE_LOCK && pFile->locktype==RESERVED_LOCK)
   ){
-    int cnt = 3;
-
     LockArea.lOffset = PENDING_BYTE;
     LockArea.lRange = 1L;
     UnlockArea.lOffset = 0L;
     UnlockArea.lRange = 0L;
 
-    while( cnt-->0 && ( res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 0L ) )
-                      != NO_ERROR
-    ){
-      /* Try 3 times to get the pending lock.  The pending lock might be
-      ** held by another reader process who will release it momentarily.
-      */
-      OSTRACE2( "LOCK could not get a PENDING lock. cnt=%d\n", cnt );
-      DosSleep(1);
-    }
-    if( res == NO_ERROR){
+    /* wait longer than LOCK_TIMEOUT here not to have to try multiple times */
+    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 100L, 0L );
+    if( res == NO_ERROR ){
       gotPendingLock = 1;
       OSTRACE3( "LOCK %d pending lock boolean set.  res=%d\n", pFile->h, res );
     }
@@ -351,7 +344,7 @@ int os2Lock( sqlite3_file *id, int locktype ){
     LockArea.lRange = 1L;
     UnlockArea.lOffset = 0L;
     UnlockArea.lRange = 0L;
-    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 0L );
+    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
     if( res == NO_ERROR ){
       newLocktype = RESERVED_LOCK;
     }
@@ -376,7 +369,7 @@ int os2Lock( sqlite3_file *id, int locktype ){
     LockArea.lRange = SHARED_SIZE;
     UnlockArea.lOffset = 0L;
     UnlockArea.lRange = 0L;
-    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 0L );
+    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
     if( res == NO_ERROR ){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
@@ -395,7 +388,7 @@ int os2Lock( sqlite3_file *id, int locktype ){
     LockArea.lRange = 0L;
     UnlockArea.lOffset = PENDING_BYTE;
     UnlockArea.lRange = 1L;
-    r = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 0L );
+    r = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
     OSTRACE3( "LOCK %d unlocking pending/is shared. r=%d\n", pFile->h, r );
   }
 
@@ -436,7 +429,7 @@ int os2CheckReservedLock( sqlite3_file *id ){
     LockArea.lRange = 1L;
     UnlockArea.lOffset = 0L;
     UnlockArea.lRange = 0L;
-    rc = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 0L );
+    rc = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
     OSTRACE3( "TEST WR-LOCK %d lock reserved byte rc=%d\n", pFile->h, rc );
     if( rc == NO_ERROR ){
       APIRET rcu = NO_ERROR; /* return code for unlocking */
@@ -444,7 +437,7 @@ int os2CheckReservedLock( sqlite3_file *id ){
       LockArea.lRange = 0L;
       UnlockArea.lOffset = RESERVED_BYTE;
       UnlockArea.lRange = 1L;
-      rcu = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 0L );
+      rcu = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
       OSTRACE3( "TEST WR-LOCK %d unlock reserved byte r=%d\n", pFile->h, rcu );
     }
     r = !(rc == NO_ERROR);
@@ -482,7 +475,7 @@ int os2Unlock( sqlite3_file *id, int locktype ){
     LockArea.lRange = 0L;
     UnlockArea.lOffset = SHARED_FIRST;
     UnlockArea.lRange = SHARED_SIZE;
-    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 0L );
+    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
     OSTRACE3( "UNLOCK %d exclusive lock res=%d\n", pFile->h, res );
     if( locktype==SHARED_LOCK && getReadLock(pFile) != NO_ERROR ){
       /* This should never happen.  We should always be able to
@@ -496,7 +489,7 @@ int os2Unlock( sqlite3_file *id, int locktype ){
     LockArea.lRange = 0L;
     UnlockArea.lOffset = RESERVED_BYTE;
     UnlockArea.lRange = 1L;
-    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 0L );
+    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
     OSTRACE3( "UNLOCK %d reserved res=%d\n", pFile->h, res );
   }
   if( locktype==NO_LOCK && type>=SHARED_LOCK ){
@@ -508,7 +501,7 @@ int os2Unlock( sqlite3_file *id, int locktype ){
     LockArea.lRange = 0L;
     UnlockArea.lOffset = PENDING_BYTE;
     UnlockArea.lRange = 1L;
-    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, 2000L, 0L );
+    res = DosSetFileLocks( pFile->h, &UnlockArea, &LockArea, LOCK_TIMEOUT, 0L );
     OSTRACE3( "UNLOCK %d pending res=%d\n", pFile->h, res );
   }
   pFile->locktype = locktype;
