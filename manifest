@@ -1,5 +1,5 @@
-C Use\smemcpy()\sinstead\sof\scasting\sto\scopy\sthe\scontent\sof\sa\slong\slong\sint\ninto\sa\sdouble.\s\sTicket\s#3101.\s(CVS\s5117)
-D 2008-05-11T17:22:01
+C Correctly\stest\sDosWrite()\sfor\sfailure\sreturn\scode\s(CVS\s5118)
+D 2008-05-12T00:29:42
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -118,7 +118,7 @@ F src/mutex_w32.c 133698096a2c4e81cd11ea6f4de7891c66f7b9f7
 F src/os.c f9708b7ebd902fe6969fee5660a71d50e0244cad
 F src/os.h 2ee8b0dec88f946c5371919ffa0f2fe4ac0de2e6
 F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
-F src/os_os2.c 0965c36db94c64088985a3debbf8463bd5aa05d8
+F src/os_os2.c 6811c0b4ef1534490ab5d09d6e4ea4e62487e45e
 F src/os_unix.c a810e2aefdaddacf479407f76f8f4ca381d231b2
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/pager.c c4e0bcb1f451d2b8601e1cf50e680d88bf175055
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 3ff2f1cdc9c57bca56de6cdc0ad5edc95b0606a0
-R 12312cbf44238ab6dcfab2629f94e5ab
-U drh
-Z 06010fb56a627a08f69a7c44cb148169
+P 88e12caca99d1d54cfe6228cb0de1eccc93fcc74
+R 0360d4f06e822f82395b4d67a9df1b75
+U pweilbacher
+Z 0843eb395ea9d368c5a3784f071575b2
