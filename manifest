@@ -1,5 +1,5 @@
-C Temporarily\sdisable\sextended\sIO\serror\scode\stests.\s(CVS\s5123)
-D 2008-05-12T12:41:15
+C Add\s"b"\sto\sfopen()\sin\sthe\shexio\stests\sso\sthat\sextra\scarriage\sreturns\sare\nnot\sinserted\son\swin32\sand\sOS/2.\s\sTest\sharness\schange\sonly\s-\sno\schanges\nto\sthe\score\sSQLite\scode.\s(CVS\s5124)
+D 2008-05-12T16:17:42
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -151,7 +151,7 @@ F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c b910754c5ba311abf149457cdbfd66144e715b35
 F src/test_devsym.c cee1aecaa90c895030399ca4ae38f84a08038f8a
 F src/test_func.c f4aafa10f17d52c43a64b47717265802e6e552b3
-F src/test_hexio.c 1a1cd8324d57585ea86b922f609fa1fbaaf9662d
+F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c c92a65e8f9b31bb2b332448d92d2016c000a963d
 F src/test_md5.c bca40b727c57462ddb415e57c5323445a1bb1a40
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 4d397f57c4446b18c5c6faf728d315495e4abf6e
-R 1c556d4a9c0199169dcb05dd36c94f41
-U danielk1977
-Z 241d5f247fc9377c219ce3169426d249
+P f204df3c3161ebe4f2c581715d708d0f35635c08
+R 8b9e27eafa1c023546360b6979e7421a
+U drh
+Z dcccd95cc4ae97b1d904c2ea71894790
