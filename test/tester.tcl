@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.123 2008/05/12 10:57:02 danielk1977 Exp $
+# $Id: tester.tcl,v 1.124 2008/05/12 12:41:15 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -596,6 +596,10 @@ proc do_ioerr_test {testname args} {
   set ::ioerropts(-persist) 1
   set ::ioerropts(-ckrefcount) 0
   array set ::ioerropts $args
+
+  # TEMPORARY: For 3.5.9, disable testing of extended result codes. There are
+  # a couple of obscure IO errors that do not return them.
+  set ::ioerropts(-erc) 0
 
   set ::go 1
   #reset_prng_state

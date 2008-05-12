@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sdocumentation\sof\ssqlite3_step().\s\sTicket\s#3110.\s(CVS\s5122)
-D 2008-05-12T12:39:56
+C Temporarily\sdisable\sextended\sIO\serror\scode\stests.\s(CVS\s5123)
+D 2008-05-12T12:41:15
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -458,7 +458,7 @@ F test/tableapi.test 791f7e3891d9b70bdb43b311694bf5e9befcbc34
 F test/tclsqlite.test 3dfb48f46de4353376fad835390b493ba066b4dc
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl 0b13284e4348c7605037a8a5ac5e44578012e05c
+F test/tester.tcl 1b88f471872326a2458ca1cc97a743582afcd1ba
 F test/thread001.test 8fbd9559da0bbdc273e00318c7fd66c162020af7
 F test/thread002.test 2c4ad2c386f60f6fe268cd91c769ee35b3c1fd0b
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f532692ec91b40fc002af925d2ab8382e3c3b2ca
-R 8fd89c706d46f78c623e9f9ad754a613
-U drh
-Z c21143371c5082c1432bc00be226f2c5
+P 4d397f57c4446b18c5c6faf728d315495e4abf6e
+R 1c556d4a9c0199169dcb05dd36c94f41
+U danielk1977
+Z 241d5f247fc9377c219ce3169426d249
