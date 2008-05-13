@@ -1,7 +1,7 @@
-C check\sthat\sDosWrite()\swas\ssuccessful\sbefore\strying\sagain\s(CVS\s5125)
-D 2008-05-12T16:56:14
+C Update\sthe\sautoconf\smakefile\sso\sthat\sit\sincludes\s-lpthread.\s(CVS\s5126)
+D 2008-05-13T00:57:21
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in 8b9b8263852f0217157f9042b8e3dae7427ec739
+F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 0993b4f2f08c496fab78af42928b6dc745f8a2e1
@@ -17,7 +17,7 @@ F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 7940ca68451e949b9b4c83814a7c719721eea6e1
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure e1ecb9e25edbd0ab2b46adb9905e2ed69c9fb8f9 x
+F configure 26628e967aafe0ff04cf967abc1f38b648093ff1 x
 F configure.ac d106f5114a042ffbd43db0537ca22aa6c4c6dd4d
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 68cbc6b45c98ebaeca74e1ff5acc3ff7e34f45e9
-R 156e3cd5515763b68ef15555dd9e1ead
-U pweilbacher
-Z c0d1dbf3d433f92440a17e805f99b443
+P 1ef6458bee4f0f77ded7c532f196d4c876ec9649
+R 6bb9b9e6e50b2404494aa49e43c39203
+U drh
+Z 1612b303b063a083731b1dcfef60bbe6

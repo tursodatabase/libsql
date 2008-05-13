@@ -666,9 +666,10 @@ tclsqlite3$(TEXE):	tclsqlite-shell.lo libsqlite3.la
 		 libsqlite3.la $(LIBTCL)
 
 testfixture$(TEXE):	$(TESTFIXTURE_SRC)
-	$(LTLINK) -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
+	$(LTLINK) -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_NO_SYNC=1\
+		-DSQLITE_CRASH_TEST=1 \
                 -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE $(TEMP_STORE) \
-		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL)
+		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
 
 
 fulltest:	testfixture$(TEXE) sqlite3$(TEXE)
