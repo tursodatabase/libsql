@@ -1,5 +1,5 @@
-C Do\sa\sslow-path\sin\sGetVarint32()\sfor\svarints\sthat\sdo\snot\sfit\sin\s32\sbits.\nThis\swill\sonly\shappen\swhen\strying\sto\sinterpret\sa\scorrupt\sdatabase\sfile\nso\sspeed\sis\snot\scritical.\s(CVS\s5129)
-D 2008-05-13T16:41:50
+C On\sinstruction\sfrom\sDRH,\sonly\sdo\smalloc\sfailure\stests\sfor\sO/S\sops\son\snon-Windows\ssystems.\s\sBetter\stest\sfixture\scode\swill\sbe\sintroduced\sin\s3.6.0\sto\sadd\sthis\scoverage\sback\sin\sfor\sWindows.\s(CVS\s5130)
+D 2008-05-13T19:41:54
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 2911ea96955ab6cba734cc4ad903fe76f834b39e
 F src/mutex_unix.c 466d20378a0645fea64c3f2e2669c33b7802df56
 F src/mutex_w32.c 133698096a2c4e81cd11ea6f4de7891c66f7b9f7
-F src/os.c f9708b7ebd902fe6969fee5660a71d50e0244cad
+F src/os.c 10ec39461c53ded815d22f16f4bb0920c5561091
 F src/os.h 2ee8b0dec88f946c5371919ffa0f2fe4ac0de2e6
 F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 0c3a5802bc4fdb7cb5f66771552b081c4e48a216
@@ -368,7 +368,7 @@ F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/main.test 82c222989e02ea09abd58d453828ffd71806b6bf
 F test/malloc.test fa208f99ed283b131ace2903f052375ab480de1a
 F test/malloc2.test 6f2abc0617a7df210381272681d598488a3bf943
-F test/malloc3.test b0bc1427574358f715e8d4379e16642089996703
+F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 1a68e56e513eab54d8c4cd1b769ff1d14e3f99f4
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a9d1d931358637a6f039723a053098f65530de4b
-R 435a83bf622f2e0c536254ba212845bb
-U drh
-Z da1263aed0eae79af41ab62d5e5b89fb
+P 6a6b9437367b66c3b6f710cf3abbdb9841765b21
+R c25ac8c50b83839e3cddbf23a801f9cb
+U shane
+Z 73678a053712b45b6a3efa873fe95580
