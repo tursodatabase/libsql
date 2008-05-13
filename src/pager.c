@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.445 2008/05/13 00:58:18 drh Exp $
+** @(#) $Id: pager.c,v 1.446 2008/05/13 13:27:34 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -688,9 +688,9 @@ static void pager_resize_hash_table(Pager *pPager, int N){
   if( N==pPager->nHash ) return;
 #endif
   pagerLeave(pPager);
-  sqlite3FaultBenign(SQLITE_FAULTINJECTOR_MALLOC, pPager->aHash!=0);
+  if( pPager->aHash!=0 ) sqlite3FaultBeginBenign(SQLITE_FAULTINJECTOR_MALLOC);
   aHash = sqlite3MallocZero( sizeof(aHash[0])*N );
-  sqlite3FaultBenign(SQLITE_FAULTINJECTOR_MALLOC, 0);
+  if( pPager->aHash!=0 ) sqlite3FaultEndBenign(SQLITE_FAULTINJECTOR_MALLOC);
   pagerEnter(pPager);
   if( aHash==0 ){
     /* Failure to rehash is not an error.  It is only a performance hit. */
@@ -1358,7 +1358,9 @@ static void pager_unlock(Pager *pPager){
 static void pagerUnlockAndRollback(Pager *p){
   /* assert( p->state>=PAGER_RESERVED || p->journalOpen==0 ); */
   if( p->errCode==SQLITE_OK && p->state>=PAGER_RESERVED ){
+    sqlite3FaultBeginBenign(-1);
     sqlite3PagerRollback(p);
+    sqlite3FaultEndBenign(-1);
   }
   pager_unlock(p);
 #if 0
@@ -2761,13 +2763,13 @@ int sqlite3PagerClose(Pager *pPager){
 #endif
 
   disable_simulated_io_errors();
-  sqlite3FaultBenign(-1, 1);
+  sqlite3FaultBeginBenign(-1);
   pPager->errCode = 0;
   pPager->exclusiveMode = 0;
   pager_reset(pPager);
   pagerUnlockAndRollback(pPager);
   enable_simulated_io_errors();
-  sqlite3FaultBenign(-1, 0);
+  sqlite3FaultEndBenign(-1);
   PAGERTRACE2("CLOSE %d\n", PAGERID(pPager));
   IOTRACE(("CLOSE %p\n", pPager))
   if( pPager->journalOpen ){

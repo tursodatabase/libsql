@@ -42,7 +42,7 @@ static struct FaultInjector {
   int nBenign;      /* Number of benign failures seen since last config */
   int nFail;        /* Number of failures seen since last config */
   u8 enable;        /* True if enabled */
-  u8 benign;        /* True if next failure will be benign */
+  i16 benign;       /* Positive if next failure will be benign */
 } aFault[SQLITE_FAULTINJECTOR_COUNT];
 
 /*
@@ -104,14 +104,26 @@ int sqlite3FaultPending(int id){
 ** will continue to function normally.  So a malloc failure during
 ** a hash table resize is a benign fault.  
 */
-void sqlite3FaultBenign(int id, int enable){
+void sqlite3FaultBeginBenign(int id){
   if( id<0 ){
     for(id=0; id<SQLITE_FAULTINJECTOR_COUNT; id++){
-      aFault[id].benign = enable;
+      aFault[id].benign++;
     }
   }else{
     assert( id>=0 && id<SQLITE_FAULTINJECTOR_COUNT );
-    aFault[id].benign = enable;
+    aFault[id].benign++;
+  }
+}
+void sqlite3FaultEndBenign(int id){
+  if( id<0 ){
+    for(id=0; id<SQLITE_FAULTINJECTOR_COUNT; id++){
+      assert( aFault[id].benign>0 );
+      aFault[id].benign--;
+    }
+  }else{
+    assert( id>=0 && id<SQLITE_FAULTINJECTOR_COUNT );
+    assert( aFault[id].benign>0 );
+    aFault[id].benign--;
   }
 }
 
@@ -140,7 +152,7 @@ int sqlite3FaultStep(int id){
   }
   sqlite3Fault();
   aFault[id].nFail++;
-  if( aFault[id].benign ){
+  if( aFault[id].benign>0 ){
     aFault[id].nBenign++;
   }
   aFault[id].nRepeat--;

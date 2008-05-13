@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.21 2008/05/13 00:58:18 drh Exp $
+# $Id: malloc3.test,v 1.22 2008/05/13 13:27:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -586,7 +586,7 @@ if {$iterid=="pc=4.iFail=44-sql"} breakpoint
             # Otherwise a malloc() failed and the error was not reported.
             # 
             if {$nFail!=$nBenign} {
-#              error "Unreported malloc() failure"
+              error "Unreported malloc() failure"
             }
 
             if {$ac && !$nac} {

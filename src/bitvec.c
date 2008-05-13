@@ -32,7 +32,7 @@
 ** start of a transaction, and is thus usually less than a few thousand,
 ** but can be as large as 2 billion for a really big database.
 **
-** @(#) $Id: bitvec.c,v 1.4 2008/04/14 01:00:58 drh Exp $
+** @(#) $Id: bitvec.c,v 1.5 2008/05/13 13:27:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -140,9 +140,9 @@ int sqlite3BitvecSet(Bitvec *p, u32 i){
     u32 bin = (i-1)/p->iDivisor;
     i = (i-1)%p->iDivisor + 1;
     if( p->u.apSub[bin]==0 ){
-      sqlite3FaultBenign(SQLITE_FAULTINJECTOR_MALLOC, 1);
+      sqlite3FaultBeginBenign(SQLITE_FAULTINJECTOR_MALLOC);
       p->u.apSub[bin] = sqlite3BitvecCreate( p->iDivisor );
-      sqlite3FaultBenign(SQLITE_FAULTINJECTOR_MALLOC, 0);
+      sqlite3FaultEndBenign(SQLITE_FAULTINJECTOR_MALLOC);
       if( p->u.apSub[bin]==0 ) return SQLITE_NOMEM;
     }
     return sqlite3BitvecSet(p->u.apSub[bin], i);
