@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.444 2008/05/09 16:57:51 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.445 2008/05/13 00:58:18 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -351,6 +351,7 @@ struct Pager {
   u8 doNotSync;               /* Boolean. While true, do not spill the cache */
   u8 exclusiveMode;           /* Boolean. True if locking_mode==EXCLUSIVE */
   u8 journalMode;             /* On of the PAGER_JOURNALMODE_* values */
+  u8 dbModified;              /* True if there are any changes to the Db */
   u8 changeCountDone;         /* Set after incrementing the change-counter */
   u32 vfsFlags;               /* Flags for sqlite3_vfs.xOpen() */
   int errCode;                /* One of several kinds of errors */
@@ -1440,6 +1441,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
   pPager->needSync = 0;
   lruListSetFirstSynced(pPager);
   pPager->dbSize = -1;
+  pPager->dbModified = 0;
 
   return (rc==SQLITE_OK?rc2:rc);
 }
@@ -4058,10 +4060,11 @@ int sqlite3PagerBegin(DbPage *pPg, int exFlag){
       }
     }
   }else if( pPager->journalOpen && pPager->journalOff==0 ){
-    /* This happens when the pager was in exclusive-access mode last
+    /* This happens when the pager was in exclusive-access mode the last
     ** time a (read or write) transaction was successfully concluded
     ** by this connection. Instead of deleting the journal file it was 
-    ** kept open and truncated to 0 bytes.
+    ** kept open and either was truncated to 0 bytes or its header was
+    ** overwritten with zeros.
     */
     assert( pPager->nRec==0 );
     assert( pPager->origDbSize==0 );
@@ -4175,6 +4178,7 @@ static int pager_write(PgHdr *pPg){
   makeDirty(pPg);
   if( pPg->inJournal && (pageInStatement(pPg) || pPager->stmtInUse==0) ){
     pPager->dirtyCache = 1;
+    pPager->dbModified = 1;
   }else{
 
     /* If we get this far, it means that the page needs to be
@@ -4196,6 +4200,7 @@ static int pager_write(PgHdr *pPg){
       if( rc!=SQLITE_OK ) return rc;
     }
     pPager->dirtyCache = 1;
+    pPager->dbModified = 1;
   
     /* The transaction journal now exists and we have a RESERVED or an
     ** EXCLUSIVE lock on the main database file.  Write the current page to
@@ -4606,6 +4611,15 @@ int sqlite3PagerCommitPhaseOne(
 ){
   int rc = SQLITE_OK;
 
+  /* If no changes have been made, we can leave the transaction early.
+  */
+  if( pPager->dbModified==0 &&
+        (pPager->journalMode!=PAGER_JOURNALMODE_DELETE ||
+          pPager->exclusiveMode!=0) ){
+    assert( pPager->dirtyCache==0 || pPager->journalOpen==0 );
+    return SQLITE_OK;
+  }
+
   PAGERTRACE4("DATABASE SYNC: File=%s zMaster=%s nTrunc=%d\n", 
       pPager->zFilename, zMaster, nTrunc);
   pagerEnter(pPager);
@@ -4756,6 +4770,12 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   }
   if( pPager->state<PAGER_RESERVED ){
     return SQLITE_ERROR;
+  }
+  if( pPager->dbModified==0 &&
+        (pPager->journalMode!=PAGER_JOURNALMODE_DELETE ||
+          pPager->exclusiveMode!=0) ){
+    assert( pPager->dirtyCache==0 || pPager->journalOpen==0 );
+    return SQLITE_OK;
   }
   pagerEnter(pPager);
   PAGERTRACE2("COMMIT %d\n", PAGERID(pPager));
@@ -5174,6 +5194,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
 
   makeDirty(pPg);
   pPager->dirtyCache = 1;
+  pPager->dbModified = 1;
 
   if( needSyncPgno ){
     /* If needSyncPgno is non-zero, then the journal file needs to be 

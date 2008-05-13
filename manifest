@@ -1,5 +1,5 @@
-C Update\sthe\sautoconf\smakefile\sso\sthat\sit\sincludes\s-lpthread.\s(CVS\s5126)
-D 2008-05-13T00:57:21
+C Update\sthe\spager\sso\sthat\sit\sdoes\snot\stry\sto\scommit\sa\stransaction\sif\sthere\nhave\sbeen\sno\schanges\sto\sthe\sdatabase.\s(CVS\s5127)
+D 2008-05-13T00:58:18
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -121,7 +121,7 @@ F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 0c3a5802bc4fdb7cb5f66771552b081c4e48a216
 F src/os_unix.c a810e2aefdaddacf479407f76f8f4ca381d231b2
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
-F src/pager.c c4e0bcb1f451d2b8601e1cf50e680d88bf175055
+F src/pager.c 8c222e8a89390005bdf2f5800d118c0d48a47522
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -368,7 +368,7 @@ F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/main.test 82c222989e02ea09abd58d453828ffd71806b6bf
 F test/malloc.test fa208f99ed283b131ace2903f052375ab480de1a
 F test/malloc2.test 6f2abc0617a7df210381272681d598488a3bf943
-F test/malloc3.test c724bc1c5fe7b8686be0f56c181c7fa4515d7bd7
+F test/malloc3.test 9943abf6348413d37a24aaf9cea3b3b17d638892
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 1a68e56e513eab54d8c4cd1b769ff1d14e3f99f4
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 1ef6458bee4f0f77ded7c532f196d4c876ec9649
-R 6bb9b9e6e50b2404494aa49e43c39203
+P bd654ebdbe752b44f801726eea16f40aa27df920
+R 939b509f9ae1dcc4659bd81429c6ffa4
 U drh
-Z 1612b303b063a083731b1dcfef60bbe6
+Z 4c32af911b8a7565a24f7a57dac06542
