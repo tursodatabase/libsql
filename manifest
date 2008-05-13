@@ -1,5 +1,5 @@
-C Make\sthe\sbenign-fault\ssetting\srecursive.\s\sMake\sall\smalloc\sfailures\nduring\sa\srollback\sbenign\ssince\sthere\sis\snothing\swe\scan\sdo\sabout\sthem.\s(CVS\s5128)
-D 2008-05-13T13:27:34
+C Do\sa\sslow-path\sin\sGetVarint32()\sfor\svarints\sthat\sdo\snot\sfit\sin\s32\sbits.\nThis\swill\sonly\shappen\swhen\strying\sto\sinterpret\sa\scorrupt\sdatabase\sfile\nso\sspeed\sis\snot\scritical.\s(CVS\s5129)
+D 2008-05-13T16:41:50
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -165,7 +165,7 @@ F src/tokenize.c 8d77af8584cf027dc21375f0efa5818cb303c995
 F src/trigger.c 9bd3b6fa0beff4a02d262c96466f752ec15a7fc3
 F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
-F src/util.c 4f0125fa1ba77be12e30e1b234352fc1b5abfe00
+F src/util.c 28fb90e03f83b95f6e8b1978fb60953e6cef9e3a
 F src/vacuum.c c3b2b70677f874102b8753bf494c232e777f3998
 F src/vdbe.c 81035a619a605412a782c1f01ffeb924e08759da
 F src/vdbe.h f4bb70962d9c13e0f65b215c90e8acea1ae6e8ee
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f1ed3689239098e0630e8d61f52971bcdf2801b6
-R d7bb146d74af3e1e4d1db38ff35aa3b2
+P a9d1d931358637a6f039723a053098f65530de4b
+R 435a83bf622f2e0c536254ba212845bb
 U drh
-Z 71aaa427251ef7c78206e20cadcf791d
+Z da1263aed0eae79af41ab62d5e5b89fb

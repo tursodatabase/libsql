@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.228 2008/05/11 11:07:07 drh Exp $
+** $Id: util.c,v 1.229 2008/05/13 16:41:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -780,55 +780,20 @@ int sqlite3GetVarint32(const unsigned char *p, u32 *v){
     return 5;
   }
 
-  p++;
-  b = b<<14;
-  b |= *p;
-  // b: p1<<28 | p3<<14 | p5 (unmasked)
-  if (!(b&0x80))
+  /* We can only reach this point when reading a corrupt database
+  ** file.  In that case we are not in any hurry.  Use the (relatively
+  ** slow) general-purpose sqlite3GetVarint() routine to extract the
+  ** value. */
   {
-    b &= (0x7f<<28)|(0x7f<<14)|(0x7f);
-    a &= (0x7f<<28)|(0x7f<<14)|(0x7f);
-    a = a<<7;
-    *v = a | b;
-    return 6;
+    u64 v64;
+    int n;
+
+    p -= 4;
+    n = sqlite3GetVarint(p, &v64);
+    assert( n>5 && n<=9 );
+    *v = (u32)v64;
+    return n;
   }
-
-  p++;
-  a = a<<14;
-  a |= *p;
-  // a: p2<<28 | p4<<14 | p6 (unmasked)
-  if (!(a&0x80))
-  {
-    a &= (0x7f<<28)|(0x7f<<14)|(0x7f);
-    b &= (0x7f<<28)|(0x7f<<14)|(0x7f);
-    b = b<<7;
-    *v = a | b;
-    return 7;
-  }
-
-  p++;
-  b = b<<14;
-  b |= *p;
-  // b: p3<<28 | p5<<14 | p7 (unmasked)
-  if (!(b&0x80))
-  {
-    b &= (0x7f<<28)|(0x7f<<14)|(0x7f);
-    a &= (0x7f<<28)|(0x7f<<14)|(0x7f);
-    a = a<<7;
-    *v = a | b;
-    return 8;
-  }
-
-  p++;
-  a = a<<14;
-  a |= *p;
-  // a: p4<<28 | p6<<14 | p8 (unmasked)
-
-  a &= (0x7f<<28)|(0x7f<<14)|(0x7f);
-  b &= (0x7f<<28)|(0x7f<<14)|(0x7f);
-  b = b<<7;
-  *v = a | b;
-  return 9;
 }
 
 /*
