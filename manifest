@@ -1,5 +1,5 @@
-C On\sinstruction\sfrom\sDRH,\sonly\sdo\smalloc\sfailure\stests\sfor\sO/S\sops\son\snon-Windows\ssystems.\s\sBetter\stest\sfixture\scode\swill\sbe\sintroduced\sin\s3.6.0\sto\sadd\sthis\scoverage\sback\sin\sfor\sWindows.\s(CVS\s5130)
-D 2008-05-13T19:41:54
+C Version\s3.5.9\s(CVS\s5131)
+D 2008-05-14T16:18:11
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -634,7 +634,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 6a6b9437367b66c3b6f710cf3abbdb9841765b21
+P e4aab150042bd22868ab02645151cb69a1c02ba0
 R c25ac8c50b83839e3cddbf23a801f9cb
-U shane
-Z 73678a053712b45b6a3efa873fe95580
+U drh
+Z 5d9759a5b998826f7607e53c2a3b8fed
