@@ -1,5 +1,5 @@
-C Fix\sa\stest\sscript\sbug\s-\snot\sall\sdatabase\shandles\swere\sbeing\sclosed\sby\sioerr5.test.\s(CVS\s5133)
-D 2008-05-15T09:07:56
+C If\sa\spager\sis\salready\sin\sthe\serror-state\swhen\sCommitPhaseOne()\sis\scalled,\sexit\searly.\s(CVS\s5134)
+D 2008-05-15T11:08:08
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -121,7 +121,7 @@ F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 0c3a5802bc4fdb7cb5f66771552b081c4e48a216
 F src/os_unix.c a810e2aefdaddacf479407f76f8f4ca381d231b2
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
-F src/pager.c eae53a807a85e6f68454e42a1a81754abe4216e3
+F src/pager.c 43f5f67ff211ed0f40ccd9a96c079e811a9ac601
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -345,7 +345,7 @@ F test/ioerr.test 32cff40562447bda194ba67ad601170edbaed49b
 F test/ioerr2.test b9c9a0491a812707762a7c002876553be54d9969
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
-F test/ioerr5.test 3efdada539683af68f7630b83843b53ed45818f1
+F test/ioerr5.test f44e30b4780b879bcceb2601aabae40d8a0a0b56
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -635,7 +635,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 10ea8287d090ae610416b4754c0838f13b51fd78
-R d0ced0e9fffeaaa2b43426ebd729f2cc
+P 47652e7b169626e5f3d95f29e867a2e8f68c5025
+R d8f7609758174cb331cdc46a0cb952a9
 U danielk1977
-Z 0bd221f8c209aa798908237921045fbf
+Z 7ea980f7a54707b1517ab40c9892ab63

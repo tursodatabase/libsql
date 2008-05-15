@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.447 2008/05/15 08:34:54 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.448 2008/05/15 11:08:08 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4613,6 +4613,10 @@ int sqlite3PagerCommitPhaseOne(
   int noSync
 ){
   int rc = SQLITE_OK;
+
+  if( pPager->errCode ){
+    return pPager->errCode;
+  }
 
   /* If no changes have been made, we can leave the transaction early.
   */

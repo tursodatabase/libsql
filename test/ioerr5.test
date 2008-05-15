@@ -14,7 +14,7 @@
 # incorrectly write dirty pages out to the database (not safe to do
 # once the pager is in error state).
 #
-# $Id: ioerr5.test,v 1.2 2008/05/15 09:07:56 danielk1977 Exp $
+# $Id: ioerr5.test,v 1.3 2008/05/15 11:08:08 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -84,7 +84,7 @@ foreach locking_mode {normal exclusive} {
     set nRow [db one {SELECT count(*) FROM a}]
   
     # Dirty (at least) one of the pages in the cache.
-    do_test ioerr5-$locking_mode-$iFail.1 {
+    do_test ioerr5-1.$locking_mode-$iFail.1 {
       execsql {
         BEGIN EXCLUSIVE;
         INSERT INTO a VALUES(1, 'ABCDEFGHIJKLMNOP');
@@ -96,7 +96,7 @@ foreach locking_mode {normal exclusive} {
     #
     set ::sqlite_io_error_persist 1
     set ::sqlite_io_error_pending $iFail
-    do_test ioerr5-$locking_mode-$iFail.2 {
+    do_test ioerr5-1.$locking_mode-$iFail.2 {
       set rc [catchsql {COMMIT}]
       list
     } {}
@@ -116,7 +116,7 @@ foreach locking_mode {normal exclusive} {
     # from the pager that is in error state. Including that associated
     # with the dirty page.
     #
-    do_test ioerr5-$locking_mode-$iFail.3 {
+    do_test ioerr5-1.$locking_mode-$iFail.3 {
       sqlite3_soft_heap_limit 1024
       compilesql16 "SELECT 10"
       set bt [btree_from_db db]
@@ -127,7 +127,7 @@ foreach locking_mode {normal exclusive} {
     # Ensure that nothing was written to the database while reclaiming
     # memory from the pager in error state.
     #
-    do_test ioerr5-$locking_mode-$iFail.4 {
+    do_test ioerr5-1.$locking_mode-$iFail.4 {
       set fd [open test.db]
       fconfigure $fd -translation binary -encoding binary
       set zDatabase2 [read $fd]
@@ -136,9 +136,58 @@ foreach locking_mode {normal exclusive} {
     } {1}
   
     if {$rc eq [list 0 {}]} {
-      do_test ioerr5-$locking_mode-$iFail.3 {
+      do_test ioerr5.1-$locking_mode-$iFail.3 {
         execsql { SELECT count(*) FROM a }
       } [expr $nRow+1]
+      break
+    }
+  }
+}
+
+# Make sure this test script doesn't leave any files open.
+#
+do_test ioerr5-1.X {
+  catch { db close }
+  catch { db2 close }
+  set sqlite_open_file_count
+} 0
+
+do_test ioerr5-2.0 {
+  sqlite3 db test.db
+  execsql { CREATE INDEX i1 ON a(id, name); }
+} {}
+
+foreach locking_mode {exclusive normal} {
+  for {set iFail 1} {$iFail<200} {incr iFail} {
+    sqlite3_soft_heap_limit 1048576
+    opendatabases
+    execsql { pragma locking_mode=exclusive }
+    set nRow [db one {SELECT count(*) FROM a}]
+  
+    do_test ioerr5-2.$locking_mode-$iFail.1 {
+      execsql {
+        BEGIN EXCLUSIVE;
+        INSERT INTO a VALUES(1, 'ABCDEFGHIJKLMNOP');
+      }
+    } {}
+
+    set ::sqlite_io_error_persist 1
+    set ::sqlite_io_error_pending $iFail
+
+    sqlite3_release_memory 10000
+
+    set error_hit $::sqlite_io_error_hit
+    set ::sqlite_io_error_hit 0
+    set ::sqlite_io_error_persist 0
+    set ::sqlite_io_error_pending 0
+    if {$error_hit} {
+      do_test ioerr5-2.$locking_mode-$iFail.3a {
+        catchsql COMMIT
+      } {1 {disk I/O error}}
+    } else {
+      do_test ioerr5-2.$locking_mode-$iFail.3b {
+        execsql COMMIT
+      } {}
       break
     }
   }
