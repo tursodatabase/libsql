@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.59 2008/03/19 00:21:31 drh Exp $
+# $Id: pragma.test,v 1.60 2008/05/15 17:48:20 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -31,6 +31,7 @@ source $testdir/tester.tcl
 # pragma-9.*: Test temp_store and temp_store_directory.
 # pragma-10.*: Test the count_changes pragma in the presence of triggers.
 # pragma-11.*: Test the collation_list pragma.
+# pragma-14.*: Test the page_count pragma.
 #
 
 ifcapable !pragma {
@@ -1094,6 +1095,61 @@ do_test pragma-13.1 {
 } {}
 
 } ;# ifcapable bloblit 
+
+ifcapable pager_pragmas {
+  db close
+  file delete -force test.db
+  sqlite3 db test.db
+
+  do_test pragma-14.1 {
+    execsql { pragma auto_vacuum = 0 }
+    execsql { pragma page_count }
+  } {0}
+
+  do_test pragma-14.2 {
+    execsql { 
+      CREATE TABLE abc(a, b, c);
+      PRAGMA page_count;
+    }
+  } {2}
+
+  do_test pragma-14.3 {
+    execsql { 
+      BEGIN;
+      CREATE TABLE def(a, b, c);
+      PRAGMA page_count;
+    }
+  } {3}
+
+  do_test pragma-14.4 {
+    set page_size [db one {pragma page_size}]
+    expr [file size test.db] / $page_size
+  } {2}
+
+  do_test pragma-14.5 {
+    execsql {
+      ROLLBACK;
+      PRAGMA page_count;
+    }
+  } {2}
+
+  do_test pragma-14.6 {
+    file delete -force test2.db
+    sqlite3 db2 test2.db
+    execsql {
+      PRAGMA auto_vacuum = 0;
+      CREATE TABLE t1(a, b, c);
+      CREATE TABLE t2(a, b, c);
+      CREATE TABLE t3(a, b, c);
+      CREATE TABLE t4(a, b, c);
+    } db2
+    db2 close
+    execsql {
+      ATTACH 'test2.db' AS aux;
+      PRAGMA aux.page_count;
+    } 
+  } {5}
+}
 
 # Reset the sqlite3_temp_directory variable for the next run of tests:
 sqlite3 dbX :memory:

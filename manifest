@@ -1,5 +1,5 @@
-C If\sa\spager\sis\salready\sin\sthe\serror-state\swhen\sCommitPhaseOne()\sis\scalled,\sexit\searly.\s(CVS\s5134)
-D 2008-05-15T11:08:08
+C Add\sthe\s"page_count"\spragma.\sReturns\sa\ssingle\sinteger\s-\sthe\snumber\sof\spages\sin\sthe\sspecified\sdatabase\sfile.\s(CVS\s5135)
+D 2008-05-15T17:48:20
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -124,7 +124,7 @@ F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
 F src/pager.c 43f5f67ff211ed0f40ccd9a96c079e811a9ac601
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
-F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
+F src/pragma.c a4919a29a0923e00c6170b0677a50058e352b58c
 F src/prepare.c adc7e1fc08dfbab63cd213d4c0aff8f3fa70d477
 F src/printf.c 77c192ccc81117d68b21b449cd33396357aa266d
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
@@ -167,7 +167,7 @@ F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 28fb90e03f83b95f6e8b1978fb60953e6cef9e3a
 F src/vacuum.c c3b2b70677f874102b8753bf494c232e777f3998
-F src/vdbe.c 81035a619a605412a782c1f01ffeb924e08759da
+F src/vdbe.c 25a362a4fdd5ff2797db0e20a9cf4300e053891e
 F src/vdbe.h f4bb70962d9c13e0f65b215c90e8acea1ae6e8ee
 F src/vdbeInt.h 18aebaa7857de4507d92ced62d8fe0844671a681
 F src/vdbeapi.c 95ed14a59c509f98c64afba30cd18c3c8cf649cd
@@ -409,7 +409,7 @@ F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 6df72c441db0a037b7ec6990d16311c24fbea77b
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
-F test/pragma.test aec802c9599db3ec887b5fd96f0b08958129303e
+F test/pragma.test c3229f5f66a00807fa1d3cb8fd07d87c28c93e3e
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
@@ -635,7 +635,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 47652e7b169626e5f3d95f29e867a2e8f68c5025
-R d8f7609758174cb331cdc46a0cb952a9
+P 443cf1056c73ae89d0efcc7a462455c078b3a4a8
+R 96e9041aae6fa8722c29c429bd779ba8
 U danielk1977
-Z 7ea980f7a54707b1517ab40c9892ab63
+Z 5b148c1b18a27ad32a8908d4eed930da

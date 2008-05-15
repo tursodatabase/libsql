@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.740 2008/05/13 13:27:34 drh Exp $
+** $Id: vdbe.c,v 1.741 2008/05/15 17:48:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4807,6 +4807,27 @@ case OP_VUpdate: {
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef  SQLITE_OMIT_PAGER_PRAGMAS
+/* Opcode: Pagecount P1 P2 * * *
+**
+** Write the current number of pages in database P1 to memory cell P2.
+*/
+case OP_Pagecount: {            /* out2-prerelease */
+  int p1 = pOp->p1; 
+  int nPage;
+  Pager *pPager = sqlite3BtreePager(db->aDb[p1].pBt);
+
+  nPage = sqlite3PagerPagecount(pPager);
+  if( nPage<0 ){
+    rc = SQLITE_IOERR;
+  }else{
+    pOut->flags = MEM_Int;
+    pOut->u.i = nPage;
+  }
+  break;
+}
+#endif
 
 #ifndef SQLITE_OMIT_TRACE
 /* Opcode: Trace * * * P4 *

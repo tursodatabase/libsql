@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.176 2008/04/17 20:59:38 drh Exp $
+** $Id: pragma.c,v 1.177 2008/05/15 17:48:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -376,6 +376,24 @@ void sqlite3Pragma(
       newMax = sqlite3BtreeMaxPageCount(pBt, newMax);
     }
     returnSingleInt(pParse, "max_page_count", newMax);
+  }else
+
+  /*
+  **  PRAGMA [database.]page_count
+  **
+  ** Return the number of pages in the specified database.
+  */
+  if( sqlite3StrICmp(zLeft,"page_count")==0 ){
+    Vdbe *v;
+    int iReg;
+    v = sqlite3GetVdbe(pParse);
+    if( !v || sqlite3ReadSchema(pParse) ) goto pragma_out;
+    sqlite3CodeVerifySchema(pParse, iDb);
+    iReg = ++pParse->nMem;
+    sqlite3VdbeAddOp2(v, OP_Pagecount, iDb, iReg);
+    sqlite3VdbeAddOp2(v, OP_ResultRow, iReg, 1);
+    sqlite3VdbeSetNumCols(v, 1);
+    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "page_count", P4_STATIC);
   }else
 
   /*
