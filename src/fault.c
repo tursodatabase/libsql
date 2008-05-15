@@ -25,6 +25,8 @@
 ** from production builds.  But safety-critical systems who work
 ** under the motto "fly what you test and test what you fly" may
 ** choose to leave the fault injector enabled even in production.
+**
+** $Id: fault.c,v 1.6 2008/05/15 19:43:53 drh Exp $
 */
 #include "sqliteInt.h"
 

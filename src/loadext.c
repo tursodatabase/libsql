@@ -11,6 +11,8 @@
 *************************************************************************
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
+**
+** $Id: loadext.c,v 1.47 2008/05/15 19:43:53 drh Exp $
 */
 
 #ifndef SQLITE_CORE
