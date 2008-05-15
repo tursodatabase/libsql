@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.446 2008/05/13 13:27:34 drh Exp $
+** @(#) $Id: pager.c,v 1.447 2008/05/15 08:34:54 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2870,7 +2870,6 @@ static int syncJournal(Pager *pPager){
   PgHdr *pPg;
   int rc = SQLITE_OK;
 
-
   /* Sync the journal before modifying the main database
   ** (assuming there is a journal and it needs to be synced.)
   */
@@ -3182,25 +3181,27 @@ static int pager_recycle(Pager *pPager, PgHdr **ppPg){
   ** very slow operation, so we work hard to avoid it.  But sometimes
   ** it can't be helped.
   */
-  if( pPg==0 && pPager->lru.pFirst){
-    int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
-    int rc = syncJournal(pPager);
-    if( rc!=0 ){
-      return rc;
-    }
-    if( pPager->fullSync && 0==(iDc&SQLITE_IOCAP_SAFE_APPEND) ){
-      /* If in full-sync mode, write a new journal header into the
-      ** journal file. This is done to avoid ever modifying a journal
-      ** header that is involved in the rollback of pages that have
-      ** already been written to the database (in case the header is
-      ** trashed when the nRec field is updated).
-      */
-      pPager->nRec = 0;
-      assert( pPager->journalOff > 0 );
-      assert( pPager->doNotSync==0 );
-      rc = writeJournalHdr(pPager);
+  if( pPg==0 && pPager->lru.pFirst ){
+    if( !pPager->errCode ){
+      int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
+      int rc = syncJournal(pPager);
       if( rc!=0 ){
         return rc;
+      }
+      if( pPager->fullSync && 0==(iDc&SQLITE_IOCAP_SAFE_APPEND) ){
+        /* If in full-sync mode, write a new journal header into the
+        ** journal file. This is done to avoid ever modifying a journal
+        ** header that is involved in the rollback of pages that have
+        ** already been written to the database (in case the header is
+        ** trashed when the nRec field is updated).
+        */
+        pPager->nRec = 0;
+        assert( pPager->journalOff > 0 );
+        assert( pPager->doNotSync==0 );
+        rc = writeJournalHdr(pPager);
+        if( rc!=0 ){
+          return rc;
+        }
       }
     }
     pPg = pPager->lru.pFirst;
@@ -3210,7 +3211,7 @@ static int pager_recycle(Pager *pPager, PgHdr **ppPg){
 
   /* Write the page to the database file if it is dirty.
   */
-  if( pPg->dirty ){
+  if( pPg->dirty && !pPager->errCode ){
     int rc;
     assert( pPg->needSync==0 );
     makeClean(pPg);
@@ -3222,7 +3223,7 @@ static int pager_recycle(Pager *pPager, PgHdr **ppPg){
       return rc;
     }
   }
-  assert( pPg->dirty==0 );
+  assert( pPg->dirty==0 || pPager->errCode );
 
   /* If the page we are recycling is marked as alwaysRollback, then
   ** set the global alwaysRollback flag, thus disabling the
