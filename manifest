@@ -1,5 +1,5 @@
-C Do\snot\swrite\spages\sto\sdisk\sto\sfree\smemory\safter\san\sIO\serror\soccurs.\s(CVS\s5132)
-D 2008-05-15T08:34:54
+C Fix\sa\stest\sscript\sbug\s-\snot\sall\sdatabase\shandles\swere\sbeing\sclosed\sby\sioerr5.test.\s(CVS\s5133)
+D 2008-05-15T09:07:56
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -345,7 +345,7 @@ F test/ioerr.test 32cff40562447bda194ba67ad601170edbaed49b
 F test/ioerr2.test b9c9a0491a812707762a7c002876553be54d9969
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
-F test/ioerr5.test f3295451261feae164eb1cd210d7dd33969126a9
+F test/ioerr5.test 3efdada539683af68f7630b83843b53ed45818f1
 F test/join.test af0443185378b64878750aa1cf4b83c216f246b4
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -635,7 +635,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P b6129f4cc28f6ba55d19039545555b33857ffd72
-R 78624488c85c554a6f210fb3ce986d3b
+P 10ea8287d090ae610416b4754c0838f13b51fd78
+R d0ced0e9fffeaaa2b43426ebd729f2cc
 U danielk1977
-Z f06731727f080dbdbd1ab0290cb50f86
+Z 0bd221f8c209aa798908237921045fbf

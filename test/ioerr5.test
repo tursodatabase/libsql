@@ -14,7 +14,7 @@
 # incorrectly write dirty pages out to the database (not safe to do
 # once the pager is in error state).
 #
-# $Id: ioerr5.test,v 1.1 2008/05/15 08:34:54 danielk1977 Exp $
+# $Id: ioerr5.test,v 1.2 2008/05/15 09:07:56 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -143,6 +143,14 @@ foreach locking_mode {normal exclusive} {
     }
   }
 }
+
+# Make sure this test script doesn't leave any files open.
+#
+do_test ioerr5-2.X {
+  catch { db close }
+  catch { db2 close }
+  set sqlite_open_file_count
+} 0
 
 sqlite3_enable_shared_cache $::enable_shared_cache
 sqlite3_soft_heap_limit $::soft_limit
