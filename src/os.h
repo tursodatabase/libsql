@@ -16,6 +16,8 @@
 **
 ** This header file is #include-ed by sqliteInt.h and thus ends up
 ** being included by every source file.
+**
+** $Id: os.h,v 1.99 2008/05/16 04:51:55 danielk1977 Exp $
 */
 #ifndef _SQLITE_OS_H_
 #define _SQLITE_OS_H_

@@ -8,7 +8,9 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-*
+**
+**
+** $Id: trigger.c,v 1.126 2008/05/16 04:51:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 

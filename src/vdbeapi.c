@@ -12,6 +12,8 @@
 **
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
+**
+** $Id: vdbeapi.c,v 1.131 2008/05/16 04:51:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"

@@ -16,6 +16,8 @@
 **
 ** This file should be #included by the os_*.c files only.  It is not a
 ** general purpose header file.
+**
+** $Id: os_common.h,v 1.36 2008/05/16 04:51:55 danielk1977 Exp $
 */
 
 /*

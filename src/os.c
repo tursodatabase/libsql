@@ -12,6 +12,8 @@
 **
 ** This file contains OS interface code that is common to all
 ** architectures.
+**
+** $Id: os.c,v 1.108 2008/05/16 04:51:55 danielk1977 Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"

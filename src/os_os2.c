@@ -11,6 +11,8 @@
 ******************************************************************************
 **
 ** This file contains code that is specific to OS/2.
+**
+** $Id: os_os2.c,v 1.39 2008/05/16 04:51:55 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"

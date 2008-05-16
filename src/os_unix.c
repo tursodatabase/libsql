@@ -11,6 +11,8 @@
 ******************************************************************************
 **
 ** This file contains code that is specific to Unix systems.
+**
+** $Id: os_unix.c,v 1.182 2008/05/16 04:51:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if OS_UNIX              /* This file is used on unix only */

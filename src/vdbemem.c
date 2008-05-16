@@ -14,6 +14,8 @@
 ** stores a single value in the VDBE.  Mem is an opaque structure visible
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
+**
+** $Id: vdbemem.c,v 1.115 2008/05/16 04:51:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>

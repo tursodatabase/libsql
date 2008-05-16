@@ -5,6 +5,8 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
+** $Id: printf.c,v 1.85 2008/05/16 04:51:55 danielk1977 Exp $
+**
 **************************************************************************
 **
 ** The following modules is an enhanced replacement for the "printf" subroutines
