@@ -1,5 +1,5 @@
-C Check\sthat\sthe\sencoding\sof\svalues\spassed\sto\ssqlite3_bind_value()\smatches\sthat\sof\sthe\sdatabase.\s(CVS\s5138)
-D 2008-05-16T15:24:58
+C Disable\sthe\scolumn\scache\swhen\scoding\svalues\sthat\swill\sbe\spassed\sto\sthe\sxFilter()\smethod\sof\sa\svirtual\stable,\sin\scase\sthe\sxFilter()\simplementation\smodifies\sthe\stype\sor\sencoding\sof\sthe\svalue.\sTicket\s#3121.\s(CVS\s5139)
+D 2008-05-16T15:40:40
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -176,7 +176,7 @@ F src/vdbeblob.c 554736781ee273a8089c776e96bdb53e66f57ce6
 F src/vdbefifo.c 1644a41c6366ff25a920df4ca675f12d3f559687
 F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
 F src/vtab.c ce9d19ca9053812a557010fd4be7e842f8ebba2d
-F src/where.c 85719d58e0f680b5d8239dc6af82b159775d7376
+F src/where.c ef5bd7ad975de37acf2473ae9fa4a6d022a3b4ca
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d56a3ca8acdf761204aff0a2e7aa5eb8e11b31e6
@@ -505,6 +505,7 @@ F test/tkt2927.test a473c09eafa83d95579fc2b976f2afc11571ce7e
 F test/tkt2942.test c5c87d179799ca6d1fbe83c815510b87cd5ec7ce
 F test/tkt3080.test 31a02e87a4c80ed443831c2c5b0e8216ff95ac14
 F test/tkt3093.test fbdbc5b4969244ad11f540759003e361fcaf391f
+F test/tkt3121.test 9da9c57b75c9dbebae70eb19f458bbc616d04280
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -635,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 81a8c70ed7a86abf286706fdbc251f31c9c53382
-R 5a2937be27f27b7f1d54f93265dcfcc7
+P e94a2883060b9ef59809ff4de9525d897d95546c
+R d8ea57ad8afa02e143de5e2bb345621f
 U danielk1977
-Z 6154c558467833dfc32de2e7a9a5e6d2
+Z daf8d2ef2b1e508dc6f926c2aac99473
