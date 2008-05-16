@@ -1,5 +1,5 @@
-C Add\smore\sversion\stags\sto\sfiles\sthat\slack\sthem.\sTicket\s#3120.\s(CVS\s5137)
-D 2008-05-16T04:51:55
+C Check\sthat\sthe\sencoding\sof\svalues\spassed\sto\ssqlite3_bind_value()\smatches\sthat\sof\sthe\sdatabase.\s(CVS\s5138)
+D 2008-05-16T15:24:58
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -170,7 +170,7 @@ F src/vacuum.c c3b2b70677f874102b8753bf494c232e777f3998
 F src/vdbe.c 25a362a4fdd5ff2797db0e20a9cf4300e053891e
 F src/vdbe.h f4bb70962d9c13e0f65b215c90e8acea1ae6e8ee
 F src/vdbeInt.h ede1a31cfa74d4718f41da491bd1d2b3abc137fc
-F src/vdbeapi.c b72aba838b4c804c5e281fe73a6e149aad222149
+F src/vdbeapi.c 22b01ed175e4d4c613ee82cabc7a44a275641206
 F src/vdbeaux.c 7823f1db7f47cf70d86d1901e2030309e1cbfd02
 F src/vdbeblob.c 554736781ee273a8089c776e96bdb53e66f57ce6
 F src/vdbefifo.c 1644a41c6366ff25a920df4ca675f12d3f559687
@@ -635,7 +635,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P cf1fb2d850c3eebc2f92159a156695b61f023202
-R 73c1595d5382c5ce910da92366092d9f
+P 81a8c70ed7a86abf286706fdbc251f31c9c53382
+R 5a2937be27f27b7f1d54f93265dcfcc7
 U danielk1977
-Z 437f7b772d0e4f7109c2547854fc0773
+Z 6154c558467833dfc32de2e7a9a5e6d2
