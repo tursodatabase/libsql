@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.178 2008/05/05 16:27:24 drh Exp $
+** $Id: shell.c,v 1.179 2008/05/19 15:53:35 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1946,7 +1946,7 @@ int main(int argc, char **argv){
     }
   }
   if( i<argc ){
-#ifdef OS_OS2
+#if defined(OS_OS2) && OS_OS2
     data.zDbFilename = (const char *)convertCpPathToUtf8( argv[i++] );
 #else
     data.zDbFilename = argv[i++];

@@ -1,5 +1,5 @@
-C Added\stest\scases\sfor\scorrupt\s2-10\sbyte\sSerialTypeLen\svalues.\s(CVS\s5140)
-D 2008-05-19T15:37:10
+C In\sthe\sCLI,\shandle\sthe\scompilation\soption\s-DOS_OS2=0\scorrectly.\s(CVS\s5141)
+D 2008-05-19T15:53:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -129,7 +129,7 @@ F src/prepare.c adc7e1fc08dfbab63cd213d4c0aff8f3fa70d477
 F src/printf.c f2d4f6c5b0ec24b643e85fe60258adad8b1f6acc
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c da43ce3080112aa77863e9c570c1df19a892acb8
-F src/shell.c 668ad976716982eb658019eda489b6f55131dbe7
+F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
 F src/sqlite.h.in 5fafd7849e3e74625533144ce0ab9d495c0320da
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 70a2b0bf856bbdb86b10d994ea863f6591ab7144
@@ -636,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ecbc0d5deddc0ca0d1d2649e0134ee392266027e
-R 37a7c25321c7791c1c14cbcefeac56a4
-U shane
-Z 4ca6a78c8e149d07dae4e73975b338da
+P 97ed2dd1dc9d8e8f837914277c080160d319591b
+R 22a96c9f6a9a05eec3ea2d9122c497a4
+U drh
+Z 1ef1d4005a15344dec819eb5379b60a1
