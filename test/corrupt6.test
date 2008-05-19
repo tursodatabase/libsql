@@ -14,7 +14,7 @@
 # segfault if it sees a corrupt database file.  It specifically focuses
 # on corrupt SerialTypeLen values.
 #
-# $Id: corrupt6.test,v 1.1 2008/05/07 18:59:29 shane Exp $
+# $Id: corrupt6.test,v 1.2 2008/05/19 15:37:10 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -55,10 +55,10 @@ integrity_check corrupt6-1.4
 # SerialTypeLen = (len*2+12) = 60*2+12 = 132
 do_test corrupt6-1.5.1 {
   hexio_read test.db 1923 2
-} 8103      ;# First text field size if 81 03 == 131
+} 8103      ;# First text field size is 81 03 == 131
 do_test corrupt6-1.5.2 {
   hexio_read test.db 1987 2
-} 8103      ;# Second text field size if 81 03 == 131
+} 8103      ;# Second text field size is 81 03 == 131
 
 # Verify simple query results as expected.
 do_test corrupt6-1.6 {
@@ -139,5 +139,113 @@ do_test corrupt6-1.9.3 {
   }
 } [list 0 {varint32 varint32} ]
 integrity_check corrupt6-1.9.4
+
+# Adjust value of record 1 / field 1 SerialTypeLen and see if the
+# corruption is detected.
+# Set SerialTypeLen to FF 7F (2 bytes)
+do_test corrupt6-1.10.1 {
+  db close
+  hexio_write test.db 1923 FF7F
+  sqlite3 db test.db
+  catchsql {
+    SELECT substr(x,1,8) FROM t1
+  }
+} [list 1 {database disk image is malformed}]
+
+# Adjust value of record 1 / field 1 SerialTypeLen and see if the
+# corruption is detected.
+# Set SerialTypeLen to FF FF 7F (3 bytes)
+do_test corrupt6-1.10.2 {
+  db close
+  hexio_write test.db 1923 FFFF7F
+  sqlite3 db test.db
+  catchsql {
+    SELECT substr(x,1,8) FROM t1
+  }
+} [list 1 {database disk image is malformed}]
+
+# Adjust value of record 1 / field 1 SerialTypeLen and see if the
+# corruption is detected.
+# Set SerialTypeLen to FF FF FF 7F (4 bytes)
+do_test corrupt6-1.10.3 {
+  db close
+  hexio_write test.db 1923 FFFFFF7F
+  sqlite3 db test.db
+  catchsql {
+    SELECT substr(x,1,8) FROM t1
+  }
+} [list 1 {database disk image is malformed}]
+
+# Adjust value of record 1 / field 1 SerialTypeLen and see if the
+# corruption is detected.
+# Set SerialTypeLen to FF FF FF FF 7F (5 bytes)
+do_test corrupt6-1.10.4 {
+  db close
+  hexio_write test.db 1923 FFFFFFFF7F
+  sqlite3 db test.db
+  catchsql {
+    SELECT substr(x,1,8) FROM t1
+  }
+} [list 1 {database disk image is malformed}]
+
+# Adjust value of record 1 / field 1 SerialTypeLen and see if the
+# corruption is detected.
+# Set SerialTypeLen to FF FF FF FF FF 7F (6 bytes, and overflows).
+do_test corrupt6-1.10.5 {
+  db close
+  hexio_write test.db 1923 FFFFFFFFFF7F
+  sqlite3 db test.db
+  catchsql {
+    SELECT substr(x,1,8) FROM t1
+  }
+} [list 1 {database disk image is malformed}]
+
+# Adjust value of record 1 / field 1 SerialTypeLen and see if the
+# corruption is detected.
+# Set SerialTypeLen to FF FF FF FF FF FF 7F (7 bytes, and overflows).
+do_test corrupt6-1.10.6 {
+  db close
+  hexio_write test.db 1923 FFFFFFFFFFFF7F
+  sqlite3 db test.db
+  catchsql {
+    SELECT substr(x,1,8) FROM t1
+  }
+} [list 1 {database disk image is malformed}]
+
+# Adjust value of record 1 / field 1 SerialTypeLen and see if the
+# corruption is detected.
+# Set SerialTypeLen to FF FF FF FF FF FF FF 7F (8 bytes, and overflows).
+do_test corrupt6-1.10.7 {
+  db close
+  hexio_write test.db 1923 FFFFFFFFFFFFFF7F
+  sqlite3 db test.db
+  catchsql {
+    SELECT substr(x,1,8) FROM t1
+  }
+} [list 1 {database disk image is malformed}]
+
+# Adjust value of record 1 / field 1 SerialTypeLen and see if the
+# corruption is detected.
+# Set SerialTypeLen to FF FF FF FF FF FF FF FF 7F (9 bytes, and overflows).
+do_test corrupt6-1.10.8 {
+  db close
+  hexio_write test.db 1923 FFFFFFFFFFFFFFFF7F
+  sqlite3 db test.db
+  catchsql {
+    SELECT substr(x,1,8) FROM t1
+  }
+} [list 1 {database disk image is malformed}]
+
+# Adjust value of record 1 / field 1 SerialTypeLen and see if the
+# corruption is detected.
+# Set SerialTypeLen to FFFF FF FF FF FF FF FF FF 7F (10 bytes, and overflows).
+do_test corrupt6-1.10.9 {
+  db close
+  hexio_write test.db 1923 FFFFFFFFFFFFFFFFFF7F
+  sqlite3 db test.db
+  catchsql {
+    SELECT substr(x,1,8) FROM t1
+  }
+} [list 1 {database disk image is malformed}]
 
 finish_test

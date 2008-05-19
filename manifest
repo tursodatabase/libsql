@@ -1,5 +1,5 @@
-C Disable\sthe\scolumn\scache\swhen\scoding\svalues\sthat\swill\sbe\spassed\sto\sthe\sxFilter()\smethod\sof\sa\svirtual\stable,\sin\scase\sthe\sxFilter()\simplementation\smodifies\sthe\stype\sor\sencoding\sof\sthe\svalue.\sTicket\s#3121.\s(CVS\s5139)
-D 2008-05-16T15:40:40
+C Added\stest\scases\sfor\scorrupt\s2-10\sbyte\sSerialTypeLen\svalues.\s(CVS\s5140)
+D 2008-05-19T15:37:10
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -233,7 +233,7 @@ F test/corrupt2.test 8059c7354aaba91e7405b4503b79f456c816df8e
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
-F test/corrupt6.test 9c32c74e41a6c9c2964bad75dca3785f956e556a
+F test/corrupt6.test e69b877d478224deab7b66844566258cecacd25e
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 26d7a4c5520201e5de2c696ea51ab946b59dc0e9
 F test/crash3.test 0b09687ae1a3ccbcefdfaeb4b963e26e36255d76
@@ -636,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e94a2883060b9ef59809ff4de9525d897d95546c
-R d8ea57ad8afa02e143de5e2bb345621f
-U danielk1977
-Z daf8d2ef2b1e508dc6f926c2aac99473
+P ecbc0d5deddc0ca0d1d2649e0134ee392266027e
+R 37a7c25321c7791c1c14cbcefeac56a4
+U shane
+Z 4ca6a78c8e149d07dae4e73975b338da
