@@ -1,5 +1,5 @@
-C SQLite\sstores\snative\sfile\snames\sand\spaths\sfor\sthe\sdatabase\sfile.\s\sUnder\sWindows,\s(file\snormalize\stest.db)\sis\sexpanded\susing\sUNIX\stype\spath\sseparators\swhich\sTCL\srecognizes\sinterchangeably.\s\s\sHowever,\sthis\smeans\sthat\sthe\spath\sreported\sby\ssqlite3_shared_cache_report\sdoesn't\smatch\swhich\scauses\sthe\stest\scase\sto\sfail.\s\sMade\sminor\schange\sto\stest\scase\sto\shopefully\scorrect\sthis\son\sall\splatforms.\s(CVS\s5143)
-D 2008-05-19T20:11:40
+C Improvements\sto\sAPI\sdocumentation.\s\sThe\ssqlite3_exec()\sfunction\snow\nsets\sthe\sresult\sreturned\sby\ssqlite3_errcode()\swhen\sit\sreceives\san\sSQLITE_ABORT.\s(CVS\s5144)
+D 2008-05-19T23:51:55
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -100,7 +100,7 @@ F src/hash.c fd8cb06fb54c2fe7d48c9195792059a2e5be8b70
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
 F src/insert.c 77f0829b3e2edd19e9238195c56b0d56ab000f17
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
-F src/legacy.c 8267890e6a0a71f13b680794520999c642299081
+F src/legacy.c 4568e4762272cd671722f0b054eb05801aab2af2
 F src/loadext.c eac6c61810a3b531808774bec7f3d238cfe261f3
 F src/main.c 2d1cf908a2e874f9bad7e8bff6b93c057dff6ba7
 F src/malloc.c 12c1ae98ef1eff34b13c9eb526e0b7b479e1e820
@@ -130,7 +130,7 @@ F src/printf.c f2d4f6c5b0ec24b643e85fe60258adad8b1f6acc
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c da43ce3080112aa77863e9c570c1df19a892acb8
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in 5fafd7849e3e74625533144ce0ab9d495c0320da
+F src/sqlite.h.in f1d8355483f2688ab385522bd95edaecc55b1f2a
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 70a2b0bf856bbdb86b10d994ea863f6591ab7144
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -636,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P bc90787583dd2dadff72d516de9720d4a36e7fd2
-R 22f0e32263f04f1c10de732563542a44
-U shane
-Z 0ed652a054220cb34754df08abc06527
+P 5ef61701398ce75e32cfaea2eacf2c3e80832ca0
+R c6947a62afcdc65fd7adce5253152bd6
+U drh
+Z 7051c7ad739f94ff57939cd3c56414aa

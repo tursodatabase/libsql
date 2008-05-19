@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.312 2008/05/12 12:39:56 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.313 2008/05/19 23:51:55 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -278,27 +278,32 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 **
 ** INVARIANTS:
 ** 
-** {F12101} The [sqlite3_exec()] interface evaluates zero or more UTF-8
-**          encoded, semicolon-separated, SQL statements in the
-**          zero-terminated string of its 2nd parameter within the
-**          context of the [sqlite3] object given in the 1st parameter.
+** {F12101} A successful invocation of [sqlite3_exec(D,S,C,A,E)]
+**          shall evaluate all of the UTF-8 encoded, semicolon-separated,
+**          SQL statements in the zero-terminated string S within the
+**          context of the D [database connection].
 **
-** {F12104} The return value of [sqlite3_exec()] is SQLITE_OK if all
-**          SQL statements run successfully.
+** {F12102} When the S argment to [sqlite3_exec(D,S,C,A,E)] is an empty string
+**          then the [sqlite3_exec()] call shall be a no-op.
 **
-** {F12105} The return value of [sqlite3_exec()] is an appropriate 
+** {F12104} The return value of [sqlite3_exec()] shall be SQLITE_OK if all
+**          SQL statements run successfully and to completion.
+**
+** {F12105} The return value of [sqlite3_exec()] shall be an appropriate 
 **          non-zero error code if any SQL statement fails.
 **
 ** {F12107} If one or more of the SQL statements handed to [sqlite3_exec()]
 **          return results and the 3rd parameter is not NULL, then
-**          the callback function specified by the 3rd parameter is
+**          the callback function specified by the 3rd parameter shall be
 **          invoked once for each row of result.
 **
 ** {F12110} If the callback returns a non-zero value then [sqlite3_exec()]
-**          will aborted the SQL statement it is currently evaluating,
+**          shall aborted the SQL statement it is currently evaluating,
 **          skip all subsequent SQL statements, and return [SQLITE_ABORT].
-**          <todo>What happens to *errmsg here?  Does the result code for
-**          sqlite3_errcode() get set?</todo>
+**
+** {F12111} Following a call to [sqlite3_exec()] where the callback returns
+**          non-zero, the [sqlite3_errcode()], [sqlite3_errmsg()], and
+**          [sqlite3_errmsg16()] routines shall return no error.
 **
 ** {F12113} The [sqlite3_exec()] routine will pass its 4th parameter through
 **          as the 1st parameter of the callback.
@@ -325,17 +330,23 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 **          return an [error code] other than [SQLITE_OK].
 **
 ** {F12131} If an error occurs while parsing or evaluating any of the SQL
-**          handed to [sqlite3_exec()] and if the 5th parameter (errmsg)
-**          to [sqlite3_exec()] is not NULL, then an error message is
-**          allocated using the equivalent of [sqlite3_mprintf()] and
-**          *errmsg is made to point to that message.
+**          handed in the S parameter of [sqlite3_exec(D,S,C,A,E)] and if
+**          the E parameter is not NULL, then sqlit3_exec shall store in *E
+**          an appropriate error message written into memory obtained
+**          from [sqlite3_malloc()].
 **
-** {F12134} The [sqlite3_exec()] routine does not change the value of
-**          *errmsg if errmsg is NULL or if there are no errors.
+** {F12134} The [sqlite3_exec(D,S,C,A,E)] routine does not change the value of
+**          *E if E is NULL or if there are no errors.
 **
 ** {F12137} The [sqlite3_exec()] function sets the error code and message
 **          accessible via [sqlite3_errcode()], [sqlite3_errmsg()], and
 **          [sqlite3_errmsg16()].
+**
+** {F12138} If the S parameter to [sqlite3_exec(D,S,C,A,E)] is not an empty
+**          string but contains nothing other than whitespace, comments, and/or
+**          semicolons, then results of [sqlite3_errcode()],
+**          [sqlite3_errmsg()], and [sqlite3_errmsg16()]
+**          shall reset to indicate no errors.
 **
 ** LIMITATIONS:
 **
