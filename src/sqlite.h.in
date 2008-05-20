@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.314 2008/05/20 15:44:31 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.315 2008/05/20 18:43:38 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -849,11 +849,11 @@ struct sqlite3_vfs {
 **
 ** INVARIANTS:
 **
-** {F12201} Each new [database connection] has the 
+** {F12201} Each new [database connection] shall have the 
 **          [extended result codes] feature
 **          disabled by default.
 **
-** {F12202} The [sqlite3_extended_result_codes(D,F)] interface will enable
+** {F12202} The [sqlite3_extended_result_codes(D,F)] interface shall enable
 **          [extended result codes] for the 
 **          [database connection] D if the F parameter
 **          is true, or disable them if F is false.
@@ -899,8 +899,8 @@ int sqlite3_extended_result_codes(sqlite3*, int onoff);
 ** {F12221} The [sqlite3_last_insert_rowid()] function returns the
 **          rowid of the most recent successful insert done
 **          on the same database connection and within the same
-**          trigger context, or zero if there have
-**          been no qualifying inserts on that connection.
+**          or higher level trigger context, or zero if there have
+**          been no qualifying inserts.
 **
 ** {F12223} The [sqlite3_last_insert_rowid()] function returns
 **          same value when called from the same trigger context
