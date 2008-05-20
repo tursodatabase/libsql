@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\swrite\sa\smaster\sjournal\sname\sto\sthe\s(non-existent)\sjournal\sfile\sin\s"no-journal"\smode.\sFix\sfor\s#3127.\s(CVS\s5145)
-D 2008-05-20T07:05:09
+C Updated\stest\scase\sfor\sWindows\sto\sget\saround\sproblems\sin\sticket\s#3129.\s(CVS\s5146)
+D 2008-05-20T13:17:28
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -499,7 +499,7 @@ F test/tkt2817.test 709a2201a5590bf56cb97f6fb168a62282203fd1
 F test/tkt2820.test 017fdee33aaef7abc092beab6088816f1942304b
 F test/tkt2822.test 8b1526b1e5b0d38a1a993f7828fbb81759093686
 F test/tkt2832.test cd56dc66bb31898b7eb2146baa5bde2eb80f96fe
-F test/tkt2854.test aebd5a9904d36d1ef7a074fc5e7c7da3ab00c32a
+F test/tkt2854.test de967898652e71de7e5bc1659e4edabaca4a2f7b
 F test/tkt2920.test a8737380e4ae6424e00c0273dc12775704efbebf
 F test/tkt2927.test a473c09eafa83d95579fc2b976f2afc11571ce7e
 F test/tkt2942.test c5c87d179799ca6d1fbe83c815510b87cd5ec7ce
@@ -636,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f1df19ca17a09ab8d85a4a7eb04f3ce95a6722da
-R 68f9179fabf783575dcd6ca035849dc9
-U danielk1977
-Z 5dd3e01e7b698f452f1b90a7cd9bf54d
+P ffd4e50ab9b14fb7b686681c5e7a37b8355bbfca
+R 12b715aa174c70b8d935ac606ddf1cf1
+U shane
+Z 21adfb2ee36b21344b385ac1ce33302a
