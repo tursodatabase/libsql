@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.313 2008/05/19 23:51:55 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.314 2008/05/20 15:44:31 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -270,11 +270,20 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** produced by the SQL statements.  The 5th parameter tells where
 ** to write any error messages.
 **
+** The error message passed back through the 5th parameter is held
+** in memory obtained from [sqlite3_malloc()].  To avoid a memory leak,
+** the calling application should call [sqlite3_free()] on any error
+** message returned through the 5th parameter when it has finished using
+** the error message.
+**
+** If the SQL statement in the 2nd parameter is NULL or an empty string
+** or a string containing only whitespace and comments, then SQL
+** statements are evaluated and the database is unchanged.
+**
 ** The sqlite3_exec() interface is implemented in terms of
 ** [sqlite3_prepare_v2()], [sqlite3_step()], and [sqlite3_finalize()].
-** The sqlite3_exec() routine does nothing that cannot be done
+** The sqlite3_exec() routine does nothing to the database that cannot be done
 ** by [sqlite3_prepare_v2()], [sqlite3_step()], and [sqlite3_finalize()].
-** The sqlite3_exec() is just a convenient wrapper.
 **
 ** INVARIANTS:
 ** 
@@ -283,14 +292,15 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 **          SQL statements in the zero-terminated string S within the
 **          context of the D [database connection].
 **
-** {F12102} When the S argment to [sqlite3_exec(D,S,C,A,E)] is an empty string
-**          then the [sqlite3_exec()] call shall be a no-op.
+** {F12102} If the S parameter to [sqlite3_exec(D,S,C,A,E)] is NULL then
+**          the actions of the interface shall be the same as if the
+**          S parameter where an empty string.
 **
 ** {F12104} The return value of [sqlite3_exec()] shall be SQLITE_OK if all
 **          SQL statements run successfully and to completion.
 **
 ** {F12105} The return value of [sqlite3_exec()] shall be an appropriate 
-**          non-zero error code if any SQL statement fails.
+**          non-zero [error code] if any SQL statement fails.
 **
 ** {F12107} If one or more of the SQL statements handed to [sqlite3_exec()]
 **          return results and the 3rd parameter is not NULL, then
@@ -301,11 +311,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 **          shall aborted the SQL statement it is currently evaluating,
 **          skip all subsequent SQL statements, and return [SQLITE_ABORT].
 **
-** {F12111} Following a call to [sqlite3_exec()] where the callback returns
-**          non-zero, the [sqlite3_errcode()], [sqlite3_errmsg()], and
-**          [sqlite3_errmsg16()] routines shall return no error.
-**
-** {F12113} The [sqlite3_exec()] routine will pass its 4th parameter through
+** {F12113} The [sqlite3_exec()] routine shall pass its 4th parameter through
 **          as the 1st parameter of the callback.
 **
 ** {F12116} The [sqlite3_exec()] routine sets the 2nd parameter of its
@@ -325,25 +331,21 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 **          [sqlite3_exec()] never invokes a callback.  All query
 **          results are silently discarded.
 **
-** {F12128} If an error occurs while parsing or evaluating any of the SQL
-**          statements handed to [sqlite3_exec()] then [sqlite3_exec()] will
-**          return an [error code] other than [SQLITE_OK].
-**
 ** {F12131} If an error occurs while parsing or evaluating any of the SQL
 **          handed in the S parameter of [sqlite3_exec(D,S,C,A,E)] and if
-**          the E parameter is not NULL, then sqlit3_exec shall store in *E
-**          an appropriate error message written into memory obtained
+**          the E parameter is not NULL, then [sqlite3_exec()] shall store
+**          in *E an appropriate error message written into memory obtained
 **          from [sqlite3_malloc()].
 **
-** {F12134} The [sqlite3_exec(D,S,C,A,E)] routine does not change the value of
-**          *E if E is NULL or if there are no errors.
+** {F12134} The [sqlite3_exec(D,S,C,A,E)] routine shall set the value of
+**          *E to NULL if E is not NULL and there are no errors.
 **
-** {F12137} The [sqlite3_exec()] function sets the error code and message
-**          accessible via [sqlite3_errcode()], [sqlite3_errmsg()], and
-**          [sqlite3_errmsg16()].
+** {F12137} The [sqlite3_exec(D,S,C,A,E)] function shall set the error code
+**          and message accessible via [sqlite3_errcode()],
+**          [sqlite3_errmsg()], and [sqlite3_errmsg16()].
 **
-** {F12138} If the S parameter to [sqlite3_exec(D,S,C,A,E)] is not an empty
-**          string but contains nothing other than whitespace, comments, and/or
+** {F12138} If the S parameter to [sqlite3_exec(D,S,C,A,E)] is a null or empty
+**          string or contains nothing other than whitespace, comments, and/or
 **          semicolons, then results of [sqlite3_errcode()],
 **          [sqlite3_errmsg()], and [sqlite3_errmsg16()]
 **          shall reset to indicate no errors.
@@ -356,7 +358,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** {U12142} The database connection must not be closed while
 **          [sqlite3_exec()] is running.
 ** 
-** {U12143} The calling function is should use [sqlite3_free()] to free
+** {U12143} The calling function should use [sqlite3_free()] to free
 **          the memory that *errmsg is left pointing at once the error
 **          message is no longer needed.
 **

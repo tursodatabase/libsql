@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: legacy.c,v 1.25 2008/05/19 23:51:55 drh Exp $
+** $Id: legacy.c,v 1.26 2008/05/20 15:44:31 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -45,9 +45,10 @@ int sqlite3_exec(
   int nRetry = 0;
   int nCallback;
 
-  if( zSql==0 ) return SQLITE_OK;
+  if( zSql==0 ) zSql = "";
 
   sqlite3_mutex_enter(db->mutex);
+  sqlite3Error(db, SQLITE_OK, 0);
   while( (rc==SQLITE_OK || (rc==SQLITE_SCHEMA && (++nRetry)<2)) && zSql[0] ){
     int nCol;
     char **azVals = 0;
