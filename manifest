@@ -1,5 +1,5 @@
-C Updated\stest\scase\sfor\sWindows\sto\sget\saround\sproblems\sin\sticket\s#3129.\s(CVS\s5146)
-D 2008-05-20T13:17:28
+C Added\smore\sDST\sboundary\schecks\sfor\s2006\sand\s2007.\s\sAdded\scheck\sfor\ssuspect\sWindows\sDST\simplementations\sand\swarning\sabout\sthem.\s\sTicket\s#2322.\s(CVS\s5147)
+D 2008-05-20T14:01:59
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -244,7 +244,7 @@ F test/crash7.test e20a7b9ee1d16eaef7c94a4cb7ed2191b4d05970
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 4b8a49decaefccb835ecc67249277be491713f6c
-F test/date.test be0a3a30f5009b1cbc1a9c396b1fe96bd18522cc
+F test/date.test a1554e1af11fd8a4c150013a53713605f2499bde
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test f171c1011395a8dd63169438fe1d8cc625eb7442
 F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
@@ -636,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ffd4e50ab9b14fb7b686681c5e7a37b8355bbfca
-R 12b715aa174c70b8d935ac606ddf1cf1
+P 2faf69ca1da43f8083b96675a4886648f10177d8
+R 6df5a2e7a1004d286b1e02fdd89d3f9d
 U shane
-Z 21adfb2ee36b21344b385ac1ce33302a
+Z 473f14dd2f4e8d627d9c50329fe96aff

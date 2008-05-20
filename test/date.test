@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.26 2008/04/15 04:02:41 drh Exp $
+# $Id: date.test,v 1.27 2008/05/20 14:01:59 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -222,24 +222,98 @@ datetest 5.15 {datetime('1994-04-16 14:00:00 +05:00 Z')} NULL
 # if the localtime is in the US Eastern Time (the time in Charlotte, NC
 # and in New York.)
 #
-set tzoffset [db one {
-  SELECT CAST(24*(julianday('2006-09-01') -
-                  julianday('2006-09-01','localtime'))+0.5
+# On non-Vista Windows platform, '2006-03-31' is treated incorrectly as being
+# in DST giving a 4 hour offset instead of 5.  In 2007, DST was extended to 
+# start three weeks earlier (second Sunday in March) and end one week
+# later (first Sunday in November).  Older Windows systems apply this
+# new rule incorrectly to dates prior to 2007.
+#
+# It might be argued that this is masking a problem on non-Vista Windows
+# platform.  A ticket has already been opened for this issue 
+# (http://www.sqlite.org/cvstrac/tktview?tn=2322).  This is just to prevent
+# more confusion/reports of the issue.
+#
+
+# $tzoffset_old should be 5 if DST is working correctly.
+set tzoffset_old [db one {
+  SELECT CAST(24*(julianday('2006-03-31') -
+                  julianday('2006-03-31','localtime'))+0.5
               AS INT)
 }]
-if {$tzoffset==4} {
+
+# $tzoffset_new should be 4 if DST is working correctly.
+set tzoffset_new [db one {
+  SELECT CAST(24*(julianday('2007-03-31') -
+                  julianday('2007-03-31','localtime'))+0.5
+              AS INT)
+}]
+
+# Warn about possibly broken Windows DST implementations.
+if {$::tcl_platform(platform)=="windows" && $tzoffset_new==4 && $tzoffset_old==4} {
+  puts "******************************************************************"
+  puts "N.B.:  The DST support provided by your current O/S seems to be"
+  puts "suspect in that it is reporting incorrect DST values for dates"
+  puts "prior to 2007.  This is the known case for most (all?) non-Vista"
+  puts "Windows versions.  Please see ticket #2322 for more information."
+  puts "******************************************************************"
+}
+
+if {$tzoffset_new==4} {
   datetest 6.1 {datetime('2000-10-29 05:59:00','localtime')}\
       {2000-10-29 01:59:00}
-  datetest 6.2 {datetime('2000-10-29 06:00:00','localtime')}\
-      {2000-10-29 01:00:00}
-  datetest 6.3 {datetime('2000-04-02 06:59:00','localtime')}\
-      {2000-04-02 01:59:00}
+  datetest 6.1.1 {datetime('2006-10-29 05:59:00','localtime')}\
+      {2006-10-29 01:59:00}
+  datetest 6.1.2 {datetime('2007-11-04 05:59:00','localtime')}\
+      {2007-11-04 01:59:00}
+
+  # If the new and old DST rules seem to be working correctly...
+  if {$tzoffset_new==4 && $tzoffset_old==5} {
+    datetest 6.2 {datetime('2000-10-29 06:00:00','localtime')}\
+        {2000-10-29 01:00:00}
+    datetest 6.2.1 {datetime('2006-10-29 06:00:00','localtime')}\
+        {2006-10-29 01:00:00}
+  }
+  datetest 6.2.2 {datetime('2007-11-04 06:00:00','localtime')}\
+      {2007-11-04 01:00:00}
+
+  # If the new and old DST rules seem to be working correctly...
+  if {$tzoffset_new==4 && $tzoffset_old==5} {
+    datetest 6.3 {datetime('2000-04-02 06:59:00','localtime')}\
+        {2000-04-02 01:59:00}
+    datetest 6.3.1 {datetime('2006-04-02 06:59:00','localtime')}\
+        {2006-04-02 01:59:00}
+  }
+  datetest 6.3.2 {datetime('2007-03-11 07:00:00','localtime')}\
+      {2007-03-11 03:00:00}
+
   datetest 6.4 {datetime('2000-04-02 07:00:00','localtime')}\
       {2000-04-02 03:00:00}
+  datetest 6.4.1 {datetime('2006-04-02 07:00:00','localtime')}\
+      {2006-04-02 03:00:00}
+  datetest 6.4.2 {datetime('2007-03-11 07:00:00','localtime')}\
+      {2007-03-11 03:00:00}
+      
   datetest 6.5 {datetime('2000-10-29 01:59:00','utc')} {2000-10-29 05:59:00}
-  datetest 6.6 {datetime('2000-10-29 02:00:00','utc')} {2000-10-29 07:00:00}
-  datetest 6.7 {datetime('2000-04-02 01:59:00','utc')} {2000-04-02 06:59:00}
+  datetest 6.5.1 {datetime('2006-10-29 01:59:00','utc')} {2006-10-29 05:59:00}
+  datetest 6.5.2 {datetime('2007-11-04 01:59:00','utc')} {2007-11-04 05:59:00}
+
+  # If the new and old DST rules seem to be working correctly...
+  if {$tzoffset_new==4 && $tzoffset_old==5} {
+    datetest 6.6 {datetime('2000-10-29 02:00:00','utc')} {2000-10-29 07:00:00}
+    datetest 6.6.1 {datetime('2006-10-29 02:00:00','utc')} {2006-10-29 07:00:00}
+  }
+  datetest 6.6.2 {datetime('2007-11-04 02:00:00','utc')} {2007-11-04 07:00:00}
+
+  # If the new and old DST rules seem to be working correctly...
+  if {$tzoffset_new==4 && $tzoffset_old==5} {
+    datetest 6.7 {datetime('2000-04-02 01:59:00','utc')} {2000-04-02 06:59:00}
+    datetest 6.7.1 {datetime('2006-04-02 01:59:00','utc')} {2006-04-02 06:59:00}
+  }
+  datetest 6.7.2 {datetime('2007-03-11 01:59:00','utc')} {2007-03-11 06:59:00}
+
   datetest 6.8 {datetime('2000-04-02 02:00:00','utc')} {2000-04-02 06:00:00}
+  datetest 6.8.1 {datetime('2006-04-02 02:00:00','utc')} {2006-04-02 06:00:00}
+  datetest 6.8.2 {datetime('2007-03-11 02:00:00','utc')} {2007-03-11 06:00:00}
 
   datetest 6.10 {datetime('2000-01-01 12:00:00','localtime')} \
       {2000-01-01 07:00:00}
@@ -376,6 +450,5 @@ datetest 13.6 {strftime('%Y-%m-%d %H:%M:%S', '2007-01-01 23:59:59.6')} \
   {2007-01-01 23:59:59}
 datetest 13.7 {strftime('%Y-%m-%d %H:%M:%f', '2007-01-01 23:59:59.6')} \
   {2007-01-01 23:59:59.600}
-
 
 finish_test
