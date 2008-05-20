@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.39 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: os_os2.c,v 1.40 2008/05/20 19:08:54 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -649,6 +649,7 @@ static int os2Open(
   os2File *pFile = (os2File*)id;
   APIRET rc = NO_ERROR;
   ULONG ulAction;
+  char *zNameCp;
 
   memset( pFile, 0, sizeof(*pFile) );
 
@@ -700,7 +701,7 @@ static int os2Open(
   ulOpenMode |= OPEN_FLAGS_FAIL_ON_ERROR;
   ulOpenMode |= OPEN_FLAGS_NOINHERIT;
 
-  char *zNameCp = convertUtf8PathToCp( zName );
+  zNameCp = convertUtf8PathToCp( zName );
   rc = DosOpen( (PSZ)zNameCp,
                 &h,
                 &ulAction,

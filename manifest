@@ -1,5 +1,5 @@
-C Corrections\sto\sthe\sdocumented\sbehavior\sof\ssqlite3_last_insert_rowid().\n(This\schange\sis\sunrelated\sto\sthe\sproblem\sreported\sby\sBram\sde\sJong.\s\sThat\ncomes\snext.)\s(CVS\s5149)
-D 2008-05-20T18:43:38
+C Fix\sOS/2\scompilation\sfor\spre-C99\scompilers.\s(CVS\s5150)
+D 2008-05-20T19:08:54
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -118,7 +118,7 @@ F src/mutex_w32.c 133698096a2c4e81cd11ea6f4de7891c66f7b9f7
 F src/os.c 9348e092f3ac2c964491b01424a17862e0650e86
 F src/os.h 7131c5b8e5cd59504d3818f88e4ae106da8fac01
 F src/os_common.h 9da7339466404707af49943fe4c47e608034761b
-F src/os_os2.c afb7ce54dab1725656cec92f289b24ad8e2b39ba
+F src/os_os2.c 1578149e21c4eac42c7f230a6f40500846f8e781
 F src/os_unix.c 06dceb3230249d6e7c6a1d8d602fa6a93f4085b9
 F src/os_win.c 3b0a31c598dcafada283368f2a7f7bb3fd78b26b
 F src/pager.c baf3c74d8add102e83bae06f34644e8a50f4928d
@@ -636,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a0376c7907db8e2993ce48e484001e981fbbb187
-R 41897067ca76c4aab67af0416a4c9951
-U drh
-Z d730ec45afb5132bb2647dd3d3555a41
+P 894085a59cdc60c34c8a3eb560d98bcb4a087cb1
+R 9cd012b9b6638413801262c433fecb94
+U pweilbacher
+Z d561cc78f2b3ec86435123f580dbcd83
