@@ -1,5 +1,5 @@
-C Improvements\sto\sAPI\sdocumentation.\s\sThe\ssqlite3_exec()\sfunction\snow\nsets\sthe\sresult\sreturned\sby\ssqlite3_errcode()\swhen\sit\sreceives\san\sSQLITE_ABORT.\s(CVS\s5144)
-D 2008-05-19T23:51:55
+C Do\snot\sattempt\sto\swrite\sa\smaster\sjournal\sname\sto\sthe\s(non-existent)\sjournal\sfile\sin\s"no-journal"\smode.\sFix\sfor\s#3127.\s(CVS\s5145)
+D 2008-05-20T07:05:09
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -121,7 +121,7 @@ F src/os_common.h 9da7339466404707af49943fe4c47e608034761b
 F src/os_os2.c afb7ce54dab1725656cec92f289b24ad8e2b39ba
 F src/os_unix.c 06dceb3230249d6e7c6a1d8d602fa6a93f4085b9
 F src/os_win.c 3b0a31c598dcafada283368f2a7f7bb3fd78b26b
-F src/pager.c 43f5f67ff211ed0f40ccd9a96c079e811a9ac601
+F src/pager.c baf3c74d8add102e83bae06f34644e8a50f4928d
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c a4919a29a0923e00c6170b0677a50058e352b58c
@@ -352,7 +352,7 @@ F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
-F test/jrnlmode.test 5b650ba0630fc1089688e18bb7f0c9b8a33417ed
+F test/jrnlmode.test 8e8e359e46799cea23d029f28bda6311f0f4c07b
 F test/jrnlmode2.test e48ec49320a3f849a5036e3551bf2394112a4aae
 F test/jrnlmode3.test c77f9d4095945f234dddd60ca0f73c24802ed0c1
 F test/jrnlmode4.test 8ee031603fef8ed5deba0de8b012a82be6d5a6a0
@@ -636,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 5ef61701398ce75e32cfaea2eacf2c3e80832ca0
-R c6947a62afcdc65fd7adce5253152bd6
-U drh
-Z 7051c7ad739f94ff57939cd3c56414aa
+P f1df19ca17a09ab8d85a4a7eb04f3ce95a6722da
+R 68f9179fabf783575dcd6ca035849dc9
+U danielk1977
+Z 5dd3e01e7b698f452f1b90a7cd9bf54d

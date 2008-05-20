@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.448 2008/05/15 11:08:08 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.449 2008/05/20 07:05:09 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4688,28 +4688,30 @@ int sqlite3PagerCommitPhaseOne(
     if( !pPager->setMaster ){
       rc = pager_incr_changecounter(pPager, 0);
       if( rc!=SQLITE_OK ) goto sync_exit;
+      if( pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
 #ifndef SQLITE_OMIT_AUTOVACUUM
-      if( nTrunc!=0 ){
-        /* If this transaction has made the database smaller, then all pages
-        ** being discarded by the truncation must be written to the journal
-        ** file.
-        */
-        Pgno i;
-        int iSkip = PAGER_MJ_PGNO(pPager);
-        for( i=nTrunc+1; i<=pPager->origDbSize; i++ ){
-          if( !sqlite3BitvecTest(pPager->pInJournal, i) && i!=iSkip ){
-            rc = sqlite3PagerGet(pPager, i, &pPg);
-            if( rc!=SQLITE_OK ) goto sync_exit;
-            rc = sqlite3PagerWrite(pPg);
-            sqlite3PagerUnref(pPg);
-            if( rc!=SQLITE_OK ) goto sync_exit;
-          }
-        } 
-      }
+        if( nTrunc!=0 ){
+          /* If this transaction has made the database smaller, then all pages
+          ** being discarded by the truncation must be written to the journal
+          ** file.
+          */
+          Pgno i;
+          int iSkip = PAGER_MJ_PGNO(pPager);
+          for( i=nTrunc+1; i<=pPager->origDbSize; i++ ){
+            if( !sqlite3BitvecTest(pPager->pInJournal, i) && i!=iSkip ){
+              rc = sqlite3PagerGet(pPager, i, &pPg);
+              if( rc!=SQLITE_OK ) goto sync_exit;
+              rc = sqlite3PagerWrite(pPg);
+              sqlite3PagerUnref(pPg);
+              if( rc!=SQLITE_OK ) goto sync_exit;
+            }
+          } 
+        }
 #endif
-      rc = writeMasterJournal(pPager, zMaster);
-      if( rc!=SQLITE_OK ) goto sync_exit;
-      rc = syncJournal(pPager);
+        rc = writeMasterJournal(pPager, zMaster);
+        if( rc!=SQLITE_OK ) goto sync_exit;
+        rc = syncJournal(pPager);
+      }
     }
     if( rc!=SQLITE_OK ) goto sync_exit;
 
