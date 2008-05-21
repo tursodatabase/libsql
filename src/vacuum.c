@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.78 2008/04/30 16:38:23 drh Exp $
+** $Id: vacuum.c,v 1.79 2008/05/21 13:44:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -84,11 +84,15 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   Btree *pTemp;           /* The temporary database we vacuum into */
   char *zSql = 0;         /* SQL statements */
   int saved_flags;        /* Saved value of the db->flags */
+  int saved_nChange;      /* Saved value of db->nChange */
+  int saved_nTotalChange; /* Saved value of db->nTotalChange */
   Db *pDb = 0;            /* Database to detach at end of vacuum */
   int nRes;
 
   /* Save the current value of the write-schema flag before setting it. */
   saved_flags = db->flags;
+  saved_nChange = db->nChange;
+  saved_nTotalChange = db->nTotalChange;
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
 
   if( !db->autoCommit ){
@@ -253,6 +257,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
 end_of_vacuum:
   /* Restore the original value of db->flags */
   db->flags = saved_flags;
+  db->nChange = saved_nChange;
+  db->nTotalChange = saved_nTotalChange;
 
   /* Currently there is an SQL level transaction open on the vacuum
   ** database. No locks are held on any other files (since the main file

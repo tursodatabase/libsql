@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.315 2008/05/20 18:43:38 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.316 2008/05/21 13:44:14 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -969,11 +969,16 @@ sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 **
 ** INVARIANTS:
 **
-** {F12241} The [sqlite3_changes()] function returns the number of
+** {F12241} The [sqlite3_changes()] function shall return the number of
 **          row changes caused by the most recent INSERT, UPDATE,
 **          or DELETE statement on the same database connection and
-**          within the same trigger context, or zero if there have
+**          within the same or higher trigger context, or zero if there have
 **          not been any qualifying row changes.
+**
+** {F12243} Statements of the form "DELETE FROM tablename" with no
+**          WHERE clause shall cause subsequent calls to 
+**          [sqlite3_changes()] to return zero, regardless of the
+**          number of rows originally in the table.
 **
 ** LIMITATIONS:
 **
@@ -1015,6 +1020,10 @@ int sqlite3_changes(sqlite3*);
 **          statements on the same [database connection], in any
 **          trigger context, since the database connection was
 **          created.
+**
+** {F12263} Statements of the form "DELETE FROM tablename" with no
+**          WHERE clause shall not change the value returned
+**          by [sqlite3_total_changes()]
 **
 ** LIMITATIONS:
 **
