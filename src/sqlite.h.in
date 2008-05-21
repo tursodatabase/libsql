@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.316 2008/05/21 13:44:14 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.317 2008/05/21 15:01:21 shane Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -308,7 +308,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 **          invoked once for each row of result.
 **
 ** {F12110} If the callback returns a non-zero value then [sqlite3_exec()]
-**          shall aborted the SQL statement it is currently evaluating,
+**          shall abort the SQL statement it is currently evaluating,
 **          skip all subsequent SQL statements, and return [SQLITE_ABORT].
 **
 ** {F12113} The [sqlite3_exec()] routine shall pass its 4th parameter through
@@ -2096,6 +2096,14 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 **          [sqlite3_open_v2(F,D,G,V)] will use the
 **          [sqlite3_vfs] object identified by the V parameter, or
 **          the default [sqlite3_vfs] object is V is a NULL pointer.
+**
+** {F12723} Two [database connection | database connections] will share a common cache
+**          if both were opened with the same VFS
+**          while [sqlite3_enable_shared_cache | shared cache mode was enabled] and
+**          if both filenames compare equal using memcmp()
+**          after having been processed by the [sqlite3_vfs | xFullPathname] method of
+**          the VFS.
+**
 */
 int sqlite3_open(
   const char *filename,   /* Database filename (UTF-8) */
