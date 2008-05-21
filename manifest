@@ -1,5 +1,5 @@
-C Update\ssqlite3_open*()\sdocumentation\son\sshared\scache/filename\smatching\srelationship.\s\sTicket\s#3132.\s(CVS\s5152)
-D 2008-05-21T15:01:21
+C Add\sthe\s"volatile"\skeyword\sto\svariables\sin\sthe\sPager\sstructure\sused\sfor\nsynchronization\swhen\smemory\smanagement\sis\senabled.\s(CVS\s5153)
+D 2008-05-21T15:38:15
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -121,7 +121,7 @@ F src/os_common.h 9da7339466404707af49943fe4c47e608034761b
 F src/os_os2.c 1578149e21c4eac42c7f230a6f40500846f8e781
 F src/os_unix.c 06dceb3230249d6e7c6a1d8d602fa6a93f4085b9
 F src/os_win.c 3b0a31c598dcafada283368f2a7f7bb3fd78b26b
-F src/pager.c baf3c74d8add102e83bae06f34644e8a50f4928d
+F src/pager.c d0a77feeaeecaaaec9342a3bb3865ed9a490897a
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c a4919a29a0923e00c6170b0677a50058e352b58c
@@ -636,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P f5d61d7d982b58accaf33df4362ce4a5eb79307e
-R 42e618db2ae86e2160c59be2f9d5da71
-U shane
-Z 5788821c85d4f89b016a3bb69ebecefe
+P 235e384eca65d5007e8e0c440904eb254f9b976a
+R bd9892fd17c2d2b279ed03b570f23df7
+U drh
+Z 1856d468393c5ff533277bf646b25f29

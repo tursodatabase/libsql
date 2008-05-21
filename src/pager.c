@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.449 2008/05/20 07:05:09 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.450 2008/05/21 15:38:15 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -401,8 +401,8 @@ struct Pager {
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   Pager *pNext;               /* Doubly linked list of pagers on which */
   Pager *pPrev;               /* sqlite3_release_memory() will work */
-  int iInUseMM;               /* Non-zero if unavailable to MM */
-  int iInUseDB;               /* Non-zero if in sqlite3_release_memory() */
+  volatile int iInUseMM;      /* Non-zero if unavailable to MM */
+  volatile int iInUseDB;      /* Non-zero if in sqlite3_release_memory() */
 #endif
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
   char dbFileVers[16];        /* Changes whenever database file changes */
