@@ -1,5 +1,5 @@
-C Add\sthe\s"volatile"\skeyword\sto\svariables\sin\sthe\sPager\sstructure\sused\sfor\nsynchronization\swhen\smemory\smanagement\sis\senabled.\s(CVS\s5153)
-D 2008-05-21T15:38:15
+C Ensure\sthat\sthe\sdb.mallocFailed\sflag\sis\scleared\sbefore\ssqlite3_errmsg16()\sreturns.\s(CVS\s5154)
+D 2008-05-22T13:56:17
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,7 +102,7 @@ F src/insert.c 77f0829b3e2edd19e9238195c56b0d56ab000f17
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 8f5a2b25d9673b4004287cf2bf51dbf7d0738406
 F src/loadext.c eac6c61810a3b531808774bec7f3d238cfe261f3
-F src/main.c 2d1cf908a2e874f9bad7e8bff6b93c057dff6ba7
+F src/main.c cf415e0920dc9f66806dd766ad72ba5cda533363
 F src/malloc.c 12c1ae98ef1eff34b13c9eb526e0b7b479e1e820
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
@@ -125,7 +125,7 @@ F src/pager.c d0a77feeaeecaaaec9342a3bb3865ed9a490897a
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c a4919a29a0923e00c6170b0677a50058e352b58c
-F src/prepare.c adc7e1fc08dfbab63cd213d4c0aff8f3fa70d477
+F src/prepare.c dbc9b592997ee8ad5e9f97322534daada553f042
 F src/printf.c f2d4f6c5b0ec24b643e85fe60258adad8b1f6acc
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c da43ce3080112aa77863e9c570c1df19a892acb8
@@ -435,7 +435,7 @@ F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test c6769531e0cb751d46a9838c0532d3786606c0f6
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
 F test/shared3.test 01e3e124dbb3859788aabc7cfb82f7ea04421749
-F test/shared_err.test 202ce115a4bfab2b41da5d4c9431f68a474134a6
+F test/shared_err.test 10157148055f1b96373bcc59ecd4e84a83e22a81
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/sidedelete.test 736ac1da08b3b1aa62df97fef2fcdb1b660111b9
 F test/soak.test 64f9b27fbcdec43335a88c546ce1983e6ba40d7b
@@ -636,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 235e384eca65d5007e8e0c440904eb254f9b976a
-R bd9892fd17c2d2b279ed03b570f23df7
-U drh
-Z 1856d468393c5ff533277bf646b25f29
+P 25b9f3b9b2d996ab4582b22b695c4dbd94d09cc7
+R 1aff04e878d28f7a24a4493a69449176
+U danielk1977
+Z f40b5d93825daedb779203833c7a0c3b

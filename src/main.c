@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.439 2008/05/13 13:27:34 drh Exp $
+** $Id: main.c,v 1.440 2008/05/22 13:56:17 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -796,6 +796,7 @@ const char *sqlite3_errmsg(sqlite3 *db){
   sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
   z = (char*)sqlite3_value_text(db->pErr);
+  assert( !db->mallocFailed );
   if( z==0 ){
     z = sqlite3ErrStr(db->errCode);
   }
@@ -843,7 +844,12 @@ const void *sqlite3_errmsg16(sqlite3 *db){
          SQLITE_UTF8, SQLITE_STATIC);
     z = sqlite3_value_text16(db->pErr);
   }
-  sqlite3ApiExit(0, 0);
+  /* A malloc() may have failed within the call to sqlite3_value_text16()
+  ** above. If this is the case, then the db->mallocFailed flag needs to
+  ** be cleared before returning. Do this directly, instead of via
+  ** sqlite3ApiExit(), to avoid setting the database handle error message.
+  */
+  db->mallocFailed = 0;
   sqlite3_mutex_leave(db->mutex);
   return z;
 }

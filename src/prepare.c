@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.83 2008/04/03 14:36:26 danielk1977 Exp $
+** $Id: prepare.c,v 1.84 2008/05/22 13:56:17 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -545,7 +545,7 @@ static int sqlite3Prepare(
         const char *zDb = db->aDb[i].zName;
         sqlite3Error(db, SQLITE_LOCKED, "database schema is locked: %s", zDb);
         (void)sqlite3SafetyOff(db);
-        return SQLITE_LOCKED;
+        return sqlite3ApiExit(db, SQLITE_LOCKED);
       }
     }
   }
@@ -558,7 +558,7 @@ static int sqlite3Prepare(
     if( nBytes>mxLen ){
       sqlite3Error(db, SQLITE_TOOBIG, "statement too long");
       (void)sqlite3SafetyOff(db);
-      return SQLITE_TOOBIG;
+      return sqlite3ApiExit(db, SQLITE_TOOBIG);
     }
     zSqlCopy = sqlite3DbStrNDup(db, zSql, nBytes);
     if( zSqlCopy ){
