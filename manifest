@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sdb.mallocFailed\sflag\sis\scleared\sbefore\ssqlite3_errmsg16()\sreturns.\s(CVS\s5154)
-D 2008-05-22T13:56:17
+C Do\snot\sreferences\szSql(-1)\sif\snBytes==0\sin\ssqlite3_prepare().\nTicket\s#3134.\s(CVS\s5155)
+D 2008-05-23T14:32:19
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,7 +125,7 @@ F src/pager.c d0a77feeaeecaaaec9342a3bb3865ed9a490897a
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c a4919a29a0923e00c6170b0677a50058e352b58c
-F src/prepare.c dbc9b592997ee8ad5e9f97322534daada553f042
+F src/prepare.c 4082e0d016fa7b2de07b67dab6b9d2bf0233ffab
 F src/printf.c f2d4f6c5b0ec24b643e85fe60258adad8b1f6acc
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c da43ce3080112aa77863e9c570c1df19a892acb8
@@ -636,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 25b9f3b9b2d996ab4582b22b695c4dbd94d09cc7
-R 1aff04e878d28f7a24a4493a69449176
-U danielk1977
-Z f40b5d93825daedb779203833c7a0c3b
+P 0d47653a3c39b7cd41c7e6edd8c4b4543658412d
+R 351b6d5d96f998331ac308c9c1246646
+U drh
+Z cb4f5f91ab1e87c3fcaef512e844a9d1
