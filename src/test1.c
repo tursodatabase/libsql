@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.303 2008/05/11 17:22:01 drh Exp $
+** $Id: test1.c,v 1.304 2008/05/23 14:49:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3167,6 +3167,47 @@ static int test_prepare_v2(
 }
 
 /*
+** Usage: sqlite3_prepare_tkt3134 DB
+**
+** Generate a prepared statement for a zero-byte string as a test
+** for ticket #3134.  The string should be preceeded by a zero byte.
+*/
+static int test_prepare_tkt3134(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  static const char zSql[] = "\000SELECT 1";
+  sqlite3_stmt *pStmt = 0;
+  char zBuf[50];
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  rc = sqlite3_prepare_v2(db, &zSql[1], 0, &pStmt, 0);
+  assert(rc==SQLITE_OK || pStmt==0);
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  if( rc!=SQLITE_OK ){
+    assert( pStmt==0 );
+    sprintf(zBuf, "(%d) ", rc);
+    Tcl_AppendResult(interp, zBuf, sqlite3_errmsg(db), 0);
+    return TCL_ERROR;
+  }
+
+  if( pStmt ){
+    if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
+    Tcl_AppendResult(interp, zBuf, 0);
+  }
+  return TCL_OK;
+}
+
+/*
 ** Usage: sqlite3_prepare16 DB sql bytes tailvar
 **
 ** Compile up to <bytes> bytes of the supplied SQL string <sql> using
@@ -4554,6 +4595,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_prepare",               test_prepare       ,0 },
      { "sqlite3_prepare16",             test_prepare16     ,0 },
      { "sqlite3_prepare_v2",            test_prepare_v2    ,0 },
+     { "sqlite3_prepare_tkt3134",       test_prepare_tkt3134, 0},
      { "sqlite3_prepare16_v2",          test_prepare16_v2  ,0 },
      { "sqlite3_finalize",              test_finalize      ,0 },
      { "sqlite3_reset",                 test_reset         ,0 },

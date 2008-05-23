@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.63 2008/05/05 16:56:35 drh Exp $
+# $Id: capi3.test,v 1.64 2008/05/23 14:49:49 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1136,7 +1136,6 @@ do_test capi3-18.1 {
   sqlite3 db2 test.db
   db2 eval {CREATE TABLE t3(x)}
   db2 close
-breakpoint
   sqlite3_step $STMT
 } {SQLITE_ERROR}
 do_test capi3-18.2 {
@@ -1159,5 +1158,12 @@ do_test capi3-18.6 {
 } {database schema has changed}
 sqlite3_finalize $STMT
 
+# Ticket #3134.  Prepare a statement with an nBytes parameter of 0.
+# Make sure this works correctly and does not reference memory out of
+# range.
+#
+do_test capi3-19.1 {
+  sqlite3_prepare_tkt3134 db
+} {}
 
 finish_test

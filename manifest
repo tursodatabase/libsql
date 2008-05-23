@@ -1,5 +1,5 @@
-C Do\snot\sreferences\szSql(-1)\sif\snBytes==0\sin\ssqlite3_prepare().\nTicket\s#3134.\s(CVS\s5155)
-D 2008-05-23T14:32:19
+C Add\sa\stest\scase\sof\spreparing\sa\sstatement\swith\san\snBytes\sparameter\sof\s0\nand\swhere\sthe\sprevious\sbyte\sof\sthe\sstring\sis\szero.\s\sTicket\s#3134.\s(CVS\s5156)
+D 2008-05-23T14:49:49
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,7 +125,7 @@ F src/pager.c d0a77feeaeecaaaec9342a3bb3865ed9a490897a
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c a4919a29a0923e00c6170b0677a50058e352b58c
-F src/prepare.c 4082e0d016fa7b2de07b67dab6b9d2bf0233ffab
+F src/prepare.c cbc9301aba1d0fc3d05fae576f2eb667c189cb36
 F src/printf.c f2d4f6c5b0ec24b643e85fe60258adad8b1f6acc
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c da43ce3080112aa77863e9c570c1df19a892acb8
@@ -136,7 +136,7 @@ F src/sqliteInt.h 70a2b0bf856bbdb86b10d994ea863f6591ab7144
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c c57e740e30bd6dda678796eed62c7f0e64689834
-F src/test1.c 168e78680b5b946378855042d30606015aa46fff
+F src/test1.c da8bf328d7badb199fa83bd084f44f88202570c2
 F src/test2.c f0808cc643528b9620e4059ca9bda8346f526121
 F src/test3.c f5328839e29631ed9eef8674994ad7341b2de59b
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -211,7 +211,7 @@ F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
 F test/capi2.test cc64df7560a96f848f919ea2926c60acf639684b
-F test/capi3.test 1ca5912fdd3a51ea8ee148742532c6a81724f594
+F test/capi3.test d3848b06fb36d43b73aca6e22c44f734e14e5c3b
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
 F test/capi3c.test 208713e5f3a63442c3574c55b83baa7cf8ac5f28
 F test/cast.test ce8f14fc80f70b30ed984480cc0d8914a459e8f9
@@ -636,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 0d47653a3c39b7cd41c7e6edd8c4b4543658412d
-R 351b6d5d96f998331ac308c9c1246646
+P 2d2c53e5058412a5f484ac2ca5bcef596aed2a7b
+R d5354c2350726260a7fbdf53312cdb32
 U drh
-Z cb4f5f91ab1e87c3fcaef512e844a9d1
+Z 65ba60bec746e8c3fc476890f017c4c4
