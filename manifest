@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sof\spreparing\sa\sstatement\swith\san\snBytes\sparameter\sof\s0\nand\swhere\sthe\sprevious\sbyte\sof\sthe\sstring\sis\szero.\s\sTicket\s#3134.\s(CVS\s5156)
-D 2008-05-23T14:49:49
+C Fixed\svarious\stypos,\sspelling,\sgrammar,\sand\sformatting\smistakes.\s\sTicket\s#3124.\s(CVS\s5157)
+D 2008-05-23T17:21:09
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -130,7 +130,7 @@ F src/printf.c f2d4f6c5b0ec24b643e85fe60258adad8b1f6acc
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c da43ce3080112aa77863e9c570c1df19a892acb8
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in 7bbf0c2359fd1de3e337a5ed614b17ddac1b18da
+F src/sqlite.h.in bd32c7e159cf5f18f7de32d7e53a61e7218d4b53
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 70a2b0bf856bbdb86b10d994ea863f6591ab7144
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -636,7 +636,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 2d2c53e5058412a5f484ac2ca5bcef596aed2a7b
-R d5354c2350726260a7fbdf53312cdb32
-U drh
-Z 65ba60bec746e8c3fc476890f017c4c4
+P 846a69acb59403438696000b4ffd588ab42b2f95
+R 8d33bdff8a616328f5fd78e7f84c8843
+U shane
+Z ffb4343d0f8907272f977c577a7ffada
