@@ -11,7 +11,7 @@
 #
 # The focus of this file is testing the r-tree extension.
 #
-# $Id: rtree1.test,v 1.1 2008/05/26 18:41:54 danielk1977 Exp $
+# $Id: rtree1.test,v 1.2 2008/05/26 20:49:04 drh Exp $
 #
 
 set testdir [file join [file dirname $argv0] .. .. test]
@@ -140,7 +140,7 @@ do_test rtree-1.6.1 {
   catchsql {
     CREATE VIRTUAL TABLE t1 USING rtree("the key", "x dim.", "x2'dim");
   }
-} {1 {table 't1_rowid' already exists}}
+} {1 {table "t1_rowid" already exists}}
 do_test rtree-1.6.1 {
   execsql { DROP TABLE t1_rowid }
 } {}
@@ -358,4 +358,3 @@ do_test rtree-8.1.8 { execsql { SELECT ii FROM t6 WHERE x1<5 } } {1 2}
 
 
 finish_test
-
