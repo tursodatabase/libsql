@@ -12,7 +12,7 @@
 ** This file contains code for implementations of the r-tree and r*-tree
 ** algorithms packaged as an SQLite virtual table module.
 **
-** $Id: rtree.c,v 1.1 2008/05/26 18:41:54 danielk1977 Exp $
+** $Id: rtree.c,v 1.2 2008/05/26 20:19:25 drh Exp $
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
@@ -66,9 +66,11 @@
 #include <string.h>
 #include <assert.h>
 
-typedef sqlite3_int64 i64;
-typedef unsigned char u8;
-typedef unsigned int u32;
+#ifndef SQLITE_CORE
+  typedef sqlite3_int64 i64;
+  typedef unsigned char u8;
+  typedef unsigned int u32;
+#endif
 
 typedef struct Rtree Rtree;
 typedef struct RtreeCursor RtreeCursor;
@@ -1356,7 +1358,7 @@ static int parentWrite(Rtree *pRtree, sqlite3_int64 iNode, sqlite3_int64 iPar){
   return sqlite3_reset(pRtree->pWriteParent);
 }
 
-static int insertCell(Rtree *, RtreeNode *, RtreeCell *, int);
+static int rtreeInsertCell(Rtree *, RtreeNode *, RtreeCell *, int);
 
 #if VARIANT_GUTTMAN_LINEAR_SPLIT
 /*
@@ -1894,7 +1896,7 @@ static int SplitNode(
   leftbbox.iRowid = pLeft->iNode;
 
   if( pNode->iNode==1 ){
-    rc = insertCell(pRtree, pLeft->pParent, &leftbbox, iHeight+1);
+    rc = rtreeInsertCell(pRtree, pLeft->pParent, &leftbbox, iHeight+1);
     if( rc!=SQLITE_OK ){
       goto splitnode_out;
     }
@@ -1904,7 +1906,7 @@ static int SplitNode(
     nodeOverwriteCell(pRtree, pParent, &leftbbox, iCell);
     AdjustTree(pRtree, pParent, &leftbbox);
   }
-  if( (rc = insertCell(pRtree, pRight->pParent, &rightbbox, iHeight+1)) ){
+  if( (rc = rtreeInsertCell(pRtree, pRight->pParent, &rightbbox, iHeight+1)) ){
     goto splitnode_out;
   }
 
@@ -2149,7 +2151,7 @@ static int Reinsert(
     rc = ChooseLeaf(pRtree, p, iHeight, &pInsert);
     if( rc==SQLITE_OK ){
       int rc2;
-      rc = insertCell(pRtree, pInsert, p, iHeight);
+      rc = rtreeInsertCell(pRtree, pInsert, p, iHeight);
       rc2 = nodeRelease(pRtree, pInsert);
       if( rc==SQLITE_OK ){
         rc = rc2;
@@ -2165,7 +2167,7 @@ static int Reinsert(
 ** Insert cell pCell into node pNode. Node pNode is the head of a 
 ** subtree iHeight high (leaf nodes have iHeight==0).
 */
-static int insertCell(
+static int rtreeInsertCell(
   Rtree *pRtree,
   RtreeNode *pNode,
   RtreeCell *pCell,
@@ -2218,7 +2220,7 @@ static int reinsertNodeContent(Rtree *pRtree, RtreeNode *pNode){
     rc = ChooseLeaf(pRtree, &cell, pNode->iNode, &pInsert);
     if( rc==SQLITE_OK ){
       int rc2;
-      rc = insertCell(pRtree, pInsert, &cell, pNode->iNode);
+      rc = rtreeInsertCell(pRtree, pInsert, &cell, pNode->iNode);
       rc2 = nodeRelease(pRtree, pInsert);
       if( rc==SQLITE_OK ){
         rc = rc2;
@@ -2389,7 +2391,7 @@ int rtreeUpdate(
     if( rc==SQLITE_OK ){
       int rc2;
       pRtree->iReinsertHeight = -1;
-      rc = insertCell(pRtree, pLeaf, &cell, 0);
+      rc = rtreeInsertCell(pRtree, pLeaf, &cell, 0);
       rc2 = nodeRelease(pRtree, pLeaf);
       if( rc==SQLITE_OK ){
         rc = rc2;

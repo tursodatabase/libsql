@@ -77,6 +77,7 @@ EXTOBJ += fts3.o \
 	  fts3_porter.o \
           fts3_tokenizer.o \
 	  fts3_tokenizer1.o
+EXTOBJ += rtree.o
 
 # All of the source code files.
 #
@@ -186,6 +187,9 @@ SRC += \
   $(TOP)/ext/fts3/fts3_tokenizer1.c
 SRC += \
   $(TOP)/ext/icu/icu.c
+SRC += \
+  $(TOP)/ext/rtree/rtree.h \
+  $(TOP)/ext/rtree/rtree.c
 
 
 # Generated source code files
@@ -274,6 +278,8 @@ EXTHDR += \
   $(TOP)/ext/fts3/fts3.h \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_tokenizer.h
+EXTHDR += \
+  $(TOP)/ext/rtree/rtree.h
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.

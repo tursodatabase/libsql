@@ -80,7 +80,7 @@ and query r-tree structures using ordinary SQL statements.
   1.3 Queries.
 
     R-tree tables may be queried using all of the same SQL syntax supported
-    by regular tables. However, some query patterns are more efficient faster
+    by regular tables. However, some query patterns are more efficient
     than others.
 
     R-trees support fast lookup by primary key value (O(logN), like 
@@ -98,14 +98,14 @@ and query r-tree structures using ordinary SQL statements.
 
 2. COMPILATION AND USAGE
 
-  The easiest way to compile and use the ICU extension is to build
+  The easiest way to compile and use the RTREE extension is to build
   and use it as a dynamically loadable SQLite extension. To do this
   using gcc on *nix:
 
     gcc -shared rtree.c -o libSqliteRtree.so
 
   You may need to add "-I" flags so that gcc can find sqlite3ext.h
-  and sqlite3.h. The resulting shared lib, libSqliteIcu.so, may be
+  and sqlite3.h. The resulting shared lib, libSqliteRtree.so, may be
   loaded into sqlite in the same way as any other dynamicly loadable
   extension.
 
@@ -118,6 +118,3 @@ and query r-tree structures using ordinary SQL statements.
   [2]  Norbert Beckmann, Hans-Peter Kriegel, Ralf Schneider, Bernhard Seeger,
        "The R*-tree: An Efficient and Robust Access Method for Points and
        Rectangles", Universitaet Bremen, 1990.
-
-
-

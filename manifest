@@ -1,5 +1,5 @@
-C Import\s'rtree'\sextension.\s(CVS\s5159)
-D 2008-05-26T18:41:54
+C Update\sthe\samalgamation\sbuilder\sto\sincorporate\sthe\sRTREE\sextension.\s(CVS\s5160)
+D 2008-05-26T20:19:25
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -63,8 +63,9 @@ F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
-F ext/rtree/README decb7976cfacf834074d15028af99344439e30c3
-F ext/rtree/rtree.c f56f8a5888d3584f5b19112ade2855db5a985690
+F ext/rtree/README 64b8300581ba2553a4522ec78812dc940482906b
+F ext/rtree/rtree.c 9352fa04c917a3603ddfa9b0623e0cf039227470
+F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree.test ec173a9420ff012e4d29b3063add143583a597a7
 F ext/rtree/rtree1.test 96563843773129eaec544f52768853f06be61d9c
 F ext/rtree/rtree2.test 98f3c39b03577330566abf3c7e1e0baf8f9aa521
@@ -74,14 +75,14 @@ F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
-F main.mk 6c01687f355dc8c7dff14a952a7c720b3a4c11a6
+F main.mk 0fdc9417630e829cae994efee59038810f091e33
 F mkdll.sh 712e74f3efe08a6ba12b2945d018a29a89d7fe3b
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
 F mkopcodec.awk 3fb9bf077053c968451f4dd03d11661ac373f9d1
 F mkopcodeh.awk 513946ce4429bf2723aef0d640eb4d2493deb68e
 F mkso.sh 24bde4c09e6fe80f718db3c31c068f45e13a2f2c
-F publish.sh 3ecffcfa9d4718b20fc8f1891ac529056636d37f
+F publish.sh 5efba7d327e0acf6633136f7f096c88aaa26df73
 F publish_osx.sh 2ad2ee7d50632dff99949edc9c162dbb052f7534
 F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
 F sqlite.pc.in c322c6244c6395955dca34d87955aabde7df7623
@@ -111,7 +112,7 @@ F src/insert.c 77f0829b3e2edd19e9238195c56b0d56ab000f17
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 8f5a2b25d9673b4004287cf2bf51dbf7d0738406
 F src/loadext.c eac6c61810a3b531808774bec7f3d238cfe261f3
-F src/main.c 51f02209493572630dfcf4d4c8855f08aae21b9b
+F src/main.c 25358a404194d7571cdd3be001919a53b80106db
 F src/malloc.c 12c1ae98ef1eff34b13c9eb526e0b7b479e1e820
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
@@ -573,7 +574,7 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl f8f8233344494ad8a193056fe346f8f616951b78
+F tool/mksqlite3c.tcl da45d6d596f536d361e428874e7071710803de1e
 F tool/mksqlite3internalh.tcl 47737a925fb02fce43e2c0a14b3cc17574a4d44a
 F tool/omittest.tcl 7d1fdf469e2f4d175f70c36e469db64a1626fabb
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -588,65 +589,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-F www/34to35.tcl 942e479aa7740b55d714dce0f0b2cb6ca91c3f20
-F www/arch.fig d5f9752a4dbf242e9cfffffd3f5762b6c63b3bcf
-F www/arch.gif f845a64772062e82d17980a349f95f1f0b4c8054
-F www/arch.png 82ef36db1143828a7abc88b1e308a5f55d4336f4
-F www/arch.tcl 03a6c66b1b34209d2897352e058377b421f0b80e
-F www/arch2.fig ae2432145c26cfa148fa0116589517ad3cd5fc65
-F www/arch2.gif 6f2d47c4e0c5842c0d6b5513fd8249393d7c7003
-F www/arch2b.fig d22a2c9642d584b89d4088b1e51e2bb0f7c04bed
-F www/audit.tcl 90e09d580f79c7efec0c7d6f447b7ec5c2dce5c0
-F www/autoinc.tcl b357f5ba954b046ee35392ce0f884a2fcfcdea06
-F www/c_interface.tcl b51b08591554c16a0c3ef718364a508ac25abc7e
-F www/capi3.tcl 88884dd743039d1a95aa57f4a5eb369de7744716
-F www/capi3ref.tcl 167c2d5b45da22d77b2493b00d44b001b4ec83b1
-F www/changes.tcl 7540ccadb3072f3aba44f9f745aad0f4a0458a55
-F www/common.tcl 2b793e5c31486c8a01dd27dc0a631ad93704438e
-F www/compile.tcl 276546d7eb445add5a867193bbd80f6919a6b084
-F www/conflict.tcl cdd0f4b59b0ba6d61f67e6a38f3ae45853bacb30
-F www/copyright-release.html 294e011760c439c44951a6bfecd4c81a1ae359e8
-F www/copyright-release.pdf cfca3558fc97095e57c6117d08f1f5b80d95125a
-F www/copyright.tcl b698824cea9b503751bf7380a98883a264d600a0
-F www/datatype3.tcl f7b6831c9088549efe021df4f71a34c0095d4e94
-F www/datatypes.tcl 7c786d2e8ff434346764534ec015966d17efce60
-F www/different.tcl 8b76ae88bf73e38097b7936e198df4f89baf587c
-F www/direct1b.gif 32b48b764244817b6b591898dc52a04299a7b8a7
-F www/docs.tcl be3fabaead4a21ec5315934f5eac10b4e79081c7
-F www/download.tcl d59a0244f22a975c3f9deafb535fc20549cb8c45
-F www/dynload.tcl 02eb8273aa78cfa9070dd4501dca937fb22b466c
-F www/faq.tcl ebdcad6041d66220b866ac49bcd55726c3bd80ef
-F www/fileformat.tcl 900c95b9633abc3dcfc384d9ddd8eb4876793059
-F www/formatchng.tcl 722a9c08be4f7325b3a545abfe508cfbabe20eb7
-F www/fullscanb.gif f7c94cb227f060511f8909e10f570157263e9a25
-F www/index-ex1-x-b.gif f9b1d85c3fa2435cf38b15970c7e3aa1edae23a3
-F www/index.tcl d23c2491aed9fef025c95b0d0f954ee6a28703dd
-F www/indirect1b1.gif adfca361d2df59e34f9c5cac52a670c2bfc303a1
-F www/lang.tcl e015c489a30cbf5669bc6aef5c932a6b4f6ddf48
-F www/limits.tcl 9035eb73e814ccb298595fd57670dec817533616
-F www/lockingv3.tcl e52345bd20323bef6146bfce18ae0829b2b7c87d
-F www/mingw.tcl d96b451568c5d28545fefe0c80bee3431c73f69c
-F www/mkapidoc.tcl 2fdbb765c38a4467687ba390e07c1229d4939a3b
-F www/nulls.tcl ec35193f92485b87b90a994a01d0171b58823fcf
-F www/oldnews.tcl acfcfc6e90c41ef46a605c87972cdb6061867e1f
-F www/omitted.tcl ee6b46f83d513b2187869740da829a700e1a355e
-F www/opcode.tcl 5bd68059416b223515a680d410a9f7cb6736485f
-F www/optimizer.tcl d6812a10269bd0d7c488987aac0ad5036cace9dc
-F www/optimizing.tcl f0b2538988d1bbad16cbfe63ec6e8f48c9eb04e5
-F www/optoverview.tcl 815df406a38c9f69b27d37e8f7ede004c6d9f19e
-F www/pragma.tcl 93b37b2b7f39be33d3462416f2af8a627561960a
-F www/quickstart.tcl 8708a4ca83fbf55c66af1782992626f20c3df095
-F www/shared.gif 265bae80c5b311c5a86e47662821076ffaf5c6ea
-F www/sharedcache.tcl 3ebec81110e606af6fd65a3c4c19562cb173b29c
-F www/speed.tcl 656ed5be8cc9d536353e1a96927b925634a62933
-F www/sqlite.tcl abb87f0d74a4fe9642987466bb59fe6abada988f
-F www/support.tcl 1b94f4a98abfddcc1b13fb41565c8f66629cdf03
-F www/table-ex1b2.gif a588d21a2d88bb2a2ef0431fcc5ed5aa48c0bbc5
-F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
-F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
-F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
-F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 33548744369643cc8843b74ad1fc1b7d5988d7a4
-R 675fcc0cf171d37f901dfc59fa943c1b
-U danielk1977
-Z a3cfe87334f3bee1a0f0c75b4054c9e1
+P b104dcd6adadbd3fe15a348fe9d4d290119e139e
+R b2d59c86708fea19320a46b10d663097
+U drh
+Z 0bf3965fe2dcc107d2419d0fa0170efc

@@ -100,6 +100,7 @@ foreach hdr {
    os_os2.h
    pager.h
    parse.h
+   rtree.h
    sqlite3ext.h
    sqlite3.h
    sqliteInt.h
@@ -273,6 +274,8 @@ foreach file {
    fts3_porter.c
    fts3_tokenizer.c
    fts3_tokenizer1.c
+
+   rtree.c
 } {
   copy_file tsrc/$file
 }

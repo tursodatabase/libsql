@@ -14,12 +14,16 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.441 2008/05/26 18:41:54 danielk1977 Exp $
+** $Id: main.c,v 1.442 2008/05/26 20:19:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
+
 #ifdef SQLITE_ENABLE_FTS3
 # include "fts3.h"
+#endif
+#ifdef SQLITE_ENABLE_RTREE
+# include "rtree.h"
 #endif
 
 /*
@@ -1187,7 +1191,6 @@ static int openDatabase(
 
 #ifdef SQLITE_ENABLE_RTREE
   if( !db->mallocFailed && rc==SQLITE_OK){
-    extern int sqlite3RtreeInit(sqlite3*);
     rc = sqlite3RtreeInit(db);
   }
 #endif
