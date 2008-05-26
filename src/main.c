@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.440 2008/05/22 13:56:17 danielk1977 Exp $
+** $Id: main.c,v 1.441 2008/05/26 18:41:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1184,6 +1184,14 @@ static int openDatabase(
     rc = sqlite3IcuInit(db);
   }
 #endif
+
+#ifdef SQLITE_ENABLE_RTREE
+  if( !db->mallocFailed && rc==SQLITE_OK){
+    extern int sqlite3RtreeInit(sqlite3*);
+    rc = sqlite3RtreeInit(db);
+  }
+#endif
+
   sqlite3Error(db, rc, 0);
 
   /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking

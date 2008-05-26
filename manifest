@@ -1,5 +1,5 @@
-C Fix\sthe\sLIKE\squery\soptimizer\sso\sthat\sit\sworks\swith\sLIKE\spatterns\nending\sin\s'@%'\son\sNOCASE\scolumns.\s\sTicket\s#3139.\s(CVS\s5158)
-D 2008-05-26T18:33:41
+C Import\s'rtree'\sextension.\s(CVS\s5159)
+D 2008-05-26T18:41:54
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -63,9 +63,18 @@ F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
+F ext/rtree/README decb7976cfacf834074d15028af99344439e30c3
+F ext/rtree/rtree.c f56f8a5888d3584f5b19112ade2855db5a985690
+F ext/rtree/rtree.test ec173a9420ff012e4d29b3063add143583a597a7
+F ext/rtree/rtree1.test 96563843773129eaec544f52768853f06be61d9c
+F ext/rtree/rtree2.test 98f3c39b03577330566abf3c7e1e0baf8f9aa521
+F ext/rtree/rtree3.test 46d1959aa651d3df8b64d93762d3061c62b38105
+F ext/rtree/rtree_perf.tcl 0fabb6d5c48cb8024e042ce5d4bb88998b6ec1cb
+F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
+F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
-F main.mk 6a916bb5c17cf2a753346b32cc0869ffdc1ed4b3
+F main.mk 6c01687f355dc8c7dff14a952a7c720b3a4c11a6
 F mkdll.sh 712e74f3efe08a6ba12b2945d018a29a89d7fe3b
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -102,7 +111,7 @@ F src/insert.c 77f0829b3e2edd19e9238195c56b0d56ab000f17
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 8f5a2b25d9673b4004287cf2bf51dbf7d0738406
 F src/loadext.c eac6c61810a3b531808774bec7f3d238cfe261f3
-F src/main.c cf415e0920dc9f66806dd766ad72ba5cda533363
+F src/main.c 51f02209493572630dfcf4d4c8855f08aae21b9b
 F src/malloc.c 12c1ae98ef1eff34b13c9eb526e0b7b479e1e820
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c fc716ff521b6dd3e43eaa211967383308800e70a
@@ -148,7 +157,7 @@ F src/test9.c 4615ef08750245a2d96aaa7cbe2fb4aff2b57acc
 F src/test_async.c 0d26a72361022f6f732dd1174c6615bad6e587ff
 F src/test_autoext.c 5e892ab84aece3f0428920bf46923f16ac83962a
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
-F src/test_config.c b910754c5ba311abf149457cdbfd66144e715b35
+F src/test_config.c 982bba6221b854a86427ae64e9c65b313b0f6e03
 F src/test_devsym.c 76cf28b79c6f01658083ae2a972647b97a362a01
 F src/test_func.c f4aafa10f17d52c43a64b47717265802e6e552b3
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
@@ -637,7 +646,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 77d5a7aa1c7ea715298228ed2dbd0497cacbd0e4
-R d32b39a4864ba1e92f958c456cb9d453
-U drh
-Z b0b4c859c49b7350ba450c2f85000be9
+P 33548744369643cc8843b74ad1fc1b7d5988d7a4
+R 675fcc0cf171d37f901dfc59fa943c1b
+U danielk1977
+Z a3cfe87334f3bee1a0f0c75b4054c9e1

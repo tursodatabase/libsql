@@ -58,7 +58,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o bitvec.o btmutex.o btree.o build.o \
          select.o table.o $(TCLOBJ) tokenize.o trigger.o \
          update.o util.o vacuum.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbefifo.o vdbemem.o \
-         where.o utf.o legacy.o vtab.o
+         where.o utf.o legacy.o vtab.o rtree.o
 
 EXTOBJ = icu.o
 EXTOBJ += fts1.o \
@@ -411,6 +411,9 @@ fts3_tokenizer.o:	$(TOP)/ext/fts3/fts3_tokenizer.c $(HDR) $(EXTHDR)
 
 fts3_tokenizer1.o:	$(TOP)/ext/fts3/fts3_tokenizer1.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenizer1.c
+
+rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
 
 
 # Rules for building test programs and for running tests

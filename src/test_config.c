@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.25 2008/04/14 01:00:58 drh Exp $
+** $Id: test_config.c,v 1.26 2008/05/26 18:41:54 danielk1977 Exp $
 */
 
 #include "sqliteLimit.h"
@@ -336,6 +336,12 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp, "sqlite_options", "reindex", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "reindex", "1", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_ENABLE_RTREE
+  Tcl_SetVar2(interp, "sqlite_options", "rtree", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "rtree", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_OMIT_SCHEMA_PRAGMAS
