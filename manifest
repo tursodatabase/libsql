@@ -1,5 +1,5 @@
-C Fixed\svarious\stypos,\sspelling,\sgrammar,\sand\sformatting\smistakes.\s\sTicket\s#3124.\s(CVS\s5157)
-D 2008-05-23T17:21:09
+C Fix\sthe\sLIKE\squery\soptimizer\sso\sthat\sit\sworks\swith\sLIKE\spatterns\nending\sin\s'@%'\son\sNOCASE\scolumns.\s\sTicket\s#3139.\s(CVS\s5158)
+D 2008-05-26T18:33:41
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -176,7 +176,7 @@ F src/vdbeblob.c 554736781ee273a8089c776e96bdb53e66f57ce6
 F src/vdbefifo.c 1644a41c6366ff25a920df4ca675f12d3f559687
 F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
 F src/vtab.c ce9d19ca9053812a557010fd4be7e842f8ebba2d
-F src/where.c ef5bd7ad975de37acf2473ae9fa4a6d022a3b4ca
+F src/where.c 8c8b360d898fe1fa7994ad6171d999aad6318cfd
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d56a3ca8acdf761204aff0a2e7aa5eb8e11b31e6
@@ -359,6 +359,7 @@ F test/jrnlmode4.test 8ee031603fef8ed5deba0de8b012a82be6d5a6a0
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
 F test/like.test 2a3ddbd5d91503f914eabae67a47c4196fe33a58
+F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test ca61a9fc520f54470edb3a771167fe4b68abc247
 F test/loadext.test 1911e7365a6d31d77ba00dd3a8a31b7f2111a670
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
@@ -636,7 +637,7 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P 846a69acb59403438696000b4ffd588ab42b2f95
-R 8d33bdff8a616328f5fd78e7f84c8843
-U shane
-Z ffb4343d0f8907272f977c577a7ffada
+P 77d5a7aa1c7ea715298228ed2dbd0497cacbd0e4
+R d32b39a4864ba1e92f958c456cb9d453
+U drh
+Z b0b4c859c49b7350ba450c2f85000be9
