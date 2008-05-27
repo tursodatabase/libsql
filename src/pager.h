@@ -13,7 +13,7 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.72 2008/05/01 17:03:49 drh Exp $
+** @(#) $Id: pager.h,v 1.73 2008/05/27 18:11:45 shane Exp $
 */
 
 #ifndef _PAGER_H_
@@ -23,7 +23,7 @@
 ** The type used to represent a page number.  The first page in a file
 ** is called page 1.  0 is used to represent "not a page".
 */
-typedef unsigned int Pgno;
+typedef u32 Pgno;
 
 /*
 ** Each open file is managed by a separate instance of the "Pager" structure.

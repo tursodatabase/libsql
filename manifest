@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\srtree\sthat\soccurs\swhen\stoo\smany\sconstraints\sare\spassed\nin\son\sa\squery.\s(CVS\s5162)
-D 2008-05-27T00:06:02
+C Explicitly\stypedef\sPgno\sas\s'u32'\sinstead\sof\s'unsigned\sint'\sto\sremove\sa\sfew\swarnings/errors\sfrom\snative\sx86_64\scompile.\s(CVS\s5163)
+D 2008-05-27T18:11:45
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -133,7 +133,7 @@ F src/os_os2.c 1578149e21c4eac42c7f230a6f40500846f8e781
 F src/os_unix.c 06dceb3230249d6e7c6a1d8d602fa6a93f4085b9
 F src/os_win.c 3b0a31c598dcafada283368f2a7f7bb3fd78b26b
 F src/pager.c d0a77feeaeecaaaec9342a3bb3865ed9a490897a
-F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
+F src/pager.h 1ccde54041195311c2b09b6936404d2192db44da
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c a4919a29a0923e00c6170b0677a50058e352b58c
 F src/prepare.c cbc9301aba1d0fc3d05fae576f2eb667c189cb36
@@ -590,7 +590,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P 78f4ba974d9b768b62391d8cd2ed407d49584cb8
-R 1a1f7b7755f4d5c027e202044942e3ee
-U drh
-Z d4c09f4b49e195721c249033176d5e36
+P 54b84a3ddba9d27814c2f613dd197f691ac549a4
+R 355aae5f822bc54cb546f46095fa6fd0
+U shane
+Z c8e74ab907b84a5ef7d47d703f1cad85
