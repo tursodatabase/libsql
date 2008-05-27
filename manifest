@@ -1,5 +1,5 @@
-C Updated\sto\suse\slocaltime_s()\sin\sWindows\sbuild\senvironments\sthat\ssupport\sit.\s\sTicket\s#3126.\s(CVS\s5164)
-D 2008-05-27T19:49:21
+C In\stest3.c,\suse\stype\s'u32'\sinstead\sof\s'unsigned\sint'\sto\sremove\sa\swarning/error\sfrom\snative\sx86_64\scompile.\s(CVS\s5165)
+D 2008-05-27T20:17:01
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -149,7 +149,7 @@ F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c c57e740e30bd6dda678796eed62c7f0e64689834
 F src/test1.c da8bf328d7badb199fa83bd084f44f88202570c2
 F src/test2.c f0808cc643528b9620e4059ca9bda8346f526121
-F src/test3.c f5328839e29631ed9eef8674994ad7341b2de59b
+F src/test3.c 5705fc361dd60fe830f1934841aee509c733c6a9
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
 F src/test6.c 1f7d1cc0d997f549d441036a1103b4422ce0b877
@@ -590,7 +590,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P b5fd8a239d787a126f775101760737781751f56e
-R 7cfe648a4ba711ba9a867bf6621bf338
+P 1518827e48bc3a259b6079a5a4b8dca47b265172
+R 71fe853769612a115cd254179d576c17
 U shane
-Z b944ae1ffa37a17d40e51075e534325a
+Z 1538412614f587f7b2507f1507eb264e
