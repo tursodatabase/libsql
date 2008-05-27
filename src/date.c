@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.79 2008/03/20 14:03:29 drh Exp $
+** $Id: date.c,v 1.80 2008/05/27 19:49:21 shane Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -52,6 +52,23 @@
 #include <time.h>
 
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
+
+/*
+** On recent Windows platforms, the localtime_s() function is available
+** as part of the "Secure CRT". It is essentially equivalent to 
+** localtime_r() available under most POSIX platforms, except that the 
+** order of the parameters is reversed.
+**
+** See http://msdn.microsoft.com/en-us/library/a442x3ye(VS.80).aspx.
+**
+** If the user has not indicated to use localtime_r() or localtime_s()
+** already, check for an MSVC build environment that provides 
+** localtime_s().
+*/
+#if !defined(HAVE_LOCALTIME_R) && !defined(HAVE_LOCALTIME_S) && \
+     defined(_MSC_VER) && defined(_CRT_INSECURE_DEPRECATE)
+#define HAVE_LOCALTIME_S 1
+#endif
 
 /*
 ** A structure for holding a single date and time.
@@ -427,6 +444,17 @@ static double localtimeOffset(DateTime *p){
   {
     struct tm sLocal;
     localtime_r(&t, &sLocal);
+    y.Y = sLocal.tm_year + 1900;
+    y.M = sLocal.tm_mon + 1;
+    y.D = sLocal.tm_mday;
+    y.h = sLocal.tm_hour;
+    y.m = sLocal.tm_min;
+    y.s = sLocal.tm_sec;
+  }
+#elif defined(HAVE_LOCALTIME_S)
+  {
+    struct tm sLocal;
+    localtime_s(&sLocal, &t);
     y.Y = sLocal.tm_year + 1900;
     y.M = sLocal.tm_mon + 1;
     y.D = sLocal.tm_mday;

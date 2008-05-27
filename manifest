@@ -1,5 +1,5 @@
-C Explicitly\stypedef\sPgno\sas\s'u32'\sinstead\sof\s'unsigned\sint'\sto\sremove\sa\sfew\swarnings/errors\sfrom\snative\sx86_64\scompile.\s(CVS\s5163)
-D 2008-05-27T18:11:45
+C Updated\sto\suse\slocaltime_s()\sin\sWindows\sbuild\senvironments\sthat\ssupport\sit.\s\sTicket\s#3126.\s(CVS\s5164)
+D 2008-05-27T19:49:21
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,7 +102,7 @@ F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
 F src/build.c a52d9d51341444a2131e3431608f245db80d9591
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
-F src/date.c e41ce4513fb0e359dc678d6bddb4ace135fe365d
+F src/date.c b305ced9f4da66b51ef020d9bf31c6c92fc0c6bb
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
 F src/expr.c 89f192b22b8c06b61d9b944cb59f42370d80e362
 F src/fault.c 1f6177188edb00641673e462f3fab8cba9f7422b
@@ -590,7 +590,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P 54b84a3ddba9d27814c2f613dd197f691ac549a4
-R 355aae5f822bc54cb546f46095fa6fd0
+P b5fd8a239d787a126f775101760737781751f56e
+R 7cfe648a4ba711ba9a867bf6621bf338
 U shane
-Z c8e74ab907b84a5ef7d47d703f1cad85
+Z b944ae1ffa37a17d40e51075e534325a
