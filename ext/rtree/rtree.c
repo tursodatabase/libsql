@@ -12,7 +12,7 @@
 ** This file contains code for implementations of the r-tree and r*-tree
 ** algorithms packaged as an SQLite virtual table module.
 **
-** $Id: rtree.c,v 1.3 2008/05/26 20:49:03 drh Exp $
+** $Id: rtree.c,v 1.4 2008/05/27 00:06:02 drh Exp $
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
@@ -1080,11 +1080,11 @@ static int rtreeFilter(
 */
 static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int rc = SQLITE_OK;
-  int ii;
+  int ii, cCol;
 
   int iIdx = 0;
-  char zIdxStr[RTREE_MAX_DIMENSIONS*2+1];
-  memset(zIdxStr, 0, RTREE_MAX_DIMENSIONS*2+1);
+  char zIdxStr[RTREE_MAX_DIMENSIONS*8+1];
+  memset(zIdxStr, 0, sizeof(zIdxStr));
 
   assert( pIdxInfo->idxStr==0 );
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
@@ -1113,8 +1113,35 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         case SQLITE_INDEX_CONSTRAINT_GE: op = RTREE_GE; break;
       }
       if( op ){
+        /* Make sure this particular constraint has not been used before.
+        ** If it has been used before, ignore it.
+        **
+        ** A <= or < can be used if there is a prior >= or >.
+        ** A >= or > can be used if there is a prior < or <=.
+        ** A <= or < is disqualified if there is a prior <=, <, or ==.
+        ** A >= or > is disqualified if there is a prior >=, >, or ==.
+        ** A == is disqualifed if there is any prior constraint.
+        */
+        int j, opmsk;
+        static const unsigned char compatible[] = { 0, 0, 1, 1, 2, 2 };
+        assert( compatible[RTREE_EQ & 7]==0 );
+        assert( compatible[RTREE_LT & 7]==1 );
+        assert( compatible[RTREE_LE & 7]==1 );
+        assert( compatible[RTREE_GT & 7]==2 );
+        assert( compatible[RTREE_GE & 7]==2 );
+        cCol = p->iColumn - 1 + 'a';
+        opmsk = compatible[op & 7];
+        for(j=0; j<iIdx; j+=2){
+          if( zIdxStr[j+1]==cCol && (compatible[zIdxStr[j] & 7] & opmsk)!=0 ){
+            op = 0;
+            break;
+          }
+        }
+      }
+      if( op ){
+        assert( iIdx<sizeof(zIdxStr)-1 );
         zIdxStr[iIdx++] = op;
-        zIdxStr[iIdx++] = (char)(p->iColumn-1) + 'a';
+        zIdxStr[iIdx++] = cCol;
         pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
         pIdxInfo->aConstraintUsage[ii].omit = 1;
       }

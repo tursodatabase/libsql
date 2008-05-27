@@ -1,5 +1,5 @@
-C Use\s%w\sinstead\sof\s%q\swhen\sconstructing\sshadow\stable\snames\sfor\srtree.\s(CVS\s5161)
-D 2008-05-26T20:49:03
+C Fix\sa\sbug\sin\srtree\sthat\soccurs\swhen\stoo\smany\sconstraints\sare\spassed\nin\son\sa\squery.\s(CVS\s5162)
+D 2008-05-27T00:06:02
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -64,12 +64,13 @@ F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F ext/rtree/README 64b8300581ba2553a4522ec78812dc940482906b
-F ext/rtree/rtree.c 8b849f0460545eca83b23878914aca7891657b4f
+F ext/rtree/rtree.c 28b8650cb1594b6a26a47db0b0a3269c8c8d1d43
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree.test ec173a9420ff012e4d29b3063add143583a597a7
 F ext/rtree/rtree1.test 7504a4bd3aaad379d2d712bbb05fc75460e8537d
-F ext/rtree/rtree2.test 98f3c39b03577330566abf3c7e1e0baf8f9aa521
+F ext/rtree/rtree2.test 3402e9d57cac67651779130bafd4162772d2420e
 F ext/rtree/rtree3.test 46d1959aa651d3df8b64d93762d3061c62b38105
+F ext/rtree/rtree4.test f285c08f664804558c267dc8e222e7ecd4dfbc6d
 F ext/rtree/rtree_perf.tcl 0fabb6d5c48cb8024e042ce5d4bb88998b6ec1cb
 F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
@@ -589,7 +590,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P aa8eba3360c31182f5238e96b83a382374f40fab
-R 6ae55ee931b382f2653693522f39d2a9
+P 78f4ba974d9b768b62391d8cd2ed407d49584cb8
+R 1a1f7b7755f4d5c027e202044942e3ee
 U drh
-Z 38ba8ba8b7fad64dd7f56bc5220bc609
+Z d4c09f4b49e195721c249033176d5e36

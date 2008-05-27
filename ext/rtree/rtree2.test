@@ -11,7 +11,7 @@
 #
 # The focus of this file is testing the r-tree extension.
 #
-# $Id: rtree2.test,v 1.1 2008/05/26 18:41:54 danielk1977 Exp $
+# $Id: rtree2.test,v 1.2 2008/05/27 00:06:02 drh Exp $
 #
 
 set testdir [file join [file dirname $argv0] .. .. test]
@@ -44,24 +44,24 @@ for {set nDim 1} {$nDim <= 5} {incr nDim} {
   do_test rtree2-$nDim.2 {
     db transaction {
       for {set ii 0} {$ii < $::NROW} {incr ii} {
-#puts "Row $ii"
+        #puts "Row $ii"
         set values [list]
         for {set jj 0} {$jj<$nDim*2} {incr jj} {
           lappend values [expr int(rand()*1000)]
         }
         set values [join $values ,]
-#puts [rtree_treedump db t1]
-#puts "INSERT INTO t2 VALUES($ii, $values)"
+        #puts [rtree_treedump db t1]
+        #puts "INSERT INTO t2 VALUES($ii, $values)"
         set rc [catch {db eval "INSERT INTO t1 VALUES($ii, $values)"}]
         if {$rc} {
           incr ii -1
         } else {
           db eval "INSERT INTO t2 VALUES($ii, $values)"
         }
-#if {[rtree_check db t1]} {
-#puts [rtree_treedump db t1]
-#exit
-#}
+        #if {[rtree_check db t1]} {
+          #puts [rtree_treedump db t1]
+          #exit
+        #}
       }
     }
 
@@ -100,13 +100,13 @@ for {set nDim 1} {$nDim <= 5} {incr nDim} {
       set t2 [execsql "SELECT * FROM t2 WHERE $where ORDER BY ii"]
       set rc [expr {$t1 eq $t2}]
       if {$rc != 1} {
-puts $where
+        #puts $where
         puts $t1
         puts $t2
-puts [rtree_treedump db t1]
-breakpoint
-set t1 [execsql "SELECT * FROM t1 WHERE $where ORDER BY ii"]
-exit
+        #puts [rtree_treedump db t1]
+        #breakpoint
+        #set t1 [execsql "SELECT * FROM t1 WHERE $where ORDER BY ii"]
+        #exit
       }
       set rc
     } {1}
@@ -141,4 +141,3 @@ exit
 }
 
 finish_test
-
