@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.371 2008/05/01 17:16:53 drh Exp $
+** $Id: expr.c,v 1.372 2008/05/28 13:49:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -738,7 +738,6 @@ void sqlite3ExprListCheckLength(
   }
 }
 
-
 /* The following three functions, heightOfExpr(), heightOfExprList()
 ** and heightOfSelect(), are used to determine the maximum height
 ** of any expression tree referenced by the structure passed as the
@@ -748,6 +747,7 @@ void sqlite3ExprListCheckLength(
 ** to by pnHeight, the second parameter, then set *pnHeight to that
 ** value.
 */
+#if SQLITE_MAX_EXPR_DEPTH>0
 static void heightOfExpr(Expr *p, int *pnHeight){
   if( p ){
     if( p->nHeight>*pnHeight ){
@@ -775,6 +775,7 @@ static void heightOfSelect(Select *p, int *pnHeight){
     heightOfSelect(p->pPrior, pnHeight);
   }
 }
+#endif /* SQLITE_MAX_EXPR_DEPTH>0 */
 
 /*
 ** Set the Expr.nHeight variable in the structure passed as an 
@@ -783,6 +784,7 @@ static void heightOfSelect(Select *p, int *pnHeight){
 ** has a height equal to the maximum height of any other 
 ** referenced Expr plus one.
 */
+#if SQLITE_MAX_EXPR_DEPTH>0
 void sqlite3ExprSetHeight(Expr *p){
   int nHeight = 0;
   heightOfExpr(p->pLeft, &nHeight);
@@ -791,16 +793,19 @@ void sqlite3ExprSetHeight(Expr *p){
   heightOfSelect(p->pSelect, &nHeight);
   p->nHeight = nHeight + 1;
 }
+#endif /* SQLITE_MAX_EXPR_DEPTH>0 */
 
 /*
 ** Return the maximum height of any expression tree referenced
 ** by the select statement passed as an argument.
 */
+#if SQLITE_MAX_EXPR_DEPTH>0
 int sqlite3SelectExprHeight(Select *p){
   int nHeight = 0;
   heightOfSelect(p, &nHeight);
   return nHeight;
 }
+#endif /* SQLITE_MAX_EXPR_DEPTH>0 */
 
 /*
 ** Delete an entire expression list.

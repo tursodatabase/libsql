@@ -11,7 +11,7 @@
 #
 # Randomized test cases for the rtree extension.
 #
-# $Id: rtree4.test,v 1.1 2008/05/27 00:06:02 drh Exp $
+# $Id: rtree4.test,v 1.2 2008/05/28 13:49:35 drh Exp $
 #
 
 set testdir [file join [file dirname $argv0] .. .. test]
@@ -222,7 +222,6 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
     do_test rtree-$nDim.2.$i.8 {
       list $where [db eval "SELECT id FROM rx $where ORDER BY id"]
     } [list $where [db eval "SELECT id FROM bx $where ORDER BY id"]]
-
   }
 
 }

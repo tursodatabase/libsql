@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.704 2008/05/13 13:27:34 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.705 2008/05/28 13:49:36 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1142,8 +1142,7 @@ struct Expr {
   Select *pSelect;       /* When the expression is a sub-select.  Also the
                          ** right side of "<expr> IN (<select>)" */
   Table *pTab;           /* Table for OP_Column expressions. */
-/*  Schema *pSchema; */
-#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
+#if SQLITE_MAX_EXPR_DEPTH>0
   int nHeight;           /* Height of the tree headed by this node */
 #endif
 };
@@ -1533,9 +1532,7 @@ struct Parse {
   int nVtabLock;             /* Number of virtual tables to lock */
   Table **apVtabLock;        /* Pointer to virtual tables needing locking */
 #endif
-#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
   int nHeight;            /* Expression tree height of current sub-select */
-#endif
 };
 
 #ifdef SQLITE_OMIT_VIRTUALTABLE
@@ -2198,11 +2195,12 @@ int sqlite3FindInIndex(Parse *, Expr *, int);
   #define sqlite3JournalSize(pVfs) ((pVfs)->szOsFile)
 #endif
 
-#if defined(SQLITE_TEST) || SQLITE_MAX_EXPR_DEPTH>0
+#if SQLITE_MAX_EXPR_DEPTH>0
   void sqlite3ExprSetHeight(Expr *);
   int sqlite3SelectExprHeight(Select *);
 #else
   #define sqlite3ExprSetHeight(x)
+  #define sqlite3SelectExprHeight(x) 0
 #endif
 
 u32 sqlite3Get4byte(const u8*);
