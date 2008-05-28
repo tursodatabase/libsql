@@ -1,5 +1,5 @@
-C Update\smakefile.in\sso\sthat\smakefiles\sgenerated\sby\sconfigure\scorrectly\scopy\sin\srtree\ssource\sfiles\sto\stsrc.\s(CVS\s5169)
-D 2008-05-28T17:31:17
+C Use\s%llx\sinstead\sof\s%x\sfor\s64\sbit\svalues\s(this\sonly\saffects\sa\sdebugging\sstatement).\s(CVS\s5170)
+D 2008-05-28T18:01:45
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 62b2a40ff5944dd33c9c3184b21f720ea8e48a44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -187,7 +187,7 @@ F src/vdbeblob.c 554736781ee273a8089c776e96bdb53e66f57ce6
 F src/vdbefifo.c 1644a41c6366ff25a920df4ca675f12d3f559687
 F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
 F src/vtab.c ce9d19ca9053812a557010fd4be7e842f8ebba2d
-F src/where.c 8c8b360d898fe1fa7994ad6171d999aad6318cfd
+F src/where.c d074da73e1ffe0cc2836c274c5f0d34ef3b767ab
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d56a3ca8acdf761204aff0a2e7aa5eb8e11b31e6
@@ -590,7 +590,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P d895e85e2f9b595e58562d57226404f72db89a60
-R 9b46e4a38cf339a8c54a1e3bed6bf939
+P e015fa44586b2444c78da413af50787e2690046e
+R 3e9228b0d9f6822c55e66633366a1aa7
 U shane
-Z 58c82cf29be6c981634c421838ecea8a
+Z 7accd8022bb63f907adfa2c60741d11c

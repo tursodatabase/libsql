@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.304 2008/05/26 18:33:41 drh Exp $
+** $Id: where.c,v 1.305 2008/05/28 18:01:45 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -902,7 +902,7 @@ or_not_possible:
   **          x>='abc' AND x<'abd' AND x LIKE 'abc%'
   **
   ** The last character of the prefix "abc" is incremented to form the
-  ** termination condidtion "abd".
+  ** termination condition "abd".
   */
   if( isLikeOrGlob(db, pExpr, &nPattern, &isComplete, &noCase) ){
     Expr *pLeft, *pRight;
@@ -1481,7 +1481,7 @@ static double bestIndex(
   int eqTermMask;             /* Mask of valid equality operators */
   double cost;                /* Cost of using pProbe */
 
-  WHERETRACE(("bestIndex: tbl=%s notReady=%x\n", pSrc->pTab->zName, notReady));
+  WHERETRACE(("bestIndex: tbl=%s notReady=%llx\n", pSrc->pTab->zName, notReady));
   lowestCost = SQLITE_BIG_DBL;
   pProbe = pSrc->pTab->pIndex;
 
