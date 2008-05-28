@@ -1,5 +1,5 @@
-C Allow\sthe\sSQLITE_MAX_EXPR_DEPTH\scompile-time\sparameter\sto\sbe\sset\sto\s0\sin\norder\sto\sdisable\sexpression\sdepth\schecking.\s\sTicket\s#3143.\s(CVS\s5166)
-D 2008-05-28T13:49:35
+C Add\sa\stest\sto\svacuum3.test\sto\stry\sto\strick\ssqlite\sinto\susing\sthe\swrong\sdatabase\spage-size.\sTurns\sout\sthere\swas\sno\sproblem.\s(CVS\s5167)
+D 2008-05-28T14:08:17
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -540,7 +540,7 @@ F test/utf16.test 20e2d9ba0d57e952a18b1ac8deab9ad49e082893
 F test/utf16align.test 7360e84472095518c56746f76b1f9d4dce99fb4d
 F test/vacuum.test 0bc75ee74ab9c69322d6563aa2287375697e630b
 F test/vacuum2.test d3b9691541fe6ed5c711f547a1c7d70e9760ac6f
-F test/vacuum3.test f22cd134cc43887514fb793e828d95c75a93e1cb
+F test/vacuum3.test 68b26f8c9079bc2af1b29f97c9214ca825d33f18
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test c08b303a9a6e5bbb27d0988858e919f3b70042aa
 F test/view.test 4864e3841ab3213a95297718b94d5d6a8d3bc78b
@@ -590,7 +590,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P 02447e4e47659d70f014529e9baa3bf8ff75844c
-R 04ded18baa8178434a3cbb20f973bb3d
-U drh
-Z 9c47218eaabe6b95bde0ff5933047777
+P 5ceef40e397fc535173996404345b93f695e8cac
+R 9ed678d012ae5c79cbf6209933cbc12a
+U danielk1977
+Z a91711e9dba31b150277aad566bca686
