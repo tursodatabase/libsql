@@ -291,6 +291,9 @@ SRC += \
   $(TOP)/ext/fts3/fts3_tokenizer1.c
 SRC += \
   $(TOP)/ext/icu/icu.c
+SRC += \
+  $(TOP)/ext/rtree/rtree.h \
+  $(TOP)/ext/rtree/rtree.c
 
 # Source code to the library files needed by the test fixture
 #
@@ -385,6 +388,8 @@ HDR += \
   $(TOP)/ext/fts3/fts3.h \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_tokenizer.h
+HDR += \
+  $(TOP)/ext/rtree/rtree.h
 
 # If using the amalgamation, use sqlite3.c directly to build the test
 # fixture.  Otherwise link against libsqlite3.la.  (This distinction is
