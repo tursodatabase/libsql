@@ -1,5 +1,5 @@
-C Fix\san\sobsolete\scomment\son\sthe\sOP_Rowid\sopcode\sin\sthe\sVDBE.\s(CVS\s5174)
-D 2008-05-29T03:12:55
+C When\sinitializing\sthe\ssqlite_sequence\sentry\sfor\san\sAUTOINCREMENT\stable,\nmake\ssure\sthe\svalue\sis\san\sreasonable\sinteger\seven\sif\sthe\sinitial\sinsert\nfailed.\s\sTicket\s#3148.\s(CVS\s5175)
+D 2008-05-29T03:20:59
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 62b2a40ff5944dd33c9c3184b21f720ea8e48a44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/fault.c 1f6177188edb00641673e462f3fab8cba9f7422b
 F src/func.c 77a910a1ca7613d291fd0b5cba3be14c02f0dce0
 F src/hash.c fd8cb06fb54c2fe7d48c9195792059a2e5be8b70
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
-F src/insert.c 77f0829b3e2edd19e9238195c56b0d56ab000f17
+F src/insert.c e3277f313352ac27282b5be39972fda4f315d0c6
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 8f5a2b25d9673b4004287cf2bf51dbf7d0738406
 F src/loadext.c eac6c61810a3b531808774bec7f3d238cfe261f3
@@ -205,7 +205,7 @@ F test/attach3.test 7b92dc8e40c1ebca9732ca6f2d3fefbd46f196df
 F test/attachmalloc.test 56c5e55563dba6d64641ef2f70ce06900df16912
 F test/auth.test 100cde29a9913530994289038ec80ef5f63d38d3
 F test/auth2.test 65ac294b8d52cbdd463f61e77ad0165268373126
-F test/autoinc.test 0555aa5c789520f16d86a39c6c49b87998e01bea
+F test/autoinc.test 42af2c407c4e37d0626f9cda57ed381e94522c9d
 F test/autovacuum.test 4339e66003b9cf813dd667a83aed2dee27c4c36d
 F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
 F test/autovacuum_ioerr.test c46a76869cb6eddbbb40b419b2b6c4c001766b1f
@@ -590,7 +590,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P 5afc445a0e49def38f198455ffce9266fc8724ad
-R b2c1745f6c0390bde274854fea56c24c
+P 0d55328e680e23aae36d8f32a05aa3815393ac1d
+R ab453b09cecfedf1a77ed78183e41224
 U drh
-Z d8c9f6ac32584a71df5ee1017d267564
+Z 59397d3549d58da0def94fe92fd606ec

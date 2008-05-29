@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the AUTOINCREMENT features.
 #
-# $Id: autoinc.test,v 1.11 2008/01/04 19:10:29 danielk1977 Exp $
+# $Id: autoinc.test,v 1.12 2008/05/29 03:20:59 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -534,5 +534,22 @@ do_test autoinc-8.1 {
     SELECT * FROM t1;
   }
 } {1}
+
+# Ticket #3148
+# Make sure the sqlite_sequence table is not damaged when doing
+# an empty insert - an INSERT INTO ... SELECT ... where the SELECT
+# clause returns an empty set.
+#
+do_test autoinc-9.1 {
+  db eval {
+    CREATE TABLE t2(x INTEGER PRIMARY KEY AUTOINCREMENT, y);
+    INSERT INTO t2 VALUES(NULL, 1);
+    CREATE TABLE t3(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+    INSERT INTO t3 SELECT * FROM t2 WHERE y>1;
+
+    SELECT * FROM sqlite_sequence WHERE name='t3';
+  }
+} {t3 0}
+
 
 finish_test
