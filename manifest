@@ -1,5 +1,5 @@
-C Omit\sdeclaration\sfor\sfunctions\sthat\sare\sonly\sused\sby\sasserts\sif\sasserts\saren't\sbeing\sused\s(NDEBUG).\s(CVS\s5173)
-D 2008-05-29T03:01:24
+C Fix\san\sobsolete\scomment\son\sthe\sOP_Rowid\sopcode\sin\sthe\sVDBE.\s(CVS\s5174)
+D 2008-05-29T03:12:55
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 62b2a40ff5944dd33c9c3184b21f720ea8e48a44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -178,7 +178,7 @@ F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 43277088f8fea4109a640aa46731b8752c3fb4a7
 F src/vacuum.c a5c289e561ed72283e97d2485491986bc7d684eb
-F src/vdbe.c 25a362a4fdd5ff2797db0e20a9cf4300e053891e
+F src/vdbe.c 4666906aa7d50154a890dac714c92e9993370f57
 F src/vdbe.h f4bb70962d9c13e0f65b215c90e8acea1ae6e8ee
 F src/vdbeInt.h ede1a31cfa74d4718f41da491bd1d2b3abc137fc
 F src/vdbeapi.c 22b01ed175e4d4c613ee82cabc7a44a275641206
@@ -590,7 +590,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P 5e3ff1bb37f7fbdc9b1414232bd78f096f89eced
-R 28146f24b38de5c9915458f57b32a4b1
-U shane
-Z 2107dd85d580920f6cc5f4aac9bbfa38
+P 5afc445a0e49def38f198455ffce9266fc8724ad
+R b2c1745f6c0390bde274854fea56c24c
+U drh
+Z d8c9f6ac32584a71df5ee1017d267564
