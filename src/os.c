@@ -13,7 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 **
-** $Id: os.c,v 1.108 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: os.c,v 1.109 2008/05/29 02:53:00 shane Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
@@ -137,6 +137,7 @@ int sqlite3OsFullPathname(
 ){
   return pVfs->xFullPathname(pVfs, zPath, nPathOut, zPathOut);
 }
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
 void *sqlite3OsDlOpen(sqlite3_vfs *pVfs, const char *zPath){
   return pVfs->xDlOpen(pVfs, zPath);
 }
@@ -149,6 +150,7 @@ void *sqlite3OsDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
 void sqlite3OsDlClose(sqlite3_vfs *pVfs, void *pHandle){
   pVfs->xDlClose(pVfs, pHandle);
 }
+#endif /* SQLITE_OMIT_LOAD_EXTENSION */
 int sqlite3OsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
   return pVfs->xRandomness(pVfs, nByte, zBufOut);
 }

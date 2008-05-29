@@ -1,5 +1,5 @@
-C Use\s%llx\sinstead\sof\s%x\sfor\s64\sbit\svalues\s(this\sonly\saffects\sa\sdebugging\sstatement).\s(CVS\s5170)
-D 2008-05-28T18:01:45
+C sqlite3OsDl*()\sAPIs\scan\sbe\somitted\sif\sSQLITE_OMIT_LOAD_EXTENSION\sdefined.\s(CVS\s5171)
+D 2008-05-29T02:53:00
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 62b2a40ff5944dd33c9c3184b21f720ea8e48a44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -126,8 +126,8 @@ F src/mutex.h 079fa6fe9da18ceb89e79012c010594c6672addb
 F src/mutex_os2.c 2911ea96955ab6cba734cc4ad903fe76f834b39e
 F src/mutex_unix.c 466d20378a0645fea64c3f2e2669c33b7802df56
 F src/mutex_w32.c 133698096a2c4e81cd11ea6f4de7891c66f7b9f7
-F src/os.c 9348e092f3ac2c964491b01424a17862e0650e86
-F src/os.h 7131c5b8e5cd59504d3818f88e4ae106da8fac01
+F src/os.c 541ea39fbacc18483b3aa96cd0242bad2dd0f049
+F src/os.h c0727c1a360aea23dc3213b32417608afa7143a3
 F src/os_common.h 9da7339466404707af49943fe4c47e608034761b
 F src/os_os2.c 1578149e21c4eac42c7f230a6f40500846f8e781
 F src/os_unix.c 06dceb3230249d6e7c6a1d8d602fa6a93f4085b9
@@ -160,7 +160,7 @@ F src/test_async.c 0d26a72361022f6f732dd1174c6615bad6e587ff
 F src/test_autoext.c 5e892ab84aece3f0428920bf46923f16ac83962a
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c 982bba6221b854a86427ae64e9c65b313b0f6e03
-F src/test_devsym.c 76cf28b79c6f01658083ae2a972647b97a362a01
+F src/test_devsym.c 647b4dbf305343873c1a08095cc828a80ce2781d
 F src/test_func.c f4aafa10f17d52c43a64b47717265802e6e552b3
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
@@ -590,7 +590,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P e015fa44586b2444c78da413af50787e2690046e
-R 3e9228b0d9f6822c55e66633366a1aa7
+P c81efc97bca58ebbd9500f990f7e45d133e1bd0b
+R 9e30e2938cf70de7ee4bbf3a765ffb93
 U shane
-Z 7accd8022bb63f907adfa2c60741d11c
+Z 63284a3ba625c43aca47806e6d9a8932

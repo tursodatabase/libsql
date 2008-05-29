@@ -14,7 +14,7 @@
 ** different device types (by overriding the return values of the 
 ** xDeviceCharacteristics() and xSectorSize() methods).
 **
-** $Id: test_devsym.c,v 1.4 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: test_devsym.c,v 1.5 2008/05/29 02:53:00 shane Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -61,10 +61,12 @@ static int devsymDelete(sqlite3_vfs*, const char *zName, int syncDir);
 static int devsymAccess(sqlite3_vfs*, const char *zName, int flags);
 static int devsymGetTempName(sqlite3_vfs*, int nOut, char *zOut);
 static int devsymFullPathname(sqlite3_vfs*, const char *zName, int, char *zOut);
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
 static void *devsymDlOpen(sqlite3_vfs*, const char *zFilename);
 static void devsymDlError(sqlite3_vfs*, int nByte, char *zErrMsg);
 static void *devsymDlSym(sqlite3_vfs*,void*, const char *zSymbol);
 static void devsymDlClose(sqlite3_vfs*, void*);
+#endif /* SQLITE_OMIT_LOAD_EXTENSION */
 static int devsymRandomness(sqlite3_vfs*, int nByte, char *zOut);
 static int devsymSleep(sqlite3_vfs*, int microseconds);
 static int devsymCurrentTime(sqlite3_vfs*, double*);
@@ -81,10 +83,17 @@ static sqlite3_vfs devsym_vfs = {
   devsymAccess,             /* xAccess */
   devsymGetTempName,        /* xGetTempName */
   devsymFullPathname,       /* xFullPathname */
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
   devsymDlOpen,             /* xDlOpen */
   devsymDlError,            /* xDlError */
   devsymDlSym,              /* xDlSym */
   devsymDlClose,            /* xDlClose */
+#else
+  0,                        /* xDlOpen */
+  0,                        /* xDlError */
+  0,                        /* xDlSym */
+  0,                        /* xDlClose */
+#endif /* SQLITE_OMIT_LOAD_EXTENSION */
   devsymRandomness,         /* xRandomness */
   devsymSleep,              /* xSleep */
   devsymCurrentTime         /* xCurrentTime */
@@ -273,6 +282,7 @@ static int devsymFullPathname(
   return sqlite3OsFullPathname(g.pVfs, zPath, nOut, zOut);
 }
 
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*
 ** Open the dynamic library located at zPath and return a handle.
 */
@@ -302,6 +312,7 @@ static void *devsymDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
 static void devsymDlClose(sqlite3_vfs *pVfs, void *pHandle){
   sqlite3OsDlClose(g.pVfs, pHandle);
 }
+#endif /* SQLITE_OMIT_LOAD_EXTENSION */
 
 /*
 ** Populate the buffer pointed to by zBufOut with nByte bytes of 
