@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.305 2008/05/28 18:01:45 shane Exp $
+** $Id: where.c,v 1.306 2008/05/29 05:23:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2363,12 +2363,14 @@ WhereInfo *sqlite3WhereBegin(
         for(k=0; k<nConstraint; k++){
           if( aUsage[k].argvIndex==j ){
             int iTerm = aConstraint[k].iTermOffset;
+            assert( pParse->disableColCache );
             sqlite3ExprCode(pParse, wc.a[iTerm].pExpr->pRight, iReg+j+1);
             break;
           }
         }
         if( k==nConstraint ) break;
       }
+      assert( pParse->disableColCache );
       pParse->disableColCache--;
       sqlite3VdbeAddOp2(v, OP_Integer, pBestIdx->idxNum, iReg);
       sqlite3VdbeAddOp2(v, OP_Integer, j-1, iReg+1);
@@ -2376,7 +2378,7 @@ WhereInfo *sqlite3WhereBegin(
                         pBestIdx->needToFreeIdxStr ? P4_MPRINTF : P4_STATIC);
       sqlite3ReleaseTempRange(pParse, iReg, nConstraint+2);
       pBestIdx->needToFreeIdxStr = 0;
-      for(j=0; j<pBestIdx->nConstraint; j++){
+      for(j=0; j<nConstraint; j++){
         if( aUsage[j].omit ){
           int iTerm = aConstraint[j].iTermOffset;
           disableTerm(pLevel, &wc.a[iTerm]);
@@ -2577,7 +2579,7 @@ WhereInfo *sqlite3WhereBegin(
       if( pRangeStart ){
         int dcc = pParse->disableColCache;
         if( pRangeEnd ){
-          pParse->disableColCache = 1;
+          pParse->disableColCache++;
         }
         sqlite3ExprCode(pParse, pRangeStart->pExpr->pRight, regBase+nEq);
         pParse->disableColCache = dcc;

@@ -16,7 +16,7 @@
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
 **
-** $Id: test_tclvar.c,v 1.14 2007/08/21 10:44:16 drh Exp $
+** $Id: test_tclvar.c,v 1.15 2008/05/29 05:23:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -222,7 +222,8 @@ static int tclvarBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
     struct sqlite3_index_constraint const *pCons = &pIdxInfo->aConstraint[ii];
-    if( pCons->iColumn==0 && pCons->op==SQLITE_INDEX_CONSTRAINT_EQ ){
+    if( pCons->iColumn==0 && pCons->usable
+           && pCons->op==SQLITE_INDEX_CONSTRAINT_EQ ){
       struct sqlite3_index_constraint_usage *pUsage;
       pUsage = &pIdxInfo->aConstraintUsage[ii];
       pUsage->omit = 0;
@@ -233,7 +234,8 @@ static int tclvarBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
     struct sqlite3_index_constraint const *pCons = &pIdxInfo->aConstraint[ii];
-    if( pCons->iColumn==0 && pCons->op==SQLITE_INDEX_CONSTRAINT_MATCH ){
+    if( pCons->iColumn==0 && pCons->usable
+           && pCons->op==SQLITE_INDEX_CONSTRAINT_MATCH ){
       struct sqlite3_index_constraint_usage *pUsage;
       pUsage = &pIdxInfo->aConstraintUsage[ii];
       pUsage->omit = 1;

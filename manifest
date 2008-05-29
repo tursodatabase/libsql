@@ -1,5 +1,5 @@
-C Moved\scheck\sand\sdefine\sfor\sOS_WINCE\sfrom\sos_win.c\sto\sos.h\s(with\sthe\sother\sOS_*\sdefines).\s\sThis\sallows\sOS_WINCE\sto\sbe\savailable\sfor\smutex_w32.c\swhich\sis\sincluded\searlier\sthan\sos_win.c\sin\sthe\salmagamation.\s(CVS\s5176)
-D 2008-05-29T03:54:27
+C Fix\scosmetic\sissues\sspotted\swhile\sworking\son\sticket\s#3146\s(CVS\s5177)
+D 2008-05-29T05:23:42
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 62b2a40ff5944dd33c9c3184b21f720ea8e48a44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -170,7 +170,7 @@ F src/test_onefile.c fd994d397b0e9cad103b1a6e1f76c61a90a38752
 F src/test_osinst.c c684ee6d480f30e36cb564dcbc94f5f8467468a8
 F src/test_schema.c e3f93725f7c5b2cff84a69dc4332040dfbc8f81a
 F src/test_server.c 7e579eb9bf6fbe9cc45e84e4c74d3d06d049a825
-F src/test_tclvar.c b2d1115e4d489179d3f029e765211b2ad527ba59
+F src/test_tclvar.c e99b975614735553fa1c43503d85b0dd988c0e77
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c 8d77af8584cf027dc21375f0efa5818cb303c995
 F src/trigger.c 1e751f8d5ceeb328d26bf1ccfb2de50653670d49
@@ -178,7 +178,7 @@ F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 43277088f8fea4109a640aa46731b8752c3fb4a7
 F src/vacuum.c a5c289e561ed72283e97d2485491986bc7d684eb
-F src/vdbe.c 4666906aa7d50154a890dac714c92e9993370f57
+F src/vdbe.c efe92d0925bc0a6f76c5bbfaf4cfee1665ae8799
 F src/vdbe.h f4bb70962d9c13e0f65b215c90e8acea1ae6e8ee
 F src/vdbeInt.h ede1a31cfa74d4718f41da491bd1d2b3abc137fc
 F src/vdbeapi.c 22b01ed175e4d4c613ee82cabc7a44a275641206
@@ -187,7 +187,7 @@ F src/vdbeblob.c 554736781ee273a8089c776e96bdb53e66f57ce6
 F src/vdbefifo.c 1644a41c6366ff25a920df4ca675f12d3f559687
 F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
 F src/vtab.c ce9d19ca9053812a557010fd4be7e842f8ebba2d
-F src/where.c d074da73e1ffe0cc2836c274c5f0d34ef3b767ab
+F src/where.c ad88aefac0e6469b3899477a81ef81b6bdc82913
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d56a3ca8acdf761204aff0a2e7aa5eb8e11b31e6
@@ -590,7 +590,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P 7e6847852d4517b1d14bebb8f0ae4d938b0b6f6d
-R 91aa8ed903089be5892cc06ca20f01b5
-U shane
-Z 71f9353c7030348ee2a7d1aadf46f880
+P ad6a782e7c408f6c3ebff5f2715c629b75c8002d
+R 486eefc4a3f966d0ff0a629a9a11c14c
+U drh
+Z 38197e0cbfc994144353080aecc69a7d
