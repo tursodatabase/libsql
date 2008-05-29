@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.304 2008/05/23 14:49:49 drh Exp $
+** $Id: test1.c,v 1.305 2008/05/29 02:57:48 shane Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -225,6 +225,7 @@ static int exec_printf_cb(void *pArg, int argc, char **argv, char **name){
 /*
 ** The I/O tracing callback.
 */
+#if !defined(SQLITE_OMIT_TRACE) && defined(SQLITE_ENABLE_IOTRACE)
 static FILE *iotrace_file = 0;
 static void io_trace_callback(const char *zFormat, ...){
   va_list ap;
@@ -233,6 +234,7 @@ static void io_trace_callback(const char *zFormat, ...){
   va_end(ap);
   fflush(iotrace_file);
 }
+#endif
 
 /*
 ** Usage:  io_trace FILENAME

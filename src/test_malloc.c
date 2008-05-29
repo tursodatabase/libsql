@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.22 2008/03/28 15:44:10 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.23 2008/05/29 02:57:48 shane Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -517,6 +517,7 @@ struct MallocLog {
   int nByte;
 };
 
+#ifdef SQLITE_MEMDEBUG
 static void test_memdebug_callback(int nByte, int nFrame, void **aFrame){
   if( mallocLogEnabled ){
     MallocLog *pLog;
@@ -545,6 +546,7 @@ static void test_memdebug_callback(int nByte, int nFrame, void **aFrame){
     pLog->nByte += nByte;
   }
 }
+#endif /* SQLITE_MEMDEBUG */
 
 static void test_memdebug_log_clear(){
   Tcl_HashSearch search;

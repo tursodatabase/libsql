@@ -1,5 +1,5 @@
-C sqlite3OsDl*()\sAPIs\scan\sbe\somitted\sif\sSQLITE_OMIT_LOAD_EXTENSION\sdefined.\s(CVS\s5171)
-D 2008-05-29T02:53:00
+C Unused\sfunctions\sin\stestfixture.exe\swith\scertain\sdefines.\s(CVS\s5172)
+D 2008-05-29T02:57:48
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 62b2a40ff5944dd33c9c3184b21f720ea8e48a44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/sqliteInt.h cfcb83222431108aa51565efecf3a084360ad4a6
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c c57e740e30bd6dda678796eed62c7f0e64689834
-F src/test1.c da8bf328d7badb199fa83bd084f44f88202570c2
+F src/test1.c 736be7dea5cc126356bbb61a4b1ac5ff4fac7994
 F src/test2.c f0808cc643528b9620e4059ca9bda8346f526121
 F src/test3.c 5705fc361dd60fe830f1934841aee509c733c6a9
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -164,7 +164,7 @@ F src/test_devsym.c 647b4dbf305343873c1a08095cc828a80ce2781d
 F src/test_func.c f4aafa10f17d52c43a64b47717265802e6e552b3
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
-F src/test_malloc.c c92a65e8f9b31bb2b332448d92d2016c000a963d
+F src/test_malloc.c 5c2c698355613d321f216ece25901be1040cc1fb
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_onefile.c fd994d397b0e9cad103b1a6e1f76c61a90a38752
 F src/test_osinst.c c684ee6d480f30e36cb564dcbc94f5f8467468a8
@@ -590,7 +590,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P c81efc97bca58ebbd9500f990f7e45d133e1bd0b
-R 9e30e2938cf70de7ee4bbf3a765ffb93
+P 7c51a97dc11f20f7323a9dc5c04a3b84380cf8fb
+R b81023eeaf1ecbacf1eeae3033f0b3f3
 U shane
-Z 63284a3ba625c43aca47806e6d9a8932
+Z 89b56791f56862934070209bac24f577
