@@ -14,7 +14,7 @@
 ** adds instrumentation to all vfs and file methods. C and Tcl interfaces
 ** are provided to control the instrumentation.
 **
-** $Id: test_osinst.c,v 1.11 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: test_osinst.c,v 1.12 2008/05/29 20:22:37 shane Exp $
 */
 
 /*
@@ -53,8 +53,8 @@
 **
 **         * The name of the invoked method - i.e. "xRead".
 **
-**         * The time consumed by the method call as measured by hwtime() (an
-**           integer value)
+**         * The time consumed by the method call as measured by 
+**           sqlite3Hwtime() (an integer value)
 **
 **         * A string value with a different meaning for different calls. 
 **           For file methods, the name of the file being operated on. For
@@ -82,7 +82,7 @@
 **         * The name of the method call - i.e. "xWrite",
 **         * The total number of calls to the method (an integer).
 **         * The aggregate time consumed by all calls to the method as
-**           measured by hwtime() (an integer).
+**           measured by sqlite3Hwtime() (an integer).
 */
 
 #include "sqlite3.h"
@@ -222,30 +222,19 @@ static sqlite3_io_methods inst_io_methods = {
   instDeviceCharacteristics       /* xDeviceCharacteristics */
 };
 
-/*
-** The following routine only works on pentium-class processors.
-** It uses the RDTSC opcode to read the cycle count value out of the
-** processor and returns that value.  This can be used for high-res
-** profiling.
+/* 
+** hwtime.h contains inline assembler code for implementing 
+** high-performance timing routines.
 */
-#if defined(i386) || defined(__i386__) || defined(_M_IX86)
-__inline__ unsigned long long int osinst_hwtime(void){
-   unsigned int lo, hi;
-   /* We cannot use "=A", since this would use %rax on x86_64 */
-   __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
-   return (unsigned long long int)hi << 32 | lo;
-}
-#else
-  static unsigned long long int osinst_hwtime(void){ return 0; }
-#endif
+#include "hwtime.h"
 
 #define OS_TIME_IO(eEvent, A, B, Call) {     \
   inst_file *p = (inst_file *)pFile;         \
   InstVfs *pInstVfs = p->pInstVfs;           \
   int rc;                                    \
-  sqlite3_int64 t = osinst_hwtime();         \
+  sqlite_uint64 t = sqlite3Hwtime();         \
   rc = Call;                                 \
-  t = osinst_hwtime() - t;                   \
+  t = sqlite3Hwtime() - t;                   \
   pInstVfs->aTime[eEvent] += t;              \
   pInstVfs->aCount[eEvent] += 1;             \
   if( pInstVfs->xCall ){                     \
@@ -259,9 +248,9 @@ __inline__ unsigned long long int osinst_hwtime(void){
 #define OS_TIME_VFS(eEvent, Z, flags, A, B, Call) {      \
   InstVfs *pInstVfs = (InstVfs *)pVfs;   \
   int rc;                                \
-  sqlite3_int64 t = osinst_hwtime();     \
+  sqlite_uint64 t = sqlite3Hwtime();     \
   rc = Call;                             \
-  t = osinst_hwtime() - t;               \
+  t = sqlite3Hwtime() - t;               \
   pInstVfs->aTime[eEvent] += t;          \
   pInstVfs->aCount[eEvent] += 1;         \
   if( pInstVfs->xCall ){                 \

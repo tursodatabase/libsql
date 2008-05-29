@@ -92,6 +92,7 @@ foreach hdr {
    fts3_hash.h
    fts3_tokenizer.h
    hash.h
+   hwtime.h
    keywordhash.h
    mutex.h
    opcodes.h
@@ -146,7 +147,7 @@ proc copy_file {filename} {
     if {[regexp {^#\s*include\s+["<]([^">]+)[">]} $line all hdr]} {
       if {[info exists available_hdr($hdr)]} {
         if {$available_hdr($hdr)} {
-          if {$hdr!="os_common.h"} {
+          if {$hdr!="os_common.h" && $hdr!="hwtime.h"} {
             set available_hdr($hdr) 0
           }
           section_comment "Include $hdr in the middle of $tail"
@@ -229,7 +230,7 @@ foreach file {
    bitvec.c
    pager.c
 
-   btmutex.c   
+   btmutex.c
    btree.c
 
    vdbefifo.c

@@ -14,7 +14,7 @@
 ** Then link against this program.  But to do optimize this program
 ** because that defeats the hi-res timer.
 **
-**     gcc speedtest8.c sqlite3.o -ldl
+**     gcc speedtest8.c sqlite3.o -ldl -I../src
 **
 ** Then run this program with a single argument which is the name of
 ** a file containing SQL script that you want to test:
@@ -29,18 +29,11 @@
 #include <stdarg.h>
 #include "sqlite3.h"
 
-/*
-** The following routine only works on pentium-class processors.
-** It uses the RDTSC opcode to read the cycle count value out of the
-** processor and returns that value.  This can be used for high-res
-** profiling.
+/* 
+** hwtime.h contains inline assembler code for implementing 
+** high-performance timing routines.
 */
-__inline__ sqlite3_uint64 hwtime(void){
-   unsigned int lo, hi;
-   /* We cannot use "=A", since this would use %rax on x86_64 */
-   __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
-   return (sqlite3_uint64)hi << 32 | lo;
-}
+#include "hwtime.h"
 
 /*
 ** Send a message to the log file.
@@ -136,24 +129,25 @@ static sqlite3_io_methods inst_io_methods = {
 };
 
 #define OS_TIME_IO(MESSAGE, A, B, CALL)      \
-  int rc; sqlite3_uint64 t1, t2;             \
+  int rc;                                    \
+  sqlite_uint64 t1, t2;                      \
   inst_file *p = (inst_file*)pFile;          \
-  t1 = hwtime();                             \
+  t1 = sqlite3Hwtime();                      \
   rc = CALL;                                 \
-  t2 = hwtime();                             \
+  t2 = sqlite3Hwtime();                      \
   logMessage(MESSAGE, A, B, t2-t1);          \
-  instTime += hwtime() - t2;                 \
+  instTime += sqlite3Hwtime() - t2;          \
   return rc;
 
 #define OS_TIME_VFS(MESSAGE, A, B, CALL)                 \
   int rc;                                                \
-  sqlite3_uint64 t1, t2;                                 \
+  sqlite_uint64 t1, t2;                                  \
   sqlite3_vfs *pRealVfs = (sqlite3_vfs*)pVfs->pAppData;  \
-  t1 = hwtime();                                         \
+  t1 = sqlite3Hwtime();                                  \
   rc = CALL;                                             \
-  t2 = hwtime();                                         \
+  t2 = sqlite3Hwtime();                                  \
   logMessage(MESSAGE, A, B, t2-t1);                      \
-  instTime += hwtime() - t2;                             \
+  instTime += sqlite3Hwtime() - t2;                      \
   return rc;
 
 
@@ -437,32 +431,32 @@ static void setupInstrumentedVfs(void){
 static void prepareAndRun(sqlite3 *db, const char *zSql){
   sqlite3_stmt *pStmt;
   const char *stmtTail;
-  sqlite3_uint64 iStart, iElapse;
+  sqlite_uint64 iStart, iElapse;
   int rc;
   
   printf("****************************************************************\n");
   printf("SQL statement: [%s]\n", zSql);
   instTime = 0;
-  iStart = hwtime();
+  iStart = sqlite3Hwtime();
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &stmtTail);
-  iElapse = hwtime();
+  iElapse = sqlite3Hwtime();
   iElapse -= iStart + instTime;
   prepTime += iElapse;
   printf("sqlite3_prepare_v2() returns %d in %llu cycles\n", rc, iElapse);
   if( rc==SQLITE_OK ){
     int nRow = 0;
     instTime = 0;
-    iStart = hwtime();
+    iStart = sqlite3Hwtime();
     while( (rc=sqlite3_step(pStmt))==SQLITE_ROW ){ nRow++; }
-    iElapse = hwtime();
+    iElapse = sqlite3Hwtime();
     iElapse -= iStart + instTime;
     runTime += iElapse;
     printf("sqlite3_step() returns %d after %d rows in %llu cycles\n",
            rc, nRow, iElapse);
     instTime = 0;
-    iStart = hwtime();
+    iStart = sqlite3Hwtime();
     rc = sqlite3_finalize(pStmt);
-    iElapse = hwtime();
+    iElapse = sqlite3Hwtime();
     iElapse -= iStart + instTime;
     finalizeTime += iElapse;
     printf("sqlite3_finalize() returns %d in %llu cycles\n", rc, iElapse);
@@ -476,8 +470,8 @@ int main(int argc, char **argv){
   char *zSql;
   int i, j;
   FILE *in;
-  sqlite3_uint64 iStart, iElapse;
-  sqlite3_uint64 iSetup = 0;
+  sqlite_uint64 iStart, iElapse;
+  sqlite_uint64 iSetup = 0;
   int nStmt = 0;
   int nByte = 0;
 
@@ -499,9 +493,9 @@ int main(int argc, char **argv){
   unlink(argv[1]);
   setupInstrumentedVfs();
   instTime = 0;
-  iStart = hwtime();
+  iStart = sqlite3Hwtime();
   rc = sqlite3_open(argv[1], &db);
-  iElapse = hwtime();
+  iElapse = sqlite3Hwtime();
   iElapse -= iStart + instTime;
   iSetup = iElapse;
   printf("sqlite3_open() returns %d in %llu cycles\n", rc, iElapse);
@@ -526,9 +520,9 @@ int main(int argc, char **argv){
     }
   }
   instTime = 0;
-  iStart = hwtime();
+  iStart = sqlite3Hwtime();
   sqlite3_close(db);
-  iElapse = hwtime();
+  iElapse = sqlite3Hwtime();
   iElapse -= iStart + instTime;
   iSetup += iElapse;
   printf("sqlite3_close() returns in %llu cycles\n", iElapse);

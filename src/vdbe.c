@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.743 2008/05/29 05:23:42 drh Exp $
+** $Id: vdbe.c,v 1.744 2008/05/29 20:22:37 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -465,18 +465,13 @@ static void registerTrace(FILE *out, int iReg, Mem *p){
 
 
 #ifdef VDBE_PROFILE
-/*
-** The following routine only works on pentium-class processors.
-** It uses the RDTSC opcode to read the cycle count value out of the
-** processor and returns that value.  This can be used for high-res
-** profiling.
+
+/* 
+** hwtime.h contains inline assembler code for implementing 
+** high-performance timing routines.
 */
-__inline__ unsigned long long int hwtime(void){
-   unsigned int lo, hi;
-   /* We cannot use "=A", since this would use %rax on x86_64 */
-   __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
-   return (unsigned long long int)hi << 32 | lo;
-}
+#include "hwtime.h"
+
 #endif
 
 /*
@@ -536,7 +531,7 @@ int sqlite3VdbeExec(
   Mem *pOut;                 /* Output operand */
   u8 opProperty;
 #ifdef VDBE_PROFILE
-  unsigned long long start;  /* CPU clock count at start of opcode */
+  u64 start;                 /* CPU clock count at start of opcode */
   int origPc;                /* Program counter at start of opcode */
 #endif
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
@@ -580,7 +575,7 @@ int sqlite3VdbeExec(
     if( db->mallocFailed ) goto no_mem;
 #ifdef VDBE_PROFILE
     origPc = pc;
-    start = hwtime();
+    start = sqlite3Hwtime();
 #endif
     pOp = &p->aOp[pc];
 
@@ -4876,11 +4871,11 @@ default: {          /* This is really OP_Noop and OP_Explain */
 
 #ifdef VDBE_PROFILE
     {
-      long long elapse = hwtime() - start;
-      pOp->cycles += elapse;
+      u64 elapsed = sqlite3Hwtime() - start;
+      pOp->cycles += elapsed;
       pOp->cnt++;
 #if 0
-        fprintf(stdout, "%10lld ", elapse);
+        fprintf(stdout, "%10llu ", elapsed);
         sqlite3VdbePrintOp(stdout, origPc, &p->aOp[origPc]);
 #endif
     }

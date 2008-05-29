@@ -1,7 +1,7 @@
-C Fix\scosmetic\sissues\sspotted\swhile\sworking\son\sticket\s#3146\s(CVS\s5177)
-D 2008-05-29T05:23:42
+C Consolidated\sinline\sassembly\sversions\sof\s"hwtime()"\sinto\shwtime.h.\s\sProvided\sMSVC\sversion.\s\sModified\scode\sfor\sconsistent\suse\sof\shwtime().\s\sChanged\simplementation\sto\suse\ssqlite_uint64\sand\ssqlite_int64\sinstead\sof\sunsigned\slong\slong\sint\sand\slong\slong\sint\sfor\sMSVC\scompiler\ssupport.\s(CVS\s5178)
+D 2008-05-29T20:22:37
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in 62b2a40ff5944dd33c9c3184b21f720ea8e48a44
+F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 0993b4f2f08c496fab78af42928b6dc745f8a2e1
@@ -76,7 +76,7 @@ F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
-F main.mk 0fdc9417630e829cae994efee59038810f091e33
+F main.mk 254bdf904af5869178e6b333be5729bf24ff3f77
 F mkdll.sh 712e74f3efe08a6ba12b2945d018a29a89d7fe3b
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -109,6 +109,7 @@ F src/fault.c 1f6177188edb00641673e462f3fab8cba9f7422b
 F src/func.c 77a910a1ca7613d291fd0b5cba3be14c02f0dce0
 F src/hash.c fd8cb06fb54c2fe7d48c9195792059a2e5be8b70
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
+F src/hwtime.h 10fae2093aefa2b00be13bcac40c06e90924bc83
 F src/insert.c e3277f313352ac27282b5be39972fda4f315d0c6
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 8f5a2b25d9673b4004287cf2bf51dbf7d0738406
@@ -128,9 +129,9 @@ F src/mutex_unix.c 466d20378a0645fea64c3f2e2669c33b7802df56
 F src/mutex_w32.c 133698096a2c4e81cd11ea6f4de7891c66f7b9f7
 F src/os.c 541ea39fbacc18483b3aa96cd0242bad2dd0f049
 F src/os.h 6e7e5d4efdc907b7a1a8cddb0cf984af01843fad
-F src/os_common.h 9da7339466404707af49943fe4c47e608034761b
+F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 1578149e21c4eac42c7f230a6f40500846f8e781
-F src/os_unix.c 06dceb3230249d6e7c6a1d8d602fa6a93f4085b9
+F src/os_unix.c a6b02934fdd4682db47c006cb03baac8694d8b77
 F src/os_win.c 812f9ba8cd90c8aa54914a56897fb534494576d8
 F src/pager.c d0a77feeaeecaaaec9342a3bb3865ed9a490897a
 F src/pager.h 1ccde54041195311c2b09b6936404d2192db44da
@@ -167,7 +168,7 @@ F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c 5c2c698355613d321f216ece25901be1040cc1fb
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_onefile.c fd994d397b0e9cad103b1a6e1f76c61a90a38752
-F src/test_osinst.c c684ee6d480f30e36cb564dcbc94f5f8467468a8
+F src/test_osinst.c acf306ba86a2963ba69dd87907fae447478a28f1
 F src/test_schema.c e3f93725f7c5b2cff84a69dc4332040dfbc8f81a
 F src/test_server.c 7e579eb9bf6fbe9cc45e84e4c74d3d06d049a825
 F src/test_tclvar.c e99b975614735553fa1c43503d85b0dd988c0e77
@@ -178,8 +179,8 @@ F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 43277088f8fea4109a640aa46731b8752c3fb4a7
 F src/vacuum.c a5c289e561ed72283e97d2485491986bc7d684eb
-F src/vdbe.c efe92d0925bc0a6f76c5bbfaf4cfee1665ae8799
-F src/vdbe.h f4bb70962d9c13e0f65b215c90e8acea1ae6e8ee
+F src/vdbe.c 37d3237ad5b84c4d4d3a33a49350c2594cac65c3
+F src/vdbe.h 1e3722d471739c2b213c6283b60373290e52f7ea
 F src/vdbeInt.h ede1a31cfa74d4718f41da491bd1d2b3abc137fc
 F src/vdbeapi.c 22b01ed175e4d4c613ee82cabc7a44a275641206
 F src/vdbeaux.c 7823f1db7f47cf70d86d1901e2030309e1cbfd02
@@ -575,8 +576,8 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl da45d6d596f536d361e428874e7071710803de1e
-F tool/mksqlite3internalh.tcl 47737a925fb02fce43e2c0a14b3cc17574a4d44a
+F tool/mksqlite3c.tcl 927b9d6ccd05690f75eb67bce7cca9a90b65ceeb
+F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 7d1fdf469e2f4d175f70c36e469db64a1626fabb
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
@@ -586,11 +587,11 @@ F tool/soak1.tcl 85a4a7826c77351bfe1c005ae3cff2ef59123557
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
 F tool/spaceanal.tcl b87db46ae29e3116411b1686e136b9b994d7de39
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
-F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
+F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
-F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
-F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P ad6a782e7c408f6c3ebff5f2715c629b75c8002d
-R 486eefc4a3f966d0ff0a629a9a11c14c
-U drh
-Z 38197e0cbfc994144353080aecc69a7d
+F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
+F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
+P 5f6eab65dba421a736659a6673a51a0e487d68ac
+R 458af2184cd56db6e376c81a0c3c302b
+U shane
+Z a36aff0535891ea4228fb00ae4809b6b

@@ -101,6 +101,7 @@ SRC = \
   $(TOP)/src/func.c \
   $(TOP)/src/hash.c \
   $(TOP)/src/hash.h \
+  $(TOP)/src/hwtime.h \
   $(TOP)/src/insert.c \
   $(TOP)/src/journal.c \
   $(TOP)/src/legacy.c \
@@ -250,6 +251,7 @@ HDR = \
    $(TOP)/src/btree.h \
    $(TOP)/src/btreeInt.h \
    $(TOP)/src/hash.h \
+   $(TOP)/src/hwtime.h \
    keywordhash.h \
    $(TOP)/src/mutex.h \
    opcodes.h \

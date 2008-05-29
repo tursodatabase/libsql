@@ -14,7 +14,7 @@
 ** Then link against this program.  But to do optimize this program
 ** because that defeats the hi-res timer.
 **
-**     gcc speedtest8.c sqlite3.o -ldl
+**     gcc speedtest8.c sqlite3.o -ldl -I../src
 **
 ** Then run this program with a single argument which is the name of
 ** a file containing SQL script that you want to test:
@@ -25,32 +25,30 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <time.h>
+
+#if defined(_MSC_VER)
+#include <windows.h>
+#else
 #include <unistd.h>
 #include <sys/times.h>
-#include <time.h>
 #include <sched.h>
+#endif
 
 #include "sqlite3.h"
 
-/*
-** The following routine only works on pentium-class processors.
-** It uses the RDTSC opcode to read the cycle count value out of the
-** processor and returns that value.  This can be used for high-res
-** profiling.
+/* 
+** hwtime.h contains inline assembler code for implementing 
+** high-performance timing routines.
 */
-__inline__ unsigned long long int hwtime(void){
-   unsigned int lo, hi;
-   /* We cannot use "=A", since this would use %rax on x86_64 */
-   __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
-   return (unsigned long long int)hi << 32 | lo;
-}
+#include "hwtime.h"
 
 /*
 ** Timers
 */
-static unsigned long long int prepTime = 0;
-static unsigned long long int runTime = 0;
-static unsigned long long int finalizeTime = 0;
+static sqlite_uint64 prepTime = 0;
+static sqlite_uint64 runTime = 0;
+static sqlite_uint64 finalizeTime = 0;
 
 /*
 ** Prepare and run a single statement of SQL.
@@ -58,33 +56,33 @@ static unsigned long long int finalizeTime = 0;
 static void prepareAndRun(sqlite3 *db, const char *zSql, int bQuiet){
   sqlite3_stmt *pStmt;
   const char *stmtTail;
-  unsigned long long int iStart, iElapse;
+  sqlite_uint64 iStart, iElapse;
   int rc;
   
   if (!bQuiet){
     printf("***************************************************************\n");
   }
   if (!bQuiet) printf("SQL statement: [%s]\n", zSql);
-  iStart = hwtime();
+  iStart = sqlite3Hwtime();
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &stmtTail);
-  iElapse = hwtime() - iStart;
+  iElapse = sqlite3Hwtime() - iStart;
   prepTime += iElapse;
   if (!bQuiet){
     printf("sqlite3_prepare_v2() returns %d in %llu cycles\n", rc, iElapse);
   }
   if( rc==SQLITE_OK ){
     int nRow = 0;
-    iStart = hwtime();
+    iStart = sqlite3Hwtime();
     while( (rc=sqlite3_step(pStmt))==SQLITE_ROW ){ nRow++; }
-    iElapse = hwtime() - iStart;
+    iElapse = sqlite3Hwtime() - iStart;
     runTime += iElapse;
     if (!bQuiet){
       printf("sqlite3_step() returns %d after %d rows in %llu cycles\n",
              rc, nRow, iElapse);
     }
-    iStart = hwtime();
+    iStart = sqlite3Hwtime();
     rc = sqlite3_finalize(pStmt);
-    iElapse = hwtime() - iStart;
+    iElapse = sqlite3Hwtime() - iStart;
     finalizeTime += iElapse;
     if (!bQuiet){
       printf("sqlite3_finalize() returns %d in %llu cycles\n", rc, iElapse);
@@ -182,14 +180,16 @@ int main(int argc, char **argv){
   char *zSql;
   int i, j;
   FILE *in;
-  unsigned long long int iStart, iElapse;
-  unsigned long long int iSetup = 0;
+  sqlite_uint64 iStart, iElapse;
+  sqlite_uint64 iSetup = 0;
   int nStmt = 0;
   int nByte = 0;
   const char *zArgv0 = argv[0];
   int bQuiet = 0;
+#if !defined(_MSC_VER)
   struct tms tmsStart, tmsEnd;
   clock_t clkStart, clkEnd;
+#endif
 
 #ifdef HAVE_OSINST
   extern sqlite3_vfs *sqlite3_instvfs_binarylog(char *, char *, char *);
@@ -223,6 +223,18 @@ int main(int argc, char **argv){
     ** equates to "Normal".
     */
     if( argc>4 && (strcmp(argv[1], "-priority")==0) ){
+#if defined(_MSC_VER)
+      int new_priority = atoi(argv[2]);
+      if(!SetPriorityClass(GetCurrentProcess(), 
+        (new_priority<=-5) ? HIGH_PRIORITY_CLASS : 
+        (new_priority<=0)  ? ABOVE_NORMAL_PRIORITY_CLASS : 
+        (new_priority==0)  ? NORMAL_PRIORITY_CLASS : 
+        (new_priority<5)   ? BELOW_NORMAL_PRIORITY_CLASS : 
+        IDLE_PRIORITY_CLASS)){
+        printf ("error setting priority\n"); 
+        exit(2); 
+      }
+#else
       struct sched_param myParam;
       sched_getparam(0, &myParam);
       printf ("Current process priority is %d.\n", (int)myParam.sched_priority); 
@@ -232,6 +244,7 @@ int main(int argc, char **argv){
         printf ("error setting priority\n"); 
         exit(2); 
       }
+#endif
       argv += 2;
       argc -= 2;
       continue;
@@ -271,10 +284,12 @@ int main(int argc, char **argv){
 
   printf("SQLite version: %d\n", sqlite3_libversion_number());
   unlink(argv[1]);
+#if !defined(_MSC_VER)
   clkStart = times(&tmsStart);
-  iStart = hwtime();
+#endif
+  iStart = sqlite3Hwtime();
   rc = sqlite3_open(argv[1], &db);
-  iElapse = hwtime() - iStart;
+  iElapse = sqlite3Hwtime() - iStart;
   iSetup = iElapse;
   if (!bQuiet) printf("sqlite3_open() returns %d in %llu cycles\n", rc, iElapse);
   for(i=j=0; j<nSql; j++){
@@ -299,10 +314,12 @@ int main(int argc, char **argv){
       }
     }
   }
-  iStart = hwtime();
+  iStart = sqlite3Hwtime();
   sqlite3_close(db);
-  iElapse = hwtime() - iStart;
+  iElapse = sqlite3Hwtime() - iStart;
+#if !defined(_MSC_VER)
   clkEnd = times(&tmsEnd);
+#endif
   iSetup += iElapse;
   if (!bQuiet) printf("sqlite3_close() returns in %llu cycles\n", iElapse);
 
@@ -316,10 +333,12 @@ int main(int argc, char **argv){
   printf("Total time:            %15llu cycles\n",
       prepTime + runTime + finalizeTime + iSetup);
 
+#if !defined(_MSC_VER)
   printf("\n");
   printf("Total user CPU time:   %15.3g secs\n", (tmsEnd.tms_utime - tmsStart.tms_utime)/(double)CLOCKS_PER_SEC );
   printf("Total system CPU time: %15.3g secs\n", (tmsEnd.tms_stime - tmsStart.tms_stime)/(double)CLOCKS_PER_SEC );
   printf("Total real time:       %15.3g secs\n", (clkEnd -clkStart)/(double)CLOCKS_PER_SEC );
+#endif
 
 #ifdef HAVE_OSINST
   if( pVfs ){

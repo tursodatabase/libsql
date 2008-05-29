@@ -15,7 +15,7 @@
 ** Then link against this program.  But to do optimize this program
 ** because that defeats the hi-res timer.
 **
-**     gcc speedtest16.c sqlite3.o -ldl
+**     gcc speedtest16.c sqlite3.o -ldl -I../src
 **
 ** Then run this program with a single argument which is the name of
 ** a file containing SQL script that you want to test:
@@ -29,19 +29,11 @@
 #include <unistd.h>
 #include "sqlite3.h"
 
-
-/*
-** The following routine only works on pentium-class processors.
-** It uses the RDTSC opcode to read the cycle count value out of the
-** processor and returns that value.  This can be used for high-res
-** profiling.
+/* 
+** hwtime.h contains inline assembler code for implementing 
+** high-performance timing routines.
 */
-__inline__ unsigned long long int hwtime(void){
-   unsigned int lo, hi;
-   /* We cannot use "=A", since this would use %rax on x86_64 */
-   __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
-   return (unsigned long long int)hi << 32 | lo;
-}
+#include "hwtime.h"
 
 /*
 ** Convert a zero-terminated ASCII string into a zero-terminated
@@ -64,9 +56,9 @@ static void *asciiToUtf16le(const char *z){
 /*
 ** Timers
 */
-static unsigned long long int prepTime = 0;
-static unsigned long long int runTime = 0;
-static unsigned long long int finalizeTime = 0;
+static sqlite_uint64 prepTime = 0;
+static sqlite_uint64 runTime = 0;
+static sqlite_uint64 finalizeTime = 0;
 
 /*
 ** Prepare and run a single statement of SQL.
@@ -75,28 +67,28 @@ static void prepareAndRun(sqlite3 *db, const char *zSql){
   void *utf16;
   sqlite3_stmt *pStmt;
   const void *stmtTail;
-  unsigned long long int iStart, iElapse;
+  sqlite_uint64 iStart, iElapse;
   int rc;
   
   printf("****************************************************************\n");
   printf("SQL statement: [%s]\n", zSql);
   utf16 = asciiToUtf16le(zSql);
-  iStart = hwtime();
+  iStart = sqlite3Hwtime();
   rc = sqlite3_prepare16_v2(db, utf16, -1, &pStmt, &stmtTail);
-  iElapse = hwtime() - iStart;
+  iElapse = sqlite3Hwtime() - iStart;
   prepTime += iElapse;
   printf("sqlite3_prepare16_v2() returns %d in %llu cycles\n", rc, iElapse);
   if( rc==SQLITE_OK ){
     int nRow = 0;
-    iStart = hwtime();
+    iStart = sqlite3Hwtime();
     while( (rc=sqlite3_step(pStmt))==SQLITE_ROW ){ nRow++; }
-    iElapse = hwtime() - iStart;
+    iElapse = sqlite3Hwtime() - iStart;
     runTime += iElapse;
     printf("sqlite3_step() returns %d after %d rows in %llu cycles\n",
            rc, nRow, iElapse);
-    iStart = hwtime();
+    iStart = sqlite3Hwtime();
     rc = sqlite3_finalize(pStmt);
-    iElapse = hwtime() - iStart;
+    iElapse = sqlite3Hwtime() - iStart;
     finalizeTime += iElapse;
     printf("sqlite3_finalize() returns %d in %llu cycles\n", rc, iElapse);
   }
@@ -111,8 +103,8 @@ int main(int argc, char **argv){
   char *zSql;
   int i, j;
   FILE *in;
-  unsigned long long int iStart, iElapse;
-  unsigned long long int iSetup = 0;
+  sqlite_uint64 iStart, iElapse;
+  sqlite_uint64 iSetup = 0;
   int nStmt = 0;
   int nByte = 0;
 
@@ -133,9 +125,9 @@ int main(int argc, char **argv){
   printf("SQLite version: %d\n", sqlite3_libversion_number());
   unlink(argv[1]);
   utf16 = asciiToUtf16le(argv[1]);
-  iStart = hwtime();
+  iStart = sqlite3Hwtime();
   rc = sqlite3_open16(utf16, &db);
-  iElapse = hwtime() - iStart;
+  iElapse = sqlite3Hwtime() - iStart;
   iSetup = iElapse;
   printf("sqlite3_open16() returns %d in %llu cycles\n", rc, iElapse);
   free(utf16);
@@ -159,9 +151,9 @@ int main(int argc, char **argv){
       }
     }
   }
-  iStart = hwtime();
+  iStart = sqlite3Hwtime();
   sqlite3_close(db);
-  iElapse = hwtime() - iStart;
+  iElapse = sqlite3Hwtime() - iStart;
   iSetup += iElapse;
   printf("sqlite3_close() returns in %llu cycles\n", iElapse);
   printf("\n");

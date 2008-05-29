@@ -56,6 +56,7 @@ foreach hdr {
    btree.h
    btreeInt.h
    hash.h
+   hwtime.h
    keywordhash.h
    opcodes.h
    os_common.h

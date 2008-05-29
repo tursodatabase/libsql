@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.182 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: os_unix.c,v 1.183 2008/05/29 20:22:37 shane Exp $
 */
 #include "sqliteInt.h"
 #if OS_UNIX              /* This file is used on unix only */
@@ -805,7 +805,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   got = read(id->h, pBuf, cnt);
 #endif
   TIMER_END;
-  OSTRACE5("READ    %-3d %5d %7lld %d\n", id->h, got, offset, TIMER_ELAPSED);
+  OSTRACE5("READ    %-3d %5d %7lld %llu\n", id->h, got, offset, TIMER_ELAPSED);
   return got;
 }
 
@@ -853,7 +853,7 @@ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
   got = write(id->h, pBuf, cnt);
 #endif
   TIMER_END;
-  OSTRACE5("WRITE   %-3d %5d %7lld %d\n", id->h, got, offset, TIMER_ELAPSED);
+  OSTRACE5("WRITE   %-3d %5d %7lld %llu\n", id->h, got, offset, TIMER_ELAPSED);
   return got;
 }
 
