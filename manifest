@@ -1,5 +1,5 @@
-C Unused\sfunctions\sin\stestfixture.exe\swith\scertain\sdefines.\s(CVS\s5172)
-D 2008-05-29T02:57:48
+C Omit\sdeclaration\sfor\sfunctions\sthat\sare\sonly\sused\sby\sasserts\sif\sasserts\saren't\sbeing\sused\s(NDEBUG).\s(CVS\s5173)
+D 2008-05-29T03:01:24
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 62b2a40ff5944dd33c9c3184b21f720ea8e48a44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -97,7 +97,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c ab50c4b8c6a899dae499f5a805eebe4223c78269
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
 F src/btree.c 7bee6ba457f3e241911fab69b1602eb43c65b438
-F src/btree.h 8826591bf54dd35fcf2e67473d5f1bae253861c7
+F src/btree.h b1bd7e0b8c2e33658aaf447cb0d1d94f74664b6b
 F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
 F src/build.c a52d9d51341444a2131e3431608f245db80d9591
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
@@ -590,7 +590,7 @@ F tool/speedtest16.c 6f5bc019dcf8b6537f379bbac0408a9e1a86f0b6
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c e74126bc12178fa29904f711bb100212a5448041
 F tool/speedtest8inst1.c 025879132979a5fdec11218472cba6cf8f6ec854
-P 7c51a97dc11f20f7323a9dc5c04a3b84380cf8fb
-R b81023eeaf1ecbacf1eeae3033f0b3f3
+P 5e3ff1bb37f7fbdc9b1414232bd78f096f89eced
+R 28146f24b38de5c9915458f57b32a4b1
 U shane
-Z 89b56791f56862934070209bac24f577
+Z 2107dd85d580920f6cc5f4aac9bbfa38

@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.98 2008/04/26 13:39:47 drh Exp $
+** @(#) $Id: btree.h,v 1.99 2008/05/29 03:01:24 shane Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -185,24 +185,36 @@ int sqlite3BtreePageDump(Btree*, int, int recursive);
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE
   void sqlite3BtreeEnter(Btree*);
   void sqlite3BtreeLeave(Btree*);
+#ifndef NDEBUG
+  /* This routine is used inside assert() statements only. */
   int sqlite3BtreeHoldsMutex(Btree*);
+#endif
   void sqlite3BtreeEnterCursor(BtCursor*);
   void sqlite3BtreeLeaveCursor(BtCursor*);
   void sqlite3BtreeEnterAll(sqlite3*);
   void sqlite3BtreeLeaveAll(sqlite3*);
+#ifndef NDEBUG
+  /* This routine is used inside assert() statements only. */
   int sqlite3BtreeHoldsAllMutexes(sqlite3*);
+#endif
   void sqlite3BtreeMutexArrayEnter(BtreeMutexArray*);
   void sqlite3BtreeMutexArrayLeave(BtreeMutexArray*);
   void sqlite3BtreeMutexArrayInsert(BtreeMutexArray*, Btree*);
 #else
 # define sqlite3BtreeEnter(X)
 # define sqlite3BtreeLeave(X)
+#ifndef NDEBUG
+  /* This routine is used inside assert() statements only. */
 # define sqlite3BtreeHoldsMutex(X) 1
+#endif
 # define sqlite3BtreeEnterCursor(X)
 # define sqlite3BtreeLeaveCursor(X)
 # define sqlite3BtreeEnterAll(X)
 # define sqlite3BtreeLeaveAll(X)
+#ifndef NDEBUG
+  /* This routine is used inside assert() statements only. */
 # define sqlite3BtreeHoldsAllMutexes(X) 1
+#endif
 # define sqlite3BtreeMutexArrayEnter(X)
 # define sqlite3BtreeMutexArrayLeave(X)
 # define sqlite3BtreeMutexArrayInsert(X,Y)
