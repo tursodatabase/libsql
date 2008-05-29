@@ -17,7 +17,7 @@
 ** This header file is #include-ed by sqliteInt.h and thus ends up
 ** being included by every source file.
 **
-** $Id: os.h,v 1.100 2008/05/29 02:53:00 shane Exp $
+** $Id: os.h,v 1.101 2008/05/29 03:54:27 shane Exp $
 */
 #ifndef _SQLITE_OS_H_
 #define _SQLITE_OS_H_
@@ -66,6 +66,15 @@
 # endif
 #endif
 
+/*
+** Determine if we are dealing with WindowsCE - which has a much
+** reduced API.
+*/
+#if defined(_WIN32_WCE)
+# define OS_WINCE 1
+#else
+# define OS_WINCE 0
+#endif
 
 
 /*

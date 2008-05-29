@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.122 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: os_win.c,v 1.123 2008/05/29 03:54:27 shane Exp $
 */
 #include "sqliteInt.h"
 #if OS_WIN               /* This file is used for windows only */
@@ -66,11 +66,8 @@
 ** Determine if we are dealing with WindowsCE - which has a much
 ** reduced API.
 */
-#if defined(_WIN32_WCE)
-# define OS_WINCE 1
+#if defined(OS_WINCE)
 # define AreFileApisANSI() 1
-#else
-# define OS_WINCE 0
 #endif
 
 /*
