@@ -29,7 +29,7 @@
 ** Computation results are stored on a set of registers numbered beginning
 ** with 1 and going up to Vdbe.nMem.  Each register can store
 ** either an integer, a null-terminated string, a floating point
-** number, or the SQL "NULL" value.  An inplicit conversion from one
+** number, or the SQL "NULL" value.  An implicit conversion from one
 ** type to the other occurs as necessary.
 ** 
 ** Most of the code in this file is taken up by the sqlite3VdbeExec()
@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.744 2008/05/29 20:22:37 shane Exp $
+** $Id: vdbe.c,v 1.745 2008/05/30 15:59:49 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -75,7 +75,7 @@ int sqlite3_interrupt_count = 0;
 /*
 ** The next global variable is incremented each type the OP_Sort opcode
 ** is executed.  The test procedures use this information to make sure that
-** sorting is occurring or not occuring at appropriate times.   This variable
+** sorting is occurring or not occurring at appropriate times.   This variable
 ** has no function other than to help verify the correct operation of the
 ** library.
 */
@@ -145,7 +145,7 @@ static void updateMaxBlobsize(Mem *p){
 #define ExpandBlob(P) (((P)->flags&MEM_Zero)?sqlite3VdbeMemExpandBlob(P):0)
 
 /*
-** Argument pMem points at a regiser that will be passed to a
+** Argument pMem points at a register that will be passed to a
 ** user-defined function or returned to the user as the result of a query.
 ** The second argument, 'db_enc' is the text encoding used by the vdbe for
 ** register variables.  This routine sets the pMem->enc and pMem->type
@@ -925,7 +925,7 @@ case OP_Blob: {                /* out2-prerelease */
 **
 ** The value of variable P1 is written into register P2. A variable is
 ** an unknown in the original SQL string as handed to sqlite3_compile().
-** Any occurance of the '?' character in the original SQL is considered
+** Any occurrence of the '?' character in the original SQL is considered
 ** a variable.  Variables in the SQL string are number from left to
 ** right beginning with 1.  The values of variables are set using the
 ** sqlite3_bind() API.
@@ -1018,7 +1018,7 @@ case OP_SCopy: {
 
 /* Opcode: ResultRow P1 P2 * * *
 **
-** The registers P1 throught P1+P2-1 contain a single row of
+** The registers P1 through P1+P2-1 contain a single row of
 ** results. This opcode causes the sqlite3_step() call to terminate
 ** with an SQLITE_ROW return code and it sets up the sqlite3_stmt
 ** structure to provide access to the top P1 values as the result
@@ -1035,7 +1035,7 @@ case OP_ResultRow: {
   p->cacheCtr = (p->cacheCtr + 2)|1;
 
   /* Make sure the results of the current row are \000 terminated
-  ** and have an assigned type.  The results are deephemeralized as
+  ** and have an assigned type.  The results are de-ephemeralized as
   ** as side effect.
   */
   pMem = p->pResultSet = &p->aMem[pOp->p1];
@@ -1101,13 +1101,13 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
 /* Opcode: Add P1 P2 P3 * *
 **
 ** Add the value in register P1 to the value in register P2
-** and store the result in regiser P3.
+** and store the result in register P3.
 ** If either input is NULL, the result is NULL.
 */
 /* Opcode: Multiply P1 P2 P3 * *
 **
 **
-** Multiply the value in regiser P1 by the value in regiser P2
+** Multiply the value in register P1 by the value in register P2
 ** and store the result in register P3.
 ** If either input is NULL, the result is NULL.
 */
@@ -1153,8 +1153,8 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
         ** -1 returns an integer too large to store in a 64-bit data-type. On
         ** some architectures, the value overflows to (1<<63). On others,
         ** a SIGFPE is issued. The following statement normalizes this
-        ** behaviour so that all architectures behave as if integer 
-        ** overflow occured.
+        ** behavior so that all architectures behave as if integer 
+        ** overflow occurred.
         */
         if( a==-1 && b==SMALLEST_INT64 ) a = 1;
         b /= a;
@@ -1308,7 +1308,7 @@ case OP_Function: {
     goto no_mem;
   }
 
-  /* If any auxilary data functions have been called by this user function,
+  /* If any auxiliary data functions have been called by this user function,
   ** immediately call the destructor for any non-static values.
   */
   if( ctx.pVdbeFunc ){
@@ -2139,7 +2139,7 @@ case OP_Affinity: {
 **
 ** Convert P2 registers beginning with P1 into a single entry
 ** suitable for use as a data record in a database table or as a key
-** in an index.  The details of the format are irrelavant as long as
+** in an index.  The details of the format are irrelevant as long as
 ** the OP_Column opcode can decode the record later.
 ** Refer to source code comments for the details of the record
 ** format.
@@ -2516,7 +2516,7 @@ case OP_VerifyCookie: {
     ** stored with the in-memory representation of the schema, do
     ** not reload the schema from the database file.
     **
-    ** If virtual-tables are in use, this is not just an optimisation.
+    ** If virtual-tables are in use, this is not just an optimization.
     ** Often, v-tables store their data in other SQLite tables, which
     ** are queried from within xNext() and other v-table methods using
     ** prepared queries. If such a query is out-of-date, we do not want to
@@ -2937,7 +2937,7 @@ case OP_MoveGt: {       /* jump, in3 */
 ** DISTINCT keyword in SELECT statements.
 **
 ** This instruction checks if index P1 contains a record for which 
-** the first N serialised values exactly match the N serialised values
+** the first N serialized values exactly match the N serialized values
 ** in the record in register P3, where N is the total number of values in
 ** the P3 record (the P3 record is a prefix of the P1 record). 
 **
@@ -3196,7 +3196,7 @@ case OP_NewRowid: {           /* out2-prerelease */
     ** random number generator based on the RC4 algorithm.
     **
     ** To promote locality of reference for repetitive inserts, the
-    ** first few attempts at chosing a random rowid pick values just a little
+    ** first few attempts at choosing a random rowid pick values just a little
     ** larger than the previous rowid.  This has been shown experimentally
     ** to double the speed of the COPY operation.
     */
@@ -4009,7 +4009,7 @@ case OP_CreateTable: {          /* out2-prerelease */
 ** schema is already loaded into the symbol table.
 **
 ** This opcode invokes the parser to create a new virtual machine,
-** then runs the new virtual machine.  It is thus a reentrant opcode.
+** then runs the new virtual machine.  It is thus a re-entrant opcode.
 */
 case OP_ParseSchema: {
   char *zSql;
@@ -4516,7 +4516,7 @@ case OP_VOpen: {
   rc = pModule->xOpen(pVtab, &pVtabCursor);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
   if( SQLITE_OK==rc ){
-    /* Initialise sqlite3_vtab_cursor base class */
+    /* Initialize sqlite3_vtab_cursor base class */
     pVtabCursor->pVtab = pVtab;
 
     /* Initialise vdbe cursor object */

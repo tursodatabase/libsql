@@ -1,5 +1,5 @@
-C Fix\stypos\sin\scomments\sin\ssqlite.h.in.\s(CVS\s5181)
-D 2008-05-30T15:35:31
+C Fix\stypos\sin\scomments\sin\svdbe.c.\s(CVS\s5182)
+D 2008-05-30T15:59:49
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -179,7 +179,7 @@ F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 43277088f8fea4109a640aa46731b8752c3fb4a7
 F src/vacuum.c a5c289e561ed72283e97d2485491986bc7d684eb
-F src/vdbe.c 37d3237ad5b84c4d4d3a33a49350c2594cac65c3
+F src/vdbe.c bad9123e8005eb5789cececd104cf1dffb529f2f
 F src/vdbe.h 1e3722d471739c2b213c6283b60373290e52f7ea
 F src/vdbeInt.h ede1a31cfa74d4718f41da491bd1d2b3abc137fc
 F src/vdbeapi.c 22b01ed175e4d4c613ee82cabc7a44a275641206
@@ -591,7 +591,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P 7cadb223cb79387a7def7762dc9e42028d14baf3
-R bff31198d4ee51ff36b2f99acb782ff0
+P 47956f8ee997113a1765d27009504143e518cc69
+R 3727f256146c4c448c58d410527b0562
 U shane
-Z 23685e4939f963ad7f8672f18f745279
+Z 48117443c557da472a60dcbecad099ec
