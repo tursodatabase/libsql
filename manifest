@@ -1,5 +1,5 @@
-C Consolidated\sinline\sassembly\sversions\sof\s"hwtime()"\sinto\shwtime.h.\s\sProvided\sMSVC\sversion.\s\sModified\scode\sfor\sconsistent\suse\sof\shwtime().\s\sChanged\simplementation\sto\suse\ssqlite_uint64\sand\ssqlite_int64\sinstead\sof\sunsigned\slong\slong\sint\sand\slong\slong\sint\sfor\sMSVC\scompiler\ssupport.\s(CVS\s5179)
-D 2008-05-29T20:22:37
+C Fix\stypos\sin\scomments\sin\swhere.c.\s(CVS\s5180)
+D 2008-05-30T14:58:37
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -188,7 +188,7 @@ F src/vdbeblob.c 554736781ee273a8089c776e96bdb53e66f57ce6
 F src/vdbefifo.c 1644a41c6366ff25a920df4ca675f12d3f559687
 F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
 F src/vtab.c ce9d19ca9053812a557010fd4be7e842f8ebba2d
-F src/where.c ad88aefac0e6469b3899477a81ef81b6bdc82913
+F src/where.c 53c6b8014622aa918046957e56bc020101754768
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d56a3ca8acdf761204aff0a2e7aa5eb8e11b31e6
@@ -591,7 +591,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P 9883b406ce24eae93942ee5e6aab33fb6b05329f
-R 458af2184cd56db6e376c81a0c3c302b
-U shane
-Z 98aa2a75de827de92c3fa65796b99ae6
+P 19f5f571dd09c91b6e6a3f82857f54bd30791c03
+R 370cbc62aa9ac62f8f836f2b7096e753
+U drh
+Z 9dd2f30f46ebe42610e1e3f60bc2001b

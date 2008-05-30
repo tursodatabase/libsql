@@ -10,13 +10,13 @@
 **
 *************************************************************************
 ** This module contains C code that generates VDBE code used to process
-** the WHERE clause of SQL statements.  This module is reponsible for
+** the WHERE clause of SQL statements.  This module is responsible for
 ** generating the code that loops through a table looking for applicable
 ** rows.  Indices are selected and used to speed the search when doing
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.306 2008/05/29 05:23:42 drh Exp $
+** $Id: where.c,v 1.307 2008/05/30 14:58:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -219,7 +219,7 @@ static void whereClauseClear(WhereClause *pWC){
 ** for freeing the expression p is assumed by the WhereClause object.
 **
 ** WARNING:  This routine might reallocate the space used to store
-** WhereTerms.  All pointers to WhereTerms should be invalided after
+** WhereTerms.  All pointers to WhereTerms should be invalidated after
 ** calling this routine.  Such pointers may be reinitialized by referencing
 ** the pWC->a[] array.
 */
@@ -382,7 +382,7 @@ static int allowedOp(int op){
 #define SWAP(TYPE,A,B) {TYPE t=A; A=B; B=t;}
 
 /*
-** Commute a comparision operator.  Expressions of the form "X op Y"
+** Commute a comparison operator.  Expressions of the form "X op Y"
 ** are converted into "Y op X".
 **
 ** If a collation sequence is associated with either the left or right
@@ -621,7 +621,7 @@ static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
 **           a=<expr1> OR  a=<expr2> OR b=<expr3>  OR ...
 **
 ** The pOrTerm input to this routine corresponds to a single term of
-** this OR clause.  In order for the term to be a condidate for
+** this OR clause.  In order for the term to be a candidate for
 ** conversion to an IN operator, the following must be true:
 **
 **     *  The left-hand side of the term must be the column which
@@ -676,7 +676,7 @@ static int orTermIsOptCandidate(WhereTerm *pOrTerm, int iCursor, int iColumn){
 ** This routine merely checks to see if pOrTerm has a duplicate that
 ** might qualify.  If there is a duplicate that has not yet been
 ** disqualified, then return true.  If there are no duplicates, or
-** the duplicate has also been disqualifed, return false.
+** the duplicate has also been disqualified, return false.
 */
 static int orTermHasOkDuplicate(WhereClause *pOr, WhereTerm *pOrTerm){
   if( pOrTerm->flags & TERM_COPIED ){
@@ -1166,7 +1166,7 @@ static int sortableByRowid(
 /*
 ** Prepare a crude estimate of the logarithm of the input value.
 ** The results need not be exact.  This is only used for estimating
-** the total cost of performing operatings with O(logN) or O(NlogN)
+** the total cost of performing operations with O(logN) or O(NlogN)
 ** complexity.  Because N is just a guess, it is no great tragedy if
 ** logN is a little off.
 */
