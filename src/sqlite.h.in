@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.318 2008/05/23 17:21:09 shane Exp $
+** @(#) $Id: sqlite.h.in,v 1.319 2008/05/30 15:35:31 shane Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -367,7 +367,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 */
 int sqlite3_exec(
   sqlite3*,                                  /* An open database */
-  const char *sql,                           /* SQL to be evaluted */
+  const char *sql,                           /* SQL to be evaluated */
   int (*callback)(void*,int,char**,char**),  /* Callback function */
   void *,                                    /* 1st argument to callback */
   char **errmsg                              /* Error msg written here */
@@ -1921,7 +1921,7 @@ void *sqlite3_profile(sqlite3*,
 ** [sqlite3_get_table()].   An example use for this 
 ** interface is to keep a GUI updated during a large query.
 **
-** If the progress callback returns non-zero, the opertion is
+** If the progress callback returns non-zero, the operation is
 ** interrupted.  This feature can be used to implement a
 ** "Cancel" button on a GUI dialog box.
 **
@@ -2216,7 +2216,7 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** by untrusted external sources.  An example application might be a
 ** webbrowser that has its own databases for storing history and
 ** separate databases controlled by JavaScript applications downloaded
-** off the internet.  The internal databases can be given the
+** off the Internet.  The internal databases can be given the
 ** large, default limits.  Databases managed by external sources can
 ** be given much smaller limits designed to prevent a denial of service
 ** attach.  Developers might also want to use the [sqlite3_set_authorizer()]
@@ -3403,7 +3403,7 @@ sqlite3_value *sqlite3_column_value(sqlite3_stmt*, int iCol);
 ** [prepared statement].  If the virtual machine has not 
 ** completed execution when this routine is called, that is like
 ** encountering an error or an interrupt.  (See [sqlite3_interrupt()].) 
-** Incomplete updates may be rolled back and transactions cancelled,  
+** Incomplete updates may be rolled back and transactions canceled,  
 ** depending on the circumstances, and the 
 ** [error code] returned will be [SQLITE_ABORT].
 **
@@ -4492,7 +4492,7 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 **          registered by prior calls.
 **
 ** {F12954} If the F argument to [sqlite3_commit_hook(D,F,P)] is NULL
-**          then the commit hook callback is cancelled and no callback
+**          then the commit hook callback is canceled and no callback
 **          is invoked when a transaction commits.
 **
 ** {F12955} If the commit callback returns non-zero then the commit is
@@ -4511,7 +4511,7 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 **          registered by prior calls.
 **
 ** {F12964} If the F argument to [sqlite3_rollback_hook(D,F,P)] is NULL
-**          then the rollback hook callback is cancelled and no callback
+**          then the rollback hook callback is canceled and no callback
 **          is invoked when a transaction rolls back.
 */
 void *sqlite3_commit_hook(sqlite3*, int(*)(void*), void*);
