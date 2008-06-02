@@ -1,5 +1,5 @@
-C Fix\stypos\sin\scomments\sin\svdbe.c.\s(CVS\s5182)
-D 2008-05-30T15:59:49
+C Avoid\spassing\sa\snull\spointer\sto\ssqlite3SetString\sin\ssqlite3RunParser.\sFix\sfor\s#3155.\s(CVS\s5183)
+D 2008-06-02T13:00:33
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -173,7 +173,7 @@ F src/test_schema.c e3f93725f7c5b2cff84a69dc4332040dfbc8f81a
 F src/test_server.c 7e579eb9bf6fbe9cc45e84e4c74d3d06d049a825
 F src/test_tclvar.c e99b975614735553fa1c43503d85b0dd988c0e77
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
-F src/tokenize.c 8d77af8584cf027dc21375f0efa5818cb303c995
+F src/tokenize.c d07c7482a59dd8e02f3f73e86ff55eccdc0d8f26
 F src/trigger.c 1e751f8d5ceeb328d26bf1ccfb2de50653670d49
 F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
@@ -591,7 +591,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P 47956f8ee997113a1765d27009504143e518cc69
-R 3727f256146c4c448c58d410527b0562
-U shane
-Z 48117443c557da472a60dcbecad099ec
+P 0613569424995207c600279c0d2337d5d5a3658c
+R 4bb786c9e56e221af2c71f4b5e4c62b5
+U danielk1977
+Z 87149db77d95d08dd87a6326a5ea2676
