@@ -12,7 +12,7 @@
 # focus of this file is changing the database page size using a 
 # VACUUM statement.
 #
-# $Id: vacuum3.test,v 1.4 2008/05/28 16:00:44 danielk1977 Exp $
+# $Id: vacuum3.test,v 1.5 2008/06/03 07:34:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -237,6 +237,8 @@ do_test vacuum3-4.6 {
   }
   execsql { SELECT * FROM abc } db2
 } {1 2 3 4 5 6}
+
+db2 close
 
 do_ioerr_test vacuum3-ioerr-1 -cksum true -sqlprep { 
   PRAGMA page_size = 1024;
