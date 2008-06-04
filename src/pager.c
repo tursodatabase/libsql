@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.450 2008/05/21 15:38:15 drh Exp $
+** @(#) $Id: pager.c,v 1.451 2008/06/04 06:45:59 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -406,6 +406,7 @@ struct Pager {
 #endif
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
   char dbFileVers[16];        /* Changes whenever database file changes */
+  i64 journalSizeLimit;       /* Size limit for persistent journal files */
 };
 
 /*
@@ -974,14 +975,30 @@ static int zeroJournalHdr(Pager *pPager, int doTruncate){
   static const char zeroHdr[28];
 
   if( pPager->journalOff ){
+    i64 iLimit = pPager->journalSizeLimit;
+
     IOTRACE(("JZEROHDR %p\n", pPager))
-    if( doTruncate ){
+    if( doTruncate || iLimit==0 ){
       rc = sqlite3OsTruncate(pPager->jfd, 0);
     }else{
       rc = sqlite3OsWrite(pPager->jfd, zeroHdr, sizeof(zeroHdr), 0);
     }
     if( rc==SQLITE_OK ){
       rc = sqlite3OsSync(pPager->jfd, SQLITE_SYNC_DATAONLY|pPager->sync_flags);
+    }
+
+    /* At this point the transaction is committed but the write lock 
+    ** is still held on the file. If there is a size limit configured for 
+    ** the persistent journal and the journal file currently consumes more
+    ** space than that limit allows for, truncate it now. There is no need
+    ** to sync the file following this operation.
+    */
+    if( rc==SQLITE_OK && iLimit>0 ){
+      i64 sz;
+      rc = sqlite3OsFileSize(pPager->jfd, &sz);
+      if( rc==SQLITE_OK && sz>iLimit ){
+        rc = sqlite3OsTruncate(pPager->jfd, iLimit);
+      }
     }
   }
   return rc;
@@ -2351,6 +2368,7 @@ int sqlite3PagerOpen(
   /* pPager->pFirstSynced = 0; */
   /* pPager->pLast = 0; */
   pPager->nExtra = FORCE_ALIGNMENT(nExtra);
+  pPager->journalSizeLimit = SQLITE_DEFAULT_JOURNAL_SIZE_LIMIT;
   assert(pPager->fd->pMethods||memDb||tempFile);
   if( !memDb ){
     setSectorSize(pPager);
@@ -5304,6 +5322,16 @@ int sqlite3PagerJournalMode(Pager *pPager, int eMode){
     pPager->journalMode = eMode;
   }
   return (int)pPager->journalMode;
+}
+
+/*
+** Get/set the size-limit used for persistent journal files.
+*/
+i64 sqlite3PagerJournalSizeLimit(Pager *pPager, i64 iLimit){
+  if( iLimit>=-1 ){
+    pPager->journalSizeLimit = iLimit;
+  }
+  return pPager->journalSizeLimit;
 }
 
 #ifdef SQLITE_TEST

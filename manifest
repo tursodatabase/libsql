@@ -1,5 +1,5 @@
-C Ensure\sthat\svacuum3.test\scloses\sall\sopened\sdatabase\sconnections.\sFix\sfor\s#3157.\s(CVS\s5184)
-D 2008-06-03T07:34:09
+C Add\s"pragma\sjournal_size_limit",\sused\sto\slimit\sthe\sspace\sconsumed\sby\spersistent\sjournal\sfiles\sleft\sin\sthe\sfile-system\safter\sa\stransaction\shas\sconcluded\sin\sexclusive\s(or\sjournal_mode=persist)\smode.\s(CVS\s5185)
+D 2008-06-04T06:45:59
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -133,10 +133,10 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 1578149e21c4eac42c7f230a6f40500846f8e781
 F src/os_unix.c a6b02934fdd4682db47c006cb03baac8694d8b77
 F src/os_win.c 812f9ba8cd90c8aa54914a56897fb534494576d8
-F src/pager.c d0a77feeaeecaaaec9342a3bb3865ed9a490897a
-F src/pager.h 1ccde54041195311c2b09b6936404d2192db44da
+F src/pager.c d55885a30760028d3fe367df2fe7e2c884d65ff4
+F src/pager.h 71c58cd613174a91b50ed66edad6148639aa064a
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
-F src/pragma.c a4919a29a0923e00c6170b0677a50058e352b58c
+F src/pragma.c c6dfbd16fff857aceb2fece8b34891a32d64b19a
 F src/prepare.c cbc9301aba1d0fc3d05fae576f2eb667c189cb36
 F src/printf.c f2d4f6c5b0ec24b643e85fe60258adad8b1f6acc
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
@@ -364,7 +364,7 @@ F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
-F test/jrnlmode.test 8e8e359e46799cea23d029f28bda6311f0f4c07b
+F test/jrnlmode.test b60a7dae8534ccd2e811deb09258f1172fd6e24f
 F test/jrnlmode2.test e48ec49320a3f849a5036e3551bf2394112a4aae
 F test/jrnlmode3.test c77f9d4095945f234dddd60ca0f73c24802ed0c1
 F test/jrnlmode4.test 8ee031603fef8ed5deba0de8b012a82be6d5a6a0
@@ -591,7 +591,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P 03b5e4581a075179c85e8c16b16fd24c151294d3
-R b2702bf888acb9a4ed6edc79a93f42e2
+P 654e3b3de8ddeba3e31e9677ec4086e9f73c3598
+R 6663a334dd4809e3aa8da9c4ad8955dc
 U danielk1977
-Z 0dbf472f8f6e6a4fc7afad9089837ffd
+Z 785d2e00fd28d9fc7c0eeb4393db61ec

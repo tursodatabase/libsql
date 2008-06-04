@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library. The focus
 # of these tests is the journal mode pragma.
 #
-# $Id: jrnlmode.test,v 1.3 2008/05/20 07:05:09 danielk1977 Exp $
+# $Id: jrnlmode.test,v 1.4 2008/06/04 06:46:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -249,6 +249,137 @@ ifcapable autovacuum&&pragma {
   } {}
 
   integrity_check jrnlmode-4.5
+}
+
+#------------------------------------------------------------------------
+# The following test caes, jrnlmode-5.*, test the journal_size_limit
+# pragma.
+ifcapable pragma {
+  db close
+  file delete -force test.db test2.db test3.db
+  sqlite3 db test.db
+
+  do_test jrnlmode-5.1 {
+    execsql {pragma page_size=1024}
+    execsql {pragma journal_mode=persist}
+  } {persist}
+
+  do_test jrnlmode-5.2 {
+    execsql { PRAGMA journal_size_limit }
+  } {-1}
+  do_test jrnlmode-5.3 {
+    execsql { 
+      ATTACH 'test2.db' AS aux;
+      PRAGMA aux.journal_size_limit;
+    }
+  } {-1}
+  do_test jrnlmode-5.4 {
+    execsql { PRAGMA aux.journal_size_limit = 10240 }
+  } {10240}
+  do_test jrnlmode-5.5 {
+    execsql { PRAGMA main.journal_size_limit = 20480 }
+  } {20480}
+  do_test jrnlmode-5.6 {
+    execsql { PRAGMA journal_size_limit }
+  } {20480}
+  do_test jrnlmode-5.7 {
+    execsql { PRAGMA aux.journal_size_limit }
+  } {10240}
+
+  do_test jrnlmode-5.8 {
+    execsql { ATTACH 'test3.db' AS aux2 }
+  } {}
+
+  do_test jrnlmode-5.9 {
+    execsql {
+      CREATE TABLE main.t1(a, b, c);
+      CREATE TABLE aux.t2(a, b, c);
+      CREATE TABLE aux2.t3(a, b, c);
+    }
+  } {}
+  do_test jrnlmode-5.10 {
+    list \
+      [file exists test.db-journal]  \
+      [file exists test2.db-journal] \
+      [file exists test3.db-journal]
+  } {1 1 1}
+  do_test jrnlmode-5.11 {
+    execsql {
+      BEGIN;
+      INSERT INTO t3 VALUES(randomblob(1000),randomblob(1000),randomblob(1000));
+      INSERT INTO t3 
+          SELECT randomblob(1000),randomblob(1000),randomblob(1000) FROM t3;
+      INSERT INTO t3 
+          SELECT randomblob(1000),randomblob(1000),randomblob(1000) FROM t3;
+      INSERT INTO t3 
+          SELECT randomblob(1000),randomblob(1000),randomblob(1000) FROM t3;
+      INSERT INTO t3 
+          SELECT randomblob(1000),randomblob(1000),randomblob(1000) FROM t3;
+      INSERT INTO t3 
+          SELECT randomblob(1000),randomblob(1000),randomblob(1000) FROM t3;
+      INSERT INTO t2 SELECT * FROM t3;
+      INSERT INTO t1 SELECT * FROM t2;
+      COMMIT;
+    }
+    list \
+      [file exists test.db-journal]  \
+      [file exists test2.db-journal] \
+      [file exists test3.db-journal] \
+      [file size test.db-journal]    \
+      [file size test2.db-journal]   \
+      [file size test3.db-journal]
+  } {1 1 1 0 0 0}
+
+  do_test jrnlmode-5.12 {
+    execsql {
+      BEGIN;
+      UPDATE t1 SET a = randomblob(1000);
+    }
+    expr {[file size test.db-journal]>30000}
+  } {1}
+  do_test jrnlmode-5.13 {
+    execsql COMMIT
+    file size test.db-journal
+  } {20480}
+
+  do_test jrnlmode-5.14 {
+    execsql {
+      BEGIN;
+      UPDATE t2 SET a = randomblob(1000);
+    }
+    expr {[file size test2.db-journal]>30000}
+  } {1}
+  do_test jrnlmode-5.15 {
+    execsql COMMIT
+    file size test2.db-journal
+  } {10240}
+
+  do_test jrnlmode-5.16 {
+    execsql {
+      BEGIN;
+      UPDATE t3 SET a = randomblob(1000);
+    }
+    set journalsize [file size test3.db-journal]
+    expr {$journalsize>30000}
+  } {1}
+  do_test jrnlmode-5.17 {
+    execsql COMMIT
+    file size test3.db-journal
+  } $journalsize
+
+  do_test jrnlmode-5.18 {
+    execsql {
+      PRAGMA journal_size_limit = -4;
+      BEGIN;
+      UPDATE t1 SET a = randomblob(1000);
+    }
+    set journalsize [file size test.db-journal]
+    expr {$journalsize>30000}
+  } {1}
+  do_test jrnlmode-5.19 {
+    execsql COMMIT
+    file size test.db-journal
+  } $journalsize
 }
 
 finish_test

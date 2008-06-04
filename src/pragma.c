@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.177 2008/05/15 17:48:20 danielk1977 Exp $
+** $Id: pragma.c,v 1.178 2008/06/04 06:45:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -461,7 +461,7 @@ void sqlite3Pragma(
       }
     }
     if( pId2->n==0 && eMode==PAGER_JOURNALMODE_QUERY ){
-      /* Simple "PRAGMA persistent_journal;" statement. This is a query for
+      /* Simple "PRAGMA journal_mode;" statement. This is a query for
       ** the current default journal mode (which may be different to
       ** the journal-mode of the main database).
       */
@@ -499,6 +499,27 @@ void sqlite3Pragma(
            azModeName[eMode], P4_STATIC);
     sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
   }else
+
+  /*
+  **  PRAGMA [database.]journal_size_limit
+  **  PRAGMA [database.]journal_size_limit=N
+  **
+  ** Get or set the (boolean) value of the database 'auto-vacuum' parameter.
+  */
+  if( sqlite3StrICmp(zLeft,"journal_size_limit")==0 ){
+    Pager *pPager = sqlite3BtreePager(pDb->pBt);
+    i64 iLimit = -2;
+    if( zRight ){
+      int iLimit32 = atoi(zRight);
+      if( iLimit32<-1 ){
+        iLimit32 = -1;
+      }
+      iLimit = iLimit32;
+    }
+    iLimit = sqlite3PagerJournalSizeLimit(pPager, iLimit);
+    returnSingleInt(pParse, "journal_size_limit", (int)iLimit);
+  }else
+
 #endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
   /*
