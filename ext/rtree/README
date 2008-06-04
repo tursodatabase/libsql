@@ -35,7 +35,7 @@ and query r-tree structures using ordinary SQL statements.
     For example:
 
       CREATE VIRTUAL TABLE boxes USING rtree(boxno, xmin, xmax, ymin, ymax);
-      CREATE VIRTUAL TABLE boxes USING rtree(1, 1.0, 3.0, 2.0, 4.0);
+      INSERT INTO boxes VALUES(1, 1.0, 3.0, 2.0, 4.0);
 
     Constructing a virtual r-tree table <name> creates the following three
     real tables in the database to store the data structure:

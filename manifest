@@ -1,5 +1,5 @@
-C Add\s"pragma\sjournal_size_limit",\sused\sto\slimit\sthe\sspace\sconsumed\sby\spersistent\sjournal\sfiles\sleft\sin\sthe\sfile-system\safter\sa\stransaction\shas\sconcluded\sin\sexclusive\s(or\sjournal_mode=persist)\smode.\s(CVS\s5185)
-D 2008-06-04T06:45:59
+C Fix\sa\sbug\sin\sthe\sR-Tree\sdocumentation.\s(CVS\s5186)
+D 2008-06-04T14:20:09
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -63,7 +63,7 @@ F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
-F ext/rtree/README 64b8300581ba2553a4522ec78812dc940482906b
+F ext/rtree/README 4bdb819d0977344c2d588f096e41791874d2fe20
 F ext/rtree/rtree.c 28b8650cb1594b6a26a47db0b0a3269c8c8d1d43
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree.test ec173a9420ff012e4d29b3063add143583a597a7
@@ -591,7 +591,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P 654e3b3de8ddeba3e31e9677ec4086e9f73c3598
-R 6663a334dd4809e3aa8da9c4ad8955dc
-U danielk1977
-Z 785d2e00fd28d9fc7c0eeb4393db61ec
+P 5c59f469d0321c6a2e702ca2c61db012f63aeecc
+R 60f1264b0e16d32e3957ce12ef54bf4a
+U drh
+Z 3e50f23b3b2045d120d544ccac909461
