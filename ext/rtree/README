@@ -27,7 +27,7 @@ and query r-tree structures using ordinary SQL statements.
     The leftmost column is always the pimary key and contains 64-bit 
     integer values. Each subsequent column contains a 32-bit real
     value. For each pair of real values, the first (leftmost) must be 
-    less than or greater than the second. R-tree tables may be 
+    less than or equal to the second. R-tree tables may be 
     constructed using the following syntax:
 
       CREATE VIRTUAL TABLE <name> USING rtree(<column-names>)
