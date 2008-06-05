@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.745 2008/05/30 15:59:49 shane Exp $
+** $Id: vdbe.c,v 1.746 2008/06/05 11:39:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -487,6 +487,13 @@ static void registerTrace(FILE *out, int iReg, Mem *p){
 #define CHECK_FOR_INTERRUPT \
    if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
 
+#ifdef SQLITE_DEBUG
+static int fileExists(sqlite3 *db, const char *zFile){
+  int res;
+  int rc = sqlite3OsAccess(db->pVfs, zFile, SQLITE_ACCESS_EXISTS, &res);
+  return (res && rc==SQLITE_OK);
+}
+#endif
 
 /*
 ** Execute as much of a VDBE program as we can then return.
@@ -555,8 +562,8 @@ int sqlite3VdbeExec(
   sqlite3VdbeIOTraceSql(p);
 #ifdef SQLITE_DEBUG
   sqlite3FaultBeginBenign(-1);
-  if( p->pc==0 && ((p->db->flags & SQLITE_VdbeListing)!=0
-    || sqlite3OsAccess(db->pVfs, "vdbe_explain", SQLITE_ACCESS_EXISTS)==1 )
+  if( p->pc==0 
+   && ((p->db->flags & SQLITE_VdbeListing) || fileExists(db, "vdbe_explain"))
   ){
     int i;
     printf("VDBE Program Listing:\n");
@@ -565,7 +572,7 @@ int sqlite3VdbeExec(
       sqlite3VdbePrintOp(stdout, i, &p->aOp[i]);
     }
   }
-  if( sqlite3OsAccess(db->pVfs, "vdbe_trace", SQLITE_ACCESS_EXISTS)==1 ){
+  if( fileExists(db, "vdbe_trace") ){
     p->trace = stdout;
   }
   sqlite3FaultEndBenign(-1);
@@ -591,7 +598,7 @@ int sqlite3VdbeExec(
     }
     if( p->trace==0 && pc==0 ){
       sqlite3FaultBeginBenign(-1);
-      if( sqlite3OsAccess(db->pVfs, "vdbe_sqltrace", SQLITE_ACCESS_EXISTS)==1 ){
+      if( fileExists(db, "vdbe_sqltrace") ){
         sqlite3VdbePrintSql(p);
       }
       sqlite3FaultEndBenign(-1);

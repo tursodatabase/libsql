@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.319 2008/05/30 15:35:31 shane Exp $
+** @(#) $Id: sqlite.h.in,v 1.320 2008/06/05 11:39:11 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -450,18 +450,20 @@ int sqlite3_exec(
 **          numeric value of its corresponding primary result code in
 **          its least significant 8 bits.
 */
-#define SQLITE_IOERR_READ          (SQLITE_IOERR | (1<<8))
-#define SQLITE_IOERR_SHORT_READ    (SQLITE_IOERR | (2<<8))
-#define SQLITE_IOERR_WRITE         (SQLITE_IOERR | (3<<8))
-#define SQLITE_IOERR_FSYNC         (SQLITE_IOERR | (4<<8))
-#define SQLITE_IOERR_DIR_FSYNC     (SQLITE_IOERR | (5<<8))
-#define SQLITE_IOERR_TRUNCATE      (SQLITE_IOERR | (6<<8))
-#define SQLITE_IOERR_FSTAT         (SQLITE_IOERR | (7<<8))
-#define SQLITE_IOERR_UNLOCK        (SQLITE_IOERR | (8<<8))
-#define SQLITE_IOERR_RDLOCK        (SQLITE_IOERR | (9<<8))
-#define SQLITE_IOERR_DELETE        (SQLITE_IOERR | (10<<8))
-#define SQLITE_IOERR_BLOCKED       (SQLITE_IOERR | (11<<8))
-#define SQLITE_IOERR_NOMEM         (SQLITE_IOERR | (12<<8))
+#define SQLITE_IOERR_READ              (SQLITE_IOERR | (1<<8))
+#define SQLITE_IOERR_SHORT_READ        (SQLITE_IOERR | (2<<8))
+#define SQLITE_IOERR_WRITE             (SQLITE_IOERR | (3<<8))
+#define SQLITE_IOERR_FSYNC             (SQLITE_IOERR | (4<<8))
+#define SQLITE_IOERR_DIR_FSYNC         (SQLITE_IOERR | (5<<8))
+#define SQLITE_IOERR_TRUNCATE          (SQLITE_IOERR | (6<<8))
+#define SQLITE_IOERR_FSTAT             (SQLITE_IOERR | (7<<8))
+#define SQLITE_IOERR_UNLOCK            (SQLITE_IOERR | (8<<8))
+#define SQLITE_IOERR_RDLOCK            (SQLITE_IOERR | (9<<8))
+#define SQLITE_IOERR_DELETE            (SQLITE_IOERR | (10<<8))
+#define SQLITE_IOERR_BLOCKED           (SQLITE_IOERR | (11<<8))
+#define SQLITE_IOERR_NOMEM             (SQLITE_IOERR | (12<<8))
+#define SQLITE_IOERR_ACCESS            (SQLITE_IOERR | (13<<8))
+#define SQLITE_IOERR_CHECKRESERVEDLOCK (SQLITE_IOERR | (14<<8))
 
 /*
 ** CAPI3REF: Flags For File Open Operations {F10230}
@@ -649,7 +651,7 @@ struct sqlite3_io_methods {
   int (*xFileSize)(sqlite3_file*, sqlite3_int64 *pSize);
   int (*xLock)(sqlite3_file*, int);
   int (*xUnlock)(sqlite3_file*, int);
-  int (*xCheckReservedLock)(sqlite3_file*);
+  int (*xCheckReservedLock)(sqlite3_file*, int *pResOut);
   int (*xFileControl)(sqlite3_file*, int op, void *pArg);
   int (*xSectorSize)(sqlite3_file*);
   int (*xDeviceCharacteristics)(sqlite3_file*);
@@ -808,7 +810,7 @@ struct sqlite3_vfs {
   int (*xOpen)(sqlite3_vfs*, const char *zName, sqlite3_file*,
                int flags, int *pOutFlags);
   int (*xDelete)(sqlite3_vfs*, const char *zName, int syncDir);
-  int (*xAccess)(sqlite3_vfs*, const char *zName, int flags);
+  int (*xAccess)(sqlite3_vfs*, const char *zName, int flags, int *pResOut);
   int (*xGetTempname)(sqlite3_vfs*, int nOut, char *zOut);
   int (*xFullPathname)(sqlite3_vfs*, const char *zName, int nOut, char *zOut);
   void *(*xDlOpen)(sqlite3_vfs*, const char *zFilename);

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.451 2008/06/04 06:45:59 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.452 2008/06/05 11:39:11 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1684,12 +1684,12 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
 
     zJournal = zMasterJournal;
     while( (zJournal-zMasterJournal)<nMasterJournal ){
-      rc = sqlite3OsAccess(pVfs, zJournal, SQLITE_ACCESS_EXISTS);
-      if( rc!=0 && rc!=1 ){
-        rc = SQLITE_IOERR_NOMEM;
+      int exists;
+      rc = sqlite3OsAccess(pVfs, zJournal, SQLITE_ACCESS_EXISTS, &exists);
+      if( rc!=SQLITE_OK ){
         goto delmaster_out;
       }
-      if( rc==1 ){
+      if( exists ){
         /* One of the journals pointed to by the master journal exists.
         ** Open it and check if it points at the master journal. If
         ** so, return without deleting the master journal file.
@@ -1850,7 +1850,7 @@ static int pager_playback(Pager *pPager, int isHot){
   int i;                   /* Loop counter */
   Pgno mxPg = 0;           /* Size of the original file in pages */
   int rc;                  /* Result code of a subroutine */
-  int res = 0;             /* Value returned by sqlite3OsAccess() */
+  int res = 1;             /* Value returned by sqlite3OsAccess() */
   char *zMaster = 0;       /* Name of master journal file if any */
 
   /* Figure out how many records are in the journal.  Abort early if
@@ -1869,15 +1869,11 @@ static int pager_playback(Pager *pPager, int isHot){
   */
   zMaster = pPager->pTmpSpace;
   rc = readMasterJournal(pPager->jfd, zMaster, pPager->pVfs->mxPathname+1);
-  if( rc!=SQLITE_OK || (zMaster[0] 
-   && (res=sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS))==0 ) 
-  ){
-    zMaster = 0;
-    goto end_playback;
+  if( rc==SQLITE_OK && zMaster[0] ){
+    rc = sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS, &res);
   }
   zMaster = 0;
-  if( res<0 ){
-    rc = SQLITE_IOERR_NOMEM;
+  if( rc!=SQLITE_OK || !res ){
     goto end_playback;
   }
   pPager->journalOff = 0;
@@ -3155,22 +3151,28 @@ static PgHdr *pager_get_all_dirty_pages(Pager *pPager){
 */
 static int hasHotJournal(Pager *pPager){
   sqlite3_vfs *pVfs = pPager->pVfs;
-  int rc;
-  if( !pPager->useJournal ) return 0;
-  if( !pPager->fd->pMethods ) return 0;
-  rc = sqlite3OsAccess(pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS);
-  if( rc<=0 ){
-    return rc;
+  int res = 0;
+  if( pPager->useJournal && pPager->fd->pMethods ){
+    int rc;
+    int exists;
+    int locked;
+
+    rc = sqlite3OsAccess(pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS, &exists);
+    if( rc==SQLITE_OK && exists ){
+      rc = sqlite3OsCheckReservedLock(pPager->fd, &locked);
+    }
+
+    if( rc==SQLITE_OK && exists && !locked ){
+      if( sqlite3PagerPagecount(pPager)==0 ){
+        sqlite3OsDelete(pVfs, pPager->zJournal, 0);
+        exists = 0;
+      }
+    }
+
+    res = (rc!=SQLITE_OK ? -1 : (exists && !locked));
   }
-  if( sqlite3OsCheckReservedLock(pPager->fd) ){
-    return 0;
-  }
-  if( sqlite3PagerPagecount(pPager)==0 ){
-    sqlite3OsDelete(pVfs, pPager->zJournal, 0);
-    return 0;
-  }else{
-    return 1;
-  }
+
+  return res;
 }
 
 /*
@@ -3498,25 +3500,24 @@ static int pagerSharedLock(Pager *pPager){
         ** a read/write file handle.
         */
         if( !isHot && pPager->journalOpen==0 ){
-          int res = sqlite3OsAccess(pVfs,pPager->zJournal,SQLITE_ACCESS_EXISTS);
-          if( res==1 ){
-            int fout = 0;
-            int f = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
-            assert( !pPager->tempFile );
-            rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &fout);
-            assert( rc!=SQLITE_OK || pPager->jfd->pMethods );
-            if( fout&SQLITE_OPEN_READONLY ){
+          int res;
+          rc = sqlite3OsAccess(pVfs,pPager->zJournal,SQLITE_ACCESS_EXISTS,&res);
+          if( rc==SQLITE_OK ){
+            if( res ){
+              int fout = 0;
+              int f = SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_JOURNAL;
+              assert( !pPager->tempFile );
+              rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &fout);
+              assert( rc!=SQLITE_OK || pPager->jfd->pMethods );
+              if( fout&SQLITE_OPEN_READONLY ){
+                rc = SQLITE_BUSY;
+                sqlite3OsClose(pPager->jfd);
+              }
+            }else{
+              /* If the journal does not exist, that means some other process
+              ** has already rolled it back */
               rc = SQLITE_BUSY;
-              sqlite3OsClose(pPager->jfd);
             }
-          }else if( res==0 ){
-            /* If the journal does not exist, that means some other process
-            ** has already rolled it back */
-            rc = SQLITE_BUSY;
-          }else{
-            /* If sqlite3OsAccess() returns a negative value, that means it
-            ** failed a memory allocation */
-            rc = SQLITE_IOERR_NOMEM;
           }
         }
         if( rc!=SQLITE_OK ){

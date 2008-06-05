@@ -13,7 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 **
-** $Id: os.c,v 1.109 2008/05/29 02:53:00 shane Exp $
+** $Id: os.c,v 1.110 2008/06/05 11:39:11 danielk1977 Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
@@ -76,6 +76,7 @@ int sqlite3OsSync(sqlite3_file *id, int flags){
   return id->pMethods->xSync(id, flags);
 }
 int sqlite3OsFileSize(sqlite3_file *id, i64 *pSize){
+  DO_OS_MALLOC_TEST;
   return id->pMethods->xFileSize(id, pSize);
 }
 int sqlite3OsLock(sqlite3_file *id, int lockType){
@@ -85,11 +86,12 @@ int sqlite3OsLock(sqlite3_file *id, int lockType){
 int sqlite3OsUnlock(sqlite3_file *id, int lockType){
   return id->pMethods->xUnlock(id, lockType);
 }
-int sqlite3OsCheckReservedLock(sqlite3_file *id){
-  return id->pMethods->xCheckReservedLock(id);
+int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut){
+  DO_OS_MALLOC_TEST;
+  return id->pMethods->xCheckReservedLock(id, pResOut);
 }
 int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
-  return id->pMethods->xFileControl(id,op,pArg);
+  return id->pMethods->xFileControl(id, op, pArg);
 }
 int sqlite3OsSectorSize(sqlite3_file *id){
   int (*xSectorSize)(sqlite3_file*) = id->pMethods->xSectorSize;
@@ -116,15 +118,14 @@ int sqlite3OsOpen(
 int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   return pVfs->xDelete(pVfs, zPath, dirSync);
 }
-int sqlite3OsAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
-  int rc;
-#ifdef SQLITE_TEST
-  void *pTstAlloc = sqlite3_malloc(10);
-  if (!pTstAlloc) return -1;
-  sqlite3_free(pTstAlloc);
-#endif
-  rc = pVfs->xAccess(pVfs, zPath, flags);
-  return rc;
+int sqlite3OsAccess(
+  sqlite3_vfs *pVfs, 
+  const char *zPath, 
+  int flags, 
+  int *pResOut
+){
+  DO_OS_MALLOC_TEST;
+  return pVfs->xAccess(pVfs, zPath, flags, pResOut);
 }
 int sqlite3OsGetTempname(sqlite3_vfs *pVfs, int nBufOut, char *zBufOut){
   return pVfs->xGetTempname(pVfs, nBufOut, zBufOut);

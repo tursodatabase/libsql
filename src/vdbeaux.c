@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.383 2008/05/13 13:27:34 drh Exp $
+** $Id: vdbeaux.c,v 1.384 2008/06/05 11:39:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1286,6 +1286,7 @@ static int vdbeCommit(sqlite3 *db){
     char const *zMainFile = sqlite3BtreeGetFilename(db->aDb[0].pBt);
     sqlite3_file *pMaster = 0;
     i64 offset = 0;
+    int res;
 
     /* Select a master journal file name */
     do {
@@ -1296,11 +1297,9 @@ static int vdbeCommit(sqlite3 *db){
       if( !zMaster ){
         return SQLITE_NOMEM;
       }
-      rc = sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS);
-    }while( rc==1 );
-    if( rc!=0 ){
-      rc = SQLITE_IOERR_NOMEM;
-    }else{
+      rc = sqlite3OsAccess(pVfs, zMaster, SQLITE_ACCESS_EXISTS, &res);
+    }while( rc==SQLITE_OK && res );
+    if( rc==SQLITE_OK ){
       /* Open the master journal. */
       rc = sqlite3OsOpenMalloc(pVfs, zMaster, &pMaster, 
           SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|

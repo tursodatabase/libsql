@@ -14,7 +14,7 @@
 ** different device types (by overriding the return values of the 
 ** xDeviceCharacteristics() and xSectorSize() methods).
 **
-** $Id: test_devsym.c,v 1.5 2008/05/29 02:53:00 shane Exp $
+** $Id: test_devsym.c,v 1.6 2008/06/05 11:39:11 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -48,7 +48,7 @@ static int devsymSync(sqlite3_file*, int flags);
 static int devsymFileSize(sqlite3_file*, sqlite3_int64 *pSize);
 static int devsymLock(sqlite3_file*, int);
 static int devsymUnlock(sqlite3_file*, int);
-static int devsymCheckReservedLock(sqlite3_file*);
+static int devsymCheckReservedLock(sqlite3_file*, int *);
 static int devsymFileControl(sqlite3_file*, int op, void *pArg);
 static int devsymSectorSize(sqlite3_file*);
 static int devsymDeviceCharacteristics(sqlite3_file*);
@@ -58,7 +58,7 @@ static int devsymDeviceCharacteristics(sqlite3_file*);
 */
 static int devsymOpen(sqlite3_vfs*, const char *, sqlite3_file*, int , int *);
 static int devsymDelete(sqlite3_vfs*, const char *zName, int syncDir);
-static int devsymAccess(sqlite3_vfs*, const char *zName, int flags);
+static int devsymAccess(sqlite3_vfs*, const char *zName, int flags, int *);
 static int devsymGetTempName(sqlite3_vfs*, int nOut, char *zOut);
 static int devsymFullPathname(sqlite3_vfs*, const char *zName, int, char *zOut);
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
@@ -199,9 +199,9 @@ static int devsymUnlock(sqlite3_file *pFile, int eLock){
 /*
 ** Check if another file-handle holds a RESERVED lock on an devsym-file.
 */
-static int devsymCheckReservedLock(sqlite3_file *pFile){
+static int devsymCheckReservedLock(sqlite3_file *pFile, int *pResOut){
   devsym_file *p = (devsym_file *)pFile;
-  return sqlite3OsCheckReservedLock(p->pReal);
+  return sqlite3OsCheckReservedLock(p->pReal, pResOut);
 }
 
 /*
@@ -255,8 +255,13 @@ static int devsymDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 ** Test for access permissions. Return true if the requested permission
 ** is available, or false otherwise.
 */
-static int devsymAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
-  return sqlite3OsAccess(g.pVfs, zPath, flags);
+static int devsymAccess(
+  sqlite3_vfs *pVfs, 
+  const char *zPath, 
+  int flags, 
+  int *pResOut
+){
+  return sqlite3OsAccess(g.pVfs, zPath, flags, pResOut);
 }
 
 /*

@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.42 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: test_async.c,v 1.43 2008/06/05 11:39:11 danielk1977 Exp $
 **
 ** This file contains an example implementation of an asynchronous IO 
 ** backend for SQLite.
@@ -906,7 +906,7 @@ static int asyncUnlock(sqlite3_file *pFile, int eLock){
 ** This function is called when the pager layer first opens a database file
 ** and is checking for a hot-journal.
 */
-static int asyncCheckReservedLock(sqlite3_file *pFile){
+static int asyncCheckReservedLock(sqlite3_file *pFile, int *pResOut){
   int ret = 0;
   AsyncFileLock *pIter;
   AsyncLock *pLock;
@@ -922,7 +922,8 @@ static int asyncCheckReservedLock(sqlite3_file *pFile){
   pthread_mutex_unlock(&async.lockMutex);
 
   ASYNC_TRACE(("CHECK-LOCK %d (%s)\n", ret, p->zName));
-  return ret;
+  *pResOut = ret;
+  return SQLITE_OK;
 }
 
 /* 
@@ -1127,7 +1128,13 @@ static int asyncDelete(sqlite3_vfs *pAsyncVfs, const char *z, int syncDir){
 ** Implementation of sqlite3OsAccess. This method holds the mutex from
 ** start to finish.
 */
-static int asyncAccess(sqlite3_vfs *pAsyncVfs, const char *zName, int flags){
+static int asyncAccess(
+  sqlite3_vfs *pAsyncVfs, 
+  const char *zName, 
+  int flags,
+  int *pResOut
+){
+  int rc;
   int ret;
   AsyncWrite *p;
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
@@ -1138,8 +1145,8 @@ static int asyncAccess(sqlite3_vfs *pAsyncVfs, const char *zName, int flags){
   );
 
   pthread_mutex_lock(&async.queueMutex);
-  ret = sqlite3OsAccess(pVfs, zName, flags);
-  if( flags==SQLITE_ACCESS_EXISTS ){
+  rc = sqlite3OsAccess(pVfs, zName, flags, &ret);
+  if( rc==SQLITE_OK && flags==SQLITE_ACCESS_EXISTS ){
     for(p=async.pQueueFirst; p; p = p->pNext){
       if( p->op==ASYNC_DELETE && 0==strcmp(p->zBuf, zName) ){
         ret = 0;
@@ -1156,7 +1163,8 @@ static int asyncAccess(sqlite3_vfs *pAsyncVfs, const char *zName, int flags){
     , zName, ret)
   );
   pthread_mutex_unlock(&async.queueMutex);
-  return ret;
+  *pResOut = ret;
+  return rc;
 }
 
 static int asyncGetTempname(sqlite3_vfs *pAsyncVfs, int nBufOut, char *zBufOut){

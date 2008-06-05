@@ -15,10 +15,11 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.35 2008/05/05 15:26:51 danielk1977 Exp $
+# $Id: ioerr.test,v 1.36 2008/06/05 11:39:12 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
 
 # If SQLITE_DEFAULT_AUTOVACUUM is set to true, then a simulated IO error
 # on the 8th IO operation in the SQL script below doesn't report an error.
@@ -113,6 +114,7 @@ do_ioerr_test ioerr-4 -ckrefcount true -tclprep {
  SELECT * FROM abc;
 }
 
+
 # Test IO errors that may occur during a multi-file commit.
 #
 # Tests 8 and 17 are excluded when auto-vacuum is enabled for the same 
@@ -122,7 +124,7 @@ ifcapable attach {
   if {[string match [execsql {pragma auto_vacuum}] 1]} {
     set ex [list 4 17]
   }
-  do_ioerr_test ioerr-5 -ckrefcount true -sqlprep {
+  do_ioerr_test ioerr-5 -restoreprng 0 -ckrefcount true -sqlprep {
     ATTACH 'test2.db' AS test2;
   } -sqlbody {
     BEGIN;

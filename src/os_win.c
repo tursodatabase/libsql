@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.123 2008/05/29 03:54:27 shane Exp $
+** $Id: os_win.c,v 1.124 2008/06/05 11:39:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if OS_WIN               /* This file is used for windows only */
@@ -937,7 +937,7 @@ static int winLock(sqlite3_file *id, int locktype){
 ** file by this or any other process. If such a lock is held, return
 ** non-zero, otherwise zero.
 */
-static int winCheckReservedLock(sqlite3_file *id){
+static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
   int rc;
   winFile *pFile = (winFile*)id;
   assert( pFile!=0 );
@@ -952,7 +952,8 @@ static int winCheckReservedLock(sqlite3_file *id){
     rc = !rc;
     OSTRACE3("TEST WR-LOCK %d %d (remote)\n", pFile->h, rc);
   }
-  return rc;
+  *pResOut = rc;
+  return SQLITE_OK;
 }
 
 /*
@@ -1239,7 +1240,8 @@ static int winDelete(
 static int winAccess(
   sqlite3_vfs *pVfs,         /* Not used on win32 */
   const char *zFilename,     /* Name of file to check */
-  int flags                  /* Type of test to make on this file */
+  int flags,                 /* Type of test to make on this file */
+  int *pResOut               /* OUT: Result */
 ){
   DWORD attr;
   int rc;
@@ -1268,7 +1270,8 @@ static int winAccess(
     default:
       assert(!"Invalid flags argument");
   }
-  return rc;
+  *pResOut = rc;
+  return SQLITE_OK;
 }
 
 

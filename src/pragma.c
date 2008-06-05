@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.178 2008/06/04 06:45:59 danielk1977 Exp $
+** $Id: pragma.c,v 1.179 2008/06/05 11:39:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -666,11 +666,13 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
       }
     }else{
-      if( zRight[0] 
-       && sqlite3OsAccess(db->pVfs, zRight, SQLITE_ACCESS_READWRITE)==0 
-      ){
-        sqlite3ErrorMsg(pParse, "not a writable directory");
-        goto pragma_out;
+      if( zRight[0] ){
+        int res;
+        sqlite3OsAccess(db->pVfs, zRight, SQLITE_ACCESS_READWRITE, &res);
+        if( res==0 ){
+          sqlite3ErrorMsg(pParse, "not a writable directory");
+          goto pragma_out;
+        }
       }
       if( TEMP_STORE==0
        || (TEMP_STORE==1 && db->temp_store<=1)

@@ -14,7 +14,7 @@
 ** adds instrumentation to all vfs and file methods. C and Tcl interfaces
 ** are provided to control the instrumentation.
 **
-** $Id: test_osinst.c,v 1.12 2008/05/29 20:22:37 shane Exp $
+** $Id: test_osinst.c,v 1.13 2008/06/05 11:39:11 danielk1977 Exp $
 */
 
 /*
@@ -162,7 +162,7 @@ static int instSync(sqlite3_file*, int flags);
 static int instFileSize(sqlite3_file*, sqlite3_int64 *pSize);
 static int instLock(sqlite3_file*, int);
 static int instUnlock(sqlite3_file*, int);
-static int instCheckReservedLock(sqlite3_file*);
+static int instCheckReservedLock(sqlite3_file*, int *pResOut);
 static int instFileControl(sqlite3_file*, int op, void *pArg);
 static int instSectorSize(sqlite3_file*);
 static int instDeviceCharacteristics(sqlite3_file*);
@@ -172,7 +172,7 @@ static int instDeviceCharacteristics(sqlite3_file*);
 */
 static int instOpen(sqlite3_vfs*, const char *, sqlite3_file*, int , int *);
 static int instDelete(sqlite3_vfs*, const char *zName, int syncDir);
-static int instAccess(sqlite3_vfs*, const char *zName, int flags);
+static int instAccess(sqlite3_vfs*, const char *zName, int flags, int *);
 static int instGetTempName(sqlite3_vfs*, int nOut, char *zOut);
 static int instFullPathname(sqlite3_vfs*, const char *zName, int, char *zOut);
 static void *instDlOpen(sqlite3_vfs*, const char *zFilename);
@@ -339,8 +339,10 @@ static int instUnlock(sqlite3_file *pFile, int eLock){
 /*
 ** Check if another file-handle holds a RESERVED lock on an inst-file.
 */
-static int instCheckReservedLock(sqlite3_file *pFile){
-  OS_TIME_IO(OS_CHECKRESERVEDLOCK, 0, 0, p->pReal->pMethods->xCheckReservedLock(p->pReal));
+static int instCheckReservedLock(sqlite3_file *pFile, int *pResOut){
+  OS_TIME_IO(OS_CHECKRESERVEDLOCK, 0, 0, 
+      p->pReal->pMethods->xCheckReservedLock(p->pReal, pResOut)
+  );
 }
 
 /*
@@ -404,10 +406,15 @@ static int instDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 ** Test for access permissions. Return true if the requested permission
 ** is available, or false otherwise.
 */
-static int instAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
+static int instAccess(
+  sqlite3_vfs *pVfs, 
+  const char *zPath, 
+  int flags, 
+  int *pResOut
+){
   binarylog_blob(pVfs, zPath, -1, 0);
-  OS_TIME_VFS(OS_ACCESS, zPath, 0, flags, 0, 
-    REALVFS(pVfs)->xAccess(REALVFS(pVfs), zPath, flags) 
+  OS_TIME_VFS(OS_ACCESS, zPath, 0, flags, *pResOut, 
+    REALVFS(pVfs)->xAccess(REALVFS(pVfs), zPath, flags, pResOut) 
   );
 }
 

@@ -14,7 +14,7 @@
 ** the effect on the database file of an OS crash or power failure.  This
 ** is used to test the ability of SQLite to recover from those situations.
 **
-** $Id: test6.c,v 1.37 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: test6.c,v 1.38 2008/06/05 11:39:11 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 #include "sqliteInt.h"
@@ -486,8 +486,8 @@ static int cfLock(sqlite3_file *pFile, int eLock){
 static int cfUnlock(sqlite3_file *pFile, int eLock){
   return sqlite3OsUnlock(((CrashFile *)pFile)->pRealFile, eLock);
 }
-static int cfCheckReservedLock(sqlite3_file *pFile){
-  return sqlite3OsCheckReservedLock(((CrashFile *)pFile)->pRealFile);
+static int cfCheckReservedLock(sqlite3_file *pFile, int *pResOut){
+  return sqlite3OsCheckReservedLock(((CrashFile *)pFile)->pRealFile, pResOut);
 }
 static int cfFileControl(sqlite3_file *pFile, int op, void *pArg){
   return sqlite3OsFileControl(((CrashFile *)pFile)->pRealFile, op, pArg);
@@ -580,9 +580,14 @@ static int cfDelete(sqlite3_vfs *pCfVfs, const char *zPath, int dirSync){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
   return pVfs->xDelete(pVfs, zPath, dirSync);
 }
-static int cfAccess(sqlite3_vfs *pCfVfs, const char *zPath, int flags){
+static int cfAccess(
+  sqlite3_vfs *pCfVfs, 
+  const char *zPath, 
+  int flags, 
+  int *pResOut
+){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-  return pVfs->xAccess(pVfs, zPath, flags);
+  return pVfs->xAccess(pVfs, zPath, flags, pResOut);
 }
 static int cfGetTempname(sqlite3_vfs *pCfVfs, int nBufOut, char *zBufOut){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;

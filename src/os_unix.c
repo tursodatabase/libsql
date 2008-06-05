@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.183 2008/05/29 20:22:37 shane Exp $
+** $Id: os_unix.c,v 1.184 2008/06/05 11:39:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if OS_UNIX              /* This file is used on unix only */
@@ -1070,9 +1070,11 @@ static int unixFileSize(sqlite3_file *id, i64 *pSize){
 ** non-zero.  If the file is unlocked or holds only SHARED locks, then
 ** return zero.
 */
-static int unixCheckReservedLock(sqlite3_file *id){
+static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
   int r = 0;
   unixFile *pFile = (unixFile*)id;
+
+  SimulateIOError( return SQLITE_IOERR_CHECKRESERVEDLOCK; );
 
   assert( pFile );
   enterMutex(); /* Because pFile->pLock is shared across threads */
@@ -1099,7 +1101,8 @@ static int unixCheckReservedLock(sqlite3_file *id){
   leaveMutex();
   OSTRACE3("TEST WR-LOCK %d %d\n", pFile->h, r);
 
-  return r;
+  *pResOut = r;
+  return SQLITE_OK;
 }
 
 /*
@@ -1526,7 +1529,7 @@ static int _AFPFSSetLock(
  ** non-zero.  If the file is unlocked or holds only SHARED locks, then
  ** return zero.
  */
-static int afpUnixCheckReservedLock(sqlite3_file *id){
+static int afpUnixCheckReservedLock(sqlite3_file *id, int *pResOut){
   int r = 0;
   unixFile *pFile = (unixFile*)id;
   
@@ -1554,7 +1557,8 @@ static int afpUnixCheckReservedLock(sqlite3_file *id){
   }
   OSTRACE3("TEST WR-LOCK %d %d\n", pFile->h, r);
   
-  return r;
+  *pResOut = r;
+  return SQLITE_OK;
 }
 
 /* AFP-style locking following the behavior of unixLock, see the unixLock 
@@ -1786,21 +1790,22 @@ static int afpUnixClose(sqlite3_file *id) {
 */
 typedef void flockLockingContext;
 
-static int flockUnixCheckReservedLock(sqlite3_file *id){
+static int flockUnixCheckReservedLock(sqlite3_file *id, int *pResOut){
+  int r = 1;
   unixFile *pFile = (unixFile*)id;
   
-  if (pFile->locktype == RESERVED_LOCK) {
-    return 1; /* already have a reserved lock */
-  } else {
+  if (pFile->locktype != RESERVED_LOCK) {
     /* attempt to get the lock */
     int rc = flock(pFile->h, LOCK_EX | LOCK_NB);
     if (!rc) {
       /* got the lock, unlock it */
       flock(pFile->h, LOCK_UN);
-      return 0;  /* no one has it reserved */
+      r = 0;  /* no one has it reserved */
     }
-    return 1; /* someone else might have it reserved */
   }
+
+  *pResOut = r;
+  return SQLITE_OK;
 }
 
 static int flockUnixLock(sqlite3_file *id, int locktype) {
@@ -1884,23 +1889,22 @@ struct dotlockLockingContext {
 };
 
 
-static int dotlockUnixCheckReservedLock(sqlite3_file *id) {
+static int dotlockUnixCheckReservedLock(sqlite3_file *id, int *pResOut) {
+  int r = 1;
   unixFile *pFile = (unixFile*)id;
   dotlockLockingContext *context;
 
   context = (dotlockLockingContext*)pFile->lockingContext;
-  if (pFile->locktype == RESERVED_LOCK) {
-    return 1; /* already have a reserved lock */
-  } else {
+  if (pFile->locktype != RESERVED_LOCK) {
     struct stat statBuf;
-    if (lstat(context->lockPath,&statBuf) == 0){
-      /* file exists, someone else has the lock */
-      return 1;
-    }else{
+    if (lstat(context->lockPath,&statBuf) != 0){
       /* file does not exist, we could have it if we want it */
-      return 0;
+      r = 0;
     }
   }
+
+  *pResOut = r;
+  return SQLITE_OK;
 }
 
 static int dotlockUnixLock(sqlite3_file *id, int locktype) {
@@ -1992,8 +1996,9 @@ static int dotlockUnixClose(sqlite3_file *id) {
 */
 typedef void nolockLockingContext;
 
-static int nolockUnixCheckReservedLock(sqlite3_file *id) {
-  return 0;
+static int nolockUnixCheckReservedLock(sqlite3_file *id, int *pResOut) {
+  *pResOut = 0;
+  return SQLITE_OK;
 }
 
 static int nolockUnixLock(sqlite3_file *id, int locktype) {
@@ -2472,8 +2477,14 @@ static int unixDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 **
 ** Otherwise return 0.
 */
-static int unixAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
+static int unixAccess(
+  sqlite3_vfs *pVfs, 
+  const char *zPath, 
+  int flags, 
+  int *pResOut
+){
   int amode = 0;
+  SimulateIOError( return SQLITE_IOERR_ACCESS; );
   switch( flags ){
     case SQLITE_ACCESS_EXISTS:
       amode = F_OK;
@@ -2488,7 +2499,8 @@ static int unixAccess(sqlite3_vfs *pVfs, const char *zPath, int flags){
     default:
       assert(!"Invalid flags argument");
   }
-  return (access(zPath, amode)==0);
+  *pResOut = (access(zPath, amode)==0);
+  return SQLITE_OK;
 }
 
 /*

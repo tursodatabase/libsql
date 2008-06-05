@@ -17,7 +17,7 @@
 ** This header file is #include-ed by sqliteInt.h and thus ends up
 ** being included by every source file.
 **
-** $Id: os.h,v 1.101 2008/05/29 03:54:27 shane Exp $
+** $Id: os.h,v 1.102 2008/06/05 11:39:11 danielk1977 Exp $
 */
 #ifndef _SQLITE_OS_H_
 #define _SQLITE_OS_H_
@@ -242,7 +242,7 @@ int sqlite3OsSync(sqlite3_file*, int);
 int sqlite3OsFileSize(sqlite3_file*, i64 *pSize);
 int sqlite3OsLock(sqlite3_file*, int);
 int sqlite3OsUnlock(sqlite3_file*, int);
-int sqlite3OsCheckReservedLock(sqlite3_file *id);
+int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut);
 int sqlite3OsFileControl(sqlite3_file*,int,void*);
 int sqlite3OsSectorSize(sqlite3_file *id);
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id);
@@ -252,7 +252,7 @@ int sqlite3OsDeviceCharacteristics(sqlite3_file *id);
 */
 int sqlite3OsOpen(sqlite3_vfs *, const char *, sqlite3_file*, int, int *);
 int sqlite3OsDelete(sqlite3_vfs *, const char *, int);
-int sqlite3OsAccess(sqlite3_vfs *, const char *, int);
+int sqlite3OsAccess(sqlite3_vfs *, const char *, int, int *pResOut);
 int sqlite3OsGetTempname(sqlite3_vfs *, int, char *);
 int sqlite3OsFullPathname(sqlite3_vfs *, const char *, int, char *);
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
