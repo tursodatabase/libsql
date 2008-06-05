@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.705 2008/05/28 13:49:36 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.706 2008/06/05 16:47:39 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2196,10 +2196,10 @@ int sqlite3FindInIndex(Parse *, Expr *, int);
 #endif
 
 #if SQLITE_MAX_EXPR_DEPTH>0
-  void sqlite3ExprSetHeight(Expr *);
+  void sqlite3ExprSetHeight(Parse *pParse, Expr *p);
   int sqlite3SelectExprHeight(Select *);
 #else
-  #define sqlite3ExprSetHeight(x)
+  #define sqlite3ExprSetHeight(x,y)
   #define sqlite3SelectExprHeight(x) 0
 #endif
 

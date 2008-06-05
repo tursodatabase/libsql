@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.372 2008/05/28 13:49:36 drh Exp $
+** $Id: expr.c,v 1.373 2008/06/05 16:47:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -253,6 +253,101 @@ static int codeCompare(
   return addr;
 }
 
+#if SQLITE_MAX_EXPR_DEPTH>0
+/*
+** Check that argument nHeight is less than or equal to the maximum
+** expression depth allowed. If it is not, leave an error message in
+** pParse.
+*/
+static int checkExprHeight(Parse *pParse, int nHeight){
+  int rc = SQLITE_OK;
+  int mxHeight = pParse->db->aLimit[SQLITE_LIMIT_EXPR_DEPTH];
+  if( nHeight>mxHeight ){
+    sqlite3ErrorMsg(pParse, 
+       "Expression tree is too large (maximum depth %d)", mxHeight
+    );
+    rc = SQLITE_ERROR;
+  }
+  return rc;
+}
+
+/* The following three functions, heightOfExpr(), heightOfExprList()
+** and heightOfSelect(), are used to determine the maximum height
+** of any expression tree referenced by the structure passed as the
+** first argument.
+**
+** If this maximum height is greater than the current value pointed
+** to by pnHeight, the second parameter, then set *pnHeight to that
+** value.
+*/
+static void heightOfExpr(Expr *p, int *pnHeight){
+  if( p ){
+    if( p->nHeight>*pnHeight ){
+      *pnHeight = p->nHeight;
+    }
+  }
+}
+static void heightOfExprList(ExprList *p, int *pnHeight){
+  if( p ){
+    int i;
+    for(i=0; i<p->nExpr; i++){
+      heightOfExpr(p->a[i].pExpr, pnHeight);
+    }
+  }
+}
+static void heightOfSelect(Select *p, int *pnHeight){
+  if( p ){
+    heightOfExpr(p->pWhere, pnHeight);
+    heightOfExpr(p->pHaving, pnHeight);
+    heightOfExpr(p->pLimit, pnHeight);
+    heightOfExpr(p->pOffset, pnHeight);
+    heightOfExprList(p->pEList, pnHeight);
+    heightOfExprList(p->pGroupBy, pnHeight);
+    heightOfExprList(p->pOrderBy, pnHeight);
+    heightOfSelect(p->pPrior, pnHeight);
+  }
+}
+
+/*
+** Set the Expr.nHeight variable in the structure passed as an 
+** argument. An expression with no children, Expr.pList or 
+** Expr.pSelect member has a height of 1. Any other expression
+** has a height equal to the maximum height of any other 
+** referenced Expr plus one.
+*/
+static void exprSetHeight(Expr *p){
+  int nHeight = 0;
+  heightOfExpr(p->pLeft, &nHeight);
+  heightOfExpr(p->pRight, &nHeight);
+  heightOfExprList(p->pList, &nHeight);
+  heightOfSelect(p->pSelect, &nHeight);
+  p->nHeight = nHeight + 1;
+}
+
+/*
+** Set the Expr.nHeight variable using the exprSetHeight() function. If
+** the height is greater than the maximum allowed expression depth,
+** leave an error in pParse.
+*/
+void sqlite3ExprSetHeight(Parse *pParse, Expr *p){
+  exprSetHeight(p);
+  checkExprHeight(pParse, p->nHeight);
+}
+
+/*
+** Return the maximum height of any expression tree referenced
+** by the select statement passed as an argument.
+*/
+int sqlite3SelectExprHeight(Select *p){
+  int nHeight = 0;
+  heightOfSelect(p, &nHeight);
+  return nHeight;
+}
+#else
+  #define checkExprHeight(x,y)
+  #define exprSetHeight(y)
+#endif /* SQLITE_MAX_EXPR_DEPTH>0 */
+
 /*
 ** Construct a new expression node and return a pointer to it.  Memory
 ** for this node is obtained from sqlite3_malloc().  The calling function
@@ -297,7 +392,7 @@ Expr *sqlite3Expr(
     }
   }
 
-  sqlite3ExprSetHeight(pNew);
+  exprSetHeight(pNew);
   return pNew;
 }
 
@@ -312,7 +407,11 @@ Expr *sqlite3PExpr(
   Expr *pRight,           /* Right operand */
   const Token *pToken     /* Argument token */
 ){
-  return sqlite3Expr(pParse->db, op, pLeft, pRight, pToken);
+  Expr *p = sqlite3Expr(pParse->db, op, pLeft, pRight, pToken);
+  if( p ){
+    checkExprHeight(pParse, p->nHeight);
+  }
+  return p;
 }
 
 /*
@@ -391,7 +490,7 @@ Expr *sqlite3ExprFunction(Parse *pParse, ExprList *pList, Token *pToken){
   pNew->token = *pToken;
   pNew->span = pNew->token;
 
-  sqlite3ExprSetHeight(pNew);
+  sqlite3ExprSetHeight(pParse, pNew);
   return pNew;
 }
 
@@ -737,75 +836,6 @@ void sqlite3ExprListCheckLength(
     sqlite3ErrorMsg(pParse, "too many columns in %s", zObject);
   }
 }
-
-/* The following three functions, heightOfExpr(), heightOfExprList()
-** and heightOfSelect(), are used to determine the maximum height
-** of any expression tree referenced by the structure passed as the
-** first argument.
-**
-** If this maximum height is greater than the current value pointed
-** to by pnHeight, the second parameter, then set *pnHeight to that
-** value.
-*/
-#if SQLITE_MAX_EXPR_DEPTH>0
-static void heightOfExpr(Expr *p, int *pnHeight){
-  if( p ){
-    if( p->nHeight>*pnHeight ){
-      *pnHeight = p->nHeight;
-    }
-  }
-}
-static void heightOfExprList(ExprList *p, int *pnHeight){
-  if( p ){
-    int i;
-    for(i=0; i<p->nExpr; i++){
-      heightOfExpr(p->a[i].pExpr, pnHeight);
-    }
-  }
-}
-static void heightOfSelect(Select *p, int *pnHeight){
-  if( p ){
-    heightOfExpr(p->pWhere, pnHeight);
-    heightOfExpr(p->pHaving, pnHeight);
-    heightOfExpr(p->pLimit, pnHeight);
-    heightOfExpr(p->pOffset, pnHeight);
-    heightOfExprList(p->pEList, pnHeight);
-    heightOfExprList(p->pGroupBy, pnHeight);
-    heightOfExprList(p->pOrderBy, pnHeight);
-    heightOfSelect(p->pPrior, pnHeight);
-  }
-}
-#endif /* SQLITE_MAX_EXPR_DEPTH>0 */
-
-/*
-** Set the Expr.nHeight variable in the structure passed as an 
-** argument. An expression with no children, Expr.pList or 
-** Expr.pSelect member has a height of 1. Any other expression
-** has a height equal to the maximum height of any other 
-** referenced Expr plus one.
-*/
-#if SQLITE_MAX_EXPR_DEPTH>0
-void sqlite3ExprSetHeight(Expr *p){
-  int nHeight = 0;
-  heightOfExpr(p->pLeft, &nHeight);
-  heightOfExpr(p->pRight, &nHeight);
-  heightOfExprList(p->pList, &nHeight);
-  heightOfSelect(p->pSelect, &nHeight);
-  p->nHeight = nHeight + 1;
-}
-#endif /* SQLITE_MAX_EXPR_DEPTH>0 */
-
-/*
-** Return the maximum height of any expression tree referenced
-** by the select statement passed as an argument.
-*/
-#if SQLITE_MAX_EXPR_DEPTH>0
-int sqlite3SelectExprHeight(Select *p){
-  int nHeight = 0;
-  heightOfSelect(p, &nHeight);
-  return nHeight;
-}
-#endif /* SQLITE_MAX_EXPR_DEPTH>0 */
 
 /*
 ** Delete an entire expression list.
@@ -1536,11 +1566,7 @@ int sqlite3ExprResolveNames(
   if( pExpr==0 ) return 0;
 #if SQLITE_MAX_EXPR_DEPTH>0
   {
-    int mxDepth = pNC->pParse->db->aLimit[SQLITE_LIMIT_EXPR_DEPTH];
-    if( (pExpr->nHeight+pNC->pParse->nHeight)>mxDepth ){
-      sqlite3ErrorMsg(pNC->pParse, 
-         "Expression tree is too large (maximum depth %d)", mxDepth
-      );
+    if( checkExprHeight(pNC->pParse, pExpr->nHeight + pNC->pParse->nHeight) ){
       return 1;
     }
     pNC->pParse->nHeight += pExpr->nHeight;

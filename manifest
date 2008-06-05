@@ -1,5 +1,5 @@
-C Modify\sthe\ssignatures\sof\sthe\ssqlite3_vfs.xAccess\sand\ssqlite3_vfs.xCheckReservedLock\sfunctions.\s(CVS\s5188)
-D 2008-06-05T11:39:11
+C Reorganize\ssome\sof\sthe\scode\sthat\sdetects\sexpression\strees\swith\sa\sdepth\sgreater\sthan\sEXPR_MAX_DEPTH\sso\sthat\sthey\sare\sdetected\searlier.\sThis\sfurther\sreduces\sthe\sopportunities\sfor\sstack\soverflow.\s(CVS\s5189)
+D 2008-06-05T16:47:39
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
 F src/date.c b305ced9f4da66b51ef020d9bf31c6c92fc0c6bb
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
-F src/expr.c 52fbb644cf5e9b70329e95c67552e74c3cba81b7
+F src/expr.c ecb3b23d3543427cba3e2ac12a6c6ae4bb20d39b
 F src/fault.c 1f6177188edb00641673e462f3fab8cba9f7422b
 F src/func.c 77a910a1ca7613d291fd0b5cba3be14c02f0dce0
 F src/hash.c fd8cb06fb54c2fe7d48c9195792059a2e5be8b70
@@ -135,7 +135,7 @@ F src/os_unix.c bea384cc48cc03630703fbf3afbc9ee4b5442663
 F src/os_win.c 9ac4e4e9c864b16e5dd087eed5770c960a5b1f09
 F src/pager.c 912792937cba5838c4515a7a284c9f57f56d603e
 F src/pager.h 71c58cd613174a91b50ed66edad6148639aa064a
-F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
+F src/parse.y 8c2c3145eebe1964eb279cb3c4e502eae28bb0fa
 F src/pragma.c 70e7c865dce85fdf9df81848af2169009a56ed08
 F src/prepare.c cbc9301aba1d0fc3d05fae576f2eb667c189cb36
 F src/printf.c f2d4f6c5b0ec24b643e85fe60258adad8b1f6acc
@@ -144,7 +144,7 @@ F src/select.c da43ce3080112aa77863e9c570c1df19a892acb8
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
 F src/sqlite.h.in 0f4f33b54824cc8077c028a85a1dbd8a3df4fa73
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h cfcb83222431108aa51565efecf3a084360ad4a6
+F src/sqliteInt.h debc576f4476cde358f3c7d8214b0c2f47b24555
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c c57e740e30bd6dda678796eed62c7f0e64689834
@@ -591,7 +591,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P 9ab87b7b0d0195787f1527b5be1475fb89330f08
-R f736eee5959ea7b2b1c25bb8c6d7f381
+P 4226ac54beea1b58de8ab7b9d768d999f50438a6
+R 15114df36c8c1f1e10e6cc53ddf8867c
 U danielk1977
-Z 8a3aacae4ecc1da5df29c6db6f201b0d
+Z b0654222f29652b857476f2b1403ea27
