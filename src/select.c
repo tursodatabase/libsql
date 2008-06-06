@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.429 2008/05/01 17:03:49 drh Exp $
+** $Id: select.c,v 1.430 2008/06/06 15:04:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -39,6 +39,7 @@ static void clearSelect(Select *p){
 void sqlite3SelectDestInit(SelectDest *pDest, int eDest, int iParm){
   pDest->eDest = eDest;
   pDest->iParm = iParm;
+  pDest->regReturn = 0;
   pDest->affinity = 0;
   pDest->iMem = 0;
   pDest->nMem = 0;
@@ -711,7 +712,7 @@ static void selectInnerLoop(
         pushOntoSorter(pParse, pOrderBy, p, r1);
         sqlite3ReleaseTempReg(pParse, r1);
       }else if( eDest==SRT_Subroutine ){
-        sqlite3VdbeAddOp2(v, OP_Gosub, 0, iParm);
+        sqlite3VdbeAddOp2(v, OP_Gosub, pDest->regReturn, iParm);
       }else{
         sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nColumn);
         sqlite3ExprCacheAffinityChange(pParse, regResult, nColumn);
@@ -858,7 +859,7 @@ static void generateSortTail(
         sqlite3VdbeAddOp2(v, OP_ResultRow, pDest->iMem, nColumn);
         sqlite3ExprCacheAffinityChange(pParse, pDest->iMem, nColumn);
       }else{
-        sqlite3VdbeAddOp2(v, OP_Gosub, 0, iParm);
+        sqlite3VdbeAddOp2(v, OP_Gosub, pDest->regReturn, iParm);
       }
       break;
     }
@@ -3291,6 +3292,7 @@ int sqlite3Select(
     /* The following variables hold addresses or labels for parts of the
     ** virtual machine program we are putting together */
     int addrOutputRow;      /* Start of subroutine that outputs a result row */
+    int regOutputRow;       /* Return address register for outputrow subroutine */
     int addrSetAbort;       /* Set the abort flag and return */
     int addrInitializeLoop; /* Start of code that initializes the input loop */
     int addrTopOfLoop;      /* Top of the input loop */
@@ -3299,6 +3301,7 @@ int sqlite3Select(
     int addrEnd;            /* End of all processing */
     int addrSortingIdx;     /* The OP_OpenEphemeral for the sorting index */
     int addrReset;          /* Subroutine for resetting the accumulator */
+    int regReset;           /* Return address register for reset subroutine */
 
     addrEnd = sqlite3VdbeMakeLabel(v);
 
@@ -3371,11 +3374,12 @@ int sqlite3Select(
       addrSetAbort = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp2(v, OP_Integer, 1, iAbortFlag);
       VdbeComment((v, "set abort flag"));
-      sqlite3VdbeAddOp2(v, OP_Return, 0, 0);
+      regOutputRow = ++pParse->nMem;
+      sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
       addrOutputRow = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp2(v, OP_IfPos, iUseFlag, addrOutputRow+2);
       VdbeComment((v, "Groupby result generator entry point"));
-      sqlite3VdbeAddOp2(v, OP_Return, 0, 0);
+      sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
       finalizeAggFunctions(pParse, &sAggInfo);
       if( pHaving ){
         sqlite3ExprIfFalse(pParse, pHaving, addrOutputRow+1, SQLITE_JUMPIFNULL);
@@ -3383,14 +3387,15 @@ int sqlite3Select(
       selectInnerLoop(pParse, p, p->pEList, 0, 0, pOrderBy,
                       distinct, pDest,
                       addrOutputRow+1, addrSetAbort, aff);
-      sqlite3VdbeAddOp2(v, OP_Return, 0, 0);
+      sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
       VdbeComment((v, "end groupby result generator"));
 
       /* Generate a subroutine that will reset the group-by accumulator
       */
       addrReset = sqlite3VdbeCurrentAddr(v);
+      regReset = ++pParse->nMem;
       resetAccumulator(pParse, &sAggInfo);
-      sqlite3VdbeAddOp2(v, OP_Return, 0, 0);
+      sqlite3VdbeAddOp1(v, OP_Return, regReset);
 
       /* Begin a loop that will extract all source rows in GROUP BY order.
       ** This might involve two separate loops with an OP_Sort in between, or
@@ -3398,7 +3403,7 @@ int sqlite3Select(
       ** in the right order to begin with.
       */
       sqlite3VdbeResolveLabel(v, addrInitializeLoop);
-      sqlite3VdbeAddOp2(v, OP_Gosub, 0, addrReset);
+      sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy, 0);
       if( pWInfo==0 ) goto select_end;
       if( pGroupBy==0 ){
@@ -3493,11 +3498,11 @@ int sqlite3Select(
       for(j=0; j<pGroupBy->nExpr; j++){
         sqlite3ExprCodeMove(pParse, iBMem+j, iAMem+j);
       }
-      sqlite3VdbeAddOp2(v, OP_Gosub, 0, addrOutputRow);
+      sqlite3VdbeAddOp2(v, OP_Gosub, regOutputRow, addrOutputRow);
       VdbeComment((v, "output one row"));
       sqlite3VdbeAddOp2(v, OP_IfPos, iAbortFlag, addrEnd);
       VdbeComment((v, "check abort flag"));
-      sqlite3VdbeAddOp2(v, OP_Gosub, 0, addrReset);
+      sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
       VdbeComment((v, "reset accumulator"));
 
       /* Update the aggregate accumulators based on the content of
@@ -3519,7 +3524,7 @@ int sqlite3Select(
 
       /* Output the final row of result
       */
-      sqlite3VdbeAddOp2(v, OP_Gosub, 0, addrOutputRow);
+      sqlite3VdbeAddOp2(v, OP_Gosub, regOutputRow, addrOutputRow);
       VdbeComment((v, "output final row"));
       
     } /* endif pGroupBy */

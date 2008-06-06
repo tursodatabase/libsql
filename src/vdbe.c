@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.746 2008/06/05 11:39:11 danielk1977 Exp $
+** $Id: vdbe.c,v 1.747 2008/06/06 15:04:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -749,33 +749,30 @@ case OP_Goto: {             /* jump */
   break;
 }
 
-/* Opcode:  Gosub * P2 * * *
+/* Opcode:  Gosub P1 P2 * * *
 **
-** Push the current address plus 1 onto the return address stack
+** Write the current address onto register P1
 ** and then jump to address P2.
-**
-** The return address stack is of limited depth.  If too many
-** OP_Gosub operations occur without intervening OP_Returns, then
-** the return address stack will fill up and processing will abort
-** with a fatal error.
 */
 case OP_Gosub: {            /* jump */
-  assert( p->returnDepth<sizeof(p->returnStack)/sizeof(p->returnStack[0]) );
-  p->returnStack[p->returnDepth++] = pc+1;
+  assert( pOp->p1>0 );
+  assert( pOp->p1<=p->nMem );
+  pIn1 = &p->aMem[pOp->p1];
+  assert( (pIn1->flags & MEM_Dyn)==0 );
+  pIn1->flags = MEM_Int;
+  pIn1->u.i = pc;
+  REGISTER_TRACE(pOp->p1, pIn1);
   pc = pOp->p2 - 1;
   break;
 }
 
-/* Opcode:  Return * * * * *
+/* Opcode:  Return P1 * * * *
 **
-** Jump immediately to the next instruction after the last unreturned
-** OP_Gosub.  If an OP_Return has occurred for all OP_Gosubs, then
-** processing aborts with a fatal error.
+** Jump to the next instruction after the address in register P1.
 */
-case OP_Return: {
-  assert( p->returnDepth>0 );
-  p->returnDepth--;
-  pc = p->returnStack[p->returnDepth] - 1;
+case OP_Return: {           /* in1 */
+  assert( pIn1->flags & MEM_Int );
+  pc = pIn1->u.i;
   break;
 }
 

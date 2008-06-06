@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.239 2008/05/29 03:20:59 drh Exp $
+** $Id: insert.c,v 1.240 2008/06/06 15:04:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -366,6 +366,7 @@ void sqlite3Insert(
   int iSelectLoop = 0;  /* Address of code that implements the SELECT */
   int iCleanup = 0;     /* Address of the cleanup code */
   int iInsertBlock = 0; /* Address of the subroutine used to insert data */
+  SelectDest dest;      /* Destination for SELECT on rhs of INSERT */
   int newIdx = -1;      /* Cursor for the NEW pseudo-table */
   int iDb;              /* Index of database holding TABLE */
   Db *pDb;              /* The database containing table being inserted into */
@@ -484,13 +485,13 @@ void sqlite3Insert(
   if( pSelect ){
     /* Data is coming from a SELECT.  Generate code to implement that SELECT
     */
-    SelectDest dest;
     int rc, iInitCode;
 
     iInitCode = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
     iSelectLoop = sqlite3VdbeCurrentAddr(v);
     iInsertBlock = sqlite3VdbeMakeLabel(v);
     sqlite3SelectDestInit(&dest, SRT_Subroutine, iInsertBlock);
+    dest.regReturn = ++pParse->nMem;
 
     /* Resolve the expressions in the SELECT statement and execute it. */
     rc = sqlite3Select(pParse, pSelect, &dest, 0, 0, 0, 0);
@@ -529,7 +530,7 @@ void sqlite3Insert(
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regFromSelect, nColumn, regRec);
       sqlite3VdbeAddOp2(v, OP_NewRowid, srcTab, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, srcTab, regRec, regRowid);
-      sqlite3VdbeAddOp2(v, OP_Return, 0, 0);
+      sqlite3VdbeAddOp1(v, OP_Return, dest.regReturn);
       sqlite3ReleaseTempReg(pParse, regRec);
       sqlite3ReleaseTempReg(pParse, regRowid);
 
@@ -898,17 +899,17 @@ void sqlite3Insert(
   if( useTempTable ){
     sqlite3VdbeAddOp2(v, OP_Next, srcTab, iCont);
     sqlite3VdbeResolveLabel(v, iBreak);
-    sqlite3VdbeAddOp2(v, OP_Close, srcTab, 0);
+    sqlite3VdbeAddOp1(v, OP_Close, srcTab);
   }else if( pSelect ){
-    sqlite3VdbeAddOp2(v, OP_Return, 0, 0);
+    sqlite3VdbeAddOp1(v, OP_Return, dest.regReturn);
     sqlite3VdbeResolveLabel(v, iCleanup);
   }
 
   if( !IsVirtual(pTab) && !isView ){
     /* Close all tables opened */
-    sqlite3VdbeAddOp2(v, OP_Close, baseCur, 0);
+    sqlite3VdbeAddOp1(v, OP_Close, baseCur);
     for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
-      sqlite3VdbeAddOp2(v, OP_Close, idx+baseCur, 0);
+      sqlite3VdbeAddOp1(v, OP_Close, idx+baseCur);
     }
   }
 

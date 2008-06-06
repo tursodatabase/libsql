@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.385 2008/06/06 11:11:27 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.386 2008/06/06 15:04:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1043,7 +1043,6 @@ void sqlite3VdbeMakeReady(
   p->pc = -1;
   p->rc = SQLITE_OK;
   p->uniqueCnt = 0;
-  p->returnDepth = 0;
   p->errorAction = OE_Abort;
   p->explain |= isExplain;
   p->magic = VDBE_MAGIC_RUN;

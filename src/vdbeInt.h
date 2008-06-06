@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.146 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: vdbeInt.h,v 1.147 2008/06/06 15:04:37 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -311,8 +311,6 @@ struct Vdbe {
   unsigned uniqueCnt;     /* Used by OP_MakeRecord when P2!=0 */
   int errorAction;        /* Recovery action to do in case of an error */
   int inTempTrans;        /* True if temp database is transactioned */
-  int returnStack[25];    /* Return address stack for OP_Gosub & OP_Return */
-  int returnDepth;        /* Next unused element in returnStack[] */
   int nResColumn;         /* Number of columns in one row of the result set */
   char **azResColumn;     /* Values for one row of result */ 
   char *zErrMsg;          /* Error message written here */
