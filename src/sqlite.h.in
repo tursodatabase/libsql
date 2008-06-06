@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.321 2008/06/06 11:11:26 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.322 2008/06/06 15:49:30 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -819,6 +819,7 @@ struct sqlite3_vfs {
   int (*xRandomness)(sqlite3_vfs*, int nByte, char *zOut);
   int (*xSleep)(sqlite3_vfs*, int microseconds);
   int (*xCurrentTime)(sqlite3_vfs*, double*);
+  int (*xGetLastError)(sqlite3_vfs*, int, char *);
   /* New fields may be appended in figure versions.  The iVersion
   ** value will increment whenever this happens. */
 };

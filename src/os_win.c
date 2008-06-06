@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.125 2008/06/06 11:11:26 danielk1977 Exp $
+** $Id: os_win.c,v 1.126 2008/06/06 15:49:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if OS_WIN               /* This file is used for windows only */
@@ -1548,6 +1548,9 @@ int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
   return 0;
 }
 
+static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
+  return 0;
+}
 
 /*
 ** Return a pointer to the sqlite3DefaultVfs structure.   We use
@@ -1563,7 +1566,7 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     0,                 /* pNext */
     "win32",           /* zName */
     0,                 /* pAppData */
-  
+ 
     winOpen,           /* xOpen */
     winDelete,         /* xDelete */
     winAccess,         /* xAccess */
@@ -1574,9 +1577,10 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     winDlClose,        /* xDlClose */
     winRandomness,     /* xRandomness */
     winSleep,          /* xSleep */
-    winCurrentTime     /* xCurrentTime */
+    winCurrentTime,    /* xCurrentTime */
+    winGetLastError    /* xGetLastError */
   };
-  
+
   return &winVfs;
 }
 
