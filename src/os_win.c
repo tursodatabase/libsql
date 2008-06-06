@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.124 2008/06/05 11:39:11 danielk1977 Exp $
+** $Id: os_win.c,v 1.125 2008/06/06 11:11:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if OS_WIN               /* This file is used for windows only */
@@ -1075,6 +1075,57 @@ static void *convertUtf8Filename(const char *zFilename){
 }
 
 /*
+** Create a temporary file name in zBuf.  zBuf must be big enough to
+** hold at pVfs->mxPathname characters.
+*/
+static int getTempname(int nBuf, char *zBuf){
+  static char zChars[] =
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789";
+  int i, j;
+  char zTempPath[MAX_PATH+1];
+  if( sqlite3_temp_directory ){
+    sqlite3_snprintf(MAX_PATH-30, zTempPath, "%s", sqlite3_temp_directory);
+  }else if( isNT() ){
+    char *zMulti;
+    WCHAR zWidePath[MAX_PATH];
+    GetTempPathW(MAX_PATH-30, zWidePath);
+    zMulti = unicodeToUtf8(zWidePath);
+    if( zMulti ){
+      sqlite3_snprintf(MAX_PATH-30, zTempPath, "%s", zMulti);
+      free(zMulti);
+    }else{
+      return SQLITE_NOMEM;
+    }
+  }else{
+    char *zUtf8;
+    char zMbcsPath[MAX_PATH];
+    GetTempPathA(MAX_PATH-30, zMbcsPath);
+    zUtf8 = mbcsToUtf8(zMbcsPath);
+    if( zUtf8 ){
+      sqlite3_snprintf(MAX_PATH-30, zTempPath, "%s", zUtf8);
+      free(zUtf8);
+    }else{
+      return SQLITE_NOMEM;
+    }
+  }
+  for(i=strlen(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
+  zTempPath[i] = 0;
+  sqlite3_snprintf(nBuf-30, zBuf,
+                   "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath);
+  j = strlen(zBuf);
+  sqlite3_randomness(20, &zBuf[j]);
+  for(i=0; i<20; i++, j++){
+    zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
+  }
+  zBuf[j] = 0;
+  OSTRACE2("TEMP FILENAME: %s\n", zBuf);
+  return SQLITE_OK; 
+}
+
+
+/*
 ** Open a file.
 */
 static int winOpen(
@@ -1091,7 +1142,23 @@ static int winOpen(
   DWORD dwFlagsAndAttributes = 0;
   int isTemp;
   winFile *pFile = (winFile*)id;
-  void *zConverted = convertUtf8Filename(zName);
+  void *zConverted;                 /* Filename in OS encoding */
+  const char *zUtf8Name = zName;    /* Filename in UTF-8 encoding */
+  char zTmpname[MAX_PATH+1];        /* Buffer used to create temp filename */
+
+  /* If the second argument to this function is NULL, generate a 
+  ** temporary file name to use 
+  */
+  if( !zUtf8Name ){
+    int rc = getTempname(MAX_PATH+1, zTmpname);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+    zUtf8Name = zTmpname;
+  }
+
+  /* Convert the filename to the system encoding. */
+  zConverted = convertUtf8Filename(zUtf8Name);
   if( zConverted==0 ){
     return SQLITE_NOMEM;
   }
@@ -1274,56 +1341,6 @@ static int winAccess(
   return SQLITE_OK;
 }
 
-
-/*
-** Create a temporary file name in zBuf.  zBuf must be big enough to
-** hold at pVfs->mxPathname characters.
-*/
-static int winGetTempname(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
-  static char zChars[] =
-    "abcdefghijklmnopqrstuvwxyz"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "0123456789";
-  int i, j;
-  char zTempPath[MAX_PATH+1];
-  if( sqlite3_temp_directory ){
-    sqlite3_snprintf(MAX_PATH-30, zTempPath, "%s", sqlite3_temp_directory);
-  }else if( isNT() ){
-    char *zMulti;
-    WCHAR zWidePath[MAX_PATH];
-    GetTempPathW(MAX_PATH-30, zWidePath);
-    zMulti = unicodeToUtf8(zWidePath);
-    if( zMulti ){
-      sqlite3_snprintf(MAX_PATH-30, zTempPath, "%s", zMulti);
-      free(zMulti);
-    }else{
-      return SQLITE_NOMEM;
-    }
-  }else{
-    char *zUtf8;
-    char zMbcsPath[MAX_PATH];
-    GetTempPathA(MAX_PATH-30, zMbcsPath);
-    zUtf8 = mbcsToUtf8(zMbcsPath);
-    if( zUtf8 ){
-      sqlite3_snprintf(MAX_PATH-30, zTempPath, "%s", zUtf8);
-      free(zUtf8);
-    }else{
-      return SQLITE_NOMEM;
-    }
-  }
-  for(i=strlen(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
-  zTempPath[i] = 0;
-  sqlite3_snprintf(nBuf-30, zBuf,
-                   "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath);
-  j = strlen(zBuf);
-  sqlite3_randomness(20, &zBuf[j]);
-  for(i=0; i<20; i++, j++){
-    zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
-  }
-  zBuf[j] = 0;
-  OSTRACE2("TEMP FILENAME: %s\n", zBuf);
-  return SQLITE_OK; 
-}
 
 /*
 ** Turn a relative pathname into a full pathname.  Write the full
@@ -1550,7 +1567,6 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     winOpen,           /* xOpen */
     winDelete,         /* xDelete */
     winAccess,         /* xAccess */
-    winGetTempname,    /* xGetTempName */
     winFullPathname,   /* xFullPathname */
     winDlOpen,         /* xDlOpen */
     winDlError,        /* xDlError */

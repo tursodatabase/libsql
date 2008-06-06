@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.320 2008/06/05 11:39:11 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.321 2008/06/06 11:11:26 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -781,7 +781,7 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** directory.
 ** 
 ** {F11150} SQLite will always allocate at least mxPathname+1 bytes for
-** the output buffers for xGetTempname and xFullPathname. {F11151} The exact
+** the output buffer xFullPathname. {F11151} The exact
 ** size of the output buffer is also passed as a parameter to both 
 ** methods. {END} If the output buffer is not large enough, [SQLITE_CANTOPEN]
 ** should be returned. As this is handled as a fatal error by SQLite,
@@ -811,7 +811,6 @@ struct sqlite3_vfs {
                int flags, int *pOutFlags);
   int (*xDelete)(sqlite3_vfs*, const char *zName, int syncDir);
   int (*xAccess)(sqlite3_vfs*, const char *zName, int flags, int *pResOut);
-  int (*xGetTempname)(sqlite3_vfs*, int nOut, char *zOut);
   int (*xFullPathname)(sqlite3_vfs*, const char *zName, int nOut, char *zOut);
   void *(*xDlOpen)(sqlite3_vfs*, const char *zFilename);
   void (*xDlError)(sqlite3_vfs*, int nByte, char *zErrMsg);

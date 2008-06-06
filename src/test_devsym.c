@@ -14,7 +14,7 @@
 ** different device types (by overriding the return values of the 
 ** xDeviceCharacteristics() and xSectorSize() methods).
 **
-** $Id: test_devsym.c,v 1.6 2008/06/05 11:39:11 danielk1977 Exp $
+** $Id: test_devsym.c,v 1.7 2008/06/06 11:11:26 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -59,7 +59,6 @@ static int devsymDeviceCharacteristics(sqlite3_file*);
 static int devsymOpen(sqlite3_vfs*, const char *, sqlite3_file*, int , int *);
 static int devsymDelete(sqlite3_vfs*, const char *zName, int syncDir);
 static int devsymAccess(sqlite3_vfs*, const char *zName, int flags, int *);
-static int devsymGetTempName(sqlite3_vfs*, int nOut, char *zOut);
 static int devsymFullPathname(sqlite3_vfs*, const char *zName, int, char *zOut);
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 static void *devsymDlOpen(sqlite3_vfs*, const char *zFilename);
@@ -81,7 +80,6 @@ static sqlite3_vfs devsym_vfs = {
   devsymOpen,               /* xOpen */
   devsymDelete,             /* xDelete */
   devsymAccess,             /* xAccess */
-  devsymGetTempName,        /* xGetTempName */
   devsymFullPathname,       /* xFullPathname */
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   devsymDlOpen,             /* xDlOpen */
@@ -262,15 +260,6 @@ static int devsymAccess(
   int *pResOut
 ){
   return sqlite3OsAccess(g.pVfs, zPath, flags, pResOut);
-}
-
-/*
-** Populate buffer zBufOut with a pathname suitable for use as a 
-** temporary file. zBufOut is guaranteed to point to a buffer of 
-** at least (DEVSYM_MAX_PATHNAME+1) bytes.
-*/
-static int devsymGetTempName(sqlite3_vfs *pVfs, int nOut, char *zBufOut){
-  return sqlite3OsGetTempname(g.pVfs, nOut, zBufOut);
 }
 
 /*

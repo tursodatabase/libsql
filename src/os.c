@@ -13,7 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 **
-** $Id: os.c,v 1.110 2008/06/05 11:39:11 danielk1977 Exp $
+** $Id: os.c,v 1.111 2008/06/06 11:11:26 danielk1977 Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
@@ -126,9 +126,6 @@ int sqlite3OsAccess(
 ){
   DO_OS_MALLOC_TEST;
   return pVfs->xAccess(pVfs, zPath, flags, pResOut);
-}
-int sqlite3OsGetTempname(sqlite3_vfs *pVfs, int nBufOut, char *zBufOut){
-  return pVfs->xGetTempname(pVfs, nBufOut, zBufOut);
 }
 int sqlite3OsFullPathname(
   sqlite3_vfs *pVfs, 

@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_onefile.c,v 1.7 2008/06/05 11:39:11 danielk1977 Exp $
+** $Id: test_onefile.c,v 1.8 2008/06/06 11:11:26 danielk1977 Exp $
 **
 ** OVERVIEW:
 **
@@ -165,7 +165,6 @@ static int tmpDeviceCharacteristics(sqlite3_file*);
 static int fsOpen(sqlite3_vfs*, const char *, sqlite3_file*, int , int *);
 static int fsDelete(sqlite3_vfs*, const char *zName, int syncDir);
 static int fsAccess(sqlite3_vfs*, const char *zName, int flags, int *);
-static int fsGetTempname(sqlite3_vfs*, int nOut, char *zOut);
 static int fsFullPathname(sqlite3_vfs*, const char *zName, int nOut,char *zOut);
 static void *fsDlOpen(sqlite3_vfs*, const char *zFilename);
 static void fsDlError(sqlite3_vfs*, int nByte, char *zErrMsg);
@@ -194,7 +193,6 @@ static fs_vfs_t fs_vfs = {
     fsOpen,                                     /* xOpen */
     fsDelete,                                   /* xDelete */
     fsAccess,                                   /* xAccess */
-    fsGetTempname,                              /* xGetTempName */
     fsFullPathname,                             /* xFullPathname */
     fsDlOpen,                                   /* xDlOpen */
     fsDlError,                                  /* xDlError */
@@ -729,16 +727,6 @@ static int fsAccess(
 
   *pResOut = (pReal && (!isJournal || pReal->nJournal>0));
   return SQLITE_OK;
-}
-
-/*
-** Populate buffer zBufOut with a pathname suitable for use as a 
-** temporary file. zBufOut is guaranteed to point to a buffer of 
-** at least (FS_MAX_PATHNAME+1) bytes.
-*/
-static int fsGetTempname(sqlite3_vfs *pVfs, int nBufOut, char *zBufOut){
-  sqlite3_vfs *pParent = ((fs_vfs_t *)pVfs)->pParent;
-  return pParent->xGetTempname(pParent, nBufOut, zBufOut);
 }
 
 /*

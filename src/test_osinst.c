@@ -14,7 +14,7 @@
 ** adds instrumentation to all vfs and file methods. C and Tcl interfaces
 ** are provided to control the instrumentation.
 **
-** $Id: test_osinst.c,v 1.13 2008/06/05 11:39:11 danielk1977 Exp $
+** $Id: test_osinst.c,v 1.14 2008/06/06 11:11:26 danielk1977 Exp $
 */
 
 /*
@@ -173,7 +173,6 @@ static int instDeviceCharacteristics(sqlite3_file*);
 static int instOpen(sqlite3_vfs*, const char *, sqlite3_file*, int , int *);
 static int instDelete(sqlite3_vfs*, const char *zName, int syncDir);
 static int instAccess(sqlite3_vfs*, const char *zName, int flags, int *);
-static int instGetTempName(sqlite3_vfs*, int nOut, char *zOut);
 static int instFullPathname(sqlite3_vfs*, const char *zName, int, char *zOut);
 static void *instDlOpen(sqlite3_vfs*, const char *zFilename);
 static void instDlError(sqlite3_vfs*, int nByte, char *zErrMsg);
@@ -195,7 +194,6 @@ static sqlite3_vfs inst_vfs = {
   instOpen,               /* xOpen */
   instDelete,             /* xDelete */
   instAccess,             /* xAccess */
-  instGetTempName,        /* xGetTempName */
   instFullPathname,       /* xFullPathname */
   instDlOpen,             /* xDlOpen */
   instDlError,            /* xDlError */
@@ -415,17 +413,6 @@ static int instAccess(
   binarylog_blob(pVfs, zPath, -1, 0);
   OS_TIME_VFS(OS_ACCESS, zPath, 0, flags, *pResOut, 
     REALVFS(pVfs)->xAccess(REALVFS(pVfs), zPath, flags, pResOut) 
-  );
-}
-
-/*
-** Populate buffer zBufOut with a pathname suitable for use as a 
-** temporary file. zBufOut is guaranteed to point to a buffer of 
-** at least (INST_MAX_PATHNAME+1) bytes.
-*/
-static int instGetTempName(sqlite3_vfs *pVfs, int nOut, char *zBufOut){
-  OS_TIME_VFS( OS_GETTEMPNAME, 0, 0, 0, 0,
-    REALVFS(pVfs)->xGetTempname(REALVFS(pVfs), nOut, zBufOut);
   );
 }
 

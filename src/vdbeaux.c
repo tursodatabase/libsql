@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.384 2008/06/05 11:39:11 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.385 2008/06/06 11:11:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1246,9 +1246,9 @@ static int vdbeCommit(sqlite3 *db){
   ** master-journal.
   **
   ** If the return value of sqlite3BtreeGetFilename() is a zero length
-  ** string, it means the main database is :memory:.  In that case we do
-  ** not support atomic multi-file commits, so use the simple case then
-  ** too.
+  ** string, it means the main database is :memory: or a temp file.  In 
+  ** that case we do not support atomic multi-file commits, so use the 
+  ** simple case then too.
   */
   if( 0==strlen(sqlite3BtreeGetFilename(db->aDb[0].pBt)) || nTrans<=1 ){
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 

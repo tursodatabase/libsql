@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.60 2008/05/15 17:48:20 danielk1977 Exp $
+# $Id: pragma.test,v 1.61 2008/06/06 11:11:27 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -822,11 +822,11 @@ proc check_temp_store {} {
   db eval {CREATE TEMP TABLE IF NOT EXISTS a(b)}
   db eval {PRAGMA database_list} {
     if {$name=="temp"} {
-      if {$file==""} {
+      set bt [btree_from_db db 1]
+      if {[btree_ismemdb $bt]} {
         return "memory"
-      } else {
-        return "disk"
       }
+      return "disk"
     }
   }
   return "unknown"

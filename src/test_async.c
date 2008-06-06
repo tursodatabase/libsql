@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.43 2008/06/05 11:39:11 danielk1977 Exp $
+** $Id: test_async.c,v 1.44 2008/06/06 11:11:26 danielk1977 Exp $
 **
 ** This file contains an example implementation of an asynchronous IO 
 ** backend for SQLite.
@@ -1167,11 +1167,6 @@ static int asyncAccess(
   return rc;
 }
 
-static int asyncGetTempname(sqlite3_vfs *pAsyncVfs, int nBufOut, char *zBufOut){
-  sqlite3_vfs *pVfs = (sqlite3_vfs *)pAsyncVfs->pAppData;
-  return pVfs->xGetTempname(pVfs, nBufOut, zBufOut);
-}
-
 /*
 ** Fill in zPathOut with the full path to the file identified by zPath.
 */
@@ -1271,7 +1266,6 @@ static sqlite3_vfs async_vfs = {
   asyncOpen,            /* xOpen */
   asyncDelete,          /* xDelete */
   asyncAccess,          /* xAccess */
-  asyncGetTempname,     /* xGetTempName */
   asyncFullPathname,    /* xFullPathname */
   asyncDlOpen,          /* xDlOpen */
   asyncDlError,         /* xDlError */

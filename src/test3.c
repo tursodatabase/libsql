@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.96 2008/05/27 20:17:01 shane Exp $
+** $Id: test3.c,v 1.97 2008/06/06 11:11:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -1604,6 +1604,35 @@ static int btree_set_cache_size(
   return TCL_OK;
 }
 
+/*
+** Usage:   btree_ismemdb ID
+**
+** Return true if the B-Tree is in-memory.
+*/
+static int btree_ismemdb(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  Btree *pBt;
+  int res;
+
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " ID\"", 0);
+    return TCL_ERROR;
+  }
+  pBt = sqlite3TextToPtr(argv[1]);
+  sqlite3_mutex_enter(pBt->db->mutex);
+  sqlite3BtreeEnter(pBt);
+  res = sqlite3PagerIsMemdb(sqlite3BtreePager(pBt));
+  sqlite3BtreeLeave(pBt);
+  sqlite3_mutex_leave(pBt->db->mutex);
+  Tcl_SetObjResult(interp, Tcl_NewBooleanObj(res));
+  return SQLITE_OK;
+}
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -1654,6 +1683,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_cursor_info",        (Tcl_CmdProc*)btree_cursor_info        },
      { "btree_ovfl_info",          (Tcl_CmdProc*)btree_ovfl_info          },
      { "btree_cursor_list",        (Tcl_CmdProc*)btree_cursor_list        },
+     { "btree_ismemdb",            (Tcl_CmdProc*)btree_ismemdb            },
   };
   int i;
 

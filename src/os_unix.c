@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.184 2008/06/05 11:39:11 danielk1977 Exp $
+** $Id: os_unix.c,v 1.185 2008/06/06 11:11:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if OS_UNIX              /* This file is used on unix only */
@@ -2185,7 +2185,7 @@ static int fillInUnixFile(
   sqlite3_file *pId,      /* Write to the unixFile structure here */
   const char *zFilename   /* Name of the file being opened */
 ){
-  sqlite3LockingStyle lockingStyle;
+  sqlite3LockingStyle lockingStyle = noLockingStyle;
   unixFile *pNew = (unixFile *)pId;
   int rc;
 
@@ -2193,24 +2193,28 @@ static int fillInUnixFile(
   fcntl(h, F_SETFD, fcntl(h, F_GETFD, 0) | FD_CLOEXEC);
 #endif
 
-  lockingStyle = sqlite3DetectLockingStyle(zFilename, h);
-  if ( lockingStyle==posixLockingStyle ){
-    enterMutex();
-    rc = findLockInfo(h, &pNew->pLock, &pNew->pOpen);
-    leaveMutex();
-    if( rc ){
-      if( dirfd>=0 ) close(dirfd);
-      close(h);
-      return rc;
+  assert( pNew->pLock==NULL );
+  assert( pNew->pOpen==NULL );
+  if( zFilename ){
+    /* If zFilename is NULL then this is a temporary file. Temporary files
+    ** are never locked or unlocked, so noLockingStyle is used for these.
+    ** The locking style used by other files is determined by 
+    ** sqlite3DetectLockingStyle().
+    */
+    lockingStyle = sqlite3DetectLockingStyle(zFilename, h);
+    if ( lockingStyle==posixLockingStyle ){
+      enterMutex();
+      rc = findLockInfo(h, &pNew->pLock, &pNew->pOpen);
+      leaveMutex();
+      if( rc ){
+        if( dirfd>=0 ) close(dirfd);
+        close(h);
+        return rc;
+      }
     }
-  } else {
-    /*  pLock and pOpen are only used for posix advisory locking */
-    pNew->pLock = NULL;
-    pNew->pOpen = NULL;
   }
 
   OSTRACE3("OPEN    %-3d %s\n", h, zFilename);    
-  pNew->dirfd = -1;
   pNew->h = h;
   pNew->dirfd = dirfd;
   SET_THREADID(pNew);
@@ -2337,6 +2341,63 @@ static int openDirectory(const char *zFilename, int *pFd){
 }
 
 /*
+** Create a temporary file name in zBuf.  zBuf must be allocated
+** by the calling process and must be big enough to hold at least
+** pVfs->mxPathname bytes.
+*/
+static int getTempname(int nBuf, char *zBuf){
+  static const char *azDirs[] = {
+     0,
+     "/var/tmp",
+     "/usr/tmp",
+     "/tmp",
+     ".",
+  };
+  static const unsigned char zChars[] =
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789";
+  int i, j;
+  struct stat buf;
+  const char *zDir = ".";
+
+  /* It's odd to simulate an io-error here, but really this is just
+  ** using the io-error infrastructure to test that SQLite handles this
+  ** function failing. 
+  */
+  SimulateIOError( return SQLITE_IOERR );
+
+  azDirs[0] = sqlite3_temp_directory;
+  for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); i++){
+    if( azDirs[i]==0 ) continue;
+    if( stat(azDirs[i], &buf) ) continue;
+    if( !S_ISDIR(buf.st_mode) ) continue;
+    if( access(azDirs[i], 07) ) continue;
+    zDir = azDirs[i];
+    break;
+  }
+
+  /* Check that the output buffer is large enough for the temporary file 
+  ** name. If it is not, return SQLITE_ERROR.
+  */
+  if( (strlen(zDir) + strlen(SQLITE_TEMP_FILE_PREFIX) + 17) >= nBuf ){
+    return SQLITE_ERROR;
+  }
+
+  do{
+    sqlite3_snprintf(nBuf-17, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX, zDir);
+    j = strlen(zBuf);
+    sqlite3_randomness(15, &zBuf[j]);
+    for(i=0; i<15; i++, j++){
+      zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
+    }
+    zBuf[j] = 0;
+  }while( access(zBuf,0)==0 );
+  return SQLITE_OK;
+}
+
+
+/*
 ** Open the file zPath.
 ** 
 ** Previously, the SQLite OS layer used three functions in place of this
@@ -2384,6 +2445,12 @@ static int unixOpen(
       (eType==SQLITE_OPEN_MASTER_JOURNAL || eType==SQLITE_OPEN_MAIN_JOURNAL)
   );
 
+  /* If argument zPath is a NULL pointer, this function is required to open
+  ** a temporary file. Use this buffer to store the file name in.
+  */
+  char zTmpname[MAX_PATHNAME+1];
+  const char *zName = zPath;
+
   /* Check the following statements are true: 
   **
   **   (a) Exactly one of the READWRITE and READONLY flags must be set, and 
@@ -2411,6 +2478,16 @@ static int unixOpen(
        || eType==SQLITE_OPEN_TRANSIENT_DB
   );
 
+  if( !zName ){
+    int rc;
+    assert(isDelete && !isOpenDirectory);
+    rc = getTempname(MAX_PATHNAME+1, zTmpname);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+    zName = zTmpname;
+  }
+
   if( isReadonly )  oflags |= O_RDONLY;
   if( isReadWrite ) oflags |= O_RDWR;
   if( isCreate )    oflags |= O_CREAT;
@@ -2418,7 +2495,7 @@ static int unixOpen(
   oflags |= (O_LARGEFILE|O_BINARY);
 
   memset(pFile, 0, sizeof(unixFile));
-  fd = open(zPath, oflags, isDelete?0600:SQLITE_DEFAULT_FILE_PERMISSIONS);
+  fd = open(zName, oflags, isDelete?0600:SQLITE_DEFAULT_FILE_PERMISSIONS);
   if( fd<0 && errno!=EISDIR && isReadWrite && !isExclusive ){
     /* Failed to open the file for read/write access. Try read-only. */
     flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
@@ -2429,7 +2506,7 @@ static int unixOpen(
     return SQLITE_CANTOPEN;
   }
   if( isDelete ){
-    unlink(zPath);
+    unlink(zName);
   }
   if( pOutFlags ){
     *pOutFlags = flags;
@@ -2500,63 +2577,6 @@ static int unixAccess(
       assert(!"Invalid flags argument");
   }
   *pResOut = (access(zPath, amode)==0);
-  return SQLITE_OK;
-}
-
-/*
-** Create a temporary file name in zBuf.  zBuf must be allocated
-** by the calling process and must be big enough to hold at least
-** pVfs->mxPathname bytes.
-*/
-static int unixGetTempname(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
-  static const char *azDirs[] = {
-     0,
-     "/var/tmp",
-     "/usr/tmp",
-     "/tmp",
-     ".",
-  };
-  static const unsigned char zChars[] =
-    "abcdefghijklmnopqrstuvwxyz"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "0123456789";
-  int i, j;
-  struct stat buf;
-  const char *zDir = ".";
-
-  /* It's odd to simulate an io-error here, but really this is just
-  ** using the io-error infrastructure to test that SQLite handles this
-  ** function failing. 
-  */
-  SimulateIOError( return SQLITE_ERROR );
-
-  azDirs[0] = sqlite3_temp_directory;
-  for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); i++){
-    if( azDirs[i]==0 ) continue;
-    if( stat(azDirs[i], &buf) ) continue;
-    if( !S_ISDIR(buf.st_mode) ) continue;
-    if( access(azDirs[i], 07) ) continue;
-    zDir = azDirs[i];
-    break;
-  }
-
-  /* Check that the output buffer is large enough for the temporary file 
-  ** name. If it is not, return SQLITE_ERROR.
-  */
-  if( (strlen(zDir) + strlen(SQLITE_TEMP_FILE_PREFIX) + 17) >= nBuf ){
-    return SQLITE_ERROR;
-  }
-
-  do{
-    assert( pVfs->mxPathname==MAX_PATHNAME );
-    sqlite3_snprintf(nBuf-17, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX, zDir);
-    j = strlen(zBuf);
-    sqlite3_randomness(15, &zBuf[j]);
-    for(i=0; i<15; i++, j++){
-      zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
-    }
-    zBuf[j] = 0;
-  }while( access(zBuf,0)==0 );
   return SQLITE_OK;
 }
 
@@ -2773,7 +2793,6 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     unixOpen,           /* xOpen */
     unixDelete,         /* xDelete */
     unixAccess,         /* xAccess */
-    unixGetTempname,    /* xGetTempName */
     unixFullPathname,   /* xFullPathname */
     unixDlOpen,         /* xDlOpen */
     unixDlError,        /* xDlError */

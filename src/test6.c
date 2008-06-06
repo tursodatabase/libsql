@@ -14,7 +14,7 @@
 ** the effect on the database file of an OS crash or power failure.  This
 ** is used to test the ability of SQLite to recover from those situations.
 **
-** $Id: test6.c,v 1.38 2008/06/05 11:39:11 danielk1977 Exp $
+** $Id: test6.c,v 1.39 2008/06/06 11:11:26 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 #include "sqliteInt.h"
@@ -589,10 +589,6 @@ static int cfAccess(
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
   return pVfs->xAccess(pVfs, zPath, flags, pResOut);
 }
-static int cfGetTempname(sqlite3_vfs *pCfVfs, int nBufOut, char *zBufOut){
-  sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-  return pVfs->xGetTempname(pVfs, nBufOut, zBufOut);
-}
 static int cfFullPathname(
   sqlite3_vfs *pCfVfs, 
   const char *zPath, 
@@ -747,7 +743,6 @@ static int crashEnableCmd(
     cfOpen,               /* xOpen */
     cfDelete,             /* xDelete */
     cfAccess,             /* xAccess */
-    cfGetTempname,        /* xGetTempName */
     cfFullPathname,       /* xFullPathname */
     cfDlOpen,             /* xDlOpen */
     cfDlError,            /* xDlError */
