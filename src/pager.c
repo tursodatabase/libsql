@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.453 2008/06/06 11:11:26 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.454 2008/06/06 16:14:02 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1426,7 +1426,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
     }else{
       sqlite3OsClose(pPager->jfd);
       pPager->journalOpen = 0;
-      if( rc==SQLITE_OK ){
+      if( rc==SQLITE_OK && !pPager->tempFile ){
         rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
       }
     }
