@@ -1,5 +1,5 @@
-C Avoid\sattempting\sto\sdelete\sthe\sjournal\sfile\sof\sa\stemporary\spager\swhen\sclosing\sthe\spager.\sIt\swill\sbe\sdeleted\sautomatically\sby\sthe\sOS\slayer.\s(CVS\s5193)
-D 2008-06-06T16:14:02
+C Do\snot\scall\sxSync()\sfrom\szeroJournalHdr()\sif\sthe\sPager.noSync\sflag\sis\sset\s(i.e.\sfor\stemp\sfiles).\s(CVS\s5194)
+D 2008-06-07T05:19:38
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -133,7 +133,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 1578149e21c4eac42c7f230a6f40500846f8e781
 F src/os_unix.c 47936aee8265e482faa626141d97d896aa981ef4
 F src/os_win.c 0d975b131b2b104d6d69d9f16bdf3c8cec28e81d
-F src/pager.c 1f3e20af0d027fefe6a09c4d00249abe7800d929
+F src/pager.c 7ce0a4abcc7e096adbd79277bb7c048ae24190f1
 F src/pager.h 7b1de4bf2cf2d9b7b312e6ed5bc7fcc9ba9aa2a4
 F src/parse.y 8c2c3145eebe1964eb279cb3c4e502eae28bb0fa
 F src/pragma.c 70e7c865dce85fdf9df81848af2169009a56ed08
@@ -472,7 +472,7 @@ F test/tableapi.test 791f7e3891d9b70bdb43b311694bf5e9befcbc34
 F test/tclsqlite.test 3dfb48f46de4353376fad835390b493ba066b4dc
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl 2930673dd346a8ca69b577a0fc23cebbe3ddb5f4
+F test/tester.tcl afb901226b414b60ea136765d0fbf9ffcdf617a1
 F test/thread001.test 8fbd9559da0bbdc273e00318c7fd66c162020af7
 F test/thread002.test 2c4ad2c386f60f6fe268cd91c769ee35b3c1fd0b
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -591,7 +591,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P b8f1da52c303de20d40aa20a7a031728d5d69af5
-R 70316fa31416819576dd64c07a69ff7b
+P de8b87d65a85c4dabe53281092d9a23555a8e2d6
+R 4108c9364e1aef5c2e5946df2ebf6495
 U danielk1977
-Z 20131427c7a2cab6d1318e6133e00790
+Z ce75257a59bcc2211b7d68c3ccc3199f

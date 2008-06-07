@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.125 2008/06/05 11:39:12 danielk1977 Exp $
+# $Id: tester.tcl,v 1.126 2008/06/07 05:19:38 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -717,14 +717,21 @@ proc do_ioerr_test {testname args} {
     # a single reference if there is still an active transaction, 
     # or zero otherwise.
     #
+    # UPDATE: If the IO error occurs after a 'BEGIN' but before any
+    # locks are established on database files (i.e. if the error 
+    # occurs while attempting to detect a hot-journal file), then
+    # there may 0 page references and an active transaction according
+    # to [sqlite3_get_autocommit].
+    #
     if {$::go && $::sqlite_io_error_hardhit && $::ioerropts(-ckrefcount)} {
       do_test $testname.$n.4 {
         set bt [btree_from_db db]
         db_enter db
         array set stats [btree_pager_stats $bt]
         db_leave db
-        set stats(ref)
-      } [expr {[sqlite3_get_autocommit db]?0:1}]
+        set nRef $stats(ref)
+        expr {$nRef == 0 || ([sqlite3_get_autocommit db]==0 && $nRef == 1)}
+      } {1}
     }
 
     # If there is an open database handle and no open transaction, 
