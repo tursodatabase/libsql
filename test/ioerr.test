@@ -15,11 +15,10 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.36 2008/06/05 11:39:12 danielk1977 Exp $
+# $Id: ioerr.test,v 1.37 2008/06/07 08:58:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-
 
 # If SQLITE_DEFAULT_AUTOVACUUM is set to true, then a simulated IO error
 # on the 8th IO operation in the SQL script below doesn't report an error.

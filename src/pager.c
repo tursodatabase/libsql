@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.455 2008/06/07 05:19:38 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.456 2008/06/07 08:58:22 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2461,7 +2461,7 @@ int sqlite3PagerMaxPageCount(Pager *pPager, int mxPage){
   if( mxPage>0 ){
     pPager->mxPgno = mxPage;
   }
-  sqlite3PagerPagecount(pPager);
+  sqlite3PagerPagecount(pPager, 0);
   return pPager->mxPgno;
 }
 
@@ -2522,12 +2522,12 @@ int sqlite3PagerReadFileheader(Pager *pPager, int N, unsigned char *pDest){
 ** PENDING_BYTE is byte 4096 (the first byte of page 5) and the size of the
 ** file is 4096 bytes, 5 is returned instead of 4.
 */
-int sqlite3PagerPagecount(Pager *pPager){
+int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
   i64 n = 0;
   int rc;
   assert( pPager!=0 );
   if( pPager->errCode ){
-    return -1;
+    return pPager->errCode;
   }
   if( pPager->dbSize>=0 ){
     n = pPager->dbSize;
@@ -2538,7 +2538,7 @@ int sqlite3PagerPagecount(Pager *pPager){
       pPager->nRef++;
       pager_error(pPager, rc);
       pPager->nRef--;
-      return -1;
+      return rc;
     }
     if( n>0 && n<pPager->pageSize ){
       n = 1;
@@ -2555,7 +2555,10 @@ int sqlite3PagerPagecount(Pager *pPager){
   if( n>pPager->mxPgno ){
     pPager->mxPgno = n;
   }
-  return n;
+  if( pnPage ){
+    *pnPage = n;
+  }
+  return SQLITE_OK;
 }
 
 
@@ -2697,7 +2700,7 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
 int sqlite3PagerTruncate(Pager *pPager, Pgno nPage){
   int rc;
   assert( pPager->state>=PAGER_SHARED || MEMDB );
-  sqlite3PagerPagecount(pPager);
+  sqlite3PagerPagecount(pPager, 0);
   if( pPager->errCode ){
     rc = pPager->errCode;
     return rc;
@@ -3148,12 +3151,11 @@ static int hasHotJournal(Pager *pPager){
     }
 
     if( rc==SQLITE_OK && exists && !locked ){
-      int nPage = sqlite3PagerPagecount(pPager);
-      if( nPage==0 ){
+      int nPage;
+      rc = sqlite3PagerPagecount(pPager, &nPage);
+      if( rc==SQLITE_OK && nPage==0 ){
         sqlite3OsDelete(pVfs, pPager->zJournal, 0);
         exists = 0;
-      }else if( nPage<0 ){
-        rc = SQLITE_IOERR;
       }
     }
 
@@ -3553,7 +3555,7 @@ static int pagerSharedLock(Pager *pPager){
         ** it can be neglected.
         */
         char dbFileVers[sizeof(pPager->dbFileVers)];
-        sqlite3PagerPagecount(pPager);
+        sqlite3PagerPagecount(pPager, 0);
 
         if( pPager->errCode ){
           rc = pPager->errCode;
@@ -3789,9 +3791,8 @@ static int pagerAcquire(
     if( pPager->nExtra>0 ){
       memset(PGHDR_TO_EXTRA(pPg, pPager), 0, pPager->nExtra);
     }
-    nMax = sqlite3PagerPagecount(pPager);
-    if( pPager->errCode ){
-      rc = pPager->errCode;
+    rc = sqlite3PagerPagecount(pPager, &nMax);
+    if( rc!=SQLITE_OK ){
       sqlite3PagerUnref(pPg);
       return rc;
     }
@@ -3949,7 +3950,7 @@ static int pager_open_journal(Pager *pPager){
   assert( pPager->state>=PAGER_RESERVED );
   assert( pPager->useJournal );
   assert( pPager->pInJournal==0 );
-  sqlite3PagerPagecount(pPager);
+  sqlite3PagerPagecount(pPager, 0);
   pagerLeave(pPager);
   pPager->pInJournal = sqlite3BitvecCreate(pPager->dbSize);
   pagerEnter(pPager);
@@ -4079,7 +4080,7 @@ int sqlite3PagerBegin(DbPage *pPg, int exFlag){
     assert( pPager->nRec==0 );
     assert( pPager->origDbSize==0 );
     assert( pPager->pInJournal==0 );
-    sqlite3PagerPagecount(pPager);
+    sqlite3PagerPagecount(pPager, 0);
     pagerLeave(pPager);
     pPager->pInJournal = sqlite3BitvecCreate( pPager->dbSize );
     pagerEnter(pPager);
@@ -4365,7 +4366,7 @@ int sqlite3PagerWrite(DbPage *pDbPage){
     */
     pg1 = ((pPg->pgno-1) & ~(nPagePerSector-1)) + 1;
 
-    nPageCount = sqlite3PagerPagecount(pPager);
+    sqlite3PagerPagecount(pPager, (int *)&nPageCount);
     if( pPg->pgno>nPageCount ){
       nPage = (pPg->pgno - pg1)+1;
     }else if( (pg1+nPagePerSector-1)>nPageCount ){

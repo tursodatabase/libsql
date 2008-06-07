@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.747 2008/06/06 15:04:37 drh Exp $
+** $Id: vdbe.c,v 1.748 2008/06/07 08:58:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -489,8 +489,17 @@ static void registerTrace(FILE *out, int iReg, Mem *p){
 
 #ifdef SQLITE_DEBUG
 static int fileExists(sqlite3 *db, const char *zFile){
-  int res;
-  int rc = sqlite3OsAccess(db->pVfs, zFile, SQLITE_ACCESS_EXISTS, &res);
+  int res = 0;
+  int rc = SQLITE_OK;
+#ifdef SQLITE_TEST
+  /* If we are currently testing IO errors, then do not call OsAccess() to
+  ** test for the presence of zFile. This is because any IO error that
+  ** occurs here will not be reported, causing the test to fail.
+  */
+  extern int sqlite3_io_error_pending;
+  if( sqlite3_io_error_pending<=0 )
+#endif
+    rc = sqlite3OsAccess(db->pVfs, zFile, SQLITE_ACCESS_EXISTS, &res);
   return (res && rc==SQLITE_OK);
 }
 #endif
@@ -2636,7 +2645,7 @@ case OP_OpenWrite: {
     case SQLITE_OK: {
       int flags = sqlite3BtreeFlags(pCur->pCursor);
       /* Sanity checking.  Only the lower four bits of the flags byte should
-      ** be used.  Bit 3 (mask 0x08) is unpreditable.  The lower 3 bits
+      ** be used.  Bit 3 (mask 0x08) is unpredictable.  The lower 3 bits
       ** (mask 0x07) should be either 5 (intkey+leafdata for tables) or
       ** 2 (zerodata for indices).  If these conditions are not met it can
       ** only mean that we are dealing with a corrupt database file
@@ -4817,10 +4826,8 @@ case OP_Pagecount: {            /* out2-prerelease */
   int nPage;
   Pager *pPager = sqlite3BtreePager(db->aDb[p1].pBt);
 
-  nPage = sqlite3PagerPagecount(pPager);
-  if( nPage<0 ){
-    rc = SQLITE_IOERR;
-  }else{
+  rc = sqlite3PagerPagecount(pPager, &nPage);
+  if( rc==SQLITE_OK ){
     pOut->flags = MEM_Int;
     pOut->u.i = nPage;
   }

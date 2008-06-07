@@ -1,5 +1,5 @@
-C Do\snot\scall\sxSync()\sfrom\szeroJournalHdr()\sif\sthe\sPager.noSync\sflag\sis\sset\s(i.e.\sfor\stemp\sfiles).\s(CVS\s5194)
-D 2008-06-07T05:19:38
+C Change\sthe\ssignature\sof\ssqlite3PagerPagecount()\sso\sthat\sit\scan\sreturn\san\serror\scode.\s(CVS\s5195)
+D 2008-06-07T08:58:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c 496cc628b2e8c4d8db99d7c136761fcbebd8420b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c ab50c4b8c6a899dae499f5a805eebe4223c78269
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 7bee6ba457f3e241911fab69b1602eb43c65b438
+F src/btree.c fca8ae92574deb31fe95483cbf1fa185e77c8fd2
 F src/btree.h b1bd7e0b8c2e33658aaf447cb0d1d94f74664b6b
 F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
 F src/build.c a52d9d51341444a2131e3431608f245db80d9591
@@ -133,8 +133,8 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 1578149e21c4eac42c7f230a6f40500846f8e781
 F src/os_unix.c 47936aee8265e482faa626141d97d896aa981ef4
 F src/os_win.c 0d975b131b2b104d6d69d9f16bdf3c8cec28e81d
-F src/pager.c 7ce0a4abcc7e096adbd79277bb7c048ae24190f1
-F src/pager.h 7b1de4bf2cf2d9b7b312e6ed5bc7fcc9ba9aa2a4
+F src/pager.c be98ceeb55bbcda9251c1a846d28c3d323885708
+F src/pager.h 6aa3050a3c684475a5a9dbad5ff1cebad612acba
 F src/parse.y 8c2c3145eebe1964eb279cb3c4e502eae28bb0fa
 F src/pragma.c 70e7c865dce85fdf9df81848af2169009a56ed08
 F src/prepare.c cbc9301aba1d0fc3d05fae576f2eb667c189cb36
@@ -149,7 +149,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c c57e740e30bd6dda678796eed62c7f0e64689834
 F src/test1.c 736be7dea5cc126356bbb61a4b1ac5ff4fac7994
-F src/test2.c f0808cc643528b9620e4059ca9bda8346f526121
+F src/test2.c c46d146019ab6e37474e66b3c789e5237d9ea7b7
 F src/test3.c b5c1d1047a45af03375d66b3eec603faafa3ddc6
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
@@ -179,7 +179,7 @@ F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 43277088f8fea4109a640aa46731b8752c3fb4a7
 F src/vacuum.c a5c289e561ed72283e97d2485491986bc7d684eb
-F src/vdbe.c a113a62ae6779830dcc6b2caec9b89d894db4f71
+F src/vdbe.c 1936425c3455535a1a20e26a65c470fb009a1ed8
 F src/vdbe.h 1e3722d471739c2b213c6283b60373290e52f7ea
 F src/vdbeInt.h de321b2c02593e1420106634ed1f5a7d77ad35a7
 F src/vdbeapi.c 22b01ed175e4d4c613ee82cabc7a44a275641206
@@ -353,7 +353,7 @@ F test/insert5.test 509017213328147d3acdfa2c441bfd82362dda41
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
 F test/io.test 833a1746518ec3005aa7792f9bcb8f01923ff544
-F test/ioerr.test a9dc72225498e95d08235352243e90e7a88e7b2b
+F test/ioerr.test 035470704718a2982a8d14e8a46316e6acd667ac
 F test/ioerr2.test b9c9a0491a812707762a7c002876553be54d9969
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
@@ -591,7 +591,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P de8b87d65a85c4dabe53281092d9a23555a8e2d6
-R 4108c9364e1aef5c2e5946df2ebf6495
+P 9f5cbe29226151113e4565fcf8170317afe1b8c6
+R c5a7106bdebe8d6a8255cc886f35d9c1
 U danielk1977
-Z ce75257a59bcc2211b7d68c3ccc3199f
+Z 439ab2cd9536726e391f52e67ee1840b
