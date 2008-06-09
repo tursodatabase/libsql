@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.459 2008/06/07 08:58:22 danielk1977 Exp $
+** $Id: btree.c,v 1.460 2008/06/09 19:27:12 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4107,8 +4107,8 @@ static int allocateBtreePage(
 
         iPage = get4byte(&aData[8+closest*4]);
         if( !searchList || iPage==nearby ){
-          *pPgno = iPage;
           int nPage;
+          *pPgno = iPage;
           nPage = pagerPagecount(pBt->pPager);
           if( *pPgno>nPage ){
             /* Free page off the end of the file */
