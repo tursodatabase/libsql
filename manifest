@@ -1,5 +1,5 @@
-C Moved\sdeclaration\sof\sint\snPage;\sto\stop\sof\sblock\sto\ssilence\spicky\scompilers\s(MSVC).\s(CVS\s5197)
-D 2008-06-09T19:27:12
+C Initial\sattempt\sat\sdefining\sthe\ssqlite3_initialize()\sand\ssqlite3_shutdown()\ninterfaces.\s(CVS\s5198)
+D 2008-06-09T21:57:23
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -128,7 +128,7 @@ F src/mutex_os2.c 2911ea96955ab6cba734cc4ad903fe76f834b39e
 F src/mutex_unix.c 466d20378a0645fea64c3f2e2669c33b7802df56
 F src/mutex_w32.c 133698096a2c4e81cd11ea6f4de7891c66f7b9f7
 F src/os.c 284abcb97ffdaf5f0b08fa4c5fe1fe93dd86b416
-F src/os.h 333a53ddaf25697577a58165e1216c6cb3ccf056
+F src/os.h c9a7f94e80193fd4cf27f5c5698eb56753f1b05a
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 1578149e21c4eac42c7f230a6f40500846f8e781
 F src/os_unix.c 47936aee8265e482faa626141d97d896aa981ef4
@@ -142,7 +142,7 @@ F src/printf.c f2d4f6c5b0ec24b643e85fe60258adad8b1f6acc
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in 48d90217674a919cc96cdeb6c26fe674eddfa23a
+F src/sqlite.h.in 5956da2f10f6bf7bb008b3932da7921a1b08893f
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 1593404d8aee13687ca7b5d552cb153de7441bef
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P c1d877feb530b5cdaad55da3dbbb7c2596a10c49
-R 81c98d48a45b9042d962ee079ffcf761
-U shane
-Z 5e9347ffb7b52be63ae88c924696d76b
+P 120bffff747592f1ab6ed02713a712cc74c12528
+R 8d8e29a55f02f2444346b9de32d470a6
+U drh
+Z 41d7f329a14fa126f2a7b2f5f5beb340

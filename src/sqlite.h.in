@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.322 2008/06/06 15:49:30 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.323 2008/06/09 21:57:23 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -152,6 +152,7 @@ int sqlite3_libversion_number(void);
 **          if SQLite was compiled with mutexes disabled.
 */
 int sqlite3_threadsafe(void);
+
 
 /*
 ** CAPI3REF: Database Connection Handle {F12000}
@@ -840,6 +841,209 @@ struct sqlite3_vfs {
 #define SQLITE_ACCESS_EXISTS    0
 #define SQLITE_ACCESS_READWRITE 1
 #define SQLITE_ACCESS_READ      2
+
+/*
+** CAPI3REF: SQLite Configuration Definition {F10180}
+**
+** A pointer to an instance of the sqlite3_configuration structure
+** may be optionally passed into the [sqlite3_initialize()] interface
+** in order to set up a custom configuration for the SQLite library.
+**
+** The xMemInit() routine is called with pMemClientData as an argument
+** at [sqlite3_initialize()].  xMemShutdown is called at 
+** [sqlite3_shutdown()].
+**
+** If the xMemSize pointer may be omitted,
+** but if it is, then the following SQLite interfaces will not work
+** correctly:
+**
+** <ul>
+** <li>   [sqlite3_memory_used()]
+** <li>   [sqlite3_memory_highwater()]
+** <li>   [sqlite3_soft_heap_limit()]
+** </ul>
+**
+** If xMemSize is defined, then SQLite will hold the
+** [SQLITE_MUTEX_STATIC_MEM] mutex will accessing any of xMemAlloc,
+** xMemRealloc, or xMemFree.  If xMemSize is NULL then the
+** [SQLITE_MUTEX_STATIC_MEM] mutex is never used.
+**
+** The xPageAlloc and xPageFree functions are alternative memory 
+** allocators for page cache pages.  If undefined
+** then xMemAlloc and xMemFree will be used.
+**
+** The xTempAlloc and xTempFree functions are alternative memory
+** allocators for short-lived temporary space.
+** If undefined then xMemAlloc and xMemFree above will be used.
+**
+** None of the mutex subsystem fields are ever accessed
+** if SQLite is compiled with -DSQLITE_THREADSAFE=0.
+**
+** The xMutexInit routine is called by each effective [sqlite3_initialize()]
+** and xMutexShutdown is called by each valid [sqlite3_shutdown()].
+**
+** If bSerializeConnection is true then SQLite will use one or more
+** [SQLITE_MUTEX_RECURSIVE] mutexes to serialize access to 
+** [database connection] and [prepared statement] objects.  If
+** bSerializeConnection is false, then it is the application's
+** responsibiility to serialize access to these objects.
+**
+** The xMutexTry interface is an optimization that does not
+** come up often and can be omitted.  If omitted, xMutexEnter
+** will be used in its place.
+**
+** The xMutexHeld and xMutexNotHeld interfaces are used for testing
+** purposes only.  It is ok for these functions to report false
+** positives.  These functions are only used within the argument of
+** assert() statements.
+*/
+typedef struct sqlite3_configuration sqlite3_configuration;
+struct sqlite3_configuration {
+  /* Memory allocation subsystem interface */
+  void *pMemClientData;             /* Argument to xMemInit and xMemShutdown */
+  int (*xMemInit)(void*);           /* May be NULL */
+  int (*xMemShutdown)(void*);       /* May be NULL */
+  void *(*xMemAlloc)(int);
+  void *(*xMemRealloc)(void*, int);
+  void (*xMemFree)(void*);
+  int (*xMemSize)(void*);                /* May be NULL */
+  /* Alternative memory allocators for page cache and transient storage */
+  void *(*xPageAlloc)(int iSize);        /* May be NULL */
+  void (*xPageFree)(void*, int iSize);   /* May be NULL */
+  void *(*xTempAlloc)(int iSize);        /* May be NULL */
+  void (*xTempFree)(void*);              /* May be NULL */
+  /* Parameters optionally used by some alternative memory allocators. */
+  sqlite3_int64 nMemHeap;      /* Total memory available for allocating */
+  void *pMemHeap;              /* Pointer to memory space to be allocated */
+  int mnMemAlloc;              /* Minimum allocation size */
+  int mxMemAlloc;              /* Maximum allocation size */
+  int nTemp;                   /* Maximum temp space available */
+  int mxTemp;                  /* Maximum temp space allocation size */
+  /* Mutex methods */
+  void *pMutexClientData;            /* Arg to xMutexInit and xMutexShutdown */
+  int (*xMutexInit)(void*);          /* May be NULL */
+  int (*xMutexShutdown)(void*);      /* May be NULL */
+  int bSerializeConnection;
+  sqlite3_mutex *(*xMutexAlloc)(int mutexType);
+  void (*xMutexFree)(sqlite3_mutex*);
+  void (*xMutexEnter)(sqlite3_mutex*);
+  int (*xMutexTry)(sqlite3_mutex*);       /* May be NULL */
+  void (*xMutexLeave)(sqlite3_mutex*);
+  int (*xMutexHeld)(sqlite3_mutex*);      /* May be NULL */
+  int (*xMutexNotHeld)(sqlite3_mutex*);   /* May be NULL */
+};
+
+/*
+** CAPI3REF: Initialize The SQLite Library {F10140}
+**
+** The sqlite3_initialize() interface is used to initialize the
+** SQLite library.  The sqlite3_initialize() routine is only effective
+** the first time it is called within a process, or the first time it
+** is called after a call to sqlite3_shutdown().  Other SQLite APIs
+** might invoke sqlite3_initialize() internally, so in order for
+** an application to be sure that its call to sqlite3_initialize()
+** is first, it should invoke sqlite3_initialize() prior to invoking any
+** other SQLite interface (with the possible exception of
+** sqlite3_default_configuration() as described below.)
+**
+** If the parameter to sqlite3_initialize() is NULL then a default
+** configuration is used.  A copy of the default configuration can
+** be obtained using the sqlite3_default_configuration() interface.
+** An application that only wants to make slight adjustments to the
+** configuration can invoke sqlite3_default_configuration() to populate
+** an initially empty [sqlite3_configuration] structure, make whatever
+** changes to that structure are desired, then invoke sqlite3_initialize()
+** to register the new configuration.  
+**
+** The sqlite3_default_configuration() interface does not invoke 
+** sqlite3_initialize() so an application can call
+** sqlite3_default_configuration() before sqlite3_initialize() and still
+** be assured that its call to sqlite3_initialize() is the first.
+** The configuration returned by sqlite3_default_configuration() is
+** a compiled-in default.  Changing the configuration using a call
+** to sqlite3_initialize() does not change the value returned by
+** sqlite3_default_configuration().  The sqlite3_default_configuration()
+** interface is threadsafe.
+**
+** The second parameter to both sqlite3_initialize() and
+** sqlite3_default_configuration() should always be the
+** SQLITE_VERSION_NUMBER constant.  The content of the
+** [sqlite3_configuration] structure may change in future versions of
+** SQLite and so the sqlite3_initialize() and 
+** sqlite3_default_configuration()) functions need to know the
+** version of the header file that defined the [sqlite3_configuration]
+** structure in order to use the structure correctly.
+**
+** The sqlite3_default_configuration() interface returns SQLITE_OK on
+** success.  If the iVersion parameter is such that SQLite is unable
+** to fill in the [sqlite3_configuration] structure, then the interface
+** will return SQLITE_ERROR.
+**
+** The application must insure that the initial call to sqlite3_initialize()
+** is serialized.  This means that multi-threaded applications should invoke
+** sqlite3_initialize() in the main thread prior to starting any other
+** threads that might use SQLite.  In the general case, SQLite depends on
+** the application to serialize access to sqlite3_initialize() because SQLite
+** cannot create a mutex to do the serialization itself until after
+** sqlite3_initialize() has run.  In the current unix and win32
+** implementations, SQLite is able to serialize access to sqlite3_initialize()
+** on its own, but this is not true for all embedded platforms and might
+** not be true for unix and win32 in future releases.
+**
+** SQLite makes a copy of the content of the [sqlite3_configuration] structure
+** that is passed into sqlite3_initialize().  Hence the application is free
+** to deallocate or modify the [sqlite3_configuration] structure after
+** sqlite3_initialize() returns.
+**
+** Once sqlite3_initialize() has been successfully invoked once, all
+** subsequent calls to sqlite3_initialize() are ignored until
+** sqlite3_shutdown() is run.  After sqlite3_shutdown() has been invoked,
+** the next call to sqlite3_initialize() is effective for a single call
+** but after that sqlite3_initialize() again becomes a no-up.  In other words,
+** a call to sqlite3_initialize() is only effective if it is the first
+** invocation for the process or if it is invoked immediately after a
+** call to sqlite3_shutdown().
+**
+** The sqlite3_initialize() routine returns SQLITE_OK on success.
+** If sqlite3_initialize() returns any value other than SQLITE_OK then
+** the SQLite library is not safe to use.
+**
+** The sqlite3_shutdown() interface clears a prior initialization and
+** enables SQLite to be reinitialized.  The application must insure that
+** the sqlite3_shutdown() interface is only called when there are no
+** outstanding memory allocations or mutexes, no open database connections,
+** and no other SQLite interfaces are being called in different threads.
+** If sqlite3_shutdown() is called while there are still outstanding
+** memory allocations or mutexes, or open database connections, or while
+** another thread is making a call to any SQLite interface, then the
+** result is undefined and could be segmentation fault or other
+** fatal application error.
+**
+** As currently implemented, sqlite3_shutdown() always returns SQLITE_OK,
+** however this might change in a future release of SQLite.
+** 
+** The sqlite3_on_shutdown() interface registers a callback to be invoked
+** the next time sqlite3_shutdown() is called.  Each callback is invoked
+** only once at the next sqlite3_shutdown() call.  Callbacks must be
+** reregistered in order to be run on subsequent sqlite3_shutdown() calls.
+** Each call to sqlite3_on_shutdown() allocates a little bit of memory
+** used to hold the callback function pointer and the corresponding
+** application data pointer.  The memory is freed after the callback is
+** invoked.  The callbacks registered by sqlite3_on_callback() are invoked
+** in the order in which they were registered.  If the same callback is
+** registered multiple times, it is invoked multiple times.  All callbacks
+** are invoked prior to the xMemShutdown() and xMutexShutdown() methods
+** of the sqlite3_configuration structure.
+**
+** The sqlite3_on_shutdown() interface returns SQLITE_OK on success, or
+** SQLITE_NOMEM if it is unable to allocate memory to hold the pointer
+** to the callback function and corresponding application data pointer.
+*/
+int sqlite3_initialize(const sqlite3_configuration*, int iVersion);
+int sqlite3_default_configuration(sqlite3_configuration*, int iVersion);
+int sqlite3_on_shutdown(void (*)(void*), void*);
+int sqlite3_shutdown(void);
+
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes {F12200}
