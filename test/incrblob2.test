@@ -1,0 +1,131 @@
+# 2008 June 9
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test that it is possible to have two open blob handles on a single
+# blob object.
+#
+# $Id: incrblob2.test,v 1.1 2008/06/09 15:51:27 danielk1977 Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable {!autovacuum || !pragma || !incrblob} {
+  finish_test
+  return
+}
+
+do_test incrblob2-1.0 {
+  execsql {
+    CREATE TABLE blobs(id INTEGER PRIMARY KEY, data BLOB);
+    INSERT INTO blobs VALUES(0, zeroblob(10240));
+    INSERT INTO blobs VALUES(1, zeroblob(10240));
+    INSERT INTO blobs VALUES(2, zeroblob(10240));
+  }
+} {}
+
+foreach iOffset [list 0 256 4094] {
+  do_test incrblob2-1.$iOffset.1 {
+    set fd [db incrblob blobs data 1]
+    puts $fd "[string repeat x $iOffset]SQLite version 3.6.0"
+    close $fd
+  } {}
+  
+  do_test incrblob2-1.$iOffset.2 {
+    set fd1 [db incrblob blobs data 1]
+    set fd2 [db incrblob blobs data 1]
+    fconfigure $fd1 -buffering none
+    fconfigure $fd2 -buffering none
+    if {$iOffset != 0} {
+      seek $fd2 $iOffset start
+      seek $fd1 $iOffset start
+    }
+    read $fd1 6
+  } {SQLite}
+  
+  do_test incrblob2-1.$iOffset.3 {
+    read $fd2 6
+  } {SQLite}
+  
+  do_test incrblob2-1.$iOffset.4 {
+    seek $fd2 $iOffset start
+    seek $fd1 $iOffset start
+    puts -nonewline $fd2 "etiLQS"
+  } {}
+
+  
+  do_test incrblob2-1.$iOffset.5 {
+    seek $fd1 $iOffset start
+    read $fd1 6
+  } {etiLQS}
+  
+  do_test incrblob2-1.$iOffset.6 {
+    seek $fd2 $iOffset start
+    read $fd2 6
+  } {etiLQS}
+  
+  do_test incrblob2-1.$iOffset.7 {
+    seek $fd1 $iOffset start
+    read $fd1 6
+  } {etiLQS}
+  
+  do_test incrblob2-1.$iOffset.8 {
+    close $fd1
+    close $fd2
+  } {}
+}
+
+#--------------------------------------------------------------------------
+
+foreach iOffset [list 0 256 4094] {
+
+  do_test incrblob2-2.$iOffset.1 {
+    set fd1 [db incrblob blobs data 1]
+    seek $fd1 [expr $iOffset - 10240] end
+    fconfigure $fd1 -buffering none
+
+    set fd2 [db incrblob blobs data 1]
+    seek $fd2 [expr $iOffset - 10240] end
+    fconfigure $fd2 -buffering none
+
+    puts -nonewline $fd1 "123456"
+  } {}
+  
+  do_test incrblob2-2.$iOffset.2 {
+    read $fd2 6
+  } {123456}
+
+  do_test incrblob2-2.$iOffset.3 {
+    close $fd1
+    close $fd2
+  } {}
+}
+
+do_test incrblob2-3.1 {
+  set fd1 [db incrblob blobs data 1]
+  fconfigure $fd1 -buffering none
+} {}
+do_test incrblob2-3.2 {
+  execsql {
+    INSERT INTO blobs VALUES(4, zeroblob(10240));
+  }
+} {}
+do_test incrblob2-3.3 {
+  set rc [catch { read $fd1 6 } msg]
+  list $rc $msg
+} "1 {error reading \"$fd1\": interrupted system call}"
+do_test incrblob2-3.4 {
+  close $fd1
+} {}
+
+
+finish_test
+

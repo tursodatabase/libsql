@@ -1,5 +1,5 @@
-C Change\sthe\ssignature\sof\ssqlite3PagerPagecount()\sso\sthat\sit\scan\sreturn\san\serror\scode.\s(CVS\s5195)
-D 2008-06-07T08:58:22
+C Add\stest\sfile\sincrblob2.test\sto\stest\sopening\stwo\sblob\shandles\son\sa\ssingle\sdatabase\sblob.\s(CVS\s5196)
+D 2008-06-09T15:51:27
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -338,6 +338,7 @@ F test/in.test 763a29007a4850d611ac4441bfa488fb9969ad30
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
+F test/incrblob2.test f5b70f9531f8f879ef49516b5205395b2d5ac3c9
 F test/incrblob_err.test 00a8bcb25cb493d53f4efed0f5cf09c386534940
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
@@ -591,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P 9f5cbe29226151113e4565fcf8170317afe1b8c6
-R c5a7106bdebe8d6a8255cc886f35d9c1
+P e9f01c01866d302d81bf9ebc484ea6351cbc0f60
+R dd9a63ff4b4fc60007b0c2db37c9a684
 U danielk1977
-Z 439ab2cd9536726e391f52e67ee1840b
+Z c121a7e48caf86ba6a00e5828d755c0c
