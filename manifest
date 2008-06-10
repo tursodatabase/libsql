@@ -1,5 +1,5 @@
-C Initial\sattempt\sat\sdefining\sthe\ssqlite3_initialize()\sand\ssqlite3_shutdown()\ninterfaces.\s(CVS\s5198)
-D 2008-06-09T21:57:23
+C Invalidate\ssqlite3_blob*\shandles\swhenever\san\sSQL\sstatement\sis\sused\sto\sdelete\sor\smodify\sthe\srows\scontaining\sthe\sopen\sblob.\sPreviously,\smodifying\sthe\stable\scontaining\sthe\sopen\sblob\sin\sany\sway\sinvalidated\sthe\shandle.\sThis\swas\stoo\srestrictive.\s(CVS\s5199)
+D 2008-06-10T17:30:26
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c 496cc628b2e8c4d8db99d7c136761fcbebd8420b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c ab50c4b8c6a899dae499f5a805eebe4223c78269
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 0c2c19a9796b5d2cd9f50f6c67559bc923349941
+F src/btree.c 5f76517e78b66d180abb12df2b519f0753745a29
 F src/btree.h b1bd7e0b8c2e33658aaf447cb0d1d94f74664b6b
 F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
 F src/build.c a52d9d51341444a2131e3431608f245db80d9591
@@ -338,7 +338,7 @@ F test/in.test 763a29007a4850d611ac4441bfa488fb9969ad30
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
-F test/incrblob2.test f5b70f9531f8f879ef49516b5205395b2d5ac3c9
+F test/incrblob2.test bb295ab403e4d3a054a31b250a375a32050deb45
 F test/incrblob_err.test 00a8bcb25cb493d53f4efed0f5cf09c386534940
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P 120bffff747592f1ab6ed02713a712cc74c12528
-R 8d8e29a55f02f2444346b9de32d470a6
-U drh
-Z 41d7f329a14fa126f2a7b2f5f5beb340
+P 220bfd1f5cef0dfa8b800faa814ad4dc1456ced4
+R 7091f0d54d253e94a68681a5dbc7d30d
+U danielk1977
+Z 0473705fb37e9902593a0d0168c10fa7

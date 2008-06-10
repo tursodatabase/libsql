@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.460 2008/06/09 19:27:12 shane Exp $
+** $Id: btree.c,v 1.461 2008/06/10 17:30:26 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -68,7 +68,7 @@ int sqlite3_enable_shared_cache(int enable){
 /*
 ** Forward declaration
 */
-static int checkReadLocks(Btree*,Pgno,BtCursor*);
+static int checkReadLocks(Btree*, Pgno, BtCursor*, i64);
 
 
 #ifdef SQLITE_OMIT_SHARED_CACHE
@@ -373,11 +373,6 @@ int sqlite3BtreeRestoreOrClearCursorPosition(BtCursor *pCur){
   if( pCur->eState==CURSOR_FAULT ){
     return pCur->skip;
   }
-#ifndef SQLITE_OMIT_INCRBLOB
-  if( pCur->isIncrblobHandle ){
-    return SQLITE_ABORT;
-  }
-#endif
   pCur->eState = CURSOR_INVALID;
   rc = sqlite3BtreeMoveto(pCur, pCur->pKey, 0, pCur->nKey, 0, &pCur->skip);
   if( rc==SQLITE_OK ){
@@ -2717,7 +2712,7 @@ static int btreeCursor(
     if( pBt->readOnly ){
       return SQLITE_READONLY;
     }
-    if( checkReadLocks(p, iTable, 0) ){
+    if( checkReadLocks(p, iTable, 0, 0) ){
       return SQLITE_LOCKED;
     }
   }
@@ -3253,6 +3248,12 @@ int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 */
 int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
   int rc;
+
+#ifndef SQLITE_OMIT_INCRBLOB
+  if ( pCur->eState==CURSOR_INVALID ){
+    return SQLITE_ABORT;
+  }
+#endif
 
   assert( cursorHoldsMutex(pCur) );
   rc = restoreOrClearCursorPosition(pCur);
@@ -5594,31 +5595,62 @@ static int balance(MemPage *pPage, int insert){
 ** is not in the ReadUncommmitted state, then this routine returns 
 ** SQLITE_LOCKED.
 **
-** In addition to checking for read-locks (where a read-lock 
-** means a cursor opened with wrFlag==0) this routine also moves
-** all write cursors so that they are pointing to the 
-** first Cell on the root page.  This is necessary because an insert 
-** or delete might change the number of cells on a page or delete
-** a page entirely and we do not want to leave any cursors 
-** pointing to non-existant pages or cells.
+** As well as cursors with wrFlag==0, cursors with wrFlag==1 and 
+** isIncrblobHandle==1 are also considered 'read' cursors. Incremental 
+** blob cursors are used for both reading and writing.
+**
+** When pgnoRoot is the root page of an intkey table, this function is also
+** responsible for invalidating incremental blob cursors when the table row
+** on which they are opened is deleted or modified. Cursors are invalidated
+** according to the following rules:
+**
+**   1) When BtreeClearTable() is called to completely delete the contents
+**      of a B-Tree table, pExclude is set to zero and parameter iRow is 
+**      set to non-zero. In this case all incremental blob cursors open
+**      on the table rooted at pgnoRoot are invalidated.
+**
+**   2) When BtreeInsert(), BtreeDelete() or BtreePutData() is called to 
+**      modify a table row via an SQL statement, pExclude is set to the 
+**      write cursor used to do the modification and parameter iRow is set
+**      to the integer row id of the B-Tree entry being modified. Unless
+**      pExclude is itself an incremental blob cursor, then all incremental
+**      blob cursors open on row iRow of the B-Tree are invalidated.
+**
+**   3) If both pExclude and iRow are set to zero, no incremental blob 
+**      cursors are invalidated.
 */
-static int checkReadLocks(Btree *pBtree, Pgno pgnoRoot, BtCursor *pExclude){
+static int checkReadLocks(
+  Btree *pBtree, 
+  Pgno pgnoRoot, 
+  BtCursor *pExclude,
+  i64 iRow
+){
   BtCursor *p;
   BtShared *pBt = pBtree->pBt;
   sqlite3 *db = pBtree->db;
   assert( sqlite3BtreeHoldsMutex(pBtree) );
   for(p=pBt->pCursor; p; p=p->pNext){
     if( p==pExclude ) continue;
-    if( p->eState!=CURSOR_VALID ) continue;
     if( p->pgnoRoot!=pgnoRoot ) continue;
-    if( p->wrFlag==0 ){
+#ifndef SQLITE_OMIT_INCRBLOB
+    if( p->isIncrblobHandle && ( 
+         (!pExclude && iRow)
+      || (pExclude && !pExclude->isIncrblobHandle && p->info.nKey==iRow)
+    )){
+      p->eState = CURSOR_INVALID;
+    }
+#endif
+    if( p->eState!=CURSOR_VALID ) continue;
+    if( p->wrFlag==0 
+#ifndef SQLITE_OMIT_INCRBLOB
+     || p->isIncrblobHandle
+#endif
+    ){
       sqlite3 *dbOther = p->pBtree->db;
       if( dbOther==0 ||
          (dbOther!=db && (dbOther->flags & SQLITE_ReadUncommitted)==0) ){
         return SQLITE_LOCKED;
       }
-    }else if( p->pPage->pgno!=p->pgnoRoot ){
-      moveToRoot(p);
     }
   }
   return SQLITE_OK;
@@ -5669,7 +5701,7 @@ int sqlite3BtreeInsert(
   if( !pCur->wrFlag ){
     return SQLITE_PERM;   /* Cursor not open for writing */
   }
-  if( checkReadLocks(pCur->pBtree, pCur->pgnoRoot, pCur) ){
+  if( checkReadLocks(pCur->pBtree, pCur->pgnoRoot, pCur, nKey) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
   if( pCur->eState==CURSOR_FAULT ){
@@ -5763,7 +5795,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   if( !pCur->wrFlag ){
     return SQLITE_PERM;   /* Did not open this cursor for writing */
   }
-  if( checkReadLocks(pCur->pBtree, pCur->pgnoRoot, pCur) ){
+  if( checkReadLocks(pCur->pBtree, pCur->pgnoRoot, pCur, pCur->info.nKey) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
 
@@ -6062,7 +6094,7 @@ int sqlite3BtreeClearTable(Btree *p, int iTable){
   pBt->db = p->db;
   if( p->inTrans!=TRANS_WRITE ){
     rc = pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
-  }else if( (rc = checkReadLocks(p, iTable, 0))!=SQLITE_OK ){
+  }else if( (rc = checkReadLocks(p, iTable, 0, 1))!=SQLITE_OK ){
     /* nothing to do */
   }else if( SQLITE_OK!=(rc = saveAllCursors(pBt, iTable, 0)) ){
     /* nothing to do */
@@ -7112,12 +7144,11 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
   assert( cursorHoldsMutex(pCsr) );
   assert( sqlite3_mutex_held(pCsr->pBtree->db->mutex) );
   assert(pCsr->isIncrblobHandle);
-  if( pCsr->eState>=CURSOR_REQUIRESEEK ){
-    if( pCsr->eState==CURSOR_FAULT ){
-      return pCsr->skip;
-    }else{
-      return SQLITE_ABORT;
-    }
+
+  restoreOrClearCursorPosition(pCsr);
+  assert( pCsr->eState!=CURSOR_REQUIRESEEK );
+  if( pCsr->eState!=CURSOR_VALID ){
+    return SQLITE_ABORT;
   }
 
   /* Check some preconditions: 
@@ -7130,7 +7161,7 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
   }
   assert( !pCsr->pBt->readOnly 
           && pCsr->pBt->inTransaction==TRANS_WRITE );
-  if( checkReadLocks(pCsr->pBtree, pCsr->pgnoRoot, pCsr) ){
+  if( checkReadLocks(pCsr->pBtree, pCsr->pgnoRoot, pCsr, 0) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
   if( pCsr->eState==CURSOR_INVALID || !pCsr->pPage->intKey ){
