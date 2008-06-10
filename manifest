@@ -1,10 +1,10 @@
-C Invalidate\ssqlite3_blob*\shandles\swhenever\san\sSQL\sstatement\sis\sused\sto\sdelete\sor\smodify\sthe\srows\scontaining\sthe\sopen\sblob.\sPreviously,\smodifying\sthe\stable\scontaining\sthe\sopen\sblob\sin\sany\sway\sinvalidated\sthe\shandle.\sThis\swas\stoo\srestrictive.\s(CVS\s5199)
-D 2008-06-10T17:30:26
+C A\scompletely\snew\sdesign\sfor\sthe\ssqlite3_initialize()\sand\ssqlite3_shutdown()\ninterfaces.\s(CVS\s5200)
+D 2008-06-10T17:41:45
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
-F VERSION 0993b4f2f08c496fab78af42928b6dc745f8a2e1
+F VERSION d739ba532eddc5c09ef9a55151328cd6a8a102c6
 F aclocal.m4 7d02b11fed45174e11156144227278deb6236eea
 F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -142,7 +142,7 @@ F src/printf.c f2d4f6c5b0ec24b643e85fe60258adad8b1f6acc
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in 5956da2f10f6bf7bb008b3932da7921a1b08893f
+F src/sqlite.h.in 31b526c2527b46575c3596a4cef0a046137f8a59
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 1593404d8aee13687ca7b5d552cb153de7441bef
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P 220bfd1f5cef0dfa8b800faa814ad4dc1456ced4
-R 7091f0d54d253e94a68681a5dbc7d30d
-U danielk1977
-Z 0473705fb37e9902593a0d0168c10fa7
+P e339c91f8718482ce74fc53781091db95e69d4c3
+R 8ec52602b4b686db548caee20e44cbbf
+U drh
+Z 3c6689c95ccc77a83be26587df45b6b7
