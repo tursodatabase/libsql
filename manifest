@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sthe\sprevious\scommit\sfound\sby\scorrupt7.test.\s(CVS\s5204)
-D 2008-06-11T18:27:55
+C Adjust\sthe\serror-message\stext\sin\scorrupt7.test.\s(CVS\s5205)
+D 2008-06-11T18:56:42
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -246,7 +246,7 @@ F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
 F test/corrupt6.test e69b877d478224deab7b66844566258cecacd25e
-F test/corrupt7.test 900d4f9aadd4f78d6977c06f256ea6df662921ab
+F test/corrupt7.test f0ff354eb2f0a23035fbd06724b87cac95b55cc1
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 26d7a4c5520201e5de2c696ea51ab946b59dc0e9
 F test/crash3.test 0b09687ae1a3ccbcefdfaeb4b963e26e36255d76
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 82f27e28eeb6902b75e21afd8eb170465f680d7b
-R c346a4a7878a0b007ff43abb39115b5b
-U danielk1977
-Z dd9fd2343fb83323594f7981326120ef
+P afcfba0a8ac46e1d86a0fa2f1fbaeefe8ef10f7d
+R 3e551b95d299519ccc04c39188c68404
+U drh
+Z 3d49acd29f04c431837b04f32be1e4f3

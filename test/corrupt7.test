@@ -14,7 +14,7 @@
 # segfault if it sees a corrupt database file.  It specifically focuses
 # on corrupt cell offsets in a btree page.
 #
-# $Id: corrupt7.test,v 1.1 2008/06/11 18:01:22 drh Exp $
+# $Id: corrupt7.test,v 1.2 2008/06/11 18:56:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -63,13 +63,13 @@ do_test corrupt7-2.1 {
   sqlite3 db test.db
   db eval {PRAGMA integrity_check(1)}
 } {{*** in database main ***
-Corruption detected in cell 15 on page 2}}
+Page 2: sqlite3BtreeInitPage() returns error code 11}}
 do_test corrupt7-2.2 {
   db close
   hexio_write test.db 1062 04
   sqlite3 db test.db
   db eval {PRAGMA integrity_check(1)}
 } {{*** in database main ***
-Corruption detected in cell 15 on page 2}}
+Page 2: sqlite3BtreeInitPage() returns error code 11}}
 
 finish_test
