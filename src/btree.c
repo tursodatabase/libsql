@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.461 2008/06/10 17:30:26 danielk1977 Exp $
+** $Id: btree.c,v 1.462 2008/06/11 18:15:30 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -902,6 +902,9 @@ int sqlite3BtreeInitPage(
   int cellOffset;    /* Offset from start of page to first cell pointer */
   int nFree;         /* Number of unused bytes on the page */
   int top;           /* First byte of the cell content area */
+  u8 *pOff;          /* Iterator used to check all cell offsets are in range */
+  u8 *pEnd;          /* Pointer to end of cell offset array */
+  u8 mask;           /* Mask of bits that must be zero in MSB of cell offsets */
 
   pBt = pPage->pBt;
   assert( pBt!=0 );
@@ -959,6 +962,14 @@ int sqlite3BtreeInitPage(
   if( nFree>=usableSize ){
     /* Free space cannot exceed total page size */
     return SQLITE_CORRUPT_BKPT; 
+  }
+
+  /* Check that all the offsets in the cell offset array are within range. */
+  mask = ~(((u8)(pBt->pageSize>>7))-1);
+  pEnd = &data[cellOffset + pPage->nCell*2];
+  for(pOff=&data[cellOffset]; pOff!=pEnd && !((*pOff)&mask); pOff+=2);
+  if( pOff!=pEnd ){
+    return SQLITE_CORRUPT_BKPT;
   }
 
   pPage->isInit = 1;

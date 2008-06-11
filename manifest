@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sthe\sdatabase\scorruption\sin\sthe\sform\sof\scell\soffsets\nout\sof\srange\sin\san\sotherwise\svalid\sbtree\spage.\s(CVS\s5202)
-D 2008-06-11T18:01:22
+C Check\sthat\sthe\soffsets\sin\sthe\scell-offset\sarray\sof\sa\sb-tree\spage\sare\swithin\srange\sin\ssqlite3BtreeInit().\s(CVS\s5203)
+D 2008-06-11T18:15:30
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c 496cc628b2e8c4d8db99d7c136761fcbebd8420b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c ab50c4b8c6a899dae499f5a805eebe4223c78269
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 5f76517e78b66d180abb12df2b519f0753745a29
+F src/btree.c 48290915e2202be02c65c68ef72ad4a7312ad98a
 F src/btree.h b1bd7e0b8c2e33658aaf447cb0d1d94f74664b6b
 F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
 F src/build.c a52d9d51341444a2131e3431608f245db80d9591
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 98bdc7b44db737d3b77aa76c139995d2b185cd85
-R f724ee3e69f515b743bac10237bb979a
-U drh
-Z 4642ac2e7ff23a8e99ee652f9dc55d1e
+P c569a6cf664e9a8095f616327719392fb8186d37
+R eefa72e5e202422710521462491b2bb8
+U danielk1977
+Z 70d5f41fb2c71a3e95c0665ed6c5e363
