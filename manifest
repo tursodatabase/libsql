@@ -1,5 +1,5 @@
-C A\scompletely\snew\sdesign\sfor\sthe\ssqlite3_initialize()\sand\ssqlite3_shutdown()\ninterfaces.\s(CVS\s5200)
-D 2008-06-10T17:41:45
+C Update\sutility\sprogram\sspeedtest8inst1.c.\s(CVS\s5201)
+D 2008-06-11T11:00:31
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -168,7 +168,7 @@ F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c 5c2c698355613d321f216ece25901be1040cc1fb
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_onefile.c 1f87d4a21cbfb24a7c35e4333fa0bd34d641f68d
-F src/test_osinst.c 22b0aea6cd0f087e40394ee61c2c73da485ff305
+F src/test_osinst.c 37876112c8664e53e414a50e2369d24ff809984c
 F src/test_schema.c e3f93725f7c5b2cff84a69dc4332040dfbc8f81a
 F src/test_server.c 7e579eb9bf6fbe9cc45e84e4c74d3d06d049a825
 F src/test_tclvar.c e99b975614735553fa1c43503d85b0dd988c0e77
@@ -591,8 +591,8 @@ F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
-F tool/speedtest8inst1.c c65494ca99d1e09c246dfe37a7ca7a354af9990f
-P e339c91f8718482ce74fc53781091db95e69d4c3
-R 8ec52602b4b686db548caee20e44cbbf
-U drh
-Z 3c6689c95ccc77a83be26587df45b6b7
+F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
+P 7dfcd73dc8e97e0bdbe05a22d0ed22b25e5a2786
+R be3baccbbf891ee85b0be23033b91bd1
+U danielk1977
+Z bc0ce3d33a91fd1711f3aee11bae1a91

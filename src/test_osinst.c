@@ -14,7 +14,7 @@
 ** adds instrumentation to all vfs and file methods. C and Tcl interfaces
 ** are provided to control the instrumentation.
 **
-** $Id: test_osinst.c,v 1.14 2008/06/06 11:11:26 danielk1977 Exp $
+** $Id: test_osinst.c,v 1.15 2008/06/11 11:00:31 danielk1977 Exp $
 */
 
 /*
@@ -122,6 +122,10 @@
 
 #define BINARYLOG_STRING     30
 #define BINARYLOG_MARKER     31
+
+#define BINARYLOG_PREPARE_V2 64
+#define BINARYLOG_STEP       65
+#define BINARYLOG_FINALIZE   66
 
 struct InstVfs {
   sqlite3_vfs base;
@@ -261,7 +265,9 @@ static sqlite3_io_methods inst_io_methods = {
 ** Close an inst-file.
 */
 static int instClose(sqlite3_file *pFile){
-  OS_TIME_IO(OS_CLOSE, 0, 0, p->pReal->pMethods->xClose(p->pReal));
+  OS_TIME_IO(OS_CLOSE, 0, 0, 
+    (p->pReal->pMethods ? p->pReal->pMethods->xClose(p->pReal) : SQLITE_OK)
+  );
 }
 
 /*
@@ -731,6 +737,22 @@ static void binarylog_blob(
     memcpy(&zRec[28], zBlob, nBlob);
     pLog->nBuf += nWrite;
   }
+}
+
+void sqlite3_instvfs_binarylog_call(
+  sqlite3_vfs *pVfs,
+  int eEvent,
+  sqlite3_int64 nClick,
+  int return_code,
+  const char *zString
+){
+  InstVfs *pInstVfs = (InstVfs *)pVfs;
+  InstVfsBinaryLog *pLog = (InstVfsBinaryLog *)pInstVfs->pClient;
+
+  if( zString ){
+    binarylog_blob(pVfs, zString, -1, 0);
+  }
+  binarylog_xcall(pLog, eEvent, 0, nClick, return_code, 0, 0, 0, 0);
 }
 
 void sqlite3_instvfs_binarylog_marker(
