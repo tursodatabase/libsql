@@ -1,5 +1,5 @@
-C Update\sutility\sprogram\sspeedtest8inst1.c.\s(CVS\s5201)
-D 2008-06-11T11:00:31
+C Add\sa\stest\scase\sfor\sthe\sdatabase\scorruption\sin\sthe\sform\sof\scell\soffsets\nout\sof\srange\sin\san\sotherwise\svalid\sbtree\spage.\s(CVS\s5202)
+D 2008-06-11T18:01:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -246,6 +246,7 @@ F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
 F test/corrupt6.test e69b877d478224deab7b66844566258cecacd25e
+F test/corrupt7.test 900d4f9aadd4f78d6977c06f256ea6df662921ab
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 26d7a4c5520201e5de2c696ea51ab946b59dc0e9
 F test/crash3.test 0b09687ae1a3ccbcefdfaeb4b963e26e36255d76
@@ -592,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7dfcd73dc8e97e0bdbe05a22d0ed22b25e5a2786
-R be3baccbbf891ee85b0be23033b91bd1
-U danielk1977
-Z bc0ce3d33a91fd1711f3aee11bae1a91
+P 98bdc7b44db737d3b77aa76c139995d2b185cd85
+R f724ee3e69f515b743bac10237bb979a
+U drh
+Z 4642ac2e7ff23a8e99ee652f9dc55d1e
