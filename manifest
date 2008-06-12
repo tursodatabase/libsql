@@ -1,5 +1,5 @@
-C Add\sanother\stest\sto\sincrblob2.test.\sThis\stest\sfailed\sto\sreveal\sany\snew\sbugs.\s(CVS\s5214)
-D 2008-06-12T14:42:07
+C Convert\sthe\sdate/time\sfunctions\sto\swork\swith\smilliseconds\ssince\sthe\njulian\sepoch\sinternally\s(instead\sof\sdays\ssince\sthe\sepoch)\sin\sorder\sto\savoid\nproblems\swith\sfloating-point\sroundoff\serror.\s\sThe\sinterface\sis\sunchanged.\s(CVS\s5215)
+D 2008-06-12T16:35:38
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,7 +102,7 @@ F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
 F src/build.c a52d9d51341444a2131e3431608f245db80d9591
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
-F src/date.c 95d742c3fbbcccb3bf89e1acfaf90c9626e37592
+F src/date.c 76a5ba94772346efedf0c412c47e67891bbb266c
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
 F src/expr.c ecb3b23d3543427cba3e2ac12a6c6ae4bb20d39b
 F src/fault.c 1f6177188edb00641673e462f3fab8cba9f7422b
@@ -257,7 +257,7 @@ F test/crash7.test e20a7b9ee1d16eaef7c94a4cb7ed2191b4d05970
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 4b8a49decaefccb835ecc67249277be491713f6c
-F test/date.test fe0afe5d96fa5016ea8f9fd99ad9b89312974462
+F test/date.test 6ddaefb613aa728e281992da3560de3d88fb0aeb
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test f171c1011395a8dd63169438fe1d8cc625eb7442
 F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6ec4d7653b1e67ba0951e909ee23fe774762d646
-R 570f09991125bd50f45eef8fb2b56b3d
-U danielk1977
-Z b8c281924d7fa5a6eb236e8528b6194f
+P 20d8ea45afcddf22632c3de984147826d0616d3f
+R 0304989bcb11c8650d732a0c70396d11
+U drh
+Z 15805328e436510985375f9b6e038fc3
