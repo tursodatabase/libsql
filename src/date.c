@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.81 2008/06/12 12:51:37 drh Exp $
+** $Id: date.c,v 1.82 2008/06/12 13:50:00 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -314,6 +314,17 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
 }
 
 /*
+** Set the time to the current time reported by the VFS
+*/
+static void setDateTimeToCurrent(sqlite3_context *context, DateTime *p){
+  double r;
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  sqlite3OsCurrentTime(db->pVfs, &r);
+  p->rJD = r;
+  p->validJD = 1;
+}
+
+/*
 ** Attempt to parse the given string into a Julian Day Number.  Return
 ** the number of errors.
 **
@@ -340,11 +351,7 @@ static int parseDateOrTime(
   }else if( parseHhMmSs(zDate, p)==0 ){
     return 0;
   }else if( sqlite3StrICmp(zDate,"now")==0){
-    double r;
-    sqlite3 *db = sqlite3_context_db_handle(context);
-    sqlite3OsCurrentTime(db->pVfs, &r);
-    p->rJD = r;
-    p->validJD = 1;
+    setDateTimeToCurrent(context, p);
     return 0;
   }else if( sqlite3IsNumber(zDate, 0, SQLITE_UTF8) ){
     getValue(zDate, &p->rJD);
@@ -708,14 +715,18 @@ static int isDate(
 ){
   int i;
   const unsigned char *z;
-  static const unsigned char zDflt[] = "now";
+  memset(p, 0, sizeof(*p));
   if( argc==0 ){
-    z = zDflt;
+    setDateTimeToCurrent(context, p);
+  }else if( sqlite3_value_type(argv[0])==SQLITE_FLOAT ){
+    memset(p, 0, sizeof(*p));
+    p->rJD = sqlite3_value_double(argv[0]);
+    p->validJD = 1;
   }else{
     z = sqlite3_value_text(argv[0]);
-  }
-  if( !z || parseDateOrTime(context, (char*)z, p) ){
-    return 1;
+    if( !z || parseDateOrTime(context, (char*)z, p) ){
+      return 1;
+    }
   }
   for(i=1; i<argc; i++){
     if( (z = sqlite3_value_text(argv[i]))==0 || parseModifier((char*)z, p) ){
