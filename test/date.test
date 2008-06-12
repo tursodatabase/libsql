@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.29 2008/06/12 16:35:39 drh Exp $
+# $Id: date.test,v 1.30 2008/06/12 18:05:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -476,7 +476,7 @@ do_test date-14.1 {
 #
 for {set i 0} {$i<=255} {incr i} {
   db close
-  hexio_write test.db 2047 [format %2x $i]
+  hexio_write test.db 2047 [format %02x $i]
   sqlite3 db test.db
   do_test date-14.2.$i {
     set date [db one {SELECT datetime(x) FROM t1}]

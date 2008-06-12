@@ -1,5 +1,5 @@
-C Convert\sthe\sdate/time\sfunctions\sto\swork\swith\smilliseconds\ssince\sthe\njulian\sepoch\sinternally\s(instead\sof\sdays\ssince\sthe\sepoch)\sin\sorder\sto\savoid\nproblems\swith\sfloating-point\sroundoff\serror.\s\sThe\sinterface\sis\sunchanged.\s(CVS\s5215)
-D 2008-06-12T16:35:38
+C Fix\sa\stypo\sin\sthe\sdate/time\sfunction\stests.\s\sAdd\sadditional\scases\sto\nthe\szeroblob\stests\sto\smake\ssure\ssqlite3_bind_zeroblob()\sdoes\snot\suse\nexcess\smemory.\s(CVS\s5216)
+D 2008-06-12T18:05:40
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -257,7 +257,7 @@ F test/crash7.test e20a7b9ee1d16eaef7c94a4cb7ed2191b4d05970
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 4b8a49decaefccb835ecc67249277be491713f6c
-F test/date.test 6ddaefb613aa728e281992da3560de3d88fb0aeb
+F test/date.test 1413c8a73d281f09afb8ac444c57958f5fbed3fc
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test f171c1011395a8dd63169438fe1d8cc625eb7442
 F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
@@ -568,7 +568,7 @@ F test/where3.test 97d3936e6a443b968f1a61cdcc0f673252000e94
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 42c4373595f4409d9c6a9987b4a60000ad664faf
-F test/zeroblob.test 7d1854ea79d048e023e5f2e38106a7e99a17435c
+F test/zeroblob.test 2f4f8c80d4fc63fe74ba51f63028ea432f37445a
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/lemon.c a9c51c1ede7f35dc8746894e7f8cc7e3704ecef8
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 20d8ea45afcddf22632c3de984147826d0616d3f
-R 0304989bcb11c8650d732a0c70396d11
+P ed35f8a98323dadb64b423615287fb24ea262ffb
+R 6d3a5f7e9e66d13c1835b9bd637681e5
 U drh
-Z 15805328e436510985375f9b6e038fc3
+Z ad27c56d832bced711a43dcd785d84f4

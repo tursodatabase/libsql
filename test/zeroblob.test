@@ -13,7 +13,7 @@
 # including the sqlite3_bind_zeroblob(), sqlite3_result_zeroblob(),
 # and the built-in zeroblob() SQL function.
 #
-# $Id: zeroblob.test,v 1.10 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: zeroblob.test,v 1.11 2008/06/12 18:05:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -188,17 +188,27 @@ do_test zeroblob-6.7 {
 
 # Test bind_zeroblob()
 #
+sqlite3_memory_highwater 1
+unset -nocomplain memused
+set memused [sqlite3_memory_used]
 do_test zeroblob-7.1 {
   set ::STMT [sqlite3_prepare $::DB "SELECT length(?)" -1 DUMMY]
-  sqlite3_bind_zeroblob $::STMT 1 450
+  set ::sqlite3_max_blobsize 0
+  sqlite3_bind_zeroblob $::STMT 1 450000
   sqlite3_step $::STMT
 } {SQLITE_ROW}
 do_test zeroblob-7.2 {
   sqlite3_column_int $::STMT 0
-} {450}
+} {450000}
 do_test zeroblob-7.3 {
   sqlite3_finalize $::STMT
 } {SQLITE_OK}
+do_test zeroblob-7.4 {
+  set ::sqlite3_max_blobsize
+} {0}
+do_test zeroblob-7.5 {
+  expr {[sqlite3_memory_highwater]<$::memused+10000}
+} {1}
 
 # Test that MakeRecord can handle a value with some real content
 # and a zero-blob tail.
