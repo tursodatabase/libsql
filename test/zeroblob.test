@@ -13,7 +13,7 @@
 # including the sqlite3_bind_zeroblob(), sqlite3_result_zeroblob(),
 # and the built-in zeroblob() SQL function.
 #
-# $Id: zeroblob.test,v 1.11 2008/06/12 18:05:40 drh Exp $
+# $Id: zeroblob.test,v 1.12 2008/06/12 18:17:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -27,21 +27,28 @@ ifcapable !incrblob {
 # content of the zeroblob is never instantiated on the VDBE stack.
 # But it does get inserted into the database correctly.
 #
+db eval {PRAGMA cache_size=10}
+sqlite3_memory_highwater
+unset -nocomplain memused
+set memused [sqlite3_memory_used]
 do_test zeroblob-1.1 {
   execsql {
     CREATE TABLE t1(a,b,c,d);
   }
   set ::sqlite3_max_blobsize 0
   execsql {
-    INSERT INTO t1 VALUES(2,3,4,zeroblob(10000));
+    INSERT INTO t1 VALUES(2,3,4,zeroblob(1000000));
   }
   set ::sqlite3_max_blobsize
 } {10}
+do_test zeroblob-1.1.1 {
+  expr {[sqlite3_memory_highwater]<$::memused+25000}
+} {1}
 do_test zeroblob-1.2 {
   execsql {
     SELECT length(d) FROM t1
   }
-} {10000}
+} {1000000}
 
 # If a non-NULL column follows the zeroblob, then the content of
 # the zeroblob must be instantiated.
@@ -57,7 +64,7 @@ do_test zeroblob-1.4 {
   execsql {
     SELECT length(c), length(d) FROM t1
   }
-} {1 10000 10000 1}
+} {1 1000000 10000 1}
 
 # Multiple zeroblobs can appear at the end of record.  No instantiation
 # of the blob content occurs on the stack.
@@ -73,7 +80,7 @@ do_test zeroblob-1.6 {
   execsql {
     SELECT length(c), length(d) FROM t1
   }
-} {1 10000 10000 1 10000 10000}
+} {1 1000000 10000 1 10000 10000}
 
 # NULLs can follow the zeroblob() or be intermixed with zeroblobs and
 # no instantiation of the zeroblobs occurs on the stack.
