@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.26 2008/05/26 18:41:54 danielk1977 Exp $
+** $Id: test_config.c,v 1.27 2008/06/12 12:51:37 drh Exp $
 */
 
 #include "sqliteLimit.h"
@@ -283,6 +283,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "load_ext", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "load_ext", "1", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_OMIT_LOCALTIME
+  Tcl_SetVar2(interp, "sqlite_options", "localtime", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "localtime", "1", TCL_GLOBAL_ONLY);
 #endif
 
 Tcl_SetVar2(interp, "sqlite_options", "long_double",

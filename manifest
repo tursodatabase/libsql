@@ -1,5 +1,5 @@
-C Remove\sobsolete\scode\sfrom\sthe\stest_osinst.c\smodule.\s(CVS\s5211)
-D 2008-06-12T12:40:14
+C Add\sthe\sability\sto\sdisable\sthe\s"localtime"\smodifier\sin\sthe\sdate/time\nfunctions.\s\sThis\smight\sbe\snecessary\sfor\ssystems\sthat\sdo\snot\ssupport\nlocaltime_r()\sor\slocaltime_s().\s(CVS\s5212)
+D 2008-06-12T12:51:37
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,7 +102,7 @@ F src/btreeInt.h dc04ee33d8eb84714b2acdf81336fbbf6e764530
 F src/build.c a52d9d51341444a2131e3431608f245db80d9591
 F src/callback.c 77b302b0d41468dcda78c70e706e5b84577f0fa0
 F src/complete.c 4cf68fd75d60257524cbe74f87351b9848399131
-F src/date.c b305ced9f4da66b51ef020d9bf31c6c92fc0c6bb
+F src/date.c fd34fd6b95ba197a7edcf03f2d29bbad12627747
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
 F src/expr.c ecb3b23d3543427cba3e2ac12a6c6ae4bb20d39b
 F src/fault.c 1f6177188edb00641673e462f3fab8cba9f7422b
@@ -160,7 +160,7 @@ F src/test9.c 4615ef08750245a2d96aaa7cbe2fb4aff2b57acc
 F src/test_async.c fb5ab7b54c0b4ece9e2283b9c38314ba5d40bab6
 F src/test_autoext.c 5e892ab84aece3f0428920bf46923f16ac83962a
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
-F src/test_config.c 982bba6221b854a86427ae64e9c65b313b0f6e03
+F src/test_config.c 0a2b732a6fd9cfef39417a303b76a402c963d89b
 F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
 F src/test_func.c f4aafa10f17d52c43a64b47717265802e6e552b3
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b60508ccbc3159e994bc988512d9dbec3932deb6
-R 51ab164f50f582f0a145ce2a644a3770
+P 699cec66cdae6818844612d69eb89aa8b93c3f1a
+R 6631b4e8e1eef0d904b1e969cd29169e
 U drh
-Z 04a51ee536177a3891649a3a4a46bfd5
+Z c094251ed94ff85de9ce9595187c60d8
