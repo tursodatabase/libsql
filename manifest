@@ -1,5 +1,5 @@
-C Additional\srefinements\sto\sthe\snew\ssqlite3_initialize()\sinterface\sdesign.\s(CVS\s5206)
-D 2008-06-12T00:07:29
+C Removed\sall\sC++\sstyle\scomments.\sTicket\s#3172.\s(CVS\s5207)
+D 2008-06-12T02:16:45
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -130,7 +130,7 @@ F src/mutex_w32.c 133698096a2c4e81cd11ea6f4de7891c66f7b9f7
 F src/os.c 284abcb97ffdaf5f0b08fa4c5fe1fe93dd86b416
 F src/os.h c9a7f94e80193fd4cf27f5c5698eb56753f1b05a
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
-F src/os_os2.c 1578149e21c4eac42c7f230a6f40500846f8e781
+F src/os_os2.c ae37c5971e8b0cfc77e6bf685aa9dd43414208d8
 F src/os_unix.c 47936aee8265e482faa626141d97d896aa981ef4
 F src/os_win.c 0d975b131b2b104d6d69d9f16bdf3c8cec28e81d
 F src/pager.c be98ceeb55bbcda9251c1a846d28c3d323885708
@@ -177,7 +177,7 @@ F src/tokenize.c d07c7482a59dd8e02f3f73e86ff55eccdc0d8f26
 F src/trigger.c 1e751f8d5ceeb328d26bf1ccfb2de50653670d49
 F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
-F src/util.c 43277088f8fea4109a640aa46731b8752c3fb4a7
+F src/util.c 512027b58e8b9b11743e5ae70837c45b53696b26
 F src/vacuum.c a5c289e561ed72283e97d2485491986bc7d684eb
 F src/vdbe.c 1936425c3455535a1a20e26a65c470fb009a1ed8
 F src/vdbe.h 1e3722d471739c2b213c6283b60373290e52f7ea
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4a77ff5b588f4c83959591c208a8b20224b75a66
-R 2ee7086af6d477574d9996bfe52c2048
-U drh
-Z cf96ca2091c06c69535cad9d1b243124
+P 14a9b9453bc1c85785fcc44617af80912f5118c8
+R 2f32538fd41301b7db27aba00bd1cd70
+U shane
+Z 5f5579143d41d2431d70f73b40c5dc99

@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.230 2008/05/19 15:54:59 drh Exp $
+** $Id: util.c,v 1.231 2008/06/12 02:16:45 shane Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -561,7 +561,7 @@ int sqlite3GetVarint(const unsigned char *p, u64 *v){
   u32 a,b,s;
 
   a = *p;
-  // a: p0 (unmasked)
+  /* a: p0 (unmasked) */
   if (!(a&0x80))
   {
     *v = a;
@@ -570,7 +570,7 @@ int sqlite3GetVarint(const unsigned char *p, u64 *v){
 
   p++;
   b = *p;
-  // b: p1 (unmasked)
+  /* b: p1 (unmasked) */
   if (!(b&0x80))
   {
     a &= 0x7f;
@@ -583,7 +583,7 @@ int sqlite3GetVarint(const unsigned char *p, u64 *v){
   p++;
   a = a<<14;
   a |= *p;
-  // a: p0<<14 | p2 (unmasked)
+  /* a: p0<<14 | p2 (unmasked) */
   if (!(a&0x80))
   {
     a &= (0x7f<<14)|(0x7f);
@@ -594,41 +594,41 @@ int sqlite3GetVarint(const unsigned char *p, u64 *v){
     return 3;
   }
 
-  // CSE1 from below
+  /* CSE1 from below */
   a &= (0x7f<<14)|(0x7f);
   p++;
   b = b<<14;
   b |= *p;
-  // b: p1<<14 | p3 (unmasked)
+  /* b: p1<<14 | p3 (unmasked) */
   if (!(b&0x80))
   {
     b &= (0x7f<<14)|(0x7f);
-    // moved CSE1 up
-    // a &= (0x7f<<14)|(0x7f);
+    /* moved CSE1 up */
+    /* a &= (0x7f<<14)|(0x7f); */
     a = a<<7;
     a |= b;
     *v = a;
     return 4;
   }
 
-  // a: p0<<14 | p2 (masked)
-  // b: p1<<14 | p3 (unmasked)
-  // 1:save off p0<<21 | p1<<14 | p2<<7 | p3 (masked)
-  // moved CSE1 up
-  // a &= (0x7f<<14)|(0x7f);
+  /* a: p0<<14 | p2 (masked) */
+  /* b: p1<<14 | p3 (unmasked) */
+  /* 1:save off p0<<21 | p1<<14 | p2<<7 | p3 (masked) */
+  /* moved CSE1 up */
+  /* a &= (0x7f<<14)|(0x7f); */
   b &= (0x7f<<14)|(0x7f);
   s = a;
-  // s: p0<<14 | p2 (masked)
+  /* s: p0<<14 | p2 (masked) */
 
   p++;
   a = a<<14;
   a |= *p;
-  // a: p0<<28 | p2<<14 | p4 (unmasked)
+  /* a: p0<<28 | p2<<14 | p4 (unmasked) */
   if (!(a&0x80))
   {
-    // we can skip these cause they were (effectively) done above in calc'ing s
-    // a &= (0x7f<<28)|(0x7f<<14)|(0x7f);
-    // b &= (0x7f<<14)|(0x7f);
+    /* we can skip these cause they were (effectively) done above in calc'ing s */
+    /* a &= (0x7f<<28)|(0x7f<<14)|(0x7f); */
+    /* b &= (0x7f<<14)|(0x7f); */
     b = b<<7;
     a |= b;
     s = s>>18;
@@ -636,19 +636,19 @@ int sqlite3GetVarint(const unsigned char *p, u64 *v){
     return 5;
   }
 
-  // 2:save off p0<<21 | p1<<14 | p2<<7 | p3 (masked)
+  /* 2:save off p0<<21 | p1<<14 | p2<<7 | p3 (masked) */
   s = s<<7;
   s |= b;
-  // s: p0<<21 | p1<<14 | p2<<7 | p3 (masked)
+  /* s: p0<<21 | p1<<14 | p2<<7 | p3 (masked) */
 
   p++;
   b = b<<14;
   b |= *p;
-  // b: p1<<28 | p3<<14 | p5 (unmasked)
+  /* b: p1<<28 | p3<<14 | p5 (unmasked) */
   if (!(b&0x80))
   {
-    // we can skip this cause it was (effectively) done above in calc'ing s
-    // b &= (0x7f<<28)|(0x7f<<14)|(0x7f);
+    /* we can skip this cause it was (effectively) done above in calc'ing s */
+    /* b &= (0x7f<<28)|(0x7f<<14)|(0x7f); */
     a &= (0x7f<<14)|(0x7f);
     a = a<<7;
     a |= b;
@@ -660,7 +660,7 @@ int sqlite3GetVarint(const unsigned char *p, u64 *v){
   p++;
   a = a<<14;
   a |= *p;
-  // a: p2<<28 | p4<<14 | p6 (unmasked)
+  /* a: p2<<28 | p4<<14 | p6 (unmasked) */
   if (!(a&0x80))
   {
     a &= (0x7f<<28)|(0x7f<<14)|(0x7f);
@@ -672,17 +672,17 @@ int sqlite3GetVarint(const unsigned char *p, u64 *v){
     return 7;
   }
 
-  // CSE2 from below
+  /* CSE2 from below */
   a &= (0x7f<<14)|(0x7f);
   p++;
   b = b<<14;
   b |= *p;
-  // b: p3<<28 | p5<<14 | p7 (unmasked)
+  /* b: p3<<28 | p5<<14 | p7 (unmasked) */
   if (!(b&0x80))
   {
     b &= (0x7f<<28)|(0x7f<<14)|(0x7f);
-    // moved CSE2 up
-    // a &= (0x7f<<14)|(0x7f);
+    /* moved CSE2 up */
+    /* a &= (0x7f<<14)|(0x7f); */
     a = a<<7;
     a |= b;
     s = s>>4;
@@ -693,10 +693,10 @@ int sqlite3GetVarint(const unsigned char *p, u64 *v){
   p++;
   a = a<<15;
   a |= *p;
-  // a: p4<<29 | p6<<15 | p8 (unmasked)
+  /* a: p4<<29 | p6<<15 | p8 (unmasked) */
 
-  // moved CSE2 up
-  // a &= (0x7f<<29)|(0x7f<<15)|(0xff);
+  /* moved CSE2 up */
+  /* a &= (0x7f<<29)|(0x7f<<15)|(0xff); */
   b &= (0x7f<<14)|(0x7f);
   b = b<<8;
   a |= b;
@@ -723,7 +723,7 @@ int sqlite3GetVarint32(const unsigned char *p, u32 *v){
   u32 a,b;
 
   a = *p;
-  // a: p0 (unmasked)
+  /* a: p0 (unmasked) */
 #ifndef getVarint32
   if (!(a&0x80))
   {
@@ -734,7 +734,7 @@ int sqlite3GetVarint32(const unsigned char *p, u32 *v){
 
   p++;
   b = *p;
-  // b: p1 (unmasked)
+  /* b: p1 (unmasked) */
   if (!(b&0x80))
   {
     a &= 0x7f;
@@ -746,7 +746,7 @@ int sqlite3GetVarint32(const unsigned char *p, u32 *v){
   p++;
   a = a<<14;
   a |= *p;
-  // a: p0<<14 | p2 (unmasked)
+  /* a: p0<<14 | p2 (unmasked) */
   if (!(a&0x80))
   {
     a &= (0x7f<<14)|(0x7f);
@@ -759,7 +759,7 @@ int sqlite3GetVarint32(const unsigned char *p, u32 *v){
   p++;
   b = b<<14;
   b |= *p;
-  // b: p1<<14 | p3 (unmasked)
+  /* b: p1<<14 | p3 (unmasked) */
   if (!(b&0x80))
   {
     b &= (0x7f<<14)|(0x7f);
@@ -772,7 +772,7 @@ int sqlite3GetVarint32(const unsigned char *p, u32 *v){
   p++;
   a = a<<14;
   a |= *p;
-  // a: p0<<28 | p2<<14 | p4 (unmasked)
+  /* a: p0<<28 | p2<<14 | p4 (unmasked) */
   if (!(a&0x80))
   {
     a &= (0x7f<<28)|(0x7f<<14)|(0x7f);

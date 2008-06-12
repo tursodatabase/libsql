@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.40 2008/05/20 19:08:54 pweilbacher Exp $
+** $Id: os_os2.c,v 1.41 2008/06/12 02:16:45 shane Exp $
 */
 
 #include "sqliteInt.h"
@@ -655,7 +655,7 @@ static int os2Open(
 
   OSTRACE2( "OPEN want %d\n", flags );
 
-  //ulOpenMode = flags & SQLITE_OPEN_READWRITE ? OPEN_ACCESS_READWRITE : OPEN_ACCESS_READONLY;
+  /*ulOpenMode = flags & SQLITE_OPEN_READWRITE ? OPEN_ACCESS_READWRITE : OPEN_ACCESS_READONLY;*/
   if( flags & SQLITE_OPEN_READWRITE ){
     ulOpenMode |= OPEN_ACCESS_READWRITE;
     OSTRACE1( "OPEN read/write\n" );
@@ -664,7 +664,7 @@ static int os2Open(
     OSTRACE1( "OPEN read only\n" );
   }
 
-  //ulOpenFlags = flags & SQLITE_OPEN_CREATE ? OPEN_ACTION_CREATE_IF_NEW : OPEN_ACTION_FAIL_IF_NEW;
+  /*ulOpenFlags = flags & SQLITE_OPEN_CREATE ? OPEN_ACTION_CREATE_IF_NEW : OPEN_ACTION_FAIL_IF_NEW;*/
   if( flags & SQLITE_OPEN_CREATE ){
     ulOpenFlags |= OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW;
     OSTRACE1( "OPEN open new/create\n" );
@@ -673,7 +673,7 @@ static int os2Open(
     OSTRACE1( "OPEN open existing\n" );
   }
 
-  //ulOpenMode |= flags & SQLITE_OPEN_MAIN_DB ? OPEN_SHARE_DENYNONE : OPEN_SHARE_DENYWRITE;
+  /*ulOpenMode |= flags & SQLITE_OPEN_MAIN_DB ? OPEN_SHARE_DENYNONE : OPEN_SHARE_DENYWRITE;*/
   if( flags & SQLITE_OPEN_MAIN_DB ){
     ulOpenMode |= OPEN_SHARE_DENYNONE;
     OSTRACE1( "OPEN share read/write\n" );
@@ -685,7 +685,7 @@ static int os2Open(
   if( flags & (SQLITE_OPEN_TEMP_DB | SQLITE_OPEN_TEMP_JOURNAL
                | SQLITE_OPEN_SUBJOURNAL) ){
     char pathUtf8[CCHMAXPATH];
-    //ulFileAttribute = FILE_HIDDEN;  //for debugging, we want to make sure it is deleted
+    /*ulFileAttribute = FILE_HIDDEN;  //for debugging, we want to make sure it is deleted*/
     ulFileAttribute = FILE_NORMAL;
     sqlite3OsFullPathname( pVfs, zName, CCHMAXPATH, pathUtf8 );
     pFile->pathToDel = convertUtf8PathToCp( pathUtf8 );
