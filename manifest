@@ -1,5 +1,5 @@
-C Adjust\sthe\serror-message\stext\sin\scorrupt7.test.\s(CVS\s5205)
-D 2008-06-11T18:56:42
+C Additional\srefinements\sto\sthe\snew\ssqlite3_initialize()\sinterface\sdesign.\s(CVS\s5206)
+D 2008-06-12T00:07:29
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/printf.c f2d4f6c5b0ec24b643e85fe60258adad8b1f6acc
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in 31b526c2527b46575c3596a4cef0a046137f8a59
+F src/sqlite.h.in c7e356869c27312291d929322b26f3cc74028299
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 1593404d8aee13687ca7b5d552cb153de7441bef
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -188,7 +188,7 @@ F src/vdbeblob.c 554736781ee273a8089c776e96bdb53e66f57ce6
 F src/vdbefifo.c 1644a41c6366ff25a920df4ca675f12d3f559687
 F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
 F src/vtab.c ce9d19ca9053812a557010fd4be7e842f8ebba2d
-F src/where.c 53c6b8014622aa918046957e56bc020101754768
+F src/where.c 6af9313bdcb6a1986402028864c4d4cf9879d873
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test d56a3ca8acdf761204aff0a2e7aa5eb8e11b31e6
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P afcfba0a8ac46e1d86a0fa2f1fbaeefe8ef10f7d
-R 3e551b95d299519ccc04c39188c68404
+P 4a77ff5b588f4c83959591c208a8b20224b75a66
+R 2ee7086af6d477574d9996bfe52c2048
 U drh
-Z 3d49acd29f04c431837b04f32be1e4f3
+Z cf96ca2091c06c69535cad9d1b243124

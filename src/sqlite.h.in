@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.324 2008/06/10 17:41:45 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.325 2008/06/12 00:07:29 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -845,20 +845,26 @@ struct sqlite3_vfs {
 /*
 ** CAPI3REF: Initialize The SQLite Library {F10130}
 **
-** The sqlite3_initialize() routine does operating-system specific
-** initialization of the SQLite library.  The sqlite3_shutdown()
-** routine undoes the effect of sqlite3_initialize().  Typical tasks
-** performed by these routines include allocation or deallocation
-** of static resources, initialization of global variables,
-** setting up a default [sqlite3_vfs | VFS] module, or setting up
-** a default configuration using [sqlite3_config()].
+** The sqlite3_initialize() routine initializes the
+** SQLite library prior to use.  The sqlite3_shutdown() routine
+** deallocates any resources that were allocated by sqlite3_initialize().
 **
-** The sqlite3_initialize() routine can be called multiple times
+** A call to sqlite3_initialize() is an "effective" call if it is
+** the first time sqlite3_initialize() is invoked during the lifetime of
+** the process, or if it is the first time sqlite3_initialize() is invoked
+** following a call to sqlite3_shutdown().  Only an effective call
+** of sqlite3_initialize() does any initialization.  All other calls
+** are harmless no-ops.  In other words,
+** the sqlite3_initialize() routine may be called multiple times
 ** without consequence.  Second and subsequent evaluations of
 ** sqlite3_initialize() are no-ops.  The sqlite3_initialize() routine
 ** only works the first time it is called for a process, or the first
 ** time it is called after sqlite3_shutdown().  In all other cases,
-** sqlite3_initialize() returns SQLITE_OK.
+** sqlite3_initialize() returns SQLITE_OK without doing any real work.
+**
+** Among other things, sqlite3_initialize() shall invoke
+** [sqlite3_mutex_init()] and sqlite3_os_init().  Similarly, sqlite3_shutdown()
+** shall invoke [sqlite3_mutex_end()] and sqlite3_os_end().
 **
 ** The sqlite3_initialize() routine returns SQLITE_OK on success.
 ** If for some reason, sqlite3_initialize() is unable to initialize
@@ -866,36 +872,46 @@ struct sqlite3_vfs {
 ** as a mutex) it returns an [error code] other than SQLITE_OK.
 **
 ** The sqlite3_initialize() routine is called internally by many other
-** SQLite interfaces so that an application does not typically need to
+** SQLite interfaces so that an application usually does not need to
 ** invoke sqlite3_initialize() directly.  For example, [sqlite3_open()]
 ** calls sqlite3_initialize() so the SQLite library will be automatically
 ** initialized when [sqlite3_open()] is called if it has not be initialized
-** already.
+** already.  However, if SQLite is compiled with the SQLITE_OMIT_AUTOINIT
+** compile-time option, then the automatic calls to sqlite3_initialize()
+** are omitted and the application must call sqlite3_initialize() directly
+** prior to using any other SQLite interface.  For maximum portability,
+** it is recommended that applications always invoke sqlite3_initialize()
+** directly prior to using any other SQLite interface.  Future releases
+** of SQLite may require this.  In other words, the behavior exhibited
+** when SQLite is compiled with SQLITE_OMIT_AUTOINIT might become the
+** default behavior in some future release of SQLite.
 **
-** Appropriate implementations for sqlite3_initialize() and sqlite3_shutdown()
-** are provided as part of SQLite when it is compiled for unix, win32, and
-** os/2.  However, when SQLite is compiled for other platforms, the
-** implementations of sqlite3_initialize() and sqlite3_shutdown() are
-** omitted and must be supplied by the application.
+** The sqlite3_os_init() routine does operating-system specific
+** initialization of the SQLite library.  The sqlite3_os_end()
+** routine undoes the effect of sqlite3_os_init().  Typical tasks
+** performed by these routines include allocation or deallocation
+** of static resources, initialization of global variables,
+** setting up a default [sqlite3_vfs] module, or setting up
+** a default configuration using [sqlite3_config()].  
 **
-** The implementations of sqlite3_initialize() for unix, win32, and os/2
-** are threadsafe and never fail.  However, the sqlite3_initialize()
-** implementation for other operationing systems might not be threadsafe
-** and so portable applications may want to invoke sqlite3_initialize()
-** at application startup before other threads are created and check
-** the return code to make sure that initialization was successful before
-** continuing.  To restate: it is never necessary to call sqlite3_initialize()
-** on unix, win32, or os/2, but making a serialized call to
-** sqlite3_initialize() might be necessary on other operating systems.
-**
-** The sqlite3_shutdown() interface is not threadsafe on any platform and
-** should be serialized by the application.  Few applications should ever
-** need to call sqlite3_shutdown().  About the only reason for calling
-** sqlite3_shutdown() is to deallocate static memory allocations to suppress
-** spurious reports of memory leaks from program analysis tools.
+** The application should never invoke either sqlite3_os_init()
+** or sqlite3_os_end() directly.  The application should only invoke
+** sqlite3_initialize() and sqlite3_shutdown().  The sqlite3_os_init()
+** interface is called automatically by sqlite3_initialize() and 
+** sqlite3_os_end() is called by sqlite3_shutdown().  Appropriate
+** implementations for sqlite3_os_init() and sqlite3_os_end()
+** are built into SQLite when it is compiled for unix, windows, or os/2.
+** When built for other platforms (using the SQLITE_OS_OTHER=1 compile-time
+** option) the application must supply a suitable implementation for
+** sqlite3_os_init() and sqlite3_os_end().  An application-supplied
+** implementation of sqlite3_os_init() or sqlite3_os_end()
+** must return SQLITE_OK on success and some other [error code] upon
+** failure.
 */
 int sqlite3_initialize(void);
 int sqlite3_shutdown(void);
+int sqlite3_os_init(void);
+int sqlite3_os_end(void);
 
 /*
 ** CAPI3REF: Configuring The SQLite Library {F10145}
@@ -961,10 +977,9 @@ int sqlite3_config(int, ...);
 ** <dt>SQLITE_CONFIG_MALLOC</dt>
 ** <dd>This option takes four arguments.  The first three
 ** arguments are pointers to functions that emulate malloc(), free(),
-** and realloc(), respectively.  The fourth argument is either a pointer to
-** a function that returns the size of a prior allocation, or NULL.  If
-** the fourth function is NULL, SQLite will keep track of allocation
-** sizes itself.  This option is used to replace the default memory
+** and realloc(), respectively.  The fourth argument must be a pointer to
+** a function that returns the size of a prior allocation when handed a pointer
+** to the allocation. This option is used to replace the default memory
 ** allocator with an application-defined memory allocator.</dd>
 **
 ** <dt>SQLITE_CONFIG_MEMSTATS</dt>
@@ -5624,6 +5639,18 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** application that links against SQLite to provide its own mutex
 ** implementation without having to modify the SQLite core.
 **
+** {F17001} The sqlite3_mutex_init() routine is called once by each
+** effective call to [sqlite3_initialize()].  The sqlite3_mutex_init()
+** interface initializes the mutex subsystem.  The application should
+** never call sqlite3_mutex_init() directly but only indirectly by
+** invoking [sqlite3_initialize()].
+**
+** {F17003} The sqlite3_mutex_end() routine undoes the effect of
+** sqlite3_mutex_init().  The sqlite3_mutex_end() interface is called
+** by [sqlite3_shutdown()].  The application should never call 
+** sqlite3_mutex_end() directly but only indirectly through
+** [sqlite3_shutdown()].
+**
 ** {F17011} The sqlite3_mutex_alloc() routine allocates a new
 ** mutex and returns a pointer to it. {F17012} If it returns NULL
 ** that means that a mutex could not be allocated. {F17013} SQLite
@@ -5683,12 +5710,12 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** can enter.  {U17028} If the same thread tries to enter any other
 ** kind of mutex more than once, the behavior is undefined.
 ** {F17029} SQLite will never exhibit
-** such behavior in its own use of mutexes. {END}
+** such behavior in its own use of mutexes.
 **
-** Some systems (ex: windows95) do not the operation implemented by
+** Some systems (ex: windows95) do not support the operation implemented by
 ** sqlite3_mutex_try().  On those systems, sqlite3_mutex_try() will
 ** always return SQLITE_BUSY.  {F17030} The SQLite core only ever uses
-** sqlite3_mutex_try() as an optimization so this is acceptable behavior. {END}
+** sqlite3_mutex_try() as an optimization so this is acceptable behavior.
 **
 ** {F17031} The sqlite3_mutex_leave() routine exits a mutex that was
 ** previously entered by the same thread.  {U17032} The behavior
@@ -5698,11 +5725,13 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 **
 ** See also: [sqlite3_mutex_held()] and [sqlite3_mutex_notheld()].
 */
+int sqlite3_mutex_init();
 sqlite3_mutex *sqlite3_mutex_alloc(int);
 void sqlite3_mutex_free(sqlite3_mutex*);
 void sqlite3_mutex_enter(sqlite3_mutex*);
 int sqlite3_mutex_try(sqlite3_mutex*);
 void sqlite3_mutex_leave(sqlite3_mutex*);
+int sqlite_mutex_end();
 
 /*
 ** CAPI3REF: Mutex Verifcation Routines {F17080}
