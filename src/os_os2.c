@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.41 2008/06/12 02:16:45 shane Exp $
+** $Id: os_os2.c,v 1.42 2008/06/12 12:38:10 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -414,7 +414,7 @@ int os2Lock( sqlite3_file *id, int locktype ){
 ** file by this or any other process. If such a lock is held, return
 ** non-zero, otherwise zero.
 */
-int os2CheckReservedLock( sqlite3_file *id ){
+int os2CheckReservedLock( sqlite3_file *id, int *pOut ){
   int r = 0;
   os2File *pFile = (os2File*)id;
   assert( pFile!=0 );
@@ -445,7 +445,8 @@ int os2CheckReservedLock( sqlite3_file *id ){
     r = !(rc == NO_ERROR);
     OSTRACE3( "TEST WR-LOCK %d %d (remote)\n", pFile->h, r );
   }
-  return r;
+  *pOut = r;
+  return SQLITE_OK;
 }
 
 /*
@@ -633,6 +634,50 @@ static const sqlite3_io_methods os2IoMethod = {
 ****************************************************************************/
 
 /*
+** Create a temporary file name in zBuf.  zBuf must be big enough to
+** hold at pVfs->mxPathname characters.
+*/
+static int getTempname(int nBuf, char *zBuf ){
+  static const unsigned char zChars[] =
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789";
+  int i, j;
+  char zTempPathBuf[3];
+  PSZ zTempPath = (PSZ)&zTempPathBuf;
+  char *zTempPathUTF;
+  if( DosScanEnv( (PSZ)"TEMP", &zTempPath ) ){
+    if( DosScanEnv( (PSZ)"TMP", &zTempPath ) ){
+      if( DosScanEnv( (PSZ)"TMPDIR", &zTempPath ) ){
+           ULONG ulDriveNum = 0, ulDriveMap = 0;
+           DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
+           sprintf( (char*)zTempPath, "%c:", (char)( 'A' + ulDriveNum - 1 ) );
+      }
+    }
+  }
+  /* strip off a trailing slashes or backslashes, otherwise we would get *
+   * multiple (back)slashes which causes DosOpen() to fail               */
+  j = strlen(zTempPath);
+  while( j > 0 && ( zTempPath[j-1] == '\\' || zTempPath[j-1] == '/' ) ){
+    j--;
+  }
+  zTempPath[j] = '\0';
+  zTempPathUTF = convertCpPathToUtf8( zTempPath );
+  sqlite3_snprintf( nBuf-30, zBuf,
+                    "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPathUTF );
+  free( zTempPathUTF );
+  j = strlen( zBuf );
+  sqlite3_randomness( 20, &zBuf[j] );
+  for( i = 0; i < 20; i++, j++ ){
+    zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
+  }
+  zBuf[j] = 0;
+  OSTRACE2( "TEMP FILENAME: %s\n", zBuf );
+  return SQLITE_OK;
+}
+
+
+/*
 ** Open a file.
 */
 static int os2Open(
@@ -650,6 +695,19 @@ static int os2Open(
   APIRET rc = NO_ERROR;
   ULONG ulAction;
   char *zNameCp;
+  char zTmpname[MAX_PATH+1];    /* Buffer to hold name of temp file */
+
+  /* If the second argument to this function is NULL, generate a 
+  ** temporary file name to use 
+  */
+  if( !zName ){
+    int rc = getTempname(MAX_PATH+1, zTmpname);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+    zName = zTmpname;
+  }
+
 
   memset( pFile, 0, sizeof(*pFile) );
 
@@ -760,7 +818,8 @@ int os2Delete(
 static int os2Access(
   sqlite3_vfs *pVfs,        /* Not used on os2 */
   const char *zFilename,    /* Name of file to check */
-  int flags                 /* Type of test to make on this file */
+  int flags,                /* Type of test to make on this file */
+  int *pOut                 /* Write results here */
 ){
   FILESTATUS3 fsts3ConfigInfo;
   APIRET rc = NO_ERROR;
@@ -785,52 +844,10 @@ static int os2Access(
     default:
       assert( !"Invalid flags argument" );
   }
-  return rc;
-}
-
-
-/*
-** Create a temporary file name in zBuf.  zBuf must be big enough to
-** hold at pVfs->mxPathname characters.
-*/
-static int os2GetTempname( sqlite3_vfs *pVfs, int nBuf, char *zBuf ){
-  static const unsigned char zChars[] =
-    "abcdefghijklmnopqrstuvwxyz"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "0123456789";
-  int i, j;
-  char zTempPathBuf[3];
-  PSZ zTempPath = (PSZ)&zTempPathBuf;
-  char *zTempPathUTF;
-  if( DosScanEnv( (PSZ)"TEMP", &zTempPath ) ){
-    if( DosScanEnv( (PSZ)"TMP", &zTempPath ) ){
-      if( DosScanEnv( (PSZ)"TMPDIR", &zTempPath ) ){
-           ULONG ulDriveNum = 0, ulDriveMap = 0;
-           DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
-           sprintf( (char*)zTempPath, "%c:", (char)( 'A' + ulDriveNum - 1 ) );
-      }
-    }
-  }
-  /* strip off a trailing slashes or backslashes, otherwise we would get *
-   * multiple (back)slashes which causes DosOpen() to fail               */
-  j = strlen(zTempPath);
-  while( j > 0 && ( zTempPath[j-1] == '\\' || zTempPath[j-1] == '/' ) ){
-    j--;
-  }
-  zTempPath[j] = '\0';
-  zTempPathUTF = convertCpPathToUtf8( zTempPath );
-  sqlite3_snprintf( nBuf-30, zBuf,
-                    "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPathUTF );
-  free( zTempPathUTF );
-  j = strlen( zBuf );
-  sqlite3_randomness( 20, &zBuf[j] );
-  for( i = 0; i < 20; i++, j++ ){
-    zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
-  }
-  zBuf[j] = 0;
-  OSTRACE2( "TEMP FILENAME: %s\n", zBuf );
+  *pOut = rc;
   return SQLITE_OK;
 }
+
 
 
 /*
@@ -1042,7 +1059,6 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     os2Open,           /* xOpen */
     os2Delete,         /* xDelete */
     os2Access,         /* xAccess */
-    os2GetTempname,    /* xGetTempname */
     os2FullPathname,   /* xFullPathname */
     os2DlOpen,         /* xDlOpen */
     os2DlError,        /* xDlError */
@@ -1051,6 +1067,7 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     os2Randomness,     /* xRandomness */
     os2Sleep,          /* xSleep */
     os2CurrentTime     /* xCurrentTime */
+    os2GetLastError    /* xGetLastError */
   };
 
   return &os2Vfs;
