@@ -1,5 +1,5 @@
-C Added\sx86_64\sversion\sof\shwtime\sfunction.\s\sTicket\s#3156.\s(CVS\s5208)
-D 2008-06-12T02:24:39
+C Added\sadditional\stestcases\sfor\sjulianday\scalculations\swith\smidnight\sboundary\sfor\sUTC\stime.\s(CVS\s5209)
+D 2008-06-12T05:16:15
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -257,7 +257,7 @@ F test/crash7.test e20a7b9ee1d16eaef7c94a4cb7ed2191b4d05970
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 4b8a49decaefccb835ecc67249277be491713f6c
-F test/date.test a1554e1af11fd8a4c150013a53713605f2499bde
+F test/date.test fe0afe5d96fa5016ea8f9fd99ad9b89312974462
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test f171c1011395a8dd63169438fe1d8cc625eb7442
 F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 59f72425eb9acd270110a6a739f98a045c555f23
-R e05fbcefeff7929064a3601d150fe711
+P 0729f5c3d01200190897488f14aec413a5ea17f9
+R 13b984f0768ebaa40b5c7e286a6869c0
 U shane
-Z 04de18a0cb7b221fee4cdd4f5e5f10fc
+Z 48e7b28e9864381656e53aa34872ff8b
