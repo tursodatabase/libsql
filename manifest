@@ -1,5 +1,5 @@
-C Removed\sall\sC++\sstyle\scomments.\sTicket\s#3172.\s(CVS\s5207)
-D 2008-06-12T02:16:45
+C Added\sx86_64\sversion\sof\shwtime\sfunction.\s\sTicket\s#3156.\s(CVS\s5208)
+D 2008-06-12T02:24:39
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/fault.c 1f6177188edb00641673e462f3fab8cba9f7422b
 F src/func.c 77a910a1ca7613d291fd0b5cba3be14c02f0dce0
 F src/hash.c fd8cb06fb54c2fe7d48c9195792059a2e5be8b70
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
-F src/hwtime.h 10fae2093aefa2b00be13bcac40c06e90924bc83
+F src/hwtime.h 745961687a65ef8918cd551c02e5ccb4b8e772de
 F src/insert.c c2ead6c36566de8e3f130e7ab1431723a269d5d7
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 8f5a2b25d9673b4004287cf2bf51dbf7d0738406
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 14a9b9453bc1c85785fcc44617af80912f5118c8
-R 2f32538fd41301b7db27aba00bd1cd70
+P 59f72425eb9acd270110a6a739f98a045c555f23
+R e05fbcefeff7929064a3601d150fe711
 U shane
-Z 5f5579143d41d2431d70f73b40c5dc99
+Z 04de18a0cb7b221fee4cdd4f5e5f10fc
