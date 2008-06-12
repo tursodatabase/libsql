@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\sfloat->text->float\sconversions\sin\sdate/time\sprocessing.\nThis\schange\snecessary\sto\sreproduce\sthe\sproblem\sreported\sby\sBareFoot.\s(CVS\s5213)
-D 2008-06-12T13:50:00
+C Add\sanother\stest\sto\sincrblob2.test.\sThis\stest\sfailed\sto\sreveal\sany\snew\sbugs.\s(CVS\s5214)
+D 2008-06-12T14:42:07
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -339,7 +339,7 @@ F test/in.test 763a29007a4850d611ac4441bfa488fb9969ad30
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
-F test/incrblob2.test bb295ab403e4d3a054a31b250a375a32050deb45
+F test/incrblob2.test 798ce8c5dfc563dde4b960e8e588ee0b25f5b163
 F test/incrblob_err.test 00a8bcb25cb493d53f4efed0f5cf09c386534940
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 12f3ba11e72b2310abf51d040d5344c81fe5ebd3
-R bb5746ef6e6bfc89c8a8599c4be75f8d
-U drh
-Z 2295630320c454b579b6d344ea7e8948
+P 6ec4d7653b1e67ba0951e909ee23fe774762d646
+R 570f09991125bd50f45eef8fb2b56b3d
+U danielk1977
+Z b8c281924d7fa5a6eb236e8528b6194f
