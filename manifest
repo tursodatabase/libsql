@@ -1,5 +1,5 @@
-C Copy\sthe\slatest\sVFS\schanges\sinto\sthe\sOS/2\simplementation.\s\sThis\sis\sa\sblind\nedit\s-\sI\shave\sno\sway\sto\scompile\sor\stest\sOS/2.\s(CVS\s5210)
-D 2008-06-12T12:38:10
+C Remove\sobsolete\scode\sfrom\sthe\stest_osinst.c\smodule.\s(CVS\s5211)
+D 2008-06-12T12:40:14
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ce92ea8dc7adfb743757794f51c10d1b0d9c55e4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -168,7 +168,7 @@ F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c 5c2c698355613d321f216ece25901be1040cc1fb
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_onefile.c 1f87d4a21cbfb24a7c35e4333fa0bd34d641f68d
-F src/test_osinst.c 37876112c8664e53e414a50e2369d24ff809984c
+F src/test_osinst.c 867f1317bd135f942a63eab5a78da40fc70d1493
 F src/test_schema.c e3f93725f7c5b2cff84a69dc4332040dfbc8f81a
 F src/test_server.c 7e579eb9bf6fbe9cc45e84e4c74d3d06d049a825
 F src/test_tclvar.c e99b975614735553fa1c43503d85b0dd988c0e77
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P edd2cb00ae606858d8ae138c69eee7821b8cd6ea
-R 5a214bbf9c201a500d01a02d59ac7033
+P b60508ccbc3159e994bc988512d9dbec3932deb6
+R 51ab164f50f582f0a145ce2a644a3770
 U drh
-Z bad3ab7e73e6a175cb3c0e9aefbda043
+Z 04a51ee536177a3891649a3a4a46bfd5

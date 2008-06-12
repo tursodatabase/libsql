@@ -14,7 +14,7 @@
 ** adds instrumentation to all vfs and file methods. C and Tcl interfaces
 ** are provided to control the instrumentation.
 **
-** $Id: test_osinst.c,v 1.15 2008/06/11 11:00:31 danielk1977 Exp $
+** $Id: test_osinst.c,v 1.16 2008/06/12 12:40:14 drh Exp $
 */
 
 /*
@@ -106,7 +106,6 @@
 #define OS_FILECONTROL       7
 #define OS_FILESIZE          8
 #define OS_FULLPATHNAME      9
-#define OS_GETTEMPNAME       10
 #define OS_LOCK              11
 #define OS_OPEN              12
 #define OS_RANDOMNESS        13
@@ -583,7 +582,6 @@ const char *sqlite3_instvfs_name(int eEvent){
     case OS_OPEN:              zEvent = "xOpen"; break;
     case OS_DELETE:            zEvent = "xDelete"; break;
     case OS_ACCESS:            zEvent = "xAccess"; break;
-    case OS_GETTEMPNAME:       zEvent = "xGetTempName"; break;
     case OS_FULLPATHNAME:      zEvent = "xFullPathname"; break;
     case OS_RANDOMNESS:        zEvent = "xRandomness"; break;
     case OS_SLEEP:             zEvent = "xSleep"; break;
