@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.6 2008/03/26 18:34:43 danielk1977 Exp $
+** $Id: mutex_w32.c,v 1.7 2008/06/13 18:24:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -57,6 +57,12 @@ struct sqlite3_mutex {
   }
 #endif /* OS_WINCE */
 
+
+/*
+** Initialize and deinitialize the mutex subsystem.
+*/
+int sqlite3_mutex_init(void){ return SQLITE_OK; }
+int sqlite3_mutex_end(void){ return SQLITE_OK; }
 
 /*
 ** The sqlite3_mutex_alloc() routine allocates a new
@@ -161,7 +167,7 @@ void sqlite3_mutex_free(sqlite3_mutex *p){
 ** more than once, the behavior is undefined.
 */
 void sqlite3_mutex_enter(sqlite3_mutex *p){
-  assert( p );
+  if( p==0 ) return;
   assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
   EnterCriticalSection(&p->mutex);
   p->owner = GetCurrentThreadId(); 
@@ -169,7 +175,7 @@ void sqlite3_mutex_enter(sqlite3_mutex *p){
 }
 int sqlite3_mutex_try(sqlite3_mutex *p){
   int rc = SQLITE_BUSY;
-  assert( p );
+  if( p==0 ) return SQLITE_OK;
   assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
   /*
   ** The sqlite3_mutex_try() routine is very rarely used, and when it
@@ -199,6 +205,7 @@ int sqlite3_mutex_try(sqlite3_mutex *p){
 ** is not currently allocated.  SQLite will never do either.
 */
 void sqlite3_mutex_leave(sqlite3_mutex *p){
+  if( p==0 ) return;
   assert( p->nRef>0 );
   assert( p->owner==GetCurrentThreadId() );
   p->nRef--;

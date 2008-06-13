@@ -12,7 +12,7 @@
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
 **
-** $Id: loadext.c,v 1.47 2008/05/15 19:43:53 drh Exp $
+** $Id: loadext.c,v 1.48 2008/06/13 18:24:27 drh Exp $
 */
 
 #ifndef SQLITE_CORE
@@ -469,44 +469,56 @@ static struct {
 ** loaded by every new database connection.
 */
 int sqlite3_auto_extension(void *xInit){
-  int i;
-  int rc = SQLITE_OK;
-#ifndef SQLITE_MUTEX_NOOP
-  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+#ifndef SQLITE_OMIT_AUTOINIT
+  int rc = sqlite3_initialize();
+  if( rc ){
+    return rc;
+  }else
 #endif
-  sqlite3_mutex_enter(mutex);
-  for(i=0; i<autoext.nExt; i++){
-    if( autoext.aExt[i]==xInit ) break;
-  }
-  if( i==autoext.nExt ){
-    int nByte = (autoext.nExt+1)*sizeof(autoext.aExt[0]);
-    void **aNew;
-    aNew = sqlite3_realloc(autoext.aExt, nByte);
-    if( aNew==0 ){
-      rc = SQLITE_NOMEM;
-    }else{
-      autoext.aExt = aNew;
-      autoext.aExt[autoext.nExt] = xInit;
-      autoext.nExt++;
+  {
+    int i;
+#ifndef SQLITE_MUTEX_NOOP
+    sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+#endif
+    sqlite3_mutex_enter(mutex);
+    for(i=0; i<autoext.nExt; i++){
+      if( autoext.aExt[i]==xInit ) break;
     }
+    if( i==autoext.nExt ){
+      int nByte = (autoext.nExt+1)*sizeof(autoext.aExt[0]);
+      void **aNew;
+      aNew = sqlite3_realloc(autoext.aExt, nByte);
+      if( aNew==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        autoext.aExt = aNew;
+        autoext.aExt[autoext.nExt] = xInit;
+        autoext.nExt++;
+      }
+    }
+    sqlite3_mutex_leave(mutex);
+    assert( (rc&0xff)==rc );
+    return rc;
   }
-  sqlite3_mutex_leave(mutex);
-  assert( (rc&0xff)==rc );
-  return rc;
 }
 
 /*
 ** Reset the automatic extension loading mechanism.
 */
 void sqlite3_reset_auto_extension(void){
-#ifndef SQLITE_MUTEX_NOOP
-  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+#ifndef SQLITE_OMIT_AUTOINIT
+  if( sqlite3_initialize()==SQLITE_OK )
 #endif
-  sqlite3_mutex_enter(mutex);
-  sqlite3_free(autoext.aExt);
-  autoext.aExt = 0;
-  autoext.nExt = 0;
-  sqlite3_mutex_leave(mutex);
+  {
+#ifndef SQLITE_MUTEX_NOOP
+    sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+#endif
+    sqlite3_mutex_enter(mutex);
+    sqlite3_free(autoext.aExt);
+    autoext.aExt = 0;
+    autoext.nExt = 0;
+    sqlite3_mutex_leave(mutex);
+  }
 }
 
 /*

@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.325 2008/06/12 00:07:29 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.326 2008/06/13 18:24:27 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -928,7 +928,7 @@ int sqlite3_os_end(void);
 ** may only be invoked prior to library initialization using
 ** [sqlite3_initialize()] or after shutdown by [sqlite3_shutdown()].
 ** Note, however, that sqlite3_config() can be called as part of the
-** implementation of an application-defined [sqlite3_initialize()].
+** implementation of an application-defined [sqlite3_os_init()].
 **
 ** The first argument to sqlite3_config() is an integer
 ** [SQLITE_CONFIG_SINGLETHREAD | configuration option] that determines
@@ -937,10 +937,8 @@ int sqlite3_os_end(void);
 ** in the first argument.
 **
 ** When a configuration option is set, sqlite3_config() returns SQLITE_OK.
-** If the option is unknown or SQLite is unable to set the option (for
-** example if one attempts to set a threadsafe option when SQLite is
-** compiled with SQLITE_THREADSAFE=0 and is thus incapable of being
-** threadsafe) then this routine returns a non-zero [error code].
+** If the option is unknown or SQLite is unable to set the option 
+** then this routine returns a non-zero [error code].
 */
 int sqlite3_config(int, ...);
 
@@ -975,11 +973,13 @@ int sqlite3_config(int, ...);
 ** same [prepared statement] in different threads at the same time.</dd>
 **
 ** <dt>SQLITE_CONFIG_MALLOC</dt>
-** <dd>This option takes four arguments.  The first three
+** <dd>This option takes five arguments.  The first three
 ** arguments are pointers to functions that emulate malloc(), free(),
 ** and realloc(), respectively.  The fourth argument must be a pointer to
 ** a function that returns the size of a prior allocation when handed a pointer
-** to the allocation. This option is used to replace the default memory
+** to the allocation. The fifth argument is a pointer to a function that
+** returns the rounded-up size of a memory allocation given the requested
+** allocation size.  This option is used to replace the default memory
 ** allocator with an application-defined memory allocator.</dd>
 **
 ** <dt>SQLITE_CONFIG_MEMSTATS</dt>
@@ -990,22 +990,19 @@ int sqlite3_config(int, ...);
 **   <li> [sqlite3_memory_used()]
 **   <li> [sqlite3_memory_highwater()]
 **   <li> [sqlite3_soft_heap_limit()]
+**   <li> sqlite3_memory_status()
 **   </ul>
 ** </dd>
 ** </dl>
 */ 
-#define SQLITE_CONFIG_SINGLETHREAD       1  /* nil */
-#define SQLITE_CONFIG_MULTITHREAD        2  /* nil */
-#define SQLITE_CONFIG_SERIALIZED         3  /* nil */
-#define SQLITE_CONFIG_MALLOC             4  /* malloc, free, realloc, memsize */
-#define SQLITE_CONFIG_MEMSTATS           5  /* boolean */
+#define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
+#define SQLITE_CONFIG_MULTITHREAD   2  /* nil */
+#define SQLITE_CONFIG_SERIALIZED    3  /* nil */
+#define SQLITE_CONFIG_MALLOC        4  /* malloc,free,realloc,memsize,roundup */
+#define SQLITE_CONFIG_MEMSTATS      5  /* boolean */
 
 /* These options are to be added later.  Currently unused and undocumented. */
-#define SQLITE_CONFIG_PAGEMALLOC         6  /* malloc, free */
-#define SQLITE_CONFIG_TEMPMALLOC         7  /* malloc, free */
-#define SQLITE_CONFIG_HEAP               8  /* void*, int64 */
-#define SQLITE_CONFIG_PAGEHEAP           9  /* void*, int64 */
-#define SQLITE_CONFIG_TEMPHEAP          10  /* void*, int64 */
+#define SQLITE_CONFIG_HEAP          6  /* void*, int64, min, max, tmp */
 
 
 /*
@@ -5723,15 +5720,19 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** calling thread or is not currently allocated.  {F17033} SQLite will
 ** never do either. {END}
 **
+** If the argument to sqlite3_mutex_enter(), sqlite3_mutex_try(), or
+** sqlite3_mutex_leave() is a NULL pointer, then all three routines
+** behave as no-ops.
+**
 ** See also: [sqlite3_mutex_held()] and [sqlite3_mutex_notheld()].
 */
-int sqlite3_mutex_init();
+int sqlite3_mutex_init(void);
 sqlite3_mutex *sqlite3_mutex_alloc(int);
 void sqlite3_mutex_free(sqlite3_mutex*);
 void sqlite3_mutex_enter(sqlite3_mutex*);
 int sqlite3_mutex_try(sqlite3_mutex*);
 void sqlite3_mutex_leave(sqlite3_mutex*);
-int sqlite_mutex_end();
+int sqlite3_mutex_end(void);
 
 /*
 ** CAPI3REF: Mutex Verifcation Routines {F17080}

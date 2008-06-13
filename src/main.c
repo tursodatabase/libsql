@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.442 2008/05/26 20:19:26 drh Exp $
+** $Id: main.c,v 1.443 2008/06/13 18:24:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -52,6 +52,123 @@ void (*sqlite3IoTrace)(const char*, ...) = 0;
 ** See also the "PRAGMA temp_store_directory" SQL command.
 */
 char *sqlite3_temp_directory = 0;
+
+/*
+** Flags to help SQLite determine if it has been initialized.
+*/
+static int sqlite3IsInit = 0;        /* Initialization has started */
+static int sqlite3FullInit = 0;      /* Initialization is complete */
+
+/*
+** Initialize SQLite.  
+**
+** This routine must be called to initialize the memory allocation,
+** VFS, and mutex subsystesms prior to doing any serious work with
+** SQLite.  But as long as you do not compile with SQLITE_OMIT_AUTOINIT
+** this routine will be called automatically by key routines such as
+** sqlite3_open().  
+**
+** This routine is a no-op except on its very first call for the process,
+** or for the first call after a call to sqlite3_shutdown.
+*/
+int sqlite3_initialize(void){
+  int rc;
+  if( sqlite3IsInit ) return SQLITE_OK;
+  rc = sqlite3_mutex_init();
+  if( rc==SQLITE_OK ){
+#ifndef SQLITE_MUTEX_NOOP
+    sqlite3_mutex *pMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+#endif
+    sqlite3_mutex_enter(pMutex);
+    if( sqlite3IsInit==0 ){
+      sqlite3IsInit = 1;
+      if( rc==SQLITE_OK ) rc = sqlite3MallocInit();
+      if( rc==SQLITE_OK ) rc = sqlite3_os_init();
+      if( rc!=SQLITE_OK ){
+        sqlite3IsInit = 0;
+      }else{
+        sqlite3FullInit = 1;
+      }
+    }
+    sqlite3_mutex_leave(pMutex);
+  }
+  return rc;
+}
+
+/*
+** Undo the effects of sqlite3_initialize().  Must not be called while
+** there are outstanding database connections or memory allocations or
+** while any part of SQLite is otherwise in use in any thread.  This
+** routine is not threadsafe.  Not by a long shot.
+*/
+int sqlite3_shutdown(void){
+  sqlite3_os_end();
+  sqlite3_mutex_end();
+  sqlite3FullInit = 0;
+  sqlite3IsInit = 0;
+  return SQLITE_OK;
+}
+
+/*
+** This API allows applications to modify the global configuration of
+** the SQLite library at run-time.
+**
+** This routine should only be called when there are no outstanding
+** database connections or memory allocations.  This routine is not
+** threadsafe.  Failure to heed these warnings can lead to unpredictable
+** behavior.
+*/
+int sqlite3_config(int op, ...){
+  va_list ap;
+  int rc = SQLITE_OK;
+
+  /* sqlite3_config() shall return SQLITE_MISUSE if it is invoked while
+  ** the SQLite library is in use. */
+  if( sqlite3FullInit ) return SQLITE_MISUSE;
+
+  va_start(ap, op);
+  switch( op ){
+    case SQLITE_CONFIG_SINGLETHREAD: {
+      /* Disable all mutexing */
+      sqlite3Config.bCoreMutex = 0;
+      sqlite3Config.bFullMutex = 0;
+      break;
+    }
+    case SQLITE_CONFIG_MULTITHREAD: {
+      /* Disable mutexing of database connections */
+      /* Enable mutexing of core data structures */
+      sqlite3Config.bCoreMutex = 1;
+      sqlite3Config.bFullMutex = 0;
+      break;
+    }
+    case SQLITE_CONFIG_SERIALIZED: {
+      /* Enable all mutexing */
+      sqlite3Config.bCoreMutex = 1;
+      sqlite3Config.bFullMutex = 1;
+      break;
+    }
+    case SQLITE_CONFIG_MALLOC: {
+      /* Specify an alternative malloc implementation */
+      sqlite3Config.xMalloc = va_arg(ap, void*(*)(int));
+      sqlite3Config.xFree = va_arg(ap, void(*)(void*));
+      sqlite3Config.xRealloc = va_arg(ap, void*(*)(void*,int));
+      sqlite3Config.xMemsize = va_arg(ap, int(*)(void*));
+      sqlite3Config.xRoundup = va_arg(ap, int(*)(int));
+      break;
+    }
+    case SQLITE_CONFIG_MEMSTATS: {
+      /* Enable or disable the malloc status collection */
+      sqlite3Config.bMemstat = va_arg(ap, int);
+      break;
+    }
+    default: {
+      rc = SQLITE_ERROR;
+      break;
+    }
+  }
+  va_end(ap);
+  return rc;
+}
 
 /*
 ** Routine needed to support the testcase() macro.
@@ -1040,6 +1157,11 @@ static int openDatabase(
   int rc;
   CollSeq *pColl;
 
+#ifndef SQLITE_OMIT_AUTOINIT
+  rc = sqlite3_initialize();
+  if( rc ) return rc;
+#endif
+
   /* Remove harmful bits from the flags parameter */
   flags &=  ~( SQLITE_OPEN_DELETEONCLOSE |
                SQLITE_OPEN_MAIN_DB |
@@ -1249,11 +1371,15 @@ int sqlite3_open16(
 ){
   char const *zFilename8;   /* zFilename encoded in UTF-8 instead of UTF-16 */
   sqlite3_value *pVal;
-  int rc = SQLITE_NOMEM;
+  int rc;
 
   assert( zFilename );
   assert( ppDb );
   *ppDb = 0;
+#ifndef SQLITE_OMIT_AUTOINIT
+  rc = sqlite3_initialize();
+  if( rc ) return rc;
+#endif
   pVal = sqlite3ValueNew(0);
   sqlite3ValueSetStr(pVal, -1, zFilename, SQLITE_UTF16NATIVE, SQLITE_STATIC);
   zFilename8 = sqlite3ValueText(pVal, SQLITE_UTF8);
@@ -1264,6 +1390,8 @@ int sqlite3_open16(
     if( rc==SQLITE_OK && !DbHasProperty(*ppDb, 0, DB_SchemaLoaded) ){
       ENC(*ppDb) = SQLITE_UTF16NATIVE;
     }
+  }else{
+    rc = SQLITE_NOMEM;
   }
   sqlite3ValueFree(pVal);
 
@@ -1536,6 +1664,7 @@ int sqlite3_sleep(int ms){
   sqlite3_vfs *pVfs;
   int rc;
   pVfs = sqlite3_vfs_find(0);
+  if( pVfs==0 ) return 0;
 
   /* This function works in milliseconds, but the underlying OsSleep() 
   ** API uses microseconds. Hence the 1000's.

@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.126 2008/06/06 15:49:30 danielk1977 Exp $
+** $Id: os_win.c,v 1.127 2008/06/13 18:24:27 drh Exp $
 */
 #include "sqliteInt.h"
 #if OS_WIN               /* This file is used for windows only */
@@ -1583,5 +1583,12 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
 
   return &winVfs;
 }
+
+/*
+** Initialize and deinitialize the operating system interface.
+** These are stubs for now - populate with real code later...
+*/
+int sqlite3_os_init(void){ return SQLITE_OK; }
+int sqlite3_os_end(void){ return SQLITE_OK; }
 
 #endif /* OS_WIN */

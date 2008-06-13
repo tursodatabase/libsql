@@ -20,7 +20,7 @@
 ** This version of the memory allocation subsystem is used if
 ** and only if SQLITE_MEMORY_SIZE is defined.
 **
-** $Id: mem3.c,v 1.12 2008/02/19 15:15:16 drh Exp $
+** $Id: mem3.c,v 1.13 2008/06/13 18:24:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -295,6 +295,13 @@ int sqlite3MallocSize(void *p){
     iSize = (pBlock[-1].u.hdr.size4x&~3)*2 - 4;
   }
   return iSize;
+}
+
+/*
+** Initialize the memmory allocation subsystem.
+*/
+int sqlite3MallocInit(void){
+  return SQLITE_OK;
 }
 
 /*

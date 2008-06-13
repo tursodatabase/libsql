@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.186 2008/06/06 15:49:30 danielk1977 Exp $
+** $Id: os_unix.c,v 1.187 2008/06/13 18:24:27 drh Exp $
 */
 #include "sqliteInt.h"
 #if OS_UNIX              /* This file is used on unix only */
@@ -2810,5 +2810,13 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
   
   return &unixVfs;
 }
+
+/*
+** Initialize and deinitialize the operating system interface.
+** These are stubs for now - populate with real code later...
+*/
+int sqlite3_os_init(void){ return SQLITE_OK; }
+int sqlite3_os_end(void){ return SQLITE_OK; }
+
  
 #endif /* OS_UNIX */

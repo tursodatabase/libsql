@@ -151,7 +151,7 @@ NAWK = @AWK@
 #
 OBJS0 = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo \
         btree.lo build.lo callback.lo complete.lo date.lo \
-        delete.lo expr.lo fault.lo func.lo \
+        delete.lo expr.lo fault.lo func.lo global.lo \
         hash.lo journal.lo insert.lo loadext.lo \
         main.lo malloc.lo mem1.lo mem2.lo mem3.lo mem4.lo mem5.lo mutex.lo \
         mutex_os2.lo mutex_unix.lo mutex_w32.lo \
@@ -192,6 +192,7 @@ SRC = \
   $(TOP)/src/expr.c \
   $(TOP)/src/fault.c \
   $(TOP)/src/func.c \
+  $(TOP)/src/global.c \
   $(TOP)/src/hash.c \
   $(TOP)/src/hash.h \
   $(TOP)/src/hwtime.h \
@@ -507,6 +508,9 @@ fault.lo:	$(TOP)/src/fault.c $(HDR)
 
 func.lo:	$(TOP)/src/func.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/func.c
+
+global.lo:	$(TOP)/src/global.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/global.c
 
 hash.lo:	$(TOP)/src/hash.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/hash.c

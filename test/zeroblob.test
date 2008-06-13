@@ -13,7 +13,7 @@
 # including the sqlite3_bind_zeroblob(), sqlite3_result_zeroblob(),
 # and the built-in zeroblob() SQL function.
 #
-# $Id: zeroblob.test,v 1.12 2008/06/12 18:17:40 drh Exp $
+# $Id: zeroblob.test,v 1.13 2008/06/13 18:24:28 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,7 +28,7 @@ ifcapable !incrblob {
 # But it does get inserted into the database correctly.
 #
 db eval {PRAGMA cache_size=10}
-sqlite3_memory_highwater
+sqlite3_memory_highwater 1
 unset -nocomplain memused
 set memused [sqlite3_memory_used]
 do_test zeroblob-1.1 {

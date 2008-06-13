@@ -20,7 +20,7 @@
 ** This version of the memory allocation subsystem is used if
 ** and only if SQLITE_POW2_MEMORY_SIZE is defined.
 **
-** $Id: mem5.c,v 1.4 2008/02/19 15:15:16 drh Exp $
+** $Id: mem5.c,v 1.5 2008/06/13 18:24:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -281,6 +281,13 @@ int sqlite3MallocSize(void *p){
     iSize = 1 << ((mem.aCtrl[i]&CTRL_LOGSIZE) + SQLITE_POW2_LOGMIN);
   }
   return iSize;
+}
+
+/*
+** Initialize the memmory allocation subsystem.
+*/
+int sqlite3MallocInit(void){
+  return SQLITE_OK;
 }
 
 /*

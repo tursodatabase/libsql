@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem2.c,v 1.26 2008/04/10 14:57:25 drh Exp $
+** $Id: mem2.c,v 1.27 2008/06/13 18:24:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -238,6 +238,13 @@ int sqlite3MallocSize(void *p){
   }
   pHdr = sqlite3MemsysGetHeader(p);
   return pHdr->iSize;
+}
+
+/*
+** Initialize the memmory allocation subsystem.
+*/
+int sqlite3MallocInit(void){
+  return SQLITE_OK;
 }
 
 /*

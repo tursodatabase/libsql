@@ -19,7 +19,7 @@
 ** implementation is suitable for testing.
 ** debugging purposes
 **
-** $Id: mutex.c,v 1.17 2008/03/26 18:34:43 danielk1977 Exp $
+** $Id: mutex.c,v 1.18 2008/06/13 18:24:27 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -37,6 +37,12 @@ struct sqlite3_mutex {
   int id;     /* The mutex type */
   int cnt;    /* Number of entries without a matching leave */
 };
+
+/*
+** Initialize and deinitialize the mutex subsystem.
+*/
+int sqlite3_mutex_init(void){ return SQLITE_OK; }
+int sqlite3_mutex_end(void){ return SQLITE_OK; }
 
 /*
 ** The sqlite3_mutex_alloc() routine allocates a new

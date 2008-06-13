@@ -203,6 +203,7 @@ proc copy_file {filename} {
 foreach file {
    sqliteInt.h
 
+   global.c
    date.c
    os.c
 

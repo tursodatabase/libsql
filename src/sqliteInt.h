@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.707 2008/06/06 15:04:37 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.708 2008/06/13 18:24:27 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1732,6 +1732,24 @@ typedef struct {
 } InitData;
 
 /*
+** Structure containing global configuration data for the SQLite library.
+*/
+struct Sqlite3Config {
+  void *(*xMalloc)(int);            /* Low-level malloc() */
+  void *(*xRealloc)(void*,int);     /* Low-level realloc() */
+  void (*xFree)(void*);             /* Low-level free() */
+  int (*xMemsize)(void*);           /* Return size of an allocation */
+  int (*xRoundup)(int);             /* Size of allocation given request */
+  void *pHeap;                      /* Heap storage space */
+  sqlite3_int64 nHeap;              /* Size of pHeap[] */
+  int mnReq, mxReq;                 /* Min and max memory request sizes */
+  int nTemp;                        /* Part of pHeap for temporary allos */
+  int bMemstat;                     /* True to enable memory status */
+  int bCoreMutex;                   /* True to enable core mutexing */
+  int bFullMutex;                   /* True to enable full mutexing */
+};
+
+/*
 ** Assuming zIn points to the first byte of a UTF-8 character,
 ** advance zIn to point to the first byte of the next UTF-8 character.
 */
@@ -1763,6 +1781,7 @@ int sqlite3StrICmp(const char *, const char *);
 int sqlite3StrNICmp(const char *, const char *, int);
 int sqlite3IsNumber(const char*, int*, u8);
 
+int sqlite3MallocInit(void);
 void *sqlite3MallocZero(unsigned);
 void *sqlite3DbMallocZero(sqlite3*, unsigned);
 void *sqlite3DbMallocRaw(sqlite3*, unsigned);
@@ -2060,6 +2079,7 @@ int sqlite3ValueFromExpr(sqlite3 *, Expr *, u8, u8, sqlite3_value **);
 void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 #ifndef SQLITE_AMALGAMATION
 extern const unsigned char sqlite3UpperToLower[];
+extern struct Sqlite3Config sqlite3Config;
 #endif
 void sqlite3RootPageMoved(Db*, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);

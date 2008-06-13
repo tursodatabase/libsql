@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.42 2008/06/12 12:38:10 drh Exp $
+** $Id: os_os2.c,v 1.43 2008/06/13 18:24:27 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -1072,5 +1072,12 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
 
   return &os2Vfs;
 }
+
+/*
+** Initialize and deinitialize the operating system interface.
+** These are stubs for now - populate with real code later...
+*/
+int sqlite3_os_init(void){ return SQLITE_OK; }
+int sqlite3_os_end(void){ return SQLITE_OK; }
 
 #endif /* OS_OS2 */
