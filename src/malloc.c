@@ -9,10 +9,10 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
+**
 ** Memory allocation functions used throughout sqlite.
 **
-**
-** $Id: malloc.c,v 1.15 2008/03/26 18:34:43 danielk1977 Exp $
+** $Id: malloc.c,v 1.16 2008/06/14 16:56:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -67,12 +67,252 @@ int sqlite3_release_memory(int n){
 #endif
 }
 
+/*
+** State information local to the memory allocation subsystem.
+*/
+static struct {
+  sqlite3_mutex *mutex;         /* Mutex to serialize access */
+
+  /*
+  ** The alarm callback and its arguments.  The mem0.mutex lock will
+  ** be held while the callback is running.  Recursive calls into
+  ** the memory subsystem are allowed, but no new callbacks will be
+  ** issued.  The alarmBusy variable is set to prevent recursive
+  ** callbacks.
+  */
+  sqlite3_int64 alarmThreshold;
+  void (*alarmCallback)(void*, sqlite3_int64,int);
+  void *alarmArg;
+  int alarmBusy;
+
+  /*
+  ** Performance statistics
+  */
+  sqlite3_int64 nowUsed;  /* Main memory currently in use */
+  sqlite3_int64 mxUsed;   /* Highwater mark for nowUsed */
+  int mxReq;              /* maximum request size for main or page-cache mem */
+} mem0;
+
+/*
+** Initialize the memory allocation subsystem.
+*/
+int sqlite3MallocInit(void){
+  if( sqlite3Config.m.xMalloc==0 ){
+    sqlite3MemSetDefault();
+  }
+  memset(&mem0, 0, sizeof(mem0));
+  if( sqlite3Config.bMemstat && sqlite3Config.bCoreMutex ){
+    mem0.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
+  }
+  return sqlite3Config.m.xInit(sqlite3Config.m.pAppData);
+}
+
+/*
+** Deinitialize the memory allocation subsystem.
+*/
+void sqlite3MallocEnd(void){
+   sqlite3Config.m.xShutdown(sqlite3Config.m.pAppData);
+}
+
+/*
+** Return the amount of memory currently checked out.
+*/
+sqlite3_int64 sqlite3_memory_used(void){
+  sqlite3_int64 n;
+  sqlite3_mutex_enter(mem0.mutex);
+  n = mem0.nowUsed;
+  sqlite3_mutex_leave(mem0.mutex);  
+  return n;
+}
+
+/*
+** Return the maximum amount of memory that has ever been
+** checked out since either the beginning of this process
+** or since the most recent reset.
+*/
+sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
+  sqlite3_int64 n;
+  sqlite3_mutex_enter(mem0.mutex);
+  n = mem0.mxUsed;
+  if( resetFlag ){
+    mem0.mxUsed = mem0.nowUsed;
+  }
+  sqlite3_mutex_leave(mem0.mutex);  
+  return n;
+}
+
+/*
+** Change the alarm callback
+*/
+int sqlite3_memory_alarm(
+  void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
+  void *pArg,
+  sqlite3_int64 iThreshold
+){
+  sqlite3_mutex_enter(mem0.mutex);
+  mem0.alarmCallback = xCallback;
+  mem0.alarmArg = pArg;
+  mem0.alarmThreshold = iThreshold;
+  sqlite3_mutex_leave(mem0.mutex);
+  return SQLITE_OK;
+}
+
+/*
+** Trigger the alarm 
+*/
+static void sqlite3MallocAlarm(int nByte){
+  void (*xCallback)(void*,sqlite3_int64,int);
+  sqlite3_int64 nowUsed;
+  void *pArg;
+  if( mem0.alarmCallback==0 || mem0.alarmBusy  ) return;
+  mem0.alarmBusy = 1;
+  xCallback = mem0.alarmCallback;
+  nowUsed = mem0.nowUsed;
+  pArg = mem0.alarmArg;
+  sqlite3_mutex_leave(mem0.mutex);
+  xCallback(pArg, nowUsed, nByte);
+  sqlite3_mutex_enter(mem0.mutex);
+  mem0.alarmBusy = 0;
+}
+
+
+/*
+** Allocate memory.  This routine is like sqlite3_malloc() except that it
+** assumes the memory subsystem has already been initialized.
+*/
+void *sqlite3Malloc(int n){
+  void *p;
+  int nFull;
+  if( n<=0 ){
+    return 0;
+  }else if( sqlite3Config.bMemstat ){
+    nFull = sqlite3Config.m.xRoundup(n);
+    sqlite3_mutex_enter(mem0.mutex);
+    if( n>mem0.mxReq ) mem0.mxReq = n;
+    if( mem0.alarmCallback!=0 && mem0.nowUsed+nFull>=mem0.alarmThreshold ){
+      sqlite3MallocAlarm(nFull);
+    }
+    if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ){
+      p = 0;
+    }else{
+      p = sqlite3Config.m.xMalloc(nFull);
+      if( p==0 ){
+        sqlite3MallocAlarm(nFull);
+        p = malloc(nFull);
+      }
+    }
+    if( p ){
+      mem0.nowUsed += nFull;
+      if( mem0.nowUsed>mem0.mxUsed ){
+        mem0.mxUsed = mem0.nowUsed;
+      }
+    }
+    sqlite3_mutex_leave(mem0.mutex);
+  }else{
+    p = sqlite3Config.m.xMalloc(n);
+  }
+  return p;
+}
+
+/*
+** This version of the memory allocation is for use by the application.
+** First make sure the memory subsystem is initialized, then do the
+** allocation.
+*/
+void *sqlite3_malloc(int n){
+#ifndef SQLITE_OMIT_AUTOINIT
+  if( sqlite3_initialize() ) return 0;
+#endif
+  return sqlite3Malloc(n);
+}
+
+/*
+** Return the size of a memory allocation previously obtained from
+** sqlite3Malloc() or sqlite3_malloc().
+*/
+int sqlite3MallocSize(void *p){
+  return sqlite3Config.m.xSize(p);
+}
+
+/*
+** Free memory previously obtained from sqlite3Malloc().
+*/
+void sqlite3_free(void *p){
+  if( p==0 ) return;
+  if( sqlite3Config.bMemstat ){
+    sqlite3_mutex_enter(mem0.mutex);
+    mem0.nowUsed -= sqlite3MallocSize(p);
+    sqlite3Config.m.xFree(p);
+    sqlite3_mutex_leave(mem0.mutex);
+  }else{
+    sqlite3Config.m.xFree(p);
+  }
+}
+
+/*
+** Change the size of an existing memory allocation
+*/
+void *sqlite3Realloc(void *pOld, int nBytes){
+  int nOld, nNew;
+  void *pNew;
+  if( pOld==0 ){
+    return sqlite3Malloc(nBytes);
+  }
+  if( nBytes<=0 ){
+    sqlite3_free(pOld);
+    return 0;
+  }
+  nOld = sqlite3MallocSize(pOld);
+  if( sqlite3Config.bMemstat ){
+    sqlite3_mutex_enter(mem0.mutex);
+    if( nBytes>mem0.mxReq ) mem0.mxReq = nBytes;
+    nNew = sqlite3Config.m.xRoundup(nBytes);
+    if( nOld==nNew ){
+      pNew = pOld;
+    }else{
+      if( mem0.nowUsed+nNew-nOld>=mem0.alarmThreshold ){
+        sqlite3MallocAlarm(nNew-nOld);
+      }
+      if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ){
+        pNew = 0;
+      }else{
+        pNew = sqlite3Config.m.xRealloc(pOld, nNew);
+        if( pNew==0 ){
+          sqlite3MallocAlarm(nBytes);
+          pNew = sqlite3Config.m.xRealloc(pOld, nNew);
+        }
+      }
+      if( pNew ){
+        mem0.nowUsed += nNew-nOld;
+        if( mem0.nowUsed>mem0.mxUsed ){
+          mem0.mxUsed = mem0.nowUsed;
+        }
+      }
+    }
+    sqlite3_mutex_leave(mem0.mutex);
+  }else{
+    pNew = sqlite3Config.m.xRealloc(pOld, nBytes);
+  }
+  return pNew;
+}
+
+/*
+** The public interface to sqlite3Realloc.  Make sure that the memory
+** subsystem is initialized prior to invoking sqliteRealloc.
+*/
+void *sqlite3_realloc(void *pOld, int n){
+#ifndef SQLITE_OMIT_AUTOINIT
+  if( sqlite3_initialize() ) return 0;
+#endif
+  return sqlite3Realloc(pOld, n);
+}
+
 
 /*
 ** Allocate and zero memory.
 */ 
-void *sqlite3MallocZero(unsigned n){
-  void *p = sqlite3_malloc(n);
+void *sqlite3MallocZero(int n){
+  void *p = sqlite3Malloc(n);
   if( p ){
     memset(p, 0, n);
   }
@@ -83,7 +323,7 @@ void *sqlite3MallocZero(unsigned n){
 ** Allocate and zero memory.  If the allocation fails, make
 ** the mallocFailed flag in the connection pointer.
 */
-void *sqlite3DbMallocZero(sqlite3 *db, unsigned n){
+void *sqlite3DbMallocZero(sqlite3 *db, int n){
   void *p = sqlite3DbMallocRaw(db, n);
   if( p ){
     memset(p, 0, n);
@@ -95,10 +335,10 @@ void *sqlite3DbMallocZero(sqlite3 *db, unsigned n){
 ** Allocate and zero memory.  If the allocation fails, make
 ** the mallocFailed flag in the connection pointer.
 */
-void *sqlite3DbMallocRaw(sqlite3 *db, unsigned n){
+void *sqlite3DbMallocRaw(sqlite3 *db, int n){
   void *p = 0;
   if( !db || db->mallocFailed==0 ){
-    p = sqlite3_malloc(n);
+    p = sqlite3Malloc(n);
     if( !p && db ){
       db->mallocFailed = 1;
     }

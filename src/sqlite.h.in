@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.326 2008/06/13 18:24:27 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.327 2008/06/14 16:56:23 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -943,6 +943,60 @@ int sqlite3_os_end(void);
 int sqlite3_config(int, ...);
 
 /*
+** CAPI3REF: Memory Allocation Routines {F10155}
+**
+** An instance of this object defines the interface between SQLite
+** and low-level memory allocation routines.  
+**
+** This object is used in only one place in the SQLite interface.
+** A pointer to an instance of this object is the argument to
+** [sqlite3_config] when the configuration option is
+** [SQLITE_CONFIG_MALLOC].  By creating an instance of this object
+** and passing it to [sqlite3_config] during configuration, an
+** application can specify an alternative memory allocation subsystem
+** for SQLite to use for all of its dynamic memory needs.
+**
+** Note that SQLite comes with a built-in memory allocator that is
+** perfectly adequate for the overwhelming majority of applications
+** and that this object is only useful to a tiny minority of applications
+** with specialized memory allocation requirements.  This object is
+** also used during testing of SQLite in order to specify an alternative
+** memory allocator that simulates memory out-of-memory conditions in
+** order to verify that SQLite recovers gracefully from such
+** conditions.
+**
+** The xMalloc, xFree, and xRealloc methods should work like the
+** malloc(), free(), and realloc() functions from the standard library.
+**
+** xSize should return the allocated size of a memory allocation
+** previously obtained from xMalloc or xRealloc.  The allocated size
+** is always at least as big as the requested size but may be larger.
+**
+** The xRoundup method returns what would be the allocated size of
+** a memory allocation given a particular requested size.  Most memory
+** allocators round up memory allocations at least to the next multiple
+** of 8.  Some round up to a larger multiple or to a power of 2. 
+**
+** The xInit method initializes the memory allocator.  (For example,
+** it might allocate any require mutexes or initialize internal data
+** structures.  The xShutdown method is invoked (indirectly) by
+** [sqlite3_shutdown()] and should deallocate any resources acquired
+** by xInit.  The pAppData pointer is used as the only parameter to
+** xInit and xShutdown.
+*/
+typedef struct sqlite3_mem_methods sqlite3_mem_methods;
+struct sqlite3_mem_methods {
+  void *(*xMalloc)(int);         /* Memory allocation function */
+  void (*xFree)(void*);          /* Free a prior allocation */
+  void *(*xRealloc)(void*,int);  /* Resize an allocation */
+  int (*xSize)(void*);           /* Return the size of an allocation */
+  int (*xRoundup)(int);          /* Round up request size to allocation size */
+  int (*xInit)(void*);           /* Initialize the memory allocator */
+  void (*xShutdown)(void*);      /* Deinitialize the memory allocator */
+  void *pAppData;                /* Argument to xInit() and xShutdown() */
+};
+
+/*
 ** CAPI3REF: Configuration Options {F10160}
 **
 ** These constants are the available integer configuration options that
@@ -973,16 +1027,12 @@ int sqlite3_config(int, ...);
 ** same [prepared statement] in different threads at the same time.</dd>
 **
 ** <dt>SQLITE_CONFIG_MALLOC</dt>
-** <dd>This option takes five arguments.  The first three
-** arguments are pointers to functions that emulate malloc(), free(),
-** and realloc(), respectively.  The fourth argument must be a pointer to
-** a function that returns the size of a prior allocation when handed a pointer
-** to the allocation. The fifth argument is a pointer to a function that
-** returns the rounded-up size of a memory allocation given the requested
-** allocation size.  This option is used to replace the default memory
-** allocator with an application-defined memory allocator.</dd>
+** <dd>This option takes a single argument which is a pointer to an
+** instance of the [sqlite3_mem_methods] structure.  The argument specifics
+** alternative low-level memory allocation routines to be used in place
+** the memory allocation routines built into SQLite.</dd>
 **
-** <dt>SQLITE_CONFIG_MEMSTATS</dt>
+** <dt>SQLITE_CONFIG_MEMSTATUS</dt>
 ** <dd>This option takes single boolean argument which enables or disables
 ** the collection of memory allocation statistics.  When disabled, the
 ** following SQLite interfaces become non-operational:
@@ -998,8 +1048,8 @@ int sqlite3_config(int, ...);
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
 #define SQLITE_CONFIG_MULTITHREAD   2  /* nil */
 #define SQLITE_CONFIG_SERIALIZED    3  /* nil */
-#define SQLITE_CONFIG_MALLOC        4  /* malloc,free,realloc,memsize,roundup */
-#define SQLITE_CONFIG_MEMSTATS      5  /* boolean */
+#define SQLITE_CONFIG_MALLOC        4  /* sqlite3_mem_methods* */
+#define SQLITE_CONFIG_MEMSTATUS     5  /* boolean */
 
 /* These options are to be added later.  Currently unused and undocumented. */
 #define SQLITE_CONFIG_HEAP          6  /* void*, int64, min, max, tmp */

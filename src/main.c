@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.443 2008/06/13 18:24:27 drh Exp $
+** $Id: main.c,v 1.444 2008/06/14 16:56:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -103,6 +103,7 @@ int sqlite3_initialize(void){
 */
 int sqlite3_shutdown(void){
   sqlite3_os_end();
+  sqlite3MallocEnd();
   sqlite3_mutex_end();
   sqlite3FullInit = 0;
   sqlite3IsInit = 0;
@@ -149,14 +150,10 @@ int sqlite3_config(int op, ...){
     }
     case SQLITE_CONFIG_MALLOC: {
       /* Specify an alternative malloc implementation */
-      sqlite3Config.xMalloc = va_arg(ap, void*(*)(int));
-      sqlite3Config.xFree = va_arg(ap, void(*)(void*));
-      sqlite3Config.xRealloc = va_arg(ap, void*(*)(void*,int));
-      sqlite3Config.xMemsize = va_arg(ap, int(*)(void*));
-      sqlite3Config.xRoundup = va_arg(ap, int(*)(int));
+      sqlite3Config.m = *va_arg(ap, sqlite3_mem_methods*);
       break;
     }
-    case SQLITE_CONFIG_MEMSTATS: {
+    case SQLITE_CONFIG_MEMSTATUS: {
       /* Enable or disable the malloc status collection */
       sqlite3Config.bMemstat = va_arg(ap, int);
       break;

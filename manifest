@@ -1,5 +1,5 @@
-C Progress\stoward\simplementation\sof\ssqlite3_config()\sand\sa\srework\sof\sthe\nmutex\sand\smemory\sallocation\ssubsystems.\s\sThis\sis\san\sincremental\scheck-in.\s(CVS\s5218)
-D 2008-06-13T18:24:27
+C Continuing\sprogress\son\sthe\snew\smemory\sallocation\ssubsystem.\s\sAdded\sthe\nsqlite3_mem_methods\sstructure\sfor\sdefining\snew\smemory\sallocators\sat\nrun-time.\s(CVS\s5219)
+D 2008-06-14T16:56:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -107,7 +107,7 @@ F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
 F src/expr.c ecb3b23d3543427cba3e2ac12a6c6ae4bb20d39b
 F src/fault.c 1f6177188edb00641673e462f3fab8cba9f7422b
 F src/func.c 77a910a1ca7613d291fd0b5cba3be14c02f0dce0
-F src/global.c 8a5c66b6e61c38072c697179dbc2d708e39ddc96
+F src/global.c 2304cfa3288763bd2fed10caf8c6fbaa2b383f4e
 F src/hash.c fd8cb06fb54c2fe7d48c9195792059a2e5be8b70
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
 F src/hwtime.h 745961687a65ef8918cd551c02e5ccb4b8e772de
@@ -115,15 +115,15 @@ F src/insert.c c2ead6c36566de8e3f130e7ab1431723a269d5d7
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 8f5a2b25d9673b4004287cf2bf51dbf7d0738406
 F src/loadext.c f99a75534a53e281fa2461239ee4a4b4bf6ad564
-F src/main.c 88caac737f4bdc646c7b298ebca867e9f3828208
-F src/malloc.c 12c1ae98ef1eff34b13c9eb526e0b7b479e1e820
+F src/main.c 4540ec2c0ba99a0dcb8bd114f733007958c6258e
+F src/malloc.c ed5c36588992e63ce5dccdfeb3c8071b8fb34e17
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
-F src/mem1.c 18ca1e2543252ce13cd9c1ba67853b2d8fece3dd
-F src/mem2.c cb99d152253ae11cc2ccc4073611925e81c2212d
+F src/mem1.c 9ac005ab606a58ffe32e40edd7526375be82a008
+F src/mem2.c 10df776854bee610d5228e6184aaf3bd19f6e542
 F src/mem3.c 617c2e2a72a10ecc5c01af14efc8c2596d2c2e87
 F src/mem4.c 45c328ec6dcb7e8d319cb383615b5fe547ca5409
 F src/mem5.c 3d2ff00c6e3bc37f5d82cd82e1a123b246fb7b39
-F src/mutex.c 1ff43a9f9a8e5a0d98ffccd77f56859d9fd9ffcf
+F src/mutex.c 639881f679d75b30813536ddf9224154321c31fb
 F src/mutex.h 91292a8351b5844f7d622b0da83df4e651a8f40b
 F src/mutex_os2.c b8c1231319e966875f251a7ec137bea353546b87
 F src/mutex_unix.c 28588d08a2221623d66655e536880003fd5234d6
@@ -143,9 +143,9 @@ F src/printf.c f2d4f6c5b0ec24b643e85fe60258adad8b1f6acc
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in 487f5490a9677ef0c105c21a9595bb587be1da6a
+F src/sqlite.h.in 0995188c694b36d041424e1b65b6e01d1802c70b
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h c7b8bfb55381f62962eafd9826846c9e6e8bd429
+F src/sqliteInt.h cd66968455ee85b1ffed33bb241cbf30fe760d32
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c c57e740e30bd6dda678796eed62c7f0e64689834
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e93079be83a9df7328d9b910fcbdb762be7ec815
-R b8763d642b06205a0aac83d31a5eaad0
+P a03c5af115889f477e17187a198a7d2d40bc76bf
+R 7a7d2d9fd4f0061599821d0212d56ac9
 U drh
-Z 7798430e342a4a876c2baf52ecfbbead
+Z 3478c8b21bc53c2ad4322f8aef50d224

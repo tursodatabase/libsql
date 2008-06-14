@@ -12,7 +12,7 @@
 **
 ** This file contains definitions of global variables and contants.
 **
-** $Id: global.c,v 1.1 2008/06/13 18:24:27 drh Exp $
+** $Id: global.c,v 1.2 2008/06/14 16:56:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -66,4 +66,4 @@ const unsigned char sqlite3UpperToLower[] = {
 ** The following singleton contains the global configuration for
 ** the SQLite library.
 */
-struct Sqlite3Config sqlite3Config;
+struct Sqlite3Config sqlite3Config = { 1, 1, 1, };
