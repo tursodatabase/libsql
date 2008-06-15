@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.327 2008/06/14 16:56:23 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.328 2008/06/15 02:51:48 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -977,6 +977,14 @@ int sqlite3_config(int, ...);
 ** allocators round up memory allocations at least to the next multiple
 ** of 8.  Some round up to a larger multiple or to a power of 2. 
 **
+** The xTempMalloc and xTempFree methods are used to allocate a large
+** chunk of temporary-use memory whose lifetime is a single procedure
+** call.  These routines may be the same as xMalloc and xFree, if desired,
+** though some specialized applications may benefit from using a different
+** allocation algorithm in this case. 
+** SQLite will never request more than one outstanding memory allocation
+** per thread using xTempMalloc.
+**
 ** The xInit method initializes the memory allocator.  (For example,
 ** it might allocate any require mutexes or initialize internal data
 ** structures.  The xShutdown method is invoked (indirectly) by
@@ -991,6 +999,8 @@ struct sqlite3_mem_methods {
   void *(*xRealloc)(void*,int);  /* Resize an allocation */
   int (*xSize)(void*);           /* Return the size of an allocation */
   int (*xRoundup)(int);          /* Round up request size to allocation size */
+  void *(*xTempMalloc)(int);     /* Allocate temporary space */
+  void (*xTempFree)(void*);      /* Free space from xTempMalloc */
   int (*xInit)(void*);           /* Initialize the memory allocator */
   void (*xShutdown)(void*);      /* Deinitialize the memory allocator */
   void *pAppData;                /* Argument to xInit() and xShutdown() */

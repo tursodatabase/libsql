@@ -19,7 +19,7 @@
 ** implementation is suitable for testing.
 ** debugging purposes
 **
-** $Id: mutex.c,v 1.19 2008/06/14 16:56:23 drh Exp $
+** $Id: mutex.c,v 1.20 2008/06/15 02:51:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -55,7 +55,7 @@ sqlite3_mutex *sqlite3_mutex_alloc(int id){
   switch( id ){
     case SQLITE_MUTEX_FAST:
     case SQLITE_MUTEX_RECURSIVE: {
-      pNew = sqlite3_malloc(sizeof(*pNew));
+      pNew = sqlite3Malloc(sizeof(*pNew));
       if( pNew ){
         pNew->id = id;
         pNew->cnt = 0;

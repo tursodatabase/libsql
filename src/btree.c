@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.463 2008/06/11 18:27:55 danielk1977 Exp $
+** $Id: btree.c,v 1.464 2008/06/15 02:51:47 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -300,7 +300,7 @@ static int saveCursorPosition(BtCursor *pCur){
   ** data.
   */
   if( rc==SQLITE_OK && 0==pCur->pPage->intKey){
-    void *pKey = sqlite3_malloc(pCur->nKey);
+    void *pKey = sqlite3Malloc(pCur->nKey);
     if( pKey ){
       rc = sqlite3BtreeKey(pCur, 0, pCur->nKey, pKey);
       if( rc==SQLITE_OK ){
@@ -1190,7 +1190,7 @@ int sqlite3BtreeOpen(
   ){
     if( sqlite3SharedCacheEnabled ){
       int nFullPathname = pVfs->mxPathname+1;
-      char *zFullPathname = (char *)sqlite3_malloc(nFullPathname);
+      char *zFullPathname = sqlite3Malloc(nFullPathname);
       sqlite3_mutex *mutexShared;
       p->sharable = 1;
       if( db ){
@@ -1267,9 +1267,6 @@ int sqlite3BtreeOpen(
          || ((pBt->pageSize-1)&pBt->pageSize)!=0 ){
       pBt->pageSize = 0;
       sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize);
-      pBt->maxEmbedFrac = 64;   /* 25% */
-      pBt->minEmbedFrac = 32;   /* 12.5% */
-      pBt->minLeafFrac = 32;    /* 12.5% */
 #ifndef SQLITE_OMIT_AUTOVACUUM
       /* If the magic name ":memory:" will create an in-memory database, then
       ** leave the autoVacuum mode at 0 (do not auto-vacuum), even if
@@ -1285,9 +1282,6 @@ int sqlite3BtreeOpen(
       nReserve = 0;
     }else{
       nReserve = zDbHeader[20];
-      pBt->maxEmbedFrac = zDbHeader[21];
-      pBt->minEmbedFrac = zDbHeader[22];
-      pBt->minLeafFrac = zDbHeader[23];
       pBt->pageSizeFixed = 1;
 #ifndef SQLITE_OMIT_AUTOVACUUM
       pBt->autoVacuum = (get4byte(&zDbHeader[36 + 4*4])?1:0);
@@ -1677,6 +1671,15 @@ static int lockBtree(BtShared *pBt){
     if( page1[19]>1 ){
       goto page1_init_failed;
     }
+
+    /* The maximum embedded fraction must be exactly 25%.  And the minimum
+    ** embedded fraction must be 12.5% for both leaf-data and non-leaf-data.
+    ** The original design allowed these amounts to vary, but as of
+    ** version 3.6.0, we require them to be fixed.
+    */
+    if( memcmp(&page1[21], "\100\040\040",3)!=0 ){
+      goto page1_init_failed;
+    }
     pageSize = get2byte(&page1[16]);
     if( ((pageSize-1)&pageSize)!=0 || pageSize<512 ||
         (SQLITE_MAX_PAGE_SIZE<32768 && pageSize>SQLITE_MAX_PAGE_SIZE)
@@ -1705,9 +1708,6 @@ static int lockBtree(BtShared *pBt){
     }
     pBt->pageSize = pageSize;
     pBt->usableSize = usableSize;
-    pBt->maxEmbedFrac = page1[21];
-    pBt->minEmbedFrac = page1[22];
-    pBt->minLeafFrac = page1[23];
 #ifndef SQLITE_OMIT_AUTOVACUUM
     pBt->autoVacuum = (get4byte(&page1[36 + 4*4])?1:0);
     pBt->incrVacuum = (get4byte(&page1[36 + 7*4])?1:0);
@@ -1727,10 +1727,10 @@ static int lockBtree(BtShared *pBt){
   ** 17 bytes long, 0 to N bytes of payload, and an optional 4 byte overflow
   ** page pointer.
   */
-  pBt->maxLocal = (pBt->usableSize-12)*pBt->maxEmbedFrac/255 - 23;
-  pBt->minLocal = (pBt->usableSize-12)*pBt->minEmbedFrac/255 - 23;
+  pBt->maxLocal = (pBt->usableSize-12)*64/255 - 23;
+  pBt->minLocal = (pBt->usableSize-12)*32/255 - 23;
   pBt->maxLeaf = pBt->usableSize - 35;
-  pBt->minLeaf = (pBt->usableSize-12)*pBt->minLeafFrac/255 - 23;
+  pBt->minLeaf = (pBt->usableSize-12)*32/255 - 23;
   if( pBt->minLocal>pBt->maxLocal || pBt->maxLocal<0 ){
     goto page1_init_failed;
   }
@@ -1823,9 +1823,9 @@ static int newDatabase(BtShared *pBt){
   data[18] = 1;
   data[19] = 1;
   data[20] = pBt->pageSize - pBt->usableSize;
-  data[21] = pBt->maxEmbedFrac;
-  data[22] = pBt->minEmbedFrac;
-  data[23] = pBt->minLeafFrac;
+  data[21] = 64;
+  data[22] = 32;
+  data[23] = 32;
   memset(&data[24], 0, 100-24);
   zeroPage(pP1, PTF_INTKEY|PTF_LEAF|PTF_LEAFDATA );
   pBt->pageSizeFixed = 1;
@@ -3719,14 +3719,14 @@ int sqlite3BtreeMoveto(
         if( available>=nCellKey ){
           c = sqlite3VdbeRecordCompare(nCellKey, pCellKey, pUnKey);
         }else{
-          pCellKey = sqlite3_malloc( nCellKey );
+          pCellKey = sqlite3TempMalloc( nCellKey );
           if( pCellKey==0 ){
             rc = SQLITE_NOMEM;
             goto moveto_finish;
           }
           rc = sqlite3BtreeKey(pCur, 0, nCellKey, (void *)pCellKey);
           c = sqlite3VdbeRecordCompare(nCellKey, pCellKey, pUnKey);
-          sqlite3_free(pCellKey);
+          sqlite3TempFree(pCellKey);
           if( rc ) goto moveto_finish;
         }
       }
@@ -4858,7 +4858,8 @@ static int balance_nonroot(MemPage *pPage){
   int usableSpace;             /* Bytes in pPage beyond the header */
   int pageFlags;               /* Value of pPage->aData[0] */
   int subtotal;                /* Subtotal of bytes in cells on one page */
-  int iSpace = 0;              /* First unused byte of aSpace[] */
+  int iSpace1 = 0;             /* First unused byte of aSpace1[] */
+  int iSpace2 = 0;             /* First unused byte of aSpace2[] */
   MemPage *apOld[NB];          /* pPage and up to two siblings */
   Pgno pgnoOld[NB];            /* Page numbers for each page in apOld[] */
   MemPage *apCopy[NB];         /* Private copies of apOld[] pages */
@@ -4869,8 +4870,9 @@ static int balance_nonroot(MemPage *pPage){
   int szNew[NB+2];             /* Combined size of cells place on i-th page */
   u8 **apCell = 0;             /* All cells begin balanced */
   u16 *szCell;                 /* Local size of all cells in apCell[] */
-  u8 *aCopy[NB];               /* Space for holding data of apCopy[] */
-  u8 *aSpace;                  /* Space to hold copies of dividers cells */
+  u8 *aCopy[NB];         /* Space for holding data of apCopy[] */
+  u8 *aSpace1;           /* Space for copies of dividers cells before balance */
+  u8 *aSpace2 = 0;       /* Space for overflow dividers cells after balance */
 #ifndef SQLITE_OMIT_AUTOVACUUM
   u8 *aFrom = 0;
 #endif
@@ -4988,11 +4990,11 @@ static int balance_nonroot(MemPage *pPage){
   /*
   ** Allocate space for memory structures
   */
-  apCell = sqlite3_malloc( 
+  apCell = sqlite3TempMalloc( 
        nMaxCells*sizeof(u8*)                       /* apCell */
      + nMaxCells*sizeof(u16)                       /* szCell */
      + (ROUND8(sizeof(MemPage))+pBt->pageSize)*NB  /* aCopy */
-     + pBt->pageSize*5                             /* aSpace */
+     + pBt->pageSize                               /* aSpace1 */
      + (ISAUTOVACUUM ? nMaxCells : 0)              /* aFrom */
   );
   if( apCell==0 ){
@@ -5006,13 +5008,18 @@ static int balance_nonroot(MemPage *pPage){
     aCopy[i] = &aCopy[i-1][pBt->pageSize+ROUND8(sizeof(MemPage))];
     assert( ((aCopy[i] - (u8*)apCell) & 7)==0 ); /* 8-byte alignment required */
   }
-  aSpace = &aCopy[NB-1][pBt->pageSize+ROUND8(sizeof(MemPage))];
-  assert( ((aSpace - (u8*)apCell) & 7)==0 ); /* 8-byte alignment required */
+  aSpace1 = &aCopy[NB-1][pBt->pageSize+ROUND8(sizeof(MemPage))];
+  assert( ((aSpace1 - (u8*)apCell) & 7)==0 ); /* 8-byte alignment required */
 #ifndef SQLITE_OMIT_AUTOVACUUM
   if( pBt->autoVacuum ){
-    aFrom = &aSpace[5*pBt->pageSize];
+    aFrom = &aSpace1[pBt->pageSize];
   }
 #endif
+  aSpace2 = sqlite3Malloc(pBt->pageSize);
+  if( aSpace2==0 ){
+    rc = SQLITE_NOMEM;
+    goto balance_cleanup;
+  }
   
   /*
   ** Make copies of the content of pPage and its siblings into aOld[].
@@ -5030,12 +5037,12 @@ static int balance_nonroot(MemPage *pPage){
   /*
   ** Load pointers to all cells on sibling pages and the divider cells
   ** into the local apCell[] array.  Make copies of the divider cells
-  ** into space obtained form aSpace[] and remove the the divider Cells
+  ** into space obtained form aSpace1[] and remove the the divider Cells
   ** from pParent.
   **
   ** If the siblings are on leaf pages, then the child pointers of the
   ** divider cells are stripped from the cells before they are copied
-  ** into aSpace[].  In this way, all cells in apCell[] are without
+  ** into aSpace1[].  In this way, all cells in apCell[] are without
   ** child pointers.  If siblings are not leaves, then all cell in
   ** apCell[] include child pointers.  Either way, all cells in apCell[]
   ** are alike.
@@ -5080,9 +5087,10 @@ static int balance_nonroot(MemPage *pPage){
         u8 *pTemp;
         assert( nCell<nMaxCells );
         szCell[nCell] = sz;
-        pTemp = &aSpace[iSpace];
-        iSpace += sz;
-        assert( iSpace<=pBt->pageSize*5 );
+        pTemp = &aSpace1[iSpace1];
+        iSpace1 += sz;
+        assert( sz<=pBt->pageSize/4 );
+        assert( iSpace1<=pBt->pageSize );
         memcpy(pTemp, apDiv[i], sz);
         apCell[nCell] = pTemp+leafCorrection;
 #ifndef SQLITE_OMIT_AUTOVACUUM
@@ -5303,9 +5311,9 @@ static int balance_nonroot(MemPage *pPage){
       assert( j<nMaxCells );
       pCell = apCell[j];
       sz = szCell[j] + leafCorrection;
+      pTemp = &aSpace2[iSpace2];
       if( !pNew->leaf ){
         memcpy(&pNew->aData[8], pCell, 4);
-        pTemp = 0;
       }else if( leafData ){
         /* If the tree is a leaf-data tree, and the siblings are leaves, 
         ** then there is no divider cell in apCell[]. Instead, the divider 
@@ -5315,16 +5323,11 @@ static int balance_nonroot(MemPage *pPage){
         CellInfo info;
         j--;
         sqlite3BtreeParseCellPtr(pNew, apCell[j], &info);
-        pCell = &aSpace[iSpace];
+        pCell = pTemp;
         fillInCell(pParent, pCell, 0, info.nKey, 0, 0, 0, &sz);
-        iSpace += sz;
-        assert( iSpace<=pBt->pageSize*5 );
         pTemp = 0;
       }else{
         pCell -= 4;
-        pTemp = &aSpace[iSpace];
-        iSpace += sz;
-        assert( iSpace<=pBt->pageSize*5 );
         /* Obscure case for non-leaf-data trees: If the cell at pCell was
         ** previously stored on a leaf node, and its reported size was 4
         ** bytes, then it may actually be smaller than this 
@@ -5341,6 +5344,9 @@ static int balance_nonroot(MemPage *pPage){
           sz = cellSizePtr(pParent, pCell);
         }
       }
+      iSpace2 += sz;
+      assert( sz<=pBt->pageSize/4 );
+      assert( iSpace2<=pBt->pageSize );
       rc = insertCell(pParent, nxDiv, pCell, sz, pTemp, 4);
       if( rc!=SQLITE_OK ) goto balance_cleanup;
       put4byte(findOverflowCell(pParent,nxDiv), pNew->pgno);
@@ -5391,13 +5397,16 @@ static int balance_nonroot(MemPage *pPage){
   ** But the parent page will always be initialized.
   */
   assert( pParent->isInit );
+  sqlite3TempFree(apCell);
+  apCell = 0;
   rc = balance(pParent, 0);
   
   /*
   ** Cleanup before returning.
   */
 balance_cleanup:
-  sqlite3_free(apCell);
+  sqlite3_free(aSpace2);
+  sqlite3TempFree(apCell);
   for(i=0; i<nOld; i++){
     releasePage(apOld[i]);
   }
@@ -5429,7 +5438,7 @@ static int balance_shallower(MemPage *pPage){
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   pBt = pPage->pBt;
   mxCellPerPage = MX_CELL(pBt);
-  apCell = sqlite3_malloc( mxCellPerPage*(sizeof(u8*)+sizeof(u16)) );
+  apCell = sqlite3Malloc( mxCellPerPage*(sizeof(u8*)+sizeof(u16)) );
   if( apCell==0 ) return SQLITE_NOMEM;
   szCell = (u16*)&apCell[mxCellPerPage];
   if( pPage->leaf ){
@@ -5673,7 +5682,7 @@ static int checkReadLocks(
 */
 static void allocateTempSpace(BtShared *pBt){
   if( !pBt->pTmpSpace ){
-    pBt->pTmpSpace = sqlite3_malloc(MX_CELL_SIZE(pBt));
+    pBt->pTmpSpace = sqlite3Malloc(MX_CELL_SIZE(pBt));
   }
 }
 
@@ -6729,7 +6738,7 @@ char *sqlite3BtreeIntegrityCheck(
     sqlite3BtreeLeave(p);
     return 0;
   }
-  sCheck.anRef = sqlite3_malloc( (sCheck.nPage+1)*sizeof(sCheck.anRef[0]) );
+  sCheck.anRef = sqlite3Malloc( (sCheck.nPage+1)*sizeof(sCheck.anRef[0]) );
   if( !sCheck.anRef ){
     unlockBtreeIfUnused(pBt);
     *pnErr = 1;

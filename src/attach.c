@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.75 2008/04/17 17:02:01 drh Exp $
+** $Id: attach.c,v 1.76 2008/06/15 02:51:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -112,18 +112,12 @@ static void attachFunc(
   ** hash tables.
   */
   if( db->aDb==db->aDbStatic ){
-    aNew = sqlite3_malloc( sizeof(db->aDb[0])*3 );
-    if( aNew==0 ){
-      db->mallocFailed = 1;
-      return;
-    }
+    aNew = sqlite3DbMallocRaw(db, sizeof(db->aDb[0])*3 );
+    if( aNew==0 ) return;
     memcpy(aNew, db->aDb, sizeof(db->aDb[0])*2);
   }else{
-    aNew = sqlite3_realloc(db->aDb, sizeof(db->aDb[0])*(db->nDb+1) );
-    if( aNew==0 ){
-      db->mallocFailed = 1;
-      return;
-    } 
+    aNew = sqlite3DbRealloc(db, db->aDb, sizeof(db->aDb[0])*(db->nDb+1) );
+    if( aNew==0 ) return;
   }
   db->aDb = aNew;
   aNew = &db->aDb[db->nDb++];

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.456 2008/06/07 08:58:22 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.457 2008/06/15 02:51:48 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1650,7 +1650,7 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   /* Open the master journal file exclusively in case some other process
   ** is running this routine also. Not that it makes too much difference.
   */
-  pMaster = (sqlite3_file *)sqlite3_malloc(pVfs->szOsFile * 2);
+  pMaster = (sqlite3_file *)sqlite3Malloc(pVfs->szOsFile * 2);
   pJournal = (sqlite3_file *)(((u8 *)pMaster) + pVfs->szOsFile);
   if( !pMaster ){
     rc = SQLITE_NOMEM;
@@ -1672,7 +1672,7 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
     /* Load the entire master journal file into space obtained from
     ** sqlite3_malloc() and pointed to by zMasterJournal. 
     */
-    zMasterJournal = (char *)sqlite3_malloc(nMasterJournal + nMasterPtr);
+    zMasterJournal = (char *)sqlite3Malloc(nMasterJournal + nMasterPtr);
     if( !zMasterJournal ){
       rc = SQLITE_NOMEM;
       goto delmaster_out;
@@ -2193,7 +2193,7 @@ int sqlite3PagerOpen(
   */
   if( zFilename && zFilename[0] ){
     nPathname = pVfs->mxPathname+1;
-    zPathname = sqlite3_malloc(nPathname*2);
+    zPathname = sqlite3Malloc(nPathname*2);
     if( zPathname==0 ){
       return SQLITE_NOMEM;
     }
@@ -2421,7 +2421,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize){
   if( pageSize && pageSize!=pPager->pageSize 
    && !pPager->memDb && pPager->nRef==0 
   ){
-    char *pNew = (char *)sqlite3_malloc(pageSize);
+    char *pNew = (char *)sqlite3Malloc(pageSize);
     if( !pNew ){
       rc = SQLITE_NOMEM;
     }else{
@@ -3647,9 +3647,9 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
     pagerLeave(pPager);
     nByteHdr = sizeof(*pPg) + sizeof(u32) + pPager->nExtra
               + MEMDB*sizeof(PgHistory);
-    pPg = sqlite3_malloc( nByteHdr );
+    pPg = sqlite3Malloc( nByteHdr );
     if( pPg ){
-      pData = sqlite3_malloc( pPager->pageSize );
+      pData = sqlite3Malloc( pPager->pageSize );
       if( pData==0 ){
         sqlite3_free(pPg);
         pPg = 0;
@@ -4223,7 +4223,7 @@ static int pager_write(PgHdr *pPg){
           PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
           PAGERTRACE3("JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno);
           assert( pHist->pOrig==0 );
-          pHist->pOrig = sqlite3_malloc( pPager->pageSize );
+          pHist->pOrig = sqlite3Malloc( pPager->pageSize );
           if( !pHist->pOrig ){
             return SQLITE_NOMEM;
           }
@@ -4293,7 +4293,7 @@ static int pager_write(PgHdr *pPg){
       if( MEMDB ){
         PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
         assert( pHist->pStmt==0 );
-        pHist->pStmt = sqlite3_malloc( pPager->pageSize );
+        pHist->pStmt = sqlite3Malloc( pPager->pageSize );
         if( pHist->pStmt ){
           memcpy(pHist->pStmt, PGHDR_TO_DATA(pPg), pPager->pageSize);
         }

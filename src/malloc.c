@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.16 2008/06/14 16:56:22 drh Exp $
+** $Id: malloc.c,v 1.17 2008/06/15 02:51:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -90,7 +90,8 @@ static struct {
   */
   sqlite3_int64 nowUsed;  /* Main memory currently in use */
   sqlite3_int64 mxUsed;   /* Highwater mark for nowUsed */
-  int mxReq;              /* maximum request size for main or page-cache mem */
+  int mxReq;              /* Max request size for ordinary mallocs */
+  int mxTempReq;          /* Max request size for xTemp mallocs */
 } mem0;
 
 /*
@@ -224,6 +225,55 @@ void *sqlite3_malloc(int n){
   if( sqlite3_initialize() ) return 0;
 #endif
   return sqlite3Malloc(n);
+}
+
+/*
+** Each thread may only have a single outstanding allocation from
+** xTempMalloc().  We verify this constraint in the single-threaded
+** case by setting tempAllocOut to 1 when an allocation
+** is outstanding clearing it when the allocation is freed.
+*/
+#if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
+static int tempAllocOut = 0;
+#endif
+
+
+/*
+** Allocate memory that is to be used and released right away.
+** This routine is similar to alloca() in that it is not intended
+** for situations where the memory might be held long-term.  This
+** routine is intended to get memory to old large transient data
+** structures that would not normally fit on the stack of an
+** embedded processor.
+*/
+void *sqlite3TempMalloc(int n){
+  void *p;
+  assert( n>0 );
+  if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ){
+    return 0;
+  }
+#if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
+  assert( tempAllocOut==0 );
+  tempAllocOut = 1;
+#endif
+  if( sqlite3Config.bMemstat ){
+    sqlite3_mutex_enter(mem0.mutex);
+    if( n>mem0.mxTempReq ) mem0.mxTempReq = n;
+    p = sqlite3Config.m.xTempMalloc(n);
+    sqlite3_mutex_leave(mem0.mutex);
+  }else{
+    p = sqlite3Config.m.xTempMalloc(n);
+  }
+  return p;
+}
+void sqlite3TempFree(void *p){
+  if( p ){
+#if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
+    assert( tempAllocOut==1 );
+    tempAllocOut = 0;
+#endif
+    sqlite3Config.m.xTempFree(p);
+  }
 }
 
 /*
@@ -386,14 +436,14 @@ char *sqlite3StrDup(const char *z){
   int n;
   if( z==0 ) return 0;
   n = strlen(z)+1;
-  zNew = sqlite3_malloc(n);
+  zNew = sqlite3Malloc(n);
   if( zNew ) memcpy(zNew, z, n);
   return zNew;
 }
 char *sqlite3StrNDup(const char *z, int n){
   char *zNew;
   if( z==0 ) return 0;
-  zNew = sqlite3_malloc(n+1);
+  zNew = sqlite3Malloc(n+1);
   if( zNew ){
     memcpy(zNew, z, n);
     zNew[n] = 0;
@@ -437,7 +487,7 @@ void sqlite3SetString(char **pz, ...){
   }
   va_end(ap);
   sqlite3_free(*pz);
-  *pz = zResult = sqlite3_malloc(nByte);
+  *pz = zResult = sqlite3Malloc(nByte);
   if( zResult==0 ){
     return;
   }

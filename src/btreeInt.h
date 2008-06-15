@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.21 2008/04/24 19:15:10 shane Exp $
+** $Id: btreeInt.h,v 1.22 2008/06/15 02:51:47 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -371,9 +371,6 @@ struct BtShared {
   MemPage *pPage1;      /* First page of the database */
   u8 inStmt;            /* True if we are in a statement subtransaction */
   u8 readOnly;          /* True if the underlying file is readonly */
-  u8 maxEmbedFrac;      /* Maximum payload as % of total page size */
-  u8 minEmbedFrac;      /* Minimum payload as % of total page size */
-  u8 minLeafFrac;       /* Minimum leaf payload as % of total page size */
   u8 pageSizeFixed;     /* True if the page size can no longer be changed */
 #ifndef SQLITE_OMIT_AUTOVACUUM
   u8 autoVacuum;        /* True if auto-vacuum is enabled */

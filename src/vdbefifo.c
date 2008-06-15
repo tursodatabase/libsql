@@ -12,7 +12,7 @@
 ** This file implements a FIFO queue of rowids used for processing
 ** UPDATE and DELETE statements.
 **
-** $Id: vdbefifo.c,v 1.6 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: vdbefifo.c,v 1.7 2008/06/15 02:51:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -38,7 +38,7 @@ static FifoPage *allocateFifoPage(int nEntry){
   if( nEntry>FIFOSIZE_MAX ){
     nEntry = FIFOSIZE_MAX;
   }
-  pPage = sqlite3_malloc( sizeof(FifoPage) + sizeof(i64)*(nEntry-1) );
+  pPage = sqlite3Malloc( sizeof(FifoPage) + sizeof(i64)*(nEntry-1) );
   if( pPage ){
     pPage->nSlot = nEntry;
     pPage->iWrite = 0;

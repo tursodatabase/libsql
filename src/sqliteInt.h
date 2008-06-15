@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.709 2008/06/14 16:56:23 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.710 2008/06/15 02:51:48 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1791,6 +1791,8 @@ void *sqlite3Realloc(void*, int);
 void *sqlite3DbReallocOrFree(sqlite3 *, void *, int);
 void *sqlite3DbRealloc(sqlite3 *, void *, int);
 int sqlite3MallocSize(void *);
+void *sqlite3TempMalloc(int);
+void sqlite3TempFree(void*);
 void sqlite3MemSetDefault(void);
 
 int sqlite3IsNaN(double);

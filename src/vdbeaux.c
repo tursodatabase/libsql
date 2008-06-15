@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.386 2008/06/06 15:04:37 drh Exp $
+** $Id: vdbeaux.c,v 1.387 2008/06/15 02:51:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -547,7 +547,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
 
     nField = ((KeyInfo*)zP4)->nField;
     nByte = sizeof(*pKeyInfo) + (nField-1)*sizeof(pKeyInfo->aColl[0]) + nField;
-    pKeyInfo = sqlite3_malloc( nByte );
+    pKeyInfo = sqlite3Malloc( nByte );
     pOp->p4.pKeyInfo = pKeyInfo;
     if( pKeyInfo ){
       memcpy(pKeyInfo, zP4, nByte);

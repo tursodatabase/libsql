@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.192 2008/04/27 18:40:12 drh Exp $
+** $Id: func.c,v 1.193 2008/06/15 02:51:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -249,7 +249,7 @@ static void *contextMalloc(sqlite3_context *context, i64 nByte){
     sqlite3_result_error_toobig(context);
     z = 0;
   }else{
-    z = sqlite3_malloc(nByte);
+    z = sqlite3Malloc(nByte);
     if( !z && nByte>0 ){
       sqlite3_result_error_nomem(context);
     }
