@@ -1,5 +1,5 @@
-C Fix\sa\srecently\sintroduced\sresource\sleak\sin\stest\sfile\sincrblob2.test\s(forgot\sto\sclose\sa\sblob\shandle).\s(CVS\s5223)
-D 2008-06-16T14:36:01
+C Clean\sup\sobfuscated\scode\sin\ssqlite3_table_column_meta_data().\nBe\ssure\sto\sinvoke\ssqlite3_initialize()\swithin\ssqlite3_mprintf().\s(CVS\s5224)
+D 2008-06-16T20:51:16
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/insert.c c2ead6c36566de8e3f130e7ab1431723a269d5d7
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c f99a75534a53e281fa2461239ee4a4b4bf6ad564
-F src/main.c 4540ec2c0ba99a0dcb8bd114f733007958c6258e
+F src/main.c 1f65b285a87f237e9e63c9628f220d10aef36b81
 F src/malloc.c c5bdf8967df9acc9765ed1b55c0c0eba9fe9494c
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c c8e07e9e6620b1aabf9bdefd19dee93831f67733
@@ -139,7 +139,7 @@ F src/pager.h 6aa3050a3c684475a5a9dbad5ff1cebad612acba
 F src/parse.y 8c2c3145eebe1964eb279cb3c4e502eae28bb0fa
 F src/pragma.c 70e7c865dce85fdf9df81848af2169009a56ed08
 F src/prepare.c 3c19149e75fbf3b08471a389f064da7302cad9c5
-F src/printf.c ff67198b0deee15b4415149880b8e3ab0a36705b
+F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1b9478da2f421c1270e76297324fff8037d2f231
-R 60087b858e49df0fe447344466833ade
-U danielk1977
-Z 896538a54b48dcf65f77aa8165a8f5a9
+P 88e1c6092e48c860950d3437f264785243bb67ed
+R a1b6bf6dbc2358eb6da4aeb0eb037ba0
+U drh
+Z 3b2158d65e565f1ac34f84ff1bba4421

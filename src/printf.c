@@ -5,7 +5,7 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
-** $Id: printf.c,v 1.86 2008/06/15 02:51:48 drh Exp $
+** $Id: printf.c,v 1.87 2008/06/16 20:51:16 drh Exp $
 **
 **************************************************************************
 **
@@ -850,6 +850,7 @@ char *sqlite3_vmprintf(const char *zFormat, va_list ap){
   char *z;
   char zBase[SQLITE_PRINT_BUF_SIZE];
   StrAccum acc;
+  sqlite3_initialize();
   sqlite3StrAccumInit(&acc, zBase, sizeof(zBase), SQLITE_MAX_LENGTH);
   vxprintf(&acc, 0, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
@@ -863,6 +864,7 @@ char *sqlite3_vmprintf(const char *zFormat, va_list ap){
 char *sqlite3_mprintf(const char *zFormat, ...){
   va_list ap;
   char *z;
+  sqlite3_initialize();
   va_start(ap, zFormat);
   z = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
