@@ -12,7 +12,7 @@
 # Test that it is possible to have two open blob handles on a single
 # blob object.
 #
-# $Id: incrblob2.test,v 1.4 2008/06/16 14:19:58 danielk1977 Exp $
+# $Id: incrblob2.test,v 1.5 2008/06/16 14:36:01 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -347,6 +347,10 @@ do_test incrblob2-7.3 {
 do_test incrblob2-7.4 {
   expr {[sqlite3_memory_highwater]<(5 * 1024 * 1024)}
 } {1}
+
+do_test incrblob2-7.5 {
+  close $h
+} {}
 
 finish_test
 
