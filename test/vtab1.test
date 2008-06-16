@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.52 2008/04/10 16:42:59 drh Exp $
+# $Id: vtab1.test,v 1.53 2008/06/16 06:31:35 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -40,6 +40,8 @@ ifcapable !vtab||!schema_pragmas {
 # TODO: 
 #   * How to test the sqlite3_index_constraint_usage.omit field?
 #   * vtab1-5.*
+#
+# vtab1-14.*: Test 'IN' constraints - i.e. "SELECT * FROM t1 WHERE id IN(...)"
 #
 
 
@@ -1010,8 +1012,6 @@ do_test vtab1.12-3 {
   execsql { SELECT * FROM c }
 } {3 G H}
 
-breakpoint
-
 # Now the real test - wrapped in a transaction.
 do_test vtab1.12-4 {
   execsql  {BEGIN}
@@ -1054,6 +1054,32 @@ do_test vtab1.13-3 {
     SELECT * FROM echo_c WHERE b IS NULL AND a = 15;
   }
 } {15 {} 16}
+
+
+do_test vtab1-14.1 {
+  execsql { DELETE FROM c }
+  set echo_module ""
+  execsql { SELECT * FROM echo_c WHERE rowid IN (1, 2, 3) }
+  set echo_module
+} [list xBestIndex {SELECT rowid, * FROM 'c'} xFilter {SELECT rowid, * FROM 'c'}]
+
+do_test vtab1-14.2 {
+  set echo_module ""
+  execsql { SELECT * FROM echo_c WHERE rowid = 1 }
+  set echo_module
+} [list xBestIndex {SELECT rowid, * FROM 'c' WHERE rowid = ?} xFilter {SELECT rowid, * FROM 'c' WHERE rowid = ?} 1]
+
+do_test vtab1-14.3 {
+  set echo_module ""
+  execsql { SELECT * FROM echo_c WHERE a = 1 }
+  set echo_module
+} [list xBestIndex {SELECT rowid, * FROM 'c' WHERE a = ?} xFilter {SELECT rowid, * FROM 'c' WHERE a = ?} 1]
+
+do_test vtab1-14.4 {
+  set echo_module ""
+  execsql { SELECT * FROM echo_c WHERE a IN (1, 2) }
+  set echo_module
+} [list xBestIndex {SELECT rowid, * FROM 'c'} xFilter {SELECT rowid, * FROM 'c'}]
 
 unset -nocomplain echo_module_begin_fail
 finish_test

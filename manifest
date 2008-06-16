@@ -1,5 +1,5 @@
-C Continuing\swork\son\sthe\snew\smemory\sallocation\ssubsystem.\nAdded\sroutines\sfor\stemporary\smemory\sallocation.\s\sRight\sthe\sbtree\nbalance\smechanism\sto\sonly\sdo\sone\stemporary\sallocation\sat\sa\stime.\s(CVS\s5220)
-D 2008-06-15T02:51:47
+C Add\sa\stest\sto\sverify\sthat\sIN(...)\sWHERE\sclause\sterms\sare\snot\shandled\sby\svirtual\stable\simplemetations.\s(CVS\s5221)
+D 2008-06-16T06:31:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -548,7 +548,7 @@ F test/vacuum3.test 6149b24613f487915ca9cedfbb9147d5759714ec
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test c08b303a9a6e5bbb27d0988858e919f3b70042aa
 F test/view.test 4864e3841ab3213a95297718b94d5d6a8d3bc78b
-F test/vtab1.test b1e4bf536efd83c24feb303699001fa886e2256b
+F test/vtab1.test 47092e3ac59141f08e09a6c0cc0df8997242bc79
 F test/vtab2.test 1da49b015582965a8fc386aa23d051a5a622b08e
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f00305f4cd2f487f660f34a21c1c24a0b37c7275
-R 959050eddfb58749f141d64dc00b9d92
-U drh
-Z a529f10f0af791d96bfc33f5cbab9f39
+P 65fe7b62cfe7d11cd667681a64c96fe7b2fe5685
+R 5c46ebc86e0ac8318bbd836a9634196f
+U danielk1977
+Z d1c404b0ce37dd5dd64aa7a93fc28b2d
