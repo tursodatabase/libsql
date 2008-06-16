@@ -1,5 +1,5 @@
-C Add\sa\stest\sto\sverify\sthat\sIN(...)\sWHERE\sclause\sterms\sare\snot\shandled\sby\svirtual\stable\simplemetations.\s(CVS\s5221)
-D 2008-06-16T06:31:35
+C Fix\sa\sproblem\swith\sthe\sincremental\sblob\sAPI.\ssqlite3_blob_open()\swas\salways\sreading\sthe\sdata\sfor\sthe\sleftmost\scolumn\sof\sthe\srow\sthat\sthe\sopened\sblob\swas\sstored\sin.\sIf\sthis\scolumn\shappened\sto\scontain\sa\s(the)\slarge\sblob,\ssqlite\swould\smake\sa\slarge\smemory\sallocation\sto\sread\sthe\sdata\sinto.\sWhich\sdefeats\sthe\spurpose\sof\susing\sincremental\sblobs.\s(CVS\s5222)
+D 2008-06-16T14:19:58
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +156,7 @@ F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
 F src/test6.c 0a0304a69cfa4962a429d084c6d451ff9e4fb572
 F src/test7.c acec2256c7c2d279db5a8b5fa1a2a68fcc942c67
-F src/test8.c bfebbeed68c86bab495256390636d39d195d3f1a
+F src/test8.c de8b2d25458b7416ce839dda5bed13c7e26c70b4
 F src/test9.c 4615ef08750245a2d96aaa7cbe2fb4aff2b57acc
 F src/test_async.c fb5ab7b54c0b4ece9e2283b9c38314ba5d40bab6
 F src/test_autoext.c 5e892ab84aece3f0428920bf46923f16ac83962a
@@ -185,7 +185,7 @@ F src/vdbe.h 1e3722d471739c2b213c6283b60373290e52f7ea
 F src/vdbeInt.h de321b2c02593e1420106634ed1f5a7d77ad35a7
 F src/vdbeapi.c 22b01ed175e4d4c613ee82cabc7a44a275641206
 F src/vdbeaux.c 34b9478ea0c8b41a6dbce6b1bb1c392c87bb0264
-F src/vdbeblob.c 554736781ee273a8089c776e96bdb53e66f57ce6
+F src/vdbeblob.c 9345f6dcd675fdcfdb537d2d2f487542d9ea136a
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
 F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
 F src/vtab.c ce9d19ca9053812a557010fd4be7e842f8ebba2d
@@ -340,7 +340,7 @@ F test/in.test 763a29007a4850d611ac4441bfa488fb9969ad30
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
-F test/incrblob2.test 798ce8c5dfc563dde4b960e8e588ee0b25f5b163
+F test/incrblob2.test b34789e6e8bebcf35e1c607e380324501b5b25dc
 F test/incrblob_err.test 00a8bcb25cb493d53f4efed0f5cf09c386534940
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 65fe7b62cfe7d11cd667681a64c96fe7b2fe5685
-R 5c46ebc86e0ac8318bbd836a9634196f
+P 85483c8fb3b45281ce07e84349841fc80e560b1f
+R 5f72c26d35bb66f062d5eee386745de3
 U danielk1977
-Z d1c404b0ce37dd5dd64aa7a93fc28b2d
+Z 23cd7f6ee72d1c4eb1181335292f4852
