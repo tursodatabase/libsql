@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.7 2008/06/13 18:24:27 drh Exp $
+** $Id: mutex_w32.c,v 1.8 2008/06/17 17:21:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -57,12 +57,23 @@ struct sqlite3_mutex {
   }
 #endif /* OS_WINCE */
 
+/*
+** The sqlite3_mutex_held() and sqlite3_mutex_notheld() routine are
+** intended for use only inside assert() statements.
+*/
+static int winMutexHeld(sqlite3_mutex *p){
+  return p->nRef!=0 && p->owner==GetCurrentThreadId();
+}
+static int winMutexNotheld(sqlite3_mutex *p){
+  return p->nRef==0 || p->owner!=GetCurrentThreadId();
+}
+
 
 /*
 ** Initialize and deinitialize the mutex subsystem.
 */
-int sqlite3_mutex_init(void){ return SQLITE_OK; }
-int sqlite3_mutex_end(void){ return SQLITE_OK; }
+static int winMutexInit(void){ return SQLITE_OK; }
+static int winMutexEnd(void){ return SQLITE_OK; }
 
 /*
 ** The sqlite3_mutex_alloc() routine allocates a new
@@ -103,7 +114,7 @@ int sqlite3_mutex_end(void){ return SQLITE_OK; }
 ** mutex types, the same mutex is returned on every call that has
 ** the same type number.
 */
-sqlite3_mutex *sqlite3_mutex_alloc(int iType){
+static sqlite3_mutex *winMutexAlloc(int iType){
   sqlite3_mutex *p;
 
   switch( iType ){
@@ -147,7 +158,7 @@ sqlite3_mutex *sqlite3_mutex_alloc(int iType){
 ** allocated mutex.  SQLite is careful to deallocate every
 ** mutex that it allocates.
 */
-void sqlite3_mutex_free(sqlite3_mutex *p){
+static void winMutexFree(sqlite3_mutex *p){
   assert( p );
   assert( p->nRef==0 );
   assert( p->id==SQLITE_MUTEX_FAST || p->id==SQLITE_MUTEX_RECURSIVE );
@@ -166,17 +177,15 @@ void sqlite3_mutex_free(sqlite3_mutex *p){
 ** can enter.  If the same thread tries to enter any other kind of mutex
 ** more than once, the behavior is undefined.
 */
-void sqlite3_mutex_enter(sqlite3_mutex *p){
-  if( p==0 ) return;
-  assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
+static void winMutexEnter(sqlite3_mutex *p){
+  assert( p->id==SQLITE_MUTEX_RECURSIVE || winMutexNotheld(p) );
   EnterCriticalSection(&p->mutex);
   p->owner = GetCurrentThreadId(); 
   p->nRef++;
 }
-int sqlite3_mutex_try(sqlite3_mutex *p){
+static int winMutexTry(sqlite3_mutex *p){
   int rc = SQLITE_BUSY;
-  if( p==0 ) return SQLITE_OK;
-  assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
+  assert( p->id==SQLITE_MUTEX_RECURSIVE || winMutexNotheld(p) );
   /*
   ** The sqlite3_mutex_try() routine is very rarely used, and when it
   ** is used it is merely an optimization.  So it is OK for it to always
@@ -204,8 +213,7 @@ int sqlite3_mutex_try(sqlite3_mutex *p){
 ** is undefined if the mutex is not currently entered or
 ** is not currently allocated.  SQLite will never do either.
 */
-void sqlite3_mutex_leave(sqlite3_mutex *p){
-  if( p==0 ) return;
+static void winMutexLeave(sqlite3_mutex *p){
   assert( p->nRef>0 );
   assert( p->owner==GetCurrentThreadId() );
   p->nRef--;
@@ -213,14 +221,21 @@ void sqlite3_mutex_leave(sqlite3_mutex *p){
   LeaveCriticalSection(&p->mutex);
 }
 
-/*
-** The sqlite3_mutex_held() and sqlite3_mutex_notheld() routine are
-** intended for use only inside assert() statements.
-*/
-int sqlite3_mutex_held(sqlite3_mutex *p){
-  return p==0 || (p->nRef!=0 && p->owner==GetCurrentThreadId());
-}
-int sqlite3_mutex_notheld(sqlite3_mutex *p){
-  return p==0 || p->nRef==0 || p->owner!=GetCurrentThreadId();
+sqlite3_mutex_methods *sqlite3DefaultMutex(void){
+  static sqlite3_mutex_methods sMutex = {
+    winMutexInit,
+    winMutexAlloc,
+    winMutexFree,
+    winMutexEnter,
+    winMutexTry,
+    winMutexLeave,
+    winMutexEnd,
+
+    winMutexHeld,
+    winMutexNotheld
+  };
+
+  return &sMutex;
 }
 #endif /* SQLITE_MUTEX_W32 */
+

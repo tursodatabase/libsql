@@ -19,7 +19,7 @@
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 **
-** $Id: mem2.c,v 1.30 2008/06/17 15:12:01 drh Exp $
+** $Id: mem2.c,v 1.31 2008/06/17 17:21:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -321,7 +321,7 @@ void sqlite3MemSetDefault(void){
 
 /*
 ** Set the number of backtrace levels kept for each allocation.
-** A value of zero turns of backtracing.  The number is always rounded
+** A value of zero turns off backtracing.  The number is always rounded
 ** up to a multiple of 2.
 */
 void sqlite3MemdebugBacktrace(int depth){

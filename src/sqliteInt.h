@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.711 2008/06/17 15:12:01 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.712 2008/06/17 17:21:18 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1739,6 +1739,7 @@ struct Sqlite3Config {
   int bCoreMutex;                   /* True to enable core mutexing */
   int bFullMutex;                   /* True to enable full mutexing */
   sqlite3_mem_methods m;            /* Low-level memory allocation interface */
+  sqlite3_mutex_methods mutex;      /* Low-level mutex interface */
   void *pHeap;                      /* Heap storage space */
   sqlite3_int64 nHeap;              /* Size of pHeap[] */
   int mnReq, mxReq;                 /* Min and max memory request sizes */
@@ -1796,6 +1797,8 @@ void sqlite3ScratchFree(void*);
 void *sqlite3PageMalloc(int);
 void sqlite3PageFree(void*);
 void sqlite3MemSetDefault(void);
+
+sqlite3_mutex_methods *sqlite3DefaultMutex(void);
 
 int sqlite3IsNaN(double);
 
