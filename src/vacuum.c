@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.79 2008/05/21 13:44:14 drh Exp $
+** $Id: vacuum.c,v 1.80 2008/06/17 01:03:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -125,6 +125,18 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   pTemp = db->aDb[db->nDb-1].pBt;
 
   nRes = sqlite3BtreeGetReserve(pMain);
+
+  /* A VACUUM cannot change the pagesize of an encrypted database. */
+#ifdef SQLITE_HAS_CODEC
+  if( db->nextPagesize ){
+    extern void sqlite3CodecGetKey(sqlite3*, int, void**, int*);
+    int nKey;
+    char *zKey;
+    sqlite3CodecGetKey(db, 0, (void**)&zKey, &nKey);
+    if( nKey ) db->nextPagesize = 0;
+  }
+#endif
+
   if( sqlite3BtreeSetPageSize(pTemp, sqlite3BtreeGetPageSize(pMain), nRes)
    || sqlite3BtreeSetPageSize(pTemp, db->nextPagesize, nRes)
    || db->mallocFailed 

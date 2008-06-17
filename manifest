@@ -1,5 +1,5 @@
-C Clean\sup\sobfuscated\scode\sin\ssqlite3_table_column_meta_data().\nBe\ssure\sto\sinvoke\ssqlite3_initialize()\swithin\ssqlite3_mprintf().\s(CVS\s5224)
-D 2008-06-16T20:51:16
+C Do\snot\sallow\sa\sVACUUM\sto\stry\sto\schange\sthe\spage_size\son\san\sencrypted\sdatabase.\s(CVS\s5225)
+D 2008-06-17T01:03:26
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -179,7 +179,7 @@ F src/trigger.c 1e751f8d5ceeb328d26bf1ccfb2de50653670d49
 F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 920d6d5dfdf25f7b85d2093705d8716f9b387e3b
-F src/vacuum.c a5c289e561ed72283e97d2485491986bc7d684eb
+F src/vacuum.c 14eb21b480924d87e791cd8ab6fb35ac563243ef
 F src/vdbe.c f6866986de706b98c2738040bc65907728650e8d
 F src/vdbe.h 1e3722d471739c2b213c6283b60373290e52f7ea
 F src/vdbeInt.h de321b2c02593e1420106634ed1f5a7d77ad35a7
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 88e1c6092e48c860950d3437f264785243bb67ed
-R a1b6bf6dbc2358eb6da4aeb0eb037ba0
+P bb4edb53964559fc1cd69700beb72ecc29b58f37
+R 7166a804863eb0c7dec5311dc0bfcdb3
 U drh
-Z 3b2158d65e565f1ac34f84ff1bba4421
+Z 9f8da086219df1d3431408cc19590d26
