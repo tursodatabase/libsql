@@ -1,5 +1,5 @@
-C Change\sthe\smutex\sinterface\sto\sbe\spluggable.\sThis\sis\san\sincremental\scheckin,\sthere\sare\sstill\schanges\sto\scome.\s(CVS\s5227)
-D 2008-06-17T17:21:18
+C Add\sthe\sSQLITE_CONFIG_MUTEX\ssymbol\sfor\suse\swith\ssqlite3_config().\s(CVS\s5228)
+D 2008-06-17T18:57:49
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/insert.c c2ead6c36566de8e3f130e7ab1431723a269d5d7
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c f99a75534a53e281fa2461239ee4a4b4bf6ad564
-F src/main.c 1f65b285a87f237e9e63c9628f220d10aef36b81
+F src/main.c 02f11264d00bec0a450b3570a7232eec6a4cdf5d
 F src/malloc.c 7b622d22f29e3be56d271a5a921f3b5788330189
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 159f10e280f2d9aea597cf938851e61652dd5c3d
@@ -123,7 +123,7 @@ F src/mem2.c 594270b8f0ed6c09ae5fb729eca2864139f9e293
 F src/mem3.c 617c2e2a72a10ecc5c01af14efc8c2596d2c2e87
 F src/mem4.c 45c328ec6dcb7e8d319cb383615b5fe547ca5409
 F src/mem5.c 3d2ff00c6e3bc37f5d82cd82e1a123b246fb7b39
-F src/mutex.c cbdaeeed05e3debdaf3ab4465ba32203cae44656
+F src/mutex.c d367b079d61f4b4c2925e321209da04fe226590f
 F src/mutex.h b9b9baf7050f3bb1c723e1d22088a704783a2927
 F src/mutex_os2.c b8c1231319e966875f251a7ec137bea353546b87
 F src/mutex_unix.c 74a6755912ad2a924026b54b4b5a64d327748aa5
@@ -143,7 +143,7 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in b0aacae57d08cd3909f999a0801f764287b1817f
+F src/sqlite.h.in d77f7a34f7655721cd887728874b8931a046fabb
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h f465a6d45e9cabadad5c6c097d17df3c054616d0
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3e797d0ffe1af6f7512b3fb7b387418ac05671e0
-R e1c01b11e23adfbe56a06238817523c5
+P 597283637bcdc2398bf249b2bbc6ded47ad2de22
+R c6d0203337799c1a8192ac6a1f7c93df
 U danielk1977
-Z 7e1766078375e85380a4af4034e888e3
+Z 44fe1d3a2cecd4882d9cfff45340b7b9

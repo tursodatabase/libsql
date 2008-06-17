@@ -19,7 +19,7 @@
 ** implementation is suitable for testing.
 ** debugging purposes
 **
-** $Id: mutex.c,v 1.21 2008/06/17 17:21:18 danielk1977 Exp $
+** $Id: mutex.c,v 1.22 2008/06/17 18:57:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -30,12 +30,24 @@
 int sqlite3_mutex_init(void){ 
   int rc;
   if( !sqlite3Config.mutex.xMutexAlloc ){
+    /* If the xMutexAlloc method has not been set, then the user did not
+    ** install a mutex implementation via sqlite3_config() prior to 
+    ** sqlite3_initialize() being called. This block copies pointers to
+    ** the default implementation into the sqlite3Config structure.
+    **
+    ** The danger is that although sqlite3_config() is not a threadsafe
+    ** API, sqlite3_initialize() is, and so multiple threads may be
+    ** attempting to run this function simultaneously. To guard write
+    ** access to the sqlite3Config structure, the 'MASTER' static mutex
+    ** is obtained before modifying it.
+    */
     sqlite3_mutex_methods *p = sqlite3DefaultMutex();
     sqlite3_mutex *pMaster;
 
     rc = p->xMutexInit();
     if( rc==SQLITE_OK ){
       pMaster = p->xMutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+      assert(pMaster);
       p->xMutexEnter(pMaster);
       assert( sqlite3Config.mutex.xMutexAlloc==0 
            || sqlite3Config.mutex.xMutexAlloc==p->xMutexAlloc
@@ -45,7 +57,6 @@ int sqlite3_mutex_init(void){
       }
       p->xMutexLeave(pMaster);
     }
-
   }else{
     rc = sqlite3Config.mutex.xMutexInit();
   }
