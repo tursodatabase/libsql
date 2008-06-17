@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.17 2008/06/15 02:51:48 drh Exp $
+** $Id: malloc.c,v 1.18 2008/06/17 15:12:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -91,7 +91,7 @@ static struct {
   sqlite3_int64 nowUsed;  /* Main memory currently in use */
   sqlite3_int64 mxUsed;   /* Highwater mark for nowUsed */
   int mxReq;              /* Max request size for ordinary mallocs */
-  int mxTempReq;          /* Max request size for xTemp mallocs */
+  int mxScratchReq;       /* Max request size for xTemp mallocs */
 } mem0;
 
 /*
@@ -229,12 +229,12 @@ void *sqlite3_malloc(int n){
 
 /*
 ** Each thread may only have a single outstanding allocation from
-** xTempMalloc().  We verify this constraint in the single-threaded
-** case by setting tempAllocOut to 1 when an allocation
+** xScratchMalloc().  We verify this constraint in the single-threaded
+** case by setting scratchAllocOut to 1 when an allocation
 ** is outstanding clearing it when the allocation is freed.
 */
 #if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
-static int tempAllocOut = 0;
+static int scratchAllocOut = 0;
 #endif
 
 
@@ -246,34 +246,44 @@ static int tempAllocOut = 0;
 ** structures that would not normally fit on the stack of an
 ** embedded processor.
 */
-void *sqlite3TempMalloc(int n){
+void *sqlite3ScratchMalloc(int n){
   void *p;
   assert( n>0 );
   if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ){
     return 0;
   }
 #if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
-  assert( tempAllocOut==0 );
-  tempAllocOut = 1;
+  assert( scratchAllocOut==0 );
+  scratchAllocOut = 1;
 #endif
   if( sqlite3Config.bMemstat ){
     sqlite3_mutex_enter(mem0.mutex);
-    if( n>mem0.mxTempReq ) mem0.mxTempReq = n;
-    p = sqlite3Config.m.xTempMalloc(n);
+    if( n>mem0.mxScratchReq ) mem0.mxScratchReq = n;
+    p = sqlite3Config.m.xMalloc(n);
     sqlite3_mutex_leave(mem0.mutex);
   }else{
-    p = sqlite3Config.m.xTempMalloc(n);
+    p = sqlite3Config.m.xMalloc(n);
   }
   return p;
 }
-void sqlite3TempFree(void *p){
+void sqlite3ScratchFree(void *p){
   if( p ){
 #if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
-    assert( tempAllocOut==1 );
-    tempAllocOut = 0;
+    assert( scratchAllocOut==1 );
+    scratchAllocOut = 0;
 #endif
-    sqlite3Config.m.xTempFree(p);
+    sqlite3Config.m.xFree(p);
   }
+}
+
+/*
+** Place holders for the page-cache memory allocator.
+*/
+void *sqlite3PageMalloc(int iSize){
+  return sqlite3Malloc(iSize);
+}
+void sqlite3PageFree(void *pOld){
+  sqlite3_free(pOld);
 }
 
 /*

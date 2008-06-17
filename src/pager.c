@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.457 2008/06/15 02:51:48 drh Exp $
+** @(#) $Id: pager.c,v 1.458 2008/06/17 15:12:01 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -773,19 +773,20 @@ static int osUnlock(sqlite3_file *pFd, int eLock){
 static int jrnlBufferSize(Pager *pPager){
   int dc;           /* Device characteristics */
   int nSector;      /* Sector size */
-  int nPage;        /* Page size */
+  int szPage;        /* Page size */
   sqlite3_file *fd = pPager->fd;
 
   if( fd->pMethods ){
     dc = sqlite3OsDeviceCharacteristics(fd);
     nSector = sqlite3OsSectorSize(fd);
-    nPage = pPager->pageSize;
+    szPage = pPager->pageSize;
   }
 
   assert(SQLITE_IOCAP_ATOMIC512==(512>>8));
   assert(SQLITE_IOCAP_ATOMIC64K==(65536>>8));
 
-  if( !fd->pMethods || (dc&(SQLITE_IOCAP_ATOMIC|(nPage>>8))&&nSector<=nPage) ){
+  if( !fd->pMethods || 
+       (dc & (SQLITE_IOCAP_ATOMIC|(szPage>>8)) && nSector<=szPage) ){
     return JOURNAL_HDR_SZ(pPager) + JOURNAL_PG_SZ(pPager);
   }
   return 0;
@@ -1294,7 +1295,7 @@ static void pager_reset(Pager *pPager){
     PAGER_INCR(sqlite3_pager_pgfree_count);
     pNext = pPg->pNextAll;
     lruListRemove(pPg);
-    sqlite3_free(pPg->pData);
+    sqlite3PageFree(pPg->pData);
     sqlite3_free(pPg);
   }
   assert(pPager->lru.pFirst==0);
@@ -2180,7 +2181,7 @@ int sqlite3PagerOpen(
   int useJournal = (flags & PAGER_OMIT_JOURNAL)==0;
   int noReadlock = (flags & PAGER_NO_READLOCK)!=0;
   int journalFileSize = sqlite3JournalSize(pVfs);
-  int nDefaultPage = SQLITE_DEFAULT_PAGE_SIZE;
+  int szPageDflt = SQLITE_DEFAULT_PAGE_SIZE;
   char *zPathname = 0;
   int nPathname = 0;
 
@@ -2259,8 +2260,8 @@ int sqlite3PagerOpen(
       */
       if( rc==SQLITE_OK && !readOnly ){
         int iSectorSize = sqlite3OsSectorSize(pPager->fd);
-        if( nDefaultPage<iSectorSize ){
-          nDefaultPage = iSectorSize;
+        if( szPageDflt<iSectorSize ){
+          szPageDflt = iSectorSize;
         }
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
         {
@@ -2269,13 +2270,13 @@ int sqlite3PagerOpen(
           assert(SQLITE_IOCAP_ATOMIC512==(512>>8));
           assert(SQLITE_IOCAP_ATOMIC64K==(65536>>8));
           assert(SQLITE_MAX_DEFAULT_PAGE_SIZE<=65536);
-          for(ii=nDefaultPage; ii<=SQLITE_MAX_DEFAULT_PAGE_SIZE; ii=ii*2){
-            if( iDc&(SQLITE_IOCAP_ATOMIC|(ii>>8)) ) nDefaultPage = ii;
+          for(ii=szPageDflt; ii<=SQLITE_MAX_DEFAULT_PAGE_SIZE; ii=ii*2){
+            if( iDc&(SQLITE_IOCAP_ATOMIC|(ii>>8)) ) szPageDflt = ii;
           }
         }
 #endif
-        if( nDefaultPage>SQLITE_MAX_DEFAULT_PAGE_SIZE ){
-          nDefaultPage = SQLITE_MAX_DEFAULT_PAGE_SIZE;
+        if( szPageDflt>SQLITE_MAX_DEFAULT_PAGE_SIZE ){
+          szPageDflt = SQLITE_MAX_DEFAULT_PAGE_SIZE;
         }
       }
     }
@@ -2289,7 +2290,7 @@ int sqlite3PagerOpen(
   }
 
   if( pPager && rc==SQLITE_OK ){
-    pPager->pTmpSpace = sqlite3MallocZero(nDefaultPage);
+    pPager->pTmpSpace = sqlite3PageMalloc(szPageDflt);
   }
 
   /* If an error occured in either of the blocks above.
@@ -2326,7 +2327,7 @@ int sqlite3PagerOpen(
   /* pPager->stmtInUse = 0; */
   /* pPager->nRef = 0; */
   pPager->dbSize = memDb-1;
-  pPager->pageSize = nDefaultPage;
+  pPager->pageSize = szPageDflt;
   /* pPager->stmtSize = 0; */
   /* pPager->stmtJSize = 0; */
   /* pPager->nPage = 0; */
@@ -2421,7 +2422,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize){
   if( pageSize && pageSize!=pPager->pageSize 
    && !pPager->memDb && pPager->nRef==0 
   ){
-    char *pNew = (char *)sqlite3Malloc(pageSize);
+    char *pNew = (char *)sqlite3PageMalloc(pageSize);
     if( !pNew ){
       rc = SQLITE_NOMEM;
     }else{
@@ -2429,7 +2430,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize){
       pager_reset(pPager);
       pPager->pageSize = pageSize;
       setSectorSize(pPager);
-      sqlite3_free(pPager->pTmpSpace);
+      sqlite3PageFree(pPager->pTmpSpace);
       pPager->pTmpSpace = pNew;
       pagerLeave(pPager);
     }
@@ -2567,8 +2568,8 @@ int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
 ** Clear a PgHistory block
 */
 static void clearHistory(PgHistory *pHist){
-  sqlite3_free(pHist->pOrig);
-  sqlite3_free(pHist->pStmt);
+  sqlite3PageFree(pHist->pOrig);
+  sqlite3PageFree(pHist->pStmt);
   pHist->pOrig = 0;
   pHist->pStmt = 0;
 }
@@ -2653,7 +2654,7 @@ static void pager_truncate_cache(Pager *pPager){
       PAGER_INCR(sqlite3_pager_pgfree_count);
       unlinkPage(pPg);
       makeClean(pPg);
-      sqlite3_free(pPg->pData);
+      sqlite3PageFree(pPg->pData);
       sqlite3_free(pPg);
       pPager->nPage--;
     }
@@ -2790,7 +2791,7 @@ int sqlite3PagerClose(Pager *pPager){
   */
 
   sqlite3_free(pPager->aHash);
-  sqlite3_free(pPager->pTmpSpace);
+  sqlite3PageFree(pPager->pTmpSpace);
   sqlite3_free(pPager);
   return SQLITE_OK;
 }
@@ -3347,7 +3348,7 @@ int sqlite3PagerReleaseMemory(int nReq){
       );
       IOTRACE(("PGFREE %p %d *\n", pPager, pPg->pgno));
       PAGER_INCR(sqlite3_pager_pgfree_count);
-      sqlite3_free(pPg->pData);
+      sqlite3PageFree(pPg->pData);
       sqlite3_free(pPg);
       pPager->nPage--;
     }else{
@@ -3649,7 +3650,7 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
               + MEMDB*sizeof(PgHistory);
     pPg = sqlite3Malloc( nByteHdr );
     if( pPg ){
-      pData = sqlite3Malloc( pPager->pageSize );
+      pData = sqlite3PageMalloc( pPager->pageSize );
       if( pData==0 ){
         sqlite3_free(pPg);
         pPg = 0;
@@ -4223,7 +4224,7 @@ static int pager_write(PgHdr *pPg){
           PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
           PAGERTRACE3("JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno);
           assert( pHist->pOrig==0 );
-          pHist->pOrig = sqlite3Malloc( pPager->pageSize );
+          pHist->pOrig = sqlite3PageMalloc( pPager->pageSize );
           if( !pHist->pOrig ){
             return SQLITE_NOMEM;
           }
@@ -4293,7 +4294,7 @@ static int pager_write(PgHdr *pPg){
       if( MEMDB ){
         PgHistory *pHist = PGHDR_TO_HIST(pPg, pPager);
         assert( pHist->pStmt==0 );
-        pHist->pStmt = sqlite3Malloc( pPager->pageSize );
+        pHist->pStmt = sqlite3PageMalloc( pPager->pageSize );
         if( pHist->pStmt ){
           memcpy(pHist->pStmt, PGHDR_TO_DATA(pPg), pPager->pageSize);
         }
@@ -5035,7 +5036,7 @@ int sqlite3PagerStmtCommit(Pager *pPager){
         assert( pHist->inStmt );
         pHist->inStmt = 0;
         pHist->pPrevStmt = pHist->pNextStmt = 0;
-        sqlite3_free(pHist->pStmt);
+        sqlite3PageFree(pHist->pStmt);
         pHist->pStmt = 0;
       }
     }
@@ -5063,7 +5064,7 @@ int sqlite3PagerStmtRollback(Pager *pPager){
         pHist = PGHDR_TO_HIST(pPg, pPager);
         if( pHist->pStmt ){
           memcpy(PGHDR_TO_DATA(pPg), pHist->pStmt, pPager->pageSize);
-          sqlite3_free(pHist->pStmt);
+          sqlite3PageFree(pHist->pStmt);
           pHist->pStmt = 0;
         }
       }

@@ -1,5 +1,5 @@
-C Do\snot\sallow\sa\sVACUUM\sto\stry\sto\schange\sthe\spage_size\son\san\sencrypted\sdatabase.\s(CVS\s5225)
-D 2008-06-17T01:03:26
+C Add\sinternal\sinterfaces:\s\sPageMalloc/PageFree\sand\sScratchMalloc/ScratchFree.\s(CVS\s5226)
+D 2008-06-17T15:12:01
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c ab50c4b8c6a899dae499f5a805eebe4223c78269
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c b374c2ba457f442371aa92b065d1ba698cdee1dc
+F src/btree.c a7b1ffdde06b8e854076789e393b315ee7856ae5
 F src/btree.h b1bd7e0b8c2e33658aaf447cb0d1d94f74664b6b
 F src/btreeInt.h 02325f04758dba0fcd0c08ac55cd9b189dad61a5
 F src/build.c 88cc5501a87f72d0538b040001d88d31f994edea
@@ -116,10 +116,10 @@ F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c f99a75534a53e281fa2461239ee4a4b4bf6ad564
 F src/main.c 1f65b285a87f237e9e63c9628f220d10aef36b81
-F src/malloc.c c5bdf8967df9acc9765ed1b55c0c0eba9fe9494c
+F src/malloc.c 7b622d22f29e3be56d271a5a921f3b5788330189
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
-F src/mem1.c c8e07e9e6620b1aabf9bdefd19dee93831f67733
-F src/mem2.c 53d29d8275753e05676536c5db8f4867a622b31c
+F src/mem1.c 159f10e280f2d9aea597cf938851e61652dd5c3d
+F src/mem2.c 809d0e311c38521779e92262f51bd847d12d0f4d
 F src/mem3.c 617c2e2a72a10ecc5c01af14efc8c2596d2c2e87
 F src/mem4.c 45c328ec6dcb7e8d319cb383615b5fe547ca5409
 F src/mem5.c 3d2ff00c6e3bc37f5d82cd82e1a123b246fb7b39
@@ -134,7 +134,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 9f74147f1899793a106827f6bc770363ec377912
 F src/os_unix.c dd4a7b19ec00869764c389560c3faf566cf98a71
 F src/os_win.c 0b90d9a1ce18bfd2a5f3c4a6bdb13ec369c805a9
-F src/pager.c 5599fb3ebb63a60ecb44a18a594b371484a7e128
+F src/pager.c 124b3eaed1bcf9d19b183b5796fa94e292f8cdb8
 F src/pager.h 6aa3050a3c684475a5a9dbad5ff1cebad612acba
 F src/parse.y 8c2c3145eebe1964eb279cb3c4e502eae28bb0fa
 F src/pragma.c 70e7c865dce85fdf9df81848af2169009a56ed08
@@ -143,9 +143,9 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in 9ff44542f18937a987f13dbc64f29f9a93b8b521
+F src/sqlite.h.in 1444cdd69bd9377fe33fd273a4554b75fb0b5ede
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h bf561dab8a5155f25d3415fa056f570a731e2792
+F src/sqliteInt.h e579f90f7d070f604f79bb85029c424d273cc20b
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c c57e740e30bd6dda678796eed62c7f0e64689834
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P bb4edb53964559fc1cd69700beb72ecc29b58f37
-R 7166a804863eb0c7dec5311dc0bfcdb3
+P d49e5020019093a5b8a4fbe09caeb84ecb538629
+R 25fbb9097db5d9ffe1b1d6302c5755df
 U drh
-Z 9f8da086219df1d3431408cc19590d26
+Z e3fe71a0b1fa8d45526d8e8aaa39339c

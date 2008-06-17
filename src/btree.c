@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.464 2008/06/15 02:51:47 drh Exp $
+** $Id: btree.c,v 1.465 2008/06/17 15:12:01 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3719,14 +3719,14 @@ int sqlite3BtreeMoveto(
         if( available>=nCellKey ){
           c = sqlite3VdbeRecordCompare(nCellKey, pCellKey, pUnKey);
         }else{
-          pCellKey = sqlite3TempMalloc( nCellKey );
+          pCellKey = sqlite3Malloc( nCellKey );
           if( pCellKey==0 ){
             rc = SQLITE_NOMEM;
             goto moveto_finish;
           }
           rc = sqlite3BtreeKey(pCur, 0, nCellKey, (void *)pCellKey);
           c = sqlite3VdbeRecordCompare(nCellKey, pCellKey, pUnKey);
-          sqlite3TempFree(pCellKey);
+          sqlite3_free(pCellKey);
           if( rc ) goto moveto_finish;
         }
       }
@@ -4860,6 +4860,7 @@ static int balance_nonroot(MemPage *pPage){
   int subtotal;                /* Subtotal of bytes in cells on one page */
   int iSpace1 = 0;             /* First unused byte of aSpace1[] */
   int iSpace2 = 0;             /* First unused byte of aSpace2[] */
+  int szScratch;               /* Size of scratch memory requested */
   MemPage *apOld[NB];          /* pPage and up to two siblings */
   Pgno pgnoOld[NB];            /* Page numbers for each page in apOld[] */
   MemPage *apCopy[NB];         /* Private copies of apOld[] pages */
@@ -4990,13 +4991,13 @@ static int balance_nonroot(MemPage *pPage){
   /*
   ** Allocate space for memory structures
   */
-  apCell = sqlite3TempMalloc( 
+  szScratch =
        nMaxCells*sizeof(u8*)                       /* apCell */
      + nMaxCells*sizeof(u16)                       /* szCell */
      + (ROUND8(sizeof(MemPage))+pBt->pageSize)*NB  /* aCopy */
      + pBt->pageSize                               /* aSpace1 */
-     + (ISAUTOVACUUM ? nMaxCells : 0)              /* aFrom */
-  );
+     + (ISAUTOVACUUM ? nMaxCells : 0);             /* aFrom */
+  apCell = sqlite3ScratchMalloc( szScratch ); 
   if( apCell==0 ){
     rc = SQLITE_NOMEM;
     goto balance_cleanup;
@@ -5015,7 +5016,7 @@ static int balance_nonroot(MemPage *pPage){
     aFrom = &aSpace1[pBt->pageSize];
   }
 #endif
-  aSpace2 = sqlite3Malloc(pBt->pageSize);
+  aSpace2 = sqlite3PageMalloc(pBt->pageSize);
   if( aSpace2==0 ){
     rc = SQLITE_NOMEM;
     goto balance_cleanup;
@@ -5397,7 +5398,7 @@ static int balance_nonroot(MemPage *pPage){
   ** But the parent page will always be initialized.
   */
   assert( pParent->isInit );
-  sqlite3TempFree(apCell);
+  sqlite3ScratchFree(apCell);
   apCell = 0;
   rc = balance(pParent, 0);
   
@@ -5405,8 +5406,8 @@ static int balance_nonroot(MemPage *pPage){
   ** Cleanup before returning.
   */
 balance_cleanup:
-  sqlite3_free(aSpace2);
-  sqlite3TempFree(apCell);
+  sqlite3PageFree(aSpace2);
+  sqlite3ScratchFree(apCell);
   for(i=0; i<nOld; i++){
     releasePage(apOld[i]);
   }
