@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.43 2008/06/13 18:24:27 drh Exp $
+** $Id: os_os2.c,v 1.44 2008/06/18 21:08:16 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -695,13 +695,13 @@ static int os2Open(
   APIRET rc = NO_ERROR;
   ULONG ulAction;
   char *zNameCp;
-  char zTmpname[MAX_PATH+1];    /* Buffer to hold name of temp file */
+  char zTmpname[CCHMAXPATH+1];    /* Buffer to hold name of temp file */
 
   /* If the second argument to this function is NULL, generate a 
   ** temporary file name to use 
   */
   if( !zName ){
-    int rc = getTempname(MAX_PATH+1, zTmpname);
+    int rc = getTempname(CCHMAXPATH+1, zTmpname);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -1041,6 +1041,10 @@ int os2CurrentTime( sqlite3_vfs *pVfs, double *prNow ){
   return 0;
 }
 
+static int os2GetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
+  return 0;
+}
+
 /*
 ** Return a pointer to the sqlite3DefaultVfs structure.   We use
 ** a function rather than give the structure global scope because
@@ -1066,7 +1070,7 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     os2DlClose,        /* xDlClose */
     os2Randomness,     /* xRandomness */
     os2Sleep,          /* xSleep */
-    os2CurrentTime     /* xCurrentTime */
+    os2CurrentTime,    /* xCurrentTime */
     os2GetLastError    /* xGetLastError */
   };
 
