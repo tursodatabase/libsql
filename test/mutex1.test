@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: mutex1.test,v 1.2 2008/06/18 17:09:10 danielk1977 Exp $
+# $Id: mutex1.test,v 1.3 2008/06/18 17:59:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -84,44 +84,47 @@ do_test mutex1-1.9 {
 #   * Single-threaded mode.
 #
 
-foreach {mode mutexes} {
-  singlethread {}
-  multithread  {fast static_master static_mem static_prng}
-  serialized   {fast recursive static_master static_mem static_prng}
-} {
-  do_test mutex1.2.$mode.1 {
-    catch {db close}
-    sqlite3_shutdown
-    sqlite3_config $mode
-  } SQLITE_OK
-
-  do_test mutex1.2.$mode.2 {
-    clear_mutex_counters
-    sqlite3 db test.db
-    catchsql { CREATE TABLE abc(a, b, c) }
-    db eval {
-      INSERT INTO abc VALUES(1, 2, 3);
-    }
-  } {}
-
-  do_test mutex1.2.$mode.3 {
-    mutex_counters counters
-
-    set res [list]
-    foreach {key value} [array get counters] {
-      if {$key ne "total" && $value > 0} {
-        lappend res $key
+ifcapable threadsafe {
+  foreach {mode mutexes} {
+    singlethread {}
+    multithread  {fast static_master static_mem static_prng}
+    serialized   {fast recursive static_master static_mem static_prng}
+  } {
+    do_test mutex1.2.$mode.1 {
+      catch {db close}
+      sqlite3_shutdown
+      sqlite3_config $mode
+    } SQLITE_OK
+  
+    do_test mutex1.2.$mode.2 {
+      clear_mutex_counters
+      sqlite3 db test.db
+      catchsql { CREATE TABLE abc(a, b, c) }
+      db eval {
+        INSERT INTO abc VALUES(1, 2, 3);
       }
-    }
-    lsort $res
-  } $mutexes
+    } {}
+  
+    do_test mutex1.2.$mode.3 {
+      mutex_counters counters
+  
+      set res [list]
+      foreach {key value} [array get counters] {
+        if {$key ne "total" && $value > 0} {
+          lappend res $key
+        }
+      }
+      lsort $res
+    } $mutexes
+  }
 }
 
 do_test mutex1-X {
-  db close
+  catch {db close}
   sqlite3_shutdown
   clear_mutex_counters
   install_mutex_counters 0
+  sqlite3_initialize
 } {SQLITE_OK}
 
 finish_test

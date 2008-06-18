@@ -1,5 +1,5 @@
-C Implement\sthe\s'CONFIG_SINGLETHREAD'\sand\s'CONFIG_MULTITHREAD'\sconfiguration\smodes.\s(CVS\s5234)
-D 2008-06-18T17:09:10
+C Fix\sa\stest\scase\sin\smutex1.test\sthat\swas\sfailing\swhen\ssqlite\swas\scompiled\swith\sSQLITE_THREADSAFE=0.\s(CVS\s5235)
+D 2008-06-18T17:59:04
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -416,7 +416,7 @@ F test/misc5.test 0b68dcb630d44af2dbcdca94dd2b17c8d580f6fa
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 26e0d948a413bca61ed031159907a03d64647409
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/mutex1.test c8de096af7ae7ccee2b8f472fecb224b214e24d0
+F test/mutex1.test 9f493fa8663dc3e627e7e20a523873b1a20f0583
 F test/mutex2.test 6c8f4a5425a27088bc2ad107c71b7abbc2d8534d
 F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
@@ -597,7 +597,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 70c6739f4e84b3433e14960346b54d0e9e0bb9c6
-R bcb69678a02b2561df6a33f19115dfbd
+P 5059644c4bc5f6679afd939e0bc26080f42a9918
+R e1b007e18a61486333f37eed7d20669e
 U danielk1977
-Z b2748b102e9ea5fd93fb45dc8d5bd3c0
+Z 3a46c90858d1f487bb77585ca61e818d
