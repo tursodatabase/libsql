@@ -19,7 +19,7 @@
 ** implementation is suitable for testing.
 ** debugging purposes
 **
-** $Id: mutex.c,v 1.24 2008/06/18 17:09:10 danielk1977 Exp $
+** $Id: mutex.c,v 1.25 2008/06/18 18:08:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -80,6 +80,9 @@ int sqlite3_mutex_end(void){
 ** Retrieve a pointer to a static mutex or allocate a new dynamic one.
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int id){
+#ifndef SQLITE_OMIT_AUTOINIT
+  if( sqlite3_initialize() ) return 0;
+#endif
   return sqlite3Config.mutex.xMutexAlloc(id);
 }
 
