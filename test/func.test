@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.78 2008/04/16 12:58:54 drh Exp $
+# $Id: func.test,v 1.79 2008/06/18 15:34:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -929,6 +929,18 @@ do_test func-24.6 {
     SELECT 'BEGIN-'||group_concat(t1) FROM tbl1
   }
 } {BEGIN-this,program,is,free,software}
+set midargs {}
+set midres {}
+for {set i 1} {$i<[sqlite3_limit db SQLITE_LIMIT_FUNCTION_ARG -1]-1} {incr i} {
+  append midargs ,'/$i'
+  append midres /$i
+  set result \
+     "this$midres:program$midres:is$midres:free$midres:software$midres"
+  set sql "SELECT group_concat(t1$midargs,':') FROM tbl1"
+  do_test func-24.7.$i {
+     db eval $::sql
+  } $result
+}
 
 # Use the test_isolation function to make sure that type conversions
 # on function arguments do not effect subsequent arguments.

@@ -1,5 +1,5 @@
-C Add\sdocumentation\son\sthe\ssqlite3_mutex_methods\sobject.\s(CVS\s5232)
-D 2008-06-18T13:47:04
+C Make\ssure\saggregate\sfunctions\scan\stake\sany\snumber\sof\sarguments\sup\sto\sthe\nlimit\simposed\sby\sSQLITE_LIMIT_FUNCTION_ARGS.\s\sTicket\s#3179.\s\sModify\nthe\sgroup_concat()\sfunction\sto\stake\san\sunlimited\snumber\sof\sarguments\sin\norder\sto\sfacilitate\stesting\sthis\sbehavior.\s(CVS\s5233)
+D 2008-06-18T15:34:10
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/date.c bbc4114d1b946d6a94d060bc5b9edce7142c6086
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
 F src/expr.c ecb3b23d3543427cba3e2ac12a6c6ae4bb20d39b
 F src/fault.c 1f6177188edb00641673e462f3fab8cba9f7422b
-F src/func.c 6ebd44016c5a6c6d5dd9fe4cbbef2bd517313d0d
+F src/func.c 1e7d9569570134ac0771a00382d9d4b41c4aa052
 F src/global.c 2304cfa3288763bd2fed10caf8c6fbaa2b383f4e
 F src/hash.c 283864c1adf546d4f0a6ee3694b62beeda8fbd35
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
@@ -185,7 +185,7 @@ F src/vdbe.c f6866986de706b98c2738040bc65907728650e8d
 F src/vdbe.h 1e3722d471739c2b213c6283b60373290e52f7ea
 F src/vdbeInt.h de321b2c02593e1420106634ed1f5a7d77ad35a7
 F src/vdbeapi.c 22b01ed175e4d4c613ee82cabc7a44a275641206
-F src/vdbeaux.c 34b9478ea0c8b41a6dbce6b1bb1c392c87bb0264
+F src/vdbeaux.c 09d7a6923d4d71d7028e0d72b9d146d3ece6054e
 F src/vdbeblob.c 9345f6dcd675fdcfdb537d2d2f487542d9ea136a
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
 F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
@@ -330,7 +330,7 @@ F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3near.test 2d4dadcaac5025ab65bb87e66c45f39e92966194
-F test/func.test b9f4cd2171891c258d025b10413024bb9ebcf068
+F test/func.test 2c929a20e15b4d9121890393a892e91b74fe9fda
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
@@ -596,7 +596,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e36201a352f832c97c5c0fcb872c1f094cac03d2
-R 8648cd5178619fc653bfd259b7c7bae3
+P c3c7bfc9db6774824be14a1394e1842716dce8ec
+R 03ee4502eba907b49b63dcad3c223959
 U drh
-Z 67e332d2264b741dc268059d30026b9b
+Z 84afc1583f0d4ac82122bd3650c7f8b5

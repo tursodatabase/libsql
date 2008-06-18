@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.193 2008/06/15 02:51:47 drh Exp $
+** $Id: func.c,v 1.194 2008/06/18 15:34:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1166,8 +1166,8 @@ static void groupConcatStep(
   const char *zVal;
   StrAccum *pAccum;
   const char *zSep;
-  int nVal, nSep;
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  int nVal, nSep, i;
+  if( argc==0 || sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   pAccum = (StrAccum*)sqlite3_aggregate_context(context, sizeof(*pAccum));
 
   if( pAccum ){
@@ -1175,18 +1175,22 @@ static void groupConcatStep(
     pAccum->useMalloc = 1;
     pAccum->mxAlloc = db->aLimit[SQLITE_LIMIT_LENGTH];
     if( pAccum->nChar ){
-      if( argc==2 ){
-        zSep = (char*)sqlite3_value_text(argv[1]);
-        nSep = sqlite3_value_bytes(argv[1]);
+      if( argc>1 ){
+        zSep = (char*)sqlite3_value_text(argv[argc-1]);
+        nSep = sqlite3_value_bytes(argv[argc-1]);
       }else{
         zSep = ",";
         nSep = 1;
       }
       sqlite3StrAccumAppend(pAccum, zSep, nSep);
     }
-    zVal = (char*)sqlite3_value_text(argv[0]);
-    nVal = sqlite3_value_bytes(argv[0]);
-    sqlite3StrAccumAppend(pAccum, zVal, nVal);
+    i = 0;
+    do{
+      zVal = (char*)sqlite3_value_text(argv[i]);
+      nVal = sqlite3_value_bytes(argv[i]);
+      sqlite3StrAccumAppend(pAccum, zVal, nVal);
+      i++;
+    }while( i<argc-1 );
   }
 }
 static void groupConcatFinalize(sqlite3_context *context){
@@ -1275,8 +1279,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
     { "avg",    1, 0, 0, sumStep,      avgFinalize    },
     { "count",  0, 0, 0, countStep,    countFinalize  },
     { "count",  1, 0, 0, countStep,    countFinalize  },
-    { "group_concat", 1, 0, 0, groupConcatStep, groupConcatFinalize },
-    { "group_concat", 2, 0, 0, groupConcatStep, groupConcatFinalize },
+    { "group_concat", -1, 0, 0, groupConcatStep, groupConcatFinalize },
   };
   int i;
 
