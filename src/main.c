@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.446 2008/06/17 18:57:49 danielk1977 Exp $
+** $Id: main.c,v 1.447 2008/06/18 09:45:56 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -154,6 +154,11 @@ int sqlite3_config(int op, ...){
     case SQLITE_CONFIG_MUTEX: {
       /* Specify an alternative mutex implementation */
       sqlite3Config.mutex = *va_arg(ap, sqlite3_mutex_methods*);
+      break;
+    }
+    case SQLITE_CONFIG_GETMUTEX: {
+      /* Retrieve the current mutex implementation */
+      *va_arg(ap, sqlite3_mutex_methods*) = sqlite3Config.mutex;
       break;
     }
     case SQLITE_CONFIG_MEMSTATUS: {

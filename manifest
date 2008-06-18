@@ -1,5 +1,5 @@
-C Remove\smem3.c\sand\smem5.c\sfrom\sthe\samalgamation\sfor\sthe\stime\sbeing,\ssince\nthey\sdo\snot\scurrently\swork.\s\sWe\swill\sadd\sthem\sback\slater\sonce\sthey\sare\sfixed.\s(CVS\s5229)
-D 2008-06-18T02:01:07
+C Add\ssome\stest\sinfrastructure\sand\scases\sfor\sthe\snew\smutex\sapi.\s(CVS\s5230)
+D 2008-06-18T09:45:56
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -76,7 +76,7 @@ F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
-F main.mk 5ef9aba69a7c8a585348d1ce77bfc927e456fbc7
+F main.mk 8a6820d4ed89c95b4c28c88412bb8bf0513cfc5c
 F mkdll.sh 712e74f3efe08a6ba12b2945d018a29a89d7fe3b
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -115,7 +115,7 @@ F src/insert.c c2ead6c36566de8e3f130e7ab1431723a269d5d7
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c f99a75534a53e281fa2461239ee4a4b4bf6ad564
-F src/main.c 02f11264d00bec0a450b3570a7232eec6a4cdf5d
+F src/main.c 21807e7bff6176030ac14ebf49c8a85479349689
 F src/malloc.c 7b622d22f29e3be56d271a5a921f3b5788330189
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 159f10e280f2d9aea597cf938851e61652dd5c3d
@@ -123,10 +123,10 @@ F src/mem2.c 594270b8f0ed6c09ae5fb729eca2864139f9e293
 F src/mem3.c 617c2e2a72a10ecc5c01af14efc8c2596d2c2e87
 F src/mem4.c 45c328ec6dcb7e8d319cb383615b5fe547ca5409
 F src/mem5.c 3d2ff00c6e3bc37f5d82cd82e1a123b246fb7b39
-F src/mutex.c d367b079d61f4b4c2925e321209da04fe226590f
+F src/mutex.c 890b83ccf19de17e88b612b2b3f18009a9f1bfa1
 F src/mutex.h b9b9baf7050f3bb1c723e1d22088a704783a2927
 F src/mutex_os2.c b8c1231319e966875f251a7ec137bea353546b87
-F src/mutex_unix.c 74a6755912ad2a924026b54b4b5a64d327748aa5
+F src/mutex_unix.c 469a35c105435794375d683f75cad9e848817d19
 F src/mutex_w32.c e03baa369c5e8e7ea4dd2e5b3d098e047f7a2f06
 F src/os.c cf7e09d4215f35fc8269f0fa99f03fd2c2978658
 F src/os.h c9a7f94e80193fd4cf27f5c5698eb56753f1b05a
@@ -143,12 +143,12 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in d77f7a34f7655721cd887728874b8931a046fabb
+F src/sqlite.h.in 4724c4c3fb66c0e696edd6aec3b3d79c33c09d0a
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h f465a6d45e9cabadad5c6c097d17df3c054616d0
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
-F src/tclsqlite.c c57e740e30bd6dda678796eed62c7f0e64689834
+F src/tclsqlite.c 4dd9ee4cb44846ad9bcc4d0da8088c1e7d4b33d9
 F src/test1.c 736be7dea5cc126356bbb61a4b1ac5ff4fac7994
 F src/test2.c c46d146019ab6e37474e66b3c789e5237d9ea7b7
 F src/test3.c b5c1d1047a45af03375d66b3eec603faafa3ddc6
@@ -168,6 +168,7 @@ F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
 F src/test_malloc.c 5c2c698355613d321f216ece25901be1040cc1fb
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
+F src/test_mutex.c f3e1f04fd6a42f9e7ff47784db8bc81e497b5c65
 F src/test_onefile.c 1f87d4a21cbfb24a7c35e4333fa0bd34d641f68d
 F src/test_osinst.c 867f1317bd135f942a63eab5a78da40fc70d1493
 F src/test_schema.c e3f93725f7c5b2cff84a69dc4332040dfbc8f81a
@@ -415,6 +416,7 @@ F test/misc5.test 0b68dcb630d44af2dbcdca94dd2b17c8d580f6fa
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 26e0d948a413bca61ed031159907a03d64647409
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
+F test/mutex1.test 6494fe9e6747328a0b1b0d2676ff4cf1a12fb51d
 F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
@@ -594,7 +596,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P af1835bb5f5e3fb78d782c7c287e20db169e883f
-R f52e17178b7cffb0eea0931f117949b1
-U drh
-Z 9696bf70dd1d33bb99b1db9b6b6af8a7
+P 39b4e1ff4e3db3278c35eff10bbabdf4d87793a4
+R a0d49cf1341289981a00a4ad9da3e9bc
+U danielk1977
+Z 963819c2af16f4cb39a0c216ae54cc59

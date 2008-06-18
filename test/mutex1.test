@@ -1,0 +1,86 @@
+# 2008 June 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: mutex1.test,v 1.1 2008/06/18 09:45:56 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+proc mutex_counters {varname} {
+  upvar $varname var
+  set var(total) 0
+  foreach {name value} [read_mutex_counters] {
+    set var($name) $value
+    incr var(total) $value
+  }
+}
+
+#-------------------------------------------------------------------------
+# Tests mutex1-1.* test that sqlite3_config() returns SQLITE_MISUSE if
+# is called at the wrong time. And that the first time sqlite3_initialize 
+# is called it obtains the 'static_master' mutex. Subsequent calls are
+# no-ops that do not require a mutex.
+#
+do_test mutex1-1.0 {
+  install_mutex_counters 1
+} {SQLITE_MISUSE}
+
+do_test mutex1-1.1 {
+  db close
+  install_mutex_counters 1
+} {SQLITE_MISUSE}
+
+do_test mutex1-1.2 {
+  sqlite3_shutdown
+  install_mutex_counters 1
+} {SQLITE_OK}
+
+do_test mutex1-1.3 {
+  install_mutex_counters 0
+} {SQLITE_OK}
+
+do_test mutex1-1.4 {
+  install_mutex_counters 1
+} {SQLITE_OK}
+
+do_test mutex1-1.5 {
+  mutex_counters counters
+  set counters(total)
+} {0}
+
+do_test mutex1-1.6 {
+  sqlite3_initialize
+} {SQLITE_OK}
+
+do_test mutex1-1.7 {
+  mutex_counters counters
+  list $counters(total) $counters(static_master)
+} {1 1}
+
+do_test mutex1-1.8 {
+  clear_mutex_counters
+  sqlite3_initialize
+} {SQLITE_OK}
+
+do_test mutex1-1.9 {
+  mutex_counters counters
+  list $counters(total) $counters(static_master)
+} {0 0}
+
+
+do_test mutex1-X {
+  sqlite3_shutdown
+  clear_mutex_counters
+  install_mutex_counters 0
+} {SQLITE_OK}
+
+finish_test
+

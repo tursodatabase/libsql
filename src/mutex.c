@@ -19,7 +19,7 @@
 ** implementation is suitable for testing.
 ** debugging purposes
 **
-** $Id: mutex.c,v 1.22 2008/06/17 18:57:49 danielk1977 Exp $
+** $Id: mutex.c,v 1.23 2008/06/18 09:45:56 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -237,9 +237,9 @@ static int noopMutexTry(sqlite3_mutex *p){
 ** is not currently allocated.  SQLite will never do either.
 */
 static void noopMutexLeave(sqlite3_mutex *p){
-  assert( sqlite3_mutex_held(p) );
+  assert( noopMutexHeld(p) );
   p->cnt--;
-  assert( p->id==SQLITE_MUTEX_RECURSIVE || sqlite3_mutex_notheld(p) );
+  assert( p->id==SQLITE_MUTEX_RECURSIVE || noopMutexNotheld(p) );
 }
 
 sqlite3_mutex_methods *sqlite3DefaultMutex(void){
