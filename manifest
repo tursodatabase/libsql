@@ -1,5 +1,5 @@
-C Add\ssome\stest\sinfrastructure\sand\scases\sfor\sthe\snew\smutex\sapi.\s(CVS\s5230)
-D 2008-06-18T09:45:56
+C Added\snew\sconfiguration\soptions\sto\squery\sthe\slow-level\smalloc\sinterface\nand\sto\sprovide\smemory\sbuffers\sfor\sscratch,\spage-cache,\sand\sheap\smemory\nallocators.\s(CVS\s5231)
+D 2008-06-18T13:27:47
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/insert.c c2ead6c36566de8e3f130e7ab1431723a269d5d7
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c f99a75534a53e281fa2461239ee4a4b4bf6ad564
-F src/main.c 21807e7bff6176030ac14ebf49c8a85479349689
+F src/main.c 34c9d9f99e0c6df25ac9d6e1a9c0964d8170cbe2
 F src/malloc.c 7b622d22f29e3be56d271a5a921f3b5788330189
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 159f10e280f2d9aea597cf938851e61652dd5c3d
@@ -143,9 +143,9 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 2b2db2de4ab491f5a14d3480466f8f4b5a5db74a
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in 4724c4c3fb66c0e696edd6aec3b3d79c33c09d0a
+F src/sqlite.h.in ada07a820e5a9d1264e2f9736f2bf7edd0a623ff
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
-F src/sqliteInt.h f465a6d45e9cabadad5c6c097d17df3c054616d0
+F src/sqliteInt.h 90dff45c2fa188ff8763dd5358f7b1040e1bb4fb
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c 4dd9ee4cb44846ad9bcc4d0da8088c1e7d4b33d9
@@ -596,7 +596,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 39b4e1ff4e3db3278c35eff10bbabdf4d87793a4
-R a0d49cf1341289981a00a4ad9da3e9bc
-U danielk1977
-Z 963819c2af16f4cb39a0c216ae54cc59
+P 262baee9952b28afe5dc77eb7365ebb11a480906
+R 5f557fa3b0a0319b470b2906d72f8bb7
+U drh
+Z 9163b748554dc08433fe2724996f3f54

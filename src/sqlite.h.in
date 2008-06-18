@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.332 2008/06/18 09:45:56 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.333 2008/06/18 13:27:47 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1032,6 +1032,14 @@ struct sqlite3_mem_methods {
 ** alternative low-level memory allocation routines to be used in place
 ** the memory allocation routines built into SQLite.</dd>
 **
+** <dt>SQLITE_CONFIG_GETMALLOC</dt>
+** <dd>This option takes a single argument which is a pointer to an
+** instance of the [sqlite3_mem_methods] structure.  The [sqlite3_mem_methods]
+** structure is filled with the currently defined memory allocation routines.
+** This option can be used to overload the default memory allocation
+** routines with a wrapper that simulations memory allocation failure or
+** tracks memory usage, for example.</dd>
+**
 ** <dt>SQLITE_CONFIG_MEMSTATUS</dt>
 ** <dd>This option takes single boolean argument which enables or disables
 ** the collection of memory allocation statistics.  When disabled, the
@@ -1043,18 +1051,73 @@ struct sqlite3_mem_methods {
 **   <li> sqlite3_memory_status()
 **   </ul>
 ** </dd>
+**
+** <dt>SQLITE_CONFIG_SCRATCH</dt>
+** <dd>This option specifies a static memory buffer that SQLite can use for
+** scratch memory.  There are three arguments:  A pointer to the memory, the
+** size of each scratch buffer (sz), and the number of buffers (N).  The first
+** argument should point to an allocation of at least sz*N bytes of memory.
+** SQLite will use no more than one scratch buffer at once per thread, so
+** N should be set to the expected maximum number of threads.  The sz 
+** parameter should be 6 times the size of the largest database page size.
+** Scratch buffers are used as part of the btree balance operation.  If
+** The btree balancer needs additional memory beyond what is provided by
+** scratch buffers or if no scratch buffer space is specified, then SQLite
+** goes to [sqlite3_malloc()] to obtain the memory it needs.
+** </dd>
+**
+** <dt>SQLITE_CONFIG_PAGECACHE</dt>
+** <dd>This option specifies a static memory buffer that SQLite can use for
+** the database page cache.  There are three arguments:
+** A pointer to the memory, the
+** size of each page buffer (sz), and the number of pages (N).  The first
+** argument should point to an allocation of at least sz*N bytes of memory.
+** SQLite will use the memory provided by the first argument to satisfy
+** its memory needs for the first N pages that it adds to cache.  If 
+** additional page cache memory is needed beyond what is provided by
+** this option, then SQLite goes to [sqlite3_malloc()] for the additional
+** storage space.
+** </dd>
+**
+** <dt>SQLITE_CONFIG_HEAP</dt>
+** <dd>This option specifies a static memory buffer that SQLite will use
+** for all of its dynamic memory allocation needs beyond those provided
+** for by [SQLITE_CONFIG_SCRATCH] and [SQLITE_CONFIG_PAGECACHE].
+** There are three arguments: A pointer to the memory, the number of
+** bytes in the memory buffer, and the minimum allocation size.  When
+** this configuration option is used, SQLite never calls the system
+** malloc() implementation but instead uses the supplied memory buffer
+** to satisfy all [sqlite3_malloc()] requests.
+** </dd>
+**
+** <dt>SQLITE_CONFIG_MUTEX</dt>
+** <dd>This option takes a single argument which is a pointer to an
+** instance of the [sqlite3_mutex_methods] structure.  The argument specifics
+** alternative low-level mutex routines to be used in place
+** the mutex routines built into SQLite.</dd>
+**
+** <dt>SQLITE_CONFIG_GETMALLOC</dt>
+** <dd>This option takes a single argument which is a pointer to an
+** instance of the [sqlite3_mutex_methods] structure.  The
+** [sqlite3_mutex_methods]
+** structure is filled with the currently defined mutex routines.
+** This option can be used to overload the default mutex allocation
+** routines with a wrapper used to track mutex usage for performance
+** profiling or testing, for example.</dd>
+**
 ** </dl>
 */ 
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
 #define SQLITE_CONFIG_MULTITHREAD   2  /* nil */
 #define SQLITE_CONFIG_SERIALIZED    3  /* nil */
 #define SQLITE_CONFIG_MALLOC        4  /* sqlite3_mem_methods* */
-#define SQLITE_CONFIG_MEMSTATUS     5  /* boolean */
-#define SQLITE_CONFIG_MUTEX         6  /* sqlite3_mutex_methods* */
-#define SQLITE_CONFIG_GETMUTEX      7  /* sqlite3_mutex_methods* */
-
-/* These options are to be added later.  Currently unused and undocumented. */
-#define SQLITE_CONFIG_HEAP          8  /* void*, int64, min, max, tmp */
+#define SQLITE_CONFIG_GETMALLOC     5  /* sqlite3_mem_methods* */
+#define SQLITE_CONFIG_SCRATCH       6  /* void*, int sz, int N */
+#define SQLITE_CONFIG_PAGECACHE     7  /* void*, int sz, int N */
+#define SQLITE_CONFIG_HEAP          8  /* void*, int nByte, int min */
+#define SQLITE_CONFIG_MEMSTATUS     9  /* boolean */
+#define SQLITE_CONFIG_MUTEX        10  /* sqlite3_mutex_methods* */
+#define SQLITE_CONFIG_GETMUTEX     11  /* sqlite3_mutex_methods* */
 
 
 /*
