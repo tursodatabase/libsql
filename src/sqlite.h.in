@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.334 2008/06/18 13:47:04 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.335 2008/06/18 18:12:04 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1055,8 +1055,9 @@ struct sqlite3_mem_methods {
 ** <dt>SQLITE_CONFIG_SCRATCH</dt>
 ** <dd>This option specifies a static memory buffer that SQLite can use for
 ** scratch memory.  There are three arguments:  A pointer to the memory, the
-** size of each scratch buffer (sz), and the number of buffers (N).  The first
-** argument should point to an allocation of at least sz*N bytes of memory.
+** size of each scratch buffer (sz), and the number of buffers (N).  The sz
+** argument must be a multiple of 16. The first
+** argument should point to an allocation of at least (sz+1)*N bytes of memory.
 ** SQLite will use no more than one scratch buffer at once per thread, so
 ** N should be set to the expected maximum number of threads.  The sz 
 ** parameter should be 6 times the size of the largest database page size.
@@ -1070,8 +1071,9 @@ struct sqlite3_mem_methods {
 ** <dd>This option specifies a static memory buffer that SQLite can use for
 ** the database page cache.  There are three arguments:
 ** A pointer to the memory, the
-** size of each page buffer (sz), and the number of pages (N).  The first
-** argument should point to an allocation of at least sz*N bytes of memory.
+** size of each page buffer (sz), and the number of pages (N).  The sz
+** argument must be a power of two between 512 and 32768.  The first
+** argument should point to an allocation of at least (sz+4)*N bytes of memory.
 ** SQLite will use the memory provided by the first argument to satisfy
 ** its memory needs for the first N pages that it adds to cache.  If 
 ** additional page cache memory is needed beyond what is provided by

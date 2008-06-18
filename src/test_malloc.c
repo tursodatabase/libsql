@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.23 2008/05/29 02:57:48 shane Exp $
+** $Id: test_malloc.c,v 1.24 2008/06/18 18:12:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -652,6 +652,85 @@ static int test_memdebug_log(
 }
 
 /*
+** Usage:    sqlite3_config_scratch SIZE N
+**
+** Set the scratch memory buffer using SQLITE_CONFIG_SCRATCH.
+** The buffer is static and is of limited size.  N might be
+** adjusted downward as needed to accomodate the requested size.
+** The revised value of N is returned.
+**
+** A negative SIZE causes the buffer pointer to be NULL.
+*/
+static int test_config_scratch(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int sz, N, rc;
+  Tcl_Obj *pResult;
+  static char buf[20000];
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SIZE N");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &N) ) return TCL_ERROR;
+  if( sz<0 ){
+    rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, 0, 0, 0);
+  }else if( sz==0 ){
+    int mx = sizeof(buf)/(sz+4);
+    if( N>mx ) N = mx;
+    rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, buf, sz, N);
+  }
+  pResult = Tcl_NewObj();
+  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(rc));
+  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(N));
+  Tcl_SetObjResult(interp, pResult);
+  return TCL_OK;
+}
+
+/*
+** Usage:    sqlite3_config_pagecache SIZE N
+**
+** Set the page-cache memory buffer using SQLITE_CONFIG_PAGECACHE.
+** The buffer is static and is of limited size.  N might be
+** adjusted downward as needed to accomodate the requested size.
+** The revised value of N is returned.
+**
+** A negative SIZE causes the buffer pointer to be NULL.
+*/
+static int test_config_pagecache(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int sz, N, rc;
+  Tcl_Obj *pResult;
+  static char buf[100000];
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SIZE N");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &N) ) return TCL_ERROR;
+  if( sz<0 ){
+    rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, 0, 0, 0);
+  }else if( sz==0 ){
+    int mx = sizeof(buf)/(sz+4);
+    if( N>mx ) N = mx;
+    rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, buf, sz, N);
+  }
+  pResult = Tcl_NewObj();
+  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(rc));
+  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(N));
+  Tcl_SetObjResult(interp, pResult);
+  return TCL_OK;
+}
+
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest_malloc_Init(Tcl_Interp *interp){
@@ -672,7 +751,9 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_memdebug_pending",   test_memdebug_pending         },
      { "sqlite3_memdebug_settitle",  test_memdebug_settitle        },
      { "sqlite3_memdebug_malloc_count", test_memdebug_malloc_count },
-     { "sqlite3_memdebug_log",       test_memdebug_log },
+     { "sqlite3_memdebug_log",       test_memdebug_log             },
+     { "sqlite3_config_scratch",     test_config_scratch           },
+     { "sqlite3_config_pagecache",   test_config_pagecache         },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

@@ -1,5 +1,5 @@
-C Add\sa\scall\sto\ssqlite3_initialize()\sto\ssqlite3_mutex_alloc()\s(CVS\s5236)
-D 2008-06-18T18:08:39
+C Added\ssupport\sfor\sscratch-memory\slookaside\sallocations.\s\sLargely\suntested.\nAdded\scalls\sto\ssqlite3_initialize()\swithin\smalloc\sAPIs.\s(CVS\s5237)
+D 2008-06-18T18:12:04
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +116,7 @@ F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 2ac671f42a8ce15e2a58155b9d7f6c61eb7e127e
 F src/main.c 619caedf25329b55fe138e581497ec5052bb7e34
-F src/malloc.c 6f84f295db49a79c1e2fc07a63311f5685d47274
+F src/malloc.c 56e48f8147e04f8f8a19fed8e09be351bdf1a48e
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 159f10e280f2d9aea597cf938851e61652dd5c3d
 F src/mem2.c 468a7fd5e0ce1909cfb554d7589af1d4a61f14bb
@@ -143,7 +143,7 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 362b62e26db90ec9296903377a9d74b4669aa515
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in 48a3a643fa711141cb53b1c714be74098770e224
+F src/sqlite.h.in 44a3ab74e6677490133ea5efd4ee649dedcf9048
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 24fe828d52f497d4c026ea3b5f6a01d97ea01a2d
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -166,7 +166,7 @@ F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
 F src/test_func.c f4aafa10f17d52c43a64b47717265802e6e552b3
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
-F src/test_malloc.c 5c2c698355613d321f216ece25901be1040cc1fb
+F src/test_malloc.c d44d9ee715ad97503c87d287a802b22421a4c32b
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c 08640d7547bfadb6997a22d72e63914feaf4bc4f
 F src/test_onefile.c 1f87d4a21cbfb24a7c35e4333fa0bd34d641f68d
@@ -597,7 +597,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d1a87c3bcc9a32918f1cf743f85cd1a71557220e
-R 2889563ab68a678e373207022a120810
-U danielk1977
-Z 2c927c6baa472eb569be9409a45d4432
+P 8b23b719440aca9fca7e8f409729c3318ff3f80c
+R 34015a602dbdf60ee79902fc40c411d2
+U drh
+Z c0727b87467452e392e22abba32628ae

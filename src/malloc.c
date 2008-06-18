@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.19 2008/06/18 17:09:10 danielk1977 Exp $
+** $Id: malloc.c,v 1.20 2008/06/18 18:12:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -43,6 +43,7 @@ void sqlite3_soft_heap_limit(int n){
   }else{
     iLimit = n;
   }
+  sqlite3_initialize();
   if( iLimit>0 ){
     sqlite3_memory_alarm(softHeapLimitEnforcer, 0, iLimit);
   }else{
@@ -86,6 +87,18 @@ static struct {
   int alarmBusy;
 
   /*
+  ** Pointers to the end of sqlite3Config.pScratch and
+  ** sqlite3Config.pPage to a block of memory that records
+  ** which pages are available.
+  */
+  u32 *aScratchFree;
+  u32 *aPageFree;
+
+  /* Number of free pages for scratch and page-cache memory */
+  u32 nScratchFree;
+  u32 nPageFree;
+
+  /*
   ** Performance statistics
   */
   sqlite3_int64 nowUsed;  /* Main memory currently in use */
@@ -102,8 +115,28 @@ int sqlite3MallocInit(void){
     sqlite3MemSetDefault();
   }
   memset(&mem0, 0, sizeof(mem0));
-  if( sqlite3Config.bMemstat ){
+  if( sqlite3Config.bCoreMutex ){
     mem0.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
+  }
+  if( sqlite3Config.pScratch && sqlite3Config.szScratch>=3000
+      && sqlite3Config.nScratch>0 ){
+    int i;
+    mem0.aScratchFree = (u32*)&((char*)sqlite3Config.pScratch)
+                  [sqlite3Config.szScratch*sqlite3Config.nScratch];
+    for(i=0; i<sqlite3Config.nScratch; i++){ mem0.aScratchFree[i] = i; }
+    mem0.nScratchFree = sqlite3Config.nScratch;
+  }else{
+    sqlite3Config.pScratch = 0;
+  }
+  if( sqlite3Config.pPage && sqlite3Config.szPage>=512
+      && sqlite3Config.nPage>0 ){
+    int i;
+    mem0.aPageFree = (u32*)&((char*)sqlite3Config.pPage)
+                  [sqlite3Config.szPage*sqlite3Config.nPage];
+    for(i=0; i<sqlite3Config.nPage; i++){ mem0.aPageFree[i] = i; }
+    mem0.nPageFree = sqlite3Config.nPage;
+  }else{
+    sqlite3Config.pPage = 0;
   }
   return sqlite3Config.m.xInit(sqlite3Config.m.pAppData);
 }
@@ -112,7 +145,8 @@ int sqlite3MallocInit(void){
 ** Deinitialize the memory allocation subsystem.
 */
 void sqlite3MallocEnd(void){
-   sqlite3Config.m.xShutdown(sqlite3Config.m.pAppData);
+  sqlite3Config.m.xShutdown(sqlite3Config.m.pAppData);
+  memset(&mem0, 0, sizeof(mem0));
 }
 
 /*
@@ -120,6 +154,7 @@ void sqlite3MallocEnd(void){
 */
 sqlite3_int64 sqlite3_memory_used(void){
   sqlite3_int64 n;
+  sqlite3_initialize();
   sqlite3_mutex_enter(mem0.mutex);
   n = mem0.nowUsed;
   sqlite3_mutex_leave(mem0.mutex);  
@@ -133,6 +168,7 @@ sqlite3_int64 sqlite3_memory_used(void){
 */
 sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
   sqlite3_int64 n;
+  sqlite3_initialize();
   sqlite3_mutex_enter(mem0.mutex);
   n = mem0.mxUsed;
   if( resetFlag ){
@@ -252,27 +288,55 @@ void *sqlite3ScratchMalloc(int n){
   if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ){
     return 0;
   }
+
 #if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
+  /* Verify that no more than one scratch allocation per thread
+  ** is outstanding at one time.  (This is only checked in the
+  ** single-threaded case since checking in the multi-threaded case
+  ** would be much more complicated.) */
   assert( scratchAllocOut==0 );
   scratchAllocOut = 1;
 #endif
-  if( sqlite3Config.bMemstat ){
-    sqlite3_mutex_enter(mem0.mutex);
-    if( n>mem0.mxScratchReq ) mem0.mxScratchReq = n;
+
+  sqlite3_mutex_enter(mem0.mutex);
+  if( n>mem0.mxScratchReq ) mem0.mxScratchReq = n;
+  if( mem0.nScratchFree==0 || sqlite3Config.szScratch>=n ){
     p = sqlite3Config.m.xMalloc(n);
-    sqlite3_mutex_leave(mem0.mutex);
   }else{
-    p = sqlite3Config.m.xMalloc(n);
+    int i;
+    i = mem0.aScratchFree[--mem0.nScratchFree];
+    i *= sqlite3Config.szScratch;
+    p = (void*)&((char*)sqlite3Config.pScratch)[i];
   }
+  sqlite3_mutex_leave(mem0.mutex);
   return p;
 }
 void sqlite3ScratchFree(void *p){
   if( p ){
+
 #if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
+    /* Verify that no more than one scratch allocation per thread
+    ** is outstanding at one time.  (This is only checked in the
+    ** single-threaded case since checking in the multi-threaded case
+    ** would be much more complicated.) */
     assert( scratchAllocOut==1 );
     scratchAllocOut = 0;
 #endif
-    sqlite3Config.m.xFree(p);
+
+    if( sqlite3Config.pScratch==0
+       || p<sqlite3Config.pScratch
+       || p>=(void*)mem0.aScratchFree ){
+      sqlite3Config.m.xFree(p);
+    }else{
+      int i;
+      sqlite3_mutex_enter(mem0.mutex);
+      assert( mem0.nScratchFree<sqlite3Config.nScratch );
+      i = p - sqlite3Config.pScratch;
+      i /= sqlite3Config.szScratch;
+      assert( i>=0 && i<sqlite3Config.nScratch );
+      mem0.aScratchFree[mem0.nScratchFree++] = i;
+      sqlite3_mutex_leave(mem0.mutex);
+    }
   }
 }
 
