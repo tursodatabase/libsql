@@ -19,7 +19,7 @@
 ** Source files should #include the sqliteInt.h file and let that file
 ** include this one indirectly.
 **
-** $Id: mutex.h,v 1.4 2008/06/15 02:51:48 drh Exp $
+** $Id: mutex.h,v 1.5 2008/06/18 18:57:42 danielk1977 Exp $
 */
 
 
@@ -77,8 +77,8 @@
 #define sqlite3_mutex_leave(X)
 #define sqlite3_mutex_held(X)     1
 #define sqlite3_mutex_notheld(X)  1
-#define sqlite3_mutex_init()      SQLITE_OK
-#define sqlite3_mutex_end()
+#define sqlite3MutexInit()        SQLITE_OK
+#define sqlite3MutexEnd()
 #endif
 
 #endif /* SQLITE_MUTEX_APPDEF */

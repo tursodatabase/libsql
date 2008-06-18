@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.714 2008/06/18 17:09:10 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.715 2008/06/18 18:57:42 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1807,6 +1807,8 @@ void sqlite3MemSetDefault(void);
 
 sqlite3_mutex_methods *sqlite3DefaultMutex(void);
 sqlite3_mutex *sqlite3MutexAlloc(int);
+int sqlite3MutexInit(void);
+int sqlite3MutexEnd(void);
 
 int sqlite3IsNaN(double);
 

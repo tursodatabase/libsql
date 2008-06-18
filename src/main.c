@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.449 2008/06/18 17:09:10 danielk1977 Exp $
+** $Id: main.c,v 1.450 2008/06/18 18:57:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -74,7 +74,7 @@ static int sqlite3FullInit = 0;      /* Initialization is complete */
 int sqlite3_initialize(void){
   int rc;
   if( sqlite3IsInit ) return SQLITE_OK;
-  rc = sqlite3_mutex_init();
+  rc = sqlite3MutexInit();
   if( rc==SQLITE_OK ){
     sqlite3_mutex *pMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
     sqlite3_mutex_enter(pMutex);
@@ -102,7 +102,7 @@ int sqlite3_initialize(void){
 int sqlite3_shutdown(void){
   sqlite3_os_end();
   sqlite3MallocEnd();
-  sqlite3_mutex_end();
+  sqlite3MutexEnd();
   sqlite3FullInit = 0;
   sqlite3IsInit = 0;
   return SQLITE_OK;
