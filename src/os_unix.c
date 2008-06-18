@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.187 2008/06/13 18:24:27 drh Exp $
+** $Id: os_unix.c,v 1.188 2008/06/18 17:09:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if OS_UNIX              /* This file is used on unix only */
@@ -367,10 +367,10 @@ typedef enum {
 ** Helper functions to obtain and relinquish the global mutex.
 */
 static void enterMutex(){
-  sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER));
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
 }
 static void leaveMutex(){
-  sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER));
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
 }
 
 #if SQLITE_THREADSAFE

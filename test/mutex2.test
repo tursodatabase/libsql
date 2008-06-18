@@ -1,0 +1,72 @@
+# 2007 March 26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file runs some other test files after calling sqlite3_config to
+# set the thread-safety mode to SQLITE_CONFIG_SINGLETHREAD and
+# SQLITE_CONFIG_MULTITHREAD (instead of the default SQLITE_CONFIG_SERIALIZED).
+#
+# $Id: mutex2.test,v 1.1 2008/06/18 17:09:10 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable {!pager_pragmas} {
+  finish_test
+  return
+}
+
+rename finish_test really_finish_test2
+proc finish_test {} {}
+set ISQUICK 1
+
+rename do_test really_do_test
+proc do_test {args} {
+  set sc [concat really_do_test "mutex2-${::thread_mode}.[lindex $args 0]" \
+      [lrange $args 1 end]]
+  eval $sc
+}
+
+foreach ::thread_mode {singlethread multithread} {
+  do_test mutex2-$::thread_mode.0 {
+    catch {db close}
+    sqlite3_shutdown
+    sqlite3_config $::thread_mode
+  } SQLITE_OK
+
+  source $testdir/delete.test
+  source $testdir/delete2.test
+  source $testdir/insert.test
+  source $testdir/rollback.test
+  source $testdir/select1.test
+  source $testdir/select2.test
+  source $testdir/trans.test
+  source $testdir/update.test
+  source $testdir/vacuum.test
+  source $testdir/types.test
+  source $testdir/types2.test
+  source $testdir/types3.test
+
+  #source $testdir/malloc.test
+  #source $testdir/ioerr.test
+}
+
+do_test mutex2-X {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config serialized
+} SQLITE_OK
+
+rename finish_test ""
+rename really_finish_test2 finish_test
+rename do_test ""
+rename really_do_test do_test
+finish_test
+

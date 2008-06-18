@@ -19,7 +19,7 @@
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 **
-** $Id: mem2.c,v 1.31 2008/06/17 17:21:18 danielk1977 Exp $
+** $Id: mem2.c,v 1.32 2008/06/18 17:09:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -162,7 +162,7 @@ static int sqlite3MemSize(void *p){
 ** Initialize the memory allocation subsystem.
 */
 static int sqlite3MemInit(void *NotUsed){
-  mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+  mem.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   return SQLITE_OK;
 }
 

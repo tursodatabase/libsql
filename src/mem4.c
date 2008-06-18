@@ -12,7 +12,7 @@
 ** This file contains the C functions that implement a memory
 ** allocation subsystem for use by SQLite.  
 **
-** $Id: mem4.c,v 1.2 2008/02/14 23:26:56 drh Exp $
+** $Id: mem4.c,v 1.3 2008/06/18 17:09:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -112,7 +112,7 @@ static struct {
 */
 static void memsys4Enter(void){
   if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
+    mem.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   }
   sqlite3_mutex_enter(mem.mutex);
 }

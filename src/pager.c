@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.458 2008/06/17 15:12:01 drh Exp $
+** @(#) $Id: pager.c,v 1.459 2008/06/18 17:09:10 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -518,7 +518,7 @@ static const unsigned char aJournalMagic[] = {
     if( p->iInUseMM && p->iInUseDB==1 ){
 #ifndef SQLITE_MUTEX_NOOP
       sqlite3_mutex *mutex;
-      mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM2);
+      mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM2);
 #endif
       p->iInUseDB = 0;
       sqlite3_mutex_enter(mutex);
@@ -616,9 +616,9 @@ static void lruListAdd(PgHdr *pPg){
   listAdd(&pPg->pPager->lru, &pPg->free, pPg);
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   if( !pPg->pPager->memDb ){
-    sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+    sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU));
     listAdd(&sqlite3LruPageList, &pPg->gfree, pPg);
-    sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU));
   }
 #endif
 }
@@ -632,9 +632,9 @@ static void lruListRemove(PgHdr *pPg){
   listRemove(&pPg->pPager->lru, &pPg->free, pPg);
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   if( !pPg->pPager->memDb ){
-    sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+    sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU));
     listRemove(&sqlite3LruPageList, &pPg->gfree, pPg);
-    sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU));
   }
 #endif
 }
@@ -651,11 +651,11 @@ static void lruListSetFirstSynced(Pager *pPager){
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   if( !pPager->memDb ){
     PgHdr *p;
-    sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+    sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU));
     for(p=sqlite3LruPageList.pFirst; p && p->needSync; p=p->gfree.pNext);
     assert(p==pPager->lru.pFirstSynced || p==sqlite3LruPageList.pFirstSynced);
     sqlite3LruPageList.pFirstSynced = p;
-    sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU));
   }
 #endif
 }
@@ -2364,7 +2364,7 @@ int sqlite3PagerOpen(
   pPager->iInUseDB = 0;
   if( !memDb ){
 #ifndef SQLITE_MUTEX_NOOP
-    sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM2);
+    sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM2);
 #endif
     sqlite3_mutex_enter(mutex);
     pPager->pNext = sqlite3PagerList;
@@ -2751,7 +2751,7 @@ int sqlite3PagerClose(Pager *pPager){
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   if( !MEMDB ){
 #ifndef SQLITE_MUTEX_NOOP
-    sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM2);
+    sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM2);
 #endif
     sqlite3_mutex_enter(mutex);
     if( pPager->pPrev ){
@@ -3278,7 +3278,7 @@ int sqlite3PagerReleaseMemory(int nReq){
   */
 #ifndef SQLITE_MUTEX_NOOP
   sqlite3_mutex *mutex;       /* The MEM2 mutex */
-  mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM2);
+  mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM2);
 #endif
   sqlite3_mutex_enter(mutex);
 
@@ -3296,7 +3296,7 @@ int sqlite3PagerReleaseMemory(int nReq){
     /* Try to find a page to recycle that does not require a sync(). If
     ** this is not possible, find one that does require a sync().
     */
-    sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+    sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU));
     pPg = sqlite3LruPageList.pFirstSynced;
     while( pPg && (pPg->needSync || pPg->pPager->iInUseDB) ){
       pPg = pPg->gfree.pNext;
@@ -3307,7 +3307,7 @@ int sqlite3PagerReleaseMemory(int nReq){
         pPg = pPg->gfree.pNext;
       }
     }
-    sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU));
+    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU));
 
     /* If pPg==0, then the block above has failed to find a page to
     ** recycle. In this case return early - no further memory will

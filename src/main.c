@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.448 2008/06/18 13:27:47 drh Exp $
+** $Id: main.c,v 1.449 2008/06/18 17:09:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -76,7 +76,7 @@ int sqlite3_initialize(void){
   if( sqlite3IsInit ) return SQLITE_OK;
   rc = sqlite3_mutex_init();
   if( rc==SQLITE_OK ){
-    sqlite3_mutex *pMutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+    sqlite3_mutex *pMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
     sqlite3_mutex_enter(pMutex);
     if( sqlite3IsInit==0 ){
       sqlite3IsInit = 1;
@@ -1208,11 +1208,13 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
-  db->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
-  if( db->mutex==0 ){
-    sqlite3_free(db);
-    db = 0;
-    goto opendb_out;
+  if( sqlite3Config.bFullMutex ){
+    db->mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
+    if( db->mutex==0 ){
+      sqlite3_free(db);
+      db = 0;
+      goto opendb_out;
+    }
   }
   sqlite3_mutex_enter(db->mutex);
   db->errMask = 0xff;
@@ -1363,7 +1365,7 @@ static int openDatabase(
 
 opendb_out:
   if( db ){
-    assert( db->mutex!=0 );
+    assert( db->mutex!=0 || sqlite3Config.bFullMutex==0 );
     sqlite3_mutex_leave(db->mutex);
   }
   if( SQLITE_NOMEM==(rc = sqlite3_errcode(db)) ){

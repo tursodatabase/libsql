@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.1 2008/06/18 09:45:56 danielk1977 Exp $
+** $Id: test_mutex.c,v 1.2 2008/06/18 17:09:10 danielk1977 Exp $
 */
 
 #include "tcl.h"
@@ -247,6 +247,42 @@ static int test_clear_mutex_counters(
   return TCL_OK;
 }
 
+/*
+** sqlite3_config OPTION
+*/
+static int test_config(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  struct ConfigOption {
+    const char *zName;
+    int iValue;
+  } aOpt[] = {
+    {"singlethread", SQLITE_CONFIG_SINGLETHREAD},
+    {"multithread",  SQLITE_CONFIG_MULTITHREAD},
+    {"serialized",   SQLITE_CONFIG_SERIALIZED},
+    {0, 0}
+  };
+  int s = sizeof(struct ConfigOption);
+  int i;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+
+  if( Tcl_GetIndexFromObjStruct(interp, objv[1], aOpt, s, "flag", 0, &i) ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3_config(aOpt[i].iValue);
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  return TCL_OK;
+}
+
 int Sqlitetest_mutex_Init(Tcl_Interp *interp){
   static struct {
     char *zName;
@@ -254,6 +290,7 @@ int Sqlitetest_mutex_Init(Tcl_Interp *interp){
   } aCmd[] = {
     { "sqlite3_shutdown",        (Tcl_ObjCmdProc*)test_shutdown },
     { "sqlite3_initialize",      (Tcl_ObjCmdProc*)test_initialize },
+    { "sqlite3_config",          (Tcl_ObjCmdProc*)test_config },
 
     { "install_mutex_counters",  (Tcl_ObjCmdProc*)test_install_mutex_counters },
     { "read_mutex_counters",     (Tcl_ObjCmdProc*)test_read_mutex_counters },

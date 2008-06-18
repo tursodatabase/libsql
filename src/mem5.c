@@ -20,7 +20,7 @@
 ** This version of the memory allocation subsystem is used if
 ** and only if SQLITE_POW2_MEMORY_SIZE is defined.
 **
-** $Id: mem5.c,v 1.5 2008/06/13 18:24:27 drh Exp $
+** $Id: mem5.c,v 1.6 2008/06/18 17:09:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -193,7 +193,7 @@ static void memsys5Enter(void){
     assert( sizeof(Mem5Block)==POW2_MIN );
     assert( (SQLITE_POW2_MEMORY_SIZE % POW2_MAX)==0 );
     assert( SQLITE_POW2_MEMORY_SIZE>=POW2_MAX );
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
+    mem.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
     sqlite3_mutex_enter(mem.mutex);
     for(i=0; i<NSIZE; i++) mem.aiFreelist[i] = -1;
     for(i=0; i<=NBLOCK-SZ_MAX; i += SZ_MAX){

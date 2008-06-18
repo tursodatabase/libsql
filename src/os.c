@@ -13,7 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 **
-** $Id: os.c,v 1.113 2008/06/15 02:51:48 drh Exp $
+** $Id: os.c,v 1.114 2008/06/18 17:09:10 danielk1977 Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
@@ -207,7 +207,7 @@ sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
   if( rc ) return 0;
 #endif
 #ifndef SQLITE_MUTEX_NOOP
-  mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+  mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
   sqlite3_vfs *pVfs = 0;
   static int isInit = 0;
@@ -228,7 +228,7 @@ sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
 ** Unlink a VFS from the linked list
 */
 static void vfsUnlink(sqlite3_vfs *pVfs){
-  assert( sqlite3_mutex_held(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER)) );
+  assert( sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER)) );
   if( pVfs==0 ){
     /* No-op */
   }else if( vfsList==pVfs ){
@@ -258,7 +258,7 @@ int sqlite3_vfs_register(sqlite3_vfs *pVfs, int makeDflt){
   if( rc ) return rc;
 #endif
 #ifndef SQLITE_MUTEX_NOOP
-  mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+  mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
   sqlite3_vfs_find(0);  /* Make sure we are initialized */
   sqlite3_mutex_enter(mutex);
@@ -280,7 +280,7 @@ int sqlite3_vfs_register(sqlite3_vfs *pVfs, int makeDflt){
 */
 int sqlite3_vfs_unregister(sqlite3_vfs *pVfs){
 #ifndef SQLITE_MUTEX_NOOP
-  sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
   sqlite3_mutex_enter(mutex);
   vfsUnlink(pVfs);

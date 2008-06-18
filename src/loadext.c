@@ -12,7 +12,7 @@
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
 **
-** $Id: loadext.c,v 1.48 2008/06/13 18:24:27 drh Exp $
+** $Id: loadext.c,v 1.49 2008/06/18 17:09:10 danielk1977 Exp $
 */
 
 #ifndef SQLITE_CORE
@@ -478,7 +478,7 @@ int sqlite3_auto_extension(void *xInit){
   {
     int i;
 #ifndef SQLITE_MUTEX_NOOP
-    sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+    sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
     sqlite3_mutex_enter(mutex);
     for(i=0; i<autoext.nExt; i++){
@@ -511,7 +511,7 @@ void sqlite3_reset_auto_extension(void){
 #endif
   {
 #ifndef SQLITE_MUTEX_NOOP
-    sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+    sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
     sqlite3_mutex_enter(mutex);
     sqlite3_free(autoext.aExt);
@@ -537,7 +537,7 @@ int sqlite3AutoLoadExtensions(sqlite3 *db){
   for(i=0; go; i++){
     char *zErrmsg = 0;
 #ifndef SQLITE_MUTEX_NOOP
-    sqlite3_mutex *mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER);
+    sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
     sqlite3_mutex_enter(mutex);
     if( i>=autoext.nExt ){

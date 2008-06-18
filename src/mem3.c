@@ -20,7 +20,7 @@
 ** This version of the memory allocation subsystem is used if
 ** and only if SQLITE_MEMORY_SIZE is defined.
 **
-** $Id: mem3.c,v 1.13 2008/06/13 18:24:27 drh Exp $
+** $Id: mem3.c,v 1.14 2008/06/18 17:09:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -214,7 +214,7 @@ static void memsys3Link(u32 i){
 */
 static void memsys3Enter(void){
   if( mem.mutex==0 ){
-    mem.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
+    mem.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
     mem.aPool[0].u.hdr.size4x = SQLITE_MEMORY_SIZE/2 + 2;
     mem.aPool[SQLITE_MEMORY_SIZE/8].u.hdr.prevSize = SQLITE_MEMORY_SIZE/8;
     mem.aPool[SQLITE_MEMORY_SIZE/8].u.hdr.size4x = 1;

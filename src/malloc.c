@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.18 2008/06/17 15:12:01 drh Exp $
+** $Id: malloc.c,v 1.19 2008/06/18 17:09:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -102,8 +102,8 @@ int sqlite3MallocInit(void){
     sqlite3MemSetDefault();
   }
   memset(&mem0, 0, sizeof(mem0));
-  if( sqlite3Config.bMemstat && sqlite3Config.bCoreMutex ){
-    mem0.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM);
+  if( sqlite3Config.bMemstat ){
+    mem0.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   }
   return sqlite3Config.m.xInit(sqlite3Config.m.pAppData);
 }

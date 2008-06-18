@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.84 2008/06/15 02:51:47 drh Exp $
+** $Id: date.c,v 1.85 2008/06/18 17:09:10 danielk1977 Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -474,7 +474,7 @@ static int localtimeOffset(DateTime *p){
 #else
   {
     struct tm *pTm;
-    sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER));
+    sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
     pTm = localtime(&t);
     y.Y = pTm->tm_year + 1900;
     y.M = pTm->tm_mon + 1;
@@ -482,7 +482,7 @@ static int localtimeOffset(DateTime *p){
     y.h = pTm->tm_hour;
     y.m = pTm->tm_min;
     y.s = pTm->tm_sec;
-    sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER));
+    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
   }
 #endif
   y.validYMD = 1;
@@ -1031,10 +1031,10 @@ static void currentTimeFunc(
 #else
   {
     struct tm *pTm;
-    sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER));
+    sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
     pTm = gmtime(&t);
     strftime(zBuf, 20, zFormat, pTm);
-    sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MASTER));
+    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
   }
 #endif
 

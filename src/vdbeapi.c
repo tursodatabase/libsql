@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.132 2008/05/16 15:24:58 danielk1977 Exp $
+** $Id: vdbeapi.c,v 1.133 2008/06/18 17:09:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -68,10 +68,10 @@ static int stmtLruCheck(){
 ** is protected by the SQLITE_MUTEX_STATIC_LRU mutex.
 */
 static void stmtLruAdd(Vdbe *p){
-  sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU2));
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU2));
 
   if( p->pLruPrev || p->pLruNext || sqlite3LruStatements.pFirst==p ){
-    sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU2));
+    sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU2));
     return;
   }
 
@@ -90,7 +90,7 @@ static void stmtLruAdd(Vdbe *p){
 
   assert( stmtLruCheck() );
 
-  sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU2));
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU2));
 }
 
 /*
@@ -123,9 +123,9 @@ static void stmtLruRemoveNomutex(Vdbe *p){
 ** statement is not currently part of the list, this call is a no-op.
 */
 static void stmtLruRemove(Vdbe *p){
-  sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU2));
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU2));
   stmtLruRemoveNomutex(p);
-  sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU2));
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU2));
 }
 
 /*
@@ -137,7 +137,7 @@ int sqlite3VdbeReleaseMemory(int n){
   Vdbe *pNext;
   int nFree = 0;
 
-  sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU2));
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU2));
   for(p=sqlite3LruStatements.pFirst; p && nFree<n; p=pNext){
     pNext = p->pLruNext;
 
@@ -152,7 +152,7 @@ int sqlite3VdbeReleaseMemory(int n){
       sqlite3_mutex_leave(p->db->mutex);
     }
   }
-  sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU2));
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_LRU2));
 
   return nFree;
 }

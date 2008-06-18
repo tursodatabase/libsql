@@ -19,7 +19,7 @@
 ** implementation is suitable for testing.
 ** debugging purposes
 **
-** $Id: mutex.c,v 1.23 2008/06/18 09:45:56 danielk1977 Exp $
+** $Id: mutex.c,v 1.24 2008/06/18 17:09:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -28,37 +28,39 @@
 ** Initialize the mutex system.
 */
 int sqlite3_mutex_init(void){ 
-  int rc;
-  if( !sqlite3Config.mutex.xMutexAlloc ){
-    /* If the xMutexAlloc method has not been set, then the user did not
-    ** install a mutex implementation via sqlite3_config() prior to 
-    ** sqlite3_initialize() being called. This block copies pointers to
-    ** the default implementation into the sqlite3Config structure.
-    **
-    ** The danger is that although sqlite3_config() is not a threadsafe
-    ** API, sqlite3_initialize() is, and so multiple threads may be
-    ** attempting to run this function simultaneously. To guard write
-    ** access to the sqlite3Config structure, the 'MASTER' static mutex
-    ** is obtained before modifying it.
-    */
-    sqlite3_mutex_methods *p = sqlite3DefaultMutex();
-    sqlite3_mutex *pMaster;
-
-    rc = p->xMutexInit();
-    if( rc==SQLITE_OK ){
-      pMaster = p->xMutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
-      assert(pMaster);
-      p->xMutexEnter(pMaster);
-      assert( sqlite3Config.mutex.xMutexAlloc==0 
-           || sqlite3Config.mutex.xMutexAlloc==p->xMutexAlloc
-      );
-      if( !sqlite3Config.mutex.xMutexAlloc ){
-        sqlite3Config.mutex = *p;
+  int rc = SQLITE_OK;
+  if( sqlite3Config.bCoreMutex ){
+    if( !sqlite3Config.mutex.xMutexAlloc ){
+      /* If the xMutexAlloc method has not been set, then the user did not
+      ** install a mutex implementation via sqlite3_config() prior to 
+      ** sqlite3_initialize() being called. This block copies pointers to
+      ** the default implementation into the sqlite3Config structure.
+      **
+      ** The danger is that although sqlite3_config() is not a threadsafe
+      ** API, sqlite3_initialize() is, and so multiple threads may be
+      ** attempting to run this function simultaneously. To guard write
+      ** access to the sqlite3Config structure, the 'MASTER' static mutex
+      ** is obtained before modifying it.
+      */
+      sqlite3_mutex_methods *p = sqlite3DefaultMutex();
+      sqlite3_mutex *pMaster = 0;
+  
+      rc = p->xMutexInit();
+      if( rc==SQLITE_OK ){
+        pMaster = p->xMutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+        assert(pMaster);
+        p->xMutexEnter(pMaster);
+        assert( sqlite3Config.mutex.xMutexAlloc==0 
+             || sqlite3Config.mutex.xMutexAlloc==p->xMutexAlloc
+        );
+        if( !sqlite3Config.mutex.xMutexAlloc ){
+          sqlite3Config.mutex = *p;
+        }
+        p->xMutexLeave(pMaster);
       }
-      p->xMutexLeave(pMaster);
+    }else{
+      rc = sqlite3Config.mutex.xMutexInit();
     }
-  }else{
-    rc = sqlite3Config.mutex.xMutexInit();
   }
 
   return rc;
@@ -78,6 +80,13 @@ int sqlite3_mutex_end(void){
 ** Retrieve a pointer to a static mutex or allocate a new dynamic one.
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int id){
+  return sqlite3Config.mutex.xMutexAlloc(id);
+}
+
+sqlite3_mutex *sqlite3MutexAlloc(int id){
+  if( !sqlite3Config.bCoreMutex ){
+    return 0;
+  }
   return sqlite3Config.mutex.xMutexAlloc(id);
 }
 
