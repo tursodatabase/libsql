@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_CONFIG_MUTEX\ssymbol\sfor\suse\swith\ssqlite3_config().\s(CVS\s5228)
-D 2008-06-17T18:57:49
+C Remove\smem3.c\sand\smem5.c\sfrom\sthe\samalgamation\sfor\sthe\stime\sbeing,\ssince\nthey\sdo\snot\scurrently\swork.\s\sWe\swill\sadd\sthem\sback\slater\sonce\sthey\sare\sfixed.\s(CVS\s5229)
+D 2008-06-18T02:01:07
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dc5608df93faf4406cfd7a1c8ed9ab93d8bfbfd5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -579,7 +579,7 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl 687ae979ba47db01d3a6296b2e7a678a161be392
+F tool/mksqlite3c.tcl 7641043a1c17669a3ecd181558b70c0652e1a9e4
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 7d1fdf469e2f4d175f70c36e469db64a1626fabb
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 597283637bcdc2398bf249b2bbc6ded47ad2de22
-R c6d0203337799c1a8192ac6a1f7c93df
-U danielk1977
-Z 44fe1d3a2cecd4882d9cfff45340b7b9
+P af1835bb5f5e3fb78d782c7c287e20db169e883f
+R f52e17178b7cffb0eea0931f117949b1
+U drh
+Z 9696bf70dd1d33bb99b1db9b6b6af8a7
