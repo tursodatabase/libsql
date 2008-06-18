@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.333 2008/06/18 13:27:47 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.334 2008/06/18 13:47:04 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -5849,6 +5849,27 @@ int sqlite3_mutex_try(sqlite3_mutex*);
 void sqlite3_mutex_leave(sqlite3_mutex*);
 int sqlite3_mutex_end(void);
 
+/*
+** CAPI3REF: Mutex Methods Object {F17120}
+**
+** An instance of this structure defines the low-level routines
+** used to allocate and use mutexes.  This structure is used as
+** an argument to the [SQLITE_CONFIG_MUTEX] and [SQLITE_CONFIG_GETMUTEX]
+** options of [sqlite3_config()].  The methods defined by this
+** structure implement the following interfaces (respectively):
+**
+** <ul>
+** <li>  [sqlite3_mutex_init()] </li>
+** <li>  [sqlite3_mutex_alloc()] </li>
+** <li>  [sqlite3_mutex_free()] </li>
+** <li>  [sqlite3_mutex_enter()] </li>
+** <li>  [sqlite3_mutex_try()] </li>
+** <li>  [sqlite3_mutex_leave()] </li>
+** <li>  [sqlite3_mutex_end()] </li>
+** <li>  [sqlite3_mutex_held()] </li>
+** <li>  [sqlite3_mutex_notheld()] </li>
+** </ul>
+*/
 typedef struct sqlite3_mutex_methods sqlite3_mutex_methods;
 struct sqlite3_mutex_methods {
   int (*xMutexInit)(void);
