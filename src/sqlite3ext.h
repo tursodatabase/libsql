@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.21 2008/03/19 21:45:51 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.22 2008/06/19 15:06:24 drh Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -188,6 +188,11 @@ struct sqlite3_api_routines {
   int (*test_control)(int, ...);
   void (*randomness)(int,void*);
   sqlite3 *(*context_db_handle)(sqlite3_context*);
+  int (*extended_result_codes)(sqlite3*,int);
+  int (*limit)(sqlite3*,int,int);
+  sqlite3_stmt *(*next_stmt)(sqlite3*,sqlite3_stmt*);
+  const char *(*sql)(sqlite3_stmt*);
+  int (*status)(int,int*,int*,int);
 };
 
 /*
@@ -354,6 +359,11 @@ struct sqlite3_api_routines {
 #define sqlite3_test_control           sqlite3_api->test_control
 #define sqlite3_randomness             sqlite3_api->randomness
 #define sqlite3_context_db_handle      sqlite3_api->context_db_handle
+#define sqlite3_extended_result_codes  sqlite3_api->extended_result_codes
+#define sqlite3_limit                  sqlite3_api->limit
+#define sqlite3_next_stmt              sqlite3_api->next_stmt
+#define sqlite3_sql                    sqlite3_api->sql
+#define sqlite3_status                 sqlite3_api->status
 #endif /* SQLITE_CORE */
 
 #define SQLITE_EXTENSION_INIT1     const sqlite3_api_routines *sqlite3_api;

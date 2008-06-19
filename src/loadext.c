@@ -12,7 +12,7 @@
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
 **
-** $Id: loadext.c,v 1.49 2008/06/18 17:09:10 danielk1977 Exp $
+** $Id: loadext.c,v 1.50 2008/06/19 15:06:24 drh Exp $
 */
 
 #ifndef SQLITE_CORE
@@ -305,6 +305,15 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_test_control,
   sqlite3_randomness,
   sqlite3_context_db_handle,
+
+  /*
+  ** Added for 3.6.0
+  */
+  sqlite3_extended_result_codes,
+  sqlite3_limit,
+  sqlite3_next_stmt,
+  sqlite3_sql,
+  sqlite3_status,
 };
 
 /*
