@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.338 2008/06/19 02:52:25 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.339 2008/06/19 08:51:24 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -5755,7 +5755,7 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** CAPI3REF: Mutexes {F17000}
 **
 ** The SQLite core uses these routines for thread
-** synchronization.  Though they are intended for internal
+** synchronization. Though they are intended for internal
 ** use by SQLite, code that links against SQLite is
 ** permitted to use any of these routines.
 **
@@ -5779,24 +5779,11 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** 
 ** If SQLite is compiled with the SQLITE_MUTEX_APPDEF preprocessor
 ** macro defined (with "-DSQLITE_MUTEX_APPDEF=1"), then no mutex
-** implementation is included with the library.  The
-** mutex interface routines defined here become external
-** references in the SQLite library for which implementations
-** must be provided by the application.  This facility allows an
-** application that links against SQLite to provide its own mutex
-** implementation without having to modify the SQLite core.
-**
-** {F17001} The sqlite3_mutex_init() routine is called once by each
-** effective call to [sqlite3_initialize()].  The sqlite3_mutex_init()
-** interface initializes the mutex subsystem.  The application should
-** never call sqlite3_mutex_init() directly but only indirectly by
-** invoking [sqlite3_initialize()].
-**
-** {F17003} The sqlite3_mutex_end() routine undoes the effect of
-** sqlite3_mutex_init().  The sqlite3_mutex_end() interface is called
-** by [sqlite3_shutdown()].  The application should never call 
-** sqlite3_mutex_end() directly but only indirectly through
-** [sqlite3_shutdown()].
+** implementation is included with the library. In this case the
+** application must supply a custom mutex implementation using the
+** [SQLITE_CONFIG_MUTEX] option of the sqlite3_config() function
+** before calling sqlite3_initialize() or any other public sqlite3_ 
+** function that calls sqlite3_initialize().
 **
 ** {F17011} The sqlite3_mutex_alloc() routine allocates a new
 ** mutex and returns a pointer to it. {F17012} If it returns NULL
@@ -5886,32 +5873,61 @@ void sqlite3_mutex_leave(sqlite3_mutex*);
 ** CAPI3REF: Mutex Methods Object {F17120}
 **
 ** An instance of this structure defines the low-level routines
-** used to allocate and use mutexes.  This structure is used as
-** an argument to the [SQLITE_CONFIG_MUTEX] and [SQLITE_CONFIG_GETMUTEX]
-** options of [sqlite3_config()].  The methods defined by this
-** structure implement the following interfaces (respectively):
+** used to allocate and use mutexes.
+**
+** Usually, the default mutex implementations provided by SQLite are
+** sufficient, however the user has the option of substituting a custom 
+** implementation for specialized deployments or systems for which SQLite 
+** does not provide a suitable implementation. In this case, the user
+** creates and populates an instance of this structure to pass
+** to sqlite3_config() along with the [SQLITE_CONFIG_MUTEX] option. 
+** Additionally, an instance of this structure can be used as an
+** output variable when querying the system for the current mutex
+** implementation, using the [SQLITE_CONFIG_GETMUTEX] option.
+**
+** The xMutexInit method defined by this structure is invoked as
+** part of system initialization by the sqlite3_initialize() function.
+** {F17001} The xMutexInit routine shall be called by SQLite once for each
+** effective call to [sqlite3_initialize()].  
+**
+** The xMutexEnd method defined by this structure is invoked as
+** part of system shutdown by the sqlite3_shutdown() function. The
+** implementation of this method is expected to release all outstanding
+** resources obtained by the mutex methods implementation, especially
+** those obtained by the xMutexInit method. {F17003} The xMutexEnd() 
+** interface shall be invoked once for each call to [sqlite3_shutdown()]. 
+**
+** The remaining seven methods defined by this structure (xMutexAlloc,
+** xMutexFree, xMutexEnter, xMutexTry, xMutexLeave, xMutexHeld and
+** xMutexNotheld) implement the following interfaces (respectively):
 **
 ** <ul>
-** <li>  [sqlite3_mutex_init()] </li>
-** <li>  [sqlite3_mutex_alloc()] </li>
-** <li>  [sqlite3_mutex_free()] </li>
-** <li>  [sqlite3_mutex_enter()] </li>
-** <li>  [sqlite3_mutex_try()] </li>
-** <li>  [sqlite3_mutex_leave()] </li>
-** <li>  [sqlite3_mutex_end()] </li>
-** <li>  [sqlite3_mutex_held()] </li>
-** <li>  [sqlite3_mutex_notheld()] </li>
+**   <li>  [sqlite3_mutex_alloc()] </li>
+**   <li>  [sqlite3_mutex_free()] </li>
+**   <li>  [sqlite3_mutex_enter()] </li>
+**   <li>  [sqlite3_mutex_try()] </li>
+**   <li>  [sqlite3_mutex_leave()] </li>
+**   <li>  [sqlite3_mutex_held()] </li>
+**   <li>  [sqlite3_mutex_notheld()] </li>
 ** </ul>
+**
+** The only difference is that the public sqlite3_XXX functions enumerated
+** above silently ignore any invocations that pass a NULL pointer instead
+** of a valid mutex handle. The implementations of the methods defined
+** by this structure are not required to handle this case, the results
+** of passing a NULL pointer instead of a valid mutex handle are undefined
+** (i.e. it is acceptable to provide an implementation that segfaults if
+** it is passed a NULL pointer).
 */
 typedef struct sqlite3_mutex_methods sqlite3_mutex_methods;
 struct sqlite3_mutex_methods {
   int (*xMutexInit)(void);
+  int (*xMutexEnd)(void);
   sqlite3_mutex *(*xMutexAlloc)(int);
   void (*xMutexFree)(sqlite3_mutex *);
   void (*xMutexEnter)(sqlite3_mutex *);
   int (*xMutexTry)(sqlite3_mutex *);
   void (*xMutexLeave)(sqlite3_mutex *);
-  int (*xMutexEnd)(void);
   int (*xMutexHeld)(sqlite3_mutex *);
   int (*xMutexNotheld)(sqlite3_mutex *);
 };

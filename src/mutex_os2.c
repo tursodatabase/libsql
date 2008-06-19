@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for OS/2
 **
-** $Id: mutex_os2.c,v 1.8 2008/06/18 21:08:16 pweilbacher Exp $
+** $Id: mutex_os2.c,v 1.9 2008/06/19 08:51:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -254,12 +254,12 @@ int os2MutexNotheld(sqlite3_mutex *p){
 sqlite3_mutex_methods *sqlite3DefaultMutex(void){
   static sqlite3_mutex_methods sMutex = {
     os2MutexInit,
+    os2MutexEnd,
     os2MutexAlloc,
     os2MutexFree,
     os2MutexEnter,
     os2MutexTry,
     os2MutexLeave,
-    os2MutexEnd,
 
     os2MutexHeld,
     os2MutexNotheld

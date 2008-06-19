@@ -19,7 +19,7 @@
 ** implementation is suitable for testing.
 ** debugging purposes
 **
-** $Id: mutex.c,v 1.26 2008/06/18 18:57:42 danielk1977 Exp $
+** $Id: mutex.c,v 1.27 2008/06/19 08:51:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -257,12 +257,12 @@ static void noopMutexLeave(sqlite3_mutex *p){
 sqlite3_mutex_methods *sqlite3DefaultMutex(void){
   static sqlite3_mutex_methods sMutex = {
     noopMutexInit,
+    noopMutexEnd,
     noopMutexAlloc,
     noopMutexFree,
     noopMutexEnter,
     noopMutexTry,
     noopMutexLeave,
-    noopMutexEnd,
 
     noopMutexHeld,
     noopMutexNotheld

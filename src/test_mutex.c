@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.2 2008/06/18 17:09:10 danielk1977 Exp $
+** $Id: test_mutex.c,v 1.3 2008/06/19 08:51:25 danielk1977 Exp $
 */
 
 #include "tcl.h"
@@ -146,12 +146,12 @@ static int test_install_mutex_counters(
 
   sqlite3_mutex_methods counter_methods = {
     counterMutexInit,
+    counterMutexEnd,
     counterMutexAlloc,
     counterMutexFree,
     counterMutexEnter,
     counterMutexTry,
     counterMutexLeave,
-    counterMutexEnd,
     counterMutexHeld,
     counterMutexNotheld
   };

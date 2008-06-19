@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.8 2008/06/17 17:21:18 danielk1977 Exp $
+** $Id: mutex_w32.c,v 1.9 2008/06/19 08:51:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -224,12 +224,12 @@ static void winMutexLeave(sqlite3_mutex *p){
 sqlite3_mutex_methods *sqlite3DefaultMutex(void){
   static sqlite3_mutex_methods sMutex = {
     winMutexInit,
+    winMutexEnd,
     winMutexAlloc,
     winMutexFree,
     winMutexEnter,
     winMutexTry,
     winMutexLeave,
-    winMutexEnd,
 
     winMutexHeld,
     winMutexNotheld

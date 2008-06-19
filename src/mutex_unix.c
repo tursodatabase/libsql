@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for pthreads
 **
-** $Id: mutex_unix.c,v 1.10 2008/06/18 09:45:56 danielk1977 Exp $
+** $Id: mutex_unix.c,v 1.11 2008/06/19 08:51:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -307,12 +307,12 @@ static void pthreadMutexLeave(sqlite3_mutex *p){
 sqlite3_mutex_methods *sqlite3DefaultMutex(void){
   static sqlite3_mutex_methods sMutex = {
     pthreadMutexInit,
+    pthreadMutexEnd,
     pthreadMutexAlloc,
     pthreadMutexFree,
     pthreadMutexEnter,
     pthreadMutexTry,
     pthreadMutexLeave,
-    pthreadMutexEnd,
 
     pthreadMutexHeld,
     pthreadMutexNotheld
