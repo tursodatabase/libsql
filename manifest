@@ -1,5 +1,5 @@
-C Shuffle\ssome\sof\sthe\smutex\srelated\sdocumentation\sin\ssqlite.h.in\sto\smatch\sthe\snew\ssqlite3_mutex_methods\sbased\sAPI.\s(CVS\s5244)
-D 2008-06-19T08:51:24
+C Check\sin\sthe\smissing\sstatus.c\ssource\sfile.\s(CVS\s5245)
+D 2008-06-19T13:20:02
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,6 +147,7 @@ F src/sqlite.h.in cc64323ecc21320692c12726102976689ee5ae53
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 6dd55232e738a4dac23475cd4b0e444dff75c896
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
+F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c 4dd9ee4cb44846ad9bcc4d0da8088c1e7d4b33d9
 F src/test1.c e78c07d7f1db40593ab1e4aa321016184af0c7ad
@@ -599,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 565a530896b40790287eeaad709edd51980fbddf
-R 950854b62a7a587d35382e80a0549a75
-U danielk1977
-Z 2b8089afd328ee7a65250c0132b39dd9
+P 9cd7f8669a59c6096331229df2e2ad87e628abab
+R 2ae02cc3666590b0ae8cac03168cec93
+U drh
+Z dc8fb3a0d249f077cc181d199fa20d70
