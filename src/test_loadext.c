@@ -11,9 +11,9 @@
 *************************************************************************
 ** Test extension for testing the sqlite3_load_extension() function.
 **
-** $Id: test_loadext.c,v 1.1 2006/06/14 10:38:03 danielk1977 Exp $
+** $Id: test_loadext.c,v 1.2 2008/06/19 15:44:00 drh Exp $
 */
-
+#include <string.h>
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 
@@ -29,6 +29,68 @@ static void halfFunc(
 }
 
 /*
+** SQL functions to call the sqlite3_status function and return results.
+*/
+static void statusFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int op, mx, cur, resetFlag, rc;
+  if( sqlite3_value_type(argv[0])==SQLITE_INTEGER ){
+    op = sqlite3_value_int(argv[0]);
+  }else if( sqlite3_value_type(argv[0])==SQLITE_TEXT ){
+    int i;
+    const char *zName;
+    static const struct {
+      const char *zName;
+      int op;
+    } aOp[] = {
+      { "MEMORY_USED",         SQLITE_STATUS_MEMORY_USED         },
+      { "PAGECACHE_USED",      SQLITE_STATUS_PAGECACHE_USED      },
+      { "PAGECACHE_OVERFLOW",  SQLITE_STATUS_PAGECACHE_OVERFLOW  },
+      { "SCRATCH_USED",        SQLITE_STATUS_SCRATCH_USED        },
+      { "SCRATCH_OVERFLOW",    SQLITE_STATUS_SCRATCH_OVERFLOW    },
+      { "MALLOC_SIZE",         SQLITE_STATUS_MALLOC_SIZE         },
+    };
+    int nOp = sizeof(aOp)/sizeof(aOp[0]);
+    zName = (const char*)sqlite3_value_text(argv[0]);
+    for(i=0; i<nOp; i++){
+      if( strcmp(aOp[i].zName, zName)==0 ){
+        op = aOp[i].op;
+        break;
+      }
+    }
+    if( i>=nOp ){
+      char *zMsg = sqlite3_mprintf("unknown status property: %s", zName);
+      sqlite3_result_error(context, zMsg, -1);
+      sqlite3_free(zMsg);
+      return;
+    }
+  }else{
+    sqlite3_result_error(context, "unknown status type", -1);
+    return;
+  }
+  if( argc==2 ){
+    resetFlag = sqlite3_value_int(argv[1]);
+  }else{
+    resetFlag = 0;
+  }
+  rc = sqlite3_status(op, &cur, &mx, resetFlag);
+  if( rc!=SQLITE_OK ){
+    char *zMsg = sqlite3_mprintf("sqlite3_status(%d,...) returns %d", op, rc);
+    sqlite3_result_error(context, zMsg, -1);
+    sqlite3_free(zMsg);
+    return;
+  } 
+  if( argc==2 ){
+    sqlite3_result_int(context, mx);
+  }else{
+    sqlite3_result_int(context, cur);
+  }
+}
+
+/*
 ** Extension load function.
 */
 int testloadext_init(
@@ -38,6 +100,10 @@ int testloadext_init(
 ){
   SQLITE_EXTENSION_INIT2(pApi);
   sqlite3_create_function(db, "half", 1, SQLITE_ANY, 0, halfFunc, 0, 0);
+  sqlite3_create_function(db, "sqlite3_status", 1, SQLITE_ANY, 0,
+                          statusFunc, 0, 0);
+  sqlite3_create_function(db, "sqlite3_status", 2, SQLITE_ANY, 0,
+                          statusFunc, 0, 0);
   return 0;
 }
 

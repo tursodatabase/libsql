@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is extension loading.
 #
-# $Id: loadext.test,v 1.11 2007/09/01 06:19:06 danielk1977 Exp $
+# $Id: loadext.test,v 1.12 2008/06/19 15:44:00 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -187,6 +187,28 @@ do_test loadext-3.4 {
     SELECT half(5);
   }
 } {0 2.5}
+do_test loadext-3.5 {
+  db eval {
+    SELECT sqlite3_status('MEMORY_USED') AS mused
+  } break
+  puts -nonewline " (memory_used=$mused) "
+  expr {$mused>0}
+} {1}
+do_test loadext-3.6 {
+  catchsql {
+    SELECT sqlite3_status('MEMORY_USED_X') AS mused
+  }
+} {1 {unknown status property: MEMORY_USED_X}}
+do_test loadext-3.7 {
+  catchsql {
+    SELECT sqlite3_status(4.53) AS mused
+  }
+} {1 {unknown status type}}
+do_test loadext-3.8 {
+  catchsql {
+    SELECT sqlite3_status(23) AS mused
+  }
+} {1 {sqlite3_status(23,...) returns 21}}
 
 # Ticket #1863
 # Make sure the extension loading mechanism will not work unless it

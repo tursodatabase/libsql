@@ -1,5 +1,5 @@
-C Add\srecent\sAPI\sadditions\sto\sthe\sloadable\sextension\sinterface.\s(CVS\s5246)
-D 2008-06-19T15:06:24
+C Additional\stest\scases\sfor\sloadable\sextensions.\s(CVS\s5247)
+D 2008-06-19T15:44:00
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -166,7 +166,7 @@ F src/test_config.c 0a2b732a6fd9cfef39417a303b76a402c963d89b
 F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
 F src/test_func.c f4aafa10f17d52c43a64b47717265802e6e552b3
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
-F src/test_loadext.c 22065d601a18878e5542191001f0eaa5d77c0ed8
+F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
 F src/test_malloc.c dc6d256544b1be96312367b24b93a778de8afdfe
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c 8cfe5c56d5583e07c25c50f59c42ca0104dd24bb
@@ -379,7 +379,7 @@ F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
 F test/like.test 2a3ddbd5d91503f914eabae67a47c4196fe33a58
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test ca61a9fc520f54470edb3a771167fe4b68abc247
-F test/loadext.test 1911e7365a6d31d77ba00dd3a8a31b7f2111a670
+F test/loadext.test de9ff1f3db6377b42cb001a2ca93cc9ebd254784
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
 F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 298113d4a707ecf59d5dfd8bca45bfe734fb9fbb
-R 42f17a00236aadb90310fa7ec4da2a6e
+P 12ba27d94e3fb448f88b5efb43b35242fd893297
+R 879c31cbda7a3b9b2e0834f6de46c685
 U drh
-Z 4fa413bd990aa53101659d02698816d3
+Z cf35d3d9299c3534badc2d10fe6488b5
