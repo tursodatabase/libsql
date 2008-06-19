@@ -1,5 +1,5 @@
-C Additional\stest\scases\sfor\sloadable\sextensions.\s(CVS\s5247)
-D 2008-06-19T15:44:00
+C Fix\ssome\sminor\scompile\sproblems.\s(CVS\s5248)
+D 2008-06-19T16:07:07
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -126,9 +126,9 @@ F src/mem5.c ad31a0a481b86b86f4ac0b6d952e69727d4e113a
 F src/mutex.c a485a0eac8ee2cd95f66e565b4c6696c18db968f
 F src/mutex.h 236677b27760d85701b5872d01b5cafedde5f0a9
 F src/mutex_os2.c 7c948174d31e06df3e3dd0ef734691e95e30a5f4
-F src/mutex_unix.c 630a3860703ebcda94e99d179dc4ef4824489470
-F src/mutex_w32.c 36841fbd4450bf5b9dd5b065f2b614d3b50c7021
-F src/os.c e9f37351dc4aacc4861f0adbe463f21c8f5969fa
+F src/mutex_unix.c c1526811f4b97a7cd9d4d72d2b9623d06abd05ce
+F src/mutex_w32.c 7aa9ad79b36931314b81ac4045f40f2c503b1e44
+F src/os.c b1c73547466b832612b3be425a8f21afd603fd9b
 F src/os.h c9a7f94e80193fd4cf27f5c5698eb56753f1b05a
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 9dc031a31ec631c4b2ee3bc2f8b2533b36f20376
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 12ba27d94e3fb448f88b5efb43b35242fd893297
-R 879c31cbda7a3b9b2e0834f6de46c685
+P 9d73a68c305db673d393db118b6a41241683a670
+R 89c080d7705fb747009452a0b592549a
 U drh
-Z cf35d3d9299c3534badc2d10fe6488b5
+Z 866325c54297cfb5a7889c7f7cecefe7

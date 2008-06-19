@@ -13,7 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 **
-** $Id: os.c,v 1.114 2008/06/18 17:09:10 danielk1977 Exp $
+** $Id: os.c,v 1.115 2008/06/19 16:07:07 drh Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
@@ -199,6 +199,8 @@ static sqlite3_vfs *vfsList = 0;
 ** first VFS on the list.
 */
 sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
+  sqlite3_vfs *pVfs = 0;
+  static int isInit = 0;
 #ifndef SQLITE_MUTEX_NOOP
   sqlite3_mutex *mutex;
 #endif
@@ -209,8 +211,6 @@ sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
 #ifndef SQLITE_MUTEX_NOOP
   mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
-  sqlite3_vfs *pVfs = 0;
-  static int isInit = 0;
   sqlite3_mutex_enter(mutex);
   if( !isInit ){
     vfsList = sqlite3OsDefaultVfs();

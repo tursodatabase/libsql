@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.9 2008/06/19 08:51:24 danielk1977 Exp $
+** $Id: mutex_w32.c,v 1.10 2008/06/19 16:07:07 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -57,6 +57,8 @@ struct sqlite3_mutex {
   }
 #endif /* OS_WINCE */
 
+
+#ifdef SQLITE_DEBUG
 /*
 ** The sqlite3_mutex_held() and sqlite3_mutex_notheld() routine are
 ** intended for use only inside assert() statements.
@@ -67,6 +69,7 @@ static int winMutexHeld(sqlite3_mutex *p){
 static int winMutexNotheld(sqlite3_mutex *p){
   return p->nRef==0 || p->owner!=GetCurrentThreadId();
 }
+#endif
 
 
 /*
@@ -230,12 +233,12 @@ sqlite3_mutex_methods *sqlite3DefaultMutex(void){
     winMutexEnter,
     winMutexTry,
     winMutexLeave,
-
+#ifdef SQLITE_DEBUG
     winMutexHeld,
     winMutexNotheld
+#endif
   };
 
   return &sMutex;
 }
 #endif /* SQLITE_MUTEX_W32 */
-
