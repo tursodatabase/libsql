@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.466 2008/06/18 17:09:10 danielk1977 Exp $
+** $Id: btree.c,v 1.467 2008/06/19 00:16:08 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1401,6 +1401,24 @@ static int removeFromSharingList(BtShared *pBt){
 }
 
 /*
+** Make sure pBt->pTmpSpace points to an allocation of 
+** MX_CELL_SIZE(pBt) bytes.
+*/
+static void allocateTempSpace(BtShared *pBt){
+  if( !pBt->pTmpSpace ){
+    pBt->pTmpSpace = sqlite3PageMalloc( pBt->pageSize );
+  }
+}
+
+/*
+** Free the pBt->pTmpSpace allocation
+*/
+static void freeTempSpace(BtShared *pBt){
+  sqlite3PageFree( pBt->pTmpSpace);
+  pBt->pTmpSpace = 0;
+}
+
+/*
 ** Close an open database and invalidate all cursors.
 */
 int sqlite3BtreeClose(Btree *p){
@@ -1444,8 +1462,7 @@ int sqlite3BtreeClose(Btree *p){
       pBt->xFreeSchema(pBt->pSchema);
     }
     sqlite3_free(pBt->pSchema);
-    sqlite3_free(pBt->pTmpSpace);
-    sqlite3_free(pBt);
+    freeTempSpace(pBt);
   }
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
@@ -1549,8 +1566,7 @@ int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve){
     assert( (pageSize & 7)==0 );
     assert( !pBt->pPage1 && !pBt->pCursor );
     pBt->pageSize = pageSize;
-    sqlite3_free(pBt->pTmpSpace);
-    pBt->pTmpSpace = 0;
+    freeTempSpace(pBt);
     rc = sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize);
   }
   pBt->usableSize = pBt->pageSize - nReserve;
@@ -1698,8 +1714,7 @@ static int lockBtree(BtShared *pBt){
       releasePage(pPage1);
       pBt->usableSize = usableSize;
       pBt->pageSize = pageSize;
-      sqlite3_free(pBt->pTmpSpace);
-      pBt->pTmpSpace = 0;
+      freeTempSpace(pBt);
       sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize);
       return SQLITE_OK;
     }
@@ -5678,16 +5693,6 @@ static int checkReadLocks(
 }
 
 /*
-** Make sure pBt->pTmpSpace points to an allocation of 
-** MX_CELL_SIZE(pBt) bytes.
-*/
-static void allocateTempSpace(BtShared *pBt){
-  if( !pBt->pTmpSpace ){
-    pBt->pTmpSpace = sqlite3Malloc(MX_CELL_SIZE(pBt));
-  }
-}
-
-/*
 ** Insert a new record into the BTree.  The key is given by (pKey,nKey)
 ** and the data is given by (pData,nData).  The cursor is used only to
 ** define what table the record should be inserted into.  The cursor
@@ -6643,8 +6648,9 @@ static int checkTreePage(
   */
   data = pPage->aData;
   hdr = pPage->hdrOffset;
-  hit = sqlite3MallocZero( usableSize );
+  hit = sqlite3PageMalloc( pBt->pageSize );
   if( hit ){
+    memset(hit, 0, usableSize );
     memset(hit, 1, get2byte(&data[hdr+5]));
     nCell = get2byte(&data[hdr+3]);
     cellStart = hdr + 12 - 4*pPage->leaf;
@@ -6686,7 +6692,7 @@ static int checkTreePage(
           cnt, data[hdr+7], iPage);
     }
   }
-  sqlite3_free(hit);
+  sqlite3PageFree(hit);
 
   releasePage(pPage);
   return depth+1;

@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.126 2008/06/07 05:19:38 danielk1977 Exp $
+# $Id: tester.tcl,v 1.127 2008/06/19 00:16:08 drh Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -333,6 +333,7 @@ proc finalize_testing {} {
       sqlite3_memdebug_dump ./memusage.txt
     }
   }
+  show_memstats
   puts "Maximum memory usage: [sqlite3_memory_highwater 1] bytes"
   puts "Current memory usage: [sqlite3_memory_highwater] bytes"
   if {[info commands sqlite3_memdebug_malloc_count] ne ""} {
@@ -357,6 +358,28 @@ proc finalize_testing {} {
     file delete -force $f
   }
   exit [expr {$nErr>0}]
+}
+
+# Display memory statistics for analysis and debugging purposes.
+#
+proc show_memstats {} {
+  set x [sqlite3_status SQLITE_STATUS_MEMORY_USED 0]
+  set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
+  puts "Memory used:          $val"
+  set x [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0]
+  set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
+  puts "Page-cache used:      $val"
+  set x [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0]
+  set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
+  puts "Page-cache overflow:  $val"
+  set x [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0]
+  set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
+  puts "Scratch memory used:  $val"
+  set x [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0]
+  set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
+  puts "Scratch overflow:     $val"
+  set x [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0]
+  puts "Maximum alloc size:   [lindex $x 2]"
 }
 
 # A procedure to execute SQL

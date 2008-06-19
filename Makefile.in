@@ -157,7 +157,7 @@ OBJS0 = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo \
         mutex_os2.lo mutex_unix.lo mutex_w32.lo \
         opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
         pager.lo parse.lo pragma.lo prepare.lo printf.lo random.lo \
-        select.lo table.lo tokenize.lo trigger.lo update.lo \
+        select.lo status.lo table.lo tokenize.lo trigger.lo update.lo \
         util.lo vacuum.lo \
         vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbefifo.lo vdbemem.lo \
         where.lo utf.lo legacy.lo vtab.lo
@@ -226,6 +226,7 @@ SRC = \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
   $(TOP)/src/select.c \
+  $(TOP)/src/status.c \
   $(TOP)/src/shell.c \
   $(TOP)/src/sqlite.h.in \
   $(TOP)/src/sqlite3ext.h \
@@ -609,6 +610,9 @@ random.lo:	$(TOP)/src/random.c $(HDR)
 
 select.lo:	$(TOP)/src/select.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/select.c
+
+status.lo:	$(TOP)/src/status.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/status.c
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in 
 	sed -e s/--VERS--/$(RELEASE)/ $(TOP)/src/sqlite.h.in | \

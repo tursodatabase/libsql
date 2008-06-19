@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.450 2008/06/18 18:57:42 danielk1977 Exp $
+** $Id: main.c,v 1.451 2008/06/19 00:16:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -80,6 +80,7 @@ int sqlite3_initialize(void){
     sqlite3_mutex_enter(pMutex);
     if( sqlite3IsInit==0 ){
       sqlite3IsInit = 1;
+      sqlite3StatusReset();
       if( rc==SQLITE_OK ) rc = sqlite3MallocInit();
       if( rc==SQLITE_OK ) rc = sqlite3_os_init();
       if( rc!=SQLITE_OK ){

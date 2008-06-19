@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.24 2008/06/18 18:12:04 drh Exp $
+** $Id: test_malloc.c,v 1.25 2008/06/19 00:16:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -669,16 +669,16 @@ static int test_config_scratch(
 ){
   int sz, N, rc;
   Tcl_Obj *pResult;
-  static char buf[20000];
+  static char buf[30000];
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SIZE N");
     return TCL_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[3], &N) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &N) ) return TCL_ERROR;
   if( sz<0 ){
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, 0, 0, 0);
-  }else if( sz==0 ){
+  }else{
     int mx = sizeof(buf)/(sz+4);
     if( N>mx ) N = mx;
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, buf, sz, N);
@@ -713,11 +713,11 @@ static int test_config_pagecache(
     Tcl_WrongNumArgs(interp, 1, objv, "SIZE N");
     return TCL_ERROR;
   }
-  if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[3], &N) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &N) ) return TCL_ERROR;
   if( sz<0 ){
-    rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, 0, 0, 0);
-  }else if( sz==0 ){
+    rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, 0, 0, 0);
+  }else{
     int mx = sizeof(buf)/(sz+4);
     if( N>mx ) N = mx;
     rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, buf, sz, N);
@@ -729,6 +729,56 @@ static int test_config_pagecache(
   return TCL_OK;
 }
 
+/*
+** Usage:    sqlite3_status  OPCODE  RESETFLAG
+**
+** Return a list of three elements which are the sqlite3_status() return
+** code, the current value, and the high-water mark value.
+*/
+static int test_status(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc, iValue, mxValue;
+  int i, op, resetFlag;
+  const char *zOpName;
+  static const struct {
+    const char *zName;
+    int op;
+  } aOp[] = {
+    { "SQLITE_STATUS_MEMORY_USED",         SQLITE_STATUS_MEMORY_USED         },
+    { "SQLITE_STATUS_PAGECACHE_USED",      SQLITE_STATUS_PAGECACHE_USED      },
+    { "SQLITE_STATUS_PAGECACHE_OVERFLOW",  SQLITE_STATUS_PAGECACHE_OVERFLOW  },
+    { "SQLITE_STATUS_SCRATCH_USED",        SQLITE_STATUS_SCRATCH_USED        },
+    { "SQLITE_STATUS_SCRATCH_OVERFLOW",    SQLITE_STATUS_SCRATCH_OVERFLOW    },
+    { "SQLITE_STATUS_MALLOC_SIZE",         SQLITE_STATUS_MALLOC_SIZE         },
+  };
+  Tcl_Obj *pResult;
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "PARAMETER RESETFLAG");
+    return TCL_ERROR;
+  }
+  zOpName = Tcl_GetString(objv[1]);
+  for(i=0; i<ArraySize(aOp); i++){
+    if( strcmp(aOp[i].zName, zOpName)==0 ){
+      op = aOp[i].op;
+      break;
+    }
+  }
+  if( i>=ArraySize(aOp) ){
+    if( Tcl_GetIntFromObj(interp, objv[1], &op) ) return TCL_ERROR;
+  }
+  if( Tcl_GetBooleanFromObj(interp, objv[2], &resetFlag) ) return TCL_ERROR;
+  rc = sqlite3_status(op, &iValue, &mxValue, resetFlag);
+  pResult = Tcl_NewObj();
+  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(rc));
+  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(iValue));
+  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(mxValue));
+  Tcl_SetObjResult(interp, pResult);
+  return TCL_OK;
+}
 
 /*
 ** Register commands with the TCL interpreter.
@@ -754,6 +804,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_memdebug_log",       test_memdebug_log             },
      { "sqlite3_config_scratch",     test_config_scratch           },
      { "sqlite3_config_pagecache",   test_config_pagecache         },
+     { "sqlite3_status",             test_status                   },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

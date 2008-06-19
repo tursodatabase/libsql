@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.336 2008/06/18 18:57:42 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.337 2008/06/19 00:16:08 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1057,7 +1057,7 @@ struct sqlite3_mem_methods {
 ** scratch memory.  There are three arguments:  A pointer to the memory, the
 ** size of each scratch buffer (sz), and the number of buffers (N).  The sz
 ** argument must be a multiple of 16. The first
-** argument should point to an allocation of at least (sz+1)*N bytes of memory.
+** argument should point to an allocation of at least (sz+4)*N bytes of memory.
 ** SQLite will use no more than one scratch buffer at once per thread, so
 ** N should be set to the expected maximum number of threads.  The sz 
 ** parameter should be 6 times the size of the largest database page size.
@@ -5997,6 +5997,95 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_PRNG_RESTORE             6
 #define SQLITE_TESTCTRL_PRNG_RESET               7
 #define SQLITE_TESTCTRL_BITVEC_TEST              8
+
+/*
+** CAPI3REF: SQLite Runtime Status {F17200}
+**
+** This interface is used to retrieve run-time status information
+** about the preformance of SQLite, and optionally to reset various
+** highwater marks.  The first argument is an integer code for
+** the specific parameter to measure.  Recognized integer codes
+** are of the form [SQLITE_STATUS_MEMORY_USED | SQLITE_STATUS_...].
+** The current value of the parameter is returned into *pCurrent.
+** The highest recorded value is returned in *pHighwater.  If the
+** resetFlag is true, then the highest record value is reset after
+** *pHighwater is written. Some parameters do not record the highest
+** value.  For those parameters
+** nothing is written into *pHighwater and the resetFlag is ignored.
+** Other parameters record only the highwater mark and not the current
+** value.  For these latter parameters nothing is written into *pCurrent.
+**
+** This routine returns SQLITE_OK on success and a non-zero
+** [error code] on failure.
+**
+** This routine is threadsafe but is not atomic.  This routine can
+** called while other threads are running the same or different SQLite
+** interfaces.  However the values returned in *pCurrent and
+** *pHighwater reflect the status of SQLite at different points in time
+** and it is possible that another thread might change the parameter
+** in between the times when *pCurrent and *pHighwater are written.
+**
+** This interface is experimental and is subject to change or
+** removal in future releases of SQLite.
+*/
+int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
+
+/*
+** CAPI3REF: Status Parameters {F17250}
+**
+** These integer constants designate various run-time status parameters
+** that can be returned by [sqlite3_status()].
+**
+** <dl>
+** <dt>SQLITE_STATUS_MEMORY_USED</dt>
+** <dd>This parameter is the current amount of memory checked out
+** using [sqlite3_malloc()], either directly or indirectly.  The 
+** figure includes calls made to [sqlite3_malloc()] by the application
+** and internal memory usage by the SQLite library.  Scratch memory
+** controlled by [SQLITE_CONFIG_SCRATCH] and auxiliary page-cache
+** memory controlled by [SQLITE_CONFIG_PAGECACHE] is not included in
+** this parameter.  The amount returned is the sum of the allocation
+** sizes as are reported by the xSize method in [sqlite3_mem_methods].</dd>
+**
+** <dt>SQLITE_STATUS_PAGECACHE_USED</dt>
+** <dd>This parameter returns the number of pages used out of the
+** page cache buffer configured using [SQLITE_CONFIG_PAGECACHE].  The
+** value returned is in pages, not in bytes.</dd>
+**
+** <dt>SQLITE_STATUS_PAGECACHE_OVERFLOW</dt>
+** <dd>This parameter returns the number of bytes of page cache
+** allocation which could not be statisfied by the [SQLITE_CONFIG_PAGECACHE]
+** buffer and where forced to overflow to [sqlite3_malloc()].</dd>
+**
+** <dt>SQLITE_STATUS_SCRATCH_USED</dt>
+** <dd>This parameter returns the number of allocations used out of the
+** scratch allocation lookaside buffer configured using
+** [SQLITE_CONFIG_SCRATCH].  The value returned is in allocations, not
+** in bytes.  Since a single thread may only have one allocation
+** outstanding at time, this parameter also reports the number of threads
+** using scratch memory at the same time.</dd>
+**
+** <dt>SQLITE_STATUS_PAGECACHE_OVERFLOW</dt>
+** <dd>This parameter returns the number of bytes of scratch memory
+** allocation which could not be statisfied by the [SQLITE_CONFIG_SCRATCH]
+** buffer and where forced to overflow to [sqlite3_malloc()].</dd>
+**
+** <dt>SQLITE_STATUS_MALLOC_SIZE</dt>
+** <dd>This parameter records the largest memory allocation request
+** handed to [sqlite3_malloc()] or [sqlite3_realloc()] (or their
+** internal equivalents).  The value of interest is return in the
+** *pHighwater parameter to [sqlite3_status()].  The value written
+** into the *pCurrent parameter is undefined.</dd>
+** </dl>
+**
+** New status parameters may be added from time to time.
+*/
+#define SQLITE_STATUS_MEMORY_USED          0
+#define SQLITE_STATUS_PAGECACHE_USED       1
+#define SQLITE_STATUS_PAGECACHE_OVERFLOW   2
+#define SQLITE_STATUS_SCRATCH_USED         3
+#define SQLITE_STATUS_SCRATCH_OVERFLOW     4
+#define SQLITE_STATUS_MALLOC_SIZE          5
 
 
 /*

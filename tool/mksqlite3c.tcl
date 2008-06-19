@@ -204,6 +204,7 @@ foreach file {
    sqliteInt.h
 
    global.c
+   status.c
    date.c
    os.c
 
