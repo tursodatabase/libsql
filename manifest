@@ -1,5 +1,5 @@
-C Move\sthe\smalloc()\sfailure\ssimulation\sout\sof\smalloc.c\sand\sinto\sa\sseparate\ssqlite3_mem_methods\sinterface.\sStill\ssome\srelated\schanges\sto\scome.\s(CVS\s5250)
-D 2008-06-19T18:17:50
+C Unset\sglobal\sTCL\svariables\sin\sthe\sfunc.test\sscript\sprior\sto\suse\sto\savoid\nconflicts\sfrom\sother\sscripts.\s(CVS\s5251)
+D 2008-06-19T18:39:11
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -332,7 +332,7 @@ F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3near.test 2d4dadcaac5025ab65bb87e66c45f39e92966194
-F test/func.test 2c929a20e15b4d9121890393a892e91b74fe9fda
+F test/func.test 7cc20ab84558911cc77e95ae62b2af31b1b48ad2
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 68d4f7954108f5bf586c4706c8664d8333fb2230
-R 97546362f278f80be16b4e945792af6f
-U danielk1977
-Z 7b2a0d71c4e09cb60bf9f1b81e5fb2c6
+P d22cd2a59f472f4eaf80aa9f55fbff2514ca428d
+R 141cad4775fdd164f9905c54617debf2
+U drh
+Z efce33888cd2e10d3d123e87d1e0d2d9
