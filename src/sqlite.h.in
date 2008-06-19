@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.339 2008/06/19 08:51:24 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.340 2008/06/19 17:54:33 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -219,10 +219,20 @@ typedef sqlite_uint64 sqlite3_uint64;
 ** [prepared statements] and
 ** [sqlite3_blob_close | close] all [sqlite3_blob | BLOBs] 
 ** associated with the [sqlite3] object prior
-** to attempting to close the [sqlite3] object.
+** to attempting to close the [sqlite3] object.  The
+** [sqlite3_next_stmt()] interface can be used to locate all
+** [prepared statements] associated with a [database connection]
+** if desired.  Typical code might look like this:
 **
-** <todo>What happens to pending transactions?  Are they
-** rolled back, or abandoned?</todo>
+** <blockquote><pre>
+** sqlite3_stmt *pStmt;
+** while( (pStmt = sqlite3_next_stmt(db, 0))!=0 ){
+** &nbsp;   sqlite3_finalize(pStmt);
+** }
+** </pre></blockquote>
+**
+** If [sqlite3_close()] is invoked while a transaction is opened,
+** the transaction is automatically rolled back.
 **
 ** INVARIANTS:
 **
@@ -239,6 +249,10 @@ typedef sqlite_uint64 sqlite3_uint64;
 **          returns [SQLITE_BUSY] and leaves the connection open.
 **
 ** {F12014} Giving sqlite3_close() a NULL pointer is a harmless no-op.
+**
+** {F12019} When [sqlite3_close()] is invoked on a [database connection]
+**          that has a pending transaction, the transaction shall be
+**          rolled back.
 **
 ** LIMITATIONS:
 **
@@ -863,8 +877,8 @@ struct sqlite3_vfs {
 ** sqlite3_initialize() returns SQLITE_OK without doing any real work.
 **
 ** Among other things, sqlite3_initialize() shall invoke
-** [sqlite3_mutex_init()] and sqlite3_os_init().  Similarly, sqlite3_shutdown()
-** shall invoke [sqlite3_mutex_end()] and sqlite3_os_end().
+** sqlite3_os_init().  Similarly, sqlite3_shutdown()
+** shall invoke sqlite3_os_end().
 **
 ** The sqlite3_initialize() routine returns SQLITE_OK on success.
 ** If for some reason, sqlite3_initialize() is unable to initialize

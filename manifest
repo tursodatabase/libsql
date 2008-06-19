@@ -1,5 +1,5 @@
-C Fix\ssome\sminor\scompile\sproblems.\s(CVS\s5248)
-D 2008-06-19T16:07:07
+C Documentation\sand\stest-script\supdates.\s(CVS\s5249)
+D 2008-06-19T17:54:33
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in cc64323ecc21320692c12726102976689ee5ae53
+F src/sqlite.h.in 379c716552d98527db1b1acc38d9d2164bba7956
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
 F src/sqliteInt.h 6dd55232e738a4dac23475cd4b0e444dff75c896
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -407,7 +407,7 @@ F test/malloc_common.tcl fd7040bbb0bbbe84187c7f80049fdf6b2a4d699b
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
-F test/memsubsys1.test 353d51691b0fbc10633ab61986d85a6b03cb0533
+F test/memsubsys1.test e3178f1235eece2e97d725d7ff261b37da6d97e5
 F test/minmax.test 5d56f08a7765dfb5c1fb303333f7444dacb37bef
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
 F test/minmax3.test 05110398e065875b3d9315892889d3c87fccfe2b
@@ -419,7 +419,7 @@ F test/misc5.test 0b68dcb630d44af2dbcdca94dd2b17c8d580f6fa
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 26e0d948a413bca61ed031159907a03d64647409
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/mutex1.test 9f493fa8663dc3e627e7e20a523873b1a20f0583
+F test/mutex1.test f643fe0753daaed30fa233a83e690f0cff9b596e
 F test/mutex2.test 6c8f4a5425a27088bc2ad107c71b7abbc2d8534d
 F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9d73a68c305db673d393db118b6a41241683a670
-R 89c080d7705fb747009452a0b592549a
+P 7d38da3eea9ce93f32e90fce0af5101e2cf12462
+R 267d5dcbcec5655f8a7bf7ef07b9ba94
 U drh
-Z 866325c54297cfb5a7889c7f7cecefe7
+Z 9d5c19f9eec6311440a093ba49ae5844

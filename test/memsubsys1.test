@@ -11,10 +11,11 @@
 #
 # This file contains tests of the memory allocation subsystem
 #
-# $Id: memsubsys1.test,v 1.1 2008/06/19 00:16:08 drh Exp $
+# $Id: memsubsys1.test,v 1.2 2008/06/19 17:54:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+sqlite3_reset_auto_extension
 
 # This procedure constructs a new database in test.db.  It fills
 # this database with many small records (enough to force multiple
@@ -220,5 +221,5 @@ do_test memsubsys1-7.7 {
   set s_ovfl [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]
 } 0
 
-
+autoinstall_test_functions
 finish_test
