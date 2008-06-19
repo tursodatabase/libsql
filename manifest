@@ -1,5 +1,5 @@
-C Bug\sfixes:\s\sPlug\sa\smemory\sleak\sintroduced\sby\sthe\sprevious\scheck-in.\s\sGet\nthe\samalgamation\sto\sthe\spoint\swhere\sit\swill\scompile.\s(CVS\s5241)
-D 2008-06-19T01:03:18
+C Fix\sa\sbug\sin\sthe\snoop-mutex\simplementation.\s(CVS\s5242)
+D 2008-06-19T01:50:09
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -124,7 +124,7 @@ F src/mem3.c 28b4812b87470a00b11821fb5850e7cabcce06c6
 F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
 F src/mem5.c ad31a0a481b86b86f4ac0b6d952e69727d4e113a
 F src/mutex.c 67393ac4e82d2ff09622ec33b9f289deb9d8825e
-F src/mutex.h e9f3a02e58e6858b0c4e29bb8a4bc811807f3178
+F src/mutex.h 236677b27760d85701b5872d01b5cafedde5f0a9
 F src/mutex_os2.c d9eb88ad198c59f1a45d90b597c258562a40e52c
 F src/mutex_unix.c 469a35c105435794375d683f75cad9e848817d19
 F src/mutex_w32.c e03baa369c5e8e7ea4dd2e5b3d098e047f7a2f06
@@ -598,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cb1f11cd9764cf0275e88e1f6342e366e5536bfd
-R d31a6f690398344ca4203edcb0e9db61
+P 005f8eaef5ae05cef5c76f3afe299eaa2cf8af2f
+R bb3c0fc73a660955ea9906ca7b361daf
 U drh
-Z 8c5da773b6bfb26a8c5d93d48d8bcf9f
+Z a303ab4342edea1fe35b42a109e80885
