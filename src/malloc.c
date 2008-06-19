@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.21 2008/06/19 00:16:08 drh Exp $
+** $Id: malloc.c,v 1.22 2008/06/19 18:17:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -213,14 +213,10 @@ static int mallocWithAlarm(int n, void **pp){
       sqlite3MallocAlarm(nFull);
     }
   }
-  if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ){
-    p = 0;
-  }else{
+  p = sqlite3Config.m.xMalloc(nFull);
+  if( p==0 && mem0.alarmCallback ){
+    sqlite3MallocAlarm(nFull);
     p = sqlite3Config.m.xMalloc(nFull);
-    if( p==0 ){
-      sqlite3MallocAlarm(nFull);
-      p = malloc(nFull);
-    }
   }
   if( p ) sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nFull);
   *pp = p;
@@ -279,9 +275,6 @@ static int scratchAllocOut = 0;
 void *sqlite3ScratchMalloc(int n){
   void *p;
   assert( n>0 );
-  if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ){
-    return 0;
-  }
 
 #if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
   /* Verify that no more than one scratch allocation per thread
@@ -377,9 +370,6 @@ void *sqlite3PageMalloc(int n){
   assert( n>0 );
   assert( (n & (n-1))==0 );
   assert( n>=512 && n<=32768 );
-  if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ){
-    return 0;
-  }
 
   if( sqlite3Config.szPage<n ){
     goto page_overflow;
@@ -487,14 +477,10 @@ void *sqlite3Realloc(void *pOld, int nBytes){
             mem0.alarmThreshold ){
         sqlite3MallocAlarm(nNew-nOld);
       }
-      if( sqlite3FaultStep(SQLITE_FAULTINJECTOR_MALLOC) ){
-        pNew = 0;
-      }else{
+      pNew = sqlite3Config.m.xRealloc(pOld, nNew);
+      if( pNew==0 && mem0.alarmCallback ){
+        sqlite3MallocAlarm(nBytes);
         pNew = sqlite3Config.m.xRealloc(pOld, nNew);
-        if( pNew==0 ){
-          sqlite3MallocAlarm(nBytes);
-          pNew = sqlite3Config.m.xRealloc(pOld, nNew);
-        }
       }
       if( pNew ){
         sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nNew-nOld);

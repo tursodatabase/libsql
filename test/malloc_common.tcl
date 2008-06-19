@@ -12,7 +12,7 @@
 # This file contains common code used by many different malloc tests
 # within the test suite.
 #
-# $Id: malloc_common.tcl,v 1.16 2008/03/21 16:45:48 drh Exp $
+# $Id: malloc_common.tcl,v 1.17 2008/06/19 18:17:50 danielk1977 Exp $
 
 # If we did not compile with malloc testing enabled, then do nothing.
 #
@@ -22,6 +22,11 @@ ifcapable builtin_test {
   set MEMDEBUG 0
   return 0
 }
+
+catch {db close}
+sqlite3_shutdown
+catch {install_malloc_faultsim 1} msg
+sqlite3 db test.db
 
 # Usage: do_malloc_test <test number> <options...>
 #

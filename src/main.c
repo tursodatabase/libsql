@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.452 2008/06/19 01:03:18 drh Exp $
+** $Id: main.c,v 1.453 2008/06/19 18:17:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1813,6 +1813,18 @@ int sqlite3_test_control(int op, ...){
     case SQLITE_TESTCTRL_FAULT_PENDING: {
       int id = va_arg(ap, int);
       rc = sqlite3FaultPending(id);
+      break;
+    }
+
+    /*
+    ** sqlite3_test_control(FAULT_INSTALL, isInstall)
+    **
+    ** If the argument is non-zero, install the fault-simulation malloc layer
+    ** as a wrapper around the currently installed implementation.
+    */
+    case SQLITE_TESTCTRL_FAULT_INSTALL: {
+      int isInstall = va_arg(ap, int);
+      rc = sqlite3FaultsimInstall(isInstall);
       break;
     }
 

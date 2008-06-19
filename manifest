@@ -1,5 +1,5 @@
-C Documentation\sand\stest-script\supdates.\s(CVS\s5249)
-D 2008-06-19T17:54:33
+C Move\sthe\smalloc()\sfailure\ssimulation\sout\sof\smalloc.c\sand\sinto\sa\sseparate\ssqlite3_mem_methods\sinterface.\sStill\ssome\srelated\schanges\sto\scome.\s(CVS\s5250)
+D 2008-06-19T18:17:50
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -105,7 +105,7 @@ F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e841168e5520bbbb2a1cbcdce7531d8b23017b4d
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
 F src/expr.c ecb3b23d3543427cba3e2ac12a6c6ae4bb20d39b
-F src/fault.c 1f6177188edb00641673e462f3fab8cba9f7422b
+F src/fault.c 34d0f93490a659561a5a41bccb40cc1ef918d265
 F src/func.c 1e7d9569570134ac0771a00382d9d4b41c4aa052
 F src/global.c 2304cfa3288763bd2fed10caf8c6fbaa2b383f4e
 F src/hash.c 283864c1adf546d4f0a6ee3694b62beeda8fbd35
@@ -115,8 +115,8 @@ F src/insert.c c2ead6c36566de8e3f130e7ab1431723a269d5d7
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 40024a0f476c1279494876b9a002001b29e5d3e3
-F src/main.c d75dad89c689c92cfb20d45f3ef31baca08eb896
-F src/malloc.c 33b8a20684e65ce13f94e5b14fb0e6cdc335c5d1
+F src/main.c ae01b4e90c6a323b689dea1e0af4bf98dc484c7f
+F src/malloc.c 66c0b17a6611547f630b6ea67e14e575b9431507
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 159f10e280f2d9aea597cf938851e61652dd5c3d
 F src/mem2.c 23f9538f35fbcd5665afe7056a56be0c7ed65aa7
@@ -143,9 +143,9 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in 379c716552d98527db1b1acc38d9d2164bba7956
+F src/sqlite.h.in bf94fcce7c2da5e92d0037595238efbb4f5d0985
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
-F src/sqliteInt.h 6dd55232e738a4dac23475cd4b0e444dff75c896
+F src/sqliteInt.h 4d4c0432b5f4918beff36a075015b32244c420c3
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
@@ -167,7 +167,7 @@ F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
 F src/test_func.c f4aafa10f17d52c43a64b47717265802e6e552b3
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
-F src/test_malloc.c dc6d256544b1be96312367b24b93a778de8afdfe
+F src/test_malloc.c 8c8c0b5cad66b1cb5b8ccca6efec1739572a5978
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c 8cfe5c56d5583e07c25c50f59c42ca0104dd24bb
 F src/test_onefile.c 1f87d4a21cbfb24a7c35e4333fa0bd34d641f68d
@@ -386,8 +386,8 @@ F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/main.test 82c222989e02ea09abd58d453828ffd71806b6bf
-F test/malloc.test fa208f99ed283b131ace2903f052375ab480de1a
-F test/malloc2.test 6f2abc0617a7df210381272681d598488a3bf943
+F test/malloc.test ca6d4ebb9886ec1bdb78953ca0f53cf2e0846761
+F test/malloc2.test c847c457d37cf37ff9ff989fa6bd1475f714e485
 F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 1a68e56e513eab54d8c4cd1b769ff1d14e3f99f4
@@ -403,7 +403,7 @@ F test/mallocD.test f78c295e8e18ea3029e65ca08278690e00c22100
 F test/mallocE.test db1ed69d7eded1b080952e2a7c37f364ad241b08
 F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
 F test/mallocG.test b295dc03b6d8d705ce425ff4d1ce6bbeb1c5ab33
-F test/malloc_common.tcl fd7040bbb0bbbe84187c7f80049fdf6b2a4d699b
+F test/malloc_common.tcl c3b251237a7a1578c49c4f342fa764c4c8fa613c
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7d38da3eea9ce93f32e90fce0af5101e2cf12462
-R 267d5dcbcec5655f8a7bf7ef07b9ba94
-U drh
-Z 9d5c19f9eec6311440a093ba49ae5844
+P 68d4f7954108f5bf586c4706c8664d8333fb2230
+R 97546362f278f80be16b4e945792af6f
+U danielk1977
+Z 7b2a0d71c4e09cb60bf9f1b81e5fb2c6

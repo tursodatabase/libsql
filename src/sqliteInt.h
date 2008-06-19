@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.717 2008/06/19 01:03:18 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.718 2008/06/19 18:17:50 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2215,6 +2215,7 @@ CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
   void sqlite3FaultBeginBenign(int);
   void sqlite3FaultEndBenign(int);
   int sqlite3FaultStep(int);
+  int sqlite3FaultsimInstall(int);
 #else
 # define sqlite3FaultConfig(A,B,C)
 # define sqlite3FaultFailures(A)         0

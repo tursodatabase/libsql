@@ -26,11 +26,9 @@
 ** under the motto "fly what you test and test what you fly" may
 ** choose to leave the fault injector enabled even in production.
 **
-** $Id: fault.c,v 1.6 2008/05/15 19:43:53 drh Exp $
+** $Id: fault.c,v 1.7 2008/06/19 18:17:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
-
-#ifndef SQLITE_OMIT_BUILTIN_TEST
 
 /*
 ** There can be various kinds of faults.  For example, there can be
@@ -38,29 +36,107 @@
 ** fault type, there is a separate FaultInjector structure to keep track
 ** of the status of that fault.
 */
-static struct FaultInjector {
+static struct MemFault {
   int iCountdown;   /* Number of pending successes before we hit a failure */
   int nRepeat;      /* Number of times to repeat the failure */
   int nBenign;      /* Number of benign failures seen since last config */
   int nFail;        /* Number of failures seen since last config */
   u8 enable;        /* True if enabled */
   i16 benign;       /* Positive if next failure will be benign */
-} aFault[SQLITE_FAULTINJECTOR_COUNT];
+
+  int isInstalled;
+  sqlite3_mem_methods m;         /* 'Real' malloc implementation */
+} memfault;
+
+/*
+** This routine exists as a place to set a breakpoint that will
+** fire on any simulated malloc() failure.
+*/
+static void sqlite3Fault(void){
+  static int cnt = 0;
+  cnt++;
+}
+
+/*
+** Check to see if a fault should be simulated.  Return true to simulate
+** the fault.  Return false if the fault should not be simulated.
+*/
+static int faultsimStep(){
+  if( likely(!memfault.enable) ){
+    return 0;
+  }
+  if( memfault.iCountdown>0 ){
+    memfault.iCountdown--;
+    return 0;
+  }
+  sqlite3Fault();
+  memfault.nFail++;
+  if( memfault.benign>0 ){
+    memfault.nBenign++;
+  }
+  memfault.nRepeat--;
+  if( memfault.nRepeat<=0 ){
+    memfault.enable = 0;
+  }
+  return 1;  
+}
+
+static void *faultsimMalloc(int n){
+  void *p = 0;
+  if( !faultsimStep() ){
+    p = memfault.m.xMalloc(n);
+  }
+  return p;
+}
+
+
+static void *faultsimRealloc(void *pOld, int n){
+  void *p = 0;
+  if( !faultsimStep() ){
+    p = memfault.m.xRealloc(pOld, n);
+  }
+  return p;
+}
+
+/* 
+** The following method calls are passed directly through to the underlying
+** malloc system:
+**
+**     xFree
+**     xSize
+**     xRoundup
+**     xInit
+**     xShutdown
+*/
+static void faultsimFree(void *p){
+  memfault.m.xFree(p);
+}
+static int faultsimSize(void *p){
+  return memfault.m.xSize(p);
+}
+static int faultsimRoundup(int n){
+  return memfault.m.xRoundup(n);
+}
+static int faultsimInit(void *p){
+  return memfault.m.xInit(memfault.m.pAppData);
+}
+static void faultsimShutdown(void *p){
+  memfault.m.xShutdown(memfault.m.pAppData);
+}
 
 /*
 ** This routine configures and enables a fault injector.  After
-** calling this routine, aFaultStep() will return false (zero)
+** calling this routine, a FaultStep() will return false (zero)
 ** nDelay times, then it will return true nRepeat times,
 ** then it will again begin returning false.
 */
 void sqlite3FaultConfig(int id, int nDelay, int nRepeat){
-  assert( id>=0 && id<SQLITE_FAULTINJECTOR_COUNT );
-  aFault[id].iCountdown = nDelay;
-  aFault[id].nRepeat = nRepeat;
-  aFault[id].nBenign = 0;
-  aFault[id].nFail = 0;
-  aFault[id].enable = nDelay>=0;
-  aFault[id].benign = 0;
+  memfault.iCountdown = nDelay;
+  memfault.nRepeat = nRepeat;
+  memfault.nBenign = 0;
+  memfault.nFail = 0;
+  memfault.enable = nDelay>=0;
+  memfault.benign = 0;
 }
 
 /*
@@ -69,7 +145,7 @@ void sqlite3FaultConfig(int id, int nDelay, int nRepeat){
 */
 int sqlite3FaultFailures(int id){
   assert( id>=0 && id<SQLITE_FAULTINJECTOR_COUNT );
-  return aFault[id].nFail;
+  return memfault.nFail;
 }
 
 /*
@@ -77,8 +153,7 @@ int sqlite3FaultFailures(int id){
 ** injector was last configured.
 */
 int sqlite3FaultBenignFailures(int id){
-  assert( id>=0 && id<SQLITE_FAULTINJECTOR_COUNT );
-  return aFault[id].nBenign;
+  return memfault.nBenign;
 }
 
 /*
@@ -86,9 +161,8 @@ int sqlite3FaultBenignFailures(int id){
 ** If no failures are scheduled, return -1.
 */
 int sqlite3FaultPending(int id){
-  assert( id>=0 && id<SQLITE_FAULTINJECTOR_COUNT );
-  if( aFault[id].enable ){
-    return aFault[id].iCountdown;
+  if( memfault.enable ){
+    return memfault.iCountdown;
   }else{
     return -1;
   }
@@ -109,59 +183,54 @@ int sqlite3FaultPending(int id){
 void sqlite3FaultBeginBenign(int id){
   if( id<0 ){
     for(id=0; id<SQLITE_FAULTINJECTOR_COUNT; id++){
-      aFault[id].benign++;
+      memfault.benign++;
     }
   }else{
     assert( id>=0 && id<SQLITE_FAULTINJECTOR_COUNT );
-    aFault[id].benign++;
+    memfault.benign++;
   }
 }
 void sqlite3FaultEndBenign(int id){
   if( id<0 ){
     for(id=0; id<SQLITE_FAULTINJECTOR_COUNT; id++){
-      assert( aFault[id].benign>0 );
-      aFault[id].benign--;
+      assert( memfault.benign>0 );
+      memfault.benign--;
     }
   }else{
-    assert( id>=0 && id<SQLITE_FAULTINJECTOR_COUNT );
-    assert( aFault[id].benign>0 );
-    aFault[id].benign--;
+    assert( memfault.benign>0 );
+    memfault.benign--;
   }
 }
 
-/*
-** This routine exists as a place to set a breakpoint that will
-** fire on any simulated fault.
-*/
-static void sqlite3Fault(void){
-  static int cnt = 0;
-  cnt++;
+int sqlite3FaultsimInstall(int install){
+  static struct sqlite3_mem_methods m = {
+    faultsimMalloc,                   /* xMalloc */
+    faultsimFree,                     /* xFree */
+    faultsimRealloc,                  /* xRealloc */
+    faultsimSize,                     /* xSize */
+    faultsimRoundup,                  /* xRoundup */
+    faultsimInit,                     /* xInit */
+    faultsimShutdown,                 /* xShutdown */
+    0                                 /* pAppData */
+  };
+  int rc;
+
+  assert(install==1 || install==0);
+  assert(memfault.isInstalled==1 || memfault.isInstalled==0);
+
+  if( install==memfault.isInstalled ){
+    return SQLITE_ERROR;
+  }
+
+  rc = sqlite3_config(SQLITE_CONFIG_GETMALLOC, &memfault.m);
+  assert(memfault.m.xMalloc);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &m);
+  }
+
+  if( rc==SQLITE_OK ){
+    memfault.isInstalled = 1;
+  }
+  return rc;
 }
 
-
-/*
-** Check to see if a fault should be simulated.  Return true to simulate
-** the fault.  Return false if the fault should not be simulated.
-*/
-int sqlite3FaultStep(int id){
-  assert( id>=0 && id<SQLITE_FAULTINJECTOR_COUNT );
-  if( likely(!aFault[id].enable) ){
-    return 0;
-  }
-  if( aFault[id].iCountdown>0 ){
-    aFault[id].iCountdown--;
-    return 0;
-  }
-  sqlite3Fault();
-  aFault[id].nFail++;
-  if( aFault[id].benign>0 ){
-    aFault[id].nBenign++;
-  }
-  aFault[id].nRepeat--;
-  if( aFault[id].nRepeat<=0 ){
-    aFault[id].enable = 0;
-  }
-  return 1;  
-}
-
-#endif /* SQLITE_OMIT_BUILTIN_TEST */

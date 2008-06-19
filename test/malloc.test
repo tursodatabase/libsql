@@ -16,10 +16,11 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.61 2008/04/17 14:16:42 drh Exp $
+# $Id: malloc.test,v 1.62 2008/06/19 18:17:50 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
 
 # Only run these tests if memory debugging is turned on.
 #
