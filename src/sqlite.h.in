@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.337 2008/06/19 00:16:08 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.338 2008/06/19 02:52:25 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4738,6 +4738,39 @@ int sqlite3_get_autocommit(sqlite3*);
 **          [prepared statement] S.
 */
 sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
+
+/*
+** CAPI3REF:  Find the next prepared statement {F13140}
+**
+** Return a pointer to the next [prepared statement] after pStmt
+** associated with [database connection] pDb.  If pStmt is NULL
+** then return a pointer to the first [prepared statement] associated
+** with the [database connection] pDb.  If no [prepared statement]
+** satisfies the conditions of this routine, return NULL.
+**
+** INVARIANTS:
+**
+** {F13143} If D is a [database connection] that holds one or more
+**          unfinalized [prepared statements] and S is a NULL pointer,
+**          then [sqlite3_next_stmt(D, S)] routine shall return a pointer
+**          to one of the [prepared statements] associated with D.
+**
+** {F13146} If D is a [database connection] that holds no
+**          unfinalized [prepared statements] and S is a NULL pointer,
+**          then [sqlite3_next_stmt(D, S)] routine shall return a NULL
+**          pointer.
+**
+** {F13149} If S is a [prepared statement] in [database connection] D
+**          and S is not the last [prepared statement] in D, then
+**          [sqlite3_next_stmt(D, S)] routine shall return a pointer
+**          to the next [prepared statement] in D after S.
+**
+** {F13152} If S is the last [prepared statement] in [database connection] D
+**          then [sqlite3_next_stmt(D, S)] routine shall return a NULL
+**          pointer.
+**
+*/
+sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 
 
 /*

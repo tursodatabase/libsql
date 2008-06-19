@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\snoop-mutex\simplementation.\s(CVS\s5242)
-D 2008-06-19T01:50:09
+C Add\sthe\ssqlite3_next_stmt()\sinterface,\sincluding\stest\scases.\s(CVS\s5243)
+D 2008-06-19T02:52:25
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,13 +143,13 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 669687459e7d0193c89de06c5dbed55b4a41191c
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in f69427508e76eec76dae7f5fffdfefc05a9d4329
+F src/sqlite.h.in 2590420afe3c9c5a05ee7269f32c3c6f4b06c053
 F src/sqlite3ext.h faacd0e6a81aabee0861c6d7883c9172e74ef5b3
 F src/sqliteInt.h 6dd55232e738a4dac23475cd4b0e444dff75c896
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c 4dd9ee4cb44846ad9bcc4d0da8088c1e7d4b33d9
-F src/test1.c 736be7dea5cc126356bbb61a4b1ac5ff4fac7994
+F src/test1.c e78c07d7f1db40593ab1e4aa321016184af0c7ad
 F src/test2.c c46d146019ab6e37474e66b3c789e5237d9ea7b7
 F src/test3.c 01ff03164cf6a2bededa3b44ecd481603e2644fc
 F src/test4.c c2c0f5dc907f1346f5d4b65eb5799f11eb9e4071
@@ -184,7 +184,7 @@ F src/vacuum.c 14eb21b480924d87e791cd8ab6fb35ac563243ef
 F src/vdbe.c f6866986de706b98c2738040bc65907728650e8d
 F src/vdbe.h 1e3722d471739c2b213c6283b60373290e52f7ea
 F src/vdbeInt.h de321b2c02593e1420106634ed1f5a7d77ad35a7
-F src/vdbeapi.c 9cf3207a58e484c74c60d61ac037c1cad8aa5b65
+F src/vdbeapi.c a7c6b8db324cf7eccff32de871dea36aa305c994
 F src/vdbeaux.c 09d7a6923d4d71d7028e0d72b9d146d3ece6054e
 F src/vdbeblob.c 9345f6dcd675fdcfdb537d2d2f487542d9ea136a
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
@@ -228,6 +228,7 @@ F test/capi2.test cc64df7560a96f848f919ea2926c60acf639684b
 F test/capi3.test d3848b06fb36d43b73aca6e22c44f734e14e5c3b
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
 F test/capi3c.test 208713e5f3a63442c3574c55b83baa7cf8ac5f28
+F test/capi3d.test 537de3a1f724862e327e02bb21b4a84f185dc1e2
 F test/cast.test ce8f14fc80f70b30ed984480cc0d8914a459e8f9
 F test/check.test 024ed399600b799160378cf9d9f436bdf5dfd184
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
@@ -598,7 +599,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 005f8eaef5ae05cef5c76f3afe299eaa2cf8af2f
-R bb3c0fc73a660955ea9906ca7b361daf
+P eec9a54dc3554a00ea69fc8e26d205f30a3bcabd
+R c8ee455d2762ac91cbcc6d328820d18d
 U drh
-Z a303ab4342edea1fe35b42a109e80885
+Z 1aaf0ee87bfe5a8385c7655d6421e7d4
