@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.467 2008/06/19 00:16:08 drh Exp $
+** $Id: btree.c,v 1.468 2008/06/19 01:03:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1463,6 +1463,7 @@ int sqlite3BtreeClose(Btree *p){
     }
     sqlite3_free(pBt->pSchema);
     freeTempSpace(pBt);
+    sqlite3_free(pBt);
   }
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
