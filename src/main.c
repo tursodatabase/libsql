@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.453 2008/06/19 18:17:50 danielk1977 Exp $
+** $Id: main.c,v 1.454 2008/06/20 11:05:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1763,6 +1763,7 @@ int sqlite3_test_control(int op, ...){
   va_list ap;
   va_start(ap, op);
   switch( op ){
+#if 0
     /*
     ** sqlite3_test_control(FAULT_CONFIG, fault_id, nDelay, nRepeat)
     **
@@ -1827,6 +1828,7 @@ int sqlite3_test_control(int op, ...){
       rc = sqlite3FaultsimInstall(isInstall);
       break;
     }
+#endif
 
     /*
     ** Save the current state of the PRNG.

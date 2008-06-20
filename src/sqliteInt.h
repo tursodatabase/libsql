@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.718 2008/06/19 18:17:50 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.719 2008/06/20 11:05:38 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2203,30 +2203,18 @@ CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
 #define SQLITE_FAULTINJECTOR_COUNT      1
 
 /*
-** The interface to the fault injector subsystem.  If the fault injector
-** mechanism is disabled at compile-time then set up macros so that no
-** unnecessary code is generated.
+** The interface to the code in fault.c used for identifying "benign"
+** malloc failures. This is only present if SQLITE_OMIT_BUILTIN_TEST
+** is not defined.
 */
 #ifndef SQLITE_OMIT_BUILTIN_TEST
-  void sqlite3FaultConfig(int,int,int);
-  int sqlite3FaultFailures(int);
-  int sqlite3FaultBenignFailures(int);
-  int sqlite3FaultPending(int);
   void sqlite3FaultBeginBenign(int);
   void sqlite3FaultEndBenign(int);
-  int sqlite3FaultStep(int);
-  int sqlite3FaultsimInstall(int);
+  int sqlite3FaultIsBenign(void);
 #else
-# define sqlite3FaultConfig(A,B,C)
-# define sqlite3FaultFailures(A)         0
-# define sqlite3FaultBenignFailures(A)   0
-# define sqlite3FaultPending(A)          (-1)
-# define sqlite3FaultBeginBenign(A)
-# define sqlite3FaultEndBenign(A)
-# define sqlite3FaultStep(A)             0
+  #define sqlite3FaultBeginBenign()
+  #define sqlite3FaultEndBenign()
 #endif
-  
-  
 
 #define IN_INDEX_ROWID           1
 #define IN_INDEX_EPH             2

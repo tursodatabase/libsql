@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.26 2008/06/19 18:17:50 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.27 2008/06/20 11:05:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -21,6 +21,192 @@
 #include <string.h>
 #include <assert.h>
 
+/*
+** This structure is used to encapsulate the global state variables used 
+** by malloc() fault simulation.
+*/
+static struct MemFault {
+  int iCountdown;         /* Number of pending successes before a failure */
+  int nRepeat;            /* Number of times to repeat the failure */
+  int nBenign;            /* Number of benign failures seen since last config */
+  int nFail;              /* Number of failures seen since last config */
+  u8 enable;              /* True if enabled */
+  int isInstalled;        /* True if the fault simulation layer is installed */
+  sqlite3_mem_methods m;  /* 'Real' malloc implementation */
+} memfault;
+
+/*
+** This routine exists as a place to set a breakpoint that will
+** fire on any simulated malloc() failure.
+*/
+static void sqlite3Fault(void){
+  static int cnt = 0;
+  cnt++;
+}
+
+/*
+** Check to see if a fault should be simulated.  Return true to simulate
+** the fault.  Return false if the fault should not be simulated.
+*/
+static int faultsimStep(){
+  if( likely(!memfault.enable) ){
+    return 0;
+  }
+  if( memfault.iCountdown>0 ){
+    memfault.iCountdown--;
+    return 0;
+  }
+  sqlite3Fault();
+  memfault.nFail++;
+  if( sqlite3FaultIsBenign()>0 ){
+    memfault.nBenign++;
+  }
+  memfault.nRepeat--;
+  if( memfault.nRepeat<=0 ){
+    memfault.enable = 0;
+  }
+  return 1;  
+}
+
+/*
+** A version of sqlite3_mem_methods.xMalloc() that includes fault simulation
+** logic.
+*/
+static void *faultsimMalloc(int n){
+  void *p = 0;
+  if( !faultsimStep() ){
+    p = memfault.m.xMalloc(n);
+  }
+  return p;
+}
+
+
+/*
+** A version of sqlite3_mem_methods.xRealloc() that includes fault simulation
+** logic.
+*/
+static void *faultsimRealloc(void *pOld, int n){
+  void *p = 0;
+  if( !faultsimStep() ){
+    p = memfault.m.xRealloc(pOld, n);
+  }
+  return p;
+}
+
+/* 
+** The following method calls are passed directly through to the underlying
+** malloc system:
+**
+**     xFree
+**     xSize
+**     xRoundup
+**     xInit
+**     xShutdown
+*/
+static void faultsimFree(void *p){
+  memfault.m.xFree(p);
+}
+static int faultsimSize(void *p){
+  return memfault.m.xSize(p);
+}
+static int faultsimRoundup(int n){
+  return memfault.m.xRoundup(n);
+}
+static int faultsimInit(void *p){
+  return memfault.m.xInit(memfault.m.pAppData);
+}
+static void faultsimShutdown(void *p){
+  memfault.m.xShutdown(memfault.m.pAppData);
+}
+
+/*
+** This routine configures the malloc failure simulation.  After
+** calling this routine, the next nDelay mallocs will succeed, followed
+** by a block of nRepeat failures, after which malloc() calls will begin
+** to succeed again.
+*/
+static void faultsimConfig(int nDelay, int nRepeat){
+  memfault.iCountdown = nDelay;
+  memfault.nRepeat = nRepeat;
+  memfault.nBenign = 0;
+  memfault.nFail = 0;
+  memfault.enable = nDelay>=0;
+}
+
+/*
+** Return the number of faults (both hard and benign faults) that have
+** occurred since the injector was last configured.
+*/
+static int faultsimFailures(void){
+  return memfault.nFail;
+}
+
+/*
+** Return the number of benign faults that have occurred since the
+** injector was last configured.
+*/
+static int faultsimBenignFailures(void){
+  return memfault.nBenign;
+}
+
+/*
+** Return the number of successes that will occur before the next failure.
+** If no failures are scheduled, return -1.
+*/
+static int faultsimPending(void){
+  if( memfault.enable ){
+    return memfault.iCountdown;
+  }else{
+    return -1;
+  }
+}
+
+/*
+** Add or remove the fault-simulation layer using sqlite3_config(). If
+** the argument is non-zero, the 
+*/
+static int faultsimInstall(int install){
+  static struct sqlite3_mem_methods m = {
+    faultsimMalloc,                   /* xMalloc */
+    faultsimFree,                     /* xFree */
+    faultsimRealloc,                  /* xRealloc */
+    faultsimSize,                     /* xSize */
+    faultsimRoundup,                  /* xRoundup */
+    faultsimInit,                     /* xInit */
+    faultsimShutdown,                 /* xShutdown */
+    0                                 /* pAppData */
+  };
+  int rc;
+
+  install = (install ? 1 : 0);
+  assert(memfault.isInstalled==1 || memfault.isInstalled==0);
+
+  if( install==memfault.isInstalled ){
+    return SQLITE_ERROR;
+  }
+
+  rc = sqlite3_config(SQLITE_CONFIG_GETMALLOC, &memfault.m);
+  assert(memfault.m.xMalloc);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &m);
+  }
+
+  if( rc==SQLITE_OK ){
+    memfault.isInstalled = 1;
+  }
+  return rc;
+}
+
+#ifdef SQLITE_TEST
+
+/*
+** This function is implemented in test1.c. Returns a pointer to a static
+** buffer containing the symbolic SQLite error code that corresponds to
+** the least-significant 8-bits of the integer passed as an argument.
+** For example:
+**
+**   sqlite3TestErrorName(1) -> "SQLITE_ERROR"
+*/
 const char *sqlite3TestErrorName(int);
 
 /*
@@ -129,7 +315,6 @@ static int test_realloc(
   Tcl_AppendResult(interp, zOut, NULL);
   return TCL_OK;
 }
-
 
 /*
 ** Usage:    sqlite3_free  PRIOR
@@ -439,13 +624,10 @@ static int test_memdebug_fail(
     }
   }
   
-  sqlite3_test_control(-12345); /* Just to stress the test_control interface */
-  nBenign = sqlite3_test_control(SQLITE_TESTCTRL_FAULT_BENIGN_FAILURES,
-                                 SQLITE_FAULTINJECTOR_MALLOC);
-  nFail = sqlite3_test_control(SQLITE_TESTCTRL_FAULT_FAILURES,
-                               SQLITE_FAULTINJECTOR_MALLOC);
-  sqlite3_test_control(SQLITE_TESTCTRL_FAULT_CONFIG,
-                       SQLITE_FAULTINJECTOR_MALLOC, iFail, nRepeat);
+  nBenign = faultsimBenignFailures();
+  nFail = faultsimFailures();
+  faultsimConfig(iFail, nRepeat);
+
   if( pBenignCnt ){
     Tcl_ObjSetVar2(interp, pBenignCnt, 0, Tcl_NewIntObj(nBenign), 0);
   }
@@ -471,8 +653,7 @@ static int test_memdebug_pending(
     Tcl_WrongNumArgs(interp, 1, objv, "");
     return TCL_ERROR;
   }
-  nPending = sqlite3_test_control(SQLITE_TESTCTRL_FAULT_PENDING,
-                                  SQLITE_FAULTINJECTOR_MALLOC);
+  nPending = faultsimPending();
   Tcl_SetObjResult(interp, Tcl_NewIntObj(nPending));
   return TCL_OK;
 }
@@ -801,7 +982,7 @@ static int test_install_malloc_faultsim(
   if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[1], &isInstall) ){
     return TCL_ERROR;
   }
-  rc = sqlite3_test_control(SQLITE_TESTCTRL_FAULT_INSTALL, isInstall);
+  rc = faultsimInstall(isInstall);
   Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
   return TCL_OK;
 }
@@ -840,3 +1021,4 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
   }
   return TCL_OK;
 }
+#endif
