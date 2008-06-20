@@ -1,5 +1,5 @@
-C Add\sa\stest\sto\scheck\sthat\sopening\sa\ssecond\sconnection\sto\sa\sshared\scache\sdoes\snot\sreset\sthe\scache\ssize\sto\sits\sdefault\svalue.\s(CVS\s5256)
-D 2008-06-20T17:51:17
+C Add\snew\sCompare\sand\sJump\scodes\sto\sthe\svirtual\smachine.\s\sUse\sthem\sin\sthe\nimplementation\sof\saggregate\squeries.\s(CVS\s5257)
+D 2008-06-20T18:13:25
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/pragma.c 70e7c865dce85fdf9df81848af2169009a56ed08
 F src/prepare.c 3c19149e75fbf3b08471a389f064da7302cad9c5
 F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c 672a4812f7bf889176b52d3257bf21d2c08009f1
+F src/select.c 8393c47a170923f40602622bfa59b8e7cbff9027
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
 F src/sqlite.h.in 4c41b702bf6a105a485dfb61065f941c8cb0357d
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
@@ -182,11 +182,11 @@ F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 920d6d5dfdf25f7b85d2093705d8716f9b387e3b
 F src/vacuum.c 14eb21b480924d87e791cd8ab6fb35ac563243ef
-F src/vdbe.c d4b0efeedb4bfb088931addf926e99f4977346c9
-F src/vdbe.h 1e3722d471739c2b213c6283b60373290e52f7ea
-F src/vdbeInt.h de321b2c02593e1420106634ed1f5a7d77ad35a7
+F src/vdbe.c b733eaea9bb821b710c7ccc0a80551e1daaae733
+F src/vdbe.h 1246ace5511258b2192487581f23985bbc61b1be
+F src/vdbeInt.h 723fb796fc13346e01fb7269dcfe28f74006c5b3
 F src/vdbeapi.c a7c6b8db324cf7eccff32de871dea36aa305c994
-F src/vdbeaux.c c61240e6776a4a88d61624734234d103bd7a31fa
+F src/vdbeaux.c 5645351aed834221dac9f059f79021b5295a8626
 F src/vdbeblob.c 9345f6dcd675fdcfdb537d2d2f487542d9ea136a
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
 F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6b9d92fc3f265ef75c9182e537812490bb818950
-R 71da1fcba8c73c8171b73b407d6eada6
-U danielk1977
-Z d3489b3e80ddc7822f5885b135f3fa25
+P 3546e245aaf5d75b9f52ffb3268da9bc26946396
+R 9ebc5eb0b944955c55dacd9381beebe7
+U drh
+Z 957de0aa116eb421d5f8567d774f0a1d

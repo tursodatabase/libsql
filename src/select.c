@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.431 2008/06/20 15:24:02 drh Exp $
+** $Id: select.c,v 1.432 2008/06/20 18:13:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1875,8 +1875,9 @@ static CollSeq *multiSelectCollSeq(Parse *pParse, Select *p, int iCol){
 
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
-** This routine is called to process a query that is really the union
-** or intersection of two or more separate queries.
+** This routine is called to process a compound query form from
+** two or more separate queries using UNION, UNION ALL, EXCEPT, or
+** INTERSECT
 **
 ** "p" points to the right-most of the two queries.  the query on the
 ** left is p->pPrior.  The left query could also be a compound query
@@ -3291,12 +3292,10 @@ int sqlite3Select(
     /* The following variables hold addresses or labels for parts of the
     ** virtual machine program we are putting together */
     int addrOutputRow;      /* Start of subroutine that outputs a result row */
-    int regOutputRow;       /* Return address register for outputrow subroutine */
+    int regOutputRow;       /* Return address register for output subroutine */
     int addrSetAbort;       /* Set the abort flag and return */
     int addrInitializeLoop; /* Start of code that initializes the input loop */
     int addrTopOfLoop;      /* Top of the input loop */
-    int addrGroupByChange;  /* Code that runs when any GROUP BY term changes */
-    int addrProcessRow;     /* Code to process a single input row */
     int addrEnd;            /* End of all processing */
     int addrSortingIdx;     /* The OP_OpenEphemeral for the sorting index */
     int addrReset;          /* Subroutine for resetting the accumulator */
@@ -3330,13 +3329,11 @@ int sqlite3Select(
     */
     if( pGroupBy ){
       KeyInfo *pKeyInfo;  /* Keying information for the group by clause */
+      int j1;
 
       /* Create labels that we will be needing
       */
-     
       addrInitializeLoop = sqlite3VdbeMakeLabel(v);
-      addrGroupByChange = sqlite3VdbeMakeLabel(v);
-      addrProcessRow = sqlite3VdbeMakeLabel(v);
 
       /* If there is a GROUP BY clause we might need a sorting index to
       ** implement it.  Allocate that sorting index now.  If it turns out
@@ -3474,15 +3471,10 @@ int sqlite3Select(
           sqlite3ExprCode(pParse, pGroupBy->a[j].pExpr, iBMem+j);
         }
       }
-      for(j=pGroupBy->nExpr-1; j>=0; j--){
-        if( j==0 ){
-          sqlite3VdbeAddOp3(v, OP_Eq, iAMem+j, addrProcessRow, iBMem+j);
-        }else{
-          sqlite3VdbeAddOp3(v, OP_Ne, iAMem+j, addrGroupByChange, iBMem+j);
-        }
-        sqlite3VdbeChangeP4(v, -1, (void*)pKeyInfo->aColl[j], P4_COLLSEQ);
-        sqlite3VdbeChangeP5(v, SQLITE_NULLEQUAL);
-      }
+      sqlite3VdbeAddOp4(v, OP_Compare, iAMem, iBMem, pGroupBy->nExpr,
+                          (char*)pKeyInfo, P4_KEYINFO_STATIC);
+      j1 = sqlite3VdbeCurrentAddr(v);
+      sqlite3VdbeAddOp3(v, OP_Jump, j1+1, 0, j1+1);
 
       /* Generate code that runs whenever the GROUP BY changes.
       ** Changes in the GROUP BY are detected by the previous code
@@ -3493,7 +3485,6 @@ int sqlite3Select(
       ** and resets the aggregate accumulator registers in preparation
       ** for the next GROUP BY batch.
       */
-      sqlite3VdbeResolveLabel(v, addrGroupByChange);
       for(j=0; j<pGroupBy->nExpr; j++){
         sqlite3ExprCodeMove(pParse, iBMem+j, iAMem+j);
       }
@@ -3507,7 +3498,7 @@ int sqlite3Select(
       /* Update the aggregate accumulators based on the content of
       ** the current row
       */
-      sqlite3VdbeResolveLabel(v, addrProcessRow);
+      sqlite3VdbeJumpHere(v, j1);
       updateAccumulator(pParse, &sAggInfo);
       sqlite3VdbeAddOp2(v, OP_Integer, 1, iUseFlag);
       VdbeComment((v, "indicate data in accumulator"));
@@ -3579,7 +3570,7 @@ int sqlite3Select(
       updateAccumulator(pParse, &sAggInfo);
       if( !pMinMax && flag ){
         sqlite3VdbeAddOp2(v, OP_Goto, 0, pWInfo->iBreak);
-        VdbeComment((v, "%s() by index", (flag==WHERE_ORDERBY_MIN?"min":"max")));
+        VdbeComment((v, "%s() by index",(flag==WHERE_ORDERBY_MIN?"min":"max")));
       }
       sqlite3WhereEnd(pWInfo);
       finalizeAggFunctions(pParse, &sAggInfo);

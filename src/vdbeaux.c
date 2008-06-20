@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.389 2008/06/20 14:59:51 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.390 2008/06/20 18:13:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -581,7 +581,10 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
 
 #ifndef NDEBUG
 /*
-** Change the comment on the the most recently coded instruction.
+** Change the comment on the the most recently coded instruction.  Or
+** insert a No-op and add the comment to that new instruction.  This
+** makes the code easier to read during debugging.  None of this happens
+** in a production build.
 */
 void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
   va_list ap;
@@ -595,7 +598,20 @@ void sqlite3VdbeComment(Vdbe *p, const char *zFormat, ...){
     va_end(ap);
   }
 }
-#endif
+void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
+  va_list ap;
+  sqlite3VdbeAddOp0(p, OP_Noop);
+  assert( p->nOp>0 || p->aOp==0 );
+  assert( p->aOp==0 || p->aOp[p->nOp-1].zComment==0 || p->db->mallocFailed );
+  if( p->nOp ){
+    char **pz = &p->aOp[p->nOp-1].zComment;
+    va_start(ap, zFormat);
+    sqlite3_free(*pz);
+    *pz = sqlite3VMPrintf(p->db, zFormat, ap);
+    va_end(ap);
+  }
+}
+#endif  /* NDEBUG */
 
 /*
 ** Return the opcode for a given address.
@@ -616,6 +632,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
   char *zP4 = zTemp;
   assert( nTemp>=20 );
   switch( pOp->p4type ){
+    case P4_KEYINFO_STATIC:
     case P4_KEYINFO: {
       int i, j;
       KeyInfo *pKeyInfo = pOp->p4.pKeyInfo;

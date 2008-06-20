@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.147 2008/06/06 15:04:37 drh Exp $
+** $Id: vdbeInt.h,v 1.148 2008/06/20 18:13:25 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -321,6 +321,7 @@ struct Vdbe {
   u8 expired;             /* True if the VM needs to be recompiled */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   u8 inVtabMethod;        /* See comments above */
+  int iCompare;           /* Result of most recent OP_Compare comparison */
   int nChange;            /* Number of db changes made since last reset */
   i64 startTime;          /* Time when query started - used for profiling */
   int btreeMask;          /* Bitmask of db->aDb[] entries referenced */
