@@ -1,5 +1,5 @@
-C Unset\sglobal\sTCL\svariables\sin\sthe\sfunc.test\sscript\sprior\sto\suse\sto\savoid\nconflicts\sfrom\sother\sscripts.\s(CVS\s5251)
-D 2008-06-19T18:39:11
+C Patch\sto\smemsubsys1.test\sin\sorder\sto\savoid\sa\ssegfault\sin\stableapi.test.\s(CVS\s5252)
+D 2008-06-20T00:03:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -407,7 +407,7 @@ F test/malloc_common.tcl c3b251237a7a1578c49c4f342fa764c4c8fa613c
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
-F test/memsubsys1.test e3178f1235eece2e97d725d7ff261b37da6d97e5
+F test/memsubsys1.test 209156a07aaf99d095ef2e3a3a0acd5d55c978f6
 F test/minmax.test 5d56f08a7765dfb5c1fb303333f7444dacb37bef
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
 F test/minmax3.test 05110398e065875b3d9315892889d3c87fccfe2b
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d22cd2a59f472f4eaf80aa9f55fbff2514ca428d
-R 141cad4775fdd164f9905c54617debf2
+P 9b04e10f6c00c36652444206d1d8868a560eb56e
+R 1d236634be0294388a5fbf26bd78c134
 U drh
-Z efce33888cd2e10d3d123e87d1e0d2d9
+Z 98968f4980c50e00172f902ce8864e91
