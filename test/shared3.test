@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared3.test,v 1.1 2006/05/24 12:43:28 drh Exp $
+# $Id: shared3.test,v 1.2 2008/06/20 17:51:17 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -39,6 +39,29 @@ do_test shared3-1.2 {
   sqlite3 db2 test.db
   db2 eval {SELECT y FROM t1 WHERE x='abc'}
 } {{This is a test string}}
+
+db1 close
+db2 close
+
+do_test shared3-2.1 {
+  sqlite3 db1 test.db
+  execsql {
+    PRAGMA main.cache_size = 64;
+  } db1
+} {}
+do_test shared3-2.2 {
+  execsql { PRAGMA main.cache_size } db1
+} {64}
+do_test shared3-2.3 {
+  sqlite3 db2 test.db
+  execsql { PRAGMA main.cache_size } db1
+} {64}
+do_test shared3-2.4 {
+  execsql { PRAGMA main.cache_size } db2
+} {64}
+do_test shared3-2.5 {
+  execsql { PRAGMA main.cache_size } db1
+} {64}
 
 db1 close
 db2 close
