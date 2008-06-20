@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.240 2008/06/06 15:04:37 drh Exp $
+** $Id: insert.c,v 1.241 2008/06/20 15:24:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -269,7 +269,8 @@ static int xferOptimization(
 **
 ** The code generated follows one of four templates.  For a simple
 ** select with data coming from a VALUES clause, the code executes
-** once straight down through.  The template looks like this:
+** once straight down through.  Pseudo-code follows (we call this
+** the "1st template"):
 **
 **         open write cursor to <table> and its indices
 **         puts VALUES clause expressions onto the stack
@@ -287,7 +288,7 @@ static int xferOptimization(
 ** schemas, including all the same indices, then a special optimization
 ** is invoked that copies raw records from <table2> over to <table1>.
 ** See the xferOptimization() function for the implementation of this
-** template.  This is the second template.
+** template.  This is the 2nd template.
 **
 **         open a write cursor to <table>
 **         open read cursor on <table2>
@@ -300,45 +301,58 @@ static int xferOptimization(
 **           close cursors
 **         end foreach
 **
-** The third template is for when the second template does not apply
+** The 3rd template is for when the second template does not apply
 ** and the SELECT clause does not read from <table> at any time.
 ** The generated code follows this template:
 **
+**         EOF <- 0
+**         X <- A
 **         goto B
 **      A: setup for the SELECT
 **         loop over the rows in the SELECT
-**           gosub C
+**           load values into registers R..R+n
+**           yield X
 **         end loop
 **         cleanup after the SELECT
-**         goto D
-**      B: open write cursor to <table> and its indices
+**         EOF <- 1
+**         yield X
 **         goto A
-**      C: insert the select result into <table>
-**         return
+**      B: open write cursor to <table> and its indices
+**      C: yield X
+**         if EOF goto D
+**         insert the select result into <table> from R..R+n
+**         goto C
 **      D: cleanup
 **
-** The fourth template is used if the insert statement takes its
+** The 4th template is used if the insert statement takes its
 ** values from a SELECT but the data is being inserted into a table
 ** that is also read as part of the SELECT.  In the third form,
 ** we have to use a intermediate table to store the results of
 ** the select.  The template is like this:
 **
+**         EOF <- 0
+**         X <- A
 **         goto B
 **      A: setup for the SELECT
 **         loop over the tables in the SELECT
-**           gosub C
+**           load value into register R..R+n
+**           yield X
 **         end loop
 **         cleanup after the SELECT
-**         goto D
-**      C: insert the select result into the intermediate table
-**         return
-**      B: open a cursor to an intermediate table
-**         goto A
-**      D: open write cursor to <table> and its indices
-**         loop over the intermediate table
+**         EOF <- 1
+**         yield X
+**         halt-error
+**      B: open temp table
+**      L: yield X
+**         if EOF goto M
+**         insert row from R..R+n into temp table
+**         goto L
+**      M: open write cursor to <table> and its indices
+**         rewind temp table
+**      C: loop over rows of intermediate table
 **           transfer values form intermediate table into <table>
-**         end the loop
-**         cleanup
+**         end loop
+**      D: cleanup
 */
 void sqlite3Insert(
   Parse *pParse,        /* Parser context */
@@ -362,10 +376,9 @@ void sqlite3Insert(
   int endOfLoop;        /* Label for the end of the insertion loop */
   int useTempTable = 0; /* Store SELECT results in intermediate table */
   int srcTab = 0;       /* Data comes from this temporary cursor if >=0 */
-  int iCont=0,iBreak=0; /* Beginning and end of the loop over srcTab */
-  int iSelectLoop = 0;  /* Address of code that implements the SELECT */
-  int iCleanup = 0;     /* Address of the cleanup code */
-  int iInsertBlock = 0; /* Address of the subroutine used to insert data */
+  int addrInsTop = 0;   /* Jump to label "D" */
+  int addrCont = 0;     /* Top of insert loop. Label "C" in templates 3 and 4 */
+  int addrSelect = 0;   /* Address of coroutine that implements the SELECT */
   SelectDest dest;      /* Destination for SELECT on rhs of INSERT */
   int newIdx = -1;      /* Cursor for the NEW pseudo-table */
   int iDb;              /* Index of database holding TABLE */
@@ -380,6 +393,7 @@ void sqlite3Insert(
   int regRowid;         /* registers holding insert rowid */
   int regData;          /* register holding first column to insert */
   int regRecord;        /* Holds the assemblied row record */
+  int regEof;           /* Register recording end of SELECT data */
   int *aRegIdx = 0;     /* One register allocated to each index */
 
 
@@ -461,6 +475,8 @@ void sqlite3Insert(
   **
   ** Then special optimizations can be applied that make the transfer
   ** very fast and which reduce fragmentation of indices.
+  **
+  ** This is the 2nd template.
   */
   if( pColumn==0 && xferOptimization(pParse, pTab, pSelect, onError, iDb) ){
     assert( !triggers_exist );
@@ -475,75 +491,104 @@ void sqlite3Insert(
   regAutoinc = autoIncBegin(pParse, iDb, pTab);
 
   /* Figure out how many columns of data are supplied.  If the data
-  ** is coming from a SELECT statement, then this step also generates
-  ** all the code to implement the SELECT statement and invoke a subroutine
-  ** to process each row of the result. (Template 2.) If the SELECT
-  ** statement uses the the table that is being inserted into, then the
-  ** subroutine is also coded here.  That subroutine stores the SELECT
-  ** results in a temporary table. (Template 3.)
+  ** is coming from a SELECT statement, then generate a co-routine that
+  ** produces a single row of the SELECT on each invocation.  The
+  ** co-routine is the common header to the 3rd and 4th templates.
   */
   if( pSelect ){
     /* Data is coming from a SELECT.  Generate code to implement that SELECT
+    ** as a co-routine.  The code is common to both the 3rd and 4th
+    ** templates:
+    **
+    **         EOF <- 0
+    **         X <- A
+    **         goto B
+    **      A: setup for the SELECT
+    **         loop over the tables in the SELECT
+    **           load value into register R..R+n
+    **           yield X
+    **         end loop
+    **         cleanup after the SELECT
+    **         EOF <- 1
+    **         yield X
+    **         halt-error
+    **
+    ** On each invocation of the co-routine, it puts a single row of the
+    ** SELECT result into registers dest.iMem...dest.iMem+dest.nMem-1.
+    ** (These output registers are allocated by sqlite3Select().)  When
+    ** the SELECT completes, it sets the EOF flag stored in regEof.
     */
-    int rc, iInitCode;
+    int rc, j1;
 
-    iInitCode = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
-    iSelectLoop = sqlite3VdbeCurrentAddr(v);
-    iInsertBlock = sqlite3VdbeMakeLabel(v);
-    sqlite3SelectDestInit(&dest, SRT_Subroutine, iInsertBlock);
-    dest.regReturn = ++pParse->nMem;
+    regEof = ++pParse->nMem;
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, regEof);      /* EOF <- 0 */
+    VdbeComment((v, "SELECT eof flag"));
+    sqlite3SelectDestInit(&dest, SRT_Coroutine, 0);
+    dest.regCoroutine = ++pParse->nMem;
+    addrSelect = sqlite3VdbeCurrentAddr(v)+2;
+    sqlite3VdbeAddOp2(v, OP_Integer, addrSelect-1, dest.regCoroutine);
+    j1 = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
+    VdbeComment((v, "Jump over SELECT coroutine"));
 
     /* Resolve the expressions in the SELECT statement and execute it. */
     rc = sqlite3Select(pParse, pSelect, &dest, 0, 0, 0, 0);
     if( rc || pParse->nErr || db->mallocFailed ){
       goto insert_cleanup;
     }
+    sqlite3VdbeAddOp2(v, OP_Integer, 1, regEof);         /* EOF <- 1 */
+    sqlite3VdbeAddOp1(v, OP_Yield, dest.regCoroutine);   /* yield X */
+    sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_INTERNAL, OE_Abort);
+    VdbeComment((v, "End of SELECT coroutine"));
+    sqlite3VdbeJumpHere(v, j1);                          /* label B: */
 
     regFromSelect = dest.iMem;
-    iCleanup = sqlite3VdbeMakeLabel(v);
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, iCleanup);
     assert( pSelect->pEList );
     nColumn = pSelect->pEList->nExpr;
+    assert( dest.nMem==nColumn );
 
     /* Set useTempTable to TRUE if the result of the SELECT statement
-    ** should be written into a temporary table.  Set to FALSE if each
-    ** row of the SELECT can be written directly into the result table.
+    ** should be written into a temporary table (template 4).  Set to
+    ** FALSE if each* row of the SELECT can be written directly into
+    ** the destination table (template 3).
     **
     ** A temp table must be used if the table being updated is also one
     ** of the tables being read by the SELECT statement.  Also use a 
     ** temp table in the case of row triggers.
     */
-    if( triggers_exist || readsTable(v, iSelectLoop, iDb, pTab) ){
+    if( triggers_exist || readsTable(v, addrSelect, iDb, pTab) ){
       useTempTable = 1;
     }
 
     if( useTempTable ){
-      /* Generate the subroutine that SELECT calls to process each row of
-      ** the result.  Store the result in a temporary table
+      /* Invoke the coroutine to extract information from the SELECT
+      ** and add it to a transient table srcTab.  The code generated
+      ** here is from the 4th template:
+      **
+      **      B: open temp table
+      **      L: yield X
+      **         if EOF goto M
+      **         insert row from R..R+n into temp table
+      **         goto L
+      **      M: ...
       */
-      int regRec, regRowid;
+      int regRec;      /* Register to hold packed record */
+      int regRowid;    /* Register to hold temp table ROWID */
+      int addrTop;     /* Label "L" */
+      int addrIf;      /* Address of jump to M */
 
       srcTab = pParse->nTab++;
       regRec = sqlite3GetTempReg(pParse);
       regRowid = sqlite3GetTempReg(pParse);
-      sqlite3VdbeResolveLabel(v, iInsertBlock);
+      sqlite3VdbeAddOp2(v, OP_OpenEphemeral, srcTab, nColumn);
+      addrTop = sqlite3VdbeAddOp1(v, OP_Yield, dest.regCoroutine);
+      addrIf = sqlite3VdbeAddOp1(v, OP_If, regEof);
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regFromSelect, nColumn, regRec);
       sqlite3VdbeAddOp2(v, OP_NewRowid, srcTab, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, srcTab, regRec, regRowid);
-      sqlite3VdbeAddOp1(v, OP_Return, dest.regReturn);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrTop);
+      sqlite3VdbeJumpHere(v, addrIf);
       sqlite3ReleaseTempReg(pParse, regRec);
       sqlite3ReleaseTempReg(pParse, regRowid);
-
-      /* The following code runs first because the GOTO at the very top
-      ** of the program jumps to it.  Create the temporary table, then jump
-      ** back up and execute the SELECT code above.
-      */
-      sqlite3VdbeJumpHere(v, iInitCode);
-      sqlite3VdbeAddOp2(v, OP_OpenEphemeral, srcTab, nColumn);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, iSelectLoop);
-      sqlite3VdbeResolveLabel(v, iCleanup);
-    }else{
-      sqlite3VdbeJumpHere(v, iInitCode);
     }
   }else{
     /* This is the case if the data for the INSERT is coming from a VALUES
@@ -657,18 +702,31 @@ void sqlite3Insert(
     }
   }
 
-  /* If the data source is a temporary table, then we have to create
-  ** a loop because there might be multiple rows of data.  If the data
-  ** source is a subroutine call from the SELECT statement, then we need
-  ** to launch the SELECT statement processing.
-  */
+  /* This is the top of the main insertion loop */
   if( useTempTable ){
-    iBreak = sqlite3VdbeMakeLabel(v);
-    sqlite3VdbeAddOp2(v, OP_Rewind, srcTab, iBreak);
-    iCont = sqlite3VdbeCurrentAddr(v);
+    /* This block codes the top of loop only.  The complete loop is the
+    ** following pseudocode (template 4):
+    **
+    **         rewind temp table
+    **      C: loop over rows of intermediate table
+    **           transfer values form intermediate table into <table>
+    **         end loop
+    **      D: ...
+    */
+    addrInsTop = sqlite3VdbeAddOp1(v, OP_Rewind, srcTab);
+    addrCont = sqlite3VdbeCurrentAddr(v);
   }else if( pSelect ){
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, iSelectLoop);
-    sqlite3VdbeResolveLabel(v, iInsertBlock);
+    /* This block codes the top of loop only.  The complete loop is the
+    ** following pseudocode (template 3):
+    **
+    **      C: yield X
+    **         if EOF goto D
+    **         insert the select result into <table> from R..R+n
+    **         goto C
+    **      D: ...
+    */
+    addrCont = sqlite3VdbeAddOp1(v, OP_Yield, dest.regCoroutine);
+    addrInsTop = sqlite3VdbeAddOp1(v, OP_If, regEof);
   }
 
   /* Allocate registers for holding the rowid of the new row,
@@ -893,16 +951,17 @@ void sqlite3Insert(
     }
   }
 
-  /* The bottom of the loop, if the data source is a SELECT statement
+  /* The bottom of the main insertion loop, if the data source
+  ** is a SELECT statement.
   */
   sqlite3VdbeResolveLabel(v, endOfLoop);
   if( useTempTable ){
-    sqlite3VdbeAddOp2(v, OP_Next, srcTab, iCont);
-    sqlite3VdbeResolveLabel(v, iBreak);
+    sqlite3VdbeAddOp2(v, OP_Next, srcTab, addrCont);
+    sqlite3VdbeJumpHere(v, addrInsTop);
     sqlite3VdbeAddOp1(v, OP_Close, srcTab);
   }else if( pSelect ){
-    sqlite3VdbeAddOp1(v, OP_Return, dest.regReturn);
-    sqlite3VdbeResolveLabel(v, iCleanup);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrCont);
+    sqlite3VdbeJumpHere(v, addrInsTop);
   }
 
   if( !IsVirtual(pTab) && !isView ){

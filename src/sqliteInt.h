@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.720 2008/06/20 14:59:51 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.721 2008/06/20 15:24:02 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1438,7 +1438,7 @@ struct Select {
 #define SRT_Set          7  /* Store non-null results as keys in an index */
 #define SRT_Table        8  /* Store result as data with an automatic rowid */
 #define SRT_EphemTab     9  /* Create transient tab and store like SRT_Table */
-#define SRT_Subroutine  10  /* Call a subroutine to handle results */
+#define SRT_Coroutine   10  /* Generate a single row of result */
 
 /*
 ** A structure used to customize the behaviour of sqlite3Select(). See
@@ -1449,9 +1449,10 @@ struct SelectDest {
   u8 eDest;         /* How to dispose of the results */
   u8 affinity;      /* Affinity used when eDest==SRT_Set */
   int iParm;        /* A parameter used by the eDest disposal method */
-  int regReturn;    /* Return address register for SRT_Subroutine */
+  int regCoroutine; /* Program counter register for SRT_Coroutine */
   int iMem;         /* Base register where results are written */
   int nMem;         /* Number of registers allocated */
+  int eofMem;       /* Register holding EOF flag */
 };
 
 /*

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.750 2008/06/20 14:59:51 danielk1977 Exp $
+** $Id: vdbe.c,v 1.751 2008/06/20 15:24:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -784,6 +784,25 @@ case OP_Return: {           /* in1 */
   pc = pIn1->u.i;
   break;
 }
+
+/* Opcode:  Yield P1 * * * *
+**
+** Swap the program counter with the value in register P1.
+*/
+case OP_Yield: {
+  int pcDest;
+  assert( pOp->p1>0 );
+  assert( pOp->p1<=p->nMem );
+  pIn1 = &p->aMem[pOp->p1];
+  assert( (pIn1->flags & MEM_Dyn)==0 );
+  pIn1->flags = MEM_Int;
+  pcDest = pIn1->u.i;
+  pIn1->u.i = pc;
+  REGISTER_TRACE(pOp->p1, pIn1);
+  pc = pcDest;
+  break;
+}
+
 
 /* Opcode:  Halt P1 P2 * P4 *
 **

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.430 2008/06/06 15:04:37 drh Exp $
+** $Id: select.c,v 1.431 2008/06/20 15:24:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -39,7 +39,7 @@ static void clearSelect(Select *p){
 void sqlite3SelectDestInit(SelectDest *pDest, int eDest, int iParm){
   pDest->eDest = eDest;
   pDest->iParm = iParm;
-  pDest->regReturn = 0;
+  pDest->regCoroutine = 0;
   pDest->affinity = 0;
   pDest->iMem = 0;
   pDest->nMem = 0;
@@ -704,15 +704,15 @@ static void selectInnerLoop(
     ** case of a subroutine, the subroutine itself is responsible for
     ** popping the data from the stack.
     */
-    case SRT_Subroutine:
+    case SRT_Coroutine:
     case SRT_Callback: {
       if( pOrderBy ){
         int r1 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
         pushOntoSorter(pParse, pOrderBy, p, r1);
         sqlite3ReleaseTempReg(pParse, r1);
-      }else if( eDest==SRT_Subroutine ){
-        sqlite3VdbeAddOp2(v, OP_Gosub, pDest->regReturn, iParm);
+      }else if( eDest==SRT_Coroutine ){
+        sqlite3VdbeAddOp1(v, OP_Yield, pDest->regCoroutine);
       }else{
         sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nColumn);
         sqlite3ExprCacheAffinityChange(pParse, regResult, nColumn);
@@ -810,7 +810,7 @@ static void generateSortTail(
   int regRowid;
 
   iTab = pOrderBy->iECursor;
-  if( eDest==SRT_Callback || eDest==SRT_Subroutine ){
+  if( eDest==SRT_Callback || eDest==SRT_Coroutine ){
     pseudoTab = pParse->nTab++;
     sqlite3VdbeAddOp2(v, OP_SetNumColumns, 0, nColumn);
     sqlite3VdbeAddOp2(v, OP_OpenPseudo, pseudoTab, eDest==SRT_Callback);
@@ -847,7 +847,7 @@ static void generateSortTail(
     }
 #endif
     case SRT_Callback:
-    case SRT_Subroutine: {
+    case SRT_Coroutine: {
       int i;
       sqlite3VdbeAddOp2(v, OP_Integer, 1, regRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, pseudoTab, regRow, regRowid);
@@ -858,8 +858,8 @@ static void generateSortTail(
       if( eDest==SRT_Callback ){
         sqlite3VdbeAddOp2(v, OP_ResultRow, pDest->iMem, nColumn);
         sqlite3ExprCacheAffinityChange(pParse, pDest->iMem, nColumn);
-      }else{
-        sqlite3VdbeAddOp2(v, OP_Gosub, pDest->regReturn, iParm);
+      }else if( eDest==SRT_Coroutine ){
+        sqlite3VdbeAddOp1(v, OP_Yield, pDest->regCoroutine);
       }
       break;
     }
@@ -883,7 +883,7 @@ static void generateSortTail(
   sqlite3VdbeResolveLabel(v, cont);
   sqlite3VdbeAddOp2(v, OP_Next, iTab, addr);
   sqlite3VdbeResolveLabel(v, brk);
-  if( eDest==SRT_Callback || eDest==SRT_Subroutine ){
+  if( eDest==SRT_Callback || eDest==SRT_Coroutine ){
     sqlite3VdbeAddOp2(v, OP_Close, pseudoTab, 0);
   }
 
@@ -2992,9 +2992,8 @@ void sqlite3SelectMask(Parse *pParse, Select *p, u32 mask){
 **                     the result there. The cursor is left open after
 **                     returning.
 **
-**     SRT_Subroutine  For each row returned, push the results onto the
-**                     vdbe stack and call the subroutine (via OP_Gosub)
-**                     at address pDest->iParm.
+**     SRT_Coroutine   Invoke a co-routine to compute a single row of 
+**                     the result
 **
 **     SRT_Exists      Store a 1 in memory cell pDest->iParm if the result
 **                     set is not empty.
@@ -3486,7 +3485,7 @@ int sqlite3Select(
       }
 
       /* Generate code that runs whenever the GROUP BY changes.
-      ** Change in the GROUP BY are detected by the previous code
+      ** Changes in the GROUP BY are detected by the previous code
       ** block.  If there were no changes, this block is skipped.
       **
       ** This code copies current group by terms in b0,b1,b2,...
