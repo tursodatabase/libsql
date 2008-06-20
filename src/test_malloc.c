@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.27 2008/06/20 11:05:38 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.28 2008/06/20 14:59:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -32,6 +32,7 @@ static struct MemFault {
   int nFail;              /* Number of failures seen since last config */
   u8 enable;              /* True if enabled */
   int isInstalled;        /* True if the fault simulation layer is installed */
+  int isBenignMode;       /* True if malloc failures are considered benign */
   sqlite3_mem_methods m;  /* 'Real' malloc implementation */
 } memfault;
 
@@ -58,7 +59,7 @@ static int faultsimStep(){
   }
   sqlite3Fault();
   memfault.nFail++;
-  if( sqlite3FaultIsBenign()>0 ){
+  if( memfault.isBenignMode>0 ){
     memfault.nBenign++;
   }
   memfault.nRepeat--;
@@ -161,6 +162,14 @@ static int faultsimPending(void){
   }
 }
 
+
+static void faultsimBeginBenign(void){
+  memfault.isBenignMode++;
+}
+static void faultsimEndBenign(void){
+  memfault.isBenignMode--;
+}
+
 /*
 ** Add or remove the fault-simulation layer using sqlite3_config(). If
 ** the argument is non-zero, the 
@@ -185,10 +194,19 @@ static int faultsimInstall(int install){
     return SQLITE_ERROR;
   }
 
-  rc = sqlite3_config(SQLITE_CONFIG_GETMALLOC, &memfault.m);
-  assert(memfault.m.xMalloc);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &m);
+  if( install ){
+    rc = sqlite3_config(SQLITE_CONFIG_GETMALLOC, &memfault.m);
+    assert(memfault.m.xMalloc);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &m);
+    }
+    sqlite3_test_control(SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, 
+        faultsimBeginBenign, faultsimEndBenign
+    );
+  }else{
+    assert(memfault.m.xMalloc);
+    rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &memfault.m);
+    sqlite3_test_control(SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, 0, 0);
   }
 
   if( rc==SQLITE_OK ){
@@ -1012,7 +1030,6 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_config_scratch",     test_config_scratch           },
      { "sqlite3_config_pagecache",   test_config_pagecache         },
      { "sqlite3_status",             test_status                   },
-
      { "install_malloc_faultsim",    test_install_malloc_faultsim  },
   };
   int i;

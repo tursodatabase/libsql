@@ -10,10 +10,22 @@
 **
 *************************************************************************
 **
+** $Id: fault.c,v 1.9 2008/06/20 14:59:51 danielk1977 Exp $
+*/
+
+/*
 ** This file contains code to support the concept of "benign" 
-** malloc failures. 
+** malloc failures (when the xMalloc() or xRealloc() method of the
+** sqlite3_mem_methods structure fails to allocate a block of memory
+** and returns 0). 
 **
-** $Id: fault.c,v 1.8 2008/06/20 11:05:38 danielk1977 Exp $
+** Most malloc failures are non-benign. After they occur, SQLite
+** abandons the current operation and returns an error code (usually
+** SQLITE_NOMEM) to the user. However, sometimes a fault is not necessarily
+** fatal. For example, if a malloc fails while resizing a hash table, this 
+** is completely recoverable simply by not carrying out the resize. The 
+** hash table will continue to function normally.  So a malloc failure 
+** during a hash table resize is a benign fault.
 */
 
 #include "sqliteInt.h"
@@ -21,37 +33,39 @@
 #ifndef SQLITE_OMIT_BUILTIN_TEST
 
 /*
-** If zero, malloc() failures are non-benign. If non-zero, benign.
+** Global variables.
 */
-static int memfault_is_benign = 0;
+static struct BenignMallocHooks {
+  void (*xBenignBegin)(void);
+  void (*xBenignEnd)(void);
+} hooks;
 
 /*
-** Return true if a malloc failures are currently considered to be
-** benign. A benign fault does not affect the operation of sqlite.
-** By constrast a non-benign fault causes sqlite to fail the current 
-** operation and return SQLITE_NOMEM to the user.
+** Register hooks to call when sqlite3BeginBenignMalloc() and
+** sqlite3EndBenignMalloc() are called, respectively.
 */
-int sqlite3FaultIsBenign(void){
-  return memfault_is_benign;
+void sqlite3BenignMallocHooks(
+  void (*xBenignBegin)(void),
+  void (*xBenignEnd)(void)
+){
+  hooks.xBenignBegin = xBenignBegin;
+  hooks.xBenignEnd = xBenignEnd;
 }
 
-/* 
-** After this routine causes subsequent malloc faults to be either 
-** benign or hard (not benign), according to the "enable" parameter.
-**
-** Most faults are hard.  In other words, most faults cause
-** an error to be propagated back up to the application interface.
-** However, sometimes a fault is easily recoverable.  For example,
-** if a malloc fails while resizing a hash table, this is completely
-** recoverable simply by not carrying out the resize.  The hash table
-** will continue to function normally.  So a malloc failure during
-** a hash table resize is a benign fault.  
+/*
+** This (sqlite3EndBenignMalloc()) is called by SQLite code to indicate that
+** subsequent malloc failures are benign. A call to sqlite3EndBenignMalloc()
+** indicates that subsequent malloc failures are non-benign.
 */
-void sqlite3FaultBeginBenign(int id){
-  memfault_is_benign++;
+void sqlite3BeginBenignMalloc(void){
+  if( hooks.xBenignBegin ){
+    hooks.xBenignBegin();
+  }
 }
-void sqlite3FaultEndBenign(int id){
-  memfault_is_benign--;
+void sqlite3EndBenignMalloc(void){
+  if( hooks.xBenignEnd ){
+    hooks.xBenignEnd();
+  }
 }
 
 #endif   /* #ifndef SQLITE_OMIT_BUILTIN_TEST */

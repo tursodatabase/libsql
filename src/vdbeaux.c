@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.388 2008/06/18 15:34:10 drh Exp $
+** $Id: vdbeaux.c,v 1.389 2008/06/20 14:59:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1388,14 +1388,14 @@ static int vdbeCommit(sqlite3 *db){
     ** may be lying around. Returning an error code won't help matters.
     */
     disable_simulated_io_errors();
-    sqlite3FaultBeginBenign(SQLITE_FAULTINJECTOR_MALLOC);
+    sqlite3BeginBenignMalloc();
     for(i=0; i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
         sqlite3BtreeCommitPhaseTwo(pBt);
       }
     }
-    sqlite3FaultEndBenign(SQLITE_FAULTINJECTOR_MALLOC);
+    sqlite3EndBenignMalloc();
     enable_simulated_io_errors();
 
     sqlite3VtabCommit(db);

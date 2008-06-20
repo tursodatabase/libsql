@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.65 2008/06/16 14:19:58 danielk1977 Exp $
+** $Id: test8.c,v 1.66 2008/06/20 14:59:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1065,9 +1065,9 @@ static int echoCommit(sqlite3_vtab *tab){
   ** a transaction */
   assert( pVtab->inTransaction );
 
-  sqlite3FaultBeginBenign(SQLITE_FAULTINJECTOR_MALLOC);
+  sqlite3BeginBenignMalloc();
   rc = echoTransactionCall(tab, "xCommit");
-  sqlite3FaultEndBenign(SQLITE_FAULTINJECTOR_MALLOC);
+  sqlite3EndBenignMalloc();
   pVtab->inTransaction = 0;
   return rc;
 }

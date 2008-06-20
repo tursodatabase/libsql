@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.749 2008/06/15 02:51:48 drh Exp $
+** $Id: vdbe.c,v 1.750 2008/06/20 14:59:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -570,7 +570,7 @@ int sqlite3VdbeExec(
   CHECK_FOR_INTERRUPT;
   sqlite3VdbeIOTraceSql(p);
 #ifdef SQLITE_DEBUG
-  sqlite3FaultBeginBenign(-1);
+  sqlite3BeginBenignMalloc();
   if( p->pc==0 
    && ((p->db->flags & SQLITE_VdbeListing) || fileExists(db, "vdbe_explain"))
   ){
@@ -584,7 +584,7 @@ int sqlite3VdbeExec(
   if( fileExists(db, "vdbe_trace") ){
     p->trace = stdout;
   }
-  sqlite3FaultEndBenign(-1);
+  sqlite3EndBenignMalloc();
 #endif
   for(pc=p->pc; rc==SQLITE_OK; pc++){
     assert( pc>=0 && pc<p->nOp );
@@ -606,11 +606,11 @@ int sqlite3VdbeExec(
       sqlite3VdbePrintOp(p->trace, pc, pOp);
     }
     if( p->trace==0 && pc==0 ){
-      sqlite3FaultBeginBenign(-1);
+      sqlite3BeginBenignMalloc();
       if( fileExists(db, "vdbe_sqltrace") ){
         sqlite3VdbePrintSql(p);
       }
-      sqlite3FaultEndBenign(-1);
+      sqlite3EndBenignMalloc();
     }
 #endif
       

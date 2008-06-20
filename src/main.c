@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.454 2008/06/20 11:05:38 danielk1977 Exp $
+** $Id: main.c,v 1.455 2008/06/20 14:59:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -410,7 +410,7 @@ void sqlite3RollbackAll(sqlite3 *db){
   int i;
   int inTrans = 0;
   assert( sqlite3_mutex_held(db->mutex) );
-  sqlite3FaultBeginBenign(SQLITE_FAULTINJECTOR_MALLOC);
+  sqlite3BeginBenignMalloc();
   for(i=0; i<db->nDb; i++){
     if( db->aDb[i].pBt ){
       if( sqlite3BtreeIsInTrans(db->aDb[i].pBt) ){
@@ -421,7 +421,7 @@ void sqlite3RollbackAll(sqlite3 *db){
     }
   }
   sqlite3VtabRollback(db);
-  sqlite3FaultEndBenign(SQLITE_FAULTINJECTOR_MALLOC);
+  sqlite3EndBenignMalloc();
 
   if( db->flags&SQLITE_InternChanges ){
     sqlite3ExpirePreparedStatements(db);
@@ -1763,72 +1763,6 @@ int sqlite3_test_control(int op, ...){
   va_list ap;
   va_start(ap, op);
   switch( op ){
-#if 0
-    /*
-    ** sqlite3_test_control(FAULT_CONFIG, fault_id, nDelay, nRepeat)
-    **
-    ** Configure a fault injector.  The specific fault injector is
-    ** identified by the fault_id argument.  (ex: SQLITE_FAULTINJECTOR_MALLOC)
-    ** The fault will occur after a delay of nDelay calls.  The fault
-    ** will repeat nRepeat times.
-    */
-    case SQLITE_TESTCTRL_FAULT_CONFIG: {
-      int id = va_arg(ap, int);
-      int nDelay = va_arg(ap, int);
-      int nRepeat = va_arg(ap, int);
-      sqlite3FaultConfig(id, nDelay, nRepeat);
-      break;
-    }
-
-    /*
-    ** sqlite3_test_control(FAULT_FAILURES, fault_id)
-    **
-    ** Return the number of faults (both hard and benign faults) that have
-    ** occurred since the injector identified by fault_id) was last configured.
-    */
-    case SQLITE_TESTCTRL_FAULT_FAILURES: {
-      int id = va_arg(ap, int);
-      rc = sqlite3FaultFailures(id);
-      break;
-    }
-
-    /*
-    ** sqlite3_test_control(FAULT_BENIGN_FAILURES, fault_id)
-    **
-    ** Return the number of benign faults that have occurred since the
-    ** injector identified by fault_id was last configured.
-    */
-    case SQLITE_TESTCTRL_FAULT_BENIGN_FAILURES: {
-      int id = va_arg(ap, int);
-      rc = sqlite3FaultBenignFailures(id);
-      break;
-    }
-
-    /*
-    ** sqlite3_test_control(FAULT_PENDING, fault_id)
-    **
-    ** Return the number of successes that will occur before the next
-    ** scheduled failure on fault injector fault_id.
-    ** If no failures are scheduled, return -1.
-    */
-    case SQLITE_TESTCTRL_FAULT_PENDING: {
-      int id = va_arg(ap, int);
-      rc = sqlite3FaultPending(id);
-      break;
-    }
-
-    /*
-    ** sqlite3_test_control(FAULT_INSTALL, isInstall)
-    **
-    ** If the argument is non-zero, install the fault-simulation malloc layer
-    ** as a wrapper around the currently installed implementation.
-    */
-    case SQLITE_TESTCTRL_FAULT_INSTALL: {
-      int isInstall = va_arg(ap, int);
-      rc = sqlite3FaultsimInstall(isInstall);
-      break;
-    }
-#endif
 
     /*
     ** Save the current state of the PRNG.
@@ -1870,6 +1804,21 @@ int sqlite3_test_control(int op, ...){
       int sz = va_arg(ap, int);
       int *aProg = va_arg(ap, int*);
       rc = sqlite3BitvecBuiltinTest(sz, aProg);
+      break;
+    }
+
+    /*
+    **  sqlite3_test_control(BENIGN_MALLOC_HOOKS, xBegin, xEnd)
+    **
+    ** Register hooks to call to indicate which malloc() failures 
+    ** are benign.
+    */
+    case SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS: {
+      void (*xBenignBegin)(void);
+      void (*xBenignEnd)(void);
+      xBenignBegin = va_arg(ap, void(*)(void));
+      xBenignEnd = va_arg(ap, void(*)(void));
+      sqlite3BenignMallocHooks(xBenignBegin, xBenignEnd);
       break;
     }
   }
