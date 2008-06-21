@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.347 2008/06/21 18:02:17 mihailim Exp $
+** @(#) $Id: sqlite.h.in,v 1.348 2008/06/21 20:11:17 mihailim Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1305,7 +1305,7 @@ int sqlite3_total_changes(sqlite3*);
 **
 ** This function causes any pending database operation to abort and
 ** return at its earliest opportunity. This routine is typically
-** called in response to an user action such as pressing "Cancel"
+** called in response to a user action such as pressing "Cancel"
 ** or Ctrl-C where the user wants a long query operation to halt
 ** immediately.
 **
@@ -1931,10 +1931,9 @@ void sqlite3_randomness(int N, void *P);
 ** details about the action to be authorized.
 **
 ** An authorizer is used when [sqlite3_prepare | preparing]
-** SQL statements from an untrusted
-** source, to ensure that the SQL statements do not try to access data
-** that they are not allowed to see, or that they do not try to
-** execute malicious statements that damage the database.  For
+** SQL statements from an untrusted source, to ensure that the SQL statements
+** do not try to access data they are not allowed to see, or that they do not
+** try to execute malicious statements that damage the database.  For
 ** example, an application may allow a user to enter arbitrary
 ** SQL queries for evaluation by a database.  But the application does
 ** not want the user to be able to make arbitrary changes to the
@@ -2142,7 +2141,7 @@ int sqlite3_set_authorizer(
 **          the pointer which was the 3rd argument to [sqlite3_trace()].
 **
 ** {F12285} The second argument to the trace callback is a
-**          zero-terminated UTF8 string containing the original text
+**          zero-terminated UTF-8 string containing the original text
 **          of the SQL statement as it was passed into [sqlite3_prepare_v2()]
 **          or the equivalent, or an SQL comment indicating the beginning
 **          of a trigger subprogram.
@@ -2374,7 +2373,7 @@ int sqlite3_open_v2(
 ** sqlite3_errcode() is undefined.
 **
 ** The sqlite3_errmsg() and sqlite3_errmsg16() return English-language
-** text that describes the error, as either UTF8 or UTF16 respectively.
+** text that describes the error, as either UTF-8 or UTF-16 respectively.
 ** Memory to hold the error message string is managed internally.
 ** The application does not need to worry about freeing the result.
 ** However, the error string might be overwritten or deallocated by
@@ -2389,7 +2388,7 @@ int sqlite3_open_v2(
 ** {F12803} The [sqlite3_errmsg(D)] and [sqlite3_errmsg16(D)]
 **          interfaces return English-language text that describes
 **          the error in the mostly recently failed interface call,
-**          encoded as either UTF8 or UTF16 respectively.
+**          encoded as either UTF-8 or UTF-16 respectively.
 **
 ** {F12807} The strings returned by [sqlite3_errmsg()] and [sqlite3_errmsg16()]
 **          are valid until the next SQLite interface call.
@@ -2752,7 +2751,7 @@ typedef struct sqlite3_context sqlite3_context;
 /*
 ** CAPI3REF: Binding Values To Prepared Statements {F13500}
 ** KEYWORDS: {host parameter} {host parameters} {host parameter name}
-** KEYWORDS: {SQL parameter} {SQL parameters}
+** KEYWORDS: {SQL parameter} {SQL parameters} {parameter binding}
 **
 ** In the SQL strings input to [sqlite3_prepare_v2()] and its variants,
 ** literals may be replaced by a parameter in one of these forms:
@@ -3088,7 +3087,7 @@ const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 ** These routines provide a means to determine what column of what
 ** table in which database a result of a SELECT statement comes from.
 ** The name of the database or table or column can be returned as
-** either a UTF8 or UTF16 string.  The _database_ routines return
+** either a UTF-8 or UTF-16 string.  The _database_ routines return
 ** the database name, the _table_ routines return the table name, and
 ** the origin_ routines return the column name.
 ** The returned string is valid until the [prepared statement] is destroyed
@@ -3231,7 +3230,7 @@ const void *sqlite3_column_origin_name16(sqlite3_stmt*,int);
 const char *sqlite3_column_decltype(sqlite3_stmt*,int);
 const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 
-/* 
+/*
 ** CAPI3REF:  Evaluate An SQL Statement {F13200}
 **
 ** After a [prepared statement] has been prepared using either
@@ -3246,7 +3245,7 @@ const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 ** new "v2" interface is recommended for new applications but the legacy
 ** interface will continue to be supported.
 **
-** In the legacy interface, the return value will be either [SQLITE_BUSY], 
+** In the legacy interface, the return value will be either [SQLITE_BUSY],
 ** [SQLITE_DONE], [SQLITE_ROW], [SQLITE_ERROR], or [SQLITE_MISUSE].
 ** With the "v2" interface, any of the other [result codes] or
 ** [extended result codes] might be returned as well.
@@ -3412,10 +3411,10 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 **
 ** If the result is a BLOB or UTF-8 string then the sqlite3_column_bytes()
 ** routine returns the number of bytes in that BLOB or string.
-** If the result is an UTF-16 string, then sqlite3_column_bytes() converts
+** If the result is a UTF-16 string, then sqlite3_column_bytes() converts
 ** the string to UTF-8 and then returns the number of bytes.
 ** If the result is a numeric value then sqlite3_column_bytes() uses
-** [sqlite3_snprintf()] to convert that value to an UTF-8 string and returns
+** [sqlite3_snprintf()] to convert that value to a UTF-8 string and returns
 ** the number of bytes in that string.
 ** The value returned does not include the zero terminator at the end
 ** of the string.  For clarity: the value returned is the number of
@@ -3596,19 +3595,17 @@ sqlite3_value *sqlite3_column_value(sqlite3_stmt*, int iCol);
 /*
 ** CAPI3REF: Destroy A Prepared Statement Object {F13300}
 **
-** The sqlite3_finalize() function is called to delete a 
-** [prepared statement]. If the statement was
-** executed successfully, or not executed at all, then SQLITE_OK is returned.
-** If execution of the statement failed then an 
-** [error code] or [extended error code]
-** is returned. 
+** The sqlite3_finalize() function is called to delete a [prepared statement].
+** If the statement was executed successfully or not executed at all, then
+** SQLITE_OK is returned. If execution of the statement failed then an
+** [error code] or [extended error code] is returned.
 **
 ** This routine can be called at any point during the execution of the
-** [prepared statement].  If the virtual machine has not 
+** [prepared statement].  If the virtual machine has not
 ** completed execution when this routine is called, that is like
-** encountering an error or an interrupt.  (See [sqlite3_interrupt()].) 
-** Incomplete updates may be rolled back and transactions canceled,  
-** depending on the circumstances, and the 
+** encountering an error or an [sqlite3_interrupt | interrupt].
+** Incomplete updates may be rolled back and transactions canceled,
+** depending on the circumstances, and the
 ** [error code] returned will be [SQLITE_ABORT].
 **
 ** INVARIANTS:
@@ -3626,9 +3623,8 @@ int sqlite3_finalize(sqlite3_stmt *pStmt);
 /*
 ** CAPI3REF: Reset A Prepared Statement Object {F13330}
 **
-** The sqlite3_reset() function is called to reset a 
-** [prepared statement] object.
-** back to its initial state, ready to be re-executed.
+** The sqlite3_reset() function is called to reset a [prepared statement]
+** object back to its initial state, ready to be re-executed.
 ** Any SQL statement variables that had values bound to them using
 ** the [sqlite3_bind_blob | sqlite3_bind_*() API] retain their values.
 ** Use [sqlite3_clear_bindings()] to reset the bindings.
@@ -3636,17 +3632,17 @@ int sqlite3_finalize(sqlite3_stmt *pStmt);
 ** {F11332} The [sqlite3_reset(S)] interface resets the [prepared statement] S
 **          back to the beginning of its program.
 **
-** {F11334} If the most recent call to [sqlite3_step(S)] for 
+** {F11334} If the most recent call to [sqlite3_step(S)] for the
 **          [prepared statement] S returned [SQLITE_ROW] or [SQLITE_DONE],
 **          or if [sqlite3_step(S)] has never before been called on S,
 **          then [sqlite3_reset(S)] returns [SQLITE_OK].
 **
-** {F11336} If the most recent call to [sqlite3_step(S)] for
+** {F11336} If the most recent call to [sqlite3_step(S)] for the
 **          [prepared statement] S indicated an error, then
 **          [sqlite3_reset(S)] returns an appropriate [error code].
 **
 ** {F11338} The [sqlite3_reset(S)] interface does not change the values
-**          of any [sqlite3_bind_blob|bindings] on [prepared statement] S.
+**          of any [sqlite3_bind_blob|bindings] on the [prepared statement] S.
 */
 int sqlite3_reset(sqlite3_stmt *pStmt);
 
@@ -3656,30 +3652,29 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** KEYWORDS: {application-defined SQL function}
 ** KEYWORDS: {application-defined SQL functions}
 **
-** These two functions (collectively known as
-** "function creation routines") are used to add SQL functions or aggregates
-** or to redefine the behavior of existing SQL functions or aggregates.  The
-** difference only between the two is that the second parameter, the
-** name of the (scalar) function or aggregate, is encoded in UTF-8 for
-** sqlite3_create_function() and UTF-16 for sqlite3_create_function16().
+** These two functions (collectively known as "function creation routines")
+** are used to add SQL functions or aggregates or to redefine the behavior
+** of existing SQL functions or aggregates.  The only difference between the
+** two is that the second parameter, the name of the (scalar) function or
+** aggregate, is encoded in UTF-8 for sqlite3_create_function() and UTF-16
+** for sqlite3_create_function16().
 **
 ** The first parameter is the [database connection] to which the SQL
-** function is to be added.  If a single
-** program uses more than one [database connection] internally, then SQL
-** functions must be added individually to each [database connection].
+** function is to be added.  If a single program uses more than one database
+** connection internally, then SQL functions must be added individually to
+** each database connection.
 **
-** The second parameter is the name of the SQL function to be created
-** or redefined.
-** The length of the name is limited to 255 bytes, exclusive of the 
-** zero-terminator.  Note that the name length limit is in bytes, not
+** The second parameter is the name of the SQL function to be created or
+** redefined.  The length of the name is limited to 255 bytes, exclusive of
+** the zero-terminator.  Note that the name length limit is in bytes, not
 ** characters.  Any attempt to create a function with a longer name
-** will result in an SQLITE_ERROR error.
+** will result in [SQLITE_ERROR] being returned.
 **
 ** The third parameter is the number of arguments that the SQL function or
 ** aggregate takes. If this parameter is negative, then the SQL function or
 ** aggregate may take any number of arguments.
 **
-** The fourth parameter, eTextRep, specifies what 
+** The fourth parameter, eTextRep, specifies what
 ** [SQLITE_UTF8 | text encoding] this SQL function prefers for
 ** its parameters.  Any SQL function implementation should be able to work
 ** work with UTF-8, UTF-16le, or UTF-16be.  But some implementations may be
@@ -3688,22 +3683,19 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** times with the same function but with different values of eTextRep.
 ** When multiple implementations of the same function are available, SQLite
 ** will pick the one that involves the least amount of data conversion.
-** If there is only a single implementation which does not care what
-** text encoding is used, then the fourth argument should be
-** [SQLITE_ANY].
+** If there is only a single implementation which does not care what text
+** encoding is used, then the fourth argument should be [SQLITE_ANY].
 **
-** The fifth parameter is an arbitrary pointer.  The implementation
-** of the function can gain access to this pointer using
-** [sqlite3_user_data()].
+** The fifth parameter is an arbitrary pointer.  The implementation of the
+** function can gain access to this pointer using [sqlite3_user_data()].
 **
 ** The seventh, eighth and ninth parameters, xFunc, xStep and xFinal, are
-** pointers to C-language functions that implement the SQL
-** function or aggregate. A scalar SQL function requires an implementation of
-** the xFunc callback only, NULL pointers should be passed as the xStep
-** and xFinal parameters. An aggregate SQL function requires an implementation
-** of xStep and xFinal and NULL should be passed for xFunc. To delete an
-** existing SQL function or aggregate, pass NULL for all three function
-** callbacks.
+** pointers to C-language functions that implement the SQL function or
+** aggregate. A scalar SQL function requires an implementation of the xFunc
+** callback only, NULL pointers should be passed as the xStep and xFinal
+** parameters. An aggregate SQL function requires an implementation of xStep
+** and xFinal and NULL should be passed for xFunc. To delete an existing
+** SQL function or aggregate, pass NULL for all three function callbacks.
 **
 ** It is permitted to register multiple implementations of the same
 ** functions with the same name but with either differing numbers of
@@ -3715,13 +3707,12 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 **
 ** {F16103} The [sqlite3_create_function16()] interface behaves exactly
 **          like [sqlite3_create_function()] in every way except that it
-**          interprets the zFunctionName argument as
-**          zero-terminated UTF-16 native byte order instead of as a
-**          zero-terminated UTF-8.
+**          interprets the zFunctionName argument as zero-terminated UTF-16
+**          native byte order instead of as zero-terminated UTF-8.
 **
 ** {F16106} A successful invocation of
 **          the [sqlite3_create_function(D,X,N,E,...)] interface registers
-**          or replaces callback functions in [database connection] D
+**          or replaces callback functions in the [database connection] D
 **          used to implement the SQL function named X with N parameters
 **          and having a preferred text encoding of E.
 **
@@ -3767,7 +3758,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 **          database encoding is preferred.
 **
 ** {F16139} For an aggregate SQL function created using
-**          [sqlite3_create_function(D,X,N,E,P,0,S,L)] the finializer
+**          [sqlite3_create_function(D,X,N,E,P,0,S,L)] the finalizer
 **          function L will always be invoked exactly once if the
 **          step function S is called one or more times.
 **
@@ -3850,37 +3841,36 @@ int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
 ** except that  these routines take a single [protected sqlite3_value] object
 ** pointer instead of a [sqlite3_stmt*] pointer and an integer column number.
 **
-** The sqlite3_value_text16() interface extracts a UTF16 string
+** The sqlite3_value_text16() interface extracts a UTF-16 string
 ** in the native byte-order of the host machine.  The
 ** sqlite3_value_text16be() and sqlite3_value_text16le() interfaces
-** extract UTF16 strings as big-endian and little-endian respectively.
+** extract UTF-16 strings as big-endian and little-endian respectively.
 **
 ** The sqlite3_value_numeric_type() interface attempts to apply
 ** numeric affinity to the value.  This means that an attempt is
 ** made to convert the value to an integer or floating point.  If
 ** such a conversion is possible without loss of information (in other
-** words if the value is a string that looks like a number)
-** then the conversion is done.  Otherwise no conversion occurs.  The 
-** [SQLITE_INTEGER | datatype] after conversion is returned.
+** words, if the value is a string that looks like a number)
+** then the conversion is performed.  Otherwise no conversion occurs.
+** The [SQLITE_INTEGER | datatype] after conversion is returned.
 **
-** Please pay particular attention to the fact that the pointer that
-** is returned from [sqlite3_value_blob()], [sqlite3_value_text()], or
+** Please pay particular attention to the fact that the pointer returned
+** from [sqlite3_value_blob()], [sqlite3_value_text()], or
 ** [sqlite3_value_text16()] can be invalidated by a subsequent call to
 ** [sqlite3_value_bytes()], [sqlite3_value_bytes16()], [sqlite3_value_text()],
-** or [sqlite3_value_text16()].  
+** or [sqlite3_value_text16()].
 **
 ** These routines must be called from the same thread as
 ** the SQL function that supplied the [sqlite3_value*] parameters.
 **
-**
 ** INVARIANTS:
 **
 ** {F15103} The [sqlite3_value_blob(V)] interface converts the
-**          [protected sqlite3_value] object V into a blob and then returns a
-**          pointer to the converted value.
+**          [protected sqlite3_value] object V into a BLOB and then
+**          returns a pointer to the converted value.
 **
 ** {F15106} The [sqlite3_value_bytes(V)] interface returns the
-**          number of bytes in the blob or string (exclusive of the
+**          number of bytes in the BLOB or string (exclusive of the
 **          zero terminator on the string) that was returned by the
 **          most recent call to [sqlite3_value_blob(V)] or
 **          [sqlite3_value_text(V)].
@@ -3904,7 +3894,7 @@ int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
 **          returns a copy of that integer.
 **
 ** {F15121} The [sqlite3_value_text(V)] interface converts the
-**          [protected sqlite3_value] object V into a zero-terminated UTF-8 
+**          [protected sqlite3_value] object V into a zero-terminated UTF-8
 **          string and returns a pointer to that string.
 **
 ** {F15124} The [sqlite3_value_text16(V)] interface converts the
@@ -3932,8 +3922,8 @@ int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
 **          a floating point value if it can do so without loss of
 **          information, and returns one of [SQLITE_NULL],
 **          [SQLITE_INTEGER], [SQLITE_FLOAT], [SQLITE_TEXT], or
-**          [SQLITE_BLOB] as appropriate for
-**          the [protected sqlite3_value] object V after the conversion attempt.
+**          [SQLITE_BLOB] as appropriate for the
+**          [protected sqlite3_value] object V after the conversion attempt.
 */
 const void *sqlite3_value_blob(sqlite3_value*);
 int sqlite3_value_bytes(sqlite3_value*);
@@ -3952,22 +3942,21 @@ int sqlite3_value_numeric_type(sqlite3_value*);
 ** CAPI3REF: Obtain Aggregate Function Context {F16210}
 **
 ** The implementation of aggregate SQL functions use this routine to allocate
-** a structure for storing their state.  
-** The first time the sqlite3_aggregate_context() routine is
-** is called for a particular aggregate, SQLite allocates nBytes of memory
-** zeros that memory, and returns a pointer to it.
-** On second and subsequent calls to sqlite3_aggregate_context()
-** for the same aggregate function index, the same buffer is returned.
-** The implementation
-** of the aggregate can use the returned buffer to accumulate data.
+** a structure for storing their state.
+**
+** The first time the sqlite3_aggregate_context() routine is called for a
+** particular aggregate, SQLite allocates nBytes of memory, zeroes out that
+** memory, and returns a pointer to it. On second and subsequent calls to
+** sqlite3_aggregate_context() for the same aggregate function index,
+** the same buffer is returned. The implementation of the aggregate can use
+** the returned buffer to accumulate data.
 **
 ** SQLite automatically frees the allocated buffer when the aggregate
 ** query concludes.
 **
-** The first parameter should be a copy of the 
-** [sqlite3_context | SQL function context] that is the first
-** parameter to the callback routine that implements the aggregate
-** function.
+** The first parameter should be a copy of the
+** [sqlite3_context | SQL function context] that is the first parameter
+** to the callback routine that implements the aggregate function.
 **
 ** This routine must be called from the same thread in which
 ** the aggregate SQL function is running.
@@ -3976,9 +3965,8 @@ int sqlite3_value_numeric_type(sqlite3_value*);
 **
 ** {F16211} The first invocation of [sqlite3_aggregate_context(C,N)] for
 **          a particular instance of an aggregate function (for a particular
-**          context C) causes SQLite to allocation N bytes of memory,
-**          zero that memory, and return a pointer to the allocated
-**          memory.
+**          context C) causes SQLite to allocate N bytes of memory,
+**          zero that memory, and return a pointer to the allocated memory.
 **
 ** {F16213} If a memory allocation error occurs during
 **          [sqlite3_aggregate_context(C,N)] then the function returns 0.
@@ -4012,8 +4000,7 @@ void *sqlite3_aggregate_context(sqlite3_context*, int nBytes);
 ** {F16243} The [sqlite3_user_data(C)] interface returns a copy of the
 **          P pointer from the [sqlite3_create_function(D,X,N,E,P,F,S,L)]
 **          or [sqlite3_create_function16(D,X,N,E,P,F,S,L)] call that
-**          registered the SQL function associated with 
-**          [sqlite3_context] C.
+**          registered the SQL function associated with [sqlite3_context] C.
 */
 void *sqlite3_user_data(sqlite3_context*);
 
@@ -4031,8 +4018,7 @@ void *sqlite3_user_data(sqlite3_context*);
 ** {F16253} The [sqlite3_context_db_handle(C)] interface returns a copy of the
 **          D pointer from the [sqlite3_create_function(D,X,N,E,P,F,S,L)]
 **          or [sqlite3_create_function16(D,X,N,E,P,F,S,L)] call that
-**          registered the SQL function associated with 
-**          [sqlite3_context] C.
+**          registered the SQL function associated with [sqlite3_context] C.
 */
 sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 
@@ -4040,40 +4026,38 @@ sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 ** CAPI3REF: Function Auxiliary Data {F16270}
 **
 ** The following two functions may be used by scalar SQL functions to
-** associate meta-data with argument values. If the same value is passed to
+** associate metadata with argument values. If the same value is passed to
 ** multiple invocations of the same SQL function during query execution, under
-** some circumstances the associated meta-data may be preserved. This may
+** some circumstances the associated metadata may be preserved. This may
 ** be used, for example, to add a regular-expression matching scalar
 ** function. The compiled version of the regular expression is stored as
-** meta-data associated with the SQL value passed as the regular expression
+** metadata associated with the SQL value passed as the regular expression
 ** pattern.  The compiled regular expression can be reused on multiple
 ** invocations of the same function so that the original pattern string
 ** does not need to be recompiled on each invocation.
 **
-** The sqlite3_get_auxdata() interface returns a pointer to the meta-data
+** The sqlite3_get_auxdata() interface returns a pointer to the metadata
 ** associated by the sqlite3_set_auxdata() function with the Nth argument
-** value to the application-defined function.
-** If no meta-data has been ever been set for the Nth
-** argument of the function, or if the corresponding function parameter
-** has changed since the meta-data was set, then sqlite3_get_auxdata()
-** returns a NULL pointer.
+** value to the application-defined function. If no metadata has been ever
+** been set for the Nth argument of the function, or if the corresponding
+** function parameter has changed since the meta-data was set,
+** then sqlite3_get_auxdata() returns a NULL pointer.
 **
-** The sqlite3_set_auxdata() interface saves the meta-data
-** pointed to by its 3rd parameter as the meta-data for the N-th
+** The sqlite3_set_auxdata() interface saves the metadata
+** pointed to by its 3rd parameter as the metadata for the N-th
 ** argument of the application-defined function.  Subsequent
 ** calls to sqlite3_get_auxdata() might return this data, if it has
-** not been destroyed. 
-** If it is not NULL, SQLite will invoke the destructor 
+** not been destroyed.
+** If it is not NULL, SQLite will invoke the destructor
 ** function given by the 4th parameter to sqlite3_set_auxdata() on
-** the meta-data when the corresponding function parameter changes
+** the metadata when the corresponding function parameter changes
 ** or when the SQL statement completes, whichever comes first.
 **
-** SQLite is free to call the destructor and drop meta-data on
-** any parameter of any function at any time.  The only guarantee
-** is that the destructor will be called before the metadata is
-** dropped.
+** SQLite is free to call the destructor and drop metadata on any
+** parameter of any function at any time.  The only guarantee is that
+** the destructor will be called before the metadata is dropped.
 **
-** In practice, meta-data is preserved between function calls for
+** In practice, metadata is preserved between function calls for
 ** expressions that are constant at compile time. This includes literal
 ** values and SQL variables.
 **
@@ -4088,8 +4072,7 @@ sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 **          with that parameter.
 **
 ** {F16274} The [sqlite3_set_auxdata(C,N,P,D)] interface assigns a metadata
-**          pointer P to the Nth parameter of the SQL function with context
-**          C.
+**          pointer P to the Nth parameter of the SQL function with context C.
 **
 ** {F16276} SQLite will invoke the destructor D with a single argument
 **          which is the metadata pointer P following a call to
@@ -4114,10 +4097,10 @@ void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 /*
 ** CAPI3REF: Constants Defining Special Destructor Behavior {F10280}
 **
-** These are special value for the destructor that is passed in as the
+** These are special values for the destructor that is passed in as the
 ** final argument to routines like [sqlite3_result_blob()].  If the destructor
 ** argument is SQLITE_STATIC, it means that the content pointer is constant
-** and will never change.  It does not need to be destroyed.  The 
+** and will never change.  It does not need to be destroyed.  The
 ** SQLITE_TRANSIENT value means that the content will likely change in
 ** the near future and that SQLite should make its own private copy of
 ** the content before returning.
@@ -4137,23 +4120,21 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** [sqlite3_create_function()] and [sqlite3_create_function16()]
 ** for additional information.
 **
-** These functions work very much like the 
-** [sqlite3_bind_blob | sqlite3_bind_*] family of functions used
-** to bind values to host parameters in prepared statements.
-** Refer to the
-** [sqlite3_bind_blob | sqlite3_bind_* documentation] for
-** additional information.
+** These functions work very much like the [parameter binding] family of
+** functions used to bind values to host parameters in prepared statements.
+** Refer to the [SQL parameter] documentation for additional information.
 **
 ** The sqlite3_result_blob() interface sets the result from
-** an application defined function to be the BLOB whose content is pointed
+** an application-defined function to be the BLOB whose content is pointed
 ** to by the second parameter and which is N bytes long where N is the
-** third parameter. 
+** third parameter.
+**
 ** The sqlite3_result_zeroblob() interfaces set the result of
-** the application defined function to be a BLOB containing all zero
+** the application-defined function to be a BLOB containing all zero
 ** bytes and N bytes in size, where N is the value of the 2nd parameter.
 **
 ** The sqlite3_result_double() interface sets the result from
-** an application defined function to be a floating point value specified
+** an application-defined function to be a floating point value specified
 ** by its 2nd argument.
 **
 ** The sqlite3_result_error() and sqlite3_result_error16() functions
@@ -4161,8 +4142,8 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** SQLite uses the string pointed to by the
 ** 2nd parameter of sqlite3_result_error() or sqlite3_result_error16()
 ** as the text of an error message.  SQLite interprets the error
-** message string from sqlite3_result_error() as UTF8. SQLite
-** interprets the string from sqlite3_result_error16() as UTF16 in native
+** message string from sqlite3_result_error() as UTF-8. SQLite
+** interprets the string from sqlite3_result_error16() as UTF-16 in native
 ** byte order.  If the third parameter to sqlite3_result_error()
 ** or sqlite3_result_error16() is negative then SQLite takes as the error
 ** message all text up through the first zero character.
@@ -4170,7 +4151,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** sqlite3_result_error16() is non-negative then SQLite takes that many
 ** bytes (not characters) from the 2nd parameter as the error message.
 ** The sqlite3_result_error() and sqlite3_result_error16()
-** routines make a copy private copy of the error message text before
+** routines make a private copy of the error message text before
 ** they return.  Hence, the calling function can deallocate or
 ** modify the text after they return without harm.
 ** The sqlite3_result_error_code() function changes the error code
@@ -4178,11 +4159,11 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** the error code is SQLITE_ERROR.  A subsequent call to sqlite3_result_error()
 ** or sqlite3_result_error16() resets the error code to SQLITE_ERROR.
 **
-** The sqlite3_result_toobig() interface causes SQLite
-** to throw an error indicating that a string or BLOB is to long
-** to represent.  The sqlite3_result_nomem() interface
-** causes SQLite to throw an exception indicating that the a
-** memory allocation failed.
+** The sqlite3_result_toobig() interface causes SQLite to throw an error
+** indicating that a string or BLOB is to long to represent.
+**
+** The sqlite3_result_nomem() interface causes SQLite to throw an error
+** indicating that a memory allocation failed.
 **
 ** The sqlite3_result_int() interface sets the return value
 ** of the application-defined function to be the 32-bit signed integer
@@ -4194,7 +4175,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** The sqlite3_result_null() interface sets the return value
 ** of the application-defined function to be NULL.
 **
-** The sqlite3_result_text(), sqlite3_result_text16(), 
+** The sqlite3_result_text(), sqlite3_result_text16(),
 ** sqlite3_result_text16le(), and sqlite3_result_text16be() interfaces
 ** set the return value of the application-defined function to be
 ** a text string which is represented as UTF-8, UTF-16 native byte order,
@@ -4202,7 +4183,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** SQLite takes the text result from the application from
 ** the 2nd parameter of the sqlite3_result_text* interfaces.
 ** If the 3rd parameter to the sqlite3_result_text* interfaces
-** is negative, then SQLite takes result text from the 2nd parameter 
+** is negative, then SQLite takes result text from the 2nd parameter
 ** through the first zero character.
 ** If the 3rd parameter to the sqlite3_result_text* interfaces
 ** is non-negative, then as many bytes (not characters) of the text
@@ -4210,13 +4191,12 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** function result.
 ** If the 4th parameter to the sqlite3_result_text* interfaces
 ** or sqlite3_result_blob is a non-NULL pointer, then SQLite calls that
-** function as the destructor on the text or blob result when it has
+** function as the destructor on the text or BLOB result when it has
 ** finished using that result.
-** If the 4th parameter to the sqlite3_result_text* interfaces
-** or sqlite3_result_blob is the special constant SQLITE_STATIC, then
-** SQLite assumes that the text or blob result is constant space and
-** does not copy the space or call a destructor when it has
-** finished using that result.
+** If the 4th parameter to the sqlite3_result_text* interfaces or
+** sqlite3_result_blob is the special constant SQLITE_STATIC, then SQLite
+** assumes that the text or BLOB result is in constant space and does not
+** copy the it or call a destructor when it has finished using that result.
 ** If the 4th parameter to the sqlite3_result_text* interfaces
 ** or sqlite3_result_blob is the special constant SQLITE_TRANSIENT
 ** then SQLite makes a copy of the result into space obtained from
@@ -4226,13 +4206,13 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** the application-defined function to be a copy the
 ** [unprotected sqlite3_value] object specified by the 2nd parameter.  The
 ** sqlite3_result_value() interface makes a copy of the [sqlite3_value]
-** so that [sqlite3_value] specified in the parameter may change or
+** so that the [sqlite3_value] specified in the parameter may change or
 ** be deallocated after sqlite3_result_value() returns without harm.
 ** A [protected sqlite3_value] object may always be used where an
 ** [unprotected sqlite3_value] object is required, so either
 ** kind of [sqlite3_value] object can be used with this interface.
 **
-** If these routines are called from within the different thread 
+** If these routines are called from within the different thread
 ** than the one containing the application-defined function that received
 ** the [sqlite3_context] pointer, the results are undefined.
 **
@@ -4241,7 +4221,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** {F16403} The default return value from any SQL function is NULL.
 **
 ** {F16406} The [sqlite3_result_blob(C,V,N,D)] interface changes the
-**          return value of function C to be a blob that is N bytes
+**          return value of function C to be a BLOB that is N bytes
 **          in length and with content pointed to by V.
 **
 ** {F16409} The [sqlite3_result_double(C,V)] interface changes the
@@ -4249,12 +4229,12 @@ typedef void (*sqlite3_destructor_type)(void*);
 **
 ** {F16412} The [sqlite3_result_error(C,V,N)] interface changes the return
 **          value of function C to be an exception with error code
-**          [SQLITE_ERROR] and a UTF8 error message copied from V up to the
+**          [SQLITE_ERROR] and a UTF-8 error message copied from V up to the
 **          first zero byte or until N bytes are read if N is positive.
 **
 ** {F16415} The [sqlite3_result_error16(C,V,N)] interface changes the return
 **          value of function C to be an exception with error code
-**          [SQLITE_ERROR] and a UTF16 native byte order error message
+**          [SQLITE_ERROR] and a UTF-16 native byte order error message
 **          copied from V up to the first zero terminator or until N bytes
 **          are read if N is positive.
 **
@@ -4280,31 +4260,31 @@ typedef void (*sqlite3_destructor_type)(void*);
 **          return value of function C to be NULL.
 **
 ** {F16436} The [sqlite3_result_text(C,V,N,D)] interface changes the
-**          return value of function C to be the UTF8 string
+**          return value of function C to be the UTF-8 string
 **          V up to the first zero if N is negative
 **          or the first N bytes of V if N is non-negative.
 **
 ** {F16439} The [sqlite3_result_text16(C,V,N,D)] interface changes the
-**          return value of function C to be the UTF16 native byte order
-**          string V up to the first zero if N is
-**          negative or the first N bytes of V if N is non-negative.
+**          return value of function C to be the UTF-16 native byte order
+**          string V up to the first zero if N is negative
+**          or the first N bytes of V if N is non-negative.
 **
 ** {F16442} The [sqlite3_result_text16be(C,V,N,D)] interface changes the
-**          return value of function C to be the UTF16 big-endian
-**          string V up to the first zero if N is
-**          is negative or the first N bytes or V if N is non-negative.
+**          return value of function C to be the UTF-16 big-endian
+**          string V up to the first zero if N is negative
+**          or the first N bytes or V if N is non-negative.
 **
 ** {F16445} The [sqlite3_result_text16le(C,V,N,D)] interface changes the
-**          return value of function C to be the UTF16 little-endian
-**          string V up to the first zero if N is
-**          negative or the first N bytes of V if N is non-negative.
+**          return value of function C to be the UTF-16 little-endian
+**          string V up to the first zero if N is negative
+**          or the first N bytes of V if N is non-negative.
 **
 ** {F16448} The [sqlite3_result_value(C,V)] interface changes the
-**          return value of function C to be [unprotected sqlite3_value]
+**          return value of function C to be the [unprotected sqlite3_value]
 **          object V.
 **
 ** {F16451} The [sqlite3_result_zeroblob(C,N)] interface changes the
-**          return value of function C to be an N-byte blob of all zeros.
+**          return value of function C to be an N-byte BLOB of all zeros.
 **
 ** {F16454} The [sqlite3_result_error()] and [sqlite3_result_error16()]
 **          interfaces make a copy of their error message strings before
@@ -4328,7 +4308,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 **          [sqlite3_result_text(C,V,N,D)], [sqlite3_result_text16(C,V,N,D)],
 **          [sqlite3_result_text16be(C,V,N,D)], or
 **          [sqlite3_result_text16le(C,V,N,D)] is some value other than
-**          the constants [SQLITE_STATIC] and [SQLITE_TRANSIENT] then 
+**          the constants [SQLITE_STATIC] and [SQLITE_TRANSIENT] then
 **          SQLite will invoke the destructor D with V as its only argument
 **          when it has finished with the V value.
 */
@@ -4353,7 +4333,7 @@ void sqlite3_result_zeroblob(sqlite3_context*, int n);
 ** CAPI3REF: Define New Collating Sequences {F16600}
 **
 ** These functions are used to add new collation sequences to the
-** [sqlite3*] handle specified as the first argument. 
+** [database connection] specified as the first argument.
 **
 ** The name of the new collation sequence is specified as a UTF-8 string
 ** for sqlite3_create_collation() and sqlite3_create_collation_v2()
@@ -4363,42 +4343,40 @@ void sqlite3_result_zeroblob(sqlite3_context*, int n);
 ** The third argument may be one of the constants [SQLITE_UTF8],
 ** [SQLITE_UTF16LE] or [SQLITE_UTF16BE], indicating that the user-supplied
 ** routine expects to be passed pointers to strings encoded using UTF-8,
-** UTF-16 little-endian or UTF-16 big-endian respectively. The
+** UTF-16 little-endian, or UTF-16 big-endian, respectively. The
 ** third argument might also be [SQLITE_UTF16_ALIGNED] to indicate that
 ** the routine expects pointers to 16-bit word aligned strings
-** of UTF16 in the native byte order of the host computer.
+** of UTF-16 in the native byte order of the host computer.
 **
 ** A pointer to the user supplied routine must be passed as the fifth
 ** argument.  If it is NULL, this is the same as deleting the collation
 ** sequence (so that SQLite cannot call it anymore).
-** Each time the application
-** supplied function is invoked, it is passed a copy of the void* passed as
-** the fourth argument to sqlite3_create_collation() or
-** sqlite3_create_collation16() as its first parameter.
+** Each time the application supplied function is invoked, it is passed
+** as its first parameter a copy of the void* passed as the fourth argument
+** to sqlite3_create_collation() or sqlite3_create_collation16().
 **
 ** The remaining arguments to the application-supplied routine are two strings,
 ** each represented by a (length, data) pair and encoded in the encoding
 ** that was passed as the third argument when the collation sequence was
 ** registered. {END} The application defined collation routine should
-** return negative, zero or positive if
-** the first string is less than, equal to, or greater than the second
-** string. i.e. (STRING1 - STRING2).
+** return negative, zero or positive if the first string is less than,
+** equal to, or greater than the second string. i.e. (STRING1 - STRING2).
 **
 ** The sqlite3_create_collation_v2() works like sqlite3_create_collation()
 ** except that it takes an extra argument which is a destructor for
 ** the collation.  The destructor is called when the collation is
 ** destroyed and is passed a copy of the fourth parameter void* pointer
 ** of the sqlite3_create_collation_v2().
-** Collations are destroyed when
-** they are overridden by later calls to the collation creation functions
-** or when the [sqlite3*] database handle is closed using [sqlite3_close()].
+** Collations are destroyed when they are overridden by later calls to the
+** collation creation functions or when the [database connection] is closed
+** using [sqlite3_close()].
 **
 ** INVARIANTS:
 **
 ** {F16603} A successful call to the
 **          [sqlite3_create_collation_v2(B,X,E,P,F,D)] interface
 **          registers function F as the comparison function used to
-**          implement collation X on [database connection] B for
+**          implement collation X on the [database connection] B for
 **          databases having encoding E.
 **
 ** {F16604} SQLite understands the X parameter to
@@ -4410,7 +4388,7 @@ void sqlite3_result_zeroblob(sqlite3_context*, int n);
 **          with the same values for B, X, and E, override prior values
 **          of P, F, and D.
 **
-** {F16609} The destructor D in [sqlite3_create_collation_v2(B,X,E,P,F,D)]
+** {F16609} If the destructor D in [sqlite3_create_collation_v2(B,X,E,P,F,D)]
 **          is not NULL then it is called with argument P when the
 **          collating function is dropped by SQLite.
 **
@@ -4429,8 +4407,8 @@ void sqlite3_result_zeroblob(sqlite3_context*, int n);
 **
 ** {F16624} Following a [sqlite3_create_collation_v2(B,X,E,P,F,D)],
 **          SQLite uses the comparison function F for all text comparison
-**          operations on [database connection] B on text values that
-**          use the collating sequence name X.
+**          operations on the [database connection] B on text values that
+**          use the collating sequence named X.
 **
 ** {F16627} The [sqlite3_create_collation16(B,X,E,P,F)] works the same
 **          as [sqlite3_create_collation(B,X,E,P,F)] except that the
