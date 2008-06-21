@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.343 2008/06/21 06:16:43 mihailim Exp $
+** @(#) $Id: sqlite.h.in,v 1.344 2008/06/21 11:20:48 mihailim Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1026,8 +1026,8 @@ struct sqlite3_mem_methods {
 **
 ** <dt>SQLITE_CONFIG_MALLOC</dt>
 ** <dd>This option takes a single argument which is a pointer to an
-** instance of the [sqlite3_mem_methods] structure.  The argument specifics
-** alternative low-level memory allocation routines to be used in place
+** instance of the [sqlite3_mem_methods] structure.  The argument specifies
+** alternative low-level memory allocation routines to be used in place of
 ** the memory allocation routines built into SQLite.</dd>
 **
 ** <dt>SQLITE_CONFIG_GETMALLOC</dt>
@@ -1057,27 +1057,23 @@ struct sqlite3_mem_methods {
 ** argument must be a multiple of 16. The first
 ** argument should point to an allocation of at least (sz+4)*N bytes of memory.
 ** SQLite will use no more than one scratch buffer at once per thread, so
-** N should be set to the expected maximum number of threads.  The sz 
+** N should be set to the expected maximum number of threads.  The sz
 ** parameter should be 6 times the size of the largest database page size.
 ** Scratch buffers are used as part of the btree balance operation.  If
 ** The btree balancer needs additional memory beyond what is provided by
 ** scratch buffers or if no scratch buffer space is specified, then SQLite
-** goes to [sqlite3_malloc()] to obtain the memory it needs.
-** </dd>
+** goes to [sqlite3_malloc()] to obtain the memory it needs.</dd>
 **
 ** <dt>SQLITE_CONFIG_PAGECACHE</dt>
 ** <dd>This option specifies a static memory buffer that SQLite can use for
-** the database page cache.  There are three arguments:
-** A pointer to the memory, the
-** size of each page buffer (sz), and the number of pages (N).  The sz
-** argument must be a power of two between 512 and 32768.  The first
+** the database page cache.  There are three arguments: A pointer to the
+** memory, the size of each page buffer (sz), and the number of pages (N).
+** The sz argument must be a power of two between 512 and 32768.  The first
 ** argument should point to an allocation of at least (sz+4)*N bytes of memory.
-** SQLite will use the memory provided by the first argument to satisfy
-** its memory needs for the first N pages that it adds to cache.  If 
-** additional page cache memory is needed beyond what is provided by
-** this option, then SQLite goes to [sqlite3_malloc()] for the additional
-** storage space.
-** </dd>
+** SQLite will use the memory provided by the first argument to satisfy its
+** memory needs for the first N pages that it adds to cache.  If additional
+** page cache memory is needed beyond what is provided by this option, then
+** SQLite goes to [sqlite3_malloc()] for the additional storage space.</dd>
 **
 ** <dt>SQLITE_CONFIG_HEAP</dt>
 ** <dd>This option specifies a static memory buffer that SQLite will use
@@ -1087,12 +1083,11 @@ struct sqlite3_mem_methods {
 ** bytes in the memory buffer, and the minimum allocation size.  When
 ** this configuration option is used, SQLite never calls the system
 ** malloc() implementation but instead uses the supplied memory buffer
-** to satisfy all [sqlite3_malloc()] requests.
-** </dd>
+** to satisfy all [sqlite3_malloc()] requests.</dd>
 **
 ** <dt>SQLITE_CONFIG_MUTEX</dt>
 ** <dd>This option takes a single argument which is a pointer to an
-** instance of the [sqlite3_mutex_methods] structure.  The argument specifics
+** instance of the [sqlite3_mutex_methods] structure.  The argument specifies
 ** alternative low-level mutex routines to be used in place
 ** the mutex routines built into SQLite.</dd>
 **
@@ -1119,25 +1114,22 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_MUTEX        10  /* sqlite3_mutex_methods* */
 #define SQLITE_CONFIG_GETMUTEX     11  /* sqlite3_mutex_methods* */
 
-
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes {F12200}
 **
 ** The sqlite3_extended_result_codes() routine enables or disables the
 ** [SQLITE_IOERR_READ | extended result codes] feature of SQLite.
 ** The extended result codes are disabled by default for historical
-** compatibility.
+** compatibility considerations.
 **
 ** INVARIANTS:
 **
-** {F12201} Each new [database connection] shall have the 
-**          [extended result codes] feature
-**          disabled by default.
+** {F12201} Each new [database connection] shall have the
+**          [extended result codes] feature disabled by default.
 **
 ** {F12202} The [sqlite3_extended_result_codes(D,F)] interface shall enable
-**          [extended result codes] for the 
-**          [database connection] D if the F parameter
-**          is true, or disable them if F is false.
+**          [extended result codes] for the  [database connection] D
+**          if the F parameter is true, or disable them if F is false.
 */
 int sqlite3_extended_result_codes(sqlite3*, int onoff);
 
@@ -1152,44 +1144,42 @@ int sqlite3_extended_result_codes(sqlite3*, int onoff);
 ** is another alias for the rowid.
 **
 ** This routine returns the rowid of the most recent
-** successful INSERT into the database from the database connection
-** shown in the first argument.  If no successful inserts
-** have ever occurred on this database connection, zero is returned.
+** successful INSERT into the database from the [database connection]
+** in the first argument.  If no successful INSERTs
+** have ever occurred on that database connection, zero is returned.
 **
-** If an INSERT occurs within a trigger, then the rowid of the
-** inserted row is returned by this routine as long as the trigger
-** is running.  But once the trigger terminates, the value returned
-** by this routine reverts to the last value inserted before the
-** trigger fired.
+** If an INSERT occurs within a trigger, then the rowid of the inserted
+** row is returned by this routine as long as the trigger is running.
+** But once the trigger terminates, the value returned by this routine
+** reverts to the last value inserted before the trigger fired.
 **
 ** An INSERT that fails due to a constraint violation is not a
-** successful insert and does not change the value returned by this
+** successful INSERT and does not change the value returned by this
 ** routine.  Thus INSERT OR FAIL, INSERT OR IGNORE, INSERT OR ROLLBACK,
 ** and INSERT OR ABORT make no changes to the return value of this
-** routine when their insertion fails.  When INSERT OR REPLACE 
+** routine when their insertion fails.  When INSERT OR REPLACE
 ** encounters a constraint violation, it does not fail.  The
 ** INSERT continues to completion after deleting rows that caused
 ** the constraint problem so INSERT OR REPLACE will always change
-** the return value of this interface. 
+** the return value of this interface.
 **
-** For the purposes of this routine, an insert is considered to
+** For the purposes of this routine, an INSERT is considered to
 ** be successful even if it is subsequently rolled back.
 **
 ** INVARIANTS:
 **
-** {F12221} The [sqlite3_last_insert_rowid()] function returns the
-**          rowid of the most recent successful insert done
-**          on the same database connection and within the same
-**          or higher level trigger context, or zero if there have
-**          been no qualifying inserts.
+** {F12221} The [sqlite3_last_insert_rowid()] function returns the rowid
+**          of the most recent successful INSERT performed on the same
+**          [database connection] and within the same or higher level
+**          trigger context, or zero if there have been no qualifying inserts.
 **
-** {F12223} The [sqlite3_last_insert_rowid()] function returns
+** {F12223} The [sqlite3_last_insert_rowid()] function returns the
 **          same value when called from the same trigger context
 **          immediately before and after a ROLLBACK.
 **
 ** LIMITATIONS:
 **
-** {U12232} If a separate thread does a new insert on the same
+** {U12232} If a separate thread performs a new INSERT on the same
 **          database connection while the [sqlite3_last_insert_rowid()]
 **          function is running and thus changes the last insert rowid,
 **          then the value returned by [sqlite3_last_insert_rowid()] is
@@ -1203,9 +1193,9 @@ sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 **
 ** This function returns the number of database rows that were changed
 ** or inserted or deleted by the most recently completed SQL statement
-** on the connection specified by the first parameter.  Only
-** changes that are directly specified by the INSERT, UPDATE, or
-** DELETE statement are counted.  Auxiliary changes caused by
+** on the [database connection] specified by the first parameter.
+** Only changes that are directly specified by the INSERT, UPDATE,
+** or DELETE statement are counted.  Auxiliary changes caused by
 ** triggers are not counted. Use the [sqlite3_total_changes()] function
 ** to find the total number of changes including changes caused by triggers.
 **
@@ -1229,23 +1219,22 @@ sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 ** most recent INSERT, UPDATE, or DELETE statement within the same
 ** trigger context.
 **
-** So when called from the top level, this function returns the
+** Thus, when called from the top level, this function returns the
 ** number of changes in the most recent INSERT, UPDATE, or DELETE
-** that also occurred at the top level.
-** Within the body of a trigger, the sqlite3_changes() interface
-** can be called to find the number of
+** that also occurred at the top level.  Within the body of a trigger,
+** the sqlite3_changes() interface can be called to find the number of
 ** changes in the most recently completed INSERT, UPDATE, or DELETE
 ** statement within the body of the same trigger.
-** However, the number returned does not include in changes
-** caused by subtriggers since they have their own context.
+** However, the number returned does not include changes
+** caused by subtriggers since those have their own context.
 **
-** SQLite implements the command "DELETE FROM table" without
-** a WHERE clause by dropping and recreating the table.  (This is much
-** faster than going through and deleting individual elements from the
-** table.)  Because of this optimization, the deletions in
-** "DELETE FROM table" are not row changes and will not be counted
-** by the sqlite3_changes() or [sqlite3_total_changes()] functions.
-** To get an accurate count of the number of rows deleted, use
+** SQLite implements the command "DELETE FROM table" without a WHERE clause
+** by dropping and recreating the table.  (This is much faster than going
+** through and deleting individual elements from the table.)  Because of this
+** optimization, the deletions in "DELETE FROM table" are not row changes and
+** will not be counted by the sqlite3_changes() or [sqlite3_total_changes()]
+** functions, regardless of the number of elements that were originally
+** in the table.  To get an accurate count of the number of rows deleted, use
 ** "DELETE FROM table WHERE 1" instead.
 **
 ** INVARIANTS:
@@ -1257,7 +1246,7 @@ sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 **          not been any qualifying row changes.
 **
 ** {F12243} Statements of the form "DELETE FROM tablename" with no
-**          WHERE clause shall cause subsequent calls to 
+**          WHERE clause shall cause subsequent calls to
 **          [sqlite3_changes()] to return zero, regardless of the
 **          number of rows originally in the table.
 **
@@ -1271,40 +1260,37 @@ int sqlite3_changes(sqlite3*);
 
 /*
 ** CAPI3REF: Total Number Of Rows Modified {F12260}
-***
-** This function returns the number of row changes caused
-** by INSERT, UPDATE or DELETE statements since the database handle
-** was opened.  The count includes all changes from all trigger
-** contexts.  But the count does not include changes used to
-** implement REPLACE constraints, do rollbacks or ABORT processing,
-** or DROP table processing.
-** The changes
-** are counted as soon as the statement that makes them is completed 
-** (when the statement handle is passed to [sqlite3_reset()] or 
+**
+** This function returns the number of row changes caused by INSERT,
+** UPDATE or DELETE statements since the [database connection] was opened.
+** The count includes all changes from all trigger contexts.  However,
+** the count does not include changes used to implement REPLACE constraints,
+** do rollbacks or ABORT processing, or DROP table processing.
+** The changes are counted as soon as the statement that makes them is
+** completed (when the statement handle is passed to [sqlite3_reset()] or
 ** [sqlite3_finalize()]).
 **
-** SQLite implements the command "DELETE FROM table" without
-** a WHERE clause by dropping and recreating the table.  (This is much
-** faster than going
-** through and deleting individual elements from the table.)  Because of
-** this optimization, the change count for "DELETE FROM table" will be
-** zero regardless of the number of elements that were originally in the
-** table. To get an accurate count of the number of rows deleted, use
+** SQLite implements the command "DELETE FROM table" without a WHERE clause
+** by dropping and recreating the table.  (This is much faster than going
+** through and deleting individual elements from the table.)  Because of this
+** optimization, the deletions in "DELETE FROM table" are not row changes and
+** will not be counted by the sqlite3_changes() or [sqlite3_total_changes()]
+** functions, regardless of the number of elements that were originally
+** in the table.  To get an accurate count of the number of rows deleted, use
 ** "DELETE FROM table WHERE 1" instead.
 **
 ** See also the [sqlite3_changes()] interface.
 **
 ** INVARIANTS:
-** 
+**
 ** {F12261} The [sqlite3_total_changes()] returns the total number
 **          of row changes caused by INSERT, UPDATE, and/or DELETE
 **          statements on the same [database connection], in any
-**          trigger context, since the database connection was
-**          created.
+**          trigger context, since the database connection was created.
 **
 ** {F12263} Statements of the form "DELETE FROM tablename" with no
 **          WHERE clause shall not change the value returned
-**          by [sqlite3_total_changes()]
+**          by [sqlite3_total_changes()].
 **
 ** LIMITATIONS:
 **
@@ -1319,22 +1305,24 @@ int sqlite3_total_changes(sqlite3*);
 **
 ** This function causes any pending database operation to abort and
 ** return at its earliest opportunity. This routine is typically
-** called in response to a user action such as pressing "Cancel"
+** called in response to an user action such as pressing "Cancel"
 ** or Ctrl-C where the user wants a long query operation to halt
 ** immediately.
 **
 ** It is safe to call this routine from a thread different from the
 ** thread that is currently running the database operation.  But it
-** is not safe to call this routine with a database connection that
+** is not safe to call this routine with a [database connection] that
 ** is closed or might close before sqlite3_interrupt() returns.
 **
-** If an SQL is very nearly finished at the time when sqlite3_interrupt()
-** is called, then it might not have an opportunity to be interrupted.
-** It might continue to completion.
-** An SQL operation that is interrupted will return
-** [SQLITE_INTERRUPT].  If the interrupted SQL operation is an
-** INSERT, UPDATE, or DELETE that is inside an explicit transaction, 
-** then the entire transaction will be rolled back automatically.
+** If an SQL operation is very nearly finished at the time when
+** sqlite3_interrupt() is called, then it might not have an opportunity
+** to be interrupted and might continue to completion.
+**
+** An SQL operation that is interrupted will return [SQLITE_INTERRUPT].
+** If the interrupted SQL operation is an INSERT, UPDATE, or DELETE
+** that is inside an explicit transaction, then the entire transaction
+** will be rolled back automatically.
+**
 ** A call to sqlite3_interrupt() has no effect on SQL statements
 ** that are started after sqlite3_interrupt() returns.
 **
@@ -1342,8 +1330,7 @@ int sqlite3_total_changes(sqlite3*);
 **
 ** {F12271} The [sqlite3_interrupt()] interface will force all running
 **          SQL statements associated with the same database connection
-**          to halt after processing at most one additional row of
-**          data.
+**          to halt after processing at most one additional row of data.
 **
 ** {F12272} Any SQL statement that is interrupted by [sqlite3_interrupt()]
 **          will return [SQLITE_INTERRUPT].
@@ -1369,16 +1356,15 @@ void sqlite3_interrupt(sqlite3*);
 ** independent tokens (they are part of the token in which they are
 ** embedded) and thus do not count as a statement terminator.
 **
-** These routines do not parse the SQL and
-** so will not detect syntactically incorrect SQL.
+** These routines do not parse the SQL statements thus
+** will not detect syntactically incorrect SQL.
 **
 ** INVARIANTS:
 **
 ** {F10511} The sqlite3_complete() and sqlite3_complete16() functions
-**          return true (non-zero) if and only if the last
-**          non-whitespace token in their input is a semicolon that
-**          is not in between the BEGIN and END of a CREATE TRIGGER
-**          statement.
+**          return true (non-zero) if and only if the last non-whitespace
+**          token in their input is a semicolon that is not in between
+**          the BEGIN and END of a CREATE TRIGGER statement.
 **
 ** LIMITATIONS:
 **
@@ -1394,29 +1380,27 @@ int sqlite3_complete16(const void *sql);
 /*
 ** CAPI3REF: Register A Callback To Handle SQLITE_BUSY Errors {F12310}
 **
-** This routine identifies a callback function that might be
-** invoked whenever an attempt is made to open a database table 
-** that another thread or process has locked.
-** If the busy callback is NULL, then [SQLITE_BUSY]
-** or [SQLITE_IOERR_BLOCKED]
-** is returned immediately upon encountering the lock.
-** If the busy callback is not NULL, then the
-** callback will be invoked with two arguments.  The
-** first argument to the handler is a copy of the void* pointer which
-** is the third argument to this routine.  The second argument to
-** the handler is the number of times that the busy handler has
-** been invoked for this locking event.   If the
+** This routine sets a callback function that might be invoked whenever
+** an attempt is made to open a database table that another thread
+** or process has locked.
+**
+** If the busy callback is NULL, then [SQLITE_BUSY] or [SQLITE_IOERR_BLOCKED]
+** is returned immediately upon encountering the lock. If the busy callback
+** is not NULL, then the callback will be invoked with two arguments.
+**
+** The first argument to the handler is a copy of the void* pointer which
+** is the third argument to sqlite3_busy_handler().  The second argument to
+** the handler callback is the number of times that the busy handler has
+** been invoked for this locking event.  If the
 ** busy callback returns 0, then no additional attempts are made to
 ** access the database and [SQLITE_BUSY] or [SQLITE_IOERR_BLOCKED] is returned.
 ** If the callback returns non-zero, then another attempt
 ** is made to open the database for reading and the cycle repeats.
 **
-** The presence of a busy handler does not guarantee that
-** it will be invoked when there is lock contention.
-** If SQLite determines that invoking the busy handler could result in
-** a deadlock, it will go ahead and return [SQLITE_BUSY] or
-** [SQLITE_IOERR_BLOCKED] instead of invoking the
-** busy handler.
+** The presence of a busy handler does not guarantee that it will be invoked
+** when there is lock contention. If SQLite determines that invoking the busy
+** handler could result in a deadlock, it will go ahead and return [SQLITE_BUSY]
+** or [SQLITE_IOERR_BLOCKED] instead of invoking the busy handler.
 ** Consider a scenario where one process is holding a read lock that
 ** it is trying to promote to a reserved lock and
 ** a second process is holding a reserved lock that it is trying
@@ -1441,14 +1425,14 @@ int sqlite3_complete16(const void *sql);
 ** code is promoted from the relatively benign [SQLITE_BUSY] to
 ** the more severe [SQLITE_IOERR_BLOCKED].  This error code promotion
 ** forces an automatic rollback of the changes.  See the
-** <a href="http://www.sqlite.org/cvstrac/wiki?p=CorruptionFollowingBusyError">
+** <a href="/cvstrac/wiki?p=CorruptionFollowingBusyError">
 ** CorruptionFollowingBusyError</a> wiki page for a discussion of why
 ** this is important.
-**	
-** There can only be a single busy handler defined for each database
-** connection.  Setting a new busy handler clears any previous one. 
-** Note that calling [sqlite3_busy_timeout()] will also set or clear
-** the busy handler.
+**
+** There can only be a single busy handler defined for each
+** [database connection].  Setting a new busy handler clears any
+** previously set handler.  Note that calling [sqlite3_busy_timeout()]
+** will also set or clear the busy handler.
 **
 ** INVARIANTS:
 **
@@ -1459,13 +1443,13 @@ int sqlite3_complete16(const void *sql);
 **
 ** {F12312} The default busy handler for new database connections is NULL.
 **
-** {F12314} When two or more database connection share a [sqlite3_enable_shared_cache | common cache],
+** {F12314} When two or more database connection share a
+**          [sqlite3_enable_shared_cache | common cache],
 **          the busy handler for the database connection currently using
 **          the cache is invoked when the cache encounters a lock.
 **
-** {F12316} If a busy handler callback returns zero, then the SQLite
-**          interface that provoked the locking event will return
-**          [SQLITE_BUSY].
+** {F12316} If a busy handler callback returns zero, then the SQLite interface
+**          that provoked the locking event will return [SQLITE_BUSY].
 **
 ** {F12318} SQLite will invokes the busy handler with two arguments which
 **          are a copy of the pointer supplied by the 3rd parameter to
@@ -1474,27 +1458,27 @@ int sqlite3_complete16(const void *sql);
 **
 ** LIMITATIONS:
 **
-** {U12319} A busy handler should not call close the database connection
-**          or prepared statement that invoked the busy handler.
+** {U12319} A busy handler should not close the database connection
+**          or [prepared statement] that invoked the busy handler.
 */
 int sqlite3_busy_handler(sqlite3*, int(*)(void*,int), void*);
 
 /*
 ** CAPI3REF: Set A Busy Timeout {F12340}
 **
-** This routine sets a [sqlite3_busy_handler | busy handler]
-** that sleeps for a while when a
-** table is locked.  The handler will sleep multiple times until 
-** at least "ms" milliseconds of sleeping have been done. {F12343} After
-** "ms" milliseconds of sleeping, the handler returns 0 which
-** causes [sqlite3_step()] to return [SQLITE_BUSY] or [SQLITE_IOERR_BLOCKED].
+** This routine sets a [sqlite3_busy_handler | busy handler] that sleeps
+** for a specified amount of time when a table is locked.  The handler
+** will sleep multiple times until at least "ms" milliseconds of sleeping
+** have accumulated. {F12343} After "ms" milliseconds of sleeping,
+** the handler returns 0 which causes [sqlite3_step()] to return
+** [SQLITE_BUSY] or [SQLITE_IOERR_BLOCKED].
 **
 ** Calling this routine with an argument less than or equal to zero
 ** turns off all busy handlers.
 **
-** There can only be a single busy handler for a particular database
-** connection.  If another busy handler was defined  
-** (using [sqlite3_busy_handler()]) prior to calling
+** There can only be a single busy handler for a particular
+** [database connection] any any given moment.  If another busy handler
+** was defined  (using [sqlite3_busy_handler()]) prior to calling
 ** this routine, that other busy handler is cleared.
 **
 ** INVARIANTS:
@@ -1527,16 +1511,14 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 ** numbers are obtained separately.  Let N be the number of rows
 ** and M be the number of columns.
 **
-** A result table is an array of pointers to zero-terminated
-** UTF-8 strings.  There are (N+1)*M elements in the array.  
-** The first M pointers point to zero-terminated strings that 
-** contain the names of the columns.
-** The remaining entries all point to query results.  NULL
-** values are give a NULL pointer.  All other values are in
-** their UTF-8 zero-terminated string representation as returned by
-** [sqlite3_column_text()].
+** A result table is an array of pointers to zero-terminated UTF-8 strings.
+** There are (N+1)*M elements in the array.  The first M pointers point
+** to zero-terminated strings that  contain the names of the columns.
+** The remaining entries all point to query results.  NULL values result
+** in NULL pointers.  All other values are in their UTF-8 zero-terminated
+** string representation as returned by [sqlite3_column_text()].
 **
-** A result table might consists of one or more memory allocations.
+** A result table might consist of one or more memory allocations.
 ** It is not safe to pass a result table directly to [sqlite3_free()].
 ** A result table should be deallocated using [sqlite3_free_table()].
 **
@@ -1571,11 +1553,11 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 ** string of its 2nd parameter.  It returns a result table to the
 ** pointer given in its 3rd parameter.
 **
-** After the calling function has finished using the result, it should 
-** pass the pointer to the result table to sqlite3_free_table() in order to 
-** release the memory that was malloced.  Because of the way the 
+** After the calling function has finished using the result, it should
+** pass the pointer to the result table to sqlite3_free_table() in order to
+** release the memory that was malloced.  Because of the way the
 ** [sqlite3_malloc()] happens within sqlite3_get_table(), the calling
-** function must not try to call [sqlite3_free()] directly.  Only 
+** function must not try to call [sqlite3_free()] directly.  Only
 ** [sqlite3_free_table()] is able to release the memory properly and safely.
 **
 ** The sqlite3_get_table() interface is implemented as a wrapper around
@@ -1583,8 +1565,7 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 ** to any internal data structures of SQLite.  It uses only the public
 ** interface defined here.  As a consequence, errors that occur in the
 ** wrapper layer outside of the internal [sqlite3_exec()] call are not
-** reflected in subsequent calls to [sqlite3_errcode()] or
-** [sqlite3_errmsg()].
+** reflected in subsequent calls to [sqlite3_errcode()] or [sqlite3_errmsg()].
 **
 ** INVARIANTS:
 **
@@ -1594,19 +1575,18 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 **          *resultp output pointer to NULL and returns [SQLITE_NOMEM].
 **
 ** {F12373} If the ncolumn parameter to [sqlite3_get_table()] is not NULL
-**          then [sqlite3_get_table()] write the number of columns in the
+**          then [sqlite3_get_table()] writes the number of columns in the
 **          result set of the query into *ncolumn if the query is
 **          successful (if the function returns SQLITE_OK).
 **
 ** {F12374} If the nrow parameter to [sqlite3_get_table()] is not NULL
-**          then [sqlite3_get_table()] write the number of rows in the
+**          then [sqlite3_get_table()] writes the number of rows in the
 **          result set of the query into *nrow if the query is
 **          successful (if the function returns SQLITE_OK).
 **
-** {F12376} The [sqlite3_get_table()] function sets its *ncolumn value
-**          to the number of columns in the result set of the query in the
-**          sql parameter, or to zero if the query in sql has an empty
-**          result set.
+** {F12376} The [sqlite3_get_table()] function sets its *ncolumn value to the
+**          number of columns in the result set of the query in the sql
+**          parameter, or to zero if the query in sql has an empty result set.
 */
 int sqlite3_get_table(
   sqlite3*,             /* An open database */
@@ -1661,7 +1641,7 @@ void sqlite3_free_table(char **result);
 ** character it escapes that character and allows it to be inserted into
 ** the string.
 **
-** For example, so some string variable contains text as follows:
+** For example, assume the string variable zText contains text as follows:
 **
 ** <blockquote><pre>
 **  char *zText = "It's a happy day!";
@@ -1689,14 +1669,14 @@ void sqlite3_free_table(char **result);
 **  INSERT INTO table1 VALUES('It's a happy day!');
 ** </pre></blockquote>
 **
-** This second example is an SQL syntax error.  As a general rule you
-** should always use %q instead of %s when inserting text into a string 
-** literal.
+** This second example is an SQL syntax error.  As a general rule you should
+** always use %q instead of %s when inserting text into a string literal.
 **
 ** The %Q option works like %q except it also adds single quotes around
-** the outside of the total string.  Or if the parameter in the argument
-** list is a NULL pointer, %Q substitutes the text "NULL" (without single
-** quotes) in place of the %Q option. {END}  So, for example, one could say:
+** the outside of the total string.  Additionally, if the parameter in the
+** argument list is a NULL pointer, %Q substitutes the text "NULL" (without
+** single quotes) in place of the %Q option. {END}  So, for example,
+** one could say:
 **
 ** <blockquote><pre>
 **  char *zSQL = sqlite3_mprintf("INSERT INTO table VALUES(%Q)", zText);
@@ -1722,12 +1702,11 @@ void sqlite3_free_table(char **result);
 **           UTF-8 string into the buffer pointed to by the second parameter
 **           provided that the first parameter is greater than zero.
 **
-** {F17407}  The [sqlite3_snprintf()] interface does not writes slots of
+** {F17407}  The [sqlite3_snprintf()] interface does not write slots of
 **           its output buffer (the second parameter) outside the range
 **           of 0 through N-1 (where N is the first parameter)
 **           regardless of the length of the string
 **           requested by the format specification.
-**   
 */
 char *sqlite3_mprintf(const char*,...);
 char *sqlite3_vmprintf(const char*, va_list);
@@ -1768,7 +1747,7 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 ** If the second parameter to sqlite3_realloc() is zero or
 ** negative then the behavior is exactly the same as calling
 ** sqlite3_free(P) where P is the first parameter to sqlite3_realloc().
-** Sqlite3_realloc() returns a pointer to a memory allocation
+** sqlite3_realloc() returns a pointer to a memory allocation
 ** of at least N bytes in size or NULL if sufficient memory is unavailable.
 ** If M is the size of the prior allocation, then min(N,M) bytes
 ** of the prior allocation are copied into the beginning of buffer returned
@@ -1779,23 +1758,19 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 ** The memory returned by sqlite3_malloc() and sqlite3_realloc()
 ** is always aligned to at least an 8 byte boundary. {END}
 **
-** The default implementation
-** of the memory allocation subsystem uses the malloc(), realloc()
-** and free() provided by the standard C library. {F17382} However, if 
-** SQLite is compiled with the following C preprocessor macro
-**
-** <blockquote> SQLITE_MEMORY_SIZE=<i>NNN</i> </blockquote>
-**
-** where <i>NNN</i> is an integer, then SQLite create a static
-** array of at least <i>NNN</i> bytes in size and use that array
-** for all of its dynamic memory allocation needs. {END}  Additional
-** memory allocator options may be added in future releases.
+** The default implementation of the memory allocation subsystem uses
+** the malloc(), realloc() and free() provided by the standard C library.
+** {F17382} However, if SQLite is compiled with the
+** SQLITE_MEMORY_SIZE=<i>NNN</i> C preprocessor macro (where <i>NNN</i>
+** is an integer), then SQLite create a static array of at least
+** <i>NNN</i> bytes in size and uses that array for all of its dynamic
+** memory allocation needs. {END}  Additional memory allocator options
+** may be added in future releases.
 **
 ** In SQLite version 3.5.0 and 3.5.1, it was possible to define
 ** the SQLITE_OMIT_MEMORY_ALLOCATION which would cause the built-in
 ** implementation of these routines to be omitted.  That capability
-** is no longer provided.  Only built-in memory allocators can be
-** used.
+** is no longer provided.  Only built-in memory allocators can be used.
 **
 ** The Windows OS interface layer calls
 ** the system malloc() and free() directly when converting
@@ -1807,10 +1782,10 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 **
 ** INVARIANTS:
 **
-** {F17303}  The [sqlite3_malloc(N)] interface returns either a pointer to 
-**           newly checked-out block of at least N bytes of memory
-**           that is 8-byte aligned, 
-**           or it returns NULL if it is unable to fulfill the request.
+** {F17303}  The [sqlite3_malloc(N)] interface returns either a pointer to
+**           a newly checked-out block of at least N bytes of memory
+**           that is 8-byte aligned, or it returns NULL if it is unable
+**           to fulfill the request.
 **
 ** {F17304}  The [sqlite3_malloc(N)] interface returns a NULL pointer if
 **           N is less than or equal to zero.
@@ -1836,8 +1811,9 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 **           that is 8-byte aligned, or a NULL pointer.
 **
 ** {F17321}  When [sqlite3_realloc(P,N)] returns a non-NULL pointer, it first
-**           copies the first K bytes of content from P into the newly allocated
-**           where K is the lesser of N and the size of the buffer P.
+**           copies the first K bytes of content from P into the newly
+**           allocated block, where K is the lesser of N and the size of
+**           the buffer P.
 **
 ** {F17322}  When [sqlite3_realloc(P,N)] returns a non-NULL pointer, it first
 **           releases the buffer P.
@@ -1848,14 +1824,13 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 ** LIMITATIONS:
 **
 ** {U17350}  The pointer arguments to [sqlite3_free()] and [sqlite3_realloc()]
-**           must be either NULL or else a pointer obtained from a prior
-**           invocation of [sqlite3_malloc()] or [sqlite3_realloc()] that has
-**           not been released.
+**           must be either NULL or else pointers obtained from a prior
+**           invocation of [sqlite3_malloc()] or [sqlite3_realloc()] that have
+**           not yet been released.
 **
 ** {U17351}  The application must not read or write any part of 
 **           a block of memory after it has been released using
 **           [sqlite3_free()] or [sqlite3_realloc()].
-**
 */
 void *sqlite3_malloc(int);
 void *sqlite3_realloc(void*, int);
@@ -1866,7 +1841,7 @@ void sqlite3_free(void*);
 **
 ** SQLite provides these two interfaces for reporting on the status
 ** of the [sqlite3_malloc()], [sqlite3_free()], and [sqlite3_realloc()]
-** the memory allocation subsystem included within the SQLite.
+** routines, which form the built-in memory allocation subsystem.
 **
 ** INVARIANTS:
 **
@@ -1875,8 +1850,8 @@ void sqlite3_free(void*);
 **          (malloced but not freed).
 **
 ** {F17373} The [sqlite3_memory_highwater()] routine returns the maximum
-**          value of [sqlite3_memory_used()] 
-**          since the high-water mark was last reset.
+**          value of [sqlite3_memory_used()] since the high-water mark
+**          was last reset.
 **
 ** {F17374} The values returned by [sqlite3_memory_used()] and
 **          [sqlite3_memory_highwater()] include any overhead
