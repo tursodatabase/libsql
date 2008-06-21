@@ -1,5 +1,5 @@
-C Documentation\sspellcheck\sand\scleanup.\sNo\schanges\sto\scode.\s(CVS\s5258)
-D 2008-06-21T06:16:43
+C Fix\sa\sproblem\sin\sthe\stest\ssuite\sthat\scould\scause\sa\scrash\sif\susing\sa\spre-allocated\sblock\sof\smemory\sfor\spages\s(the\sproblem\swas\sthat\ssqlite3_shutdown()\swas\sbeing\scalled\swhile\sthere\swere\sstill\sopen\sdatabase\sconnections).\s(CVS\s5259)
+D 2008-06-21T08:12:15
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +116,7 @@ F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 40024a0f476c1279494876b9a002001b29e5d3e3
 F src/main.c 37e65eaad07de56353cf149b45896b2c56cca9b2
-F src/malloc.c 66c0b17a6611547f630b6ea67e14e575b9431507
+F src/malloc.c d4339af305c2cb62fbecc2c533b3169dec315d44
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 159f10e280f2d9aea597cf938851e61652dd5c3d
 F src/mem2.c 23f9538f35fbcd5665afe7056a56be0c7ed65aa7
@@ -477,7 +477,7 @@ F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
-F test/tableapi.test 791f7e3891d9b70bdb43b311694bf5e9befcbc34
+F test/tableapi.test bb7a41e8a9b577a56e40325cb39dab652bee565c
 F test/tclsqlite.test 3dfb48f46de4353376fad835390b493ba066b4dc
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 083113652ff8f69b18cf1611710fdbbe5fbd9fef
-R fce4f25d2da1a3a12eb857c1053f43c3
-U mihailim
-Z ea2c2643b30dd62f704df4e2a6d81858
+P 2904d26ba43b0ded5b43f696ba2d8cd19d4244de
+R c113c331a7360a8ae8154a587ec4ebd9
+U danielk1977
+Z 424aee893f8bd1e1c8ade0a3dc854ce4

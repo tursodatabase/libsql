@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.22 2008/06/19 18:17:50 danielk1977 Exp $
+** $Id: malloc.c,v 1.23 2008/06/21 08:12:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -405,6 +405,10 @@ void sqlite3PageFree(void *p){
     if( sqlite3Config.pPage==0
            || p<sqlite3Config.pPage
            || p>=(void*)mem0.aPageFree ){
+      /* In this case, the page allocation was obtained from a regular 
+      ** call to sqlite3_mem_methods.xMalloc() (a page-cache-memory 
+      ** "overflow"). Free the block with sqlite3_mem_methods.xFree().
+      */
       if( sqlite3Config.bMemstat ){
         int iSize = sqlite3MallocSize(p);
         sqlite3_mutex_enter(mem0.mutex);
@@ -416,6 +420,11 @@ void sqlite3PageFree(void *p){
         sqlite3Config.m.xFree(p);
       }
     }else{
+      /* The page allocation was allocated from the sqlite3Config.pPage
+      ** buffer. In this case all that is add the index of the page in
+      ** the sqlite3Config.pPage array to the set of free indexes stored
+      ** in the mem0.aPageFree[] array.
+      */
       int i;
       i = p - sqlite3Config.pPage;
       i /= sqlite3Config.szPage;
@@ -425,6 +434,12 @@ void sqlite3PageFree(void *p){
       mem0.aPageFree[mem0.nPageFree++] = i;
       sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_USED, -1);
       sqlite3_mutex_leave(mem0.mutex);
+#ifndef NDEBUG
+      /* Assert that a duplicate was not just inserted into aPageFree[]. */
+      for(i=0; i<mem0.nPageFree-1; i++){
+        assert( mem0.aPageFree[i]!=mem0.aPageFree[mem0.nPageFree-1] );
+      }
+#endif
     }
   }
 }
