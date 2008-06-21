@@ -1,5 +1,5 @@
-C Remove\smutex2.test.\sIt\swill\sbe\sreplaced\slater\stoday\sby\spermutations.test.\s(CVS\s5261)
-D 2008-06-21T12:15:04
+C More\sdocumentation\sspellcheck\sand\scleanup.\sNo\schanges\sto\scode.\s(CVS\s5262)
+D 2008-06-21T13:35:57
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 8393c47a170923f40602622bfa59b8e7cbff9027
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in b38a20988588df2467722d5e0be9a3e66bec7203
+F src/sqlite.h.in 06ec1a8643200b9760ffc3e61e99e869b7088f84
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
 F src/sqliteInt.h 005b2f0aa10acd20435b46d4a9f84e20855c6f35
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -599,7 +599,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8c457fb08b93aa1aa9f62d0ec31755d74416e16b
-R ba7419dbfecd1a68feccea2f76855031
-U danielk1977
-Z 32157deb1b7267717504f46d7018eab5
+P 98a6a0a30f16cbc60c655663b5895429a34da0ba
+R 80cc7d70c0f30496ee4b30619bfc84a6
+U mihailim
+Z eeec625e4e64aeb5ff5f877eeb54a003
