@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.54 2008/03/31 23:51:35 drh Exp $
+# $Id: all.test,v 1.55 2008/06/21 18:07:37 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -107,6 +107,9 @@ for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
     lappend LeakList $Leak
   }
 }
+set argv all
+source $testdir/permutations.test
+set argv ""
 
 # Do one last test to look for a memory leak in the library.  This will
 # only work if SQLite is compiled with the -DSQLITE_DEBUG=1 flag.
@@ -134,7 +137,9 @@ if {$::tcl_platform(platform)=="unix"} {
   source $testdir/crash.test
   source $testdir/crash2.test
   ifcapable !default_autovacuum {
-    source $testdir/autovacuum_crash.test
+    set argv autovacuum_crash
+    source $testdir/permutations.test
+    set argv ""
   }
 }
 

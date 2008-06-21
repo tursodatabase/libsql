@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.80 2008/06/21 12:15:04 danielk1977 Exp $
+# $Id: quick.test,v 1.81 2008/06/21 18:07:37 danielk1977 Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -116,6 +116,9 @@ foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
     set sqlite_open_file_count 0
   }
 }
+set argv quick
+source $testdir/permutations.test
+set argv ""
 source $testdir/misuse.test
 
 set sqlite_open_file_count 0
