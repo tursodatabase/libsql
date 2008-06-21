@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.55 2008/06/21 18:07:37 danielk1977 Exp $
+# $Id: all.test,v 1.56 2008/06/21 19:20:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -57,12 +57,12 @@ lappend EXCLUDE all.test               ;# This file
 lappend EXCLUDE async.test
 lappend EXCLUDE crash.test             ;# Run seperately later.
 lappend EXCLUDE crash2.test            ;# Run seperately later.
-lappend EXCLUDE autovacuum_crash.test  ;# Run seperately later.
 lappend EXCLUDE quick.test             ;# Alternate test driver script
 lappend EXCLUDE veryquick.test         ;# Alternate test driver script
 lappend EXCLUDE malloc.test            ;# Run seperately later.
 lappend EXCLUDE misuse.test            ;# Run seperately later.
 lappend EXCLUDE memleak.test           ;# Alternate test driver script
+lappend EXCLUDE permutations.test      ;# Run seperately later.
 lappend EXCLUDE fuzz.test
 lappend EXCLUDE soak.test              ;# Takes a very long time (default 1 hr)
 lappend EXCLUDE fts3.test              ;# Wrapper for muliple fts3*.tests

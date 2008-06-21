@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\spermutations.test\scausing\sthe\sutf-16\stests\sto\sfail.\s(CVS\s5266)
-D 2008-06-21T19:10:27
+C Prevent\sveryquick.test\sand\sall.test\sfrom\srunning\spermutations.test\sdirectly.\s(CVS\s5267)
+D 2008-06-21T19:20:13
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -194,7 +194,7 @@ F src/vtab.c ce9d19ca9053812a557010fd4be7e842f8ebba2d
 F src/where.c 5c4a999f6aed992131479bfaec9b874326d9963c
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
-F test/all.test 4e152341762cfc9b87dac0305e50ea2c8c68b81c
+F test/all.test ed6849e7a425620d5d4388409f3b15901b5bc2e7
 F test/alter.test 6353aae6839e486c9b7d8f73b1f4a1e98e57332c
 F test/alter2.test dd55146e812622c8fc51fd2216bcd8dca8880752
 F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
@@ -544,7 +544,7 @@ F test/vacuum.test 0bc75ee74ab9c69322d6563aa2287375697e630b
 F test/vacuum2.test d3b9691541fe6ed5c711f547a1c7d70e9760ac6f
 F test/vacuum3.test 6149b24613f487915ca9cedfbb9147d5759714ec
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
-F test/veryquick.test a5d65426d4a598d9f4c57aaca6e539a692fad580
+F test/veryquick.test fe7c32b95b7fe8cd9ad41760848cbc844e0d4d8f
 F test/view.test 4864e3841ab3213a95297718b94d5d6a8d3bc78b
 F test/vtab1.test 47092e3ac59141f08e09a6c0cc0df8997242bc79
 F test/vtab2.test 1da49b015582965a8fc386aa23d051a5a622b08e
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0e9df3507bd30d320b7ccfeaf3e06e10938022e1
-R 8b335ae5dd95cb9b97ef6dfe982882a5
+P 710621f373398748f31942f2ac9d1c857492538a
+R f1c966d0c51c52433dd2173ecc33f402
 U danielk1977
-Z d9ac3eef93bb6ad281309e04441f6129
+Z ed24ee00a09219474c07809f74f34803
