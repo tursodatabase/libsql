@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.1 2008/06/21 18:07:37 danielk1977 Exp $
+# $Id: permutations.test,v 1.2 2008/06/21 19:10:27 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -241,7 +241,7 @@ run_tests "onefile" -description {
 #
 run_tests "utf16" -description {
   Run tests using UTF-16 databases
-} -initialize {
+} -presql {
   pragma encoding = 'UTF-16'
 } -include {
     alter.test alter3.test

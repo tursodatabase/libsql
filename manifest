@@ -1,5 +1,5 @@
-C Add\stest\sfile\spermutations.test,\swhich\sruns\svarious\sother\stest\sfiles\swith\ssqlite\sconfigured\sin\svarious\sways.\sThis\sadds\sa\sfew\snew\stests\sand\sreplaces\stest\sfiles\sautovacuum_crash.test,\sautovacuum_ioerr.test,\sexclusive3.test,\sjrnlmode2.test,\sjrnlmode3.test,\sjrnlmode4.test,\smutex2\sand\sonefile.test.\s(CVS\s5265)
-D 2008-06-21T18:07:37
+C Fix\sa\sbug\sin\spermutations.test\scausing\sthe\sutf-16\stests\sto\sfail.\s(CVS\s5266)
+D 2008-06-21T19:10:27
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -423,7 +423,7 @@ F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 6df72c441db0a037b7ec6990d16311c24fbea77b
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
-F test/permutations.test fb03fe6dc2a713ff1171373da9f72d962ed3bc92
+F test/permutations.test aaf905172ee1c2bbd595bf8b94320a1c7581b383
 F test/pragma.test 6b9bee4f5dbb9bccde4d0d5caf13a33f9da86e15
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9ae03f5629fb47006ae2d8108dfab3956833d943
-R b8fb89ef8b6c36b0d81c4791e3cfb607
+P 0e9df3507bd30d320b7ccfeaf3e06e10938022e1
+R 8b335ae5dd95cb9b97ef6dfe982882a5
 U danielk1977
-Z 8b09be7399f86723726fb0f8fb2ed88a
+Z d9ac3eef93bb6ad281309e04441f6129
