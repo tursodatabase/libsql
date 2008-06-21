@@ -12,7 +12,7 @@
 # focus of this file is testing the sqlite_exec_printf() and
 # sqlite_get_table_printf() APIs.
 #
-# $Id: tableapi.test,v 1.17 2008/06/21 08:12:15 danielk1977 Exp $
+# $Id: tableapi.test,v 1.18 2008/06/21 12:15:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -20,13 +20,6 @@ source $testdir/tester.tcl
 ifcapable memdebug {
   source $testdir/malloc_common.tcl
 }
-
-db close
-sqlite3_shutdown
-sqlite3_config_pagecache 4096 24
-sqlite3_config_scratch 25000 1
-sqlite3_initialize
-sqlite3 db test.db
 
 do_test tableapi-1.0 {
   set ::dbx [sqlite3_open test.db]

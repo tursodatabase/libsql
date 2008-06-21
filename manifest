@@ -1,5 +1,5 @@
-C More\sdocumentation\sspellcheck\sand\scleanup.\sNo\schanges\sto\scode.\s(CVS\s5260)
-D 2008-06-21T11:20:48
+C Remove\smutex2.test.\sIt\swill\sbe\sreplaced\slater\stoday\sby\spermutations.test.\s(CVS\s5261)
+D 2008-06-21T12:15:04
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -420,7 +420,6 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 26e0d948a413bca61ed031159907a03d64647409
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/mutex1.test f643fe0753daaed30fa233a83e690f0cff9b596e
-F test/mutex2.test 6c8f4a5425a27088bc2ad107c71b7abbc2d8534d
 F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
@@ -436,7 +435,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 83150cb7b513e33cce90fdc68f4b1817551857c0
-F test/quick.test 58a082b4cd30ed7d5a06129a6b1ec2550610806b
+F test/quick.test 48fb66d9c7216c3ff72c7619b264be6c427d7bac
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -477,7 +476,7 @@ F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
-F test/tableapi.test bb7a41e8a9b577a56e40325cb39dab652bee565c
+F test/tableapi.test 892208d49e7be4817a4d3e4f641dbcbbee8cd03c
 F test/tclsqlite.test 3dfb48f46de4353376fad835390b493ba066b4dc
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
@@ -600,7 +599,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3d413e9b466a871650597407016131df4d07b3d2
-R 3068395447a488d855036458cdac3d08
-U mihailim
-Z cc370ba2bcd1d75c705436aa5f9d6ee7
+P 8c457fb08b93aa1aa9f62d0ec31755d74416e16b
+R ba7419dbfecd1a68feccea2f76855031
+U danielk1977
+Z 32157deb1b7267717504f46d7018eab5
