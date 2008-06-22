@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.752 2008/06/20 18:13:25 drh Exp $
+** $Id: vdbe.c,v 1.753 2008/06/22 12:37:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -458,7 +458,7 @@ static void registerTrace(FILE *out, int iReg, Mem *p){
 #endif
 
 #ifdef SQLITE_DEBUG
-#  define REGISTER_TRACE(R,M) if(p->trace&&R>0)registerTrace(p->trace,R,M)
+#  define REGISTER_TRACE(R,M) if(p->trace)registerTrace(p->trace,R,M)
 #else
 #  define REGISTER_TRACE(R,M)
 #endif
@@ -976,27 +976,36 @@ case OP_Variable: {           /* out2-prerelease */
   break;
 }
 
-/* Opcode: Move P1 P2 * * *
+/* Opcode: Move P1 P2 P3 * *
 **
-** Move the value in register P1 over into register P2.  Register P1
-** is left holding a NULL.  It is an error for P1 and P2 to be the
-** same register.
+** Move the values in register P1..P1+P3-1 over into
+** registers P2..P2+P3-1.  Registers P1..P1+P1-1 are
+** left holding a NULL.  It is an error for register ranges
+** P1..P1+P3-1 and P2..P2+P3-1 to overlap.
 */
 case OP_Move: {
   char *zMalloc;
-  assert( pOp->p1>0 );
-  assert( pOp->p1<=p->nMem );
-  pIn1 = &p->aMem[pOp->p1];
-  REGISTER_TRACE(pOp->p1, pIn1);
-  assert( pOp->p2>0 );
-  assert( pOp->p2<=p->nMem );
-  pOut = &p->aMem[pOp->p2];
-  assert( pOut!=pIn1 );
-  zMalloc = pOut->zMalloc;
-  pOut->zMalloc = 0;
-  sqlite3VdbeMemMove(pOut, pIn1);
-  pIn1->zMalloc = zMalloc;
-  REGISTER_TRACE(pOp->p2, pOut);
+  int n = pOp->p3;
+  int p1 = pOp->p1;
+  int p2 = pOp->p2;
+  assert( n>0 );
+  assert( p1>0 );
+  assert( p1+n<p->nMem );
+  pIn1 = &p->aMem[p1];
+  assert( p2>0 );
+  assert( p2+n<p->nMem );
+  pOut = &p->aMem[p2];
+  assert( p1+n<=p2 || p2+n<=p1 );
+  while( n-- ){
+    REGISTER_TRACE(p1++, pIn1);
+    zMalloc = pOut->zMalloc;
+    pOut->zMalloc = 0;
+    sqlite3VdbeMemMove(pOut, pIn1);
+    pIn1->zMalloc = zMalloc;
+    REGISTER_TRACE(p2++, pOut);
+    pIn1++;
+    pOut++;
+  }
   break;
 }
 

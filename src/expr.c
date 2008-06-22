@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.373 2008/06/05 16:47:39 danielk1977 Exp $
+** $Id: expr.c,v 1.374 2008/06/22 12:37:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2112,16 +2112,17 @@ void sqlite3ExprCacheAffinityChange(Parse *pParse, int iStart, int iCount){
 }
 
 /*
-** Generate code to moves content from one register to another.
-** Keep the column cache up-to-date.
+** Generate code to move content from registers iFrom...iFrom+nReg-1
+** over to iTo..iTo+nReg-1. Keep the column cache up-to-date.
 */
-void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo){
+void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
   int i;
   if( iFrom==iTo ) return;
-  sqlite3VdbeAddOp2(pParse->pVdbe, OP_Move, iFrom, iTo);
+  sqlite3VdbeAddOp3(pParse->pVdbe, OP_Move, iFrom, iTo, nReg);
   for(i=0; i<pParse->nColCache; i++){
-    if( pParse->aColCache[i].iReg==iFrom ){
-      pParse->aColCache[i].iReg = iTo;
+    int x = pParse->aColCache[i].iReg;
+    if( x>=iFrom && x<iFrom+nReg ){
+      pParse->aColCache[i].iReg += iTo-iFrom;
     }
   }
 }

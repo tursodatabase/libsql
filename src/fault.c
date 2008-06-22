@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: fault.c,v 1.9 2008/06/20 14:59:51 danielk1977 Exp $
+** $Id: fault.c,v 1.10 2008/06/22 12:37:58 drh Exp $
 */
 
 /*
@@ -69,4 +69,3 @@ void sqlite3EndBenignMalloc(void){
 }
 
 #endif   /* #ifndef SQLITE_OMIT_BUILTIN_TEST */
-

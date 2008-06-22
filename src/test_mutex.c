@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.3 2008/06/19 08:51:25 danielk1977 Exp $
+** $Id: test_mutex.c,v 1.4 2008/06/22 12:37:58 drh Exp $
 */
 
 #include "tcl.h"
@@ -303,4 +303,3 @@ int Sqlitetest_mutex_Init(Tcl_Interp *interp){
   memset(&g, 0, sizeof(g));
   return SQLITE_OK;
 }
-

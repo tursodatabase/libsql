@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.721 2008/06/20 15:24:02 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.722 2008/06/22 12:37:58 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1911,7 +1911,7 @@ void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**, u8);
 void sqlite3WhereEnd(WhereInfo*);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, int);
-void sqlite3ExprCodeMove(Parse*, int, int);
+void sqlite3ExprCodeMove(Parse*, int, int, int);
 void sqlite3ExprClearColumnCache(Parse*, int);
 void sqlite3ExprCacheAffinityChange(Parse*, int, int);
 int sqlite3ExprWritableRegister(Parse*,int,int);

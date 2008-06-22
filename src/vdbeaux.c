@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.390 2008/06/20 18:13:25 drh Exp $
+** $Id: vdbeaux.c,v 1.391 2008/06/22 12:37:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -548,19 +548,13 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     pKeyInfo = sqlite3Malloc( nByte );
     pOp->p4.pKeyInfo = pKeyInfo;
     if( pKeyInfo ){
+      u8 *aSortOrder;
       memcpy(pKeyInfo, zP4, nByte);
-      /* In the current implementation, P4_KEYINFO is only ever used on
-      ** KeyInfo structures that have no aSortOrder component.  Elements
-      ** with an aSortOrder always use P4_KEYINFO_HANDOFF.  So we do not
-      ** need to bother with duplicating the aSortOrder. */
-      assert( pKeyInfo->aSortOrder==0 );
-#if 0
       aSortOrder = pKeyInfo->aSortOrder;
       if( aSortOrder ){
         pKeyInfo->aSortOrder = (unsigned char*)&pKeyInfo->aColl[nField];
         memcpy(pKeyInfo->aSortOrder, aSortOrder, nField);
       }
-#endif
       pOp->p4type = P4_KEYINFO;
     }else{
       p->db->mallocFailed = 1;
