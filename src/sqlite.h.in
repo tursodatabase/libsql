@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.351 2008/06/22 10:21:27 mihailim Exp $
+** @(#) $Id: sqlite.h.in,v 1.352 2008/06/22 16:35:49 mihailim Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4992,8 +4992,6 @@ int sqlite3_table_column_metadata(
 **
 ** This interface loads an SQLite extension library from the named file.
 **
-** INVARIANTS:
-**
 ** {F12601} The sqlite3_load_extension() interface attempts to load an
 **          SQLite extension library contained in the file zFile.
 **
@@ -5006,10 +5004,11 @@ int sqlite3_table_column_metadata(
 **          [SQLITE_OK] on success and [SQLITE_ERROR] if something goes wrong.
 **
 ** {F12605} If an error occurs and pzErrMsg is not 0, then the
-**          sqlite3_load_extension() interface shall attempt to fill
-**          *pzErrMsg with error message text stored in memory obtained
-**          from [sqlite3_malloc()]. {END} The calling function should free
-**          this memory by calling [sqlite3_free()].
+**          [sqlite3_load_extension()] interface shall attempt to
+**          fill *pzErrMsg with error message text stored in memory
+**          obtained from [sqlite3_malloc()]. {END}  The calling function
+**          should free this memory by calling [sqlite3_free()].
+**
 ** {F12606} Extension loading must be enabled using
 **          [sqlite3_enable_load_extension()] prior to calling this API,
 **          otherwise an error will be returned.
@@ -5030,8 +5029,6 @@ int sqlite3_load_extension(
 ** is provided to turn the [sqlite3_load_extension()] mechanism on and off.
 **
 ** Extension loading is off by default. See ticket #1863.
-**
-** INVARIANTS:
 **
 ** {F12621} Call the sqlite3_enable_load_extension() routine with onoff==1
 **          to turn extension loading on and call it with onoff==0 to turn
@@ -5055,8 +5052,6 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff);
 **
 ** This interface is experimental and is subject to change or
 ** removal in future releases of SQLite.
-**
-** INVARIANTS:
 **
 ** {F12641} This function registers an extension entry point that is
 **          automatically invoked whenever a new [database connection]
@@ -5082,8 +5077,6 @@ int sqlite3_auto_extension(void *xEntryPoint);
 **
 ** This interface is experimental and is subject to change or
 ** removal in future releases of SQLite.
-**
-** INVARIANTS:
 **
 ** {F12661} This function disables all previously registered
 **          automatic extensions.
