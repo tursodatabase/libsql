@@ -1,5 +1,5 @@
-C More\sdocumentation\sspellcheck\sand\scleanup.\sNo\schanges\sto\scode.\s(CVS\s5268)
-D 2008-06-21T20:11:17
+C More\sdocumentation\sspellcheck\sand\scleanup.\sNo\schanges\sto\scode.\s(CVS\s5269)
+D 2008-06-22T08:58:50
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 8393c47a170923f40602622bfa59b8e7cbff9027
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in 5c515eefe7c60008f82fcd1cfbb413d7c426e6c3
+F src/sqlite.h.in da6e86216b44efa13d7a09a4362aaee96365a50a
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
 F src/sqliteInt.h 005b2f0aa10acd20435b46d4a9f84e20855c6f35
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ae9e4c0e4d5639ff11f3fa23775a1118b39688c8
-R 72036edb963be2cffed1f3e6dcee354c
+P 65edead166aafa8ca18b3aaa9eda89816239066a
+R bf2282191673191d00a8f967bf958436
 U mihailim
-Z 1999a3f5d826a97b248c2d83840ad685
+Z 1c0c2ee91f6d65dbc5e5f1c5ab454e0e

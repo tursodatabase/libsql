@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.348 2008/06/21 20:11:17 mihailim Exp $
+** @(#) $Id: sqlite.h.in,v 1.349 2008/06/22 08:58:50 mihailim Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4448,22 +4448,21 @@ int sqlite3_create_collation16(
 **
 ** To avoid having to register all collation sequences before a database
 ** can be used, a single callback function may be registered with the
-** database handle to be called whenever an undefined collation sequence is
-** required.
+** [database connection] to be called whenever an undefined collation
+** sequence is required.
 **
 ** If the function is registered using the sqlite3_collation_needed() API,
 ** then it is passed the names of undefined collation sequences as strings
-** encoded in UTF-8. {F16703} If sqlite3_collation_needed16() is used, the names
-** are passed as UTF-16 in machine native byte order. A call to either
-** function replaces any existing callback.
+** encoded in UTF-8. {F16703} If sqlite3_collation_needed16() is used,
+** the names are passed as UTF-16 in machine native byte order.
+** A call to either function replaces any existing callback.
 **
 ** When the callback is invoked, the first argument passed is a copy
 ** of the second argument to sqlite3_collation_needed() or
 ** sqlite3_collation_needed16().  The second argument is the database
-** handle.  The third argument is one of [SQLITE_UTF8],
-** [SQLITE_UTF16BE], or [SQLITE_UTF16LE], indicating the most
-** desirable form of the collation sequence function required.
-** The fourth parameter is the name of the
+** connection.  The third argument is one of [SQLITE_UTF8], [SQLITE_UTF16BE],
+** or [SQLITE_UTF16LE], indicating the most desirable form of the collation
+** sequence function required.  The fourth parameter is the name of the
 ** required collation sequence.
 **
 ** The callback function should register the desired collation using
@@ -4488,8 +4487,6 @@ int sqlite3_create_collation16(
 **          was registered using [sqlite3_collation_needed()] and
 **          is in UTF-16 native byte order if the callback was
 **          registered using [sqlite3_collation_needed16()].
-**
-** 
 */
 int sqlite3_collation_needed(
   sqlite3*, 
@@ -4530,13 +4527,12 @@ int sqlite3_rekey(
 /*
 ** CAPI3REF:  Suspend Execution For A Short Time {F10530}
 **
-** The sqlite3_sleep() function
-** causes the current thread to suspend execution
+** The sqlite3_sleep() function causes the current thread to suspend execution
 ** for at least a number of milliseconds specified in its parameter.
 **
-** If the operating system does not support sleep requests with 
-** millisecond time resolution, then the time will be rounded up to 
-** the nearest second. The number of milliseconds of sleep actually 
+** If the operating system does not support sleep requests with
+** millisecond time resolution, then the time will be rounded up to
+** the nearest second. The number of milliseconds of sleep actually
 ** requested from the operating system is returned.
 **
 ** SQLite implements this interface by calling the xSleep()
@@ -4561,10 +4557,10 @@ int sqlite3_sleep(int);
 ** If this global variable is made to point to a string which is
 ** the name of a folder (a.k.a. directory), then all temporary files
 ** created by SQLite will be placed in that directory.  If this variable
-** is NULL pointer, then SQLite does a search for an appropriate temporary
-** file directory.
+** is a NULL pointer, then SQLite performs a search for an appropriate
+** temporary file directory.
 **
-** It is not safe to modify this variable once a database connection
+** It is not safe to modify this variable once a [database connection]
 ** has been opened.  It is intended that this variable be set once
 ** as part of process initialization and before any SQLite interface
 ** routines have been call and remain unchanged thereafter.
@@ -4576,15 +4572,15 @@ SQLITE_EXTERN char *sqlite3_temp_directory;
 **
 ** The sqlite3_get_autocommit() interface returns non-zero or
 ** zero if the given database connection is or is not in autocommit mode,
-** respectively.   Autocommit mode is on
-** by default.  Autocommit mode is disabled by a [BEGIN] statement.
+** respectively.   Autocommit mode is on by default.
+** Autocommit mode is disabled by a [BEGIN] statement.
 ** Autocommit mode is re-enabled by a [COMMIT] or [ROLLBACK].
 **
 ** If certain kinds of errors occur on a statement within a multi-statement
-** transactions (errors including [SQLITE_FULL], [SQLITE_IOERR], 
+** transaction (errors including [SQLITE_FULL], [SQLITE_IOERR],
 ** [SQLITE_NOMEM], [SQLITE_BUSY], and [SQLITE_INTERRUPT]) then the
 ** transaction might be rolled back automatically.  The only way to
-** find out if SQLite automatically rolled back the transaction after
+** find out whether SQLite automatically rolled back the transaction after
 ** an error is to use this function.
 **
 ** INVARIANTS:
@@ -4599,7 +4595,6 @@ SQLITE_EXTERN char *sqlite3_temp_directory;
 **
 ** {F12934} Autocommit mode is enabled by a successful [COMMIT] or [ROLLBACK]
 **          statement.
-** 
 **
 ** LIMITATIONS:
 ***
@@ -4612,18 +4607,16 @@ int sqlite3_get_autocommit(sqlite3*);
 /*
 ** CAPI3REF:  Find The Database Handle Of A Prepared Statement {F13120}
 **
-** The sqlite3_db_handle interface
-** returns the [sqlite3*] database handle to which a
-** [prepared statement] belongs.
-** The database handle returned by sqlite3_db_handle
-** is the same database handle that was
-** the first argument to the [sqlite3_prepare_v2()] or its variants
-** that was used to create the statement in the first place.
+** The sqlite3_db_handle interface returns the [database connection] handle
+** to which a [prepared statement] belongs.  The database handle returned by
+** sqlite3_db_handle is the same database handle that was the first argument
+** to the [sqlite3_prepare_v2()] call (or its variants) that was used to
+** create the statement in the first place.
 **
 ** INVARIANTS:
 **
 ** {F13123} The [sqlite3_db_handle(S)] interface returns a pointer
-**          to the [database connection] associated with
+**          to the [database connection] associated with the
 **          [prepared statement] S.
 */
 sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
@@ -4631,36 +4624,33 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 /*
 ** CAPI3REF:  Find the next prepared statement {F13140}
 **
-** Return a pointer to the next [prepared statement] after pStmt
-** associated with [database connection] pDb.  If pStmt is NULL
-** then return a pointer to the first [prepared statement] associated
-** with the [database connection] pDb.  If no [prepared statement]
-** satisfies the conditions of this routine, return NULL.
+** This interface returns a pointer to the next [prepared statement] after
+** pStmt associated with the [database connection] pDb.  If pStmt is NULL
+** then this interface returns a pointer to the first prepared statement
+** associated with the database connection pDb.  If no prepared statement
+** satisfies the conditions of this routine, it returns NULL.
 **
 ** INVARIANTS:
 **
 ** {F13143} If D is a [database connection] that holds one or more
 **          unfinalized [prepared statements] and S is a NULL pointer,
 **          then [sqlite3_next_stmt(D, S)] routine shall return a pointer
-**          to one of the [prepared statements] associated with D.
+**          to one of the prepared statements associated with D.
 **
-** {F13146} If D is a [database connection] that holds no
-**          unfinalized [prepared statements] and S is a NULL pointer,
-**          then [sqlite3_next_stmt(D, S)] routine shall return a NULL
-**          pointer.
+** {F13146} If D is a [database connection] that holds no unfinalized
+**          [prepared statements] and S is a NULL pointer, then
+**          [sqlite3_next_stmt(D, S)] routine shall return a NULL pointer.
 **
-** {F13149} If S is a [prepared statement] in [database connection] D
-**          and S is not the last [prepared statement] in D, then
+** {F13149} If S is a [prepared statement] in the [database connection] D
+**          and S is not the last prepared statement in D, then
 **          [sqlite3_next_stmt(D, S)] routine shall return a pointer
-**          to the next [prepared statement] in D after S.
+**          to the next prepared statement in D after S.
 **
-** {F13152} If S is the last [prepared statement] in [database connection] D
-**          then [sqlite3_next_stmt(D, S)] routine shall return a NULL
-**          pointer.
-**
+** {F13152} If S is the last [prepared statement] in the
+**          [database connection] D then the [sqlite3_next_stmt(D, S)]
+**          routine shall return a NULL pointer.
 */
 sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
-
 
 /*
 ** CAPI3REF: Commit And Rollback Notification Callbacks {F12950}
@@ -4673,16 +4663,16 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 ** function to be invoked whenever a transaction is committed.
 ** Any callback set by a previous call to sqlite3_commit_hook()
 ** for the same database connection is overridden.
-** The pArg argument is passed through
-** to the callback.  If the callback on a commit hook function 
-** returns non-zero, then the commit is converted into a rollback.
+** The pArg argument is passed through to the callback.
+** If the callback on a commit hook function returns non-zero,
+** then the commit is converted into a rollback.
 **
 ** If another function was previously registered, its
 ** pArg value is returned.  Otherwise NULL is returned.
 **
 ** Registering a NULL function disables the callback.
 **
-** For the purposes of this API, a transaction is said to have been 
+** For the purposes of this API, a transaction is said to have been
 ** rolled back if an explicit "ROLLBACK" statement is executed, or
 ** an error or constraint causes an implicit rollback to occur.
 ** The rollback callback is not invoked if a transaction is
@@ -4697,12 +4687,11 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 **
 ** {F12951} The [sqlite3_commit_hook(D,F,P)] interface registers the
 **          callback function F to be invoked with argument P whenever
-**          a transaction commits on [database connection] D.
+**          a transaction commits on the [database connection] D.
 **
-** {F12952} The [sqlite3_commit_hook(D,F,P)] interface returns the P
-**          argument from the previous call with the same 
-**          [database connection ] D , or NULL on the first call
-**          for a particular [database connection] D.
+** {F12952} The [sqlite3_commit_hook(D,F,P)] interface returns the P argument
+**          from the previous call with the same [database connection] D,
+**          or NULL on the first call for a particular database connection D.
 **
 ** {F12953} Each call to [sqlite3_commit_hook()] overwrites the callback
 **          registered by prior calls.
@@ -4716,12 +4705,12 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 **
 ** {F12961} The [sqlite3_rollback_hook(D,F,P)] interface registers the
 **          callback function F to be invoked with argument P whenever
-**          a transaction rolls back on [database connection] D.
+**          a transaction rolls back on the [database connection] D.
 **
 ** {F12962} The [sqlite3_rollback_hook(D,F,P)] interface returns the P
-**          argument from the previous call with the same 
-**          [database connection ] D , or NULL on the first call
-**          for a particular [database connection] D.
+**          argument from the previous call with the same
+**          [database connection] D, or NULL on the first call
+**          for a particular database connection D.
 **
 ** {F12963} Each call to [sqlite3_rollback_hook()] overwrites the callback
 **          registered by prior calls.
@@ -4736,26 +4725,23 @@ void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 /*
 ** CAPI3REF: Data Change Notification Callbacks {F12970}
 **
-** The sqlite3_update_hook() interface
-** registers a callback function with the database connection identified by the 
-** first argument to be invoked whenever a row is updated, inserted or deleted.
-** Any callback set by a previous call to this function for the same 
-** database connection is overridden.
+** The sqlite3_update_hook() interface registers a callback function
+** with the [database connection] identified by the first argument
+** to be invoked whenever a row is updated, inserted or deleted.
+** Any callback set by a previous call to this function
+** for the same database connection is overridden.
 **
-** The second argument is a pointer to the function to invoke when a 
-** row is updated, inserted or deleted. 
-** The first argument to the callback is
-** a copy of the third argument to sqlite3_update_hook().
-** The second callback 
-** argument is one of [SQLITE_INSERT], [SQLITE_DELETE] or [SQLITE_UPDATE],
-** depending on the operation that caused the callback to be invoked.
-** The third and 
-** fourth arguments to the callback contain pointers to the database and 
-** table name containing the affected row.
-** The final callback parameter is 
-** the rowid of the row.
-** In the case of an update, this is the rowid after 
-** the update takes place.
+** The second argument is a pointer to the function to invoke when a
+** row is updated, inserted or deleted.
+** The first argument to the callback is a copy of the third argument
+** to sqlite3_update_hook().
+** The second callback argument is one of [SQLITE_INSERT], [SQLITE_DELETE],
+** or [SQLITE_UPDATE], depending on the operation that caused the callback
+** to be invoked.
+** The third and fourth arguments to the callback contain pointers to the
+** database and table name containing the affected row.
+** The final callback parameter is the rowid of the row. In the case of
+** an update, this is the rowid after the update takes place.
 **
 ** The update hook is not invoked when internal system tables are
 ** modified (i.e. sqlite_master and sqlite_sequence).
@@ -4765,10 +4751,10 @@ void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 **
 ** INVARIANTS:
 **
-** {F12971} The [sqlite3_update_hook(D,F,P)] interface causes callback
+** {F12971} The [sqlite3_update_hook(D,F,P)] interface causes the callback
 **          function F to be invoked with first parameter P whenever
 **          a table row is modified, inserted, or deleted on
-**          [database connection] D.
+**          the [database connection] D.
 **
 ** {F12973} The [sqlite3_update_hook(D,F,P)] interface returns the value
 **          of P for the previous call on the same [database connection] D,
@@ -4783,7 +4769,7 @@ void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 ** {F12979} The update hook callback is not invoked when internal system
 **          tables such as sqlite_master and sqlite_sequence are modified.
 **
-** {F12981} The second parameter to the update callback 
+** {F12981} The second parameter to the update callback
 **          is one of [SQLITE_INSERT], [SQLITE_DELETE] or [SQLITE_UPDATE],
 **          depending on the operation that caused the callback to be invoked.
 **
@@ -4805,27 +4791,25 @@ void *sqlite3_update_hook(
 ** KEYWORDS: {shared cache} {shared cache mode}
 **
 ** This routine enables or disables the sharing of the database cache
-** and schema data structures between connections to the same database.
-** Sharing is enabled if the argument is true and disabled if the argument
-** is false.
+** and schema data structures between [database connection | connections]
+** to the same database. Sharing is enabled if the argument is true
+** and disabled if the argument is false.
 **
-** Cache sharing is enabled and disabled
-** for an entire process. {END} This is a change as of SQLite version 3.5.0.
-** In prior versions of SQLite, sharing was
-** enabled or disabled for each thread separately.
+** Cache sharing is enabled and disabled for an entire process. {END}
+** This is a change as of SQLite version 3.5.0. In prior versions of SQLite,
+** sharing was enabled or disabled for each thread separately.
 **
 ** The cache sharing mode set by this interface effects all subsequent
 ** calls to [sqlite3_open()], [sqlite3_open_v2()], and [sqlite3_open16()].
 ** Existing database connections continue use the sharing mode
 ** that was in effect at the time they were opened.
 **
-** Virtual tables cannot be used with a shared cache.   When shared
+** Virtual tables cannot be used with a shared cache.  When shared
 ** cache is enabled, the [sqlite3_create_module()] API used to register
 ** virtual tables will always return an error.
 **
-** This routine returns [SQLITE_OK] if shared cache was
-** enabled or disabled successfully.  An [error code]
-** is returned otherwise.
+** This routine returns [SQLITE_OK] if shared cache was enabled or disabled
+** successfully.  An [error code] is returned otherwise.
 **
 ** Shared cache is disabled by default. But this might change in
 ** future releases of SQLite.  Applications that care about shared
@@ -4873,16 +4857,14 @@ int sqlite3_release_memory(int);
 /*
 ** CAPI3REF:  Impose A Limit On Heap Size {F17350}
 **
-** The sqlite3_soft_heap_limit() interface
-** places a "soft" limit on the amount of heap memory that may be allocated
-** by SQLite. If an internal allocation is requested 
-** that would exceed the soft heap limit, [sqlite3_release_memory()] is
-** invoked one or more times to free up some space before the allocation
-** is made.
+** The sqlite3_soft_heap_limit() interface places a "soft" limit
+** on the amount of heap memory that may be allocated by SQLite.
+** If an internal allocation is requested that would exceed the
+** soft heap limit, [sqlite3_release_memory()] is invoked one or
+** more times to free up some space before the allocation is performed.
 **
-** The limit is called "soft", because if
-** [sqlite3_release_memory()] cannot
-** free sufficient memory to prevent the limit from being exceeded,
+** The limit is called "soft", because if [sqlite3_release_memory()]
+** cannot free sufficient memory to prevent the limit from being exceeded,
 ** the memory is allocated anyway and the current operation proceeds.
 **
 ** A negative or zero value for N means that there is no soft heap limit and
@@ -4891,7 +4873,7 @@ int sqlite3_release_memory(int);
 **
 ** SQLite makes a best effort to honor the soft heap limit.  
 ** But if the soft heap limit cannot be honored, execution will
-** continue without error or notification.  This is why the limit is 
+** continue without error or notification.  This is why the limit is
 ** called a "soft" limit.  It is advisory only.
 **
 ** Prior to SQLite version 3.5.0, this routine only constrained the memory
@@ -4933,52 +4915,49 @@ int sqlite3_release_memory(int);
 void sqlite3_soft_heap_limit(int);
 
 /*
-** CAPI3REF:  Extract Metadata About A Column Of A Table {F12850}
+** CAPI3REF: Extract Metadata About A Column Of A Table {F12850}
 **
-** This routine
-** returns meta-data about a specific column of a specific database
-** table accessible using the connection handle passed as the first function 
-** argument.
+** This routine returns metadata about a specific column of a specific
+** database table accessible using the [database connection] handle
+** passed as the first function argument.
 **
-** The column is identified by the second, third and fourth parameters to 
+** The column is identified by the second, third and fourth parameters to
 ** this function. The second parameter is either the name of the database
 ** (i.e. "main", "temp" or an attached database) containing the specified
 ** table or NULL. If it is NULL, then all attached databases are searched
-** for the table using the same algorithm as the database engine uses to 
+** for the table using the same algorithm used by the database engine to
 ** resolve unqualified table references.
 **
-** The third and fourth parameters to this function are the table and column 
-** name of the desired column, respectively. Neither of these parameters 
+** The third and fourth parameters to this function are the table and column
+** name of the desired column, respectively. Neither of these parameters
 ** may be NULL.
 **
-** Meta information is returned by writing to the memory locations passed as
-** the 5th and subsequent parameters to this function. Any of these 
-** arguments may be NULL, in which case the corresponding element of meta 
-** information is omitted.
+** Metadata is returned by writing to the memory locations passed as the 5th
+** and subsequent parameters to this function. Any of these arguments may be
+** NULL, in which case the corresponding element of metadata is omitted.
+** <blockquote>
+** <table border="1">
+** <tr><th> Parameter <th> Output<br>Type <th>  Description
 **
-** <pre>
-** Parameter     Output Type      Description
-** -----------------------------------
+** <tr><td> 5th <td> const char* <td> Data type
+** <tr><td> 6th <td> const char* <td> Name of default collation sequence
+** <tr><td> 7th <td> int         <td> True if column has a NOT NULL constraint
+** <tr><td> 8th <td> int         <td> True if column is part of the PRIMARY KEY
+** <tr><td> 9th <td> int         <td> True if column is AUTOINCREMENT
+** </table>
+** </blockquote>
 **
-**   5th         const char*      Data type
-**   6th         const char*      Name of the default collation sequence 
-**   7th         int              True if the column has a NOT NULL constraint
-**   8th         int              True if the column is part of the PRIMARY KEY
-**   9th         int              True if the column is AUTOINCREMENT
-** </pre>
+** The memory pointed to by the character pointers returned for the
+** declaration type and collation sequence is valid only until the next
+** call to any SQLite API function.
 **
+** If the specified table is actually a view, an [error code] is returned.
 **
-** The memory pointed to by the character pointers returned for the 
-** declaration type and collation sequence is valid only until the next 
-** call to any sqlite API function.
-**
-** If the specified table is actually a view, then an error is returned.
-**
-** If the specified column is "rowid", "oid" or "_rowid_" and an 
-** INTEGER PRIMARY KEY column has been explicitly declared, then the output 
+** If the specified column is "rowid", "oid" or "_rowid_" and an
+** INTEGER PRIMARY KEY column has been explicitly declared, then the output
 ** parameters are set for the explicitly declared column. If there is no
-** explicitly declared IPK column, then the output parameters are set as 
-** follows:
+** explicitly declared INTEGER PRIMARY KEY column, then the output
+** parameters are set as follows:
 **
 ** <pre>
 **     data type: "INTEGER"
@@ -4990,11 +4969,11 @@ void sqlite3_soft_heap_limit(int);
 **
 ** This function may load one or more schemas from database files. If an
 ** error occurs during this process, or if the requested table or column
-** cannot be found, an SQLITE error code is returned and an error message
-** left in the database handle (to be retrieved using sqlite3_errmsg()).
+** cannot be found, an [error code] is returned and an error message left
+** in the [database connection] (to be retrieved using sqlite3_errmsg()).
 **
 ** This API is only available if the library was compiled with the
-** SQLITE_ENABLE_COLUMN_METADATA preprocessor symbol defined.
+** SQLITE_ENABLE_COLUMN_METADATA C preprocessor symbol defined.
 */
 int sqlite3_table_column_metadata(
   sqlite3 *db,                /* Connection handle */
@@ -5011,25 +4990,29 @@ int sqlite3_table_column_metadata(
 /*
 ** CAPI3REF: Load An Extension {F12600}
 **
-** {F12601} The sqlite3_load_extension() interface
-** attempts to load an SQLite extension library contained in the file
-** zFile. {F12602} The entry point is zProc. {F12603} zProc may be 0
-** in which case the name of the entry point defaults
-** to "sqlite3_extension_init".
+** This interface loads an SQLite extension library from the named file.
 **
-** {F12604} The sqlite3_load_extension() interface shall
-** return [SQLITE_OK] on success and [SQLITE_ERROR] if something goes wrong.
+** INVARIANTS:
 **
-** {F12605}
-** If an error occurs and pzErrMsg is not 0, then the
-** sqlite3_load_extension() interface shall attempt to fill *pzErrMsg with 
-** error message text stored in memory obtained from [sqlite3_malloc()].
-** {END}  The calling function should free this memory
-** by calling [sqlite3_free()].
+** {F12601} The sqlite3_load_extension() interface attempts to load an
+**          SQLite extension library contained in the file zFile.
 **
-** {F12606}
-** Extension loading must be enabled using [sqlite3_enable_load_extension()]
-** prior to calling this API or an error will be returned.
+** {F12602} The entry point is zProc.
+**
+** {F12603} zProc may be 0, in which case the name of the entry point
+**          defaults to "sqlite3_extension_init".
+**
+** {F12604} The sqlite3_load_extension() interface shall return
+**          [SQLITE_OK] on success and [SQLITE_ERROR] if something goes wrong.
+**
+** {F12605} If an error occurs and pzErrMsg is not 0, then the
+**          sqlite3_load_extension() interface shall attempt to fill
+**          *pzErrMsg with error message text stored in memory obtained
+**          from [sqlite3_malloc()]. {END} The calling function should free
+**          this memory by calling [sqlite3_free()].
+** {F12606} Extension loading must be enabled using
+**          [sqlite3_enable_load_extension()] prior to calling this API,
+**          otherwise an error will be returned.
 */
 int sqlite3_load_extension(
   sqlite3 *db,          /* Load the extension into this database connection */
@@ -5039,64 +5022,74 @@ int sqlite3_load_extension(
 );
 
 /*
-** CAPI3REF:  Enable Or Disable Extension Loading {F12620}
+** CAPI3REF: Enable Or Disable Extension Loading {F12620}
 **
 ** So as not to open security holes in older applications that are
 ** unprepared to deal with extension loading, and as a means of disabling
-** extension loading while evaluating user-entered SQL, the following
-** API is provided to turn the [sqlite3_load_extension()] mechanism on and
-** off.  {F12622} It is off by default. {END} See ticket #1863.
+** extension loading while evaluating user-entered SQL, the following API
+** is provided to turn the [sqlite3_load_extension()] mechanism on and off.
 **
-** {F12621} Call the sqlite3_enable_load_extension() routine
-** with onoff==1 to turn extension loading on
-** and call it with onoff==0 to turn it back off again. {END}
+** Extension loading is off by default. See ticket #1863.
+**
+** INVARIANTS:
+**
+** {F12621} Call the sqlite3_enable_load_extension() routine with onoff==1
+**          to turn extension loading on and call it with onoff==0 to turn
+**          it back off again.
+**
+** {F12622} Extension loading is off by default.
 */
 int sqlite3_enable_load_extension(sqlite3 *db, int onoff);
 
 /*
 ** CAPI3REF: Make Arrangements To Automatically Load An Extension {F12640}
 **
-** {F12641} This function
-** registers an extension entry point that is automatically invoked
-** whenever a new database connection is opened using
-** [sqlite3_open()], [sqlite3_open16()], or [sqlite3_open_v2()]. {END}
-**
 ** This API can be invoked at program startup in order to register
 ** one or more statically linked extensions that will be available
-** to all new database connections.
-**
-** {F12642} Duplicate extensions are detected so calling this routine multiple
-** times with the same extension is harmless.
-**
-** {F12643} This routine stores a pointer to the extension in an array
-** that is obtained from sqlite_malloc(). {END} If you run a memory leak
-** checker on your program and it reports a leak because of this
-** array, then invoke [sqlite3_reset_auto_extension()] prior
-** to shutdown to free the memory.
-**
-** {F12644} Automatic extensions apply across all threads. {END}
+** to all new [database connections].
 **
 ** This interface is experimental and is subject to change or
 ** removal in future releases of SQLite.
+**
+** This routine stores a pointer to the extension in an array that is
+** obtained from [sqlite3_malloc()].  If you run a memory leak checker
+** on your program and it reports a leak because of this array, invoke
+** [sqlite3_reset_auto_extension()] prior to shutdown to free the memory.
+**
+** INVARIANTS:
+**
+** {F12641} This function registers an extension entry point that is
+**          automatically invoked whenever a new [database connection]
+**          is opened using [sqlite3_open()], [sqlite3_open16()],
+**          or [sqlite3_open_v2()].
+**
+** {F12642} Duplicate extensions are detected so calling this routine
+**          multiple times with the same extension is harmless.
+**
+** {F12643} This routine stores a pointer to the extension in an array
+**          that is obtained from [sqlite3_malloc()].
+**
+** {F12644} Automatic extensions apply across all threads.
 */
 int sqlite3_auto_extension(void *xEntryPoint);
-
 
 /*
 ** CAPI3REF: Reset Automatic Extension Loading {F12660}
 **
-** {F12661} This function disables all previously registered
-** automatic extensions. {END}  This
-** routine undoes the effect of all prior [sqlite3_auto_extension()]
-** calls.
-**
-** {F12662} This call disabled automatic extensions in all threads. {END}
+** This function disables all previously registered automatic extensions.
+** It undoes the effect of all prior [sqlite3_auto_extension()] calls.
 **
 ** This interface is experimental and is subject to change or
 ** removal in future releases of SQLite.
+**
+** INVARIANTS:
+**
+** {F12661} This function disables all previously registered
+**          automatic extensions.
+**
+** {F12662} This function disabled automatic extensions in all threads.
 */
 void sqlite3_reset_auto_extension(void);
-
 
 /*
 ****** EXPERIMENTAL - subject to change without notice **************
