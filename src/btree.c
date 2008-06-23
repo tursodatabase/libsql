@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.468 2008/06/19 01:03:18 drh Exp $
+** $Id: btree.c,v 1.469 2008/06/23 09:50:51 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7107,6 +7107,10 @@ int sqlite3BtreeIsInReadTrans(Btree *p){
 ** call the nBytes parameter is ignored and a pointer to the same blob
 ** of memory returned. 
 **
+** If the nBytes parameter is 0 and the blob of memory has not yet been
+** allocated, a null pointer is returned. If the blob has already been
+** allocated, it is returned as normal.
+**
 ** Just before the shared-btree is closed, the function passed as the 
 ** xFree argument when the memory allocation was made is invoked on the 
 ** blob of allocated memory. This function should not call sqlite3_free()
@@ -7115,7 +7119,7 @@ int sqlite3BtreeIsInReadTrans(Btree *p){
 void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){
   BtShared *pBt = p->pBt;
   sqlite3BtreeEnter(p);
-  if( !pBt->pSchema ){
+  if( !pBt->pSchema && nBytes ){
     pBt->pSchema = sqlite3MallocZero(nBytes);
     pBt->xFreeSchema = xFree;
   }

@@ -1,5 +1,5 @@
-C Removed\sINVARIANTS\ssections\sin\sthe\sexperimental\sextension\sloading\sAPI\sthat\sI\sshould\snot\shave\sadded\sin\sthe\sfirst\splace.\sNo\schanges\sto\scode.\s(CVS\s5273)
-D 2008-06-22T16:35:49
+C Fix\sa\sbug\swhereby\sopening\sa\sconnection\sto\san\sexisting\sshared-cache\scaused\sthe\scache-size\s(the\svalue\sconfigured\sby\s"PRAGMA\scache_size")\sto\srevert\sto\sits\sdefault\svalue.\s(CVS\s5274)
+D 2008-06-23T09:50:51
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 54a5e5f84657e57313be156cdf47dfc8d1182b39
+F src/btree.c 6d25027de7c26b1c0a69ad3f2045f944e20fba22
 F src/btree.h b1bd7e0b8c2e33658aaf447cb0d1d94f74664b6b
 F src/btreeInt.h 02325f04758dba0fcd0c08ac55cd9b189dad61a5
 F src/build.c 88cc5501a87f72d0538b040001d88d31f994edea
@@ -115,7 +115,7 @@ F src/insert.c 93231fd0199f044bcefda3d857420f4d377e4056
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 40024a0f476c1279494876b9a002001b29e5d3e3
-F src/main.c 37e65eaad07de56353cf149b45896b2c56cca9b2
+F src/main.c e9a760651620c9dd6e86224ef4cada9fb71ad898
 F src/malloc.c d4339af305c2cb62fbecc2c533b3169dec315d44
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 159f10e280f2d9aea597cf938851e61652dd5c3d
@@ -145,7 +145,7 @@ F src/select.c ea3e5e233cf16f4cb43f6ec35972683ae7bc03f3
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
 F src/sqlite.h.in 4a42be927bc632f7c06042e5022c64834cc82943
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
-F src/sqliteInt.h 973e5cc6db87f12eba25ae847494af57844be9bf
+F src/sqliteInt.h 9cd8b86d9592f9ca521e6d1f003cc6ce8f673cfc
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
@@ -449,7 +449,7 @@ F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test c6769531e0cb751d46a9838c0532d3786606c0f6
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
-F test/shared3.test 546b69002d23a704acbe8b5ed24bc5930b6b0bfe
+F test/shared3.test 987316be601e2349e6a340a6d5f8ed981e507931
 F test/shared_err.test 10157148055f1b96373bcc59ecd4e84a83e22a81
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/sidedelete.test 736ac1da08b3b1aa62df97fef2fcdb1b660111b9
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 663a590e3086145a57af7569d8f798b6b6a8b76c
-R 45e33e074c642d8dbfde0cca0369777f
-U mihailim
-Z fea5e0f4352ec79670c3c8b75e3787b1
+P e7610890b4df78af5bb8f3e8f8d05ef5cf36e186
+R c4d643cc756037ad7486bb96e515e495
+U danielk1977
+Z aadad94b6ce5d63b330c8f427e6c96a1
