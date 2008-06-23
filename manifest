@@ -1,5 +1,5 @@
-C Reverted\sprevious\scheckin\s(on\ssecond\sthought,\schanging\scase\scould\sbreak\sbadly\swritten\shomegrown\sparsers\ssuch\sas\ssometimes\sencountered\sin\sembedded\sfirmware.)\s(CVS\s5289)
-D 2008-06-23T21:26:05
+C Update\sOS/2\smutex\simplementation:\smake\smethods\sstatic\sand\sdon't\suse\sthem\sby\sthe\sold\snames\sany\smore.\sHeld/Notheld\sshould\sbe\sdebug\sonly.\s(CVS\s5290)
+D 2008-06-23T22:13:28
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -124,7 +124,7 @@ F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
 F src/mem5.c ad31a0a481b86b86f4ac0b6d952e69727d4e113a
 F src/mutex.c a485a0eac8ee2cd95f66e565b4c6696c18db968f
 F src/mutex.h 236677b27760d85701b5872d01b5cafedde5f0a9
-F src/mutex_os2.c 7c948174d31e06df3e3dd0ef734691e95e30a5f4
+F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
 F src/mutex_unix.c c1526811f4b97a7cd9d4d72d2b9623d06abd05ce
 F src/mutex_w32.c 7aa9ad79b36931314b81ac4045f40f2c503b1e44
 F src/os.c b1c73547466b832612b3be425a8f21afd603fd9b
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e07ed82caf5e4706ef564271830112d31e8cff7c
-R f38fb3594a0085ca5a3991f47a016d0f
-U mihailim
-Z 0dc42af4c4695aef69f105f585f6e11c
+P bf2e283d6fd40cabe55864b06b502524eb8a3b07
+R bfadbc404a2d8b31ffee6a81899b30a6
+U pweilbacher
+Z 4ec4b9feb6cdd59c7ef6420f4a9a5810
