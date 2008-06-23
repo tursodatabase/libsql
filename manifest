@@ -1,5 +1,5 @@
-C Fix\ssome\scodewarrior\scompilation\sproblems.\s(CVS\s5278)
-D 2008-06-23T14:03:45
+C Avoid\spassing\s"void(*)(void)"\sas\san\sargument\sto\sva_arg().\sCodewarrior\sdoesn't\slike\sit.\s(CVS\s5279)
+D 2008-06-23T14:15:53
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/insert.c 93231fd0199f044bcefda3d857420f4d377e4056
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 40024a0f476c1279494876b9a002001b29e5d3e3
-F src/main.c 67a80507f4400333ccedfa2392496269e2f4ee0b
+F src/main.c c5a5b0d7826f9abeb16c75edfae72ec24594ce28
 F src/malloc.c f52166df8abd7ff6990dbee1a0ce3534addc8617
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 159f10e280f2d9aea597cf938851e61652dd5c3d
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0421c09967a191fb62338eb8b1bd766be42f61cc
-R 52bf66b5096b00041ec1d05176769f1b
+P e6ea8f87c102bd36ab0f2fbc8360fde49f4e3422
+R 6a41be28a329b52ada431d44cab92555
 U danielk1977
-Z 1b144410ae9704424d3e82154631562d
+Z e7c5c2712d4ab35f4842e972a84d4467

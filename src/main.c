@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.457 2008/06/23 11:23:14 mihailim Exp $
+** $Id: main.c,v 1.458 2008/06/23 14:15:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1820,10 +1820,11 @@ int sqlite3_test_control(int op, ...){
     ** are benign.
     */
     case SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS: {
-      void (*xBenignBegin)(void);
-      void (*xBenignEnd)(void);
-      xBenignBegin = va_arg(ap, void(*)(void));
-      xBenignEnd = va_arg(ap, void(*)(void));
+      typedef void (*void_function)(void);
+      void_function xBenignBegin;
+      void_function xBenignEnd;
+      xBenignBegin = va_arg(ap, void_function);
+      xBenignEnd = va_arg(ap, void_function);
       sqlite3BenignMallocHooks(xBenignBegin, xBenignEnd);
       break;
     }
