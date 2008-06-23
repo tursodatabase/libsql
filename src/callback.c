@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.23 2007/08/29 12:31:26 danielk1977 Exp $
+** $Id: callback.c,v 1.24 2008/06/23 16:53:47 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -328,6 +328,8 @@ FuncDef *sqlite3FindFunction(
 ** at a Schema struct. This function does not call sqlite3_free() on the 
 ** pointer itself, it just cleans up subsiduary resources (i.e. the contents
 ** of the schema hash tables).
+**
+** The Schema.cache_size variable is not cleared.
 */
 void sqlite3SchemaFree(void *p){
   Hash temp1;

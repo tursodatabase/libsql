@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.87 2008/06/15 02:51:48 drh Exp $
+** $Id: prepare.c,v 1.88 2008/06/23 16:53:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -274,11 +274,13 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   }
   pDb->pSchema->enc = ENC(db);
 
-  size = meta[2];
-  if( size==0 ){ size = SQLITE_DEFAULT_CACHE_SIZE; }
-  if( size<0 ) size = -size;
-  pDb->pSchema->cache_size = size;
-  sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
+  if( pDb->pSchema->cache_size==0 ){
+    size = meta[2];
+    if( size==0 ){ size = SQLITE_DEFAULT_CACHE_SIZE; }
+    if( size<0 ) size = -size;
+    pDb->pSchema->cache_size = size;
+    sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
+  }
 
   /*
   ** file_format==1    Version 3.0.0.

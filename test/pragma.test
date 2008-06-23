@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.61 2008/06/06 11:11:27 danielk1977 Exp $
+# $Id: pragma.test,v 1.62 2008/06/23 16:53:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,6 +32,8 @@ source $testdir/tester.tcl
 # pragma-10.*: Test the count_changes pragma in the presence of triggers.
 # pragma-11.*: Test the collation_list pragma.
 # pragma-14.*: Test the page_count pragma.
+# pragma-15.*: Test that the value set using the cache_size pragma is not
+#              reset when the schema is reloaded.
 #
 
 ifcapable !pragma {
@@ -1149,6 +1151,35 @@ ifcapable pager_pragmas {
       PRAGMA aux.page_count;
     } 
   } {5}
+}
+
+# Test that the value set using the cache_size pragma is not reset when the
+# schema is reloaded.
+#
+ifcapable pager_pragmas {
+  db close
+  sqlite3 db test.db
+  do_test pragma-15.1 {
+    execsql {
+      PRAGMA cache_size=59;
+      PRAGMA cache_size;
+    }
+  } {59}
+  do_test pragma-15.2 {
+    sqlite3 db2 test.db
+    execsql {
+      CREATE TABLE newtable(a, b, c);
+    } db2
+    db2 close
+  } {}
+  do_test pragma-15.3 {
+    # Evaluating this statement will cause the schema to be reloaded (because
+    # the schema was changed by another connection in pragma-15.2). At one
+    # point there was a bug that reset the cache_size to its default value
+    # when this happened. 
+    execsql { SELECT * FROM sqlite_master }
+    execsql { PRAGMA cache_size }
+  } {59}
 }
 
 # Reset the sqlite3_temp_directory variable for the next run of tests:
