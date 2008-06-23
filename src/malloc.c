@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.23 2008/06/21 08:12:15 danielk1977 Exp $
+** $Id: malloc.c,v 1.24 2008/06/23 11:11:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -32,8 +32,8 @@ static void softHeapLimitEnforcer(
 }
 
 /*
-** Set the soft heap-size limit for the current thread. Passing a
-** zero or negative value indicates no limit.
+** Set the soft heap-size limit for the library. Passing a zero or 
+** negative value indicates no limit.
 */
 void sqlite3_soft_heap_limit(int n){
   sqlite3_uint64 iLimit;
@@ -56,7 +56,9 @@ void sqlite3_soft_heap_limit(int n){
 }
 
 /*
-** Release memory held by SQLite instances created by the current thread.
+** Attempt to release up to n bytes of non-essential memory currently
+** held by SQLite. An example of non-essential memory is memory used to
+** cache database pages that are not currently in use.
 */
 int sqlite3_release_memory(int n){
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
