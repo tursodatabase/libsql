@@ -17,7 +17,7 @@
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 **
-** $Id: mem1.c,v 1.22 2008/06/23 14:40:18 danielk1977 Exp $
+** $Id: mem1.c,v 1.23 2008/06/23 15:10:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -41,8 +41,11 @@ static void *sqlite3MemMalloc(int nByte){
   assert( nByte>0 );
   nByte = (nByte+7)&~7;
   p = malloc( nByte+8 );
-  p[0] = nByte;
-  return (void*)&p[1];
+  if( p ){
+    p[0] = nByte;
+    p++;
+  }
+  return (void *)p;
 }
 
 /*
