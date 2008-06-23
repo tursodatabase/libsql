@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.391 2008/06/22 12:37:58 drh Exp $
+** $Id: vdbeaux.c,v 1.392 2008/06/23 13:57:22 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -275,8 +275,8 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     }else if( opcode==OP_VUpdate ){
       if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
-    }
 #endif
+    }
     if( opcode==OP_Halt ){
       if( pOp->p1==SQLITE_CONSTRAINT && pOp->p2==OE_Abort ){
         doesStatementRollback = 1;

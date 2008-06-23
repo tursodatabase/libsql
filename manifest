@@ -1,5 +1,5 @@
-C Fixed\swrong\stype\sin\ssqlite3_create_collation16\sdeclaration\sand\sdefinition\s(UTF-16\sstring\shad\sbeen\spassed\sas\sconst\schar*\sinstead\sof\sconst\svoid*)\s(CVS\s5276)
-D 2008-06-23T11:23:14
+C Fix\sa\scompilation\sproblem\swith\sSQLITE_OMIT_VIRTUAL_TABLE\sis\sdefined.\s(CVS\s5277)
+D 2008-06-23T13:57:22
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -186,7 +186,7 @@ F src/vdbe.c 98d8d2f7a7f4624ee9fd76d53fea3b4a3d737dfa
 F src/vdbe.h 1246ace5511258b2192487581f23985bbc61b1be
 F src/vdbeInt.h 723fb796fc13346e01fb7269dcfe28f74006c5b3
 F src/vdbeapi.c a7c6b8db324cf7eccff32de871dea36aa305c994
-F src/vdbeaux.c eff4eed70cbf14c993df0eeacc28932853093a48
+F src/vdbeaux.c 3db1f037906cd0961b1f79771abc267b94bd8475
 F src/vdbeblob.c 9345f6dcd675fdcfdb537d2d2f487542d9ea136a
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
 F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3240446853a11f5a1e379d4841d0268873aad64d
-R f970ee678fe3aed9a204c3983662af24
-U mihailim
-Z b6d7eebf60befb977f1dcc7e76ee6cd8
+P 4215e3e5ae3376bd46e5e12eec14b8209c164830
+R a7197bc3eb534ff9475cd8e3b42c9ea6
+U danielk1977
+Z faf968a5b946d66e40b204ecac9020fa
