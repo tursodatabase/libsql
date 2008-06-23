@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\shandling\squeries\son\sthe\ssqlite_master\stable\swith\san\sempty\s(0\sbytes\sin\ssize)\sdatabase\sfile.\s(CVS\s5286)
-D 2008-06-23T18:49:44
+C Added\sldconfig\sinvocations\sfor\spostinstall\sand\spostuninstall.\sUpdated\spackage\sURL\sand\sdescription\sto\smatch\sthe\scurrent\swebsite.\s(CVS\s5287)
+D 2008-06-23T20:55:21
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -84,7 +84,7 @@ F mkopcodeh.awk 513946ce4429bf2723aef0d640eb4d2493deb68e
 F mkso.sh 24bde4c09e6fe80f718db3c31c068f45e13a2f2c
 F publish.sh 5efba7d327e0acf6633136f7f096c88aaa26df73
 F publish_osx.sh 2ad2ee7d50632dff99949edc9c162dbb052f7534
-F spec.template b2f6c4e488cbc3b993a57deba22cbc36203c4da3
+F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in c322c6244c6395955dca34d87955aabde7df7623
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a1be7b9a4b8b51ac41c6ff6e8e44a14ef66b338b
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1fdab2c65b966f74bdf130c640ae56a0e811fb71
-R c7364517d4c619ea19df18d184a56ae2
-U danielk1977
-Z 59f57be1dc35db9ff15212786f4c3c03
+P f8238770bf41e17014c6de05363b759304fc80de
+R fcfbac9c8268428de2dba0adbe9d771b
+U mihailim
+Z e091e71e284c3f06dabd36f1dc5dbc09
