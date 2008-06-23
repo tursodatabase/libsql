@@ -1,5 +1,5 @@
-C Changed\sHTML\smode\soutput\sto\suse\slowercase\stags\smaking\sgood\son\sthe\sXHTML\soutput\spromise\s(the\sDTDs\sindeed\smandate\slowercase)\sand\sclosing\s#450.\s(CVS\s5288)
-D 2008-06-23T21:18:11
+C Reverted\sprevious\scheckin\s(on\ssecond\sthought,\schanging\scase\scould\sbreak\sbadly\swritten\shomegrown\sparsers\ssuch\sas\ssometimes\sencountered\sin\sembedded\sfirmware.)\s(CVS\s5289)
+D 2008-06-23T21:26:05
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/prepare.c aba51dad52308e3d9d2074d8ff4e612e7f1cab51
 F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c ea3e5e233cf16f4cb43f6ec35972683ae7bc03f3
-F src/shell.c 3f3c184e2fd57990bcb8f2c2877ae7a4b3fd6591
+F src/shell.c 61fa61932ed52825720ebfd3f8381b8d550ef766
 F src/sqlite.h.in 6a80d00621a43271f01c77eb42bbf57e0f52051b
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
 F src/sqliteInt.h 0129e546b43a06844d1d66fd9d9b3090676d0873
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 66529ae3a21ea8c57d3f50cdf6e1e8929fd7e437
-R 7e0310c2f1b98ef65fc65f43220083f2
+P e07ed82caf5e4706ef564271830112d31e8cff7c
+R f38fb3594a0085ca5a3991f47a016d0f
 U mihailim
-Z bd451200f94583267a2ebaaac01cd69b
+Z 0dc42af4c4695aef69f105f585f6e11c

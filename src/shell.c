@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.180 2008/06/23 21:18:11 mihailim Exp $
+** $Id: shell.c,v 1.181 2008/06/23 21:26:05 mihailim Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -604,20 +604,20 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
     }
     case MODE_Html: {
       if( p->cnt++==0 && p->showHeader ){
-        fprintf(p->out,"<tr>");
+        fprintf(p->out,"<TR>");
         for(i=0; i<nArg; i++){
-          fprintf(p->out,"<th>%s</th>",azCol[i]);
+          fprintf(p->out,"<TH>%s</TH>",azCol[i]);
         }
-        fprintf(p->out,"</tr>\n");
+        fprintf(p->out,"</TR>\n");
       }
       if( azArg==0 ) break;
-      fprintf(p->out,"<tr>");
+      fprintf(p->out,"<TR>");
       for(i=0; i<nArg; i++){
-        fprintf(p->out,"<td>");
+        fprintf(p->out,"<TD>");
         output_html_string(p->out, azArg[i] ? azArg[i] : p->nullvalue);
-        fprintf(p->out,"</td>\n");
+        fprintf(p->out,"</TD>\n");
       }
-      fprintf(p->out,"</tr>\n");
+      fprintf(p->out,"</TR>\n");
       break;
     }
     case MODE_Tcl: {
