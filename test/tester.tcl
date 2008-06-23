@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.127 2008/06/19 00:16:08 drh Exp $
+# $Id: tester.tcl,v 1.128 2008/06/23 18:49:45 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -133,6 +133,11 @@ if {[sqlite3 -has-codec] && [info command sqlite_orig]==""} {
 
 # Create a test database
 #
+if {![info exists nTest]} {
+  sqlite3_shutdown 
+  install_malloc_faultsim 1 
+  sqlite3_initialize
+}
 catch {db close}
 file delete -force test.db
 file delete -force test.db-journal

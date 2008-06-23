@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.753 2008/06/22 12:37:58 drh Exp $
+** $Id: vdbe.c,v 1.754 2008/06/23 18:49:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3006,6 +3006,12 @@ case OP_MoveGt: {       /* jump, in3 */
     if( res ){
       pc = pOp->p2 - 1;
     }
+  }else if( !pC->pseudoTable ){
+    /* This happens when attempting to open the sqlite3_master table
+    ** for read access returns SQLITE_EMPTY. In this case always
+    ** take the jump (since there are no records in the table).
+    */
+    pc = pOp->p2 - 1;
   }
   break;
 }
@@ -3213,6 +3219,13 @@ case OP_NotExists: {        /* jump, in3 */
       pc = pOp->p2 - 1;
       assert( pC->rowidIsValid==0 );
     }
+  }else if( !pC->pseudoTable ){
+    /* This happens when an attempt to open a read cursor on the 
+    ** sqlite_master table returns SQLITE_EMPTY.
+    */
+    assert( pC->isTable );
+    pc = pOp->p2 - 1;
+    assert( pC->rowidIsValid==0 );
   }
   break;
 }
