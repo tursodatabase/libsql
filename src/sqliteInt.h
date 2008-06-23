@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.723 2008/06/23 09:50:52 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.724 2008/06/23 14:03:45 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2214,7 +2214,7 @@ CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
   void sqlite3EndBenignMalloc(void);
 #else
   #define sqlite3BeginBenignMalloc()
-  #define sqlite3FaultEndBenign()
+  #define sqlite3EndBenignMalloc()
 #endif
 
 #define IN_INDEX_ROWID           1

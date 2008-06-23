@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.24 2008/06/23 11:11:36 danielk1977 Exp $
+** $Id: malloc.c,v 1.25 2008/06/23 14:03:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -349,7 +349,7 @@ void sqlite3ScratchFree(void *p){
       }
     }else{
       int i;
-      i = p - sqlite3Config.pScratch;
+      i = (u8 *)p - (u8 *)sqlite3Config.pScratch;
       i /= sqlite3Config.szScratch;
       assert( i>=0 && i<sqlite3Config.nScratch );
       sqlite3_mutex_enter(mem0.mutex);
@@ -428,7 +428,7 @@ void sqlite3PageFree(void *p){
       ** in the mem0.aPageFree[] array.
       */
       int i;
-      i = p - sqlite3Config.pPage;
+      i = (u8 *)p - (u8 *)sqlite3Config.pPage;
       i /= sqlite3Config.szPage;
       assert( i>=0 && i<sqlite3Config.nPage );
       sqlite3_mutex_enter(mem0.mutex);
