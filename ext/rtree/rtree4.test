@@ -11,15 +11,22 @@
 #
 # Randomized test cases for the rtree extension.
 #
-# $Id: rtree4.test,v 1.2 2008/05/28 13:49:35 drh Exp $
+# $Id: rtree4.test,v 1.3 2008/06/23 15:55:52 danielk1977 Exp $
 #
 
-set testdir [file join [file dirname $argv0] .. .. test]
+if {![info exists testdir]} {
+  set testdir [file join [file dirname $argv0] .. .. test]
+} 
 source $testdir/tester.tcl
 
 ifcapable !rtree {
   finish_test
   return
+}
+
+set ::NROW 2500
+if {[info exists ISQUICK] && $ISQUICK} {
+  set ::NROW 250
 }
 
 # Return a floating point number between -X and X.
@@ -85,7 +92,7 @@ for {set nDim 1} {$nDim<=5} {incr nDim} {
   # is well.
   #
   unset -nocomplain where
-  for {set i 1} {$i<2500} {incr i} {
+  for {set i 1} {$i<$::NROW} {incr i} {
     # Do a random insert
     #
     do_test rtree-$nDim.2.$i.1 {

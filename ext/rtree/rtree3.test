@@ -12,10 +12,12 @@
 # The focus of this file is testing that the r-tree correctly handles
 # out-of-memory conditions.
 #
-# $Id: rtree3.test,v 1.1 2008/05/26 18:41:54 danielk1977 Exp $
+# $Id: rtree3.test,v 1.2 2008/06/23 15:55:52 danielk1977 Exp $
 #
 
-set testdir [file join [file dirname $argv0] .. .. test]
+if {![info exists testdir]} {
+  set testdir [file join [file dirname $argv0] .. .. test]
+} 
 source $testdir/tester.tcl
 
 ifcapable !rtree {

@@ -44,7 +44,7 @@
 
 # This is how we compile
 #
-TCCX = $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP)
+TCCX = $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) -I$(TOP)/ext/rtree
 
 # Object files for the SQLite library.
 #

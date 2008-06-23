@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.2 2008/06/21 19:10:27 danielk1977 Exp $
+# $Id: permutations.test,v 1.3 2008/06/23 15:55:52 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -328,6 +328,29 @@ run_tests "autovacuum_ioerr" -description {
 } -presql {
   pragma auto_vacuum = 1
 } -include ioerr.test
+
+# run_tests "crash_safe_append" -description {
+#   Run crash.test with persistent journals on a SAFE_APPEND file-system.
+# } -initialize {
+#   rename crashsql sa_crashsql
+#   proc crashsql {args} {
+#     set options [lrange $args 0 [expr {[llength $args]-2}]]
+#     lappend options -char safe_append
+#     set sql [lindex $args end]
+#     lappend options "
+#       PRAGMA journal_mode=persistent;
+#       $sql
+#     "
+#     set fd [open test.db-journal w]
+#     puts $fd [string repeat 1234567890 100000]
+#     close $fd
+#     eval sa_crashsql $options
+#   }
+# } -shutdown {
+#   rename crashsql {}
+#   rename sa_crashsql crashsql
+# } -include crash.test
+
 
 # End of tests
 #############################################################################

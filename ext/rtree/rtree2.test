@@ -11,12 +11,14 @@
 #
 # The focus of this file is testing the r-tree extension.
 #
-# $Id: rtree2.test,v 1.2 2008/05/27 00:06:02 drh Exp $
+# $Id: rtree2.test,v 1.3 2008/06/23 15:55:52 danielk1977 Exp $
 #
 
-set testdir [file join [file dirname $argv0] .. .. test]
+if {![info exists testdir]} {
+  set testdir [file join [file dirname $argv0] .. .. test]
+} 
+source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
-source [file join [file dirname $argv0] rtree_util.tcl]
 
 ifcapable !rtree {
   finish_test
@@ -26,6 +28,11 @@ ifcapable !rtree {
 set ::NROW   1000
 set ::NDEL     10
 set ::NSELECT 100
+
+if {[info exists ISQUICK] && $ISQUICK} {
+  set ::NROW 100
+  set ::NSELECT 10
+}
 
 for {set nDim 1} {$nDim <= 5} {incr nDim} {
 

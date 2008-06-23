@@ -6,28 +6,24 @@
 #***********************************************************************
 # This file runs all rtree related tests.
 #
-# $Id: rtree.test,v 1.1 2008/05/26 18:41:54 danielk1977 Exp $
+# $Id: rtree.test,v 1.1 2008/06/23 15:55:52 danielk1977 Exp $
 
-set testdir [file join [file dirname $argv0] .. .. test]
+set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-rename finish_test really_finish_test
+
+rename finish_test rtree_finish_test
 proc finish_test {} {}
-set ISQUICK 1
 
-set EXCLUDE {
-  rtree.test
+set RTREE_EXCLUDE { }
+if {[info exists ISQUICK] && $ISQUICK} { 
+  set RTREE_EXCLUDE rtree3.test
 }
 
-# Files to include in the test.  If this list is empty then everything
-# that is not in the EXCLUDE list is run.
-#
-set INCLUDE {
-}
+set rtreedir [file join $testdir .. ext rtree]
 
-foreach testfile [lsort -dictionary [glob [file dirname $argv0]/*.test]] {
+foreach testfile [lsort -dictionary [glob $rtreedir/*.test]] {
   set tail [file tail $testfile]
-  if {[lsearch -exact $EXCLUDE $tail]>=0} continue
-  if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue
+  if {[lsearch -exact $RTREE_EXCLUDE $tail]>=0} continue
   source $testfile
   catch {db close}
   if {$sqlite_open_file_count>0} {
@@ -39,5 +35,7 @@ foreach testfile [lsort -dictionary [glob [file dirname $argv0]/*.test]] {
 }
 
 set sqlite_open_file_count 0
-really_finish_test
+rtree_finish_test
+rename finish_test {}
+rename rtree_finish_test finish_test
 

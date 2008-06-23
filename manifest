@@ -1,5 +1,5 @@
-C Handle\sa\sreal\ssystem\smalloc()\sfailure\sin\smem1.c.\s(CVS\s5281)
-D 2008-06-23T15:10:25
+C Run\s(a\ssubset\sof)\sthe\srtree\stests\sfrom\squick.test.\s(CVS\s5282)
+D 2008-06-23T15:55:52
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -64,19 +64,18 @@ F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 28b8650cb1594b6a26a47db0b0a3269c8c8d1d43
+F ext/rtree/rtree.c 20b87410e55f33a03e0f7cc58c0f1908faf91858
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
-F ext/rtree/rtree.test ec173a9420ff012e4d29b3063add143583a597a7
-F ext/rtree/rtree1.test 7504a4bd3aaad379d2d712bbb05fc75460e8537d
-F ext/rtree/rtree2.test 3402e9d57cac67651779130bafd4162772d2420e
-F ext/rtree/rtree3.test 46d1959aa651d3df8b64d93762d3061c62b38105
-F ext/rtree/rtree4.test 029a2a09bd021ed9e38ded7bea31f73b8dca2480
+F ext/rtree/rtree1.test b7c40c535804f786ea1dbf975a28f0c0e2d26f88
+F ext/rtree/rtree2.test 07aea32287ce3f7717fe285e6172e5418ce3fd52
+F ext/rtree/rtree3.test 877a09c1a0c2b87af0f94f3a286e7dd3b65adf22
+F ext/rtree/rtree4.test 11724f766a74f48710998cdd7552cec140c55bf9
 F ext/rtree/rtree_perf.tcl 0fabb6d5c48cb8024e042ce5d4bb88998b6ec1cb
 F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
-F main.mk f7be21bc9c67879c249b86b332a0b4f8eeef3d3b
+F main.mk d05e1f618544095915ab4d91d6057d439eee7004
 F mkdll.sh 712e74f3efe08a6ba12b2945d018a29a89d7fe3b
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -423,7 +422,7 @@ F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 6df72c441db0a037b7ec6990d16311c24fbea77b
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
-F test/permutations.test aaf905172ee1c2bbd595bf8b94320a1c7581b383
+F test/permutations.test eb7373f8dd450b99b8addfdabe820da0cc851e54
 F test/pragma.test 6b9bee4f5dbb9bccde4d0d5caf13a33f9da86e15
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
@@ -435,6 +434,7 @@ F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
 F test/rollback.test 0bd29070ba2f76da939347773fbda53337ebd61c
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
+F test/rtree.test a8404a59bbc3a7827db9bfb334790c852f0391b3
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
 F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1de98da6b4c2039e5dc594cc9bfc7d49ae36697c
-R 1096b6f46bafe59852717e33d5ec098a
+P 006fd69bf56f05448fd9aa82d3b1cdcc175369ad
+R eaeaee6d431b07ec903a8c0b496cdb2e
 U danielk1977
-Z 14a1331b5777495bf864709dca28d63b
+Z 4f90c48cde8f4b8c15d87a303ff9e628
