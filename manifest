@@ -1,5 +1,5 @@
-C Fix\sa\sbug\scausing\sthe\spager-cache\ssize\sto\sbe\sreset\sto\sits\sdefault\svalue\swhenever\sthe\sdatabase\sschema\swas\sreloaded.\s(CVS\s5283)
-D 2008-06-23T16:53:47
+C Fix\sa\sfailure\sto\sreport\sa\sfailed\smalloc()\swithin\ssqlite3_create_module().\s(CVS\s5284)
+D 2008-06-23T17:44:19
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -189,7 +189,7 @@ F src/vdbeaux.c 3db1f037906cd0961b1f79771abc267b94bd8475
 F src/vdbeblob.c 9345f6dcd675fdcfdb537d2d2f487542d9ea136a
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
 F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
-F src/vtab.c ce9d19ca9053812a557010fd4be7e842f8ebba2d
+F src/vtab.c 2096c03ec5540a43c8c73a8f43407dfd3549a982
 F src/where.c 5c4a999f6aed992131479bfaec9b874326d9963c
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e872c78c72eb5976e72123485692a76409bd857f
-R f7cd8593345fa0392a9591d6d8df4193
+P 6dbe67da5cb0141e011b4fdcc3964a20f68be843
+R d294d8c8ca1e1e0b998b4b9e46c87eb3
 U danielk1977
-Z 82fd96eb942b7f8687f6348bde0b3b6d
+Z aa84f2af470a4c68cbe527219bc745f0
