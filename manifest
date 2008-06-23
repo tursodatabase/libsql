@@ -1,5 +1,5 @@
-C Fix\sa\sfailure\sto\sreport\sa\sfailed\smalloc()\swithin\ssqlite3_create_module().\s(CVS\s5284)
-D 2008-06-23T17:44:19
+C Additional\stests\sadded\sto\scapi3.test.\s(CVS\s5285)
+D 2008-06-23T17:56:47
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -223,7 +223,7 @@ F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
 F test/capi2.test cc64df7560a96f848f919ea2926c60acf639684b
-F test/capi3.test d3848b06fb36d43b73aca6e22c44f734e14e5c3b
+F test/capi3.test 6312427a6034d4bb725411dbe0c7ec02f09a65f3
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
 F test/capi3c.test 208713e5f3a63442c3574c55b83baa7cf8ac5f28
 F test/capi3d.test 537de3a1f724862e327e02bb21b4a84f185dc1e2
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6dbe67da5cb0141e011b4fdcc3964a20f68be843
-R d294d8c8ca1e1e0b998b4b9e46c87eb3
-U danielk1977
-Z aa84f2af470a4c68cbe527219bc745f0
+P 3ca7dab88e030cc945e0d358d7f53ddca35bc221
+R 90ee4c267ce50621164d3fc140bcfcee
+U drh
+Z 3b00e032d2531d8d31a48af81a734f31
