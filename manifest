@@ -1,5 +1,5 @@
-C Correct\scomments\sabove\ssqlite3_release_memory()\sand\ssqlite3_soft_heap_limit().\sTicket\s#3138.\s(CVS\s5275)
-D 2008-06-23T11:11:36
+C Fixed\swrong\stype\sin\ssqlite3_create_collation16\sdeclaration\sand\sdefinition\s(UTF-16\sstring\shad\sbeen\spassed\sas\sconst\schar*\sinstead\sof\sconst\svoid*)\s(CVS\s5276)
+D 2008-06-23T11:23:14
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/insert.c 93231fd0199f044bcefda3d857420f4d377e4056
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 40024a0f476c1279494876b9a002001b29e5d3e3
-F src/main.c e9a760651620c9dd6e86224ef4cada9fb71ad898
+F src/main.c 67a80507f4400333ccedfa2392496269e2f4ee0b
 F src/malloc.c a3c5f9bf0073ee3f60c098a9d95ca0f1cb2c81c2
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 159f10e280f2d9aea597cf938851e61652dd5c3d
@@ -143,7 +143,7 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c ea3e5e233cf16f4cb43f6ec35972683ae7bc03f3
 F src/shell.c a12ea645271b7876c8f080146f48e20b00d367ec
-F src/sqlite.h.in 4a42be927bc632f7c06042e5022c64834cc82943
+F src/sqlite.h.in 6a80d00621a43271f01c77eb42bbf57e0f52051b
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
 F src/sqliteInt.h 9cd8b86d9592f9ca521e6d1f003cc6ce8f673cfc
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0492aa8ed3c35dd2cdfc69c9cb87e43ef0460826
-R 4c31894c9cf394f503a7801352b88b5a
-U danielk1977
-Z eb3d57a29e7dcb8bb596438786438280
+P 3240446853a11f5a1e379d4841d0268873aad64d
+R f970ee678fe3aed9a204c3983662af24
+U mihailim
+Z b6d7eebf60befb977f1dcc7e76ee6cd8

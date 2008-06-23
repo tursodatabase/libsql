@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.352 2008/06/22 16:35:49 mihailim Exp $
+** @(#) $Id: sqlite.h.in,v 1.353 2008/06/23 11:23:14 mihailim Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4436,7 +4436,7 @@ int sqlite3_create_collation_v2(
 );
 int sqlite3_create_collation16(
   sqlite3*, 
-  const char *zName, 
+  const void *zName,
   int eTextRep, 
   void*,
   int(*xCompare)(void*,int,const void*,int,const void*)
