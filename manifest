@@ -1,5 +1,5 @@
-C Modify\sthe\smemory\sallocation\ssystem\sin\smem3.c\sso\sto\sfit\sin\swith\sthe\snew\ssqlite3_mem_methods\sscheme.\sAt\sthis\spoint\sit\sonly\s"mostly"\sworks.\s(CVS\s5297)
-D 2008-06-24T19:02:55
+C OS/2\sfixes\sfor\spre-C99\scompilers\sand\sa\sreturn\scode\scorrection\sin\sos2Access().\s(CVS\s5298)
+D 2008-06-24T22:50:06
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -130,7 +130,7 @@ F src/mutex_w32.c 7aa9ad79b36931314b81ac4045f40f2c503b1e44
 F src/os.c b1c73547466b832612b3be425a8f21afd603fd9b
 F src/os.h c9a7f94e80193fd4cf27f5c5698eb56753f1b05a
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
-F src/os_os2.c 9dc031a31ec631c4b2ee3bc2f8b2533b36f20376
+F src/os_os2.c 4647d718d7ad3f84c3d1241cda971a0ae67cb45e
 F src/os_unix.c b8c07b0cd85c9909000740dc3f29ce938091b00c
 F src/os_win.c 0b90d9a1ce18bfd2a5f3c4a6bdb13ec369c805a9
 F src/pager.c e2a49872f1e15eb83895ace704c48ac8ded998ba
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 37b084fd7d7ad7f13fc9454fc25ca5aed48d4a31
-R 465c685f9632ada3f1635a03ece5ad9c
-U danielk1977
-Z 585b6f7015b63e1eb50cf90d6b5f14fd
+P 3febef548fb1c314336fe4bc359d72a4fe84e84e
+R 2bb349bf8738c9c34feda271d58ba513
+U pweilbacher
+Z b3e4e1f56a819d60939aa1a1f4cf6934

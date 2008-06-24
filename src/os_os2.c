@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.44 2008/06/18 21:08:16 pweilbacher Exp $
+** $Id: os_os2.c,v 1.45 2008/06/24 22:50:06 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -772,7 +772,8 @@ static int os2Open(
   if( rc != NO_ERROR ){
     OSTRACE7( "OPEN Invalid handle rc=%d: zName=%s, ulAction=%#lx, ulAttr=%#lx, ulFlags=%#lx, ulMode=%#lx\n",
               rc, zName, ulAction, ulFileAttribute, ulOpenFlags, ulOpenMode );
-    free( pFile->pathToDel );
+    if ( pFile->pathToDel )
+      free( pFile->pathToDel );
     pFile->pathToDel = NULL;
     if( flags & SQLITE_OPEN_READWRITE ){
       OSTRACE2( "OPEN %d Invalid handle\n", ((flags | SQLITE_OPEN_READONLY) & ~SQLITE_OPEN_READWRITE) );
@@ -804,8 +805,8 @@ int os2Delete(
   int syncDir                            /* Not used on os2 */
 ){
   APIRET rc = NO_ERROR;
-  SimulateIOError(return SQLITE_IOERR_DELETE);
   char *zFilenameCp = convertUtf8PathToCp( zFilename );
+  SimulateIOError( return SQLITE_IOERR_DELETE );
   rc = DosDelete( (PSZ)zFilenameCp );
   free( zFilenameCp );
   OSTRACE2( "DELETE \"%s\"\n", zFilename );
@@ -823,9 +824,9 @@ static int os2Access(
 ){
   FILESTATUS3 fsts3ConfigInfo;
   APIRET rc = NO_ERROR;
+  char *zFilenameCp = convertUtf8PathToCp( zFilename );
 
   memset( &fsts3ConfigInfo, 0, sizeof(fsts3ConfigInfo) );
-  char *zFilenameCp = convertUtf8PathToCp( zFilename );
   rc = DosQueryPathInfo( (PSZ)zFilenameCp, FIL_STANDARD,
                          &fsts3ConfigInfo, sizeof(FILESTATUS3) );
   free( zFilenameCp );
@@ -838,7 +839,7 @@ static int os2Access(
       OSTRACE3( "ACCESS %s access of read and exists  rc=%d\n", zFilename, rc );
       break;
     case SQLITE_ACCESS_READWRITE:
-      rc = (fsts3ConfigInfo.attrFile & FILE_READONLY) == 0;
+      rc = (rc == NO_ERROR) && ( (fsts3ConfigInfo.attrFile & FILE_READONLY) == 0 );
       OSTRACE3( "ACCESS %s access of read/write  rc=%d\n", zFilename, rc );
       break;
     default:
@@ -847,7 +848,6 @@ static int os2Access(
   *pOut = rc;
   return SQLITE_OK;
 }
-
 
 
 /*
