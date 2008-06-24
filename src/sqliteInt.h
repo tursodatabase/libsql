@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.724 2008/06/23 14:03:45 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.725 2008/06/24 00:32:36 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1161,7 +1161,7 @@ struct Expr {
 #define EP_ExpCollate 0x0100  /* Collating sequence specified explicitly */
 #define EP_AnyAff     0x0200  /* Can take a cached column of any affinity */
 #define EP_FixedDest  0x0400  /* Result needed in a specific register */
-
+#define EP_IntValue   0x0800  /* Integer value contained in iTable */
 /*
 ** These macros can be used to test, set, or clear bits in the 
 ** Expr.flags field.
@@ -1449,10 +1449,8 @@ struct SelectDest {
   u8 eDest;         /* How to dispose of the results */
   u8 affinity;      /* Affinity used when eDest==SRT_Set */
   int iParm;        /* A parameter used by the eDest disposal method */
-  int regCoroutine; /* Program counter register for SRT_Coroutine */
   int iMem;         /* Base register where results are written */
   int nMem;         /* Number of registers allocated */
-  int eofMem;       /* Register holding EOF flag */
 };
 
 /*
@@ -1913,6 +1911,7 @@ WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**, u8);
 void sqlite3WhereEnd(WhereInfo*);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
+void sqlite3ExprCodeCopy(Parse*, int, int, int);
 void sqlite3ExprClearColumnCache(Parse*, int);
 void sqlite3ExprCacheAffinityChange(Parse*, int, int);
 int sqlite3ExprWritableRegister(Parse*,int,int);

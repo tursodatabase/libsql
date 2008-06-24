@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.241 2008/06/20 15:24:02 drh Exp $
+** $Id: insert.c,v 1.242 2008/06/24 00:32:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -523,10 +523,9 @@ void sqlite3Insert(
     regEof = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regEof);      /* EOF <- 0 */
     VdbeComment((v, "SELECT eof flag"));
-    sqlite3SelectDestInit(&dest, SRT_Coroutine, 0);
-    dest.regCoroutine = ++pParse->nMem;
+    sqlite3SelectDestInit(&dest, SRT_Coroutine, ++pParse->nMem);
     addrSelect = sqlite3VdbeCurrentAddr(v)+2;
-    sqlite3VdbeAddOp2(v, OP_Integer, addrSelect-1, dest.regCoroutine);
+    sqlite3VdbeAddOp2(v, OP_Integer, addrSelect-1, dest.iParm);
     j1 = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
     VdbeComment((v, "Jump over SELECT coroutine"));
 
@@ -536,7 +535,7 @@ void sqlite3Insert(
       goto insert_cleanup;
     }
     sqlite3VdbeAddOp2(v, OP_Integer, 1, regEof);         /* EOF <- 1 */
-    sqlite3VdbeAddOp1(v, OP_Yield, dest.regCoroutine);   /* yield X */
+    sqlite3VdbeAddOp1(v, OP_Yield, dest.iParm);   /* yield X */
     sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_INTERNAL, OE_Abort);
     VdbeComment((v, "End of SELECT coroutine"));
     sqlite3VdbeJumpHere(v, j1);                          /* label B: */
@@ -580,7 +579,7 @@ void sqlite3Insert(
       regRec = sqlite3GetTempReg(pParse);
       regRowid = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp2(v, OP_OpenEphemeral, srcTab, nColumn);
-      addrTop = sqlite3VdbeAddOp1(v, OP_Yield, dest.regCoroutine);
+      addrTop = sqlite3VdbeAddOp1(v, OP_Yield, dest.iParm);
       addrIf = sqlite3VdbeAddOp1(v, OP_If, regEof);
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regFromSelect, nColumn, regRec);
       sqlite3VdbeAddOp2(v, OP_NewRowid, srcTab, regRowid);
@@ -725,7 +724,7 @@ void sqlite3Insert(
     **         goto C
     **      D: ...
     */
-    addrCont = sqlite3VdbeAddOp1(v, OP_Yield, dest.regCoroutine);
+    addrCont = sqlite3VdbeAddOp1(v, OP_Yield, dest.iParm);
     addrInsTop = sqlite3VdbeAddOp1(v, OP_If, regEof);
   }
 

@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.374 2008/06/22 12:37:58 drh Exp $
+** $Id: expr.c,v 1.375 2008/06/24 00:32:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -756,8 +756,8 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p){
   pNew->pPrior = sqlite3SelectDup(db, p->pPrior);
   pNew->pLimit = sqlite3ExprDup(db, p->pLimit);
   pNew->pOffset = sqlite3ExprDup(db, p->pOffset);
-  pNew->iLimit = -1;
-  pNew->iOffset = -1;
+  pNew->iLimit = 0;
+  pNew->iOffset = 0;
   pNew->isResolved = p->isResolved;
   pNew->isAgg = p->isAgg;
   pNew->usesEphm = 0;
@@ -1018,27 +1018,35 @@ int sqlite3ExprIsConstantOrFunction(Expr *p){
 ** to fit in a signed 32-bit integer, return 0 and leave *pValue unchanged.
 */
 int sqlite3ExprIsInteger(Expr *p, int *pValue){
+  int rc = 0;
+  if( p->flags & EP_IntValue ){
+    *pValue = p->iTable;
+    return 1;
+  }
   switch( p->op ){
     case TK_INTEGER: {
-      if( sqlite3GetInt32((char*)p->token.z, pValue) ){
-        return 1;
-      }
+      rc = sqlite3GetInt32((char*)p->token.z, pValue);
       break;
     }
     case TK_UPLUS: {
-      return sqlite3ExprIsInteger(p->pLeft, pValue);
+      rc = sqlite3ExprIsInteger(p->pLeft, pValue);
     }
     case TK_UMINUS: {
       int v;
       if( sqlite3ExprIsInteger(p->pLeft, &v) ){
         *pValue = -v;
-        return 1;
+        rc = 1;
       }
       break;
     }
     default: break;
   }
-  return 0;
+  if( rc ){
+    p->op = TK_INTEGER;
+    p->flags |= EP_IntValue;
+    p->iTable = *pValue;
+  }
+  return rc;
 }
 
 /*
@@ -1986,10 +1994,15 @@ static void codeReal(Vdbe *v, const char *z, int n, int negateFlag, int iMem){
 ** z[n] character is guaranteed to be something that does not look
 ** like the continuation of the number.
 */
-static void codeInteger(Vdbe *v, const char *z, int n, int negFlag, int iMem){
-  assert( z || v==0 || sqlite3VdbeDb(v)->mallocFailed );
-  if( z ){
+static void codeInteger(Vdbe *v, Expr *pExpr, int negFlag, int iMem){
+  const char *z;
+  if( pExpr->flags & EP_IntValue ){
+    int i = pExpr->iTable;
+    if( negFlag ) i = -i;
+    sqlite3VdbeAddOp2(v, OP_Integer, i, iMem);
+  }else if( (z = (char*)pExpr->token.z)!=0 ){
     int i;
+    int n = pExpr->token.n;
     assert( !isdigit(z[n]) );
     if( sqlite3GetInt32(z, &i) ){
       if( negFlag ) i = -i;
@@ -2128,6 +2141,18 @@ void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
 }
 
 /*
+** Generate code to copy content from registers iFrom...iFrom+nReg-1
+** over to iTo..iTo+nReg-1.
+*/
+void sqlite3ExprCodeCopy(Parse *pParse, int iFrom, int iTo, int nReg){
+  int i;
+  if( iFrom==iTo ) return;
+  for(i=0; i<nReg; i++){
+    sqlite3VdbeAddOp2(pParse->pVdbe, OP_Copy, iFrom+i, iTo+i);
+  }
+}
+
+/*
 ** Return true if any register in the range iFrom..iTo (inclusive)
 ** is used as part of the column cache.
 */
@@ -2246,7 +2271,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_INTEGER: {
-      codeInteger(v, (char*)pExpr->token.z, pExpr->token.n, 0, target);
+      codeInteger(v, pExpr, 0, target);
       break;
     }
     case TK_FLOAT: {
@@ -2384,11 +2409,10 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       Expr *pLeft = pExpr->pLeft;
       assert( pLeft );
       if( pLeft->op==TK_FLOAT || pLeft->op==TK_INTEGER ){
-        Token *p = &pLeft->token;
         if( pLeft->op==TK_FLOAT ){
-          codeReal(v, (char*)p->z, p->n, 1, target);
+          codeReal(v, (char*)pLeft->token.z, pLeft->token.n, 1, target);
         }else{
-          codeInteger(v, (char*)p->z, p->n, 1, target);
+          codeInteger(v, pLeft, 1, target);
         }
       }else{
         regFree1 = r1 = sqlite3GetTempReg(pParse);
