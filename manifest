@@ -1,5 +1,5 @@
-C The\scompound-select\smerge\soptimization\sis\smostly\sworking\swith\sthis\scheck-in.\nBut\sthere\sare\sstill\sa\sfew\sproblems\sand\sso\sthe\soptimization\sis\sdisabled\sby\nand\s"#if\s0".\s\sThis\scheck-in\sis\sto\ssynchronize\swith\sthe\sother\schanges\shappening\nin\sparallel.\s(CVS\s5291)
-D 2008-06-24T00:32:35
+C Fix\sa\stypo\sin\sthe\sdocumentation\sfor\sthe\ssqlite3_bind_XXX()\sAPIs.\s(CVS\s5292)
+D 2008-06-24T09:52:39
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 1ebcd83ab51be47f31b2ec93daad844baf3b0788
 F src/shell.c 61fa61932ed52825720ebfd3f8381b8d550ef766
-F src/sqlite.h.in 6a80d00621a43271f01c77eb42bbf57e0f52051b
+F src/sqlite.h.in 449e75d6c0c00c8f9f0325e2d665bc66a1e6fb83
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
 F src/sqliteInt.h ec8e71249994b8a5b23b1a098a576c02e8548244
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -592,7 +592,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d92418ca502f5f58dc968668e11c42955a7b1e52
-R f88ace7929fab768ff8007a473e6b665
-U drh
-Z 9ed7972d77404d7a52eef908bd3410d8
+P e2ba324cbcac0ba35bbde50048677e085abb092b
+R 571f5a2a7c5833f8ac9443d6db08af85
+U danielk1977
+Z 3b8abaa5172f1cf18d7b1bca5e24fb2f
