@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.354 2008/06/24 09:52:39 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.355 2008/06/24 19:02:55 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1115,6 +1115,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_MEMSTATUS     9  /* boolean */
 #define SQLITE_CONFIG_MUTEX        10  /* sqlite3_mutex_methods* */
 #define SQLITE_CONFIG_GETMUTEX     11  /* sqlite3_mutex_methods* */
+#define SQLITE_CONFIG_MEMPOOL      12  /* u8*, int */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes {F12200}

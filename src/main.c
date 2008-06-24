@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.458 2008/06/23 14:15:53 danielk1977 Exp $
+** $Id: main.c,v 1.459 2008/06/24 19:02:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -149,13 +149,21 @@ int sqlite3_config(int op, ...){
       sqlite3Config.bFullMutex = 1;
       break;
     }
+#ifdef SQLITE_ENABLE_MEMPOOL
+    case SQLITE_CONFIG_MEMPOOL: {
+      u8 *pMem = va_arg(ap, u8*);
+      int nMem = va_arg(ap, int);
+      rc = sqlite3MemSetMempool(pMem, nMem);
+      break;
+    }
+#endif
     case SQLITE_CONFIG_MALLOC: {
       /* Specify an alternative malloc implementation */
       sqlite3Config.m = *va_arg(ap, sqlite3_mem_methods*);
       break;
     }
     case SQLITE_CONFIG_GETMALLOC: {
-      /* Specify an alternative malloc implementation */
+      /* Retrieve the current malloc() implementation */
       if( sqlite3Config.m.xMalloc==0 ) sqlite3MemSetDefault();
       *va_arg(ap, sqlite3_mem_methods*) = sqlite3Config.m;
       break;

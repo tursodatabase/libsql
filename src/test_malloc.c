@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.28 2008/06/20 14:59:51 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.29 2008/06/24 19:02:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -931,6 +931,38 @@ static int test_config_pagecache(
 }
 
 /*
+** Usage:    sqlite3_config_mempool NBYTE
+**
+*/
+static int test_config_mempool(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int sz, rc;
+  Tcl_Obj *pResult;
+  static char buf[1000000];
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NBYTE");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
+  if( sz<=0 ){
+    sqlite3_mem_methods m;
+    memset(&m, 0, sizeof(sqlite3_mem_methods));
+    rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &m);
+  }else{
+    if( sz>sizeof(buf) ){
+      sz = sizeof(buf);
+    }
+    rc = sqlite3_config(SQLITE_CONFIG_MEMPOOL, buf, sz);
+  }
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  return TCL_OK;
+}
+
+/*
 ** Usage:    sqlite3_status  OPCODE  RESETFLAG
 **
 ** Return a list of three elements which are the sqlite3_status() return
@@ -1029,6 +1061,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_memdebug_log",       test_memdebug_log             },
      { "sqlite3_config_scratch",     test_config_scratch           },
      { "sqlite3_config_pagecache",   test_config_pagecache         },
+     { "sqlite3_config_mempool",     test_config_mempool           },
      { "sqlite3_status",             test_status                   },
      { "install_malloc_faultsim",    test_install_malloc_faultsim  },
   };
