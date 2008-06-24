@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.375 2008/06/24 00:32:35 drh Exp $
+** $Id: expr.c,v 1.376 2008/06/24 12:46:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1030,6 +1030,7 @@ int sqlite3ExprIsInteger(Expr *p, int *pValue){
     }
     case TK_UPLUS: {
       rc = sqlite3ExprIsInteger(p->pLeft, pValue);
+      break;
     }
     case TK_UMINUS: {
       int v;

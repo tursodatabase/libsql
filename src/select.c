@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.434 2008/06/24 00:32:36 drh Exp $
+** $Id: select.c,v 1.435 2008/06/24 12:46:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1951,21 +1951,31 @@ static int multiSelect(
     goto multi_select_end;
   }
 
-#if 0
-  if( p->pOrderBy ){
-    return multiSelectOrderBy(pParse, p, pDest, aff);
-  }
-#endif
-
   /* Create the destination temporary table if necessary
   */
   dest = *pDest;
   if( dest.eDest==SRT_EphemTab ){
     assert( p->pEList );
-    assert( nSetP2<sizeof(aSetP2)/sizeof(aSetP2[0]) );
-    aSetP2[nSetP2++] = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, dest.iParm, 0);
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, dest.iParm, p->pEList->nExpr);
     dest.eDest = SRT_Table;
   }
+
+  /* Make sure all SELECTs in the statement have the same number of elements
+  ** in their result sets.
+  */
+  assert( p->pEList && pPrior->pEList );
+  if( p->pEList->nExpr!=pPrior->pEList->nExpr ){
+    sqlite3ErrorMsg(pParse, "SELECTs to the left and right of %s"
+      " do not have the same number of result columns", selectOpName(p->op));
+    rc = 1;
+    goto multi_select_end;
+  }
+
+#if 0
+  if( p->pOrderBy ){
+    return multiSelectOrderBy(pParse, p, pDest, aff);
+  }
+#endif
 
   /* Generate code for the left and right SELECT statements.
   */
@@ -2184,17 +2194,6 @@ static int multiSelect(
       sqlite3VdbeAddOp2(v, OP_Close, tab1, 0);
       break;
     }
-  }
-
-  /* Make sure all SELECTs in the statement have the same number of elements
-  ** in their result sets.
-  */
-  assert( p->pEList && pPrior->pEList );
-  if( p->pEList->nExpr!=pPrior->pEList->nExpr ){
-    sqlite3ErrorMsg(pParse, "SELECTs to the left and right of %s"
-      " do not have the same number of result columns", selectOpName(p->op));
-    rc = 1;
-    goto multi_select_end;
   }
 
   /* Set the number of columns in temporary tables
@@ -2551,7 +2550,6 @@ static int multiSelectOrderBy(
   int op;               /* One of TK_ALL, TK_UNION, TK_EXCEPT, TK_INTERSECT */
   KeyInfo *pKeyInfo;    /* Type data for comparisons */
   int p4type;           /* P4 type used for pKeyInfo */
-  u8 NotUsed;           /* Dummy variable */
 
   assert( p->pOrderBy!=0 );
   v = pParse->pVdbe;
@@ -2575,8 +2573,6 @@ static int multiSelectOrderBy(
   */
   p->pPrior = 0;
   pPrior->pRightmost = 0;
-  processOrderGroupBy(pParse, p, p->pOrderBy, 1, &NotUsed);
-  processOrderGroupBy(pParse, pPrior, pPrior->pOrderBy, 1, &NotUsed);
   
   /* Compute the limit registers */
   computeLimitRegisters(pParse, p, labelEnd);
@@ -2781,7 +2777,6 @@ static int multiSelectOrderBy(
   if( p4type==P4_KEYINFO_HANDOFF ){
     sqlite3_free(pKeyInfo);
   }
-
 
   /*** TBD:  Insert subroutine calls to close cursors on incomplete
   **** subqueries ****/

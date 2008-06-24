@@ -1,5 +1,5 @@
-C Remove\sa\ssurplus\s"breakpoint"\sfrom\sselect4.test.\s(CVS\s5294)
-D 2008-06-24T12:28:04
+C Fix\sa\sproblem\sin\ssqlite3ExprIsInteger()\scausing\sfailures\son\sselect1-4.9.2.\nOther\sbug\sfixes\sin\scompound-merge.\s\sThe\scompound-merge\sis\sstill\sdisabled\nin\sthis\scheck-in\susing\s"#if\s0"\sdue\sto\sadditional\sbugs.\s(CVS\s5295)
+D 2008-06-24T12:46:31
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,14 +103,14 @@ F src/callback.c 3ba98ae46f60aa7c2c40eac7d18fe5ba9b706b83
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e841168e5520bbbb2a1cbcdce7531d8b23017b4d
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
-F src/expr.c 18af707c4346de39c25d0c30a7db4c3ea449d3df
+F src/expr.c 1a8fbd3dfc531fa8ec51319a0bdef014e28c0fdd
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c 1e7d9569570134ac0771a00382d9d4b41c4aa052
 F src/global.c 2304cfa3288763bd2fed10caf8c6fbaa2b383f4e
 F src/hash.c eb64e48f3781100e5934f759fbe72a63a8fe78cb
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
 F src/hwtime.h 745961687a65ef8918cd551c02e5ccb4b8e772de
-F src/insert.c 4656c5231059d8f40a5bbe21a28a9344c07a49bd
+F src/insert.c f8c7da31409ec19a769b960a4a2b9cca7bab80bd
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 40024a0f476c1279494876b9a002001b29e5d3e3
@@ -140,11 +140,11 @@ F src/pragma.c e6c55362d164e4bc8ebc83a9a01635552d854800
 F src/prepare.c aba51dad52308e3d9d2074d8ff4e612e7f1cab51
 F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c 1ebcd83ab51be47f31b2ec93daad844baf3b0788
+F src/select.c dfc7e6ba4c987105799372ab7c8b58a305237c01
 F src/shell.c 61fa61932ed52825720ebfd3f8381b8d550ef766
 F src/sqlite.h.in 449e75d6c0c00c8f9f0325e2d665bc66a1e6fb83
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
-F src/sqliteInt.h ec8e71249994b8a5b23b1a098a576c02e8548244
+F src/sqliteInt.h 5ed4ae2a9338533370517a361623e38a125724a4
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
@@ -335,7 +335,7 @@ F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
 F test/fuzz_malloc.test 166b58dfd77cc04f6afeeaef0cfc1087abf134d1
 F test/hook.test e17d4ed2843ba4ef9b234aa63e6f056bf88f9a19
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
-F test/in.test 763a29007a4850d611ac4441bfa488fb9969ad30
+F test/in.test ca4ea8ac1077f5221055fcb66969892612632ef7
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
@@ -438,7 +438,7 @@ F test/rtree.test a8404a59bbc3a7827db9bfb334790c852f0391b3
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
 F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
-F test/select1.test a976b3b21a80becef09aac96b90c1050b8647aa0
+F test/select1.test 9f9d90c40b84d1d2cff651db1c0245a882e2b180
 F test/select2.test 06a2660de57673e2d076c29c0fd73f961a930f87
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test 7cc135c8343e6e433bdad185de6a720b112c40e7
@@ -593,7 +593,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3a13e943d8fb4060fc1f0f827a156a730ee64be0
-R df0eb9896580dd594e1bec904b7c6fed
+P 3117238ce9cbfc36e2de929592decef86220e2a2
+R 26a607ae3a119e64f7c632da62404b44
 U drh
-Z a9fd286f1f7b5d6d804d2ba12e95b0c7
+Z bac94444cc935a7d7088735bd4cb7650
