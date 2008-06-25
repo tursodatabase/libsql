@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.45 2008/06/24 22:50:06 pweilbacher Exp $
+** $Id: os_os2.c,v 1.46 2008/06/25 17:19:01 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -1046,12 +1046,9 @@ static int os2GetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 }
 
 /*
-** Return a pointer to the sqlite3DefaultVfs structure.   We use
-** a function rather than give the structure global scope because
-** some compilers (MSVC) do not allow forward declarations of
-** initialized structures.
+** Initialize and deinitialize the operating system interface.
 */
-sqlite3_vfs *sqlite3OsDefaultVfs(void){
+int sqlite3_os_init(void){
   static sqlite3_vfs os2Vfs = {
     1,                 /* iVersion */
     sizeof(os2File),   /* szOsFile */
@@ -1073,15 +1070,11 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     os2CurrentTime,    /* xCurrentTime */
     os2GetLastError    /* xGetLastError */
   };
-
-  return &os2Vfs;
+  sqlite3_vfs_register(&os2Vfs, 1);
+  return SQLITE_OK; 
 }
-
-/*
-** Initialize and deinitialize the operating system interface.
-** These are stubs for now - populate with real code later...
-*/
-int sqlite3_os_init(void){ return SQLITE_OK; }
-int sqlite3_os_end(void){ return SQLITE_OK; }
+int sqlite3_os_end(void){ 
+  return SQLITE_OK; 
+}
 
 #endif /* OS_OS2 */

@@ -1,5 +1,5 @@
-C Have\smem3.c\sand\smem5.c\sgrab\sa\smutex\swhen\srequired.\sInclude\sthem\sboth\sin\sthe\samalgamation\sagain.\s(CVS\s5306)
-D 2008-06-25T14:57:54
+C Remove\sinternal\sfunction\ssqlite3OsDefaultVfs().\sThe\sbuilt-in\sVFS\slayers\snow\sregister\stheir\sVFS\simplementations\sby\scalling\ssqlite3_vfs_register()\sfrom\swithin\ssqlite3_os_init().\s(CVS\s5307)
+D 2008-06-25T17:19:01
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/insert.c f8c7da31409ec19a769b960a4a2b9cca7bab80bd
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 40024a0f476c1279494876b9a002001b29e5d3e3
-F src/main.c 1291a974ff9ffcb771ce4060795c9c3059268049
+F src/main.c 88a34d852e8e592b89146d3975b37cea3dd3160d
 F src/malloc.c f52166df8abd7ff6990dbee1a0ce3534addc8617
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 8340fa5f969e9f9b9bdeb54106457a2003456d2b
@@ -127,12 +127,12 @@ F src/mutex.h 236677b27760d85701b5872d01b5cafedde5f0a9
 F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
 F src/mutex_unix.c c1526811f4b97a7cd9d4d72d2b9623d06abd05ce
 F src/mutex_w32.c 7aa9ad79b36931314b81ac4045f40f2c503b1e44
-F src/os.c b1c73547466b832612b3be425a8f21afd603fd9b
-F src/os.h c9a7f94e80193fd4cf27f5c5698eb56753f1b05a
+F src/os.c 3e98547ef92358a44ed32e025b81599026c2660f
+F src/os.h a7bc8d7232b69ce8ba536cafd8514c877bc3342c
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
-F src/os_os2.c 4647d718d7ad3f84c3d1241cda971a0ae67cb45e
-F src/os_unix.c b8c07b0cd85c9909000740dc3f29ce938091b00c
-F src/os_win.c 0b90d9a1ce18bfd2a5f3c4a6bdb13ec369c805a9
+F src/os_os2.c 205900770c90f77718dcae4d8f28c60ab4657250
+F src/os_unix.c 800138f4b9e2c26c89b0f8085441ec188fd5c19e
+F src/os_win.c 77cae913383157348a4ac0a6385e8543b28103a1
 F src/pager.c e2a49872f1e15eb83895ace704c48ac8ded998ba
 F src/pager.h 6aa3050a3c684475a5a9dbad5ff1cebad612acba
 F src/parse.y 8c2c3145eebe1964eb279cb3c4e502eae28bb0fa
@@ -144,7 +144,7 @@ F src/select.c 79f60dc4a7e90bb907c7a2cca42f45276d1ead99
 F src/shell.c 61fa61932ed52825720ebfd3f8381b8d550ef766
 F src/sqlite.h.in b5c731b88ab1275396920103b5ecbefba200d423
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
-F src/sqliteInt.h d045d18b412345ed2f9d2e5a05e6de25051522a5
+F src/sqliteInt.h 55d1a6c155eaad745d8e4b7f373f5904337fbaf1
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P edf7f518361902924105142a8c67b898ba7d532f
-R 1a009318bac5f3e776bc54f3122c8111
+P 9e3c95ff4048cd8e4c56acf7a8ebedc49621e9c7
+R dd99e8c754ee82c9c2d08705cbcbd9a2
 U danielk1977
-Z 0a0f9328bf9a2e8862b4f65895b7ec64
+Z d4c5b3f927846f2701cf2cdd435f8f43

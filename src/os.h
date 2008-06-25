@@ -17,7 +17,7 @@
 ** This header file is #include-ed by sqliteInt.h and thus ends up
 ** being included by every source file.
 **
-** $Id: os.h,v 1.103 2008/06/09 21:57:23 drh Exp $
+** $Id: os.h,v 1.104 2008/06/25 17:19:01 danielk1977 Exp $
 */
 #ifndef _SQLITE_OS_H_
 #define _SQLITE_OS_H_
@@ -270,15 +270,5 @@ int sqlite3OsCurrentTime(sqlite3_vfs *, double*);
 */
 int sqlite3OsOpenMalloc(sqlite3_vfs *, const char *, sqlite3_file **, int,int*);
 int sqlite3OsCloseFree(sqlite3_file *);
-
-/*
-** Each OS-specific backend defines an instance of the following
-** structure for returning a pointer to its sqlite3_vfs.  If OS_OTHER
-** is defined (meaning that the application-defined OS interface layer
-** is used) then there is no default VFS.   The application must
-** register one or more VFS structures using sqlite3_vfs_register()
-** before attempting to use SQLite.
-*/
-sqlite3_vfs *sqlite3OsDefaultVfs(void);
 
 #endif /* _SQLITE_OS_H_ */

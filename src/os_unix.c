@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.188 2008/06/18 17:09:10 danielk1977 Exp $
+** $Id: os_unix.c,v 1.189 2008/06/25 17:19:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if OS_UNIX              /* This file is used on unix only */
@@ -2780,12 +2780,9 @@ static int unixGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 }
 
 /*
-** Return a pointer to the sqlite3DefaultVfs structure.   We use
-** a function rather than give the structure global scope because
-** some compilers (MSVC) do not allow forward declarations of
-** initialized structures.
+** Initialize and deinitialize the operating system interface.
 */
-sqlite3_vfs *sqlite3OsDefaultVfs(void){
+int sqlite3_os_init(void){ 
   static sqlite3_vfs unixVfs = {
     1,                  /* iVersion */
     sizeof(unixFile),   /* szOsFile */
@@ -2807,16 +2804,11 @@ sqlite3_vfs *sqlite3OsDefaultVfs(void){
     unixCurrentTime,    /* xCurrentTime */
     unixGetLastError    /* xGetLastError */
   };
-  
-  return &unixVfs;
+  sqlite3_vfs_register(&unixVfs, 1);
+  return SQLITE_OK; 
 }
-
-/*
-** Initialize and deinitialize the operating system interface.
-** These are stubs for now - populate with real code later...
-*/
-int sqlite3_os_init(void){ return SQLITE_OK; }
-int sqlite3_os_end(void){ return SQLITE_OK; }
-
+int sqlite3_os_end(void){ 
+  return SQLITE_OK; 
+}
  
 #endif /* OS_UNIX */

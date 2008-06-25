@@ -13,7 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 **
-** $Id: os.c,v 1.115 2008/06/19 16:07:07 drh Exp $
+** $Id: os.c,v 1.116 2008/06/25 17:19:01 danielk1977 Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
@@ -188,9 +188,7 @@ int sqlite3OsCloseFree(sqlite3_file *pFile){
 }
 
 /*
-** The list of all registered VFS implementations.  This list is
-** initialized to the single VFS returned by sqlite3OsDefaultVfs()
-** upon the first call to sqlite3_vfs_find().
+** The list of all registered VFS implementations.
 */
 static sqlite3_vfs *vfsList = 0;
 
@@ -200,7 +198,6 @@ static sqlite3_vfs *vfsList = 0;
 */
 sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
   sqlite3_vfs *pVfs = 0;
-  static int isInit = 0;
 #ifndef SQLITE_MUTEX_NOOP
   sqlite3_mutex *mutex;
 #endif
@@ -212,10 +209,6 @@ sqlite3_vfs *sqlite3_vfs_find(const char *zVfs){
   mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
   sqlite3_mutex_enter(mutex);
-  if( !isInit ){
-    vfsList = sqlite3OsDefaultVfs();
-    isInit = 1;
-  }
   for(pVfs = vfsList; pVfs; pVfs=pVfs->pNext){
     if( zVfs==0 ) break;
     if( strcmp(zVfs, pVfs->zName)==0 ) break;
@@ -251,16 +244,17 @@ static void vfsUnlink(sqlite3_vfs *pVfs){
 */
 int sqlite3_vfs_register(sqlite3_vfs *pVfs, int makeDflt){
 #ifndef SQLITE_MUTEX_NOOP
-  sqlite3_mutex *mutex;
+  sqlite3_mutex *mutex = 0;
 #endif
 #ifndef SQLITE_OMIT_AUTOINIT
   int rc = sqlite3_initialize();
   if( rc ) return rc;
 #endif
 #ifndef SQLITE_MUTEX_NOOP
-  mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+  if( sqlite3Config.isInit!=1 ){
+    mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+  }
 #endif
-  sqlite3_vfs_find(0);  /* Make sure we are initialized */
   sqlite3_mutex_enter(mutex);
   vfsUnlink(pVfs);
   if( makeDflt || vfsList==0 ){
@@ -288,10 +282,3 @@ int sqlite3_vfs_unregister(sqlite3_vfs *pVfs){
   return SQLITE_OK;
 }
 
-/*
-** Provide a default sqlite3OsDefaultVfs() implementation in the
-** cases where none of the standard backends are used.
-*/
-#if !OS_UNIX && !OS_WIN && !OS_OS2
-sqlite3_vfs *sqlite3OsDefaultVfs(void){ return 0; }
-#endif

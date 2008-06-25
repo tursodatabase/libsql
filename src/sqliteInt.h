@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.728 2008/06/25 14:26:08 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.729 2008/06/25 17:19:01 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1734,6 +1734,12 @@ typedef struct {
 ** Structure containing global configuration data for the SQLite library.
 **
 ** This structure also contains some state information.
+**
+** The Sqlite3Config.isInit variable indicates whether or not
+** sqlite3_initialize() has already been called or not. Initially, isInit
+** is 0. While sqlite3_initialize() is running, it is set to 1. After
+** sqlite3_initialize has successfully run, the Sqlite3Config.isInit variable
+** is set to 2. Calling sqlite3_shutdown() resets the value to 0.
 */
 struct Sqlite3Config {
   int bMemstat;                     /* True to enable memory status */
@@ -1750,6 +1756,7 @@ struct Sqlite3Config {
   void *pPage;                      /* Page cache memory */
   int szPage;                       /* Size of each page in pPage[] */
   int nPage;                        /* Number of pages in pPage[] */
+  int isInit;                       /* Initialization state */
 };
 
 /*

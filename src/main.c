@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.461 2008/06/25 14:26:08 danielk1977 Exp $
+** $Id: main.c,v 1.462 2008/06/25 17:19:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -54,12 +54,6 @@ void (*sqlite3IoTrace)(const char*, ...) = 0;
 char *sqlite3_temp_directory = 0;
 
 /*
-** Flags to help SQLite determine if it has been initialized.
-*/
-static int sqlite3IsInit = 0;        /* Initialization has started */
-static int sqlite3FullInit = 0;      /* Initialization is complete */
-
-/*
 ** Initialize SQLite.  
 **
 ** This routine must be called to initialize the memory allocation,
@@ -73,22 +67,22 @@ static int sqlite3FullInit = 0;      /* Initialization is complete */
 */
 int sqlite3_initialize(void){
   int rc;
-  if( sqlite3IsInit ) return SQLITE_OK;
+  if( sqlite3Config.isInit ) return SQLITE_OK;
   rc = sqlite3MutexInit();
   if( rc==SQLITE_OK ){
 #ifndef SQLITE_MUTEX_NOOP
     sqlite3_mutex *pMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
     sqlite3_mutex_enter(pMutex);
-    if( sqlite3IsInit==0 ){
-      sqlite3IsInit = 1;
+    if( sqlite3Config.isInit==0 ){
+      sqlite3Config.isInit = 1;
       sqlite3StatusReset();
       if( rc==SQLITE_OK ) rc = sqlite3MallocInit();
       if( rc==SQLITE_OK ) rc = sqlite3_os_init();
       if( rc!=SQLITE_OK ){
-        sqlite3IsInit = 0;
+        sqlite3Config.isInit = 0;
       }else{
-        sqlite3FullInit = 1;
+        sqlite3Config.isInit = 2;
       }
     }
     sqlite3_mutex_leave(pMutex);
@@ -106,8 +100,7 @@ int sqlite3_shutdown(void){
   sqlite3_os_end();
   sqlite3MallocEnd();
   sqlite3MutexEnd();
-  sqlite3FullInit = 0;
-  sqlite3IsInit = 0;
+  sqlite3Config.isInit = 0;
   return SQLITE_OK;
 }
 
@@ -126,7 +119,7 @@ int sqlite3_config(int op, ...){
 
   /* sqlite3_config() shall return SQLITE_MISUSE if it is invoked while
   ** the SQLite library is in use. */
-  if( sqlite3FullInit ) return SQLITE_MISUSE;
+  if( sqlite3Config.isInit==2 ) return SQLITE_MISUSE;
 
   va_start(ap, op);
   switch( op ){
