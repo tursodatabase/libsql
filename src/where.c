@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.309 2008/06/15 02:51:48 drh Exp $
+** $Id: where.c,v 1.310 2008/06/25 02:47:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1089,6 +1089,9 @@ static int isSortingIndex(
         ** ORDER BY term, that is OK.  Just ignore that column of the index
         */
         continue;
+      }else if( i==pIdx->nColumn ){
+        /* Index column i is the rowid.  All other terms match. */
+        break;
       }else{
         /* If an index column fails to match and is not constrained by ==
         ** then the index cannot satisfy the ORDER BY constraint.
