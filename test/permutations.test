@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.4 2008/06/24 19:02:55 danielk1977 Exp $
+# $Id: permutations.test,v 1.5 2008/06/25 10:34:35 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -329,20 +329,27 @@ run_tests "autovacuum_ioerr" -description {
   pragma auto_vacuum = 1
 } -include ioerr.test
 
-run_tests "mempool" -description {
+run_tests "memsys3" -description {
   Run tests using the allocator in mem3.c.
+} -exclude {
+  incrblob2.test manydb.test  autovacuum.test bigrow.test
+  collate5.test  delete3.test index2.test     ioerr.test  join3.test 
+  pagesize.test  bitvec.test  capi3.test      memsubsys1.test  limit.test
+  memdb.test     capi3c.test
 } -initialize {
   catch {db close}
   sqlite3_reset_auto_extension
   sqlite3_shutdown
-  sqlite3_config_mempool 1000000
+  sqlite3_config_memsys3 1000000
+  install_malloc_faultsim 1 
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
   catch {db close}
   sqlite3_reset_auto_extension
   sqlite3_shutdown
-  sqlite3_config_mempool 0
+  sqlite3_config_memsys3 0
+  install_malloc_faultsim 1 
   sqlite3_initialize
 }
 

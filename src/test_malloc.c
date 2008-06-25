@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.29 2008/06/24 19:02:55 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.30 2008/06/25 10:34:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -931,10 +931,10 @@ static int test_config_pagecache(
 }
 
 /*
-** Usage:    sqlite3_config_mempool NBYTE
+** Usage:    sqlite3_config_memsys3 NBYTE
 **
 */
-static int test_config_mempool(
+static int test_config_memsys3(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -956,9 +956,34 @@ static int test_config_mempool(
     if( sz>sizeof(buf) ){
       sz = sizeof(buf);
     }
-    rc = sqlite3_config(SQLITE_CONFIG_MEMPOOL, buf, sz);
+    rc = sqlite3_config(SQLITE_CONFIG_MEMSYS3, buf, sz);
   }
   Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  return TCL_OK;
+}
+
+/*
+** Usage:    sqlite3_dump_memsys3  FILENAME
+**
+** Write a summary of unfreed memsys3 allocations to FILENAME.
+*/
+static int test_dump_memsys3(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
+    return TCL_ERROR;
+  }
+#if defined(SQLITE_MEMDEBUG) || defined(SQLITE_MEMORY_SIZE) \
+     || defined(SQLITE_POW2_MEMORY_SIZE)
+  {
+    extern void sqlite3Memsys3Dump(const char*);
+    sqlite3Memsys3Dump(Tcl_GetString(objv[1]));
+  }
+#endif
   return TCL_OK;
 }
 
@@ -1061,7 +1086,8 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_memdebug_log",       test_memdebug_log             },
      { "sqlite3_config_scratch",     test_config_scratch           },
      { "sqlite3_config_pagecache",   test_config_pagecache         },
-     { "sqlite3_config_mempool",     test_config_mempool           },
+     { "sqlite3_config_memsys3",     test_config_memsys3           },
+     { "sqlite3_dump_memsys3",       test_dump_memsys3             },
      { "sqlite3_status",             test_status                   },
      { "install_malloc_faultsim",    test_install_malloc_faultsim  },
   };

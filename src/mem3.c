@@ -13,25 +13,28 @@
 ** allocation subsystem for use by SQLite. 
 **
 ** This version of the memory allocation subsystem omits all
-** use of malloc().  All dynamically allocatable memory is
-** contained in a static array, mem3.aPool[].  The size of this
-** fixed memory pool is SQLITE_MEMORY_SIZE bytes.
+** use of malloc(). The SQLite user supplies a block of memory
+** before calling sqlite3_initialize() from which allocations
+** are made and returned by the xMalloc() and xRealloc() 
+** implementations. Once sqlite3_initialize() has been called,
+** the amount of memory available to SQLite is fixed and cannot
+** be changed.
 **
-** This version of the memory allocation subsystem is used if
-** and only if SQLITE_MEMORY_SIZE is defined.
+** This version of the memory allocation subsystem is included
+** in the build only if SQLITE_ENABLE_MEMSYS3 is defined.
 **
-** $Id: mem3.c,v 1.15 2008/06/24 19:02:55 danielk1977 Exp $
+** $Id: mem3.c,v 1.16 2008/06/25 10:34:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
 /*
 ** This version of the memory allocator is only built into the library
-** SQLITE_ENABLE_MEMPOOL is defined. Defining this symbol does not
+** SQLITE_ENABLE_MEMSYS3 is defined. Defining this symbol does not
 ** mean that the library will use a memory-pool by default, just that
 ** it is available. The mempool allocator is activated by calling
 ** sqlite3_config().
 */
-#ifdef SQLITE_ENABLE_MEMPOOL
+#ifdef SQLITE_ENABLE_MEMSYS3
 
 /*
 ** Maximum size (in Mem3Blocks) of a "small" chunk.
@@ -347,8 +350,11 @@ static void memsys3Merge(u32 *pRoot){
 /*
 ** Return a block of memory of at least nBytes in size.
 ** Return NULL if unable.
+**
+** This function assumes that the necessary mutexes, if any, are
+** already held by the caller. Hence "Unsafe".
 */
-static void *memsys3Malloc(int nByte){
+static void *memsys3MallocUnsafe(int nByte){
   u32 i;
   int nBlock;
   int toFree;
@@ -426,8 +432,11 @@ static void *memsys3Malloc(int nByte){
 
 /*
 ** Free an outstanding memory allocation.
+**
+** This function assumes that the necessary mutexes, if any, are
+** already held by the caller. Hence "Unsafe".
 */
-void memsys3Free(void *pOld){
+void memsys3FreeUnsafe(void *pOld){
   Mem3Block *p = (Mem3Block*)pOld;
   int i;
   u32 size, x;
@@ -466,11 +475,11 @@ void memsys3Free(void *pOld){
 /*
 ** Allocate nBytes of memory.
 */
-static void *mempoolMalloc(int nBytes){
+static void *memsys3Malloc(int nBytes){
   sqlite3_int64 *p;
   assert( nBytes>0 );          /* malloc.c filters out 0 byte requests */
   memsys3Enter();
-  p = memsys3Malloc(nBytes);
+  p = memsys3MallocUnsafe(nBytes);
   memsys3Leave();
   return (void*)p; 
 }
@@ -478,10 +487,10 @@ static void *mempoolMalloc(int nBytes){
 /*
 ** Free memory.
 */
-void mempoolFree(void *pPrior){
+void memsys3Free(void *pPrior){
   assert( pPrior );
   memsys3Enter();
-  memsys3Free(pPrior);
+  memsys3FreeUnsafe(pPrior);
   memsys3Leave();
 }
 
@@ -490,7 +499,7 @@ void mempoolFree(void *pPrior){
 ** size returned omits the 8-byte header overhead.  This only
 ** works for chunks that are currently checked out.
 */
-static int mempoolSize(void *p){
+static int memsys3Size(void *p){
   Mem3Block *pBlock = (Mem3Block*)p;
   assert( pBlock );
   assert( (pBlock[-1].u.hdr.size4x&1)!=0 );
@@ -500,7 +509,7 @@ static int mempoolSize(void *p){
 /*
 ** Change the size of an existing memory allocation
 */
-void *mempoolRealloc(void *pPrior, int nBytes){
+void *memsys3Realloc(void *pPrior, int nBytes){
   int nOld;
   void *p;
   if( pPrior==0 ){
@@ -510,19 +519,19 @@ void *mempoolRealloc(void *pPrior, int nBytes){
     sqlite3_free(pPrior);
     return 0;
   }
-  nOld = mempoolSize(pPrior);
+  nOld = memsys3Size(pPrior);
   if( nBytes<=nOld && nBytes>=nOld-128 ){
     return pPrior;
   }
   memsys3Enter();
-  p = mempoolMalloc(nBytes);
+  p = memsys3MallocUnsafe(nBytes);
   if( p ){
     if( nOld<nBytes ){
       memcpy(p, pPrior, nOld);
     }else{
       memcpy(p, pPrior, nBytes);
     }
-    mempoolFree(pPrior);
+    memsys3FreeUnsafe(pPrior);
   }
   memsys3Leave();
   return p;
@@ -531,22 +540,21 @@ void *mempoolRealloc(void *pPrior, int nBytes){
 /*
 ** Round up a request size to the next valid allocation size.
 */
-static int mempoolRoundup(int n){
-  /* TODO: Fix me */
-  return n;
+static int memsys3Roundup(int n){
+  return (n+7) & ~7;
 }
 
 /*
 ** Initialize this module.
 */
-static int mempoolInit(void *NotUsed){
+static int memsys3Init(void *NotUsed){
   return SQLITE_OK;
 }
 
 /*
 ** Deinitialize this module.
 */
-static void mempoolShutdown(void *NotUsed){
+static void memsys3Shutdown(void *NotUsed){
   return;
 }
 
@@ -556,9 +564,8 @@ static void mempoolShutdown(void *NotUsed){
 ** Open the file indicated and write a log of all unfreed memory 
 ** allocations into that log.
 */
-#if 0
-void sqlite3MemdebugDump(const char *zFilename){
 #ifdef SQLITE_DEBUG
+void sqlite3Memsys3Dump(const char *zFilename){
   FILE *out;
   int i, j;
   u32 size;
@@ -574,7 +581,7 @@ void sqlite3MemdebugDump(const char *zFilename){
   }
   memsys3Enter();
   fprintf(out, "CHUNKS:\n");
-  for(i=1; i<=SQLITE_MEMORY_SIZE/8; i+=size/4){
+  for(i=1; i<=mem3.nPool; i+=size/4){
     size = mem3.aPool[i-1].u.hdr.size4x;
     if( size/4<=1 ){
       fprintf(out, "%p size error\n", &mem3.aPool[i]);
@@ -617,15 +624,14 @@ void sqlite3MemdebugDump(const char *zFilename){
     fprintf(out, "\n"); 
   }
   fprintf(out, "master=%d\n", mem3.iMaster);
-  fprintf(out, "nowUsed=%d\n", SQLITE_MEMORY_SIZE - mem3.szMaster*8);
-  fprintf(out, "mxUsed=%d\n", SQLITE_MEMORY_SIZE - mem3.mnMaster*8);
+  fprintf(out, "nowUsed=%d\n", mem3.nPool*8 - mem3.szMaster*8);
+  fprintf(out, "mxUsed=%d\n", mem3.nPool*8 - mem3.mnMaster*8);
   sqlite3_mutex_leave(mem3.mutex);
   if( out==stdout ){
     fflush(stdout);
   }else{
     fclose(out);
   }
-#endif
 }
 #endif
 
@@ -640,15 +646,15 @@ void sqlite3MemdebugDump(const char *zFilename){
 ** This routine is only called by sqlite3_config(), and therefore
 ** is not required to be threadsafe (it is not).
 */
-void sqlite3MemSetMempool(u8 *pBlock, int nBlock){
+void sqlite3MemSetMemsys3(u8 *pBlock, int nBlock){
   static const sqlite3_mem_methods mempoolMethods = {
-     mempoolMalloc,
-     mempoolFree,
-     mempoolRealloc,
-     mempoolSize,
-     mempoolRoundup,
-     mempoolInit,
-     mempoolShutdown,
+     memsys3Malloc,
+     memsys3Free,
+     memsys3Realloc,
+     memsys3Size,
+     memsys3Roundup,
+     memsys3Init,
+     memsys3Shutdown,
      0
   };
 
@@ -669,4 +675,4 @@ void sqlite3MemSetMempool(u8 *pBlock, int nBlock){
   mem3.aPool[mem3.nPool].u.hdr.size4x = 1;
 }
 
-#endif /* SQLITE_MEMPOOL_MALLOC */
+#endif /* SQLITE_ENABLE_MEMSYS3 */
