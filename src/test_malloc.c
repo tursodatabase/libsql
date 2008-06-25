@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.30 2008/06/25 10:34:35 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.31 2008/06/25 14:26:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -931,18 +931,20 @@ static int test_config_pagecache(
 }
 
 /*
-** Usage:    sqlite3_config_memsys3 NBYTE
+** Usage:    
+** 
+**   sqlite3_config_memsys3 NBYTE
+**   sqlite3_config_memsys5 NBYTE
 **
 */
 static int test_config_memsys3(
-  void * clientData,
+  void * clientData, 
   Tcl_Interp *interp,
   int objc,
   Tcl_Obj *CONST objv[]
 ){
   int sz, rc;
-  Tcl_Obj *pResult;
-  static char buf[1000000];
+  static char buf[1048576];
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "NBYTE");
     return TCL_ERROR;
@@ -956,14 +958,17 @@ static int test_config_memsys3(
     if( sz>sizeof(buf) ){
       sz = sizeof(buf);
     }
-    rc = sqlite3_config(SQLITE_CONFIG_MEMSYS3, buf, sz);
+    rc = sqlite3_config((int)clientData, buf, sz);
   }
   Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
   return TCL_OK;
 }
 
 /*
-** Usage:    sqlite3_dump_memsys3  FILENAME
+** Usage:    
+**
+**   sqlite3_dump_memsys3  FILENAME
+**   sqlite3_dump_memsys5  FILENAME
 **
 ** Write a summary of unfreed memsys3 allocations to FILENAME.
 */
@@ -977,13 +982,23 @@ static int test_dump_memsys3(
     Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
     return TCL_ERROR;
   }
-#if defined(SQLITE_MEMDEBUG) || defined(SQLITE_MEMORY_SIZE) \
-     || defined(SQLITE_POW2_MEMORY_SIZE)
-  {
-    extern void sqlite3Memsys3Dump(const char*);
-    sqlite3Memsys3Dump(Tcl_GetString(objv[1]));
-  }
+
+  switch( (int)clientData ){
+    case SQLITE_CONFIG_MEMSYS3: {
+#ifdef SQLITE_ENABLE_MEMSYS3
+      extern void sqlite3Memsys3Dump(const char*);
+      sqlite3Memsys3Dump(Tcl_GetString(objv[1]));
+      break;
 #endif
+    }
+    case SQLITE_CONFIG_MEMSYS5: {
+#ifdef SQLITE_ENABLE_MEMSYS5
+      extern void sqlite3Memsys5Dump(const char*);
+      sqlite3Memsys5Dump(Tcl_GetString(objv[1]));
+      break;
+#endif
+    }
+  }
   return TCL_OK;
 }
 
@@ -1069,31 +1084,35 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
   static struct {
      char *zName;
      Tcl_ObjCmdProc *xProc;
+     int clientData;
   } aObjCmd[] = {
-     { "sqlite3_malloc",             test_malloc                   },
-     { "sqlite3_realloc",            test_realloc                  },
-     { "sqlite3_free",               test_free                     },
-     { "memset",                     test_memset                   },
-     { "memget",                     test_memget                   },
-     { "sqlite3_memory_used",        test_memory_used              },
-     { "sqlite3_memory_highwater",   test_memory_highwater         },
-     { "sqlite3_memdebug_backtrace", test_memdebug_backtrace       },
-     { "sqlite3_memdebug_dump",      test_memdebug_dump            },
-     { "sqlite3_memdebug_fail",      test_memdebug_fail            },
-     { "sqlite3_memdebug_pending",   test_memdebug_pending         },
-     { "sqlite3_memdebug_settitle",  test_memdebug_settitle        },
-     { "sqlite3_memdebug_malloc_count", test_memdebug_malloc_count },
-     { "sqlite3_memdebug_log",       test_memdebug_log             },
-     { "sqlite3_config_scratch",     test_config_scratch           },
-     { "sqlite3_config_pagecache",   test_config_pagecache         },
-     { "sqlite3_config_memsys3",     test_config_memsys3           },
-     { "sqlite3_dump_memsys3",       test_dump_memsys3             },
-     { "sqlite3_status",             test_status                   },
-     { "install_malloc_faultsim",    test_install_malloc_faultsim  },
+     { "sqlite3_malloc",             test_malloc                   ,0. },
+     { "sqlite3_realloc",            test_realloc                  ,0. },
+     { "sqlite3_free",               test_free                     ,0. },
+     { "memset",                     test_memset                   ,0. },
+     { "memget",                     test_memget                   ,0. },
+     { "sqlite3_memory_used",        test_memory_used              ,0. },
+     { "sqlite3_memory_highwater",   test_memory_highwater         ,0. },
+     { "sqlite3_memdebug_backtrace", test_memdebug_backtrace       ,0. },
+     { "sqlite3_memdebug_dump",      test_memdebug_dump            ,0. },
+     { "sqlite3_memdebug_fail",      test_memdebug_fail            ,0. },
+     { "sqlite3_memdebug_pending",   test_memdebug_pending         ,0. },
+     { "sqlite3_memdebug_settitle",  test_memdebug_settitle        ,0. },
+     { "sqlite3_memdebug_malloc_count", test_memdebug_malloc_count ,0. },
+     { "sqlite3_memdebug_log",       test_memdebug_log             ,0. },
+     { "sqlite3_config_scratch",     test_config_scratch           ,0. },
+     { "sqlite3_config_pagecache",   test_config_pagecache         ,0. },
+     { "sqlite3_status",             test_status                   ,0. },
+     { "install_malloc_faultsim",    test_install_malloc_faultsim  ,0. },
+     { "sqlite3_config_memsys3", test_config_memsys3, SQLITE_CONFIG_MEMSYS3 },
+     { "sqlite3_config_memsys5", test_config_memsys3, SQLITE_CONFIG_MEMSYS5 },
+     { "sqlite3_dump_memsys3",   test_dump_memsys3  , SQLITE_CONFIG_MEMSYS3 },
+     { "sqlite3_dump_memsys5",   test_dump_memsys3  , SQLITE_CONFIG_MEMSYS5 }
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
-    Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, 0, 0);
+    ClientData c = (ClientData)aObjCmd[i].clientData;
+    Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, c, 0);
   }
   return TCL_OK;
 }

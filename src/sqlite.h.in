@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.356 2008/06/25 10:34:35 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.357 2008/06/25 14:26:08 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1115,6 +1115,14 @@ struct sqlite3_mem_methods {
 ** caller must ensure that the block of memory remains valid for as long
 ** as the memsys3 allocator is in use.</dd>
 **
+** <dt>SQLITE_CONFIG_MEMSYS5</dt>
+** <dd>This option is only available if SQLite is compiled with the 
+** SQLITE_ENABLE_MEMSYS5 symbol defined. If available, then it is similar
+** to the SQLITE_CONFIG_MEMSYS3 option. The "memsys5" allocator differs
+** from the "memsys3" allocator in that it rounds all allocations up to
+** the next largest power of two. Although this is sometimes more wasteful
+** than the procudures used by memsys3, it guarantees an upper limit on
+** internal fragmentation.</dd>
 ** </dl>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
@@ -1129,6 +1137,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_MUTEX        10  /* sqlite3_mutex_methods* */
 #define SQLITE_CONFIG_GETMUTEX     11  /* sqlite3_mutex_methods* */
 #define SQLITE_CONFIG_MEMSYS3      12  /* u8*, int */
+#define SQLITE_CONFIG_MEMSYS5      13  /* u8*, int */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes {F12200}
