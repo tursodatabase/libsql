@@ -211,6 +211,8 @@ foreach file {
    fault.c
    mem1.c
    mem2.c
+   mem3.c
+   mem5.c
    mutex.c
    mutex_os2.c
    mutex_unix.c

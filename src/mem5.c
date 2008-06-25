@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS5 is defined.
 **
-** $Id: mem5.c,v 1.7 2008/06/25 14:26:08 danielk1977 Exp $
+** $Id: mem5.c,v 1.8 2008/06/25 14:57:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -180,15 +180,18 @@ static void memsys5Link(int i, int iLogsize){
 }
 
 /*
-** Enter the mutex mem5.mutex. Allocate it if it is not already allocated.
-**
-** Also:  Initialize the memory allocation subsystem the first time
-** this routine is called.
+** If the STATIC_MEM mutex is not already held, obtain it now. The mutex
+** will already be held (obtained by code in malloc.c) if
+** sqlite3Config.bMemStat is true.
 */
 static void memsys5Enter(void){
+  if( sqlite3Config.bMemstat==0 && mem5.mutex==0 ){
+    mem5.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
+  }
+  sqlite3_mutex_enter(mem5.mutex);
 }
-
 static void memsys5Leave(void){
+  sqlite3_mutex_leave(mem5.mutex);
 }
 
 /*

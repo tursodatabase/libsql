@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS3 is defined.
 **
-** $Id: mem3.c,v 1.16 2008/06/25 10:34:35 danielk1977 Exp $
+** $Id: mem3.c,v 1.17 2008/06/25 14:57:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -216,20 +216,18 @@ static void memsys3Link(u32 i){
 }
 
 /*
-** Enter the mutex mem3.mutex. Allocate it if it is not already allocated.
-**
-** Also:  Initialize the memory allocation subsystem the first time
-** this routine is called.
+** If the STATIC_MEM mutex is not already held, obtain it now. The mutex
+** will already be held (obtained by code in malloc.c) if
+** sqlite3Config.bMemStat is true.
 */
 static void memsys3Enter(void){
-#if 0
-  if( mem3.mutex==0 ){
+  if( sqlite3Config.bMemstat==0 && mem3.mutex==0 ){
     mem3.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   }
   sqlite3_mutex_enter(mem3.mutex);
-#endif
 }
 static void memsys3Leave(void){
+  sqlite3_mutex_leave(mem3.mutex);
 }
 
 /*

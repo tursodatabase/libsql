@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.6 2008/06/25 14:26:09 danielk1977 Exp $
+# $Id: permutations.test,v 1.7 2008/06/25 14:57:54 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -329,52 +329,56 @@ run_tests "autovacuum_ioerr" -description {
   pragma auto_vacuum = 1
 } -include ioerr.test
 
-run_tests "memsys3" -description {
-  Run tests using the allocator in mem3.c.
-} -exclude {
-  incrblob2.test manydb.test  autovacuum.test bigrow.test
-  collate5.test  delete3.test index2.test     ioerr.test  join3.test 
-  pagesize.test  bitvec.test  capi3.test      memsubsys1.test  limit.test
-  memdb.test     capi3c.test
-} -initialize {
-  catch {db close}
-  sqlite3_reset_auto_extension
-  sqlite3_shutdown
-  sqlite3_config_memsys3 1000000
-  install_malloc_faultsim 1 
-  sqlite3_initialize
-  autoinstall_test_functions
-} -shutdown {
-  catch {db close}
-  sqlite3_reset_auto_extension
-  sqlite3_shutdown
-  sqlite3_config_memsys3 0
-  install_malloc_faultsim 1 
-  sqlite3_initialize
+ifcapable mem3 {
+  run_tests "memsys3" -description {
+    Run tests using the allocator in mem3.c.
+  } -exclude {
+    incrblob2.test manydb.test  autovacuum.test bigrow.test
+    collate5.test  delete3.test index2.test     ioerr.test  join3.test 
+    pagesize.test  bitvec.test  capi3.test      memsubsys1.test  limit.test
+    memdb.test     capi3c.test
+  } -initialize {
+    catch {db close}
+    sqlite3_reset_auto_extension
+    sqlite3_shutdown
+    sqlite3_config_memsys3 1000000
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+    autoinstall_test_functions
+  } -shutdown {
+    catch {db close}
+    sqlite3_reset_auto_extension
+    sqlite3_shutdown
+    sqlite3_config_memsys3 0
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+  }
 }
 
-run_tests "memsys5" -description {
-  Run tests using the allocator in mem3.c.
-} -exclude {
-  incrblob2.test manydb.test  autovacuum.test bigrow.test
-  collate5.test  delete3.test index2.test     ioerr.test  join3.test 
-  pagesize.test  bitvec.test  capi3.test      memsubsys1.test  limit.test
-  memdb.test     capi3c.test  func.test
-} -initialize {
-  catch {db close}
-  sqlite3_reset_auto_extension
-  sqlite3_shutdown
-  sqlite3_config_memsys5 1000000
-  install_malloc_faultsim 1 
-  sqlite3_initialize
-  autoinstall_test_functions
-} -shutdown {
-  catch {db close}
-  sqlite3_reset_auto_extension
-  sqlite3_shutdown
-  sqlite3_config_memsys5 0
-  install_malloc_faultsim 1 
-  sqlite3_initialize
+ifcapable mem5 {
+  run_tests "memsys5" -description {
+    Run tests using the allocator in mem5.c.
+  } -exclude {
+    incrblob2.test manydb.test  autovacuum.test bigrow.test
+    collate5.test  delete3.test index2.test     ioerr.test  join3.test 
+    pagesize.test  bitvec.test  capi3.test      memsubsys1.test  limit.test
+    memdb.test     capi3c.test  func.test
+  } -initialize {
+    catch {db close}
+    sqlite3_reset_auto_extension
+    sqlite3_shutdown
+    sqlite3_config_memsys5 1000000
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+    autoinstall_test_functions
+  } -shutdown {
+    catch {db close}
+    sqlite3_reset_auto_extension
+    sqlite3_shutdown
+    sqlite3_config_memsys5 0
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+  }
 }
 
 # run_tests "crash_safe_append" -description {
