@@ -1,5 +1,5 @@
-C Fix\sthe\sallocator\sin\smem5.c\sso\sthat\sit\scan\sbe\senabled\sat\srun\stime\susing\sthe\ssqlite3_config()\sfunction.\s(CVS\s5304)
-D 2008-06-25T14:26:08
+C Test\senhancements,\sespecially\sto\sthe\snew\scompound-SELECT\smerge\slogic.\s(CVS\s5305)
+D 2008-06-25T14:31:53
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -339,8 +339,8 @@ F test/in.test ca4ea8ac1077f5221055fcb66969892612632ef7
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
-F test/incrblob2.test 4dc86910dea806f75c941e91785cb1da69c14a6f
-F test/incrblob_err.test 00a8bcb25cb493d53f4efed0f5cf09c386534940
+F test/incrblob2.test a1db17c1f70bdbf9cae8415fb500df511569306a
+F test/incrblob_err.test a3e3d9442d2993e8a449e791db4001d11a2f683f
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
 F test/incrvacuum_ioerr.test ebc94092ac1545d9ce518a673988aef88197ca4e
@@ -447,7 +447,7 @@ F test/select6.test 399f14b9ba37b768afe5d2cd8c12e4f340a69db8
 F test/select7.test 7906735805cfbee4dddc0bed4c14e68d7f5f9c5f
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test 0e1a5470bac7e6daa757d8df3fbfaee6730c544e
-F test/selectA.test 45263e0936f654ddbd0c451b49790d9956f3b921
+F test/selectA.test e4501789a1d0fe9d00db15187623fb5b7031357b
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test c6769531e0cb751d46a9838c0532d3786606c0f6
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9c6c8e01b31abfe2bc8e650bbfdb504021dc7e59
-R 8f7483e2fdaf9f81d7806dda44fbca72
-U danielk1977
-Z b5c0c1b2ba1d5eb688c90f849be1cc0e
+P 30ff6bb0b2d1068d28e86ac90bb9f454e4537a2d
+R c93b123df0b25165ffd3a040169a5b55
+U drh
+Z 0b17565ed474d5b4889c83b3477691a8

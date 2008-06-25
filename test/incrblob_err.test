@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob_err.test,v 1.9 2008/05/12 07:42:20 danielk1977 Exp $
+# $Id: incrblob_err.test,v 1.10 2008/06/25 14:31:53 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -22,6 +22,7 @@ ifcapable {!incrblob  || !memdebug || !tclvar} {
 
 source $testdir/malloc_common.tcl
 
+unset -nocomplain ::fd ::data
 set ::fd [open [info script]]
 set ::data [read $::fd]
 close $::fd

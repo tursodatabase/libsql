@@ -17,7 +17,7 @@
 # explicit sort order and explicit collating secquites) and
 # with and without optional LIMIT and OFFSET clauses.
 #
-# $Id: selectA.test,v 1.2 2008/06/25 02:47:57 drh Exp $
+# $Id: selectA.test,v 1.3 2008/06/25 14:31:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -44,6 +44,18 @@ do_test selectA-1.1 {
     SELECT * FROM t2;
   }
 } {{} U u mad Z z hare m M 5200000.0 X x -23 Y y}
+do_test selectA-1.2 {
+  execsql {
+    CREATE TABLE t3(a,b,c COLLATE NOCASE);
+    INSERT INTO t3 SELECT * FROM t1;
+    INSERT INTO t3 SELECT * FROM t2;
+    INSERT INTO t3 SELECT * FROM t1;
+    INSERT INTO t3 SELECT * FROM t2;
+    INSERT INTO t3 SELECT * FROM t1;
+    INSERT INTO t3 SELECT * FROM t2;
+    SELECT count(*) FROM t3;
+  }
+} {30}
 
 do_test selectA-2.1 {
   execsql {
@@ -429,6 +441,196 @@ do_test selectA-2.64 {
     ORDER BY c
   }
 } {1 a a 9.9 b B {} C c}
+do_test selectA-2.65 {
+  execsql {
+    SELECT a,b,c FROM t3 INTERSECT SELECT a,b,c FROM t1 WHERE b<'d'
+    ORDER BY c COLLATE NOCASE
+  }
+} {1 a a 9.9 b B {} C c}
+do_test selectA-2.66 {
+  execsql {
+    SELECT a,b,c FROM t1 WHERE b<'d' INTERSECT SELECT a,b,c FROM t3
+    ORDER BY c
+  }
+} {1 a a 9.9 b B {} C c}
+do_test selectA-2.67 {
+  execsql {
+    SELECT a,b,c FROM t1 EXCEPT SELECT a,b,c FROM t3 WHERE b<'d'
+    ORDER BY c DESC, a
+  }
+} {abc e e hello d D}
+do_test selectA-2.68 {
+  execsql {
+    SELECT a,b,c FROM t1 EXCEPT SELECT a,b,c FROM t1 WHERE b<'d'
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT b,c,a FROM t3
+    ORDER BY c DESC, a
+  }
+} {abc e e hello d D}
+do_test selectA-2.69 {
+  execsql {
+    SELECT a,b,c FROM t1 INTERSECT SELECT a,b,c FROM t1 WHERE b<'d'
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT b,c,a FROM t3
+    ORDER BY c COLLATE NOCASE
+  }
+} {1 a a 9.9 b B {} C c}
+do_test selectA-2.70 {
+  execsql {
+    SELECT a,b,c FROM t1 WHERE b<'d' INTERSECT SELECT a,b,c FROM t1
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT b,c,a FROM t3
+    ORDER BY c
+  }
+} {1 a a 9.9 b B {} C c}
+do_test selectA-2.71 {
+  execsql {
+    SELECT a,b,c FROM t1 WHERE b<'d'
+    INTERSECT SELECT a,b,c FROM t1
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT b,c,a FROM t3
+    INTERSECT SELECT a,b,c FROM t1
+    EXCEPT SELECT x,y,z FROM t2
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT y,x,z FROM t2
+    INTERSECT SELECT a,b,c FROM t1
+    EXCEPT SELECT c,b,a FROM t3
+    ORDER BY c
+  }
+} {1 a a 9.9 b B {} C c}
+do_test selectA-2.72 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY a,b,c
+  }
+} {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
+do_test selectA-2.73 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY a DESC,b,c
+  }
+} {hare m M abc e e mad Z z hello d D 5200000.0 X x 9.9 b B 1 a a -23 Y y {} C c {} U u}
+do_test selectA-2.74 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY a,c,b
+  }
+} {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
+do_test selectA-2.75 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY b,a,c
+  }
+} {{} C c {} U u 5200000.0 X x -23 Y y mad Z z 1 a a 9.9 b B hello d D abc e e hare m M}
+do_test selectA-2.76 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY b COLLATE NOCASE,a,c
+  }
+} {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
+do_test selectA-2.77 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY b COLLATE NOCASE DESC,a,c
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
+do_test selectA-2.78 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY c,b,a
+  }
+} {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
+do_test selectA-2.79 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY c,a,b
+  }
+} {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
+do_test selectA-2.80 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY c DESC,a,b
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
+do_test selectA-2.81 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY c COLLATE BINARY DESC,a,b
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u abc e e {} C c 1 a a hare m M hello d D 9.9 b B}
+do_test selectA-2.82 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY a,b,c
+  }
+} {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
+do_test selectA-2.83 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY a DESC,b,c
+  }
+} {hare m M abc e e mad Z z hello d D 5200000.0 X x 9.9 b B 1 a a -23 Y y {} C c {} U u}
+do_test selectA-2.84 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY a,c,b
+  }
+} {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
+do_test selectA-2.85 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY b,a,c
+  }
+} {{} C c {} U u 5200000.0 X x -23 Y y mad Z z 1 a a 9.9 b B hello d D abc e e hare m M}
+do_test selectA-2.86 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY b COLLATE NOCASE,a,c
+  }
+} {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
+do_test selectA-2.87 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY y COLLATE NOCASE DESC,x,z
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
+do_test selectA-2.88 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY c,b,a
+  }
+} {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
+do_test selectA-2.89 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY c,a,b
+  }
+} {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
+do_test selectA-2.90 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY c DESC,a,b
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
+do_test selectA-2.91 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY c COLLATE BINARY DESC,a,b
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u abc e e {} C c 1 a a hare m M hello d D 9.9 b B}
+do_test selectA-2.92 {
+  execsql {
+    SELECT x,y,z FROM t2
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT c,b,a FROM t1
+    UNION SELECT a,b,c FROM t3
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT c,b,a FROM t1
+    UNION SELECT a,b,c FROM t3
+    ORDER BY y COLLATE NOCASE DESC,x,z
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
+
 
 do_test selectA-3.0 {
   execsql {
@@ -825,6 +1027,195 @@ do_test selectA-3.64 {
     ORDER BY c
   }
 } {1 a a 9.9 b B {} C c}
+do_test selectA-3.65 {
+  execsql {
+    SELECT a,b,c FROM t3 INTERSECT SELECT a,b,c FROM t1 WHERE b<'d'
+    ORDER BY c COLLATE NOCASE
+  }
+} {1 a a 9.9 b B {} C c}
+do_test selectA-3.66 {
+  execsql {
+    SELECT a,b,c FROM t1 WHERE b<'d' INTERSECT SELECT a,b,c FROM t3
+    ORDER BY c
+  }
+} {1 a a 9.9 b B {} C c}
+do_test selectA-3.67 {
+  execsql {
+    SELECT a,b,c FROM t1 EXCEPT SELECT a,b,c FROM t3 WHERE b<'d'
+    ORDER BY c DESC, a
+  }
+} {abc e e hello d D}
+do_test selectA-3.68 {
+  execsql {
+    SELECT a,b,c FROM t1 EXCEPT SELECT a,b,c FROM t1 WHERE b<'d'
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT b,c,a FROM t3
+    ORDER BY c DESC, a
+  }
+} {abc e e hello d D}
+do_test selectA-3.69 {
+  execsql {
+    SELECT a,b,c FROM t1 INTERSECT SELECT a,b,c FROM t1 WHERE b<'d'
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT b,c,a FROM t3
+    ORDER BY c COLLATE NOCASE
+  }
+} {1 a a 9.9 b B {} C c}
+do_test selectA-3.70 {
+  execsql {
+    SELECT a,b,c FROM t1 WHERE b<'d' INTERSECT SELECT a,b,c FROM t1
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT b,c,a FROM t3
+    ORDER BY c
+  }
+} {1 a a 9.9 b B {} C c}
+do_test selectA-3.71 {
+  execsql {
+    SELECT a,b,c FROM t1 WHERE b<'d'
+    INTERSECT SELECT a,b,c FROM t1
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT b,c,a FROM t3
+    INTERSECT SELECT a,b,c FROM t1
+    EXCEPT SELECT x,y,z FROM t2
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT y,x,z FROM t2
+    INTERSECT SELECT a,b,c FROM t1
+    EXCEPT SELECT c,b,a FROM t3
+    ORDER BY c
+  }
+} {1 a a 9.9 b B {} C c}
+do_test selectA-3.72 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY a,b,c
+  }
+} {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
+do_test selectA-3.73 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY a DESC,b,c
+  }
+} {hare m M abc e e mad Z z hello d D 5200000.0 X x 9.9 b B 1 a a -23 Y y {} C c {} U u}
+do_test selectA-3.74 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY a,c,b
+  }
+} {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
+do_test selectA-3.75 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY b,a,c
+  }
+} {{} C c {} U u 5200000.0 X x -23 Y y mad Z z 1 a a 9.9 b B hello d D abc e e hare m M}
+do_test selectA-3.76 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY b COLLATE NOCASE,a,c
+  }
+} {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
+do_test selectA-3.77 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY b COLLATE NOCASE DESC,a,c
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
+do_test selectA-3.78 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY c,b,a
+  }
+} {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
+do_test selectA-3.79 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY c,a,b
+  }
+} {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
+do_test selectA-3.80 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY c DESC,a,b
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
+do_test selectA-3.81 {
+  execsql {
+    SELECT a,b,c FROM t3 UNION SELECT x,y,z FROM t2
+    ORDER BY c COLLATE BINARY DESC,a,b
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u abc e e {} C c 1 a a hare m M hello d D 9.9 b B}
+do_test selectA-3.82 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY a,b,c
+  }
+} {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
+do_test selectA-3.83 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY a DESC,b,c
+  }
+} {hare m M abc e e mad Z z hello d D 5200000.0 X x 9.9 b B 1 a a -23 Y y {} C c {} U u}
+do_test selectA-3.84 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY a,c,b
+  }
+} {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
+do_test selectA-3.85 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY b,a,c
+  }
+} {{} C c {} U u 5200000.0 X x -23 Y y mad Z z 1 a a 9.9 b B hello d D abc e e hare m M}
+do_test selectA-3.86 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY b COLLATE NOCASE,a,c
+  }
+} {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
+do_test selectA-3.87 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY y COLLATE NOCASE DESC,x,z
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
+do_test selectA-3.88 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY c,b,a
+  }
+} {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
+do_test selectA-3.89 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY c,a,b
+  }
+} {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
+do_test selectA-3.90 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY c DESC,a,b
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
+do_test selectA-3.91 {
+  execsql {
+    SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
+    ORDER BY c COLLATE BINARY DESC,a,b
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u abc e e {} C c 1 a a hare m M hello d D 9.9 b B}
+do_test selectA-3.92 {
+  execsql {
+    SELECT x,y,z FROM t2
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT c,b,a FROM t1
+    UNION SELECT a,b,c FROM t3
+    INTERSECT SELECT a,b,c FROM t3
+    EXCEPT SELECT c,b,a FROM t1
+    UNION SELECT a,b,c FROM t3
+    ORDER BY y COLLATE NOCASE DESC,x,z
+  }
+} {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
 
 
 finish_test

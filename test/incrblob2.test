@@ -12,7 +12,7 @@
 # Test that it is possible to have two open blob handles on a single
 # blob object.
 #
-# $Id: incrblob2.test,v 1.5 2008/06/16 14:36:01 danielk1977 Exp $
+# $Id: incrblob2.test,v 1.6 2008/06/25 14:31:53 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -132,6 +132,7 @@ do_test incrblob2-3.4 {
 # invalidated at the correct times.
 #
 do_test incrblob2-4.1 {
+  unset -nocomplain data
   db eval BEGIN
   db eval { CREATE TABLE t1(id INTEGER PRIMARY KEY, data BLOB); }
   for {set ii 1} {$ii < 100} {incr ii} {
@@ -353,4 +354,3 @@ do_test incrblob2-7.5 {
 } {}
 
 finish_test
-
