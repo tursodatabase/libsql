@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.392 2008/06/23 13:57:22 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.393 2008/06/25 00:12:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -441,31 +441,32 @@ static void freeEphemeralFunction(FuncDef *pDef){
 /*
 ** Delete a P4 value if necessary.
 */
-static void freeP4(int p4type, void *p3){
-  if( p3 ){
+static void freeP4(int p4type, void *p4){
+  if( p4 ){
     switch( p4type ){
       case P4_REAL:
       case P4_INT64:
       case P4_MPRINTF:
       case P4_DYNAMIC:
       case P4_KEYINFO:
+      case P4_INTARRAY:
       case P4_KEYINFO_HANDOFF: {
-        sqlite3_free(p3);
+        sqlite3_free(p4);
         break;
       }
       case P4_VDBEFUNC: {
-        VdbeFunc *pVdbeFunc = (VdbeFunc *)p3;
+        VdbeFunc *pVdbeFunc = (VdbeFunc *)p4;
         freeEphemeralFunction(pVdbeFunc->pFunc);
         sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
         sqlite3_free(pVdbeFunc);
         break;
       }
       case P4_FUNCDEF: {
-        freeEphemeralFunction((FuncDef*)p3);
+        freeEphemeralFunction((FuncDef*)p4);
         break;
       }
       case P4_MEM: {
-        sqlite3ValueFree((sqlite3_value*)p3);
+        sqlite3ValueFree((sqlite3_value*)p4);
         break;
       }
     }
@@ -697,6 +698,10 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       break;
     }
 #endif
+    case P4_INTARRAY: {
+      sqlite3_snprintf(nTemp, zTemp, "intarray");
+      break;
+    }
     default: {
       zP4 = pOp->p4.z;
       if( zP4==0 ){

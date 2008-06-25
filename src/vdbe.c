@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.754 2008/06/23 18:49:44 danielk1977 Exp $
+** $Id: vdbe.c,v 1.755 2008/06/25 00:12:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -546,6 +546,8 @@ int sqlite3VdbeExec(
   Mem *pIn1, *pIn2, *pIn3;   /* Input operands */
   Mem *pOut;                 /* Output operand */
   u8 opProperty;
+  int iCompare = 0;          /* Result of last OP_Compare operation */
+  int *aPermute = 0;         /* Permuation of columns for OP_Compare */
 #ifdef VDBE_PROFILE
   u64 start;                 /* CPU clock count at start of opcode */
   int origPc;                /* Program counter at start of opcode */
@@ -997,7 +999,6 @@ case OP_Move: {
   pOut = &p->aMem[p2];
   assert( p1+n<=p2 || p2+n<=p1 );
   while( n-- ){
-    REGISTER_TRACE(p1++, pIn1);
     zMalloc = pOut->zMalloc;
     pOut->zMalloc = 0;
     sqlite3VdbeMemMove(pOut, pIn1);
@@ -1020,7 +1021,6 @@ case OP_Copy: {
   assert( pOp->p1>0 );
   assert( pOp->p1<=p->nMem );
   pIn1 = &p->aMem[pOp->p1];
-  REGISTER_TRACE(pOp->p1, pIn1);
   assert( pOp->p2>0 );
   assert( pOp->p2<=p->nMem );
   pOut = &p->aMem[pOp->p2];
@@ -1083,6 +1083,7 @@ case OP_ResultRow: {
   for(i=0; i<pOp->p2; i++){
     sqlite3VdbeMemNulTerminate(&pMem[i]);
     storeTypeInfo(&pMem[i], encoding);
+    REGISTER_TRACE(pOp->p1+i, &pMem[i]);
   }
   if( db->mallocFailed ) goto no_mem;
 
@@ -1740,15 +1741,34 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   break;
 }
 
+/* Opcode: Permutation * * * P4 *
+**
+** Set the permuation used by the OP_Compare operator to be the array
+** of integers in P4.
+**
+** The permutation is only valid until the next OP_Permutation, OP_Compare,
+** OP_Halt, or OP_ResultRow.  Typically the OP_Permutation should occur
+** immediately prior to the OP_Compare.
+*/
+case OP_Permutation: {
+  assert( pOp->p4type==P4_INTARRAY );
+  assert( pOp->p4.ai );
+  aPermute = pOp->p4.ai;
+  break;
+}
+
 /* Opcode: Compare P1 P2 P3 P4 *
 **
 ** Compare to vectors of registers in reg(P1)..reg(P1+P3-1) (all this
 ** one "A") and in reg(P2)..reg(P2+P3-1) ("B").  Save the result of
 ** the comparison for use by the next OP_Jump instruct.
 **
-** P4 is a KeyInfo structure that defines collating sequences usedused for affinity purposes.  The
-** comparison is done for sorting purposes, so NULLs compare
-** equal, NULLs are less than numbers, numbers are less than strings,
+** P4 is a KeyInfo structure that defines collating sequences and sort
+** orders for the comparison.  The permutation applies to registers
+** only.  The KeyInfo elements are used sequentially.
+**
+** The comparison is a sort comparison, so NULLs compare equal,
+** NULLs are less than numbers, numbers are less than strings,
 ** and strings are less than blobs.
 */
 case OP_Compare: {
@@ -1760,13 +1780,28 @@ case OP_Compare: {
   assert( p1>0 && p1+n-1<p->nMem );
   p2 = pOp->p2;
   assert( p2>0 && p2+n-1<p->nMem );
-  for(i=0; i<n; i++, p1++, p2++){
-    REGISTER_TRACE(p1, &p->aMem[p1]);
-    REGISTER_TRACE(p2, &p->aMem[p2]);
-    p->iCompare = sqlite3MemCompare(&p->aMem[p1], &p->aMem[p2],
-                   pKeyInfo && i<pKeyInfo->nField ? pKeyInfo->aColl[i] : 0);
-    if( p->iCompare ) break;
+  for(i=0; i<n; i++){
+    int idx = aPermute ? aPermute[i] : i;
+    CollSeq *pColl;    /* Collating sequence to use on this term */
+    int bRev;          /* True for DESCENDING sort order */
+    assert( pKeyInfo==0 || i<pKeyInfo->nField );
+    REGISTER_TRACE(p1+idx, &p->aMem[p1+idx]);
+    REGISTER_TRACE(p2+idx, &p->aMem[p2+idx]);
+    if( pKeyInfo ){
+      assert( i<pKeyInfo->nField );
+      pColl = pKeyInfo->aColl[i];
+      bRev = pKeyInfo->aSortOrder[i];
+    }else{
+      pColl = 0;
+      bRev = 0;
+    }
+    iCompare = sqlite3MemCompare(&p->aMem[p1+idx], &p->aMem[p2+idx], pColl);
+    if( iCompare ){
+      if( bRev ) iCompare = -iCompare;
+      break;
+    }
   }
+  aPermute = 0;
   break;
 }
 
@@ -1776,10 +1811,10 @@ case OP_Compare: {
 ** in the most recent OP_Compare instruction the P1 vector was less than
 ** equal to, or greater than the P2 vector, respectively.
 */
-case OP_Jump: {
-  if( p->iCompare<0 ){
+case OP_Jump: {             /* jump */
+  if( iCompare<0 ){
     pc = pOp->p1 - 1;
-  }else if( p->iCompare==0 ){
+  }else if( iCompare==0 ){
     pc = pOp->p2 - 1;
   }else{
     pc = pOp->p3 - 1;

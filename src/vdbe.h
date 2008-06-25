@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.133 2008/06/20 18:13:25 drh Exp $
+** $Id: vdbe.h,v 1.134 2008/06/25 00:12:41 drh Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -61,6 +61,7 @@ struct VdbeOp {
     Mem *pMem;             /* Used when p4type is P4_MEM */
     sqlite3_vtab *pVtab;   /* Used when p4type is P4_VTAB */
     KeyInfo *pKeyInfo;     /* Used when p4type is P4_KEYINFO */
+    int *ai;               /* Used when p4type is P4_INTARRAY */
   } p4;
 #ifdef SQLITE_DEBUG
   char *zComment;          /* Comment to improve readability */
@@ -101,6 +102,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_REAL     (-12) /* P4 is a 64-bit floating point value */
 #define P4_INT64    (-13) /* P4 is a 64-bit signed integer */
 #define P4_INT32    (-14) /* P4 is a 32-bit signed integer */
+#define P4_INTARRAY (-15) /* P4 is a vector of 32-bit integers */
 
 /* When adding a P4 argument using P4_KEYINFO, a copy of the KeyInfo structure
 ** is made.  That copy is freed when the Vdbe is finalized.  But if the
@@ -109,8 +111,8 @@ typedef struct VdbeOpList VdbeOpList;
 ** from a single sqliteMalloc().  But no copy is made and the calling
 ** function should *not* try to free the KeyInfo.
 */
-#define P4_KEYINFO_HANDOFF (-15)
-#define P4_KEYINFO_STATIC  (-16)
+#define P4_KEYINFO_HANDOFF (-16)
+#define P4_KEYINFO_STATIC  (-17)
 
 /*
 ** The Vdbe.aColName array contains 5n Mem structures, where n is the 
