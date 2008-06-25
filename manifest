@@ -1,5 +1,5 @@
-C The\scompound-select\smerge\soptimization\spasses\squick.test\swith\sno\serrors.\s(CVS\s5299)
-D 2008-06-25T00:12:41
+C Add\snew\stest\sscript\sfor\scompound\sselect\sstatements.\s(CVS\s5300)
+D 2008-06-25T02:22:32
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -447,6 +447,7 @@ F test/select6.test 399f14b9ba37b768afe5d2cd8c12e4f340a69db8
 F test/select7.test 7906735805cfbee4dddc0bed4c14e68d7f5f9c5f
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test 0e1a5470bac7e6daa757d8df3fbfaee6730c544e
+F test/selectA.test 8d7e8787fd461f7aff2b276bcfdc7d1d38db21e9
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test c6769531e0cb751d46a9838c0532d3786606c0f6
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
@@ -593,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3241a3bdd08f6abf3f1655152e296cc7ebe73bca
-R 995a859e5760c33926984742f82293bc
+P 8bbfa97837a74ef0514e0c92ea2a6576f02cc361
+R d3d63954a19224d9d12c86b40b9ad68f
 U drh
-Z 8f5160dde73c0aa66c073fcfee385953
+Z 3497cca5a2b0cf3fe586a565ff57add5
