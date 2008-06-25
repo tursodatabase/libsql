@@ -691,7 +691,7 @@ fulltest:	testfixture$(TEXE) sqlite3$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/all.test
 
 test:	testfixture$(TEXE) sqlite3$(TEXE)
-	./testfixture$(TEXE) $(TOP)/test/quick.test
+	./testfixture$(TEXE) $(TOP)/test/veryquick.test
 
 sqlite3_analyzer$(TEXE):	$(TESTFIXTURE_SRC) $(TOP)/tool/spaceanal.tcl
 	sed \

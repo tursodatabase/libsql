@@ -1,7 +1,7 @@
-C Remove\sinternal\sfunction\ssqlite3OsDefaultVfs().\sThe\sbuilt-in\sVFS\slayers\snow\sregister\stheir\sVFS\simplementations\sby\scalling\ssqlite3_vfs_register()\sfrom\swithin\ssqlite3_os_init().\s(CVS\s5307)
-D 2008-06-25T17:19:01
+C Change\sthe\smakefiles\sso\sthat\s"make\stest"\snow\sruns\sthe\sveryquick.test\sscript\sinstead\sof\squick.test.\sAlso\smodify\sveryquick.test\sto\sreuse\sthe\scode\sin\squick.test.\sveryquick.test\sis\snow\sthe\ssame\sas\squick.test\sexcept\sthat\sit\somits\sall\stesting\srelated\sto\smalloc\sand\sIO\serror\ssimulation.\s(CVS\s5308)
+D 2008-06-25T17:54:53
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
-F Makefile.in ff6f90048555a0088f6a4b7406bed5e55a7c4eff
+F Makefile.in dcf0ecf664a31c257f540d32e5d69a09edf962f0
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION d739ba532eddc5c09ef9a55151328cd6a8a102c6
@@ -75,7 +75,7 @@ F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
-F main.mk d05e1f618544095915ab4d91d6057d439eee7004
+F main.mk 4b4961d11a76f6f6c54f1137326ea6a556f359f8
 F mkdll.sh 712e74f3efe08a6ba12b2945d018a29a89d7fe3b
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 1a866b53637dab137191341cc875575a5ca110fb
@@ -428,7 +428,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 83150cb7b513e33cce90fdc68f4b1817551857c0
-F test/quick.test 7c786e7829cda4844e03c7d8924a0d758e6fb3bc
+F test/quick.test c5e83a241e9adf989a79f83d1ade1c6cc768f68b
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
@@ -546,7 +546,7 @@ F test/vacuum.test 0bc75ee74ab9c69322d6563aa2287375697e630b
 F test/vacuum2.test d3b9691541fe6ed5c711f547a1c7d70e9760ac6f
 F test/vacuum3.test 6149b24613f487915ca9cedfbb9147d5759714ec
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
-F test/veryquick.test d93a2f36ef0f7bb0f1048ae339e9d8bda774c941
+F test/veryquick.test fdd8108de66eec378291d9a0e46e30d129eef1ca
 F test/view.test 4864e3841ab3213a95297718b94d5d6a8d3bc78b
 F test/vtab1.test 47092e3ac59141f08e09a6c0cc0df8997242bc79
 F test/vtab2.test 1da49b015582965a8fc386aa23d051a5a622b08e
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9e3c95ff4048cd8e4c56acf7a8ebedc49621e9c7
-R dd99e8c754ee82c9c2d08705cbcbd9a2
+P 8fa33b79d7369ec5777fd9ad3349f0fa31b98fd6
+R 1a6c7219f503b204e4bc313620ed4688
 U danielk1977
-Z d4c5b3f927846f2701cf2cdd435f8f43
+Z 2704037bd54444a7717bec83b4f04306

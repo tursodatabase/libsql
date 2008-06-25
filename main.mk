@@ -462,7 +462,7 @@ soaktest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/all.test -soak 1
 
 test:	testfixture$(EXE) sqlite3$(EXE)
-	./testfixture$(EXE) $(TOP)/test/quick.test
+	./testfixture$(EXE) $(TOP)/test/veryquick.test
 
 sqlite3_analyzer$(EXE):	$(TOP)/src/tclsqlite.c sqlite3.c $(TESTSRC) \
 			$(TOP)/tool/spaceanal.tcl

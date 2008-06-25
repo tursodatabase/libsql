@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.82 2008/06/24 11:21:21 danielk1977 Exp $
+# $Id: quick.test,v 1.83 2008/06/25 17:54:55 danielk1977 Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -47,20 +47,15 @@ set EXCLUDE {
   crash2.test
   crash3.test
   crash4.test
+  crash5.test
   crash6.test
   crash7.test
-  exclusive3.test
+  delete3.test
   fts3.test
   fuzz.test
   fuzz_malloc.test
   in2.test
-  jrnlmode3.test
   loadext.test
-  mallocAll.test
-  malloc.test
-  malloc2.test
-  malloc3.test
-  malloc4.test
   memleak.test
   misc7.test
   misuse.test
@@ -77,17 +72,18 @@ set EXCLUDE {
   speed4.test
   speed4p.test
   sqllimits1.test
-
+  tkt2686.test
   thread001.test
   thread002.test
+  vacuum3.test
 
   incrvacuum_ioerr.test
   autovacuum_crash.test
   btree8.test
-  utf16.test
   shared_err.test
   vtab_err.test
   veryquick.test
+  mallocAll.test
 }
 
 if {[sqlite3 -has-codec]} {
@@ -103,6 +99,14 @@ set INCLUDE {
 }
 
 foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
+  # If this is "veryquick.test", do not run any of the malloc or 
+  # IO error simulations.
+  if {[info exists ISVERYQUICK] && (
+    [string match *malloc* $testfile] || [string match *ioerr* $testfile]
+  ) } {
+    continue
+  }
+
   set tail [file tail $testfile]
   if {[lsearch -exact $EXCLUDE $tail]>=0} continue
   if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue
@@ -117,9 +121,9 @@ foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
     set sqlite_open_file_count 0
   }
 }
-set argv quick
-source $testdir/permutations.test
-set argv ""
+#set argv quick
+#source $testdir/permutations.test
+#set argv ""
 source $testdir/misuse.test
 
 set sqlite_open_file_count 0
