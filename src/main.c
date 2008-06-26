@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.464 2008/06/26 10:41:19 danielk1977 Exp $
+** $Id: main.c,v 1.465 2008/06/26 10:54:12 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -919,19 +919,19 @@ void *sqlite3_rollback_hook(
 **
 ** A virtual database can be either a disk file (that is automatically
 ** deleted when the file is closed) or it an be held entirely in memory,
-** depending on the values of the TEMP_STORE compile-time macro and the
+** depending on the values of the SQLITE_TEMP_STORE compile-time macro and the
 ** db->temp_store variable, according to the following chart:
 **
-**       TEMP_STORE     db->temp_store     Location of temporary database
-**       ----------     --------------     ------------------------------
-**           0               any             file
-**           1                1              file
-**           1                2              memory
-**           1                0              file
-**           2                1              file
-**           2                2              memory
-**           2                0              memory
-**           3               any             memory
+**   SQLITE_TEMP_STORE     db->temp_store     Location of temporary database
+**   -----------------     --------------     ------------------------------
+**   0                     any                file
+**   1                     1                  file
+**   1                     2                  memory
+**   1                     0                  file
+**   2                     1                  file
+**   2                     2                  memory
+**   2                     0                  memory
+**   3                     any                memory
 */
 int sqlite3BtreeFactory(
   const sqlite3 *db,        /* Main database when opening aux otherwise 0 */
@@ -953,17 +953,17 @@ int sqlite3BtreeFactory(
     btFlags |= BTREE_NO_READLOCK;
   }
   if( zFilename==0 ){
-#if TEMP_STORE==0
+#if SQLITE_TEMP_STORE==0
     /* Do nothing */
 #endif
 #ifndef SQLITE_OMIT_MEMORYDB
-#if TEMP_STORE==1
+#if SQLITE_TEMP_STORE==1
     if( db->temp_store==2 ) zFilename = ":memory:";
 #endif
-#if TEMP_STORE==2
+#if SQLITE_TEMP_STORE==2
     if( db->temp_store!=1 ) zFilename = ":memory:";
 #endif
-#if TEMP_STORE==3
+#if SQLITE_TEMP_STORE==3
     zFilename = ":memory:";
 #endif
 #endif /* SQLITE_OMIT_MEMORYDB */

@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.29 2008/06/26 10:41:19 danielk1977 Exp $
+** $Id: test_config.c,v 1.30 2008/06/26 10:54:12 danielk1977 Exp $
 */
 
 #include "sqliteLimit.h"
@@ -460,7 +460,7 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   LINKVAR( MAX_ATTACHED );
 
   {
-    static const int cv_TEMP_STORE = TEMP_STORE;
+    static const int cv_TEMP_STORE = SQLITE_TEMP_STORE;
     Tcl_LinkVar(interp, "TEMP_STORE", (char *)&(cv_TEMP_STORE),
                 TCL_LINK_INT | TCL_LINK_READ_ONLY);
   }

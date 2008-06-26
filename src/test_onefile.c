@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_onefile.c,v 1.8 2008/06/06 11:11:26 danielk1977 Exp $
+** $Id: test_onefile.c,v 1.9 2008/06/26 10:54:12 danielk1977 Exp $
 **
 ** OVERVIEW:
 **
@@ -28,8 +28,8 @@
 **   from sqlite3_malloc(). Any attempt to create a temporary database file 
 **   will fail (SQLITE_IOERR). To prevent SQLite from attempting this,
 **   it should be configured to store all temporary database files in 
-**   main memory (see pragma "temp_store" or the TEMP_STORE compile time
-**   option).
+**   main memory (see pragma "temp_store" or the SQLITE_TEMP_STORE compile 
+**   time option).
 **
 ** ASSUMPTIONS:
 **

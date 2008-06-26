@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.730 2008/06/26 08:29:34 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.731 2008/06/26 10:54:12 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -249,11 +249,11 @@
 #endif
 
 /*
-** Provide a default value for TEMP_STORE in case it is not specified
+** Provide a default value for SQLITE_TEMP_STORE in case it is not specified
 ** on the command-line
 */
-#ifndef TEMP_STORE
-# define TEMP_STORE 1
+#ifndef SQLITE_TEMP_STORE
+# define SQLITE_TEMP_STORE 1
 #endif
 
 /*
