@@ -1,5 +1,5 @@
-C Documentation\supdates\sin\ssqlite.h.in.\sNo\schanges\sto\scode.\s(CVS\s5315)
-D 2008-06-26T18:16:06
+C Avoid\sgenerating\sunnecessary\sSCopy\sinstructions\swith\sthe\sRHS\sof\san\sIN\noperator\sis\sa\slist\sof\svalues.\s(CVS\s5316)
+D 2008-06-26T20:06:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/callback.c 3ba98ae46f60aa7c2c40eac7d18fe5ba9b706b83
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e841168e5520bbbb2a1cbcdce7531d8b23017b4d
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
-F src/expr.c edcc8a30453f63fe9eab3a3d714589f44f875d8d
+F src/expr.c 557faa5ac7183016032077f34aa53c0fe759abe5
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c 1e7d9569570134ac0771a00382d9d4b41c4aa052
 F src/global.c 2304cfa3288763bd2fed10caf8c6fbaa2b383f4e
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d45a97be71fa61ab4a692bd807ab762130f7f5b9
-R 3dedfcadac16cf05d22a150cef869c0f
+P 168fd6f83e2c837e91d02fa49fff3fe2f9538928
+R e1a92aea430aad3339e25549f0582b1d
 U drh
-Z 3f2fbb3accba9d608a70c4032d103e16
+Z 0ed860dc736798983c144766ce199486

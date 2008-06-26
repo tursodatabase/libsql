@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.377 2008/06/26 18:04:03 danielk1977 Exp $
+** $Id: expr.c,v 1.378 2008/06/26 20:06:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1907,7 +1907,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr, int rMayHaveNull){
         int i;
         ExprList *pList = pExpr->pList;
         struct ExprList_item *pItem;
-        int r1, r2;
+        int r1, r2, r3;
 
         if( !affinity ){
           affinity = SQLITE_AFF_NONE;
@@ -1932,10 +1932,10 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr, int rMayHaveNull){
 
           /* Evaluate the expression and insert it into the temp table */
           pParse->disableColCache++;
-          sqlite3ExprCode(pParse, pE2, r1);
+          r3 = sqlite3ExprCodeTarget(pParse, pE2, r1);
           assert( pParse->disableColCache>0 );
           pParse->disableColCache--;
-          sqlite3VdbeAddOp4(v, OP_MakeRecord, r1, 1, r2, &affinity, 1);
+          sqlite3VdbeAddOp4(v, OP_MakeRecord, r3, 1, r2, &affinity, 1);
           sqlite3ExprCacheAffinityChange(pParse, r1, 1);
           sqlite3VdbeAddOp2(v, OP_IdxInsert, pExpr->iTable, r2);
         }
@@ -2646,7 +2646,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
           j3 = sqlite3VdbeAddOp1(v, OP_NotNull, rMayHaveNull);
           sqlite3VdbeAddOp2(v, OP_Null, 0, rNotFound);
           sqlite3VdbeAddOp2(v, OP_Integer, 1, rMayHaveNull);
-	  sqlite3VdbeAddOp4(v, OP_MakeRecord, rNotFound, 1, r2, 0, 1);
+          sqlite3VdbeAddOp4(v, OP_MakeRecord, rNotFound, 1, r2, 0, 1);
           j4 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r2);
           sqlite3VdbeAddOp2(v, OP_Integer, 0, rNotFound);
           sqlite3VdbeJumpHere(v, j4);
