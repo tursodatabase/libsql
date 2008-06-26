@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.462 2008/06/25 17:19:01 danielk1977 Exp $
+** $Id: main.c,v 1.463 2008/06/26 08:29:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -66,26 +66,56 @@ char *sqlite3_temp_directory = 0;
 ** or for the first call after a call to sqlite3_shutdown.
 */
 int sqlite3_initialize(void){
+  static int inProgress = 0;
   int rc;
+
+  /* If SQLite is already initialized, this call is a no-op. */
   if( sqlite3Config.isInit ) return SQLITE_OK;
+
+  /* Make sure the mutex system is initialized. */
   rc = sqlite3MutexInit();
+
   if( rc==SQLITE_OK ){
-#ifndef SQLITE_MUTEX_NOOP
-    sqlite3_mutex *pMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
-#endif
-    sqlite3_mutex_enter(pMutex);
-    if( sqlite3Config.isInit==0 ){
-      sqlite3Config.isInit = 1;
-      sqlite3StatusReset();
-      if( rc==SQLITE_OK ) rc = sqlite3MallocInit();
-      if( rc==SQLITE_OK ) rc = sqlite3_os_init();
-      if( rc!=SQLITE_OK ){
-        sqlite3Config.isInit = 0;
-      }else{
-        sqlite3Config.isInit = 2;
+
+    /* Initialize the malloc() system and the recursive pInitMutex mutex.
+    ** This operation is protected by the STATIC_MASTER mutex.
+    */
+    sqlite3_mutex *pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+    sqlite3_mutex_enter(pMaster);
+    if( !sqlite3Config.isMallocInit ){
+      rc = sqlite3MallocInit();
+    }
+    if( rc==SQLITE_OK ){
+      sqlite3Config.isMallocInit = 1;
+      if( !sqlite3Config.pInitMutex ){
+        sqlite3Config.pInitMutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
+        if( sqlite3Config.bCoreMutex && !sqlite3Config.pInitMutex ){
+          rc = SQLITE_NOMEM;
+        }
       }
     }
-    sqlite3_mutex_leave(pMutex);
+    sqlite3_mutex_leave(pMaster);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+
+    /* Enter the recursive pInitMutex mutex. After doing so, if the
+    ** sqlite3Config.isInit flag is true, then some other thread has
+    ** finished doing the initialization. If the inProgress flag is
+    ** true, then this function is being called recursively from within
+    ** the sqlite3_os_init() call below. In either case, exit early.
+    */
+    sqlite3_mutex_enter(sqlite3Config.pInitMutex);
+    if( sqlite3Config.isInit || inProgress ){
+      sqlite3_mutex_leave(sqlite3Config.pInitMutex);
+      return SQLITE_OK;
+    }
+    sqlite3StatusReset();
+    inProgress = 1;
+    rc = sqlite3_os_init();
+    inProgress = 0;
+    sqlite3Config.isInit = (rc==SQLITE_OK ? 1 : 0);
+    sqlite3_mutex_leave(sqlite3Config.pInitMutex);
   }
   return rc;
 }
@@ -97,6 +127,9 @@ int sqlite3_initialize(void){
 ** routine is not threadsafe.  Not by a long shot.
 */
 int sqlite3_shutdown(void){
+  sqlite3_mutex_free(sqlite3Config.pInitMutex);
+  sqlite3Config.pInitMutex = 0;
+  sqlite3Config.isMallocInit = 0;
   sqlite3_os_end();
   sqlite3MallocEnd();
   sqlite3MutexEnd();
@@ -119,7 +152,7 @@ int sqlite3_config(int op, ...){
 
   /* sqlite3_config() shall return SQLITE_MISUSE if it is invoked while
   ** the SQLite library is in use. */
-  if( sqlite3Config.isInit==2 ) return SQLITE_MISUSE;
+  if( sqlite3Config.isInit ) return SQLITE_MISUSE;
 
   va_start(ap, op);
   switch( op ){

@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: mutex1.test,v 1.4 2008/06/19 17:54:33 drh Exp $
+# $Id: mutex1.test,v 1.5 2008/06/26 08:29:35 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -27,8 +27,9 @@ proc mutex_counters {varname} {
 #-------------------------------------------------------------------------
 # Tests mutex1-1.* test that sqlite3_config() returns SQLITE_MISUSE if
 # is called at the wrong time. And that the first time sqlite3_initialize 
-# is called it obtains the 'static_master' mutex. Subsequent calls are
-# no-ops that do not require a mutex.
+# is called it obtains the 'static_master' mutex 3 times and a recursive
+# mutex (sqlite3Config.pInitMutex) twice. Subsequent calls are no-ops 
+# that do not require any mutexes.
 #
 do_test mutex1-1.0 {
   install_mutex_counters 1
@@ -64,7 +65,7 @@ do_test mutex1-1.6 {
 do_test mutex1-1.7 {
   mutex_counters counters
   list $counters(total) $counters(static_master)
-} {1 1}
+} {6 3}
 
 do_test mutex1-1.8 {
   clear_mutex_counters
@@ -96,8 +97,9 @@ ifcapable threadsafe {
       sqlite3_shutdown
       sqlite3_config $mode
     } SQLITE_OK
-  
+
     do_test mutex1.2.$mode.2 {
+      sqlite3_initialize
       clear_mutex_counters
       sqlite3 db test.db
       catchsql { CREATE TABLE abc(a, b, c) }
