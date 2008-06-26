@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.358 2008/06/26 02:53:02 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.359 2008/06/26 15:04:58 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -5445,26 +5445,44 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** This function sets the [database connection] error code and message
 ** accessible via [sqlite3_errcode()] and [sqlite3_errmsg()].
 **
+** If the row that a BLOB handle points to is modified by an
+** [UPDATE], [DELETE], or by [ON CONFLICT] side-effects
+** then the BLOB handle is marked as "expired".
+** This is true if any column of the row is changed, even a column
+** other than the one the BLOB handle is open on.
+** Calls to [sqlite3_blob_read()] and [sqlite3_blob_write()] for
+** a expired BLOB handle fail with an return code of [SQLITE_ABORT].
+** Changes written into a BLOB prior to the BLOB expiring are not
+** rollback by the expiration of the BLOB.  Such changes will eventually
+** commit if the transaction continues to completion.
+**
 ** INVARIANTS:
 **
 ** {F17813} A successful invocation of the [sqlite3_blob_open(D,B,T,C,R,F,P)]
-**          interface opens an [sqlite3_blob] object P on the BLOB in column C
-**          of the table T in the database B on the [database connection] D.
+**          interface shall open an [sqlite3_blob] object P on the BLOB
+**          in column C of the table T in the database B on
+**          the [database connection] D.
 **
-** {F17814} A successful invocation of [sqlite3_blob_open(D,...)] starts
+** {F17814} A successful invocation of [sqlite3_blob_open(D,...)] shall start
 **          a new transaction on the [database connection] D if that
 **          connection is not already in a transaction.
 **
-** {F17816} The [sqlite3_blob_open(D,B,T,C,R,F,P)] interface opens the BLOB for
-**          read and write access if and only if the F parameter is non-zero.
+** {F17816} The [sqlite3_blob_open(D,B,T,C,R,F,P)] interface shall open
+**          the BLOB for read and write access if and only if the F
+**          parameter is non-zero.
 **
-** {F17819} The [sqlite3_blob_open()] interface returns [SQLITE_OK] on
+** {F17819} The [sqlite3_blob_open()] interface shall return [SQLITE_OK] on
 **          success and an appropriate [error code] on failure.
 **
 ** {F17821} If an error occurs during evaluation of [sqlite3_blob_open(D,...)]
 **          then subsequent calls to [sqlite3_errcode(D)],
-**          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] will return
+**          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] shall return
 **          information appropriate for that error.
+**
+** {F17824} If any column in the row that a [sqlite3_blob] has open is
+**          changed by a separate [UPDATE] or [DELETE] statement or by
+**          an [ON CONFLICT] side effect, then the [sqlite3_blob] shall
+**          be marked as invalid.
 */
 int sqlite3_blob_open(
   sqlite3*,
@@ -5506,7 +5524,7 @@ int sqlite3_blob_open(
 **          or [prepared statements] on the same [database connection] and
 **          the database connection is in [autocommit mode].
 **
-** {F17839} The [sqlite3_blob_close(P)] interfaces closes the
+** {F17839} The [sqlite3_blob_close(P)] interfaces shall close the
 **          [sqlite3_blob] object P unconditionally, even if
 **          [sqlite3_blob_close(P)] returns something other than [SQLITE_OK].
 */
@@ -5537,33 +5555,41 @@ int sqlite3_blob_bytes(sqlite3_blob *);
 ** [SQLITE_ERROR] is returned and no data is read.  If N or iOffset is
 ** less than zero, [SQLITE_ERROR] is returned and no data is read.
 **
+** An attempt to read from an expired [BLOB handle] fails with an
+** error code of [SQLITE_ABORT].
+**
 ** On success, SQLITE_OK is returned.
 ** Otherwise, an [error code] or an [extended error code] is returned.
 **
 ** INVARIANTS:
 **
-** {F17853} The [sqlite3_blob_read(P,Z,N,X)] interface reads N bytes beginning
-**          at offset X from the BLOB that [sqlite3_blob] object P refers to
-**          and writes those N bytes into buffer Z.
+** {F17853} A successful invocation of [sqlite3_blob_read(P,Z,N,X)] 
+**          shall reads N bytes of data out of the BLOB referenced by
+**          [BLOB handle] P beginning at offset X and store those bytes
+**          into buffer Z.
 **
 ** {F17856} In [sqlite3_blob_read(P,Z,N,X)] if the size of the BLOB
-**          is less than N+X bytes, then the function returns [SQLITE_ERROR]
-**          and nothing is read from the BLOB.
+**          is less than N+X bytes, then the function shall leave the
+**          Z buffer unchanged and return [SQLITE_ERROR].
 **
 ** {F17859} In [sqlite3_blob_read(P,Z,N,X)] if X or N is less than zero
-**          then the function returns [SQLITE_ERROR]
-**          and nothing is read from the BLOB.
+**          then the function shall leave the Z buffer unchanged
+**          and return [SQLITE_ERROR].
 **
-** {F17862} The [sqlite3_blob_read(P,Z,N,X)] interface returns [SQLITE_OK]
-**          if N bytes where successfully read into buffer Z.
+** {F17862} The [sqlite3_blob_read(P,Z,N,X)] interface shall return [SQLITE_OK]
+**          if N bytes are successfully read into buffer Z.
+**
+** {F17863} If the [BLOB handle] P is expired and X and N are within bounds
+**          then [sqlite3_blob_read(P,Z,N,X)] shall leave the Z buffer
+**          unchanged and return [SQLITE_ABORT].
 **
 ** {F17865} If the requested read could not be completed,
-**          the [sqlite3_blob_read(P,Z,N,X)] interface returns an
+**          the [sqlite3_blob_read(P,Z,N,X)] interface shall return an
 **          appropriate [error code] or [extended error code].
 **
 ** {F17868} If an error occurs during evaluation of [sqlite3_blob_read(P,...)]
 **          then subsequent calls to [sqlite3_errcode(D)],
-**          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] will return
+**          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] shall return
 **          information appropriate for that error, where D is the
 **          [database connection] that was used to open the [BLOB handle] P.
 */
@@ -5586,37 +5612,53 @@ int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 ** [SQLITE_ERROR] is returned and no data is written.  If N is
 ** less than zero [SQLITE_ERROR] is returned and no data is written.
 **
+** An attempt to write to an expired [BLOB handle] fails with an
+** error code of [SQLITE_ABORT].  Writes to the BLOB that occurred
+** before the [BLOB handle] expired are not rolled back by the
+** expiration of the handle, though of course those changes might
+** have been overwritten by the statement that expired the BLOB handle
+** or by other independent statements.
+**
 ** On success, SQLITE_OK is returned.
 ** Otherwise, an  [error code] or an [extended error code] is returned.
 **
 ** INVARIANTS:
 **
-** {F17873} The [sqlite3_blob_write(P,Z,N,X)] interface writes N bytes
-**          from buffer Z into the BLOB that [sqlite3_blob] object P
-**          refers to beginning at an offset of X into the BLOB.
+** {F17873} A successful invocation of [sqlite3_blob_write(P,Z,N,X)]
+**          shall write N bytes of data from buffer Z into the BLOB 
+**          referenced by [BLOB handle] P beginning at offset X into
+**          the BLOB.
 **
-** {F17875} The [sqlite3_blob_write(P,Z,N,X)] interface returns
-**          [SQLITE_READONLY] if the [sqlite3_blob] object P was
-**          [sqlite3_blob_open | opened] for reading only.
+** {F17874} In the absence of other overridding changes, the changes
+**          written to a BLOB by [sqlite3_blob_write()] shall
+**          remain in effect after the associated [BLOB handle] expires.
 **
-** {F17876} In [sqlite3_blob_write(P,Z,N,X)] if the size of the BLOB
-**          is less than N+X bytes, then the function returns [SQLITE_ERROR]
-**          and nothing is written into the BLOB.
+** {F17875} If the [BLOB handle] P was opened for reading only then
+**          an invocation of [sqlite3_blob_write(P,Z,N,X)] shall leave
+**          the referenced BLOB unchanged and return [SQLITE_READONLY].
 **
-** {F17879} In [sqlite3_blob_write(P,Z,N,X)] if X or N is less than zero
-**          then the function returns [SQLITE_ERROR]
-**          and nothing is written into the BLOB.
+** {F17876} If the size of the BLOB referenced by [BLOB handle] P is
+**          less than N+X bytes then [sqlite3_blob_write(P,Z,N,X)] shall
+**          leave the BLOB unchanged and return [SQLITE_ERROR].
 **
-** {F17882} The [sqlite3_blob_write(P,Z,N,X)] interface returns [SQLITE_OK]
-**          if N bytes where successfully written into the BLOB.
+** {F17877} If the [BLOB handle] P is expired and X and N are within bounds
+**          then [sqlite3_blob_read(P,Z,N,X)] shall leave the BLOB
+**          unchanged and return [SQLITE_ABORT].
+**
+** {F17879} If X or N are less than zero then [sqlite3_blob_write(P,Z,N,X)]
+**          shall leave the BLOB referenced by [BLOB handle] P unchanged
+**          and return [SQLITE_ERROR].
+**
+** {F17882} The [sqlite3_blob_write(P,Z,N,X)] interface shall return
+**          [SQLITE_OK] if N bytes where successfully written into the BLOB.
 **
 ** {F17885} If the requested write could not be completed,
-**          the [sqlite3_blob_write(P,Z,N,X)] interface returns an
+**          the [sqlite3_blob_write(P,Z,N,X)] interface shall return an
 **          appropriate [error code] or [extended error code].
 **
 ** {F17888} If an error occurs during evaluation of [sqlite3_blob_write(D,...)]
 **          then subsequent calls to [sqlite3_errcode(D)],
-**          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] will return
+**          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] shall return
 **          information appropriate for that error.
 */
 int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
