@@ -1,5 +1,5 @@
-C Change\sthe\smakefiles\sso\sthat\s"make\stest"\snow\sruns\sthe\sveryquick.test\sscript\sinstead\sof\squick.test.\sAlso\smodify\sveryquick.test\sto\sreuse\sthe\scode\sin\squick.test.\sveryquick.test\sis\snow\sthe\ssame\sas\squick.test\sexcept\sthat\sit\somits\sall\stesting\srelated\sto\smalloc\sand\sIO\serror\ssimulation.\s(CVS\s5308)
-D 2008-06-25T17:54:53
+C Documentation\supdates.\s\sNo\schanges\sto\scode.\s(CVS\s5309)
+D 2008-06-26T02:53:02
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in dcf0ecf664a31c257f540d32e5d69a09edf962f0
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 79f60dc4a7e90bb907c7a2cca42f45276d1ead99
 F src/shell.c 61fa61932ed52825720ebfd3f8381b8d550ef766
-F src/sqlite.h.in b5c731b88ab1275396920103b5ecbefba200d423
+F src/sqlite.h.in 0dfa5d11d2c063ef551cbc9f3933295857e420fc
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
 F src/sqliteInt.h 55d1a6c155eaad745d8e4b7f373f5904337fbaf1
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8fa33b79d7369ec5777fd9ad3349f0fa31b98fd6
-R 1a6c7219f503b204e4bc313620ed4688
-U danielk1977
-Z 2704037bd54444a7717bec83b4f04306
+P 8c65146ea0e77e8e31fffc467806b1edf91fb4db
+R 8d998f8b6233260e7b79c9834ce4d483
+U drh
+Z 275bbf775c9970112c0cc3209800d9b5
