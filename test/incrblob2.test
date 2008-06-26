@@ -12,7 +12,7 @@
 # Test that it is possible to have two open blob handles on a single
 # blob object.
 #
-# $Id: incrblob2.test,v 1.6 2008/06/25 14:31:53 drh Exp $
+# $Id: incrblob2.test,v 1.7 2008/06/26 18:04:03 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -352,5 +352,12 @@ do_test incrblob2-7.4 {
 do_test incrblob2-7.5 {
   close $h
 } {}
+
+#do_test incrblob2-8.5 {
+  #execsql BEGIN
+  #db eval {SELECT * FROM t2} {
+  #execsql "DROP TABLE t2"
+  #}
+#} {}
 
 finish_test

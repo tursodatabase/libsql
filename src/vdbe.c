@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.755 2008/06/25 00:12:41 drh Exp $
+** $Id: vdbe.c,v 1.756 2008/06/26 18:04:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1428,7 +1428,7 @@ case OP_ShiftRight: {           /* same as TK_RSHIFT, in1, in2, out3 */
 
 /* Opcode: AddImm  P1 P2 * * *
 ** 
-** Add the constant P2 the value in register P1.
+** Add the constant P2 to the value in register P1.
 ** The result is always an integer.
 **
 ** To force any register to be an integer, just add 0.

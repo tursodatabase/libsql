@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.376 2008/06/24 12:46:31 drh Exp $
+** $Id: expr.c,v 1.377 2008/06/26 18:04:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1673,22 +1673,46 @@ static int isCandidateForInOpt(Select *p){
 **
 **     SELECT <column> FROM <table>
 **
-** If the mustBeUnique parameter is false, the structure will be used 
-** for fast set membership tests. In this case an epheremal table must 
-** be used unless <column> is an INTEGER PRIMARY KEY or an index can 
-** be found with <column> as its left-most column.
-**
-** If mustBeUnique is true, then the structure will be used to iterate
+** If prNotFound parameter is 0, then the structure will be used to iterate
 ** through the set members, skipping any duplicates. In this case an
 ** epheremal table must be used unless the selected <column> is guaranteed
 ** to be unique - either because it is an INTEGER PRIMARY KEY or it
 ** is unique by virtue of a constraint or implicit index.
+**
+** If the prNotFound parameter is not 0, then the structure will be used 
+** for fast set membership tests. In this case an epheremal table must 
+** be used unless <column> is an INTEGER PRIMARY KEY or an index can 
+** be found with <column> as its left-most column.
+**
+** When the structure is being used for set membership tests, the user
+** needs to know whether or not the structure contains an SQL NULL 
+** value in order to correctly evaluate expressions like "X IN (Y, Z)".
+** If there is a chance that the structure may contain a NULL value at
+** runtime, then a register is allocated and the register number written
+** to *prNotFound. If there is no chance that the structure contains a
+** NULL value, then *prNotFound is left unchanged.
+**
+** If a register is allocated and its location stored in *prNotFound, then
+** its initial value is NULL. If the structure does not remain constant
+** for the duration of the query (i.e. the set is a correlated sub-select), 
+** the value of the allocated register is reset to NULL each time the 
+** structure is repopulated. This allows the caller to use vdbe code 
+** equivalent to the following:
+**
+**   if( register==NULL ){
+**     has_null = <test if data structure contains null>
+**     register = 1
+**   }
+**
+** in order to avoid running the <test if data structure contains null>
+** test more often than is necessary.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
-int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
+int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
   Select *p;
   int eType = 0;
   int iTab = pParse->nTab++;
+  int mustBeUnique = !prNotFound;
 
   /* The follwing if(...) expression is true if the SELECT is of the 
   ** simple form:
@@ -1764,13 +1788,20 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
           eType = IN_INDEX_INDEX;
 
           sqlite3VdbeJumpHere(v, iAddr);
+          if( prNotFound && !pTab->aCol[iCol].notNull ){
+            *prNotFound = ++pParse->nMem;
+          }
         }
       }
     }
   }
 
   if( eType==0 ){
-    sqlite3CodeSubselect(pParse, pX);
+    int rMayHaveNull = 0;
+    if( prNotFound ){
+      *prNotFound = rMayHaveNull = ++pParse->nMem;
+    }
+    sqlite3CodeSubselect(pParse, pX, rMayHaveNull);
     eType = IN_INDEX_EPH;
   }else{
     pX->iTable = iTab;
@@ -1792,7 +1823,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int mustBeUnique){
 ** operator or subquery.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
-void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
+void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr, int rMayHaveNull){
   int testAddr = 0;                       /* One-time test address */
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
@@ -1820,6 +1851,10 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
       char affinity;
       KeyInfo keyInfo;
       int addr;        /* Address of OP_OpenEphemeral instruction */
+
+      if( rMayHaveNull ){
+        sqlite3VdbeAddOp2(v, OP_Null, 0, rMayHaveNull);
+      }
 
       affinity = sqlite3ExprAffinity(pExpr->pLeft);
 
@@ -2535,17 +2570,22 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       testcase( op==TK_EXISTS );
       testcase( op==TK_SELECT );
       if( pExpr->iColumn==0 ){
-        sqlite3CodeSubselect(pParse, pExpr);
+        sqlite3CodeSubselect(pParse, pExpr, 0);
       }
       inReg = pExpr->iColumn;
       break;
     }
     case TK_IN: {
+      int rNotFound = 0;
+      int rMayHaveNull = 0;
       int j1, j2, j3, j4, j5;
       char affinity;
       int eType;
 
-      eType = sqlite3FindInIndex(pParse, pExpr, 0);
+      eType = sqlite3FindInIndex(pParse, pExpr, &rMayHaveNull);
+      if( rMayHaveNull ){
+        rNotFound = ++pParse->nMem;
+      }
 
       /* Figure out the affinity to use to create a key from the results
       ** of the expression. affinityStr stores a static string suitable for
@@ -2570,13 +2610,55 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         j5 = sqlite3VdbeAddOp0(v, OP_Goto);
         sqlite3VdbeJumpHere(v, j3);
         sqlite3VdbeJumpHere(v, j4);
+        sqlite3VdbeAddOp2(v, OP_Integer, 0, target);
       }else{
         r2 = regFree2 = sqlite3GetTempReg(pParse);
+
+        /* Create a record and test for set membership. If the set contains
+        ** the value, then jump to the end of the test code. The target
+        ** register still contains the true (1) value written to it earlier.
+        */
         sqlite3VdbeAddOp4(v, OP_MakeRecord, r1, 1, r2, &affinity, 1);
         sqlite3ExprCacheAffinityChange(pParse, r1, 1);
         j5 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r2);
+
+        /* If the set membership test fails, then the result of the 
+        ** "x IN (...)" expression must be either 0 or NULL. If the set
+        ** contains no NULL values, then the result is 0. If the set 
+        ** contains one or more NULL values, then the result of the
+        ** expression is also NULL.
+        */
+        if( rNotFound==0 ){
+          /* This branch runs if it is known at compile time (now) that 
+          ** the set contains no NULL values. This happens as the result
+          ** of a "NOT NULL" constraint in the database schema. No need
+          ** to test the data structure at runtime in this case.
+          */
+          sqlite3VdbeAddOp2(v, OP_Integer, 0, target);
+        }else{
+          /* This block populates the rNotFound register with either NULL
+          ** or 0 (an integer value). If the data structure contains one
+          ** or more NULLs, then set rNotFound to NULL. Otherwise, set it
+          ** to 0. If register rMayHaveNull is already set to some value
+          ** other than NULL, then the test has already been run and 
+          ** rNotFound is already populated.
+          */
+          j3 = sqlite3VdbeAddOp1(v, OP_NotNull, rMayHaveNull);
+          sqlite3VdbeAddOp2(v, OP_Null, 0, rNotFound);
+          sqlite3VdbeAddOp2(v, OP_Integer, 1, rMayHaveNull);
+	  sqlite3VdbeAddOp4(v, OP_MakeRecord, rNotFound, 1, r2, 0, 1);
+          j4 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r2);
+          sqlite3VdbeAddOp2(v, OP_Integer, 0, rNotFound);
+          sqlite3VdbeJumpHere(v, j4);
+          sqlite3VdbeJumpHere(v, j3);
+
+          /* Copy the value of register rNotFound (which is either NULL or 0)
+	  ** into the target register. This will be the result of the
+          ** expression.
+          */
+          sqlite3VdbeAddOp2(v, OP_Copy, rNotFound, target);
+        }
       }
-      sqlite3VdbeAddOp2(v, OP_AddImm, target, -1);
       sqlite3VdbeJumpHere(v, j2);
       sqlite3VdbeJumpHere(v, j5);
       break;

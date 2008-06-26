@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.731 2008/06/26 10:54:12 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.732 2008/06/26 18:04:03 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1435,7 +1435,7 @@ struct Select {
 
 #define SRT_Callback     5  /* Invoke a callback with each row of result */
 #define SRT_Mem          6  /* Store result in a memory cell */
-#define SRT_Set          7  /* Store non-null results as keys in an index */
+#define SRT_Set          7  /* Store results as keys in an index */
 #define SRT_Table        8  /* Store result as data with an automatic rowid */
 #define SRT_EphemTab     9  /* Create transient tab and store like SRT_Table */
 #define SRT_Coroutine   10  /* Generate a single row of result */
@@ -2118,7 +2118,7 @@ void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*);
-void sqlite3CodeSubselect(Parse *, Expr *);
+void sqlite3CodeSubselect(Parse *, Expr *, int);
 int sqlite3SelectResolve(Parse *, Select *, NameContext *);
 void sqlite3ColumnDefault(Vdbe *, Table *, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
@@ -2224,7 +2224,7 @@ CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
 #define IN_INDEX_ROWID           1
 #define IN_INDEX_EPH             2
 #define IN_INDEX_INDEX           3
-int sqlite3FindInIndex(Parse *, Expr *, int);
+int sqlite3FindInIndex(Parse *, Expr *, int*);
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
   int sqlite3JournalOpen(sqlite3_vfs *, const char *, sqlite3_file *, int, int);

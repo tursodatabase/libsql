@@ -1,5 +1,5 @@
-C Document\sthe\srules\sfor\swhen\san\ssqlite3_blob\sobject\sexpires.\s(CVS\s5313)
-D 2008-06-26T15:04:58
+C Fix\shandling\sof\s"x\sIN\s(...)"\sand\s"x\sNOT\sIN\s(...)"\sexpressions\swhen\sthe\sset\scontains\san\sSQL\sNULL\svalue.\s(CVS\s5314)
+D 2008-06-26T18:04:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/callback.c 3ba98ae46f60aa7c2c40eac7d18fe5ba9b706b83
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e841168e5520bbbb2a1cbcdce7531d8b23017b4d
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
-F src/expr.c 1a8fbd3dfc531fa8ec51319a0bdef014e28c0fdd
+F src/expr.c edcc8a30453f63fe9eab3a3d714589f44f875d8d
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c 1e7d9569570134ac0771a00382d9d4b41c4aa052
 F src/global.c 2304cfa3288763bd2fed10caf8c6fbaa2b383f4e
@@ -140,11 +140,11 @@ F src/pragma.c 9a95f5b3708f6d3ddd987eab5f369a19ffcb6795
 F src/prepare.c aba51dad52308e3d9d2074d8ff4e612e7f1cab51
 F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c 79f60dc4a7e90bb907c7a2cca42f45276d1ead99
+F src/select.c e27de53be426254e1b75690c9c99482bb1431b79
 F src/shell.c 479807b87f0409289eec4a776cd6ae56d30544b1
 F src/sqlite.h.in 2b9e8de3378101ad8ec8de98e3679ad5c2f39427
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
-F src/sqliteInt.h 5ed69fd1affa577a47ce01baa42ee94f22f45ed7
+F src/sqliteInt.h 969acf22dbe79075e486074a8ffdc1e2fc2b8b1f
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
@@ -181,7 +181,7 @@ F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
 F src/util.c 920d6d5dfdf25f7b85d2093705d8716f9b387e3b
 F src/vacuum.c 14eb21b480924d87e791cd8ab6fb35ac563243ef
-F src/vdbe.c c0daf1d1fb4c3c79805004969d5d036f3d2381f8
+F src/vdbe.c b1528683ff7ca1faf017db5ebedbc403e92d009b
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
 F src/vdbeInt.h 30535c1d30ba1b5fb58d8f0e1d1261af976558aa
 F src/vdbeapi.c a7c6b8db324cf7eccff32de871dea36aa305c994
@@ -190,7 +190,7 @@ F src/vdbeblob.c 9345f6dcd675fdcfdb537d2d2f487542d9ea136a
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
 F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
 F src/vtab.c 2096c03ec5540a43c8c73a8f43407dfd3549a982
-F src/where.c 767db25b4b92a5e0a6f1b75ba40abf377b65a212
+F src/where.c 6a22ceb86d774c4428ac53196f721bb14e6cbdfa
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test ed6849e7a425620d5d4388409f3b15901b5bc2e7
@@ -335,11 +335,11 @@ F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
 F test/fuzz_malloc.test 166b58dfd77cc04f6afeeaef0cfc1087abf134d1
 F test/hook.test e17d4ed2843ba4ef9b234aa63e6f056bf88f9a19
 F test/icu.test e6bfae7f625c88fd14df6f540fe835bdfc1e4329
-F test/in.test ca4ea8ac1077f5221055fcb66969892612632ef7
+F test/in.test b35fc31caf26647cc4243c3af8ad29e45ed8776f
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
-F test/incrblob2.test a1db17c1f70bdbf9cae8415fb500df511569306a
+F test/incrblob2.test c9aad1e11f7726d8c49e66f2a1ecc2d04f9f6861
 F test/incrblob_err.test a3e3d9442d2993e8a449e791db4001d11a2f683f
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1e3b8308021107d983d2152663f62b369cca091d
-R 5972f13e602e13f1fa109add837cf301
-U drh
-Z 6e75d867f7857f56f8d906b33d9926f0
+P e1de2287fd9b067f687cb8b427786b878af6c5b7
+R 01ffd027189ad04179892df9936c6090
+U danielk1977
+Z c4dcbe6b5c0897a85aa2b72a88c7084f

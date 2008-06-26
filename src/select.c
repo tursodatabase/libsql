@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.436 2008/06/25 00:12:41 drh Exp $
+** $Id: select.c,v 1.437 2008/06/26 18:04:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -655,7 +655,6 @@ static void selectInnerLoop(
       int addr2;
 
       assert( nColumn==1 );
-      addr2 = sqlite3VdbeAddOp1(v, OP_IsNull, regResult);
       p->affinity = sqlite3CompareAffinity(pEList->a[0].pExpr, pDest->affinity);
       if( pOrderBy ){
         /* At first glance you would think we could optimize out the
@@ -670,7 +669,6 @@ static void selectInnerLoop(
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, r1);
         sqlite3ReleaseTempReg(pParse, r1);
       }
-      sqlite3VdbeJumpHere(v, addr2);
       break;
     }
 
@@ -828,13 +826,10 @@ static void generateSortTail(
     }
 #ifndef SQLITE_OMIT_SUBQUERY
     case SRT_Set: {
-      int j1;
       assert( nColumn==1 );
-      j1 = sqlite3VdbeAddOp1(v, OP_IsNull, regRow);
       sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, 1, regRowid, &p->affinity, 1);
       sqlite3ExprCacheAffinityChange(pParse, regRow, 1);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, regRowid);
-      sqlite3VdbeJumpHere(v, j1);
       break;
     }
     case SRT_Mem: {
@@ -2391,7 +2386,6 @@ static int generateOutputSubroutine(
     case SRT_Set: {
       int addr2, r1;
       assert( pIn->nMem==1 );
-      addr2 = sqlite3VdbeAddOp1(v, OP_IsNull, pIn->iMem);
       p->affinity = 
          sqlite3CompareAffinity(p->pEList->a[0].pExpr, pDest->affinity);
       r1 = sqlite3GetTempReg(pParse);
@@ -2399,7 +2393,6 @@ static int generateOutputSubroutine(
       sqlite3ExprCacheAffinityChange(pParse, pIn->iMem, 1);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, pDest->iParm, r1);
       sqlite3ReleaseTempReg(pParse, r1);
-      sqlite3VdbeJumpHere(v, addr2);
       break;
     }
 
@@ -3577,7 +3570,7 @@ void sqlite3SelectMask(Parse *pParse, Select *p, u32 mask){
 **
 **     SRT_Mem         Store first result in memory cell pDest->iParm
 **
-**     SRT_Set         Store non-null results as keys of table pDest->iParm. 
+**     SRT_Set         Store results as keys of table pDest->iParm. 
 **                     Apply the affinity pDest->affinity before storing them.
 **
 **     SRT_Union       Store results as a key in a temporary table pDest->iParm.

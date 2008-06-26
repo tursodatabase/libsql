@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.310 2008/06/25 02:47:57 drh Exp $
+** $Id: where.c,v 1.311 2008/06/26 18:04:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1787,7 +1787,7 @@ static int codeEqualityTerm(
 
     assert( pX->op==TK_IN );
     iReg = iTarget;
-    eType = sqlite3FindInIndex(pParse, pX, 1);
+    eType = sqlite3FindInIndex(pParse, pX, 0);
     iTab = pX->iTable;
     sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
     VdbeComment((v, "%.*s", pX->span.n, pX->span.z));

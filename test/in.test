@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the IN and BETWEEN operator.
 #
-# $Id: in.test,v 1.20 2008/06/24 12:46:31 drh Exp $
+# $Id: in.test,v 1.21 2008/06/26 18:04:03 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -428,5 +428,151 @@ do_test in-12.9 {
     );
   }
 } {1 {SELECTs to the left and right of INTERSECT do not have the same number of result columns}}
+
+
+#------------------------------------------------------------------------
+# The following tests check that NULL is handled correctly when it 
+# appears as part of a set of values on the right-hand side of an
+# IN or NOT IN operator.
+#
+# When it appears in such a set, NULL is handled as an "unknown value".
+# If, because of the unknown value in the set, the result of the expression 
+# cannot be determined, then it itself evaluates to NULL.
+#
+
+# Warm body test to demonstrate the principles being tested:
+#
+do_test in-13.1 {
+  db nullvalue "null"
+  execsql { SELECT 
+    1 IN (NULL, 1, 2),     -- The value 1 is a member of the set, return true.
+    3 IN (NULL, 1, 2),     -- Ambiguous, return NULL.
+    1 NOT IN (NULL, 1, 2), -- The value 1 is a member of the set, return false.
+    3 NOT IN (NULL, 1, 2)  -- Ambiguous, return NULL.
+  }
+} {1 null 0 null}
+
+do_test in-13.2 {
+  execsql { 
+    CREATE TABLE t7(a, b, c NOT NULL);
+    INSERT INTO t7 VALUES(1,    1, 1);
+    INSERT INTO t7 VALUES(2,    2, 2);
+    INSERT INTO t7 VALUES(3,    3, 3);
+    INSERT INTO t7 VALUES(NULL, 4, 4);
+    INSERT INTO t7 VALUES(NULL, 5, 5);
+  }
+} {}
+
+do_test in-13.3 {
+  execsql { SELECT 2 IN (SELECT a FROM t7) }
+} {1}
+do_test in-13.4 {
+  execsql { SELECT 6 IN (SELECT a FROM t7) }
+} {null}
+
+do_test in-13.5 {
+  execsql { SELECT 2 IN (SELECT b FROM t7) }
+} {1}
+do_test in-13.6 {
+  execsql { SELECT 6 IN (SELECT b FROM t7) }
+} {0}
+
+do_test in-13.7 {
+  execsql { SELECT 2 IN (SELECT c FROM t7) }
+} {1}
+do_test in-13.8 {
+  execsql { SELECT 6 IN (SELECT c FROM t7) }
+} {0}
+
+do_test in-13.9 {
+  execsql {
+    SELECT
+      2 NOT IN (SELECT a FROM t7),
+      6 NOT IN (SELECT a FROM t7),
+      2 NOT IN (SELECT b FROM t7),
+      6 NOT IN (SELECT b FROM t7),
+      2 NOT IN (SELECT c FROM t7),
+      6 NOT IN (SELECT c FROM t7)
+  } 
+} {0 null 0 1 0 1}
+
+do_test in-13.10 {
+  execsql { 
+    SELECT b IN (
+      SELECT inside.a 
+      FROM t7 AS inside 
+      WHERE inside.b BETWEEN outside.b+1 AND outside.b+2
+    )
+    FROM t7 AS outside ORDER BY b;
+  }
+} {0 null null null 0}
+
+do_test in-13.11 {
+  execsql {
+    SELECT b NOT IN (
+      SELECT inside.a 
+      FROM t7 AS inside 
+      WHERE inside.b BETWEEN outside.b+1 AND outside.b+2
+    )
+    FROM t7 AS outside ORDER BY b;
+  }
+} {1 null null null 1}
+
+do_test in-13.12 {
+  execsql {
+    CREATE INDEX i1 ON t7(a);
+    CREATE INDEX i2 ON t7(b);
+    CREATE INDEX i3 ON t7(c);
+  }
+  execsql {
+    SELECT
+      2 IN (SELECT a FROM t7),
+      6 IN (SELECT a FROM t7),
+      2 IN (SELECT b FROM t7),
+      6 IN (SELECT b FROM t7),
+      2 IN (SELECT c FROM t7),
+      6 IN (SELECT c FROM t7)
+  } 
+} {1 null 1 0 1 0}
+
+do_test in-13.13 {
+  execsql {
+    SELECT
+      2 NOT IN (SELECT a FROM t7),
+      6 NOT IN (SELECT a FROM t7),
+      2 NOT IN (SELECT b FROM t7),
+      6 NOT IN (SELECT b FROM t7),
+      2 NOT IN (SELECT c FROM t7),
+      6 NOT IN (SELECT c FROM t7)
+  } 
+} {0 null 0 1 0 1}
+
+do_test in-13.14 {
+  execsql {
+    BEGIN TRANSACTION;
+    CREATE TABLE a(id INTEGER);
+    INSERT INTO a VALUES(1);
+    INSERT INTO a VALUES(2);
+    INSERT INTO a VALUES(3);
+    CREATE TABLE b(id INTEGER);
+    INSERT INTO b VALUES(NULL);
+    INSERT INTO b VALUES(3);
+    INSERT INTO b VALUES(4);
+    INSERT INTO b VALUES(5);
+    COMMIT;
+    SELECT * FROM a WHERE id NOT IN (SELECT id FROM b);
+  }
+} {}
+do_test in-13.14 {
+  execsql {
+    CREATE INDEX i5 ON b(id);
+    SELECT * FROM a WHERE id NOT IN (SELECT id FROM b);
+  }
+} {}
+
+
+do_test in-13.X {
+  db nullvalue ""
+} {}
 
 finish_test
