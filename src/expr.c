@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.378 2008/06/26 20:06:07 drh Exp $
+** $Id: expr.c,v 1.379 2008/06/26 21:45:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1936,7 +1936,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr, int rMayHaveNull){
           assert( pParse->disableColCache>0 );
           pParse->disableColCache--;
           sqlite3VdbeAddOp4(v, OP_MakeRecord, r3, 1, r2, &affinity, 1);
-          sqlite3ExprCacheAffinityChange(pParse, r1, 1);
+          sqlite3ExprCacheAffinityChange(pParse, r3, 1);
           sqlite3VdbeAddOp2(v, OP_IdxInsert, pExpr->iTable, r2);
         }
         sqlite3ReleaseTempReg(pParse, r1);
@@ -2582,6 +2582,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       char affinity;
       int eType;
 
+      VdbeNoopComment((v, "begin IN expr r%d", target));
       eType = sqlite3FindInIndex(pParse, pExpr, &rMayHaveNull);
       if( rMayHaveNull ){
         rNotFound = ++pParse->nMem;
@@ -2661,6 +2662,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       }
       sqlite3VdbeJumpHere(v, j2);
       sqlite3VdbeJumpHere(v, j5);
+      VdbeComment((v, "end IN expr r%d", target));
       break;
     }
 #endif
