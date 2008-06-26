@@ -13,7 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 **
-** $Id: os.c,v 1.117 2008/06/26 08:29:34 danielk1977 Exp $
+** $Id: os.c,v 1.118 2008/06/26 10:41:19 danielk1977 Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
@@ -36,7 +36,7 @@
 **     sqlite3OsLock()
 **
 */
-#if defined(SQLITE_TEST) && (OS_WIN==0)
+#if defined(SQLITE_TEST) && (SQLITE_OS_WIN==0)
   #define DO_OS_MALLOC_TEST if (1) {            \
     void *pTstAlloc = sqlite3Malloc(10);       \
     if (!pTstAlloc) return SQLITE_IOERR_NOMEM;  \

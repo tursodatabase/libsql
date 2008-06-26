@@ -63,7 +63,7 @@ TLIBS =
 #OPTS = -DSQLITE_DEBUG=2
 #OPTS = -DSQLITE_DEBUG=1
 #OPTS = 
-OPTS = -DNDEBUG=1 -DOS_WIN=1 -D_WIN32_WCE=1
+OPTS = -DNDEBUG=1 -DSQLITE_OS_WIN=1 -D_WIN32_WCE=1
 #OPTS += -DHAVE_FDATASYNC=1
 
 #### The suffix to add to executable files.  ".exe" for windows.

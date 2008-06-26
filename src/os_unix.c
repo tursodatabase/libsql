@@ -12,10 +12,10 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.189 2008/06/25 17:19:01 danielk1977 Exp $
+** $Id: os_unix.c,v 1.190 2008/06/26 10:41:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
-#if OS_UNIX              /* This file is used on unix only */
+#if SQLITE_OS_UNIX              /* This file is used on unix only */
 
 /* #define SQLITE_ENABLE_LOCKING_STYLE 0 */
 
@@ -2811,4 +2811,4 @@ int sqlite3_os_end(void){
   return SQLITE_OK; 
 }
  
-#endif /* OS_UNIX */
+#endif /* SQLITE_OS_UNIX */

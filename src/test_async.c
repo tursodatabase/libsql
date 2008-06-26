@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.44 2008/06/06 11:11:26 danielk1977 Exp $
+** $Id: test_async.c,v 1.45 2008/06/26 10:41:19 danielk1977 Exp $
 **
 ** This file contains an example implementation of an asynchronous IO 
 ** backend for SQLite.
@@ -117,7 +117,7 @@
 ** This test uses pthreads and hence only works on unix and with
 ** a threadsafe build of SQLite.
 */
-#if OS_UNIX && SQLITE_THREADSAFE
+#if SQLITE_OS_UNIX && SQLITE_THREADSAFE
 
 /*
 ** This demo uses pthreads.  If you do not have a pthreads implementation
@@ -1696,7 +1696,7 @@ static int testAsyncWait(
 }
 
 
-#endif  /* OS_UNIX and SQLITE_THREADSAFE */
+#endif  /* SQLITE_OS_UNIX and SQLITE_THREADSAFE */
 
 /*
 ** This routine registers the custom TCL commands defined in this
@@ -1704,7 +1704,7 @@ static int testAsyncWait(
 ** of this module.
 */
 int Sqlitetestasync_Init(Tcl_Interp *interp){
-#if OS_UNIX && SQLITE_THREADSAFE
+#if SQLITE_OS_UNIX && SQLITE_THREADSAFE
   Tcl_CreateObjCommand(interp,"sqlite3async_enable",testAsyncEnable,0,0);
   Tcl_CreateObjCommand(interp,"sqlite3async_halt",testAsyncHalt,0,0);
   Tcl_CreateObjCommand(interp,"sqlite3async_delay",testAsyncDelay,0,0);
@@ -1712,6 +1712,6 @@ int Sqlitetestasync_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp,"sqlite3async_wait",testAsyncWait,0,0);
   Tcl_LinkVar(interp, "sqlite3async_trace",
       (char*)&sqlite3async_trace, TCL_LINK_INT);
-#endif  /* OS_UNIX and SQLITE_THREADSAFE */
+#endif  /* SQLITE_OS_UNIX and SQLITE_THREADSAFE */
   return TCL_OK;
 }

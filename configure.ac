@@ -92,7 +92,7 @@ AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.45 $
+# $Revision: 1.46 $
 
 #########
 # Programs needed
@@ -340,33 +340,33 @@ else
 fi
 if test "$TARGET_EXEEXT" = ".exe"; then
   if test $OS2_SHELL ; then
-    OS_UNIX=0
-    OS_WIN=0
-    OS_OS2=1
-    CFLAGS="$CFLAGS -DOS_OS2=1"
+    SQLITE_OS_UNIX=0
+    SQLITE_OS_WIN=0
+    SQLITE_OS_OS2=1
+    CFLAGS="$CFLAGS -DSQLITE_OS_OS2=1"
     if test "$ac_compiler_gnu" = "yes" ; then
       CFLAGS="$CFLAGS -Zomf -Zexe -Zmap"
       BUILD_CFLAGS="$BUILD_CFLAGS -Zomf -Zexe"
     fi
   else
-    OS_UNIX=0
-    OS_WIN=1
-    OS_OS2=0
+    SQLITE_OS_UNIX=0
+    SQLITE_OS_WIN=1
+    SQLITE_OS_OS2=0
     tclsubdir=win
-    CFLAGS="$CFLAGS -DOS_WIN=1"
+    CFLAGS="$CFLAGS -DSQLITE_OS_WIN=1"
   fi
 else
-  OS_UNIX=1
-  OS_WIN=0
-  OS_OS2=0
+  SQLITE_OS_UNIX=1
+  SQLITE_OS_WIN=0
+  SQLITE_OS_OS2=0
   tclsubdir=unix
-  CFLAGS="$CFLAGS -DOS_UNIX=1"
+  CFLAGS="$CFLAGS -DSQLITE_OS_UNIX=1"
 fi
 
 AC_SUBST(BUILD_EXEEXT)
-AC_SUBST(OS_UNIX)
-AC_SUBST(OS_WIN)
-AC_SUBST(OS_OS2)
+AC_SUBST(SQLITE_OS_UNIX)
+AC_SUBST(SQLITE_OS_WIN)
+AC_SUBST(SQLITE_OS_OS2)
 AC_SUBST(TARGET_EXEEXT)
 
 ##########

@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.28 2008/06/25 14:57:54 danielk1977 Exp $
+** $Id: test_config.c,v 1.29 2008/06/26 10:41:19 danielk1977 Exp $
 */
 
 #include "sqliteLimit.h"
@@ -183,7 +183,7 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "conflict", "1", TCL_GLOBAL_ONLY);
 #endif
 
-#if OS_UNIX
+#if SQLITE_OS_UNIX
   Tcl_SetVar2(interp, "sqlite_options", "crashtest", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "crashtest", "0", TCL_GLOBAL_ONLY);

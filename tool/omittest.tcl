@@ -1,5 +1,5 @@
 
-set rcsid {$Id: omittest.tcl,v 1.3 2007/09/14 16:20:01 danielk1977 Exp $}
+set rcsid {$Id: omittest.tcl,v 1.4 2008/06/26 10:41:19 danielk1977 Exp $}
 
 # Documentation for this script. This may be output to stderr
 # if the script is invoked incorrectly.
@@ -47,7 +47,7 @@ they do not respect the OPTS variable.
 #
 proc run_quick_test {dir omit_symbol_list} {
   # Compile the value of the OPTS Makefile variable.
-  set opts "-DSQLITE_MEMDEBUG=2 -DSQLITE_DEBUG -DOS_UNIX" 
+  set opts "-DSQLITE_MEMDEBUG=2 -DSQLITE_DEBUG -DSQLITE_OS_UNIX" 
   foreach sym $omit_symbol_list {
     append opts " -D${sym}=1"
   }

@@ -4,7 +4,7 @@
 #
 make fts2amal.c
 PATH=$PATH:/opt/mingw/bin
-OPTS='-DTHREADSAFE=1 -DBUILD_sqlite=1 -DOS_WIN=1'
+OPTS='-DTHREADSAFE=1 -DBUILD_sqlite=1 -DSQLITE_OS_WIN=1'
 CC="i386-mingw32msvc-gcc -O2 $OPTS -Itsrc"
 NM="i386-mingw32msvc-nm"
 CMD="$CC -c fts2amal.c"

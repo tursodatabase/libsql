@@ -12,10 +12,10 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.128 2008/06/25 17:19:01 danielk1977 Exp $
+** $Id: os_win.c,v 1.129 2008/06/26 10:41:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
-#if OS_WIN               /* This file is used for windows only */
+#if SQLITE_OS_WIN               /* This file is used for windows only */
 
 
 /*
@@ -66,7 +66,7 @@
 ** Determine if we are dealing with WindowsCE - which has a much
 ** reduced API.
 */
-#if defined(OS_WINCE)
+#if defined(SQLITE_OS_WINCE)
 # define AreFileApisANSI() 1
 #endif
 
@@ -74,7 +74,7 @@
 ** WinCE lacks native support for file locking so we have to fake it
 ** with some code of our own.
 */
-#if OS_WINCE
+#if SQLITE_OS_WINCE
 typedef struct winceLock {
   int nReaders;       /* Number of reader locks obtained */
   BOOL bPending;      /* Indicates a pending lock has been obtained */
@@ -93,7 +93,7 @@ struct winFile {
   HANDLE h;               /* Handle for accessing the file */
   unsigned char locktype; /* Type of lock currently held on this file */
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
-#if OS_WINCE
+#if SQLITE_OS_WINCE
   WCHAR *zDeleteOnClose;  /* Name of file to delete when closing */
   HANDLE hMutex;          /* Mutex used to control access to shared lock */  
   HANDLE hShared;         /* Shared memory segment used for locking */
@@ -132,7 +132,7 @@ static int sqlite3_os_type = 0;
 ** WinNT/2K/XP so that we will know whether or not we can safely call
 ** the LockFileEx() API.
 */
-#if OS_WINCE
+#if SQLITE_OS_WINCE
 # define isNT()  (1)
 #else
   static int isNT(void){
@@ -144,7 +144,7 @@ static int sqlite3_os_type = 0;
     }
     return sqlite3_os_type==2;
   }
-#endif /* OS_WINCE */
+#endif /* SQLITE_OS_WINCE */
 
 /*
 ** Convert a UTF-8 string to microsoft unicode (UTF-16?). 
@@ -275,7 +275,7 @@ static char *utf8ToMbcs(const char *zFilename){
   return zFilenameMbcs;
 }
 
-#if OS_WINCE
+#if SQLITE_OS_WINCE
 /*************************************************************************
 ** This section contains code for WinCE only.
 */
@@ -579,7 +579,7 @@ static BOOL winceLockFileEx(
 /*
 ** End of the special code for wince
 *****************************************************************************/
-#endif /* OS_WINCE */
+#endif /* SQLITE_OS_WINCE */
 
 /*****************************************************************************
 ** The next group of routines implement the I/O methods specified
@@ -604,7 +604,7 @@ static int winClose(sqlite3_file *id){
   do{
     rc = CloseHandle(pFile->h);
   }while( rc==0 && cnt++ < MX_CLOSE_ATTEMPT && (Sleep(100), 1) );
-#if OS_WINCE
+#if SQLITE_OS_WINCE
 #define WINCE_DELETION_ATTEMPTS 3
   winceDestroyLock(pFile);
   if( pFile->zDeleteOnClose ){
@@ -1179,7 +1179,7 @@ static int winOpen(
     dwShareMode = 0;
   }
   if( flags & SQLITE_OPEN_DELETEONCLOSE ){
-#if OS_WINCE
+#if SQLITE_OS_WINCE
     dwFlagsAndAttributes = FILE_ATTRIBUTE_HIDDEN;
 #else
     dwFlagsAndAttributes = FILE_ATTRIBUTE_TEMPORARY
@@ -1204,7 +1204,7 @@ static int winOpen(
        NULL
     );
   }else{
-#if OS_WINCE
+#if SQLITE_OS_WINCE
     return SQLITE_NOMEM;
 #else
     h = CreateFileA((char*)zConverted,
@@ -1236,7 +1236,7 @@ static int winOpen(
   memset(pFile, 0, sizeof(*pFile));
   pFile->pMethod = &winIoMethod;
   pFile->h = h;
-#if OS_WINCE
+#if SQLITE_OS_WINCE
   if( (flags & (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)) ==
                (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)
        && !winceCreateLock(zName, pFile)
@@ -1287,7 +1287,7 @@ static int winDelete(
     }while( (rc = GetFileAttributesW(zConverted))!=0xffffffff 
             && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
   }else{
-#if OS_WINCE
+#if SQLITE_OS_WINCE
     return SQLITE_NOMEM;
 #else
     do{
@@ -1319,7 +1319,7 @@ static int winAccess(
   if( isNT() ){
     attr = GetFileAttributesW((WCHAR*)zConverted);
   }else{
-#if OS_WINCE
+#if SQLITE_OS_WINCE
     return SQLITE_NOMEM;
 #else
     attr = GetFileAttributesA((char*)zConverted);
@@ -1359,13 +1359,13 @@ static int winFullPathname(
   return SQLITE_OK;
 #endif
 
-#if OS_WINCE
+#if SQLITE_OS_WINCE
   /* WinCE has no concept of a relative pathname, or so I am told. */
   sqlite3_snprintf(pVfs->mxPathname, zFull, "%s", zRelative);
   return SQLITE_OK;
 #endif
 
-#if !OS_WINCE && !defined(__CYGWIN__)
+#if !SQLITE_OS_WINCE && !defined(__CYGWIN__)
   int nByte;
   void *zConverted;
   char *zOut;
@@ -1423,7 +1423,7 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   if( isNT() ){
     h = LoadLibraryW((WCHAR*)zConverted);
   }else{
-#if OS_WINCE
+#if SQLITE_OS_WINCE
     return 0;
 #else
     h = LoadLibraryA((char*)zConverted);
@@ -1433,7 +1433,7 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   return (void*)h;
 }
 static void winDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
-#if OS_WINCE
+#if SQLITE_OS_WINCE
   int error = GetLastError();
   if( error>0x7FFFFFF ){
     sqlite3_snprintf(nBuf, zBufOut, "OsError 0x%x", error);
@@ -1453,7 +1453,7 @@ static void winDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
 #endif
 }
 void *winDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
-#if OS_WINCE
+#if SQLITE_OS_WINCE
   /* The GetProcAddressA() routine is only available on wince. */
   return GetProcAddressA((HANDLE)pHandle, zSymbol);
 #else
@@ -1531,7 +1531,7 @@ int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
      100-nanosecond intervals since January 1, 1601 (= JD 2305813.5). 
   */
   double now;
-#if OS_WINCE
+#if SQLITE_OS_WINCE
   SYSTEMTIME time;
   GetSystemTime(&time);
   SystemTimeToFileTime(&time,&ft);
@@ -1584,4 +1584,4 @@ int sqlite3_os_end(void){
   return SQLITE_OK;
 }
 
-#endif /* OS_WIN */
+#endif /* SQLITE_OS_WIN */

@@ -12,7 +12,7 @@
 ** Code for testing the client/server version of the SQLite library.
 ** Derived from test4.c.
 **
-** $Id: test7.c,v 1.10 2007/10/05 15:04:13 danielk1977 Exp $
+** $Id: test7.c,v 1.11 2008/06/26 10:41:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -22,7 +22,7 @@
 ** the SQLITE_SERVER option.
 */
 #if defined(SQLITE_SERVER) && !defined(SQLITE_OMIT_SHARED_CACHE) && \
-    defined(OS_UNIX) && OS_UNIX && SQLITE_THREADSAFE
+    defined(SQLITE_OS_UNIX) && OS_UNIX && SQLITE_THREADSAFE
 
 #include <stdlib.h>
 #include <string.h>
@@ -720,4 +720,4 @@ int Sqlitetest7_Init(Tcl_Interp *interp){
 }
 #else
 int Sqlitetest7_Init(Tcl_Interp *interp){ return TCL_OK; }
-#endif /* OS_UNIX */
+#endif /* SQLITE_OS_UNIX */

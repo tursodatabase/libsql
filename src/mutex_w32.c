@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.10 2008/06/19 16:07:07 drh Exp $
+** $Id: mutex_w32.c,v 1.11 2008/06/26 10:41:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -42,7 +42,7 @@ struct sqlite3_mutex {
 ** WinNT/2K/XP so that we will know whether or not we can safely call
 ** the LockFileEx() API.
 */
-#if OS_WINCE
+#if SQLITE_OS_WINCE
 # define mutexIsNT()  (1)
 #else
   static int mutexIsNT(void){
@@ -55,7 +55,7 @@ struct sqlite3_mutex {
     }
     return osType==2;
   }
-#endif /* OS_WINCE */
+#endif /* SQLITE_OS_WINCE */
 
 
 #ifdef SQLITE_DEBUG

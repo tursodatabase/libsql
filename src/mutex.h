@@ -19,7 +19,7 @@
 ** Source files should #include the sqliteInt.h file and let that file
 ** include this one indirectly.
 **
-** $Id: mutex.h,v 1.7 2008/06/19 01:50:09 drh Exp $
+** $Id: mutex.h,v 1.8 2008/06/26 10:41:19 danielk1977 Exp $
 */
 
 
@@ -53,15 +53,15 @@
 # undef SQLITE_MUTEX_NOOP
 # define SQLITE_MUTEX_NOOP_DEBUG
 #endif
-#if defined(SQLITE_MUTEX_NOOP) && SQLITE_THREADSAFE && OS_UNIX
+#if defined(SQLITE_MUTEX_NOOP) && SQLITE_THREADSAFE && SQLITE_OS_UNIX
 # undef SQLITE_MUTEX_NOOP
 # define SQLITE_MUTEX_PTHREADS
 #endif
-#if defined(SQLITE_MUTEX_NOOP) && SQLITE_THREADSAFE && OS_WIN
+#if defined(SQLITE_MUTEX_NOOP) && SQLITE_THREADSAFE && SQLITE_OS_WIN
 # undef SQLITE_MUTEX_NOOP
 # define SQLITE_MUTEX_W32
 #endif
-#if defined(SQLITE_MUTEX_NOOP) && SQLITE_THREADSAFE && OS_OS2
+#if defined(SQLITE_MUTEX_NOOP) && SQLITE_THREADSAFE && SQLITE_OS_OS2
 # undef SQLITE_MUTEX_NOOP
 # define SQLITE_MUTEX_OS2
 #endif
