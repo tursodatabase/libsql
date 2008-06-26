@@ -13,7 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 **
-** $Id: os.c,v 1.118 2008/06/26 10:41:19 danielk1977 Exp $
+** $Id: os.c,v 1.119 2008/06/26 18:16:06 drh Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
@@ -275,4 +275,3 @@ int sqlite3_vfs_unregister(sqlite3_vfs *pVfs){
   sqlite3_mutex_leave(mutex);
   return SQLITE_OK;
 }
-

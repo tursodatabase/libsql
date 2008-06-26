@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.359 2008/06/26 15:04:58 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.360 2008/06/26 18:16:06 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1416,10 +1416,10 @@ void sqlite3_interrupt(sqlite3*);
 **
 ** LIMITATIONS:
 **
-** {A10512} The input to sqlite3_complete() must be a zero-terminated
+** {A10512} The input to [sqlite3_complete()] must be a zero-terminated
 **          UTF-8 string.
 **
-** {A10513} The input to sqlite3_complete16() must be a zero-terminated
+** {A10513} The input to [sqlite3_complete16()] must be a zero-terminated
 **          UTF-16 string in native byte order.
 */
 int sqlite3_complete(const char *sql);
@@ -2763,11 +2763,13 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt);
 ** sqlite3_value object but no mutex is held for an unprotected
 ** sqlite3_value object.  If SQLite is compiled to be single-threaded
 ** (with [SQLITE_THREADSAFE=0] and with [sqlite3_threadsafe()] returning 0)
+** or if SQLite is run in one of reduced mutex modes 
+** [SQLITE_CONFIG_SINGLETHREAD] or [SQLITE_CONFIG_MULTITHREAD]
 ** then there is no distinction between protected and unprotected
 ** sqlite3_value objects and they can be used interchangeably.  However,
 ** for maximum code portability it is recommended that applications
 ** still make the distinction between between protected and unprotected
-** sqlite3_value objects even if they are single threaded.
+** sqlite3_value objects even when not strictly required.
 **
 ** The sqlite3_value objects that are passed as parameters into the
 ** implementation of [application-defined SQL functions] are protected.
@@ -2826,8 +2828,8 @@ typedef struct sqlite3_context sqlite3_context;
 ** The index for named parameters can be looked up using the
 ** [sqlite3_bind_parameter_index()] API if desired.  The index
 ** for "?NNN" parameters is the value of NNN.
-** The NNN value must be between 1 and the compile-time
-** parameter SQLITE_MAX_VARIABLE_NUMBER (default value: 999).
+** The NNN value must be between 1 and the [sqlite3_limit()]
+** parameter [SQLITE_LIMIT_VARIABLE_NUMBER] (default value: 999).
 **
 ** The third argument is the value to bind to the parameter.
 **
@@ -3060,7 +3062,7 @@ int sqlite3_clear_bindings(sqlite3_stmt*);
 **
 ** Return the number of columns in the result set returned by the
 ** [prepared statement]. This routine returns 0 if pStmt is an SQL
-** statement that does not return data (for example an UPDATE).
+** statement that does not return data (for example an [UPDATE]).
 **
 ** INVARIANTS:
 **
@@ -3074,11 +3076,11 @@ int sqlite3_column_count(sqlite3_stmt *pStmt);
 ** CAPI3REF: Column Names In A Result Set {F13720}
 **
 ** These routines return the name assigned to a particular column
-** in the result set of a SELECT statement.  The sqlite3_column_name()
+** in the result set of a [SELECT] statement.  The sqlite3_column_name()
 ** interface returns a pointer to a zero-terminated UTF-8 string
 ** and sqlite3_column_name16() returns a pointer to a zero-terminated
 ** UTF-16 string.  The first parameter is the [prepared statement]
-** that implements the SELECT statement. The second parameter is the
+** that implements the [SELECT] statement. The second parameter is the
 ** column number.  The leftmost column is number 0.
 **
 ** The returned string pointer is valid until either the [prepared statement]
@@ -3131,7 +3133,7 @@ const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 ** CAPI3REF: Source Of Data In A Query Result {F13740}
 **
 ** These routines provide a means to determine what column of what
-** table in which database a result of a SELECT statement comes from.
+** table in which database a result of a [SELECT] statement comes from.
 ** The name of the database or table or column can be returned as
 ** either a UTF-8 or UTF-16 string.  The _database_ routines return
 ** the database name, the _table_ routines return the table name, and
@@ -3157,7 +3159,7 @@ const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 ** UTF-16 encoded strings, the other functions return UTF-8. {END}
 **
 ** These APIs are only available if the library was compiled with the
-** SQLITE_ENABLE_COLUMN_METADATA preprocessor symbol defined.
+** [SQLITE_ENABLE_COLUMN_METADATA] C-preprocessor symbol defined.
 **
 ** {A13751}
 ** If two or more threads call one or more of these routines against the same
@@ -3227,8 +3229,8 @@ const void *sqlite3_column_origin_name16(sqlite3_stmt*,int);
 ** CAPI3REF: Declared Datatype Of A Query Result {F13760}
 **
 ** The first parameter is a [prepared statement].
-** If this statement is a SELECT statement and the Nth column of the
-** returned result set of that SELECT is a table column (not an
+** If this statement is a [SELECT] statement and the Nth column of the
+** returned result set of that [SELECT] is a table column (not an
 ** expression or subquery) then the declared type of the table
 ** column is returned.  If the Nth column of the result set is an
 ** expression or subquery, then a NULL pointer is returned.
@@ -3297,9 +3299,9 @@ const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 ** [extended result codes] might be returned as well.
 **
 ** [SQLITE_BUSY] means that the database engine was unable to acquire the
-** database locks it needs to do its job.  If the statement is a COMMIT
+** database locks it needs to do its job.  If the statement is a [COMMIT]
 ** or occurs outside of an explicit transaction, then you can retry the
-** statement.  If the statement is not a COMMIT and occurs within a
+** statement.  If the statement is not a [COMMIT] and occurs within a
 ** explicit transaction then you should rollback the transaction before
 ** continuing.
 **
@@ -5020,7 +5022,7 @@ void sqlite3_soft_heap_limit(int);
 ** in the [database connection] (to be retrieved using sqlite3_errmsg()).
 **
 ** This API is only available if the library was compiled with the
-** SQLITE_ENABLE_COLUMN_METADATA C preprocessor symbol defined.
+** [SQLITE_ENABLE_COLUMN_METADATA] C-preprocessor symbol defined.
 */
 int sqlite3_table_column_metadata(
   sqlite3 *db,                /* Connection handle */
