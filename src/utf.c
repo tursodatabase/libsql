@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.61 2008/03/28 15:44:10 danielk1977 Exp $
+** $Id: utf.c,v 1.62 2008/06/27 18:59:45 mihailim Exp $
 **
 ** Notes on UTF-8:
 **
@@ -290,7 +290,7 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
         WRITE_UTF8(z, c);
       }
     }else{
-      /* UTF-16 Little-endian -> UTF-8 */
+      /* UTF-16 Big-endian -> UTF-8 */
       while( zIn<zTerm ){
         READ_UTF16BE(zIn, c); 
         WRITE_UTF8(z, c);

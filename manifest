@@ -1,5 +1,5 @@
-C Documentation\stweaks.\s(CVS\s5322)
-D 2008-06-27T14:51:53
+C Changed\scopy-paste\serror\sin\scomment.\sFixes\s#3193.\s(CVS\s5323)
+D 2008-06-27T18:59:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -178,7 +178,7 @@ F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c d39f0d6ce75ca9d0fa4041baec42b5e0411a74fc
 F src/trigger.c 1e751f8d5ceeb328d26bf1ccfb2de50653670d49
 F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
-F src/utf.c 8c94fa10efc78c2568d08d436acc59df4df7191b
+F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
 F src/util.c 920d6d5dfdf25f7b85d2093705d8716f9b387e3b
 F src/vacuum.c 14eb21b480924d87e791cd8ab6fb35ac563243ef
 F src/vdbe.c b1528683ff7ca1faf017db5ebedbc403e92d009b
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fef90a21aea11f15371d3fcf44548d786dd8819b
-R 4e5fbce3735af361e0ee9da92c70c873
-U drh
-Z bf002c5680a6f416a84a8f0e2aa6d952
+P fcbd39344c0bf3a734bab6606d3988810b69b7d5
+R 2f067facb47946c677deaf4746443ca0
+U mihailim
+Z ef4b7f6d71481fd821933b3e790144f9
