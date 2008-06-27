@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS3 is defined.
 **
-** $Id: mem3.c,v 1.17 2008/06/25 14:57:54 danielk1977 Exp $
+** $Id: mem3.c,v 1.18 2008/06/27 14:05:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -546,6 +546,23 @@ static int memsys3Roundup(int n){
 ** Initialize this module.
 */
 static int memsys3Init(void *NotUsed){
+  if( !sqlite3Config.pHeap ){
+    return SQLITE_ERROR;
+  }
+
+  /* Store a pointer to the memory block in global structure mem3. */
+  assert( sizeof(Mem3Block)==8 );
+  mem3.aPool = (Mem3Block *)sqlite3Config.pHeap;
+  mem3.nPool = (sqlite3Config.nHeap / sizeof(Mem3Block)) - 2;
+
+  /* Initialize the master block. */
+  mem3.szMaster = mem3.nPool;
+  mem3.mnMaster = mem3.szMaster;
+  mem3.iMaster = 1;
+  mem3.aPool[0].u.hdr.size4x = (mem3.szMaster<<2) + 2;
+  mem3.aPool[mem3.nPool].u.hdr.prevSize = mem3.nPool;
+  mem3.aPool[mem3.nPool].u.hdr.size4x = 1;
+
   return SQLITE_OK;
 }
 
@@ -644,7 +661,7 @@ void sqlite3Memsys3Dump(const char *zFilename){
 ** This routine is only called by sqlite3_config(), and therefore
 ** is not required to be threadsafe (it is not).
 */
-void sqlite3MemSetMemsys3(u8 *pBlock, int nBlock){
+const sqlite3_mem_methods *sqlite3MemGetMemsys3(void){
   static const sqlite3_mem_methods mempoolMethods = {
      memsys3Malloc,
      memsys3Free,
@@ -655,22 +672,7 @@ void sqlite3MemSetMemsys3(u8 *pBlock, int nBlock){
      memsys3Shutdown,
      0
   };
-
-  /* Configure the functions to call to allocate memory. */
-  sqlite3_config(SQLITE_CONFIG_MALLOC, &mempoolMethods);
-
-  /* Store a pointer to the memory block in global structure mem3. */
-  assert( sizeof(Mem3Block)==8 );
-  mem3.aPool = (Mem3Block *)pBlock;
-  mem3.nPool = (nBlock / sizeof(Mem3Block)) - 2;
-
-  /* Initialize the master block. */
-  mem3.szMaster = mem3.nPool;
-  mem3.mnMaster = mem3.szMaster;
-  mem3.iMaster = 1;
-  mem3.aPool[0].u.hdr.size4x = (mem3.szMaster<<2) + 2;
-  mem3.aPool[mem3.nPool].u.hdr.prevSize = mem3.nPool;
-  mem3.aPool[mem3.nPool].u.hdr.size4x = 1;
+  return &mempoolMethods;
 }
 
 #endif /* SQLITE_ENABLE_MEMSYS3 */

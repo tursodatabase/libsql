@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS5 is defined.
 **
-** $Id: mem5.c,v 1.9 2008/06/27 13:27:04 danielk1977 Exp $
+** $Id: mem5.c,v 1.10 2008/06/27 14:05:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -410,6 +410,10 @@ static int memsys5Init(void *NotUsed){
   u8 *zByte = (u8 *)sqlite3Config.pHeap;
   int nMinLog;                 /* Log of minimum allocation size in bytes*/
   int iOffset;
+
+  if( !zByte ){
+    return SQLITE_ERROR;
+  }
 
   nMinLog = memsys5Log(sqlite3Config.mnReq);
   mem5.nAtom = (1<<nMinLog);

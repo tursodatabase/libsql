@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.32 2008/06/27 13:27:04 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.33 2008/06/27 14:05:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -931,40 +931,6 @@ static int test_config_pagecache(
 }
 
 /*
-** Usage:    
-** 
-**   sqlite3_config_memsys3 NBYTE
-**   sqlite3_config_memsys5 NBYTE
-**
-*/
-static int test_config_memsys3(
-  void * clientData, 
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int sz, rc;
-  static char buf[1048576];
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "NBYTE");
-    return TCL_ERROR;
-  }
-  if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
-  if( sz<=0 ){
-    sqlite3_mem_methods m;
-    memset(&m, 0, sizeof(sqlite3_mem_methods));
-    rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &m);
-  }else{
-    if( sz>sizeof(buf) ){
-      sz = sizeof(buf);
-    }
-    rc = sqlite3_config((int)clientData, buf, sz);
-  }
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
-  return TCL_OK;
-}
-
-/*
 ** Usage:
 **
 **   sqlite3_config_heap ?-memsys3? NBYTE NMINALLOC
@@ -996,10 +962,19 @@ static int test_config_heap(
   if( Tcl_GetIntFromObj(interp, aArg[0], &nByte) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, aArg[1], &nMinAlloc) ) return TCL_ERROR;
 
-  if( nByte>sizeof(zBuf) ){
-    nByte = sizeof(zBuf);
+  if( nByte==0 ){
+    sqlite3_mem_methods m;
+    memset(&m, 0, sizeof(sqlite3_mem_methods));
+    rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &m);
+  }else{
+    if( nByte>sizeof(zBuf) ){
+      nByte = sizeof(zBuf);
+    }
+    rc = sqlite3_config(SQLITE_CONFIG_HEAP, zBuf, nByte, nMinAlloc);
+    if( isMemsys3 && rc==SQLITE_OK ){
+       rc = sqlite3_config(SQLITE_CONFIG_MEMSYS3);
+    }
   }
-  rc = sqlite3_config(SQLITE_CONFIG_HEAP, zBuf, nByte, nMinAlloc);
 
   Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
   return TCL_OK;
@@ -1025,14 +1000,14 @@ static int test_dump_memsys3(
   }
 
   switch( (int)clientData ){
-    case SQLITE_CONFIG_MEMSYS3: {
+    case 3: {
 #ifdef SQLITE_ENABLE_MEMSYS3
       extern void sqlite3Memsys3Dump(const char*);
       sqlite3Memsys3Dump(Tcl_GetString(objv[1]));
       break;
 #endif
     }
-    case SQLITE_CONFIG_MEMSYS5: {
+    case 5: {
 #ifdef SQLITE_ENABLE_MEMSYS5
       extern void sqlite3Memsys5Dump(const char*);
       sqlite3Memsys5Dump(Tcl_GetString(objv[1]));
@@ -1145,11 +1120,9 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_config_pagecache",   test_config_pagecache         ,0. },
      { "sqlite3_status",             test_status                   ,0. },
      { "install_malloc_faultsim",    test_install_malloc_faultsim  ,0. },
-     { "sqlite3_config_memsys3", test_config_memsys3, SQLITE_CONFIG_MEMSYS3 },
-     { "sqlite3_config_memsys5", test_config_memsys3, SQLITE_CONFIG_MEMSYS5 },
-     { "sqlite3_config_heap",        test_config_heap,              0 },
-     { "sqlite3_dump_memsys3",   test_dump_memsys3  , SQLITE_CONFIG_MEMSYS3 },
-     { "sqlite3_dump_memsys5",   test_dump_memsys3  , SQLITE_CONFIG_MEMSYS5 }
+     { "sqlite3_config_heap",        test_config_heap              ,0 },
+     { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
+     { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 }
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
