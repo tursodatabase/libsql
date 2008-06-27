@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.7 2008/06/25 14:57:54 danielk1977 Exp $
+# $Id: permutations.test,v 1.8 2008/06/27 13:27:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -367,7 +367,27 @@ ifcapable mem5 {
     catch {db close}
     sqlite3_reset_auto_extension
     sqlite3_shutdown
-    sqlite3_config_memsys5 1000000
+    sqlite3_config_heap 1000000 64
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+    autoinstall_test_functions
+  } -shutdown {
+    catch {db close}
+    sqlite3_reset_auto_extension
+    sqlite3_shutdown
+    sqlite3_config_memsys5 0
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+  }
+
+  run_tests "memsys5-2" -description {
+    Run tests using the allocator in mem5.c in a different configuration.
+  } -include { select1.test 
+  } -initialize {
+    catch {db close}
+    sqlite3_reset_auto_extension
+    sqlite3_shutdown
+    sqlite3_config_heap 250000 16
     install_malloc_faultsim 1 
     sqlite3_initialize
     autoinstall_test_functions

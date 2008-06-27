@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.465 2008/06/26 10:54:12 danielk1977 Exp $
+** $Id: main.c,v 1.466 2008/06/27 13:27:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -175,22 +175,6 @@ int sqlite3_config(int op, ...){
       sqlite3Config.bFullMutex = 1;
       break;
     }
-#ifdef SQLITE_ENABLE_MEMSYS3
-    case SQLITE_CONFIG_MEMSYS3: {
-      u8 *pMem = va_arg(ap, u8*);
-      int nMem = va_arg(ap, int);
-      sqlite3MemSetMemsys3(pMem, nMem);
-      break;
-    }
-#endif
-#ifdef SQLITE_ENABLE_MEMSYS5
-    case SQLITE_CONFIG_MEMSYS5: {
-      u8 *pMem = va_arg(ap, u8*);
-      int nMem = va_arg(ap, int);
-      sqlite3MemSetMemsys5(pMem, nMem);
-      break;
-    }
-#endif
     case SQLITE_CONFIG_MALLOC: {
       /* Specify an alternative malloc implementation */
       sqlite3Config.m = *va_arg(ap, sqlite3_mem_methods*);
@@ -231,13 +215,34 @@ int sqlite3_config(int op, ...){
       sqlite3Config.nPage = va_arg(ap, int);
       break;
     }
+
     case SQLITE_CONFIG_HEAP: {
-      /* Designate a buffer for scratch memory space */
+      /* Designate a buffer for heap memory space */
       sqlite3Config.pHeap = va_arg(ap, void*);
       sqlite3Config.nHeap = va_arg(ap, int);
       sqlite3Config.mnReq = va_arg(ap, int);
+
+      /* Fall through to install the mem5.c/mem3.c methods. If neither
+      ** ENABLE_MEMSYS3 nor ENABLE_MEMSYS5 is defined, fall through to
+      ** the default case and return an error.
+      */
+    }
+
+#ifdef SQLITE_ENABLE_MEMSYS5
+    case SQLITE_CONFIG_MEMSYS5: {
+      sqlite3_mem_methods *p = sqlite3MemGetMemsys5();
+      sqlite3Config.m = *p;
       break;
     }
+#endif
+#ifdef SQLITE_ENABLE_MEMSYS3
+    case SQLITE_CONFIG_MEMSYS3: {
+      sqlite3_mem_methods *p = sqlite3MemGetMemsys3();
+      sqlite3Config.m = *p;
+      break;
+    }
+#endif
+
     default: {
       rc = SQLITE_ERROR;
       break;

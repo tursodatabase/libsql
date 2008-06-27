@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS5 is defined.
 **
-** $Id: mem5.c,v 1.8 2008/06/25 14:57:54 danielk1977 Exp $
+** $Id: mem5.c,v 1.9 2008/06/27 13:27:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -41,7 +41,6 @@
 #ifndef SQLITE_POW2_LOGMIN
 # define SQLITE_POW2_LOGMIN 6
 #endif
-#define POW2_MIN (1<<SQLITE_POW2_LOGMIN)
 
 /*
 ** Log2 of the maximum size of an allocation.
@@ -61,21 +60,18 @@
 ** Larger allocations are an array of these structures where the
 ** size of the array is a power of 2.
 */
-typedef struct Mem5Block Mem5Block;
-struct Mem5Block {
-  union {
-    char aData[POW2_MIN];
-    struct {
-      int next;       /* Index in mem5.aPool[] of next free chunk */
-      int prev;       /* Index in mem5.aPool[] of previous free chunk */
-    } list;
-  } u;
+typedef struct Mem5Link Mem5Link;
+struct Mem5Link {
+  int next;       /* Index of next free chunk */
+  int prev;       /* Index of previous free chunk */
 };
 
 /*
-** The size in blocks of an POW2_MAX allocation
+** Maximum size of any allocation is ((1<<LOGMAX)*mem5.nAtom). Since
+** mem5.nAtom is always at least 8, this is not really a practical
+** limitation.
 */
-#define SZ_MAX (1<<(NSIZE-1))
+#define LOGMAX 30
 
 /*
 ** Masks used for mem5.aCtrl[] elements.
@@ -122,7 +118,7 @@ static struct {
   /*
   ** Lists of free blocks of various sizes.
   */
-  int aiFreelist[NSIZE];
+  int aiFreelist[LOGMAX+1];
 
   /*
   ** Space for tracking which blocks are checked out and the size
@@ -133,9 +129,12 @@ static struct {
   /*
   ** Memory available for allocation
   */
-  int nBlock;
-  Mem5Block *aPool;
+  int nAtom;       /* Smallest possible allocation in bytes */
+  int nBlock;      /* Number of nAtom sized blocks in zPool */
+  u8 *zPool;
 } mem5;
+
+#define MEM5LINK(idx) ((Mem5Link *)(&mem5.zPool[(idx)*mem5.nAtom]))
 
 /*
 ** Unlink the chunk at mem5.aPool[i] from list it is currently
@@ -144,18 +143,18 @@ static struct {
 static void memsys5Unlink(int i, int iLogsize){
   int next, prev;
   assert( i>=0 && i<mem5.nBlock );
-  assert( iLogsize>=0 && iLogsize<NSIZE );
+  assert( iLogsize>=0 && iLogsize<=LOGMAX );
   assert( (mem5.aCtrl[i] & CTRL_LOGSIZE)==iLogsize );
 
-  next = mem5.aPool[i].u.list.next;
-  prev = mem5.aPool[i].u.list.prev;
+  next = MEM5LINK(i)->next;
+  prev = MEM5LINK(i)->prev;
   if( prev<0 ){
     mem5.aiFreelist[iLogsize] = next;
   }else{
-    mem5.aPool[prev].u.list.next = next;
+    MEM5LINK(prev)->next = next;
   }
   if( next>=0 ){
-    mem5.aPool[next].u.list.prev = prev;
+    MEM5LINK(next)->prev = prev;
   }
 }
 
@@ -167,14 +166,14 @@ static void memsys5Link(int i, int iLogsize){
   int x;
   assert( sqlite3_mutex_held(mem5.mutex) );
   assert( i>=0 && i<mem5.nBlock );
-  assert( iLogsize>=0 && iLogsize<NSIZE );
+  assert( iLogsize>=0 && iLogsize<=LOGMAX );
   assert( (mem5.aCtrl[i] & CTRL_LOGSIZE)==iLogsize );
 
-  mem5.aPool[i].u.list.next = x = mem5.aiFreelist[iLogsize];
-  mem5.aPool[i].u.list.prev = -1;
+  x = MEM5LINK(i)->next = mem5.aiFreelist[iLogsize];
+  MEM5LINK(i)->prev = -1;
   if( x>=0 ){
     assert( x<mem5.nBlock );
-    mem5.aPool[x].u.list.prev = i;
+    MEM5LINK(x)->prev = i;
   }
   mem5.aiFreelist[iLogsize] = i;
 }
@@ -202,9 +201,9 @@ static void memsys5Leave(void){
 static int memsys5Size(void *p){
   int iSize = 0;
   if( p ){
-    int i = ((Mem5Block*)p) - mem5.aPool;
+    int i = ((u8 *)p-mem5.zPool)/mem5.nAtom;
     assert( i>=0 && i<mem5.nBlock );
-    iSize = 1 << ((mem5.aCtrl[i]&CTRL_LOGSIZE) + SQLITE_POW2_LOGMIN);
+    iSize = mem5.nAtom * (1 << (mem5.aCtrl[i]&CTRL_LOGSIZE));
   }
   return iSize;
 }
@@ -217,12 +216,12 @@ static int memsys5UnlinkFirst(int iLogsize){
   int i;
   int iFirst;
 
-  assert( iLogsize>=0 && iLogsize<NSIZE );
+  assert( iLogsize>=0 && iLogsize<=LOGMAX );
   i = iFirst = mem5.aiFreelist[iLogsize];
   assert( iFirst>=0 );
   while( i>0 ){
     if( i<iFirst ) iFirst = i;
-    i = mem5.aPool[i].u.list.next;
+    i = MEM5LINK(i)->next;
   }
   memsys5Unlink(iFirst, iLogsize);
   return iFirst;
@@ -246,14 +245,14 @@ static void *memsys5MallocUnsafe(int nByte){
 
   /* Round nByte up to the next valid power of two */
   if( nByte>POW2_MAX ) return 0;
-  for(iFullSz=POW2_MIN, iLogsize=0; iFullSz<nByte; iFullSz *= 2, iLogsize++){}
+  for(iFullSz=mem5.nAtom, iLogsize=0; iFullSz<nByte; iFullSz *= 2, iLogsize++){}
 
   /* Make sure mem5.aiFreelist[iLogsize] contains at least one free
   ** block.  If not, then split a block of the next larger power of
   ** two in order to create a new free block of size iLogsize.
   */
-  for(iBin=iLogsize; mem5.aiFreelist[iBin]<0 && iBin<NSIZE; iBin++){}
-  if( iBin>=NSIZE ) return 0;
+  for(iBin=iLogsize; mem5.aiFreelist[iBin]<0 && iBin<=LOGMAX; iBin++){}
+  if( iBin>LOGMAX ) return 0;
   i = memsys5UnlinkFirst(iBin);
   while( iBin>iLogsize ){
     int newSize;
@@ -275,7 +274,7 @@ static void *memsys5MallocUnsafe(int nByte){
   if( mem5.maxOut<mem5.currentOut ) mem5.maxOut = mem5.currentOut;
 
   /* Return a pointer to the allocated memory. */
-  return (void*)&mem5.aPool[i];
+  return (void*)&mem5.zPool[i*mem5.nAtom];
 }
 
 /*
@@ -283,47 +282,55 @@ static void *memsys5MallocUnsafe(int nByte){
 */
 static void memsys5FreeUnsafe(void *pOld){
   u32 size, iLogsize;
-  int i;
+  int iBlock;             
 
-  i = ((Mem5Block*)pOld) - mem5.aPool;
-  assert( i>=0 && i<mem5.nBlock );
-  assert( (mem5.aCtrl[i] & CTRL_FREE)==0 );
-  iLogsize = mem5.aCtrl[i] & CTRL_LOGSIZE;
+  /* Set iBlock to the index of the block pointed to by pOld in 
+  ** the array of mem5.nAtom byte blocks pointed to by mem5.zPool.
+  */
+  iBlock = ((u8 *)pOld-mem5.zPool)/mem5.nAtom;
+
+  /* Check that the pointer pOld points to a valid, non-free block. */
+  assert( iBlock>=0 && iBlock<mem5.nBlock );
+  assert( ((u8 *)pOld-mem5.zPool)%mem5.nAtom==0 );
+  assert( (mem5.aCtrl[iBlock] & CTRL_FREE)==0 );
+
+  iLogsize = mem5.aCtrl[iBlock] & CTRL_LOGSIZE;
   size = 1<<iLogsize;
-  assert( i+size-1<mem5.nBlock );
-  mem5.aCtrl[i] |= CTRL_FREE;
-  mem5.aCtrl[i+size-1] |= CTRL_FREE;
+  assert( iBlock+size-1<mem5.nBlock );
+
+  mem5.aCtrl[iBlock] |= CTRL_FREE;
+  mem5.aCtrl[iBlock+size-1] |= CTRL_FREE;
   assert( mem5.currentCount>0 );
   assert( mem5.currentOut>=0 );
   mem5.currentCount--;
-  mem5.currentOut -= size*POW2_MIN;
+  mem5.currentOut -= size*mem5.nAtom;
   assert( mem5.currentOut>0 || mem5.currentCount==0 );
   assert( mem5.currentCount>0 || mem5.currentOut==0 );
 
-  mem5.aCtrl[i] = CTRL_FREE | iLogsize;
-  while( iLogsize<NSIZE-1 ){
+  mem5.aCtrl[iBlock] = CTRL_FREE | iLogsize;
+  while( iLogsize<LOGMAX ){
     int iBuddy;
-
-    if( (i>>iLogsize) & 1 ){
-      iBuddy = i - size;
+    if( (iBlock>>iLogsize) & 1 ){
+      iBuddy = iBlock - size;
     }else{
-      iBuddy = i + size;
+      iBuddy = iBlock + size;
     }
-    assert( iBuddy>=0 && iBuddy<mem5.nBlock );
+    assert( iBuddy>=0 );
+    if( (iBuddy+(1<<iLogsize))>mem5.nBlock ) break;
     if( mem5.aCtrl[iBuddy]!=(CTRL_FREE | iLogsize) ) break;
     memsys5Unlink(iBuddy, iLogsize);
     iLogsize++;
-    if( iBuddy<i ){
+    if( iBuddy<iBlock ){
       mem5.aCtrl[iBuddy] = CTRL_FREE | iLogsize;
-      mem5.aCtrl[i] = 0;
-      i = iBuddy;
+      mem5.aCtrl[iBlock] = 0;
+      iBlock = iBuddy;
     }else{
-      mem5.aCtrl[i] = CTRL_FREE | iLogsize;
+      mem5.aCtrl[iBlock] = CTRL_FREE | iLogsize;
       mem5.aCtrl[iBuddy] = 0;
     }
     size *= 2;
   }
-  memsys5Link(i, iLogsize);
+  memsys5Link(iBlock, iLogsize);
 }
 
 /*
@@ -344,6 +351,7 @@ static void *memsys5Malloc(int nBytes){
 */
 static void memsys5Free(void *pPrior){
   if( pPrior==0 ){
+assert(0);
     return;
   }
   memsys5Enter();
@@ -383,14 +391,51 @@ static void *memsys5Realloc(void *pPrior, int nBytes){
 */
 static int memsys5Roundup(int n){
   int iFullSz;
-  for(iFullSz=POW2_MIN; iFullSz<n; iFullSz *= 2);
+  for(iFullSz=mem5.nAtom; iFullSz<n; iFullSz *= 2);
   return iFullSz;
+}
+
+static int memsys5Log(int iValue){
+  int iLog;
+  for(iLog=0; (1<<iLog)<iValue; iLog++);
+  return iLog;
 }
 
 /*
 ** Initialize this module.
 */
 static int memsys5Init(void *NotUsed){
+  int ii;
+  int nByte = sqlite3Config.nHeap;
+  u8 *zByte = (u8 *)sqlite3Config.pHeap;
+  int nMinLog;                 /* Log of minimum allocation size in bytes*/
+  int iOffset;
+
+  nMinLog = memsys5Log(sqlite3Config.mnReq);
+  mem5.nAtom = (1<<nMinLog);
+  while( sizeof(Mem5Link)>mem5.nAtom ){
+    mem5.nAtom = mem5.nAtom << 1;
+  }
+
+  mem5.nBlock = (nByte / (mem5.nAtom+sizeof(u8)));
+  mem5.zPool = zByte;
+  mem5.aCtrl = (u8 *)&mem5.zPool[mem5.nBlock*mem5.nAtom];
+
+  for(ii=0; ii<=LOGMAX; ii++){
+    mem5.aiFreelist[ii] = -1;
+  }
+
+  iOffset = 0;
+  for(ii=LOGMAX; ii>=0; ii--){
+    int nAlloc = (1<<ii);
+    if( (iOffset+nAlloc)<=mem5.nBlock ){
+      mem5.aCtrl[iOffset] = ii | CTRL_FREE;
+      memsys5Link(iOffset, ii);
+      iOffset += nAlloc;
+    }
+    assert((iOffset+nAlloc)>mem5.nBlock);
+  }
+
   return SQLITE_OK;
 }
 
@@ -409,6 +454,7 @@ void sqlite3Memsys5Dump(const char *zFilename){
 #ifdef SQLITE_DEBUG
   FILE *out;
   int i, j, n;
+  int nMinLog;
 
   if( zFilename==0 || zFilename[0]==0 ){
     out = stdout;
@@ -421,9 +467,10 @@ void sqlite3Memsys5Dump(const char *zFilename){
     }
   }
   memsys5Enter();
-  for(i=0; i<NSIZE; i++){
-    for(n=0, j=mem5.aiFreelist[i]; j>=0; j = mem5.aPool[j].u.list.next, n++){}
-    fprintf(out, "freelist items of size %d: %d\n", POW2_MIN << i, n);
+  nMinLog = memsys5Log(mem5.nAtom);
+  for(i=0; i<=LOGMAX && i+nMinLog<32; i++){
+    for(n=0, j=mem5.aiFreelist[i]; j>=0; j = MEM5LINK(j)->next, n++){}
+    fprintf(out, "freelist items of size %d: %d\n", mem5.nAtom << i, n);
   }
   fprintf(out, "mem5.nAlloc       = %llu\n", mem5.nAlloc);
   fprintf(out, "mem5.totalAlloc   = %llu\n", mem5.totalAlloc);
@@ -444,16 +491,10 @@ void sqlite3Memsys5Dump(const char *zFilename){
 
 /*
 ** This routine is the only routine in this file with external 
-** linkage.
-**
-** Populate the low-level memory allocation function pointers in
-** sqlite3Config.m with pointers to the routines in this file. The
-** arguments specify the block of memory to manage.
-**
-** This routine is only called by sqlite3_config(), and therefore
-** is not required to be threadsafe (it is not).
+** linkage. It returns a pointer to a static sqlite3_mem_methods
+** struct populated with the memsys5 methods.
 */
-void sqlite3MemSetMemsys5(u8 *zByte, int nByte){
+const sqlite3_mem_methods *sqlite3MemGetMemsys5(void){
   static const sqlite3_mem_methods memsys5Methods = {
      memsys5Malloc,
      memsys5Free,
@@ -464,25 +505,7 @@ void sqlite3MemSetMemsys5(u8 *zByte, int nByte){
      memsys5Shutdown,
      0
   };
-  int i;
-
-  mem5.nBlock = (nByte / (sizeof(Mem5Block)+sizeof(u8)));
-  mem5.nBlock -= (mem5.nBlock%SZ_MAX);
-  mem5.aPool = (Mem5Block *)zByte;
-  mem5.aCtrl = (u8 *)&mem5.aPool[mem5.nBlock];
-
-  assert( sizeof(Mem5Block)==POW2_MIN );
-  assert( mem5.nBlock>=SZ_MAX );
-  assert( (mem5.nBlock%SZ_MAX)==0 );
-
-  for(i=0; i<NSIZE; i++) mem5.aiFreelist[i] = -1;
-  for(i=0; i<=mem5.nBlock-SZ_MAX; i += SZ_MAX){
-    mem5.aCtrl[i] = (NSIZE-1) | CTRL_FREE;
-    memsys5Link(i, NSIZE-1);
-  }
-
-  /* Configure the functions to call to allocate memory. */
-  sqlite3_config(SQLITE_CONFIG_MALLOC, &memsys5Methods);
+  return &memsys5Methods;
 }
 
 #endif /* SQLITE_ENABLE_MEMSYS5 */

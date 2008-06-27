@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.31 2008/06/25 14:26:09 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.32 2008/06/27 13:27:04 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -965,6 +965,47 @@ static int test_config_memsys3(
 }
 
 /*
+** Usage:
+**
+**   sqlite3_config_heap ?-memsys3? NBYTE NMINALLOC
+*/
+static int test_config_heap(
+  void * clientData, 
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  static char zBuf[1048576];
+  int nByte;         /* Size of buffer to pass to sqlite3_config() */
+  int nMinAlloc;     /* Size of minimum allocation */
+  int rc;            /* Return code of sqlite3_config() */
+  int isMemsys3 = 0; /* True if the -memsys3 switch is present */
+
+  Tcl_Obj * CONST *aArg = &objv[1];
+  int nArg = objc-1;
+
+  if( nArg>0 && 0==strcmp("-memsys3", Tcl_GetString(aArg[0])) ){
+    nArg--;
+    aArg++;
+    isMemsys3 = 1;
+  }
+  if( nArg!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?-memsys3? NBYTE NMINALLOC");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, aArg[0], &nByte) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, aArg[1], &nMinAlloc) ) return TCL_ERROR;
+
+  if( nByte>sizeof(zBuf) ){
+    nByte = sizeof(zBuf);
+  }
+  rc = sqlite3_config(SQLITE_CONFIG_HEAP, zBuf, nByte, nMinAlloc);
+
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  return TCL_OK;
+}
+
+/*
 ** Usage:    
 **
 **   sqlite3_dump_memsys3  FILENAME
@@ -1106,6 +1147,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "install_malloc_faultsim",    test_install_malloc_faultsim  ,0. },
      { "sqlite3_config_memsys3", test_config_memsys3, SQLITE_CONFIG_MEMSYS3 },
      { "sqlite3_config_memsys5", test_config_memsys3, SQLITE_CONFIG_MEMSYS5 },
+     { "sqlite3_config_heap",        test_config_heap,              0 },
      { "sqlite3_dump_memsys3",   test_dump_memsys3  , SQLITE_CONFIG_MEMSYS3 },
      { "sqlite3_dump_memsys5",   test_dump_memsys3  , SQLITE_CONFIG_MEMSYS5 }
   };

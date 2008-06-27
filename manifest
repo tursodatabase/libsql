@@ -1,5 +1,5 @@
-C Remove\sunused\svariable.\s\sFix\sa\scompiler\swarning.\s(CVS\s5319)
-D 2008-06-27T00:52:45
+C Change\smem5.c\sso\sthat\sthe\sminimum\sallocation\ssize\sis\sruntime\sconfigurable.\s(CVS\s5320)
+D 2008-06-27T13:27:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,14 +114,14 @@ F src/insert.c f8c7da31409ec19a769b960a4a2b9cca7bab80bd
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 40024a0f476c1279494876b9a002001b29e5d3e3
-F src/main.c 942283a5fc983a36504cc6476b6d054911921fec
+F src/main.c 7c326318fe039ea6bab91209f3eabef26f1ba33a
 F src/malloc.c f52166df8abd7ff6990dbee1a0ce3534addc8617
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 8340fa5f969e9f9b9bdeb54106457a2003456d2b
 F src/mem2.c 23f9538f35fbcd5665afe7056a56be0c7ed65aa7
 F src/mem3.c 8d34a22617a0eb96c05a83fc2c4fbbaed6bcfde1
 F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
-F src/mem5.c d0c7c8506eb3f64c0ea0f1e8defab4043f531dad
+F src/mem5.c 2ad92d6aa224650f9fa9ad41fbf27b6cdae8a76f
 F src/mutex.c a485a0eac8ee2cd95f66e565b4c6696c18db968f
 F src/mutex.h e52ffa1dfc6a6077e8b1823d2c2b7dfcbcf85594
 F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
@@ -144,7 +144,7 @@ F src/select.c 5b213de002382aeaac5c9c2d3be7c98900bc3056
 F src/shell.c 479807b87f0409289eec4a776cd6ae56d30544b1
 F src/sqlite.h.in bcdf4f68ce70ca30f0c3d351858383ce398e3c66
 F src/sqlite3ext.h 7bf1651c6fb7183831e5113b4b91662bbe67e5bf
-F src/sqliteInt.h 969acf22dbe79075e486074a8ffdc1e2fc2b8b1f
+F src/sqliteInt.h a3d505360be0385fdd6d02fef82f3f10e952259e
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
@@ -166,7 +166,7 @@ F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
 F src/test_func.c f4aafa10f17d52c43a64b47717265802e6e552b3
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
-F src/test_malloc.c db4b54a81e83c0e71e1780365e022ed96fac52b0
+F src/test_malloc.c 68da4add2f3f5f2aace5a15122df80e5f8454af4
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c b1433eb96520656fb3e4a218253a94ac32bd5775
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
@@ -422,7 +422,7 @@ F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 6df72c441db0a037b7ec6990d16311c24fbea77b
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
-F test/permutations.test e915c7125487a734cf9fc94c9653fe0a05c08d29
+F test/permutations.test 17aa068f5f6612a9e91ec316463f94141436445a
 F test/pragma.test 44bc52afa72cabfeae82641e0033ca24919f3ce8
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a4005782690f022e982df4873779a029b28b9306
-R f1af58e903b479838053b138b998370c
-U drh
-Z b29d48455395ec1bf7cf810b7d415083
+P 0b01ec5cf7725a02d4c12167df125cef578f6219
+R 0a2d2902a0d1d00bcf1712dac8ab54a9
+U danielk1977
+Z 48c1b0881009fcf3cbbdeacd5d1ca6e8
