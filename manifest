@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sintroduced\sby\scheck-in\s(5316).\s\sAdd\ssome\sVDBE\scomments\sto\nthe\sIN\sexpression\scode\sgenerator.\s(CVS\s5317)
-D 2008-06-26T21:45:26
+C Tweaks\sto\sthe\sIN\sexpression\scode\sgenerator.\s\sFix\san\san\sunrelated\sbug\nin\sthe\scompound\sSELECT\scode\sgenerator.\s(CVS\s5318)
+D 2008-06-27T00:47:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/callback.c 3ba98ae46f60aa7c2c40eac7d18fe5ba9b706b83
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e841168e5520bbbb2a1cbcdce7531d8b23017b4d
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
-F src/expr.c 3bb6d63230df920c46a6790c6f0e204b00973fb7
+F src/expr.c f166ce09a2468695b429b4e27e2a82558267374a
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c 1e7d9569570134ac0771a00382d9d4b41c4aa052
 F src/global.c 2304cfa3288763bd2fed10caf8c6fbaa2b383f4e
@@ -140,7 +140,7 @@ F src/pragma.c 9a95f5b3708f6d3ddd987eab5f369a19ffcb6795
 F src/prepare.c aba51dad52308e3d9d2074d8ff4e612e7f1cab51
 F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c e27de53be426254e1b75690c9c99482bb1431b79
+F src/select.c c4f8aa2a9e8f67341b00564e3376017c5de8c26b
 F src/shell.c 479807b87f0409289eec4a776cd6ae56d30544b1
 F src/sqlite.h.in bcdf4f68ce70ca30f0c3d351858383ce398e3c66
 F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ec80474b1c157a29fb6978dd5575c396c57973b3
-R 2776a8777b2027a36d141711118a9d4a
+P 1043a605e2dcad4b5222674efe392ee9915dc57d
+R 282907968b33788026ea00a12d860ba1
 U drh
-Z 08c80bc1275e333a7b4bb518d0147ebb
+Z fc31e53c5f5925543c80485c128b7811

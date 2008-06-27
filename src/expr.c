@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.379 2008/06/26 21:45:26 drh Exp $
+** $Id: expr.c,v 1.380 2008/06/27 00:47:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2594,20 +2594,18 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       */
       affinity = comparisonAffinity(pExpr);
 
-      sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
 
       /* Code the <expr> from "<expr> IN (...)". The temporary table
       ** pExpr->iTable contains the values that make up the (...) set.
       */
-      r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      testcase( regFree1==0 );
-      j1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1);
-      sqlite3VdbeAddOp2(v, OP_Null, 0, target);
-      j2  = sqlite3VdbeAddOp0(v, OP_Goto);
-      sqlite3VdbeJumpHere(v, j1);
+      pParse->disableColCache++;
+      sqlite3ExprCode(pParse, pExpr->pLeft, target);
+      pParse->disableColCache--;
+      j2 = sqlite3VdbeAddOp1(v, OP_IsNull, target);
       if( eType==IN_INDEX_ROWID ){
-        j3 = sqlite3VdbeAddOp1(v, OP_MustBeInt, r1);
-        j4 = sqlite3VdbeAddOp3(v, OP_NotExists, pExpr->iTable, 0, r1);
+        j3 = sqlite3VdbeAddOp1(v, OP_MustBeInt, target);
+        j4 = sqlite3VdbeAddOp3(v, OP_NotExists, pExpr->iTable, 0, target);
+        sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
         j5 = sqlite3VdbeAddOp0(v, OP_Goto);
         sqlite3VdbeJumpHere(v, j3);
         sqlite3VdbeJumpHere(v, j4);
@@ -2619,8 +2617,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         ** the value, then jump to the end of the test code. The target
         ** register still contains the true (1) value written to it earlier.
         */
-        sqlite3VdbeAddOp4(v, OP_MakeRecord, r1, 1, r2, &affinity, 1);
-        sqlite3ExprCacheAffinityChange(pParse, r1, 1);
+        sqlite3VdbeAddOp4(v, OP_MakeRecord, target, 1, r2, &affinity, 1);
+        sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
         j5 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r2);
 
         /* If the set membership test fails, then the result of the 
@@ -2644,11 +2642,12 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
           ** other than NULL, then the test has already been run and 
           ** rNotFound is already populated.
           */
+          static const char nullRecord[] = { 0x02, 0x00 };
           j3 = sqlite3VdbeAddOp1(v, OP_NotNull, rMayHaveNull);
           sqlite3VdbeAddOp2(v, OP_Null, 0, rNotFound);
-          sqlite3VdbeAddOp2(v, OP_Integer, 1, rMayHaveNull);
-          sqlite3VdbeAddOp4(v, OP_MakeRecord, rNotFound, 1, r2, 0, 1);
-          j4 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r2);
+          sqlite3VdbeAddOp4(v, OP_Blob, 2, rMayHaveNull, 0, 
+                             nullRecord, P4_STATIC);
+          j4 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, rMayHaveNull);
           sqlite3VdbeAddOp2(v, OP_Integer, 0, rNotFound);
           sqlite3VdbeJumpHere(v, j4);
           sqlite3VdbeJumpHere(v, j3);

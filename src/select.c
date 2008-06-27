@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.437 2008/06/26 18:04:03 danielk1977 Exp $
+** $Id: select.c,v 1.438 2008/06/27 00:47:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2340,7 +2340,7 @@ static int generateOutputSubroutine(
   Vdbe *v = pParse->pVdbe;
   int iContinue;
   int addr;
-  if( v==0 ) return 0;
+  if( pParse->db->mallocFailed ) return 0;
 
   addr = sqlite3VdbeCurrentAddr(v);
   iContinue = sqlite3VdbeMakeLabel(v);
