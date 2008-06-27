@@ -1,5 +1,5 @@
-C Fix\smem3.c\s(broken\sby\s(5320)).\s(CVS\s5321)
-D 2008-06-27T14:05:25
+C Documentation\stweaks.\s(CVS\s5322)
+D 2008-06-27T14:51:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 5b213de002382aeaac5c9c2d3be7c98900bc3056
 F src/shell.c 479807b87f0409289eec4a776cd6ae56d30544b1
-F src/sqlite.h.in bcdf4f68ce70ca30f0c3d351858383ce398e3c66
+F src/sqlite.h.in d6c32df390c3f705a8b6a1002ab4ab8503c2e69f
 F src/sqlite3ext.h 7bf1651c6fb7183831e5113b4b91662bbe67e5bf
 F src/sqliteInt.h 35e420ced9e27af5ee387cd40f2e7a431665f858
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4f95f4cdf77e134fab42148e10198c7b008d4ae6
-R 63274e6bfa4b3133971620ba2cd4bf5a
-U danielk1977
-Z 6121d4e53f8a4f4f8796267fc367b534
+P fef90a21aea11f15371d3fcf44548d786dd8819b
+R 4e5fbce3735af361e0ee9da92c70c873
+U drh
+Z bf002c5680a6f416a84a8f0e2aa6d952

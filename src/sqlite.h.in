@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.360 2008/06/26 18:16:06 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.361 2008/06/27 14:51:53 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1484,29 +1484,29 @@ int sqlite3_complete16(const void *sql);
 **
 ** INVARIANTS:
 **
-** {F12311} The [sqlite3_busy_handler()] function replaces the busy handler
-**          callback in the database connection identified by the 1st
-**          parameter with a new busy handler identified by the 2nd and 3rd
-**          parameters.
+** {F12311} The [sqlite3_busy_handler(D,C,A)] function shall replace
+**          busy callback in the [database connection] D with a new
+**          a new busy handler C and application data pointer A.
 **
-** {F12312} The default busy handler for new database connections is NULL.
+** {F12312} Newly created [database connections] shall have a busy
+**          handler of NULL.
 **
-** {F12314} When two or more database connection share a
+** {F12314} When two or more [database connections] share a
 **          [sqlite3_enable_shared_cache | common cache],
 **          the busy handler for the database connection currently using
-**          the cache is invoked when the cache encounters a lock.
+**          the cache shall be invoked when the cache encounters a lock.
 **
 ** {F12316} If a busy handler callback returns zero, then the SQLite interface
-**          that provoked the locking event will return [SQLITE_BUSY].
+**          that provoked the locking event shall return [SQLITE_BUSY].
 **
-** {F12318} SQLite will invokes the busy handler with two arguments which
+** {F12318} SQLite shall invokes the busy handler with two arguments which
 **          are a copy of the pointer supplied by the 3rd parameter to
 **          [sqlite3_busy_handler()] and a count of the number of prior
 **          invocations of the busy handler for the same locking event.
 **
 ** LIMITATIONS:
 **
-** {A12319} A busy handler should not close the database connection
+** {A12319} A busy handler must not close the database connection
 **          or [prepared statement] that invoked the busy handler.
 */
 int sqlite3_busy_handler(sqlite3*, int(*)(void*,int), void*);
@@ -1531,19 +1531,19 @@ int sqlite3_busy_handler(sqlite3*, int(*)(void*,int), void*);
 **
 ** INVARIANTS:
 **
-** {F12341} The [sqlite3_busy_timeout()] function overrides any prior
+** {F12341} The [sqlite3_busy_timeout()] function shall override any prior
 **          [sqlite3_busy_timeout()] or [sqlite3_busy_handler()] setting
-**          on the same database connection.
+**          on the same [database connection].
 **
 ** {F12343} If the 2nd parameter to [sqlite3_busy_timeout()] is less than
-**          or equal to zero, then the busy handler is cleared so that
+**          or equal to zero, then the busy handler shall be cleared so that
 **          all subsequent locking events immediately return [SQLITE_BUSY].
 **
 ** {F12344} If the 2nd parameter to [sqlite3_busy_timeout()] is a positive
-**          number N, then a busy handler is set that repeatedly calls
-**          the xSleep() method in the VFS interface until either the
-**          lock clears or until the cumulative sleep time reported back
-**          by xSleep() exceeds N milliseconds.
+**          number N, then a busy handler shall be set that repeatedly calls
+**          the xSleep() method in the [sqlite3_vfs | VFS interface] until
+**          either the lock clears or until the cumulative sleep time
+**          reported back by xSleep() exceeds N milliseconds.
 */
 int sqlite3_busy_timeout(sqlite3*, int ms);
 
@@ -1618,31 +1618,43 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 ** INVARIANTS:
 **
 ** {F12371} If a [sqlite3_get_table()] fails a memory allocation, then
-**          it frees the result table under construction, aborts the
-**          query in process, skips any subsequent queries, sets the
-**          *resultp output pointer to NULL and returns [SQLITE_NOMEM].
+**          it shall free the result table under construction, abort the
+**          query in process, skip any subsequent queries, set the
+**          *pazResult output pointer to NULL and return [SQLITE_NOMEM].
 **
-** {F12373} If the ncolumn parameter to [sqlite3_get_table()] is not NULL
-**          then [sqlite3_get_table()] writes the number of columns in the
-**          result set of the query into *ncolumn if the query is
-**          successful (if the function returns SQLITE_OK).
+** {F12373} If the pnColumn parameter to [sqlite3_get_table()] is not NULL
+**          then a successful invocation of [sqlite3_get_table()] shall
+**          write the number of columns in the
+**          result set of the query into *pnColumn.
 **
-** {F12374} If the nrow parameter to [sqlite3_get_table()] is not NULL
-**          then [sqlite3_get_table()] writes the number of rows in the
-**          result set of the query into *nrow if the query is
-**          successful (if the function returns SQLITE_OK).
+** {F12374} If the pnRow parameter to [sqlite3_get_table()] is not NULL
+**          then a successful invocation of [sqlite3_get_table()] shall
+**          writes the number of rows in the
+**          result set of the query into *pnRow.
 **
-** {F12376} The [sqlite3_get_table()] function sets its *ncolumn value to the
-**          number of columns in the result set of the query in the sql
-**          parameter, or to zero if the query in sql has an empty result set.
+** {F12376} A successful invocation of [sqlite3_get_table()] that computes
+**          N rows of result with C columns per row shall make *pazResult
+**          point to an array of pointers to (N+1)*C strings where the first
+**          C strings are column names as obtained from
+**          [sqlite3_column_name()] and the rest are column result values
+**          obtained from [sqlite3_column_text()].
+**
+** {F12379} The values in the pazResult array returned by [sqlite3_get_table()]
+**          shall remain valid until cleared by [sqlite3_free_table()].
+**
+** {F12382} When an error occurs during evaluation of [sqlite3_get_table()]
+**          the function shall set *pazResult to NULL, write an error message
+**          into memory obtained from [sqlite3_malloc()], make
+**          **pzErrmsg point to that error message, and return a
+**          appropriate [error code].
 */
 int sqlite3_get_table(
-  sqlite3*,             /* An open database */
-  const char *sql,      /* SQL to be evaluated */
-  char ***pResult,      /* Results of the query */
-  int *nrow,            /* Number of result rows written here */
-  int *ncolumn,         /* Number of result columns written here */
-  char **errmsg         /* Error msg written here */
+  sqlite3 *db,          /* An open database */
+  const char *zSql,     /* SQL to be evaluated */
+  char ***pazResult,    /* Results of the query */
+  int *pnRow,           /* Number of result rows written here */
+  int *pnColumn,        /* Number of result columns written here */
+  char **pzErrmsg       /* Error msg written here */
 );
 void sqlite3_free_table(char **result);
 
