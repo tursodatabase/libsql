@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.380 2008/06/27 00:47:29 drh Exp $
+** $Id: expr.c,v 1.381 2008/06/27 00:52:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2578,7 +2578,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_IN: {
       int rNotFound = 0;
       int rMayHaveNull = 0;
-      int j1, j2, j3, j4, j5;
+      int j2, j3, j4, j5;
       char affinity;
       int eType;
 

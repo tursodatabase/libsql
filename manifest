@@ -1,5 +1,5 @@
-C Tweaks\sto\sthe\sIN\sexpression\scode\sgenerator.\s\sFix\san\san\sunrelated\sbug\nin\sthe\scompound\sSELECT\scode\sgenerator.\s(CVS\s5318)
-D 2008-06-27T00:47:29
+C Remove\sunused\svariable.\s\sFix\sa\scompiler\swarning.\s(CVS\s5319)
+D 2008-06-27T00:52:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/callback.c 3ba98ae46f60aa7c2c40eac7d18fe5ba9b706b83
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e841168e5520bbbb2a1cbcdce7531d8b23017b4d
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
-F src/expr.c f166ce09a2468695b429b4e27e2a82558267374a
+F src/expr.c 0e65125e99a25a293d569f094e4b182b220a4f22
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c 1e7d9569570134ac0771a00382d9d4b41c4aa052
 F src/global.c 2304cfa3288763bd2fed10caf8c6fbaa2b383f4e
@@ -140,10 +140,10 @@ F src/pragma.c 9a95f5b3708f6d3ddd987eab5f369a19ffcb6795
 F src/prepare.c aba51dad52308e3d9d2074d8ff4e612e7f1cab51
 F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c c4f8aa2a9e8f67341b00564e3376017c5de8c26b
+F src/select.c 5b213de002382aeaac5c9c2d3be7c98900bc3056
 F src/shell.c 479807b87f0409289eec4a776cd6ae56d30544b1
 F src/sqlite.h.in bcdf4f68ce70ca30f0c3d351858383ce398e3c66
-F src/sqlite3ext.h f162a72daef5ebf8b211fe8c0ec96e85d22fbf9b
+F src/sqlite3ext.h 7bf1651c6fb7183831e5113b4b91662bbe67e5bf
 F src/sqliteInt.h 969acf22dbe79075e486074a8ffdc1e2fc2b8b1f
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
@@ -594,7 +594,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1043a605e2dcad4b5222674efe392ee9915dc57d
-R 282907968b33788026ea00a12d860ba1
+P a4005782690f022e982df4873779a029b28b9306
+R f1af58e903b479838053b138b998370c
 U drh
-Z fc31e53c5f5925543c80485c128b7811
+Z b29d48455395ec1bf7cf810b7d415083

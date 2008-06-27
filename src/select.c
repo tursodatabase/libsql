@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.438 2008/06/27 00:47:29 drh Exp $
+** $Id: select.c,v 1.439 2008/06/27 00:52:45 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -652,8 +652,6 @@ static void selectInnerLoop(
     ** item into the set table with bogus data.
     */
     case SRT_Set: {
-      int addr2;
-
       assert( nColumn==1 );
       p->affinity = sqlite3CompareAffinity(pEList->a[0].pExpr, pDest->affinity);
       if( pOrderBy ){
@@ -2384,7 +2382,7 @@ static int generateOutputSubroutine(
     ** item into the set table with bogus data.
     */
     case SRT_Set: {
-      int addr2, r1;
+      int r1;
       assert( pIn->nMem==1 );
       p->affinity = 
          sqlite3CompareAffinity(p->pEList->a[0].pExpr, pDest->affinity);
