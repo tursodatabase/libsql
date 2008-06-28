@@ -12,7 +12,7 @@
 # Test that it is possible to have two open blob handles on a single
 # blob object.
 #
-# $Id: incrblob2.test,v 1.7 2008/06/26 18:04:03 danielk1977 Exp $
+# $Id: incrblob2.test,v 1.8 2008/06/28 15:33:26 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -353,11 +353,57 @@ do_test incrblob2-7.5 {
   close $h
 } {}
 
-#do_test incrblob2-8.5 {
-  #execsql BEGIN
-  #db eval {SELECT * FROM t2} {
-  #execsql "DROP TABLE t2"
-  #}
-#} {}
+#---------------------------------------------------------------------------
+# The following tests, incrblob2-8.*, test that nothing terrible happens
+# when a statement transaction is rolled back while there are open 
+# incremental-blob handles. At one point an assert() was failing when
+# this was attempted.
+#
+do_test incrblob2-8.1 {
+  execsql BEGIN
+  set h [db incrblob t2 B 1]
+  set rc [catch {
+    db eval {SELECT * FROM t2} { execsql "DROP TABLE t2" }
+  } msg] 
+  list $rc $msg
+} {1 {database table is locked}}
+do_test incrblob2-8.2 {
+  close $h
+  execsql COMMIT
+} {}
+do_test incrblob2-8.3 {
+  execsql {
+    CREATE TABLE t3(a INTEGER UNIQUE, b TEXT);
+    INSERT INTO t3 VALUES(1, 'aaaaaaaaaaaaaaaaaaaa');
+    INSERT INTO t3 VALUES(2, 'bbbbbbbbbbbbbbbbbbbb');
+    INSERT INTO t3 VALUES(3, 'cccccccccccccccccccc');
+    INSERT INTO t3 VALUES(4, 'dddddddddddddddddddd');
+    INSERT INTO t3 VALUES(5, 'eeeeeeeeeeeeeeeeeeee');
+  }
+} {}
+do_test incrblob2-8.4 {
+  execsql BEGIN
+  set h [db incrblob t3 b 3]
+  sqlite3_blob_read $h 0 20
+} {cccccccccccccccccccc}
+do_test incrblob2-8.5 {
+  catchsql {UPDATE t3 SET a = 6 WHERE a > 3}
+} {1 {column a is not unique}}
+do_test incrblob2-8.6 {
+  catchsql {UPDATE t3 SET a = 6 WHERE a > 3}
+} {1 {column a is not unique}}
+do_test incrblob2-8.7 {
+  sqlite3_blob_read $h 0 20
+} {cccccccccccccccccccc}
+do_test incrblob2-8.8 {
+  catchsql {UPDATE t3 SET a = 6 WHERE a = 3 OR a = 5}
+} {1 {column a is not unique}}
+do_test incrblob2-8.9 {
+  set rc [catch {sqlite3_blob_read $h 0 20} msg]
+  list $rc $msg
+} {1 SQLITE_ABORT}
+do_test incrblob2-8.X {
+  close $h
+} {}
 
 finish_test

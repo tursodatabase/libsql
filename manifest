@@ -1,5 +1,5 @@
-C Added\sreminder\smessage\sto\sterminate\sSQL\sstatements\swith\sa\ssemicolon\son\sshell\sstartup.\sThis\scloses\s#3099.\s(CVS\s5325)
-D 2008-06-28T11:29:23
+C Remove\san\sassert()\sthat\swas\sfailing\sif\sthere\swere\sany\sopen\sincremental\sblob\shandles\swhen\sa\sstatement\stransaction\swas\srolled\sback.\s(CVS\s5326)
+D 2008-06-28T15:33:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 6d25027de7c26b1c0a69ad3f2045f944e20fba22
+F src/btree.c dd7b7a92fe9a0e950279e86a771bb522adb6a86b
 F src/btree.h b1bd7e0b8c2e33658aaf447cb0d1d94f74664b6b
 F src/btreeInt.h 02325f04758dba0fcd0c08ac55cd9b189dad61a5
 F src/build.c 88cc5501a87f72d0538b040001d88d31f994edea
@@ -339,7 +339,7 @@ F test/in.test b35fc31caf26647cc4243c3af8ad29e45ed8776f
 F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
-F test/incrblob2.test c9aad1e11f7726d8c49e66f2a1ecc2d04f9f6861
+F test/incrblob2.test c82a780356bdf4d0c77f1adf0ea888248904fc07
 F test/incrblob_err.test a3e3d9442d2993e8a449e791db4001d11a2f683f
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
@@ -595,7 +595,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f70d552bcd0df884eea2e2272bae558d35fc8845
-R b56dbc14c80164265b31dc6aa6cdea26
-U mihailim
-Z 2ab945c575514f69295f259ec8109260
+P 0ab0b030dea03ec6693358b733329328828cf802
+R 8c25ea2dec6b6961f92bbdeafaa47650
+U danielk1977
+Z 103f0194a9136d291f48c62f781a1953

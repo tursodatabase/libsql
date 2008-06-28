@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.469 2008/06/23 09:50:51 danielk1977 Exp $
+** $Id: btree.c,v 1.470 2008/06/28 15:33:25 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2690,7 +2690,6 @@ int sqlite3BtreeRollbackStmt(Btree *p){
   pBt->db = p->db;
   if( pBt->inStmt && !pBt->readOnly ){
     rc = sqlite3PagerStmtRollback(pBt->pPager);
-    assert( countWriteCursors(pBt)==0 );
     pBt->inStmt = 0;
   }
   sqlite3BtreeLeave(p);
