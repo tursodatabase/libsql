@@ -1,5 +1,5 @@
-C Rearrange\ssome\sENABLE_LOCKING_STYLE\srelated\scode\sin\sos_unix.c.\s(CVS\s5324)
-D 2008-06-28T11:23:00
+C Added\sreminder\smessage\sto\sterminate\sSQL\sstatements\swith\sa\ssemicolon\son\sshell\sstartup.\sThis\scloses\s#3099.\s(CVS\s5325)
+D 2008-06-28T11:29:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/prepare.c aba51dad52308e3d9d2074d8ff4e612e7f1cab51
 F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 5b213de002382aeaac5c9c2d3be7c98900bc3056
-F src/shell.c 479807b87f0409289eec4a776cd6ae56d30544b1
+F src/shell.c 484e7297e066f22830f9c15d7abbcdd2acb097b0
 F src/sqlite.h.in 76c144d23f8824e8811e837e9396b9f1361f5902
 F src/sqlite3ext.h 7bf1651c6fb7183831e5113b4b91662bbe67e5bf
 F src/sqliteInt.h 35e420ced9e27af5ee387cd40f2e7a431665f858
@@ -595,7 +595,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 00eee53e8626591c4a0c61fe35735ec95ab3ef72
-R 38c6ceeaa3a09b0f2b1b50be9761dfc4
-U danielk1977
-Z caabeb5c4eadd59f94353afa35ab138a
+P f70d552bcd0df884eea2e2272bae558d35fc8845
+R b56dbc14c80164265b31dc6aa6cdea26
+U mihailim
+Z 2ab945c575514f69295f259ec8109260

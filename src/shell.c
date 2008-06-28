@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.182 2008/06/26 10:41:19 danielk1977 Exp $
+** $Id: shell.c,v 1.183 2008/06/28 11:29:23 mihailim Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -2062,7 +2062,8 @@ int main(int argc, char **argv){
       int nHistory;
       printf(
         "SQLite version %s\n"
-        "Enter \".help\" for instructions\n",
+        "Enter \".help\" for instructions\n"
+        "Enter SQL statements terminated with a \";\"\n",
         sqlite3_libversion()
       );
       zHome = find_home_dir();
