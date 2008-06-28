@@ -1,5 +1,5 @@
-C Changed\scopy-paste\serror\sin\scomment.\sFixes\s#3193.\s(CVS\s5323)
-D 2008-06-27T18:59:45
+C Rearrange\ssome\sENABLE_LOCKING_STYLE\srelated\scode\sin\sos_unix.c.\s(CVS\s5324)
+D 2008-06-28T11:23:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/os.c 292b3b4a49fe5bf6cf2f1cf0af186ebd334e80b8
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 38fd8cfb1c122c39e451d9f3e779c602283dba33
-F src/os_unix.c 8b5116abc14013f059b6bb736b765db6fe1d51e0
+F src/os_unix.c 715e702be9229d1285e98bf3f5e05da50b4a48e8
 F src/os_win.c 2bf2f8cd700299564cc236262c2668e1e02c626a
 F src/pager.c e2a49872f1e15eb83895ace704c48ac8ded998ba
 F src/pager.h 6aa3050a3c684475a5a9dbad5ff1cebad612acba
@@ -142,14 +142,14 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 5b213de002382aeaac5c9c2d3be7c98900bc3056
 F src/shell.c 479807b87f0409289eec4a776cd6ae56d30544b1
-F src/sqlite.h.in d6c32df390c3f705a8b6a1002ab4ab8503c2e69f
+F src/sqlite.h.in 76c144d23f8824e8811e837e9396b9f1361f5902
 F src/sqlite3ext.h 7bf1651c6fb7183831e5113b4b91662bbe67e5bf
 F src/sqliteInt.h 35e420ced9e27af5ee387cd40f2e7a431665f858
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c 4dd9ee4cb44846ad9bcc4d0da8088c1e7d4b33d9
-F src/test1.c 618dfc3af2f57c5f711708b7296ac98154c472c1
+F src/test1.c b96ef5465261a63c96870d1423660b170bf1dec3
 F src/test2.c c46d146019ab6e37474e66b3c789e5237d9ea7b7
 F src/test3.c 01ff03164cf6a2bededa3b44ecd481603e2644fc
 F src/test4.c ff4ecde3cafc71337b04e8cb7da5bb88e85d70e7
@@ -378,6 +378,7 @@ F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
+F test/lock5.test 559d77d3015d1fb545b79ee3a7daf3a0e0224033
 F test/main.test 82c222989e02ea09abd58d453828ffd71806b6bf
 F test/malloc.test ca6d4ebb9886ec1bdb78953ca0f53cf2e0846761
 F test/malloc2.test c847c457d37cf37ff9ff989fa6bd1475f714e485
@@ -412,7 +413,7 @@ F test/misc5.test 0b68dcb630d44af2dbcdca94dd2b17c8d580f6fa
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 26e0d948a413bca61ed031159907a03d64647409
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/mutex1.test 0fa3f22a23532791e49df796964bb36ed5ecb5b0
+F test/mutex1.test 1c98e4d236444c6a1a912b9c48b4004eeba0d9a6
 F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
@@ -594,7 +595,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fcbd39344c0bf3a734bab6606d3988810b69b7d5
-R 2f067facb47946c677deaf4746443ca0
-U mihailim
-Z ef4b7f6d71481fd821933b3e790144f9
+P 00eee53e8626591c4a0c61fe35735ec95ab3ef72
+R 38c6ceeaa3a09b0f2b1b50be9761dfc4
+U danielk1977
+Z caabeb5c4eadd59f94353afa35ab138a

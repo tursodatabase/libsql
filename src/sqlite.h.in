@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.361 2008/06/27 14:51:53 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.362 2008/06/28 11:23:00 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1109,7 +1109,9 @@ struct sqlite3_mem_methods {
 ** bytes in the memory buffer, and the minimum allocation size.  When
 ** this configuration option is used, SQLite never calls the system
 ** malloc() implementation but instead uses the supplied memory buffer
-** to satisfy all [sqlite3_malloc()] requests.</dd>
+** to satisfy all [sqlite3_malloc()] requests. This option is only
+** available if either or both of SQLITE_ENABLE_MEMSYS3 and 
+** SQLITE_ENABLE_MEMSYS5 are defined during compilation.</dd>
 **
 ** <dt>SQLITE_CONFIG_MUTEX</dt>
 ** <dd>This option takes a single argument which is a pointer to an
@@ -1128,26 +1130,20 @@ struct sqlite3_mem_methods {
 **
 ** <dt>SQLITE_CONFIG_MEMSYS3</dt>
 ** <dd>This option is only available if SQLite is compiled with the 
-** SQLITE_ENABLE_MEMSYS3 symbol defined. If available, then it is used
-** to install an alternative set of built-in memory allocation routines
-** known as the "memsys3" allocator (in the same way as SQLITE_CONFIG_MALLOC
-** may be used to install an external set of memory allocation routines).
-** This options must be passed two arguments, a pointer to a large blob of
-** allocated memory (type char*) and the size of the block of memory in bytes
-** (type int). The memsys3 allocator manages this block of memory and uses
-** it to satisfy all requests for dynamic memory made by the library. The
-** caller must ensure that the block of memory remains valid for as long
-** as the memsys3 allocator is in use.</dd>
+** SQLITE_ENABLE_MEMSYS3 symbol defined. It selects one of two memory
+** allocation systems that use the block of memory supplied to sqlite 
+** using the SQLITE_CONFIG_HEAP option.
+** </dd>
 **
 ** <dt>SQLITE_CONFIG_MEMSYS5</dt>
 ** <dd>This option is only available if SQLite is compiled with the 
-** SQLITE_ENABLE_MEMSYS5 symbol defined. If available, then it is similar
-** to the SQLITE_CONFIG_MEMSYS3 option. The "memsys5" allocator differs
-** from the "memsys3" allocator in that it rounds all allocations up to
-** the next largest power of two. Although this is sometimes more wasteful
-** than the procedures used by memsys3, it guarantees an upper limit on
-** internal fragmentation.</dd>
-** </dl>
+** SQLITE_ENABLE_MEMSYS5 symbol defined. It selects one of two memory
+** allocation systems that use the block of memory supplied to sqlite 
+** using the SQLITE_CONFIG_HEAP option. The memory allocation system
+** selected by this option, "memsys5", is also installed by default 
+** when the SQLITE_CONFIG_HEAP option is set, so it is not usually
+** necessary to use this option directly.
+** </dd>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
 #define SQLITE_CONFIG_MULTITHREAD   2  /* nil */
@@ -1160,8 +1156,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_MEMSTATUS     9  /* boolean */
 #define SQLITE_CONFIG_MUTEX        10  /* sqlite3_mutex_methods* */
 #define SQLITE_CONFIG_GETMUTEX     11  /* sqlite3_mutex_methods* */
-#define SQLITE_CONFIG_MEMSYS3      12  /* u8*, int */
-#define SQLITE_CONFIG_MEMSYS5      13  /* u8*, int */
+#define SQLITE_CONFIG_MEMSYS3      12  /* nil */
+#define SQLITE_CONFIG_MEMSYS5      13  /* nil */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes {F12200}

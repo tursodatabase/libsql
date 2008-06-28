@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.307 2008/06/26 10:41:19 danielk1977 Exp $
+** $Id: test1.c,v 1.308 2008/06/28 11:23:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4450,6 +4450,30 @@ static int file_control_test(
 }
 
 /*
+** tclcmd:   sqlite3_vfs_list
+**
+**   Return a tcl list containing the names of all registered vfs's.
+*/
+static int vfs_list(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3_vfs *pVfs;
+  Tcl_Obj *pRet = Tcl_NewObj();
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+  for(pVfs=sqlite3_vfs_find(0); pVfs; pVfs=pVfs->pNext){
+    Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj(pVfs->zName, -1));
+  }
+  Tcl_SetObjResult(interp, pRet);
+  return TCL_OK;  
+}
+
+/*
 ** tclcmd:   sqlite3_limit DB ID VALUE
 **
 ** This TCL command runs the sqlite3_limit interface and
@@ -4693,6 +4717,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "working_64bit_int",          working_64bit_int,   0   },
      { "vfs_unlink_test",            vfs_unlink_test,     0   },
      { "file_control_test",          file_control_test,   0   },
+     { "sqlite3_vfs_list",           vfs_list,     0   },
 
      /* Functions from os.h */
 #ifndef SQLITE_OMIT_DISKIO

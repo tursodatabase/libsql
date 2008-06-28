@@ -12,11 +12,21 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.190 2008/06/26 10:41:19 danielk1977 Exp $
+** $Id: os_unix.c,v 1.191 2008/06/28 11:23:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
 
+/*
+** If SQLITE_ENABLE_LOCKING_STYLE is defined, then several different 
+** locking implementations are provided:
+**
+**   * POSIX locking (the default),
+**   * No locking,
+**   * Dot-file locking,
+**   * flock() locking,
+**   * AFP locking (OSX only).
+*/
 /* #define SQLITE_ENABLE_LOCKING_STYLE 0 */
 
 /*
@@ -50,6 +60,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <errno.h>
+
 #ifdef SQLITE_ENABLE_LOCKING_STYLE
 #include <sys/ioctl.h>
 #include <sys/param.h>
@@ -95,7 +106,7 @@ struct unixFile {
   struct lockInfo *pLock;   /* Info about locks on this inode */
 #ifdef SQLITE_ENABLE_LOCKING_STYLE
   void *lockingContext;     /* Locking style specific state */
-#endif /* SQLITE_ENABLE_LOCKING_STYLE */
+#endif
   int h;                    /* The file descriptor */
   unsigned char locktype;   /* The type of lock held on this fd */
   int dirfd;                /* File descriptor for the directory */
@@ -178,8 +189,6 @@ struct unixFile {
 ** by the same process.  It does not explicitly say so, but this implies
 ** that it overrides locks set by the same process using a different
 ** file descriptor.  Consider this test case:
-**
-**       int fd1 = open("./file1", O_RDWR|O_CREAT, 0644);
 **       int fd2 = open("./file2", O_RDWR|O_CREAT, 0644);
 **
 ** Suppose ./file1 and ./file2 are really the same file (because
@@ -337,13 +346,12 @@ struct openCnt {
 static Hash lockHash = {SQLITE_HASH_BINARY, 0, 0, 0, 0, 0};
 static Hash openHash = {SQLITE_HASH_BINARY, 0, 0, 0, 0, 0};
 
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
 /*
 ** The locking styles are associated with the different file locking
 ** capabilities supported by different file systems.  
 **
 ** POSIX locking style fully supports shared and exclusive byte-range locks 
-** ADP locking only supports exclusive byte-range locks
+** AFP locking only supports exclusive byte-range locks
 ** FLOCK only supports a single file-global exclusive lock
 ** DOTLOCK isn't a true locking style, it refers to the use of a special
 **   file named the same as the database file with a '.lock' extension, this
@@ -353,15 +361,11 @@ static Hash openHash = {SQLITE_HASH_BINARY, 0, 0, 0, 0, 0};
 ** UNSUPPORTED means that no locking will be attempted, this is only used for
 **   file systems that are known to be unsupported
 */
-typedef enum {
-  posixLockingStyle = 0,       /* standard posix-advisory locks */
-  afpLockingStyle,             /* use afp locks */
-  flockLockingStyle,           /* use flock() */
-  dotlockLockingStyle,         /* use <file>.lock files */
-  noLockingStyle,              /* useful for read-only file system */
-  unsupportedLockingStyle      /* indicates unsupported file system */
-} sqlite3LockingStyle;
-#endif /* SQLITE_ENABLE_LOCKING_STYLE */
+#define LOCKING_STYLE_POSIX        1
+#define LOCKING_STYLE_FLOCK        2
+#define LOCKING_STYLE_DOTFILE      3
+#define LOCKING_STYLE_NONE         4
+#define LOCKING_STYLE_AFP          5
 
 /*
 ** Helper functions to obtain and relinquish the global mutex.
@@ -516,12 +520,12 @@ static void testThreadLockingBehavior(int fd_orig){
 ** Release a lockInfo structure previously allocated by findLockInfo().
 */
 static void releaseLockInfo(struct lockInfo *pLock){
-  if (pLock == NULL)
-    return;
-  pLock->nRef--;
-  if( pLock->nRef==0 ){
-    sqlite3HashInsert(&lockHash, &pLock->key, sizeof(pLock->key), 0);
-    sqlite3_free(pLock);
+  if( pLock ){
+    pLock->nRef--;
+    if( pLock->nRef==0 ){
+      sqlite3HashInsert(&lockHash, &pLock->key, sizeof(pLock->key), 0);
+      sqlite3_free(pLock);
+    }
   }
 }
 
@@ -529,90 +533,95 @@ static void releaseLockInfo(struct lockInfo *pLock){
 ** Release a openCnt structure previously allocated by findLockInfo().
 */
 static void releaseOpenCnt(struct openCnt *pOpen){
-  if (pOpen == NULL)
-    return;
-  pOpen->nRef--;
-  if( pOpen->nRef==0 ){
-    sqlite3HashInsert(&openHash, &pOpen->key, sizeof(pOpen->key), 0);
-    free(pOpen->aPending);
-    sqlite3_free(pOpen);
+  if( pOpen ){
+    pOpen->nRef--;
+    if( pOpen->nRef==0 ){
+      sqlite3HashInsert(&openHash, &pOpen->key, sizeof(pOpen->key), 0);
+      free(pOpen->aPending);
+      sqlite3_free(pOpen);
+    }
   }
 }
 
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
 /*
 ** Tests a byte-range locking query to see if byte range locks are 
 ** supported, if not we fall back to dotlockLockingStyle.
 */
-static sqlite3LockingStyle sqlite3TestLockingStyle(
-  const char *filePath, 
-  int fd
-){
-  /* test byte-range lock using fcntl */
+static int testLockingStyle(int fd){
   struct flock lockInfo;
-  
+
+  /* Test byte-range lock using fcntl(). If the call succeeds, 
+  ** assume that the file-system supports POSIX style locks. 
+  */
   lockInfo.l_len = 1;
   lockInfo.l_start = 0;
   lockInfo.l_whence = SEEK_SET;
   lockInfo.l_type = F_RDLCK;
-  
   if( fcntl(fd, F_GETLK, &lockInfo)!=-1 ) {
-    return posixLockingStyle;
-  } 
+    return LOCKING_STYLE_POSIX;
+  }
   
-  /* testing for flock can give false positives.  So if if the above test
-  ** fails, then we fall back to using dot-lock style locking.
+  /* Testing for flock() can give false positives.  So if if the above 
+  ** test fails, then we fall back to using dot-file style locking.
   */  
-  return dotlockLockingStyle;
+  return LOCKING_STYLE_DOTFILE;
 }
 
 /* 
-** Examines the f_fstypename entry in the statfs structure as returned by 
-** stat() for the file system hosting the database file, assigns the 
-** appropriate locking style based on its value.  These values and 
-** assignments are based on Darwin/OSX behavior and have not been tested on 
+** If SQLITE_ENABLE_LOCKING_STYLE is defined, this function Examines the 
+** f_fstypename entry in the statfs structure as returned by stat() for 
+** the file system hosting the database file and selects  the appropriate
+** locking style based on its value.  These values and assignments are 
+** based on Darwin/OSX behavior and have not been thoroughly tested on 
 ** other systems.
+**
+** If SQLITE_ENABLE_LOCKING_STYLE is not defined, this function always
+** returns LOCKING_STYLE_POSIX.
 */
-static sqlite3LockingStyle sqlite3DetectLockingStyle(
+static int detectLockingStyle(
+  sqlite3_vfs *pVfs,
   const char *filePath, 
   int fd
 ){
-
-#ifdef SQLITE_FIXED_LOCKING_STYLE
-  return (sqlite3LockingStyle)SQLITE_FIXED_LOCKING_STYLE;
-#else
+#ifdef SQLITE_ENABLE_LOCKING_STYLE
+  struct Mapping {
+    const char *zFilesystem;
+    int eLockingStyle;
+  } aMap[] = {
+    { "hfs",    LOCKING_STYLE_POSIX },
+    { "ufs",    LOCKING_STYLE_POSIX },
+    { "afpfs",  LOCKING_STYLE_AFP },
+    { "smbfs",  LOCKING_STYLE_FLOCK },
+    { "msdos",  LOCKING_STYLE_DOTFILE },
+    { "webdav", LOCKING_STYLE_NONE },
+    { 0, 0 }
+  };
+  int i;
   struct statfs fsInfo;
 
-  if( statfs(filePath, &fsInfo) == -1 ){
-    return sqlite3TestLockingStyle(filePath, fd);
+  if( !filePath ){
+    return LOCKING_STYLE_NONE;
   }
-  if( fsInfo.f_flags & MNT_RDONLY ){
-    return noLockingStyle;
+  if( pVfs->pAppData ){
+    return (int)pVfs->pAppData;
   }
-  if( strcmp(fsInfo.f_fstypename, "hfs")==0 ||
-      strcmp(fsInfo.f_fstypename, "ufs")==0 ){
-    return posixLockingStyle;
-  }
-  if( strcmp(fsInfo.f_fstypename, "afpfs")==0 ){
-    return afpLockingStyle;
-  }
-  if( strcmp(fsInfo.f_fstypename, "nfs")==0 ){
-    return sqlite3TestLockingStyle(filePath, fd);
-  }
-  if( strcmp(fsInfo.f_fstypename, "smbfs")==0 ){
-    return flockLockingStyle;
-  }
-  if( strcmp(fsInfo.f_fstypename, "msdos")==0 ){
-    return dotlockLockingStyle;
-  }
-  if( strcmp(fsInfo.f_fstypename, "webdav")==0 ){
-    return unsupportedLockingStyle;
-  }
-  return sqlite3TestLockingStyle(filePath, fd);  
-#endif /* SQLITE_FIXED_LOCKING_STYLE */
-}
 
-#endif /* SQLITE_ENABLE_LOCKING_STYLE */
+  if( statfs(filePath, &fsInfo) != -1 ){
+    if( fsInfo.f_flags & MNT_RDONLY ){
+      return LOCKING_STYLE_NONE;
+    }
+    for(i=0; aMap[i].zFilesystem; i++){
+      if( strcmp(fsInfo.f_fstypename, aMap[i].zFilesystem)==0 ){
+        return aMap[i].eLockingStyle;
+      }
+    }
+  }
+
+  /* Default case. Handles, amongst others, "nfs". */
+  return testLockingStyle(fd);  
+#endif
+  return LOCKING_STYLE_POSIX;
+}
 
 /*
 ** Given a file descriptor, locate lockInfo and openCnt structures that
@@ -1425,43 +1434,58 @@ static int unixUnlock(sqlite3_file *id, int locktype){
 }
 
 /*
+** This function performs the parts of the "close file" operation 
+** common to all locking schemes. It closes the directory and file
+** handles, if they are valid, and sets all fields of the unixFile
+** structure to 0.
+*/
+static int closeUnixFile(sqlite3_file *id){
+  unixFile *pFile = (unixFile*)id;
+  if( pFile ){
+    if( pFile->dirfd>=0 ){
+      close(pFile->dirfd);
+    }
+    if( pFile->h>=0 ){
+      close(pFile->h);
+    }
+    OSTRACE2("CLOSE   %-3d\n", pFile->h);
+    OpenCounter(-1);
+    memset(pFile, 0, sizeof(unixFile));
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** Close a file.
 */
 static int unixClose(sqlite3_file *id){
-  unixFile *pFile = (unixFile *)id;
-  if( !pFile ) return SQLITE_OK;
-  unixUnlock(id, NO_LOCK);
-  if( pFile->dirfd>=0 ) close(pFile->dirfd);
-  pFile->dirfd = -1;
-  enterMutex();
-
-  if( pFile->pOpen->nLock ){
-    /* If there are outstanding locks, do not actually close the file just
-    ** yet because that would clear those locks.  Instead, add the file
-    ** descriptor to pOpen->aPending.  It will be automatically closed when
-    ** the last lock is cleared.
-    */
-    int *aNew;
-    struct openCnt *pOpen = pFile->pOpen;
-    aNew = realloc( pOpen->aPending, (pOpen->nPending+1)*sizeof(int) );
-    if( aNew==0 ){
-      /* If a malloc fails, just leak the file descriptor */
-    }else{
-      pOpen->aPending = aNew;
-      pOpen->aPending[pOpen->nPending] = pFile->h;
-      pOpen->nPending++;
+  if( id ){
+    unixFile *pFile = (unixFile *)id;
+    unixUnlock(id, NO_LOCK);
+    enterMutex();
+    if( pFile->pOpen->nLock ){
+      /* If there are outstanding locks, do not actually close the file just
+      ** yet because that would clear those locks.  Instead, add the file
+      ** descriptor to pOpen->aPending.  It will be automatically closed when
+      ** the last lock is cleared.
+      */
+      int *aNew;
+      struct openCnt *pOpen = pFile->pOpen;
+      aNew = realloc( pOpen->aPending, (pOpen->nPending+1)*sizeof(int) );
+      if( aNew==0 ){
+        /* If a malloc fails, just leak the file descriptor */
+      }else{
+        pOpen->aPending = aNew;
+        pOpen->aPending[pOpen->nPending] = pFile->h;
+        pOpen->nPending++;
+        pFile->h = -1;
+      }
     }
-  }else{
-    /* There are no outstanding locks so we can close the file immediately */
-    close(pFile->h);
+    releaseLockInfo(pFile->pLock);
+    releaseOpenCnt(pFile->pOpen);
+    closeUnixFile(id);
+    leaveMutex();
   }
-  releaseLockInfo(pFile->pLock);
-  releaseOpenCnt(pFile->pOpen);
-
-  leaveMutex();
-  OSTRACE2("CLOSE   %-3d\n", pFile->h);
-  OpenCounter(-1);
-  memset(pFile, 0, sizeof(unixFile));
   return SQLITE_OK;
 }
 
@@ -1529,7 +1553,7 @@ static int _AFPFSSetLock(
  ** non-zero.  If the file is unlocked or holds only SHARED locks, then
  ** return zero.
  */
-static int afpUnixCheckReservedLock(sqlite3_file *id, int *pResOut){
+static int afpCheckReservedLock(sqlite3_file *id, int *pResOut){
   int r = 0;
   unixFile *pFile = (unixFile*)id;
   
@@ -1563,11 +1587,10 @@ static int afpUnixCheckReservedLock(sqlite3_file *id, int *pResOut){
 
 /* AFP-style locking following the behavior of unixLock, see the unixLock 
 ** function comments for details of lock management. */
-static int afpUnixLock(sqlite3_file *id, int locktype){
+static int afpLock(sqlite3_file *id, int locktype){
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
   afpLockingContext *context = (afpLockingContext *) pFile->lockingContext;
-  int gotPendingLock = 0;
   
   assert( pFile );
   OSTRACE5("LOCK    %d %s was %s pid=%d\n", pFile->h,
@@ -1621,7 +1644,6 @@ static int afpUnixLock(sqlite3_file *id, int locktype){
   */
   if( locktype==SHARED_LOCK ){
     int lk, failed;
-    int tries = 0;
     
     /* Now get the read-lock */
     /* note that the quality of the randomness doesn't matter that much */
@@ -1656,7 +1678,7 @@ static int afpUnixLock(sqlite3_file *id, int locktype){
       /* Acquire an EXCLUSIVE lock */
         
       /* Remove the shared lock before trying the range.  we'll need to 
-      ** reestablish the shared lock if we can't get the  afpUnixUnlock
+      ** reestablish the shared lock if we can't get the  afpUnlock
       */
       if (!_AFPFSSetLock(context->filePath, pFile->h, SHARED_FIRST +
                          context->sharedLockByte, 1, 0)) {
@@ -1697,8 +1719,7 @@ afp_end_lock:
 ** If the locking level of the file descriptor is already at or below
 ** the requested locking level, this routine is a no-op.
 */
-static int afpUnixUnlock(sqlite3_file *id, int locktype) {
-  struct flock lock;
+static int afpUnlock(sqlite3_file *id, int locktype) {
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
   afpLockingContext *context = (afpLockingContext *) pFile->lockingContext;
@@ -1765,21 +1786,13 @@ static int afpUnixUnlock(sqlite3_file *id, int locktype) {
 /*
 ** Close a file & cleanup AFP specific locking context 
 */
-static int afpUnixClose(sqlite3_file *id) {
-  unixFile *pFile = (unixFile*)id;
-
-  if( !pFile ) return SQLITE_OK;
-  afpUnixUnlock(id, NO_LOCK);
-  sqlite3_free(pFile->lockingContext);
-  if( pFile->dirfd>=0 ) close(pFile->dirfd);
-  pFile->dirfd = -1;
-  enterMutex();
-  close(pFile->h);
-  leaveMutex();
-  OSTRACE2("CLOSE   %-3d\n", pFile->h);
-  OpenCounter(-1);
-  memset(pFile, 0, sizeof(unixFile));
-  return SQLITE_OK;
+static int afpClose(sqlite3_file *id) {
+  if( id ){
+    unixFile *pFile = (unixFile*)id;
+    afpUnlock(id, NO_LOCK);
+    sqlite3_free(pFile->lockingContext);
+  }
+  return closeUnixFile(id);
 }
 
 
@@ -1790,7 +1803,7 @@ static int afpUnixClose(sqlite3_file *id) {
 */
 typedef void flockLockingContext;
 
-static int flockUnixCheckReservedLock(sqlite3_file *id, int *pResOut){
+static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
   int r = 1;
   unixFile *pFile = (unixFile*)id;
   
@@ -1808,7 +1821,7 @@ static int flockUnixCheckReservedLock(sqlite3_file *id, int *pResOut){
   return SQLITE_OK;
 }
 
-static int flockUnixLock(sqlite3_file *id, int locktype) {
+static int flockLock(sqlite3_file *id, int locktype) {
   unixFile *pFile = (unixFile*)id;
   
   /* if we already have a lock, it is exclusive.  
@@ -1830,7 +1843,7 @@ static int flockUnixLock(sqlite3_file *id, int locktype) {
   }
 }
 
-static int flockUnixUnlock(sqlite3_file *id, int locktype) {
+static int flockUnlock(sqlite3_file *id, int locktype) {
   unixFile *pFile = (unixFile*)id;
   
   assert( locktype<=SHARED_LOCK );
@@ -1859,45 +1872,23 @@ static int flockUnixUnlock(sqlite3_file *id, int locktype) {
 /*
 ** Close a file.
 */
-static int flockUnixClose(sqlite3_file *id) {
-  unixFile *pFile = (unixFile*)id;
-  
-  if( !pFile ) return SQLITE_OK;
-  flockUnixUnlock(id, NO_LOCK);
-  
-  if( pFile->dirfd>=0 ) close(pFile->dirfd);
-  pFile->dirfd = -1;
-
-  enterMutex();
-  close(pFile->h);  
-  leaveMutex();
-  OSTRACE2("CLOSE   %-3d\n", pFile->h);
-  OpenCounter(-1);
-  memset(pFile, 0, sizeof(unixFile));
-  return SQLITE_OK;
+static int flockClose(sqlite3_file *id) {
+  if( id ){
+    flockUnlock(id, NO_LOCK);
+  }
+  return closeUnixFile(id);
 }
 
 #pragma mark Old-School .lock file based locking
 
-/*
-** The dotlockLockingContext structure contains all dotlock (.lock) lock
-** specific state
-*/
-typedef struct dotlockLockingContext dotlockLockingContext;
-struct dotlockLockingContext {
-  char *lockPath;
-};
-
-
-static int dotlockUnixCheckReservedLock(sqlite3_file *id, int *pResOut) {
+static int dotlockCheckReservedLock(sqlite3_file *id, int *pResOut) {
   int r = 1;
   unixFile *pFile = (unixFile*)id;
-  dotlockLockingContext *context;
+  char *zLockFile = (char *)pFile->lockingContext;
 
-  context = (dotlockLockingContext*)pFile->lockingContext;
   if (pFile->locktype != RESERVED_LOCK) {
     struct stat statBuf;
-    if (lstat(context->lockPath,&statBuf) != 0){
+    if (lstat(zLockFile, &statBuf) != 0){
       /* file does not exist, we could have it if we want it */
       r = 0;
     }
@@ -1907,31 +1898,29 @@ static int dotlockUnixCheckReservedLock(sqlite3_file *id, int *pResOut) {
   return SQLITE_OK;
 }
 
-static int dotlockUnixLock(sqlite3_file *id, int locktype) {
+static int dotlockLock(sqlite3_file *id, int locktype) {
   unixFile *pFile = (unixFile*)id;
-  dotlockLockingContext *context;
   int fd;
+  char *zLockFile = (char *)pFile->lockingContext;
 
-  context = (dotlockLockingContext*)pFile->lockingContext;
-  
   /* if we already have a lock, it is exclusive.  
   ** Just adjust level and punt on outta here. */
   if (pFile->locktype > NO_LOCK) {
     pFile->locktype = locktype;
     
     /* Always update the timestamp on the old file */
-    utimes(context->lockPath,NULL);
+    utimes(zLockFile, NULL);
     return SQLITE_OK;
   }
   
   /* check to see if lock file already exists */
   struct stat statBuf;
-  if (lstat(context->lockPath,&statBuf) == 0){
+  if (lstat(zLockFile,&statBuf) == 0){
     return SQLITE_BUSY; /* it does, busy */
   }
   
   /* grab an exclusive lock */
-  fd = open(context->lockPath,O_RDONLY|O_CREAT|O_EXCL,0600);
+  fd = open(zLockFile,O_RDONLY|O_CREAT|O_EXCL,0600);
   if( fd<0 ){
     /* failed to open/create the file, someone else may have stolen the lock */
     return SQLITE_BUSY; 
@@ -1943,12 +1932,10 @@ static int dotlockUnixLock(sqlite3_file *id, int locktype) {
   return SQLITE_OK;
 }
 
-static int dotlockUnixUnlock(sqlite3_file *id, int locktype) {
+static int dotlockUnlock(sqlite3_file *id, int locktype) {
   unixFile *pFile = (unixFile*)id;
-  dotlockLockingContext *context;
+  char *zLockFile = (char *)pFile->lockingContext;
 
-  context = (dotlockLockingContext*)pFile->lockingContext;
-  
   assert( locktype<=SHARED_LOCK );
   
   /* no-op if possible */
@@ -1963,7 +1950,7 @@ static int dotlockUnixUnlock(sqlite3_file *id, int locktype) {
   }
   
   /* no, really, unlock. */
-  unlink(context->lockPath);
+  unlink(zLockFile);
   pFile->locktype = NO_LOCK;
   return SQLITE_OK;
 }
@@ -1971,21 +1958,13 @@ static int dotlockUnixUnlock(sqlite3_file *id, int locktype) {
 /*
  ** Close a file.
  */
-static int dotlockUnixClose(sqlite3_file *id) {
-  unixFile *pFile = (unixFile*)id;
-  
-  if( !pFile ) return SQLITE_OK;
-  dotlockUnixUnlock(id, NO_LOCK);
-  sqlite3_free(pFile->lockingContext);
-  if( pFile->dirfd>=0 ) close(pFile->dirfd);
-  pFile->dirfd = -1;
-  enterMutex();  
-  close(pFile->h);
-  leaveMutex();
-  OSTRACE2("CLOSE   %-3d\n", pFile->h);
-  OpenCounter(-1);
-  memset(pFile, 0, sizeof(unixFile));
-  return SQLITE_OK;
+static int dotlockClose(sqlite3_file *id) {
+  if( id ){
+    unixFile *pFile = (unixFile*)id;
+    dotlockUnlock(id, NO_LOCK);
+    sqlite3_free(pFile->lockingContext);
+  }
+  return closeUnixFile(id);
 }
 
 
@@ -1996,35 +1975,24 @@ static int dotlockUnixClose(sqlite3_file *id) {
 */
 typedef void nolockLockingContext;
 
-static int nolockUnixCheckReservedLock(sqlite3_file *id, int *pResOut) {
+static int nolockCheckReservedLock(sqlite3_file *id, int *pResOut) {
   *pResOut = 0;
   return SQLITE_OK;
 }
 
-static int nolockUnixLock(sqlite3_file *id, int locktype) {
+static int nolockLock(sqlite3_file *id, int locktype) {
   return SQLITE_OK;
 }
 
-static int nolockUnixUnlock(sqlite3_file *id, int locktype) {
+static int nolockUnlock(sqlite3_file *id, int locktype) {
   return SQLITE_OK;
 }
 
 /*
 ** Close a file.
 */
-static int nolockUnixClose(sqlite3_file *id) {
-  unixFile *pFile = (unixFile*)id;
-  
-  if( !pFile ) return SQLITE_OK;
-  if( pFile->dirfd>=0 ) close(pFile->dirfd);
-  pFile->dirfd = -1;
-  enterMutex();
-  close(pFile->h);
-  leaveMutex();
-  OSTRACE2("CLOSE   %-3d\n", pFile->h);
-  OpenCounter(-1);
-  memset(pFile, 0, sizeof(unixFile));
-  return SQLITE_OK;
+static int nolockClose(sqlite3_file *id) {
+  return closeUnixFile(id);
 }
 
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
@@ -2065,249 +2033,129 @@ static int unixDeviceCharacteristics(sqlite3_file *id){
 }
 
 /*
-** This vector defines all the methods that can operate on an sqlite3_file
-** for unix.
-*/
-static const sqlite3_io_methods sqlite3UnixIoMethod = {
-  1,                        /* iVersion */
-  unixClose,
-  unixRead,
-  unixWrite,
-  unixTruncate,
-  unixSync,
-  unixFileSize,
-  unixLock,
-  unixUnlock,
-  unixCheckReservedLock,
-  unixFileControl,
-  unixSectorSize,
-  unixDeviceCharacteristics
-};
-
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
-/*
-** This vector defines all the methods that can operate on an sqlite3_file
-** for unix with AFP style file locking.
-*/
-static const sqlite3_io_methods sqlite3AFPLockingUnixIoMethod = {
-  1,                        /* iVersion */
-  afpUnixClose,
-  unixRead,
-  unixWrite,
-  unixTruncate,
-  unixSync,
-  unixFileSize,
-  afpUnixLock,
-  afpUnixUnlock,
-  afpUnixCheckReservedLock,
-  unixFileControl,
-  unixSectorSize,
-  unixDeviceCharacteristics
-};
-
-/*
-** This vector defines all the methods that can operate on an sqlite3_file
-** for unix with flock() style file locking.
-*/
-static const sqlite3_io_methods sqlite3FlockLockingUnixIoMethod = {
-  1,                        /* iVersion */
-  flockUnixClose,
-  unixRead,
-  unixWrite,
-  unixTruncate,
-  unixSync,
-  unixFileSize,
-  flockUnixLock,
-  flockUnixUnlock,
-  flockUnixCheckReservedLock,
-  unixFileControl,
-  unixSectorSize,
-  unixDeviceCharacteristics
-};
-
-/*
-** This vector defines all the methods that can operate on an sqlite3_file
-** for unix with dotlock style file locking.
-*/
-static const sqlite3_io_methods sqlite3DotlockLockingUnixIoMethod = {
-  1,                        /* iVersion */
-  dotlockUnixClose,
-  unixRead,
-  unixWrite,
-  unixTruncate,
-  unixSync,
-  unixFileSize,
-  dotlockUnixLock,
-  dotlockUnixUnlock,
-  dotlockUnixCheckReservedLock,
-  unixFileControl,
-  unixSectorSize,
-  unixDeviceCharacteristics
-};
-
-/*
-** This vector defines all the methods that can operate on an sqlite3_file
-** for unix with nolock style file locking.
-*/
-static const sqlite3_io_methods sqlite3NolockLockingUnixIoMethod = {
-  1,                        /* iVersion */
-  nolockUnixClose,
-  unixRead,
-  unixWrite,
-  unixTruncate,
-  unixSync,
-  unixFileSize,
-  nolockUnixLock,
-  nolockUnixUnlock,
-  nolockUnixCheckReservedLock,
-  unixFileControl,
-  unixSectorSize,
-  unixDeviceCharacteristics
-};
-
-#endif /* SQLITE_ENABLE_LOCKING_STYLE */
-
-/*
-** Allocate memory for a new unixFile and initialize that unixFile.
-** Write a pointer to the new unixFile into *pId.
-** If we run out of memory, close the file and return an error.
-*/
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
-/* 
+** Initialize the contents of the unixFile structure pointed to by pId.
+**
 ** When locking extensions are enabled, the filepath and locking style 
 ** are needed to determine the unixFile pMethod to use for locking operations.
 ** The locking-style specific lockingContext data structure is created 
 ** and assigned here also.
 */
 static int fillInUnixFile(
+  sqlite3_vfs *pVfs,      /* Pointer to vfs object */
   int h,                  /* Open file descriptor of file being opened */
   int dirfd,              /* Directory file descriptor */
   sqlite3_file *pId,      /* Write to the unixFile structure here */
   const char *zFilename   /* Name of the file being opened */
 ){
-  sqlite3LockingStyle lockingStyle = noLockingStyle;
-  unixFile *pNew = (unixFile *)pId;
-  int rc;
-
-#ifdef FD_CLOEXEC
-  fcntl(h, F_SETFD, fcntl(h, F_GETFD, 0) | FD_CLOEXEC);
+  /* Macro to define the static contents of an sqlite3_io_methods 
+  ** structure for a unix backend file. Different locking methods
+  ** require different functions for the xClose, xLock, xUnlock and
+  ** xCheckReservedLock methods.
+  */
+  #define IOMETHODS(xClose, xLock, xUnlock, xCheckReservedLock) {    \
+    1,                          /* iVersion */                           \
+    xClose,                     /* xClose */                             \
+    unixRead,                   /* xRead */                              \
+    unixWrite,                  /* xWrite */                             \
+    unixTruncate,               /* xTruncate */                          \
+    unixSync,                   /* xSync */                              \
+    unixFileSize,               /* xFileSize */                          \
+    xLock,                      /* xLock */                              \
+    xUnlock,                    /* xUnlock */                            \
+    xCheckReservedLock,         /* xCheckReservedLock */                 \
+    unixFileControl,            /* xFileControl */                       \
+    unixSectorSize,             /* xSectorSize */                        \
+    unixDeviceCharacteristics   /* xDeviceCapabilities */                \
+  }
+  static sqlite3_io_methods aIoMethod[] = {
+    IOMETHODS(unixClose, unixLock, unixUnlock, unixCheckReservedLock) 
+#ifdef SQLITE_ENABLE_LOCKING_STYLE
+   ,IOMETHODS(flockClose, flockLock, flockUnlock, flockCheckReservedLock)
+   ,IOMETHODS(dotlockClose, dotlockLock, dotlockUnlock,dotlockCheckReservedLock)
+   ,IOMETHODS(nolockClose, nolockLock, nolockUnlock, nolockCheckReservedLock)
+   ,IOMETHODS(afpClose, afpLock, afpUnlock, afpCheckReservedLock)
 #endif
+  };
+
+  int eLockingStyle;
+  unixFile *pNew = (unixFile *)pId;
+  int rc = SQLITE_OK;
 
   assert( pNew->pLock==NULL );
   assert( pNew->pOpen==NULL );
-  if( zFilename ){
-    /* If zFilename is NULL then this is a temporary file. Temporary files
-    ** are never locked or unlocked, so noLockingStyle is used for these.
-    ** The locking style used by other files is determined by 
-    ** sqlite3DetectLockingStyle().
-    */
-    lockingStyle = sqlite3DetectLockingStyle(zFilename, h);
-    if ( lockingStyle==posixLockingStyle ){
-      enterMutex();
-      rc = findLockInfo(h, &pNew->pLock, &pNew->pOpen);
-      leaveMutex();
-      if( rc ){
-        if( dirfd>=0 ) close(dirfd);
-        close(h);
-        return rc;
-      }
-    }
-  }
 
   OSTRACE3("OPEN    %-3d %s\n", h, zFilename);    
   pNew->h = h;
   pNew->dirfd = dirfd;
   SET_THREADID(pNew);
-    
-  switch(lockingStyle) {
-    case afpLockingStyle: {
-      /* afp locking uses the file path so it needs to be included in
-      ** the afpLockingContext */
-      afpLockingContext *context;
-      pNew->pMethod = &sqlite3AFPLockingUnixIoMethod;
-      pNew->lockingContext = context = sqlite3_malloc( sizeof(*context) );
-      if( context==0 ){
-        close(h);
-        if( dirfd>=0 ) close(dirfd);
-        return SQLITE_NOMEM;
-      }
 
-      /* NB: zFilename exists and remains valid until the file is closed
-      ** according to requirement F11141.  So we do not need to make a
-      ** copy of the filename. */
-      context->filePath = zFilename;
-      srandomdev();
+  assert(LOCKING_STYLE_POSIX==1);
+  assert(LOCKING_STYLE_FLOCK==2);
+  assert(LOCKING_STYLE_DOTFILE==3);
+  assert(LOCKING_STYLE_NONE==4);
+  assert(LOCKING_STYLE_AFP==5);
+  eLockingStyle = detectLockingStyle(pVfs, zFilename, h);
+  pNew->pMethod = &aIoMethod[eLockingStyle-1];
+
+  switch( eLockingStyle ){
+
+    case LOCKING_STYLE_POSIX: {
+      enterMutex();
+      rc = findLockInfo(h, &pNew->pLock, &pNew->pOpen);
+      leaveMutex();
       break;
     }
-    case flockLockingStyle:
-      /* flock locking doesn't need additional lockingContext information */
-      pNew->pMethod = &sqlite3FlockLockingUnixIoMethod;
+
+#ifdef SQLITE_ENABLE_LOCKING_STYLE
+    case LOCKING_STYLE_AFP: {
+      /* AFP locking uses the file path so it needs to be included in
+      ** the afpLockingContext.
+      */
+      afpLockingContext *pCtx;
+      pNew->lockingContext = pCtx = sqlite3_malloc( sizeof(*pCtx) );
+      if( pCtx==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        /* NB: zFilename exists and remains valid until the file is closed
+        ** according to requirement F11141.  So we do not need to make a
+        ** copy of the filename. */
+        pCtx->filePath = zFilename;
+        srandomdev();
+      }
       break;
-    case dotlockLockingStyle: {
-      /* dotlock locking uses the file path so it needs to be included in
-      ** the dotlockLockingContext */
-      dotlockLockingContext *context;
+    }
+
+    case LOCKING_STYLE_DOTFILE: {
+      /* Dotfile locking uses the file path so it needs to be included in
+      ** the dotlockLockingContext 
+      */
+      char *zLockFile;
       int nFilename;
-      nFilename = strlen(zFilename);
-      pNew->pMethod = &sqlite3DotlockLockingUnixIoMethod;
-      pNew->lockingContext = context = 
-         sqlite3_malloc( sizeof(*context) + nFilename + 6 );
-      if( context==0 ){
-        close(h);
-        if( dirfd>=0 ) close(dirfd);
-        return SQLITE_NOMEM;
+      nFilename = strlen(zFilename) + 6;
+      zLockFile = (char *)sqlite3_malloc(nFilename);
+      if( zLockFile==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        sqlite3_snprintf(nFilename, zLockFile, "%s.lock", zFilename);
       }
-      context->lockPath = (char*)&context[1];
-      sqlite3_snprintf(nFilename, context->lockPath,
-                       "%s.lock", zFilename);
+      pNew->lockingContext = zLockFile;
       break;
     }
-    case posixLockingStyle:
-      /* posix locking doesn't need additional lockingContext information */
-      pNew->pMethod = &sqlite3UnixIoMethod;
+
+    case LOCKING_STYLE_FLOCK: 
+    case LOCKING_STYLE_NONE: 
       break;
-    case noLockingStyle:
-    case unsupportedLockingStyle:
-    default: 
-      pNew->pMethod = &sqlite3NolockLockingUnixIoMethod;
-  }
-  OpenCounter(+1);
-  return SQLITE_OK;
-}
-#else /* SQLITE_ENABLE_LOCKING_STYLE */
-static int fillInUnixFile(
-  int h,                 /* Open file descriptor on file being opened */
-  int dirfd,
-  sqlite3_file *pId,     /* Write to the unixFile structure here */
-  const char *zFilename  /* Name of the file being opened */
-){
-  unixFile *pNew = (unixFile *)pId;
-  int rc;
-
-#ifdef FD_CLOEXEC
-  fcntl(h, F_SETFD, fcntl(h, F_GETFD, 0) | FD_CLOEXEC);
 #endif
+  }
 
-  enterMutex();
-  rc = findLockInfo(h, &pNew->pLock, &pNew->pOpen);
-  leaveMutex();
-  if( rc ){
+  if( rc!=SQLITE_OK ){
     if( dirfd>=0 ) close(dirfd);
     close(h);
-    return rc;
+  }else{
+    OpenCounter(+1);
   }
-
-  OSTRACE3("OPEN    %-3d %s\n", h, zFilename);
-  pNew->dirfd = -1;
-  pNew->h = h;
-  pNew->dirfd = dirfd;
-  SET_THREADID(pNew);
-
-  pNew->pMethod = &sqlite3UnixIoMethod;
-  OpenCounter(+1);
-  return SQLITE_OK;
+  return rc;
 }
-#endif /* SQLITE_ENABLE_LOCKING_STYLE */
 
 /*
 ** Open a file descriptor to the directory containing file zFilename.
@@ -2463,7 +2311,6 @@ static int unixOpen(
   assert(isExclusive==0 || isCreate);
   assert(isDelete==0 || isCreate);
 
-
   /* The main DB, main journal, and master journal are never automatically
   ** deleted
   */
@@ -2477,6 +2324,8 @@ static int unixOpen(
        || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_MASTER_JOURNAL 
        || eType==SQLITE_OPEN_TRANSIENT_DB
   );
+
+  memset(pFile, 0, sizeof(unixFile));
 
   if( !zName ){
     int rc;
@@ -2494,7 +2343,6 @@ static int unixOpen(
   if( isExclusive ) oflags |= (O_EXCL|O_NOFOLLOW);
   oflags |= (O_LARGEFILE|O_BINARY);
 
-  memset(pFile, 0, sizeof(unixFile));
   fd = open(zName, oflags, isDelete?0600:SQLITE_DEFAULT_FILE_PERMISSIONS);
   if( fd<0 && errno!=EISDIR && isReadWrite && !isExclusive ){
     /* Failed to open the file for read/write access. Try read-only. */
@@ -2520,7 +2368,12 @@ static int unixOpen(
       return rc;
     }
   }
-  return fillInUnixFile(fd, dirfd, pFile, zPath);
+
+#ifdef FD_CLOEXEC
+  fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
+#endif
+
+  return fillInUnixFile(pVfs, fd, dirfd, pFile, zPath);
 }
 
 /*
@@ -2780,33 +2633,58 @@ static int unixGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 }
 
 /*
-** Initialize and deinitialize the operating system interface.
+** Initialize the operating system interface.
 */
 int sqlite3_os_init(void){ 
-  static sqlite3_vfs unixVfs = {
-    1,                  /* iVersion */
-    sizeof(unixFile),   /* szOsFile */
-    MAX_PATHNAME,       /* mxPathname */
-    0,                  /* pNext */
-    "unix",             /* zName */
-    0,                  /* pAppData */
-  
-    unixOpen,           /* xOpen */
-    unixDelete,         /* xDelete */
-    unixAccess,         /* xAccess */
-    unixFullPathname,   /* xFullPathname */
-    unixDlOpen,         /* xDlOpen */
-    unixDlError,        /* xDlError */
-    unixDlSym,          /* xDlSym */
-    unixDlClose,        /* xDlClose */
-    unixRandomness,     /* xRandomness */
-    unixSleep,          /* xSleep */
-    unixCurrentTime,    /* xCurrentTime */
-    unixGetLastError    /* xGetLastError */
+  /* Macro to define the static contents of an sqlite3_vfs structure for
+  ** the unix backend. The two parameters are the values to use for
+  ** the sqlite3_vfs.zName and sqlite3_vfs.pAppData fields, respectively.
+  ** 
+  */
+  #define UNIXVFS(zVfsName, pVfsAppData) {                  \
+    1,                    /* iVersion */                    \
+    sizeof(unixFile),     /* szOsFile */                    \
+    MAX_PATHNAME,         /* mxPathname */                  \
+    0,                    /* pNext */                       \
+    zVfsName,             /* zName */                       \
+    (void *)pVfsAppData,  /* pAppData */                    \
+    unixOpen,             /* xOpen */                       \
+    unixDelete,           /* xDelete */                     \
+    unixAccess,           /* xAccess */                     \
+    unixFullPathname,     /* xFullPathname */               \
+    unixDlOpen,           /* xDlOpen */                     \
+    unixDlError,          /* xDlError */                    \
+    unixDlSym,            /* xDlSym */                      \
+    unixDlClose,          /* xDlClose */                    \
+    unixRandomness,       /* xRandomness */                 \
+    unixSleep,            /* xSleep */                      \
+    unixCurrentTime,      /* xCurrentTime */                \
+    unixGetLastError      /* xGetLastError */               \
+  }
+
+  static sqlite3_vfs unixVfs = UNIXVFS("unix", 0);
+#ifdef SQLITE_ENABLE_LOCKING_STYLE
+#if 0
+  int i;
+  static sqlite3_vfs aVfs[] = {
+    UNIXVFS("unix-posix",   LOCKING_STYLE_POSIX), 
+    UNIXVFS("unix-afp",     LOCKING_STYLE_AFP), 
+    UNIXVFS("unix-flock",   LOCKING_STYLE_FLOCK), 
+    UNIXVFS("unix-dotfile", LOCKING_STYLE_DOTFILE), 
+    UNIXVFS("unix-none",    LOCKING_STYLE_NONE)
   };
+  for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
+    sqlite3_vfs_register(&aVfs[i], 0);
+  }
+#endif
+#endif
   sqlite3_vfs_register(&unixVfs, 1);
   return SQLITE_OK; 
 }
+
+/*
+** Shutdown the operating system interface. This is a no-op for unix.
+*/
 int sqlite3_os_end(void){ 
   return SQLITE_OK; 
 }
