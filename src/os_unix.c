@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.191 2008/06/28 11:23:00 danielk1977 Exp $
+** $Id: os_unix.c,v 1.192 2008/06/30 10:16:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -1463,7 +1463,7 @@ static int unixClose(sqlite3_file *id){
     unixFile *pFile = (unixFile *)id;
     unixUnlock(id, NO_LOCK);
     enterMutex();
-    if( pFile->pOpen->nLock ){
+    if( pFile->pOpen && pFile->pOpen->nLock ){
       /* If there are outstanding locks, do not actually close the file just
       ** yet because that would clear those locks.  Instead, add the file
       ** descriptor to pOpen->aPending.  It will be automatically closed when
@@ -2095,7 +2095,6 @@ static int fillInUnixFile(
   assert(LOCKING_STYLE_NONE==4);
   assert(LOCKING_STYLE_AFP==5);
   eLockingStyle = detectLockingStyle(pVfs, zFilename, h);
-  pNew->pMethod = &aIoMethod[eLockingStyle-1];
 
   switch( eLockingStyle ){
 
@@ -2152,6 +2151,7 @@ static int fillInUnixFile(
     if( dirfd>=0 ) close(dirfd);
     close(h);
   }else{
+    pNew->pMethod = &aIoMethod[eLockingStyle-1];
     OpenCounter(+1);
   }
   return rc;
