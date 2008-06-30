@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.439 2008/06/27 00:52:45 drh Exp $
+** $Id: select.c,v 1.440 2008/06/30 18:12:28 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -3670,6 +3670,7 @@ int sqlite3Select(
   }
   p->pOrderBy = pOrderBy;
 
+
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
   /* If there is are a sequence of queries, do the earlier ones first.
   */
@@ -3696,11 +3697,7 @@ int sqlite3Select(
   /* Make local copies of the parameters for this query.
   */
   pTabList = p->pSrc;
-  pWhere = p->pWhere;
-  pGroupBy = p->pGroupBy;
-  pHaving = p->pHaving;
   isAgg = p->isAgg;
-  isDistinct = p->isDistinct;
   pEList = p->pEList;
   if( pEList==0 ) goto select_end;
 
@@ -3734,19 +3731,21 @@ int sqlite3Select(
   */
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
   for(i=0; i<pTabList->nSrc; i++){
-    const char *zSavedAuthContext = 0;
-    int needRestoreContext;
     struct SrcList_item *pItem = &pTabList->a[i];
     SelectDest dest;
+    Select *pSub = pItem->pSelect;
 
-    if( pItem->pSelect==0 || pItem->isPopulated ) continue;
-    if( pItem->zName!=0 ){
-      zSavedAuthContext = pParse->zAuthContext;
+    if( pSub==0 || pItem->isPopulated ) continue;
+    if( pItem->zName!=0 ){   /* An sql view */
+      const char *zSavedAuthContext = pParse->zAuthContext;
       pParse->zAuthContext = pItem->zName;
-      needRestoreContext = 1;
-    }else{
-      needRestoreContext = 0;
+      rc = sqlite3SelectResolve(pParse, pSub, 0);
+      pParse->zAuthContext = zSavedAuthContext;
+      if( rc ){
+        goto select_end;
+      }
     }
+
     /* Increment Parse.nHeight by the height of the largest expression
     ** tree refered to by this, the parent select. The child select
     ** may contain expression trees of at most
@@ -3755,36 +3754,32 @@ int sqlite3Select(
     ** an exact limit.
     */
     pParse->nHeight += sqlite3SelectExprHeight(p);
-    sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
-    sqlite3Select(pParse, pItem->pSelect, &dest, p, i, &isAgg, 0);
+
+    /* Check to see if the subquery can be absorbed into the parent. */
+    if( !pSub->pPrior && flattenSubquery(db, p, i, isAgg, pSub->isAgg) ){
+      if( pSub->isAgg ){
+        p->isAgg = isAgg = 1;
+      }
+      i = -1;
+    }else{
+      sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
+      sqlite3Select(pParse, pSub, &dest, p, i, &isAgg, 0);
+    }
     if( db->mallocFailed ){
       goto select_end;
     }
     pParse->nHeight -= sqlite3SelectExprHeight(p);
-    if( needRestoreContext ){
-      pParse->zAuthContext = zSavedAuthContext;
-    }
     pTabList = p->pSrc;
-    pWhere = p->pWhere;
     if( !IgnorableOrderby(pDest) ){
       pOrderBy = p->pOrderBy;
     }
-    pGroupBy = p->pGroupBy;
-    pHaving = p->pHaving;
-    isDistinct = p->isDistinct;
   }
+  pEList = p->pEList;
 #endif
-
-  /* Check to see if this is a subquery that can be "flattened" into its parent.
-  ** If flattening is a possiblity, do so and return immediately.  
-  */
-#ifndef SQLITE_OMIT_VIEW
-  if( pParent && pParentAgg &&
-      flattenSubquery(db, pParent, parentTab, *pParentAgg, isAgg) ){
-    if( isAgg ) *pParentAgg = 1;
-    goto select_end;
-  }
-#endif
+  pWhere = p->pWhere;
+  pGroupBy = p->pGroupBy;
+  pHaving = p->pHaving;
+  isDistinct = p->isDistinct;
 
   /* If possible, rewrite the query to use GROUP BY instead of DISTINCT.
   ** GROUP BY may use an index, DISTINCT never does.

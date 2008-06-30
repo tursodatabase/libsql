@@ -1,5 +1,5 @@
-C Changes\sto\sloadext.test\sso\sthat\sit\sworks\son\sosx\sas\swell\sas\slinux.\s(CVS\s5329)
-D 2008-06-30T15:09:29
+C Call\sthe\squery\sflattener\swhile\sprocessing\sthe\sparent\squery.\sPreviously,\sit\swas\scalled\swhile\sprocessing\sthe\ssub-queries.\s(CVS\s5330)
+D 2008-06-30T18:12:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/pragma.c 9a95f5b3708f6d3ddd987eab5f369a19ffcb6795
 F src/prepare.c aba51dad52308e3d9d2074d8ff4e612e7f1cab51
 F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c 5b213de002382aeaac5c9c2d3be7c98900bc3056
+F src/select.c afaac3f04b922edb8af07f05763b63c00ddc4a5a
 F src/shell.c 484e7297e066f22830f9c15d7abbcdd2acb097b0
 F src/sqlite.h.in 76c144d23f8824e8811e837e9396b9f1361f5902
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -548,7 +548,7 @@ F test/vacuum2.test d3b9691541fe6ed5c711f547a1c7d70e9760ac6f
 F test/vacuum3.test 6149b24613f487915ca9cedfbb9147d5759714ec
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test fdd8108de66eec378291d9a0e46e30d129eef1ca
-F test/view.test 4864e3841ab3213a95297718b94d5d6a8d3bc78b
+F test/view.test 041ccaf4c96f6c90d564c9ea37d1c1fa21fdb470
 F test/vtab1.test 47092e3ac59141f08e09a6c0cc0df8997242bc79
 F test/vtab2.test 1da49b015582965a8fc386aa23d051a5a622b08e
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
@@ -595,7 +595,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ba8819a6f3dbc45d88346789de42971aacc0d246
-R d9ae76ff4c185320bbb89c9f9139919a
+P 189cd85413a2e00696752bb82e7a442e86e621ac
+R d620881f6cbbbbefdfa4e9725f1fbb87
 U danielk1977
-Z 00e6f564f2a763edcec24b97ea9019b8
+Z 6869d5a04e97a4a4d7edf1da8de9ca2a
