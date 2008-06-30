@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is extension loading.
 #
-# $Id: loadext.test,v 1.12 2008/06/19 15:44:00 drh Exp $
+# $Id: loadext.test,v 1.13 2008/06/30 15:09:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -27,6 +27,10 @@ if {$::tcl_platform(platform) eq "windows"} {
   set testextension ./testloadext.dll
 } else {
   set testextension ./libtestloadext.so
+}
+set gcc_shared -shared
+if {$::tcl_platform(os) eq "Darwin"} {
+  set gcc_shared -dynamiclib
 }
 
 # The error messages tested by this file are operating system dependent
@@ -56,6 +60,13 @@ set dlerror_nosuchfile \
 set dlerror_notadll    {%s: file too short}
 set dlerror_nosymbol   {%s: undefined symbol: %s}
 
+if {$::tcl_platform(os) eq "Darwin"} {
+  set dlerror_nosuchfile {dlopen(%s, 10): image not found}
+  set dlerror_notadll    {dlopen(%1$s, 10): no suitable image found.  Did find:
+	%1$s: file to short}
+  set dlerror_nosymbol   {dlsym(XXX, %2$s): symbol not found}
+}
+
 # Make sure the test extension actually exists.  If it does not
 # exist, try to create it.  If unable to create it, then skip this
 # test file.
@@ -64,7 +75,7 @@ if {![file exists $testextension]} {
   set srcdir [file dir $testdir]/src
   set testextsrc $srcdir/test_loadext.c
   if {[catch {
-    exec gcc -Wall -I$srcdir -I. -g -shared $testextsrc -o $testextension
+    exec gcc $gcc_shared -Wall -I$srcdir -I. -g $testextsrc -o $testextension
   } msg]} {
     puts "Skipping loadext tests: Test extension not built..."
     puts $msg
@@ -148,6 +159,9 @@ do_test loadext-2.3 {
   set rc [catch {
     sqlite3_load_extension db $testextension icecream
   } msg]
+  if {$::tcl_platform(os) eq "Darwin"} {
+    regsub {0x[1234567890abcdefABCDEF]*} $msg XXX msg
+  }
   list $rc $msg
 } [list 1 [format $dlerror_nosymbol $testextension icecream]]
 
@@ -173,9 +187,13 @@ do_test loadext-3.1 {
   }
 } {1 {no such function: half}}
 do_test loadext-3.2 {
-  catchsql {
+  set res [catchsql {
     SELECT load_extension($::testextension)
+  }]
+  if {$::tcl_platform(os) eq "Darwin"} {
+    regsub {0x[1234567890abcdefABCDEF]*} $res XXX res
   }
+  set res
 } [list 1 [format $dlerror_nosymbol $testextension sqlite3_extension_init]]
 do_test loadext-3.3 {
   catchsql {

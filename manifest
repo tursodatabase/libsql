@@ -1,5 +1,5 @@
-C Fix\sa\smalloc()\sfailure\srelated\sproblem\sin\sos_unix.c.\s(CVS\s5328)
-D 2008-06-30T10:16:05
+C Changes\sto\sloadext.test\sso\sthat\sit\sworks\son\sosx\sas\swell\sas\slinux.\s(CVS\s5329)
+D 2008-06-30T15:09:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 5b213de002382aeaac5c9c2d3be7c98900bc3056
 F src/shell.c 484e7297e066f22830f9c15d7abbcdd2acb097b0
 F src/sqlite.h.in 76c144d23f8824e8811e837e9396b9f1361f5902
-F src/sqlite3ext.h 7bf1651c6fb7183831e5113b4b91662bbe67e5bf
+F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h 35e420ced9e27af5ee387cd40f2e7a431665f858
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
@@ -372,7 +372,7 @@ F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
 F test/like.test 2a3ddbd5d91503f914eabae67a47c4196fe33a58
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test ca61a9fc520f54470edb3a771167fe4b68abc247
-F test/loadext.test de9ff1f3db6377b42cb001a2ca93cc9ebd254784
+F test/loadext.test 5f4354b3eb22584563a51ff74329f06e48dfae33
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
 F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
@@ -595,7 +595,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1a711249c25aafbaf08057ffdcbb9cf2f872f13d
-R c8878f1758bd99bd85efdf3716dd1356
+P ba8819a6f3dbc45d88346789de42971aacc0d246
+R d9ae76ff4c185320bbb89c9f9139919a
 U danielk1977
-Z c7f565849ca23e8adcec51fdeb05acd5
+Z 00e6f564f2a763edcec24b97ea9019b8

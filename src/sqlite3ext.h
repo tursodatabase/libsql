@@ -15,7 +15,7 @@
 ** as extensions by SQLite should #include this file instead of 
 ** sqlite3.h.
 **
-** @(#) $Id: sqlite3ext.h,v 1.23 2008/06/27 00:52:45 drh Exp $
+** @(#) $Id: sqlite3ext.h,v 1.24 2008/06/30 15:09:29 danielk1977 Exp $
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
@@ -366,7 +366,7 @@ struct sqlite3_api_routines {
 #define sqlite3_status                 sqlite3_api->status
 #endif /* SQLITE_CORE */
 
-#define SQLITE_EXTENSION_INIT1     const sqlite3_api_routines *sqlite3_api;
+#define SQLITE_EXTENSION_INIT1     const sqlite3_api_routines *sqlite3_api = 0;
 #define SQLITE_EXTENSION_INIT2(v)  sqlite3_api = v;
 
 #endif /* _SQLITE3EXT_H_ */
