@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
-# $Id: select9.test,v 1.2 2008/06/24 15:39:44 danielk1977 Exp $
+# $Id: select9.test,v 1.3 2008/06/30 07:53:10 danielk1977 Exp $
 
 # The tests in this file are focused on test compound SELECT statements 
 # that have any or all of an ORDER BY, LIMIT or OFFSET clauses. As of
@@ -327,6 +327,95 @@ foreach indexes [list {
   } {1 2 3}
 
 }
+
+do_test select9-2.X {
+  execsql {
+    DROP INDEX i1;
+    DROP INDEX i2;
+    DROP INDEX i3;
+  }
+} {}
+
+# This procedure executes the SQL.  Then it checks the generated program
+# for the SQL and appends a "nosort" to the result if the program contains the
+# SortCallback opcode.  If the program does not contain the SortCallback
+# opcode it appends "sort"
+#
+proc cksort {sql} {
+  set ::sqlite_sort_count 0
+  set data [execsql $sql]
+  if {$::sqlite_sort_count} {set x sort} {set x nosort}
+  lappend data $x
+  return $data
+}
+
+# If the right indexes exist, the following query:
+#
+#     SELECT t1.a FROM t1 UNION ALL SELECT t2.d FROM t2 ORDER BY 1
+#
+# can use indexes to run without doing a in-memory sort operation.
+# This block of tests (select9-3.*) is used to check if the same 
+# is possible with:
+#
+#     CREATE VIEW v1 AS SELECT a FROM t1 UNION ALL SELECT d FROM t2
+#     SELECT a FROM v1 ORDER BY 1
+#
+# Currently it is not.
+#
+do_test select9-3.1 {
+  cksort { SELECT a FROM t1 ORDER BY 1 }
+} {1 2 3 4 5 6 7 8 9 10 sort}
+do_test select9-3.2 {
+  execsql { CREATE INDEX i1 ON t1(a) }
+  cksort { SELECT a FROM t1 ORDER BY 1 }
+} {1 2 3 4 5 6 7 8 9 10 nosort}
+do_test select9-3.3 {
+  cksort { SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 LIMIT 5 }
+} {1 1 2 2 3 sort}
+do_test select9-3.4 {
+  execsql { CREATE INDEX i2 ON t2(d) }
+  cksort { SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 LIMIT 5 }
+} {1 1 2 2 3 nosort}
+do_test select9-3.5 {
+  execsql { CREATE VIEW v1 AS SELECT a FROM t1 UNION ALL SELECT d FROM t2 }
+  cksort { SELECT a FROM v1 ORDER BY 1 LIMIT 5 }
+} {1 1 2 2 3 sort}
+do_test select9-3.X {
+  execsql {
+    DROP INDEX i1;
+    DROP INDEX i2;
+    DROP VIEW v1;
+  }
+} {}
+
+# This block of tests is the same as the preceding one, except that
+# "UNION" is tested instead of "UNION ALL".
+#
+do_test select9-4.1 {
+  cksort { SELECT a FROM t1 ORDER BY 1 }
+} {1 2 3 4 5 6 7 8 9 10 sort}
+do_test select9-4.2 {
+  execsql { CREATE INDEX i1 ON t1(a) }
+  cksort { SELECT a FROM t1 ORDER BY 1 }
+} {1 2 3 4 5 6 7 8 9 10 nosort}
+do_test select9-4.3 {
+  cksort { SELECT a FROM t1 UNION SELECT d FROM t2 ORDER BY 1 LIMIT 5 }
+} {1 2 3 4 5 sort}
+do_test select9-4.4 {
+  execsql { CREATE INDEX i2 ON t2(d) }
+  cksort { SELECT a FROM t1 UNION SELECT d FROM t2 ORDER BY 1 LIMIT 5 }
+} {1 2 3 4 5 nosort}
+do_test select9-4.5 {
+  execsql { CREATE VIEW v1 AS SELECT a FROM t1 UNION SELECT d FROM t2 }
+  cksort { SELECT a FROM v1 ORDER BY 1 LIMIT 5 }
+} {1 2 3 4 5 sort}
+do_test select9-4.X {
+  execsql {
+    DROP INDEX i1;
+    DROP INDEX i2;
+    DROP VIEW v1;
+  }
+} {}
 
 
 finish_test
