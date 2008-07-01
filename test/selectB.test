@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
-# $Id: selectB.test,v 1.1 2008/07/01 14:09:14 danielk1977 Exp $
+# $Id: selectB.test,v 1.2 2008/07/01 14:39:35 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -92,6 +92,19 @@ test_transform selectB-1.6 {
   SELECT d FROM t2 WHERE d>12 AND d>10
   ORDER BY a
 } {14 21}
+
+test_transform selectB-1.7 {
+  SELECT * FROM (SELECT a FROM t1 UNION ALL SELECT d FROM t2) ORDER BY 1 LIMIT 2
+} {
+  SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 LIMIT 2
+} {2 3}
+
+test_transform selectB-1.8 {
+  SELECT * FROM (SELECT a FROM t1 UNION ALL SELECT d FROM t2) ORDER BY 1 
+  LIMIT 2 OFFSET 3
+} {
+  SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 LIMIT 2 OFFSET 3
+} {12 14}
 
 
 finish_test

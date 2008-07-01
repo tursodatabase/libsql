@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
-# $Id: select9.test,v 1.3 2008/06/30 07:53:10 danielk1977 Exp $
+# $Id: select9.test,v 1.4 2008/07/01 14:39:35 danielk1977 Exp $
 
 # The tests in this file are focused on test compound SELECT statements 
 # that have any or all of an ORDER BY, LIMIT or OFFSET clauses. As of
@@ -360,7 +360,7 @@ proc cksort {sql} {
 #     CREATE VIEW v1 AS SELECT a FROM t1 UNION ALL SELECT d FROM t2
 #     SELECT a FROM v1 ORDER BY 1
 #
-# Currently it is not.
+# It turns out that it is.
 #
 do_test select9-3.1 {
   cksort { SELECT a FROM t1 ORDER BY 1 }
@@ -379,7 +379,7 @@ do_test select9-3.4 {
 do_test select9-3.5 {
   execsql { CREATE VIEW v1 AS SELECT a FROM t1 UNION ALL SELECT d FROM t2 }
   cksort { SELECT a FROM v1 ORDER BY 1 LIMIT 5 }
-} {1 1 2 2 3 sort}
+} {1 1 2 2 3 nosort}
 do_test select9-3.X {
   execsql {
     DROP INDEX i1;

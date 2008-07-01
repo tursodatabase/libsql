@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.441 2008/07/01 14:09:14 danielk1977 Exp $
+** $Id: select.c,v 1.442 2008/07/01 14:39:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -3191,16 +3191,21 @@ static int flattenSubquery(
   for(pSub=pSub->pPrior; pSub; pSub=pSub->pPrior){
     Select *pNew;
     ExprList *pOrderBy = p->pOrderBy;
+    Expr *pLimit = p->pLimit;
+    Expr *pOffset = p->pOffset;
     Select *pPrior = p->pPrior;
     p->pOrderBy = 0;
     p->pSrc = 0;
     p->pPrior = 0;
+    p->pLimit = 0;
     pNew = sqlite3SelectDup(db, p);
     pNew->pPrior = pPrior;
     p->pPrior = pNew;
     p->pOrderBy = pOrderBy;
     p->op = TK_ALL;
     p->pSrc = pSrc;
+    p->pLimit = pLimit;
+    p->pOffset = pOffset;
     p->pRightmost = 0;
     pNew->pRightmost = 0;
   }
