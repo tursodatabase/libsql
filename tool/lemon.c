@@ -3412,6 +3412,10 @@ int mhflag;                 /* True if generating makeheaders output */
     while( *cp ) stddt[j++] = *cp++;
     while( j>0 && isspace(stddt[j-1]) ) j--;
     stddt[j] = 0;
+    if( strcmp(stddt, lemp->tokentype)==0 ){
+      sp->dtnum = 0;
+      continue;
+    }
     hash = 0;
     for(j=0; stddt[j]; j++){
       hash = hash*53 + stddt[j];

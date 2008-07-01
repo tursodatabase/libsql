@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sto\sdo\swith\sthe\srecent\sUNION\sALL\ssub-select\soptimization.\s(CVS\s5333)
-D 2008-07-01T16:05:26
+C In\sLemon,\sif\sa\snon-terminal\shas\sthe\ssame\stype\sas\sa\sterminal,\sthen\sreuse\sthe\nterminal\stype\sin\sthe\sYYMINORTYPE\sunion\sfor\sthe\snon-terminal.\s\sThis\sgives\nbetter\stable\scompression.\s(CVS\s5334)
+D 2008-07-01T16:34:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -574,7 +574,7 @@ F test/where6.test 42c4373595f4409d9c6a9987b4a60000ad664faf
 F test/zeroblob.test 792124852ec61458a2eb527b5091791215e0be95
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/lemon.c a9c51c1ede7f35dc8746894e7f8cc7e3704ecef8
+F tool/lemon.c b7ea2ab73efcae17de678e27311e3a6fb45b9916
 F tool/lempar.c aab54f1758c554e550ff5c4b191053a819279a2b
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -596,7 +596,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a79786a961dba8f4ffaddbe55e6467c14b12f7d6
-R 486d38d9b6a956a8f41daead08c2e751
-U danielk1977
-Z 25057041e9180e7e0042d3e827e454fe
+P 6ee71f4ddb4fa934f58c87dad2d30560af2e55d7
+R abb51076ff7832ca4d7b7efbfab1e246
+U drh
+Z 25821389214193632a5f6ed1eb5ed459
