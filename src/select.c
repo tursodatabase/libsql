@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.444 2008/07/01 17:39:27 danielk1977 Exp $
+** $Id: select.c,v 1.445 2008/07/01 18:26:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -3063,16 +3063,16 @@ static void substSelect(
 **        until we introduced the group_concat() function.  
 **
 **  (17)  The sub-query is not a compound select, or it is a UNION ALL 
-**        compound without an ORDER BY, LIMIT or OFFSET clause made up
-**        entirely of non-aggregate queries, and 
+**        compound clause made up entirely of non-aggregate queries, and 
 **        the parent query:
 **
 **          * is not itself part of a compound select,
 **          * is not an aggregate or DISTINCT query, and
 **          * has no other tables or sub-selects in the FROM clause.
 **
-**        The parent query may have WHERE, ORDER BY, LIMIT and OFFSET
-**        clauses.
+**        The parent and sub-query may contain WHERE clauses. Subject to
+**        rules (11), (13) and (14), they may also contain ORDER BY,
+**        LIMIT and OFFSET clauses.
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
@@ -3768,15 +3768,6 @@ int sqlite3Select(
   */
   if( pParse->nErr>0 ) goto select_end;
 
-  /* If writing to memory or generating a set
-  ** only a single column may be output.
-  */
-#ifndef SQLITE_OMIT_SUBQUERY
-  if( checkForMultiColumnSelectError(pParse, pDest, pEList->nExpr) ){
-    goto select_end;
-  }
-#endif
-
   /* ORDER BY is ignored for some destinations.
   */
   if( IgnorableOrderby(pDest) ){
@@ -3864,6 +3855,15 @@ int sqlite3Select(
       }
     }
     return multiSelect(pParse, p, pDest, aff);
+  }
+#endif
+
+  /* If writing to memory or generating a set
+  ** only a single column may be output.
+  */
+#ifndef SQLITE_OMIT_SUBQUERY
+  if( checkForMultiColumnSelectError(pParse, pDest, pEList->nExpr) ){
+    goto select_end;
   }
 #endif
 

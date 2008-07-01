@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
-# $Id: selectB.test,v 1.4 2008/07/01 17:39:28 danielk1977 Exp $
+# $Id: selectB.test,v 1.5 2008/07/01 18:26:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -144,6 +144,40 @@ for {set ii 1} {$ii <= 2} {incr ii} {
     UNION ALL SELECT c FROM t1 WHERE c>=10
     ORDER BY 1 LIMIT 3
   } {12 12 14}
+
+  test_transform selectB-$ii.12 {
+    SELECT * FROM (SELECT a FROM t1 UNION ALL SELECT d FROM t2 LIMIT 2)
+  } {
+    SELECT a FROM t1 UNION ALL SELECT d FROM t2 LIMIT 2
+  } {2 8}
+
+  test_transform selectB-$ii.13 {
+    SELECT * FROM (SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY a ASC)
+  } {
+    SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 ASC
+  } {2 3 8 12 14 21}
+
+  test_transform selectB-$ii.14 {
+    SELECT * FROM (SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY a DESC)
+  } {
+    SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 DESC
+  } {21 14 12 8 3 2}
+
+  test_transform selectB-$ii.14 {
+    SELECT * FROM (
+      SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY a DESC
+    ) LIMIT 2 OFFSET 2
+  } {
+    SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 DESC LIMIT 2 OFFSET 2
+  } {12 8}
+
+  test_transform selectB-$ii.15 {
+    SELECT * FROM (
+      SELECT a, b FROM t1 UNION ALL SELECT d, e FROM t2 ORDER BY a ASC, e DESC
+    )
+  } {
+    SELECT a, b FROM t1 UNION ALL SELECT d, e FROM t2 ORDER BY a ASC, e DESC
+  } {2 4 3 6 8 10 12 15 14 16 21 24}
 }
 
 do_test selectB-3.0 {
@@ -291,6 +325,38 @@ for {set ii 3} {$ii <= 4} {incr ii} {
       ORDER BY 1
     }
   } {6 9 15 18 24 27}
+
+  do_test selectB-$ii.17 {
+    execsql {
+      SELECT * FROM (
+        SELECT a FROM t1 UNION ALL SELECT d FROM t2 LIMIT 4
+      ) LIMIT 2
+    }
+  } {2 8}
+
+  do_test selectB-$ii.18 {
+    execsql {
+      SELECT * FROM (
+        SELECT a FROM t1 UNION ALL SELECT d FROM t2 LIMIT 4 OFFSET 2
+      ) LIMIT 2
+    }
+  } {14 3}
+
+  do_test selectB-$ii.19 {
+    execsql {
+      SELECT * FROM (
+        SELECT DISTINCT (a/10) FROM t1 UNION ALL SELECT DISTINCT(d%2) FROM t2
+      )
+    }
+  } {0 1 0 1}
+
+  do_test selectB-$ii.20 {
+    execsql {
+      SELECT DISTINCT * FROM (
+        SELECT DISTINCT (a/10) FROM t1 UNION ALL SELECT DISTINCT(d%2) FROM t2
+      )
+    }
+  } {0 1}
 }
 
 finish_test
