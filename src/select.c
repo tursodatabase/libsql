@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.442 2008/07/01 14:39:35 danielk1977 Exp $
+** $Id: select.c,v 1.443 2008/07/01 16:05:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1918,6 +1918,7 @@ static int multiSelect(
   int aSetP2[2];        /* Set P2 value of these op to number of columns */
   int nSetP2 = 0;       /* Number of slots in aSetP2[] used */
   SelectDest dest;      /* Alternative data destination */
+  Select *pDelete = 0;  /* Chain of simple selects to delete */
 
   /* Make sure there is no ORDER BY or LIMIT clause on prior SELECTs.  Only
   ** the last (right-most) SELECT in the series may have an ORDER BY or LIMIT.
@@ -2000,6 +2001,7 @@ static int multiSelect(
           VdbeComment((v, "Jump ahead if LIMIT reached"));
         }
         rc = sqlite3Select(pParse, p, &dest, 0, 0, 0, aff);
+        pDelete = p->pPrior;
         p->pPrior = pPrior;
         if( rc ){
           goto multi_select_end;
@@ -2076,6 +2078,7 @@ static int multiSelect(
       /* Query flattening in sqlite3Select() might refill p->pOrderBy.
       ** Be sure to delete p->pOrderBy, therefore, to avoid a memory leak. */
       sqlite3ExprListDelete(p->pOrderBy);
+      pDelete = p->pPrior;
       p->pPrior = pPrior;
       p->pOrderBy = pOrderBy;
       sqlite3ExprDelete(p->pLimit);
@@ -2159,6 +2162,7 @@ static int multiSelect(
       p->pOffset = 0;
       intersectdest.iParm = tab2;
       rc = sqlite3Select(pParse, p, &intersectdest, 0, 0, 0, aff);
+      pDelete = p->pPrior;
       p->pPrior = pPrior;
       sqlite3ExprDelete(p->pLimit);
       p->pLimit = pLimit;
@@ -2304,6 +2308,7 @@ static int multiSelect(
 multi_select_end:
   pDest->iMem = dest.iMem;
   pDest->nMem = dest.nMem;
+  sqlite3SelectDelete(pDelete);
   return rc;
 }
 #endif /* SQLITE_OMIT_COMPOUND_SELECT */

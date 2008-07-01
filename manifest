@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sLIMIT\sand\sOFFSET\sclauses\son\sthe\sparent\squery\swhen\soptimizing\sa\sUNION\sALL\ssub-select.\s(CVS\s5332)
-D 2008-07-01T14:39:35
+C Fix\sa\smemory\sleak\sto\sdo\swith\sthe\srecent\sUNION\sALL\ssub-select\soptimization.\s(CVS\s5333)
+D 2008-07-01T16:05:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/pragma.c 9a95f5b3708f6d3ddd987eab5f369a19ffcb6795
 F src/prepare.c aba51dad52308e3d9d2074d8ff4e612e7f1cab51
 F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c d1b633882c90a8c8f9e8346d20b3f038dfee48bd
+F src/select.c 8e9951054ae130661b8e45a74e21d5422c9bb8e2
 F src/shell.c 484e7297e066f22830f9c15d7abbcdd2acb097b0
 F src/sqlite.h.in 76c144d23f8824e8811e837e9396b9f1361f5902
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -449,7 +449,7 @@ F test/select7.test 7906735805cfbee4dddc0bed4c14e68d7f5f9c5f
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test b4007b15396cb7ba2615cab31e1973b572e43210
 F test/selectA.test e4501789a1d0fe9d00db15187623fb5b7031357b
-F test/selectB.test 37d21b6f1896b2cadac36faf9c0255f07467f669
+F test/selectB.test effd81c29572fb35d8aa39e4b73dbf194f5f68ea
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test c6769531e0cb751d46a9838c0532d3786606c0f6
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
@@ -596,7 +596,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3ef468e7046b2091b5b6880fe19261ef1ee2887b
-R 57b50557616e52f60ca94711b38caba6
+P a79786a961dba8f4ffaddbe55e6467c14b12f7d6
+R 486d38d9b6a956a8f41daead08c2e751
 U danielk1977
-Z 5823aa889da28368a392c306fc60b4e7
+Z 25057041e9180e7e0042d3e827e454fe
