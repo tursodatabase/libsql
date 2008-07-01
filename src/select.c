@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.443 2008/07/01 16:05:26 danielk1977 Exp $
+** $Id: select.c,v 1.444 2008/07/01 17:39:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2895,6 +2895,9 @@ static int multiSelectOrderBy(
 
   /* Reassembly the compound query so that it will be freed correctly
   ** by the calling function */
+  if( p->pPrior ){
+    sqlite3SelectDelete(p->pPrior);
+  }
   p->pPrior = pPrior;
 
   /*** TBD:  Insert subroutine calls to close cursors on incomplete
