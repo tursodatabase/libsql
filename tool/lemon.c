@@ -134,6 +134,7 @@ struct symbol {
   int useCnt;              /* Number of times used */
   char *destructor;        /* Code which executes whenever this symbol is
                            ** popped from the stack during error processing */
+  int destLineno;          /* Line number for start of destructor */
   char *datatype;          /* The data type of information held by this
                            ** object. Only used if type==NONTERMINAL */
   int dtnum;               /* The data type number.  In the parser, the value
@@ -1961,6 +1962,7 @@ struct pstate {
   char *declkeyword;         /* Keyword of a declaration */
   char **declargslot;        /* Where the declaration argument should be put */
   int insertLineMacro;       /* Add #line before declaration insert */
+  int *decllinenoslot;       /* Where to write declaration line number */
   enum e_assoc declassoc;    /* Assign this association to decl arguments */
   int preccounter;           /* Assign this precedence to decl arguments */
   struct rule *firstrule;    /* Pointer to first rule in the grammar */
@@ -2194,6 +2196,7 @@ to follow the previous rule.");
       if( isalpha(x[0]) ){
         psp->declkeyword = x;
         psp->declargslot = 0;
+        psp->decllinenoslot = 0;
         psp->insertLineMacro = 1;
         psp->state = WAITING_FOR_DECL_ARG;
         if( strcmp(x,"name")==0 ){
@@ -2276,6 +2279,7 @@ to follow the previous rule.");
       }else{
         struct symbol *sp = Symbol_new(x);
         psp->declargslot = &sp->destructor;
+        psp->decllinenoslot = &sp->destLineno;
         psp->insertLineMacro = 1;
         psp->state = WAITING_FOR_DECL_ARG;
       }
@@ -2328,7 +2332,8 @@ to follow the previous rule.");
         }
         nOld = strlen(zOld);
         n = nOld + nNew + 20;
-        if( psp->insertLineMacro ){
+        if( psp->insertLineMacro && psp->decllinenoslot
+            && psp->decllinenoslot[0] ){
           for(z=psp->filename, nBack=0; *z; z++){
             if( *z=='\\' ) nBack++;
           }
@@ -2338,7 +2343,8 @@ to follow the previous rule.");
         }
         *psp->declargslot = zBuf = realloc(*psp->declargslot, n);
         zBuf += nOld;
-        if( psp->insertLineMacro ){
+        if( psp->insertLineMacro && psp->decllinenoslot
+            && psp->decllinenoslot[0] ){
           if( nOld && zBuf[-1]!='\n' ){
             *(zBuf++) = '\n';
           }
@@ -2353,6 +2359,9 @@ to follow the previous rule.");
           }
           *(zBuf++) = '"';
           *(zBuf++) = '\n';
+        }
+        if( psp->decllinenoslot && psp->decllinenoslot[0]==0 ){
+          psp->decllinenoslot[0] = psp->tokenlineno;
         }
         memcpy(zBuf, zNew, nNew);
         zBuf += nNew;
@@ -3137,6 +3146,7 @@ int *lineno;
  }else if( sp->destructor ){
    cp = sp->destructor;
    fprintf(out,"{\n"); (*lineno)++;
+   tplt_linedir(out,sp->destLineno,lemp->outname); (*lineno)++;
  }else if( lemp->vardest ){
    cp = lemp->vardest;
    if( cp==0 ) return;
@@ -3833,9 +3843,14 @@ int mhflag;     /* Output in makeheaders format if true */
   ** (In other words, generate the %destructor actions)
   */
   if( lemp->tokendest ){
+    int once = 1;
     for(i=0; i<lemp->nsymbol; i++){
       struct symbol *sp = lemp->symbols[i];
       if( sp==0 || sp->type!=TERMINAL ) continue;
+      if( once ){
+        fprintf(out, "      /* TERMINAL Destructor */\n"); lineno++;
+        once = 0;
+      }
       fprintf(out,"    case %d: /* %s */\n",
               sp->index, sp->name); lineno++;
     }
@@ -3847,18 +3862,23 @@ int mhflag;     /* Output in makeheaders format if true */
   }
   if( lemp->vardest ){
     struct symbol *dflt_sp = 0;
+    int once = 1;
     for(i=0; i<lemp->nsymbol; i++){
       struct symbol *sp = lemp->symbols[i];
       if( sp==0 || sp->type==TERMINAL ||
           sp->index<=0 || sp->destructor!=0 ) continue;
+      if( once ){
+        fprintf(out, "      /* Default NON-TERMINAL Destructor */\n"); lineno++;
+        once = 0;
+      }
       fprintf(out,"    case %d: /* %s */\n",
               sp->index, sp->name); lineno++;
       dflt_sp = sp;
     }
     if( dflt_sp!=0 ){
       emit_destructor_code(out,dflt_sp,lemp,&lineno);
-      fprintf(out,"      break;\n"); lineno++;
     }
+    fprintf(out,"      break;\n"); lineno++;
   }
   for(i=0; i<lemp->nsymbol; i++){
     struct symbol *sp = lemp->symbols[i];
@@ -4335,6 +4355,7 @@ char *x;
     sp->firstset = 0;
     sp->lambda = LEMON_FALSE;
     sp->destructor = 0;
+    sp->destLineno = 0;
     sp->datatype = 0;
     sp->useCnt = 0;
     Symbol_insert(sp,sp->name);
