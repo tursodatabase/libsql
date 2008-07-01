@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.440 2008/06/30 18:12:28 danielk1977 Exp $
+** $Id: select.c,v 1.441 2008/07/01 14:09:14 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1160,6 +1160,10 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   ExprList *pEList;
   Column *aCol, *pCol;
   sqlite3 *db = pParse->db;
+
+  if( sqlite3SelectResolve(pParse, pSelect, 0) ){
+    return 0;
+  }
 
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
   if( prepSelectStmt(pParse, pSelect) ){
@@ -3050,6 +3054,18 @@ static void substSelect(
 **        not contain ORDER BY.  (Ticket #2942)  This used to not matter
 **        until we introduced the group_concat() function.  
 **
+**  (17)  The sub-query is not a compound select, or it is a UNION ALL 
+**        compound without an ORDER BY, LIMIT or OFFSET clause made up
+**        entirely of non-aggregate queries, and 
+**        the parent query:
+**
+**          * is not itself part of a compound select,
+**          * is not an aggregate or DISTINCT query, and
+**          * has no other tables or sub-selects in the FROM clause.
+**
+**        The parent query may have WHERE, ORDER BY, LIMIT and OFFSET
+**        clauses.
+**
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
 ** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
@@ -3067,7 +3083,9 @@ static int flattenSubquery(
   int isAgg,           /* True if outer SELECT uses aggregate functions */
   int subqueryIsAgg    /* True if the subquery uses aggregate functions */
 ){
+  Select *pParent;
   Select *pSub;       /* The inner query or "subquery" */
+  Select *pSub1;      /* Pointer to the rightmost select in sub-query */
   SrcList *pSrc;      /* The FROM clause of the outer query */
   SrcList *pSubSrc;   /* The FROM clause of the subquery */
   ExprList *pList;    /* The result set of the outer query */
@@ -3142,41 +3160,93 @@ static int flattenSubquery(
     return 0;
   }
 
+  /* Restriction 17: If the sub-query is a compound SELECT, then it must
+  ** use only the UNION ALL operator. And none of the simple select queries
+  ** that make up the compound SELECT are allowed to be aggregate or distinct
+  ** queries.
+  */
+  if( pSub->pPrior ){
+    if( p->pPrior || isAgg || p->isDistinct || pSrc->nSrc!=1 ){
+      return 0;
+    }
+    for(pSub1=pSub; pSub1; pSub1=pSub1->pPrior){
+      if( pSub1->isAgg || pSub1->isDistinct 
+       || (pSub1->pPrior && pSub1->op!=TK_ALL) ){
+        return 0;
+      }
+    }
+  }
+
+  /* If the sub-query is a compound SELECT statement, then it must be
+  ** a UNION ALL and the parent query must be of the form:
+  **
+  **     SELECT <expr-list> FROM (<sub-query>) <where-clause> 
+  **
+  ** followed by any ORDER BY, LIMIT and/or OFFSET clauses. This block
+  ** creates N copies of the parent query without any ORDER BY, LIMIT or 
+  ** OFFSET clauses and joins them to the left-hand-side of the original
+  ** using UNION ALL operators. In this case N is the number of simple
+  ** select statements in the compound sub-query.
+  */
+  for(pSub=pSub->pPrior; pSub; pSub=pSub->pPrior){
+    Select *pNew;
+    ExprList *pOrderBy = p->pOrderBy;
+    Select *pPrior = p->pPrior;
+    p->pOrderBy = 0;
+    p->pSrc = 0;
+    p->pPrior = 0;
+    pNew = sqlite3SelectDup(db, p);
+    pNew->pPrior = pPrior;
+    p->pPrior = pNew;
+    p->pOrderBy = pOrderBy;
+    p->op = TK_ALL;
+    p->pSrc = pSrc;
+    p->pRightmost = 0;
+    pNew->pRightmost = 0;
+  }
+
   /* If we reach this point, it means flattening is permitted for the
   ** iFrom-th entry of the FROM clause in the outer query.
   */
-
-  /* Move all of the FROM elements of the subquery into the
-  ** the FROM clause of the outer query.  Before doing this, remember
-  ** the cursor number for the original outer query FROM element in
-  ** iParent.  The iParent cursor will never be used.  Subsequent code
-  ** will scan expressions looking for iParent references and replace
-  ** those references with expressions that resolve to the subquery FROM
-  ** elements we are now copying in.
-  */
+  pSub = pSub1 = pSubitem->pSelect;
   iParent = pSubitem->iCursor;
-  {
+  for(pParent=p; pParent; pParent=pParent->pPrior, pSub=pSub->pPrior){
     int nSubSrc = pSubSrc->nSrc;
-    int jointype = pSubitem->jointype;
+    int jointype = 0;
+    pSubSrc = pSub->pSrc;
+    pSrc = pParent->pSrc;
 
-    sqlite3DeleteTable(pSubitem->pTab);
-    sqlite3_free(pSubitem->zDatabase);
-    sqlite3_free(pSubitem->zName);
-    sqlite3_free(pSubitem->zAlias);
-    pSubitem->pTab = 0;
-    pSubitem->zDatabase = 0;
-    pSubitem->zName = 0;
-    pSubitem->zAlias = 0;
-    if( nSubSrc>1 ){
+    /* Move all of the FROM elements of the subquery into the
+    ** the FROM clause of the outer query.  Before doing this, remember
+    ** the cursor number for the original outer query FROM element in
+    ** iParent.  The iParent cursor will never be used.  Subsequent code
+    ** will scan expressions looking for iParent references and replace
+    ** those references with expressions that resolve to the subquery FROM
+    ** elements we are now copying in.
+    */
+    if( pSrc ){
+      pSubitem = &pSrc->a[iFrom];
+      nSubSrc = pSubSrc->nSrc;
+      jointype = pSubitem->jointype;
+      sqlite3DeleteTable(pSubitem->pTab);
+      sqlite3_free(pSubitem->zDatabase);
+      sqlite3_free(pSubitem->zName);
+      sqlite3_free(pSubitem->zAlias);
+      pSubitem->pTab = 0;
+      pSubitem->zDatabase = 0;
+      pSubitem->zName = 0;
+      pSubitem->zAlias = 0;
+    }
+    if( nSubSrc!=1 || !pSrc ){
       int extra = nSubSrc - 1;
-      for(i=1; i<nSubSrc; i++){
+      for(i=(pSrc?1:0); i<nSubSrc; i++){
         pSrc = sqlite3SrcListAppend(db, pSrc, 0, 0);
         if( pSrc==0 ){
-          p->pSrc = 0;
+          pParent->pSrc = 0;
           return 1;
         }
       }
-      p->pSrc = pSrc;
+      pParent->pSrc = pSrc;
       for(i=pSrc->nSrc-1; i-extra>=iFrom; i--){
         pSrc->a[i] = pSrc->a[i-extra];
       }
@@ -3186,79 +3256,80 @@ static int flattenSubquery(
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
     pSrc->a[iFrom].jointype = jointype;
-  }
-
-  /* Now begin substituting subquery result set expressions for 
-  ** references to the iParent in the outer query.
-  ** 
-  ** Example:
-  **
-  **   SELECT a+5, b*10 FROM (SELECT x*3 AS a, y+10 AS b FROM t1) WHERE a>b;
-  **   \                     \_____________ subquery __________/          /
-  **    \_____________________ outer query ______________________________/
-  **
-  ** We look at every expression in the outer query and every place we see
-  ** "a" we substitute "x*3" and every place we see "b" we substitute "y+10".
-  */
-  pList = p->pEList;
-  for(i=0; i<pList->nExpr; i++){
-    Expr *pExpr;
-    if( pList->a[i].zName==0 && (pExpr = pList->a[i].pExpr)->span.z!=0 ){
-      pList->a[i].zName = 
-             sqlite3DbStrNDup(db, (char*)pExpr->span.z, pExpr->span.n);
+  
+    /* Now begin substituting subquery result set expressions for 
+    ** references to the iParent in the outer query.
+    ** 
+    ** Example:
+    **
+    **   SELECT a+5, b*10 FROM (SELECT x*3 AS a, y+10 AS b FROM t1) WHERE a>b;
+    **   \                     \_____________ subquery __________/          /
+    **    \_____________________ outer query ______________________________/
+    **
+    ** We look at every expression in the outer query and every place we see
+    ** "a" we substitute "x*3" and every place we see "b" we substitute "y+10".
+    */
+    pList = pParent->pEList;
+    for(i=0; i<pList->nExpr; i++){
+      Expr *pExpr;
+      if( pList->a[i].zName==0 && (pExpr = pList->a[i].pExpr)->span.z!=0 ){
+        pList->a[i].zName = 
+               sqlite3DbStrNDup(db, (char*)pExpr->span.z, pExpr->span.n);
+      }
     }
-  }
-  substExprList(db, p->pEList, iParent, pSub->pEList);
-  if( isAgg ){
-    substExprList(db, p->pGroupBy, iParent, pSub->pEList);
-    substExpr(db, p->pHaving, iParent, pSub->pEList);
-  }
-  if( pSub->pOrderBy ){
-    assert( p->pOrderBy==0 );
-    p->pOrderBy = pSub->pOrderBy;
-    pSub->pOrderBy = 0;
-  }else if( p->pOrderBy ){
-    substExprList(db, p->pOrderBy, iParent, pSub->pEList);
-  }
-  if( pSub->pWhere ){
-    pWhere = sqlite3ExprDup(db, pSub->pWhere);
-  }else{
-    pWhere = 0;
-  }
-  if( subqueryIsAgg ){
-    assert( p->pHaving==0 );
-    p->pHaving = p->pWhere;
-    p->pWhere = pWhere;
-    substExpr(db, p->pHaving, iParent, pSub->pEList);
-    p->pHaving = sqlite3ExprAnd(db, p->pHaving, 
-                                sqlite3ExprDup(db, pSub->pHaving));
-    assert( p->pGroupBy==0 );
-    p->pGroupBy = sqlite3ExprListDup(db, pSub->pGroupBy);
-  }else{
-    substExpr(db, p->pWhere, iParent, pSub->pEList);
-    p->pWhere = sqlite3ExprAnd(db, p->pWhere, pWhere);
-  }
-
-  /* The flattened query is distinct if either the inner or the
-  ** outer query is distinct. 
-  */
-  p->isDistinct = p->isDistinct || pSub->isDistinct;
-
-  /*
-  ** SELECT ... FROM (SELECT ... LIMIT a OFFSET b) LIMIT x OFFSET y;
-  **
-  ** One is tempted to try to add a and b to combine the limits.  But this
-  ** does not work if either limit is negative.
-  */
-  if( pSub->pLimit ){
-    p->pLimit = pSub->pLimit;
-    pSub->pLimit = 0;
+    substExprList(db, pParent->pEList, iParent, pSub->pEList);
+    if( isAgg ){
+      substExprList(db, pParent->pGroupBy, iParent, pSub->pEList);
+      substExpr(db, pParent->pHaving, iParent, pSub->pEList);
+    }
+    if( pSub->pOrderBy ){
+      assert( pParent->pOrderBy==0 );
+      pParent->pOrderBy = pSub->pOrderBy;
+      pSub->pOrderBy = 0;
+    }else if( pParent->pOrderBy ){
+      substExprList(db, pParent->pOrderBy, iParent, pSub->pEList);
+    }
+    if( pSub->pWhere ){
+      pWhere = sqlite3ExprDup(db, pSub->pWhere);
+    }else{
+      pWhere = 0;
+    }
+    if( subqueryIsAgg ){
+      assert( pParent->pHaving==0 );
+      pParent->pHaving = pParent->pWhere;
+      pParent->pWhere = pWhere;
+      substExpr(db, pParent->pHaving, iParent, pSub->pEList);
+      pParent->pHaving = sqlite3ExprAnd(db, pParent->pHaving, 
+                                  sqlite3ExprDup(db, pSub->pHaving));
+      assert( pParent->pGroupBy==0 );
+      pParent->pGroupBy = sqlite3ExprListDup(db, pSub->pGroupBy);
+    }else{
+      substExpr(db, pParent->pWhere, iParent, pSub->pEList);
+      pParent->pWhere = sqlite3ExprAnd(db, pParent->pWhere, pWhere);
+    }
+  
+    /* The flattened query is distinct if either the inner or the
+    ** outer query is distinct. 
+    */
+    pParent->isDistinct = pParent->isDistinct || pSub->isDistinct;
+  
+    /*
+    ** SELECT ... FROM (SELECT ... LIMIT a OFFSET b) LIMIT x OFFSET y;
+    **
+    ** One is tempted to try to add a and b to combine the limits.  But this
+    ** does not work if either limit is negative.
+    */
+    if( pSub->pLimit ){
+      pParent->pLimit = pSub->pLimit;
+      pSub->pLimit = 0;
+    }
   }
 
   /* Finially, delete what is left of the subquery and return
   ** success.
   */
-  sqlite3SelectDelete(pSub);
+  sqlite3SelectDelete(pSub1);
+
   return 1;
 }
 #endif /* SQLITE_OMIT_VIEW */
@@ -3671,29 +3742,6 @@ int sqlite3Select(
   p->pOrderBy = pOrderBy;
 
 
-#ifndef SQLITE_OMIT_COMPOUND_SELECT
-  /* If there is are a sequence of queries, do the earlier ones first.
-  */
-  if( p->pPrior ){
-    if( p->pRightmost==0 ){
-      Select *pLoop, *pRight = 0;
-      int cnt = 0;
-      int mxSelect;
-      for(pLoop=p; pLoop; pLoop=pLoop->pPrior, cnt++){
-        pLoop->pRightmost = p;
-        pLoop->pNext = pRight;
-        pRight = pLoop;
-      }
-      mxSelect = db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT];
-      if( mxSelect && cnt>mxSelect ){
-        sqlite3ErrorMsg(pParse, "too many terms in compound SELECT");
-        return 1;
-      }
-    }
-    return multiSelect(pParse, p, pDest, aff);
-  }
-#endif
-
   /* Make local copies of the parameters for this query.
   */
   pTabList = p->pSrc;
@@ -3730,10 +3778,11 @@ int sqlite3Select(
   /* Generate code for all sub-queries in the FROM clause
   */
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
-  for(i=0; i<pTabList->nSrc; i++){
+  for(i=0; !p->pPrior && i<pTabList->nSrc; i++){
     struct SrcList_item *pItem = &pTabList->a[i];
     SelectDest dest;
     Select *pSub = pItem->pSelect;
+    int isAggSub;
 
     if( pSub==0 || pItem->isPopulated ) continue;
     if( pItem->zName!=0 ){   /* An sql view */
@@ -3756,8 +3805,9 @@ int sqlite3Select(
     pParse->nHeight += sqlite3SelectExprHeight(p);
 
     /* Check to see if the subquery can be absorbed into the parent. */
-    if( !pSub->pPrior && flattenSubquery(db, p, i, isAgg, pSub->isAgg) ){
-      if( pSub->isAgg ){
+    isAggSub = pSub->isAgg;
+    if( flattenSubquery(db, p, i, isAgg, isAggSub) ){
+      if( isAggSub ){
         p->isAgg = isAgg = 1;
       }
       i = -1;
@@ -3780,6 +3830,29 @@ int sqlite3Select(
   pGroupBy = p->pGroupBy;
   pHaving = p->pHaving;
   isDistinct = p->isDistinct;
+
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
+  /* If there is are a sequence of queries, do the earlier ones first.
+  */
+  if( p->pPrior ){
+    if( p->pRightmost==0 ){
+      Select *pLoop, *pRight = 0;
+      int cnt = 0;
+      int mxSelect;
+      for(pLoop=p; pLoop; pLoop=pLoop->pPrior, cnt++){
+        pLoop->pRightmost = p;
+        pLoop->pNext = pRight;
+        pRight = pLoop;
+      }
+      mxSelect = db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT];
+      if( mxSelect && cnt>mxSelect ){
+        sqlite3ErrorMsg(pParse, "too many terms in compound SELECT");
+        return 1;
+      }
+    }
+    return multiSelect(pParse, p, pDest, aff);
+  }
+#endif
 
   /* If possible, rewrite the query to use GROUP BY instead of DISTINCT.
   ** GROUP BY may use an index, DISTINCT never does.
