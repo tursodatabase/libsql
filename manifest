@@ -1,5 +1,5 @@
-C Call\sthe\sauthorizer\scallback\sthe\ssame\snumber\sof\stimes\swhether\sor\snot\sthe\squery\sflattening\soccurs.\s(CVS\s5338)
-D 2008-07-02T13:13:52
+C Fix\sa\smemory\sleak\sthat\scan\soccur\sfollowing\sa\smalloc\sfailure.\s(CVS\s5339)
+D 2008-07-02T16:10:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/pragma.c 9a95f5b3708f6d3ddd987eab5f369a19ffcb6795
 F src/prepare.c aba51dad52308e3d9d2074d8ff4e612e7f1cab51
 F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c 31c8ab4c9514981d33d85cb29e2abedfb531a7ea
+F src/select.c 3e44f3910660ab63c690d2a4eac5449ae48ce96b
 F src/shell.c 484e7297e066f22830f9c15d7abbcdd2acb097b0
 F src/sqlite.h.in 76c144d23f8824e8811e837e9396b9f1361f5902
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -596,7 +596,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8f9d1abb315a3d4aa3a580fd5cf3ae572cc330f4
-R d5d889c70567d9d659ef03a502196b4b
+P 8b88b64bb37df4e38cbfe31a14c219688b26e2af
+R 3c07f799f108d6a630b004c233775cb0
 U danielk1977
-Z 6abe9fcc0b95c3c5d712e076cf4d4e5d
+Z 072ebff2803ed385439d23a8fd8e0c8e
