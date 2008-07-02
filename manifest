@@ -1,5 +1,5 @@
-C Fix\serrors\sin\sin.test.\sAlso\sadd\sa\sfew\stests\sto\sselectB.test.\s(CVS\s5337)
-D 2008-07-01T18:26:50
+C Call\sthe\sauthorizer\scallback\sthe\ssame\snumber\sof\stimes\swhether\sor\snot\sthe\squery\sflattening\soccurs.\s(CVS\s5338)
+D 2008-07-02T13:13:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/pragma.c 9a95f5b3708f6d3ddd987eab5f369a19ffcb6795
 F src/prepare.c aba51dad52308e3d9d2074d8ff4e612e7f1cab51
 F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c 154b3feee700273671b74a8436c31331309171e5
+F src/select.c 31c8ab4c9514981d33d85cb29e2abedfb531a7ea
 F src/shell.c 484e7297e066f22830f9c15d7abbcdd2acb097b0
 F src/sqlite.h.in 76c144d23f8824e8811e837e9396b9f1361f5902
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -206,8 +206,8 @@ F test/attach.test 4ab582932e3c815689f61afcdb9bce245f0bac53
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test 7b92dc8e40c1ebca9732ca6f2d3fefbd46f196df
 F test/attachmalloc.test 56c5e55563dba6d64641ef2f70ce06900df16912
-F test/auth.test 100cde29a9913530994289038ec80ef5f63d38d3
-F test/auth2.test 65ac294b8d52cbdd463f61e77ad0165268373126
+F test/auth.test 9eb4b6b99eee54c95711c74c4b9694acf4d850ed
+F test/auth2.test ee3ba272e2b975e913afc9b041ee75706e190005
 F test/autoinc.test 42af2c407c4e37d0626f9cda57ed381e94522c9d
 F test/autovacuum.test 4339e66003b9cf813dd667a83aed2dee27c4c36d
 F test/autovacuum_ioerr2.test dc189f323cf0546289b5a9bbda60bcb1fe52bd4b
@@ -596,7 +596,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 56109b9a1f600ab3f16769aba0d47dcf782bbc95
-R 7cae1eb722ade0f7563a43911c2df151
+P 8f9d1abb315a3d4aa3a580fd5cf3ae572cc330f4
+R d5d889c70567d9d659ef03a502196b4b
 U danielk1977
-Z 24db410bfd4f0e01c8ce47ef0672d11f
+Z 6abe9fcc0b95c3c5d712e076cf4d4e5d

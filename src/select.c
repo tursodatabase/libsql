@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.445 2008/07/01 18:26:50 danielk1977 Exp $
+** $Id: select.c,v 1.446 2008/07/02 13:13:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -3085,12 +3085,13 @@ static void substSelect(
 ** the subquery before this routine runs.
 */
 static int flattenSubquery(
-  sqlite3 *db,         /* Database connection */
+  Parse *pParse,       /* Parsing context */
   Select *p,           /* The parent or outer SELECT statement */
   int iFrom,           /* Index in p->pSrc->a[] of the inner subquery */
   int isAgg,           /* True if outer SELECT uses aggregate functions */
   int subqueryIsAgg    /* True if the subquery uses aggregate functions */
 ){
+  const char *zSavedAuthContext = pParse->zAuthContext;
   Select *pParent;
   Select *pSub;       /* The inner query or "subquery" */
   Select *pSub1;      /* Pointer to the rightmost select in sub-query */
@@ -3101,6 +3102,7 @@ static int flattenSubquery(
   int i;              /* Loop counter */
   Expr *pWhere;                    /* The WHERE clause */
   struct SrcList_item *pSubitem;   /* The subquery */
+  sqlite3 *db = pParse->db;
 
   /* Check to see if flattening is permitted.  Return 0 if not.
   */
@@ -3184,6 +3186,10 @@ static int flattenSubquery(
       }
     }
   }
+
+  pParse->zAuthContext = pSubitem->zName;
+  sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0);
+  pParse->zAuthContext = zSavedAuthContext;
 
   /* If the sub-query is a compound SELECT statement, then it must be
   ** a UNION ALL and the parent query must be of the form:
@@ -3787,11 +3793,12 @@ int sqlite3Select(
     SelectDest dest;
     Select *pSub = pItem->pSelect;
     int isAggSub;
+    char *zName = pItem->zName;
 
     if( pSub==0 || pItem->isPopulated ) continue;
-    if( pItem->zName!=0 ){   /* An sql view */
+    if( zName!=0 ){   /* An sql view */
       const char *zSavedAuthContext = pParse->zAuthContext;
-      pParse->zAuthContext = pItem->zName;
+      pParse->zAuthContext = zName;
       rc = sqlite3SelectResolve(pParse, pSub, 0);
       pParse->zAuthContext = zSavedAuthContext;
       if( rc ){
@@ -3810,7 +3817,7 @@ int sqlite3Select(
 
     /* Check to see if the subquery can be absorbed into the parent. */
     isAggSub = pSub->isAgg;
-    if( flattenSubquery(db, p, i, isAgg, isAggSub) ){
+    if( flattenSubquery(pParse, p, i, isAgg, isAggSub) ){
       if( isAggSub ){
         p->isAgg = isAgg = 1;
       }
@@ -3819,7 +3826,7 @@ int sqlite3Select(
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
       sqlite3Select(pParse, pSub, &dest, p, i, &isAgg, 0);
     }
-    if( db->mallocFailed ){
+    if( pParse->nErr || db->mallocFailed ){
       goto select_end;
     }
     pParse->nHeight -= sqlite3SelectExprHeight(p);

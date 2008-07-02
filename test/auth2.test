@@ -12,7 +12,7 @@
 # focus of this script is testing the sqlite3_set_authorizer() API
 # and related functionality.
 #
-# $Id: auth2.test,v 1.2 2007/10/12 20:42:30 drh Exp $
+# $Id: auth2.test,v 1.3 2008/07/02 13:13:53 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -131,11 +131,11 @@ do_test auth2-2.3 {
 } {SQLITE_SELECT {} {} {} {}
 SQLITE_READ v2 a main {}
 SQLITE_READ v2 b main {}
-SQLITE_SELECT {} {} {} v2
 SQLITE_READ t2 x main v2
 SQLITE_READ t2 y main v2
 SQLITE_READ t2 y main v2
 SQLITE_READ t2 z main v2
+SQLITE_SELECT {} {} {} v2
 }
 do_test auth2-2.4 {
   db2 eval {
@@ -149,19 +149,19 @@ do_test auth2-2.4 {
 } {SQLITE_SELECT {} {} {} {}
 SQLITE_READ v2 b main {}
 SQLITE_READ v2 a main {}
-SQLITE_SELECT {} {} {} v2
 SQLITE_READ t2 x main v2
 SQLITE_READ t2 y main v2
 SQLITE_READ t2 y main v2
 SQLITE_READ t2 z main v2
+SQLITE_SELECT {} {} {} v2
 SQLITE_SELECT {} {} {} {}
 SQLITE_READ v2 b main {}
 SQLITE_READ v2 a main {}
-SQLITE_SELECT {} {} {} v2
 SQLITE_READ t2 x main v2
 SQLITE_READ t2 y main v2
 SQLITE_READ t2 y main v2
 SQLITE_READ t2 z main v2
+SQLITE_SELECT {} {} {} v2
 }
 db2 close
 
