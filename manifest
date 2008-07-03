@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sthat\scan\soccur\sfollowing\sa\smalloc\sfailure.\s(CVS\s5339)
-D 2008-07-02T16:10:46
+C fts3\sfunctions\sfor\stesting\sscripts.\s\sThese\sare\sa\sfirst\sstep\stowards\nbeing\sable\sto\swrite\stest\sscript\swhich\sverify\sthat\sfts3\sis\sinternally\nbuilding\sindices\sin\sthe\sexpected\sway.\s\sBoth\snew\sfunctions\sare\sonly\ndefined\sif\sfts3.c\sis\scompiled\swith\sSQLITE_TEST\sdefined,\sas\swhen\nbuilding\stestfixture.\s\sThese\sfunctions\sare\snot\sintended\sto\sbe\spart\sof\nthe\sexposed\sfts3\sAPI.\n\ndump_terms()\sgenerates\sa\sTEXT\sresult\sof\sall\sthe\sterms\sin\sthe\sindex\s(or\na\sspecified\ssegment),\ssorted\sand\sjoined\swith\sspaces.\n\ndump_doclist()\sgenerates\sa\sTEXT\srepresentation\sof\sthe\sdoclist\nassociated\swith\sa\sgiven\sterm\sin\sthe\sindex\s(or\sa\sspecified\ssegment).\s(CVS\s5340)
+D 2008-07-03T19:53:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -51,7 +51,7 @@ F ext/fts2/fts2_tokenizer1.c 8a545c232bdffafd117c4eeaf59789691909f26a
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.tokenizers 226644a0eab97724e8de83061912e8bb248461b6
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 9f52ff22ca64172a4e508de30994e9e811b205e0
+F ext/fts3/fts3.c 192a65d39c2904873c13dc7a8e50b00cd190ec3a
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3_hash.c 83e7bb4042106b32811681dd2859b4577a7a6b35
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
@@ -327,6 +327,7 @@ F test/fts3an.test 4b4fdab5abe2f308bdc47f6e822df2bcae30361c
 F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
+F test/fts3c.test 4c7ef29b37aca3e8ebb6a39b57910caa6506034e
 F test/fts3near.test 2d4dadcaac5025ab65bb87e66c45f39e92966194
 F test/func.test 7cc20ab84558911cc77e95ae62b2af31b1b48ad2
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
@@ -596,7 +597,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8b88b64bb37df4e38cbfe31a14c219688b26e2af
-R 3c07f799f108d6a630b004c233775cb0
-U danielk1977
-Z 072ebff2803ed385439d23a8fd8e0c8e
+P cec4eba1a105396c5fd5d2b664456f6d6be3f215
+R 2994d09a5d3d78a35346e2b1b6bff7bc
+U shess
+Z 7b70c642c4bfeb309fc7899215c4dbcd
