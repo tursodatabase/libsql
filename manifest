@@ -1,5 +1,5 @@
-C Fix\sfor\sexplicitly\sinserting\sa\sNULL\svalue\sinto\sthe\srowid\scolumn\sof\sa\svirtual\stable.\s(CVS\s5343)
-D 2008-07-04T10:56:08
+C Fix\sa\sbug\sin\sbtree.c\sthat\scaused\sit\sto\sreport\sa\sdatabase\sas\sbeing\ncorrupt\sif\sit\sused\sone\sof\sthe\slast\s6\sslots\sin\sa\sfreelist\strunk\spage.\nContinue\sto\snever\suse\sthose\slast\s6\sslots\sso\sthat\sdatabases\sfrom\snewer\nversions\sare\sstill\sreadable\swith\solder\sversions.\s(CVS\s5344)
+D 2008-07-04T17:52:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c dd7b7a92fe9a0e950279e86a771bb522adb6a86b
+F src/btree.c e00268557794be741e26cbca1cd77aa37e53b1cc
 F src/btree.h b1bd7e0b8c2e33658aaf447cb0d1d94f74664b6b
 F src/btreeInt.h 02325f04758dba0fcd0c08ac55cd9b189dad61a5
 F src/build.c 88cc5501a87f72d0538b040001d88d31f994edea
@@ -598,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 212d05d38c8126f99c028c5ab021b219487fa01e
-R 05b4445ad462e1bc7a4f23619c79cabb
-U danielk1977
-Z ef13a447ae3cb8c8f3ec0022bfd3fe35
+P a7f3b431669f7392a6acba8cd8f3fa5297a916b5
+R 4ce10b31fd2cef40edfbb643bb66a36c
+U drh
+Z b35f68dfaeeab8333199ab46961442d2

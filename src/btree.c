@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.470 2008/06/28 15:33:25 danielk1977 Exp $
+** $Id: btree.c,v 1.471 2008/07/04 17:52:43 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4051,7 +4051,7 @@ static int allocateBtreePage(
         *ppPage = pTrunk;
         pTrunk = 0;
         TRACE(("ALLOCATE: %d trunk - %d free pages left\n", *pPgno, n-1));
-      }else if( k>pBt->usableSize/4 - 8 ){
+      }else if( k>pBt->usableSize/4 - 2 ){
         /* Value of k is out of range.  Database corruption */
         rc = SQLITE_CORRUPT_BKPT;
         goto end_allocate_page;
@@ -4271,7 +4271,19 @@ static int freePage(MemPage *pPage){
     k = get4byte(&pTrunk->aData[4]);
     if( k>=pBt->usableSize/4 - 8 ){
       /* The trunk is full.  Turn the page being freed into a new
-      ** trunk page with no leaves. */
+      ** trunk page with no leaves.
+      **
+      ** Note that the trunk page is not really full until it contains
+      ** usableSize/4 - 2 entries, not usableSize/4 - 8 entries as we have
+      ** coded.  But due to a coding error in versions of SQLite prior to
+      ** 3.6.0, databases with freelist trunk pages holding more than
+      ** usableSize/4 - 8 entries will be reported as corrupt.  In order
+      ** to maintain backwards compatibility with older versions of SQLite,
+      ** we will contain to restrict the number of entries to usableSize/4 - 8
+      ** for now.  At some point in the future (once everyone has upgraded
+      ** to 3.6.0 or later) we should consider fixing the conditional above
+      ** to read "usableSize/4-2" instead of "usableSize/4-8".
+      */
       rc = sqlite3PagerWrite(pPage->pDbPage);
       if( rc==SQLITE_OK ){
         put4byte(pPage->aData, pTrunk->pgno);
@@ -6498,7 +6510,7 @@ static void checkList(
         checkPtrmap(pCheck, iPage, PTRMAP_FREEPAGE, 0, zContext);
       }
 #endif
-      if( n>pCheck->pBt->usableSize/4-8 ){
+      if( n>pCheck->pBt->usableSize/4-2 ){
         checkAppendMsg(pCheck, zContext,
            "freelist leaf count too big on page %d", iPage);
         N--;
