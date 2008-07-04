@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.381 2008/06/27 00:52:45 drh Exp $
+** $Id: expr.c,v 1.382 2008/07/04 09:15:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3568,6 +3568,7 @@ int sqlite3GetTempReg(Parse *pParse){
 }
 void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
   if( iReg && pParse->nTempReg<ArraySize(pParse->aTempReg) ){
+    sqlite3ExprWritableRegister(pParse, iReg, iReg);
     pParse->aTempReg[pParse->nTempReg++] = iReg;
   }
 }

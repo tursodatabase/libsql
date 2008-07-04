@@ -1,0 +1,76 @@
+# 2008 July 4
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. 
+# Specifically, it tests that bug #3201 has been fixed.
+#
+# $Id: tkt3201.test,v 1.1 2008/07/04 09:15:11 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_test tkt3201-1 {
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+    INSERT INTO t1 VALUES(1, 'one');
+    INSERT INTO t1 VALUES(2, 'two');
+  }
+} {}
+
+do_test tkt3201-2 {
+  execsql {
+    SELECT l.a, r.a FROM t1 AS l, t1 AS r WHERE l.a < r.a;
+  }
+} {1 2}
+
+do_test tkt3201-3 {
+  execsql {
+    CREATE TABLE t2(a INTEGER PRIMARY KEY, b TEXT);
+    INSERT INTO t2 VALUES(2, 'two');
+  }
+  execsql {
+    SELECT l.a, r.a FROM t1 AS l, t2 AS r WHERE l.a < r.a;
+  }
+} {1 2}
+
+do_test tkt3201-4 {
+  execsql {
+    DELETE FROM t1 WHERE a = 2;
+  }
+  execsql {
+    SELECT l.a, r.a FROM t1 AS l, t2 AS r WHERE l.a < r.a;
+  }
+} {1 2}
+
+do_test tkt3201-5 {
+  execsql {
+    DELETE FROM t1 WHERE a = 2;
+  }
+  execsql {
+    SELECT t1.a, t1.b, t2.a, t2.b FROM t1, t2;
+  }
+} {1 one 2 two}
+
+do_test tkt3201-6 {
+  execsql {
+    CREATE TABLE t3(c INTEGER PRIMARY KEY, d TEXT);
+    INSERT INTO t3 VALUES(2, 'two');
+  }
+  execsql { SELECT a, b, c, d FROM t1, t3 }
+} {1 one 2 two}
+
+do_test tkt3201-7 {
+  explain { SELECT a, b, c, d FROM t1, t3 WHERE a < c }
+  execsql { SELECT a, b, c, d FROM t1, t3 WHERE a < c }
+} {1 one 2 two}
+
+finish_test
+
+

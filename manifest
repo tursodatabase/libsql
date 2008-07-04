@@ -1,5 +1,5 @@
-C fts3\sfunctions\sfor\stesting\sscripts.\s\sThese\sare\sa\sfirst\sstep\stowards\nbeing\sable\sto\swrite\stest\sscript\swhich\sverify\sthat\sfts3\sis\sinternally\nbuilding\sindices\sin\sthe\sexpected\sway.\s\sBoth\snew\sfunctions\sare\sonly\ndefined\sif\sfts3.c\sis\scompiled\swith\sSQLITE_TEST\sdefined,\sas\swhen\nbuilding\stestfixture.\s\sThese\sfunctions\sare\snot\sintended\sto\sbe\spart\sof\nthe\sexposed\sfts3\sAPI.\n\ndump_terms()\sgenerates\sa\sTEXT\sresult\sof\sall\sthe\sterms\sin\sthe\sindex\s(or\na\sspecified\ssegment),\ssorted\sand\sjoined\swith\sspaces.\n\ndump_doclist()\sgenerates\sa\sTEXT\srepresentation\sof\sthe\sdoclist\nassociated\swith\sa\sgiven\sterm\sin\sthe\sindex\s(or\sa\sspecified\ssegment).\s(CVS\s5340)
-D 2008-07-03T19:53:22
+C Remove\sreferences\sto\stemporary\sregisters\sfrom\sthe\scompiler\scolumn-cache\swhen\ssuch\sregisters\sare\sreleased.\sFix\sfor\s#3201.\s(CVS\s5341)
+D 2008-07-04T09:15:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/callback.c 3ba98ae46f60aa7c2c40eac7d18fe5ba9b706b83
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e841168e5520bbbb2a1cbcdce7531d8b23017b4d
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
-F src/expr.c 0e65125e99a25a293d569f094e4b182b220a4f22
+F src/expr.c 88737070caff1c85f3336c53c3dc7ca360b00da6
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c 1e7d9569570134ac0771a00382d9d4b41c4aa052
 F src/global.c 2304cfa3288763bd2fed10caf8c6fbaa2b383f4e
@@ -526,6 +526,7 @@ F test/tkt2942.test c5c87d179799ca6d1fbe83c815510b87cd5ec7ce
 F test/tkt3080.test 31a02e87a4c80ed443831c2c5b0e8216ff95ac14
 F test/tkt3093.test fbdbc5b4969244ad11f540759003e361fcaf391f
 F test/tkt3121.test 9da9c57b75c9dbebae70eb19f458bbc616d04280
+F test/tkt3201.test f2a40b04bb769087b88acca9a17f5874254698f6
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -597,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cec4eba1a105396c5fd5d2b664456f6d6be3f215
-R 2994d09a5d3d78a35346e2b1b6bff7bc
-U shess
-Z 7b70c642c4bfeb309fc7899215c4dbcd
+P a48e3d95f7a656285e959cef595cbe6d53428ad9
+R 15ada11bb606ce47c95f2a4cfe32122e
+U danielk1977
+Z 51ba53ad7e27ba8ada3bf3fd25b9e527
