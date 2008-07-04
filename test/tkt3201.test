@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library. 
 # Specifically, it tests that bug #3201 has been fixed.
 #
-# $Id: tkt3201.test,v 1.1 2008/07/04 09:15:11 danielk1977 Exp $
+# $Id: tkt3201.test,v 1.2 2008/07/04 10:56:08 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -67,9 +67,9 @@ do_test tkt3201-6 {
 } {1 one 2 two}
 
 do_test tkt3201-7 {
-  explain { SELECT a, b, c, d FROM t1, t3 WHERE a < c }
   execsql { SELECT a, b, c, d FROM t1, t3 WHERE a < c }
 } {1 one 2 two}
+
 
 finish_test
 

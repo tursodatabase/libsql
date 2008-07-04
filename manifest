@@ -1,5 +1,5 @@
-C Remove\sredundant\scode\sfrom\ssqlite3GetTempReg().\s(CVS\s5342)
-D 2008-07-04T09:41:39
+C Fix\sfor\sexplicitly\sinserting\sa\sNULL\svalue\sinto\sthe\srowid\scolumn\sof\sa\svirtual\stable.\s(CVS\s5343)
+D 2008-07-04T10:56:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -110,7 +110,7 @@ F src/global.c 2304cfa3288763bd2fed10caf8c6fbaa2b383f4e
 F src/hash.c eb64e48f3781100e5934f759fbe72a63a8fe78cb
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
 F src/hwtime.h 745961687a65ef8918cd551c02e5ccb4b8e772de
-F src/insert.c f8c7da31409ec19a769b960a4a2b9cca7bab80bd
+F src/insert.c 9af927a81fdc99624130dc83722b3ab6364035a6
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 40024a0f476c1279494876b9a002001b29e5d3e3
@@ -526,7 +526,7 @@ F test/tkt2942.test c5c87d179799ca6d1fbe83c815510b87cd5ec7ce
 F test/tkt3080.test 31a02e87a4c80ed443831c2c5b0e8216ff95ac14
 F test/tkt3093.test fbdbc5b4969244ad11f540759003e361fcaf391f
 F test/tkt3121.test 9da9c57b75c9dbebae70eb19f458bbc616d04280
-F test/tkt3201.test f2a40b04bb769087b88acca9a17f5874254698f6
+F test/tkt3201.test 5b16303169c2262d78586679ae8884337e5fc9a8
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -552,7 +552,7 @@ F test/vacuum3.test 6149b24613f487915ca9cedfbb9147d5759714ec
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test fdd8108de66eec378291d9a0e46e30d129eef1ca
 F test/view.test 041ccaf4c96f6c90d564c9ea37d1c1fa21fdb470
-F test/vtab1.test 47092e3ac59141f08e09a6c0cc0df8997242bc79
+F test/vtab1.test 4421276b9010022d623879531a05a58fefaad771
 F test/vtab2.test 1da49b015582965a8fc386aa23d051a5a622b08e
 F test/vtab3.test f38d6d7d19f08bffdadce4d5b8cba078f8118587
 F test/vtab4.test a9d7104d41a787754a734740d7aa61c807a69f87
@@ -598,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f099d6773a837dbe4ba85a8fda818e2d9466e743
-R 50f400c9772d85c2c24551ddc1a0402e
+P 212d05d38c8126f99c028c5ab021b219487fa01e
+R 05b4445ad462e1bc7a4f23619c79cabb
 U danielk1977
-Z 7224db38772dcdb44aa2d3e38e2dec82
+Z ef13a447ae3cb8c8f3ec0022bfd3fe35
