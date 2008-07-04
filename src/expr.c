@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.382 2008/07/04 09:15:11 danielk1977 Exp $
+** $Id: expr.c,v 1.383 2008/07/04 09:41:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3549,22 +3549,10 @@ void sqlite3ExprAnalyzeAggList(NameContext *pNC, ExprList *pList){
 ** Allocate or deallocate temporary use registers during code generation.
 */
 int sqlite3GetTempReg(Parse *pParse){
-  int i, r;
   if( pParse->nTempReg==0 ){
     return ++pParse->nMem;
   }
-  for(i=0; i<pParse->nTempReg; i++){
-    r = pParse->aTempReg[i];
-    if( usedAsColumnCache(pParse, r, r) ) continue;
-  }
-  if( i>=pParse->nTempReg ){
-    return ++pParse->nMem;
-  }
-  while( i<pParse->nTempReg-1 ){
-    pParse->aTempReg[i] = pParse->aTempReg[i+1];
-  }
-  pParse->nTempReg--;
-  return r;
+  return pParse->aTempReg[--pParse->nTempReg];
 }
 void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
   if( iReg && pParse->nTempReg<ArraySize(pParse->aTempReg) ){
