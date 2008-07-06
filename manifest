@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sbtree.c\sthat\scaused\sit\sto\sreport\sa\sdatabase\sas\sbeing\ncorrupt\sif\sit\sused\sone\sof\sthe\slast\s6\sslots\sin\sa\sfreelist\strunk\spage.\nContinue\sto\snever\suse\sthose\slast\s6\sslots\sso\sthat\sdatabases\sfrom\snewer\nversions\sare\sstill\sreadable\swith\solder\sversions.\s(CVS\s5344)
-D 2008-07-04T17:52:43
+C Fail\sto\sbuild\sif\sthe\s-ffast-math\soption\sis\sspecified\sin\sGCC.\r\nTicket\s#3202.\s(CVS\s5345)
+D 2008-07-06T00:21:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -179,7 +179,7 @@ F src/tokenize.c d39f0d6ce75ca9d0fa4041baec42b5e0411a74fc
 F src/trigger.c 1e751f8d5ceeb328d26bf1ccfb2de50653670d49
 F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
-F src/util.c 920d6d5dfdf25f7b85d2093705d8716f9b387e3b
+F src/util.c aec21ebb1e21f6220af1237078b1723968803990
 F src/vacuum.c 14eb21b480924d87e791cd8ab6fb35ac563243ef
 F src/vdbe.c b1528683ff7ca1faf017db5ebedbc403e92d009b
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
@@ -598,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a7f3b431669f7392a6acba8cd8f3fa5297a916b5
-R 4ce10b31fd2cef40edfbb643bb66a36c
+P b8ff6b0a3dc2ccc51519c764a092822968a09b10
+R 1e8caeca3094e411c6ec680faf547d00
 U drh
-Z b35f68dfaeeab8333199ab46961442d2
+Z 8f3582bf1d287a7f6bf673d58093cb01

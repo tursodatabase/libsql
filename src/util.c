@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.232 2008/06/13 18:24:27 drh Exp $
+** $Id: util.c,v 1.233 2008/07/06 00:21:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -34,6 +34,9 @@ int sqlite3IsNaN(double x){
   **      which depend on an exact implementation of IEEE or ISO 
   **      rules/specifications for math functions.
   */
+#ifdef __FAST_MATH__
+# error SQLite will not work correctly with the -ffast-math option of GCC.
+#endif
   volatile double y = x;
   return x!=y;
 }
