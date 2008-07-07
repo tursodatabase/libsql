@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.460 2008/06/20 14:59:51 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.461 2008/07/07 11:18:28 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -269,6 +269,7 @@ struct PgHdr {
   short int nRef;                /* Number of users of this page */
   PgHdr *pDirty, *pPrevDirty;    /* Dirty pages */
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+  PgHdr *pPrevAll;               /* A list of all pages */
   PagerLruLink gfree;            /* Global list of nRef==0 pages */
 #endif
 #ifdef SQLITE_CHECK_PAGES
@@ -3336,10 +3337,20 @@ int sqlite3PagerReleaseMemory(int nReq){
       PgHdr *pTmp;
       assert( pPg );
       if( pPg==pPager->pAll ){
+         assert(pPg->pPrevAll==0);
+         assert(pPg->pNextAll==0 || pPg->pNextAll->pPrevAll==pPg);
          pPager->pAll = pPg->pNextAll;
+         if( pPager->pAll ){
+           pPager->pAll->pPrevAll = 0;
+         }
       }else{
-        for( pTmp=pPager->pAll; pTmp->pNextAll!=pPg; pTmp=pTmp->pNextAll ){}
-        pTmp->pNextAll = pPg->pNextAll;
+         assert(pPg->pPrevAll);
+         assert(pPg->pPrevAll->pNextAll==pPg);
+         pTmp = pPg->pPrevAll;
+         pTmp->pNextAll = pPg->pNextAll;
+         if( pTmp->pNextAll ){
+           pTmp->pNextAll->pPrevAll = pTmp;
+         }
       }
       nReleased += (
           sizeof(*pPg) + pPager->pageSize
@@ -3665,6 +3676,11 @@ static int pagerAllocatePage(Pager *pPager, PgHdr **ppPg){
     pPg->pData = pData;
     pPg->pPager = pPager;
     pPg->pNextAll = pPager->pAll;
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+    if( pPg->pNextAll ){
+      pPg->pNextAll->pPrevAll = pPg;
+    }
+#endif
     pPager->pAll = pPg;
     pPager->nPage++;
   }else{

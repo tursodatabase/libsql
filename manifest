@@ -1,5 +1,5 @@
-C Fail\sto\sbuild\sif\sthe\s-ffast-math\soption\sis\sspecified\sin\sGCC.\r\nTicket\s#3202.\s(CVS\s5345)
-D 2008-07-06T00:21:35
+C Make\sthe\sPager.pAll\slinked-list\sdoubly\slinked\swhen\sENABLE_MEMORY_MANAGEMENT\sis\sdefined.\sThis\sis\sused\sto\sspeed\sup\ssqlite3_release_memory().\s(CVS\s5346)
+D 2008-07-07T11:18:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -133,7 +133,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 38fd8cfb1c122c39e451d9f3e779c602283dba33
 F src/os_unix.c 3d19f0491e0b32e5b757c7e6f310f2f6d3aea3f4
 F src/os_win.c 2bf2f8cd700299564cc236262c2668e1e02c626a
-F src/pager.c e2a49872f1e15eb83895ace704c48ac8ded998ba
+F src/pager.c 4c4d0529a6546fda09e5703d4d3ec302c322fd6d
 F src/pager.h 6aa3050a3c684475a5a9dbad5ff1cebad612acba
 F src/parse.y 8c2c3145eebe1964eb279cb3c4e502eae28bb0fa
 F src/pragma.c 9a95f5b3708f6d3ddd987eab5f369a19ffcb6795
@@ -598,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b8ff6b0a3dc2ccc51519c764a092822968a09b10
-R 1e8caeca3094e411c6ec680faf547d00
-U drh
-Z 8f3582bf1d287a7f6bf673d58093cb01
+P aa5be9ee935ae2a45d78405e26bba2385a52563a
+R ba63b313f2ed3563fe3f6099626bd2ff
+U danielk1977
+Z 80a3ac3ae369b1b5cd11402682d1b216
