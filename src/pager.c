@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.461 2008/07/07 11:18:28 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.462 2008/07/07 18:42:41 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2651,6 +2651,9 @@ static void pager_truncate_cache(Pager *pPager){
       ppPg = &pPg->pNextAll;
     }else{
       *ppPg = pPg->pNextAll;
+      if( *ppPg ){
+        (*ppPg)->pPrevAll = pPg->pPrevAll;
+      }
       IOTRACE(("PGFREE %p %d\n", pPager, pPg->pgno));
       PAGER_INCR(sqlite3_pager_pgfree_count);
       unlinkPage(pPg);
