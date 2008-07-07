@@ -1,5 +1,5 @@
-C Fix\sa\scomment\sin\salter.c.\s\sNo\schanges\sto\scode.\s(CVS\s5347)
-D 2008-07-07T12:44:58
+C Add\sthe\svfs_unregister_all\sand\svfs_reregister_all\stest\scommands.\s\sUse\sthem\nto\stest\sthe\ssqlite3_sleep()\sinterface\swhen\sno\sVFSes\sare\sregistered.\s(CVS\s5348)
+D 2008-07-07T13:31:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -149,7 +149,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c 4dd9ee4cb44846ad9bcc4d0da8088c1e7d4b33d9
-F src/test1.c b96ef5465261a63c96870d1423660b170bf1dec3
+F src/test1.c 37de7addd16f4be291bfab25794704daee0ff532
 F src/test2.c c46d146019ab6e37474e66b3c789e5237d9ea7b7
 F src/test3.c 01ff03164cf6a2bededa3b44ecd481603e2644fc
 F src/test4.c ff4ecde3cafc71337b04e8cb7da5bb88e85d70e7
@@ -223,7 +223,7 @@ F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
 F test/capi2.test cc64df7560a96f848f919ea2926c60acf639684b
-F test/capi3.test 6312427a6034d4bb725411dbe0c7ec02f09a65f3
+F test/capi3.test b92ba9a889def7578da553b1a36f92b147244579
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
 F test/capi3c.test 208713e5f3a63442c3574c55b83baa7cf8ac5f28
 F test/capi3d.test 537de3a1f724862e327e02bb21b4a84f185dc1e2
@@ -598,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 71d699de366fc9c97d4a5122e2bf754310b9b34a
-R c7104d24bf193ab5bf7b15e1bf12efdc
+P 3e558acd5eb8aa5ef4681e62284af5c017a24a65
+R 1bf36cfd88471c9d49dd28f2d6350ddc
 U drh
-Z 5a0ac4ae85600990de53dfc94ccbbf85
+Z 6364bac1cd87c47b349e49eb6a625ea6

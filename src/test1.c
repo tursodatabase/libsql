@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.308 2008/06/28 11:23:00 danielk1977 Exp $
+** $Id: test1.c,v 1.309 2008/07/07 13:31:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4417,6 +4417,51 @@ static int vfs_unlink_test(
 }
 
 /*
+** Saved VFSes
+*/
+static sqlite3_vfs *apVfs[20];
+static int nVfs = 0;
+
+/*
+** tclcmd:   vfs_unregister_all
+**
+** Unregister all VFSes.
+*/
+static int vfs_unregister_all(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int i;
+  for(i=0; i<ArraySize(apVfs); i++){
+    apVfs[i] = sqlite3_vfs_find(0);
+    if( apVfs[i]==0 ) break;
+    sqlite3_vfs_unregister(apVfs[i]);
+  }
+  nVfs = i;
+  return TCL_OK;
+}
+/*
+** tclcmd:   vfs_reregister_all
+**
+** Restore all VFSes that were removed using vfs_unregister_all
+*/
+static int vfs_reregister_all(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int i;
+  for(i=0; i<nVfs; i++){
+    sqlite3_vfs_register(apVfs[i], i==0);
+  }
+  return TCL_OK;
+}
+
+
+/*
 ** tclcmd:   file_control_test DB
 **
 ** This TCL command runs the sqlite3_file_control interface and
@@ -4535,6 +4580,10 @@ static int test_limit(
 
 /*
 ** tclcmd:  save_prng_state
+**
+** Save the state of the pseudo-random number generator.
+** At the same time, verify that sqlite3_test_control works even when
+** called with an out-of-range opcode.
 */
 static int save_prng_state(
   ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
@@ -4542,6 +4591,10 @@ static int save_prng_state(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
+  int rc = sqlite3_test_control(9999);
+  assert( rc==0 );
+  rc = sqlite3_test_control(-1);
+  assert( rc==0 );
   sqlite3_test_control(SQLITE_TESTCTRL_PRNG_SAVE);
   return TCL_OK;
 }
@@ -4716,6 +4769,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_global_recover",     test_global_recover, 0   },
      { "working_64bit_int",          working_64bit_int,   0   },
      { "vfs_unlink_test",            vfs_unlink_test,     0   },
+     { "vfs_unregister_all",         vfs_unregister_all,  0   },
+     { "vfs_reregister_all",         vfs_reregister_all,  0   },
      { "file_control_test",          file_control_test,   0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },
 
