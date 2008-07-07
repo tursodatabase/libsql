@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.757 2008/07/07 14:56:57 danielk1977 Exp $
+** $Id: vdbe.c,v 1.758 2008/07/07 17:13:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2517,7 +2517,7 @@ case OP_Transaction: {
       p->rc = rc = SQLITE_BUSY;
       goto vdbe_return;
     }
-    if( rc!=SQLITE_OK && rc!=SQLITE_READONLY && /* rc!=SQLITE_BUSY */ ){
+    if( rc!=SQLITE_OK && rc!=SQLITE_READONLY /* && rc!=SQLITE_BUSY */ ){
       goto abort_due_to_error;
     }
   }

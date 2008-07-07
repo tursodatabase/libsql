@@ -1,5 +1,5 @@
-C Another\stest\scase\sto\stest\sa\sspecific\skind\sof\sdatabase\scorruption.\s(CVS\s5352)
-D 2008-07-07T17:04:23
+C Fix\san\serror\schecked\sin\sas\spart\sof\s(5350).\s(CVS\s5353)
+D 2008-07-07T17:13:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -181,7 +181,7 @@ F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
 F src/util.c aec21ebb1e21f6220af1237078b1723968803990
 F src/vacuum.c 14eb21b480924d87e791cd8ab6fb35ac563243ef
-F src/vdbe.c 8adaa7524e9a297718d3ef0395ec46752eb14943
+F src/vdbe.c fb6df1bd31a321647b4677f5d20716d8f7f71255
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
 F src/vdbeInt.h 30535c1d30ba1b5fb58d8f0e1d1261af976558aa
 F src/vdbeapi.c a7c6b8db324cf7eccff32de871dea36aa305c994
@@ -598,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cbb9536fc4fb2419e0eb6f3a32c67eeb7a73da82
-R 299fe13e17e3bd62ef5df1494e777b26
+P 38e04d67635d49661f9b95338fc1cb8197bf0bc7
+R 78060972ae886eae791f694f62a0db49
 U danielk1977
-Z 4ddebf708c0493772a69797365fbfc53
+Z 7cfb7b4d0ecbf47a8d1f1b2a4da8cfc3
