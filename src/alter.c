@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.44 2008/05/09 14:17:52 drh Exp $
+** $Id: alter.c,v 1.45 2008/07/07 12:44:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -55,7 +55,7 @@ static void renameTableFunc(
 
   /* The principle used to locate the table name in the CREATE TABLE 
   ** statement is that the table name is the first non-space token that
-  ** is immediately followed by a left parenthesis - TK_LP - or "USING" TK_USING.
+  ** is immediately followed by a TK_LP or TK_USING token.
   */
   if( zSql ){
     do {

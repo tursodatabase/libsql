@@ -1,5 +1,5 @@
-C Make\sthe\sPager.pAll\slinked-list\sdoubly\slinked\swhen\sENABLE_MEMORY_MANAGEMENT\sis\sdefined.\sThis\sis\sused\sto\sspeed\sup\ssqlite3_release_memory().\s(CVS\s5346)
-D 2008-07-07T11:18:28
+C Fix\sa\scomment\sin\salter.c.\s\sNo\schanges\sto\scode.\s(CVS\s5347)
+D 2008-07-07T12:44:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -89,7 +89,7 @@ F sqlite.pc.in c322c6244c6395955dca34d87955aabde7df7623
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a1be7b9a4b8b51ac41c6ff6e8e44a14ef66b338b
 F sqlite3.pc.in 32b8a014799c2028c8e0c9cc5659718262fc493f
-F src/alter.c cc38b9e2a8cf19428f64e5da7ec4da35b7c02779
+F src/alter.c c74accc33dcc7dd03496b338face06a4c4d988c2
 F src/analyze.c 9ee63497ee720728abe630d169ab91323ac7519c
 F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
@@ -598,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P aa5be9ee935ae2a45d78405e26bba2385a52563a
-R ba63b313f2ed3563fe3f6099626bd2ff
-U danielk1977
-Z 80a3ac3ae369b1b5cd11402682d1b216
+P 71d699de366fc9c97d4a5122e2bf754310b9b34a
+R c7104d24bf193ab5bf7b15e1bf12efdc
+U drh
+Z 5a0ac4ae85600990de53dfc94ccbbf85
