@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.362 2008/06/28 11:23:00 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.363 2008/07/07 17:53:08 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2432,6 +2432,10 @@ int sqlite3_open_v2(
 ** The application does not need to worry about freeing the result.
 ** However, the error string might be overwritten or deallocated by
 ** subsequent calls to other SQLite interface functions.
+**
+** If an interface fails with SQLITE_MISUSE, that means the interface
+** was invoked incorrectly by the application.  In that case, the
+** error code and message may or may not be set.
 **
 ** INVARIANTS:
 **

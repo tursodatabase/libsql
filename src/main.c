@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.467 2008/07/07 14:50:14 drh Exp $
+** $Id: main.c,v 1.468 2008/07/07 17:53:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -999,7 +999,7 @@ const char *sqlite3_errmsg(sqlite3 *db){
   if( !db ){
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
-  if( !sqlite3SafetyCheckSickOrOk(db) || db->errCode==SQLITE_MISUSE ){
+  if( !sqlite3SafetyCheckSickOrOk(db) ){
     return sqlite3ErrStr(SQLITE_MISUSE);
   }
   sqlite3_mutex_enter(db->mutex);
@@ -1042,7 +1042,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   if( !db ){
     return (void *)(&outOfMemBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
   }
-  if( !sqlite3SafetyCheckSickOrOk(db) || db->errCode==SQLITE_MISUSE ){
+  if( !sqlite3SafetyCheckSickOrOk(db) ){
     return (void *)(&misuseBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
   }
   sqlite3_mutex_enter(db->mutex);
@@ -1103,10 +1103,8 @@ static int createCollation(
   if( enc2==SQLITE_UTF16 ){
     enc2 = SQLITE_UTF16NATIVE;
   }
-
   if( (enc2&~3)!=0 ){
-    sqlite3Error(db, SQLITE_ERROR, "unknown encoding");
-    return SQLITE_ERROR;
+    return SQLITE_MISUSE;
   }
 
   /* Check if this call is removing or replacing an existing collation 
