@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt2.test,v 1.5 2008/03/19 13:03:34 drh Exp $
+# $Id: corrupt2.test,v 1.6 2008/07/07 15:39:11 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -127,6 +127,47 @@ do_test corrupt2-2.1 {
   sqlite3 db2 corrupt.db 
   catchsql {
     SELECT * FROM sqlite_master;
+  } db2
+} {1 {malformed database schema (a3) - index a3 already exists}}
+
+db2 close
+
+do_test corrupt2-3.1 {
+  file delete -force corrupt.db
+  file delete -force corrupt.db-journal
+  sqlite3 db2 corrupt.db 
+
+  execsql {
+    PRAGMA auto_vacuum = 1;
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(a, b, c);
+    CREATE TABLE t2(a, b, c);
+    INSERT INTO t2 VALUES(randomblob(100), randomblob(100), randomblob(100));
+    INSERT INTO t2 SELECT * FROM t2;
+    INSERT INTO t2 SELECT * FROM t2;
+    INSERT INTO t2 SELECT * FROM t2;
+    INSERT INTO t2 SELECT * FROM t2;
+  } db2
+
+  db2 close
+
+  # On the root page of table t2 (page 4), set one of the child page-numbers
+  # to 0. This corruption will be detected when SQLite attempts to update
+  # the pointer-map after moving the content of page 4 to page 3 as part
+  # of the DROP TABLE operation below.
+  #
+  set fd [open corrupt.db r+]
+  fconfigure $fd -encoding binary -translation binary
+  seek $fd [expr 1024*3 + 12]
+  set zCelloffset [read $fd 2]
+  binary scan $zCelloffset S iCelloffset
+  seek $fd [expr 1024*3 + $iCelloffset]
+  puts -nonewline $fd "\00\00\00\00" 
+  close $fd
+
+  sqlite3 db2 corrupt.db 
+  catchsql {
+    DROP TABLE t1;
   } db2
 } {1 {malformed database schema (a3) - index a3 already exists}}
 
