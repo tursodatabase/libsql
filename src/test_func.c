@@ -12,7 +12,7 @@
 ** Code for testing all sorts of SQLite interfaces.  This code
 ** implements new SQL functions used by the test scripts.
 **
-** $Id: test_func.c,v 1.5 2008/04/15 12:14:22 drh Exp $
+** $Id: test_func.c,v 1.6 2008/07/07 14:50:14 drh Exp $
 */
 #include "sqlite3.h"
 #include "tcl.h"
@@ -275,6 +275,101 @@ static int autoinstall_test_funcs(
   return TCL_OK;
 }
 
+/*
+** A bogus step function and finalizer function.
+*/
+static void tStep(sqlite3_context *a, int b, sqlite3_value **c){}
+static void tFinal(sqlite3_context *a){}
+
+
+/*
+** tclcmd:  abuse_create_function
+**
+** Make various calls to sqlite3_create_function that do not have valid
+** parameters.  Verify that the error condition is detected and reported.
+*/
+static int abuse_create_function(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  sqlite3 *db;
+  int rc;
+  int mxArg;
+
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+
+  rc = sqlite3_create_function(db, "tx", 1, SQLITE_UTF8, 0, tStep,tStep,tFinal);
+  if( rc!=SQLITE_ERROR ) goto abuse_err;
+  if( sqlite3_errcode(db)!=SQLITE_ERROR ) goto abuse_err;
+  if( strcmp(sqlite3_errmsg(db), "bad parameters")!=0 ) goto abuse_err;
+
+  rc = sqlite3_create_function(db, "tx", 1, SQLITE_UTF8, 0, tStep, tStep, 0);
+  if( rc!=SQLITE_ERROR ) goto abuse_err;
+  if( sqlite3_errcode(db)!=SQLITE_ERROR ) goto abuse_err;
+  if( strcmp(sqlite3_errmsg(db), "bad parameters")!=0 ) goto abuse_err;
+
+  rc = sqlite3_create_function(db, "tx", 1, SQLITE_UTF8, 0, tStep, 0, tFinal);
+  if( rc!=SQLITE_ERROR ) goto abuse_err;
+  if( sqlite3_errcode(db)!=SQLITE_ERROR ) goto abuse_err;
+  if( strcmp(sqlite3_errmsg(db), "bad parameters")!=0 ) goto abuse_err;
+
+  rc = sqlite3_create_function(db, "tx", 1, SQLITE_UTF8, 0, 0, 0, tFinal);
+  if( rc!=SQLITE_ERROR ) goto abuse_err;
+  if( sqlite3_errcode(db)!=SQLITE_ERROR ) goto abuse_err;
+  if( strcmp(sqlite3_errmsg(db), "bad parameters")!=0 ) goto abuse_err;
+
+  rc = sqlite3_create_function(db, "tx", 1, SQLITE_UTF8, 0, 0, tStep, 0);
+  if( rc!=SQLITE_ERROR ) goto abuse_err;
+  if( sqlite3_errcode(db)!=SQLITE_ERROR ) goto abuse_err;
+  if( strcmp(sqlite3_errmsg(db), "bad parameters")!=0 ) goto abuse_err;
+
+  rc = sqlite3_create_function(db, "tx", -2, SQLITE_UTF8, 0, tStep, 0, 0);
+  if( rc!=SQLITE_ERROR ) goto abuse_err;
+  if( sqlite3_errcode(db)!=SQLITE_ERROR ) goto abuse_err;
+  if( strcmp(sqlite3_errmsg(db), "bad parameters")!=0 ) goto abuse_err;
+
+  rc = sqlite3_create_function(db, "tx", 128, SQLITE_UTF8, 0, tStep, 0, 0);
+  if( rc!=SQLITE_ERROR ) goto abuse_err;
+  if( sqlite3_errcode(db)!=SQLITE_ERROR ) goto abuse_err;
+  if( strcmp(sqlite3_errmsg(db), "bad parameters")!=0 ) goto abuse_err;
+
+  rc = sqlite3_create_function(db, "funcxx"
+       "_123456789_123456789_123456789_123456789_123456789"
+       "_123456789_123456789_123456789_123456789_123456789"
+       "_123456789_123456789_123456789_123456789_123456789"
+       "_123456789_123456789_123456789_123456789_123456789"
+       "_123456789_123456789_123456789_123456789_123456789",
+       1, SQLITE_UTF8, 0, tStep, 0, 0);
+  if( rc!=SQLITE_ERROR ) goto abuse_err;
+  if( sqlite3_errcode(db)!=SQLITE_ERROR ) goto abuse_err;
+  if( strcmp(sqlite3_errmsg(db), "bad parameters")!=0 ) goto abuse_err;
+
+  /* This last function registration should actually work.  Generate
+  ** a no-op function (that always returns NULL) and which has the
+  ** maximum-length function name and the maximum number of parameters.
+  */
+  sqlite3_limit(db, SQLITE_LIMIT_FUNCTION_ARG, 10000);
+  mxArg = sqlite3_limit(db, SQLITE_LIMIT_FUNCTION_ARG, -1);
+  rc = sqlite3_create_function(db, "nullx"
+       "_123456789_123456789_123456789_123456789_123456789"
+       "_123456789_123456789_123456789_123456789_123456789"
+       "_123456789_123456789_123456789_123456789_123456789"
+       "_123456789_123456789_123456789_123456789_123456789"
+       "_123456789_123456789_123456789_123456789_123456789",
+       mxArg, SQLITE_UTF8, 0, tStep, 0, 0);
+  if( rc!=SQLITE_OK ) goto abuse_err;
+                                
+  return TCL_OK;
+
+abuse_err:
+  Tcl_AppendResult(interp, "sqlite3_create_function abused test failed", 
+                   (char*)0);
+  return TCL_ERROR;
+}
+
 
 
 /*
@@ -286,6 +381,7 @@ int Sqlitetest_func_Init(Tcl_Interp *interp){
      Tcl_ObjCmdProc *xProc;
   } aObjCmd[] = {
      { "autoinstall_test_functions",    autoinstall_test_funcs },
+     { "abuse_create_function",         abuse_create_function  },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.466 2008/06/27 13:27:04 danielk1977 Exp $
+** $Id: main.c,v 1.467 2008/07/07 14:50:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -677,7 +677,7 @@ int sqlite3CreateFunc(
       (xFunc && (xFinal || xStep)) || 
       (!xFunc && (xFinal && !xStep)) ||
       (!xFunc && (!xFinal && xStep)) ||
-      (nArg<-1 || nArg>127) ||
+      (nArg<-1 || nArg>SQLITE_MAX_FUNCTION_ARG) ||
       (255<(nName = strlen(zFunctionName))) ){
     sqlite3Error(db, SQLITE_ERROR, "bad parameters");
     return SQLITE_ERROR;
@@ -1191,8 +1191,8 @@ static const int aHardLimit[] = {
 #if SQLITE_MAX_VDBE_OP<40
 # error SQLITE_MAX_VDBE_OP must be at least 40
 #endif
-#if SQLITE_MAX_FUNCTION_ARG<0 || SQLITE_MAX_FUNCTION_ARG>255
-# error SQLITE_MAX_FUNCTION_ARG must be between 0 and 255
+#if SQLITE_MAX_FUNCTION_ARG<0 || SQLITE_MAX_FUNCTION_ARG>127
+# error SQLITE_MAX_FUNCTION_ARG must be between 0 and 127
 #endif
 #if SQLITE_MAX_ATTACH<0 || SQLITE_MAX_ATTACH>30
 # error SQLITE_MAX_ATTACH must be between 0 and 30

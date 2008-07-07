@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_schema.c,v 1.14 2008/05/01 17:16:53 drh Exp $
+** $Id: test_schema.c,v 1.15 2008/07/07 14:50:14 drh Exp $
 */
 
 /* The code in this file defines a sqlite3 virtual-table module that
@@ -299,10 +299,7 @@ static sqlite3_module schemaModule = {
 /*
 ** Decode a pointer to an sqlite3 object.
 */
-static int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb){
-  *ppDb = (sqlite3*)sqlite3TextToPtr(zA);
-  return TCL_OK;
-}
+extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 
 /*
 ** Register the schema virtual table module.

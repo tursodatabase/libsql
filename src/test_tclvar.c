@@ -16,7 +16,7 @@
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
 **
-** $Id: test_tclvar.c,v 1.15 2008/05/29 05:23:42 drh Exp $
+** $Id: test_tclvar.c,v 1.16 2008/07/07 14:50:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -277,11 +277,7 @@ static sqlite3_module tclvarModule = {
 /*
 ** Decode a pointer to an sqlite3 object.
 */
-static int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb){
-  *ppDb = (sqlite3*)sqlite3TextToPtr(zA);
-  return TCL_OK;
-}
-
+extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 
 /*
 ** Register the echo virtual table module.

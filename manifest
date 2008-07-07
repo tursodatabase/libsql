@@ -1,5 +1,5 @@
-C Add\sthe\svfs_unregister_all\sand\svfs_reregister_all\stest\scommands.\s\sUse\sthem\nto\stest\sthe\ssqlite3_sleep()\sinterface\swhen\sno\sVFSes\sare\sregistered.\s(CVS\s5348)
-D 2008-07-07T13:31:59
+C Additional\stest\scases\sadded\son\sthe\ssqlite3_create_function()\sinterface.\s(CVS\s5349)
+D 2008-07-07T14:50:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/insert.c 9af927a81fdc99624130dc83722b3ab6364035a6
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 40024a0f476c1279494876b9a002001b29e5d3e3
-F src/main.c 7c326318fe039ea6bab91209f3eabef26f1ba33a
+F src/main.c b3c4cb43fc0ea3248dcc7ec64ffeb2754b0abe5a
 F src/malloc.c f52166df8abd7ff6990dbee1a0ce3534addc8617
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 8340fa5f969e9f9b9bdeb54106457a2003456d2b
@@ -149,21 +149,21 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c 4dd9ee4cb44846ad9bcc4d0da8088c1e7d4b33d9
-F src/test1.c 37de7addd16f4be291bfab25794704daee0ff532
+F src/test1.c 0a399f36f3b9a4514cfdd44d307c5271488a53e2
 F src/test2.c c46d146019ab6e37474e66b3c789e5237d9ea7b7
 F src/test3.c 01ff03164cf6a2bededa3b44ecd481603e2644fc
 F src/test4.c ff4ecde3cafc71337b04e8cb7da5bb88e85d70e7
 F src/test5.c 3a6a5717a149d7ca2e6d14f5be72cf7555d54dc4
 F src/test6.c 0a0304a69cfa4962a429d084c6d451ff9e4fb572
 F src/test7.c 19474b1802858cd2017493c907f70ac2d57ab092
-F src/test8.c 7230aff5df11dd3a39ad9f4278ece540e3b71a38
+F src/test8.c 3b85c05b15ccfc6844093791e83d5c8a1e0354ca
 F src/test9.c 4615ef08750245a2d96aaa7cbe2fb4aff2b57acc
 F src/test_async.c da9f58f49faccd3a26ba89f58de125862351b6e2
 F src/test_autoext.c 5e892ab84aece3f0428920bf46923f16ac83962a
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c e893a7195e975f133c4481d679089531c2970c73
 F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
-F src/test_func.c f4aafa10f17d52c43a64b47717265802e6e552b3
+F src/test_func.c dfa828142be4c7bebe5c97f94dee192f0cd664f4
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
 F src/test_malloc.c 62296810d3ee914fc3e05f2a8a69d8f8f42c32e1
@@ -171,9 +171,9 @@ F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c b1433eb96520656fb3e4a218253a94ac32bd5775
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
 F src/test_osinst.c 867f1317bd135f942a63eab5a78da40fc70d1493
-F src/test_schema.c e3f93725f7c5b2cff84a69dc4332040dfbc8f81a
+F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
-F src/test_tclvar.c e99b975614735553fa1c43503d85b0dd988c0e77
+F src/test_tclvar.c 73530070df8378571c8ce6bbbbb993236ae3ad0b
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c d39f0d6ce75ca9d0fa4041baec42b5e0411a74fc
 F src/trigger.c 1e751f8d5ceeb328d26bf1ccfb2de50653670d49
@@ -329,7 +329,7 @@ F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3c.test 4c7ef29b37aca3e8ebb6a39b57910caa6506034e
 F test/fts3near.test 2d4dadcaac5025ab65bb87e66c45f39e92966194
-F test/func.test 7cc20ab84558911cc77e95ae62b2af31b1b48ad2
+F test/func.test 1a2476c57e34c79aeb6323d3e3700a8c7a1ee0af
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
@@ -598,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3e558acd5eb8aa5ef4681e62284af5c017a24a65
-R 1bf36cfd88471c9d49dd28f2d6350ddc
+P 024d439299478062b6efdb63adce85b251af18ce
+R debb3042cbb79726e4c5df3f56d34516
 U drh
-Z 6364bac1cd87c47b349e49eb6a625ea6
+Z 1898d43dcf27625a208a6ba74e936850
