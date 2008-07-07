@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.62 2008/06/19 18:17:50 danielk1977 Exp $
+# $Id: malloc.test,v 1.63 2008/07/07 14:56:57 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -591,6 +591,22 @@ ifcapable view&&trigger {
     DELETE FROM v1 WHERE a = 1;
     INSERT INTO v1 VALUES(1, 2, 3);
     UPDATE v1 SET a = 1 WHERE b = 2;
+  }
+}
+
+do_malloc_test 25 -sqlprep {
+  CREATE TABLE abc(a, b, c);
+  CREATE INDEX i1 ON abc(a, b);
+  INSERT INTO abc VALUES(1, 2, 3);
+  INSERT INTO abc VALUES(4, 5, 6);
+} -tclbody {
+  # For each UPDATE executed, the cursor used for the SELECT statement
+  # must be "saved". Because the cursor is open on an index, this requires
+  # a malloc() to allocate space to save the index key. This test case is
+  # aimed at testing the response of the library to a failure in that
+  # particular malloc() call.
+  db eval {SELECT a FROM abc ORDER BY a} {
+    db eval {UPDATE abc SET b = b - 1 WHERE a = $a}
   }
 }
 

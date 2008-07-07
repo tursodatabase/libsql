@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.756 2008/06/26 18:04:03 danielk1977 Exp $
+** $Id: vdbe.c,v 1.757 2008/07/07 14:56:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2517,7 +2517,7 @@ case OP_Transaction: {
       p->rc = rc = SQLITE_BUSY;
       goto vdbe_return;
     }
-    if( rc!=SQLITE_OK && rc!=SQLITE_READONLY /* && rc!=SQLITE_BUSY */ ){
+    if( rc!=SQLITE_OK && rc!=SQLITE_READONLY && /* rc!=SQLITE_BUSY */ ){
       goto abort_due_to_error;
     }
   }
@@ -5043,8 +5043,9 @@ default: {          /* This is really OP_Noop and OP_Explain */
 vdbe_error_halt:
   assert( rc );
   p->rc = rc;
-  rc = SQLITE_ERROR;
   sqlite3VdbeHalt(p);
+  if( rc==SQLITE_IOERR_NOMEM ) db->mallocFailed = 1;
+  rc = SQLITE_ERROR;
 
   /* This is the only way out of this procedure.  We have to
   ** release the mutexes on btrees that were acquired at the
@@ -5081,7 +5082,9 @@ abort_due_to_misuse:
 abort_due_to_error:
   assert( p->zErrMsg==0 );
   if( db->mallocFailed ) rc = SQLITE_NOMEM;
-  sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
+  if( rc!=SQLITE_IOERR_NOMEM ){
+    sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
+  }
   goto vdbe_error_halt;
 
   /* Jump to here if the sqlite3_interrupt() API sets the interrupt

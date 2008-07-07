@@ -1,5 +1,5 @@
-C Additional\stest\scases\sadded\son\sthe\ssqlite3_create_function()\sinterface.\s(CVS\s5349)
-D 2008-07-07T14:50:14
+C Test\sa\scouple\sof\sspecific\smalloc()\sfailures\sthat\swere\snot\stested\sbefore.\s(CVS\s5350)
+D 2008-07-07T14:56:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -181,7 +181,7 @@ F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
 F src/util.c aec21ebb1e21f6220af1237078b1723968803990
 F src/vacuum.c 14eb21b480924d87e791cd8ab6fb35ac563243ef
-F src/vdbe.c b1528683ff7ca1faf017db5ebedbc403e92d009b
+F src/vdbe.c 8adaa7524e9a297718d3ef0395ec46752eb14943
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
 F src/vdbeInt.h 30535c1d30ba1b5fb58d8f0e1d1261af976558aa
 F src/vdbeapi.c a7c6b8db324cf7eccff32de871dea36aa305c994
@@ -381,7 +381,7 @@ F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/lock5.test 559d77d3015d1fb545b79ee3a7daf3a0e0224033
 F test/main.test 82c222989e02ea09abd58d453828ffd71806b6bf
-F test/malloc.test ca6d4ebb9886ec1bdb78953ca0f53cf2e0846761
+F test/malloc.test 69f5bb5a13b24edb1322fc1f42894f9d2f6446b1
 F test/malloc2.test c847c457d37cf37ff9ff989fa6bd1475f714e485
 F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
@@ -455,7 +455,7 @@ F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test c6769531e0cb751d46a9838c0532d3786606c0f6
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
 F test/shared3.test 987316be601e2349e6a340a6d5f8ed981e507931
-F test/shared_err.test 10157148055f1b96373bcc59ecd4e84a83e22a81
+F test/shared_err.test 954e1c29d7415e19c95787297462254eee40ca7e
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/sidedelete.test 736ac1da08b3b1aa62df97fef2fcdb1b660111b9
 F test/soak.test 64f9b27fbcdec43335a88c546ce1983e6ba40d7b
@@ -598,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 024d439299478062b6efdb63adce85b251af18ce
-R debb3042cbb79726e4c5df3f56d34516
-U drh
-Z 1898d43dcf27625a208a6ba74e936850
+P 4e941f3d43556d8a503bb96e8a74451de36d243e
+R 8496763a8cb86990b088e6240ee7b548
+U danielk1977
+Z 8849602edea289185a3f9e44a68a98e7
