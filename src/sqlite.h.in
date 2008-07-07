@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.363 2008/07/07 17:53:08 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.364 2008/07/07 19:52:10 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1405,10 +1405,15 @@ void sqlite3_interrupt(sqlite3*);
 **
 ** INVARIANTS:
 **
-** {F10511} The sqlite3_complete() and sqlite3_complete16() functions
-**          return true (non-zero) if and only if the last non-whitespace
+** {F10511} A successful evaluation of [sqlite3_complete()] or
+**          [sqlite3_complete16()] functions shall
+**          return a numeric 1 if and only if the last non-whitespace
 **          token in their input is a semicolon that is not in between
 **          the BEGIN and END of a CREATE TRIGGER statement.
+**
+** {F10512} If a memory allocation error occurs during an invocation
+**          of [sqlite3_complete()] or [sqlite3_complete16()] then the
+**          routine shall return [SQLITE_NOMEM].
 **
 ** LIMITATIONS:
 **

@@ -1,5 +1,5 @@
-C Fix\san\serror\sintroduced\sby\s(5346).\sThe\slist\scould\sbecome\scorrupted\swhen\sthe\sdatabase\swas\struncated.\s(CVS\s5356)
-D 2008-07-07T18:42:41
+C Make\scheck-in\s(5356)\scompatible\swith\sbuilds\sthat\sdo\snot\senable\smemory\nmanagement.\s\sRemove\sunnecessary\scode\sfrom\smain.c.\s\sAdd\sout-of-memory\ntests\sfor\ssqlite3_complete16().\s(CVS\s5357)
+D 2008-07-07T19:52:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/insert.c 9af927a81fdc99624130dc83722b3ab6364035a6
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 40024a0f476c1279494876b9a002001b29e5d3e3
-F src/main.c 1fa8697b91666b5865a86f5aa143b0075800a1d3
+F src/main.c 147b58cc8b6a77d918de0c3a90e71027b3b85169
 F src/malloc.c f52166df8abd7ff6990dbee1a0ce3534addc8617
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 8340fa5f969e9f9b9bdeb54106457a2003456d2b
@@ -133,7 +133,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 38fd8cfb1c122c39e451d9f3e779c602283dba33
 F src/os_unix.c 3d19f0491e0b32e5b757c7e6f310f2f6d3aea3f4
 F src/os_win.c 2bf2f8cd700299564cc236262c2668e1e02c626a
-F src/pager.c a3a916b7215bbdc973e231cde66aaa23871a9072
+F src/pager.c 2cd554d474cfa0228ece30645fe7bb7d1f6824c7
 F src/pager.h 6aa3050a3c684475a5a9dbad5ff1cebad612acba
 F src/parse.y 8c2c3145eebe1964eb279cb3c4e502eae28bb0fa
 F src/pragma.c 9a95f5b3708f6d3ddd987eab5f369a19ffcb6795
@@ -142,7 +142,7 @@ F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 3e44f3910660ab63c690d2a4eac5449ae48ce96b
 F src/shell.c 484e7297e066f22830f9c15d7abbcdd2acb097b0
-F src/sqlite.h.in 866842b5daae9bf95b0e79cb4d92518f78179dca
+F src/sqlite.h.in 22c32cedf7e435d5b3bb8564ce0a640c40dbbfb1
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h 35e420ced9e27af5ee387cd40f2e7a431665f858
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -397,7 +397,7 @@ F test/mallocC.test 05c0bde2e41cdbdef26b9c17b8e48c935b46f611
 F test/mallocD.test f78c295e8e18ea3029e65ca08278690e00c22100
 F test/mallocE.test db1ed69d7eded1b080952e2a7c37f364ad241b08
 F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
-F test/mallocG.test b295dc03b6d8d705ce425ff4d1ce6bbeb1c5ab33
+F test/mallocG.test 9d472075e155c888706d8bb2f0d5c6fd643d793c
 F test/malloc_common.tcl cdcf092a77f3578fa4fd02121e60969cdf382e27
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
@@ -598,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2dcd5287a0d71140baa23aae2ab3d95d78a5676d
-R 632ef97e2e5d19875351e0367da22299
-U danielk1977
-Z 77dc7b2edaf1d1ebf4af6323571db8ad
+P fbd320ed27dc8910f5035b41171576b4a37cb8b9
+R 3bbbd66d8233e7386454ae7a004ab261
+U drh
+Z cc062abff1f84979b85c070012e27ea8
