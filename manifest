@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sto\stest\scorruption\sdiscovered\sas\spart\sof\sthe\sptrmapPut()\sroutine.\s(CVS\s5351)
-D 2008-07-07T15:39:11
+C Another\stest\scase\sto\stest\sa\sspecific\skind\sof\sdatabase\scorruption.\s(CVS\s5352)
+D 2008-07-07T17:04:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -242,7 +242,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test af069d971853dbe12af936910bfa49d92f7b16e9
-F test/corrupt2.test a18ee5991548fd0fc827beb438ac948e4423186a
+F test/corrupt2.test 056c97ae3144e309f22dd6a6b4a6abae9e56d5b2
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -598,7 +598,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b96bcaa197519b5be89e1f6a1579f0e36fe2b644
-R 62ed2591820a7196cabbdd58b316eda9
+P cbb9536fc4fb2419e0eb6f3a32c67eeb7a73da82
+R 299fe13e17e3bd62ef5df1494e777b26
 U danielk1977
-Z 9bfe6f64ae089bbd94ec78786a0de466
+Z 4ddebf708c0493772a69797365fbfc53
