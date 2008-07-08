@@ -1,5 +1,5 @@
-C Another\scorruption\srelated\stest\scase.\s(CVS\s5367)
-D 2008-07-08T14:31:15
+C Improved\senforcement\sof\sthe\sSQLITE_LIMIT_LENGTH\slimit.\s(CVS\s5368)
+D 2008-07-08T14:52:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -98,15 +98,15 @@ F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
 F src/btree.c e00268557794be741e26cbca1cd77aa37e53b1cc
 F src/btree.h b1bd7e0b8c2e33658aaf447cb0d1d94f74664b6b
 F src/btreeInt.h 02325f04758dba0fcd0c08ac55cd9b189dad61a5
-F src/build.c 8779e9276bef80143a9db5d51b19301457680fc1
-F src/callback.c 3ba98ae46f60aa7c2c40eac7d18fe5ba9b706b83
+F src/build.c 142ceacdc14e479f337aeb01db631f22683496f8
+F src/callback.c aa492a0ad8c2d454edff9fb8a57fae13743cf71d
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e841168e5520bbbb2a1cbcdce7531d8b23017b4d
 F src/delete.c d3fc5987f2eb88f7b9549d58a5dfea079a83fe8b
 F src/expr.c 8f2caa888af148ebf9cdb2cf7ffaae2a09767c48
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c 1e7d9569570134ac0771a00382d9d4b41c4aa052
-F src/global.c 2304cfa3288763bd2fed10caf8c6fbaa2b383f4e
+F src/global.c f12dc84d23f52d2ed42d1bdb5460fa3caf63e890
 F src/hash.c eb64e48f3781100e5934f759fbe72a63a8fe78cb
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
 F src/hwtime.h 745961687a65ef8918cd551c02e5ccb4b8e772de
@@ -114,7 +114,7 @@ F src/insert.c 9af927a81fdc99624130dc83722b3ab6364035a6
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c ae0eed9fa96d74172d2a90ee63b5bc36d284295c
-F src/main.c 9d5efc560928db31c20475b5784191654e660538
+F src/main.c 7f69c952cf2a95f21439cd260224d5341b705596
 F src/malloc.c f52166df8abd7ff6990dbee1a0ce3534addc8617
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 8340fa5f969e9f9b9bdeb54106457a2003456d2b
@@ -144,7 +144,7 @@ F src/select.c 3e44f3910660ab63c690d2a4eac5449ae48ce96b
 F src/shell.c 484e7297e066f22830f9c15d7abbcdd2acb097b0
 F src/sqlite.h.in 22c32cedf7e435d5b3bb8564ce0a640c40dbbfb1
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 35e420ced9e27af5ee387cd40f2e7a431665f858
+F src/sqliteInt.h 46e40a482ae3b93a3c26eaf6a82ea6502653d474
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
@@ -179,7 +179,7 @@ F src/tokenize.c 36484c7774914b7e307800a9bfde6a6b2fcd5a57
 F src/trigger.c 1e751f8d5ceeb328d26bf1ccfb2de50653670d49
 F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
-F src/util.c aec21ebb1e21f6220af1237078b1723968803990
+F src/util.c e202291456d34f8e2cf1c0a6f7e2538a77587445
 F src/vacuum.c 14eb21b480924d87e791cd8ab6fb35ac563243ef
 F src/vdbe.c fb6df1bd31a321647b4677f5d20716d8f7f71255
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
@@ -188,7 +188,7 @@ F src/vdbeapi.c a7c6b8db324cf7eccff32de871dea36aa305c994
 F src/vdbeaux.c 3f41742bf0588e68e48b32e5cb74cb5f19a8fe45
 F src/vdbeblob.c 9345f6dcd675fdcfdb537d2d2f487542d9ea136a
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
-F src/vdbemem.c a39a822e6ae61c4cab4a512df4a315888b206911
+F src/vdbemem.c ee1a032b44ab59bd83a064544a0895003eecaec1
 F src/vtab.c 2096c03ec5540a43c8c73a8f43407dfd3549a982
 F src/where.c 6a22ceb86d774c4428ac53196f721bb14e6cbdfa
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 94c95fad56965b68176e93f0690f0819ad40bcf7
-R 44e2f1c0e8d85d0179e55f7050a50307
-U danielk1977
-Z 66c4a0a833d5a6c4eb7405af47a10264
+P f781a68127c97e30763447a12314180f0728deb9
+R cfd14fea32bc656ba7f0a52d82871485
+U drh
+Z 00aff89bc5ac4605bda301a29f51994c

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.486 2008/07/08 00:06:50 drh Exp $
+** $Id: build.c,v 1.487 2008/07/08 14:52:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -276,11 +276,13 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
 Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
   Table *p = 0;
   int i;
+  int nName;
   assert( zName!=0 );
+  nName = sqlite3Strlen(db, zName) + 1;
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
     if( zDatabase!=0 && sqlite3StrICmp(zDatabase, db->aDb[j].zName) ) continue;
-    p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName, strlen(zName)+1);
+    p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName, nName);
     if( p ) break;
   }
   return p;
@@ -338,13 +340,14 @@ Table *sqlite3LocateTable(
 Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
   Index *p = 0;
   int i;
+  int nName = sqlite3Strlen(db, zName)+1;
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
     Schema *pSchema = db->aDb[j].pSchema;
     if( zDb && sqlite3StrICmp(zDb, db->aDb[j].zName) ) continue;
     assert( pSchema || (j==1 && !db->aDb[1].pBt) );
     if( pSchema ){
-      p = sqlite3HashFind(&pSchema->idxHash, zName, strlen(zName)+1);
+      p = sqlite3HashFind(&pSchema->idxHash, zName, nName);
     }
     if( p ) break;
   }
@@ -371,7 +374,7 @@ static void sqliteDeleteIndex(Index *p){
   Index *pOld;
   const char *zName = p->zName;
 
-  pOld = sqlite3HashInsert(&p->pSchema->idxHash, zName, strlen( zName)+1, 0);
+  pOld = sqlite3HashInsert(&p->pSchema->idxHash, zName, strlen(zName)+1, 0);
   assert( pOld==0 || pOld==p );
   freeIndex(p);
 }
@@ -387,7 +390,7 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
   int len;
   Hash *pHash = &db->aDb[iDb].pSchema->idxHash;
 
-  len = strlen(zIdxName);
+  len = sqlite3Strlen(db, zIdxName);
   pIndex = sqlite3HashInsert(pHash, zIdxName, len+1, 0);
   if( pIndex ){
     if( pIndex->pTable->pIndex==pIndex ){
@@ -1265,7 +1268,7 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
     pColl = sqlite3GetCollSeq(db, pColl, zName, nName);
     if( !pColl ){
       if( nName<0 ){
-        nName = strlen(zName);
+        nName = sqlite3Strlen(db, zName);
       }
       sqlite3ErrorMsg(pParse, "no such collation sequence: %.*s", nName, zName);
       pColl = 0;

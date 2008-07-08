@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.115 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: vdbemem.c,v 1.116 2008/07/08 14:52:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -588,6 +588,7 @@ int sqlite3VdbeMemSetStr(
   void (*xDel)(void*) /* Destructor function */
 ){
   int nByte = n;      /* New value for pMem->n */
+  int iLimit;         /* Maximum allowed string or blob size */
   int flags = 0;      /* New value for pMem->flags */
 
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
@@ -598,15 +599,23 @@ int sqlite3VdbeMemSetStr(
     return SQLITE_OK;
   }
 
+  if( pMem->db ){
+    iLimit = pMem->db->aLimit[SQLITE_LIMIT_LENGTH];
+  }else{
+    iLimit = SQLITE_MAX_LENGTH;
+  }
   flags = (enc==0?MEM_Blob:MEM_Str);
   if( nByte<0 ){
     assert( enc!=0 );
     if( enc==SQLITE_UTF8 ){
-      for(nByte=0; z[nByte]; nByte++){}
+      for(nByte=0; nByte<=iLimit && z[nByte]; nByte++){}
     }else{
-      for(nByte=0; z[nByte] | z[nByte+1]; nByte+=2){}
+      for(nByte=0; nByte<=iLimit && (z[nByte] | z[nByte+1]); nByte+=2){}
     }
     flags |= MEM_Term;
+  }
+  if( nByte>iLimit ){
+    return SQLITE_TOOBIG;
   }
 
   /* The following block sets the new values of Mem.z and Mem.xDel. It

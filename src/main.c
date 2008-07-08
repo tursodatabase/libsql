@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.470 2008/07/08 12:02:35 danielk1977 Exp $
+** $Id: main.c,v 1.471 2008/07/08 14:52:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -680,7 +680,7 @@ int sqlite3CreateFunc(
       (!xFunc && (xFinal && !xStep)) ||
       (!xFunc && (!xFinal && xStep)) ||
       (nArg<-1 || nArg>SQLITE_MAX_FUNCTION_ARG) ||
-      (255<(nName = strlen(zFunctionName))) ){
+      (255<(nName = sqlite3Strlen(db, zFunctionName))) ){
     sqlite3Error(db, SQLITE_ERROR, "bad parameters");
     return SQLITE_ERROR;
   }
@@ -806,7 +806,7 @@ int sqlite3_overload_function(
   const char *zName,
   int nArg
 ){
-  int nName = strlen(zName);
+  int nName = sqlite3Strlen(db, zName);
   int rc;
   sqlite3_mutex_enter(db->mutex);
   if( sqlite3FindFunction(db, zName, nName, nArg, SQLITE_UTF8, 0)==0 ){
@@ -1094,6 +1094,7 @@ static int createCollation(
 ){
   CollSeq *pColl;
   int enc2;
+  int nName;
   
   assert( sqlite3_mutex_held(db->mutex) );
 
@@ -1113,7 +1114,8 @@ static int createCollation(
   ** sequence. If so, and there are active VMs, return busy. If there
   ** are no active VMs, invalidate any pre-compiled statements.
   */
-  pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, strlen(zName), 0);
+  nName = sqlite3Strlen(db, zName);
+  pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, nName, 0);
   if( pColl && pColl->xCmp ){
     if( db->activeVdbeCnt ){
       sqlite3Error(db, SQLITE_BUSY, 
@@ -1129,7 +1131,7 @@ static int createCollation(
     ** to be called.
     */ 
     if( (pColl->enc & ~SQLITE_UTF16_ALIGNED)==enc2 ){
-      CollSeq *aColl = sqlite3HashFind(&db->aCollSeq, zName, strlen(zName));
+      CollSeq *aColl = sqlite3HashFind(&db->aCollSeq, zName, nName);
       int j;
       for(j=0; j<3; j++){
         CollSeq *p = &aColl[j];
@@ -1143,7 +1145,7 @@ static int createCollation(
     }
   }
 
-  pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, strlen(zName), 1);
+  pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, nName, 1);
   if( pColl ){
     pColl->xCmp = xCompare;
     pColl->pUser = pCtx;
