@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.393 2008/06/25 00:12:42 drh Exp $
+** $Id: vdbeaux.c,v 1.394 2008/07/08 19:34:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -832,7 +832,7 @@ int sqlite3VdbeList(
   }else if( db->u1.isInterrupted ){
     p->rc = SQLITE_INTERRUPT;
     rc = SQLITE_ERROR;
-    sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(p->rc), (char*)0);
+    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3ErrStr(p->rc));
   }else{
     char *z;
     Op *pOp = &p->aOp[i];
@@ -1632,7 +1632,8 @@ int sqlite3VdbeHalt(Vdbe *p){
         rc = xFunc(pBt);
         if( rc && (p->rc==SQLITE_OK || p->rc==SQLITE_CONSTRAINT) ){
           p->rc = rc;
-          sqlite3SetString(&p->zErrMsg, 0);
+          sqlite3_free(p->zErrMsg);
+          p->zErrMsg = 0;
         }
       }
     }

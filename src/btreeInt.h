@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.22 2008/06/15 02:51:47 drh Exp $
+** $Id: btreeInt.h,v 1.23 2008/07/08 19:34:07 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -612,8 +612,8 @@ struct IntegrityCk {
   int nPage;        /* Number of pages in the database */
   int *anRef;       /* Number of times each page is referenced */
   int mxErr;        /* Stop accumulating errors when this reaches zero */
-  char *zErrMsg;    /* An error message.  NULL if no errors seen. */
   int nErr;         /* Number of messages written to zErrMsg so far */
+  StrAccum errMsg;  /* Accumulate the error message text here */
 };
 
 /*

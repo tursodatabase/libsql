@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.80 2008/06/17 01:03:26 drh Exp $
+** $Id: vacuum.c,v 1.81 2008/07/08 19:34:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -96,8 +96,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
 
   if( !db->autoCommit ){
-    sqlite3SetString(pzErrMsg, "cannot VACUUM from within a transaction", 
-       (char*)0);
+    sqlite3SetString(pzErrMsg, db, "cannot VACUUM from within a transaction");
     rc = SQLITE_ERROR;
     goto end_of_vacuum;
   }

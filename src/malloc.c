@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.25 2008/06/23 14:03:45 danielk1977 Exp $
+** $Id: malloc.c,v 1.26 2008/07/08 19:34:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -631,39 +631,19 @@ char *sqlite3DbStrNDup(sqlite3 *db, const char *z, int n){
 }
 
 /*
-** Create a string from the 2nd and subsequent arguments (up to the
-** first NULL argument), store the string in memory obtained from
-** sqliteMalloc() and make the pointer indicated by the 1st argument
-** point to that string.  The 1st argument must either be NULL or 
-** point to memory obtained from sqliteMalloc().
+** Create a string from the zFromat argument and the va_list that follows.
+** Store the string in memory obtained from sqliteMalloc() and make *pz
+** point to that string.
 */
-void sqlite3SetString(char **pz, ...){
+void sqlite3SetString(char **pz, sqlite3 *db, const char *zFormat, ...){
   va_list ap;
-  int nByte;
-  const char *z;
-  char *zResult;
+  char *z;
 
-  assert( pz!=0 );
-  nByte = 1;
-  va_start(ap, pz);
-  while( (z = va_arg(ap, const char*))!=0 ){
-    nByte += strlen(z);
-  }
+  va_start(ap, zFormat);
+  z = sqlite3VMPrintf(db, zFormat, ap);
   va_end(ap);
   sqlite3_free(*pz);
-  *pz = zResult = sqlite3Malloc(nByte);
-  if( zResult==0 ){
-    return;
-  }
-  *zResult = 0;
-  va_start(ap, pz);
-  while( (z = va_arg(ap, const char*))!=0 ){
-    int n = strlen(z);
-    memcpy(zResult, z, n);
-    zResult += n;
-  }
-  zResult[0] = 0;
-  va_end(ap);
+  *pz = z;
 }
 
 

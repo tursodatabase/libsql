@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.472 2008/07/08 17:13:59 danielk1977 Exp $
+** $Id: btree.c,v 1.473 2008/07/08 19:34:07 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6401,23 +6401,18 @@ static void checkAppendMsg(
   ...
 ){
   va_list ap;
-  char *zMsg2;
   if( !pCheck->mxErr ) return;
   pCheck->mxErr--;
   pCheck->nErr++;
   va_start(ap, zFormat);
-  zMsg2 = sqlite3VMPrintf(0, zFormat, ap);
-  va_end(ap);
-  if( zMsg1==0 ) zMsg1 = "";
-  if( pCheck->zErrMsg ){
-    char *zOld = pCheck->zErrMsg;
-    pCheck->zErrMsg = 0;
-    sqlite3SetString(&pCheck->zErrMsg, zOld, "\n", zMsg1, zMsg2, (char*)0);
-    sqlite3_free(zOld);
-  }else{
-    sqlite3SetString(&pCheck->zErrMsg, zMsg1, zMsg2, (char*)0);
+  if( pCheck->errMsg.nChar ){
+    sqlite3StrAccumAppend(&pCheck->errMsg, "\n", 1);
   }
-  sqlite3_free(zMsg2);
+  if( zMsg1 ){
+    sqlite3StrAccumAppend(&pCheck->errMsg, zMsg1, -1);
+  }
+  sqlite3VXPrintf(&pCheck->errMsg, 1, zFormat, ap);
+  va_end(ap);
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
@@ -6733,6 +6728,7 @@ char *sqlite3BtreeIntegrityCheck(
   int nRef;
   IntegrityCk sCheck;
   BtShared *pBt = p->pBt;
+  char zErr[100];
 
   sqlite3BtreeEnter(p);
   pBt->db = p->db;
@@ -6770,7 +6766,7 @@ char *sqlite3BtreeIntegrityCheck(
   if( i<=sCheck.nPage ){
     sCheck.anRef[i] = 1;
   }
-  sCheck.zErrMsg = 0;
+  sqlite3StrAccumInit(&sCheck.errMsg, zErr, sizeof(zErr), 20000);
 
   /* Check the integrity of the freelist
   */
@@ -6826,7 +6822,8 @@ char *sqlite3BtreeIntegrityCheck(
   sqlite3BtreeLeave(p);
   sqlite3_free(sCheck.anRef);
   *pnErr = sCheck.nErr;
-  return sCheck.zErrMsg;
+  if( sCheck.nErr==0 ) sqlite3StrAccumReset(&sCheck.errMsg);
+  return sqlite3StrAccumFinish(&sCheck.errMsg);
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 

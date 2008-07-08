@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.88 2008/06/23 16:53:47 danielk1977 Exp $
+** $Id: prepare.c,v 1.89 2008/07/08 19:34:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -29,8 +29,12 @@ static void corruptSchema(
 ){
   if( !pData->db->mallocFailed ){
     if( zObj==0 ) zObj = "?";
-    sqlite3SetString(pData->pzErrMsg, "malformed database schema (",  zObj, ")",
-       zExtra!=0 && zExtra[0]!=0 ? " - " : (char*)0, zExtra, (char*)0);
+    sqlite3SetString(pData->pzErrMsg, pData->db,
+       "malformed database schema (%s)", zObj);
+    if( zExtra && zExtra[0] ){
+      *pData->pzErrMsg = sqlite3MPrintf(pData->db, "%z - %s",
+                                  *pData->pzErrMsg, zExtra);
+    }
   }
   pData->rc = SQLITE_CORRUPT;
 }
@@ -215,7 +219,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   sqlite3BtreeEnter(pDb->pBt);
   rc = sqlite3BtreeCursor(pDb->pBt, MASTER_ROOT, 0, 0, curMain);
   if( rc!=SQLITE_OK && rc!=SQLITE_EMPTY ){
-    sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
+    sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));
     goto leave_error_out;
   }
 
@@ -242,7 +246,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
       rc = sqlite3BtreeGetMeta(pDb->pBt, i+1, (u32 *)&meta[i]);
     }
     if( rc ){
-      sqlite3SetString(pzErrMsg, sqlite3ErrStr(rc), (char*)0);
+      sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));
       goto leave_error_out;
     }
   }else{
@@ -263,8 +267,8 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     }else{
       /* If opening an attached database, the encoding much match ENC(db) */
       if( meta[4]!=ENC(db) ){
-        sqlite3SetString(pzErrMsg, "attached databases must use the same"
-            " text encoding as main database", (char*)0);
+        sqlite3SetString(pzErrMsg, db, "attached databases must use the same"
+            " text encoding as main database");
         rc = SQLITE_ERROR;
         goto leave_error_out;
       }
@@ -293,7 +297,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     pDb->pSchema->file_format = 1;
   }
   if( pDb->pSchema->file_format>SQLITE_MAX_FILE_FORMAT ){
-    sqlite3SetString(pzErrMsg, "unsupported file format", (char*)0);
+    sqlite3SetString(pzErrMsg, db, "unsupported file format");
     rc = SQLITE_ERROR;
     goto leave_error_out;
   }
@@ -340,7 +344,6 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 #endif
   }
   if( db->mallocFailed ){
-    /* sqlite3SetString(pzErrMsg, "out of memory", (char*)0); */
     rc = SQLITE_NOMEM;
     sqlite3ResetInternalSchema(db, 0);
   }

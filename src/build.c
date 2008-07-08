@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.487 2008/07/08 14:52:08 drh Exp $
+** $Id: build.c,v 1.488 2008/07/08 19:34:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2458,15 +2458,11 @@ void sqlite3CreateIndex(
       goto exit_create_index;
     }
   }else{
-    char zBuf[30];
     int n;
     Index *pLoop;
     for(pLoop=pTab->pIndex, n=1; pLoop; pLoop=pLoop->pNext, n++){}
-    sqlite3_snprintf(sizeof(zBuf),zBuf,"_%d",n);
-    zName = 0;
-    sqlite3SetString(&zName, "sqlite_autoindex_", pTab->zName, zBuf, (char*)0);
+    zName = sqlite3MPrintf(db, "sqlite_autoindex_%s_%d", pTab->zName, n);
     if( zName==0 ){
-      db->mallocFailed = 1;
       goto exit_create_index;
     }
   }

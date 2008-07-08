@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.471 2008/07/08 14:52:10 drh Exp $
+** $Id: main.c,v 1.472 2008/07/08 19:34:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1737,8 +1737,9 @@ error_out:
   if( pAutoinc ) *pAutoinc = autoinc;
 
   if( SQLITE_OK==rc && !pTab ){
-    sqlite3SetString(&zErrMsg, "no such table column: ", zTableName, ".", 
-        zColumnName, 0);
+    sqlite3_free(zErrMsg);
+    zErrMsg = sqlite3MPrintf("no such table column: %s.%s", zTableName,
+        zColumnName);
     rc = SQLITE_ERROR;
   }
   sqlite3Error(db, rc, (zErrMsg?"%s":0), zErrMsg);

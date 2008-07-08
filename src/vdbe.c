@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.758 2008/07/07 17:13:09 danielk1977 Exp $
+** $Id: vdbe.c,v 1.759 2008/07/08 19:34:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -830,7 +830,7 @@ case OP_Halt: {
   p->pc = pc;
   p->errorAction = pOp->p2;
   if( pOp->p4.z ){
-    sqlite3SetString(&p->zErrMsg, pOp->p4.z, (char*)0);
+    sqlite3SetString(&p->zErrMsg, db, "%s", pOp->p4.z);
   }
   rc = sqlite3VdbeHalt(p);
   assert( rc==SQLITE_BUSY || rc==SQLITE_OK );
@@ -1361,7 +1361,7 @@ case OP_Function: {
 
   /* If the function returned an error, throw an exception */
   if( ctx.isError ){
-    sqlite3SetString(&p->zErrMsg, sqlite3_value_text(&ctx.s), (char*)0);
+    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&ctx.s));
     rc = ctx.isError;
   }
 
@@ -2447,8 +2447,9 @@ case OP_AutoCommit: {
     ** still running, and a transaction is active, return an error indicating
     ** that the other VMs must complete first. 
     */
-    sqlite3SetString(&p->zErrMsg, "cannot ", rollback?"rollback":"commit", 
-        " transaction - SQL statements in progress", (char*)0);
+    sqlite3SetString(&p->zErrMsg, db, "cannot %s transaction - "
+        "SQL statements in progress",
+        rollback ? "rollback" : "commit");
     rc = SQLITE_ERROR;
   }else if( i!=db->autoCommit ){
     if( pOp->p2 ){
@@ -2471,10 +2472,10 @@ case OP_AutoCommit: {
     }
     goto vdbe_return;
   }else{
-    sqlite3SetString(&p->zErrMsg,
+    sqlite3SetString(&p->zErrMsg, db,
         (!i)?"cannot start a transaction within a transaction":(
         (rollback)?"cannot rollback - no transaction is active":
-                   "cannot commit - no transaction is active"), (char*)0);
+                   "cannot commit - no transaction is active"));
          
     rc = SQLITE_ERROR;
   }
@@ -4473,7 +4474,7 @@ case OP_AggStep: {
   }
   (ctx.pFunc->xStep)(&ctx, n, apVal);
   if( ctx.isError ){
-    sqlite3SetString(&p->zErrMsg, sqlite3_value_text(&ctx.s), (char*)0);
+    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&ctx.s));
     rc = ctx.isError;
   }
   sqlite3VdbeMemRelease(&ctx.s);
@@ -4499,7 +4500,7 @@ case OP_AggFinal: {
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
   rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
   if( rc==SQLITE_ERROR ){
-    sqlite3SetString(&p->zErrMsg, sqlite3_value_text(pMem), (char*)0);
+    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(pMem));
   }
   sqlite3VdbeChangeEncoding(pMem, encoding);
   UPDATE_MAX_BLOBSIZE(pMem);
@@ -4589,7 +4590,7 @@ case OP_TableLock: {
   rc = sqlite3BtreeLockTable(db->aDb[p1].pBt, pOp->p2, isWriteLock);
   if( rc==SQLITE_LOCKED ){
     const char *z = pOp->p4.z;
-    sqlite3SetString(&p->zErrMsg, "database table is locked: ", z, (char*)0);
+    sqlite3SetString(&p->zErrMsg, db, "database table is locked: %s", z);
   }
   break;
 }
@@ -4912,7 +4913,7 @@ case OP_VUpdate: {
   int nArg = pOp->p2;
   assert( pOp->p4type==P4_VTAB );
   if( pModule->xUpdate==0 ){
-    sqlite3SetString(&p->zErrMsg, "read-only table", 0);
+    sqlite3SetString(&p->zErrMsg, db, "read-only table");
     rc = SQLITE_ERROR;
   }else{
     int i;
@@ -5058,7 +5059,7 @@ vdbe_return:
   ** is encountered.
   */
 too_big:
-  sqlite3SetString(&p->zErrMsg, "string or blob too big", (char*)0);
+  sqlite3SetString(&p->zErrMsg, db, "string or blob too big");
   rc = SQLITE_TOOBIG;
   goto vdbe_error_halt;
 
@@ -5066,7 +5067,7 @@ too_big:
   */
 no_mem:
   db->mallocFailed = 1;
-  sqlite3SetString(&p->zErrMsg, "out of memory", (char*)0);
+  sqlite3SetString(&p->zErrMsg, db, "out of memory");
   rc = SQLITE_NOMEM;
   goto vdbe_error_halt;
 
@@ -5083,7 +5084,7 @@ abort_due_to_error:
   assert( p->zErrMsg==0 );
   if( db->mallocFailed ) rc = SQLITE_NOMEM;
   if( rc!=SQLITE_IOERR_NOMEM ){
-    sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
+    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3ErrStr(rc));
   }
   goto vdbe_error_halt;
 
@@ -5094,6 +5095,6 @@ abort_due_to_interrupt:
   assert( db->u1.isInterrupted );
   rc = SQLITE_INTERRUPT;
   p->rc = rc;
-  sqlite3SetString(&p->zErrMsg, sqlite3ErrStr(rc), (char*)0);
+  sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3ErrStr(rc));
   goto vdbe_error_halt;
 }
