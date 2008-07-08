@@ -1,5 +1,5 @@
-C change\sto\suse\ssqlite_uint64\sfor\sMSVC\scompile;\s(CVS\s5361)
-D 2008-07-08T03:04:59
+C Prohibit\sthe\suser\sfrom\schanging\sthe\stemporary\sstorage\smedium\s(pragma\stemp_store)\swhile\sthere\sis\sa\sread\stransaction\sopen\son\sthe\stemporary\sdatabase.\sAdd\stests\sto\sshared.test\sto\scover\sa\sfew\smore\slines\sin\sbtree.c.\s(CVS\s5362)
+D 2008-07-08T07:35:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -136,7 +136,7 @@ F src/os_win.c 2bf2f8cd700299564cc236262c2668e1e02c626a
 F src/pager.c 2cd554d474cfa0228ece30645fe7bb7d1f6824c7
 F src/pager.h 6aa3050a3c684475a5a9dbad5ff1cebad612acba
 F src/parse.y 8c2c3145eebe1964eb279cb3c4e502eae28bb0fa
-F src/pragma.c 9a95f5b3708f6d3ddd987eab5f369a19ffcb6795
+F src/pragma.c 6fad83fbcc7ec6e76d91fe2805fe972ff3af6a0c
 F src/prepare.c aba51dad52308e3d9d2074d8ff4e612e7f1cab51
 F src/printf.c 8b063da9dcde26b7c500a01444b718d86f21bc6e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
@@ -426,7 +426,7 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 6df72c441db0a037b7ec6990d16311c24fbea77b
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
 F test/permutations.test af83024a469d1cade2a6ca9ce33e61bcdd7c2672
-F test/pragma.test 44bc52afa72cabfeae82641e0033ca24919f3ce8
+F test/pragma.test e1984ed47f699a4a817008dab4111be31ee8b935
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test b04797fc069ffad3ec2e45980bbfa1671dd66550
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
@@ -453,7 +453,7 @@ F test/select9.test b4007b15396cb7ba2615cab31e1973b572e43210
 F test/selectA.test e4501789a1d0fe9d00db15187623fb5b7031357b
 F test/selectB.test 811a852ad6567f3d6f786619511f9c4b2ed1defd
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
-F test/shared.test c6769531e0cb751d46a9838c0532d3786606c0f6
+F test/shared.test f1066281aa19517ab8dbe76328afadff76516f67
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
 F test/shared3.test 987316be601e2349e6a340a6d5f8ed981e507931
 F test/shared_err.test 776ab7196ecda8b07a075e115b0725806991e151
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6f2629c78327bb6cbb15d1f9900a1ef58f2d37dd
-R 18a26bc89f174a9c318cb7d42425a4b2
-U shane
-Z 6593495d35209a42e3237ec7dfb5e511
+P 369118ca2e9da55f44b946559ad38a14efe723e5
+R 64f2b20fec791858c79e62a22bfbc726
+U danielk1977
+Z 21ef773aee8047e84e0c419b111a78b2

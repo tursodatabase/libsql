@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.32 2008/05/19 20:11:40 shane Exp $
+# $Id: shared.test,v 1.33 2008/07/08 07:35:52 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -936,6 +936,68 @@ do_test shared-$av.12.X {
   foreach h $::db_handles { 
     $h close
   }
+} {}
+
+# Internally, locks are acquired on shared B-Tree structures in the order
+# that the structures appear in the virtual memory address space. This
+# test case attempts to cause the order of the structures in memory 
+# to be different from the order in which they are attached to a given
+# database handle. This covers an extra line or two.
+#
+do_test shared-$av.13.1 {
+  file delete -force test2.db test3.db test4.db test5.db
+  sqlite3 db :memory:
+  execsql {
+    ATTACH 'test2.db' AS aux2;
+    ATTACH 'test3.db' AS aux3;
+    ATTACH 'test4.db' AS aux4;
+    ATTACH 'test5.db' AS aux5;
+    DETACH aux2;
+    DETACH aux3;
+    DETACH aux4;
+    ATTACH 'test2.db' AS aux2;
+    ATTACH 'test3.db' AS aux3;
+    ATTACH 'test4.db' AS aux4;
+  }
+} {}
+do_test shared-$av.13.2 {
+  execsql {
+    CREATE TABLE t1(a, b, c);
+    CREATE TABLE aux2.t2(a, b, c);
+    CREATE TABLE aux3.t3(a, b, c);
+    CREATE TABLE aux4.t4(a, b, c);
+    CREATE TABLE aux5.t5(a, b, c);
+    SELECT count(*) FROM 
+      aux2.sqlite_master, 
+      aux3.sqlite_master, 
+      aux4.sqlite_master, 
+      aux5.sqlite_master
+  }
+} {1}
+do_test shared-$av.13.3 {
+  db close
+} {}
+
+# Test that nothing horrible happens if a connection to a shared B-Tree 
+# structure is closed while some other connection has an open cursor.
+#
+do_test shared-$av.14.1 {
+  sqlite3 db test.db
+  sqlite3 db2 test.db
+  execsql {SELECT name FROM sqlite_master}
+} {db1 db2 db3 db4 db5 db6 db7 db8 db9 db10 db11 db12 db13 db14}
+do_test shared-$av.14.2 {
+  set res [list]
+  db eval {SELECT name FROM sqlite_master} {
+    if {$name eq "db7"} {
+      db2 close
+    }
+    lappend res $name
+  }
+  set res
+} {db1 db2 db3 db4 db5 db6 db7 db8 db9 db10 db11 db12 db13 db14}
+do_test shared-$av.14.3 {
+  db close
 } {}
 
 }
