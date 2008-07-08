@@ -1,5 +1,5 @@
-C Add\stests\sto\sverify\scorrect\sbehavior\swhen\smutex\sinitialization\sfails.\s(CVS\s5359)
-D 2008-07-08T02:12:37
+C Test\scoverage\simprovements\sin\sprintf.c.\s(CVS\s5360)
+D 2008-07-08T02:24:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -428,7 +428,7 @@ F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
 F test/permutations.test af83024a469d1cade2a6ca9ce33e61bcdd7c2672
 F test/pragma.test 44bc52afa72cabfeae82641e0033ca24919f3ce8
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
-F test/printf.test c3405535b418d454e8a52196a0fc592ec9eec58d
+F test/printf.test b04797fc069ffad3ec2e45980bbfa1671dd66550
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 83150cb7b513e33cce90fdc68f4b1817551857c0
 F test/quick.test 3dba257b9d4e06e1b0199bc1401052f554ab5f14
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fe80aa58a4ac12db5a92d25d28165f5159f04533
-R f30d395fe0e995ac76915a06c1dd7771
+P 65875005ac8bc7988d7d7d8e8b999857449568fd
+R 23693314e34adf232597662e6e934b58
 U drh
-Z 4be64c0a5d2f09e2efc62714a2157dfd
+Z f9ac4fdaeaf8da093b1800067c3b5339
