@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.194 2008/06/18 15:34:10 drh Exp $
+** $Id: func.c,v 1.195 2008/07/08 22:28:49 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -908,7 +908,7 @@ static void trimFunc(
     }
   }
   if( nChar>0 ){
-    flags = (int)sqlite3_user_data(context);
+    flags = SQLITE_PTR_TO_INT(sqlite3_user_data(context));
     if( flags & 1 ){
       while( nIn>0 ){
         int len;
@@ -1286,7 +1286,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
     void *pArg;
     u8 argType = aFuncs[i].argType;
-    pArg = (void*)(int)argType;
+    pArg = SQLITE_INT_TO_PTR(argType);
     sqlite3CreateFunc(db, aFuncs[i].zName, aFuncs[i].nArg,
         aFuncs[i].eTextRep, pArg, aFuncs[i].xFunc, 0, 0);
     if( aFuncs[i].needCollSeq ){
@@ -1304,7 +1304,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
   sqlite3AttachFunctions(db);
 #endif
   for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
-    void *pArg = (void*)(int)aAggs[i].argType;
+    void *pArg = SQLITE_INT_TO_PTR(aAggs[i].argType);
     sqlite3CreateFunc(db, aAggs[i].zName, aAggs[i].nArg, SQLITE_UTF8, 
         pArg, 0, aAggs[i].xStep, aAggs[i].xFinalize);
     if( aAggs[i].needCollSeq ){

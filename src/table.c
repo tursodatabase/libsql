@@ -16,7 +16,7 @@
 ** These routines are in a separate files so that they will not be linked
 ** if they are not used.
 **
-** $Id: table.c,v 1.35 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: table.c,v 1.36 2008/07/08 22:28:49 shane Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -147,7 +147,7 @@ int sqlite3_get_table(
   res.azResult[0] = 0;
   rc = sqlite3_exec(db, zSql, sqlite3_get_table_cb, &res, pzErrMsg);
   assert( sizeof(res.azResult[0])>= sizeof(res.nData) );
-  res.azResult[0] = (char*)res.nData;
+  res.azResult[0] = SQLITE_INT_TO_PTR(res.nData);
   if( (rc&0xff)==SQLITE_ABORT ){
     sqlite3_free_table(&res.azResult[1]);
     if( res.zErrMsg ){
@@ -192,7 +192,7 @@ void sqlite3_free_table(
     int i, n;
     azResult--;
     assert( azResult!=0 );
-    n = (int)azResult[0];
+    n = SQLITE_PTR_TO_INT(azResult[0]);
     for(i=1; i<n; i++){ if( azResult[i] ) sqlite3_free(azResult[i]); }
     sqlite3_free(azResult);
   }

@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.394 2008/07/08 19:34:07 drh Exp $
+** $Id: vdbeaux.c,v 1.395 2008/07/08 22:28:49 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -535,7 +535,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   if( n==P4_INT32 ){
     /* Note: this cast is safe, because the origin data point was an int
     ** that was cast to a (const char *). */
-    pOp->p4.i = (int)zP4;
+    pOp->p4.i = SQLITE_PTR_TO_INT(zP4);
     pOp->p4type = n;
   }else if( zP4==0 ){
     pOp->p4.p = 0;
