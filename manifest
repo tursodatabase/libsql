@@ -1,7 +1,7 @@
-C make\sOS/2\sVFS\sfunctions\sstatic\s(CVS\s5376)
-D 2008-07-08T19:46:24
+C Added\stest_mutex.c\s(for\stestfixture)\sto\sinput\sfile\sfor\sconfigure\sscript.\s(CVS\s5377)
+D 2008-07-08T22:15:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
+F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION d739ba532eddc5c09ef9a55151328cd6a8a102c6
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1ed98f9e617fb422efc37c4a3a5c5f0702467868
-R 6e4e70358db42b8f8dcd50ec7b7d6dda
-U pweilbacher
-Z 63744f7f09cac2a3e40c86fea6a789dd
+P b40d9496d03b16a25c164bbb694860539f77cbc3
+R cd1100607ecda4285f414b5cc8debe5d
+U shane
+Z 13f1570fbf6a7563b5523ff34acfea48
