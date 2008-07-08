@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.37 2008/06/07 08:58:23 danielk1977 Exp $
+# $Id: ioerr.test,v 1.38 2008/07/08 10:19:58 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -288,4 +288,23 @@ ifcapable memorymanage {
   }
 }
 
+ifcapable pager_pragmas&&autovacuum {
+  do_ioerr_test ioerr-12 -ckrefcount true -erc 1 -sqlprep {
+     PRAGMA page_size = 512;
+     PRAGMA auto_vacuum = incremental;
+     CREATE TABLE t1(x);
+     INSERT INTO t1 VALUES( randomblob(1   * (512-4)) );
+     INSERT INTO t1 VALUES( randomblob(110 * (512-4)) );
+     INSERT INTO t1 VALUES( randomblob(2   * (512-4)) );
+     INSERT INTO t1 VALUES( randomblob(110 * (512-4)) );
+     INSERT INTO t1 VALUES( randomblob(3 * (512-4)) );
+     DELETE FROM t1 WHERE rowid = 3;
+     PRAGMA incremental_vacuum = 2;
+     DELETE FROM t1 WHERE rowid = 1;
+  } -sqlbody {
+     PRAGMA incremental_vacuum = 1;
+  }
+}
+
 finish_test
+

@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt2.test,v 1.8 2008/07/07 17:55:29 danielk1977 Exp $
+# $Id: corrupt2.test,v 1.9 2008/07/08 10:19:58 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -177,7 +177,7 @@ do_test corrupt2-4.1 {
   } db2
 } {1 {database disk image is malformed}}
 
-do_test corrupt2-4.1 {
+do_test corrupt2-5.1 {
   file delete -force corrupt.db
   file delete -force corrupt.db-journal
   sqlite3 db2 corrupt.db 
@@ -226,5 +226,94 @@ On tree page 2 cell 1: Child page depth differs
 Page 4 is never used}}
 
 db2 close
+
+proc corruption_test {args} {
+  array set A $args
+
+  catch {db close}
+  file delete -force corrupt.db
+  file delete -force corrupt.db-journal
+
+  sqlite3 db corrupt.db 
+  db eval $A(-sqlprep)
+  db close
+
+  eval $A(-corrupt)
+
+  sqlite3 db corrupt.db
+  eval $A(-test)
+}
+
+ifcapable autovacuum {
+  # The tests within this block - corrupt2-6.* - aim to test corruption
+  # detection within an incremental-vacuum. When an incremental-vacuum
+  # step is executed, the last non-free page of the database file is 
+  # moved into a free space in the body of the file. After doing so,
+  # the page reference in the parent page must be updated to refer
+  # to the new location. These tests test the outcome of corrupting
+  # that page reference before performing the incremental vacuum.
+  #
+
+  # The last page in the database page is the second page 
+  # in an overflow chain.
+  #
+  corruption_test -sqlprep {
+    PRAGMA auto_vacuum = incremental;
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, randomblob(2500));
+    INSERT INTO t1 VALUES(2, randomblob(2500));
+    DELETE FROM t1 WHERE a = 1;
+  } -corrupt {
+    hexio_write corrupt.db [expr 1024*5] 00000008
+  } -test {
+    do_test corrupt2-6.1 {
+      catchsql { pragma incremental_vacuum = 1 }
+    } {1 {database disk image is malformed}}
+  }
+
+  # The last page in the database page is a non-root b-tree page.
+  #
+  corruption_test -sqlprep {
+    PRAGMA auto_vacuum = incremental;
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(1, randomblob(2500));
+    INSERT INTO t1 VALUES(2, randomblob(50));
+    INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
+    INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
+    INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
+    INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
+    DELETE FROM t1 WHERE a = 1;
+  } -corrupt {
+    hexio_write corrupt.db [expr 1024*2 + 8] 00000009
+  } -test {
+    do_test corrupt2-6.2 {
+      catchsql { pragma incremental_vacuum = 1 }
+    } {1 {database disk image is malformed}}
+  }
+
+  # Set up a pointer-map entry so that the last page of the database
+  # file appears to be a b-tree root page. This should be detected
+  # as corruption.
+  #
+  corruption_test -sqlprep {
+    PRAGMA auto_vacuum = incremental;
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(1, randomblob(2500));
+    INSERT INTO t1 VALUES(2, randomblob(2500));
+    INSERT INTO t1 VALUES(3, randomblob(2500));
+    DELETE FROM t1 WHERE a = 1;
+  } -corrupt {
+    set nPage [expr [file size corrupt.db] / 1024]
+    hexio_write corrupt.db [expr 1024 + ($nPage-3)*5] 010000000
+  } -test {
+    do_test corrupt2-6.3 {
+      catchsql { pragma incremental_vacuum = 1 }
+    } {1 {database disk image is malformed}}
+  }
+
+}
 
 finish_test

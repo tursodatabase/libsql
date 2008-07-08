@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite treats a database
 # as readonly if its write version is set to  high.
 #
-# $Id: rdonly.test,v 1.1 2007/04/24 17:27:52 drh Exp $
+# $Id: rdonly.test,v 1.2 2008/07/08 10:19:58 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -61,5 +61,18 @@ do_test rdonly-1.5 {
     SELECT * FROM t1;
   }
 } {0 {1 2}}
+
+# Now, after connection [db] has loaded the database schema, modify the
+# write-version of the file (and the change-counter, so that the 
+# write-version is reloaded). This way, SQLite does not discover that
+# the database is read-only until after it is locked.
+#
+do_test rdonly-1.6 {
+  hexio_write test.db 18 02              ; # write-version
+  hexio_write test.db 24 11223344        ; # change-counter
+  catchsql {
+    INSERT INTO t1 VALUES(2);
+  }
+} {1 {attempt to write a readonly database}}
 
 finish_test

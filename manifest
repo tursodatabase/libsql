@@ -1,5 +1,5 @@
-C Prohibit\sthe\suser\sfrom\schanging\sthe\stemporary\sstorage\smedium\s(pragma\stemp_store)\swhile\sthere\sis\sa\sread\stransaction\sopen\son\sthe\stemporary\sdatabase.\sAdd\stests\sto\sshared.test\sto\scover\sa\sfew\smore\slines\sin\sbtree.c.\s(CVS\s5362)
-D 2008-07-08T07:35:52
+C Improve\scoverage\sof\sbtree.c.\s(CVS\s5363)
+D 2008-07-08T10:19:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -242,7 +242,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test af069d971853dbe12af936910bfa49d92f7b16e9
-F test/corrupt2.test 33c154628676f494bf4e7dd2c976115ed59a632d
+F test/corrupt2.test bef3b73ffd7aa678be1e490bf6dd87edac848757
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -356,7 +356,7 @@ F test/insert5.test 509017213328147d3acdfa2c441bfd82362dda41
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
 F test/io.test 833a1746518ec3005aa7792f9bcb8f01923ff544
-F test/ioerr.test 035470704718a2982a8d14e8a46316e6acd667ac
+F test/ioerr.test 7ff1f418eae013dd848583c7f8a8cae938532f55
 F test/ioerr2.test b9c9a0491a812707762a7c002876553be54d9969
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
@@ -433,7 +433,7 @@ F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test 83150cb7b513e33cce90fdc68f4b1817551857c0
 F test/quick.test 3dba257b9d4e06e1b0199bc1401052f554ab5f14
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
-F test/rdonly.test b34db316525440d3b42c32e83942c02c37d28ef0
+F test/rdonly.test bd054831f8a3078e765a0657e247182486f0cb47
 F test/reindex.test 38b138abe36bf9a08c791ed44d9f76cd6b97b78b
 F test/rollback.test 0bd29070ba2f76da939347773fbda53337ebd61c
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 369118ca2e9da55f44b946559ad38a14efe723e5
-R 64f2b20fec791858c79e62a22bfbc726
+P 92e0cf9a08a8b337a8f239afb048a0e045485771
+R f6b0a753332066ca84b9ccfcacf058f5
 U danielk1977
-Z 21ef773aee8047e84e0c419b111a78b2
+Z 108e75b1f366b17292035348cfaf03b0
