@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.30 2008/06/26 10:54:12 danielk1977 Exp $
+** $Id: test_config.c,v 1.31 2008/07/08 23:40:20 drh Exp $
 */
 
 #include "sqliteLimit.h"
@@ -64,7 +64,7 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "lfs", "1", TCL_GLOBAL_ONLY);
 #endif
 
-#ifdef SQLITE_MEMDEBUG
+#if 1 /* def SQLITE_MEMDEBUG */
   Tcl_SetVar2(interp, "sqlite_options", "memdebug", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "memdebug", "0", TCL_GLOBAL_ONLY);

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.489 2008/07/08 22:28:49 shane Exp $
+** $Id: build.c,v 1.490 2008/07/08 23:40:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1526,7 +1526,7 @@ void sqlite3EndTable(
       sqlite3VdbeChangeP5(v, 1);
       pParse->nTab = 2;
       sqlite3SelectDestInit(&dest, SRT_Table, 1);
-      sqlite3Select(pParse, pSelect, &dest, 0, 0, 0, 0);
+      sqlite3Select(pParse, pSelect, &dest, 0, 0, 0);
       sqlite3VdbeAddOp1(v, OP_Close, 1);
       if( pParse->nErr==0 ){
         pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSelect);

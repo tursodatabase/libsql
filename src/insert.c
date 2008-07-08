@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.246 2008/07/08 22:28:49 shane Exp $
+** $Id: insert.c,v 1.247 2008/07/08 23:40:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -530,7 +530,7 @@ void sqlite3Insert(
     VdbeComment((v, "Jump over SELECT coroutine"));
 
     /* Resolve the expressions in the SELECT statement and execute it. */
-    rc = sqlite3Select(pParse, pSelect, &dest, 0, 0, 0, 0);
+    rc = sqlite3Select(pParse, pSelect, &dest, 0, 0, 0);
     if( rc || pParse->nErr || db->mallocFailed ){
       goto insert_cleanup;
     }

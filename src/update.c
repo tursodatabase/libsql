@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.178 2008/04/28 18:46:43 drh Exp $
+** $Id: update.c,v 1.179 2008/07/08 23:40:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -649,7 +649,7 @@ static void updateVirtualTable(
   /* fill the ephemeral table 
   */
   sqlite3SelectDestInit(&dest, SRT_Table, ephemTab);
-  sqlite3Select(pParse, pSelect, &dest, 0, 0, 0, 0);
+  sqlite3Select(pParse, pSelect, &dest, 0, 0, 0);
 
   /* Generate code to scan the ephemeral table and call VUpdate. */
   iReg = ++pParse->nMem;

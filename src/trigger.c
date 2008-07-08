@@ -10,7 +10,7 @@
 *************************************************************************
 **
 **
-** $Id: trigger.c,v 1.126 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: trigger.c,v 1.127 2008/07/08 23:40:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -680,7 +680,7 @@ static int codeTriggerProgram(
 
           sqlite3SelectDestInit(&dest, SRT_Discard, 0);
           sqlite3SelectResolve(pParse, ss, 0);
-          sqlite3Select(pParse, ss, &dest, 0, 0, 0, 0);
+          sqlite3Select(pParse, ss, &dest, 0, 0, 0);
           sqlite3SelectDelete(ss);
         }
         break;

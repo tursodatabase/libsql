@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.737 2008/07/08 22:28:49 shane Exp $
+** @(#) $Id: sqliteInt.h,v 1.738 2008/07/08 23:40:20 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1922,7 +1922,7 @@ void sqlite3SrcListDelete(SrcList*);
 void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
                         Token*, int, int);
 void sqlite3DropIndex(Parse*, SrcList*, int);
-int sqlite3Select(Parse*, Select*, SelectDest*, Select*, int, int*, char *aff);
+int sqlite3Select(Parse*, Select*, SelectDest*, Select*, int, int*);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
                          Expr*,ExprList*,int,Expr*,Expr*);
 void sqlite3SelectDelete(Select*);
