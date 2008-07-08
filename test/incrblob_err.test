@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob_err.test,v 1.11 2008/07/08 12:07:33 danielk1977 Exp $
+# $Id: incrblob_err.test,v 1.12 2008/07/08 17:43:57 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -130,5 +130,7 @@ do_ioerr_test incrblob_err-8 -cksum 1 -sqlprep {
   sqlite3_blob_write $::blob [expr 500*1020-20] 12345678900987654321
   close $::blob
 }
+
+db2 close
 
 finish_test

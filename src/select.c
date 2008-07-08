@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.447 2008/07/02 16:10:46 danielk1977 Exp $
+** $Id: select.c,v 1.448 2008/07/08 17:43:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -3074,6 +3074,10 @@ static void substSelect(
 **        rules (11), (13) and (14), they may also contain ORDER BY,
 **        LIMIT and OFFSET clauses.
 **
+**  (18)  If the sub-query is a compound select, then all terms of the
+**        ORDER by clause of the parent must be simple references to 
+**        columns of the sub-query.
+**
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
 ** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
@@ -3110,6 +3114,7 @@ static int flattenSubquery(
   pSrc = p->pSrc;
   assert( pSrc && iFrom>=0 && iFrom<pSrc->nSrc );
   pSubitem = &pSrc->a[iFrom];
+  iParent = pSubitem->iCursor;
   pSub = pSubitem->pSelect;
   assert( pSub!=0 );
   if( isAgg && subqueryIsAgg ) return 0;                 /* Restriction (1)  */
@@ -3185,6 +3190,17 @@ static int flattenSubquery(
         return 0;
       }
     }
+
+    /* Restriction 18. */
+    if( p->pOrderBy ){
+      int ii;
+      for(ii=0; ii<p->pOrderBy->nExpr; ii++){
+        Expr *pExpr = p->pOrderBy->a[ii].pExpr;
+        if( pExpr->op!=TK_COLUMN || pExpr->iTable!=iParent ){ 
+          return 0;
+        }
+      }
+    }
   }
 
   pParse->zAuthContext = pSubitem->zName;
@@ -3228,7 +3244,6 @@ static int flattenSubquery(
   ** iFrom-th entry of the FROM clause in the outer query.
   */
   pSub = pSub1 = pSubitem->pSelect;
-  iParent = pSubitem->iCursor;
   for(pParent=p; pParent; pParent=pParent->pPrior, pSub=pSub->pPrior){
     int nSubSrc = pSubSrc->nSrc;
     int jointype = 0;

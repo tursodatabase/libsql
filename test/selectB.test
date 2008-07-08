@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
-# $Id: selectB.test,v 1.5 2008/07/01 18:26:51 danielk1977 Exp $
+# $Id: selectB.test,v 1.6 2008/07/08 17:43:57 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -357,6 +357,12 @@ for {set ii 3} {$ii <= 4} {incr ii} {
       )
     }
   } {0 1}
+
+  do_test selectB-$ii.21 {
+    execsql {
+      SELECT * FROM (SELECT * FROM t1 UNION ALL SELECT * FROM t2) ORDER BY a+b
+    }
+  } {2 4 6 3 6 9 8 10 12 12 15 18 14 16 18 21 24 27}
 }
 
 finish_test
