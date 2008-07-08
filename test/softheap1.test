@@ -13,7 +13,7 @@
 # A database corruption bug that occurs in auto_vacuum mode when
 # the soft_heap_limit is set low enough to be triggered.
 #
-# $Id: softheap1.test,v 1.4 2008/01/19 20:11:26 drh Exp $
+# $Id: softheap1.test,v 1.5 2008/07/08 17:13:59 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -44,6 +44,7 @@ do_test softheap1-1.1 {
     PRAGMA integrity_check;
   }
 } {ok}
+
 sqlite3_soft_heap_limit $soft_limit
    
 finish_test

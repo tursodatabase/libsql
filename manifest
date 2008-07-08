@@ -1,5 +1,5 @@
-C 3\smore\scoverage\stests\sfor\sbtree.c.\s(CVS\s5370)
-D 2008-07-08T15:59:52
+C Test\sanother\scorruption\scase\sin\sbtree.c.\sAnd\san\sIO\serror\srelated\sscenario.\s(CVS\s5371)
+D 2008-07-08T17:13:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c e00268557794be741e26cbca1cd77aa37e53b1cc
+F src/btree.c 965da6ca8bbd51677db5587471a5b0ef08f49786
 F src/btree.h b1bd7e0b8c2e33658aaf447cb0d1d94f74664b6b
 F src/btreeInt.h 02325f04758dba0fcd0c08ac55cd9b189dad61a5
 F src/build.c 142ceacdc14e479f337aeb01db631f22683496f8
@@ -242,7 +242,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test af069d971853dbe12af936910bfa49d92f7b16e9
-F test/corrupt2.test 26810e0019a16004b1a7619930801ef1c31531e4
+F test/corrupt2.test e56f45006e7eb3ee680ad3b61c92cc14ae09986e
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -356,7 +356,7 @@ F test/insert5.test 509017213328147d3acdfa2c441bfd82362dda41
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
 F test/io.test 833a1746518ec3005aa7792f9bcb8f01923ff544
-F test/ioerr.test 7ff1f418eae013dd848583c7f8a8cae938532f55
+F test/ioerr.test f87e5be364a5938996e8741091088845eb9ce802
 F test/ioerr2.test 5598405c48842c6c0187daad9eb49eff2c54f80d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
@@ -460,7 +460,7 @@ F test/shared_err.test 776ab7196ecda8b07a075e115b0725806991e151
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/sidedelete.test 736ac1da08b3b1aa62df97fef2fcdb1b660111b9
 F test/soak.test 64f9b27fbcdec43335a88c546ce1983e6ba40d7b
-F test/softheap1.test c9146eda576eedb62192b771293a2115d9af8456
+F test/softheap1.test 73ebd6e020d2954d965da2072baba5922fc8fb6a
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c5e45dd664198e5b4fc44b316bd4adbc9a6c296b
-R 17c4ddff498e4bc2ee18143f2ad0e55f
+P 96df0a5fa4bb2b3dfedf034d81704e152cdc63a9
+R bc52d4843754cbd36c0ef3202e607fb2
 U danielk1977
-Z a2bfd51b9ad8acbdccd1bedc318ea395
+Z 01c21e73d1086c9de6763f3a0f6454a5

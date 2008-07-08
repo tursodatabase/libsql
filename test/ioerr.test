@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.38 2008/07/08 10:19:58 danielk1977 Exp $
+# $Id: ioerr.test,v 1.39 2008/07/08 17:13:59 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -305,6 +305,29 @@ ifcapable pager_pragmas&&autovacuum {
      PRAGMA incremental_vacuum = 1;
   }
 }
+
+# Usually, after a new page is allocated from the end of the file, it does
+# not need to be written to the journal. The exception is when the new page
+# shares its sector with an existing page that does need to be journalled.
+# This test case provokes this condition to test for the sake of coverage
+# that an IO error while journalling the coresident page is handled correctly.
+#
+sqlite3_simulate_device -char {} -sectorsize 2048
+do_ioerr_test ioerr-12 -ckrefcount true -erc 1 -tclprep {
+  db close
+  sqlite3 db test.db -vfs devsym
+
+  # Create a test database. Page 2 is the root page of table t1. The only
+  # row inserted into t1 has an overflow page - page 3. Page 3 will be
+  # coresident on the 2048 byte sector with the next page to be allocated.
+  # 
+  db eval { PRAGMA page_size = 1024 }
+  db eval { CREATE TABLE t1(x) }
+  db eval { INSERT INTO t1 VALUES(randomblob(1100)); }
+} -tclbody {
+  db eval { INSERT INTO t1 VALUES(randomblob(2000)); }
+}
+sqlite3_simulate_device -char {} -sectorsize 0
 
 finish_test
 

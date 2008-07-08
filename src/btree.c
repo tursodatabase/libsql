@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.471 2008/07/04 17:52:43 drh Exp $
+** $Id: btree.c,v 1.472 2008/07/08 17:13:59 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2014,7 +2014,7 @@ static int setChildPtrmaps(MemPage *pPage){
     if( !pPage->leaf ){
       Pgno childPgno = get4byte(pCell);
       rc = ptrmapPut(pBt, childPgno, PTRMAP_BTREE, pgno);
-      if( rc!=SQLITE_OK ) goto set_child_ptrmaps_out;
+       if( rc!=SQLITE_OK ) goto set_child_ptrmaps_out;
     }
   }
 

@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt2.test,v 1.12 2008/07/08 15:59:52 danielk1977 Exp $
+# $Id: corrupt2.test,v 1.13 2008/07/08 17:13:59 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -337,7 +337,7 @@ ifcapable autovacuum {
 }
 
 
-corruption_test -sqlprep {
+set sqlprep {
   PRAGMA page_size = 1024;
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
   CREATE INDEX i1 ON t1(b);
@@ -348,7 +348,9 @@ corruption_test -sqlprep {
   INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
   INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
   INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
-} -corrupt {
+}
+
+corruption_test -sqlprep $sqlprep -corrupt {
   # Set the page-flags of one of the leaf pages of the index B-Tree to
   # 0x0D (interpreted by SQLite as "leaf page of a table B-Tree").
   #
@@ -362,7 +364,46 @@ corruption_test -sqlprep {
   close $fd
 } -test {
   do_test corrupt2-7.1 {
-    catchsql { SELECT b FROM t1 ORDER BY b }
+    catchsql { SELECT b FROM t1 ORDER BY b ASC }
+  } {1 {database disk image is malformed}}
+}
+
+corruption_test -sqlprep $sqlprep -corrupt {
+  # Mess up the page-header of one of the leaf pages of the index B-Tree.
+  # The corruption is detected as part of an OP_Prev opcode.
+  #
+  set fd [open corrupt.db r+]
+  fconfigure $fd -translation binary -encoding binary
+  seek $fd [expr 1024*2 + 12] 
+  set zCellOffset [read $fd 2]
+  binary scan $zCellOffset S iCellOffset
+  seek $fd [expr 1024*2 + $iCellOffset]
+  set zChild [read $fd 4]
+  binary scan $zChild I iChild
+  seek $fd [expr 1024*($iChild-1)+3]
+  puts -nonewline $fd "\xFFFF"
+  close $fd
+} -test {
+  do_test corrupt2-7.1 {
+    catchsql { SELECT b FROM t1 ORDER BY b DESC }
+  } {1 {database disk image is malformed}}
+}
+
+corruption_test -sqlprep $sqlprep -corrupt {
+  # Set the page-flags of one of the leaf pages of the table B-Tree to
+  # 0x0A (interpreted by SQLite as "leaf page of an index B-Tree").
+  #
+  set fd [open corrupt.db r+]
+  fconfigure $fd -translation binary -encoding binary
+  seek $fd [expr 1024*1 + 8] 
+  set zRightChild [read $fd 4]
+  binary scan $zRightChild I iRightChild
+  seek $fd [expr 1024*($iRightChild-1)]
+  puts -nonewline $fd "\x0A"
+  close $fd
+} -test {
+  do_test corrupt2-8.1 {
+    catchsql { SELECT * FROM t1 WHERE rowid=1000 }
   } {1 {database disk image is malformed}}
 }
 
@@ -389,7 +430,7 @@ corruption_test -sqlprep {
   puts -nonewline $fd "\x00\x00"
   close $fd
 } -test {
-  do_test corrupt2-8.1 {
+  do_test corrupt2-9.1 {
     catchsql { SELECT sql FROM sqlite_master }
   } {1 {database disk image is malformed}}
 }
