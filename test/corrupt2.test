@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt2.test,v 1.9 2008/07/08 10:19:58 danielk1977 Exp $
+# $Id: corrupt2.test,v 1.10 2008/07/08 12:07:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -311,6 +311,27 @@ ifcapable autovacuum {
   } -test {
     do_test corrupt2-6.3 {
       catchsql { pragma incremental_vacuum = 1 }
+    } {1 {database disk image is malformed}}
+  }
+
+  corruption_test -sqlprep {
+    PRAGMA auto_vacuum = 1;
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(1, randomblob(2500));
+    DELETE FROM t1 WHERE a = 1;
+  } -corrupt {
+    set nAppend [expr 1024*207 - [file size corrupt.db]]
+    set fd [open corrupt.db r+]
+    seek $fd 0 end
+    puts -nonewline $fd [string repeat x $nAppend]
+    close $fd
+  } -test {
+    do_test corrupt2-6.4 {
+      catchsql { 
+        BEGIN EXCLUSIVE;
+        COMMIT;
+      }
     } {1 {database disk image is malformed}}
   }
 

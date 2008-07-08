@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob_err.test,v 1.10 2008/06/25 14:31:53 drh Exp $
+# $Id: incrblob_err.test,v 1.11 2008/07/08 12:07:33 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -98,6 +98,36 @@ do_ioerr_test incrblob_err-6 -cksum 1 -sqlprep {
   set ::blob [db incrblob blobs v 1]
   seek $::blob -20 end
   puts -nonewline $::blob "12345678900987654321"
+  close $::blob
+}
+
+do_ioerr_test incrblob_err-7 -cksum 1 -sqlprep {
+  PRAGMA auto_vacuum = 1;
+  CREATE TABLE blobs(k INTEGER PRIMARY KEY, v BLOB);
+  INSERT INTO blobs VALUES(1, zeroblob(500 * 1020));
+} -tclbody {
+  # Read some data from the end of the large blob inserted into table 
+  # "blobs". This forces the IO error to occur while reading a pointer
+  # map page for the purposes of seeking to the end of the blob.
+  #
+  sqlite3 db2 test.db
+  set ::blob [db2 incrblob blobs v 1]
+  sqlite3_blob_read $::blob [expr 500*1020-20] 20
+  close $::blob
+}
+
+do_ioerr_test incrblob_err-8 -cksum 1 -sqlprep {
+  PRAGMA auto_vacuum = 1;
+  CREATE TABLE blobs(k INTEGER PRIMARY KEY, v BLOB);
+  INSERT INTO blobs VALUES(1, zeroblob(500 * 1020));
+} -tclbody {
+  # Read some data from the end of the large blob inserted into table 
+  # "blobs". This forces the IO error to occur while reading a pointer
+  # map page for the purposes of seeking to the end of the blob.
+  #
+  sqlite3 db2 test.db
+  set ::blob [db2 incrblob blobs v 1]
+  sqlite3_blob_write $::blob [expr 500*1020-20] 12345678900987654321
   close $::blob
 }
 

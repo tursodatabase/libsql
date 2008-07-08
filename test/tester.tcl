@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.128 2008/06/23 18:49:45 danielk1977 Exp $
+# $Id: tester.tcl,v 1.129 2008/07/08 12:07:33 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -790,6 +790,7 @@ proc do_ioerr_test {testname args} {
     if {$::go && $::sqlite_io_error_hardhit && $::ioerropts(-cksum)} {
       do_test $testname.$n.6 {
         catch {db close}
+        catch {db2 close}
         set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
         cksum
       } $checksum

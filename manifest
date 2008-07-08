@@ -1,5 +1,5 @@
-C Make\ssqlite3_shutdown()\sa\sno-op\sif\sthe\slibrary\sis\snot\sinitialized.\s(CVS\s5364)
-D 2008-07-08T12:02:35
+C Extra\scoverage\stests\sfor\sbtree.c.\s(CVS\s5365)
+D 2008-07-08T12:07:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -242,7 +242,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test af069d971853dbe12af936910bfa49d92f7b16e9
-F test/corrupt2.test bef3b73ffd7aa678be1e490bf6dd87edac848757
+F test/corrupt2.test 30a89c762c3c6575b725711d1f260b42470002a6
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -341,7 +341,7 @@ F test/in2.test b1f447f4f0f67e9f83ff931e7e2e30873f9ea055
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
 F test/incrblob2.test c82a780356bdf4d0c77f1adf0ea888248904fc07
-F test/incrblob_err.test a3e3d9442d2993e8a449e791db4001d11a2f683f
+F test/incrblob_err.test 96ae06bbb7d0cb2cad39744a32e57af5c07412e4
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
 F test/incrvacuum_ioerr.test ebc94092ac1545d9ce518a673988aef88197ca4e
@@ -480,7 +480,7 @@ F test/tableapi.test 892208d49e7be4817a4d3e4f641dbcbbee8cd03c
 F test/tclsqlite.test 3dfb48f46de4353376fad835390b493ba066b4dc
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl e9971a96183c23e70c7de5a3fbd38e87b4083aea
+F test/tester.tcl 4cb72d06312d635bf7281b23ddc388f3b0e19f82
 F test/thread001.test 8fbd9559da0bbdc273e00318c7fd66c162020af7
 F test/thread002.test 2c4ad2c386f60f6fe268cd91c769ee35b3c1fd0b
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f6d9cb835b8f75545f455328d61ba225e7da9bc4
-R 8d0a20bbb1681a3f516d3bb4b68b1d00
+P d725d3bbcef6a8093a246f8ef5b11bf690662393
+R 2d58858c5c3c471f74dd32d87ed3a2e9
 U danielk1977
-Z 1149ec9256cdcc577610b83b9209c299
+Z b7d05440ff0333183f3b4e3b23e508a6
