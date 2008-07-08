@@ -1,5 +1,5 @@
-C Completely\srework\sthe\ssqlite3SetString()\sprimitive\sso\sthat\sit\shonors\sthe\nSQLITE_LIMIT_LENGTH\sand\savoids\sthe\suse\sof\sstrlen().\s(CVS\s5374)
-D 2008-07-08T19:34:07
+C Fix\sa\sbug\sin\swhere.c\sintroduced\sby\scheck-in\s(5373).\s(CVS\s5375)
+D 2008-07-08T19:45:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -190,7 +190,7 @@ F src/vdbeblob.c 9345f6dcd675fdcfdb537d2d2f487542d9ea136a
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
 F src/vdbemem.c ee1a032b44ab59bd83a064544a0895003eecaec1
 F src/vtab.c 2096c03ec5540a43c8c73a8f43407dfd3549a982
-F src/where.c 1422d95647c6f3ca7b8e9cf4c44ed3f255fa2637
+F src/where.c 013a14f8e64686c2cea13eda5f2dbfcfdbb4d33a
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test ed6849e7a425620d5d4388409f3b15901b5bc2e7
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fa07c360b708324c47c8e9931f1e2b1b24e4faf8
-R 161d27aeeb9c9182a2b10e68914e4114
+P 8ed04b1e26a55306e4baf3e93fb084514134d603
+R bea4bf84c30b7b87b32a902e7322dcf0
 U drh
-Z 86cd29ba184c9dc2fd2c0974fe85e5ce
+Z 3a2fb73c3ed74c4bfec70edda5223524

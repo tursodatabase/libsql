@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.312 2008/07/08 18:05:26 drh Exp $
+** $Id: where.c,v 1.313 2008/07/08 19:45:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2157,8 +2157,7 @@ WhereInfo *sqlite3WhereBegin(
                                 ppIdxInfo);
         flags = WHERE_VIRTUALTABLE;
         pIndex = *ppIdxInfo;
-        assert( pIndex!=0 );
-        if( pIndex->orderByConsumed ){
+        if( pIndex && pIndex->orderByConsumed ){
           flags = WHERE_VIRTUALTABLE | WHERE_ORDERBY;
         }
         pIdx = 0;
