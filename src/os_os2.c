@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.48 2008/07/08 19:46:24 pweilbacher Exp $
+** $Id: os_os2.c,v 1.49 2008/07/08 22:34:07 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -645,27 +645,37 @@ static int getTempname(int nBuf, char *zBuf ){
   int i, j;
   char zTempPathBuf[3];
   PSZ zTempPath = (PSZ)&zTempPathBuf;
-  char *zTempPathUTF;
-  if( DosScanEnv( (PSZ)"TEMP", &zTempPath ) ){
-    if( DosScanEnv( (PSZ)"TMP", &zTempPath ) ){
-      if( DosScanEnv( (PSZ)"TMPDIR", &zTempPath ) ){
-           ULONG ulDriveNum = 0, ulDriveMap = 0;
-           DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
-           sprintf( (char*)zTempPath, "%c:", (char)( 'A' + ulDriveNum - 1 ) );
+  if( sqlite3_temp_directory ){
+    zTempPath = sqlite3_temp_directory;
+  }else{
+    if( DosScanEnv( (PSZ)"TEMP", &zTempPath ) ){
+      if( DosScanEnv( (PSZ)"TMP", &zTempPath ) ){
+        if( DosScanEnv( (PSZ)"TMPDIR", &zTempPath ) ){
+             ULONG ulDriveNum = 0, ulDriveMap = 0;
+             DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
+             sprintf( (char*)zTempPath, "%c:", (char)( 'A' + ulDriveNum - 1 ) );
+        }
       }
     }
   }
-  /* strip off a trailing slashes or backslashes, otherwise we would get *
-   * multiple (back)slashes which causes DosOpen() to fail               */
+  /* Strip off a trailing slashes or backslashes, otherwise we would get *
+   * multiple (back)slashes which causes DosOpen() to fail.              *
+   * Trailing spaces are not allowed, either.                            */
   j = strlen(zTempPath);
-  while( j > 0 && ( zTempPath[j-1] == '\\' || zTempPath[j-1] == '/' ) ){
+  while( j > 0 && ( zTempPath[j-1] == '\\' || zTempPath[j-1] == '/'
+                    || zTempPath[j-1] == ' ' ) ){
     j--;
   }
   zTempPath[j] = '\0';
-  zTempPathUTF = convertCpPathToUtf8( zTempPath );
-  sqlite3_snprintf( nBuf-30, zBuf,
-                    "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPathUTF );
-  free( zTempPathUTF );
+  if( !sqlite3_temp_directory ){
+    char *zTempPathUTF = convertCpPathToUtf8( zTempPath );
+    sqlite3_snprintf( nBuf-30, zBuf,
+                      "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPathUTF );
+    free( zTempPathUTF );
+  }else{
+    sqlite3_snprintf( nBuf-30, zBuf,
+                      "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath );
+  }
   j = strlen( zBuf );
   sqlite3_randomness( 20, &zBuf[j] );
   for( i = 0; i < 20; i++, j++ ){
@@ -772,7 +782,7 @@ static int os2Open(
   if( rc != NO_ERROR ){
     OSTRACE7( "OPEN Invalid handle rc=%d: zName=%s, ulAction=%#lx, ulAttr=%#lx, ulFlags=%#lx, ulMode=%#lx\n",
               rc, zName, ulAction, ulFileAttribute, ulOpenFlags, ulOpenMode );
-    if ( pFile->pathToDel )
+    if( pFile->pathToDel )
       free( pFile->pathToDel );
     pFile->pathToDel = NULL;
     if( flags & SQLITE_OPEN_READWRITE ){
