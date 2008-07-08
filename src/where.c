@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.311 2008/06/26 18:04:03 danielk1977 Exp $
+** $Id: where.c,v 1.312 2008/07/08 18:05:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2157,7 +2157,8 @@ WhereInfo *sqlite3WhereBegin(
                                 ppIdxInfo);
         flags = WHERE_VIRTUALTABLE;
         pIndex = *ppIdxInfo;
-        if( pIndex && pIndex->orderByConsumed ){
+        assert( pIndex!=0 );
+        if( pIndex->orderByConsumed ){
           flags = WHERE_VIRTUALTABLE | WHERE_ORDERBY;
         }
         pIdx = 0;
@@ -2546,8 +2547,9 @@ WhereInfo *sqlite3WhereBegin(
       if( (wflags&WHERE_ORDERBY_MIN)!=0
        && (pLevel->flags&WHERE_ORDERBY)
        && (pIdx->nColumn>nEq)
-       && (pOrderBy->a[0].pExpr->iColumn==pIdx->aiColumn[nEq])
       ){
+        assert( pOrderBy->nExpr==1 );
+        assert( pOrderBy->a[0].pExpr->iColumn==pIdx->aiColumn[nEq] );
         isMinQuery = 1;
       }
 

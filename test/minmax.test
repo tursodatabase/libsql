@@ -13,7 +13,7 @@
 # aggregate min() and max() functions and which are handled as
 # as a special case.
 #
-# $Id: minmax.test,v 1.20 2008/01/05 17:39:30 danielk1977 Exp $
+# $Id: minmax.test,v 1.21 2008/07/08 18:05:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -83,6 +83,19 @@ do_test minmax-1.9 {
 do_test minmax-1.10 {
   set sqlite_search_count
 } {19}
+
+do_test minmax-1.21 {
+  execsql {SELECT min(x) FROM t1 WHERE x=5}
+} {5}
+do_test minmax-1.22 {
+  execsql {SELECT min(x) FROM t1 WHERE x>=5}
+} {5}
+do_test minmax-1.23 {
+  execsql {SELECT min(x) FROM t1 WHERE x>=4.5}
+} {5}
+do_test minmax-1.24 {
+  execsql {SELECT min(x) FROM t1 WHERE x<4.5}
+} {1}
 
 do_test minmax-2.0 {
   execsql {
@@ -379,6 +392,151 @@ do_test minmax-10.12 {
     SELECT min(x), max(x) FROM t6;
   }
 } {{} {}}
+
+
+do_test minmax-11.1 {
+  execsql {
+    CREATE INDEX t1i2 ON t1(y,x);
+    SELECT min(x) FROM t1 WHERE y=5;
+  }
+} {16}
+do_test minmax-11.2 {
+  execsql {
+    SELECT max(x) FROM t1 WHERE y=5;
+  }
+} {20}
+do_test minmax-11.3 {
+  execsql {
+    SELECT min(x) FROM t1 WHERE y=6;
+  }
+} {{}}
+do_test minmax-11.4 {
+  execsql {
+    SELECT max(x) FROM t1 WHERE y=6;
+  }
+} {{}}
+do_test minmax-11.5 {
+  execsql {
+    SELECT min(x) FROM t1 WHERE y=1;
+  }
+} {1}
+do_test minmax-11.6 {
+  execsql {
+    SELECT max(x) FROM t1 WHERE y=1;
+  }
+} {1}
+do_test minmax-11.7 {
+  execsql {
+    SELECT min(x) FROM t1 WHERE y=0;
+  }
+} {{}}
+do_test minmax-11.8 {
+  execsql {
+    SELECT max(x) FROM t1 WHERE y=0;
+  }
+} {{}}
+do_test minmax-11.9 {
+  execsql {
+    SELECT min(x) FROM t1 WHERE y=5 AND x>=17.5;
+  }
+} {18}
+do_test minmax-11.10 {
+  execsql {
+    SELECT max(x) FROM t1 WHERE y=5 AND x>=17.5;
+  }
+} {20}
+
+do_test minmax-12.1 {
+  execsql {
+    CREATE TABLE t7(a,b,c);
+    INSERT INTO t7 SELECT y, x, x*y FROM t1;
+    INSERT INTO t7 SELECT y, x, x*y+1000 FROM t1;
+    CREATE INDEX t7i1 ON t7(a,b,c);
+    SELECT min(a) FROM t7;
+  }
+} {1}
+do_test minmax-12.2 {
+  execsql {
+    SELECT max(a) FROM t7;
+  }
+} {5}
+do_test minmax-12.3 {
+  execsql {
+    SELECT max(a) FROM t7 WHERE a=5;
+  }
+} {5}
+do_test minmax-12.4 {
+  execsql {
+    SELECT min(b) FROM t7 WHERE a=5;
+  }
+} {16}
+do_test minmax-12.5 {
+  execsql {
+    SELECT max(b) FROM t7 WHERE a=5;
+  }
+} {20}
+do_test minmax-12.6 {
+  execsql {
+    SELECT min(b) FROM t7 WHERE a=4;
+  }
+} {8}
+do_test minmax-12.7 {
+  execsql {
+    SELECT max(b) FROM t7 WHERE a=4;
+  }
+} {15}
+do_test minmax-12.8 {
+  execsql {
+    SELECT min(c) FROM t7 WHERE a=4 AND b=10;
+  }
+} {40}
+do_test minmax-12.9 {
+  execsql {
+    SELECT max(c) FROM t7 WHERE a=4 AND b=10;
+  }
+} {1040}
+do_test minmax-12.10 {
+  execsql {
+    SELECT min(rowid) FROM t7;
+  }
+} {1}
+do_test minmax-12.11 {
+  execsql {
+    SELECT max(rowid) FROM t7;
+  }
+} {40}
+do_test minmax-12.12 {
+  execsql {
+    SELECT min(rowid) FROM t7 WHERE a=3;
+  }
+} {4}
+do_test minmax-12.13 {
+  execsql {
+    SELECT max(rowid) FROM t7 WHERE a=3;
+  }
+} {27}
+do_test minmax-12.14 {
+  execsql {
+    SELECT min(rowid) FROM t7 WHERE a=3 AND b=5;
+  }
+} {5}
+do_test minmax-12.15 {
+  execsql {
+    SELECT max(rowid) FROM t7 WHERE a=3 AND b=5;
+  }
+} {25}
+do_test minmax-12.16 {
+  execsql {
+    SELECT min(rowid) FROM t7 WHERE a=3 AND b=5 AND c=1015;
+  }
+} {25}
+do_test minmax-12.17 {
+  execsql {
+    SELECT max(rowid) FROM t7 WHERE a=3 AND b=5 AND c=15;
+  }
+} {5}
+
+
 
 
 finish_test
