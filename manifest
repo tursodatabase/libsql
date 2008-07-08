@@ -1,5 +1,5 @@
-C Fix\sa\scompilation\sbug\swith\sSQLITE_OMIT_AUTOINIT.\s(CVS\s5366)
-D 2008-07-08T14:17:35
+C Another\scorruption\srelated\stest\scase.\s(CVS\s5367)
+D 2008-07-08T14:31:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -242,7 +242,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test af069d971853dbe12af936910bfa49d92f7b16e9
-F test/corrupt2.test 30a89c762c3c6575b725711d1f260b42470002a6
+F test/corrupt2.test e4b03d9d4831cf0840a0f473281ab251b2f165f0
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 08334f60303e63b581fa7f1f00d3e8833f1710ca
-R 8ac86c826f8b10e2f30647de3f8c697e
+P 94c95fad56965b68176e93f0690f0819ad40bcf7
+R 44e2f1c0e8d85d0179e55f7050a50307
 U danielk1977
-Z 600225b33fecb70d6a161959c7da01bc
+Z 66c4a0a833d5a6c4eb7405af47a10264

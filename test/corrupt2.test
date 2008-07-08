@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt2.test,v 1.10 2008/07/08 12:07:33 danielk1977 Exp $
+# $Id: corrupt2.test,v 1.11 2008/07/08 14:31:15 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -334,7 +334,35 @@ ifcapable autovacuum {
       }
     } {1 {database disk image is malformed}}
   }
+}
 
+corruption_test -sqlprep {
+  PRAGMA page_size = 1024;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE INDEX i1 ON t1(b);
+  INSERT INTO t1 VALUES(1, randomblob(50));
+  INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
+  INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
+  INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
+  INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
+  INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
+  INSERT INTO t1 SELECT NULL, randomblob(50) FROM t1;
+} -corrupt {
+  # Set the page-flags of one of the leaf pages of the index B-Tree to
+  # 0x0D (interpreted by SQLite as "leaf page of a table B-Tree").
+  #
+  set fd [open corrupt.db r+]
+  fconfigure $fd -translation binary -encoding binary
+  seek $fd [expr 1024*2 + 8] 
+  set zRightChild [read $fd 4]
+  binary scan $zRightChild I iRightChild
+  seek $fd [expr 1024*($iRightChild-1)]
+  puts -nonewline $fd "\x0D"
+  close $fd
+} -test {
+  do_test corrupt2-7.1 {
+    catchsql { SELECT b FROM t1 ORDER BY b }
+  } {1 {database disk image is malformed}}
 }
 
 finish_test
