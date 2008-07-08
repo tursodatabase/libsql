@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.5 2008/07/08 00:06:50 drh Exp $
+** $Id: test_mutex.c,v 1.6 2008/07/08 02:12:37 drh Exp $
 */
 
 #include "tcl.h"
@@ -65,7 +65,6 @@ static int counterMutexInit(void){
 ** Uninitialize the mutex subsystem
 */
 static int counterMutexEnd(void){ 
-  assert( g.isInit );
   g.isInit = 0;
   return g.m.xMutexEnd();
 }
@@ -83,7 +82,7 @@ static sqlite3_mutex *counterMutexAlloc(int eType){
   pReal = g.m.xMutexAlloc(eType);
   if( !pReal ) return 0;
 
-  if( eType==0 || eType==1 ){
+  if( eType==SQLITE_MUTEX_FAST || eType==SQLITE_MUTEX_RECURSIVE ){
     pRet = (sqlite3_mutex *)malloc(sizeof(sqlite3_mutex));
   }else{
     pRet = &g.aStatic[eType-2];
@@ -100,7 +99,7 @@ static sqlite3_mutex *counterMutexAlloc(int eType){
 static void counterMutexFree(sqlite3_mutex *p){
   assert( g.isInit );
   g.m.xMutexFree(p->pReal);
-  if( p->eType==0 || p->eType==1 ){
+  if( p->eType==SQLITE_MUTEX_FAST || p->eType==SQLITE_MUTEX_RECURSIVE ){
     free(p);
   }
 }
@@ -288,6 +287,25 @@ static int test_clear_mutex_counters(
 }
 
 /*
+** Create and free a mutex.  Return the mutex pointer.  The pointer
+** will be invalid since the mutex has already been freed.  The
+** return pointer just checks to see if the mutex really was allocated.
+*/
+static int test_alloc_mutex(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_mutex *p = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+  char zBuf[100];
+  sqlite3_mutex_free(p);
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%p", p);
+  Tcl_AppendResult(interp, zBuf, (char*)0);
+  return TCL_OK;
+}
+
+/*
 ** sqlite3_config OPTION
 */
 static int test_config(
@@ -332,6 +350,7 @@ int Sqlitetest_mutex_Init(Tcl_Interp *interp){
     { "sqlite3_initialize",      (Tcl_ObjCmdProc*)test_initialize },
     { "sqlite3_config",          (Tcl_ObjCmdProc*)test_config },
 
+    { "alloc_dealloc_mutex",     (Tcl_ObjCmdProc*)test_alloc_mutex },
     { "install_mutex_counters",  (Tcl_ObjCmdProc*)test_install_mutex_counters },
     { "read_mutex_counters",     (Tcl_ObjCmdProc*)test_read_mutex_counters },
     { "clear_mutex_counters",    (Tcl_ObjCmdProc*)test_clear_mutex_counters },

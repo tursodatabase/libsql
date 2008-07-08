@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.311 2008/07/07 17:53:08 drh Exp $
+** $Id: test1.c,v 1.312 2008/07/08 02:12:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4426,6 +4426,29 @@ static int vfs_unlink_test(
 }
 
 /*
+** tclcmd:   vfs_initfail_test
+**
+** This TCL command attempts to vfs_find and vfs_register when the
+** sqlite3_initialize() interface is failing.  All calls should fail.
+*/
+static int vfs_initfail_test(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3_vfs one;
+  one.zName = "__one";
+
+  if( sqlite3_vfs_find(0) ) return TCL_ERROR;
+  sqlite3_vfs_register(&one, 0);
+  if( sqlite3_vfs_find(0) ) return TCL_ERROR;
+  sqlite3_vfs_register(&one, 1);
+  if( sqlite3_vfs_find(0) ) return TCL_ERROR;
+  return TCL_OK;
+}
+
+/*
 ** Saved VFSes
 */
 static sqlite3_vfs *apVfs[20];
@@ -4778,6 +4801,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_global_recover",     test_global_recover, 0   },
      { "working_64bit_int",          working_64bit_int,   0   },
      { "vfs_unlink_test",            vfs_unlink_test,     0   },
+     { "vfs_initfail_test",          vfs_initfail_test,   0   },
      { "vfs_unregister_all",         vfs_unregister_all,  0   },
      { "vfs_reregister_all",         vfs_reregister_all,  0   },
      { "file_control_test",          file_control_test,   0   },

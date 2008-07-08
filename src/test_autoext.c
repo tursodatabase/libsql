@@ -11,7 +11,7 @@
 *************************************************************************
 ** Test extension for testing the sqlite3_auto_extension() function.
 **
-** $Id: test_autoext.c,v 1.4 2008/03/19 23:52:35 mlcreech Exp $
+** $Id: test_autoext.c,v 1.5 2008/07/08 02:12:37 drh Exp $
 */
 #include "tcl.h"
 #include "sqlite3ext.h"
@@ -95,7 +95,8 @@ static int autoExtSqrObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  sqlite3_auto_extension((void*)sqr_init);
+  int rc = sqlite3_auto_extension((void*)sqr_init);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return SQLITE_OK;
 }
 
@@ -110,7 +111,8 @@ static int autoExtCubeObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  sqlite3_auto_extension((void*)cube_init);
+  int rc = sqlite3_auto_extension((void*)cube_init);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return SQLITE_OK;
 }
 
@@ -125,7 +127,8 @@ static int autoExtBrokenObjCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  sqlite3_auto_extension((void*)broken_init);
+  int rc = sqlite3_auto_extension((void*)broken_init);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return SQLITE_OK;
 }
 

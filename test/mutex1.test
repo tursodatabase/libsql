@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: mutex1.test,v 1.6 2008/06/28 11:23:00 danielk1977 Exp $
+# $Id: mutex1.test,v 1.7 2008/07/08 02:12:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -86,7 +86,7 @@ do_test mutex1-1.9 {
 #   * Multi-threaded mode,
 #   * Single-threaded mode.
 #
-
+set enable_shared_cache [sqlite3_enable_shared_cache 1]
 ifcapable threadsafe {
   foreach {mode mutexes} {
     singlethread {}
@@ -96,9 +96,9 @@ ifcapable threadsafe {
     ifcapable memorymanage {
       if {$mode ne "singlethread"} {
         lappend mutexes static_lru static_lru2 static_mem2
-        set mutexes [lsort $mutexes]
       }
     }
+
     do_test mutex1.2.$mode.1 {
       catch {db close}
       sqlite3_shutdown
@@ -125,9 +125,10 @@ ifcapable threadsafe {
         }
       }
       lsort $res
-    } $mutexes
+    } [lsort $mutexes]
   }
 }
+sqlite3_enable_shared_cache $enable_shared_cache
 
 do_test mutex1-X {
   catch {db close}

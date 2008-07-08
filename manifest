@@ -1,5 +1,5 @@
-C Testing\scoverage\senhancements.\s(CVS\s5358)
-D 2008-07-08T00:06:50
+C Add\stests\sto\sverify\scorrect\sbehavior\swhen\smutex\sinitialization\sfails.\s(CVS\s5359)
+D 2008-07-08T02:12:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -149,7 +149,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c 4dd9ee4cb44846ad9bcc4d0da8088c1e7d4b33d9
-F src/test1.c 92fcc114c60ea9c1c41437db43cfc5a920e7402a
+F src/test1.c 6baa867e394e55b5dbb0a2e605ba52a20fb671ce
 F src/test2.c c46d146019ab6e37474e66b3c789e5237d9ea7b7
 F src/test3.c 01ff03164cf6a2bededa3b44ecd481603e2644fc
 F src/test4.c ff4ecde3cafc71337b04e8cb7da5bb88e85d70e7
@@ -159,7 +159,7 @@ F src/test7.c 19474b1802858cd2017493c907f70ac2d57ab092
 F src/test8.c 3b85c05b15ccfc6844093791e83d5c8a1e0354ca
 F src/test9.c 4615ef08750245a2d96aaa7cbe2fb4aff2b57acc
 F src/test_async.c da9f58f49faccd3a26ba89f58de125862351b6e2
-F src/test_autoext.c 5e892ab84aece3f0428920bf46923f16ac83962a
+F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c c1308ba0b88ab577fa56c9e493a09829dfcded9c
 F src/test_config.c e893a7195e975f133c4481d679089531c2970c73
 F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
@@ -168,7 +168,7 @@ F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
 F src/test_malloc.c 62296810d3ee914fc3e05f2a8a69d8f8f42c32e1
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
-F src/test_mutex.c 0a515271d8ee480b7929b8b2ba20a7bc2224ae9f
+F src/test_mutex.c 64c88ef9fed47c896fe470af03bffcd0f6f058f2
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
 F src/test_osinst.c 867f1317bd135f942a63eab5a78da40fc70d1493
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
@@ -258,7 +258,7 @@ F test/crash7.test e20a7b9ee1d16eaef7c94a4cb7ed2191b4d05970
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 4b8a49decaefccb835ecc67249277be491713f6c
-F test/date.test 1413c8a73d281f09afb8ac444c57958f5fbed3fc
+F test/date.test 4ea54e26feea7c24dfc7fad1b2b87da21ff12380
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test f171c1011395a8dd63169438fe1d8cc625eb7442
 F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
@@ -414,7 +414,8 @@ F test/misc5.test 0b68dcb630d44af2dbcdca94dd2b17c8d580f6fa
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 26e0d948a413bca61ed031159907a03d64647409
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/mutex1.test 1c98e4d236444c6a1a912b9c48b4004eeba0d9a6
+F test/mutex1.test 77719e9da234ba23f50e89e9fb19be8c116ad27a
+F test/mutex2.test a006d753714ea7e00b90b6f9c061bdde5be16435
 F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
@@ -599,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 28f8b6bfcc3e169f8a54a6681395f2c85bf99cab
-R 45fa0fc8c38b488b294ddeb46f1ccc23
+P fe80aa58a4ac12db5a92d25d28165f5159f04533
+R f30d395fe0e995ac76915a06c1dd7771
 U drh
-Z 80facad624be60e0509d94f9ed839a1b
+Z 4be64c0a5d2f09e2efc62714a2157dfd

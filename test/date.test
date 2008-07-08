@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.30 2008/06/12 18:05:40 drh Exp $
+# $Id: date.test,v 1.31 2008/07/08 02:12:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -57,6 +57,7 @@ datetest 1.20 {julianday('2000-01-01 12:00:00.01')}  2451545.00000012
 datetest 1.21 {julianday('2000-01-01 12:00:00.001')} 2451545.00000001
 datetest 1.22 {julianday('2000-01-01 12:00:00.')} NULL
 datetest 1.23 julianday(12345.6) 12345.6
+datetest 1.23b julianday('12345.6') 12345.6
 datetest 1.24 {julianday('2001-01-01 12:00:00 bogus')} NULL
 datetest 1.25 {julianday('2001-01-01 bogus')} NULL
 datetest 1.26 {julianday('2001-01-01 12:60:00')} NULL
@@ -69,6 +70,7 @@ datetest 2.1b datetime(0,'unixepoc') NULL
 datetest 2.1c datetime(0,'unixepochx') NULL
 datetest 2.1d datetime('2003-10-22','unixepoch') NULL
 datetest 2.2 datetime(946684800,'unixepoch') {2000-01-01 00:00:00}
+datetest 2.2b datetime('946684800','unixepoch') {2000-01-01 00:00:00}
 datetest 2.3 {date('2003-10-22','weekday 0')} 2003-10-26
 datetest 2.4 {date('2003-10-22','weekday 1')} 2003-10-27
 datetest 2.4a {date('2003-10-22','weekday  1')} 2003-10-27
@@ -167,9 +169,10 @@ datetest 3.11.19 {strftime('%W %j',2454109.04140974)} {02 008}
 datetest 3.11.20 {strftime('%W %j',2454109.04140975)} {02 008}
 datetest 3.11.21 {strftime('%W %j',2454109.04140976)} {02 008}
 datetest 3.11.22 {strftime('%W %j',2454109.04140977)} {02 008}
-datetest 3.11.22 {strftime('%W %j',2454109.04140978)} {02 008}
-datetest 3.11.22 {strftime('%W %j',2454109.04140979)} {02 008}
-datetest 3.11.22 {strftime('%W %j',2454109.04140980)} {02 008}
+datetest 3.11.23 {strftime('%W %j',2454109.04140978)} {02 008}
+datetest 3.11.24 {strftime('%W %j',2454109.04140979)} {02 008}
+datetest 3.11.25 {strftime('%W %j',2454109.04140980)} {02 008}
+datetest 3.11.99 {strftime('%W %j','2454109.04140970')} {02 008}
 datetest 3.12 {strftime('%Y','2003-10-31 12:34:56.432')} 2003
 datetest 3.13 {strftime('%%','2003-10-31 12:34:56.432')} %
 datetest 3.14 {strftime('%_','2003-10-31 12:34:56.432')} NULL
