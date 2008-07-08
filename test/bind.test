@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.42 2008/04/16 16:11:49 drh Exp $
+# $Id: bind.test,v 1.43 2008/07/08 00:06:51 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -90,6 +90,19 @@ do_test bind-1.9 {
   sqlite_step $VM N VALUES COLNAMES
   execsql {SELECT rowid, * FROM t1}
 } {1 123 abcdefg {} 2 456 abcdefg {}}
+
+do_test bind-1.10 {
+   set rc [catch {
+     sqlite3_prepare db {INSERT INTO t1 VALUES($abc:123,?,:abc)} -1 TAIL
+   } msg]
+   lappend rc $msg
+} {1 {(1) near ":123": syntax error}}
+do_test bind-1.11 {
+   set rc [catch {
+     sqlite3_prepare db {INSERT INTO t1 VALUES(@abc:xyz,?,:abc)} -1 TAIL
+   } msg]
+   lappend rc $msg
+} {1 {(1) near ":xyz": syntax error}}
 
 do_test bind-1.99 {
   sqlite3_finalize $VM

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.485 2008/06/15 02:51:47 drh Exp $
+** $Id: build.c,v 1.486 2008/07/08 00:06:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -238,6 +238,7 @@ void sqlite3FinishCoding(Parse *pParse){
 void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   va_list ap;
   char *zSql;
+  char *zErrMsg = 0;
 # define SAVE_SZ  (sizeof(Parse) - offsetof(Parse,nVar))
   char saveBuf[SAVE_SZ];
 
@@ -253,7 +254,8 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   pParse->nested++;
   memcpy(saveBuf, &pParse->nVar, SAVE_SZ);
   memset(&pParse->nVar, 0, SAVE_SZ);
-  sqlite3RunParser(pParse, zSql, 0);
+  sqlite3RunParser(pParse, zSql, &zErrMsg);
+  sqlite3_free(zErrMsg);
   sqlite3_free(zSql);
   memcpy(&pParse->nVar, saveBuf, SAVE_SZ);
   pParse->nested--;

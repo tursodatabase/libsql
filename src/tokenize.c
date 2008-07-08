@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.144 2008/06/15 02:51:48 drh Exp $
+** $Id: tokenize.c,v 1.145 2008/07/08 00:06:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -374,9 +374,9 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
 /*
 ** Run the parser on the given SQL string.  The parser structure is
 ** passed in.  An SQLITE_ status code is returned.  If an error occurs
-** and pzErrMsg!=NULL then an error message might be written into 
-** memory obtained from sqlite3_malloc() and *pzErrMsg made to point to that
-** error message.  Or maybe not.
+** then an and attempt is made to write an error message into 
+** memory obtained from sqlite3_malloc() and to make *pzErrMsg point to that
+** error message.
 */
 int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   int nErr = 0;
@@ -393,6 +393,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   pParse->rc = SQLITE_OK;
   pParse->zTail = pParse->zSql = zSql;
   i = 0;
+  assert( pzErrMsg!=0 );
   pEngine = sqlite3ParserAlloc((void*(*)(size_t))sqlite3Malloc);
   if( pEngine==0 ){
     db->mallocFailed = 1;
@@ -420,19 +421,15 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       case TK_COMMENT: {
         if( db->u1.isInterrupted ){
           pParse->rc = SQLITE_INTERRUPT;
-          if( pzErrMsg ){
-            sqlite3SetString(pzErrMsg, "interrupt", (char*)0);
-          }
+          sqlite3SetString(pzErrMsg, "interrupt", (char*)0);
           goto abort_parse;
         }
         break;
       }
       case TK_ILLEGAL: {
-        if( pzErrMsg ){
-          sqlite3_free(*pzErrMsg);
-          *pzErrMsg = sqlite3MPrintf(db, "unrecognized token: \"%T\"",
-                          &pParse->sLastToken);
-        }
+        sqlite3_free(*pzErrMsg);
+        *pzErrMsg = sqlite3MPrintf(db, "unrecognized token: \"%T\"",
+                        &pParse->sLastToken);
         nErr++;
         goto abort_parse;
       }
@@ -466,7 +463,7 @@ abort_parse:
     sqlite3SetString(&pParse->zErrMsg, sqlite3ErrStr(pParse->rc), (char*)0);
   }
   if( pParse->zErrMsg ){
-    if( pzErrMsg && *pzErrMsg==0 ){
+    if( *pzErrMsg==0 ){
       *pzErrMsg = pParse->zErrMsg;
     }else{
       sqlite3_free(pParse->zErrMsg);

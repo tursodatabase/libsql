@@ -1,5 +1,5 @@
-C Make\scheck-in\s(5356)\scompatible\swith\sbuilds\sthat\sdo\snot\senable\smemory\nmanagement.\s\sRemove\sunnecessary\scode\sfrom\smain.c.\s\sAdd\sout-of-memory\ntests\sfor\ssqlite3_complete16().\s(CVS\s5357)
-D 2008-07-07T19:52:10
+C Testing\scoverage\senhancements.\s(CVS\s5358)
+D 2008-07-08T00:06:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -98,7 +98,7 @@ F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
 F src/btree.c e00268557794be741e26cbca1cd77aa37e53b1cc
 F src/btree.h b1bd7e0b8c2e33658aaf447cb0d1d94f74664b6b
 F src/btreeInt.h 02325f04758dba0fcd0c08ac55cd9b189dad61a5
-F src/build.c 88cc5501a87f72d0538b040001d88d31f994edea
+F src/build.c 8779e9276bef80143a9db5d51b19301457680fc1
 F src/callback.c 3ba98ae46f60aa7c2c40eac7d18fe5ba9b706b83
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e841168e5520bbbb2a1cbcdce7531d8b23017b4d
@@ -168,14 +168,14 @@ F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
 F src/test_malloc.c 62296810d3ee914fc3e05f2a8a69d8f8f42c32e1
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
-F src/test_mutex.c b1433eb96520656fb3e4a218253a94ac32bd5775
+F src/test_mutex.c 0a515271d8ee480b7929b8b2ba20a7bc2224ae9f
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
 F src/test_osinst.c 867f1317bd135f942a63eab5a78da40fc70d1493
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 73530070df8378571c8ce6bbbbb993236ae3ad0b
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
-F src/tokenize.c d39f0d6ce75ca9d0fa4041baec42b5e0411a74fc
+F src/tokenize.c 36484c7774914b7e307800a9bfde6a6b2fcd5a57
 F src/trigger.c 1e751f8d5ceeb328d26bf1ccfb2de50653670d49
 F src/update.c 2d7143b9014e955509cc4f323f9a9584fb898f34
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
@@ -216,7 +216,7 @@ F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test 9a6a8346e4042d9c781ed6cb6553ac871ae30618
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test 93e0b1e501bc2123d97749787e6a2c8abeb9f599
+F test/bind.test 6cd35462394bdbf5928ad3f80f6fc43eab0be5ba
 F test/bindxfer.test 995d2cf8df61204d748cde6960443121c4ccd2e1
 F test/bitvec.test 62a512c3f7041d1df12558eb25990e5a19820571
 F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
@@ -527,6 +527,7 @@ F test/tkt3080.test 31a02e87a4c80ed443831c2c5b0e8216ff95ac14
 F test/tkt3093.test fbdbc5b4969244ad11f540759003e361fcaf391f
 F test/tkt3121.test 9da9c57b75c9dbebae70eb19f458bbc616d04280
 F test/tkt3201.test 5b16303169c2262d78586679ae8884337e5fc9a8
+F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
@@ -598,7 +599,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fbd320ed27dc8910f5035b41171576b4a37cb8b9
-R 3bbbd66d8233e7386454ae7a004ab261
+P 28f8b6bfcc3e169f8a54a6681395f2c85bf99cab
+R 45fa0fc8c38b488b294ddeb46f1ccc23
 U drh
-Z cc062abff1f84979b85c070012e27ea8
+Z 80facad624be60e0509d94f9ed839a1b

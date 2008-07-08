@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.4 2008/06/22 12:37:58 drh Exp $
+** $Id: test_mutex.c,v 1.5 2008/07/08 00:06:50 drh Exp $
 */
 
 #include "tcl.h"
@@ -19,40 +19,65 @@
 #include <assert.h>
 #include <string.h>
 
+/* defined in test1.c */
 const char *sqlite3TestErrorName(int);
 
+/* A countable mutex */
 struct sqlite3_mutex {
   sqlite3_mutex *pReal;
   int eType;
 };
 
+/* State variables */
 static struct test_mutex_globals {
-  int isInstalled;
-  sqlite3_mutex_methods m;          /* Interface to "real" mutex system */
-  int aCounter[8];                  /* Number of grabs of each type of mutex */
-  sqlite3_mutex aStatic[6];         /* The six static mutexes */
+  int isInstalled;              /* True if installed */
+  int disableInit;              /* True to cause sqlite3_initalize() to fail */
+  int isInit;                   /* True if initialized */
+  sqlite3_mutex_methods m;      /* Interface to "real" mutex system */
+  int aCounter[8];              /* Number of grabs of each type of mutex */
+  sqlite3_mutex aStatic[6];     /* The six static mutexes */
 } g;
 
+/* Return true if the countable mutex is currently held */
 static int counterMutexHeld(sqlite3_mutex *p){
   return g.m.xMutexHeld(p->pReal);
 }
 
+/* Return true if the countable mutex is not currently held */
 static int counterMutexNotheld(sqlite3_mutex *p){
   return g.m.xMutexNotheld(p->pReal);
 }
 
+/* Initialize the countable mutex interface
+** Or, if g.disableInit is non-zero, then do not initialize but instead
+** return the value of g.disableInit as the result code.  This can be used
+** to simulate an initialization failure.
+*/
 static int counterMutexInit(void){ 
-  return g.m.xMutexInit();
+  int rc;
+  if( g.disableInit ) return g.disableInit;
+  rc = g.m.xMutexInit();
+  g.isInit = 1;
+  return rc;
 }
 
+/*
+** Uninitialize the mutex subsystem
+*/
 static int counterMutexEnd(void){ 
+  assert( g.isInit );
+  g.isInit = 0;
   return g.m.xMutexEnd();
 }
 
+/*
+** Allocate a countable mutex
+*/
 static sqlite3_mutex *counterMutexAlloc(int eType){
   sqlite3_mutex *pReal;
   sqlite3_mutex *pRet = 0;
 
+  assert( g.isInit );
   assert(eType<8 && eType>=0);
 
   pReal = g.m.xMutexAlloc(eType);
@@ -69,24 +94,39 @@ static sqlite3_mutex *counterMutexAlloc(int eType){
   return pRet;
 }
 
+/*
+** Free a countable mutex
+*/
 static void counterMutexFree(sqlite3_mutex *p){
+  assert( g.isInit );
   g.m.xMutexFree(p->pReal);
   if( p->eType==0 || p->eType==1 ){
     free(p);
   }
 }
 
+/*
+** Enter a countable mutex.  Block until entry is safe.
+*/
 static void counterMutexEnter(sqlite3_mutex *p){
+  assert( g.isInit );
   g.aCounter[p->eType]++;
   g.m.xMutexEnter(p->pReal);
 }
 
+/*
+** Try to enter a mutex.  Return true on success.
+*/
 static int counterMutexTry(sqlite3_mutex *p){
+  assert( g.isInit );
   g.aCounter[p->eType]++;
   return g.m.xMutexTry(p->pReal);
 }
 
+/* Leave a mutex
+*/
 static void counterMutexLeave(sqlite3_mutex *p){
+  assert( g.isInit );
   g.m.xMutexLeave(p->pReal);
 }
 
@@ -301,5 +341,8 @@ int Sqlitetest_mutex_Init(Tcl_Interp *interp){
     Tcl_CreateObjCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
   }
   memset(&g, 0, sizeof(g));
+
+  Tcl_LinkVar(interp, "disable_mutex_init", 
+              (char*)&g.disableInit, TCL_LINK_INT);
   return SQLITE_OK;
 }
