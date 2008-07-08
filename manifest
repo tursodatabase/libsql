@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\swhere.c\sintroduced\sby\scheck-in\s(5373).\s(CVS\s5375)
-D 2008-07-08T19:45:02
+C make\sOS/2\sVFS\sfunctions\sstatic\s(CVS\s5376)
+D 2008-07-08T19:46:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -130,7 +130,7 @@ F src/mutex_w32.c f0d21ff1f6981e5aedc56796adf3a347423ef736
 F src/os.c 292b3b4a49fe5bf6cf2f1cf0af186ebd334e80b8
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
-F src/os_os2.c 38fd8cfb1c122c39e451d9f3e779c602283dba33
+F src/os_os2.c 7ca541fc04fa3be98b1f3d2a5b6d6daa425f8b60
 F src/os_unix.c 3d19f0491e0b32e5b757c7e6f310f2f6d3aea3f4
 F src/os_win.c 2bf2f8cd700299564cc236262c2668e1e02c626a
 F src/pager.c 2cd554d474cfa0228ece30645fe7bb7d1f6824c7
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8ed04b1e26a55306e4baf3e93fb084514134d603
-R bea4bf84c30b7b87b32a902e7322dcf0
-U drh
-Z 3a2fb73c3ed74c4bfec70edda5223524
+P 1ed98f9e617fb422efc37c4a3a5c5f0702467868
+R 6e4e70358db42b8f8dcd50ec7b7d6dda
+U pweilbacher
+Z 63744f7f09cac2a3e40c86fea6a789dd

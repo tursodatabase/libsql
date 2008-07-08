@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.47 2008/06/26 10:41:19 danielk1977 Exp $
+** $Id: os_os2.c,v 1.48 2008/07/08 19:46:24 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -79,7 +79,7 @@ struct os2File {
 /*
 ** Close a file.
 */
-int os2Close( sqlite3_file *id ){
+static int os2Close( sqlite3_file *id ){
   APIRET rc = NO_ERROR;
   os2File *pFile;
   if( id && (pFile = (os2File*)id) != 0 ){
@@ -103,7 +103,7 @@ int os2Close( sqlite3_file *id ){
 ** bytes were read successfully and SQLITE_IOERR if anything goes
 ** wrong.
 */
-int os2Read(
+static int os2Read(
   sqlite3_file *id,               /* File to read from */
   void *pBuf,                     /* Write content into this buffer */
   int amt,                        /* Number of bytes to read */
@@ -133,7 +133,7 @@ int os2Read(
 ** Write data from a buffer into a file.  Return SQLITE_OK on success
 ** or some other error code on failure.
 */
-int os2Write(
+static int os2Write(
   sqlite3_file *id,               /* File to write into */
   const void *pBuf,               /* The bytes to be written */
   int amt,                        /* Number of bytes to write */
@@ -165,7 +165,7 @@ int os2Write(
 /*
 ** Truncate an open file to a specified size
 */
-int os2Truncate( sqlite3_file *id, i64 nByte ){
+static int os2Truncate( sqlite3_file *id, i64 nByte ){
   APIRET rc = NO_ERROR;
   os2File *pFile = (os2File*)id;
   OSTRACE3( "TRUNCATE %d %lld\n", pFile->h, nByte );
@@ -186,7 +186,7 @@ int sqlite3_fullsync_count = 0;
 /*
 ** Make sure all writes to a particular file are committed to disk.
 */
-int os2Sync( sqlite3_file *id, int flags ){
+static int os2Sync( sqlite3_file *id, int flags ){
   os2File *pFile = (os2File*)id;
   OSTRACE3( "SYNC %d lock=%d\n", pFile->h, pFile->locktype );
 #ifdef SQLITE_TEST
@@ -201,7 +201,7 @@ int os2Sync( sqlite3_file *id, int flags ){
 /*
 ** Determine the current size of a file in bytes
 */
-int os2FileSize( sqlite3_file *id, sqlite3_int64 *pSize ){
+static int os2FileSize( sqlite3_file *id, sqlite3_int64 *pSize ){
   APIRET rc = NO_ERROR;
   FILESTATUS3 fsts3FileInfo;
   memset(&fsts3FileInfo, 0, sizeof(fsts3FileInfo));
@@ -278,7 +278,7 @@ static int unlockReadLock( os2File *id ){
 ** It is not possible to lower the locking level one step at a time.  You
 ** must go straight to locking level 0.
 */
-int os2Lock( sqlite3_file *id, int locktype ){
+static int os2Lock( sqlite3_file *id, int locktype ){
   int rc = SQLITE_OK;       /* Return code from subroutines */
   APIRET res = NO_ERROR;    /* Result of an OS/2 lock call */
   int newLocktype;       /* Set pFile->locktype to this value before exiting */
@@ -414,7 +414,7 @@ int os2Lock( sqlite3_file *id, int locktype ){
 ** file by this or any other process. If such a lock is held, return
 ** non-zero, otherwise zero.
 */
-int os2CheckReservedLock( sqlite3_file *id, int *pOut ){
+static int os2CheckReservedLock( sqlite3_file *id, int *pOut ){
   int r = 0;
   os2File *pFile = (os2File*)id;
   assert( pFile!=0 );
@@ -460,7 +460,7 @@ int os2CheckReservedLock( sqlite3_file *id, int *pOut ){
 ** is NO_LOCK.  If the second argument is SHARED_LOCK then this routine
 ** might return SQLITE_IOERR;
 */
-int os2Unlock( sqlite3_file *id, int locktype ){
+static int os2Unlock( sqlite3_file *id, int locktype ){
   int type;
   os2File *pFile = (os2File*)id;
   APIRET rc = SQLITE_OK;
@@ -553,7 +553,7 @@ static int os2DeviceCharacteristics(sqlite3_file *id){
 ** into UCS-2 and then from UCS-2 to the current codepage.
 ** The returned char pointer has to be freed.
 */
-char *convertUtf8PathToCp(const char *in)
+static char *convertUtf8PathToCp(const char *in)
 {
   UconvObject uconv;
   UniChar ucsUtf8Cp[12],
@@ -583,7 +583,7 @@ char *convertUtf8PathToCp(const char *in)
 ** string into UCS-2 and then from UCS-2 to the codepage of UTF-8.
 ** The returned char pointer has to be freed.
 */
-char *convertCpPathToUtf8(const char *in)
+static char *convertCpPathToUtf8(const char *in)
 {
   UconvObject uconv;
   UniChar ucsUtf8Cp[12],
@@ -799,7 +799,7 @@ static int os2Open(
 /*
 ** Delete the named file.
 */
-int os2Delete(
+static int os2Delete(
   sqlite3_vfs *pVfs,                     /* Not used on os2 */
   const char *zFilename,                 /* Name of file to delete */
   int syncDir                            /* Not used on os2 */
@@ -898,7 +898,7 @@ static void *os2DlOpen(sqlite3_vfs *pVfs, const char *zFilename){
 static void os2DlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
 /* no-op */
 }
-void *os2DlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
+static void *os2DlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
   PFN pfn;
   APIRET rc;
   rc = DosQueryProcAddr((HMODULE)pHandle, 0L, zSymbol, &pfn);
@@ -912,7 +912,7 @@ void *os2DlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
   }
   return rc != NO_ERROR ? 0 : (void*)pfn;
 }
-void os2DlClose(sqlite3_vfs *pVfs, void *pHandle){
+static void os2DlClose(sqlite3_vfs *pVfs, void *pHandle){
   DosFreeModule((HMODULE)pHandle);
 }
 #else /* if SQLITE_OMIT_LOAD_EXTENSION is defined: */
@@ -1071,10 +1071,10 @@ int sqlite3_os_init(void){
     os2GetLastError    /* xGetLastError */
   };
   sqlite3_vfs_register(&os2Vfs, 1);
-  return SQLITE_OK; 
+  return SQLITE_OK;
 }
-int sqlite3_os_end(void){ 
-  return SQLITE_OK; 
+int sqlite3_os_end(void){
+  return SQLITE_OK;
 }
 
 #endif /* SQLITE_OS_OS2 */
