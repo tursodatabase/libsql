@@ -1,5 +1,5 @@
-C Improved\senforcement\sof\sthe\sSQLITE_LIMIT_LENGTH\slimit.\s(CVS\s5368)
-D 2008-07-08T14:52:08
+C Tests\sfor\sSQLITE_LIMIT_LENGTH\senforcement\sin\ssqlite3_bind.\s(CVS\s5369)
+D 2008-07-08T15:26:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -149,7 +149,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
 F src/table.c 1fa8f8113ac9cbc09ae4801c6d2a7f0af82c5822
 F src/tclsqlite.c 4dd9ee4cb44846ad9bcc4d0da8088c1e7d4b33d9
-F src/test1.c e6a7515b9c1d4a0f5baf88d12ab7476ec41c7352
+F src/test1.c 30bdb22f911efd492c4f49565eae014330231ece
 F src/test2.c c46d146019ab6e37474e66b3c789e5237d9ea7b7
 F src/test3.c 01ff03164cf6a2bededa3b44ecd481603e2644fc
 F src/test4.c ff4ecde3cafc71337b04e8cb7da5bb88e85d70e7
@@ -470,7 +470,7 @@ F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test 20d8ea20bea3ca09c3ef3b5ec820a17e58e132cb
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/sqllimits1.test 68f7eab0bfc27ef68d677864d37e37e38f67db00
+F test/sqllimits1.test b0444644e8dfe3fdd6d4f00729e2f4d5ed69757a
 F test/subquery.test 8203f85db56ba022a57a0589890090c8feed4e59
 F test/subselect.test 974e87f8fc91c5f00dd565316d396a5a6c3106c4
 F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f781a68127c97e30763447a12314180f0728deb9
-R cfd14fea32bc656ba7f0a52d82871485
+P ee93150878436ce6e992ea8a1d348fb58b03b5e2
+R 343c2b9caa04aca6e55a06cabd00ab34
 U drh
-Z 00aff89bc5ac4605bda301a29f51994c
+Z 82b75a9fbd14cf199dacb621e828ce81

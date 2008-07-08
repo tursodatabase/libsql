@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.28 2008/04/15 02:36:34 drh Exp $
+# $Id: sqllimits1.test,v 1.29 2008/07/08 15:26:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -311,8 +311,36 @@ do_test sqllimits1-5.14.2 {
   sqlite3_step $::STMT 
 } {SQLITE_ERROR}
 do_test sqllimits1-5.14.3 {
-  sqlite3_finalize $::STMT 
+  sqlite3_reset $::STMT 
 } {SQLITE_TOOBIG}
+do_test sqllimits1-5.14.4 {
+  set np1 [expr {$SQLITE_LIMIT_LENGTH + 1}]
+  set ::str1 [string repeat A $np1]
+  catch {sqlite3_bind_text $::STMT 1 $::str1 -1} res
+  set res
+} {SQLITE_TOOBIG}
+do_test sqllimits1-5.14.5 {
+  catch {sqlite3_bind_text16 $::STMT 1 $::str1 -1} res
+  set res
+} {SQLITE_TOOBIG}
+do_test sqllimits1-5.14.6 {
+  catch {sqlite3_bind_text $::STMT 1 $::str1 $np1} res
+  set res
+} {SQLITE_TOOBIG}
+do_test sqllimits1-5.14.7 {
+  catch {sqlite3_bind_text16 $::STMT 1 $::str1 $np1} res
+  set res
+} {SQLITE_TOOBIG}
+do_test sqllimits1-5.14.8 {
+  set n [expr {$np1-1}]
+  catch {sqlite3_bind_text $::STMT 1 $::str1 $n} res
+  set res
+} {}
+do_test sqllimits1-5.14.9 {
+  catch {sqlite3_bind_text16 $::STMT 1 $::str1 $n} res
+  set res
+} {}
+sqlite3_finalize $::STMT 
 
 do_test sqllimits1-5.15 {
   execsql {
@@ -626,7 +654,7 @@ if {$SQLITE_MAX_EXPR_DEPTH==0} {
     catchsql [subst { $expr }]
   } "1 {parser stack overflow}"
   
-  
+if 0 {  
   do_test sqllimits1-9.3 {
     execsql {
       PRAGMA max_page_count = 1000000;  -- 1 GB
@@ -648,6 +676,7 @@ if {$SQLITE_MAX_EXPR_DEPTH==0} {
       SELECT a FROM v199
     }
   } "1 {Expression tree is too large (maximum depth $::SQLITE_MAX_EXPR_DEPTH)}"
+}
 }
 
 #--------------------------------------------------------------------
