@@ -1,5 +1,5 @@
-C Improve\scoverage\sof\sbtree.c.\s(CVS\s5363)
-D 2008-07-08T10:19:58
+C Make\ssqlite3_shutdown()\sa\sno-op\sif\sthe\slibrary\sis\snot\sinitialized.\s(CVS\s5364)
+D 2008-07-08T12:02:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/insert.c 9af927a81fdc99624130dc83722b3ab6364035a6
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c 40024a0f476c1279494876b9a002001b29e5d3e3
-F src/main.c 147b58cc8b6a77d918de0c3a90e71027b3b85169
+F src/main.c 9d5efc560928db31c20475b5784191654e660538
 F src/malloc.c f52166df8abd7ff6990dbee1a0ce3534addc8617
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 8340fa5f969e9f9b9bdeb54106457a2003456d2b
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 92e0cf9a08a8b337a8f239afb048a0e045485771
-R f6b0a753332066ca84b9ccfcacf058f5
+P f6d9cb835b8f75545f455328d61ba225e7da9bc4
+R 8d0a20bbb1681a3f516d3bb4b68b1d00
 U danielk1977
-Z 108e75b1f366b17292035348cfaf03b0
+Z 1149ec9256cdcc577610b83b9209c299
