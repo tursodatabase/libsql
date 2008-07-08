@@ -12,7 +12,7 @@
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
 **
-** $Id: loadext.c,v 1.50 2008/06/19 15:06:24 drh Exp $
+** $Id: loadext.c,v 1.51 2008/07/08 14:17:35 danielk1977 Exp $
 */
 
 #ifndef SQLITE_CORE
@@ -478,8 +478,9 @@ static struct {
 ** loaded by every new database connection.
 */
 int sqlite3_auto_extension(void *xInit){
+  int rc = SQLITE_OK;
 #ifndef SQLITE_OMIT_AUTOINIT
-  int rc = sqlite3_initialize();
+  rc = sqlite3_initialize();
   if( rc ){
     return rc;
   }else

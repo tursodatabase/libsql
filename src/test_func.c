@@ -12,7 +12,7 @@
 ** Code for testing all sorts of SQLite interfaces.  This code
 ** implements new SQL functions used by the test scripts.
 **
-** $Id: test_func.c,v 1.6 2008/07/07 14:50:14 drh Exp $
+** $Id: test_func.c,v 1.7 2008/07/08 14:17:35 danielk1977 Exp $
 */
 #include "sqlite3.h"
 #include "tcl.h"
@@ -387,6 +387,7 @@ int Sqlitetest_func_Init(Tcl_Interp *interp){
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, 0, 0);
   }
+  sqlite3_initialize();
   sqlite3_auto_extension((void*)registerTestFunctions);
   return TCL_OK;
 }
