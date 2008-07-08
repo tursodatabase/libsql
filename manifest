@@ -1,5 +1,5 @@
-C Tests\sfor\sSQLITE_LIMIT_LENGTH\senforcement\sin\ssqlite3_bind.\s(CVS\s5369)
-D 2008-07-08T15:26:50
+C 3\smore\scoverage\stests\sfor\sbtree.c.\s(CVS\s5370)
+D 2008-07-08T15:59:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 325dfac0a0dd1cb4d975f1ace6453157892e6042
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -242,7 +242,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test af069d971853dbe12af936910bfa49d92f7b16e9
-F test/corrupt2.test e4b03d9d4831cf0840a0f473281ab251b2f165f0
+F test/corrupt2.test 26810e0019a16004b1a7619930801ef1c31531e4
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -261,7 +261,7 @@ F test/cse.test 4b8a49decaefccb835ecc67249277be491713f6c
 F test/date.test 4ea54e26feea7c24dfc7fad1b2b87da21ff12380
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test f171c1011395a8dd63169438fe1d8cc625eb7442
-F test/delete2.test c06be3806ba804bc8c6f134476816080280b40e3
+F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
 F test/descidx1.test a13d443571e045b61b1b2b759df8dcffa092c968
 F test/descidx2.test 1310ed1326cdfed4ea2c55169631579f082d174f
@@ -357,7 +357,7 @@ F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
 F test/io.test 833a1746518ec3005aa7792f9bcb8f01923ff544
 F test/ioerr.test 7ff1f418eae013dd848583c7f8a8cae938532f55
-F test/ioerr2.test b9c9a0491a812707762a7c002876553be54d9969
+F test/ioerr2.test 5598405c48842c6c0187daad9eb49eff2c54f80d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
 F test/ioerr5.test f44e30b4780b879bcceb2601aabae40d8a0a0b56
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ee93150878436ce6e992ea8a1d348fb58b03b5e2
-R 343c2b9caa04aca6e55a06cabd00ab34
-U drh
-Z 82b75a9fbd14cf199dacb621e828ce81
+P c5e45dd664198e5b4fc44b316bd4adbc9a6c296b
+R 17c4ddff498e4bc2ee18143f2ad0e55f
+U danielk1977
+Z a2bfd51b9ad8acbdccd1bedc318ea395

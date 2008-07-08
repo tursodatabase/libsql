@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr2.test,v 1.7 2008/03/07 19:51:15 drh Exp $
+# $Id: ioerr2.test,v 1.8 2008/07/08 15:59:52 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -111,5 +111,24 @@ foreach bPersist [list 0 1] {
     check_db ioerr2-4.[expr {$bPersist+2}].$::N
   }
 }
+
+do_test ioerr2-5 {
+  execsql {
+    CREATE TABLE t2 AS SELECT * FROM t1;
+  }
+  set ::sqlite_io_error_persist 0
+  set ::go 1
+  set rc [catch {
+    for {set ::N 1} {$::N<200} {incr ::N} {
+      db eval {SELECT * FROM t1 WHERE rowid IN (1, 5, 10, 15, 20)} {
+        set ::sqlite_io_error_hit 0
+        set ::sqlite_io_error_pending $::N
+        set sql {UPDATE t2 SET b = randstr(400,400)}
+        foreach {::go res} [catchsql $sql] {}
+      }
+    }
+  } msg]
+  list $rc $msg
+} {1 {callback requested query abort}}
 
 finish_test

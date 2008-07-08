@@ -29,7 +29,7 @@
 # The solution to the problem was to detect that the table is locked
 # before the index entry is deleted.
 #
-# $Id: delete2.test,v 1.7 2006/08/16 16:42:48 drh Exp $
+# $Id: delete2.test,v 1.8 2008/07/08 15:59:52 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -95,5 +95,25 @@ do_test delete2-1.11 {
     SELECT * FROM q;
   }
 } {goodbye id.2 again id.3}
+
+do_test delete2-2.1 {
+  execsql {
+    CREATE TABLE t1(a, b);
+    CREATE TABLE t2(c, d);
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t2 VALUES(3, 4);
+    INSERT INTO t2 VALUES(5, 6);
+  }
+} {}
+do_test delete2-2.2 {
+  set res [list]
+  db eval {
+    SELECT CASE WHEN c = 5 THEN b ELSE NULL END AS b, c, d FROM t1, t2
+  } {
+    db eval {DELETE FROM t1}
+    lappend res $b $c $d
+  }
+  set res
+} {{} 3 4 {} 5 6}
 
 finish_test
