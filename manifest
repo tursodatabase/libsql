@@ -1,5 +1,5 @@
-C Remove\sobsolete\scode\sfrom\sselect.c,\sincluding\sthe\s"affinity"\sparameter\nto\sthe\ssqlite3Select()\smodule.\s(CVS\s5380)
-D 2008-07-08T23:40:20
+C Additional\stest\scoverage\sin\sselect.c\sand\sexpr.c.\s(CVS\s5381)
+D 2008-07-09T01:39:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/callback.c aa492a0ad8c2d454edff9fb8a57fae13743cf71d
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e841168e5520bbbb2a1cbcdce7531d8b23017b4d
 F src/delete.c 4a1f98fb2ffead69c8c685dcac33253ac6f9d56d
-F src/expr.c 6343c50c2bc39ac4f653b1eebd1339e25378b0e7
+F src/expr.c 17f7deae5c7a7813a86295813e757219d1a25cf9
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c 08422a7bd06c25c5e6823d525f7c63563e3fcf61
 F src/global.c f12dc84d23f52d2ed42d1bdb5460fa3caf63e890
@@ -140,7 +140,7 @@ F src/pragma.c 6fad83fbcc7ec6e76d91fe2805fe972ff3af6a0c
 F src/prepare.c c9bb0aacb7a571d049805699ed18f2bb136ea091
 F src/printf.c 0e4bd1413226e8aaeadec251ffcee93448400417
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c 02b7877754dd8391e48c3ba94b2b3bc8c3a74f20
+F src/select.c e6edf11f024a5207e34683a25f33a700a2f1b43b
 F src/shell.c 484e7297e066f22830f9c15d7abbcdd2acb097b0
 F src/sqlite.h.in 22c32cedf7e435d5b3bb8564ce0a640c40dbbfb1
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -216,7 +216,7 @@ F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test 9a6a8346e4042d9c781ed6cb6553ac871ae30618
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test 6cd35462394bdbf5928ad3f80f6fc43eab0be5ba
+F test/bind.test b5e3ffbad2b43b7cf675dd3624176510d8379978
 F test/bindxfer.test 995d2cf8df61204d748cde6960443121c4ccd2e1
 F test/bitvec.test 62a512c3f7041d1df12558eb25990e5a19820571
 F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
@@ -441,7 +441,7 @@ F test/rtree.test a8404a59bbc3a7827db9bfb334790c852f0391b3
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
 F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
-F test/select1.test 9f9d90c40b84d1d2cff651db1c0245a882e2b180
+F test/select1.test 6cea013e127fd8091ce1f80984a5bbe687088587
 F test/select2.test 06a2660de57673e2d076c29c0fd73f961a930f87
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test 0618c9377013840194b7901e6224d841cd3e7193
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9da0b32c8c55b41cbcb4eb635c51348072101ea9
-R ddba1a74c7f8c0729773c7fe021be047
+P cbd3c1585b7a8f8042aa1448fe1be87de056c41a
+R 9c8b6c813e587d92b499775ff9d0704e
 U drh
-Z 19507801db0a91231559be894402bb80
+Z 797145b83fcaf2766400631bd4924b1a

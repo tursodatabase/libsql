@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.384 2008/07/08 23:40:20 drh Exp $
+** $Id: expr.c,v 1.385 2008/07/09 01:39:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -246,7 +246,7 @@ static int codeCompare(
   addr = sqlite3VdbeAddOp4(pParse->pVdbe, opcode, in2, dest, in1,
                            (void*)p4, P4_COLLSEQ);
   sqlite3VdbeChangeP5(pParse->pVdbe, p5);
-  if( p5 & SQLITE_AFF_MASK ){
+  if( (p5 & SQLITE_AFF_MASK)!=SQLITE_AFF_NONE ){
     sqlite3ExprCacheAffinityChange(pParse, in1, 1);
     sqlite3ExprCacheAffinityChange(pParse, in2, 1);
   }
@@ -375,12 +375,15 @@ Expr *sqlite3Expr(
   pNew->pLeft = pLeft;
   pNew->pRight = pRight;
   pNew->iAgg = -1;
+  pNew->span.z = (u8*)"";
   if( pToken ){
     assert( pToken->dyn==0 );
     pNew->span = pNew->token = *pToken;
   }else if( pLeft ){
     if( pRight ){
-      sqlite3ExprSpan(pNew, &pLeft->span, &pRight->span);
+      if( pRight->span.dyn==0 && pLeft->span.dyn==0 ){
+        sqlite3ExprSpan(pNew, &pLeft->span, &pRight->span);
+      }
       if( pRight->flags & EP_ExpCollate ){
         pNew->flags |= EP_ExpCollate;
         pNew->pColl = pRight->pColl;
@@ -456,19 +459,15 @@ Expr *sqlite3ExprAnd(sqlite3 *db, Expr *pLeft, Expr *pRight){
 
 /*
 ** Set the Expr.span field of the given expression to span all
-** text between the two given tokens.
+** text between the two given tokens.  Both tokens must be pointing
+** at the same string.
 */
 void sqlite3ExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
   assert( pRight!=0 );
   assert( pLeft!=0 );
   if( pExpr && pRight->z && pLeft->z ){
-    assert( pLeft->dyn==0 || pLeft->z[pLeft->n]==0 );
-    if( pLeft->dyn==0 && pRight->dyn==0 ){
-      pExpr->span.z = pLeft->z;
-      pExpr->span.n = pRight->n + (pRight->z - pLeft->z);
-    }else{
-      pExpr->span.z = 0;
-    }
+    pExpr->span.z = pLeft->z;
+    pExpr->span.n = pRight->n + (pRight->z - pLeft->z);
   }
 }
 

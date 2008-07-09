@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.43 2008/07/08 00:06:51 drh Exp $
+# $Id: bind.test,v 1.44 2008/07/09 01:39:44 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -438,7 +438,7 @@ do_test bind-9.2 {
   } msg]
   lappend rc $msg
 } {1 {(1) variable number must be between ?1 and ?999}}
-do_test bind-9.3 {
+do_test bind-9.3.1 {
   set VM [
     sqlite3_prepare $DB {
       INSERT INTO t2(a,b) VALUES(?1,?999)
@@ -446,6 +446,15 @@ do_test bind-9.3 {
   ]
   sqlite3_bind_parameter_count $VM
 } {999}
+catch {sqlite3_finalize $VM}
+do_test bind-9.3.2 {
+  set VM [
+    sqlite3_prepare $DB {
+      INSERT INTO t2(a,b) VALUES(?2,?998)
+    } -1 TAIL
+  ]
+  sqlite3_bind_parameter_count $VM
+} {998}
 catch {sqlite3_finalize $VM}
 do_test bind-9.4 {
   set VM [

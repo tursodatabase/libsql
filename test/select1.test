@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.61 2008/06/24 12:46:31 drh Exp $
+# $Id: select1.test,v 1.62 2008/07/09 01:39:44 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -505,6 +505,38 @@ do_test select1-6.9.2 {
          ORDER BY A.f1, B.f1}} msg]
   lappend v $msg
 } {0 {f1 11 f1 11 f1 33 f1 33 f1 11 f1 11 f1 33 f1 33}}
+
+do_test select1-6.9.3 {
+  db eval {
+     PRAGMA short_column_names=OFF;
+     PRAGMA full_column_names=OFF;
+  }
+  execsql2 {
+     SELECT test1 . f1, test1 . f2 FROM test1 LIMIT 1
+  }
+} {{test1 . f1} 11 {test1 . f2} 22}
+do_test select1-6.9.4 {
+  db eval {
+     PRAGMA short_column_names=OFF;
+     PRAGMA full_column_names=ON;
+  }
+  execsql2 {
+     SELECT test1 . f1, test1 . f2 FROM test1 LIMIT 1
+  }
+} {test1.f1 11 test1.f2 22}
+do_test select1-6.9.5 {
+  db eval {
+     PRAGMA short_column_names=OFF;
+     PRAGMA full_column_names=ON;
+  }
+  execsql2 {
+     SELECT 123.45;
+  }
+} {123.45 123.45}
+db eval {
+  PRAGMA short_column_names=ON;
+  PRAGMA full_column_names=OFF;
+}
 
 ifcapable compound {
 do_test select1-6.10 {

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.451 2008/07/08 23:40:20 drh Exp $
+** $Id: select.c,v 1.452 2008/07/09 01:39:44 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -542,11 +542,7 @@ static void selectInnerLoop(
 
   if( v==0 ) return;
   assert( pEList!=0 );
-
-  /* If there was a LIMIT clause on the SELECT statement, then do the check
-  ** to see if this row should be output.
-  */
-  hasDistinct = distinct>=0 && pEList->nExpr>0;
+  hasDistinct = distinct>=0;
   if( pOrderBy==0 && !hasDistinct ){
     codeOffset(v, p, iContinue);
   }
@@ -724,7 +720,9 @@ static void selectInnerLoop(
 
   /* Jump to the end of the loop if the LIMIT is reached.
   */
-  if( p->iLimit && pOrderBy==0 ){
+  if( p->iLimit ){
+    assert( pOrderBy==0 );  /* If there is an ORDER BY, the call to
+                            ** pushOntoSorter() would have cleared p->iLimit */
     sqlite3VdbeAddOp2(v, OP_AddImm, p->iLimit, -1);
     sqlite3VdbeAddOp2(v, OP_IfZero, p->iLimit, iBreak);
   }
@@ -1079,9 +1077,7 @@ static void generateColumnNames(
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
       sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, strlen(zName));
-      continue;
-    }
-    if( p->op==TK_COLUMN && pTabList ){
+    }else if( p->op==TK_COLUMN && pTabList ){
       Table *pTab;
       char *zCol;
       int iCol = p->iColumn;
@@ -1095,7 +1091,7 @@ static void generateColumnNames(
       }else{
         zCol = pTab->aCol[iCol].zName;
       }
-      if( !shortNames && !fullNames && p->span.z && p->span.z[0] ){
+      if( !shortNames && !fullNames ){
         sqlite3VdbeSetColName(v, i, COLNAME_NAME, (char*)p->span.z, p->span.n);
       }else if( fullNames || (!shortNames && pTabList->nSrc>1) ){
         char *zName = 0;
@@ -1108,14 +1104,8 @@ static void generateColumnNames(
       }else{
         sqlite3VdbeSetColName(v, i, COLNAME_NAME, zCol, strlen(zCol));
       }
-    }else if( p->span.z && p->span.z[0] ){
-      sqlite3VdbeSetColName(v, i, COLNAME_NAME, (char*)p->span.z, p->span.n);
-      /* sqlite3VdbeCompressSpace(v, addr); */
     }else{
-      char zName[30];
-      assert( p->op!=TK_COLUMN || pTabList==0 );
-      sqlite3_snprintf(sizeof(zName), zName, "column%d", i+1);
-      sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, 0);
+      sqlite3VdbeSetColName(v, i, COLNAME_NAME, (char*)p->span.z, p->span.n);
     }
   }
   generateColumnTypes(pParse, pTabList, pEList);
