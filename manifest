@@ -1,5 +1,5 @@
-C Coverage\stesting\sfor\sbalance_quick()\sand\sbalance_deeper().\s(CVS\s5382)
-D 2008-07-09T11:49:47
+C Begin\sadding\sthe\sfailsafe()\smacro.\s(CVS\s5383)
+D 2008-07-09T13:28:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/insert.c e8efc17d037346e4a4a6949e72aab850befe3d5d
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c ae0eed9fa96d74172d2a90ee63b5bc36d284295c
-F src/main.c 47b781b6752eef3ee36ed8269b6f0d48625e82a8
+F src/main.c 62ed446133985350b94d16f986862bcdf108bbf2
 F src/malloc.c 226a532e9e371d1bb3de2553bdd1f9b600ef099c
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 8340fa5f969e9f9b9bdeb54106457a2003456d2b
@@ -142,11 +142,11 @@ F src/printf.c 0e4bd1413226e8aaeadec251ffcee93448400417
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c e6edf11f024a5207e34683a25f33a700a2f1b43b
 F src/shell.c 484e7297e066f22830f9c15d7abbcdd2acb097b0
-F src/sqlite.h.in 22c32cedf7e435d5b3bb8564ce0a640c40dbbfb1
+F src/sqlite.h.in 8a00ed8707a16ee724e9e500b07e9af3a6fcc9be
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 5f820a35b12bedad6f20395f4947b97f645ed243
+F src/sqliteInt.h ebf2eab46462b926fdb60277741b4b8659091bee
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
-F src/status.c 6cb10377992505bd69f1ca1d75c1240a65f25a58
+F src/status.c b8d7b1f6b518e71986dfa65058de7a714efd61be
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c 4dd9ee4cb44846ad9bcc4d0da8088c1e7d4b33d9
 F src/test1.c 30bdb22f911efd492c4f49565eae014330231ece
@@ -166,7 +166,7 @@ F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
 F src/test_func.c ade4f0117cc96c5a05682e1ef38b84320a866ad9
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
-F src/test_malloc.c 62296810d3ee914fc3e05f2a8a69d8f8f42c32e1
+F src/test_malloc.c e762a634a858417eee7225203fc2a5c564b9db20
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c 64c88ef9fed47c896fe470af03bffcd0f6f058f2
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
@@ -179,7 +179,7 @@ F src/tokenize.c b5fdc79fb7e00077b9c02af7a0da3b89c9f3398e
 F src/trigger.c bdb56bb9db1a7b18f8505484051221ab5123f21d
 F src/update.c 945242ccc4fa09799333632baf6b47c657f43cbc
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
-F src/util.c e202291456d34f8e2cf1c0a6f7e2538a77587445
+F src/util.c fbfb7fe4344e93245d8fc2ef975c6d2340f81388
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
 F src/vdbe.c 4b3c7d0c7f68ec241bebe075c26a46a1618a32cb
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
@@ -190,7 +190,7 @@ F src/vdbeblob.c 9345f6dcd675fdcfdb537d2d2f487542d9ea136a
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
 F src/vdbemem.c 3a27b04a25e933a46e9609356426f802fd1ef945
 F src/vtab.c 2096c03ec5540a43c8c73a8f43407dfd3549a982
-F src/where.c e8a241aab7dc7b43be697de30f2469046d1eca69
+F src/where.c 3324f8273a9c40d4b04b65cdef0a8c4954c1cce6
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test ed6849e7a425620d5d4388409f3b15901b5bc2e7
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c6cf08477cc4d622a05ad6706cb9418cf7eea432
-R 229bd421824f3bb6fb90dfe5637660e4
-U danielk1977
-Z 426328c9a228ac588ec10fbe5f06c5ef
+P 491f8f9613d2b886acad2ab8f631a4ec61ad698d
+R 9b50c0a5ab517d89c7b6337d6fb1deb0
+U drh
+Z c0317483209a7eadce22571dfcdb9040

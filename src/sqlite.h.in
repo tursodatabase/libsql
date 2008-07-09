@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.364 2008/07/07 19:52:10 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.365 2008/07/09 13:28:54 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -6120,6 +6120,7 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 #define SQLITE_STATUS_SCRATCH_USED         3
 #define SQLITE_STATUS_SCRATCH_OVERFLOW     4
 #define SQLITE_STATUS_MALLOC_SIZE          5
+#define SQLITE_STATUS_FAILSAFE             6
 
 
 /*

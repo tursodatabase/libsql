@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.234 2008/07/08 14:52:10 drh Exp $
+** $Id: util.c,v 1.235 2008/07/09 13:28:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -935,4 +935,18 @@ int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
       magic!=SQLITE_MAGIC_OPEN &&
       magic!=SQLITE_MAGIC_BUSY ) return 0;
   return 1;
+}
+
+/*
+** Report a failsafe() macro failure
+*/
+void sqlite3Failsafe(int iCode){
+  sqlite3Config.iFailsafe = iCode;
+
+  /* The following assert is always false.  When assert() is enabled,
+  ** the following causes a failsafe() failure to work like an assert()
+  ** failure.  Normal operating mode for SQLite is for assert() to be
+  ** disabled, however, so the following is normally a no-op.
+  */
+  assert( iCode==0 );   /* Always fails if assert() is enabled */
 }

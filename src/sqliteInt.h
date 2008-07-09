@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.738 2008/07/08 23:40:20 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.739 2008/07/09 13:28:54 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -62,6 +62,26 @@
 # define testcase(X)
 #endif
 
+/*
+** The failsafe() macro is used to test for error conditions that
+** should never occur.  This is similar to assert() except that with
+** failsafe() the application attempts to recover gracefully rather
+** than abort.  If a error condition is detected, a global flag is
+** set to the "Id" prior to recovery in order to alert the application 
+** to the error condition.
+**
+** The Id should be a random integer.  The idea behind the Id is that
+** failsafe() faults in the field can be mapped back to specific failsafe()
+** macros, even if line numbers and filenames have changed.
+**
+** The test condition is argument Cond.  The recovery action is
+** argument Action.
+*/
+#ifdef SQLITE_COVERAGE_TEST
+# define failsafe(Cond,Id,Action)
+#else
+# define failsafe(Cond,Id,Action)  if( Cond ){ sqlite3Failsafe(Id); Action; }
+#endif
 
 /*
 ** The macro unlikely() is a hint that surrounds a boolean
@@ -1756,6 +1776,7 @@ struct Sqlite3Config {
   int bCoreMutex;                   /* True to enable core mutexing */
   int bFullMutex;                   /* True to enable full mutexing */
   int mxStrlen;                     /* Maximum string length */
+  int iFailsafe;                    /* Id of failed failsafe() */
   sqlite3_mem_methods m;            /* Low-level memory allocation interface */
   sqlite3_mutex_methods mutex;      /* Low-level mutex interface */
   void *pHeap;                      /* Heap storage space */
@@ -1791,10 +1812,8 @@ struct Sqlite3Config {
 #ifdef SQLITE_DEBUG
   int sqlite3Corrupt(void);
 # define SQLITE_CORRUPT_BKPT sqlite3Corrupt()
-# define DEBUGONLY(X)        X
 #else
 # define SQLITE_CORRUPT_BKPT SQLITE_CORRUPT
-# define DEBUGONLY(X)
 #endif
 
 /*
@@ -2001,6 +2020,7 @@ void sqlite3RegisterDateTimeFunctions(sqlite3*);
 #endif
 int sqlite3SafetyCheckOk(sqlite3*);
 int sqlite3SafetyCheckSickOrOk(sqlite3*);
+void sqlite3Failsafe(int);
 void sqlite3ChangeCookie(Parse*, int);
 void sqlite3MaterializeView(Parse*, Select*, Expr*, int);
 

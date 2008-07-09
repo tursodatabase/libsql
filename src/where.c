@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.314 2008/07/08 22:28:49 shane Exp $
+** $Id: where.c,v 1.315 2008/07/09 13:28:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -450,13 +450,14 @@ static WhereTerm *findTerm(
 ){
   WhereTerm *pTerm;
   int k;
+  assert( iCur>=0 );
   for(pTerm=pWC->a, k=pWC->nTerm; k; k--, pTerm++){
     if( pTerm->leftCursor==iCur
        && (pTerm->prereqRight & notReady)==0
        && pTerm->leftColumn==iColumn
        && (pTerm->eOperator & op)!=0
     ){
-      if( iCur>=0 && pIdx && pTerm->eOperator!=WO_ISNULL ){
+      if( pIdx && pTerm->eOperator!=WO_ISNULL ){
         Expr *pX = pTerm->pExpr;
         CollSeq *pColl;
         char idxaff;
@@ -476,8 +477,9 @@ static WhereTerm *findTerm(
           pColl = pParse->db->pDfltColl;
         }
 
-        for(j=0; j<pIdx->nColumn && pIdx->aiColumn[j]!=iColumn; j++){}
-        assert( j<pIdx->nColumn );
+        for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
+          failsafe( j>=pIdx->nColumn, 0x0128fc98, {return 0;});
+        }
         if( sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
       }
       return pTerm;
@@ -866,7 +868,7 @@ static void exprAnalyze(
       ExprList *pList = 0;
       Expr *pNew, *pDup;
       Expr *pLeft = 0;
-      for(i=sOr.nTerm-1, pOrTerm=sOr.a; i>=0 && ok; i--, pOrTerm++){
+      for(i=sOr.nTerm-1, pOrTerm=sOr.a; i>=0; i--, pOrTerm++){
         if( (pOrTerm->flags & TERM_OR_OK)==0 ) continue;
         pDup = sqlite3ExprDup(db, pOrTerm->pExpr->pRight);
         pList = sqlite3ExprListAppend(pWC->pParse, pList, pDup, 0);
@@ -1606,7 +1608,8 @@ static double bestIndex(
         flags |= WHERE_COLUMN_IN;
         if( pExpr->pSelect!=0 ){
           inMultiplier *= 25;
-        }else if( pExpr->pList!=0 ){
+        }else{
+          failsafe( pExpr->pList==0, 0x16b91d0f, continue);
           inMultiplier *= pExpr->pList->nExpr + 1;
         }
       }
@@ -1722,9 +1725,9 @@ static double bestIndex(
 */
 static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   if( pTerm
-      && (pTerm->flags & TERM_CODED)==0
       && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_FromJoin))
   ){
+    failsafe( (pTerm->flags & TERM_CODED)!=0, 0x641154a4, /* no-op */ );
     pTerm->flags |= TERM_CODED;
     if( pTerm->iParent>=0 ){
       WhereTerm *pOther = &pTerm->pWC->a[pTerm->iParent];
@@ -1870,7 +1873,7 @@ static int codeAllEqualityTerms(
     int r1;
     int k = pIdx->aiColumn[j];
     pTerm = findTerm(pWC, iCur, k, notReady, pLevel->flags, pIdx);
-    if( pTerm==0 ) break;
+    failsafe( pTerm==0, 0x7592494c, break );
     assert( (pTerm->flags & TERM_CODED)==0 );
     r1 = codeEqualityTerm(pParse, pTerm, pLevel, regBase+j);
     if( r1!=regBase+j ){
