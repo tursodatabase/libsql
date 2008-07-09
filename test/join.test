@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.23 2008/07/08 23:40:20 drh Exp $
+# $Id: join.test,v 1.24 2008/07/09 14:47:21 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -468,19 +468,39 @@ ifcapable view {
 } ;# ifcapable view
 } ;# ifcapable compound
 
-# Ticket #1697:  Left Join WHERE clause terms that contain an
-# aggregate subquery.
-#
 ifcapable subquery {
-do_test join-10.1 {
-  execsql {
-    CREATE TABLE t21(a,b,c);
-    CREATE TABLE t22(p,q);
-    CREATE INDEX i22 ON t22(q);
-    SELECT a FROM t21 LEFT JOIN t22 ON b=p WHERE q=
-       (SELECT max(m.q) FROM t22 m JOIN t21 n ON n.b=m.p WHERE n.c=1);
-  }  
-} {}
+  # Ticket #1697:  Left Join WHERE clause terms that contain an
+  # aggregate subquery.
+  #
+  do_test join-10.1 {
+    execsql {
+      CREATE TABLE t21(a,b,c);
+      CREATE TABLE t22(p,q);
+      CREATE INDEX i22 ON t22(q);
+      SELECT a FROM t21 LEFT JOIN t22 ON b=p WHERE q=
+         (SELECT max(m.q) FROM t22 m JOIN t21 n ON n.b=m.p WHERE n.c=1);
+    }  
+  } {}
+
+  # Test a LEFT JOIN when the right-hand side of hte join is an empty
+  # sub-query. Seems fine.
+  #
+  do_test join-10.2 {
+    execsql {
+      CREATE TABLE t23(a, b, c);
+      CREATE TABLE t24(a, b, c);
+      INSERT INTO t23 VALUES(1, 2, 3);
+    }
+    execsql {
+      SELECT * FROM t23 LEFT JOIN t24;
+    }
+  } {1 2 3 {} {} {}}
+  do_test join-10.3 {
+    execsql {
+      SELECT * FROM t23 LEFT JOIN (SELECT * FROM t24);
+    }
+  } {1 2 3 {} {} {}}
+
 } ;# ifcapable subquery
 
 finish_test

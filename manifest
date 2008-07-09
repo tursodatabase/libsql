@@ -1,5 +1,5 @@
-C Begin\sadding\sthe\sfailsafe()\smacro.\s(CVS\s5383)
-D 2008-07-09T13:28:54
+C Add\sa\stest\scase\sto\sjoin.test.\sNo\scode\schanges,\sno\sbugs\sfound.\s(CVS\s5384)
+D 2008-07-09T14:47:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -361,7 +361,7 @@ F test/ioerr2.test 5598405c48842c6c0187daad9eb49eff2c54f80d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
 F test/ioerr5.test f44e30b4780b879bcceb2601aabae40d8a0a0b56
-F test/join.test f6aab432bd42c0a2617ff1563557d5e45336f391
+F test/join.test fc6c4e2132c40edb8af5ad5f0f49996825d5950d
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 491f8f9613d2b886acad2ab8f631a4ec61ad698d
-R 9b50c0a5ab517d89c7b6337d6fb1deb0
-U drh
-Z c0317483209a7eadce22571dfcdb9040
+P 8aae4fe7e702b7636fba1fd609a0ca22fdcc3371
+R cfbfcaf3163b710506b897f4bbc58497
+U danielk1977
+Z 3e68bbb0c53d3688bc63cc9fa9482f9f
