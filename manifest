@@ -1,5 +1,5 @@
-C Additional\stest\scoverage\sin\sselect.c\sand\sexpr.c.\s(CVS\s5381)
-D 2008-07-09T01:39:44
+C Coverage\stesting\sfor\sbalance_quick()\sand\sbalance_deeper().\s(CVS\s5382)
+D 2008-07-09T11:49:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c a52b0a1d0459e3a028a90df84a84ec1c58148574
+F src/btree.c fbc557de64457effea261699c11fc0cf7696ccd6
 F src/btree.h b1bd7e0b8c2e33658aaf447cb0d1d94f74664b6b
 F src/btreeInt.h 8f6e0817365ac822da0afffedc664ba03047718b
 F src/build.c bac7233d984be3805aaa41cf500f7ee12dc97249
@@ -356,7 +356,7 @@ F test/insert5.test 509017213328147d3acdfa2c441bfd82362dda41
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
 F test/io.test 833a1746518ec3005aa7792f9bcb8f01923ff544
-F test/ioerr.test f87e5be364a5938996e8741091088845eb9ce802
+F test/ioerr.test 404edbb58143b4581a6f23c2031d40db931d7b90
 F test/ioerr2.test 5598405c48842c6c0187daad9eb49eff2c54f80d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
@@ -600,7 +600,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cbd3c1585b7a8f8042aa1448fe1be87de056c41a
-R 9c8b6c813e587d92b499775ff9d0704e
-U drh
-Z 797145b83fcaf2766400631bd4924b1a
+P c6cf08477cc4d622a05ad6706cb9418cf7eea432
+R 229bd421824f3bb6fb90dfe5637660e4
+U danielk1977
+Z 426328c9a228ac588ec10fbe5f06c5ef

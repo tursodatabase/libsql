@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.39 2008/07/08 17:13:59 danielk1977 Exp $
+# $Id: ioerr.test,v 1.40 2008/07/09 11:49:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -328,6 +328,81 @@ do_ioerr_test ioerr-12 -ckrefcount true -erc 1 -tclprep {
   db eval { INSERT INTO t1 VALUES(randomblob(2000)); }
 }
 sqlite3_simulate_device -char {} -sectorsize 0
+catch {db close}
+
+do_ioerr_test ioerr-13 -ckrefcount true -erc 1 -sqlprep {
+  PRAGMA auto_vacuum = incremental;
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(x);
+  INSERT INTO t2 VALUES(randomblob(1500));
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t1 VALUES(randomblob(20));
+  INSERT INTO t1 SELECT x FROM t1;
+  INSERT INTO t1 SELECT x FROM t1;
+  INSERT INTO t1 SELECT x FROM t1;
+  INSERT INTO t1 SELECT x FROM t1;
+  INSERT INTO t1 SELECT x FROM t1;
+  INSERT INTO t1 SELECT x FROM t1;             /* 64 entries in t1 */
+  INSERT INTO t1 SELECT x FROM t1 LIMIT 14;    /* 78 entries in t1 */
+  DELETE FROM t2 WHERE rowid = 3;
+} -sqlbody {
+  -- This statement uses the balance_quick() optimization. The new page
+  -- is appended to the database file. But the overflow page used by
+  -- the new record will be positioned near the start of the database
+  -- file, in the gap left by the "DELETE FROM t2 WHERE rowid=3" statement
+  -- above.
+  --
+  -- The point of this is that the statement wil need to update two pointer
+  -- map pages. Which introduces another opportunity for an IO error.
+  --
+  INSERT INTO t1 VALUES(randomblob(2000));
+}
+
+do_ioerr_test ioerr-14 -ckrefcount true -erc 1 -sqlprep {
+  PRAGMA auto_vacuum = incremental;
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(x);
+  INSERT INTO t2 VALUES(randomblob(1500));
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+  INSERT INTO t2 SELECT randomblob(1500) FROM t2;
+
+  -- This statement inserts a row into t1 with an overflow page at the
+  -- end of the file. A long way from its parent (the root of t1).
+  INSERT INTO t1 VALUES(randomblob(1500));
+  DELETE FROM t2 WHERE rowid<10;
+} -sqlbody {
+  -- This transaction will cause the root-page of table t1 to divide
+  -- (by calling balance_deeper()). When it does, the "parent" page of the
+  -- overflow page inserted in the -sqlprep block above will change and
+  -- the corresponding pointer map page be updated. This test case attempts
+  -- to cause an IO error during the pointer map page update.
+  --
+  BEGIN;
+  INSERT INTO t1 VALUES(randomblob(100));
+  INSERT INTO t1 VALUES(randomblob(100));
+  INSERT INTO t1 VALUES(randomblob(100));
+  INSERT INTO t1 VALUES(randomblob(100));
+  INSERT INTO t1 VALUES(randomblob(100));
+  INSERT INTO t1 VALUES(randomblob(100));
+  INSERT INTO t1 VALUES(randomblob(100));
+  INSERT INTO t1 VALUES(randomblob(100));
+  INSERT INTO t1 VALUES(randomblob(100));
+  INSERT INTO t1 VALUES(randomblob(100));
+  COMMIT;
+}
 
 finish_test
 

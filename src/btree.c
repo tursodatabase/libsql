@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.473 2008/07/08 19:34:07 drh Exp $
+** $Id: btree.c,v 1.474 2008/07/09 11:49:47 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -667,7 +667,7 @@ static int ptrmapPutOvfl(MemPage *pPage, int iCell){
 ** big FreeBlk that occurs in between the header and cell
 ** pointer array and the cell content area.
 */
-static int defragmentPage(MemPage *pPage){
+static void defragmentPage(MemPage *pPage){
   int i;                     /* Loop counter */
   int pc;                    /* Address of a i-th cell */
   int addr;                  /* Offset of first byte after cell pointer array */
@@ -712,7 +712,6 @@ static int defragmentPage(MemPage *pPage){
   data[hdr+7] = 0;
   addr = cellOffset+2*nCell;
   memset(&data[addr], 0, brk-addr);
-  return SQLITE_OK;
 }
 
 /*
@@ -773,7 +772,7 @@ static int allocateSpace(MemPage *pPage, int nByte){
   nCell = get2byte(&data[hdr+3]);
   cellOffset = pPage->cellOffset;
   if( nFrag>=60 || cellOffset + 2*nCell > top - nByte ){
-    if( defragmentPage(pPage) ) return 0;
+    defragmentPage(pPage);
     top = get2byte(&data[hdr+5]);
   }
   top -= nByte;
@@ -4645,8 +4644,7 @@ static int insertCell(
     end = cellOffset + 2*pPage->nCell + 2;
     ins = cellOffset + 2*i;
     if( end > top - sz ){
-      rc = defragmentPage(pPage);
-      if( rc!=SQLITE_OK ) return rc;
+      defragmentPage(pPage);
       top = get2byte(&data[hdr+5]);
       assert( end + sz <= top );
     }
@@ -4798,19 +4796,24 @@ static int balance_quick(MemPage *pPage, MemPage *pParent){
   /* pPage is currently the right-child of pParent. Change this
   ** so that the right-child is the new page allocated above and
   ** pPage is the next-to-right child. 
+  **
+  ** Ignore the return value of the call to fillInCell(). fillInCell()
+  ** may only return other than SQLITE_OK if it is required to allocate
+  ** one or more overflow pages. Since an internal table B-Tree cell 
+  ** may never spill over onto an overflow page (it is a maximum of 
+  ** 13 bytes in size), it is not neccessary to check the return code.
+  **
+  ** Similarly, the insertCell() function cannot fail if the page
+  ** being inserted into is already writable and the cell does not 
+  ** contain an overflow pointer. So ignore this return code too.
   */
   assert( pPage->nCell>0 );
   pCell = findCell(pPage, pPage->nCell-1);
   sqlite3BtreeParseCellPtr(pPage, pCell, &info);
-  rc = fillInCell(pParent, parentCell, 0, info.nKey, 0, 0, 0, &parentSize);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
+  fillInCell(pParent, parentCell, 0, info.nKey, 0, 0, 0, &parentSize);
   assert( parentSize<64 );
-  rc = insertCell(pParent, parentIdx, parentCell, parentSize, 0, 4);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
+  assert( sqlite3PagerIswriteable(pParent->pDbPage) );
+  insertCell(pParent, parentIdx, parentCell, parentSize, 0, 4);
   put4byte(findOverflowCell(pParent,parentIdx), pPage->pgno);
   put4byte(&pParent->aData[pParent->hdrOffset+8], pgnoNew);
 
@@ -4918,6 +4921,7 @@ static int balance_nonroot(MemPage *pPage){
   if( SQLITE_OK!=(rc = sqlite3PagerWrite(pParent->pDbPage)) ){
     return rc;
   }
+
   TRACE(("BALANCE: begin page %d child of %d\n", pPage->pgno, pParent->pgno));
 
 #ifndef SQLITE_OMIT_QUICKBALANCE
@@ -5599,7 +5603,7 @@ static int balance_deeper(MemPage *pPage){
     for(i=0; i<pChild->nCell; i++){
       rc = ptrmapPutOvfl(pChild, i);
       if( rc!=SQLITE_OK ){
-        return rc;
+        goto balancedeeper_out;
       }
     }
   }
