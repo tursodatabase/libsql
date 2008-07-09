@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.19 2008/03/15 14:53:05 drh Exp $
+# $Id: misc7.test,v 1.20 2008/07/09 16:51:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -445,6 +445,17 @@ do_test misc7-18.1 {
         GROUP BY table_1.col_10, qcol_9);
   }
 } {}
+
+# Testing boundary conditions on sqlite3_status()
+#
+do_test misc7-19.1 {
+  sqlite3_status -1 0
+} {21 0 0}
+do_test misc7-19.2 {
+  sqlite3_status 1000 0
+} {21 0 0}
+
+
 
 db close
 file delete -force test.db

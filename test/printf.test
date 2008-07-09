@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.29 2008/07/08 02:24:03 drh Exp $
+# $Id: printf.test,v 1.30 2008/07/09 16:51:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -3400,7 +3400,53 @@ do_test printf-2.8.14.8 {
 do_test printf-2.8.14.9 {
   sqlite3_mprintf_double {abc: %d %d (%3.2g) :xyz} 3 2 3.38826392e-110
 } {abc: 3 2 (3.4e-110) :xyz}
+do_test printf-2.8.15.1 {
+  sqlite3_mprintf_double {abc: (% *.*f) :xyz} 3 2 3.38826392e-110
+} {abc: ( 0.00) :xyz}
+do_test printf-2.8.15.2 {
+  sqlite3_mprintf_double {abc: (% *.*e) :xyz} 3 2 3.38826392e-110
+} {abc: ( 3.39e-110) :xyz}
+do_test printf-2.8.15.3 {
+  sqlite3_mprintf_double {abc: (% *.*g) :xyz} 3 2 3.38826392e-110
+} {abc: ( 3.4e-110) :xyz}
+do_test printf-2.8.15.4 {
+  sqlite3_mprintf_double {abc: %d %d (% g) :xyz} 3 2 3.38826392e-110
+} {abc: 3 2 ( 3.38826e-110) :xyz}
+do_test printf-2.8.15.5 {
+  sqlite3_mprintf_double {abc: %d %d (% #g) :xyz} 3 2 3.38826392e-110
+} {abc: 3 2 ( 3.38826e-110) :xyz}
+do_test printf-2.8.15.6 {
+  sqlite3_mprintf_double {abc: %d %d (%0 10g) :xyz} 3 2 3.38826392e-110
+} {abc: 3 2 ( 3.38826e-110) :xyz}
+do_test printf-2.8.15.7 {
+  sqlite3_mprintf_double {abc: %d %d (% 3.2f) :xyz} 3 2 3.38826392e-110
+} {abc: 3 2 ( 0.00) :xyz}
+do_test printf-2.8.15.8 {
+  sqlite3_mprintf_double {abc: %d %d (% 3.2e) :xyz} 3 2 3.38826392e-110
+} {abc: 3 2 ( 3.39e-110) :xyz}
+do_test printf-2.8.15.9 {
+  sqlite3_mprintf_double {abc: %d %d (% 3.2g) :xyz} 3 2 3.38826392e-110
+} {abc: 3 2 ( 3.4e-110) :xyz}
 
+do_test printf-2.9.1 {
+  sqlite3_mprintf_double {abc: %d %d (%5.0g) :xyz} 0 0 1.234
+} {abc: 0 0 (    1) :xyz}
+do_test printf-2.9.2 {
+  sqlite3_mprintf_double {abc: %d %d (%+5.0g) :xyz} 0 0 1.234
+} {abc: 0 0 (   +1) :xyz}
+do_test printf-2.9.3 {
+  sqlite3_mprintf_double {abc: %d %d (%+-5.0g) :xyz} 0 0 1.234
+} {abc: 0 0 (+1   ) :xyz}
+
+do_test printf-2.10.1 {
+  sqlite3_mprintf_double {abc: %d %d (%-010.5f) :xyz} 0 0 1.234
+} {abc: 0 0 (1.23400   ) :xyz}
+do_test printf-2.10.2 {
+  sqlite3_mprintf_double {abc: %d %d (%010.5f) :xyz} 0 0 1.234
+} {abc: 0 0 (0001.23400) :xyz}
+do_test printf-2.10.3 {
+  sqlite3_mprintf_double {abc: %d %d (%+010.5f) :xyz} 0 0 1.234
+} {abc: 0 0 (+001.23400) :xyz}
 
 do_test printf-3.1 {
   sqlite3_mprintf_str {A String: (%*.*s)} 10 10 {This is the string}
@@ -3615,10 +3661,22 @@ do_test printf-14.3 {
 do_test printf-14.4 {
   sqlite3_mprintf_str {abc-%#} 0 0 {not used}
 } {abc-}
+do_test printf-14.5 {
+  sqlite3_mprintf_str {abc-%*.*s-xyz} 10 -10 {a_very_long_string}
+} {abc-a_very_lon-xyz}
+do_test printf-14.6 {
+  sqlite3_mprintf_str {abc-%5.10/} 0 0 {not used}
+} {abc-}
+do_test printf-14.7 {
+  sqlite3_mprintf_str {abc-%05.5d} 123 0 {not used}
+} {abc-00123}
+do_test printf-14.8 {
+  sqlite3_mprintf_str {abc-%05.5d} 1234567 0 {not used}
+} {abc-1234567}
 
 for {set i 2} {$i<200} {incr i} {
   set res [string repeat { } [expr {$i-1}]]x
-  do_test printf-14.10.$i "
+  do_test printf-14.90.$i "
     sqlite3_mprintf_str {%*.*s} $i 500 x
   " $res
 }

@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.117 2008/07/08 22:28:49 shane Exp $
+** $Id: vdbemem.c,v 1.118 2008/07/09 16:51:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -82,8 +82,8 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
     ((pMem->flags&MEM_Static) ? 1 : 0)
   );
 
-  if( !pMem->zMalloc || sqlite3MallocSize(pMem->zMalloc)<n ){
-    n = (n>32?n:32);
+  if( n<32 ) n = 32;
+  if( sqlite3MallocSize(pMem->zMalloc)<n ){
     if( preserve && pMem->z==pMem->zMalloc ){
       pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
       if( !pMem->z ){

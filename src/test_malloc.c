@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.34 2008/07/09 13:28:54 drh Exp $
+** $Id: test_malloc.c,v 1.35 2008/07/09 16:51:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1061,6 +1061,8 @@ static int test_status(
     if( Tcl_GetIntFromObj(interp, objv[1], &op) ) return TCL_ERROR;
   }
   if( Tcl_GetBooleanFromObj(interp, objv[2], &resetFlag) ) return TCL_ERROR;
+  iValue = 0;
+  mxValue = 0;
   rc = sqlite3_status(op, &iValue, &mxValue, resetFlag);
   pResult = Tcl_NewObj();
   Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(rc));

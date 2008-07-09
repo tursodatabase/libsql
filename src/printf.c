@@ -5,7 +5,7 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
-** $Id: printf.c,v 1.88 2008/07/08 19:34:07 drh Exp $
+** $Id: printf.c,v 1.89 2008/07/09 16:51:51 drh Exp $
 **
 **************************************************************************
 **
@@ -68,15 +68,14 @@
 #define etPERCENT     8 /* Percent symbol. %% */
 #define etCHARX       9 /* Characters. %c */
 /* The rest are extensions, not normally found in printf() */
-#define etCHARLIT    10 /* Literal characters.  %' */
-#define etSQLESCAPE  11 /* Strings with '\'' doubled.  %q */
-#define etSQLESCAPE2 12 /* Strings with '\'' doubled and enclosed in '',
+#define etSQLESCAPE  10 /* Strings with '\'' doubled.  %q */
+#define etSQLESCAPE2 11 /* Strings with '\'' doubled and enclosed in '',
                           NULL pointers replaced by SQL NULL.  %Q */
-#define etTOKEN      13 /* a pointer to a Token structure */
-#define etSRCLIST    14 /* a pointer to a SrcList */
-#define etPOINTER    15 /* The %p conversion */
-#define etSQLESCAPE3 16 /* %w -> Strings with '\"' doubled */
-#define etORDINAL    17 /* %r -> 1st, 2nd, 3rd, 4th, etc.  English only */
+#define etTOKEN      12 /* a pointer to a Token structure */
+#define etSRCLIST    13 /* a pointer to a SrcList */
+#define etPOINTER    14 /* The %p conversion */
+#define etSQLESCAPE3 15 /* %w -> Strings with '\"' doubled */
+#define etORDINAL    16 /* %r -> 1st, 2nd, 3rd, 4th, etc.  English only */
 
 
 /*
@@ -444,9 +443,7 @@ void sqlite3VXPrintf(
           const char *pre;
           char x;
           pre = &aPrefix[infop->prefix];
-          if( *bufpt!=pre[0] ){
-            for(; (x=(*pre))!=0; pre++) *(--bufpt) = x;
-          }
+          for(; (x=(*pre))!=0; pre++) *(--bufpt) = x;
         }
         length = &buf[etBUFSIZE-1]-bufpt;
         break;
@@ -485,9 +482,11 @@ void sqlite3VXPrintf(
           while( realvalue>=1e32 && exp<=350 ){ realvalue *= 1e-32; exp+=32; }
           while( realvalue>=1e8 && exp<=350 ){ realvalue *= 1e-8; exp+=8; }
           while( realvalue>=10.0 && exp<=350 ){ realvalue *= 0.1; exp++; }
-          while( realvalue<1e-8 && exp>=-350 ){ realvalue *= 1e8; exp-=8; }
-          while( realvalue<1.0 && exp>=-350 ){ realvalue *= 10.0; exp--; }
-          if( exp>350 || exp<-350 ){
+          if( realvalue>0.0 ){
+            while( realvalue<1e-8 ){ realvalue *= 1e8; exp-=8; }
+            while( realvalue<1.0 ){ realvalue *= 10.0; exp--; }
+          }
+          if( exp>350 ){
             if( prefix=='-' ){
               bufpt = "-Inf";
             }else if( prefix=='+' ){
@@ -545,7 +544,8 @@ void sqlite3VXPrintf(
         }
         /* "0" digits after the decimal point but before the first
         ** significant digit of the number */
-        for(e2++; e2<0 && precision>0; precision--, e2++){
+        for(e2++; e2<0; precision--, e2++){
+          assert( precision>0 );
           *(bufpt++) = '0';
         }
         /* Significant digits after the decimal point */
@@ -565,7 +565,7 @@ void sqlite3VXPrintf(
           }
         }
         /* Add the "eNNN" suffix */
-        if( flag_exp || (xtype==etEXP && exp) ){
+        if( flag_exp || xtype==etEXP ){
           *(bufpt++) = aDigits[infop->charset];
           if( exp<0 ){
             *(bufpt++) = '-'; exp = -exp;
@@ -610,9 +610,8 @@ void sqlite3VXPrintf(
         bufpt = buf;
         length = 1;
         break;
-      case etCHARLIT:
       case etCHARX:
-        c = buf[0] = (xtype==etCHARX ? va_arg(ap,int) : *++fmt);
+        c = buf[0] = va_arg(ap,int);
         if( precision>=0 ){
           for(idx=1; idx<precision; idx++) buf[idx] = c;
           length = precision;
@@ -670,7 +669,7 @@ void sqlite3VXPrintf(
       }
       case etTOKEN: {
         Token *pToken = va_arg(ap, Token*);
-        if( pToken && pToken->z ){
+        if( pToken ){
           sqlite3StrAccumAppend(pAccum, (const char*)pToken->z, pToken->n);
         }
         length = width = 0;
