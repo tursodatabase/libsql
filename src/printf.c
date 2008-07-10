@@ -5,7 +5,7 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
-** $Id: printf.c,v 1.89 2008/07/09 16:51:51 drh Exp $
+** $Id: printf.c,v 1.90 2008/07/10 00:32:42 drh Exp $
 **
 **************************************************************************
 **
@@ -482,10 +482,8 @@ void sqlite3VXPrintf(
           while( realvalue>=1e32 && exp<=350 ){ realvalue *= 1e-32; exp+=32; }
           while( realvalue>=1e8 && exp<=350 ){ realvalue *= 1e-8; exp+=8; }
           while( realvalue>=10.0 && exp<=350 ){ realvalue *= 0.1; exp++; }
-          if( realvalue>0.0 ){
-            while( realvalue<1e-8 ){ realvalue *= 1e8; exp-=8; }
-            while( realvalue<1.0 ){ realvalue *= 10.0; exp--; }
-          }
+          while( realvalue<1e-8 ){ realvalue *= 1e8; exp-=8; }
+          while( realvalue<1.0 ){ realvalue *= 10.0; exp--; }
           if( exp>350 ){
             if( prefix=='-' ){
               bufpt = "-Inf";
@@ -680,7 +678,7 @@ void sqlite3VXPrintf(
         int k = va_arg(ap, int);
         struct SrcList_item *pItem = &pSrc->a[k];
         assert( k>=0 && k<pSrc->nSrc );
-        if( pItem->zDatabase && pItem->zDatabase[0] ){
+        if( pItem->zDatabase ){
           sqlite3StrAccumAppend(pAccum, pItem->zDatabase, -1);
           sqlite3StrAccumAppend(pAccum, ".", 1);
         }
@@ -739,15 +737,12 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
         return;
       }
     }else{
-      i64 szNew = p->nAlloc;
+      i64 szNew = p->nChar;
       szNew += N + 1;
       if( szNew > p->mxAlloc ){
-        p->nAlloc = p->mxAlloc;
-        if( ((i64)p->nChar)+((i64)N) >= p->nAlloc ){
-          sqlite3StrAccumReset(p);
-          p->tooBig = 1;
-          return;
-        }
+        sqlite3StrAccumReset(p);
+        p->tooBig = 1;
+        return;
       }else{
         p->nAlloc = szNew;
       }

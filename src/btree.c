@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.474 2008/07/09 11:49:47 danielk1977 Exp $
+** $Id: btree.c,v 1.475 2008/07/10 00:32:42 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -493,16 +493,9 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 */
 #define findCell(pPage, iCell) \
   ((pPage)->aData + get2byte(&(pPage)->aData[(pPage)->cellOffset+2*(iCell)]))
-#ifdef SQLITE_TEST
-u8 *sqlite3BtreeFindCell(MemPage *pPage, int iCell){
-  assert( iCell>=0 );
-  assert( iCell<get2byte(&pPage->aData[pPage->hdrOffset+3]) );
-  return findCell(pPage, iCell);
-}
-#endif
 
 /*
-** This a more complex version of sqlite3BtreeFindCell() that works for
+** This a more complex version of findCell() that works for
 ** pages that do contain overflow cells.  See insert
 */
 static u8 *findOverflowCell(MemPage *pPage, int iCell){
@@ -5799,8 +5792,6 @@ int sqlite3BtreeInsert(
   rc = insertCell(pPage, pCur->idx, newCell, szNew, 0, 0);
   if( rc!=SQLITE_OK ) goto end_insert;
   rc = balance(pPage, 1);
-  /* sqlite3BtreePageDump(pCur->pBt, pCur->pgnoRoot, 1); */
-  /* fflush(stdout); */
   if( rc==SQLITE_OK ){
     moveToRoot(pCur);
   }

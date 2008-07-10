@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.235 2008/07/09 13:28:54 drh Exp $
+** $Id: util.c,v 1.236 2008/07/10 00:32:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -937,6 +937,7 @@ int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
   return 1;
 }
 
+#ifndef SQLITE_COVERAGE_TEST
 /*
 ** Report a failsafe() macro failure
 */
@@ -950,3 +951,4 @@ void sqlite3Failsafe(int iCode){
   */
   assert( iCode==0 );   /* Always fails if assert() is enabled */
 }
+#endif

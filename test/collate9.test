@@ -13,7 +13,7 @@
 # focus of this script is making sure that the names of collation
 # sequences may be quoted using double quotes in SQL statements.
 #
-# $Id: collate9.test,v 1.1 2007/11/12 09:50:26 danielk1977 Exp $
+# $Id: collate9.test,v 1.2 2008/07/10 00:32:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -105,6 +105,11 @@ do_test collate9-2.5 {
     SELECT y FROM xy ORDER BY y COLLATE "reverse sort"
   }
 } {two three one}
+do_test collate9-2.6 {
+  execsql {
+    SELECT y COLLATE "reverse sort" AS aaa FROM xy ORDER BY aaa
+  }
+} {two three one}
 
 do_test collate9-3.1 {
   execsql {
@@ -119,6 +124,16 @@ do_test collate9-3.2 {
 do_test collate9-3.3 {
   cksort { 
     SELECT y FROM xy ORDER BY y COLLATE "reverse sort"
+  }
+} {two three one nosort}
+do_test collate9-3.4 {
+  cksort { 
+    SELECT y AS aaa FROM xy ORDER BY aaa
+  }
+} {one three two sort}
+do_test collate9-3.5 {
+  cksort { 
+    SELECT y COLLATE "reverse sort" AS aaa FROM xy ORDER BY aaa
   }
 } {two three one nosort}
 
@@ -161,4 +176,3 @@ ifcapable reindex {
 }
 
 finish_test
-

@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.29 2008/07/08 15:26:50 drh Exp $
+# $Id: sqllimits1.test,v 1.30 2008/07/10 00:32:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -625,6 +625,26 @@ do_test sqllimits1-8.9 {
   catchsql "CREATE TABLE t2([join $cols ,])"
   catchsql "CREATE VIEW v1 AS SELECT *, c1 AS o FROM t2;"
 } {1 {too many columns in result set}}
+do_test sqllimits1-8.10 {
+  # ORDER BY columns
+  set cols [list]
+  for {set i 0} {$i <= $SQLITE_LIMIT_COLUMN} {incr i} {
+    lappend cols c
+  }
+  set sql "SELECT c FROM t1 ORDER BY [join $cols ,]"
+  catchsql $sql
+} {1 {too many terms in ORDER BY clause}}
+do_test sqllimits1-8.11 {
+  # ORDER BY columns
+  set cols [list]
+  for {set i 0} {$i <= $SQLITE_LIMIT_COLUMN} {incr i} {
+    lappend cols [expr {$i%3 + 1}]
+  }
+  set sql "SELECT c, c+1, c+2 FROM t1 UNION SELECT c-1, c-2, c-3 FROM t1"
+  append sql " ORDER BY [join $cols ,]"
+  catchsql $sql
+} {1 {too many terms in ORDER BY clause}}
+
 
 #--------------------------------------------------------------------
 # These tests - sqllimits1-9.* - test that the SQLITE_LIMIT_EXPR_DEPTH

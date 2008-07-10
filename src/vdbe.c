@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.759 2008/07/08 19:34:07 drh Exp $
+** $Id: vdbe.c,v 1.760 2008/07/10 00:32:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1610,10 +1610,6 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, in1 */
 ** reg(P3) is NULL then take the jump.  If the SQLITE_JUMPIFNULL 
 ** bit is clear then fall thru if either operand is NULL.
 **
-** If the SQLITE_NULLEQUAL bit of P5 is set then treat NULL operands
-** as being equal to one another.  Normally NULLs are not equal to 
-** anything including other NULLs.
-**
 ** The SQLITE_AFF_MASK portion of P5 must be an affinity character -
 ** SQLITE_AFF_TEXT, SQLITE_AFF_INTEGER, and so forth. An attempt is made 
 ** to coerce both inputs according to this affinity before the
@@ -1679,36 +1675,17 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   flags = pIn1->flags|pIn3->flags;
 
   if( flags&MEM_Null ){
-    if( (pOp->p5 & SQLITE_NULLEQUAL)!=0 ){
-      /*
-      ** When SQLITE_NULLEQUAL set and either operand is NULL
-      ** then both operands are converted to integers prior to being 
-      ** passed down into the normal comparison logic below.  
-      ** NULL operands are converted to zero and non-NULL operands
-      ** are converted to 1.  Thus, for example, with SQLITE_NULLEQUAL
-      ** set,  NULL==NULL is true whereas it would normally NULL.
-      ** Similarly,  NULL!=123 is true.
-      */
-      x1.flags = MEM_Int;
-      x1.u.i = (pIn1->flags & MEM_Null)==0;
-      pIn1 = &x1;
-      x3.flags = MEM_Int;
-      x3.u.i = (pIn3->flags & MEM_Null)==0;
-      pIn3 = &x3;
-    }else{
-      /* If the SQLITE_NULLEQUAL bit is clear and either operand is NULL then
-      ** the result is always NULL.  The jump is taken if the 
-      ** SQLITE_JUMPIFNULL bit is set.
-      */
-      if( pOp->p5 & SQLITE_STOREP2 ){
-        pOut = &p->aMem[pOp->p2];
-        MemSetTypeFlag(pOut, MEM_Null);
-        REGISTER_TRACE(pOp->p2, pOut);
-      }else if( pOp->p5 & SQLITE_JUMPIFNULL ){
-        pc = pOp->p2-1;
-      }
-      break;
+    /* If either operand is NULL then the result is always NULL.
+    ** The jump is taken if the SQLITE_JUMPIFNULL bit is set.
+    */
+    if( pOp->p5 & SQLITE_STOREP2 ){
+      pOut = &p->aMem[pOp->p2];
+      MemSetTypeFlag(pOut, MEM_Null);
+      REGISTER_TRACE(pOp->p2, pOut);
+    }else if( pOp->p5 & SQLITE_JUMPIFNULL ){
+      pc = pOp->p2-1;
     }
+    break;
   }
 
   affinity = pOp->p5 & SQLITE_AFF_MASK;
@@ -1776,6 +1753,7 @@ case OP_Compare: {
   int i, p1, p2;
   const KeyInfo *pKeyInfo = pOp->p4.pKeyInfo;
   assert( n>0 );
+  assert( pKeyInfo!=0 );
   p1 = pOp->p1;
   assert( p1>0 && p1+n-1<p->nMem );
   p2 = pOp->p2;
@@ -1784,17 +1762,11 @@ case OP_Compare: {
     int idx = aPermute ? aPermute[i] : i;
     CollSeq *pColl;    /* Collating sequence to use on this term */
     int bRev;          /* True for DESCENDING sort order */
-    assert( pKeyInfo==0 || i<pKeyInfo->nField );
     REGISTER_TRACE(p1+idx, &p->aMem[p1+idx]);
     REGISTER_TRACE(p2+idx, &p->aMem[p2+idx]);
-    if( pKeyInfo ){
-      assert( i<pKeyInfo->nField );
-      pColl = pKeyInfo->aColl[i];
-      bRev = pKeyInfo->aSortOrder[i];
-    }else{
-      pColl = 0;
-      bRev = 0;
-    }
+    assert( i<pKeyInfo->nField );
+    pColl = pKeyInfo->aColl[i];
+    bRev = pKeyInfo->aSortOrder[i];
     iCompare = sqlite3MemCompare(&p->aMem[p1+idx], &p->aMem[p2+idx], pColl);
     if( iCompare ){
       if( bRev ) iCompare = -iCompare;

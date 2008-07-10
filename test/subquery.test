@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing correlated subqueries
 #
-# $Id: subquery.test,v 1.15 2007/09/18 16:53:53 drh Exp $
+# $Id: subquery.test,v 1.16 2008/07/10 00:32:42 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -127,7 +127,7 @@ do_test subquery-1.10.4 {
     INSERT INTO t5 VALUES(25, '2003-3');
     INSERT INTO t5 VALUES(5, '2003-4');
 
-    SELECT "a.period", vsum
+    SELECT period, vsum
     FROM (SELECT 
       a.period,
       (select sum(val) from t5 where period between a.period and '2002-4') vsum
@@ -137,7 +137,7 @@ do_test subquery-1.10.4 {
 } {2002-2 30 2002-3 25 2002-4 15}
 do_test subquery-1.10.5 {
   execsql {
-    SELECT "a.period", vsum from
+    SELECT period, vsum from
       (select a.period,
       (select sum(val) from t5 where period between a.period and '2002-4') vsum
     FROM t5 a where a.period between '2002-1' and '2002-4') 

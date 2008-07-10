@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.23 2008/06/16 14:19:58 danielk1977 Exp $
+** $Id: vdbeblob.c,v 1.24 2008/07/10 00:32:42 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -96,10 +96,9 @@ int sqlite3_blob_open(
     memset(&sParse, 0, sizeof(Parse));
     sParse.db = db;
 
-    rc = sqlite3SafetyOn(db);
-    if( rc!=SQLITE_OK ){
+    if( sqlite3SafetyOn(db) ){
       sqlite3_mutex_leave(db->mutex);
-      return rc;
+      return SQLITE_MISUSE;
     }
 
     sqlite3BtreeEnterAll(db);

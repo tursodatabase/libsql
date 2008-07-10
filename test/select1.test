@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.62 2008/07/09 01:39:44 drh Exp $
+# $Id: select1.test,v 1.63 2008/07/10 00:32:42 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -533,6 +533,26 @@ do_test select1-6.9.5 {
      SELECT 123.45;
   }
 } {123.45 123.45}
+do_test select1-6.9.6 {
+  execsql2 {
+     SELECT * FROM test1 a, test1 b LIMIT 1
+  }
+} {a.f1 11 a.f2 22 b.f1 11 b.f2 22}
+do_test select1-6.9.7 {
+  set x [execsql2 {
+     SELECT * FROM test1 a, (select 5, 6) LIMIT 1
+  }]
+  regsub -all {subquery_[0-9a-fA-F]+_} $x {subquery} x
+  set x
+} {a.f1 11 a.f2 22 sqlite_subquery.5 5 sqlite_subquery.6 6}
+do_test select1-6.9.8 {
+  set x [execsql2 {
+     SELECT * FROM test1 a, (select 5 AS x, 6 AS y) AS b LIMIT 1
+  }]
+  regsub -all {subquery_[0-9a-fA-F]+_} $x {subquery} x
+  set x
+} {a.f1 11 a.f2 22 b.x 5 b.y 6}
+
 db eval {
   PRAGMA short_column_names=ON;
   PRAGMA full_column_names=OFF;
@@ -754,6 +774,11 @@ do_test select1-10.6 {
     SELECT f1-22 AS x, f2-22 as y FROM test1 WHERE x>0 AND y<50
   }
 } {11 22}
+do_test select1-10.7 {
+  execsql {
+    SELECT f1 COLLATE nocase AS x FROM test1 ORDER BY x
+  }
+} {11 33}
 
 # Check the ability to specify "TABLE.*" in the result set of a SELECT
 #

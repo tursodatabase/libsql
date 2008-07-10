@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.192 2008/06/30 10:16:05 danielk1977 Exp $
+** $Id: os_unix.c,v 1.193 2008/07/10 00:32:42 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -543,6 +543,7 @@ static void releaseOpenCnt(struct openCnt *pOpen){
   }
 }
 
+#ifdef SQLITE_ENABLE_LOCKING_STYLE
 /*
 ** Tests a byte-range locking query to see if byte range locks are 
 ** supported, if not we fall back to dotlockLockingStyle.
@@ -566,6 +567,7 @@ static int testLockingStyle(int fd){
   */  
   return LOCKING_STYLE_DOTFILE;
 }
+#endif
 
 /* 
 ** If SQLITE_ENABLE_LOCKING_STYLE is defined, this function Examines the 

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.98 2008/06/18 17:09:10 danielk1977 Exp $
+** $Id: test3.c,v 1.99 2008/07/10 00:32:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -474,70 +474,6 @@ static int btree_update_meta(
 }
 
 /*
-** Usage:   btree_page_dump ID PAGENUM
-**
-** Print a disassembly of a page on standard output
-*/
-static int btree_page_dump(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  Btree *pBt;
-  int iPage;
-  int rc;
-
-  if( argc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
-    return TCL_ERROR;
-  }
-  pBt = sqlite3TextToPtr(argv[1]);
-  if( Tcl_GetInt(interp, argv[2], &iPage) ) return TCL_ERROR;
-  sqlite3BtreeEnter(pBt);
-  rc = sqlite3BtreePageDump(pBt, iPage, 0);
-  sqlite3BtreeLeave(pBt);
-  if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, errorName(rc), 0);
-    return TCL_ERROR;
-  }
-  return TCL_OK;
-}
-
-/*
-** Usage:   btree_tree_dump ID PAGENUM
-**
-** Print a disassembly of a page and all its child pages on standard output
-*/
-static int btree_tree_dump(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  Btree *pBt;
-  int iPage;
-  int rc;
-
-  if( argc!=3 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
-    return TCL_ERROR;
-  }
-  pBt = sqlite3TextToPtr(argv[1]);
-  if( Tcl_GetInt(interp, argv[2], &iPage) ) return TCL_ERROR;
-  sqlite3BtreeEnter(pBt);
-  rc = sqlite3BtreePageDump(pBt, iPage, 1);
-  sqlite3BtreeLeave(pBt);
-  if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, errorName(rc), 0);
-    return TCL_ERROR;
-  }
-  return TCL_OK;
-}
-
-/*
 ** Usage:   btree_pager_stats ID
 **
 ** Returns pager statistics
@@ -584,33 +520,6 @@ static int btree_pager_stats(
 
   /* Release the mutex on the SQLite handle that controls this b-tree */
   sqlite3_mutex_leave(pBt->db->mutex);
-  return TCL_OK;
-}
-
-/*
-** Usage:   btree_pager_ref_dump ID
-**
-** Print out all outstanding pages.
-*/
-static int btree_pager_ref_dump(
-  void *NotUsed,
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int argc,              /* Number of arguments */
-  const char **argv      /* Text of each argument */
-){
-  Btree *pBt;
-
-  if( argc!=2 ){
-    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-       " ID\"", 0);
-    return TCL_ERROR;
-  }
-  pBt = sqlite3TextToPtr(argv[1]);
-#ifdef SQLITE_TEST
-  sqlite3BtreeEnter(pBt);
-  sqlite3PagerRefdump(sqlite3BtreePager(pBt));
-  sqlite3BtreeLeave(pBt);
-#endif
   return TCL_OK;
 }
 
@@ -1653,10 +1562,7 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_clear_table",        (Tcl_CmdProc*)btree_clear_table        },
      { "btree_get_meta",           (Tcl_CmdProc*)btree_get_meta           },
      { "btree_update_meta",        (Tcl_CmdProc*)btree_update_meta        },
-     { "btree_page_dump",          (Tcl_CmdProc*)btree_page_dump          },
-     { "btree_tree_dump",          (Tcl_CmdProc*)btree_tree_dump          },
      { "btree_pager_stats",        (Tcl_CmdProc*)btree_pager_stats        },
-     { "btree_pager_ref_dump",     (Tcl_CmdProc*)btree_pager_ref_dump     },
      { "btree_cursor",             (Tcl_CmdProc*)btree_cursor             },
      { "btree_close_cursor",       (Tcl_CmdProc*)btree_close_cursor       },
      { "btree_move_to",            (Tcl_CmdProc*)btree_move_to            },
