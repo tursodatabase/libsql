@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\stesting\slogic\sfor\smalloc\sand\smutex.\s\sOnly\spermit\sone\nof\sMEMSYS3/5\sto\sbe\scompiled-in\sat\sa\stime.\s\sOmit\sthe\sSQLITE_CONFIG_MEMSYS3/5\nconfiguration\soptions.\s(CVS\s5389)
-D 2008-07-10T18:13:42
+C Fix\sa\sbug\sin\sthe\smutex-testing\slogic\sintroduced\sby\scheck-in\s(5389).\s(CVS\s5390)
+D 2008-07-10T20:41:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -168,7 +168,7 @@ F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
 F src/test_malloc.c 4f07302a0077f2c1730baa7aeb359e4f51960aa7
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
-F src/test_mutex.c 893cdb8a1d8015e0103c0fa48e2aaca2d40d4dc7
+F src/test_mutex.c 86a937f5d28f373b8495faf1347a9d0a306594d4
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
 F src/test_osinst.c 867f1317bd135f942a63eab5a78da40fc70d1493
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
@@ -601,7 +601,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9c8b97ef593c17740640a01a7338164d7fbe070e
-R 2fd49240ed9bef71f7d65c695010f7c4
+P ed8b2525006ae7f8cacd01b291760513fdbdff57
+R efb7a3b7b52866a48ca989ffc22b1e05
 U drh
-Z ab81163c7db604825f9001df3cff3c52
+Z 90b53c53d9eef880479c1542b15e3289
