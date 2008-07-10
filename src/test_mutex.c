@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.6 2008/07/08 02:12:37 drh Exp $
+** $Id: test_mutex.c,v 1.7 2008/07/10 17:52:49 danielk1977 Exp $
 */
 
 #include "tcl.h"
@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include "mutex.h"
 
 /* defined in test1.c */
 const char *sqlite3TestErrorName(int);

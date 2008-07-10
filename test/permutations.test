@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.9 2008/06/27 14:05:25 danielk1977 Exp $
+# $Id: permutations.test,v 1.10 2008/07/10 17:52:49 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -192,6 +192,25 @@ run_tests "singlethread" -description {
     sqlite3_shutdown
     sqlite3_config serialized
   } SQLITE_OK
+}
+
+run_tests "nomutex" -description {
+  Tests run with the SQLITE_OPEN_SINGLETHREADED flag passed to sqlite3_open().
+} -initialize {
+  rename sqlite3 sqlite3_nomutex
+  proc sqlite3 {args} {
+    if {[string range [lindex $args 0] 0 0] ne "-"} {
+      lappend args -nomutex 1
+    }
+    uplevel [concat sqlite3_nomutex $args]
+  }
+} -include {
+  delete.test   delete2.test  insert.test  rollback.test  select1.test
+  select2.test  trans.test    update.test  vacuum.test    types.test
+  types2.test   types3.test
+} -shutdown {
+  rename sqlite3 {}
+  rename sqlite3_nomutex sqlite3
 }
 
 # Run some tests in SQLITE_CONFIG_MULTITHREAD mode.

@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.365 2008/07/09 13:28:54 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.366 2008/07/10 17:52:49 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -512,6 +512,7 @@ int sqlite3_exec(
 #define SQLITE_OPEN_TEMP_JOURNAL     0x00001000
 #define SQLITE_OPEN_SUBJOURNAL       0x00002000
 #define SQLITE_OPEN_MASTER_JOURNAL   0x00004000
+#define SQLITE_OPEN_NOMUTEX          0x00008000
 
 /*
 ** CAPI3REF: Device Characteristics {F10240}
@@ -2296,7 +2297,9 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 **
 ** The sqlite3_open_v2() interface works like sqlite3_open()
 ** except that it accepts two additional parameters for additional control
-** over the new database connection.  The flags parameter can be one of:
+** over the new database connection.  The flags parameter can take one of
+** the following three values, optionally combined with the 
+** SQLITE_OPEN_NOMUTEX flag:
 **
 ** <dl>
 ** <dt>[SQLITE_OPEN_READONLY]</dt>
@@ -2315,7 +2318,13 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** </dl>
 **
 ** If the 3rd parameter to sqlite3_open_v2() is not one of the
-** combinations shown above then the behavior is undefined.
+** combinations shown above or one of the combinations shown above combined
+** with the SQLITE_OPEN_NOMUTEX flag, then the behavior is undefined.
+**
+** If the SQLITE_OPEN_NOMUTEX flag is set, then the opened database handle  
+** is not threadsafe. If two threads attempt to use the database handle or
+** any of it's statement handles simultaneously, the results will be 
+** unpredictable.
 **
 ** If the filename is ":memory:", then a private, temporary in-memory database
 ** is created for the connection.  This in-memory database will vanish when

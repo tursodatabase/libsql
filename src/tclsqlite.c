@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.218 2008/06/18 09:45:56 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.219 2008/07/10 17:52:49 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2299,7 +2299,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 
 /*
 **   sqlite3 DBNAME FILENAME ?-vfs VFSNAME? ?-key KEY? ?-readonly BOOLEAN?
-**                           ?-create BOOLEAN?
+**                           ?-create BOOLEAN? ?-nomutex BOOLEAN?
 **
 ** This is the main Tcl command.  When the "sqlite" Tcl command is
 ** invoked, this routine runs to process that command.
@@ -2363,6 +2363,14 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }else{
         flags &= ~SQLITE_OPEN_CREATE;
       }
+    }else if( strcmp(zArg, "-nomutex")==0 ){
+      int b;
+      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( b ){
+        flags |= SQLITE_OPEN_NOMUTEX;
+      }else{
+        flags &= ~SQLITE_OPEN_NOMUTEX;
+      }
     }else{
       Tcl_AppendResult(interp, "unknown option: ", zArg, (char*)0);
       return TCL_ERROR;
@@ -2371,6 +2379,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   if( objc<3 || (objc&1)!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, 
       "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
+      " ?-nomutex BOOLEAN?"
 #ifdef SQLITE_HAS_CODEC
       " ?-key CODECKEY?"
 #endif
