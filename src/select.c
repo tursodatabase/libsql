@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.453 2008/07/10 00:32:42 drh Exp $
+** $Id: select.c,v 1.454 2008/07/10 17:59:12 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -3061,7 +3061,9 @@ static int flattenSubquery(
     }
     for(pSub1=pSub; pSub1; pSub1=pSub1->pPrior){
       if( pSub1->isAgg || pSub1->isDistinct 
-       || (pSub1->pPrior && pSub1->op!=TK_ALL) ){
+       || (pSub1->pPrior && pSub1->op!=TK_ALL) 
+       || !pSub1->pSrc || pSub1->pSrc->nSrc!=1
+      ){
         return 0;
       }
     }
