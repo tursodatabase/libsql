@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.10 2008/07/10 17:52:49 danielk1977 Exp $
+# $Id: permutations.test,v 1.11 2008/07/10 18:13:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -35,7 +35,7 @@ if {$::testmode eq "all"} {
   set ::testmode {
     memsubsys1 memsubsys2 singlethread multithread onefile utf16 exclusive
     persistent_journal persistent_journal_error no_journal no_journal_error
-    autovacuum_ioerr
+    autovacuum_ioerr no_mutex_try
   }
 }
 if {$::testmode eq "targets"} { 
@@ -49,19 +49,23 @@ if {$::testmode eq "targets"} {
 }
 
 set EXCLUDE {
-  all.test         async.test        async2.test      corrupt.test 
-  crash.test       crash2.test       crash3.test      crash4.test 
-  crash6.test      crash7.test       exclusive3.test  fts3.test 
-  fuzz.test        fuzz_malloc.test  in2.test         jrnlmode3.test 
-  loadext.test     mallocAll.test    malloc.test      malloc2.test
-  malloc3.test     malloc4.test      memleak.test     misc7.test 
-  misuse.test      mutex2.test       onefile.test     quick.test 
-  soak.test        speed1.test       speed1p.test     speed2.test 
-  speed3.test      speed4.test       speed4p.test     sqllimits1.test 
-  thread001.test   thread002.test    btree8.test      utf16.test        
-  shared_err.test  vtab_err.test     veryquick.test   incrvacuum_ioerr.test 
-  autovacuum_crash.test              permutations.test
-  autovacuum_ioerr.test jrnlmode2.test jrnlmode4.test
+  all.test                  in2.test                  onefile.test
+  async2.test               incrvacuum_ioerr.test     permutations.test
+  async.test                jrnlmode2.test            quick.test
+  autovacuum_crash.test     jrnlmode3.test            shared_err.test
+  autovacuum_ioerr.test     jrnlmode4.test            soak.test
+  btree8.test               loadext.test              speed1p.test
+  corrupt.test              malloc2.test              speed1.test
+  crash2.test               malloc3.test              speed2.test
+  crash3.test               malloc4.test              speed3.test
+  crash4.test               mallocAll.test            speed4p.test
+  crash6.test               malloc.test               speed4.test
+  crash7.test               memleak.test              sqllimits1.test
+  crash.test                memsubsys1.test           thread001.test
+  exclusive3.test           memsubsys2.test           thread002.test
+  fts3.test                 misc7.test                utf16.test
+  fuzz_malloc.test          misuse.test               veryquick.test
+  fuzz.test                 mutex2.test               vtab_err.test
 }
 set ALLTESTS [list]
 foreach filename [glob $testdir/*.test] {
@@ -142,8 +146,6 @@ run_tests "memsubsys1" -description {
   sqlite3_config_pagecache 4096 24
   sqlite3_config_scratch 25000 1
   sqlite3_initialize
-} -exclude {
-  memsubsys1.test
 } -shutdown {
   catch {db close}
   sqlite3_shutdown
@@ -162,8 +164,6 @@ run_tests "memsubsys2" -description {
   sqlite3_config_pagecache 512 5
   sqlite3_config_scratch 1000 1
   sqlite3_initialize
-} -exclude {
-  memsubsys1.test
 } -shutdown {
   catch {db close}
   sqlite3_shutdown
@@ -352,15 +352,17 @@ ifcapable mem3 {
   run_tests "memsys3" -description {
     Run tests using the allocator in mem3.c.
   } -exclude {
-    incrblob2.test manydb.test  autovacuum.test bigrow.test
-    collate5.test  delete3.test index2.test     ioerr.test  join3.test 
-    pagesize.test  bitvec.test  capi3.test      memsubsys1.test  limit.test
-    memdb.test     capi3c.test
+    autovacuum.test           delete3.test              manydb.test
+    bigrow.test               incrblob2.test            memdb.test
+    bitvec.test               index2.test               memsubsys1.test
+    capi3c.test               ioerr.test                memsubsys2.test
+    capi3.test                join3.test                pagesize.test
+    collate5.test             limit.test
   } -initialize {
     catch {db close}
     sqlite3_reset_auto_extension
     sqlite3_shutdown
-    sqlite3_config_heap -memsys3 1000000 0
+    sqlite3_config_heap 1000000 0
     install_malloc_faultsim 1 
     sqlite3_initialize
     autoinstall_test_functions
@@ -378,10 +380,12 @@ ifcapable mem5 {
   run_tests "memsys5" -description {
     Run tests using the allocator in mem5.c.
   } -exclude {
-    incrblob2.test manydb.test  autovacuum.test bigrow.test
-    collate5.test  delete3.test index2.test     ioerr.test  join3.test 
-    pagesize.test  bitvec.test  capi3.test      memsubsys1.test  limit.test
-    memdb.test     capi3c.test  func.test
+    autovacuum.test           delete3.test              manydb.test
+    bigrow.test               incrblob2.test            memdb.test
+    bitvec.test               index2.test               memsubsys1.test
+    capi3c.test               ioerr.test                memsubsys2.test
+    capi3.test                join3.test                pagesize.test
+    collate5.test             limit.test
   } -initialize {
     catch {db close}
     sqlite3_reset_auto_extension
@@ -401,7 +405,8 @@ ifcapable mem5 {
 
   run_tests "memsys5-2" -description {
     Run tests using the allocator in mem5.c in a different configuration.
-  } -include { select1.test 
+  } -include {
+    select1.test 
   } -initialize {
     catch {db close}
     sqlite3_reset_auto_extension
@@ -417,6 +422,21 @@ ifcapable mem5 {
     sqlite3_config_heap 0 0
     install_malloc_faultsim 1 
     sqlite3_initialize
+  }
+}
+
+ifcapable threadsafe {
+  run_tests "no_mutex_try" -description {
+     The sqlite3_mutex_try() interface always fails
+  } -initialize {
+    catch {db close}
+    sqlite3_shutdown
+    install_mutex_counters 1
+    set ::disable_mutex_try 1
+  } -shutdown {
+    catch {db close}
+    sqlite3_shutdown
+    install_mutex_counters 0
   }
 }
 
@@ -464,4 +484,3 @@ rename do_test ""
 rename really_do_test do_test
 
 finish_test
-

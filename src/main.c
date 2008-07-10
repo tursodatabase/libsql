@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.474 2008/07/10 17:52:49 danielk1977 Exp $
+** $Id: main.c,v 1.475 2008/07/10 18:13:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -228,26 +228,31 @@ int sqlite3_config(int op, ...){
       sqlite3Config.nHeap = va_arg(ap, int);
       sqlite3Config.mnReq = va_arg(ap, int);
 
-      /* Fall through to install the mem5.c/mem3.c methods. If neither
-      ** ENABLE_MEMSYS3 nor ENABLE_MEMSYS5 is defined, fall through to
-      ** the default case and return an error.
-      */
-    }
-
-#ifdef SQLITE_ENABLE_MEMSYS5
-    case SQLITE_CONFIG_MEMSYS5: {
-      sqlite3_mem_methods *p = sqlite3MemGetMemsys5();
-      sqlite3Config.m = *p;
-      break;
-    }
-#endif
+      if( sqlite3Config.pHeap==0 ){
+        /* If the heap pointer is NULL, then restore the malloc implementation
+        ** back to NULL pointers too.  This will cause the malloc to go
+        ** back to its default implementation when sqlite3_initialize() is
+        ** run.
+        */
+        memset(&sqlite3Config.m, 0, sizeof(sqlite3Config.m));
+      }else{
+        /* The heap pointer is not NULL, then install one of the
+        ** mem5.c/mem3.c methods. If neither ENABLE_MEMSYS3 nor
+        ** ENABLE_MEMSYS5 is defined, return an error.
+        ** the default case and return an error.
+        */
 #ifdef SQLITE_ENABLE_MEMSYS3
-    case SQLITE_CONFIG_MEMSYS3: {
-      sqlite3_mem_methods *p = sqlite3MemGetMemsys3();
-      sqlite3Config.m = *p;
+        sqlite3Config.m = sqlite3MemGetMemsys3();
+#endif
+#ifdef SQLITE_ENABLE_MEMSYS5
+        sqlite3Config.m = sqlite3MemGetMemsys5();
+#endif
+#if !defined(SQLITE_ENABLE_MEMSYS3) && !defined(SQLITE_ENABLE_MEMSYS5)
+        rc = SQLITE_ERROR;
+#endif
+      }
       break;
     }
-#endif
 
     default: {
       rc = SQLITE_ERROR;

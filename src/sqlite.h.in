@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.366 2008/07/10 17:52:49 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.367 2008/07/10 18:13:42 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1107,12 +1107,13 @@ struct sqlite3_mem_methods {
 ** for all of its dynamic memory allocation needs beyond those provided
 ** for by [SQLITE_CONFIG_SCRATCH] and [SQLITE_CONFIG_PAGECACHE].
 ** There are three arguments: A pointer to the memory, the number of
-** bytes in the memory buffer, and the minimum allocation size.  When
-** this configuration option is used, SQLite never calls the system
-** malloc() implementation but instead uses the supplied memory buffer
-** to satisfy all [sqlite3_malloc()] requests. This option is only
-** available if either or both of SQLITE_ENABLE_MEMSYS3 and 
-** SQLITE_ENABLE_MEMSYS5 are defined during compilation.</dd>
+** bytes in the memory buffer, and the minimum allocation size.  If
+** the first pointer (the memory pointer) is NULL, then SQLite reverts
+** to using its default memory allocator (the system malloc() implementation),
+** undoing any prior invocation of [SQLITE_CONFIG_MALLOC].  If the
+** memory pointer is not NULL and either [SQLITE_ENABLE_MEMSYS3] or
+** [SQLITE_ENABLE_MEMSYS5] are defined, then the alternative memory
+** allocator is engaged to handle all of SQLites memory allocation needs.</dd>
 **
 ** <dt>SQLITE_CONFIG_MUTEX</dt>
 ** <dd>This option takes a single argument which is a pointer to an
@@ -1128,23 +1129,6 @@ struct sqlite3_mem_methods {
 ** This option can be used to overload the default mutex allocation
 ** routines with a wrapper used to track mutex usage for performance
 ** profiling or testing, for example.</dd>
-**
-** <dt>SQLITE_CONFIG_MEMSYS3</dt>
-** <dd>This option is only available if SQLite is compiled with the 
-** SQLITE_ENABLE_MEMSYS3 symbol defined. It selects one of two memory
-** allocation systems that use the block of memory supplied to sqlite 
-** using the SQLITE_CONFIG_HEAP option.
-** </dd>
-**
-** <dt>SQLITE_CONFIG_MEMSYS5</dt>
-** <dd>This option is only available if SQLite is compiled with the 
-** SQLITE_ENABLE_MEMSYS5 symbol defined. It selects one of two memory
-** allocation systems that use the block of memory supplied to sqlite 
-** using the SQLITE_CONFIG_HEAP option. The memory allocation system
-** selected by this option, "memsys5", is also installed by default 
-** when the SQLITE_CONFIG_HEAP option is set, so it is not usually
-** necessary to use this option directly.
-** </dd>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
 #define SQLITE_CONFIG_MULTITHREAD   2  /* nil */
@@ -1157,8 +1141,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_MEMSTATUS     9  /* boolean */
 #define SQLITE_CONFIG_MUTEX        10  /* sqlite3_mutex_methods* */
 #define SQLITE_CONFIG_GETMUTEX     11  /* sqlite3_mutex_methods* */
-#define SQLITE_CONFIG_MEMSYS3      12  /* nil */
-#define SQLITE_CONFIG_MEMSYS5      13  /* nil */
+
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes {F12200}

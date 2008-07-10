@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.7 2008/07/10 17:52:49 danielk1977 Exp $
+** $Id: test_mutex.c,v 1.8 2008/07/10 18:13:42 drh Exp $
 */
 
 #include "tcl.h"
@@ -33,6 +33,7 @@ struct sqlite3_mutex {
 static struct test_mutex_globals {
   int isInstalled;              /* True if installed */
   int disableInit;              /* True to cause sqlite3_initalize() to fail */
+  int disableTry;               /* True to force sqlite3_mutex_try() to fail */
   int isInit;                   /* True if initialized */
   sqlite3_mutex_methods m;      /* Interface to "real" mutex system */
   int aCounter[8];              /* Number of grabs of each type of mutex */
@@ -120,6 +121,7 @@ static void counterMutexEnter(sqlite3_mutex *p){
 static int counterMutexTry(sqlite3_mutex *p){
   assert( g.isInit );
   g.aCounter[p->eType]++;
+  if( g.disableTry ) return 0;
   return g.m.xMutexTry(p->pReal);
 }
 
@@ -218,6 +220,7 @@ static int test_install_mutex_counters(
     if( rc==SQLITE_OK ){
       sqlite3_config(SQLITE_CONFIG_MUTEX, &counter_methods);
     }
+    g.disableTry = 0;
   }else{
     assert( g.m.xMutexAlloc );
     rc = sqlite3_config(SQLITE_CONFIG_MUTEX, &g.m);
@@ -308,6 +311,14 @@ static int test_alloc_mutex(
 
 /*
 ** sqlite3_config OPTION
+**
+** OPTION can be either one of the keywords:
+**
+**            SQLITE_CONFIG_SINGLETHREAD
+**            SQLITE_CONFIG_MULTITHREAD
+**            SQLITE_CONFIG_SERIALIZED
+**
+** Or OPTION can be an raw integer.
 */
 static int test_config(
   void * clientData,
@@ -334,10 +345,14 @@ static int test_config(
   }
 
   if( Tcl_GetIndexFromObjStruct(interp, objv[1], aOpt, s, "flag", 0, &i) ){
-    return TCL_ERROR;
+    if( Tcl_GetIntFromObj(interp, objv[1], &i) ){
+      return TCL_ERROR;
+    }
+  }else{
+    i = aOpt[i].iValue;
   }
 
-  rc = sqlite3_config(aOpt[i].iValue);
+  rc = sqlite3_config(i);
   Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
   return TCL_OK;
 }
@@ -364,5 +379,7 @@ int Sqlitetest_mutex_Init(Tcl_Interp *interp){
 
   Tcl_LinkVar(interp, "disable_mutex_init", 
               (char*)&g.disableInit, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "disable_mutex_try", 
+              (char*)&g.disableTry, TCL_LINK_INT);
   return SQLITE_OK;
 }

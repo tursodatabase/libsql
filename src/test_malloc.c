@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.35 2008/07/09 16:51:51 drh Exp $
+** $Id: test_malloc.c,v 1.36 2008/07/10 18:13:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -235,6 +235,10 @@ static void pointerToText(void *p, char *z){
   int i, k;
   unsigned int u;
   sqlite3_uint64 n;
+  if( p==0 ){
+    strcpy(z, "0");
+    return;
+  }
   if( sizeof(n)==sizeof(p) ){
     memcpy(&n, &p, sizeof(p));
   }else if( sizeof(u)==sizeof(p) ){
@@ -931,9 +935,31 @@ static int test_config_pagecache(
 }
 
 /*
+** Usage:    sqlite3_config_memstatus BOOLEAN
+**
+** Enable or disable memory status reporting using SQLITE_CONFIG_MEMSTATUS.
+*/
+static int test_config_memstatus(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int enable, rc;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "BOOLEAN");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetBooleanFromObj(interp, objv[1], &enable) ) return TCL_ERROR;
+  rc = sqlite3_config(SQLITE_CONFIG_MEMSTATUS, enable);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;
+}
+
+/*
 ** Usage:
 **
-**   sqlite3_config_heap ?-memsys3? NBYTE NMINALLOC
+**   sqlite3_config_heap NBYTE NMINALLOC
 */
 static int test_config_heap(
   void * clientData, 
@@ -945,35 +971,24 @@ static int test_config_heap(
   int nByte;         /* Size of buffer to pass to sqlite3_config() */
   int nMinAlloc;     /* Size of minimum allocation */
   int rc;            /* Return code of sqlite3_config() */
-  int isMemsys3 = 0; /* True if the -memsys3 switch is present */
 
   Tcl_Obj * CONST *aArg = &objv[1];
   int nArg = objc-1;
 
-  if( nArg>0 && 0==strcmp("-memsys3", Tcl_GetString(aArg[0])) ){
-    nArg--;
-    aArg++;
-    isMemsys3 = 1;
-  }
   if( nArg!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "?-memsys3? NBYTE NMINALLOC");
+    Tcl_WrongNumArgs(interp, 1, objv, "NBYTE NMINALLOC");
     return TCL_ERROR;
   }
   if( Tcl_GetIntFromObj(interp, aArg[0], &nByte) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, aArg[1], &nMinAlloc) ) return TCL_ERROR;
 
   if( nByte==0 ){
-    sqlite3_mem_methods m;
-    memset(&m, 0, sizeof(sqlite3_mem_methods));
-    rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &m);
+    rc = sqlite3_config(SQLITE_CONFIG_HEAP, (void*)0, 0, 0);
   }else{
     if( nByte>sizeof(zBuf) ){
       nByte = sizeof(zBuf);
     }
     rc = sqlite3_config(SQLITE_CONFIG_HEAP, zBuf, nByte, nMinAlloc);
-    if( isMemsys3 && rc==SQLITE_OK ){
-       rc = sqlite3_config(SQLITE_CONFIG_MEMSYS3);
-    }
   }
 
   Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
@@ -1105,25 +1120,26 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      Tcl_ObjCmdProc *xProc;
      int clientData;
   } aObjCmd[] = {
-     { "sqlite3_malloc",             test_malloc                   ,0. },
-     { "sqlite3_realloc",            test_realloc                  ,0. },
-     { "sqlite3_free",               test_free                     ,0. },
-     { "memset",                     test_memset                   ,0. },
-     { "memget",                     test_memget                   ,0. },
-     { "sqlite3_memory_used",        test_memory_used              ,0. },
-     { "sqlite3_memory_highwater",   test_memory_highwater         ,0. },
-     { "sqlite3_memdebug_backtrace", test_memdebug_backtrace       ,0. },
-     { "sqlite3_memdebug_dump",      test_memdebug_dump            ,0. },
-     { "sqlite3_memdebug_fail",      test_memdebug_fail            ,0. },
-     { "sqlite3_memdebug_pending",   test_memdebug_pending         ,0. },
-     { "sqlite3_memdebug_settitle",  test_memdebug_settitle        ,0. },
-     { "sqlite3_memdebug_malloc_count", test_memdebug_malloc_count ,0. },
-     { "sqlite3_memdebug_log",       test_memdebug_log             ,0. },
-     { "sqlite3_config_scratch",     test_config_scratch           ,0. },
-     { "sqlite3_config_pagecache",   test_config_pagecache         ,0. },
-     { "sqlite3_status",             test_status                   ,0. },
-     { "install_malloc_faultsim",    test_install_malloc_faultsim  ,0. },
+     { "sqlite3_malloc",             test_malloc                   ,0 },
+     { "sqlite3_realloc",            test_realloc                  ,0 },
+     { "sqlite3_free",               test_free                     ,0 },
+     { "memset",                     test_memset                   ,0 },
+     { "memget",                     test_memget                   ,0 },
+     { "sqlite3_memory_used",        test_memory_used              ,0 },
+     { "sqlite3_memory_highwater",   test_memory_highwater         ,0 },
+     { "sqlite3_memdebug_backtrace", test_memdebug_backtrace       ,0 },
+     { "sqlite3_memdebug_dump",      test_memdebug_dump            ,0 },
+     { "sqlite3_memdebug_fail",      test_memdebug_fail            ,0 },
+     { "sqlite3_memdebug_pending",   test_memdebug_pending         ,0 },
+     { "sqlite3_memdebug_settitle",  test_memdebug_settitle        ,0 },
+     { "sqlite3_memdebug_malloc_count", test_memdebug_malloc_count ,0 },
+     { "sqlite3_memdebug_log",       test_memdebug_log             ,0 },
+     { "sqlite3_config_scratch",     test_config_scratch           ,0 },
+     { "sqlite3_config_pagecache",   test_config_pagecache         ,0 },
+     { "sqlite3_status",             test_status                   ,0 },
+     { "install_malloc_faultsim",    test_install_malloc_faultsim  ,0 },
      { "sqlite3_config_heap",        test_config_heap              ,0 },
+     { "sqlite3_config_memstatus",   test_config_memstatus         ,0 },
      { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
      { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 }
   };
