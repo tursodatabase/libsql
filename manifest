@@ -1,5 +1,5 @@
-C Make\sthe\sbtree\slayer\srobust\swhen\sfaced\swith\sa\scorrupt\sdatabase\sthat\ncontains\sduplicate\sentries\son\sthe\sfreelist.\s\sTicket\s#3209.\s(CVS\s5392)
-D 2008-07-11T03:34:10
+C Remove\san\sextra\szeroPage()\scall\sthat\swas\sleft\sin\sthe\sprevious\scheck-in\nby\smistake.\s\sTicket\s#3209.\s(CVS\s5393)
+D 2008-07-11T03:38:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 89f1122f865f44a26ed65e59c998969bcb12b9c8
+F src/btree.c 6ec7584e5f61f2215cec8504ac6d330f1aa6765b
 F src/btree.h 9373128fbd6509a281e0d356cb15f9cffbfa876c
 F src/btreeInt.h d59e58d39950a17c0fb7e004c90ab7696d3e7df5
 F src/build.c bac7233d984be3805aaa41cf500f7ee12dc97249
@@ -603,7 +603,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 620b472133438607c412e0c21d2a27605a89a414
-R f7e332178c4f29b825342cc58c343fbe
+P 30825f74d60d8ace39bafd06814017ceefeb4fa4
+R e8411a89d1b019b025b129e9d614b344
 U drh
-Z b54ec49dda70f42678882a2b718e31d1
+Z 67e90b654d2140b470f7c2bf276a171a

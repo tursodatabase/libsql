@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.477 2008/07/11 03:34:10 drh Exp $
+** $Id: btree.c,v 1.478 2008/07/11 03:38:41 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5235,7 +5235,6 @@ static int balance_nonroot(MemPage *pPage){
       apNew[i] = pNew;
       nNew++;
     }
-    zeroPage(pNew, pageFlags);
   }
 
   /* Free any old pages that were not reused as new pages.
