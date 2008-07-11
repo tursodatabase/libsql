@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.479 2008/07/11 16:15:18 drh Exp $
+** $Id: btree.c,v 1.480 2008/07/11 16:39:23 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1738,9 +1738,6 @@ static int lockBtree(BtShared *pBt){
   pBt->minLocal = (pBt->usableSize-12)*32/255 - 23;
   pBt->maxLeaf = pBt->usableSize - 35;
   pBt->minLeaf = (pBt->usableSize-12)*32/255 - 23;
-  if( pBt->minLocal>pBt->maxLocal || pBt->maxLocal<0 ){
-    goto page1_init_failed;
-  }
   assert( pBt->maxLeaf + 23 <= MX_CELL_SIZE(pBt) );
   pBt->pPage1 = pPage1;
   return SQLITE_OK;

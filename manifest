@@ -1,5 +1,5 @@
-C Improved\sNaN\stesting\sfor\shighly\soptimized\sGCC\son\sx86.\nTickets\s#3202\sand\s#3194.\s(CVS\s5396)
-D 2008-07-11T16:19:10
+C Added\scorruptA.test\sfor\stesting\smalformed\sdatabase\sheaders.\s(CVS\s5397)
+D 2008-07-11T16:39:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 881d5eb6ec2a80421690537e68e63a91644bf3ef
+F src/btree.c 8d08214728e231ba9ee2753bb224abbfddad6a6c
 F src/btree.h 0063e9853aa1ffb55b46f0e798eea8934f032ffd
 F src/btreeInt.h d59e58d39950a17c0fb7e004c90ab7696d3e7df5
 F src/build.c bac7233d984be3805aaa41cf500f7ee12dc97249
@@ -250,6 +250,7 @@ F test/corrupt6.test e69b877d478224deab7b66844566258cecacd25e
 F test/corrupt7.test f0ff354eb2f0a23035fbd06724b87cac95b55cc1
 F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 2a1bf91834dc6f7adead1a4fabb5887393147dc6
+F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 26d7a4c5520201e5de2c696ea51ab946b59dc0e9
 F test/crash3.test 0b09687ae1a3ccbcefdfaeb4b963e26e36255d76
@@ -603,7 +604,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d7e2f0d2d45574d6191c1b191c0daf5260696f27
-R ade8ff6c2fb33021086110407ad75d8e
+P a8a2fe45b21b405bb871e29540f98086b0c8f828
+R 99c674837ae34581b962ad7a0bf551b9
 U drh
-Z 3b1b5d42552a23c609e4387817e377c9
+Z 9624bae6ebc6fc022ace1d7054a234f6
