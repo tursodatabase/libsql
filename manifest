@@ -1,5 +1,5 @@
-C Additional\stest\scoverage\sin\sbtree.c.\s\sAdded\scorruption\stests\sfor\nthe\sptrmap\spages\sof\san\sautovacuumed\sdatabase\s(corrupt8.test).\s(CVS\s5391)
-D 2008-07-11T02:21:41
+C Make\sthe\sbtree\slayer\srobust\swhen\sfaced\swith\sa\scorrupt\sdatabase\sthat\ncontains\sduplicate\sentries\son\sthe\sfreelist.\s\sTicket\s#3209.\s(CVS\s5392)
+D 2008-07-11T03:34:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 71ba242014031cc6b30761094adad35ad4896a19
+F src/btree.c 89f1122f865f44a26ed65e59c998969bcb12b9c8
 F src/btree.h 9373128fbd6509a281e0d356cb15f9cffbfa876c
 F src/btreeInt.h d59e58d39950a17c0fb7e004c90ab7696d3e7df5
 F src/build.c bac7233d984be3805aaa41cf500f7ee12dc97249
@@ -133,7 +133,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 6c33e61f0fab256b0136650cdee35c3eaab2fa04
 F src/os_unix.c 1df6108efdb7957a9f28b9700600e58647c9c12d
 F src/os_win.c 2bf2f8cd700299564cc236262c2668e1e02c626a
-F src/pager.c 08169a94414b03d80fc2c026a1d0fdf5367bdcbe
+F src/pager.c bb286b2fc0c7c87d0a8cbfee96a3e953da1e53dd
 F src/pager.h 6aa3050a3c684475a5a9dbad5ff1cebad612acba
 F src/parse.y 097bff733e89fbf554a07d9327046718ce364011
 F src/pragma.c 6fad83fbcc7ec6e76d91fe2805fe972ff3af6a0c
@@ -248,7 +248,8 @@ F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
 F test/corrupt6.test e69b877d478224deab7b66844566258cecacd25e
 F test/corrupt7.test f0ff354eb2f0a23035fbd06724b87cac95b55cc1
-F test/corrupt8.test c8ebf7cfe9fca7818a71907a2e433c4a38dbf838
+F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
+F test/corrupt9.test 2a1bf91834dc6f7adead1a4fabb5887393147dc6
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 26d7a4c5520201e5de2c696ea51ab946b59dc0e9
 F test/crash3.test 0b09687ae1a3ccbcefdfaeb4b963e26e36255d76
@@ -602,7 +603,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8fc462b6b7afe390463ea7b010fd3230d9acc358
-R 4385bebdc0676f5f0e502792343cbd11
+P 620b472133438607c412e0c21d2a27605a89a414
+R f7e332178c4f29b825342cc58c343fbe
 U drh
-Z f5f817655b5188ade4dd50e6a7a1f252
+Z b54ec49dda70f42678882a2b718e31d1

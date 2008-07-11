@@ -1,4 +1,4 @@
-# 2008 June 11
+# 2008 July 9
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -14,7 +14,7 @@
 # segfault if it sees a corrupt database file.  It specifically focuses
 # on corrupt pointer map pages.
 #
-# $Id: corrupt8.test,v 1.1 2008/07/11 02:21:41 drh Exp $
+# $Id: corrupt8.test,v 1.2 2008/07/11 03:34:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
