@@ -13,7 +13,7 @@
 ** This module implements the sqlite3_status() interface and related
 ** functionality.
 **
-** $Id: status.c,v 1.2 2008/07/09 13:28:54 drh Exp $
+** $Id: status.c,v 1.3 2008/07/11 16:15:18 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -73,11 +73,6 @@ void sqlite3StatusSet(int op, int X){
 ** then this routine is not threadsafe.
 */
 int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag){
-  if( op==SQLITE_STATUS_FAILSAFE ){
-    *pCurrent = *pHighwater = sqlite3Config.iFailsafe;
-    if( resetFlag ) sqlite3Config.iFailsafe = 0;
-    return SQLITE_OK;
-  }
   if( op<0 || op>=ArraySize(sqlite3Stat.nowValue) ){
     return SQLITE_MISUSE;
   }

@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.395 2008/07/08 22:28:49 shane Exp $
+** $Id: vdbeaux.c,v 1.396 2008/07/11 16:15:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1083,11 +1083,12 @@ void sqlite3VdbeFreeCursor(Vdbe *p, Cursor *pCx){
   if( pCx==0 ){
     return;
   }
-  if( pCx->pCursor ){
-    sqlite3BtreeCloseCursor(pCx->pCursor);
-  }
   if( pCx->pBt ){
     sqlite3BtreeClose(pCx->pBt);
+    /* The pCx->pCursor will be close automatically, if it exists, by
+    ** the call above. */
+  }else if( pCx->pCursor ){
+    sqlite3BtreeCloseCursor(pCx->pCursor);
   }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( pCx->pVtabCursor ){

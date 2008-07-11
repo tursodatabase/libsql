@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.478 2008/07/11 03:38:41 drh Exp $
+** $Id: btree.c,v 1.479 2008/07/11 16:15:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -793,7 +793,7 @@ static void freeSpace(MemPage *pPage, int start, int size){
   assert( start>=pPage->hdrOffset+6+(pPage->leaf?0:4) );
   assert( (start + size)<=pPage->pBt->usableSize );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  if( size<4 ) size = 4;
+  assert( size>=0 );   /* Minimum cell size is 4 */
 
 #ifdef SQLITE_SECURE_DELETE
   /* Overwrite deleted information with zeros when the SECURE_DELETE 
@@ -1177,8 +1177,7 @@ int sqlite3BtreeOpen(
   ** If this Btree is a candidate for shared cache, try to find an
   ** existing BtShared object that we can share with
   */
-  if( (flags & BTREE_PRIVATE)==0
-   && isMemdb==0
+  if( isMemdb==0
    && (db->flags & SQLITE_Vtab)==0
    && zFilename && zFilename[0]
   ){
@@ -1187,9 +1186,7 @@ int sqlite3BtreeOpen(
       char *zFullPathname = sqlite3Malloc(nFullPathname);
       sqlite3_mutex *mutexShared;
       p->sharable = 1;
-      if( db ){
-        db->flags |= SQLITE_SharedCache;
-      }
+      db->flags |= SQLITE_SharedCache;
       if( !zFullPathname ){
         sqlite3_free(p);
         return SQLITE_NOMEM;
@@ -1375,10 +1372,10 @@ static int removeFromSharingList(BtShared *pBt){
       sqlite3SharedCacheList = pBt->pNext;
     }else{
       pList = sqlite3SharedCacheList;
-      while( pList && pList->pNext!=pBt ){
+      while( ALWAYS(pList) && pList->pNext!=pBt ){
         pList=pList->pNext;
       }
-      if( pList ){
+      if( ALWAYS(pList) ){
         pList->pNext = pBt->pNext;
       }
     }

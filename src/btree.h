@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.100 2008/07/10 00:32:42 drh Exp $
+** @(#) $Id: btree.h,v 1.101 2008/07/11 16:15:18 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -75,11 +75,6 @@ int sqlite3BtreeOpen(
 #define BTREE_READONLY      8  /* Open the database in read-only mode */
 #define BTREE_READWRITE    16  /* Open for both reading and writing */
 #define BTREE_CREATE       32  /* Create the database if it does not exist */
-
-/* Additional values for the 4th argument of sqlite3BtreeOpen that
-** are not associated with PAGER_ values.
-*/
-#define BTREE_PRIVATE      64  /* Never share with other connections */
 
 int sqlite3BtreeClose(Btree*);
 int sqlite3BtreeSetCacheSize(Btree*,int);

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.740 2008/07/10 00:32:42 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.741 2008/07/11 16:15:18 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -63,24 +63,24 @@
 #endif
 
 /*
-** The failsafe() macro is used to test for error conditions that
-** should never occur.  This is similar to assert() except that with
-** failsafe() the application attempts to recover gracefully rather
-** than abort.  If a error condition is detected, a global flag is
-** set to the "Id" prior to recovery in order to alert the application 
-** to the error condition.
+** The ALWAYS and NEVER macros surround boolean expressions which 
+** are intended to always be true or false, respectively.  Such
+** expressions could be omitted from the code completely.  But they
+** are included in a few cases in order to enhance the resilience
+** of SQLite to unexpected behavior - to make the code "self-healing"
+** or "ductile" rather than being "brittle" and crashing at the first
+** hint of unplanned behavior.
 **
-** The Id should be a random integer.  The idea behind the Id is that
-** failsafe() faults in the field can be mapped back to specific failsafe()
-** macros, even if line numbers and filenames have changed.
-**
-** The test condition is argument Cond.  The recovery action is
-** argument Action.
+** When doing coverage testing ALWAYS and NEVER are hard-coded to
+** be true and false so that the unreachable code then specify will
+** not be counted as untested code.
 */
 #ifdef SQLITE_COVERAGE_TEST
-# define failsafe(Cond,Id,Action)
+# define ALWAYS(X)      (1)
+# define NEVER(X)       (0)
 #else
-# define failsafe(Cond,Id,Action)  if( Cond ){ sqlite3Failsafe(Id); Action; }
+# define ALWAYS(X)      (X)
+# define NEVER(X)       (X)
 #endif
 
 /*
@@ -1775,7 +1775,6 @@ struct Sqlite3Config {
   int bCoreMutex;                   /* True to enable core mutexing */
   int bFullMutex;                   /* True to enable full mutexing */
   int mxStrlen;                     /* Maximum string length */
-  int iFailsafe;                    /* Id of failed failsafe() */
   sqlite3_mem_methods m;            /* Low-level memory allocation interface */
   sqlite3_mutex_methods mutex;      /* Low-level mutex interface */
   void *pHeap;                      /* Heap storage space */
@@ -2019,7 +2018,6 @@ void sqlite3RegisterDateTimeFunctions(sqlite3*);
 #endif
 int sqlite3SafetyCheckOk(sqlite3*);
 int sqlite3SafetyCheckSickOrOk(sqlite3*);
-void sqlite3Failsafe(int);
 void sqlite3ChangeCookie(Parse*, int);
 void sqlite3MaterializeView(Parse*, Select*, Expr*, int);
 

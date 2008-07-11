@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.475 2008/07/10 18:13:42 drh Exp $
+** $Id: main.c,v 1.476 2008/07/11 16:15:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -584,8 +584,7 @@ static int sqliteDefaultBusyCallback(
 */
 int sqlite3InvokeBusyHandler(BusyHandler *p){
   int rc;
-  failsafe( p==0, 0x912aaf8d, {return 0;})
-  if( p->xFunc==0 || p->nBusy<0 ) return 0;
+  if( NEVER(p==0) || p->xFunc==0 || p->nBusy<0 ) return 0;
   rc = p->xFunc(p->pArg, p->nBusy);
   if( rc==0 ){
     p->nBusy = -1;

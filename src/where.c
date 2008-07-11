@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.315 2008/07/09 13:28:54 drh Exp $
+** $Id: where.c,v 1.316 2008/07/11 16:15:18 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -478,7 +478,7 @@ static WhereTerm *findTerm(
         }
 
         for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
-          failsafe( j>=pIdx->nColumn, 0x0128fc98, {return 0;});
+          if( NEVER(j>=pIdx->nColumn) ) return 0;
         }
         if( sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
       }
@@ -1608,8 +1608,7 @@ static double bestIndex(
         flags |= WHERE_COLUMN_IN;
         if( pExpr->pSelect!=0 ){
           inMultiplier *= 25;
-        }else{
-          failsafe( pExpr->pList==0, 0x16b91d0f, continue);
+        }else if( ALWAYS(pExpr->pList) ){
           inMultiplier *= pExpr->pList->nExpr + 1;
         }
       }
@@ -1725,9 +1724,9 @@ static double bestIndex(
 */
 static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   if( pTerm
+      && ALWAYS((pTerm->flags & TERM_CODED)==0)
       && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_FromJoin))
   ){
-    failsafe( (pTerm->flags & TERM_CODED)!=0, 0x641154a4, /* no-op */ );
     pTerm->flags |= TERM_CODED;
     if( pTerm->iParent>=0 ){
       WhereTerm *pOther = &pTerm->pWC->a[pTerm->iParent];
@@ -1873,7 +1872,7 @@ static int codeAllEqualityTerms(
     int r1;
     int k = pIdx->aiColumn[j];
     pTerm = findTerm(pWC, iCur, k, notReady, pLevel->flags, pIdx);
-    failsafe( pTerm==0, 0x7592494c, break );
+    if( NEVER(pTerm==0) ) break;
     assert( (pTerm->flags & TERM_CODED)==0 );
     r1 = codeEqualityTerm(pParse, pTerm, pLevel, regBase+j);
     if( r1!=regBase+j ){
