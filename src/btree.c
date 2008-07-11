@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.475 2008/07/10 00:32:42 drh Exp $
+** $Id: btree.c,v 1.476 2008/07/11 02:21:41 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -97,6 +97,8 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
   BtLock *pIter;
 
   assert( sqlite3BtreeHoldsMutex(p) );
+  assert( eLock==READ_LOCK || eLock==WRITE_LOCK );
+  assert( p->db!=0 );
   
   /* This is a no-op if the shared-cache is not enabled */
   if( !p->sharable ){
@@ -125,7 +127,6 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
   ** write-cursor does not change.
   */
   if( 
-    !p->db || 
     0==(p->db->flags&SQLITE_ReadUncommitted) || 
     eLock==WRITE_LOCK ||
     iTab==MASTER_ROOT
@@ -156,6 +157,8 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
   BtLock *pIter;
 
   assert( sqlite3BtreeHoldsMutex(p) );
+  assert( eLock==READ_LOCK || eLock==WRITE_LOCK );
+  assert( p->db!=0 );
 
   /* This is a no-op if the shared-cache is not enabled */
   if( !p->sharable ){
@@ -170,7 +173,6 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
   ** the ReadUncommitted flag.
   */
   if( 
-    (p->db) && 
     (p->db->flags&SQLITE_ReadUncommitted) && 
     (eLock==READ_LOCK) &&
     iTable!=MASTER_ROOT
@@ -629,14 +631,13 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
 ** for the overflow page.
 */
 static int ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell){
-  if( pCell ){
-    CellInfo info;
-    sqlite3BtreeParseCellPtr(pPage, pCell, &info);
-    assert( (info.nData+(pPage->intKey?0:info.nKey))==info.nPayload );
-    if( (info.nData+(pPage->intKey?0:info.nKey))>info.nLocal ){
-      Pgno ovfl = get4byte(&pCell[info.iOverflow]);
-      return ptrmapPut(pPage->pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno);
-    }
+  CellInfo info;
+  assert( pCell!=0 );
+  sqlite3BtreeParseCellPtr(pPage, pCell, &info);
+  assert( (info.nData+(pPage->intKey?0:info.nKey))==info.nPayload );
+  if( (info.nData+(pPage->intKey?0:info.nKey))>info.nLocal ){
+    Pgno ovfl = get4byte(&pCell[info.iOverflow]);
+    return ptrmapPut(pPage->pBt, ovfl, PTRMAP_OVERFLOW1, pPage->pgno);
   }
   return SQLITE_OK;
 }
@@ -711,8 +712,8 @@ static void defragmentPage(MemPage *pPage){
 ** Allocate nByte bytes of space on a page.
 **
 ** Return the index into pPage->aData[] of the first byte of
-** the new allocation. Or return 0 if there is not enough free
-** space on the page to satisfy the allocation request.
+** the new allocation.  The caller guarantees that there is enough
+** space.  This routine will never fail.
 **
 ** If the page contains nBytes of free space but does not contain
 ** nBytes of contiguous free space, then this routine automatically
@@ -732,8 +733,9 @@ static int allocateSpace(MemPage *pPage, int nByte){
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( pPage->pBt );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  if( nByte<4 ) nByte = 4;
-  if( pPage->nFree<nByte || pPage->nOverflow>0 ) return 0;
+  assert( nByte>=0 );  /* Minimum cell size is 4 */
+  assert( pPage->nFree>=nByte );
+  assert( pPage->nOverflow==0 );
   pPage->nFree -= nByte;
   hdr = pPage->hdrOffset;
 
