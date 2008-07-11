@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.20 2008/07/09 16:51:52 drh Exp $
+# $Id: misc7.test,v 1.21 2008/07/11 13:53:55 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -437,9 +437,9 @@ do_test misc7-18.1 {
       col_1, col_2, col_3, col_4, col_5,
       col_6, col_7, col_8, col_9, col_10
     );
-    SELECT col_10
+    SELECT a.col_10
     FROM
-      (SELECT table_1.col_10 AS col_10 FROM table_1),
+      (SELECT table_1.col_10 AS col_10 FROM table_1) a,
       (SELECT table_1.col_10, table_2.col_9 AS qcol_9
          FROM table_1, table_2
         GROUP BY table_1.col_10, qcol_9);

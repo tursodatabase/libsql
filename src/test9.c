@@ -14,7 +14,7 @@
 ** for completeness. Test code is written in C for these cases
 ** as there is not much point in binding to Tcl.
 **
-** $Id: test9.c,v 1.5 2008/01/23 12:52:41 drh Exp $
+** $Id: test9.c,v 1.6 2008/07/11 13:53:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -47,7 +47,7 @@ static int c_collation_test(
   }
 
   rc = sqlite3_create_collation(db, "collate", 456, 0, 0);
-  if( rc!=SQLITE_ERROR ){
+  if( rc!=SQLITE_MISUSE ){
     sqlite3_close(db);
     zErrFunction = "sqlite3_create_collation";
     goto error_out;
