@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.183 2008/06/28 11:29:23 mihailim Exp $
+** $Id: shell.c,v 1.184 2008/07/11 17:23:25 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -79,10 +79,10 @@ static void beginTimer(void){
   }
 }
 
-/* Return the difference of two time_structs in microseconds */
-static int timeDiff(struct timeval *pStart, struct timeval *pEnd){
-  return (pEnd->tv_usec - pStart->tv_usec) + 
-         1000000*(pEnd->tv_sec - pStart->tv_sec);
+/* Return the difference of two time_structs in seconds */
+static double timeDiff(struct timeval *pStart, struct timeval *pEnd){
+  return (pEnd->tv_usec - pStart->tv_usec)*0.000001 + 
+         (double)(pEnd->tv_sec - pStart->tv_sec);
 }
 
 /*
@@ -93,8 +93,8 @@ static void endTimer(void){
     struct rusage sEnd;
     getrusage(RUSAGE_SELF, &sEnd);
     printf("CPU Time: user %f sys %f\n",
-       0.000001*timeDiff(&sBegin.ru_utime, &sEnd.ru_utime),
-       0.000001*timeDiff(&sBegin.ru_stime, &sEnd.ru_stime));
+       timeDiff(&sBegin.ru_utime, &sEnd.ru_utime),
+       timeDiff(&sBegin.ru_stime, &sEnd.ru_stime));
   }
 }
 #define BEGIN_TIMER beginTimer()

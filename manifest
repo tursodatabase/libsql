@@ -1,5 +1,5 @@
-C Added\scorruptA.test\sfor\stesting\smalformed\sdatabase\sheaders.\s(CVS\s5397)
-D 2008-07-11T16:39:23
+C Tweak\sto\sthe\s".timer"\scommand\sin\sthe\sCLI\sto\shelp\sit\swork\sbetter\swith\sGCC.\s(CVS\s5398)
+D 2008-07-11T17:23:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/prepare.c c9bb0aacb7a571d049805699ed18f2bb136ea091
 F src/printf.c 8e5d410220cf8650f502caf71f0de979a3f9031e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c fcf51df1818a448edebf55b032d89771ba4536ef
-F src/shell.c 484e7297e066f22830f9c15d7abbcdd2acb097b0
+F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
 F src/sqlite.h.in a573ab3a22256fc6c28b8f27d5af446f2b712a31
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h 83181862609629e04b99ae8087b46a7c9dcde7af
@@ -604,7 +604,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a8a2fe45b21b405bb871e29540f98086b0c8f828
-R 99c674837ae34581b962ad7a0bf551b9
+P 6dcce6b9748c6148a768a4f6b69f33f70edc3993
+R 0792731ecd027d8cdcf662cd0517070f
 U drh
-Z 9624bae6ebc6fc022ace1d7054a234f6
+Z 9e913ba85dc9c52696a07ed2d3591212
