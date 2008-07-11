@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.454 2008/07/10 17:59:12 danielk1977 Exp $
+** $Id: select.c,v 1.455 2008/07/11 21:02:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1165,7 +1165,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   assert( pTab->nCol>0 );
   pTab->aCol = aCol = sqlite3DbMallocZero(db, sizeof(pTab->aCol[0])*pTab->nCol);
   for(i=0, pCol=aCol; i<pTab->nCol; i++, pCol++){
-    Expr *p, *pR;
+    Expr *p;
     char *zType;
     char *zName;
     int nName;

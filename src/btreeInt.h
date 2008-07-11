@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.24 2008/07/10 00:32:42 drh Exp $
+** $Id: btreeInt.h,v 1.25 2008/07/11 21:02:54 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -466,7 +466,7 @@ struct BtCursor {
 **   The table that this cursor was opened on still exists, but has been 
 **   modified since the cursor was last used. The cursor position is saved
 **   in variables BtCursor.pKey and BtCursor.nKey. When a cursor is in 
-**   this state, restoreOrClearCursorPosition() can be called to attempt to
+**   this state, restoreCursorPosition() can be called to attempt to
 **   seek the cursor to the saved position.
 **
 ** CURSOR_FAULT:
@@ -631,7 +631,7 @@ int sqlite3BtreeGetPage(BtShared*, Pgno, MemPage**, int);
 int sqlite3BtreeInitPage(MemPage *pPage, MemPage *pParent);
 void sqlite3BtreeParseCellPtr(MemPage*, u8*, CellInfo*);
 void sqlite3BtreeParseCell(MemPage*, int, CellInfo*);
-int sqlite3BtreeRestoreOrClearCursorPosition(BtCursor *pCur);
+int sqlite3BtreeRestoreCursorPosition(BtCursor *pCur);
 void sqlite3BtreeGetTempCursor(BtCursor *pCur, BtCursor *pTempCur);
 void sqlite3BtreeReleaseTempCursor(BtCursor *pCur);
 int sqlite3BtreeIsRootPage(MemPage *pPage);

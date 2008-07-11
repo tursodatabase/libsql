@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.396 2008/07/11 16:15:18 drh Exp $
+** $Id: vdbeaux.c,v 1.397 2008/07/11 21:02:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1864,6 +1864,14 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
 #endif
     p->deferredMoveto = 0;
     p->cacheStatus = CACHE_STALE;
+  }else if( p->pCursor ){
+    int hasMoved;
+    int rc = sqlite3BtreeCursorHasMoved(p->pCursor, &hasMoved);
+    if( rc ) return rc;
+    if( hasMoved ){
+      p->cacheStatus = CACHE_STALE;
+      p->nullRow = 1;
+    }
   }
   return SQLITE_OK;
 }

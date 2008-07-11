@@ -1,5 +1,5 @@
-C Tweak\sto\sthe\s".timer"\scommand\sin\sthe\sCLI\sto\shelp\sit\swork\sbetter\swith\sGCC.\s(CVS\s5398)
-D 2008-07-11T17:23:25
+C Detect\sand\shandles\sthe\scase\swhere\sa\srow\sis\smodified\sor\sdeleted\swhile\sit\nis\sbeing\sread\sduring\sSELECT\sprocessing.\s(CVS\s5399)
+D 2008-07-11T21:02:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,9 +95,9 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 483ced3c52205b04b97df69161fadbf87f4f1ea2
-F src/btree.c 8d08214728e231ba9ee2753bb224abbfddad6a6c
-F src/btree.h 0063e9853aa1ffb55b46f0e798eea8934f032ffd
-F src/btreeInt.h d59e58d39950a17c0fb7e004c90ab7696d3e7df5
+F src/btree.c dcbb9624c99e53cbb1d63e1c980fc9e93a02a06b
+F src/btree.h 03256ed7ee42b5ecacbe887070b0f8249e7d069d
+F src/btreeInt.h 346cef00620c91dd7c632b57defd1332d0847edc
 F src/build.c bac7233d984be3805aaa41cf500f7ee12dc97249
 F src/callback.c aa492a0ad8c2d454edff9fb8a57fae13743cf71d
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
@@ -140,7 +140,7 @@ F src/pragma.c 6fad83fbcc7ec6e76d91fe2805fe972ff3af6a0c
 F src/prepare.c c9bb0aacb7a571d049805699ed18f2bb136ea091
 F src/printf.c 8e5d410220cf8650f502caf71f0de979a3f9031e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c fcf51df1818a448edebf55b032d89771ba4536ef
+F src/select.c b909e21358f141627d1cadfdfbdb43ec08ed0a4b
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
 F src/sqlite.h.in a573ab3a22256fc6c28b8f27d5af446f2b712a31
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -160,10 +160,10 @@ F src/test8.c 3b85c05b15ccfc6844093791e83d5c8a1e0354ca
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c da9f58f49faccd3a26ba89f58de125862351b6e2
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
-F src/test_btree.c fd982a4242449a462f5a87f120d6e8fcc5e24a83
+F src/test_btree.c af13f421952807ceba599bdb63b652ac68cd6c9f
 F src/test_config.c 7d3c3bb37e12d8ed22c5e0900e1361178b0580a3
 F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
-F src/test_func.c ade4f0117cc96c5a05682e1ef38b84320a866ad9
+F src/test_func.c 24a556989685495013e08f311ae31c4ef86ddb8c
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
 F src/test_malloc.c e655e3ff61845fc23886ee81973638e795477c9e
@@ -181,11 +181,11 @@ F src/update.c 4e698fcc0c91c241a960304c4236dc3a49603155
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
 F src/util.c a8f80412a536ea309c1887e5d4b58a3fa6eca69c
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
-F src/vdbe.c 14d98d1d47041a99a9c98034842772dbbcc062fb
+F src/vdbe.c 179dbe5f08b17c712be65e951eaada3b3ca52092
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
 F src/vdbeInt.h 30535c1d30ba1b5fb58d8f0e1d1261af976558aa
 F src/vdbeapi.c a7c6b8db324cf7eccff32de871dea36aa305c994
-F src/vdbeaux.c 24ecae4e3e7ebcfb604d6ef0dc268da2cfb3ffa7
+F src/vdbeaux.c 25d562cda55cb6d9796110ee916a524bdd03a0fb
 F src/vdbeblob.c a20fe9345062b1a1b4cc187dc5fad45c9414033b
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
 F src/vdbemem.c 0c72b58ffd759676ce4829f42bacb83842a58c21
@@ -274,6 +274,7 @@ F test/distinctagg.test 2b89d1c5220d966a30ba4b40430338669301188b
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
+F test/eval.test 020a21a236667bd4c56205d999c9992f1d944cac
 F test/exclusive.test 5390ddf1f90a6d055111c0ebe6311045dd3035e1
 F test/exclusive2.test d13bf66753dca46e61241d35d36ab7c868b0d313
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
@@ -604,7 +605,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6dcce6b9748c6148a768a4f6b69f33f70edc3993
-R 0792731ecd027d8cdcf662cd0517070f
+P 1041deb6ae03c52ce1fb8170d11913cc0bbf3a6e
+R 14bde473a1bc0347c0884dfdfef2d004
 U drh
-Z 9e913ba85dc9c52696a07ed2d3591212
+Z 356e23cc4752d813c3f7c25ef3dd2a11

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_btree.c,v 1.4 2008/07/10 00:32:42 drh Exp $
+** $Id: test_btree.c,v 1.5 2008/07/11 21:02:54 drh Exp $
 */
 #include "btreeInt.h"
 #include <tcl.h>
@@ -87,7 +87,7 @@ int sqlite3BtreeCursorInfo(BtCursor *pCur, int *aResult, int upCnt){
   int rc;
 
   if( pCur->eState==CURSOR_REQUIRESEEK ){
-    rc = sqlite3BtreeRestoreOrClearCursorPosition(pCur);
+    rc = sqlite3BtreeRestoreCursorPosition(pCur);
     if( rc!=SQLITE_OK ){
       return rc;
     }

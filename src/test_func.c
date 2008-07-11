@@ -12,7 +12,7 @@
 ** Code for testing all sorts of SQLite interfaces.  This code
 ** implements new SQL functions used by the test scripts.
 **
-** $Id: test_func.c,v 1.7 2008/07/08 14:17:35 danielk1977 Exp $
+** $Id: test_func.c,v 1.8 2008/07/11 21:02:54 drh Exp $
 */
 #include "sqlite3.h"
 #include "tcl.h"
@@ -230,6 +230,38 @@ static void test_isolation(
   sqlite3_result_value(pCtx, argv[1]);
 }
 
+/*
+** Invoke an SQL statement recursively.  The function result is the 
+** first column of the first row of the result set.
+*/
+static void test_eval(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+  sqlite3_stmt *pStmt;
+  int rc;
+  sqlite3 *db = sqlite3_context_db_handle(pCtx);
+  const char *zSql;
+
+  zSql = (char*)sqlite3_value_text(argv[0]);
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_step(pStmt);
+    if( rc==SQLITE_ROW ){
+      sqlite3_result_value(pCtx, sqlite3_column_value(pStmt, 0));
+    }
+    rc = sqlite3_finalize(pStmt);
+  }
+  if( rc ){
+    char *zErr;
+    assert( pStmt==0 );
+    zErr = sqlite3_mprintf("sqlite3_prepare_v2() error: %s",sqlite3_errmsg(db));
+    sqlite3_result_text(pCtx, zErr, -1, sqlite3_free);
+    sqlite3_result_error_code(pCtx, rc);
+  }
+}
+
 
 static int registerTestFunctions(sqlite3 *db){
   static const struct {
@@ -245,6 +277,7 @@ static int registerTestFunctions(sqlite3 *db){
     { "test_auxdata",         -1, SQLITE_UTF8, test_auxdata},
     { "test_error",            1, SQLITE_UTF8, test_error},
     { "test_error",            2, SQLITE_UTF8, test_error},
+    { "test_eval",             1, SQLITE_UTF8, test_eval},
     { "test_isolation",        2, SQLITE_UTF8, test_isolation},
   };
   int i;
