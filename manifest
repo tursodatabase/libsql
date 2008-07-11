@@ -1,5 +1,5 @@
-C Additional\stest\scoverage\sfor\sthe\sbtree\smodule.\s\sRemove\sthe\sfailsafe()\smacro\nand\sreplace\sit\swith\sALWAYS()\sand\sNEVER().\s(CVS\s5395)
-D 2008-07-11T16:15:18
+C Improved\sNaN\stesting\sfor\shighly\soptimized\sGCC\son\sx86.\nTickets\s#3202\sand\s#3194.\s(CVS\s5396)
+D 2008-07-11T16:19:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -179,7 +179,7 @@ F src/tokenize.c b5fdc79fb7e00077b9c02af7a0da3b89c9f3398e
 F src/trigger.c bdb56bb9db1a7b18f8505484051221ab5123f21d
 F src/update.c 4e698fcc0c91c241a960304c4236dc3a49603155
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
-F src/util.c 172ebad4eb14eada6e2e1d0e202765b0e97905e4
+F src/util.c a8f80412a536ea309c1887e5d4b58a3fa6eca69c
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
 F src/vdbe.c 14d98d1d47041a99a9c98034842772dbbcc062fb
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
@@ -603,7 +603,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c9ffbfe343b640051161301869698dd9f1f76cb7
-R e52a0e0f0e545d82edca5fee51f0391a
+P d7e2f0d2d45574d6191c1b191c0daf5260696f27
+R ade8ff6c2fb33021086110407ad75d8e
 U drh
-Z 3dba639b9a1f25eb1dff3dc290a1617a
+Z 3b1b5d42552a23c609e4387817e377c9
