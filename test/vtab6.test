@@ -14,7 +14,7 @@
 # virtual tables. The test cases in this file are copied from the file
 # join.test, and some of the comments still reflect that.
 #
-# $Id: vtab6.test,v 1.3 2008/03/17 09:36:45 danielk1977 Exp $
+# $Id: vtab6.test,v 1.4 2008/07/12 14:52:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -157,7 +157,6 @@ do_test vtab6-1.12 {
 } {1 2 3 4 2 3 4 5}
 
 ifcapable subquery {
-breakpoint
   do_test vtab6-1.13 {
     execsql2 {
       SELECT * FROM t1 NATURAL JOIN 

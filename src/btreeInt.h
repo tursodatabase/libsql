@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.25 2008/07/11 21:02:54 drh Exp $
+** $Id: btreeInt.h,v 1.26 2008/07/12 14:52:20 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -480,17 +480,6 @@ struct BtCursor {
 #define CURSOR_VALID             1
 #define CURSOR_REQUIRESEEK       2
 #define CURSOR_FAULT             3
-
-/*
-** The TRACE macro will print high-level status information about the
-** btree operation when the global variable sqlite3BtreeTrace is
-** enabled.
-*/
-#if SQLITE_TEST
-# define TRACE(X)   if( sqlite3BtreeTrace ){ printf X; fflush(stdout); }
-#else
-# define TRACE(X)
-#endif
 
 /* The database page the PENDING_BYTE occupies. This page is never used.
 ** TODO: This macro is very similary to PAGER_MJ_PGNO() in pager.c. They

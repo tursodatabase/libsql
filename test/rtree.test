@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all rtree related tests.
 #
-# $Id: rtree.test,v 1.1 2008/06/23 15:55:52 danielk1977 Exp $
+# $Id: rtree.test,v 1.2 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -38,4 +38,3 @@ set sqlite_open_file_count 0
 rtree_finish_test
 rename finish_test {}
 rename rtree_finish_test finish_test
-

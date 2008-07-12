@@ -12,7 +12,7 @@
 # focus of this file is changing the database page size using a 
 # VACUUM statement.
 #
-# $Id: vacuum3.test,v 1.5 2008/06/03 07:34:09 danielk1977 Exp $
+# $Id: vacuum3.test,v 1.6 2008/07/12 14:52:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -55,7 +55,6 @@ foreach {request actual database} [list \
   4096 4096 8192                        \
   1024 1024 2048                        \
 ] {
-if {$I==10} breakpoint
   do_test vacuum3-1.$I.1 {
     execsql " 
       PRAGMA page_size = $request;
@@ -105,7 +104,6 @@ foreach {request actual database} [list \
   4096 4096 8192                        \
   1024 1024 3072                        \
 ] {
-if {$I==10} breakpoint
   do_test vacuum3-2.$I.1 {
     execsql " 
       PRAGMA page_size = $request;
@@ -181,7 +179,6 @@ foreach {request actual} [list \
   4096 4096                    \
   1024 1024                    \
 ] {
-if {$I==10} breakpoint
   do_test vacuum3-3.$I.1 {
     execsql " 
       PRAGMA page_size = $request;

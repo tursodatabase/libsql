@@ -14,7 +14,7 @@
 # fixed.  
 #
 #
-# $Id: tkt2213.test,v 1.1 2007/02/05 14:21:48 danielk1977 Exp $
+# $Id: tkt2213.test,v 1.2 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -27,4 +27,3 @@ do_test tkt2213-1 {
 } {0 abcd}
 
 finish_test
-

@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.63 2008/07/08 07:35:52 danielk1977 Exp $
+# $Id: pragma.test,v 1.64 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -962,7 +962,6 @@ do_test pragma-9.14 {
     PRAGMA temp_store;
   }
 } {0}
-breakpoint
 do_test pragma-9.15 {
   catchsql {
     BEGIN EXCLUSIVE;

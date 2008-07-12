@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.48 2008/02/06 14:11:35 drh Exp $
+# $Id: attach.test,v 1.49 2008/07/12 14:52:20 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -28,7 +28,6 @@ for {set i 2} {$i<=15} {incr i} {
   file delete -force test$i.db-journal
 }
 
-set btree_trace 0
 do_test attach-1.1 {
   execsql {
     CREATE TABLE t1(a,b);
@@ -58,7 +57,6 @@ do_test attach-1.4 {
   }
 } {1 x 2 y}
 do_test attach-1.5 {
-btree_breakpoint
   execsql {
     DETACH DATABASE two;
     SELECT * FROM t1;
@@ -408,7 +406,6 @@ do_test attach-3.4 {
 # prevent test2.db from being read by db2.
 do_test attach-3.5 {
   execsql {SELECT * FROM t2}
-btree_breakpoint
   catchsql {
     SELECT * FROM t2;
   } db2;
@@ -476,8 +473,6 @@ do_test attach-3.15 {
   execsql COMMIT db2
   execsql {SELECT * FROM t1}
 } {1 2 3 4}
-
-#set btree_trace 1
 
 # Ticket #323
 do_test attach-4.1 {

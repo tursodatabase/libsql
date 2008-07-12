@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.33 2008/07/08 07:35:52 danielk1977 Exp $
+# $Id: shared.test,v 1.34 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -874,7 +874,6 @@ do_test shared-$av.11.7 {
 } {}
 do_test shared-$av.11.8 {
   set res [list]
-  breakpoint
   db2 eval {
     SELECT abc.a as I, abc2.a as II FROM abc, abc2;
   } {

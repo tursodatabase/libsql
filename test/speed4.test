@@ -17,7 +17,7 @@
 #   * sub-selects
 #   * triggers
 #
-# $Id: speed4.test,v 1.1 2007/10/23 10:25:30 danielk1977 Exp $
+# $Id: speed4.test,v 1.2 2008/07/12 14:52:20 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -229,4 +229,3 @@ execsql {COMMIT}
 
 speed_trial_summary speed4
 finish_test
-

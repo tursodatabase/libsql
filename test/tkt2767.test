@@ -13,7 +13,7 @@
 # Ticket #2767 is for a VDBE stack overflow on BEFORE
 # triggers that run RAISE(IGNORE).
 #
-# $Id: tkt2767.test,v 1.1 2007/11/11 18:36:35 drh Exp $
+# $Id: tkt2767.test,v 1.2 2008/07/12 14:52:21 drh Exp $
 #
 
 set testdir [file dirname $argv0]

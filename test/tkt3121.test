@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: tkt3121.test,v 1.1 2008/05/16 15:40:40 danielk1977 Exp $
+# $Id: tkt3121.test,v 1.2 2008/07/12 14:52:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -48,4 +48,3 @@ do_test vtabD-1.2 {
 } {abcd {A nice description}}
 
 finish_test
-

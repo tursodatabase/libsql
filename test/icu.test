@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: icu.test,v 1.1 2007/05/07 11:53:14 danielk1977 Exp $
+# $Id: icu.test,v 1.2 2008/07/12 14:52:20 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -115,4 +115,3 @@ do_test icu-4.3 {
 } {apricot cherry chokecherry yamot peach plum}
 
 finish_test
-

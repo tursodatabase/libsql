@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.741 2008/07/11 16:15:18 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.742 2008/07/12 14:52:20 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1866,7 +1866,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3DebugPrintf(const char*, ...);
 #endif
 #if defined(SQLITE_TEST)
-  void *sqlite3TextToPtr(const char*);
+  void *sqlite3TestTextToPtr(const char*);
 #endif
 void sqlite3SetString(char **, sqlite3*, const char*, ...);
 void sqlite3ErrorMsg(Parse*, const char*, ...);

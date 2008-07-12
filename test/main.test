@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.28 2008/01/22 23:37:10 drh Exp $
+# $Id: main.test,v 1.29 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -337,7 +337,6 @@ do_test main-3.2.12 {
 do_test main-3.2.13 {
   catchsql {select $(abc)}
 } {1 {unrecognized token: "$"}}
-breakpoint
 do_test main-3.2.14 {
   set hi\u1234x 987
   db eval "select \$hi\u1234x"

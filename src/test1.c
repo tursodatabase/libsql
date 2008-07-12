@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.314 2008/07/08 15:26:50 drh Exp $
+** $Id: test1.c,v 1.315 2008/07/12 14:52:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -44,7 +44,7 @@ static int testHexToInt(int h){
     return h - 'A' + 10;
   }
 }
-void *sqlite3TextToPtr(const char *z){
+void *sqlite3TestTextToPtr(const char *z){
   void *p;
   u64 v;
   u32 v2;
@@ -109,7 +109,7 @@ int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb){
     p = (struct SqliteDb*)cmdInfo.objClientData;
     *ppDb = p->db;
   }else{
-    *ppDb = (sqlite3*)sqlite3TextToPtr(zA);
+    *ppDb = (sqlite3*)sqlite3TestTextToPtr(zA);
   }
   return TCL_OK;
 }
@@ -182,7 +182,7 @@ static int getStmtPointer(
   const char *zArg,  
   sqlite3_stmt **ppStmt
 ){
-  *ppStmt = (sqlite3_stmt*)sqlite3TextToPtr(zArg);
+  *ppStmt = (sqlite3_stmt*)sqlite3TestTextToPtr(zArg);
   return TCL_OK;
 }
 

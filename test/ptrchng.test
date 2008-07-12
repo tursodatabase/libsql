@@ -21,7 +21,7 @@
 #     sqlite3_value_bytes()
 #     sqlite3_value_bytes16()
 #
-# $Id: ptrchng.test,v 1.4 2008/02/14 05:44:45 danielk1977 Exp $
+# $Id: ptrchng.test,v 1.5 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -113,7 +113,6 @@ ifcapable utf16 {
     }
   } {0}
   do_test ptrchng-2.16 {
-btree_breakpoint
     execsql {
       SELECT pointer_change(y, 'text16', 'noop', 'text') FROM t1 WHERE x=3
     }

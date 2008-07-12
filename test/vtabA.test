@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is 'hidden' virtual table columns.
 #
-# $Id: vtabA.test,v 1.1 2007/06/26 10:38:54 danielk1977 Exp $
+# $Id: vtabA.test,v 1.2 2008/07/12 14:52:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -132,4 +132,3 @@ do_test vtabA-2.4 {
 } {{} {whatelse can i test} hidden}
 
 finish_test
-

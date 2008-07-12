@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: thread001.test,v 1.4 2007/09/10 07:35:47 danielk1977 Exp $
+# $Id: thread001.test,v 1.5 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 
@@ -136,4 +136,3 @@ foreach {tn same_db shared_cache} [list \
 }
 
 finish_test
-

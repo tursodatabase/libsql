@@ -13,7 +13,7 @@
 # This file tests aspects of recovery from a malloc() failure
 # in a CREATE INDEX statement.
 #
-# $Id: crash5.test,v 1.2 2008/01/18 14:17:21 danielk1977 Exp $
+# $Id: crash5.test,v 1.3 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -108,4 +108,3 @@ for {set ii 0} {$ii < 10} {incr ii} {
 
 
 finish_test
-

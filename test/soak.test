@@ -11,7 +11,7 @@
 # This file is the driver for the "soak" tests. It is a peer of the
 # quick.test and all.test scripts.
 #
-# $Id: soak.test,v 1.2 2007/05/30 10:36:47 danielk1977 Exp $
+# $Id: soak.test,v 1.3 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -87,4 +87,3 @@ for {set iRun 0} {[clock seconds] < $soak_finishtime && $nErr==0} {incr iRun} {
 }
 
 really_finish_test
-

@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: autovacuum_ioerr2.test,v 1.6 2007/04/28 15:47:44 danielk1977 Exp $
+# $Id: autovacuum_ioerr2.test,v 1.7 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -130,4 +130,3 @@ do_ioerr_test autovacuum-ioerr2-1 -sqlprep {
 }
 
 finish_test
-

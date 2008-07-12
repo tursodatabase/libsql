@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
-# $Id: selectB.test,v 1.7 2008/07/10 17:59:12 danielk1977 Exp $
+# $Id: selectB.test,v 1.8 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -372,4 +372,3 @@ for {set ii 3} {$ii <= 4} {incr ii} {
 }
 
 finish_test
-

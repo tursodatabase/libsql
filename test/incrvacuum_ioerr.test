@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: incrvacuum_ioerr.test,v 1.5 2008/05/09 18:03:28 danielk1977 Exp $
+# $Id: incrvacuum_ioerr.test,v 1.6 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -179,4 +179,3 @@ ifcapable shared_cache {
 }
 
 finish_test
-

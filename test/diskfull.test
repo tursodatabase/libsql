@@ -12,7 +12,7 @@
 # focus of this file is testing for correct handling of disk full
 # errors.
 # 
-# $Id: diskfull.test,v 1.7 2007/08/24 03:51:34 drh Exp $
+# $Id: diskfull.test,v 1.8 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -104,7 +104,7 @@ do_diskfull_test diskfull-2 VACUUM
 #     PRAGMA cache_size;
 #   }
 # } {10}
-# breakpoint
+# 
 # do_diskfull_test diskfull-3.2 {
 #   BEGIN;
 #     INSERT INTO t3 VALUES( randstr(100, 100), randstr(100, 100) );

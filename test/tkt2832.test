@@ -11,7 +11,7 @@
 #
 # This file is to test that ticket #2832 has been fixed.
 #
-# $Id: tkt2832.test,v 1.3 2007/12/12 18:05:21 danielk1977 Exp $
+# $Id: tkt2832.test,v 1.4 2008/07/12 14:52:21 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -63,4 +63,3 @@ do_test tkt2832-3.2 {
 } {}
 
 finish_test
-

@@ -12,7 +12,7 @@
 # focus of this file is testing the sqlite_exec_printf() and
 # sqlite_get_table_printf() APIs.
 #
-# $Id: tableapi.test,v 1.18 2008/06/21 12:15:04 danielk1977 Exp $
+# $Id: tableapi.test,v 1.19 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -71,7 +71,6 @@ do_test tableapi-2.3.3 {
   } {}
 } {1 {near "invalid": syntax error}}
 do_test tableapi-2.3.4 {
-breakpoint
   sqlite3_get_table_printf $::dbx {
     SELECT * FROM xyz WHERE a>47 ORDER BY a
   } {} 8

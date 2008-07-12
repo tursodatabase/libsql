@@ -12,7 +12,7 @@
 #
 # Specifically, it tests that bug 2817 is fixed.
 #
-# $Id: tkt2817.test,v 1.1 2007/12/02 11:46:35 danielk1977 Exp $
+# $Id: tkt2817.test,v 1.2 2008/07/12 14:52:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -70,4 +70,3 @@ sqlite3 db test.db
 integrity_check tkt2817-2.3
 
 finish_test
-

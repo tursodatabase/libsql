@@ -13,7 +13,7 @@
 # focus of this script is the experimental sqlite3_create_collation_v2()
 # API.
 #
-# $Id: collate7.test,v 1.1 2007/05/07 14:58:53 danielk1977 Exp $
+# $Id: collate7.test,v 1.2 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -70,4 +70,3 @@ do_test collate7-2.4 {
 } {1 {no such collation sequence: CASELESS}}
 
 finish_test
-

@@ -8,9 +8,8 @@
 # to malloc or IO error simulation. With these tests omitted, the overall
 # run time is reduced by about 75%.
 #
-# $Id: veryquick.test,v 1.8 2008/06/25 17:54:55 danielk1977 Exp $
+# $Id: veryquick.test,v 1.9 2008/07/12 14:52:21 drh Exp $
 
 set testdir [file dirname $argv0]
 set ISVERYQUICK 1
 source $testdir/quick.test
-

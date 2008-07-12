@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.40 2008/07/09 11:49:48 danielk1977 Exp $
+# $Id: ioerr.test,v 1.41 2008/07/12 14:52:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -405,4 +405,3 @@ do_ioerr_test ioerr-14 -ckrefcount true -erc 1 -sqlprep {
 }
 
 finish_test
-
