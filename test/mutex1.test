@@ -9,10 +9,16 @@
 #
 #***********************************************************************
 #
-# $Id: mutex1.test,v 1.8 2008/07/10 17:52:49 danielk1977 Exp $
+# $Id: mutex1.test,v 1.9 2008/07/12 15:55:55 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+if {[info exists tester_do_binarylog]} {
+  finish_test
+  return
+}
+
 sqlite3_reset_auto_extension
 
 proc mutex_counters {varname} {

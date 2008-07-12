@@ -14,7 +14,7 @@
 ** adds instrumentation to all vfs and file methods. C and Tcl interfaces
 ** are provided to control the instrumentation.
 **
-** $Id: test_osinst.c,v 1.16 2008/06/12 12:40:14 drh Exp $
+** $Id: test_osinst.c,v 1.17 2008/07/12 15:55:55 danielk1977 Exp $
 */
 
 /*
@@ -714,7 +714,7 @@ static void binarylog_blob(
     return;
   }
   pLog = (InstVfsBinaryLog *)pInstVfs->pClient;
-  if( !isBinary || pLog->log_data ){
+  if( zBlob && (!isBinary || pLog->log_data) ){
     unsigned char *zRec;
     int nWrite;
 

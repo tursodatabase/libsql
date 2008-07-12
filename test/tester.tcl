@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.131 2008/07/11 16:15:18 drh Exp $
+# $Id: tester.tcl,v 1.132 2008/07/12 15:55:55 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -94,12 +94,7 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
   }
   if {[lindex $argv $i] eq "--binarylog"} {
     set tester_do_binarylog 1
-
-    # sqlite3_simulate_device -char safe_append
-    # sqlite3_instvfs binarylog -default -parent devsym binarylog ostrace.bin
-    sqlite3_instvfs binarylog -default binarylog ostrace.bin
     set argv [lreplace $argv $i $i]
-    sqlite3_instvfs marker binarylog "$argv0 $argv"
   }
 }
 
@@ -137,6 +132,10 @@ if {![info exists nTest]} {
   sqlite3_shutdown 
   install_malloc_faultsim 1 
   sqlite3_initialize
+  if {[info exists tester_do_binarylog]} {
+    sqlite3_instvfs binarylog -default binarylog ostrace.bin
+    sqlite3_instvfs marker binarylog "$argv0 $argv"
+  }
 }
 catch {db close}
 file delete -force test.db

@@ -1,5 +1,5 @@
-C Remove\sleftover\sdebugging\scommands\s(breakpoint\sand\sbtree_breakpoint)\sfrom\ntest\sscripts.\s(CVS\s5400)
-D 2008-07-12T14:52:20
+C Fix\sthe\stest\sscript\s--binarylog\soption.\s(CVS\s5401)
+D 2008-07-12T15:55:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -170,7 +170,7 @@ F src/test_malloc.c e655e3ff61845fc23886ee81973638e795477c9e
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c 86a937f5d28f373b8495faf1347a9d0a306594d4
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
-F src/test_osinst.c 867f1317bd135f942a63eab5a78da40fc70d1493
+F src/test_osinst.c 49d777e6129bead1726e316e83751be35f455acc
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 73530070df8378571c8ce6bbbbb993236ae3ad0b
@@ -223,7 +223,7 @@ F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
 F test/capi2.test cc64df7560a96f848f919ea2926c60acf639684b
-F test/capi3.test b92ba9a889def7578da553b1a36f92b147244579
+F test/capi3.test ffc1156d1f28738eb335df0b88dd294bb3c94c27
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
 F test/capi3c.test 208713e5f3a63442c3574c55b83baa7cf8ac5f28
 F test/capi3d.test 537de3a1f724862e327e02bb21b4a84f185dc1e2
@@ -419,7 +419,7 @@ F test/misc5.test 0b68dcb630d44af2dbcdca94dd2b17c8d580f6fa
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test b0d80b95dc2b46ce417cf3e06bfff18166e55181
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/mutex1.test b0017a45203e92ddab9e27cc3d6bd5c8637925ac
+F test/mutex1.test c4fed76ad88646e6cfab0435fd89f5fc72da4dde
 F test/mutex2.test dce072fe922afaf193de0069ac570d3f15fa011b
 F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
@@ -485,7 +485,7 @@ F test/tableapi.test a669ae9dd3bc8e7a6f74eff003664801667cf4c2
 F test/tclsqlite.test aa1781808502271feccfd24f9e2c0d2c1d7c496a
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl 3a121e1a03b29376057b3dfff429ad4f373cd0c3
+F test/tester.tcl de507ef0412c8dd9a82cd853964caffa71acbc01
 F test/thread001.test 3fb08080e1fe84d1bb7ec7bbc9e13743a77e5bc5
 F test/thread002.test ed9b800460df01e3cf9428ee11dc4e3f04b9b896
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -605,7 +605,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c80a5d09935c60a2a50bc262c172a94073355f0d
-R 4ecb2580e4a853826fb4fa1ac5c915ee
-U drh
-Z 7ad634a4c18eb92cdbc19f19fa25b073
+P dcb160249fa2d592ad09b8b0052102dc44a93511
+R 710dd56994c44964337f17483893049d
+U danielk1977
+Z 8c0bccde1c33db0df30307b242744816
