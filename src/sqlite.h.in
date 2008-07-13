@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.369 2008/07/12 20:35:08 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.370 2008/07/13 03:55:04 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -6100,7 +6100,7 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 ** outstanding at time, this parameter also reports the number of threads
 ** using scratch memory at the same time.</dd>
 **
-** <dt>SQLITE_STATUS_PAGECACHE_OVERFLOW</dt>
+** <dt>SQLITE_STATUS_SCRATCH_OVERFLOW</dt>
 ** <dd>This parameter returns the number of bytes of scratch memory
 ** allocation which could not be statisfied by the [SQLITE_CONFIG_SCRATCH]
 ** buffer and where forced to overflow to [sqlite3_malloc()].</dd>
