@@ -2321,6 +2321,7 @@ to follow the previous rule.");
       if( x[0]=='{' || x[0]=='\"' || isalnum(x[0]) ){
         char *zOld, *zNew, *zBuf, *z;
         int nOld, n, nLine, nNew, nBack;
+        int addLineMacro;
         char zLine[50];
         zNew = x;
         if( zNew[0]=='"' || zNew[0]=='{' ) zNew++;
@@ -2332,8 +2333,9 @@ to follow the previous rule.");
         }
         nOld = strlen(zOld);
         n = nOld + nNew + 20;
-        if( psp->insertLineMacro && psp->decllinenoslot
-            && psp->decllinenoslot[0] ){
+        addLineMacro = psp->insertLineMacro &&
+                        (psp->decllinenoslot==0 || psp->decllinenoslot[0]!=0);
+        if( addLineMacro ){
           for(z=psp->filename, nBack=0; *z; z++){
             if( *z=='\\' ) nBack++;
           }
@@ -2343,8 +2345,7 @@ to follow the previous rule.");
         }
         *psp->declargslot = zBuf = realloc(*psp->declargslot, n);
         zBuf += nOld;
-        if( psp->insertLineMacro && psp->decllinenoslot
-            && psp->decllinenoslot[0] ){
+        if( addLineMacro ){
           if( nOld && zBuf[-1]!='\n' ){
             *(zBuf++) = '\n';
           }
