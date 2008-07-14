@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.370 2008/07/13 03:55:04 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.371 2008/07/14 18:38:17 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1126,7 +1126,7 @@ struct sqlite3_mem_methods {
 ** alternative low-level mutex routines to be used in place
 ** the mutex routines built into SQLite.</dd>
 **
-** <dt>SQLITE_CONFIG_GETMALLOC</dt>
+** <dt>SQLITE_CONFIG_GETMUTEX</dt>
 ** <dd>This option takes a single argument which is a pointer to an
 ** instance of the [sqlite3_mutex_methods] structure.  The
 ** [sqlite3_mutex_methods]
