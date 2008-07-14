@@ -1,5 +1,5 @@
-C Work\saround\sa\sbug\sin\sBorland\sC.\s\sTicket\s#3216.\s(CVS\s5406)
-D 2008-07-14T12:30:54
+C Fix\sa\sbug\sintroduced\sby\scheck-in\s(5406).\s\sTicket\s#3216.\s(CVS\s5407)
+D 2008-07-14T12:38:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c ae0eed9fa96d74172d2a90ee63b5bc36d284295c
 F src/main.c 453d54b33799bfa0adfdf8a97a196521f9d9e962
-F src/malloc.c 3c11d9c2f6b7d1c2a81384ce81bb2ccfe5f1e62a
+F src/malloc.c b9ff4e02fee17d2158cc52ac44a02a56bde3cf62
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 8340fa5f969e9f9b9bdeb54106457a2003456d2b
 F src/mem2.c 0fc5bd6581c80f3ebd9d0cdf0f3f9c08826397ba
@@ -605,7 +605,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 372147699585ca4bd11100983de924f63c5cfce5
-R 08f181f5901eba7c64b34324e5a525a7
+P 2c24e50da6f6c19dee105823125157db73bdd515
+R 66c049cb605f76c296e2f654edac7703
 U drh
-Z 28b71e0d3f12110f499c903968949ac4
+Z 1062c191d42ad296a8a3e7728654c356

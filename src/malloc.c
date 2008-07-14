@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.27 2008/07/14 12:30:54 drh Exp $
+** $Id: malloc.c,v 1.28 2008/07/14 12:38:21 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -165,7 +165,7 @@ sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
   int n, mx;
   sqlite3_int64 res;
   sqlite3_status(SQLITE_STATUS_MEMORY_USED, &n, &mx, resetFlag);
-  res = (sqlite3_int64)n;  /* Work around bug in Borland C. Ticket #3216 */
+  res = (sqlite3_int64)mx;  /* Work around bug in Borland C. Ticket #3216 */
   return res;
 }
 
