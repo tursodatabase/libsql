@@ -128,7 +128,7 @@ struct symbol {
     RIGHT,
     NONE,
     UNK
-  } assoc;                 /* Associativity if predecence is defined */
+  } assoc;                 /* Associativity if precedence is defined */
   char *firstset;          /* First-set for all rules of this symbol */
   Boolean lambda;          /* True if NT and can generate an empty string */
   int useCnt;              /* Number of times used */
@@ -212,7 +212,7 @@ struct action {
 struct state {
   struct config *bp;       /* The basis configurations for this state */
   struct config *cfp;      /* All configurations in this set */
-  int statenum;            /* Sequencial number for this state */
+  int statenum;            /* Sequential number for this state */
   struct action *ap;       /* Array of actions for this state */
   int nTknAct, nNtAct;     /* Number of actions on terminals and nonterminals */
   int iTknOfst, iNtOfst;   /* yy_action[] offset for terminals and nonterms */
@@ -263,7 +263,7 @@ struct lemon {
   int nconflict;           /* Number of parsing conflicts */
   int tablesize;           /* Size of the parse tables */
   int basisflag;           /* Print only basis configurations */
-  int has_fallback;        /* True if any %fallback is seen in the grammer */
+  int has_fallback;        /* True if any %fallback is seen in the grammar */
   char *argv0;             /* Name of the program */
 };
 
@@ -986,7 +986,7 @@ struct lemon *lemp;
 }
 
 /* Resolve a conflict between the two given actions.  If the
-** conflict can't be resolve, return non-zero.
+** conflict can't be resolved, return non-zero.
 **
 ** NO LONGER TRUE:
 **   To resolve a conflict, first look to see if either action
@@ -1997,7 +1997,7 @@ struct pstate *psp;
       }else if( x[0]=='{' ){
         if( psp->prevrule==0 ){
           ErrorMsg(psp->filename,psp->tokenlineno,
-"There is not prior rule opon which to attach the code \
+"There is no prior rule opon which to attach the code \
 fragment which begins on this line.");
           psp->errorcnt++;
 	}else if( psp->prevrule->code!=0 ){
@@ -2424,7 +2424,7 @@ to follow the previous rule.");
   }
 }
 
-/* Run the proprocessor over the input file text.  The global variables
+/* Run the preprocessor over the input file text.  The global variables
 ** azDefine[0] through azDefine[nDefine-1] contains the names of all defined
 ** macros.  This routine looks for "%ifdef" and "%ifndef" and "%endif" and
 ** comments them out.  Text in between is also commented out as appropriate.
@@ -3828,7 +3828,7 @@ int mhflag;     /* Output in makeheaders format if true */
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate a table containing a text string that describes every
-  ** rule in the rule set of the grammer.  This information is used
+  ** rule in the rule set of the grammar.  This information is used
   ** when tracing REDUCE actions.
   */
   for(i=0, rp=lemp->rule; rp; rp=rp->next, i++){
