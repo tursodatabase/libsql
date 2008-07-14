@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: btmutex.c,v 1.9 2008/01/23 12:52:41 drh Exp $
+** $Id: btmutex.c,v 1.10 2008/07/14 19:39:17 drh Exp $
 **
 ** This file contains code used to implement mutexes on Btree objects.
 ** This code really belongs in btree.c.  But btree.c is getting too
@@ -226,11 +226,11 @@ int sqlite3BtreeHoldsAllMutexes(sqlite3 *db){
 #endif /* NDEBUG */
 
 /*
-** Potentially dd a new Btree pointer to a BtreeMutexArray.
-** Really only add the Btree if it can possibly be shared with
+** Add a new Btree pointer to a BtreeMutexArray. 
+** if the pointer can possibly be shared with
 ** another database connection.
 **
-** The Btrees are kept in sorted order by pBtree->pBt.  That
+** The pointers are kept in sorted order by pBtree->pBt.  That
 ** way when we go to enter all the mutexes, we can enter them
 ** in order without every having to backup and retry and without
 ** worrying about deadlock.
