@@ -12,7 +12,7 @@
 #
 # This file is devoted to testing the sqlite3_next_stmt interface.
 #
-# $Id: capi3d.test,v 1.1 2008/06/19 02:52:25 drh Exp $
+# $Id: capi3d.test,v 1.2 2008/07/14 15:11:20 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -64,6 +64,7 @@ proc scramble {inlist} {
 # Database initially has no prepared statements.
 #
 do_test capi3d-1.1 {
+  db cache flush
   sqlite3_next_stmt db 0
 } {}
 

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.56 2008/06/21 19:20:13 danielk1977 Exp $
+# $Id: all.test,v 1.57 2008/07/14 15:11:20 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -72,15 +72,6 @@ lappend EXCLUDE mallocAll.test         ;# Wrapper for running all malloc tests
 # that is not in the EXCLUDE list is run.
 #
 set INCLUDE {
-}
-
-# Test files btree2.test and btree4.test don't work if the 
-# SQLITE_DEFAULT_AUTOVACUUM macro is defined to true (because they depend
-# on tables being allocated starting at page 2).
-#
-ifcapable default_autovacuum {
-  lappend EXCLUDE btree2.test
-  lappend EXCLUDE btree4.test
 }
 
 for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
