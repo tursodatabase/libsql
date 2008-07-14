@@ -11,7 +11,7 @@
 #
 # Test scripts for deliberate failures of mutex routines.
 #
-# $Id: mutex2.test,v 1.5 2008/07/11 13:53:55 drh Exp $
+# $Id: mutex2.test,v 1.6 2008/07/14 12:52:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -48,7 +48,7 @@ do_test mutex2-2.1 {
   set ::disable_mutex_init 7
   set rc [catch {sqlite db test.db} msg]
   lappend rc $msg
-} {1 {out of memory}}
+} {1 {}}
 ifcapable utf16 {
   do_test mutex2-2.2 {
     set db2 [sqlite3_open16 [utf16 test.db] {}]
@@ -59,7 +59,7 @@ ifcapable utf16 {
 }
 do_test mutex2-2.4 {
   sqlite3_mprintf_int {This is a test %d,%d,%d} 1 2 3
-} {This is a test 1,2,3}
+} {}
 do_test mutex2-2.5 {
   sqlite3_auto_extension_sqr
 } {7}

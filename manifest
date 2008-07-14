@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sintroduced\sby\scheck-in\s(5406).\s\sTicket\s#3216.\s(CVS\s5407)
-D 2008-07-14T12:38:21
+C Write\ssqlite3_initialize()\scalls\sin\ssqlite3_malloc()\swithin\nSQLITE_OMIT_AUTOINIT.\s\sTicket\s#3217.\s(CVS\s5408)
+D 2008-07-14T12:52:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/pager.h 6aa3050a3c684475a5a9dbad5ff1cebad612acba
 F src/parse.y 097bff733e89fbf554a07d9327046718ce364011
 F src/pragma.c 6fad83fbcc7ec6e76d91fe2805fe972ff3af6a0c
 F src/prepare.c c9bb0aacb7a571d049805699ed18f2bb136ea091
-F src/printf.c 8e5d410220cf8650f502caf71f0de979a3f9031e
+F src/printf.c 36895cfc04fd235af3a6cc162078d751b88bd811
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c b909e21358f141627d1cadfdfbdb43ec08ed0a4b
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
@@ -420,7 +420,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test b0d80b95dc2b46ce417cf3e06bfff18166e55181
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/mutex1.test c4fed76ad88646e6cfab0435fd89f5fc72da4dde
-F test/mutex2.test dce072fe922afaf193de0069ac570d3f15fa011b
+F test/mutex2.test 240cfcb5093d2702790a918b4666d5858323e006
 F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
@@ -605,7 +605,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2c24e50da6f6c19dee105823125157db73bdd515
-R 66c049cb605f76c296e2f654edac7703
+P 518a24aa3e042782fbf2e805cf080b61e58a8150
+R 4e2c99acbcab1443d7a9872c7dddaedc
 U drh
-Z 1062c191d42ad296a8a3e7728654c356
+Z 4ac79f627b8500f6ab489bf729aabafc
