@@ -1,5 +1,5 @@
-C Add\sa\snew\stest\sscript\sto\sexercise\sthe\sdeadlock\savoidance\scode\sin\sthe\nbtree\smutex\slogic.\s(CVS\s5412)
-D 2008-07-14T19:39:17
+C Delete\sall\sfts3\sindex\sdata\sthe\stable\sbecomes\sempty.\s\sPreviously,\ndeleting\sall\srows\sfrom\san\sfts3\stable\swould\sleave\sa\sbunch\sof\sindex\sdata\ndescribing\sthe\sterms\sof\sthe\soriginal\sdata,\splus\sdeletions\sof\sthose\nterms,\sperhaps\swith\ssome\samount\sof\sit\smerged\stogether\sso\sthe\sdeletions\nknocked\sout\sthe\soriginals.\s\sEven\swhen\sall\srows\swere\sdeleted\sthat\noriginal\sdata\swould\shang\sout,\sthough\seventually\sit\swould\smostly\sbe\noverwritten\sif\snew\sdata\scontained\sthe\ssame\sset\sof\sterms.\s(CVS\s5413)
+D 2008-07-14T20:43:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -51,7 +51,7 @@ F ext/fts2/fts2_tokenizer1.c 8a545c232bdffafd117c4eeaf59789691909f26a
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.tokenizers 226644a0eab97724e8de83061912e8bb248461b6
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 192a65d39c2904873c13dc7a8e50b00cd190ec3a
+F ext/fts3/fts3.c c4037314d324d900638665e802b0e97725a0bd07
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3_hash.c 83e7bb4042106b32811681dd2859b4577a7a6b35
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
@@ -333,6 +333,7 @@ F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3c.test 4c7ef29b37aca3e8ebb6a39b57910caa6506034e
+F test/fts3d.test 12ad44b84e2b71b4217288747a9744201f779892
 F test/fts3near.test 2d4dadcaac5025ab65bb87e66c45f39e92966194
 F test/func.test 1a2476c57e34c79aeb6323d3e3700a8c7a1ee0af
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
@@ -606,7 +607,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3dc72a46171020c62e6028d113b0e0f5ab05d159
-R 6d734a63548e6f48975b58c9676b7c06
-U drh
-Z 77913ffe58a126c4bbfbbf4bc5ff271d
+P 7d5e1c4375599a913d23e5954fa63c10ac9d7688
+R 7766dad7431ce3dddf87a600080fac2f
+U shess
+Z ce089cda99d0ad780780b717294a1a22
