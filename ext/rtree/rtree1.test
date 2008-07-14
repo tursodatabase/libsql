@@ -11,12 +11,13 @@
 #
 # The focus of this file is testing the r-tree extension.
 #
-# $Id: rtree1.test,v 1.4 2008/06/23 16:53:47 danielk1977 Exp $
+# $Id: rtree1.test,v 1.5 2008/07/14 15:37:01 danielk1977 Exp $
 #
 
 if {![info exists testdir]} {
   set testdir [file join [file dirname $argv0] .. .. test]
 }
+source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
 
 # Test plan:
