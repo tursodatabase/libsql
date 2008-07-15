@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.49 2008/07/08 22:34:07 pweilbacher Exp $
+** $Id: os_os2.c,v 1.50 2008/07/15 22:59:05 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -547,33 +547,62 @@ static int os2DeviceCharacteristics(sqlite3_file *id){
   return 0;
 }
 
+
+/*
+** Character set conversion objects used by conversion routines.
+*/
+static UconvObject ucUtf8 = NULL; /* convert between UTF-8 and UCS-2 */
+static UconvObject uclCp = NULL;  /* convert between local codepage and UCS-2 */
+
+/*
+** Helper function to initialize the conversion objects from and to UTF-8.
+*/
+static void initUconvObjects( void ){
+	printf("init them\n");
+  if( UniCreateUconvObject( UTF_8, &ucUtf8 ) != ULS_SUCCESS )
+    ucUtf8 = NULL;
+  if ( UniCreateUconvObject( (UniChar *)L"@path=yes", &uclCp ) != ULS_SUCCESS )
+    uclCp = NULL;
+}
+
+/*
+** Helper function to free the conversion objects from and to UTF-8.
+*/
+static void freeUconvObjects( void ){
+	printf("free them\n");
+  if ( ucUtf8 )
+    UniFreeUconvObject( ucUtf8 );
+  if ( uclCp )
+    UniFreeUconvObject( uclCp );
+  ucUtf8 = NULL;
+  uclCp = NULL;
+}
+
 /*
 ** Helper function to convert UTF-8 filenames to local OS/2 codepage.
 ** The two-step process: first convert the incoming UTF-8 string
 ** into UCS-2 and then from UCS-2 to the current codepage.
 ** The returned char pointer has to be freed.
 */
-static char *convertUtf8PathToCp(const char *in)
-{
-  UconvObject uconv;
-  UniChar ucsUtf8Cp[12],
-          tempPath[CCHMAXPATH];
-  char *out;
-  int rc = 0;
+static char *convertUtf8PathToCp( const char *in ){
+  UniChar tempPath[CCHMAXPATH];
+  char *out = (char *)calloc( CCHMAXPATH, 1 );
+printf("convertUtf8PathToCp(%s)\n", in);
 
-  out = (char *)calloc(CCHMAXPATH, 1);
+  if( !out )
+    return NULL;
+
+  if( !ucUtf8 || !uclCp )
+    initUconvObjects();
 
   /* determine string for the conversion of UTF-8 which is CP1208 */
-  rc = UniMapCpToUcsCp(1208, ucsUtf8Cp, 12);
-  rc = UniCreateUconvObject(ucsUtf8Cp, &uconv);
-  rc = UniStrToUcs(uconv, tempPath, (char *)in, CCHMAXPATH);
-  rc = UniFreeUconvObject(uconv);
+  if( UniStrToUcs( ucUtf8, tempPath, (char *)in, CCHMAXPATH ) != ULS_SUCCESS )
+    return out; /* if conversion fails, return the empty string */
 
   /* conversion for current codepage which can be used for paths */
-  rc = UniCreateUconvObject((UniChar *)L"@path=yes", &uconv);
-  rc = UniStrFromUcs(uconv, out, tempPath, CCHMAXPATH);
-  rc = UniFreeUconvObject(uconv);
+  UniStrFromUcs( uclCp, out, tempPath, CCHMAXPATH );
 
+	printf("%s -> Cp = %s\n", in, out);
   return out;
 }
 
@@ -582,28 +611,29 @@ static char *convertUtf8PathToCp(const char *in)
 ** The two-step process: first convert the incoming codepage-specific
 ** string into UCS-2 and then from UCS-2 to the codepage of UTF-8.
 ** The returned char pointer has to be freed.
+**
+** This function is non-static to be able to use this in shell.c and
+** similar applications that take command line arguments.
 */
-static char *convertCpPathToUtf8(const char *in)
-{
-  UconvObject uconv;
-  UniChar ucsUtf8Cp[12],
-          tempPath[CCHMAXPATH];
-  char *out;
-  int rc = 0;
+char *convertCpPathToUtf8( const char *in ){
+  UniChar tempPath[CCHMAXPATH];
+  char *out = (char *)calloc( CCHMAXPATH, 1 );
+printf("convertCpPathToUtf8(%s)\n", in);
 
-  out = (char *)calloc(CCHMAXPATH, 1);
+  if( !out )
+    return NULL;
+
+  if( !ucUtf8 || !uclCp )
+    initUconvObjects();
 
   /* conversion for current codepage which can be used for paths */
-  rc = UniCreateUconvObject((UniChar *)L"@path=yes", &uconv);
-  rc = UniStrToUcs(uconv, tempPath, (char *)in, CCHMAXPATH);
-  rc = UniFreeUconvObject(uconv);
+  if( UniStrToUcs( uclCp, tempPath, (char *)in, CCHMAXPATH ) != ULS_SUCCESS )
+    return out; /* if conversion fails, return the empty string */
 
   /* determine string for the conversion of UTF-8 which is CP1208 */
-  rc = UniMapCpToUcsCp(1208, ucsUtf8Cp, 12);
-  rc = UniCreateUconvObject(ucsUtf8Cp, &uconv);
-  rc = UniStrFromUcs(uconv, out, tempPath, CCHMAXPATH);
-  rc = UniFreeUconvObject(uconv);
+  UniStrFromUcs( ucUtf8, out, tempPath, CCHMAXPATH );
 
+	printf("%s -> Utf8 = %s\n", in, out);
   return out;
 }
 
@@ -651,9 +681,9 @@ static int getTempname(int nBuf, char *zBuf ){
     if( DosScanEnv( (PSZ)"TEMP", &zTempPath ) ){
       if( DosScanEnv( (PSZ)"TMP", &zTempPath ) ){
         if( DosScanEnv( (PSZ)"TMPDIR", &zTempPath ) ){
-             ULONG ulDriveNum = 0, ulDriveMap = 0;
-             DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
-             sprintf( (char*)zTempPath, "%c:", (char)( 'A' + ulDriveNum - 1 ) );
+           ULONG ulDriveNum = 0, ulDriveMap = 0;
+           DosQueryCurrentDisk( &ulDriveNum, &ulDriveMap );
+           sprintf( (char*)zTempPath, "%c:", (char)( 'A' + ulDriveNum - 1 ) );
         }
       }
     }
@@ -1059,6 +1089,8 @@ static int os2GetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 ** Initialize and deinitialize the operating system interface.
 */
 int sqlite3_os_init(void){
+  initUconvObjects();
+
   static sqlite3_vfs os2Vfs = {
     1,                 /* iVersion */
     sizeof(os2File),   /* szOsFile */
@@ -1084,6 +1116,7 @@ int sqlite3_os_init(void){
   return SQLITE_OK;
 }
 int sqlite3_os_end(void){
+  freeUconvObjects();
   return SQLITE_OK;
 }
 

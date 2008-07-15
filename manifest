@@ -1,5 +1,5 @@
-C Implement\soptimize()\sfunction.\s\sThis\smerges\sall\ssegments\sin\sthe\sfts\nindex\sinto\sa\ssingle\ssegment,\sincluding\sdropping\sdelete\scookies.\s(CVS\s5417)
-D 2008-07-15T21:32:07
+C Work\saround\sbugs\sin\solder\sversions\sof\sthe\sOS/2\sconversion\slibrary\sby\strying\sto\sminimize\scalls\sto\sUniCreateUconvObject()\setc.\sUse\sglobal\suconv\sobjects\sinstead.\s(CVS\s5418)
+D 2008-07-15T22:59:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/mutex_w32.c f0d21ff1f6981e5aedc56796adf3a347423ef736
 F src/os.c 292b3b4a49fe5bf6cf2f1cf0af186ebd334e80b8
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
-F src/os_os2.c 6c33e61f0fab256b0136650cdee35c3eaab2fa04
+F src/os_os2.c b16aee2f727842f758140641835a46caad322f5d
 F src/os_unix.c 1df6108efdb7957a9f28b9700600e58647c9c12d
 F src/os_win.c 2bf2f8cd700299564cc236262c2668e1e02c626a
 F src/pager.c bb286b2fc0c7c87d0a8cbfee96a3e953da1e53dd
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 61f6e19755b85bcb065f85fc425c2172badea308
-R 801d6f0acc1dc5b802184549b77ec890
-U shess
-Z 136d2d664a48bc67bfa7ab0ac78c0104
+P b22e187bc2b38bd219dd0feba19b97279bd83089
+R 3e4111cc48212173ac6c652db5b424aa
+U pweilbacher
+Z 2bd5796475610dfaaebbcccc19839580
