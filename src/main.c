@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.476 2008/07/11 16:15:18 drh Exp $
+** $Id: main.c,v 1.477 2008/07/15 14:47:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -222,6 +222,7 @@ int sqlite3_config(int op, ...){
       break;
     }
 
+#if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
     case SQLITE_CONFIG_HEAP: {
       /* Designate a buffer for heap memory space */
       sqlite3Config.pHeap = va_arg(ap, void*);
@@ -247,12 +248,10 @@ int sqlite3_config(int op, ...){
 #ifdef SQLITE_ENABLE_MEMSYS5
         sqlite3Config.m = sqlite3MemGetMemsys5();
 #endif
-#if !defined(SQLITE_ENABLE_MEMSYS3) && !defined(SQLITE_ENABLE_MEMSYS5)
-        rc = SQLITE_ERROR;
-#endif
       }
       break;
     }
+#endif
 
     default: {
       rc = SQLITE_ERROR;

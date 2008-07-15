@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.45 2008/07/07 12:44:58 drh Exp $
+** $Id: alter.c,v 1.46 2008/07/15 14:47:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -164,22 +164,12 @@ static void renameTriggerFunc(
 ** Register built-in functions used to help implement ALTER TABLE
 */
 void sqlite3AlterFunctions(sqlite3 *db){
-  static const struct {
-     char *zName;
-     signed char nArg;
-     void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
-  } aFuncs[] = {
-    { "sqlite_rename_table",    2, renameTableFunc},
+  sqlite3CreateFunc(db, "sqlite_rename_table", 2, SQLITE_UTF8, 0,
+                         renameTableFunc, 0, 0);
 #ifndef SQLITE_OMIT_TRIGGER
-    { "sqlite_rename_trigger",  2, renameTriggerFunc},
+  sqlite3CreateFunc(db, "sqlite_rename_trigger", 2, SQLITE_UTF8, 0,
+                         renameTriggerFunc, 0, 0);
 #endif
-  };
-  int i;
-
-  for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
-    sqlite3CreateFunc(db, aFuncs[i].zName, aFuncs[i].nArg,
-        SQLITE_UTF8, 0, aFuncs[i].xFunc, 0, 0);
-  }
 }
 
 /*

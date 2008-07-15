@@ -1,5 +1,5 @@
-C Increased\stest\scoverage.\s(CVS\s5414)
-D 2008-07-15T00:27:35
+C Continuing\swork\son\simproved\stest\scoverage.\s(CVS\s5415)
+D 2008-07-15T14:47:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -90,7 +90,7 @@ F sqlite.pc.in c322c6244c6395955dca34d87955aabde7df7623
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a1be7b9a4b8b51ac41c6ff6e8e44a14ef66b338b
 F sqlite3.pc.in 32b8a014799c2028c8e0c9cc5659718262fc493f
-F src/alter.c c74accc33dcc7dd03496b338face06a4c4d988c2
+F src/alter.c 73ec449c299bccd175aede22b56400134055f9db
 F src/analyze.c 9ee63497ee720728abe630d169ab91323ac7519c
 F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
@@ -115,7 +115,7 @@ F src/insert.c e8efc17d037346e4a4a6949e72aab850befe3d5d
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c ae0eed9fa96d74172d2a90ee63b5bc36d284295c
-F src/main.c 453d54b33799bfa0adfdf8a97a196521f9d9e962
+F src/main.c 1abafc3792ad0c1d9c1aee7a9361f5278649885d
 F src/malloc.c b9ff4e02fee17d2158cc52ac44a02a56bde3cf62
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 8340fa5f969e9f9b9bdeb54106457a2003456d2b
@@ -607,7 +607,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8b872e426091d9ef108e52dbec0d968ed7452907
-R d48e30f805045313ee6396ef33f6a5cc
+P 7cf91e08c08ce515c24c738c7d079f5b81eebee6
+R bcfadd4ec8973f68be342c4f22b4e260
 U drh
-Z 8698cf385c48d5e8ab762a39892fd883
+Z 9020cf2172e9c22d2421ab034ffa8201
