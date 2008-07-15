@@ -1920,6 +1920,7 @@ typedef enum fulltext_statement {
   SEGDIR_SELECT_SEGMENT_STMT,
   SEGDIR_SELECT_ALL_STMT,
   SEGDIR_DELETE_ALL_STMT,
+  SEGDIR_COUNT_STMT,
 
   MAX_STMT                     /* Always at end! */
 } fulltext_statement;
@@ -1962,6 +1963,7 @@ static const char *const fulltext_zStatement[MAX_STMT] = {
   "select start_block, leaves_end_block, root from %_segdir "
   " order by level desc, idx asc",
   /* SEGDIR_DELETE_ALL */ "delete from %_segdir",
+  /* SEGDIR_COUNT */ "select count(*), ifnull(max(level),0) from %_segdir",
 };
 
 /*
@@ -2126,15 +2128,18 @@ static int sql_single_step(sqlite3_stmt *s){
 }
 
 /* Like sql_get_statement(), but for special replicated LEAF_SELECT
-** statements.
+** statements.  idx -1 is a special case for an uncached version of
+** the statement (used in the optimize implementation).
 */
 /* TODO(shess) Write version for generic statements and then share
 ** that between the cached-statement functions.
 */
 static int sql_get_leaf_statement(fulltext_vtab *v, int idx,
                                   sqlite3_stmt **ppStmt){
-  assert( idx>=0 && idx<MERGE_COUNT );
-  if( v->pLeafSelectStmts[idx]==NULL ){
+  assert( idx>=-1 && idx<MERGE_COUNT );
+  if( idx==-1 ){
+    return sql_prepare(v->db, v->zDb, v->zName, ppStmt, LEAF_SELECT);
+  }else if( v->pLeafSelectStmts[idx]==NULL ){
     int rc = sql_prepare(v->db, v->zDb, v->zName, &v->pLeafSelectStmts[idx],
                          LEAF_SELECT);
     if( rc!=SQLITE_OK ) return rc;
@@ -2463,6 +2468,37 @@ static int segdir_delete_all(fulltext_vtab *v){
   if( rc!=SQLITE_OK ) return rc;
 
   return sql_single_step(s);
+}
+
+/* Returns SQLITE_OK with *pnSegments set to the number of entries in
+** %_segdir and *piMaxLevel set to the highest level which has a
+** segment.  Otherwise returns the SQLite error which caused failure.
+*/
+static int segdir_count(fulltext_vtab *v, int *pnSegments, int *piMaxLevel){
+  sqlite3_stmt *s;
+  int rc = sql_get_statement(v, SEGDIR_COUNT_STMT, &s);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = sqlite3_step(s);
+  /* TODO(shess): This case should not be possible?  Should stronger
+  ** measures be taken if it happens?
+  */
+  if( rc==SQLITE_DONE ){
+    *pnSegments = 0;
+    *piMaxLevel = 0;
+    return SQLITE_OK;
+  }
+  if( rc!=SQLITE_ROW ) return rc;
+
+  *pnSegments = sqlite3_column_int(s, 0);
+  *piMaxLevel = sqlite3_column_int(s, 1);
+
+  /* We expect only one row.  We must execute another sqlite3_step()
+   * to complete the iteration; otherwise the table will remain locked. */
+  rc = sqlite3_step(s);
+  if( rc==SQLITE_DONE ) return SQLITE_OK;
+  if( rc==SQLITE_ROW ) return SQLITE_ERROR;
+  return rc;
 }
 
 /* TODO(shess) clearPendingTerms() is far down the file because
@@ -5340,6 +5376,12 @@ static int leavesReaderReset(LeavesReader *pReader){
 }
 
 static void leavesReaderDestroy(LeavesReader *pReader){
+  /* If idx is -1, that means we're using a non-cached statement
+  ** handle in the optimize() case, so we need to release it.
+  */
+  if( pReader->pStmt!=NULL && pReader->idx==-1 ){
+    sqlite3_finalize(pReader->pStmt);
+  }
   leafReaderDestroy(&pReader->leafReader);
   dataBufferDestroy(&pReader->rootData);
   SCRAMBLE(pReader);
@@ -6306,6 +6348,285 @@ static void snippetOffsetsFunc(
   }
 }
 
+/* OptLeavesReader is nearly identical to LeavesReader, except that
+** where LeavesReader is geared towards the merging of complete
+** segment levels (with exactly MERGE_COUNT segments), OptLeavesReader
+** is geared towards implementation of the optimize() function, and
+** can merge all segments simultaneously.  This version may be
+** somewhat less efficient than LeavesReader because it merges into an
+** accumulator rather than doing an N-way merge, but since segment
+** size grows exponentially (so segment count logrithmically) this is
+** probably not an immediate problem.
+*/
+/* TODO(shess): Prove that assertion, or extend the merge code to
+** merge tree fashion (like the prefix-searching code does).
+*/
+/* TODO(shess): OptLeavesReader and LeavesReader could probably be
+** merged with little or no loss of performance for LeavesReader.  The
+** merged code would need to handle >MERGE_COUNT segments, and would
+** also need to be able to optionally optimize away deletes.
+*/
+typedef struct OptLeavesReader {
+  /* Segment number, to order readers by age. */
+  int segment;
+  LeavesReader reader;
+} OptLeavesReader;
+
+static int optLeavesReaderAtEnd(OptLeavesReader *pReader){
+  return leavesReaderAtEnd(&pReader->reader);
+}
+static int optLeavesReaderTermBytes(OptLeavesReader *pReader){
+  return leavesReaderTermBytes(&pReader->reader);
+}
+static const char *optLeavesReaderData(OptLeavesReader *pReader){
+  return leavesReaderData(&pReader->reader);
+}
+static int optLeavesReaderDataBytes(OptLeavesReader *pReader){
+  return leavesReaderDataBytes(&pReader->reader);
+}
+static const char *optLeavesReaderTerm(OptLeavesReader *pReader){
+  return leavesReaderTerm(&pReader->reader);
+}
+static int optLeavesReaderStep(fulltext_vtab *v, OptLeavesReader *pReader){
+  return leavesReaderStep(v, &pReader->reader);
+}
+static int optLeavesReaderTermCmp(OptLeavesReader *lr1, OptLeavesReader *lr2){
+  return leavesReaderTermCmp(&lr1->reader, &lr2->reader);
+}
+/* Order by term ascending, segment ascending (oldest to newest), with
+** exhausted readers to the end.
+*/
+static int optLeavesReaderCmp(OptLeavesReader *lr1, OptLeavesReader *lr2){
+  int c = optLeavesReaderTermCmp(lr1, lr2);
+  if( c!=0 ) return c;
+  return lr1->segment-lr2->segment;
+}
+/* Bubble pLr[0] to appropriate place in pLr[1..nLr-1].  Assumes that
+** pLr[1..nLr-1] is already sorted.
+*/
+static void optLeavesReaderReorder(OptLeavesReader *pLr, int nLr){
+  while( nLr>1 && optLeavesReaderCmp(pLr, pLr+1)>0 ){
+    OptLeavesReader tmp = pLr[0];
+    pLr[0] = pLr[1];
+    pLr[1] = tmp;
+    nLr--;
+    pLr++;
+  }
+}
+
+/* optimize() helper function.  Put the readers in order and iterate
+** through them, merging doclists for matching terms into pWriter.
+** Returns SQLITE_OK on success, or the SQLite error code which
+** prevented success.
+*/
+static int optimizeInternal(fulltext_vtab *v,
+                            OptLeavesReader *readers, int nReaders,
+                            LeafWriter *pWriter){
+  int i, rc = SQLITE_OK;
+  DataBuffer doclist, merged, tmp;
+
+  /* Order the readers. */
+  i = nReaders;
+  while( i-- > 0 ){
+    optLeavesReaderReorder(&readers[i], nReaders-i);
+  }
+
+  dataBufferInit(&doclist, LEAF_MAX);
+  dataBufferInit(&merged, LEAF_MAX);
+
+  /* Exhausted readers bubble to the end, so when the first reader is
+  ** at eof, all are at eof.
+  */
+  while( !optLeavesReaderAtEnd(&readers[0]) ){
+
+    /* Figure out how many readers share the next term. */
+    for(i=1; i<nReaders && !optLeavesReaderAtEnd(&readers[i]); i++){
+      if( 0!=optLeavesReaderTermCmp(&readers[0], &readers[i]) ) break;
+    }
+
+    /* Special-case for no merge. */
+    if( i==1 ){
+      /* Trim deletions from the doclist. */
+      dataBufferReset(&merged);
+      docListTrim(DL_DEFAULT,
+                  optLeavesReaderData(&readers[0]),
+                  optLeavesReaderDataBytes(&readers[0]),
+                  -1, DL_DEFAULT, &merged);
+    }else{
+      DLReader dlReaders[MERGE_COUNT];
+      int iReader, nReaders;
+
+      /* Prime the pipeline with the first reader's doclist.  After
+      ** one pass index 0 will reference the accumulated doclist.
+      */
+      dlrInit(&dlReaders[0], DL_DEFAULT,
+              optLeavesReaderData(&readers[0]),
+              optLeavesReaderDataBytes(&readers[0]));
+      iReader = 1;
+
+      assert( iReader<i );  /* Must execute the loop at least once. */
+      while( iReader<i ){
+        /* Merge 16 inputs per pass. */
+        for( nReaders=1; iReader<i && nReaders<MERGE_COUNT;
+             iReader++, nReaders++ ){
+          dlrInit(&dlReaders[nReaders], DL_DEFAULT,
+                  optLeavesReaderData(&readers[iReader]),
+                  optLeavesReaderDataBytes(&readers[iReader]));
+        }
+
+        /* Merge doclists and swap result into accumulator. */
+        dataBufferReset(&merged);
+        docListMerge(&merged, dlReaders, nReaders);
+        tmp = merged;
+        merged = doclist;
+        doclist = tmp;
+
+        while( nReaders-- > 0 ){
+          dlrDestroy(&dlReaders[nReaders]);
+        }
+
+        /* Accumulated doclist to reader 0 for next pass. */
+        dlrInit(&dlReaders[0], DL_DEFAULT, doclist.pData, doclist.nData);
+      }
+
+      /* Destroy reader that was left in the pipeline. */
+      dlrDestroy(&dlReaders[0]);
+
+      /* Trim deletions from the doclist. */
+      dataBufferReset(&merged);
+      docListTrim(DL_DEFAULT, doclist.pData, doclist.nData,
+                  -1, DL_DEFAULT, &merged);
+    }
+
+    /* Only pass doclists with hits (skip if all hits deleted). */
+    if( merged.nData>0 ){
+      rc = leafWriterStep(v, pWriter,
+                          optLeavesReaderTerm(&readers[0]),
+                          optLeavesReaderTermBytes(&readers[0]),
+                          merged.pData, merged.nData);
+      if( rc!=SQLITE_OK ) goto err;
+    }
+
+    /* Step merged readers to next term and reorder. */
+    while( i-- > 0 ){
+      rc = optLeavesReaderStep(v, &readers[i]);
+      if( rc!=SQLITE_OK ) goto err;
+
+      optLeavesReaderReorder(&readers[i], nReaders-i);
+    }
+  }
+
+ err:
+  dataBufferDestroy(&doclist);
+  dataBufferDestroy(&merged);
+  return rc;
+}
+
+/* Implement optimize() function for FTS3.  optimize(t) merges all
+** segments in the fts index into a single segment.  't' is the magic
+** table-named column.
+*/
+static void optimizeFunc(sqlite3_context *pContext,
+                         int argc, sqlite3_value **argv){
+  fulltext_cursor *pCursor;
+  if( argc>1 ){
+    sqlite3_result_error(pContext, "excess arguments to optimize()",-1);
+  }else if( sqlite3_value_type(argv[0])!=SQLITE_BLOB ||
+            sqlite3_value_bytes(argv[0])!=sizeof(pCursor) ){
+    sqlite3_result_error(pContext, "illegal first argument to optimize",-1);
+  }else{
+    fulltext_vtab *v;
+    int i, rc, iMaxLevel;
+    OptLeavesReader *readers;
+    int nReaders;
+    LeafWriter writer;
+    sqlite3_stmt *s;
+
+    memcpy(&pCursor, sqlite3_value_blob(argv[0]), sizeof(pCursor));
+    v = cursor_vtab(pCursor);
+
+    /* Flush any buffered updates before optimizing. */
+    rc = flushPendingTerms(v);
+    if( rc!=SQLITE_OK ) goto err;
+
+    rc = segdir_count(v, &nReaders, &iMaxLevel);
+    if( rc!=SQLITE_OK ) goto err;
+    if( nReaders==0 || nReaders==1 ){
+      sqlite3_result_text(pContext, "Index already optimal", -1,
+                          SQLITE_STATIC);
+      return;
+    }
+
+    rc = sql_get_statement(v, SEGDIR_SELECT_ALL_STMT, &s);
+    if( rc!=SQLITE_OK ) goto err;
+
+    readers = sqlite3_malloc(nReaders*sizeof(readers[0]));
+    if( readers==NULL ) goto err;
+
+    /* Note that there will already be a segment at this position
+    ** until we call segdir_delete() on iMaxLevel.
+    */
+    leafWriterInit(iMaxLevel, 0, &writer);
+
+    i = 0;
+    while( (rc = sqlite3_step(s))==SQLITE_ROW ){
+      sqlite_int64 iStart = sqlite3_column_int64(s, 0);
+      sqlite_int64 iEnd = sqlite3_column_int64(s, 1);
+      const char *pRootData = sqlite3_column_blob(s, 2);
+      int nRootData = sqlite3_column_bytes(s, 2);
+
+      assert( i<nReaders );
+      rc = leavesReaderInit(v, -1, iStart, iEnd, pRootData, nRootData,
+                            &readers[i].reader);
+      if( rc!=SQLITE_OK ) break;
+
+      readers[i].segment = i;
+      i++;
+    }
+
+    /* If we managed to succesfully read them all, optimize them. */
+    if( rc==SQLITE_DONE ){
+      assert( i==nReaders );
+      rc = optimizeInternal(v, readers, nReaders, &writer);
+    }
+
+    while( i-- > 0 ){
+      leavesReaderDestroy(&readers[i].reader);
+    }
+    sqlite3_free(readers);
+
+    /* If we've successfully gotten to here, delete the old segments
+    ** and flush the interior structure of the new segment.
+    */
+    if( rc==SQLITE_OK ){
+      for( i=0; i<=iMaxLevel; i++ ){
+        rc = segdir_delete(v, i);
+        if( rc!=SQLITE_OK ) break;
+      }
+
+      if( rc==SQLITE_OK ) rc = leafWriterFinalize(v, &writer);
+    }
+
+    leafWriterDestroy(&writer);
+
+    if( rc!=SQLITE_OK ) goto err;
+
+    sqlite3_result_text(pContext, "Index optimized", -1, SQLITE_STATIC);
+    return;
+
+    /* TODO(shess): Error-handling needs to be improved along the
+    ** lines of the dump_ functions.
+    */
+ err:
+    {
+      char buf[512];
+      sqlite3_snprintf(sizeof(buf), buf, "Error in optimize: %s",
+                       sqlite3_errmsg(sqlite3_context_db_handle(pContext)));
+      sqlite3_result_error(pContext, buf, -1);
+    }
+  }
+}
+
 #ifdef SQLITE_TEST
 /* Generate an error of the form "<prefix>: <msg>".  If msg is NULL,
 ** pull the error from the context's db handle.
@@ -6703,6 +7024,9 @@ static int fulltextFindFunction(
   }else if( strcmp(zName,"offsets")==0 ){
     *pxFunc = snippetOffsetsFunc;
     return 1;
+  }else if( strcmp(zName,"optimize")==0 ){
+    *pxFunc = optimizeFunc;
+    return 1;
 #ifdef SQLITE_TEST
     /* NOTE(shess): These functions are present only for testing
     ** purposes.  No particular effort is made to optimize their
@@ -6836,6 +7160,7 @@ int sqlite3Fts3Init(sqlite3 *db){
    && SQLITE_OK==(rc = sqlite3Fts3InitHashTable(db, pHash, "fts3_tokenizer"))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "snippet", -1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "offsets", -1))
+   && SQLITE_OK==(rc = sqlite3_overload_function(db, "optimize", -1))
 #ifdef SQLITE_TEST
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "dump_terms", -1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "dump_doclist", -1))
