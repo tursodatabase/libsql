@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.456 2008/07/15 00:27:35 drh Exp $
+** $Id: select.c,v 1.457 2008/07/15 20:56:17 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1138,20 +1138,25 @@ static int prepSelectStmt(Parse*, Select*);
 */
 Table *sqlite3ResultSetOfSelect(Parse *pParse, char *zTabName, Select *pSelect){
   Table *pTab;
-  int i, j;
+  int i, j, rc;
   ExprList *pEList;
   Column *aCol, *pCol;
   sqlite3 *db = pParse->db;
+  int savedFlags;
 
-  if( sqlite3SelectResolve(pParse, pSelect, 0) ){
-    return 0;
+  savedFlags = db->flags;
+  db->flags &= ~SQLITE_FullColNames;
+  db->flags |= SQLITE_ShortColNames;
+  rc = sqlite3SelectResolve(pParse, pSelect, 0);
+  if( rc==SQLITE_OK ){
+    while( pSelect->pPrior ) pSelect = pSelect->pPrior;
+    rc = prepSelectStmt(pParse, pSelect);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3SelectResolve(pParse, pSelect, 0);
+    }
   }
-
-  while( pSelect->pPrior ) pSelect = pSelect->pPrior;
-  if( prepSelectStmt(pParse, pSelect) ){
-    return 0;
-  }
-  if( sqlite3SelectResolve(pParse, pSelect, 0) ){
+  db->flags = savedFlags;
+  if( rc ){
     return 0;
   }
   pTab = sqlite3DbMallocZero(db, sizeof(Table) );
@@ -1362,8 +1367,8 @@ static int prepSelectStmt(Parse *pParse, Select *p){
     struct ExprList_item *a = pEList->a;
     ExprList *pNew = 0;
     int flags = pParse->db->flags;
-    int longNames = (flags & SQLITE_FullColNames)!=0 &&
-                      (flags & SQLITE_ShortColNames)==0;
+    int longNames = (flags & SQLITE_FullColNames)!=0
+                      && (flags & SQLITE_ShortColNames)==0;
 
     for(k=0; k<pEList->nExpr; k++){
       Expr *pE = a[k].pExpr;
@@ -1435,9 +1440,14 @@ static int prepSelectStmt(Parse *pParse, Select *p){
               pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight, 0);
               if( pExpr==0 ) break;
               setQuotedToken(pParse, &pLeft->token, zTabName);
+#if 1
               setToken(&pExpr->span, 
                   sqlite3MPrintf(db, "%s.%s", zTabName, zName));
               pExpr->span.dyn = 1;
+#else
+              pExpr->span = pRight->token;
+              pExpr->span.dyn = 0;
+#endif
               pExpr->token.z = 0;
               pExpr->token.n = 0;
               pExpr->token.dyn = 0;

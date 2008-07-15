@@ -1,5 +1,5 @@
-C Continuing\swork\son\simproved\stest\scoverage.\s(CVS\s5415)
-D 2008-07-15T14:47:19
+C Update\scolumn\snaming\srules.\s\sTicket\s#3221.\s\sRules\sfor\scolumn\snaming\nare\sstill\ssubject\sto\schange\s(except\sfor\sthe\sAS\srule\swhich\swe\spromise\sto\nkeep\sthe\ssame)\sbut\sare\smore\sconsistent\snow.\s\sAnd\sthe\srules\sare\stested\nusing\sa\snew\stest\sscript.\s(CVS\s5416)
+D 2008-07-15T20:56:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/pragma.c 6fad83fbcc7ec6e76d91fe2805fe972ff3af6a0c
 F src/prepare.c c9bb0aacb7a571d049805699ed18f2bb136ea091
 F src/printf.c 2174222bc346a11b1eac2a654ccc4f635355ae7e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c 972bdef5063d1ec2b6375f8bf07e3eec2d5bb1cb
+F src/select.c f3a9d9f4eee19155af0885334f24a1479ae9bda5
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
 F src/sqlite.h.in f85aad3e88f382474407672ad5950c5d4328826d
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -241,6 +241,7 @@ F test/collate8.test 7ed2461305ac959886a064dc1e3cf15e155a183f
 F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
+F test/colname.test fa138771a03d1851e6ec2d10f2a9592c3ea4d5dd
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test af069d971853dbe12af936910bfa49d92f7b16e9
 F test/corrupt2.test e56f45006e7eb3ee680ad3b61c92cc14ae09986e
@@ -607,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7cf91e08c08ce515c24c738c7d079f5b81eebee6
-R bcfadd4ec8973f68be342c4f22b4e260
+P c942a38e9aa80770e7e2819e51b43fa7aa854d71
+R 4b3353fa20b1c242a7f991bd99f44a48
 U drh
-Z 9020cf2172e9c22d2421ab034ffa8201
+Z 6835a5cfc38caa7fcd38147e81944a8f
