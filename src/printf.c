@@ -5,7 +5,7 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
-** $Id: printf.c,v 1.91 2008/07/14 12:52:53 drh Exp $
+** $Id: printf.c,v 1.92 2008/07/15 00:27:35 drh Exp $
 **
 **************************************************************************
 **
@@ -892,7 +892,7 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
   return z;
 }
 
-#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG) || defined(SQLITE_MEMDEBUG)
+#if defined(SQLITE_DEBUG)
 /*
 ** A version of printf() that understands %lld.  Used for debugging.
 ** The printf() built into some versions of windows does not understand %lld

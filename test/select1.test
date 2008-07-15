@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.63 2008/07/10 00:32:42 drh Exp $
+# $Id: select1.test,v 1.64 2008/07/15 00:27:35 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -405,7 +405,7 @@ do_test select1-5.1 {
   lappend v $msg
 } {0 33}
 
-execsql {CREATE TABLE test2(t1 test, t2 text)}
+execsql {CREATE TABLE test2(t1 text, t2 text)}
 execsql {INSERT INTO test2 VALUES('abc','xyz')}
 
 # Check for column naming
@@ -552,6 +552,59 @@ do_test select1-6.9.8 {
   regsub -all {subquery_[0-9a-fA-F]+_} $x {subquery} x
   set x
 } {a.f1 11 a.f2 22 b.x 5 b.y 6}
+do_test select1-6.9.9 {
+  execsql2 {
+     SELECT a.f1, b.f2 FROM test1 a, test1 b LIMIT 1
+  }
+} {test1.f1 11 test1.f2 22}
+do_test select1-6.9.10 {
+  execsql2 {
+     SELECT f1, t1 FROM test1, test2 LIMIT 1
+  }
+} {test1.f1 11 test2.t1 abc}
+do_test select1-6.9.11 {
+  db eval {
+     PRAGMA short_column_names=ON;
+     PRAGMA full_column_names=ON;
+  }
+  execsql2 {
+     SELECT a.f1, b.f2 FROM test1 a, test1 b LIMIT 1
+  }
+} {test1.f1 11 test1.f2 22}
+do_test select1-6.9.12 {
+  execsql2 {
+     SELECT f1, t1 FROM test1, test2 LIMIT 1
+  }
+} {test1.f1 11 test2.t1 abc}
+do_test select1-6.9.13 {
+  db eval {
+     PRAGMA short_column_names=ON;
+     PRAGMA full_column_names=OFF;
+  }
+  execsql2 {
+     SELECT a.f1, b.f1 FROM test1 a, test1 b LIMIT 1
+  }
+} {f1 11 f1 11}
+do_test select1-6.9.14 {
+  execsql2 {
+     SELECT f1, t1 FROM test1, test2 LIMIT 1
+  }
+} {f1 11 t1 abc}
+do_test select1-6.9.15 {
+  db eval {
+     PRAGMA short_column_names=OFF;
+     PRAGMA full_column_names=ON;
+  }
+  execsql2 {
+     SELECT a.f1, b.f1 FROM test1 a, test1 b LIMIT 1
+  }
+} {test1.f1 11 test1.f1 11}
+do_test select1-6.9.16 {
+  execsql2 {
+     SELECT f1, t1 FROM test1, test2 LIMIT 1
+  }
+} {test1.f1 11 test2.t1 abc}
+
 
 db eval {
   PRAGMA short_column_names=ON;

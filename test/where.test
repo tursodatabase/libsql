@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.45 2008/07/12 14:52:21 drh Exp $
+# $Id: where.test,v 1.46 2008/07/15 00:27:35 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -344,6 +344,11 @@ do_test where-4.6 {
     SELECT 99 WHERE 0.0
   }
 } {}
+do_test where-4.7 {
+  execsql {
+    SELECT count(*) FROM t1 WHERE t1.w
+  }
+} {100}
 
 # Verify that IN operators in a WHERE clause are handled correctly.
 # Omit these tests if the build is not capable of sub-queries.

@@ -17,7 +17,7 @@
 # explicit sort order and explicit collating secquites) and
 # with and without optional LIMIT and OFFSET clauses.
 #
-# $Id: selectA.test,v 1.3 2008/06/25 14:31:53 drh Exp $
+# $Id: selectA.test,v 1.4 2008/07/15 00:27:35 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -630,6 +630,26 @@ do_test selectA-2.92 {
     ORDER BY y COLLATE NOCASE DESC,x,z
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
+do_test selectA-2.93 {
+  execsql {
+    SELECT upper((SELECT c FROM t1 UNION SELECT z FROM t2 ORDER BY 1));
+  }
+} {A}
+do_test selectA-2.94 {
+  execsql {
+    SELECT lower((SELECT c FROM t1 UNION ALL SELECT z FROM t2 ORDER BY 1));
+  }
+} {a}
+do_test selectA-2.95 {
+  execsql {
+    SELECT lower((SELECT c FROM t1 INTERSECT SELECT z FROM t2 ORDER BY 1));
+  }
+} {{}}
+do_test selectA-2.96 {
+  execsql {
+    SELECT lower((SELECT z FROM t2 EXCEPT SELECT c FROM t1 ORDER BY 1));
+  }
+} {m}
 
 
 do_test selectA-3.0 {
@@ -1216,6 +1236,38 @@ do_test selectA-3.92 {
     ORDER BY y COLLATE NOCASE DESC,x,z
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
-
+do_test selectA-3.93 {
+  execsql {
+    SELECT upper((SELECT c FROM t1 UNION SELECT z FROM t2 ORDER BY 1));
+  }
+} {A}
+do_test selectA-3.94 {
+  execsql {
+    SELECT lower((SELECT c FROM t1 UNION ALL SELECT z FROM t2 ORDER BY 1));
+  }
+} {a}
+do_test selectA-3.95 {
+  execsql {
+    SELECT lower((SELECT c FROM t1 INTERSECT SELECT z FROM t2 ORDER BY 1));
+  }
+} {{}}
+do_test selectA-3.96 {
+  execsql {
+    SELECT lower((SELECT z FROM t2 EXCEPT SELECT c FROM t1 ORDER BY 1));
+  }
+} {m}
+do_test selectA-3.97 {
+  execsql {
+    SELECT upper((SELECT x FROM (
+      SELECT x,y,z FROM t2
+      INTERSECT SELECT a,b,c FROM t3
+      EXCEPT SELECT c,b,a FROM t1
+      UNION SELECT a,b,c FROM t3
+      INTERSECT SELECT a,b,c FROM t3
+      EXCEPT SELECT c,b,a FROM t1
+      UNION SELECT a,b,c FROM t3
+      ORDER BY y COLLATE NOCASE DESC,x,z)))
+  }
+} {MAD}
 
 finish_test

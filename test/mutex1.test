@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: mutex1.test,v 1.9 2008/07/12 15:55:55 danielk1977 Exp $
+# $Id: mutex1.test,v 1.10 2008/07/15 00:27:35 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -138,16 +138,18 @@ sqlite3_enable_shared_cache $enable_shared_cache
 
 # Open and use a connection in "nomutex" mode. Test that no recursive
 # mutexes are obtained.
-do_test mutex1.3.1 {
-  catch {db close}
-  clear_mutex_counters
-  sqlite3 db test.db -nomutex 1
-  execsql { SELECT * FROM abc }
-} {1 2 3 1 2 3 1 2 3}
-do_test mutex1.3.2 {
-  mutex_counters counters
-  set counters(recursive)
-} {0}
+ifcapable threadsafe {
+  do_test mutex1.3.1 {
+    catch {db close}
+    clear_mutex_counters
+    sqlite3 db test.db -nomutex 1
+    execsql { SELECT * FROM abc }
+  } {1 2 3 1 2 3 1 2 3}
+  do_test mutex1.3.2 {
+    mutex_counters counters
+    set counters(recursive)
+  } {0}
+}
 
 do_test mutex1-X {
   catch {db close}

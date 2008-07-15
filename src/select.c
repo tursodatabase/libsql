@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.455 2008/07/11 21:02:54 drh Exp $
+** $Id: select.c,v 1.456 2008/07/15 00:27:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2281,6 +2281,7 @@ static int generateOutputSubroutine(
       break;
     }
 
+#if 0  /* Never occurs on an ORDER BY query */
     /* If any row exist in the result set, record that fact and abort.
     */
     case SRT_Exists: {
@@ -2288,6 +2289,7 @@ static int generateOutputSubroutine(
       /* The LIMIT clause will terminate the loop for us */
       break;
     }
+#endif
 
     /* If this is a scalar select that is part of an expression, then
     ** store the results in the appropriate memory cell and break out
