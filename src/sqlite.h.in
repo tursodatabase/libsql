@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.371 2008/07/14 18:38:17 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.372 2008/07/16 13:29:51 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -964,6 +964,10 @@ int sqlite3_os_end(void);
 ** When a configuration option is set, sqlite3_config() returns SQLITE_OK.
 ** If the option is unknown or SQLite is unable to set the option
 ** then this routine returns a non-zero [error code].
+**
+** The sqlite3_config() interface is considered experimental in that
+** new configuration options may be added in future releases and existing
+** configuration options may be discontinued or modified.
 */
 int sqlite3_config(int, ...);
 
@@ -1026,6 +1030,13 @@ struct sqlite3_mem_methods {
 **
 ** These constants are the available integer configuration options that
 ** can be passed as the first argument to the [sqlite3_config()] interface.
+**
+** New configuration options may be added in future releases of SQLite.
+** Existing configuration options might be discontinued.  Applications
+** should check the return code from [sqlite3_config()] to make sure that
+** the call worked.  The [sqlite3_config()] interface will return a
+** non-zero [error code] if a discontinued or unsupported configuration option
+** is invoked.
 **
 ** <dl>
 ** <dt>SQLITE_CONFIG_SINGLETHREAD</dt>
@@ -2528,8 +2539,7 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** created by an untrusted script can be contained using the
 ** [max_page_count] [PRAGMA].
 **
-** This interface is currently considered experimental and is subject
-** to change or removal without prior notice.
+** New run-time limit categories may be added in future releases.
 **
 ** INVARIANTS:
 **
@@ -4748,8 +4758,6 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 ** rolled back because a commit callback returned non-zero.
 ** <todo> Check on this </todo>
 **
-** These are experimental interfaces and are subject to change.
-**
 ** INVARIANTS:
 **
 ** {F12951} The [sqlite3_commit_hook(D,F,P)] interface registers the
@@ -5117,9 +5125,6 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff);
 ** on your program and it reports a leak because of this array, invoke
 ** [sqlite3_reset_auto_extension()] prior to shutdown to free the memory.
 **
-** This interface is experimental and is subject to change or
-** removal in future releases of SQLite.
-**
 ** {F12641} This function registers an extension entry point that is
 **          automatically invoked whenever a new [database connection]
 **          is opened using [sqlite3_open()], [sqlite3_open16()],
@@ -5141,9 +5146,6 @@ int sqlite3_auto_extension(void *xEntryPoint);
 ** This function disables all previously registered automatic
 ** extensions. {END}  It undoes the effect of all prior
 ** [sqlite3_auto_extension()] calls.
-**
-** This interface is experimental and is subject to change or
-** removal in future releases of SQLite.
 **
 ** {F12661} This function disables all previously registered
 **          automatic extensions.

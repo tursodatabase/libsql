@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sHOMEGROWN_RECURSIVE_MUTEX\simplementation\sfor\sunix.\nTicket\s#3224.\s(CVS\s5420)
-D 2008-07-16T12:33:24
+C Update\sthe\s"experimental"\smarkings\son\sC/C++\sinterfaces.\s(CVS\s5421)
+D 2008-07-16T13:29:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/printf.c 2174222bc346a11b1eac2a654ccc4f635355ae7e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c f3a9d9f4eee19155af0885334f24a1479ae9bda5
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
-F src/sqlite.h.in f85aad3e88f382474407672ad5950c5d4328826d
+F src/sqlite.h.in d08ef5ae1089d248120afcfd56ab799cddae8fe9
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h aebce6d82210334fe00e6d5fa4bb6768cf02f184
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a3a7820540f6f2285e6c83cac84383fc7d60d267
-R f6e03f3f39ec884efd4e9cf222071f50
+P 9af2514c83782b4745bf48a4f82ff83111fa5535
+R 9eb9129e182956818742831e4ba083f6
 U drh
-Z 082673bb41183b6ea93d0e820052f363
+Z 42cb41bbcbebc740b4719292829808aa
