@@ -1,5 +1,5 @@
-C Activate\stesting\sof\smem3\sand\smem5.\s\sFix\sproblems\sfound.\s\sTickets\s#3223\nand\s#3225.\s\sOther\stest\sconfiguration\schanges.\s(CVS\s5419)
-D 2008-07-16T12:25:32
+C Fix\sa\sbug\sin\sthe\sHOMEGROWN_RECURSIVE_MUTEX\simplementation\sfor\sunix.\nTicket\s#3224.\s(CVS\s5420)
+D 2008-07-16T12:33:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -126,7 +126,7 @@ F src/mem5.c 0b0ba1c2a02d86eb812dea6debacee841e3856f7
 F src/mutex.c a485a0eac8ee2cd95f66e565b4c6696c18db968f
 F src/mutex.h e52ffa1dfc6a6077e8b1823d2c2b7dfcbcf85594
 F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
-F src/mutex_unix.c c1526811f4b97a7cd9d4d72d2b9623d06abd05ce
+F src/mutex_unix.c 29049a61755cccddb2ee53904e6906bb7674223c
 F src/mutex_w32.c f0d21ff1f6981e5aedc56796adf3a347423ef736
 F src/os.c 292b3b4a49fe5bf6cf2f1cf0af186ebd334e80b8
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 80e42183066b53129778ae8cbb16e495f7a82990
-R 5ad98becb2e4ee07779bd7da0702c9a6
+P a3a7820540f6f2285e6c83cac84383fc7d60d267
+R f6e03f3f39ec884efd4e9cf222071f50
 U drh
-Z 73b8f4458cbcc2ee80ce777175a24a15
+Z 082673bb41183b6ea93d0e820052f363

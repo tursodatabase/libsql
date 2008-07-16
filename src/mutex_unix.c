@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for pthreads
 **
-** $Id: mutex_unix.c,v 1.12 2008/06/19 16:07:07 drh Exp $
+** $Id: mutex_unix.c,v 1.13 2008/07/16 12:33:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -249,7 +249,7 @@ static int pthreadMutexTry(sqlite3_mutex *p){
     if( p->nRef>0 && pthread_equal(p->owner, self) ){
       p->nRef++;
       rc = SQLITE_OK;
-    }else if( pthread_mutex_lock(&p->mutex)==0 ){
+    }else if( pthread_mutex_trylock(&p->mutex)==0 ){
       assert( p->nRef==0 );
       p->owner = self;
       p->nRef = 1;
