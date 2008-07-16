@@ -1,5 +1,5 @@
-C More\simprovements\sto\sthe\s64-bit\sinteger\sconversion\stesting\sin\sfunc.test.\s(CVS\s5427)
-D 2008-07-16T18:20:09
+C Make\ssure\sthe\sauxiliary\sdatabase\sconnection\sis\sclosed\safter\severy\stest.\s(CVS\s5428)
+D 2008-07-16T18:35:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -348,7 +348,7 @@ F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
 F test/incrblob2.test c82a780356bdf4d0c77f1adf0ea888248904fc07
-F test/incrblob_err.test 50eff975fd19ea7d0f376a4488a17315ec0703fd
+F test/incrblob_err.test 944e5366c6899258bdec2ce964e9524e79b503c5
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
 F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1d01c02ab04f9cc0eb6a2a46a24d3ea63a617d5b
-R 143baab438dc0c5c5c622f52a602baf4
+P 632bb3c73443606bd2c7a5eadf0f4b8971a2b41e
+R 3ff30330b52183dbda7935a7c7b49559
 U drh
-Z f850235916953b41492867403a579451
+Z e2c020bbf55175cfd1051117aa9dd76e

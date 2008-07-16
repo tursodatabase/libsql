@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob_err.test,v 1.12 2008/07/08 17:43:57 danielk1977 Exp $
+# $Id: incrblob_err.test,v 1.13 2008/07/16 18:35:46 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -115,6 +115,7 @@ do_ioerr_test incrblob_err-7 -cksum 1 -sqlprep {
   sqlite3_blob_read $::blob [expr 500*1020-20] 20
   close $::blob
 }
+catch {db2 close}
 
 do_ioerr_test incrblob_err-8 -cksum 1 -sqlprep {
   PRAGMA auto_vacuum = 1;
