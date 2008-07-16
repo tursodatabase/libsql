@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.83 2008/07/16 18:04:37 drh Exp $
+# $Id: func.test,v 1.84 2008/07/16 18:20:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -298,17 +298,22 @@ do_test func-8.5 {
 } {0}
 do_test func-8.6 {
   execsql {
+    SELECT typeof(sum(x)) FROM (SELECT '9223372036' || '854775807' AS x
+                        UNION ALL SELECT -9223372036854775807)
+  }
+} {integer}
+do_test func-8.7 {
+  execsql {
     SELECT typeof(sum(x)) FROM (SELECT '9223372036' || '854775808' AS x
                         UNION ALL SELECT -9223372036854775807)
   }
 } {real}
-do_test func-8.7 {
+do_test func-8.8 {
   execsql {
-    SELECT round(sum(x)/16384.0)
-      FROM (SELECT '9223372036' || '854775808' AS x
+    SELECT sum(x)>0.0 FROM (SELECT '9223372036' || '854775808' AS x
                         UNION ALL SELECT -9223372036850000000)
   }
-} {291.0}
+} {1}
 
 # How do you test the random() function in a meaningful, deterministic way?
 #

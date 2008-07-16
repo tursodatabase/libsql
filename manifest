@@ -1,5 +1,5 @@
-C Eliminate\ssome\sunnecessary\sIO\sduring\sa\scommit\sin\sfull\sauto-vacuum\smode.\s(CVS\s5426)
-D 2008-07-16T18:17:56
+C More\simprovements\sto\sthe\s64-bit\sinteger\sconversion\stesting\sin\sfunc.test.\s(CVS\s5427)
+D 2008-07-16T18:20:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -336,7 +336,7 @@ F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3c.test 4c7ef29b37aca3e8ebb6a39b57910caa6506034e
 F test/fts3d.test d92a47fe8ed59c9e53d2d8e6d2685bb380aadadc
 F test/fts3near.test 2d4dadcaac5025ab65bb87e66c45f39e92966194
-F test/func.test 070ae66e38dfe159a78aeceda4ceb9d84c79b4fb
+F test/func.test 20973677b5be7e9f199854779dae85053cc6438d
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8686959d4289dc0bf9e1c353b948f26cca5a9a65
-R b11ed1a66c5f2d78327ee14b0dec1dcc
-U danielk1977
-Z b90aebe08a66c9ca365a4e0a71d2b848
+P 1d01c02ab04f9cc0eb6a2a46a24d3ea63a617d5b
+R 143baab438dc0c5c5c622f52a602baf4
+U drh
+Z f850235916953b41492867403a579451
