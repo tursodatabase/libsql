@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.477 2008/07/15 14:47:19 drh Exp $
+** $Id: main.c,v 1.478 2008/07/16 12:25:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -243,10 +243,10 @@ int sqlite3_config(int op, ...){
         ** the default case and return an error.
         */
 #ifdef SQLITE_ENABLE_MEMSYS3
-        sqlite3Config.m = sqlite3MemGetMemsys3();
+        sqlite3Config.m = *sqlite3MemGetMemsys3();
 #endif
 #ifdef SQLITE_ENABLE_MEMSYS5
-        sqlite3Config.m = sqlite3MemGetMemsys5();
+        sqlite3Config.m = *sqlite3MemGetMemsys5();
 #endif
       }
       break;

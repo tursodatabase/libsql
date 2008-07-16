@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.37 2008/07/11 16:15:18 drh Exp $
+** $Id: test_malloc.c,v 1.38 2008/07/16 12:25:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -967,7 +967,8 @@ static int test_config_heap(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  static char zBuf[1048576];
+  static char *zBuf; /* Use this memory */
+  static int szBuf;  /* Bytes allocated for zBuf */
   int nByte;         /* Size of buffer to pass to sqlite3_config() */
   int nMinAlloc;     /* Size of minimum allocation */
   int rc;            /* Return code of sqlite3_config() */
@@ -983,11 +984,13 @@ static int test_config_heap(
   if( Tcl_GetIntFromObj(interp, aArg[1], &nMinAlloc) ) return TCL_ERROR;
 
   if( nByte==0 ){
+    free( zBuf );
+    zBuf = 0;
+    szBuf = 0;
     rc = sqlite3_config(SQLITE_CONFIG_HEAP, (void*)0, 0, 0);
   }else{
-    if( nByte>sizeof(zBuf) ){
-      nByte = sizeof(zBuf);
-    }
+    zBuf = realloc(zBuf, nByte);
+    szBuf = nByte;
     rc = sqlite3_config(SQLITE_CONFIG_HEAP, zBuf, nByte, nMinAlloc);
   }
 

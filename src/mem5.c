@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS5 is defined.
 **
-** $Id: mem5.c,v 1.10 2008/06/27 14:05:25 danielk1977 Exp $
+** $Id: mem5.c,v 1.11 2008/07/16 12:25:32 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -46,7 +46,7 @@
 ** Log2 of the maximum size of an allocation.
 */
 #ifndef SQLITE_POW2_LOGMAX
-# define SQLITE_POW2_LOGMAX 18
+# define SQLITE_POW2_LOGMAX 20
 #endif
 #define POW2_MAX (((unsigned int)1)<<SQLITE_POW2_LOGMAX)
 

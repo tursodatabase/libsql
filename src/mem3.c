@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS3 is defined.
 **
-** $Id: mem3.c,v 1.18 2008/06/27 14:05:25 danielk1977 Exp $
+** $Id: mem3.c,v 1.19 2008/07/16 12:25:32 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -498,8 +498,9 @@ void memsys3Free(void *pPrior){
 ** works for chunks that are currently checked out.
 */
 static int memsys3Size(void *p){
-  Mem3Block *pBlock = (Mem3Block*)p;
-  assert( pBlock );
+  Mem3Block *pBlock;
+  if( p==0 ) return 0;
+  pBlock = (Mem3Block*)p;
   assert( (pBlock[-1].u.hdr.size4x&1)!=0 );
   return (pBlock[-1].u.hdr.size4x&~3)*2 - 4;
 }

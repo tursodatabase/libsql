@@ -14,7 +14,7 @@
 # segfault if it sees a corrupt database file.  It specifically focuses
 # on corruption in the form of duplicate entries no the freelist.
 #
-# $Id: corrupt9.test,v 1.1 2008/07/11 03:34:10 drh Exp $
+# $Id: corrupt9.test,v 1.2 2008/07/16 12:25:32 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -54,6 +54,7 @@ proc corrupt_freelist {filename N} {
 #
 do_test corrupt9-1.1 {
   execsql {
+    PRAGMA auto_vacuum=NONE;
     PRAGMA page_size=1024;
     CREATE TABLE t1(x);
     INSERT INTO t1(x) VALUES(1);

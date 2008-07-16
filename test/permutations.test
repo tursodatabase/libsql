@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.12 2008/07/14 19:39:17 drh Exp $
+# $Id: permutations.test,v 1.13 2008/07/16 12:25:32 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -361,7 +361,7 @@ ifcapable mem3 {
     catch {db close}
     sqlite3_reset_auto_extension
     sqlite3_shutdown
-    sqlite3_config_heap 1000000 0
+    sqlite3_config_heap 25000000 0
     install_malloc_faultsim 1 
     sqlite3_initialize
     autoinstall_test_functions
@@ -389,7 +389,7 @@ ifcapable mem5 {
     catch {db close}
     sqlite3_reset_auto_extension
     sqlite3_shutdown
-    sqlite3_config_heap 1000000 64
+    sqlite3_config_heap 25000000 64
     install_malloc_faultsim 1 
     sqlite3_initialize
     autoinstall_test_functions
@@ -410,7 +410,7 @@ ifcapable mem5 {
     catch {db close}
     sqlite3_reset_auto_extension
     sqlite3_shutdown
-    sqlite3_config_heap 250000 16
+    sqlite3_config_heap 40000000 16
     install_malloc_faultsim 1 
     sqlite3_initialize
     autoinstall_test_functions
