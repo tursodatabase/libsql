@@ -12,7 +12,7 @@
 ** This file contains code for implementations of the r-tree and r*-tree
 ** algorithms packaged as an SQLite virtual table module.
 **
-** $Id: rtree.c,v 1.6 2008/07/14 15:37:01 danielk1977 Exp $
+** $Id: rtree.c,v 1.7 2008/07/16 14:43:35 drh Exp $
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
@@ -66,9 +66,11 @@
 #include <string.h>
 #include <assert.h>
 
+#ifndef SQLITE_AMALGAMATION
 typedef sqlite3_int64 i64;
 typedef unsigned char u8;
 typedef unsigned int u32;
+#endif
 
 typedef struct Rtree Rtree;
 typedef struct RtreeCursor RtreeCursor;

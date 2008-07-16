@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\serror\sreporting\sof\ssqlite3_table_column_metadata().\s(CVS\s5422)
-D 2008-07-16T14:02:33
+C Allow\sthe\sr-tree\sextension\sto\sbe\scompiled\sas\spart\sof\sthe\samalgamation.\s(CVS\s5424)
+D 2008-07-16T14:43:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -64,7 +64,7 @@ F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c f00cabbe00326c9138155c497b1d9b5621ac5089
+F ext/rtree/rtree.c d60b28f466cdf4267b237160d75f44365412f3c6
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 620223886bf1a319317e63235aac20790375c544
 F ext/rtree/rtree2.test 9ac9d28fa948779df66916c67a5dcf9704c3cb74
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 96e95aa5e6c237bb9330900c2e1ac446158eca46
-R a3428b4a9a082bda0809452f0fe743db
+P 7eba18c3a5c91be2ca2b6cf9e4e04a2791e1f7b2
+R 5c550f7e6607b94cb19c3002126beb0b
 U drh
-Z b7c6fbe15a46c85549ae8c362cfda56c
+Z d2d580a158a4e5fe69a5f708cfcc7232
