@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.482 2008/07/12 14:52:20 drh Exp $
+** $Id: btree.c,v 1.483 2008/07/16 18:17:56 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2112,7 +2112,8 @@ static int relocatePage(
   MemPage *pDbPage,        /* Open page to move */
   u8 eType,                /* Pointer map 'type' entry for pDbPage */
   Pgno iPtrPage,           /* Pointer map 'page-no' entry for pDbPage */
-  Pgno iFreePage           /* The location to move pDbPage to */
+  Pgno iFreePage,          /* The location to move pDbPage to */
+  int isCommit
 ){
   MemPage *pPtrPage;   /* The page that contains a pointer to pDbPage */
   Pgno iDbPage = pDbPage->pgno;
@@ -2127,7 +2128,7 @@ static int relocatePage(
   /* Move page iDbPage from its current location to page number iFreePage */
   TRACE(("AUTOVACUUM: Moving %d to free page %d (ptr page %d type %d)\n", 
       iDbPage, iFreePage, iPtrPage, eType));
-  rc = sqlite3PagerMovepage(pPager, pDbPage->pDbPage, iFreePage);
+  rc = sqlite3PagerMovepage(pPager, pDbPage->pDbPage, iFreePage, isCommit);
   if( rc!=SQLITE_OK ){
     return rc;
   }
@@ -2277,7 +2278,7 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin){
       
       rc = sqlite3PagerWrite(pLastPg->pDbPage);
       if( rc==SQLITE_OK ){
-        rc = relocatePage(pBt, pLastPg, eType, iPtrPage, iFreePg);
+        rc = relocatePage(pBt, pLastPg, eType, iPtrPage, iFreePg, nFin!=0);
       }
       releasePage(pLastPg);
       if( rc!=SQLITE_OK ){
@@ -6030,7 +6031,7 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags){
         releasePage(pRoot);
         return rc;
       }
-      rc = relocatePage(pBt, pRoot, eType, iPtrPage, pgnoMove);
+      rc = relocatePage(pBt, pRoot, eType, iPtrPage, pgnoMove, 0);
       releasePage(pRoot);
 
       /* Obtain the page at pgnoRoot */
@@ -6238,7 +6239,7 @@ static int btreeDropTable(Btree *p, int iTable, int *piMoved){
         if( rc!=SQLITE_OK ){
           return rc;
         }
-        rc = relocatePage(pBt, pMove, PTRMAP_ROOTPAGE, 0, iTable);
+        rc = relocatePage(pBt, pMove, PTRMAP_ROOTPAGE, 0, iTable, 0);
         releasePage(pMove);
         if( rc!=SQLITE_OK ){
           return rc;

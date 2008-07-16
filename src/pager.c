@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.465 2008/07/11 03:34:10 drh Exp $
+** @(#) $Id: pager.c,v 1.466 2008/07/16 18:17:56 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -5184,8 +5184,13 @@ void sqlite3PagerSetCodec(
 ** required that a statement transaction was not active, but this restriction
 ** has been removed (CREATE INDEX needs to move a page when a statement
 ** transaction is active).
+**
+** If the fourth argument, isCommit, is non-zero, then this page is being
+** moved as part of a database reorganization just before the transaction 
+** is being committed. In this case, it is guaranteed that the database page 
+** pPg refers to will not be written to again within this transaction.
 */
-int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
+int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   PgHdr *pPgOld;  /* The page being overwritten. */
   int h;
   Pgno needSyncPgno = 0;
@@ -5198,7 +5203,15 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
   IOTRACE(("MOVE %p %d %d\n", pPager, pPg->pgno, pgno))
 
   pager_get_content(pPg);
-  if( pPg->needSync ){
+
+  /* If the journal needs to be sync()ed before page pPg->pgno can
+  ** be written to, store pPg->pgno in local variable needSyncPgno.
+  **
+  ** If the isCommit flag is set, there is no need to remember that
+  ** the journal needs to be sync()ed before database page pPg->pgno 
+  ** can be written to. The caller has already promised not to write to it.
+  */
+  if( pPg->needSync && !isCommit ){
     needSyncPgno = pPg->pgno;
     assert( pPg->inJournal || (int)pgno>pPager->origDbSize );
     assert( pPg->dirty );
@@ -5245,8 +5258,9 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno){
     /* If needSyncPgno is non-zero, then the journal file needs to be 
     ** sync()ed before any data is written to database file page needSyncPgno.
     ** Currently, no such page exists in the page-cache and the 
-    ** Pager.pInJournal bit has been set. This needs to be remedied by loading
-    ** the page into the pager-cache and setting the PgHdr.needSync flag.
+    ** "is journaled" bitvec flag has been set. This needs to be remedied by
+    ** loading the page into the pager-cache and setting the PgHdr.needSync 
+    ** flag.
     **
     ** If the attempt to load the page into the page-cache fails, (due
     ** to a malloc() or IO failure), clear the bit in the pInJournal[]

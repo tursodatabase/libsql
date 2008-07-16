@@ -1,5 +1,5 @@
-C Fix\sa\stest\sin\sfunc.test\sso\sthat\sit\sworks\son\smachines\sthat\slack\slong\sdouble.\s(CVS\s5425)
-D 2008-07-16T18:04:37
+C Eliminate\ssome\sunnecessary\sIO\sduring\sa\scommit\sin\sfull\sauto-vacuum\smode.\s(CVS\s5426)
+D 2008-07-16T18:17:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c cda41ffc78e53cd29e53eab47d174d3e6afd680d
+F src/btree.c 5dcc47a35d12bc8584d7c89ed113d24fb9fbc2ca
 F src/btree.h 03256ed7ee42b5ecacbe887070b0f8249e7d069d
 F src/btreeInt.h a6a5ffab12fa2c15392b85242cd5568371949046
 F src/build.c bac7233d984be3805aaa41cf500f7ee12dc97249
@@ -134,8 +134,8 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c b16aee2f727842f758140641835a46caad322f5d
 F src/os_unix.c 1df6108efdb7957a9f28b9700600e58647c9c12d
 F src/os_win.c 2bf2f8cd700299564cc236262c2668e1e02c626a
-F src/pager.c bb286b2fc0c7c87d0a8cbfee96a3e953da1e53dd
-F src/pager.h 6aa3050a3c684475a5a9dbad5ff1cebad612acba
+F src/pager.c e65d78bdbd316c3ca0135d2a98ecc607873145aa
+F src/pager.h 588c1ac195228b2da45c4e5f7ab6c2fd253d1751
 F src/parse.y 097bff733e89fbf554a07d9327046718ce364011
 F src/pragma.c 6fad83fbcc7ec6e76d91fe2805fe972ff3af6a0c
 F src/prepare.c c9bb0aacb7a571d049805699ed18f2bb136ea091
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1841aee6045b00cf4ab7b8485f5ab537d5fcd272
-R 8f639165d0cabfcde66742c2739c4326
-U drh
-Z f1ce4c404d5037a5b2007a246716de72
+P 8686959d4289dc0bf9e1c353b948f26cca5a9a65
+R b11ed1a66c5f2d78327ee14b0dec1dcc
+U danielk1977
+Z b90aebe08a66c9ca365a4e0a71d2b848
