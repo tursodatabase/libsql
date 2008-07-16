@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sauxiliary\sdatabase\sconnection\sis\sclosed\safter\severy\stest.\s(CVS\s5428)
-D 2008-07-16T18:35:46
+C Get\srid\sof\sthe\sdebug\soutput,\sand\smake\spre-C99\scompilers\shappy\swith\ssqlite3_os_init()\son\sOS/2.\s(CVS\s5429)
+D 2008-07-16T19:30:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/mutex_w32.c f0d21ff1f6981e5aedc56796adf3a347423ef736
 F src/os.c 292b3b4a49fe5bf6cf2f1cf0af186ebd334e80b8
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
-F src/os_os2.c b16aee2f727842f758140641835a46caad322f5d
+F src/os_os2.c 5f81fda19c86b39723caa8f5d0c6b01d693385bf
 F src/os_unix.c 1df6108efdb7957a9f28b9700600e58647c9c12d
 F src/os_win.c 2bf2f8cd700299564cc236262c2668e1e02c626a
 F src/pager.c e65d78bdbd316c3ca0135d2a98ecc607873145aa
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 632bb3c73443606bd2c7a5eadf0f4b8971a2b41e
-R 3ff30330b52183dbda7935a7c7b49559
-U drh
-Z e2c020bbf55175cfd1051117aa9dd76e
+P e60bb6a179c6e674db2b9362e2ccdefaa3bc17f4
+R a31140b737af6c0a9d7edc118fd6fbec
+U pweilbacher
+Z 588ce637dab590e74bf4372c2ed59ca2

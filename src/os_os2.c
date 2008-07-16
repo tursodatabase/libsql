@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.50 2008/07/15 22:59:05 pweilbacher Exp $
+** $Id: os_os2.c,v 1.51 2008/07/16 19:30:37 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -558,7 +558,6 @@ static UconvObject uclCp = NULL;  /* convert between local codepage and UCS-2 */
 ** Helper function to initialize the conversion objects from and to UTF-8.
 */
 static void initUconvObjects( void ){
-	printf("init them\n");
   if( UniCreateUconvObject( UTF_8, &ucUtf8 ) != ULS_SUCCESS )
     ucUtf8 = NULL;
   if ( UniCreateUconvObject( (UniChar *)L"@path=yes", &uclCp ) != ULS_SUCCESS )
@@ -569,7 +568,6 @@ static void initUconvObjects( void ){
 ** Helper function to free the conversion objects from and to UTF-8.
 */
 static void freeUconvObjects( void ){
-	printf("free them\n");
   if ( ucUtf8 )
     UniFreeUconvObject( ucUtf8 );
   if ( uclCp )
@@ -587,7 +585,6 @@ static void freeUconvObjects( void ){
 static char *convertUtf8PathToCp( const char *in ){
   UniChar tempPath[CCHMAXPATH];
   char *out = (char *)calloc( CCHMAXPATH, 1 );
-printf("convertUtf8PathToCp(%s)\n", in);
 
   if( !out )
     return NULL;
@@ -602,7 +599,6 @@ printf("convertUtf8PathToCp(%s)\n", in);
   /* conversion for current codepage which can be used for paths */
   UniStrFromUcs( uclCp, out, tempPath, CCHMAXPATH );
 
-	printf("%s -> Cp = %s\n", in, out);
   return out;
 }
 
@@ -618,7 +614,6 @@ printf("convertUtf8PathToCp(%s)\n", in);
 char *convertCpPathToUtf8( const char *in ){
   UniChar tempPath[CCHMAXPATH];
   char *out = (char *)calloc( CCHMAXPATH, 1 );
-printf("convertCpPathToUtf8(%s)\n", in);
 
   if( !out )
     return NULL;
@@ -633,7 +628,6 @@ printf("convertCpPathToUtf8(%s)\n", in);
   /* determine string for the conversion of UTF-8 which is CP1208 */
   UniStrFromUcs( ucUtf8, out, tempPath, CCHMAXPATH );
 
-	printf("%s -> Utf8 = %s\n", in, out);
   return out;
 }
 
@@ -1089,8 +1083,6 @@ static int os2GetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 ** Initialize and deinitialize the operating system interface.
 */
 int sqlite3_os_init(void){
-  initUconvObjects();
-
   static sqlite3_vfs os2Vfs = {
     1,                 /* iVersion */
     sizeof(os2File),   /* szOsFile */
@@ -1113,6 +1105,7 @@ int sqlite3_os_init(void){
     os2GetLastError    /* xGetLastError */
   };
   sqlite3_vfs_register(&os2Vfs, 1);
+  initUconvObjects();
   return SQLITE_OK;
 }
 int sqlite3_os_end(void){
