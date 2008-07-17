@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.483 2008/07/16 18:17:56 danielk1977 Exp $
+** $Id: btree.c,v 1.484 2008/07/17 18:39:58 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -871,27 +871,38 @@ static void freeSpace(MemPage *pPage, int start, int size){
 /*
 ** Decode the flags byte (the first byte of the header) for a page
 ** and initialize fields of the MemPage structure accordingly.
+**
+** Only the following combinations are supported.  Anything different
+** indicates a corrupt database files:
+**
+**         PTF_ZERODATA
+**         PTF_ZERODATA | PTF_LEAF
+**         PTF_LEAFDATA | PTF_INTKEY
+**         PTF_LEAFDATA | PTF_INTKEY | PTF_LEAF
 */
-static void decodeFlags(MemPage *pPage, int flagByte){
+static int decodeFlags(MemPage *pPage, int flagByte){
   BtShared *pBt;     /* A copy of pPage->pBt */
 
   assert( pPage->hdrOffset==(pPage->pgno==1 ? 100 : 0) );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  pPage->intKey = (flagByte & (PTF_INTKEY|PTF_LEAFDATA))!=0;
-  pPage->zeroData = (flagByte & PTF_ZERODATA)!=0;
-  pPage->leaf = (flagByte & PTF_LEAF)!=0;
-  pPage->childPtrSize = 4*(pPage->leaf==0);
+  pPage->leaf = flagByte>>3;  assert( PTF_LEAF == 1<<3 );
+  flagByte &= ~PTF_LEAF;
+  pPage->childPtrSize = 4-4*pPage->leaf;
   pBt = pPage->pBt;
-  if( flagByte & PTF_LEAFDATA ){
-    pPage->leafData = 1;
+  if( flagByte==(PTF_LEAFDATA | PTF_INTKEY) ){
+    pPage->intKey = 1;
+    pPage->hasData = pPage->leaf;
     pPage->maxLocal = pBt->maxLeaf;
     pPage->minLocal = pBt->minLeaf;
-  }else{
-    pPage->leafData = 0;
+  }else if( flagByte==PTF_ZERODATA ){
+    pPage->intKey = 0;
+    pPage->hasData = 0;
     pPage->maxLocal = pBt->maxLocal;
     pPage->minLocal = pBt->minLocal;
+  }else{
+    return SQLITE_CORRUPT_BKPT;
   }
-  pPage->hasData = !(pPage->zeroData || (!pPage->leaf && pPage->leafData));
+  return SQLITE_OK;
 }
 
 /*
@@ -941,7 +952,7 @@ int sqlite3BtreeInitPage(
   }
   hdr = pPage->hdrOffset;
   data = pPage->aData;
-  decodeFlags(pPage, data[hdr]);
+  if( decodeFlags(pPage, data[hdr]) ) return SQLITE_CORRUPT_BKPT;
   pPage->nOverflow = 0;
   pPage->idxShift = 0;
   usableSize = pBt->usableSize;
@@ -3757,7 +3768,7 @@ int sqlite3BtreeMoveto(
       }
       if( c==0 ){
         pCur->info.nKey = nCellKey;
-        if( pPage->leafData && !pPage->leaf ){
+        if( pPage->intKey && !pPage->leaf ){
           lwr = pCur->idx;
           upr = lwr - 1;
           break;
@@ -3884,7 +3895,7 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
       pPage = pCur->pPage;
     }while( pCur->idx>=pPage->nCell );
     *pRes = 0;
-    if( pPage->leafData ){
+    if( pPage->intKey ){
       rc = sqlite3BtreeNext(pCur, pRes);
     }else{
       rc = SQLITE_OK;
@@ -3951,7 +3962,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
     pCur->idx--;
     pCur->info.nSize = 0;
     pCur->validNKey = 0;
-    if( pPage->leafData && !pPage->leaf ){
+    if( pPage->intKey && !pPage->leaf ){
       rc = sqlite3BtreePrevious(pCur, pRes);
     }else{
       rc = SQLITE_OK;
@@ -4946,12 +4957,12 @@ static int balance_nonroot(MemPage *pPage){
   */
   if( pPage->leaf &&
       pPage->intKey &&
-      pPage->leafData &&
       pPage->nOverflow==1 &&
       pPage->aOvfl[0].idx==pPage->nCell &&
       pPage->pParent->pgno!=1 &&
       get4byte(&pParent->aData[pParent->hdrOffset+8])==pPage->pgno
   ){
+    assert( pPage->intKey );
     /*
     ** TODO: Check the siblings to the left of pPage. It may be that
     ** they are not full and no new page is required.
@@ -5095,7 +5106,7 @@ static int balance_nonroot(MemPage *pPage){
   */
   nCell = 0;
   leafCorrection = pPage->leaf*4;
-  leafData = pPage->leafData && pPage->leaf;
+  leafData = pPage->hasData;
   for(i=0; i<nOld; i++){
     MemPage *pOld = apCopy[i];
     int limit = pOld->nCell+pOld->nOverflow;
@@ -5772,7 +5783,7 @@ int sqlite3BtreeInsert(
 
   pPage = pCur->pPage;
   assert( pPage->intKey || nKey>=0 );
-  assert( pPage->leaf || !pPage->leafData );
+  assert( pPage->leaf || !pPage->intKey );
   TRACE(("INSERT: table=%d nkey=%lld ndata=%d page=%d %s\n",
           pCur->pgnoRoot, nKey, nData, pPage->pgno,
           loc==0 ? "overwrite" : "new entry"));
@@ -5888,7 +5899,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     unsigned char *pNext;
     int notUsed;
     unsigned char *tempCell = 0;
-    assert( !pPage->leafData );
+    assert( !pPage->intKey );
     sqlite3BtreeGetTempCursor(pCur, &leafCur);
     rc = sqlite3BtreeNext(&leafCur, &notUsed);
     if( rc==SQLITE_OK ){
