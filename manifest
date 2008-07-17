@@ -1,5 +1,5 @@
-C Get\srid\sof\sthe\sdebug\soutput,\sand\smake\spre-C99\scompilers\shappy\swith\ssqlite3_os_init()\son\sOS/2.\s(CVS\s5429)
-D 2008-07-16T19:30:37
+C Fix\sthe\stest\sharness\sso\sthat\sit\sdoes\snot\stry\sto\slink\sagainst\nsqlite3_mutex_alloc()\sif\scompiled\swith\s-DSQLITE_THREADSAFE=0.\s(CVS\s5430)
+D 2008-07-17T17:34:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -169,7 +169,7 @@ F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
 F src/test_malloc.c a77b0425720cd003b3ea02b8695343e73a326a54
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
-F src/test_mutex.c 86a937f5d28f373b8495faf1347a9d0a306594d4
+F src/test_mutex.c f4958460c298ba87f4e76987e3940f14f7a39637
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
 F src/test_osinst.c 49d777e6129bead1726e316e83751be35f455acc
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e60bb6a179c6e674db2b9362e2ccdefaa3bc17f4
-R a31140b737af6c0a9d7edc118fd6fbec
-U pweilbacher
-Z 588ce637dab590e74bf4372c2ed59ca2
+P 08fe49f62f8a91c36ad4bb9a1d8c89806c37f600
+R 514cbf07ace43083faff0e77954a2fe0
+U drh
+Z 0a72bbba17dc41aabdaed96d70dac8a1

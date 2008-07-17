@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.9 2008/07/10 20:41:50 drh Exp $
+** $Id: test_mutex.c,v 1.10 2008/07/17 17:34:20 drh Exp $
 */
 
 #include "tcl.h"
@@ -300,11 +300,13 @@ static int test_alloc_mutex(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#if SQLITE_THREADSAFE
   sqlite3_mutex *p = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
   char zBuf[100];
   sqlite3_mutex_free(p);
   sqlite3_snprintf(sizeof(zBuf), zBuf, "%p", p);
   Tcl_AppendResult(interp, zBuf, (char*)0);
+#endif
   return TCL_OK;
 }
 
