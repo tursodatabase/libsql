@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.486 2008/07/18 02:44:18 drh Exp $
+** $Id: btree.c,v 1.487 2008/07/18 03:32:51 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1029,7 +1029,7 @@ static void zeroPage(MemPage *pPage, int flags){
   assert( sqlite3PagerGetData(pPage->pDbPage) == data );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( sqlite3_mutex_held(pBt->mutex) );
-  memset(&data[hdr], 0, pBt->usableSize - hdr);
+  /*memset(&data[hdr], 0, pBt->usableSize - hdr);*/
   data[hdr] = flags;
   first = hdr + 8 + 4*((flags&PTF_LEAF)==0);
   memset(&data[hdr+1], 0, 4);
