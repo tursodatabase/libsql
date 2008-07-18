@@ -13,7 +13,7 @@
 # The focus of this file is testing how SQLite generates the names
 # of columns in a result set.
 #
-# $Id: colname.test,v 1.1 2008/07/15 20:56:17 drh Exp $
+# $Id: colname.test,v 1.2 2008/07/18 17:03:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -250,5 +250,11 @@ do_test colname-4.13 {
   }
 } {v6.a 1 v6.x 4 v6.a:1 11 v6.x:1 14 v6.a:2 1 v6.b 2 v6.c 3 v6.x:2 4 v6.y 5 v6.z 6 v6.a:3 11 v6.b:1 12 v6.c:1 13 v6.x:3 14 v6.y:1 15 v6.z:1 16}
 
+# ticket #3229
+do_test colname-5.1 {
+  db eval {
+    SELECT x.* FROM sqlite_master X LIMIT 1;
+  }
+} {table tabc tabc 2 {CREATE TABLE tabc(a,b,c)}}
 
 finish_test

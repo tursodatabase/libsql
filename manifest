@@ -1,5 +1,5 @@
-C Performance\simprovement:\sreduce\sthe\snumber\sof\scalls\sto\sptrmapPageno()\smade\sby\sptrmapPut()\sand\sptrmapGet().\s(CVS\s5437)
-D 2008-07-18T09:34:57
+C Make\ssure\sexpression\sspans\sare\sset\scorrectly\sfor\s"x.*"\sexpressions\sin\r\nthe\sresult\sset\sof\sa\sSELECT.\s\sTicket\s#3229.\s(CVS\s5438)
+D 2008-07-18T17:03:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/callback.c aa492a0ad8c2d454edff9fb8a57fae13743cf71d
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e841168e5520bbbb2a1cbcdce7531d8b23017b4d
 F src/delete.c 4a1f98fb2ffead69c8c685dcac33253ac6f9d56d
-F src/expr.c 17f7deae5c7a7813a86295813e757219d1a25cf9
+F src/expr.c 18d04f1c15e760d4329b5e0383a0c8a8320f0005
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c 08422a7bd06c25c5e6823d525f7c63563e3fcf61
 F src/global.c f12dc84d23f52d2ed42d1bdb5460fa3caf63e890
@@ -136,7 +136,7 @@ F src/os_unix.c 1df6108efdb7957a9f28b9700600e58647c9c12d
 F src/os_win.c 2bf2f8cd700299564cc236262c2668e1e02c626a
 F src/pager.c e65d78bdbd316c3ca0135d2a98ecc607873145aa
 F src/pager.h 588c1ac195228b2da45c4e5f7ab6c2fd253d1751
-F src/parse.y 097bff733e89fbf554a07d9327046718ce364011
+F src/parse.y d1316f1b8b251412bdf4926c4c34803977958b65
 F src/pragma.c 6fad83fbcc7ec6e76d91fe2805fe972ff3af6a0c
 F src/prepare.c c9bb0aacb7a571d049805699ed18f2bb136ea091
 F src/printf.c 2174222bc346a11b1eac2a654ccc4f635355ae7e
@@ -241,7 +241,7 @@ F test/collate8.test 7ed2461305ac959886a064dc1e3cf15e155a183f
 F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
-F test/colname.test fa138771a03d1851e6ec2d10f2a9592c3ea4d5dd
+F test/colname.test d717fcf45ad33ed0cc6ad6e1e7f5749afdcc4c77
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test af069d971853dbe12af936910bfa49d92f7b16e9
 F test/corrupt2.test e56f45006e7eb3ee680ad3b61c92cc14ae09986e
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c94318b982e9bb5b4c743cf8d5659f9eec697366
-R 1c9e4fce9b074d6791cf7915301ae383
-U danielk1977
-Z a5d1990c3bbe25fa6befea839cd03776
+P d807fb271340901bbf3e06de23d91132422d1408
+R 5afb3355c9e7275b2ae02909f2aaa9f9
+U drh
+Z 628f79923a0f0af78e8025613e48d7b3

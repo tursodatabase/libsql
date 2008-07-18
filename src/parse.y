@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.245 2008/07/08 23:40:20 drh Exp $
+** @(#) $Id: parse.y,v 1.246 2008/07/18 17:03:53 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -417,8 +417,8 @@ selcollist(A) ::= sclp(P) STAR. {
   Expr *p = sqlite3PExpr(pParse, TK_ALL, 0, 0, 0);
   A = sqlite3ExprListAppend(pParse, P, p, 0);
 }
-selcollist(A) ::= sclp(P) nm(X) DOT STAR. {
-  Expr *pRight = sqlite3PExpr(pParse, TK_ALL, 0, 0, 0);
+selcollist(A) ::= sclp(P) nm(X) DOT STAR(Y). {
+  Expr *pRight = sqlite3PExpr(pParse, TK_ALL, 0, 0, &Y);
   Expr *pLeft = sqlite3PExpr(pParse, TK_ID, 0, 0, &X);
   Expr *pDot = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight, 0);
   A = sqlite3ExprListAppend(pParse,P, pDot, 0);
