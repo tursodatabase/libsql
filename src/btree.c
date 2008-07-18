@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.488 2008/07/18 09:34:57 danielk1977 Exp $
+** $Id: btree.c,v 1.489 2008/07/18 17:16:26 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2015,6 +2015,18 @@ trans_begun:
   return rc;
 }
 
+/*
+** Return the size of the database file in pages.  Or return -1 if
+** there is any kind of error.
+*/
+static int pagerPagecount(Pager *pPager){
+  int rc;
+  int nPage;
+  rc = sqlite3PagerPagecount(pPager, &nPage);
+  return (rc==SQLITE_OK?nPage:-1);
+}
+
+
 #ifndef SQLITE_OMIT_AUTOVACUUM
 
 /*
@@ -2201,13 +2213,6 @@ static int relocatePage(
     }
   }
   return rc;
-}
-
-static int pagerPagecount(Pager *pPager){
-  int rc;
-  int nPage;
-  rc = sqlite3PagerPagecount(pPager, &nPage);
-  return (rc==SQLITE_OK?nPage:-1);
 }
 
 /* Forward declaration required by incrVacuumStep(). */

@@ -1,5 +1,5 @@
-C Make\ssure\sexpression\sspans\sare\sset\scorrectly\sfor\s"x.*"\sexpressions\sin\r\nthe\sresult\sset\sof\sa\sSELECT.\s\sTicket\s#3229.\s(CVS\s5438)
-D 2008-07-18T17:03:53
+C Fix\sSQLITE_OMIT_AUTOVACUUM\sso\sthat\sit\sworks\sagain.\s\sTicket\s#3228.\s(CVS\s5439)
+D 2008-07-18T17:16:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c 95640f016d8f5e086a06d37d5d24d45f54582aff
+F src/btree.c 770e1b121d1e6c194c836fec2eab6739ebf4d059
 F src/btree.h 03256ed7ee42b5ecacbe887070b0f8249e7d069d
 F src/btreeInt.h 6e4cb69a9192a8d609c27034ae5f921cf0ecdde1
 F src/build.c bac7233d984be3805aaa41cf500f7ee12dc97249
@@ -348,7 +348,7 @@ F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
 F test/incrblob2.test c82a780356bdf4d0c77f1adf0ea888248904fc07
-F test/incrblob_err.test 944e5366c6899258bdec2ce964e9524e79b503c5
+F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
 F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
 F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d807fb271340901bbf3e06de23d91132422d1408
-R 5afb3355c9e7275b2ae02909f2aaa9f9
+P 17a9984e7668be388c4042c070718a02b284a336
+R fc1f20f039a938f387418775ef20dd0c
 U drh
-Z 628f79923a0f0af78e8025613e48d7b3
+Z e1c31d25d091e2b3a4d8324915e2d849

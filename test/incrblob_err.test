@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob_err.test,v 1.13 2008/07/16 18:35:46 drh Exp $
+# $Id: incrblob_err.test,v 1.14 2008/07/18 17:16:27 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -132,6 +132,6 @@ do_ioerr_test incrblob_err-8 -cksum 1 -sqlprep {
   close $::blob
 }
 
-db2 close
+catch {db2 close}
 
 finish_test
