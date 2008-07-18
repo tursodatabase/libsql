@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.27 2008/07/17 18:39:58 drh Exp $
+** $Id: btreeInt.h,v 1.28 2008/07/18 02:44:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -284,6 +284,7 @@ struct MemPage {
   u16 idxParent;       /* Index in parent of this node */
   u16 nFree;           /* Number of free bytes on the page */
   u16 nCell;           /* Number of cells on this page, local and ovfl */
+  u16 maskPage;        /* Mask for page offset */
   struct _OvflCell {   /* Cells that will not fit on aData[] */
     u8 *pCell;          /* Pointers to the body of the overflow cell */
     u16 idx;            /* Insert this cell before idx-th non-overflow cell */

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.485 2008/07/18 00:57:33 drh Exp $
+** $Id: btree.c,v 1.486 2008/07/18 02:44:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -516,8 +516,8 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 **
 ** This routine works only for pages that do not contain overflow cells.
 */
-#define findCell(pPage, iCell) \
-  ((pPage)->aData + get2byte(&(pPage)->aData[(pPage)->cellOffset+2*(iCell)]))
+#define findCell(P,I) \
+  ((P)->aData + ((P)->maskPage & get2byte(&(P)->aData[(P)->cellOffset+2*(I)])))
 
 /*
 ** This a more complex version of findCell() that works for
@@ -929,9 +929,6 @@ int sqlite3BtreeInitPage(
   int cellOffset;    /* Offset from start of page to first cell pointer */
   int nFree;         /* Number of unused bytes on the page */
   int top;           /* First byte of the cell content area */
-  u8 *pOff;          /* Iterator used to check all cell offsets are in range */
-  u8 *pEnd;          /* Pointer to end of cell offset array */
-  u8 mask;           /* Mask of bits that must be zero in MSB of cell offsets */
 
   pBt = pPage->pBt;
   assert( pBt!=0 );
@@ -952,6 +949,8 @@ int sqlite3BtreeInitPage(
   hdr = pPage->hdrOffset;
   data = pPage->aData;
   if( decodeFlags(pPage, data[hdr]) ) return SQLITE_CORRUPT_BKPT;
+  assert( pBt->pageSize>=512 && pBt->pageSize<=32768 );
+  pPage->maskPage = pBt->pageSize - 1;
   pPage->nOverflow = 0;
   pPage->idxShift = 0;
   usableSize = pBt->usableSize;
@@ -991,13 +990,25 @@ int sqlite3BtreeInitPage(
     return SQLITE_CORRUPT_BKPT; 
   }
 
-  /* Check that all the offsets in the cell offset array are within range. */
-  mask = ~(((u8)(pBt->pageSize>>8))-1);
-  pEnd = &data[cellOffset + pPage->nCell*2];
-  for(pOff=&data[cellOffset]; pOff!=pEnd && !((*pOff)&mask); pOff+=2);
-  if( pOff!=pEnd ){
-    return SQLITE_CORRUPT_BKPT;
+#if 0
+  /* Check that all the offsets in the cell offset array are within range. 
+  ** 
+  ** Omitting this consistency check and using the pPage->maskPage mask
+  ** to prevent overrunning the page buffer in findCell() results in a
+  ** 2.5% performance gain.
+  */
+  {
+    u8 *pOff;        /* Iterator used to check all cell offsets are in range */
+    u8 *pEnd;        /* Pointer to end of cell offset array */
+    u8 mask;         /* Mask of bits that must be zero in MSB of cell offsets */
+    mask = ~(((u8)(pBt->pageSize>>8))-1);
+    pEnd = &data[cellOffset + pPage->nCell*2];
+    for(pOff=&data[cellOffset]; pOff!=pEnd && !((*pOff)&mask); pOff+=2);
+    if( pOff!=pEnd ){
+      return SQLITE_CORRUPT_BKPT;
+    }
   }
+#endif
 
   pPage->isInit = 1;
   return SQLITE_OK;
@@ -1029,6 +1040,8 @@ static void zeroPage(MemPage *pPage, int flags){
   pPage->hdrOffset = hdr;
   pPage->cellOffset = first;
   pPage->nOverflow = 0;
+  assert( pBt->pageSize>=512 && pBt->pageSize<=32768 );
+  pPage->maskPage = pBt->pageSize - 1;
   pPage->idxShift = 0;
   pPage->nCell = 0;
   pPage->isInit = 1;
