@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.51 2008/07/16 19:30:37 pweilbacher Exp $
+** $Id: os_os2.c,v 1.52 2008/07/18 05:36:28 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -896,7 +896,7 @@ static int os2FullPathname(
   char *zFull                 /* Output buffer */
 ){
   char *zRelativeCp = convertUtf8PathToCp( zRelative );
-  char zFullCp[CCHMAXPATH];
+  char zFullCp[CCHMAXPATH] = "\0";
   char *zFullUTF;
   APIRET rc = DosQueryPathInfo( zRelativeCp, FIL_QUERYFULLNAME, zFullCp,
                                 CCHMAXPATH );

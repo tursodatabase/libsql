@@ -1,5 +1,5 @@
-C The\szeroPage()\sroutine\sin\sbtree.c\sneed\snot\sactually\szero\sthe\swhole\spage,\njust\sthe\sheader.\s(CVS\s5434)
-D 2008-07-18T03:32:51
+C Init\szFullCp\sto\sprevent\scrashes\sin\scase\sDosQueryPathInfo()\sfails.\s(CVS\s5435)
+D 2008-07-18T05:36:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/mutex_w32.c f0d21ff1f6981e5aedc56796adf3a347423ef736
 F src/os.c 292b3b4a49fe5bf6cf2f1cf0af186ebd334e80b8
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
-F src/os_os2.c 5f81fda19c86b39723caa8f5d0c6b01d693385bf
+F src/os_os2.c da14449fc210cd313eb56cf511ae05b350e323d6
 F src/os_unix.c 1df6108efdb7957a9f28b9700600e58647c9c12d
 F src/os_win.c 2bf2f8cd700299564cc236262c2668e1e02c626a
 F src/pager.c e65d78bdbd316c3ca0135d2a98ecc607873145aa
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b88087e69dffb743c5b552703e14a030349cf65b
-R 8ec5677e1d6c505d04c04511bc1d36d4
-U drh
-Z ffdd94b1831b0e21450d948b159dda62
+P c69633ec6977becfbd0a72854473b7f4515fb931
+R 076a66555e139f18d2ef67a1a8c0081c
+U pweilbacher
+Z 90817ebd201618f3c97a9ffa259f1eee
