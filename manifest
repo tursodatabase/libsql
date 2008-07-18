@@ -1,5 +1,5 @@
-C Init\szFullCp\sto\sprevent\scrashes\sin\scase\sDosQueryPathInfo()\sfails.\s(CVS\s5435)
-D 2008-07-18T05:36:28
+C Speed\sup\ssqlite3_finalize()\sby\sremoving\sredundant\scode.\s(CVS\s5436)
+D 2008-07-18T08:10:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -186,7 +186,7 @@ F src/vdbe.c 179dbe5f08b17c712be65e951eaada3b3ca52092
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
 F src/vdbeInt.h 30535c1d30ba1b5fb58d8f0e1d1261af976558aa
 F src/vdbeapi.c a7c6b8db324cf7eccff32de871dea36aa305c994
-F src/vdbeaux.c 25d562cda55cb6d9796110ee916a524bdd03a0fb
+F src/vdbeaux.c 2ef92c0224d65e4fa127cb42620b9beab661c55b
 F src/vdbeblob.c a20fe9345062b1a1b4cc187dc5fad45c9414033b
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
 F src/vdbemem.c 0c72b58ffd759676ce4829f42bacb83842a58c21
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c69633ec6977becfbd0a72854473b7f4515fb931
-R 076a66555e139f18d2ef67a1a8c0081c
-U pweilbacher
-Z 90817ebd201618f3c97a9ffa259f1eee
+P 70685b2ae8bbb8ab4316a762e1c1cc59b8032e0b
+R 0fac37338ff457c8a8ccb096c255b171
+U danielk1977
+Z 5ba21847fa73d9eab64482a9b27dcd85

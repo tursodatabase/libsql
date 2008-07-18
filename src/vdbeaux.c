@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.397 2008/07/11 21:02:54 drh Exp $
+** $Id: vdbeaux.c,v 1.398 2008/07/18 08:10:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1776,7 +1776,7 @@ int sqlite3VdbeFinalize(Vdbe *p){
   }else if( p->magic!=VDBE_MAGIC_INIT ){
     return SQLITE_MISUSE;
   }
-  releaseMemArray(&p->aMem[1], p->nMem, 1);
+  /* releaseMemArray(&p->aMem[1], p->nMem, 1); */
   sqlite3VdbeDelete(p);
   return rc;
 }
@@ -1806,7 +1806,7 @@ void sqlite3VdbeDeleteAuxData(VdbeFunc *pVdbeFunc, int mask){
 void sqlite3VdbeDelete(Vdbe *p){
   int i;
   if( p==0 ) return;
-  Cleanup(p, 1);
+  /* Cleanup(p, 1); */
   if( p->pPrev ){
     p->pPrev->pNext = p->pNext;
   }else{
