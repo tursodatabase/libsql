@@ -1,5 +1,5 @@
-C Simplify\sthe\sb-tree\slogic\sby\staking\sadvantage\sof\sthe\sfact\sthat\sall\sb-trees\nare\seither\sintkey+leafdata\sor\szerodata.\s(CVS\s5431)
-D 2008-07-17T18:39:58
+C Optimization\sto\ssqltie3BtreeParseCellPtr.\s\s0.3%\sperformance\sincrease.\s(CVS\s5432)
+D 2008-07-18T00:57:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c c618d62fb41642216f8fc5be403c36f32e1b25d6
+F src/btree.c 5299a702966d3c32618340cae49cebafc5e93870
 F src/btree.h 03256ed7ee42b5ecacbe887070b0f8249e7d069d
 F src/btreeInt.h 2aa6dc53b1801bb22815a5be22e03be121f3bd8f
 F src/build.c bac7233d984be3805aaa41cf500f7ee12dc97249
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 26a203d894edd0091ac60862956e42d22167011e
-R 0aa24510df7c6bac75839ea22cde6884
+P 29d3bfd7c9a68078385354394052612bf812859b
+R 52c1e00d28149edaa06e0b96ba148399
 U drh
-Z 2661cde038f2c435549bd085c583b89a
+Z ba442f29937e797f8880a62ff02e96e8

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.484 2008/07/17 18:39:58 drh Exp $
+** $Id: btree.c,v 1.485 2008/07/18 00:57:33 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -564,31 +564,30 @@ void sqlite3BtreeParseCellPtr(
   assert( pPage->leaf==0 || pPage->leaf==1 );
   n = pPage->childPtrSize;
   assert( n==4-4*pPage->leaf );
-  if( pPage->hasData ){
-    n += getVarint32(&pCell[n], nPayload);
-  }else{
-    nPayload = 0;
-  }
-  pInfo->nData = nPayload;
   if( pPage->intKey ){
-    n += getVarint(&pCell[n], (u64 *)&pInfo->nKey);
+    if( pPage->hasData ){
+      n += getVarint32(&pCell[n], nPayload);
+    }else{
+      nPayload = 0;
+    }
+    n += getVarint(&pCell[n], (u64*)&pInfo->nKey);
+    pInfo->nData = nPayload;
   }else{
-    u32 x;
-    n += getVarint32(&pCell[n], x);
-    pInfo->nKey = x;
-    nPayload += x;
+    pInfo->nData = 0;
+    n += getVarint32(&pCell[n], nPayload);
+    pInfo->nKey = nPayload;
   }
   pInfo->nPayload = nPayload;
   pInfo->nHeader = n;
-  if( nPayload<=pPage->maxLocal ){
+  if( likely(nPayload<=pPage->maxLocal) ){
     /* This is the (easy) common case where the entire payload fits
     ** on the local page.  No overflow is required.
     */
     int nSize;          /* Total size of cell content in bytes */
+    nSize = nPayload + n;
     pInfo->nLocal = nPayload;
     pInfo->iOverflow = 0;
-    nSize = nPayload + n;
-    if( nSize<4 ){
+    if( (nSize & ~3)==0 ){
       nSize = 4;        /* Minimum cell size is 4 */
     }
     pInfo->nSize = nSize;
