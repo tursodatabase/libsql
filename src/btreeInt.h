@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.28 2008/07/18 02:44:18 drh Exp $
+** $Id: btreeInt.h,v 1.29 2008/07/18 09:34:57 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -527,7 +527,7 @@ struct BtLock {
 ** this test.
 */
 #define PTRMAP_PAGENO(pBt, pgno) ptrmapPageno(pBt, pgno)
-#define PTRMAP_PTROFFSET(pBt, pgno) (5*(pgno-ptrmapPageno(pBt, pgno)-1))
+#define PTRMAP_PTROFFSET(pgptrmap, pgno) (5*(pgno-pgptrmap-1))
 #define PTRMAP_ISPAGE(pBt, pgno) (PTRMAP_PAGENO((pBt),(pgno))==(pgno))
 
 /*
