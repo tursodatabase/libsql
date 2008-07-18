@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.129 2008/06/26 10:41:19 danielk1977 Exp $
+** $Id: os_win.c,v 1.130 2008/07/18 23:47:43 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -1423,11 +1423,7 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   if( isNT() ){
     h = LoadLibraryW((WCHAR*)zConverted);
   }else{
-#if SQLITE_OS_WINCE
-    return 0;
-#else
     h = LoadLibraryA((char*)zConverted);
-#endif
   }
   free(zConverted);
   return (void*)h;
