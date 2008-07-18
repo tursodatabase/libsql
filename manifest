@@ -1,5 +1,5 @@
-C Fix\sSQLITE_OMIT_AUTOVACUUM\sso\sthat\sit\sworks\sagain.\s\sTicket\s#3228.\s(CVS\s5439)
-D 2008-07-18T17:16:26
+C Use\sthe\sactual\ssize\sof\smemory\sallocations\sto\supdate\sthe\smemory\sstatus\ncounters.\s\sFix\sthe\sroundup()\sfunction\sof\smem3\sto\sbe\smuch\scloser\sto\sthe\nactual\sallocation\ssize.\s\sTicket\s#3226.\s(CVS\s5440)
+D 2008-07-18T18:56:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,11 +116,11 @@ F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c ae0eed9fa96d74172d2a90ee63b5bc36d284295c
 F src/main.c 59b622b0f6b6c4b44a23a71ae8dac53bfec113ca
-F src/malloc.c b9ff4e02fee17d2158cc52ac44a02a56bde3cf62
+F src/malloc.c c4b525896b8c188dab98609180d13dbeeeb33a84
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 8340fa5f969e9f9b9bdeb54106457a2003456d2b
 F src/mem2.c 0fc5bd6581c80f3ebd9d0cdf0f3f9c08826397ba
-F src/mem3.c 71e43d6be24b014a43b1989ae7adec04817ca6e4
+F src/mem3.c c73e935d0b900abc51d5fa45f880937b062f4a9f
 F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
 F src/mem5.c 0b0ba1c2a02d86eb812dea6debacee841e3856f7
 F src/mutex.c a485a0eac8ee2cd95f66e565b4c6696c18db968f
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 17a9984e7668be388c4042c070718a02b284a336
-R fc1f20f039a938f387418775ef20dd0c
+P 3b2dd417f9dab3cae3ab3693629a65a2c90f00e9
+R b952824ae01948aa242495ef9fa716b0
 U drh
-Z e1c31d25d091e2b3a4d8324915e2d849
+Z a0ec33b666d5637887a3dcf000e051b2

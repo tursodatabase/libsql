@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.28 2008/07/14 12:38:21 drh Exp $
+** $Id: malloc.c,v 1.29 2008/07/18 18:56:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -224,7 +224,10 @@ static int mallocWithAlarm(int n, void **pp){
     sqlite3MallocAlarm(nFull);
     p = sqlite3Config.m.xMalloc(nFull);
   }
-  if( p ) sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nFull);
+  if( p ){
+    nFull = sqlite3MallocSize(p);
+    sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nFull);
+  }
   *pp = p;
   return nFull;
 }
@@ -504,6 +507,7 @@ void *sqlite3Realloc(void *pOld, int nBytes){
         pNew = sqlite3Config.m.xRealloc(pOld, nNew);
       }
       if( pNew ){
+        nNew = sqlite3MallocSize(pNew);
         sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nNew-nOld);
       }
     }

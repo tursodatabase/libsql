@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS3 is defined.
 **
-** $Id: mem3.c,v 1.19 2008/07/16 12:25:32 drh Exp $
+** $Id: mem3.c,v 1.20 2008/07/18 18:56:17 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -138,7 +138,6 @@ static struct {
   */
   u32 nPool;
   Mem3Block *aPool;
-  /* Mem3Block aPool[SQLITE_MEMORY_SIZE/sizeof(Mem3Block)+2]; */
 } mem3;
 
 /*
@@ -471,6 +470,30 @@ void memsys3FreeUnsafe(void *pOld){
 }
 
 /*
+** Return the size of an outstanding allocation, in bytes.  The
+** size returned omits the 8-byte header overhead.  This only
+** works for chunks that are currently checked out.
+*/
+static int memsys3Size(void *p){
+  Mem3Block *pBlock;
+  if( p==0 ) return 0;
+  pBlock = (Mem3Block*)p;
+  assert( (pBlock[-1].u.hdr.size4x&1)!=0 );
+  return (pBlock[-1].u.hdr.size4x&~3)*2 - 4;
+}
+
+/*
+** Round up a request size to the next valid allocation size.
+*/
+static int memsys3Roundup(int n){
+  if( n<=12 ){
+    return 12;
+  }else{
+    return ((n+11)&~7) - 4;
+  }
+}
+
+/*
 ** Allocate nBytes of memory.
 */
 static void *memsys3Malloc(int nBytes){
@@ -490,19 +513,6 @@ void memsys3Free(void *pPrior){
   memsys3Enter();
   memsys3FreeUnsafe(pPrior);
   memsys3Leave();
-}
-
-/*
-** Return the size of an outstanding allocation, in bytes.  The
-** size returned omits the 8-byte header overhead.  This only
-** works for chunks that are currently checked out.
-*/
-static int memsys3Size(void *p){
-  Mem3Block *pBlock;
-  if( p==0 ) return 0;
-  pBlock = (Mem3Block*)p;
-  assert( (pBlock[-1].u.hdr.size4x&1)!=0 );
-  return (pBlock[-1].u.hdr.size4x&~3)*2 - 4;
 }
 
 /*
@@ -534,13 +544,6 @@ void *memsys3Realloc(void *pPrior, int nBytes){
   }
   memsys3Leave();
   return p;
-}
-
-/*
-** Round up a request size to the next valid allocation size.
-*/
-static int memsys3Roundup(int n){
-  return (n+7) & ~7;
 }
 
 /*
