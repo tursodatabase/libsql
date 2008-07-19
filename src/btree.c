@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.489 2008/07/18 17:16:26 drh Exp $
+** $Id: btree.c,v 1.490 2008/07/19 11:49:07 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4526,8 +4526,18 @@ static int fillInCell(
 ** Change the MemPage.pParent pointer on the page whose number is
 ** given in the second argument so that MemPage.pParent holds the
 ** pointer in the third argument.
+**
+** If the final argument, updatePtrmap, is non-zero and the database
+** is an auto-vacuum database, then the pointer-map entry for pgno
+** is updated.
 */
-static int reparentPage(BtShared *pBt, Pgno pgno, MemPage *pNewParent, int idx){
+static int reparentPage(
+  BtShared *pBt,                /* B-Tree structure */
+  Pgno pgno,                    /* Page number of child being adopted */
+  MemPage *pNewParent,          /* New parent of pgno */
+  int idx,                      /* Index of child page pgno in pNewParent */
+  int updatePtrmap              /* If true, update pointer-map for pgno */
+){
   MemPage *pThis;
   DbPage *pDbPage;
 
@@ -4551,9 +4561,22 @@ static int reparentPage(BtShared *pBt, Pgno pgno, MemPage *pNewParent, int idx){
   }
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
-  if( pBt->autoVacuum ){
+  if( pBt->autoVacuum && updatePtrmap ){
     return ptrmapPut(pBt, pgno, PTRMAP_BTREE, pNewParent->pgno);
   }
+
+#ifndef NDEBUG
+  /* If the updatePtrmap flag was clear, assert that the entry in the
+  ** pointer-map is already correct.
+  */
+  if( pBt->autoVacuum ){
+    u8 eType;
+    Pgno ii;
+    ptrmapGet(pBt, pgno, &eType, &ii);
+    assert( ii==pNewParent->pgno && eType==PTRMAP_BTREE );
+  }
+#endif
+
 #endif
   return SQLITE_OK;
 }
@@ -4569,23 +4592,26 @@ static int reparentPage(BtShared *pBt, Pgno pgno, MemPage *pNewParent, int idx){
 **
 ** This routine gets called after you memcpy() one page into
 ** another.
+**
+** If updatePtrmap is true, then the pointer-map entries for all child
+** pages of pPage are updated.
 */
-static int reparentChildPages(MemPage *pPage){
-  int i;
-  BtShared *pBt = pPage->pBt;
+static int reparentChildPages(MemPage *pPage, int updatePtrmap){
   int rc = SQLITE_OK;
-
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  if( pPage->leaf ) return SQLITE_OK;
+  if( !pPage->leaf ){
+    int i;
+    BtShared *pBt = pPage->pBt;
+    Pgno iRight = get4byte(&pPage->aData[pPage->hdrOffset+8]);
 
-  for(i=0; i<pPage->nCell; i++){
-    u8 *pCell = findCell(pPage, i);
-    rc = reparentPage(pBt, get4byte(pCell), pPage, i);
-    if( rc!=SQLITE_OK ) return rc;
+    for(i=0; i<pPage->nCell; i++){
+      u8 *pCell = findCell(pPage, i);
+      rc = reparentPage(pBt, get4byte(pCell), pPage, i, updatePtrmap);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+    rc = reparentPage(pBt, iRight, pPage, i, updatePtrmap);
+    pPage->idxShift = 0;
   }
-  rc = reparentPage(pBt, get4byte(&pPage->aData[pPage->hdrOffset+8]), 
-                    pPage, i);
-  pPage->idxShift = 0;
   return rc;
 }
 
@@ -5350,17 +5376,20 @@ static int balance_nonroot(MemPage *pPage){
     assert( pNew->nCell>0 || (nNew==1 && cntNew[0]==0) );
     assert( pNew->nOverflow==0 );
 
-#ifndef SQLITE_OMIT_AUTOVACUUM
     /* If this is an auto-vacuum database, update the pointer map entries
     ** that point to the siblings that were rearranged. These can be: left
     ** children of cells, the right-child of the page, or overflow pages
     ** pointed to by cells.
     */
+#ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
       for(k=j; k<cntNew[i]; k++){
         assert( k<nMaxCells );
         if( aFrom[k]==0xFF || apCopy[aFrom[k]]->pgno!=pNew->pgno ){
           rc = ptrmapPutOvfl(pNew, k-j);
+          if( rc==SQLITE_OK && leafCorrection==0 ){
+            rc = ptrmapPut(pBt, get4byte(apCell[k]), PTRMAP_BTREE, pNew->pgno);
+          }
           if( rc!=SQLITE_OK ){
             goto balance_cleanup;
           }
@@ -5385,6 +5414,16 @@ static int balance_nonroot(MemPage *pPage){
       pTemp = &aSpace2[iSpace2];
       if( !pNew->leaf ){
         memcpy(&pNew->aData[8], pCell, 4);
+#ifndef SQLITE_OMIT_AUTOVACUUM
+        if( pBt->autoVacuum 
+         && (aFrom[j]==0xFF || apCopy[aFrom[j]]->pgno!=pNew->pgno)
+        ){
+          rc = ptrmapPut(pBt, get4byte(pCell), PTRMAP_BTREE, pNew->pgno);
+          if( rc!=SQLITE_OK ){
+            goto balance_cleanup;
+          }
+        }
+#endif
       }else if( leafData ){
         /* If the tree is a leaf-data tree, and the siblings are leaves, 
         ** then there is no divider cell in apCell[]. Instead, the divider 
@@ -5436,12 +5475,31 @@ static int balance_nonroot(MemPage *pPage){
       j++;
       nxDiv++;
     }
+
+#ifndef SQLITE_OMIT_AUTOVACUUM
+    /* Set the pointer-map entry for the new sibling page. */
+    if( pBt->autoVacuum ){
+      rc = ptrmapPut(pBt, pNew->pgno, PTRMAP_BTREE, pParent->pgno);
+      if( rc!=SQLITE_OK ){
+        goto balance_cleanup;
+      }
+    }
+#endif
   }
   assert( j==nCell );
   assert( nOld>0 );
   assert( nNew>0 );
   if( (pageFlags & PTF_LEAF)==0 ){
-    memcpy(&apNew[nNew-1]->aData[8], &apCopy[nOld-1]->aData[8], 4);
+    u8 *zChild = &apCopy[nOld-1]->aData[8];
+    memcpy(&apNew[nNew-1]->aData[8], zChild, 4);
+#ifndef SQLITE_OMIT_AUTOVACUUM
+    if( pBt->autoVacuum ){
+      rc = ptrmapPut(pBt, get4byte(zChild), PTRMAP_BTREE, apNew[nNew-1]->pgno);
+      if( rc!=SQLITE_OK ){
+        goto balance_cleanup;
+      }
+    }
+#endif
   }
   if( nxDiv==pParent->nCell+pParent->nOverflow ){
     /* Right-most sibling is the right-most child of pParent */
@@ -5456,10 +5514,10 @@ static int balance_nonroot(MemPage *pPage){
   ** Reparent children of all cells.
   */
   for(i=0; i<nNew; i++){
-    rc = reparentChildPages(apNew[i]);
+    rc = reparentChildPages(apNew[i], 0);
     if( rc!=SQLITE_OK ) goto balance_cleanup;
   }
-  rc = reparentChildPages(pParent);
+  rc = reparentChildPages(pParent, 0);
   if( rc!=SQLITE_OK ) goto balance_cleanup;
 
   /*
@@ -5567,7 +5625,7 @@ static int balance_shallower(MemPage *pPage){
       TRACE(("BALANCE: transfer child %d into root %d\n",
               pChild->pgno, pPage->pgno));
     }
-    rc = reparentChildPages(pPage);
+    rc = reparentChildPages(pPage, 1);
     assert( pPage->nOverflow==0 );
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
@@ -5645,9 +5703,12 @@ static int balance_deeper(MemPage *pPage){
         goto balancedeeper_out;
       }
     }
+    rc = reparentChildPages(pChild, 1);
   }
 #endif
-  rc = balance_nonroot(pChild);
+  if( rc==SQLITE_OK ){
+    rc = balance_nonroot(pChild);
+  }
 
 balancedeeper_out:
   releasePage(pChild);
