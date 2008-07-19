@@ -10,11 +10,12 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.10 2008/07/17 17:34:20 drh Exp $
+** $Id: test_mutex.c,v 1.11 2008/07/19 13:43:24 danielk1977 Exp $
 */
 
 #include "tcl.h"
 #include "sqlite3.h"
+#include "sqliteInt.h"
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>

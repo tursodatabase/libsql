@@ -1,5 +1,5 @@
-C Improve\sthe\sperformance\sof\sbalance_nonroot()\son\sauto-vacuum\sdatabases\sby\sreducing\sthe\snumber\sof\scalls\sto\sptrmapPut().\s(CVS\s5442)
-D 2008-07-19T11:49:07
+C To\sensure\sSQLITE_THREADSAFE\sis\salways\sdefined,\shave\stest_mutex.c\sinclude\ssqliteInt.h.\s(CVS\s5443)
+D 2008-07-19T13:43:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -169,7 +169,7 @@ F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
 F src/test_malloc.c a77b0425720cd003b3ea02b8695343e73a326a54
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
-F src/test_mutex.c f4958460c298ba87f4e76987e3940f14f7a39637
+F src/test_mutex.c d3422d9f60cc1330249d102e74b333f0d24a0cb6
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
 F src/test_osinst.c 49d777e6129bead1726e316e83751be35f455acc
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
@@ -422,7 +422,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test b0d80b95dc2b46ce417cf3e06bfff18166e55181
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/mutex1.test 7f5e21fd11fe22de079e5dcd394ee4f6c257e68e
-F test/mutex2.test 4d98b88a55f0eaaabed1fb830e88ffefa37d14e4
+F test/mutex2.test 56f282f436596e9febdc6e0db2c507432b6724bb
 F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5c5c1f72797e4ceb229b8e3a7c65e5f173bb9e1a
-R b8085ba1aaa9b1c45ae3197480a7b3e3
+P 9992b1aecdbbc7a260f00cb6ef78b500aeab22df
+R 615c9acc5406836f8f320d7701ad2533
 U danielk1977
-Z bd3b5f822992a4ea7d03ac4968dd7385
+Z 549920f4a7d84d25c74c12bb9c25624e

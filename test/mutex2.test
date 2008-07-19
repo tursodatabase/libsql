@@ -11,7 +11,7 @@
 #
 # Test scripts for deliberate failures of mutex routines.
 #
-# $Id: mutex2.test,v 1.7 2008/07/16 12:25:32 drh Exp $
+# $Id: mutex2.test,v 1.8 2008/07/19 13:43:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -74,9 +74,11 @@ do_test mutex2-2.7 {
 do_test mutex2-2.8 {
   sqlite3_realloc 0 10000
 } {0}
-do_test mutex2-2.9 {
-  alloc_dealloc_mutex
-} {0}
+ifcapable threadsafe {
+  do_test mutex2-2.9 {
+    alloc_dealloc_mutex
+  } {0}
+}
 do_test mutex2-2.10 {
   vfs_initfail_test
 } {}
