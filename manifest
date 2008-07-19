@@ -1,5 +1,5 @@
-C To\sensure\sSQLITE_THREADSAFE\sis\salways\sdefined,\shave\stest_mutex.c\sinclude\ssqliteInt.h.\s(CVS\s5443)
-D 2008-07-19T13:43:24
+C Reduce\sthe\snumber\sof\s"#ifndef\sSQLITE_OMIT_AUTOVACUUM"\sconditions\sin\sbtree.c\sby\susing\sthe\sISAUTOVACUUM\smacro\sinstead.\s(CVS\s5444)
+D 2008-07-19T14:25:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c b18ba42c77f7d3941f5d23d2ca20fa1d841a4e91
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c 7303414d1afc4c56c8e16eb530fbd902c1243fbc
+F src/btree.c 1318ab0eaad158aad791d73611c1c63c9b5e981f
 F src/btree.h 03256ed7ee42b5ecacbe887070b0f8249e7d069d
 F src/btreeInt.h 6e4cb69a9192a8d609c27034ae5f921cf0ecdde1
 F src/build.c bac7233d984be3805aaa41cf500f7ee12dc97249
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9992b1aecdbbc7a260f00cb6ef78b500aeab22df
-R 615c9acc5406836f8f320d7701ad2533
+P d8be91e2d2737dcb0e82e6c8a6a3f4827bc98d63
+R 62e45d7b8ed334b4b86371bb551b8bcf
 U danielk1977
-Z 549920f4a7d84d25c74c12bb9c25624e
+Z 4b754cdd81d101220a03014dfb941ae8
