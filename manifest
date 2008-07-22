@@ -1,5 +1,5 @@
-C Reduce\sthe\snumber\sof\s"#ifndef\sSQLITE_OMIT_AUTOVACUUM"\sconditions\sin\sbtree.c\sby\susing\sthe\sISAUTOVACUUM\smacro\sinstead.\s(CVS\s5444)
-D 2008-07-19T14:25:16
+C flattenSubquery()\sneeded\sif\seither\sSQLITE_OMIT_SUBQUERY\sor\sSQLITE_OMIT_VIEW\snot\sdefined.\s(CVS\s5445)
+D 2008-07-22T05:00:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/pragma.c 6fad83fbcc7ec6e76d91fe2805fe972ff3af6a0c
 F src/prepare.c c9bb0aacb7a571d049805699ed18f2bb136ea091
 F src/printf.c 2174222bc346a11b1eac2a654ccc4f635355ae7e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c f3a9d9f4eee19155af0885334f24a1479ae9bda5
+F src/select.c 859ea5194b05fb2f1f816368062478cda5baa9b8
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
 F src/sqlite.h.in d08ef5ae1089d248120afcfd56ab799cddae8fe9
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d8be91e2d2737dcb0e82e6c8a6a3f4827bc98d63
-R 62e45d7b8ed334b4b86371bb551b8bcf
-U danielk1977
-Z 4b754cdd81d101220a03014dfb941ae8
+P a560c61849cb669ab03ba4a63b23369db234f329
+R bb01765ac02861b7422c0d62644cf8f1
+U shane
+Z 506b42d114c5c88a2082fc56151910b6
