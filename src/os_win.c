@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.130 2008/07/18 23:47:43 drh Exp $
+** $Id: os_win.c,v 1.131 2008/07/22 05:32:03 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -1124,6 +1124,36 @@ static int getTempname(int nBuf, char *zBuf){
   return SQLITE_OK; 
 }
 
+/*
+** The return value of getLastErrorMsg
+** is zero if the error message fits in the buffer, or non-zero
+** otherwise (if the message was truncated).
+*/
+static int getLastErrorMsg(int nBuf, char *zBuf){
+  DWORD error = GetLastError();
+
+#if SQLITE_OS_WINCE
+  sqlite3_snprintf(nBuf, zBuf, "OsError 0x%x (%u)", error, error);
+#else
+  /* FormatMessage returns 0 on failure.  Otherwise it
+  ** returns the number of TCHARs written to the output
+  ** buffer, excluding the terminating null char.
+  */
+  if (!FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM,
+                      NULL,
+                      error,
+                      0,
+                      zBuf,
+                      nBuf-1,
+                      0))
+  {
+    sqlite3_snprintf(nBuf, zBuf, "OsError 0x%x (%u)", error, error);
+  }
+#endif
+
+  return 0;
+}
+
 
 /*
 ** Open a file.
@@ -1204,9 +1234,6 @@ static int winOpen(
        NULL
     );
   }else{
-#if SQLITE_OS_WINCE
-    return SQLITE_NOMEM;
-#else
     h = CreateFileA((char*)zConverted,
        dwDesiredAccess,
        dwShareMode,
@@ -1215,7 +1242,6 @@ static int winOpen(
        dwFlagsAndAttributes,
        NULL
     );
-#endif
   }
   if( h==INVALID_HANDLE_VALUE ){
     free(zConverted);
@@ -1287,14 +1313,10 @@ static int winDelete(
     }while( (rc = GetFileAttributesW(zConverted))!=0xffffffff 
             && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
   }else{
-#if SQLITE_OS_WINCE
-    return SQLITE_NOMEM;
-#else
     do{
       DeleteFileA(zConverted);
     }while( (rc = GetFileAttributesA(zConverted))!=0xffffffff
             && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
-#endif
   }
   free(zConverted);
   OSTRACE2("DELETE \"%s\"\n", zFilename);
@@ -1319,17 +1341,13 @@ static int winAccess(
   if( isNT() ){
     attr = GetFileAttributesW((WCHAR*)zConverted);
   }else{
-#if SQLITE_OS_WINCE
-    return SQLITE_NOMEM;
-#else
     attr = GetFileAttributesA((char*)zConverted);
-#endif
   }
   free(zConverted);
   switch( flags ){
     case SQLITE_ACCESS_READ:
     case SQLITE_ACCESS_EXISTS:
-      rc = attr!=0xffffffff;
+      rc = attr!=INVALID_FILE_ATTRIBUTES;
       break;
     case SQLITE_ACCESS_READWRITE:
       rc = (attr & FILE_ATTRIBUTE_READONLY)==0;
@@ -1429,24 +1447,7 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   return (void*)h;
 }
 static void winDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
-#if SQLITE_OS_WINCE
-  int error = GetLastError();
-  if( error>0x7FFFFFF ){
-    sqlite3_snprintf(nBuf, zBufOut, "OsError 0x%x", error);
-  }else{
-    sqlite3_snprintf(nBuf, zBufOut, "OsError %d", error);
-  }
-#else
-  FormatMessageA(
-    FORMAT_MESSAGE_FROM_SYSTEM,
-    NULL,
-    GetLastError(),
-    0,
-    zBufOut,
-    nBuf-1,
-    0
-  );
-#endif
+  getLastErrorMsg(nBuf, zBufOut);
 }
 void *winDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
 #if SQLITE_OS_WINCE
@@ -1530,7 +1531,10 @@ int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
 #if SQLITE_OS_WINCE
   SYSTEMTIME time;
   GetSystemTime(&time);
-  SystemTimeToFileTime(&time,&ft);
+  /* if SystemTimeToFileTime() fails, it returns zero. */
+  if (!SystemTimeToFileTime(&time,&ft)){
+    return 1;
+  }
 #else
   GetSystemTimeAsFileTime( &ft );
 #endif
@@ -1544,8 +1548,38 @@ int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
   return 0;
 }
 
+/*
+** The idea is that this function works like a combination of
+** GetLastError() and FormatMessage() on windows (or errno and
+** strerror_r() on unix). After an error is returned by an OS
+** function, SQLite calls this function with zBuf pointing to
+** a buffer of nBuf bytes. The OS layer should populate the
+** buffer with a nul-terminated UTF-8 encoded error message
+** describing the last IO error to have occured within the calling
+** thread.
+**
+** If the error message is too large for the supplied buffer,
+** it should be truncated. The return value of xGetLastError
+** is zero if the error message fits in the buffer, or non-zero
+** otherwise (if the message was truncated). If non-zero is returned,
+** then it is not necessary to include the nul-terminator character
+** in the output buffer.
+**
+** Not supplying an error message will have no adverse effect
+** on SQLite. It is fine to have an implementation that never
+** returns an error message:
+**
+**   int xGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
+**     assert(zBuf[0]=='\0');
+**     return 0;
+**   }
+**
+** However if an error message is supplied, it will be incorporated
+** by sqlite into the error message available to the user using
+** sqlite3_errmsg(), possibly making IO errors easier to debug.
+*/
 static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
-  return 0;
+  return getLastErrorMsg(nBuf, zBuf);
 }
 
 /*
