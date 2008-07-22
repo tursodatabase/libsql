@@ -1781,9 +1781,10 @@ typedef enum fulltext_statement {
 
   SEGDIR_MAX_INDEX_STMT,
   SEGDIR_SET_STMT,
-  SEGDIR_SELECT_STMT,
+  SEGDIR_SELECT_LEVEL_STMT,
   SEGDIR_SPAN_STMT,
   SEGDIR_DELETE_STMT,
+  SEGDIR_SELECT_SEGMENT_STMT,
   SEGDIR_SELECT_ALL_STMT,
 
   MAX_STMT                     /* Always at end! */
@@ -1806,15 +1807,23 @@ static const char *const fulltext_zStatement[MAX_STMT] = {
 
   /* SEGDIR_MAX_INDEX */ "select max(idx) from %_segdir where level = ?",
   /* SEGDIR_SET */ "insert into %_segdir values (?, ?, ?, ?, ?, ?)",
-  /* SEGDIR_SELECT */
+  /* SEGDIR_SELECT_LEVEL */
   "select start_block, leaves_end_block, root from %_segdir "
   " where level = ? order by idx",
   /* SEGDIR_SPAN */
   "select min(start_block), max(end_block) from %_segdir "
   " where level = ? and start_block <> 0",
   /* SEGDIR_DELETE */ "delete from %_segdir where level = ?",
+
+  /* NOTE(shess): The first three results of the following two
+  ** statements must match.
+  */
+  /* SEGDIR_SELECT_SEGMENT */
+  "select start_block, leaves_end_block, root from %_segdir "
+  " where level = ? and idx = ?",
   /* SEGDIR_SELECT_ALL */
-  "select root, leaves_end_block from %_segdir order by level desc, idx",
+  "select start_block, leaves_end_block, root from %_segdir "
+  " order by level desc, idx asc",
 };
 
 /*
@@ -5073,7 +5082,7 @@ static void leavesReaderReorder(LeavesReader *pLr, int nLr){
 static int leavesReadersInit(fulltext_vtab *v, int iLevel,
                              LeavesReader *pReaders, int *piReaders){
   sqlite3_stmt *s;
-  int i, rc = sql_get_statement(v, SEGDIR_SELECT_STMT, &s);
+  int i, rc = sql_get_statement(v, SEGDIR_SELECT_LEVEL_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3_bind_int(s, 1, iLevel);
@@ -5611,8 +5620,8 @@ static int termSelect(fulltext_vtab *v, int iColumn,
   ** elements for given docids overwrite older elements.
   */
   while( (rc = sqlite3_step(s))==SQLITE_ROW ){
-    const char *pData = sqlite3_column_blob(s, 0);
-    const int nData = sqlite3_column_bytes(s, 0);
+    const char *pData = sqlite3_column_blob(s, 2);
+    const int nData = sqlite3_column_bytes(s, 2);
     const sqlite_int64 iLeavesEnd = sqlite3_column_int64(s, 1);
     rc = loadSegment(v, pData, nData, iLeavesEnd, pTerm, nTerm, isPrefix,
                      &doclist);
@@ -5881,6 +5890,386 @@ static void snippetOffsetsFunc(
   }
 }
 
+#ifdef SQLITE_TEST
+/* Generate an error of the form "<prefix>: <msg>".  If msg is NULL,
+** pull the error from the context's db handle.
+*/
+static void generateError(sqlite3_context *pContext,
+                          const char *prefix, const char *msg){
+  char buf[512];
+  if( msg==NULL ) msg = sqlite3_errmsg(sqlite3_context_db_handle(pContext));
+  sqlite3_snprintf(sizeof(buf), buf, "%s: %s", prefix, msg);
+  sqlite3_result_error(pContext, buf, -1);
+}
+
+/* Helper function to collect the set of terms in the segment into
+** pTerms.  The segment is defined by the leaf nodes between
+** iStartBlockid and iEndBlockid, inclusive, or by the contents of
+** pRootData if iStartBlockid is 0 (in which case the entire segment
+** fit in a leaf).
+*/
+static int collectSegmentTerms(fulltext_vtab *v, sqlite3_stmt *s,
+                               fts2Hash *pTerms){
+  const sqlite_int64 iStartBlockid = sqlite3_column_int64(s, 0);
+  const sqlite_int64 iEndBlockid = sqlite3_column_int64(s, 1);
+  const char *pRootData = sqlite3_column_blob(s, 2);
+  const int nRootData = sqlite3_column_bytes(s, 2);
+  LeavesReader reader;
+  int rc = leavesReaderInit(v, 0, iStartBlockid, iEndBlockid,
+                            pRootData, nRootData, &reader);
+  if( rc!=SQLITE_OK ) return rc;
+
+  while( rc==SQLITE_OK && !leavesReaderAtEnd(&reader) ){
+    const char *pTerm = leavesReaderTerm(&reader);
+    const int nTerm = leavesReaderTermBytes(&reader);
+    void *oldValue = sqlite3Fts2HashFind(pTerms, pTerm, nTerm);
+    void *newValue = (void *)((char *)oldValue+1);
+
+    /* From the comment before sqlite3Fts2HashInsert in fts2_hash.c,
+    ** the data value passed is returned in case of malloc failure.
+    */
+    if( newValue==sqlite3Fts2HashInsert(pTerms, pTerm, nTerm, newValue) ){
+      rc = SQLITE_NOMEM;
+    }else{
+      rc = leavesReaderStep(v, &reader);
+    }
+  }
+
+  leavesReaderDestroy(&reader);
+  return rc;
+}
+
+/* Helper function to build the result string for dump_terms(). */
+static int generateTermsResult(sqlite3_context *pContext, fts2Hash *pTerms){
+  int iTerm, nTerms, nResultBytes, iByte;
+  char *result;
+  TermData *pData;
+  fts2HashElem *e;
+
+  /* Iterate pTerms to generate an array of terms in pData for
+  ** sorting.
+  */
+  nTerms = fts2HashCount(pTerms);
+  assert( nTerms>0 );
+  pData = sqlite3_malloc(nTerms*sizeof(TermData));
+  if( pData==NULL ) return SQLITE_NOMEM;
+
+  nResultBytes = 0;
+  for(iTerm = 0, e = fts2HashFirst(pTerms); e; iTerm++, e = fts2HashNext(e)){
+    nResultBytes += fts2HashKeysize(e)+1;   /* Term plus trailing space */
+    assert( iTerm<nTerms );
+    pData[iTerm].pTerm = fts2HashKey(e);
+    pData[iTerm].nTerm = fts2HashKeysize(e);
+    pData[iTerm].pCollector = fts2HashData(e);  /* unused */
+  }
+  assert( iTerm==nTerms );
+
+  assert( nResultBytes>0 );   /* nTerms>0, nResultsBytes must be, too. */
+  result = sqlite3_malloc(nResultBytes);
+  if( result==NULL ){
+    sqlite3_free(pData);
+    return SQLITE_NOMEM;
+  }
+
+  if( nTerms>1 ) qsort(pData, nTerms, sizeof(*pData), termDataCmp);
+
+  /* Read the terms in order to build the result. */
+  iByte = 0;
+  for(iTerm=0; iTerm<nTerms; ++iTerm){
+    memcpy(result+iByte, pData[iTerm].pTerm, pData[iTerm].nTerm);
+    iByte += pData[iTerm].nTerm;
+    result[iByte++] = ' ';
+  }
+  assert( iByte==nResultBytes );
+  assert( result[nResultBytes-1]==' ' );
+  result[nResultBytes-1] = '\0';
+
+  /* Passes away ownership of result. */
+  sqlite3_result_text(pContext, result, nResultBytes-1, sqlite3_free);
+  sqlite3_free(pData);
+  return SQLITE_OK;
+}
+
+/* Implements dump_terms() for use in inspecting the fts2 index from
+** tests.  TEXT result containing the ordered list of terms joined by
+** spaces.  dump_terms(t, level, idx) dumps the terms for the segment
+** specified by level, idx (in %_segdir), while dump_terms(t) dumps
+** all terms in the index.  In both cases t is the fts table's magic
+** table-named column.
+*/
+static void dumpTermsFunc(
+  sqlite3_context *pContext,
+  int argc, sqlite3_value **argv
+){
+  fulltext_cursor *pCursor;
+  if( argc!=3 && argc!=1 ){
+    generateError(pContext, "dump_terms", "incorrect arguments");
+  }else if( sqlite3_value_type(argv[0])!=SQLITE_BLOB ||
+            sqlite3_value_bytes(argv[0])!=sizeof(pCursor) ){
+    generateError(pContext, "dump_terms", "illegal first argument");
+  }else{
+    fulltext_vtab *v;
+    fts2Hash terms;
+    sqlite3_stmt *s = NULL;
+    int rc;
+
+    memcpy(&pCursor, sqlite3_value_blob(argv[0]), sizeof(pCursor));
+    v = cursor_vtab(pCursor);
+
+    /* If passed only the cursor column, get all segments.  Otherwise
+    ** get the segment described by the following two arguments.
+    */
+    if( argc==1 ){
+      rc = sql_get_statement(v, SEGDIR_SELECT_ALL_STMT, &s);
+    }else{
+      rc = sql_get_statement(v, SEGDIR_SELECT_SEGMENT_STMT, &s);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3_bind_int(s, 1, sqlite3_value_int(argv[1]));
+        if( rc==SQLITE_OK ){
+          rc = sqlite3_bind_int(s, 2, sqlite3_value_int(argv[2]));
+        }
+      }
+    }
+
+    if( rc!=SQLITE_OK ){
+      generateError(pContext, "dump_terms", NULL);
+      return;
+    }
+
+    /* Collect the terms for each segment. */
+    sqlite3Fts2HashInit(&terms, FTS2_HASH_STRING, 1);
+    while( (rc = sqlite3_step(s))==SQLITE_ROW ){
+      rc = collectSegmentTerms(v, s, &terms);
+      if( rc!=SQLITE_OK ) break;
+    }
+
+    if( rc!=SQLITE_DONE ){
+      sqlite3_reset(s);
+      generateError(pContext, "dump_terms", NULL);
+    }else{
+      const int nTerms = fts2HashCount(&terms);
+      if( nTerms>0 ){
+        rc = generateTermsResult(pContext, &terms);
+        if( rc==SQLITE_NOMEM ){
+          generateError(pContext, "dump_terms", "out of memory");
+        }else{
+          assert( rc==SQLITE_OK );
+        }
+      }else if( argc==3 ){
+        /* The specific segment asked for could not be found. */
+        generateError(pContext, "dump_terms", "segment not found");
+      }else{
+        /* No segments found. */
+        /* TODO(shess): It should be impossible to reach this.  This
+        ** case can only happen for an empty table, in which case
+        ** SQLite has no rows to call this function on.
+        */
+        sqlite3_result_null(pContext);
+      }
+    }
+    sqlite3Fts2HashClear(&terms);
+  }
+}
+
+/* Expand the DL_DEFAULT doclist in pData into a text result in
+** pContext.
+*/
+static void createDoclistResult(sqlite3_context *pContext,
+                                const char *pData, int nData){
+  DataBuffer dump;
+  DLReader dlReader;
+
+  assert( pData!=NULL && nData>0 );
+
+  dataBufferInit(&dump, 0);
+  dlrInit(&dlReader, DL_DEFAULT, pData, nData);
+  for( ; !dlrAtEnd(&dlReader); dlrStep(&dlReader) ){
+    char buf[256];
+    PLReader plReader;
+
+    plrInit(&plReader, &dlReader);
+    if( DL_DEFAULT==DL_DOCIDS || plrAtEnd(&plReader) ){
+      sqlite3_snprintf(sizeof(buf), buf, "[%lld] ", dlrDocid(&dlReader));
+      dataBufferAppend(&dump, buf, strlen(buf));
+    }else{
+      int iColumn = plrColumn(&plReader);
+
+      sqlite3_snprintf(sizeof(buf), buf, "[%lld %d[",
+                       dlrDocid(&dlReader), iColumn);
+      dataBufferAppend(&dump, buf, strlen(buf));
+
+      for( ; !plrAtEnd(&plReader); plrStep(&plReader) ){
+        if( plrColumn(&plReader)!=iColumn ){
+          iColumn = plrColumn(&plReader);
+          sqlite3_snprintf(sizeof(buf), buf, "] %d[", iColumn);
+          assert( dump.nData>0 );
+          dump.nData--;                     /* Overwrite trailing space. */
+          assert( dump.pData[dump.nData]==' ');
+          dataBufferAppend(&dump, buf, strlen(buf));
+        }
+        if( DL_DEFAULT==DL_POSITIONS_OFFSETS ){
+          sqlite3_snprintf(sizeof(buf), buf, "%d,%d,%d ",
+                           plrPosition(&plReader),
+                           plrStartOffset(&plReader), plrEndOffset(&plReader));
+        }else if( DL_DEFAULT==DL_POSITIONS ){
+          sqlite3_snprintf(sizeof(buf), buf, "%d ", plrPosition(&plReader));
+        }else{
+          assert( NULL=="Unhandled DL_DEFAULT value");
+        }
+        dataBufferAppend(&dump, buf, strlen(buf));
+      }
+      plrDestroy(&plReader);
+
+      assert( dump.nData>0 );
+      dump.nData--;                     /* Overwrite trailing space. */
+      assert( dump.pData[dump.nData]==' ');
+      dataBufferAppend(&dump, "]] ", 3);
+    }
+  }
+  dlrDestroy(&dlReader);
+
+  assert( dump.nData>0 );
+  dump.nData--;                     /* Overwrite trailing space. */
+  assert( dump.pData[dump.nData]==' ');
+  dump.pData[dump.nData] = '\0';
+  assert( dump.nData>0 );
+
+  /* Passes ownership of dump's buffer to pContext. */
+  sqlite3_result_text(pContext, dump.pData, dump.nData, sqlite3_free);
+  dump.pData = NULL;
+  dump.nData = dump.nCapacity = 0;
+}
+
+/* Implements dump_doclist() for use in inspecting the fts2 index from
+** tests.  TEXT result containing a string representation of the
+** doclist for the indicated term.  dump_doclist(t, term, level, idx)
+** dumps the doclist for term from the segment specified by level, idx
+** (in %_segdir), while dump_doclist(t, term) dumps the logical
+** doclist for the term across all segments.  The per-segment doclist
+** can contain deletions, while the full-index doclist will not
+** (deletions are omitted).
+**
+** Result formats differ with the setting of DL_DEFAULTS.  Examples:
+**
+** DL_DOCIDS: [1] [3] [7]
+** DL_POSITIONS: [1 0[0 4] 1[17]] [3 1[5]]
+** DL_POSITIONS_OFFSETS: [1 0[0,0,3 4,23,26] 1[17,102,105]] [3 1[5,20,23]]
+**
+** In each case the number after the outer '[' is the docid.  In the
+** latter two cases, the number before the inner '[' is the column
+** associated with the values within.  For DL_POSITIONS the numbers
+** within are the positions, for DL_POSITIONS_OFFSETS they are the
+** position, the start offset, and the end offset.
+*/
+static void dumpDoclistFunc(
+  sqlite3_context *pContext,
+  int argc, sqlite3_value **argv
+){
+  fulltext_cursor *pCursor;
+  if( argc!=2 && argc!=4 ){
+    generateError(pContext, "dump_doclist", "incorrect arguments");
+  }else if( sqlite3_value_type(argv[0])!=SQLITE_BLOB ||
+            sqlite3_value_bytes(argv[0])!=sizeof(pCursor) ){
+    generateError(pContext, "dump_doclist", "illegal first argument");
+  }else if( sqlite3_value_text(argv[1])==NULL ||
+            sqlite3_value_text(argv[1])[0]=='\0' ){
+    generateError(pContext, "dump_doclist", "empty second argument");
+  }else{
+    const char *pTerm = (const char *)sqlite3_value_text(argv[1]);
+    const int nTerm = strlen(pTerm);
+    fulltext_vtab *v;
+    int rc;
+    DataBuffer doclist;
+
+    memcpy(&pCursor, sqlite3_value_blob(argv[0]), sizeof(pCursor));
+    v = cursor_vtab(pCursor);
+
+    dataBufferInit(&doclist, 0);
+
+    /* termSelect() yields the same logical doclist that queries are
+    ** run against.
+    */
+    if( argc==2 ){
+      rc = termSelect(v, v->nColumn, pTerm, nTerm, 0, DL_DEFAULT, &doclist);
+    }else{
+      sqlite3_stmt *s = NULL;
+
+      /* Get our specific segment's information. */
+      rc = sql_get_statement(v, SEGDIR_SELECT_SEGMENT_STMT, &s);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3_bind_int(s, 1, sqlite3_value_int(argv[2]));
+        if( rc==SQLITE_OK ){
+          rc = sqlite3_bind_int(s, 2, sqlite3_value_int(argv[3]));
+        }
+      }
+
+      if( rc==SQLITE_OK ){
+        rc = sqlite3_step(s);
+
+        if( rc==SQLITE_DONE ){
+          dataBufferDestroy(&doclist);
+          generateError(pContext, "dump_doclist", "segment not found");
+          return;
+        }
+
+        /* Found a segment, load it into doclist. */
+        if( rc==SQLITE_ROW ){
+          const sqlite_int64 iLeavesEnd = sqlite3_column_int64(s, 1);
+          const char *pData = sqlite3_column_blob(s, 2);
+          const int nData = sqlite3_column_bytes(s, 2);
+
+          /* loadSegment() is used by termSelect() to load each
+          ** segment's data.
+          */
+          rc = loadSegment(v, pData, nData, iLeavesEnd, pTerm, nTerm, 0,
+                           &doclist);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3_step(s);
+
+            /* Should not have more than one matching segment. */
+            if( rc!=SQLITE_DONE ){
+              sqlite3_reset(s);
+              dataBufferDestroy(&doclist);
+              generateError(pContext, "dump_doclist", "invalid segdir");
+              return;
+            }
+            rc = SQLITE_OK;
+          }
+        }
+      }
+
+      sqlite3_reset(s);
+    }
+
+    if( rc==SQLITE_OK ){
+      if( doclist.nData>0 ){
+        createDoclistResult(pContext, doclist.pData, doclist.nData);
+      }else{
+        /* TODO(shess): This can happen if the term is not present, or
+        ** if all instances of the term have been deleted and this is
+        ** an all-index dump.  It may be interesting to distinguish
+        ** these cases.
+        */
+        sqlite3_result_text(pContext, "", 0, SQLITE_STATIC);
+      }
+    }else if( rc==SQLITE_NOMEM ){
+      /* Handle out-of-memory cases specially because if they are
+      ** generated in fts2 code they may not be reflected in the db
+      ** handle.
+      */
+      /* TODO(shess): Handle this more comprehensively.
+      ** sqlite3ErrStr() has what I need, but is internal.
+      */
+      generateError(pContext, "dump_doclist", "out of memory");
+    }else{
+      generateError(pContext, "dump_doclist", NULL);
+    }
+
+    dataBufferDestroy(&doclist);
+  }
+}
+#endif
+
 /*
 ** This routine implements the xFindFunction method for the FTS2
 ** virtual table.
@@ -5898,6 +6287,20 @@ static int fulltextFindFunction(
   }else if( strcmp(zName,"offsets")==0 ){
     *pxFunc = snippetOffsetsFunc;
     return 1;
+#ifdef SQLITE_TEST
+    /* NOTE(shess): These functions are present only for testing
+    ** purposes.  No particular effort is made to optimize their
+    ** execution or how they build their results.
+    */
+  }else if( strcmp(zName,"dump_terms")==0 ){
+    /* fprintf(stderr, "Found dump_terms\n"); */
+    *pxFunc = dumpTermsFunc;
+    return 1;
+  }else if( strcmp(zName,"dump_doclist")==0 ){
+    /* fprintf(stderr, "Found dump_doclist\n"); */
+    *pxFunc = dumpDoclistFunc;
+    return 1;
+#endif
   }
   return 0;
 }
@@ -6017,6 +6420,10 @@ int sqlite3Fts2Init(sqlite3 *db){
    && SQLITE_OK==(rc = sqlite3Fts2InitHashTable(db, pHash, "fts2_tokenizer"))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "snippet", -1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "offsets", -1))
+#ifdef SQLITE_TEST
+   && SQLITE_OK==(rc = sqlite3_overload_function(db, "dump_terms", -1))
+   && SQLITE_OK==(rc = sqlite3_overload_function(db, "dump_doclist", -1))
+#endif
   ){
     return sqlite3_create_module_v2(
         db, "fts2", &fts2Module, (void *)pHash, hashDestroy
