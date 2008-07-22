@@ -31,12 +31,18 @@
 
 #include "fts2_hash.h"
 
-static void *malloc_and_zero(int n){
-  void *p = malloc(n);
+/*
+** Malloc and Free functions
+*/
+static void *fts2HashMalloc(int n){
+  void *p = sqlite3_malloc(n);
   if( p ){
     memset(p, 0, n);
   }
   return p;
+}
+static void fts2HashFree(void *p){
+  sqlite3_free(p);
 }
 
 /* Turn bulk memory into a hash table object by initializing the
@@ -58,8 +64,6 @@ void sqlite3Fts2HashInit(fts2Hash *pNew, int keyClass, int copyKey){
   pNew->count = 0;
   pNew->htsize = 0;
   pNew->ht = 0;
-  pNew->xMalloc = malloc_and_zero;
-  pNew->xFree = free;
 }
 
 /* Remove all entries from a hash table.  Reclaim all memory.
@@ -72,15 +76,15 @@ void sqlite3Fts2HashClear(fts2Hash *pH){
   assert( pH!=0 );
   elem = pH->first;
   pH->first = 0;
-  if( pH->ht ) pH->xFree(pH->ht);
+  fts2HashFree(pH->ht);
   pH->ht = 0;
   pH->htsize = 0;
   while( elem ){
     fts2HashElem *next_elem = elem->next;
     if( pH->copyKey && elem->pKey ){
-      pH->xFree(elem->pKey);
+      fts2HashFree(elem->pKey);
     }
-    pH->xFree(elem);
+    fts2HashFree(elem);
     elem = next_elem;
   }
   pH->count = 0;
@@ -192,9 +196,9 @@ static void rehash(fts2Hash *pH, int new_size){
   int (*xHash)(const void*,int);   /* The hash function */
 
   assert( (new_size & (new_size-1))==0 );
-  new_ht = (struct _fts2ht *)pH->xMalloc( new_size*sizeof(struct _fts2ht) );
+  new_ht = (struct _fts2ht *)fts2HashMalloc( new_size*sizeof(struct _fts2ht) );
   if( new_ht==0 ) return;
-  if( pH->ht ) pH->xFree(pH->ht);
+  fts2HashFree(pH->ht);
   pH->ht = new_ht;
   pH->htsize = new_size;
   xHash = hashFunction(pH->keyClass);
@@ -260,9 +264,9 @@ static void removeElementGivenHash(
     pEntry->chain = 0;
   }
   if( pH->copyKey && elem->pKey ){
-    pH->xFree(elem->pKey);
+    fts2HashFree(elem->pKey);
   }
-  pH->xFree( elem );
+  fts2HashFree( elem );
   pH->count--;
   if( pH->count<=0 ){
     assert( pH->first==0 );
@@ -333,12 +337,12 @@ void *sqlite3Fts2HashInsert(
     return old_data;
   }
   if( data==0 ) return 0;
-  new_elem = (fts2HashElem*)pH->xMalloc( sizeof(fts2HashElem) );
+  new_elem = (fts2HashElem*)fts2HashMalloc( sizeof(fts2HashElem) );
   if( new_elem==0 ) return data;
   if( pH->copyKey && pKey!=0 ){
-    new_elem->pKey = pH->xMalloc( nKey );
+    new_elem->pKey = fts2HashMalloc( nKey );
     if( new_elem->pKey==0 ){
-      pH->xFree(new_elem);
+      fts2HashFree(new_elem);
       return data;
     }
     memcpy((void*)new_elem->pKey, pKey, nKey);
@@ -351,7 +355,7 @@ void *sqlite3Fts2HashInsert(
     rehash(pH,8);
     if( pH->htsize==0 ){
       pH->count = 0;
-      pH->xFree(new_elem);
+      fts2HashFree(new_elem);
       return data;
     }
   }

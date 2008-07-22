@@ -34,8 +34,6 @@ struct fts2Hash {
   char copyKey;           /* True if copy of key made on insert */
   int count;              /* Number of entries in this table */
   fts2HashElem *first;    /* The first element of the array */
-  void *(*xMalloc)(int);  /* malloc() function to use */
-  void (*xFree)(void *);  /* free() function to use */
   int htsize;             /* Number of buckets in the hash table */
   struct _fts2ht {        /* the hash table */
     int count;               /* Number of entries with this hash */
