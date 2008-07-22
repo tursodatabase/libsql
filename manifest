@@ -1,5 +1,5 @@
-C Implement\soptimize()\sfunction.\r\nBackports\scheck-in\s(5417)\sfrom\sfts3.\s(CVS\s5458)
-D 2008-07-22T23:49:44
+C Be\sa\sbit\smore\ssusicious\sof\sinvalid\sresults\sfrom\sthe\stokenizer.\r\nBackports\scheck-in\s(4514)\sfrom\sfts3.\s(CVS\s5459)
+D 2008-07-22T23:54:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -39,7 +39,7 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 21e3684ea5a095b55d70f6878b4ce6af5932dfb7
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c ff1d7646d48810d08b5a081be3495b16c3a603f1
+F ext/fts2/fts2.c 5f6f8fa8f756d37a5eb271ea42e56a103f965ef5
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c 2689e42e1107ea67207f725cf69cf8972d00cf93
 F ext/fts2/fts2_hash.h 9a5b1be94664139f93217a0770d7144425cffb3a
@@ -611,7 +611,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4c98179be258319f441ae4e123cf59af77e96409
-R 7d4ed449896aa36fee287e4efa2f50e0
+P c16900dc7603cab30f8729b25361bc88bb37ae43
+R 2823196dc71e81c3c7ae664b26b8eaee
 U shess
-Z 5157ad4962dd96eaaf179dc694e76db5
+Z 401522a3652c6757103a76d2da0f5923
