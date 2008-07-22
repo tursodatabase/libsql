@@ -1,5 +1,5 @@
-C Added\scomment\son\sfloating\spoint\sprecision\scompile\soption\sfor\sMSVC.\s(CVS\s5448)
-D 2008-07-22T05:15:53
+C Changed\sa\sfew\sloop\scounters\sto\sunsigned\sints\sto\sremove\scompiler\swarnings.\s(CVS\s5449)
+D 2008-07-22T05:18:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -134,7 +134,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c da14449fc210cd313eb56cf511ae05b350e323d6
 F src/os_unix.c 1df6108efdb7957a9f28b9700600e58647c9c12d
 F src/os_win.c 08f8678d2cce51f2366ef3579fdfad9aad745b06
-F src/pager.c e65d78bdbd316c3ca0135d2a98ecc607873145aa
+F src/pager.c a6ecad26297469a8a3d1fd7a7c3dc2d603955044
 F src/pager.h 588c1ac195228b2da45c4e5f7ab6c2fd253d1751
 F src/parse.y d1316f1b8b251412bdf4926c4c34803977958b65
 F src/pragma.c 6fad83fbcc7ec6e76d91fe2805fe972ff3af6a0c
@@ -186,7 +186,7 @@ F src/vdbe.c 179dbe5f08b17c712be65e951eaada3b3ca52092
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
 F src/vdbeInt.h 30535c1d30ba1b5fb58d8f0e1d1261af976558aa
 F src/vdbeapi.c a7c6b8db324cf7eccff32de871dea36aa305c994
-F src/vdbeaux.c 2ef92c0224d65e4fa127cb42620b9beab661c55b
+F src/vdbeaux.c 05330c212c77dfd43300bc31bfa0044e4f7ec956
 F src/vdbeblob.c a20fe9345062b1a1b4cc187dc5fad45c9414033b
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
 F src/vdbemem.c 0c72b58ffd759676ce4829f42bacb83842a58c21
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8474cde34b3fcb99cd5908fddb8528d0db331cdf
-R 4ff2e855d27a90c3263b2dd456288ee5
+P e20f2b8c6a13aa826703441cf340d0ee03bf9f64
+R 67e26af499bfcadbb1a16712b95d09d3
 U shane
-Z 4590470ad70206bca68504216297f533
+Z 2fcb45844f990ac9b853cdd298c7bd91

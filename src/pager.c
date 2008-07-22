@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.466 2008/07/16 18:17:56 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.467 2008/07/22 05:18:01 shane Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -896,7 +896,7 @@ static int readMasterJournal(sqlite3_file *pJrnl, char *zMaster, int nMaster){
   u32 len;
   i64 szJ;
   u32 cksum;
-  int i;
+  u32 u;                   /* Unsigned loop counter */
   unsigned char aMagic[8]; /* A buffer to hold the magic header */
 
   zMaster[0] = '\0';
@@ -924,8 +924,8 @@ static int readMasterJournal(sqlite3_file *pJrnl, char *zMaster, int nMaster){
   zMaster[len] = '\0';
 
   /* See if the checksum matches the master journal name */
-  for(i=0; i<len; i++){
-    cksum -= zMaster[i];
+  for(u=0; u<len; u++){
+    cksum -= zMaster[u];
    }
   if( cksum ){
     /* If the checksum doesn't add up, then one or more of the disk sectors
@@ -1848,7 +1848,7 @@ static int pager_playback(Pager *pPager, int isHot){
   sqlite3_vfs *pVfs = pPager->pVfs;
   i64 szJ;                 /* Size of the journal file in bytes */
   u32 nRec;                /* Number of Records in the journal */
-  u32 i;                   /* Loop counter */
+  u32 u;                   /* Unsigned loop counter */
   Pgno mxPg = 0;           /* Size of the original file in pages */
   int rc;                  /* Result code of a subroutine */
   int res = 1;             /* Value returned by sqlite3OsAccess() */
@@ -1931,7 +1931,7 @@ static int pager_playback(Pager *pPager, int isHot){
 
     /* Copy original pages out of the journal and back into the database file.
     */
-    for(i=0; i<nRec; i++){
+    for(u=0; u<nRec; u++){
       rc = pager_playback_one_page(pPager, pPager->jfd, pPager->journalOff, 1);
       if( rc!=SQLITE_OK ){
         if( rc==SQLITE_DONE ){

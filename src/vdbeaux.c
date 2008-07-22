@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.398 2008/07/18 08:10:47 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.399 2008/07/22 05:18:01 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2205,7 +2205,8 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
   const unsigned char *aKey = (const unsigned char *)pKey;
   UnpackedRecord *p;
   int nByte;
-  int i, idx, d;
+  int idx, d;
+  u16 u;                 /* Unsigned loop counter */
   u32 szHdr;
   Mem *pMem;
   
@@ -2225,8 +2226,8 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
   p->aMem = pMem = &((Mem*)p)[1];
   idx = getVarint32(aKey, szHdr);
   d = szHdr;
-  i = 0;
-  while( idx<szHdr && i<p->nField ){
+  u = 0;
+  while( idx<szHdr && u<p->nField ){
     u32 serial_type;
 
     idx += getVarint32( aKey+idx, serial_type);
@@ -2237,9 +2238,9 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
     pMem->zMalloc = 0;
     d += sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     pMem++;
-    i++;
+    u++;
   }
-  p->nField = i;
+  p->nField = u;
   return (void*)p;
 }
 
