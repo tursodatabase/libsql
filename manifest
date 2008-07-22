@@ -1,5 +1,5 @@
-C "configure"\ssupport\supdated.\s\sRemoved\sunused\sfeatures.\s\sAdded\sparsing\sof\sCFLAGS\sand\sCPPFLAGS\sto\sextract\sOMIT\soptions\sto\spass\sto\slemon\sand\smkkeywordhash.\s(CVS\s5446)
-D 2008-07-22T05:05:02
+C Add\sassertion\scheck\sfor\sNaN\ssupport\sat\sstartup.\s(CVS\s5447)
+D 2008-07-22T05:13:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/insert.c e8efc17d037346e4a4a6949e72aab850befe3d5d
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c ae0eed9fa96d74172d2a90ee63b5bc36d284295c
-F src/main.c 59b622b0f6b6c4b44a23a71ae8dac53bfec113ca
+F src/main.c c89f35b92cb9e3bf405a58a5ab8ae5c618d5e1fb
 F src/malloc.c c4b525896b8c188dab98609180d13dbeeeb33a84
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 8340fa5f969e9f9b9bdeb54106457a2003456d2b
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1ffe7a995733fe91534a3ed81d2640fd7e6ebaa6
-R 0e73a5ae402dd55fe613de24133abe43
+P c67aa5057deda6419e1f205118bf09957d599c15
+R 8745c7fb5b4644c4f38b49737035177e
 U shane
-Z a770b6ac41943e4c9632defd47535f79
+Z e2ad2c8167d4599ae7ade4fe1ae5e2bd

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.479 2008/07/16 14:02:33 drh Exp $
+** $Id: main.c,v 1.480 2008/07/22 05:13:30 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -117,6 +117,20 @@ int sqlite3_initialize(void){
     sqlite3Config.isInit = (rc==SQLITE_OK ? 1 : 0);
     sqlite3_mutex_leave(sqlite3Config.pInitMutex);
   }
+
+  /* Check NaN support. */
+#ifndef NDEBUG
+  /* This section of code's only "output" is via assert() statements. */
+  if ( rc==SQLITE_OK ){
+    u64 x = (((u64)1)<<63)-1;
+    double y;
+    assert(sizeof(x)==8);
+    assert(sizeof(x)==sizeof(y));
+    memcpy(&y, &x, 8);
+    assert( sqlite3IsNaN(y) );
+  }
+#endif
+
   return rc;
 }
 
