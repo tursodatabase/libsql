@@ -1,5 +1,5 @@
-C Add\sassertion\scheck\sfor\sNaN\ssupport\sat\sstartup.\s(CVS\s5447)
-D 2008-07-22T05:13:30
+C Added\scomment\son\sfloating\spoint\sprecision\scompile\soption\sfor\sMSVC.\s(CVS\s5448)
+D 2008-07-22T05:15:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -180,7 +180,7 @@ F src/tokenize.c b5fdc79fb7e00077b9c02af7a0da3b89c9f3398e
 F src/trigger.c bdb56bb9db1a7b18f8505484051221ab5123f21d
 F src/update.c 4e698fcc0c91c241a960304c4236dc3a49603155
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
-F src/util.c a8f80412a536ea309c1887e5d4b58a3fa6eca69c
+F src/util.c f94d11f931775e325b1a9f97b5cd3005bc4328ba
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
 F src/vdbe.c 179dbe5f08b17c712be65e951eaada3b3ca52092
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c67aa5057deda6419e1f205118bf09957d599c15
-R 8745c7fb5b4644c4f38b49737035177e
+P 8474cde34b3fcb99cd5908fddb8528d0db331cdf
+R 4ff2e855d27a90c3263b2dd456288ee5
 U shane
-Z e2ad2c8167d4599ae7ade4fe1ae5e2bd
+Z 4590470ad70206bca68504216297f533
