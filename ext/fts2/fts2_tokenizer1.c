@@ -65,8 +65,9 @@ static int simpleCreate(
 ){
   simple_tokenizer *t;
 
-  t = (simple_tokenizer *) calloc(sizeof(*t), 1);
+  t = (simple_tokenizer *) sqlite3_malloc(sizeof(*t));
   if( t==NULL ) return SQLITE_NOMEM;
+  memset(t, 0, sizeof(*t));
 
   /* TODO(shess) Delimiters need to remain the same from run to run,
   ** else we need to reindex.  One solution would be a meta-table to
@@ -79,7 +80,7 @@ static int simpleCreate(
       unsigned char ch = argv[1][i];
       /* We explicitly don't support UTF-8 delimiters for now. */
       if( ch>=0x80 ){
-        free(t);
+        sqlite3_free(t);
         return SQLITE_ERROR;
       }
       t->delim[ch] = 1;
@@ -100,7 +101,7 @@ static int simpleCreate(
 ** Destroy a tokenizer
 */
 static int simpleDestroy(sqlite3_tokenizer *pTokenizer){
-  free(pTokenizer);
+  sqlite3_free(pTokenizer);
   return SQLITE_OK;
 }
 
@@ -117,7 +118,7 @@ static int simpleOpen(
 ){
   simple_tokenizer_cursor *c;
 
-  c = (simple_tokenizer_cursor *) malloc(sizeof(*c));
+  c = (simple_tokenizer_cursor *) sqlite3_malloc(sizeof(*c));
   if( c==NULL ) return SQLITE_NOMEM;
 
   c->pInput = pInput;
@@ -143,8 +144,8 @@ static int simpleOpen(
 */
 static int simpleClose(sqlite3_tokenizer_cursor *pCursor){
   simple_tokenizer_cursor *c = (simple_tokenizer_cursor *) pCursor;
-  free(c->pToken);
-  free(c);
+  sqlite3_free(c->pToken);
+  sqlite3_free(c);
   return SQLITE_OK;
 }
 
@@ -182,7 +183,7 @@ static int simpleNext(
       int i, n = c->iOffset-iStartOffset;
       if( n>c->nTokenAllocated ){
         c->nTokenAllocated = n+20;
-        c->pToken = realloc(c->pToken, c->nTokenAllocated);
+        c->pToken = sqlite3_realloc(c->pToken, c->nTokenAllocated);
         if( c->pToken==NULL ) return SQLITE_NOMEM;
       }
       for(i=0; i<n; i++){
