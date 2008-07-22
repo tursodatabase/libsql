@@ -1,5 +1,5 @@
-C Cleanup\sthe\shash\sfunctions\sin\sFTS2.\r\nBackports\s(4440)\sfrom\sfts3.\s(CVS\s5452)
-D 2008-07-22T22:15:48
+C fts2.c\sbuildTerms()\spasses\s-1\sfor\snInput.\r\nBackports\s(4511)\sfrom\sfts3.\s(CVS\s5453)
+D 2008-07-22T22:20:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -43,7 +43,7 @@ F ext/fts2/fts2.c 015d44a43d2a3586cd31b29f7fc1c60f21628dc3
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c 25ad8043ce2e708840a8fb179b8ed04325f860eb
 F ext/fts2/fts2_hash.h 9a5b1be94664139f93217a0770d7144425cffb3a
-F ext/fts2/fts2_icu.c 45b54d1e075020b35db20f69d829f95ca0651111
+F ext/fts2/fts2_icu.c 53162e0dbe6d27a0cc24ad2c10cea8c48b7c839b
 F ext/fts2/fts2_porter.c 98c9dbd1eed20032c03ce05877164e262567443e
 F ext/fts2/fts2_tokenizer.c 5cec41326fabe65323945a46fa9495ee85c3d5fd
 F ext/fts2/fts2_tokenizer.h a7e46462d935a314b2682287f12f27530a3ee08e
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e58b49779bfd4a9e88e8c6b0a929c97167b718b3
-R b0e2e1084cef6fc9b84268ad60b73245
+P e31d2f875c13ee41742c9aaee6291662cdbbf863
+R 6376acd2dc63d085f9c9b21e576d7486
 U shess
-Z f00ba8339a7a0adb9edcff3819c5615c
+Z 32663cd2dfd230cb3d5b37a9b5daa7ee
