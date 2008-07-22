@@ -1,5 +1,5 @@
-C winGetLastError\ssupport\sadded.\s\sConsolidated\sgetLastErrorMsg()\ssupport.\s\sRemoved\ssome\smore\sWINCE\sdead\scode\ssimilar\sto\sinstance\sin\sticket\s#3232.\s\s\sAdded\serror\sreturn\son\sSystemTimeToFileTime()\sfailure.\s(CVS\s5450)
-D 2008-07-22T05:32:03
+C Documentation\supdates.\s\sNo\schanges\sto\scode.\s(CVS\s5451)
+D 2008-07-22T18:45:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/printf.c 2174222bc346a11b1eac2a654ccc4f635355ae7e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 859ea5194b05fb2f1f816368062478cda5baa9b8
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
-F src/sqlite.h.in d08ef5ae1089d248120afcfd56ab799cddae8fe9
+F src/sqlite.h.in 4bdbaff3e6ec9eb8e9bdf18933013c07f33cf1ab
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h aebce6d82210334fe00e6d5fa4bb6768cf02f184
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 16f51f9b39c46659b4be4afd7f0d8ec325469e7b
-R 73922393200765ca01fdc60886028f22
-U shane
-Z 22add217ca23a8af113eab5534dd74da
+P c0a5cf38eea80640e42c612ce6f4850c98f70638
+R 4296aa63a77dd23807f217c5dc24b853
+U drh
+Z 141f4ca3973bdd37f521849dfab533e1
