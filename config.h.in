@@ -11,7 +11,7 @@
 *************************************************************************
 ** Configuration header template to be filled in by 'configure' script
 **
-** @(#) $Id: config.h.in,v 1.2 2008/05/06 02:28:06 mlcreech Exp $
+** @(#) $Id: config.h.in,v 1.3 2008/07/22 05:05:02 shane Exp $
 */
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
@@ -33,9 +33,6 @@
 /* Define as 1 if you have the int64_t type */
 #undef HAVE_INT64_T
 
-/* Define as 1 if you have the intptr_t type */
-#undef HAVE_INTPTR_T
-
 /* Define as 1 if you have the uint8_t type */
 #undef HAVE_UINT8_T
 
@@ -47,9 +44,6 @@
 
 /* Define as 1 if you have the uint64_t type */
 #undef HAVE_UINT64_T
-
-/* Define as 1 if you have the uintptr_t type */
-#undef HAVE_UINTPTR_T
 
 
 /*****************************
@@ -84,6 +78,9 @@
 
 /* Define as 1 if you have the localtime_r() function */
 #undef HAVE_LOCALTIME_R
+
+/* Define as 1 if you have the localtime_s() function */
+#undef HAVE_LOCALTIME_S
 
 
 /*****************************

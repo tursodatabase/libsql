@@ -423,9 +423,6 @@ PACKAGE_BUGREPORT=''
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
-#if HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
 #if HAVE_SYS_STAT_H
 # include <sys/stat.h>
 #endif
@@ -433,9 +430,6 @@ ac_includes_default="\
 # include <stdlib.h>
 # include <stddef.h>
 #else
-# if HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
 #endif
 #if HAVE_STRING_H
 # if !STDC_HEADERS && HAVE_MEMORY_H
@@ -457,7 +451,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS LIBTOOL build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT SED EGREP FGREP GREP LD DUMPBIN ac_ct_DUMPBIN NM LN_S AR ac_ct_AR STRIP ac_ct_STRIP RANLIB ac_ct_RANLIB lt_ECHO DSYMUTIL ac_ct_DSYMUTIL NMEDIT ac_ct_NMEDIT LIPO ac_ct_LIPO OTOOL ac_ct_OTOOL OTOOL64 ac_ct_OTOOL64 CPP INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA AWK TCLSH_CMD program_prefix VERSION RELEASE VERSION_NUMBER BUILD_CC SQLITE_THREADSAFE XTHREADCONNECT THREADSOVERRIDELOCKS ALLOWRELEASE TEMP_STORE BUILD_EXEEXT SQLITE_OS_UNIX SQLITE_OS_WIN SQLITE_OS_OS2 TARGET_EXEEXT TCL_VERSION TCL_BIN_DIR TCL_SRC_DIR TCL_LIBS TCL_INCLUDE_SPEC TCL_LIB_FILE TCL_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC HAVE_TCL TARGET_READLINE_LIBS TARGET_READLINE_INC TARGET_HAVE_READLINE TARGET_DEBUG USE_AMALGAMATION LOADEXTENSION_FLAGS USE_GCOV BUILD_CFLAGS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS LIBTOOL build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT SED EGREP FGREP GREP LD DUMPBIN ac_ct_DUMPBIN NM LN_S AR ac_ct_AR STRIP ac_ct_STRIP RANLIB ac_ct_RANLIB lt_ECHO DSYMUTIL ac_ct_DSYMUTIL NMEDIT ac_ct_NMEDIT LIPO ac_ct_LIPO OTOOL ac_ct_OTOOL OTOOL64 ac_ct_OTOOL64 CPP INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA AWK TCLSH_CMD program_prefix VERSION RELEASE VERSION_NUMBER BUILD_CC SQLITE_THREADSAFE XTHREADCONNECT THREADSOVERRIDELOCKS ALLOWRELEASE TEMP_STORE BUILD_EXEEXT SQLITE_OS_UNIX SQLITE_OS_WIN SQLITE_OS_OS2 TARGET_EXEEXT TCL_VERSION TCL_BIN_DIR TCL_SRC_DIR TCL_LIBS TCL_INCLUDE_SPEC TCL_LIB_FILE TCL_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC HAVE_TCL TARGET_READLINE_LIBS TARGET_READLINE_INC TARGET_HAVE_READLINE TARGET_DEBUG USE_AMALGAMATION OPT_FEATURE_FLAGS USE_GCOV BUILD_CFLAGS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1489,7 +1483,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.61 $
+# $Revision: 1.62 $
 
 #########
 # Programs needed
@@ -10131,70 +10125,7 @@ _ACEOF
 
 
 fi
-echo "$as_me:$LINENO: checking for intptr_t" >&5
-echo $ECHO_N "checking for intptr_t... $ECHO_C" >&6
-if test "${ac_cv_type_intptr_t+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-int
-main ()
-{
-if ((intptr_t *) 0)
-  return 0;
-if (sizeof (intptr_t))
-  return 0;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_type_intptr_t=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_type_intptr_t=no
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: $ac_cv_type_intptr_t" >&5
-echo "${ECHO_T}$ac_cv_type_intptr_t" >&6
-if test $ac_cv_type_intptr_t = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_INTPTR_T 1
-_ACEOF
-
-
-fi
 echo "$as_me:$LINENO: checking for uint8_t" >&5
 echo $ECHO_N "checking for uint8_t... $ECHO_C" >&6
 if test "${ac_cv_type_uint8_t+set}" = set; then
@@ -10451,70 +10382,8 @@ _ACEOF
 
 
 fi
-echo "$as_me:$LINENO: checking for uintptr_t" >&5
-echo $ECHO_N "checking for uintptr_t... $ECHO_C" >&6
-if test "${ac_cv_type_uintptr_t+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-int
-main ()
-{
-if ((uintptr_t *) 0)
-  return 0;
-if (sizeof (uintptr_t))
-  return 0;
-  ;
-  return 0;
-}
-_ACEOF
+
 rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_type_uintptr_t=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_type_uintptr_t=no
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: $ac_cv_type_uintptr_t" >&5
-echo "${ECHO_T}$ac_cv_type_uintptr_t" >&6
-if test $ac_cv_type_uintptr_t = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_UINTPTR_T 1
-_ACEOF
-
-
-fi
 
 
 #########
@@ -10680,7 +10549,7 @@ done
 
 
 
-for ac_func in usleep fdatasync localtime_r gmtime_r
+for ac_func in usleep fdatasync localtime_r gmtime_r localtime_s
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -11273,14 +11142,12 @@ if test "$TARGET_EXEEXT" = ".exe"; then
     SQLITE_OS_UNIX=0
     SQLITE_OS_WIN=1
     SQLITE_OS_OS2=0
-    tclsubdir=win
     CFLAGS="$CFLAGS -DSQLITE_OS_WIN=1"
   fi
 else
   SQLITE_OS_UNIX=1
   SQLITE_OS_WIN=0
   SQLITE_OS_OS2=0
-  tclsubdir=unix
   CFLAGS="$CFLAGS -DSQLITE_OS_UNIX=1"
 fi
 
@@ -12066,14 +11933,59 @@ else
   use_loadextension=no
 fi;
 if test "${use_loadextension}" = "yes" ; then
-  LOADEXTENSION_FLAGS=""
+  OPT_FEATURE_FLAGS=""
 else
-  LOADEXTENSION_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
+  OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
 fi
 
 
 #########
-# See whether we should allow loadable extensions
+# attempt to duplicate any OMITS into the $(OPT_FEATURE_FLAGS) parameter
+for option in $CFLAGS $CPPFLAGS
+do
+  case $option in
+    -DSQLITE_OMIT*) OPT_FEATURE_FLAGS+=" $option";;
+  esac
+done
+
+
+# attempt to remove any OMITS from the $(CFLAGS) parameter
+ac_temp_CFLAGS=""
+for option in $CFLAGS
+do
+  case $option in
+    -DSQLITE_OMIT*) ;;
+    *) ac_temp_CFLAGS+=" $option";;
+  esac
+done
+CFLAGS=$ac_temp_CFLAGS
+
+
+# attempt to remove any OMITS from the $(CPPFLAGS) parameter
+ac_temp_CPPFLAGS=""
+for option in $CPPFLAGS
+do
+  case $option in
+    -DSQLITE_OMIT*) ;;
+    *) ac_temp_CPPFLAGS+=" $option";;
+  esac
+done
+CPPFLAGS=$ac_temp_CPPFLAGS
+
+# attempt to remove any OMITS from the $(BUILD_CFLAGS) parameter
+ac_temp_BUILD_CFLAGS=""
+for option in $BUILD_CFLAGS
+do
+  case $option in
+    -DSQLITE_OMIT*) ;;
+    *) ac_temp_BUILD_CFLAGS+=" $option";;
+  esac
+done
+BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
+
+
+#########
+# See whether we should use GCOV
 # Check whether --enable-gcov or --disable-gcov was given.
 if test "${enable_gcov+set}" = set; then
   enableval="$enable_gcov"
@@ -12086,7 +11998,6 @@ if test "${use_gcov}" = "yes" ; then
 else
   USE_GCOV=0
 fi
-
 
 
 #########
@@ -13055,7 +12966,7 @@ s,@TARGET_READLINE_INC@,$TARGET_READLINE_INC,;t t
 s,@TARGET_HAVE_READLINE@,$TARGET_HAVE_READLINE,;t t
 s,@TARGET_DEBUG@,$TARGET_DEBUG,;t t
 s,@USE_AMALGAMATION@,$USE_AMALGAMATION,;t t
-s,@LOADEXTENSION_FLAGS@,$LOADEXTENSION_FLAGS,;t t
+s,@OPT_FEATURE_FLAGS@,$OPT_FEATURE_FLAGS,;t t
 s,@USE_GCOV@,$USE_GCOV,;t t
 s,@BUILD_CFLAGS@,$BUILD_CFLAGS,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t

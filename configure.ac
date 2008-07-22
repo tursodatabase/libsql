@@ -92,7 +92,7 @@ AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.46 $
+# $Revision: 1.47 $
 
 #########
 # Programs needed
@@ -118,7 +118,7 @@ AC_CHECK_HEADERS([sys/types.h stdlib.h stdint.h inttypes.h])
 #########
 # Figure out whether or not we have these functions
 #
-AC_CHECK_FUNCS([usleep fdatasync localtime_r gmtime_r])
+AC_CHECK_FUNCS([usleep fdatasync localtime_r gmtime_r localtime_s])
 
 #########
 # By default, we use the amalgamation (this may be changed below...)
@@ -352,14 +352,12 @@ if test "$TARGET_EXEEXT" = ".exe"; then
     SQLITE_OS_UNIX=0
     SQLITE_OS_WIN=1
     SQLITE_OS_OS2=0
-    tclsubdir=win
     CFLAGS="$CFLAGS -DSQLITE_OS_WIN=1"
   fi
 else
   SQLITE_OS_UNIX=1
   SQLITE_OS_WIN=0
   SQLITE_OS_OS2=0
-  tclsubdir=unix
   CFLAGS="$CFLAGS -DSQLITE_OS_UNIX=1"
 fi
 
@@ -611,14 +609,60 @@ AC_ARG_ENABLE(load-extension, AC_HELP_STRING([--enable-load-extension],
       [Enable loading of external extensions]),
       [use_loadextension=$enableval],[use_loadextension=no])
 if test "${use_loadextension}" = "yes" ; then
-  LOADEXTENSION_FLAGS=""
+  OPT_FEATURE_FLAGS=""
 else
-  LOADEXTENSION_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
+  OPT_FEATURE_FLAGS="-DSQLITE_OMIT_LOAD_EXTENSION=1"
 fi
-AC_SUBST(LOADEXTENSION_FLAGS)
 
 #########
-# See whether we should allow loadable extensions
+# attempt to duplicate any OMITS into the $(OPT_FEATURE_FLAGS) parameter
+for option in $CFLAGS $CPPFLAGS
+do
+  case $option in
+    -DSQLITE_OMIT*) OPT_FEATURE_FLAGS+=" $option";;
+  esac
+done
+AC_SUBST(OPT_FEATURE_FLAGS)
+
+
+# attempt to remove any OMITS from the $(CFLAGS) parameter
+ac_temp_CFLAGS=""
+for option in $CFLAGS
+do
+  case $option in
+    -DSQLITE_OMIT*) ;;
+    *) ac_temp_CFLAGS+=" $option";;
+  esac
+done
+CFLAGS=$ac_temp_CFLAGS
+
+
+# attempt to remove any OMITS from the $(CPPFLAGS) parameter
+ac_temp_CPPFLAGS=""
+for option in $CPPFLAGS
+do
+  case $option in
+    -DSQLITE_OMIT*) ;;
+    *) ac_temp_CPPFLAGS+=" $option";;
+  esac
+done
+CPPFLAGS=$ac_temp_CPPFLAGS
+
+
+# attempt to remove any OMITS from the $(BUILD_CFLAGS) parameter
+ac_temp_BUILD_CFLAGS=""
+for option in $BUILD_CFLAGS
+do
+  case $option in
+    -DSQLITE_OMIT*) ;;
+    *) ac_temp_BUILD_CFLAGS+=" $option";;
+  esac
+done
+BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
+
+
+#########
+# See whether we should use GCOV
 AC_ARG_ENABLE(gcov, AC_HELP_STRING([--enable-gcov],
       [Enable coverage testing using gcov]),
       [use_gcov=$enableval],[use_gcov=no])

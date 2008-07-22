@@ -1,7 +1,7 @@
-C flattenSubquery()\sneeded\sif\seither\sSQLITE_OMIT_SUBQUERY\sor\sSQLITE_OMIT_VIEW\snot\sdefined.\s(CVS\s5445)
-D 2008-07-22T05:00:56
+C "configure"\ssupport\supdated.\s\sRemoved\sunused\sfeatures.\s\sAdded\sparsing\sof\sCFLAGS\sand\sCPPFLAGS\sto\sextract\sOMIT\soptions\sto\spass\sto\slemon\sand\smkkeywordhash.\s(CVS\s5446)
+D 2008-07-22T05:05:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in a03f7cb4f7ad50bc53a788c6c544430e81f95de4
+F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION d739ba532eddc5c09ef9a55151328cd6a8a102c6
@@ -15,10 +15,10 @@ F art/SQLite_big.gif 2b8e4603b91ba2a2c7062a82ff570d945034bb30
 F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
-F config.h.in 7940ca68451e949b9b4c83814a7c719721eea6e1
+F config.h.in 3fda160d9a0ebbd6c22c0391354fa0036474680f
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 300a0748b8c5cb10195e11c70f23cfe19fc455ce x
-F configure.ac 732bfbb23e2ea8c6c79012d3a0f0f83e855ecbb1
+F configure f405735e08411da80388439bed86941981da5b94 x
+F configure.ac eebaa620c2c9a7c3be0fedfbca8c2e8dd673e586
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -608,7 +608,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a560c61849cb669ab03ba4a63b23369db234f329
-R bb01765ac02861b7422c0d62644cf8f1
+P 1ffe7a995733fe91534a3ed81d2640fd7e6ebaa6
+R 0e73a5ae402dd55fe613de24133abe43
 U shane
-Z 506b42d114c5c88a2082fc56151910b6
+Z a770b6ac41943e4c9632defd47535f79

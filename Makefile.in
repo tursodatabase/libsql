@@ -75,8 +75,13 @@ TLIBS = @LIBS@
 #
 TEMP_STORE = -DSQLITE_TEMP_STORE=@TEMP_STORE@
 
-# Enable/disable loadable extensions based on configuration
-TCC += @LOADEXTENSION_FLAGS@
+# Enable/disable loadable extensions, and other optional features
+# based on configuration. (-DSQLITE_OMIT*).  The same set of OMIT
+# flags should be passed to the LEMON parser generator and the 
+# mkkeywordhash tool as well.
+OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@
+
+TCC += $(OPT_FEATURE_FLAGS)
 
 # Version numbers and release number for the SQLite being compiled.
 #
@@ -593,7 +598,7 @@ parse.h:	parse.c
 
 parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/addopcodes.awk
 	cp $(TOP)/src/parse.y .
-	./lemon$(BEXE) $(OPTS) parse.y
+	./lemon$(BEXE) $(OPTS) $(OPT_FEATURE_FLAGS) parse.y
 	mv parse.h parse.h.temp
 	$(NAWK) -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
@@ -629,7 +634,7 @@ tokenize.lo:	$(TOP)/src/tokenize.c keywordhash.h $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/tokenize.c
 
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
-	$(BCC) -o mkkeywordhash$(BEXE) $(OPTS) $(TOP)/tool/mkkeywordhash.c
+	$(BCC) -o mkkeywordhash$(BEXE) $(OPTS) $(OPT_FEATURE_FLAGS) $(TOP)/tool/mkkeywordhash.c
 	./mkkeywordhash$(BEXE) >keywordhash.h
 
 trigger.lo:	$(TOP)/src/trigger.c $(HDR)
