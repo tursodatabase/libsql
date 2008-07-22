@@ -1,5 +1,5 @@
-C fts2\sfunctions\sfor\stesting\sscripts.\r\nBackports\s(5340)\sfrom\sfts3.\s(CVS\s5456)
-D 2008-07-22T23:32:28
+C Delete\sall\sfts2\sindex\sdata\sthe\stable\sbecomes\sempty.\r\nBackports\scheck-in\s(5413)\sfrom\sfts3.\s(CVS\s5457)
+D 2008-07-22T23:41:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -39,7 +39,7 @@ F ext/fts1/simple_tokenizer.c 1844d72f7194c3fd3d7e4173053911bf0661b70d
 F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
 F ext/fts2/README.tokenizers 21e3684ea5a095b55d70f6878b4ce6af5932dfb7
 F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c af6d11365c4ae66be9779dde0948887e92d8b867
+F ext/fts2/fts2.c c0d287669e35e3f0998b42fb06ebd2f89e5b2593
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c 2689e42e1107ea67207f725cf69cf8972d00cf93
 F ext/fts2/fts2_hash.h 9a5b1be94664139f93217a0770d7144425cffb3a
@@ -316,6 +316,7 @@ F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
 F test/fts2n.test 12b9c5352128cebd1c6b8395e43788d4b09087c2
 F test/fts2o.test c6a79567d85403dc4d15b89f3f9799a0a0aef065
 F test/fts2p.test 4b48c35c91e6a7dbf5ac8d1e5691823cc999aafb
+F test/fts2q.test ee2cb138a599a07de3a03cd7a71a4e9e40120f93
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/fts3.test 6ee4c38b0864583c80e82a2d4372f63aae8b10c7
 F test/fts3aa.test 432d1d5c41939bb5405d4d6c80a9ec759b363393
@@ -610,7 +611,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3f614453d2d7c753a5963b027fe8618b50b4f6b9
-R 76720fcdb90c8738e414944367c3b0e7
+P 4e47394be9dfbf0f9309e55eb6c6a3a517ea2006
+R 47eed6cf50908f452be50506a6925d0d
 U shess
-Z 807f812f3e691d0e714ba8b89e45124c
+Z f9e0e9386065f5f55b31594485ae0dd8

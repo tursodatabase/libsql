@@ -1774,10 +1774,12 @@ typedef enum fulltext_statement {
   CONTENT_SELECT_STMT,
   CONTENT_UPDATE_STMT,
   CONTENT_DELETE_STMT,
+  CONTENT_EXISTS_STMT,
 
   BLOCK_INSERT_STMT,
   BLOCK_SELECT_STMT,
   BLOCK_DELETE_STMT,
+  BLOCK_DELETE_ALL_STMT,
 
   SEGDIR_MAX_INDEX_STMT,
   SEGDIR_SET_STMT,
@@ -1786,6 +1788,7 @@ typedef enum fulltext_statement {
   SEGDIR_DELETE_STMT,
   SEGDIR_SELECT_SEGMENT_STMT,
   SEGDIR_SELECT_ALL_STMT,
+  SEGDIR_DELETE_ALL_STMT,
 
   MAX_STMT                     /* Always at end! */
 } fulltext_statement;
@@ -1800,10 +1803,12 @@ static const char *const fulltext_zStatement[MAX_STMT] = {
   /* CONTENT_SELECT */ "select * from %_content where rowid = ?",
   /* CONTENT_UPDATE */ NULL,  /* generated in contentUpdateStatement() */
   /* CONTENT_DELETE */ "delete from %_content where rowid = ?",
+  /* CONTENT_EXISTS */ "select rowid from %_content limit 1",
 
   /* BLOCK_INSERT */ "insert into %_segments values (?)",
   /* BLOCK_SELECT */ "select block from %_segments where rowid = ?",
   /* BLOCK_DELETE */ "delete from %_segments where rowid between ? and ?",
+  /* BLOCK_DELETE_ALL */ "delete from %_segments",
 
   /* SEGDIR_MAX_INDEX */ "select max(idx) from %_segdir where level = ?",
   /* SEGDIR_SET */ "insert into %_segdir values (?, ?, ?, ?, ?, ?)",
@@ -1824,6 +1829,7 @@ static const char *const fulltext_zStatement[MAX_STMT] = {
   /* SEGDIR_SELECT_ALL */
   "select start_block, leaves_end_block, root from %_segdir "
   " order by level desc, idx asc",
+  /* SEGDIR_DELETE_ALL */ "delete from %_segdir",
 };
 
 /*
@@ -2100,6 +2106,25 @@ static int content_delete(fulltext_vtab *v, sqlite_int64 iRow){
   return sql_single_step(s);
 }
 
+/* Returns SQLITE_ROW if any rows exist in %_content, SQLITE_DONE if
+** no rows exist, and any error in case of failure.
+*/
+static int content_exists(fulltext_vtab *v){
+  sqlite3_stmt *s;
+  int rc = sql_get_statement(v, CONTENT_EXISTS_STMT, &s);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = sqlite3_step(s);
+  if( rc!=SQLITE_ROW ) return rc;
+
+  /* We expect only one row.  We must execute another sqlite3_step()
+   * to complete the iteration; otherwise the table will remain locked. */
+  rc = sqlite3_step(s);
+  if( rc==SQLITE_DONE ) return SQLITE_ROW;
+  if( rc==SQLITE_ROW ) return SQLITE_ERROR;
+  return rc;
+}
+
 /* insert into %_segments values ([pData])
 **   returns assigned rowid in *piBlockid
 */
@@ -2268,6 +2293,23 @@ static int segdir_delete(fulltext_vtab *v, int iLevel){
   if( rc!=SQLITE_OK ) return rc;
 
   rc = sqlite3_bind_int64(s, 1, iLevel);
+  if( rc!=SQLITE_OK ) return rc;
+
+  return sql_single_step(s);
+}
+
+/* Delete entire fts index, SQLITE_OK on success, relevant error on
+** failure.
+*/
+static int segdir_delete_all(fulltext_vtab *v){
+  sqlite3_stmt *s;
+  int rc = sql_get_statement(v, SEGDIR_DELETE_ALL_STMT, &s);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = sql_single_step(s);
+  if( rc!=SQLITE_OK ) return rc;
+
+  rc = sql_get_statement(v, BLOCK_DELETE_ALL_STMT, &s);
   if( rc!=SQLITE_OK ) return rc;
 
   return sql_single_step(s);
@@ -5775,6 +5817,23 @@ static int fulltextUpdate(sqlite3_vtab *pVtab, int nArg, sqlite3_value **ppArg,
 
   if( nArg<2 ){
     rc = index_delete(v, sqlite3_value_int64(ppArg[0]));
+    if( rc==SQLITE_OK ){
+      /* If we just deleted the last row in the table, clear out the
+      ** index data.
+      */
+      rc = content_exists(v);
+      if( rc==SQLITE_ROW ){
+        rc = SQLITE_OK;
+      }else if( rc==SQLITE_DONE ){
+        /* Clear the pending terms so we don't flush a useless level-0
+        ** segment when the transaction closes.
+        */
+        rc = clearPendingTerms(v);
+        if( rc==SQLITE_OK ){
+          rc = segdir_delete_all(v);
+        }
+      }
+    }
   } else if( sqlite3_value_type(ppArg[0]) != SQLITE_NULL ){
     /* An update:
      * ppArg[0] = old rowid
