@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.376 2008/07/23 15:40:07 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.377 2008/07/23 18:25:56 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4727,6 +4727,12 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 ** {H13152} If S is the last [prepared statement] in the
 **          [database connection] D then the [sqlite3_next_stmt(D, S)]
 **          routine shall return a NULL pointer.
+**
+** ASSUMPTIONS:
+**
+** {A13154} The [database connection] pointer D in a call to
+**          [sqlite3_next_stmt(D,S)] must refer to an open database
+**          connection and in particular must not be a NULL pointer.
 */
 sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 

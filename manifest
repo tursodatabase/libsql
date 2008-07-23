@@ -1,5 +1,5 @@
-C Read\sthe\ssqlite3_vtab.zErrMsg\safter\seach\scall\sto\sa\svirtual\stable\r\nmethod\sand\stransfer\sany\serror\sinto\sthe\sdatabase\sconnection.\r\nFix\sthe\sfts2.test\sand\sfts3.test\sscripts\sto\sthat\sthey\sreturn\r\nsilently\srather\sthan\sfailing\sthe\stest\ssequence\sif\sthe\sappropriate\r\nFTS\simplementation\sis\sunavailable.\s(CVS\s5463)
-D 2008-07-23T18:17:32
+C Clarify\sin\sthe\sdocumentation\sthat\sthe\sdatabase\sconnection\spointer\sto\nsqlite3_next_stmt()\smust\snot\sbe\sNULL.\s\sTicket\s#3244.\s(CVS\s5464)
+D 2008-07-23T18:25:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/printf.c 2174222bc346a11b1eac2a654ccc4f635355ae7e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 859ea5194b05fb2f1f816368062478cda5baa9b8
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
-F src/sqlite.h.in 60e7f6d044a6ad45d995569a179ac1f32a69ca2a
+F src/sqlite.h.in 30cad9d3e7d47a63f89687605ac8730586f970bc
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h ee9c3be4c7466cd36c1ecd36f7a51f05c3f3fd54
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -611,7 +611,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d6202907e70d902e967ba116012c274154f30b8d
-R a200373e66606e3810078a9ac91f0ca9
+P e2c6771d44f1b4fee16ef90e91c3498be2a7d2b1
+R 660baada35f8ce3b2f04dc7bc064f670
 U drh
-Z c0ffbf6385b1eab9ba3b5076b220096a
+Z deee2f2abd0ea8886e3e17ffb930150d
