@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.375 2008/07/23 13:42:26 mihailim Exp $
+** @(#) $Id: sqlite.h.in,v 1.376 2008/07/23 15:40:07 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -62,7 +62,7 @@ extern "C" {
 #endif
 
 /*
-** CAPI3REF: Compile-Time Library Version Numbers {H10010}<S60100>
+** CAPI3REF: Compile-Time Library Version Numbers {H10010} <S60100>
 **
 ** The SQLITE_VERSION and SQLITE_VERSION_NUMBER #defines in
 ** the sqlite3.h file specify the version of SQLite with which
@@ -85,12 +85,11 @@ extern "C" {
 **
 ** {H10011} The SQLITE_VERSION #define in the sqlite3.h header file shall
 **          evaluate to a string literal that is the SQLite version
-**          with which the header file is associated. <S60100>
+**          with which the header file is associated.
 **
 ** {H10014} The SQLITE_VERSION_NUMBER #define shall resolve to an integer
 **          with the value (X*1000000 + Y*1000 + Z) where X, Y, and Z
 **          are the major version, minor version, and release number.
-**          <S60100>
 */
 #define SQLITE_VERSION         "--VERS--"
 #define SQLITE_VERSION_NUMBER  --VERSION-NUMBER--
@@ -399,7 +398,7 @@ int sqlite3_exec(
 );
 
 /*
-** CAPI3REF: Result Codes {H10210}
+** CAPI3REF: Result Codes {H10210} <S10700>
 ** KEYWORDS: SQLITE_OK {error code} {error codes}
 ** KEYWORDS: {result code} {result codes}
 **
@@ -443,7 +442,7 @@ int sqlite3_exec(
 /* end-of-error-codes */
 
 /*
-** CAPI3REF: Extended Result Codes {H10220}
+** CAPI3REF: Extended Result Codes {H10220} <S10700>
 ** KEYWORDS: {extended error code} {extended error codes}
 ** KEYWORDS: {extended result code} {extended result codes}
 **
@@ -548,7 +547,7 @@ int sqlite3_exec(
 #define SQLITE_IOCAP_SEQUENTIAL      0x00000400
 
 /*
-** CAPI3REF: File Locking Levels {H10250} <H11120>
+** CAPI3REF: File Locking Levels {H10250} <H11120> <H11310>
 **
 ** SQLite uses one of these integer values as the second
 ** argument to calls it makes to the xLock() and xUnlock() methods
@@ -1161,7 +1160,7 @@ struct sqlite3_mem_methods {
 
 
 /*
-** CAPI3REF: Enable Or Disable Extended Result Codes {H12200}
+** CAPI3REF: Enable Or Disable Extended Result Codes {H12200} <S10700>
 **
 ** The sqlite3_extended_result_codes() routine enables or disables the
 ** [extended result codes] feature of SQLite. The extended result
@@ -1514,7 +1513,7 @@ int sqlite3_complete16(const void *sql);
 int sqlite3_busy_handler(sqlite3*, int(*)(void*,int), void*);
 
 /*
-** CAPI3REF: Set A Busy Timeout {H12340} <S40400>
+** CAPI3REF: Set A Busy Timeout {H12340} <S40410>
 **
 ** This routine sets a [sqlite3_busy_handler | busy handler] that sleeps
 ** for a specified amount of time when a table is locked.  The handler
@@ -2774,7 +2773,7 @@ int sqlite3_prepare16_v2(
 const char *sqlite3_sql(sqlite3_stmt *pStmt);
 
 /*
-** CAPI3REF: Dynamically Typed Value Object {H15000} 
+** CAPI3REF: Dynamically Typed Value Object {H15000} <S20200>
 ** KEYWORDS: {protected sqlite3_value} {unprotected sqlite3_value}
 **
 ** SQLite uses the sqlite3_value object to represent all values
@@ -2813,7 +2812,7 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt);
 typedef struct Mem sqlite3_value;
 
 /*
-** CAPI3REF: SQL Function Context Object {H16001}
+** CAPI3REF: SQL Function Context Object {H16001} <S20200>
 **
 ** The context in which an SQL function executes is stored in an
 ** sqlite3_context object.  A pointer to an sqlite3_context object
@@ -2827,7 +2826,7 @@ typedef struct Mem sqlite3_value;
 typedef struct sqlite3_context sqlite3_context;
 
 /*
-** CAPI3REF: Binding Values To Prepared Statements {H13500} <S70000>
+** CAPI3REF: Binding Values To Prepared Statements {H13500} <S70300>
 ** KEYWORDS: {host parameter} {host parameters} {host parameter name}
 ** KEYWORDS: {SQL parameter} {SQL parameters} {parameter binding}
 **
@@ -2990,7 +2989,7 @@ int sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
 int sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n);
 
 /*
-** CAPI3REF: Number Of SQL Parameters {H13600} <H13500>
+** CAPI3REF: Number Of SQL Parameters {H13600} <S70300>
 **
 ** This routine can be used to find the number of [SQL parameters]
 ** in a [prepared statement].  SQL parameters are tokens of the
@@ -3016,7 +3015,7 @@ int sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n);
 int sqlite3_bind_parameter_count(sqlite3_stmt*);
 
 /*
-** CAPI3REF: Name Of A Host Parameter {H13620} <H13500>
+** CAPI3REF: Name Of A Host Parameter {H13620} <S70300>
 **
 ** This routine returns a pointer to the name of the n-th
 ** [SQL parameter] in a [prepared statement].
@@ -3051,7 +3050,7 @@ int sqlite3_bind_parameter_count(sqlite3_stmt*);
 const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int);
 
 /*
-** CAPI3REF: Index Of A Parameter With A Given Name {H13640} <H13500>
+** CAPI3REF: Index Of A Parameter With A Given Name {H13640} <S70300>
 **
 ** Return the index of an SQL parameter given its name.  The
 ** index value returned is suitable for use as the second
@@ -3074,7 +3073,7 @@ const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int);
 int sqlite3_bind_parameter_index(sqlite3_stmt*, const char *zName);
 
 /*
-** CAPI3REF: Reset All Bindings On A Prepared Statement {H13660}
+** CAPI3REF: Reset All Bindings On A Prepared Statement {H13660} <S70300>
 **
 ** Contrary to the intuition of many, [sqlite3_reset()] does not reset
 ** the [sqlite3_bind_blob | bindings] on a [prepared statement].
@@ -3421,7 +3420,7 @@ int sqlite3_step(sqlite3_stmt*);
 int sqlite3_data_count(sqlite3_stmt *pStmt);
 
 /*
-** CAPI3REF: Fundamental Datatypes {H10265}
+** CAPI3REF: Fundamental Datatypes {H10265} <S10110><S10120>
 ** KEYWORDS: SQLITE_TEXT
 **
 ** {H10266} Every value in SQLite has one of five fundamental datatypes:
@@ -3671,7 +3670,7 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
 sqlite3_value *sqlite3_column_value(sqlite3_stmt*, int iCol);
 
 /*
-** CAPI3REF: Destroy A Prepared Statement Object {H13300} <S70300>
+** CAPI3REF: Destroy A Prepared Statement Object {H13300} <S70300><S30100>
 **
 ** The sqlite3_finalize() function is called to delete a [prepared statement].
 ** If the statement was executed successfully or not executed at all, then
@@ -4083,7 +4082,7 @@ void *sqlite3_aggregate_context(sqlite3_context*, int nBytes);
 void *sqlite3_user_data(sqlite3_context*);
 
 /*
-** CAPI3REF: Database Connection For Functions {H16250}
+** CAPI3REF: Database Connection For Functions {H16250} <S60600><S20200>
 **
 ** The sqlite3_context_db_handle() interface returns a copy of
 ** the pointer to the [database connection] (the 1st parameter)
@@ -4173,7 +4172,7 @@ void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 
 
 /*
-** CAPI3REF: Constants Defining Special Destructor Behavior {H10280}
+** CAPI3REF: Constants Defining Special Destructor Behavior {H10280} <S30100>
 **
 ** These are special values for the destructor that is passed in as the
 ** final argument to routines like [sqlite3_result_blob()].  If the destructor
@@ -4603,7 +4602,7 @@ int sqlite3_rekey(
 );
 
 /*
-** CAPI3REF: Suspend Execution For A Short Time {H10530}
+** CAPI3REF: Suspend Execution For A Short Time {H10530} <S40410>
 **
 ** The sqlite3_sleep() function causes the current thread to suspend execution
 ** for at least a number of milliseconds specified in its parameter.
@@ -4630,7 +4629,7 @@ int sqlite3_rekey(
 int sqlite3_sleep(int);
 
 /*
-** CAPI3REF: Name Of The Folder Holding Temporary Files {H10310}
+** CAPI3REF: Name Of The Folder Holding Temporary Files {H10310} <S20000>
 **
 ** If this global variable is made to point to a string which is
 ** the name of a folder (a.k.a. directory), then all temporary files
@@ -4684,7 +4683,7 @@ SQLITE_EXTERN char *sqlite3_temp_directory;
 int sqlite3_get_autocommit(sqlite3*);
 
 /*
-** CAPI3REF: Find The Database Handle Of A Prepared Statement {H13120}
+** CAPI3REF: Find The Database Handle Of A Prepared Statement {H13120} <S60600>
 **
 ** The sqlite3_db_handle interface returns the [database connection] handle
 ** to which a [prepared statement] belongs.  The database handle returned by
@@ -4701,7 +4700,7 @@ int sqlite3_get_autocommit(sqlite3*);
 sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 
 /*
-** CAPI3REF: Find the next prepared statement {H13140}
+** CAPI3REF: Find the next prepared statement {H13140} <S60600>
 **
 ** This interface returns a pointer to the next [prepared statement] after
 ** pStmt associated with the [database connection] pDb.  If pStmt is NULL
