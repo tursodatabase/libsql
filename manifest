@@ -1,5 +1,5 @@
-C Clarify\sin\sthe\sdocumentation\sthat\sthe\sdatabase\sconnection\spointer\sto\nsqlite3_next_stmt()\smust\snot\sbe\sNULL.\s\sTicket\s#3244.\s(CVS\s5464)
-D 2008-07-23T18:25:56
+C Remove\sstray\sbreakpoints\sfrom\stest\sscripts.\s(CVS\s5465)
+D 2008-07-23T20:28:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -241,7 +241,7 @@ F test/collate8.test 7ed2461305ac959886a064dc1e3cf15e155a183f
 F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
-F test/colname.test d717fcf45ad33ed0cc6ad6e1e7f5749afdcc4c77
+F test/colname.test 5bd677e9334a7a63615a05101b3976d79cfaf241
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test af069d971853dbe12af936910bfa49d92f7b16e9
 F test/corrupt2.test e56f45006e7eb3ee680ad3b61c92cc14ae09986e
@@ -407,7 +407,7 @@ F test/mallocD.test f78c295e8e18ea3029e65ca08278690e00c22100
 F test/mallocE.test db1ed69d7eded1b080952e2a7c37f364ad241b08
 F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
 F test/mallocG.test 9d472075e155c888706d8bb2f0d5c6fd643d793c
-F test/malloc_common.tcl cdcf092a77f3578fa4fd02121e60969cdf382e27
+F test/malloc_common.tcl 17d60dfefc1598d1a7fe6da6511933536caea1d7
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
@@ -611,7 +611,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e2c6771d44f1b4fee16ef90e91c3498be2a7d2b1
-R 660baada35f8ce3b2f04dc7bc064f670
+P a7d64e86e84cf16c9742e6b012a0b96d9c6b2ba1
+R f5137591809f31c9ab28dedfd27be8d9
 U drh
-Z deee2f2abd0ea8886e3e17ffb930150d
+Z ced7f31902a9154ae870cc955d9c540a

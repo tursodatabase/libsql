@@ -13,7 +13,7 @@
 # The focus of this file is testing how SQLite generates the names
 # of columns in a result set.
 #
-# $Id: colname.test,v 1.2 2008/07/18 17:03:53 drh Exp $
+# $Id: colname.test,v 1.3 2008/07/23 20:28:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -175,7 +175,6 @@ do_test colname-3.11 {
 # Test for short=OFF and full=ON
 #
 do_test colname-4.1 {
-breakpoint
   db eval {
     PRAGMA short_column_names=OFF;
     PRAGMA full_column_names=ON;
@@ -239,7 +238,6 @@ do_test colname-4.11 {
   }
 } {v4.a 1 v4.x 4 v4.a:1 11 v4.x:1 14 v4.a:2 1 v4.b 2 v4.c 3 v4.x:2 4 v4.y 5 v4.z 6 v4.a:3 11 v4.b:1 12 v4.c:1 13 v4.x:3 14 v4.y:1 15 v4.z:1 16}
 do_test colname-4.12 {
-breakpoint
   execsql2 {
     SELECT * FROM v5 ORDER BY 2;
   }

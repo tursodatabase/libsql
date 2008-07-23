@@ -12,7 +12,7 @@
 # This file contains common code used by many different malloc tests
 # within the test suite.
 #
-# $Id: malloc_common.tcl,v 1.18 2008/06/23 18:49:45 danielk1977 Exp $
+# $Id: malloc_common.tcl,v 1.19 2008/07/23 20:28:14 drh Exp $
 
 # If we did not compile with malloc testing enabled, then do nothing.
 #
@@ -152,7 +152,6 @@ proc do_malloc_test {tn args} {
           set v2 1
         } else {
           set v2 $msg
-          breakpoint
           puts [db errorcode]
         }
         lappend isFail $v2
