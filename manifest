@@ -1,5 +1,5 @@
-C Documentation\supdates.\s(CVS\s5460)
-D 2008-07-23T00:52:56
+C Quick\stypo\sfix.\sNo\schanges\sto\scode.\s(CVS\s5461)
+D 2008-07-23T13:42:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/printf.c 2174222bc346a11b1eac2a654ccc4f635355ae7e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 859ea5194b05fb2f1f816368062478cda5baa9b8
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
-F src/sqlite.h.in 7c3746a124012efd3e93db4713f94fe225c7f3cd
+F src/sqlite.h.in 0bd3a45823801389ac9e571aa71c0375b6ab2171
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h aebce6d82210334fe00e6d5fa4bb6768cf02f184
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -611,7 +611,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 311aeb9c2b75c420a37198a93e353c72e9166747
-R fee80f70317e8b1b3157f62d3bd2c453
-U drh
-Z dcf507f8f5cfaee8c403c6c4208746f2
+P fe8e9f53f4bcedf2e8a657f33eb9a0939ef74c95
+R 81537541d188e035b7c8e805598aa286
+U mihailim
+Z 24d561cdc72e956b002e72cc0c5a7feb
