@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.762 2008/07/23 18:17:32 drh Exp $
+** $Id: vdbe.c,v 1.763 2008/07/23 21:07:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4621,7 +4621,9 @@ case OP_VOpen: {
   assert(pVtab && pModule);
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   rc = pModule->xOpen(pVtab, &pVtabCursor);
-  sqlite3VtabTransferError(db, rc, pVtab);
+  sqlite3_free(p->zErrMsg);
+  p->zErrMsg = pVtab->zErrMsg;
+  pVtab->zErrMsg = 0;
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
   if( SQLITE_OK==rc ){
     /* Initialize sqlite3_vtab_cursor base class */
@@ -4851,8 +4853,10 @@ case OP_VRename: {
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   sqlite3VtabLock(pVtab);
   rc = pVtab->pModule->xRename(pVtab, pName->z);
+  sqlite3_free(p->zErrMsg);
+  p->zErrMsg = pVtab->zErrMsg;
+  pVtab->zErrMsg = 0;
   sqlite3VtabUnlock(db, pVtab);
-  sqlite3VtabTransferError(db, rc, pVtab);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
 
   break;
@@ -4904,8 +4908,10 @@ case OP_VUpdate: {
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
     sqlite3VtabLock(pVtab);
     rc = pModule->xUpdate(pVtab, nArg, apArg, &rowid);
+    sqlite3_free(p->zErrMsg);
+    p->zErrMsg = pVtab->zErrMsg;
+    pVtab->zErrMsg = 0;
     sqlite3VtabUnlock(db, pVtab);
-    sqlite3VtabTransferError(db, rc, pVtab);
     if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
     if( pOp->p1 && rc==SQLITE_OK ){
       assert( nArg>1 && apArg[0] && (apArg[0]->flags&MEM_Null) );

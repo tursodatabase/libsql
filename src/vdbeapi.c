@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.134 2008/06/19 02:52:25 drh Exp $
+** $Id: vdbeapi.c,v 1.135 2008/07/23 21:07:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -497,14 +497,16 @@ static int sqlite3Step(Vdbe *p){
   }
 #endif
 
-  sqlite3Error(p->db, rc, 0);
+  db->errCode = rc;
+  /*sqlite3Error(p->db, rc, 0);*/
   p->rc = sqlite3ApiExit(p->db, p->rc);
 end_of_step:
   assert( (rc&0xff)==rc );
   if( p->zSql && (rc&0xff)<SQLITE_ROW ){
     /* This behavior occurs if sqlite3_prepare_v2() was used to build
     ** the prepared statement.  Return error codes directly */
-    sqlite3Error(p->db, p->rc, 0);
+    p->db->errCode = p->rc;
+    /* sqlite3Error(p->db, p->rc, 0); */
     return p->rc;
   }else{
     /* This is for legacy sqlite3_prepare() builds and when the code

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.54 2008/07/04 10:56:08 danielk1977 Exp $
+# $Id: vtab1.test,v 1.55 2008/07/23 21:07:25 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -1007,7 +1007,10 @@ do_test vtab1.12-1 {
 # First test outside of a transaction.
 do_test vtab1.12-2 {
   catchsql { INSERT INTO echo_c SELECT * FROM b; }
-} {1 {constraint failed}}
+} {1 {echo-vtab-error: column a is not unique}}
+do_test vtab1.12-2.1 {
+  sqlite3_errmsg db
+} {echo-vtab-error: column a is not unique}
 do_test vtab1.12-3 {
   execsql { SELECT * FROM c }
 } {3 G H}
@@ -1016,7 +1019,7 @@ do_test vtab1.12-3 {
 do_test vtab1.12-4 {
   execsql  {BEGIN}
   catchsql { INSERT INTO echo_c SELECT * FROM b; }
-} {1 {constraint failed}}
+} {1 {echo-vtab-error: column a is not unique}}
 do_test vtab1.12-5 {
   execsql { SELECT * FROM c }
 } {3 G H}
