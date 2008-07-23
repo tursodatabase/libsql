@@ -1,3 +1,4 @@
+# 2007 November 23
 #
 #    May you do good and not evil.
 #    May you find forgiveness for yourself and forgive others.
@@ -6,7 +7,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: fts3.test,v 1.1 2007/11/23 17:31:19 drh Exp $
+# $Id: fts3.test,v 1.2 2008/07/23 18:17:32 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -33,8 +34,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 # If SQLITE_ENABLE_FTS3 is defined, omit this file.
 ifcapable !fts3 {
-  puts stderr "this build does not include FTS3 capability"
-  exit 1
+  return
 }
 rename finish_test really_finish_test
 proc finish_test {} {}

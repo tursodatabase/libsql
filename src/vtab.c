@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.70 2008/06/23 17:44:19 danielk1977 Exp $
+** $Id: vtab.c,v 1.71 2008/07/23 18:17:32 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -726,6 +726,7 @@ int sqlite3VtabBegin(sqlite3 *db, sqlite3_vtab *pVtab){
 
     /* Invoke the xBegin method */
     rc = pModule->xBegin(pVtab);
+    sqlite3VtabTransferError(db, rc, pVtab);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -787,6 +788,7 @@ FuncDef *sqlite3VtabOverloadFunction(
     }
     rc = pMod->xFindFunction(pVtab, nArg, zLowerName, &xFunc, &pArg);
     sqlite3_free(zLowerName);
+    sqlite3VtabTransferError(db, rc, pVtab);
   }
   if( rc==0 ){
     return pDef;
@@ -824,6 +826,17 @@ void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
     pParse->apVtabLock[pParse->nVtabLock++] = pTab;
   }else{
     pParse->db->mallocFailed = 1;
+  }
+}
+
+/*
+** Transfer a virtual table error into the database connection.
+*/
+void sqlite3VtabTransferError(sqlite3 *db, int rc, sqlite3_vtab *pVtab){
+  if( pVtab->zErrMsg ){
+    sqlite3Error(db, rc, "%s", pVtab->zErrMsg);
+    sqlite3_free(pVtab->zErrMsg);
+    pVtab->zErrMsg = 0;
   }
 }
 

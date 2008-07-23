@@ -1,3 +1,4 @@
+# 2008 July 22
 #
 #    May you do good and not evil.
 #    May you find forgiveness for yourself and forgive others.
@@ -6,7 +7,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: fts2.test,v 1.1 2008/07/22 22:57:54 shess Exp $
+# $Id: fts2.test,v 1.2 2008/07/23 18:17:32 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -33,8 +34,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 # If SQLITE_ENABLE_FTS2 is defined, omit this file.
 ifcapable !fts2 {
-  puts stderr "this build does not include FTS2 capability"
-  exit 1
+  return
 }
 rename finish_test really_finish_test
 proc finish_test {} {}

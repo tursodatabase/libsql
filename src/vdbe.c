@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.761 2008/07/11 21:02:54 drh Exp $
+** $Id: vdbe.c,v 1.762 2008/07/23 18:17:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4621,6 +4621,7 @@ case OP_VOpen: {
   assert(pVtab && pModule);
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   rc = pModule->xOpen(pVtab, &pVtabCursor);
+  sqlite3VtabTransferError(db, rc, pVtab);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
   if( SQLITE_OK==rc ){
     /* Initialize sqlite3_vtab_cursor base class */
@@ -4665,12 +4666,16 @@ case OP_VFilter: {   /* jump */
   const sqlite3_module *pModule;
   Mem *pQuery = &p->aMem[pOp->p3];
   Mem *pArgc = &pQuery[1];
+  sqlite3_vtab_cursor *pVtabCursor;
+  sqlite3_vtab *pVtab;
 
   Cursor *pCur = p->apCsr[pOp->p1];
 
   REGISTER_TRACE(pOp->p3, pQuery);
   assert( pCur->pVtabCursor );
-  pModule = pCur->pVtabCursor->pVtab->pModule;
+  pVtabCursor = pCur->pVtabCursor;
+  pVtab = pVtabCursor->pVtab;
+  pModule = pVtab->pModule;
 
   /* Grab the index number and argc parameters */
   assert( (pQuery->flags&MEM_Int)!=0 && pArgc->flags==MEM_Int );
@@ -4689,10 +4694,10 @@ case OP_VFilter: {   /* jump */
 
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
     p->inVtabMethod = 1;
-    rc = pModule->xFilter(pCur->pVtabCursor, iQuery, pOp->p4.z, nArg, apArg);
+    rc = pModule->xFilter(pVtabCursor, iQuery, pOp->p4.z, nArg, apArg);
     p->inVtabMethod = 0;
     if( rc==SQLITE_OK ){
-      res = pModule->xEof(pCur->pVtabCursor);
+      res = pModule->xEof(pVtabCursor);
     }
     if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
 
@@ -4847,6 +4852,7 @@ case OP_VRename: {
   sqlite3VtabLock(pVtab);
   rc = pVtab->pModule->xRename(pVtab, pName->z);
   sqlite3VtabUnlock(db, pVtab);
+  sqlite3VtabTransferError(db, rc, pVtab);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
 
   break;
@@ -4899,6 +4905,7 @@ case OP_VUpdate: {
     sqlite3VtabLock(pVtab);
     rc = pModule->xUpdate(pVtab, nArg, apArg, &rowid);
     sqlite3VtabUnlock(db, pVtab);
+    sqlite3VtabTransferError(db, rc, pVtab);
     if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
     if( pOp->p1 && rc==SQLITE_OK ){
       assert( nArg>1 && apArg[0] && (apArg[0]->flags&MEM_Null) );
