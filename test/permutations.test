@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.15 2008/07/24 10:11:29 danielk1977 Exp $
+# $Id: permutations.test,v 1.16 2008/07/24 10:32:31 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -441,6 +441,8 @@ ifcapable threadsafe {
 
 run_tests "memsys6" -description {
   Run tests using the allocator in mem6.c.
+} -exclude {
+  capi3.test capi3c.test 
 } -initialize {
   catch {db close}
   sqlite3_reset_auto_extension
