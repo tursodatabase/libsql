@@ -1,5 +1,5 @@
-C Update\sthe\simplementation\sof\ssqlite3ResultSetOfSelect()\sto\s(hopefully)\smake\nit\sclearer\sthat\smalloc\sfailures\scannot\spossibly\sresult\sin\sa\scrash.\nTicket\s#3247.\s(CVS\s5470)
-D 2008-07-24T15:50:41
+C Use\sa\snew\salgorithm\sfor\ssqlite3Strlen\sthat\sis\sslightly\sslower\sbut\sis\smore\nlike\sto\swork\son\sa\smixture\sof\s32-\sand\s64-bit\ssystems.\s\sTicket\s#3237,\s#3248.\s(CVS\s5471)
+D 2008-07-24T17:06:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -181,7 +181,7 @@ F src/tokenize.c b5fdc79fb7e00077b9c02af7a0da3b89c9f3398e
 F src/trigger.c bdb56bb9db1a7b18f8505484051221ab5123f21d
 F src/update.c 4e698fcc0c91c241a960304c4236dc3a49603155
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
-F src/util.c f94d11f931775e325b1a9f97b5cd3005bc4328ba
+F src/util.c 06c5476b440f141987e5d829efd25900df72f629
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
 F src/vdbe.c cc4c19b88d63fa963a4b9260bcae04b82fb59fbb
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e0a101117ca44f0cce555b5db667286729fd2ad4
-R 36f01beb529c949c7be18da5beb3dc1a
+P 7455310931787ddc72d677ba6c471b67af9418a8
+R 2dc3c49d1cf459d9463d2096757fe3cd
 U drh
-Z 17b4c03daebd767a4ef2a00afd17ccd3
+Z 6ffb5de8a8a5e4cc894ca126c9cfb890

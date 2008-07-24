@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.239 2008/07/22 05:15:53 shane Exp $
+** $Id: util.c,v 1.240 2008/07/24 17:06:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -56,11 +56,15 @@ int sqlite3IsNaN(double x){
 */
 int sqlite3Strlen(sqlite3 *db, const char *z){
   const char *z2 = z;
+  int len;
+  size_t x;
   while( *z2 ){ z2++; }
-  if( z2 > &z[db->aLimit[SQLITE_LIMIT_LENGTH]] ){
+  x = z2 - z;
+  len = 0x7fffffff & x;
+  if( len!=x || len > db->aLimit[SQLITE_LIMIT_LENGTH] ){
     return db->aLimit[SQLITE_LIMIT_LENGTH];
   }else{
-    return (int)(z2 - z);
+    return len;
   }
 }
 
