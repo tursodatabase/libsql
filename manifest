@@ -1,5 +1,5 @@
-C Add\smem6.c,\sa\snew\sallocator.\sMore\sto\scome.\s(CVS\s5467)
-D 2008-07-24T08:20:40
+C Add\sa\smutex\sto\smem6.c\sto\smake\sit\sthreadsafe.\s(CVS\s5468)
+D 2008-07-24T10:11:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -123,7 +123,7 @@ F src/mem2.c 1e14a86d12dff279427cc52bb41ce5d80f138137
 F src/mem3.c c73e935d0b900abc51d5fa45f880937b062f4a9f
 F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
 F src/mem5.c 0b0ba1c2a02d86eb812dea6debacee841e3856f7
-F src/mem6.c c80dcbf6dbfe225282abcd9de2387dfca2c8515e
+F src/mem6.c af63943a8311ad87d12d9b4d4908f87b3f956773
 F src/mutex.c a485a0eac8ee2cd95f66e565b4c6696c18db968f
 F src/mutex.h e52ffa1dfc6a6077e8b1823d2c2b7dfcbcf85594
 F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
@@ -436,7 +436,7 @@ F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 6df72c441db0a037b7ec6990d16311c24fbea77b
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
-F test/permutations.test 3ed44783c79005f82585e68955b393521cd12d9e
+F test/permutations.test d90e744f64f05e9cc99ebbb4ae588301f1aeaafc
 F test/pragma.test 2c675ed9a288094ed62bf55b35fbc749e25670fb
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4a9dd5e782a363e93d4705fa3671bc6cf0bb5a33
-R 8b283cbfe876ed053eb7874d7f342505
+P 192bc192185a7b475ef9331e2a4a0dc68083ec03
+R 5534db543abd237cf60349e1495c018f
 U danielk1977
-Z 8afc40bb2e219ef5496de2d6671efc02
+Z 781d9ebe3b9b2c802e3c883b54338895

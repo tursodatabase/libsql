@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: mem6.c,v 1.1 2008/07/24 08:20:40 danielk1977 Exp $
+** $Id: mem6.c,v 1.2 2008/07/24 10:11:28 danielk1977 Exp $
 */
 
 #ifdef SQLITE_ENABLE_MEMSYS6
@@ -281,9 +281,20 @@ struct Mem6Global {
   int nChunkSize;                 /* Size of each chunk, in bytes. */
   int nMinAlloc;                  /* Minimum allowed allocation size */
 
+  sqlite3_mutex *mutex;
+
   /* This data structure will be fixed... */
   Mem6Chunk *pChunk;              /* Singly linked list of all memory chunks */
 } mem6;
+
+
+static void mem6Enter(void){
+  sqlite3_mutex_enter(mem6.mutex);
+}
+
+static void mem6Leave(void){
+  sqlite3_mutex_leave(mem6.mutex);
+}
 
 /*
 ** The argument is a pointer that may or may not have been allocated from
@@ -309,36 +320,47 @@ static void freeChunk(Mem6Chunk *pChunk){
 
 static void *memsys6Malloc(int nByte){
   Mem6Chunk *pChunk;
-  void *p;
+  void *p = 0;
+
+  mem6Enter();
   if( nByte>=mem6.nChunkSize/3 ){
-    return mem6.parent.xMalloc(nByte);
-  }
-  for(pChunk=mem6.pChunk; pChunk; pChunk=pChunk->pNext){
-    p = chunkMalloc(pChunk, nByte);
-    if( p ){
-      return p;
+    p = mem6.parent.xMalloc(nByte);
+  }else{
+    for(pChunk=mem6.pChunk; !p && pChunk; pChunk=pChunk->pNext){
+      p = chunkMalloc(pChunk, nByte);
+    }
+  
+    if( !p ){
+      p = mem6.parent.xMalloc(mem6.nChunkSize);
+      if( p ){
+        pChunk = chunkInit((u8 *)p, mem6.nChunkSize, mem6.nMinAlloc);
+        pChunk->pNext = mem6.pChunk;
+        mem6.pChunk = pChunk;
+        p = chunkMalloc(pChunk, nByte);
+        assert(p);
+      }
     }
   }
-
-  p = mem6.parent.xMalloc(mem6.nChunkSize);
-  if( p ){
-    pChunk = chunkInit((u8 *)p, mem6.nChunkSize, mem6.nMinAlloc);
-    pChunk->pNext = mem6.pChunk;
-    mem6.pChunk = pChunk;
-    p = chunkMalloc(pChunk, nByte);
-    assert(p);
-  }
+  mem6Leave();
 
   return p;
 }
 
 static int memsys6Size(void *p){
-  Mem6Chunk *pChunk = findChunk(p);
-  return (pChunk ? chunkSize(pChunk, p) : mem6.parent.xSize(p));
+  Mem6Chunk *pChunk;
+  int iSize;
+  mem6Enter();
+  pChunk = findChunk(p);
+  iSize = (pChunk ? chunkSize(pChunk, p) : mem6.parent.xSize(p));
+  mem6Leave();
+  return iSize;
 }
 
 static void memsys6Free(void *p){
-  Mem6Chunk *pChunk = findChunk(p);
+  Mem6Chunk *pChunk;
+
+  mem6Enter();
+  pChunk = findChunk(p);
   if( pChunk ){
     chunkFree(pChunk, p);
     if( chunkIsEmpty(pChunk) ){
@@ -347,22 +369,22 @@ static void memsys6Free(void *p){
   }else{
     mem6.parent.xFree(p);
   }
+  mem6Leave();
 }
 
 static void *memsys6Realloc(void *p, int nByte){
-  Mem6Chunk *pChunk = findChunk(p);
   void *p2;
 
-  if( !pChunk ){
-    return mem6.parent.xRealloc(p, nByte);
+  if( p && nByte<=memsys6Size(p) ){
+    p2 = p;
+  }else{
+    p2 = memsys6Malloc(nByte);
+    if( p && p2 ){
+      memcpy(p2, p, memsys6Size(p));
+      memsys6Free(p);
+    }
   }
 
-  p2 = memsys6Malloc(nByte);
-  if( p2 ){
-    assert( memsys6Size(p)<nByte );
-    memcpy(p2, p, memsys6Size(p));
-    memsys6Free(p);
-  }
   return p2;
 }
 
@@ -374,13 +396,24 @@ static int memsys6Roundup(int n){
 }
 
 static int memsys6Init(void *pCtx){
+  u8 bMemstat = sqlite3Config.bMemstat;
   mem6.parent = *sqlite3MemGetDefault();
   mem6.nChunkSize = (1<<16);
   mem6.nMinAlloc = 16;
   mem6.pChunk = 0;
 
+  if( !bMemstat ){
+    mem6.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
+  }
+
   /* Initialize the parent allocator. */
+#ifdef SQLITE_MEMDEBUG
+  sqlite3Config.bMemstat = 1;
+#endif
   mem6.parent.xInit(mem6.parent.pAppData);
+#ifdef SQLITE_MEMDEBUG
+  sqlite3Config.bMemstat = bMemstat;
+#endif
 
   return SQLITE_OK;
 }
