@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.38 2008/07/16 12:25:32 drh Exp $
+** $Id: test_malloc.c,v 1.39 2008/07/24 08:20:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -957,6 +957,26 @@ static int test_config_memstatus(
 }
 
 /*
+** Usage:    sqlite3_config_chunkalloc 
+**
+*/
+static int test_config_chunkalloc(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+  rc = sqlite3_config(SQLITE_CONFIG_CHUNKALLOC);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;
+}
+
+/*
 ** Usage:
 **
 **   sqlite3_config_heap NBYTE NMINALLOC
@@ -1142,6 +1162,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "install_malloc_faultsim",    test_install_malloc_faultsim  ,0 },
      { "sqlite3_config_heap",        test_config_heap              ,0 },
      { "sqlite3_config_memstatus",   test_config_memstatus         ,0 },
+     { "sqlite3_config_chunkalloc",  test_config_chunkalloc        ,0 },
      { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
      { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 }
   };

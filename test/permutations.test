@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.13 2008/07/16 12:25:32 drh Exp $
+# $Id: permutations.test,v 1.14 2008/07/24 08:20:40 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -438,6 +438,27 @@ ifcapable threadsafe {
     install_mutex_counters 0
   }
 }
+
+  run_tests "memsys6" -description {
+    Run tests using the allocator in mem6.c.
+  } -include {
+    select1.test 
+  } -initialize {
+    catch {db close}
+    sqlite3_reset_auto_extension
+    sqlite3_shutdown
+    sqlite3_config_chunkalloc
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+    autoinstall_test_functions
+  } -shutdown {
+    catch {db close}
+    sqlite3_reset_auto_extension
+    sqlite3_shutdown
+    sqlite3_config_heap 0 0
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+  }
 
 # run_tests "crash_safe_append" -description {
 #   Run crash.test with persistent journals on a SAFE_APPEND file-system.

@@ -1,5 +1,5 @@
-C Error\smessages\sfrom\svirtual\stables\sstore\son\sthe\ssqlite3_vtab->zErrMsg\sfield\nare\sreported\sback\sup\sto\sthe\sapplication\sinterface\sand\smemory\sis\sreclaimed.\s(CVS\s5466)
-D 2008-07-23T21:07:25
+C Add\smem6.c,\sa\snew\sallocator.\sMore\sto\scome.\s(CVS\s5467)
+D 2008-07-24T08:20:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -76,7 +76,7 @@ F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
-F main.mk 4b4961d11a76f6f6c54f1137326ea6a556f359f8
+F main.mk ece0e4f0b8ba76c690c3332bded6291f2d391a6a
 F mkdll.sh ce8c8cc3528d63eda1702eb65b17c2d710eb3b89
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -115,14 +115,15 @@ F src/insert.c e8efc17d037346e4a4a6949e72aab850befe3d5d
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 3626c71fb70912abec9a4312beba753a9ce800df
 F src/loadext.c ae0eed9fa96d74172d2a90ee63b5bc36d284295c
-F src/main.c c89f35b92cb9e3bf405a58a5ab8ae5c618d5e1fb
+F src/main.c 6aeae6ec84ad3e023eaa619651079d45900959bc
 F src/malloc.c c4b525896b8c188dab98609180d13dbeeeb33a84
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
-F src/mem1.c 8340fa5f969e9f9b9bdeb54106457a2003456d2b
-F src/mem2.c 0fc5bd6581c80f3ebd9d0cdf0f3f9c08826397ba
+F src/mem1.c 08f95af5095ba5d1fae17deb0ea186e8cdefd8fa
+F src/mem2.c 1e14a86d12dff279427cc52bb41ce5d80f138137
 F src/mem3.c c73e935d0b900abc51d5fa45f880937b062f4a9f
 F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
 F src/mem5.c 0b0ba1c2a02d86eb812dea6debacee841e3856f7
+F src/mem6.c c80dcbf6dbfe225282abcd9de2387dfca2c8515e
 F src/mutex.c a485a0eac8ee2cd95f66e565b4c6696c18db968f
 F src/mutex.h e52ffa1dfc6a6077e8b1823d2c2b7dfcbcf85594
 F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
@@ -143,9 +144,9 @@ F src/printf.c 2174222bc346a11b1eac2a654ccc4f635355ae7e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 859ea5194b05fb2f1f816368062478cda5baa9b8
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
-F src/sqlite.h.in 30cad9d3e7d47a63f89687605ac8730586f970bc
+F src/sqlite.h.in 30a57188b126a001dbc28955885fb9698a3b02e9
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h ee9c3be4c7466cd36c1ecd36f7a51f05c3f3fd54
+F src/sqliteInt.h 424d3e4d843c4c95258dd38a920d8448831ec741
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 2076bc996618b1a112a797f05c1d62026ae01402
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -167,7 +168,7 @@ F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
 F src/test_func.c 24a556989685495013e08f311ae31c4ef86ddb8c
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
-F src/test_malloc.c a77b0425720cd003b3ea02b8695343e73a326a54
+F src/test_malloc.c e898fc34dc96286e87a23a60579c15db7967d23a
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c d3422d9f60cc1330249d102e74b333f0d24a0cb6
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
@@ -435,7 +436,7 @@ F test/pager2.test c025f91b75fe65e85febda64d9416428b8a5cab5
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 6df72c441db0a037b7ec6990d16311c24fbea77b
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
-F test/permutations.test 3a68576f19a46f737a3c3fc5e88e8d450688c53e
+F test/permutations.test 3ed44783c79005f82585e68955b393521cd12d9e
 F test/pragma.test 2c675ed9a288094ed62bf55b35fbc749e25670fb
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -611,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cb5e75dfa5c7048bd0994afac19846f70bfa7a4d
-R da2e59546e4fa7b050269870dc1e776f
-U drh
-Z 3024197f824f60bae53687eb95f7ee5e
+P 4a9dd5e782a363e93d4705fa3671bc6cf0bb5a33
+R 8b283cbfe876ed053eb7874d7f342505
+U danielk1977
+Z 8afc40bb2e219ef5496de2d6671efc02
