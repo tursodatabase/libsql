@@ -1,5 +1,5 @@
-C Use\sa\snew\salgorithm\sfor\ssqlite3Strlen\sthat\sis\sslightly\sslower\sbut\sis\smore\nlike\sto\swork\son\sa\smixture\sof\s32-\sand\s64-bit\ssystems.\s\sTicket\s#3237,\s#3248.\s(CVS\s5471)
-D 2008-07-24T17:06:48
+C Reduce\sthe\ssize\sof\sthe\sparser\sallocation.\s\sAdd\sadditional\sinstrumentation\nto\smem2.\s\sspeed1*.test\suses\sscratch\smalloc.\s(CVS\s5472)
+D 2008-07-24T23:34:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/main.c 6aeae6ec84ad3e023eaa619651079d45900959bc
 F src/malloc.c c4b525896b8c188dab98609180d13dbeeeb33a84
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 08f95af5095ba5d1fae17deb0ea186e8cdefd8fa
-F src/mem2.c 1e14a86d12dff279427cc52bb41ce5d80f138137
+F src/mem2.c 01726714af78c144b5f1f76338bd094deaab1789
 F src/mem3.c c73e935d0b900abc51d5fa45f880937b062f4a9f
 F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
 F src/mem5.c 0b0ba1c2a02d86eb812dea6debacee841e3856f7
@@ -474,9 +474,9 @@ F test/sidedelete.test 736ac1da08b3b1aa62df97fef2fcdb1b660111b9
 F test/soak.test 3c317b3e55e1160731030c8e865d1858fab66fea
 F test/softheap1.test 73ebd6e020d2954d965da2072baba5922fc8fb6a
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
-F test/speed1.test 22e1b27af0683ed44dcd2f93ed817a9c3e65084a
+F test/speed1.test cd5d9302f18946c18570e9ce6c736a5e283c8fcf
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
-F test/speed1p.test 5f79987671f930a8aa651091c2952c1782b0df83
+F test/speed1p.test 1c932ff428cd7c26f0324a6ac59b16dfb2fd8efa
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
@@ -591,7 +591,7 @@ F test/zeroblob.test 792124852ec61458a2eb527b5091791215e0be95
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/lemon.c 13e9c37ab9e0cc182cc10b93ac0e5270bbf472c8
-F tool/lempar.c 1a2caec816704bce9ebefeb4b46f54d6b2f8970e
+F tool/lempar.c 82ad5e30f2da013a13dc934e582b85916d456b50
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7455310931787ddc72d677ba6c471b67af9418a8
-R 2dc3c49d1cf459d9463d2096757fe3cd
+P cb1876d8dc102be74be98dd57ac14ee67be8e8e2
+R 71cb87040ca7c102d12bf7d55288c874
 U drh
-Z 6ffb5de8a8a5e4cc894ca126c9cfb890
+Z 3828cdd4b6a6e072ef07f4672692577c

@@ -13,9 +13,11 @@
 #
 # This is a copy of speed1.test modified to user prepared statements.
 #
-# $Id: speed1p.test,v 1.2 2008/04/03 19:40:59 drh Exp $
+# $Id: speed1p.test,v 1.3 2008/07/24 23:34:07 drh Exp $
 #
 
+sqlite3_shutdown
+sqlite3_config_scratch 29000 1
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 speed_trial_init speed1

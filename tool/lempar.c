@@ -143,11 +143,11 @@ static const YYCODETYPE yyFallback[] = {
 **      It is sometimes called the "minor" token.
 */
 struct yyStackEntry {
-  int stateno;       /* The state-number */
-  int major;         /* The major token value.  This is the code
-                     ** number for the token at this stack level */
-  YYMINORTYPE minor; /* The user-supplied minor token value.  This
-                     ** is the value of the token  */
+  YYACTIONTYPE stateno;  /* The state-number */
+  YYCODETYPE major;      /* The major token value.  This is the code
+                         ** number for the token at this stack level */
+  YYMINORTYPE minor;     /* The user-supplied minor token value.  This
+                         ** is the value of the token  */
 };
 typedef struct yyStackEntry yyStackEntry;
 
