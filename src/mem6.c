@@ -11,15 +11,15 @@
 *************************************************************************
 **
 ** This file contains an alternative memory allocation system for SQLite.
-** This system is implemented as a wrapper around the default memory
-** allocation system (usually the one found in mem1.c - system malloc).
+** This system is implemented as a wrapper around the system provided
+** by the operating system - vanilla malloc(), realloc() and free().
 **
 ** This system differentiates between requests for "small" allocations 
 ** (by default those of 128 bytes or less) and "large" allocations (all
 ** others). The 256 byte threshhold is configurable at runtime.
 **
-** All requests for large allocations are passed through to the
-** default memory allocation system.
+** All requests for large allocations are passed through to the 
+** default system.
 **
 ** Requests for small allocations are met by allocating space within
 ** one or more larger "chunks" of memory obtained from the default
@@ -32,7 +32,7 @@
 ** fragmentation. On some systems, heap fragmentation can cause a 
 ** significant real-time slowdown.
 **
-** $Id: mem6.c,v 1.3 2008/07/25 08:49:00 danielk1977 Exp $
+** $Id: mem6.c,v 1.4 2008/07/25 09:24:13 danielk1977 Exp $
 */
 
 #ifdef SQLITE_ENABLE_MEMSYS6
@@ -310,9 +310,8 @@ static Mem6Chunk *chunkInit(u8 *zChunk, int nChunk, int nMinAlloc){
 }
 
 struct Mem6Global {
-  sqlite3_mem_methods parent;     /* Used to allocate chunks */
   int nMinAlloc;                  /* Minimum allowed allocation size */
-  int nThreshold;                 /* Allocs larger than this go to parent */
+  int nThreshold;                 /* Allocs larger than this go to malloc() */
   sqlite3_mutex *mutex;
   Mem6Chunk *pChunk;              /* Singly linked list of all memory chunks */
 } mem6;
@@ -331,13 +330,10 @@ static void mem6Leave(void){
 ** the size of the next chunk to allocate, in bytes.
 */
 static int nextChunkSize(void){
-  int iTotal = 0;
+  int iTotal = MIN_CHUNKSIZE;
   Mem6Chunk *p;
   for(p=mem6.pChunk; p; p=p->pNext){
-    iTotal += mem6.parent.xSize((void *)p);
-  }
-  if( iTotal==0 ){
-    iTotal = MIN_CHUNKSIZE;
+    iTotal = iTotal*2;
   }
   return iTotal;
 }
@@ -361,50 +357,51 @@ static void freeChunk(Mem6Chunk *pChunk){
   Mem6Chunk **pp = &mem6.pChunk;
   for( pp=&mem6.pChunk; *pp!=pChunk; pp = &(*pp)->pNext );
   *pp = (*pp)->pNext;
-  mem6.parent.xFree(pChunk);
+  free(pChunk);
 }
 
 static void *memsys6Malloc(int nByte){
   Mem6Chunk *pChunk;
   void *p = 0;
+  int nTotal = nByte+8;
 
   mem6Enter();
-  if( nByte>mem6.nThreshold ){
-    p = mem6.parent.xMalloc(nByte);
+  if( nTotal>mem6.nThreshold ){
+    p = malloc(nTotal);
   }else{
     for(pChunk=mem6.pChunk; !p && pChunk; pChunk=pChunk->pNext){
-      p = chunkMalloc(pChunk, nByte);
+      p = chunkMalloc(pChunk, nTotal);
     }
   
     if( !p ){
       int iSize = nextChunkSize();
-      p = mem6.parent.xMalloc(iSize);
+      p = malloc(iSize);
       if( p ){
         pChunk = chunkInit((u8 *)p, iSize, mem6.nMinAlloc);
         pChunk->pNext = mem6.pChunk;
         mem6.pChunk = pChunk;
-        p = chunkMalloc(pChunk, nByte);
+        p = chunkMalloc(pChunk, nTotal);
         assert(p);
       }
     }
   }
   mem6Leave();
 
-  return p;
+  ((sqlite3_int64 *)p)[0] = nByte;
+  return &((sqlite3_int64 *)p)[1];
 }
 
-static int memsys6Size(void *p){
-  Mem6Chunk *pChunk;
-  int iSize;
-  mem6Enter();
-  pChunk = findChunk(p);
-  iSize = (pChunk ? chunkSize(pChunk, p) : mem6.parent.xSize(p));
-  mem6Leave();
-  return iSize;
+static int memsys6Size(void *pPrior){
+  sqlite3_int64 *p;
+  if( pPrior==0 ) return 0;
+  p = (sqlite3_int64*)pPrior;
+  p--;
+  return p[0];
 }
 
-static void memsys6Free(void *p){
+static void memsys6Free(void *pPrior){
   Mem6Chunk *pChunk;
+  void *p = &((sqlite3_int64 *)pPrior)[-1];
 
   mem6Enter();
   pChunk = findChunk(p);
@@ -414,7 +411,7 @@ static void memsys6Free(void *p){
       freeChunk(pChunk);
     }
   }else{
-    mem6.parent.xFree(p);
+    free(p);
   }
   mem6Leave();
 }
@@ -444,7 +441,6 @@ static int memsys6Roundup(int n){
 
 static int memsys6Init(void *pCtx){
   u8 bMemstat = sqlite3Config.bMemstat;
-  mem6.parent = *sqlite3MemGetDefault();
   mem6.nMinAlloc = 16;
   mem6.pChunk = 0;
   mem6.nThreshold = sqlite3Config.nSmall;
@@ -455,22 +451,10 @@ static int memsys6Init(void *pCtx){
     mem6.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   }
 
-  /* Initialize the parent allocator. */
-#ifdef SQLITE_MEMDEBUG
-  sqlite3Config.bMemstat = 1;
-#endif
-  mem6.parent.xInit(mem6.parent.pAppData);
-#ifdef SQLITE_MEMDEBUG
-  sqlite3Config.bMemstat = bMemstat;
-#endif
-
   return SQLITE_OK;
 }
 
 static void memsys6Shutdown(void *pCtx){
-  if( mem6.parent.xShutdown ){
-    mem6.parent.xShutdown(mem6.parent.pAppData);
-  }
   memset(&mem6, 0, sizeof(mem6));
 }
 

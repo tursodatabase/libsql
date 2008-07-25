@@ -1,5 +1,5 @@
-C Updates\sto\smem6.c\sallocator.\s(CVS\s5473)
-D 2008-07-25T08:49:00
+C Change\smem6.c\sto\suse\sthe\smalloc()\sand\sfree()\sfunctions\sdirectly,\sinstead\sof\sgoing\svia\sanother\ssqlite3_mem_methods\sstructure.\s(CVS\s5474)
+D 2008-07-25T09:24:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -123,7 +123,7 @@ F src/mem2.c 87381b143530cc377592e868bd548e881c2498a3
 F src/mem3.c c73e935d0b900abc51d5fa45f880937b062f4a9f
 F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
 F src/mem5.c 0b0ba1c2a02d86eb812dea6debacee841e3856f7
-F src/mem6.c 1edd29bdd837682c54d0836fa426abfb8f838d67
+F src/mem6.c 52b0812f666a387b8b3e4528c60f6003708a2172
 F src/mutex.c a485a0eac8ee2cd95f66e565b4c6696c18db968f
 F src/mutex.h e52ffa1dfc6a6077e8b1823d2c2b7dfcbcf85594
 F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 599a9dea8fc97d0e7f09e67c9954de8cc1b8748e
-R ce0b42684f54a70ca69065b71071d9d4
+P 43a4cae2acea33d1a17c0037516e9c27fb7e8e91
+R 6b9773f158bf3ee83a8701deeafc08e6
 U danielk1977
-Z 80afc91241769621e2af3603082ce4f6
+Z 8490bacca10c0ed9d136bc3e11db83be
