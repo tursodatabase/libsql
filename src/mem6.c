@@ -32,7 +32,7 @@
 ** fragmentation. On some systems, heap fragmentation can cause a 
 ** significant real-time slowdown.
 **
-** $Id: mem6.c,v 1.5 2008/07/25 10:40:19 danielk1977 Exp $
+** $Id: mem6.c,v 1.6 2008/07/25 16:07:01 danielk1977 Exp $
 */
 
 #ifdef SQLITE_ENABLE_MEMSYS6
@@ -55,6 +55,8 @@
 ** Minimum size for a memory chunk.
 */
 #define MIN_CHUNKSIZE (1<<16)
+
+#define LOG2_MINALLOC 4
 
 
 typedef struct Mem6Chunk Mem6Chunk;
@@ -102,6 +104,14 @@ struct Mem6Chunk {
 
 #define MEM6LINK(idx) ((Mem6Link *)(&pChunk->zPool[(idx)*pChunk->nAtom]))
 
+struct Mem6Global {
+  int nMinAlloc;                  /* Minimum allowed allocation size */
+  int nThreshold;                 /* Allocs larger than this go to malloc() */
+  int nLogThreshold;              /* log2 of (nThreshold/nMinAlloc) */
+  sqlite3_mutex *mutex;
+  Mem6Chunk *pChunk;              /* Singly linked list of all memory chunks */
+} mem6;
+
 /*
 ** Unlink the chunk at pChunk->aPool[i] from list it is currently
 ** on.  It should be found on pChunk->aiFreelist[iLogsize].
@@ -109,7 +119,7 @@ struct Mem6Chunk {
 static void memsys6Unlink(Mem6Chunk *pChunk, int i, int iLogsize){
   int next, prev;
   assert( i>=0 && i<pChunk->nBlock );
-  assert( iLogsize>=0 && iLogsize<=LOGMAX );
+  assert( iLogsize>=0 && iLogsize<=mem6.nLogThreshold );
   assert( (pChunk->aCtrl[i] & CTRL_LOGSIZE)==iLogsize );
 
   next = MEM6LINK(i)->next;
@@ -131,7 +141,7 @@ static void memsys6Unlink(Mem6Chunk *pChunk, int i, int iLogsize){
 static void memsys6Link(Mem6Chunk *pChunk, int i, int iLogsize){
   int x;
   assert( i>=0 && i<pChunk->nBlock );
-  assert( iLogsize>=0 && iLogsize<=LOGMAX );
+  assert( iLogsize>=0 && iLogsize<=mem6.nLogThreshold );
   assert( (pChunk->aCtrl[i] & CTRL_LOGSIZE)==iLogsize );
 
   x = MEM6LINK(i)->next = pChunk->aiFreelist[iLogsize];
@@ -152,41 +162,59 @@ static int memsys6UnlinkFirst(Mem6Chunk *pChunk, int iLogsize){
   int i;
   int iFirst;
 
-  assert( iLogsize>=0 && iLogsize<=LOGMAX );
+  assert( iLogsize>=0 && iLogsize<=mem6.nLogThreshold );
   i = iFirst = pChunk->aiFreelist[iLogsize];
   assert( iFirst>=0 );
-  while( i>0 ){
-    if( i<iFirst ) iFirst = i;
-    i = MEM6LINK(i)->next;
-  }
   memsys6Unlink(pChunk, iFirst, iLogsize);
   return iFirst;
 }
 
+static int roundupLog2(int n){
+  static const char LogTable256[256] = {
+    0,                                                    /* 1 */
+    1,                                                    /* 2 */
+    2, 2,                                                 /* 3..4 */
+    3, 3, 3, 3,                                           /* 5..8 */
+    4, 4, 4, 4, 4, 4, 4, 4,                               /* 9..16 */
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,       /* 17..32 */
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+    6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,       /* 33..64 */
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,       /* 65..128 */
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,       /* 129..256 */
+  };
+
+  assert(n<=(1<<16) && n>0);
+  if( n<=256 ) return LogTable256[n-1];
+  return LogTable256[(n>>8) - ((n&0xFF)?0:1)] + 8;
+}
+
 /*
-** Allocate and return a block of nByte bytes from chunk pChunk. If the
-** allocation request cannot be satisfied, return 0.
+** Allocate and return a block of (pChunk->nAtom << iLogsize) bytes from chunk
+** pChunk. If the allocation request cannot be satisfied, return 0.
 */
-static void *chunkMalloc(Mem6Chunk *pChunk, int nByte){
+static void *chunkMalloc(Mem6Chunk *pChunk, int iLogsize){
   int i;           /* Index of a mem5.aPool[] slot */
   int iBin;        /* Index into mem5.aiFreelist[] */
-  int iFullSz;     /* Size of allocation rounded up to power of 2 */
-  int iLogsize;    /* Log2 of iFullSz/POW2_MIN */
-
-  /* Round nByte up to the next valid power of two */
-  if( nByte>(pChunk->nBlock*pChunk->nAtom) ) return 0;
-  for(iFullSz=pChunk->nAtom, iLogsize=0; iFullSz<nByte; iFullSz *= 2, iLogsize++){}
 
   /* Make sure mem5.aiFreelist[iLogsize] contains at least one free
   ** block.  If not, then split a block of the next larger power of
   ** two in order to create a new free block of size iLogsize.
   */
-  for(iBin=iLogsize; pChunk->aiFreelist[iBin]<0 && iBin<=LOGMAX; iBin++){}
-  if( iBin>LOGMAX ) return 0;
+  for(iBin=iLogsize; pChunk->aiFreelist[iBin]<0 && iBin<=mem6.nLogThreshold; iBin++){}
+  if( iBin>mem6.nLogThreshold ) return 0;
   i = memsys6UnlinkFirst(pChunk, iBin);
   while( iBin>iLogsize ){
     int newSize;
-
     iBin--;
     newSize = 1 << iBin;
     pChunk->aCtrl[i+newSize] = CTRL_FREE | iBin;
@@ -225,7 +253,7 @@ static void chunkFree(Mem6Chunk *pChunk, void *pOld){
   pChunk->aCtrl[iBlock+size-1] |= CTRL_FREE;
 
   pChunk->aCtrl[iBlock] = CTRL_FREE | iLogsize;
-  while( iLogsize<LOGMAX ){
+  while( iLogsize<mem6.nLogThreshold ){
     int iBuddy;
     if( (iBlock>>iLogsize) & 1 ){
       iBuddy = iBlock - size;
@@ -291,30 +319,22 @@ static Mem6Chunk *chunkInit(u8 *zChunk, int nChunk, int nMinAlloc){
   pChunk->zPool = (u8 *)&pChunk[1];
   pChunk->aCtrl = &pChunk->zPool[pChunk->nBlock*pChunk->nAtom];
 
-  for(ii=0; ii<=LOGMAX; ii++){
+  for(ii=0; ii<=mem6.nLogThreshold; ii++){
     pChunk->aiFreelist[ii] = -1;
   }
 
   iOffset = 0;
-  for(ii=LOGMAX; ii>=0; ii--){
+  for(ii=mem6.nLogThreshold; ii>=0; ii--){
     int nAlloc = (1<<ii);
-    if( (iOffset+nAlloc)<=pChunk->nBlock ){
+    while( (iOffset+nAlloc)<=pChunk->nBlock ){
       pChunk->aCtrl[iOffset] = ii | CTRL_FREE;
       memsys6Link(pChunk, iOffset, ii);
       iOffset += nAlloc;
     }
-    assert((iOffset+nAlloc)>pChunk->nBlock);
   }
 
   return pChunk;
 }
-
-struct Mem6Global {
-  int nMinAlloc;                  /* Minimum allowed allocation size */
-  int nThreshold;                 /* Allocs larger than this go to malloc() */
-  sqlite3_mutex *mutex;
-  Mem6Chunk *pChunk;              /* Singly linked list of all memory chunks */
-} mem6;
 
 
 static void mem6Enter(void){
@@ -338,21 +358,6 @@ static int nextChunkSize(void){
   return iTotal;
 }
 
-/*
-** The argument is a pointer that may or may not have been allocated from
-** one of the Mem6Chunk objects managed within mem6. If it is, return
-** a pointer to the owner chunk. If not, return 0.
-*/
-static Mem6Chunk *findChunk(u8 *p){
-  Mem6Chunk *pChunk;
-  for(pChunk=mem6.pChunk; pChunk; pChunk=pChunk->pNext){
-    if( p>=pChunk->zPool && p<=&pChunk->zPool[pChunk->nBlock*pChunk->nAtom] ){
-      return pChunk;
-    }
-  }
-  return 0;
-}
-
 static void freeChunk(Mem6Chunk *pChunk){
   Mem6Chunk **pp = &mem6.pChunk;
   for( pp=&mem6.pChunk; *pp!=pChunk; pp = &(*pp)->pNext );
@@ -366,17 +371,20 @@ static void *memsys6Malloc(int nByte){
   int nTotal = nByte+8;
   int iOffset = 0;
 
-  mem6Enter();
   if( nTotal>mem6.nThreshold ){
     p = malloc(nTotal);
   }else{
+    int iLogsize = 0;
+    if( nTotal>(1<<LOG2_MINALLOC) ){
+      iLogsize = roundupLog2(nTotal) - LOG2_MINALLOC;
+    }
+    mem6Enter();
     for(pChunk=mem6.pChunk; pChunk; pChunk=pChunk->pNext){
-      p = chunkMalloc(pChunk, nTotal);
+      p = chunkMalloc(pChunk, iLogsize);
       if( p ){
         break;
       }
     }
-  
     if( !p ){
       int iSize = nextChunkSize();
       p = malloc(iSize);
@@ -384,14 +392,13 @@ static void *memsys6Malloc(int nByte){
         pChunk = chunkInit((u8 *)p, iSize, mem6.nMinAlloc);
         pChunk->pNext = mem6.pChunk;
         mem6.pChunk = pChunk;
-        p = chunkMalloc(pChunk, nTotal);
+        p = chunkMalloc(pChunk, iLogsize);
         assert(p);
       }
     }
-
     iOffset = ((u8*)p - (u8*)pChunk);
+    mem6Leave();
   }
-  mem6Leave();
 
   if( !p ){
     return 0;
@@ -439,25 +446,26 @@ static void *memsys6Realloc(void *p, int nByte){
   return p2;
 }
 
-
 static int memsys6Roundup(int n){
-  int iFullSz;
-  for(iFullSz=mem6.nMinAlloc; iFullSz<n; iFullSz *= 2);
-  return iFullSz;
+  if( n>mem6.nThreshold ){
+    return n;
+  }else{
+    return (1<<roundupLog2(n));
+  }
 }
 
 static int memsys6Init(void *pCtx){
   u8 bMemstat = sqlite3Config.bMemstat;
-  mem6.nMinAlloc = 16;
+  mem6.nMinAlloc = (1 << LOG2_MINALLOC);
   mem6.pChunk = 0;
   mem6.nThreshold = sqlite3Config.nSmall;
   if( mem6.nThreshold<=0 ){
     mem6.nThreshold = SMALL_MALLOC_DEFAULT_THRESHOLD;
   }
+  mem6.nLogThreshold = roundupLog2(mem6.nThreshold) - LOG2_MINALLOC;
   if( !bMemstat ){
     mem6.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   }
-
   return SQLITE_OK;
 }
 
