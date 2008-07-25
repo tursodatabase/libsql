@@ -17,7 +17,7 @@
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 **
-** $Id: mem1.c,v 1.24 2008/07/24 08:20:40 danielk1977 Exp $
+** $Id: mem1.c,v 1.25 2008/07/25 08:49:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -120,7 +120,7 @@ static void sqlite3MemShutdown(void *NotUsed){
   return;
 }
 
-sqlite3_mem_methods *sqlite3MemGetDefault(void){
+const sqlite3_mem_methods *sqlite3MemGetDefault(void){
   static const sqlite3_mem_methods defaultMethods = {
      sqlite3MemMalloc,
      sqlite3MemFree,

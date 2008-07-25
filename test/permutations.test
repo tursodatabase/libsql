@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.16 2008/07/24 10:32:31 danielk1977 Exp $
+# $Id: permutations.test,v 1.17 2008/07/25 08:49:01 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -447,7 +447,7 @@ run_tests "memsys6" -description {
   catch {db close}
   sqlite3_reset_auto_extension
   sqlite3_shutdown
-  sqlite3_config_chunkalloc
+  sqlite3_config_chunkalloc 0
   install_malloc_faultsim 1 
   sqlite3_initialize
   autoinstall_test_functions

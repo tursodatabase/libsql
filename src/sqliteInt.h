@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.744 2008/07/24 08:20:40 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.745 2008/07/25 08:49:00 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1789,6 +1789,7 @@ struct Sqlite3Config {
   int isInit;                       /* True after initialization has finished */
   int isMallocInit;                 /* True after malloc is initialized */
   sqlite3_mutex *pInitMutex;        /* Mutex used by sqlite3_initialize() */
+  int nSmall;                       /* alloc size threshold used by mem6.c */
 };
 
 /*
@@ -1841,7 +1842,7 @@ void sqlite3ScratchFree(void*);
 void *sqlite3PageMalloc(int);
 void sqlite3PageFree(void*);
 void sqlite3MemSetDefault(void);
-sqlite3_mem_methods *sqlite3MemGetDefault(void);
+const sqlite3_mem_methods *sqlite3MemGetDefault(void);
 const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
 const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
 const sqlite3_mem_methods *sqlite3MemGetMemsys6(void);

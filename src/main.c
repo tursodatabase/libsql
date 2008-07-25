@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.481 2008/07/24 08:20:40 danielk1977 Exp $
+** $Id: main.c,v 1.482 2008/07/25 08:49:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -269,6 +269,7 @@ int sqlite3_config(int op, ...){
 
 #if defined(SQLITE_ENABLE_MEMSYS6)
     case SQLITE_CONFIG_CHUNKALLOC: {
+      sqlite3Config.nSmall = va_arg(ap, int);
       sqlite3Config.m = *sqlite3MemGetMemsys6();
       break;
     }
