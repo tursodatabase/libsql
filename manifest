@@ -1,5 +1,5 @@
-C Increase\slimits\son\smemsubsys1\stests\sto\saccomodate\sthe\slarger\sstructure\nsizes\son\s64-bit\splatforms.\s(CVS\s5479)
-D 2008-07-25T13:39:08
+C Fix\sthe\scorrupt7\stests\sto\strack\schanges\sin\sthe\sintegrity\scheck\serror\smessage.\s(CVS\s5480)
+D 2008-07-25T14:53:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d677b8dbc24fd815043e87e9350f8d296ab40f0d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -250,7 +250,7 @@ F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
 F test/corrupt6.test e69b877d478224deab7b66844566258cecacd25e
-F test/corrupt7.test f0ff354eb2f0a23035fbd06724b87cac95b55cc1
+F test/corrupt7.test d9a20cf5f65ff39ffc47c4044b6928c2d20d5fda
 F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 794d284109c65c8f10a2b275479045e02d163bae
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 16c164e79c2033347a36d6f7150eb8d2e0497c78
-R a8e8f80f8b9844e6ed8ca44068f49f2b
+P f7720f1bfcc6dcdd60002520e10f545a6f0eb126
+R f4c184b43a54e2c7baf24a4cb6e66abc
 U drh
-Z 9a863c91c683076c1e90cb7f006b0804
+Z 04067ce483452cdd62495d6b8ce2ca4a
