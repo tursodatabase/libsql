@@ -1,5 +1,5 @@
-C Fix\sthe\scorrupt7\stests\sto\strack\schanges\sin\sthe\sintegrity\scheck\serror\smessage.\s(CVS\s5480)
-D 2008-07-25T14:53:17
+C Add\sthe\scapability\sto\strack\sthe\smaximum\sdepth\sof\sthe\sLALR(1)\sparser\sstack\nso\sthat\scritical\sapplications\scan\scheck\sto\ssee\sif\sthey\sare\sgetting\sclose\nto\slimits.\s(CVS\s5481)
+D 2008-07-25T15:39:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d677b8dbc24fd815043e87e9350f8d296ab40f0d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,11 +144,11 @@ F src/printf.c 2174222bc346a11b1eac2a654ccc4f635355ae7e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c a152b1436d7117e25ce010453c61d1002214e337
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
-F src/sqlite.h.in db24c33101337693d5930da8d31b0ca21e266447
+F src/sqlite.h.in dd72570543919552b62dcfbc24a93d8e5a46742e
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 17ada799d10670e20eb8549b848ca622b2e8bc26
+F src/sqliteInt.h f9036237debe48d3542595fae2a18dcb41cd71e9
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
-F src/status.c 2076bc996618b1a112a797f05c1d62026ae01402
+F src/status.c 0f72b854aa75bb209718e0bb37728602c7ecdee6
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c ec46084184f033ba396a9ee7b5514b695083d0f3
 F src/test1.c 346e9262793be825ebadd9e69600d1b4682650f1
@@ -163,12 +163,12 @@ F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c da9f58f49faccd3a26ba89f58de125862351b6e2
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c 7170e0c922ed3979f2d38f4a3f84728e5740dfc3
-F src/test_config.c 7d3c3bb37e12d8ed22c5e0900e1361178b0580a3
+F src/test_config.c 7896095e9af6e3fad0e42666880afdadfbd563ac
 F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
 F src/test_func.c 24a556989685495013e08f311ae31c4ef86ddb8c
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c df8ab3a6481ddebbdf0d28ebac5d9e0790f7860f
-F src/test_malloc.c cd90645ea37a5199b4cb3168223f73a29160cca9
+F src/test_malloc.c daacb05668cc10e43c71291afc23088ff372488e
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c d3422d9f60cc1330249d102e74b333f0d24a0cb6
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
@@ -177,7 +177,7 @@ F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 73530070df8378571c8ce6bbbbb993236ae3ad0b
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
-F src/tokenize.c b5fdc79fb7e00077b9c02af7a0da3b89c9f3398e
+F src/tokenize.c 70c6b5c394761816522611e70098e8c9bd58b486
 F src/trigger.c bdb56bb9db1a7b18f8505484051221ab5123f21d
 F src/update.c 4e698fcc0c91c241a960304c4236dc3a49603155
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
@@ -492,7 +492,7 @@ F test/tableapi.test a669ae9dd3bc8e7a6f74eff003664801667cf4c2
 F test/tclsqlite.test aa1781808502271feccfd24f9e2c0d2c1d7c496a
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl de507ef0412c8dd9a82cd853964caffa71acbc01
+F test/tester.tcl 160c759e7e0661eaf1b4c15395ca7c0614b03d55
 F test/thread001.test 3fb08080e1fe84d1bb7ec7bbc9e13743a77e5bc5
 F test/thread002.test ed9b800460df01e3cf9428ee11dc4e3f04b9b896
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -591,7 +591,7 @@ F test/zeroblob.test 792124852ec61458a2eb527b5091791215e0be95
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/lemon.c 13e9c37ab9e0cc182cc10b93ac0e5270bbf472c8
-F tool/lempar.c 82ad5e30f2da013a13dc934e582b85916d456b50
+F tool/lempar.c 49e9b3b9b48f6b0799560ed4d090627c51513344
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f7720f1bfcc6dcdd60002520e10f545a6f0eb126
-R f4c184b43a54e2c7baf24a4cb6e66abc
+P 22177dac2e3cd9acafe7fcc71674a675fdd098ff
+R 11e1cd41a325e7c59adaae6fe6ca47fe
 U drh
-Z 04067ce483452cdd62495d6b8ce2ca4a
+Z 73c60297f94ac2927669701b9ab7fab2

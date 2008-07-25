@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.40 2008/07/25 08:49:00 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.41 2008/07/25 15:39:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1083,6 +1083,7 @@ static int test_status(
     { "SQLITE_STATUS_SCRATCH_USED",        SQLITE_STATUS_SCRATCH_USED        },
     { "SQLITE_STATUS_SCRATCH_OVERFLOW",    SQLITE_STATUS_SCRATCH_OVERFLOW    },
     { "SQLITE_STATUS_MALLOC_SIZE",         SQLITE_STATUS_MALLOC_SIZE         },
+    { "SQLITE_STATUS_PARSER_STACK",        SQLITE_STATUS_PARSER_STACK        },
   };
   Tcl_Obj *pResult;
   if( objc!=3 ){

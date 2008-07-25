@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.132 2008/07/12 15:55:55 danielk1977 Exp $
+# $Id: tester.tcl,v 1.133 2008/07/25 15:39:04 drh Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -382,6 +382,11 @@ proc show_memstats {} {
   set x [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0]
   set val [format {now %10d  max %10d} [lindex $x 1] [lindex $x 2]]
   puts "Scratch overflow:     $val"
+  ifcapable yytrackmaxstackdepth {
+    set x [sqlite3_status SQLITE_STATUS_PARSER_STACK 0]
+    set val [format {               max %10d} [lindex $x 2]]
+    puts "Parser stack depth:    $val"
+  }
   set x [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0]
   puts "Maximum alloc size:   [lindex $x 2]"
 }

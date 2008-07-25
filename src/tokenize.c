@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.146 2008/07/08 19:34:07 drh Exp $
+** $Id: tokenize.c,v 1.147 2008/07/25 15:39:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -455,6 +455,11 @@ abort_parse:
     }
     sqlite3Parser(pEngine, 0, pParse->sLastToken, pParse);
   }
+#ifdef YYTRACKMAXSTACKDEPTH
+  sqlite3StatusSet(SQLITE_STATUS_PARSER_STACK,
+      sqlite3ParserStackPeak(pEngine)
+  );
+#endif /* YYDEBUG */
   sqlite3ParserFree(pEngine, sqlite3_free);
   if( db->mallocFailed ){
     pParse->rc = SQLITE_NOMEM;
