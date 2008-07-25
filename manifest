@@ -1,7 +1,7 @@
-C Speed\sup\sthe\sxFree()\smethod\sof\sthe\smem6.c\sallocator\sby\sstoring\sthe\soffset\sfrom\sthe\spointer\sto\sthe\sstart\sof\sits\schunk\sin\sa\sheader\sfield.\s(CVS\s5475)
-D 2008-07-25T10:40:19
+C Fix\sa\sbuild\sproblem\son\stclsqlite\sin\sMakefile.in.\s(CVS\s5476)
+D 2008-07-25T12:39:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 77ff156061bb870aa0a8b3d545c670d08070f7e6
+F Makefile.in 0e1b4ed04abb13e3fe43401f35bc19a3b8c350fa
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION d739ba532eddc5c09ef9a55151328cd6a8a102c6
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cfa65e23df8b6f33884f533492b84dd1985db4d4
-R 009b92e01fa490443d6d24fe83f1d669
-U danielk1977
-Z 4cbc1b51c05feddec296e687ec7109a3
+P 0de54891d4901dec929459d27004efe87106ffa2
+R 04c4207c8cdb07ea9359e1b4c1529fa0
+U drh
+Z 489978530f96cceb88483308cc2556e8

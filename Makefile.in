@@ -628,7 +628,7 @@ table.lo:	$(TOP)/src/table.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/table.c
 
 tclsqlite.lo:	$(TOP)/src/tclsqlite.c $(HDR)
-	$(LTCOMPILE) -c $(TOP)/src/tclsqlite.c
+	$(LTCOMPILE) -DUSE_TCL_STUBS=1 -c $(TOP)/src/tclsqlite.c
 
 tokenize.lo:	$(TOP)/src/tokenize.c keywordhash.h $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/tokenize.c
