@@ -1,5 +1,5 @@
-C Further\sperformance\simprovements\sto\smem6.c.\s(CVS\s5482)
-D 2008-07-25T16:07:01
+C Add\san\sSQLITE_OMIT_LOCALTIME\saround\sthe\s"utc"\smodifier\sin\sdate/time\sfunctions.\s(CVS\s5483)
+D 2008-07-25T16:39:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d677b8dbc24fd815043e87e9350f8d296ab40f0d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,7 +102,7 @@ F src/btreeInt.h 6e4cb69a9192a8d609c27034ae5f921cf0ecdde1
 F src/build.c bac7233d984be3805aaa41cf500f7ee12dc97249
 F src/callback.c aa492a0ad8c2d454edff9fb8a57fae13743cf71d
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
-F src/date.c e841168e5520bbbb2a1cbcdce7531d8b23017b4d
+F src/date.c 243677c51b740933761b63c660eb85b01bf3c74d
 F src/delete.c 4a1f98fb2ffead69c8c685dcac33253ac6f9d56d
 F src/expr.c 18d04f1c15e760d4329b5e0383a0c8a8320f0005
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ef0250f3dc769a4acd534f31fa06d90922d4145b
-R 3a1f8b26d9d09e25bc3a5b4bbb94bcd2
-U danielk1977
-Z b88159d551f91e2db988e4c894c73dc0
+P 4528f7b1cce2d009f1bf32bfb8eeaf3ce5531f41
+R 32d546c36bb4bd1763e233152065a44c
+U drh
+Z a513bec2d2da8332fa1d53012814cd44
