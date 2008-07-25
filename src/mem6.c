@@ -32,7 +32,7 @@
 ** fragmentation. On some systems, heap fragmentation can cause a 
 ** significant real-time slowdown.
 **
-** $Id: mem6.c,v 1.4 2008/07/25 09:24:13 danielk1977 Exp $
+** $Id: mem6.c,v 1.5 2008/07/25 10:40:19 danielk1977 Exp $
 */
 
 #ifdef SQLITE_ENABLE_MEMSYS6
@@ -364,13 +364,17 @@ static void *memsys6Malloc(int nByte){
   Mem6Chunk *pChunk;
   void *p = 0;
   int nTotal = nByte+8;
+  int iOffset = 0;
 
   mem6Enter();
   if( nTotal>mem6.nThreshold ){
     p = malloc(nTotal);
   }else{
-    for(pChunk=mem6.pChunk; !p && pChunk; pChunk=pChunk->pNext){
+    for(pChunk=mem6.pChunk; pChunk; pChunk=pChunk->pNext){
       p = chunkMalloc(pChunk, nTotal);
+      if( p ){
+        break;
+      }
     }
   
     if( !p ){
@@ -384,36 +388,39 @@ static void *memsys6Malloc(int nByte){
         assert(p);
       }
     }
+
+    iOffset = ((u8*)p - (u8*)pChunk);
   }
   mem6Leave();
 
-  ((sqlite3_int64 *)p)[0] = nByte;
-  return &((sqlite3_int64 *)p)[1];
+  if( !p ){
+    return 0;
+  }
+  ((u32 *)p)[0] = iOffset;
+  ((u32 *)p)[1] = nByte;
+  return &((u32 *)p)[2];
 }
 
 static int memsys6Size(void *pPrior){
-  sqlite3_int64 *p;
   if( pPrior==0 ) return 0;
-  p = (sqlite3_int64*)pPrior;
-  p--;
-  return p[0];
+  return ((u32*)pPrior)[-1];
 }
 
 static void memsys6Free(void *pPrior){
-  Mem6Chunk *pChunk;
-  void *p = &((sqlite3_int64 *)pPrior)[-1];
-
-  mem6Enter();
-  pChunk = findChunk(p);
-  if( pChunk ){
+  int iSlot;
+  void *p = &((u32 *)pPrior)[-2];
+  iSlot = ((u32 *)p)[0];
+  if( iSlot ){
+    mem6Enter();
+    Mem6Chunk *pChunk = (Mem6Chunk *)(&((u8 *)p)[-1 * iSlot]);
     chunkFree(pChunk, p);
     if( chunkIsEmpty(pChunk) ){
       freeChunk(pChunk);
     }
+    mem6Leave();
   }else{
     free(p);
   }
-  mem6Leave();
 }
 
 static void *memsys6Realloc(void *p, int nByte){
