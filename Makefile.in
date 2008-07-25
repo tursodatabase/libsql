@@ -432,7 +432,7 @@ libsqlite3.la:	$(LIBOBJ)
 
 libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 	$(LTLINK) -o $@ tclsqlite.lo \
-		$(LIBOBJ) @TCL_STUB_LIB_SPEC@ $(TLIBS) \
+		libsqlite3.la @TCL_STUB_LIB_SPEC@ $(TLIBS) \
                 -rpath "$(libdir)/sqlite" \
 		-version-info "8:6:8"
 

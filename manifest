@@ -1,7 +1,7 @@
-C Fix\sa\sbuild\sproblem\son\stclsqlite\sin\sMakefile.in.\s(CVS\s5476)
-D 2008-07-25T12:39:23
+C Make\sthe\slibtclsqlite3.la\sshared\slibrary\sdepend\son\sa\sseparate\nlibsqlite3.la\sshared\slibrary.\s\sI\sthink\sthis\sflies\sin\sthe\sface\sof\sthe\nwhole\sSQLite\sphilosophy\sof\sminimal\sdependencies,\sbut\son\sthe\sother\shand,\nfew\speople\suse\sthat\sshared\slibrary\sand\sthe\scapability\shas\sbeen\srequested\nfrom\sthe\sSuSE\steam.\s(CVS\s5477)
+D 2008-07-25T12:49:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 0e1b4ed04abb13e3fe43401f35bc19a3b8c350fa
+F Makefile.in d677b8dbc24fd815043e87e9350f8d296ab40f0d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION d739ba532eddc5c09ef9a55151328cd6a8a102c6
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0de54891d4901dec929459d27004efe87106ffa2
-R 04c4207c8cdb07ea9359e1b4c1529fa0
+P e7a604807f9f3f92920b2bac403d2dd368dfa102
+R 3bb39f47d2a2a127694e46d60a5fa10a
 U drh
-Z 489978530f96cceb88483308cc2556e8
+Z 17b472ba95d0b892f34c1cae01ec7074
