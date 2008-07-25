@@ -14,9 +14,10 @@
 ** adds instrumentation to all vfs and file methods. C and Tcl interfaces
 ** are provided to control the instrumentation.
 **
-** $Id: test_osinst.c,v 1.17 2008/07/12 15:55:55 danielk1977 Exp $
+** $Id: test_osinst.c,v 1.18 2008/07/25 13:32:45 drh Exp $
 */
 
+#ifdef SQLITE_ENABLE_INSTVFS
 /*
 ** C interface:
 **
@@ -809,6 +810,7 @@ sqlite3_vfs *sqlite3_instvfs_binarylog(
 
   return pVfs;
 }
+#endif /* SQLITE_ENABLE_INSTVFS */
 
 /**************************************************************************
 ***************************************************************************
@@ -818,6 +820,7 @@ sqlite3_vfs *sqlite3_instvfs_binarylog(
 
 #include <tcl.h>
 
+#ifdef SQLITE_ENABLE_INSTVFS
 struct InstVfsCall {
   Tcl_Interp *interp;
   Tcl_Obj *pScript;
@@ -1039,10 +1042,28 @@ static int test_sqlite3_instvfs(
 
   return TCL_OK;
 }
+#endif /* SQLITE_ENABLE_INSTVFS */
+
+/* Alternative implementation of sqlite3_instvfs when the real
+** implementation is unavailable. 
+*/
+#ifndef SQLITE_ENABLE_INSTVFS
+static int test_sqlite3_instvfs(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  Tcl_AppendResult(interp, 
+     "not compiled with -DSQLITE_ENABLE_INSTVFS; sqlite3_instvfs is "
+     "unavailable", (char*)0);
+  return TCL_ERROR;
+}
+#endif /* !defined(SQLITE_ENABLE_INSTVFS) */
 
 int SqlitetestOsinst_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "sqlite3_instvfs", test_sqlite3_instvfs, 0, 0);
   return TCL_OK;
 }
 
-#endif
+#endif /* SQLITE_TEST */

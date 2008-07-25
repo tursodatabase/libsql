@@ -1,5 +1,5 @@
-C Make\sthe\slibtclsqlite3.la\sshared\slibrary\sdepend\son\sa\sseparate\nlibsqlite3.la\sshared\slibrary.\s\sI\sthink\sthis\sflies\sin\sthe\sface\sof\sthe\nwhole\sSQLite\sphilosophy\sof\sminimal\sdependencies,\sbut\son\sthe\sother\shand,\nfew\speople\suse\sthat\sshared\slibrary\sand\sthe\scapability\shas\sbeen\srequested\nfrom\sthe\sSuSE\steam.\s(CVS\s5477)
-D 2008-07-25T12:49:45
+C Require\sthe\sSQLITE_ENABLE_INSTVFS\ssymbol\sin\sorder\sto\scompile\stestfixture\nwith\ssqlite3_instvfs\senabled.\s\sThis\sallows\sfulltest\sto\srun\son\splatforms\nfor\swhich\swe\sdo\snot\shave\sa\sworking\shwtime.h\s(ex:\sppc,\ss390).\s\sChange\nrequested\sfrom\sthe\sSuSE\steam.\s(CVS\s5478)
+D 2008-07-25T13:32:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d677b8dbc24fd815043e87e9350f8d296ab40f0d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -172,7 +172,7 @@ F src/test_malloc.c cd90645ea37a5199b4cb3168223f73a29160cca9
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c d3422d9f60cc1330249d102e74b333f0d24a0cb6
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
-F src/test_osinst.c 49d777e6129bead1726e316e83751be35f455acc
+F src/test_osinst.c ae29e9c09485622a157849508302dd9ffe44f21f
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 73530070df8378571c8ce6bbbbb993236ae3ad0b
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e7a604807f9f3f92920b2bac403d2dd368dfa102
-R 3bb39f47d2a2a127694e46d60a5fa10a
+P 83484b42bf353535567e245a92f40096b63b342f
+R 088827a2af753bbeb1ed53c69cf94177
 U drh
-Z 17b472ba95d0b892f34c1cae01ec7074
+Z e1d6a1cd0ffd39b061d9a043430a84b7
