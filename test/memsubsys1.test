@@ -11,7 +11,7 @@
 #
 # This file contains tests of the memory allocation subsystem
 #
-# $Id: memsubsys1.test,v 1.4 2008/07/12 14:52:20 drh Exp $
+# $Id: memsubsys1.test,v 1.5 2008/07/25 13:39:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -133,7 +133,7 @@ do_test memsubsys1-4.4 {
 } $max_pagecache
 do_test memsubsys1-4.5 {
   set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
-  expr {$maxreq<4096}
+  expr {$maxreq<7000}
 } 1
 do_test memsubsys1-4.6 {
   set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
@@ -211,7 +211,7 @@ do_test memsubsys1-7.4 {
 } 0
 do_test memsubsys1-7.5 {
   set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
-  expr {$maxreq<2500}
+  expr {$maxreq<4000}
 } 1
 do_test memsubsys1-7.6 {
   set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
