@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.764 2008/07/26 18:26:10 danielk1977 Exp $
+** $Id: vdbe.c,v 1.765 2008/07/26 18:47:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3136,10 +3136,14 @@ case OP_IsUnique: {        /* jump, in3 */
     zKey = pK->z;
     nKey = pK->n;
 
+    /* sqlite3VdbeIdxRowidLen() only returns other than SQLITE_OK when the
+    ** record passed as an argument corrupt. Since the record in this case
+    ** has just been created by an OP_MakeRecord instruction, and not loaded
+    ** from the database file, it is not possible for it to be corrupt.
+    ** Therefore, assert(rc==SQLITE_OK).
+    */
     rc = sqlite3VdbeIdxRowidLen((u8*)zKey, nKey, &szRowid);
-    if( rc!=SQLITE_OK ){
-      goto abort_due_to_error;
-    }
+    assert(rc==SQLITE_OK);
     len = nKey-szRowid;
 
     /* Search for an entry in P1 where all but the last four bytes match K.

@@ -1,5 +1,5 @@
-C Fix\sa\scase\swhere\sdatabase\scorruption\swas\scausing\san\sinvalid\sreference.\s(CVS\s5484)
-D 2008-07-26T18:26:10
+C Remove\sa\sbranch\sthat\scould\snot\sbe\staken\sfrom\sOP_IsUnique.\s(CVS\s5485)
+D 2008-07-26T18:47:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d677b8dbc24fd815043e87e9350f8d296ab40f0d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -183,7 +183,7 @@ F src/update.c 4e698fcc0c91c241a960304c4236dc3a49603155
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
 F src/util.c 06c5476b440f141987e5d829efd25900df72f629
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
-F src/vdbe.c acc17bc1e3463e05dbcb63f93bc0bfc40e31c22f
+F src/vdbe.c aa0922d62e58dae8440d78a81a312531655db882
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
 F src/vdbeInt.h 3c12ae0982c03ddac43a2531d41e6eca9fd89eb2
 F src/vdbeapi.c 17fa6f432197d759b15d3b37a7d672a34043c078
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 71486e93b274b7ca954314dd3e4146192a8b6d79
-R 4d93eb3dfa13692d859e807a2f9f466b
+P 7aecabacf924ad8c1f9f4e707d0c56e433e3a434
+R 69ce53c160e90507e4cc52c56ef9ee63
 U danielk1977
-Z 7d9fcc3d41d5284180c5db5ee18f0596
+Z 5bd9390ae7daa19404e99c82b839d67c
