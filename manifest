@@ -1,5 +1,5 @@
-C Add\san\sSQLITE_OMIT_LOCALTIME\saround\sthe\s"utc"\smodifier\sin\sdate/time\sfunctions.\s(CVS\s5483)
-D 2008-07-25T16:39:25
+C Fix\sa\scase\swhere\sdatabase\scorruption\swas\scausing\san\sinvalid\sreference.\s(CVS\s5484)
+D 2008-07-26T18:26:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d677b8dbc24fd815043e87e9350f8d296ab40f0d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -183,11 +183,11 @@ F src/update.c 4e698fcc0c91c241a960304c4236dc3a49603155
 F src/utf.c 8d52f620a7153d90b058502124fe51d821fcdf57
 F src/util.c 06c5476b440f141987e5d829efd25900df72f629
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
-F src/vdbe.c cc4c19b88d63fa963a4b9260bcae04b82fb59fbb
+F src/vdbe.c acc17bc1e3463e05dbcb63f93bc0bfc40e31c22f
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
-F src/vdbeInt.h 30535c1d30ba1b5fb58d8f0e1d1261af976558aa
+F src/vdbeInt.h 3c12ae0982c03ddac43a2531d41e6eca9fd89eb2
 F src/vdbeapi.c 17fa6f432197d759b15d3b37a7d672a34043c078
-F src/vdbeaux.c 05330c212c77dfd43300bc31bfa0044e4f7ec956
+F src/vdbeaux.c 0d221c85240eddbce498cc0136a5edd43927d67e
 F src/vdbeblob.c a20fe9345062b1a1b4cc187dc5fad45c9414033b
 F src/vdbefifo.c c46dae1194e4277bf007144d7e5b0c0b1c24f136
 F src/vdbemem.c 0c72b58ffd759676ce4829f42bacb83842a58c21
@@ -250,7 +250,7 @@ F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
 F test/corrupt6.test e69b877d478224deab7b66844566258cecacd25e
-F test/corrupt7.test d9a20cf5f65ff39ffc47c4044b6928c2d20d5fda
+F test/corrupt7.test 34d3217f2e1b783e68374430e4049a3416e1d9e9
 F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 794d284109c65c8f10a2b275479045e02d163bae
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4528f7b1cce2d009f1bf32bfb8eeaf3ce5531f41
-R 32d546c36bb4bd1763e233152065a44c
-U drh
-Z a513bec2d2da8332fa1d53012814cd44
+P 71486e93b274b7ca954314dd3e4146192a8b6d79
+R 4d93eb3dfa13692d859e807a2f9f466b
+U danielk1977
+Z 7d9fcc3d41d5284180c5db5ee18f0596

@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.399 2008/07/22 05:18:01 shane Exp $
+** $Id: vdbeaux.c,v 1.400 2008/07/26 18:26:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2354,13 +2354,17 @@ int sqlite3VdbeRecordCompare(
 ** an integer rowid).  This routine returns the number of bytes in
 ** that integer.
 */
-int sqlite3VdbeIdxRowidLen(const u8 *aKey){
+int sqlite3VdbeIdxRowidLen(const u8 *aKey, int nKey, int *pRowidLen){
   u32 szHdr;        /* Size of the header */
   u32 typeRowid;    /* Serial type of the rowid */
 
   (void)getVarint32(aKey, szHdr);
+  if( szHdr>nKey ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   (void)getVarint32(&aKey[szHdr-1], typeRowid);
-  return sqlite3VdbeSerialTypeLen(typeRowid);
+  *pRowidLen = sqlite3VdbeSerialTypeLen(typeRowid);
+  return SQLITE_OK;
 }
   
 
@@ -2429,11 +2433,11 @@ int sqlite3VdbeIdxKeyCompare(
   m.db = 0;
   m.flags = 0;
   m.zMalloc = 0;
-  rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, nCellKey, 1, &m);
-  if( rc ){
+  if( (rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, nCellKey, 1, &m))
+   || (rc = sqlite3VdbeIdxRowidLen((u8*)m.z, m.n, &lenRowid))
+  ){
     return rc;
   }
-  lenRowid = sqlite3VdbeIdxRowidLen((u8*)m.z);
   if( !pUnpacked ){
     pRec = sqlite3VdbeRecordUnpack(pC->pKeyInfo, nKey, pKey,
                                 zSpace, sizeof(zSpace));

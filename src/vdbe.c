@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.763 2008/07/23 21:07:25 drh Exp $
+** $Id: vdbe.c,v 1.764 2008/07/26 18:26:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3136,7 +3136,10 @@ case OP_IsUnique: {        /* jump, in3 */
     zKey = pK->z;
     nKey = pK->n;
 
-    szRowid = sqlite3VdbeIdxRowidLen((u8*)zKey);
+    rc = sqlite3VdbeIdxRowidLen((u8*)zKey, nKey, &szRowid);
+    if( rc!=SQLITE_OK ){
+      goto abort_due_to_error;
+    }
     len = nKey-szRowid;
 
     /* Search for an entry in P1 where all but the last four bytes match K.
