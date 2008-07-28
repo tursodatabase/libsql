@@ -158,8 +158,8 @@ OBJS0 = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo \
         btree.lo build.lo callback.lo complete.lo date.lo \
         delete.lo expr.lo fault.lo func.lo global.lo \
         hash.lo journal.lo insert.lo loadext.lo \
-        main.lo malloc.lo mem1.lo mem2.lo mem3.lo mem4.lo mem5.lo mutex.lo \
-        mutex_os2.lo mutex_unix.lo mutex_w32.lo \
+        main.lo malloc.lo mem1.lo mem2.lo mem3.lo mem4.lo mem5.lo mem6.lo \
+        mutex.lo mutex_os2.lo mutex_unix.lo mutex_w32.lo \
         opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
         pager.lo parse.lo pragma.lo prepare.lo printf.lo random.lo \
         select.lo status.lo table.lo tokenize.lo trigger.lo update.lo \
@@ -212,6 +212,7 @@ SRC = \
   $(TOP)/src/mem3.c \
   $(TOP)/src/mem4.c \
   $(TOP)/src/mem5.c \
+  $(TOP)/src/mem6.c \
   $(TOP)/src/mutex.c \
   $(TOP)/src/mutex.h \
   $(TOP)/src/mutex_os2.c \
@@ -554,6 +555,9 @@ mem4.lo:	$(TOP)/src/mem4.c $(HDR)
 
 mem5.lo:	$(TOP)/src/mem5.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem5.c
+
+mem6.lo:	$(TOP)/src/mem6.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem6.c
 
 mutex.lo:	$(TOP)/src/mutex.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex.c
