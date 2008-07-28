@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.118 2008/07/09 16:51:51 drh Exp $
+** $Id: vdbemem.c,v 1.119 2008/07/28 19:34:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -83,7 +83,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
   );
 
   if( n<32 ) n = 32;
-  if( sqlite3MallocSize(pMem->zMalloc)<n ){
+  if( sqlite3DbMallocSize(pMem->db, pMem->zMalloc)<n ){
     if( preserve && pMem->z==pMem->zMalloc ){
       pMem->z = pMem->zMalloc = sqlite3DbReallocOrFree(pMem->db, pMem->z, n);
       if( !pMem->z ){
@@ -91,7 +91,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
       }
       preserve = 0;
     }else{
-      sqlite3_free(pMem->zMalloc);
+      sqlite3DbFree(pMem->db, pMem->zMalloc);
       pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, n);
     }
   }
@@ -255,7 +255,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
     ctx.isError = 0;
     pFunc->xFinalize(&ctx);
     assert( 0==(pMem->flags&MEM_Dyn) && !pMem->xDel );
-    sqlite3_free(pMem->zMalloc);
+    sqlite3DbFree(pMem->db, pMem->zMalloc);
     *pMem = ctx.s;
     rc = (ctx.isError?SQLITE_ERROR:SQLITE_OK);
   }
@@ -286,7 +286,7 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
 */
 void sqlite3VdbeMemRelease(Mem *p){
   sqlite3VdbeMemReleaseExternal(p);
-  sqlite3_free(p->zMalloc);
+  sqlite3DbFree(p->db, p->zMalloc);
   p->z = 0;
   p->zMalloc = 0;
   p->xDel = 0;
@@ -631,11 +631,21 @@ int sqlite3VdbeMemSetStr(
       return SQLITE_NOMEM;
     }
     memcpy(pMem->z, z, nAlloc);
+  }else if( xDel==SQLITE_DYNAMIC ){
+    sqlite3VdbeMemRelease(pMem);
+    pMem->zMalloc = pMem->z = (char *)z;
+    pMem->xDel = 0;
   }else{
     sqlite3VdbeMemRelease(pMem);
     pMem->z = (char *)z;
-    pMem->xDel = xDel;
-    flags |= ((xDel==SQLITE_STATIC)?MEM_Static:MEM_Dyn);
+    if( xDel==SQLITE_DYNAMIC ){
+      pMem->zMalloc = pMem->z;
+      pMem->xDel = 0;
+      flags |= MEM_Dyn;
+    }else{
+      pMem->xDel = xDel;
+      flags |= ((xDel==SQLITE_STATIC)?MEM_Static:MEM_Dyn);
+    }
   }
 
   pMem->n = nByte;
@@ -966,11 +976,11 @@ int sqlite3ValueFromExpr(
   op = pExpr->op;
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
-    zVal = sqlite3StrNDup((char*)pExpr->token.z, pExpr->token.n);
+    zVal = sqlite3DbStrNDup(db, (char*)pExpr->token.z, pExpr->token.n);
     pVal = sqlite3ValueNew(db);
     if( !zVal || !pVal ) goto no_mem;
     sqlite3Dequote(zVal);
-    sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, sqlite3_free);
+    sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
     if( (op==TK_INTEGER || op==TK_FLOAT ) && affinity==SQLITE_AFF_NONE ){
       sqlite3ValueApplyAffinity(pVal, SQLITE_AFF_NUMERIC, enc);
     }else{
@@ -993,7 +1003,7 @@ int sqlite3ValueFromExpr(
     nVal = pExpr->token.n - 3;
     zVal = (char*)pExpr->token.z + 2;
     sqlite3VdbeMemSetStr(pVal, sqlite3HexToBlob(db, zVal, nVal), nVal/2,
-                         0, sqlite3_free);
+                         0, SQLITE_DYNAMIC);
   }
 #endif
 
@@ -1002,7 +1012,7 @@ int sqlite3ValueFromExpr(
 
 no_mem:
   db->mallocFailed = 1;
-  sqlite3_free(zVal);
+  sqlite3DbFree(db, zVal);
   sqlite3ValueFree(pVal);
   *ppVal = 0;
   return SQLITE_NOMEM;
@@ -1027,7 +1037,7 @@ void sqlite3ValueSetStr(
 void sqlite3ValueFree(sqlite3_value *v){
   if( !v ) return;
   sqlite3VdbeMemRelease((Mem *)v);
-  sqlite3_free(v);
+  sqlite3DbFree(((Mem*)v)->db, v);
 }
 
 /*

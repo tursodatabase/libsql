@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.246 2008/07/18 17:03:53 drh Exp $
+** @(#) $Id: parse.y,v 1.247 2008/07/28 19:34:53 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -135,7 +135,7 @@ create_table_args ::= LP columnlist conslist_opt(X) RP(Y). {
 }
 create_table_args ::= AS select(S). {
   sqlite3EndTable(pParse,0,0,S);
-  sqlite3SelectDelete(S);
+  sqlite3SelectDelete(pParse->db, S);
 }
 columnlist ::= columnlist COMMA column.
 columnlist ::= column.
@@ -362,13 +362,13 @@ cmd ::= DROP VIEW ifexists(E) fullname(X). {
 cmd ::= select(X).  {
   SelectDest dest = {SRT_Callback, 0, 0, 0, 0};
   sqlite3Select(pParse, X, &dest, 0, 0, 0);
-  sqlite3SelectDelete(X);
+  sqlite3SelectDelete(pParse->db, X);
 }
 
 %type select {Select*}
-%destructor select {sqlite3SelectDelete($$);}
+%destructor select {sqlite3SelectDelete(pParse->db, $$);}
 %type oneselect {Select*}
-%destructor oneselect {sqlite3SelectDelete($$);}
+%destructor oneselect {sqlite3SelectDelete(pParse->db, $$);}
 
 select(A) ::= oneselect(X).                      {A = X;}
 %ifndef SQLITE_OMIT_COMPOUND_SELECT
@@ -377,7 +377,7 @@ select(A) ::= select(X) multiselect_op(Y) oneselect(Z).  {
     Z->op = Y;
     Z->pPrior = X;
   }else{
-    sqlite3SelectDelete(X);
+    sqlite3SelectDelete(pParse->db, X);
   }
   A = Z;
 }
@@ -405,9 +405,9 @@ distinct(A) ::= .           {A = 0;}
 // opcode of TK_ALL.
 //
 %type selcollist {ExprList*}
-%destructor selcollist {sqlite3ExprListDelete($$);}
+%destructor selcollist {sqlite3ExprListDelete(pParse->db, $$);}
 %type sclp {ExprList*}
-%destructor sclp {sqlite3ExprListDelete($$);}
+%destructor sclp {sqlite3ExprListDelete(pParse->db, $$);}
 sclp(A) ::= selcollist(X) COMMA.             {A = X;}
 sclp(A) ::= .                                {A = 0;}
 selcollist(A) ::= sclp(P) expr(X) as(Y).     {
@@ -434,11 +434,11 @@ as(X) ::= .            {X.n = 0;}
 
 
 %type seltablist {SrcList*}
-%destructor seltablist {sqlite3SrcListDelete($$);}
+%destructor seltablist {sqlite3SrcListDelete(pParse->db, $$);}
 %type stl_prefix {SrcList*}
-%destructor stl_prefix {sqlite3SrcListDelete($$);}
+%destructor stl_prefix {sqlite3SrcListDelete(pParse->db, $$);}
 %type from {SrcList*}
-%destructor from {sqlite3SrcListDelete($$);}
+%destructor from {sqlite3SrcListDelete(pParse->db, $$);}
 
 // A complete FROM clause.
 //
@@ -470,7 +470,7 @@ seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) on_opt(N) using_opt(U). {
   // a grouping of table and subqueries.
   //
   %type seltablist_paren {Select*}
-  %destructor seltablist_paren {sqlite3SelectDelete($$);}
+  %destructor seltablist_paren {sqlite3SelectDelete(pParse->db, $$);}
   seltablist_paren(A) ::= select(S).      {A = S;}
   seltablist_paren(A) ::= seltablist(F).  {
      sqlite3SrcListShiftJoinType(F);
@@ -483,7 +483,7 @@ dbnm(A) ::= .          {A.z=0; A.n=0;}
 dbnm(A) ::= DOT nm(X). {A = X;}
 
 %type fullname {SrcList*}
-%destructor fullname {sqlite3SrcListDelete($$);}
+%destructor fullname {sqlite3SrcListDelete(pParse->db, $$);}
 fullname(A) ::= nm(X) dbnm(Y).  {A = sqlite3SrcListAppend(pParse->db,0,&X,&Y);}
 
 %type joinop {int}
@@ -495,22 +495,22 @@ joinop(X) ::= JOIN_KW(A) nm(B) nm(C) JOIN.
                                        { X = sqlite3JoinType(pParse,&A,&B,&C); }
 
 %type on_opt {Expr*}
-%destructor on_opt {sqlite3ExprDelete($$);}
+%destructor on_opt {sqlite3ExprDelete(pParse->db, $$);}
 on_opt(N) ::= ON expr(E).   {N = E;}
 on_opt(N) ::= .             {N = 0;}
 
 %type using_opt {IdList*}
-%destructor using_opt {sqlite3IdListDelete($$);}
+%destructor using_opt {sqlite3IdListDelete(pParse->db, $$);}
 using_opt(U) ::= USING LP inscollist(L) RP.  {U = L;}
 using_opt(U) ::= .                        {U = 0;}
 
 
 %type orderby_opt {ExprList*}
-%destructor orderby_opt {sqlite3ExprListDelete($$);}
+%destructor orderby_opt {sqlite3ExprListDelete(pParse->db, $$);}
 %type sortlist {ExprList*}
-%destructor sortlist {sqlite3ExprListDelete($$);}
+%destructor sortlist {sqlite3ExprListDelete(pParse->db, $$);}
 %type sortitem {Expr*}
-%destructor sortitem {sqlite3ExprDelete($$);}
+%destructor sortitem {sqlite3ExprDelete(pParse->db, $$);}
 
 orderby_opt(A) ::= .                          {A = 0;}
 orderby_opt(A) ::= ORDER BY sortlist(X).      {A = X;}
@@ -531,12 +531,12 @@ sortorder(A) ::= DESC.          {A = SQLITE_SO_DESC;}
 sortorder(A) ::= .              {A = SQLITE_SO_ASC;}
 
 %type groupby_opt {ExprList*}
-%destructor groupby_opt {sqlite3ExprListDelete($$);}
+%destructor groupby_opt {sqlite3ExprListDelete(pParse->db, $$);}
 groupby_opt(A) ::= .                      {A = 0;}
 groupby_opt(A) ::= GROUP BY nexprlist(X). {A = X;}
 
 %type having_opt {Expr*}
-%destructor having_opt {sqlite3ExprDelete($$);}
+%destructor having_opt {sqlite3ExprDelete(pParse->db, $$);}
 having_opt(A) ::= .                {A = 0;}
 having_opt(A) ::= HAVING expr(X).  {A = X;}
 
@@ -550,8 +550,8 @@ having_opt(A) ::= HAVING expr(X).  {A = X;}
 // except as a transient.  So there is never anything to destroy.
 //
 //%destructor limit_opt {
-//  sqlite3ExprDelete($$.pLimit);
-//  sqlite3ExprDelete($$.pOffset);
+//  sqlite3ExprDelete(pParse->db, $$.pLimit);
+//  sqlite3ExprDelete(pParse->db, $$.pOffset);
 //}
 limit_opt(A) ::= .                     {A.pLimit = 0; A.pOffset = 0;}
 limit_opt(A) ::= LIMIT expr(X).        {A.pLimit = X; A.pOffset = 0;}
@@ -565,7 +565,7 @@ limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y).
 cmd ::= DELETE FROM fullname(X) where_opt(Y). {sqlite3DeleteFrom(pParse,X,Y);}
 
 %type where_opt {Expr*}
-%destructor where_opt {sqlite3ExprDelete($$);}
+%destructor where_opt {sqlite3ExprDelete(pParse->db, $$);}
 
 where_opt(A) ::= .                    {A = 0;}
 where_opt(A) ::= WHERE expr(X).       {A = X;}
@@ -578,7 +578,7 @@ cmd ::= UPDATE orconf(R) fullname(X) SET setlist(Y) where_opt(Z).  {
 }
 
 %type setlist {ExprList*}
-%destructor setlist {sqlite3ExprListDelete($$);}
+%destructor setlist {sqlite3ExprListDelete(pParse->db, $$);}
 
 setlist(A) ::= setlist(Z) COMMA nm(X) EQ expr(Y).
     {A = sqlite3ExprListAppend(pParse,Z,Y,&X);}
@@ -601,7 +601,7 @@ insert_cmd(A) ::= REPLACE.            {A = OE_Replace;}
 
 
 %type itemlist {ExprList*}
-%destructor itemlist {sqlite3ExprListDelete($$);}
+%destructor itemlist {sqlite3ExprListDelete(pParse->db, $$);}
 
 itemlist(A) ::= itemlist(X) COMMA expr(Y).
     {A = sqlite3ExprListAppend(pParse,X,Y,0);}
@@ -609,9 +609,9 @@ itemlist(A) ::= expr(X).
     {A = sqlite3ExprListAppend(pParse,0,X,0);}
 
 %type inscollist_opt {IdList*}
-%destructor inscollist_opt {sqlite3IdListDelete($$);}
+%destructor inscollist_opt {sqlite3IdListDelete(pParse->db, $$);}
 %type inscollist {IdList*}
-%destructor inscollist {sqlite3IdListDelete($$);}
+%destructor inscollist {sqlite3IdListDelete(pParse->db, $$);}
 
 inscollist_opt(A) ::= .                       {A = 0;}
 inscollist_opt(A) ::= LP inscollist(X) RP.    {A = X;}
@@ -624,9 +624,9 @@ inscollist(A) ::= nm(Y).
 //
 
 %type expr {Expr*}
-%destructor expr {sqlite3ExprDelete($$);}
+%destructor expr {sqlite3ExprDelete(pParse->db, $$);}
 %type term {Expr*}
-%destructor term {sqlite3ExprDelete($$);}
+%destructor term {sqlite3ExprDelete(pParse->db, $$);}
 
 expr(A) ::= term(X).             {A = X;}
 expr(A) ::= LP(B) expr(X) RP(E). {A = X; sqlite3ExprSpan(A,&B,&E); }
@@ -702,7 +702,7 @@ likeop(A) ::= NOT LIKE_KW(X). {A.eOperator = X; A.not = 1;}
 likeop(A) ::= MATCH(X).       {A.eOperator = X; A.not = 0;}
 likeop(A) ::= NOT MATCH(X).   {A.eOperator = X; A.not = 1;}
 %type escape {Expr*}
-%destructor escape {sqlite3ExprDelete($$);}
+%destructor escape {sqlite3ExprDelete(pParse->db, $$);}
 escape(X) ::= ESCAPE expr(A). [ESCAPE] {X = A;}
 escape(X) ::= .               [ESCAPE] {X = 0;}
 expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE_KW]  {
@@ -760,7 +760,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   if( A ){
     A->pList = pList;
   }else{
-    sqlite3ExprListDelete(pList);
+    sqlite3ExprListDelete(pParse->db, pList);
   } 
   if( N ) A = sqlite3PExpr(pParse, TK_NOT, A, 0, 0);
   sqlite3ExprSpan(A,&W->span,&Y->span);
@@ -775,7 +775,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       A->pList = Y;
       sqlite3ExprSetHeight(pParse, A);
     }else{
-      sqlite3ExprListDelete(Y);
+      sqlite3ExprListDelete(pParse->db, Y);
     }
     if( N ) A = sqlite3PExpr(pParse, TK_NOT, A, 0, 0);
     sqlite3ExprSpan(A,&X->span,&E);
@@ -786,7 +786,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       A->pSelect = X;
       sqlite3ExprSetHeight(pParse, A);
     }else{
-      sqlite3SelectDelete(X);
+      sqlite3SelectDelete(pParse->db, X);
     }
     sqlite3ExprSpan(A,&B,&E);
   }
@@ -796,7 +796,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       A->pSelect = Y;
       sqlite3ExprSetHeight(pParse, A);
     }else{
-      sqlite3SelectDelete(Y);
+      sqlite3SelectDelete(pParse->db, Y);
     }
     if( N ) A = sqlite3PExpr(pParse, TK_NOT, A, 0, 0);
     sqlite3ExprSpan(A,&X->span,&E);
@@ -808,7 +808,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       A->pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
       sqlite3ExprSetHeight(pParse, A);
     }else{
-      sqlite3SrcListDelete(pSrc);
+      sqlite3SrcListDelete(pParse->db, pSrc);
     }
     if( N ) A = sqlite3PExpr(pParse, TK_NOT, A, 0, 0);
     sqlite3ExprSpan(A,&X->span,Z.z?&Z:&Y);
@@ -820,7 +820,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       sqlite3ExprSpan(p,&B,&E);
       sqlite3ExprSetHeight(pParse, A);
     }else{
-      sqlite3SelectDelete(Y);
+      sqlite3SelectDelete(pParse->db, Y);
     }
   }
 %endif SQLITE_OMIT_SUBQUERY
@@ -832,12 +832,12 @@ expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
     A->pList = Y;
     sqlite3ExprSetHeight(pParse, A);
   }else{
-    sqlite3ExprListDelete(Y);
+    sqlite3ExprListDelete(pParse->db, Y);
   }
   sqlite3ExprSpan(A, &C, &E);
 }
 %type case_exprlist {ExprList*}
-%destructor case_exprlist {sqlite3ExprListDelete($$);}
+%destructor case_exprlist {sqlite3ExprListDelete(pParse->db, $$);}
 case_exprlist(A) ::= case_exprlist(X) WHEN expr(Y) THEN expr(Z). {
   A = sqlite3ExprListAppend(pParse,X, Y, 0);
   A = sqlite3ExprListAppend(pParse,A, Z, 0);
@@ -847,18 +847,18 @@ case_exprlist(A) ::= WHEN expr(Y) THEN expr(Z). {
   A = sqlite3ExprListAppend(pParse,A, Z, 0);
 }
 %type case_else {Expr*}
-%destructor case_else {sqlite3ExprDelete($$);}
+%destructor case_else {sqlite3ExprDelete(pParse->db, $$);}
 case_else(A) ::=  ELSE expr(X).         {A = X;}
 case_else(A) ::=  .                     {A = 0;} 
 %type case_operand {Expr*}
-%destructor case_operand {sqlite3ExprDelete($$);}
+%destructor case_operand {sqlite3ExprDelete(pParse->db, $$);}
 case_operand(A) ::= expr(X).            {A = X;} 
 case_operand(A) ::= .                   {A = 0;} 
 
 %type exprlist {ExprList*}
-%destructor exprlist {sqlite3ExprListDelete($$);}
+%destructor exprlist {sqlite3ExprListDelete(pParse->db, $$);}
 %type nexprlist {ExprList*}
-%destructor nexprlist {sqlite3ExprListDelete($$);}
+%destructor nexprlist {sqlite3ExprListDelete(pParse->db, $$);}
 
 exprlist(A) ::= nexprlist(X).                {A = X;}
 exprlist(A) ::= .                            {A = 0;}
@@ -882,9 +882,9 @@ uniqueflag(A) ::= UNIQUE.  {A = OE_Abort;}
 uniqueflag(A) ::= .        {A = OE_None;}
 
 %type idxlist {ExprList*}
-%destructor idxlist {sqlite3ExprListDelete($$);}
+%destructor idxlist {sqlite3ExprListDelete(pParse->db, $$);}
 %type idxlist_opt {ExprList*}
-%destructor idxlist_opt {sqlite3ExprListDelete($$);}
+%destructor idxlist_opt {sqlite3ExprListDelete(pParse->db, $$);}
 %type idxitem {Token}
 
 idxlist_opt(A) ::= .                         {A = 0;}
@@ -974,7 +974,7 @@ trigger_time(A) ::= INSTEAD OF.  { A = TK_INSTEAD;}
 trigger_time(A) ::= .            { A = TK_BEFORE; }
 
 %type trigger_event {struct TrigEvent}
-%destructor trigger_event {sqlite3IdListDelete($$.b);}
+%destructor trigger_event {sqlite3IdListDelete(pParse->db, $$.b);}
 trigger_event(A) ::= DELETE|INSERT(OP).       {A.a = @OP; A.b = 0;}
 trigger_event(A) ::= UPDATE(OP).              {A.a = @OP; A.b = 0;}
 trigger_event(A) ::= UPDATE OF inscollist(X). {A.a = TK_UPDATE; A.b = X;}
@@ -983,12 +983,12 @@ foreach_clause ::= .
 foreach_clause ::= FOR EACH ROW.
 
 %type when_clause {Expr*}
-%destructor when_clause {sqlite3ExprDelete($$);}
+%destructor when_clause {sqlite3ExprDelete(pParse->db, $$);}
 when_clause(A) ::= .             { A = 0; }
 when_clause(A) ::= WHEN expr(X). { A = X; }
 
 %type trigger_cmd_list {TriggerStep*}
-%destructor trigger_cmd_list {sqlite3DeleteTriggerStep($$);}
+%destructor trigger_cmd_list {sqlite3DeleteTriggerStep(pParse->db, $$);}
 trigger_cmd_list(A) ::= trigger_cmd_list(Y) trigger_cmd(X) SEMI. {
   if( Y ){
     Y->pLast->pNext = X;
@@ -1001,7 +1001,7 @@ trigger_cmd_list(A) ::= trigger_cmd_list(Y) trigger_cmd(X) SEMI. {
 trigger_cmd_list(A) ::= . { A = 0; }
 
 %type trigger_cmd {TriggerStep*}
-%destructor trigger_cmd {sqlite3DeleteTriggerStep($$);}
+%destructor trigger_cmd {sqlite3DeleteTriggerStep(pParse->db, $$);}
 // UPDATE 
 trigger_cmd(A) ::= UPDATE orconf(R) nm(X) SET setlist(Y) where_opt(Z).  
                { A = sqlite3TriggerUpdateStep(pParse->db, &X, Y, Z, R); }
@@ -1061,7 +1061,7 @@ cmd ::= DETACH database_kw_opt expr(D). {
 }
 
 %type key_opt {Expr*}
-%destructor key_opt {sqlite3ExprDelete($$);}
+%destructor key_opt {sqlite3ExprDelete(pParse->db, $$);}
 key_opt(A) ::= .                     { A = 0; }
 key_opt(A) ::= KEY expr(X).          { A = X; }
 

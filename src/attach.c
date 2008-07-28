@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.76 2008/06/15 02:51:47 drh Exp $
+** $Id: attach.c,v 1.77 2008/07/28 19:34:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -214,7 +214,7 @@ attach_error:
   /* Return an error if we get here */
   if( zErrDyn ){
     sqlite3_result_error(context, zErrDyn, -1);
-    sqlite3_free(zErrDyn);
+    sqlite3DbFree(db, zErrDyn);
   }else{
     zErr[sizeof(zErr)-1] = 0;
     sqlite3_result_error(context, zErr, -1);
@@ -305,7 +305,7 @@ static void codeAttach(
       goto attach_end;
     }
     rc = sqlite3AuthCheck(pParse, type, zAuthArg, 0, 0);
-    sqlite3_free(zAuthArg);
+    sqlite3DbFree(db, zAuthArg);
     if(rc!=SQLITE_OK ){
       goto attach_end;
     }
@@ -345,9 +345,9 @@ static void codeAttach(
   }
   
 attach_end:
-  sqlite3ExprDelete(pFilename);
-  sqlite3ExprDelete(pDbname);
-  sqlite3ExprDelete(pKey);
+  sqlite3ExprDelete(db, pFilename);
+  sqlite3ExprDelete(db, pDbname);
+  sqlite3ExprDelete(db, pKey);
 }
 
 /*

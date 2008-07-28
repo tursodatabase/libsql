@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.381 2008/07/28 05:22:36 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.382 2008/07/28 19:34:53 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -972,6 +972,14 @@ int sqlite3_os_end(void);
 int sqlite3_config(int, ...);
 
 /*
+** CAPI3REF: Configure database connections  {H10180} <S20000>
+**
+** The sqlite3_db_config() interface is used to make configuration
+** changes to a [database connection].  
+*/
+int sqlite3_db_config(sqlite3*, int, ...);
+
+/*
 ** CAPI3REF: Memory Allocation Routines {H10155} <S20120>
 **
 ** An instance of this object defines the interface between SQLite
@@ -1146,6 +1154,14 @@ struct sqlite3_mem_methods {
 ** This option can be used to overload the default mutex allocation
 ** routines with a wrapper used to track mutex usage for performance
 ** profiling or testing, for example.</dd>
+**
+** <dt>SQLITE_CONFIG_LOOKASIDE</dt>
+** <dd>This option takes two arguments that determine the default
+** memory allcation lookaside optimization.  The first argument is the
+** size of each lookaside buffer slot and the second is the number of
+** slots allocated to each database connection.</dd>
+**
+** </dl>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
 #define SQLITE_CONFIG_MULTITHREAD   2  /* nil */
@@ -1159,6 +1175,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_MUTEX        10  /* sqlite3_mutex_methods* */
 #define SQLITE_CONFIG_GETMUTEX     11  /* sqlite3_mutex_methods* */
 #define SQLITE_CONFIG_CHUNKALLOC   12  /* int threshold */
+#define SQLITE_CONFIG_LOOKASIDE    13  /* int int */
 
 
 /*
@@ -6073,6 +6090,7 @@ int sqlite3_test_control(int op, ...);
 ** removal in future releases of SQLite.
 */
 int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
+int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 
 /*
 ** CAPI3REF: Status Parameters {H17250} <H17200>
@@ -6136,6 +6154,18 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 #define SQLITE_STATUS_MALLOC_SIZE          5
 #define SQLITE_STATUS_PARSER_STACK         6
 
+/*
+** CAPI3REF: Status Parameters for database connections {H17275} <H17200>
+**
+** Status verbs for [sqlite3_db_status()].
+**
+** <dl>
+** <dt>SQLITE_DBSTATUS_LOOKASIDE_USED</dt>
+** <dd>This parameter returns the number of lookaside memory slots currently
+** checked out.</dd>
+** </dl>
+*/
+#define SQLITE_DBSTATUS_LOOKASIDE_USED     0
 
 /*
 ** Undo the hack that converts floating point types to integer for

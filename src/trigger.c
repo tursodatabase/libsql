@@ -10,7 +10,7 @@
 *************************************************************************
 **
 **
-** $Id: trigger.c,v 1.127 2008/07/08 23:40:20 drh Exp $
+** $Id: trigger.c,v 1.128 2008/07/28 19:34:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -18,18 +18,18 @@
 /*
 ** Delete a linked list of TriggerStep structures.
 */
-void sqlite3DeleteTriggerStep(TriggerStep *pTriggerStep){
+void sqlite3DeleteTriggerStep(sqlite3 *db, TriggerStep *pTriggerStep){
   while( pTriggerStep ){
     TriggerStep * pTmp = pTriggerStep;
     pTriggerStep = pTriggerStep->pNext;
 
-    if( pTmp->target.dyn ) sqlite3_free((char*)pTmp->target.z);
-    sqlite3ExprDelete(pTmp->pWhere);
-    sqlite3ExprListDelete(pTmp->pExprList);
-    sqlite3SelectDelete(pTmp->pSelect);
-    sqlite3IdListDelete(pTmp->pIdList);
+    if( pTmp->target.dyn ) sqlite3DbFree(db, (char*)pTmp->target.z);
+    sqlite3ExprDelete(db, pTmp->pWhere);
+    sqlite3ExprListDelete(db, pTmp->pExprList);
+    sqlite3SelectDelete(db, pTmp->pSelect);
+    sqlite3IdListDelete(db, pTmp->pIdList);
 
-    sqlite3_free(pTmp);
+    sqlite3DbFree(db, pTmp);
   }
 }
 
@@ -186,12 +186,12 @@ void sqlite3BeginTrigger(
   pParse->pNewTrigger = pTrigger;
 
 trigger_cleanup:
-  sqlite3_free(zName);
-  sqlite3SrcListDelete(pTableName);
-  sqlite3IdListDelete(pColumns);
-  sqlite3ExprDelete(pWhen);
+  sqlite3DbFree(db, zName);
+  sqlite3SrcListDelete(db, pTableName);
+  sqlite3IdListDelete(db, pColumns);
+  sqlite3ExprDelete(db, pWhen);
   if( !pParse->pNewTrigger ){
-    sqlite3DeleteTrigger(pTrigger);
+    sqlite3DeleteTrigger(db, pTrigger);
   }else{
     assert( pParse->pNewTrigger==pTrigger );
   }
@@ -241,7 +241,7 @@ void sqlite3FinishTrigger(
        "INSERT INTO %Q.%s VALUES('trigger',%Q,%Q,0,'CREATE TRIGGER %q')",
        db->aDb[iDb].zName, SCHEMA_TABLE(iDb), pTrig->name,
        pTrig->table, z);
-    sqlite3_free(z);
+    sqlite3DbFree(db, z);
     sqlite3ChangeCookie(pParse, iDb);
     sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 0, 0, sqlite3MPrintf(
         db, "type='trigger' AND name='%q'", pTrig->name), P4_DYNAMIC
@@ -268,9 +268,9 @@ void sqlite3FinishTrigger(
   }
 
 triggerfinish_cleanup:
-  sqlite3DeleteTrigger(pTrig);
+  sqlite3DeleteTrigger(db, pTrig);
   assert( !pParse->pNewTrigger );
-  sqlite3DeleteTriggerStep(pStepList);
+  sqlite3DeleteTriggerStep(db, pStepList);
 }
 
 /*
@@ -290,22 +290,22 @@ static void sqlitePersistTriggerStep(sqlite3 *db, TriggerStep *p){
   }
   if( p->pSelect ){
     Select *pNew = sqlite3SelectDup(db, p->pSelect);
-    sqlite3SelectDelete(p->pSelect);
+    sqlite3SelectDelete(db, p->pSelect);
     p->pSelect = pNew;
   }
   if( p->pWhere ){
     Expr *pNew = sqlite3ExprDup(db, p->pWhere);
-    sqlite3ExprDelete(p->pWhere);
+    sqlite3ExprDelete(db, p->pWhere);
     p->pWhere = pNew;
   }
   if( p->pExprList ){
     ExprList *pNew = sqlite3ExprListDup(db, p->pExprList);
-    sqlite3ExprListDelete(p->pExprList);
+    sqlite3ExprListDelete(db, p->pExprList);
     p->pExprList = pNew;
   }
   if( p->pIdList ){
     IdList *pNew = sqlite3IdListDup(db, p->pIdList);
-    sqlite3IdListDelete(p->pIdList);
+    sqlite3IdListDelete(db, p->pIdList);
     p->pIdList = pNew;
   }
 }
@@ -320,7 +320,7 @@ static void sqlitePersistTriggerStep(sqlite3 *db, TriggerStep *p){
 TriggerStep *sqlite3TriggerSelectStep(sqlite3 *db, Select *pSelect){
   TriggerStep *pTriggerStep = sqlite3DbMallocZero(db, sizeof(TriggerStep));
   if( pTriggerStep==0 ) {
-    sqlite3SelectDelete(pSelect);
+    sqlite3SelectDelete(db, pSelect);
     return 0;
   }
 
@@ -362,9 +362,9 @@ TriggerStep *sqlite3TriggerInsertStep(
     pTriggerStep->orconf = orconf;
     sqlitePersistTriggerStep(db, pTriggerStep);
   }else{
-    sqlite3IdListDelete(pColumn);
-    sqlite3ExprListDelete(pEList);
-    sqlite3SelectDelete(pSelect);
+    sqlite3IdListDelete(db, pColumn);
+    sqlite3ExprListDelete(db, pEList);
+    sqlite3SelectDelete(db, pSelect);
   }
 
   return pTriggerStep;
@@ -384,8 +384,8 @@ TriggerStep *sqlite3TriggerUpdateStep(
 ){
   TriggerStep *pTriggerStep = sqlite3DbMallocZero(db, sizeof(TriggerStep));
   if( pTriggerStep==0 ){
-     sqlite3ExprListDelete(pEList);
-     sqlite3ExprDelete(pWhere);
+     sqlite3ExprListDelete(db, pEList);
+     sqlite3ExprDelete(db, pWhere);
      return 0;
   }
 
@@ -411,7 +411,7 @@ TriggerStep *sqlite3TriggerDeleteStep(
 ){
   TriggerStep *pTriggerStep = sqlite3DbMallocZero(db, sizeof(TriggerStep));
   if( pTriggerStep==0 ){
-    sqlite3ExprDelete(pWhere);
+    sqlite3ExprDelete(db, pWhere);
     return 0;
   }
 
@@ -427,15 +427,15 @@ TriggerStep *sqlite3TriggerDeleteStep(
 /* 
 ** Recursively delete a Trigger structure
 */
-void sqlite3DeleteTrigger(Trigger *pTrigger){
+void sqlite3DeleteTrigger(sqlite3 *db, Trigger *pTrigger){
   if( pTrigger==0 ) return;
-  sqlite3DeleteTriggerStep(pTrigger->step_list);
-  sqlite3_free(pTrigger->name);
-  sqlite3_free(pTrigger->table);
-  sqlite3ExprDelete(pTrigger->pWhen);
-  sqlite3IdListDelete(pTrigger->pColumns);
-  if( pTrigger->nameToken.dyn ) sqlite3_free((char*)pTrigger->nameToken.z);
-  sqlite3_free(pTrigger);
+  sqlite3DeleteTriggerStep(db, pTrigger->step_list);
+  sqlite3DbFree(db, pTrigger->name);
+  sqlite3DbFree(db, pTrigger->table);
+  sqlite3ExprDelete(db, pTrigger->pWhen);
+  sqlite3IdListDelete(db, pTrigger->pColumns);
+  if( pTrigger->nameToken.dyn ) sqlite3DbFree(db, (char*)pTrigger->nameToken.z);
+  sqlite3DbFree(db, pTrigger);
 }
 
 /*
@@ -478,7 +478,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName, int noErr){
   sqlite3DropTriggerPtr(pParse, pTrigger);
 
 drop_trigger_cleanup:
-  sqlite3SrcListDelete(pName);
+  sqlite3SrcListDelete(db, pName);
 }
 
 /*
@@ -570,7 +570,7 @@ void sqlite3UnlinkAndDeleteTrigger(sqlite3 *db, int iDb, const char *zName){
       }
       assert(cc);
     }
-    sqlite3DeleteTrigger(pTrigger);
+    sqlite3DeleteTrigger(db, pTrigger);
     db->flags |= SQLITE_InternChanges;
   }
 }
@@ -681,7 +681,7 @@ static int codeTriggerProgram(
           sqlite3SelectDestInit(&dest, SRT_Discard, 0);
           sqlite3SelectResolve(pParse, ss, 0);
           sqlite3Select(pParse, ss, &dest, 0, 0, 0);
-          sqlite3SelectDelete(ss);
+          sqlite3SelectDelete(db, ss);
         }
         break;
       }
@@ -831,11 +831,11 @@ int sqlite3CodeRowTrigger(
       whenExpr = sqlite3ExprDup(db, p->pWhen);
       if( db->mallocFailed || sqlite3ExprResolveNames(&sNC, whenExpr) ){
         pParse->trigStack = trigStackEntry.pNext;
-        sqlite3ExprDelete(whenExpr);
+        sqlite3ExprDelete(db, whenExpr);
         return 1;
       }
       sqlite3ExprIfFalse(pParse, whenExpr, endTrigger, SQLITE_JUMPIFNULL);
-      sqlite3ExprDelete(whenExpr);
+      sqlite3ExprDelete(db, whenExpr);
 
       codeTriggerProgram(pParse, p->step_list, orconf); 
 

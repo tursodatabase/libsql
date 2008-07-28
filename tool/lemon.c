@@ -3147,7 +3147,7 @@ int *lineno;
  }else if( sp->destructor ){
    cp = sp->destructor;
    fprintf(out,"{\n"); (*lineno)++;
-   tplt_linedir(out,sp->destLineno,lemp->outname); (*lineno)++;
+   tplt_linedir(out,sp->destLineno,lemp->filename); (*lineno)++;
  }else if( lemp->vardest ){
    cp = lemp->vardest;
    if( cp==0 ) return;

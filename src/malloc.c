@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.29 2008/07/18 18:56:17 drh Exp $
+** $Id: malloc.c,v 1.30 2008/07/28 19:34:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -454,11 +454,25 @@ void sqlite3PageFree(void *p){
 }
 
 /*
+** TRUE if p is a lookaside memory allocation from db
+*/
+static int isLookaside(sqlite3 *db, void *p){
+  return db && p && p>=db->lookaside.pStart && p<db->lookaside.pEnd;
+}
+
+/*
 ** Return the size of a memory allocation previously obtained from
 ** sqlite3Malloc() or sqlite3_malloc().
 */
 int sqlite3MallocSize(void *p){
   return sqlite3Config.m.xSize(p);
+}
+int sqlite3DbMallocSize(sqlite3 *db, void *p){
+  if( isLookaside(db, p) ){
+    return db->lookaside.sz;
+  }else{
+    return sqlite3Config.m.xSize(p);
+  }
 }
 
 /*
@@ -473,6 +487,21 @@ void sqlite3_free(void *p){
     sqlite3_mutex_leave(mem0.mutex);
   }else{
     sqlite3Config.m.xFree(p);
+  }
+}
+
+/*
+** Free memory that might be associated with a particular database
+** connection.
+*/
+void sqlite3DbFree(sqlite3 *db, void *p){
+  if( isLookaside(db, p) ){
+    LookasideSlot *pBuf = (LookasideSlot*)p;
+    pBuf->pNext = db->lookaside.pFree;
+    db->lookaside.pFree = pBuf;
+    db->lookaside.nOut--;
+  }else{
+    sqlite3_free(p);
   }
 }
 
@@ -558,26 +587,53 @@ void *sqlite3DbMallocZero(sqlite3 *db, int n){
 ** the mallocFailed flag in the connection pointer.
 */
 void *sqlite3DbMallocRaw(sqlite3 *db, int n){
-  void *p = 0;
-  if( !db || db->mallocFailed==0 ){
-    p = sqlite3Malloc(n);
-    if( !p && db ){
-      db->mallocFailed = 1;
+  void *p;
+  if( db ){
+    LookasideSlot *pBuf;
+    if( db->mallocFailed ){
+      return 0;
     }
+    if( db->lookaside.bEnabled && n<=db->lookaside.sz
+         && (pBuf = db->lookaside.pFree)!=0 ){
+      db->lookaside.pFree = pBuf->pNext;
+      db->lookaside.nOut++;
+      if( db->lookaside.nOut>db->lookaside.mxOut ){
+        db->lookaside.mxOut = db->lookaside.nOut;
+      }
+      return (void*)pBuf;
+    }
+  }
+  p = sqlite3Malloc(n);
+  if( !p && db ){
+    db->mallocFailed = 1;
   }
   return p;
 }
 
 /*
 ** Resize the block of memory pointed to by p to n bytes. If the
-** resize fails, set the mallocFailed flag inthe connection object.
+** resize fails, set the mallocFailed flag in the connection object.
 */
 void *sqlite3DbRealloc(sqlite3 *db, void *p, int n){
   void *pNew = 0;
   if( db->mallocFailed==0 ){
-    pNew = sqlite3_realloc(p, n);
-    if( !pNew ){
-      db->mallocFailed = 1;
+    if( p==0 ){
+      return sqlite3DbMallocRaw(db, n);
+    }
+    if( isLookaside(db, p) ){
+      if( n<=db->lookaside.sz ){
+        return p;
+      }
+      pNew = sqlite3DbMallocRaw(db, n);
+      if( pNew ){
+        memcpy(pNew, p, db->lookaside.sz);
+        sqlite3DbFree(db, p);
+      }
+    }else{
+      pNew = sqlite3_realloc(p, n);
+      if( !pNew ){
+        db->mallocFailed = 1;
+      }
     }
   }
   return pNew;
@@ -591,7 +647,7 @@ void *sqlite3DbReallocOrFree(sqlite3 *db, void *p, int n){
   void *pNew;
   pNew = sqlite3DbRealloc(db, p, n);
   if( !pNew ){
-    sqlite3_free(p);
+    sqlite3DbFree(db, p);
   }
   return pNew;
 }
@@ -603,37 +659,30 @@ void *sqlite3DbReallocOrFree(sqlite3 *db, void *p, int n){
 ** called via macros that record the current file and line number in the
 ** ThreadData structure.
 */
-char *sqlite3StrDup(const char *z){
+char *sqlite3DbStrDup(sqlite3 *db, const char *z){
   char *zNew;
-  int n;
-  if( z==0 ) return 0;
+  size_t n;
+  if( z==0 ){
+    return 0;
+  }
   n = strlen(z)+1;
-  zNew = sqlite3Malloc(n);
-  if( zNew ) memcpy(zNew, z, n);
-  return zNew;
-}
-char *sqlite3StrNDup(const char *z, int n){
-  char *zNew;
-  if( z==0 ) return 0;
-  zNew = sqlite3Malloc(n+1);
+  assert( (n&0x7fffffff)==n );
+  zNew = sqlite3DbMallocRaw(db, (int)n);
   if( zNew ){
     memcpy(zNew, z, n);
-    zNew[n] = 0;
-  }
-  return zNew;
-}
-
-char *sqlite3DbStrDup(sqlite3 *db, const char *z){
-  char *zNew = sqlite3StrDup(z);
-  if( z && !zNew ){
-    db->mallocFailed = 1;
   }
   return zNew;
 }
 char *sqlite3DbStrNDup(sqlite3 *db, const char *z, int n){
-  char *zNew = sqlite3StrNDup(z, n);
-  if( z && !zNew ){
-    db->mallocFailed = 1;
+  char *zNew;
+  if( z==0 ){
+    return 0;
+  }
+  assert( (n&0x7fffffff)==n );
+  zNew = sqlite3DbMallocRaw(db, n+1);
+  if( zNew ){
+    memcpy(zNew, z, n);
+    zNew[n] = 0;
   }
   return zNew;
 }
@@ -650,7 +699,7 @@ void sqlite3SetString(char **pz, sqlite3 *db, const char *zFormat, ...){
   va_start(ap, zFormat);
   z = sqlite3VMPrintf(db, zFormat, ap);
   va_end(ap);
-  sqlite3_free(*pz);
+  sqlite3DbFree(db, *pz);
   *pz = z;
 }
 

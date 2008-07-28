@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.150 2008/07/26 18:26:10 danielk1977 Exp $
+** $Id: vdbeInt.h,v 1.151 2008/07/28 19:34:54 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -245,6 +245,7 @@ struct FifoPage {
 typedef struct Fifo Fifo;
 struct Fifo {
   int nEntry;         /* Total number of entries */
+  sqlite3 *db;        /* The associated database connection */
   FifoPage *pFirst;   /* First page on the list */
   FifoPage *pLast;    /* Last page on the list */
 };
@@ -434,7 +435,7 @@ int sqlite3VdbeMemTranslate(Mem*, u8);
   void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf);
 #endif
 int sqlite3VdbeMemHandleBom(Mem *pMem);
-void sqlite3VdbeFifoInit(Fifo*);
+void sqlite3VdbeFifoInit(Fifo*, sqlite3*);
 int sqlite3VdbeFifoPush(Fifo*, i64);
 int sqlite3VdbeFifoPop(Fifo*, i64*);
 void sqlite3VdbeFifoClear(Fifo*);

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.180 2008/07/09 16:51:51 drh Exp $
+** $Id: update.c,v 1.181 2008/07/28 19:34:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -570,11 +570,11 @@ void sqlite3Update(
 
 update_cleanup:
   sqlite3AuthContextPop(&sContext);
-  sqlite3_free(aRegIdx);
-  sqlite3_free(aXRef);
-  sqlite3SrcListDelete(pTabList);
-  sqlite3ExprListDelete(pChanges);
-  sqlite3ExprDelete(pWhere);
+  sqlite3DbFree(db, aRegIdx);
+  sqlite3DbFree(db, aXRef);
+  sqlite3SrcListDelete(db, pTabList);
+  sqlite3ExprListDelete(db, pChanges);
+  sqlite3ExprDelete(db, pWhere);
   return;
 }
 
@@ -668,7 +668,7 @@ static void updateVirtualTable(
   sqlite3VdbeAddOp2(v, OP_Close, ephemTab, 0);
 
   /* Cleanup */
-  sqlite3SelectDelete(pSelect);  
+  sqlite3SelectDelete(db, pSelect);  
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 

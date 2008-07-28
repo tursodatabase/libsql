@@ -15,7 +15,7 @@
 ** is used for testing the SQLite routines for converting between
 ** the various supported unicode encodings.
 **
-** $Id: test5.c,v 1.20 2007/08/21 19:33:57 drh Exp $
+** $Id: test5.c,v 1.21 2008/07/28 19:34:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -154,7 +154,7 @@ static int test_translate(
   if( enc_from==SQLITE_UTF8 ){
     z = Tcl_GetString(objv[1]);
     if( objc==5 ){
-      z = sqlite3StrDup(z);
+      z = sqlite3DbStrDup(0, z);
     }
     sqlite3ValueSetStr(pVal, -1, z, enc_from, xDel);
   }else{

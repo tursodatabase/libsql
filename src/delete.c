@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.170 2008/07/08 23:40:20 drh Exp $
+** $Id: delete.c,v 1.171 2008/07/28 19:34:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -107,7 +107,7 @@ void sqlite3MaterializeView(
   }
   sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
   sqlite3Select(pParse, pDup, &dest, 0, 0, 0);
-  sqlite3SelectDelete(pDup);
+  sqlite3SelectDelete(db, pDup);
 }
 #endif /* !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER) */
 
@@ -415,8 +415,8 @@ void sqlite3DeleteFrom(
 
 delete_from_cleanup:
   sqlite3AuthContextPop(&sContext);
-  sqlite3SrcListDelete(pTabList);
-  sqlite3ExprDelete(pWhere);
+  sqlite3SrcListDelete(db, pTabList);
+  sqlite3ExprDelete(db, pWhere);
   return;
 }
 

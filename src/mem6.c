@@ -32,7 +32,7 @@
 ** fragmentation. On some systems, heap fragmentation can cause a 
 ** significant real-time slowdown.
 **
-** $Id: mem6.c,v 1.6 2008/07/25 16:07:01 danielk1977 Exp $
+** $Id: mem6.c,v 1.7 2008/07/28 19:34:53 drh Exp $
 */
 
 #ifdef SQLITE_ENABLE_MEMSYS6
@@ -418,8 +418,9 @@ static void memsys6Free(void *pPrior){
   void *p = &((u32 *)pPrior)[-2];
   iSlot = ((u32 *)p)[0];
   if( iSlot ){
+    Mem6Chunk *pChunk;
     mem6Enter();
-    Mem6Chunk *pChunk = (Mem6Chunk *)(&((u8 *)p)[-1 * iSlot]);
+    pChunk = (Mem6Chunk *)(&((u8 *)p)[-1 * iSlot]);
     chunkFree(pChunk, p);
     if( chunkIsEmpty(pChunk) ){
       freeChunk(pChunk);

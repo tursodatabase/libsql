@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.195 2008/07/08 22:28:49 shane Exp $
+** $Id: func.c,v 1.196 2008/07/28 19:34:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -832,14 +832,14 @@ static void replaceFunc(
       nOut += nRep - nPattern;
       if( nOut>=db->aLimit[SQLITE_LIMIT_LENGTH] ){
         sqlite3_result_error_toobig(context);
-        sqlite3_free(zOut);
+        sqlite3DbFree(db, zOut);
         return;
       }
       zOld = zOut;
       zOut = sqlite3_realloc(zOut, (int)nOut);
       if( zOut==0 ){
         sqlite3_result_error_nomem(context);
-        sqlite3_free(zOld);
+        sqlite3DbFree(db, zOld);
         return;
       }
       memcpy(&zOut[j], zRep, nRep);

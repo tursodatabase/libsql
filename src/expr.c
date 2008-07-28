@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.386 2008/07/18 17:03:53 drh Exp $
+** $Id: expr.c,v 1.387 2008/07/28 19:34:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -56,7 +56,8 @@ char sqlite3ExprAffinity(Expr *pExpr){
 Expr *sqlite3ExprSetColl(Parse *pParse, Expr *pExpr, Token *pName){
   char *zColl = 0;            /* Dequoted name of collation sequence */
   CollSeq *pColl;
-  zColl = sqlite3NameFromToken(pParse->db, pName);
+  sqlite3 *db = pParse->db;
+  zColl = sqlite3NameFromToken(db, pName);
   if( pExpr && zColl ){
     pColl = sqlite3LocateCollSeq(pParse, zColl, -1);
     if( pColl ){
@@ -64,7 +65,7 @@ Expr *sqlite3ExprSetColl(Parse *pParse, Expr *pExpr, Token *pName){
       pExpr->flags |= EP_ExpCollate;
     }
   }
-  sqlite3_free(zColl);
+  sqlite3DbFree(db, zColl);
   return pExpr;
 }
 
@@ -367,8 +368,8 @@ Expr *sqlite3Expr(
     ** this function must always be allocated with sqlite3Expr() for this 
     ** reason. 
     */
-    sqlite3ExprDelete(pLeft);
-    sqlite3ExprDelete(pRight);
+    sqlite3ExprDelete(db, pLeft);
+    sqlite3ExprDelete(db, pRight);
     return 0;
   }
   pNew->op = op;
@@ -477,10 +478,11 @@ void sqlite3ExprSpan(Expr *pExpr, Token *pLeft, Token *pRight){
 */
 Expr *sqlite3ExprFunction(Parse *pParse, ExprList *pList, Token *pToken){
   Expr *pNew;
+  sqlite3 *db = pParse->db;
   assert( pToken );
-  pNew = sqlite3DbMallocZero(pParse->db, sizeof(Expr) );
+  pNew = sqlite3DbMallocZero(db, sizeof(Expr) );
   if( pNew==0 ){
-    sqlite3ExprListDelete(pList); /* Avoid leaking memory when malloc fails */
+    sqlite3ExprListDelete(db, pList); /* Avoid leaking memory when malloc fails */
     return 0;
   }
   pNew->op = TK_FUNCTION;
@@ -578,15 +580,15 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
 /*
 ** Recursively delete an expression tree.
 */
-void sqlite3ExprDelete(Expr *p){
+void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p==0 ) return;
-  if( p->span.dyn ) sqlite3_free((char*)p->span.z);
-  if( p->token.dyn ) sqlite3_free((char*)p->token.z);
-  sqlite3ExprDelete(p->pLeft);
-  sqlite3ExprDelete(p->pRight);
-  sqlite3ExprListDelete(p->pList);
-  sqlite3SelectDelete(p->pSelect);
-  sqlite3_free(p);
+  if( p->span.dyn ) sqlite3DbFree(db, (char*)p->span.z);
+  if( p->token.dyn ) sqlite3DbFree(db, (char*)p->token.z);
+  sqlite3ExprDelete(db, p->pLeft);
+  sqlite3ExprDelete(db, p->pRight);
+  sqlite3ExprListDelete(db, p->pList);
+  sqlite3SelectDelete(db, p->pSelect);
+  sqlite3DbFree(db, p);
 }
 
 /*
@@ -637,7 +639,7 @@ Expr *sqlite3ExprDup(sqlite3 *db, Expr *p){
   return pNew;
 }
 void sqlite3TokenCopy(sqlite3 *db, Token *pTo, Token *pFrom){
-  if( pTo->dyn ) sqlite3_free((char*)pTo->z);
+  if( pTo->dyn ) sqlite3DbFree(db, (char*)pTo->z);
   if( pFrom->z ){
     pTo->n = pFrom->n;
     pTo->z = (u8*)sqlite3DbStrNDup(db, (char*)pFrom->z, pFrom->n);
@@ -657,7 +659,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p){
   pNew->nExpr = pNew->nAlloc = p->nExpr;
   pNew->a = pItem = sqlite3DbMallocRaw(db,  p->nExpr*sizeof(p->a[0]) );
   if( pItem==0 ){
-    sqlite3_free(pNew);
+    sqlite3DbFree(db, pNew);
     return 0;
   } 
   pOldItem = p->a;
@@ -728,7 +730,7 @@ IdList *sqlite3IdListDup(sqlite3 *db, IdList *p){
   pNew->nId = pNew->nAlloc = p->nId;
   pNew->a = sqlite3DbMallocRaw(db, p->nId*sizeof(p->a[0]) );
   if( pNew->a==0 ){
-    sqlite3_free(pNew);
+    sqlite3DbFree(db, pNew);
     return 0;
   }
   for(i=0; i<p->nId; i++){
@@ -814,8 +816,8 @@ ExprList *sqlite3ExprListAppend(
 
 no_mem:     
   /* Avoid leaking memory if malloc has failed. */
-  sqlite3ExprDelete(pExpr);
-  sqlite3ExprListDelete(pList);
+  sqlite3ExprDelete(db, pExpr);
+  sqlite3ExprListDelete(db, pList);
   return 0;
 }
 
@@ -839,18 +841,18 @@ void sqlite3ExprListCheckLength(
 /*
 ** Delete an entire expression list.
 */
-void sqlite3ExprListDelete(ExprList *pList){
+void sqlite3ExprListDelete(sqlite3 *db, ExprList *pList){
   int i;
   struct ExprList_item *pItem;
   if( pList==0 ) return;
   assert( pList->a!=0 || (pList->nExpr==0 && pList->nAlloc==0) );
   assert( pList->nExpr<=pList->nAlloc );
   for(pItem=pList->a, i=0; i<pList->nExpr; i++, pItem++){
-    sqlite3ExprDelete(pItem->pExpr);
-    sqlite3_free(pItem->zName);
+    sqlite3ExprDelete(db, pItem->pExpr);
+    sqlite3DbFree(db, pItem->zName);
   }
-  sqlite3_free(pList->a);
-  sqlite3_free(pList);
+  sqlite3DbFree(db, pList->a);
+  sqlite3DbFree(db, pList);
 }
 
 /*
@@ -1264,7 +1266,7 @@ static int lookupName(
           pOrig = pEList->a[j].pExpr;
           if( !pNC->allowAgg && ExprHasProperty(pOrig, EP_Agg) ){
             sqlite3ErrorMsg(pParse, "misuse of aliased aggregate %s", zAs);
-            sqlite3_free(zCol);
+            sqlite3DbFree(db, zCol);
             return 2;
           }
           pDup = sqlite3ExprDup(db, pOrig);
@@ -1272,10 +1274,10 @@ static int lookupName(
             pDup->pColl = pExpr->pColl;
             pDup->flags |= EP_ExpCollate;
           }
-          if( pExpr->span.dyn ) sqlite3_free((char*)pExpr->span.z);
-          if( pExpr->token.dyn ) sqlite3_free((char*)pExpr->token.z);
+          if( pExpr->span.dyn ) sqlite3DbFree(db, (char*)pExpr->span.z);
+          if( pExpr->token.dyn ) sqlite3DbFree(db, (char*)pExpr->token.z);
           memcpy(pExpr, pDup, sizeof(*pExpr));
-          sqlite3_free(pDup);
+          sqlite3DbFree(db, pDup);
           cnt = 1;
           pMatch = 0;
           assert( zTab==0 && zDb==0 );
@@ -1303,7 +1305,7 @@ static int lookupName(
   ** fields are not changed in any context.
   */
   if( cnt==0 && zTab==0 && pColumnToken->z[0]=='"' ){
-    sqlite3_free(zCol);
+    sqlite3DbFree(db, zCol);
     return 0;
   }
 
@@ -1343,15 +1345,15 @@ static int lookupName(
 lookupname_end:
   /* Clean up and return
   */
-  sqlite3_free(zDb);
-  sqlite3_free(zTab);
-  sqlite3ExprDelete(pExpr->pLeft);
+  sqlite3DbFree(db, zDb);
+  sqlite3DbFree(db, zTab);
+  sqlite3ExprDelete(db, pExpr->pLeft);
   pExpr->pLeft = 0;
-  sqlite3ExprDelete(pExpr->pRight);
+  sqlite3ExprDelete(db, pExpr->pRight);
   pExpr->pRight = 0;
   pExpr->op = TK_COLUMN;
 lookupname_end_2:
-  sqlite3_free(zCol);
+  sqlite3DbFree(db, zCol);
   if( cnt==1 ){
     assert( pNC!=0 );
     sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
@@ -1966,7 +1968,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr, int rMayHaveNull){
         sqlite3VdbeAddOp2(v, OP_Integer, 0, dest.iParm);
         VdbeComment((v, "Init EXISTS result"));
       }
-      sqlite3ExprDelete(pSel->pLimit);
+      sqlite3ExprDelete(pParse->db, pSel->pLimit);
       pSel->pLimit = sqlite3PExpr(pParse, TK_INTEGER, 0, 0, &one);
       if( sqlite3Select(pParse, pSel, &dest, 0, 0, 0) ){
         return;

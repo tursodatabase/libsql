@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: legacy.c,v 1.27 2008/06/15 02:51:47 drh Exp $
+** $Id: legacy.c,v 1.28 2008/07/28 19:34:53 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -122,13 +122,13 @@ int sqlite3_exec(
       }
     }
 
-    sqlite3_free(azCols);
+    sqlite3DbFree(db, azCols);
     azCols = 0;
   }
 
 exec_out:
   if( pStmt ) sqlite3_finalize(pStmt);
-  if( azCols ) sqlite3_free(azCols);
+  sqlite3DbFree(db, azCols);
 
   rc = sqlite3ApiExit(db, rc);
   if( rc!=SQLITE_OK && rc==sqlite3_errcode(db) && pzErrMsg ){

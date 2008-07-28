@@ -5,7 +5,7 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
-** $Id: printf.c,v 1.92 2008/07/15 00:27:35 drh Exp $
+** $Id: printf.c,v 1.93 2008/07/28 19:34:53 drh Exp $
 **
 **************************************************************************
 **
@@ -746,7 +746,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
       }else{
         p->nAlloc = szNew;
       }
-      zNew = sqlite3Malloc( p->nAlloc );
+      zNew = sqlite3DbMallocRaw(p->db, p->nAlloc );
       if( zNew ){
         memcpy(zNew, p->zText, p->nChar);
         sqlite3StrAccumReset(p);
@@ -771,7 +771,7 @@ char *sqlite3StrAccumFinish(StrAccum *p){
   if( p->zText ){
     p->zText[p->nChar] = 0;
     if( p->useMalloc && p->zText==p->zBase ){
-      p->zText = sqlite3Malloc( p->nChar+1 );
+      p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
       if( p->zText ){
         memcpy(p->zText, p->zBase, p->nChar+1);
       }else{
@@ -787,7 +787,7 @@ char *sqlite3StrAccumFinish(StrAccum *p){
 */
 void sqlite3StrAccumReset(StrAccum *p){
   if( p->zText!=p->zBase ){
-    sqlite3_free(p->zText);
+    sqlite3DbFree(p->db, p->zText);
   }
   p->zText = 0;
 }
@@ -797,6 +797,7 @@ void sqlite3StrAccumReset(StrAccum *p){
 */
 void sqlite3StrAccumInit(StrAccum *p, char *zBase, int n, int mx){
   p->zText = p->zBase = zBase;
+  p->db = 0;
   p->nChar = 0;
   p->nAlloc = n;
   p->mxAlloc = mx;
@@ -815,6 +816,7 @@ char *sqlite3VMPrintf(sqlite3 *db, const char *zFormat, va_list ap){
   StrAccum acc;
   sqlite3StrAccumInit(&acc, zBase, sizeof(zBase),
                       db ? db->aLimit[SQLITE_LIMIT_LENGTH] : SQLITE_MAX_LENGTH);
+  acc.db = db;
   sqlite3VXPrintf(&acc, 1, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
   if( acc.mallocFailed && db ){
@@ -833,6 +835,24 @@ char *sqlite3MPrintf(sqlite3 *db, const char *zFormat, ...){
   va_start(ap, zFormat);
   z = sqlite3VMPrintf(db, zFormat, ap);
   va_end(ap);
+  return z;
+}
+
+/*
+** Like sqlite3MPrintf(), but call sqlite3DbFree() on zStr after formatting
+** the string and before returnning.  This routine is intended to be used
+** to modify an existing string.  For example:
+**
+**       x = sqlite3MPrintf(db, x, "prefix %s suffix", x);
+**
+*/
+char *sqlite3MAppendf(sqlite3 *db, char *zStr, const char *zFormat, ...){
+  va_list ap;
+  char *z;
+  va_start(ap, zFormat);
+  z = sqlite3VMPrintf(db, zFormat, ap);
+  va_end(ap);
+  sqlite3DbFree(db, zStr);
   return z;
 }
 

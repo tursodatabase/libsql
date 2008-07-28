@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.25 2008/07/08 14:52:10 drh Exp $
+** $Id: callback.c,v 1.26 2008/07/28 19:34:53 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -30,7 +30,7 @@ static void callCollNeeded(sqlite3 *db, const char *zName, int nName){
     char *zExternal = sqlite3DbStrNDup(db, zName, nName);
     if( !zExternal ) return;
     db->xCollNeeded(db->pCollNeededArg, db, (int)ENC(db), zExternal);
-    sqlite3_free(zExternal);
+    sqlite3DbFree(db, zExternal);
   }
 #ifndef SQLITE_OMIT_UTF16
   if( db->xCollNeeded16 ){
@@ -182,7 +182,7 @@ static CollSeq *findCollSeqEntry(
       assert( pDel==0 || pDel==pColl );
       if( pDel!=0 ){
         db->mallocFailed = 1;
-        sqlite3_free(pDel);
+        sqlite3DbFree(db, pDel);
         pColl = 0;
       }
     }
@@ -312,7 +312,7 @@ FuncDef *sqlite3FindFunction(
     pBest->zName[nName] = 0;
     if( pBest==sqlite3HashInsert(&db->aFunc,pBest->zName,nName,(void*)pBest) ){
       db->mallocFailed = 1;
-      sqlite3_free(pBest);
+      sqlite3DbFree(db, pBest);
       return 0;
     }
   }
@@ -325,7 +325,7 @@ FuncDef *sqlite3FindFunction(
 
 /*
 ** Free all resources held by the schema structure. The void* argument points
-** at a Schema struct. This function does not call sqlite3_free() on the 
+** at a Schema struct. This function does not call sqlite3DbFree(db, ) on the 
 ** pointer itself, it just cleans up subsiduary resources (i.e. the contents
 ** of the schema hash tables).
 **
@@ -343,7 +343,7 @@ void sqlite3SchemaFree(void *p){
   sqlite3HashClear(&pSchema->aFKey);
   sqlite3HashClear(&pSchema->idxHash);
   for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
-    sqlite3DeleteTrigger((Trigger*)sqliteHashData(pElem));
+    sqlite3DeleteTrigger(0, (Trigger*)sqliteHashData(pElem));
   }
   sqlite3HashClear(&temp2);
   sqlite3HashInit(&pSchema->tblHash, SQLITE_HASH_STRING, 0);

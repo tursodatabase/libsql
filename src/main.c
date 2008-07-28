@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.482 2008/07/25 08:49:00 danielk1977 Exp $
+** $Id: main.c,v 1.483 2008/07/28 19:34:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -275,8 +275,68 @@ int sqlite3_config(int op, ...){
     }
 #endif
 
+    case SQLITE_CONFIG_LOOKASIDE: {
+      sqlite3Config.szLookaside = va_arg(ap, int);
+      sqlite3Config.nLookaside = va_arg(ap, int);
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
+      break;
+    }
+  }
+  va_end(ap);
+  return rc;
+}
+
+/*
+** Set up the lookaside buffers for a database connection.
+** Return SQLITE_OK on success.  
+** If lookaside is already active, return SQLITE_BUSY.
+*/
+static int setupLookaside(sqlite3 *db, int sz, int cnt){
+  void *pStart;
+  if( db->lookaside.nOut ){
+    return SQLITE_BUSY;
+  }
+  if( sz<0 ) sz = 0;
+  if( cnt<0 ) cnt = 0;
+  sz = (sz+7)&~7;
+  sqlite3BeginBenignMalloc();
+  pStart = sqlite3Malloc( sz*cnt );
+  sqlite3EndBenignMalloc();
+  if( pStart ){
+    int i;
+    LookasideSlot *p;
+    sqlite3_free(db->lookaside.pStart);
+    db->lookaside.pFree = 0;
+    db->lookaside.pStart = pStart;
+    p = (LookasideSlot*)pStart;
+    for(i=cnt-1; i>=0; i--){
+      p->pNext = db->lookaside.pFree;
+      db->lookaside.pFree = p;
+      p = (LookasideSlot*)&((u8*)p)[sz];
+    }
+    db->lookaside.pEnd = p;
+    db->lookaside.bEnabled = 1;
+    db->lookaside.sz = sz;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Configuration settings for an individual database connection
+*/
+int sqlite3_db_config(sqlite3 *db, int op, ...){
+  va_list ap;
+  int rc = SQLITE_OK;
+  va_start(ap, op);
+  switch( op ){
+    case SQLITE_CONFIG_LOOKASIDE: {
+      int sz = va_arg(ap, int);
+      int cnt = va_arg(ap, int);
+      rc = setupLookaside(db, sz, cnt);
       break;
     }
   }
@@ -433,7 +493,7 @@ int sqlite3_close(sqlite3 *db){
     FuncDef *pFunc, *pNext;
     for(pFunc = (FuncDef*)sqliteHashData(i); pFunc; pFunc=pNext){
       pNext = pFunc->pNext;
-      sqlite3_free(pFunc);
+      sqlite3DbFree(db, pFunc);
     }
   }
 
@@ -445,7 +505,7 @@ int sqlite3_close(sqlite3 *db){
         pColl[j].xDel(pColl[j].pUser);
       }
     }
-    sqlite3_free(pColl);
+    sqlite3DbFree(db, pColl);
   }
   sqlite3HashClear(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -454,7 +514,7 @@ int sqlite3_close(sqlite3 *db){
     if( pMod->xDestroy ){
       pMod->xDestroy(pMod->pAux);
     }
-    sqlite3_free(pMod);
+    sqlite3DbFree(db, pMod);
   }
   sqlite3HashClear(&db->aModule);
 #endif
@@ -474,10 +534,11 @@ int sqlite3_close(sqlite3 *db){
   ** the same sqliteMalloc() as the one that allocates the database 
   ** structure?
   */
-  sqlite3_free(db->aDb[1].pSchema);
+  sqlite3DbFree(db, db->aDb[1].pSchema);
   sqlite3_mutex_leave(db->mutex);
   db->magic = SQLITE_MAGIC_CLOSED;
   sqlite3_mutex_free(db->mutex);
+  sqlite3_free(db->lookaside.pStart);
   sqlite3_free(db);
   return SQLITE_OK;
 }
@@ -807,7 +868,7 @@ int sqlite3_create_function16(
   assert( !db->mallocFailed );
   zFunc8 = sqlite3Utf16to8(db, zFunctionName, -1);
   rc = sqlite3CreateFunc(db, zFunc8, nArg, eTextRep, p, xFunc, xStep, xFinal);
-  sqlite3_free(zFunc8);
+  sqlite3DbFree(db, zFunc8);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
@@ -1312,6 +1373,7 @@ static int openDatabase(
   db->nDb = 2;
   db->magic = SQLITE_MAGIC_BUSY;
   db->aDb = db->aDbStatic;
+
   assert( sizeof(db->aLimit)==sizeof(aHardLimit) );
   memcpy(db->aLimit, aHardLimit, sizeof(db->aLimit));
   db->autoCommit = 1;
@@ -1453,6 +1515,9 @@ static int openDatabase(
                           SQLITE_DEFAULT_LOCKING_MODE);
 #endif
 
+  /* Enable the lookaside-malloc subsystem */
+  setupLookaside(db, sqlite3Config.szLookaside, sqlite3Config.nLookaside);
+
 opendb_out:
   if( db ){
     assert( db->mutex!=0 || isThreadsafe==0 || sqlite3Config.bFullMutex==0 );
@@ -1580,7 +1645,7 @@ int sqlite3_create_collation16(
   zName8 = sqlite3Utf16to8(db, zName, -1);
   if( zName8 ){
     rc = createCollation(db, zName8, enc, pCtx, xCompare, 0);
-    sqlite3_free(zName8);
+    sqlite3DbFree(db, zName8);
   }
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
@@ -1769,13 +1834,13 @@ error_out:
   if( pAutoinc ) *pAutoinc = autoinc;
 
   if( SQLITE_OK==rc && !pTab ){
-    sqlite3_free(zErrMsg);
+    sqlite3DbFree(db, zErrMsg);
     zErrMsg = sqlite3MPrintf(db, "no such table column: %s.%s", zTableName,
         zColumnName);
     rc = SQLITE_ERROR;
   }
   sqlite3Error(db, rc, (zErrMsg?"%s":0), zErrMsg);
-  sqlite3_free(zErrMsg);
+  sqlite3DbFree(db, zErrMsg);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;

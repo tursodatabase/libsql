@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.42 2008/03/25 09:47:35 danielk1977 Exp $
+** @(#) $Id: analyze.c,v 1.43 2008/07/28 19:34:53 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -316,7 +316,7 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
       z = sqlite3NameFromToken(db, pName1);
       if( z ){
         pTab = sqlite3LocateTable(pParse, 0, z, 0);
-        sqlite3_free(z);
+        sqlite3DbFree(db, z);
         if( pTab ){
           analyzeTable(pParse, pTab);
         }
@@ -330,7 +330,7 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
       z = sqlite3NameFromToken(db, pTableName);
       if( z ){
         pTab = sqlite3LocateTable(pParse, 0, z, zDb);
-        sqlite3_free(z);
+        sqlite3DbFree(db, z);
         if( pTab ){
           analyzeTable(pParse, pTab);
         }
@@ -417,7 +417,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   (void)sqlite3SafetyOff(db);
   rc = sqlite3_exec(db, zSql, analysisLoader, &sInfo, 0);
   (void)sqlite3SafetyOn(db);
-  sqlite3_free(zSql);
+  sqlite3DbFree(db, zSql);
   return rc;
 }
 

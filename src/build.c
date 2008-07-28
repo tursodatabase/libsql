@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.490 2008/07/08 23:40:20 drh Exp $
+** $Id: build.c,v 1.491 2008/07/28 19:34:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -239,24 +239,24 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   va_list ap;
   char *zSql;
   char *zErrMsg = 0;
+  sqlite3 *db = pParse->db;
 # define SAVE_SZ  (sizeof(Parse) - offsetof(Parse,nVar))
   char saveBuf[SAVE_SZ];
 
   if( pParse->nErr ) return;
   assert( pParse->nested<10 );  /* Nesting should only be of limited depth */
   va_start(ap, zFormat);
-  zSql = sqlite3VMPrintf(pParse->db, zFormat, ap);
+  zSql = sqlite3VMPrintf(db, zFormat, ap);
   va_end(ap);
   if( zSql==0 ){
-    pParse->db->mallocFailed = 1;
     return;   /* A malloc must have failed */
   }
   pParse->nested++;
   memcpy(saveBuf, &pParse->nVar, SAVE_SZ);
   memset(&pParse->nVar, 0, SAVE_SZ);
   sqlite3RunParser(pParse, zSql, &zErrMsg);
-  sqlite3_free(zErrMsg);
-  sqlite3_free(zSql);
+  sqlite3DbFree(db, zErrMsg);
+  sqlite3DbFree(db, zSql);
   memcpy(&pParse->nVar, saveBuf, SAVE_SZ);
   pParse->nested--;
 }
@@ -358,8 +358,9 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
 ** Reclaim the memory used by an index
 */
 static void freeIndex(Index *p){
-  sqlite3_free(p->zColAff);
-  sqlite3_free(p);
+  sqlite3 *db = p->pTable->db;
+  sqlite3DbFree(db, p->zColAff);
+  sqlite3DbFree(db, p);
 }
 
 /*
@@ -453,7 +454,7 @@ void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
   for(i=j=2; i<db->nDb; i++){
     struct Db *pDb = &db->aDb[i];
     if( pDb->pBt==0 ){
-      sqlite3_free(pDb->zName);
+      sqlite3DbFree(db, pDb->zName);
       pDb->zName = 0;
       continue;
     }
@@ -466,7 +467,7 @@ void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
   db->nDb = j;
   if( db->nDb<=2 && db->aDb!=db->aDbStatic ){
     memcpy(db->aDbStatic, db->aDb, 2*sizeof(db->aDb[0]));
-    sqlite3_free(db->aDb);
+    sqlite3DbFree(db, db->aDb);
     db->aDb = db->aDbStatic;
   }
 }
@@ -484,15 +485,16 @@ void sqlite3CommitInternalChanges(sqlite3 *db){
 static void sqliteResetColumnNames(Table *pTable){
   int i;
   Column *pCol;
+  sqlite3 *db = pTable->db;
   assert( pTable!=0 );
   if( (pCol = pTable->aCol)!=0 ){
     for(i=0; i<pTable->nCol; i++, pCol++){
-      sqlite3_free(pCol->zName);
-      sqlite3ExprDelete(pCol->pDflt);
-      sqlite3_free(pCol->zType);
-      sqlite3_free(pCol->zColl);
+      sqlite3DbFree(db, pCol->zName);
+      sqlite3ExprDelete(db, pCol->pDflt);
+      sqlite3DbFree(db, pCol->zType);
+      sqlite3DbFree(db, pCol->zColl);
     }
-    sqlite3_free(pTable->aCol);
+    sqlite3DbFree(db, pTable->aCol);
   }
   pTable->aCol = 0;
   pTable->nCol = 0;
@@ -511,8 +513,10 @@ static void sqliteResetColumnNames(Table *pTable){
 void sqlite3DeleteTable(Table *pTable){
   Index *pIndex, *pNext;
   FKey *pFKey, *pNextFKey;
+  sqlite3 *db;
 
   if( pTable==0 ) return;
+  db = pTable->db;
 
   /* Do not delete the table until the reference count reaches zero. */
   pTable->nRef--;
@@ -537,21 +541,21 @@ void sqlite3DeleteTable(Table *pTable){
     pNextFKey = pFKey->pNextFrom;
     assert( sqlite3HashFind(&pTable->pSchema->aFKey,
                            pFKey->zTo, strlen(pFKey->zTo)+1)!=pFKey );
-    sqlite3_free(pFKey);
+    sqlite3DbFree(db, pFKey);
   }
 #endif
 
   /* Delete the Table structure itself.
   */
   sqliteResetColumnNames(pTable);
-  sqlite3_free(pTable->zName);
-  sqlite3_free(pTable->zColAff);
-  sqlite3SelectDelete(pTable->pSelect);
+  sqlite3DbFree(db, pTable->zName);
+  sqlite3DbFree(db, pTable->zColAff);
+  sqlite3SelectDelete(db, pTable->pSelect);
 #ifndef SQLITE_OMIT_CHECK
-  sqlite3ExprDelete(pTable->pCheck);
+  sqlite3ExprDelete(db, pTable->pCheck);
 #endif
   sqlite3VtabClear(pTable);
-  sqlite3_free(pTable);
+  sqlite3DbFree(db, pTable);
 }
 
 /*
@@ -641,7 +645,7 @@ int sqlite3FindDb(sqlite3 *db, Token *pName){
         break;
       }
     }
-    sqlite3_free(zName);
+    sqlite3DbFree(db, zName);
   }
   return i;
 }
@@ -832,6 +836,7 @@ void sqlite3StartTable(
   pTable->iPKey = -1;
   pTable->pSchema = db->aDb[iDb].pSchema;
   pTable->nRef = 1;
+  pTable->db = db;
   if( pParse->pNewTable ) sqlite3DeleteTable(pParse->pNewTable);
   pParse->pNewTable = pTable;
 
@@ -911,7 +916,7 @@ void sqlite3StartTable(
 
   /* If an error occurs, we jump here */
 begin_table_error:
-  sqlite3_free(zName);
+  sqlite3DbFree(db, zName);
   return;
 }
 
@@ -954,7 +959,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   for(i=0; i<p->nCol; i++){
     if( STRICMP(z, p->aCol[i].zName) ){
       sqlite3ErrorMsg(pParse, "duplicate column name: %s", z);
-      sqlite3_free(z);
+      sqlite3DbFree(db, z);
       return;
     }
   }
@@ -962,7 +967,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
     Column *aNew;
     aNew = sqlite3DbRealloc(pParse->db,p->aCol,(p->nCol+8)*sizeof(p->aCol[0]));
     if( aNew==0 ){
-      sqlite3_free(z);
+      sqlite3DbFree(db, z);
       return;
     }
     p->aCol = aNew;
@@ -1069,13 +1074,15 @@ void sqlite3AddColumnType(Parse *pParse, Token *pType){
   Table *p;
   int i;
   Column *pCol;
+  sqlite3 *db;
 
   if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
   if( i<0 ) return;
   pCol = &p->aCol[i];
-  sqlite3_free(pCol->zType);
-  pCol->zType = sqlite3NameFromToken(pParse->db, pType);
+  db = pParse->db;
+  sqlite3DbFree(db, pCol->zType);
+  pCol->zType = sqlite3NameFromToken(db, pType);
   pCol->affinity = sqlite3AffinityType(pType);
 }
 
@@ -1092,6 +1099,7 @@ void sqlite3AddColumnType(Parse *pParse, Token *pType){
 void sqlite3AddDefaultValue(Parse *pParse, Expr *pExpr){
   Table *p;
   Column *pCol;
+  sqlite3 *db = pParse->db;
   if( (p = pParse->pNewTable)!=0 ){
     pCol = &(p->aCol[p->nCol-1]);
     if( !sqlite3ExprIsConstantOrFunction(pExpr) ){
@@ -1099,15 +1107,14 @@ void sqlite3AddDefaultValue(Parse *pParse, Expr *pExpr){
           pCol->zName);
     }else{
       Expr *pCopy;
-      sqlite3 *db = pParse->db;
-      sqlite3ExprDelete(pCol->pDflt);
+      sqlite3ExprDelete(db, pCol->pDflt);
       pCol->pDflt = pCopy = sqlite3ExprDup(db, pExpr);
       if( pCopy ){
         sqlite3TokenCopy(db, &pCopy->span, &pExpr->span);
       }
     }
   }
-  sqlite3ExprDelete(pExpr);
+  sqlite3ExprDelete(db, pExpr);
 }
 
 /*
@@ -1180,7 +1187,7 @@ void sqlite3AddPrimaryKey(
   }
 
 primary_key_exit:
-  sqlite3ExprListDelete(pList);
+  sqlite3ExprListDelete(pParse->db, pList);
   return;
 }
 
@@ -1191,9 +1198,9 @@ void sqlite3AddCheckConstraint(
   Parse *pParse,    /* Parsing context */
   Expr *pCheckExpr  /* The check expression */
 ){
+  sqlite3 *db = pParse->db;
 #ifndef SQLITE_OMIT_CHECK
   Table *pTab = pParse->pNewTable;
-  sqlite3 *db = pParse->db;
   if( pTab && !IN_DECLARE_VTAB ){
     /* The CHECK expression must be duplicated so that tokens refer
     ** to malloced space and not the (ephemeral) text of the CREATE TABLE
@@ -1202,7 +1209,7 @@ void sqlite3AddCheckConstraint(
                                   sqlite3ExprDup(db, pCheckExpr));
   }
 #endif
-  sqlite3ExprDelete(pCheckExpr);
+  sqlite3ExprDelete(db, pCheckExpr);
 }
 
 /*
@@ -1213,11 +1220,12 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
   Table *p;
   int i;
   char *zColl;              /* Dequoted name of collation sequence */
+  sqlite3 *db;
 
   if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
-
-  zColl = sqlite3NameFromToken(pParse->db, pToken);
+  db = pParse->db;
+  zColl = sqlite3NameFromToken(db, pToken);
   if( !zColl ) return;
 
   if( sqlite3LocateCollSeq(pParse, zColl, -1) ){
@@ -1235,7 +1243,7 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
       }
     }
   }else{
-    sqlite3_free(zColl);
+    sqlite3DbFree(db, zColl);
   }
 }
 
@@ -1568,7 +1576,7 @@ void sqlite3EndTable(
       zStmt,
       pParse->regRowid
     );
-    sqlite3_free(zStmt);
+    sqlite3DbFree(db, zStmt);
     sqlite3ChangeCookie(pParse, iDb);
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT
@@ -1658,13 +1666,13 @@ void sqlite3CreateView(
 
   if( pParse->nVar>0 ){
     sqlite3ErrorMsg(pParse, "parameters are not allowed in views");
-    sqlite3SelectDelete(pSelect);
+    sqlite3SelectDelete(db, pSelect);
     return;
   }
   sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
   p = pParse->pNewTable;
   if( p==0 || pParse->nErr ){
-    sqlite3SelectDelete(pSelect);
+    sqlite3SelectDelete(db, pSelect);
     return;
   }
   sqlite3TwoPartName(pParse, pName1, pName2, &pName);
@@ -1672,7 +1680,7 @@ void sqlite3CreateView(
   if( sqlite3FixInit(&sFix, pParse, iDb, "view", pName)
     && sqlite3FixSelect(&sFix, pSelect)
   ){
-    sqlite3SelectDelete(pSelect);
+    sqlite3SelectDelete(db, pSelect);
     return;
   }
 
@@ -1682,7 +1690,7 @@ void sqlite3CreateView(
   ** they will persist after the current sqlite3_exec() call returns.
   */
   p->pSelect = sqlite3SelectDup(db, pSelect);
-  sqlite3SelectDelete(pSelect);
+  sqlite3SelectDelete(db, pSelect);
   if( db->mallocFailed ){
     return;
   }
@@ -1789,7 +1797,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       pTable->nCol = 0;
       nErr++;
     }
-    sqlite3SelectDelete(pSel);
+    sqlite3SelectDelete(db, pSel);
   } else {
     nErr++;
   }
@@ -2105,7 +2113,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   sqliteViewResetAll(db, iDb);
 
 exit_drop_table:
-  sqlite3SrcListDelete(pName);
+  sqlite3SrcListDelete(db, pName);
 }
 
 /*
@@ -2140,8 +2148,10 @@ void sqlite3CreateForeignKey(
   int i;
   int nCol;
   char *z;
+  sqlite3 *db;
 
   assert( pTo!=0 );
+  db = pParse->db;
   if( p==0 || pParse->nErr || IN_DECLARE_VTAB ) goto fk_end;
   if( pFromCol==0 ){
     int iCol = p->nCol-1;
@@ -2167,7 +2177,7 @@ void sqlite3CreateForeignKey(
       nByte += strlen(pToCol->a[i].zName) + 1;
     }
   }
-  pFKey = sqlite3DbMallocZero(pParse->db, nByte );
+  pFKey = sqlite3DbMallocZero(db, nByte );
   if( pFKey==0 ){
     goto fk_end;
   }
@@ -2221,10 +2231,10 @@ void sqlite3CreateForeignKey(
   pFKey = 0;
 
 fk_end:
-  sqlite3_free(pFKey);
+  sqlite3DbFree(db, pFKey);
 #endif /* !defined(SQLITE_OMIT_FOREIGN_KEY) */
-  sqlite3ExprListDelete(pFromCol);
-  sqlite3ExprListDelete(pToCol);
+  sqlite3ExprListDelete(db, pFromCol);
+  sqlite3ExprListDelete(db, pToCol);
 }
 
 /*
@@ -2711,7 +2721,7 @@ void sqlite3CreateIndex(
         iMem,
         zStmt
     );
-    sqlite3_free(zStmt);
+    sqlite3DbFree(db, zStmt);
 
     /* Fill the index with data and reparse the schema. Code an OP_Expire
     ** to invalidate all pre-compiled statements.
@@ -2751,9 +2761,9 @@ exit_create_index:
   if( pIndex ){
     freeIndex(pIndex);
   }
-  sqlite3ExprListDelete(pList);
-  sqlite3SrcListDelete(pTblName);
-  sqlite3_free(zName);
+  sqlite3ExprListDelete(db, pList);
+  sqlite3SrcListDelete(db, pTblName);
+  sqlite3DbFree(db, zName);
   return;
 }
 
@@ -2882,7 +2892,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   }
 
 exit_drop_index:
-  sqlite3SrcListDelete(pName);
+  sqlite3SrcListDelete(db, pName);
 }
 
 /*
@@ -2952,7 +2962,7 @@ IdList *sqlite3IdListAppend(sqlite3 *db, IdList *pList, Token *pToken){
       &i
   );
   if( i<0 ){
-    sqlite3IdListDelete(pList);
+    sqlite3IdListDelete(db, pList);
     return 0;
   }
   pList->a[i].zName = sqlite3NameFromToken(db, pToken);
@@ -2962,14 +2972,14 @@ IdList *sqlite3IdListAppend(sqlite3 *db, IdList *pList, Token *pToken){
 /*
 ** Delete an IdList.
 */
-void sqlite3IdListDelete(IdList *pList){
+void sqlite3IdListDelete(sqlite3 *db, IdList *pList){
   int i;
   if( pList==0 ) return;
   for(i=0; i<pList->nId; i++){
-    sqlite3_free(pList->a[i].zName);
+    sqlite3DbFree(db, pList->a[i].zName);
   }
-  sqlite3_free(pList->a);
-  sqlite3_free(pList);
+  sqlite3DbFree(db, pList->a);
+  sqlite3DbFree(db, pList);
 }
 
 /*
@@ -3028,7 +3038,7 @@ SrcList *sqlite3SrcListAppend(
     pNew = sqlite3DbRealloc(db, pList,
                sizeof(*pList) + (pList->nAlloc-1)*sizeof(pList->a[0]) );
     if( pNew==0 ){
-      sqlite3SrcListDelete(pList);
+      sqlite3SrcListDelete(db, pList);
       return 0;
     }
     pList = pNew;
@@ -3072,20 +3082,20 @@ void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
 /*
 ** Delete an entire SrcList including all its substructure.
 */
-void sqlite3SrcListDelete(SrcList *pList){
+void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
   int i;
   struct SrcList_item *pItem;
   if( pList==0 ) return;
   for(pItem=pList->a, i=0; i<pList->nSrc; i++, pItem++){
-    sqlite3_free(pItem->zDatabase);
-    sqlite3_free(pItem->zName);
-    sqlite3_free(pItem->zAlias);
+    sqlite3DbFree(db, pItem->zDatabase);
+    sqlite3DbFree(db, pItem->zName);
+    sqlite3DbFree(db, pItem->zAlias);
     sqlite3DeleteTable(pItem->pTab);
-    sqlite3SelectDelete(pItem->pSelect);
-    sqlite3ExprDelete(pItem->pOn);
-    sqlite3IdListDelete(pItem->pUsing);
+    sqlite3SelectDelete(db, pItem->pSelect);
+    sqlite3ExprDelete(db, pItem->pOn);
+    sqlite3IdListDelete(db, pItem->pUsing);
   }
-  sqlite3_free(pList);
+  sqlite3DbFree(db, pList);
 }
 
 /*
@@ -3118,9 +3128,9 @@ SrcList *sqlite3SrcListAppendFromTerm(
   sqlite3 *db = pParse->db;
   p = sqlite3SrcListAppend(db, p, pTable, pDatabase);
   if( p==0 || p->nSrc==0 ){
-    sqlite3ExprDelete(pOn);
-    sqlite3IdListDelete(pUsing);
-    sqlite3SelectDelete(pSubquery);
+    sqlite3ExprDelete(db, pOn);
+    sqlite3IdListDelete(db, pUsing);
+    sqlite3SelectDelete(db, pSubquery);
     return p;
   }
   pItem = &p->a[p->nSrc-1];
@@ -3425,11 +3435,11 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
     if( pColl ){
       if( zColl ){
         reindexDatabases(pParse, zColl);
-        sqlite3_free(zColl);
+        sqlite3DbFree(db, zColl);
       }
       return;
     }
-    sqlite3_free(zColl);
+    sqlite3DbFree(db, zColl);
   }
   iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pObjName);
   if( iDb<0 ) return;
@@ -3439,11 +3449,11 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   pTab = sqlite3FindTable(db, z, zDb);
   if( pTab ){
     reindexTable(pParse, pTab, 0);
-    sqlite3_free(z);
+    sqlite3DbFree(db, z);
     return;
   }
   pIndex = sqlite3FindIndex(db, z, zDb);
-  sqlite3_free(z);
+  sqlite3DbFree(db, z);
   if( pIndex ){
     sqlite3BeginWriteOperation(pParse, 0, iDb);
     sqlite3RefillIndex(pParse, pIndex, -1);
@@ -3458,7 +3468,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
 ** with OP_OpenRead or OP_OpenWrite to access database index pIdx.
 **
 ** If successful, a pointer to the new structure is returned. In this case
-** the caller is responsible for calling sqlite3_free() on the returned 
+** the caller is responsible for calling sqlite3DbFree(db, ) on the returned 
 ** pointer. If an error occurs (out of memory or missing collation 
 ** sequence), NULL is returned and the state of pParse updated to reflect
 ** the error.
@@ -3467,7 +3477,8 @@ KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
   int i;
   int nCol = pIdx->nColumn;
   int nBytes = sizeof(KeyInfo) + (nCol-1)*sizeof(CollSeq*) + nCol;
-  KeyInfo *pKey = (KeyInfo *)sqlite3DbMallocZero(pParse->db, nBytes);
+  sqlite3 *db = pParse->db;
+  KeyInfo *pKey = (KeyInfo *)sqlite3DbMallocZero(db, nBytes);
 
   if( pKey ){
     pKey->db = pParse->db;
@@ -3483,7 +3494,7 @@ KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
   }
 
   if( pParse->nErr ){
-    sqlite3_free(pKey);
+    sqlite3DbFree(db, pKey);
     pKey = 0;
   }
   return pKey;

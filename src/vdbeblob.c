@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.24 2008/07/10 00:32:42 drh Exp $
+** $Id: vdbeblob.c,v 1.25 2008/07/28 19:34:54 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -117,7 +117,7 @@ int sqlite3_blob_open(
       if( sParse.zErrMsg ){
         sqlite3_snprintf(sizeof(zErr), zErr, "%s", sParse.zErrMsg);
       }
-      sqlite3_free(sParse.zErrMsg);
+      sqlite3DbFree(db, sParse.zErrMsg);
       rc = SQLITE_ERROR;
       (void)sqlite3SafetyOff(db);
       sqlite3BtreeLeaveAll(db);
@@ -229,7 +229,7 @@ int sqlite3_blob_open(
     }
     pBlob = (Incrblob *)sqlite3DbMallocZero(db, sizeof(Incrblob));
     if( db->mallocFailed ){
-      sqlite3_free(pBlob);
+      sqlite3DbFree(db, pBlob);
       goto blob_open_out;
     }
     pBlob->flags = flags;
@@ -268,7 +268,7 @@ int sqlite3_blob_close(sqlite3_blob *pBlob){
   int rc;
 
   rc = sqlite3_finalize(p->pStmt);
-  sqlite3_free(p);
+  sqlite3DbFree(p->db, p);
   return rc;
 }
 

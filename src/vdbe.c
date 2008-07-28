@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.765 2008/07/26 18:47:27 danielk1977 Exp $
+** $Id: vdbe.c,v 1.766 2008/07/28 19:34:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -895,7 +895,7 @@ case OP_String8: {         /* same as TK_STRING, out2-prerelease */
     pOut->flags |= MEM_Static;
     pOut->flags &= ~MEM_Dyn;
     if( pOp->p4type==P4_DYNAMIC ){
-      sqlite3_free(pOp->p4.z);
+      sqlite3DbFree(db, pOp->p4.z);
     }
     pOp->p4type = P4_DYNAMIC;
     pOp->p4.z = pOut->z;
@@ -2605,7 +2605,7 @@ case OP_VerifyCookie: {
     iMeta = 0;
   }
   if( rc==SQLITE_OK && iMeta!=pOp->p2 ){
-    sqlite3_free(p->zErrMsg);
+    sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
     /* If the schema-cookie from the database file matches the cookie 
     ** stored with the in-memory representation of the schema, do
@@ -3470,7 +3470,7 @@ case OP_Insert: {
   }
   if( pC->pseudoTable ){
     if( !pC->ephemPseudoTable ){
-      sqlite3_free(pC->pData);
+      sqlite3DbFree(db, pC->pData);
     }
     pC->iKey = iKey;
     pC->nData = pData->n;
@@ -4149,7 +4149,7 @@ case OP_ParseSchema: {
   assert( !db->mallocFailed );
   rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
   if( rc==SQLITE_ABORT ) rc = initData.rc;
-  sqlite3_free(zSql);
+  sqlite3DbFree(db, zSql);
   db->init.busy = 0;
   (void)sqlite3SafetyOn(db);
   if( rc==SQLITE_NOMEM ){
@@ -4241,7 +4241,7 @@ case OP_IntegrityCk: {
   
   nRoot = pOp->p2;
   assert( nRoot>0 );
-  aRoot = sqlite3Malloc( sizeof(int)*(nRoot+1) );
+  aRoot = sqlite3DbMallocRaw(db, sizeof(int)*(nRoot+1) );
   if( aRoot==0 ) goto no_mem;
   assert( pOp->p3>0 && pOp->p3<=p->nMem );
   pnErr = &p->aMem[pOp->p3];
@@ -4265,7 +4265,7 @@ case OP_IntegrityCk: {
   }
   UPDATE_MAX_BLOBSIZE(pIn1);
   sqlite3VdbeChangeEncoding(pIn1, encoding);
-  sqlite3_free(aRoot);
+  sqlite3DbFree(db, aRoot);
   break;
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
@@ -4275,6 +4275,7 @@ case OP_IntegrityCk: {
 ** Write the integer from register P1 into the Fifo.
 */
 case OP_FifoWrite: {        /* in1 */
+  p->sFifo.db = db;
   if( sqlite3VdbeFifoPush(&p->sFifo, sqlite3VdbeIntValue(pIn1))==SQLITE_NOMEM ){
     goto no_mem;
   }
@@ -4322,7 +4323,7 @@ case OP_ContextPush: {
   pContext->lastRowid = db->lastRowid;
   pContext->nChange = p->nChange;
   pContext->sFifo = p->sFifo;
-  sqlite3VdbeFifoInit(&p->sFifo);
+  sqlite3VdbeFifoInit(&p->sFifo, db);
   break;
 }
 
@@ -4628,7 +4629,7 @@ case OP_VOpen: {
   assert(pVtab && pModule);
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   rc = pModule->xOpen(pVtab, &pVtabCursor);
-  sqlite3_free(p->zErrMsg);
+  sqlite3DbFree(db, p->zErrMsg);
   p->zErrMsg = pVtab->zErrMsg;
   pVtab->zErrMsg = 0;
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
@@ -4860,7 +4861,7 @@ case OP_VRename: {
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   sqlite3VtabLock(pVtab);
   rc = pVtab->pModule->xRename(pVtab, pName->z);
-  sqlite3_free(p->zErrMsg);
+  sqlite3DbFree(db, p->zErrMsg);
   p->zErrMsg = pVtab->zErrMsg;
   pVtab->zErrMsg = 0;
   sqlite3VtabUnlock(db, pVtab);
@@ -4915,7 +4916,7 @@ case OP_VUpdate: {
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
     sqlite3VtabLock(pVtab);
     rc = pModule->xUpdate(pVtab, nArg, apArg, &rowid);
-    sqlite3_free(p->zErrMsg);
+    sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = pVtab->zErrMsg;
     pVtab->zErrMsg = 0;
     sqlite3VtabUnlock(db, pVtab);

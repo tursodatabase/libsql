@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.46 2008/07/15 14:47:19 drh Exp $
+** $Id: alter.c,v 1.47 2008/07/28 19:34:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -80,7 +80,7 @@ static void renameTableFunc(
 
     zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", tname.z - zSql, zSql, 
        zTableName, tname.z+tname.n);
-    sqlite3_result_text(context, zRet, -1, sqlite3_free);
+    sqlite3_result_text(context, zRet, -1, SQLITE_DYNAMIC);
   }
 }
 
@@ -155,7 +155,7 @@ static void renameTriggerFunc(
     */
     zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", tname.z - zSql, zSql, 
        zTableName, tname.z+tname.n);
-    sqlite3_result_text(context, zRet, -1, sqlite3_free);
+    sqlite3_result_text(context, zRet, -1, SQLITE_DYNAMIC);
   }
 }
 #endif   /* !SQLITE_OMIT_TRIGGER */
@@ -198,7 +198,7 @@ static char *whereTempTriggers(Parse *pParse, Table *pTab){
         }else{
           tmp = zWhere;
           zWhere = sqlite3MPrintf(db, "%s OR name=%Q", zWhere, pTrig->name);
-          sqlite3_free(tmp);
+          sqlite3DbFree(db, tmp);
         }
       }
     }
@@ -409,7 +409,7 @@ void sqlite3AlterRenameTable(
             "sql = sqlite_rename_trigger(sql, %Q), "
             "tbl_name = %Q "
             "WHERE %s;", zName, zName, zWhere);
-    sqlite3_free(zWhere);
+    sqlite3DbFree(db, zWhere);
   }
 #endif
 
@@ -417,8 +417,8 @@ void sqlite3AlterRenameTable(
   reloadTableSchema(pParse, pTab, zName);
 
 exit_rename_table:
-  sqlite3SrcListDelete(pSrc);
-  sqlite3_free(zName);
+  sqlite3SrcListDelete(db, pSrc);
+  sqlite3DbFree(db, zName);
 }
 
 
@@ -518,7 +518,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
       zDb, SCHEMA_TABLE(iDb), pNew->addColOffset, zCol, pNew->addColOffset+1,
       zTab
     );
-    sqlite3_free(zCol);
+    sqlite3DbFree(db, zCol);
   }
 
   /* If the default value of the new column is NULL, then set the file
@@ -585,6 +585,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   if( !pNew ) goto exit_begin_add_column;
   pParse->pNewTable = pNew;
   pNew->nRef = 1;
+  pNew->db = db;
   pNew->nCol = pTab->nCol;
   assert( pNew->nCol>0 );
   nAlloc = (((pNew->nCol-1)/8)*8)+8;
@@ -614,7 +615,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   sqlite3ChangeCookie(pParse, iDb);
 
 exit_begin_add_column:
-  sqlite3SrcListDelete(pSrc);
+  sqlite3SrcListDelete(db, pSrc);
   return;
 }
 #endif  /* SQLITE_ALTER_TABLE */

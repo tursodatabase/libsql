@@ -12,7 +12,7 @@
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
 **
-** $Id: loadext.c,v 1.51 2008/07/08 14:17:35 danielk1977 Exp $
+** $Id: loadext.c,v 1.52 2008/07/28 19:34:53 drh Exp $
 */
 
 #ifndef SQLITE_CORE
@@ -326,7 +326,7 @@ static const sqlite3_api_routines sqlite3Apis = {
 **
 ** If an error occurs and pzErrMsg is not 0, then fill *pzErrMsg with 
 ** error message text.  The calling function should free this memory
-** by calling sqlite3_free().
+** by calling sqlite3DbFree(db, ).
 */
 static int sqlite3LoadExtension(
   sqlite3 *db,          /* Load the extension into this database connection */
@@ -365,7 +365,7 @@ static int sqlite3LoadExtension(
       sqlite3_snprintf(sizeof(zErr)-1, zErr, 
           "unable to open shared library [%s]", zFile);
       sqlite3OsDlError(pVfs, sizeof(zErr)-1, zErr);
-      *pzErrMsg = sqlite3DbStrDup(db, zErr);
+      *pzErrMsg = sqlite3DbStrDup(0, zErr);
     }
     return SQLITE_ERROR;
   }
@@ -378,7 +378,7 @@ static int sqlite3LoadExtension(
       sqlite3_snprintf(sizeof(zErr)-1, zErr,
           "no entry point [%s] in shared library [%s]", zProc,zFile);
       sqlite3OsDlError(pVfs, sizeof(zErr)-1, zErr);
-      *pzErrMsg = sqlite3DbStrDup(db, zErr);
+      *pzErrMsg = sqlite3DbStrDup(0, zErr);
       sqlite3OsDlClose(pVfs, handle);
     }
     return SQLITE_ERROR;
@@ -400,7 +400,7 @@ static int sqlite3LoadExtension(
   if( db->nExtension>0 ){
     memcpy(aHandle, db->aExtension, sizeof(handle)*(db->nExtension-1));
   }
-  sqlite3_free(db->aExtension);
+  sqlite3DbFree(db, db->aExtension);
   db->aExtension = aHandle;
 
   db->aExtension[db->nExtension-1] = handle;
@@ -429,7 +429,7 @@ void sqlite3CloseExtensions(sqlite3 *db){
   for(i=0; i<db->nExtension; i++){
     sqlite3OsDlClose(db->pVfs, db->aExtension[i]);
   }
-  sqlite3_free(db->aExtension);
+  sqlite3DbFree(db, db->aExtension);
 }
 
 /*

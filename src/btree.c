@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.491 2008/07/19 14:25:16 danielk1977 Exp $
+** $Id: btree.c,v 1.492 2008/07/28 19:34:53 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6814,7 +6814,7 @@ char *sqlite3BtreeIntegrityCheck(
   nRef = sqlite3PagerRefcount(pBt->pPager);
   if( lockBtreeWithRetry(p)!=SQLITE_OK ){
     sqlite3BtreeLeave(p);
-    return sqlite3StrDup("Unable to acquire a read lock on the database");
+    return sqlite3DbStrDup(0, "Unable to acquire a read lock on the database");
   }
   sCheck.pBt = pBt;
   sCheck.pPager = pBt->pPager;

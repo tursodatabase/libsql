@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.135 2008/07/23 21:07:25 drh Exp $
+** $Id: vdbeapi.c,v 1.136 2008/07/28 19:34:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -556,7 +556,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
       ** sqlite3_errmsg() and sqlite3_errcode().
       */
       const char *zErr = (const char *)sqlite3_value_text(db->pErr); 
-      sqlite3_free(v->zErrMsg);
+      sqlite3DbFree(db, v->zErrMsg);
       if( !db->mallocFailed ){
         v->zErrMsg = sqlite3DbStrDup(db, zErr);
       } else {

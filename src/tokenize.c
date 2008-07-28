@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.147 2008/07/25 15:39:04 drh Exp $
+** $Id: tokenize.c,v 1.148 2008/07/28 19:34:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -427,7 +427,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
         break;
       }
       case TK_ILLEGAL: {
-        sqlite3_free(*pzErrMsg);
+        sqlite3DbFree(db, *pzErrMsg);
         *pzErrMsg = sqlite3MPrintf(db, "unrecognized token: \"%T\"",
                         &pParse->sLastToken);
         nErr++;
@@ -471,7 +471,7 @@ abort_parse:
     if( *pzErrMsg==0 ){
       *pzErrMsg = pParse->zErrMsg;
     }else{
-      sqlite3_free(pParse->zErrMsg);
+      sqlite3DbFree(db, pParse->zErrMsg);
     }
     pParse->zErrMsg = 0;
     nErr++;
@@ -482,13 +482,13 @@ abort_parse:
   }
 #ifndef SQLITE_OMIT_SHARED_CACHE
   if( pParse->nested==0 ){
-    sqlite3_free(pParse->aTableLock);
+    sqlite3DbFree(db, pParse->aTableLock);
     pParse->aTableLock = 0;
     pParse->nTableLock = 0;
   }
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  sqlite3_free(pParse->apVtabLock);
+  sqlite3DbFree(db, pParse->apVtabLock);
 #endif
 
   if( !IN_DECLARE_VTAB ){
@@ -499,8 +499,8 @@ abort_parse:
     sqlite3DeleteTable(pParse->pNewTable);
   }
 
-  sqlite3DeleteTrigger(pParse->pNewTrigger);
-  sqlite3_free(pParse->apVarExpr);
+  sqlite3DeleteTrigger(db, pParse->pNewTrigger);
+  sqlite3DbFree(db, pParse->apVarExpr);
   if( nErr>0 && (pParse->rc==SQLITE_OK || pParse->rc==SQLITE_DONE) ){
     pParse->rc = SQLITE_ERROR;
   }

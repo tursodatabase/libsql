@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.41 2008/07/25 15:39:04 drh Exp $
+** $Id: test_malloc.c,v 1.42 2008/07/28 19:34:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -979,6 +979,56 @@ static int test_config_chunkalloc(
 }
 
 /*
+** Usage:    sqlite3_config_lookaside  SIZE  COUNT
+**
+*/
+static int test_config_lookaside(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  int sz, cnt;
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SIZE COUNT");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &cnt) ) return TCL_ERROR;
+  rc = sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, cnt);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;
+}
+
+
+/*
+** Usage:    sqlite3_db_config_lookaside  CONNECTION  SIZE  COUNT
+**
+*/
+static int test_db_config_lookaside(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  int sz, cnt;
+  sqlite3 *db;
+  int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SIZE COUNT");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &cnt) ) return TCL_ERROR;
+  rc = sqlite3_db_config(db, SQLITE_CONFIG_LOOKASIDE, sz, cnt);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;
+}
+
+/*
 ** Usage:
 **
 **   sqlite3_config_heap NBYTE NMINALLOC
@@ -1113,6 +1163,57 @@ static int test_status(
 }
 
 /*
+** Usage:    sqlite3_db_status  DATABASE  OPCODE  RESETFLAG
+**
+** Return a list of three elements which are the sqlite3_db_status() return
+** code, the current value, and the high-water mark value.
+*/
+static int test_db_status(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc, iValue, mxValue;
+  int i, op, resetFlag;
+  const char *zOpName;
+  sqlite3 *db;
+  int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  static const struct {
+    const char *zName;
+    int op;
+  } aOp[] = {
+    { "SQLITE_DBSTATUS_LOOKASIDE_USED",    SQLITE_DBSTATUS_LOOKASIDE_USED   },
+  };
+  Tcl_Obj *pResult;
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "PARAMETER RESETFLAG");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zOpName = Tcl_GetString(objv[2]);
+  for(i=0; i<ArraySize(aOp); i++){
+    if( strcmp(aOp[i].zName, zOpName)==0 ){
+      op = aOp[i].op;
+      break;
+    }
+  }
+  if( i>=ArraySize(aOp) ){
+    if( Tcl_GetIntFromObj(interp, objv[2], &op) ) return TCL_ERROR;
+  }
+  if( Tcl_GetBooleanFromObj(interp, objv[3], &resetFlag) ) return TCL_ERROR;
+  iValue = 0;
+  mxValue = 0;
+  rc = sqlite3_db_status(db, op, &iValue, &mxValue, resetFlag);
+  pResult = Tcl_NewObj();
+  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(rc));
+  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(iValue));
+  Tcl_ListObjAppendElement(0, pResult, Tcl_NewIntObj(mxValue));
+  Tcl_SetObjResult(interp, pResult);
+  return TCL_OK;
+}
+
+/*
 ** install_malloc_faultsim BOOLEAN
 */
 static int test_install_malloc_faultsim(
@@ -1162,10 +1263,13 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_config_scratch",     test_config_scratch           ,0 },
      { "sqlite3_config_pagecache",   test_config_pagecache         ,0 },
      { "sqlite3_status",             test_status                   ,0 },
+     { "sqlite3_db_status",          test_db_status                ,0 },
      { "install_malloc_faultsim",    test_install_malloc_faultsim  ,0 },
      { "sqlite3_config_heap",        test_config_heap              ,0 },
      { "sqlite3_config_memstatus",   test_config_memstatus         ,0 },
      { "sqlite3_config_chunkalloc",  test_config_chunkalloc        ,0 },
+     { "sqlite3_config_lookaside",   test_config_lookaside         ,0 },
+     { "sqlite3_db_config_lookaside",test_db_config_lookaside      ,0 },
      { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
      { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 }
   };
