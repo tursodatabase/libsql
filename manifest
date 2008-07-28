@@ -1,5 +1,5 @@
-C Remove\sa\sbranch\sthat\scould\snot\sbe\staken\sfrom\sOP_IsUnique.\s(CVS\s5485)
-D 2008-07-26T18:47:27
+C In\sthe\sdocumentation\sfor\sSQLITE_CONFIG_MEMSTATUS,\smake\sit\sclear\sthat\sthe\s'boolean'\sargument\spassed\sto\ssqlite3_config()\sis\sactually\sof\stype\sint.\sTicket\s#3252.\s(CVS\s5486)
+D 2008-07-28T05:22:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d677b8dbc24fd815043e87e9350f8d296ab40f0d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,7 +144,7 @@ F src/printf.c 2174222bc346a11b1eac2a654ccc4f635355ae7e
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c a152b1436d7117e25ce010453c61d1002214e337
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
-F src/sqlite.h.in dd72570543919552b62dcfbc24a93d8e5a46742e
+F src/sqlite.h.in 534688abf1580de0a458f017c97770a96c3827ac
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h f9036237debe48d3542595fae2a18dcb41cd71e9
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -612,7 +612,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7aecabacf924ad8c1f9f4e707d0c56e433e3a434
-R 69ce53c160e90507e4cc52c56ef9ee63
+P 75c2a532f4dfd7eee5136fbb79f8e20dbc666fad
+R 89775535aa216d47014ca2a590511a5c
 U danielk1977
-Z 5bd9390ae7daa19404e99c82b839d67c
+Z 44c393816d0fa17b7638b4e918f4a225
