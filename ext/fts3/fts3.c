@@ -4102,21 +4102,43 @@ static int fulltextFilter(
   fulltext_cursor *c = (fulltext_cursor *) pCursor;
   fulltext_vtab *v = cursor_vtab(c);
   int rc;
-  StringBuffer sb;
 
   FTSTRACE(("FTS3 Filter %p\n",pCursor));
 
-  initStringBuffer(&sb);
-  append(&sb, "SELECT docid, ");
-  appendList(&sb, v->nColumn, v->azContentColumn);
-  append(&sb, " FROM %_content");
-  if( idxNum!=QUERY_GENERIC ) append(&sb, " WHERE docid = ?");
-  sqlite3_finalize(c->pStmt);
-  rc = sql_prepare(v->db, v->zDb, v->zName, &c->pStmt, stringBufferData(&sb));
-  stringBufferDestroy(&sb);
-  if( rc!=SQLITE_OK ) return rc;
+  /* If the cursor has a statement that was not prepared according to
+  ** idxNum, clear it.  I believe all calls to fulltextFilter with a
+  ** given cursor will have the same idxNum , but in this case it's
+  ** easy to be safe.
+  */
+  if( c->pStmt && c->iCursorType!=idxNum ){
+    sqlite3_finalize(c->pStmt);
+    c->pStmt = NULL;
+  }
 
-  c->iCursorType = idxNum;
+  /* Get a fresh statement appropriate to idxNum. */
+  /* TODO(shess): Add a prepared-statement cache in the vt structure.
+  ** The cache must handle multiple open cursors.  Easier to cache the
+  ** statement variants at the vt to reduce malloc/realloc/free here.
+  ** Or we could have a StringBuffer variant which allowed stack
+  ** construction for small values.
+  */
+  if( !c->pStmt ){
+    StringBuffer sb;
+    initStringBuffer(&sb);
+    append(&sb, "SELECT docid, ");
+    appendList(&sb, v->nColumn, v->azContentColumn);
+    append(&sb, " FROM %_content");
+    if( idxNum!=QUERY_GENERIC ) append(&sb, " WHERE docid = ?");
+    rc = sql_prepare(v->db, v->zDb, v->zName, &c->pStmt,
+                     stringBufferData(&sb));
+    stringBufferDestroy(&sb);
+    if( rc!=SQLITE_OK ) return rc;
+    c->iCursorType = idxNum;
+  }else{
+    sqlite3_reset(c->pStmt);
+    assert( c->iCursorType==idxNum );
+  }
+
   switch( idxNum ){
     case QUERY_GENERIC:
       break;
