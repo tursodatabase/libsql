@@ -1,5 +1,5 @@
-C finally\smake\stemporary\sand\sjournal\sfiles\shidden\sin\srelease\sbuilds\son\sOS/2\s(CVS\s5497)
-D 2008-07-29T18:49:29
+C Add\ssome\ssimple\stests\sto\smake\ssure\sthat\sthe\sdifferent\sfulltextFilter\nquery\spaths\sare\sbeing\sexercised.\s(CVS\s5498)
+D 2008-07-29T20:24:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in bbb62eecc851379aef5a48a1bf8787eb13e6ec06
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -339,6 +339,7 @@ F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3c.test 4c7ef29b37aca3e8ebb6a39b57910caa6506034e
 F test/fts3d.test d92a47fe8ed59c9e53d2d8e6d2685bb380aadadc
+F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3near.test 2d4dadcaac5025ab65bb87e66c45f39e92966194
 F test/func.test 20973677b5be7e9f199854779dae85053cc6438d
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
@@ -612,7 +613,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6eac49f046d089dac90c0bf72e8c3fc583694dcd
-R 37db558a63fbbe7b21086d8a66873964
-U pweilbacher
-Z 8f64b0555e1ee664441fa92b59a45394
+P c449a95c4f7abd2bfb92bed0e3a9ae874350ce79
+R b698c84f6b41998f7179c968db38e9a8
+U shess
+Z 8007ccac7fb34b00a3c12fd8cb677718
