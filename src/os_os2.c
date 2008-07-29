@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.54 2008/07/29 18:38:47 pweilbacher Exp $
+** $Id: os_os2.c,v 1.55 2008/07/29 18:49:29 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -801,7 +801,9 @@ static int os2Open(
   if( flags & (SQLITE_OPEN_TEMP_DB | SQLITE_OPEN_TEMP_JOURNAL
                | SQLITE_OPEN_SUBJOURNAL) ){
     char pathUtf8[CCHMAXPATH];
-    /*ulFileAttribute = FILE_HIDDEN;  //for debugging, we want to make sure it is deleted*/
+#ifdef NDEBUG /* when debugging we want to make sure it is deleted */
+    ulFileAttribute = FILE_HIDDEN;
+#endif
     ulFileAttribute = FILE_NORMAL;
     os2FullPathname( pVfs, zName, CCHMAXPATH, pathUtf8 );
     pFile->pathToDel = convertUtf8PathToCp( pathUtf8 );
