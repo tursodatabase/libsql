@@ -11,12 +11,13 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is measuring executing speed.
 #
-# $Id: speed1.test,v 1.7 2008/07/28 19:34:54 drh Exp $
+# $Id: speed1.test,v 1.8 2008/07/29 14:29:07 drh Exp $
 #
 
 sqlite3_shutdown
 sqlite3_config_scratch 29000 1
 sqlite3_config_lookaside 1000 300
+sqlite3_config_pagecache 1024 10000
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 speed_trial_init speed1

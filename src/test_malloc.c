@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.42 2008/07/28 19:34:54 drh Exp $
+** $Id: test_malloc.c,v 1.43 2008/07/29 14:29:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -874,18 +874,19 @@ static int test_config_scratch(
 ){
   int sz, N, rc;
   Tcl_Obj *pResult;
-  static char buf[30000];
+  static char *buf = 0;
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SIZE N");
     return TCL_ERROR;
   }
   if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &N) ) return TCL_ERROR;
+  free(buf);
   if( sz<0 ){
+    buf = 0;
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, 0, 0, 0);
   }else{
-    int mx = sizeof(buf)/(sz+4);
-    if( N>mx ) N = mx;
+    buf = malloc( (sz+4)*N );
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, buf, sz, N);
   }
   pResult = Tcl_NewObj();
@@ -913,18 +914,19 @@ static int test_config_pagecache(
 ){
   int sz, N, rc;
   Tcl_Obj *pResult;
-  static char buf[100000];
+  static char *buf = 0;
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SIZE N");
     return TCL_ERROR;
   }
   if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &N) ) return TCL_ERROR;
+  free(buf);
   if( sz<0 ){
+    buf = 0;
     rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, 0, 0, 0);
   }else{
-    int mx = sizeof(buf)/(sz+4);
-    if( N>mx ) N = mx;
+    buf = malloc( (sz+4)*N );
     rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, buf, sz, N);
   }
   pResult = Tcl_NewObj();

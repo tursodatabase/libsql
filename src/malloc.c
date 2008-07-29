@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.30 2008/07/28 19:34:53 drh Exp $
+** $Id: malloc.c,v 1.31 2008/07/29 14:29:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -443,7 +443,7 @@ void sqlite3PageFree(void *p){
       mem0.aPageFree[mem0.nPageFree++] = i;
       sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_USED, -1);
       sqlite3_mutex_leave(mem0.mutex);
-#ifndef NDEBUG
+#if !defined(NDEBUG) && 0
       /* Assert that a duplicate was not just inserted into aPageFree[]. */
       for(i=0; i<mem0.nPageFree-1; i++){
         assert( mem0.aPageFree[i]!=mem0.aPageFree[mem0.nPageFree-1] );
