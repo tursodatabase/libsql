@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.53 2008/07/29 18:35:54 pweilbacher Exp $
+** $Id: os_os2.c,v 1.54 2008/07/29 18:38:47 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -835,7 +835,7 @@ static int os2Open(
     pFile->pathToDel = NULL;
     if( flags & SQLITE_OPEN_READWRITE ){
       OSTRACE2( "OPEN %d Invalid handle\n", ((flags | SQLITE_OPEN_READONLY) & ~SQLITE_OPEN_READWRITE) );
-      return os2Open( 0, zName, id,
+      return os2Open( pVfs, zName, id,
                       ((flags | SQLITE_OPEN_READONLY) & ~SQLITE_OPEN_READWRITE),
                       pOutFlags );
     }else{
