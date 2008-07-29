@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.52 2008/07/18 05:36:28 pweilbacher Exp $
+** $Id: os_os2.c,v 1.53 2008/07/29 18:35:54 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -712,6 +712,30 @@ static int getTempname(int nBuf, char *zBuf ){
 
 
 /*
+** Turn a relative pathname into a full pathname.  Write the full
+** pathname into zFull[].  zFull[] will be at least pVfs->mxPathname
+** bytes in size.
+*/
+static int os2FullPathname(
+  sqlite3_vfs *pVfs,          /* Pointer to vfs object */
+  const char *zRelative,      /* Possibly relative input path */
+  int nFull,                  /* Size of output buffer in bytes */
+  char *zFull                 /* Output buffer */
+){
+  char *zRelativeCp = convertUtf8PathToCp( zRelative );
+  char zFullCp[CCHMAXPATH] = "\0";
+  char *zFullUTF;
+  APIRET rc = DosQueryPathInfo( zRelativeCp, FIL_QUERYFULLNAME, zFullCp,
+                                CCHMAXPATH );
+  free( zRelativeCp );
+  zFullUTF = convertCpPathToUtf8( zFullCp );
+  sqlite3_snprintf( nFull, zFull, zFullUTF );
+  free( zFullUTF );
+  return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
+}
+
+
+/*
 ** Open a file.
 */
 static int os2Open(
@@ -779,7 +803,7 @@ static int os2Open(
     char pathUtf8[CCHMAXPATH];
     /*ulFileAttribute = FILE_HIDDEN;  //for debugging, we want to make sure it is deleted*/
     ulFileAttribute = FILE_NORMAL;
-    sqlite3OsFullPathname( pVfs, zName, CCHMAXPATH, pathUtf8 );
+    os2FullPathname( pVfs, zName, CCHMAXPATH, pathUtf8 );
     pFile->pathToDel = convertUtf8PathToCp( pathUtf8 );
     OSTRACE1( "OPEN hidden/delete on close file attributes\n" );
   }else{
@@ -883,29 +907,6 @@ static int os2Access(
   return SQLITE_OK;
 }
 
-
-/*
-** Turn a relative pathname into a full pathname.  Write the full
-** pathname into zFull[].  zFull[] will be at least pVfs->mxPathname
-** bytes in size.
-*/
-static int os2FullPathname(
-  sqlite3_vfs *pVfs,          /* Pointer to vfs object */
-  const char *zRelative,      /* Possibly relative input path */
-  int nFull,                  /* Size of output buffer in bytes */
-  char *zFull                 /* Output buffer */
-){
-  char *zRelativeCp = convertUtf8PathToCp( zRelative );
-  char zFullCp[CCHMAXPATH] = "\0";
-  char *zFullUTF;
-  APIRET rc = DosQueryPathInfo( zRelativeCp, FIL_QUERYFULLNAME, zFullCp,
-                                CCHMAXPATH );
-  free( zRelativeCp );
-  zFullUTF = convertCpPathToUtf8( zFullCp );
-  sqlite3_snprintf( nFull, zFull, zFullUTF );
-  free( zFullUTF );
-  return rc == NO_ERROR ? SQLITE_OK : SQLITE_IOERR;
-}
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*
