@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.62 2008/06/27 18:59:45 mihailim Exp $
+** $Id: utf.c,v 1.63 2008/07/29 11:25:14 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -154,24 +154,28 @@ static const unsigned char sqlite3UtfTrans1[] = {
 **     for unicode values 0x80 and greater.  It do not change over-length
 **     encodings to 0xfffd as some systems recommend.
 */
+#define READ_UTF8(zIn, zTerm, c)                           \
+  c = *(zIn++);                                            \
+  if( c>=0xc0 ){                                           \
+    c = sqlite3UtfTrans1[c-0xc0];                          \
+    while( zIn!=zTerm && (*zIn & 0xc0)==0x80 ){            \
+      c = (c<<6) + (0x3f & *(zIn++));                      \
+    }                                                      \
+    if( c<0x80                                             \
+        || (c&0xFFFFF800)==0xD800                          \
+        || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }        \
+  }
 int sqlite3Utf8Read(
   const unsigned char *z,         /* First byte of UTF-8 character */
   const unsigned char *zTerm,     /* Pretend this byte is 0x00 */
   const unsigned char **pzNext    /* Write first byte past UTF-8 char here */
 ){
-  int c = *(z++);
-  if( c>=0xc0 ){
-    c = sqlite3UtfTrans1[c-0xc0];
-    while( z!=zTerm && (*z & 0xc0)==0x80 ){
-      c = (c<<6) + (0x3f & *(z++));
-    }
-    if( c<0x80
-        || (c&0xFFFFF800)==0xD800
-        || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }
-  }
+  int c;
+  READ_UTF8(z, zTerm, c);
   *pzNext = z;
   return c;
 }
+
 
 
 
@@ -268,14 +272,16 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
     if( desiredEnc==SQLITE_UTF16LE ){
       /* UTF-8 -> UTF-16 Little-endian */
       while( zIn<zTerm ){
-        c = sqlite3Utf8Read(zIn, zTerm, (const u8**)&zIn);
+        /* c = sqlite3Utf8Read(zIn, zTerm, (const u8**)&zIn); */
+        READ_UTF8(zIn, zTerm, c);
         WRITE_UTF16LE(z, c);
       }
     }else{
       assert( desiredEnc==SQLITE_UTF16BE );
       /* UTF-8 -> UTF-16 Big-endian */
       while( zIn<zTerm ){
-        c = sqlite3Utf8Read(zIn, zTerm, (const u8**)&zIn);
+        /* c = sqlite3Utf8Read(zIn, zTerm, (const u8**)&zIn); */
+        READ_UTF8(zIn, zTerm, c);
         WRITE_UTF16BE(z, c);
       }
     }
