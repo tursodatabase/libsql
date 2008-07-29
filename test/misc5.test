@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc5.test,v 1.21 2008/05/08 15:18:10 drh Exp $
+# $Id: misc5.test,v 1.22 2008/07/29 10:26:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -1868,3 +1868,5 @@ do_test misc5-11.1 {
 4611686018427387906\
 9223372036854775806\
 9223372036854775807}
+
+finish_test
