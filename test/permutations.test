@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.17 2008/07/25 08:49:01 danielk1977 Exp $
+# $Id: permutations.test,v 1.18 2008/07/30 13:15:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -141,6 +141,7 @@ proc run_tests {name args} {
 run_tests "memsubsys1" -description {
   Tests using pre-allocated page and scratch blocks
 } -initialize {
+  catch {db close}
   sqlite3_shutdown
   sqlite3_config_pagecache 4096 24
   sqlite3_config_scratch 25000 1
@@ -159,6 +160,7 @@ run_tests "memsubsys1" -description {
 run_tests "memsubsys2" -description {
   Tests using small pre-allocated page and scratch blocks
 } -initialize {
+  catch {db close}
   sqlite3_shutdown
   sqlite3_config_pagecache 512 5
   sqlite3_config_scratch 1000 1
