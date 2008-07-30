@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.18 2008/01/21 16:22:46 drh Exp $
+# $Id: incrvacuum.test,v 1.19 2008/07/30 17:28:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -35,7 +35,10 @@ do_test incrvacuum-1.1 {
   }
 } $sqlite_options(default_autovacuum)
 do_test incrvacuum-1.2.0 {
-  expr {[file size test.db] > 0}
+  # File size is sometimes 1 instead of 0 due to the hack we put in
+  # to work around ticket #3260.  Search for comments on #3260 in
+  # os_unix.c.
+  expr {[file size test.db] > 1}
 } {0}
 do_test incrvacuum-1.2 {
   # This command will create the database.
@@ -689,7 +692,10 @@ sqlite3 db test.db  ;  set ::DB [sqlite3_connection_pointer db]
 sqlite3 db2 test.db
 
 do_test incrvacuum-13.1 {
-  expr {[file size test.db]>0}
+  # File size is sometimes 1 instead of 0 due to the hack we put in
+  # to work around ticket #3260.  Search for comments on #3260 in
+  # os_unix.c.
+  expr {[file size test.db]>1}
 } {0}
 do_test incrvacuum-13.2 {
   set ::STMT [sqlite3_prepare $::DB {PRAGMA auto_vacuum = 2} -1 DUMMY]

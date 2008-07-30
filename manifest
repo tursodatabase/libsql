@@ -1,5 +1,5 @@
-C In\sthe\sunix\sOS\simplementation,\sreplace\sinode\shash\stables\swith\slinked\slists.\s(CVS\s5503)
-D 2008-07-30T15:27:54
+C When\sopening\sa\szero-size\sdatabase\son\sunix,\swrite\sone\sbyte\sinto\sthe\sfile\sbefore\ninterrogating\sthe\sinode\snumber.\s\sThis\sworks\saround\sissues\swith\smsdos\nfilesystems\smounted\son\sOS-X.\s\sTicket\s#3260.\s(CVS\s5504)
+D 2008-07-30T17:28:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in bbb62eecc851379aef5a48a1bf8787eb13e6ec06
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -133,7 +133,7 @@ F src/os.c 939ae7690a01d9401685ba124b4ba45fd4a7a2ad
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 676ed273b17bd260f905df81375c9f9950d85517
-F src/os_unix.c c778a6b7098f54ee2e4420150265ad3d26824c96
+F src/os_unix.c fe0dbc35bcd3de49e46b132abfc0f45d6dd6a864
 F src/os_win.c 50ec783403b418ddc9e6e05d541c6027dfd41070
 F src/pager.c a6ecad26297469a8a3d1fd7a7c3dc2d603955044
 F src/pager.h 588c1ac195228b2da45c4e5f7ab6c2fd253d1751
@@ -355,7 +355,7 @@ F test/in3.test dc62b080ed79898121c61c91118b4d1e111f1438
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
 F test/incrblob2.test c82a780356bdf4d0c77f1adf0ea888248904fc07
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
-F test/incrvacuum.test 1a2b0bddc76629afeb41e3d8ea3e4563982d16b9
+F test/incrvacuum.test 0684fbd7773eec45b911d46a6f8dc0f220b1223d
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
 F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
 F test/index.test cbf301cdb2da43e4eac636c3400c2439af1834ad
@@ -368,7 +368,7 @@ F test/insert4.test 6e382eaf7295a4463e6f29ea20fcd8e63d097eeb
 F test/insert5.test 509017213328147d3acdfa2c441bfd82362dda41
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
-F test/io.test 833a1746518ec3005aa7792f9bcb8f01923ff544
+F test/io.test 23c52939ebf90f00d9cbd819ced6daa9f21445fa
 F test/ioerr.test b42f249c9181b5864e53fdae38ef75475d71c66f
 F test/ioerr2.test 5598405c48842c6c0187daad9eb49eff2c54f80d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -614,7 +614,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P da0e4bff30a77f72ae283406b547401c2ebb42c5
-R 4761a1459dbfe21d158c4e02d11ac727
+P db4022db64dc5864e6f1d0a20672183879ad43aa
+R 46a59a75e0405426ca6be3fd6558aebe
 U drh
-Z 2fbbc6538919439da5b60f94f6787348
+Z f2a23010508f2b32889d0e3805823d10

@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.194 2008/07/30 15:27:54 drh Exp $
+** $Id: os_unix.c,v 1.195 2008/07/30 17:28:04 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -674,6 +674,24 @@ static int findLockInfo(
     return SQLITE_IOERR;
   }
 
+  /* On OS X on an msdos filesystem, the inode number is reported
+  ** incorrectly for zero-size files.  See ticket #3260.  To work
+  ** around this problem (we consider it a bug in OS X, not SQLite)
+  ** we always increase the file size to 1 by writing a single byte
+  ** prior to accessing the inode number.  The one byte written is
+  ** an ASCII 'S' character which also happens to be the first byte
+  ** in the header of every SQLite database.  In this way, if there
+  ** is a race condition such that another thread has already populated
+  ** the first page of the database, no damage is done.
+  */
+  if( statbuf.st_size==0 ){
+    write(fd, "S", 1);
+    rc = fstat(fd, &statbuf);
+    if( rc!=0 ){
+      return SQLITE_IOERR;
+    }
+  }
+
   memset(&key1, 0, sizeof(key1));
   key1.dev = statbuf.st_dev;
   key1.ino = statbuf.st_ino;
@@ -1092,6 +1110,16 @@ static int unixFileSize(sqlite3_file *id, i64 *pSize){
     return SQLITE_IOERR_FSTAT;
   }
   *pSize = buf.st_size;
+
+  /* When opening a zero-size database, the findLockInfo() procedure
+  ** writes a single byte into that file in order to work around a bug
+  ** in the OS-X msdos filesystem.  In order to avoid problems with upper
+  ** layers, we need to report this file size as zero even though it is
+  ** really 1.   Ticket #3260.
+  */
+  if( *pSize==1 ) *pSize = 0;
+
+
   return SQLITE_OK;
 }
 
