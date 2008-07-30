@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.119 2008/07/28 19:34:54 drh Exp $
+** $Id: vdbemem.c,v 1.120 2008/07/30 13:14:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -110,11 +110,14 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve){
 }
 
 /*
-** Make the given Mem object MEM_Dyn.
+** Make the given Mem object MEM_Dyn.  In other words, make it so
+** that any TEXT or BLOB content is stored in memory obtained from
+** malloc().  In this way, we know that the memory is safe to be
+** overwritten or altered.
 **
 ** Return SQLITE_OK on success or SQLITE_NOMEM if malloc fails.
 */
-int sqlite3VdbeMemDynamicify(Mem *pMem){
+int sqlite3VdbeMemMakeWriteable(Mem *pMem){
   int f;
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   expandBlob(pMem);
@@ -159,16 +162,6 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
 }
 #endif
 
-
-/*
-** Make the given Mem object either MEM_Short or MEM_Dyn so that bytes
-** of the Mem.z[] array can be modified.
-**
-** Return SQLITE_OK on success or SQLITE_NOMEM if malloc fails.
-*/
-int sqlite3VdbeMemMakeWriteable(Mem *pMem){
-  return sqlite3VdbeMemDynamicify(pMem);
-}
 
 /*
 ** Make sure the given Mem is \u0000 terminated.
