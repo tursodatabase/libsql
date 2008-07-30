@@ -1,5 +1,5 @@
-C Make\ssure\severything\sis\sdeallocated\sbefore\scalling\ssqlite3_shutdown().\nTicket\s#3259.\s(CVS\s5501)
-D 2008-07-30T13:15:46
+C Implicit\sstring->numeric\sconversion\sshould\sgo\sto\san\sinteger\svalue\swhen\npossible.\s\sTicket\s#3257.\s(CVS\s5502)
+D 2008-07-30T13:27:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in bbb62eecc851379aef5a48a1bf8787eb13e6ec06
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -183,7 +183,7 @@ F src/update.c 79b77a3cc8ed5f8903a7f37055fcedd69388dcae
 F src/utf.c a7004436a6ef2aee012ace93de274dd0f3c7624e
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
-F src/vdbe.c 4a5b78debc983d26954d1283f92810d161a7292a
+F src/vdbe.c caa169475973e56a87eb90477928d84f3daa14b8
 F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
 F src/vdbeInt.h ab27f964458fd070c6660f80694ab85d56d5f4c5
 F src/vdbeapi.c 25dd01c8b12978c14ec30e9a50666b23da767b27
@@ -281,7 +281,7 @@ F test/eval.test 020a21a236667bd4c56205d999c9992f1d944cac
 F test/exclusive.test 5390ddf1f90a6d055111c0ebe6311045dd3035e1
 F test/exclusive2.test d13bf66753dca46e61241d35d36ab7c868b0d313
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
-F test/expr.test a34267926f2f4b3a8ae6b7c8614fd8fb2fe251af
+F test/expr.test a47d304a90c75def083cce3b1cd6c282842e6bbe
 F test/filectrl.test 524853082d5d7fb442599730ec3a0f3f84a3a936
 F test/filefmt.test 053b622009fbbb74dd37921ffad374d852c13cd8
 F test/fkey1.test dcb4f28eb22d5141f15161d6bdca9a4f58c95729
@@ -614,7 +614,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P aee63308312bcebb79e15cfdf942ee23694444b0
-R 3465f2c7e121c53fca69b8f5aa86f11d
+P 4a6ee88697ddc28e0c7df1954d1526de18191827
+R 1fc491d5b31cb2a2cf0986670de436ee
 U drh
-Z dce61b95175b8585a01982cf2130d459
+Z 6e72d4e65f10edd96172495856b81fe0
