@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.43 2008/07/29 14:29:07 drh Exp $
+** $Id: test_malloc.c,v 1.44 2008/07/31 17:16:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -886,7 +886,7 @@ static int test_config_scratch(
     buf = 0;
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, 0, 0, 0);
   }else{
-    buf = malloc( (sz+4)*N );
+    buf = malloc( sz*N );
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, buf, sz, N);
   }
   pResult = Tcl_NewObj();
@@ -926,7 +926,7 @@ static int test_config_pagecache(
     buf = 0;
     rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, 0, 0, 0);
   }else{
-    buf = malloc( (sz+4)*N );
+    buf = malloc( sz*N );
     rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, buf, sz, N);
   }
   pResult = Tcl_NewObj();

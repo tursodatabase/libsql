@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.383 2008/07/31 14:47:55 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.384 2008/07/31 17:16:05 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1109,7 +1109,7 @@ struct sqlite3_mem_methods {
 **   <li> [sqlite3_memory_used()]
 **   <li> [sqlite3_memory_highwater()]
 **   <li> [sqlite3_soft_heap_limit()]
-**   <li> sqlite3_memory_status()
+**   <li> [sqlite3_status()]
 **   </ul>
 ** </dd>
 **
@@ -1117,8 +1117,10 @@ struct sqlite3_mem_methods {
 ** <dd>This option specifies a static memory buffer that SQLite can use for
 ** scratch memory.  There are three arguments:  A pointer to the memory, the
 ** size of each scratch buffer (sz), and the number of buffers (N).  The sz
-** argument must be a multiple of 16. The first
-** argument should point to an allocation of at least (sz+4)*N bytes of memory.
+** argument must be a multiple of 16. The sz parameter should be a few bytes
+** larger than the actual scratch space required due internal overhead.
+** The first
+** argument should point to an allocation of at least sz*N bytes of memory.
 ** SQLite will use no more than one scratch buffer at once per thread, so
 ** N should be set to the expected maximum number of threads.  The sz
 ** parameter should be 6 times the size of the largest database page size.
@@ -1132,11 +1134,13 @@ struct sqlite3_mem_methods {
 ** the database page cache.  There are three arguments: A pointer to the
 ** memory, the size of each page buffer (sz), and the number of pages (N).
 ** The sz argument must be a power of two between 512 and 32768.  The first
-** argument should point to an allocation of at least (sz+4)*N bytes of memory.
+** argument should point to an allocation of at least sz*N bytes of memory.
 ** SQLite will use the memory provided by the first argument to satisfy its
 ** memory needs for the first N pages that it adds to cache.  If additional
 ** page cache memory is needed beyond what is provided by this option, then
-** SQLite goes to [sqlite3_malloc()] for the additional storage space.</dd>
+** SQLite goes to [sqlite3_malloc()] for the additional storage space.
+** The implementation might use one or more of the N buffers to hold 
+** memory accounting information. </dd>
 **
 ** <dt>SQLITE_CONFIG_HEAP</dt>
 ** <dd>This option specifies a static memory buffer that SQLite will use
@@ -6175,7 +6179,7 @@ int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 **
 ** <dt>SQLITE_STATUS_PARSER_STACK</dt>
 ** <dd>This parameter records the deepest parser stack.  It is only
-** meaningful if SQLite is compiled with YYTRACKMAXSTACKDEPTH.</dd>
+** meaningful if SQLite is compiled with [YYTRACKMAXSTACKDEPTH].</dd>
 ** </dl>
 **
 ** New status parameters may be added from time to time.
