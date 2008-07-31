@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.747 2008/07/28 19:34:54 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.748 2008/07/31 17:35:45 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -36,7 +36,9 @@
 #endif
 
 /* Needed for various definitions... */
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
 
 /*
 ** Include standard header files as necessary

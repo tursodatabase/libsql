@@ -1,5 +1,5 @@
-C Update\sthe\smemsubsys1\stest\sscript\sto\stake\sinto\saccount\sthe\sbuffer\ssize\nchanges\sof\sthe\sprevious\scheck-in.\s(CVS\s5513)
-D 2008-07-31T17:20:59
+C Define\s_GNU_SOURCE\sonly\sif\sit\sis\snot\salready\sdefined.\s\sTicket\s#3263.\s(CVS\s5514)
+D 2008-07-31T17:35:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in bbb62eecc851379aef5a48a1bf8787eb13e6ec06
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -146,7 +146,7 @@ F src/select.c ef18af5624fc3189014e6b617a36562394740f91
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
 F src/sqlite.h.in 30af3a002a0b672aaae8f4a5deb0a2e9a4b699af
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h a4d6bcf383b1ff207f175f7e274a83d1283c73d7
+F src/sqliteInt.h 99a49b2d85b7648fbb2f7933b145dfb5b11d8941
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c ca61c18b6f1c632b771514e0c39a7d662c805bbf
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -614,7 +614,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e7ed0fe640a39053009eac52a7f055b121750e57
-R e7803177fad1994208c0c231f00cf8c8
+P d43ff7bb8fc59c54b85658aaeb3dd088a324276f
+R e9616e8e48e4c16696138dc02f276c0f
 U drh
-Z ee197dce3f8e29de114bf6a5d78c4a0d
+Z 0d489aea3de9f958e0d9db5f75558e86
