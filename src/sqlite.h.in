@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.382 2008/07/28 19:34:53 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.383 2008/07/31 14:47:55 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -975,9 +975,20 @@ int sqlite3_config(int, ...);
 ** CAPI3REF: Configure database connections  {H10180} <S20000>
 **
 ** The sqlite3_db_config() interface is used to make configuration
-** changes to a [database connection].  
+** changes to a [database connection].  The interface is similar to
+** [sqlite3_config()] except that the changes apply to a single
+** [database connection] (specified in the first argument).  The
+** sqlite3_db_config() interface can only be used immediately after
+** the database connection is created using [sqlite3_open()],
+** [sqlite3_open16()], or [sqlite3_open_v2()].  
+**
+** The second argument to sqlite3_db_config(D,V,...)  is the
+** configuration verb - an integer code that indicates what
+** aspect of the [database connection] is being configured.
+** Choices for this value are [SQLITE_CONFIG_LOOKASIDE].
+** New verbs are likely to be added in future releases of SQLite.
 */
-int sqlite3_db_config(sqlite3*, int, ...);
+int sqlite3_db_config(sqlite3*, int op, ...);
 
 /*
 ** CAPI3REF: Memory Allocation Routines {H10155} <S20120>
@@ -6086,10 +6097,33 @@ int sqlite3_test_control(int op, ...);
 ** and it is possible that another thread might change the parameter
 ** in between the times when *pCurrent and *pHighwater are written.
 **
+** See also: [sqlite3_db_status()]
+**
 ** This interface is experimental and is subject to change or
 ** removal in future releases of SQLite.
 */
 int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
+
+/*
+** CAPI3REF: Database Connection Status {H17201} <S60200>
+**
+** This interface is used to retrieve runtime status information 
+** about a single [database connection].  The first argument is the
+** database connection object to be interrogated.  The second argument
+** is the parameter to interrogate.  Currently, the only allowed value
+** for the second parameter is [SQLITE_DBSTATUS_LOOKASIDE_USED].
+** Additional options will likely appear in future releases of SQLite.
+**
+** The current value of the request parameter is written into *pCur
+** and the highest instantaneous value is written into *pHiwtr.  If
+** the resetFlg is true, then the highest instantaneous value is
+** reset back down to the current value.
+**
+** See also: [sqlite3_status()].
+**
+** This interface is experimental and is subject to change or
+** removal in future releases of SQLite.
+*/
 int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 
 /*
