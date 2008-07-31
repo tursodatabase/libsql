@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.401 2008/07/28 19:34:54 drh Exp $
+** $Id: vdbeaux.c,v 1.402 2008/07/31 01:43:14 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1887,9 +1887,9 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
 **
 ** sqlite3VdbeSerialType()
 ** sqlite3VdbeSerialTypeLen()
-** sqlite3VdbeSerialRead()
 ** sqlite3VdbeSerialLen()
-** sqlite3VdbeSerialWrite()
+** sqlite3VdbeSerialPut()
+** sqlite3VdbeSerialGet()
 **
 ** encapsulate the code that serializes values for storage in SQLite
 ** data and index records. Each serialized value consists of a
