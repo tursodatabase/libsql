@@ -12,7 +12,7 @@
 # focus of this file is testing the sqlite_exec_printf() and
 # sqlite_get_table_printf() APIs.
 #
-# $Id: tableapi.test,v 1.19 2008/07/12 14:52:20 drh Exp $
+# $Id: tableapi.test,v 1.20 2008/07/31 02:05:05 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,6 +34,8 @@ do_test tableapi-1.1 {
 do_test tableapi-1.2 {
   sqlite3_exec_printf $::dbx {SELECT * FROM xyz} {}
 } {0 {a b 1 {Hi Y'all}}}
+
+ifcapable gettable {
 
 do_test tableapi-2.1 {
   sqlite3_get_table_printf $::dbx {
@@ -112,6 +114,9 @@ do_test tableapi-2.7 {
     SELECT * FROM xyz WHERE a>1000
   } {}
 } {0 0 0}
+
+}; # end ifcapable gettable
+
 
 # Repeat all tests with the empty_result_callbacks pragma turned on
 #

@@ -1,5 +1,5 @@
-C Omit\scalls\sto\stest_destructor16()\sif\sSQLITE_OMIT_UTF16\sdefined.\s(CVS\s5508)
-D 2008-07-31T01:47:11
+C Omit\scalls\sto\stest_get_table_printf()\sif\sSQLITE_OMIT_GET_TABLE\sdefined.\s(CVS\s5509)
+D 2008-07-31T02:05:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in bbb62eecc851379aef5a48a1bf8787eb13e6ec06
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -151,7 +151,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c ca61c18b6f1c632b771514e0c39a7d662c805bbf
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c ec46084184f033ba396a9ee7b5514b695083d0f3
-F src/test1.c c7d37c6d6ce5a84c45546dfafae12e5c46c656ce
+F src/test1.c e503344d492584d3df31c959f2b14da112e536f4
 F src/test2.c 7a634c1e044be3ea5845e65155fdd1cab13936cb
 F src/test3.c e00795839be38f0345a4845170426fb17d828bf9
 F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
@@ -163,7 +163,7 @@ F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c da9f58f49faccd3a26ba89f58de125862351b6e2
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c 7170e0c922ed3979f2d38f4a3f84728e5740dfc3
-F src/test_config.c 7896095e9af6e3fad0e42666880afdadfbd563ac
+F src/test_config.c 224f699a34d45eb8ac5c22a7ad6cdbb8edf0ba28
 F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
 F src/test_func.c 94c4424ed9869ecf2e2132662a04581bbec016f6
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
@@ -490,7 +490,7 @@ F test/subselect.test 61267b87828155e9e67681252cfe1603641c3547
 F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
-F test/tableapi.test a669ae9dd3bc8e7a6f74eff003664801667cf4c2
+F test/tableapi.test 505031f15b18a750184d967d2c896cf88fcc969c
 F test/tclsqlite.test aa1781808502271feccfd24f9e2c0d2c1d7c496a
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
@@ -614,7 +614,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 820c37ec5290d7f0030438da29b30c33400fd4e3
-R 3dc1fcdf110f66179a36d525136ab12f
+P 2d5cec53c2f31875d198d81ac4fd54e7066ea0ff
+R 627f2a9e4460b71645d84bbc07ff1c95
 U shane
-Z 001a364b69eb4757e0498d542e8fbb94
+Z 96460a47221ce3b47525cec7a20cc12b
