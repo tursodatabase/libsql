@@ -1,5 +1,5 @@
-C Omit\scalls\sto\stest_get_table_printf()\sif\sSQLITE_OMIT_GET_TABLE\sdefined.\s(CVS\s5509)
-D 2008-07-31T02:05:04
+C Updated\somittest.tcl.\s\sUpdated\sOMIT\slist.\sUpdated\sfor\sWindows.\s(CVS\s5510)
+D 2008-07-31T02:43:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in bbb62eecc851379aef5a48a1bf8787eb13e6ec06
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -601,7 +601,7 @@ F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mksqlite3c.tcl dbc5c9a6752e729f09bf4422a04fac4b84ee61e4
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
-F tool/omittest.tcl e29ddad7f546c5aad0198dca389066c3bda53f2d
+F tool/omittest.tcl 016a42726a0abced84a31c361e927a75780a8922
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F tool/showdb.c a086a3d788c7a23cb008317c3180ceb19f20bce0
@@ -614,7 +614,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2d5cec53c2f31875d198d81ac4fd54e7066ea0ff
-R 627f2a9e4460b71645d84bbc07ff1c95
+P 524a4075ddaecb07469da717e8afebc91240616e
+R 3d726d916a7b113af0235b1956f76028
 U shane
-Z 96460a47221ce3b47525cec7a20cc12b
+Z 3303b9e791476ab11d91cf7aaab2d13d

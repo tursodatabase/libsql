@@ -1,5 +1,5 @@
 
-set rcsid {$Id: omittest.tcl,v 1.4 2008/06/26 10:41:19 danielk1977 Exp $}
+set rcsid {$Id: omittest.tcl,v 1.5 2008/07/31 02:43:35 shane Exp $}
 
 # Documentation for this script. This may be output to stderr
 # if the script is invoked incorrectly.
@@ -47,7 +47,12 @@ they do not respect the OPTS variable.
 #
 proc run_quick_test {dir omit_symbol_list} {
   # Compile the value of the OPTS Makefile variable.
-  set opts "-DSQLITE_MEMDEBUG=2 -DSQLITE_DEBUG -DSQLITE_OS_UNIX" 
+  set opts "-DSQLITE_MEMDEBUG -DSQLITE_DEBUG" 
+  if {$::tcl_platform(platform)=="windows"} {
+    append opts " -DSQLITE_OS_WIN=1"
+  } else {
+    append opts " -DSQLITE_OS_UNIX=1"
+  }
   foreach sym $omit_symbol_list {
     append opts " -D${sym}=1"
   }
@@ -57,6 +62,8 @@ proc run_quick_test {dir omit_symbol_list} {
   file mkdir $dir
   puts -nonewline "Building $dir..."
   flush stdout
+  file copy -force ./config.h $dir
+  file copy -force ./libtool $dir
   set rc [catch {
     exec make -C $dir -f $::MAKEFILE testfixture OPTS=$opts >& $dir/build.log
   }]
@@ -70,8 +77,12 @@ proc run_quick_test {dir omit_symbol_list} {
   # Create an empty file "$dir/sqlite3". This is to trick the makefile out 
   # of trying to build the sqlite shell. The sqlite shell won't build 
   # with some of the OMIT options (i.e OMIT_COMPLETE).
-  if {![file exists $dir/sqlite3]} {
-    set wr [open $dir/sqlite3 w]
+  set sqlite3_dummy $dir/sqlite3
+  if {$::tcl_platform(platform)=="windows"} {
+    append sqlite3_dummy ".exe"
+  }
+  if {![file exists $sqlite3_dummy]} {
+    set wr [open $sqlite3_dummy w]
     puts $wr "dummy"
     close $wr
   }
@@ -96,7 +107,11 @@ proc run_quick_test {dir omit_symbol_list} {
 # option.
 #
 proc process_options {argv} {
-  set ::MAKEFILE ../Makefile.linux-gcc              ;# Default value
+  if {$::tcl_platform(platform)=="windows"} {
+      set ::MAKEFILE ../Makefile                        ;# Default value
+  } else {
+      set ::MAKEFILE ../Makefile.linux-gcc              ;# Default value
+  }
   for {set i 0} {$i < [llength $argv]} {incr i} {
     switch -- [lindex $argv $i] {
       -makefile {
@@ -120,33 +135,55 @@ proc main {argv} {
   # List of SQLITE_OMIT_XXX symbols supported by SQLite.
   set ::SYMBOLS [list                  \
     SQLITE_OMIT_ALTERTABLE             \
+    SQLITE_OMIT_ANALYZE                \
+    SQLITE_OMIT_ATTACH                 \
     SQLITE_OMIT_AUTHORIZATION          \
     SQLITE_OMIT_AUTOINCREMENT          \
+    SQLITE_OMIT_AUTOINIT               \
     SQLITE_OMIT_AUTOVACUUM             \
+    SQLITE_OMIT_BETWEEN_OPTIMIZATION   \
     SQLITE_OMIT_BLOB_LITERAL           \
+    SQLITE_OMIT_BUILTIN_TEST           \
+    SQLITE_OMIT_CAST                   \
+    SQLITE_OMIT_CHECK                  \
     SQLITE_OMIT_COMPLETE               \
     SQLITE_OMIT_COMPOUND_SELECT        \
     SQLITE_OMIT_CONFLICT_CLAUSE        \
     SQLITE_OMIT_DATETIME_FUNCS         \
+    SQLITE_OMIT_DECLTYPE               \
+    SQLITE_OMIT_DISKIO                 \
     SQLITE_OMIT_EXPLAIN                \
+    SQLITE_OMIT_FLAG_PRAGMAS           \
     SQLITE_OMIT_FLOATING_POINT         \
     SQLITE_OMIT_FOREIGN_KEY            \
+    SQLITE_OMIT_GET_TABLE              \
+    SQLITE_OMIT_GLOBALRECOVER          \
     SQLITE_OMIT_INCRBLOB               \
     SQLITE_OMIT_INTEGRITY_CHECK        \
+    SQLITE_OMIT_LIKE_OPTIMIZATION      \
+    SQLITE_OMIT_LOAD_EXTENSION         \
+    SQLITE_OMIT_LOCALTIME              \
     SQLITE_OMIT_MEMORYDB               \
+    SQLITE_OMIT_OR_OPTIMIZATION        \
     SQLITE_OMIT_PAGER_PRAGMAS          \
+    SQLITE_OMIT_PARSER                 \
     SQLITE_OMIT_PRAGMA                 \
     SQLITE_OMIT_PROGRESS_CALLBACK      \
+    SQLITE_OMIT_QUICKBALANCE           \
     SQLITE_OMIT_REINDEX                \
     SQLITE_OMIT_SCHEMA_PRAGMAS         \
     SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS \
+    SQLITE_OMIT_SHARED_CACHE           \
     SQLITE_OMIT_SUBQUERY               \
     SQLITE_OMIT_TCL_VARIABLE           \
+    SQLITE_OMIT_TEMPDB                 \
+    SQLITE_OMIT_TRACE                  \
     SQLITE_OMIT_TRIGGER                \
     SQLITE_OMIT_UTF16                  \
     SQLITE_OMIT_VACUUM                 \
     SQLITE_OMIT_VIEW                   \
     SQLITE_OMIT_VIRTUALTABLE           \
+    SQLITE_OMIT_XFER_OPT               \
   ]
 
   # Process any command line options.
@@ -163,7 +200,7 @@ proc main {argv} {
     }
   }
   run_quick_test test_OMIT_EVERYTHING $allsyms
-  
+
   # Now try one quick.test with each of the OMIT symbols defined. Included
   # are the OMIT_FLOATING_POINT and OMIT_PRAGMA symbols, even though we
   # know they will fail. It's good to be reminded of this from time to time.
