@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.131 2008/07/22 05:32:03 shane Exp $
+** $Id: os_win.c,v 1.132 2008/07/31 01:34:34 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -1083,7 +1083,7 @@ static int getTempname(int nBuf, char *zBuf){
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";
-  int i, j;
+  size_t i, j;
   char zTempPath[MAX_PATH+1];
   if( sqlite3_temp_directory ){
     sqlite3_snprintf(MAX_PATH-30, zTempPath, "%s", sqlite3_temp_directory);
@@ -1288,7 +1288,7 @@ static int winOpen(
 ** Note that windows does not allow a file to be deleted if some other
 ** process has it open.  Sometimes a virus scanner or indexing program
 ** will open a journal file shortly after it is created in order to do
-** whatever does.  While this other process is holding the
+** whatever it does.  While this other process is holding the
 ** file open, we will be unable to delete it.  To work around this
 ** problem, we delay 100 milliseconds and try to delete again.  Up
 ** to MX_DELETION_ATTEMPTs deletion attempts are run before giving
@@ -1302,6 +1302,7 @@ static int winDelete(
 ){
   int cnt = 0;
   int rc;
+  DWORD error;
   void *zConverted = convertUtf8Filename(zFilename);
   if( zConverted==0 ){
     return SQLITE_NOMEM;
@@ -1310,17 +1311,22 @@ static int winDelete(
   if( isNT() ){
     do{
       DeleteFileW(zConverted);
-    }while( (rc = GetFileAttributesW(zConverted))!=0xffffffff 
-            && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
+    }while(   (   ((rc = GetFileAttributesW(zConverted)) != INVALID_FILE_ATTRIBUTES)
+               || ((error = GetLastError()) == ERROR_ACCESS_DENIED))
+           && (cnt++ < MX_DELETION_ATTEMPTS)
+           && (Sleep(100), 1) );
   }else{
     do{
       DeleteFileA(zConverted);
-    }while( (rc = GetFileAttributesA(zConverted))!=0xffffffff
-            && cnt++ < MX_DELETION_ATTEMPTS && (Sleep(100), 1) );
+    }while(   (   ((rc = GetFileAttributesA(zConverted)) != INVALID_FILE_ATTRIBUTES)
+               || ((error = GetLastError()) == ERROR_ACCESS_DENIED))
+           && (cnt++ < MX_DELETION_ATTEMPTS)
+           && (Sleep(100), 1) );
   }
   free(zConverted);
   OSTRACE2("DELETE \"%s\"\n", zFilename);
-  return rc==0xffffffff ? SQLITE_OK : SQLITE_IOERR_DELETE;
+  return (   (rc==INVALID_FILE_ATTRIBUTES) 
+          && (error == ERROR_FILE_NOT_FOUND)) ? SQLITE_OK : SQLITE_IOERR_DELETE;
 }
 
 /*

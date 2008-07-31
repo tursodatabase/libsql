@@ -1,5 +1,5 @@
-C When\sopening\sa\szero-size\sdatabase\son\sunix,\swrite\sone\sbyte\sinto\sthe\sfile\sbefore\ninterrogating\sthe\sinode\snumber.\s\sThis\sworks\saround\sissues\swith\smsdos\nfilesystems\smounted\son\sOS-X.\s\sTicket\s#3260.\s(CVS\s5504)
-D 2008-07-30T17:28:04
+C Improved\sretry\slogic\sfor\swinDelete()\swhen\sin\s"pending\sdelete"\sstate.\s(CVS\s5505)
+D 2008-07-31T01:34:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in bbb62eecc851379aef5a48a1bf8787eb13e6ec06
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -134,7 +134,7 @@ F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 676ed273b17bd260f905df81375c9f9950d85517
 F src/os_unix.c fe0dbc35bcd3de49e46b132abfc0f45d6dd6a864
-F src/os_win.c 50ec783403b418ddc9e6e05d541c6027dfd41070
+F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c a6ecad26297469a8a3d1fd7a7c3dc2d603955044
 F src/pager.h 588c1ac195228b2da45c4e5f7ab6c2fd253d1751
 F src/parse.y 5ce0b04d2d35b987ccca8b46cfc2527dd932f040
@@ -614,7 +614,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P db4022db64dc5864e6f1d0a20672183879ad43aa
-R 46a59a75e0405426ca6be3fd6558aebe
-U drh
-Z f2a23010508f2b32889d0e3805823d10
+P a480a8845fb3b49967de0790b30e6250c824b9be
+R 7b2f7cd10860e5c19f09f3db17699242
+U shane
+Z 43b2cced62bf2bf8c1e2bb2193bc268a
