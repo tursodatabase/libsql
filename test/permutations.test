@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.18 2008/07/30 13:15:46 drh Exp $
+# $Id: permutations.test,v 1.19 2008/08/01 15:06:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -170,6 +170,38 @@ run_tests "memsubsys2" -description {
   sqlite3_shutdown
   sqlite3_config_pagecache 0 0
   sqlite3_config_scratch 0 0
+  sqlite3_initialize
+}
+
+# Run all tests with the lookaside allocator disabled.
+#
+run_tests "memsubsys3" -description {
+  OOM tests with lookaside disabled
+} -include {
+  malloc.test
+  malloc3.test
+  malloc4.test
+  malloc5.test
+  malloc6.test
+  malloc7.test
+  malloc8.test
+  malloc9.test
+  mallocA.test
+  mallocB.test
+  mallocC.test
+  mallocD.test
+  mallocE.test
+  mallocF.test
+  mallocG.test
+} -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_lookaside 0 0
+  sqlite3_initialize
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_lookaside 100 500
   sqlite3_initialize
 }
 
@@ -364,6 +396,7 @@ ifcapable mem3 {
     sqlite3_reset_auto_extension
     sqlite3_shutdown
     sqlite3_config_heap 25000000 0
+    sqlite3_config_lookaside 0 0
     install_malloc_faultsim 1 
     sqlite3_initialize
     autoinstall_test_functions
@@ -372,6 +405,7 @@ ifcapable mem3 {
     sqlite3_reset_auto_extension
     sqlite3_shutdown
     sqlite3_config_heap 0 0
+    sqlite3_config_lookaside 100 500
     install_malloc_faultsim 1 
     sqlite3_initialize
   }
@@ -392,6 +426,7 @@ ifcapable mem5 {
     sqlite3_reset_auto_extension
     sqlite3_shutdown
     sqlite3_config_heap 25000000 64
+    sqlite3_config_lookaside 0 0
     install_malloc_faultsim 1 
     sqlite3_initialize
     autoinstall_test_functions
@@ -400,6 +435,7 @@ ifcapable mem5 {
     sqlite3_reset_auto_extension
     sqlite3_shutdown
     sqlite3_config_heap 0 0
+    sqlite3_config_lookaside 100 500
     install_malloc_faultsim 1 
     sqlite3_initialize
   }
@@ -413,6 +449,7 @@ ifcapable mem5 {
     sqlite3_reset_auto_extension
     sqlite3_shutdown
     sqlite3_config_heap 40000000 16
+    sqlite3_config_lookaside 0 0
     install_malloc_faultsim 1 
     sqlite3_initialize
     autoinstall_test_functions
@@ -421,6 +458,7 @@ ifcapable mem5 {
     sqlite3_reset_auto_extension
     sqlite3_shutdown
     sqlite3_config_heap 0 0
+    sqlite3_config_lookaside 100 500
     install_malloc_faultsim 1 
     sqlite3_initialize
   }
