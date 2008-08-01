@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.483 2008/07/28 19:34:53 drh Exp $
+** $Id: main.c,v 1.484 2008/08/01 16:31:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -330,13 +330,17 @@ static int setupLookaside(sqlite3 *db, int sz, int cnt){
 */
 int sqlite3_db_config(sqlite3 *db, int op, ...){
   va_list ap;
-  int rc = SQLITE_OK;
+  int rc;
   va_start(ap, op);
   switch( op ){
     case SQLITE_CONFIG_LOOKASIDE: {
       int sz = va_arg(ap, int);
       int cnt = va_arg(ap, int);
       rc = setupLookaside(db, sz, cnt);
+      break;
+    }
+    default: {
+      rc = SQLITE_ERROR;
       break;
     }
   }

@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.44 2008/07/31 17:16:05 drh Exp $
+** $Id: test_malloc.c,v 1.45 2008/08/01 16:31:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -886,7 +886,7 @@ static int test_config_scratch(
     buf = 0;
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, 0, 0, 0);
   }else{
-    buf = malloc( sz*N );
+    buf = malloc( sz*N + 1 );
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, buf, sz, N);
   }
   pResult = Tcl_NewObj();
@@ -1069,6 +1069,44 @@ static int test_config_heap(
   }
 
   Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  return TCL_OK;
+}
+
+/*
+** tclcmd:     sqlite3_config_error  [DB]
+**
+** Invoke sqlite3_config() or sqlite3_db_config() with invalid
+** opcodes and verify that they return errors.
+*/
+static int test_config_error(
+  void * clientData, 
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+
+  if( objc!=2 && objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "[DB]");
+    return TCL_ERROR;
+  }
+  if( objc==2 ){
+    if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+    if( sqlite3_db_config(db, 99999)!=SQLITE_ERROR ){
+      Tcl_AppendResult(interp, 
+            "sqlite3_db_config(db, 99999) does not return SQLITE_ERROR",
+            (char*)0);
+      return TCL_ERROR;
+    }
+  }else{
+    if( sqlite3_config(99999)!=SQLITE_ERROR ){
+      Tcl_AppendResult(interp, 
+          "sqlite3_config(99999) does not return SQLITE_ERROR",
+          (char*)0);
+      return TCL_ERROR;
+    }
+  }
   return TCL_OK;
 }
 
@@ -1271,6 +1309,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_config_memstatus",   test_config_memstatus         ,0 },
      { "sqlite3_config_chunkalloc",  test_config_chunkalloc        ,0 },
      { "sqlite3_config_lookaside",   test_config_lookaside         ,0 },
+     { "sqlite3_config_error",       test_config_error             ,0 },
      { "sqlite3_db_config_lookaside",test_db_config_lookaside      ,0 },
      { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
      { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 }

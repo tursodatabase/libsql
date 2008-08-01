@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.32 2008/07/31 17:16:05 drh Exp $
+** $Id: malloc.c,v 1.33 2008/08/01 16:31:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -112,8 +112,8 @@ int sqlite3MallocInit(void){
   if( sqlite3Config.bCoreMutex ){
     mem0.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   }
-  if( sqlite3Config.pScratch && sqlite3Config.szScratch>=3000
-      && sqlite3Config.nScratch>0 ){
+  if( sqlite3Config.pScratch && sqlite3Config.szScratch>=100
+      && sqlite3Config.nScratch>=0 ){
     int i;
     sqlite3Config.szScratch -= 4;
     mem0.aScratchFree = (u32*)&((char*)sqlite3Config.pScratch)
@@ -125,7 +125,7 @@ int sqlite3MallocInit(void){
     sqlite3Config.szScratch = 0;
   }
   if( sqlite3Config.pPage && sqlite3Config.szPage>=512
-      && sqlite3Config.nPage>1 ){
+      && sqlite3Config.nPage>=1 ){
     int i;
     int overhead;
     int sz = sqlite3Config.szPage;

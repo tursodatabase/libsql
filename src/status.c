@@ -13,7 +13,7 @@
 ** This module implements the sqlite3_status() interface and related
 ** functionality.
 **
-** $Id: status.c,v 1.5 2008/07/28 19:34:54 drh Exp $
+** $Id: status.c,v 1.6 2008/08/01 16:31:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -102,6 +102,9 @@ int sqlite3_db_status(
         db->lookaside.mxOut = db->lookaside.nOut;
       }
       break;
+    }
+    default: {
+      return SQLITE_ERROR;
     }
   }
   return SQLITE_OK;
