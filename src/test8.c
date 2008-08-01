@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.70 2008/08/01 17:37:41 danielk1977 Exp $
+** $Id: test8.c,v 1.71 2008/08/01 17:51:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -49,7 +49,7 @@ typedef struct echo_cursor echo_cursor;
 **
 **   xBestIndex   xOpen     xFilter   xNext   
 **   xColumn      xRowid    xUpdate   xSync   
-**   xBegin
+**   xBegin       xRename
 **
 ** This is done by setting the global tcl variable:
 **
@@ -1217,6 +1217,10 @@ static int echoFindFunction(
 static int echoRename(sqlite3_vtab *vtab, const char *zNewName){
   int rc = SQLITE_OK;
   echo_vtab *p = (echo_vtab *)vtab;
+
+  if( simulateVtabError(p, "xRename") ){
+    return SQLITE_ERROR;
+  }
 
   if( p->isPattern ){
     int nThis = strlen(p->zThis);

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.56 2008/08/01 17:37:41 danielk1977 Exp $
+# $Id: vtab1.test,v 1.57 2008/08/01 17:51:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -1153,6 +1153,13 @@ foreach method [list \
   unset echo_module_fail($method,t2)
   incr tn
 }
+
+do_test vtab1-16.$tn {
+  set echo_module_fail(xRename,t2) "the xRename method has failed"
+  catchsql { ALTER TABLE echo_t2 RENAME TO another_name }
+} "1 {echo-vtab-error: the xRename method has failed}"
+unset echo_module_fail(xRename,t2)
+incr tn
 
 unset -nocomplain echo_module_begin_fail
 finish_test
