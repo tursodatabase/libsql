@@ -13,7 +13,7 @@
 ** This file contains inline asm code for retrieving "high-performance"
 ** counters for x86 class CPUs.
 **
-** $Id: hwtime.h,v 1.2 2008/06/12 02:24:39 shane Exp $
+** $Id: hwtime.h,v 1.3 2008/08/01 14:33:15 shane Exp $
 */
 #ifndef _HWTIME_H_
 #define _HWTIME_H_
@@ -54,6 +54,21 @@
       return val;
   }
  
+#elif (defined(__GNUC__) && defined(__ppc__))
+
+  __inline__ sqlite_uint64 sqlite3Hwtime(void){
+      unsigned long long retval;
+      unsigned long junk;
+      __asm__ __volatile__ ("\n\
+          1:      mftbu   %1\n\
+                  mftb    %L0\n\
+                  mftbu   %0\n\
+                  cmpw    %0,%1\n\
+                  bne     1b"
+                  : "=r" (retval), "=r" (junk));
+      return retval;
+  }
+
 #else
 
   #error Need implementation of sqlite3Hwtime() for your platform.
