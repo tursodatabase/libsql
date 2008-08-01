@@ -1,5 +1,5 @@
-C Fix\sproblems\sin\stest\sscripts.\s\sAdd\snew\stest\scases\sto\simprove\stest\scoverage.\s(CVS\s5521)
-D 2008-08-01T18:47:02
+C Bring\stest\scoverage\sup\sto\s99%.\s(CVS\s5522)
+D 2008-08-01T20:10:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in bbb62eecc851379aef5a48a1bf8787eb13e6ec06
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,9 +96,9 @@ F src/attach.c a85c14612e7e3410e0c3d2e0241832fa9688bd14
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c 540186cc76840ef9c6be5ec55793de79e33cf409
+F src/btree.c 0be00cb6a5cd130127a06eb5f661cb5e4a9d0259
 F src/btree.h 03256ed7ee42b5ecacbe887070b0f8249e7d069d
-F src/btreeInt.h 6e4cb69a9192a8d609c27034ae5f921cf0ecdde1
+F src/btreeInt.h ab18c7b4980314e9e4b402e5dcde09f3c2545576
 F src/build.c 77d5518a64c0a905024bee80f6df2e794f4f5d43
 F src/callback.c c9f75a4c403f166af3761df47d78a806587d63af
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
@@ -183,14 +183,14 @@ F src/update.c 79b77a3cc8ed5f8903a7f37055fcedd69388dcae
 F src/utf.c a7004436a6ef2aee012ace93de274dd0f3c7624e
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
-F src/vdbe.c 90296a45d28939fd631c05c235dab7e123f94f57
-F src/vdbe.h c46155c221418bea29ee3a749d5950fcf85a70e2
+F src/vdbe.c a548d1dd6c5d99b2bd38e522aba2fa401340c99c
+F src/vdbe.h 647fcf33a551ba10a974162c56846cb9aef2276b
 F src/vdbeInt.h ab27f964458fd070c6660f80694ab85d56d5f4c5
-F src/vdbeapi.c 25dd01c8b12978c14ec30e9a50666b23da767b27
-F src/vdbeaux.c 78c9d6413b8720edfe5b2a40a14850d21b0079b7
+F src/vdbeapi.c 6a769ea6708f75b1e55268ec1c7bcf8e96fc7628
+F src/vdbeaux.c 81a433ce73b79df605cc9709af430362e771ecdc
 F src/vdbeblob.c f93110888ddc246215e9ba1f831d3d375bfd8355
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
-F src/vdbemem.c bdf92746583b0187655d736c4a20a2622eb9ab69
+F src/vdbemem.c c37b2a266a49eaf0c0f5080157f9f1a908fdaac3
 F src/vtab.c 914db4c9435c61a522e3cdaf103dac163d38aa30
 F src/where.c a800184a2d023b15d6f2758b7a6c7ab011258fee
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -207,7 +207,7 @@ F test/async3.test 9ffa0977a78cc6351862a1583be2b1eecd41736d
 F test/attach.test 75a5d22f88e730967d68f2c9f95e786e3953d8e3
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test 7b92dc8e40c1ebca9732ca6f2d3fefbd46f196df
-F test/attachmalloc.test 56c5e55563dba6d64641ef2f70ce06900df16912
+F test/attachmalloc.test f7f62363896475080b0d41907a85a9fd94625296
 F test/auth.test 9eb4b6b99eee54c95711c74c4b9694acf4d850ed
 F test/auth2.test ee3ba272e2b975e913afc9b041ee75706e190005
 F test/autoinc.test 42af2c407c4e37d0626f9cda57ed381e94522c9d
@@ -411,7 +411,7 @@ F test/mallocD.test f78c295e8e18ea3029e65ca08278690e00c22100
 F test/mallocE.test db1ed69d7eded1b080952e2a7c37f364ad241b08
 F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
 F test/mallocG.test 4584d0d8ddb8009f16ca0c8bab1fa37f6358efa2
-F test/mallocH.test 10df29d6d8ee429e30cfa51f1583fb96956d9ae1
+F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/malloc_common.tcl 753eb1ff3481f6cddb65cff33b9ef9f72c5ccdf7
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
@@ -616,7 +616,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4f4a9ccae7d25b9856d1203f6b289d552c2b425e
-R 18c217d4a8c206615c26839f44ff5969
+P b65f493c7519e8a5ee632a395b57d45269741dda
+R 569ccbda0a2f36d2174f959575a5f332
 U drh
-Z 42613daae14dfac0693542545b969121
+Z f6ba4601378d31882289341741f7ff01

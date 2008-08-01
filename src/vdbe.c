@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.770 2008/08/01 17:37:41 danielk1977 Exp $
+** $Id: vdbe.c,v 1.771 2008/08/01 20:10:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4249,16 +4249,18 @@ case OP_IntegrityCk: {
   assert( (p->btreeMask & (1<<pOp->p5))!=0 );
   z = sqlite3BtreeIntegrityCheck(db->aDb[pOp->p5].pBt, aRoot, nRoot,
                                  pnErr->u.i, &nErr);
+  sqlite3DbFree(db, aRoot);
   pnErr->u.i -= nErr;
   sqlite3VdbeMemSetNull(pIn1);
   if( nErr==0 ){
     assert( z==0 );
+  }else if( z==0 ){
+    goto no_mem;
   }else{
     sqlite3VdbeMemSetStr(pIn1, z, -1, SQLITE_UTF8, sqlite3_free);
   }
   UPDATE_MAX_BLOBSIZE(pIn1);
   sqlite3VdbeChangeEncoding(pIn1, encoding);
-  sqlite3DbFree(db, aRoot);
   break;
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */

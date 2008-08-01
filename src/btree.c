@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.492 2008/07/28 19:34:53 drh Exp $
+** $Id: btree.c,v 1.493 2008/08/01 20:10:08 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6492,6 +6492,9 @@ static void checkAppendMsg(
   }
   sqlite3VXPrintf(&pCheck->errMsg, 1, zFormat, ap);
   va_end(ap);
+  if( pCheck->errMsg.mallocFailed ){
+    pCheck->mallocFailed = 1;
+  }
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
@@ -6735,7 +6738,9 @@ static int checkTreePage(
   data = pPage->aData;
   hdr = pPage->hdrOffset;
   hit = sqlite3PageMalloc( pBt->pageSize );
-  if( hit ){
+  if( hit==0 ){
+    pCheck->mallocFailed = 1;
+  }else{
     memset(hit, 0, usableSize );
     memset(hit, 1, get2byte(&data[hdr+5]));
     nCell = get2byte(&data[hdr+3]);
@@ -6791,10 +6796,10 @@ static int checkTreePage(
 ** an array of pages numbers were each page number is the root page of
 ** a table.  nRoot is the number of entries in aRoot.
 **
-** If everything checks out, this routine returns NULL.  If something is
-** amiss, an error message is written into memory obtained from malloc()
-** and a pointer to that error message is returned.  The calling function
-** is responsible for freeing the error message when it is done.
+** Write the number of error seen in *pnErr.  Except for some memory
+** allocation errors,  nn error message is held in memory obtained from
+** malloc is returned if *pnErr is non-zero.  If *pnErr==0 then NULL is
+** returned.
 */
 char *sqlite3BtreeIntegrityCheck(
   Btree *p,     /* The btree to be checked */
@@ -6813,14 +6818,16 @@ char *sqlite3BtreeIntegrityCheck(
   pBt->db = p->db;
   nRef = sqlite3PagerRefcount(pBt->pPager);
   if( lockBtreeWithRetry(p)!=SQLITE_OK ){
+    *pnErr = 1;
     sqlite3BtreeLeave(p);
-    return sqlite3DbStrDup(0, "Unable to acquire a read lock on the database");
+    return sqlite3DbStrDup(0, "cannot acquire a read lock on the database");
   }
   sCheck.pBt = pBt;
   sCheck.pPager = pBt->pPager;
   sCheck.nPage = pagerPagecount(sCheck.pPager);
   sCheck.mxErr = mxErr;
   sCheck.nErr = 0;
+  sCheck.mallocFailed = 0;
   *pnErr = 0;
 #ifndef SQLITE_OMIT_AUTOVACUUM
   if( pBt->nTrunc!=0 ){
@@ -6837,8 +6844,7 @@ char *sqlite3BtreeIntegrityCheck(
     unlockBtreeIfUnused(pBt);
     *pnErr = 1;
     sqlite3BtreeLeave(p);
-    return sqlite3MPrintf(p->db, "Unable to malloc %d bytes", 
-        (sCheck.nPage+1)*sizeof(sCheck.anRef[0]));
+    return 0;
   }
   for(i=0; i<=sCheck.nPage; i++){ sCheck.anRef[i] = 0; }
   i = PENDING_BYTE_PAGE(pBt);
@@ -6900,6 +6906,11 @@ char *sqlite3BtreeIntegrityCheck(
   */
   sqlite3BtreeLeave(p);
   sqlite3_free(sCheck.anRef);
+  if( sCheck.mallocFailed ){
+    sqlite3StrAccumReset(&sCheck.errMsg);
+    *pnErr = sCheck.nErr+1;
+    return 0;
+  }
   *pnErr = sCheck.nErr;
   if( sCheck.nErr==0 ) sqlite3StrAccumReset(&sCheck.errMsg);
   return sqlite3StrAccumFinish(&sCheck.errMsg);

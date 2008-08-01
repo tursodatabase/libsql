@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.120 2008/07/30 13:14:55 drh Exp $
+** $Id: vdbemem.c,v 1.121 2008/08/01 20:10:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -631,14 +631,8 @@ int sqlite3VdbeMemSetStr(
   }else{
     sqlite3VdbeMemRelease(pMem);
     pMem->z = (char *)z;
-    if( xDel==SQLITE_DYNAMIC ){
-      pMem->zMalloc = pMem->z;
-      pMem->xDel = 0;
-      flags |= MEM_Dyn;
-    }else{
-      pMem->xDel = xDel;
-      flags |= ((xDel==SQLITE_STATIC)?MEM_Static:MEM_Dyn);
-    }
+    pMem->xDel = xDel;
+    flags |= ((xDel==SQLITE_STATIC)?MEM_Static:MEM_Dyn);
   }
 
   pMem->n = nByte;

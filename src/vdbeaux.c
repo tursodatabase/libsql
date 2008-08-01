@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.403 2008/08/01 17:37:41 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.404 2008/08/01 20:10:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -759,17 +759,13 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
 /*
 ** Release an array of N Mem elements
 */
-static void releaseMemArray(Mem *p, int N, int freebuffers){
+static void releaseMemArray(Mem *p, int N){
   if( p && N ){
     sqlite3 *db = p->db;
     int malloc_failed = db->mallocFailed;
     while( N-->0 ){
       assert( N<2 || p[0].db==p[1].db );
-      if( freebuffers ){
-        sqlite3VdbeMemRelease(p);
-      }else{
-        sqlite3VdbeMemReleaseExternal(p);
-      }
+      sqlite3VdbeMemRelease(p);
       p->flags = MEM_Null;
       p++;
     }
@@ -824,7 +820,7 @@ int sqlite3VdbeList(
   ** the result, result columns may become dynamic if the user calls
   ** sqlite3_column_text16(), causing a translation to UTF-16 encoding.
   */
-  releaseMemArray(pMem, p->nMem, 1);
+  releaseMemArray(pMem, p->nMem);
 
   do{
     i = p->pc++;
@@ -1132,14 +1128,14 @@ static void closeAllCursorsExceptActiveVtabs(Vdbe *p){
 ** sorters that were left open.  It also deletes the values of
 ** variables in the aVar[] array.
 */
-static void Cleanup(Vdbe *p, int freebuffers){
+static void Cleanup(Vdbe *p){
   int i;
   sqlite3 *db = p->db;
   closeAllCursorsExceptActiveVtabs(p);
   for(i=1; i<=p->nMem; i++){
     MemSetTypeFlag(&p->aMem[i], MEM_Null);
   }
-  releaseMemArray(&p->aMem[1], p->nMem, freebuffers);
+  releaseMemArray(&p->aMem[1], p->nMem);
   sqlite3VdbeFifoClear(&p->sFifo);
   if( p->contextStack ){
     for(i=0; i<p->contextStackTop; i++){
@@ -1166,7 +1162,7 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
   int n;
   sqlite3 *db = p->db;
 
-  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N, 1);
+  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
   sqlite3DbFree(db, p->aColName);
   n = nResColumn*COLNAME_N;
   p->nResColumn = nResColumn;
@@ -1696,7 +1692,7 @@ void sqlite3VdbeResetStepResult(Vdbe *p){
 ** virtual machine from VDBE_MAGIC_RUN or VDBE_MAGIC_HALT back to
 ** VDBE_MAGIC_INIT.
 */
-int sqlite3VdbeReset(Vdbe *p, int freebuffers){
+int sqlite3VdbeReset(Vdbe *p){
   sqlite3 *db;
   db = p->db;
 
@@ -1737,7 +1733,7 @@ int sqlite3VdbeReset(Vdbe *p, int freebuffers){
 
   /* Reclaim all memory used by the VDBE
   */
-  Cleanup(p, freebuffers);
+  Cleanup(p);
 
   /* Save profiling information from this VDBE run.
   */
@@ -1775,12 +1771,11 @@ int sqlite3VdbeReset(Vdbe *p, int freebuffers){
 int sqlite3VdbeFinalize(Vdbe *p){
   int rc = SQLITE_OK;
   if( p->magic==VDBE_MAGIC_RUN || p->magic==VDBE_MAGIC_HALT ){
-    rc = sqlite3VdbeReset(p, 1);
+    rc = sqlite3VdbeReset(p);
     assert( (rc & p->db->errMask)==rc );
   }else if( p->magic!=VDBE_MAGIC_INIT ){
     return SQLITE_MISUSE;
   }
-  /* releaseMemArray(&p->aMem[1], p->nMem, 1); */
   sqlite3VdbeDelete(p);
   return rc;
 }
@@ -1832,12 +1827,12 @@ void sqlite3VdbeDelete(Vdbe *p){
     }
     sqlite3DbFree(db, p->aOp);
   }
-  releaseMemArray(p->aVar, p->nVar, 1);
+  releaseMemArray(p->aVar, p->nVar);
   sqlite3DbFree(db, p->aLabel);
   if( p->aMem ){
     sqlite3DbFree(db, &p->aMem[1]);
   }
-  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N, 1);
+  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
   sqlite3DbFree(db, p->aColName);
   sqlite3DbFree(db, p->zSql);
   p->magic = VDBE_MAGIC_DEAD;

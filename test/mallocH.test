@@ -11,7 +11,7 @@
 #
 # This test script checks malloc failures in various obscure operations.
 # 
-# $Id: mallocH.test,v 1.1 2008/08/01 18:47:02 drh Exp $
+# $Id: mallocH.test,v 1.2 2008/08/01 20:10:09 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -46,6 +46,28 @@ do_malloc_test mallocH-3 -sqlbody {
 #
 do_malloc_test mallocH-3 -sqlbody {
    SELECT replace('ababa','a','xyzzy');
+}
+
+# Malloc failures during EXPLAIN.
+#
+ifcapable explain {
+  do_malloc_test mallocH-4 -sqlprep {
+     CREATE TABLE abc(a PRIMARY KEY, b, c);
+  } -sqlbody {
+     EXPLAIN SELECT * FROM abc AS t2 WHERE rowid=1;
+     EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE rowid=1;
+  }
+}
+
+# Malloc failure during integrity_check pragma.
+#
+do_malloc_test mallocH-5 -sqlprep {
+   CREATE TABLE t1(a PRIMARY KEY, b UNIQUE);
+   CREATE TABLE t2(x,y);
+   INSERT INTO t1 VALUES(1,2);
+   INSERT INTO t2 SELECT * FROM t1;
+} -sqlbody {
+   PRAGMA integrity_check;
 }
 
 finish_test

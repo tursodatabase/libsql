@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.136 2008/07/28 19:34:54 drh Exp $
+** $Id: vdbeapi.c,v 1.137 2008/08/01 20:10:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -228,7 +228,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt){
   }else{
     Vdbe *v = (Vdbe*)pStmt;
     sqlite3_mutex_enter(v->db->mutex);
-    rc = sqlite3VdbeReset(v, 1);
+    rc = sqlite3VdbeReset(v);
     stmtLruAdd(v);
     sqlite3VdbeMakeReady(v, -1, 0, 0, 0);
     assert( (rc & (v->db->errMask))==rc );
