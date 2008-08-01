@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.
 # This file implements tests for the ANALYZE command.
 #
-# $Id: analyze.test,v 1.7 2008/04/11 17:11:27 danielk1977 Exp $
+# $Id: analyze.test,v 1.8 2008/08/01 18:47:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -259,6 +259,16 @@ do_test analyze-4.2 {
     INSERT INTO sqlite_stat1 VALUES('t4','t4i1','nonsense');
     INSERT INTO sqlite_stat1 VALUES('t4','t4i2','120897349817238741092873198273409187234918720394817209384710928374109827172901827349871928741910');
     PRAGMA writable_schema=off;
+  }
+  db close
+  sqlite3 db test.db
+  execsql {
+    SELECT * FROM t4 WHERE x=1234;
+  }
+} {}
+do_test analyze-4.3 {
+  execsql {
+    INSERT INTO sqlite_stat1 VALUES('t4','xyzzy','0 1 2 3');
   }
   db close
   sqlite3 db test.db

@@ -11,7 +11,7 @@
 #
 # This test script checks malloc failures in various obscure operations.
 # 
-# $Id: mallocG.test,v 1.4 2008/07/07 19:52:11 drh Exp $
+# $Id: mallocG.test,v 1.5 2008/08/01 18:47:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -27,7 +27,7 @@ if {!$MEMDEBUG} {
 
 # Malloc failures while opening a database connection.
 #
-do_malloc_test malloeG-1 -tclbody {
+do_malloc_test mallocG-1 -tclbody {
   db close
   sqlite3 db test.db
 }
