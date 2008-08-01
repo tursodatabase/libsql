@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.467 2008/07/22 05:18:01 shane Exp $
+** @(#) $Id: pager.c,v 1.468 2008/08/01 10:50:23 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3144,11 +3144,11 @@ static PgHdr *pager_get_all_dirty_pages(Pager *pPager){
 ** is hot.  The pager_playback() routine will discover that the
 ** journal file is not really hot and will no-op.
 */
-static int hasHotJournal(Pager *pPager){
+static int hasHotJournal(Pager *pPager, int *pExists){
   sqlite3_vfs *pVfs = pPager->pVfs;
-  int res = 0;
+  int rc = SQLITE_OK;
+  *pExists = 0;
   if( pPager->useJournal && pPager->fd->pMethods ){
-    int rc;
     int exists;
     int locked;
 
@@ -3160,16 +3160,17 @@ static int hasHotJournal(Pager *pPager){
     if( rc==SQLITE_OK && exists && !locked ){
       int nPage;
       rc = sqlite3PagerPagecount(pPager, &nPage);
-      if( rc==SQLITE_OK && nPage==0 ){
-        sqlite3OsDelete(pVfs, pPager->zJournal, 0);
-        exists = 0;
+      if( rc==SQLITE_OK ){
+        if( nPage==0 ){
+          sqlite3OsDelete(pVfs, pPager->zJournal, 0);
+        }else{
+          *pExists = 1;
+        }
       }
     }
-
-    res = (rc!=SQLITE_OK ? -1 : (exists && !locked));
   }
 
-  return res;
+  return rc;
 }
 
 /*
@@ -3435,7 +3436,7 @@ static int readDbPage(Pager *pPager, PgHdr *pPg, Pgno pgno){
 */
 static int pagerSharedLock(Pager *pPager){
   int rc = SQLITE_OK;
-  int isHot = 0;
+  int isErrorReset = 0;
 
   /* If this database is opened for exclusive access, has no outstanding 
   ** page references and is in an error-state, now is the chance to clear
@@ -3444,7 +3445,7 @@ static int pagerSharedLock(Pager *pPager){
   */
   if( !MEMDB && pPager->exclusiveMode && pPager->nRef==0 && pPager->errCode ){
     if( pPager->journalOpen ){
-      isHot = 1;
+      isErrorReset = 1;
     }
     pPager->errCode = SQLITE_OK;
     pager_reset(pPager);
@@ -3458,9 +3459,10 @@ static int pagerSharedLock(Pager *pPager){
     return pPager->errCode;
   }
 
-  if( pPager->state==PAGER_UNLOCK || isHot ){
+  if( pPager->state==PAGER_UNLOCK || isErrorReset ){
     sqlite3_vfs *pVfs = pPager->pVfs;
     if( !MEMDB ){
+      int isHotJournal;
       assert( pPager->nRef==0 );
       if( !pPager->noReadlock ){
         rc = pager_wait_on_lock(pPager, SHARED_LOCK);
@@ -3474,12 +3476,13 @@ static int pagerSharedLock(Pager *pPager){
       /* If a journal file exists, and there is no RESERVED lock on the
       ** database file, then it either needs to be played back or deleted.
       */
-      rc = hasHotJournal(pPager);
-      if( rc<0 ){
-        rc = SQLITE_IOERR_NOMEM;
-        goto failed;
+      if( !isErrorReset ){
+        rc = hasHotJournal(pPager, &isHotJournal);
+        if( rc!=SQLITE_OK ){
+          goto failed;
+        }
       }
-      if( rc==1 || isHot ){
+      if( isErrorReset || isHotJournal ){
         /* Get an EXCLUSIVE lock on the database file. At this point it is
         ** important that a RESERVED lock is not obtained on the way to the
         ** EXCLUSIVE lock. If it were, another process might open the
@@ -3506,7 +3509,7 @@ static int pagerSharedLock(Pager *pPager){
         ** OsTruncate() call used in exclusive-access mode also requires
         ** a read/write file handle.
         */
-        if( !isHot && pPager->journalOpen==0 ){
+        if( !isErrorReset && pPager->journalOpen==0 ){
           int res;
           rc = sqlite3OsAccess(pVfs,pPager->zJournal,SQLITE_ACCESS_EXISTS,&res);
           if( rc==SQLITE_OK ){
