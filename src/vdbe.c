@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.769 2008/07/30 13:27:11 drh Exp $
+** $Id: vdbe.c,v 1.770 2008/08/01 17:37:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4570,11 +4570,21 @@ case OP_TableLock: {
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VBegin * * * P4 *
 **
-** P4 a pointer to an sqlite3_vtab structure. Call the xBegin method 
-** for that table.
+** P4 may be a pointer to an sqlite3_vtab structure. If so, call the 
+** xBegin method for that table.
+**
+** Also, whether or not P4 is set, check that this is not being called from
+** within a callback to a virtual table xSync() method. If it is, set the
+** error code to SQLITE_LOCKED.
 */
 case OP_VBegin: {
-  rc = sqlite3VtabBegin(db, pOp->p4.pVtab);
+  sqlite3_vtab *pVtab = pOp->p4.pVtab;
+  rc = sqlite3VtabBegin(db, pVtab);
+  if( pVtab ){
+    sqlite3DbFree(db, p->zErrMsg);
+    p->zErrMsg = pVtab->zErrMsg;
+    pVtab->zErrMsg = 0;
+  }
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -4699,6 +4709,9 @@ case OP_VFilter: {   /* jump */
     p->inVtabMethod = 1;
     rc = pModule->xFilter(pVtabCursor, iQuery, pOp->p4.z, nArg, apArg);
     p->inVtabMethod = 0;
+    sqlite3DbFree(db, p->zErrMsg);
+    p->zErrMsg = pVtab->zErrMsg;
+    pVtab->zErrMsg = 0;
     if( rc==SQLITE_OK ){
       res = pModule->xEof(pVtabCursor);
     }
@@ -4721,6 +4734,7 @@ case OP_VFilter: {   /* jump */
 ** the virtual-table that the P1 cursor is pointing to.
 */
 case OP_VRowid: {             /* out2-prerelease */
+  sqlite3_vtab *pVtab;
   const sqlite3_module *pModule;
   sqlite_int64 iRow;
   Cursor *pCur = p->apCsr[pOp->p1];
@@ -4729,10 +4743,14 @@ case OP_VRowid: {             /* out2-prerelease */
   if( pCur->nullRow ){
     break;
   }
-  pModule = pCur->pVtabCursor->pVtab->pModule;
+  pVtab = pCur->pVtabCursor->pVtab;
+  pModule = pVtab->pModule;
   assert( pModule->xRowid );
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   rc = pModule->xRowid(pCur->pVtabCursor, &iRow);
+  sqlite3DbFree(db, p->zErrMsg);
+  p->zErrMsg = pVtab->zErrMsg;
+  pVtab->zErrMsg = 0;
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
   MemSetTypeFlag(pOut, MEM_Int);
   pOut->u.i = iRow;
@@ -4748,6 +4766,7 @@ case OP_VRowid: {             /* out2-prerelease */
 ** P1 cursor is pointing to into register P3.
 */
 case OP_VColumn: {
+  sqlite3_vtab *pVtab;
   const sqlite3_module *pModule;
   Mem *pDest;
   sqlite3_context sContext;
@@ -4760,7 +4779,8 @@ case OP_VColumn: {
     sqlite3VdbeMemSetNull(pDest);
     break;
   }
-  pModule = pCur->pVtabCursor->pVtab->pModule;
+  pVtab = pCur->pVtabCursor->pVtab;
+  pModule = pVtab->pModule;
   assert( pModule->xColumn );
   memset(&sContext, 0, sizeof(sContext));
 
@@ -4774,6 +4794,9 @@ case OP_VColumn: {
 
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   rc = pModule->xColumn(pCur->pVtabCursor, &sContext, pOp->p2);
+  sqlite3DbFree(db, p->zErrMsg);
+  p->zErrMsg = pVtab->zErrMsg;
+  pVtab->zErrMsg = 0;
 
   /* Copy the result of the function to the P3 register. We
   ** do this regardless of whether or not an error occured to ensure any
@@ -4802,6 +4825,7 @@ case OP_VColumn: {
 ** the end of its result set, then fall through to the next instruction.
 */
 case OP_VNext: {   /* jump */
+  sqlite3_vtab *pVtab;
   const sqlite3_module *pModule;
   int res = 0;
 
@@ -4810,7 +4834,8 @@ case OP_VNext: {   /* jump */
   if( pCur->nullRow ){
     break;
   }
-  pModule = pCur->pVtabCursor->pVtab->pModule;
+  pVtab = pCur->pVtabCursor->pVtab;
+  pModule = pVtab->pModule;
   assert( pModule->xNext );
 
   /* Invoke the xNext() method of the module. There is no way for the
@@ -4823,6 +4848,9 @@ case OP_VNext: {   /* jump */
   p->inVtabMethod = 1;
   rc = pModule->xNext(pCur->pVtabCursor);
   p->inVtabMethod = 0;
+  sqlite3DbFree(db, p->zErrMsg);
+  p->zErrMsg = pVtab->zErrMsg;
+  pVtab->zErrMsg = 0;
   if( rc==SQLITE_OK ){
     res = pModule->xEof(pCur->pVtabCursor);
   }

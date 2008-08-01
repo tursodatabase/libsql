@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.72 2008/07/28 19:34:54 drh Exp $
+** $Id: vtab.c,v 1.73 2008/08/01 17:37:41 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -640,17 +640,18 @@ static void callFinaliser(sqlite3 *db, int offset){
 }
 
 /*
-** If argument rc2 is not SQLITE_OK, then return it and do nothing. 
-** Otherwise, invoke the xSync method of all virtual tables in the 
-** sqlite3.aVTrans array. Return the error code for the first error 
-** that occurs, or SQLITE_OK if all xSync operations are successful.
+** Invoke the xSync method of all virtual tables in the sqlite3.aVTrans
+** array. Return the error code for the first error that occurs, or
+** SQLITE_OK if all xSync operations are successful.
+**
+** Set *pzErrmsg to point to a buffer that should be released using 
+** sqlite3DbFree() containing an error message, if one is available.
 */
-int sqlite3VtabSync(sqlite3 *db, int rc2){
+int sqlite3VtabSync(sqlite3 *db, char **pzErrmsg){
   int i;
   int rc = SQLITE_OK;
   int rcsafety;
   sqlite3_vtab **aVTrans = db->aVTrans;
-  if( rc2!=SQLITE_OK ) return rc2;
 
   rc = sqlite3SafetyOff(db);
   db->aVTrans = 0;
@@ -660,6 +661,9 @@ int sqlite3VtabSync(sqlite3 *db, int rc2){
     x = pVtab->pModule->xSync;
     if( x ){
       rc = x(pVtab);
+      sqlite3DbFree(db, *pzErrmsg);
+      *pzErrmsg = pVtab->zErrMsg;
+      pVtab->zErrMsg = 0;
     }
   }
   db->aVTrans = aVTrans;
@@ -727,12 +731,9 @@ int sqlite3VtabBegin(sqlite3 *db, sqlite3_vtab *pVtab){
 
     /* Invoke the xBegin method */
     rc = pModule->xBegin(pVtab);
-    sqlite3VtabTransferError(db, rc, pVtab);
-    if( rc!=SQLITE_OK ){
-      return rc;
+    if( rc==SQLITE_OK ){
+      rc = addToVTrans(db, pVtab);
     }
-
-    rc = addToVTrans(db, pVtab);
   }
   return rc;
 }

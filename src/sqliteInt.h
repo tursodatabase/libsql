@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.748 2008/07/31 17:35:45 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.749 2008/08/01 17:37:41 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2267,7 +2267,7 @@ int sqlite3AutoLoadExtensions(sqlite3*);
 #  define sqlite3VtabTransferError(A,B,C)
 #else
    void sqlite3VtabClear(Table*);
-   int sqlite3VtabSync(sqlite3 *db, int rc);
+   int sqlite3VtabSync(sqlite3 *db, char **);
    int sqlite3VtabRollback(sqlite3 *db);
    int sqlite3VtabCommit(sqlite3 *db);
    void sqlite3VtabTransferError(sqlite3 *db, int, sqlite3_vtab*);

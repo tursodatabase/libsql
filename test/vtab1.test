@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtab1.test,v 1.55 2008/07/23 21:07:25 drh Exp $
+# $Id: vtab1.test,v 1.56 2008/08/01 17:37:41 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -52,6 +52,9 @@ ifcapable !vtab||!schema_pragmas {
 # We cannot create a virtual table if the module has not been registered.
 #
 do_test vtab1-1.1 {
+  explain {
+    CREATE VIRTUAL TABLE t1 USING echo;
+  }
   catchsql {
     CREATE VIRTUAL TABLE t1 USING echo;
   }
@@ -1108,6 +1111,48 @@ do_test vtab1-15.4 {
   }
 } {1 {datatype mismatch}}
 
+# The following tests - vtab1-16.* - are designed to test that setting 
+# sqlite3_vtab.zErrMsg variable can be used by the vtab interface to 
+# return an error message to the user.
+# 
+do_test vtab1-16.1 {
+  execsql {
+    CREATE TABLE t2(a PRIMARY KEY, b, c);
+    INSERT INTO t2 VALUES(1, 2, 3);
+    INSERT INTO t2 VALUES(4, 5, 6);
+    CREATE VIRTUAL TABLE echo_t2 USING echo(t2);
+  }
+} {}
+
+set tn 2
+foreach method [list \
+    xBestIndex       \
+    xOpen            \
+    xFilter          \
+    xNext            \
+    xColumn          \
+    xRowid           \
+] {
+  do_test vtab1-16.$tn {
+    set echo_module_fail($method,t2) "the $method method has failed"
+    catchsql { SELECT rowid, * FROM echo_t2 WHERE a >= 1 }
+  } "1 {echo-vtab-error: the $method method has failed}"
+  unset echo_module_fail($method,t2)
+  incr tn
+}
+
+foreach method [list \
+  xUpdate            \
+  xBegin             \
+  xSync              \
+] {
+  do_test vtab1-16.$tn {
+    set echo_module_fail($method,t2) "the $method method has failed"
+    catchsql { INSERT INTO echo_t2 VALUES(7, 8, 9) }
+  } "1 {echo-vtab-error: the $method method has failed}"
+  unset echo_module_fail($method,t2)
+  incr tn
+}
 
 unset -nocomplain echo_module_begin_fail
 finish_test
