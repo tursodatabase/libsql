@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.468 2008/08/01 10:50:23 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.469 2008/08/02 03:50:39 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4580,6 +4580,9 @@ static int pager_incr_changecounter(Pager *pPager, int isDirect){
   u32 change_counter;
   int rc = SQLITE_OK;
 
+#ifndef SQLITE_ENABLE_ATOMIC_WRITE
+  assert( isDirect==0 );  /* isDirect is only true for atomic writes */
+#endif
   if( !pPager->changeCountDone ){
     /* Open page 1 of the file for writing. */
     rc = sqlite3PagerGet(pPager, 1, &pPgHdr);
@@ -4598,10 +4601,12 @@ static int pager_incr_changecounter(Pager *pPager, int isDirect){
     change_counter++;
     put32bits(((char*)PGHDR_TO_DATA(pPgHdr))+24, change_counter);
 
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
     if( isDirect && pPager->fd->pMethods ){
       const void *zBuf = PGHDR_TO_DATA(pPgHdr);
       rc = sqlite3OsWrite(pPager->fd, zBuf, pPager->pageSize, 0);
     }
+#endif
 
     /* Release the page reference. */
     sqlite3PagerUnref(pPgHdr);

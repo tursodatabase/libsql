@@ -1,0 +1,43 @@
+# 2008 August 01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This test script checks malloc failures in various obscure operations.
+# 
+# $Id: mallocI.test,v 1.1 2008/08/02 03:50:39 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
+
+# Malloc failures in a view.
+#
+do_malloc_test mallocI-1 -sqlprep {
+  CREATE TABLE t1(a,b,c,d);
+  CREATE VIEW v1 AS SELECT a*b, c*d FROM t1 ORDER BY b-d;
+} -sqlbody {
+  SELECT * FROM v1
+}
+
+# Malloc failure while trying to service a pragma on a TEMP database.
+#
+do_malloc_test mallocI-2 -sqlbody {
+  PRAGMA temp.page_size
+}
+
+# Malloc failure while creating a table from a SELECT statement.
+#
+do_malloc_test mallocI-3 -sqlprep {
+  CREATE TABLE t1(a,b,c);
+} -sqlbody {
+  CREATE TABLE t2 AS SELECT b,c FROM t1;
+}
+
+finish_test

@@ -12,7 +12,7 @@
 # focus of this file is changing the database page size using a 
 # VACUUM statement.
 #
-# $Id: vacuum3.test,v 1.6 2008/07/12 14:52:21 drh Exp $
+# $Id: vacuum3.test,v 1.7 2008/08/02 03:50:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -301,6 +301,15 @@ if {$MEMDEBUG} {
     DROP TABLE t2;
   } -sqlbody {
     PRAGMA page_size = 512;
+    VACUUM;
+  } 
+  do_malloc_test vacuum3-malloc-2 -sqlprep { 
+    PRAGMA encoding=UTF16;
+    CREATE TABLE t1(a, b, c);
+    INSERT INTO t1 VALUES(1, 2, 3);
+    CREATE TABLE t2(x,y,z);
+    INSERT INTO t2 SELECT * FROM t1;
+  } -sqlbody {
     VACUUM;
   } 
 }

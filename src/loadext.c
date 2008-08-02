@@ -12,7 +12,7 @@
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
 **
-** $Id: loadext.c,v 1.52 2008/07/28 19:34:53 drh Exp $
+** $Id: loadext.c,v 1.53 2008/08/02 03:50:39 drh Exp $
 */
 
 #ifndef SQLITE_CORE
@@ -392,18 +392,17 @@ static int sqlite3LoadExtension(
   }
 
   /* Append the new shared library handle to the db->aExtension array. */
-  db->nExtension++;
-  aHandle = sqlite3DbMallocZero(db, sizeof(handle)*db->nExtension);
+  aHandle = sqlite3DbMallocZero(db, sizeof(handle)*(db->nExtension+1));
   if( aHandle==0 ){
     return SQLITE_NOMEM;
   }
   if( db->nExtension>0 ){
-    memcpy(aHandle, db->aExtension, sizeof(handle)*(db->nExtension-1));
+    memcpy(aHandle, db->aExtension, sizeof(handle)*db->nExtension);
   }
   sqlite3DbFree(db, db->aExtension);
   db->aExtension = aHandle;
 
-  db->aExtension[db->nExtension-1] = handle;
+  db->aExtension[db->nExtension++] = handle;
   return SQLITE_OK;
 }
 int sqlite3_load_extension(

@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.137 2008/08/01 20:10:08 drh Exp $
+** $Id: vdbeapi.c,v 1.138 2008/08/02 03:50:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -435,9 +435,6 @@ static int sqlite3Step(Vdbe *p){
   db = p->db;
   assert( !db->mallocFailed );
 
-  if( p->aborted ){
-    return SQLITE_ABORT;
-  }
   if( p->pc<=0 && p->expired ){
     if( p->rc==SQLITE_OK ){
       p->rc = SQLITE_SCHEMA;

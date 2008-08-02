@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.461 2008/08/01 18:47:02 drh Exp $
+** $Id: select.c,v 1.462 2008/08/02 03:50:39 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1891,10 +1891,7 @@ static int multiSelect(
   /* Make sure there is no ORDER BY or LIMIT clause on prior SELECTs.  Only
   ** the last (right-most) SELECT in the series may have an ORDER BY or LIMIT.
   */
-  if( p==0 || p->pPrior==0 ){
-    rc = 1;
-    goto multi_select_end;
-  }
+  assert( p && p->pPrior );  /* Calling function guarantees this much */
   db = pParse->db;
   pPrior = p->pPrior;
   assert( pPrior->pRightmost!=pPrior );
@@ -1912,13 +1909,8 @@ static int multiSelect(
     goto multi_select_end;
   }
 
-  /* Make sure we have a valid query engine.  If not, create a new one.
-  */
   v = sqlite3GetVdbe(pParse);
-  if( v==0 ){
-    rc = 1;
-    goto multi_select_end;
-  }
+  assert( v!=0 );  /* The VDBE already created by calling function */
 
   /* Create the destination temporary table if necessary
   */
@@ -4000,12 +3992,20 @@ int sqlite3Select(
           struct AggInfo_col *pCol = &sAggInfo.aCol[i];
           if( pCol->iSorterColumn>=j ){
             int r1 = j + regBase;
-            int r2 = sqlite3ExprCodeGetColumn(pParse, 
+#ifndef NDEBUG
+            int r2 = 
+#endif
+                     sqlite3ExprCodeGetColumn(pParse, 
                                pCol->pTab, pCol->iColumn, pCol->iTable, r1, 0);
-            if( r1!=r2 ){
-              sqlite3VdbeAddOp2(v, OP_SCopy, r2, r1);
-            }
             j++;
+
+            /* sAggInfo.aCol[] only contains one entry per column.  So
+            ** The reference to pCol->iColumn,pCol->iTable must have been
+            ** the first reference to that column.  Hence, 
+            ** sqliteExprCodeGetColumn is guaranteed to put the result in
+            ** the column requested. 
+            */
+            assert( r1==r2 );
           }
         }
         regRecord = sqlite3GetTempReg(pParse);

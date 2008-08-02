@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.26 2007/04/07 15:03:17 danielk1977 Exp $
+# $Id: autovacuum.test,v 1.27 2008/08/02 03:50:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -642,5 +642,24 @@ do_test autovacuum-7.3 {
   }
   expr {[file size test.db] / 1024}
 } {286}
+
+#------------------------------------------------------------------------
+# Additional tests.
+#
+# Try to determine the autovacuum setting for a database that is locked.
+#
+do_test autovacuum-8.1 {
+  db close
+  sqlite3 db test.db
+  sqlite3 db2 test.db
+  db eval {PRAGMA auto_vacuum}
+} {1}
+do_test autovacuum-8.2 {
+  db eval {BEGIN EXCLUSIVE}
+  catchsql {PRAGMA auto_vacuum} db2
+} {1 {database is locked}}
+catch {db2 close}
+catch {db eval {COMMIT}}
+    
 
 finish_test

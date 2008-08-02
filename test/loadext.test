@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is extension loading.
 #
-# $Id: loadext.test,v 1.13 2008/06/30 15:09:29 danielk1977 Exp $
+# $Id: loadext.test,v 1.14 2008/08/02 03:50:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -253,6 +253,20 @@ do_test loadext-4.3 {
   }
 } {1 {not authorized}}
 
+source $testdir/malloc_common.tcl
 
+
+# Malloc failure in sqlite3_auto_extension and sqlite3_load_extension
+#
+do_malloc_test loadext-5 -tclprep {
+  sqlite3_reset_auto_extension
+} -tclbody {
+  if {[autoinstall_test_functions]==7} {error "out of memory"}
+}
+do_malloc_test loadext-6 -tclbody {
+  db enable_load_extension 1
+  sqlite3_load_extension db $::testextension testloadext_init
+}
+autoinstall_test_functions
 
 finish_test

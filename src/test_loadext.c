@@ -11,7 +11,7 @@
 *************************************************************************
 ** Test extension for testing the sqlite3_load_extension() function.
 **
-** $Id: test_loadext.c,v 1.2 2008/06/19 15:44:00 drh Exp $
+** $Id: test_loadext.c,v 1.3 2008/08/02 03:50:39 drh Exp $
 */
 #include <string.h>
 #include "sqlite3ext.h"
@@ -98,13 +98,14 @@ int testloadext_init(
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi
 ){
+  int nErr = 0;
   SQLITE_EXTENSION_INIT2(pApi);
-  sqlite3_create_function(db, "half", 1, SQLITE_ANY, 0, halfFunc, 0, 0);
-  sqlite3_create_function(db, "sqlite3_status", 1, SQLITE_ANY, 0,
+  nErr |= sqlite3_create_function(db, "half", 1, SQLITE_ANY, 0, halfFunc, 0, 0);
+  nErr |= sqlite3_create_function(db, "sqlite3_status", 1, SQLITE_ANY, 0,
                           statusFunc, 0, 0);
-  sqlite3_create_function(db, "sqlite3_status", 2, SQLITE_ANY, 0,
+  nErr |= sqlite3_create_function(db, "sqlite3_status", 2, SQLITE_ANY, 0,
                           statusFunc, 0, 0);
-  return 0;
+  return nErr ? SQLITE_ERROR : SQLITE_OK;
 }
 
 /*

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.22 2008/08/01 15:06:30 drh Exp $
+# $Id: misc7.test,v 1.23 2008/08/02 03:50:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -243,7 +243,7 @@ file delete -force test.db-journal
 sqlite3 db test.db
 
 ifcapable explain {
-  do_test misc7-14 {
+  do_test misc7-14.1 {
     execsql {
       CREATE TABLE abc(a PRIMARY KEY, b, c);
     }
@@ -251,11 +251,16 @@ ifcapable explain {
       EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE rowid = 1;
     }
   } {0 0 {TABLE abc AS t2 USING PRIMARY KEY}}
-  do_test misc7-15 {
+  do_test misc7-14.2 {
     execsql {
       EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE a = 1;
     }
   } {0 0 {TABLE abc AS t2 WITH INDEX sqlite_autoindex_abc_1}}
+  do_test misc7-14.3 {
+    execsql {
+      EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 ORDER BY a;
+    }
+  } {0 0 {TABLE abc AS t2 WITH INDEX sqlite_autoindex_abc_1 ORDER BY}}
 }
 
 db close

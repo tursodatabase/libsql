@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of SELECT statements.
 #
-# $Id: limit.test,v 1.31 2008/01/16 18:20:42 danielk1977 Exp $
+# $Id: limit.test,v 1.32 2008/08/02 03:50:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -444,5 +444,29 @@ do_test limit-11.1 {
   }
 } {}
 } ;# ifcapable subquery
+
+# Test error processing.
+#
+do_test limit-12.1 {
+  catchsql {
+     SELECT * FROM t1 LIMIT replace(1)
+  }
+} {1 {wrong number of arguments to function replace()}}
+do_test limit-12.2 {
+  catchsql {
+     SELECT * FROM t1 LIMIT 5 OFFSET replace(1)
+  }
+} {1 {wrong number of arguments to function replace()}}
+do_test limit-12.3 {
+  catchsql {
+     SELECT * FROM t1 LIMIT x
+  }
+} {1 {no such column: x}}
+do_test limit-12.4 {
+  catchsql {
+     SELECT * FROM t1 LIMIT 1 OFFSET x
+  }
+} {1 {no such column: x}}
+
 
 finish_test

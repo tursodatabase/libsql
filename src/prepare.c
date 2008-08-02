@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.90 2008/07/28 19:34:53 drh Exp $
+** $Id: prepare.c,v 1.91 2008/08/02 03:50:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -224,7 +224,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   rc = sqlite3BtreeCursor(pDb->pBt, MASTER_ROOT, 0, 0, curMain);
   if( rc!=SQLITE_OK && rc!=SQLITE_EMPTY ){
     sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));
-    goto leave_error_out;
+    goto initone_error_out;
   }
 
   /* Get the database meta information.
@@ -246,12 +246,12 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   */
   if( rc==SQLITE_OK ){
     int i;
-    for(i=0; rc==SQLITE_OK && i<sizeof(meta)/sizeof(meta[0]); i++){
+    for(i=0; i<sizeof(meta)/sizeof(meta[0]); i++){
       rc = sqlite3BtreeGetMeta(pDb->pBt, i+1, (u32 *)&meta[i]);
-    }
-    if( rc ){
-      sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));
-      goto leave_error_out;
+      if( rc ){
+        sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));
+        goto initone_error_out;
+      }
     }
   }else{
     memset(meta, 0, sizeof(meta));
@@ -274,7 +274,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
         sqlite3SetString(pzErrMsg, db, "attached databases must use the same"
             " text encoding as main database");
         rc = SQLITE_ERROR;
-        goto leave_error_out;
+        goto initone_error_out;
       }
     }
   }else{
@@ -303,7 +303,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   if( pDb->pSchema->file_format>SQLITE_MAX_FILE_FORMAT ){
     sqlite3SetString(pzErrMsg, db, "unsupported file format");
     rc = SQLITE_ERROR;
-    goto leave_error_out;
+    goto initone_error_out;
   }
 
   /* Ticket #2804:  When we open a database in the newer file format,
@@ -368,7 +368,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   ** curMain and calling sqlite3BtreeEnter(). For an error that occurs
   ** before that point, jump to error_out.
   */
-leave_error_out:
+initone_error_out:
   sqlite3BtreeCloseCursor(curMain);
   sqlite3_free(curMain);
   sqlite3BtreeLeave(pDb->pBt);
