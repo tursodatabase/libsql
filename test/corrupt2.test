@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt2.test,v 1.13 2008/07/08 17:13:59 danielk1977 Exp $
+# $Id: corrupt2.test,v 1.14 2008/08/02 20:09:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -23,6 +23,8 @@ source $testdir/tester.tcl
 #
 do_test corrupt2-1.1 {
   execsql {
+    PRAGMA auto_vacuum=0;
+    PRAGMA page_size=1024;
     CREATE TABLE abc(a, b, c);
   }
 } {}
@@ -183,6 +185,7 @@ do_test corrupt2-5.1 {
   sqlite3 db2 corrupt.db 
 
   execsql {
+    PRAGMA auto_vacuum = 0;
     PRAGMA page_size = 1024;
     CREATE TABLE t1(a, b, c);
     CREATE TABLE t2(a, b, c);
@@ -338,6 +341,7 @@ ifcapable autovacuum {
 
 
 set sqlprep {
+  PRAGMA auto_vacuum = 0;
   PRAGMA page_size = 1024;
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
   CREATE INDEX i1 ON t1(b);

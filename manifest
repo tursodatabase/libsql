@@ -1,5 +1,5 @@
-C Fix\sa\sreference\scount\sleak\sintroduced\sby\s(5526).\s(CVS\s5527)
-D 2008-08-02T17:36:46
+C Test\sscripts\srevised\sto\swork\swhen\sauto_vacuum\sdefaults\son.\s(CVS\s5528)
+D 2008-08-02T20:09:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in bbb62eecc851379aef5a48a1bf8787eb13e6ec06
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -242,10 +242,10 @@ F test/collate8.test 7ed2461305ac959886a064dc1e3cf15e155a183f
 F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
-F test/colname.test 5bd677e9334a7a63615a05101b3976d79cfaf241
+F test/colname.test bc396d99a11a855370010c7e95187177592b1dfe
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test af069d971853dbe12af936910bfa49d92f7b16e9
-F test/corrupt2.test e56f45006e7eb3ee680ad3b61c92cc14ae09986e
+F test/corrupt2.test a6b9051516f7d417e76b6953cc02f568a6e1cbf0
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -380,7 +380,7 @@ F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
-F test/jrnlmode.test b60a7dae8534ccd2e811deb09258f1172fd6e24f
+F test/jrnlmode.test 1ab9729d6bbb6fb355cbb4bb41f1f0c271fc251a
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
 F test/like.test 2a3ddbd5d91503f914eabae67a47c4196fe33a58
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fb26ae723959390a716f221af93c6c29eec16955
-R a66ca1fda9069bfc9a58362384b8ff79
-U danielk1977
-Z 28b6a6b3eaf88141513e6a1347308569
+P f653995c32197cacbcd14ea9e876ba5b2fde94df
+R ede5f4fdac184ba3807c6c0ff13cc811
+U drh
+Z c6822d32fa5f22fb4c4224795e9d09f4

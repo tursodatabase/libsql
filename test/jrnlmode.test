@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library. The focus
 # of these tests is the journal mode pragma.
 #
-# $Id: jrnlmode.test,v 1.4 2008/06/04 06:46:00 danielk1977 Exp $
+# $Id: jrnlmode.test,v 1.5 2008/08/02 20:09:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -364,8 +364,9 @@ ifcapable pragma {
   } {1}
   do_test jrnlmode-5.17 {
     execsql COMMIT
-    file size test3.db-journal
-  } $journalsize
+    set sz [file size test3.db-journal]
+    expr {$sz>=$journalsize}
+  } {1}
 
   do_test jrnlmode-5.18 {
     execsql {
@@ -378,8 +379,9 @@ ifcapable pragma {
   } {1}
   do_test jrnlmode-5.19 {
     execsql COMMIT
-    file size test.db-journal
-  } $journalsize
+    set sz [file size test.db-journal]
+    expr {$sz>=$journalsize}
+  } {1}
 }
 
 finish_test
