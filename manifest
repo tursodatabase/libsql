@@ -1,5 +1,5 @@
-C Avoid\sdoing\sIO\spurely\sto\scheck\sassert()\sconstraints.\s(CVS\s5526)
-D 2008-08-02T17:03:32
+C Fix\sa\sreference\scount\sleak\sintroduced\sby\s(5526).\s(CVS\s5527)
+D 2008-08-02T17:36:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in bbb62eecc851379aef5a48a1bf8787eb13e6ec06
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c a85c14612e7e3410e0c3d2e0241832fa9688bd14
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c ff5ff00d1780ee1cd5bfbe5fb282f62a99c41466
+F src/btree.c da7491ef06c0209da962e1520bfc5c90b5c5cc96
 F src/btree.h 03256ed7ee42b5ecacbe887070b0f8249e7d069d
 F src/btreeInt.h ab18c7b4980314e9e4b402e5dcde09f3c2545576
 F src/build.c 05be60b1edc70bb8b354778facfb0ad5137c679a
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 761e73ceab77f965d58546ecf493f65cf52456fc
-R fdf59fb8d6897d3f2b38734b8b43cb6c
+P fb26ae723959390a716f221af93c6c29eec16955
+R a66ca1fda9069bfc9a58362384b8ff79
 U danielk1977
-Z a95b43c0298b566b87fa8289070bfdc0
+Z 28b6a6b3eaf88141513e6a1347308569

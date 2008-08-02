@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.494 2008/08/02 17:03:32 danielk1977 Exp $
+** $Id: btree.c,v 1.495 2008/08/02 17:36:46 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4571,12 +4571,15 @@ static int reparentPage(
   /* If the updatePtrmap flag was clear, assert that the entry in the
   ** pointer-map is already correct.
   */
-  if( ISAUTOVACUUM && sqlite3PagerLookup(pBt->pPager,PTRMAP_PAGENO(pBt,pgno)) ){
-    u8 eType;
-    Pgno ii;
-    int rc;
-    rc = ptrmapGet(pBt, pgno, &eType, &ii);
-    assert( rc==SQLITE_OK && ii==pNewParent->pgno && eType==PTRMAP_BTREE );
+  if( ISAUTOVACUUM ){
+    pDbPage = sqlite3PagerLookup(pBt->pPager,PTRMAP_PAGENO(pBt,pgno));
+    if( pDbPage ){
+      u8 eType;
+      Pgno ii;
+      int rc = ptrmapGet(pBt, pgno, &eType, &ii);
+      assert( rc==SQLITE_OK && ii==pNewParent->pgno && eType==PTRMAP_BTREE );
+      sqlite3PagerUnref(pDbPage);
+    }
   }
 #endif
 
