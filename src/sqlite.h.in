@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.384 2008/07/31 17:16:05 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.385 2008/08/04 13:44:57 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -940,6 +940,7 @@ int sqlite3_os_end(void);
 
 /*
 ** CAPI3REF: Configuring The SQLite Library {H10145} <S20000><S30200>
+** EXPERIMENTAL
 **
 ** The sqlite3_config() interface is used to make global configuration
 ** changes to SQLite in order to tune SQLite to the specific needs of
@@ -964,15 +965,12 @@ int sqlite3_os_end(void);
 ** When a configuration option is set, sqlite3_config() returns SQLITE_OK.
 ** If the option is unknown or SQLite is unable to set the option
 ** then this routine returns a non-zero [error code].
-**
-** The sqlite3_config() interface is considered experimental in that
-** new configuration options may be added in future releases and existing
-** configuration options may be discontinued or modified.
 */
 int sqlite3_config(int, ...);
 
 /*
 ** CAPI3REF: Configure database connections  {H10180} <S20000>
+** EXPERIMENTAL
 **
 ** The sqlite3_db_config() interface is used to make configuration
 ** changes to a [database connection].  The interface is similar to
@@ -992,6 +990,7 @@ int sqlite3_db_config(sqlite3*, int op, ...);
 
 /*
 ** CAPI3REF: Memory Allocation Routines {H10155} <S20120>
+** EXPERIMENTAL
 **
 ** An instance of this object defines the interface between SQLite
 ** and low-level memory allocation routines.
@@ -1046,6 +1045,7 @@ struct sqlite3_mem_methods {
 
 /*
 ** CAPI3REF: Configuration Options {H10160} <S20000>
+** EXPERIMENTAL
 **
 ** These constants are the available integer configuration options that
 ** can be passed as the first argument to the [sqlite3_config()] interface.
@@ -2196,6 +2196,7 @@ int sqlite3_set_authorizer(
 
 /*
 ** CAPI3REF: Tracing And Profiling Functions {H12280} <S60400>
+** EXPERIMENTAL
 **
 ** These routines register callback functions that can be used for
 ** tracing and profiling the execution of SQL statements.
@@ -2211,14 +2212,6 @@ int sqlite3_set_authorizer(
 ** as each SQL statement finishes.  The profile callback contains
 ** the original statement text and an estimate of wall-clock time
 ** of how long that statement took to run.
-**
-** The sqlite3_profile() API is currently considered experimental and
-** is subject to change or removal in a future release.
-**
-** The trigger reporting feature of the trace callback is considered
-** experimental and is subject to change or removal in future releases.
-** Future versions of SQLite might also add new trace callback
-** invocations.
 **
 ** INVARIANTS:
 **
@@ -3914,11 +3907,12 @@ int sqlite3_create_function16(
 #define SQLITE_UTF16_ALIGNED  8    /* sqlite3_create_collation only */
 
 /*
-** CAPI3REF: Obsolete Functions
+** CAPI3REF: Deprecated Functions
+** DEPRECATED
 **
-** These functions are all now obsolete.  In order to maintain
-** backwards compatibility with older code, we continue to support
-** these functions.  However, new development projects should avoid
+** These functions are [deprecated].  In order to maintain
+** backwards compatibility with older code, these functions continue 
+** to be supported.  However, new applications should avoid
 ** the use of these functions.  To help encourage people to avoid
 ** using these functions, we are not going to tell you want they do.
 */
@@ -5217,6 +5211,7 @@ typedef struct sqlite3_module sqlite3_module;
 /*
 ** CAPI3REF: Virtual Table Object {H18000} <S20400>
 ** KEYWORDS: sqlite3_module
+** EXPERIMENTAL
 **
 ** A module is a class of virtual tables.  Each module is defined
 ** by an instance of the following structure.  This structure consists
@@ -5258,6 +5253,7 @@ struct sqlite3_module {
 /*
 ** CAPI3REF: Virtual Table Indexing Information {H18100} <S20400>
 ** KEYWORDS: sqlite3_index_info
+** EXPERIMENTAL
 **
 ** The sqlite3_index_info structure and its substructures is used to
 ** pass information into and receive the reply from the xBestIndex
@@ -5340,6 +5336,7 @@ struct sqlite3_index_info {
 
 /*
 ** CAPI3REF: Register A Virtual Table Implementation {H18200} <S20400>
+** EXPERIMENTAL
 **
 ** This routine is used to register a new module name with a
 ** [database connection].  Module names must be registered before
@@ -5358,6 +5355,7 @@ int sqlite3_create_module(
 
 /*
 ** CAPI3REF: Register A Virtual Table Implementation {H18210} <S20400>
+** EXPERIMENTAL
 **
 ** This routine is identical to the [sqlite3_create_module()] method above,
 ** except that it allows a destructor function to be specified. It is
@@ -5374,6 +5372,7 @@ int sqlite3_create_module_v2(
 /*
 ** CAPI3REF: Virtual Table Instance Object {H18010} <S20400>
 ** KEYWORDS: sqlite3_vtab
+** EXPERIMENTAL
 **
 ** Every module implementation uses a subclass of the following structure
 ** to describe a particular instance of the module.  Each subclass will
@@ -5404,6 +5403,7 @@ struct sqlite3_vtab {
 /*
 ** CAPI3REF: Virtual Table Cursor Object  {H18020} <S20400>
 ** KEYWORDS: sqlite3_vtab_cursor
+** EXPERIMENTAL
 **
 ** Every module implementation uses a subclass of the following structure
 ** to describe cursors that point into the virtual table and are used
@@ -5424,6 +5424,7 @@ struct sqlite3_vtab_cursor {
 
 /*
 ** CAPI3REF: Declare The Schema Of A Virtual Table {H18280} <S20400>
+** EXPERIMENTAL
 **
 ** The xCreate and xConnect methods of a module use the following API
 ** to declare the format (the names and datatypes of the columns) of
@@ -5436,6 +5437,7 @@ int sqlite3_declare_vtab(sqlite3*, const char *zCreateTable);
 
 /*
 ** CAPI3REF: Overload A Function For A Virtual Table {H18300} <S20400>
+** EXPERIMENTAL
 **
 ** Virtual tables can provide alternative implementations of functions
 ** using the xFindFunction method.  But global versions of those functions
@@ -5903,6 +5905,7 @@ void sqlite3_mutex_leave(sqlite3_mutex*);
 
 /*
 ** CAPI3REF: Mutex Methods Object {H17120} <S20130>
+** EXPERIMENTAL
 **
 ** An instance of this structure defines the low-level routines
 ** used to allocate and use mutexes.
@@ -5999,8 +6002,12 @@ int sqlite3_mutex_notheld(sqlite3_mutex*);
 /*
 ** CAPI3REF: Mutex Types {H17001} <H17000>
 **
-** {H17002} The [sqlite3_mutex_alloc()] interface takes a single argument
+** The [sqlite3_mutex_alloc()] interface takes a single argument
 ** which is one of these integer constants.
+**
+** The set of static mutexes may change from one SQLite release to the
+** next.  Applications that override the built-in mutex logic must be
+** prepared to accommodate additional static mutexes.
 */
 #define SQLITE_MUTEX_FAST             0
 #define SQLITE_MUTEX_RECURSIVE        1
@@ -6076,6 +6083,7 @@ int sqlite3_test_control(int op, ...);
 
 /*
 ** CAPI3REF: SQLite Runtime Status {H17200} <S60200>
+** EXPERIMENTAL
 **
 ** This interface is used to retrieve runtime status information
 ** about the preformance of SQLite, and optionally to reset various
@@ -6102,14 +6110,12 @@ int sqlite3_test_control(int op, ...);
 ** in between the times when *pCurrent and *pHighwater are written.
 **
 ** See also: [sqlite3_db_status()]
-**
-** This interface is experimental and is subject to change or
-** removal in future releases of SQLite.
 */
 int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 
 /*
 ** CAPI3REF: Database Connection Status {H17201} <S60200>
+** EXPERIMENTAL
 **
 ** This interface is used to retrieve runtime status information 
 ** about a single [database connection].  The first argument is the
@@ -6124,14 +6130,12 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 ** reset back down to the current value.
 **
 ** See also: [sqlite3_status()].
-**
-** This interface is experimental and is subject to change or
-** removal in future releases of SQLite.
 */
 int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 
 /*
 ** CAPI3REF: Status Parameters {H17250} <H17200>
+** EXPERIMENTAL
 **
 ** These integer constants designate various run-time status parameters
 ** that can be returned by [sqlite3_status()].
@@ -6194,6 +6198,7 @@ int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 
 /*
 ** CAPI3REF: Status Parameters for database connections {H17275} <H17200>
+** EXPERIMENTAL
 **
 ** Status verbs for [sqlite3_db_status()].
 **

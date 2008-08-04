@@ -1,5 +1,5 @@
-C Make\sit\seasier\sto\sbuild\swith\sthe\sicu\sextension\senabled.\sInclude\sicu.c\sin\sthe\samalgamation\ssource.\sTicket\s#3245.\s(CVS\s5533)
-D 2008-08-04T11:49:20
+C Enhanced\smarkings\sfor\sexperimental\sand\sdeprecated\sinterfaces.\s(CVS\s5534)
+D 2008-08-04T13:44:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,7 +144,7 @@ F src/printf.c 2e984b2507291a7e16d89dc9bb60582904f6247d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c c1899b14f5eb3d3b71aeb02d541d6c5052ad3b70
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
-F src/sqlite.h.in 30af3a002a0b672aaae8f4a5deb0a2e9a4b699af
+F src/sqlite.h.in e149baf6c77cba40fa462d76e3c0b37535be6a36
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h 8bd67fa1beb4eb67f9c543f1f27bd454bbca9fb4
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 34208f0ba420ca6bef16991eba200d5ed68d5430
-R afddfaf2852ede007adbb58923e9cce3
-U danielk1977
-Z 291ffe5c183aae756520564690b07267
+P e42ff97ba7d9fcda699a63fc8bc609d559498180
+R b4ac1f1ebf69466100db4f153d1ab00e
+U drh
+Z 86e2d87ac133b0980ed1fb699e144ca0
