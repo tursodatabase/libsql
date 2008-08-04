@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH statement and
 # specifically out-of-memory conditions within that command.
 #
-# $Id: attachmalloc.test,v 1.8 2008/08/01 20:10:09 drh Exp $
+# $Id: attachmalloc.test,v 1.9 2008/08/04 20:13:27 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -35,7 +35,7 @@ do_malloc_test attachmalloc-1 -tclprep {
   if {[catch {sqlite3 db test.db}]} {
     error "out of memory"
   }
-  sqlite3_db_config_lookaside db 0 0
+  sqlite3_db_config_lookaside db 0 0 0
   sqlite3_extended_result_codes db 1
 } -sqlbody {
   ATTACH 'test2.db' AS two;

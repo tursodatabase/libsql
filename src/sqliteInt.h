@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.751 2008/08/02 15:32:40 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.752 2008/08/04 20:13:27 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -575,6 +575,7 @@ struct Schema {
 struct Lookaside {
   u16 sz;                 /* Size of each buffer in bytes */
   u8 bEnabled;            /* True if use lookaside.  False to ignore it */
+  u8 bMalloced;           /* True if pStart obtained from sqlite3_malloc() */
   int nOut;               /* Number of buffers currently checked out */
   int mxOut;              /* Highwater mark for nOut */
   LookasideSlot *pFree;   /* List if available buffers */

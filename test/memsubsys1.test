@@ -11,7 +11,7 @@
 #
 # This file contains tests of the memory allocation subsystem
 #
-# $Id: memsubsys1.test,v 1.7 2008/07/31 17:20:59 drh Exp $
+# $Id: memsubsys1.test,v 1.8 2008/08/04 20:13:27 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -26,7 +26,7 @@ proc build_test_db {testname pragmas} {
   catch {db close}
   file delete -force test.db test.db-journal
   sqlite3 db test.db
-  sqlite3_db_config_lookaside db 0 0
+  sqlite3_db_config_lookaside db 0 0 0
   db eval $pragmas
   db eval {
     CREATE TABLE t1(x, y);

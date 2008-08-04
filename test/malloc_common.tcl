@@ -12,7 +12,7 @@
 # This file contains common code used by many different malloc tests
 # within the test suite.
 #
-# $Id: malloc_common.tcl,v 1.20 2008/08/01 18:47:02 drh Exp $
+# $Id: malloc_common.tcl,v 1.21 2008/08/04 20:13:27 drh Exp $
 
 # If we did not compile with malloc testing enabled, then do nothing.
 #
@@ -98,7 +98,7 @@ proc do_malloc_test {tn args} {
         if {[info commands db] ne ""} {
           sqlite3_extended_result_codes db 1
         }
-        sqlite3_db_config_lookaside db 0 0
+        sqlite3_db_config_lookaside db 0 0 0
   
         # Execute any -tclprep and -sqlprep scripts.
         #

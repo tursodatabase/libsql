@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.45 2008/08/01 16:31:14 drh Exp $
+** $Id: test_malloc.c,v 1.46 2008/08/04 20:13:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1005,8 +1005,11 @@ static int test_config_lookaside(
 
 
 /*
-** Usage:    sqlite3_db_config_lookaside  CONNECTION  SIZE  COUNT
+** Usage:    sqlite3_db_config_lookaside  CONNECTION  BUFID  SIZE  COUNT
 **
+** There are two static buffers with BUFID 1 and 2.   Each static buffer
+** is 10KB in size.  A BUFID of 0 indicates that the buffer should be NULL
+** which will cause sqlite3_db_config() to allocate space on its own.
 */
 static int test_db_config_lookaside(
   void * clientData,
@@ -1017,15 +1020,25 @@ static int test_db_config_lookaside(
   int rc;
   int sz, cnt;
   sqlite3 *db;
+  int bufid;
+  static char azBuf[2][10000];
   int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "SIZE COUNT");
+  if( objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "BUFID SIZE COUNT");
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &sz) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[3], &cnt) ) return TCL_ERROR;
-  rc = sqlite3_db_config(db, SQLITE_CONFIG_LOOKASIDE, sz, cnt);
+  if( Tcl_GetIntFromObj(interp, objv[2], &bufid) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &sz) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[4], &cnt) ) return TCL_ERROR;
+  if( bufid==0 ){
+    rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE, 0, sz, cnt);
+  }else if( bufid>=1 && bufid<=2 && sz*cnt<=sizeof(azBuf[0]) ){
+    rc = sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE, azBuf[bufid], sz,cnt);
+  }else{
+    Tcl_AppendResult(interp, "illegal arguments - see documentation", (char*)0);
+    return TCL_ERROR;
+  }
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return TCL_OK;
 }

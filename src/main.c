@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.485 2008/08/01 18:47:02 drh Exp $
+** $Id: main.c,v 1.486 2008/08/04 20:13:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -294,8 +294,14 @@ int sqlite3_config(int op, ...){
 ** Set up the lookaside buffers for a database connection.
 ** Return SQLITE_OK on success.  
 ** If lookaside is already active, return SQLITE_BUSY.
+**
+** The sz parameter is the number of bytes in each lookaside slot.
+** The cnt parameter is the number of slots.  If pStart is NULL the
+** space for the lookaside memory is obtained from sqlite3_malloc().
+** If pStart is not NULL then it is sz*cnt bytes of memory to use for
+** the lookaside memory.
 */
-static int setupLookaside(sqlite3 *db, int sz, int cnt){
+static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   void *pStart;
   if( db->lookaside.nOut ){
     return SQLITE_BUSY;
@@ -303,13 +309,20 @@ static int setupLookaside(sqlite3 *db, int sz, int cnt){
   if( sz<0 ) sz = 0;
   if( cnt<0 ) cnt = 0;
   sz = (sz+7)&~7;
-  sqlite3BeginBenignMalloc();
-  pStart = sqlite3Malloc( sz*cnt );
-  sqlite3EndBenignMalloc();
-  sqlite3_free(db->lookaside.pStart);
+  if( pBuf==0 ){
+    sqlite3BeginBenignMalloc();
+    pStart = sqlite3Malloc( sz*cnt );
+    sqlite3EndBenignMalloc();
+  }else{
+    pStart = pBuf;
+  }
+  if( db->lookaside.bMalloced ){
+    sqlite3_free(db->lookaside.pStart);
+  }
   db->lookaside.pStart = pStart;
   db->lookaside.pFree = 0;
   db->lookaside.sz = sz;
+  db->lookaside.bMalloced = pBuf==0;
   if( pStart ){
     int i;
     LookasideSlot *p;
@@ -336,10 +349,11 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
   int rc;
   va_start(ap, op);
   switch( op ){
-    case SQLITE_CONFIG_LOOKASIDE: {
+    case SQLITE_DBCONFIG_LOOKASIDE: {
+      void *pBuf = va_arg(ap, void*);
       int sz = va_arg(ap, int);
       int cnt = va_arg(ap, int);
-      rc = setupLookaside(db, sz, cnt);
+      rc = setupLookaside(db, pBuf, sz, cnt);
       break;
     }
     default: {
@@ -545,7 +559,9 @@ int sqlite3_close(sqlite3 *db){
   sqlite3_mutex_leave(db->mutex);
   db->magic = SQLITE_MAGIC_CLOSED;
   sqlite3_mutex_free(db->mutex);
-  sqlite3_free(db->lookaside.pStart);
+  if( db->lookaside.bMalloced ){
+    sqlite3_free(db->lookaside.pStart);
+  }
   sqlite3_free(db);
   return SQLITE_OK;
 }
@@ -1523,7 +1539,7 @@ static int openDatabase(
 #endif
 
   /* Enable the lookaside-malloc subsystem */
-  setupLookaside(db, sqlite3Config.szLookaside, sqlite3Config.nLookaside);
+  setupLookaside(db, 0, sqlite3Config.szLookaside, sqlite3Config.nLookaside);
 
 opendb_out:
   if( db ){

@@ -11,7 +11,7 @@
 #
 # Tests for the lookaside memory allocator.
 #
-# $Id: lookaside.test,v 1.2 2008/08/01 18:47:02 drh Exp $
+# $Id: lookaside.test,v 1.3 2008/08/04 20:13:27 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -29,7 +29,7 @@ do_test lookaside-1.1 {
   catch {sqlite3_config_error db}
 } {0}
 do_test lookaside-1.2 {
-  sqlite3_db_config_lookaside db 20 20
+  sqlite3_db_config_lookaside db 1 20 20
 } {0}
 do_test lookaside-1.3 {
   sqlite3_db_status db SQLITE_DBSTATUS_LOOKASIDE_USED 0
@@ -63,7 +63,7 @@ do_test lookaside-1.9 {
 } {0 0 0}
 
 do_test lookaside-2.1 {
-  sqlite3_db_config_lookaside db 100 1000
+  sqlite3_db_config_lookaside db 0 100 1000
 } {0}
 do_test lookaside-2.2 {
   db eval {CREATE TABLE t2(x);}
@@ -71,11 +71,11 @@ do_test lookaside-2.2 {
   expr {$x==0 && $y<$z && $z>10 && $z<100}
 } {1}
 do_test lookaside-2.3 {
-  sqlite3_db_config_lookaside db 50 50
+  sqlite3_db_config_lookaside db 0 50 50
 } {5}  ;# SQLITE_BUSY
 do_test lookaside-2.4 {
   db cache flush
-  sqlite3_db_config_lookaside db 50 50
+  sqlite3_db_config_lookaside db 0 50 50
 } {0}  ;# SQLITE_OK
 
 # sqlite3_db_status() with an invalid verb returns an error.
