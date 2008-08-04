@@ -1,5 +1,5 @@
 
-set rcsid {$Id: omittest.tcl,v 1.5 2008/07/31 02:43:35 shane Exp $}
+set rcsid {$Id: omittest.tcl,v 1.6 2008/08/04 03:51:24 danielk1977 Exp $}
 
 # Documentation for this script. This may be output to stderr
 # if the script is invoked incorrectly.
@@ -62,8 +62,10 @@ proc run_quick_test {dir omit_symbol_list} {
   file mkdir $dir
   puts -nonewline "Building $dir..."
   flush stdout
+catch {
   file copy -force ./config.h $dir
   file copy -force ./libtool $dir
+}
   set rc [catch {
     exec make -C $dir -f $::MAKEFILE testfixture OPTS=$opts >& $dir/build.log
   }]

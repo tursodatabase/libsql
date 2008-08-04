@@ -13,7 +13,7 @@
 # factoring constant expressions out of loops and for
 # common subexpression eliminations.
 #
-# $Id: cse.test,v 1.5 2008/04/01 18:04:11 drh Exp $
+# $Id: cse.test,v 1.6 2008/08/04 03:51:24 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -94,20 +94,22 @@ do_test cse-1.10 {
     SELECT CAST(b AS integer), typeof(b), CAST(b AS text), typeof(b) FROM t1
   }
 } {11 integer 11 integer 21 integer 21 integer}
-do_test cse-1.11 { 
-  execsql {
-    SELECT *,* FROM t1 WHERE a=2
-    UNION ALL
-    SELECT *,* FROM t1 WHERE a=1
-  }
-} {2 21 22 23 24 25 2 21 22 23 24 25 1 11 12 13 14 15 1 11 12 13 14 15}
-do_test cse-1.12 { 
-  execsql {
-    SELECT coalesce(b,c,d,e), a, b, c, d, e FROM t1 WHERE a=2
-    UNION ALL
-    SELECT coalesce(e,d,c,b), e, d, c, b, a FROM t1 WHERE a=1
-  }
-} {21 2 21 22 23 24 14 14 13 12 11 1}
+ifcapable compound {
+  do_test cse-1.11 { 
+    execsql {
+      SELECT *,* FROM t1 WHERE a=2
+      UNION ALL
+      SELECT *,* FROM t1 WHERE a=1
+    }
+  } {2 21 22 23 24 25 2 21 22 23 24 25 1 11 12 13 14 15 1 11 12 13 14 15}
+  do_test cse-1.12 { 
+    execsql {
+      SELECT coalesce(b,c,d,e), a, b, c, d, e FROM t1 WHERE a=2
+      UNION ALL
+      SELECT coalesce(e,d,c,b), e, d, c, b, a FROM t1 WHERE a=1
+    }
+  } {21 2 21 22 23 24 14 14 13 12 11 1}
+}
 do_test cse-1.13 {
   execsql {
      SELECT upper(b), typeof(b), b FROM t1

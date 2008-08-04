@@ -11,7 +11,7 @@
 #
 # Test the btree mutex protocol for shared cache mode.
 #
-# $Id: shared4.test,v 1.1 2008/07/14 19:39:17 drh Exp $
+# $Id: shared4.test,v 1.2 2008/08/04 03:51:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -21,7 +21,7 @@ puts hello
 # This script is only valid if we are running shared-cache mode in a
 # threadsafe-capable database engine.
 #
-ifcapable !shared_cache {
+ifcapable !shared_cache||!compound {
   finish_test
   return
 }

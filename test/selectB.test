@@ -10,10 +10,15 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
-# $Id: selectB.test,v 1.8 2008/07/12 14:52:20 drh Exp $
+# $Id: selectB.test,v 1.9 2008/08/04 03:51:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !compound {
+  finish_test
+  return
+}
 
 proc test_transform {testname sql1 sql2 results} {
   set ::vdbe1 [list]

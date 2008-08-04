@@ -13,7 +13,7 @@
 #
 #     <value> IN (SELECT <column> FROM <table>)
 #
-# $Id: in3.test,v 1.4 2008/03/12 10:39:00 danielk1977 Exp $
+# $Id: in3.test,v 1.5 2008/08/04 03:51:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -103,13 +103,15 @@ do_test in3-1.12 {
 
 # Has to use a temp-table because of the compound sub-select.
 #
-do_test in3-1.13 {
-  exec_neph {
-    SELECT a FROM t1 WHERE a IN (
-      SELECT a FROM t1 UNION ALL SELECT a FROM t1
-    )
-  }
-} {1 1 3 5}
+ifcapable compound {
+  do_test in3-1.13 {
+    exec_neph {
+      SELECT a FROM t1 WHERE a IN (
+        SELECT a FROM t1 UNION ALL SELECT a FROM t1
+      )
+    }
+  } {1 1 3 5}
+}
 
 # The first of these queries has to use the temp-table, because the 
 # collation sequence used for the index on "t1.a" does not match the

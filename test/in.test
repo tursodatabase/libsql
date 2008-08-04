@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the IN and BETWEEN operator.
 #
-# $Id: in.test,v 1.21 2008/06/26 18:04:03 danielk1977 Exp $
+# $Id: in.test,v 1.22 2008/08/04 03:51:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -366,6 +366,7 @@ do_test in-11.6 {
 
 # Test error conditions with expressions of the form IN(<compound select>).
 #
+ifcapable compound {
 do_test in-12.1 {
   execsql {
     CREATE TABLE t2(a, b, c);
@@ -428,6 +429,7 @@ do_test in-12.9 {
     );
   }
 } {1 {SELECTs to the left and right of INTERSECT do not have the same number of result columns}}
+}
 
 
 #------------------------------------------------------------------------

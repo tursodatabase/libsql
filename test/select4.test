@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.28 2008/06/25 08:02:44 mihailim Exp $
+# $Id: select4.test,v 1.29 2008/08/04 03:51:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -616,8 +616,6 @@ do_test select4-9.12 {
 } {a 1 b 2 a 3 b 4}
 } ;# ifcapable subquery
 
-} ;# ifcapable compound
-
 # Try combining DISTINCT, LIMIT, and OFFSET.  Make sure they all work
 # together.
 #
@@ -792,5 +790,7 @@ do_test select4-11.15 {
     SELECT x FROM t2
   }
 } {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
+
+} ;# ifcapable compound
 
 finish_test

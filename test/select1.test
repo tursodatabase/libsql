@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.64 2008/07/15 00:27:35 drh Exp $
+# $Id: select1.test,v 1.65 2008/08/04 03:51:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -628,7 +628,7 @@ do_test select1-6.11 {
 } {1 {1st ORDER BY term does not match any column in the result set}}
 
 # Ticket #2296
-ifcapable subquery {
+ifcapable subquery&&compound {
 do_test select1-6.20 {
    execsql {
      CREATE TABLE t6(a TEXT, b TEXT);

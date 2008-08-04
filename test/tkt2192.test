@@ -14,17 +14,17 @@
 # fixed.  
 #
 #
-# $Id: tkt2192.test,v 1.2 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: tkt2192.test,v 1.3 2008/08/04 03:51:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !datetime {
+ifcapable !datetime||!compound {
   finish_test
   return
 }
 
-do_test tkt2191-1.1 {
+do_test tkt2192-1.1 {
   execsql {
     -- Raw data (RBS) --------
     

@@ -12,7 +12,7 @@
 # The tests in this file ensure that a temporary table is used
 # when required by an "INSERT INTO ... SELECT ..." statement.
 #
-# $Id: insert5.test,v 1.4 2008/01/06 00:25:22 drh Exp $
+# $Id: insert5.test,v 1.5 2008/08/04 03:51:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -47,14 +47,25 @@ do_test insert5-1.0 {
 
 # Run the query.
 #
-do_test insert5-1.1 {
-  execsql {
-    INSERT INTO B 
-      SELECT * FROM B UNION ALL 
-      SELECT * FROM MAIN WHERE exists (select * FROM B WHERE B.Id = MAIN.Id);
+ifcapable compound {
+  do_test insert5-1.1 {
+    execsql {
+      INSERT INTO B 
+        SELECT * FROM B UNION ALL 
+        SELECT * FROM MAIN WHERE exists (select * FROM B WHERE B.Id = MAIN.Id);
       SELECT * FROM B;
-  }
-} {2 3 2 3 2 3}
+    }
+  } {2 3 2 3 2 3}
+} else {
+  do_test insert5-1.1 {
+    execsql {
+      INSERT INTO B SELECT * FROM B;
+      INSERT INTO B
+        SELECT * FROM MAIN WHERE exists (select * FROM B WHERE B.Id = MAIN.Id);
+      SELECT * FROM B;
+    }
+  } {2 3 2 3 2 3}
+}
 do_test insert5-2.1 {
   uses_temp_table { INSERT INTO b SELECT * FROM main }
 } {0}

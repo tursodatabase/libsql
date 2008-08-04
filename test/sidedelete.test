@@ -15,7 +15,7 @@
 # older versions of SQLite that behavior was implemented
 # incorrectly and resulted in corrupt database files.
 #
-# $Id: sidedelete.test,v 1.1 2007/12/12 22:24:13 drh Exp $
+# $Id: sidedelete.test,v 1.2 2008/08/04 03:51:24 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -47,7 +47,8 @@ do_test sidedelete-2.0 {
   execsql {
     CREATE TABLE t1(a PRIMARY KEY, b);
     CREATE TABLE chng(a PRIMARY KEY, b);
-    SELECT count(*) FROM t1 UNION ALL SELECT count(*) FROM chng;
+    SELECT count(*) FROM t1;
+    SELECT count(*) FROM chng;
   }
 } {0 0}
 for {set i 2} {$i<=100} {incr i} {

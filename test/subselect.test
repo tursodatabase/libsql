@@ -12,7 +12,7 @@
 # focus of this file is testing SELECT statements that are part of
 # expressions.
 #
-# $Id: subselect.test,v 1.15 2008/07/15 00:27:35 drh Exp $
+# $Id: subselect.test,v 1.16 2008/08/04 03:51:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -56,12 +56,14 @@ do_test subselect-1.3c {
 do_test subselect-1.3d {
   execsql {SELECT b from t1 where a = (SELECT a FROM t1 WHERE b=8)}
 } {}
-do_test subselect-1.3e {
-  execsql {
-    SELECT b FROM t1
-     WHERE a = (SELECT a FROM t1 UNION SELECT b FROM t1 ORDER BY 1);
-  }
-} {2}
+ifcapable compound {
+  do_test subselect-1.3e {
+    execsql {
+      SELECT b FROM t1
+       WHERE a = (SELECT a FROM t1 UNION SELECT b FROM t1 ORDER BY 1);
+    }
+  } {2}
+}
 
 # What if the subselect doesn't return any value.  We should get
 # NULL as the result.  Check it out.

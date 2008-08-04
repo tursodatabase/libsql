@@ -17,10 +17,15 @@
 # explicit sort order and explicit collating secquites) and
 # with and without optional LIMIT and OFFSET clauses.
 #
-# $Id: selectA.test,v 1.4 2008/07/15 00:27:35 drh Exp $
+# $Id: selectA.test,v 1.5 2008/08/04 03:51:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !compound {
+  finish_test
+  return
+}
 
 do_test selectA-1.0 {
   execsql {

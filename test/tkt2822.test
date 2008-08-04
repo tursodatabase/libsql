@@ -13,11 +13,16 @@
 # ORDER BY clauses on compound SELECT statements raised by ticket
 # #2822 have been dealt with.
 #
-# $Id: tkt2822.test,v 1.4 2007/12/13 17:50:23 drh Exp $
+# $Id: tkt2822.test,v 1.5 2008/08/04 03:51:24 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !compound {
+  finish_test
+  return
+}
 
 # The ORDER BY matching algorithm is three steps:
 # 

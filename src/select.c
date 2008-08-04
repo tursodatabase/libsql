@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.462 2008/08/02 03:50:39 drh Exp $
+** $Id: select.c,v 1.463 2008/08/04 03:51:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2447,6 +2447,7 @@ static int generateOutputSubroutine(
 ** until all data is exhausted then jump to the "end" labe.  AltB, AeqB,
 ** and AgtB jump to either L2 or to one of EofA or EofB.
 */
+#ifndef SQLITE_OMIT_COMPOUND_SELECT
 static int multiSelectOrderBy(
   Parse *pParse,        /* Parsing context */
   Select *p,            /* The right-most of SELECTs to be coded */
@@ -2793,6 +2794,7 @@ static int multiSelectOrderBy(
   **** subqueries ****/
   return SQLITE_OK;
 }
+#endif
 
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
 /* Forward Declarations */

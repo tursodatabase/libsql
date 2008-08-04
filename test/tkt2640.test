@@ -11,7 +11,7 @@
 #
 # This file is to test that ticket #2640 has been fixed.
 #
-# $Id: tkt2640.test,v 1.2 2007/12/10 05:03:48 danielk1977 Exp $
+# $Id: tkt2640.test,v 1.3 2008/08/04 03:51:24 danielk1977 Exp $
 #
 
 # The problem in ticket #2640 was that the query optimizer was 
@@ -28,7 +28,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !subquery {
+ifcapable !subquery||!compound {
   finish_test
   return
 }
