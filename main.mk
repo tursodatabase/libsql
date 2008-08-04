@@ -58,7 +58,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o bitvec.o btmutex.o btree.o build.o \
          select.o status.o table.o $(TCLOBJ) tokenize.o trigger.o \
          update.o util.o vacuum.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbefifo.o vdbemem.o \
-         where.o utf.o legacy.o vtab.o rtree.o
+         where.o utf.o legacy.o vtab.o rtree.o icu.o
 
 EXTOBJ = icu.o
 EXTOBJ += fts1.o \

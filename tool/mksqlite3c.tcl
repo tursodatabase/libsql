@@ -280,6 +280,7 @@ foreach file {
    fts3_tokenizer1.c
 
    rtree.c
+   icu.c
 } {
   copy_file tsrc/$file
 }
