@@ -1,5 +1,5 @@
-C Add\sthe\spkgconfigdir\svariable\sto\sMakefile.in.\sTicket\s#3242.\s(CVS\s5531)
-D 2008-08-04T04:28:19
+C Add\san\sassert()\sstatement\sthat\swill\salert\sus\sif\sthe\spotential\sproblem\sidentified\sby\s#3243\sever\sbecomes\sa\sreality.\s(CVS\s5532)
+D 2008-08-04T04:39:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,7 +99,7 @@ F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
 F src/btree.c da7491ef06c0209da962e1520bfc5c90b5c5cc96
 F src/btree.h 03256ed7ee42b5ecacbe887070b0f8249e7d069d
 F src/btreeInt.h ab18c7b4980314e9e4b402e5dcde09f3c2545576
-F src/build.c 05be60b1edc70bb8b354778facfb0ad5137c679a
+F src/build.c f774f01e10885319d8f839cf00f25cc6a8a7d605
 F src/callback.c c9f75a4c403f166af3761df47d78a806587d63af
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 52a54811218a76da6235420f532ece841159a96d
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9ca975c8fdeaae7d5af8fe62e097d8d251362cfe
-R 5bb4b25bbf04f572bd726e4ba29e159f
+P 540c9d4c0daf9ddf07c95bb3eb9f294a2dd0285d
+R 4c6ed43221defe5cb2ad688acec376b6
 U danielk1977
-Z f2555b51388b9242a7411cde42e68351
+Z 98925fc3ae9fdb0af8d49d1de0df3909
