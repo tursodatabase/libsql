@@ -1,5 +1,5 @@
-C Enhanced\smarkings\sfor\sexperimental\sand\sdeprecated\sinterfaces.\s(CVS\s5534)
-D 2008-08-04T13:44:57
+C Modify\sthe\sconfigure\sscript\sto\savoid\susing\sthe\s+=\soperator.\sNot\sall\sshells\ssupport\sit.\s(CVS\s5535)
+D 2008-08-04T14:50:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -17,8 +17,8 @@ F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 3fda160d9a0ebbd6c22c0391354fa0036474680f
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 0435f73795c7a1ced456d46df784fd44fea794ee x
-F configure.ac eebaa620c2c9a7c3be0fedfbca8c2e8dd673e586
+F configure a013a40a9215b92fb9267603823f95d007ab5b00 x
+F configure.ac 3ce485247a4facc8df9cf03038c2014ed9d0ccda
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e42ff97ba7d9fcda699a63fc8bc609d559498180
-R b4ac1f1ebf69466100db4f153d1ab00e
-U drh
-Z 86e2d87ac133b0980ed1fb699e144ca0
+P 7e6ec5d53d9e002848fa437ec21bf009798a9a3b
+R 4d3a854b4d64fe4c3d561b28ac8712bc
+U danielk1977
+Z 38ad1e873bd8c9c39f5e63fd276f0978
