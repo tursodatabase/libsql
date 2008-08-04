@@ -135,6 +135,7 @@ LTLINK_EXTRAS += $(GCOV_LDFLAGS$(USE_GCOV))
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 libdir = @libdir@
+pkgconfigdir = $(libdir)/pkgconfig
 bindir = @bindir@
 includedir = @includedir@
 INSTALL = @INSTALL@
@@ -724,8 +725,8 @@ install:	sqlite3$(BEXE) libsqlite3.la sqlite3.h ${HAVE_TCL:1=tcl_install}
 	$(INSTALL) -d $(DESTDIR)$(includedir)
 	$(INSTALL) -m 0644 sqlite3.h $(DESTDIR)$(includedir)
 	$(INSTALL) -m 0644 $(TOP)/src/sqlite3ext.h $(DESTDIR)$(includedir)
-	$(INSTALL) -d $(DESTDIR)$(libdir)/pkgconfig; 
-	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(libdir)/pkgconfig; 
+	$(INSTALL) -d $(DESTDIR)$(pkgconfigdir)
+	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(pkgconfigdir)
 
 tcl_install:	libtclsqlite3.la
 	$(TCLSH_CMD) $(TOP)/tclinstaller.tcl $(VERSION)
