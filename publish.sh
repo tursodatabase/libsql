@@ -54,6 +54,7 @@ TCLDIR=/home/drh/tcltk/846/linux/846linux
 TCLSTUBLIB=$TCLDIR/libtclstub8.4g.a
 CFLAGS="-Os -DSQLITE_ENABLE_FTS3=3 -DSQLITE_ENABLE_RTREE=1"
 CFLAGS="$CFLAGS -DHAVE_LOCALTIME_R=1 -DHAVE_GMTIME_R=1"
+CFLAGS="$CFLAGS -DSQLITE_ENABLE_COLUMN_METADATA=1"
 echo '***** BUILDING shared libraries for linux'
 gcc $CFLAGS -shared tclsqlite3.c $TCLSTUBLIB -o tclsqlite3.so -lpthread
 strip tclsqlite3.so
