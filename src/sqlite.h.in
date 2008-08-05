@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.386 2008/08/04 20:13:27 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.387 2008/08/05 17:53:23 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -6182,35 +6182,57 @@ int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 ** this parameter.  The amount returned is the sum of the allocation
 ** sizes as reported by the xSize method in [sqlite3_mem_methods].</dd>
 **
+** <dt>SQLITE_STATUS_MALLOC_SIZE</dt>
+** <dd>This parameter records the largest memory allocation request
+** handed to [sqlite3_malloc()] or [sqlite3_realloc()] (or their
+** internal equivalents).  Only the value returned in the
+** *pHighwater parameter to [sqlite3_status()] is of interest.  
+** The value written into the *pCurrent parameter is undefined.</dd>
+**
 ** <dt>SQLITE_STATUS_PAGECACHE_USED</dt>
 ** <dd>This parameter returns the number of pages used out of the
-** page cache buffer configured using [SQLITE_CONFIG_PAGECACHE].  The
+** [pagecache memory allocator] that was configured using 
+** [SQLITE_CONFIG_PAGECACHE].  The
 ** value returned is in pages, not in bytes.</dd>
 **
 ** <dt>SQLITE_STATUS_PAGECACHE_OVERFLOW</dt>
 ** <dd>This parameter returns the number of bytes of page cache
 ** allocation which could not be statisfied by the [SQLITE_CONFIG_PAGECACHE]
-** buffer and where forced to overflow to [sqlite3_malloc()].</dd>
+** buffer and where forced to overflow to [sqlite3_malloc()].  The
+** returned value includes allocations that overflowed because they
+** where too large (they were larger than the "sz" parameter to
+** [SQLITE_CONFIG_PAGECACHE]) and allocations that overflowed because
+** no space was left in the page cache.</dd>
+**
+** <dt>SQLITE_STATUS_PAGECACHE_SIZE</dt>
+** <dd>This parameter records the largest memory allocation request
+** handed to [pagecache memory allocator].  Only the value returned in the
+** *pHighwater parameter to [sqlite3_status()] is of interest.  
+** The value written into the *pCurrent parameter is undefined.</dd>
 **
 ** <dt>SQLITE_STATUS_SCRATCH_USED</dt>
 ** <dd>This parameter returns the number of allocations used out of the
-** scratch allocation lookaside buffer configured using
+** [scratch memory allocator] configured using
 ** [SQLITE_CONFIG_SCRATCH].  The value returned is in allocations, not
-** in bytes.  Since a single thread may only have one allocation
+** in bytes.  Since a single thread may only have one scratch allocation
 ** outstanding at time, this parameter also reports the number of threads
 ** using scratch memory at the same time.</dd>
 **
 ** <dt>SQLITE_STATUS_SCRATCH_OVERFLOW</dt>
 ** <dd>This parameter returns the number of bytes of scratch memory
 ** allocation which could not be statisfied by the [SQLITE_CONFIG_SCRATCH]
-** buffer and where forced to overflow to [sqlite3_malloc()].</dd>
+** buffer and where forced to overflow to [sqlite3_malloc()].  The values
+** returned include overflows because the requested allocation was too
+** larger (that is, because the requested allocation was larger than the
+** "sz" parameter to [SQLITE_CONFIG_SCRATCH]) and because no scratch buffer
+** slots were available.
+** </dd>
 **
-** <dt>SQLITE_STATUS_MALLOC_SIZE</dt>
+** <dt>SQLITE_STATUS_SCRATCH_SIZE</dt>
 ** <dd>This parameter records the largest memory allocation request
-** handed to [sqlite3_malloc()] or [sqlite3_realloc()] (or their
-** internal equivalents).  The value of interest is return in the
-** *pHighwater parameter to [sqlite3_status()].  The value written
-** into the *pCurrent parameter is undefined.</dd>
+** handed to [scratch memory allocator].  Only the value returned in the
+** *pHighwater parameter to [sqlite3_status()] is of interest.  
+** The value written into the *pCurrent parameter is undefined.</dd>
 **
 ** <dt>SQLITE_STATUS_PARSER_STACK</dt>
 ** <dd>This parameter records the deepest parser stack.  It is only
@@ -6226,6 +6248,8 @@ int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 #define SQLITE_STATUS_SCRATCH_OVERFLOW     4
 #define SQLITE_STATUS_MALLOC_SIZE          5
 #define SQLITE_STATUS_PARSER_STACK         6
+#define SQLITE_STATUS_PAGECACHE_SIZE       7
+#define SQLITE_STATUS_SCRATCH_SIZE         8
 
 /*
 ** CAPI3REF: Status Parameters for database connections {H17275} <H17200>

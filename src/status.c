@@ -13,7 +13,7 @@
 ** This module implements the sqlite3_status() interface and related
 ** functionality.
 **
-** $Id: status.c,v 1.6 2008/08/01 16:31:14 drh Exp $
+** $Id: status.c,v 1.7 2008/08/05 17:53:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -21,8 +21,8 @@
 ** Variables in which to record status information.
 */
 static struct {
-  int nowValue[7];         /* Current value */
-  int mxValue[7];          /* Maximum value */
+  int nowValue[9];         /* Current value */
+  int mxValue[9];          /* Maximum value */
 } sqlite3Stat;
 
 

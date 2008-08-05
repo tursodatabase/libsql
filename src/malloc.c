@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.33 2008/08/01 16:31:14 drh Exp $
+** $Id: malloc.c,v 1.34 2008/08/05 17:53:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -312,6 +312,7 @@ void *sqlite3ScratchMalloc(int n){
       sqlite3_mutex_leave(mem0.mutex);
       i *= sqlite3Config.szScratch;
       sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_USED, 1);
+      sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
       p = (void*)&((char*)sqlite3Config.pScratch)[i];
     }
   }
@@ -324,6 +325,7 @@ void *sqlite3ScratchMalloc(int n){
 scratch_overflow:
   if( sqlite3Config.bMemstat ){
     sqlite3_mutex_enter(mem0.mutex);
+    sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
     n = mallocWithAlarm(n, &p);
     if( p ) sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_OVERFLOW, n);
     sqlite3_mutex_leave(mem0.mutex);
@@ -398,6 +400,7 @@ void *sqlite3PageMalloc(int n){
       i = mem0.aPageFree[--mem0.nPageFree];
       sqlite3_mutex_leave(mem0.mutex);
       i *= sqlite3Config.szPage;
+      sqlite3StatusSet(SQLITE_STATUS_PAGECACHE_SIZE, n);
       sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_USED, 1);
       p = (void*)&((char*)sqlite3Config.pPage)[i];
     }
@@ -407,6 +410,7 @@ void *sqlite3PageMalloc(int n){
 page_overflow:
   if( sqlite3Config.bMemstat ){
     sqlite3_mutex_enter(mem0.mutex);
+    sqlite3StatusSet(SQLITE_STATUS_PAGECACHE_SIZE, n);
     n = mallocWithAlarm(n, &p);
     if( p ) sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, n);
     sqlite3_mutex_leave(mem0.mutex);

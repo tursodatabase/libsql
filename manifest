@@ -1,5 +1,5 @@
-C Separate\sverbs\sof\ssqlite3_config()\sand\ssqlite3_db_config()\sinto\stheir\nown\snamespaces.\s\sAllow\sSQLITE3_DBCONFIG_LOOKASIDE\sto\sspecific\san\sexternal\nmemory\sbuffer.\s(CVS\s5536)
-D 2008-08-04T20:13:27
+C Add\sSQLITE_STATUS_PAGECACHE_SIZE\sand\sSQLITE_STATUS_SCRATCH_SIZE.\s(CVS\s5537)
+D 2008-08-05T17:53:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +116,7 @@ F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c eb1fe4f44d7c8ff53fc0c6a4388ab79fbd34cd64
 F src/main.c d750c6c0d381252851401f6ea2ee72185de005ed
-F src/malloc.c f0ad28008351cac2337ef502a3fdc8ffd3e5d9a9
+F src/malloc.c 22c68fc62f0c2df0f1deb8cd9a5ea968f995cac2
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 3a7fe31d8290baa3bb203af72f7dfd6323966bcd
 F src/mem2.c 87381b143530cc377592e868bd548e881c2498a3
@@ -144,11 +144,11 @@ F src/printf.c 2e984b2507291a7e16d89dc9bb60582904f6247d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c c1899b14f5eb3d3b71aeb02d541d6c5052ad3b70
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
-F src/sqlite.h.in 286cbb5e5bbe31949d4537f532e44a22a3d14184
+F src/sqlite.h.in 157cd9932c2747a6ef3cb091e006185f4f9105d3
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h 685b9cf6537e59e4453269b43acb33c59b566346
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
-F src/status.c 8ad1f215934c5f5afb91df86e44dccff7ef3c1d0
+F src/status.c b39b4468fe97c7d26be2de052804887c099312e7
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c ec46084184f033ba396a9ee7b5514b695083d0f3
 F src/test1.c e503344d492584d3df31c959f2b14da112e536f4
@@ -168,7 +168,7 @@ F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
 F src/test_func.c df7ddd5abfc5c8d6cd3e36ae9ecb0c276b0e9039
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
-F src/test_malloc.c 75f639a723e498a67c0ee68e81318c671388d1a3
+F src/test_malloc.c 49abbf5d9c71fb06cf7a7cf96f9b9a799b77a421
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c d3422d9f60cc1330249d102e74b333f0d24a0cb6
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
@@ -393,7 +393,7 @@ F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/lock5.test f4eeb0400cf65c37f733cb3c74401136f8c46acd
-F test/lookaside.test 22a518a780de0797d428d2ed6de56828ee7b5544
+F test/lookaside.test 48846c5620a0d4529e53fcb9d2e0e8b028833c6a
 F test/main.test 8d77c161757ef7d96eaff0413daa7120c3b316fe
 F test/malloc.test 69f5bb5a13b24edb1322fc1f42894f9d2f6446b1
 F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
@@ -497,7 +497,7 @@ F test/tableapi.test 505031f15b18a750184d967d2c896cf88fcc969c
 F test/tclsqlite.test aa1781808502271feccfd24f9e2c0d2c1d7c496a
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl 160c759e7e0661eaf1b4c15395ca7c0614b03d55
+F test/tester.tcl 12fd8394caeb71f7d961707da8668756389bc9d3
 F test/thread001.test 3fb08080e1fe84d1bb7ec7bbc9e13743a77e5bc5
 F test/thread002.test ed9b800460df01e3cf9428ee11dc4e3f04b9b896
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f167b2745d491a1adb2b6c869b2169cd6fa53af8
-R d131d66bc7d60253653f16ca16c768cd
+P 5dd865da5e787c10ef4c9e96647724bfab9dea01
+R ce2564d8ec0dc6375aa3480b9fe6e715
 U drh
-Z d5dc59ad71fc51bae7a99c7ae5dfa84b
+Z 6fec2c40476962caef5feb67a58958a2
