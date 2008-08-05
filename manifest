@@ -1,5 +1,5 @@
-C Add\sSQLITE_STATUS_PAGECACHE_SIZE\sand\sSQLITE_STATUS_SCRATCH_SIZE.\s(CVS\s5537)
-D 2008-08-05T17:53:23
+C Remove\sa\sreference\sto\ssnprintf()\sin\stest8.c.\s(CVS\s5538)
+D 2008-08-05T21:36:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -158,7 +158,7 @@ F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
 F src/test5.c 847eb5cfe89c197b6b494858ccf60be981235bdf
 F src/test6.c 0a0304a69cfa4962a429d084c6d451ff9e4fb572
 F src/test7.c 475b1fa7e3275408b40a3cbdc9508cbdc41ffa02
-F src/test8.c 0517adadd05a21bb119d14d0b9b8d7776a6fe9f9
+F src/test8.c 8cd3382bca3908c6eaf15af4f25607a648b3cf55
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c da9f58f49faccd3a26ba89f58de125862351b6e2
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5dd865da5e787c10ef4c9e96647724bfab9dea01
-R ce2564d8ec0dc6375aa3480b9fe6e715
+P c4e9b824062ba82a8db01cd82e3e681de1940208
+R d668f4d0e581aa72cbf7ada1bb89b25c
 U drh
-Z 6fec2c40476962caef5feb67a58958a2
+Z 6745878cb5281dcc7fff4d9cfbc49816

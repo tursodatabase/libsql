@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.71 2008/08/01 17:51:47 danielk1977 Exp $
+** $Id: test8.c,v 1.72 2008/08/05 21:36:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -96,7 +96,8 @@ static int simulateVtabError(echo_vtab *p, const char *zMethod){
   const char *zErr;
   char zVarname[128];
   zVarname[127] = '\0';
-  snprintf(zVarname, 127, "echo_module_fail(%s,%s)", zMethod, p->zTableName);
+  sqlite3_snprintf(127, zVarname, 
+                   "echo_module_fail(%s,%s)", zMethod, p->zTableName);
   zErr = Tcl_GetVar(p->interp, zVarname, TCL_GLOBAL_ONLY);
   if( zErr ){
     p->base.zErrMsg = sqlite3_mprintf("echo-vtab-error: %s", zErr);
