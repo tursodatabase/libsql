@@ -94,11 +94,13 @@ ORIGIN=`pwd`
 cd $srcdir
 cd ..
 mv sqlite sqlite-$VERS
-EXCLUDE=`find sqlite-$VERS -print | egrep (CVS|www/|art/|doc/|contrib/) | sed 's,^, --exclude ,'`
+EXCLUDE=`find sqlite-$VERS -print | egrep '(CVS|www/|art/|doc/|contrib/|_FOSSIL_|manifest)' | sed 's,^, --exclude ,'`
+echo EXCLUDE=$EXCLUDE
 tar czf $ORIGIN/doc/sqlite-$VERS.tar.gz $EXCLUDE sqlite-$VERS
 mv sqlite-$VERS sqlite
 cd $ORIGIN
 
+exit
 #
 # Build RPMS (binary) and Source RPM
 #

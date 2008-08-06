@@ -1,5 +1,5 @@
-C Revise\sbuild\sscripts\sin\sset\sSQLITE_ENABLE_COLUMN_METADATA\son\sDLLs.\s(CVS\s5539)
-D 2008-08-05T21:42:37
+C Fix\sthe\starball\sbuilder\sin\spublish.sh\sto\sexclude\sCVS\sand\sFossil\sfiles.\s(CVS\s5541)
+D 2008-08-06T10:43:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -83,7 +83,7 @@ F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
 F mkopcodec.awk 3fb9bf077053c968451f4dd03d11661ac373f9d1
 F mkopcodeh.awk 513946ce4429bf2723aef0d640eb4d2493deb68e
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
-F publish.sh 9627b915d2bfd736c768f3707fbd583733799f60
+F publish.sh d9dba9052ae73f300bd7e3d7b3acaf94e94f7ff9
 F publish_osx.sh 2ad2ee7d50632dff99949edc9c162dbb052f7534
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in c322c6244c6395955dca34d87955aabde7df7623
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 32d32b743642c2f6d9e4f8845a9cd07e4f83f4cd
-R 5539a6792926c886cda0a8d37de9907c
+P ce5daa0359a05f992546f23a3fe8285ffb132204
+R fa46f26dbe8fccadbff1fe260fbed058
 U drh
-Z dc18ba5e2f63ddf7d939b1c61274639f
+Z 6a6283d2f8071714a45618bf56f3fa59
