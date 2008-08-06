@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.387 2008/08/05 17:53:23 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.388 2008/08/06 13:40:13 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2449,11 +2449,11 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 **          reading and writing if possible, or for reading only if the
 **          file is write protected by the operating system.
 **
-** {H12713} If the G parameter to [sqlite3_open(v2(F,D,G,V)] omits the
+** {H12713} If the G parameter to [sqlite3_open_v2(F,D,G,V)] omits the
 **          bit value [SQLITE_OPEN_CREATE] and the database does not
 **          previously exist, an error is returned.
 **
-** {H12714} If the G parameter to [sqlite3_open(v2(F,D,G,V)] contains the
+** {H12714} If the G parameter to [sqlite3_open_v2(F,D,G,V)] contains the
 **          bit value [SQLITE_OPEN_CREATE] and the database does not
 **          previously exist, then an attempt is made to create and
 **          initialize the database.
