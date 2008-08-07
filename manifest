@@ -1,5 +1,5 @@
-C Fix\scompilation\swith\sSQLITE_OMIT_FOREIGN_KEY\sdefined.\sTicket\s#3273.\s(CVS\s5544)
-D 2008-08-06T13:47:41
+C Improved\sclarity\sof\spresentation\sin\sthe\stokenizer.\s(CVS\s5545)
+D 2008-08-07T13:05:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/callback.c c9f75a4c403f166af3761df47d78a806587d63af
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 52a54811218a76da6235420f532ece841159a96d
 F src/delete.c 0d115c173863b3c688c3083ef7857c7f2e9f7a18
-F src/expr.c 4f5221197384d923525fdfd117298eab073e9539
+F src/expr.c 278d3950f55e04a2486e7b8dede3713a2ed6c0e1
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c 54efe220cc1ef3859a4b738011621b63a0d697c5
 F src/global.c b9c96ee2317a6e1391763c7db1098a6473a91863
@@ -177,7 +177,7 @@ F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 73530070df8378571c8ce6bbbbb993236ae3ad0b
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
-F src/tokenize.c bfdc945527a4645bf54c8bf34d1f18c019b37117
+F src/tokenize.c 0b8f3e1dc928cef15857fd59a61e76afcf7a39b4
 F src/trigger.c b61aaf7bff8e3763b234dbf46a1a64fb88a34e64
 F src/update.c 79b77a3cc8ed5f8903a7f37055fcedd69388dcae
 F src/utf.c a7004436a6ef2aee012ace93de274dd0f3c7624e
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 18030631e82c70e0d4d6093cd43fb0c0fa6d53c8
-R a954fc13cc336434d5e272a361cdb24e
-U danielk1977
-Z 3569290c6359f5abc9d03dcdea8e12bf
+P ce8cbeea51442ea963bcdf5ddc71f021fb996a37
+R d3ffb4267b8bb3f4ad51b066b9b3e92c
+U drh
+Z 7539001bbb09229cb83d06a8b023aae5

@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.148 2008/07/28 19:34:54 drh Exp $
+** $Id: tokenize.c,v 1.149 2008/08/07 13:05:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -245,8 +245,11 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
           }
         }
       }
-      if( c ){
+      if( c=='\'' ){
         *tokenType = TK_STRING;
+        return i+1;
+      }else if( c!=0 ){
+        *tokenType = TK_ID;
         return i+1;
       }else{
         *tokenType = TK_ILLEGAL;

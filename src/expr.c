@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.387 2008/07/28 19:34:53 drh Exp $
+** $Id: expr.c,v 1.388 2008/08/07 13:05:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1306,6 +1306,7 @@ static int lookupName(
   */
   if( cnt==0 && zTab==0 && pColumnToken->z[0]=='"' ){
     sqlite3DbFree(db, zCol);
+    pExpr->op = TK_STRING;
     return 0;
   }
 
@@ -1405,14 +1406,6 @@ static int nameResolverStep(void *pArg, Expr *pExpr){
   }
 #endif
   switch( pExpr->op ){
-    /* Double-quoted strings (ex: "abc") are used as identifiers if
-    ** possible.  Otherwise they remain as strings.  Single-quoted
-    ** strings (ex: 'abc') are always string literals.
-    */
-    case TK_STRING: {
-      if( pExpr->token.z[0]=='\'' ) break;
-      /* Fall thru into the TK_ID case if this is a double-quoted string */
-    }
     /* A lone identifier is the name of a column.
     */
     case TK_ID: {
