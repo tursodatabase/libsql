@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.486 2008/08/04 20:13:27 drh Exp $
+** $Id: main.c,v 1.487 2008/08/08 14:33:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -308,12 +308,13 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   }
   if( sz<0 ) sz = 0;
   if( cnt<0 ) cnt = 0;
-  sz = (sz+7)&~7;
   if( pBuf==0 ){
+    sz = (sz + 7)&~7;
     sqlite3BeginBenignMalloc();
     pStart = sqlite3Malloc( sz*cnt );
     sqlite3EndBenignMalloc();
   }else{
+    sz = sz&~7;
     pStart = pBuf;
   }
   if( db->lookaside.bMalloced ){
