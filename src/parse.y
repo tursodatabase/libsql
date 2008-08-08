@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.249 2008/08/08 14:19:41 drh Exp $
+** @(#) $Id: parse.y,v 1.250 2008/08/08 15:06:22 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -313,7 +313,7 @@ tcons ::= PRIMARY KEY LP idxlist(X) autoinc(I) RP onconf(R).
                                          {sqlite3AddPrimaryKey(pParse,X,R,I,0);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
                                  {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0,0,0);}
-tcons ::= CHECK LP expr(E) RP. {sqlite3AddCheckConstraint(pParse,E);}
+tcons ::= CHECK LP expr(E) RP onconf. {sqlite3AddCheckConstraint(pParse,E);}
 tcons ::= FOREIGN KEY LP idxlist(FA) RP
           REFERENCES nm(T) idxlist_opt(TA) refargs(R) defer_subclause_opt(D). {
     sqlite3CreateForeignKey(pParse, FA, &T, TA, R);
