@@ -1,5 +1,5 @@
-C Back\sout\spart\sof\s(5546):\s\sEven\sthough\sON\sCONFLICT\sclauses\son\sCHECK\sconstraints\nare\sno-ops,\sif\sa\sschema\sincludes\sthem,\sthe\sdatabase\swill\sbe\sunreadable\sif\nwe\sdo\snot\sat\sleast\sparse\sand\signore\sthe\sclause.\s(CVS\s5548)
-D 2008-08-08T15:06:22
+C Move\sa\svariable\sinitialization\searlier\sto\swork\saround\sMS\scompiler\scomplaints.\s(CVS\s5549)
+D 2008-08-08T18:06:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/pragma.c 6e207b4f69901089758c02c02e0bf86ed12a4d8f
 F src/prepare.c d9f420808f7d2802258f0bf64103271311e2d87f
 F src/printf.c 2e984b2507291a7e16d89dc9bb60582904f6247d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/select.c c1899b14f5eb3d3b71aeb02d541d6c5052ad3b70
+F src/select.c 390d1bdde0c24f0225e369896da8e60ef2aeffbe
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
 F src/sqlite.h.in ee034584ec883aa37d8b4e2b94b03c7990a5fcf2
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c1a9bf3863b7bcc69885e4637f18c6532075f982
-R 8d0e91da93c2779fa60230021b205285
+P efcaeb68f943daf135972ae045eff1ca157a7f22
+R e14809ad0728bff4f7c2887a2141af1a
 U drh
-Z d95263978d00f25283f3bc56c2592eb7
+Z 5658ff2ac52b1890bd0a4bac033e7421

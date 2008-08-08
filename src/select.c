@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.463 2008/08/04 03:51:24 danielk1977 Exp $
+** $Id: select.c,v 1.464 2008/08/08 18:06:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1896,6 +1896,7 @@ static int multiSelect(
   pPrior = p->pPrior;
   assert( pPrior->pRightmost!=pPrior );
   assert( pPrior->pRightmost==p->pRightmost );
+  dest = *pDest;
   if( pPrior->pOrderBy ){
     sqlite3ErrorMsg(pParse,"ORDER BY clause should come after %s not before",
       selectOpName(p->op));
@@ -1914,7 +1915,6 @@ static int multiSelect(
 
   /* Create the destination temporary table if necessary
   */
-  dest = *pDest;
   if( dest.eDest==SRT_EphemTab ){
     assert( p->pEList );
     sqlite3VdbeAddOp2(v, OP_OpenEphemeral, dest.iParm, p->pEList->nExpr);
