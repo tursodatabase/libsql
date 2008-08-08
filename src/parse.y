@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.248 2008/07/31 01:40:42 shane Exp $
+** @(#) $Id: parse.y,v 1.249 2008/08/08 14:19:41 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -91,7 +91,6 @@ struct AttachKey { int type;  Token key; };
 input ::= cmdlist.
 cmdlist ::= cmdlist ecmd.
 cmdlist ::= ecmd.
-cmdx ::= cmd.           { sqlite3FinishCoding(pParse); }
 ecmd ::= SEMI.
 ecmd ::= explain cmdx SEMI.
 explain ::= .           { sqlite3BeginParse(pParse, 0); }
@@ -99,6 +98,7 @@ explain ::= .           { sqlite3BeginParse(pParse, 0); }
 explain ::= EXPLAIN.              { sqlite3BeginParse(pParse, 1); }
 explain ::= EXPLAIN QUERY PLAN.   { sqlite3BeginParse(pParse, 2); }
 %endif  SQLITE_OMIT_EXPLAIN
+cmdx ::= cmd.           { sqlite3FinishCoding(pParse); }
 
 ///////////////////// Begin and end transactions. ////////////////////////////
 //
@@ -313,7 +313,7 @@ tcons ::= PRIMARY KEY LP idxlist(X) autoinc(I) RP onconf(R).
                                          {sqlite3AddPrimaryKey(pParse,X,R,I,0);}
 tcons ::= UNIQUE LP idxlist(X) RP onconf(R).
                                  {sqlite3CreateIndex(pParse,0,0,0,X,R,0,0,0,0);}
-tcons ::= CHECK LP expr(E) RP onconf. {sqlite3AddCheckConstraint(pParse,E);}
+tcons ::= CHECK LP expr(E) RP. {sqlite3AddCheckConstraint(pParse,E);}
 tcons ::= FOREIGN KEY LP idxlist(FA) RP
           REFERENCES nm(T) idxlist_opt(TA) refargs(R) defer_subclause_opt(D). {
     sqlite3CreateForeignKey(pParse, FA, &T, TA, R);
@@ -885,11 +885,10 @@ uniqueflag(A) ::= .        {A = OE_None;}
 %destructor idxlist {sqlite3ExprListDelete(pParse->db, $$);}
 %type idxlist_opt {ExprList*}
 %destructor idxlist_opt {sqlite3ExprListDelete(pParse->db, $$);}
-%type idxitem {Token}
 
 idxlist_opt(A) ::= .                         {A = 0;}
 idxlist_opt(A) ::= LP idxlist(X) RP.         {A = X;}
-idxlist(A) ::= idxlist(X) COMMA idxitem(Y) collate(C) sortorder(Z).  {
+idxlist(A) ::= idxlist(X) COMMA nm(Y) collate(C) sortorder(Z).  {
   Expr *p = 0;
   if( C.n>0 ){
     p = sqlite3PExpr(pParse, TK_COLUMN, 0, 0, 0);
@@ -899,7 +898,7 @@ idxlist(A) ::= idxlist(X) COMMA idxitem(Y) collate(C) sortorder(Z).  {
   sqlite3ExprListCheckLength(pParse, A, "index");
   if( A ) A->a[A->nExpr-1].sortOrder = Z;
 }
-idxlist(A) ::= idxitem(Y) collate(C) sortorder(Z). {
+idxlist(A) ::= nm(Y) collate(C) sortorder(Z). {
   Expr *p = 0;
   if( C.n>0 ){
     p = sqlite3PExpr(pParse, TK_COLUMN, 0, 0, 0);
@@ -909,7 +908,6 @@ idxlist(A) ::= idxitem(Y) collate(C) sortorder(Z). {
   sqlite3ExprListCheckLength(pParse, A, "index");
   if( A ) A->a[A->nExpr-1].sortOrder = Z;
 }
-idxitem(A) ::= nm(X).              {A = X;}
 
 %type collate {Token}
 collate(C) ::= .                {C.z = 0; C.n = 0;}

@@ -23,10 +23,9 @@ END {
   printf "#define TK_%-29s %4d\n", "ILLEGAL",         max+7
   printf "#define TK_%-29s %4d\n", "SPACE",           max+8
   printf "#define TK_%-29s %4d\n", "UNCLOSED_STRING", max+9
-  printf "#define TK_%-29s %4d\n", "COMMENT",         max+10
-  printf "#define TK_%-29s %4d\n", "FUNCTION",        max+11
-  printf "#define TK_%-29s %4d\n", "COLUMN",          max+12
-  printf "#define TK_%-29s %4d\n", "AGG_FUNCTION",    max+13
-  printf "#define TK_%-29s %4d\n", "AGG_COLUMN",      max+14
-  printf "#define TK_%-29s %4d\n", "CONST_FUNC",      max+15
+  printf "#define TK_%-29s %4d\n", "FUNCTION",        max+10
+  printf "#define TK_%-29s %4d\n", "COLUMN",          max+11
+  printf "#define TK_%-29s %4d\n", "AGG_FUNCTION",    max+12
+  printf "#define TK_%-29s %4d\n", "AGG_COLUMN",      max+13
+  printf "#define TK_%-29s %4d\n", "CONST_FUNC",      max+14
 }

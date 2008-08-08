@@ -1,12 +1,12 @@
-C Improved\sclarity\sof\spresentation\sin\sthe\stokenizer.\s(CVS\s5545)
-D 2008-08-07T13:05:35
+C Disallow\sthe\sON\sCONFLICT\sclause\son\sCHECK\sconstraints.\s\sThe\ssyntax\sused\sto\sbe\nallowed\sbut\snever\sworked,\sso\sthis\sshould\snot\spresent\scompatibility\sproblems.\nOther\sinternal\sgrammar\ssimplifications.\s(CVS\s5546)
+D 2008-08-08T14:19:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 1d5b2c9192236ed2c6bad659a7c2d1662e39e7b9
 F aclocal.m4 7d02b11fed45174e11156144227278deb6236eea
-F addopcodes.awk 701697fae48376375ec8532c3d04e910cfeef352
+F addopcodes.awk 48a2ffae0a6fb191ae9e42e69a90b15d973e0339
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
 F art/SQLite.eps 9b43cc99cfd2be687d386faea6862ea68d6a72b2
 F art/SQLite.gif 1bbb94484963f1382e27e1c5e86dd0c1061eba2b
@@ -90,7 +90,7 @@ F sqlite.pc.in c322c6244c6395955dca34d87955aabde7df7623
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a1be7b9a4b8b51ac41c6ff6e8e44a14ef66b338b
 F sqlite3.pc.in 32b8a014799c2028c8e0c9cc5659718262fc493f
-F src/alter.c 2c541aaa88d720301253f181799d4af7bb9ddf1c
+F src/alter.c f462b637bac6c6576a9b7bc6da59c7a82ed5aab2
 F src/analyze.c 747ce8cb6b318bb0d0576cfb5277aed98cbbeb5c
 F src/attach.c a85c14612e7e3410e0c3d2e0241832fa9688bd14
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
@@ -137,7 +137,7 @@ F src/os_unix.c fe0dbc35bcd3de49e46b132abfc0f45d6dd6a864
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c b6a366f2343e7f127d7e70dbe76cd664336143cd
 F src/pager.h 588c1ac195228b2da45c4e5f7ab6c2fd253d1751
-F src/parse.y d962e544d9953289db23c1d4cc2dab514c7136fa
+F src/parse.y 3bd91b936a247dbb89a6fb1824cb18c6987f16b0
 F src/pragma.c 6e207b4f69901089758c02c02e0bf86ed12a4d8f
 F src/prepare.c d9f420808f7d2802258f0bf64103271311e2d87f
 F src/printf.c 2e984b2507291a7e16d89dc9bb60582904f6247d
@@ -177,7 +177,7 @@ F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 73530070df8378571c8ce6bbbbb993236ae3ad0b
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
-F src/tokenize.c 0b8f3e1dc928cef15857fd59a61e76afcf7a39b4
+F src/tokenize.c d16ca0e9944161c76d2e4c11dc379ec88189b93b
 F src/trigger.c b61aaf7bff8e3763b234dbf46a1a64fb88a34e64
 F src/update.c 79b77a3cc8ed5f8903a7f37055fcedd69388dcae
 F src/utf.c a7004436a6ef2aee012ace93de274dd0f3c7624e
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ce8cbeea51442ea963bcdf5ddc71f021fb996a37
-R d3ffb4267b8bb3f4ad51b066b9b3e92c
+P 732657c6a639bdf71a3341f6747d19298d442ddb
+R a8dbe9c0297be9af2808d9fc7cbb821d
 U drh
-Z 7539001bbb09229cb83d06a8b023aae5
+Z c51d96114f2cd9514587cda1bec559ff

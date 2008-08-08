@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.149 2008/08/07 13:05:36 drh Exp $
+** $Id: tokenize.c,v 1.150 2008/08/08 14:19:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -131,7 +131,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     case '-': {
       if( z[1]=='-' ){
         for(i=2; (c=z[i])!=0 && c!='\n'; i++){}
-        *tokenType = TK_COMMENT;
+        *tokenType = TK_SPACE;
         return i;
       }
       *tokenType = TK_MINUS;
@@ -164,7 +164,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       }
       for(i=3, c=z[2]; (c!='*' || z[i]!='/') && (c=z[i])!=0; i++){}
       if( c ) i++;
-      *tokenType = TK_COMMENT;
+      *tokenType = TK_SPACE;
       return i;
     }
     case '%': {
@@ -420,8 +420,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
       break;
     }
     switch( tokenType ){
-      case TK_SPACE:
-      case TK_COMMENT: {
+      case TK_SPACE: {
         if( db->u1.isInterrupted ){
           pParse->rc = SQLITE_INTERRUPT;
           sqlite3SetString(pzErrMsg, db, "interrupt");
