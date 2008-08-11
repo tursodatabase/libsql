@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.494 2008/08/06 13:47:41 danielk1977 Exp $
+** $Id: build.c,v 1.495 2008/08/11 18:44:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2011,7 +2011,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     }
   }
 #endif
-  if( pTab->readOnly || pTab==db->aDb[iDb].pSchema->pSeqTab ){
+  if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 ){
     sqlite3ErrorMsg(pParse, "table %s may not be dropped", pTab->zName);
     goto exit_drop_table;
   }
@@ -2411,7 +2411,7 @@ void sqlite3CreateIndex(
   pDb = &db->aDb[iDb];
 
   if( pTab==0 || pParse->nErr ) goto exit_create_index;
-  if( pTab->readOnly ){
+  if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 ){
     sqlite3ErrorMsg(pParse, "table %s may not be indexed", pTab->zName);
     goto exit_create_index;
   }

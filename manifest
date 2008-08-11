@@ -1,5 +1,5 @@
-C The\sGCC\smagic\sto\swarn\sabout\sexperimental\sinterfaces\sdoes\snot\swork\non\sgcc\sversion\s4.1.0.\s\sAdd\s#ifdefs\sto\swork\saround\sthis.\s(CVS\s5552)
-D 2008-08-11T18:29:38
+C Do\snot\sallow\sindexing\sof\sany\stable\swhose\sname\sbegins\swith\s"sqlite_".\nTicket\s#3284.\s\sImprove\shandling\sof\sdatabases\swith\smalformed\sschemas\s-\njust\sin\scase\ssomebody\shas\sactually\sindexed\sa\ssystem\stable.\s(CVS\s5553)
+D 2008-08-11T18:44:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,7 +99,7 @@ F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
 F src/btree.c da7491ef06c0209da962e1520bfc5c90b5c5cc96
 F src/btree.h 03256ed7ee42b5ecacbe887070b0f8249e7d069d
 F src/btreeInt.h ab18c7b4980314e9e4b402e5dcde09f3c2545576
-F src/build.c 00aa62a843fcb7c4d47a7669af95cb6be08afd45
+F src/build.c 931ed94fd3bbd67b6ac9d5ac6a45dc01e9f01726
 F src/callback.c c9f75a4c403f166af3761df47d78a806587d63af
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 52a54811218a76da6235420f532ece841159a96d
@@ -139,7 +139,7 @@ F src/pager.c b6a366f2343e7f127d7e70dbe76cd664336143cd
 F src/pager.h 588c1ac195228b2da45c4e5f7ab6c2fd253d1751
 F src/parse.y 84003422b2862f82bd187dfa2399557fd1f4ecbe
 F src/pragma.c 6e207b4f69901089758c02c02e0bf86ed12a4d8f
-F src/prepare.c d9f420808f7d2802258f0bf64103271311e2d87f
+F src/prepare.c fceb567b359daaa6c6e2a4d04a01dec01ac0c907
 F src/printf.c 2e984b2507291a7e16d89dc9bb60582904f6247d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 390d1bdde0c24f0225e369896da8e60ef2aeffbe
@@ -183,10 +183,10 @@ F src/update.c 79b77a3cc8ed5f8903a7f37055fcedd69388dcae
 F src/utf.c a7004436a6ef2aee012ace93de274dd0f3c7624e
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
-F src/vdbe.c 96e0527ad121b1308ed4ab5d02ff5b8a5f434e7f
+F src/vdbe.c 2eff8c2206048f73e1ce23a56ed666b0591c56d5
 F src/vdbe.h 647fcf33a551ba10a974162c56846cb9aef2276b
 F src/vdbeInt.h 6f04c2bf65a0d5c2bb8318b226278a35d1f7a8f5
-F src/vdbeapi.c 803f365b77a22c1b2680a0dee9202bc75c02bf4a
+F src/vdbeapi.c f21971516880fd3a10821b2cdd0e64a5a63952c9
 F src/vdbeaux.c 21126e0d319e19125f5e42fceafb17eafe58721c
 F src/vdbeblob.c f93110888ddc246215e9ba1f831d3d375bfd8355
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
@@ -200,7 +200,7 @@ F test/alter.test 6353aae6839e486c9b7d8f73b1f4a1e98e57332c
 F test/alter2.test dd55146e812622c8fc51fd2216bcd8dca8880752
 F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
 F test/altermalloc.test 11116c58953b6275a48a87c2912b7d4b72c52840
-F test/analyze.test a881c145565de9ae1d37aaf385d9a0bbcbb98391
+F test/analyze.test ad5329098fe4de4a96852231d53e3e9e6283ad4b
 F test/async.test aecaa46ed0618a3c338f3651ca4f10fbb4021044
 F test/async2.test 8998e089b0fbb3d84cdd51c25a78833486d721af
 F test/async3.test 9ffa0977a78cc6351862a1583be2b1eecd41736d
@@ -210,7 +210,7 @@ F test/attach3.test 7b92dc8e40c1ebca9732ca6f2d3fefbd46f196df
 F test/attachmalloc.test ccbde53bcb0a61020afa3e0670ca9c6c5b99af32
 F test/auth.test 9eb4b6b99eee54c95711c74c4b9694acf4d850ed
 F test/auth2.test ee3ba272e2b975e913afc9b041ee75706e190005
-F test/autoinc.test 42af2c407c4e37d0626f9cda57ed381e94522c9d
+F test/autoinc.test ab549b48b389cabd92967b86c379ec8b31fa6c16
 F test/autovacuum.test e3428031ad7a14f16a7d515cd2a0480854e66b21
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
@@ -554,7 +554,7 @@ F test/trigger3.test 501b8489eb6b9cb5b005f60b071583c01a3c3041
 F test/trigger4.test 8e90ee98cba940cd5f96493f82e55083806ab8a0
 F test/trigger5.test 619391a3e9fc194081d22cefd830d811e7badf83
 F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
-F test/trigger7.test 194984b3f6f851eb905cd0a7bffac09f36cf1244
+F test/trigger7.test 72feaf8dbc52cea84de0c3e6ce7559ff19c479af
 F test/trigger8.test 3a09275aa2214fdff56f731b1e775d8dfee4408a
 F test/trigger9.test e6e8dbab673666b3c0a63f0fefcff2329fe6bba8
 F test/triggerA.test 208dbda4d2f7c918b02f8a0dfa3acd2a0fe00691
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5f4b547aba56564cebfdd442d2171c1c8c2979ba
-R 01014453b2c93908762f879c2f841d24
+P 90cae83169de980c6548ca6b57f4c65419e8eb13
+R 679caa78525facd517eb682beb151c0a
 U drh
-Z 930f1dc51ca1ae0466ef498973eb4fb5
+Z c1abcb802b7b42f4c0a5be91ca718e3a

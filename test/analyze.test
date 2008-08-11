@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.
 # This file implements tests for the ANALYZE command.
 #
-# $Id: analyze.test,v 1.8 2008/08/01 18:47:02 drh Exp $
+# $Id: analyze.test,v 1.9 2008/08/11 18:44:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -61,6 +61,16 @@ do_test analyze-1.6 {
     SELECT count(*) FROM sqlite_master WHERE name='sqlite_stat1'
   }
 } {1}
+do_test analyze-1.6.2 {
+  catchsql {
+    CREATE INDEX stat1idx ON sqlite_stat1(idx);
+  }
+} {1 {table sqlite_stat1 may not be indexed}}
+do_test analyze-1.6.3 {
+  catchsql {
+    CREATE INDEX main.stat1idx ON SQLite_stat1(idx);
+  }
+} {1 {table sqlite_stat1 may not be indexed}}
 do_test analyze-1.7 {
   execsql {
     SELECT * FROM sqlite_stat1
@@ -283,7 +293,7 @@ do_test analyze-4.3 {
 do_test analyze-99.1 {
   execsql {
     PRAGMA writable_schema=on;
-    UPDATE sqlite_master SET sql='nonsense';
+    UPDATE sqlite_master SET sql='nonsense' WHERE name='sqlite_stat1';
   }
   db close
   sqlite3 db test.db

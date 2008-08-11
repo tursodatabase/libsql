@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.772 2008/08/02 15:10:09 danielk1977 Exp $
+** $Id: vdbe.c,v 1.773 2008/08/11 18:44:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4139,9 +4139,10 @@ case OP_ParseSchema: {
   (void)sqlite3SafetyOff(db);
   assert( db->init.busy==0 );
   db->init.busy = 1;
+  initData.rc = SQLITE_OK;
   assert( !db->mallocFailed );
   rc = sqlite3_exec(db, zSql, sqlite3InitCallback, &initData, 0);
-  if( rc==SQLITE_ABORT ) rc = initData.rc;
+  if( rc==SQLITE_OK ) rc = initData.rc;
   sqlite3DbFree(db, zSql);
   db->init.busy = 0;
   (void)sqlite3SafetyOn(db);

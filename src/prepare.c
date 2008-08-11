@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.91 2008/08/02 03:50:39 drh Exp $
+** $Id: prepare.c,v 1.92 2008/08/11 18:44:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -27,7 +27,8 @@ static void corruptSchema(
   const char *zObj,    /* Object being parsed at the point of error */
   const char *zExtra   /* Error information */
 ){
-  if( !pData->db->mallocFailed ){
+  sqlite3 *db = pData->db;
+  if( !db->mallocFailed && (db->flags & SQLITE_RecoveryMode)==0 ){
     if( zObj==0 ) zObj = "?";
     sqlite3SetString(pData->pzErrMsg, pData->db,
        "malformed database schema (%s)", zObj);
@@ -57,7 +58,6 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
   int iDb = pData->iDb;
 
   assert( sqlite3_mutex_held(db->mutex) );
-  pData->rc = SQLITE_OK;
   DbClearProperty(db, iDb, DB_Empty);
   if( db->mallocFailed ){
     corruptSchema(pData, argv[0], 0);
@@ -97,7 +97,6 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
         corruptSchema(pData, argv[0], zErr);
       }
       sqlite3DbFree(db, zErr);
-      return 1;
     }
   }else if( argv[0]==0 ){
     corruptSchema(pData, 0, 0);
@@ -193,11 +192,12 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   azArg[3] = 0;
   initData.db = db;
   initData.iDb = iDb;
+  initData.rc = SQLITE_OK;
   initData.pzErrMsg = pzErrMsg;
   (void)sqlite3SafetyOff(db);
-  rc = sqlite3InitCallback(&initData, 3, (char **)azArg, 0);
+  sqlite3InitCallback(&initData, 3, (char **)azArg, 0);
   (void)sqlite3SafetyOn(db);
-  if( rc ){
+  if( initData.rc ){
     rc = initData.rc;
     goto error_out;
   }
@@ -338,7 +338,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
       db->xAuth = xAuth;
     }
 #endif
-    if( rc==SQLITE_ABORT ) rc = initData.rc;
+    if( rc==SQLITE_OK ) rc = initData.rc;
     (void)sqlite3SafetyOn(db);
     sqlite3DbFree(db, zSql);
 #ifndef SQLITE_OMIT_ANALYZE

@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.138 2008/08/02 03:50:39 drh Exp $
+** $Id: vdbeapi.c,v 1.139 2008/08/11 18:44:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -433,7 +433,9 @@ static int sqlite3Step(Vdbe *p){
 
   /* Assert that malloc() has not failed */
   db = p->db;
-  assert( !db->mallocFailed );
+  if( db->mallocFailed ){
+    return SQLITE_NOMEM;
+  }
 
   if( p->pc<=0 && p->expired ){
     if( p->rc==SQLITE_OK ){
