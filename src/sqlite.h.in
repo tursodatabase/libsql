@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.389 2008/08/11 17:27:02 shane Exp $
+** @(#) $Id: sqlite.h.in,v 1.390 2008/08/11 18:29:38 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -66,8 +66,9 @@ extern "C" {
 /*
 ** Add the ability to mark interfaces as experimental.
 */
-#if (__GNUC__ > 3)
+#if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2))
   /* GCC added the warning attribute in version 4.0 (I think) */
+  /* I can confirm that it does not work on version 4.1.0... */
   #define SQLITE_EXPERIMENTAL __attribute__ ((warning ("is experimental")))
 #elif defined(_MSC_VER)
   #define SQLITE_EXPERIMENTAL __declspec(deprecated("was declared experimental"))

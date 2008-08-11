@@ -1,5 +1,5 @@
-C Added\sSQLITE_EXPERIMENTAL\sand\sSQLITE_DEPRECATED\stags\sto\sAPIs\sto\stake\sadvantage\sof\scompiler\swarnings\s(with\sthe\snecessary\sfunction\sattributes.)\s\sTicket\s#3142.\s(CVS\s5551)
-D 2008-08-11T17:27:02
+C The\sGCC\smagic\sto\swarn\sabout\sexperimental\sinterfaces\sdoes\snot\swork\non\sgcc\sversion\s4.1.0.\s\sAdd\s#ifdefs\sto\swork\saround\sthis.\s(CVS\s5552)
+D 2008-08-11T18:29:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,7 +144,7 @@ F src/printf.c 2e984b2507291a7e16d89dc9bb60582904f6247d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 390d1bdde0c24f0225e369896da8e60ef2aeffbe
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
-F src/sqlite.h.in e0a00bff50997f9210d8eb014b3af48f4eaafb42
+F src/sqlite.h.in ba8920c272e3ddef424bc0627cbecaec5401ae47
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h 685b9cf6537e59e4453269b43acb33c59b566346
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 571adab9d2215fac6ed375257a070b8ffa9d9808
-R fcfa79ccf98383011a1b0e291c0c7cff
-U shane
-Z bb732ecf52d8f084294f658ab4f24744
+P 5f4b547aba56564cebfdd442d2171c1c8c2979ba
+R 01014453b2c93908762f879c2f841d24
+U drh
+Z 930f1dc51ca1ae0466ef498973eb4fb5
