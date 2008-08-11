@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.388 2008/08/06 13:40:13 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.389 2008/08/11 17:27:02 shane Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -49,6 +49,30 @@ extern "C" {
 */
 #ifndef SQLITE_EXTERN
 # define SQLITE_EXTERN extern
+#endif
+
+/*
+** Add the ability to mark interfaces as deprecated.
+*/
+#if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+  /* GCC added the deprecated attribute in version 3.1 */
+  #define SQLITE_DEPRECATED __attribute__ ((deprecated))
+#elif defined(_MSC_VER)
+  #define SQLITE_DEPRECATED __declspec(deprecated)
+#else
+  #define SQLITE_DEPRECATED
+#endif
+
+/*
+** Add the ability to mark interfaces as experimental.
+*/
+#if (__GNUC__ > 3)
+  /* GCC added the warning attribute in version 4.0 (I think) */
+  #define SQLITE_EXPERIMENTAL __attribute__ ((warning ("is experimental")))
+#elif defined(_MSC_VER)
+  #define SQLITE_EXPERIMENTAL __declspec(deprecated("was declared experimental"))
+#else
+  #define SQLITE_EXPERIMENTAL
 #endif
 
 /*
@@ -966,7 +990,7 @@ int sqlite3_os_end(void);
 ** If the option is unknown or SQLite is unable to set the option
 ** then this routine returns a non-zero [error code].
 */
-int sqlite3_config(int, ...);
+SQLITE_EXPERIMENTAL int sqlite3_config(int, ...);
 
 /*
 ** CAPI3REF: Configure database connections  {H10180} <S20000>
@@ -987,7 +1011,7 @@ int sqlite3_config(int, ...);
 ** New verbs are likely to be added in future releases of SQLite.
 ** Additional arguments depend on the verb.
 */
-int sqlite3_db_config(sqlite3*, int op, ...);
+SQLITE_EXPERIMENTAL int sqlite3_db_config(sqlite3*, int op, ...);
 
 /*
 ** CAPI3REF: Memory Allocation Routines {H10155} <S20120>
@@ -2279,8 +2303,8 @@ int sqlite3_set_authorizer(
 **          of the number of nanoseconds of wall-clock time required to
 **          run the SQL statement from start to finish.
 */
-void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
-void *sqlite3_profile(sqlite3*,
+SQLITE_EXPERIMENTAL void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
+SQLITE_EXPERIMENTAL void *sqlite3_profile(sqlite3*,
    void(*xProfile)(void*,const char*,sqlite3_uint64), void*);
 
 /*
@@ -3947,12 +3971,12 @@ int sqlite3_create_function16(
 ** the use of these functions.  To help encourage people to avoid
 ** using these functions, we are not going to tell you want they do.
 */
-int sqlite3_aggregate_count(sqlite3_context*);
-int sqlite3_expired(sqlite3_stmt*);
-int sqlite3_transfer_bindings(sqlite3_stmt*, sqlite3_stmt*);
-int sqlite3_global_recover(void);
-void sqlite3_thread_cleanup(void);
-int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
+SQLITE_DEPRECATED int sqlite3_aggregate_count(sqlite3_context*);
+SQLITE_DEPRECATED int sqlite3_expired(sqlite3_stmt*);
+SQLITE_DEPRECATED int sqlite3_transfer_bindings(sqlite3_stmt*, sqlite3_stmt*);
+SQLITE_DEPRECATED int sqlite3_global_recover(void);
+SQLITE_DEPRECATED void sqlite3_thread_cleanup(void);
+SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
 
 /*
 ** CAPI3REF: Obtaining SQL Function Parameter Values {H15100} <S20200>
@@ -5377,7 +5401,7 @@ struct sqlite3_index_info {
 ** This interface is experimental and is subject to change or
 ** removal in future releases of SQLite.
 */
-int sqlite3_create_module(
+SQLITE_EXPERIMENTAL int sqlite3_create_module(
   sqlite3 *db,               /* SQLite connection to register module with */
   const char *zName,         /* Name of the module */
   const sqlite3_module *,    /* Methods for the module */
@@ -5392,7 +5416,7 @@ int sqlite3_create_module(
 ** except that it allows a destructor function to be specified. It is
 ** even more experimental than the rest of the virtual tables API.
 */
-int sqlite3_create_module_v2(
+SQLITE_EXPERIMENTAL int sqlite3_create_module_v2(
   sqlite3 *db,               /* SQLite connection to register module with */
   const char *zName,         /* Name of the module */
   const sqlite3_module *,    /* Methods for the module */
@@ -5464,7 +5488,7 @@ struct sqlite3_vtab_cursor {
 ** This interface is experimental and is subject to change or
 ** removal in future releases of SQLite.
 */
-int sqlite3_declare_vtab(sqlite3*, const char *zCreateTable);
+SQLITE_EXPERIMENTAL int sqlite3_declare_vtab(sqlite3*, const char *zCreateTable);
 
 /*
 ** CAPI3REF: Overload A Function For A Virtual Table {H18300} <S20400>
@@ -5485,7 +5509,7 @@ int sqlite3_declare_vtab(sqlite3*, const char *zCreateTable);
 ** This API should be considered part of the virtual table interface,
 ** which is experimental and subject to change.
 */
-int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
+SQLITE_EXPERIMENTAL int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
 
 /*
 ** The interface to the virtual-table mechanism defined above (back up
@@ -6142,7 +6166,7 @@ int sqlite3_test_control(int op, ...);
 **
 ** See also: [sqlite3_db_status()]
 */
-int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
+SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 
 /*
 ** CAPI3REF: Database Connection Status {H17201} <S60200>
@@ -6162,7 +6186,7 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 **
 ** See also: [sqlite3_status()].
 */
-int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
+SQLITE_EXPERIMENTAL int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 
 /*
 ** CAPI3REF: Status Parameters {H17250} <H17200>
