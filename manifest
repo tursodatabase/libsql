@@ -1,5 +1,5 @@
-C Make\sthe\sCLI\smore\stolerant\sof\smalformed\sschemas\sby\ssetting\sthe\nwritable_schema\spragma\sprior\sto\srunning\sthe\s".dump"\scommand.\s(CVS\s5554)
-D 2008-08-11T19:12:35
+C GCC\sattribute\swarning\sfirst\sappears\sin\sthe\s4.3.0\sdocs,\sso\supdated\s#if\sto\sspecify\sat\sleast\sthat\sversion.\s(CVS\s5555)
+D 2008-08-11T20:07:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,7 +144,7 @@ F src/printf.c 2e984b2507291a7e16d89dc9bb60582904f6247d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c 390d1bdde0c24f0225e369896da8e60ef2aeffbe
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
-F src/sqlite.h.in ba8920c272e3ddef424bc0627cbecaec5401ae47
+F src/sqlite.h.in 9c332e029130e9d950221928688cf430106515b1
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h 685b9cf6537e59e4453269b43acb33c59b566346
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0e1d8d14a153483e65bd0246d23db2b823a122d1
-R 81e8937d2db82d3461db266a89371cd1
-U drh
-Z 9d5c1e42d2af8bfee1919e66398a136d
+P 860babd841a7744eb8ba0e4f325fc10b348ed78b
+R 52dbf2a94c9f2ca0459cb24a9e00371f
+U shane
+Z 47fb90750f78e23feda1ddb64e1aa20d
