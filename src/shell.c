@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.184 2008/07/11 17:23:25 drh Exp $
+** $Id: shell.c,v 1.185 2008/08/11 19:12:35 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1090,6 +1090,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     open_db(p);
     fprintf(p->out, "BEGIN TRANSACTION;\n");
     p->writableSchema = 0;
+    sqlite3_exec(p->db, "PRAGMA writable_schema=ON", 0, 0, 0);
     if( nArg==1 ){
       run_schema_dump_query(p, 
         "SELECT name, type, sql FROM sqlite_master "
@@ -1120,6 +1121,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       fprintf(p->out, "PRAGMA writable_schema=OFF;\n");
       p->writableSchema = 0;
     }
+    sqlite3_exec(p->db, "PRAGMA writable_schema=OFF", 0, 0, 0);
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
       sqlite3_free(zErrMsg);
