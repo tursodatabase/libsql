@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.250 2008/08/08 15:06:22 drh Exp $
+** @(#) $Id: parse.y,v 1.251 2008/08/11 14:26:35 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -990,15 +990,24 @@ when_clause(A) ::= WHEN expr(X). { A = X; }
 %type trigger_cmd_list {TriggerStep*}
 %destructor trigger_cmd_list {sqlite3DeleteTriggerStep(pParse->db, $$);}
 trigger_cmd_list(A) ::= trigger_cmd_list(Y) trigger_cmd(X) SEMI. {
+/*
   if( Y ){
     Y->pLast->pNext = X;
   }else{
     Y = X;
   }
+*/
+  assert( Y!=0 );
+  Y->pLast->pNext = X;
   Y->pLast = X;
   A = Y;
 }
-trigger_cmd_list(A) ::= . { A = 0; }
+trigger_cmd_list(A) ::= trigger_cmd(X) SEMI. { 
+  /* if( X ) */
+  assert( X!=0 );
+  X->pLast = X;
+  A = X;
+}
 
 %type trigger_cmd {TriggerStep*}
 %destructor trigger_cmd {sqlite3DeleteTriggerStep(pParse->db, $$);}
