@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.72 2008/08/05 21:36:07 drh Exp $
+** $Id: test8.c,v 1.73 2008/08/12 14:48:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1325,20 +1325,20 @@ static int declare_vtab(
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest8_Init(Tcl_Interp *interp){
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   static struct {
      char *zName;
      Tcl_ObjCmdProc *xProc;
      void *clientData;
   } aObjCmd[] = {
-#ifndef SQLITE_OMIT_VIRTUALTABLE
      { "register_echo_module",   register_echo_module, 0 },
      { "sqlite3_declare_vtab",   declare_vtab, 0 },
-#endif
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, 
         aObjCmd[i].xProc, aObjCmd[i].clientData, 0);
   }
+#endif
   return TCL_OK;
 }

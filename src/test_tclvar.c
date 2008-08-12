@@ -16,7 +16,7 @@
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
 **
-** $Id: test_tclvar.c,v 1.16 2008/07/07 14:50:14 drh Exp $
+** $Id: test_tclvar.c,v 1.17 2008/08/12 14:48:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -307,19 +307,19 @@ static int register_tclvar_module(
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetesttclvar_Init(Tcl_Interp *interp){
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   static struct {
      char *zName;
      Tcl_ObjCmdProc *xProc;
      void *clientData;
   } aObjCmd[] = {
-#ifndef SQLITE_OMIT_VIRTUALTABLE
      { "register_tclvar_module",   register_tclvar_module, 0 },
-#endif
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, 
         aObjCmd[i].xProc, aObjCmd[i].clientData, 0);
   }
+#endif
   return TCL_OK;
 }

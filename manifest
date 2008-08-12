@@ -1,5 +1,5 @@
-C GCC\sattribute\swarning\sfirst\sappears\sin\sthe\s4.3.0\sdocs,\sso\supdated\s#if\sto\sspecify\sat\sleast\sthat\sversion.\s(CVS\s5555)
-D 2008-08-11T20:07:47
+C Fix\swarnings\sand\sa\scompilation\serror\sin\stest\scode.\s(CVS\s5556)
+D 2008-08-12T14:48:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -158,7 +158,7 @@ F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
 F src/test5.c 847eb5cfe89c197b6b494858ccf60be981235bdf
 F src/test6.c 0a0304a69cfa4962a429d084c6d451ff9e4fb572
 F src/test7.c 475b1fa7e3275408b40a3cbdc9508cbdc41ffa02
-F src/test8.c 8cd3382bca3908c6eaf15af4f25607a648b3cf55
+F src/test8.c 7da151778887275c7f62b972363c78a5609f2bd8
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c da9f58f49faccd3a26ba89f58de125862351b6e2
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
@@ -175,12 +175,12 @@ F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
 F src/test_osinst.c ae29e9c09485622a157849508302dd9ffe44f21f
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
-F src/test_tclvar.c 73530070df8378571c8ce6bbbbb993236ae3ad0b
+F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c d16ca0e9944161c76d2e4c11dc379ec88189b93b
 F src/trigger.c b61aaf7bff8e3763b234dbf46a1a64fb88a34e64
 F src/update.c 79b77a3cc8ed5f8903a7f37055fcedd69388dcae
-F src/utf.c a7004436a6ef2aee012ace93de274dd0f3c7624e
+F src/utf.c 036dd1a2ff8917b6a1417c4aa8fac4322cfd7611
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
 F src/vdbe.c 2eff8c2206048f73e1ce23a56ed666b0591c56d5
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 860babd841a7744eb8ba0e4f325fc10b348ed78b
-R 52dbf2a94c9f2ca0459cb24a9e00371f
-U shane
-Z 47fb90750f78e23feda1ddb64e1aa20d
+P 46defad516bccb9921326bb4750251a3f7b5a869
+R f161e988a6b39ac9b85ad26fc0f5d7b0
+U danielk1977
+Z c2bd27f61b73c3a52a453e67f50c31ef
