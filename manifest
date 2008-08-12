@@ -1,5 +1,5 @@
-C Revise\sthe\sinitialization\sand\sshutdown\slogic\sso\sthat\sit\sno\slonger\skeeps\na\srecursive\smutex\sallocated\sfor\sthe\swhole\sinterval\sbut\sinstead\sreleases\nthe\smutex\sas\ssoon\sas\spossible.\s\sDo\snot\sreset\sstatus\svalues\supon\sinitialization.\s(CVS\s5559)
-D 2008-08-12T15:21:12
+C Make\ssure\sthe\slookaside\stest\sscript\ssaturates\sthe\slookaside\sbuffer\seven\nwhen\sSQLITE_DEBUG\sis\soff.\s\sTicket\s#3289\s(CVS\s5560)
+D 2008-08-12T15:48:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -393,7 +393,7 @@ F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/lock5.test f4eeb0400cf65c37f733cb3c74401136f8c46acd
-F test/lookaside.test 48846c5620a0d4529e53fcb9d2e0e8b028833c6a
+F test/lookaside.test 8866ea41301d74993423c99e523322fca09c259e
 F test/main.test 8d77c161757ef7d96eaff0413daa7120c3b316fe
 F test/malloc.test 69f5bb5a13b24edb1322fc1f42894f9d2f6446b1
 F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 42247b917ae5a5c0d81b934200810755d0040282
-R 69ce11efb4890d98b6c9a2863d484581
+P 697fe7a3167c22a3232ce154e9d47cf75af613c4
+R bc3261e0e67b2840551eab89813d1cbf
 U drh
-Z be8367a1b5dd5ee08063dfae6619d193
+Z 492a17374325436959e89a8ba7f54c34
