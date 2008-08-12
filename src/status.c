@@ -13,7 +13,7 @@
 ** This module implements the sqlite3_status() interface and related
 ** functionality.
 **
-** $Id: status.c,v 1.7 2008/08/05 17:53:23 drh Exp $
+** $Id: status.c,v 1.8 2008/08/12 15:21:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -25,14 +25,6 @@ static struct {
   int mxValue[9];          /* Maximum value */
 } sqlite3Stat;
 
-
-/*
-** Reset the status records.  This routine is called by
-** sqlite3_initialize().
-*/
-void sqlite3StatusReset(void){
-  memset(&sqlite3Stat, 0, sizeof(sqlite3Stat));
-}
 
 /*
 ** Return the current value of a status parameter.

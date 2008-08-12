@@ -1,5 +1,5 @@
-C Fix\sfurther\swarnings/compilation\serrors\sin\stest\scode.\s(CVS\s5558)
-D 2008-08-12T15:04:59
+C Revise\sthe\sinitialization\sand\sshutdown\slogic\sso\sthat\sit\sno\slonger\skeeps\na\srecursive\smutex\sallocated\sfor\sthe\swhole\sinterval\sbut\sinstead\sreleases\nthe\smutex\sas\ssoon\sas\spossible.\s\sDo\snot\sreset\sstatus\svalues\supon\sinitialization.\s(CVS\s5559)
+D 2008-08-12T15:21:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/insert.c 89cd9af52a5ea6fb7d0cfc9c3b935d6406c360c4
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c eb1fe4f44d7c8ff53fc0c6a4388ab79fbd34cd64
-F src/main.c 9707706f62adc7a6830f7128eaaae6f3410046ae
+F src/main.c c5ed24ad2b27bc93aea580a17f370a19897165f6
 F src/malloc.c 22c68fc62f0c2df0f1deb8cd9a5ea968f995cac2
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 3a7fe31d8290baa3bb203af72f7dfd6323966bcd
@@ -146,9 +146,9 @@ F src/select.c 390d1bdde0c24f0225e369896da8e60ef2aeffbe
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 54e51c22e2294c5989156b0aec87aa44168ac1f0
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 685b9cf6537e59e4453269b43acb33c59b566346
+F src/sqliteInt.h be39605e2deee45c1004c8bf3927bdab2ec97e0c
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
-F src/status.c b39b4468fe97c7d26be2de052804887c099312e7
+F src/status.c 8caa772cd9310bc297280f7cf0ede4d69ed5b801
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c ec46084184f033ba396a9ee7b5514b695083d0f3
 F src/test1.c 0ae2203b03dec8ecf8ad731038df47ba27bfe68c
@@ -417,8 +417,8 @@ F test/malloc_common.tcl e082fe4791dad22b49d2ad3f7dcf1dcbee1a4cec
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
-F test/memsubsys1.test 4896d75373f55e61d80b12261d88192861d18b53
-F test/memsubsys2.test c05b541f9c2a1234a9dc2ff2233b3a9544fa5139
+F test/memsubsys1.test 3cfd3237dbbceaf65673be7265c58d8a34d63cbb
+F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
 F test/minmax3.test 94742aa922153953ce3562702815e4f1f079bdb8
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e3935502fdca486613c8116b6057bfdd37545e58
-R 81992e6503b50b00362c1f386109d2c1
-U danielk1977
-Z 15fdebe7ba6a81553a61856d47818587
+P 42247b917ae5a5c0d81b934200810755d0040282
+R 69ce11efb4890d98b6c9a2863d484581
+U drh
+Z be8367a1b5dd5ee08063dfae6619d193

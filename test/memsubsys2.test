@@ -11,7 +11,7 @@
 #
 # This file contains tests of the memory allocation subsystem.
 #
-# $Id: memsubsys2.test,v 1.1 2008/07/10 18:13:43 drh Exp $
+# $Id: memsubsys2.test,v 1.2 2008/08/12 15:21:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -43,6 +43,20 @@ proc build_test_db {testname pragmas} {
     db eval {SELECT count(*) FROM t1}
   } 8192
   integrity_check $testname.2
+}
+
+# Reset all of the highwater marks.
+#
+proc reset_highwater_marks {} {
+  sqlite3_status SQLITE_STATUS_MEMORY_USED 1
+  sqlite3_status SQLITE_STATUS_MALLOC_SIZE 1
+  sqlite3_status SQLITE_STATUS_PAGECACHE_USED 1
+  sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 1
+  sqlite3_status SQLITE_STATUS_PAGECACHE_SIZE 1
+  sqlite3_status SQLITE_STATUS_SCRATCH_USED 1
+  sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 1
+  sqlite3_status SQLITE_STATUS_SCRATCH_SIZE 1
+  sqlite3_status SQLITE_STATUS_PARSER_STACK 1
 }
 
 # Test 1:  Verify that calling sqlite3_malloc(0) returns a NULL
@@ -77,6 +91,7 @@ db close
 sqlite3_shutdown
 sqlite3_config_memstatus 0
 sqlite3_initialize
+reset_highwater_marks
 set highwater [sqlite3_memory_highwater 0]
 do_test memsubsys2-3.1 {
   set highwater
@@ -114,6 +129,7 @@ do_test memsubsys2-3.9 {
 sqlite3_shutdown
 sqlite3_config_memstatus 1
 sqlite3_initialize
+reset_highwater_marks
 set highwater [sqlite3_memory_highwater 0]
 do_test memsubsys2-4.1 {
   set highwater

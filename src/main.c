@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.487 2008/08/08 14:33:13 drh Exp $
+** $Id: main.c,v 1.488 2008/08/12 15:21:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -57,68 +57,119 @@ char *sqlite3_temp_directory = 0;
 ** Initialize SQLite.  
 **
 ** This routine must be called to initialize the memory allocation,
-** VFS, and mutex subsystesms prior to doing any serious work with
+** VFS, and mutex subsystems prior to doing any serious work with
 ** SQLite.  But as long as you do not compile with SQLITE_OMIT_AUTOINIT
 ** this routine will be called automatically by key routines such as
 ** sqlite3_open().  
 **
 ** This routine is a no-op except on its very first call for the process,
 ** or for the first call after a call to sqlite3_shutdown.
+**
+** The first thread to call this routine runs the initialization to
+** completion.  If subsequent threads call this routine before the first
+** thread has finished the initialization process, then the subsequent
+** threads must block until the first thread finishes with the initialization.
+**
+** The first thread might call this routine recursively.  Recursive
+** calls to this routine should not block, of course.  Otherwise the
+** initialization process would never complete.
+**
+** Let X be the first thread to enter this routine.  Let Y be some other
+** thread.  Then while the initial invocation of this routine by X is
+** incomplete, it is required that:
+**
+**    *  Calls to this routine from Y must block until the outer-most
+**       call by X completes.
+**
+**    *  Recursive calls to this routine from thread X return immediately
+**       without blocking.
 */
 int sqlite3_initialize(void){
-  static int inProgress = 0;
-  int rc;
+  static int inProgress = 0;        /* Prevent recursion */
+  sqlite3_mutex *pMaster;           /* The main static mutex */
+  int rc;                           /* Result code */
 
-  /* If SQLite is already initialized, this call is a no-op. */
+  /* If SQLite is already completely initialized, then this call
+  ** to sqlite3_initialize() should be a no-op.  But the initialization
+  ** must be complete.  So isInit must not be set until the very end
+  ** of this routine.
+  */
   if( sqlite3Config.isInit ) return SQLITE_OK;
 
-  /* Make sure the mutex system is initialized. */
+  /* Make sure the mutex subsystem is initialized.  If unable to 
+  ** initialize the mutex subsystem, return early with the error.
+  ** If the system is so sick that we are unable to allocate a mutex,
+  ** there is not much SQLite is going to be able to do.
+  **
+  ** The mutex subsystem must take care of serializing its own
+  ** initialization.
+  */
   rc = sqlite3MutexInit();
+  if( rc ) return rc;
 
+  /* Initialize the malloc() system and the recursive pInitMutex mutex.
+  ** This operation is protected by the STATIC_MASTER mutex.  Note that
+  ** MutexAlloc() is called for a static mutex prior to initializing the
+  ** malloc subsystem - this implies that the allocation of a static
+  ** mutex must not require support from the malloc subsystem.
+  */
+  pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+  sqlite3_mutex_enter(pMaster);
+  if( !sqlite3Config.isMallocInit ){
+    rc = sqlite3MallocInit();
+  }
   if( rc==SQLITE_OK ){
-
-    /* Initialize the malloc() system and the recursive pInitMutex mutex.
-    ** This operation is protected by the STATIC_MASTER mutex.
-    */
-    sqlite3_mutex *pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
-    sqlite3_mutex_enter(pMaster);
-    if( !sqlite3Config.isMallocInit ){
-      rc = sqlite3MallocInit();
-    }
-    if( rc==SQLITE_OK ){
-      sqlite3Config.isMallocInit = 1;
-      if( !sqlite3Config.pInitMutex ){
-        sqlite3Config.pInitMutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
-        if( sqlite3Config.bCoreMutex && !sqlite3Config.pInitMutex ){
-          rc = SQLITE_NOMEM;
-        }
+    sqlite3Config.isMallocInit = 1;
+    if( !sqlite3Config.pInitMutex ){
+      sqlite3Config.pInitMutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
+      if( sqlite3Config.bCoreMutex && !sqlite3Config.pInitMutex ){
+        rc = SQLITE_NOMEM;
       }
     }
-    sqlite3_mutex_leave(pMaster);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
+    sqlite3Config.nRefInitMutex++;
+  }
+  sqlite3_mutex_leave(pMaster);
 
-    /* Enter the recursive pInitMutex mutex. After doing so, if the
-    ** sqlite3Config.isInit flag is true, then some other thread has
-    ** finished doing the initialization. If the inProgress flag is
-    ** true, then this function is being called recursively from within
-    ** the sqlite3_os_init() call below. In either case, exit early.
-    */
-    sqlite3_mutex_enter(sqlite3Config.pInitMutex);
-    if( sqlite3Config.isInit || inProgress ){
-      sqlite3_mutex_leave(sqlite3Config.pInitMutex);
-      return SQLITE_OK;
-    }
-    sqlite3StatusReset();
+  /* If unable to initialize the malloc subsystem, then return early.
+  ** There is little hope of getting SQLite to run if the malloc
+  ** subsystem cannot be initialized.
+  */
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+
+  /* Do the rest of the initialization under the recursive mutex so
+  ** that we will be able to handle recursive calls into
+  ** sqlite3_initialize().  The recursive calls normally come through
+  ** sqlite3_os_init() when it invokes sqlite3_vfs_register(), but other
+  ** recursive calls might also be possible.
+  */
+  sqlite3_mutex_enter(sqlite3Config.pInitMutex);
+  if( sqlite3Config.isInit==0 && inProgress==0 ){
     inProgress = 1;
     rc = sqlite3_os_init();
     inProgress = 0;
     sqlite3Config.isInit = (rc==SQLITE_OK ? 1 : 0);
-    sqlite3_mutex_leave(sqlite3Config.pInitMutex);
   }
+  sqlite3_mutex_leave(sqlite3Config.pInitMutex);
 
-  /* Check NaN support. */
+  /* Go back under the static mutex and clean up the recursive
+  ** mutex to prevent a resource leak.
+  */
+  sqlite3_mutex_enter(pMaster);
+  sqlite3Config.nRefInitMutex--;
+  if( sqlite3Config.nRefInitMutex<=0 ){
+    assert( sqlite3Config.nRefInitMutex==0 );
+    sqlite3_mutex_free(sqlite3Config.pInitMutex);
+    sqlite3Config.pInitMutex = 0;
+  }
+  sqlite3_mutex_leave(pMaster);
+
+  /* The following is just a sanity check to make sure SQLite has
+  ** been compiled correctly.  It is important to run this code, but
+  ** we don't want to run it too often and soak up CPU cycles for no
+  ** reason.  So we run it once during initialization.
+  */
 #ifndef NDEBUG
   /* This section of code's only "output" is via assert() statements. */
   if ( rc==SQLITE_OK ){
@@ -141,8 +192,6 @@ int sqlite3_initialize(void){
 ** routine is not threadsafe.  Not by a long shot.
 */
 int sqlite3_shutdown(void){
-  sqlite3_mutex_free(sqlite3Config.pInitMutex);
-  sqlite3Config.pInitMutex = 0;
   sqlite3Config.isMallocInit = 0;
   if( sqlite3Config.isInit ){
     sqlite3_os_end();
