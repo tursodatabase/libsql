@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.391 2008/08/11 20:07:47 shane Exp $
+** @(#) $Id: sqlite.h.in,v 1.392 2008/08/12 14:51:30 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2101,6 +2101,11 @@ void sqlite3_randomness(int N, void *P);
 ** previous call.  Disable the authorizer by installing a NULL callback.
 ** The authorizer is disabled by default.
 **
+** When [sqlite3_prepare_v2()] is used to prepare a statement, the
+** statement might be reprepared during [sqlite3_step()] due to a 
+** schema change.  Hence, the application should ensure that the
+** correct authorizer callback remains in place during the [sqlite3_step()].
+**
 ** Note that the authorizer callback is invoked only during
 ** [sqlite3_prepare()] or its variants.  Authorization is not
 ** performed during statement evaluation in [sqlite3_step()].
@@ -2111,11 +2116,11 @@ void sqlite3_randomness(int N, void *P);
 **          authorizer callback with database connection D.
 **
 ** {H12502} The authorizer callback is invoked as SQL statements are
-**          being compiled.
+**          being parseed and compiled.
 **
 ** {H12503} If the authorizer callback returns any value other than
 **          [SQLITE_IGNORE], [SQLITE_OK], or [SQLITE_DENY], then
-**          the [sqlite3_prepare_v2()] or equivalent call that caused
+**          the application interface call that caused
 **          the authorizer callback to run shall fail with an
 **          [SQLITE_ERROR] error code and an appropriate error message.
 **
@@ -2123,7 +2128,7 @@ void sqlite3_randomness(int N, void *P);
 **          described is processed normally.
 **
 ** {H12505} When the authorizer callback returns [SQLITE_DENY], the
-**          [sqlite3_prepare_v2()] or equivalent call that caused the
+**          application interface call that caused the
 **          authorizer callback to run shall fail
 **          with an [SQLITE_ERROR] error code and an error message
 **          explaining that access is denied.
@@ -2197,21 +2202,21 @@ int sqlite3_set_authorizer(
 ** INVARIANTS:
 **
 ** {H12551} The second parameter to an
-**          [sqlite3_set_authorizer | authorizer callback] is always an integer
+**          [sqlite3_set_authorizer | authorizer callback] shall be an integer
 **          [SQLITE_COPY | authorizer code] that specifies what action
 **          is being authorized.
 **
 ** {H12552} The 3rd and 4th parameters to the
 **          [sqlite3_set_authorizer | authorization callback]
-**          will be parameters or NULL depending on which
+**          shall be parameters or NULL depending on which
 **          [SQLITE_COPY | authorizer code] is used as the second parameter.
 **
 ** {H12553} The 5th parameter to the
-**          [sqlite3_set_authorizer | authorizer callback] is the name
+**          [sqlite3_set_authorizer | authorizer callback] shall be the name
 **          of the database (example: "main", "temp", etc.) if applicable.
 **
 ** {H12554} The 6th parameter to the
-**          [sqlite3_set_authorizer | authorizer callback] is the name
+**          [sqlite3_set_authorizer | authorizer callback] shall be the name
 **          of the inner-most trigger or view that is responsible for
 **          the access attempt or NULL if this access attempt is directly from
 **          top-level SQL code.
@@ -2271,16 +2276,17 @@ int sqlite3_set_authorizer(
 **
 ** INVARIANTS:
 **
-** {H12281} The callback function registered by [sqlite3_trace()] is
+** {H12281} The callback function registered by [sqlite3_trace()] 
+**          shall be invoked
 **          whenever an SQL statement first begins to execute and
 **          whenever a trigger subprogram first begins to run.
 **
-** {H12282} Each call to [sqlite3_trace()] overrides the previously
+** {H12282} Each call to [sqlite3_trace()] shall override the previously
 **          registered trace callback.
 **
-** {H12283} A NULL trace callback disables tracing.
+** {H12283} A NULL trace callback shall disable tracing.
 **
-** {H12284} The first argument to the trace callback is a copy of
+** {H12284} The first argument to the trace callback shall be a copy of
 **          the pointer which was the 3rd argument to [sqlite3_trace()].
 **
 ** {H12285} The second argument to the trace callback is a
