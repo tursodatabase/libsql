@@ -1,5 +1,5 @@
-C Documentation\supdates\sand\sclarifications\sin\ssqlite.h.in.\s(CVS\s5557)
-D 2008-08-12T14:51:30
+C Fix\sfurther\swarnings/compilation\serrors\sin\stest\scode.\s(CVS\s5558)
+D 2008-08-12T15:04:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/main.c 9707706f62adc7a6830f7128eaaae6f3410046ae
 F src/malloc.c 22c68fc62f0c2df0f1deb8cd9a5ea968f995cac2
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 3a7fe31d8290baa3bb203af72f7dfd6323966bcd
-F src/mem2.c 87381b143530cc377592e868bd548e881c2498a3
+F src/mem2.c 7256327b96927020824e06ffb3443b99a28da047
 F src/mem3.c c73e935d0b900abc51d5fa45f880937b062f4a9f
 F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
 F src/mem5.c 0b0ba1c2a02d86eb812dea6debacee841e3856f7
@@ -151,11 +151,11 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c b39b4468fe97c7d26be2de052804887c099312e7
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c ec46084184f033ba396a9ee7b5514b695083d0f3
-F src/test1.c e503344d492584d3df31c959f2b14da112e536f4
+F src/test1.c 0ae2203b03dec8ecf8ad731038df47ba27bfe68c
 F src/test2.c 7a634c1e044be3ea5845e65155fdd1cab13936cb
 F src/test3.c e00795839be38f0345a4845170426fb17d828bf9
 F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
-F src/test5.c 847eb5cfe89c197b6b494858ccf60be981235bdf
+F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
 F src/test6.c 0a0304a69cfa4962a429d084c6d451ff9e4fb572
 F src/test7.c 475b1fa7e3275408b40a3cbdc9508cbdc41ffa02
 F src/test8.c 7da151778887275c7f62b972363c78a5609f2bd8
@@ -180,7 +180,7 @@ F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c d16ca0e9944161c76d2e4c11dc379ec88189b93b
 F src/trigger.c b61aaf7bff8e3763b234dbf46a1a64fb88a34e64
 F src/update.c 79b77a3cc8ed5f8903a7f37055fcedd69388dcae
-F src/utf.c 036dd1a2ff8917b6a1417c4aa8fac4322cfd7611
+F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
 F src/vdbe.c 2eff8c2206048f73e1ce23a56ed666b0591c56d5
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 80c129e63ec7dbed3de1e485dffea96fae40aa6d
-R 25774e794e1ecb5577b8f86606a06257
-U drh
-Z e8b0bbf8c483270e383fc49d3a494a77
+P e3935502fdca486613c8116b6057bfdd37545e58
+R 81992e6503b50b00362c1f386109d2c1
+U danielk1977
+Z 15fdebe7ba6a81553a61856d47818587

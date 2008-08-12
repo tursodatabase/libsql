@@ -19,7 +19,7 @@
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 **
-** $Id: mem2.c,v 1.37 2008/07/25 08:49:00 danielk1977 Exp $
+** $Id: mem2.c,v 1.38 2008/08/12 15:04:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -36,7 +36,7 @@
   extern int backtrace(void**,int);
   extern void backtrace_symbols_fd(void*const*,int,int);
 #else
-# define backtrace(A,B) 0
+# define backtrace(A,B) 1
 # define backtrace_symbols_fd(A,B,C)
 #endif
 #include <stdio.h>

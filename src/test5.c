@@ -15,7 +15,7 @@
 ** is used for testing the SQLite routines for converting between
 ** the various supported unicode encodings.
 **
-** $Id: test5.c,v 1.21 2008/07/28 19:34:54 drh Exp $
+** $Id: test5.c,v 1.22 2008/08/12 15:04:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -99,7 +99,7 @@ static u8 name_to_enc(Tcl_Interp *interp, Tcl_Obj *pObj){
     { "UTF8", SQLITE_UTF8 },
     { "UTF16LE", SQLITE_UTF16LE },
     { "UTF16BE", SQLITE_UTF16BE },
-    { "UTF16", SQLITE_UTF16NATIVE },
+    { "UTF16", SQLITE_UTF16 },
     { 0, 0 }
   };
   struct EncName *pEnc;
@@ -111,6 +111,9 @@ static u8 name_to_enc(Tcl_Interp *interp, Tcl_Obj *pObj){
   }
   if( !pEnc->enc ){
     Tcl_AppendResult(interp, "No such encoding: ", z, 0);
+  }
+  if( pEnc->enc==SQLITE_UTF16 ){
+    return SQLITE_UTF16NATIVE;
   }
   return pEnc->enc;
 }
@@ -182,7 +185,7 @@ static int test_translate(
 ** Call sqlite3UtfSelfTest() to run the internal tests for unicode
 ** translation. If there is a problem an assert() will fail.
 **/
-void sqlite3UtfSelfTest();
+void sqlite3UtfSelfTest(void);
 static int test_translate_selftest(
   void * clientData,
   Tcl_Interp *interp,

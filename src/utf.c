@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.64 2008/08/12 14:48:41 danielk1977 Exp $
+** $Id: utf.c,v 1.65 2008/08/12 15:04:59 danielk1977 Exp $
 **
 ** Notes on UTF-8:
 **
@@ -481,7 +481,7 @@ int sqlite3Utf16ByteLen(const void *zIn, int nChar){
 ** It checks that the primitives for serializing and deserializing
 ** characters in each encoding are inverses of each other.
 */
-void sqlite3UtfSelfTest(){
+void sqlite3UtfSelfTest(void){
   unsigned int i, t;
   unsigned char zBuf[20];
   unsigned char *z;

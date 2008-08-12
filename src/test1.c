@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.317 2008/07/31 02:05:04 shane Exp $
+** $Id: test1.c,v 1.318 2008/08/12 15:04:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3685,9 +3685,10 @@ static int test_stmt_utf8(
 ){
   sqlite3_stmt *pStmt;
   int col;
-  const char *(*xFunc)(sqlite3_stmt*, int) = clientData;
+  const char *(*xFunc)(sqlite3_stmt*, int);
   const char *zRet;
 
+  xFunc = (const char *(*)(sqlite3_stmt*, int))clientData;
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
        Tcl_GetString(objv[0]), " STMT column", 0);
@@ -3739,8 +3740,9 @@ static int test_stmt_utf16(
   int col;
   Tcl_Obj *pRet;
   const void *zName16;
-  const void *(*xFunc)(sqlite3_stmt*, int) = clientData;
+  const void *(*xFunc)(sqlite3_stmt*, int);
 
+  xFunc = (const void *(*)(sqlite3_stmt*, int))clientData;
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
        Tcl_GetString(objv[0]), " STMT column", 0);
@@ -3776,8 +3778,9 @@ static int test_stmt_int(
 ){
   sqlite3_stmt *pStmt;
   int col;
-  int (*xFunc)(sqlite3_stmt*, int) = clientData;
+  int (*xFunc)(sqlite3_stmt*, int);
 
+  xFunc = (const void *(*)(sqlite3_stmt*, int))clientData;
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
        Tcl_GetString(objv[0]), " STMT column", 0);
@@ -4615,32 +4618,32 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_column_blob",           test_column_blob   ,0 },
      { "sqlite3_column_double",         test_column_double ,0 },
      { "sqlite3_column_int64",          test_column_int64  ,0 },
-     { "sqlite3_column_text",       test_stmt_utf8,  sqlite3_column_text      },
-     { "sqlite3_column_name",       test_stmt_utf8,  sqlite3_column_name      },
-     { "sqlite3_column_int",        test_stmt_int,   sqlite3_column_int       },
-     { "sqlite3_column_bytes",      test_stmt_int,   sqlite3_column_bytes     },
+     { "sqlite3_column_text",   test_stmt_utf8,  (void*)sqlite3_column_text },
+     { "sqlite3_column_name",   test_stmt_utf8,  (void*)sqlite3_column_name },
+     { "sqlite3_column_int",    test_stmt_int,   (void*)sqlite3_column_int  },
+     { "sqlite3_column_bytes",  test_stmt_int,   (void*)sqlite3_column_bytes},
 #ifndef SQLITE_OMIT_DECLTYPE
-     { "sqlite3_column_decltype",   test_stmt_utf8,  sqlite3_column_decltype  },
+     { "sqlite3_column_decltype",test_stmt_utf8,(void*)sqlite3_column_decltype},
 #endif
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
-{ "sqlite3_column_database_name", test_stmt_utf8, sqlite3_column_database_name},
-{ "sqlite3_column_table_name", test_stmt_utf8, sqlite3_column_table_name},
-{ "sqlite3_column_origin_name", test_stmt_utf8, sqlite3_column_origin_name},
+{ "sqlite3_column_database_name",test_stmt_utf8,(void*)sqlite3_column_database_name},
+{ "sqlite3_column_table_name",test_stmt_utf8,(void*)sqlite3_column_table_name},
+{ "sqlite3_column_origin_name",test_stmt_utf8,(void*)sqlite3_column_origin_name},
 #endif
 
 #ifndef SQLITE_OMIT_UTF16
-     { "sqlite3_column_bytes16",    test_stmt_int,   sqlite3_column_bytes16   },
-     { "sqlite3_column_text16",     test_stmt_utf16, sqlite3_column_text16    },
-     { "sqlite3_column_name16",     test_stmt_utf16, sqlite3_column_name16    },
+     { "sqlite3_column_bytes16", test_stmt_int, (void*)sqlite3_column_bytes16 },
+     { "sqlite3_column_text16",  test_stmt_utf16, (void*)sqlite3_column_text16},
+     { "sqlite3_column_name16",  test_stmt_utf16, (void*)sqlite3_column_name16},
      { "add_alignment_test_collations", add_alignment_test_collations, 0      },
 #ifndef SQLITE_OMIT_DECLTYPE
-     { "sqlite3_column_decltype16", test_stmt_utf16, sqlite3_column_decltype16},
+     { "sqlite3_column_decltype16",test_stmt_utf16,(void*)sqlite3_column_decltype16},
 #endif
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
 {"sqlite3_column_database_name16",
   test_stmt_utf16, sqlite3_column_database_name16},
-{"sqlite3_column_table_name16", test_stmt_utf16, sqlite3_column_table_name16},
-{"sqlite3_column_origin_name16", test_stmt_utf16, sqlite3_column_origin_name16},
+{"sqlite3_column_table_name16", test_stmt_utf16, (void*)sqlite3_column_table_name16},
+{"sqlite3_column_origin_name16", test_stmt_utf16, (void*)sqlite3_column_origin_name16},
 #endif
 #endif
      { "sqlite3_create_collation_v2", test_create_collation_v2, 0 },
