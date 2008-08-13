@@ -14,7 +14,7 @@
 # segfault if it sees a corrupt database file.  It specifically focuses
 # on corrupt cell offsets in a btree page.
 #
-# $Id: corrupt7.test,v 1.4 2008/07/26 18:26:10 danielk1977 Exp $
+# $Id: corrupt7.test,v 1.5 2008/08/13 14:07:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -72,31 +72,34 @@ do_test corrupt7-2.2 {
 } {{*** in database main ***
 Corruption detected in cell 15 on page 2}}
 
-do_test corrupt7-3.1 {
-  execsql {
-    DROP TABLE t1;
-    CREATE TABLE t1(a, b);
-    INSERT INTO t1 VALUES(1, 'one');
-    INSERT INTO t1 VALUES(100, 'one hundred');
-    INSERT INTO t1 VALUES(100000, 'one hundred thousand');
-    CREATE INDEX i1 ON t1(b);
-  }
-  db close
-
-  # Locate the 3rd cell in the index.
-  set cell_offset [hexio_get_int [hexio_read test.db [expr 1024*2 + 12] 2]]
-  incr cell_offset [expr 1024*2]
-  incr cell_offset 1
-
-  # This write corrupts the "header-size" field of the database record
-  # stored in the index cell. At one point this was causing sqlite to 
-  # reference invalid memory.
-  hexio_write test.db $cell_offset FFFF7F
-  
-  sqlite3 db test.db
-  catchsql {
-    SELECT b FROM t1 WHERE b > 'o' AND b < 'p';
-  }
-} {1 {database disk image is malformed}}
+# The code path that was causing the buffer overrun that this test
+# case was checking for was removed.
+#
+#do_test corrupt7-3.1 {
+#  execsql {
+#    DROP TABLE t1;
+#    CREATE TABLE t1(a, b);
+#    INSERT INTO t1 VALUES(1, 'one');
+#    INSERT INTO t1 VALUES(100, 'one hundred');
+#    INSERT INTO t1 VALUES(100000, 'one hundred thousand');
+#    CREATE INDEX i1 ON t1(b);
+#  }
+#  db close
+#
+#  # Locate the 3rd cell in the index.
+#  set cell_offset [hexio_get_int [hexio_read test.db [expr 1024*2 + 12] 2]]
+#  incr cell_offset [expr 1024*2]
+#  incr cell_offset 1
+#
+#  # This write corrupts the "header-size" field of the database record
+#  # stored in the index cell. At one point this was causing sqlite to 
+#  # reference invalid memory.
+#  hexio_write test.db $cell_offset FFFF7F
+#  
+#  sqlite3 db test.db
+#  catchsql {
+#    SELECT b FROM t1 WHERE b > 'o' AND b < 'p';
+#  }
+#} {1 {database disk image is malformed}}
 
 finish_test

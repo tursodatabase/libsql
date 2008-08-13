@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.773 2008/08/11 18:44:58 drh Exp $
+** $Id: vdbe.c,v 1.774 2008/08/13 14:07:40 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3058,10 +3058,10 @@ case OP_Found: {        /* jump, in3 */
     assert( pC->isTable==0 );
     assert( pIn3->flags & MEM_Blob );
     if( pOp->opcode==OP_Found ){
-      pC->pKeyInfo->prefixIsEqual = 1;
+      pC->pKeyInfo->ckPrefixOnly = 1;
     }
     rc = sqlite3BtreeMoveto(pC->pCursor, pIn3->z, 0, pIn3->n, 0, &res);
-    pC->pKeyInfo->prefixIsEqual = 0;
+    pC->pKeyInfo->ckPrefixOnly = 0;
     if( rc!=SQLITE_OK ){
       break;
     }

@@ -1,5 +1,5 @@
-C Make\ssure\sthe\slookaside\stest\sscript\ssaturates\sthe\slookaside\sbuffer\seven\nwhen\sSQLITE_DEBUG\sis\soff.\s\sTicket\s#3289\s(CVS\s5560)
-D 2008-08-12T15:48:25
+C A\spartial\sfix\sfor\sticket\s#3292.\s\sThis\sfixes\sthe\soriginal\sproblem\sbut\sthere\nare\sother\ssimilar\sproblems\slurking\sin\sthe\scode\sstill.\s(CVS\s5561)
+D 2008-08-13T14:07:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c a85c14612e7e3410e0c3d2e0241832fa9688bd14
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c da7491ef06c0209da962e1520bfc5c90b5c5cc96
+F src/btree.c 2ae1092eee58d2d89e5d2f59f711f805dec59bbc
 F src/btree.h 03256ed7ee42b5ecacbe887070b0f8249e7d069d
 F src/btreeInt.h ab18c7b4980314e9e4b402e5dcde09f3c2545576
 F src/build.c 931ed94fd3bbd67b6ac9d5ac6a45dc01e9f01726
@@ -146,7 +146,7 @@ F src/select.c 390d1bdde0c24f0225e369896da8e60ef2aeffbe
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 54e51c22e2294c5989156b0aec87aa44168ac1f0
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h be39605e2deee45c1004c8bf3927bdab2ec97e0c
+F src/sqliteInt.h df48efd8c4cb7b833bd7299a41c59c6651be0072
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 8caa772cd9310bc297280f7cf0ede4d69ed5b801
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -183,11 +183,11 @@ F src/update.c 79b77a3cc8ed5f8903a7f37055fcedd69388dcae
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
-F src/vdbe.c 2eff8c2206048f73e1ce23a56ed666b0591c56d5
-F src/vdbe.h 647fcf33a551ba10a974162c56846cb9aef2276b
+F src/vdbe.c cda10a8e6ac05c783d6cd8a1d4852754fa73cf3b
+F src/vdbe.h ccca49ce3db3486ae27f9baec68a77ccc29c43a9
 F src/vdbeInt.h 6f04c2bf65a0d5c2bb8318b226278a35d1f7a8f5
 F src/vdbeapi.c f21971516880fd3a10821b2cdd0e64a5a63952c9
-F src/vdbeaux.c 21126e0d319e19125f5e42fceafb17eafe58721c
+F src/vdbeaux.c 7b25fbbbdbd548b71c0a44d2f90fd3d0b06e70b8
 F src/vdbeblob.c f93110888ddc246215e9ba1f831d3d375bfd8355
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c c37b2a266a49eaf0c0f5080157f9f1a908fdaac3
@@ -250,7 +250,7 @@ F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
 F test/corrupt6.test e69b877d478224deab7b66844566258cecacd25e
-F test/corrupt7.test 34d3217f2e1b783e68374430e4049a3416e1d9e9
+F test/corrupt7.test 7a3be79b93dba88ba8472d61b57cb6d7b66cb69e
 F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 794d284109c65c8f10a2b275479045e02d163bae
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
@@ -545,6 +545,7 @@ F test/tkt3080.test 31a02e87a4c80ed443831c2c5b0e8216ff95ac14
 F test/tkt3093.test fbdbc5b4969244ad11f540759003e361fcaf391f
 F test/tkt3121.test 536df66a02838c26a12fe98639354ca1290ca68b
 F test/tkt3201.test 607d433ad2c1f6a8cb1af55aaca427f63c83191b
+F test/tkt3292.test 962465a0984a3b8c757efe59c2c59144871ee1dd
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
@@ -617,7 +618,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 697fe7a3167c22a3232ce154e9d47cf75af613c4
-R bc3261e0e67b2840551eab89813d1cbf
+P d6aacc5dc7c06f97fb5faa3d85a8f2d8ab0dd554
+R 9b480ed8f28854c07567551a082c6f07
 U drh
-Z 492a17374325436959e89a8ba7f54c34
+Z d0f90d7840e7d910b5f941e8ef52ae1d

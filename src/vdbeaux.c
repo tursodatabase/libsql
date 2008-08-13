@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.405 2008/08/02 03:50:39 drh Exp $
+** $Id: vdbeaux.c,v 1.406 2008/08/13 14:07:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2274,18 +2274,32 @@ void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord *p){
 ** sqlite3VdbeParseRecord.
 **
 ** Key1 and Key2 do not have to contain the same number of fields.
-** But if the lengths differ, Key2 must be the shorter of the two.
+** The key with fewer fields is usually considered lessor than the 
+** longer.  However if pPKey2->pKeyInfo->incrKey is set and
+** the common prefixes are equal, then key1 is less than key2.
+** Or if pPKey2->pKeyInfo->ckPrefixOnly flag is set and the 
+** prefixes are equal, then the keys are considered to be equal and
+** the parts beyond the common prefix are ignored.
+**
+** The last nHdrIgnore1 bytes of the header of pKey1 are ignored,
+** as if they do not exist.  Usually nHdrIgnore1 is 0 which means
+** that we look at the entire key.  But sometimes nHdrIgnore1 is 1.
+** When nHdrIgnore1 is 1, the keys are index records and so the last
+** column is a rowid.  The type code is always one byte in length.
+** Hence, setting nHdrIgnore1 to 1 means that the final rowid at the
+** end of the record should be treated as if it does not exist.
 **
 ** Historical note: In earlier versions of this routine both Key1
 ** and Key2 were blobs obtained from OP_MakeRecord.  But we found
 ** that in typical use the same Key2 would be submitted multiple times
 ** in a row.  So an optimization was added to parse the Key2 key
 ** separately and submit the parsed version.  In this way, we avoid
-** parsing the same Key2 multiple times in a row.
+** parsing the same Key2 multiple times.
 */
 int sqlite3VdbeRecordCompare(
-  int nKey1, const void *pKey1, 
-  UnpackedRecord *pPKey2
+  int nKey1, const void *pKey1, /* Left key */
+  int nHdrIgnore1,              /* Omit this much from end of key1 header */
+  UnpackedRecord *pPKey2        /* Right key */
 ){
   u32 d1;            /* Offset into aKey[] of next data element */
   u32 idx1;          /* Offset into aKey[] of next header element */
@@ -2305,6 +2319,7 @@ int sqlite3VdbeRecordCompare(
   
   idx1 = getVarint32(aKey1, szHdr1);
   d1 = szHdr1;
+  szHdr1 -= nHdrIgnore1;
   nField = pKeyInfo->nField;
   while( idx1<szHdr1 && i<pPKey2->nField ){
     u32 serial_type1;
@@ -2328,17 +2343,21 @@ int sqlite3VdbeRecordCompare(
   }
   if( mem1.zMalloc ) sqlite3VdbeMemRelease(&mem1);
 
-  /* One of the keys ran out of fields, but all the fields up to that point
-  ** were equal. If the incrKey flag is true, then the second key is
-  ** treated as larger.
-  */
   if( rc==0 ){
+    /* rc==0 here means that one of the keys ran out of fields and
+    ** all the fields up to that point were equal. If the incrKey 
+    ** flag is true, then break the tie by treating the second key 
+    ** as larger.  If ckPrefixOnly is true, then keys with common prefixes
+    ** are considered to be equal.  Otherwise, the longer key is the 
+    ** larger.  As it happens, the pPKey2 will always be the longer
+    ** if there is a difference.
+    */
     if( pKeyInfo->incrKey ){
       rc = -1;
-    }else if( !pKeyInfo->prefixIsEqual ){
-      if( d1<nKey1 ){
-        rc = 1;
-      }
+    }else if( pKeyInfo->ckPrefixOnly ){
+      /* Leave rc==0 */
+    }else if( idx1<szHdr1 ){
+      rc = 1;
     }
   }else if( pKeyInfo->aSortOrder && i<pKeyInfo->nField
                && pKeyInfo->aSortOrder[i] ){
@@ -2347,7 +2366,7 @@ int sqlite3VdbeRecordCompare(
 
   return rc;
 }
-
+  
 /*
 ** The argument is an index entry composed using the OP_MakeRecord opcode.
 ** The last entry in this record should be an integer (specifically
@@ -2366,7 +2385,7 @@ int sqlite3VdbeIdxRowidLen(const u8 *aKey, int nKey, int *pRowidLen){
   *pRowidLen = sqlite3VdbeSerialTypeLen(typeRowid);
   return SQLITE_OK;
 }
-  
+ 
 
 /*
 ** pCur points at an index entry created using the OP_MakeRecord opcode.
@@ -2409,18 +2428,21 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
 **
 ** pKey is either created without a rowid or is truncated so that it
 ** omits the rowid at the end.  The rowid at the end of the index entry
-** is ignored as well.
+** is ignored as well.  Hence, this routine only compares the prefixes 
+** of the keys prior to the final rowid, not the entire key.
+**
+** pUnpacked may be an unpacked version of pKey,nKey.  If pUnpacked is
+** supplied it is used in place of pKey,nKey.
 */
 int sqlite3VdbeIdxKeyCompare(
   Cursor *pC,                 /* The cursor to compare against */
-  UnpackedRecord *pUnpacked,
+  UnpackedRecord *pUnpacked,  /* Unpacked version of pKey and nKey */
   int nKey, const u8 *pKey,   /* The key to compare */
   int *res                    /* Write the comparison result here */
 ){
   i64 nCellKey = 0;
   int rc;
   BtCursor *pCur = pC->pCursor;
-  int lenRowid;
   Mem m;
   UnpackedRecord *pRec;
   char zSpace[200];
@@ -2433,9 +2455,8 @@ int sqlite3VdbeIdxKeyCompare(
   m.db = 0;
   m.flags = 0;
   m.zMalloc = 0;
-  if( (rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, nCellKey, 1, &m))
-   || (rc = sqlite3VdbeIdxRowidLen((u8*)m.z, m.n, &lenRowid))
-  ){
+  rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, nCellKey, 1, &m);
+  if( rc ){
     return rc;
   }
   if( !pUnpacked ){
@@ -2447,7 +2468,7 @@ int sqlite3VdbeIdxKeyCompare(
   if( pRec==0 ){
     return SQLITE_NOMEM;
   }
-  *res = sqlite3VdbeRecordCompare(m.n-lenRowid, m.z, pRec);
+  *res = sqlite3VdbeRecordCompare(m.n, m.z, 1, pRec);
   if( !pUnpacked ){
     sqlite3VdbeDeleteUnpackedRecord(pRec);
   }
