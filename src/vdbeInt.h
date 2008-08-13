@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.153 2008/08/02 03:50:39 drh Exp $
+** $Id: vdbeInt.h,v 1.154 2008/08/13 19:11:48 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -71,13 +71,11 @@ struct Cursor {
   Bool deferredMoveto;  /* A call to sqlite3BtreeMoveto() is needed */
   Bool isTable;         /* True if a table requiring integer keys */
   Bool isIndex;         /* True if an index containing keys only - no data */
-  u8 bogusIncrKey;      /* Something for pIncrKey to point to if pKeyInfo==0 */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   Btree *pBt;           /* Separate file holding temporary table */
   int nData;            /* Number of bytes in pData */
   char *pData;          /* Data for a NEW or OLD pseudo-table */
   i64 iKey;             /* Key for the NEW or OLD pseudo-table row */
-  u8 *pIncrKey;         /* Pointer to pKeyInfo->incrKey */
   KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
   int nField;           /* Number of fields in the header */
   i64 seqCount;         /* Sequence counter */
@@ -342,28 +340,6 @@ struct Vdbe {
 };
 
 /*
-** An instance of the following structure holds information about a
-** single index record that has already been parsed out into individual
-** values.
-**
-** A record is an object that contains one or more fields of data.
-** Records are used to store the content of a table row and to store
-** the key of an index.  A blob encoding of a record is created by
-** the OP_MakeRecord opcode of the VDBE and is disassemblied by the
-** OP_Column opcode.
-**
-** This structure holds a record that has already been disassembled
-** into its constitutent fields.
-*/
-struct UnpackedRecord {
-  KeyInfo *pKeyInfo;  /* Collation and sort-order information */
-  u16 nField;         /* Number of entries in apMem[] */
-  u8 needFree;        /* True if memory obtained from sqlite3_malloc() */
-  u8 needDestroy;     /* True if apMem[]s should be destroyed on close */
-  Mem *aMem;          /* Values */
-};
-
-/*
 ** The following are allowed values for Vdbe.magic
 */
 #define VDBE_MAGIC_INIT     0x26bceaa5    /* Building a VDBE program */
@@ -387,10 +363,9 @@ int sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
 void sqlite3VdbeDeleteAuxData(VdbeFunc*, int);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
-int sqlite3VdbeIdxKeyCompare(Cursor*,UnpackedRecord *,int,const unsigned char*,int*);
+int sqlite3VdbeIdxKeyCompare(Cursor*,UnpackedRecord*,int*);
 int sqlite3VdbeIdxRowid(BtCursor *, i64 *);
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
-int sqlite3VdbeIdxRowidLen(const u8*, int, int*);
 int sqlite3VdbeExec(Vdbe*);
 int sqlite3VdbeList(Vdbe*);
 int sqlite3VdbeHalt(Vdbe*);

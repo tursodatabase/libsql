@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.406 2008/08/13 14:07:41 drh Exp $
+** $Id: vdbeaux.c,v 1.407 2008/08/13 19:11:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1850,9 +1850,8 @@ int sqlite3VdbeCursorMoveto(Cursor *p){
     extern int sqlite3_search_count;
 #endif
     assert( p->isTable );
-    rc = sqlite3BtreeMoveto(p->pCursor, 0, 0, p->movetoTarget, 0, &res);
+    rc = sqlite3BtreeMovetoUnpacked(p->pCursor, 0, p->movetoTarget, 0, &res);
     if( rc ) return rc;
-    *p->pIncrKey = 0;
     p->lastRowid = keyToInt(p->movetoTarget);
     p->rowidIsValid = res==0;
     if( res<0 ){
@@ -2215,14 +2214,13 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
   if( nByte>szSpace ){
     p = sqlite3DbMallocRaw(pKeyInfo->db, nByte);
     if( p==0 ) return 0;
-    p->needFree = 1;
+    p->flags = UNPACKED_NEED_FREE | UNPACKED_NEED_DESTROY;
   }else{
     p = pSpace;
-    p->needFree = 0;
+    p->flags = UNPACKED_NEED_DESTROY;
   }
   p->pKeyInfo = pKeyInfo;
   p->nField = pKeyInfo->nField + 1;
-  p->needDestroy = 1;
   p->aMem = pMem = &((Mem*)p)[1];
   idx = getVarint32(aKey, szHdr);
   d = szHdr;
@@ -2249,7 +2247,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
 */
 void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord *p){
   if( p ){
-    if( p->needDestroy ){
+    if( p->flags & UNPACKED_NEED_DESTROY ){
       int i;
       Mem *pMem;
       for(i=0, pMem=p->aMem; i<p->nField; i++, pMem++){
@@ -2258,7 +2256,7 @@ void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord *p){
         }
       }
     }
-    if( p->needFree ){
+    if( p->flags & UNPACKED_NEED_FREE ){
       sqlite3DbFree(p->pKeyInfo->db, p);
     }
   }
@@ -2267,38 +2265,31 @@ void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord *p){
 /*
 ** This function compares the two table rows or index records
 ** specified by {nKey1, pKey1} and pPKey2.  It returns a negative, zero
-** or positive integer if {nKey1, pKey1} is less than, equal to or 
-** greater than pPKey2.  The {nKey1, pKey1} key must be a blob
+** or positive integer if key1 is less than, equal to or 
+** greater than key2.  The {nKey1, pKey1} key must be a blob
 ** created by th OP_MakeRecord opcode of the VDBE.  The pPKey2
 ** key must be a parsed key such as obtained from
 ** sqlite3VdbeParseRecord.
 **
 ** Key1 and Key2 do not have to contain the same number of fields.
-** The key with fewer fields is usually considered lessor than the 
-** longer.  However if pPKey2->pKeyInfo->incrKey is set and
-** the common prefixes are equal, then key1 is less than key2.
-** Or if pPKey2->pKeyInfo->ckPrefixOnly flag is set and the 
-** prefixes are equal, then the keys are considered to be equal and
+** The key with fewer fields is usually compares less than the 
+** longer key.  However if the UNPACKED_INCRKEY flags in pPKey2 is set
+** and the common prefixes are equal, then key1 is less than key2.
+** Or if the UNPACKED_MATCH_PREFIX flag is set and the prefixes are
+** equal, then the keys are considered to be equal and
 ** the parts beyond the common prefix are ignored.
 **
-** The last nHdrIgnore1 bytes of the header of pKey1 are ignored,
-** as if they do not exist.  Usually nHdrIgnore1 is 0 which means
-** that we look at the entire key.  But sometimes nHdrIgnore1 is 1.
-** When nHdrIgnore1 is 1, the keys are index records and so the last
-** column is a rowid.  The type code is always one byte in length.
-** Hence, setting nHdrIgnore1 to 1 means that the final rowid at the
-** end of the record should be treated as if it does not exist.
-**
-** Historical note: In earlier versions of this routine both Key1
-** and Key2 were blobs obtained from OP_MakeRecord.  But we found
-** that in typical use the same Key2 would be submitted multiple times
-** in a row.  So an optimization was added to parse the Key2 key
-** separately and submit the parsed version.  In this way, we avoid
-** parsing the same Key2 multiple times.
+** If the UNPACKED_IGNORE_ROWID flag is set, then the last byte of
+** the header of pKey1 is ignored.  It is assumed that pKey1 is
+** an index key, and thus ends with a rowid value.  The last byte
+** of the header will therefore be the serial type of the rowid:
+** one of 1, 2, 3, 4, 5, 6, 8, or 9 - the integer serial types.
+** The serial type of the final rowid will always be a single byte.
+** By ignoring this last byte of the header, we force the comparison
+** to ignore the rowid at the end of key1.
 */
 int sqlite3VdbeRecordCompare(
   int nKey1, const void *pKey1, /* Left key */
-  int nHdrIgnore1,              /* Omit this much from end of key1 header */
   UnpackedRecord *pPKey2        /* Right key */
 ){
   u32 d1;            /* Offset into aKey[] of next data element */
@@ -2319,7 +2310,9 @@ int sqlite3VdbeRecordCompare(
   
   idx1 = getVarint32(aKey1, szHdr1);
   d1 = szHdr1;
-  szHdr1 -= nHdrIgnore1;
+  if( pPKey2->flags & UNPACKED_IGNORE_ROWID ){
+    szHdr1--;
+  }
   nField = pKeyInfo->nField;
   while( idx1<szHdr1 && i<pPKey2->nField ){
     u32 serial_type1;
@@ -2345,16 +2338,16 @@ int sqlite3VdbeRecordCompare(
 
   if( rc==0 ){
     /* rc==0 here means that one of the keys ran out of fields and
-    ** all the fields up to that point were equal. If the incrKey 
-    ** flag is true, then break the tie by treating the second key 
-    ** as larger.  If ckPrefixOnly is true, then keys with common prefixes
+    ** all the fields up to that point were equal. If the UNPACKED_INCRKEY
+    ** flag is set, then break the tie by treating key2 as larger.
+    ** If the UPACKED_PREFIX_MATCH flag is set, then keys with common prefixes
     ** are considered to be equal.  Otherwise, the longer key is the 
     ** larger.  As it happens, the pPKey2 will always be the longer
     ** if there is a difference.
     */
-    if( pKeyInfo->incrKey ){
+    if( pPKey2->flags & UNPACKED_INCRKEY ){
       rc = -1;
-    }else if( pKeyInfo->ckPrefixOnly ){
+    }else if( pPKey2->flags & UNPACKED_PREFIX_MATCH ){
       /* Leave rc==0 */
     }else if( idx1<szHdr1 ){
       rc = 1;
@@ -2365,25 +2358,6 @@ int sqlite3VdbeRecordCompare(
   }
 
   return rc;
-}
-  
-/*
-** The argument is an index entry composed using the OP_MakeRecord opcode.
-** The last entry in this record should be an integer (specifically
-** an integer rowid).  This routine returns the number of bytes in
-** that integer.
-*/
-int sqlite3VdbeIdxRowidLen(const u8 *aKey, int nKey, int *pRowidLen){
-  u32 szHdr;        /* Size of the header */
-  u32 typeRowid;    /* Serial type of the rowid */
-
-  (void)getVarint32(aKey, szHdr);
-  if( szHdr>nKey ){
-    return SQLITE_CORRUPT_BKPT;
-  }
-  (void)getVarint32(&aKey[szHdr-1], typeRowid);
-  *pRowidLen = sqlite3VdbeSerialTypeLen(typeRowid);
-  return SQLITE_OK;
 }
  
 
@@ -2437,15 +2411,12 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
 int sqlite3VdbeIdxKeyCompare(
   Cursor *pC,                 /* The cursor to compare against */
   UnpackedRecord *pUnpacked,  /* Unpacked version of pKey and nKey */
-  int nKey, const u8 *pKey,   /* The key to compare */
   int *res                    /* Write the comparison result here */
 ){
   i64 nCellKey = 0;
   int rc;
   BtCursor *pCur = pC->pCursor;
   Mem m;
-  UnpackedRecord *pRec;
-  char zSpace[200];
 
   sqlite3BtreeKeySize(pCur, &nCellKey);
   if( nCellKey<=0 ){
@@ -2459,19 +2430,8 @@ int sqlite3VdbeIdxKeyCompare(
   if( rc ){
     return rc;
   }
-  if( !pUnpacked ){
-    pRec = sqlite3VdbeRecordUnpack(pC->pKeyInfo, nKey, pKey,
-                                zSpace, sizeof(zSpace));
-  }else{
-    pRec = pUnpacked;
-  }
-  if( pRec==0 ){
-    return SQLITE_NOMEM;
-  }
-  *res = sqlite3VdbeRecordCompare(m.n, m.z, 1, pRec);
-  if( !pUnpacked ){
-    sqlite3VdbeDeleteUnpackedRecord(pRec);
-  }
+  assert( pUnpacked->flags & UNPACKED_IGNORE_ROWID );
+  *res = sqlite3VdbeRecordCompare(m.n, m.z, pUnpacked);
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
 }

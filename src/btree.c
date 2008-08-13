@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.496 2008/08/13 14:07:40 drh Exp $
+** $Id: btree.c,v 1.497 2008/08/13 19:11:48 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -375,7 +375,7 @@ int sqlite3BtreeRestoreCursorPosition(BtCursor *pCur){
     return pCur->skip;
   }
   pCur->eState = CURSOR_INVALID;
-  rc = sqlite3BtreeMoveto(pCur, pCur->pKey, 0, pCur->nKey, 0, &pCur->skip);
+  rc = sqlite3BtreeMoveto(pCur, pCur->pKey, pCur->nKey, 0, &pCur->skip);
   if( rc==SQLITE_OK ){
     sqlite3_free(pCur->pKey);
     pCur->pKey = 0;
@@ -3648,12 +3648,11 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 }
 
 /* Move the cursor so that it points to an entry near the key 
-** specified by pKey/nKey/pUnKey. Return a success code.
+** specified by pIdxKey or intKey.   Return a success code.
 **
-** For INTKEY tables, only the nKey parameter is used.  pKey 
-** and pUnKey must be NULL.  For index tables, either pUnKey
-** must point to a key that has already been unpacked, or else
-** pKey/nKey describes a blob containing the key.
+** For INTKEY tables, the intKey parameter is used.  pIdxKey 
+** must be NULL.  For index tables, pIdxKey is used and intKey
+** is ignored.
 **
 ** If an exact match is not found, then the cursor is always
 ** left pointing at a leaf page which would hold the entry if it
@@ -3675,16 +3674,14 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 **                  is larger than pKey.
 **
 */
-int sqlite3BtreeMoveto(
-  BtCursor *pCur,        /* The cursor to be moved */
-  const void *pKey,      /* The key content for indices.  Not used by tables */
-  UnpackedRecord *pUnKey,/* Unpacked version of pKey */
-  i64 nKey,              /* Size of pKey.  Or the key for tables */
-  int biasRight,         /* If true, bias the search to the high end */
-  int *pRes              /* Search result flag */
+int sqlite3BtreeMovetoUnpacked(
+  BtCursor *pCur,          /* The cursor to be moved */
+  UnpackedRecord *pIdxKey, /* Unpacked index key */
+  i64 intKey,              /* The table key */
+  int biasRight,           /* If true, bias the search to the high end */
+  int *pRes                /* Write search results here */
 ){
   int rc;
-  char aSpace[200];
 
   assert( cursorHoldsMutex(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
@@ -3692,11 +3689,11 @@ int sqlite3BtreeMoveto(
   /* If the cursor is already positioned at the point we are trying
   ** to move to, then just return without doing any work */
   if( pCur->eState==CURSOR_VALID && pCur->validNKey && pCur->pPage->intKey ){
-    if( pCur->info.nKey==nKey ){
+    if( pCur->info.nKey==intKey ){
       *pRes = 0;
       return SQLITE_OK;
     }
-    if( pCur->atLast && pCur->info.nKey<nKey ){
+    if( pCur->atLast && pCur->info.nKey<intKey ){
       *pRes = -1;
       return SQLITE_OK;
     }
@@ -3714,24 +3711,7 @@ int sqlite3BtreeMoveto(
     assert( pCur->pPage->nCell==0 );
     return SQLITE_OK;
   }
-  if( pCur->pPage->intKey ){
-    /* We are given an SQL table to search.  The key is the integer
-    ** rowid contained in nKey.  pKey and pUnKey should both be NULL */
-    assert( pUnKey==0 );
-    assert( pKey==0 );
-  }else if( pUnKey==0 ){
-    /* We are to search an SQL index using a key encoded as a blob.
-    ** The blob is found at pKey and is nKey bytes in length.  Unpack
-    ** this key so that we can use it. */
-    assert( pKey!=0 );
-    pUnKey = sqlite3VdbeRecordUnpack(pCur->pKeyInfo, nKey, pKey,
-                                   aSpace, sizeof(aSpace));
-    if( pUnKey==0 ) return SQLITE_NOMEM;
-  }else{
-    /* We are to search an SQL index using a key that is already unpacked
-    ** and handed to us in pUnKey. */
-    assert( pKey==0 );
-  }
+  assert( pCur->pPage->intKey || pIdxKey );
   for(;;){
     int lwr, upr;
     Pgno chldPg;
@@ -3739,7 +3719,7 @@ int sqlite3BtreeMoveto(
     int c = -1;  /* pRes return if table is empty must be -1 */
     lwr = 0;
     upr = pPage->nCell-1;
-    if( !pPage->intKey && pUnKey==0 ){
+    if( !pPage->intKey && pIdxKey==0 ){
       rc = SQLITE_CORRUPT_BKPT;
       goto moveto_finish;
     }
@@ -3761,12 +3741,12 @@ int sqlite3BtreeMoveto(
           pCell += getVarint32(pCell, dummy);
         }
         getVarint(pCell, (u64*)&nCellKey);
-        if( nCellKey==nKey ){
+        if( nCellKey==intKey ){
           c = 0;
-        }else if( nCellKey<nKey ){
+        }else if( nCellKey<intKey ){
           c = -1;
         }else{
-          assert( nCellKey>nKey );
+          assert( nCellKey>intKey );
           c = +1;
         }
       }else{
@@ -3774,7 +3754,7 @@ int sqlite3BtreeMoveto(
         pCellKey = (void *)fetchPayload(pCur, &available, 0);
         nCellKey = pCur->info.nKey;
         if( available>=nCellKey ){
-          c = sqlite3VdbeRecordCompare(nCellKey, pCellKey, 0, pUnKey);
+          c = sqlite3VdbeRecordCompare(nCellKey, pCellKey, pIdxKey);
         }else{
           pCellKey = sqlite3Malloc( nCellKey );
           if( pCellKey==0 ){
@@ -3782,7 +3762,7 @@ int sqlite3BtreeMoveto(
             goto moveto_finish;
           }
           rc = sqlite3BtreeKey(pCur, 0, nCellKey, (void *)pCellKey);
-          c = sqlite3VdbeRecordCompare(nCellKey, pCellKey, 0, pUnKey);
+          c = sqlite3VdbeRecordCompare(nCellKey, pCellKey, pIdxKey);
           sqlite3_free(pCellKey);
           if( rc ) goto moveto_finish;
         }
@@ -3832,10 +3812,35 @@ int sqlite3BtreeMoveto(
     if( rc ) goto moveto_finish;
   }
 moveto_finish:
+  return rc;
+}
+
+/*
+** In this version of BtreeMoveto, pKey is a packed index record
+** such as is generated by the OP_MakeRecord opcode.  Unpack the
+** record and then call BtreeMovetoUnpacked() to do the work.
+*/
+int sqlite3BtreeMoveto(
+  BtCursor *pCur,     /* Cursor open on the btree to be searched */
+  const void *pKey,   /* Packed key if the btree is an index */
+  i64 nKey,           /* Integer key for tables.  Size of pKey for indices */
+  int bias,           /* Bias search to the high end */
+  int *pRes           /* Write search results here */
+){
+  int rc;                    /* Status code */
+  UnpackedRecord *pIdxKey;   /* Unpacked index key */
+  char aSpace[200];          /* Temp space for pIdxKey - to avoid a malloc */
+
   if( pKey ){
-    /* If we created our own unpacked key at the top of this
-    ** procedure, then destroy that key before returning. */
-    sqlite3VdbeDeleteUnpackedRecord(pUnKey);
+    pIdxKey = sqlite3VdbeRecordUnpack(pCur->pKeyInfo, nKey, pKey,
+                                   aSpace, sizeof(aSpace));
+    if( pIdxKey==0 ) return SQLITE_NOMEM;
+  }else{
+    pIdxKey = 0;
+  }
+  rc = sqlite3BtreeMovetoUnpacked(pCur, pIdxKey, nKey, bias, pRes);
+  if( pKey ){
+    sqlite3VdbeDeleteUnpackedRecord(pIdxKey);
   }
   return rc;
 }
@@ -5836,7 +5841,7 @@ int sqlite3BtreeInsert(
   clearCursorPosition(pCur);
   if( 
     SQLITE_OK!=(rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur)) ||
-    SQLITE_OK!=(rc = sqlite3BtreeMoveto(pCur, pKey, 0, nKey, appendBias, &loc))
+    SQLITE_OK!=(rc = sqlite3BtreeMoveto(pCur, pKey, nKey, appendBias, &loc))
   ){
     return rc;
   }

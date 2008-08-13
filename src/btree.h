@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.102 2008/07/11 21:02:54 drh Exp $
+** @(#) $Id: btree.h,v 1.103 2008/08/13 19:11:48 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -122,8 +122,6 @@ int sqlite3BtreeGetMeta(Btree*, int idx, u32 *pValue);
 int sqlite3BtreeUpdateMeta(Btree*, int idx, u32 value);
 void sqlite3BtreeTripAllCursors(Btree*, int);
 
-struct UnpackedRecord;  /* Forward declaration.  Definition in vdbeaux.c. */
-
 int sqlite3BtreeCursor(
   Btree*,                              /* BTree containing table to open */
   int iTable,                          /* Index of root page */
@@ -137,8 +135,14 @@ int sqlite3BtreeCloseCursor(BtCursor*);
 int sqlite3BtreeMoveto(
   BtCursor*,
   const void *pKey,
-  struct UnpackedRecord *pUnKey,
   i64 nKey,
+  int bias,
+  int *pRes
+);
+int sqlite3BtreeMovetoUnpacked(
+  BtCursor*,
+  UnpackedRecord *pUnKey,
+  i64 intKey,
   int bias,
   int *pRes
 );

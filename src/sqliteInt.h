@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.754 2008/08/13 14:07:40 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.755 2008/08/13 19:11:48 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -470,6 +470,7 @@ typedef struct Token Token;
 typedef struct TriggerStack TriggerStack;
 typedef struct TriggerStep TriggerStep;
 typedef struct Trigger Trigger;
+typedef struct UnpackedRecord UnpackedRecord;
 typedef struct WhereInfo WhereInfo;
 typedef struct WhereLevel WhereLevel;
 
@@ -1037,20 +1038,44 @@ struct FKey {
 ** An instance of the following structure is passed as the first
 ** argument to sqlite3VdbeKeyCompare and is used to control the 
 ** comparison of the two index keys.
-**
-** If the KeyInfo.incrKey value is true and the comparison would
-** otherwise be equal, then return a result as if the second key
-** were larger.
 */
 struct KeyInfo {
   sqlite3 *db;        /* The database connection */
   u8 enc;             /* Text encoding - one of the TEXT_Utf* values */
-  u8 incrKey;         /* Increase 2nd key by epsilon before comparison */
-  u8 ckPrefixOnly;    /* Records are equal if shorter is a prefix of longer */
-  int nField;         /* Number of entries in aColl[] */
+  u16 nField;         /* Number of entries in aColl[] */
   u8 *aSortOrder;     /* If defined an aSortOrder[i] is true, sort DESC */
   CollSeq *aColl[1];  /* Collating sequence for each term of the key */
 };
+
+/*
+** An instance of the following structure holds information about a
+** single index record that has already been parsed out into individual
+** values.
+**
+** A record is an object that contains one or more fields of data.
+** Records are used to store the content of a table row and to store
+** the key of an index.  A blob encoding of a record is created by
+** the OP_MakeRecord opcode of the VDBE and is disassemblied by the
+** OP_Column opcode.
+**
+** This structure holds a record that has already been disassembled
+** into its constitutent fields.
+*/
+struct UnpackedRecord {
+  KeyInfo *pKeyInfo;  /* Collation and sort-order information */
+  u16 nField;         /* Number of entries in apMem[] */
+  u16 flags;          /* Boolean settings.  UNPACKED_... below */
+  Mem *aMem;          /* Values */
+};
+
+/*
+** Allowed values of UnpackedRecord.flags
+*/
+#define UNPACKED_NEED_FREE     0x0001  /* Memory is from sqlite3Malloc() */
+#define UNPACKED_NEED_DESTROY  0x0002  /* apMem[]s should all be destroyed */
+#define UNPACKED_IGNORE_ROWID  0x0004  /* Ignore trailing rowid on key1 */
+#define UNPACKED_INCRKEY       0x0008  /* Make this key an epsilon larger */
+#define UNPACKED_PREFIX_MATCH  0x0010  /* A prefix match is considered OK */
 
 /*
 ** Each SQL index is represented in memory by an
