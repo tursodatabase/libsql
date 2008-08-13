@@ -1,5 +1,5 @@
-C Additional\schanges\stoward\sfixing\sticket\s#3292.\s(CVS\s5562)
-D 2008-08-13T19:11:48
+C Fix\stoken\sdestructors\sin\slemon\sgenerated\sparsers.\s\sDoes\snot\seffect\sSQLite.\nTicket\s#3299.\s(CVS\s5563)
+D 2008-08-13T20:04:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -596,7 +596,7 @@ F test/where6.test 42c4373595f4409d9c6a9987b4a60000ad664faf
 F test/zeroblob.test 792124852ec61458a2eb527b5091791215e0be95
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/lemon.c bd3f56f7e949fc016639159d77936d07a29ad418
+F tool/lemon.c b1079f06558d1a94912271aa5c60600cc6022c1d
 F tool/lempar.c 4d115ee7c0c8a749d5b22abed731abb4e6546a5f
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
@@ -618,7 +618,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 055f173ab1b6fb657bf817faa3a37335d8fa60d5
-R 3660b918f4cbadc772ff6c9bb7d03fb8
+P 0b92cbf5255020d4fde382f81590ff0488936667
+R 9d574c529378b3d73d80ccf88b33d8ef
 U drh
-Z ef96eabf3e6f46a636feb3cbdfe8a28b
+Z fdcb2741ad3dd67c96bbb89ab36fad62

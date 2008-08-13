@@ -3315,7 +3315,7 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
       lemp->errorcnt++;
     }else if( rp->rhsalias[i]==0 ){
       if( has_destructor(rp->rhs[i],lemp) ){
-        append_str("  yy_destructor(%d,&yymsp[%d].minor);\n", 0,
+        append_str("  yy_destructor(yypParser,%d,&yymsp[%d].minor);\n", 0,
            rp->rhs[i]->index,i-rp->nrhs+1);
       }else{
         /* No destructor defined for this term */
