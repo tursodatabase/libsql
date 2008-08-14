@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.464 2008/08/08 18:06:26 drh Exp $
+** $Id: select.c,v 1.465 2008/08/14 00:19:49 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2915,8 +2915,8 @@ static void substSelect(
 **
 **   (2)  The subquery is not an aggregate or the outer query is not a join.
 **
-**   (3)  The subquery is not the right operand of a left outer join, or
-**        the subquery is not itself a join.  (Ticket #306)
+**   (3)  The subquery is not the right operand of a left outer join
+**        (Originally ticket #306.  Strenghtened by ticket #3300)
 **
 **   (4)  The subquery is not DISTINCT or the outer query is not a join.
 **
@@ -2938,8 +2938,8 @@ static void substSelect(
 **
 **  (11)  The subquery and the outer query do not both have ORDER BY clauses.
 **
-**  (12)  The subquery is not the right term of a LEFT OUTER JOIN or the
-**        subquery has no WHERE clause.  (added by ticket #350)
+**  (12)  Not implemented.  Subsumed into restriction (3).  Was previously
+**        a separate restriction deriving from ticket #350.
 **
 **  (13)  The subquery and outer query do not both use LIMIT
 **
@@ -3033,7 +3033,8 @@ static int flattenSubquery(
   }
   if( isAgg && pSub->pOrderBy ) return 0;                /* Restriction (16) */
 
-  /* Restriction 3:  If the subquery is a join, make sure the subquery is 
+  /* OBSOLETE COMMENT 1:
+  ** Restriction 3:  If the subquery is a join, make sure the subquery is 
   ** not used as the right operand of an outer join.  Examples of why this
   ** is not allowed:
   **
@@ -3044,12 +3045,9 @@ static int flattenSubquery(
   **         (t1 LEFT OUTER JOIN t2) JOIN t3
   **
   ** which is not at all the same thing.
-  */
-  if( pSubSrc->nSrc>1 && (pSubitem->jointype & JT_OUTER)!=0 ){
-    return 0;
-  }
-
-  /* Restriction 12:  If the subquery is the right operand of a left outer
+  **
+  ** OBSOLETE COMMENT 2:
+  ** Restriction 12:  If the subquery is the right operand of a left outer
   ** join, make sure the subquery has no WHERE clause.
   ** An examples of why this is not allowed:
   **
@@ -3061,8 +3059,13 @@ static int flattenSubquery(
   **
   ** But the t2.x>0 test will always fail on a NULL row of t2, which
   ** effectively converts the OUTER JOIN into an INNER JOIN.
+  **
+  ** THIS OVERRIDES OBSOLETE COMMENTS 1 AND 2 ABOVE:
+  ** Ticket #3300 shows that flattening the right term of a LEFT JOIN
+  ** is fraught with danger.  Best to avoid the whole thing.  If the
+  ** subquery is the right term of a LEFT JOIN, then do not flatten.
   */
-  if( (pSubitem->jointype & JT_OUTER)!=0 && pSub->pWhere!=0 ){
+  if( (pSubitem->jointype & JT_OUTER)!=0 ){
     return 0;
   }
 

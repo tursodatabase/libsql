@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.24 2008/07/09 14:47:21 danielk1977 Exp $
+# $Id: join.test,v 1.25 2008/08/14 00:19:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -422,6 +422,16 @@ do_test join-8.3 {
     SELECT * FROM v10_11 LEFT JOIN t9 ON( a=x );
   }
 } {1 111 1 11 3 333 {} {}}
+ifcapable subquery {
+  # Constant expressions in a subquery that is the right element of a
+  # LEFT JOIN evaluate to NULL for rows where the LEFT JOIN does not
+  # match.  Ticket #3300
+  do_test join-8.4 {
+    execsql {
+      SELECT * FROM t9 LEFT JOIN (SELECT 44, p, q FROM t11) AS sub1 ON p=a
+    }
+  } {1 11 {} {} {} 2 22 44 2 111}
+}
 } ;# ifcapable view
 
 # Ticket #350 describes a scenario where LEFT OUTER JOIN does not
