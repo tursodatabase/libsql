@@ -1,5 +1,5 @@
-C Fix\stypo\sin\smain.c:\sSQLITE_MAX_ATTACH\s->\sSQLITE_MAX_ATTACHED.\sTicket\s#3319.\s(CVS\s5567)
-D 2008-08-20T16:21:12
+C When\sa\s"pragma\smain.table_info(...)"\sis\sissued,\sconsider\sonly\stables\sfrom\sthe\smain\sdatabase,\snot\sthe\stemp\sdb.\sTicket\s#3320.\s(CVS\s5568)
+D 2008-08-20T16:34:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e277c1f6dee97c18ef2f64db608da63eea4cc933
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/pager.h fb9376af5ba8e1eb78ee3b4f15eb0f60658ffd65
 F src/parse.y 84003422b2862f82bd187dfa2399557fd1f4ecbe
 F src/pcache.c c1a9abb5e2aa3d1d52a2995c8e0a36535d4d1bc2
 F src/pcache.h 71ade7a84ed87d9d20507315260b1d91808d7c9a
-F src/pragma.c 6e207b4f69901089758c02c02e0bf86ed12a4d8f
+F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c fceb567b359daaa6c6e2a4d04a01dec01ac0c907
 F src/printf.c 2e984b2507291a7e16d89dc9bb60582904f6247d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
@@ -444,7 +444,7 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
 F test/permutations.test 4ad59e4489255b025aac0cc661789d35a83d87ec
-F test/pragma.test 2c675ed9a288094ed62bf55b35fbc749e25670fb
+F test/pragma.test b55931bbd5dd543e56fd942dbf4b7439619b09a6
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
@@ -621,7 +621,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cb494e10d71852024647aaa254203579ad438ea9
-R d898350f4044b9e4cf9b478d2288a8ab
+P 66ff55efd688703fe99143e4c17e8d5f119d0690
+R 0d247ce1493fb2ede2a50a5e354297e6
 U danielk1977
-Z 98a270009068c853c61f64d820ba1780
+Z 33cfa9a4ef54e991c9419dcc5b206894

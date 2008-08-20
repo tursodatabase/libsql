@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.64 2008/07/12 14:52:20 drh Exp $
+# $Id: pragma.test,v 1.65 2008/08/20 16:34:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -541,6 +541,33 @@ do_test pragma-6.5 {
     pragma index_info(t3i1);
   }
 } {0 0 a 1 1 b}
+
+ifcapable tempdb {
+  # Test for ticket #3320. When a temp table of the same name exists, make
+  # sure the schema of the main table can still be queried using 
+  # "pragma table_info":
+  do_test pragma-6.6.1 {
+    execsql {
+      CREATE TABLE trial(col_main);
+      CREATE TEMP TABLE trial(col_temp);
+    }
+  } {}
+  do_test pragma-6.6.2 {
+    execsql {
+      PRAGMA table_info(trial);
+    }
+  } {0 col_temp {} 0 {} 0}
+  do_test pragma-6.6.3 {
+    execsql {
+      PRAGMA temp.table_info(trial);
+    }
+  } {0 col_temp {} 0 {} 0}
+  do_test pragma-6.6.4 {
+    execsql {
+      PRAGMA main.table_info(trial);
+    }
+  } {0 col_main {} 0 {} 0}
+}
 } ;# ifcapable schema_pragmas
 # Miscellaneous tests
 #

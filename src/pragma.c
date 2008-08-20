@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.183 2008/07/28 19:34:53 drh Exp $
+** $Id: pragma.c,v 1.184 2008/08/20 16:34:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -275,7 +275,7 @@ void sqlite3Pragma(
     zRight = sqlite3NameFromToken(db, pValue);
   }
 
-  zDb = ((iDb>0)?pDb->zName:0);
+  zDb = ((pId2 && pId2->n>0)?pDb->zName:0);
   if( sqlite3AuthCheck(pParse, SQLITE_PRAGMA, zLeft, zRight, zDb) ){
     goto pragma_out;
   }
