@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.408 2008/08/20 16:35:10 drh Exp $
+** $Id: vdbeaux.c,v 1.409 2008/08/20 22:06:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2198,7 +2198,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
   KeyInfo *pKeyInfo,     /* Information about the record format */
   int nKey,              /* Size of the binary record */
   const void *pKey,      /* The binary record */
-  void *pSpace,          /* Space available to hold resulting object */
+  UnpackedRecord *pSpace,/* Space available to hold resulting object */
   int szSpace            /* Size of pSpace[] in bytes */
 ){
   const unsigned char *aKey = (const unsigned char *)pKey;

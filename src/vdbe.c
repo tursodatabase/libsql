@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.775 2008/08/13 19:11:48 drh Exp $
+** $Id: vdbe.c,v 1.776 2008/08/20 22:06:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -555,7 +555,7 @@ int sqlite3VdbeExec(
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   int nProgressOps = 0;      /* Opcodes executed since progress callback. */
 #endif
-  char zTempSpace[200];      /* Space to hold a transient UnpackedRecord */
+  UnpackedRecord aTempRec[16]; /* Space to hold a transient UnpackedRecord */
 
 
   assert( p->magic==VDBE_MAGIC_RUN );  /* sqlite3_step() verifies this */
@@ -3058,7 +3058,7 @@ case OP_Found: {        /* jump, in3 */
     assert( pC->isTable==0 );
     assert( pIn3->flags & MEM_Blob );
     pIdxKey = sqlite3VdbeRecordUnpack(pC->pKeyInfo, pIn3->n, pIn3->z,
-                                      zTempSpace, sizeof(zTempSpace));
+                                      aTempRec, sizeof(aTempRec));
     if( pIdxKey==0 ){
       goto no_mem;
     }
@@ -3129,7 +3129,7 @@ case OP_IsUnique: {        /* jump, in3 */
     */
     assert( pK->flags & MEM_Blob );
     pIdxKey = sqlite3VdbeRecordUnpack(pCx->pKeyInfo, pK->n, pK->z,
-                                      zTempSpace, sizeof(zTempSpace));
+                                      aTempRec, sizeof(aTempRec));
     if( pIdxKey==0 ){
       goto no_mem;
     }
