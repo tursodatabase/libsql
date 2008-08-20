@@ -1,5 +1,5 @@
-C Add\sthe\spcache\smodule\sfrom\sthe\sexperimental\sbranch.\sAlso\schange\sthings\sso\sthat\smost\sof\sthe\sbuilt-in\sSQL\sfunctions\sare\skept\sin\ssingle\sstatic\shash-table,\srather\sthan\screating\sand\spopulating\sa\sseparate\shash\stable\sfor\seach\sopen\sdatabase\sconnection.\s(CVS\s5566)
-D 2008-08-20T14:49:24
+C Fix\stypo\sin\smain.c:\sSQLITE_MAX_ATTACH\s->\sSQLITE_MAX_ATTACHED.\sTicket\s#3319.\s(CVS\s5567)
+D 2008-08-20T16:21:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e277c1f6dee97c18ef2f64db608da63eea4cc933
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/insert.c 89cd9af52a5ea6fb7d0cfc9c3b935d6406c360c4
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c eb1fe4f44d7c8ff53fc0c6a4388ab79fbd34cd64
-F src/main.c c900d0f46ddb127866ba272a2124ce56dd8592dd
+F src/main.c 64df39151a77bf521cee8ef54efc3c71328d8bb4
 F src/malloc.c 56918cddc4da7a0590eef4a2497e97b781f5c25f
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 3a7fe31d8290baa3bb203af72f7dfd6323966bcd
@@ -621,7 +621,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8947c72f93d0b79c8061a3bfd5ab595edfb155a5
-R 10a01c477903bc3de835b14e423b9901
+P cb494e10d71852024647aaa254203579ad438ea9
+R d898350f4044b9e4cf9b478d2288a8ab
 U danielk1977
-Z 0dd70edbac3b8ebacf6c1d5a239b80f0
+Z 98a270009068c853c61f64d820ba1780
