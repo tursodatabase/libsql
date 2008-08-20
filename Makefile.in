@@ -617,7 +617,7 @@ parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/addopcodes.awk
 	$(NAWK) -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
 func2.c: $(TOP)/src/func.c $(HDR)
-	$(BCC) -o mkfunction$(BEXE) $(OPTS) $(TOP)/tool/mkfunction.c -I$(TOP)/src -I.
+	$(BCC) -o mkfunction$(BEXE) $(OPTS) $(OPT_FEATURE_FLAGS) $(TOP)/tool/mkfunction.c -I$(TOP)/src -I.
 	cat $(TOP)/src/func.c > func2.c
 	./mkfunction$(BEXE) >> func2.c
 
