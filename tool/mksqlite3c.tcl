@@ -101,6 +101,7 @@ foreach hdr {
    os_os2.h
    pager.h
    parse.h
+   pcache.h
    rtree.h
    sqlite3ext.h
    sqlite3.h
@@ -231,6 +232,7 @@ foreach file {
    os_win.c
 
    bitvec.c
+   pcache.c
    pager.c
 
    btmutex.c
@@ -252,7 +254,7 @@ foreach file {
    build.c
    callback.c
    delete.c
-   func.c
+   func2.c
    insert.c
    legacy.c
    loadext.c

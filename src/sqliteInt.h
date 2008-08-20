@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.755 2008/08/13 19:11:48 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.756 2008/08/20 14:49:25 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -482,6 +482,7 @@ typedef struct WhereLevel WhereLevel;
 #include "btree.h"
 #include "vdbe.h"
 #include "pager.h"
+#include "pcache.h"
 
 #include "os.h"
 #include "mutex.h"
@@ -757,7 +758,7 @@ struct FuncDef {
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**); /* Regular function */
   void (*xStep)(sqlite3_context*,int,sqlite3_value**); /* Aggregate step */
   void (*xFinalize)(sqlite3_context*);                /* Aggregate finializer */
-  char zName[1];       /* SQL name of the function.  MUST BE LAST */
+  char *zName;         /* SQL name of the function. */
 };
 
 /*
@@ -1932,6 +1933,7 @@ int sqlite3IsNaN(double);
 
 void sqlite3VXPrintf(StrAccum*, int, const char*, va_list);
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
+char *sqlite3MAppendf(sqlite3 *, char *, const char *, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
@@ -2081,6 +2083,7 @@ Select *sqlite3SelectDup(sqlite3*,Select*);
 FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,int,u8,int);
 void sqlite3RegisterBuiltinFunctions(sqlite3*);
 void sqlite3RegisterDateTimeFunctions(sqlite3*);
+int sqlite3GetBuiltinFunction(const char *, int, FuncDef **);
 #ifdef SQLITE_DEBUG
   int sqlite3SafetyOn(sqlite3*);
   int sqlite3SafetyOff(sqlite3*);

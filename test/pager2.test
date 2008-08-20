@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager2.test,v 1.6 2007/03/23 18:12:07 danielk1977 Exp $
+# $Id: pager2.test,v 1.7 2008/08/20 14:49:25 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -75,6 +75,7 @@ do_test pager2-2.3.3 {
 } {ref 1 page 1 max 10 size 0 state 1 err 0 hit 0 miss 1 ovfl 0}
 do_test pager2-2.3.4 {
   set ::gx [page_lookup $::p1 1]
+  page_unref $::gx
   expr {$::gx!=""}
 } {1}
 do_test pager2-2.3.5 {
@@ -84,7 +85,6 @@ do_test pager2-2.3.6 {
   expr {$::g1==$::gx}
 } {1}
 do_test pager2-2.3.7 {
-  page_unref $::gx
   pager_stats $::p1
 } {ref 1 page 1 max 10 size 0 state 1 err 0 hit 0 miss 1 ovfl 0}
 do_test pager2-2.4 {
@@ -181,9 +181,9 @@ do_test pager2-2.29 {
   set ::g1 [page_get $::p1 1]
   page_read $::g1
 } {Page-One}
-#do_test pager2-2.99 {
-#  pager_close $::p1
-#} {}
+do_test pager2-2.99 {
+  page_unref $::g1
+} {}
 
 #do_test pager2-3.1 {
 #  set v [catch {
@@ -212,6 +212,7 @@ do_test pager2-3.5 {
     page_unref $gx
   }
   pager_commit $::p1
+  page_unref $::g(1)
 } {}
 for {set i 2} {$i<=20} {incr i} {
   do_test pager2-3.6.[expr {$i-1}] [subst {
@@ -337,6 +338,7 @@ for {set i 1} {$i<20} {incr i} {
     }
     set res
   } {}
+breakpoint
   do_test pager2-4.5.$i.5 {
     page_write $g1 "Page-1 v$i"
     lrange [pager_stats $p1] 8 9
@@ -398,6 +400,7 @@ for {set i 1} {$i<20} {incr i} {
 }
 
 do_test pager2-4.99 {
+  page_unref $::g1
   pager_close $::p1
 } {}
 

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.59 2008/07/12 14:52:20 drh Exp $
+** $Id: test2.c,v 1.60 2008/08/20 14:49:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -78,7 +78,7 @@ static int pager_open(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &nPage) ) return TCL_ERROR;
-  rc = sqlite3PagerOpen(sqlite3_vfs_find(0), &pPager, argv[1], 0, 0,
+  rc = sqlite3PagerOpen(sqlite3_vfs_find(0), &pPager, argv[1], 0, 0, 0,
       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
@@ -383,6 +383,26 @@ static int page_lookup(
 }
 
 /*
+** Usage:   pcache_global_max NPAGE
+*/
+static int pcache_global_max(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  int nPage;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " NPAGE\"", 0);
+    return TCL_ERROR;
+  }
+  if( Tcl_GetInt(interp, argv[1], &nPage) ) return TCL_ERROR;
+  sqlite3PcacheGlobalMax(nPage);
+  return TCL_OK;
+}
+
+/*
 ** Usage:   pager_truncate ID PGNO
 */
 static int pager_truncate(
@@ -630,6 +650,7 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
     { "page_write",              (Tcl_CmdProc*)page_write          },
     { "page_number",             (Tcl_CmdProc*)page_number         },
     { "pager_truncate",          (Tcl_CmdProc*)pager_truncate      },
+    { "pcache_global_max",       (Tcl_CmdProc*)pcache_global_max   },
 #ifndef SQLITE_OMIT_DISKIO
     { "fake_big_file",           (Tcl_CmdProc*)fake_big_file       },
 #endif

@@ -157,12 +157,12 @@ NAWK = @AWK@
 #
 OBJS0 = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo \
         btree.lo build.lo callback.lo complete.lo date.lo \
-        delete.lo expr.lo fault.lo func.lo global.lo \
+        delete.lo expr.lo fault.lo func2.lo global.lo \
         hash.lo journal.lo insert.lo loadext.lo \
         main.lo malloc.lo mem1.lo mem2.lo mem3.lo mem4.lo mem5.lo mem6.lo \
         mutex.lo mutex_os2.lo mutex_unix.lo mutex_w32.lo \
         opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
-        pager.lo parse.lo pragma.lo prepare.lo printf.lo random.lo \
+        pager.lo parse.lo pcache.lo pragma.lo prepare.lo printf.lo random.lo \
         select.lo status.lo table.lo tokenize.lo trigger.lo update.lo \
         util.lo vacuum.lo \
         vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbefifo.lo vdbemem.lo \
@@ -197,7 +197,6 @@ SRC = \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/fault.c \
-  $(TOP)/src/func.c \
   $(TOP)/src/global.c \
   $(TOP)/src/hash.c \
   $(TOP)/src/hash.h \
@@ -228,6 +227,8 @@ SRC = \
   $(TOP)/src/pager.c \
   $(TOP)/src/pager.h \
   $(TOP)/src/parse.y \
+  $(TOP)/src/pcache.c \
+  $(TOP)/src/pcache.h \
   $(TOP)/src/pragma.c \
   $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
@@ -261,6 +262,7 @@ SRC = \
 # Generated source code files
 #
 SRC += \
+  func2.c \
   keywordhash.h \
   opcodes.c \
   opcodes.h \
@@ -322,6 +324,7 @@ TESTSRC2 = \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/pager.c \
+  $(TOP)/src/pcache.c \
   $(TOP)/src/pragma.c \
   $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
@@ -515,8 +518,8 @@ expr.lo:	$(TOP)/src/expr.c $(HDR)
 fault.lo:	$(TOP)/src/fault.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/fault.c
 
-func.lo:	$(TOP)/src/func.c $(HDR)
-	$(LTCOMPILE) -c $(TOP)/src/func.c
+func2.lo:	func2.c $(HDR)
+	$(LTCOMPILE) -c func2.c
 
 global.lo:	$(TOP)/src/global.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/global.c
@@ -575,6 +578,9 @@ mutex_w32.lo:	$(TOP)/src/mutex_w32.c $(HDR)
 pager.lo:	$(TOP)/src/pager.c $(HDR) $(TOP)/src/pager.h
 	$(LTCOMPILE) -c $(TOP)/src/pager.c
 
+pcache.lo:	$(TOP)/src/pcache.c $(HDR) $(TOP)/src/pcache.h
+	$(LTCOMPILE) -c $(TOP)/src/pcache.c
+
 opcodes.lo:	opcodes.c
 	$(LTCOMPILE) -c opcodes.c
 
@@ -606,6 +612,11 @@ parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/addopcodes.awk
 	./lemon$(BEXE) $(OPTS) $(OPT_FEATURE_FLAGS) parse.y
 	mv parse.h parse.h.temp
 	$(NAWK) -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
+
+func2.c: $(TOP)/src/func.c $(HDR)
+	$(BCC) -o mkfunction$(BEXE) $(OPTS) $(TOP)/tool/mkfunction.c -I$(TOP)/src -I.
+	cat $(TOP)/src/func.c > func2.c
+	./mkfunction$(BEXE) >> func2.c
 
 pragma.lo:	$(TOP)/src/pragma.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/pragma.c

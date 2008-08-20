@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared3.test,v 1.3 2008/06/23 09:50:52 danielk1977 Exp $
+# $Id: shared3.test,v 1.4 2008/08/20 14:49:25 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -86,9 +86,11 @@ do_test shared3-2.7 {
   catchsql {select count(*) from sqlite_master} db3
 } {0 1}
 do_test shared3-2.8 {
+  db3 close
   execsql {
     INSERT INTO t1 VALUES(10, randomblob(10000))
   } db1
+  sqlite3 db3 $alternative_name
 
   # If the pager-cache is really still limited to 10 pages, then the INSERT
   # statement above should have caused the pager to grab an exclusive lock

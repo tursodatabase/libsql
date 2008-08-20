@@ -16,14 +16,16 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.196 2008/07/28 19:34:53 drh Exp $
+** $Id: func.c,v 1.197 2008/08/20 14:49:24 danielk1977 Exp $
 */
+
+#ifndef CREATE_BUILTIN_HASHTABLE
+
 #include "sqliteInt.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <assert.h>
 #include "vdbeInt.h"
-
 
 /*
 ** Return the collating function associated with a function.
@@ -1214,107 +1216,12 @@ static void groupConcatFinalize(sqlite3_context *context){
 ** external linkage.
 */
 void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
-  static const struct {
-     char *zName;
-     signed char nArg;
-     u8 argType;           /* 1: 0, 2: 1, 3: 2,...  N:  N-1. */
-     u8 eTextRep;          /* 1: UTF-16.  0: UTF-8 */
-     u8 needCollSeq;
-     void (*xFunc)(sqlite3_context*,int,sqlite3_value **);
-  } aFuncs[] = {
-    { "min",               -1, 0, SQLITE_UTF8,    1, minmaxFunc },
-    { "min",                0, 0, SQLITE_UTF8,    1, 0          },
-    { "max",               -1, 1, SQLITE_UTF8,    1, minmaxFunc },
-    { "max",                0, 1, SQLITE_UTF8,    1, 0          },
-    { "typeof",             1, 0, SQLITE_UTF8,    0, typeofFunc },
-    { "length",             1, 0, SQLITE_UTF8,    0, lengthFunc },
-    { "substr",             2, 0, SQLITE_UTF8,    0, substrFunc },
-    { "substr",             3, 0, SQLITE_UTF8,    0, substrFunc },
-    { "abs",                1, 0, SQLITE_UTF8,    0, absFunc    },
-    { "round",              1, 0, SQLITE_UTF8,    0, roundFunc  },
-    { "round",              2, 0, SQLITE_UTF8,    0, roundFunc  },
-    { "upper",              1, 0, SQLITE_UTF8,    0, upperFunc  },
-    { "lower",              1, 0, SQLITE_UTF8,    0, lowerFunc  },
-    { "coalesce",          -1, 0, SQLITE_UTF8,    0, ifnullFunc },
-    { "coalesce",           0, 0, SQLITE_UTF8,    0, 0          },
-    { "coalesce",           1, 0, SQLITE_UTF8,    0, 0          },
-    { "hex",                1, 0, SQLITE_UTF8,    0, hexFunc    },
-    { "ifnull",             2, 0, SQLITE_UTF8,    1, ifnullFunc },
-    { "random",            -1, 0, SQLITE_UTF8,    0, randomFunc },
-    { "randomblob",         1, 0, SQLITE_UTF8,    0, randomBlob },
-    { "nullif",             2, 0, SQLITE_UTF8,    1, nullifFunc },
-    { "sqlite_version",     0, 0, SQLITE_UTF8,    0, versionFunc},
-    { "quote",              1, 0, SQLITE_UTF8,    0, quoteFunc  },
-    { "last_insert_rowid",  0, 0, SQLITE_UTF8, 0, last_insert_rowid },
-    { "changes",            0, 0, SQLITE_UTF8, 0, changes           },
-    { "total_changes",      0, 0, SQLITE_UTF8, 0, total_changes     },
-    { "replace",            3, 0, SQLITE_UTF8,    0, replaceFunc       },
-    { "ltrim",              1, 1, SQLITE_UTF8,    0, trimFunc          },
-    { "ltrim",              2, 1, SQLITE_UTF8,    0, trimFunc          },
-    { "rtrim",              1, 2, SQLITE_UTF8,    0, trimFunc          },
-    { "rtrim",              2, 2, SQLITE_UTF8,    0, trimFunc          },
-    { "trim",               1, 3, SQLITE_UTF8,    0, trimFunc          },
-    { "trim",               2, 3, SQLITE_UTF8,    0, trimFunc          },
-    { "zeroblob",           1, 0, SQLITE_UTF8,    0, zeroblobFunc      },
-#ifdef SQLITE_SOUNDEX
-    { "soundex",            1, 0, SQLITE_UTF8,    0, soundexFunc},
-#endif
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
-    { "load_extension",     1, 0, SQLITE_UTF8, 0, loadExt },
-    { "load_extension",     2, 0, SQLITE_UTF8, 0, loadExt },
-#endif
-  };
-  static const struct {
-    char *zName;
-    signed char nArg;
-    u8 argType;
-    u8 needCollSeq;
-    void (*xStep)(sqlite3_context*,int,sqlite3_value**);
-    void (*xFinalize)(sqlite3_context*);
-  } aAggs[] = {
-    { "min",    1, 0, 1, minmaxStep,   minMaxFinalize },
-    { "max",    1, 1, 1, minmaxStep,   minMaxFinalize },
-    { "sum",    1, 0, 0, sumStep,      sumFinalize    },
-    { "total",  1, 0, 0, sumStep,      totalFinalize    },
-    { "avg",    1, 0, 0, sumStep,      avgFinalize    },
-    { "count",  0, 0, 0, countStep,    countFinalize  },
-    { "count",  1, 0, 0, countStep,    countFinalize  },
-    { "group_concat", -1, 0, 0, groupConcatStep, groupConcatFinalize },
-  };
-  int i;
-
-  for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
-    void *pArg;
-    u8 argType = aFuncs[i].argType;
-    pArg = SQLITE_INT_TO_PTR(argType);
-    sqlite3CreateFunc(db, aFuncs[i].zName, aFuncs[i].nArg,
-        aFuncs[i].eTextRep, pArg, aFuncs[i].xFunc, 0, 0);
-    if( aFuncs[i].needCollSeq ){
-      FuncDef *pFunc = sqlite3FindFunction(db, aFuncs[i].zName, 
-          strlen(aFuncs[i].zName), aFuncs[i].nArg, aFuncs[i].eTextRep, 0);
-      if( pFunc && aFuncs[i].needCollSeq ){
-        pFunc->needCollSeq = 1;
-      }
-    }
-  }
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions(db);
 #endif
 #ifndef SQLITE_OMIT_PARSER
   sqlite3AttachFunctions(db);
 #endif
-  for(i=0; i<sizeof(aAggs)/sizeof(aAggs[0]); i++){
-    void *pArg = SQLITE_INT_TO_PTR(aAggs[i].argType);
-    sqlite3CreateFunc(db, aAggs[i].zName, aAggs[i].nArg, SQLITE_UTF8, 
-        pArg, 0, aAggs[i].xStep, aAggs[i].xFinalize);
-    if( aAggs[i].needCollSeq ){
-      FuncDef *pFunc = sqlite3FindFunction( db, aAggs[i].zName,
-          strlen(aAggs[i].zName), aAggs[i].nArg, SQLITE_UTF8, 0);
-      if( pFunc && aAggs[i].needCollSeq ){
-        pFunc->needCollSeq = 1;
-      }
-    }
-  }
   sqlite3RegisterDateTimeFunctions(db);
   if( !db->mallocFailed ){
     int rc = sqlite3_overload_function(db, "MATCH", 2);
@@ -1325,11 +1232,6 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
   }
 #ifdef SQLITE_SSE
   (void)sqlite3SseFunctions(db);
-#endif
-#ifdef SQLITE_CASE_SENSITIVE_LIKE
-  sqlite3RegisterLikeFunctions(db, 1);
-#else
-  sqlite3RegisterLikeFunctions(db, 0);
 #endif
 }
 
@@ -1397,3 +1299,126 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   *pIsNocase = (pDef->flags & SQLITE_FUNC_CASE)==0;
   return 1;
 }
+
+/*
+** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
+** used to create the literal values used for the FuncDef structures in
+** the global aBuiltinFunc[] array (see below).
+**
+**   FUNCTION(zName, nArg, iArg, bNC, xFunc)
+**     Used to create a scalar function definition of a function zName 
+**     implemented by C function xFunc that accepts nArg arguments. The
+**     value passed as iArg is cast to a (void*) and made available
+**     as the user-data (sqlite3_user_data()) for the function. If 
+**     argument bNC is true, then the FuncDef.needCollate flag is set.
+**
+**   AGGREGATE(zName, nArg, iArg, bNC, xStep, xFinal)
+**     Used to create an aggregate function definition implemented by
+**     the C functions xStep and xFinal. The first four parameters
+**     are interpreted in the same way as the first 4 parameters to
+**     FUNCTION().
+**
+**   LIKEFUNC(zName, nArg, pArg, flags)
+**     Used to create a scalar function definition of a function zName 
+**     that accepts nArg arguments and is implemented by a call to C 
+**     function likeFunc. Argument pArg is cast to a (void *) and made
+**     available as the function user-data (sqlite3_user_data()). The
+**     FuncDef.flags variable is set to the value passed as the flags
+**     parameter.
+**
+** See below for examples.
+*/
+#define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
+  {nArg, SQLITE_UTF8, bNC, 0, SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName}
+
+#define LIKEFUNC(zName, nArg, arg, flags) \
+  {nArg, SQLITE_UTF8, 0, flags, (void *)arg, 0, likeFunc, 0, 0, #zName}
+
+#define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
+  {nArg, SQLITE_UTF8, nc, 0, SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal, #zName}
+
+#endif
+
+/*
+** This array of FuncDef structures contains most of the "built-in" functions
+** and aggregates. Function users (the other routines in the SQL compiler)
+** call the following function to access the FuncDef structures stored in 
+** this array:
+** 
+**     int sqlite3GetBuiltinFunction(const char *z, int n, FuncDef **paFunc);
+**
+** The caller passes the name of the required function and its length
+** in parameters z and n, respectively. The value returned is the number
+** of FuncDef structures found in the aBuiltinFunc[] array that match
+** the requested name. If no match is found, 0 is returned. *paFunc is 
+** set to point at a static array containing that subset of aBuiltinFunc[] 
+** before returning.
+**
+** The implementation of sqlite3GetBuiltinFunction() is generated by
+** the program found in tool/mkfunction.c, which is compiled and executed
+** as part of the build process. The routine generated by this program 
+** assumes that if there are two or more entries in the aBuiltinFunc[] 
+** array with the same name (i.e. two versions of the "max" function), 
+** then they must be stored in adjacent slots. 
+*/
+static FuncDef aBuiltinFunc[] = {
+  FUNCTION(ltrim,              1, 1, 0, trimFunc         ),
+  FUNCTION(ltrim,              2, 1, 0, trimFunc         ),
+  FUNCTION(rtrim,              1, 2, 0, trimFunc         ),
+  FUNCTION(rtrim,              2, 2, 0, trimFunc         ),
+  FUNCTION(trim,               1, 3, 0, trimFunc         ),
+  FUNCTION(trim,               2, 3, 0, trimFunc         ),
+  FUNCTION(min,               -1, 0, 1, minmaxFunc       ),
+  FUNCTION(min,                0, 0, 1, 0                ),
+  AGGREGATE(min,               1, 0, 1, minmaxStep,      minMaxFinalize ),
+  FUNCTION(max,               -1, 1, 1, minmaxFunc       ),
+  FUNCTION(max,                0, 1, 1, 0                ),
+  AGGREGATE(max,               1, 1, 1, minmaxStep,      minMaxFinalize ),
+  FUNCTION(typeof,             1, 0, 0, typeofFunc       ),
+  FUNCTION(length,             1, 0, 0, lengthFunc       ),
+  FUNCTION(substr,             2, 0, 0, substrFunc       ),
+  FUNCTION(substr,             3, 0, 0, substrFunc       ),
+  FUNCTION(abs,                1, 0, 0, absFunc          ),
+  FUNCTION(round,              1, 0, 0, roundFunc        ),
+  FUNCTION(round,              2, 0, 0, roundFunc        ),
+  FUNCTION(upper,              1, 0, 0, upperFunc        ),
+  FUNCTION(lower,              1, 0, 0, lowerFunc        ),
+  FUNCTION(coalesce,           1, 0, 0, 0                ),
+  FUNCTION(coalesce,          -1, 0, 0, ifnullFunc       ),
+  FUNCTION(coalesce,           0, 0, 0, 0                ),
+  FUNCTION(hex,                1, 0, 0, hexFunc          ),
+  FUNCTION(ifnull,             2, 0, 1, ifnullFunc       ),
+  FUNCTION(random,            -1, 0, 0, randomFunc       ),
+  FUNCTION(randomblob,         1, 0, 0, randomBlob       ),
+  FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
+  FUNCTION(sqlite_version,     0, 0, 0, versionFunc      ),
+  FUNCTION(quote,              1, 0, 0, quoteFunc        ),
+  FUNCTION(last_insert_rowid,  0, 0, 0, last_insert_rowid),
+  FUNCTION(changes,            0, 0, 0, changes          ),
+  FUNCTION(total_changes,      0, 0, 0, total_changes    ),
+  FUNCTION(replace,            3, 0, 0, replaceFunc      ),
+  FUNCTION(zeroblob,           1, 0, 0, zeroblobFunc     ),
+#ifdef SQLITE_SOUNDEX
+  FUNCTION(soundex,            1, 0, 0, soundexFunc      ),
+#endif
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+  FUNCTION(load_extension,     1, 0, 0, loadExt          ),
+  FUNCTION(load_extension,     2, 0, 0, loadExt          ),
+#endif
+  AGGREGATE(sum,               1, 0, 0, sumStep,         sumFinalize    ),
+  AGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
+  AGGREGATE(avg,               1, 0, 0, sumStep,         avgFinalize    ),
+  AGGREGATE(count,             0, 0, 0, countStep,       countFinalize  ),
+  AGGREGATE(count,             1, 0, 0, countStep,       countFinalize  ),
+  AGGREGATE(group_concat,     -1, 0, 0, groupConcatStep, groupConcatFinalize),
+
+  LIKEFUNC(glob, 2, &globInfo, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),
+#ifdef SQLITE_CASE_SENSITIVE_LIKE
+  LIKEFUNC(like, 2, &likeInfoAlt, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),
+  LIKEFUNC(like, 3, &likeInfoAlt, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),
+#else
+  LIKEFUNC(like, 2, &likeInfoNorm, SQLITE_FUNC_LIKE),
+  LIKEFUNC(like, 3, &likeInfoNorm, SQLITE_FUNC_LIKE),
+#endif
+};
+

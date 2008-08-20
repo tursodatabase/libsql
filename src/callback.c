@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.26 2008/07/28 19:34:53 drh Exp $
+** $Id: callback.c,v 1.27 2008/08/20 14:49:24 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -222,6 +222,44 @@ CollSeq *sqlite3FindCollSeq(
   return pColl;
 }
 
+/* During the search for the best function definition, this procedure
+** is called to test how well the function passed as the first argument
+** matches the request for a function with nArg arguments in a system
+** that uses encoding enc. The value returned indicates how well the
+** request is matched. A higher value indicates a better match.
+**
+** The returned value is always between 1 and 6, as follows:
+**
+** 1: A variable arguments function that prefers UTF-8 when a UTF-16
+**    encoding is requested, or vice versa.
+** 2: A variable arguments function that uses UTF-16BE when UTF-16LE is
+**    requested, or vice versa.
+** 3: A variable arguments function using the same text encoding.
+** 4: A function with the exact number of arguments requested that
+**    prefers UTF-8 when a UTF-16 encoding is requested, or vice versa.
+** 5: A function with the exact number of arguments requested that
+**    prefers UTF-16LE when UTF-16BE is requested, or vice versa.
+** 6: An exact match.
+**
+*/
+static int matchQuality(FuncDef *p, int nArg, u8 enc){
+  int match = 0;
+  if( p->nArg==-1 || p->nArg==nArg || nArg==-1 ){
+    match = 1;
+    if( p->nArg==nArg || nArg==-1 ){
+      match = 4;
+    }
+    if( enc==p->iPrefEnc ){
+      match += 2;
+    }
+    else if( (enc==SQLITE_UTF16LE && p->iPrefEnc==SQLITE_UTF16BE) ||
+             (enc==SQLITE_UTF16BE && p->iPrefEnc==SQLITE_UTF16LE) ){
+      match += 1;
+    }
+  }
+  return match;
+}
+
 /*
 ** Locate a user function given a name, a number of arguments and a flag
 ** indicating whether the function prefers UTF-16 over UTF-8.  Return a
@@ -261,39 +299,26 @@ FuncDef *sqlite3FindFunction(
 
   pFirst = (FuncDef*)sqlite3HashFind(&db->aFunc, zName, nName);
   for(p=pFirst; p; p=p->pNext){
-    /* During the search for the best function definition, bestmatch is set
-    ** as follows to indicate the quality of the match with the definition
-    ** pointed to by pBest:
-    **
-    ** 0: pBest is NULL. No match has been found.
-    ** 1: A variable arguments function that prefers UTF-8 when a UTF-16
-    **    encoding is requested, or vice versa.
-    ** 2: A variable arguments function that uses UTF-16BE when UTF-16LE is
-    **    requested, or vice versa.
-    ** 3: A variable arguments function using the same text encoding.
-    ** 4: A function with the exact number of arguments requested that
-    **    prefers UTF-8 when a UTF-16 encoding is requested, or vice versa.
-    ** 5: A function with the exact number of arguments requested that
-    **    prefers UTF-16LE when UTF-16BE is requested, or vice versa.
-    ** 6: An exact match.
-    **
-    ** A larger value of 'matchqual' indicates a more desirable match.
-    */
-    if( p->nArg==-1 || p->nArg==nArg || nArg==-1 ){
-      int match = 1;          /* Quality of this match */
-      if( p->nArg==nArg || nArg==-1 ){
-        match = 4;
-      }
-      if( enc==p->iPrefEnc ){
-        match += 2;
-      }
-      else if( (enc==SQLITE_UTF16LE && p->iPrefEnc==SQLITE_UTF16BE) ||
-               (enc==SQLITE_UTF16BE && p->iPrefEnc==SQLITE_UTF16LE) ){
-        match += 1;
-      }
+    int match = matchQuality(p, nArg, enc);
+    if( match>bestmatch ){
+      pBest = p;
+      bestmatch = match;
+    }
+  }
 
+  /* If the createFlag parameter is false and no match was found amongst
+  ** the custom functions stored in sqlite3.aFunc, try to find a built-in
+  ** function to use.
+  */ 
+  if( !createFlag && !pBest ){
+    FuncDef *aFunc;
+    int nFunc;
+    int i;
+    nFunc = sqlite3GetBuiltinFunction(zName, nName, &aFunc);
+    for(i=0; i<nFunc; i++){
+      int match = matchQuality(&aFunc[i], nArg, enc);
       if( match>bestmatch ){
-        pBest = p;
+        pBest = &aFunc[i];
         bestmatch = match;
       }
     }
@@ -304,7 +329,8 @@ FuncDef *sqlite3FindFunction(
   ** new entry to the hash table and return it.
   */
   if( createFlag && bestmatch<6 && 
-      (pBest = sqlite3DbMallocZero(db, sizeof(*pBest)+nName))!=0 ){
+      (pBest = sqlite3DbMallocZero(db, sizeof(*pBest)+nName+1))!=0 ){
+    pBest->zName = (char *)&pBest[1];
     pBest->nArg = nArg;
     pBest->pNext = pFirst;
     pBest->iPrefEnc = enc;
