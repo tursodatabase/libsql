@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.490 2008/08/20 16:21:12 danielk1977 Exp $
+** $Id: main.c,v 1.491 2008/08/20 16:35:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1890,7 +1890,7 @@ int sqlite3_table_column_metadata(
     zCollSeq = pCol->zColl;
     notnull = pCol->notNull!=0;
     primarykey  = pCol->isPrimKey!=0;
-    autoinc = pTab->iPKey==iCol && pTab->autoInc;
+    autoinc = pTab->iPKey==iCol && (pTab->tabFlags & TF_Autoincrement)!=0;
   }else{
     zDataType = "INTEGER";
     primarykey = 1;

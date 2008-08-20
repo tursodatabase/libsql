@@ -163,10 +163,11 @@ OBJS0 = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo \
         mutex.lo mutex_os2.lo mutex_unix.lo mutex_w32.lo \
         opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
         pager.lo parse.lo pcache.lo pragma.lo prepare.lo printf.lo random.lo \
-        select.lo status.lo table.lo tokenize.lo trigger.lo update.lo \
+        resolve.lo select.lo status.lo \
+        table.lo tokenize.lo trigger.lo update.lo \
         util.lo vacuum.lo \
         vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbefifo.lo vdbemem.lo \
-        where.lo utf.lo legacy.lo vtab.lo
+        walker.lo where.lo utf.lo vtab.lo
 
 # Object files for the amalgamation.
 #
@@ -233,6 +234,7 @@ SRC = \
   $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
+  $(TOP)/src/resolve.c \
   $(TOP)/src/select.c \
   $(TOP)/src/status.c \
   $(TOP)/src/shell.c \
@@ -257,6 +259,7 @@ SRC = \
   $(TOP)/src/vdbemem.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
+  $(TOP)/src/walker.c \
   $(TOP)/src/where.c
 
 # Generated source code files
@@ -630,6 +633,9 @@ printf.lo:	$(TOP)/src/printf.c $(HDR)
 random.lo:	$(TOP)/src/random.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/random.c
 
+resolve.lo:	$(TOP)/src/resolve.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/resolve.c
+
 select.lo:	$(TOP)/src/select.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/select.c
 
@@ -688,6 +694,9 @@ vdbemem.lo:	$(TOP)/src/vdbemem.c $(HDR)
 
 vtab.lo:	$(TOP)/src/vtab.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/vtab.c
+
+walker.lo:	$(TOP)/src/walker.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/walker.c
 
 where.lo:	$(TOP)/src/where.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/where.c

@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.319 2008/08/01 17:37:41 danielk1977 Exp $
+** $Id: where.c,v 1.320 2008/08/20 16:35:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -320,9 +320,9 @@ static void createMask(ExprMaskSet *pMaskSet, int iCursor){
 ** tree.
 **
 ** In order for this routine to work, the calling function must have
-** previously invoked sqlite3ExprResolveNames() on the expression.  See
+** previously invoked sqlite3ResolveExprNames() on the expression.  See
 ** the header comment on that routine for additional information.
-** The sqlite3ExprResolveNames() routines looks for column names and
+** The sqlite3ResolveExprNames() routines looks for column names and
 ** sets their opcodes to TK_COLUMN and their Expr.iTable fields to
 ** the VDBE cursor number of the table.  This routine just has to
 ** translate the cursor numbers into bitmask values and OR all
@@ -396,10 +396,12 @@ static int allowedOp(int op){
 ** attached to the right. For the same reason the EP_ExpCollate flag
 ** is not commuted.
 */
-static void exprCommute(Expr *pExpr){
+static void exprCommute(Parse *pParse, Expr *pExpr){
   u16 expRight = (pExpr->pRight->flags & EP_ExpCollate);
   u16 expLeft = (pExpr->pLeft->flags & EP_ExpCollate);
   assert( allowedOp(pExpr->op) && pExpr->op!=TK_IN );
+  pExpr->pRight->pColl = sqlite3ExprCollSeq(pParse, pExpr->pRight);
+  pExpr->pLeft->pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
   SWAP(CollSeq*,pExpr->pRight->pColl,pExpr->pLeft->pColl);
   pExpr->pRight->flags = (pExpr->pRight->flags & ~EP_ExpCollate) | expLeft;
   pExpr->pLeft->flags = (pExpr->pLeft->flags & ~EP_ExpCollate) | expRight;
@@ -519,7 +521,7 @@ static void exprAnalyzeAll(
 ** literal that does not begin with a wildcard.  
 */
 static int isLikeOrGlob(
-  sqlite3 *db,      /* The database */
+  Parse *pParse,    /* Parsing and code generating context */
   Expr *pExpr,      /* Test this expression */
   int *pnPattern,   /* Number of non-wildcard prefix characters */
   int *pisComplete, /* True if the only wildcard is % in the last character */
@@ -531,6 +533,7 @@ static int isLikeOrGlob(
   int c, cnt;
   char wc[3];
   CollSeq *pColl;
+  sqlite3 *db = pParse->db;
 
   if( !sqlite3IsLikeFunction(db, pExpr, pnoCase, wc) ){
     return 0;
@@ -548,7 +551,7 @@ static int isLikeOrGlob(
   if( pLeft->op!=TK_COLUMN ){
     return 0;
   }
-  pColl = pLeft->pColl;
+  pColl = sqlite3ExprCollSeq(pParse, pLeft);
   assert( pColl!=0 || pLeft->iColumn==-1 );
   if( pColl==0 ){
     /* No collation is defined for the ROWID.  Use the default. */
@@ -788,7 +791,7 @@ static void exprAnalyze(
         pDup = pExpr;
         pNew = pTerm;
       }
-      exprCommute(pDup);
+      exprCommute(pParse, pDup);
       pLeft = pDup->pLeft;
       pNew->leftCursor = pLeft->iTable;
       pNew->leftColumn = pLeft->iColumn;
@@ -909,7 +912,7 @@ or_not_possible:
   ** The last character of the prefix "abc" is incremented to form the
   ** termination condition "abd".
   */
-  if( isLikeOrGlob(db, pExpr, &nPattern, &isComplete, &noCase) ){
+  if( isLikeOrGlob(pParse, pExpr, &nPattern, &isComplete, &noCase) ){
     Expr *pLeft, *pRight;
     Expr *pStr1, *pStr2;
     Expr *pNewExpr1, *pNewExpr2;
@@ -2278,7 +2281,7 @@ WhereInfo *sqlite3WhereBegin(
     pTabItem = &pTabList->a[pLevel->iFrom];
     pTab = pTabItem->pTab;
     iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
-    if( pTab->isEphem || pTab->pSelect ) continue;
+    if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ) continue;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( pLevel->pBestIdx ){
       int iCur = pTabItem->iCursor;
@@ -2837,7 +2840,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     struct SrcList_item *pTabItem = &pTabList->a[pLevel->iFrom];
     Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
-    if( pTab->isEphem || pTab->pSelect ) continue;
+    if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ) continue;
     if( !pWInfo->okOnePass && (pLevel->flags & WHERE_IDX_ONLY)==0 ){
       sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
     }

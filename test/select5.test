@@ -12,7 +12,7 @@
 # focus of this file is testing aggregate functions and the
 # GROUP BY and HAVING clauses of SELECT statements.
 #
-# $Id: select5.test,v 1.18 2008/08/02 03:50:40 drh Exp $
+# $Id: select5.test,v 1.19 2008/08/20 16:35:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -159,7 +159,6 @@ do_test select5-5.5 {
 # Test rendering of columns for the GROUP BY clause.
 #
 do_test select5-5.11 {
-breakpoint
   execsql {
     SELECT max(c), b*a, b, a FROM t2 GROUP BY b*a, b, a
   }

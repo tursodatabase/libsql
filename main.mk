@@ -48,36 +48,21 @@ TCCX = $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) -I$(TOP)/ext/rtree
 
 # Object files for the SQLite library.
 #
-LIBOBJ+= alter.o analyze.o attach.o auth.o bitvec.o btmutex.o btree.o build.o \
+LIBOBJ+= alter.o analyze.o attach.o auth.o \
+         bitvec.o btmutex.o btree.o build.o \
          callback.o complete.o date.o delete.o \
-         expr.o fault.o func2.o global.o hash.o insert.o journal.o loadext.o \
+         expr.o fault.o func2.o global.o hash.o \
+         icu.o insert.o journal.o legacy.o loadext.o \
          main.o malloc.o mem1.o mem2.o mem3.o mem4.o mem5.o mem6.o \
          mutex.o mutex_os2.o mutex_unix.o mutex_w32.o \
          opcodes.o os.o os_os2.o os_unix.o os_win.o \
-         pager.o parse.o pragma.o prepare.o printf.o random.o \
-         select.o status.o table.o $(TCLOBJ) tokenize.o trigger.o \
+         pager.o parse.o pcache.o pragma.o prepare.o printf.o \
+         random.o resolve.o rtree.o select.o status.o \
+         table.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbefifo.o vdbemem.o \
-         where.o utf.o legacy.o vtab.o rtree.o icu.o pcache.o
+         walker.o where.o utf.o vtab.o
 
-EXTOBJ = icu.o
-EXTOBJ += fts1.o \
-	  fts1_hash.o \
-	  fts1_tokenizer1.o \
-	  fts1_porter.o
-EXTOBJ += fts2.o \
-	  fts2_hash.o \
-	  fts2_icu.o \
-	  fts2_porter.o \
-          fts2_tokenizer.o \
-	  fts2_tokenizer1.o
-EXTOBJ += fts3.o \
-	  fts3_hash.o \
-	  fts3_icu.o \
-	  fts3_porter.o \
-          fts3_tokenizer.o \
-	  fts3_tokenizer1.o
-EXTOBJ += rtree.o
 
 # All of the source code files.
 #
@@ -128,10 +113,13 @@ SRC = \
   $(TOP)/src/pager.c \
   $(TOP)/src/pager.h \
   $(TOP)/src/parse.y \
+  $(TOP)/src/pcache.c \
+  $(TOP)/src/pcache.h \
   $(TOP)/src/pragma.c \
   $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
+  $(TOP)/src/resolve.c \
   $(TOP)/src/select.c \
   $(TOP)/src/status.c \
   $(TOP)/src/shell.c \
@@ -157,6 +145,7 @@ SRC = \
   $(TOP)/src/pcache.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
+  $(TOP)/src/walker.c \
   $(TOP)/src/where.c
 
 # Source code for extensions

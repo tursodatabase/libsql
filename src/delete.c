@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.171 2008/07/28 19:34:53 drh Exp $
+** $Id: delete.c,v 1.172 2008/08/20 16:35:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -42,7 +42,8 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
 ** writable return 0;
 */
 int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
-  if( (pTab->readOnly && (pParse->db->flags & SQLITE_WriteSchema)==0
+  if( ((pTab->tabFlags & TF_Readonly)!=0
+        && (pParse->db->flags & SQLITE_WriteSchema)==0
         && pParse->nested==0) 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       || (pTab->pMod && pTab->pMod->pModule->xUpdate==0)
@@ -106,7 +107,7 @@ void sqlite3MaterializeView(
     pDup = sqlite3SelectNew(pParse, 0, pFrom, pWhere, 0, 0, 0, 0, 0, 0);
   }
   sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
-  sqlite3Select(pParse, pDup, &dest, 0, 0, 0);
+  sqlite3Select(pParse, pDup, &dest);
   sqlite3SelectDelete(db, pDup);
 }
 #endif /* !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER) */
@@ -254,7 +255,7 @@ void sqlite3DeleteFrom(
   memset(&sNC, 0, sizeof(sNC));
   sNC.pParse = pParse;
   sNC.pSrcList = pTabList;
-  if( sqlite3ExprResolveNames(&sNC, pWhere) ){
+  if( sqlite3ResolveExprNames(&sNC, pWhere) ){
     goto delete_from_cleanup;
   }
 

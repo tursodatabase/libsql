@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.77 2008/07/28 19:34:53 drh Exp $
+** $Id: attach.c,v 1.78 2008/08/20 16:35:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -39,7 +39,7 @@ static int resolveAttachExpr(NameContext *pName, Expr *pExpr)
   int rc = SQLITE_OK;
   if( pExpr ){
     if( pExpr->op!=TK_ID ){
-      rc = sqlite3ExprResolveNames(pName, pExpr);
+      rc = sqlite3ResolveExprNames(pName, pExpr);
       if( rc==SQLITE_OK && !sqlite3ExprIsConstant(pExpr) ){
         sqlite3ErrorMsg(pName->pParse, "invalid name: \"%T\"", &pExpr->span);
         return SQLITE_ERROR;

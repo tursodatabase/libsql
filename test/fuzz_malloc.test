@@ -12,7 +12,7 @@
 #
 # This file tests malloc failures in concert with fuzzy SQL generation.
 #
-# $Id: fuzz_malloc.test,v 1.9 2007/09/03 15:42:48 drh Exp $
+# $Id: fuzz_malloc.test,v 1.10 2008/08/20 16:35:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -56,6 +56,7 @@ proc do_fuzzy_malloc_test {testname args} {
     expr srand($jj)
     incr jj
     set ::sql [subst $::fuzzyopts(-template)]
+    # puts fuzyy-sql=\[$::sql\]; flush stdout
     foreach {rc res} [catchsql "$::sql"] {}
     if {$rc==0} {
       do_malloc_test $testname-$ii -sqlbody $::sql -sqlprep $::prep

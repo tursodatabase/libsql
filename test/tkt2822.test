@@ -13,7 +13,7 @@
 # ORDER BY clauses on compound SELECT statements raised by ticket
 # #2822 have been dealt with.
 #
-# $Id: tkt2822.test,v 1.5 2008/08/04 03:51:24 danielk1977 Exp $
+# $Id: tkt2822.test,v 1.6 2008/08/20 16:35:10 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -134,12 +134,12 @@ do_test tkt2822-3.2 {
 # Test that if a match cannot be found in the leftmost SELECT, an
 # attempt is made to find a match in subsequent SELECT statements.
 #
-do_test tkt2822-3.1 {
+do_test tkt2822-3.3 {
   execsql {
     SELECT a, b, c FROM t1 UNION ALL SELECT a AS x, b, c FROM t2 ORDER BY x;
   }
 } {1 3 9 2 6 18 3 9 27 4 12 36 5 15 45 6 18 54}
-do_test tkt2822-3.2 {
+do_test tkt2822-3.4 {
   # But the leftmost SELECT takes precedence.
   execsql {
     SELECT a AS b, CAST (b AS TEXT) AS a, c FROM t1 
@@ -148,7 +148,7 @@ do_test tkt2822-3.2 {
       ORDER BY a;
   }
 } {2 6 18 4 12 36 6 18 54 5 15 45 1 3 9 3 9 27}
-do_test tkt2822-3.3 {
+do_test tkt2822-3.5 {
   execsql {
     SELECT a, b, c FROM t2 
       UNION ALL 

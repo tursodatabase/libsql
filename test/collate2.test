@@ -12,7 +12,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: collate2.test,v 1.5 2007/02/01 23:02:46 drh Exp $
+# $Id: collate2.test,v 1.6 2008/08/20 16:35:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -136,6 +136,26 @@ do_test collate2-1.2.3 {
      ORDER BY 1, oid;
   }
 } {ab aB Ab AB ba bA Ba BA bb bB Bb BB}
+do_test collate2-1.2.4 {
+  execsql {
+    SELECT b FROM collate2t1 WHERE b > 'aa' ORDER BY +b;
+  }
+} {ab aB Ab AB ba bA Ba BA bb bB Bb BB}
+do_test collate2-1.2.5 {
+  execsql {
+    SELECT b FROM collate2t1 WHERE a COLLATE nocase > 'aa' ORDER BY +b;
+  }
+} {ab aB Ab AB ba bA Ba BA bb bB Bb BB}
+do_test collate2-1.2.6 {
+  execsql {
+    SELECT b FROM collate2t1 WHERE b COLLATE nocase > 'aa' ORDER BY +b;
+  }
+} {ab aB Ab AB ba bA Ba BA bb bB Bb BB}
+do_test collate2-1.2.7 {
+  execsql {
+    SELECT b FROM collate2t1 WHERE c COLLATE nocase > 'aa' ORDER BY +b;
+  }
+} {ab aB Ab AB ba bA Ba BA bb bB Bb BB}
 do_test collate2-1.3 {
   execsql {
     SELECT c FROM collate2t1 WHERE c > 'aa' ORDER BY 1;
@@ -167,6 +187,11 @@ do_test collate2-1.4 {
 do_test collate2-1.5 {
   execsql {
     SELECT b FROM collate2t1 WHERE b < 'aa' ORDER BY 1, oid;
+  }
+} {}
+do_test collate2-1.5.1 {
+  execsql {
+    SELECT b FROM collate2t1 WHERE b < 'aa' ORDER BY +b;
   }
 } {}
 do_test collate2-1.6 {
@@ -227,6 +252,11 @@ do_test collate2-1.16 {
 do_test collate2-1.17 {
   execsql {
     SELECT b FROM collate2t1 WHERE b BETWEEN 'Aa' AND 'Bb' ORDER BY 1, oid;
+  }
+} {aa aA Aa AA ab aB Ab AB ba bA Ba BA bb bB Bb BB}
+do_test collate2-1.17.1 {
+  execsql {
+    SELECT b FROM collate2t1 WHERE b BETWEEN 'Aa' AND 'Bb' ORDER BY +b;
   }
 } {aa aA Aa AA ab aB Ab AB ba bA Ba BA bb bB Bb BB}
 do_test collate2-1.18 {

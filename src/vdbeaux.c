@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.407 2008/08/13 19:11:48 drh Exp $
+** $Id: vdbeaux.c,v 1.408 2008/08/20 16:35:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2238,6 +2238,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
     pMem++;
     u++;
   }
+  assert( u<=pKeyInfo->nField + 1 );
   p->nField = u;
   return (void*)p;
 }

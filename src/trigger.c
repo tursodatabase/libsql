@@ -10,7 +10,7 @@
 *************************************************************************
 **
 **
-** $Id: trigger.c,v 1.128 2008/07/28 19:34:54 drh Exp $
+** $Id: trigger.c,v 1.129 2008/08/20 16:35:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -679,8 +679,7 @@ static int codeTriggerProgram(
           SelectDest dest;
 
           sqlite3SelectDestInit(&dest, SRT_Discard, 0);
-          sqlite3SelectResolve(pParse, ss, 0);
-          sqlite3Select(pParse, ss, &dest, 0, 0, 0);
+          sqlite3Select(pParse, ss, &dest);
           sqlite3SelectDelete(db, ss);
         }
         break;
@@ -829,7 +828,7 @@ int sqlite3CodeRowTrigger(
       /* code the WHEN clause */
       endTrigger = sqlite3VdbeMakeLabel(pParse->pVdbe);
       whenExpr = sqlite3ExprDup(db, p->pWhen);
-      if( db->mallocFailed || sqlite3ExprResolveNames(&sNC, whenExpr) ){
+      if( db->mallocFailed || sqlite3ResolveExprNames(&sNC, whenExpr) ){
         pParse->trigStack = trigStackEntry.pNext;
         sqlite3ExprDelete(db, whenExpr);
         return 1;

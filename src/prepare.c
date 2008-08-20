@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.92 2008/08/11 18:44:58 drh Exp $
+** $Id: prepare.c,v 1.93 2008/08/20 16:35:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -203,7 +203,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   }
   pTab = sqlite3FindTable(db, zMasterName, db->aDb[iDb].zName);
   if( pTab ){
-    pTab->readOnly = 1;
+    pTab->tabFlags |= TF_Readonly;
   }
 
   /* Create a cursor to hold the database open

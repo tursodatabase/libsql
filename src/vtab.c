@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.75 2008/08/20 14:49:25 danielk1977 Exp $
+** $Id: vtab.c,v 1.76 2008/08/20 16:35:10 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -186,7 +186,7 @@ void sqlite3VtabBeginParse(
   iDb = sqlite3SchemaToIndex(db, pTable->pSchema);
   assert( iDb>=0 );
 
-  pTable->isVirtual = 1;
+  pTable->tabFlags |= TF_Virtual;
   pTable->nModuleArg = 0;
   addModuleArgument(db, pTable, sqlite3NameFromToken(db, pModuleName));
   addModuleArgument(db, pTable, sqlite3DbStrDup(db, db->aDb[iDb].zName));
@@ -442,7 +442,7 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
   Module *pMod;
   int rc = SQLITE_OK;
 
-  if( !pTab || !pTab->isVirtual || pTab->pVtab ){
+  if( !pTab || (pTab->tabFlags & TF_Virtual)==0 || pTab->pVtab ){
     return SQLITE_OK;
   }
 
@@ -503,7 +503,7 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
   const char *zModule;
 
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
-  assert(pTab && pTab->isVirtual && !pTab->pVtab);
+  assert(pTab && (pTab->tabFlags & TF_Virtual)!=0 && !pTab->pVtab);
   pMod = pTab->pMod;
   zModule = pTab->azModuleArg[0];
 
@@ -544,7 +544,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
     sqlite3_mutex_leave(db->mutex);
     return SQLITE_MISUSE;
   }
-  assert(pTab->isVirtual && pTab->nCol==0 && pTab->aCol==0);
+  assert((pTab->tabFlags & TF_Virtual)!=0 && pTab->nCol==0 && pTab->aCol==0);
 
   memset(&sParse, 0, sizeof(Parse));
   sParse.declareVtab = 1;
@@ -554,7 +554,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
       SQLITE_OK == sqlite3RunParser(&sParse, zCreateTable, &zErr) && 
       sParse.pNewTable && 
       !sParse.pNewTable->pSelect && 
-      !sParse.pNewTable->isVirtual 
+      (sParse.pNewTable->tabFlags & TF_Virtual)==0
   ){
     pTab->aCol = sParse.pNewTable->aCol;
     pTab->nCol = sParse.pNewTable->nCol;
@@ -773,7 +773,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   if( pExpr->op!=TK_COLUMN ) return pDef;
   pTab = pExpr->pTab;
   if( pTab==0 ) return pDef;
-  if( !pTab->isVirtual ) return pDef;
+  if( (pTab->tabFlags & TF_Virtual)==0 ) return pDef;
   pVtab = pTab->pVtab;
   assert( pVtab!=0 );
   assert( pVtab->pModule!=0 );

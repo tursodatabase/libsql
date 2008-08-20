@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.756 2008/08/20 14:49:25 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.757 2008/08/20 16:35:10 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -208,6 +208,9 @@
 #  define _XOPEN_SOURCE 500  /* Needed to enable pthread recursive mutexes */
 #endif
 
+/*
+** The TCL headers are only needed when compiling the TCL bindings.
+*/
 #if defined(SQLITE_TCL) || defined(TCLSH)
 # include <tcl.h>
 #endif
@@ -471,6 +474,7 @@ typedef struct TriggerStack TriggerStack;
 typedef struct TriggerStep TriggerStep;
 typedef struct Trigger Trigger;
 typedef struct UnpackedRecord UnpackedRecord;
+typedef struct Walker Walker;
 typedef struct WhereInfo WhereInfo;
 typedef struct WhereLevel WhereLevel;
 
@@ -580,7 +584,7 @@ struct Lookaside {
   u8 bMalloced;           /* True if pStart obtained from sqlite3_malloc() */
   int nOut;               /* Number of buffers currently checked out */
   int mxOut;              /* Highwater mark for nOut */
-  LookasideSlot *pFree;   /* List if available buffers */
+  LookasideSlot *pFree;   /* List of available buffers */
   void *pStart;           /* First byte of available memory space */
   void *pEnd;             /* First byte past end of available space */
 };
@@ -762,6 +766,13 @@ struct FuncDef {
 };
 
 /*
+** Possible values for FuncDef.flags
+*/
+#define SQLITE_FUNC_LIKE   0x01  /* Candidate for the LIKE optimization */
+#define SQLITE_FUNC_CASE   0x02  /* Case-sensitive LIKE-type function */
+#define SQLITE_FUNC_EPHEM  0x04  /* Ephermeral.  Delete with VDBE */
+
+/*
 ** Each SQLite module (virtual table definition) is defined by an
 ** instance of the following structure, stored in the sqlite3.aModule
 ** hash table.
@@ -772,13 +783,6 @@ struct Module {
   void *pAux;                          /* pAux passed to create_module() */
   void (*xDestroy)(void *);            /* Module destructor function */
 };
-
-/*
-** Possible values for FuncDef.flags
-*/
-#define SQLITE_FUNC_LIKE   0x01  /* Candidate for the LIKE optimization */
-#define SQLITE_FUNC_CASE   0x02  /* Case-sensitive LIKE-type function */
-#define SQLITE_FUNC_EPHEM  0x04  /* Ephermeral.  Delete with VDBE */
 
 /*
 ** information about each column of an SQL table is held in an instance
@@ -828,7 +832,7 @@ struct CollSeq {
 };
 
 /*
-** Allowed values of CollSeq flags:
+** Allowed values of CollSeq.type:
 */
 #define SQLITE_COLL_BINARY  1  /* The default memcmp() collating sequence */
 #define SQLITE_COLL_NOCASE  2  /* The built-in NOCASE collating sequence */
@@ -846,7 +850,7 @@ struct CollSeq {
 **
 ** These used to have mnemonic name like 'i' for SQLITE_AFF_INTEGER and
 ** 't' for SQLITE_AFF_TEXT.  But we can save a little space and improve
-** the speed a little by number the values consecutively.  
+** the speed a little by numbering the values consecutively.  
 **
 ** But rather than start with 0 or 1, we begin with 'a'.  That way,
 ** when multiple affinity types are concatenated into a string and
@@ -892,14 +896,14 @@ struct CollSeq {
 ** that the datatype of the PRIMARY KEY must be INTEGER for this field to
 ** be set.  An INTEGER PRIMARY KEY is used as the rowid for each row of
 ** the table.  If a table has no INTEGER PRIMARY KEY, then a random rowid
-** is generated for each row of the table.  Table.hasPrimKey is true if
+** is generated for each row of the table.  TF_HasPrimaryKey is set if
 ** the table has any PRIMARY KEY, INTEGER or otherwise.
 **
 ** Table.tnum is the page number for the root BTree page of the table in the
 ** database file.  If Table.iDb is the index of the database table backend
 ** in sqlite.aDb[].  0 is for the main database and 1 is for the file that
-** holds temporary tables and indices.  If Table.isEphem
-** is true, then the table is stored in a file that is automatically deleted
+** holds temporary tables and indices.  If TF_Ephemeral is set
+** then the table is stored in a file that is automatically deleted
 ** when the VDBE cursor to the table is closed.  In this case Table.tnum 
 ** refers VDBE cursor number that holds the table open, not to the root
 ** page number.  Transient tables are used to hold the results of a
@@ -907,39 +911,46 @@ struct CollSeq {
 ** of a SELECT statement.
 */
 struct Table {
-  sqlite3 *db;     /* Associated database connection.  Might be NULL. */
-  char *zName;     /* Name of the table */
-  int nCol;        /* Number of columns in this table */
-  Column *aCol;    /* Information about each column */
-  int iPKey;       /* If not less then 0, use aCol[iPKey] as the primary key */
-  Index *pIndex;   /* List of SQL indexes on this table. */
-  int tnum;        /* Root BTree node for this table (see note above) */
-  Select *pSelect; /* NULL for tables.  Points to definition if a view. */
-  int nRef;          /* Number of pointers to this Table */
-  Trigger *pTrigger; /* List of SQL triggers on this table */
-  FKey *pFKey;       /* Linked list of all foreign keys in this table */
-  char *zColAff;     /* String defining the affinity of each column */
+  sqlite3 *db;         /* Associated database connection.  Might be NULL. */
+  char *zName;         /* Name of the table or view */
+  int iPKey;           /* If not negative, use aCol[iPKey] as the primary key */
+  int nCol;            /* Number of columns in this table */
+  Column *aCol;        /* Information about each column */
+  Index *pIndex;       /* List of SQL indexes on this table. */
+  int tnum;            /* Root BTree node for this table (see note above) */
+  Select *pSelect;     /* NULL for tables.  Points to definition if a view. */
+  u16 nRef;            /* Number of pointers to this Table */
+  u8 tabFlags;         /* Mask of TF_* values */
+  u8 keyConf;          /* What to do in case of uniqueness conflict on iPKey */
+  Trigger *pTrigger;   /* List of SQL triggers on this table */
+  FKey *pFKey;         /* Linked list of all foreign keys in this table */
+  char *zColAff;       /* String defining the affinity of each column */
 #ifndef SQLITE_OMIT_CHECK
-  Expr *pCheck;      /* The AND of all CHECK constraints */
+  Expr *pCheck;        /* The AND of all CHECK constraints */
 #endif
 #ifndef SQLITE_OMIT_ALTERTABLE
-  int addColOffset;  /* Offset in CREATE TABLE statement to add a new column */
+  int addColOffset;    /* Offset in CREATE TABLE stmt to add a new column */
 #endif
-  u8 readOnly;     /* True if this table should not be written by the user */
-  u8 isEphem;      /* True if created using OP_OpenEphermeral */
-  u8 hasPrimKey;   /* True if there exists a primary key */
-  u8 keyConf;      /* What to do in case of uniqueness conflict on iPKey */
-  u8 autoInc;      /* True if the integer primary key is autoincrement */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  u8 isVirtual;             /* True if this is a virtual table */
-  u8 isCommit;              /* True once the CREATE TABLE has been committed */
-  Module *pMod;             /* Pointer to the implementation of the module */
-  sqlite3_vtab *pVtab;      /* Pointer to the module instance */
-  int nModuleArg;           /* Number of arguments to the module */
-  char **azModuleArg;       /* Text of all module args. [0] is module name */
+  Module *pMod;        /* Pointer to the implementation of the module */
+  sqlite3_vtab *pVtab; /* Pointer to the module instance */
+  int nModuleArg;      /* Number of arguments to the module */
+  char **azModuleArg;  /* Text of all module args. [0] is module name */
 #endif
-  Schema *pSchema;          /* Schema that contains this table */
+  Schema *pSchema;     /* Schema that contains this table */
 };
+
+/*
+** Allowed values for Tabe.tabFlags.
+*/
+#define TF_Readonly        0x01    /* Read-only system table */
+#define TF_Ephemeral       0x02    /* An emphermal table */
+#define TF_HasPrimaryKey   0x04    /* Table has a primary key */
+#define TF_Autoincrement   0x08    /* Integer primary key is autoincrement */
+#define TF_Virtual         0x10    /* Is a virtual table */
+#define TF_NeedMetadata    0x20    /* aCol[].zType and aCol[].pColl missing */
+
+
 
 /*
 ** Test to see whether or not a table is a virtual table.  This is
@@ -947,7 +958,7 @@ struct Table {
 ** table support is omitted from the build.
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-#  define IsVirtual(X)      ((X)->isVirtual)
+#  define IsVirtual(X)      (((X)->tabFlags & TF_Virtual)!=0)
 #  define IsHiddenColumn(X) ((X)->isHidden)
 #else
 #  define IsVirtual(X)      0
@@ -1241,7 +1252,7 @@ struct Expr {
   int iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
   Select *pSelect;       /* When the expression is a sub-select.  Also the
                          ** right side of "<expr> IN (<select>)" */
-  Table *pTab;           /* Table for OP_Column expressions. */
+  Table *pTab;           /* Table for TK_COLUMN expressions. */
 #if SQLITE_MAX_EXPR_DEPTH>0
   int nHeight;           /* Height of the tree headed by this node */
 #endif
@@ -1287,8 +1298,8 @@ struct ExprList {
     Expr *pExpr;           /* The list of expressions */
     char *zName;           /* Token associated with this expression */
     u8 sortOrder;          /* 1 for DESC or 0 for ASC */
-    u8 isAgg;              /* True if this is an aggregate like count(*) */
     u8 done;               /* A flag to indicate when processing is finished */
+    u16 iCol;              /* For ORDER BY, column number in result set */
   } *a;                  /* One entry for each expression */
 };
 
@@ -1502,12 +1513,8 @@ struct NameContext {
 struct Select {
   ExprList *pEList;      /* The fields of the result */
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
-  u8 isDistinct;         /* True if the DISTINCT keyword is present */
-  u8 isResolved;         /* True once sqlite3SelectResolve() has run. */
-  u8 isAgg;              /* True if this is an aggregate query */
-  u8 usesEphm;           /* True if uses an OpenEphemeral opcode */
-  u8 disallowOrderBy;    /* Do not allow an ORDER BY to be attached if TRUE */
   char affinity;         /* MakeRecord with this affinity for SRT_Set */
+  u16 selFlags;          /* Various SF_* values */
   SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */
   ExprList *pGroupBy;    /* The GROUP BY clause */
@@ -1523,7 +1530,20 @@ struct Select {
 };
 
 /*
-** The results of a select can be distributed in several ways.
+** Allowed values for Select.selFlags.  The "SF" prefix stands for
+** "Select Flag".
+*/
+#define SF_Distinct        0x0001  /* Output should be DISTINCT */
+#define SF_Resolved        0x0002  /* Identifiers have been resolved */
+#define SF_Aggregate       0x0004  /* Contains aggregate functions */
+#define SF_UsesEphemeral   0x0008  /* Uses the OpenEphemeral opcode */
+#define SF_Expanded        0x0010  /* sqlite3SelectExpand() called on this */
+#define SF_HasTypeInfo     0x0020  /* FROM subqueries have Table metadata */
+
+
+/*
+** The results of a select can be distributed in several ways.  The
+** "SRT" prefix means "SELECT Result Type".
 */
 #define SRT_Union        1  /* Store result as keys in an index */
 #define SRT_Except       2  /* Remove result from a UNION index */
@@ -1533,7 +1553,7 @@ struct Select {
 /* The ORDER BY clause is ignored for all of the above */
 #define IgnorableOrderby(X) ((X->eDest)<=SRT_Discard)
 
-#define SRT_Callback     5  /* Invoke a callback with each row of result */
+#define SRT_Output       5  /* Output each row of result */
 #define SRT_Mem          6  /* Store result in a memory cell */
 #define SRT_Set          7  /* Store results as keys in an index */
 #define SRT_Table        8  /* Store result as data with an automatic rowid */
@@ -1863,6 +1883,34 @@ struct Sqlite3Config {
 };
 
 /*
+** Context pointer passed down through the tree-walk.
+*/
+struct Walker {
+  int (*xExprCallback)(Walker*, Expr*);     /* Callback for expressions */
+  int (*xSelectCallback)(Walker*,Select*);  /* Callback for SELECTs */
+  Parse *pParse;                            /* Parser context.  */
+  union {                                   /* Extra data for callback */
+    NameContext *pNC;                          /* Naming context */
+    int i;                                     /* Integer value */
+  } u;
+};
+
+/* Forward declarations */
+int sqlite3WalkExpr(Walker*, Expr*);
+int sqlite3WalkExprList(Walker*, ExprList*);
+int sqlite3WalkSelect(Walker*, Select*);
+int sqlite3WalkSelectExpr(Walker*, Select*);
+int sqlite3WalkSelectFrom(Walker*, Select*);
+
+/*
+** Return code from the parse-tree walking primitives and their
+** callbacks.
+*/
+#define WRC_Continue    0
+#define WRC_Prune       1
+#define WRC_Abort       2
+
+/*
 ** Assuming zIn points to the first byte of a UTF-8 character,
 ** advance zIn to point to the first byte of the next UTF-8 character.
 */
@@ -1970,7 +2018,7 @@ void sqlite3Pragma(Parse*,Token*,Token*,Token*,int);
 void sqlite3ResetInternalSchema(sqlite3*, int);
 void sqlite3BeginParse(Parse*,int);
 void sqlite3CommitInternalChanges(sqlite3*);
-Table *sqlite3ResultSetOfSelect(Parse*,char*,Select*);
+Table *sqlite3ResultSetOfSelect(Parse*,Select*);
 void sqlite3OpenMasterTable(Parse *, int);
 void sqlite3StartTable(Parse*,Token*,Token*,int,int,int,int);
 void sqlite3AddColumn(Parse*,Token*);
@@ -2013,7 +2061,7 @@ void sqlite3SrcListDelete(sqlite3*, SrcList*);
 void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
                         Token*, int, int);
 void sqlite3DropIndex(Parse*, SrcList*, int);
-int sqlite3Select(Parse*, Select*, SelectDest*, Select*, int, int*);
+int sqlite3Select(Parse*, Select*, SelectDest*);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
                          Expr*,ExprList*,int,Expr*,Expr*);
 void sqlite3SelectDelete(sqlite3*, Select*);
@@ -2048,7 +2096,6 @@ void sqlite3Vacuum(Parse*);
 int sqlite3RunVacuum(char**, sqlite3*);
 char *sqlite3NameFromToken(sqlite3*, Token*);
 int sqlite3ExprCompare(Expr*, Expr*);
-int sqlite3ExprResolveNames(NameContext *, Expr *);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 Vdbe *sqlite3GetVdbe(Parse*);
@@ -2230,7 +2277,11 @@ int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*);
 void sqlite3CodeSubselect(Parse *, Expr *, int);
-int sqlite3SelectResolve(Parse *, Select *, NameContext *);
+void sqlite3SelectPrep(Parse*, Select*, NameContext*);
+int sqlite3ResolveExprNames(NameContext*, Expr*);
+int sqlite3ResolveExprListNames(NameContext*, ExprList*);
+void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);
+int sqlite3ResolveOrderGroupBy(Parse*, Select*, ExprList*, const char*);
 void sqlite3ColumnDefault(Vdbe *, Table *, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
@@ -2352,9 +2403,11 @@ int sqlite3FindInIndex(Parse *, Expr *, int*);
 #if SQLITE_MAX_EXPR_DEPTH>0
   void sqlite3ExprSetHeight(Parse *pParse, Expr *p);
   int sqlite3SelectExprHeight(Select *);
+  int sqlite3ExprCheckHeight(Parse*, int);
 #else
   #define sqlite3ExprSetHeight(x,y)
   #define sqlite3SelectExprHeight(x) 0
+  #define sqlite3ExprCheckHeight(x,y)
 #endif
 
 u32 sqlite3Get4byte(const u8*);

@@ -14,18 +14,18 @@ BEGIN {
   if( max<$3 ) max = $3
 }
 END {
-  printf "#define TK_%-29s %4d\n", "TO_TEXT",         max+1
-  printf "#define TK_%-29s %4d\n", "TO_BLOB",         max+2
-  printf "#define TK_%-29s %4d\n", "TO_NUMERIC",      max+3
-  printf "#define TK_%-29s %4d\n", "TO_INT",          max+4
-  printf "#define TK_%-29s %4d\n", "TO_REAL",         max+5
-  printf "#define TK_%-29s %4d\n", "END_OF_FILE",     max+6
-  printf "#define TK_%-29s %4d\n", "ILLEGAL",         max+7
-  printf "#define TK_%-29s %4d\n", "SPACE",           max+8
-  printf "#define TK_%-29s %4d\n", "UNCLOSED_STRING", max+9
-  printf "#define TK_%-29s %4d\n", "FUNCTION",        max+10
-  printf "#define TK_%-29s %4d\n", "COLUMN",          max+11
-  printf "#define TK_%-29s %4d\n", "AGG_FUNCTION",    max+12
-  printf "#define TK_%-29s %4d\n", "AGG_COLUMN",      max+13
-  printf "#define TK_%-29s %4d\n", "CONST_FUNC",      max+14
+  printf "#define TK_%-29s %4d\n", "TO_TEXT",         ++max
+  printf "#define TK_%-29s %4d\n", "TO_BLOB",         ++max
+  printf "#define TK_%-29s %4d\n", "TO_NUMERIC",      ++max
+  printf "#define TK_%-29s %4d\n", "TO_INT",          ++max
+  printf "#define TK_%-29s %4d\n", "TO_REAL",         ++max
+  printf "#define TK_%-29s %4d\n", "END_OF_FILE",     ++max
+  printf "#define TK_%-29s %4d\n", "ILLEGAL",         ++max
+  printf "#define TK_%-29s %4d\n", "SPACE",           ++max
+  printf "#define TK_%-29s %4d\n", "UNCLOSED_STRING", ++max
+  printf "#define TK_%-29s %4d\n", "FUNCTION",        ++max
+  printf "#define TK_%-29s %4d\n", "COLUMN",          ++max
+  printf "#define TK_%-29s %4d\n", "AGG_FUNCTION",    ++max
+  printf "#define TK_%-29s %4d\n", "AGG_COLUMN",      ++max
+  printf "#define TK_%-29s %4d\n", "CONST_FUNC",      ++max
 }

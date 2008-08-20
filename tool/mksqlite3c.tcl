@@ -246,6 +246,8 @@ foreach file {
    vdbeblob.c
    journal.c
 
+   walker.c
+   resolve.c
    expr.c
    alter.c
    analyze.c

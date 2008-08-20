@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.248 2008/07/28 19:34:53 drh Exp $
+** $Id: insert.c,v 1.249 2008/08/20 16:35:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -165,7 +165,7 @@ static int autoIncBegin(
   Table *pTab         /* The table we are writing to */
 ){
   int memId = 0;      /* Register holding maximum rowid */
-  if( pTab->autoInc ){
+  if( pTab->tabFlags & TF_Autoincrement ){
     Vdbe *v = pParse->pVdbe;
     Db *pDb = &pParse->db->aDb[iDb];
     int iCur = pParse->nTab;
@@ -216,7 +216,7 @@ static void autoIncEnd(
   Table *pTab,       /* Table we are inserting into */
   int memId          /* Memory cell holding the maximum rowid */
 ){
-  if( pTab->autoInc ){
+  if( pTab->tabFlags & TF_Autoincrement ){
     int iCur = pParse->nTab;
     Vdbe *v = pParse->pVdbe;
     Db *pDb = &pParse->db->aDb[iDb];
@@ -532,7 +532,7 @@ void sqlite3Insert(
     VdbeComment((v, "Jump over SELECT coroutine"));
 
     /* Resolve the expressions in the SELECT statement and execute it. */
-    rc = sqlite3Select(pParse, pSelect, &dest, 0, 0, 0);
+    rc = sqlite3Select(pParse, pSelect, &dest);
     if( rc || pParse->nErr || db->mallocFailed ){
       goto insert_cleanup;
     }
@@ -602,7 +602,7 @@ void sqlite3Insert(
     assert( useTempTable==0 );
     nColumn = pList ? pList->nExpr : 0;
     for(i=0; i<nColumn; i++){
-      if( sqlite3ExprResolveNames(&sNC, pList->a[i].pExpr) ){
+      if( sqlite3ResolveExprNames(&sNC, pList->a[i].pExpr) ){
         goto insert_cleanup;
       }
     }
@@ -1535,7 +1535,7 @@ static int xferOptimization(
     return 0;   /* tab1 must not have triggers */
   }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( pDest->isVirtual ){
+  if( pDest->tabFlags & TF_Virtual ){
     return 0;   /* tab1 must not be a virtual table */
   }
 #endif
@@ -1570,7 +1570,7 @@ static int xferOptimization(
   if( pSelect->pPrior ){
     return 0;   /* SELECT may not be a compound query */
   }
-  if( pSelect->isDistinct ){
+  if( pSelect->selFlags & SF_Distinct ){
     return 0;   /* SELECT may not be DISTINCT */
   }
   pEList = pSelect->pEList;
@@ -1596,7 +1596,7 @@ static int xferOptimization(
     return 0;   /* tab1 and tab2 may not be the same table */
   }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( pSrc->isVirtual ){
+  if( pSrc->tabFlags & TF_Virtual ){
     return 0;   /* tab2 must not be a virtual table */
   }
 #endif
@@ -1687,7 +1687,7 @@ static int xferOptimization(
     addr1 = sqlite3VdbeAddOp2(v, OP_NewRowid, iDest, regRowid);
   }else{
     addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, regRowid);
-    assert( pDest->autoInc==0 );
+    assert( (pDest->tabFlags & TF_Autoincrement)==0 );
   }
   sqlite3VdbeAddOp2(v, OP_RowData, iSrc, regData);
   sqlite3VdbeAddOp3(v, OP_Insert, iDest, regData, regRowid);

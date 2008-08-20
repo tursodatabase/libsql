@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.495 2008/08/11 18:44:58 drh Exp $
+** $Id: build.c,v 1.496 2008/08/20 16:35:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1140,12 +1140,12 @@ void sqlite3AddPrimaryKey(
   char *zType = 0;
   int iCol = -1, i;
   if( pTab==0 || IN_DECLARE_VTAB ) goto primary_key_exit;
-  if( pTab->hasPrimKey ){
+  if( pTab->tabFlags & TF_HasPrimaryKey ){
     sqlite3ErrorMsg(pParse, 
       "table \"%s\" has more than one primary key", pTab->zName);
     goto primary_key_exit;
   }
-  pTab->hasPrimKey = 1;
+  pTab->tabFlags |= TF_HasPrimaryKey;
   if( pList==0 ){
     iCol = pTab->nCol - 1;
     pTab->aCol[iCol].isPrimKey = 1;
@@ -1169,7 +1169,8 @@ void sqlite3AddPrimaryKey(
         && sortOrder==SQLITE_SO_ASC ){
     pTab->iPKey = iCol;
     pTab->keyConf = onError;
-    pTab->autoInc = autoInc;
+    assert( autoInc==0 || autoInc==1 );
+    pTab->tabFlags |= autoInc*TF_Autoincrement;
   }else if( autoInc ){
 #ifndef SQLITE_OMIT_AUTOINCREMENT
     sqlite3ErrorMsg(pParse, "AUTOINCREMENT is only allowed on an "
@@ -1456,7 +1457,7 @@ void sqlite3EndTable(
     sNC.pParse = pParse;
     sNC.pSrcList = &sSrc;
     sNC.isCheck = 1;
-    if( sqlite3ExprResolveNames(&sNC, p->pCheck) ){
+    if( sqlite3ResolveExprNames(&sNC, p->pCheck) ){
       return;
     }
   }
@@ -1529,10 +1530,10 @@ void sqlite3EndTable(
       sqlite3VdbeChangeP5(v, 1);
       pParse->nTab = 2;
       sqlite3SelectDestInit(&dest, SRT_Table, 1);
-      sqlite3Select(pParse, pSelect, &dest, 0, 0, 0);
+      sqlite3Select(pParse, pSelect, &dest);
       sqlite3VdbeAddOp1(v, OP_Close, 1);
       if( pParse->nErr==0 ){
-        pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSelect);
+        pSelTab = sqlite3ResultSetOfSelect(pParse, pSelect);
         if( pSelTab==0 ) return;
         assert( p->aCol==0 );
         p->nCol = pSelTab->nCol;
@@ -1578,7 +1579,7 @@ void sqlite3EndTable(
     /* Check to see if we need to create an sqlite_sequence table for
     ** keeping track of autoincrement keys.
     */
-    if( p->autoInc ){
+    if( p->tabFlags & TF_Autoincrement ){
       Db *pDb = &db->aDb[iDb];
       if( pDb->pSchema->pSeqTab==0 ){
         sqlite3NestedParse(pParse,
@@ -1774,10 +1775,10 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
 #ifndef SQLITE_OMIT_AUTHORIZATION
     xAuth = db->xAuth;
     db->xAuth = 0;
-    pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSel);
+    pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
     db->xAuth = xAuth;
 #else
-    pSelTab = sqlite3ResultSetOfSelect(pParse, 0, pSel);
+    pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
 #endif
     pParse->nTab = n;
     if( pSelTab ){
@@ -2066,7 +2067,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
     ** at the btree level, in case the sqlite_sequence table needs to
     ** move as a result of the drop (can happen in auto-vacuum mode).
     */
-    if( pTab->autoInc ){
+    if( pTab->tabFlags & TF_Autoincrement ){
       sqlite3NestedParse(pParse,
         "DELETE FROM %s.sqlite_sequence WHERE name=%Q",
         pDb->zName, pTab->zName
@@ -2503,9 +2504,10 @@ void sqlite3CreateIndex(
   ** specified collation sequence names.
   */
   for(i=0; i<pList->nExpr; i++){
-    Expr *pExpr = pList->a[i].pExpr;
-    if( pExpr ){
-      nExtra += (1 + strlen(pExpr->pColl->zName));
+    Expr *pExpr;
+    CollSeq *pColl;
+    if( (pExpr = pList->a[i].pExpr)!=0 && (pColl = pExpr->pColl)!=0 ){
+      nExtra += (1 + strlen(pColl->zName));
     }
   }
 
@@ -2572,7 +2574,7 @@ void sqlite3CreateIndex(
     ** break backwards compatibility - it needs to be a warning.
     */
     pIndex->aiColumn[i] = j;
-    if( pListItem->pExpr ){
+    if( pListItem->pExpr && pListItem->pExpr->pColl ){
       assert( pListItem->pExpr->pColl );
       zColl = zExtra;
       sqlite3_snprintf(nExtra, zExtra, "%s", pListItem->pExpr->pColl->zName);
