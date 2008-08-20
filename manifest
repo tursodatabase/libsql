@@ -1,5 +1,5 @@
-C Modify\sthe\slemon\sparser\stemplate\sto\savoid\susing\szero-initialized\sconstants\nwhen\scompiled\swith\sC++.\s\sTicket\s#3288.\s(CVS\s5571)
-D 2008-08-20T17:48:21
+C Comment\sand\sfunction\snaming\stweaks\sto\spcache.\s\sNo\sfunctionality\schanges.\s(CVS\s5572)
+D 2008-08-20T21:47:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0b1c022000f55221454a7846022f11674d8024bf
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,10 +135,10 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 676ed273b17bd260f905df81375c9f9950d85517
 F src/os_unix.c fe0dbc35bcd3de49e46b132abfc0f45d6dd6a864
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c 9f813a8f26680ff510335e2bbd01910b2a77277b
+F src/pager.c 79d4d33245462c054a7e815e29ec6500c667ef26
 F src/pager.h fb9376af5ba8e1eb78ee3b4f15eb0f60658ffd65
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c c1a9abb5e2aa3d1d52a2995c8e0a36535d4d1bc2
+F src/pcache.c cf7a7c81366e42330ff9c84d1f3591c905289c3d
 F src/pcache.h 71ade7a84ed87d9d20507315260b1d91808d7c9a
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P aef5b909e960c31527c795bc09a1de846f8afcbb
-R ba6058aa52b7f536a969626105129ff5
+P 71992f4a3723418df5f16093aec92f1f95f0b604
+R 1864568c91564440b5d8de8411bca79f
 U drh
-Z a81a89f6460671859f4d4500f7e3aaad
+Z 8ae3b66a71a20677fcd2b2a4e9762a73

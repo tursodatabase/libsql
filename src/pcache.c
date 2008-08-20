@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.1 2008/08/20 14:49:25 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.2 2008/08/20 21:47:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -65,7 +65,7 @@ static struct PCacheGlobal {
   PCache *pAll;                       /* list of all page caches */
   int nPage;                          /* Number of pages */
   int nPurgeable;                     /* Number of pages in purgable caches */
-  int mxPage;                   /* Globally configured page maximum */
+  int mxPage;                         /* Globally configured page maximum */
   int mxPagePurgeable;                /* Purgeable page maximum */
   PgHdr *pLruHead, *pLruTail;         /* Global LRU list of unused pages */
   int szSlot;                         /* Size of each free slot */
@@ -99,13 +99,13 @@ static struct PCacheGlobal {
 ** mutex released (in that order) before making the call.
 */
 
-#define enterPcacheGlobal() sqlite3_mutex_enter(pcache.mutex_lru)
-#define exitPcacheGlobal()  sqlite3_mutex_leave(pcache.mutex_lru)
+#define pcacheEnterGlobal() sqlite3_mutex_enter(pcache.mutex_lru)
+#define pcacheExitGlobal()  sqlite3_mutex_leave(pcache.mutex_lru)
 
 /*
 ** Increment the reference count on both page p and its cache by n.
 */
-static void page_ref(PgHdr *p, int n){
+static void pcacheRef(PgHdr *p, int n){
   /* This next block assert()s that the number of references to the 
   ** PCache is the sum of the number of references to all pages in
   ** the PCache. This is a bit expensive to leave turned on all the 
@@ -124,7 +124,13 @@ static void page_ref(PgHdr *p, int n){
 
 /********************************** Linked List Management ********************/
 
-static int check_hash_count(PCache *pCache){
+#ifndef NDEBUG
+/*
+** This routine verifies that the number of entries in the hash table
+** is pCache->nPage.  This routine is used within assert() statements
+** only and is therefore disabled during production builds.
+*/
+static int pcacheCheckHashCount(PCache *pCache){
   int i;
   int nPage = 0;
   for(i=0; i<pCache->nHash; i++){
@@ -136,6 +142,7 @@ static int check_hash_count(PCache *pCache){
   assert( nPage==pCache->nPage );
   return 1;
 }
+#endif
 
 /*
 ** Remove a page from its hash table (PCache.apHash[]).
@@ -153,7 +160,7 @@ static void pcacheRemoveFromHash(PgHdr *pPage){
     pPage->pNextHash->pPrevHash = pPage->pPrevHash;
   }
   pPage->pCache->nPage--;
-  assert( check_hash_count(pPage->pCache) );
+  assert( pcacheCheckHashCount(pPage->pCache) );
 }
 
 /*
@@ -169,21 +176,22 @@ static void pcacheAddToHash(PgHdr *pPage){
   }
   pCache->apHash[h] = pPage;
   pCache->nPage++;
-  assert( check_hash_count(pCache) );
+  assert( pcacheCheckHashCount(pCache) );
 }
 
 /*
-** Resize the hash table to nHash buckets.
+** Attempt to increase the size the hash table to contain
+** at least nHash buckets.
 */
 static int pcacheResizeHash(PCache *pCache, int nHash){
 #ifdef SQLITE_MALLOC_SOFT_LIMIT
-  if( nHash*sizeof(PgHdr *)>SQLITE_MALLOC_SOFT_LIMIT ){
+  if( nHash*sizeof(PgHdr*)>SQLITE_MALLOC_SOFT_LIMIT ){
     nHash = SQLITE_MALLOC_SOFT_LIMIT/sizeof(PgHdr *);
   }
 #endif
   if( nHash>pCache->nHash ){
     PgHdr *p;
-    PgHdr **pNew = (PgHdr **)sqlite3_malloc(sizeof(PgHdr *)*nHash);
+    PgHdr **pNew = (PgHdr **)sqlite3_malloc(sizeof(PgHdr*)*nHash);
     if( !pNew ){
       return SQLITE_NOMEM;
     }
@@ -333,9 +341,9 @@ void *pcacheMalloc(int sz){
 }
 void *sqlite3PageMalloc(sz){
   void *p;
-  enterPcacheGlobal();
+  pcacheEnterGlobal();
   p = pcacheMalloc(sz);
-  exitPcacheGlobal();
+  pcacheExitGlobal();
   return p;
 }
 
@@ -358,9 +366,9 @@ void pcacheFree(void *p){
   }
 }
 void sqlite3PageFree(void *p){
-  enterPcacheGlobal();
+  pcacheEnterGlobal();
   pcacheFree(p);
-  exitPcacheGlobal();
+  pcacheExitGlobal();
 }
 
 /*
@@ -415,7 +423,7 @@ static PgHdr *pcacheRecycleOrAlloc(PCache *pCache){
   assert( pcache.isInit );
   assert( sqlite3_mutex_notheld(pcache.mutex_lru) );
 
-  enterPcacheGlobal();
+  pcacheEnterGlobal();
 
   if( (pcache.mxPage && pcache.nPage>=pcache.mxPage) 
    || (!pcache.mxPage && bPurg && pcache.nPurgeable>=pcache.mxPagePurgeable)
@@ -435,9 +443,9 @@ static PgHdr *pcacheRecycleOrAlloc(PCache *pCache){
         assert( pCsr->iInUseMM==0 );
         pCsr->iInUseMM = 1;
         if( pCsr->xStress && (pCsr->iInUseDB==0 || pCache==pCsr) ){
-          exitPcacheGlobal();
+          pcacheExitGlobal();
           pCsr->xStress(pCsr->pStress);
-          enterPcacheGlobal();
+          pcacheEnterGlobal();
         }
         pCsr->iInUseMM = 0;
       }
@@ -472,7 +480,7 @@ static PgHdr *pcacheRecycleOrAlloc(PCache *pCache){
     p = pcachePageAlloc(szPage, szExtra, bPurg);
   }
 
-  exitPcacheGlobal();
+  pcacheExitGlobal();
   return p;
 }
 
@@ -527,9 +535,9 @@ void sqlite3PcacheOpen(
   p->nMax = 100;
 
   if( bPurgeable ){
-    enterPcacheGlobal();
+    pcacheEnterGlobal();
     pcache.mxPagePurgeable += p->nMax;
-    exitPcacheGlobal();
+    pcacheExitGlobal();
   }
 
   /* Add the new pager-cache to the list of caches starting at pcache.pAll */
@@ -543,6 +551,10 @@ void sqlite3PcacheOpen(
   sqlite3_mutex_leave(pcache.mutex_mem2);
 }
 
+/*
+** Change the page size for PCache object.  This can only happen
+** when the cache is empty.
+*/
 void sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
   assert(pCache->nPage==0);
   pCache->szPage = szPage;
@@ -569,11 +581,11 @@ int sqlite3PcacheFetch(
     for(pPage=pCache->apHash[h]; pPage; pPage=pPage->pNextHash){
       if( pPage->pgno==pgno ){
         if( pPage->nRef==0 && (pPage->flags & PGHDR_DIRTY)==0 ){
-          enterPcacheGlobal();
+          pcacheEnterGlobal();
           pcacheRemoveFromLruList(pPage);
-          exitPcacheGlobal();
+          pcacheExitGlobal();
         }
-        page_ref(pPage, 1);
+        pcacheRef(pPage, 1);
         *ppPage = pPage;
         return SQLITE_OK;
       }
@@ -600,7 +612,7 @@ int sqlite3PcacheFetch(
     pPage->nRef = 0;
     pPage->pgno = pgno;
     pPage->pCache = pCache;
-    page_ref(pPage, 1);
+    pcacheRef(pPage, 1);
     pcacheAddToList(&pCache->pClean, pPage);
     pcacheAddToHash(pPage);
   }else{
@@ -617,20 +629,20 @@ int sqlite3PcacheFetch(
 void sqlite3PcacheRelease(PgHdr *p){
   assert( p->nRef>0 );
   assert( p->pCache->iInUseDB || p->pCache->iInUseMM );
-  page_ref(p, -1);
+  pcacheRef(p, -1);
   if( p->nRef!=0 ) return;
   if( p->pCache->xDestroy ){
     p->pCache->xDestroy(p);
   }
   if( (p->flags & PGHDR_DIRTY)!=0 ) return;
-  enterPcacheGlobal();
+  pcacheEnterGlobal();
   pcacheAddToLruList(p);
-  exitPcacheGlobal();
+  pcacheExitGlobal();
 }
 
 void sqlite3PcacheRef(PgHdr *p){
   assert(p->nRef>=0);
-  page_ref(p, 1);
+  pcacheRef(p, 1);
 }
 
 /*
@@ -649,9 +661,9 @@ void sqlite3PcacheDrop(PgHdr *p){
     pcacheRemoveFromList(&pCache->pClean, p);
   }
   pcacheRemoveFromHash(p);
-  enterPcacheGlobal();
+  pcacheEnterGlobal();
   pcachePageFree(p);
-  exitPcacheGlobal();
+  pcacheExitGlobal();
 }
 
 /*
@@ -686,9 +698,9 @@ void sqlite3PcacheMakeClean(PgHdr *p){
   pcacheAddToList(&pCache->pClean, p);
   p->flags &= ~PGHDR_DIRTY;
   if( p->nRef==0 ){
-    enterPcacheGlobal();
+    pcacheEnterGlobal();
     pcacheAddToLruList(p);
-    exitPcacheGlobal();
+    pcacheExitGlobal();
   }
 }
 
@@ -704,9 +716,9 @@ void sqlite3PcacheCleanAll(PCache *pCache){
     pcacheAddToList(&pCache->pClean, p);
     p->flags &= ~PGHDR_DIRTY;
     if( p->nRef==0 ){
-      enterPcacheGlobal();
+      pcacheEnterGlobal();
       pcacheAddToLruList(p);
-      exitPcacheGlobal();
+      pcacheExitGlobal();
     }
   }
 }
@@ -722,10 +734,10 @@ void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
   p->pgno = newPgno;
   if( newPgno==0 ){
     p->flags |= PGHDR_REUSE_UNLIKELY;
-    enterPcacheGlobal();
+    pcacheEnterGlobal();
     pcacheFree(p->apSave[0]);
     pcacheFree(p->apSave[1]);
-    exitPcacheGlobal();
+    pcacheExitGlobal();
     p->apSave[0] = 0;
     p->apSave[1] = 0;
     sqlite3PcacheMakeClean(p);
@@ -737,9 +749,9 @@ void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
 ** Set the global maximum number of pages. Return the previous value.
 */
 void sqlite3PcacheGlobalMax(int mx){
-  enterPcacheGlobal();
+  pcacheEnterGlobal();
   pcache.mxPage = mx;
-  exitPcacheGlobal();
+  pcacheExitGlobal();
 }
 
 /*
@@ -771,7 +783,7 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
   PgHdr *p, *pNext;
   PgHdr *pDirty = pCache->pDirty;
   assert( pCache->iInUseDB );
-  enterPcacheGlobal();
+  pcacheEnterGlobal();
   for(p=pCache->pClean; p||pDirty; p=pNext){
     if( !p ){
       p = pDirty;
@@ -796,7 +808,7 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
       }
     }
   }
-  exitPcacheGlobal();
+  pcacheExitGlobal();
 }
 
 
@@ -809,13 +821,13 @@ void sqlite3PcacheClose(PCache *pCache){
   /* Free all the pages used by this pager and remove them from the LRU
   ** list. This requires the protection of the MUTEX_STATIC_LRU mutex.
   */
-  enterPcacheGlobal();
+  pcacheEnterGlobal();
   pcacheClear(pCache);
   if( pCache->bPurgeable ){
     pcache.mxPagePurgeable -= pCache->nMax;
   }
   sqlite3_free(pCache->apHash);
-  exitPcacheGlobal();
+  pcacheExitGlobal();
 
   /* Now remove the pager-cache structure itself from the list of
   ** all such structures headed by pcache.pAll. This required the
@@ -865,14 +877,14 @@ int sqlite3PcachePreserve(PgHdr *p, int idJournal){
 void sqlite3PcacheCommit(PCache *pCache, int idJournal){
   PgHdr *p;
   assert( pCache->iInUseDB );
-  enterPcacheGlobal();     /* Mutex is required to call pcacheFree() */
+  pcacheEnterGlobal();     /* Mutex is required to call pcacheFree() */
   for(p=pCache->pDirty; p; p=p->pNext){
     if( p->apSave[idJournal] ){
       pcacheFree(p->apSave[idJournal]);
       p->apSave[idJournal] = 0;
     }
   }
-  exitPcacheGlobal();
+  pcacheExitGlobal();
 }
 
 /*
@@ -882,7 +894,7 @@ void sqlite3PcacheRollback(PCache *pCache, int idJournal){
   PgHdr *p;
   int sz;
   assert( pCache->iInUseDB );
-  enterPcacheGlobal();     /* Mutex is required to call pcacheFree() */
+  pcacheEnterGlobal();     /* Mutex is required to call pcacheFree() */
   sz = pCache->szPage;
   for(p=pCache->pDirty; p; p=p->pNext){
     if( p->apSave[idJournal] ){
@@ -891,7 +903,7 @@ void sqlite3PcacheRollback(PCache *pCache, int idJournal){
       p->apSave[idJournal] = 0;
     }
   }
-  exitPcacheGlobal();
+  pcacheExitGlobal();
 }
 
 /* 
@@ -916,9 +928,9 @@ void sqlite3PcacheAssertFlags(PCache *pCache, int trueMask, int falseMask){
 int sqlite3PcacheClear(PCache *pCache){
   assert( pCache->iInUseDB );
   assert(pCache->nRef==0);
-  enterPcacheGlobal();
+  pcacheEnterGlobal();
   pcacheClear(pCache);
-  exitPcacheGlobal();
+  pcacheExitGlobal();
   return SQLITE_OK;
 }
 
@@ -1100,10 +1112,10 @@ void sqlite3PcacheSetCachesize(PCache *pCache, int mxPage){
     mxPage = 10;
   }
   if( pCache->bPurgeable ){
-    enterPcacheGlobal();
+    pcacheEnterGlobal();
     pcache.mxPagePurgeable -= pCache->nMax;
     pcache.mxPagePurgeable += mxPage;
-    exitPcacheGlobal();
+    pcacheExitGlobal();
   }
   pCache->nMax = mxPage;
 }
@@ -1129,4 +1141,3 @@ void sqlite3PcacheUnlock(PCache *pCache){
   pCache->iInUseDB--;
   assert( pCache->iInUseDB>=0 );
 }
-

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.470 2008/08/20 14:49:24 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.471 2008/08/20 21:47:46 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -490,7 +490,7 @@ static void checkPage(PgHdr *pPg){
 #define pager_datahash(X,Y)  0
 #define pager_pagehash(X)  0
 #define CHECK_PAGE(x)
-#endif
+#endif  /* SQLITE_CHECK_PAGES */
 
 /*
 ** When this is called the journal file for pager pPager must be open.
@@ -1868,7 +1868,8 @@ int sqlite3PagerOpen(
     return ((rc==SQLITE_OK)?SQLITE_NOMEM:rc);
   }
   nExtra = FORCE_ALIGNMENT(nExtra);
-  sqlite3PcacheOpen(szPageDflt, nExtra, !memDb, xDesc, !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
+  sqlite3PcacheOpen(szPageDflt, nExtra, !memDb, xDesc, 
+                    !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
 
   PAGERTRACE3("OPEN %d %s\n", FILEHANDLEID(pPager->fd), pPager->zFilename);
   IOTRACE(("OPEN %p %s\n", pPager, pPager->zFilename))
