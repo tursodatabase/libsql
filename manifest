@@ -1,5 +1,5 @@
-C Remove\sleftover\sPGHDR_TO_DATA\smacro\sfrom\spager.c.\sTicket\s#3323.\s(CVS\s5574)
-D 2008-08-21T04:35:19
+C Move\san\sassert()\sin\ssqlite3PcacheDirtyPage()\sso\sthat\sit\sdoes\snot\soccur\sbefore\slocal\svariable\sdeclarations.\sTicket\s#3325.\s(CVS\s5575)
+D 2008-08-21T04:41:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0b1c022000f55221454a7846022f11674d8024bf
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c 08e257feabce0d2b3f9cba83915327e2f97a51a7
 F src/pager.h fb9376af5ba8e1eb78ee3b4f15eb0f60658ffd65
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c cf7a7c81366e42330ff9c84d1f3591c905289c3d
+F src/pcache.c e244ef4b7019ce08b768b3e019f5c39585dc7a96
 F src/pcache.h 71ade7a84ed87d9d20507315260b1d91808d7c9a
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 00b177985ee08f13a7781d095936da3beaf0408c
-R 8b85ab03b807b81e22342fe88061675a
+P 5e9559c0490b9e0395e1da4d36bd33942350978c
+R ffb9b74aabb8421663a6722de8981c79
 U danielk1977
-Z 4faef0c342826d18c5f3474e10d7d202
+Z e689954593a083b11a089928219e4342

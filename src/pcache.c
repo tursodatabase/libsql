@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.2 2008/08/20 21:47:46 drh Exp $
+** @(#) $Id: pcache.c,v 1.3 2008/08/21 04:41:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1030,7 +1030,6 @@ PgHdr *sqlite3PcacheDirtyList(PCache *pCache){
 */
 PgHdr *sqlite3PcacheDirtyPage(PCache *pCache){
   PgHdr *p = 0;
-  assert( pCache->iInUseMM );
 #if 1
   PgHdr *pIter;
   Pgno min_pgno;
@@ -1043,6 +1042,7 @@ PgHdr *sqlite3PcacheDirtyPage(PCache *pCache){
 #else
   for(p=pCache->pDirty; p && p->nRef; p=p->pNext);
 #endif
+  assert( pCache->iInUseMM );
   if( p ){
     p->pDirty = 0;
   }
