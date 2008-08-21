@@ -1,5 +1,5 @@
-C Reinsert\san\sSCopy\soperation\sthat\swas\sremoved\sin\s(5523)\sbecause\scoverage\ntesting\sindicated\sthat\sit\swas\sdead\scode.\s\sTicket\s#3324\sshows\sthat\sthe\ncode\swas\snot\sas\sdead\sas\swe\sthought\sit\swas.\s(CVS\s5578)
-D 2008-08-21T14:15:59
+C Add\stest\scases\sto\sverify\sthat\sticket\s#3314\shas\sbeen\sfixed.\s(CVS\s5579)
+D 2008-08-21T14:24:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0b1c022000f55221454a7846022f11674d8024bf
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -470,7 +470,7 @@ F test/select6.test faad87c6e691bf69a822b69cd6808137a34d19e8
 F test/select7.test 7906735805cfbee4dddc0bed4c14e68d7f5f9c5f
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test b4007b15396cb7ba2615cab31e1973b572e43210
-F test/selectA.test 9335851a42b664e2e4db6889dc0d4a3302f3d623
+F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
 F test/selectB.test 31e81ac9af7d224850e0706350f070ecb92fcbc7
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test b9f3bbd3ba727c5f1f8c815b7d0199262aacf214
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a2f375fffb49b6f6adbfd59d24e9c6a170fd5ebb
-R a28baeafe56f2cc5b7a4255743c38809
+P 6855711595b58d4b6fbaf9480720b788904d0e2d
+R f9dd7772aed55e02a1d2567ebef0881f
 U drh
-Z 48f409680bd6268427d83dfae2ba5930
+Z ee8b94f7984c53fadfdb88741ce8777a

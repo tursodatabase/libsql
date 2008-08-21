@@ -17,7 +17,7 @@
 # explicit sort order and explicit collating secquites) and
 # with and without optional LIMIT and OFFSET clauses.
 #
-# $Id: selectA.test,v 1.5 2008/08/04 03:51:24 danielk1977 Exp $
+# $Id: selectA.test,v 1.6 2008/08/21 14:24:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -66,6 +66,18 @@ do_test selectA-2.1 {
   execsql {
     SELECT a,b,c FROM t1 UNION ALL SELECT x,y,z FROM t2
     ORDER BY a,b,c
+  }
+} {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
+do_test selectA-2.1.1 {   # Ticket #3314
+  execsql {
+    SELECT t1.a, t1.b, t1.c FROM t1 UNION ALL SELECT x,y,z FROM t2
+    ORDER BY a,b,c
+  }
+} {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
+do_test selectA-2.1.2 {   # Ticket #3314
+  execsql {
+    SELECT a,b,c FROM t1 UNION ALL SELECT x,y,z FROM t2
+    ORDER BY t1.a, t1.b, t1.c
   }
 } {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
 do_test selectA-2.2 {
@@ -672,6 +684,12 @@ do_test selectA-3.1 {
   execsql {
     SELECT a,b,c FROM t1 UNION ALL SELECT x,y,z FROM t2
     ORDER BY a,b,c
+  }
+} {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
+do_test selectA-3.1.1 {  # Ticket #3314
+  execsql {
+    SELECT t1.a,b,t1.c FROM t1 UNION ALL SELECT x,y,z FROM t2
+    ORDER BY a,t1.b,t1.c
   }
 } {{} C c {} U u -23 Y y 1 a a 9.9 b B 5200000.0 X x hello d D mad Z z abc e e hare m M}
 do_test selectA-3.2 {
