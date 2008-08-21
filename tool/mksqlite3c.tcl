@@ -256,7 +256,7 @@ foreach file {
    build.c
    callback.c
    delete.c
-   func2.c
+   func.c
    insert.c
    legacy.c
    loadext.c

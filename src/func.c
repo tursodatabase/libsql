@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.197 2008/08/20 14:49:24 danielk1977 Exp $
+** $Id: func.c,v 1.198 2008/08/21 18:49:28 drh Exp $
 */
 
 #ifndef CREATE_BUILTIN_HASHTABLE
@@ -1422,3 +1422,13 @@ static FuncDef aBuiltinFunc[] = {
 #endif
 };
 
+/*
+** Build up the global built-in function table at initialization
+** time.
+*/
+void sqlite3RegisterGlobalFunctions(void){
+  int i;
+  for(i=0; i<ArraySize(aBuiltinFunc); i++){
+    sqlite3FuncDefInsert(&sqlite3FuncBuiltins, &aBuiltinFunc[i]);
+  }
+}

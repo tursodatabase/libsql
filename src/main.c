@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.491 2008/08/20 16:35:10 drh Exp $
+** $Id: main.c,v 1.492 2008/08/21 18:49:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -147,6 +147,8 @@ int sqlite3_initialize(void){
   sqlite3_mutex_enter(sqlite3Config.pInitMutex);
   if( sqlite3Config.isInit==0 && inProgress==0 ){
     inProgress = 1;
+    memset(&sqlite3FuncBuiltins, 0, sizeof(sqlite3FuncBuiltins));
+    sqlite3RegisterGlobalFunctions();
     rc = sqlite3_os_init();
     if( rc==SQLITE_OK ){
       rc = sqlite3PcacheInitialize();
@@ -566,14 +568,17 @@ int sqlite3_close(sqlite3 *db){
   sqlite3ResetInternalSchema(db, 0);
   assert( db->nDb<=2 );
   assert( db->aDb==db->aDbStatic );
-  for(i=sqliteHashFirst(&db->aFunc); i; i=sqliteHashNext(i)){
-    FuncDef *pFunc, *pNext;
-    for(pFunc = (FuncDef*)sqliteHashData(i); pFunc; pFunc=pNext){
-      pNext = pFunc->pNext;
-      sqlite3DbFree(db, pFunc);
+  for(j=0; j<ArraySize(db->aFunc.a); j++){
+    FuncDef *pNext, *pHash, *p;
+    for(p=db->aFunc.a[j]; p; p=pHash){
+      pHash = p->pHash;
+      while( p ){
+        pNext = p->pNext;
+        sqlite3DbFree(db, p);
+        p = pNext;
+      }
     }
   }
-
   for(i=sqliteHashFirst(&db->aCollSeq); i; i=sqliteHashNext(i)){
     CollSeq *pColl = (CollSeq *)sqliteHashData(i);
     /* Invoke any destructors registered for collation sequence user data. */
@@ -596,7 +601,6 @@ int sqlite3_close(sqlite3 *db){
   sqlite3HashClear(&db->aModule);
 #endif
 
-  sqlite3HashClear(&db->aFunc);
   sqlite3Error(db, SQLITE_OK, 0); /* Deallocates any cached error strings. */
   if( db->pErr ){
     sqlite3ValueFree(db->pErr);
@@ -1371,6 +1375,9 @@ static const int aHardLimit[] = {
 #if SQLITE_MAX_VARIABLE_NUMBER<1
 # error SQLITE_MAX_VARIABLE_NUMBER must be at least 1
 #endif
+#if SQLITE_MAX_COLUMN>32767
+# error SQLITE_MAX_COLUMN must not exceed 32767
+#endif
 
 
 /*
@@ -1466,7 +1473,6 @@ static int openDatabase(
                  | SQLITE_LoadExtension
 #endif
       ;
-  sqlite3HashInit(&db->aFunc, SQLITE_HASH_STRING, 0);
   sqlite3HashInit(&db->aCollSeq, SQLITE_HASH_STRING, 0);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3HashInit(&db->aModule, SQLITE_HASH_STRING, 0);

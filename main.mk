@@ -51,7 +51,7 @@ TCCX = $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) -I$(TOP)/ext/rtree
 LIBOBJ+= alter.o analyze.o attach.o auth.o \
          bitvec.o btmutex.o btree.o build.o \
          callback.o complete.o date.o delete.o \
-         expr.o fault.o func2.o global.o hash.o \
+         expr.o fault.o func.o global.o hash.o \
          icu.o insert.o journal.o legacy.o loadext.o \
          main.o malloc.o mem1.o mem2.o mem3.o mem4.o mem5.o mem6.o \
          mutex.o mutex_os2.o mutex_unix.o mutex_w32.o \
@@ -83,6 +83,7 @@ SRC = \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/fault.c \
+  $(TOP)/src/func.c \
   $(TOP)/src/global.c \
   $(TOP)/src/hash.c \
   $(TOP)/src/hash.h \
@@ -142,7 +143,6 @@ SRC = \
   $(TOP)/src/vdbeblob.c \
   $(TOP)/src/vdbefifo.c \
   $(TOP)/src/vdbemem.c \
-  $(TOP)/src/pcache.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
   $(TOP)/src/walker.c \
@@ -193,7 +193,6 @@ SRC += \
   opcodes.h \
   parse.c \
   parse.h \
-  func2.c \
   sqlite3.h
 
 
@@ -231,7 +230,7 @@ TESTSRC = \
 
 TESTSRC2 = \
   $(TOP)/src/attach.c $(TOP)/src/btree.c $(TOP)/src/build.c $(TOP)/src/date.c  \
-  $(TOP)/src/expr.c func2.c $(TOP)/src/insert.c $(TOP)/src/os.c      \
+  $(TOP)/src/expr.c $(TOP)/src/func.c $(TOP)/src/insert.c $(TOP)/src/os.c      \
   $(TOP)/src/os_os2.c $(TOP)/src/os_unix.c $(TOP)/src/os_win.c                 \
   $(TOP)/src/pager.c $(TOP)/src/pragma.c $(TOP)/src/prepare.c                  \
   $(TOP)/src/printf.c $(TOP)/src/random.c $(TOP)/src/pcache.c                  \
@@ -349,12 +348,8 @@ opcodes.c:	opcodes.h $(TOP)/mkopcodec.awk
 	sort -n -b -k 3 opcodes.h | $(NAWK) -f $(TOP)/mkopcodec.awk >opcodes.c
 
 opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/mkopcodeh.awk
-	cat parse.h $(TOP)/src/vdbe.c |$(NAWK) -f $(TOP)/mkopcodeh.awk >opcodes.h
-
-func2.c: $(TOP)/src/func.c $(HDR)
-	$(BCC) -o mkfunction $(OPTS) $(TOP)/tool/mkfunction.c -I$(TOP)/src -I.
-	cat $(TOP)/src/func.c > func2.c
-	./mkfunction >> func2.c
+	cat parse.h $(TOP)/src/vdbe.c | \
+		$(NAWK) -f $(TOP)/mkopcodeh.awk >opcodes.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #
@@ -497,4 +492,4 @@ clean:
 	rm -f *.da *.bb *.bbg gmon.out
 	rm -rf tsrc target_source
 	rm -f testloadext.dll libtestloadext.so
-	rm -f sqlite3.c fts?amal.c tclsqlite3.c func2.c
+	rm -f sqlite3.c fts?amal.c tclsqlite3.c

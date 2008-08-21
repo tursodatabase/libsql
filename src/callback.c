@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.27 2008/08/20 14:49:24 danielk1977 Exp $
+** $Id: callback.c,v 1.28 2008/08/21 18:49:28 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -261,6 +261,49 @@ static int matchQuality(FuncDef *p, int nArg, u8 enc){
 }
 
 /*
+** Search a FuncDefHash for a function with the given name.  Return
+** a pointer to the matching FuncDef if found, or 0 if there is no match.
+*/
+static FuncDef *functionSearch(
+  FuncDefHash *pHash,  /* Hash table to search */
+  int h,               /* Hash of the name */
+  const char *zFunc,   /* Name of function */
+  int nFunc            /* Number of bytes in zFunc */
+){
+  FuncDef *p;
+  for(p=pHash->a[h]; p; p=p->pHash){
+    if( sqlite3StrNICmp(p->zName, zFunc, nFunc)==0 && p->zName[nFunc]==0 ){
+      return p;
+    }
+  }
+  return 0;
+}
+
+/*
+** Insert a new FuncDef into a FuncDefHash hash table.
+*/
+void sqlite3FuncDefInsert(
+  FuncDefHash *pHash,  /* The hash table into which to insert */
+  FuncDef *pDef        /* The function definition to insert */
+){
+  FuncDef *pOther;
+  int nName = strlen(pDef->zName);
+  u8 c1 = (u8)pDef->zName[0];
+  int h = (sqlite3UpperToLower[c1] + nName) % ArraySize(pHash->a);
+  pOther = functionSearch(pHash, h, pDef->zName, nName);
+  if( pOther ){
+    pDef->pNext = pOther->pNext;
+    pOther->pNext = pDef;
+  }else{
+    pDef->pNext = 0;
+    pDef->pHash = pHash->a[h];
+    pHash->a[h] = pDef;
+  }
+}
+  
+  
+
+/*
 ** Locate a user function given a name, a number of arguments and a flag
 ** indicating whether the function prefers UTF-16 over UTF-8.  Return a
 ** pointer to the FuncDef structure that defines that function, or return
@@ -289,21 +332,24 @@ FuncDef *sqlite3FindFunction(
   int createFlag     /* Create new entry if true and does not otherwise exist */
 ){
   FuncDef *p;         /* Iterator variable */
-  FuncDef *pFirst;    /* First function with this name */
   FuncDef *pBest = 0; /* Best match found so far */
-  int bestmatch = 0;  
+  int bestScore = 0;  /* Score of best match */
+  int h;              /* Hash value */
 
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   if( nArg<-1 ) nArg = -1;
+  h = (sqlite3UpperToLower[(u8)zName[0]] + nName) % ArraySize(db->aFunc.a);
 
-  pFirst = (FuncDef*)sqlite3HashFind(&db->aFunc, zName, nName);
-  for(p=pFirst; p; p=p->pNext){
-    int match = matchQuality(p, nArg, enc);
-    if( match>bestmatch ){
+
+  p = functionSearch(&db->aFunc, h, zName, nName);
+  while( p ){
+    int score = matchQuality(p, nArg, enc);
+    if( score>bestScore ){
       pBest = p;
-      bestmatch = match;
+      bestScore = score;
     }
+    p = p->pNext;
   }
 
   /* If the createFlag parameter is false and no match was found amongst
@@ -311,16 +357,14 @@ FuncDef *sqlite3FindFunction(
   ** function to use.
   */ 
   if( !createFlag && !pBest ){
-    FuncDef *aFunc;
-    int nFunc;
-    int i;
-    nFunc = sqlite3GetBuiltinFunction(zName, nName, &aFunc);
-    for(i=0; i<nFunc; i++){
-      int match = matchQuality(&aFunc[i], nArg, enc);
-      if( match>bestmatch ){
-        pBest = &aFunc[i];
-        bestmatch = match;
+    p = functionSearch(&sqlite3FuncBuiltins, h, zName, nName);
+    while( p ){
+      int score = matchQuality(p, nArg, enc);
+      if( score>bestScore ){
+        pBest = p;
+        bestScore = score;
       }
+      p = p->pNext;
     }
   }
 
@@ -328,19 +372,14 @@ FuncDef *sqlite3FindFunction(
   ** exact match for the name, number of arguments and encoding, then add a
   ** new entry to the hash table and return it.
   */
-  if( createFlag && bestmatch<6 && 
+  if( createFlag && bestScore<6 && 
       (pBest = sqlite3DbMallocZero(db, sizeof(*pBest)+nName+1))!=0 ){
     pBest->zName = (char *)&pBest[1];
     pBest->nArg = nArg;
-    pBest->pNext = pFirst;
     pBest->iPrefEnc = enc;
     memcpy(pBest->zName, zName, nName);
     pBest->zName[nName] = 0;
-    if( pBest==sqlite3HashInsert(&db->aFunc,pBest->zName,nName,(void*)pBest) ){
-      db->mallocFailed = 1;
-      sqlite3DbFree(db, pBest);
-      return 0;
-    }
+    sqlite3FuncDefInsert(&db->aFunc, pBest);
   }
 
   if( pBest && (pBest->xStep || pBest->xFunc || createFlag) ){

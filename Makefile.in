@@ -157,7 +157,7 @@ NAWK = @AWK@
 #
 OBJS0 = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo \
         btree.lo build.lo callback.lo complete.lo date.lo \
-        delete.lo expr.lo fault.lo func2.lo global.lo \
+        delete.lo expr.lo fault.lo func.lo global.lo \
         hash.lo journal.lo insert.lo loadext.lo \
         main.lo malloc.lo mem1.lo mem2.lo mem3.lo mem4.lo mem5.lo mem6.lo \
         mutex.lo mutex_os2.lo mutex_unix.lo mutex_w32.lo \
@@ -198,6 +198,7 @@ SRC = \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/fault.c \
+  $(TOP)/src/func.c \
   $(TOP)/src/global.c \
   $(TOP)/src/hash.c \
   $(TOP)/src/hash.h \
@@ -265,7 +266,6 @@ SRC = \
 # Generated source code files
 #
 SRC += \
-  func2.c \
   keywordhash.h \
   opcodes.c \
   opcodes.h \
@@ -521,8 +521,8 @@ expr.lo:	$(TOP)/src/expr.c $(HDR)
 fault.lo:	$(TOP)/src/fault.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/fault.c
 
-func2.lo:	func2.c $(HDR)
-	$(LTCOMPILE) -c func2.c
+func.lo:	$(TOP)/src/func.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/func.c
 
 global.lo:	$(TOP)/src/global.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/global.c
@@ -615,11 +615,6 @@ parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/addopcodes.awk
 	./lemon$(BEXE) $(OPTS) $(OPT_FEATURE_FLAGS) parse.y
 	mv parse.h parse.h.temp
 	$(NAWK) -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
-
-func2.c: $(TOP)/src/func.c $(HDR)
-	$(BCC) -o mkfunction$(BEXE) $(OPTS) $(OPT_FEATURE_FLAGS) $(TOP)/tool/mkfunction.c -I$(TOP)/src -I.
-	cat $(TOP)/src/func.c > func2.c
-	./mkfunction$(BEXE) >> func2.c
 
 pragma.lo:	$(TOP)/src/pragma.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/pragma.c
