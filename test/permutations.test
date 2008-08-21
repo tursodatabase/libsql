@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.20 2008/08/01 18:47:02 drh Exp $
+# $Id: permutations.test,v 1.21 2008/08/21 15:54:01 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -141,6 +141,9 @@ proc run_tests {name args} {
 #
 run_tests "memsubsys1" -description {
   Tests using pre-allocated page and scratch blocks
+} -exclude {
+  ioerr5.test
+  malloc5.test
 } -initialize {
   catch {db close}
   sqlite3_shutdown

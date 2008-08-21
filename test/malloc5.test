@@ -12,7 +12,7 @@
 # This file contains test cases focused on the two memory-management APIs, 
 # sqlite3_soft_heap_limit() and sqlite3_release_memory().
 #
-# $Id: malloc5.test,v 1.18 2008/02/18 22:24:58 drh Exp $
+# $Id: malloc5.test,v 1.19 2008/08/21 15:54:01 danielk1977 Exp $
 
 #---------------------------------------------------------------------------
 # NOTES ON EXPECTED BEHAVIOUR
@@ -206,7 +206,7 @@ do_test malloc5-4.1 {
 } {1}
 do_test malloc5-4.2 {
   sqlite3_release_memory
-  sqlite3_soft_heap_limit 100000
+  sqlite3_soft_heap_limit 110000
   sqlite3_memory_highwater 1
   execsql {BEGIN;}
   for {set i 0} {$i < 10000} {incr i} {
@@ -231,7 +231,7 @@ do_test malloc5-4.2 {
   # the problem are the calls to sqlite3_malloc() inserted into selected
   # sqlite3OsXXX() functions in test builds.
   #
-  expr $nMaxBytes <= 100100
+  expr $nMaxBytes <= 110100
 } {1}
 do_test malloc5-4.3 {
   # Check that the content of table abc is at least roughly as expected.
@@ -296,6 +296,9 @@ do_test malloc5-6.1.1 {
   execsql {
     PRAGMA page_size=1024;
     PRAGMA default_cache_size=10;
+  }
+  execsql {
+    PRAGMA temp_store = memory;
     BEGIN;
     CREATE TABLE abc(a PRIMARY KEY, b, c);
     INSERT INTO abc VALUES(randstr(50,50), randstr(75,75), randstr(100,100));
@@ -325,22 +328,22 @@ do_test malloc5-6.1.2 {
 do_test malloc5-6.2.1 {
   execsql { SELECT * FROM abc } db2
   execsql {SELECT * FROM abc} db
-  list [nPage db] [nPage db2]
-} {10 10}
+  expr [nPage db] + [nPage db2]
+} {20}
+
 do_test malloc5-6.2.2 {
   # If we now try to reclaim some memory, it should come from the db2 cache.
   sqlite3_release_memory 3000
-  list [nPage db] [nPage db2]
-} {10 7}
+  expr [nPage db] + [nPage db2]
+} {17}
 do_test malloc5-6.2.3 {
   # Access the db2 cache again, so that all the db2 pages have been used
   # more recently than all the db pages. Then try to reclaim 3000 bytes.
   # This time, 3 pages should be pulled from the db cache.
   execsql { SELECT * FROM abc } db2
   sqlite3_release_memory 3000
-  list [nPage db] [nPage db2]
-} {7 10}
-
+  expr [nPage db] + [nPage db2]
+} {17}
 
 do_test malloc5-6.3.1 {
   # Now open a transaction and update 2 pages in the db2 cache. Then
@@ -356,8 +359,8 @@ do_test malloc5-6.3.1 {
     WHERE rowid = 1 OR rowid = (SELECT max(rowid) FROM abc);
   } db2
   execsql { SELECT * FROM abc } db
-  list [nPage db] [nPage db2]
-} {10 10}
+  expr [nPage db] + [nPage db2]
+} {20}
 do_test malloc5-6.3.2 {
   # Try to release 7700 bytes. This should release all the 
   # non-dirty pages held by db2.

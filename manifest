@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sin\spreparation\sfor\sthe\snext\srelease.\s(CVS\s5581)
-D 2008-08-21T15:13:43
+C Fix\ssoft-heap-limit\srelated\stest\ssuite\sfailures.\s(CVS\s5582)
+D 2008-08-21T15:54:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0b1c022000f55221454a7846022f11674d8024bf
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c 3a4358c72c9c8415e8648001c776857e6952e2b4
 F src/pager.h 3778bea71dfb9658b6c94394e18db4a5b27e6ded
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 54d03c3550893582451c476731a3d4b6b682f7b8
+F src/pcache.c 4668410008dda89ff5f0eb62b887cfb5e13903eb
 F src/pcache.h aef1dedd7ff6186f27052a2509fff437a8906977
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
@@ -402,7 +402,7 @@ F test/main.test 8d77c161757ef7d96eaff0413daa7120c3b316fe
 F test/malloc.test 69f5bb5a13b24edb1322fc1f42894f9d2f6446b1
 F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
-F test/malloc5.test 1a68e56e513eab54d8c4cd1b769ff1d14e3f99f4
+F test/malloc5.test 8b18857f37c1c409b914789934aeb1346b778b3a
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
@@ -445,7 +445,7 @@ F test/pager2.test 070983b89a308adaba525a2f9c1ba0592c72fa3d
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
-F test/permutations.test 4ad59e4489255b025aac0cc661789d35a83d87ec
+F test/permutations.test 1f7ead8d56d62633b2dd00c26868db35f0b3dcdf
 F test/pragma.test b55931bbd5dd543e56fd942dbf4b7439619b09a6
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8593218c7c8016fbdbcc223db951751eaba9c0dd
-R 316e5dae58950571a5d41225469e48e2
-U drh
-Z 79d80137c3262f0c6af4b82ef771a790
+P d68dad73d0a85c6213a96982d0366c790871b693
+R b1b9ce7ac833bb03734065aa230b3a65
+U danielk1977
+Z 442c477497b5c11bc6fcf9ea22d419f7

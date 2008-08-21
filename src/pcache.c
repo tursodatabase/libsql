@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.5 2008/08/21 12:32:12 drh Exp $
+** @(#) $Id: pcache.c,v 1.6 2008/08/21 15:54:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -97,6 +97,9 @@ static struct PCacheGlobal {
 ** Before the xStress callback of a pager-cache (PCache) is invoked, the
 ** SQLITE_MUTEX_STATIC_MEM2 mutex is obtained and the SQLITE_MUTEX_STATIC_LRU 
 ** mutex released (in that order) before making the call.
+**
+** Deadlock within the module is avoided by never blocking on the MEM2 
+** mutex while the LRU mutex is held.
 */
 
 #define pcacheEnterGlobal() sqlite3_mutex_enter(pcache.mutex_lru)
@@ -322,7 +325,7 @@ void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
 ** and use an element from it first if available.  If nothing is available
 ** in the page cache memory pool, go to the general purpose memory allocator.
 */
-void *pcacheMalloc(int sz){
+void *pcacheMalloc(int sz, PCache *pCache){
   assert( sqlite3_mutex_held(pcache.mutex_lru) );
   if( sz<=pcache.szSlot && pcache.pFree ){
     PgFreeslot *p = pcache.pFree;
@@ -332,9 +335,21 @@ void *pcacheMalloc(int sz){
     return (void*)p;
   }else{
     void *p;
+
+    /* Allocate a new buffer using sqlite3Malloc. Before doing so, exit the
+    ** global pcache mutex and unlock the pager-cache object pCache. This is 
+    ** so that if the attempt to allocate a new buffer causes the the 
+    ** configured soft-heap-limit to be breached, it will be possible to
+    ** reclaim memory from this pager-cache. Because sqlite3PcacheLock() 
+    ** might block on the MEM2 mutex, it has to be called before re-entering
+    ** the global LRU mutex.
+    */
     pcacheExitGlobal();
+    sqlite3PcacheUnlock(pCache);
     p = sqlite3Malloc(sz);
+    sqlite3PcacheLock(pCache);
     pcacheEnterGlobal();
+
     if( p ){
       sz = sqlite3MallocSize(p);
       sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, sz);
@@ -345,7 +360,7 @@ void *pcacheMalloc(int sz){
 void *sqlite3PageMalloc(sz){
   void *p;
   pcacheEnterGlobal();
-  p = pcacheMalloc(sz);
+  p = pcacheMalloc(sz, 0);
   pcacheExitGlobal();
   return p;
 }
@@ -377,18 +392,17 @@ void sqlite3PageFree(void *p){
 /*
 ** Allocate a new page.
 */
-static PgHdr *pcachePageAlloc(int szPage, int szExtra, int bPurgeable){
+static PgHdr *pcachePageAlloc(PCache *pCache){
   PgHdr *p;
-  int sz = sizeof(*p) + szPage + szExtra;
+  int sz = sizeof(*p) + pCache->szPage + pCache->szExtra;
   assert( sqlite3_mutex_held(pcache.mutex_lru) );
-  p = pcacheMalloc( sz );
+  p = pcacheMalloc(sz, pCache);
   if( p==0 ) return 0;
   memset(p, 0, sizeof(PgHdr));
   p->pData = (void*)&p[1];
-  p->pExtra = (void*)&((char*)p->pData)[szPage];
-
+  p->pExtra = (void*)&((char*)p->pData)[pCache->szPage];
   pcache.nPage++;
-  if( bPurgeable ){
+  if( pCache->bPurgeable ){
     pcache.nPurgeable++;
   }
 
@@ -501,8 +515,7 @@ static PgHdr *pcacheRecycleOrAlloc(PCache *pCache){
   }
 
   if( !p ){
-    /* Allocate a new page object. */
-    p = pcachePageAlloc(szPage, szExtra, bPurg);
+    p = pcachePageAlloc(pCache);
   }
 
   pcacheExitGlobal();
@@ -566,6 +579,7 @@ void sqlite3PcacheOpen(
   }
 
   /* Add the new pager-cache to the list of caches starting at pcache.pAll */
+  assert( sqlite3_mutex_notheld(pcache.mutex_lru) );
   sqlite3_mutex_enter(pcache.mutex_mem2);
   p->pNextAll = pcache.pAll;
   if( pcache.pAll ){
@@ -858,6 +872,7 @@ void sqlite3PcacheClose(PCache *pCache){
   ** all such structures headed by pcache.pAll. This required the
   ** MUTEX_STATIC_MEM2 mutex.
   */
+  assert( sqlite3_mutex_notheld(pcache.mutex_lru) );
   sqlite3_mutex_enter(pcache.mutex_mem2);
   assert(pCache==pcache.pAll || pCache->pPrevAll);
   assert(pCache->pNextAll==0 || pCache->pNextAll->pPrevAll==pCache);
@@ -1151,13 +1166,16 @@ void sqlite3PcacheSetCachesize(PCache *pCache, int mxPage){
 ** Lock a pager-cache.
 */
 void sqlite3PcacheLock(PCache *pCache){
-  pCache->iInUseDB++;
-  if( pCache->iInUseMM && pCache->iInUseDB==1 ){
-    pCache->iInUseDB = 0;
-    sqlite3_mutex_enter(pcache.mutex_mem2);
-    assert( pCache->iInUseMM==0 && pCache->iInUseDB==0 );
-    pCache->iInUseDB = 1;
-    sqlite3_mutex_leave(pcache.mutex_mem2);
+  if( pCache ){
+    assert( sqlite3_mutex_notheld(pcache.mutex_lru) );
+    pCache->iInUseDB++;
+    if( pCache->iInUseMM && pCache->iInUseDB==1 ){
+      pCache->iInUseDB = 0;
+      sqlite3_mutex_enter(pcache.mutex_mem2);
+      assert( pCache->iInUseMM==0 && pCache->iInUseDB==0 );
+      pCache->iInUseDB = 1;
+      sqlite3_mutex_leave(pcache.mutex_mem2);
+    }
   }
 }
 
@@ -1165,8 +1183,10 @@ void sqlite3PcacheLock(PCache *pCache){
 ** Unlock a pager-cache.
 */
 void sqlite3PcacheUnlock(PCache *pCache){
-  pCache->iInUseDB--;
-  assert( pCache->iInUseDB>=0 );
+  if( pCache ){
+    pCache->iInUseDB--;
+    assert( pCache->iInUseDB>=0 );
+  }
 }
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
