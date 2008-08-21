@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.776 2008/08/20 22:06:48 drh Exp $
+** $Id: vdbe.c,v 1.777 2008/08/21 19:28:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3033,7 +3033,7 @@ case OP_MoveGt: {       /* jump, in3 */
 ** in the record in register P3, where N is the total number of values in
 ** the P3 record (the P3 record is a prefix of the P1 record). 
 **
-** See also: NotFound, MoveTo, IsUnique, NotExists
+** See also: NotFound, IsUnique, NotExists
 */
 /* Opcode: NotFound P1 P2 P3 * *
 **
@@ -3042,7 +3042,7 @@ case OP_MoveGt: {       /* jump, in3 */
 ** to P2.  If an entry does existing, fall through.  The cursor is left
 ** pointing to the entry that matches.
 **
-** See also: Found, MoveTo, NotExists, IsUnique
+** See also: Found, NotExists, IsUnique
 */
 case OP_NotFound:       /* jump, in3 */
 case OP_Found: {        /* jump, in3 */
@@ -3197,7 +3197,7 @@ case OP_IsUnique: {        /* jump, in3 */
 ** NotFound assumes key is a blob constructed from MakeRecord and
 ** P1 is an index.
 **
-** See also: Found, MoveTo, NotFound, IsUnique
+** See also: Found, NotFound, IsUnique
 */
 case OP_NotExists: {        /* jump, in3 */
   int i = pOp->p1;

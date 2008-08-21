@@ -1,5 +1,5 @@
-C Initialize\sthe\sglobal\sbuilt-in\sfunction\stable\sat\sstart-time\ninstead\sof\sat\scompile-time.\s\sThis\sis\sless\sprone\sto\smalfunction\swhen\ncompile-time\sparameters\svery.\s(CVS\s5583)
-D 2008-08-21T18:49:28
+C Remove\sreferences\sto\sOP_MoveTo\sin\scomments\sof\svdbe.c\s-\sthat\sopcode\sno\nlonger\sexists.\s\sTicket\s#3327.\s(CVS\s5584)
+D 2008-08-21T19:28:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 51b727303f84cf055e29514d8248e5eaf9701379
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -186,7 +186,7 @@ F src/update.c 9e3786e76825bd7fa22528556cc1c467cd428075
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
-F src/vdbe.c ae37f601426e01c4cdf6f650f465928bc18ad0c9
+F src/vdbe.c adcc179a31d71466b7b4f20ab77555e1e137bfe5
 F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
 F src/vdbeInt.h b48c74d86a9fb62b707a3186ccca76bb32f1c6be
 F src/vdbeapi.c 3c98fbed9d4e10a4fbe09fce47e88ec567927a7b
@@ -622,7 +622,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2091d9a5260b1d7e27ff5ca93e60dae1e3b12081
-R b949ccba5219ea8fee93a425d2cbcc5d
+P ef6936e50adb9ebea39c890167403fff01bbb5ed
+R 93e8a5c8f5b8731f0168db8793678abe
 U drh
-Z f9a9c8cdda97c141f21d737763887781
+Z fc276d4f825ababf0c32faa8e25a17cd
