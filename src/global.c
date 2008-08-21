@@ -12,7 +12,7 @@
 **
 ** This file contains definitions of global variables and contants.
 **
-** $Id: global.c,v 1.5 2008/08/21 18:49:28 drh Exp $
+** $Id: global.c,v 1.6 2008/08/21 20:21:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -82,4 +82,4 @@ struct Sqlite3Config sqlite3Config = {
 ** database connections.  After initialization, this table is
 ** read-only.
 */
-FuncDefHash sqlite3FuncBuiltins;
+FuncDefHash sqlite3GlobalFunctions;

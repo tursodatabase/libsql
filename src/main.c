@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.492 2008/08/21 18:49:28 drh Exp $
+** $Id: main.c,v 1.493 2008/08/21 20:21:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -147,7 +147,7 @@ int sqlite3_initialize(void){
   sqlite3_mutex_enter(sqlite3Config.pInitMutex);
   if( sqlite3Config.isInit==0 && inProgress==0 ){
     inProgress = 1;
-    memset(&sqlite3FuncBuiltins, 0, sizeof(sqlite3FuncBuiltins));
+    memset(&sqlite3GlobalFunctions, 0, sizeof(sqlite3GlobalFunctions));
     sqlite3RegisterGlobalFunctions();
     rc = sqlite3_os_init();
     if( rc==SQLITE_OK ){

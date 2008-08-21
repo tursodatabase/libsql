@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.6 2008/08/21 15:54:01 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.7 2008/08/21 20:21:35 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1213,4 +1213,3 @@ int sqlite3PcacheReleaseMemory(int nReq){
   return nFree;
 }
 #endif /* SQLITE_ENABLE_MEMORY_MANAGEMENT */
-

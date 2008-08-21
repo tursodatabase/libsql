@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.758 2008/08/21 18:49:28 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.759 2008/08/21 20:21:35 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -783,6 +783,39 @@ struct FuncDef {
 #define SQLITE_FUNC_LIKE     0x01  /* Candidate for the LIKE optimization */
 #define SQLITE_FUNC_CASE     0x02  /* Case-sensitive LIKE-type function */
 #define SQLITE_FUNC_EPHEM    0x04  /* Ephermeral.  Delete with VDBE */
+
+/*
+** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
+** used to create the initializers for the FuncDef structures.
+**
+**   FUNCTION(zName, nArg, iArg, bNC, xFunc)
+**     Used to create a scalar function definition of a function zName 
+**     implemented by C function xFunc that accepts nArg arguments. The
+**     value passed as iArg is cast to a (void*) and made available
+**     as the user-data (sqlite3_user_data()) for the function. If 
+**     argument bNC is true, then the FuncDef.needCollate flag is set.
+**
+**   AGGREGATE(zName, nArg, iArg, bNC, xStep, xFinal)
+**     Used to create an aggregate function definition implemented by
+**     the C functions xStep and xFinal. The first four parameters
+**     are interpreted in the same way as the first 4 parameters to
+**     FUNCTION().
+**
+**   LIKEFUNC(zName, nArg, pArg, flags)
+**     Used to create a scalar function definition of a function zName 
+**     that accepts nArg arguments and is implemented by a call to C 
+**     function likeFunc. Argument pArg is cast to a (void *) and made
+**     available as the function user-data (sqlite3_user_data()). The
+**     FuncDef.flags variable is set to the value passed as the flags
+**     parameter.
+*/
+#define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
+  {nArg, SQLITE_UTF8, bNC, 0, SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName}
+#define LIKEFUNC(zName, nArg, arg, flags) \
+  {nArg, SQLITE_UTF8, 0, flags, (void *)arg, 0, likeFunc, 0, 0, #zName}
+#define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
+  {nArg, SQLITE_UTF8, nc, 0, SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal, #zName}
+
 
 /*
 ** Each SQLite module (virtual table definition) is defined by an
@@ -2142,7 +2175,7 @@ Select *sqlite3SelectDup(sqlite3*,Select*);
 void sqlite3FuncDefInsert(FuncDefHash*, FuncDef*);
 FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,int,u8,int);
 void sqlite3RegisterBuiltinFunctions(sqlite3*);
-void sqlite3RegisterDateTimeFunctions(sqlite3*);
+void sqlite3RegisterDateTimeFunctions(void);
 void sqlite3RegisterGlobalFunctions(void);
 int sqlite3GetBuiltinFunction(const char *, int, FuncDef **);
 #ifdef SQLITE_DEBUG
@@ -2282,7 +2315,7 @@ void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 #ifndef SQLITE_AMALGAMATION
 extern const unsigned char sqlite3UpperToLower[];
 extern struct Sqlite3Config sqlite3Config;
-extern FuncDefHash sqlite3FuncBuiltins;
+extern FuncDefHash sqlite3GlobalFunctions;
 #endif
 void sqlite3RootPageMoved(Db*, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);

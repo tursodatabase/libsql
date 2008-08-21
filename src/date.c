@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.87 2008/07/28 19:34:53 drh Exp $
+** $Id: date.c,v 1.88 2008/08/21 20:21:35 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -1052,42 +1052,26 @@ static void currentTimeFunc(
 ** functions.  This should be the only routine in this file with
 ** external linkage.
 */
-void sqlite3RegisterDateTimeFunctions(sqlite3 *db){
+void sqlite3RegisterDateTimeFunctions(void){
+  static FuncDef aDateTimeFuncs[] = {
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
-  static const struct {
-     char *zName;
-     int nArg;
-     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
-  } aFuncs[] = {
-    { "julianday", -1, juliandayFunc   },
-    { "date",      -1, dateFunc        },
-    { "time",      -1, timeFunc        },
-    { "datetime",  -1, datetimeFunc    },
-    { "strftime",  -1, strftimeFunc    },
-    { "current_time",       0, ctimeFunc      },
-    { "current_timestamp",  0, ctimestampFunc },
-    { "current_date",       0, cdateFunc      },
-  };
-  int i;
-
-  for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
-    sqlite3CreateFunc(db, aFuncs[i].zName, aFuncs[i].nArg,
-        SQLITE_UTF8, 0, aFuncs[i].xFunc, 0, 0);
-  }
+    FUNCTION(julianday,        -1, 0, 0, juliandayFunc ),
+    FUNCTION(date,             -1, 0, 0, dateFunc      ),
+    FUNCTION(time,             -1, 0, 0, timeFunc      ),
+    FUNCTION(datetime,         -1, 0, 0, datetimeFunc  ),
+    FUNCTION(strftime,         -1, 0, 0, strftimeFunc  ),
+    FUNCTION(current_time,      0, 0, 0, ctimeFunc     ),
+    FUNCTION(current_timestamp, 0, 0, 0, ctimestampFunc),
+    FUNCTION(current_date,      0, 0, 0, cdateFunc     ),
 #else
-  static const struct {
-     char *zName;
-     char *zFormat;
-  } aFuncs[] = {
-    { "current_time", "%H:%M:%S" },
-    { "current_date", "%Y-%m-%d" },
-    { "current_timestamp", "%Y-%m-%d %H:%M:%S" }
+    FUNCTION(current_time,      0, "%H:%M:%S",          0, currentTimeFunc),
+    FUNCTION(current_timestamp, 0, "%Y-%m-%d",          0, currentTimeFunc),
+    FUNCTION(current_date,      0, "%Y-%m-%d %H:%M:%S", 0, currentTimeFunc),
+#endif
   };
   int i;
 
-  for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
-    sqlite3CreateFunc(db, aFuncs[i].zName, 0, SQLITE_UTF8, 
-        aFuncs[i].zFormat, currentTimeFunc, 0, 0);
+  for(i=0; i<ArraySize(aDateTimeFuncs); i++){
+    sqlite3FuncDefInsert(&sqlite3GlobalFunctions, &aDateTimeFuncs[i]);
   }
-#endif
 }
