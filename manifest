@@ -1,5 +1,5 @@
-C Patch\sto\smkfunction\sto\stry\sand\sdetect\smiscompiles.\s\sAdd\san\sunimportant\nassert\sback\sto\spcache.c.\s(CVS\s5577)
-D 2008-08-21T12:32:12
+C Reinsert\san\sSCopy\soperation\sthat\swas\sremoved\sin\s(5523)\sbecause\scoverage\ntesting\sindicated\sthat\sit\swas\sdead\scode.\s\sTicket\s#3324\sshows\sthat\sthe\ncode\swas\snot\sas\sdead\sas\swe\sthought\sit\swas.\s(CVS\s5578)
+D 2008-08-21T14:15:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0b1c022000f55221454a7846022f11674d8024bf
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -145,7 +145,7 @@ F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
 F src/printf.c 2e984b2507291a7e16d89dc9bb60582904f6247d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/resolve.c e688f240bdacf4003047c2b023c3a4ee3a3eca98
-F src/select.c 0a0ed2d14bfa216c1584fa8516e8820115b1047b
+F src/select.c eed74c3d00c45a01808a16aaca8a676e222bf2fa
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 54e51c22e2294c5989156b0aec87aa44168ac1f0
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -465,7 +465,7 @@ F test/select1.test d0a4cad954fd41c030ec16ffbd2d08a4c0548742
 F test/select2.test 272a3d3e35b1d3a0760168ababf555e656357fc4
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test b64d5d248d008e1dc365f451c76090bde907e665
-F test/select5.test 2c5464283438e06531a1e8801c674279dd01dd04
+F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test faad87c6e691bf69a822b69cd6808137a34d19e8
 F test/select7.test 7906735805cfbee4dddc0bed4c14e68d7f5f9c5f
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d025866b09352b32a6d35b97144eaad2fafb7165
-R b4969a898ecc1333175a9c194ed1293f
+P a2f375fffb49b6f6adbfd59d24e9c6a170fd5ebb
+R a28baeafe56f2cc5b7a4255743c38809
 U drh
-Z 4309b6f5bb92174f920621883fba8649
+Z 48f409680bd6268427d83dfae2ba5930
