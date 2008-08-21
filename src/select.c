@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.467 2008/08/21 14:15:59 drh Exp $
+** $Id: select.c,v 1.468 2008/08/21 14:54:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1167,12 +1167,14 @@ static int selectColumnsFromExprList(
       zName = sqlite3DbStrDup(db, zName);
     }else{
       Expr *pCol = p;
+      Table *pTab;
       while( pCol->op==TK_DOT ) pCol = pCol->pRight;
-      if( pCol->op==TK_COLUMN && pCol->pTab ){
+      if( pCol->op==TK_COLUMN && (pTab = pCol->pTab)!=0 ){
         /* For columns use the column name name */
         int iCol = pCol->iColumn;
-        if( iCol<0 ) iCol = pCol->pTab->iPKey;
-        zName = sqlite3MPrintf(db, "%s", pCol->pTab->aCol[iCol].zName);
+        if( iCol<0 ) iCol = pTab->iPKey;
+        zName = sqlite3MPrintf(db, "%s",
+                 iCol>=0 ? pTab->aCol[iCol].zName : "rowid");
       }else{
         /* Use the original text of the column expression as its name */
         zName = sqlite3MPrintf(db, "%T", &pCol->span);

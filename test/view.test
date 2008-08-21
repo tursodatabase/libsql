@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.37 2008/07/10 00:32:42 drh Exp $
+# $Id: view.test,v 1.38 2008/08/21 14:54:29 drh Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -538,5 +538,32 @@ do_test view-18.1 {
   }
 } {1 2 3 4 5 6}
 
+# Ticket #3308
+# Make sure "rowid" columns in a view are named correctly.
+#
+do_test view-19.1 {
+  execsql {
+    CREATE VIEW v3308a AS SELECT rowid, * FROM t1;
+  }
+  execsql2 {
+    SELECT * FROM v3308a
+  }
+} {rowid 1 a 1 b 2 c 3 rowid 2 a 4 b 5 c 6}
+do_test view-19.2 {
+  execsql {
+    CREATE VIEW v3308b AS SELECT t1.rowid, t1.a, t1.b+t1.c FROM t1;
+  }
+  execsql2 {
+    SELECT * FROM v3308b
+  }
+} {rowid 1 a 1 t1.b+t1.c 5 rowid 2 a 4 t1.b+t1.c 11}
+do_test view-19.3 {
+  execsql {
+    CREATE VIEW v3308c AS SELECT t1.oid, A, t1.b+t1.c AS x FROM t1;
+  }
+  execsql2 {
+    SELECT * FROM v3308c
+  }
+} {rowid 1 a 1 x 5 rowid 2 a 4 x 11}
 
 finish_test
