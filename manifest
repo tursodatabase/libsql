@@ -1,5 +1,5 @@
-C Modify\sthe\ssqlite3VdbeUnpackRecord()\sinterface\sto\sforce\sthe\stemporary\nspace\sto\sbe\s8-byte\saligned.\s\sThis\smight\sbe\simportant\sfor\sSparc.\nTicket\s#3318.\s(CVS\s5573)
-D 2008-08-20T22:06:48
+C Remove\sleftover\sPGHDR_TO_DATA\smacro\sfrom\spager.c.\sTicket\s#3323.\s(CVS\s5574)
+D 2008-08-21T04:35:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0b1c022000f55221454a7846022f11674d8024bf
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 676ed273b17bd260f905df81375c9f9950d85517
 F src/os_unix.c fe0dbc35bcd3de49e46b132abfc0f45d6dd6a864
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c 79d4d33245462c054a7e815e29ec6500c667ef26
+F src/pager.c 08e257feabce0d2b3f9cba83915327e2f97a51a7
 F src/pager.h fb9376af5ba8e1eb78ee3b4f15eb0f60658ffd65
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c cf7a7c81366e42330ff9c84d1f3591c905289c3d
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4b0e67d397236c740bea88ad3a5912abe896322a
-R dd5981fcfab83bf09d88f574f4947590
-U drh
-Z 7d447f2bb72d5431ebd4715c4fa2ad19
+P 00b177985ee08f13a7781d095936da3beaf0408c
+R 8b85ab03b807b81e22342fe88061675a
+U danielk1977
+Z 4faef0c342826d18c5f3474e10d7d202

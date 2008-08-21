@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.471 2008/08/20 21:47:46 drh Exp $
+** @(#) $Id: pager.c,v 1.472 2008/08/21 04:35:19 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2558,7 +2558,7 @@ static int readDbPage(Pager *pPager, PgHdr *pPg, Pgno pgno){
     memcpy(&pPager->dbFileVers, &((u8*)pPg->pData)[24],
                                               sizeof(pPager->dbFileVers));
   }
-  CODEC1(pPager, PGHDR_TO_DATA(pPg), pPg->pgno, 3);
+  CODEC1(pPager, pPg->pData, pPg->pgno, 3);
   PAGERTRACE4("FETCH %d page %d hash(%08x)\n",
                PAGERID(pPager), pPg->pgno, pager_pagehash(pPg));
   return rc;
