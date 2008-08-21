@@ -82,7 +82,7 @@ static void printarray(const char *zName, u8 *aArray, int nArray){
     if( (ii%16)==0 ){
       printf("\n    ");
     }
-    printf("%d, ", aArray[ii]);
+    printf("%2d, ", aArray[ii]);
   }
   printf("\n  };\n");
 }
@@ -143,6 +143,7 @@ int main(int argc, char **argv){
   }
 
   printf(
+  "/******* Automatically Generated code - do not edit **************/\n"
   "int sqlite3GetBuiltinFunction(\n"
   "  const char *zName,   \n"
   "  int nName, \n"
@@ -160,6 +161,11 @@ int main(int argc, char **argv){
   "  int ii;\n"
   "  FuncDef *pFunc;\n"
   "\n"
+  );
+  printf(
+  "  assert( (sizeof(aBuiltinFunc)/sizeof(aBuiltinFunc[0]))==%d );\n", nFunc
+  );
+  printf(
   "  /* Generate the hash of zName */\n"
   "  for(ii=0; ii<nName; ii++){\n"
   "    iKey = (iKey<<3) + (u8)sqlite3UpperToLower[(u8)zName[ii]];\n"
@@ -178,4 +184,3 @@ int main(int argc, char **argv){
 
   return 0;
 }
-

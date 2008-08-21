@@ -1,5 +1,5 @@
-C Fix\sthe\sfunctionality\sassociated\swith\ssqlite3_release_memory()\sand\ssqlite3_soft_heap_limit().\sIt\sis\sautomatically\sdisabled\sif\sthe\sSQLITE_CONFIG_PAGECACHE\soption\sis\sused.\s(CVS\s5576)
-D 2008-08-21T12:19:44
+C Patch\sto\smkfunction\sto\stry\sand\sdetect\smiscompiles.\s\sAdd\san\sunimportant\nassert\sback\sto\spcache.c.\s(CVS\s5577)
+D 2008-08-21T12:32:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0b1c022000f55221454a7846022f11674d8024bf
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c 3a4358c72c9c8415e8648001c776857e6952e2b4
 F src/pager.h 3778bea71dfb9658b6c94394e18db4a5b27e6ded
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 614f927e2e4e87d8a27379deefb2c0c7163e7d2f
+F src/pcache.c 54d03c3550893582451c476731a3d4b6b682f7b8
 F src/pcache.h aef1dedd7ff6186f27052a2509fff437a8906977
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
@@ -605,7 +605,7 @@ F tool/lempar.c 770dc64b74429daf9611676f43bfbd7c1bed0152
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
-F tool/mkfunction.c a785a1970027bc7a833aa8afb43d6786a33c11ae
+F tool/mkfunction.c 72c656fbc1a20ec426a94cd80cda5eea5b7b8bc7
 F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mksqlite3c.tcl f5645b2e7ee71fa9633ca5c90ada3ae9120b4a3c
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 899fa19d1ab9c40a2ffc1c5170476292d0509e33
-R ad1e5ab4aaee003ca6f449d2a77708ca
-U danielk1977
-Z a88d7d4ec4d431cb5810e83fa3ed8841
+P d025866b09352b32a6d35b97144eaad2fafb7165
+R b4969a898ecc1333175a9c194ed1293f
+U drh
+Z 4309b6f5bb92174f920621883fba8649
