@@ -1,10 +1,10 @@
-C Make\ssure\s"rowid"\scolumns\sin\sviews\sare\snamed\scorrectly.\s\sTicket\s#3308.\s(CVS\s5580)
-D 2008-08-21T14:54:29
+C Increase\sthe\sversion\snumber\sin\spreparation\sfor\sthe\snext\srelease.\s(CVS\s5581)
+D 2008-08-21T15:13:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0b1c022000f55221454a7846022f11674d8024bf
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
-F VERSION 1d5b2c9192236ed2c6bad659a7c2d1662e39e7b9
+F VERSION d1968c7d42b95f18d5fdb5cf7f4cef21797572fa
 F aclocal.m4 7d02b11fed45174e11156144227278deb6236eea
 F addopcodes.awk 215333be9d99c260e076c3080a81dba3ae928c45
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b46267ff07f9b967bb7aee16b6d9dd8d0bd23f0c
-R 2254e4730c10ac23dce2d42c635a0f77
+P 8593218c7c8016fbdbcc223db951751eaba9c0dd
+R 316e5dae58950571a5d41225469e48e2
 U drh
-Z c47aabc6550675841029fc54450540b2
+Z 79d80137c3262f0c6af4b82ef771a790
