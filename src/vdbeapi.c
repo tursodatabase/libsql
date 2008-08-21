@@ -13,12 +13,12 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.139 2008/08/11 18:44:58 drh Exp $
+** $Id: vdbeapi.c,v 1.140 2008/08/21 12:19:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+#if 0 && defined(SQLITE_ENABLE_MEMORY_MANAGEMENT)
 /*
 ** The following structure contains pointers to the end points of a
 ** doubly-linked list of all compiled SQL statements that may be holding

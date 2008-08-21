@@ -12,7 +12,7 @@
 ** This header file defines the interface that the sqlite page cache
 ** subsystem. 
 **
-** @(#) $Id: pcache.h,v 1.1 2008/08/20 14:49:25 danielk1977 Exp $
+** @(#) $Id: pcache.h,v 1.2 2008/08/21 12:19:44 danielk1977 Exp $
 */
 
 #ifndef _PCACHE_H_
@@ -170,6 +170,8 @@ void sqlite3PcacheSetCachesize(PCache *, int);
 */
 void sqlite3PcacheLock(PCache *);
 void sqlite3PcacheUnlock(PCache *);
+
+int sqlite3PcacheReleaseMemory(int);
 
 #endif /* _PCACHE_H_ */
 

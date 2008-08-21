@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.3 2008/08/21 04:41:02 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.4 2008/08/21 12:19:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -331,7 +331,10 @@ void *pcacheMalloc(int sz){
     sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_USED, 1);
     return (void*)p;
   }else{
-    void *p = sqlite3Malloc(sz);
+    void *p;
+    pcacheExitGlobal();
+    p = sqlite3Malloc(sz);
+    pcacheEnterGlobal();
     if( p ){
       sz = sqlite3MallocSize(p);
       sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, sz);
@@ -407,6 +410,65 @@ static void pcachePageFree(PgHdr *p){
 }
 
 /*
+** Return the number of bytes that will be returned to the heap when
+** the argument is passed to pcachePageFree().
+*/
+static int pcachePageSize(PgHdr *p){
+  assert( sqlite3_mutex_held(pcache.mutex_lru) );
+  assert( !pcache.pStart );
+  assert( p->apSave[0]==0 );
+  assert( p->apSave[1]==0 );
+  assert( p && p->pCache );
+  return sqlite3MallocSize(p);
+}
+
+static PgHdr *pcacheRecycle(PCache *pCache){
+  PCache *pCsr;
+  PgHdr *p = 0;
+
+  assert( pcache.isInit );
+  assert( sqlite3_mutex_held(pcache.mutex_lru) );
+
+  if( !pcache.pLruTail && SQLITE_OK==sqlite3_mutex_try(pcache.mutex_mem2) ){
+
+    /* Invoke xStress() callbacks until the LRU list contains at least one
+    ** page that can be reused or until the xStress() callback of all
+    ** caches has been invoked.
+    */
+    for(pCsr=pcache.pAll; pCsr&&!pcache.pLruTail; pCsr=pCsr->pNextAll){
+      assert( pCsr->iInUseMM==0 );
+      pCsr->iInUseMM = 1;
+      if( pCsr->xStress && (pCsr->iInUseDB==0 || pCache==pCsr) ){
+        pcacheExitGlobal();
+        pCsr->xStress(pCsr->pStress);
+        pcacheEnterGlobal();
+      }
+      pCsr->iInUseMM = 0;
+    }
+
+    sqlite3_mutex_leave(pcache.mutex_mem2);
+  }
+
+  p = pcache.pLruTail;
+
+  if( p ){
+    pcacheRemoveFromLruList(p);
+    pcacheRemoveFromHash(p);
+    pcacheRemoveFromList(&p->pCache->pClean, p);
+
+    /* If the always-rollback flag is set on the page being recycled, set 
+    ** the always-rollback flag on the corresponding pager.
+    */
+    if( p->flags&PGHDR_ALWAYS_ROLLBACK ){
+      assert(p->pPager);
+      sqlite3PagerAlwaysRollback(p->pPager);
+    }
+  }
+
+  return p;
+}
+
+/*
 ** Obtain space for a page. Try to recycle an old page if the limit on the 
 ** number of pages has been reached. If the limit has not been reached or
 ** there are no pages eligible for recycling, allocate a new page.
@@ -428,51 +490,14 @@ static PgHdr *pcacheRecycleOrAlloc(PCache *pCache){
   if( (pcache.mxPage && pcache.nPage>=pcache.mxPage) 
    || (!pcache.mxPage && bPurg && pcache.nPurgeable>=pcache.mxPagePurgeable)
   ){
-    PCache *pCsr;
-
-    /* If the above test succeeds, then a page will be obtained by recycling
-    ** an existing page.
-    */
-    if( !pcache.pLruTail && SQLITE_OK==sqlite3_mutex_try(pcache.mutex_mem2) ){
-
-      /* Invoke xStress() callbacks until the LRU list contains at least one
-      ** page that can be reused or until the xStress() callback of all
-      ** caches has been invoked.
-      */
-      for(pCsr=pcache.pAll; pCsr&&!pcache.pLruTail; pCsr=pCsr->pNextAll){
-        assert( pCsr->iInUseMM==0 );
-        pCsr->iInUseMM = 1;
-        if( pCsr->xStress && (pCsr->iInUseDB==0 || pCache==pCsr) ){
-          pcacheExitGlobal();
-          pCsr->xStress(pCsr->pStress);
-          pcacheEnterGlobal();
-        }
-        pCsr->iInUseMM = 0;
-      }
-
-      sqlite3_mutex_leave(pcache.mutex_mem2);
-    }
-
-    p = pcache.pLruTail;
+    /* If the above test succeeds, then try to obtain a buffer by recycling
+    ** an existing page. */
+    p = pcacheRecycle(pCache);
   }
 
-  if( p ){
-    pcacheRemoveFromLruList(p);
-    pcacheRemoveFromHash(p);
-    pcacheRemoveFromList(&p->pCache->pClean, p);
-
-    /* If the always-rollback flag is set on the page being recycled, set 
-    ** the always-rollback flag on the corresponding pager.
-    */
-    if( p->flags&PGHDR_ALWAYS_ROLLBACK ){
-      assert(p->pPager);
-      sqlite3PagerAlwaysRollback(p->pPager);
-    }
-
-    if( p->pCache->szPage!=szPage || p->pCache->szExtra!=szExtra ){
-      pcachePageFree(p);
-      p = 0;
-    }
+  if( p && (p->pCache->szPage!=szPage || p->pCache->szExtra!=szExtra) ){
+    pcachePageFree(p);
+    p = 0;
   }
 
   if( !p ){
@@ -1141,3 +1166,29 @@ void sqlite3PcacheUnlock(PCache *pCache){
   pCache->iInUseDB--;
   assert( pCache->iInUseDB>=0 );
 }
+
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+/*
+** This function is called to free superfluous dynamically allocated memory
+** held by the pager system. Memory in use by any SQLite pager allocated
+** by the current thread may be sqlite3_free()ed.
+**
+** nReq is the number of bytes of memory required. Once this much has
+** been released, the function returns. The return value is the total number 
+** of bytes of memory released.
+*/
+int sqlite3PcacheReleaseMemory(int nReq){
+  int nFree = 0;
+  if( pcache.pStart==0 ){
+    PgHdr *p;
+    pcacheEnterGlobal();
+    while( (nReq<0 || nFree<nReq) && (p=pcacheRecycle(0)) ){
+      nFree += pcachePageSize(p);
+      pcachePageFree(p);
+    }
+    pcacheExitGlobal();
+  }
+  return nFree;
+}
+#endif /* SQLITE_ENABLE_MEMORY_MANAGEMENT */
+

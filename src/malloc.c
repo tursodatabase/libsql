@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.35 2008/08/20 14:49:24 danielk1977 Exp $
+** $Id: malloc.c,v 1.36 2008/08/21 12:19:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -62,8 +62,11 @@ void sqlite3_soft_heap_limit(int n){
 */
 int sqlite3_release_memory(int n){
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-  int nRet = sqlite3VdbeReleaseMemory(n);
-  nRet += sqlite3PagerReleaseMemory(n-nRet);
+  int nRet = 0;
+#if 0
+  nRet += sqlite3VdbeReleaseMemory(n);
+#endif
+  nRet += sqlite3PcacheReleaseMemory(n-nRet);
   return nRet;
 #else
   return SQLITE_OK;

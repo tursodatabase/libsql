@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.472 2008/08/21 04:35:19 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.473 2008/08/21 12:19:44 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2453,22 +2453,26 @@ static int pagerStress(void *p){
   PgHdr *pPg = sqlite3PcacheDirtyPage(pPager->pPCache);
   int rc = SQLITE_OK;
 
-  if( pPg && pPager->errCode==SQLITE_OK ){
+  if( pPg ){
     assert( pPg->flags&PGHDR_DIRTY );
-    if( pPg->flags&PGHDR_NEED_SYNC ){
-      rc = syncJournal(pPager);
-      if( rc==SQLITE_OK && pPager->fullSync 
-       && !(sqlite3OsDeviceCharacteristics(pPager->fd)&SQLITE_IOCAP_SAFE_APPEND)
-      ){
-        pPager->nRec = 0;
-        rc = writeJournalHdr(pPager);
+    if( pPager->errCode==SQLITE_OK ){
+      if( pPg->flags&PGHDR_NEED_SYNC ){
+        rc = syncJournal(pPager);
+        if( rc==SQLITE_OK && pPager->fullSync && 
+          !(sqlite3OsDeviceCharacteristics(pPager->fd)&SQLITE_IOCAP_SAFE_APPEND)
+        ){
+          pPager->nRec = 0;
+          rc = writeJournalHdr(pPager);
+        }
       }
-    }
-    if( rc==SQLITE_OK ){
-      rc = pager_write_pagelist(pPg);
-    }
-    if( rc!=SQLITE_OK ){
-      pager_error(pPager, rc);
+      if( rc==SQLITE_OK ){
+        rc = pager_write_pagelist(pPg);
+      }
+      if( rc!=SQLITE_OK ){
+        pager_error(pPager, rc);
+      }
+    }else{
+      sqlite3PcacheMakeClean(pPg);
     }
   }
   return rc;
@@ -2522,21 +2526,6 @@ static int hasHotJournal(Pager *pPager, int *pExists){
 
   return rc;
 }
-
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-/*
-** This function is called to free superfluous dynamically allocated memory
-** held by the pager system. Memory in use by any SQLite pager allocated
-** by the current thread may be sqlite3_free()ed.
-**
-** nReq is the number of bytes of memory required. Once this much has
-** been released, the function returns. The return value is the total number 
-** of bytes of memory released.
-*/
-int sqlite3PagerReleaseMemory(int nReq){
-  return 0;
-}
-#endif /* SQLITE_ENABLE_MEMORY_MANAGEMENT */
 
 /*
 ** Read the content of page pPg out of the database file.
