@@ -1,5 +1,5 @@
-C remove\sOS/2\scompiler\sflags\sthat\saren't\sreally\snecessary\s(CVS\s5594)
-D 2008-08-22T13:58:55
+C Remove\sunused\svariable\sfrom\sprintf.c.\s\sTicket\s#3331.\s(CVS\s5595)
+D 2008-08-22T14:08:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 51b727303f84cf055e29514d8248e5eaf9701379
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/pcache.c f57227003d39d40fa7f9b5a86e36b99f74b93267
 F src/pcache.h d2becbe7255f6bf57fc9e0bf889a9ec73d50ee74
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
-F src/printf.c 2e984b2507291a7e16d89dc9bb60582904f6247d
+F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/resolve.c e688f240bdacf4003047c2b023c3a4ee3a3eca98
 F src/select.c e71462393fe0f9d2bf41378763b96659e8780e43
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 10e62d4700c99faf07140a8204d3cd81481206ac
-R 684694bd79bd41d3ec0440c436400237
-U pweilbacher
-Z 5683d4a6bb0feb55e16e8cf19c7c6973
+P b688c68c3d70dc69adc2d1a08ddcf5899a115646
+R b1823fb06c594bd3d36602634950ace1
+U drh
+Z d5d85a25fc7e66c54a54c4e7b5d02861
