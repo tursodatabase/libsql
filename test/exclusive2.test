@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: exclusive2.test,v 1.8 2007/08/12 20:07:59 drh Exp $
+# $Id: exclusive2.test,v 1.9 2008/08/22 00:25:53 aswift Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -25,9 +25,14 @@ ifcapable {!pager_pragmas} {
 #
 sqlite3_soft_heap_limit 0
 
-proc pagerChangeCounter {filename {new ""}} {
-  set fd [open $filename RDWR]
-  fconfigure $fd -translation binary -encoding binary
+proc pagerChangeCounter {filename new {fd ""}} {
+  if {$fd==""} {
+    set fd [open $filename RDWR]
+    fconfigure $fd -translation binary -encoding binary
+    set needClose 1
+  } else {
+    set needClose 0
+  }
   if {$new ne ""} {
     seek $fd 24
     set a [expr {($new&0xFF000000)>>24}]
@@ -46,7 +51,7 @@ proc pagerChangeCounter {filename {new ""}} {
   incr ret [expr ($c&0x000000FF)<<8]
   incr ret [expr ($d&0x000000FF)<<0]
 
-  close $fd
+  if {$needClose} {close $fd}
   return $ret
 }
 
@@ -207,16 +212,16 @@ do_test exclusive2-2.3 {
 } $::sig
 
 do_test exclusive2-2.4 {
-  set fd [open test.db RDWR]
-  seek $fd 1024
-  puts -nonewline $fd [string repeat [binary format c 0] 10000]
-  flush $fd
-  close $fd
+  set ::fd [open test.db RDWR]
+  fconfigure $::fd -translation binary
+  seek $::fd 1024
+  puts -nonewline $::fd [string repeat [binary format c 0] 10000]
+  flush $::fd
   t1sig
 } $::sig
 
 do_test exclusive2-2.5 {
-  pagerChangeCounter test.db 5
+  pagerChangeCounter test.db 5 $::fd
 } {5}
 do_test exclusive2-2.6 {
   t1sig
@@ -240,6 +245,7 @@ do_test exclusive2-2.8 {
 
 db close
 db2 close
+catch {close $::fd}
 file delete -force test.db
 file delete -force test.db-journal
 
