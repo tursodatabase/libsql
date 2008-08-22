@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.8 2008/08/22 16:22:17 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.9 2008/08/22 17:09:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -453,6 +453,14 @@ static int pcachePageSize(PgHdr *p){
   return sqlite3MallocSize(p);
 }
 
+/*
+** Recycle a page from the global LRU list. If no page can be recycled, 
+** return NULL. Otherwise, the pointer returned points to a PgHdr 
+** object that has been removed from all lists and hash tables in
+** which is was referenced. The caller may reuse the allocation directly
+** or may pass it to pcachePageFree() to return the memory to the heap
+** (or pcache.pFree list).
+*/ 
 static PgHdr *pcacheRecycle(PCache *pCache){
   PgHdr *p = 0;
 
@@ -465,31 +473,13 @@ static PgHdr *pcacheRecycle(PCache *pCache){
   }
   if( p && (p->flags&PGHDR_DIRTY) ){
     if( SQLITE_OK==sqlite3_mutex_try(pcache.mutex_mem2) ){
-      int iInUseDB;
       PCache *pC = p->pCache;
-
-      if( pCache==pC ){
-        /* If trying to recycle a page from pCache, then set the iInUseDb
-        ** flag to zero. This is done so that the sqlite3PcacheSetFlags()
-        ** can tell that the LRU mutex is already held.
-        **
-        ** It is quite safe to modify the iInUseDB variable, because we 
-        ** know no other thread will attempt to use pCache (because this
-        ** call is being made from within a call to sqlite3PcacheFetch()
-        ** on pCache). 
-        */
-        assert( pCache->iInUseDB );
-        iInUseDB = pCache->iInUseDB;
-        pCache->iInUseDB = 0;
-      }
-
       assert( pC->iInUseMM==0 );
       pC->iInUseMM = 1;
-      if( pC->xStress && pC->iInUseDB==0 ){
+      if( pC->xStress && (pC->iInUseDB==0 || pC==pCache) ){
+        pcacheExitGlobal();
         pC->xStress(pC->pStress, p);
-      }
-      if( pCache==pC ){
-        pCache->iInUseDB = iInUseDB;
+        pcacheEnterGlobal();
       }
       pC->iInUseMM = 0;
       sqlite3_mutex_leave(pcache.mutex_mem2);
@@ -766,7 +756,6 @@ void sqlite3PcacheMakeClean(PgHdr *p){
   if( (p->flags & PGHDR_DIRTY)==0 ) return;
   assert( p->apSave[0]==0 && p->apSave[1]==0 );
   assert( p->flags & PGHDR_DIRTY );
-  assert( p->nRef>0 || sqlite3_mutex_held(pcache.mutex_lru) );
   pCache = p->pCache;
   pcacheRemoveFromList(&pCache->pDirty, p);
   pcacheAddToList(&pCache->pClean, p);
@@ -1127,15 +1116,10 @@ void sqlite3PcacheSetFlags(PCache *pCache, int andMask, int orMask){
   assert( (orMask&PGHDR_NEED_SYNC)==0 );
   assert( pCache->iInUseDB || pCache->iInUseMM );
 
-  /* If this call is being made from within a call to the xStress callback
-  ** of a pager-cache (i.e. from within pagerRecycle()), then the 
-  ** PCache.iInUseDB will be set to zero. In this case, the LRU mutex is
-  ** already held. Otherwise, obtain it before modifying any PgHdr.flags
-  ** variables or traversing the LRU list.
+  /* Obtain the global mutex before modifying any PgHdr.flags variables 
+  ** or traversing the LRU list.
   */ 
-  if( pCache->iInUseDB ){
-    pcacheEnterGlobal();
-  }
+  pcacheEnterGlobal();
   assert( sqlite3_mutex_held(pcache.mutex_lru) );
 
   for(p=pCache->pDirty; p; p=p->pNext){
@@ -1150,9 +1134,7 @@ void sqlite3PcacheSetFlags(PCache *pCache, int andMask, int orMask){
     pcache.pLruSynced = p;
   }
 
-  if( pCache->iInUseDB ){
-    pcacheExitGlobal();
-  }
+  pcacheExitGlobal();
 }
 
 /*
