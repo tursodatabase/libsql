@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.9 2008/08/22 17:09:50 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.10 2008/08/22 17:34:45 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -440,6 +440,7 @@ static void pcachePageFree(PgHdr *p){
   pcacheFree(p);
 }
 
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 /*
 ** Return the number of bytes that will be returned to the heap when
 ** the argument is passed to pcachePageFree().
@@ -452,6 +453,7 @@ static int pcachePageSize(PgHdr *p){
   assert( p && p->pCache );
   return sqlite3MallocSize(p);
 }
+#endif
 
 /*
 ** Recycle a page from the global LRU list. If no page can be recycled, 

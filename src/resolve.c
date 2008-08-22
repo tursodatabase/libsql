@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.1 2008/08/20 16:35:10 drh Exp $
+** $Id: resolve.c,v 1.2 2008/08/22 17:34:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -1081,18 +1081,6 @@ int sqlite3ResolveExprNames(
     pNC->hasAgg = 1;
   }
   return ExprHasProperty(pExpr, EP_Error);
-}
-int sqlite3ResolveExprListNames( 
-  NameContext *pNC,       /* Namespace to resolve expressions in. */
-  ExprList *pList         /* List of expressions to be analyzed. */
-){
-  int i;
-  struct ExprList_item *pItem;
-  if( pList==0 ) return 0;
-  for(i=pList->nExpr, pItem=pList->a; i>0; i--, pItem++){
-    if( sqlite3ResolveExprNames(pNC, pItem->pExpr) ) return 1;
-  }
-  return 0;
 }
 
 

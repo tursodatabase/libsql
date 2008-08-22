@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.475 2008/08/22 16:22:17 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.476 2008/08/22 17:34:45 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1934,18 +1934,6 @@ int sqlite3PagerOpen(
 */
 void sqlite3PagerSetBusyhandler(Pager *pPager, BusyHandler *pBusyHandler){
   pPager->pBusyHandler = pBusyHandler;
-}
-
-/*
-** Set the destructor for this pager.  If not NULL, the destructor is called
-** when the reference count on each page reaches zero.  The destructor can
-** be used to clean up information in the extra segment appended to each page.
-**
-** The destructor is not called as a result sqlite3PagerClose().  
-** Destructors are only called by sqlite3PagerUnref().
-*/
-void sqlite3PagerSetDestructor(Pager *pPager, void (*xDesc)(DbPage*,int)){
-  pPager->xDestructor = xDesc;
 }
 
 /*

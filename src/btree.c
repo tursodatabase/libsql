@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.500 2008/08/22 12:57:09 drh Exp $
+** $Id: btree.c,v 1.501 2008/08/22 17:34:45 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1299,7 +1299,6 @@ int sqlite3BtreeOpen(
     sqlite3PagerSetBusyhandler(pBt->pPager, &pBt->busyHdr);
     p->pBt = pBt;
   
-    /* sqlite3PagerSetDestructor(pBt->pPager, pageDestructor); */
     sqlite3PagerSetReiniter(pBt->pPager, pageReinit);
     pBt->pCursor = 0;
     pBt->pPage1 = 0;

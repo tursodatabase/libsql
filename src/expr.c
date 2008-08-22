@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.390 2008/08/22 16:29:51 drh Exp $
+** $Id: expr.c,v 1.391 2008/08/22 17:34:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -920,11 +920,6 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_AGG_COLUMN );
       pWalker->u.i = 0;
       return WRC_Abort;
-    case TK_IN:
-      if( pExpr->pSelect ){
-        pWalker->u.i = 0;
-        return WRC_Abort;
-      }
     default:
       return WRC_Continue;
   }
