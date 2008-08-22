@@ -1,5 +1,5 @@
-C Allow\sthe\sWHERE\sclause\sin\san\sUPDATE\sor\sDELETE\sagainst\sa\sview\swith\san\nINSTEAD\sOF\strigger\sto\srefer\sto\sthe\sview\sby\sname.\s\sTicket\s#3298.\s(CVS\s5589)
-D 2008-08-22T12:30:52
+C Add\stest\scase\sto\sverify\sthat\sTicket\s#3301\swas\sfixed\sby\s(5569)\s(CVS\s5590)
+D 2008-08-22T12:46:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 51b727303f84cf055e29514d8248e5eaf9701379
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -550,7 +550,7 @@ F test/tkt3093.test fbdbc5b4969244ad11f540759003e361fcaf391f
 F test/tkt3121.test 536df66a02838c26a12fe98639354ca1290ca68b
 F test/tkt3201.test 607d433ad2c1f6a8cb1af55aaca427f63c83191b
 F test/tkt3292.test 962465a0984a3b8c757efe59c2c59144871ee1dd
-F test/tkt3298.test fb174771c7a4d5abd57448c01008eebd13128bb0
+F test/tkt3298.test a735582095ca2e90a0c1391c7e781a90de6c1f34
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2416708208357304904e38b2d36081a1adf5e44b
-R f37f9f9f6612c2b90a90588052b716e7
+P 7360e5d1f37ed6672f336b625b3c90d060e0a020
+R 017f7b90161d988c18cb4b0906ee0aa4
 U drh
-Z 2e1b1719f9f299edfbb6ca6ba7f8d98c
+Z eb111e17330c41bd52191c83c0466be2

@@ -10,9 +10,9 @@
 #***********************************************************************
 # 
 # This file tests changes to the name resolution logic that occurred
-# in august of 2008 and where associated with tickets #3298
+# in august of 2008 and where associated with tickets #3298 and #3301
 #
-# $Id: tkt3298.test,v 1.1 2008/08/22 12:30:52 drh Exp $
+# $Id: tkt3298.test,v 1.2 2008/08/22 12:46:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -60,6 +60,19 @@ do_test tkt3298-1.5 {
   }
 } {0 3}
 
+# Ticket #3301
+#
+do_test tkt3298-2.1 {
+  execsql {
+    CREATE TABLE t2(p,q);
+    INSERT INTO t2 VALUES(1,11);
+    INSERT INTO t2 VALUES(2,22);
+    CREATE TABLE t3(x,y);
+    INSERT INTO t3 VALUES(1,'one');
+
+    SELECT *, (SELECT z FROM (SELECT y AS z FROM t3 WHERE x=t1.a+1) ) FROM t1;
+  }
+} {0 2 one}
 
 
 finish_test
