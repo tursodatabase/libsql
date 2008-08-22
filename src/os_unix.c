@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.196 2008/08/22 00:22:35 aswift Exp $
+** $Id: os_unix.c,v 1.197 2008/08/22 00:47:54 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -1173,9 +1173,11 @@ static int sqliteErrorFromPosixError(int posixError, int sqliteIOErr) {
   case EDEADLK:
     return SQLITE_IOERR_BLOCKED;
     
+#if EOPNOTSUPP!=ENOTSUP
   case EOPNOTSUPP: 
     /* something went terribly awry, unless during file system support 
      * introspection, in which it actually means what it says */
+#endif
   case ENOTSUP: 
     /* invalid fd, unless during file system support introspection, in which 
      * it actually means what it says */
