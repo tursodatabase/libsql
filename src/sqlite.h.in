@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.392 2008/08/12 14:51:30 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.393 2008/08/22 00:22:35 aswift Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -516,6 +516,7 @@ int sqlite3_exec(
 #define SQLITE_IOERR_NOMEM             (SQLITE_IOERR | (12<<8))
 #define SQLITE_IOERR_ACCESS            (SQLITE_IOERR | (13<<8))
 #define SQLITE_IOERR_CHECKRESERVEDLOCK (SQLITE_IOERR | (14<<8))
+#define SQLITE_IOERR_LOCK              (SQLITE_IOERR | (15<<8))
 
 /*
 ** CAPI3REF: Flags For File Open Operations {H10230} <H11120> <H12700>
