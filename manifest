@@ -1,7 +1,7 @@
-C Relinquish\sthe\spcache\smutex\sbefore\scalling\san\sxStress\scallback.\sThis\sensures\sthat\sthe\spcache\smutex\sis\snever\sheld\swhile\sIO\sis\sperformed.\s(CVS\s5599)
-D 2008-08-22T17:09:50
+C add\slegacy.lo\sback\s(in\salphabetical\sorder)\s(CVS\s5600)
+D 2008-08-22T17:28:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 51b727303f84cf055e29514d8248e5eaf9701379
+F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION d1968c7d42b95f18d5fdb5cf7f4cef21797572fa
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cc36b4e016a1f519ca81d591de3a551ee8aa6813
-R 64828ec133db995283a20c7be6e84925
-U danielk1977
-Z 7437592fbd9eee9fb3293ff26d588a0d
+P 8fe234b2ca1292955162d38922a45c93004fb6ae
+R a701cf150f5456b72bfe44e79189c7f8
+U pweilbacher
+Z 824bd1e8b14485d4921b6a57c114c725

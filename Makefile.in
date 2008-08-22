@@ -158,7 +158,7 @@ NAWK = @AWK@
 OBJS0 = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo \
         btree.lo build.lo callback.lo complete.lo date.lo \
         delete.lo expr.lo fault.lo func.lo global.lo \
-        hash.lo journal.lo insert.lo loadext.lo \
+        hash.lo journal.lo insert.lo legacy.lo loadext.lo \
         main.lo malloc.lo mem1.lo mem2.lo mem3.lo mem4.lo mem5.lo mem6.lo \
         mutex.lo mutex_os2.lo mutex_unix.lo mutex_w32.lo \
         opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
