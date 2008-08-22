@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.197 2008/08/22 00:47:54 drh Exp $
+** $Id: os_unix.c,v 1.198 2008/08/22 18:41:37 aswift Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -639,7 +639,7 @@ static int detectLockingStyle(
     return LOCKING_STYLE_NONE;
   }
   if( pVfs->pAppData ){
-    return (int)pVfs->pAppData;
+    return SQLITE_PTR_TO_INT(pVfs->pAppData);
   }
 
   if( statfs(filePath, &fsInfo) != -1 ){

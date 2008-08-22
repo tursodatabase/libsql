@@ -1,5 +1,5 @@
-C Remove\sdead\scode.\s(CVS\s5601)
-D 2008-08-22T17:34:45
+C quieting\scompiler\swarning\sabout\spointer/int\sconversion\ssize\smismatch\s(CVS\s5602)
+D 2008-08-22T18:41:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -133,7 +133,7 @@ F src/os.c 939ae7690a01d9401685ba124b4ba45fd4a7a2ad
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
-F src/os_unix.c f1be99705e4542f01830ccea327eb773814f4eb9
+F src/os_unix.c 4665cef7639dd937893c3ea076f0e8a8f215bb32
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c 62a0e18d5daacc9c0b3c79d446d411051fbfe6a2
 F src/pager.h 3b9c138d2e744b9d6e61d4c2742301e3bf464864
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a861aa73c4913c468315e6b5c5a2706150082280
-R 869e35b1c300abbb971e58a073e89d71
-U drh
-Z c347f5c3495d908d0036ec2b3b0f97ed
+P 6de9c084fc533fbb22af6a4cd3e4e9a461b13876
+R ef30e25c72527afbee7daff10fc9c47e
+U aswift
+Z e2eb11c438fcd3621bc862059e4c76f6
