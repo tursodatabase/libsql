@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.55 2008/07/29 18:49:29 pweilbacher Exp $
+** $Id: os_os2.c,v 1.56 2008/08/22 13:47:57 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -746,7 +746,7 @@ static int os2Open(
   int *pOutFlags                /* Status return flags */
 ){
   HFILE h;
-  ULONG ulFileAttribute = 0;
+  ULONG ulFileAttribute = FILE_NORMAL;
   ULONG ulOpenFlags = 0;
   ULONG ulOpenMode = 0;
   os2File *pFile = (os2File*)id;
@@ -771,7 +771,6 @@ static int os2Open(
 
   OSTRACE2( "OPEN want %d\n", flags );
 
-  /*ulOpenMode = flags & SQLITE_OPEN_READWRITE ? OPEN_ACCESS_READWRITE : OPEN_ACCESS_READONLY;*/
   if( flags & SQLITE_OPEN_READWRITE ){
     ulOpenMode |= OPEN_ACCESS_READWRITE;
     OSTRACE1( "OPEN read/write\n" );
@@ -780,7 +779,6 @@ static int os2Open(
     OSTRACE1( "OPEN read only\n" );
   }
 
-  /*ulOpenFlags = flags & SQLITE_OPEN_CREATE ? OPEN_ACTION_CREATE_IF_NEW : OPEN_ACTION_FAIL_IF_NEW;*/
   if( flags & SQLITE_OPEN_CREATE ){
     ulOpenFlags |= OPEN_ACTION_OPEN_IF_EXISTS | OPEN_ACTION_CREATE_IF_NEW;
     OSTRACE1( "OPEN open new/create\n" );
@@ -789,7 +787,6 @@ static int os2Open(
     OSTRACE1( "OPEN open existing\n" );
   }
 
-  /*ulOpenMode |= flags & SQLITE_OPEN_MAIN_DB ? OPEN_SHARE_DENYNONE : OPEN_SHARE_DENYWRITE;*/
   if( flags & SQLITE_OPEN_MAIN_DB ){
     ulOpenMode |= OPEN_SHARE_DENYNONE;
     OSTRACE1( "OPEN share read/write\n" );
@@ -798,18 +795,15 @@ static int os2Open(
     OSTRACE1( "OPEN share read only\n" );
   }
 
-  if( flags & (SQLITE_OPEN_TEMP_DB | SQLITE_OPEN_TEMP_JOURNAL
-               | SQLITE_OPEN_SUBJOURNAL) ){
+  if( flags & SQLITE_OPEN_DELETEONCLOSE ){
     char pathUtf8[CCHMAXPATH];
 #ifdef NDEBUG /* when debugging we want to make sure it is deleted */
     ulFileAttribute = FILE_HIDDEN;
 #endif
-    ulFileAttribute = FILE_NORMAL;
     os2FullPathname( pVfs, zName, CCHMAXPATH, pathUtf8 );
     pFile->pathToDel = convertUtf8PathToCp( pathUtf8 );
     OSTRACE1( "OPEN hidden/delete on close file attributes\n" );
   }else{
-    ulFileAttribute = FILE_ARCHIVED | FILE_NORMAL;
     pFile->pathToDel = NULL;
     OSTRACE1( "OPEN normal file attribute\n" );
   }

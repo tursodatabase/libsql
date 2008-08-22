@@ -1,5 +1,5 @@
-C Fix\snuisance\scompiler\swarnings.\s\sTicket\s#3309.\s(CVS\s5591)
-D 2008-08-22T12:57:09
+C Hide\s(for\snon-debugging\sbuilds)\sand\sremove\sDELETEONCLOSE\sfiles\son\sOS/2,\sfollowing\sthe\sWindows\sexample.\sTicket\s#3328.\s(CVS\s5592)
+D 2008-08-22T13:47:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 51b727303f84cf055e29514d8248e5eaf9701379
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -132,7 +132,7 @@ F src/mutex_w32.c f0d21ff1f6981e5aedc56796adf3a347423ef736
 F src/os.c 939ae7690a01d9401685ba124b4ba45fd4a7a2ad
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
-F src/os_os2.c 676ed273b17bd260f905df81375c9f9950d85517
+F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c f1be99705e4542f01830ccea327eb773814f4eb9
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c 620b0c34f2f43acc3cc770be75c832739465bb52
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 73b260686264a31f43211efb235e4e0121115a50
-R c914bc7de113bdfb3ca8ef47fc4aa9d4
-U drh
-Z 750a87dae06fe394fb8ed452f3ce58a5
+P 2a365e29944f9fd45ca2903875a8c2e2759c9492
+R 57109e2c4d2f82977c4cd0376610232c
+U pweilbacher
+Z ec0f9d580f11413771c77027641fba31
