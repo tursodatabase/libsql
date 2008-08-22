@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.23 2008/08/02 03:50:40 drh Exp $
+# $Id: misc7.test,v 1.24 2008/08/22 13:57:39 pweilbacher Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -367,7 +367,7 @@ set sqlite_pager_n_sort_bucket 0
 # These tests do not work on windows due to restrictions in the
 # windows file system.
 #
-if {$tcl_platform(platform)!="windows"} {
+if {$tcl_platform(platform)!="windows" && $tcl_platform(platform)!="os2"} {
 
   # Some network filesystems (ex: AFP) do not support setting read-only
   # permissions.  Only run these tests if full unix permission setting

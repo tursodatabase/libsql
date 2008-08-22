@@ -1,5 +1,5 @@
-C Hide\s(for\snon-debugging\sbuilds)\sand\sremove\sDELETEONCLOSE\sfiles\son\sOS/2,\sfollowing\sthe\sWindows\sexample.\sTicket\s#3328.\s(CVS\s5592)
-D 2008-08-22T13:47:57
+C fix\ssome\stests\sto\stake\sthe\sright\sbranch\son\sOS/2\s(hope\sI\sgot\sthe\sTcl\ssyntax\sright)\s(CVS\s5593)
+D 2008-08-22T13:57:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 51b727303f84cf055e29514d8248e5eaf9701379
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -390,7 +390,7 @@ F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
 F test/like.test 2a3ddbd5d91503f914eabae67a47c4196fe33a58
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
-F test/loadext.test f79e5460c4664916a93ba6e7c762886153e2014b
+F test/loadext.test 4972cb5a12ba70f23f827452b8265be08bb6d8cd
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
 F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
@@ -432,7 +432,7 @@ F test/misc3.test 7212ed8dad01427e9acab9bd3e7e5e2c2e89be9e
 F test/misc4.test 91e8ed25c092c2bb4e0bb01864631e2930f8d7de
 F test/misc5.test 6a5c1e3217a95b0db05ff9a0f1ecb5ce9043ffef
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
-F test/misc7.test fd424ff93a83bb6a31463eb043c588777d8215a8
+F test/misc7.test 0d763f703a34521e55ab30145b747aafa0e5f794
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/mutex1.test ee9fb9c12d03eb2291ab500a3ce30bcad6fb46e8
 F test/mutex2.test 56f282f436596e9febdc6e0db2c507432b6724bb
@@ -610,7 +610,7 @@ F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mksqlite3c.tcl c4542127796826a26f89567c7bbaecafaf42a120
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
-F tool/omittest.tcl 5a25ea687df5da8dd9b94bf1683f5cf2c210e51d
+F tool/omittest.tcl 4be55add3ec87f45fe041b7bfa8f16dab8105431
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F tool/showdb.c a086a3d788c7a23cb008317c3180ceb19f20bce0
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2a365e29944f9fd45ca2903875a8c2e2759c9492
-R 57109e2c4d2f82977c4cd0376610232c
+P 8aaa77000fb86fe512405a0ad40cb08678a12198
+R 90c51ef90aca648a6dca010f02b9d08a
 U pweilbacher
-Z ec0f9d580f11413771c77027641fba31
+Z 1a9bc88c2eda9eebe512d73221dd8dba

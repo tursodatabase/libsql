@@ -1,5 +1,5 @@
 
-set rcsid {$Id: omittest.tcl,v 1.6 2008/08/04 03:51:24 danielk1977 Exp $}
+set rcsid {$Id: omittest.tcl,v 1.7 2008/08/22 13:57:39 pweilbacher Exp $}
 
 # Documentation for this script. This may be output to stderr
 # if the script is invoked incorrectly.
@@ -50,6 +50,8 @@ proc run_quick_test {dir omit_symbol_list} {
   set opts "-DSQLITE_MEMDEBUG -DSQLITE_DEBUG" 
   if {$::tcl_platform(platform)=="windows"} {
     append opts " -DSQLITE_OS_WIN=1"
+  } elseif {$::tcl_platform(platform)=="os2"} {
+    append opts " -DSQLITE_OS_OS2=1"
   } else {
     append opts " -DSQLITE_OS_UNIX=1"
   }
@@ -80,7 +82,7 @@ catch {
   # of trying to build the sqlite shell. The sqlite shell won't build 
   # with some of the OMIT options (i.e OMIT_COMPLETE).
   set sqlite3_dummy $dir/sqlite3
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(platform)=="windows" || $::tcl_platform(platform)=="os2"} {
     append sqlite3_dummy ".exe"
   }
   if {![file exists $sqlite3_dummy]} {
@@ -109,7 +111,7 @@ catch {
 # option.
 #
 proc process_options {argv} {
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(platform)=="windows" || $::tcl_platform(platform)=="os2"} {
       set ::MAKEFILE ../Makefile                        ;# Default value
   } else {
       set ::MAKEFILE ../Makefile.linux-gcc              ;# Default value
