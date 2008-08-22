@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.182 2008/08/20 16:35:10 drh Exp $
+** $Id: update.c,v 1.183 2008/08/22 12:30:52 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -329,7 +329,7 @@ void sqlite3Update(
   ** a ephemeral table.
   */
   if( isView ){
-    sqlite3MaterializeView(pParse, pTab->pSelect, pWhere, iCur);
+    sqlite3MaterializeView(pParse, pTab, pWhere, iCur);
   }
 
   /* Resolve the column names in all the expressions in the

@@ -1,5 +1,5 @@
-C Fix\sos_unix.c\sso\sthat\sit\swill\scompile\son\sLinux\sagain.\s(CVS\s5588)
-D 2008-08-22T00:47:54
+C Allow\sthe\sWHERE\sclause\sin\san\sUPDATE\sor\sDELETE\sagainst\sa\sview\swith\san\nINSTEAD\sOF\strigger\sto\srefer\sto\sthe\sview\sby\sname.\s\sTicket\s#3298.\s(CVS\s5589)
+D 2008-08-22T12:30:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 51b727303f84cf055e29514d8248e5eaf9701379
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/build.c 160c71acca8f643f436ed6c1ee2f684c88df4dfe
 F src/callback.c 27e55dfafc66e97dd8e7343a1d7bb295f3afd736
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 2373f20a91bec70e20e0e715520c8010d26ebb52
-F src/delete.c 5105c67c741f934379722de5e11fdd73ea4d82b5
+F src/delete.c d979a250a47b9f52effa2998070810239e38db8b
 F src/expr.c 4651d08422474f7e4bcb9a35da00c33ebe719a2d
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c f2e0b55f13e678a5c5ff94f0f225ed0a995acba7
@@ -149,7 +149,7 @@ F src/select.c e71462393fe0f9d2bf41378763b96659e8780e43
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 2373d1d70664f7fcd78e79af3c51792bb0a0753e
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h ddf6c9eb90b295bcb7c600139227e5e2a16c8063
+F src/sqliteInt.h 4f231eb750bf6901fdfa935c246a69d03c25d9b8
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 8caa772cd9310bc297280f7cf0ede4d69ed5b801
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -182,7 +182,7 @@ F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
 F src/tokenize.c d16ca0e9944161c76d2e4c11dc379ec88189b93b
 F src/trigger.c 649940b5bf5838a33721fb72372e7c9d1faf56a9
-F src/update.c 9e3786e76825bd7fa22528556cc1c467cd428075
+F src/update.c f2cf6f00d542956bd49ba4b9815c2900d9225bf2
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
@@ -550,6 +550,7 @@ F test/tkt3093.test fbdbc5b4969244ad11f540759003e361fcaf391f
 F test/tkt3121.test 536df66a02838c26a12fe98639354ca1290ca68b
 F test/tkt3201.test 607d433ad2c1f6a8cb1af55aaca427f63c83191b
 F test/tkt3292.test 962465a0984a3b8c757efe59c2c59144871ee1dd
+F test/tkt3298.test fb174771c7a4d5abd57448c01008eebd13128bb0
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
@@ -622,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e28a2870b49509502529892ff8ddb9fcf3a27173
-R e06d422a77e6a9b567f419fccc11805c
+P 2416708208357304904e38b2d36081a1adf5e44b
+R f37f9f9f6612c2b90a90588052b716e7
 U drh
-Z e1dcaa67276ea8bb0343faa68fef8503
+Z 2e1b1719f9f299edfbb6ca6ba7f8d98c
