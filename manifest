@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sfunction\scontext\sis\sfully\sinitialized\sbefore\sinvoking\sthe\nfunction\sfinalizer.\s\sTicket\s#3326.\s(CVS\s5596)
-D 2008-08-22T14:41:01
+C When\srecycling\sa\spage,\stry\sto\sfind\sone\sthat\sdoes\snot\srequire\sa\scall\sto\sxSync()\son\sthe\sjournal\sfile.\sAlso\ssimplify\ssome\sof\sthe\smutex\srelated\sthings\sin\spcache.\s(CVS\s5597)
+D 2008-08-22T16:22:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 51b727303f84cf055e29514d8248e5eaf9701379
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,11 +135,11 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c f1be99705e4542f01830ccea327eb773814f4eb9
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c 620b0c34f2f43acc3cc770be75c832739465bb52
+F src/pager.c 3b6625d32cd6f43c54c160f246545f9f26ba7668
 F src/pager.h 3778bea71dfb9658b6c94394e18db4a5b27e6ded
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c f57227003d39d40fa7f9b5a86e36b99f74b93267
-F src/pcache.h d2becbe7255f6bf57fc9e0bf889a9ec73d50ee74
+F src/pcache.c e12359db2963c379f18b52c657b5ec0ebb7a02cd
+F src/pcache.h 1457e4e7ef08f6964399d5c039afdece25071d54
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
@@ -434,7 +434,7 @@ F test/misc5.test 6a5c1e3217a95b0db05ff9a0f1ecb5ce9043ffef
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 0d763f703a34521e55ab30145b747aafa0e5f794
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/mutex1.test ee9fb9c12d03eb2291ab500a3ce30bcad6fb46e8
+F test/mutex1.test 342dd695567d307126e8f67f243e9b2bcd17898e
 F test/mutex2.test 56f282f436596e9febdc6e0db2c507432b6724bb
 F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7fd11f4ad8774e68f0a053eb2e1dd962a024da48
-R d422b5970a3ab5d1313431fc076c62e8
-U drh
-Z dc8b2c3e5eaef00fc8cce9d4dcda1b42
+P 8496f4a00a7e62006956e58f3d50c6c4de5347e4
+R 07c866e144c636ba349c06010da224eb
+U danielk1977
+Z 3fb2f6ec7de60b517a8379ad6632f407

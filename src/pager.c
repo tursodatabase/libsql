@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.474 2008/08/22 12:57:09 drh Exp $
+** @(#) $Id: pager.c,v 1.475 2008/08/22 16:22:17 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1707,7 +1707,7 @@ static int sqlite3PagerOpentemp(
   return rc;
 }
 
-static int pagerStress(void *);
+static int pagerStress(void *,PgHdr *);
 
 /*
 ** Create a new page cache and put a pointer to the page cache in *ppPager.
@@ -2366,8 +2366,10 @@ static int syncJournal(Pager *pPager){
 
 /*
 ** Given a list of pages (connected by the PgHdr.pDirty pointer) write
-** every one of those pages out to the database file and mark them all
-** as clean.
+** every one of those pages out to the database file. No calls are made
+** to the page-cache to mark the pages as clean. It is the responsibility
+** of the caller to use PcacheCleanAll() or PcacheMakeClean() to mark
+** the pages as clean.
 */
 static int pager_write_pagelist(PgHdr *pList){
   Pager *pPager;
@@ -2433,7 +2435,7 @@ static int pager_write_pagelist(PgHdr *pList){
 #ifdef SQLITE_CHECK_PAGES
     pList->pageHash = pager_pagehash(pList);
 #endif
-    makeClean(pList);
+    /* makeClean(pList); */
     pList = pList->pDirty;
   }
 
@@ -2448,32 +2450,32 @@ static int pager_write_pagelist(PgHdr *pList){
 ** outstanding references (if one exists) clean so that it can be recycled 
 ** by the pcache layer.
 */
-static int pagerStress(void *p){
+static int pagerStress(void *p, PgHdr *pPg){
   Pager *pPager = (Pager *)p;
-  PgHdr *pPg = sqlite3PcacheDirtyPage(pPager->pPCache);
   int rc = SQLITE_OK;
 
-  if( pPg ){
-    assert( pPg->flags&PGHDR_DIRTY );
-    if( pPager->errCode==SQLITE_OK ){
-      if( pPg->flags&PGHDR_NEED_SYNC ){
-        rc = syncJournal(pPager);
-        if( rc==SQLITE_OK && pPager->fullSync && 
-          !(sqlite3OsDeviceCharacteristics(pPager->fd)&SQLITE_IOCAP_SAFE_APPEND)
-        ){
-          pPager->nRec = 0;
-          rc = writeJournalHdr(pPager);
-        }
+  assert( pPg->flags&PGHDR_DIRTY );
+  if( pPager->errCode==SQLITE_OK ){
+    if( pPg->flags&PGHDR_NEED_SYNC ){
+      rc = syncJournal(pPager);
+      if( rc==SQLITE_OK && pPager->fullSync && 
+        !(sqlite3OsDeviceCharacteristics(pPager->fd)&SQLITE_IOCAP_SAFE_APPEND)
+      ){
+        pPager->nRec = 0;
+        rc = writeJournalHdr(pPager);
       }
-      if( rc==SQLITE_OK ){
-        rc = pager_write_pagelist(pPg);
-      }
-      if( rc!=SQLITE_OK ){
-        pager_error(pPager, rc);
-      }
-    }else{
-      sqlite3PcacheMakeClean(pPg);
     }
+    if( rc==SQLITE_OK ){
+      pPg->pDirty = 0;
+      rc = pager_write_pagelist(pPg);
+    }
+    if( rc!=SQLITE_OK ){
+      pager_error(pPager, rc);
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    sqlite3PcacheMakeClean(pPg);
   }
   return rc;
 }

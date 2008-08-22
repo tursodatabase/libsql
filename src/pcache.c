@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.7 2008/08/21 20:21:35 drh Exp $
+** @(#) $Id: pcache.c,v 1.8 2008/08/22 16:22:17 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -28,7 +28,7 @@ struct PCache {
   PgHdr **apHash;                     /* Hash table for fast lookup by pgno */
   int bPurgeable;                     /* True if pages are on backing store */
   void (*xDestroy)(PgHdr*);           /* Called when refcnt goes 1->0 */
-  int (*xStress)(void*);              /* Call to try to make pages clean */
+  int (*xStress)(void*,PgHdr*);       /* Call to try make a page clean */
   void *pStress;                      /* Argument to xStress */
   PgHdr *pClean;                      /* List of clean pages in use */
   PgHdr *pDirty;                      /* List of dirty pages */
@@ -57,6 +57,13 @@ struct PgFreeslot {
 **
 ** If mxPage is zero, then the system tries to limit the number of
 ** pages held by purgable caches to mxPagePurgeable.
+**
+** The doubly-linked list that runs between pcache.pLruHead and 
+** pcache.pLruTail contains all pages in the system with a zero 
+** reference count. The pcache.pLruSynced variable points to the last
+** (closest to pcache.pLruTail) entry in this list that does not have
+** the PGHDR_NEED_SYNC flag set. This is the page that the pcacheRecycle()
+** function will try to recycle.
 */
 static struct PCacheGlobal {
   int isInit;                         /* True when initialized */
@@ -68,6 +75,9 @@ static struct PCacheGlobal {
   int mxPage;                         /* Globally configured page maximum */
   int mxPagePurgeable;                /* Purgeable page maximum */
   PgHdr *pLruHead, *pLruTail;         /* Global LRU list of unused pages */
+  PgHdr *pLruSynced;                  /* Last synced entry in LRU list  */
+
+  /* Variables related to SQLITE_CONFIG_PAGECACHE settings. */
   int szSlot;                         /* Size of each free slot */
   void *pStart, *pEnd;                /* Bounds of pagecache malloc range */
   PgFreeslot *pFree;                  /* Free page blocks */
@@ -79,9 +89,6 @@ static struct PCacheGlobal {
 ** pager-caches starting with pcache.pAll, are protected by the static 
 ** SQLITE_MUTEX_STATIC_LRU mutex. A pointer to this mutex is stored in
 ** variable "pcache.mutex_lru".
-**
-** The list of all pager-caches (PCache structures) headed by pcache.pAll 
-** is protected by SQLITE_MUTEX_STATIC_MEM2.
 **
 ** Access to the contents of the individual PCache structures is not 
 ** protected. It is the job of the caller to ensure that these structures
@@ -95,8 +102,7 @@ static struct PCacheGlobal {
 ** underway.
 **
 ** Before the xStress callback of a pager-cache (PCache) is invoked, the
-** SQLITE_MUTEX_STATIC_MEM2 mutex is obtained and the SQLITE_MUTEX_STATIC_LRU 
-** mutex released (in that order) before making the call.
+** SQLITE_MUTEX_STATIC_MEM2 mutex is obtained.
 **
 ** Deadlock within the module is avoided by never blocking on the MEM2 
 ** mutex while the LRU mutex is held.
@@ -249,6 +255,11 @@ static void pcacheAddToList(PgHdr **ppHead, PgHdr *pPage){
 static void pcacheRemoveFromLruList(PgHdr *pPage){
   assert( sqlite3_mutex_held(pcache.mutex_lru) );
   if( pPage->pCache->bPurgeable==0 ) return;
+  if( pPage==pcache.pLruSynced ){
+    PgHdr *p;
+    for(p=pPage->pPrevLru; p && (p->flags&PGHDR_NEED_SYNC); p=p->pPrevLru);
+    pcache.pLruSynced = p;
+  }
   if( pPage->pNextLru ){
     pPage->pNextLru->pPrevLru = pPage->pPrevLru;
   }else{
@@ -282,6 +293,9 @@ static void pcacheAddToLruList(PgHdr *pPage){
     pcache.pLruTail->pNextLru = pPage;
     pcache.pLruTail = pPage;
     pPage->flags &= ~PGHDR_REUSE_UNLIKELY;
+    if( 0==(pPage->flags&PGHDR_NEED_SYNC) ){
+      pcache.pLruSynced = pPage;
+    }
   }else{
     /* If reuse is possible. the page goes at the beginning of the LRU
     ** list so that it will be the last to be recycled.
@@ -294,6 +308,9 @@ static void pcacheAddToLruList(PgHdr *pPage){
     pPage->pPrevLru = 0;
     if( pcache.pLruTail==0 ){
       pcache.pLruTail = pPage;
+    }
+    if( pcache.pLruSynced==0 && 0==(pPage->flags&PGHDR_NEED_SYNC) ){
+      pcache.pLruSynced = pPage;
     }
   }
 }
@@ -437,33 +454,50 @@ static int pcachePageSize(PgHdr *p){
 }
 
 static PgHdr *pcacheRecycle(PCache *pCache){
-  PCache *pCsr;
   PgHdr *p = 0;
 
   assert( pcache.isInit );
   assert( sqlite3_mutex_held(pcache.mutex_lru) );
 
-  if( !pcache.pLruTail && SQLITE_OK==sqlite3_mutex_try(pcache.mutex_mem2) ){
-
-    /* Invoke xStress() callbacks until the LRU list contains at least one
-    ** page that can be reused or until the xStress() callback of all
-    ** caches has been invoked.
-    */
-    for(pCsr=pcache.pAll; pCsr&&!pcache.pLruTail; pCsr=pCsr->pNextAll){
-      assert( pCsr->iInUseMM==0 );
-      pCsr->iInUseMM = 1;
-      if( pCsr->xStress && (pCsr->iInUseDB==0 || pCache==pCsr) ){
-        pcacheExitGlobal();
-        pCsr->xStress(pCsr->pStress);
-        pcacheEnterGlobal();
-      }
-      pCsr->iInUseMM = 0;
-    }
-
-    sqlite3_mutex_leave(pcache.mutex_mem2);
+  p = pcache.pLruSynced;
+  if( !p ){
+    p = pcache.pLruTail;
   }
+  if( p && (p->flags&PGHDR_DIRTY) ){
+    if( SQLITE_OK==sqlite3_mutex_try(pcache.mutex_mem2) ){
+      int iInUseDB;
+      PCache *pC = p->pCache;
 
-  p = pcache.pLruTail;
+      if( pCache==pC ){
+        /* If trying to recycle a page from pCache, then set the iInUseDb
+        ** flag to zero. This is done so that the sqlite3PcacheSetFlags()
+        ** can tell that the LRU mutex is already held.
+        **
+        ** It is quite safe to modify the iInUseDB variable, because we 
+        ** know no other thread will attempt to use pCache (because this
+        ** call is being made from within a call to sqlite3PcacheFetch()
+        ** on pCache). 
+        */
+        assert( pCache->iInUseDB );
+        iInUseDB = pCache->iInUseDB;
+        pCache->iInUseDB = 0;
+      }
+
+      assert( pC->iInUseMM==0 );
+      pC->iInUseMM = 1;
+      if( pC->xStress && pC->iInUseDB==0 ){
+        pC->xStress(pC->pStress, p);
+      }
+      if( pCache==pC ){
+        pCache->iInUseDB = iInUseDB;
+      }
+      pC->iInUseMM = 0;
+      sqlite3_mutex_leave(pcache.mutex_mem2);
+    }
+  }
+  if( p && (p->flags&PGHDR_DIRTY) ){
+    p = 0;
+  }
 
   if( p ){
     pcacheRemoveFromLruList(p);
@@ -558,7 +592,7 @@ void sqlite3PcacheOpen(
   int szExtra,                 /* Extra space associated with each page */
   int bPurgeable,              /* True if pages are on backing store */
   void (*xDestroy)(PgHdr*),    /* Called to destroy a page */
-  int (*xStress)(void*),       /* Call to try to make pages clean */
+  int (*xStress)(void*,PgHdr*),/* Call to try to make pages clean */
   void *pStress,               /* Argument to xStress */
   PCache *p                    /* Preallocated space for the PCache */
 ){
@@ -579,15 +613,14 @@ void sqlite3PcacheOpen(
   }
 
   /* Add the new pager-cache to the list of caches starting at pcache.pAll */
-  assert( sqlite3_mutex_notheld(pcache.mutex_lru) );
-  sqlite3_mutex_enter(pcache.mutex_mem2);
+  pcacheEnterGlobal();
   p->pNextAll = pcache.pAll;
   if( pcache.pAll ){
     pcache.pAll->pPrevAll = p;
   }
   p->pPrevAll = 0;
   pcache.pAll = p;
-  sqlite3_mutex_leave(pcache.mutex_mem2);
+  pcacheExitGlobal();
 }
 
 /*
@@ -619,7 +652,7 @@ int sqlite3PcacheFetch(
     u32 h = pgno % pCache->nHash;
     for(pPage=pCache->apHash[h]; pPage; pPage=pPage->pNextHash){
       if( pPage->pgno==pgno ){
-        if( pPage->nRef==0 && (pPage->flags & PGHDR_DIRTY)==0 ){
+        if( pPage->nRef==0 /* && (pPage->flags & PGHDR_DIRTY)==0 */ ){
           pcacheEnterGlobal();
           pcacheRemoveFromLruList(pPage);
           pcacheExitGlobal();
@@ -673,7 +706,9 @@ void sqlite3PcacheRelease(PgHdr *p){
   if( p->pCache->xDestroy ){
     p->pCache->xDestroy(p);
   }
+#if 0
   if( (p->flags & PGHDR_DIRTY)!=0 ) return;
+#endif
   pcacheEnterGlobal();
   pcacheAddToLruList(p);
   pcacheExitGlobal();
@@ -731,16 +766,11 @@ void sqlite3PcacheMakeClean(PgHdr *p){
   if( (p->flags & PGHDR_DIRTY)==0 ) return;
   assert( p->apSave[0]==0 && p->apSave[1]==0 );
   assert( p->flags & PGHDR_DIRTY );
-  /* assert( p->nRef>0 ); */
+  assert( p->nRef>0 || sqlite3_mutex_held(pcache.mutex_lru) );
   pCache = p->pCache;
   pcacheRemoveFromList(&pCache->pDirty, p);
   pcacheAddToList(&pCache->pClean, p);
   p->flags &= ~PGHDR_DIRTY;
-  if( p->nRef==0 ){
-    pcacheEnterGlobal();
-    pcacheAddToLruList(p);
-    pcacheExitGlobal();
-  }
 }
 
 /*
@@ -749,17 +779,15 @@ void sqlite3PcacheMakeClean(PgHdr *p){
 void sqlite3PcacheCleanAll(PCache *pCache){
   PgHdr *p;
   assert( pCache->iInUseDB );
+  pcacheEnterGlobal();
   while( (p = pCache->pDirty)!=0 ){
     assert( p->apSave[0]==0 && p->apSave[1]==0 );
     pcacheRemoveFromList(&pCache->pDirty, p);
     pcacheAddToList(&pCache->pClean, p);
     p->flags &= ~PGHDR_DIRTY;
-    if( p->nRef==0 ){
-      pcacheEnterGlobal();
-      pcacheAddToLruList(p);
-      pcacheExitGlobal();
-    }
   }
+  sqlite3PcacheAssertFlags(pCache, 0, PGHDR_DIRTY);
+  pcacheExitGlobal();
 }
 
 /*
@@ -806,6 +834,7 @@ void pcacheClear(PCache *pCache){
   }
   for(p=pCache->pDirty; p; p=pNext){
     pNext = p->pNext;
+    pcacheRemoveFromLruList(p);
     pcachePageFree(p);
   }
   pCache->pClean = 0;
@@ -835,9 +864,9 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
         if( p->flags&PGHDR_DIRTY ){
           pcacheRemoveFromList(&pCache->pDirty, p);
         }else{
-          pcacheRemoveFromLruList(p);
           pcacheRemoveFromList(&pCache->pClean, p);
         }
+        pcacheRemoveFromLruList(p);
         pcachePageFree(p);
       }else{
         /* If there are references to the page, it cannot be freed. In this
@@ -856,24 +885,18 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
 */
 void sqlite3PcacheClose(PCache *pCache){
   assert( pCache->iInUseDB==1 );
-
-  /* Free all the pages used by this pager and remove them from the LRU
-  ** list. This requires the protection of the MUTEX_STATIC_LRU mutex.
-  */
   pcacheEnterGlobal();
+
+  /* Free all the pages used by this pager and remove them from the LRU list. */
   pcacheClear(pCache);
   if( pCache->bPurgeable ){
     pcache.mxPagePurgeable -= pCache->nMax;
   }
   sqlite3_free(pCache->apHash);
-  pcacheExitGlobal();
 
   /* Now remove the pager-cache structure itself from the list of
-  ** all such structures headed by pcache.pAll. This required the
-  ** MUTEX_STATIC_MEM2 mutex.
+  ** all such structures headed by pcache.pAll. 
   */
-  assert( sqlite3_mutex_notheld(pcache.mutex_lru) );
-  sqlite3_mutex_enter(pcache.mutex_mem2);
   assert(pCache==pcache.pAll || pCache->pPrevAll);
   assert(pCache->pNextAll==0 || pCache->pNextAll->pPrevAll==pCache);
   assert(pCache->pPrevAll==0 || pCache->pPrevAll->pNextAll==pCache);
@@ -885,7 +908,8 @@ void sqlite3PcacheClose(PCache *pCache){
   if( pCache->pNextAll ){
     pCache->pNextAll->pPrevAll = pCache->pPrevAll;
   }
-  sqlite3_mutex_leave(pcache.mutex_mem2);
+
+  pcacheExitGlobal();
 }
 
 /*
@@ -1060,37 +1084,6 @@ PgHdr *sqlite3PcacheDirtyList(PCache *pCache){
   return pcacheSortDirtyList(pCache->pDirty);
 }
 
-/*
-** This function searches cache pCache for a dirty page for which the
-** reference count is zero. If such a page can be found, the PgHdr.pDirty
-** pointer is set to 0 and a pointer to the page is returned. If no
-** such page is found, 0 is returned.
-**
-** This is used by the pager module to implement the xStress callback.
-*/
-PgHdr *sqlite3PcacheDirtyPage(PCache *pCache){
-  PgHdr *p = 0;
-#if 1
-  PgHdr *pIter;
-  Pgno min_pgno;
-  assert( pCache->iInUseMM );
-  for(pIter=pCache->pDirty; pIter; pIter=pIter->pNext){
-    if( pIter->nRef==0 && (p==0 || pIter->pgno<min_pgno) ){
-      p = pIter;
-      min_pgno = pIter->pgno;
-    }
-  }
-#else
-  assert( pCache->iInUseMM );
-  for(p=pCache->pDirty; p && p->nRef; p=p->pNext);
-#endif
-  assert( pCache->iInUseMM );
-  if( p ){
-    p->pDirty = 0;
-  }
-  return p;
-}
-
 /* 
 ** Return the total number of outstanding page references.
 */
@@ -1130,12 +1123,35 @@ void sqlite3PcacheIterate(PCache *pCache, void (*xIter)(PgHdr *)){
 */
 void sqlite3PcacheSetFlags(PCache *pCache, int andMask, int orMask){
   PgHdr *p;
+
+  assert( (orMask&PGHDR_NEED_SYNC)==0 );
   assert( pCache->iInUseDB || pCache->iInUseMM );
+
+  /* If this call is being made from within a call to the xStress callback
+  ** of a pager-cache (i.e. from within pagerRecycle()), then the 
+  ** PCache.iInUseDB will be set to zero. In this case, the LRU mutex is
+  ** already held. Otherwise, obtain it before modifying any PgHdr.flags
+  ** variables or traversing the LRU list.
+  */ 
+  if( pCache->iInUseDB ){
+    pcacheEnterGlobal();
+  }
+  assert( sqlite3_mutex_held(pcache.mutex_lru) );
+
   for(p=pCache->pDirty; p; p=p->pNext){
     p->flags = (p->flags&andMask)|orMask;
   }
   for(p=pCache->pClean; p; p=p->pNext){
     p->flags = (p->flags&andMask)|orMask;
+  }
+
+  if( 0==(andMask&PGHDR_NEED_SYNC) ){
+    for(p=pcache.pLruTail; p && (p->flags&PGHDR_NEED_SYNC); p=p->pPrevLru);
+    pcache.pLruSynced = p;
+  }
+
+  if( pCache->iInUseDB ){
+    pcacheExitGlobal();
   }
 }
 
