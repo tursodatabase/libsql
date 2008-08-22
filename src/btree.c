@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.499 2008/08/20 22:06:48 drh Exp $
+** $Id: btree.c,v 1.500 2008/08/22 12:57:09 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -695,7 +695,7 @@ static void defragmentPage(MemPage *pPage){
   int size;                  /* Size of a cell */
   int usableSize;            /* Number of usable bytes on a page */
   int cellOffset;            /* Offset to the cell pointer array */
-  int brk;                   /* Offset to the cell content area */
+  int cbrk;                  /* Offset to the cell content area */
   int nCell;                 /* Number of cells on the page */
   unsigned char *data;       /* The page data */
   unsigned char *temp;       /* Temp area for cell content */
@@ -712,26 +712,26 @@ static void defragmentPage(MemPage *pPage){
   nCell = pPage->nCell;
   assert( nCell==get2byte(&data[hdr+3]) );
   usableSize = pPage->pBt->usableSize;
-  brk = get2byte(&data[hdr+5]);
-  memcpy(&temp[brk], &data[brk], usableSize - brk);
-  brk = usableSize;
+  cbrk = get2byte(&data[hdr+5]);
+  memcpy(&temp[cbrk], &data[cbrk], usableSize - cbrk);
+  cbrk = usableSize;
   for(i=0; i<nCell; i++){
     u8 *pAddr;     /* The i-th cell pointer */
     pAddr = &data[cellOffset + i*2];
     pc = get2byte(pAddr);
     assert( pc<pPage->pBt->usableSize );
     size = cellSizePtr(pPage, &temp[pc]);
-    brk -= size;
-    memcpy(&data[brk], &temp[pc], size);
-    put2byte(pAddr, brk);
+    cbrk -= size;
+    memcpy(&data[cbrk], &temp[pc], size);
+    put2byte(pAddr, cbrk);
   }
-  assert( brk>=cellOffset+2*nCell );
-  put2byte(&data[hdr+5], brk);
+  assert( cbrk>=cellOffset+2*nCell );
+  put2byte(&data[hdr+5], cbrk);
   data[hdr+1] = 0;
   data[hdr+2] = 0;
   data[hdr+7] = 0;
   addr = cellOffset+2*nCell;
-  memset(&data[addr], 0, brk-addr);
+  memset(&data[addr], 0, cbrk-addr);
 }
 
 /*
@@ -5655,7 +5655,7 @@ static int balance_deeper(MemPage *pPage){
   u8 *data;           /* Content of the parent page */
   u8 *cdata;          /* Content of the child page */
   int hdr;            /* Offset to page header in parent */
-  int brk;            /* Offset to content of first cell in parent */
+  int cbrk;           /* Offset to content of first cell in parent */
 
   assert( pPage->pParent==0 );
   assert( pPage->nOverflow>0 );
@@ -5667,10 +5667,10 @@ static int balance_deeper(MemPage *pPage){
   usableSize = pBt->usableSize;
   data = pPage->aData;
   hdr = pPage->hdrOffset;
-  brk = get2byte(&data[hdr+5]);
+  cbrk = get2byte(&data[hdr+5]);
   cdata = pChild->aData;
   memcpy(cdata, &data[hdr], pPage->cellOffset+2*pPage->nCell-hdr);
-  memcpy(&cdata[brk], &data[brk], usableSize-brk);
+  memcpy(&cdata[cbrk], &data[cbrk], usableSize-cbrk);
   if( pChild->isInit ) return SQLITE_CORRUPT;
   rc = sqlite3BtreeInitPage(pChild, pPage);
   if( rc ) goto balancedeeper_out;

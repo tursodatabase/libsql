@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.473 2008/08/21 12:19:44 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.474 2008/08/22 12:57:09 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1152,8 +1152,8 @@ static int pager_playback_one_page(
    && (pPg==0 || 0==(pPg->flags&PGHDR_NEED_SYNC))
    && (pPager->fd->pMethods)
   ){
-    i64 offset = (pgno-1)*(i64)pPager->pageSize;
-    rc = sqlite3OsWrite(pPager->fd, aData, pPager->pageSize, offset);
+    i64 ofst = (pgno-1)*(i64)pPager->pageSize;
+    rc = sqlite3OsWrite(pPager->fd, aData, pPager->pageSize, ofst);
   }
   if( pPg ){
     /* No page should ever be explicitly rolled back that is in use, except
@@ -1665,10 +1665,10 @@ void sqlite3PagerSetCachesize(Pager *pPager, int mxPage){
 ** and FULL=3.
 */
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
-void sqlite3PagerSetSafetyLevel(Pager *pPager, int level, int full_fsync){
+void sqlite3PagerSetSafetyLevel(Pager *pPager, int level, int bFullFsync){
   pPager->noSync =  level==1 || pPager->tempFile;
   pPager->fullSync = level==3 && !pPager->tempFile;
-  pPager->sync_flags = (full_fsync?SQLITE_SYNC_FULL:SQLITE_SYNC_NORMAL);
+  pPager->sync_flags = (bFullFsync?SQLITE_SYNC_FULL:SQLITE_SYNC_NORMAL);
   if( pPager->noSync ) pPager->needSync = 0;
 }
 #endif
