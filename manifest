@@ -1,5 +1,5 @@
-C Remove\sunused\svariable\sfrom\sprintf.c.\s\sTicket\s#3331.\s(CVS\s5595)
-D 2008-08-22T14:08:36
+C Make\ssure\sthe\sfunction\scontext\sis\sfully\sinitialized\sbefore\sinvoking\sthe\nfunction\sfinalizer.\s\sTicket\s#3326.\s(CVS\s5596)
+D 2008-08-22T14:41:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 51b727303f84cf055e29514d8248e5eaf9701379
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -193,7 +193,7 @@ F src/vdbeapi.c 3c98fbed9d4e10a4fbe09fce47e88ec567927a7b
 F src/vdbeaux.c 45a53a4459c01db4e6befc977952346bfef405c3
 F src/vdbeblob.c f93110888ddc246215e9ba1f831d3d375bfd8355
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
-F src/vdbemem.c c37b2a266a49eaf0c0f5080157f9f1a908fdaac3
+F src/vdbemem.c 51538ff193e1fcd462123ccef65323ccd2cc030c
 F src/vtab.c 527c180e9c5fca417c9167d02af4b5039f892b4b
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
 F src/where.c b156f2785538ed1783dbdd1f714d00ba21c1d5b1
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b688c68c3d70dc69adc2d1a08ddcf5899a115646
-R b1823fb06c594bd3d36602634950ace1
+P 7fd11f4ad8774e68f0a053eb2e1dd962a024da48
+R d422b5970a3ab5d1313431fc076c62e8
 U drh
-Z d5d85a25fc7e66c54a54c4e7b5d02861
+Z dc8b2c3e5eaef00fc8cce9d4dcda1b42
