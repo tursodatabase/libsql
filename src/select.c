@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.468 2008/08/21 14:54:29 drh Exp $
+** $Id: select.c,v 1.469 2008/08/22 16:29:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3149,11 +3149,7 @@ static int selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
   SrcList *pTabList;
   struct SrcList_item *pFrom;
 
-  if( (p->selFlags & SF_Resolved)==0 ){
-    /* If the ORDER BY clause of a compound SELECT contains a subquery,
-    ** that subquery will not yet have been resolved. */
-    return WRC_Prune;
-  }
+  assert( p->selFlags & SF_Resolved );
   if( (p->selFlags & SF_HasTypeInfo)==0 ){
     p->selFlags |= SF_HasTypeInfo;
     pParse = pWalker->pParse;

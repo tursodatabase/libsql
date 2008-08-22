@@ -1,5 +1,5 @@
-C When\srecycling\sa\spage,\stry\sto\sfind\sone\sthat\sdoes\snot\srequire\sa\scall\sto\sxSync()\son\sthe\sjournal\sfile.\sAlso\ssimplify\ssome\sof\sthe\smutex\srelated\sthings\sin\spcache.\s(CVS\s5597)
-D 2008-08-22T16:22:17
+C Enhanced\stest\scoverage.\s(CVS\s5598)
+D 2008-08-22T16:29:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 51b727303f84cf055e29514d8248e5eaf9701379
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/callback.c 27e55dfafc66e97dd8e7343a1d7bb295f3afd736
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 2373f20a91bec70e20e0e715520c8010d26ebb52
 F src/delete.c d979a250a47b9f52effa2998070810239e38db8b
-F src/expr.c 4651d08422474f7e4bcb9a35da00c33ebe719a2d
+F src/expr.c 9033d8efb283311103a2859fc6aa9f85b894b6ba
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c f2e0b55f13e678a5c5ff94f0f225ed0a995acba7
 F src/global.c 239d03b6dbae6c985deb2ffb54ab919debb9f8d7
@@ -145,7 +145,7 @@ F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/resolve.c e688f240bdacf4003047c2b023c3a4ee3a3eca98
-F src/select.c e71462393fe0f9d2bf41378763b96659e8780e43
+F src/select.c 3db954ccabee38995b16013a390f15c3b07e1265
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 2373d1d70664f7fcd78e79af3c51792bb0a0753e
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -285,7 +285,7 @@ F test/eval.test 020a21a236667bd4c56205d999c9992f1d944cac
 F test/exclusive.test 5390ddf1f90a6d055111c0ebe6311045dd3035e1
 F test/exclusive2.test 7d2b1c0370f1e1dac4a728bd653f2dea5100fcf6
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
-F test/expr.test a47d304a90c75def083cce3b1cd6c282842e6bbe
+F test/expr.test 135ed46c049916688171e618c5c14312811618d4
 F test/filectrl.test 524853082d5d7fb442599730ec3a0f3f84a3a936
 F test/filefmt.test 053b622009fbbb74dd37921ffad374d852c13cd8
 F test/fkey1.test dcb4f28eb22d5141f15161d6bdca9a4f58c95729
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8496f4a00a7e62006956e58f3d50c6c4de5347e4
-R 07c866e144c636ba349c06010da224eb
-U danielk1977
-Z 3fb2f6ec7de60b517a8379ad6632f407
+P 93dbc5427bebaa0b3d726731027caad3f70611c7
+R d06c1972a5218a66e3015476bedfa7df
+U drh
+Z 9e8818091fbf71d795674002e4d9c171

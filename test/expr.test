@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.64 2008/07/30 13:27:11 drh Exp $
+# $Id: expr.test,v 1.65 2008/08/22 16:29:51 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -606,6 +606,20 @@ test_expr2 expr-7.60 {LIKE('_4',b)}                   {6}
 test_expr2 expr-7.61 {GLOB('1?',a)}            {10 11 12 13 14 15 16 17 18 19}
 test_expr2 expr-7.62 {GLOB('1*4',b)}                  {10 14}
 test_expr2 expr-7.63 {GLOB('*1[456]',b)}              {4}
+
+breakpoint
+test_expr2 expr-7.64 {b = abs(-2)}                    {1}
+test_expr2 expr-7.65 {b = abs(+-2)}                   {1}
+test_expr2 expr-7.66 {b = abs(++-2)}                  {1}
+test_expr2 expr-7.67 {b = abs(+-+-2)}                 {1}
+test_expr2 expr-7.68 {b = abs(+-++-2)}                {1}
+test_expr2 expr-7.69 {b = abs(++++-2)}                {1}
+test_expr2 expr-7.70 {b = 5 - abs(+3)}                {1}
+test_expr2 expr-7.71 {b = 5 - abs(-3)}                {1}
+test_expr2 expr-7.72 {b = abs(-2.0)}                  {1}
+test_expr2 expr-7.73 {b = 6 - abs(-a)}                {2}
+test_expr2 expr-7.74 {b = abs(8.0)}                   {3}
+
 
 # Test the CURRENT_TIME, CURRENT_DATE, and CURRENT_TIMESTAMP expressions.
 #
