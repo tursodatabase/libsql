@@ -1,5 +1,5 @@
-C quieting\scompiler\swarning\sabout\spointer/int\sconversion\ssize\smismatch\s(CVS\s5602)
-D 2008-08-22T18:41:37
+C Do\snot\sincorrectly\sdetect\scorruption\swhen\san\sauto-vacuum\sdatabase\sis\sconverted\sto\sa\snon-auto-vacuum\sdatabase\swithin\sa\svacuum.\sTicket\s#3332.\s(CVS\s5603)
+D 2008-08-23T16:17:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c db3f4a60538733c1e4dcb9d0217a6e0d6ccd615b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c 4212dce1c446b8aa8bf2be7d39c6d93d169ace0b
+F src/btree.c 9253ac92b434a5a556cb65cf67b9c101205bfdf2
 F src/btree.h 6371c5e599fab391a150c96afbc10062b276d107
 F src/btreeInt.h ab18c7b4980314e9e4b402e5dcde09f3c2545576
 F src/build.c 160c71acca8f643f436ed6c1ee2f684c88df4dfe
@@ -185,7 +185,7 @@ F src/trigger.c 649940b5bf5838a33721fb72372e7c9d1faf56a9
 F src/update.c f2cf6f00d542956bd49ba4b9815c2900d9225bf2
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
-F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
+F src/vacuum.c a5b10ae21ffbb73c79b7fa17e2ff40dc8ff33440
 F src/vdbe.c adcc179a31d71466b7b4f20ab77555e1e137bfe5
 F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
 F src/vdbeInt.h b48c74d86a9fb62b707a3186ccca76bb32f1c6be
@@ -572,8 +572,8 @@ F test/unique.test 0253c4227a5dc533e312202ce21ecfad18058d18
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/utf16align.test 7360e84472095518c56746f76b1f9d4dce99fb4d
 F test/vacuum.test 0bc75ee74ab9c69322d6563aa2287375697e630b
-F test/vacuum2.test d3b9691541fe6ed5c711f547a1c7d70e9760ac6f
-F test/vacuum3.test 306b65554980d8d4a3b6eeb7b3ccd11c65ebb540
+F test/vacuum2.test e7c5f5bf5e1f2266ca668d420393820cf501fdfc
+F test/vacuum3.test 54a7152f004fb1647702c2f7be9a7e7abfafd70e
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test e265401afefa994cdf2fe4b6f286b1e87c2f9b9d
 F test/view.test 7fba28a47f76541f6aea9542f62f3412e3519bad
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6de9c084fc533fbb22af6a4cd3e4e9a461b13876
-R ef30e25c72527afbee7daff10fc9c47e
-U aswift
-Z e2eb11c438fcd3621bc862059e4c76f6
+P f8a70501c234545b3030144ac6bcbfaa0d2b0069
+R aef83607149c9c342bce05a1b1fbac8b
+U danielk1977
+Z 1527ca57bd02efd33a253e2eb002c3ed

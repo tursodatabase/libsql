@@ -12,7 +12,7 @@
 # focus of this file is changing the database page size using a 
 # VACUUM statement.
 #
-# $Id: vacuum3.test,v 1.7 2008/08/02 03:50:40 drh Exp $
+# $Id: vacuum3.test,v 1.8 2008/08/23 16:17:56 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -237,8 +237,7 @@ do_test vacuum3-4.6 {
 
 db2 close
 
-do_ioerr_test vacuum3-ioerr-1 -cksum true -sqlprep { 
-  PRAGMA page_size = 1024;
+set create_database_sql {
   BEGIN; 
   CREATE TABLE t1(a, b, c); 
   INSERT INTO t1 VALUES(1, randstr(50,50), randstr(50,50)); 
@@ -254,31 +253,39 @@ do_ioerr_test vacuum3-ioerr-1 -cksum true -sqlprep {
   CREATE TABLE t3 AS SELECT * FROM t1;
   COMMIT;
   DROP TABLE t2;
-} -sqlbody {
+}
+
+do_ioerr_test vacuum3-ioerr-1 -cksum true -sqlprep "
+  PRAGMA page_size = 1024;
+  $create_database_sql
+" -sqlbody {
   PRAGMA page_size = 4096;
   VACUUM;
 } 
-do_ioerr_test vacuum3-ioerr-2 -cksum true -sqlprep { 
+do_ioerr_test vacuum3-ioerr-2 -cksum true -sqlprep " 
   PRAGMA page_size = 2048;
-  BEGIN; 
-  CREATE TABLE t1(a, b, c); 
-  INSERT INTO t1 VALUES(1, randstr(50,50), randstr(50,50)); 
-  INSERT INTO t1 SELECT a+2, b||'-'||rowid, c||'-'||rowid FROM t1; 
-  INSERT INTO t1 SELECT a+4, b||'-'||rowid, c||'-'||rowid FROM t1;
-  INSERT INTO t1 SELECT a+8, b||'-'||rowid, c||'-'||rowid FROM t1;
-  INSERT INTO t1 SELECT a+16, b||'-'||rowid, c||'-'||rowid FROM t1;
-  INSERT INTO t1 SELECT a+32, b||'-'||rowid, c||'-'||rowid FROM t1;
-  INSERT INTO t1 SELECT a+64, b||'-'||rowid, c||'-'||rowid FROM t1;
-  INSERT INTO t1 SELECT a+128, b||'-'||rowid, c||'-'||rowid FROM t1;
-  INSERT INTO t1 VALUES(1, randstr(600,600), randstr(600,600));
-  CREATE TABLE t2 AS SELECT * FROM t1;
-  CREATE TABLE t3 AS SELECT * FROM t1;
-  COMMIT;
-  DROP TABLE t2;
-} -sqlbody {
+  $create_database_sql
+" -sqlbody {
   PRAGMA page_size = 512;
   VACUUM;
 } 
+
+ifcapable autovacuum {
+  do_ioerr_test vacuum3-ioerr-3 -cksum true -sqlprep "
+    PRAGMA auto_vacuum = 0;
+    $create_database_sql
+  " -sqlbody {
+    PRAGMA auto_vacuum = 1;
+    VACUUM;
+  } 
+  do_ioerr_test vacuum3-ioerr-4 -cksum true -sqlprep "
+    PRAGMA auto_vacuum = 1;
+    $create_database_sql
+  " -sqlbody {
+    PRAGMA auto_vacuum = 0;
+    VACUUM;
+  } 
+}
 
 source $testdir/malloc_common.tcl
 if {$MEMDEBUG} {
