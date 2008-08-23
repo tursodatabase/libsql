@@ -1,5 +1,5 @@
-C Do\snot\sincorrectly\sdetect\scorruption\swhen\san\sauto-vacuum\sdatabase\sis\sconverted\sto\sa\snon-auto-vacuum\sdatabase\swithin\sa\svacuum.\sTicket\s#3332.\s(CVS\s5603)
-D 2008-08-23T16:17:56
+C Instead\sof\smarking\sa\spage\sas\sclean\swhen\ssqlite3PagerDontWrite()\sis\scalled,\sset\sa\sdedictated\sflag\s-\sPGHDR_DONT_WRITE.\s(CVS\s5604)
+D 2008-08-23T18:53:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,11 +135,11 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 4665cef7639dd937893c3ea076f0e8a8f215bb32
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c 62a0e18d5daacc9c0b3c79d446d411051fbfe6a2
+F src/pager.c 8fd88689463dcf2ee1d687e6cb0a8c3d3c9b7647
 F src/pager.h 3b9c138d2e744b9d6e61d4c2742301e3bf464864
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 3feb47f5ce4174570e7b76bd851faccf7df55e80
-F src/pcache.h 1457e4e7ef08f6964399d5c039afdece25071d54
+F src/pcache.c 4858bf42f9c04c1d1f767c1f2a052809836db6ad
+F src/pcache.h f03fc3b8241da092bd929ba0eec15e84d9d2cca0
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f8a70501c234545b3030144ac6bcbfaa0d2b0069
-R aef83607149c9c342bce05a1b1fbac8b
+P cb869946d68f2abbd1322fababbe4aa74a4e08aa
+R 6bb49f025f936fb67884362dcf5dfa8b
 U danielk1977
-Z 1527ca57bd02efd33a253e2eb002c3ed
+Z aad391fe05cc3c31b11ee3817a80c513

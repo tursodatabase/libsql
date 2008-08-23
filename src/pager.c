@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.476 2008/08/22 17:34:45 drh Exp $
+** @(#) $Id: pager.c,v 1.477 2008/08/23 18:53:08 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2401,7 +2401,7 @@ static int pager_write_pagelist(PgHdr *pList){
     ** make the file smaller (presumably by auto-vacuum code). Do not write
     ** any such pages to the file.
     */
-    if( pList->pgno<=pPager->dbSize ){
+    if( pList->pgno<=pPager->dbSize && 0==(pList->flags&PGHDR_DONT_WRITE) ){
       i64 offset = (pList->pgno-1)*(i64)pPager->pageSize;
       char *pData = CODEC2(pPager, pList->pData, pList->pgno, 6);
       PAGERTRACE4("STORE %d page %d hash(%08x)\n",
@@ -2857,7 +2857,6 @@ static int pagerAcquire(
     */
     int nMax;
     PAGER_INCR(pPager->nMiss);
-    /* pPager->nRef++; */
     pPg->pPager = pPager;
     if( sqlite3BitvecTest(pPager->pInJournal, pgno) ){
       pPg->flags |= PGHDR_IN_JOURNAL;
@@ -3495,7 +3494,7 @@ void sqlite3PagerDontWrite(DbPage *pDbPage){
     }else{
       PAGERTRACE3("DONT_WRITE page %d of %d\n", pPg->pgno, PAGERID(pPager));
       IOTRACE(("CLEAN %p %d\n", pPager, pPg->pgno))
-      makeClean(pPg);
+      pPg->flags |= PGHDR_DONT_WRITE;
 #ifdef SQLITE_CHECK_PAGES
       pPg->pageHash = pager_pagehash(pPg);
 #endif
