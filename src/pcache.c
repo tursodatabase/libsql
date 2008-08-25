@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.12 2008/08/25 07:12:29 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.13 2008/08/25 14:49:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -110,26 +110,6 @@ static struct PCacheGlobal {
 
 #define pcacheEnterGlobal() sqlite3_mutex_enter(pcache.mutex_lru)
 #define pcacheExitGlobal()  sqlite3_mutex_leave(pcache.mutex_lru)
-
-/*
-** Increment the reference count on both page p and its cache by n.
-*/
-static void pcacheRef(PgHdr *p, int n){
-  /* This next block assert()s that the number of references to the 
-  ** PCache is the sum of the number of references to all pages in
-  ** the PCache. This is a bit expensive to leave turned on all the 
-  ** time, even in debugging builds.
-  */
-#if 0
-  PgHdr *pHdr;
-  int nRef = 0;
-  for(pHdr=p->pCache->pClean; pHdr; pHdr=pHdr->pNext) nRef += pHdr->nRef;
-  for(pHdr=p->pCache->pDirty; pHdr; pHdr=pHdr->pNext) nRef += pHdr->nRef;
-  assert( p->pCache->nRef==nRef );
-#endif
-  p->nRef += n;
-  p->pCache->nRef += n;
-}
 
 /********************************** Linked List Management ********************/
 
@@ -658,7 +638,9 @@ int sqlite3PcacheFetch(
           pcacheRemoveFromLruList(pPage);
           pcacheExitGlobal();
         }
-        pcacheRef(pPage, 1);
+        if( (pPage->nRef++)==0 ){
+          pCache->nRef++;
+        }
         *ppPage = pPage;
         return SQLITE_OK;
       }
@@ -682,10 +664,10 @@ int sqlite3PcacheFetch(
     pPage->pPager = 0;
     pPage->flags = 0;
     pPage->pDirty = 0;
-    pPage->nRef = 0;
     pPage->pgno = pgno;
     pPage->pCache = pCache;
-    pcacheRef(pPage, 1);
+    pPage->nRef = 1;
+    pCache->nRef++;
     pcacheAddToList(&pCache->pClean, pPage);
     pcacheAddToHash(pPage);
   }else{
@@ -702,22 +684,25 @@ int sqlite3PcacheFetch(
 void sqlite3PcacheRelease(PgHdr *p){
   assert( p->nRef>0 );
   assert( p->pCache->iInUseDB || p->pCache->iInUseMM );
-  pcacheRef(p, -1);
-  if( p->nRef!=0 ) return;
-  if( p->pCache->xDestroy ){
-    p->pCache->xDestroy(p);
-  }
+  p->nRef--;
+  if( p->nRef==0 ){
+    PCache *pCache = p->pCache;
+    pCache->nRef--;
+    if( p->pCache->xDestroy ){
+      p->pCache->xDestroy(p);
+    }
 #if 0
-  if( (p->flags & PGHDR_DIRTY)!=0 ) return;
+    if( (p->flags & PGHDR_DIRTY)!=0 ) return;
 #endif
-  pcacheEnterGlobal();
-  pcacheAddToLruList(p);
-  pcacheExitGlobal();
+    pcacheEnterGlobal();
+    pcacheAddToLruList(p);
+    pcacheExitGlobal();
+  }
 }
 
 void sqlite3PcacheRef(PgHdr *p){
-  assert(p->nRef>=0);
-  pcacheRef(p, 1);
+  assert(p->nRef>0);
+  p->nRef++;
 }
 
 /*

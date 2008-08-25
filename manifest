@@ -1,5 +1,5 @@
-C Additional\scoverage\stesting\sin\sthe\snew\sname\sresolver\smodule.\s(CVS\s5608)
-D 2008-08-25T12:14:09
+C Pick\sup\sa\ssmall\sperformance\sincrease\sby\seliminating\sthe\spcacheRef()\sfunction.\s(CVS\s5609)
+D 2008-08-25T14:49:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c a175ce0a026177ca24b48b2944670404bcec90d8
 F src/pager.h 3b9c138d2e744b9d6e61d4c2742301e3bf464864
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 67c402c23d90ac8cea02c917f18245ade6a44e1d
+F src/pcache.c 4883f3714503242057643a5dddbc74065def5157
 F src/pcache.h f03fc3b8241da092bd929ba0eec15e84d9d2cca0
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 635933b1cae6c43656260555089952e2925c3292
-R 425df6baa72dc44cb2b3af4ba0d5d71f
-U drh
-Z 402656fa4c5ab25e1bc6c1040a95ee16
+P 0d61960afd35721d6d07acd75288c20d2cd6fda1
+R a45c0ea79cdddeaf5b79e95fe71c1625
+U danielk1977
+Z d37cbd289bc865902ff5dd4aff605824
