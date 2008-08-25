@@ -1,5 +1,5 @@
-C If\sthe\ssector\ssize\sis\sgreater\sthan\sthe\sdatabase\spage\ssize,\sSQLite\sjournals\sall\spages\sthat\slie\swithin\sa\ssector\sbefore\swriting\sto\sany\sof\sthem.\sThis\schange\sensure\sthat\sa\sjournal\ssync\sdoes\snot\soccur\shalfway\sthrough\sjournalling\sthe\sset\sof\spages\sthat\sbelong\sto\sa\ssingle\ssector.\s(CVS\s5605)
-D 2008-08-25T07:12:29
+C Fix\sa\ssegfault\sthat\scan\soccur\swhen\srunning\sintegrity_check\son\sa\scorrupt\sdb.\s(CVS\s5606)
+D 2008-08-25T11:57:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F src/attach.c db3f4a60538733c1e4dcb9d0217a6e0d6ccd615b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c 9253ac92b434a5a556cb65cf67b9c101205bfdf2
+F src/btree.c f6a1f698b1625da624457d25436e1a639631ffb3
 F src/btree.h 6371c5e599fab391a150c96afbc10062b276d107
 F src/btreeInt.h ab18c7b4980314e9e4b402e5dcde09f3c2545576
 F src/build.c 160c71acca8f643f436ed6c1ee2f684c88df4dfe
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a323bd29a600abddbcc2cc9961ab84d82cccc5e5
-R 0ab2c5661f3a3767448c6b94f28dc844
+P 16f612d61e00938f29ecae4ebfe598be7a8709a8
+R a1b7813883cc372930b535631e98f790
 U danielk1977
-Z 7c29baa12ffe3b5de5f7f54f640152f8
+Z a2e4405583d55f95054203654010ac3f
