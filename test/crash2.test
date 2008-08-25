@@ -16,7 +16,7 @@
 # specifically, the tests in this file verify this functionality
 # for storage mediums with various sector sizes.
 #
-# $Id: crash2.test,v 1.5 2007/08/24 11:52:29 danielk1977 Exp $
+# $Id: crash2.test,v 1.6 2008/08/25 07:12:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -93,6 +93,7 @@ for {set i 1} {$i < 30} {incr i} {
   db close
   do_test crash2-2.$i.1 {
      crashsql -blocksize $sector -delay [expr $i%5 + 1] -file test.db-journal "
+       PRAGMA temp_store = memory;
        BEGIN;
        SELECT random() FROM abc LIMIT $i;
        INSERT INTO abc SELECT randstr(10,10), 0, 0 FROM abc WHERE random()%2==0;

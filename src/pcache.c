@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.11 2008/08/23 18:53:08 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.12 2008/08/25 07:12:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -455,6 +455,23 @@ static int pcachePageSize(PgHdr *p){
 }
 #endif
 
+static int pcacheRecyclePage(PgHdr *p, PCache *pCache){
+  assert( sqlite3_mutex_held(pcache.mutex_lru) );
+  assert( sqlite3_mutex_held(pcache.mutex_mem2) );
+
+  PCache *pC = p->pCache;
+  assert( pC->iInUseMM==0 );
+  pC->iInUseMM = 1;
+  if( pC->xStress && (pC->iInUseDB==0 || pC==pCache) ){
+    pcacheExitGlobal();
+    pC->xStress(pC->pStress, p);
+    pcacheEnterGlobal();
+  }
+  pC->iInUseMM = 0;
+
+  return (p->flags&PGHDR_DIRTY);
+}
+
 /*
 ** Recycle a page from the global LRU list. If no page can be recycled, 
 ** return NULL. Otherwise, the pointer returned points to a PgHdr 
@@ -469,26 +486,18 @@ static PgHdr *pcacheRecycle(PCache *pCache){
   assert( pcache.isInit );
   assert( sqlite3_mutex_held(pcache.mutex_lru) );
 
-  p = pcache.pLruSynced;
-  if( !p ){
-    p = pcache.pLruTail;
-  }
-  if( p && (p->flags&PGHDR_DIRTY) ){
-    if( SQLITE_OK==sqlite3_mutex_try(pcache.mutex_mem2) ){
-      PCache *pC = p->pCache;
-      assert( pC->iInUseMM==0 );
-      pC->iInUseMM = 1;
-      if( pC->xStress && (pC->iInUseDB==0 || pC==pCache) ){
-        pcacheExitGlobal();
-        pC->xStress(pC->pStress, p);
-        pcacheEnterGlobal();
-      }
-      pC->iInUseMM = 0;
-      sqlite3_mutex_leave(pcache.mutex_mem2);
+  if( SQLITE_OK==sqlite3_mutex_try(pcache.mutex_mem2) ){
+    p = pcache.pLruSynced;
+    while( p && (p->flags&PGHDR_DIRTY) && pcacheRecyclePage(p, pCache) ){
+      do { p = p->pPrevLru; } while( p && (p->flags&PGHDR_NEED_SYNC) );
     }
-  }
-  if( p && (p->flags&PGHDR_DIRTY) ){
-    p = 0;
+    if( !p ){
+      p = pcache.pLruTail;
+      while( p && (p->flags&PGHDR_DIRTY) && pcacheRecyclePage(p, pCache) ){
+        do { p = p->pPrevLru; } while( p && 0==(p->flags&PGHDR_NEED_SYNC) );
+      }
+    }
+    sqlite3_mutex_leave(pcache.mutex_mem2);
   }
 
   if( p ){

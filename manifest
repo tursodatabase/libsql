@@ -1,5 +1,5 @@
-C Instead\sof\smarking\sa\spage\sas\sclean\swhen\ssqlite3PagerDontWrite()\sis\scalled,\sset\sa\sdedictated\sflag\s-\sPGHDR_DONT_WRITE.\s(CVS\s5604)
-D 2008-08-23T18:53:08
+C If\sthe\ssector\ssize\sis\sgreater\sthan\sthe\sdatabase\spage\ssize,\sSQLite\sjournals\sall\spages\sthat\slie\swithin\sa\ssector\sbefore\swriting\sto\sany\sof\sthem.\sThis\schange\sensure\sthat\sa\sjournal\ssync\sdoes\snot\soccur\shalfway\sthrough\sjournalling\sthe\sset\sof\spages\sthat\sbelong\sto\sa\ssingle\ssector.\s(CVS\s5605)
+D 2008-08-25T07:12:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,10 +135,10 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 4665cef7639dd937893c3ea076f0e8a8f215bb32
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c 8fd88689463dcf2ee1d687e6cb0a8c3d3c9b7647
+F src/pager.c a175ce0a026177ca24b48b2944670404bcec90d8
 F src/pager.h 3b9c138d2e744b9d6e61d4c2742301e3bf464864
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 4858bf42f9c04c1d1f767c1f2a052809836db6ad
+F src/pcache.c 67c402c23d90ac8cea02c917f18245ade6a44e1d
 F src/pcache.h f03fc3b8241da092bd929ba0eec15e84d9d2cca0
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
@@ -259,7 +259,7 @@ F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 794d284109c65c8f10a2b275479045e02d163bae
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
-F test/crash2.test 26d7a4c5520201e5de2c696ea51ab946b59dc0e9
+F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
 F test/crash3.test 776f9363554c029fcce71d9e6600fa0ba6359ce7
 F test/crash4.test 02ff4f15c149ca1e88a5c299b4896c84d9450c3b
 F test/crash5.test 80a2f7073381837fc082435c97df52a830abcd80
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cb869946d68f2abbd1322fababbe4aa74a4e08aa
-R 6bb49f025f936fb67884362dcf5dfa8b
+P a323bd29a600abddbcc2cc9961ab84d82cccc5e5
+R 0ab2c5661f3a3767448c6b94f28dc844
 U danielk1977
-Z aad391fe05cc3c31b11ee3817a80c513
+Z 7c29baa12ffe3b5de5f7f54f640152f8

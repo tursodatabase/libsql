@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.477 2008/08/23 18:53:08 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.478 2008/08/25 07:12:29 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2441,6 +2441,10 @@ static int pager_write_pagelist(PgHdr *pList){
 static int pagerStress(void *p, PgHdr *pPg){
   Pager *pPager = (Pager *)p;
   int rc = SQLITE_OK;
+
+  if( pPager->doNotSync ){
+    return SQLITE_OK;
+  }
 
   assert( pPg->flags&PGHDR_DIRTY );
   if( pPager->errCode==SQLITE_OK ){
