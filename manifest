@@ -1,5 +1,5 @@
-C Pick\sup\sa\ssmall\sperformance\sincrease\sby\seliminating\sthe\spcacheRef()\sfunction.\s(CVS\s5609)
-D 2008-08-25T14:49:42
+C Fix\sbug\sin\sthe\spremutation\stesting\sthat\swas\scausing\smany\spermutations\sfrom\nbegin\sskipped.\s\sThere\sare\snow\s16\serrors\sreported\sby\sthe\spermutation\stest.\s(CVS\s5610)
+D 2008-08-25T17:23:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 4665cef7639dd937893c3ea076f0e8a8f215bb32
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c a175ce0a026177ca24b48b2944670404bcec90d8
+F src/pager.c 67d689efa33fbca2788d006e18dd7d1a7de22487
 F src/pager.h 3b9c138d2e744b9d6e61d4c2742301e3bf464864
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c 4883f3714503242057643a5dddbc74065def5157
@@ -144,8 +144,8 @@ F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/resolve.c f279cfe052c3f91457de2512fa2510e4ea86b0cc
-F src/select.c 3db954ccabee38995b16013a390f15c3b07e1265
+F src/resolve.c 74725e61c9eefb597a203631d921efd9005b7a88
+F src/select.c 1042eafb5c703ed4fc80ab3c3cbdfdb74fbcf2b4
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 2373d1d70664f7fcd78e79af3c51792bb0a0753e
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -445,7 +445,7 @@ F test/pager2.test 070983b89a308adaba525a2f9c1ba0592c72fa3d
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
-F test/permutations.test 1f7ead8d56d62633b2dd00c26868db35f0b3dcdf
+F test/permutations.test 49468b8b94e66e20a43a29b805bc1811569208cf
 F test/pragma.test b55931bbd5dd543e56fd942dbf4b7439619b09a6
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0d61960afd35721d6d07acd75288c20d2cd6fda1
-R a45c0ea79cdddeaf5b79e95fe71c1625
-U danielk1977
-Z d37cbd289bc865902ff5dd4aff605824
+P e3840fbf0adf824941a4b9b3cac3a869f195d6f8
+R 536eabce05a14041e4591c9d085fb224
+U drh
+Z 6161148b36887e1910794505f591cf40

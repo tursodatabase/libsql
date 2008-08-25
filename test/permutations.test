@@ -9,36 +9,40 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.21 2008/08/21 15:54:01 danielk1977 Exp $
+# $Id: permutations.test,v 1.22 2008/08/25 17:23:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Argument processing.
 #
-set ::testmode [lindex $argv 0]
-set ::testfile [lindex $argv 1]
+#puts "PERM-DEBUG: argv=$argv"
+namespace eval ::perm {
+  set testmode [lindex $::argv 0]
+  set testfile [lindex $::argv 1]
+}
 set argv [lrange $argv 2 end]
+#puts "PERM-DEBUG: testmode=$::perm::testmode"
 
 set ::permutations_presql ""
 set ::permutations_test_prefix ""
 
-if {$::testmode eq "veryquick"} {
-  set ::testmode [list persistent_journal no_journal]
+if {$::perm::testmode eq "veryquick"} {
+  set ::perm::testmode [list persistent_journal no_journal]
   set ISQUICK 1
 }
-if {$::testmode eq "quick"} {
-  set ::testmode [list persistent_journal no_journal autovacuum_ioerr]
+if {$::perm::testmode eq "quick"} {
+  set ::perm::testmode [list persistent_journal no_journal autovacuum_ioerr]
   set ISQUICK 1
 }
-if {$::testmode eq "all"} {
-  set ::testmode {
+if {$::perm::testmode eq "all"} {
+  set ::perm::testmode {
     memsubsys1 memsubsys2 singlethread multithread onefile utf16 exclusive
     persistent_journal persistent_journal_error no_journal no_journal_error
     autovacuum_ioerr no_mutex_try
   }
 }
-if {$::testmode eq "targets"} { 
+if {$::perm::testmode eq "targets"} { 
   puts ""
   puts -nonewline "veryquick            "
   puts "Same as persistent_journal and no_journal"
@@ -47,6 +51,7 @@ if {$::testmode eq "targets"} {
   puts -nonewline "all                  "
   puts "Everything except autovacuum_crash"
 }
+puts "PERM-DEBUG: testmode=$::perm::testmode"
 
 set EXCLUDE {
   all.test                  in2.test                  onefile.test
@@ -113,21 +118,30 @@ proc run_tests {name args} {
   set options(-presql) ""
   set options(-description) "no description supplied (fixme)"
   array set options $args
+  #puts "PERM-DEBUG: name=$name testfile=$::perm::testfile"
+  #puts "PERM-DEBUG: [array get options]"
 
-  if {$::testmode eq "targets"} {
+  if {$::perm::testmode eq "targets"} {
     puts [format "% -20s %s" $name [string trim $options(-description)]]
     return
   }
-  if {$::testmode ne "" && [lsearch $::testmode $name]<0} return
+  if {$::perm::testmode ne "" && [lsearch $::perm::testmode $name]<0} {
+    puts "skipping permutation test $name..."
+    return
+  }
 
   uplevel $options(-initialize)
   set ::permutations_presql $options(-presql)
 
   foreach file $options(-include) {
-    if {[lsearch $options(-exclude) $file] < 0 && (
-      $::testfile eq "" || $::testfile eq $file || "$::testfile.test" eq $file
-    ) } {
+    if {[lsearch $options(-exclude) $file] < 0 &&
+       ( $::perm::testfile eq "" ||
+         $::perm::testfile eq $file ||
+        "$::perm::testfile.test" eq $file )
+    } {
       uplevel source $::testdir/$file
+    } else {
+      # puts "skipping file $file"
     }
   }
 
@@ -471,7 +485,8 @@ ifcapable mem5 {
 ifcapable threadsafe {
   run_tests "no_mutex_try" -description {
      The sqlite3_mutex_try() interface always fails
-  } -initialize {
+  } -exclude [concat $EXCLUDE mutex1.test mutex2.test] \
+  -initialize {
     catch {db close}
     sqlite3_shutdown
     install_mutex_counters 1
@@ -530,7 +545,7 @@ run_tests "memsys6" -description {
 # End of tests
 #############################################################################
 
-if {$::testmode eq "targets"} { puts "" ; exit }
+if {$::perm::testmode eq "targets"} { puts "" ; exit }
 
 # Restore the [sqlite3] command.
 #

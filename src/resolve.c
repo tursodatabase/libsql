@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.3 2008/08/25 12:14:09 drh Exp $
+** $Id: resolve.c,v 1.4 2008/08/25 17:23:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -647,9 +647,7 @@ static int resolveCompoundOrderBy(
     struct ExprList_item *pItem;
     moreToDo = 0;
     pEList = pSelect->pEList;
-    if( pEList==0 ){
-      return 1;
-    }
+    assert( pEList!=0 );
     for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
       int iCol = -1;
       Expr *pE, *pDup;
@@ -730,9 +728,7 @@ int sqlite3ResolveOrderGroupBy(
   }
 #endif
   pEList = pSelect->pEList;
-  if( pEList==0 ){
-    return 0;
-  }
+  assert( pEList!=0 );  /* sqlite3SelectNew() guarantees this */
   for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
     if( pItem->iCol ){
       Expr *pE;
@@ -749,7 +745,7 @@ int sqlite3ResolveOrderGroupBy(
       sqlite3ExprDelete(db, pE);
       pE = sqlite3ExprDup(db, pEList->a[pItem->iCol-1].pExpr);
       pItem->pExpr = pE;
-      if( pE && pColl && flags ){
+      if( pE && flags ){
         pE->pColl = pColl;
         pE->flags |= flags;
       }
@@ -809,7 +805,7 @@ static int resolveOrderGroupBy(
       /* The ORDER BY term is an integer constant.  Again, set the column
       ** number so that sqlite3ResolveOrderGroupBy() will convert the
       ** order-by term to a copy of the result-set expression */
-      if( iCol<1 || iCol>nResult ){
+      if( iCol<1 ){
         resolveOutOfRangeError(pParse, zType, i+1, nResult);
         return 1;
       }
@@ -842,7 +838,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   sqlite3 *db;            /* Database connection */
   
 
-  if( p==0 ) return WRC_Continue;
+  assert( p!=0 );
   if( p->selFlags & SF_Resolved ){
     return WRC_Prune;
   }
@@ -890,7 +886,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
   
     /* Resolve names in the result set. */
     pEList = p->pEList;
-    if( !pEList ) return WRC_Abort;
+    assert( pEList!=0 );
     for(i=0; i<pEList->nExpr; i++){
       Expr *pX = pEList->a[i].pExpr;
       if( sqlite3ResolveExprNames(&sNC, pX) ){
@@ -1102,11 +1098,10 @@ void sqlite3ResolveSelectNames(
 ){
   Walker w;
 
-  if( p ){
-    w.xExprCallback = resolveExprStep;
-    w.xSelectCallback = resolveSelectStep;
-    w.pParse = pParse;
-    w.u.pNC = pOuterNC;
-    sqlite3WalkSelect(&w, p);
-  }
+  assert( p!=0 );
+  w.xExprCallback = resolveExprStep;
+  w.xSelectCallback = resolveSelectStep;
+  w.pParse = pParse;
+  w.u.pNC = pOuterNC;
+  sqlite3WalkSelect(&w, p);
 }

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.469 2008/08/22 16:29:51 drh Exp $
+** $Id: select.c,v 1.470 2008/08/25 17:23:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -87,8 +87,9 @@ Select *sqlite3SelectNew(
   pNew->addrOpenEphm[0] = -1;
   pNew->addrOpenEphm[1] = -1;
   pNew->addrOpenEphm[2] = -1;
-  if( pNew==&standin) {
+  if( db->mallocFailed ) {
     clearSelect(db, pNew);
+    if( pNew!=&standin ) sqlite3DbFree(db, pNew);
     pNew = 0;
   }
   return pNew;
