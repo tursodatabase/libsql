@@ -13,10 +13,9 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt.test,v 1.9 2008/05/05 12:09:33 danielk1977 Exp $
+# $Id: corrupt.test,v 1.10 2008/08/25 12:14:09 drh Exp $
 
-catch {file delete -force test.db}
-catch {file delete -force test.db-journal}
+catch {file delete -force test.db test.db-journal test.bu}
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
