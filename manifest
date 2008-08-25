@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scan\soccur\swhen\srunning\sintegrity_check\son\sa\scorrupt\sdb.\s(CVS\s5606)
-D 2008-08-25T11:57:17
+C Two\sif\sstatements\sshould\sbe\sasserts.\s\sGCC\swas\ssilently\signoring\sthem,\r\nhence\sthe\sproblem\sdid\snot\sshow\sup\sin\scoverage\stesting.\r\nTicket\s#3333.\s(CVS\s5607)
+D 2008-08-25T12:08:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -196,7 +196,7 @@ F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c 51538ff193e1fcd462123ccef65323ccd2cc030c
 F src/vtab.c 527c180e9c5fca417c9167d02af4b5039f892b4b
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
-F src/where.c b156f2785538ed1783dbdd1f714d00ba21c1d5b1
+F src/where.c 72a4ac6890e9571375458021688dba6c45689082
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/all.test 89e09ed0074083ac6f208dc3243429e8f89efb69
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 16f612d61e00938f29ecae4ebfe598be7a8709a8
-R a1b7813883cc372930b535631e98f790
-U danielk1977
-Z a2e4405583d55f95054203654010ac3f
+P eae959ede1b2b50190c60de9249cf141c3031ce2
+R e151136f3c0921b50d046c381c57bb8f
+U drh
+Z 577af3d40ea26b9ad4601f25255d4181

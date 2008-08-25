@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.320 2008/08/20 16:35:10 drh Exp $
+** $Id: where.c,v 1.321 2008/08/25 12:08:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1286,7 +1286,7 @@ static double bestVirtualIndex(
     ** to this virtual table */
     for(i=nTerm=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
       if( pTerm->leftCursor != pSrc->iCursor ) continue;
-      if( (pTerm->eOperator&(pTerm->eOperator-1))==0 );
+      assert( (pTerm->eOperator&(pTerm->eOperator-1))==0 );
       testcase( pTerm->eOperator==WO_IN );
       testcase( pTerm->eOperator==WO_ISNULL );
       if( pTerm->eOperator & (WO_IN|WO_ISNULL) ) continue;
@@ -1336,7 +1336,7 @@ static double bestVirtualIndex(
 
     for(i=j=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
       if( pTerm->leftCursor != pSrc->iCursor ) continue;
-      if( (pTerm->eOperator&(pTerm->eOperator-1))==0 );
+      assert( (pTerm->eOperator&(pTerm->eOperator-1))==0 );
       testcase( pTerm->eOperator==WO_IN );
       testcase( pTerm->eOperator==WO_ISNULL );
       if( pTerm->eOperator & (WO_IN|WO_ISNULL) ) continue;
