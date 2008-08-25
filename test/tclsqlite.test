@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.65 2008/07/10 17:52:49 danielk1977 Exp $
+# $Id: tclsqlite.test,v 1.66 2008/08/25 19:09:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -29,6 +29,7 @@ if {[sqlite3 -has-codec]} {
 }
 do_test tcl-1.1 {
   set v [catch {sqlite3 bogus} msg]
+  regsub {really_sqlite3} $msg {sqlite3} msg
   lappend v $msg
 } [list 1 "wrong # args: should be \"$r\""]
 do_test tcl-1.2 {

@@ -1,5 +1,5 @@
-C Fix\sbug\sin\sthe\spremutation\stesting\sthat\swas\scausing\smany\spermutations\sfrom\nbegin\sskipped.\s\sThere\sare\snow\s16\serrors\sreported\sby\sthe\spermutation\stest.\s(CVS\s5610)
-D 2008-08-25T17:23:29
+C Fix\sobscure\spermutation\stest\sproblems.\s(CVS\s5611)
+D 2008-08-25T19:09:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -445,7 +445,7 @@ F test/pager2.test 070983b89a308adaba525a2f9c1ba0592c72fa3d
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
-F test/permutations.test 49468b8b94e66e20a43a29b805bc1811569208cf
+F test/permutations.test cd043a0e8eb1487aa8486c5d9b75ad7a88128041
 F test/pragma.test b55931bbd5dd543e56fd942dbf4b7439619b09a6
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -498,7 +498,7 @@ F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
 F test/tableapi.test 505031f15b18a750184d967d2c896cf88fcc969c
-F test/tclsqlite.test aa1781808502271feccfd24f9e2c0d2c1d7c496a
+F test/tclsqlite.test 642869f9581a1c457c2329767d93a571a3c281b8
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
 F test/tester.tcl 12fd8394caeb71f7d961707da8668756389bc9d3
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e3840fbf0adf824941a4b9b3cac3a869f195d6f8
-R 536eabce05a14041e4591c9d085fb224
+P 4ad096bda1fc5c7b66f71ff5b32a4085c9a40574
+R 8aff786a29aace2991158a4d33765078
 U drh
-Z 6161148b36887e1910794505f591cf40
+Z f51424384209c14b500d1be464da41a2

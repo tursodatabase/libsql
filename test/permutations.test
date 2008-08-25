@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.22 2008/08/25 17:23:29 drh Exp $
+# $Id: permutations.test,v 1.23 2008/08/25 19:09:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -35,7 +35,7 @@ if {$::perm::testmode eq "quick"} {
   set ::perm::testmode [list persistent_journal no_journal autovacuum_ioerr]
   set ISQUICK 1
 }
-if {$::perm::testmode eq "all"} {
+if {$::perm::testmode eq "all" || $::perm::testmode eq ""} {
   set ::perm::testmode {
     memsubsys1 memsubsys2 singlethread multithread onefile utf16 exclusive
     persistent_journal persistent_journal_error no_journal no_journal_error
@@ -51,7 +51,7 @@ if {$::perm::testmode eq "targets"} {
   puts -nonewline "all                  "
   puts "Everything except autovacuum_crash"
 }
-puts "PERM-DEBUG: testmode=$::perm::testmode"
+#puts "PERM-DEBUG: testmode=$::perm::testmode"
 
 set EXCLUDE {
   all.test                  in2.test                  onefile.test
@@ -301,7 +301,6 @@ run_tests "onefile" -description {
 } -include {
   conflict.test  insert.test   insert2.test  insert3.test
   rollback.test  select1.test  select2.test  select3.test
-  temptable.test
 } -shutdown {
   rename sqlite3 {}
   rename sqlite3_onefile sqlite3
