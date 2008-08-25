@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.393 2008/08/22 00:22:35 aswift Exp $
+** @(#) $Id: sqlite.h.in,v 1.394 2008/08/25 21:23:02 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -539,6 +539,7 @@ int sqlite3_exec(
 #define SQLITE_OPEN_SUBJOURNAL       0x00002000
 #define SQLITE_OPEN_MASTER_JOURNAL   0x00004000
 #define SQLITE_OPEN_NOMUTEX          0x00008000
+#define SQLITE_OPEN_FULLMUTEX        0x00010000
 
 /*
 ** CAPI3REF: Device Characteristics {H10240} <H11120>

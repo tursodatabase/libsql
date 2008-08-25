@@ -1,5 +1,5 @@
-C Fix\sobscure\spermutation\stest\sproblems.\s(CVS\s5611)
-D 2008-08-25T19:09:02
+C Add\sthe\sSQLITE_OPEN_FULLMUTEX\sdefinition\sto\ssqlite3.h.\s\sIt\scurrently\sis\snot\nvalid\sfor\sanything.\s\sThis\sis\smerely\sto\sreserve\sthe\snumber.\s(CVS\s5612)
+D 2008-08-25T21:23:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/resolve.c 74725e61c9eefb597a203631d921efd9005b7a88
 F src/select.c 1042eafb5c703ed4fc80ab3c3cbdfdb74fbcf2b4
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
-F src/sqlite.h.in 2373d1d70664f7fcd78e79af3c51792bb0a0753e
+F src/sqlite.h.in c0e84a2d6e9f3263599174ff7261ba6daf730b4f
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h c66e9c22a9c7fcf32db52a14fcddaa4d87bf9559
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4ad096bda1fc5c7b66f71ff5b32a4085c9a40574
-R 8aff786a29aace2991158a4d33765078
+P aa92a1bec3d6bbcc59680ba13fed51ada9249d4c
+R bd25d74a7fe1cecd03149819abf1e756
 U drh
-Z f51424384209c14b500d1be464da41a2
+Z 979b697b6c0ee9331c1f53da4ee2f6c2
