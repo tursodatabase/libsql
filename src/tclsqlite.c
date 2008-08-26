@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.219 2008/07/10 17:52:49 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.220 2008/08/26 21:33:34 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -104,6 +104,7 @@ struct SqliteDb {
   char *zProfile;            /* The profile callback routine */
   char *zProgress;           /* The progress callback routine */
   char *zAuth;               /* The authorization callback routine */
+  int disableAuth;           /* Disable the authorizer if it exists */
   char *zNull;               /* Text to substitute for an SQL NULL value */
   SqlFunc *pFunc;            /* List of SQL functions */
   Tcl_Obj *pUpdateHook;      /* Update hook script (if any) */
@@ -761,6 +762,7 @@ static int auth_callback(
   int rc;
   const char *zReply;
   SqliteDb *pDb = (SqliteDb*)pArg;
+  if( pDb->disableAuth ) return SQLITE_OK;
 
   switch( code ){
     case SQLITE_COPY              : zCode="SQLITE_COPY"; break;
@@ -2224,7 +2226,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     }
     inTrans = !sqlite3_get_autocommit(pDb->db);
     if( !inTrans ){
+      pDb->disableAuth++;
       (void)sqlite3_exec(pDb->db, zBegin, 0, 0, 0);
+      pDb->disableAuth--;
     }
     rc = Tcl_EvalObjEx(interp, pScript, 0);
     if( !inTrans ){
@@ -2234,9 +2238,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       } else {
         zEnd = "COMMIT";
       }
+      pDb->disableAuth++;
       if( sqlite3_exec(pDb->db, zEnd, 0, 0, 0) ){
         sqlite3_exec(pDb->db, "ROLLBACK", 0, 0, 0);
       }
+      pDb->disableAuth--;
     }
     break;
   }

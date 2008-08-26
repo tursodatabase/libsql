@@ -1,5 +1,5 @@
-C All\sthe\spage_size\spragma\sto\schange\sthe\spage\ssize\son\sa\snew\s:memory:\sdatabase,\nbut\snot\sa\svacuumed\s:memory:\sdatabase.\s\sTicket\s#3335\s(CVS\s5617)
-D 2008-08-26T21:07:27
+C In\sthe\sTCL\sinterface,\sdisable\sthe\sauthorizer\swhen\sduring\sa\sBEGIN,\sCOMMIT,\nor\sROLLBACK\sassociated\swith\sthe\stransaction\smethod.\sTicket\s#3336.\s(CVS\s5618)
+D 2008-08-26T21:33:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/sqliteInt.h c66e9c22a9c7fcf32db52a14fcddaa4d87bf9559
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 8caa772cd9310bc297280f7cf0ede4d69ed5b801
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
-F src/tclsqlite.c ec46084184f033ba396a9ee7b5514b695083d0f3
+F src/tclsqlite.c 420c7936d71f8318ea23b254c0d2cfc365135403
 F src/test1.c f92039530f6a6253ec8d3bfeaa54205a0036bbb6
 F src/test2.c eaa77124786649eedf47d3c5e94d8070c0da228f
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
@@ -624,7 +624,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 555dad900fad874099556d44c464ea9f64687ca0
-R 13266d9013275d3da810529c8b3c4107
+P 226a9056783247679fcf442e10807a1f2707f463
+R 1dca17ea8af03c92a254032098cda071
 U drh
-Z 5391d7f9c881bbaeba1d5a1fec437229
+Z 054c735d0303cff98ac0e0c962c3aa9b
