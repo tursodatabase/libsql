@@ -1,5 +1,5 @@
-C Implement\sa\s"counter"\sSQL\sfunction\sthat\scan\sbe\sused\sto\sinsert\sa\ssequence\nnumber\seach\srow\sof\sa\sresult\sset.\s\sCurrently\sin\sthe\stest\sharness\sonly,\sbut\na\scandidate\sto\smove\sinto\sthe\score.\s(CVS\s5614)
-D 2008-08-26T14:42:15
+C Simplify\sthe\spcache\smodule\sby\sonly\srecycling\sclean\spages\sfrom\s'other'\scaches.\sThis\scommit\scauses\serrors\sin\stest\sfiles\sioerr5.test\sand\smalloc5.test\sbecause\sthey\stest\srecycling\sdirty\spages\sfrom\sother\scaches.\s(CVS\s5615)
+D 2008-08-26T18:05:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,11 +135,11 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 4665cef7639dd937893c3ea076f0e8a8f215bb32
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c 67d689efa33fbca2788d006e18dd7d1a7de22487
+F src/pager.c 9dfaca6cd443228326b1837fbb712b9cbde9a0e0
 F src/pager.h 3b9c138d2e744b9d6e61d4c2742301e3bf464864
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 4883f3714503242057643a5dddbc74065def5157
-F src/pcache.h f03fc3b8241da092bd929ba0eec15e84d9d2cca0
+F src/pcache.c 03c2ad23aa6f9cf008a6fe4ee68a07b3948d331f
+F src/pcache.h 3531f83e1771442af16f6ffeac68024ff8c8bb2d
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
@@ -155,7 +155,7 @@ F src/status.c 8caa772cd9310bc297280f7cf0ede4d69ed5b801
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c ec46084184f033ba396a9ee7b5514b695083d0f3
 F src/test1.c f92039530f6a6253ec8d3bfeaa54205a0036bbb6
-F src/test2.c 9601907ac0bab60f2f81695c3a6e9249621ae741
+F src/test2.c eaa77124786649eedf47d3c5e94d8070c0da228f
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
 F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
 F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
@@ -421,7 +421,7 @@ F test/malloc_common.tcl e082fe4791dad22b49d2ad3f7dcf1dcbee1a4cec
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
-F test/memsubsys1.test bd578712272a3c327873b388396e351586d29e61
+F test/memsubsys1.test c12d1e4ad7f0ec7a45b56b5c49fe7397fa8d6d8f
 F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
@@ -531,7 +531,7 @@ F test/tkt2285.test cca17be61cf600b397188e77e7143844d2b977e9
 F test/tkt2332.test fc955609b958ca86dfa102832243370a0cc84070
 F test/tkt2339.test 73bd17818924cd2ac442e5fd9916b58565739450
 F test/tkt2391.test ab7a11be7402da8b51a5be603425367aa0684567
-F test/tkt2409.test 695269f90bbd30285fb1dd1499e8cc0d827a647d
+F test/tkt2409.test c9599f296178eb764a7d6260c5403e1e921d9fef
 F test/tkt2450.test 77ed94863f2049c1420288ddfea2d41e5e0971d6
 F test/tkt2640.test 28134f5d1e05658ef182520cf0b680fa3de5211b
 F test/tkt2643.test 3f3ebb743da00d4fed4fcf6daed92a0e18e57813
@@ -624,7 +624,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4995a1d1c9530be9ce647d338169620cd95a72eb
-R 53057febb14c48765135eac34d009c5b
-U drh
-Z 0de0cfc7bacf48ec9c7d1199a1a02018
+P c84d46c71233bbf869513f433b1d18cbd7f2a35e
+R 9db6a9b878af9d031aaa0c602a425d48
+U danielk1977
+Z e27423cf6787772e11bb472965b58787

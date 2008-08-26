@@ -16,7 +16,7 @@
 # any statement other than a COMMIT, an I/O error is returned instead
 # of SQLITE_BUSY.
 #
-# $Id: tkt2409.test,v 1.4 2008/08/20 14:49:25 danielk1977 Exp $
+# $Id: tkt2409.test,v 1.5 2008/08/26 18:05:48 danielk1977 Exp $
 
 # Test Outline:
 #
@@ -78,8 +78,6 @@ proc unread_lock_db {} {
     set ::STMT ""
   }
 }
-
-pcache_global_max 10
 
 # Open the db handle used by [read_lock_db].
 #
@@ -222,8 +220,6 @@ integrity_check tkt2409-4.3
 do_test tkt2409-4.4 {
   catchsql { ROLLBACK }
 } {0 {}}
-
-pcache_global_max 0
 
 unread_lock_db
 db2 close

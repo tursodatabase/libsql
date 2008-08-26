@@ -11,7 +11,7 @@
 #
 # This file contains tests of the memory allocation subsystem
 #
-# $Id: memsubsys1.test,v 1.10 2008/08/20 14:49:25 danielk1977 Exp $
+# $Id: memsubsys1.test,v 1.11 2008/08/26 18:05:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -228,10 +228,11 @@ sqlite3_shutdown
 sqlite3_config_pagecache [expr 4096+$xtra_size] 24
 sqlite3_config_scratch 25000 1
 sqlite3_initialize
-pcache_global_max 15
 reset_highwater_marks
 build_test_db memsubsys1-7 {
   PRAGMA page_size=4096;
+  PRAGMA cache_size=10;
+  PRAGMA temp_store=memory;
 }
 #show_memstats
 do_test memsubsys1-7.3 {
@@ -251,7 +252,6 @@ do_test memsubsys1-7.6 {
 do_test memsubsys1-7.7 {
   set s_ovfl [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]
 } 0
-pcache_global_max 0
 
 db close
 sqlite3_shutdown

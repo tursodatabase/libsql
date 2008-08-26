@@ -12,7 +12,7 @@
 ** This header file defines the interface that the sqlite page cache
 ** subsystem. 
 **
-** @(#) $Id: pcache.h,v 1.5 2008/08/23 18:53:08 danielk1977 Exp $
+** @(#) $Id: pcache.h,v 1.6 2008/08/26 18:05:48 danielk1977 Exp $
 */
 
 #ifndef _PCACHE_H_
@@ -101,12 +101,6 @@ void sqlite3PcacheCleanAll(PCache*);    /* Mark all dirty list pages as clean */
 /* Change a page number.  Used by incr-vacuum. */
 void sqlite3PcacheMove(PgHdr*, Pgno);
 
-/* Set a global maximum page count for all page caches. 
-** If the sum of individual cache maxes exceed the global max, the
-** individuals are scaled down proportionally. 
-*/
-void sqlite3PcacheGlobalMax(int N);
-
 /* Remove all pages with pgno>x.  Reset the cache if x==0 */
 void sqlite3PcacheTruncate(PCache*, Pgno x);
 
@@ -148,10 +142,7 @@ int sqlite3PcachePagecount(PCache*);
 */
 void sqlite3PcacheIterate(PCache *pCache, void (*xIter)(PgHdr *));
 
-/* Set and get the suggested cache-size for the specified pager-cache. If
-** a global maximum on the number of pages cached by the system is 
-** configured via the sqlite3PcacheGlobalMax() API, then the suggested
-** cache-sizes are not used at all.
+/* Set and get the suggested cache-size for the specified pager-cache.
 **
 ** If no global maximum is configured, then the system attempts to limit
 ** the total number of pages cached by purgeable pager-caches to the sum
@@ -160,14 +151,7 @@ void sqlite3PcacheIterate(PCache *pCache, void (*xIter)(PgHdr *));
 int sqlite3PcacheGetCachesize(PCache *);
 void sqlite3PcacheSetCachesize(PCache *, int);
 
-/* Lock and unlock a pager-cache object. The PcacheLock() function may 
-** block if the lock is temporarily available. While a pager-cache is locked,
-** the system guarantees that any configured xStress() callback will not
-** be invoked by any thread other than the one holding the lock.
-*/
-void sqlite3PcacheLock(PCache *);
-void sqlite3PcacheUnlock(PCache *);
-
+/* Try to return memory used by the pcache module to the main memory heap */
 int sqlite3PcacheReleaseMemory(int);
 
 #endif /* _PCACHE_H_ */
