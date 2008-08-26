@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.14 2008/08/26 18:05:48 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.15 2008/08/26 19:08:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -100,6 +100,7 @@ static struct PCacheGlobal {
 ** only and is therefore disabled during production builds.
 */
 static int pcacheCheckHashCount(PCache *pCache){
+#if 0
   int i;
   int nPage = 0;
   for(i=0; i<pCache->nHash; i++){
@@ -109,6 +110,7 @@ static int pcacheCheckHashCount(PCache *pCache){
     }
   }
   assert( nPage==pCache->nPage );
+#endif
   return 1;
 }
 
@@ -120,6 +122,7 @@ static int pcacheCheckHashCount(PCache *pCache){
 **   assert( pCache->nPinned==pcachePinnedCount(pCache) );
 */
 static int pcachePinnedCount(PCache *pCache){
+#if 0
   PgHdr *p;
   int nPinned = pCache->nRef;
   for(p=pCache->pDirty; p; p=p->pNext){
@@ -128,6 +131,8 @@ static int pcachePinnedCount(PCache *pCache){
     }
   }
   return nPinned;
+#endif
+  return pCache->nPinned;
 }
 
 /*
@@ -138,11 +143,14 @@ static int pcachePinnedCount(PCache *pCache){
 **   assert( pcacheCheckSynced(pCache) );
 */
 static int pcacheCheckSynced(PCache *pCache){
+#if 0
   PgHdr *p = pCache->pDirtyTail;
   for(p=pCache->pDirtyTail; p!=pCache->pSynced; p=p->pPrev){
     assert( p->nRef || (p->flags&PGHDR_NEED_SYNC) );
   }
   return (p==0 || p->nRef || (p->flags&PGHDR_NEED_SYNC)==0);
+#endif
+  return 1;
 }
 
 #endif

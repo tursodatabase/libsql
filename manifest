@@ -1,5 +1,5 @@
-C Simplify\sthe\spcache\smodule\sby\sonly\srecycling\sclean\spages\sfrom\s'other'\scaches.\sThis\scommit\scauses\serrors\sin\stest\sfiles\sioerr5.test\sand\smalloc5.test\sbecause\sthey\stest\srecycling\sdirty\spages\sfrom\sother\scaches.\s(CVS\s5615)
-D 2008-08-26T18:05:48
+C Disable\ssome\svery\sexpensive\sasserts\sin\spcache.c\sthat\sare\stoo\sslow\sfor\sall.test.\s(CVS\s5616)
+D 2008-08-26T19:08:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c 9dfaca6cd443228326b1837fbb712b9cbde9a0e0
 F src/pager.h 3b9c138d2e744b9d6e61d4c2742301e3bf464864
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 03c2ad23aa6f9cf008a6fe4ee68a07b3948d331f
+F src/pcache.c 006714ad89db3c488526246e6ed6b130e457f01b
 F src/pcache.h 3531f83e1771442af16f6ffeac68024ff8c8bb2d
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
@@ -624,7 +624,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c84d46c71233bbf869513f433b1d18cbd7f2a35e
-R 9db6a9b878af9d031aaa0c602a425d48
+P 9e511e161bcb077450d31fca5dd20c2557f103b3
+R 1ce47647904dad33d524c97e4b2f240b
 U danielk1977
-Z e27423cf6787772e11bb472965b58787
+Z 36ed8c7bfd4a032646271d9bbcb5d47b
