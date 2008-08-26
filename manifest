@@ -1,5 +1,5 @@
-C In\sthe\sTCL\sinterface,\sdisable\sthe\sauthorizer\swhen\sduring\sa\sBEGIN,\sCOMMIT,\nor\sROLLBACK\sassociated\swith\sthe\stransaction\smethod.\sTicket\s#3336.\s(CVS\s5618)
-D 2008-08-26T21:33:34
+C Fix\san\sissue\swith\sthe\spermutation\stest\sscript.\s(CVS\s5619)
+D 2008-08-26T23:08:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -445,7 +445,7 @@ F test/pager2.test 070983b89a308adaba525a2f9c1ba0592c72fa3d
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
-F test/permutations.test cd043a0e8eb1487aa8486c5d9b75ad7a88128041
+F test/permutations.test e16bbd8cf443dd637317d9085b67bbdf91f21a1c
 F test/pragma.test b55931bbd5dd543e56fd942dbf4b7439619b09a6
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -624,7 +624,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 226a9056783247679fcf442e10807a1f2707f463
-R 1dca17ea8af03c92a254032098cda071
+P 7e1032ab0031ba535f37b6338a3ac81cb1449d76
+R 5bb8278c25d388f413885c21aaec9f08
 U drh
-Z 054c735d0303cff98ac0e0c962c3aa9b
+Z 29c1240c9559901eefb07c5d9ddca3ab

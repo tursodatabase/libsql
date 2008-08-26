@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.23 2008/08/25 19:09:02 drh Exp $
+# $Id: permutations.test,v 1.24 2008/08/26 23:08:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -18,11 +18,11 @@ source $testdir/tester.tcl
 #
 #puts "PERM-DEBUG: argv=$argv"
 namespace eval ::perm {
-  set testmode [lindex $::argv 0]
-  set testfile [lindex $::argv 1]
+  variable testmode [lindex $::argv 0]
+  variable testfile [lindex $::argv 1]
 }
 set argv [lrange $argv 2 end]
-#puts "PERM-DEBUG: testmode=$::perm::testmode"
+#puts "PERM-DEBUG: testmode=$::perm::testmode tstfile=$::perm::testfile"
 
 set ::permutations_presql ""
 set ::permutations_test_prefix ""
