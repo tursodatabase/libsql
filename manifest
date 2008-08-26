@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_OPEN_FULLMUTEX\sdefinition\sto\ssqlite3.h.\s\sIt\scurrently\sis\snot\nvalid\sfor\sanything.\s\sThis\sis\smerely\sto\sreserve\sthe\snumber.\s(CVS\s5612)
-D 2008-08-25T21:23:02
+C Do\snot\sflatten\ssubqueries\swhere\sthe\ssubquery\shas\sa\sLIMIT\sand\sthe\souter\nquery\shas\sa\sWHERE\sclause.\s\sTicket\s#3334.\s(CVS\s5613)
+D 2008-08-26T12:56:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -145,7 +145,7 @@ F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/resolve.c 74725e61c9eefb597a203631d921efd9005b7a88
-F src/select.c 1042eafb5c703ed4fc80ab3c3cbdfdb74fbcf2b4
+F src/select.c 8187927315ee592a8ee94d753b8a1a3625c33523
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in c0e84a2d6e9f3263599174ff7261ba6daf730b4f
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -551,6 +551,7 @@ F test/tkt3121.test 536df66a02838c26a12fe98639354ca1290ca68b
 F test/tkt3201.test 607d433ad2c1f6a8cb1af55aaca427f63c83191b
 F test/tkt3292.test 962465a0984a3b8c757efe59c2c59144871ee1dd
 F test/tkt3298.test a735582095ca2e90a0c1391c7e781a90de6c1f34
+F test/tkt3334.test ea13a53cb176e90571a76c86605b14a09efe366d
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
@@ -623,7 +624,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P aa92a1bec3d6bbcc59680ba13fed51ada9249d4c
-R bd25d74a7fe1cecd03149819abf1e756
+P 3b6ffb4492b6c43897692c49dcccbfb55963a46c
+R 0ea5c2219f101d8498478c6075393d46
 U drh
-Z 979b697b6c0ee9331c1f53da4ee2f6c2
+Z 5e5db29fb87e2cab5c4bf06a60b36872
