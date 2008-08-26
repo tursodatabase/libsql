@@ -12,7 +12,7 @@
 # focus of this file is changing the database page size using a 
 # VACUUM statement.
 #
-# $Id: vacuum3.test,v 1.8 2008/08/23 16:17:56 danielk1977 Exp $
+# $Id: vacuum3.test,v 1.9 2008/08/26 21:07:27 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -235,7 +235,23 @@ do_test vacuum3-4.6 {
   execsql { SELECT * FROM abc } db2
 } {1 2 3 4 5 6}
 
+# Unable to change the page-size of an in-memory using vacuum.
 db2 close
+sqlite3 db2 :memory:
+do_test vacuum3-5.1 {
+  db2 eval {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(1234);
+    PRAGMA page_size=4096;
+    VACUUM;
+    SELECT * FROM t1;
+  }
+} {1234}
+do_test vacuum3-5.2 {
+  db2 eval {
+    PRAGMA page_size
+  }
+} {1024}
 
 set create_database_sql {
   BEGIN; 

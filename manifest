@@ -1,5 +1,5 @@
-C Disable\ssome\svery\sexpensive\sasserts\sin\spcache.c\sthat\sare\stoo\sslow\sfor\sall.test.\s(CVS\s5616)
-D 2008-08-26T19:08:00
+C All\sthe\spage_size\spragma\sto\schange\sthe\spage\ssize\son\sa\snew\s:memory:\sdatabase,\nbut\snot\sa\svacuumed\s:memory:\sdatabase.\s\sTicket\s#3335\s(CVS\s5617)
+D 2008-08-26T21:07:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 4665cef7639dd937893c3ea076f0e8a8f215bb32
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c 9dfaca6cd443228326b1837fbb712b9cbde9a0e0
+F src/pager.c 66836244eac6b1a46e8c26e3dd3c143031bf28e5
 F src/pager.h 3b9c138d2e744b9d6e61d4c2742301e3bf464864
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c 006714ad89db3c488526246e6ed6b130e457f01b
@@ -185,7 +185,7 @@ F src/trigger.c 649940b5bf5838a33721fb72372e7c9d1faf56a9
 F src/update.c f2cf6f00d542956bd49ba4b9815c2900d9225bf2
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
-F src/vacuum.c a5b10ae21ffbb73c79b7fa17e2ff40dc8ff33440
+F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
 F src/vdbe.c adcc179a31d71466b7b4f20ab77555e1e137bfe5
 F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
 F src/vdbeInt.h b48c74d86a9fb62b707a3186ccca76bb32f1c6be
@@ -444,7 +444,7 @@ F test/pager.test 1e1832795e9e07a359c959ffdddcf7275a88f54c
 F test/pager2.test 070983b89a308adaba525a2f9c1ba0592c72fa3d
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
-F test/pagesize.test e0a8b3fe80f8b8e808d94a00734c7a18c76c407e
+F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/permutations.test cd043a0e8eb1487aa8486c5d9b75ad7a88128041
 F test/pragma.test b55931bbd5dd543e56fd942dbf4b7439619b09a6
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
@@ -574,7 +574,7 @@ F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/utf16align.test 7360e84472095518c56746f76b1f9d4dce99fb4d
 F test/vacuum.test 0bc75ee74ab9c69322d6563aa2287375697e630b
 F test/vacuum2.test e7c5f5bf5e1f2266ca668d420393820cf501fdfc
-F test/vacuum3.test 54a7152f004fb1647702c2f7be9a7e7abfafd70e
+F test/vacuum3.test f39ad1428347c5808cd2da7578c470f186a4d0ce
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test e265401afefa994cdf2fe4b6f286b1e87c2f9b9d
 F test/view.test 7fba28a47f76541f6aea9542f62f3412e3519bad
@@ -624,7 +624,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9e511e161bcb077450d31fca5dd20c2557f103b3
-R 1ce47647904dad33d524c97e4b2f240b
-U danielk1977
-Z 36ed8c7bfd4a032646271d9bbcb5d47b
+P 555dad900fad874099556d44c464ea9f64687ca0
+R 13266d9013275d3da810529c8b3c4107
+U drh
+Z 5391d7f9c881bbaeba1d5a1fec437229

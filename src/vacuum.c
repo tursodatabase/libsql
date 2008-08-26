@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.82 2008/08/23 16:17:56 danielk1977 Exp $
+** $Id: vacuum.c,v 1.83 2008/08/26 21:07:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -81,12 +81,14 @@ void sqlite3Vacuum(Parse *pParse){
 int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   int rc = SQLITE_OK;     /* Return code from service routines */
   Btree *pMain;           /* The database being vacuumed */
+  Pager *pMainPager;      /* Pager for database being vacuumed */
   Btree *pTemp;           /* The temporary database we vacuum into */
   char *zSql = 0;         /* SQL statements */
   int saved_flags;        /* Saved value of the db->flags */
   int saved_nChange;      /* Saved value of db->nChange */
   int saved_nTotalChange; /* Saved value of db->nTotalChange */
   Db *pDb = 0;            /* Database to detach at end of vacuum */
+  int isMemDb;            /* True is vacuuming a :memory: database */
   int nRes;
 
   /* Save the current value of the write-schema flag before setting it. */
@@ -101,6 +103,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
     goto end_of_vacuum;
   }
   pMain = db->aDb[0].pBt;
+  pMainPager = sqlite3BtreePager(pMain);
+  isMemDb = sqlite3PagerFile(pMainPager)->pMethods==0;
 
   /* Attach the temporary database as 'vacuum_db'. The synchronous pragma
   ** can be set to 'off' for this file, as it is not recovered if a crash
@@ -137,7 +141,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
 #endif
 
   if( sqlite3BtreeSetPageSize(pTemp, sqlite3BtreeGetPageSize(pMain), nRes)
-   || sqlite3BtreeSetPageSize(pTemp, db->nextPagesize, nRes)
+   || (!isMemDb && sqlite3BtreeSetPageSize(pTemp, db->nextPagesize, nRes))
    || db->mallocFailed 
   ){
     rc = SQLITE_NOMEM;
