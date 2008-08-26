@@ -12,7 +12,7 @@
 ** Code for testing all sorts of SQLite interfaces.  This code
 ** implements new SQL functions used by the test scripts.
 **
-** $Id: test_func.c,v 1.10 2008/08/02 03:50:39 drh Exp $
+** $Id: test_func.c,v 1.11 2008/08/26 14:42:15 drh Exp $
 */
 #include "sqlite3.h"
 #include "tcl.h"
@@ -207,6 +207,36 @@ static void test_error(
 }
 
 /*
+** Implementation of the counter(X) function.  If X is an integer
+** constant, then the first invocation will return X.  The second X+1.
+** and so forth.  Can be used (for example) to provide a sequence number
+** in a result set.
+*/
+static void counterFunc(
+  sqlite3_context *pCtx,   /* Function context */
+  int nArg,                /* Number of function arguments */
+  sqlite3_value **argv     /* Values for all function arguments */
+){
+  int i;
+  int *pCounter;
+
+  pCounter = (int*)sqlite3_get_auxdata(pCtx, 0);
+  if( pCounter==0 ){
+    pCounter = sqlite3_malloc( sizeof(*pCounter) );
+    if( pCounter==0 ){
+      sqlite3_result_error_nomem(pCtx);
+      return;
+    }
+    *pCounter = sqlite3_value_int(argv[0]);
+    sqlite3_set_auxdata(pCtx, 0, pCounter, sqlite3_free);
+  }else{
+    ++*pCounter;
+  }
+  sqlite3_result_int(pCtx, *pCounter);
+}
+
+
+/*
 ** This function takes two arguments.  It performance UTF-8/16 type
 ** conversions on the first argument then returns a copy of the second
 ** argument.
@@ -283,6 +313,7 @@ static int registerTestFunctions(sqlite3 *db){
     { "test_error",            2, SQLITE_UTF8, test_error},
     { "test_eval",             1, SQLITE_UTF8, test_eval},
     { "test_isolation",        2, SQLITE_UTF8, test_isolation},
+    { "test_counter",          1, SQLITE_UTF8, counterFunc},
   };
   int i;
   extern int Md5_Register(sqlite3*);
