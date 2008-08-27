@@ -1,5 +1,5 @@
-C In\sthe\stest\slogic:\sload\sthe\smd5sum()\sSQL\sfunction\sas\sa\sseparate\nautoloaded\sextension.\s(CVS\s5623)
-D 2008-08-27T15:21:34
+C Clear\sthe\s$result\svariable\sprior\sto\susing\sit\sin\scorrupt2.test.\s(CVS\s5624)
+D 2008-08-27T16:14:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -248,7 +248,7 @@ F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test bc396d99a11a855370010c7e95187177592b1dfe
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test 5bcf7a986358123b8055dfa64b45fc2fb54dcaa9
-F test/corrupt2.test a6b9051516f7d417e76b6953cc02f568a6e1cbf0
+F test/corrupt2.test d1e209b0a60e72e493cdedaaf992c04466e14c70
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9e9325997e11a0368721ed7860f4c37de3502a9b
-R 0e2ba4158c241329cb727ca9484e66cb
+P d4438251dd66c4168e09eb421a8c2081228357dd
+R c758c0690635db76a5c5bb3d1f9c5535
 U drh
-Z 84f050fcba2bc26a7dcf8ee114e1c1ce
+Z c69b32c45298adb6ff9560d2f547e841
