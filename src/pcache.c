@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.17 2008/08/27 15:16:34 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.18 2008/08/27 16:38:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -553,7 +553,7 @@ static int pcacheRecycleOrAlloc(PCache *pCache, PgHdr **ppPage){
   }
 
   /* If the global page limit has been reached, try to recycle a page. */
-  if( pcache.nCurrentPage>=pcache.nMaxPage ){
+  if( pCache->bPurgeable && pcache.nCurrentPage>=pcache.nMaxPage ){
     p = pcacheRecyclePage();
   }
 
@@ -620,7 +620,7 @@ void sqlite3PcacheOpen(
   p->xStress = xStress;
   p->pStress = pStress;
   p->nMax = 100;
-  p->nMin = 20;
+  p->nMin = 10;
 
   pcacheEnterGlobal();
   if( bPurgeable ){

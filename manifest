@@ -1,5 +1,5 @@
-C Clear\sthe\s$result\svariable\sprior\sto\susing\sit\sin\scorrupt2.test.\s(CVS\s5624)
-D 2008-08-27T16:14:21
+C Modifications\sto\smalloc5.test\sto\saccount\sfor\sthe\sfact\sthat\ssqlite3_release_memory()\sno\slonger\sreclaims\sdirty\spages.\s(CVS\s5625)
+D 2008-08-27T16:38:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c a38742815a6b2238d0b91d1dd64bda50d6ee95fc
 F src/pager.h 914103bb62dbcc3d8e9f14baec812d027264d457
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 94050f68015c883813e39cd222b21d7728ad1203
+F src/pcache.c 3d9d933bb22f10956ab78d83798d88ca9a147e86
 F src/pcache.h 7a50b77f06c220ff7696be1a9f2a17c9e6ddc486
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
@@ -401,7 +401,7 @@ F test/main.test 8d77c161757ef7d96eaff0413daa7120c3b316fe
 F test/malloc.test 69f5bb5a13b24edb1322fc1f42894f9d2f6446b1
 F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
-F test/malloc5.test 8b18857f37c1c409b914789934aeb1346b778b3a
+F test/malloc5.test c8d0f7673337e8a29afa558735ae937a0d629751
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d4438251dd66c4168e09eb421a8c2081228357dd
-R c758c0690635db76a5c5bb3d1f9c5535
-U drh
-Z c69b32c45298adb6ff9560d2f547e841
+P 12f2d24f88e55d170dd7750e7904ff14e84e820e
+R b53ac5363faaa116cc8b7dfcfecb5950
+U danielk1977
+Z c5747597064276f7a0eeb73c949573eb
