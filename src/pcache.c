@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.16 2008/08/27 09:44:40 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.17 2008/08/27 15:16:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -497,15 +497,6 @@ static PgHdr *pcacheRecyclePage(){
     pcacheRemoveFromLruList(p);
     pcacheRemoveFromHash(p);
     pcacheRemoveFromList(&p->pCache->pClean, p);
-
-    /* If the always-rollback flag is set on the page being recycled, set 
-    ** the always-rollback flag on the corresponding pager. TODO: This is
-    ** a thread-safety problem.
-    */
-    if( p->flags&PGHDR_ALWAYS_ROLLBACK ){
-      assert(p->pPager);
-      sqlite3PagerAlwaysRollback(p->pPager);
-    }
   }
 
   return p;

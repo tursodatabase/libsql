@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.482 2008/08/27 09:44:40 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.483 2008/08/27 15:16:34 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -191,6 +191,7 @@ struct Pager {
   Pgno mxPgno;                /* Maximum allowed size of the database */
   Bitvec *pInJournal;         /* One bit for each page in the database file */
   Bitvec *pInStmt;            /* One bit for each page in the database */
+  Bitvec *pAlwaysRollback;    /* One bit for each page marked always-rollback */
   char *zFilename;            /* Name of the database file */
   char *zJournal;             /* Name of the journal file */
   char *zDirectory;           /* Directory hold database and journal files */
@@ -895,6 +896,8 @@ static void pager_unlock(Pager *pPager){
         pPager->journalOpen = 0;
         sqlite3BitvecDestroy(pPager->pInJournal);
         pPager->pInJournal = 0;
+        sqlite3BitvecDestroy(pPager->pAlwaysRollback);
+        pPager->pAlwaysRollback = 0;
       }
 
       /* If Pager.errCode is set, the contents of the pager cache cannot be
@@ -985,12 +988,14 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
     }
     sqlite3BitvecDestroy(pPager->pInJournal);
     pPager->pInJournal = 0;
+    sqlite3BitvecDestroy(pPager->pAlwaysRollback);
+    pPager->pAlwaysRollback = 0;
     sqlite3PcacheCleanAll(pPager->pPCache);
 #ifdef SQLITE_CHECK_PAGES
     sqlite3PcacheIterate(pPager->pPCache, pager_set_pagehash);
 #endif
-    sqlite3PcacheSetFlags(pPager->pPCache, 
-       ~(PGHDR_IN_JOURNAL | PGHDR_NEED_SYNC | PGHDR_ALWAYS_ROLLBACK), 0
+    sqlite3PcacheSetFlags(pPager->pPCache,
+       ~(PGHDR_IN_JOURNAL | PGHDR_NEED_SYNC), 0
     );
     pPager->dirtyCache = 0;
     pPager->nRec = 0;
@@ -2201,6 +2206,7 @@ int sqlite3PagerClose(Pager *pPager){
     sqlite3OsClose(pPager->jfd);
   }
   sqlite3BitvecDestroy(pPager->pInJournal);
+  sqlite3BitvecDestroy(pPager->pAlwaysRollback);
   if( pPager->stmtOpen ){
     sqlite3OsClose(pPager->stfd);
   }
@@ -2843,13 +2849,13 @@ static int pagerAcquire(
       return rc;
     }
 
-    if( nMax<(int)pgno || MEMDB || (noContent && !pPager->alwaysRollback) ){
+    if( nMax<(int)pgno || MEMDB || noContent ){
       if( pgno>pPager->mxPgno ){
         sqlite3PagerUnref(pPg);
         return SQLITE_FULL;
       }
       memset(pPg->pData, 0, pPager->pageSize);
-      if( noContent && !pPager->alwaysRollback ){
+      if( noContent ){
         pPg->flags |= PGHDR_NEED_READ;
       }
       IOTRACE(("ZERO %p %d\n", pPager, pgno));
@@ -2985,7 +2991,6 @@ static int pager_open_journal(Pager *pPager){
   pPager->journalOpen = 1;
   pPager->journalStarted = 0;
   pPager->needSync = 0;
-  pPager->alwaysRollback = 0;
   pPager->nRec = 0;
   if( pPager->errCode ){
     rc = pPager->errCode;
@@ -3434,13 +3439,24 @@ int sqlite3PagerIswriteable(DbPage *pPg){
 ** page contains critical data, we still need to be sure it gets
 ** rolled back in spite of the sqlite3PagerDontRollback() call.
 */
-void sqlite3PagerDontWrite(DbPage *pDbPage){
+int sqlite3PagerDontWrite(DbPage *pDbPage){
   PgHdr *pPg = pDbPage;
   Pager *pPager = pPg->pPager;
+  int rc;
 
-  if( MEMDB ) return;
-  pPg->flags |= PGHDR_ALWAYS_ROLLBACK;
-  if( (pPg->flags&PGHDR_DIRTY) && !pPager->stmtInUse ){
+  if( MEMDB || pPg->pgno>pPager->origDbSize ){
+    return SQLITE_OK;
+  }
+  if( pPager->pAlwaysRollback==0 ){
+    assert( pPager->pInJournal );
+    pPager->pAlwaysRollback = sqlite3BitvecCreate(pPager->origDbSize);
+    if( !pPager->pAlwaysRollback ){
+      return SQLITE_NOMEM;
+    }
+  }
+  rc = sqlite3BitvecSet(pPager->pAlwaysRollback, pPg->pgno);
+
+  if( rc==SQLITE_OK && (pPg->flags&PGHDR_DIRTY) && !pPager->stmtInUse ){
     assert( pPager->state>=PAGER_SHARED );
     if( pPager->dbSize==(int)pPg->pgno && pPager->origDbSize<pPager->dbSize ){
       /* If this pages is the last page in the file and the file has grown
@@ -3460,6 +3476,7 @@ void sqlite3PagerDontWrite(DbPage *pDbPage){
 #endif
     }
   }
+  return rc;
 }
 
 /*
@@ -3482,15 +3499,16 @@ void sqlite3PagerDontRollback(DbPage *pPg){
   ** this page (DontWrite() sets the alwaysRollback flag), then this
   ** function is a no-op.
   */
-  if( pPager->journalOpen==0 || (pPg->flags&PGHDR_ALWAYS_ROLLBACK) 
-   || pPager->alwaysRollback 
+  if( pPager->journalOpen==0 
+   || sqlite3BitvecTest(pPager->pAlwaysRollback, pPg->pgno)
+   || pPg->pgno>pPager->origDbSize
   ){
     return;
   }
   assert( !MEMDB );    /* For a memdb, pPager->journalOpen is always 0 */
 
 #ifdef SQLITE_SECURE_DELETE
-  if( pPg->inJournal || (int)pPg->pgno > pPager->origDbSize ){
+  if( pPg->inJournal || (int)pPg->pgno>pPager->origDbSize ){
     return;
   }
 #endif
@@ -3782,7 +3800,7 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
     sqlite3PcacheCommit(pPager->pPCache, 0);
     sqlite3PcacheCleanAll(pPager->pPCache);
     sqlite3PcacheSetFlags(pPager->pPCache, 
-       ~(PGHDR_IN_JOURNAL | PGHDR_NEED_SYNC | PGHDR_ALWAYS_ROLLBACK), 0
+       ~(PGHDR_IN_JOURNAL | PGHDR_NEED_SYNC), 0
     );
     pPager->state = PAGER_SHARED;
   }else{
@@ -3813,7 +3831,7 @@ int sqlite3PagerRollback(Pager *pPager){
     sqlite3PcacheRollback(pPager->pPCache, 0);
     sqlite3PcacheCleanAll(pPager->pPCache);
     sqlite3PcacheSetFlags(pPager->pPCache, 
-       ~(PGHDR_IN_JOURNAL | PGHDR_NEED_SYNC | PGHDR_ALWAYS_ROLLBACK), 0
+       ~(PGHDR_IN_JOURNAL | PGHDR_NEED_SYNC), 0
     );
     pPager->dbSize = pPager->origDbSize;
     pager_truncate_cache(pPager);
@@ -4230,10 +4248,6 @@ i64 sqlite3PagerJournalSizeLimit(Pager *pPager, i64 iLimit){
     pPager->journalSizeLimit = iLimit;
   }
   return pPager->journalSizeLimit;
-}
-
-void sqlite3PagerAlwaysRollback(Pager *pPager){
-  pPager->alwaysRollback = 1;
 }
 
 #endif /* SQLITE_OMIT_DISKIO */
