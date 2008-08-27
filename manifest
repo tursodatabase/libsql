@@ -1,5 +1,5 @@
-C Use\sa\sbitvec\sobject\sto\sstore\sthe\sset\sof\spages\swith\sthe\s'always-rollback'\sproperty\sfor\sa\stransaction.\s(CVS\s5622)
-D 2008-08-27T15:16:34
+C In\sthe\stest\slogic:\sload\sthe\smd5sum()\sSQL\sfunction\sas\sa\sseparate\nautoloaded\sextension.\s(CVS\s5623)
+D 2008-08-27T15:21:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 8caa772cd9310bc297280f7cf0ede4d69ed5b801
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c 420c7936d71f8318ea23b254c0d2cfc365135403
-F src/test1.c f92039530f6a6253ec8d3bfeaa54205a0036bbb6
+F src/test1.c bca7922b1eb9e8ca6042651a6974f0e2ad022df7
 F src/test2.c eaa77124786649eedf47d3c5e94d8070c0da228f
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
 F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
@@ -167,7 +167,7 @@ F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c 7170e0c922ed3979f2d38f4a3f84728e5740dfc3
 F src/test_config.c 224f699a34d45eb8ac5c22a7ad6cdbb8edf0ba28
 F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
-F src/test_func.c 18c727c11461a21bc2ef404a32672517f6eb7587
+F src/test_func.c bc648b7747320e037d756acfa1037bd8dedf3f8b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c 49abbf5d9c71fb06cf7a7cf96f9b9a799b77a421
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 45fc70bd9264d5bcd72c97017079ced4aac7729f
-R c500546293e96bf186a034cac9d9bde9
-U danielk1977
-Z d2167933e8c62e7d24268a42c6d01402
+P 9e9325997e11a0368721ed7860f4c37de3502a9b
+R 0e2ba4158c241329cb727ca9484e66cb
+U drh
+Z 84f050fcba2bc26a7dcf8ee114e1c1ce

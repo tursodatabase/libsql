@@ -12,7 +12,7 @@
 ** Code for testing all sorts of SQLite interfaces.  This code
 ** implements new SQL functions used by the test scripts.
 **
-** $Id: test_func.c,v 1.11 2008/08/26 14:42:15 drh Exp $
+** $Id: test_func.c,v 1.12 2008/08/27 15:21:35 drh Exp $
 */
 #include "sqlite3.h"
 #include "tcl.h"
@@ -316,13 +316,11 @@ static int registerTestFunctions(sqlite3 *db){
     { "test_counter",          1, SQLITE_UTF8, counterFunc},
   };
   int i;
-  extern int Md5_Register(sqlite3*);
 
   for(i=0; i<sizeof(aFuncs)/sizeof(aFuncs[0]); i++){
     sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg,
         aFuncs[i].eTextRep, 0, aFuncs[i].xFunc, 0, 0);
   }
-  Md5_Register(db);
   return SQLITE_OK;
 }
 
@@ -339,7 +337,11 @@ static int autoinstall_test_funcs(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+  extern int Md5_Register(sqlite3*);
   int rc = sqlite3_auto_extension((void*)registerTestFunctions);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_auto_extension((void*)Md5_Register);
+  }
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return TCL_OK;
 }
@@ -453,10 +455,13 @@ int Sqlitetest_func_Init(Tcl_Interp *interp){
      { "abuse_create_function",         abuse_create_function  },
   };
   int i;
+  extern int Md5_Register(sqlite3*);
+
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
     Tcl_CreateObjCommand(interp, aObjCmd[i].zName, aObjCmd[i].xProc, 0, 0);
   }
   sqlite3_initialize();
   sqlite3_auto_extension((void*)registerTestFunctions);
+  sqlite3_auto_extension((void*)Md5_Register);
   return TCL_OK;
 }
