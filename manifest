@@ -1,5 +1,5 @@
-C Fix\san\sissue\swith\sthe\spermutation\stest\sscript.\s(CVS\s5619)
-D 2008-08-26T23:08:04
+C Remove\sunreachable\sbranches\sfrom\spcache.c.\s(CVS\s5620)
+D 2008-08-27T09:44:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,10 +135,10 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 4665cef7639dd937893c3ea076f0e8a8f215bb32
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c 66836244eac6b1a46e8c26e3dd3c143031bf28e5
+F src/pager.c 095efa75a1a6500e6e975d1f7ddad34ed25424ae
 F src/pager.h 3b9c138d2e744b9d6e61d4c2742301e3bf464864
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 006714ad89db3c488526246e6ed6b130e457f01b
+F src/pcache.c 9e00544dd8c2bc93087050fecad9767353a9b81d
 F src/pcache.h 3531f83e1771442af16f6ffeac68024ff8c8bb2d
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
@@ -624,7 +624,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7e1032ab0031ba535f37b6338a3ac81cb1449d76
-R 5bb8278c25d388f413885c21aaec9f08
-U drh
-Z 29c1240c9559901eefb07c5d9ddca3ab
+P 2e12aa3e078c0da9e418ff1f25a08f05cd03c07d
+R bd0a0c9cdd657d12dbda9e1d4a16eb2b
+U danielk1977
+Z b519f55ef9a51e1605788897feb7c282

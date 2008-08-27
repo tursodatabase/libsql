@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.15 2008/08/26 19:08:00 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.16 2008/08/27 09:44:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -518,7 +518,7 @@ static PgHdr *pcacheRecyclePage(){
 **
 ** Return a pointer to the new page, or NULL if an OOM condition occurs.
 */
-static PgHdr *pcacheRecycleOrAlloc(PCache *pCache){
+static int pcacheRecycleOrAlloc(PCache *pCache, PgHdr **ppPage){
   PgHdr *p = 0;
 
   int szPage = pCache->szPage;
@@ -527,6 +527,7 @@ static PgHdr *pcacheRecycleOrAlloc(PCache *pCache){
   assert( pcache.isInit );
   assert( sqlite3_mutex_notheld(pcache.mutex) );
 
+  *ppPage = 0;
   pcacheEnterGlobal();
 
   /* If we have reached the limit for pinned/dirty pages, and there is at
@@ -550,8 +551,12 @@ static PgHdr *pcacheRecycleOrAlloc(PCache *pCache){
       for(pPg=pCache->pDirtyTail; pPg && pPg->nRef; pPg=pPg->pPrev);
     }
     if( pPg ){
+      int rc;
       pcacheExitGlobal();
-      pCache->xStress(pCache->pStress, pPg);
+      rc = pCache->xStress(pCache->pStress, pPg);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
       pcacheEnterGlobal();
     }
   }
@@ -572,7 +577,8 @@ static PgHdr *pcacheRecycleOrAlloc(PCache *pCache){
   }
 
   pcacheExitGlobal();
-  return p;
+  *ppPage = p;
+  return (p?SQLITE_OK:SQLITE_NOMEM);
 }
 
 /*************************************************** General Interfaces ******
@@ -584,10 +590,10 @@ int sqlite3PcacheInitialize(void){
   assert( pcache.isInit==0 );
   memset(&pcache, 0, sizeof(pcache));
   if( sqlite3Config.bCoreMutex ){
+    /* No need to check the return value of sqlite3_mutex_alloc(). 
+    ** Allocating a static mutex cannot fail.
+    */
     pcache.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU);
-    if( pcache.mutex==0 ){
-      return SQLITE_NOMEM;
-    }
   }
   pcache.isInit = 1;
   return SQLITE_OK;
@@ -680,19 +686,19 @@ int sqlite3PcacheFetch(
   }
 
   if( createFlag ){
+    int rc = SQLITE_OK;
     if( pCache->nHash<=pCache->nPage ){
-      int rc = pcacheResizeHash(pCache, pCache->nHash<256?256:pCache->nHash*2);
+      rc = pcacheResizeHash(pCache, pCache->nHash<256?256:pCache->nHash*2);
       if( rc!=SQLITE_OK ){
         return rc;
       }
     }
 
-    pPage = pcacheRecycleOrAlloc(pCache);
-    *ppPage = pPage;
-    if( pPage==0 ){
-      return SQLITE_NOMEM;
+    rc = pcacheRecycleOrAlloc(pCache, ppPage);
+    if( rc!=SQLITE_OK ){
+      return rc;
     }
-
+    pPage = *ppPage;
     pPage->pPager = 0;
     pPage->flags = 0;
     pPage->pDirty = 0;
@@ -743,20 +749,18 @@ void sqlite3PcacheRef(PgHdr *p){
 }
 
 /*
-** Drop a page from the cache.  This should be the only reference to
-** the page.
+** Drop a page from the cache. There must be exactly one reference to the
+** page. This function deletes that reference, so after it returns the
+** page pointed to by p is invalid.
 */
 void sqlite3PcacheDrop(PgHdr *p){
   PCache *pCache;
   assert( p->nRef==1 );
+  assert( 0==(p->flags&PGHDR_DIRTY) );
   pCache = p->pCache;
   pCache->nRef--;
   pCache->nPinned--;
-  if( p->flags & PGHDR_DIRTY ){
-    pcacheRemoveFromList(&pCache->pDirty, p);
-  }else{
-    pcacheRemoveFromList(&pCache->pClean, p);
-  }
+  pcacheRemoveFromList(&pCache->pClean, p);
   pcacheRemoveFromHash(p);
   pcacheEnterGlobal();
   pcachePageFree(p);
@@ -1140,11 +1144,8 @@ void sqlite3PcacheSetFlags(PCache *pCache, int andMask, int orMask){
   }
 
   if( 0==(andMask&PGHDR_NEED_SYNC) ){
-    PgHdr *pSynced = pCache->pDirtyTail;
-    while( pSynced && (pSynced->flags&PGHDR_NEED_SYNC) ){
-      pSynced = pSynced->pPrev;
-    }
-    pCache->pSynced = pSynced;
+    pCache->pSynced = pCache->pDirtyTail;
+    assert( !pCache->pSynced || (pCache->pSynced->flags&PGHDR_NEED_SYNC)==0 );
   }
 
   pcacheExitGlobal();

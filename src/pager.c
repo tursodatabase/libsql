@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.481 2008/08/26 21:07:27 drh Exp $
+** @(#) $Id: pager.c,v 1.482 2008/08/27 09:44:40 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2824,10 +2824,6 @@ static int pagerAcquire(
   rc = sqlite3PcacheFetch(pPager->pPCache, pgno, 1, &pPg);
   if( rc!=SQLITE_OK ){
     return rc;
-  }
-  if( pPager->errCode && pPg->nRef==1 ){
-    sqlite3PcacheDrop(pPg);
-    return pPager->errCode;
   }
   if( pPg->pPager==0 ){
     /* The pager cache has created a new page. Its content needs to 
