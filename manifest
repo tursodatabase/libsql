@@ -1,5 +1,5 @@
-C Do\snot\smark\spages\sas\sclean\swhen\sdoing\sa\sstatement\sjournal\srollback.\s(CVS\s5626)
-D 2008-08-27T18:03:20
+C Add\sthe\strans2.test\sscript\sdesigned\sto\sstress\sstatement\srollback\sand\nno-write\soptimizations\son\slarge\stransactions\swith\sa\ssmall\scache.\s(CVS\s5627)
+D 2008-08-27T18:56:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -450,7 +450,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
-F test/quick.test 3dba257b9d4e06e1b0199bc1401052f554ab5f14
+F test/quick.test 4e702221947cf31a624f929502e55871bcb11dbc
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test bd054831f8a3078e765a0657e247182486f0cb47
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
@@ -554,6 +554,7 @@ F test/tkt3334.test ea13a53cb176e90571a76c86605b14a09efe366d
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
+F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
 F test/trigger2.test 33bf8ae9b788013be194efe5f66c04a202facbb4
 F test/trigger3.test 501b8489eb6b9cb5b005f60b071583c01a3c3041
@@ -623,7 +624,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b01c65b065c62e3dd71e88866a953668b5e2f25f
-R 689d729100f20090b1e466716c44a30f
+P 9d7722f4f357b96c37f950024f1e7e160e2c1252
+R 7e38426936c8ee7d92dffd15d06dbe75
 U drh
-Z 88ce9a46e91a9c5f4a11c03c806a9437
+Z 4f34f6e09d3a22e5fabb341c54267054
