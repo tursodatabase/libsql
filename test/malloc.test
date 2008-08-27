@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.63 2008/07/07 14:56:57 danielk1977 Exp $
+# $Id: malloc.test,v 1.64 2008/08/27 19:01:58 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -407,6 +407,9 @@ ifcapable utf16 {
     # Prepare statement
     set rc [catch {sqlite3_prepare $DB2 {SELECT * FROM sqlite_master} -1 X} msg]
     if {[sqlite3_errcode $DB2] eq "SQLITE_IOERR+12"} {
+      error "out of memory"
+    }
+    if {[regexp ".*automatic extension loading.*" [sqlite3_errmsg $DB2]]} {
       error "out of memory"
     }
     if {$rc} {

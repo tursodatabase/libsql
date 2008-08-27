@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.493 2008/08/21 20:21:35 drh Exp $
+** $Id: main.c,v 1.494 2008/08/27 19:01:58 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1481,7 +1481,6 @@ static int openDatabase(
   db->pVfs = sqlite3_vfs_find(zVfs);
   if( !db->pVfs ){
     rc = SQLITE_ERROR;
-    db->magic = SQLITE_MAGIC_SICK;
     sqlite3Error(db, rc, "no such vfs: %s", zVfs);
     goto opendb_out;
   }
@@ -1495,7 +1494,6 @@ static int openDatabase(
   createCollation(db, "BINARY", SQLITE_UTF16LE, 0, binCollFunc, 0);
   createCollation(db, "RTRIM", SQLITE_UTF8, (void*)1, binCollFunc, 0);
   if( db->mallocFailed ){
-    db->magic = SQLITE_MAGIC_SICK;
     goto opendb_out;
   }
   db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 6, 0);
@@ -1518,7 +1516,6 @@ static int openDatabase(
                            &db->aDb[0].pBt);
   if( rc!=SQLITE_OK ){
     sqlite3Error(db, rc, 0);
-    db->magic = SQLITE_MAGIC_SICK;
     goto opendb_out;
   }
   db->aDb[0].pSchema = sqlite3SchemaGet(db, db->aDb[0].pBt);
@@ -1608,9 +1605,12 @@ opendb_out:
     assert( db->mutex!=0 || isThreadsafe==0 || sqlite3Config.bFullMutex==0 );
     sqlite3_mutex_leave(db->mutex);
   }
-  if( SQLITE_NOMEM==(rc = sqlite3_errcode(db)) ){
+  rc = sqlite3_errcode(db);
+  if( rc==SQLITE_NOMEM ){
     sqlite3_close(db);
     db = 0;
+  }else if( rc!=SQLITE_OK ){
+    db->magic = SQLITE_MAGIC_SICK;
   }
   *ppDb = db;
   return sqlite3ApiExit(0, rc);

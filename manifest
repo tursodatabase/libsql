@@ -1,5 +1,5 @@
-C Add\sthe\strans2.test\sscript\sdesigned\sto\sstress\sstatement\srollback\sand\nno-write\soptimizations\son\slarge\stransactions\swith\sa\ssmall\scache.\s(CVS\s5627)
-D 2008-08-27T18:56:36
+C If\sany\serror\soccurs\sduring\ssqlite3_open(),\smove\sthe\sdatabase\shandle\sinto\s"sick"\sstate.\sWhen\sin\sthe\ssick\sstate\sthe\suser\scan\suse\ssqlite3_errcode()\sand\ssqlite3_errmsg(),\sbut\snot\smuch\selse.\s(CVS\s5628)
+D 2008-08-27T19:01:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/insert.c 110cca7845ed5a66c08fdd413b02e706ae34455f
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c eb1fe4f44d7c8ff53fc0c6a4388ab79fbd34cd64
-F src/main.c 69dbacc8c605f19dd380b2eda8c947a2aac19671
+F src/main.c f372968372bdf4275333327fd04737f667e0f3af
 F src/malloc.c 7ccc630b359f57a47b6034af54e42eb838eebd46
 F src/mem1.c 3a7fe31d8290baa3bb203af72f7dfd6323966bcd
 F src/mem2.c 7256327b96927020824e06ffb3443b99a28da047
@@ -398,7 +398,7 @@ F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/lock5.test f4eeb0400cf65c37f733cb3c74401136f8c46acd
 F test/lookaside.test 8866ea41301d74993423c99e523322fca09c259e
 F test/main.test 8d77c161757ef7d96eaff0413daa7120c3b316fe
-F test/malloc.test 69f5bb5a13b24edb1322fc1f42894f9d2f6446b1
+F test/malloc.test f87273951a359a391b3074e1cb758fe8ca2113d5
 F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test c8d0f7673337e8a29afa558735ae937a0d629751
@@ -624,7 +624,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9d7722f4f357b96c37f950024f1e7e160e2c1252
-R 7e38426936c8ee7d92dffd15d06dbe75
-U drh
-Z 4f34f6e09d3a22e5fabb341c54267054
+P 39c34e2238c27b2a2f4f0b896126ccbd299114c5
+R 0bf03a77bd82f6ac6f412ad9339ae6a4
+U danielk1977
+Z ac6800a3d7725cc034896ca6e2243181
