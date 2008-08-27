@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.483 2008/08/27 15:16:34 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.484 2008/08/27 18:03:20 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1056,15 +1056,15 @@ static void makeClean(PgHdr*);
 ** Read a single page from the journal file opened on file descriptor
 ** jfd.  Playback this one page.
 **
-** If useCksum==0 it means this journal does not use checksums.  Checksums
-** are not used in statement journals because statement journals do not
-** need to survive power failures.
+** The isMainJrnl flag is true if this is the main rollback journal and
+** false for the statement journal.  The main rollback journal uses
+** checksums - the statement journal does not.
 */
 static int pager_playback_one_page(
-  Pager *pPager, 
-  sqlite3_file *jfd,
-  i64 offset,
-  int useCksum
+  Pager *pPager,       /* The pager being played back */
+  sqlite3_file *jfd,   /* The file that is the journal being rolled back */
+  i64 offset,          /* Offset of the page within the journal */
+  int isMainJrnl       /* True for main rollback journal. False for Stmt jrnl */
 ){
   int rc;
   PgHdr *pPg;                   /* An existing page in the cache */
@@ -1072,10 +1072,10 @@ static int pager_playback_one_page(
   u32 cksum;                    /* Checksum used for sanity checking */
   u8 *aData = (u8 *)pPager->pTmpSpace;   /* Temp storage for a page */
 
-  /* useCksum should be true for the main journal and false for
+  /* isMainJrnl should be true for the main journal and false for
   ** statement journals.  Verify that this is always the case
   */
-  assert( jfd == (useCksum ? pPager->jfd : pPager->stfd) );
+  assert( jfd == (isMainJrnl ? pPager->jfd : pPager->stfd) );
   assert( aData );
 
   rc = read32bits(jfd, offset, &pgno);
@@ -1095,7 +1095,7 @@ static int pager_playback_one_page(
   if( pgno>(unsigned)pPager->dbSize ){
     return SQLITE_OK;
   }
-  if( useCksum ){
+  if( isMainJrnl ){
     rc = read32bits(jfd, offset+pPager->pageSize+4, &cksum);
     if( rc ) return rc;
     pPager->journalOff += 4;
@@ -1156,13 +1156,12 @@ static int pager_playback_one_page(
     ** sqlite3PagerRollback().
     */
     void *pData;
-    /* assert( pPg->nRef==0 || pPg->pgno==1 ); */
     pData = pPg->pData;
     memcpy(pData, aData, pPager->pageSize);
     if( pPager->xReiniter ){
       pPager->xReiniter(pPg, pPager->pageSize);
     }
-    makeClean(pPg);
+    if( isMainJrnl ) makeClean(pPg);
 #ifdef SQLITE_CHECK_PAGES
     pPg->pageHash = pager_pagehash(pPg);
 #endif

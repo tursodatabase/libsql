@@ -1,5 +1,5 @@
-C Modifications\sto\smalloc5.test\sto\saccount\sfor\sthe\sfact\sthat\ssqlite3_release_memory()\sno\slonger\sreclaims\sdirty\spages.\s(CVS\s5625)
-D 2008-08-27T16:38:57
+C Do\snot\smark\spages\sas\sclean\swhen\sdoing\sa\sstatement\sjournal\srollback.\s(CVS\s5626)
+D 2008-08-27T18:03:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -134,7 +134,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 4665cef7639dd937893c3ea076f0e8a8f215bb32
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c a38742815a6b2238d0b91d1dd64bda50d6ee95fc
+F src/pager.c 84f4c171a0cb4561291f212508b1a91a8a325abb
 F src/pager.h 914103bb62dbcc3d8e9f14baec812d027264d457
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c 3d9d933bb22f10956ab78d83798d88ca9a147e86
@@ -623,7 +623,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 12f2d24f88e55d170dd7750e7904ff14e84e820e
-R b53ac5363faaa116cc8b7dfcfecb5950
-U danielk1977
-Z c5747597064276f7a0eeb73c949573eb
+P b01c65b065c62e3dd71e88866a953668b5e2f25f
+R 689d729100f20090b1e466716c44a30f
+U drh
+Z 88ce9a46e91a9c5f4a11c03c806a9437
