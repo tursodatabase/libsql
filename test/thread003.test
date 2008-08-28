@@ -1,0 +1,115 @@
+# 2007 September 10
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#   This file contains tests that attempt to break the pcache module
+#   by bombarding it with simultaneous requests from multiple threads.
+#     
+# $Id: thread003.test,v 1.1 2008/08/28 08:31:48 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+
+source $testdir/tester.tcl
+source $testdir/thread_common.tcl
+if {[info commands sqlthread] eq ""} {
+  finish_test
+  return
+}
+
+# Set up a couple of different databases full of pseudo-randomly 
+# generated data.
+#
+do_test thread003.1.1 {
+  execsql {
+    BEGIN;
+    CREATE TABLE t1(a, b, c);
+  }
+  for {set ii 0} {$ii < 5000} {incr ii} {
+    execsql {INSERT INTO t1 VALUES($ii, randomblob(200), randomblob(200))}
+  }
+  execsql { 
+    CREATE INDEX i1 ON t1(a, b); 
+    COMMIT;
+  }
+} {}
+do_test thread003.1.2 {
+  expr {([file size test.db] / 1024) > 2000}
+} {1}
+do_test thread003.1.3 {
+  db close
+  file delete -force test2.db
+  sqlite3 db test2.db
+} {}
+do_test thread003.1.4 {
+  execsql {
+    BEGIN;
+    CREATE TABLE t1(a, b, c);
+  }
+  for {set ii 0} {$ii < 5000} {incr ii} {
+    execsql {INSERT INTO t1 VALUES($ii, randomblob(200), randomblob(200))}
+  }
+  execsql { 
+    CREATE INDEX i1 ON t1(a, b); 
+    COMMIT;
+  }
+} {}
+do_test thread003.1.5 {
+  expr {([file size test.db] / 1024) > 2000}
+} {1}
+do_test thread003.1.6 {
+  db close
+} {}
+
+
+# This test opens a connection on each of the large (>2MB) database files
+# created by the previous block. The connections do not share a cache.
+# Both "cache_size" parameters are set to 15, so there is a maximum of
+# 30 pages available globally.
+#
+# Then, in separate threads, the databases are randomly queried over and
+# over again. This will force the connections to recycle clean pages from
+# each other. If there is a thread-safety problem, a segfault or assertion
+# failure may eventually occur.
+#
+set nSecond 30
+puts "Starting thread003.2 (should run for ~$nSecond seconds)"
+do_test thread003.2 {
+  foreach zFile {test.db test2.db} {
+    set SCRIPT [format {
+      set iStart [clock seconds]
+      set iEnd [expr {[clock seconds] + %d}]
+      set ::DB [sqlthread open %s]
+  
+      # Set the cache size to 15 pages per cache. 30 available globally.
+      execsql { PRAGMA cache_size = 15 }
+  
+      while {[clock seconds] < $iEnd} {
+        set iQuery [expr {int(rand()*5000)}]
+        execsql " SELECT * FROM t1 WHERE a = $iQuery "
+      }
+  
+      sqlite3_close $::DB
+      expr 1
+    } $nSecond $zFile]
+  
+    unset -nocomplain finished($zFile)
+    thread_spawn finished($zFile) $thread_procs $SCRIPT
+  }
+  foreach zFile {test.db test2.db} {
+    if {![info exists finished($zFile)]} {
+      vwait finished($zFile)
+    }
+  }
+  expr 0
+} {0}
+
+finish_test
+
+

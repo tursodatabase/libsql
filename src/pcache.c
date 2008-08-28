@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.19 2008/08/28 02:26:07 drh Exp $
+** @(#) $Id: pcache.c,v 1.20 2008/08/28 08:31:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -685,22 +685,23 @@ int sqlite3PcacheFetch(
   /* Search the hash table for the requested page. Exit early if it is found. */
   if( pCache->apHash ){
     u32 h = pgno % pCache->nHash;
+    pcacheEnterMutex();
     for(pPage=pCache->apHash[h]; pPage; pPage=pPage->pNextHash){
       if( pPage->pgno==pgno ){
         if( pPage->nRef==0 ){
           if( 0==(pPage->flags&PGHDR_DIRTY) ){
-            pcacheEnterMutex();
             pcacheRemoveFromLruList(pPage);
-            pcacheExitMutex();
             pCache->nPinned++;
           }
           pCache->nRef++;
         }
         pPage->nRef++;
         *ppPage = pPage;
+        pcacheExitMutex();
         return SQLITE_OK;
       }
     }
+    pcacheExitMutex();
   }
 
   if( createFlag ){
