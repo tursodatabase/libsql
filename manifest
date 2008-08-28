@@ -1,5 +1,5 @@
-C Avoid\susing\s(clock\sseconds)\sin\sthread003.test.\sIt\sis\snot\savailable\sif\stestfixture\sis\slinked\sto\stcl\s8.5.\s(CVS\s5634)
-D 2008-08-28T13:55:10
+C Partial\sfix\sfor\sa\sbug\sin\srecovery\sfrom\sxStress\sfailures\sin\spcache.\s(CVS\s5635)
+D 2008-08-28T17:46:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c 032d11049af4ec49bdbaa3584e7ce9887098b66a
 F src/pager.h 914103bb62dbcc3d8e9f14baec812d027264d457
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c c45e2440b83958f274df3e2a84d267955a651052
+F src/pcache.c 4853068cb21ae742507186f8780b2eba33b734ff
 F src/pcache.h bd373ee3e4db310d6bbe7fa6d8d971de9678edd8
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
@@ -531,7 +531,7 @@ F test/tkt2285.test cca17be61cf600b397188e77e7143844d2b977e9
 F test/tkt2332.test fc955609b958ca86dfa102832243370a0cc84070
 F test/tkt2339.test 73bd17818924cd2ac442e5fd9916b58565739450
 F test/tkt2391.test ab7a11be7402da8b51a5be603425367aa0684567
-F test/tkt2409.test c9599f296178eb764a7d6260c5403e1e921d9fef
+F test/tkt2409.test 464d55beb32e3b12ce2b4bbf9857d063c4c34297
 F test/tkt2450.test 77ed94863f2049c1420288ddfea2d41e5e0971d6
 F test/tkt2640.test 28134f5d1e05658ef182520cf0b680fa3de5211b
 F test/tkt2643.test 3f3ebb743da00d4fed4fcf6daed92a0e18e57813
@@ -625,7 +625,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 677ac144c8f7e2722fdf05da1431919d6a8bb45f
-R e5bc691d64a66c3c32e3f3fdc2b65463
-U danielk1977
-Z a14388406a05abc10347757e6741d06a
+P b606263d0868aed267bcec623b9fe4d142099145
+R 583df9a59ceb3abe3e9babb420a62f8c
+U drh
+Z d2e0132b284492803c0e9b5e5f2053d7

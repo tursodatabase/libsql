@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.22 2008/08/28 11:12:09 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.23 2008/08/28 17:46:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -573,7 +573,7 @@ static int pcacheRecycleOrAlloc(PCache *pCache, PgHdr **ppPage){
       pcacheExitMutex();
       rc = pCache->xStress(pCache->pStress, pPg);
       pcacheEnterMutex();
-      if( rc!=SQLITE_OK ){
+      if( rc!=SQLITE_OK && rc!=SQLITE_BUSY ){
         return rc;
       }
     }

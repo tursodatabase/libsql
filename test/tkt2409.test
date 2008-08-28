@@ -16,7 +16,7 @@
 # any statement other than a COMMIT, an I/O error is returned instead
 # of SQLITE_BUSY.
 #
-# $Id: tkt2409.test,v 1.5 2008/08/26 18:05:48 danielk1977 Exp $
+# $Id: tkt2409.test,v 1.6 2008/08/28 17:46:19 drh Exp $
 
 # Test Outline:
 #
@@ -182,8 +182,9 @@ do_test tkt2409-3.4 {
   unread_lock_db
   catchsql { ROLLBACK }
 } {0 {}}
+integrity_check tkt2409-3.5
 
-
+expr {srand(1)}
 do_test tkt2409-4.1 {
   execsql {
     PRAGMA cache_size=20;
@@ -220,6 +221,7 @@ integrity_check tkt2409-4.3
 do_test tkt2409-4.4 {
   catchsql { ROLLBACK }
 } {0 {}}
+integrity_check tkt2409-4.5
 
 unread_lock_db
 db2 close
