@@ -12,7 +12,7 @@
 ** Code for testing all sorts of SQLite interfaces.  This code
 ** implements new SQL functions used by the test scripts.
 **
-** $Id: test_func.c,v 1.12 2008/08/27 15:21:35 drh Exp $
+** $Id: test_func.c,v 1.13 2008/08/28 02:26:07 drh Exp $
 */
 #include "sqlite3.h"
 #include "tcl.h"
@@ -217,10 +217,7 @@ static void counterFunc(
   int nArg,                /* Number of function arguments */
   sqlite3_value **argv     /* Values for all function arguments */
 ){
-  int i;
-  int *pCounter;
-
-  pCounter = (int*)sqlite3_get_auxdata(pCtx, 0);
+  int *pCounter = (int*)sqlite3_get_auxdata(pCtx, 0);
   if( pCounter==0 ){
     pCounter = sqlite3_malloc( sizeof(*pCounter) );
     if( pCounter==0 ){

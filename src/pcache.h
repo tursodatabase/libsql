@@ -12,7 +12,7 @@
 ** This header file defines the interface that the sqlite page cache
 ** subsystem. 
 **
-** @(#) $Id: pcache.h,v 1.7 2008/08/27 15:16:34 danielk1977 Exp $
+** @(#) $Id: pcache.h,v 1.8 2008/08/28 02:26:07 drh Exp $
 */
 
 #ifndef _PCACHE_H_
@@ -25,22 +25,30 @@ typedef struct PCache PCache;
 ** structure.
 */
 struct PgHdr {
-  u32 flags;                     /* PGHDR flags defined below */
   void *pData;                   /* Content of this page */
   void *pExtra;                  /* Extra content */
   PgHdr *pDirty;                 /* Transient list of dirty pages */
   Pgno pgno;                     /* Page number for this page */
-  Pager *pPager;
+  Pager *pPager;                 /* The pager this page is part of */
 #ifdef SQLITE_CHECK_PAGES
-  u32 pageHash;
+  u32 pageHash;                  /* Hash of page content */
 #endif
-  /*** Public data is above. All that follows is private to pcache.c ***/
+  u16 flags;                     /* PGHDR flags defined below */
+  /**********************************************************************
+  ** Elements above are public.  All that follows is private to pcache.c
+  ** and should not be accessed by other modules.
+  */
+  i16 nRef;                      /* Number of users of this page */
   PCache *pCache;                /* Cache that owns this page */
+  void *apSave[2];               /* Journal entries for in-memory databases */
+  /**********************************************************************
+  ** Elements above are accessible at any time by the owner of the cache
+  ** without the need for a mutex.  The elements that follow can only be
+  ** accessed while holding the SQLITE_MUTEX_STATIC_LRU mutex.
+  */
   PgHdr *pNextHash, *pPrevHash;  /* Hash collision chain for PgHdr.pgno */
   PgHdr *pNext, *pPrev;          /* List of clean or dirty pages */
   PgHdr *pNextLru, *pPrevLru;    /* Part of global LRU list */
-  int nRef;                      /* Number of users of this page */
-  void *apSave[2];               /* Journal entries for in-memory databases */
 };
 
 /* Bit values for PgHdr.flags */

@@ -1,5 +1,5 @@
-C If\sany\serror\soccurs\sduring\ssqlite3_open(),\smove\sthe\sdatabase\shandle\sinto\s"sick"\sstate.\sWhen\sin\sthe\ssick\sstate\sthe\suser\scan\suse\ssqlite3_errcode()\sand\ssqlite3_errmsg(),\sbut\snot\smuch\selse.\s(CVS\s5628)
-D 2008-08-27T19:01:58
+C Miscellaneous\scleanup\sin\sthe\snew\spcache\scode.\s(CVS\s5629)
+D 2008-08-28T02:26:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -134,11 +134,11 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 4665cef7639dd937893c3ea076f0e8a8f215bb32
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c 84f4c171a0cb4561291f212508b1a91a8a325abb
+F src/pager.c 032d11049af4ec49bdbaa3584e7ce9887098b66a
 F src/pager.h 914103bb62dbcc3d8e9f14baec812d027264d457
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 3d9d933bb22f10956ab78d83798d88ca9a147e86
-F src/pcache.h 7a50b77f06c220ff7696be1a9f2a17c9e6ddc486
+F src/pcache.c aa609c9b1fc1a2b00f7d7bfb3d06b1e507767b93
+F src/pcache.h bd373ee3e4db310d6bbe7fa6d8d971de9678edd8
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
@@ -167,7 +167,7 @@ F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c 7170e0c922ed3979f2d38f4a3f84728e5740dfc3
 F src/test_config.c 224f699a34d45eb8ac5c22a7ad6cdbb8edf0ba28
 F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
-F src/test_func.c bc648b7747320e037d756acfa1037bd8dedf3f8b
+F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c 49abbf5d9c71fb06cf7a7cf96f9b9a799b77a421
@@ -624,7 +624,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 39c34e2238c27b2a2f4f0b896126ccbd299114c5
-R 0bf03a77bd82f6ac6f412ad9339ae6a4
-U danielk1977
-Z ac6800a3d7725cc034896ca6e2243181
+P ce9c74eaab459ddde213c828e821940f5d6cb354
+R 55c280ec697a3a6039a240cf488ad9ad
+U drh
+Z 7df830e688305e6be422e59df78b53fe
