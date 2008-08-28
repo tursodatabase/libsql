@@ -1,5 +1,5 @@
-C Partial\sfix\sfor\sa\sbug\sin\srecovery\sfrom\sxStress\sfailures\sin\spcache.\s(CVS\s5635)
-D 2008-08-28T17:46:19
+C Fix\sioerr5.test\sso\sthat\sit\sworks\swith\sthe\snew\spcache\smodule.\s(CVS\s5636)
+D 2008-08-28T18:35:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -376,7 +376,7 @@ F test/ioerr.test b42f249c9181b5864e53fdae38ef75475d71c66f
 F test/ioerr2.test 988bda4d8d6fa1593765a514bf7a24adb3240da9
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
-F test/ioerr5.test fe59ee3e3d45a121bcdb8f462b718076e66b4ca7
+F test/ioerr5.test 89f69b09a6b5d4f5bbfe58d4231f28236d842dcb
 F test/join.test e0664af757049ba1f19a0d42c470a58299f36a3e
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -625,7 +625,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b606263d0868aed267bcec623b9fe4d142099145
-R 583df9a59ceb3abe3e9babb420a62f8c
-U drh
-Z d2e0132b284492803c0e9b5e5f2053d7
+P 44193b92770062271711570d8532fa5af5f5da54
+R b653a7b6746fff19fe5c3b4b1ca78010
+U danielk1977
+Z e1c85e2c49e0ca001d86550ca68a5398

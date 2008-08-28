@@ -14,7 +14,7 @@
 # incorrectly write dirty pages out to the database (not safe to do
 # once the pager is in error state).
 #
-# $Id: ioerr5.test,v 1.4 2008/07/12 14:52:20 drh Exp $
+# $Id: ioerr5.test,v 1.5 2008/08/28 18:35:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -77,6 +77,7 @@ do_test ioerr5-1.0 {
 } {}
 
 foreach locking_mode {normal exclusive} {
+  set nPage 2
   for {set iFail 1} {$iFail<200} {incr iFail} {
     sqlite3_soft_heap_limit 1048576
     opendatabases
@@ -117,12 +118,25 @@ foreach locking_mode {normal exclusive} {
     # with the dirty page.
     #
     do_test ioerr5-1.$locking_mode-$iFail.3 {
+      set bt [btree_from_db db]
       sqlite3_soft_heap_limit 1024
       compilesql16 "SELECT 10"
-      set bt [btree_from_db db]
       array set stats [btree_pager_stats $bt]
-      set stats(page)
-    } {0}
+
+      # If the pager made it all the way to PAGER_SYNCED state, then 
+      # both in-memory pages are clean. Following the calls to 
+      # release_memory() that were made as part of the [compilesql16]
+      # above, there will be zero pages left in the cache.
+      #
+      # If the pager did not make it as far as PAGER_SYNCED, the two
+      # in memory pages are still dirty. So there will be 2 pages left
+      # in the cache following the release_memory() calls.
+      #
+      if {$stats(state)==5} {
+        set nPage 0
+      }
+      expr {$stats(page)==$nPage}
+    } {1}
 
     # Ensure that nothing was written to the database while reclaiming
     # memory from the pager in error state.
