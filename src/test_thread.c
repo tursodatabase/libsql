@@ -14,7 +14,7 @@
 ** test that sqlite3 database handles may be concurrently accessed by 
 ** multiple threads. Right now this only works on unix.
 **
-** $Id: test_thread.c,v 1.7 2008/08/28 13:15:50 danielk1977 Exp $
+** $Id: test_thread.c,v 1.8 2008/08/28 13:55:10 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -51,6 +51,7 @@ struct EvalEvent {
 };
 
 static Tcl_ObjCmdProc sqlthread_proc;
+static Tcl_ObjCmdProc clock_seconds_proc;
 int Sqlitetest1_Init(Tcl_Interp *);
 
 /*
@@ -99,6 +100,7 @@ static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
   SqlThread *p = (SqlThread *)pSqlThread;
 
   interp = Tcl_CreateInterp();
+  Tcl_CreateObjCommand(interp, "clock_seconds", clock_seconds_proc, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlthread", sqlthread_proc, pSqlThread, 0);
   Sqlitetest1_Init(interp);
 
@@ -171,7 +173,7 @@ static int sqlthread_spawn(
   rc = Tcl_CreateThread(&x, tclScriptThread, (void *)pNew, nStack, flags);
   if( rc!=TCL_OK ){
     Tcl_AppendResult(interp, "Error in Tcl_CreateThread()", 0);
-    ckfree(pNew);
+    ckfree((char *)pNew);
     return TCL_ERROR;
   }
 
@@ -319,10 +321,30 @@ static int sqlthread_proc(
 }
 
 /*
+** The [clock_seconds] command. This is more or less the same as the
+** regular tcl [clock seconds], except that it is available in testfixture
+** when linked against both Tcl 8.4 and 8.5. Because [clock seconds] is
+** implemented as a script in Tcl 8.5, it is not usually available to
+** testfixture.
+*/ 
+static int clock_seconds_proc(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  Tcl_Time now;
+  Tcl_GetTime(&now);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(now.sec));
+  return TCL_OK;
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int SqlitetestThread_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "sqlthread", sqlthread_proc, 0, 0);
+  Tcl_CreateObjCommand(interp, "clock_seconds", clock_seconds_proc, 0, 0);
   return TCL_OK;
 }
 #else
