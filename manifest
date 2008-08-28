@@ -1,5 +1,5 @@
-C Enable\sthe\sdisabled\sasserts\sadded\sby\s(5629).\sAdd\sextra\stests\sto\sthread003.test.\sAnd\sthe\srequired\smodifications\sto\spcache.c.\s(CVS\s5631)
-D 2008-08-28T10:21:17
+C Fix\smutex\srelated\sbug\sin\spcache.c\sto\sdo\swith\shandling\sIO\serrors.\s(CVS\s5632)
+D 2008-08-28T11:12:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c 032d11049af4ec49bdbaa3584e7ce9887098b66a
 F src/pager.h 914103bb62dbcc3d8e9f14baec812d027264d457
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 23dba1a9f262946c931e3f122bf3ebfe8a6f3013
+F src/pcache.c c45e2440b83958f274df3e2a84d267955a651052
 F src/pcache.h bd373ee3e4db310d6bbe7fa6d8d971de9678edd8
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
@@ -625,7 +625,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1928f15b78eee0fbf0a8ecdbbdd38dbbde2942b8
-R 166d531ec6ddd69fe2db8781062339d3
+P 473c09fac22ed2f56ea86150a60b9f0f2263c889
+R 9f6a0d6436f4f7c1733d1b8451190fa4
 U danielk1977
-Z 853ee09750f4e2c171d372d7dd09456a
+Z 1a59be1e312620b044387bb176a9be8d
