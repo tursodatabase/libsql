@@ -14,7 +14,7 @@
 ** test that sqlite3 database handles may be concurrently accessed by 
 ** multiple threads. Right now this only works on unix.
 **
-** $Id: test_thread.c,v 1.6 2007/12/13 21:54:11 drh Exp $
+** $Id: test_thread.c,v 1.7 2008/08/28 13:15:50 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -171,7 +171,7 @@ static int sqlthread_spawn(
   rc = Tcl_CreateThread(&x, tclScriptThread, (void *)pNew, nStack, flags);
   if( rc!=TCL_OK ){
     Tcl_AppendResult(interp, "Error in Tcl_CreateThread()", 0);
-    sqlite3_free(pNew);
+    ckfree(pNew);
     return TCL_ERROR;
   }
 

@@ -1,5 +1,5 @@
-C Fix\smutex\srelated\sbug\sin\spcache.c\sto\sdo\swith\shandling\sIO\serrors.\s(CVS\s5632)
-D 2008-08-28T11:12:09
+C Use\sckfree()\sinstead\sof\ssqlite3_free()\sto\sfree\san\sallocation\smade\sby\sckalloc()\sin\stest_thread.c\s(test\scode\sonly).\s(CVS\s5633)
+D 2008-08-28T13:15:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -178,7 +178,7 @@ F src/test_osinst.c ae29e9c09485622a157849508302dd9ffe44f21f
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
-F src/test_thread.c e297dd41db0b249646e69f97d36ec13e56e8b730
+F src/test_thread.c ecb4b86f5f348d7129bdfc7565cbc9afd668cd68
 F src/tokenize.c d16ca0e9944161c76d2e4c11dc379ec88189b93b
 F src/trigger.c 649940b5bf5838a33721fb72372e7c9d1faf56a9
 F src/update.c f2cf6f00d542956bd49ba4b9815c2900d9225bf2
@@ -625,7 +625,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 473c09fac22ed2f56ea86150a60b9f0f2263c889
-R 9f6a0d6436f4f7c1733d1b8451190fa4
+P 5e304fed275137f98be56f475504422d1f5113a4
+R c752f6e3a22232cc2fbb6d6779da507b
 U danielk1977
-Z 1a59be1e312620b044387bb176a9be8d
+Z 3fa1e66ece378940e87415f3818f5176
