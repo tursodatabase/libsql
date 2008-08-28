@@ -12,7 +12,7 @@
 #   This file contains tests that attempt to break the pcache module
 #   by bombarding it with simultaneous requests from multiple threads.
 #     
-# $Id: thread003.test,v 1.1 2008/08/28 08:31:48 danielk1977 Exp $
+# $Id: thread003.test,v 1.2 2008/08/28 10:21:17 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 
@@ -105,6 +105,84 @@ do_test thread003.2 {
   foreach zFile {test.db test2.db} {
     if {![info exists finished($zFile)]} {
       vwait finished($zFile)
+    }
+  }
+  expr 0
+} {0}
+
+# This test is the same as the test above, except that each thread also
+# writes to the database. This causes pages to be moved back and forth 
+# between the caches internal dirty and clean lists, which is another
+# opportunity for a thread-related bug to present itself.
+#
+set nSecond 30
+puts "Starting thread003.3 (should run for ~$nSecond seconds)"
+do_test thread003.3 {
+  foreach zFile {test.db test2.db} {
+    set SCRIPT [format {
+      set iStart [clock seconds]
+      set iEnd [expr {[clock seconds] + %d}]
+      set ::DB [sqlthread open %s]
+  
+      # Set the cache size to 15 pages per cache. 30 available globally.
+      execsql { PRAGMA cache_size = 15 }
+  
+      while {[clock seconds] < $iEnd} {
+        set iQuery [expr {int(rand()*5000)}]
+        execsql "SELECT * FROM t1 WHERE a = $iQuery"
+        execsql "UPDATE t1 SET b = randomblob(200) 
+                 WHERE a < $iQuery AND a > $iQuery + 20
+        "
+      }
+  
+      sqlite3_close $::DB
+      expr 1
+    } $nSecond $zFile]
+  
+    unset -nocomplain finished($zFile)
+    thread_spawn finished($zFile) $thread_procs $SCRIPT
+  }
+  foreach zFile {test.db test2.db} {
+    if {![info exists finished($zFile)]} {
+      vwait finished($zFile)
+    }
+  }
+  expr 0
+} {0}
+
+# In this test case, one thread is continually querying the database.
+# The other thread does not have a database connection, but calls
+# sqlite3_release_memory() over and over again.
+#
+set nSecond 30
+puts "Starting thread003.3 (should run for ~$nSecond seconds)"
+do_test thread003.4 {
+  thread_spawn finished(1) $thread_procs [format {
+    set iEnd [expr {[clock seconds] + %d}]
+    set ::DB [sqlthread open test.db]
+
+    # Set the cache size to 15 pages per cache. 30 available globally.
+    execsql { PRAGMA cache_size = 15 }
+
+    while {[clock seconds] < $iEnd} {
+      set iQuery [expr {int(rand()*5000)}]
+      execsql "SELECT * FROM t1 WHERE a = $iQuery"
+    }
+
+    sqlite3_close $::DB
+    expr 1
+  } $nSecond] 
+  thread_spawn finished(2) [format {
+    set iEnd [expr {[clock seconds] + %d}]
+
+    while {[clock seconds] < $iEnd} {
+      sqlite3_release_memory 1000
+    }
+  } $nSecond]
+  
+  foreach ii {1 2} {
+    if {![info exists finished($ii)]} {
+      vwait finished($ii)
     }
   }
   expr 0

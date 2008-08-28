@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.20 2008/08/28 08:31:48 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.21 2008/08/28 10:21:17 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -173,7 +173,6 @@ static int pcacheCheckSynced(PCache *pCache){
     assert( p->nRef || (p->flags&PGHDR_NEED_SYNC) );
   }
   return (p==0 || p->nRef || (p->flags&PGHDR_NEED_SYNC)==0);
-  return 1;
 }
 #endif /* !NDEBUG && SQLITE_ENABLE_EXPENSIVE_ASSERT */
 
@@ -183,7 +182,7 @@ static int pcacheCheckSynced(PCache *pCache){
 ** Remove a page from its hash table (PCache.apHash[]).
 */
 static void pcacheRemoveFromHash(PgHdr *pPage){
-  /* assert( pcacheMutexHeld() ); *** FIXME ****/
+  assert( pcacheMutexHeld() );
   if( pPage->pPrevHash ){
     pPage->pPrevHash->pNextHash = pPage->pNextHash;
   }else{
@@ -207,7 +206,7 @@ static void pcacheRemoveFromHash(PgHdr *pPage){
 static void pcacheAddToHash(PgHdr *pPage){
   PCache *pCache = pPage->pCache;
   u32 h = pPage->pgno % pCache->nHash;
-  /* assert( pcacheMutexHeld() ); *** FIXME *****/
+  assert( pcacheMutexHeld() );
   pPage->pNextHash = pCache->apHash[h];
   pPage->pPrevHash = 0;
   if( pCache->apHash[h] ){
@@ -225,13 +224,15 @@ static void pcacheAddToHash(PgHdr *pPage){
 static int pcacheResizeHash(PCache *pCache, int nHash){
   PgHdr *p;
   PgHdr **pNew;
-  /* assert( pcacheMutexHeld() ); **** FIXME *****/
+  assert( pcacheMutexHeld() );
 #ifdef SQLITE_MALLOC_SOFT_LIMIT
   if( nHash*sizeof(PgHdr*)>SQLITE_MALLOC_SOFT_LIMIT ){
     nHash = SQLITE_MALLOC_SOFT_LIMIT/sizeof(PgHdr *);
   }
 #endif
-  pNew = (PgHdr **)sqlite3_malloc(sizeof(PgHdr*)*nHash);
+  pcacheExitMutex();
+  pNew = (PgHdr **)sqlite3Malloc(sizeof(PgHdr*)*nHash);
+  pcacheEnterMutex();
   if( !pNew ){
     return SQLITE_NOMEM;
   }
@@ -257,7 +258,7 @@ static int pcacheResizeHash(PCache *pCache, int nHash){
 static void pcacheRemoveFromList(PgHdr **ppHead, PgHdr *pPage){
   int isDirtyList = (ppHead==&pPage->pCache->pDirty);
   assert( ppHead==&pPage->pCache->pClean || ppHead==&pPage->pCache->pDirty );
-  /* assert( pcacheMutexHeld() || ppHead!=&pPage->pCache->pClean ); *** FIXME */
+  assert( pcacheMutexHeld() || ppHead!=&pPage->pCache->pClean );
 
   if( pPage->pPrev ){
     pPage->pPrev->pNext = pPage->pNext;
@@ -543,10 +544,9 @@ static int pcacheRecycleOrAlloc(PCache *pCache, PgHdr **ppPage){
   int szExtra = pCache->szExtra;
 
   assert( pcache.isInit );
-  assert( sqlite3_mutex_notheld(pcache.mutex) );
+  assert( sqlite3_mutex_held(pcache.mutex) );
 
   *ppPage = 0;
-  pcacheEnterMutex();
 
   /* If we have reached the limit for pinned/dirty pages, and there is at
   ** least one dirty page, invoke the xStress callback to cause a page to
@@ -594,7 +594,6 @@ static int pcacheRecycleOrAlloc(PCache *pCache, PgHdr **ppPage){
     p = pcachePageAlloc(pCache);
   }
 
-  pcacheExitMutex();
   *ppPage = p;
   return (p?SQLITE_OK:SQLITE_NOMEM);
 }
@@ -676,16 +675,19 @@ int sqlite3PcacheFetch(
   int createFlag,       /* If true, create page if it does not exist already */
   PgHdr **ppPage        /* Write the page here */
 ){
-  PgHdr *pPage;
+  int rc = SQLITE_OK;
+  PgHdr *pPage = 0;
+
   assert( pcache.isInit );
   assert( pCache!=0 );
   assert( pgno>0 );
   expensive_assert( pCache->nPinned==pcachePinnedCount(pCache) );
 
+  pcacheEnterMutex();
+
   /* Search the hash table for the requested page. Exit early if it is found. */
   if( pCache->apHash ){
     u32 h = pgno % pCache->nHash;
-    pcacheEnterMutex();
     for(pPage=pCache->apHash[h]; pPage; pPage=pPage->pNextHash){
       if( pPage->pgno==pgno ){
         if( pPage->nRef==0 ){
@@ -696,44 +698,38 @@ int sqlite3PcacheFetch(
           pCache->nRef++;
         }
         pPage->nRef++;
-        *ppPage = pPage;
-        pcacheExitMutex();
-        return SQLITE_OK;
+        break;
       }
     }
-    pcacheExitMutex();
   }
 
-  if( createFlag ){
-    int rc = SQLITE_OK;
+  if( !pPage && createFlag ){
     if( pCache->nHash<=pCache->nPage ){
       rc = pcacheResizeHash(pCache, pCache->nHash<256 ? 256 : pCache->nHash*2);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
     }
-
-    rc = pcacheRecycleOrAlloc(pCache, ppPage);
-    if( rc!=SQLITE_OK ){
-      return rc;
+    if( rc==SQLITE_OK ){
+      rc = pcacheRecycleOrAlloc(pCache, &pPage);
     }
-    pPage = *ppPage;
-    pPage->pPager = 0;
-    pPage->flags = 0;
-    pPage->pDirty = 0;
-    pPage->pgno = pgno;
-    pPage->pCache = pCache;
-    pPage->nRef = 1;
-    pCache->nRef++;
-    pCache->nPinned++;
-    pcacheAddToList(&pCache->pClean, pPage);
-    pcacheAddToHash(pPage);
-  }else{
-    *ppPage = 0;
+    if( rc==SQLITE_OK ){
+      pPage->pPager = 0;
+      pPage->flags = 0;
+      pPage->pDirty = 0;
+      pPage->pgno = pgno;
+      pPage->pCache = pCache;
+      pPage->nRef = 1;
+      pCache->nRef++;
+      pCache->nPinned++;
+      pcacheAddToList(&pCache->pClean, pPage);
+      pcacheAddToHash(pPage);
+    }
   }
 
+  pcacheExitMutex();
+
+  *ppPage = pPage;
   expensive_assert( pCache->nPinned==pcachePinnedCount(pCache) );
-  return SQLITE_OK;
+  assert( pPage || !createFlag || rc!=SQLITE_OK );
+  return rc;
 }
 
 /*
@@ -779,9 +775,9 @@ void sqlite3PcacheDrop(PgHdr *p){
   pCache = p->pCache;
   pCache->nRef--;
   pCache->nPinned--;
+  pcacheEnterMutex();
   pcacheRemoveFromList(&pCache->pClean, p);
   pcacheRemoveFromHash(p);
-  pcacheEnterMutex();
   pcachePageFree(p);
   pcacheExitMutex();
 }
@@ -797,23 +793,18 @@ void sqlite3PcacheMakeDirty(PgHdr *p){
   assert( (p->flags & PGHDR_DIRTY)==0 );
   assert( p->nRef>0 );
   pCache = p->pCache;
+  pcacheEnterMutex();
   pcacheRemoveFromList(&pCache->pClean, p);
   pcacheAddToList(&pCache->pDirty, p);
+  pcacheExitMutex();
   p->flags |= PGHDR_DIRTY;
 }
 
-/*
-** Make sure the page is marked as clean.  If it isn't clean already,
-** make it so.
-*/
-void sqlite3PcacheMakeClean(PgHdr *p){
-  PCache *pCache;
-  if( (p->flags & PGHDR_DIRTY)==0 ) return;
+void pcacheMakeClean(PgHdr *p){
+  PCache *pCache = p->pCache;
   assert( p->apSave[0]==0 && p->apSave[1]==0 );
   assert( p->flags & PGHDR_DIRTY );
-  pCache = p->pCache;
   pcacheRemoveFromList(&pCache->pDirty, p);
-  pcacheEnterMutex();
   pcacheAddToList(&pCache->pClean, p);
   p->flags &= ~PGHDR_DIRTY;
   if( p->nRef==0 ){
@@ -821,7 +812,18 @@ void sqlite3PcacheMakeClean(PgHdr *p){
     pCache->nPinned--;
   }
   expensive_assert( pCache->nPinned==pcachePinnedCount(pCache) );
-  pcacheExitMutex();
+}
+
+/*
+** Make sure the page is marked as clean.  If it isn't clean already,
+** make it so.
+*/
+void sqlite3PcacheMakeClean(PgHdr *p){
+  if( (p->flags & PGHDR_DIRTY) ){
+    pcacheEnterMutex();
+    pcacheMakeClean(p);
+    pcacheExitMutex();
+  }
 }
 
 /*
@@ -852,19 +854,21 @@ void sqlite3PcacheCleanAll(PCache *pCache){
 */
 void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
   assert( p->nRef>0 );
+  pcacheEnterMutex();
   pcacheRemoveFromHash(p);
   p->pgno = newPgno;
   if( newPgno==0 ){
     p->flags |= PGHDR_REUSE_UNLIKELY;
-    pcacheEnterMutex();
     pcacheFree(p->apSave[0]);
     pcacheFree(p->apSave[1]);
-    pcacheExitMutex();
     p->apSave[0] = 0;
     p->apSave[1] = 0;
-    sqlite3PcacheMakeClean(p);
+    if( (p->flags & PGHDR_DIRTY) ){
+      pcacheMakeClean(p);
+    }
   }
   pcacheAddToHash(p);
+  pcacheExitMutex();
 }
 
 /*

@@ -1,5 +1,5 @@
-C Fix\sa\sthreads/mutex\sproblem\sin\spcache.c.\s(CVS\s5630)
-D 2008-08-28T08:31:48
+C Enable\sthe\sdisabled\sasserts\sadded\sby\s(5629).\sAdd\sextra\stests\sto\sthread003.test.\sAnd\sthe\srequired\smodifications\sto\spcache.c.\s(CVS\s5631)
+D 2008-08-28T10:21:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c 032d11049af4ec49bdbaa3584e7ce9887098b66a
 F src/pager.h 914103bb62dbcc3d8e9f14baec812d027264d457
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 8a2d92fb12ede40cfc8532f062763f353ba2868a
+F src/pcache.c 23dba1a9f262946c931e3f122bf3ebfe8a6f3013
 F src/pcache.h bd373ee3e4db310d6bbe7fa6d8d971de9678edd8
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
@@ -503,7 +503,7 @@ F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
 F test/tester.tcl 12fd8394caeb71f7d961707da8668756389bc9d3
 F test/thread001.test 3fb08080e1fe84d1bb7ec7bbc9e13743a77e5bc5
 F test/thread002.test ed9b800460df01e3cf9428ee11dc4e3f04b9b896
-F test/thread003.test 6e612660f31c49f70bbe2e6c78af1eed54d89968
+F test/thread003.test d78038bf0ec882b61bd5d05c4e77affb23f5033f
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
 F test/thread_common.tcl 8a9d7a4500dfdbbd36679c977831b62c130b76b1
@@ -625,7 +625,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P da1777259f53c2e20c7ced06bf6f2a550f0ea0fc
-R 825acac92c02335d51391b9bead07be1
+P 1928f15b78eee0fbf0a8ecdbbdd38dbbde2942b8
+R 166d531ec6ddd69fe2db8781062339d3
 U danielk1977
-Z ccfb17e90f1b78b85072c08441535cfa
+Z 853ee09750f4e2c171d372d7dd09456a
