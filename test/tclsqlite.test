@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.66 2008/08/25 19:09:02 drh Exp $
+# $Id: tclsqlite.test,v 1.67 2008/08/29 15:54:57 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -234,13 +234,13 @@ ifcapable {tclvar} {
   do_test tcl-5.1 {
     execsql {CREATE TABLE t3(a,b,c)}
     catch {unset x}
-    set x(1) 5
-    set x(2) 7
+    set x(1) A
+    set x(2) B
     execsql {
       INSERT INTO t3 VALUES($::x(1),$::x(2),$::x(3));
       SELECT * FROM t3
     }
-  } {5 7 {}}
+  } {A B {}}
   do_test tcl-5.2 {
     execsql {
       SELECT typeof(a), typeof(b), typeof(c) FROM t3
