@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.24 2008/08/26 23:08:04 drh Exp $
+# $Id: permutations.test,v 1.25 2008/08/29 12:00:20 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -175,8 +175,15 @@ run_tests "memsubsys1" -description {
 # Run some tests using pre-allocated page and scratch blocks. This time
 # the allocations are too small to use in most cases.
 #
+# Both ioerr5.test and malloc5.test are excluded because they test the
+# sqlite3_soft_heap_limit() and sqlite3_release_memory() functionality.
+# This functionality is disabled if a pre-allocated page block is provided.
+#
 run_tests "memsubsys2" -description {
   Tests using small pre-allocated page and scratch blocks
+} -exclude {
+  ioerr5.test
+  malloc5.test
 } -initialize {
   catch {db close}
   sqlite3_shutdown

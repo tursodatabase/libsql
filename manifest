@@ -1,5 +1,5 @@
-C If\sa\spage\sis\smade\seligible\sfor\srecycling\swhen\smore\sthan\sthe\sconfigured\smaximum\snumber\sof\spages\sare\sallocated,\sfree\sit\simmediately\sinstead\sof\sadding\sit\sto\sthe\sLRU\slist.\s(CVS\s5638)
-D 2008-08-29T09:10:03
+C In\spermutations.test,\sdisable\stests\sthat\sdepend\son\ssoft-heap-limit\sfunctionality\swhen\srunning\sthe\smemsubsys2\svariant.\sIt\sdisables\sthe\ssoft-heap-limit.\s(CVS\s5639)
+D 2008-08-29T12:00:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -446,7 +446,7 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test a0fc9e965d039c4de24f9af929f9a25eb8be8539
-F test/permutations.test e16bbd8cf443dd637317d9085b67bbdf91f21a1c
+F test/permutations.test fcd155dd44b8e85377e57643dd6e7929309e8259
 F test/pragma.test b55931bbd5dd543e56fd942dbf4b7439619b09a6
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -627,7 +627,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ab0292caa5887cc1bdc0e8c9d3f3502b83975440
-R b8688b362830896e075bddc5ac84e1a4
+P 4b12922dcb4547bf3a7276d0542b2e1d12ad338d
+R 2ffa9bd2f8d79fb5963ae5f5988d926b
 U danielk1977
-Z e3ebfdb580a05ecf955ac9f707aeb447
+Z 546ff8821ac9632bfb1f8285195992ba
