@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.150 2008/08/08 14:19:41 drh Exp $
+** $Id: tokenize.c,v 1.151 2008/08/29 02:14:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -503,6 +503,7 @@ abort_parse:
 
   sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   sqlite3DbFree(db, pParse->apVarExpr);
+  sqlite3DbFree(db, pParse->aAlias);
   if( nErr>0 && (pParse->rc==SQLITE_OK || pParse->rc==SQLITE_DONE) ){
     pParse->rc = SQLITE_ERROR;
   }

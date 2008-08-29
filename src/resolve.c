@@ -14,11 +14,74 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.4 2008/08/25 17:23:29 drh Exp $
+** $Id: resolve.c,v 1.5 2008/08/29 02:14:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
 #include <string.h>
+
+/*
+** Turn the pExpr expression into an alias for the iCol-th column of the
+** result set in pEList.
+**
+** If the result set column is a simple column reference, then this routine
+** makes an exact copy.  But for any other kind of expression, this
+** routine make a copy of the result set column as the argument to the
+** TK_AS operator.  The TK_AS operator causes the expression to be
+** evaluated just once and then reused for each alias.
+**
+** The reason for suppressing the TK_AS term when the expression is a simple
+** column reference is so that the column reference will be recognized as
+** usable by indices within the WHERE clause processing logic. 
+**
+** Hack:  The TK_AS operator is inhibited if zType[0]=='G'.  This means
+** that in a GROUP BY clause, the expression is evaluated twice.  Hence:
+**
+**     SELECT random()%5 AS x, count(*) FROM tab GROUP BY x
+**
+** Is equivalent to:
+**
+**     SELECT random()%5 AS x, count(*) FROM tab GROUP BY random()%5
+**
+** The result of random()%5 in the GROUP BY clause is probably different
+** from the result in the result-set.  We might fix this someday.  Or
+** then again, we might not...
+*/
+static void resolveAlias(
+  Parse *pParse,         /* Parsing context */
+  ExprList *pEList,      /* A result set */
+  int iCol,              /* A column in the result set.  0..pEList->nExpr-1 */
+  Expr *pExpr,           /* Transform this into an alias to the result set */
+  const char *zType      /* "GROUP" or "ORDER" or "" */
+){
+  Expr *pOrig;           /* The iCol-th column of the result set */
+  Expr *pDup;            /* Copy of pOrig */
+  sqlite3 *db;           /* The database connection */
+
+  assert( iCol>=0 && iCol<pEList->nExpr );
+  pOrig = pEList->a[iCol].pExpr;
+  assert( pOrig!=0 );
+  assert( pOrig->flags & EP_Resolved );
+  db = pParse->db;
+  pDup = sqlite3ExprDup(db, pOrig);
+  if( pDup==0 ) return;
+  if( pDup->op!=TK_COLUMN && zType[0]!='G' ){
+    pDup = sqlite3PExpr(pParse, TK_AS, pDup, 0, 0);
+    if( pDup==0 ) return;
+    if( pEList->a[iCol].iAlias==0 ){
+      pEList->a[iCol].iAlias = ++pParse->nAlias;
+    }
+    pDup->iTable = pEList->a[iCol].iAlias;
+  }
+  if( pExpr->flags & EP_ExpCollate ){
+    pDup->pColl = pExpr->pColl;
+    pDup->flags |= EP_ExpCollate;
+  }
+  if( pExpr->span.dyn ) sqlite3DbFree(db, (char*)pExpr->span.z);
+  if( pExpr->token.dyn ) sqlite3DbFree(db, (char*)pExpr->token.z);
+  memcpy(pExpr, pDup, sizeof(*pExpr));
+  sqlite3DbFree(db, pDup);
+}
 
 /*
 ** Given the name of a column of the form X.Y.Z or Y.Z or just Z, look up
@@ -218,7 +281,7 @@ static int lookupName(
       for(j=0; j<pEList->nExpr; j++){
         char *zAs = pEList->a[j].zName;
         if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
-          Expr *pDup, *pOrig;
+          Expr *pOrig;
           assert( pExpr->pLeft==0 && pExpr->pRight==0 );
           assert( pExpr->pList==0 );
           assert( pExpr->pSelect==0 );
@@ -228,15 +291,7 @@ static int lookupName(
             sqlite3DbFree(db, zCol);
             return 2;
           }
-          pDup = sqlite3ExprDup(db, pOrig);
-          if( pExpr->flags & EP_ExpCollate ){
-            pDup->pColl = pExpr->pColl;
-            pDup->flags |= EP_ExpCollate;
-          }
-          if( pExpr->span.dyn ) sqlite3DbFree(db, (char*)pExpr->span.z);
-          if( pExpr->token.dyn ) sqlite3DbFree(db, (char*)pExpr->token.z);
-          memcpy(pExpr, pDup, sizeof(*pExpr));
-          sqlite3DbFree(db, pDup);
+          resolveAlias(pParse, pEList, j, pExpr, "");
           cnt = 1;
           pMatch = 0;
           assert( zTab==0 && zDb==0 );
@@ -731,24 +786,11 @@ int sqlite3ResolveOrderGroupBy(
   assert( pEList!=0 );  /* sqlite3SelectNew() guarantees this */
   for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
     if( pItem->iCol ){
-      Expr *pE;
-      CollSeq *pColl;
-      int flags;
-
       if( pItem->iCol>pEList->nExpr ){
         resolveOutOfRangeError(pParse, zType, i+1, pEList->nExpr);
         return 1;
       }
-      pE = pItem->pExpr;
-      pColl = pE->pColl;
-      flags = pE->flags & EP_ExpCollate;
-      sqlite3ExprDelete(db, pE);
-      pE = sqlite3ExprDup(db, pEList->a[pItem->iCol-1].pExpr);
-      pItem->pExpr = pE;
-      if( pE && flags ){
-        pE->pColl = pColl;
-        pE->flags |= flags;
-      }
+      resolveAlias(pParse, pEList, pItem->iCol-1, pItem->pExpr, zType);
     }
   }
   return 0;

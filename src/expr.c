@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.391 2008/08/22 17:34:45 drh Exp $
+** $Id: expr.c,v 1.392 2008/08/29 02:14:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -701,6 +701,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p){
     pItem->sortOrder = pOldItem->sortOrder;
     pItem->done = 0;
     pItem->iCol = pOldItem->iCol;
+    pItem->iAlias = pOldItem->iAlias;
   }
   return pNew;
 }
@@ -829,6 +830,7 @@ ExprList *sqlite3ExprListAppend(
     memset(pItem, 0, sizeof(*pItem));
     pItem->zName = sqlite3NameFromToken(db, pName);
     pItem->pExpr = pExpr;
+    pItem->iAlias = 0;
   }
   return pList;
 
@@ -1665,11 +1667,46 @@ void sqlite3ExprHardCopy(Parse *pParse, int iReg, int nReg){
 }
 
 /*
+** Generate code to store the value of the iAlias-th alias in register
+** target.  The first time this is called, pExpr is evaluated to compute
+** the value of the alias.  The value is stored in an auxiliary register
+** and the number of that register is returned.  On subsequent calls,
+** the register number is returned without generating any code.
+**
+** Note that in order for this to work, code must be generated in the
+** same order that it is executed.
+**
+** Aliases are numbered starting with 1.  So iAlias is in the range
+** of 1 to pParse->nAlias inclusive.  
+**
+** pParse->aAlias[iAlias-1] records the register number where the value
+** of the iAlias-th alias is stored.  If zero, that means that the
+** alias has not yet been computed.
+*/
+static int codeAlias(Parse *pParse, int iAlias, Expr *pExpr){
+  sqlite3 *db = pParse->db;
+  int iReg;
+  if( pParse->aAlias==0 ){
+    pParse->aAlias = sqlite3DbMallocZero(db, 
+                                 sizeof(pParse->aAlias[0])*pParse->nAlias );
+    if( db->mallocFailed ) return 0;
+  }
+  assert( iAlias>0 && iAlias<=pParse->nAlias );
+  iReg = pParse->aAlias[iAlias-1];
+  if( iReg==0 ){
+    iReg = ++pParse->nMem;
+    sqlite3ExprCode(pParse, pExpr, iReg);
+    pParse->aAlias[iAlias-1] = iReg;
+  }
+  return iReg;
+}
+
+/*
 ** Generate code into the current Vdbe to evaluate the given
 ** expression.  Attempt to store the results in register "target".
 ** Return the register where results are stored.
 **
-** With this routine, there is no guaranteed that results will
+** With this routine, there is no guarantee that results will
 ** be stored in target.  The result might be stored in some other
 ** register if it is convenient to do so.  The calling function
 ** must check the return code and move the results to the desired
@@ -1682,8 +1719,10 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
   int regFree1 = 0;         /* If non-zero free this temporary register */
   int regFree2 = 0;         /* If non-zero free this temporary register */
   int r1, r2, r3, r4;       /* Various register numbers */
+  sqlite3 *db;
 
-  assert( v!=0 || pParse->db->mallocFailed );
+  db = pParse->db;
+  assert( v!=0 || db->mallocFailed );
   assert( target>0 && target<=pParse->nMem );
   if( v==0 ) return 0;
 
@@ -1729,7 +1768,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_STRING: {
-      sqlite3DequoteExpr(pParse->db, pExpr);
+      sqlite3DequoteExpr(db, pExpr);
       sqlite3VdbeAddOp4(v,OP_String8, 0, target, 0,
                         (char*)pExpr->token.z, pExpr->token.n);
       break;
@@ -1763,6 +1802,10 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     }
     case TK_REGISTER: {
       inReg = pExpr->iTable;
+      break;
+    }
+    case TK_AS: {
+      inReg = codeAlias(pParse, pExpr->iTable, pExpr->pLeft);
       break;
     }
 #ifndef SQLITE_OMIT_CAST
@@ -1921,7 +1964,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       const char *zId;
       int constMask = 0;
       int i;
-      sqlite3 *db = pParse->db;
       u8 enc = ENC(db);
       CollSeq *pColl = 0;
 
@@ -1929,7 +1971,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       testcase( op==TK_FUNCTION );
       zId = (char*)pExpr->token.z;
       nId = pExpr->token.n;
-      pDef = sqlite3FindFunction(pParse->db, zId, nId, nExpr, enc, 0);
+      pDef = sqlite3FindFunction(db, zId, nId, nExpr, enc, 0);
       assert( pDef!=0 );
       if( pList ){
         nExpr = pList->nExpr;
@@ -1966,7 +2008,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         }
       }
       if( pDef->needCollSeq ){
-        if( !pColl ) pColl = pParse->db->pDfltColl; 
+        if( !pColl ) pColl = db->pDfltColl; 
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0, 0, 0, (char *)pColl, P4_COLLSEQ);
       }
       sqlite3VdbeAddOp4(v, OP_Function, constMask, r1, target,
@@ -2206,7 +2248,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
          assert( pExpr->iColumn==OE_Rollback ||
                  pExpr->iColumn == OE_Abort ||
                  pExpr->iColumn == OE_Fail );
-         sqlite3DequoteExpr(pParse->db, pExpr);
+         sqlite3DequoteExpr(db, pExpr);
          sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->iColumn, 0,
                         (char*)pExpr->token.z, pExpr->token.n);
       } else {
@@ -2422,7 +2464,13 @@ int sqlite3ExprCodeExprList(
   assert( target>0 );
   n = pList->nExpr;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
-    sqlite3ExprCode(pParse, pItem->pExpr, target+i);
+    if( pItem->iAlias ){
+      int iReg = codeAlias(pParse, pItem->iAlias, pItem->pExpr);
+      Vdbe *v = sqlite3GetVdbe(pParse);
+      sqlite3VdbeAddOp2(v, OP_SCopy, iReg, target+i);
+    }else{
+      sqlite3ExprCode(pParse, pItem->pExpr, target+i);
+    }
     if( doHardCopy ) sqlite3ExprHardCopy(pParse, target, n);
   }
   return n;
@@ -2811,6 +2859,8 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
   switch( pExpr->op ){
     case TK_AGG_COLUMN:
     case TK_COLUMN: {
+      testcase( pExpr->op==TK_AGG_COLUMN );
+      testcase( pExpr->op==TK_COLUMN );
       /* Check to see if the column is in one of the tables in the FROM
       ** clause of the aggregate query */
       if( pSrcList ){

@@ -1,5 +1,5 @@
-C Fix\sioerr5.test\sso\sthat\sit\sworks\swith\sthe\snew\spcache\smodule.\s(CVS\s5636)
-D 2008-08-28T18:35:34
+C Avoid\sreevaluating\sWHERE\sand\sORDER\sBY\sexpressions\sthat\salias\sterms\sin\sthe\nresult\sset.\s\sTicket\s#3343.\s\sNote\sthat\saliased\sGROUP\sBY\sexpressions\sare\sstill\nevaluated\stwice.\s(CVS\s5637)
+D 2008-08-29T02:14:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,8 +103,8 @@ F src/build.c 160c71acca8f643f436ed6c1ee2f684c88df4dfe
 F src/callback.c 27e55dfafc66e97dd8e7343a1d7bb295f3afd736
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 2373f20a91bec70e20e0e715520c8010d26ebb52
-F src/delete.c d979a250a47b9f52effa2998070810239e38db8b
-F src/expr.c 622c8d8e3cc8246a33aba30af5c166e4a3898c4b
+F src/delete.c 434dd6f9d19475b35f2f57041d4bbba9f64da5ac
+F src/expr.c 6413795aa13ceb05994e6b2b453a77df3b892e7b
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c f2e0b55f13e678a5c5ff94f0f225ed0a995acba7
 F src/global.c 239d03b6dbae6c985deb2ffb54ab919debb9f8d7
@@ -143,12 +143,12 @@ F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
-F src/resolve.c 74725e61c9eefb597a203631d921efd9005b7a88
+F src/resolve.c a6abf83125bce0c80ba04acc27c3565155ad305c
 F src/select.c 8187927315ee592a8ee94d753b8a1a3625c33523
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in c0e84a2d6e9f3263599174ff7261ba6daf730b4f
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h c66e9c22a9c7fcf32db52a14fcddaa4d87bf9559
+F src/sqliteInt.h 90839e736d81d6c8b9d5e5d67764664b3605ceaf
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 8caa772cd9310bc297280f7cf0ede4d69ed5b801
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -179,7 +179,7 @@ F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c d74fc445e0dba0e00806117eb449b307c0b146bf
-F src/tokenize.c d16ca0e9944161c76d2e4c11dc379ec88189b93b
+F src/tokenize.c 76fe4cb8a606c24c76843ee2170cf84085f40817
 F src/trigger.c 649940b5bf5838a33721fb72372e7c9d1faf56a9
 F src/update.c f2cf6f00d542956bd49ba4b9815c2900d9225bf2
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
@@ -198,6 +198,7 @@ F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
 F src/where.c 72a4ac6890e9571375458021688dba6c45689082
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
+F test/alias.test c321c114a8a31a33e3cbda910fa39949f5d9dcb2
 F test/all.test 89e09ed0074083ac6f208dc3243429e8f89efb69
 F test/alter.test 6353aae6839e486c9b7d8f73b1f4a1e98e57332c
 F test/alter2.test dd55146e812622c8fc51fd2216bcd8dca8880752
@@ -625,7 +626,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 44193b92770062271711570d8532fa5af5f5da54
-R b653a7b6746fff19fe5c3b4b1ca78010
-U danielk1977
-Z e1c85e2c49e0ca001d86550ca68a5398
+P 83e6a75e7d70b4b01f0892924d7a8a49d5ef6bf2
+R f7b963f31369c623d2a04efc9a423904
+U drh
+Z 9a20437031aab1a22d3ddda0e55ea04f
