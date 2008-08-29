@@ -1,5 +1,5 @@
-C remove\sa\sdoubled\sfunction\sdeclaration\s(the\ssecond\sjust\sis\sjust\stwo\slines\sbelow)\s(CVS\s5642)
-D 2008-08-29T18:40:15
+C remove\sprivate\sdeclaration\sof\ssqlite3_snprintf()\sin\ssqliteInt.h\sas\sthere\sis\salready\sa\spublic\sdeclaration\sin\ssqlite3.h\s(CVS\s5643)
+D 2008-08-29T18:42:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -148,7 +148,7 @@ F src/select.c 8187927315ee592a8ee94d753b8a1a3625c33523
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in c0e84a2d6e9f3263599174ff7261ba6daf730b4f
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 677c2006f6521715692acbd4d28ac14058cf2cd2
+F src/sqliteInt.h e7f9e974763e93707ba4fe564b50744ba2a08658
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 8caa772cd9310bc297280f7cf0ede4d69ed5b801
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -627,7 +627,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4e011ddf9e483e3f7c7427205e50f7c3e5616790
-R 676287eb56b2ccbd7d73a61aa530d4bd
+P e5793110d5e3b8bc4d139fc21f0962ccd48cf10c
+R 6beb42ef8d9807ff859e28c1b1b907d7
 U rse
-Z c2e6428ec7f59e835999b3bc9060b9a6
+Z 696c63453c8c3f13345d5460922e9cf7
