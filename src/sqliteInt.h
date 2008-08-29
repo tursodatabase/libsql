@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.762 2008/08/29 02:14:03 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.763 2008/08/29 18:40:15 rse Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2029,7 +2029,6 @@ int sqlite3IsNaN(double);
 
 void sqlite3VXPrintf(StrAccum*, int, const char*, va_list);
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
-char *sqlite3MAppendf(sqlite3 *, char *, const char *, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
