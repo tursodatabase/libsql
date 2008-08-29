@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.23 2008/08/28 17:46:19 drh Exp $
+** @(#) $Id: pcache.c,v 1.24 2008/08/29 09:10:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -748,7 +748,13 @@ void sqlite3PcacheRelease(PgHdr *p){
     if( (p->flags&PGHDR_DIRTY)==0 ){
       pCache->nPinned--;
       pcacheEnterMutex();
-      pcacheAddToLruList(p);
+      if( pcache.nCurrentPage>pcache.nMaxPage ){
+        pcacheRemoveFromList(&pCache->pClean, p);
+        pcacheRemoveFromHash(p);
+        pcachePageFree(p);
+      }else{
+        pcacheAddToLruList(p);
+      }
       pcacheExitMutex();
     }else{
       /* Move the page to the head of the caches dirty list. */
@@ -930,6 +936,17 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
   pcacheExitMutex();
 }
 
+/*
+** If there are currently more than pcache.nMaxPage pages allocated, try
+** to recycle pages to reduce the number allocated to pcache.nMaxPage.
+*/
+static void pcacheEnforceMaxPage(){
+  PgHdr *p;
+  assert( sqlite3_mutex_held(pcache.mutex) );
+  while( pcache.nCurrentPage>pcache.nMaxPage && (p = pcacheRecyclePage()) ){
+    pcachePageFree(p);
+  }
+}
 
 /*
 ** Close a cache.
@@ -942,9 +959,9 @@ void sqlite3PcacheClose(PCache *pCache){
   if( pCache->bPurgeable ){
     pcache.nMaxPage -= pCache->nMax;
     pcache.nMinPage -= pCache->nMin;
+    pcacheEnforceMaxPage();
   }
   sqlite3_free(pCache->apHash);
-
   pcacheExitMutex();
 }
 
@@ -1193,6 +1210,7 @@ void sqlite3PcacheSetCachesize(PCache *pCache, int mxPage){
     pcacheEnterMutex();
     pcache.nMaxPage -= pCache->nMax;
     pcache.nMaxPage += mxPage;
+    pcacheEnforceMaxPage();
     pcacheExitMutex();
   }
   pCache->nMax = mxPage;
@@ -1222,3 +1240,24 @@ int sqlite3PcacheReleaseMemory(int nReq){
   return nFree;
 }
 #endif /* SQLITE_ENABLE_MEMORY_MANAGEMENT */
+
+#ifdef SQLITE_TEST
+void sqlite3PcacheStats(
+  int *pnCurrent,
+  int *pnMax,
+  int *pnMin,
+  int *pnRecyclable
+){
+  PgHdr *p;
+  int nRecyclable = 0;
+  for(p=pcache.pLruHead; p; p=p->pNextLru){
+    nRecyclable++;
+  }
+
+  *pnCurrent = pcache.nCurrentPage;
+  *pnMax = pcache.nMaxPage;
+  *pnMin = pcache.nMinPage;
+  *pnRecyclable = nRecyclable;
+}
+#endif
+

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.320 2008/08/27 15:21:34 drh Exp $
+** $Id: test1.c,v 1.321 2008/08/29 09:10:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4501,6 +4501,38 @@ static int reset_prng_state(
   return TCL_OK;
 }
 
+/*
+** tclcmd:  pcache_stats
+*/
+static int test_pcache_stats(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int nMin;
+  int nMax;
+  int nCurrent;
+  int nRecyclable;
+  Tcl_Obj *pRet;
+
+  sqlite3PcacheStats(&nCurrent, &nMax, &nMin, &nRecyclable);
+
+  pRet = Tcl_NewObj();
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj("current", -1));
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(nCurrent));
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj("max", -1));
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(nMax));
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj("min", -1));
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(nMin));
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj("recyclable", -1));
+  Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(nRecyclable));
+
+  Tcl_SetObjResult(interp, pRet);
+
+  return TCL_OK;
+}
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -4675,6 +4707,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_blob_read",  test_blob_read, 0  },
      { "sqlite3_blob_write", test_blob_write, 0  },
 #endif
+     { "pcache_stats",       test_pcache_stats, 0  },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

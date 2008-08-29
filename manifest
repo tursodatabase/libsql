@@ -1,5 +1,5 @@
-C Avoid\sreevaluating\sWHERE\sand\sORDER\sBY\sexpressions\sthat\salias\sterms\sin\sthe\nresult\sset.\s\sTicket\s#3343.\s\sNote\sthat\saliased\sGROUP\sBY\sexpressions\sare\sstill\nevaluated\stwice.\s(CVS\s5637)
-D 2008-08-29T02:14:03
+C If\sa\spage\sis\smade\seligible\sfor\srecycling\swhen\smore\sthan\sthe\sconfigured\smaximum\snumber\sof\spages\sare\sallocated,\sfree\sit\simmediately\sinstead\sof\sadding\sit\sto\sthe\sLRU\slist.\s(CVS\s5638)
+D 2008-08-29T09:10:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,8 +137,8 @@ F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c 032d11049af4ec49bdbaa3584e7ce9887098b66a
 F src/pager.h 914103bb62dbcc3d8e9f14baec812d027264d457
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 4853068cb21ae742507186f8780b2eba33b734ff
-F src/pcache.h bd373ee3e4db310d6bbe7fa6d8d971de9678edd8
+F src/pcache.c e1cb0e77d2a299cfa4aa95d2e3307cc6900d2007
+F src/pcache.h 53730c33310cdf7a5c94e8333c853d59a3b30226
 F src/pragma.c f5b271b090af7fcedd308d7c5807a5503f7a853d
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
@@ -153,7 +153,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 8caa772cd9310bc297280f7cf0ede4d69ed5b801
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c 420c7936d71f8318ea23b254c0d2cfc365135403
-F src/test1.c bca7922b1eb9e8ca6042651a6974f0e2ad022df7
+F src/test1.c e5781c664321fc10092dda13d6c3d02ae844566f
 F src/test2.c eaa77124786649eedf47d3c5e94d8070c0da228f
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
 F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
@@ -445,6 +445,7 @@ F test/pager2.test 070983b89a308adaba525a2f9c1ba0592c72fa3d
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
+F test/pcache.test a0fc9e965d039c4de24f9af929f9a25eb8be8539
 F test/permutations.test e16bbd8cf443dd637317d9085b67bbdf91f21a1c
 F test/pragma.test b55931bbd5dd543e56fd942dbf4b7439619b09a6
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
@@ -626,7 +627,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 83e6a75e7d70b4b01f0892924d7a8a49d5ef6bf2
-R f7b963f31369c623d2a04efc9a423904
-U drh
-Z 9a20437031aab1a22d3ddda0e55ea04f
+P ab0292caa5887cc1bdc0e8c9d3f3502b83975440
+R b8688b362830896e075bddc5ac84e1a4
+U danielk1977
+Z e3ebfdb580a05ecf955ac9f707aeb447
