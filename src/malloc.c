@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.36 2008/08/21 12:19:44 danielk1977 Exp $
+** $Id: malloc.c,v 1.37 2008/08/29 17:56:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -312,10 +312,10 @@ void *sqlite3ScratchMalloc(int n){
     }else{
       int i;
       i = mem0.aScratchFree[--mem0.nScratchFree];
-      sqlite3_mutex_leave(mem0.mutex);
       i *= sqlite3Config.szScratch;
       sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_USED, 1);
       sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
+      sqlite3_mutex_leave(mem0.mutex);
       p = (void*)&((char*)sqlite3Config.pScratch)[i];
     }
   }

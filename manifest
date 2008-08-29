@@ -1,5 +1,5 @@
-C Modify\stclsqlite.test\sso\sthat\sit\sworks\sreliably\swith\stcl\s8.5.4.\s(CVS\s5640)
-D 2008-08-29T15:54:57
+C Move\sa\scall\sto\ssqlite3_mutex_leave()\sto\sprotect\scalls\sto\ssqlite3StatusAdd()\srelated\sto\sscratch\s(SQLITE_CONFIG_SCRATCH)\smemory.\s(CVS\s5641)
+D 2008-08-29T17:56:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +116,7 @@ F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c eb1fe4f44d7c8ff53fc0c6a4388ab79fbd34cd64
 F src/main.c f372968372bdf4275333327fd04737f667e0f3af
-F src/malloc.c 7ccc630b359f57a47b6034af54e42eb838eebd46
+F src/malloc.c 6bd94746cca2ad3afc0020b934848378f27df244
 F src/mem1.c 3a7fe31d8290baa3bb203af72f7dfd6323966bcd
 F src/mem2.c 7256327b96927020824e06ffb3443b99a28da047
 F src/mem3.c c73e935d0b900abc51d5fa45f880937b062f4a9f
@@ -627,7 +627,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 047c7bdb9f37462c462071334f1cb9d3400917db
-R f411fbe65e0c3dfe793771b6348667b5
+P 790d329f5d18d361a5d6d34f46c269f8b4057cd9
+R efac81fc6476abca03ea778a46edc83f
 U danielk1977
-Z 25a3ba31f696c906a0852daa4ea99091
+Z a3c2c898d8615f9d40ba6ed98bb1a853
