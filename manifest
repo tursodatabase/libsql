@@ -1,5 +1,5 @@
-C Add\ssome\scode\sto\spermutations.test\sto\smake\ssure\sno\stest\sfile\smodifies\sthe\sshared-cache\ssetting.\s(CVS\s5645)
-D 2008-08-30T13:25:11
+C Run\spermutation\ssubtests\sin\ssorted\sorder.\s(CVS\s5646)
+D 2008-08-30T16:07:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -446,7 +446,7 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test a0fc9e965d039c4de24f9af929f9a25eb8be8539
-F test/permutations.test ae920d74e8f8bbc17cb7d5012556c679cb830068
+F test/permutations.test e4509095a9870ae13b6184b3b957f78675716e6f
 F test/pragma.test b55931bbd5dd543e56fd942dbf4b7439619b09a6
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -627,7 +627,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 87c7e82f54cd446721d553d5c48ca2571b063669
-R e2c52fcf7b3d6d8b01994af543c655f8
-U danielk1977
-Z 1886c1c3ded3c3046314dc2f653c5119
+P 8565b7c66525dc7808a2a266deb1a0d995c99917
+R 36aa38b4e8b452d8f5ae51f2ed213163
+U drh
+Z 7ac05c493149163b58248c21ad6ca047

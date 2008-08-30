@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.26 2008/08/30 13:25:11 danielk1977 Exp $
+# $Id: permutations.test,v 1.27 2008/08/30 16:07:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -78,6 +78,7 @@ foreach filename [glob $testdir/*.test] {
   set filename [file tail $filename]
   if {[lsearch $EXCLUDE $filename] < 0} { lappend ALLTESTS $filename }
 }
+set ALLTESTS [lsort $ALLTESTS]
 
 rename finish_test really_finish_test2
 proc finish_test {} {}
