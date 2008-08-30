@@ -1,5 +1,5 @@
-C Run\spermutation\ssubtests\sin\ssorted\sorder.\s(CVS\s5646)
-D 2008-08-30T16:07:04
+C Version\s3.6.2\s(CVS\s5647)
+D 2008-08-30T16:34:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -627,7 +627,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8565b7c66525dc7808a2a266deb1a0d995c99917
+P 4cd1bdf3ce8077e10dcd8ae4fe2df0dd9bb0f56b
 R 36aa38b4e8b452d8f5ae51f2ed213163
 U drh
-Z 7ac05c493149163b58248c21ad6ca047
+Z 5f6f0c2342208012993669716618a4c6
