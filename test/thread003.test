@@ -12,7 +12,7 @@
 #   This file contains tests that attempt to break the pcache module
 #   by bombarding it with simultaneous requests from multiple threads.
 #     
-# $Id: thread003.test,v 1.3 2008/08/28 13:55:10 danielk1977 Exp $
+# $Id: thread003.test,v 1.4 2008/08/30 09:10:17 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 
@@ -155,6 +155,8 @@ do_test thread003.3 {
 #
 set nSecond 30
 puts "Starting thread003.3 (should run for ~$nSecond seconds)"
+unset -nocomplain finished(1)
+unset -nocomplain finished(2)
 do_test thread003.4 {
   thread_spawn finished(1) $thread_procs [format {
     set iEnd [expr {[clock_seconds] + %d}]

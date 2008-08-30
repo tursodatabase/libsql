@@ -1,5 +1,5 @@
-C remove\sprivate\sdeclaration\sof\ssqlite3_snprintf()\sin\ssqliteInt.h\sas\sthere\sis\salready\sa\spublic\sdeclaration\sin\ssqlite3.h\s(CVS\s5643)
-D 2008-08-29T18:42:30
+C Make\ssure\sthread003.test\swaits\sfor\sall\sspawned\sthreads\sto\sfinish\sbefore\scontinuing.\s(CVS\s5644)
+D 2008-08-30T09:10:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -505,7 +505,7 @@ F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
 F test/tester.tcl 12fd8394caeb71f7d961707da8668756389bc9d3
 F test/thread001.test 3fb08080e1fe84d1bb7ec7bbc9e13743a77e5bc5
 F test/thread002.test ed9b800460df01e3cf9428ee11dc4e3f04b9b896
-F test/thread003.test fae60bf3f15c074fd24768492ecb476d8734cffd
+F test/thread003.test 047fb3b971f5dac856d34394186bf8a4bdd39e3e
 F test/thread1.test 776c9e459b75ba905193b351926ac4019b049f35
 F test/thread2.test 6d7b30102d600f51b4055ee3a5a19228799049fb
 F test/thread_common.tcl 8a9d7a4500dfdbbd36679c977831b62c130b76b1
@@ -627,7 +627,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e5793110d5e3b8bc4d139fc21f0962ccd48cf10c
-R 6beb42ef8d9807ff859e28c1b1b907d7
-U rse
-Z 696c63453c8c3f13345d5460922e9cf7
+P 4113e778be7a1e3e7a67583913e137c66d88a190
+R 2a60c5d1cd625352cfef0ef380bf8453
+U danielk1977
+Z 3388fb24fd72ba29854409fc76ac5077
