@@ -1,5 +1,5 @@
-C Make\ssure\sthread003.test\swaits\sfor\sall\sspawned\sthreads\sto\sfinish\sbefore\scontinuing.\s(CVS\s5644)
-D 2008-08-30T09:10:17
+C Add\ssome\scode\sto\spermutations.test\sto\smake\ssure\sno\stest\sfile\smodifies\sthe\sshared-cache\ssetting.\s(CVS\s5645)
+D 2008-08-30T13:25:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 8caa772cd9310bc297280f7cf0ede4d69ed5b801
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c 420c7936d71f8318ea23b254c0d2cfc365135403
-F src/test1.c e5781c664321fc10092dda13d6c3d02ae844566f
+F src/test1.c 1b641aca173d8dfd2faf8f28aee0a4db20ac1534
 F src/test2.c eaa77124786649eedf47d3c5e94d8070c0da228f
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
 F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
@@ -446,7 +446,7 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test a0fc9e965d039c4de24f9af929f9a25eb8be8539
-F test/permutations.test fcd155dd44b8e85377e57643dd6e7929309e8259
+F test/permutations.test ae920d74e8f8bbc17cb7d5012556c679cb830068
 F test/pragma.test b55931bbd5dd543e56fd942dbf4b7439619b09a6
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -627,7 +627,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4113e778be7a1e3e7a67583913e137c66d88a190
-R 2a60c5d1cd625352cfef0ef380bf8453
+P 87c7e82f54cd446721d553d5c48ca2571b063669
+R e2c52fcf7b3d6d8b01994af543c655f8
 U danielk1977
-Z 3388fb24fd72ba29854409fc76ac5077
+Z 1886c1c3ded3c3046314dc2f653c5119

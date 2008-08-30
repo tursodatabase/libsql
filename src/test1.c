@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.321 2008/08/29 09:10:03 danielk1977 Exp $
+** $Id: test1.c,v 1.322 2008/08/30 13:25:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1368,7 +1368,7 @@ static int sqlite3_mprintf_hexdouble(
 }
 
 /*
-** Usage: sqlite3_enable_shared_cache      BOOLEAN
+** Usage: sqlite3_enable_shared_cache ?BOOLEAN?
 **
 */
 #if !defined(SQLITE_OMIT_SHARED_CACHE)
@@ -1383,18 +1383,21 @@ static int test_enable_shared(
   int ret = 0;
   extern int sqlite3SharedCacheEnabled;
 
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "BOOLEAN");
-    return TCL_ERROR;
-  }
-  if( Tcl_GetBooleanFromObj(interp, objv[1], &enable) ){
+  if( objc!=2 && objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?BOOLEAN?");
     return TCL_ERROR;
   }
   ret = sqlite3SharedCacheEnabled;
-  rc = sqlite3_enable_shared_cache(enable);
-  if( rc!=SQLITE_OK ){
-    Tcl_SetResult(interp, (char *)sqlite3ErrStr(rc), TCL_STATIC);
-    return TCL_ERROR;
+
+  if( objc==2 ){
+    if( Tcl_GetBooleanFromObj(interp, objv[1], &enable) ){
+      return TCL_ERROR;
+    }
+    rc = sqlite3_enable_shared_cache(enable);
+    if( rc!=SQLITE_OK ){
+      Tcl_SetResult(interp, (char *)sqlite3ErrStr(rc), TCL_STATIC);
+      return TCL_ERROR;
+    }
   }
   Tcl_SetObjResult(interp, Tcl_NewBooleanObj(ret));
   return TCL_OK;

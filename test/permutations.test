@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.25 2008/08/29 12:00:20 danielk1977 Exp $
+# $Id: permutations.test,v 1.26 2008/08/30 13:25:11 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -133,19 +133,31 @@ proc run_tests {name args} {
   uplevel $options(-initialize)
   set ::permutations_presql $options(-presql)
 
-  foreach file $options(-include) {
+  foreach file [lsort $options(-include)] {
     if {[lsearch $options(-exclude) $file] < 0 &&
        ( $::perm::testfile eq "" ||
          $::perm::testfile eq $file ||
         "$::perm::testfile.test" eq $file )
     } {
+      set ::perm::shared_cache_setting [shared_cache_setting]
       uplevel source $::testdir/$file
+      if {$::perm::shared_cache_setting ne [shared_cache_setting]} {
+        error "File $::testdir/$file changed the shared cache setting from $::perm::shared_cache_setting to [shared_cache_setting]"
+      }
     } else {
       # puts "skipping file $file"
     }
   }
 
   uplevel $options(-shutdown)
+}
+
+proc shared_cache_setting {} {
+  set ret 0
+  catch {
+    set ret [sqlite3_enable_shared_cache]
+  }
+  return $ret
 }
 
 #############################################################################
