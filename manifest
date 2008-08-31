@@ -1,5 +1,5 @@
-C Version\s3.6.2\s(CVS\s5647)
-D 2008-08-30T16:34:19
+C Changed\sto\sused\ssqlite3_snprintf\sinstead\sof\ssnprintf\s(test\scode\sonly).\s(CVS\s5648)
+D 2008-08-31T00:29:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -160,7 +160,7 @@ F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
 F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
 F src/test6.c 0a0304a69cfa4962a429d084c6d451ff9e4fb572
 F src/test7.c 475b1fa7e3275408b40a3cbdc9508cbdc41ffa02
-F src/test8.c 2f821eabefc73e4fd90ea24501d105e74b8e76d2
+F src/test8.c 3637439424d0d21ff2dcf9b015c30fcc1e7bcb24
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c da9f58f49faccd3a26ba89f58de125862351b6e2
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
@@ -627,7 +627,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4cd1bdf3ce8077e10dcd8ae4fe2df0dd9bb0f56b
-R 36aa38b4e8b452d8f5ae51f2ed213163
-U drh
-Z 5f6f0c2342208012993669716618a4c6
+P 88c51b9f1579707a8ec394eba61539fabd725e2a
+R 6475b6bc34459c3a14e2d3b7fca18d08
+U shane
+Z cb37c60a6ecfe6b85c8d7118af0df8f4
