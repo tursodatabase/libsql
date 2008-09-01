@@ -1,5 +1,5 @@
-C Omit\sprototype\sfor\sand\scalls\sto\ssqlite3MaterializeView()\sif\s\s!defined(SQLITE_OMIT_VIEW)\s&&\s!defined(SQLITE_OMIT_TRIGGER).\s(CVS\s5655)
-D 2008-09-01T21:59:43
+C Added\s\s(_MSC_VER>1200)\sto\sSQLITE_DEPRECATED\sand\sSQLITE_EXPERIMENTAL\sdefines\ssince\s__declspec(deprecated)\sisn't\ssupported\sby\sVC\s6\sor\searlier.\s\sTicket\s#3347.\s(CVS\s5656)
+D 2008-09-01T22:06:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/resolve.c a6abf83125bce0c80ba04acc27c3565155ad305c
 F src/select.c eec7c5f28a0c75fdd8500630435af176bba73219
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
-F src/sqlite.h.in 0031454ccb163b191daab7f7151d9d68af8b26c9
+F src/sqlite.h.in 81c37dcbd5bb1b1a5f6cdd96a67e82e6a0c3d1da
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h 4ac6c25d217307c1d95800ee50b29292806693e0
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P bdeefe37602f8b0cd7c63a8c1e52de319cc51bea
-R 272b24068639c4b760bf09f5a099c551
+P 9cf484fc17944ffa14335e391112d82d2390d116
+R 8d8bb8fb8868373b20efefc5087e7a3e
 U shane
-Z 48ff9b71cc8628400c81fb5d5b62d0f5
+Z b4739fa06590f36964521c309e7e2f82
