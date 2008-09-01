@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.132 2008/07/31 01:34:34 shane Exp $
+** $Id: os_win.c,v 1.133 2008/09/01 22:15:19 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -61,6 +61,13 @@
 ** Include code that is common to all os_*.c files
 */
 #include "os_common.h"
+
+/*
+** Some microsoft compilers lack this definition.
+*/
+#ifndef INVALID_FILE_ATTRIBUTES
+# define INVALID_FILE_ATTRIBUTES ((DWORD)-1) 
+#endif
 
 /*
 ** Determine if we are dealing with WindowsCE - which has a much
