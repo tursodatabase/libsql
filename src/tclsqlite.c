@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.220 2008/08/26 21:33:34 drh Exp $
+** $Id: tclsqlite.c,v 1.221 2008/09/01 20:38:12 shane Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -1343,11 +1343,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_AppendResult(interp,"Error: non-null separator required for copy",0);
       return TCL_ERROR;
     }
-    if(strcasecmp(zConflict, "rollback") != 0 &&
-       strcasecmp(zConflict, "abort"   ) != 0 &&
-       strcasecmp(zConflict, "fail"    ) != 0 &&
-       strcasecmp(zConflict, "ignore"  ) != 0 &&
-       strcasecmp(zConflict, "replace" ) != 0 ) {
+    if(sqlite3StrICmp(zConflict, "rollback") != 0 &&
+       sqlite3StrICmp(zConflict, "abort"   ) != 0 &&
+       sqlite3StrICmp(zConflict, "fail"    ) != 0 &&
+       sqlite3StrICmp(zConflict, "ignore"  ) != 0 &&
+       sqlite3StrICmp(zConflict, "replace" ) != 0 ) {
       Tcl_AppendResult(interp, "Error: \"", zConflict, 
             "\", conflict-algorithm must be one of: rollback, "
             "abort, fail, ignore, or replace", 0);
