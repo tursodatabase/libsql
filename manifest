@@ -1,5 +1,5 @@
-C Converted\sstrcasecmp\sto\ssqlite3StrICmp.\s\sTest\scode\sonly.\s(CVS\s5654)
-D 2008-09-01T20:38:12
+C Omit\sprototype\sfor\sand\scalls\sto\ssqlite3MaterializeView()\sif\s\s!defined(SQLITE_OMIT_VIEW)\s&&\s!defined(SQLITE_OMIT_TRIGGER).\s(CVS\s5655)
+D 2008-09-01T21:59:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/build.c 160c71acca8f643f436ed6c1ee2f684c88df4dfe
 F src/callback.c cfc8d4f95fd831e25532d0fee2af5306283f4835
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 6609557446f2d6788e64e18c09e03fdaf4dd55cc
-F src/delete.c 434dd6f9d19475b35f2f57041d4bbba9f64da5ac
+F src/delete.c bae6684aa02e1f7cf6328023157c91d9cf94200b
 F src/expr.c 6413795aa13ceb05994e6b2b453a77df3b892e7b
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
 F src/func.c c02615eafbe415d32d02499d31bbb1f72f052868
@@ -149,7 +149,7 @@ F src/select.c eec7c5f28a0c75fdd8500630435af176bba73219
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 0031454ccb163b191daab7f7151d9d68af8b26c9
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 3ea61550f587eb4432373bcf145cd754da342ddc
+F src/sqliteInt.h 4ac6c25d217307c1d95800ee50b29292806693e0
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 8caa772cd9310bc297280f7cf0ede4d69ed5b801
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -183,7 +183,7 @@ F src/test_thread.c d74fc445e0dba0e00806117eb449b307c0b146bf
 F src/test_wsd.c 9eadce9ae2910d738018649d5de26a65b5881ce6
 F src/tokenize.c aaa5fa6a4536a9dd7c855a3f66f32508f1612138
 F src/trigger.c 649940b5bf5838a33721fb72372e7c9d1faf56a9
-F src/update.c f2cf6f00d542956bd49ba4b9815c2900d9225bf2
+F src/update.c 206fffc877379affe3a9b42c78e478ea0874c9fe
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 846fff5f0902418cfce2915d2ccfe567481a1289
-R 68ff840a0535110f8fc749062d8fd1de
+P bdeefe37602f8b0cd7c63a8c1e52de319cc51bea
+R 272b24068639c4b760bf09f5a099c551
 U shane
-Z 91f50584748e76ba04a7c22ee8df70a3
+Z 48ff9b71cc8628400c81fb5d5b62d0f5

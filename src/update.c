@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.183 2008/08/22 12:30:52 drh Exp $
+** $Id: update.c,v 1.184 2008/09/01 21:59:43 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -328,9 +328,11 @@ void sqlite3Update(
   /* If we are trying to update a view, realize that view into
   ** a ephemeral table.
   */
+#if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
   if( isView ){
     sqlite3MaterializeView(pParse, pTab, pWhere, iCur);
   }
+#endif
 
   /* Resolve the column names in all the expressions in the
   ** WHERE clause.

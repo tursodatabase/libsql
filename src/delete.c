@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.174 2008/08/29 02:14:03 drh Exp $
+** $Id: delete.c,v 1.175 2008/09/01 21:59:43 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -249,9 +249,11 @@ void sqlite3DeleteFrom(
   /* If we are trying to delete from a view, realize that view into
   ** a ephemeral table.
   */
+#if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
   if( isView ){
     sqlite3MaterializeView(pParse, pTab, pWhere, iCur);
   }
+#endif
 
   /* Resolve the column names in the WHERE clause.
   */
