@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.764 2008/08/29 18:42:30 rse Exp $
+** @(#) $Id: sqliteInt.h,v 1.765 2008/09/01 15:52:11 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -983,6 +983,7 @@ struct Table {
   char **azModuleArg;  /* Text of all module args. [0] is module name */
 #endif
   Schema *pSchema;     /* Schema that contains this table */
+  Table *pNextZombie;  /* Next on the Parse.pZombieTab list */
 };
 
 /*
@@ -1701,6 +1702,7 @@ struct Parse {
   Table **apVtabLock;        /* Pointer to virtual tables needing locking */
 #endif
   int nHeight;            /* Expression tree height of current sub-select */
+  Table *pZombieTab;      /* List of Table objects to delete after code gen */
 };
 
 #ifdef SQLITE_OMIT_VIRTUALTABLE

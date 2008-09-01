@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.471 2008/08/26 12:56:14 drh Exp $
+** $Id: select.c,v 1.472 2008/09/01 15:52:11 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2427,6 +2427,9 @@ static void substSelect(
   int iTable,          /* Table to be replaced */
   ExprList *pEList     /* Substitute values */
 ){
+  SrcList *pSrc;
+  struct SrcList_item *pItem;
+  int i;
   if( !p ) return;
   substExprList(db, p->pEList, iTable, pEList);
   substExprList(db, p->pGroupBy, iTable, pEList);
@@ -2434,6 +2437,12 @@ static void substSelect(
   substExpr(db, p->pHaving, iTable, pEList);
   substExpr(db, p->pWhere, iTable, pEList);
   substSelect(db, p->pPrior, iTable, pEList);
+  pSrc = p->pSrc;
+  if( pSrc ){
+    for(i=pSrc->nSrc, pItem=pSrc->a; i>0; i--, pItem++){
+      substSelect(db, pItem->pSelect, iTable, pEList);
+    }
+  }
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
@@ -2718,17 +2727,31 @@ static int flattenSubquery(
     ** elements we are now copying in.
     */
     if( pSrc ){
+      Table *pTabToDel;
       pSubitem = &pSrc->a[iFrom];
       nSubSrc = pSubSrc->nSrc;
       jointype = pSubitem->jointype;
-      sqlite3DeleteTable(pSubitem->pTab);
       sqlite3DbFree(db, pSubitem->zDatabase);
       sqlite3DbFree(db, pSubitem->zName);
       sqlite3DbFree(db, pSubitem->zAlias);
-      pSubitem->pTab = 0;
       pSubitem->zDatabase = 0;
       pSubitem->zName = 0;
       pSubitem->zAlias = 0;
+
+      /* If the FROM element is a subquery, defer deleting the Table
+      ** object associated with that subquery until code generation is
+      ** complete, since there may still exist Expr.pTab entires that
+      ** refer to the subquery even after flattening.  Ticket #3346.
+      */
+      if( (pTabToDel = pSubitem->pTab)!=0 ){
+        if( pTabToDel->nRef==1 ){
+          pTabToDel->pNextZombie = pParse->pZombieTab;
+          pParse->pZombieTab = pTabToDel;
+        }else{
+          pTabToDel->nRef--;
+        }
+      }
+      pSubitem->pTab = 0;
     }
     if( nSubSrc!=1 || !pSrc ){
       int extra = nSubSrc - 1;

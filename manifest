@@ -1,5 +1,5 @@
-C Have\sthe\srtree\smodule\sset\sthe\sestimatedCost\soutput\svariable.\sTicket\s#3312.\s(CVS\s5649)
-D 2008-09-01T12:47:00
+C Defer\sdeleting\sTable\sobjects\sassociated\swith\sflattened\ssubqueries\suntil\nall\scode\shas\sbeen\sgenerated,\sin\scase\ssome\sexpression\snode\sstill\sreferences\nthe\sTable\sobject.\s\sTicket\s#3346.\s(CVS\s5650)
+D 2008-09-01T15:52:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -145,11 +145,11 @@ F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/resolve.c a6abf83125bce0c80ba04acc27c3565155ad305c
-F src/select.c 8187927315ee592a8ee94d753b8a1a3625c33523
+F src/select.c eec7c5f28a0c75fdd8500630435af176bba73219
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in c0e84a2d6e9f3263599174ff7261ba6daf730b4f
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h e7f9e974763e93707ba4fe564b50744ba2a08658
+F src/sqliteInt.h 2243b0eadb5dd32de8f0a38571afedb711fa2cc5
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 8caa772cd9310bc297280f7cf0ede4d69ed5b801
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -180,7 +180,7 @@ F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c d74fc445e0dba0e00806117eb449b307c0b146bf
-F src/tokenize.c 76fe4cb8a606c24c76843ee2170cf84085f40817
+F src/tokenize.c aaa5fa6a4536a9dd7c855a3f66f32508f1612138
 F src/trigger.c 649940b5bf5838a33721fb72372e7c9d1faf56a9
 F src/update.c f2cf6f00d542956bd49ba4b9815c2900d9225bf2
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
@@ -229,7 +229,7 @@ F test/bitvec.test 62a512c3f7041d1df12558eb25990e5a19820571
 F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
-F test/capi2.test cc64df7560a96f848f919ea2926c60acf639684b
+F test/capi2.test 36f87803c811b5986dd31eb5492cb704552776b4
 F test/capi3.test ffc1156d1f28738eb335df0b88dd294bb3c94c27
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
 F test/capi3c.test 208713e5f3a63442c3574c55b83baa7cf8ac5f28
@@ -555,6 +555,7 @@ F test/tkt3201.test 607d433ad2c1f6a8cb1af55aaca427f63c83191b
 F test/tkt3292.test 962465a0984a3b8c757efe59c2c59144871ee1dd
 F test/tkt3298.test a735582095ca2e90a0c1391c7e781a90de6c1f34
 F test/tkt3334.test ea13a53cb176e90571a76c86605b14a09efe366d
+F test/tkt3346.test 2f9a2be8621a87cbdb6283177dd419c7c46dd2a1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
@@ -597,7 +598,7 @@ F test/vtabC.test 9f2d9eb84bf65e606d6616f20977c5a32a11f548
 F test/vtab_alter.test 3a299749fee97ca3d53bd55717f536e4a2284856
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test c19b2555b807ef2ee014c882cdda5bc8d84fcf48
-F test/where.test 4f1b9a403bba6855681eb7e7e9230e5decb67309
+F test/where.test ea8e56f3c7b18fa4d250d32a08ffab44c0ff64ba
 F test/where2.test 7012c0ad022a54430dd22c98288d3f4d6599dbcf
 F test/where3.test 97d3936e6a443b968f1a61cdcc0f673252000e94
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
@@ -628,7 +629,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d68791e35d13f5ae4befeb0bb5f8ccaf14fd3763
-R cf8a1d32d459a4e4e9a02a25baa421e1
-U danielk1977
-Z d770b724d467b2bb63feddfe02dfb4bf
+P 483932c4e08901a11b7ab671073fd0a048b10d66
+R 952afbcc44da7926eca4d46e950df9fb
+U drh
+Z a76eb0281ee8fa910a9148137fb4d127
