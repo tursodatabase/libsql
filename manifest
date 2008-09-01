@@ -1,5 +1,5 @@
-C Begin\sadding\ssupport\sfor\sthe\sSQLITE_OMIT_WSD\smacro.\sSome\s(many)\sWSD\svariables\sstill\sneed\swrappers\sadded\sto\sthem.\s(CVS\s5652)
-D 2008-09-01T18:34:20
+C Modify\sthe\saBuiltinFunc\sarray\sin\sfunc.c\sto\suse\sthe\sWSD\smacros.\s(CVS\s5653)
+D 2008-09-01T19:14:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -107,7 +107,7 @@ F src/date.c 6609557446f2d6788e64e18c09e03fdaf4dd55cc
 F src/delete.c 434dd6f9d19475b35f2f57041d4bbba9f64da5ac
 F src/expr.c 6413795aa13ceb05994e6b2b453a77df3b892e7b
 F src/fault.c 3638519d1e0b82bccfafcb9f5ff491918b28f8e1
-F src/func.c 964a610bd68d79764f9e435615d723146f94f0e0
+F src/func.c c02615eafbe415d32d02499d31bbb1f72f052868
 F src/global.c 9ced7c26127f04fb4baaebed1f5bf6d7063b089f
 F src/hash.c eb64e48f3781100e5934f759fbe72a63a8fe78cb
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7a577428b22918c232815e7998a623dbc47a8d41
-R b45f7764c971fd9d217268e94c98eacf
+P 573d92abb9adb1c321ebc2fcadcf14374213b093
+R 3abac82e1ee45358c8492ec6124a4409
 U danielk1977
-Z a30ccc5ce0944839576c9352eb85797d
+Z b414667c5cfbc125e0f377ce623ab83e
