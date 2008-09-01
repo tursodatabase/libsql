@@ -12,7 +12,7 @@
 ** This file contains code for implementations of the r-tree and r*-tree
 ** algorithms packaged as an SQLite virtual table module.
 **
-** $Id: rtree.c,v 1.7 2008/07/16 14:43:35 drh Exp $
+** $Id: rtree.c,v 1.8 2008/09/01 12:47:00 danielk1977 Exp $
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
@@ -1116,6 +1116,13 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       pIdxInfo->idxNum = 1;
       pIdxInfo->aConstraintUsage[ii].argvIndex = 1;
       pIdxInfo->aConstraintUsage[jj].omit = 1;
+
+      /* This strategy involves a two rowid lookups on an B-Tree structures
+      ** and then a linear search of an R-Tree node. This should be 
+      ** considered almost as quick as a direct rowid lookup (for which 
+      ** sqlite uses an internal cost of 0.0).
+      */ 
+      pIdxInfo->estimatedCost = 10.0;
       return SQLITE_OK;
     }
 
@@ -1169,6 +1176,8 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   if( iIdx>0 && 0==(pIdxInfo->idxStr = sqlite3_mprintf("%s", zIdxStr)) ){
     return SQLITE_NOMEM;
   }
+  assert( iIdx>=0 );
+  pIdxInfo->estimatedCost = (2000000.0 / (double)(iIdx + 1));
   return rc;
 }
 

@@ -1,5 +1,5 @@
-C Changed\sto\sused\ssqlite3_snprintf\sinstead\sof\ssnprintf\s(test\scode\sonly).\s(CVS\s5648)
-D 2008-08-31T00:29:08
+C Have\sthe\srtree\smodule\sset\sthe\sestimatedCost\soutput\svariable.\sTicket\s#3312.\s(CVS\s5649)
+D 2008-09-01T12:47:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -64,13 +64,14 @@ F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c d60b28f466cdf4267b237160d75f44365412f3c6
+F ext/rtree/rtree.c 5e372fdbe572ae8e4e3b4917f048e842dcb57915
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 620223886bf1a319317e63235aac20790375c544
 F ext/rtree/rtree2.test 9ac9d28fa948779df66916c67a5dcf9704c3cb74
 F ext/rtree/rtree3.test 877a09c1a0c2b87af0f94f3a286e7dd3b65adf22
 F ext/rtree/rtree4.test 11724f766a74f48710998cdd7552cec140c55bf9
 F ext/rtree/rtree5.test 7d0643482829038f0263881ddf7e2d51bff1d60f
+F ext/rtree/rtree6.test fdfaf62bf026f1312c6eca658979800f3c0bc93f
 F ext/rtree/rtree_perf.tcl 0fabb6d5c48cb8024e042ce5d4bb88998b6ec1cb
 F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
@@ -627,7 +628,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 88c51b9f1579707a8ec394eba61539fabd725e2a
-R 6475b6bc34459c3a14e2d3b7fca18d08
-U shane
-Z cb37c60a6ecfe6b85c8d7118af0df8f4
+P d68791e35d13f5ae4befeb0bb5f8ccaf14fd3763
+R cf8a1d32d459a4e4e9a02a25baa421e1
+U danielk1977
+Z d770b724d467b2bb63feddfe02dfb4bf

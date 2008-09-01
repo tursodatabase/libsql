@@ -1,0 +1,111 @@
+# 2008 Sep 1
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: rtree6.test,v 1.1 2008/09/01 12:47:00 danielk1977 Exp $
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname $argv0] .. .. test]
+} 
+source $testdir/tester.tcl
+
+ifcapable !rtree {
+  finish_test
+  return
+}
+
+#   Operator    Byte Value
+#   ----------------------
+#      =        0x41 ('A')
+#     <=        0x42 ('B')
+#      <        0x43 ('C')
+#     >=        0x44 ('D')
+#      >        0x45 ('E')
+#   ----------------------
+
+proc rtree_strategy {sql} {
+  set ret [list]
+  db eval "explain $sql" a {
+    if {$a(opcode) eq "VFilter"} {
+      lappend ret $a(p4)
+    }
+  }
+  set ret
+}
+
+proc query_plan {sql} {
+  set ret [list]
+  db eval "explain query plan $sql" a {
+    lappend ret $a(detail)
+  }
+  set ret
+}
+
+do_test rtree6-1.1 {
+  execsql {
+    CREATE TABLE t2(k INTEGER PRIMARY KEY, v);
+    CREATE VIRTUAL TABLE t1 USING rtree(ii, x1, x2, y1, y2);
+  }
+} {}
+
+do_test rtree6-1.2 {
+  rtree_strategy {SELECT * FROM t1 WHERE x1>10}
+} {Ea}
+
+do_test rtree6-1.3 {
+  rtree_strategy {SELECT * FROM t1 WHERE x1<10}
+} {Ca}
+
+do_test rtree6-1.4 {
+  rtree_strategy {SELECT * FROM t1,t2 WHERE k=ii AND x1<10}
+} {Ca}
+
+do_test rtree6-1.5 {
+  rtree_strategy {SELECT * FROM t1,t2 WHERE k=+ii AND x1<10}
+} {Ca}
+
+do_test rtree6.2.1 {
+  query_plan {SELECT * FROM t1,t2 WHERE k=+ii AND x1<10}
+} [list \
+  {TABLE t1 VIRTUAL TABLE INDEX 2:Ca} \
+  {TABLE t2 USING PRIMARY KEY}        \
+]
+
+do_test rtree6.2.2 {
+  query_plan {SELECT * FROM t1,t2 WHERE k=ii AND x1<10}
+} [list \
+  {TABLE t1 VIRTUAL TABLE INDEX 2:Ca} \
+  {TABLE t2 USING PRIMARY KEY}        \
+]
+
+do_test rtree6.2.3 {
+  query_plan {SELECT * FROM t1,t2 WHERE k=ii}
+} [list \
+  {TABLE t2}                          \
+  {TABLE t1 VIRTUAL TABLE INDEX 1:}   \
+]
+
+do_test rtree6.2.4 {
+  query_plan {SELECT * FROM t1,t2 WHERE v=10 and x1<10 and x2>10}
+} [list \
+  {TABLE t2}                              \
+  {TABLE t1 VIRTUAL TABLE INDEX 2:CaEb}   \
+]
+
+do_test rtree6.2.5 {
+  query_plan {SELECT * FROM t1,t2 WHERE k=ii AND x1<v}
+} [list \
+  {TABLE t2}                              \
+  {TABLE t1 VIRTUAL TABLE INDEX 1:}   \
+]
+
+finish_test
+
