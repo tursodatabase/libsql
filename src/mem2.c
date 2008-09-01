@@ -19,7 +19,7 @@
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 **
-** $Id: mem2.c,v 1.38 2008/08/12 15:04:59 danielk1977 Exp $
+** $Id: mem2.c,v 1.39 2008/09/01 18:34:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -185,7 +185,7 @@ static int sqlite3MemSize(void *p){
 ** Initialize the memory allocation subsystem.
 */
 static int sqlite3MemInit(void *NotUsed){
-  if( !sqlite3Config.bMemstat ){
+  if( !sqlite3GlobalConfig.bMemstat ){
     /* If memory status is enabled, then the malloc.c wrapper will already
     ** hold the STATIC_MEM mutex when the routines here are invoked. */
     mem.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
@@ -270,7 +270,7 @@ static void sqlite3MemFree(void *pPrior){
   struct MemBlockHdr *pHdr;
   void **pBt;
   char *z;
-  assert( sqlite3Config.bMemstat || mem.mutex!=0 );
+  assert( sqlite3GlobalConfig.bMemstat || mem.mutex!=0 );
   pHdr = sqlite3MemsysGetHeader(pPrior);
   pBt = (void**)pHdr;
   pBt -= pHdr->nBacktraceSlots;
@@ -340,7 +340,7 @@ const sqlite3_mem_methods *sqlite3MemGetDefault(void){
 
 /*
 ** Populate the low-level memory allocation function pointers in
-** sqlite3Config.m with pointers to the routines in this file.
+** sqlite3GlobalConfig.m with pointers to the routines in this file.
 */
 void sqlite3MemSetDefault(void){
   sqlite3_config(SQLITE_CONFIG_MALLOC, sqlite3MemGetDefault());

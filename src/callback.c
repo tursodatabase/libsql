@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.29 2008/08/21 20:21:35 drh Exp $
+** $Id: callback.c,v 1.30 2008/09/01 18:34:20 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -357,7 +357,8 @@ FuncDef *sqlite3FindFunction(
   ** function to use.
   */ 
   if( !createFlag && !pBest ){
-    p = functionSearch(&sqlite3GlobalFunctions, h, zName, nName);
+    FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
+    p = functionSearch(pHash, h, zName, nName);
     while( p ){
       int score = matchQuality(p, nArg, enc);
       if( score>bestScore ){

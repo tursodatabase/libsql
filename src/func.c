@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.199 2008/08/21 20:21:35 drh Exp $
+** $Id: func.c,v 1.200 2008/09/01 18:34:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1375,7 +1375,8 @@ static FuncDef aBuiltinFunc[] = {
 void sqlite3RegisterGlobalFunctions(void){
   int i;
   for(i=0; i<ArraySize(aBuiltinFunc); i++){
-    sqlite3FuncDefInsert(&sqlite3GlobalFunctions, &aBuiltinFunc[i]);
+    FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
+    sqlite3FuncDefInsert(pHash, &aBuiltinFunc[i]);
   }
   sqlite3RegisterDateTimeFunctions();
 }

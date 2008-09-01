@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.394 2008/08/25 21:23:02 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.395 2008/09/01 18:34:20 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -6196,6 +6196,10 @@ SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pHighwater, i
 ** See also: [sqlite3_status()].
 */
 SQLITE_EXPERIMENTAL int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
+
+
+int sqlite3_wsd_init(int N, int J);
+void *sqlite3_wsd_find(void *K, int L);
 
 /*
 ** CAPI3REF: Status Parameters {H17250} <H17200>

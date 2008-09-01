@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.494 2008/08/27 19:01:58 danielk1977 Exp $
+** $Id: main.c,v 1.495 2008/09/01 18:34:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -85,16 +85,23 @@ char *sqlite3_temp_directory = 0;
 **       without blocking.
 */
 int sqlite3_initialize(void){
-  static int inProgress = 0;        /* Prevent recursion */
-  sqlite3_mutex *pMaster;           /* The main static mutex */
-  int rc;                           /* Result code */
+  SQLITE_WSD static int inProgress = 0;        /* Prevent recursion */
+  sqlite3_mutex *pMaster;                      /* The main static mutex */
+  int rc;                                      /* Result code */
+
+#ifdef SQLITE_OMIT_WSD
+  rc = sqlite3_wsd_init(1024, 256);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
+#endif
 
   /* If SQLite is already completely initialized, then this call
   ** to sqlite3_initialize() should be a no-op.  But the initialization
   ** must be complete.  So isInit must not be set until the very end
   ** of this routine.
   */
-  if( sqlite3Config.isInit ) return SQLITE_OK;
+  if( sqlite3GlobalConfig.isInit ) return SQLITE_OK;
 
   /* Make sure the mutex subsystem is initialized.  If unable to 
   ** initialize the mutex subsystem, return early with the error.
@@ -115,18 +122,18 @@ int sqlite3_initialize(void){
   */
   pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
   sqlite3_mutex_enter(pMaster);
-  if( !sqlite3Config.isMallocInit ){
+  if( !sqlite3GlobalConfig.isMallocInit ){
     rc = sqlite3MallocInit();
   }
   if( rc==SQLITE_OK ){
-    sqlite3Config.isMallocInit = 1;
-    if( !sqlite3Config.pInitMutex ){
-      sqlite3Config.pInitMutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
-      if( sqlite3Config.bCoreMutex && !sqlite3Config.pInitMutex ){
+    sqlite3GlobalConfig.isMallocInit = 1;
+    if( !sqlite3GlobalConfig.pInitMutex ){
+      sqlite3GlobalConfig.pInitMutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
+      if( sqlite3GlobalConfig.bCoreMutex && !sqlite3GlobalConfig.pInitMutex ){
         rc = SQLITE_NOMEM;
       }
     }
-    sqlite3Config.nRefInitMutex++;
+    sqlite3GlobalConfig.nRefInitMutex++;
   }
   sqlite3_mutex_leave(pMaster);
 
@@ -144,31 +151,32 @@ int sqlite3_initialize(void){
   ** sqlite3_os_init() when it invokes sqlite3_vfs_register(), but other
   ** recursive calls might also be possible.
   */
-  sqlite3_mutex_enter(sqlite3Config.pInitMutex);
-  if( sqlite3Config.isInit==0 && inProgress==0 ){
-    inProgress = 1;
-    memset(&sqlite3GlobalFunctions, 0, sizeof(sqlite3GlobalFunctions));
+  sqlite3_mutex_enter(sqlite3GlobalConfig.pInitMutex);
+  if( sqlite3GlobalConfig.isInit==0 && GLOBAL(int, inProgress)==0 ){
+    FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
+    GLOBAL(int, inProgress) = 1;
+    memset(pHash, 0, sizeof(sqlite3GlobalFunctions));
     sqlite3RegisterGlobalFunctions();
     rc = sqlite3_os_init();
     if( rc==SQLITE_OK ){
       rc = sqlite3PcacheInitialize();
-      sqlite3PCacheBufferSetup(sqlite3Config.pPage, sqlite3Config.szPage, 
-          sqlite3Config.nPage);
+      sqlite3PCacheBufferSetup(sqlite3GlobalConfig.pPage, sqlite3GlobalConfig.szPage, 
+          sqlite3GlobalConfig.nPage);
     }
-    inProgress = 0;
-    sqlite3Config.isInit = (rc==SQLITE_OK ? 1 : 0);
+    GLOBAL(int, inProgress) = 0;
+    sqlite3GlobalConfig.isInit = (rc==SQLITE_OK ? 1 : 0);
   }
-  sqlite3_mutex_leave(sqlite3Config.pInitMutex);
+  sqlite3_mutex_leave(sqlite3GlobalConfig.pInitMutex);
 
   /* Go back under the static mutex and clean up the recursive
   ** mutex to prevent a resource leak.
   */
   sqlite3_mutex_enter(pMaster);
-  sqlite3Config.nRefInitMutex--;
-  if( sqlite3Config.nRefInitMutex<=0 ){
-    assert( sqlite3Config.nRefInitMutex==0 );
-    sqlite3_mutex_free(sqlite3Config.pInitMutex);
-    sqlite3Config.pInitMutex = 0;
+  sqlite3GlobalConfig.nRefInitMutex--;
+  if( sqlite3GlobalConfig.nRefInitMutex<=0 ){
+    assert( sqlite3GlobalConfig.nRefInitMutex==0 );
+    sqlite3_mutex_free(sqlite3GlobalConfig.pInitMutex);
+    sqlite3GlobalConfig.pInitMutex = 0;
   }
   sqlite3_mutex_leave(pMaster);
 
@@ -199,18 +207,18 @@ int sqlite3_initialize(void){
 ** routine is not threadsafe.  Not by a long shot.
 */
 int sqlite3_shutdown(void){
-  sqlite3Config.isMallocInit = 0;
+  sqlite3GlobalConfig.isMallocInit = 0;
   sqlite3PcacheShutdown();
-  if( sqlite3Config.isInit ){
+  if( sqlite3GlobalConfig.isInit ){
     sqlite3_os_end();
   }
-  if( sqlite3Config.m.xShutdown ){
+  if( sqlite3GlobalConfig.m.xShutdown ){
     sqlite3MallocEnd();
   }
-  if( sqlite3Config.mutex.xMutexEnd ){
+  if( sqlite3GlobalConfig.mutex.xMutexEnd ){
     sqlite3MutexEnd();
   }
-  sqlite3Config.isInit = 0;
+  sqlite3GlobalConfig.isInit = 0;
   return SQLITE_OK;
 }
 
@@ -229,84 +237,84 @@ int sqlite3_config(int op, ...){
 
   /* sqlite3_config() shall return SQLITE_MISUSE if it is invoked while
   ** the SQLite library is in use. */
-  if( sqlite3Config.isInit ) return SQLITE_MISUSE;
+  if( sqlite3GlobalConfig.isInit ) return SQLITE_MISUSE;
 
   va_start(ap, op);
   switch( op ){
     case SQLITE_CONFIG_SINGLETHREAD: {
       /* Disable all mutexing */
-      sqlite3Config.bCoreMutex = 0;
-      sqlite3Config.bFullMutex = 0;
+      sqlite3GlobalConfig.bCoreMutex = 0;
+      sqlite3GlobalConfig.bFullMutex = 0;
       break;
     }
     case SQLITE_CONFIG_MULTITHREAD: {
       /* Disable mutexing of database connections */
       /* Enable mutexing of core data structures */
-      sqlite3Config.bCoreMutex = 1;
-      sqlite3Config.bFullMutex = 0;
+      sqlite3GlobalConfig.bCoreMutex = 1;
+      sqlite3GlobalConfig.bFullMutex = 0;
       break;
     }
     case SQLITE_CONFIG_SERIALIZED: {
       /* Enable all mutexing */
-      sqlite3Config.bCoreMutex = 1;
-      sqlite3Config.bFullMutex = 1;
+      sqlite3GlobalConfig.bCoreMutex = 1;
+      sqlite3GlobalConfig.bFullMutex = 1;
       break;
     }
     case SQLITE_CONFIG_MALLOC: {
       /* Specify an alternative malloc implementation */
-      sqlite3Config.m = *va_arg(ap, sqlite3_mem_methods*);
+      sqlite3GlobalConfig.m = *va_arg(ap, sqlite3_mem_methods*);
       break;
     }
     case SQLITE_CONFIG_GETMALLOC: {
       /* Retrieve the current malloc() implementation */
-      if( sqlite3Config.m.xMalloc==0 ) sqlite3MemSetDefault();
-      *va_arg(ap, sqlite3_mem_methods*) = sqlite3Config.m;
+      if( sqlite3GlobalConfig.m.xMalloc==0 ) sqlite3MemSetDefault();
+      *va_arg(ap, sqlite3_mem_methods*) = sqlite3GlobalConfig.m;
       break;
     }
     case SQLITE_CONFIG_MUTEX: {
       /* Specify an alternative mutex implementation */
-      sqlite3Config.mutex = *va_arg(ap, sqlite3_mutex_methods*);
+      sqlite3GlobalConfig.mutex = *va_arg(ap, sqlite3_mutex_methods*);
       break;
     }
     case SQLITE_CONFIG_GETMUTEX: {
       /* Retrieve the current mutex implementation */
-      *va_arg(ap, sqlite3_mutex_methods*) = sqlite3Config.mutex;
+      *va_arg(ap, sqlite3_mutex_methods*) = sqlite3GlobalConfig.mutex;
       break;
     }
     case SQLITE_CONFIG_MEMSTATUS: {
       /* Enable or disable the malloc status collection */
-      sqlite3Config.bMemstat = va_arg(ap, int);
+      sqlite3GlobalConfig.bMemstat = va_arg(ap, int);
       break;
     }
     case SQLITE_CONFIG_SCRATCH: {
       /* Designate a buffer for scratch memory space */
-      sqlite3Config.pScratch = va_arg(ap, void*);
-      sqlite3Config.szScratch = va_arg(ap, int);
-      sqlite3Config.nScratch = va_arg(ap, int);
+      sqlite3GlobalConfig.pScratch = va_arg(ap, void*);
+      sqlite3GlobalConfig.szScratch = va_arg(ap, int);
+      sqlite3GlobalConfig.nScratch = va_arg(ap, int);
       break;
     }
     case SQLITE_CONFIG_PAGECACHE: {
       /* Designate a buffer for scratch memory space */
-      sqlite3Config.pPage = va_arg(ap, void*);
-      sqlite3Config.szPage = va_arg(ap, int);
-      sqlite3Config.nPage = va_arg(ap, int);
+      sqlite3GlobalConfig.pPage = va_arg(ap, void*);
+      sqlite3GlobalConfig.szPage = va_arg(ap, int);
+      sqlite3GlobalConfig.nPage = va_arg(ap, int);
       break;
     }
 
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
     case SQLITE_CONFIG_HEAP: {
       /* Designate a buffer for heap memory space */
-      sqlite3Config.pHeap = va_arg(ap, void*);
-      sqlite3Config.nHeap = va_arg(ap, int);
-      sqlite3Config.mnReq = va_arg(ap, int);
+      sqlite3GlobalConfig.pHeap = va_arg(ap, void*);
+      sqlite3GlobalConfig.nHeap = va_arg(ap, int);
+      sqlite3GlobalConfig.mnReq = va_arg(ap, int);
 
-      if( sqlite3Config.pHeap==0 ){
+      if( sqlite3GlobalConfig.pHeap==0 ){
         /* If the heap pointer is NULL, then restore the malloc implementation
         ** back to NULL pointers too.  This will cause the malloc to go
         ** back to its default implementation when sqlite3_initialize() is
         ** run.
         */
-        memset(&sqlite3Config.m, 0, sizeof(sqlite3Config.m));
+        memset(&sqlite3GlobalConfig.m, 0, sizeof(sqlite3GlobalConfig.m));
       }else{
         /* The heap pointer is not NULL, then install one of the
         ** mem5.c/mem3.c methods. If neither ENABLE_MEMSYS3 nor
@@ -314,10 +322,10 @@ int sqlite3_config(int op, ...){
         ** the default case and return an error.
         */
 #ifdef SQLITE_ENABLE_MEMSYS3
-        sqlite3Config.m = *sqlite3MemGetMemsys3();
+        sqlite3GlobalConfig.m = *sqlite3MemGetMemsys3();
 #endif
 #ifdef SQLITE_ENABLE_MEMSYS5
-        sqlite3Config.m = *sqlite3MemGetMemsys5();
+        sqlite3GlobalConfig.m = *sqlite3MemGetMemsys5();
 #endif
       }
       break;
@@ -326,15 +334,15 @@ int sqlite3_config(int op, ...){
 
 #if defined(SQLITE_ENABLE_MEMSYS6)
     case SQLITE_CONFIG_CHUNKALLOC: {
-      sqlite3Config.nSmall = va_arg(ap, int);
-      sqlite3Config.m = *sqlite3MemGetMemsys6();
+      sqlite3GlobalConfig.nSmall = va_arg(ap, int);
+      sqlite3GlobalConfig.m = *sqlite3MemGetMemsys6();
       break;
     }
 #endif
 
     case SQLITE_CONFIG_LOOKASIDE: {
-      sqlite3Config.szLookaside = va_arg(ap, int);
-      sqlite3Config.nLookaside = va_arg(ap, int);
+      sqlite3GlobalConfig.szLookaside = va_arg(ap, int);
+      sqlite3GlobalConfig.nLookaside = va_arg(ap, int);
       break;
     }
 
@@ -1445,7 +1453,7 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
-  if( sqlite3Config.bFullMutex && isThreadsafe ){
+  if( sqlite3GlobalConfig.bFullMutex && isThreadsafe ){
     db->mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     if( db->mutex==0 ){
       sqlite3_free(db);
@@ -1598,11 +1606,11 @@ static int openDatabase(
 #endif
 
   /* Enable the lookaside-malloc subsystem */
-  setupLookaside(db, 0, sqlite3Config.szLookaside, sqlite3Config.nLookaside);
+  setupLookaside(db, 0, sqlite3GlobalConfig.szLookaside, sqlite3GlobalConfig.nLookaside);
 
 opendb_out:
   if( db ){
-    assert( db->mutex!=0 || isThreadsafe==0 || sqlite3Config.bFullMutex==0 );
+    assert( db->mutex!=0 || isThreadsafe==0 || sqlite3GlobalConfig.bFullMutex==0 );
     sqlite3_mutex_leave(db->mutex);
   }
   rc = sqlite3_errcode(db);

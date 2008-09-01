@@ -224,6 +224,7 @@ TESTSRC = \
   $(TOP)/src/test_server.c \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
+  $(TOP)/src/test_wsd.c \
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
 #TESTSRC += $(TOP)/ext/fts3/fts3_tokenizer.c

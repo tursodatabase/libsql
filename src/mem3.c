@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS3 is defined.
 **
-** $Id: mem3.c,v 1.20 2008/07/18 18:56:17 drh Exp $
+** $Id: mem3.c,v 1.21 2008/09/01 18:34:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -217,10 +217,10 @@ static void memsys3Link(u32 i){
 /*
 ** If the STATIC_MEM mutex is not already held, obtain it now. The mutex
 ** will already be held (obtained by code in malloc.c) if
-** sqlite3Config.bMemStat is true.
+** sqlite3GlobalConfig.bMemStat is true.
 */
 static void memsys3Enter(void){
-  if( sqlite3Config.bMemstat==0 && mem3.mutex==0 ){
+  if( sqlite3GlobalConfig.bMemstat==0 && mem3.mutex==0 ){
     mem3.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   }
   sqlite3_mutex_enter(mem3.mutex);
@@ -550,14 +550,14 @@ void *memsys3Realloc(void *pPrior, int nBytes){
 ** Initialize this module.
 */
 static int memsys3Init(void *NotUsed){
-  if( !sqlite3Config.pHeap ){
+  if( !sqlite3GlobalConfig.pHeap ){
     return SQLITE_ERROR;
   }
 
   /* Store a pointer to the memory block in global structure mem3. */
   assert( sizeof(Mem3Block)==8 );
-  mem3.aPool = (Mem3Block *)sqlite3Config.pHeap;
-  mem3.nPool = (sqlite3Config.nHeap / sizeof(Mem3Block)) - 2;
+  mem3.aPool = (Mem3Block *)sqlite3GlobalConfig.pHeap;
+  mem3.nPool = (sqlite3GlobalConfig.nHeap / sizeof(Mem3Block)) - 2;
 
   /* Initialize the master block. */
   mem3.szMaster = mem3.nPool;
@@ -659,7 +659,7 @@ void sqlite3Memsys3Dump(const char *zFilename){
 ** linkage.
 **
 ** Populate the low-level memory allocation function pointers in
-** sqlite3Config.m with pointers to the routines in this file. The
+** sqlite3GlobalConfig.m with pointers to the routines in this file. The
 ** arguments specify the block of memory to manage.
 **
 ** This routine is only called by sqlite3_config(), and therefore

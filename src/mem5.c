@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS5 is defined.
 **
-** $Id: mem5.c,v 1.11 2008/07/16 12:25:32 drh Exp $
+** $Id: mem5.c,v 1.12 2008/09/01 18:34:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -181,10 +181,10 @@ static void memsys5Link(int i, int iLogsize){
 /*
 ** If the STATIC_MEM mutex is not already held, obtain it now. The mutex
 ** will already be held (obtained by code in malloc.c) if
-** sqlite3Config.bMemStat is true.
+** sqlite3GlobalConfig.bMemStat is true.
 */
 static void memsys5Enter(void){
-  if( sqlite3Config.bMemstat==0 && mem5.mutex==0 ){
+  if( sqlite3GlobalConfig.bMemstat==0 && mem5.mutex==0 ){
     mem5.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   }
   sqlite3_mutex_enter(mem5.mutex);
@@ -406,8 +406,8 @@ static int memsys5Log(int iValue){
 */
 static int memsys5Init(void *NotUsed){
   int ii;
-  int nByte = sqlite3Config.nHeap;
-  u8 *zByte = (u8 *)sqlite3Config.pHeap;
+  int nByte = sqlite3GlobalConfig.nHeap;
+  u8 *zByte = (u8 *)sqlite3GlobalConfig.pHeap;
   int nMinLog;                 /* Log of minimum allocation size in bytes*/
   int iOffset;
 
@@ -415,7 +415,7 @@ static int memsys5Init(void *NotUsed){
     return SQLITE_ERROR;
   }
 
-  nMinLog = memsys5Log(sqlite3Config.mnReq);
+  nMinLog = memsys5Log(sqlite3GlobalConfig.mnReq);
   mem5.nAtom = (1<<nMinLog);
   while( sizeof(Mem5Link)>mem5.nAtom ){
     mem5.nAtom = mem5.nAtom << 1;

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.24 2008/08/29 09:10:03 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.25 2008/09/01 18:34:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -606,7 +606,7 @@ static int pcacheRecycleOrAlloc(PCache *pCache, PgHdr **ppPage){
 int sqlite3PcacheInitialize(void){
   assert( pcache.isInit==0 );
   memset(&pcache, 0, sizeof(pcache));
-  if( sqlite3Config.bCoreMutex ){
+  if( sqlite3GlobalConfig.bCoreMutex ){
     /* No need to check the return value of sqlite3_mutex_alloc(). 
     ** Allocating a static mutex cannot fail.
     */

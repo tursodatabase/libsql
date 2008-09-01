@@ -17,7 +17,7 @@
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 **
-** $Id: mem1.c,v 1.25 2008/07/25 08:49:00 danielk1977 Exp $
+** $Id: mem1.c,v 1.26 2008/09/01 18:34:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -138,7 +138,7 @@ const sqlite3_mem_methods *sqlite3MemGetDefault(void){
 ** This routine is the only routine in this file with external linkage.
 **
 ** Populate the low-level memory allocation function pointers in
-** sqlite3Config.m with pointers to the routines in this file.
+** sqlite3GlobalConfig.m with pointers to the routines in this file.
 */
 void sqlite3MemSetDefault(void){
   sqlite3_config(SQLITE_CONFIG_MALLOC, sqlite3MemGetDefault());
