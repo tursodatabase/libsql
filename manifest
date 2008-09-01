@@ -1,5 +1,5 @@
-C Defer\sdeleting\sTable\sobjects\sassociated\swith\sflattened\ssubqueries\suntil\nall\scode\shas\sbeen\sgenerated,\sin\scase\ssome\sexpression\snode\sstill\sreferences\nthe\sTable\sobject.\s\sTicket\s#3346.\s(CVS\s5650)
-D 2008-09-01T15:52:11
+C Remove\san\sunused\sfunction\sdeclaration\sfrom\sa\sheader\sfile.\s\sTicket\s#3349.\s(CVS\s5651)
+D 2008-09-01T17:23:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -136,7 +136,7 @@ F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 4665cef7639dd937893c3ea076f0e8a8f215bb32
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
 F src/pager.c 032d11049af4ec49bdbaa3584e7ce9887098b66a
-F src/pager.h 914103bb62dbcc3d8e9f14baec812d027264d457
+F src/pager.h c45380ca9d0933ea5bc4ecb3a43958b6d2ec5a9c
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c e1cb0e77d2a299cfa4aa95d2e3307cc6900d2007
 F src/pcache.h 53730c33310cdf7a5c94e8333c853d59a3b30226
@@ -629,7 +629,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 483932c4e08901a11b7ab671073fd0a048b10d66
-R 952afbcc44da7926eca4d46e950df9fb
+P d04d70336727a0db959c672e6c22cdaa0505dce5
+R 04f6f8f1d929ad05f0d2d67cc6fb131a
 U drh
-Z a76eb0281ee8fa910a9148137fb4d127
+Z 14bd2f399c6134eded42b5797d53425f
