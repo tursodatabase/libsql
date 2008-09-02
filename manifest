@@ -1,5 +1,5 @@
-C Add\san\sextra\s'const'\squalifier\sto\stwo\sarrays\s(in\sfunc.c\sand\spragma.c)\sto\sensure\sthat\sthey\sdo\snot\sconsume\sspace\sin\sthe\sdata\ssegment\sof\sthe\scompiled\sobject\sfiles.\s(CVS\s5663)
-D 2008-09-02T15:44:09
+C Fine\stune\sthe\shard-coded\svalues\spassed\sto\ssqlite3_init_wsd().\s(CVS\s5664)
+D 2008-09-02T16:22:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +116,7 @@ F src/insert.c 110cca7845ed5a66c08fdd413b02e706ae34455f
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 6581a5bbc4d74fcd46dbbcfd695a6a5417f778a2
-F src/main.c bebdb97ae38f9d552b302f11a8b1ec80a4d3b9e4
+F src/main.c a679dd3e0f040d13d72b9800840e07bedd6aa2d4
 F src/malloc.c fb23bfbcc5c93180b787bd746c7387289028d482
 F src/mem1.c 5a529ff121c55ab067be14de00f86f6dcc4f4fb9
 F src/mem2.c f87e681d0d1ed8436870d089332ed0d27d885b5c
@@ -180,7 +180,7 @@ F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c d74fc445e0dba0e00806117eb449b307c0b146bf
-F src/test_wsd.c 9eadce9ae2910d738018649d5de26a65b5881ce6
+F src/test_wsd.c a36c7fbb93eebf7c917d00fcaab25ad4d8a7918b
 F src/tokenize.c aaa5fa6a4536a9dd7c855a3f66f32508f1612138
 F src/trigger.c 649940b5bf5838a33721fb72372e7c9d1faf56a9
 F src/update.c 206fffc877379affe3a9b42c78e478ea0874c9fe
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 88c82759946910b5ffdd5febc17356403f986c2e
-R 5143ab2a6f2bed3632d947de646f0cba
+P 43f757c9f01ccc6e6c7a404fbeb74f825f7a29ca
+R 09d4fbec45f895938cb0d76ecfb46d71
 U danielk1977
-Z 7c4b6a4e085baf00c29c55f12ec835c8
+Z 9698f3c633c4547af630faf1230b9965

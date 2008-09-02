@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.497 2008/09/02 14:07:24 danielk1977 Exp $
+** $Id: main.c,v 1.498 2008/09/02 16:22:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -89,7 +89,7 @@ int sqlite3_initialize(void){
   int rc;                                      /* Result code */
 
 #ifdef SQLITE_OMIT_WSD
-  rc = sqlite3_wsd_init(1024, 256);
+  rc = sqlite3_wsd_init(4096, 24);
   if( rc!=SQLITE_OK ){
     return rc;
   }

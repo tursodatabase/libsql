@@ -14,7 +14,7 @@
 ** sqlite3_wsd_init() and sqlite3_wsd_find() functions required if the
 ** SQLITE_OMIT_WSD symbol is defined at build time.
 **
-** $Id: test_wsd.c,v 1.1 2008/09/01 18:34:20 danielk1977 Exp $
+** $Id: test_wsd.c,v 1.2 2008/09/02 16:22:29 danielk1977 Exp $
 */
 
 #if defined(SQLITE_OMIT_WSD) && defined(SQLITE_TEST)
@@ -60,7 +60,7 @@ void *sqlite3_wsd_find(void *K, int L){
 
   /* Calculate a hash of K */
   for(i=0; i<sizeof(void*); i++){
-    iHash = (iHash<<3) + ((unsigned char *)K)[i];
+    iHash = (iHash<<3) + ((unsigned char *)&K)[i];
   }
   iHash = iHash%PLS_HASHSIZE;
 
