@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.507 2008/09/02 09:38:07 danielk1977 Exp $
+** $Id: btree.c,v 1.508 2008/09/02 14:07:24 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -38,18 +38,15 @@ int sqlite3BtreeTrace=0;  /* True to enable tracing */
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /*
-** A flag to indicate whether or not shared cache is enabled.  Also,
-** a list of BtShared objects that are eligible for participation
-** in shared cache.  The variables have file scope during normal builds,
-** but the test harness needs to access these variables so we make them
-** global for test builds.
+** A list of BtShared objects that are eligible for participation
+** in shared cache.  This variable has file scope during normal builds,
+** but the test harness needs to access it so we make it global for 
+** test builds.
 */
 #ifdef SQLITE_TEST
 BtShared *SQLITE_WSD sqlite3SharedCacheList = 0;
-SQLITE_WSD int sqlite3SharedCacheEnabled = 0;
 #else
 static BtShared *SQLITE_WSD sqlite3SharedCacheList = 0;
-static SQLITE_WSD int sqlite3SharedCacheEnabled = 0;
 #endif
 #endif /* SQLITE_OMIT_SHARED_CACHE */
 
@@ -62,7 +59,7 @@ static SQLITE_WSD int sqlite3SharedCacheEnabled = 0;
 ** sqlite3_open(), sqlite3_open16(), or sqlite3_open_v2().
 */
 int sqlite3_enable_shared_cache(int enable){
-  GLOBAL(int, sqlite3SharedCacheEnabled) = enable;
+  sqlite3GlobalConfig.sharedCacheEnabled = enable;
   return SQLITE_OK;
 }
 #endif
@@ -1232,7 +1229,7 @@ int sqlite3BtreeOpen(
    && (db->flags & SQLITE_Vtab)==0
    && zFilename && zFilename[0]
   ){
-    if( GLOBAL(int,sqlite3SharedCacheEnabled) ){
+    if( sqlite3GlobalConfig.sharedCacheEnabled ){
       int nFullPathname = pVfs->mxPathname+1;
       char *zFullPathname = sqlite3Malloc(nFullPathname);
       sqlite3_mutex *mutexShared;

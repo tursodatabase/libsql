@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.768 2008/09/02 00:52:52 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.769 2008/09/02 14:07:24 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1949,11 +1949,13 @@ struct Sqlite3Config {
   int szPage;                       /* Size of each page in pPage[] */
   int nPage;                        /* Number of pages in pPage[] */
   int isInit;                       /* True after initialization has finished */
+  int inProgress;                   /* True while initialization in progress */
   int isMallocInit;                 /* True after malloc is initialized */
   sqlite3_mutex *pInitMutex;        /* Mutex used by sqlite3_initialize() */
   int nRefInitMutex;                /* Number of users of pInitMutex */
   int nSmall;                       /* alloc size threshold used by mem6.c */
   int mxParserStack;                /* maximum depth of the parser stack */
+  int sharedCacheEnabled;           /* true if shared-cache mode enabled */
 };
 
 /*
