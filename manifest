@@ -1,5 +1,5 @@
-C Move\sthe\ssqlite3SharedCacheEnabled\sglobal\sand\sthe\sinProgress\sstatic\svariable\s(function\ssqlite3_initialize())\sinto\sthe\sglobal\ssqlite3Config\sstructure.\sThis\sis\srequired\sfor\sthe\sOMIT_WSD\sfeature\sto\swork\son\ssome\splatforms.\s(CVS\s5662)
-D 2008-09-02T14:07:24
+C Add\san\sextra\s'const'\squalifier\sto\stwo\sarrays\s(in\sfunc.c\sand\spragma.c)\sto\sensure\sthat\sthey\sdo\snot\sconsume\sspace\sin\sthe\sdata\ssegment\sof\sthe\scompiled\sobject\sfiles.\s(CVS\s5663)
+D 2008-09-02T15:44:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -107,7 +107,7 @@ F src/date.c 6609557446f2d6788e64e18c09e03fdaf4dd55cc
 F src/delete.c bae6684aa02e1f7cf6328023157c91d9cf94200b
 F src/expr.c 6413795aa13ceb05994e6b2b453a77df3b892e7b
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/func.c c02615eafbe415d32d02499d31bbb1f72f052868
+F src/func.c 41a4cbbc439935f2106a621a689ed02b1ed0324f
 F src/global.c 9ced7c26127f04fb4baaebed1f5bf6d7063b089f
 F src/hash.c eb64e48f3781100e5934f759fbe72a63a8fe78cb
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
@@ -140,7 +140,7 @@ F src/pager.h c45380ca9d0933ea5bc4ecb3a43958b6d2ec5a9c
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c ff79cb5eb797d0f1a244b4332c2d39cb5cfd066b
 F src/pcache.h 53730c33310cdf7a5c94e8333c853d59a3b30226
-F src/pragma.c 9d8127ac1527617cfb31392cd8832bb2c9a02115
+F src/pragma.c 9d00ed41b261968757c02707e1508a707f2d46a7
 F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 11bbdf7def3746a762fbdb56c9d04648135ad6d8
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 29c9a80294398a349bc7cf0fb84cd4ef8a9e2f60
-R 8d35d3261ce4d6b4c41025ca53bd27df
+P 88c82759946910b5ffdd5febc17356403f986c2e
+R 5143ab2a6f2bed3632d947de646f0cba
 U danielk1977
-Z e602fc4ab77bd0708d41bbe674d74574
+Z 7c4b6a4e085baf00c29c55f12ec835c8

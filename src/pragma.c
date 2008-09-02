@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.185 2008/09/02 00:52:52 drh Exp $
+** $Id: pragma.c,v 1.186 2008/09/02 15:44:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -449,7 +449,7 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft,"journal_mode")==0 ){
     int eMode;
-    static const char *azModeName[] = {"delete", "persist", "off"};
+    static char * const azModeName[] = {"delete", "persist", "off"};
 
     if( zRight==0 ){
       eMode = PAGER_JOURNALMODE_QUERY;
@@ -1192,7 +1192,6 @@ void sqlite3Pragma(
    || sqlite3StrICmp(zLeft, "user_version")==0 
    || sqlite3StrICmp(zLeft, "freelist_count")==0 
   ){
-
     int iCookie;   /* Cookie index. 0 for schema-cookie, 6 for user-cookie. */
     sqlite3VdbeUsesBtree(v, iDb);
     switch( zLeft[0] ){
@@ -1267,6 +1266,7 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, zState, P4_STATIC);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 2);
     }
+
   }else
 #endif
 
