@@ -12,7 +12,7 @@
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
 **
-** $Id: loadext.c,v 1.53 2008/08/02 03:50:39 drh Exp $
+** $Id: loadext.c,v 1.54 2008/09/02 00:52:52 drh Exp $
 */
 
 #ifndef SQLITE_CORE
@@ -466,10 +466,26 @@ static const sqlite3_api_routines sqlite3Apis = { 0 };
 ** This list is shared across threads.  The SQLITE_MUTEX_STATIC_MASTER
 ** mutex must be held while accessing this list.
 */
-static struct {
+typedef struct sqlite3ExtType sqlite3ExtType;
+static SQLITE_WSD struct sqlite3ExtType {
   int nExt;        /* Number of entries in aExt[] */          
   void **aExt;     /* Pointers to the extension init functions */
-} autoext = { 0, 0 };
+} sqlite3Autoext = { 0, 0 };
+
+/* The "wsdAutoext" macro will resolve to the autoextension
+** state vector.  If writable static data is unsupported on the target,
+** we have to locate the state vector at run-time.  In the more common
+** case where writable static data is supported, wsdStat can refer directly
+** to the "sqlite3Autoext" state vector declared above.
+*/
+#ifdef SQLITE_OMIT_WSD
+# define wsdAutoextInit \
+  sqlite3ExtType *x = &GLOBAL(sqlite3ExtType,sqlite3Autoext)
+# define wsdAutoext x[0]
+#else
+# define wsdAutoextInit
+# define wsdAutoext sqlite3Autoext
+#endif
 
 
 /*
@@ -489,20 +505,21 @@ int sqlite3_auto_extension(void *xInit){
 #ifndef SQLITE_MUTEX_NOOP
     sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
+    wsdAutoextInit;
     sqlite3_mutex_enter(mutex);
-    for(i=0; i<autoext.nExt; i++){
-      if( autoext.aExt[i]==xInit ) break;
+    for(i=0; i<wsdAutoext.nExt; i++){
+      if( wsdAutoext.aExt[i]==xInit ) break;
     }
-    if( i==autoext.nExt ){
-      int nByte = (autoext.nExt+1)*sizeof(autoext.aExt[0]);
+    if( i==wsdAutoext.nExt ){
+      int nByte = (wsdAutoext.nExt+1)*sizeof(wsdAutoext.aExt[0]);
       void **aNew;
-      aNew = sqlite3_realloc(autoext.aExt, nByte);
+      aNew = sqlite3_realloc(wsdAutoext.aExt, nByte);
       if( aNew==0 ){
         rc = SQLITE_NOMEM;
       }else{
-        autoext.aExt = aNew;
-        autoext.aExt[autoext.nExt] = xInit;
-        autoext.nExt++;
+        wsdAutoext.aExt = aNew;
+        wsdAutoext.aExt[wsdAutoext.nExt] = xInit;
+        wsdAutoext.nExt++;
       }
     }
     sqlite3_mutex_leave(mutex);
@@ -522,10 +539,11 @@ void sqlite3_reset_auto_extension(void){
 #ifndef SQLITE_MUTEX_NOOP
     sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
+    wsdAutoextInit;
     sqlite3_mutex_enter(mutex);
-    sqlite3_free(autoext.aExt);
-    autoext.aExt = 0;
-    autoext.nExt = 0;
+    sqlite3_free(wsdAutoext.aExt);
+    wsdAutoext.aExt = 0;
+    wsdAutoext.nExt = 0;
     sqlite3_mutex_leave(mutex);
   }
 }
@@ -539,7 +557,8 @@ int sqlite3AutoLoadExtensions(sqlite3 *db){
   int rc = SQLITE_OK;
   int (*xInit)(sqlite3*,char**,const sqlite3_api_routines*);
 
-  if( autoext.nExt==0 ){
+  wsdAutoextInit;
+  if( wsdAutoext.nExt==0 ){
     /* Common case: early out without every having to acquire a mutex */
     return SQLITE_OK;
   }
@@ -549,12 +568,12 @@ int sqlite3AutoLoadExtensions(sqlite3 *db){
     sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
     sqlite3_mutex_enter(mutex);
-    if( i>=autoext.nExt ){
+    if( i>=wsdAutoext.nExt ){
       xInit = 0;
       go = 0;
     }else{
       xInit = (int(*)(sqlite3*,char**,const sqlite3_api_routines*))
-              autoext.aExt[i];
+              wsdAutoext.aExt[i];
     }
     sqlite3_mutex_leave(mutex);
     if( xInit && xInit(db, &zErrmsg, &sqlite3Apis) ){

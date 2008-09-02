@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.65 2008/08/20 16:34:24 danielk1977 Exp $
+# $Id: pragma.test,v 1.66 2008/09/02 00:52:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -925,46 +925,48 @@ do_test pragma-9.4 {
     PRAGMA temp_store_directory;
   }
 } {}
-do_test pragma-9.5 {
-  set pwd [string map {' ''} [pwd]]
-  execsql "
-    PRAGMA temp_store_directory='$pwd';
-  "
-} {}
-do_test pragma-9.6 {
-  execsql { 
-    PRAGMA temp_store_directory;
+ifcapable wsd {
+  do_test pragma-9.5 {
+    set pwd [string map {' ''} [pwd]]
+    execsql "
+      PRAGMA temp_store_directory='$pwd';
+    "
+  } {}
+  do_test pragma-9.6 {
+    execsql { 
+      PRAGMA temp_store_directory;
+    }
+  } [list [pwd]]
+  do_test pragma-9.7 {
+    catchsql { 
+      PRAGMA temp_store_directory='/NON/EXISTENT/PATH/FOOBAR';
+    }
+  } {1 {not a writable directory}}
+  do_test pragma-9.8 {
+    execsql { 
+      PRAGMA temp_store_directory='';
+    }
+  } {}
+  if {![info exists TEMP_STORE] || $TEMP_STORE<=1} {
+    ifcapable tempdb {
+      do_test pragma-9.9 {
+        execsql { 
+          PRAGMA temp_store_directory;
+          PRAGMA temp_store=FILE;
+          CREATE TEMP TABLE temp_store_directory_test(a integer);
+          INSERT INTO temp_store_directory_test values (2);
+          SELECT * FROM temp_store_directory_test;
+        }
+      } {2}
+      do_test pragma-9.10 {
+        catchsql "
+          PRAGMA temp_store_directory='$pwd';
+          SELECT * FROM temp_store_directory_test;
+        "
+      } {1 {no such table: temp_store_directory_test}}
+    }
   }
-} [list [pwd]]
-do_test pragma-9.7 {
-  catchsql { 
-    PRAGMA temp_store_directory='/NON/EXISTENT/PATH/FOOBAR';
-  }
-} {1 {not a writable directory}}
-do_test pragma-9.8 {
-  execsql { 
-    PRAGMA temp_store_directory='';
-  }
-} {}
-if {![info exists TEMP_STORE] || $TEMP_STORE<=1} {
-  ifcapable tempdb {
-    do_test pragma-9.9 {
-      execsql { 
-        PRAGMA temp_store_directory;
-        PRAGMA temp_store=FILE;
-        CREATE TEMP TABLE temp_store_directory_test(a integer);
-        INSERT INTO temp_store_directory_test values (2);
-        SELECT * FROM temp_store_directory_test;
-      }
-    } {2}
-    do_test pragma-9.10 {
-      catchsql "
-        PRAGMA temp_store_directory='$pwd';
-        SELECT * FROM temp_store_directory_test;
-      "
-    } {1 {no such table: temp_store_directory_test}}
-  }
-}  
+}
 do_test pragma-9.11 {
   execsql {
     PRAGMA temp_store = 0;

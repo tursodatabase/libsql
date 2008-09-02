@@ -15,7 +15,7 @@
 ** Random numbers are used by some of the database backends in order
 ** to generate random integer keys for tables or random filenames.
 **
-** $Id: random.c,v 1.25 2008/06/19 01:03:18 drh Exp $
+** $Id: random.c,v 1.26 2008/09/02 00:52:52 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -23,11 +23,11 @@
 /* All threads share a single random number generator.
 ** This structure is the current state of the generator.
 */
-static struct sqlite3PrngType {
+static SQLITE_WSD struct sqlite3PrngType {
   unsigned char isInit;          /* True if initialized */
   unsigned char i, j;            /* State variables */
   unsigned char s[256];          /* State variables */
-} sqlite3Prng;
+} sqlite3Prng = { 0, };
 
 /*
 ** Get a single 8-bit random value from the RC4 PRNG.  The Mutex
@@ -49,6 +49,20 @@ static int randomByte(void){
   unsigned char t;
 
 
+  /* The "wsdPrng" macro will resolve to the pseudo-random number generator
+  ** state vector.  If writable static data is unsupported on the target,
+  ** we have to locate the state vector at run-time.  In the more common
+  ** case where writable static data is supported, wsdPrng can refer directly
+  ** to the "sqlite3Prng" state vector declared above.
+  */
+#ifdef SQLITE_OMIT_WSD
+  struct sqlite3PrngType *p = &GLOBAL(struct sqlite3PrngType, sqlite3Prng);
+# define wsdPrng p[0]
+#else
+# define wsdPrng sqlite3Prng
+#endif
+
+
   /* Initialize the state of the random number generator once,
   ** the first time this routine is called.  The seed value does
   ** not need to contain a lot of randomness since we are not
@@ -58,33 +72,33 @@ static int randomByte(void){
   ** encryption.  The RC4 algorithm is being used as a PRNG (pseudo-random
   ** number generator) not as an encryption device.
   */
-  if( !sqlite3Prng.isInit ){
+  if( !wsdPrng.isInit ){
     int i;
     char k[256];
-    sqlite3Prng.j = 0;
-    sqlite3Prng.i = 0;
+    wsdPrng.j = 0;
+    wsdPrng.i = 0;
     sqlite3OsRandomness(sqlite3_vfs_find(0), 256, k);
     for(i=0; i<256; i++){
-      sqlite3Prng.s[i] = i;
+      wsdPrng.s[i] = i;
     }
     for(i=0; i<256; i++){
-      sqlite3Prng.j += sqlite3Prng.s[i] + k[i];
-      t = sqlite3Prng.s[sqlite3Prng.j];
-      sqlite3Prng.s[sqlite3Prng.j] = sqlite3Prng.s[i];
-      sqlite3Prng.s[i] = t;
+      wsdPrng.j += wsdPrng.s[i] + k[i];
+      t = wsdPrng.s[wsdPrng.j];
+      wsdPrng.s[wsdPrng.j] = wsdPrng.s[i];
+      wsdPrng.s[i] = t;
     }
-    sqlite3Prng.isInit = 1;
+    wsdPrng.isInit = 1;
   }
 
   /* Generate and return single random byte
   */
-  sqlite3Prng.i++;
-  t = sqlite3Prng.s[sqlite3Prng.i];
-  sqlite3Prng.j += t;
-  sqlite3Prng.s[sqlite3Prng.i] = sqlite3Prng.s[sqlite3Prng.j];
-  sqlite3Prng.s[sqlite3Prng.j] = t;
-  t += sqlite3Prng.s[sqlite3Prng.i];
-  return sqlite3Prng.s[t];
+  wsdPrng.i++;
+  t = wsdPrng.s[wsdPrng.i];
+  wsdPrng.j += t;
+  wsdPrng.s[wsdPrng.i] = wsdPrng.s[wsdPrng.j];
+  wsdPrng.s[wsdPrng.j] = t;
+  t += wsdPrng.s[wsdPrng.i];
+  return wsdPrng.s[t];
 }
 
 /*
@@ -105,18 +119,29 @@ void sqlite3_randomness(int N, void *pBuf){
 #ifndef SQLITE_OMIT_BUILTIN_TEST
 /*
 ** For testing purposes, we sometimes want to preserve the state of
-** PRNG and restore the PRNG to its saved state at a later time.
+** PRNG and restore the PRNG to its saved state at a later time, or
+** to reset the PRNG to its initial state.  These routines accomplish
+** those tasks.
+**
 ** The sqlite3_test_control() interface calls these routines to
 ** control the PRNG.
 */
-static struct sqlite3PrngType sqlite3SavedPrng;
+static SQLITE_WSD struct sqlite3PrngType sqlite3SavedPrng = { 0, };
 void sqlite3PrngSaveState(void){
-  memcpy(&sqlite3SavedPrng, &sqlite3Prng, sizeof(sqlite3Prng));
+  memcpy(
+    &GLOBAL(struct sqlite3PrngType, sqlite3SavedPrng),
+    &GLOBAL(struct sqlite3PrngType, sqlite3Prng),
+    sizeof(sqlite3Prng)
+  );
 }
 void sqlite3PrngRestoreState(void){
-  memcpy(&sqlite3Prng, &sqlite3SavedPrng, sizeof(sqlite3Prng));
+  memcpy(
+    &GLOBAL(struct sqlite3PrngType, sqlite3Prng),
+    &GLOBAL(struct sqlite3PrngType, sqlite3SavedPrng),
+    sizeof(sqlite3Prng)
+  );
 }
 void sqlite3PrngResetState(void){
-  sqlite3Prng.isInit = 0;
+  GLOBAL(struct sqlite3PrngType, sqlite3Prng).isInit = 0;
 }
 #endif /* SQLITE_OMIT_BUILTIN_TEST */

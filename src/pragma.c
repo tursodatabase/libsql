@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.184 2008/08/20 16:34:24 danielk1977 Exp $
+** $Id: pragma.c,v 1.185 2008/09/02 00:52:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -666,6 +666,7 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
       }
     }else{
+#ifndef SQLITE_OMIT_WSD
       if( zRight[0] ){
         int res;
         sqlite3OsAccess(db->pVfs, zRight, SQLITE_ACCESS_READWRITE, &res);
@@ -686,6 +687,7 @@ void sqlite3Pragma(
       }else{
         sqlite3_temp_directory = 0;
       }
+#endif /* SQLITE_OMIT_WSD */
     }
   }else
 

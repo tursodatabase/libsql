@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.505 2008/09/01 18:34:20 danielk1977 Exp $
+** $Id: btree.c,v 1.506 2008/09/02 00:52:52 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -45,11 +45,11 @@ int sqlite3BtreeTrace=0;  /* True to enable tracing */
 ** global for test builds.
 */
 #ifdef SQLITE_TEST
-BtShared *sqlite3SharedCacheList = 0;
-int sqlite3SharedCacheEnabled = 0;
+BtShared *SQLITE_WSD sqlite3SharedCacheList = 0;
+SQLITE_WSD int sqlite3SharedCacheEnabled = 0;
 #else
-static BtShared *sqlite3SharedCacheList = 0;
-static int sqlite3SharedCacheEnabled = 0;
+static BtShared *SQLITE_WSD sqlite3SharedCacheList = 0;
+static SQLITE_WSD int sqlite3SharedCacheEnabled = 0;
 #endif
 #endif /* SQLITE_OMIT_SHARED_CACHE */
 
@@ -62,7 +62,7 @@ static int sqlite3SharedCacheEnabled = 0;
 ** sqlite3_open(), sqlite3_open16(), or sqlite3_open_v2().
 */
 int sqlite3_enable_shared_cache(int enable){
-  sqlite3SharedCacheEnabled = enable;
+  GLOBAL(int,sqlite3SharedCacheEnabled) = enable;
   return SQLITE_OK;
 }
 #endif
@@ -1232,7 +1232,7 @@ int sqlite3BtreeOpen(
    && (db->flags & SQLITE_Vtab)==0
    && zFilename && zFilename[0]
   ){
-    if( sqlite3SharedCacheEnabled ){
+    if( GLOBAL(int,sqlite3SharedCacheEnabled) ){
       int nFullPathname = pVfs->mxPathname+1;
       char *zFullPathname = sqlite3Malloc(nFullPathname);
       sqlite3_mutex *mutexShared;
@@ -1245,7 +1245,7 @@ int sqlite3BtreeOpen(
       sqlite3OsFullPathname(pVfs, zFilename, nFullPathname, zFullPathname);
       mutexShared = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
       sqlite3_mutex_enter(mutexShared);
-      for(pBt=sqlite3SharedCacheList; pBt; pBt=pBt->pNext){
+      for(pBt=GLOBAL(BtShared*,sqlite3SharedCacheList); pBt; pBt=pBt->pNext){
         assert( pBt->nRef>0 );
         if( 0==strcmp(zFullPathname, sqlite3PagerFilename(pBt->pPager))
                  && sqlite3PagerVfs(pBt->pPager)==pVfs ){
@@ -1349,8 +1349,8 @@ int sqlite3BtreeOpen(
         }
       }
       sqlite3_mutex_enter(mutexShared);
-      pBt->pNext = sqlite3SharedCacheList;
-      sqlite3SharedCacheList = pBt;
+      pBt->pNext = GLOBAL(BtShared*,sqlite3SharedCacheList);
+      GLOBAL(BtShared*,sqlite3SharedCacheList) = pBt;
       sqlite3_mutex_leave(mutexShared);
     }
 #endif
@@ -1418,10 +1418,10 @@ static int removeFromSharingList(BtShared *pBt){
   sqlite3_mutex_enter(pMaster);
   pBt->nRef--;
   if( pBt->nRef<=0 ){
-    if( sqlite3SharedCacheList==pBt ){
-      sqlite3SharedCacheList = pBt->pNext;
+    if( GLOBAL(BtShared*,sqlite3SharedCacheList)==pBt ){
+      GLOBAL(BtShared*,sqlite3SharedCacheList) = pBt->pNext;
     }else{
-      pList = sqlite3SharedCacheList;
+      pList = GLOBAL(BtShared*,sqlite3SharedCacheList);
       while( ALWAYS(pList) && pList->pNext!=pBt ){
         pList=pList->pNext;
       }

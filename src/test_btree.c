@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_btree.c,v 1.6 2008/07/15 00:27:35 drh Exp $
+** $Id: test_btree.c,v 1.7 2008/09/02 00:52:52 drh Exp $
 */
 #include "btreeInt.h"
 #include <tcl.h>
@@ -34,7 +34,7 @@ int sqlite3BtreeSharedCacheReport(
   extern BtShared *sqlite3SharedCacheList;
   BtShared *pBt;
   Tcl_Obj *pRet = Tcl_NewObj();
-  for(pBt=sqlite3SharedCacheList; pBt; pBt=pBt->pNext){
+  for(pBt=GLOBAL(BtShared*,sqlite3SharedCacheList); pBt; pBt=pBt->pNext){
     const char *zFile = sqlite3PagerFilename(pBt->pPager);
     Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj(zFile, -1));
     Tcl_ListObjAppendElement(interp, pRet, Tcl_NewIntObj(pBt->nRef));

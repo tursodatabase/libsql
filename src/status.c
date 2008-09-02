@@ -13,25 +13,41 @@
 ** This module implements the sqlite3_status() interface and related
 ** functionality.
 **
-** $Id: status.c,v 1.8 2008/08/12 15:21:12 drh Exp $
+** $Id: status.c,v 1.9 2008/09/02 00:52:52 drh Exp $
 */
 #include "sqliteInt.h"
 
 /*
 ** Variables in which to record status information.
 */
-static struct {
+typedef struct sqlite3StatType sqlite3StatType;
+static SQLITE_WSD struct sqlite3StatType {
   int nowValue[9];         /* Current value */
   int mxValue[9];          /* Maximum value */
-} sqlite3Stat;
+} sqlite3Stat = { {0,}, {0,} };
 
+
+/* The "wsdStat" macro will resolve to the status information
+** state vector.  If writable static data is unsupported on the target,
+** we have to locate the state vector at run-time.  In the more common
+** case where writable static data is supported, wsdStat can refer directly
+** to the "sqlite3Stat" state vector declared above.
+*/
+#ifdef SQLITE_OMIT_WSD
+# define wsdStatInit  sqlite3StatType *x = &GLOBAL(sqlite3StatType,sqlite3Stat)
+# define wsdStat x[0]
+#else
+# define wsdStatInit
+# define wsdStat sqlite3Stat
+#endif
 
 /*
 ** Return the current value of a status parameter.
 */
 int sqlite3StatusValue(int op){
-  assert( op>=0 && op<ArraySize(sqlite3Stat.nowValue) );
-  return sqlite3Stat.nowValue[op];
+  wsdStatInit;
+  assert( op>=0 && op<ArraySize(wsdStat.nowValue) );
+  return wsdStat.nowValue[op];
 }
 
 /*
@@ -39,10 +55,11 @@ int sqlite3StatusValue(int op){
 ** caller holds appropriate locks.
 */
 void sqlite3StatusAdd(int op, int N){
-  assert( op>=0 && op<ArraySize(sqlite3Stat.nowValue) );
-  sqlite3Stat.nowValue[op] += N;
-  if( sqlite3Stat.nowValue[op]>sqlite3Stat.mxValue[op] ){
-    sqlite3Stat.mxValue[op] = sqlite3Stat.nowValue[op];
+  wsdStatInit;
+  assert( op>=0 && op<ArraySize(wsdStat.nowValue) );
+  wsdStat.nowValue[op] += N;
+  if( wsdStat.nowValue[op]>wsdStat.mxValue[op] ){
+    wsdStat.mxValue[op] = wsdStat.nowValue[op];
   }
 }
 
@@ -50,10 +67,11 @@ void sqlite3StatusAdd(int op, int N){
 ** Set the value of a status to X.
 */
 void sqlite3StatusSet(int op, int X){
-  assert( op>=0 && op<ArraySize(sqlite3Stat.nowValue) );
-  sqlite3Stat.nowValue[op] = X;
-  if( sqlite3Stat.nowValue[op]>sqlite3Stat.mxValue[op] ){
-    sqlite3Stat.mxValue[op] = sqlite3Stat.nowValue[op];
+  wsdStatInit;
+  assert( op>=0 && op<ArraySize(wsdStat.nowValue) );
+  wsdStat.nowValue[op] = X;
+  if( wsdStat.nowValue[op]>wsdStat.mxValue[op] ){
+    wsdStat.mxValue[op] = wsdStat.nowValue[op];
   }
 }
 
@@ -65,13 +83,14 @@ void sqlite3StatusSet(int op, int X){
 ** then this routine is not threadsafe.
 */
 int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag){
-  if( op<0 || op>=ArraySize(sqlite3Stat.nowValue) ){
+  wsdStatInit;
+  if( op<0 || op>=ArraySize(wsdStat.nowValue) ){
     return SQLITE_MISUSE;
   }
-  *pCurrent = sqlite3Stat.nowValue[op];
-  *pHighwater = sqlite3Stat.mxValue[op];
+  *pCurrent = wsdStat.nowValue[op];
+  *pHighwater = wsdStat.mxValue[op];
   if( resetFlag ){
-    sqlite3Stat.mxValue[op] = sqlite3Stat.nowValue[op];
+    wsdStat.mxValue[op] = wsdStat.nowValue[op];
   }
   return SQLITE_OK;
 }
