@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.506 2008/09/02 00:52:52 drh Exp $
+** $Id: btree.c,v 1.507 2008/09/02 09:38:07 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -62,7 +62,7 @@ static SQLITE_WSD int sqlite3SharedCacheEnabled = 0;
 ** sqlite3_open(), sqlite3_open16(), or sqlite3_open_v2().
 */
 int sqlite3_enable_shared_cache(int enable){
-  GLOBAL(int,sqlite3SharedCacheEnabled) = enable;
+  GLOBAL(int, sqlite3SharedCacheEnabled) = enable;
   return SQLITE_OK;
 }
 #endif

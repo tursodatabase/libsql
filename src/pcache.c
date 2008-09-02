@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.25 2008/09/01 18:34:20 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.26 2008/09/02 09:38:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -68,7 +68,7 @@ struct PgFreeslot {
 /*
 ** Global data for the page cache.
 */
-static struct PCacheGlobal {
+static SQLITE_WSD struct PCacheGlobal {
   int isInit;                         /* True when initialized */
   sqlite3_mutex *mutex;               /* static mutex MUTEX_STATIC_LRU */
 
@@ -82,6 +82,13 @@ static struct PCacheGlobal {
   void *pStart, *pEnd;                /* Bounds of pagecache malloc range */
   PgFreeslot *pFree;                  /* Free page blocks */
 } pcache = {0};
+
+/*
+** All code in this file should access the global pcache structure via the
+** alias "pcache_g". This ensures that the WSD emulation is used when
+** compiling for systems that do not support real WSD.
+*/
+#define pcache_g (GLOBAL(struct PCacheGlobal, pcache))
 
 /*
 ** All global variables used by this module (all of which are grouped 
@@ -99,9 +106,9 @@ static struct PCacheGlobal {
 ** entered more than once.  The pcacheMutexHeld() macro should only be
 ** used within an assert() to verify that the mutex is being held.
 */
-#define pcacheEnterMutex() sqlite3_mutex_enter(pcache.mutex)
-#define pcacheExitMutex()  sqlite3_mutex_leave(pcache.mutex)
-#define pcacheMutexHeld()  sqlite3_mutex_held(pcache.mutex)
+#define pcacheEnterMutex() sqlite3_mutex_enter(pcache_g.mutex)
+#define pcacheExitMutex()  sqlite3_mutex_leave(pcache_g.mutex)
+#define pcacheMutexHeld()  sqlite3_mutex_held(pcache_g.mutex)
 
 /*
 ** Some of the assert() macros in this code are too expensive to run
@@ -317,22 +324,22 @@ static void pcacheAddToList(PgHdr **ppHead, PgHdr *pPage){
 ** Remove a page from the global LRU list
 */
 static void pcacheRemoveFromLruList(PgHdr *pPage){
-  assert( sqlite3_mutex_held(pcache.mutex) );
+  assert( sqlite3_mutex_held(pcache_g.mutex) );
   assert( (pPage->flags&PGHDR_DIRTY)==0 );
   if( pPage->pCache->bPurgeable==0 ) return;
   if( pPage->pNextLru ){
-    assert( pcache.pLruTail!=pPage );
+    assert( pcache_g.pLruTail!=pPage );
     pPage->pNextLru->pPrevLru = pPage->pPrevLru;
   }else{
-    assert( pcache.pLruTail==pPage );
-    pcache.pLruTail = pPage->pPrevLru;
+    assert( pcache_g.pLruTail==pPage );
+    pcache_g.pLruTail = pPage->pPrevLru;
   }
   if( pPage->pPrevLru ){
-    assert( pcache.pLruHead!=pPage );
+    assert( pcache_g.pLruHead!=pPage );
     pPage->pPrevLru->pNextLru = pPage->pNextLru;
   }else{
-    assert( pcache.pLruHead==pPage );
-    pcache.pLruHead = pPage->pNextLru;
+    assert( pcache_g.pLruHead==pPage );
+    pcache_g.pLruHead = pPage->pNextLru;
   }
 }
 
@@ -343,31 +350,31 @@ static void pcacheRemoveFromLruList(PgHdr *pPage){
 ** to the end of the LRU list so that it will be the next to be recycled.
 */
 static void pcacheAddToLruList(PgHdr *pPage){
-  assert( sqlite3_mutex_held(pcache.mutex) );
+  assert( sqlite3_mutex_held(pcache_g.mutex) );
   assert( (pPage->flags&PGHDR_DIRTY)==0 );
   if( pPage->pCache->bPurgeable==0 ) return;
-  if( pcache.pLruTail && (pPage->flags & PGHDR_REUSE_UNLIKELY)!=0 ){
+  if( pcache_g.pLruTail && (pPage->flags & PGHDR_REUSE_UNLIKELY)!=0 ){
     /* If reuse is unlikely.  Put the page at the end of the LRU list
     ** where it will be recycled sooner rather than later. 
     */
-    assert( pcache.pLruHead );
+    assert( pcache_g.pLruHead );
     pPage->pNextLru = 0;
-    pPage->pPrevLru = pcache.pLruTail;
-    pcache.pLruTail->pNextLru = pPage;
-    pcache.pLruTail = pPage;
+    pPage->pPrevLru = pcache_g.pLruTail;
+    pcache_g.pLruTail->pNextLru = pPage;
+    pcache_g.pLruTail = pPage;
     pPage->flags &= ~PGHDR_REUSE_UNLIKELY;
   }else{
     /* If reuse is possible. the page goes at the beginning of the LRU
     ** list so that it will be the last to be recycled.
     */
-    if( pcache.pLruHead ){
-      pcache.pLruHead->pPrevLru = pPage;
+    if( pcache_g.pLruHead ){
+      pcache_g.pLruHead->pPrevLru = pPage;
     }
-    pPage->pNextLru = pcache.pLruHead;
-    pcache.pLruHead = pPage;
+    pPage->pNextLru = pcache_g.pLruHead;
+    pcache_g.pLruHead = pPage;
     pPage->pPrevLru = 0;
-    if( pcache.pLruTail==0 ){
-      pcache.pLruTail = pPage;
+    if( pcache_g.pLruTail==0 ){
+      pcache_g.pLruTail = pPage;
     }
   }
 }
@@ -382,16 +389,16 @@ static void pcacheAddToLruList(PgHdr *pPage){
 void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
   PgFreeslot *p;
   sz &= ~7;
-  pcache.szSlot = sz;
-  pcache.pStart = pBuf;
-  pcache.pFree = 0;
+  pcache_g.szSlot = sz;
+  pcache_g.pStart = pBuf;
+  pcache_g.pFree = 0;
   while( n-- ){
     p = (PgFreeslot*)pBuf;
-    p->pNext = pcache.pFree;
-    pcache.pFree = p;
+    p->pNext = pcache_g.pFree;
+    pcache_g.pFree = p;
     pBuf = (void*)&((char*)pBuf)[sz];
   }
-  pcache.pEnd = pBuf;
+  pcache_g.pEnd = pBuf;
 }
 
 /*
@@ -400,10 +407,10 @@ void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
 ** in the page cache memory pool, go to the general purpose memory allocator.
 */
 void *pcacheMalloc(int sz, PCache *pCache){
-  assert( sqlite3_mutex_held(pcache.mutex) );
-  if( sz<=pcache.szSlot && pcache.pFree ){
-    PgFreeslot *p = pcache.pFree;
-    pcache.pFree = p->pNext;
+  assert( sqlite3_mutex_held(pcache_g.mutex) );
+  if( sz<=pcache_g.szSlot && pcache_g.pFree ){
+    PgFreeslot *p = pcache_g.pFree;
+    pcache_g.pFree = p->pNext;
     sqlite3StatusSet(SQLITE_STATUS_PAGECACHE_SIZE, sz);
     sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_USED, 1);
     return (void*)p;
@@ -439,14 +446,14 @@ void *sqlite3PageMalloc(sz){
 ** Release a pager memory allocation
 */
 void pcacheFree(void *p){
-  assert( sqlite3_mutex_held(pcache.mutex) );
+  assert( sqlite3_mutex_held(pcache_g.mutex) );
   if( p==0 ) return;
-  if( p>=pcache.pStart && p<pcache.pEnd ){
+  if( p>=pcache_g.pStart && p<pcache_g.pEnd ){
     PgFreeslot *pSlot;
     sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_USED, -1);
     pSlot = (PgFreeslot*)p;
-    pSlot->pNext = pcache.pFree;
-    pcache.pFree = pSlot;
+    pSlot->pNext = pcache_g.pFree;
+    pcache_g.pFree = pSlot;
   }else{
     int iSize = sqlite3MallocSize(p);
     sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, -iSize);
@@ -465,14 +472,14 @@ void sqlite3PageFree(void *p){
 static PgHdr *pcachePageAlloc(PCache *pCache){
   PgHdr *p;
   int sz = sizeof(*p) + pCache->szPage + pCache->szExtra;
-  assert( sqlite3_mutex_held(pcache.mutex) );
+  assert( sqlite3_mutex_held(pcache_g.mutex) );
   p = pcacheMalloc(sz, pCache);
   if( p==0 ) return 0;
   memset(p, 0, sizeof(PgHdr));
   p->pData = (void*)&p[1];
   p->pExtra = (void*)&((char*)p->pData)[pCache->szPage];
   if( pCache->bPurgeable ){
-    pcache.nCurrentPage++;
+    pcache_g.nCurrentPage++;
   }
   return p;
 }
@@ -481,9 +488,9 @@ static PgHdr *pcachePageAlloc(PCache *pCache){
 ** Deallocate a page
 */
 static void pcachePageFree(PgHdr *p){
-  assert( sqlite3_mutex_held(pcache.mutex) );
+  assert( sqlite3_mutex_held(pcache_g.mutex) );
   if( p->pCache->bPurgeable ){
-    pcache.nCurrentPage--;
+    pcache_g.nCurrentPage--;
   }
   pcacheFree(p->apSave[0]);
   pcacheFree(p->apSave[1]);
@@ -496,8 +503,8 @@ static void pcachePageFree(PgHdr *p){
 ** the argument is passed to pcachePageFree().
 */
 static int pcachePageSize(PgHdr *p){
-  assert( sqlite3_mutex_held(pcache.mutex) );
-  assert( !pcache.pStart );
+  assert( sqlite3_mutex_held(pcache_g.mutex) );
+  assert( !pcache_g.pStart );
   assert( p->apSave[0]==0 );
   assert( p->apSave[1]==0 );
   assert( p && p->pCache );
@@ -518,9 +525,9 @@ static int pcachePageSize(PgHdr *p){
 */
 static PgHdr *pcacheRecyclePage(){
   PgHdr *p = 0;
-  assert( sqlite3_mutex_held(pcache.mutex) );
+  assert( sqlite3_mutex_held(pcache_g.mutex) );
 
-  if( (p=pcache.pLruTail) ){
+  if( (p=pcache_g.pLruTail) ){
     assert( (p->flags&PGHDR_DIRTY)==0 );
     pcacheRemoveFromLruList(p);
     pcacheRemoveFromHash(p);
@@ -543,8 +550,8 @@ static int pcacheRecycleOrAlloc(PCache *pCache, PgHdr **ppPage){
   int szPage = pCache->szPage;
   int szExtra = pCache->szExtra;
 
-  assert( pcache.isInit );
-  assert( sqlite3_mutex_held(pcache.mutex) );
+  assert( pcache_g.isInit );
+  assert( sqlite3_mutex_held(pcache_g.mutex) );
 
   *ppPage = 0;
 
@@ -556,7 +563,7 @@ static int pcacheRecycleOrAlloc(PCache *pCache, PgHdr **ppPage){
   expensive_assert( pcacheCheckSynced(pCache) );
   if( pCache->xStress
    && pCache->pDirty
-   && pCache->nPinned>=(pcache.nMaxPage+pCache->nMin-pcache.nMinPage)
+   && pCache->nPinned>=(pcache_g.nMaxPage+pCache->nMin-pcache_g.nMinPage)
   ){
     PgHdr *pPg;
     assert(pCache->pDirtyTail);
@@ -580,7 +587,7 @@ static int pcacheRecycleOrAlloc(PCache *pCache, PgHdr **ppPage){
   }
 
   /* If the global page limit has been reached, try to recycle a page. */
-  if( pCache->bPurgeable && pcache.nCurrentPage>=pcache.nMaxPage ){
+  if( pCache->bPurgeable && pcache_g.nCurrentPage>=pcache_g.nMaxPage ){
     p = pcacheRecyclePage();
   }
 
@@ -604,19 +611,19 @@ static int pcacheRecycleOrAlloc(PCache *pCache, PgHdr **ppPage){
 ** functions are threadsafe.
 */
 int sqlite3PcacheInitialize(void){
-  assert( pcache.isInit==0 );
-  memset(&pcache, 0, sizeof(pcache));
+  assert( pcache_g.isInit==0 );
+  memset(&pcache_g, 0, sizeof(pcache));
   if( sqlite3GlobalConfig.bCoreMutex ){
     /* No need to check the return value of sqlite3_mutex_alloc(). 
     ** Allocating a static mutex cannot fail.
     */
-    pcache.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU);
+    pcache_g.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU);
   }
-  pcache.isInit = 1;
+  pcache_g.isInit = 1;
   return SQLITE_OK;
 }
 void sqlite3PcacheShutdown(void){
-  memset(&pcache, 0, sizeof(pcache));
+  memset(&pcache_g, 0, sizeof(pcache));
 }
 
 /*
@@ -637,7 +644,7 @@ void sqlite3PcacheOpen(
   void *pStress,               /* Argument to xStress */
   PCache *p                    /* Preallocated space for the PCache */
 ){
-  assert( pcache.isInit );
+  assert( pcache_g.isInit );
   memset(p, 0, sizeof(PCache));
   p->szPage = szPage;
   p->szExtra = szExtra;
@@ -650,8 +657,8 @@ void sqlite3PcacheOpen(
 
   pcacheEnterMutex();
   if( bPurgeable ){
-    pcache.nMaxPage += p->nMax;
-    pcache.nMinPage += p->nMin;
+    pcache_g.nMaxPage += p->nMax;
+    pcache_g.nMinPage += p->nMin;
   }
 
   pcacheExitMutex();
@@ -678,7 +685,7 @@ int sqlite3PcacheFetch(
   int rc = SQLITE_OK;
   PgHdr *pPage = 0;
 
-  assert( pcache.isInit );
+  assert( pcache_g.isInit );
   assert( pCache!=0 );
   assert( pgno>0 );
   expensive_assert( pCache->nPinned==pcachePinnedCount(pCache) );
@@ -748,7 +755,7 @@ void sqlite3PcacheRelease(PgHdr *p){
     if( (p->flags&PGHDR_DIRTY)==0 ){
       pCache->nPinned--;
       pcacheEnterMutex();
-      if( pcache.nCurrentPage>pcache.nMaxPage ){
+      if( pcache_g.nCurrentPage>pcache_g.nMaxPage ){
         pcacheRemoveFromList(&pCache->pClean, p);
         pcacheRemoveFromHash(p);
         pcachePageFree(p);
@@ -882,7 +889,7 @@ void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
 */
 void pcacheClear(PCache *pCache){
   PgHdr *p, *pNext;
-  assert( sqlite3_mutex_held(pcache.mutex) );
+  assert( sqlite3_mutex_held(pcache_g.mutex) );
   for(p=pCache->pClean; p; p=pNext){
     pNext = p->pNext;
     pcacheRemoveFromLruList(p);
@@ -942,8 +949,8 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
 */
 static void pcacheEnforceMaxPage(){
   PgHdr *p;
-  assert( sqlite3_mutex_held(pcache.mutex) );
-  while( pcache.nCurrentPage>pcache.nMaxPage && (p = pcacheRecyclePage()) ){
+  assert( sqlite3_mutex_held(pcache_g.mutex) );
+  while( pcache_g.nCurrentPage>pcache_g.nMaxPage && (p = pcacheRecyclePage()) ){
     pcachePageFree(p);
   }
 }
@@ -957,8 +964,8 @@ void sqlite3PcacheClose(PCache *pCache){
   /* Free all the pages used by this pager and remove them from the LRU list. */
   pcacheClear(pCache);
   if( pCache->bPurgeable ){
-    pcache.nMaxPage -= pCache->nMax;
-    pcache.nMinPage -= pCache->nMin;
+    pcache_g.nMaxPage -= pCache->nMax;
+    pcache_g.nMinPage -= pCache->nMin;
     pcacheEnforceMaxPage();
   }
   sqlite3_free(pCache->apHash);
@@ -1208,8 +1215,8 @@ void sqlite3PcacheSetCachesize(PCache *pCache, int mxPage){
   }
   if( pCache->bPurgeable ){
     pcacheEnterMutex();
-    pcache.nMaxPage -= pCache->nMax;
-    pcache.nMaxPage += mxPage;
+    pcache_g.nMaxPage -= pCache->nMax;
+    pcache_g.nMaxPage += mxPage;
     pcacheEnforceMaxPage();
     pcacheExitMutex();
   }
@@ -1228,7 +1235,7 @@ void sqlite3PcacheSetCachesize(PCache *pCache, int mxPage){
 */
 int sqlite3PcacheReleaseMemory(int nReq){
   int nFree = 0;
-  if( pcache.pStart==0 ){
+  if( pcache_g.pStart==0 ){
     PgHdr *p;
     pcacheEnterMutex();
     while( (nReq<0 || nFree<nReq) && (p=pcacheRecyclePage()) ){
@@ -1250,13 +1257,13 @@ void sqlite3PcacheStats(
 ){
   PgHdr *p;
   int nRecyclable = 0;
-  for(p=pcache.pLruHead; p; p=p->pNextLru){
+  for(p=pcache_g.pLruHead; p; p=p->pNextLru){
     nRecyclable++;
   }
 
-  *pnCurrent = pcache.nCurrentPage;
-  *pnMax = pcache.nMaxPage;
-  *pnMin = pcache.nMinPage;
+  *pnCurrent = pcache_g.nCurrentPage;
+  *pnMax = pcache_g.nMaxPage;
+  *pnMin = pcache_g.nMinPage;
   *pnRecyclable = nRecyclable;
 }
 #endif
