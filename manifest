@@ -1,5 +1,5 @@
-C Explicitly\sinitialize\sat\sleast\sthe\sfirst\sfield\sof\severy\sstruct.\sThis\sis\sto\swork\saround\scompilers\sthat\sdon't\slike\sthe\ssyntax\s"struct\sXXX\s{\s...\s}\syyy\s=\s{};".\s(CVS\s5666)
-D 2008-09-02T17:52:52
+C API\sdocumentation\supdates\sfor\sthreading\smode.\s(CVS\s5667)
+D 2008-09-02T21:35:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/random.c 11bbdf7def3746a762fbdb56c9d04648135ad6d8
 F src/resolve.c a6abf83125bce0c80ba04acc27c3565155ad305c
 F src/select.c eec7c5f28a0c75fdd8500630435af176bba73219
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
-F src/sqlite.h.in 81c37dcbd5bb1b1a5f6cdd96a67e82e6a0c3d1da
+F src/sqlite.h.in 7da6a0d39221affca458b4ba305be3eb1590bb8e
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h 4e81ab61bc9a942f0dafdb8c2cec7825f6eba2f5
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e869446119724b9b1568b1f8e56e9f29ff6d3816
-R 9d15214be0d8a6dfee557461b3e13e4a
-U danielk1977
-Z a4210662dddf1b4f707bdd6daa55e785
+P 88bfdc87471e65ac5a262a794b8cdf3e563eb327
+R 9074e71dd90330aa0cdf889817e3ecc6
+U drh
+Z d261a4787bb96a3cdffa0da07ab29e60

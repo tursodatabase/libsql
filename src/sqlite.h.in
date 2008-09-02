@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.396 2008/09/01 22:06:23 shane Exp $
+** @(#) $Id: sqlite.h.in,v 1.397 2008/09/02 21:35:03 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -154,8 +154,9 @@ int sqlite3_libversion_number(void);
 ** CAPI3REF: Test To See If The Library Is Threadsafe {H10100} <S60100>
 **
 ** SQLite can be compiled with or without mutexes.  When
-** the [SQLITE_THREADSAFE] C preprocessor macro is true, mutexes
-** are enabled and SQLite is threadsafe.  When that macro is false,
+** the [SQLITE_THREADSAFE] C preprocessor macro 1 or 2, mutexes
+** are enabled and SQLite is threadsafe.  When the
+** [SQLITE_THREADSAFE] macro is 0, 
 ** the mutexes are omitted.  Without the mutexes, it is not safe
 ** to use SQLite concurrently from more than one thread.
 **
@@ -177,12 +178,13 @@ int sqlite3_libversion_number(void);
 ** only the default compile-time setting, not any run-time changes
 ** to that setting.
 **
+** See the [threading mode] documentation for additional information.
+**
 ** INVARIANTS:
 **
 ** {H10101} The [sqlite3_threadsafe()] function shall return nonzero if
-**          SQLite was compiled with the its mutexes enabled by default
-**          or zero if SQLite was compiled such that mutexes are
-**          permanently disabled.
+**          and only if
+**          SQLite was compiled with the its mutexes enabled by default.
 **
 ** {H10102} The value returned by the [sqlite3_threadsafe()] function
 **          shall not change when mutex setting are modified at
@@ -1097,7 +1099,9 @@ struct sqlite3_mem_methods {
 ** The application is responsible for serializing access to
 ** [database connections] and [prepared statements].  But other mutexes
 ** are enabled so that SQLite will be safe to use in a multi-threaded
-** environment.</dd>
+** environment as long as no two threads attempt to use the same
+** [database connection] at the same time.  See the [threading mode]
+** documentation for additional information.</dd>
 **
 ** <dt>SQLITE_CONFIG_SERIALIZED</dt>
 ** <dd>There are no arguments to this option.  This option enables
@@ -1108,11 +1112,7 @@ struct sqlite3_mem_methods {
 ** to [database connections] and [prepared statements] so that the
 ** application is free to use the same [database connection] or the
 ** same [prepared statement] in different threads at the same time.
-**
-** <p>This configuration option merely sets the default mutex 
-** behavior to serialize access to [database connections].  Individual
-** [database connections] can override this setting
-** using the [SQLITE_OPEN_NOMUTEX] flag to [sqlite3_open_v2()].</p></dd>
+** See the [threading mode] documentation for additional information.</dd>
 **
 ** <dt>SQLITE_CONFIG_MALLOC</dt>
 ** <dd>This option takes a single argument which is a pointer to an
@@ -2390,7 +2390,7 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** except that it accepts two additional parameters for additional control
 ** over the new database connection.  The flags parameter can take one of
 ** the following three values, optionally combined with the 
-** [SQLITE_OPEN_NOMUTEX] flag:
+** [SQLITE_OPEN_NOMUTEX] or [SQLITE_OPEN_FULLMUTEX] flags:
 **
 ** <dl>
 ** <dt>[SQLITE_OPEN_READONLY]</dt>
@@ -2410,16 +2410,15 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 **
 ** If the 3rd parameter to sqlite3_open_v2() is not one of the
 ** combinations shown above or one of the combinations shown above combined
-** with the [SQLITE_OPEN_NOMUTEX] flag, then the behavior is undefined.
+** with the [SQLITE_OPEN_NOMUTEX] or [SQLITE_OPEN_FULLMUTEX] flags,
+** then the behavior is undefined.
 **
-** If the [SQLITE_OPEN_NOMUTEX] flag is set, then mutexes on the
-** opened [database connection] are disabled and the appliation must
-** insure that access to the [database connection] and its associated
-** [prepared statements] is serialized.  The [SQLITE_OPEN_NOMUTEX] flag
-** is the default behavior is SQLite is configured using the
-** [SQLITE_CONFIG_MULTITHREAD] or [SQLITE_CONFIG_SINGLETHREAD] options
-** to [sqlite3_config()].  The [SQLITE_OPEN_NOMUTEX] flag only makes a
-** difference when SQLite is in its default [SQLITE_CONFIG_SERIALIZED] mode.
+** If the [SQLITE_OPEN_NOMUTEX] flag is set, then the database connection
+** opens in the multi-thread [threading mode] as long as the single-thread
+** mode has not been set at compile-time or start-time.  If the
+** [SQLITE_OPEN_FULLMUTEX] flag is set then the database connection opens
+** in the serialized [threading mode] unless single-thread was
+** previously selected at compile-time or start-time.
 **
 ** If the filename is ":memory:", then a private, temporary in-memory database
 ** is created for the connection.  This in-memory database will vanish when
