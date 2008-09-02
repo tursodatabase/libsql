@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.777 2008/08/21 19:28:30 drh Exp $
+** $Id: vdbe.c,v 1.778 2008/09/02 11:05:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -176,7 +176,7 @@ static void _storeTypeInfo(Mem *pMem){
 ** from the comments following the "case OP_xxxx:" statements in
 ** this file.  
 */
-static unsigned char opcodeProperty[] = OPFLG_INITIALIZER;
+static const unsigned char opcodeProperty[] = OPFLG_INITIALIZER;
 
 /*
 ** Return true if an opcode has any of the OPFLG_xxx properties
