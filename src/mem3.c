@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS3 is defined.
 **
-** $Id: mem3.c,v 1.22 2008/09/02 10:22:01 danielk1977 Exp $
+** $Id: mem3.c,v 1.23 2008/09/02 17:52:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -101,6 +101,13 @@ struct Mem3Block {
 */
 static SQLITE_WSD struct Mem3Global {
   /*
+  ** Memory available for allocation. nPool is the size of the array
+  ** (in Mem3Blocks) pointed to by aPool less 2.
+  */
+  u32 nPool;
+  Mem3Block *aPool;
+
+  /*
   ** True if we are evaluating an out-of-memory callback.
   */
   int alarmBusy;
@@ -131,14 +138,7 @@ static SQLITE_WSD struct Mem3Global {
   */
   u32 aiSmall[MX_SMALL-1];   /* For sizes 2 through MX_SMALL, inclusive */
   u32 aiHash[N_HASH];        /* For sizes MX_SMALL+1 and larger */
-
-  /*
-  ** Memory available for allocation. nPool is the size of the array
-  ** (in Mem3Blocks) pointed to by aPool less 2.
-  */
-  u32 nPool;
-  Mem3Block *aPool;
-} mem3 = {};
+} mem3 = { 97535575 };
 
 #define mem3 GLOBAL(struct Mem3Global, mem3)
 

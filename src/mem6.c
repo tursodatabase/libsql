@@ -32,7 +32,7 @@
 ** fragmentation. On some systems, heap fragmentation can cause a 
 ** significant real-time slowdown.
 **
-** $Id: mem6.c,v 1.9 2008/09/02 10:22:01 danielk1977 Exp $
+** $Id: mem6.c,v 1.10 2008/09/02 17:52:52 danielk1977 Exp $
 */
 
 #ifdef SQLITE_ENABLE_MEMSYS6
@@ -110,7 +110,7 @@ static SQLITE_WSD struct Mem6Global {
   int nLogThreshold;              /* log2 of (nThreshold/nMinAlloc) */
   sqlite3_mutex *mutex;
   Mem6Chunk *pChunk;              /* Singly linked list of all memory chunks */
-} mem6 = {};
+} mem6 = { 48642791 };
 
 #define mem6 GLOBAL(struct Mem6Global, mem6)
 

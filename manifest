@@ -1,5 +1,5 @@
-C Fix\sthe\sposition\sof\sthe\sSQLITE_WSD\smacro\sin\sthe\sdeclaration\sof\sglobal\svariable\svfsList.\s(CVS\s5665)
-D 2008-09-02T17:18:52
+C Explicitly\sinitialize\sat\sleast\sthe\sfirst\sfield\sof\severy\sstruct.\sThis\sis\sto\swork\saround\scompilers\sthat\sdon't\slike\sthe\ssyntax\s"struct\sXXX\s{\s...\s}\syyy\s=\s{};".\s(CVS\s5666)
+D 2008-09-02T17:52:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -117,13 +117,13 @@ F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 6581a5bbc4d74fcd46dbbcfd695a6a5417f778a2
 F src/main.c a679dd3e0f040d13d72b9800840e07bedd6aa2d4
-F src/malloc.c fb23bfbcc5c93180b787bd746c7387289028d482
+F src/malloc.c 9aa2ef805287017ed16a9e3809d275b8af26b762
 F src/mem1.c 5a529ff121c55ab067be14de00f86f6dcc4f4fb9
 F src/mem2.c f87e681d0d1ed8436870d089332ed0d27d885b5c
-F src/mem3.c 0d9341b01ebbed7bce59a94236620f20bce2efd4
+F src/mem3.c 1594f117fde4cf11a6c16521f3f30af8d04bbe68
 F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
-F src/mem5.c 6ec2795f5c328d8560ce500dad56a2aaedddb2d4
-F src/mem6.c 95d19a2e76c9173b1366f0a08a9f79fa34c697f2
+F src/mem5.c 706d462c13a9819dfec7c10d9dccedf8d199960c
+F src/mem6.c febe4db9ddef73df500989e68a9d4ac68602a075
 F src/mutex.c 81174f600553c25832e9a8705b609f16c73a4c01
 F src/mutex.h e52ffa1dfc6a6077e8b1823d2c2b7dfcbcf85594
 F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P af5763eb65baa791a38f7e235624e4f63beac104
-R 614d8789ebf6e763073894eea03bb50c
+P e869446119724b9b1568b1f8e56e9f29ff6d3816
+R 9d15214be0d8a6dfee557461b3e13e4a
 U danielk1977
-Z 89924553a58b9babc004b5df11c6ef86
+Z a4210662dddf1b4f707bdd6daa55e785
