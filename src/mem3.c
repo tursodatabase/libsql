@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS3 is defined.
 **
-** $Id: mem3.c,v 1.21 2008/09/01 18:34:20 danielk1977 Exp $
+** $Id: mem3.c,v 1.22 2008/09/02 10:22:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -99,7 +99,7 @@ struct Mem3Block {
 ** static variables organized and to reduce namespace pollution
 ** when this module is combined with other in the amalgamation.
 */
-static struct {
+static SQLITE_WSD struct Mem3Global {
   /*
   ** True if we are evaluating an out-of-memory callback.
   */
@@ -138,7 +138,9 @@ static struct {
   */
   u32 nPool;
   Mem3Block *aPool;
-} mem3;
+} mem3 = {};
+
+#define mem3 GLOBAL(struct Mem3Global, mem3)
 
 /*
 ** Unlink the chunk at mem3.aPool[i] from list it is currently
@@ -583,8 +585,8 @@ static void memsys3Shutdown(void *NotUsed){
 ** Open the file indicated and write a log of all unfreed memory 
 ** allocations into that log.
 */
-#ifdef SQLITE_DEBUG
 void sqlite3Memsys3Dump(const char *zFilename){
+#ifdef SQLITE_DEBUG
   FILE *out;
   int i, j;
   u32 size;
@@ -651,8 +653,8 @@ void sqlite3Memsys3Dump(const char *zFilename){
   }else{
     fclose(out);
   }
-}
 #endif
+}
 
 /*
 ** This routine is the only routine in this file with external 

@@ -13,7 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 **
-** $Id: os.c,v 1.120 2008/07/28 19:34:53 drh Exp $
+** $Id: os.c,v 1.121 2008/09/02 10:22:01 danielk1977 Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
@@ -190,7 +190,8 @@ int sqlite3OsCloseFree(sqlite3_file *pFile){
 /*
 ** The list of all registered VFS implementations.
 */
-static sqlite3_vfs *vfsList = 0;
+static SQLITE_WSD sqlite3_vfs *vfsList = 0;
+#define vfsList GLOBAL(sqlite3_vfs *, vfsList)
 
 /*
 ** Locate a VFS by name.  If no name is given, simply return the
