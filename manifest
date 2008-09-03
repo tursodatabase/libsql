@@ -1,5 +1,5 @@
-C API\sdocumentation\supdates\sfor\sthreading\smode.\s(CVS\s5667)
-D 2008-09-02T21:35:03
+C If\sa\srollback\sfails,\smark\sthe\sdatabase\sas\scorrupt.\s(CVS\s5668)
+D 2008-09-03T00:08:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 4665cef7639dd937893c3ea076f0e8a8f215bb32
 F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
-F src/pager.c 24a494282792f3a08d972a39c27e3a6a24ab18d3
+F src/pager.c 5a6b59089511db451df45414eb137110b04b1419
 F src/pager.h c45380ca9d0933ea5bc4ecb3a43958b6d2ec5a9c
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c ff79cb5eb797d0f1a244b4332c2d39cb5cfd066b
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 88bfdc87471e65ac5a262a794b8cdf3e563eb327
-R 9074e71dd90330aa0cdf889817e3ecc6
+P fa237c14c8551315ea8f239e89a81b7725675c81
+R bef98882f050cbe8a7e09b4a627b9eac
 U drh
-Z d261a4787bb96a3cdffa0da07ab29e60
+Z b8216416ceb392107a1119cd9017e017
