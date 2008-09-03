@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.27 2008/08/30 16:07:04 drh Exp $
+# $Id: permutations.test,v 1.28 2008/09/03 00:43:15 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -266,7 +266,7 @@ run_tests "singlethread" -description {
 }
 
 run_tests "nomutex" -description {
-  Tests run with the SQLITE_OPEN_SINGLETHREADED flag passed to sqlite3_open().
+  Tests run with the SQLITE_OPEN_MULTITHREADED flag passed to sqlite3_open().
 } -initialize {
   rename sqlite3 sqlite3_nomutex
   proc sqlite3 {args} {
@@ -304,6 +304,27 @@ run_tests "multithread" -description {
     sqlite3_shutdown
     sqlite3_config serialized
   } SQLITE_OK
+}
+
+# Run some tests in SQLITE_OPEN_FULLMUTEX mode.
+#
+run_tests "fullmutex" -description {
+  Tests run in SQLITE_OPEN_FULLMUTEX mode
+} -initialize {
+  rename sqlite3 sqlite3_fullmutex
+  proc sqlite3 {args} {
+    if {[string range [lindex $args 0] 0 0] ne "-"} {
+      lappend args -fullmutex 1
+    }
+    uplevel [concat sqlite3_fullmutex $args]
+  }
+} -include {
+  delete.test   delete2.test  insert.test  rollback.test  select1.test
+  select2.test  trans.test    update.test  vacuum.test    types.test
+  types2.test   types3.test
+} -shutdown {
+  rename sqlite3 {}
+  rename sqlite3_fullmutex sqlite3
 }
 
 # Run some tests using the "onefile" demo.

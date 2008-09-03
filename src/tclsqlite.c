@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.221 2008/09/01 20:38:12 shane Exp $
+** $Id: tclsqlite.c,v 1.222 2008/09/03 00:43:15 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2374,8 +2374,18 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
       if( b ){
         flags |= SQLITE_OPEN_NOMUTEX;
+        flags &= ~SQLITE_OPEN_FULLMUTEX;
       }else{
         flags &= ~SQLITE_OPEN_NOMUTEX;
+      }
+   }else if( strcmp(zArg, "-fullmutex")==0 ){
+      int b;
+      if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
+      if( b ){
+        flags |= SQLITE_OPEN_FULLMUTEX;
+        flags &= ~SQLITE_OPEN_NOMUTEX;
+      }else{
+        flags &= ~SQLITE_OPEN_FULLMUTEX;
       }
     }else{
       Tcl_AppendResult(interp, "unknown option: ", zArg, (char*)0);
@@ -2385,7 +2395,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   if( objc<3 || (objc&1)!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, 
       "HANDLE FILENAME ?-vfs VFSNAME? ?-readonly BOOLEAN? ?-create BOOLEAN?"
-      " ?-nomutex BOOLEAN?"
+      " ?-nomutex BOOLEAN? ?-fullmutex BOOLEAN?"
 #ifdef SQLITE_HAS_CODEC
       " ?-key CODECKEY?"
 #endif

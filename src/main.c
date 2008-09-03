@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.498 2008/09/02 16:22:29 danielk1977 Exp $
+** $Id: main.c,v 1.499 2008/09/03 00:43:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1426,15 +1426,21 @@ static int openDatabase(
   sqlite3 *db;
   int rc;
   CollSeq *pColl;
-  int isThreadsafe = 1;
+  int isThreadsafe;
 
 #ifndef SQLITE_OMIT_AUTOINIT
   rc = sqlite3_initialize();
   if( rc ) return rc;
 #endif
 
-  if( flags&SQLITE_OPEN_NOMUTEX ){
+  if( sqlite3GlobalConfig.bCoreMutex==0 ){
     isThreadsafe = 0;
+  }else if( flags & SQLITE_OPEN_NOMUTEX ){
+    isThreadsafe = 0;
+  }else if( flags & SQLITE_OPEN_FULLMUTEX ){
+    isThreadsafe = 1;
+  }else{
+    isThreadsafe = sqlite3GlobalConfig.bFullMutex;
   }
 
   /* Remove harmful bits from the flags parameter */
@@ -1446,13 +1452,14 @@ static int openDatabase(
                SQLITE_OPEN_TEMP_JOURNAL | 
                SQLITE_OPEN_SUBJOURNAL | 
                SQLITE_OPEN_MASTER_JOURNAL |
-               SQLITE_OPEN_NOMUTEX
+               SQLITE_OPEN_NOMUTEX |
+               SQLITE_OPEN_FULLMUTEX
              );
 
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
-  if( sqlite3GlobalConfig.bFullMutex && isThreadsafe ){
+  if( isThreadsafe ){
     db->mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     if( db->mutex==0 ){
       sqlite3_free(db);
