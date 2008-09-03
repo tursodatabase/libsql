@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: mutex1.test,v 1.13 2008/08/22 16:22:17 danielk1977 Exp $
+# $Id: mutex1.test,v 1.14 2008/09/03 01:08:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -97,7 +97,7 @@ ifcapable threadsafe {
   foreach {mode mutexes} {
     singlethread {}
     multithread  {fast static_lru static_master static_mem static_prng }
-    serialized   {fast recursive static_lru static_master static_mem static_prng }
+    serialized  {fast recursive static_lru static_master static_mem static_prng}
   } {
 
     do_test mutex1.2.$mode.1 {
@@ -109,7 +109,7 @@ ifcapable threadsafe {
     do_test mutex1.2.$mode.2 {
       sqlite3_initialize
       clear_mutex_counters
-      sqlite3 db test.db
+      sqlite3 db test.db -nomutex 0
       catchsql { CREATE TABLE abc(a, b, c) }
       db eval {
         INSERT INTO abc VALUES(1, 2, 3);

@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sSQLITE_OPEN_FULLMUTEX.\s(CVS\s5669)
-D 2008-09-03T00:43:15
+C Make\sthe\sdefault\sthreading\smode\smultithread\s(-nomutex)\sin\sthe\sTCL\sinterface.\s(CVS\s5670)
+D 2008-09-03T01:08:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/sqliteInt.h 4e81ab61bc9a942f0dafdb8c2cec7825f6eba2f5
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
-F src/tclsqlite.c f431fe065a024e80b32a4691bab73beaccda024e
+F src/tclsqlite.c 7f5c49f4347c197e869fef86b35b2251ca45f7c2
 F src/test1.c 349606445a5a938e9fa9b5e410413632c6c25f87
 F src/test2.c eaa77124786649eedf47d3c5e94d8070c0da228f
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
@@ -436,7 +436,7 @@ F test/misc5.test 6a5c1e3217a95b0db05ff9a0f1ecb5ce9043ffef
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test 0d763f703a34521e55ab30145b747aafa0e5f794
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/mutex1.test 342dd695567d307126e8f67f243e9b2bcd17898e
+F test/mutex1.test dbcf556502389abcca65a80af45b80c141714ccc
 F test/mutex2.test 56f282f436596e9febdc6e0db2c507432b6724bb
 F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
@@ -448,7 +448,7 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test a0fc9e965d039c4de24f9af929f9a25eb8be8539
-F test/permutations.test b3dc25ef805a940e23b7e1a8189cc8a06f21ca0a
+F test/permutations.test cf196f6adddb52d423ebf408dd6ad73d9da8575e
 F test/pragma.test 4461cb1004084b907dd28f9d517af7bcf8f5b35f
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c8b24bd1be94b6d385e759a2f9e202be066578a0
-R 40631eb64a3c216515d7d10a0d831308
+P f2f361a5e2fb81fb0f99e83ecf8bae9a750723b1
+R 705577649ea0352c58c4fc8568a84665
 U drh
-Z 44c1ecf2f51b2cc145c32f8106994277
+Z 89560b732b51adcb2b255247e55584a1

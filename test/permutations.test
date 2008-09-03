@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.28 2008/09/03 00:43:15 drh Exp $
+# $Id: permutations.test,v 1.29 2008/09/03 01:08:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -271,7 +271,7 @@ run_tests "nomutex" -description {
   rename sqlite3 sqlite3_nomutex
   proc sqlite3 {args} {
     if {[string range [lindex $args 0] 0 0] ne "-"} {
-      lappend args -nomutex 1
+      lappend args -fullmutex 0 -nomutex 1
     }
     uplevel [concat sqlite3_nomutex $args]
   }
@@ -314,7 +314,7 @@ run_tests "fullmutex" -description {
   rename sqlite3 sqlite3_fullmutex
   proc sqlite3 {args} {
     if {[string range [lindex $args 0] 0 0] ne "-"} {
-      lappend args -fullmutex 1
+      lappend args -nomutex 0 -fullmutex 1
     }
     uplevel [concat sqlite3_fullmutex $args]
   }
