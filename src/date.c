@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.89 2008/09/01 18:34:20 danielk1977 Exp $
+** $Id: date.c,v 1.90 2008/09/03 17:11:16 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -1071,7 +1071,7 @@ void sqlite3RegisterDateTimeFunctions(void){
   };
   int i;
   FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
-  FuncDef *aFunc = &GLOBAL(FuncDef, aDateTimeFuncs);
+  FuncDef *aFunc = (FuncDef*)&GLOBAL(FuncDef, aDateTimeFuncs);
 
   for(i=0; i<ArraySize(aDateTimeFuncs); i++){
     sqlite3FuncDefInsert(pHash, &aFunc[i]);
