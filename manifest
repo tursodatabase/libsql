@@ -1,5 +1,5 @@
-C Missing\simplementation\sfor\ssqlite3TransferBindings().\s(CVS\s5675)
-D 2008-09-04T12:03:43
+C Add\ssupport\sfor\sthe\sSQLITE_THREADSAFE=2\sand\sSQLITE_DEFAULT_MEMSTATUS\scompilation\soptions.\s(CVS\s5676)
+D 2008-09-04T17:17:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -108,7 +108,7 @@ F src/delete.c bae6684aa02e1f7cf6328023157c91d9cf94200b
 F src/expr.c 6413795aa13ceb05994e6b2b453a77df3b892e7b
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 8431b40a7843d1024145684d303c55b4ee087bbe
-F src/global.c 9ced7c26127f04fb4baaebed1f5bf6d7063b089f
+F src/global.c 20a3fe46c8287a01ba3a7442558f0eb70c66b19a
 F src/hash.c eb64e48f3781100e5934f759fbe72a63a8fe78cb
 F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
@@ -133,7 +133,7 @@ F src/os.c 543976efc0b177b40779d5fc00f709d6888d6903
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
-F src/os_unix.c e99f82f1f777cd6030e1e8c7d1fabc7130684a99
+F src/os_unix.c 075c3e474d20203153da1b2eb3f0fe3e2096f2de
 F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
 F src/pager.c 5a6b59089511db451df45414eb137110b04b1419
 F src/pager.h c45380ca9d0933ea5bc4ecb3a43958b6d2ec5a9c
@@ -149,7 +149,7 @@ F src/select.c eec7c5f28a0c75fdd8500630435af176bba73219
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 7da6a0d39221affca458b4ba305be3eb1590bb8e
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 986281c5cc398a02b1b7911808fe80e99e8826e2
+F src/sqliteInt.h 4a43cd9dcb7d5a6664a981f08e64d555acbca1bc
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -166,7 +166,7 @@ F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c da9f58f49faccd3a26ba89f58de125862351b6e2
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c 8d5b835054f1dd15992e09864a8bc04386bab701
-F src/test_config.c 9dbbe29af32ad3ff79946497f35de24981cc1ce3
+F src/test_config.c a171729f6683177f369cdae3bf9ac86434fcb80f
 F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6e8fb64639cc7451005d9f1dd2d0ef62576abbdd
-R 5354b80b6c29c8fa14951a33a49c97ef
-U shane
-Z 9e93d129d3e209d52e4ed523c9876f35
+P 56d618957571f65e88375aad34a6e7dcf22508e1
+R 7f31a60d7476d173a3ef83e79848a29e
+U danielk1977
+Z aacf6403f17f1bb9a05d92d3dbd05d57

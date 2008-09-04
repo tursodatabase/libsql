@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.34 2008/09/02 00:52:52 drh Exp $
+** $Id: test_config.c,v 1.35 2008/09/04 17:17:39 danielk1977 Exp $
 */
 
 #include "sqliteLimit.h"
@@ -25,6 +25,13 @@
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>
+
+/*
+** Macro to stringify the results of the evaluation a pre-processor
+** macro. i.e. so that STRINGVALUE(SQLITE_NOMEM) -> "7".
+*/
+#define STRINGVALUE2(x) #x
+#define STRINGVALUE(x) STRINGVALUE2(x)
 
 /*
 ** This routine sets entries in the global ::sqlite_options() array variable
@@ -386,14 +393,9 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp, "sqlite_options", "tclvar", "1", TCL_GLOBAL_ONLY);
 #endif
 
-  rc = sqlite3_threadsafe();
-#if SQLITE_THREADSAFE
-  Tcl_SetVar2(interp, "sqlite_options", "threadsafe", "1", TCL_GLOBAL_ONLY);
-  assert( rc );
-#else
-  Tcl_SetVar2(interp, "sqlite_options", "threadsafe", "0", TCL_GLOBAL_ONLY);
-  assert( !rc );
-#endif
+  Tcl_SetVar2(interp, "sqlite_options", "threadsafe", 
+      STRINGVALUE(SQLITE_THREADSAFE), TCL_GLOBAL_ONLY);
+  assert( sqlite3_threadsafe()==SQLITE_THREADSAFE );
 
 #ifdef SQLITE_OMIT_TRACE
   Tcl_SetVar2(interp, "sqlite_options", "trace", "0", TCL_GLOBAL_ONLY);

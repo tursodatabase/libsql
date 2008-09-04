@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.199 2008/09/04 06:22:26 danielk1977 Exp $
+** $Id: os_unix.c,v 1.200 2008/09/04 17:17:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -2030,7 +2030,6 @@ static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
 
 static int flockLock(sqlite3_file *id, int locktype) {
   int rc = SQLITE_OK;
-  int lrc;
   unixFile *pFile = (unixFile*)id;
 
   assert( pFile );

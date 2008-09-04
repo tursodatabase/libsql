@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.770 2008/09/04 04:32:49 shane Exp $
+** @(#) $Id: sqliteInt.h,v 1.771 2008/09/04 17:17:39 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -155,6 +155,16 @@
 #else
 # define SQLITE_THREADSAFE 1
 #endif
+#endif
+
+/*
+** The SQLITE_DEFAULT_MEMSTATUS macro must be defined as either 0 or 1.
+** It determines whether or not the features related to 
+** SQLITE_CONFIG_MEMSTATUS are availabe by default or not. This value can
+** be overridden at runtime using the sqlite3_config() API.
+*/
+#if !defined(SQLITE_DEFAULT_MEMSTATUS)
+# define SQLITE_DEFAULT_MEMSTATUS 1
 #endif
 
 /*
