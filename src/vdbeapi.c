@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.140 2008/08/21 12:19:44 danielk1977 Exp $
+** $Id: vdbeapi.c,v 1.141 2008/09/04 12:03:43 shane Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1227,7 +1227,7 @@ int sqlite3_bind_parameter_index(sqlite3_stmt *pStmt, const char *zName){
 ** If the two statements contain a different number of bindings, then
 ** an SQLITE_ERROR is returned.
 */
-int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
+int sqlite3TransferBindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
   Vdbe *pFrom = (Vdbe*)pFromStmt;
   Vdbe *pTo = (Vdbe*)pToStmt;
   int i, rc = SQLITE_OK;
@@ -1246,6 +1246,14 @@ int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
   sqlite3_mutex_leave(pTo->db->mutex);
   assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
   return rc;
+}
+
+/*
+** Deprecated external interface.  Internal/core SQLite code
+** should call sqlite3TransferBindings.
+*/
+int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
+  return sqlite3TransferBindings(pFromStmt, pToStmt);
 }
 
 /*
