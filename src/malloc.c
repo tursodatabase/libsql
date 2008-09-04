@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.40 2008/09/02 17:52:52 danielk1977 Exp $
+** $Id: malloc.c,v 1.41 2008/09/04 04:32:49 shane Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -45,9 +45,9 @@ void sqlite3_soft_heap_limit(int n){
   }
   sqlite3_initialize();
   if( iLimit>0 ){
-    sqlite3_memory_alarm(softHeapLimitEnforcer, 0, iLimit);
+    sqlite3MemoryAlarm(softHeapLimitEnforcer, 0, iLimit);
   }else{
-    sqlite3_memory_alarm(0, 0, 0);
+    sqlite3MemoryAlarm(0, 0, 0);
   }
   overage = sqlite3_memory_used() - n;
   if( overage>0 ){
@@ -183,7 +183,7 @@ sqlite3_int64 sqlite3_memory_highwater(int resetFlag){
 /*
 ** Change the alarm callback
 */
-int sqlite3_memory_alarm(
+int sqlite3MemoryAlarm(
   void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
   void *pArg,
   sqlite3_int64 iThreshold
@@ -194,6 +194,18 @@ int sqlite3_memory_alarm(
   mem0.alarmThreshold = iThreshold;
   sqlite3_mutex_leave(mem0.mutex);
   return SQLITE_OK;
+}
+
+/*
+** Deprecated external interface.  Internal/core SQLite code
+** should call sqlite3MemoryAlarm.
+*/
+int sqlite3_memory_alarm(
+  void(*xCallback)(void *pArg, sqlite3_int64 used,int N),
+  void *pArg,
+  sqlite3_int64 iThreshold
+){
+  return sqlite3MemoryAlarm(xCallback, pArg, iThreshold);
 }
 
 /*

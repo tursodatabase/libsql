@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.93 2008/08/20 16:35:10 drh Exp $
+** $Id: prepare.c,v 1.94 2008/09/04 04:32:49 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -692,7 +692,7 @@ int sqlite3Reprepare(Vdbe *p){
     assert( pNew!=0 );
   }
   sqlite3VdbeSwap((Vdbe*)pNew, p);
-  sqlite3_transfer_bindings(pNew, (sqlite3_stmt*)p);
+  sqlite3TransferBindings(pNew, (sqlite3_stmt*)p);
   sqlite3VdbeResetStepResult((Vdbe*)pNew);
   sqlite3VdbeFinalize((Vdbe*)pNew);
   return 1;

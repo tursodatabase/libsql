@@ -1,5 +1,5 @@
-C Work\saround\san\sissue\swith\sthe\sWINSCW\scompiler.\s(CVS\s5671)
-D 2008-09-03T17:11:16
+C Modified\score\sto\snot\scall\sdeprecated\sfunctions\ssqlite3_memory_alarm()\sand\ssqlite3_transfer_bindings()\sby\sadding\ssqlite3MemoryAlarm()\sand\ssqlite3TransferBindings().\s\ssqlite3_memory_alarm()\sand\ssqlite3_transfer_bindings()\sare\snow\ssimple\swrappers\sfor\sthe\snew\sfunctions.\s\sIn\sprep\sfor\sadding\sSQLITE_OMIT_DEPRECATED.\s(CVS\s5672)
+D 2008-09-04T04:32:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -117,7 +117,7 @@ F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 6581a5bbc4d74fcd46dbbcfd695a6a5417f778a2
 F src/main.c 088b513b16b480e96cbabab883107e0e74646a2e
-F src/malloc.c 9aa2ef805287017ed16a9e3809d275b8af26b762
+F src/malloc.c 6c3bcae8ee8885f1705f36306062f82a64d96118
 F src/mem1.c 5a529ff121c55ab067be14de00f86f6dcc4f4fb9
 F src/mem2.c f87e681d0d1ed8436870d089332ed0d27d885b5c
 F src/mem3.c 1594f117fde4cf11a6c16521f3f30af8d04bbe68
@@ -141,7 +141,7 @@ F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c ff79cb5eb797d0f1a244b4332c2d39cb5cfd066b
 F src/pcache.h 53730c33310cdf7a5c94e8333c853d59a3b30226
 F src/pragma.c 9d00ed41b261968757c02707e1508a707f2d46a7
-F src/prepare.c c197041e0c4770672cda75e6bfe10242f885e510
+F src/prepare.c bb0c76b7d149debe0fbc96b0b9b211180769a66f
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 11bbdf7def3746a762fbdb56c9d04648135ad6d8
 F src/resolve.c a6abf83125bce0c80ba04acc27c3565155ad305c
@@ -149,7 +149,7 @@ F src/select.c eec7c5f28a0c75fdd8500630435af176bba73219
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 7da6a0d39221affca458b4ba305be3eb1590bb8e
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 4e81ab61bc9a942f0dafdb8c2cec7825f6eba2f5
+F src/sqliteInt.h 986281c5cc398a02b1b7911808fe80e99e8826e2
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d9e826942673ad048d611c014bfbee39ab5535c8
-R 4c58f8d518f4d7642e26335d639dedc9
-U drh
-Z 9a733289185c8757aa19d0d86da78658
+P e333c3f4c3629dba05b58318e2cd0514843e5394
+R 8f01b0f2eeb7eb8624edfef58dbe76a2
+U shane
+Z 94943e24fb9ab172c32144f86dec2f9a
