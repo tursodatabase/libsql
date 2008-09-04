@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.198 2008/08/22 18:41:37 aswift Exp $
+** $Id: os_unix.c,v 1.199 2008/09/04 06:22:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -2946,7 +2946,6 @@ int sqlite3_os_init(void){
 
   static sqlite3_vfs unixVfs = UNIXVFS("unix", 0);
 #ifdef SQLITE_ENABLE_LOCKING_STYLE
-#if 0
   int i;
   static sqlite3_vfs aVfs[] = {
     UNIXVFS("unix-posix",   LOCKING_STYLE_POSIX), 
@@ -2958,7 +2957,6 @@ int sqlite3_os_init(void){
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
     sqlite3_vfs_register(&aVfs[i], 0);
   }
-#endif
 #endif
   sqlite3_vfs_register(&unixVfs, 1);
   return SQLITE_OK; 
