@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.508 2008/09/02 14:07:24 danielk1977 Exp $
+** $Id: btree.c,v 1.509 2008/09/05 05:02:47 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3593,7 +3593,7 @@ static int moveToRightmost(BtCursor *pCur){
     pCur->info.nSize = 0;
     pCur->validNKey = 0;
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /* Move the cursor to the first entry in the table.  Return SQLITE_OK

@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.64 2008/08/27 19:01:58 danielk1977 Exp $
+# $Id: malloc.test,v 1.65 2008/09/05 05:02:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -611,6 +611,29 @@ do_malloc_test 25 -sqlprep {
   db eval {SELECT a FROM abc ORDER BY a} {
     db eval {UPDATE abc SET b = b - 1 WHERE a = $a}
   }
+}
+
+# This test is designed to test a specific juncture in the sqlite code.
+# The database set up by -sqlprep script contains a single table B-Tree
+# of height 2. In the -tclbody script, the existing database connection
+# is closed and a new one opened and used to insert a new row into the
+# table B-Tree. By using a new connection, the outcome of a malloc() 
+# failure while seeking to the right-hand side of the B-Tree to insert 
+# a new record can be tested.
+#
+do_malloc_test 26 -sqlprep {
+  BEGIN;
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, randomblob(210));
+  INSERT INTO t1 VALUES(1, randomblob(210));
+  INSERT INTO t1 VALUES(1, randomblob(210));
+  INSERT INTO t1 VALUES(1, randomblob(210));
+  INSERT INTO t1 VALUES(1, randomblob(210));
+  COMMIT;
+} -tclbody {
+  db close
+  sqlite3 db test.db
+  db eval { INSERT INTO t1 VALUES(1, randomblob(210)) }
 }
 
 # Ensure that no file descriptors were leaked.

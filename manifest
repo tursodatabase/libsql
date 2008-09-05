@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sthe\sSQLITE_THREADSAFE=2\sand\sSQLITE_DEFAULT_MEMSTATUS\scompilation\soptions.\s(CVS\s5676)
-D 2008-09-04T17:17:39
+C Fix\sa\sproblem\sin\sbtree.c\spreventing\san\sOOM\serror\sfrom\sbeing\spropagated\sup\sto\sthe\scaller.\s(CVS\s5677)
+D 2008-09-05T05:02:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -97,7 +97,7 @@ F src/attach.c db3f4a60538733c1e4dcb9d0217a6e0d6ccd615b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c 70706ed6c15a2b6f37b84454386d80fe8ff3a58a
+F src/btree.c 6ea37de364f483496f60e47c996b429a9f313d54
 F src/btree.h 6371c5e599fab391a150c96afbc10062b276d107
 F src/btreeInt.h ab18c7b4980314e9e4b402e5dcde09f3c2545576
 F src/build.c 160c71acca8f643f436ed6c1ee2f684c88df4dfe
@@ -401,7 +401,7 @@ F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/lock5.test f4eeb0400cf65c37f733cb3c74401136f8c46acd
 F test/lookaside.test 8866ea41301d74993423c99e523322fca09c259e
 F test/main.test 8d77c161757ef7d96eaff0413daa7120c3b316fe
-F test/malloc.test f87273951a359a391b3074e1cb758fe8ca2113d5
+F test/malloc.test cdc0bb8675b972f56bffdb48e7d52a18500ff66f
 F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test c8d0f7673337e8a29afa558735ae937a0d629751
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 56d618957571f65e88375aad34a6e7dcf22508e1
-R 7f31a60d7476d173a3ef83e79848a29e
+P 85c2a58901338c1c4652c2cbee51e5f48d289191
+R a58a9043fd7c8bb950e6474043bc3a9e
 U danielk1977
-Z aacf6403f17f1bb9a05d92d3dbd05d57
+Z d05200e95cbfe7a62e09a0f5c4e8f02b
