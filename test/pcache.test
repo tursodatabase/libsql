@@ -11,7 +11,7 @@
 #
 # This file is focused on testing the pcache module.
 #
-# $Id: pcache.test,v 1.1 2008/08/29 09:10:03 danielk1977 Exp $
+# $Id: pcache.test,v 1.2 2008/09/05 05:29:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -29,7 +29,10 @@ do_test pcache-1.1 {
 
 do_test pcache-1.2 {
   sqlite3 db test.db
-  execsql "PRAGMA cache_size=10"
+  execsql {
+    PRAGMA cache_size=10;
+    PRAGMA auto_vacuum=0;
+  }
   pcache_stats
 } {current 1 max 10 min 10 recyclable 1}
 

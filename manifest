@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sbtree.c\spreventing\san\sOOM\serror\sfrom\sbeing\spropagated\sup\sto\sthe\scaller.\s(CVS\s5677)
-D 2008-09-05T05:02:47
+C Change\spcache.test\sso\sthat\sit\sworks\sif\ssqlite\sis\sconfigured\sto\screate\sauto-vacuum\sdatabases\sby\sdefault.\s(CVS\s5678)
+D 2008-09-05T05:29:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -447,7 +447,7 @@ F test/pager2.test 070983b89a308adaba525a2f9c1ba0592c72fa3d
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
-F test/pcache.test a0fc9e965d039c4de24f9af929f9a25eb8be8539
+F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
 F test/permutations.test cf196f6adddb52d423ebf408dd6ad73d9da8575e
 F test/pragma.test 4461cb1004084b907dd28f9d517af7bcf8f5b35f
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
@@ -630,7 +630,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 85c2a58901338c1c4652c2cbee51e5f48d289191
-R a58a9043fd7c8bb950e6474043bc3a9e
+P 0b8ee83f2ebadab099ccd6490f6995949dafdd6f
+R 932fafef78ea6489de48ca6f4803a6b4
 U danielk1977
-Z d05200e95cbfe7a62e09a0f5c4e8f02b
+Z 9246690989981e51181a3ec91bf495d4
