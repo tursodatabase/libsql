@@ -1,5 +1,5 @@
-C Change\spcache.test\sso\sthat\sit\sworks\sif\ssqlite\sis\sconfigured\sto\screate\sauto-vacuum\sdatabases\sby\sdefault.\s(CVS\s5678)
-D 2008-09-05T05:29:09
+C Deallocate\sa\stemp\sregister\sallocated\sby\scodeEqualityTerm()\sin\swhere.c.\sIf\sit\sis\snot\sdeallocated,\sits\svalue\smay\sbe\sreused\sby\sthe\scolumn-cache\smechanism.\sHowever,\sby\sthe\stime\sit\sis\sused,\sthe\svalue\smay\shave\sbeen\sclobbered\sby\sa\ssub-routine\sthat\salso\suses\sthe\ssame\stemp\sregister.\sFix\sfor\s#3357.\s(CVS\s5679)
+D 2008-09-06T14:19:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 689e14735f862a5553bceef206d8c13e29504e44
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -197,7 +197,7 @@ F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c 51538ff193e1fcd462123ccef65323ccd2cc030c
 F src/vtab.c 527c180e9c5fca417c9167d02af4b5039f892b4b
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
-F src/where.c 72a4ac6890e9571375458021688dba6c45689082
+F src/where.c a9958b26cc87ea1446fbe6d004a7959b8d5d75c1
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test c321c114a8a31a33e3cbda910fa39949f5d9dcb2
@@ -557,6 +557,7 @@ F test/tkt3292.test 962465a0984a3b8c757efe59c2c59144871ee1dd
 F test/tkt3298.test a735582095ca2e90a0c1391c7e781a90de6c1f34
 F test/tkt3334.test ea13a53cb176e90571a76c86605b14a09efe366d
 F test/tkt3346.test 2f9a2be8621a87cbdb6283177dd419c7c46dd2a1
+F test/tkt3357.test b37a51a12ba5e143d6714778276438606f8f9e27
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
@@ -630,7 +631,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0b8ee83f2ebadab099ccd6490f6995949dafdd6f
-R 932fafef78ea6489de48ca6f4803a6b4
+P 55e677569ec131c388841f6f453291f737738076
+R 737efb409a0015e9a7163c40b2224334
 U danielk1977
-Z 9246690989981e51181a3ec91bf495d4
+Z 56b39276941be5e96c36dc21cdd5080a
