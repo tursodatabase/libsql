@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.487 2008/09/03 00:08:29 drh Exp $
+** @(#) $Id: pager.c,v 1.488 2008/09/08 15:35:07 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3662,8 +3662,9 @@ int sqlite3PagerCommitPhaseOne(
     ** If the optimization can be used, then the journal file will never
     ** be created for this transaction.
     */
+    int useAtomicWrite;
     pPg = sqlite3PcacheDirtyList(pPager->pPCache);
-    int useAtomicWrite = (
+    useAtomicWrite = (
         !zMaster && 
         pPager->journalOpen &&
         pPager->journalOff==jrnlBufferSize(pPager) && 

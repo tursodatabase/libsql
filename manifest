@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sr-tree\srelated\sto\sinternal\snodes\swith\sone\sor\smore\sdimensions\sof\ssize\szero.\sTicket\s#3363.\s(CVS\s5682)
-D 2008-09-08T11:07:03
+C Fix\sa\sC++ism\sin\spager.c\s(variable\suseAtomicWrite\snot\sdeclard\sat\sthe\stop\sof\sits\sscope).\s(CVS\s5683)
+D 2008-09-08T15:35:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 075c3e474d20203153da1b2eb3f0fe3e2096f2de
 F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
-F src/pager.c 5a6b59089511db451df45414eb137110b04b1419
+F src/pager.c 2280eef428c33cfe9d7378f85d59cf7ea9ff5c70
 F src/pager.h c45380ca9d0933ea5bc4ecb3a43958b6d2ec5a9c
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c ff79cb5eb797d0f1a244b4332c2d39cb5cfd066b
@@ -633,7 +633,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a7b7b126e9e9b0cd2d68643d8dff321cf41ce2ee
-R 7a5557b83cc6a1a73277a849ba33fee0
+P 8b600ed083d48784df4b1da1320a01bebbf233d7
+R ffda790045fe743907465f52ace9412e
 U danielk1977
-Z f7a6166717d192feb4eb993c1d3b14c3
+Z 3f4db5a2e713c7718c372d8ef3c17aff
