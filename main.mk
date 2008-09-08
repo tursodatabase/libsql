@@ -44,7 +44,7 @@
 
 # This is how we compile
 #
-TCCX = $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) -I$(TOP)/ext/rtree
+TCCX = $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) -I$(TOP)/ext/rtree -I$(TOP)/ext/icu
 
 # Object files for the SQLite library.
 #
@@ -179,7 +179,8 @@ SRC += \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_tokenizer1.c
 SRC += \
-  $(TOP)/ext/icu/icu.c
+  $(TOP)/ext/icu/sqliteicu.h \
+  $(TOP)/ext/icu/icu.c 
 SRC += \
   $(TOP)/ext/rtree/rtree.h \
   $(TOP)/ext/rtree/rtree.c
@@ -277,6 +278,8 @@ EXTHDR += \
   $(TOP)/ext/fts3/fts3_tokenizer.h
 EXTHDR += \
   $(TOP)/ext/rtree/rtree.h
+EXTHDR += \
+  $(TOP)/ext/icu/sqliteicu.h
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.

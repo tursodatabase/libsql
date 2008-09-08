@@ -105,6 +105,7 @@ foreach hdr {
    rtree.h
    sqlite3ext.h
    sqlite3.h
+   sqliteicu.h
    sqliteInt.h
    sqliteLimit.h
    vdbe.h

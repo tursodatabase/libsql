@@ -305,6 +305,7 @@ SRC += \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_tokenizer1.c
 SRC += \
+  $(TOP)/ext/icu/sqliteicu.h \
   $(TOP)/ext/icu/icu.c
 SRC += \
   $(TOP)/ext/rtree/rtree.h \
@@ -408,6 +409,8 @@ HDR += \
   $(TOP)/ext/fts3/fts3_tokenizer.h
 HDR += \
   $(TOP)/ext/rtree/rtree.h
+HDR += \
+  $(TOP)/ext/icu/sqliteicu.h
 
 # If using the amalgamation, use sqlite3.c directly to build the test
 # fixture.  Otherwise link against libsqlite3.la.  (This distinction is

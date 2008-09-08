@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.499 2008/09/03 00:43:15 drh Exp $
+** $Id: main.c,v 1.500 2008/09/08 08:08:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -24,6 +24,9 @@
 #endif
 #ifdef SQLITE_ENABLE_RTREE
 # include "rtree.h"
+#endif
+#ifdef SQLITE_ENABLE_ICU
+# include "sqliteicu.h"
 #endif
 
 /*
@@ -1588,7 +1591,6 @@ static int openDatabase(
 
 #ifdef SQLITE_ENABLE_ICU
   if( !db->mallocFailed && rc==SQLITE_OK ){
-    extern int sqlite3IcuInit(sqlite3*);
     rc = sqlite3IcuInit(db);
   }
 #endif
