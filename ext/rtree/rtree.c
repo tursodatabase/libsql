@@ -12,7 +12,7 @@
 ** This file contains code for implementations of the r-tree and r*-tree
 ** algorithms packaged as an SQLite virtual table module.
 **
-** $Id: rtree.c,v 1.8 2008/09/01 12:47:00 danielk1977 Exp $
+** $Id: rtree.c,v 1.9 2008/09/08 11:07:03 danielk1977 Exp $
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
@@ -1225,6 +1225,25 @@ static void cellUnion(Rtree *pRtree, RtreeCell *p1, RtreeCell *p2){
 }
 
 /*
+** Return true if the area covered by p2 is a subset of the area covered
+** by p1. False otherwise.
+*/
+static int cellContains(Rtree *pRtree, RtreeCell *p1, RtreeCell *p2){
+  int ii;
+  int isInt = (pRtree->eCoordType==RTREE_COORD_INT32);
+  for(ii=0; ii<(pRtree->nDim*2); ii+=2){
+    RtreeCoord *a1 = &p1->aCoord[ii];
+    RtreeCoord *a2 = &p2->aCoord[ii];
+    if( (!isInt && (a2[0].f<a1[0].f || a2[1].f>a1[1].f)) 
+     || ( isInt && (a2[0].i<a1[0].i || a2[1].i>a1[1].i)) 
+    ){
+      return 0;
+    }
+  }
+  return 1;
+}
+
+/*
 ** Return the amount cell p would grow by if it were unioned with pCell.
 */
 static float cellGrowth(Rtree *pRtree, RtreeCell *p, RtreeCell *pCell){
@@ -1390,7 +1409,7 @@ static void AdjustTree(
     int iCell = nodeParentIndex(pRtree, p);
 
     nodeGetCell(pRtree, pParent, iCell, &cell);
-    if( cellGrowth(pRtree, &cell, pCell)>0.0 ){
+    if( !cellContains(pRtree, &cell, pCell) ){
       cellUnion(pRtree, &cell, pCell);
       nodeOverwriteCell(pRtree, pParent, &cell, iCell);
     }

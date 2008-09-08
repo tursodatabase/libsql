@@ -1,5 +1,5 @@
-C If\sthe\s'rootpage'\scolumn\sof\sthe\ssqlite_master\stable\scontains\sa\sNULL\svalue,\sreturn\sSQLITE_CORRUPT\sto\sthe\scaller.\s(CVS\s5681)
-D 2008-09-08T09:06:19
+C Fix\sa\sbug\sin\sr-tree\srelated\sto\sinternal\snodes\swith\sone\sor\smore\sdimensions\sof\ssize\szero.\sTicket\s#3363.\s(CVS\s5682)
+D 2008-09-08T11:07:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -65,7 +65,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 5e372fdbe572ae8e4e3b4917f048e842dcb57915
+F ext/rtree/rtree.c 9a9ef98ea5c36841cedf95d8cfbe79ebb411fef6
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 620223886bf1a319317e63235aac20790375c544
 F ext/rtree/rtree2.test 9ac9d28fa948779df66916c67a5dcf9704c3cb74
@@ -75,6 +75,7 @@ F ext/rtree/rtree5.test 7d0643482829038f0263881ddf7e2d51bff1d60f
 F ext/rtree/rtree6.test fdfaf62bf026f1312c6eca658979800f3c0bc93f
 F ext/rtree/rtree_perf.tcl 0fabb6d5c48cb8024e042ce5d4bb88998b6ec1cb
 F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
+F ext/rtree/tkt3363.test 6662237ea75bb431cd5d262dfc9535e1023315fc
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
@@ -632,7 +633,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 79364b963b348d5433da737b4e21e97952882389
-R 39b97310e19679d7df923788ff2f1b2d
+P a7b7b126e9e9b0cd2d68643d8dff321cf41ce2ee
+R 7a5557b83cc6a1a73277a849ba33fee0
 U danielk1977
-Z 99c7b68e3038fbf05d1b53e87e37df07
+Z f7a6166717d192feb4eb993c1d3b14c3
