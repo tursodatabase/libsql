@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt2.test,v 1.15 2008/08/27 16:14:21 drh Exp $
+# $Id: corrupt2.test,v 1.16 2008/09/08 09:06:19 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -232,6 +232,7 @@ Page 4 is never used}}
 db2 close
 
 proc corruption_test {args} {
+  set A(-corrupt) {}
   array set A $args
 
   catch {db close}
@@ -438,6 +439,20 @@ corruption_test -sqlprep {
   do_test corrupt2-9.1 {
     catchsql { SELECT sql FROM sqlite_master }
   } {1 {database disk image is malformed}}
+}
+
+corruption_test -sqlprep {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE t2(a, b, c);
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master SET rootpage = NULL WHERE name = 't2';
+} -test {
+  do_test corrupt2-10.1 {
+    catchsql { SELECT * FROM t2 }
+  } {1 {malformed database schema (t2)}}
+  do_test corrupt2-10.2 {
+    sqlite3_errcode db
+  } {SQLITE_CORRUPT}
 }
 
 finish_test

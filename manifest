@@ -1,5 +1,5 @@
-C Add\sheader\sfile\ssqliteicu.h\sto\sthe\sICU\sextension.\sThis\sis\sanalogous\sto\sthe\srtree.h\sand\sfts3.h\sheaders\sused\sby\sother\sextensions\sto\sdeclare\stheir\sentry\spoints.\sFix\sfor\sticket\s#3361.\s(CVS\s5680)
-D 2008-09-08T08:08:09
+C If\sthe\s'rootpage'\scolumn\sof\sthe\ssqlite_master\stable\scontains\sa\sNULL\svalue,\sreturn\sSQLITE_CORRUPT\sto\sthe\scaller.\s(CVS\s5681)
+D 2008-09-08T09:06:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c ff79cb5eb797d0f1a244b4332c2d39cb5cfd066b
 F src/pcache.h 53730c33310cdf7a5c94e8333c853d59a3b30226
 F src/pragma.c 9d00ed41b261968757c02707e1508a707f2d46a7
-F src/prepare.c b708c5a8af1870145e93da88ec8f755e9e3efaf6
+F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 11bbdf7def3746a762fbdb56c9d04648135ad6d8
 F src/resolve.c a6abf83125bce0c80ba04acc27c3565155ad305c
@@ -252,7 +252,7 @@ F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test bc396d99a11a855370010c7e95187177592b1dfe
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test 5bcf7a986358123b8055dfa64b45fc2fb54dcaa9
-F test/corrupt2.test d1e209b0a60e72e493cdedaaf992c04466e14c70
+F test/corrupt2.test 62a2773b86c96e5d1a7f15396c6022e5cbdf4973
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -632,7 +632,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7c0f638ef3d7ff9156f07d6fb01448453ffcf5ac
-R 4a1efcaea2f131dfd44298514b9ce3f7
+P 79364b963b348d5433da737b4e21e97952882389
+R 39b97310e19679d7df923788ff2f1b2d
 U danielk1977
-Z 7597622eae79bdd1df2cc819cd2a8a3f
+Z 99c7b68e3038fbf05d1b53e87e37df07

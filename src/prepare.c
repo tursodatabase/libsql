@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.96 2008/09/04 12:03:43 shane Exp $
+** $Id: prepare.c,v 1.97 2008/09/08 09:06:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -65,13 +65,11 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
   }
 
   assert( argc==3 );
+  assert( iDb>=0 && iDb<db->nDb );
   if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
   if( argv[1]==0 ){
     corruptSchema(pData, argv[0], 0);
-    return 1;
-  }
-  assert( iDb>=0 && iDb<db->nDb );
-  if( argv[2] && argv[2][0] ){
+  }else if( argv[2] && argv[2][0] ){
     /* Call the parser to process a CREATE TABLE, INDEX or VIEW.
     ** But because db->init.busy is set to 1, no VDBE code is generated
     ** or executed.  All the parser does is build the internal data
