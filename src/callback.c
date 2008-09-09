@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.30 2008/09/01 18:34:20 danielk1977 Exp $
+** $Id: callback.c,v 1.31 2008/09/09 12:31:34 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -341,7 +341,8 @@ FuncDef *sqlite3FindFunction(
   if( nArg<-1 ) nArg = -1;
   h = (sqlite3UpperToLower[(u8)zName[0]] + nName) % ArraySize(db->aFunc.a);
 
-
+  /* First search for a match amongst the application-defined functions.
+  */
   p = functionSearch(&db->aFunc, h, zName, nName);
   while( p ){
     int score = matchQuality(p, nArg, enc);
@@ -352,9 +353,13 @@ FuncDef *sqlite3FindFunction(
     p = p->pNext;
   }
 
-  /* If the createFlag parameter is false and no match was found amongst
-  ** the custom functions stored in sqlite3.aFunc, try to find a built-in
-  ** function to use.
+  /* If no match is found, search the built-in functions.
+  **
+  ** Except, if createFlag is true, that means that we are trying to
+  ** install a new function.  Whatever FuncDef structure is returned will
+  ** have fields overwritten with new information appropriate for the
+  ** new function.  But the FuncDefs for built-in functions are read-only.
+  ** So we must not search for built-ins when creating a new function.
   */ 
   if( !createFlag && !pBest ){
     FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
@@ -369,11 +374,11 @@ FuncDef *sqlite3FindFunction(
     }
   }
 
-  /* If the createFlag parameter is true, and the seach did not reveal an
+  /* If the createFlag parameter is true and the search did not reveal an
   ** exact match for the name, number of arguments and encoding, then add a
   ** new entry to the hash table and return it.
   */
-  if( createFlag && bestScore<6 && 
+  if( createFlag && (bestScore<6 || pBest->nArg!=nArg) && 
       (pBest = sqlite3DbMallocZero(db, sizeof(*pBest)+nName+1))!=0 ){
     pBest->zName = (char *)&pBest[1];
     pBest->nArg = nArg;

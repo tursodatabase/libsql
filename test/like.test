@@ -13,7 +13,7 @@
 # in particular the optimizations that occur to help those operators
 # run faster.
 #
-# $Id: like.test,v 1.9 2008/02/23 21:55:40 drh Exp $
+# $Id: like.test,v 1.10 2008/09/09 12:31:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -120,7 +120,7 @@ do_test like-2.3 {
   proc test_match {a b} {
     return [string match $a $b]
   }
-  db function match test_match
+  db function match -argcount 2 test_match
   execsql {
     SELECT x FROM t1 WHERE x MATCH '*abc*' ORDER BY 1;
   }
@@ -510,5 +510,45 @@ do_test like-7.1 {
     SELECT * FROM t1 WHERE rowid GLOB '1*';
   }
 } {a}
+
+# ticket #3345.
+#
+# Overloading the LIKE function with -1 for the number of arguments
+# will overload both the 2-argument and the 3-argument LIKE.
+#
+do_test like-8.1 {
+  db eval {
+    CREATE TABLE t8(x);
+    INSERT INTO t8 VALUES('abcdef');
+    INSERT INTO t8 VALUES('ghijkl');
+    INSERT INTO t8 VALUES('mnopqr');
+    SELECT 1, x FROM t8 WHERE x LIKE '%h%';
+    SELECT 2, x FROM t8 WHERE x LIKE '%h%' ESCAPE 'x';
+  }
+} {1 ghijkl 2 ghijkl}
+do_test like-8.2 {
+  proc newlike {args} {return 1} ;# Alternative LIKE is always return TRUE
+  db function like newlike       ;# Uses -1 for nArg in sqlite3_create_function
+  db cache flush
+  db eval {
+    SELECT 1, x FROM t8 WHERE x LIKE '%h%';
+    SELECT 2, x FROM t8 WHERE x LIKE '%h%' ESCAPE 'x';
+  }
+} {1 ghijkl 2 ghijkl}
+do_test like-8.3 {
+  db function like -argcount 2 newlike
+  db eval {
+    SELECT 1, x FROM t8 WHERE x LIKE '%h%';
+    SELECT 2, x FROM t8 WHERE x LIKE '%h%' ESCAPE 'x';
+  }
+} {1 abcdef 1 ghijkl 1 mnopqr 2 ghijkl}
+do_test like-8.4 {
+  db function like -argcount 3 newlike
+  db eval {
+    SELECT 1, x FROM t8 WHERE x LIKE '%h%';
+    SELECT 2, x FROM t8 WHERE x LIKE '%h%' ESCAPE 'x';
+  }
+} {1 abcdef 1 ghijkl 1 mnopqr 2 abcdef 2 ghijkl 2 mnopqr}
+
 
 finish_test

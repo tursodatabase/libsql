@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.68 2008/09/03 00:43:15 drh Exp $
+# $Id: tclsqlite.test,v 1.69 2008/09/09 12:31:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -118,7 +118,7 @@ do_test tcl-1.14 {
 do_test tcl-1.15 {
   set v [catch {db function} msg]
   lappend v $msg
-} {1 {wrong # args: should be "db function NAME SCRIPT"}}
+} {1 {wrong # args: should be "db function NAME [-argcount N] SCRIPT"}}
 do_test tcl-1.16 {
   set v [catch {db last_insert_rowid xyz} msg]
   lappend v $msg
