@@ -1,5 +1,5 @@
-C Documentation\supdates:\s\sDescribe\srecursion\scapabilities\sfor\sthe\svarious\ncallbacks.\s(CVS\s5688)
-D 2008-09-10T13:09:24
+C Fix\sfor\shandling\sdatabase\sfiles\scorrupted\sin\ssuch\sa\swas\sas\sto\smake\sa\sb-tree\spage\sa\sdirect\sor\sindirect\sdescendant\sof\sitself.\s(CVS\s5689)
+D 2008-09-10T14:45:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,7 +99,7 @@ F src/attach.c db3f4a60538733c1e4dcb9d0217a6e0d6ccd615b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c 6ea37de364f483496f60e47c996b429a9f313d54
+F src/btree.c 9e11a68fe66c751668e9fcd1b54c88d60f832b47
 F src/btree.h 6371c5e599fab391a150c96afbc10062b276d107
 F src/btreeInt.h ab18c7b4980314e9e4b402e5dcde09f3c2545576
 F src/build.c 160c71acca8f643f436ed6c1ee2f684c88df4dfe
@@ -262,6 +262,7 @@ F test/corrupt7.test 7a3be79b93dba88ba8472d61b57cb6d7b66cb69e
 F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 794d284109c65c8f10a2b275479045e02d163bae
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
+F test/corruptB.test 547c5f96a6c2b6d316f4b888c2d8186fc186579f
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
 F test/crash3.test 776f9363554c029fcce71d9e6600fa0ba6359ce7
@@ -634,7 +635,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 099adfd31167a78d803e2992e5f50cf4e292dd43
-R 7853a8a5ccb659e8bb6ea1c2c2871c9f
-U drh
-Z d85bcb69ec2b69991a86141e52428a8c
+P edd80811d702bc0d7a25199d193c04ea057df4de
+R 86a7c41a00b3787bf3d3b2cfbbdffc97
+U danielk1977
+Z 5931af1cdd92a17ee908521206422339

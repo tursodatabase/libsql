@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.509 2008/09/05 05:02:47 danielk1977 Exp $
+** $Id: btree.c,v 1.510 2008/09/10 14:45:58 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -938,6 +938,9 @@ int sqlite3BtreeInitPage(
   assert( pPage->pgno==sqlite3PagerPagenumber(pPage->pDbPage) );
   assert( pPage == sqlite3PagerGetExtra(pPage->pDbPage) );
   assert( pPage->aData == sqlite3PagerGetData(pPage->pDbPage) );
+  if( pPage==pParent ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   if( pPage->pParent!=pParent && (pPage->pParent!=0 || pPage->isInit) ){
     /* The parent page should never change unless the file is corrupt */
     return SQLITE_CORRUPT_BKPT;
@@ -1095,17 +1098,27 @@ static int getAndInitPage(
 ){
   int rc;
   assert( sqlite3_mutex_held(pBt->mutex) );
+  assert( !pParent || pParent->isInit );
   if( pgno==0 ){
     return SQLITE_CORRUPT_BKPT; 
   }
   rc = sqlite3BtreeGetPage(pBt, pgno, ppPage, 0);
-  if( rc==SQLITE_OK && (*ppPage)->isInit==0 ){
-    rc = sqlite3BtreeInitPage(*ppPage, pParent);
+  if( rc==SQLITE_OK ){
+    if( (*ppPage)->isInit==0 ){
+      rc = sqlite3BtreeInitPage(*ppPage, pParent);
+    }else if( pParent && ((*ppPage)==pParent || (*ppPage)->pParent!=pParent) ){
+      /* This condition indicates a loop in the b-tree structure (the scenario
+      ** where database corruption has caused a page to be a direct or
+      ** indirect descendant of itself).
+      */ 
+      rc = SQLITE_CORRUPT_BKPT;
+    }
     if( rc!=SQLITE_OK ){
       releasePage(*ppPage);
       *ppPage = 0;
     }
   }
+
   return rc;
 }
 
@@ -6182,14 +6195,14 @@ static int clearDatabasePage(
   for(i=0; i<pPage->nCell; i++){
     pCell = findCell(pPage, i);
     if( !pPage->leaf ){
-      rc = clearDatabasePage(pBt, get4byte(pCell), pPage->pParent, 1);
+      rc = clearDatabasePage(pBt, get4byte(pCell), pPage, 1);
       if( rc ) goto cleardatabasepage_out;
     }
     rc = clearCell(pPage, pCell);
     if( rc ) goto cleardatabasepage_out;
   }
   if( !pPage->leaf ){
-    rc = clearDatabasePage(pBt, get4byte(&pPage->aData[8]), pPage->pParent, 1);
+    rc = clearDatabasePage(pBt, get4byte(&pPage->aData[8]), pPage, 1);
     if( rc ) goto cleardatabasepage_out;
   }
   if( freePageFlag ){
