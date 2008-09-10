@@ -1,5 +1,5 @@
-C Avoid\sdeleting\sa\sfile\swhile\sit\sis\sstill\sopen\sin\scorrupt2.test.\sNot\sall\splatforms\ssupport\sthis.\s(CVS\s5687)
-D 2008-09-10T11:28:38
+C Documentation\supdates:\s\sDescribe\srecursion\scapabilities\sfor\sthe\svarious\ncallbacks.\s(CVS\s5688)
+D 2008-09-10T13:09:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -149,7 +149,7 @@ F src/random.c 11bbdf7def3746a762fbdb56c9d04648135ad6d8
 F src/resolve.c a6abf83125bce0c80ba04acc27c3565155ad305c
 F src/select.c eec7c5f28a0c75fdd8500630435af176bba73219
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
-F src/sqlite.h.in 7da6a0d39221affca458b4ba305be3eb1590bb8e
+F src/sqlite.h.in 81dc1e8e50fb5c7cccf0a67a34cb796efc1d2a1e
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h 4a43cd9dcb7d5a6664a981f08e64d555acbca1bc
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -634,7 +634,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 300a64b725a111ee66e38de099314f03b064c6eb
-R 2fc115d04cd9022ed9994d800543641d
-U danielk1977
-Z 65ea31ed57297840fa2eea42aecf71f5
+P 099adfd31167a78d803e2992e5f50cf4e292dd43
+R 7853a8a5ccb659e8bb6ea1c2c2871c9f
+U drh
+Z d85bcb69ec2b69991a86141e52428a8c
