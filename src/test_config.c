@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.35 2008/09/04 17:17:39 danielk1977 Exp $
+** $Id: test_config.c,v 1.36 2008/09/10 10:57:28 danielk1977 Exp $
 */
 
 #include "sqliteLimit.h"
@@ -130,10 +130,11 @@ static void set_options(Tcl_Interp *interp){
 #else
   Tcl_SetVar2(interp, "sqlite_options", "autovacuum", "1", TCL_GLOBAL_ONLY);
 #endif /* SQLITE_OMIT_AUTOVACUUM */
-#if !defined(SQLITE_DEFAULT_AUTOVACUUM) || SQLITE_DEFAULT_AUTOVACUUM==0
+#if !defined(SQLITE_DEFAULT_AUTOVACUUM)
   Tcl_SetVar2(interp,"sqlite_options","default_autovacuum","0",TCL_GLOBAL_ONLY);
 #else
-  Tcl_SetVar2(interp,"sqlite_options","default_autovacuum","1",TCL_GLOBAL_ONLY);
+  Tcl_SetVar2(interp, "sqlite_options", "default_autovacuum", 
+      STRINGVALUE(SQLITE_DEFAULT_AUTOVACUUM), TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_OMIT_BETWEEN_OPTIMIZATION

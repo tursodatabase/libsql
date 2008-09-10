@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.27 2008/08/02 03:50:39 drh Exp $
+# $Id: autovacuum.test,v 1.28 2008/09/10 10:57:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -484,7 +484,7 @@ do_test autovacuum-3.6 {
     PRAGMA auto_vacuum = 1;
     PRAGMA auto_vacuum;
   }
-} $AUTOVACUUM
+} [expr $AUTOVACUUM ? 1 : 0]
 do_test autovacuum-3.7 {
   execsql {
     DROP TABLE av1;

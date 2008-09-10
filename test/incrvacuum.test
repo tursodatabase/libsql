@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.19 2008/07/30 17:28:04 drh Exp $
+# $Id: incrvacuum.test,v 1.20 2008/09/10 10:57:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -601,7 +601,7 @@ ifcapable default_autovacuum {
     execsql {
       PRAGMA auto_vacuum;
     }
-  } {1}
+  } $AUTOVACUUM
 } else {
   do_test incrvacuum-11.1-av-dflt-off {
     execsql {

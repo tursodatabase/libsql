@@ -1,5 +1,5 @@
-C Add\sfuzz3.test.\sFor\stesting\sthe\slibrary's\sresponse\sto\scorrupted\sdatabase\sfiles.\s(CVS\s5685)
-D 2008-09-09T18:28:07
+C Fix\ssome\stest\sscript\sdetails\sso\sthat\sthe\stest\ssuite\sruns\swith\san\sSQLITE_DEFAULT_AUTOVACUUM=2\sbuild.\s(CVS\s5686)
+D 2008-09-10T10:57:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -168,7 +168,7 @@ F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c da9f58f49faccd3a26ba89f58de125862351b6e2
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c 8d5b835054f1dd15992e09864a8bc04386bab701
-F src/test_config.c a171729f6683177f369cdae3bf9ac86434fcb80f
+F src/test_config.c b2681a8e1b570f0c3686c934d6ef6112921af05d
 F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
@@ -219,7 +219,7 @@ F test/attachmalloc.test ccbde53bcb0a61020afa3e0670ca9c6c5b99af32
 F test/auth.test 9eb4b6b99eee54c95711c74c4b9694acf4d850ed
 F test/auth2.test ee3ba272e2b975e913afc9b041ee75706e190005
 F test/autoinc.test ab549b48b389cabd92967b86c379ec8b31fa6c16
-F test/autovacuum.test e3428031ad7a14f16a7d515cd2a0480854e66b21
+F test/autovacuum.test 61260e25744189ff766f61ca3df23c1eeec0060e
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
@@ -364,7 +364,7 @@ F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
 F test/incrblob2.test c82a780356bdf4d0c77f1adf0ea888248904fc07
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
-F test/incrvacuum.test 0684fbd7773eec45b911d46a6f8dc0f220b1223d
+F test/incrvacuum.test 9a6346c56ffa141024054ae7ba6c8655edf2d137
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
 F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
 F test/index.test cbf301cdb2da43e4eac636c3400c2439af1834ad
@@ -634,7 +634,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5aa5b8044a14f59559c1839dc0799b0d2f990809
-R dc12ffc18ad6820a14094d33496f85b8
+P 7fd4dd95791974b0ef6cf30a186b32df25ee2211
+R aea68e44b7b56a23aeaca8b5821c3782
 U danielk1977
-Z bd924448786b0f6a62ff458ca7bca6c4
+Z f30672d79afc059ed9a04796d686998b
