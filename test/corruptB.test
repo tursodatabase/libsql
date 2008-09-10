@@ -16,7 +16,11 @@
 # when there exists a page that is both an a descendent or ancestor of
 # itself.
 #
-# $Id: corruptB.test,v 1.1 2008/09/10 14:45:58 danielk1977 Exp $
+# Also test that an SQLITE_CORRUPT error is returned if a B-Tree page
+# contains a (corrupt) reference to a page greater than the configured
+# maximum page number.
+#
+# $Id: corruptB.test,v 1.2 2008/09/10 17:53:36 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -138,6 +142,43 @@ do_test corruptB-1.9.1 {
 do_test corruptB-1.9.2 {
   sqlite3 db test.db
   catchsql { SELECT * FROM t1 }
+} {1 {database disk image is malformed}}
+
+#---------------------------------------------------------------------------
+
+do_test corruptB-2.1.1 {
+  db close
+  file copy -force bak.db test.db
+  hexio_write test.db [expr $offset+8] [hexio_render_int32 0x6FFFFFFF]
+} {4}
+do_test corruptB-2.1.2 {
+  sqlite3 db test.db
+  catchsql { SELECT * FROM t1 }
+} {1 {database disk image is malformed}}
+
+#---------------------------------------------------------------------------
+
+# Corrupt the header-size field of a database record.
+#
+do_test corruptB-3.1.1 {
+  db close
+  file copy -force bak.db test.db
+  sqlite3 db test.db
+  set v [string repeat abcdefghij 200]
+  execsql {
+    CREATE TABLE t2(a);
+    INSERT INTO t2 VALUES($v);
+  }
+  set t2_root [execsql {SELECT rootpage FROM sqlite_master WHERE name = 't2'}]
+  set iPage [expr ($t2_root-1)*1024]
+  set iCellarray [expr $iPage + 8]
+  set iRecord [hexio_get_int [hexio_read test.db $iCellarray 2]]
+  db close
+  hexio_write test.db [expr $iPage+$iRecord+3] FF00
+} {2}
+do_test corruptB-3.1.2 {
+  sqlite3 db test.db
+  catchsql { SELECT * FROM t2 }
 } {1 {database disk image is malformed}}
 
 finish_test

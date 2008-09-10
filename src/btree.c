@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.510 2008/09/10 14:45:58 danielk1977 Exp $
+** $Id: btree.c,v 1.511 2008/09/10 17:53:36 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1086,6 +1086,17 @@ int sqlite3BtreeGetPage(
 }
 
 /*
+** Return the size of the database file in pages.  Or return -1 if
+** there is any kind of error.
+*/
+static int pagerPagecount(Pager *pPager){
+  int rc;
+  int nPage;
+  rc = sqlite3PagerPagecount(pPager, &nPage);
+  return (rc==SQLITE_OK?nPage:-1);
+}
+
+/*
 ** Get a page from the pager and initialize it.  This routine
 ** is just a convenience wrapper around separate calls to
 ** sqlite3BtreeGetPage() and sqlite3BtreeInitPage().
@@ -1099,7 +1110,7 @@ static int getAndInitPage(
   int rc;
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( !pParent || pParent->isInit );
-  if( pgno==0 ){
+  if( pgno==0 || pgno>pagerPagecount(pBt->pPager) ){
     return SQLITE_CORRUPT_BKPT; 
   }
   rc = sqlite3BtreeGetPage(pBt, pgno, ppPage, 0);
@@ -2027,17 +2038,6 @@ trans_begun:
   btreeIntegrity(p);
   sqlite3BtreeLeave(p);
   return rc;
-}
-
-/*
-** Return the size of the database file in pages.  Or return -1 if
-** there is any kind of error.
-*/
-static int pagerPagecount(Pager *pPager){
-  int rc;
-  int nPage;
-  rc = sqlite3PagerPagecount(pPager, &nPage);
-  return (rc==SQLITE_OK?nPage:-1);
 }
 
 
@@ -3184,7 +3184,7 @@ static int accessPayload(
   }
   if( offset+amt > nKey+pCur->info.nData ){
     /* Trying to read or write past the end of the data is an error */
-    return SQLITE_ERROR;
+    return SQLITE_CORRUPT_BKPT;
   }
 
   /* Check if data must be read/written to/from the btree page itself. */
