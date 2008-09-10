@@ -1,5 +1,5 @@
-C Fix\ssome\stest\sscript\sdetails\sso\sthat\sthe\stest\ssuite\sruns\swith\san\sSQLITE_DEFAULT_AUTOVACUUM=2\sbuild.\s(CVS\s5686)
-D 2008-09-10T10:57:28
+C Avoid\sdeleting\sa\sfile\swhile\sit\sis\sstill\sopen\sin\scorrupt2.test.\sNot\sall\splatforms\ssupport\sthis.\s(CVS\s5687)
+D 2008-09-10T11:28:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -253,7 +253,7 @@ F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test bc396d99a11a855370010c7e95187177592b1dfe
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test 5bcf7a986358123b8055dfa64b45fc2fb54dcaa9
-F test/corrupt2.test 62a2773b86c96e5d1a7f15396c6022e5cbdf4973
+F test/corrupt2.test 08fb049fdf4f72902ff39b1c609e7c1c2e985d8b
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -634,7 +634,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7fd4dd95791974b0ef6cf30a186b32df25ee2211
-R aea68e44b7b56a23aeaca8b5821c3782
+P 300a64b725a111ee66e38de099314f03b064c6eb
+R 2fc115d04cd9022ed9994d800543641d
 U danielk1977
-Z f30672d79afc059ed9a04796d686998b
+Z 65ea31ed57297840fa2eea42aecf71f5
