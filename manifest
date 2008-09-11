@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sproblems\swith\svariable\sinitializations\spicked\sup\sby\sstricter\scompilers.\s(CVS\s5691)
-D 2008-09-11T10:29:16
+C Add\sa\scouple\sof\s(fconfigure)\scommands\sto\sconfigure\sthe\sincremental\sblob\schannels\sused\sby\stest\sfile\sincrblob.test.\sThis\sis\srequired\sso\sthat\sthe\stests\swork\son\swindows\sand\sother\splatforms\sthat\shave\sa\sdefault\s-translation\smode\sother\sthan\s'lf'.\s(CVS\s5692)
+D 2008-09-11T11:28:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -362,7 +362,7 @@ F test/icu.test f51d0f4407ff8bb1e872f51a0e8b08fdc5a6897e
 F test/in.test d49419c6df515852f477fa513f3317181d46bc92
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
-F test/incrblob.test 4455fffd08b2f9418a9257e18b135d72273eff3e
+F test/incrblob.test e50cf41ac64e76ca4f8881ecb8d28fd988503ad5
 F test/incrblob2.test c82a780356bdf4d0c77f1adf0ea888248904fc07
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
 F test/incrvacuum.test 9a6346c56ffa141024054ae7ba6c8655edf2d137
@@ -635,7 +635,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 89fda074f6b4959c32f1083badba3c73cffb4995
-R 85812e7746203ab8537445f3f86cd08c
+P f4293d148007515eaf8eb9738f62554a963abe8e
+R 0f4b805b0ca3c14544035af4fa76719a
 U danielk1977
-Z 27c3f8ea06b509546e4bacb6e96912d7
+Z fe301292260ae41f14352bf9fbdb0a81
