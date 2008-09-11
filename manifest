@@ -1,5 +1,5 @@
-C Fix\ssome\strivial\scases\swhere\sdatabase\scorruption\swas\scausing\san\serror\scode\sother\sthan\sSQLITE_CORRUPT\sto\sbe\sreturned.\s(CVS\s5690)
-D 2008-09-10T17:53:36
+C Fix\sa\scouple\sof\sproblems\swith\svariable\sinitializations\spicked\sup\sby\sstricter\scompilers.\s(CVS\s5691)
+D 2008-09-11T10:29:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 075c3e474d20203153da1b2eb3f0fe3e2096f2de
 F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
-F src/pager.c 2280eef428c33cfe9d7378f85d59cf7ea9ff5c70
+F src/pager.c b1ea487022bf91ffba58fc4c02518398290ac2c2
 F src/pager.h c45380ca9d0933ea5bc4ecb3a43958b6d2ec5a9c
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c ff79cb5eb797d0f1a244b4332c2d39cb5cfd066b
@@ -156,7 +156,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c a6a346f42322ae1df980228306da6c3cea4dd680
-F src/test1.c 349606445a5a938e9fa9b5e410413632c6c25f87
+F src/test1.c c4de690aad182606e5914f6f3c8f43869fbdaaa8
 F src/test2.c eaa77124786649eedf47d3c5e94d8070c0da228f
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
 F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
@@ -635,7 +635,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 93545861a70c190d67b0d1effdd8fe038d28811c
-R ca5d96095f41db68c113b9e97492618c
+P 89fda074f6b4959c32f1083badba3c73cffb4995
+R 85812e7746203ab8537445f3f86cd08c
 U danielk1977
-Z 9e0933fb92abc116c50b0b29f1654435
+Z 27c3f8ea06b509546e4bacb6e96912d7

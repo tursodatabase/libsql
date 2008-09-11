@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.488 2008/09/08 15:35:07 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.489 2008/09/11 10:29:16 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -578,7 +578,7 @@ static void seekJournalHdr(Pager *pPager){
 */
 static int zeroJournalHdr(Pager *pPager, int doTruncate){
   int rc = SQLITE_OK;
-  static const char zeroHdr[28] = {};
+  static const char zeroHdr[28] = {0};
 
   if( pPager->journalOff ){
     i64 iLimit = pPager->journalSizeLimit;

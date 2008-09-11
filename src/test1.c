@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.324 2008/09/02 14:07:24 danielk1977 Exp $
+** $Id: test1.c,v 1.325 2008/09/11 10:29:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3781,7 +3781,7 @@ static int test_stmt_int(
   int col;
   int (*xFunc)(sqlite3_stmt*, int);
 
-  xFunc = (const void *(*)(sqlite3_stmt*, int))clientData;
+  xFunc = (int (*)(sqlite3_stmt*, int))clientData;
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
        Tcl_GetString(objv[0]), " STMT column", 0);
