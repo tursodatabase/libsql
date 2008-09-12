@@ -1824,7 +1824,7 @@ typedef struct QueryTerm {
   short int nPhrase; /* How many following terms are part of the same phrase */
   short int iPhrase; /* This is the i-th term of a phrase. */
   short int iColumn; /* Column of the index that must match this term */
-  signed char nNear; /* term followed by a NEAR operator with span=(nNear-1) */
+  short int nNear;   /* term followed by a NEAR operator with span=(nNear-1) */
   signed char isOr;  /* this term is preceded by "OR" */
   signed char isNot; /* this term is preceded by "-" */
   signed char isPrefix; /* this term is followed by "*" */
@@ -3805,10 +3805,10 @@ static int checkColumnSpecifier(
 }
 
 /*
-** Parse the text at pSegment[0..nSegment-1].  Add additional terms
+** Parse the text at zSegment[0..nSegment-1].  Add additional terms
 ** to the query being assemblied in pQuery.
 **
-** inPhrase is true if pSegment[0..nSegement-1] is contained within
+** inPhrase is true if zSegment[0..nSegement-1] is contained within
 ** double-quotes.  If inPhrase is true, then the first term
 ** is marked with the number of terms in the phrase less one and
 ** OR and "-" syntax is ignored.  If inPhrase is false, then every
@@ -3816,7 +3816,7 @@ static int checkColumnSpecifier(
 */
 static int tokenizeSegment(
   sqlite3_tokenizer *pTokenizer,          /* The tokenizer to use */
-  const char *pSegment, int nSegment,     /* Query expression being parsed */
+  const char *zSegment, int nSegment,     /* Query expression being parsed */
   int inPhrase,                           /* True if within "..." */
   Query *pQuery                           /* Append results here */
 ){
@@ -3826,49 +3826,45 @@ static int tokenizeSegment(
   int iCol;
   int nTerm = 1;
   
-  int rc = pModule->xOpen(pTokenizer, pSegment, nSegment, &pCursor);
+  int rc = pModule->xOpen(pTokenizer, zSegment, nSegment, &pCursor);
   if( rc!=SQLITE_OK ) return rc;
   pCursor->pTokenizer = pTokenizer;
 
   while( 1 ){
-    const char *pToken;
+    const char *zToken;
     int nToken, iBegin, iEnd, iPos;
 
     rc = pModule->xNext(pCursor,
-                        &pToken, &nToken,
+                        &zToken, &nToken,
                         &iBegin, &iEnd, &iPos);
     if( rc!=SQLITE_OK ) break;
     if( !inPhrase &&
-        pSegment[iEnd]==':' &&
-         (iCol = checkColumnSpecifier(pQuery->pFts, pToken, nToken))>=0 ){
+        zSegment[iEnd]==':' &&
+         (iCol = checkColumnSpecifier(pQuery->pFts, zToken, nToken))>=0 ){
       pQuery->nextColumn = iCol;
       continue;
     }
     if( !inPhrase && pQuery->nTerms>0 && nToken==2 
-     && pSegment[iBegin+0]=='O'
-     && pSegment[iBegin+1]=='R' 
+     && zSegment[iBegin+0]=='O'
+     && zSegment[iBegin+1]=='R' 
     ){
       pQuery->nextIsOr = 1;
       continue;
     }
     if( !inPhrase && pQuery->nTerms>0 && !pQuery->nextIsOr && nToken==4 
-      && pSegment[iBegin+0]=='N' 
-      && pSegment[iBegin+1]=='E' 
-      && pSegment[iBegin+2]=='A' 
-      && pSegment[iBegin+3]=='R' 
+      && memcmp(&zSegment[iBegin], "NEAR", 4)==0
     ){
       QueryTerm *pTerm = &pQuery->pTerms[pQuery->nTerms-1];
       if( (iBegin+6)<nSegment 
-       && pSegment[iBegin+4] == '/'
-       && pSegment[iBegin+5]>='0' && pSegment[iBegin+5]<='9'
+       && zSegment[iBegin+4] == '/'
+       && isdigit(zSegment[iBegin+5])
       ){
-        pTerm->nNear = (pSegment[iBegin+5] - '0');
-        nToken += 2;
-        if( pSegment[iBegin+6]>='0' && pSegment[iBegin+6]<=9 ){
-          pTerm->nNear = pTerm->nNear * 10 + (pSegment[iBegin+6] - '0');
-          iEnd++;
+        int k;
+        pTerm->nNear = 0;
+        for(k=5; (iBegin+k)<=nSegment && isdigit(zSegment[iBegin+k]); k++){
+          pTerm->nNear = pTerm->nNear*10 + (zSegment[iBegin+k] - '0');
         }
-        pModule->xNext(pCursor, &pToken, &nToken, &iBegin, &iEnd, &iPos);
+        pModule->xNext(pCursor, &zToken, &nToken, &iBegin, &iEnd, &iPos);
       } else {
         pTerm->nNear = SQLITE_FTS3_DEFAULT_NEAR_PARAM;
       }
@@ -3876,11 +3872,11 @@ static int tokenizeSegment(
       continue;
     }
 
-    queryAdd(pQuery, pToken, nToken);
-    if( !inPhrase && iBegin>0 && pSegment[iBegin-1]=='-' ){
+    queryAdd(pQuery, zToken, nToken);
+    if( !inPhrase && iBegin>0 && zSegment[iBegin-1]=='-' ){
       pQuery->pTerms[pQuery->nTerms-1].isNot = 1;
     }
-    if( iEnd<nSegment && pSegment[iEnd]=='*' ){
+    if( iEnd<nSegment && zSegment[iEnd]=='*' ){
       pQuery->pTerms[pQuery->nTerms-1].isPrefix = 1;
     }
     pQuery->pTerms[pQuery->nTerms-1].iPhrase = nTerm;
