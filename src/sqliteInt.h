@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.771 2008/09/04 17:17:39 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.772 2008/09/12 16:03:48 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -713,7 +713,7 @@ struct sqlite3 {
   char *zErrMsg;                /* Most recent error message (UTF-8 encoded) */
   char *zErrMsg16;              /* Most recent error message (UTF-16 encoded) */
   union {
-    int isInterrupted;          /* True if sqlite3_interrupt has been called */
+    volatile int isInterrupted; /* True if sqlite3_interrupt has been called */
     double notUsed1;            /* Spacer */
   } u1;
   Lookaside lookaside;          /* Lookaside malloc configuration */

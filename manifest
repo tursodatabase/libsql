@@ -1,5 +1,5 @@
-C Add\sa\scase\sto\spermutations.test\sto\srun\stests\swith\sthe\sIOCAP_SAFEAPPEND\sproperty\sset.\s(CVS\s5693)
-D 2008-09-12T10:22:40
+C Declare\sthe\sisInterrupted\sfield\sof\sthe\ssqlite3\sstructure\sto\sbe\svolatile.\nTicket\s#3369.\s(CVS\s5694)
+D 2008-09-12T16:03:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -151,7 +151,7 @@ F src/select.c eec7c5f28a0c75fdd8500630435af176bba73219
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 81dc1e8e50fb5c7cccf0a67a34cb796efc1d2a1e
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 4a43cd9dcb7d5a6664a981f08e64d555acbca1bc
+F src/sqliteInt.h dbe2797806c48f4a90adfea69dfbea95edd722ae
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -635,7 +635,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 753caa20ca50bc42d747d934ccc61438790e7f32
-R 1b0f464c326623228199c42b7b823ee9
-U danielk1977
-Z efa4aeae72cd5490bfab255177e78baa
+P 80bdaafa77ec5c967f633eaaf5ee6f493a6e5a56
+R 459f9fc431217cf781a414864860109b
+U drh
+Z 0b8a274367e2088529ac83c60572b420
