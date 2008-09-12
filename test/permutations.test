@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.29 2008/09/03 01:08:02 drh Exp $
+# $Id: permutations.test,v 1.30 2008/09/12 10:22:40 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -71,7 +71,7 @@ set EXCLUDE {
   fts3.test                 misc7.test                utf16.test
   fuzz_malloc.test          misuse.test               veryquick.test
   fuzz.test                 mutex2.test               vtab_err.test
-  lookaside.test
+  lookaside.test            fuzz3.test
 }
 set ALLTESTS [list]
 foreach filename [glob $testdir/*.test] {
@@ -580,6 +580,23 @@ run_tests "memsys6" -description {
 #   rename crashsql {}
 #   rename sa_crashsql crashsql
 # } -include crash.test
+
+run_tests "safe_append" -description {
+  Run some tests on a SAFE_APPEND file-system.
+} -initialize {
+  rename sqlite3 sqlite3_safeappend
+  proc sqlite3 {args} {
+    if {[string range [lindex $args 0] 0 0] ne "-"} {
+      lappend args -vfs devsym
+    }
+    uplevel [concat sqlite3_safeappend $args]
+  }
+  sqlite3_simulate_device -char safe_append
+} -shutdown {
+  rename sqlite3 {}
+  rename sqlite3_shutdown sqlite3
+} -include [lsort [concat shared_err.test $ALLTESTS]] \
+  -exclude async3.test
 
 
 # End of tests

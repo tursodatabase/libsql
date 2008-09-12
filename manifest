@@ -1,5 +1,5 @@
-C Add\sa\scouple\sof\s(fconfigure)\scommands\sto\sconfigure\sthe\sincremental\sblob\schannels\sused\sby\stest\sfile\sincrblob.test.\sThis\sis\srequired\sso\sthat\sthe\stests\swork\son\swindows\sand\sother\splatforms\sthat\shave\sa\sdefault\s-translation\smode\sother\sthan\s'lf'.\s(CVS\s5692)
-D 2008-09-11T11:28:00
+C Add\sa\scase\sto\spermutations.test\sto\srun\stests\swith\sthe\sIOCAP_SAFEAPPEND\sproperty\sset.\s(CVS\s5693)
+D 2008-09-12T10:22:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -169,7 +169,7 @@ F src/test_async.c da9f58f49faccd3a26ba89f58de125862351b6e2
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c 8d5b835054f1dd15992e09864a8bc04386bab701
 F src/test_config.c b2681a8e1b570f0c3686c934d6ef6112921af05d
-F src/test_devsym.c 6012cb8e3acf812513511025a4fa5d626e0ba19b
+F src/test_devsym.c 802d10e65b4217208cb47059b84adf46318bcdf4
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
@@ -452,7 +452,7 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
-F test/permutations.test cf196f6adddb52d423ebf408dd6ad73d9da8575e
+F test/permutations.test 41832b86c152c140bcdf75a35a7c82badd8912b9
 F test/pragma.test 4461cb1004084b907dd28f9d517af7bcf8f5b35f
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -635,7 +635,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f4293d148007515eaf8eb9738f62554a963abe8e
-R 0f4b805b0ca3c14544035af4fa76719a
+P 753caa20ca50bc42d747d934ccc61438790e7f32
+R 1b0f464c326623228199c42b7b823ee9
 U danielk1977
-Z fe301292260ae41f14352bf9fbdb0a81
+Z efa4aeae72cd5490bfab255177e78baa

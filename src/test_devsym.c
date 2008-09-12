@@ -14,7 +14,7 @@
 ** different device types (by overriding the return values of the 
 ** xDeviceCharacteristics() and xSectorSize() methods).
 **
-** $Id: test_devsym.c,v 1.7 2008/06/06 11:11:26 danielk1977 Exp $
+** $Id: test_devsym.c,v 1.8 2008/09/12 10:22:40 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -234,10 +234,14 @@ static int devsymOpen(
   int flags,
   int *pOutFlags
 ){
+  int rc;
   devsym_file *p = (devsym_file *)pFile;
-  pFile->pMethods = &devsym_io_methods;
   p->pReal = (sqlite3_file *)&p[1];
-  return sqlite3OsOpen(g.pVfs, zName, p->pReal, flags, pOutFlags);
+  rc = sqlite3OsOpen(g.pVfs, zName, p->pReal, flags, pOutFlags);
+  if( p->pReal->pMethods ){
+    pFile->pMethods = &devsym_io_methods;
+  }
+  return rc;
 }
 
 /*
