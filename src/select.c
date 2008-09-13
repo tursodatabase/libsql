@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.472 2008/09/01 15:52:11 drh Exp $
+** $Id: select.c,v 1.473 2008/09/13 01:20:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -204,15 +204,17 @@ static void setToken(Token *p, const char *z){
 */
 static void setQuotedToken(Parse *pParse, Token *p, const char *z){
 
-  /* Check if the string contains any " characters. If it does, then
-  ** this function will malloc space to create a quoted version of
-  ** the string in. Otherwise, save a call to sqlite3MPrintf() by
-  ** just copying the pointer to the string.
+  /* Check if the string appears to be quoted using "..." or `...`
+  ** or [...] or '...' or if the string contains any " characters.  
+  ** If it does, then record a version of the string with the special
+  ** characters escaped.
   */
   const char *z2 = z;
-  while( *z2 ){
-    if( *z2=='"' ) break;
-    z2++;
+  if( *z2!='[' && *z2!='`' && *z2!='\'' ){
+    while( *z2 ){
+      if( *z2=='"' ) break;
+      z2++;
+    }
   }
 
   if( *z2 ){
@@ -1078,7 +1080,7 @@ static void generateColumnNames(
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
       sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, strlen(zName));
-    }else if( p->op==TK_COLUMN && pTabList ){
+    }else if( (p->op==TK_COLUMN || p->op==TK_AGG_COLUMN) && pTabList ){
       Table *pTab;
       char *zCol;
       int iCol = p->iColumn;

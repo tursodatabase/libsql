@@ -1,5 +1,5 @@
-C Fix\sthe\sNEAR\sconnector\sin\sFTS3\sso\sthat\sit\scan\stake\sranges\sin\sexcess\sof\s9.\nThe\smaximum\srange\sis\snow\s32767.\s(CVS\s5695)
-D 2008-09-12T18:25:31
+C Fix\sissues\swith\sbizarrely\squoted\scolumn\snames.\s\sTickets\s#3370,\s#3371,\nand\s#3372.\s(CVS\s5696)
+D 2008-09-13T01:20:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 11bbdf7def3746a762fbdb56c9d04648135ad6d8
 F src/resolve.c a6abf83125bce0c80ba04acc27c3565155ad305c
-F src/select.c eec7c5f28a0c75fdd8500630435af176bba73219
+F src/select.c b4bc2536228769093ad0d110f40143a322009abb
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 81dc1e8e50fb5c7cccf0a67a34cb796efc1d2a1e
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -250,7 +250,7 @@ F test/collate8.test df26649cfcbddf109c04122b340301616d3a88f6
 F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
-F test/colname.test bc396d99a11a855370010c7e95187177592b1dfe
+F test/colname.test 0f05fea3e5c9260ece53117ad400657515c34280
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test 5bcf7a986358123b8055dfa64b45fc2fb54dcaa9
 F test/corrupt2.test 08fb049fdf4f72902ff39b1c609e7c1c2e985d8b
@@ -635,7 +635,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 414da4ebcecbed37177aecf649ddd3d258af260d
-R 30fe40585fda84091e0ee18bc0941dc6
+P 8e9b9553115c42dae38cad0612d98d9a0c453a5c
+R 7bc434752d16929a3e421e431e8ae91f
 U drh
-Z a8f9df1c6b8baaa9d26a99abcbf57852
+Z 0c765190cb5cb7de380cf9d6dd1fc3e7
