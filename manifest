@@ -1,5 +1,5 @@
-C Modify\stest_async.c\sto\savoid\susing\sinternal\sSQLite\sAPIs.\sThere\sare\sstill\ssome\scomments\sthat\sneed\supdating.\s(CVS\s5698)
-D 2008-09-15T14:08:04
+C Fix\sthe\sshared_err.test\sscript\sso\sthat\sit\sworks\sif\sthe\sdevice\ssupports\sSQLITE_IOCAP_SAFEAPPEND.\s(CVS\s5699)
+D 2008-09-15T14:42:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -484,7 +484,7 @@ F test/shared.test b9f3bbd3ba727c5f1f8c815b7d0199262aacf214
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
 F test/shared3.test 9c880afc081d797da514ef64bccf36f3fce2f09c
 F test/shared4.test d0fadacb50bb6981b2fb9dc6d1da30fa1edddf83
-F test/shared_err.test 776ab7196ecda8b07a075e115b0725806991e151
+F test/shared_err.test 63628d33e0d59325c63650f5d67f4c8798cef5db
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/soak.test 3c317b3e55e1160731030c8e865d1858fab66fea
@@ -635,7 +635,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c32cb106c5d68e98f51f1eaf9ae0e2a3c36d00d6
-R 81c8df88182aeac4375b62d10daf76ae
+P 1d4fcaafd058bf1b726378e9ec308ecd8130fe1b
+R 57269a074958fd6039f5b3b57984a6b8
 U danielk1977
-Z 598fdfba976b3753bad5428908262014
+Z d6eed9f5b63d13b9611ae30d3fa84e0d

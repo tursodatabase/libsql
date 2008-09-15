@@ -13,7 +13,7 @@
 # cache context. What happens to connection B if one connection A encounters
 # an IO-error whilst reading or writing the file-system?
 #
-# $Id: shared_err.test,v 1.21 2008/07/07 17:55:29 danielk1977 Exp $
+# $Id: shared_err.test,v 1.22 2008/09/15 14:42:38 danielk1977 Exp $
 
 proc skip {args} {}
 
@@ -57,12 +57,13 @@ do_ioerr_test shared_ioerr-1 -tclprep {
     set res [catchsql {
       SELECT * FROM t1;
     } db2]
-    set possible_results [list            \
-      "1 {disk I/O error}"                \
-      "0 {1 2 3}"                         \
-      "0 {1 2 3 1 2 3 4 5 6}"             \
-      "0 {1 2 3 1 2 3 4 5 6 1 2 3 4 5 6}" \
-      "0 {}"                              \
+    set possible_results [list               \
+      "1 {disk I/O error}"                   \
+      "0 {1 2 3}"                            \
+      "0 {1 2 3 1 2 3 4 5 6}"                \
+      "0 {1 2 3 1 2 3 4 5 6 1 2 3 4 5 6}"    \
+      "0 {}"                                 \
+      "1 {database disk image is malformed}" \
     ]
     set rc [expr [lsearch -exact $possible_results $res] >= 0]
     if {$rc != 1} {
@@ -71,7 +72,15 @@ do_ioerr_test shared_ioerr-1 -tclprep {
     }
     set rc
   } {1}
+
+  # The "database disk image is malformed" is a special case that can
+  # occur if an IO error occurs during a rollback in the {SELECT * FROM t1}
+  # statement above. This test is to make sure there is no real database
+  # corruption.
   db2 close
+  do_test shared_ioerr-1.$n.cleanup.2 {
+    execsql {pragma integrity_check} db
+  } {ok}
 }
 
 do_ioerr_test shared_ioerr-2 -tclprep {
