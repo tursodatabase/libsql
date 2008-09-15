@@ -1,5 +1,5 @@
-C Fix\sthe\sasync.test\stest\sscript\sso\sthat\sit\sinvokes\s(finish_test)\seven\sif\sthe\sasynchronous\sbackend\sis\snot\sincluded\sin\sthe\sbuild\s(and\sno\stests\sare\srun).\s(CVS\s5700)
-D 2008-09-15T14:47:21
+C Adjust\sthe\spage\srecycling\salgorithm\sso\sthat\sthe\snumber\sof\spages\sallocated\nto\seach\sconnection\sdoes\snot\sexceed\sits\scache_size\slimit.\s(CVS\s5701)
+D 2008-09-15T15:36:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
 F src/pager.c b1ea487022bf91ffba58fc4c02518398290ac2c2
 F src/pager.h c45380ca9d0933ea5bc4ecb3a43958b6d2ec5a9c
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c ff79cb5eb797d0f1a244b4332c2d39cb5cfd066b
+F src/pcache.c d3c0f4ad708929fba15886914b18b82d64e286bf
 F src/pcache.h 53730c33310cdf7a5c94e8333c853d59a3b30226
 F src/pragma.c 9d00ed41b261968757c02707e1508a707f2d46a7
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
@@ -452,6 +452,7 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
+F test/pcache2.test 2b4fa1bee5cfc338d8c04eb6ed7eaf41f478bf7c
 F test/permutations.test 41832b86c152c140bcdf75a35a7c82badd8912b9
 F test/pragma.test 4461cb1004084b907dd28f9d517af7bcf8f5b35f
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
@@ -635,7 +636,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 38e5ea070a38fe1656e0f5c3024f28ce67eae725
-R 4f6ae6e9e52ddaefcd8ded4941fd5732
-U danielk1977
-Z b072615d26c8fe7520e777696085a2bf
+P 5c954b40ecb71203b1013c23cdac54ff83484b0a
+R dc88c00a1c805cb4941b70045df2df2e
+U drh
+Z c3d0d50b48385323dd5a9627ae00e19c

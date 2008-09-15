@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.26 2008/09/02 09:38:07 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.27 2008/09/15 15:36:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -555,15 +555,16 @@ static int pcacheRecycleOrAlloc(PCache *pCache, PgHdr **ppPage){
 
   *ppPage = 0;
 
-  /* If we have reached the limit for pinned/dirty pages, and there is at
-  ** least one dirty page, invoke the xStress callback to cause a page to
-  ** become clean.
+  /* If we have reached either the global or the local limit for 
+  ** pinned+dirty pages, and there is at least one dirty page,
+  ** invoke the xStress callback to cause a page to become clean.
   */
   expensive_assert( pCache->nPinned==pcachePinnedCount(pCache) );
   expensive_assert( pcacheCheckSynced(pCache) );
   if( pCache->xStress
    && pCache->pDirty
-   && pCache->nPinned>=(pcache_g.nMaxPage+pCache->nMin-pcache_g.nMinPage)
+   && (pCache->nPinned>=(pcache_g.nMaxPage+pCache->nMin-pcache_g.nMinPage)
+           || pCache->nPinned>=pCache->nMax)
   ){
     PgHdr *pPg;
     assert(pCache->pDirtyTail);
@@ -586,8 +587,11 @@ static int pcacheRecycleOrAlloc(PCache *pCache, PgHdr **ppPage){
     }
   }
 
-  /* If the global page limit has been reached, try to recycle a page. */
-  if( pCache->bPurgeable && pcache_g.nCurrentPage>=pcache_g.nMaxPage ){
+  /* If either the local or the global page limit has been reached, 
+  ** try to recycle a page. 
+  */
+  if( pCache->bPurgeable && (pCache->nPage>=pCache->nMax-1 ||
+                             pcache_g.nCurrentPage>=pcache_g.nMaxPage) ){
     p = pcacheRecyclePage();
   }
 
@@ -1267,4 +1271,3 @@ void sqlite3PcacheStats(
   *pnRecyclable = nRecyclable;
 }
 #endif
-
