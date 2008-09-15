@@ -6,16 +6,17 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: async.test,v 1.13 2007/11/05 17:01:08 danielk1977 Exp $
-
-
-if {[catch {sqlite3async_enable}]} {
-  # The async logic is not built into this system
-  return
-}
+# $Id: async.test,v 1.14 2008/09/15 14:47:21 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+if {[catch {sqlite3async_enable}]} {
+  # The async logic is not built into this system
+  finish_test
+  return
+}
+
 rename finish_test really_finish_test
 proc finish_test {} {
   catch {db close}
