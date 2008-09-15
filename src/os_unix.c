@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.200 2008/09/04 17:17:39 danielk1977 Exp $
+** $Id: os_unix.c,v 1.201 2008/09/15 04:20:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -1178,9 +1178,11 @@ static int sqliteErrorFromPosixError(int posixError, int sqliteIOErr) {
     /* something went terribly awry, unless during file system support 
      * introspection, in which it actually means what it says */
 #endif
+#ifdef ENOTSUP
   case ENOTSUP: 
     /* invalid fd, unless during file system support introspection, in which 
      * it actually means what it says */
+#endif
   case EIO:
   case EBADF:
   case EINVAL:
@@ -1563,7 +1565,7 @@ static int unixUnlock(sqlite3_file *id, int locktype){
         pLock->locktype = NO_LOCK;
       }else{
         int tErrno = errno;
-				rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
+        rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
         if( IS_LOCK_ERROR(rc) ){
           pFile->lastErrno = tErrno;
         }
