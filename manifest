@@ -1,5 +1,5 @@
-C Adjust\sthe\spage\srecycling\salgorithm\sso\sthat\sthe\snumber\sof\spages\sallocated\nto\seach\sconnection\sdoes\snot\sexceed\sits\scache_size\slimit.\s(CVS\s5701)
-D 2008-09-15T15:36:58
+C Minor\scomment\schange\sto\stest_async.c.\sNo\scode\schanges.\s(CVS\s5702)
+D 2008-09-15T15:49:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -165,7 +165,7 @@ F src/test6.c 0a0304a69cfa4962a429d084c6d451ff9e4fb572
 F src/test7.c 475b1fa7e3275408b40a3cbdc9508cbdc41ffa02
 F src/test8.c 3637439424d0d21ff2dcf9b015c30fcc1e7bcb24
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
-F src/test_async.c 2f644e5c4ee4ecc568234a22b98d992deda6006e
+F src/test_async.c de6661370d96f660e0f0d604582c193c6144b19c
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c 8d5b835054f1dd15992e09864a8bc04386bab701
 F src/test_config.c b2681a8e1b570f0c3686c934d6ef6112921af05d
@@ -636,7 +636,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5c954b40ecb71203b1013c23cdac54ff83484b0a
-R dc88c00a1c805cb4941b70045df2df2e
-U drh
-Z c3d0d50b48385323dd5a9627ae00e19c
+P 3bc221b940565133ae8d95f59b3b120e57df0124
+R 169d88f35cd96cb7ad2b2ca745637258
+U danielk1977
+Z 0fe4cdd19c8dedfd7534f209f2501a4f

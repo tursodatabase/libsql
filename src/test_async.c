@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.46 2008/09/15 14:08:04 danielk1977 Exp $
+** $Id: test_async.c,v 1.47 2008/09/15 15:49:34 danielk1977 Exp $
 **
 ** This file contains an example implementation of an asynchronous IO 
 ** backend for SQLite.
@@ -27,7 +27,7 @@
 ** You lose the Durable property.  With the default I/O backend of SQLite,
 ** once a write completes, you know that the information you wrote is
 ** safely on disk.  With the asynchronous I/O, this is not the case.  If
-** your program crashes or if a power lose occurs after the database
+** your program crashes or if a power loss occurs after the database
 ** write but before the asynchronous write thread has completed, then the
 ** database change might never make it to disk and the next user of the
 ** database might not see your change.
@@ -162,10 +162,10 @@ static void asyncTrace(const char *zFormat, ...){
 **       protected by the async.queueMutex. As are the async.ioError and
 **       async.nFile variables.
 **
-**     * The async.aLock hash-table and all AsyncLock and AsyncFileLock
+**     * The async.pLock list and all AsyncLock and AsyncFileLock
 **       structures must be protected by the async.lockMutex mutex.
 **
-**     * The file handles from the underlying system are assumed not to 
+**     * The file handles from the underlying system are not assumed to 
 **       be thread safe.
 **
 **     * See the last two paragraphs under "The Writer Thread" for
