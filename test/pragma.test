@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.66 2008/09/02 00:52:52 drh Exp $
+# $Id: pragma.test,v 1.67 2008/09/16 15:50:12 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -927,7 +927,7 @@ do_test pragma-9.4 {
 } {}
 ifcapable wsd {
   do_test pragma-9.5 {
-    set pwd [string map {' ''} [pwd]]
+    set pwd [string map {' ''} [file nativename [pwd]]]
     execsql "
       PRAGMA temp_store_directory='$pwd';
     "
@@ -936,7 +936,7 @@ ifcapable wsd {
     execsql { 
       PRAGMA temp_store_directory;
     }
-  } [list [pwd]]
+  } [list [file nativename [pwd]]]
   do_test pragma-9.7 {
     catchsql { 
       PRAGMA temp_store_directory='/NON/EXISTENT/PATH/FOOBAR';

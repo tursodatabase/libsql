@@ -1,5 +1,5 @@
-C Add\stest\sscript\sselectC.test\swhich\sdemonstrates\sticket\s#3381.\s(CVS\s5708)
-D 2008-09-16T15:09:54
+C Use\s(file\snativename\s(pwd))\sinstead\sof\sjust\s(pwd)\sto\sfind\sthe\sname\sof\sthe\scurrent\sdirectory\sto\spass\sto\s"PRAGMA\stemp_store_directory"\sin\spragma.test.\sThis\shelps\sthe\stest\spass\son\snon-unix\ssystems.\s(CVS\s5709)
+D 2008-09-16T15:50:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -454,7 +454,7 @@ F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
 F test/pcache2.test 2b4fa1bee5cfc338d8c04eb6ed7eaf41f478bf7c
 F test/permutations.test 41832b86c152c140bcdf75a35a7c82badd8912b9
-F test/pragma.test 4461cb1004084b907dd28f9d517af7bcf8f5b35f
+F test/pragma.test c86359a8e0b28abdcc0ff4936f7966c446d0479a
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e8418588f2c23487cefda702849d4546202fd8ec
-R 73ad7181d5aeabe99d686cb75c5c2a82
-U drh
-Z f6e3bbff74612bd9d3803b70b020f13a
+P 3847faff55d4bd7574785c3b18d5c95e687c7598
+R 16670c73dbd43d240ea75630e41f8efe
+U danielk1977
+Z 41ee678a15fcc38b7474c6adcc1f7073
