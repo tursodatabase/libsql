@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr2.test,v 1.9 2008/08/20 14:49:25 danielk1977 Exp $
+# $Id: ioerr2.test,v 1.10 2008/09/16 14:38:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -131,5 +131,18 @@ do_test ioerr2-5 {
   } msg]
   list $rc $msg
 } {1 {callback requested query abort}}
+
+if {$::tcl_platform(platform) == "unix"} {
+  # Cause the call to xAccess used by [pragma temp_store_directory] to
+  # determine if the specified directory is writable to fail. This causes
+  # SQLite to report "not a writable directory", which is probably the
+  # right answer.
+  #
+  do_test ioerr2-6 {
+    set ::sqlite_io_error_hit 0
+    set ::sqlite_io_error_pending 1
+    catchsql {PRAGMA temp_store_directory = '/tmp/'}
+  } {1 {not a writable directory}}
+}
 
 finish_test
