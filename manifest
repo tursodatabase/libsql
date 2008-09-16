@@ -1,5 +1,5 @@
-C Set\sthe\stype\sof\sthe\s"comment"\sfield\sto\sSQLITE_TEXT\swhen\soutputing\sthe\sresults\sof\san\sEXPLAIN\squery.\s(CVS\s5704)
-D 2008-09-16T09:09:20
+C Add\stest\scase\sfor\sticket\s#3376.\s(CVS\s5705)
+D 2008-09-16T11:58:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -243,7 +243,7 @@ F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
 F test/collate3.test d28d2cfab2c3a3d4628ae4b2b7afc9965daa3b4c
 F test/collate4.test 4545554388daaa604e5b3def3aa2f7ed6d56e8da
-F test/collate5.test e54df13eb9e1140273680b3153c6e19b39e59888
+F test/collate5.test fe0f43c4740d7b71b959cac668d19e42f2e06e4d
 F test/collate6.test 8be65a182abaac8011a622131486dafb8076e907
 F test/collate7.test fac8db7aac3978466c04ae892cc74dcf2bc031aa
 F test/collate8.test df26649cfcbddf109c04122b340301616d3a88f6
@@ -636,7 +636,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P aa5c9455be961e712d5c56de8d699adabb186cdc
-R 7a2483a682bc45f299b14a46a88e0b76
-U danielk1977
-Z 9c3c637b07efde53a208adaf6274b212
+P 5dff20f4bc8d98017e76d3a771ab49310bddda63
+R bbe3c956b65ecfe3fc9d4f701a790ef2
+U drh
+Z 010c83f95916a850b415d2bd020d7b81
