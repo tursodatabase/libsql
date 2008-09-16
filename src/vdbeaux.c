@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.409 2008/08/20 22:06:48 drh Exp $
+** $Id: vdbeaux.c,v 1.410 2008/09/16 09:09:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -901,6 +901,7 @@ int sqlite3VdbeList(
         pMem->z = pOp->zComment;
         pMem->n = strlen(pMem->z);
         pMem->enc = SQLITE_UTF8;
+        pMem->type = SQLITE_TEXT;
       }else
 #endif
       {

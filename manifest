@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\schange\sthe\spage\ssize\safter\sa\spager\shas\sentered\sthe\serror\sstate\s(Pager.errCode!=SQLITE_OK).\sThis\sprevents\san\sassertion\sfailure\sin\svacuum3.test.\s(CVS\s5703)
-D 2008-09-16T05:12:24
+C Set\sthe\stype\sof\sthe\s"comment"\sfield\sto\sSQLITE_TEXT\swhen\soutputing\sthe\sresults\sof\san\sEXPLAIN\squery.\s(CVS\s5704)
+D 2008-09-16T09:09:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -193,7 +193,7 @@ F src/vdbe.c ebc6f6bc8663ca00b6c7ed41bc464023dd6e0483
 F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
 F src/vdbeInt.h b48c74d86a9fb62b707a3186ccca76bb32f1c6be
 F src/vdbeapi.c c0f87aabb2bcf8c760ff9cb289119f7f6ba1797a
-F src/vdbeaux.c 45a53a4459c01db4e6befc977952346bfef405c3
+F src/vdbeaux.c e1198d1ea2e129bd56863794a223da670e1359c7
 F src/vdbeblob.c f93110888ddc246215e9ba1f831d3d375bfd8355
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c 51538ff193e1fcd462123ccef65323ccd2cc030c
@@ -636,7 +636,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b134106000e2e694cf5e1e5ae2f5b1e2956ee74a
-R cdc2f80804241449a7b7980720e97dd8
+P aa5c9455be961e712d5c56de8d699adabb186cdc
+R 7a2483a682bc45f299b14a46a88e0b76
 U danielk1977
-Z 91cb718d4a8f6d563442b7b2dfb3b695
+Z 9c3c637b07efde53a208adaf6274b212
