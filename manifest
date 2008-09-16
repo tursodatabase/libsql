@@ -1,5 +1,5 @@
-C Minor\scomment\schange\sto\stest_async.c.\sNo\scode\schanges.\s(CVS\s5702)
-D 2008-09-15T15:49:34
+C Do\snot\sattempt\sto\schange\sthe\spage\ssize\safter\sa\spager\shas\sentered\sthe\serror\sstate\s(Pager.errCode!=SQLITE_OK).\sThis\sprevents\san\sassertion\sfailure\sin\svacuum3.test.\s(CVS\s5703)
+D 2008-09-16T05:12:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 8f4def6a92681735908fa1b87b5cc0291ebafde6
 F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
-F src/pager.c b1ea487022bf91ffba58fc4c02518398290ac2c2
+F src/pager.c f21654d1fcfd62ce058dbb88d07159745dc5bd84
 F src/pager.h c45380ca9d0933ea5bc4ecb3a43958b6d2ec5a9c
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c d3c0f4ad708929fba15886914b18b82d64e286bf
@@ -636,7 +636,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3bc221b940565133ae8d95f59b3b120e57df0124
-R 169d88f35cd96cb7ad2b2ca745637258
+P b134106000e2e694cf5e1e5ae2f5b1e2956ee74a
+R cdc2f80804241449a7b7980720e97dd8
 U danielk1977
-Z 0fe4cdd19c8dedfd7534f209f2501a4f
+Z 91cb718d4a8f6d563442b7b2dfb3b695

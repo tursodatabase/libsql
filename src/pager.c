@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.489 2008/09/11 10:29:16 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.490 2008/09/16 05:12:24 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1950,26 +1950,28 @@ void sqlite3PagerSetReiniter(Pager *pPager, void (*xReinit)(DbPage*,int)){
 ** value before returning.
 */
 int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize){
-  int rc = SQLITE_OK;
-  u16 pageSize = *pPageSize;
-  assert( pageSize==0 || (pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE) );
-  if( pageSize && pageSize!=pPager->pageSize 
-   && (pPager->memDb==0 || pPager->dbSize==0)
-   && sqlite3PcacheRefCount(pPager->pPCache)==0 
-  ){
-    char *pNew = (char *)sqlite3PageMalloc(pageSize);
-    if( !pNew ){
-      rc = SQLITE_NOMEM;
-    }else{
-      pager_reset(pPager);
-      pPager->pageSize = pageSize;
-      if( !pPager->memDb ) setSectorSize(pPager);
-      sqlite3PageFree(pPager->pTmpSpace);
-      pPager->pTmpSpace = pNew;
-      sqlite3PcacheSetPageSize(pPager->pPCache, pageSize);
+  int rc = pPager->errCode;
+  if( rc==SQLITE_OK ){
+    u16 pageSize = *pPageSize;
+    assert( pageSize==0 || (pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE) );
+    if( pageSize && pageSize!=pPager->pageSize 
+     && (pPager->memDb==0 || pPager->dbSize==0)
+     && sqlite3PcacheRefCount(pPager->pPCache)==0 
+    ){
+      char *pNew = (char *)sqlite3PageMalloc(pageSize);
+      if( !pNew ){
+        rc = SQLITE_NOMEM;
+      }else{
+        pager_reset(pPager);
+        pPager->pageSize = pageSize;
+        if( !pPager->memDb ) setSectorSize(pPager);
+        sqlite3PageFree(pPager->pTmpSpace);
+        pPager->pTmpSpace = pNew;
+        sqlite3PcacheSetPageSize(pPager->pPCache, pageSize);
+      }
     }
+    *pPageSize = pPager->pageSize;
   }
-  *pPageSize = pPager->pageSize;
   return rc;
 }
 
