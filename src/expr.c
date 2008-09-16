@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.392 2008/08/29 02:14:03 drh Exp $
+** $Id: expr.c,v 1.393 2008/09/16 18:02:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2464,11 +2464,14 @@ int sqlite3ExprCodeExprList(
   assert( target>0 );
   n = pList->nExpr;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
+#if 0  /* Remove temporarily for tickets #3378 and #3381 */
     if( pItem->iAlias ){
       int iReg = codeAlias(pParse, pItem->iAlias, pItem->pExpr);
       Vdbe *v = sqlite3GetVdbe(pParse);
       sqlite3VdbeAddOp2(v, OP_SCopy, iReg, target+i);
-    }else{
+    }else
+#endif
+    {
       sqlite3ExprCode(pParse, pItem->pExpr, target+i);
     }
     if( doHardCopy ) sqlite3ExprHardCopy(pParse, target, n);

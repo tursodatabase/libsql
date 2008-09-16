@@ -10,11 +10,12 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
-# $Id: selectC.test,v 1.1 2008/09/16 15:09:54 drh Exp $
+# $Id: selectC.test,v 1.2 2008/09/16 18:02:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Ticket #
 do_test selectC-1.1 {
   execsql {
     CREATE TABLE t1(a, b, c);
@@ -69,5 +70,53 @@ do_test selectC-1.7 {
      WHERE +y='aaabbb'
   }
 } {1 aaabbb}
+do_test selectC-1.8 {
+  execsql {
+    SELECT a AS x, b||c AS y
+      FROM t1
+     GROUP BY x, y
+    HAVING y='aaabbb'
+  }
+} {1 aaabbb}
+do_test selectC-1.9 {
+  execsql {
+    SELECT a AS x, b||c AS y
+      FROM t1
+     GROUP BY x, y
+    HAVING b||c='aaabbb'
+  }
+} {1 aaabbb}
+do_test selectC-1.10 {
+  execsql {
+    SELECT a AS x, b||c AS y
+      FROM t1
+     WHERE y='aaabbb'
+     GROUP BY x, y
+  }
+} {1 aaabbb}
+do_test selectC-1.11 {
+  execsql {
+    SELECT a AS x, b||c AS y
+      FROM t1
+     WHERE b||c='aaabbb'
+     GROUP BY x, y
+  }
+} {1 aaabbb}
+do_test selectC-1.12 {
+  execsql {
+    SELECT DISTINCT upper(b) AS x
+      FROM t1
+     ORDER BY x
+  }
+} {AAA CCC}
+do_test selectC-1.13 {
+  execsql {
+    SELECT upper(b) AS x
+      FROM t1
+     GROUP BY x
+     ORDER BY x
+  }
+} {AAA CCC}
+
 
 finish_test

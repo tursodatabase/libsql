@@ -1,5 +1,5 @@
-C Initialize\svariable\spKeyDup\sin\smultiSelectOrderBy().\sTechnically\sit\sdoesn't\sneed\sto\sbe\sinitialized,\sbut\sthe\sreasoning\srequired\sto\scome\sto\sthat\sconclusion\sis\stoo\scomplicated\sfor\ssome\sautomated\ssystems.\sSo\sit\sis\sinitialized\sto\skeep\ssome\scompilers\shappy.\sTicket\s#3382.\s(CVS\s5710)
-D 2008-09-16T15:55:56
+C Add\stest\scases\sfor\sticket\s#3378\sand\s#3381.\s\sAdd\sa\stemporary\shack\sto\sget\sthose\nto\sproblems\sfixed.\s\sThe\shack\scauses\sfailures\sin\salias.test,\sbut\sthose\sare\smuch\nless\sserious\sthan\sthe\saforementioned\stickets.\s\sThis\sis\sa\sstop-gap\suntil\swe\scan\nfigure\sout\sa\sproper\sfix.\s(CVS\s5711)
+D 2008-09-16T18:02:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -107,7 +107,7 @@ F src/callback.c 7a40fd44da3eb89e7f6eff30aa6f940c45d73a97
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 5c092296c03d658e84884121a694150964d6861d
 F src/delete.c bae6684aa02e1f7cf6328023157c91d9cf94200b
-F src/expr.c 6413795aa13ceb05994e6b2b453a77df3b892e7b
+F src/expr.c e439afc46c5e859c1d6137fb447f8b5a0c05372f
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 8431b40a7843d1024145684d303c55b4ee087bbe
 F src/global.c 20a3fe46c8287a01ba3a7442558f0eb70c66b19a
@@ -480,7 +480,7 @@ F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test b4007b15396cb7ba2615cab31e1973b572e43210
 F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
 F test/selectB.test 31e81ac9af7d224850e0706350f070ecb92fcbc7
-F test/selectC.test fbce7d0dce38e9328502fd5ed3466ee1dc4ca7c5
+F test/selectC.test afc5b7bb570c59b17aa0719c51ed0ff53588f8bb
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test b9f3bbd3ba727c5f1f8c815b7d0199262aacf214
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 50feaa3707f4f61202bc855802ab2e405365d801
-R 4a936eb29e45588fe381195159200956
-U danielk1977
-Z 7c553474e27fde482ebe5fefe5f1afc5
+P bd58be6ecf0a22f3c8404bd7094ab5e13e19b1c4
+R 2fc3441b1258e07766f97b640f95644a
+U drh
+Z e70756170cf6143ba60cbd6ecd5882c4
