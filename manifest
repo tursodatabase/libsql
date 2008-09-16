@@ -1,5 +1,5 @@
-C Use\s(file\snativename\s(pwd))\sinstead\sof\sjust\s(pwd)\sto\sfind\sthe\sname\sof\sthe\scurrent\sdirectory\sto\spass\sto\s"PRAGMA\stemp_store_directory"\sin\spragma.test.\sThis\shelps\sthe\stest\spass\son\snon-unix\ssystems.\s(CVS\s5709)
-D 2008-09-16T15:50:12
+C Initialize\svariable\spKeyDup\sin\smultiSelectOrderBy().\sTechnically\sit\sdoesn't\sneed\sto\sbe\sinitialized,\sbut\sthe\sreasoning\srequired\sto\scome\sto\sthat\sconclusion\sis\stoo\scomplicated\sfor\ssome\sautomated\ssystems.\sSo\sit\sis\sinitialized\sto\skeep\ssome\scompilers\shappy.\sTicket\s#3382.\s(CVS\s5710)
+D 2008-09-16T15:55:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 11bbdf7def3746a762fbdb56c9d04648135ad6d8
 F src/resolve.c a6abf83125bce0c80ba04acc27c3565155ad305c
-F src/select.c b4bc2536228769093ad0d110f40143a322009abb
+F src/select.c 9cf9aac53aae65ce519310fd86ea3d895a654d79
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 81dc1e8e50fb5c7cccf0a67a34cb796efc1d2a1e
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3847faff55d4bd7574785c3b18d5c95e687c7598
-R 16670c73dbd43d240ea75630e41f8efe
+P 50feaa3707f4f61202bc855802ab2e405365d801
+R 4a936eb29e45588fe381195159200956
 U danielk1977
-Z 41ee678a15fcc38b7474c6adcc1f7073
+Z 7c553474e27fde482ebe5fefe5f1afc5

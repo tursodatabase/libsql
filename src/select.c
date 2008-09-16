@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.473 2008/09/13 01:20:15 drh Exp $
+** $Id: select.c,v 1.474 2008/09/16 15:55:56 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2047,7 +2047,7 @@ static int multiSelectOrderBy(
   int labelEnd;         /* Label for the end of the overall SELECT stmt */
   int j1;               /* Jump instructions that get retargetted */
   int op;               /* One of TK_ALL, TK_UNION, TK_EXCEPT, TK_INTERSECT */
-  KeyInfo *pKeyDup;     /* Comparison information for duplicate removal */
+  KeyInfo *pKeyDup = 0; /* Comparison information for duplicate removal */
   KeyInfo *pKeyMerge;   /* Comparison information for merging rows */
   sqlite3 *db;          /* Database connection */
   ExprList *pOrderBy;   /* The ORDER BY clause */
