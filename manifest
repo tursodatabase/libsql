@@ -1,5 +1,5 @@
-C Add\stest\scase\sfor\sticket\s#3376.\s(CVS\s5705)
-D 2008-09-16T11:58:20
+C Modify\sthe\ssqlite3VdbeMemCompare()\sroutine\sso\sthat\sit\sdoes\snot\smodify\sany\sMem.z\svalues.\sTicket\s#3376.\s(CVS\s5706)
+D 2008-09-16T12:06:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -196,7 +196,7 @@ F src/vdbeapi.c c0f87aabb2bcf8c760ff9cb289119f7f6ba1797a
 F src/vdbeaux.c e1198d1ea2e129bd56863794a223da670e1359c7
 F src/vdbeblob.c f93110888ddc246215e9ba1f831d3d375bfd8355
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
-F src/vdbemem.c 51538ff193e1fcd462123ccef65323ccd2cc030c
+F src/vdbemem.c ead88713b852576e2a924bc4ae696964bfbaec0a
 F src/vtab.c 527c180e9c5fca417c9167d02af4b5039f892b4b
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
 F src/where.c a9958b26cc87ea1446fbe6d004a7959b8d5d75c1
@@ -636,7 +636,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5dff20f4bc8d98017e76d3a771ab49310bddda63
-R bbe3c956b65ecfe3fc9d4f701a790ef2
-U drh
-Z 010c83f95916a850b415d2bd020d7b81
+P c64260579d353df3eae8c355b082b8206bc6185b
+R 7535949cc5ece243cee76f2451e698a1
+U danielk1977
+Z f8c645f05684cc478b17c2db72cd6df0

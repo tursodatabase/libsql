@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.122 2008/08/22 14:41:01 drh Exp $
+** $Id: vdbemem.c,v 1.123 2008/09/16 12:06:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -738,22 +738,21 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
         ** comparison function directly */
         return pColl->xCmp(pColl->pUser,pMem1->n,pMem1->z,pMem2->n,pMem2->z);
       }else{
-        u8 origEnc = pMem1->enc;
         const void *v1, *v2;
         int n1, n2;
-        /* Convert the strings into the encoding that the comparison
-        ** function expects */
-        v1 = sqlite3ValueText((sqlite3_value*)pMem1, pColl->enc);
-        n1 = v1==0 ? 0 : pMem1->n;
-        assert( n1==sqlite3ValueBytes((sqlite3_value*)pMem1, pColl->enc) );
-        v2 = sqlite3ValueText((sqlite3_value*)pMem2, pColl->enc);
-        n2 = v2==0 ? 0 : pMem2->n;
-        assert( n2==sqlite3ValueBytes((sqlite3_value*)pMem2, pColl->enc) );
-        /* Do the comparison */
+        Mem c1;
+        Mem c2;
+        memset(&c1, 0, sizeof(c1));
+        memset(&c2, 0, sizeof(c2));
+        sqlite3VdbeMemShallowCopy(&c1, pMem1, MEM_Ephem);
+        sqlite3VdbeMemShallowCopy(&c2, pMem2, MEM_Ephem);
+        v1 = sqlite3ValueText((sqlite3_value*)&c1, pColl->enc);
+        n1 = v1==0 ? 0 : c1.n;
+        v2 = sqlite3ValueText((sqlite3_value*)&c2, pColl->enc);
+        n2 = v2==0 ? 0 : c2.n;
         rc = pColl->xCmp(pColl->pUser, n1, v1, n2, v2);
-        /* Convert the strings back into the database encoding */
-        sqlite3ValueText((sqlite3_value*)pMem1, origEnc);
-        sqlite3ValueText((sqlite3_value*)pMem2, origEnc);
+        sqlite3VdbeMemRelease(&c1);
+        sqlite3VdbeMemRelease(&c2);
         return rc;
       }
     }
