@@ -1,5 +1,5 @@
-C Add\sa\stype\sidentifier\sto\sargument\ssz\sto\ssqlite3PageMalloc()\sin\spcache.c.\sTicket\s#3383.\s(CVS\s5713)
-D 2008-09-17T11:02:57
+C Changes\sto\stest\sscripts\sto\ssupport\srunning\son\ssymbian.\s(CVS\s5714)
+D 2008-09-17T16:14:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -442,7 +442,7 @@ F test/misc7.test 0d763f703a34521e55ab30145b747aafa0e5f794
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/mutex1.test dbcf556502389abcca65a80af45b80c141714ccc
 F test/mutex2.test 56f282f436596e9febdc6e0db2c507432b6724bb
-F test/nan.test 14c41572ff52dbc740b1c3303dd313a90dc6084c
+F test/nan.test e90b7fbae9cd2a08f42834c141c6dc0dc348fa2e
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test f5dd6b23e4dce828eb211649b600763c42a668df
@@ -575,7 +575,7 @@ F test/trigger4.test 8e90ee98cba940cd5f96493f82e55083806ab8a0
 F test/trigger5.test 619391a3e9fc194081d22cefd830d811e7badf83
 F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
 F test/trigger7.test 72feaf8dbc52cea84de0c3e6ce7559ff19c479af
-F test/trigger8.test 3a09275aa2214fdff56f731b1e775d8dfee4408a
+F test/trigger8.test 83d92c212f36442d26527d6f7701575905a52ae1
 F test/trigger9.test e6e8dbab673666b3c0a63f0fefcff2329fe6bba8
 F test/triggerA.test 208dbda4d2f7c918b02f8a0dfa3acd2a0fe00691
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f8b759f1977915c314be874840ebf18e6bc69b57
-R 8c3fe913436cdf48666844c295a610a7
+P 94fde77b9a4efde5f7fb2a84fedaf38b0ebbac70
+R 5cb1f4f412c11fd992c399fc6668cf38
 U danielk1977
-Z 30cb1003b5d39513a1e8a125fdb27449
+Z f12860bdb96f15ad02a57af76d19c3b1

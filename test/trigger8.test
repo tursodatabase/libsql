@@ -13,6 +13,7 @@
 # This file implements tests to make sure abusively large triggers
 # (triggers with 100s or 1000s of statements) work.
 #
+# $Id: trigger8.test,v 1.2 2008/09/17 16:14:10 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -21,14 +22,23 @@ ifcapable {!trigger} {
   return
 }
 
+# Set variable $nStatement to the number of statements to include in the
+# body of the trigger. On a workstation with virtually unlimited memory, 
+# use 10000. But on symbian, which allows each application at most a 32MB
+# heap, use 1000.
+#
+set nStatement 10000
+if {$tcl_platform(platform) == "symbian"} {
+  set nStatement 1000
+}
 
 do_test trigger8-1.1 {
   execsql {
     CREATE TABLE t1(x);
     CREATE TABLE t2(y);
   }
-  set sql "CREATE TRIGGER r10000 AFTER INSERT ON t1 BEGIN\n"
-  for {set i 0} {$i<10000} {incr i} {
+  set sql "CREATE TRIGGER r${nStatement} AFTER INSERT ON t1 BEGIN\n"
+  for {set i 0} {$i<$nStatement} {incr i} {
     append sql "  INSERT INTO t2 VALUES($i);\n"
   }
   append sql "END;"
@@ -37,6 +47,6 @@ do_test trigger8-1.1 {
     INSERT INTO t1 VALUES(5);
     SELECT count(*) FROM t2;
   }
-} {10000}
+} $nStatement
 
 finish_test
