@@ -1,5 +1,5 @@
-C Changes\sto\stest\sscripts\sto\ssupport\srunning\son\ssymbian.\s(CVS\s5714)
-D 2008-09-17T16:14:10
+C Speed\simprovements\sfor\sin-memory\sdatabases\sby\somitting\sflag\sclearing\son\spages\nwhere\sit\sis\simpossible\sfor\sthe\sflag\sto\sbe\sset\sand\sby\savoiding\sassert()s\son\nnon-debugging\sbuilds.\s\sTicket\s#3384.\s(CVS\s5715)
+D 2008-09-17T20:06:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,11 +137,11 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 8f4def6a92681735908fa1b87b5cc0291ebafde6
 F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
-F src/pager.c f21654d1fcfd62ce058dbb88d07159745dc5bd84
+F src/pager.c 34318b85cead25e179a6ff83092c79d6dcecb2fd
 F src/pager.h c45380ca9d0933ea5bc4ecb3a43958b6d2ec5a9c
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c a39908e73cf5001dec2cc7a55a477fe8e8611db9
-F src/pcache.h 53730c33310cdf7a5c94e8333c853d59a3b30226
+F src/pcache.c c799d753a5d4b913961a4fe66c8a7c706b04d28d
+F src/pcache.h deddea69babf3e0931b11eea3bf5c9e33a654389
 F src/pragma.c e633b6b7dabc110e2abfed4e35ba34a4039cb65c
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 94fde77b9a4efde5f7fb2a84fedaf38b0ebbac70
-R 5cb1f4f412c11fd992c399fc6668cf38
-U danielk1977
-Z f12860bdb96f15ad02a57af76d19c3b1
+P 6ef34e9d3118965781c69011deaede1ebbb19b12
+R a27713f2ccd1c6c2e7e56fb7534b72ec
+U drh
+Z ee142ff5e27b59538a7c71659e26324f

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.490 2008/09/16 05:12:24 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.491 2008/09/17 20:06:26 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -994,8 +994,8 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
 #ifdef SQLITE_CHECK_PAGES
     sqlite3PcacheIterate(pPager->pPCache, pager_set_pagehash);
 #endif
-    sqlite3PcacheSetFlags(pPager->pPCache,
-       ~(PGHDR_IN_JOURNAL | PGHDR_NEED_SYNC), 0
+    sqlite3PcacheClearFlags(pPager->pPCache,
+       PGHDR_IN_JOURNAL | PGHDR_NEED_SYNC
     );
     pPager->dirtyCache = 0;
     pPager->nRec = 0;
@@ -1663,7 +1663,7 @@ void sqlite3PagerSetCachesize(Pager *pPager, int mxPage){
 */
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
 void sqlite3PagerSetSafetyLevel(Pager *pPager, int level, int bFullFsync){
-  pPager->noSync =  level==1 || pPager->tempFile;
+  pPager->noSync =  level==1 || pPager->tempFile || MEMDB;
   pPager->fullSync = level==3 && !pPager->tempFile;
   pPager->sync_flags = (bFullFsync?SQLITE_SYNC_FULL:SQLITE_SYNC_NORMAL);
   if( pPager->noSync ) pPager->needSync = 0;
@@ -1761,6 +1761,7 @@ int sqlite3PagerOpen(
     if( strcmp(zFilename,":memory:")==0 ){
       memDb = 1;
       zPathname[0] = 0;
+      useJournal = 0;
     }else
 #endif
     {
@@ -1885,7 +1886,7 @@ int sqlite3PagerOpen(
   }
 
   /* pPager->journalOpen = 0; */
-  pPager->useJournal = useJournal && !memDb;
+  pPager->useJournal = useJournal;
   pPager->noReadlock = noReadlock && readOnly;
   /* pPager->stmtOpen = 0; */
   /* pPager->stmtInUse = 0; */
@@ -2322,8 +2323,7 @@ static int syncJournal(Pager *pPager){
 
     /* Erase the needSync flag from every page.
     */
-    sqlite3PcacheSetFlags(pPager->pPCache, ~PGHDR_NEED_SYNC, 0);
-    /* lruListSetFirstSynced(pPager); */
+    sqlite3PcacheClearFlags(pPager->pPCache, PGHDR_NEED_SYNC);
   }
 
 #ifndef NDEBUG
@@ -2333,7 +2333,6 @@ static int syncJournal(Pager *pPager){
   */
   else{
     sqlite3PcacheAssertFlags(pPager->pPCache, 0, PGHDR_NEED_SYNC);
-    /* assert( pPager->lru.pFirstSynced==pPager->lru.pFirst ); */
   }
 #endif
 
@@ -2411,11 +2410,9 @@ static int pager_write_pagelist(PgHdr *pList){
 #ifdef SQLITE_CHECK_PAGES
     pList->pageHash = pager_pagehash(pList);
 #endif
-    /* makeClean(pList); */
     pList = pList->pDirty;
   }
 
-  /* sqlite3PcacheCleanAll(pPager->pPCache); */
   return SQLITE_OK;
 }
 
@@ -2845,6 +2842,7 @@ static int pagerAcquire(
     PAGER_INCR(pPager->nMiss);
     pPg->pPager = pPager;
     if( sqlite3BitvecTest(pPager->pInJournal, pgno) ){
+      assert( !MEMDB );
       pPg->flags |= PGHDR_IN_JOURNAL;
     }
     memset(pPg->pExtra, 0, pPager->nExtra);
@@ -3393,6 +3391,7 @@ int sqlite3PagerWrite(DbPage *pDbPage){
     ** before any of them can be written out to the database file.
     */
     if( needSync ){
+      assert( !MEMDB && pPager->noSync==0 );
       for(ii=0; ii<nPage && needSync; ii++){
         PgHdr *pPage = pager_lookup(pPager, pg1+ii);
         if( pPage ) pPage->flags |= PGHDR_NEED_SYNC;
@@ -3805,9 +3804,7 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   if( MEMDB ){
     sqlite3PcacheCommit(pPager->pPCache, 0);
     sqlite3PcacheCleanAll(pPager->pPCache);
-    sqlite3PcacheSetFlags(pPager->pPCache, 
-       ~(PGHDR_IN_JOURNAL | PGHDR_NEED_SYNC), 0
-    );
+    sqlite3PcacheAssertFlags(pPager->pPCache, 0, PGHDR_IN_JOURNAL);
     pPager->state = PAGER_SHARED;
   }else{
     assert( pPager->state==PAGER_SYNCED || !pPager->dirtyCache );
@@ -3836,9 +3833,7 @@ int sqlite3PagerRollback(Pager *pPager){
     sqlite3PcacheRollback(pPager->pPCache, 1);
     sqlite3PcacheRollback(pPager->pPCache, 0);
     sqlite3PcacheCleanAll(pPager->pPCache);
-    sqlite3PcacheSetFlags(pPager->pPCache, 
-       ~(PGHDR_IN_JOURNAL | PGHDR_NEED_SYNC), 0
-    );
+    sqlite3PcacheAssertFlags(pPager->pPCache, 0, PGHDR_IN_JOURNAL);
     pPager->dbSize = pPager->origDbSize;
     pager_truncate_cache(pPager);
     pPager->stmtInUse = 0;
@@ -3976,7 +3971,6 @@ int sqlite3PagerStmtCommit(Pager *pPager){
   if( pPager->stmtInUse ){
     PAGERTRACE2("STMT-COMMIT %d\n", PAGERID(pPager));
     if( !MEMDB ){
-      /* sqlite3OsTruncate(pPager->stfd, 0); */
       sqlite3BitvecDestroy(pPager->pInStmt);
       pPager->pInStmt = 0;
     }else{
@@ -4077,7 +4071,7 @@ void sqlite3PagerSetCodec(
 **
 ** There must be no references to the page previously located at
 ** pgno (which we call pPgOld) though that page is allowed to be
-** in cache.  If the page previous located at pgno is not already
+** in cache.  If the page previously located at pgno is not already
 ** in the rollback journal, it is not put there by by this routine.
 **
 ** References to the page pPg remain valid. Updating any
@@ -4132,6 +4126,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
     pPg->flags |= (pPgOld->flags&PGHDR_NEED_SYNC);
   }
   if( sqlite3BitvecTest(pPager->pInJournal, pgno) ){
+    assert( !MEMDB );
     pPg->flags |= PGHDR_IN_JOURNAL;
   }
 
@@ -4174,6 +4169,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
       return rc;
     }
     pPager->needSync = 1;
+    assert( pPager->noSync==0 && !MEMDB );
     pPgHdr->flags |= PGHDR_NEED_SYNC;
     pPgHdr->flags |= PGHDR_IN_JOURNAL;
     makeDirty(pPgHdr);

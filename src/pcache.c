@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.28 2008/09/17 11:02:57 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.29 2008/09/17 20:06:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -875,7 +875,6 @@ void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
   pcacheRemoveFromHash(p);
   p->pgno = newPgno;
   if( newPgno==0 ){
-    p->flags |= PGHDR_REUSE_UNLIKELY;
     pcacheFree(p->apSave[0]);
     pcacheFree(p->apSave[1]);
     p->apSave[0] = 0;
@@ -883,6 +882,7 @@ void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
     if( (p->flags & PGHDR_DIRTY) ){
       pcacheMakeClean(p);
     }
+    p->flags = PGHDR_REUSE_UNLIKELY;
   }
   pcacheAddToHash(p);
   pcacheExitMutex();
@@ -1004,12 +1004,14 @@ int sqlite3PcachePreserve(PgHdr *p, int idJournal){
 */
 void sqlite3PcacheCommit(PCache *pCache, int idJournal){
   PgHdr *p;
+  int mask = idJournal==0 ? ~PGHDR_IN_JOURNAL : 0xffffff;
   pcacheEnterMutex();     /* Mutex is required to call pcacheFree() */
   for(p=pCache->pDirty; p; p=p->pNext){
     if( p->apSave[idJournal] ){
       pcacheFree(p->apSave[idJournal]);
       p->apSave[idJournal] = 0;
     }
+    p->flags &= mask;
   }
   pcacheExitMutex();
 }
@@ -1020,6 +1022,7 @@ void sqlite3PcacheCommit(PCache *pCache, int idJournal){
 void sqlite3PcacheRollback(PCache *pCache, int idJournal){
   PgHdr *p;
   int sz;
+  int mask = idJournal==0 ? ~PGHDR_IN_JOURNAL : 0xffffff;
   pcacheEnterMutex();     /* Mutex is required to call pcacheFree() */
   sz = pCache->szPage;
   for(p=pCache->pDirty; p; p=p->pNext){
@@ -1028,10 +1031,12 @@ void sqlite3PcacheRollback(PCache *pCache, int idJournal){
       pcacheFree(p->apSave[idJournal]);
       p->apSave[idJournal] = 0;
     }
+    p->flags &= mask;
   }
   pcacheExitMutex();
 }
 
+#ifndef NDEBUG
 /* 
 ** Assert flags settings on all pages.  Debugging only.
 */
@@ -1046,6 +1051,7 @@ void sqlite3PcacheAssertFlags(PCache *pCache, int trueMask, int falseMask){
     assert( (p->flags&falseMask)==0 );
   }
 }
+#endif
 
 /* 
 ** Discard the contents of the cache.
@@ -1178,24 +1184,23 @@ void sqlite3PcacheIterate(PCache *pCache, void (*xIter)(PgHdr *)){
 /* 
 ** Set flags on all pages in the page cache 
 */
-void sqlite3PcacheSetFlags(PCache *pCache, int andMask, int orMask){
+void sqlite3PcacheClearFlags(PCache *pCache, int mask){
   PgHdr *p;
-
-  assert( (orMask&PGHDR_NEED_SYNC)==0 );
 
   /* Obtain the global mutex before modifying any PgHdr.flags variables 
   ** or traversing the LRU list.
   */ 
   pcacheEnterMutex();
 
+  mask = ~mask;
   for(p=pCache->pDirty; p; p=p->pNext){
-    p->flags = (p->flags&andMask)|orMask;
+    p->flags &= mask;
   }
   for(p=pCache->pClean; p; p=p->pNext){
-    p->flags = (p->flags&andMask)|orMask;
+    p->flags &= mask;
   }
 
-  if( 0==(andMask&PGHDR_NEED_SYNC) ){
+  if( 0==(mask&PGHDR_NEED_SYNC) ){
     pCache->pSynced = pCache->pDirtyTail;
     assert( !pCache->pSynced || (pCache->pSynced->flags&PGHDR_NEED_SYNC)==0 );
   }

@@ -12,7 +12,7 @@
 ** This header file defines the interface that the sqlite page cache
 ** subsystem. 
 **
-** @(#) $Id: pcache.h,v 1.9 2008/08/29 09:10:03 danielk1977 Exp $
+** @(#) $Id: pcache.h,v 1.10 2008/09/17 20:06:26 drh Exp $
 */
 
 #ifndef _PCACHE_H_
@@ -53,13 +53,12 @@ struct PgHdr {
 
 /* Bit values for PgHdr.flags */
 #define PGHDR_IN_JOURNAL        0x001  /* Page is in rollback journal */
-#define PGHDR_IN_STMTJRNL       0x002  /* Page is in the statement journal */
-#define PGHDR_DIRTY             0x004  /* Page has changed */
-#define PGHDR_NEED_SYNC         0x008  /* Peed to fsync this page */
-#define PGHDR_NEED_READ         0x020  /* Content is unread */
-#define PGHDR_IS_INIT           0x040  /* pData is initialized */
-#define PGHDR_REUSE_UNLIKELY    0x080  /* Hint: Reuse is unlikely */
-#define PGHDR_DONT_WRITE        0x100  /* Do not write content to disk */
+#define PGHDR_DIRTY             0x002  /* Page has changed */
+#define PGHDR_NEED_SYNC         0x004  /* Fsync the rollback journal before
+                                       ** writing this page to the database */
+#define PGHDR_NEED_READ         0x008  /* Content is unread */
+#define PGHDR_REUSE_UNLIKELY    0x010  /* A hint that reuse is unlikely */
+#define PGHDR_DONT_WRITE        0x020  /* Do not write content to disk */
 
 /* Initialize and shutdown the page cache subsystem */
 int sqlite3PcacheInitialize(void);
@@ -122,11 +121,15 @@ PgHdr *sqlite3PcacheDirtyList(PCache*);
 /* Reset and close the cache object */
 void sqlite3PcacheClose(PCache*);
 
-/* Set flags on all pages in the page cache */
-void sqlite3PcacheSetFlags(PCache*, int andMask, int orMask);
+/* Clear flags from pages of the page cache */
+void sqlite3PcacheClearFlags(PCache*, int mask);
 
 /* Assert flags settings on all pages.  Debugging only */
-void sqlite3PcacheAssertFlags(PCache*, int trueMask, int falseMask);
+#ifndef NDEBUG
+  void sqlite3PcacheAssertFlags(PCache*, int trueMask, int falseMask);
+#else
+# define sqlite3PcacheAssertFlags(A,B,C)
+#endif
 
 /* Return true if the number of dirty pages is 0 or 1 */
 int sqlite3PcacheZeroOrOneDirtyPages(PCache*);
