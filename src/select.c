@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.474 2008/09/16 15:55:56 danielk1977 Exp $
+** $Id: select.c,v 1.475 2008/09/17 00:13:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2047,7 +2047,7 @@ static int multiSelectOrderBy(
   int labelEnd;         /* Label for the end of the overall SELECT stmt */
   int j1;               /* Jump instructions that get retargetted */
   int op;               /* One of TK_ALL, TK_UNION, TK_EXCEPT, TK_INTERSECT */
-  KeyInfo *pKeyDup = 0; /* Comparison information for duplicate removal */
+  KeyInfo *pKeyDup;     /* Comparison information for duplicate removal */
   KeyInfo *pKeyMerge;   /* Comparison information for merging rows */
   sqlite3 *db;          /* Database connection */
   ExprList *pOrderBy;   /* The ORDER BY clause */
@@ -3650,20 +3650,25 @@ int sqlite3Select(
                         ** processed */
     int iAbortFlag;     /* Mem address which causes query abort if positive */
     int groupBySort;    /* Rows come from source in GROUP BY order */
+    int addrEnd;        /* End of processing for this SELECT */
 
+    /* Remove any and all aliases between the result set and the
+    ** GROUP BY clause.
+    */
+    if( pGroupBy ){
+      int i;                        /* Loop counter */
+      struct ExprList_item *pItem;  /* For looping over expression in a list */
 
-    /* The following variables hold addresses or labels for parts of the
-    ** virtual machine program we are putting together */
-    int addrOutputRow;      /* Start of subroutine that outputs a result row */
-    int regOutputRow;       /* Return address register for output subroutine */
-    int addrSetAbort;       /* Set the abort flag and return */
-    int addrInitializeLoop; /* Start of code that initializes the input loop */
-    int addrTopOfLoop;      /* Top of the input loop */
-    int addrEnd;            /* End of all processing */
-    int addrSortingIdx;     /* The OP_OpenEphemeral for the sorting index */
-    int addrReset;          /* Subroutine for resetting the accumulator */
-    int regReset;           /* Return address register for reset subroutine */
+      for(i=p->pEList->nExpr, pItem=p->pEList->a; i>0; i--, pItem++){
+        pItem->iAlias = 0;
+      }
+      for(i=pGroupBy->nExpr, pItem=pGroupBy->a; i>0; i--, pItem++){
+        pItem->iAlias = 0;
+      }
+    }
 
+ 
+    /* Create a label to jump to when we want to abort the query */
     addrEnd = sqlite3VdbeMakeLabel(v);
 
     /* Convert TK_COLUMN nodes into TK_AGG_COLUMN and make entries in
@@ -3692,11 +3697,14 @@ int sqlite3Select(
     */
     if( pGroupBy ){
       KeyInfo *pKeyInfo;  /* Keying information for the group by clause */
-      int j1;
-
-      /* Create labels that we will be needing
-      */
-      addrInitializeLoop = sqlite3VdbeMakeLabel(v);
+      int j1;             /* A-vs-B comparision jump */
+      int addrOutputRow;  /* Start of subroutine that outputs a result row */
+      int regOutputRow;   /* Return address register for output subroutine */
+      int addrSetAbort;   /* Set the abort flag and return */
+      int addrTopOfLoop;  /* Top of the input loop */
+      int addrSortingIdx; /* The OP_OpenEphemeral for the sorting index */
+      int addrReset;      /* Subroutine for resetting the accumulator */
+      int regReset;       /* Return address register for reset subroutine */
 
       /* If there is a GROUP BY clause we might need a sorting index to
       ** implement it.  Allocate that sorting index now.  If it turns out
@@ -3713,6 +3721,10 @@ int sqlite3Select(
       */
       iUseFlag = ++pParse->nMem;
       iAbortFlag = ++pParse->nMem;
+      regOutputRow = ++pParse->nMem;
+      addrOutputRow = sqlite3VdbeMakeLabel(v);
+      regReset = ++pParse->nMem;
+      addrReset = sqlite3VdbeMakeLabel(v);
       iAMem = pParse->nMem + 1;
       pParse->nMem += pGroupBy->nExpr;
       iBMem = pParse->nMem + 1;
@@ -3721,47 +3733,12 @@ int sqlite3Select(
       VdbeComment((v, "clear abort flag"));
       sqlite3VdbeAddOp2(v, OP_Integer, 0, iUseFlag);
       VdbeComment((v, "indicate accumulator empty"));
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrInitializeLoop);
-
-      /* Generate a subroutine that outputs a single row of the result
-      ** set.  This subroutine first looks at the iUseFlag.  If iUseFlag
-      ** is less than or equal to zero, the subroutine is a no-op.  If
-      ** the processing calls for the query to abort, this subroutine
-      ** increments the iAbortFlag memory location before returning in
-      ** order to signal the caller to abort.
-      */
-      addrSetAbort = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeAddOp2(v, OP_Integer, 1, iAbortFlag);
-      VdbeComment((v, "set abort flag"));
-      regOutputRow = ++pParse->nMem;
-      sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
-      addrOutputRow = sqlite3VdbeCurrentAddr(v);
-      sqlite3VdbeAddOp2(v, OP_IfPos, iUseFlag, addrOutputRow+2);
-      VdbeComment((v, "Groupby result generator entry point"));
-      sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
-      finalizeAggFunctions(pParse, &sAggInfo);
-      if( pHaving ){
-        sqlite3ExprIfFalse(pParse, pHaving, addrOutputRow+1, SQLITE_JUMPIFNULL);
-      }
-      selectInnerLoop(pParse, p, p->pEList, 0, 0, pOrderBy,
-                      distinct, pDest,
-                      addrOutputRow+1, addrSetAbort);
-      sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
-      VdbeComment((v, "end groupby result generator"));
-
-      /* Generate a subroutine that will reset the group-by accumulator
-      */
-      addrReset = sqlite3VdbeCurrentAddr(v);
-      regReset = ++pParse->nMem;
-      resetAccumulator(pParse, &sAggInfo);
-      sqlite3VdbeAddOp1(v, OP_Return, regReset);
 
       /* Begin a loop that will extract all source rows in GROUP BY order.
       ** This might involve two separate loops with an OP_Sort in between, or
       ** it might be a single loop that uses an index to extract information
       ** in the right order to begin with.
       */
-      sqlite3VdbeResolveLabel(v, addrInitializeLoop);
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy, 0);
       if( pWInfo==0 ) goto select_end;
@@ -3879,7 +3856,43 @@ int sqlite3Select(
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regOutputRow, addrOutputRow);
       VdbeComment((v, "output final row"));
-      
+
+      /* Jump over the subroutines
+      */
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrEnd);
+
+      /* Generate a subroutine that outputs a single row of the result
+      ** set.  This subroutine first looks at the iUseFlag.  If iUseFlag
+      ** is less than or equal to zero, the subroutine is a no-op.  If
+      ** the processing calls for the query to abort, this subroutine
+      ** increments the iAbortFlag memory location before returning in
+      ** order to signal the caller to abort.
+      */
+      addrSetAbort = sqlite3VdbeCurrentAddr(v);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, iAbortFlag);
+      VdbeComment((v, "set abort flag"));
+      sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
+      sqlite3VdbeResolveLabel(v, addrOutputRow);
+      addrOutputRow = sqlite3VdbeCurrentAddr(v);
+      sqlite3VdbeAddOp2(v, OP_IfPos, iUseFlag, addrOutputRow+2);
+      VdbeComment((v, "Groupby result generator entry point"));
+      sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
+      finalizeAggFunctions(pParse, &sAggInfo);
+      if( pHaving ){
+        sqlite3ExprIfFalse(pParse, pHaving, addrOutputRow+1, SQLITE_JUMPIFNULL);
+      }
+      selectInnerLoop(pParse, p, p->pEList, 0, 0, pOrderBy,
+                      distinct, pDest,
+                      addrOutputRow+1, addrSetAbort);
+      sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
+      VdbeComment((v, "end groupby result generator"));
+
+      /* Generate a subroutine that will reset the group-by accumulator
+      */
+      sqlite3VdbeResolveLabel(v, addrReset);
+      resetAccumulator(pParse, &sAggInfo);
+      sqlite3VdbeAddOp1(v, OP_Return, regReset);
+     
     } /* endif pGroupBy */
     else {
       ExprList *pMinMax = 0;
