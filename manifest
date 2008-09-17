@@ -1,5 +1,5 @@
-C Fix\sfor\stickets\s#3378\sand\s#3381\sthat\spreserves\sthe\saliasing\soptimization.\nAnd\syet,\sthis\sfix\sfeels\suncomfortable.\s\sSeeking\san\salternative...\s(CVS\s5712)
-D 2008-09-17T00:13:12
+C Add\sa\stype\sidentifier\sto\sargument\ssz\sto\ssqlite3PageMalloc()\sin\spcache.c.\sTicket\s#3383.\s(CVS\s5713)
+D 2008-09-17T11:02:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
 F src/pager.c f21654d1fcfd62ce058dbb88d07159745dc5bd84
 F src/pager.h c45380ca9d0933ea5bc4ecb3a43958b6d2ec5a9c
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c d3c0f4ad708929fba15886914b18b82d64e286bf
+F src/pcache.c a39908e73cf5001dec2cc7a55a477fe8e8611db9
 F src/pcache.h 53730c33310cdf7a5c94e8333c853d59a3b30226
 F src/pragma.c e633b6b7dabc110e2abfed4e35ba34a4039cb65c
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a67da9dd2ff6acc163de4ce2b836b03e3f159a88
-R 14978e8fa671319bba1736bf8a70ed4f
-U drh
-Z 020ff8f35c07f9455927e2b1f65bc01f
+P f8b759f1977915c314be874840ebf18e6bc69b57
+R 8c3fe913436cdf48666844c295a610a7
+U danielk1977
+Z 30cb1003b5d39513a1e8a125fdb27449

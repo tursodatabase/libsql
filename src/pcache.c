@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.27 2008/09/15 15:36:58 drh Exp $
+** @(#) $Id: pcache.c,v 1.28 2008/09/17 11:02:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -434,7 +434,7 @@ void *pcacheMalloc(int sz, PCache *pCache){
     return p;
   }
 }
-void *sqlite3PageMalloc(sz){
+void *sqlite3PageMalloc(int sz){
   void *p;
   pcacheEnterMutex();
   p = pcacheMalloc(sz, 0);
