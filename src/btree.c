@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.513 2008/09/18 17:34:44 danielk1977 Exp $
+** $Id: btree.c,v 1.514 2008/09/18 18:17:04 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4953,6 +4953,9 @@ static int balance_quick(MemPage *pPage, MemPage *pParent){
         rc = ptrmapPutOvfl(pNew, 0);
       }
     }
+
+    /* Release the reference to the new page. */
+    releasePage(pNew);
   }
 
   /* At this point the pPage->nFree variable is not set correctly with
@@ -4972,10 +4975,9 @@ static int balance_quick(MemPage *pPage, MemPage *pParent){
   sqlite3BtreeInitPage(pPage, pPage->pParent);
   sqlite3PagerUnref(pPage->pParent->pDbPage);
 
-  /* Release the reference to the new page and balance the parent page,
-  ** in case the divider cell inserted caused it to become overfull.
+  /* If everything else succeeded, balance the parent page, in 
+  ** case the divider cell inserted caused it to become overfull.
   */
-  releasePage(pNew);
   if( rc==SQLITE_OK ){
     rc = balance(pParent, 0);
   }
