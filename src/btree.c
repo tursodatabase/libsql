@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.511 2008/09/10 17:53:36 danielk1977 Exp $
+** $Id: btree.c,v 1.512 2008/09/18 01:08:16 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1051,6 +1051,21 @@ static void zeroPage(MemPage *pPage, int flags){
   pPage->isInit = 1;
 }
 
+
+/*
+** Convert a DbPage obtained from the pager into a MemPage used by
+** the btree layer.
+*/
+static MemPage *btreePageFromDbPage(DbPage *pDbPage, Pgno pgno, BtShared *pBt){
+  MemPage *pPage = (MemPage*)sqlite3PagerGetExtra(pDbPage);
+  pPage->aData = sqlite3PagerGetData(pDbPage);
+  pPage->pDbPage = pDbPage;
+  pPage->pBt = pBt;
+  pPage->pgno = pgno;
+  pPage->hdrOffset = pPage->pgno==1 ? 100 : 0;
+  return pPage; 
+}
+
 /*
 ** Get a page from the pager.  Initialize the MemPage.pBt and
 ** MemPage.aData elements if needed.
@@ -1069,19 +1084,12 @@ int sqlite3BtreeGetPage(
   int noContent        /* Do not load page content if true */
 ){
   int rc;
-  MemPage *pPage;
   DbPage *pDbPage;
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   rc = sqlite3PagerAcquire(pBt->pPager, pgno, (DbPage**)&pDbPage, noContent);
   if( rc ) return rc;
-  pPage = (MemPage *)sqlite3PagerGetExtra(pDbPage);
-  pPage->aData = sqlite3PagerGetData(pDbPage);
-  pPage->pDbPage = pDbPage;
-  pPage->pBt = pBt;
-  pPage->pgno = pgno;
-  pPage->hdrOffset = pPage->pgno==1 ? 100 : 0;
-  *ppPage = pPage;
+  *ppPage = btreePageFromDbPage(pDbPage, pgno, pBt);
   return SQLITE_OK;
 }
 
@@ -1108,28 +1116,47 @@ static int getAndInitPage(
   MemPage *pParent     /* Parent of the page */
 ){
   int rc;
+  DbPage *pDbPage;
+  MemPage *pPage;
+
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( !pParent || pParent->isInit );
-  if( pgno==0 || pgno>pagerPagecount(pBt->pPager) ){
+  if( pgno==0 ){
     return SQLITE_CORRUPT_BKPT; 
   }
-  rc = sqlite3BtreeGetPage(pBt, pgno, ppPage, 0);
-  if( rc==SQLITE_OK ){
-    if( (*ppPage)->isInit==0 ){
-      rc = sqlite3BtreeInitPage(*ppPage, pParent);
-    }else if( pParent && ((*ppPage)==pParent || (*ppPage)->pParent!=pParent) ){
-      /* This condition indicates a loop in the b-tree structure (the scenario
-      ** where database corruption has caused a page to be a direct or
-      ** indirect descendant of itself).
-      */ 
-      rc = SQLITE_CORRUPT_BKPT;
-    }
-    if( rc!=SQLITE_OK ){
-      releasePage(*ppPage);
-      *ppPage = 0;
-    }
-  }
 
+  /* It is often the case that the page we want is already in cache.
+  ** If so, get it directly.  This saves us from having to call
+  ** pagerPagecount() to make sure pgno is within limits, which results
+  ** in a measureable performance improvements.
+  */
+  pDbPage = sqlite3PagerLookup(pBt->pPager, pgno);
+  if( pDbPage ){
+    /* Page is already in cache */
+    *ppPage = pPage = btreePageFromDbPage(pDbPage, pgno, pBt);
+    rc = SQLITE_OK;
+  }else{
+    /* Page not in cache.  Acquire it. */
+    if( pgno>pagerPagecount(pBt->pPager) ){
+      return SQLITE_CORRUPT_BKPT; 
+    }
+    rc = sqlite3BtreeGetPage(pBt, pgno, ppPage, 0);
+    if( rc ) return rc;
+    pPage = *ppPage;
+  }
+  if( pPage->isInit==0 ){
+     rc = sqlite3BtreeInitPage(pPage, pParent);
+  }else if( pParent && (pPage==pParent || pPage->pParent!=pParent) ){
+    /* This condition indicates a loop in the b-tree structure (the scenario
+    ** where database corruption has caused a page to be a direct or
+    ** indirect descendant of itself).
+    */ 
+    rc = SQLITE_CORRUPT_BKPT;
+  }
+  if( rc!=SQLITE_OK ){
+    releasePage(pPage);
+    *ppPage = 0;
+  }
   return rc;
 }
 
