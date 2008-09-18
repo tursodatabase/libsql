@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is exercising the code in main.c.
 #
-# $Id: main.test,v 1.29 2008/07/12 14:52:20 drh Exp $
+# $Id: main.test,v 1.30 2008/09/18 18:18:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -443,7 +443,8 @@ do_test main-3.6 {
 
 # The following test-case tests the linked list code used to manage
 # sqlite3_vfs structures.
-if {$::tcl_platform(platform)=="unix"} {
+if {$::tcl_platform(platform)=="unix" 
+     && [info command sqlite3async_enable]!=""} {
   ifcapable threadsafe {
     do_test main-4.1 {
       sqlite3_crash_enable 1
