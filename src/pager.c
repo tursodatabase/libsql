@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.491 2008/09/17 20:06:26 drh Exp $
+** @(#) $Id: pager.c,v 1.492 2008/09/18 17:34:44 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -208,8 +208,7 @@ struct Pager {
   int nHit, nMiss;            /* Cache hits and missing */
   int nRead, nWrite;          /* Database pages read/written */
 #endif
-  void (*xDestructor)(DbPage*,int); /* Call this routine when freeing pages */
-  void (*xReiniter)(DbPage*,int);   /* Call this routine when reloading pages */
+  void (*xReiniter)(DbPage*); /* Call this routine when reloading pages */
 #ifdef SQLITE_HAS_CODEC
   void *(*xCodec)(void*,void*,Pgno,int); /* Routine for en/decoding data */
   void *pCodecArg;            /* First argument to xCodec() */
@@ -1159,7 +1158,7 @@ static int pager_playback_one_page(
     pData = pPg->pData;
     memcpy(pData, aData, pPager->pageSize);
     if( pPager->xReiniter ){
-      pPager->xReiniter(pPg, pPager->pageSize);
+      pPager->xReiniter(pPg);
     }
     if( isMainJrnl ) makeClean(pPg);
 #ifdef SQLITE_CHECK_PAGES
@@ -1941,7 +1940,7 @@ void sqlite3PagerSetBusyhandler(Pager *pPager, BusyHandler *pBusyHandler){
 ** an opportunity to restore the EXTRA section to agree with the restored
 ** page data.
 */
-void sqlite3PagerSetReiniter(Pager *pPager, void (*xReinit)(DbPage*,int)){
+void sqlite3PagerSetReiniter(Pager *pPager, void (*xReinit)(DbPage*)){
   pPager->xReiniter = xReinit;
 }
 
@@ -3830,8 +3829,8 @@ int sqlite3PagerRollback(Pager *pPager){
   int rc = SQLITE_OK;
   PAGERTRACE2("ROLLBACK %d\n", PAGERID(pPager));
   if( MEMDB ){
-    sqlite3PcacheRollback(pPager->pPCache, 1);
-    sqlite3PcacheRollback(pPager->pPCache, 0);
+    sqlite3PcacheRollback(pPager->pPCache, 1, pPager->xReiniter);
+    sqlite3PcacheRollback(pPager->pPCache, 0, pPager->xReiniter);
     sqlite3PcacheCleanAll(pPager->pPCache);
     sqlite3PcacheAssertFlags(pPager->pPCache, 0, PGHDR_IN_JOURNAL);
     pPager->dbSize = pPager->origDbSize;
@@ -3991,7 +3990,7 @@ int sqlite3PagerStmtRollback(Pager *pPager){
   if( pPager->stmtInUse ){
     PAGERTRACE2("STMT-ROLLBACK %d\n", PAGERID(pPager));
     if( MEMDB ){
-      sqlite3PcacheRollback(pPager->pPCache, 1);
+      sqlite3PcacheRollback(pPager->pPCache, 1, pPager->xReiniter);
       pPager->dbSize = pPager->stmtSize;
       pager_truncate_cache(pPager);
       rc = SQLITE_OK;

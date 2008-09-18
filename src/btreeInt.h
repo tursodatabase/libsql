@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.30 2008/08/01 20:10:08 drh Exp $
+** $Id: btreeInt.h,v 1.31 2008/09/18 17:34:44 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -295,6 +295,18 @@ struct MemPage {
   Pgno pgno;           /* Page number for this page */
   MemPage *pParent;    /* The parent of this page.  NULL for root */
 };
+
+/*
+** Possible values for the MemPage.isInit variable. When a page is first
+** loaded or if the data stored in the MemPage struct is invalidated, 
+** MemPage.isInit is set to PAGE_ISINIT_NONE. If the MemPage structure
+** is fully initialized, then MemPage.isInit is set to PAGE_ISINIT_FULL.
+** MemPage.isInit is set to PAGE_ISINIT_DATA when the MemPage struct is
+** populated, but the MemPage.pParent variable is not necessarily correct.
+*/
+#define PAGE_ISINIT_NONE 0
+#define PAGE_ISINIT_DATA 1
+#define PAGE_ISINIT_FULL 2
 
 /*
 ** The in-memory image of a disk page has the auxiliary information appended
