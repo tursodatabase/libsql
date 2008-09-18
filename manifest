@@ -1,5 +1,5 @@
-C Changes\sto\stest\sscript\sio.test\sto\swork\son\ssymbian.\s(CVS\s5717)
-D 2008-09-18T11:18:41
+C Changes\sto\stest\sscript\snan.test\sto\swork\son\ssymbian.\s(CVS\s5718)
+D 2008-09-18T11:30:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -442,7 +442,7 @@ F test/misc7.test 0d763f703a34521e55ab30145b747aafa0e5f794
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/mutex1.test dbcf556502389abcca65a80af45b80c141714ccc
 F test/mutex2.test 56f282f436596e9febdc6e0db2c507432b6724bb
-F test/nan.test e90b7fbae9cd2a08f42834c141c6dc0dc348fa2e
+F test/nan.test c627d79b3d36ea892563fd67584b3e8a18f0618a
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test f5dd6b23e4dce828eb211649b600763c42a668df
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P badd0873e6dffac9463b06a381b9f797a54d33e9
-R c960d4325ae6e924ae5c620820d9e695
+P 2b41c4959da2ef5a882a658e85ee34d07d31f379
+R 2e73bde913dbf01aa0bcf45ea5d3d40d
 U danielk1977
-Z 3fd7fc9ce11902ac8ce0b52beafd96c6
+Z 5164e60ab6c8dd97f413cb56999085b7

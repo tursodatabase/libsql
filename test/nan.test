@@ -18,7 +18,7 @@
 # correctly generate 0.0, +Inf, and -Inf as appropriate for numbers
 # out of range.
 #
-# $Id: nan.test,v 1.4 2008/09/17 16:14:10 danielk1977 Exp $
+# $Id: nan.test,v 1.5 2008/09/18 11:30:13 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -260,30 +260,53 @@ do_test nan-4.11 {
 } {-1234.5 real}
 do_test nan-4.12 {
   db eval {DELETE FROM t1}
-  set small [string repeat 0 10000].[string repeat 0 323][string repeat 9 10000]
-  db eval "INSERT INTO t1 VALUES($small)"
-  db eval {SELECT x, typeof(x) FROM t1}
-} {9.88131291682493e-324 real}
-do_test nan-4.13 {
-  db eval {DELETE FROM t1}
   set small [string repeat 0 10000].[string repeat 0 324][string repeat 9 10000]
   db eval "INSERT INTO t1 VALUES($small)"
   db eval {SELECT x, typeof(x) FROM t1}
 } {0.0 real}
-do_test nan-4.14 {
-  db eval {DELETE FROM t1}
-  set small \
-      -[string repeat 0 10000].[string repeat 0 323][string repeat 9 10000]
-  db eval "INSERT INTO t1 VALUES($small)"
-  db eval {SELECT x, typeof(x) FROM t1}
-} {-9.88131291682493e-324 real}
-do_test nan-4.15 {
+do_test nan-4.13 {
   db eval {DELETE FROM t1}
   set small \
       -[string repeat 0 10000].[string repeat 0 324][string repeat 9 10000]
   db eval "INSERT INTO t1 VALUES($small)"
   db eval {SELECT x, typeof(x) FROM t1}
 } {0.0 real}
+
+# These tests test some really, really small floating point numbers.
+#
+if {$tcl_platform(platform) != "symbian"} {
+  # These two are not run on symbian because tcl has trouble converting
+  # the very small numbers back to text form (probably due to a difference
+  # in the sprintf() implementation).
+  #
+  do_test nan-4.14 {
+    db eval {DELETE FROM t1}
+    set small \
+        [string repeat 0 10000].[string repeat 0 323][string repeat 9 10000]
+    db eval "INSERT INTO t1 VALUES($small)"
+    db eval {SELECT x, typeof(x) FROM t1}
+  } {9.88131291682493e-324 real}
+  do_test nan-4.15 {
+    db eval {DELETE FROM t1}
+    set small \
+        -[string repeat 0 10000].[string repeat 0 323][string repeat 9 10000]
+    db eval "INSERT INTO t1 VALUES($small)"
+    db eval {SELECT x, typeof(x) FROM t1}
+  } {-9.88131291682493e-324 real}
+}
+do_test nan-4.16 {
+  db eval {DELETE FROM t1}
+  set small [string repeat 0 10000].[string repeat 0 323][string repeat 9 10000]
+  db eval "INSERT INTO t1 VALUES($small)"
+  db eval {SELECT CAST(x AS text), typeof(x) FROM t1}
+} {9.88131291682493e-324 real}
+do_test nan-4.17 {
+  db eval {DELETE FROM t1}
+  set small \
+      -[string repeat 0 10000].[string repeat 0 323][string repeat 9 10000]
+  db eval "INSERT INTO t1 VALUES($small)"
+  db eval {SELECT CAST(x AS text), typeof(x) FROM t1}
+} {-9.88131291682493e-324 real}
 
 do_test nan-4.20 {
   db eval {DELETE FROM t1}
