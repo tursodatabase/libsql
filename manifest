@@ -1,10 +1,10 @@
-C Changes\sto\stest\sscript\snan.test\sto\swork\son\ssymbian.\s(CVS\s5718)
-D 2008-09-18T11:30:13
+C Update\sthe\sversion\snumber\sto\s3.6.3.\s(CVS\s5719)
+D 2008-09-18T13:49:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
-F VERSION d1968c7d42b95f18d5fdb5cf7f4cef21797572fa
+F VERSION 708c93c5dbb97b8a8e4c39eb77c53dae43d96910
 F aclocal.m4 7d02b11fed45174e11156144227278deb6236eea
 F addopcodes.awk 215333be9d99c260e076c3080a81dba3ae928c45
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2b41c4959da2ef5a882a658e85ee34d07d31f379
-R 2e73bde913dbf01aa0bcf45ea5d3d40d
-U danielk1977
-Z 5164e60ab6c8dd97f413cb56999085b7
+P 0889b22a2949160c3f2d06beaa05a867b4c228b3
+R ac300755102001ce1aa8c09d26102ac6
+U drh
+Z c0568459c1b6c869285e59f30eb43c51
