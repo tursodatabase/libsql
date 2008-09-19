@@ -1,5 +1,5 @@
-C Do\snot\srun\sthe\sasync\stests\sif\sthe\sasync\smodule\sis\snot\sinstalled.\s(CVS\s5722)
-D 2008-09-18T18:18:29
+C Remove\san\sobsolete\slayer\sof\sredirection\sin\spager.c.\s(CVS\s5723)
+D 2008-09-19T09:14:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c 8f4def6a92681735908fa1b87b5cc0291ebafde6
 F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
-F src/pager.c bcfa1c4034414a247c1583fd97c9c561afae53f9
+F src/pager.c 131746ea47383daf89fce08e0cb09b84cffa39eb
 F src/pager.h 1ef5a3f8e0b4c8b30f19c8e01d4fca2db9bb5797
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c e025e5380d75ffc25ef069fee8d128b595513ece
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 05d3462688507b61710cbda27adf61d0b0514e27
-R 911f836ad52fececbc6f20763213dc67
-U drh
-Z 0cc43854ad71c274b62522f0a2b152de
+P 4de71a4e2f59d302156e10efcb288efa23e18598
+R e7e88b502f42bf2bf854d0ef69d24fbc
+U danielk1977
+Z a0c5df28c3667ba69a8633d2e8e61142

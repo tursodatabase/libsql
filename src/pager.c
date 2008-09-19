@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.492 2008/09/18 17:34:44 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.493 2008/09/19 09:14:44 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2793,7 +2793,7 @@ static void pagerDropPage(DbPage *pPg){
 ** called again with noContent==0, that means that the content is needed
 ** and the disk read should occur at that point.
 */
-static int pagerAcquire(
+int sqlite3PagerAcquire(
   Pager *pPager,      /* The pager open on the database file */
   Pgno pgno,          /* Page number to fetch */
   DbPage **ppPage,    /* Write a pointer to the page here */
@@ -2889,18 +2889,6 @@ static int pagerAcquire(
   *ppPage = pPg;
   return SQLITE_OK;
 }
-
-int sqlite3PagerAcquire(
-  Pager *pPager,      /* The pager open on the database file */
-  Pgno pgno,          /* Page number to fetch */
-  DbPage **ppPage,    /* Write a pointer to the page here */
-  int noContent       /* Do not bother reading content from disk if true */
-){
-  int rc;
-  rc = pagerAcquire(pPager, pgno, ppPage, noContent);
-  return rc;
-}
-
 
 /*
 ** Acquire a page if it is already in the in-memory cache.  Do
