@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.514 2008/09/18 18:17:04 danielk1977 Exp $
+** $Id: btree.c,v 1.515 2008/09/19 15:10:58 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1148,7 +1148,7 @@ static int getAndInitPage(
     pPage = *ppPage;
   }
   if( pPage->isInit!=PAGE_ISINIT_FULL ){
-     rc = sqlite3BtreeInitPage(pPage, pParent);
+    rc = sqlite3BtreeInitPage(pPage, pParent);
   }else if( pParent && (pPage==pParent || pPage->pParent!=pParent) ){
     /* This condition indicates a loop in the b-tree structure (the scenario
     ** where database corruption has caused a page to be a direct or
@@ -6472,14 +6472,21 @@ int sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   }
 
   assert( idx>=0 && idx<=15 );
-  rc = sqlite3PagerGet(pBt->pPager, 1, &pDbPage);
-  if( rc ){
-    sqlite3BtreeLeave(p);
-    return rc;
+  if( !pBt->pPage1 ){
+    rc = sqlite3PagerGet(pBt->pPager, 1, &pDbPage);
+    if( rc ){
+      sqlite3BtreeLeave(p);
+      return rc;
+    }
+    pP1 = (unsigned char *)sqlite3PagerGetData(pDbPage);
+  }else{
+    pP1 = (unsigned char *)pBt->pPage1->aData;
   }
-  pP1 = (unsigned char *)sqlite3PagerGetData(pDbPage);
   *pMeta = get4byte(&pP1[36 + idx*4]);
-  sqlite3PagerUnref(pDbPage);
+
+  if( !pBt->pPage1 ){
+    sqlite3PagerUnref(pDbPage);
+  }
 
   /* If autovacuumed is disabled in this build but we are trying to 
   ** access an autovacuumed database, then make the database readonly. 
