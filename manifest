@@ -1,5 +1,5 @@
-C In\sfunction\smoveToRoot(),\suse\sthe\sMemPage.pParent\spointers\sto\sfind\sthe\sroot\spage\sif\sthey\sare\svalid.\sThis\sis\sslightly\sfaster\sthan\srequesting\sa\snew\sreference\sto\sthe\sroot\spage\sfrom\sthe\spager\slayer.\s(CVS\s5725)
-D 2008-09-19T16:39:38
+C Speed\sup\sreleaseMemArray()\sa\sbit\sby\shandling\sthe\smost\scommon\stypes\sof\smemory\scells\sinline.\s(CVS\s5726)
+D 2008-09-19T18:32:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -193,7 +193,7 @@ F src/vdbe.c ebc6f6bc8663ca00b6c7ed41bc464023dd6e0483
 F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
 F src/vdbeInt.h b48c74d86a9fb62b707a3186ccca76bb32f1c6be
 F src/vdbeapi.c c0f87aabb2bcf8c760ff9cb289119f7f6ba1797a
-F src/vdbeaux.c e1198d1ea2e129bd56863794a223da670e1359c7
+F src/vdbeaux.c 20a7d109c95e32beee7891fba828c63e419af26c
 F src/vdbeblob.c f93110888ddc246215e9ba1f831d3d375bfd8355
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c ead88713b852576e2a924bc4ae696964bfbaec0a
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 59be34cfa4fe74f7e5b547c55d273ecba9d7796c
-R f3d27e1b16af35370468dd13d616f41c
+P 0c8b74e668b7462c5439c04993d1d7cd74210075
+R 0c4f9fcda4509cdf163057aa76c78a60
 U danielk1977
-Z c019239d82228e28c9df258ace82b690
+Z e05882893abbd0418dd9ff166dc58eca
