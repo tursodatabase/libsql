@@ -1,5 +1,5 @@
-C In\ssqlite3BtreeGetMeta(),\sif\sBtShared.pPage1\sis\savailable\suse\sit\sinstead\sof\srequesting\sa\snew\sreference\sfrom\sthe\spager\slayer.\s(CVS\s5724)
-D 2008-09-19T15:10:58
+C In\sfunction\smoveToRoot(),\suse\sthe\sMemPage.pParent\spointers\sto\sfind\sthe\sroot\spage\sif\sthey\sare\svalid.\sThis\sis\sslightly\sfaster\sthan\srequesting\sa\snew\sreference\sto\sthe\sroot\spage\sfrom\sthe\spager\slayer.\s(CVS\s5725)
+D 2008-09-19T16:39:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,7 +99,7 @@ F src/attach.c db3f4a60538733c1e4dcb9d0217a6e0d6ccd615b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c cfe8dbbaa75f587653f33121c3e82999c65069ae
+F src/btree.c 4d642d23fc4507089f702eb24b506be2ce7e0efd
 F src/btree.h 6371c5e599fab391a150c96afbc10062b276d107
 F src/btreeInt.h e36f77e6621d671beb19ae581af1eba116cdfdc4
 F src/build.c 160c71acca8f643f436ed6c1ee2f684c88df4dfe
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 75deaa442f3a363c4ea5b6f0e510306feeaa8915
-R 62a9176bcf4a5c57a6633d26293ede50
+P 59be34cfa4fe74f7e5b547c55d273ecba9d7796c
+R f3d27e1b16af35370468dd13d616f41c
 U danielk1977
-Z 89134c443f08e4715d35e3ebe96ef424
+Z c019239d82228e28c9df258ace82b690

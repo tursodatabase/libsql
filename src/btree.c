@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.515 2008/09/19 15:10:58 danielk1977 Exp $
+** $Id: btree.c,v 1.516 2008/09/19 16:39:38 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3564,8 +3564,22 @@ static int moveToRoot(BtCursor *pCur){
     clearCursorPosition(pCur);
   }
   pRoot = pCur->pPage;
-  if( pRoot && pRoot->pgno==pCur->pgnoRoot ){
+  if( pRoot && pRoot->isInit ){
+    /* If the page the cursor is currently pointing to is fully initialized,
+    ** then the root page can be found by following the MemPage.pParent
+    ** pointers. This is faster than requesting a reference to the root
+    ** page from the pager layer.
+    */
+    while( pRoot->pParent ){
+      assert( pRoot->isInit==PAGE_ISINIT_FULL );
+      pRoot = pRoot->pParent;
+    }
     assert( pRoot->isInit==PAGE_ISINIT_FULL );
+    if( pRoot!=pCur->pPage ){
+      sqlite3PagerRef(pRoot->pDbPage);
+      releasePage(pCur->pPage);
+      pCur->pPage = pRoot;
+    }
   }else{
     if( 
       SQLITE_OK!=(rc = getAndInitPage(pBt, pCur->pgnoRoot, &pRoot, 0))
@@ -3576,6 +3590,7 @@ static int moveToRoot(BtCursor *pCur){
     releasePage(pCur->pPage);
     pCur->pPage = pRoot;
   }
+  assert( pCur->pPage->pgno==pCur->pgnoRoot );
   pCur->idx = 0;
   pCur->info.nSize = 0;
   pCur->atLast = 0;
@@ -3744,7 +3759,6 @@ int sqlite3BtreeMovetoUnpacked(
       return SQLITE_OK;
     }
   }
-
 
   rc = moveToRoot(pCur);
   if( rc ){
@@ -6472,18 +6486,29 @@ int sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   }
 
   assert( idx>=0 && idx<=15 );
-  if( !pBt->pPage1 ){
+  if( pBt->pPage1 ){
+    /* The b-tree is already holding a reference to page 1 of the database
+    ** file. In this case the required meta-data value can be read directly
+    ** from the page data of this reference. This is slightly faster than
+    ** requesting a new reference from the pager layer.
+    */
+    pP1 = (unsigned char *)pBt->pPage1->aData;
+  }else{
+    /* The b-tree does not have a reference to page 1 of the database file.
+    ** Obtain one from the pager layer.
+    */
     rc = sqlite3PagerGet(pBt->pPager, 1, &pDbPage);
     if( rc ){
       sqlite3BtreeLeave(p);
       return rc;
     }
     pP1 = (unsigned char *)sqlite3PagerGetData(pDbPage);
-  }else{
-    pP1 = (unsigned char *)pBt->pPage1->aData;
   }
   *pMeta = get4byte(&pP1[36 + idx*4]);
 
+  /* If the b-tree is not holding a reference to page 1, then one was 
+  ** requested from the pager layer in the above block. Release it now.
+  */
   if( !pBt->pPage1 ){
     sqlite3PagerUnref(pDbPage);
   }
