@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.30 2008/09/18 17:34:44 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.31 2008/09/21 15:14:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -406,7 +406,7 @@ void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
 ** and use an element from it first if available.  If nothing is available
 ** in the page cache memory pool, go to the general purpose memory allocator.
 */
-void *pcacheMalloc(int sz, PCache *pCache){
+static void *pcacheMalloc(int sz, PCache *pCache){
   assert( sqlite3_mutex_held(pcache_g.mutex) );
   if( sz<=pcache_g.szSlot && pcache_g.pFree ){
     PgFreeslot *p = pcache_g.pFree;
@@ -445,7 +445,7 @@ void *sqlite3PageMalloc(int sz){
 /*
 ** Release a pager memory allocation
 */
-void pcacheFree(void *p){
+static void pcacheFree(void *p){
   assert( sqlite3_mutex_held(pcache_g.mutex) );
   if( p==0 ) return;
   if( p>=pcache_g.pStart && p<pcache_g.pEnd ){
@@ -817,7 +817,7 @@ void sqlite3PcacheMakeDirty(PgHdr *p){
   p->flags |= PGHDR_DIRTY;
 }
 
-void pcacheMakeClean(PgHdr *p){
+static void pcacheMakeClean(PgHdr *p){
   PCache *pCache = p->pCache;
   assert( p->apSave[0]==0 && p->apSave[1]==0 );
   assert( p->flags & PGHDR_DIRTY );
@@ -891,7 +891,7 @@ void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
 /*
 ** Remove all content from a page cache
 */
-void pcacheClear(PCache *pCache){
+static void pcacheClear(PCache *pCache){
   PgHdr *p, *pNext;
   assert( sqlite3_mutex_held(pcache_g.mutex) );
   for(p=pCache->pClean; p; p=pNext){

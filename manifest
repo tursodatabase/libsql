@@ -1,5 +1,5 @@
-C Speed\sup\sreleaseMemArray()\sa\sbit\sby\shandling\sthe\smost\scommon\stypes\sof\smemory\scells\sinline.\s(CVS\s5726)
-D 2008-09-19T18:32:27
+C Give\sfile\sscope\sto\snon-API\sroutines\sin\spcache.\s\sTicket\s#3392.\s(CVS\s5727)
+D 2008-09-21T15:14:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
 F src/pager.c 131746ea47383daf89fce08e0cb09b84cffa39eb
 F src/pager.h 1ef5a3f8e0b4c8b30f19c8e01d4fca2db9bb5797
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c e025e5380d75ffc25ef069fee8d128b595513ece
+F src/pcache.c e2a4dd0ae4118c95499b97806ea26ece8d12127a
 F src/pcache.h 0b6871e820159629915e8688b5c67a81a203773f
 F src/pragma.c e633b6b7dabc110e2abfed4e35ba34a4039cb65c
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0c8b74e668b7462c5439c04993d1d7cd74210075
-R 0c4f9fcda4509cdf163057aa76c78a60
-U danielk1977
-Z e05882893abbd0418dd9ff166dc58eca
+P ce07508550da858beb0bc0763c65e6d556bb0843
+R eb677157932c5d2c4609f1e846031add
+U drh
+Z c75262320174dd220d3d87cbeb32ad45
