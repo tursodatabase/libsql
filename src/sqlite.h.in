@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.398 2008/09/10 13:09:24 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.399 2008/09/22 17:54:46 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -52,29 +52,20 @@ extern "C" {
 #endif
 
 /*
-** Add the ability to mark interfaces as deprecated.
+** These no-op macros are used in front of interfaces to mark those
+** interfaces as either deprecated or experimental.  New applications
+** should not use deprecated intrfaces - they are support for backwards
+** compatibility only.  Application writers should be aware that
+** experimental interfaces are subject to change in point releases.
+**
+** These macros used to resolve to various kinds of compiler magic that
+** would generate warning messages when they were used.  But that
+** compiler magic ended up generating such a flurry of bug reports
+** that we have taken it all out and gone back to using simple
+** noop macros.
 */
-#if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-  /* GCC added the deprecated attribute in version 3.1 */
-  #define SQLITE_DEPRECATED __attribute__ ((deprecated))
-#elif defined(_MSC_VER) && (_MSC_VER>1200) 
-  #define SQLITE_DEPRECATED __declspec(deprecated)
-#else
-  #define SQLITE_DEPRECATED
-#endif
-
-/*
-** Add the ability to mark interfaces as experimental.
-*/
-#if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3))
-  /* I can confirm that it does not work on version 4.1.0... */
-  /* First appears in GCC docs for version 4.3.0 */
-  #define SQLITE_EXPERIMENTAL __attribute__ ((warning ("is experimental")))
-#elif defined(_MSC_VER) && (_MSC_VER>1200) 
-  #define SQLITE_EXPERIMENTAL __declspec(deprecated("was declared experimental"))
-#else
-  #define SQLITE_EXPERIMENTAL
-#endif
+#define SQLITE_DEPRECATED
+#define SQLITE_EXPERIMENTAL
 
 /*
 ** Ensure these symbols were not defined by some previous header file.
