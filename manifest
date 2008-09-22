@@ -1,5 +1,5 @@
-C Version\s3.6.3\s(CVS\s5729)
-D 2008-09-22T10:44:32
+C Add\sinstrumentation\sto\sos_unix.c\sto\stest\sthat\sa\sreturn\svalue\sof\sSQLITE_FULL\sfrom\san\sxSync()\scallback\sis\shandled\scorrectly.\s(CVS\s5730)
+D 2008-09-22T11:46:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/os.c 543976efc0b177b40779d5fc00f709d6888d6903
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
-F src/os_unix.c 8f4def6a92681735908fa1b87b5cc0291ebafde6
+F src/os_unix.c badd226d71460f0be57f68843ef66a258b0a376c
 F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
 F src/pager.c 131746ea47383daf89fce08e0cb09b84cffa39eb
 F src/pager.h 1ef5a3f8e0b4c8b30f19c8e01d4fca2db9bb5797
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 915679431a70c593a83cf5e8b1dcce1555e9518e
-R 04d214daa28a8779c3e21d3d214f0f79
-U drh
-Z f2e5c0e22e4c94edc3b9d5fe99da766d
+P 1634fd223d65a6ad461f79ca922b5ef967ae763d
+R 698b4c94e662dc747c35b026461fede7
+U danielk1977
+Z 12625cc77a189a02eb1bc64110fc5009
