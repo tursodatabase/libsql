@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.778 2008/09/02 11:05:02 danielk1977 Exp $
+** $Id: vdbe.c,v 1.779 2008/09/22 06:13:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -108,12 +108,6 @@ static void updateMaxBlobsize(Mem *p){
 #else
 # define UPDATE_MAX_BLOBSIZE(P)
 #endif
-
-/*
-** Release the memory associated with a register.  This
-** leaves the Mem.flags field in an inconsistent state.
-*/
-#define Release(P) if((P)->flags&MEM_Dyn){ sqlite3VdbeMemRelease(P); }
 
 /*
 ** Convert the given register into a string if it isn't one
@@ -2144,7 +2138,8 @@ case OP_Column: {
     ** of the record (when all fields present), then we must be dealing 
     ** with a corrupt database.
     */
-    if( zIdx>zEndHdr || offset>payloadSize || (zIdx==zEndHdr && offset!=payloadSize) ){
+    if( zIdx>zEndHdr || offset>payloadSize 
+     || (zIdx==zEndHdr && offset!=payloadSize) ){
       rc = SQLITE_CORRUPT_BKPT;
       goto op_column_out;
     }

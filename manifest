@@ -1,5 +1,5 @@
-C Give\sfile\sscope\sto\snon-API\sroutines\sin\spcache.\s\sTicket\s#3392.\s(CVS\s5727)
-D 2008-09-21T15:14:04
+C Remove\sunused\smacro\sRelease()\sfrom\svdbe.c.\s(CVS\s5728)
+D 2008-09-22T06:13:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -189,7 +189,7 @@ F src/update.c 206fffc877379affe3a9b42c78e478ea0874c9fe
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
-F src/vdbe.c ebc6f6bc8663ca00b6c7ed41bc464023dd6e0483
+F src/vdbe.c c9499f1824049cfef00a6146ef832b742f477920
 F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
 F src/vdbeInt.h b48c74d86a9fb62b707a3186ccca76bb32f1c6be
 F src/vdbeapi.c c0f87aabb2bcf8c760ff9cb289119f7f6ba1797a
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ce07508550da858beb0bc0763c65e6d556bb0843
-R eb677157932c5d2c4609f1e846031add
-U drh
-Z c75262320174dd220d3d87cbeb32ad45
+P 6521f98ac3a5cd2d959a9672cd07b1d25b82d559
+R 04d214daa28a8779c3e21d3d214f0f79
+U danielk1977
+Z 0ee440d2e4df9fbfbeda7db83b2687e0
