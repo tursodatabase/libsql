@@ -1,5 +1,5 @@
-C Remove\sunused\smacro\sRelease()\sfrom\svdbe.c.\s(CVS\s5728)
-D 2008-09-22T06:13:32
+C Version\s3.6.3\s(CVS\s5729)
+D 2008-09-22T10:44:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6521f98ac3a5cd2d959a9672cd07b1d25b82d559
+P 915679431a70c593a83cf5e8b1dcce1555e9518e
 R 04d214daa28a8779c3e21d3d214f0f79
-U danielk1977
-Z 0ee440d2e4df9fbfbeda7db83b2687e0
+U drh
+Z f2e5c0e22e4c94edc3b9d5fe99da766d
