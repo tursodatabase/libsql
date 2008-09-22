@@ -1,5 +1,5 @@
-C Add\sinstrumentation\sto\sos_unix.c\sto\stest\sthat\sa\sreturn\svalue\sof\sSQLITE_FULL\sfrom\san\sxSync()\scallback\sis\shandled\scorrectly.\s(CVS\s5730)
-D 2008-09-22T11:46:33
+C Fix\sa\smemory\sleak\sthat\scan\sfollow\sa\smalloc\sfailure\sin\ssqlite3_initialize.\s(CVS\s5731)
+D 2008-09-22T17:22:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -118,7 +118,7 @@ F src/insert.c 110cca7845ed5a66c08fdd413b02e706ae34455f
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 6581a5bbc4d74fcd46dbbcfd695a6a5417f778a2
-F src/main.c 8704f23153fdcf3b748d8e7ca7e4ec7d7cd319be
+F src/main.c 19953a54797208b5350d5dfe3f220734cca28af0
 F src/malloc.c 6c3bcae8ee8885f1705f36306062f82a64d96118
 F src/mem1.c 5a529ff121c55ab067be14de00f86f6dcc4f4fb9
 F src/mem2.c f87e681d0d1ed8436870d089332ed0d27d885b5c
@@ -405,7 +405,7 @@ F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/lock5.test f4eeb0400cf65c37f733cb3c74401136f8c46acd
 F test/lookaside.test 8866ea41301d74993423c99e523322fca09c259e
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
-F test/malloc.test cdc0bb8675b972f56bffdb48e7d52a18500ff66f
+F test/malloc.test c5a70f6b9c1def3d49b108ebb487a5d522933cfd
 F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test c8d0f7673337e8a29afa558735ae937a0d629751
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1634fd223d65a6ad461f79ca922b5ef967ae763d
-R 698b4c94e662dc747c35b026461fede7
+P 7bd2da93c6cce52edbbe53fe26a82ad159dd6b6b
+R 1d180ffa7242175bc8c7caff350d401f
 U danielk1977
-Z 12625cc77a189a02eb1bc64110fc5009
+Z 502f4e6fe483d957c00be49b346a4200

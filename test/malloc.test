@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.65 2008/09/05 05:02:47 danielk1977 Exp $
+# $Id: malloc.test,v 1.66 2008/09/22 17:22:20 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -38,6 +38,7 @@ puts stderr "This is a test.  Ignore the error that follows:"
 sqlite3_memdebug_dump $testdir
 puts "Memory dump to file memdump.txt..."
 sqlite3_memdebug_dump memdump.txt
+
 
 ifcapable bloblit&&subquery {
   do_malloc_test 1 -tclprep {
@@ -634,6 +635,19 @@ do_malloc_test 26 -sqlprep {
   db close
   sqlite3 db test.db
   db eval { INSERT INTO t1 VALUES(1, randomblob(210)) }
+}
+
+# Test that no memory is leaked following a malloc() failure in
+# sqlite3_initialize().
+#
+do_malloc_test 27 -tclprep {
+  db close
+  sqlite3_shutdown
+} -tclbody {
+  set rc [sqlite3_initialize]
+  if {$rc == "SQLITE_NOMEM"} {
+    error "out of memory"
+  }
 }
 
 # Ensure that no file descriptors were leaked.

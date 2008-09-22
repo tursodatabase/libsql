@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.500 2008/09/08 08:08:09 danielk1977 Exp $
+** $Id: main.c,v 1.501 2008/09/22 17:22:20 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -135,6 +135,8 @@ int sqlite3_initialize(void){
         rc = SQLITE_NOMEM;
       }
     }
+  }
+  if( rc==SQLITE_OK ){
     sqlite3GlobalConfig.nRefInitMutex++;
   }
   sqlite3_mutex_leave(pMaster);
