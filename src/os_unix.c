@@ -12,22 +12,31 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.202 2008/09/22 11:46:33 danielk1977 Exp $
+** $Id: os_unix.c,v 1.203 2008/09/23 10:23:26 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
 
 /*
-** If SQLITE_ENABLE_LOCKING_STYLE is defined, then several different 
-** locking implementations are provided:
+** If SQLITE_ENABLE_LOCKING_STYLE is defined and is non-zero, then several
+** alternative locking implementations are provided:
 **
 **   * POSIX locking (the default),
 **   * No locking,
 **   * Dot-file locking,
 **   * flock() locking,
 **   * AFP locking (OSX only).
+**
+** SQLITE_ENABLE_LOCKING_STYLE only works on a Mac. It is turned on by
+** default on a Mac and disabled on all other posix platforms.
 */
-/* #define SQLITE_ENABLE_LOCKING_STYLE 0 */
+#if !defined(SQLITE_ENABLE_LOCKING_STYLE)
+#  if defined(__DARWIN__)
+#    define SQLITE_ENABLE_LOCKING_STYLE 1
+#  else
+#    define SQLITE_ENABLE_LOCKING_STYLE 0
+#  endif
+#endif
 
 /*
 ** These #defines should enable >2GB file support on Posix if the
@@ -61,7 +70,7 @@
 #include <sys/time.h>
 #include <errno.h>
 
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
+#if SQLITE_ENABLE_LOCKING_STYLE
 #include <sys/ioctl.h>
 #include <sys/param.h>
 #include <sys/mount.h>
@@ -104,7 +113,7 @@ struct unixFile {
 #endif
   struct openCnt *pOpen;    /* Info about all open fd's on this inode */
   struct lockInfo *pLock;   /* Info about locks on this inode */
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
+#if SQLITE_ENABLE_LOCKING_STYLE
   void *lockingContext;     /* Locking style specific state */
 #endif
   int h;                    /* The file descriptor */
@@ -573,7 +582,7 @@ static void releaseOpenCnt(struct openCnt *pOpen){
   }
 }
 
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
+#if SQLITE_ENABLE_LOCKING_STYLE
 /*
 ** Tests a byte-range locking query to see if byte range locks are 
 ** supported, if not we fall back to dotlockLockingStyle.
@@ -615,7 +624,7 @@ static int detectLockingStyle(
   const char *filePath, 
   int fd
 ){
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
+#if SQLITE_ENABLE_LOCKING_STYLE
   struct Mapping {
     const char *zFilesystem;
     int eLockingStyle;
@@ -1662,7 +1671,7 @@ static int unixClose(sqlite3_file *id){
 }
 
 
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
+#if SQLITE_ENABLE_LOCKING_STYLE
 #pragma mark AFP Support
 
 /*
@@ -2352,7 +2361,7 @@ static int fillInUnixFile(
   static sqlite3_io_methods aIoMethod[] = {
     IOMETHODS(unixClose, unixLock, unixUnlock, unixCheckReservedLock) 
    ,IOMETHODS(nolockClose, nolockLock, nolockUnlock, nolockCheckReservedLock)
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
+#if SQLITE_ENABLE_LOCKING_STYLE
    ,IOMETHODS(dotlockClose, dotlockLock, dotlockUnlock,dotlockCheckReservedLock)
    ,IOMETHODS(flockClose, flockLock, flockUnlock, flockCheckReservedLock)
    ,IOMETHODS(afpClose, afpLock, afpUnlock, afpCheckReservedLock)
@@ -2390,7 +2399,7 @@ static int fillInUnixFile(
       break;
     }
 
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
+#if SQLITE_ENABLE_LOCKING_STYLE
     case LOCKING_STYLE_AFP: {
       /* AFP locking uses the file path so it needs to be included in
       ** the afpLockingContext.
@@ -2951,7 +2960,7 @@ int sqlite3_os_init(void){
   }
 
   static sqlite3_vfs unixVfs = UNIXVFS("unix", 0);
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
+#if SQLITE_ENABLE_LOCKING_STYLE
   int i;
   static sqlite3_vfs aVfs[] = {
     UNIXVFS("unix-posix",   LOCKING_STYLE_POSIX), 
