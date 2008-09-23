@@ -1,5 +1,5 @@
-C Get\srid\sof\sall\sof\sthe\scompiler\smagic\sassociated\swith\sSQLITE_EXPERIMENTAL\nand\sSQLITE_DEPRECATED.\s\sIt\swas\scausing\smore\sproblems\sthan\sit\swas\ssolving.\nTicket\s#3395\set\sal.\s(CVS\s5732)
-D 2008-09-22T17:54:46
+C Fix\sfor\sticket\s#3382\swas\smistakenly\sremoved\sby\s(5712).\s\sAdd\san\sassert\sto\nprevent\sit\sfrom\sbeing\sremoved\sagain.\s(CVS\s5733)
+D 2008-09-23T09:36:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 11bbdf7def3746a762fbdb56c9d04648135ad6d8
 F src/resolve.c a6abf83125bce0c80ba04acc27c3565155ad305c
-F src/select.c 4d25fe8da35abb5b5317a0248bedc3c9570416e9
+F src/select.c f118f8db2ce91a4cf972e6ae88c8e7cc8543f513
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 2be75cc1f2a5515db910e8d0e2d5954b493fd1f3
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 118dc0ba082dd9abba5602dafc86bd56e756db86
-R c68ae4639d84d403402dd4e6c38c002d
+P bc040073c7c059e91fddece27f99fa359cc1405d
+R 69a8b52c7b477536fc1c4abb6b8b8a6a
 U drh
-Z c830ecc4b86de78a2dcceed42e67cb65
+Z ad11379c63a259b173a0751db90b52b4
