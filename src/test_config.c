@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.36 2008/09/10 10:57:28 danielk1977 Exp $
+** $Id: test_config.c,v 1.37 2008/09/23 10:16:05 drh Exp $
 */
 
 #include "sqliteLimit.h"
@@ -39,8 +39,6 @@
 ** procedures use this to determine when tests should be omitted.
 */
 static void set_options(Tcl_Interp *interp){
-  int rc = 0;
-
 #ifdef SQLITE_32BIT_ROWID
   Tcl_SetVar2(interp, "sqlite_options", "rowid32", "1", TCL_GLOBAL_ONLY);
 #else
