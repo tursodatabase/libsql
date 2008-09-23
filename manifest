@@ -1,5 +1,5 @@
-C Enable\sthe\sLOCKING_STYLE\sextensions\sby\sdefault\son\sa\sMac.\s\sLeave\sthem\ndisabled\son\sall\sother\sposix\splatforms.\s(CVS\s5737)
-D 2008-09-23T10:23:26
+C Always\stransform\serror\scode\sSQLITE_IOERR_NOMEM\sto\sSQLITE_NOMEM\sbefore\sreturning.\sThis\swas\salready\shappening\sin\smost\splaces.\s(CVS\s5738)
+D 2008-09-23T16:41:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 6581a5bbc4d74fcd46dbbcfd695a6a5417f778a2
 F src/main.c 19953a54797208b5350d5dfe3f220734cca28af0
-F src/malloc.c 6c3bcae8ee8885f1705f36306062f82a64d96118
+F src/malloc.c 31f4ca218f4b664dce45ef9c4f1fcd2929c67a42
 F src/mem1.c 5a529ff121c55ab067be14de00f86f6dcc4f4fb9
 F src/mem2.c f87e681d0d1ed8436870d089332ed0d27d885b5c
 F src/mem3.c 1594f117fde4cf11a6c16521f3f30af8d04bbe68
@@ -131,13 +131,13 @@ F src/mutex.h e52ffa1dfc6a6077e8b1823d2c2b7dfcbcf85594
 F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
 F src/mutex_unix.c 29049a61755cccddb2ee53904e6906bb7674223c
 F src/mutex_w32.c f0d21ff1f6981e5aedc56796adf3a347423ef736
-F src/os.c 543976efc0b177b40779d5fc00f709d6888d6903
+F src/os.c 74ac327e8f82f53c9461466f46f736ac5d05b97e
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c ee778087d7b73746598947a93d2e1de3f909c9c2
 F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
-F src/pager.c 131746ea47383daf89fce08e0cb09b84cffa39eb
+F src/pager.c 7a3ba14e27cf134e54f0f4f58d307de13a7ea28d
 F src/pager.h 1ef5a3f8e0b4c8b30f19c8e01d4fca2db9bb5797
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c e2a4dd0ae4118c95499b97806ea26ece8d12127a
@@ -405,7 +405,7 @@ F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/lock5.test f4eeb0400cf65c37f733cb3c74401136f8c46acd
 F test/lookaside.test 8866ea41301d74993423c99e523322fca09c259e
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
-F test/malloc.test c5a70f6b9c1def3d49b108ebb487a5d522933cfd
+F test/malloc.test 6ff6063f750d30741bc6d8c01b6ae5f94f5cf6f6
 F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test c8d0f7673337e8a29afa558735ae937a0d629751
@@ -423,7 +423,7 @@ F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
 F test/mallocG.test 4584d0d8ddb8009f16ca0c8bab1fa37f6358efa2
 F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test 6e24fe6444bd2999ccc81f984977b44c0d6e5591
-F test/malloc_common.tcl e082fe4791dad22b49d2ad3f7dcf1dcbee1a4cec
+F test/malloc_common.tcl 984baeb6c6b185e798827d1187d426acc2bc4962
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 309ba380d985d77419a6e185373493e043823258
-R 2c9572d754434b5bfdf3e25c7b3dbb14
-U drh
-Z 1990ad5dc1d65a186d212ae883760b71
+P bae1d5b16948705b7dec7b139e3586b4b510cbfa
+R db54292f8698b50bed3c35887f235c9d
+U danielk1977
+Z a91424ad5a1c84801c087c9549103e38

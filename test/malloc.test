@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.66 2008/09/22 17:22:20 danielk1977 Exp $
+# $Id: malloc.test,v 1.67 2008/09/23 16:41:30 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -38,7 +38,6 @@ puts stderr "This is a test.  Ignore the error that follows:"
 sqlite3_memdebug_dump $testdir
 puts "Memory dump to file memdump.txt..."
 sqlite3_memdebug_dump memdump.txt
-
 
 ifcapable bloblit&&subquery {
   do_malloc_test 1 -tclprep {
@@ -346,9 +345,14 @@ if {$tcl_platform(platform)!="windows"} {
   } -tclbody {
     sqlite3 db test.db
     sqlite3_extended_result_codes db 1
-    db eval {
-      SELECT * FROM t1;
-    }  
+
+    # If an out-of-memory occurs within a call to a VFS layer function during
+    # hot-journal rollback, sqlite will report SQLITE_CORRUPT. See commit
+    # [5668] for details.
+    set rc [catch {db eval { SELECT * FROM t1 }} msg]
+    if {$msg eq "database disk image is malformed"} { set msg "out of memory" }
+    if {$rc} { error $msg }
+    set msg
   }
 }
 
@@ -568,8 +572,14 @@ ifcapable {pager_pragmas} {
     set ::sqlite_io_error_pending 10
     catch {db eval {ROLLBACK}} msg
 
-  } -sqlbody {
-    SELECT * FROM abc LIMIT 10;
+  } -tclbody {
+    # If an out-of-memory occurs within a call to a VFS layer function during
+    # hot-journal rollback, sqlite will report SQLITE_CORRUPT. See commit
+    # [5668] for details.
+    set rc [catch {db eval { SELECT * FROM abc LIMIT 10 }} msg]
+    if {$msg eq "database disk image is malformed"} { set msg "out of memory" }
+    if {$rc} { error $msg }
+    set msg
   } -cleanup {
     set e [db eval {PRAGMA integrity_check}]
     if {$e ne "ok"} {error $e}

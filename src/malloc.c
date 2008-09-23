@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.41 2008/09/04 04:32:49 shane Exp $
+** $Id: malloc.c,v 1.42 2008/09/23 16:41:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -752,7 +752,7 @@ int sqlite3ApiExit(sqlite3* db, int rc){
   ** is unsafe, as is the call to sqlite3Error().
   */
   assert( !db || sqlite3_mutex_held(db->mutex) );
-  if( db && db->mallocFailed ){
+  if( db && (db->mallocFailed || rc==SQLITE_IOERR_NOMEM) ){
     sqlite3Error(db, SQLITE_NOMEM, 0);
     db->mallocFailed = 0;
     rc = SQLITE_NOMEM;

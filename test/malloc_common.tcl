@@ -12,7 +12,7 @@
 # This file contains common code used by many different malloc tests
 # within the test suite.
 #
-# $Id: malloc_common.tcl,v 1.21 2008/08/04 20:13:27 drh Exp $
+# $Id: malloc_common.tcl,v 1.22 2008/09/23 16:41:30 danielk1977 Exp $
 
 # If we did not compile with malloc testing enabled, then do nothing.
 #
@@ -147,7 +147,6 @@ proc do_malloc_test {tn args} {
         } elseif {
           [info command db]=="" || 
           [db errorcode]==7 ||
-          [db errorcode]==[expr 10+(12<<8)] ||
           $msg=="out of memory"
         } {
           set v2 1

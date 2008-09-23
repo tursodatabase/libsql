@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.493 2008/09/19 09:14:44 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.494 2008/09/23 16:41:30 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1495,7 +1495,7 @@ static int pager_playback(Pager *pPager, int isHot){
           ** going to end up being corrupt.  It is corrupt to us, anyhow.
           ** Perhaps the next process to come along can fix it....
           */
-          rc = SQLITE_CORRUPT;
+          rc = SQLITE_CORRUPT_BKPT;
           goto end_playback;
         }
       }
