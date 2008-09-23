@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.501 2008/09/22 17:22:20 danielk1977 Exp $
+** $Id: main.c,v 1.502 2008/09/23 17:39:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1534,6 +1534,9 @@ static int openDatabase(
                            flags | SQLITE_OPEN_MAIN_DB,
                            &db->aDb[0].pBt);
   if( rc!=SQLITE_OK ){
+    if( rc==SQLITE_IOERR_NOMEM ){
+      rc = SQLITE_NOMEM;
+    }
     sqlite3Error(db, rc, 0);
     goto opendb_out;
   }

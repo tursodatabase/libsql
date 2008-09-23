@@ -1,5 +1,5 @@
-C Always\stransform\serror\scode\sSQLITE_IOERR_NOMEM\sto\sSQLITE_NOMEM\sbefore\sreturning.\sThis\swas\salready\shappening\sin\smost\splaces.\s(CVS\s5738)
-D 2008-09-23T16:41:30
+C Catch\sanother\scase\swhere\sSQLITE_IOERR\scould\sbe\sreturned\sinstead\sof\sSQLITE_NOMEM\sfollowing\san\sout-of-memory\serror.\s(CVS\s5739)
+D 2008-09-23T17:39:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -118,7 +118,7 @@ F src/insert.c 110cca7845ed5a66c08fdd413b02e706ae34455f
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 6581a5bbc4d74fcd46dbbcfd695a6a5417f778a2
-F src/main.c 19953a54797208b5350d5dfe3f220734cca28af0
+F src/main.c 9c9cad9d93f9e5023f4688bb77e10a5949632305
 F src/malloc.c 31f4ca218f4b664dce45ef9c4f1fcd2929c67a42
 F src/mem1.c 5a529ff121c55ab067be14de00f86f6dcc4f4fb9
 F src/mem2.c f87e681d0d1ed8436870d089332ed0d27d885b5c
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P bae1d5b16948705b7dec7b139e3586b4b510cbfa
-R db54292f8698b50bed3c35887f235c9d
+P 046ef07261d520c9399bd8cdfdfd5281956b7a27
+R dfc4e12505acec1a0c448720b1492aee
 U danielk1977
-Z a91424ad5a1c84801c087c9549103e38
+Z 5af64882fb58e650b1db6cb44449fe90
