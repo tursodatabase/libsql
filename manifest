@@ -1,7 +1,7 @@
-C Add\sno-op\sUnload\sentry\spoints\sto\sthe\sTCL\sinterface.\s\sTicket\s#3397.\s(CVS\s5734)
-D 2008-09-23T09:58:47
+C Fix\sthe\sTCL\sinstaller\sso\sthat\sit\somits\sthe\srelease\snumber.\s\sTicket\s#3396.\nUse\sstrcmp()\sinstead\sof\ssqlite3StrICmp()\sin\sthe\s"copy"\smethod\sof\sthe\sSQLite\nobject\sin\sthe\sTCL\sinterface.\s(CVS\s5735)
+D 2008-09-23T10:12:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
+F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 708c93c5dbb97b8a8e4c39eb77c53dae43d96910
@@ -155,7 +155,7 @@ F src/sqliteInt.h dbe2797806c48f4a90adfea69dfbea95edd722ae
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
-F src/tclsqlite.c 41b968e1bf03a945ca01e29b566e175ca43b5eaf
+F src/tclsqlite.c 6a7eeff5afd8f5f10fcb7fd7806e56c725dd2b07
 F src/test1.c c4de690aad182606e5914f6f3c8f43869fbdaaa8
 F src/test2.c eaa77124786649eedf47d3c5e94d8070c0da228f
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 01d26b3df7029f7fa09231c18a7b9f9a1a967916
-R d0992888a64e99a48ac01b51393a45d6
+P b31dd1e3f1d927b9236b7ebeb331268cbd253083
+R ace5a7213a4deb1d4a043bb449b44e95
 U drh
-Z aef936bb02da51cb904de9fbbd6e9f98
+Z 8f67a48d5db1fc547aee4817526d9807
