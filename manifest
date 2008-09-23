@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s#3382\swas\smistakenly\sremoved\sby\s(5712).\s\sAdd\san\sassert\sto\nprevent\sit\sfrom\sbeing\sremoved\sagain.\s(CVS\s5733)
-D 2008-09-23T09:36:10
+C Add\sno-op\sUnload\sentry\spoints\sto\sthe\sTCL\sinterface.\s\sTicket\s#3397.\s(CVS\s5734)
+D 2008-09-23T09:58:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d15a7ebfe5e057a72a49805ffb302dbb601c8329
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/sqliteInt.h dbe2797806c48f4a90adfea69dfbea95edd722ae
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
-F src/tclsqlite.c a6a346f42322ae1df980228306da6c3cea4dd680
+F src/tclsqlite.c 41b968e1bf03a945ca01e29b566e175ca43b5eaf
 F src/test1.c c4de690aad182606e5914f6f3c8f43869fbdaaa8
 F src/test2.c eaa77124786649eedf47d3c5e94d8070c0da228f
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P bc040073c7c059e91fddece27f99fa359cc1405d
-R 69a8b52c7b477536fc1c4abb6b8b8a6a
+P 01d26b3df7029f7fa09231c18a7b9f9a1a967916
+R d0992888a64e99a48ac01b51393a45d6
 U drh
-Z ad11379c63a259b173a0751db90b52b4
+Z aef936bb02da51cb904de9fbbd6e9f98

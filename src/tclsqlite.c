@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.224 2008/09/09 12:31:34 drh Exp $
+** $Id: tclsqlite.c,v 1.225 2008/09/23 09:58:47 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2488,12 +2488,21 @@ EXTERN int Sqlite3_Init(Tcl_Interp *interp){
 EXTERN int Tclsqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
 EXTERN int Sqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
 EXTERN int Tclsqlite3_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
+EXTERN int Sqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+EXTERN int Tclsqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+EXTERN int Sqlite3_SafeUnload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+EXTERN int Tclsqlite3_SafeUnload(Tcl_Interp *interp, int flags){ return TCL_OK;}
+
 
 #ifndef SQLITE_3_SUFFIX_ONLY
 EXTERN int Sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
 EXTERN int Tclsqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
 EXTERN int Sqlite_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
 EXTERN int Tclsqlite_SafeInit(Tcl_Interp *interp){ return TCL_OK; }
+EXTERN int Sqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+EXTERN int Tclsqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+EXTERN int Sqlite_SafeUnload(Tcl_Interp *interp, int flags){ return TCL_OK; }
+EXTERN int Tclsqlite_SafeUnload(Tcl_Interp *interp, int flags){ return TCL_OK;}
 #endif
 
 #ifdef TCLSH
