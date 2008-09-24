@@ -1,5 +1,5 @@
-C Add\sfile\sfts3_icu.c\sto\sthe\samalgamation.\sBecause\sof\sthe\sway\sheader\sfiles\sare\sincluded\sinto\ssqlite3.c,\sfts3_icu.c\shas\sto\sappear\safter\sall\sthe\sother\sfts3\sand\sicu\sextension\sfiles.\sTicket\s#3398.\s(CVS\s5741)
-D 2008-09-24T09:58:01
+C On\swindows,\savoid\srunning\sthose\stests\sin\sexclusive.test\sthat\srequire\sthe\sjournal\sfile\sto\sbe\sexternally\saccessed\swhile\sSQLite\sis\sholding\sit\sopen.\sThis\sdoesn't\swork\son\swindows.\s(CVS\s5742)
+D 2008-09-24T14:03:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -287,7 +287,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
 F test/eval.test 020a21a236667bd4c56205d999c9992f1d944cac
-F test/exclusive.test 5390ddf1f90a6d055111c0ebe6311045dd3035e1
+F test/exclusive.test 8d32ccf8eaf0260977dc8406bd70080ca2d7e6f8
 F test/exclusive2.test 7d2b1c0370f1e1dac4a728bd653f2dea5100fcf6
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test 135ed46c049916688171e618c5c14312811618d4
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0fb98c35353d8c0a8d669bbe45fe84e3a5060621
-R 859f2905b67a8bdd67aa2bb089a495b4
+P 0acca5842f83943228d4225b60dc7e8a42bae577
+R 9eb08ed19a8499580c1afb4ad41aa2b7
 U danielk1977
-Z 71842990e6a257d104859b264ad9981c
+Z 7daec82c5a8b96a531bdb9c3bccd5b3b

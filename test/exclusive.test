@@ -12,7 +12,7 @@
 # of these tests is exclusive access mode (i.e. the thing activated by 
 # "PRAGMA locking_mode = EXCLUSIVE").
 #
-# $Id: exclusive.test,v 1.8 2008/04/17 14:16:42 drh Exp $
+# $Id: exclusive.test,v 1.9 2008/09/24 14:03:43 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -257,58 +257,64 @@ db2 close
 # truncates instead of deletes the journal file when committing 
 # a transaction.
 #
-proc filestate {fname} {
-  set exists 0
-  set content 0
-  if {[file exists $fname]} {
-    set exists 1
-    set hdr [hexio_read $fname 0 28]
-    set content \
-      [expr {$hdr!="00000000000000000000000000000000000000000000000000000000"}]
+# These tests are not run on windows because the windows backend
+# opens the journal file for exclusive access, preventing its contents 
+# from being inspected externally.
+#
+if {$tcl_platform(platform) != "windows"} {
+  proc filestate {fname} {
+    set exists 0
+    set content 0
+    if {[file exists $fname]} {
+      set exists 1
+      set hdr [hexio_read $fname 0 28]
+      set content \
+       [expr {$hdr!="00000000000000000000000000000000000000000000000000000000"}]
+    }
+    list $exists $content
   }
-  list $exists $content
+  do_test exclusive-3.0 {
+    filestate test.db-journal
+  } {0 0}
+  do_test exclusive-3.1 {
+    execsql {
+      PRAGMA locking_mode = exclusive;
+      BEGIN;
+      DELETE FROM abc;
+    }
+    filestate test.db-journal
+  } {1 1}
+  do_test exclusive-3.2 {
+    execsql {
+      COMMIT;
+    }
+    filestate test.db-journal
+  } {1 0}
+  do_test exclusive-3.3 {
+    execsql {
+      INSERT INTO abc VALUES('A', 'B', 'C');
+      SELECT * FROM abc;
+    }
+  } {A B C}
+  do_test exclusive-3.4 {
+    execsql {
+      BEGIN;
+      UPDATE abc SET a = 1, b = 2, c = 3;
+      ROLLBACK;
+      SELECT * FROM abc;
+    }
+  } {A B C}
+  do_test exclusive-3.5 {
+    filestate test.db-journal
+  } {1 0}
+  do_test exclusive-3.6 {
+    execsql {
+      PRAGMA locking_mode = normal;
+      SELECT * FROM abc;
+    }
+    filestate test.db-journal
+  } {0 0}
 }
-do_test exclusive-3.0 {
-  filestate test.db-journal
-} {0 0}
-do_test exclusive-3.1 {
-  execsql {
-    PRAGMA locking_mode = exclusive;
-    BEGIN;
-    DELETE FROM abc;
-  }
-  filestate test.db-journal
-} {1 1}
-do_test exclusive-3.2 {
-  execsql {
-    COMMIT;
-  }
-  filestate test.db-journal
-} {1 0}
-do_test exclusive-3.3 {
-  execsql {
-    INSERT INTO abc VALUES('A', 'B', 'C');
-    SELECT * FROM abc;
-  }
-} {A B C}
-do_test exclusive-3.4 {
-  execsql {
-    BEGIN;
-    UPDATE abc SET a = 1, b = 2, c = 3;
-    ROLLBACK;
-    SELECT * FROM abc;
-  }
-} {A B C}
-do_test exclusive-3.5 {
-  filestate test.db-journal
-} {1 0}
-do_test exclusive-3.6 {
-  execsql {
-    PRAGMA locking_mode = normal;
-    SELECT * FROM abc;
-  }
-  filestate test.db-journal
-} {0 0}
 
 #----------------------------------------------------------------------
 # Tests exclusive-4.X - test that rollback works correctly when
