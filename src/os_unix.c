@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.203 2008/09/23 10:23:26 drh Exp $
+** $Id: os_unix.c,v 1.204 2008/09/24 09:12:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -389,10 +389,10 @@ static struct openCnt *openList = 0;
 /*
 ** Helper functions to obtain and relinquish the global mutex.
 */
-static void enterMutex(){
+static void enterMutex(void){
   sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
 }
-static void leaveMutex(){
+static void leaveMutex(void){
   sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
 }
 

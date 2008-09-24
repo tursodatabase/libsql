@@ -1,5 +1,5 @@
-C Catch\sanother\scase\swhere\sSQLITE_IOERR\scould\sbe\sreturned\sinstead\sof\sSQLITE_NOMEM\sfollowing\san\sout-of-memory\serror.\s(CVS\s5739)
-D 2008-09-23T17:39:26
+C Fix\ssome\sfunction\sdeclarations\s(change\s"int\sfoo()"\sto\s"int\sfoo(void)").\sTicket\s#3399.\s(CVS\s5740)
+D 2008-09-24T09:12:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,12 +135,12 @@ F src/os.c 74ac327e8f82f53c9461466f46f736ac5d05b97e
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
-F src/os_unix.c ee778087d7b73746598947a93d2e1de3f909c9c2
+F src/os_unix.c f33b69d8a85372b270fe37ee664a4c2140a5217d
 F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
 F src/pager.c 7a3ba14e27cf134e54f0f4f58d307de13a7ea28d
 F src/pager.h 1ef5a3f8e0b4c8b30f19c8e01d4fca2db9bb5797
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c e2a4dd0ae4118c95499b97806ea26ece8d12127a
+F src/pcache.c 52108517c38bcf023f3977085a66aacb520a5385
 F src/pcache.h 0b6871e820159629915e8688b5c67a81a203773f
 F src/pragma.c e633b6b7dabc110e2abfed4e35ba34a4039cb65c
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
@@ -402,7 +402,7 @@ F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
-F test/lock5.test f4eeb0400cf65c37f733cb3c74401136f8c46acd
+F test/lock5.test 904c20aec51d5dbff0a3aec6a4d35c5ae0257449
 F test/lookaside.test 8866ea41301d74993423c99e523322fca09c259e
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
 F test/malloc.test 6ff6063f750d30741bc6d8c01b6ae5f94f5cf6f6
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 046ef07261d520c9399bd8cdfdfd5281956b7a27
-R dfc4e12505acec1a0c448720b1492aee
+P 18d030da0c1755aab458e5aa0d3ad0a714706d67
+R 11535e9b9e86d8fb3a874ab506c449b0
 U danielk1977
-Z 5af64882fb58e650b1db6cb44449fe90
+Z ee91073a9a545206f9656a2661645181

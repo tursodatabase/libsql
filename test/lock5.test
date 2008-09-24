@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock5.test,v 1.2 2008/07/12 14:52:20 drh Exp $
+# $Id: lock5.test,v 1.3 2008/09/24 09:12:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -20,7 +20,6 @@ source $testdir/tester.tcl
 # SQLITE_ENABLE_LOCKING_STYLE macro.
 db close
 if {[catch {sqlite3 db test.db -vfs unix-none} msg]} {
-puts $msg
   finish_test
   return
 }

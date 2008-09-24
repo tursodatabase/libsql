@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.31 2008/09/21 15:14:04 drh Exp $
+** @(#) $Id: pcache.c,v 1.32 2008/09/24 09:12:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -523,7 +523,7 @@ static int pcachePageSize(PgHdr *p){
 ** A pointer to the recycled page is returned, or NULL if no page is
 ** eligible for recycling.
 */
-static PgHdr *pcacheRecyclePage(){
+static PgHdr *pcacheRecyclePage(void){
   PgHdr *p = 0;
   assert( sqlite3_mutex_held(pcache_g.mutex) );
 
@@ -951,7 +951,7 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
 ** If there are currently more than pcache.nMaxPage pages allocated, try
 ** to recycle pages to reduce the number allocated to pcache.nMaxPage.
 */
-static void pcacheEnforceMaxPage(){
+static void pcacheEnforceMaxPage(void){
   PgHdr *p;
   assert( sqlite3_mutex_held(pcache_g.mutex) );
   while( pcache_g.nCurrentPage>pcache_g.nMaxPage && (p = pcacheRecyclePage()) ){
