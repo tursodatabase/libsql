@@ -286,6 +286,7 @@ foreach file {
 
    rtree.c
    icu.c
+   fts3_icu.c
 } {
   copy_file tsrc/$file
 }

@@ -1,5 +1,5 @@
-C Fix\ssome\sfunction\sdeclarations\s(change\s"int\sfoo()"\sto\s"int\sfoo(void)").\sTicket\s#3399.\s(CVS\s5740)
-D 2008-09-24T09:12:47
+C Add\sfile\sfts3_icu.c\sto\sthe\samalgamation.\sBecause\sof\sthe\sway\sheader\sfiles\sare\sincluded\sinto\ssqlite3.c,\sfts3_icu.c\shas\sto\sappear\safter\sall\sthe\sother\sfts3\sand\sicu\sextension\sfiles.\sTicket\s#3398.\s(CVS\s5741)
+D 2008-09-24T09:58:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -622,7 +622,7 @@ F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c ef93810fc41fb3d3dbacf9a33a29be88ea99ffa9
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mksqlite3c.tcl 370dca60b92731699887f92e0b1e69f8732a79eb
+F tool/mksqlite3c.tcl 50f3ca0333694ef51ae4016c310af020c09006f4
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 4be55add3ec87f45fe041b7bfa8f16dab8105431
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 18d030da0c1755aab458e5aa0d3ad0a714706d67
-R 11535e9b9e86d8fb3a874ab506c449b0
+P 0fb98c35353d8c0a8d669bbe45fe84e3a5060621
+R 859f2905b67a8bdd67aa2bb089a495b4
 U danielk1977
-Z ee91073a9a545206f9656a2661645181
+Z 71842990e6a257d104859b264ad9981c
