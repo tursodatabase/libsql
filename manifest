@@ -1,5 +1,5 @@
-C Performance\senhancement:\savoid\scalling\sreparentChildPages()\sfrom\sbalance_nonroot().\s(CVS\s5743)
-D 2008-09-26T17:31:55
+C Make\ssure\sthe\squeueMutex\sis\sheld\sprior\sto\swriting\sthe\spQueueLast\sfield\nof\sthe\swrite\squeue\sin\sthe\sasync\sdemonstration\scode.\s\sTicket\s#3405.\s(CVS\s5744)
+D 2008-09-26T20:02:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -165,7 +165,7 @@ F src/test6.c 0a0304a69cfa4962a429d084c6d451ff9e4fb572
 F src/test7.c 475b1fa7e3275408b40a3cbdc9508cbdc41ffa02
 F src/test8.c 3637439424d0d21ff2dcf9b015c30fcc1e7bcb24
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
-F src/test_async.c de6661370d96f660e0f0d604582c193c6144b19c
+F src/test_async.c 45024094ed7cf780c5d5dccda645145f95cf78ef
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c 8d5b835054f1dd15992e09864a8bc04386bab701
 F src/test_config.c db72e95bafdd53c05ceb8735f833cc5dc1f48782
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5debf12fa46520946ac5da44c03448fffbc9940c
-R ad8baa95733fbb9a312a15654e608ce1
-U danielk1977
-Z 410e2e4a76b6dc0451fd1f6a24aebc75
+P 28fd0a50ca8529892f5b1ababd38d494889eed6d
+R 42f79e8d6bad8dc05f28b70884a1cf00
+U drh
+Z c1f39a8806852672a67f740f0e33cd9d

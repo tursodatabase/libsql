@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.47 2008/09/15 15:49:34 danielk1977 Exp $
+** $Id: test_async.c,v 1.48 2008/09/26 20:02:50 drh Exp $
 **
 ** This file contains an example implementation of an asynchronous IO 
 ** backend for SQLite.
@@ -571,11 +571,30 @@ static int async_cond_wait(pthread_cond_t *pCond, pthread_mutex_t *pMutex){
   return rc;
 }
 
+/*
+** Assert that the mutex is held by the current thread.
+*/
+static void assert_mutex_is_held(pthread_mutex_t *pMutex){
+  int iIdx;
+  pthread_mutex_t *aMutex = (pthread_mutex_t *)(&async);
+  pthread_t *aHolder = (pthread_t *)(&asyncdebug);
+
+  for(iIdx=0; iIdx<3; iIdx++){
+    if( pMutex==&aMutex[iIdx] ) break;
+  }
+  assert(iIdx<3);
+  assert( aHolder[iIdx]==pthread_self() );
+}
+
 /* Call our async_XX wrappers instead of selected pthread_XX functions */
 #define pthread_mutex_lock    async_mutex_lock
 #define pthread_mutex_unlock  async_mutex_unlock
 #define pthread_mutex_trylock async_mutex_trylock
 #define pthread_cond_wait     async_cond_wait
+
+#else    /* if defined(NDEBUG) */
+
+#define assert_mutex_is_held(X)    /* A no-op when not debugging */
 
 #endif   /* !defined(NDEBUG) */
 
@@ -1482,6 +1501,11 @@ static void *asyncWriterThread(void *pIsStarted){
         rc = unlinkAsyncFile(pData);
         pthread_mutex_unlock(&async.lockMutex);
 
+        if( !holdingMutex ){
+          pthread_mutex_lock(&async.queueMutex);
+          holdingMutex = 1;
+        }
+        assert_mutex_is_held(&async.queueMutex);
         async.pQueueFirst = p->pNext;
         sqlite3_free(pData);
         doNotFree = 1;
@@ -1534,6 +1558,7 @@ static void *asyncWriterThread(void *pIsStarted){
       async.pQueueLast = 0;
     }
     if( !doNotFree ){
+      assert_mutex_is_held(&async.queueMutex);
       async.pQueueFirst = p->pNext;
       sqlite3_free(p);
     }
