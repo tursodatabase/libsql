@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.516 2008/09/19 16:39:38 danielk1977 Exp $
+** $Id: btree.c,v 1.517 2008/09/26 17:31:55 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5586,14 +5586,46 @@ static int balance_nonroot(MemPage *pPage){
   }
 
   /*
-  ** Reparent children of all cells.
+  ** At this point we used to call reparentChildPages() to make sure that
+  ** the MemPage.pParent and MemPage.idxParent variables are correct for
+  ** all children of the pages modified by this balance operation. Even
+  ** if this is an auto-vacuum database there is no need to update the
+  ** pointer-map entries for child pages - that has already been done
+  ** by the block above.
+  **
+  ** However, this is no longer necessary because the MemPage.pParent and
+  ** MemPage.idxParent variables are only assumed to be valid when there
+  ** are one or more references to the page (when isInit==PAGE_ISINIT_FULL). 
+  ** At this point we can account for all references to the pages
+  ** manipulated by this function and deduce that it is not necessary to
+  ** update these two variables because:
+  **
+  **   a) it must have been called, directly or indirectly, from BtreeInsert()
+  **      or BtreeDelete(). Both these functions call saveAllCursors(), so
+  **      we can be sure that there exactly one write-cursor (and no
+  **      read-cursors) open on the b-tree being manipulated. No other
+  **      cursor may be holding references to any pages in the b-tree.
+  **
+  **   b) After this function returns, the one open write-cursor will be
+  **      moved to point at the root of the table using moveToRoot(). The
+  **      code that does this (see BtreeInsert() and BtreeDelete()) ensures
+  **      that the MemPage.pParent variables are not used to find the root
+  **      page of the b-tree, it is located using BtCursor.pgnoRoot.
+  **
+  **   c) the other page references are those held by this function, on
+  **      the pages in apNew[] and apOld[]. They are about to be released.
+  **
+  ** Therefore, no need to call reparentChildPages(). This can be a
+  ** significant performance boost.
   */
+#if 0
   for(i=0; i<nNew; i++){
     rc = reparentChildPages(apNew[i], 0);
     if( rc!=SQLITE_OK ) goto balance_cleanup;
   }
   rc = reparentChildPages(pParent, 0);
   if( rc!=SQLITE_OK ) goto balance_cleanup;
+#endif
 
   /*
   ** Balance the parent page.  Note that the current page (pPage) might
@@ -5973,6 +6005,13 @@ int sqlite3BtreeInsert(
   if( rc!=SQLITE_OK ) goto end_insert;
   rc = balance(pPage, 1);
   if( rc==SQLITE_OK ){
+    /* balance() may have messed up the chain of MemPage.pParent pointers.
+    ** To prevent moveToRoot() from trying to use them to locate the root
+    ** page of this table, release the reference to the current page before
+    ** calling it.
+    */
+    releasePage(pCur->pPage);
+    pCur->pPage = 0;
     moveToRoot(pCur);
   }
 end_insert:
@@ -6089,6 +6128,13 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     rc = balance(pPage, 0);
   }
   if( rc==SQLITE_OK ){
+    /* balance() may have messed up the chain of MemPage.pParent pointers.
+    ** To prevent moveToRoot() from trying to use them to locate the root
+    ** page of this table, release the reference to the current page before
+    ** calling it.
+    */
+    releasePage(pCur->pPage);
+    pCur->pPage = 0;
     moveToRoot(pCur);
   }
   return rc;
