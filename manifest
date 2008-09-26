@@ -1,5 +1,5 @@
-C Make\ssure\sthe\squeueMutex\sis\sheld\sprior\sto\swriting\sthe\spQueueLast\sfield\nof\sthe\swrite\squeue\sin\sthe\sasync\sdemonstration\scode.\s\sTicket\s#3405.\s(CVS\s5744)
-D 2008-09-26T20:02:50
+C Add\sthe\s"truncate"\sjournal\smode\swhich\scommits\stransactions\sby\struncating\sthe\nrollback\sjournal\sfile\sto\szero\slength\sand\snot\scalling\sfsync().\s(CVS\s5745)
+D 2008-09-26T21:08:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,12 +137,12 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c f33b69d8a85372b270fe37ee664a4c2140a5217d
 F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
-F src/pager.c 7a3ba14e27cf134e54f0f4f58d307de13a7ea28d
-F src/pager.h 1ef5a3f8e0b4c8b30f19c8e01d4fca2db9bb5797
+F src/pager.c 6426902ba983ce6872fcec20ba72796a79d6cead
+F src/pager.h 30e71f447ecbcfef707bb72cc813ce37ab5a2bc9
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
 F src/pcache.c 52108517c38bcf023f3977085a66aacb520a5385
 F src/pcache.h 0b6871e820159629915e8688b5c67a81a203773f
-F src/pragma.c e633b6b7dabc110e2abfed4e35ba34a4039cb65c
+F src/pragma.c 0b1c2d2a241dd79a7361bbeb8ff575a9e9d7cd71
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 11bbdf7def3746a762fbdb56c9d04648135ad6d8
@@ -390,7 +390,7 @@ F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
-F test/jrnlmode.test 1ab9729d6bbb6fb355cbb4bb41f1f0c271fc251a
+F test/jrnlmode.test 54469696db41e185a37aed3b3848998cca4e0c37
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
 F test/like.test fef924922828d5a2a5bff80b9bdd9ff57a1ca500
@@ -453,7 +453,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
 F test/pcache2.test 2b4fa1bee5cfc338d8c04eb6ed7eaf41f478bf7c
-F test/permutations.test 41832b86c152c140bcdf75a35a7c82badd8912b9
+F test/permutations.test 9f9ee1a8899cc26c7f850c92bfc7efc85bb71161
 F test/pragma.test c86359a8e0b28abdcc0ff4936f7966c446d0479a
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 28fd0a50ca8529892f5b1ababd38d494889eed6d
-R 42f79e8d6bad8dc05f28b70884a1cf00
+P 5622a1e285fc4d5720f7180a0eb551952f2df331
+R d784c96d098146eb0a9f2a9c5180ad72
 U drh
-Z c1f39a8806852672a67f740f0e33cd9d
+Z ac8d7bb3e53159a4cf0d1bb60149a10e

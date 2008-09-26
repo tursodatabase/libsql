@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.494 2008/09/23 16:41:30 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.495 2008/09/26 21:08:08 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -971,7 +971,11 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
     pPager->stmtOpen = 0;
   }
   if( pPager->journalOpen ){
-    if( pPager->exclusiveMode 
+    if( pPager->journalMode==PAGER_JOURNALMODE_TRUNCATE
+         && (rc = sqlite3OsTruncate(pPager->jfd, 0))==SQLITE_OK ){
+      pPager->journalOff = 0;
+      pPager->journalStarted = 0;
+    }else if( pPager->exclusiveMode 
      || pPager->journalMode==PAGER_JOURNALMODE_PERSIST
     ){
       rc = zeroJournalHdr(pPager, hasMaster);
@@ -979,6 +983,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
       pPager->journalOff = 0;
       pPager->journalStarted = 0;
     }else{
+      assert( pPager->journalMode==PAGER_JOURNALMODE_DELETE || rc );
       sqlite3OsClose(pPager->jfd);
       pPager->journalOpen = 0;
       if( rc==SQLITE_OK && !pPager->tempFile ){
@@ -4207,24 +4212,31 @@ int sqlite3PagerLockingMode(Pager *pPager, int eMode){
 }
 
 /*
-** Get/set the journal-mode for this pager. Parameter eMode must be one
-** of PAGER_JOURNALMODE_QUERY, PAGER_JOURNALMODE_DELETE or 
-** PAGER_JOURNALMODE_PERSIST. If the parameter is not _QUERY, then
-** the journal-mode is set to the value specified.
+** Get/set the journal-mode for this pager. Parameter eMode must be one of:
 **
-** The returned value is either PAGER_JOURNALMODE_DELETE or
-** PAGER_JOURNALMODE_PERSIST, indicating the current (possibly updated)
+**    PAGER_JOURNALMODE_QUERY
+**    PAGER_JOURNALMODE_DELETE
+**    PAGER_JOURNALMODE_TRUNCATE
+**    PAGER_JOURNALMODE_PERSIST
+**    PAGER_JOURNALMODE_OFF
+**
+** If the parameter is not _QUERY, then the journal-mode is set to the
+** value specified.
+**
+** The returned indicate the current (possibly updated)
 ** journal-mode.
 */
 int sqlite3PagerJournalMode(Pager *pPager, int eMode){
   assert( eMode==PAGER_JOURNALMODE_QUERY
             || eMode==PAGER_JOURNALMODE_DELETE
+            || eMode==PAGER_JOURNALMODE_TRUNCATE
             || eMode==PAGER_JOURNALMODE_PERSIST
             || eMode==PAGER_JOURNALMODE_OFF );
   assert( PAGER_JOURNALMODE_QUERY<0 );
-  assert( PAGER_JOURNALMODE_DELETE>=0 && PAGER_JOURNALMODE_PERSIST>=0 );
   if( eMode>=0 ){
     pPager->journalMode = eMode;
+  }else{
+    assert( eMode==PAGER_JOURNALMODE_QUERY );
   }
   return (int)pPager->journalMode;
 }
