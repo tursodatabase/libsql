@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.32 2008/09/29 11:49:48 danielk1977 Exp $
+** $Id: btreeInt.h,v 1.33 2008/09/29 15:53:26 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -271,7 +271,6 @@ typedef struct BtLock BtLock;
 */
 struct MemPage {
   u8 isInit;           /* True if previously initialized. MUST BE FIRST! */
-  u8 idxShift;         /* True if Cell indices have changed */
   u8 nOverflow;        /* Number of overflow cell bodies in aCell[] */
   u8 intKey;           /* True if intkey flag is set */
   u8 leaf;             /* True if leaf flag is set */

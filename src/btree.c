@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.518 2008/09/29 11:49:48 danielk1977 Exp $
+** $Id: btree.c,v 1.519 2008/09/29 15:53:26 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -944,7 +944,6 @@ int sqlite3BtreeInitPage(MemPage *pPage){
     assert( pBt->pageSize>=512 && pBt->pageSize<=32768 );
     pPage->maskPage = pBt->pageSize - 1;
     pPage->nOverflow = 0;
-    pPage->idxShift = 0;
     usableSize = pBt->usableSize;
     pPage->cellOffset = cellOffset = hdr + 12 - 4*pPage->leaf;
     top = get2byte(&data[hdr+5]);
@@ -1031,7 +1030,6 @@ static void zeroPage(MemPage *pPage, int flags){
   pPage->nOverflow = 0;
   assert( pBt->pageSize>=512 && pBt->pageSize<=32768 );
   pPage->maskPage = pBt->pageSize - 1;
-  pPage->idxShift = 0;
   pPage->nCell = 0;
   pPage->isInit = 1;
 }
@@ -3443,7 +3441,6 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   }
   rc = getAndInitPage(pBt, newPgno, &pNewPage);
   if( rc ) return rc;
-  pCur->apPage[i]->idxShift = 0;
   pCur->apPage[i+1] = pNewPage;
   pCur->aiIdx[i+1] = 0;
   pCur->iPage++;
@@ -3455,6 +3452,26 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   }
   return SQLITE_OK;
 }
+
+#ifndef NDEBUG
+/*
+** Page pParent is an internal (non-leaf) tree page. This function 
+** asserts that page number iChild is the left-child if the iIdx'th
+** cell in page pParent. Or, if iIdx is equal to the total number of
+** cells in pParent, that page number iChild is the right-child of
+** the page.
+*/
+static void assertParentIndex(MemPage *pParent, int iIdx, Pgno iChild){
+  assert( iIdx<=pParent->nCell );
+  if( iIdx==pParent->nCell ){
+    assert( get4byte(&pParent->aData[pParent->hdrOffset+8])==iChild );
+  }else{
+    assert( get4byte(findCell(pParent, iIdx))==iChild );
+  }
+}
+#else
+#  define assertParentIndex(x,y,z) 
+#endif
 
 /*
 ** Move the cursor up to the parent page.
@@ -3469,12 +3486,15 @@ void sqlite3BtreeMoveToParent(BtCursor *pCur){
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->iPage>0 );
   assert( pCur->apPage[pCur->iPage] );
-
+  assertParentIndex(
+    pCur->apPage[pCur->iPage-1], 
+    pCur->aiIdx[pCur->iPage-1], 
+    pCur->apPage[pCur->iPage]->pgno
+  );
   releasePage(pCur->apPage[pCur->iPage]);
   pCur->iPage--;
   pCur->info.nSize = 0;
   pCur->validNKey = 0;
-  assert( pCur->apPage[pCur->iPage]->idxShift==0 );
 }
 
 /*
@@ -4589,7 +4609,6 @@ static int reparentChildPages(MemPage *pPage, int updatePtrmap){
       if( rc!=SQLITE_OK ) return rc;
     }
     rc = reparentPage(pBt, iRight, pPage, i, updatePtrmap);
-    pPage->idxShift = 0;
   }
   return rc;
 }
@@ -4624,7 +4643,6 @@ static void dropCell(MemPage *pPage, int idx, int sz){
   pPage->nCell--;
   put2byte(&data[pPage->hdrOffset+3], pPage->nCell);
   pPage->nFree += 2;
-  pPage->idxShift = 1;
 }
 
 /*
@@ -4704,7 +4722,6 @@ static int insertCell(
     }
     put2byte(&data[ins], idx);
     put2byte(&data[hdr+3], pPage->nCell);
-    pPage->idxShift = 1;
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pPage->pBt->autoVacuum ){
       /* The cell may contain a pointer to an overflow page. If so, write
@@ -4832,12 +4849,6 @@ static int balance_quick(BtCursor *pCur){
     zeroPage(pNew, pPage->aData[0]);
     assemblePage(pNew, 1, &pCell, &szCell);
     pPage->nOverflow = 0;
-  
-    /* Set the parent of the newly allocated page to pParent. */
-#if 0
-    pNew->pParent = pParent;
-    sqlite3PagerRef(pParent->pDbPage);
-#endif
   
     /* pPage is currently the right-child of pParent. Change this
     ** so that the right-child is the new page allocated above and
@@ -5023,27 +5034,14 @@ static int balance_nonroot(BtCursor *pCur){
   ** to pPage.  The "idx" variable is the index of that cell.  If pPage
   ** is the rightmost child of pParent then set idx to pParent->nCell 
   */
-  if( pParent->idxShift ){
-    Pgno pgno;
-    pgno = pPage->pgno;
-    assert( pgno==sqlite3PagerPagenumber(pPage->pDbPage) );
-    for(idx=0; idx<pParent->nCell; idx++){
-      if( get4byte(findCell(pParent, idx))==pgno ){
-        break;
-      }
-    }
-    assert( idx<pParent->nCell
-             || get4byte(&pParent->aData[pParent->hdrOffset+8])==pgno );
-  }else{
-    idx = pCur->aiIdx[pCur->iPage-1];
-  }
+  idx = pCur->aiIdx[pCur->iPage-1];
+  assertParentIndex(pParent, idx, pPage->pgno);
 
   /*
   ** Initialize variables so that it will be safe to jump
   ** directly to balance_cleanup at any moment.
   */
   nOld = nNew = 0;
-  /* sqlite3PagerRef(pParent->pDbPage); */
 
   /*
   ** Find sibling pages to pPage and the cells in pParent that divide
@@ -5732,6 +5730,7 @@ static int balance_deeper(BtCursor *pCur){
   if( rc==SQLITE_OK ){
     pCur->iPage++;
     pCur->apPage[1] = pChild;
+    pCur->aiIdx[0] = 0;
     rc = balance_nonroot(pCur);
   }else{
     releasePage(pChild);

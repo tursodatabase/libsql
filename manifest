@@ -1,5 +1,5 @@
-C Do\snot\srun\svacuum.test\sas\spart\sof\sthe\s"exclusive"\spermutation\stest.\s(CVS\s5749)
-D 2008-09-29T14:27:41
+C Remove\sthe\sMemPage.idxShift\svariable.\sIt\sis\sno\slonger\srequired.\s(CVS\s5750)
+D 2008-09-29T15:53:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,9 +99,9 @@ F src/attach.c db3f4a60538733c1e4dcb9d0217a6e0d6ccd615b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c 8fc7c0bd577e0e8850d95b0f8d927c983e53deab
+F src/btree.c 002084e207070d17e29863a7453409fd8717dd73
 F src/btree.h 6371c5e599fab391a150c96afbc10062b276d107
-F src/btreeInt.h a9388a5e5998cec0b79c2024e6740d12d094ad17
+F src/btreeInt.h 3e93c0a6f363bbf68fdd975620f4d3671b6cf7bc
 F src/build.c 160c71acca8f643f436ed6c1ee2f684c88df4dfe
 F src/callback.c 7a40fd44da3eb89e7f6eff30aa6f940c45d73a97
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 292acaf7c4e68b532cc8d1763e02aa79d90ea20c
-R 2e374347a03a1d74809c97c540cb28f9
+P 2fb15ae9e9af716a5684a21826814bc4c332a596
+R 45649b03c1be1592a9f04aa95ab9d358
 U danielk1977
-Z c73cbb2539399e32cc6d96320e7fb756
+Z 44ecc5d9fa4059a6de64d456c7327e83
