@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.519 2008/09/29 15:53:26 danielk1977 Exp $
+** $Id: btree.c,v 1.520 2008/09/29 16:41:32 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2057,7 +2057,7 @@ static int setChildPtrmaps(MemPage *pPage){
     if( !pPage->leaf ){
       Pgno childPgno = get4byte(pCell);
       rc = ptrmapPut(pBt, childPgno, PTRMAP_BTREE, pgno);
-       if( rc!=SQLITE_OK ) goto set_child_ptrmaps_out;
+      if( rc!=SQLITE_OK ) goto set_child_ptrmaps_out;
     }
   }
 
@@ -4539,80 +4539,6 @@ static int fillInCell(
   return SQLITE_OK;
 }
 
-
-/*
-** Change the MemPage.pParent pointer on the page whose number is
-** given in the second argument so that MemPage.pParent holds the
-** pointer in the third argument.
-**
-** If the final argument, updatePtrmap, is non-zero and the database
-** is an auto-vacuum database, then the pointer-map entry for pgno
-** is updated.
-*/
-static int reparentPage(
-  BtShared *pBt,                /* B-Tree structure */
-  Pgno pgno,                    /* Page number of child being adopted */
-  MemPage *pNewParent,          /* New parent of pgno */
-  int idx,                      /* Index of child page pgno in pNewParent */
-  int updatePtrmap              /* If true, update pointer-map for pgno */
-){
-  DbPage *pDbPage;
-  if( ISAUTOVACUUM && updatePtrmap ){
-    return ptrmapPut(pBt, pgno, PTRMAP_BTREE, pNewParent->pgno);
-  }
-
-#ifndef NDEBUG
-  /* If the updatePtrmap flag was clear, assert that the entry in the
-  ** pointer-map is already correct.
-  */
-  if( ISAUTOVACUUM ){
-    pDbPage = sqlite3PagerLookup(pBt->pPager,PTRMAP_PAGENO(pBt,pgno));
-    if( pDbPage ){
-      u8 eType;
-      Pgno ii;
-      int rc = ptrmapGet(pBt, pgno, &eType, &ii);
-      assert( rc==SQLITE_OK && ii==pNewParent->pgno && eType==PTRMAP_BTREE );
-      sqlite3PagerUnref(pDbPage);
-    }
-  }
-#endif
-
-  return SQLITE_OK;
-}
-
-
-
-/*
-** Change the pParent pointer of all children of pPage to point back
-** to pPage.
-**
-** In other words, for every child of pPage, invoke reparentPage()
-** to make sure that each child knows that pPage is its parent.
-**
-** This routine gets called after you memcpy() one page into
-** another.
-**
-** If updatePtrmap is true, then the pointer-map entries for all child
-** pages of pPage are updated.
-*/
-static int reparentChildPages(MemPage *pPage, int updatePtrmap){
-  int rc = SQLITE_OK;
-  assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  if( !pPage->leaf ){
-    int i;
-    BtShared *pBt = pPage->pBt;
-    Pgno iRight = get4byte(&pPage->aData[pPage->hdrOffset+8]);
-
-    for(i=0; i<pPage->nCell; i++){
-      u8 *pCell = findCell(pPage, i);
-      rc = reparentPage(pBt, get4byte(pCell), pPage, i, updatePtrmap);
-      if( rc!=SQLITE_OK ) return rc;
-    }
-    rc = reparentPage(pBt, iRight, pPage, i, updatePtrmap);
-  }
-  return rc;
-}
-
 /*
 ** Remove the i-th cell from pPage.  This routine effects pPage only.
 ** The cell content is not freed or deallocated.  It is assumed that
@@ -5494,48 +5420,6 @@ static int balance_nonroot(BtCursor *pCur){
   }
 
   /*
-  ** At this point we used to call reparentChildPages() to make sure that
-  ** the MemPage.pParent and MemPage.idxParent variables are correct for
-  ** all children of the pages modified by this balance operation. Even
-  ** if this is an auto-vacuum database there is no need to update the
-  ** pointer-map entries for child pages - that has already been done
-  ** by the block above.
-  **
-  ** However, this is no longer necessary because the MemPage.pParent and
-  ** MemPage.idxParent variables are only assumed to be valid when there
-  ** are one or more references to the page (when isInit==PAGE_ISINIT_FULL). 
-  ** At this point we can account for all references to the pages
-  ** manipulated by this function and deduce that it is not necessary to
-  ** update these two variables because:
-  **
-  **   a) it must have been called, directly or indirectly, from BtreeInsert()
-  **      or BtreeDelete(). Both these functions call saveAllCursors(), so
-  **      we can be sure that there exactly one write-cursor (and no
-  **      read-cursors) open on the b-tree being manipulated. No other
-  **      cursor may be holding references to any pages in the b-tree.
-  **
-  **   b) After this function returns, the one open write-cursor will be
-  **      moved to point at the root of the table using moveToRoot(). The
-  **      code that does this (see BtreeInsert() and BtreeDelete()) ensures
-  **      that the MemPage.pParent variables are not used to find the root
-  **      page of the b-tree, it is located using BtCursor.pgnoRoot.
-  **
-  **   c) the other page references are those held by this function, on
-  **      the pages in apNew[] and apOld[]. They are about to be released.
-  **
-  ** Therefore, no need to call reparentChildPages(). This can be a
-  ** significant performance boost.
-  */
-#if 0
-  for(i=0; i<nNew; i++){
-    rc = reparentChildPages(apNew[i], 0);
-    if( rc!=SQLITE_OK ) goto balance_cleanup;
-  }
-  rc = reparentChildPages(pParent, 0);
-  if( rc!=SQLITE_OK ) goto balance_cleanup;
-#endif
-
-  /*
   ** Balance the parent page.  Note that the current page (pPage) might
   ** have been added to the freelist so it might no longer be initialized.
   ** But the parent page will always be initialized.
@@ -5646,16 +5530,9 @@ static int balance_shallower(BtCursor *pCur){
       TRACE(("BALANCE: transfer child %d into root %d\n",
               pChild->pgno, pPage->pgno));
     }
-    rc = reparentChildPages(pPage, 1);
     assert( pPage->nOverflow==0 );
     if( ISAUTOVACUUM ){
-      int i;
-      for(i=0; i<pPage->nCell; i++){ 
-        rc = ptrmapPutOvfl(pPage, i);
-        if( rc!=SQLITE_OK ){
-          goto end_shallow_balance;
-        }
-      }
+      rc = setChildPtrmaps(pPage);
     }
     releasePage(pChild);
   }
@@ -5716,13 +5593,9 @@ static int balance_deeper(BtCursor *pCur){
     put4byte(&pPage->aData[pPage->hdrOffset+8], pgnoChild);
     TRACE(("BALANCE: copy root %d into %d\n", pPage->pgno, pChild->pgno));
     if( ISAUTOVACUUM ){
-      int i;
       rc = ptrmapPut(pBt, pChild->pgno, PTRMAP_BTREE, pPage->pgno);
-      for(i=0; rc==SQLITE_OK && i<pChild->nCell; i++){
-        rc = ptrmapPutOvfl(pChild, i);
-      }
       if( rc==SQLITE_OK ){
-        rc = reparentChildPages(pChild, 1);
+        rc = setChildPtrmaps(pChild);
       }
     }
   }

@@ -1,5 +1,5 @@
-C Remove\sthe\sMemPage.idxShift\svariable.\sIt\sis\sno\slonger\srequired.\s(CVS\s5750)
-D 2008-09-29T15:53:26
+C Remove\sthe\sreparentPage()\sand\sreparentChildPages()\sfunctions\sfrom\sbtree.c.\sAll\scalls\sto\sthese\sfunctions\scan\snow\sbe\sreplaced\sby\sa\scall\sto\ssetChildPtrmaps().\s(CVS\s5751)
+D 2008-09-29T16:41:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,7 +99,7 @@ F src/attach.c db3f4a60538733c1e4dcb9d0217a6e0d6ccd615b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c 002084e207070d17e29863a7453409fd8717dd73
+F src/btree.c df02edb06f8fcb53d607a338d77434c4a3bffe7a
 F src/btree.h 6371c5e599fab391a150c96afbc10062b276d107
 F src/btreeInt.h 3e93c0a6f363bbf68fdd975620f4d3671b6cf7bc
 F src/build.c 160c71acca8f643f436ed6c1ee2f684c88df4dfe
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2fb15ae9e9af716a5684a21826814bc4c332a596
-R 45649b03c1be1592a9f04aa95ab9d358
+P 7354abd03be756b1d7d0a3d5b8958f5c0c985ff5
+R 0f06dc556542affcd1339888998b5de0
 U danielk1977
-Z 44ecc5d9fa4059a6de64d456c7327e83
+Z 09ed030904a23d22068a2c20cf1cad6c
