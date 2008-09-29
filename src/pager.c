@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.495 2008/09/26 21:08:08 drh Exp $
+** @(#) $Id: pager.c,v 1.496 2008/09/29 11:49:48 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1728,7 +1728,6 @@ int sqlite3PagerOpen(
   sqlite3_vfs *pVfs,       /* The virtual file system to use */
   Pager **ppPager,         /* Return the Pager structure here */
   const char *zFilename,   /* Name of the database file to open */
-  void (*xDesc)(DbPage*),  /* Page destructor function */
   int nExtra,              /* Extra bytes append to each in-memory page */
   int flags,               /* flags controlling this file */
   int vfsFlags             /* flags passed through to sqlite3_vfs.xOpen() */
@@ -1870,7 +1869,7 @@ int sqlite3PagerOpen(
     return ((rc==SQLITE_OK)?SQLITE_NOMEM:rc);
   }
   nExtra = FORCE_ALIGNMENT(nExtra);
-  sqlite3PcacheOpen(szPageDflt, nExtra, !memDb, xDesc, 
+  sqlite3PcacheOpen(szPageDflt, nExtra, !memDb,
                     !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
 
   PAGERTRACE3("OPEN %d %s\n", FILEHANDLEID(pPager->fd), pPager->zFilename);
@@ -3875,6 +3874,13 @@ int sqlite3PagerRefcount(Pager *pPager){
   return sqlite3PcacheRefCount(pPager->pPCache);
 }
 
+/*
+** Return the number of references to the specified page.
+*/
+int sqlite3PagerPageRefcount(DbPage *pPage){
+  return sqlite3PcachePageRefcount(pPage);
+}
+
 #ifdef SQLITE_TEST
 /*
 ** This routine is used for testing and analysis only.
@@ -4176,7 +4182,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
 ** Return a pointer to the data for the specified page.
 */
 void *sqlite3PagerGetData(DbPage *pPg){
-  assert( pPg->nRef>0 );
+  assert( pPg->nRef>0 || pPg->pPager->memDb );
   return pPg->pData;
 }
 

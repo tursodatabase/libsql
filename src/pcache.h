@@ -12,7 +12,7 @@
 ** This header file defines the interface that the sqlite page cache
 ** subsystem. 
 **
-** @(#) $Id: pcache.h,v 1.11 2008/09/18 17:34:44 danielk1977 Exp $
+** @(#) $Id: pcache.h,v 1.12 2008/09/29 11:49:48 danielk1977 Exp $
 */
 
 #ifndef _PCACHE_H_
@@ -79,7 +79,6 @@ void sqlite3PcacheOpen(
   int szPage,                    /* Size of every page */
   int szExtra,                   /* Extra space associated with each page */
   int bPurgeable,                /* True if pages are on backing store */
-  void (*xDestroy)(PgHdr *),     /* Called to destroy a page */
   int (*xStress)(void*, PgHdr*), /* Call to try to make pages clean */
   void *pStress,                 /* Argument to xStress */
   PCache *pToInit                /* Preallocated space for the PCache */
@@ -142,6 +141,8 @@ int sqlite3PcacheRefCount(PCache*);
 
 /* Increment the reference count of an existing page */
 void sqlite3PcacheRef(PgHdr*);
+
+int sqlite3PcachePageRefcount(PgHdr*);
 
 /* Return the total number of pages stored in the cache */
 int sqlite3PcachePagecount(PCache*);

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.32 2008/09/24 09:12:47 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.33 2008/09/29 11:49:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -43,7 +43,6 @@ struct PCache {
   int szPage;                         /* Size of every page in this cache */
   int szExtra;                        /* Size of extra space for each page */
   int bPurgeable;                     /* True if pages are on backing store */
-  void (*xDestroy)(PgHdr*);           /* Called when refcnt goes 1->0 */
   int (*xStress)(void*,PgHdr*);       /* Call to try make a page clean */
   void *pStress;                      /* Argument to xStress */
   /**********************************************************************
@@ -643,7 +642,6 @@ void sqlite3PcacheOpen(
   int szPage,                  /* Size of every page */
   int szExtra,                 /* Extra space associated with each page */
   int bPurgeable,              /* True if pages are on backing store */
-  void (*xDestroy)(PgHdr*),    /* Called to destroy a page */
   int (*xStress)(void*,PgHdr*),/* Call to try to make pages clean */
   void *pStress,               /* Argument to xStress */
   PCache *p                    /* Preallocated space for the PCache */
@@ -653,7 +651,6 @@ void sqlite3PcacheOpen(
   p->szPage = szPage;
   p->szExtra = szExtra;
   p->bPurgeable = bPurgeable;
-  p->xDestroy = xDestroy;
   p->xStress = xStress;
   p->pStress = pStress;
   p->nMax = 100;
@@ -752,9 +749,6 @@ void sqlite3PcacheRelease(PgHdr *p){
   p->nRef--;
   if( p->nRef==0 ){
     PCache *pCache = p->pCache;
-    if( p->pCache->xDestroy ){
-      p->pCache->xDestroy(p);
-    }
     pCache->nRef--;
     if( (p->flags&PGHDR_DIRTY)==0 ){
       pCache->nPinned--;
@@ -1161,6 +1155,10 @@ PgHdr *sqlite3PcacheDirtyList(PCache *pCache){
 */
 int sqlite3PcacheRefCount(PCache *pCache){
   return pCache->nRef;
+}
+
+int sqlite3PcachePageRefcount(PgHdr *p){
+  return p->nRef;
 }
 
 /* 

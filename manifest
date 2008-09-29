@@ -1,5 +1,5 @@
-C fix\s#3077:\suse\sfull\sversion\sin\spkg-config\sfiles\s(CVS\s5746)
-D 2008-09-29T00:11:22
+C Instead\sof\sstoring\sa\spointer\sto\sthe\sparent\spage\sin\sthe\sMemPage\sstructure,\shave\seach\sB-Tree\scursor\skeep\strack\sof\sthe\sancestry\sof\sthe\scurrent\spage.\s(CVS\s5747)
+D 2008-09-29T11:49:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,9 +99,9 @@ F src/attach.c db3f4a60538733c1e4dcb9d0217a6e0d6ccd615b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c 850d7ede7fe58f8bfad78131278ceff83817abf5
+F src/btree.c 8fc7c0bd577e0e8850d95b0f8d927c983e53deab
 F src/btree.h 6371c5e599fab391a150c96afbc10062b276d107
-F src/btreeInt.h e36f77e6621d671beb19ae581af1eba116cdfdc4
+F src/btreeInt.h a9388a5e5998cec0b79c2024e6740d12d094ad17
 F src/build.c 160c71acca8f643f436ed6c1ee2f684c88df4dfe
 F src/callback.c 7a40fd44da3eb89e7f6eff30aa6f940c45d73a97
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
@@ -137,11 +137,11 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c f33b69d8a85372b270fe37ee664a4c2140a5217d
 F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
-F src/pager.c 6426902ba983ce6872fcec20ba72796a79d6cead
-F src/pager.h 30e71f447ecbcfef707bb72cc813ce37ab5a2bc9
+F src/pager.c 44eba010e81dcc9b772401b90d6a1c61ec24345b
+F src/pager.h 9c1917be28fff58118e1fe0ddbc7adfb8dd4f44d
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
-F src/pcache.c 52108517c38bcf023f3977085a66aacb520a5385
-F src/pcache.h 0b6871e820159629915e8688b5c67a81a203773f
+F src/pcache.c f8d7beceba164a34441ac37e88abb3a404f968a7
+F src/pcache.h 28d9ce2d66909db1f01652586450b62b64793093
 F src/pragma.c 0b1c2d2a241dd79a7361bbeb8ff575a9e9d7cd71
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
@@ -157,7 +157,7 @@ F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c 6a7eeff5afd8f5f10fcb7fd7806e56c725dd2b07
 F src/test1.c c4de690aad182606e5914f6f3c8f43869fbdaaa8
-F src/test2.c eaa77124786649eedf47d3c5e94d8070c0da228f
+F src/test2.c 897528183edf2839c2a3c991d415905db56f1240
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
 F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
 F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
@@ -167,7 +167,7 @@ F src/test8.c 3637439424d0d21ff2dcf9b015c30fcc1e7bcb24
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c 45024094ed7cf780c5d5dccda645145f95cf78ef
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
-F src/test_btree.c 8d5b835054f1dd15992e09864a8bc04386bab701
+F src/test_btree.c d7b8716544611c323860370ee364e897c861f1b0
 F src/test_config.c db72e95bafdd53c05ceb8735f833cc5dc1f48782
 F src/test_devsym.c 802d10e65b4217208cb47059b84adf46318bcdf4
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
@@ -253,7 +253,7 @@ F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 0f05fea3e5c9260ece53117ad400657515c34280
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test 5bcf7a986358123b8055dfa64b45fc2fb54dcaa9
-F test/corrupt2.test 08fb049fdf4f72902ff39b1c609e7c1c2e985d8b
+F test/corrupt2.test b83f690753525ddac4a9c96e6ba11886ddaf24ea
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7c561f2e9264de676c1028943f6c3d06542fd802
-R 02a6492d8d58a0069722b4e87a758448
-U vapier
-Z f2828935781c5b8b7b8d7e5f72f7da88
+P efe095e0cb8e0f8a11fd9cc321ec83b556458bf2
+R a0f3c37847099f2dcfb6efb98a6a77ac
+U danielk1977
+Z 079550270237333fc6211bd885a42871

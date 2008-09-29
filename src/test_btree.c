@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_btree.c,v 1.7 2008/09/02 00:52:52 drh Exp $
+** $Id: test_btree.c,v 1.8 2008/09/29 11:49:48 danielk1977 Exp $
 */
 #include "btreeInt.h"
 #include <tcl.h>
@@ -52,11 +52,11 @@ void sqlite3BtreeCursorList(Btree *p){
   BtCursor *pCur;
   BtShared *pBt = p->pBt;
   for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-    MemPage *pPage = pCur->pPage;
+    MemPage *pPage = pCur->apPage[pCur->iPage];
     char *zMode = pCur->wrFlag ? "rw" : "ro";
     sqlite3DebugPrintf("CURSOR %p rooted at %4d(%s) currently at %d.%d%s\n",
        pCur, pCur->pgnoRoot, zMode,
-       pPage ? pPage->pgno : 0, pCur->idx,
+       pPage ? pPage->pgno : 0, pCur->aiIdx[pCur->iPage],
        (pCur->eState==CURSOR_VALID) ? "" : " eof"
     );
   }
@@ -83,8 +83,9 @@ void sqlite3BtreeCursorList(Btree *p){
 ** This routine is used for testing and debugging only.
 */
 int sqlite3BtreeCursorInfo(BtCursor *pCur, int *aResult, int upCnt){
+#if 0
   int cnt, idx;
-  MemPage *pPage = pCur->pPage;
+  MemPage *pPage = pCur->apPage[pCur->iPage];
   BtCursor tmpCur;
   int rc;
 
@@ -136,5 +137,6 @@ int sqlite3BtreeCursorInfo(BtCursor *pCur, int *aResult, int upCnt){
     aResult[10] = 0;
   }
   sqlite3BtreeReleaseTempCursor(&tmpCur);
+#endif
   return SQLITE_OK;
 }

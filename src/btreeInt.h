@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.31 2008/09/18 17:34:44 danielk1977 Exp $
+** $Id: btreeInt.h,v 1.32 2008/09/29 11:49:48 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -281,7 +281,6 @@ struct MemPage {
   u16 maxLocal;        /* Copy of BtShared.maxLocal or BtShared.maxLeaf */
   u16 minLocal;        /* Copy of BtShared.minLocal or BtShared.minLeaf */
   u16 cellOffset;      /* Index in aData of first cell pointer */
-  u16 idxParent;       /* Index in parent of this node */
   u16 nFree;           /* Number of free bytes on the page */
   u16 nCell;           /* Number of cells on this page, local and ovfl */
   u16 maskPage;        /* Mask for page offset */
@@ -293,20 +292,7 @@ struct MemPage {
   u8 *aData;           /* Pointer to disk image of the page data */
   DbPage *pDbPage;     /* Pager page handle */
   Pgno pgno;           /* Page number for this page */
-  MemPage *pParent;    /* The parent of this page.  NULL for root */
 };
-
-/*
-** Possible values for the MemPage.isInit variable. When a page is first
-** loaded or if the data stored in the MemPage struct is invalidated, 
-** MemPage.isInit is set to PAGE_ISINIT_NONE. If the MemPage structure
-** is fully initialized, then MemPage.isInit is set to PAGE_ISINIT_FULL.
-** MemPage.isInit is set to PAGE_ISINIT_DATA when the MemPage struct is
-** populated, but the MemPage.pParent variable is not necessarily correct.
-*/
-#define PAGE_ISINIT_NONE 0
-#define PAGE_ISINIT_DATA 1
-#define PAGE_ISINIT_FULL 2
 
 /*
 ** The in-memory image of a disk page has the auxiliary information appended
@@ -427,6 +413,17 @@ struct CellInfo {
 };
 
 /*
+** Maximum depth of an SQLite B-Tree structure. Any B-Tree deeper than
+** this will be declared corrupt. This value is calculated based on a
+** maximum database size of 2^31 pages a minimum fanout of 2 for a
+** root-node and 3 for all other internal nodes.
+**
+** If a tree that appears to be taller than this is encountered, it is
+** assumed that the database is corrupt.
+*/
+#define BTCURSOR_MAX_DEPTH 20
+
+/*
 ** A cursor is a pointer to a particular entry within a particular
 ** b-tree within a database file.
 **
@@ -446,8 +443,6 @@ struct BtCursor {
   BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
   struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
   Pgno pgnoRoot;            /* The root page of this tree */
-  MemPage *pPage;           /* Page that contains the entry */
-  int idx;                  /* Index of the entry in pPage->aCell[] */
   CellInfo info;            /* A parse of the cell we are pointing at */
   u8 wrFlag;                /* True if writable */
   u8 atLast;                /* Cursor pointing to the last entry */
@@ -460,6 +455,10 @@ struct BtCursor {
   u8 isIncrblobHandle;      /* True if this cursor is an incr. io handle */
   Pgno *aOverflow;          /* Cache of overflow page locations */
 #endif
+
+  i16 iPage;                            /* Index of current page in apPage */
+  MemPage *apPage[BTCURSOR_MAX_DEPTH];  /* Pages from root to current page */
+  u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */
 };
 
 /*
@@ -629,11 +628,10 @@ struct IntegrityCk {
 ** Internal routines that should be accessed by the btree layer only.
 */
 int sqlite3BtreeGetPage(BtShared*, Pgno, MemPage**, int);
-int sqlite3BtreeInitPage(MemPage *pPage, MemPage *pParent);
+int sqlite3BtreeInitPage(MemPage *pPage);
 void sqlite3BtreeParseCellPtr(MemPage*, u8*, CellInfo*);
 void sqlite3BtreeParseCell(MemPage*, int, CellInfo*);
 int sqlite3BtreeRestoreCursorPosition(BtCursor *pCur);
 void sqlite3BtreeGetTempCursor(BtCursor *pCur, BtCursor *pTempCur);
 void sqlite3BtreeReleaseTempCursor(BtCursor *pCur);
-int sqlite3BtreeIsRootPage(MemPage *pPage);
 void sqlite3BtreeMoveToParent(BtCursor *pCur);
