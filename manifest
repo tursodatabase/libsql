@@ -1,5 +1,5 @@
-C Update\sshared_err.test\sto\swork\swith\s(5668)\s(return\sSQLITE_CORRUPT\sif\srollback\sfails).\s(CVS\s5748)
-D 2008-09-29T14:12:57
+C Do\snot\srun\svacuum.test\sas\spart\sof\sthe\s"exclusive"\spermutation\stest.\s(CVS\s5749)
+D 2008-09-29T14:27:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -453,7 +453,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
 F test/pcache2.test 2b4fa1bee5cfc338d8c04eb6ed7eaf41f478bf7c
-F test/permutations.test 9f9ee1a8899cc26c7f850c92bfc7efc85bb71161
+F test/permutations.test 9560e6def651479c8fa15f4cae3bd14fb71bcff6
 F test/pragma.test c86359a8e0b28abdcc0ff4936f7966c446d0479a
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 40425e93421286cca1965d7a5769084526210c7a
-R 35cba72f6c9edee4c5886f7c1e12d335
+P 292acaf7c4e68b532cc8d1763e02aa79d90ea20c
+R 2e374347a03a1d74809c97c540cb28f9
 U danielk1977
-Z f975bf8ece71959ef54f545ea97809a1
+Z c73cbb2539399e32cc6d96320e7fb756
