@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.133 2008/09/01 22:15:19 shane Exp $
+** $Id: os_win.c,v 1.134 2008/09/30 04:20:08 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -610,7 +610,7 @@ static int winClose(sqlite3_file *id){
   OSTRACE2("CLOSE %d\n", pFile->h);
   do{
     rc = CloseHandle(pFile->h);
-  }while( rc==0 && cnt++ < MX_CLOSE_ATTEMPT && (Sleep(100), 1) );
+  }while( rc==0 && ++cnt < MX_CLOSE_ATTEMPT && (Sleep(100), 1) );
 #if SQLITE_OS_WINCE
 #define WINCE_DELETION_ATTEMPTS 3
   winceDestroyLock(pFile);
@@ -1177,7 +1177,9 @@ static int winOpen(
   DWORD dwShareMode;
   DWORD dwCreationDisposition;
   DWORD dwFlagsAndAttributes = 0;
-  int isTemp;
+#if SQLITE_OS_WINCE
+  int isTemp = 0;
+#endif
   winFile *pFile = (winFile*)id;
   void *zConverted;                 /* Filename in OS encoding */
   const char *zUtf8Name = zName;    /* Filename in UTF-8 encoding */
@@ -1218,19 +1220,20 @@ static int winOpen(
   if( flags & SQLITE_OPEN_DELETEONCLOSE ){
 #if SQLITE_OS_WINCE
     dwFlagsAndAttributes = FILE_ATTRIBUTE_HIDDEN;
+    isTemp = 1;
 #else
     dwFlagsAndAttributes = FILE_ATTRIBUTE_TEMPORARY
                                | FILE_ATTRIBUTE_HIDDEN
                                | FILE_FLAG_DELETE_ON_CLOSE;
 #endif
-    isTemp = 1;
   }else{
     dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL;
-    isTemp = 0;
   }
   /* Reports from the internet are that performance is always
   ** better if FILE_FLAG_RANDOM_ACCESS is used.  Ticket #2699. */
+#if SQLITE_OS_WINCE
   dwFlagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
+#endif
   if( isNT() ){
     h = CreateFileW((WCHAR*)zConverted,
        dwDesiredAccess,
@@ -1308,7 +1311,7 @@ static int winDelete(
   int syncDir                 /* Not used on win32 */
 ){
   int cnt = 0;
-  int rc;
+  DWORD rc;
   DWORD error;
   void *zConverted = convertUtf8Filename(zFilename);
   if( zConverted==0 ){
@@ -1320,19 +1323,19 @@ static int winDelete(
       DeleteFileW(zConverted);
     }while(   (   ((rc = GetFileAttributesW(zConverted)) != INVALID_FILE_ATTRIBUTES)
                || ((error = GetLastError()) == ERROR_ACCESS_DENIED))
-           && (cnt++ < MX_DELETION_ATTEMPTS)
+           && (++cnt < MX_DELETION_ATTEMPTS)
            && (Sleep(100), 1) );
   }else{
     do{
       DeleteFileA(zConverted);
     }while(   (   ((rc = GetFileAttributesA(zConverted)) != INVALID_FILE_ATTRIBUTES)
                || ((error = GetLastError()) == ERROR_ACCESS_DENIED))
-           && (cnt++ < MX_DELETION_ATTEMPTS)
+           && (++cnt < MX_DELETION_ATTEMPTS)
            && (Sleep(100), 1) );
   }
   free(zConverted);
   OSTRACE2("DELETE \"%s\"\n", zFilename);
-  return (   (rc==INVALID_FILE_ATTRIBUTES) 
+  return (   (rc == INVALID_FILE_ATTRIBUTES) 
           && (error == ERROR_FILE_NOT_FOUND)) ? SQLITE_OK : SQLITE_IOERR_DELETE;
 }
 

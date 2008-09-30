@@ -1,5 +1,5 @@
-C A\sfew\sminor\schanges\sto\stest\sscripts\sso\sthat\sthey\swork\son\slinux-amd64.\s(CVS\s5752)
-D 2008-09-30T00:31:38
+C Misc\sclean\sup.\s\sWrapped\sa\sCE\sonly\svariable\sin\sif-defs.\sChanged\sto\sonly\sprovide\scache\shint\sfor\sCE\sbuilds\s(as\sthis\sprevents\sCE\sfrom\scompressing\sthe\sfile.)\sPerformance\stesting\son\sXP\sand\sVista\sshowed\scaching\shint\shad\slittle\seffect\swhen\sthe\sDB\ssize\swas\smuch\ssmaller\sthan\sthe\sO/S\sdisk\scache\ssize,\sand\sprovided\sonly\smarginal\sbenefit\swhen\sthe\sDB\ssize\swas\smuch\slarger\sthan\sthe\scache.\s\sOn\sVista,\soverall\ssystem\sperformance\swas\shurt\sfor\svery\slarge\sDBs.\s\sTicket\s#3387.\s(CVS\s5753)
+D 2008-09-30T04:20:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -136,7 +136,7 @@ F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c f33b69d8a85372b270fe37ee664a4c2140a5217d
-F src/os_win.c 3209dc0ed734291764393ea8d534ba0d8696a540
+F src/os_win.c 04033a86a39f49cb8e348f515eb0116aa9d36678
 F src/pager.c 44eba010e81dcc9b772401b90d6a1c61ec24345b
 F src/pager.h 9c1917be28fff58118e1fe0ddbc7adfb8dd4f44d
 F src/parse.y d0f76d2cb8d6883d5600dc20beb961a6022b94b8
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 35e8e4dcd24b050b535ae005ca3b25e6a673eb89
-R 9074d4b98a3d572c308fa30be3a7f773
-U drh
-Z fbd675315e0378308c18a28ef87a5133
+P 78d075ff38d96cc58659a7097dec0e49402aa960
+R 39be9f2940749141be589318f7d2a538
+U shane
+Z b381b1aa9c52e2148aadad6fea9866f7
