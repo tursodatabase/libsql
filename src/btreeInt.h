@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.33 2008/09/29 15:53:26 danielk1977 Exp $
+** $Id: btreeInt.h,v 1.34 2008/09/30 17:18:17 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -454,7 +454,9 @@ struct BtCursor {
   u8 isIncrblobHandle;      /* True if this cursor is an incr. io handle */
   Pgno *aOverflow;          /* Cache of overflow page locations */
 #endif
-
+#ifndef NDEBUG
+  u8 pagesShuffled;         /* True if Btree pages are rearranged by balance()*/
+#endif
   i16 iPage;                            /* Index of current page in apPage */
   MemPage *apPage[BTCURSOR_MAX_DEPTH];  /* Pages from root to current page */
   u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */

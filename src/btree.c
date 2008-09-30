@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.523 2008/09/30 16:48:11 danielk1977 Exp $
+** $Id: btree.c,v 1.524 2008/09/30 17:18:17 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -32,6 +32,20 @@ int sqlite3BtreeTrace=0;  /* True to enable tracing */
 # define TRACE(X)  if(sqlite3BtreeTrace){printf X;fflush(stdout);}
 #else
 # define TRACE(X)
+#endif
+
+/*
+** Sometimes we need a small amount of code such as a variable initialization
+** to setup for a later assert() statement.  We do not want this code to
+** appear when assert() is disabled.  The following macro is therefore
+** used to contain that setup code.  The "VVA" acronym stands for
+** "Verification, Validation, and Accreditation".  In other words, the
+** code within VVA_ONLY() will only run during verification processes.
+*/
+#ifndef NDEBUG
+# define VVA_ONLY(X)  X
+#else
+# define VVA_ONLY(X)
 #endif
 
 
@@ -2356,9 +2370,7 @@ int sqlite3BtreeIncrVacuum(Btree *p){
 static int autoVacuumCommit(BtShared *pBt, Pgno *pnTrunc){
   int rc = SQLITE_OK;
   Pager *pPager = pBt->pPager;
-#ifndef NDEBUG
-  int nRef = sqlite3PagerRefcount(pPager);
-#endif
+  VVA_ONLY( int nRef = sqlite3PagerRefcount(pPager) );
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   invalidateAllOverflowCache(pBt);
@@ -4910,6 +4922,7 @@ static int balance_nonroot(BtCursor *pCur){
 
   pPage = pCur->apPage[pCur->iPage];
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
+  VVA_ONLY( pCur->pagesShuffled = 1 );
 
   /* 
   ** Find the parent page.
@@ -5492,6 +5505,7 @@ static int balance_shallower(BtCursor *pCur){
     ** for the right-pointer to the child page.  The child page becomes
     ** the virtual root of the tree.
     */
+    VVA_ONLY( pCur->pagesShuffled = 1 );
     pgnoChild = get4byte(&pPage->aData[pPage->hdrOffset+8]);
     assert( pgnoChild>0 );
     assert( pgnoChild<=pagerPagecount(pPage->pBt->pPager) );
@@ -5566,6 +5580,7 @@ static int balance_deeper(BtCursor *pCur){
   assert( pCur->iPage==0 );
   assert( pCur->apPage[0]->nOverflow>0 );
 
+  VVA_ONLY( pCur->pagesShuffled = 1 );
   pPage = pCur->apPage[0];
   pBt = pPage->pBt;
   assert( sqlite3_mutex_held(pBt->mutex) );
@@ -5814,7 +5829,7 @@ end_insert:
 
 /*
 ** Delete the entry that the cursor is pointing to.  The cursor
-** is left pointing at a random location.
+** is left pointing at a arbitrary location.
 */
 int sqlite3BtreeDelete(BtCursor *pCur){
   MemPage *pPage = pCur->apPage[pCur->iPage];
@@ -5913,11 +5928,30 @@ int sqlite3BtreeDelete(BtCursor *pCur){
         rc = insertCell(pPage, idx, pNext-4, szNext+4, tempCell, 0);
       }
 
+
+      /* The "if" statement in the next code block is critical.  The
+      ** slightest error in that statement would allow SQLite to operate
+      ** correctly most of the time but produce very rare failures.  To
+      ** guard against this, the following macros help to verify that
+      ** the "if" statement is well tested.
+      */
+      testcase( pPage->nOverflow==0 && pPage->nFree<pBt->usableSize*2/3 
+                 && pLeafPage->nFree+2+szNext > pBt->usableSize*2/3 );
+      testcase( pPage->nOverflow==0 && pPage->nFree==pBt->usableSize*2/3 
+                 && pLeafPage->nFree+2+szNext > pBt->usableSize*2/3 );
+      testcase( pPage->nOverflow==0 && pPage->nFree==pBt->usableSize*2/3+1 
+                 && pLeafPage->nFree+2+szNext > pBt->usableSize*2/3 );
+      testcase( pPage->nOverflow>0 && pPage->nFree<=pBt->usableSize*2/3
+                 && pLeafPage->nFree+2+szNext > pBt->usableSize*2/3 );
+      testcase( (pPage->nOverflow>0 || (pPage->nFree > pBt->usableSize*2/3))
+                 && pLeafPage->nFree+2+szNext == pBt->usableSize*2/3 );
+
+
       if( (pPage->nOverflow>0 || (pPage->nFree > pBt->usableSize*2/3)) &&
           (pLeafPage->nFree+2+szNext > pBt->usableSize*2/3)
       ){
-        /* This branch is taken if the internal node is now either over or
-        ** underfull and the leaf node will be underfull after the just cell 
+        /* This branch is taken if the internal node is now either overflowing
+        ** or underfull and the leaf node will be underfull after the just cell 
         ** copied to the internal node is deleted from it. This is a special
         ** case because the call to balance() to correct the internal node
         ** may change the tree structure and invalidate the contents of
@@ -5928,11 +5962,14 @@ int sqlite3BtreeDelete(BtCursor *pCur){
         ** The formula used in the expression above are based on facets of
         ** the SQLite file-format that do not change over time.
         */
+        testcase( pPage->nFree==pBt->usableSize*2/3+1 );
+        testcase( pLeafPage->nFree+2+szNext==pBt->usableSize*2/3+1 );
         leafCursorInvalid = 1;
       }        
 
       if( rc==SQLITE_OK ){
         put4byte(findOverflowCell(pPage, idx), pgnoChild);
+        VVA_ONLY( pCur->pagesShuffled = 0 );
         rc = balance(pCur, 0);
       }
 
@@ -5960,9 +5997,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
         ** that needs to be removed, and the leafCur.apPage[] and
         ** leafCur.aiIdx[] arrays are correct.
         */
-      #ifndef NDEBUG
-        Pgno leafPgno = pLeafPage->pgno;
-      #endif
+        VVA_ONLY( Pgno leafPgno = pLeafPage->pgno );
         rc = saveCursorPosition(&leafCur);
         if( rc==SQLITE_OK ){
           rc = sqlite3BtreeNext(&leafCur, &notUsed);
@@ -5974,7 +6009,10 @@ int sqlite3BtreeDelete(BtCursor *pCur){
 
       if( rc==SQLITE_OK ){
         dropCell(pLeafPage, 0, szNext);
+        VVA_ONLY( leafCur.pagesShuffled = 0 );
         rc = balance(&leafCur, 0);
+        assert( leafCursorInvalid || !leafCur.pagesShuffled
+                                   || !pCur->pagesShuffled );
       }
     }
     sqlite3BtreeReleaseTempCursor(&leafCur);
