@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.520 2008/09/29 16:41:32 danielk1977 Exp $
+** $Id: btree.c,v 1.521 2008/09/30 09:31:45 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5883,7 +5883,6 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     */
     BtCursor leafCur;
     MemPage *pLeafPage;
-    int iLeafIdx;
 
     unsigned char *pNext;
     int notUsed;
@@ -5892,16 +5891,17 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     sqlite3BtreeGetTempCursor(pCur, &leafCur);
     rc = sqlite3BtreeNext(&leafCur, &notUsed);
     if( rc==SQLITE_OK ){
+      assert( leafCur.aiIdx[leafCur.iPage]==0 );
       pLeafPage = leafCur.apPage[leafCur.iPage];
-      iLeafIdx = leafCur.aiIdx[leafCur.iPage];
       rc = sqlite3PagerWrite(pLeafPage->pDbPage);
     }
     if( rc==SQLITE_OK ){
+      int leafCursorInvalid = 0;
       u16 szNext;
       TRACE(("DELETE: table=%d delete internal from %d replace from leaf %d\n",
          pCur->pgnoRoot, pPage->pgno, pLeafPage->pgno));
       dropCell(pPage, idx, cellSizePtr(pPage, pCell));
-      pNext = findCell(pLeafPage, iLeafIdx);
+      pNext = findCell(pLeafPage, 0);
       szNext = cellSizePtr(pLeafPage, pNext);
       assert( MX_CELL_SIZE(pBt)>=szNext+4 );
       allocateTempSpace(pBt);
@@ -5912,12 +5912,66 @@ int sqlite3BtreeDelete(BtCursor *pCur){
       if( rc==SQLITE_OK ){
         rc = insertCell(pPage, idx, pNext-4, szNext+4, tempCell, 0);
       }
+
+      if( (pPage->nOverflow>0 || (pPage->nFree > pBt->usableSize*2/3)) &&
+          (pLeafPage->nFree+2+szNext > pBt->usableSize*2/3)
+      ){
+        /* This branch is taken if the internal node is now either over or
+        ** underfull and the leaf node will be underfull after the just cell 
+        ** copied to the internal node is deleted from it. This is a special
+        ** case because the call to balance() to correct the internal node
+        ** may change the tree structure and invalidate the contents of
+        ** the leafCur.apPage[] and leafCur.aiIdx[] arrays, which will be
+        ** used by the balance() required to correct the underfull leaf
+        ** node.
+        **
+        ** The formula used in the expression above are based on facets of
+        ** the SQLite file-format that do not change over time.
+        */
+        leafCursorInvalid = 1;
+      }        
+
       if( rc==SQLITE_OK ){
         put4byte(findOverflowCell(pPage, idx), pgnoChild);
         rc = balance(pCur, 0);
       }
+
+      if( rc==SQLITE_OK && leafCursorInvalid ){
+        /* The leaf-node is now underfull and so the tree needs to be 
+        ** rebalanced. However, the balance() operation on the internal
+        ** node above may have modified the structure of the B-Tree and
+        ** so the current contents of leafCur.apPage[] and leafCur.aiIdx[]
+        ** may not be trusted.
+        **
+        ** It is not possible to copy the ancestry from pCur, as the same
+        ** balance() call has invalidated the pCur->apPage[] and aiIdx[]
+        ** arrays. 
+	**
+	** The call to saveCursorPosition() below internally saves the 
+	** key that leafCur is currently pointing to. Currently, there
+	** are two copies of that key in the tree - one here on the leaf
+	** page and one on some internal node in the tree. The copy on
+	** the leaf node is always the next key in tree-order after the 
+	** copy on the internal node. So, the call to sqlite3BtreeNext()
+	** calls restoreCursorPosition() to point the cursor to the copy
+	** stored on the internal node, then advances to the next entry,
+	** which happens to be the copy of the key on the internal node.
+	** Net effect: leafCur is pointing back where
+        */
+      #ifndef NDEBUG
+        Pgno leafPgno = pLeafPage->pgno;
+      #endif
+        rc = saveCursorPosition(&leafCur);
+        if( rc==SQLITE_OK ){
+          rc = sqlite3BtreeNext(&leafCur, &notUsed);
+        }
+        pLeafPage = leafCur.apPage[leafCur.iPage];
+        assert( pLeafPage->pgno==leafPgno );
+        assert( leafCur.aiIdx[leafCur.iPage]==0 );
+      }
+
       if( rc==SQLITE_OK ){
-        dropCell(pLeafPage, iLeafIdx, szNext);
+        dropCell(pLeafPage, 0, szNext);
         rc = balance(&leafCur, 0);
       }
     }
@@ -7026,7 +7080,7 @@ static int btreeCopyFile(Btree *pTo, Btree *pFrom){
           }
 
           memcpy(zTo, zFrom, nCopy);
-	  sqlite3PagerUnref(pFromPage);
+          sqlite3PagerUnref(pFromPage);
         }
       }
 
