@@ -1,5 +1,5 @@
-C Remove\sthe\sreparentPage()\sand\sreparentChildPages()\sfunctions\sfrom\sbtree.c.\sAll\scalls\sto\sthese\sfunctions\scan\snow\sbe\sreplaced\sby\sa\scall\sto\ssetChildPtrmaps().\s(CVS\s5751)
-D 2008-09-29T16:41:32
+C A\sfew\sminor\schanges\sto\stest\sscripts\sso\sthat\sthey\swork\son\slinux-amd64.\s(CVS\s5752)
+D 2008-09-30T00:31:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -403,7 +403,7 @@ F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/lock5.test 904c20aec51d5dbff0a3aec6a4d35c5ae0257449
-F test/lookaside.test 8866ea41301d74993423c99e523322fca09c259e
+F test/lookaside.test 28f730199350f3912c122c23bab2f01910530c84
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
 F test/malloc.test 6ff6063f750d30741bc6d8c01b6ae5f94f5cf6f6
 F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
@@ -427,7 +427,7 @@ F test/malloc_common.tcl 984baeb6c6b185e798827d1187d426acc2bc4962
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
-F test/memsubsys1.test c12d1e4ad7f0ec7a45b56b5c49fe7397fa8d6d8f
+F test/memsubsys1.test 966f413d30875121f6decd72a920d6f34069a0c0
 F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7354abd03be756b1d7d0a3d5b8958f5c0c985ff5
-R 0f06dc556542affcd1339888998b5de0
-U danielk1977
-Z 09ed030904a23d22068a2c20cf1cad6c
+P 35e8e4dcd24b050b535ae005ca3b25e6a673eb89
+R 9074d4b98a3d572c308fa30be3a7f773
+U drh
+Z fbd675315e0378308c18a28ef87a5133
