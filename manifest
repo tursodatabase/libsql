@@ -1,5 +1,5 @@
-C Fix\sa\srecently\sintroduced\sproblem\swith\sdeleting\sentries\sfrom\sindex\stables.\s(CVS\s5754)
-D 2008-09-30T09:31:45
+C Change\sleading\stabs\sinto\sspaces.\s(CVS\s5755)
+D 2008-09-30T14:06:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,7 +99,7 @@ F src/attach.c db3f4a60538733c1e4dcb9d0217a6e0d6ccd615b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
-F src/btree.c 2e5cf91c3f342fa611bfd6f0250c31b432fbdd90
+F src/btree.c b7fbd31bd8b856abf86582451dd89418ee2112d0
 F src/btree.h 6371c5e599fab391a150c96afbc10062b276d107
 F src/btreeInt.h 3e93c0a6f363bbf68fdd975620f4d3671b6cf7bc
 F src/build.c 160c71acca8f643f436ed6c1ee2f684c88df4dfe
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 15dd0169a4c5e2ff9e3894eec10799cb89d462e5
-R 67ac196eea416fb3e08d66e37fb1b4f0
-U danielk1977
-Z 769068257f0c5361c027fdd2793aa895
+P 83c064cae481ca95b7107e22e98fc599fe85a2da
+R 319340bfa62e8f2b4a8c5cb2fb651da4
+U drh
+Z 27a83ef36caf191b09200aa330c8990e

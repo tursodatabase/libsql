@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.521 2008/09/30 09:31:45 danielk1977 Exp $
+** $Id: btree.c,v 1.522 2008/09/30 14:06:29 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5946,17 +5946,17 @@ int sqlite3BtreeDelete(BtCursor *pCur){
         ** It is not possible to copy the ancestry from pCur, as the same
         ** balance() call has invalidated the pCur->apPage[] and aiIdx[]
         ** arrays. 
-	**
-	** The call to saveCursorPosition() below internally saves the 
-	** key that leafCur is currently pointing to. Currently, there
-	** are two copies of that key in the tree - one here on the leaf
-	** page and one on some internal node in the tree. The copy on
-	** the leaf node is always the next key in tree-order after the 
-	** copy on the internal node. So, the call to sqlite3BtreeNext()
-	** calls restoreCursorPosition() to point the cursor to the copy
-	** stored on the internal node, then advances to the next entry,
-	** which happens to be the copy of the key on the internal node.
-	** Net effect: leafCur is pointing back where
+        **
+        ** The call to saveCursorPosition() below internally saves the 
+        ** key that leafCur is currently pointing to. Currently, there
+        ** are two copies of that key in the tree - one here on the leaf
+        ** page and one on some internal node in the tree. The copy on
+        ** the leaf node is always the next key in tree-order after the 
+        ** copy on the internal node. So, the call to sqlite3BtreeNext()
+        ** calls restoreCursorPosition() to point the cursor to the copy
+        ** stored on the internal node, then advances to the next entry,
+        ** which happens to be the copy of the key on the internal node.
+        ** Net effect: leafCur is pointing back where
         */
       #ifndef NDEBUG
         Pgno leafPgno = pLeafPage->pgno;
