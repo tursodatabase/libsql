@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\swhere.c\swhere\sa\snon-temp\sregister\swas\sbeing\sincorrectly\sdeallocated.\sTicket\s#3408.\s(CVS\s5758)
-D 2008-10-01T08:43:03
+C Adjust\sthe\smemory\susage\sbounds\son\sthe\smemsubsys1.test\sscript\sso\sthat\nit\sworks\son\samd64.\s(CVS\s5759)
+D 2008-10-01T13:55:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -427,7 +427,7 @@ F test/malloc_common.tcl 984baeb6c6b185e798827d1187d426acc2bc4962
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
-F test/memsubsys1.test 966f413d30875121f6decd72a920d6f34069a0c0
+F test/memsubsys1.test bdc24a38d198679d777ca4efcc089fd3948567a6
 F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fb461b78dfc2501fafa8bce03da5487fdfdff959
-R f17efdf67307b7c45c0bdb0de383022f
-U danielk1977
-Z c0645d23ba10337cccb6560748424fb4
+P 59d2e89e2181c26b18eac68ccc80ea3018f70a5e
+R 2287b309c0341dad7ec54713b965b29d
+U drh
+Z d9d819f707dc5f486bedf318813a096b
