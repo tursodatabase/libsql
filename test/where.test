@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.47 2008/09/01 15:52:11 drh Exp $
+# $Id: where.test,v 1.48 2008/10/01 08:43:03 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -1154,6 +1154,50 @@ do_test where-15.1 {
     SELECT t1.e AS alias FROM t2, t1 WHERE alias = 1 ;
   }
 } {}
+
+# Ticket #3408.
+# 
+# The branch of code in where.c that generated rowid lookups was
+# incorrectly deallocating a constant register, meaning that if the 
+# vdbe code ran more than once, the second time around the constant
+# value may have been clobbered by some other value.
+# 
+do_test where-16.1 {
+  execsql {
+    CREATE TABLE a1(id INTEGER PRIMARY KEY, v);
+    CREATE TABLE a2(id INTEGER PRIMARY KEY, v);
+    INSERT INTO a1 VALUES(1, 'one');
+    INSERT INTO a1 VALUES(2, 'two');
+    INSERT INTO a2 VALUES(1, 'one');
+    INSERT INTO a2 VALUES(2, 'two');
+  }
+} {}
+do_test where-16.2 {
+  execsql {
+    SELECT * FROM a2 CROSS JOIN a1 WHERE a1.id=1 AND a1.v='one';
+  }
+} {1 one 1 one 2 two 1 one}
+
+# The actual problem reported in #3408.
+do_test where-16.3 {
+  execsql {
+    CREATE TEMP TABLE foo(idx INTEGER);
+    INSERT INTO foo VALUES(1);
+    INSERT INTO foo VALUES(1);
+    INSERT INTO foo VALUES(1);
+    INSERT INTO foo VALUES(2);
+    INSERT INTO foo VALUES(2);
+    CREATE TEMP TABLE bar(stuff INTEGER);
+    INSERT INTO bar VALUES(100);
+    INSERT INTO bar VALUES(200);
+    INSERT INTO bar VALUES(300);
+  }
+} {}
+do_test where-16.4 {
+  execsql {
+    SELECT bar.RowID id FROM foo, bar WHERE foo.idx = bar.RowID AND id = 2;
+  }
+} {2 2}
 
 integrity_check {where-99.0}
 

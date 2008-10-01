@@ -1,5 +1,5 @@
-C Add\ssome\stestcase()\sand\sassert()\smacros\sto\sbtree.c\sto\said\swith\stesting\nrecent\schanges.\s(CVS\s5757)
-D 2008-09-30T17:18:17
+C Fix\sa\sbug\sin\swhere.c\swhere\sa\snon-temp\sregister\swas\sbeing\sincorrectly\sdeallocated.\sTicket\s#3408.\s(CVS\s5758)
+D 2008-10-01T08:43:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -199,7 +199,7 @@ F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c ead88713b852576e2a924bc4ae696964bfbaec0a
 F src/vtab.c 527c180e9c5fca417c9167d02af4b5039f892b4b
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
-F src/where.c a9958b26cc87ea1446fbe6d004a7959b8d5d75c1
+F src/where.c 75b7f45bc02832445c244e2c6df4f7f5653148be
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test c321c114a8a31a33e3cbda910fa39949f5d9dcb2
@@ -606,7 +606,7 @@ F test/vtabC.test 9f2d9eb84bf65e606d6616f20977c5a32a11f548
 F test/vtab_alter.test 3a299749fee97ca3d53bd55717f536e4a2284856
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test c19b2555b807ef2ee014c882cdda5bc8d84fcf48
-F test/where.test ea8e56f3c7b18fa4d250d32a08ffab44c0ff64ba
+F test/where.test 7dcfe573d4a5c6c4b7670271d02c006f2c7414b8
 F test/where2.test 7012c0ad022a54430dd22c98288d3f4d6599dbcf
 F test/where3.test 97d3936e6a443b968f1a61cdcc0f673252000e94
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
@@ -637,7 +637,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0f3c56330b43fb7c9dc43a444ca38bace9397ede
-R 5a3edf18f89485bee6c0db5078617fd9
-U drh
-Z 6d8b0066d3b484307b936dd03d86c312
+P fb461b78dfc2501fafa8bce03da5487fdfdff959
+R f17efdf67307b7c45c0bdb0de383022f
+U danielk1977
+Z c0645d23ba10337cccb6560748424fb4

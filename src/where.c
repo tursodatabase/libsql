@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.322 2008/09/06 14:19:11 danielk1977 Exp $
+** $Id: where.c,v 1.323 2008/10/01 08:43:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1784,9 +1784,7 @@ static int codeEqualityTerm(
   Vdbe *v = pParse->pVdbe;
   int iReg;                  /* Register holding results */
 
-  if( iTarget<=0 ){
-    iReg = iTarget = sqlite3GetTempReg(pParse);
-  }
+  assert( iTarget>0 );
   if( pX->op==TK_EQ ){
     iReg = sqlite3ExprCodeTarget(pParse, pX->pRight, iTarget);
   }else if( pX->op==TK_ISNULL ){
@@ -2414,16 +2412,17 @@ WhereInfo *sqlite3WhereBegin(
       **          construct.
       */
       int r1;
+      int rtmp = sqlite3GetTempReg(pParse);
       pTerm = findTerm(&wc, iCur, -1, notReady, WO_EQ|WO_IN, 0);
       assert( pTerm!=0 );
       assert( pTerm->pExpr!=0 );
       assert( pTerm->leftCursor==iCur );
       assert( omitTable==0 );
-      r1 = codeEqualityTerm(pParse, pTerm, pLevel, 0);
+      r1 = codeEqualityTerm(pParse, pTerm, pLevel, rtmp);
       nxt = pLevel->nxt;
       sqlite3VdbeAddOp2(v, OP_MustBeInt, r1, nxt);
       sqlite3VdbeAddOp3(v, OP_NotExists, iCur, nxt, r1);
-      sqlite3ReleaseTempReg(pParse, r1);
+      sqlite3ReleaseTempReg(pParse, rtmp);
       VdbeComment((v, "pk"));
       pLevel->op = OP_Noop;
     }else if( pLevel->flags & WHERE_ROWID_RANGE ){
