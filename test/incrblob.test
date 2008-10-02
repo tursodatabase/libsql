@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.21 2008/09/11 11:28:00 danielk1977 Exp $
+# $Id: incrblob.test,v 1.22 2008/10/02 14:49:02 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -617,5 +617,37 @@ do_test incrblob-7.5 {
 do_test incrblob-7.6 {
   sqlite3_errmsg db
 } {attempt to write a readonly database}
+
+# Test that if either the "offset" or "amount" arguments to
+# sqlite3_blob_write() are less than zero, SQLITE_ERROR is returned.
+# 
+do_test incrblob-8.1 {
+  execsql { INSERT INTO t1 VALUES(314159, 'sqlite') }
+  set ::b [db incrblob t1 b 314159]
+  fconfigure $::b -translation binary
+  set rc [catch {sqlite3_blob_write $::b 10 HELLO -1} msg]
+  lappend rc $msg
+} {1 SQLITE_ERROR}
+do_test incrblob-8.2 {
+  sqlite3_errcode db
+} {SQLITE_ERROR}
+do_test incrblob-8.3 {
+  set rc [catch {sqlite3_blob_write $::b -1 HELLO 5} msg]
+  lappend rc $msg
+} {1 SQLITE_ERROR}
+do_test incrblob-8.4 {
+  sqlite3_errcode db
+} {SQLITE_ERROR}
+do_test incrblob-8.5 {
+  execsql {SELECT b FROM t1 WHERE a = 314159}
+} {sqlite}
+do_test incrblob-8.6 {
+  set rc [catch {sqlite3_blob_write $::b 0 etilqs 6} msg]
+  lappend rc $msg
+} {0 {}}
+do_test incrblob-8.7 {
+  execsql {SELECT b FROM t1 WHERE a = 314159}
+} {etilqs}
+
 
 finish_test

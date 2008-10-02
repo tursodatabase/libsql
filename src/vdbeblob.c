@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.25 2008/07/28 19:34:54 drh Exp $
+** $Id: vdbeblob.c,v 1.26 2008/10/02 14:49:02 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -287,17 +287,17 @@ static int blobReadWrite(
   Vdbe *v;
   sqlite3 *db = p->db;  
 
-  /* Request is out of range. Return a transient error. */
-  if( (iOffset+n)>p->nByte ){
-    return SQLITE_ERROR;
-  }
   sqlite3_mutex_enter(db->mutex);
-
-  /* If there is no statement handle, then the blob-handle has
-  ** already been invalidated. Return SQLITE_ABORT in this case.
-  */
   v = (Vdbe*)p->pStmt;
-  if( v==0 ){
+
+  if( n<0 || iOffset<0 || (iOffset+n)>p->nByte ){
+    /* Request is out of range. Return a transient error. */
+    rc = SQLITE_ERROR;
+    sqlite3Error(db, SQLITE_ERROR, 0);
+  } else if( v==0 ){
+    /* If there is no statement handle, then the blob-handle has
+    ** already been invalidated. Return SQLITE_ABORT in this case.
+    */
     rc = SQLITE_ABORT;
   }else{
     /* Call either BtreeData() or BtreePutData(). If SQLITE_ABORT is

@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sthat\sprevents\sthe\ssqlite3_sql()\sinterface\sfrom\sappearing\nin\sthe\sofficial\sdocumentation.\s(CVS\s5761)
-D 2008-10-02T14:33:57
+C Fix\sfor\ssqlite3_blob_write():\sIf\seither\s3rd\sor\s4th\sargument\sis\sless\sthan\szero,\sreturn\sSQLITE_ERROR.\sH17879.\s(CVS\s5762)
+D 2008-10-02T14:49:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +156,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c 6a7eeff5afd8f5f10fcb7fd7806e56c725dd2b07
-F src/test1.c c4de690aad182606e5914f6f3c8f43869fbdaaa8
+F src/test1.c fed7656affe3bc687043bb76d13650a40cb21aef
 F src/test2.c 897528183edf2839c2a3c991d415905db56f1240
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
 F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
@@ -194,7 +194,7 @@ F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
 F src/vdbeInt.h b48c74d86a9fb62b707a3186ccca76bb32f1c6be
 F src/vdbeapi.c c0f87aabb2bcf8c760ff9cb289119f7f6ba1797a
 F src/vdbeaux.c 20a7d109c95e32beee7891fba828c63e419af26c
-F src/vdbeblob.c f93110888ddc246215e9ba1f831d3d375bfd8355
+F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c ead88713b852576e2a924bc4ae696964bfbaec0a
 F src/vtab.c 527c180e9c5fca417c9167d02af4b5039f892b4b
@@ -363,7 +363,7 @@ F test/in.test d49419c6df515852f477fa513f3317181d46bc92
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test c043f75147295e9f6ad5040a5cda2c485736c2c8
-F test/incrblob.test e50cf41ac64e76ca4f8881ecb8d28fd988503ad5
+F test/incrblob.test 4040ac885090f147345bedb89bf5e9b5eee1c1f0
 F test/incrblob2.test c82a780356bdf4d0c77f1adf0ea888248904fc07
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
 F test/incrvacuum.test 9a6346c56ffa141024054ae7ba6c8655edf2d137
@@ -638,7 +638,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 803a1736d56b3c07b8ad38715fe0e39196ecc507
-R 243556cb0b1b86e08eea9d0132581848
-U drh
-Z d6769dceda655ca5c441f3e442cce59a
+P b46814b202f4cc355b925551c90ea811f3f9e44a
+R 362ac30c5f648c7676e341baf41a9564
+U danielk1977
+Z c307b688eb6312afb2158a48404fe616

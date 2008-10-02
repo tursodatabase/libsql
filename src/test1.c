@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.325 2008/09/11 10:29:16 danielk1977 Exp $
+** $Id: test1.c,v 1.326 2008/10/02 14:49:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1559,7 +1559,7 @@ static int test_blob_read(
 }
 
 /*
-** sqlite3_blob_write CHANNEL OFFSET DATA
+** sqlite3_blob_write CHANNEL OFFSET DATA ?NDATA?
 **
 **   This command is used to test the sqlite3_blob_write() in ways that
 **   the Tcl channel interface does not. The first argument should
@@ -1588,16 +1588,13 @@ static int test_blob_write(
   unsigned char *zBuf;
   int nBuf;
   
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "CHANNEL OFFSET DATA");
+  if( objc!=4 && objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "CHANNEL OFFSET DATA ?NDATA?");
     return TCL_ERROR;
   }
 
   channel = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), &notUsed);
-  if( !channel
-   || TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &iOffset)
-   || iOffset<0
-  ){ 
+  if( !channel || TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &iOffset) ){ 
     return TCL_ERROR;
   }
 
@@ -1605,6 +1602,9 @@ static int test_blob_write(
   pBlob = *((sqlite3_blob **)instanceData);
 
   zBuf = Tcl_GetByteArrayFromObj(objv[3], &nBuf);
+  if( objc==5 && Tcl_GetIntFromObj(interp, objv[4], &nBuf) ){
+    return TCL_ERROR;
+  }
   rc = sqlite3_blob_write(pBlob, zBuf, nBuf, iOffset);
   if( rc!=SQLITE_OK ){
     Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
