@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.399 2008/09/22 17:54:46 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.400 2008/10/02 14:33:57 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2844,7 +2844,7 @@ int sqlite3_prepare16_v2(
 );
 
 /*
-** CAPIREF: Retrieving Statement SQL {H13100} <H13000>
+** CAPI3REF: Retrieving Statement SQL {H13100} <H13000>
 **
 ** This interface can be used to retrieve a saved copy of the original
 ** SQL text used to create a [prepared statement] if that statement was
