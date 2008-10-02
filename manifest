@@ -1,5 +1,5 @@
-C Adjust\sthe\smemory\susage\sbounds\son\sthe\smemsubsys1.test\sscript\sso\sthat\nit\sworks\son\samd64.\s(CVS\s5759)
-D 2008-10-01T13:55:51
+C Optimize\squeries\sthat\scontain\s"WHERE\srowid\sIN\s(x,\sy,\sz...)"\sby\susing\san\sintkey\sbtree\sto\sstore\sthe\s(x,\sy,\sz...)\sset\sinstead\sof\san\sindex\sbtree.\s(CVS\s5760)
+D 2008-10-02T13:50:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -107,7 +107,7 @@ F src/callback.c 7a40fd44da3eb89e7f6eff30aa6f940c45d73a97
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 5c092296c03d658e84884121a694150964d6861d
 F src/delete.c bae6684aa02e1f7cf6328023157c91d9cf94200b
-F src/expr.c 04822d5c7af85fd195a5f72501ab5e8d99768fae
+F src/expr.c 61f5afca422f34194225cfd9bca9f2efd96c6179
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 8431b40a7843d1024145684d303c55b4ee087bbe
 F src/global.c 20a3fe46c8287a01ba3a7442558f0eb70c66b19a
@@ -151,7 +151,7 @@ F src/select.c f118f8db2ce91a4cf972e6ae88c8e7cc8543f513
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 2be75cc1f2a5515db910e8d0e2d5954b493fd1f3
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h dbe2797806c48f4a90adfea69dfbea95edd722ae
+F src/sqliteInt.h 437b408a7473293a903eb63f3c1d6ca814a13cdb
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -362,6 +362,7 @@ F test/icu.test f51d0f4407ff8bb1e872f51a0e8b08fdc5a6897e
 F test/in.test d49419c6df515852f477fa513f3317181d46bc92
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
+F test/in4.test c043f75147295e9f6ad5040a5cda2c485736c2c8
 F test/incrblob.test e50cf41ac64e76ca4f8881ecb8d28fd988503ad5
 F test/incrblob2.test c82a780356bdf4d0c77f1adf0ea888248904fc07
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
@@ -637,7 +638,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 59d2e89e2181c26b18eac68ccc80ea3018f70a5e
-R 2287b309c0341dad7ec54713b965b29d
-U drh
-Z d9d819f707dc5f486bedf318813a096b
+P aabde23fe19bd95371fdebdde66ac553dfd53f8e
+R 280f60e55a9bc8f499b588b678dbf711
+U danielk1977
+Z 0496772435641c7d88e45dbde24176e8

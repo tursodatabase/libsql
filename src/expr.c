@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.394 2008/09/17 00:13:12 drh Exp $
+** $Id: expr.c,v 1.395 2008/10/02 13:50:56 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1214,11 +1214,13 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
 
   if( eType==0 ){
     int rMayHaveNull = 0;
+    eType = IN_INDEX_EPH;
     if( prNotFound ){
       *prNotFound = rMayHaveNull = ++pParse->nMem;
+    }else if( pX->pLeft->iColumn<0 && pX->pSelect==0 ){
+      eType = IN_INDEX_ROWID;
     }
-    sqlite3CodeSubselect(pParse, pX, rMayHaveNull);
-    eType = IN_INDEX_EPH;
+    sqlite3CodeSubselect(pParse, pX, rMayHaveNull, eType==IN_INDEX_ROWID);
   }else{
     pX->iTable = iTab;
   }
@@ -1237,9 +1239,20 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
 **
 ** The pExpr parameter describes the expression that contains the IN
 ** operator or subquery.
+**
+** If parameter isRowid is non-zero, then expression pExpr is guaranteed
+** to be of the form "<rowid> IN (?, ?, ?)", where <rowid> is a reference
+** to some integer key column of a table B-Tree. In this case, use an
+** intkey B-Tree to store the set of IN(...) values instead of the usual
+** (slower) variable length keys B-Tree.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
-void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr, int rMayHaveNull){
+void sqlite3CodeSubselect(
+  Parse *pParse, 
+  Expr *pExpr, 
+  int rMayHaveNull,
+  int isRowid
+){
   int testAddr = 0;                       /* One-time test address */
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;
@@ -1267,12 +1280,13 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr, int rMayHaveNull){
       char affinity;
       KeyInfo keyInfo;
       int addr;        /* Address of OP_OpenEphemeral instruction */
+      Expr *pLeft = pExpr->pLeft;
 
       if( rMayHaveNull ){
         sqlite3VdbeAddOp2(v, OP_Null, 0, rMayHaveNull);
       }
 
-      affinity = sqlite3ExprAffinity(pExpr->pLeft);
+      affinity = sqlite3ExprAffinity(pLeft);
 
       /* Whether this is an 'x IN(SELECT...)' or an 'x IN(<exprlist>)'
       ** expression it is handled the same way. A virtual table is 
@@ -1288,7 +1302,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr, int rMayHaveNull){
       ** is used.
       */
       pExpr->iTable = pParse->nTab++;
-      addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pExpr->iTable, 1);
+      addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pExpr->iTable, !isRowid);
       memset(&keyInfo, 0, sizeof(keyInfo));
       keyInfo.nField = 1;
 
@@ -1301,6 +1315,7 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr, int rMayHaveNull){
         SelectDest dest;
         ExprList *pEList;
 
+        assert( !isRowid );
         sqlite3SelectDestInit(&dest, SRT_Set, pExpr->iTable);
         dest.affinity = (int)affinity;
         assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
@@ -1351,14 +1366,23 @@ void sqlite3CodeSubselect(Parse *pParse, Expr *pExpr, int rMayHaveNull){
           r3 = sqlite3ExprCodeTarget(pParse, pE2, r1);
           assert( pParse->disableColCache>0 );
           pParse->disableColCache--;
-          sqlite3VdbeAddOp4(v, OP_MakeRecord, r3, 1, r2, &affinity, 1);
-          sqlite3ExprCacheAffinityChange(pParse, r3, 1);
-          sqlite3VdbeAddOp2(v, OP_IdxInsert, pExpr->iTable, r2);
+
+          if( isRowid ){
+            sqlite3VdbeAddOp2(v, OP_Null, 0, r2);
+            sqlite3VdbeAddOp2(v, OP_MustBeInt, r3, sqlite3VdbeCurrentAddr(v)+2);
+            sqlite3VdbeAddOp3(v, OP_Insert, pExpr->iTable, r2, r3);
+          }else{
+            sqlite3VdbeAddOp4(v, OP_MakeRecord, r3, 1, r2, &affinity, 1);
+            sqlite3ExprCacheAffinityChange(pParse, r3, 1);
+            sqlite3VdbeAddOp2(v, OP_IdxInsert, pExpr->iTable, r2);
+          }
         }
         sqlite3ReleaseTempReg(pParse, r1);
         sqlite3ReleaseTempReg(pParse, r2);
       }
-      sqlite3VdbeChangeP4(v, addr, (void *)&keyInfo, P4_KEYINFO);
+      if( !isRowid ){
+        sqlite3VdbeChangeP4(v, addr, (void *)&keyInfo, P4_KEYINFO);
+      }
       break;
     }
 
@@ -2026,7 +2050,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       testcase( op==TK_EXISTS );
       testcase( op==TK_SELECT );
       if( pExpr->iColumn==0 ){
-        sqlite3CodeSubselect(pParse, pExpr, 0);
+        sqlite3CodeSubselect(pParse, pExpr, 0, 0);
       }
       inReg = pExpr->iColumn;
       break;
@@ -2109,7 +2133,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
           sqlite3VdbeJumpHere(v, j3);
 
           /* Copy the value of register rNotFound (which is either NULL or 0)
-	  ** into the target register. This will be the result of the
+          ** into the target register. This will be the result of the
           ** expression.
           */
           sqlite3VdbeAddOp2(v, OP_Copy, rNotFound, target);
