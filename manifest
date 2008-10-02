@@ -1,5 +1,5 @@
-C Fix\sfor\ssqlite3_blob_write():\sIf\seither\s3rd\sor\s4th\sargument\sis\sless\sthan\szero,\sreturn\sSQLITE_ERROR.\sH17879.\s(CVS\s5762)
-D 2008-10-02T14:49:02
+C Change\sto\sreduce\sthe\snumber\sof\sOP_Null\sopcodes\sin\s"WHERE\s<rowid>\sIN\s(x,y,z)"\squeries.\s(CVS\s5763)
+D 2008-10-02T16:42:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -107,7 +107,7 @@ F src/callback.c 7a40fd44da3eb89e7f6eff30aa6f940c45d73a97
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 5c092296c03d658e84884121a694150964d6861d
 F src/delete.c bae6684aa02e1f7cf6328023157c91d9cf94200b
-F src/expr.c 61f5afca422f34194225cfd9bca9f2efd96c6179
+F src/expr.c efa82724366877b546a12174fa1278bd47a450a9
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 8431b40a7843d1024145684d303c55b4ee087bbe
 F src/global.c 20a3fe46c8287a01ba3a7442558f0eb70c66b19a
@@ -638,7 +638,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b46814b202f4cc355b925551c90ea811f3f9e44a
-R 362ac30c5f648c7676e341baf41a9564
+P f6074c0b9b5ba51d131509dba2aec80d0fcf3b7e
+R 33637e788f8748f17ec5e76310a601af
 U danielk1977
-Z c307b688eb6312afb2158a48404fe616
+Z 28080c6f14276c95795c63e71d965a02
