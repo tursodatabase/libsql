@@ -1,5 +1,5 @@
-C Change\sto\sreduce\sthe\snumber\sof\sOP_Null\sopcodes\sin\s"WHERE\s<rowid>\sIN\s(x,y,z)"\squeries.\s(CVS\s5763)
-D 2008-10-02T16:42:07
+C Change\sone\sof\sthe\stest\scases\sin\sincrblob2.test\sto\savoid\sallocating\sa\s10MB\sblock\sof\sheap\smemory.\s(CVS\s5764)
+D 2008-10-03T08:44:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -364,7 +364,7 @@ F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test c043f75147295e9f6ad5040a5cda2c485736c2c8
 F test/incrblob.test 4040ac885090f147345bedb89bf5e9b5eee1c1f0
-F test/incrblob2.test c82a780356bdf4d0c77f1adf0ea888248904fc07
+F test/incrblob2.test 5cca1c3cb29064c504b3b0cc3e2cd43e8053cfdf
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
 F test/incrvacuum.test 9a6346c56ffa141024054ae7ba6c8655edf2d137
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
@@ -638,7 +638,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f6074c0b9b5ba51d131509dba2aec80d0fcf3b7e
-R 33637e788f8748f17ec5e76310a601af
+P 33b59a3db0b1797663ae840ceaca1b23a9a9e3b0
+R a30414f171094ea38ff88343e3b16cf5
 U danielk1977
-Z 28080c6f14276c95795c63e71d965a02
+Z 75263f9148ba153a4956ee60f2bf11fc
