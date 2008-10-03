@@ -1,5 +1,5 @@
-C Change\sone\sof\sthe\stest\scases\sin\sincrblob2.test\sto\savoid\sallocating\sa\s10MB\sblock\sof\sheap\smemory.\s(CVS\s5764)
-D 2008-10-03T08:44:54
+C Modifications\sto\sbind.test\sto\saccount\sfor\sdifferent\svalues\sof\sSQLITE_MAX_VARIABLE_NUMBER.\sTicket\s#3409.\s(CVS\s5765)
+D 2008-10-03T09:10:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -226,7 +226,7 @@ F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test 9a6a8346e4042d9c781ed6cb6553ac871ae30618
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test b5e3ffbad2b43b7cf675dd3624176510d8379978
+F test/bind.test 1134441f1ea47abd1c740090435a6ecbe9ceb263
 F test/bindxfer.test 995d2cf8df61204d748cde6960443121c4ccd2e1
 F test/bitvec.test 62a512c3f7041d1df12558eb25990e5a19820571
 F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
@@ -638,7 +638,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 33b59a3db0b1797663ae840ceaca1b23a9a9e3b0
-R a30414f171094ea38ff88343e3b16cf5
+P 83b7dd737a16555b9eb4ad9faacac3d705b0a90e
+R e1b31f97badd065f62c08777c72ef7ab
 U danielk1977
-Z 75263f9148ba153a4956ee60f2bf11fc
+Z 1e0e51d60145cedc85e2ef54e96b33e8

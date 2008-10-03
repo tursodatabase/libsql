@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.44 2008/07/09 01:39:44 drh Exp $
+# $Id: bind.test,v 1.45 2008/10/03 09:10:46 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -419,6 +419,8 @@ do_test bind-8.99 {
   sqlite3_finalize $VM
 } SQLITE_OK
 
+set iMaxVar $SQLITE_MAX_VARIABLE_NUMBER
+set zError "(1) variable number must be between ?1 and ?$iMaxVar"
 do_test bind-9.1 {
   execsql {
     CREATE TABLE t2(a,b,c,d,e,f);
@@ -429,46 +431,44 @@ do_test bind-9.1 {
     } -1 TAIL
   } msg]
   lappend rc $msg
-} {1 {(1) variable number must be between ?1 and ?999}}
+} [list 1 $zError]
 do_test bind-9.2 {
   set rc [catch {
-    sqlite3_prepare $DB {
-      INSERT INTO t2(a) VALUES(?1000)
-    } -1 TAIL
+    sqlite3_prepare $DB "INSERT INTO t2(a) VALUES(?[expr $iMaxVar+1])" -1 TAIL
   } msg]
   lappend rc $msg
-} {1 {(1) variable number must be between ?1 and ?999}}
+} [list 1 $zError]
 do_test bind-9.3.1 {
   set VM [
-    sqlite3_prepare $DB {
-      INSERT INTO t2(a,b) VALUES(?1,?999)
-    } -1 TAIL
+    sqlite3_prepare $DB "
+      INSERT INTO t2(a,b) VALUES(?1,?$iMaxVar)
+    " -1 TAIL
   ]
   sqlite3_bind_parameter_count $VM
-} {999}
+} $iMaxVar
 catch {sqlite3_finalize $VM}
 do_test bind-9.3.2 {
   set VM [
-    sqlite3_prepare $DB {
-      INSERT INTO t2(a,b) VALUES(?2,?998)
-    } -1 TAIL
+    sqlite3_prepare $DB "
+      INSERT INTO t2(a,b) VALUES(?2,?[expr $iMaxVar - 1])
+    " -1 TAIL
   ]
   sqlite3_bind_parameter_count $VM
-} {998}
+} [expr {$iMaxVar - 1}]
 catch {sqlite3_finalize $VM}
 do_test bind-9.4 {
   set VM [
-    sqlite3_prepare $DB {
-      INSERT INTO t2(a,b,c,d) VALUES(?1,?997,?,?)
-    } -1 TAIL
+    sqlite3_prepare $DB "
+      INSERT INTO t2(a,b,c,d) VALUES(?1,?[expr $iMaxVar - 2],?,?)
+    " -1 TAIL
   ]
   sqlite3_bind_parameter_count $VM
-} {999}
+} $iMaxVar
 do_test bind-9.5 {
   sqlite3_bind_int $VM 1 1
-  sqlite3_bind_int $VM 997 999
-  sqlite3_bind_int $VM 998 1000
-  sqlite3_bind_int $VM 999 1001
+  sqlite3_bind_int $VM [expr $iMaxVar - 2] 999
+  sqlite3_bind_int $VM [expr $iMaxVar - 1] 1000
+  sqlite3_bind_int $VM $iMaxVar 1001
   sqlite3_step $VM
 } SQLITE_DONE
 do_test bind-9.6 {
