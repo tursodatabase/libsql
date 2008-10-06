@@ -1,5 +1,5 @@
-C Add\sa\stest\sto\sindexedby.test\sto\scheck\sthat\sautomatic\sindexes\s(sqlite_autoindex_xxx)\scan\sbe\sused\swith\sthe\sINDEXED\sBY\ssyntax.\s(CVS\s5767)
-D 2008-10-06T11:29:49
+C In\ssqlite3_bind()\sinterfaces,\savoid\sacquiring\sthe\smutex\suntil\safter\sthe\nstatement\shandle\shas\sbeen\svalidated.\s\sTicket\s#3418.\s(CVS\s5768)
+D 2008-10-06T12:46:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -192,7 +192,7 @@ F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
 F src/vdbe.c c9499f1824049cfef00a6146ef832b742f477920
 F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
 F src/vdbeInt.h b48c74d86a9fb62b707a3186ccca76bb32f1c6be
-F src/vdbeapi.c c0f87aabb2bcf8c760ff9cb289119f7f6ba1797a
+F src/vdbeapi.c 5beff875bef3a801484ac78c24b13a039a4d511c
 F src/vdbeaux.c 20a7d109c95e32beee7891fba828c63e419af26c
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
@@ -639,7 +639,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 98ca5580f5acd2e7b3ce512520ec0527f221505e
-R 0f893f469ad12cc6a25579e35395d754
-U danielk1977
-Z ca84df9ff1faefde10026b9c258b030a
+P bb51c34506b3353506b6f3566fbe2a10d02e8ebc
+R 69a4995829880b2d104f98bd582a2981
+U drh
+Z aca7259dd10a822c578f92e2091145fe
