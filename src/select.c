@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.477 2008/10/06 05:32:19 danielk1977 Exp $
+** $Id: select.c,v 1.478 2008/10/06 16:18:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2883,6 +2883,31 @@ static int minMaxQuery(Parse *pParse, Select *p){
 }
 
 /*
+** If the source-list item passed as an argument was augmented with an
+** INDEXED BY clause, then try to locate the specified index. If there
+** was such a clause and the named index cannot be found, return 
+** SQLITE_ERROR and leave an error in pParse. Otherwise, populate 
+** pFrom->pIndex and return SQLITE_OK.
+*/
+int sqlite3IndexedByLookup(Parse *pParse, struct SrcList_item *pFrom){
+  if( pFrom->pTab && pFrom->zIndex ){
+    Table *pTab = pFrom->pTab;
+    char *zIndex = pFrom->zIndex;
+    Index *pIdx;
+    for(pIdx=pTab->pIndex; 
+        pIdx && sqlite3StrICmp(pIdx->zName, zIndex); 
+        pIdx=pIdx->pNext
+    );
+    if( !pIdx ){
+      sqlite3ErrorMsg(pParse, "no such index: %s", zIndex, 0);
+      return SQLITE_ERROR;
+    }
+    pFrom->pIndex = pIdx;
+  }
+  return SQLITE_OK;
+}
+
+/*
 ** This routine is a Walker callback for "expanding" a SELECT statement.
 ** "Expanding" means to do the following:
 **
@@ -2984,18 +3009,8 @@ static int selectExpander(Walker *pWalker, Select *p){
     }
 
     /* Locate the index named by the INDEXED BY clause, if any. */
-    if( pFrom->zIndex ){
-      char *zIndex = pFrom->zIndex;
-      Index *pIdx;
-      for(pIdx=pTab->pIndex; 
-          pIdx && sqlite3StrICmp(pIdx->zName, zIndex); 
-          pIdx=pIdx->pNext
-      );
-      if( !pIdx ){
-        sqlite3ErrorMsg(pParse, "no such index: %s", zIndex, 0);
-        return WRC_Abort;
-      }
-      pFrom->pIndex = pIdx;
+    if( sqlite3IndexedByLookup(pParse, pFrom) ){
+      return WRC_Abort;
     }
   }
 

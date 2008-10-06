@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.497 2008/10/06 05:32:19 danielk1977 Exp $
+** $Id: build.c,v 1.498 2008/10/06 16:18:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3116,7 +3116,6 @@ SrcList *sqlite3SrcListAppendFromTerm(
   Token *pTable,          /* Name of the table to add to the FROM clause */
   Token *pDatabase,       /* Name of the database containing pTable */
   Token *pAlias,          /* The right-hand side of the AS subexpression */
-  Token *pIndexedBy,      /* Token from INDEXED BY clause, if any */
   Select *pSubquery,      /* A subquery used in place of a table name */
   Expr *pOn,              /* The ON clause of a join */
   IdList *pUsing          /* The USING clause of a join */
@@ -3134,17 +3133,28 @@ SrcList *sqlite3SrcListAppendFromTerm(
   if( pAlias && pAlias->n ){
     pItem->zAlias = sqlite3NameFromToken(db, pAlias);
   }
-  if( pIndexedBy && pIndexedBy->n==1 && !pIndexedBy->z ){
-    /* A "NOT INDEXED" clause was supplied. See parse.y 
-    ** construct "indexed_opt" for details. */
-    pItem->notIndexed = 1;
-  }else{
-    pItem->zIndex = sqlite3NameFromToken(db, pIndexedBy);
-  }
   pItem->pSelect = pSubquery;
   pItem->pOn = pOn;
   pItem->pUsing = pUsing;
   return p;
+}
+
+/*
+** Add an INDEXED BY or NOT INDEXED clause to the most recently added 
+** element of the source-list passed as the second argument.
+*/
+void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
+  if( pIndexedBy && p && p->nSrc>0 ){
+    struct SrcList_item *pItem = &p->a[p->nSrc-1];
+    assert( pItem->notIndexed==0 && pItem->zIndex==0 );
+    if( pIndexedBy->n==1 && !pIndexedBy->z ){
+      /* A "NOT INDEXED" clause was supplied. See parse.y 
+      ** construct "indexed_opt" for details. */
+      pItem->notIndexed = 1;
+    }else{
+      pItem->zIndex = sqlite3NameFromToken(pParse->db, pIndexedBy);
+    }
+  }
 }
 
 /*

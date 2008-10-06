@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: indexedby.test,v 1.2 2008/10/06 11:29:49 danielk1977 Exp $
+# $Id: indexedby.test,v 1.3 2008/10/06 16:18:40 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -161,6 +161,48 @@ do_test indexedby-6.1 {
 do_test indexedby-6.2 {
   EQP { SELECT * FROM t1 NOT INDEXED WHERE b = 10 ORDER BY rowid }
 } {0 0 {TABLE t1 USING PRIMARY KEY ORDER BY}}
+
+# Test that "INDEXED BY" can be used in a DELETE statement.
+# 
+do_test indexedby-7.1 {
+  EQP { DELETE FROM t1 WHERE a = 5 }
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-7.2 {
+  EQP { DELETE FROM t1 NOT INDEXED WHERE a = 5 }
+} {0 0 {TABLE t1}}
+do_test indexedby-7.3 {
+  EQP { DELETE FROM t1 INDEXED BY i1 WHERE a = 5 }
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-7.4 {
+  EQP { DELETE FROM t1 INDEXED BY i1 WHERE a = 5 AND b = 10}
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-7.5 {
+  EQP { DELETE FROM t1 INDEXED BY i2 WHERE a = 5 AND b = 10}
+} {0 0 {TABLE t1 WITH INDEX i2}}
+do_test indexedby-7.6 {
+  catchsql { DELETE FROM t1 INDEXED BY i2 WHERE a = 5}
+} {1 {cannot use index: i2}}
+
+# Test that "INDEXED BY" can be used in an UPDATE statement.
+# 
+do_test indexedby-8.1 {
+  EQP { UPDATE t1 SET rowid=rowid+1 WHERE a = 5 }
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-8.2 {
+  EQP { UPDATE t1 NOT INDEXED SET rowid=rowid+1 WHERE a = 5 }
+} {0 0 {TABLE t1}}
+do_test indexedby-8.3 {
+  EQP { UPDATE t1 INDEXED BY i1 SET rowid=rowid+1 WHERE a = 5 }
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-8.4 {
+  EQP { UPDATE t1 INDEXED BY i1 SET rowid=rowid+1 WHERE a = 5 AND b = 10}
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-8.5 {
+  EQP { UPDATE t1 INDEXED BY i2 SET rowid=rowid+1 WHERE a = 5 AND b = 10}
+} {0 0 {TABLE t1 WITH INDEX i2}}
+do_test indexedby-8.6 {
+  catchsql { UPDATE t1 INDEXED BY i2 SET rowid=rowid+1 WHERE a = 5}
+} {1 {cannot use index: i2}}
 
 finish_test
 

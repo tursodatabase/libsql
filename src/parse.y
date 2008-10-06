@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.253 2008/10/06 05:32:19 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.254 2008/10/06 16:18:40 danielk1977 Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -457,12 +457,13 @@ stl_prefix(A) ::= seltablist(X) joinop(Y).    {
 }
 stl_prefix(A) ::= .                           {A = 0;}
 seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) indexed_opt(I) on_opt(N) using_opt(U). {
-  A = sqlite3SrcListAppendFromTerm(pParse,X,&Y,&D,&Z,&I,0,N,U);
+  A = sqlite3SrcListAppendFromTerm(pParse,X,&Y,&D,&Z,0,N,U);
+  sqlite3SrcListIndexedBy(pParse, A, &I);
 }
 %ifndef SQLITE_OMIT_SUBQUERY
   seltablist(A) ::= stl_prefix(X) LP seltablist_paren(S) RP
                     as(Z) on_opt(N) using_opt(U). {
-    A = sqlite3SrcListAppendFromTerm(pParse,X,0,0,&Z,0,S,N,U);
+    A = sqlite3SrcListAppendFromTerm(pParse,X,0,0,&Z,S,N,U);
   }
   
   // A seltablist_paren nonterminal represents anything in a FROM that
@@ -506,7 +507,7 @@ on_opt(N) ::= .             {N = 0;}
 // in the token.
 //
 // If there is a "NOT INDEXED" clause, then (z==0 && n==1), which is 
-// normally illegal. The sqlite3SrcListAppendFromTerm() function 
+// normally illegal. The sqlite3SrcListIndexedBy() function 
 // recognizes and interprets this as a special case.
 //
 %type indexed_opt {Token}
@@ -577,7 +578,10 @@ limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y).
 
 /////////////////////////// The DELETE statement /////////////////////////////
 //
-cmd ::= DELETE FROM fullname(X) where_opt(Y). {sqlite3DeleteFrom(pParse,X,Y);}
+cmd ::= DELETE FROM fullname(X) indexed_opt(I) where_opt(Y). {
+  sqlite3SrcListIndexedBy(pParse, X, &I);
+  sqlite3DeleteFrom(pParse,X,Y);
+}
 
 %type where_opt {Expr*}
 %destructor where_opt {sqlite3ExprDelete(pParse->db, $$);}
@@ -587,7 +591,8 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
-cmd ::= UPDATE orconf(R) fullname(X) SET setlist(Y) where_opt(Z).  {
+cmd ::= UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y) where_opt(Z).  {
+  sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
   sqlite3Update(pParse,X,Y,Z,R);
 }
