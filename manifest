@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\scheck-in\s(5769)\s(CVS\s5770)
-D 2008-10-06T15:18:02
+C Add\sa\stest\sscript\sto\sverify\sthat\sticket\s#3419\sstays\sfixed.\s(CVS\s5771)
+D 2008-10-06T15:31:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -566,6 +566,7 @@ F test/tkt3298.test a735582095ca2e90a0c1391c7e781a90de6c1f34
 F test/tkt3334.test ea13a53cb176e90571a76c86605b14a09efe366d
 F test/tkt3346.test 2f9a2be8621a87cbdb6283177dd419c7c46dd2a1
 F test/tkt3357.test b37a51a12ba5e143d6714778276438606f8f9e27
+F test/tkt3419.test 1bbf36d7ea03b638c15804251287c2391f5c1f6b
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
@@ -639,7 +640,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2f7db6c98f17e0b7110258093c283091a91d4e4f
-R f102e5f9639b21811969b15dd695ef99
+P 24891902fa625445aa47ae930f0cb340cc73d25d
+R 078d46958e9975c6cde4a1174680baa8
 U drh
-Z 021970d59a30a959df9e3fc8ae0d4cc2
+Z 32ce6a1b9f1606eebd07bae951617e0e
