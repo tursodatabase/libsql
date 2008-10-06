@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.6 2008/10/06 13:54:35 drh Exp $
+** $Id: resolve.c,v 1.7 2008/10/06 15:18:02 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -436,7 +436,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       pExpr->affinity = SQLITE_AFF_INTEGER;
       break;
     }
-#endif /* SQLITE_OMIT_UPDATE_DELETE_LIMIT
+#endif /* SQLITE_OMIT_UPDATE_DELETE_LIMIT */
 
     /* A lone identifier is the name of a column.
     */

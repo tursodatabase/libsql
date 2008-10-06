@@ -1,5 +1,5 @@
-C Expression\snodes\sof\stype\sTK_ROW\smean\sthe\srowid\sof\sthe\sfirst\stable\sin\sthe\nsource\slist.\s(CVS\s5769)
-D 2008-10-06T13:54:35
+C Fix\sa\stypo\sin\scheck-in\s(5769)\s(CVS\s5770)
+D 2008-10-06T15:18:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -146,7 +146,7 @@ F src/pragma.c 0b1c2d2a241dd79a7361bbeb8ff575a9e9d7cd71
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c 11bbdf7def3746a762fbdb56c9d04648135ad6d8
-F src/resolve.c 9aeb0719949bad117e0df9fdd06688a5fa06223b
+F src/resolve.c 1971ff6996f1a73303339acf7f1de8497546045d
 F src/select.c 75d4ffe971e25831125ea165c0c580df00f4c403
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in ea235b37a691b32e7941baa70fb0afaf6377dbb4
@@ -639,7 +639,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 693503e241001271512f4ce3e8cc932ba6a3106c
-R 497dc3af1e2cb1328ea2b80e152ed99a
+P 2f7db6c98f17e0b7110258093c283091a91d4e4f
+R f102e5f9639b21811969b15dd695ef99
 U drh
-Z 1bfcb8fd89bfe1a5f0eb7238feee16f8
+Z 021970d59a30a959df9e3fc8ae0d4cc2
