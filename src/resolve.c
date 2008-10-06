@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.5 2008/08/29 02:14:03 drh Exp $
+** $Id: resolve.c,v 1.6 2008/10/06 13:54:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -418,6 +418,26 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
   }
 #endif
   switch( pExpr->op ){
+
+#ifndef SQLITE_OMIT_UPDATE_DELETE_LIMIT
+    /* The special operator TK_ROW means use the rowid for the first
+    ** column in the FROM clause.  This is used by the LIMIT and ORDER BY
+    ** clause processing on UPDATE and DELETE statements.
+    */
+    case TK_ROW: {
+      SrcList *pSrcList = pNC->pSrcList;
+      struct SrcList_item *pItem;
+      assert( pSrcList && pSrcList->nSrc==1 );
+      pItem = pSrcList->a; 
+      pExpr->op = TK_COLUMN;
+      pExpr->pTab = pItem->pTab;
+      pExpr->iTable = pItem->iCursor;
+      pExpr->iColumn = -1;
+      pExpr->affinity = SQLITE_AFF_INTEGER;
+      break;
+    }
+#endif /* SQLITE_OMIT_UPDATE_DELETE_LIMIT
+
     /* A lone identifier is the name of a column.
     */
     case TK_ID: {
