@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: indexedby.test,v 1.1 2008/10/06 05:32:19 danielk1977 Exp $
+# $Id: indexedby.test,v 1.2 2008/10/06 11:29:49 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -25,6 +25,8 @@ do_test indexedby-1.1 {
     CREATE TABLE t2(c, d);
     CREATE INDEX i3 ON t2(c);
     CREATE INDEX i4 ON t2(d);
+
+    CREATE TABLE t3(e PRIMARY KEY, f);
 
     CREATE VIEW v1 AS SELECT * FROM t1;
   }
@@ -99,6 +101,19 @@ do_test indexedby-3.6 {
 do_test indexedby-3.7 {
   catchsql { SELECT * FROM t1 INDEXED BY i1 ORDER BY a }
 } {0 {}}
+
+do_test indexedby-3.8 {
+  EQP { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 ORDER BY e }
+} {0 0 {TABLE t3 WITH INDEX sqlite_autoindex_t3_1 ORDER BY}}
+do_test indexedby-3.9 {
+  EQP { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 WHERE e = 10 }
+} {0 0 {TABLE t3 WITH INDEX sqlite_autoindex_t3_1}}
+do_test indexedby-3.10 {
+  catchsql { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 WHERE f = 10 }
+} {1 {cannot use index: sqlite_autoindex_t3_1}}
+do_test indexedby-3.11 {
+  catchsql { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_2 WHERE f = 10 }
+} {1 {no such index: sqlite_autoindex_t3_2}}
 
 # Tests for multiple table cases.
 #

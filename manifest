@@ -1,5 +1,5 @@
-C Allow\sINDEXED\sBY\sand\sNOT\sINDEXED\sclauses\sin\sSELECT\sstatements.\s(CVS\s5766)
-D 2008-10-06T05:32:19
+C Add\sa\stest\sto\sindexedby.test\sto\scheck\sthat\sautomatic\sindexes\s(sqlite_autoindex_xxx)\scan\sbe\sused\swith\sthe\sINDEXED\sBY\ssyntax.\s(CVS\s5767)
+D 2008-10-06T11:29:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -372,7 +372,7 @@ F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
 F test/index.test cbf301cdb2da43e4eac636c3400c2439af1834ad
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 727d55dceb9a4ec36675057bb5becfc265e28ca6
-F test/indexedby.test b3fde1aed0790ad5e6366e0cf48f9cc34a3c7745
+F test/indexedby.test 5e54a6b25ac619502a4960c1bf7ca93bb23da5df
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 9a4ef3526fd3cca8b05278020ec3100448b4c677
@@ -639,7 +639,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1a91f3fd58608e258b60305d1d18c3d07d2e9c46
-R 8c1c7a684aaa38c556e33506eaf2c8a3
+P 98ca5580f5acd2e7b3ce512520ec0527f221505e
+R 0f893f469ad12cc6a25579e35395d754
 U danielk1977
-Z 40b4cbdd0428ffc473ce2e8ffc9b642c
+Z ca84df9ff1faefde10026b9c258b030a
