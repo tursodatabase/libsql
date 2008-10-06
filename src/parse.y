@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.252 2008/08/20 16:35:10 drh Exp $
+** @(#) $Id: parse.y,v 1.253 2008/10/06 05:32:19 danielk1977 Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -456,13 +456,13 @@ stl_prefix(A) ::= seltablist(X) joinop(Y).    {
    if( A && A->nSrc>0 ) A->a[A->nSrc-1].jointype = Y;
 }
 stl_prefix(A) ::= .                           {A = 0;}
-seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) on_opt(N) using_opt(U). {
-  A = sqlite3SrcListAppendFromTerm(pParse,X,&Y,&D,&Z,0,N,U);
+seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) indexed_opt(I) on_opt(N) using_opt(U). {
+  A = sqlite3SrcListAppendFromTerm(pParse,X,&Y,&D,&Z,&I,0,N,U);
 }
 %ifndef SQLITE_OMIT_SUBQUERY
   seltablist(A) ::= stl_prefix(X) LP seltablist_paren(S) RP
                     as(Z) on_opt(N) using_opt(U). {
-    A = sqlite3SrcListAppendFromTerm(pParse,X,0,0,&Z,S,N,U);
+    A = sqlite3SrcListAppendFromTerm(pParse,X,0,0,&Z,0,S,N,U);
   }
   
   // A seltablist_paren nonterminal represents anything in a FROM that
@@ -498,6 +498,21 @@ joinop(X) ::= JOIN_KW(A) nm(B) nm(C) JOIN.
 %destructor on_opt {sqlite3ExprDelete(pParse->db, $$);}
 on_opt(N) ::= ON expr(E).   {N = E;}
 on_opt(N) ::= .             {N = 0;}
+
+// Note that this block abuses the Token type just a little. If there is
+// no "INDEXED BY" clause, the returned token is empty (z==0 && n==0). If
+// there is an INDEXED BY clause, then the token is populated as per normal,
+// with z pointing to the token data and n containing the number of bytes
+// in the token.
+//
+// If there is a "NOT INDEXED" clause, then (z==0 && n==1), which is 
+// normally illegal. The sqlite3SrcListAppendFromTerm() function 
+// recognizes and interprets this as a special case.
+//
+%type indexed_opt {Token}
+indexed_opt(A) ::= .                 {A.z=0; A.n=0;}
+indexed_opt(A) ::= INDEXED BY nm(X). {A = X;}
+indexed_opt(A) ::= NOT INDEXED.      {A.z=0; A.n=1;}
 
 %type using_opt {IdList*}
 %destructor using_opt {sqlite3IdListDelete(pParse->db, $$);}

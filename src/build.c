@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.496 2008/08/20 16:35:10 drh Exp $
+** $Id: build.c,v 1.497 2008/10/06 05:32:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3052,7 +3052,6 @@ SrcList *sqlite3SrcListAppend(
   pItem->zName = sqlite3NameFromToken(db, pTable);
   pItem->zDatabase = sqlite3NameFromToken(db, pDatabase);
   pItem->iCursor = -1;
-  pItem->isPopulated = 0;
   pList->nSrc++;
   return pList;
 }
@@ -3086,6 +3085,7 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
     sqlite3DbFree(db, pItem->zDatabase);
     sqlite3DbFree(db, pItem->zName);
     sqlite3DbFree(db, pItem->zAlias);
+    sqlite3DbFree(db, pItem->zIndex);
     sqlite3DeleteTable(pItem->pTab);
     sqlite3SelectDelete(db, pItem->pSelect);
     sqlite3ExprDelete(db, pItem->pOn);
@@ -3116,6 +3116,7 @@ SrcList *sqlite3SrcListAppendFromTerm(
   Token *pTable,          /* Name of the table to add to the FROM clause */
   Token *pDatabase,       /* Name of the database containing pTable */
   Token *pAlias,          /* The right-hand side of the AS subexpression */
+  Token *pIndexedBy,      /* Token from INDEXED BY clause, if any */
   Select *pSubquery,      /* A subquery used in place of a table name */
   Expr *pOn,              /* The ON clause of a join */
   IdList *pUsing          /* The USING clause of a join */
@@ -3132,6 +3133,13 @@ SrcList *sqlite3SrcListAppendFromTerm(
   pItem = &p->a[p->nSrc-1];
   if( pAlias && pAlias->n ){
     pItem->zAlias = sqlite3NameFromToken(db, pAlias);
+  }
+  if( pIndexedBy && pIndexedBy->n==1 && !pIndexedBy->z ){
+    /* A "NOT INDEXED" clause was supplied. See parse.y 
+    ** construct "indexed_opt" for details. */
+    pItem->notIndexed = 1;
+  }else{
+    pItem->zIndex = sqlite3NameFromToken(db, pIndexedBy);
   }
   pItem->pSelect = pSubquery;
   pItem->pOn = pOn;

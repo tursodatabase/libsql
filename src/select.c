@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.476 2008/09/23 09:36:10 drh Exp $
+** $Id: select.c,v 1.477 2008/10/06 05:32:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2981,6 +2981,21 @@ static int selectExpander(Walker *pWalker, Select *p){
         }
       }
 #endif
+    }
+
+    /* Locate the index named by the INDEXED BY clause, if any. */
+    if( pFrom->zIndex ){
+      char *zIndex = pFrom->zIndex;
+      Index *pIdx;
+      for(pIdx=pTab->pIndex; 
+          pIdx && sqlite3StrICmp(pIdx->zName, zIndex); 
+          pIdx=pIdx->pNext
+      );
+      if( !pIdx ){
+        sqlite3ErrorMsg(pParse, "no such index: %s", zIndex, 0);
+        return WRC_Abort;
+      }
+      pFrom->pIndex = pIdx;
     }
   }
 

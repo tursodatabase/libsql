@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.323 2008/10/01 08:43:03 danielk1977 Exp $
+** $Id: where.c,v 1.324 2008/10/06 05:32:19 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1473,6 +1473,16 @@ static double bestVirtualIndex(
 **    *  Whether or not there must be separate lookups in the
 **       index and in the main table.
 **
+** If there was an INDEXED BY clause attached to the table in the SELECT
+** statement, then this function only considers strategies using the 
+** named index. If one cannot be found, then the returned cost is
+** SQLITE_BIG_DBL. If a strategy can be found that uses the named index, 
+** then the cost is calculated in the usual way.
+**
+** If a NOT INDEXED clause was attached to the table in the SELECT 
+** statement, then no indexes are considered. However, the selected 
+** stategy may still take advantage of the tables built-in rowid
+** index.
 */
 static double bestIndex(
   Parse *pParse,              /* The parsing context */
@@ -1500,6 +1510,9 @@ static double bestIndex(
   WHERETRACE(("bestIndex: tbl=%s notReady=%llx\n", pSrc->pTab->zName, notReady));
   lowestCost = SQLITE_BIG_DBL;
   pProbe = pSrc->pTab->pIndex;
+  if( pSrc->notIndexed ){
+    pProbe = 0;
+  }
 
   /* If the table has no indices and there are no terms in the where
   ** clause that refer to the ROWID, then we will never be able to do
@@ -1516,74 +1529,77 @@ static double bestIndex(
     return 0.0;
   }
 
-  /* Check for a rowid=EXPR or rowid IN (...) constraints
+  /* Check for a rowid=EXPR or rowid IN (...) constraints. If there was
+  ** an INDEXED BY clause attached to this table, skip this step.
   */
-  pTerm = findTerm(pWC, iCur, -1, notReady, WO_EQ|WO_IN, 0);
-  if( pTerm ){
-    Expr *pExpr;
-    *ppIndex = 0;
-    bestFlags = WHERE_ROWID_EQ;
-    if( pTerm->eOperator & WO_EQ ){
-      /* Rowid== is always the best pick.  Look no further.  Because only
-      ** a single row is generated, output is always in sorted order */
-      *pFlags = WHERE_ROWID_EQ | WHERE_UNIQUE;
-      *pnEq = 1;
-      WHERETRACE(("... best is rowid\n"));
-      return 0.0;
-    }else if( (pExpr = pTerm->pExpr)->pList!=0 ){
-      /* Rowid IN (LIST): cost is NlogN where N is the number of list
-      ** elements.  */
-      lowestCost = pExpr->pList->nExpr;
-      lowestCost *= estLog(lowestCost);
-    }else{
-      /* Rowid IN (SELECT): cost is NlogN where N is the number of rows
-      ** in the result of the inner select.  We have no way to estimate
-      ** that value so make a wild guess. */
-      lowestCost = 200;
-    }
-    WHERETRACE(("... rowid IN cost: %.9g\n", lowestCost));
-  }
-
-  /* Estimate the cost of a table scan.  If we do not know how many
-  ** entries are in the table, use 1 million as a guess.
-  */
-  cost = pProbe ? pProbe->aiRowEst[0] : 1000000;
-  WHERETRACE(("... table scan base cost: %.9g\n", cost));
-  flags = WHERE_ROWID_RANGE;
-
-  /* Check for constraints on a range of rowids in a table scan.
-  */
-  pTerm = findTerm(pWC, iCur, -1, notReady, WO_LT|WO_LE|WO_GT|WO_GE, 0);
-  if( pTerm ){
-    if( findTerm(pWC, iCur, -1, notReady, WO_LT|WO_LE, 0) ){
-      flags |= WHERE_TOP_LIMIT;
-      cost /= 3;  /* Guess that rowid<EXPR eliminates two-thirds or rows */
-    }
-    if( findTerm(pWC, iCur, -1, notReady, WO_GT|WO_GE, 0) ){
-      flags |= WHERE_BTM_LIMIT;
-      cost /= 3;  /* Guess that rowid>EXPR eliminates two-thirds of rows */
-    }
-    WHERETRACE(("... rowid range reduces cost to %.9g\n", cost));
-  }else{
-    flags = 0;
-  }
-
-  /* If the table scan does not satisfy the ORDER BY clause, increase
-  ** the cost by NlogN to cover the expense of sorting. */
-  if( pOrderBy ){
-    if( sortableByRowid(iCur, pOrderBy, pWC->pMaskSet, &rev) ){
-      flags |= WHERE_ORDERBY|WHERE_ROWID_RANGE;
-      if( rev ){
-        flags |= WHERE_REVERSE;
+  if( !pSrc->pIndex ){
+    pTerm = findTerm(pWC, iCur, -1, notReady, WO_EQ|WO_IN, 0);
+    if( pTerm ){
+      Expr *pExpr;
+      *ppIndex = 0;
+      bestFlags = WHERE_ROWID_EQ;
+      if( pTerm->eOperator & WO_EQ ){
+        /* Rowid== is always the best pick.  Look no further.  Because only
+        ** a single row is generated, output is always in sorted order */
+        *pFlags = WHERE_ROWID_EQ | WHERE_UNIQUE;
+        *pnEq = 1;
+        WHERETRACE(("... best is rowid\n"));
+        return 0.0;
+      }else if( (pExpr = pTerm->pExpr)->pList!=0 ){
+        /* Rowid IN (LIST): cost is NlogN where N is the number of list
+        ** elements.  */
+        lowestCost = pExpr->pList->nExpr;
+        lowestCost *= estLog(lowestCost);
+      }else{
+        /* Rowid IN (SELECT): cost is NlogN where N is the number of rows
+        ** in the result of the inner select.  We have no way to estimate
+        ** that value so make a wild guess. */
+        lowestCost = 200;
       }
-    }else{
-      cost += cost*estLog(cost);
-      WHERETRACE(("... sorting increases cost to %.9g\n", cost));
+      WHERETRACE(("... rowid IN cost: %.9g\n", lowestCost));
     }
-  }
-  if( cost<lowestCost ){
-    lowestCost = cost;
-    bestFlags = flags;
+  
+    /* Estimate the cost of a table scan.  If we do not know how many
+    ** entries are in the table, use 1 million as a guess.
+    */
+    cost = pProbe ? pProbe->aiRowEst[0] : 1000000;
+    WHERETRACE(("... table scan base cost: %.9g\n", cost));
+    flags = WHERE_ROWID_RANGE;
+  
+    /* Check for constraints on a range of rowids in a table scan.
+    */
+    pTerm = findTerm(pWC, iCur, -1, notReady, WO_LT|WO_LE|WO_GT|WO_GE, 0);
+    if( pTerm ){
+      if( findTerm(pWC, iCur, -1, notReady, WO_LT|WO_LE, 0) ){
+        flags |= WHERE_TOP_LIMIT;
+        cost /= 3;  /* Guess that rowid<EXPR eliminates two-thirds or rows */
+      }
+      if( findTerm(pWC, iCur, -1, notReady, WO_GT|WO_GE, 0) ){
+        flags |= WHERE_BTM_LIMIT;
+        cost /= 3;  /* Guess that rowid>EXPR eliminates two-thirds of rows */
+      }
+      WHERETRACE(("... rowid range reduces cost to %.9g\n", cost));
+    }else{
+      flags = 0;
+    }
+  
+    /* If the table scan does not satisfy the ORDER BY clause, increase
+    ** the cost by NlogN to cover the expense of sorting. */
+    if( pOrderBy ){
+      if( sortableByRowid(iCur, pOrderBy, pWC->pMaskSet, &rev) ){
+        flags |= WHERE_ORDERBY|WHERE_ROWID_RANGE;
+        if( rev ){
+          flags |= WHERE_REVERSE;
+        }
+      }else{
+        cost += cost*estLog(cost);
+        WHERETRACE(("... sorting increases cost to %.9g\n", cost));
+      }
+    }
+    if( cost<lowestCost ){
+      lowestCost = cost;
+      bestFlags = flags;
+    }
   }
 
   /* If the pSrc table is the right table of a LEFT JOIN then we may not
@@ -1599,7 +1615,10 @@ static double bestIndex(
 
   /* Look at each index.
   */
-  for(; pProbe; pProbe=pProbe->pNext){
+  if( pSrc->pIndex ){
+    pProbe = pSrc->pIndex;
+  }
+  for(; pProbe; pProbe=(pSrc->pIndex ? 0 : pProbe->pNext)){
     int i;                       /* Loop counter */
     double inMultiplier = 1;
 
@@ -2065,7 +2084,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo = sqlite3DbMallocZero(db,  
                       sizeof(WhereInfo) + pTabList->nSrc*sizeof(WhereLevel));
   if( db->mallocFailed ){
-    goto whereBeginNoMem;
+    goto whereBeginError;
   }
   pWInfo->nLevel = pTabList->nSrc;
   pWInfo->pParse = pParse;
@@ -2112,7 +2131,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   exprAnalyzeAll(pTabList, &wc);
   if( db->mallocFailed ){
-    goto whereBeginNoMem;
+    goto whereBeginError;
   }
 
   /* Chose the best index to use for each table in the FROM clause.
@@ -2122,7 +2141,7 @@ WhereInfo *sqlite3WhereBegin(
   **   pWInfo->a[].pIdx      The index to use for this level of the loop.
   **   pWInfo->a[].flags     WHERE_xxx flags associated with pIdx
   **   pWInfo->a[].nEq       The number of == and IN constraints
-  **   pWInfo->a[].iFrom     When term of the FROM clause is being coded
+  **   pWInfo->a[].iFrom     Which term of the FROM clause is being coded
   **   pWInfo->a[].iTabCur   The VDBE cursor for the database table
   **   pWInfo->a[].iIdxCur   The VDBE cursor for the index
   **
@@ -2219,6 +2238,18 @@ WhereInfo *sqlite3WhereBegin(
     }
     notReady &= ~getMask(&maskSet, pTabList->a[bestJ].iCursor);
     pLevel->iFrom = bestJ;
+
+    /* Check that if the table scanned by this loop iteration had an
+    ** INDEXED BY clause attached to it, that the named index is being
+    ** used for the scan. If not, then query compilation has failed.
+    ** Return an error.
+    */
+    pIdx = pTabList->a[bestJ].pIndex;
+    assert( !pIdx || !pBest || pIdx==pBest );
+    if( pIdx && pBest!=pIdx ){
+      sqlite3ErrorMsg(pParse, "cannot use index: %s", pIdx->zName);
+      goto whereBeginError;
+    }
   }
   WHERETRACE(("*** Optimizer Finished ***\n"));
 
@@ -2778,7 +2809,7 @@ WhereInfo *sqlite3WhereBegin(
   return pWInfo;
 
   /* Jump here if malloc fails */
-whereBeginNoMem:
+whereBeginError:
   whereClauseClear(&wc);
   whereInfoFree(pWInfo);
   return 0;
