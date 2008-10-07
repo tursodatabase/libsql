@@ -13,7 +13,7 @@
 # caused by an ON CONFLICT ROLLBACK clause aborts any other pending
 # statements.
 #
-# $Id: rollback.test,v 1.6 2007/09/12 17:01:45 danielk1977 Exp $
+# $Id: rollback.test,v 1.7 2008/10/07 11:51:20 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -78,5 +78,63 @@ do_test rollback-1.8 {
 do_test rollback-1.9 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
+
+if {$tcl_platform(platform) == "unix"} {
+  do_test rollback-2.1 {
+    execsql {
+      BEGIN;
+      INSERT INTO t3 VALUES('hello world');
+    }
+    file copy -force test.db testA.db
+    file copy -force test.db-journal testA.db-journal
+    execsql {
+      COMMIT;
+    }
+  } {}
+
+  # At this point files testA.db and testA.db-journal are present in the
+  # file system. This block adds a master-journal file pointer to the
+  # end of testA.db-journal. The master-journal file does not exist.
+  # 
+  set mj [file normalize testA.db-mj-123]
+  binary scan $mj c* a
+  set cksum 0
+  foreach i $a { incr cksum $i }
+  set mj_pgno [expr $sqlite_pending_byte / 1024]
+  set zAppend [binary format Ia*IIa8 $mj_pgno $mj [string length $mj] $cksum \
+    "\xd9\xd5\x05\xf9\x20\xa1\x63\xd7"
+  ]
+  set iOffset [expr (([file size testA.db-journal] + 511)/512)*512]
+  set fd [open testA.db-journal a+]
+  fconfigure $fd -encoding binary -translation binary
+  seek $fd $iOffset
+  puts -nonewline $fd $zAppend
+  close $fd
+
+  # Open a handle on testA.db and use it to query the database. At one
+  # point the first query would attempt a hot rollback, attempt to open
+  # the master-journal file and return SQLITE_CANTOPEN when it could not
+  # be opened. This is incorrect, it should simply delete the journal
+  # file and proceed with the query.
+  # 
+  do_test rollback-2.2 {
+    sqlite3 db2 testA.db
+    execsql {
+      SELECT distinct tbl_name FROM sqlite_master;
+    } db2
+  } {t1 t3}
+
+  do_test rollback-2.3 {
+    file exists testA.db-journal
+  } 0
+
+  do_test rollback-2.4 {
+    execsql {
+      SELECT distinct tbl_name FROM sqlite_master;
+    } db2
+  } {t1 t3}
+
+  db2 close
+}
 
 finish_test

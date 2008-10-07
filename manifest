@@ -1,5 +1,5 @@
-C Initial\ssupport\sfor\sLIMIT\sclause\son\sDELETEs\sand\sUPDATEs.\s\sChanges\slikely\swith\smore\stesting.\s\sThe\scode\scan\sbe\somitted\swith\sthe\sdefine\sSQLITE_OMIT_UPDATE_DELETE_LIMIT.\s(CVS\s5774)
-D 2008-10-07T05:27:11
+C Fix\sa\sproblem\swith\shot-journal\srollback.\sSQLITE_CANTOPEN\swas\sbeing\sreturned\sif\sthe\shot-journal\sfile\scontained\sa\spointer\sto\sa\smaster\sjournal\sfile\sthat\sdid\snot\sexist.\s(CVS\s5775)
+D 2008-10-07T11:51:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
 F src/os_unix.c f33b69d8a85372b270fe37ee664a4c2140a5217d
 F src/os_win.c 04033a86a39f49cb8e348f515eb0116aa9d36678
-F src/pager.c 44eba010e81dcc9b772401b90d6a1c61ec24345b
+F src/pager.c d98f56128e849083f2f612196efebd982c491fea
 F src/pager.h 9c1917be28fff58118e1fe0ddbc7adfb8dd4f44d
 F src/parse.y 85d57c1dba3098da736a0c2ff8917c3d02a3a5f8
 F src/pcache.c f8d7beceba164a34441ac37e88abb3a404f968a7
@@ -465,7 +465,7 @@ F test/quick.test bbaa1fbdac766cab2219d5599e9cd5bc2614d01e
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test bd054831f8a3078e765a0657e247182486f0cb47
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/rollback.test 0bd29070ba2f76da939347773fbda53337ebd61c
+F test/rollback.test e57717812fab712cf93422f7b7301293674bdd0b
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
@@ -640,7 +640,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 486b1124f76bcf0505b6be908f2a3e988ad6e05d
-R d465119c99c45922a96415b5f4873654
-U shane
-Z 57d43f78fc0572634b2aa36caa16bd30
+P 9c8b132e34bc6024bc9898182f8f93127ca52ac9
+R 2d56feb5b3db0390dce74ef956d676c6
+U danielk1977
+Z c027ab0e5ec1d7fd629c680bded3838f

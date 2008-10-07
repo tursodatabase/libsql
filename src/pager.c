@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.496 2008/09/29 11:49:48 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.497 2008/10/07 11:51:20 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1517,7 +1517,7 @@ end_playback:
   if( rc==SQLITE_OK ){
     rc = pager_end_transaction(pPager, zMaster[0]!='\0');
   }
-  if( rc==SQLITE_OK && zMaster[0] ){
+  if( rc==SQLITE_OK && zMaster[0] && res ){
     /* If there was a master journal and this routine will return success,
     ** see if it is possible to delete the master journal.
     */
