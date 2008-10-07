@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.142 2008/10/06 12:46:44 drh Exp $
+** $Id: vdbeapi.c,v 1.143 2008/10/07 14:06:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1140,7 +1140,7 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
     }
     sqlite3_mutex_leave(p->db->mutex);
   }
-  /* rc = sqlite3ApiExit(p->db, rc); */
+  rc = sqlite3ApiExit(p->db, rc);
   return rc;
 }
 int sqlite3_bind_zeroblob(sqlite3_stmt *pStmt, int i, int n){

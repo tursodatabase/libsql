@@ -1,5 +1,5 @@
-C Do\snot\suse\sdouble\sunnecessarily\sin\sdate+time\sfunctions.\s\sTicket\s#3422.\s(CVS\s5776)
-D 2008-10-07T12:32:13
+C Have\ssqlite3_bind_value()\scall\ssqlite3ApiExit()\sbefore\sreturning.\sOtherwise\sthe\sdb->mallocFailed\sflag\smay\snot\sbe\scleared.\s(CVS\s5777)
+D 2008-10-07T14:06:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -192,7 +192,7 @@ F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
 F src/vdbe.c c9499f1824049cfef00a6146ef832b742f477920
 F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
 F src/vdbeInt.h b48c74d86a9fb62b707a3186ccca76bb32f1c6be
-F src/vdbeapi.c 5beff875bef3a801484ac78c24b13a039a4d511c
+F src/vdbeapi.c 319d3be8a309ecbadcdb21c3b73b158d8505ca1d
 F src/vdbeaux.c 20a7d109c95e32beee7891fba828c63e419af26c
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
@@ -640,7 +640,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 22d1feb9b20b8fd9c86066b94e4220cf8929b043
-R 0fb2eeff41ff645ca471d2d7f864fae4
-U drh
-Z 9376a2913d9e9e6a50b7bfc1a1ab95da
+P b03231323a7f06c736c38ae3c5535d2fd025583f
+R 2d8a716a431d9dece4c77326c23de85f
+U danielk1977
+Z 03ceb216b128380ac04b50e2ec1cb07f
