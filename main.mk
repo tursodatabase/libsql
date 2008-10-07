@@ -54,7 +54,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          expr.o fault.o func.o global.o hash.o \
          icu.o insert.o journal.o legacy.o loadext.o \
          main.o malloc.o mem1.o mem2.o mem3.o mem4.o mem5.o mem6.o \
-         mutex.o mutex_os2.o mutex_unix.o mutex_w32.o \
+         mutex.o mutex_noop.o mutex_os2.o mutex_unix.o mutex_w32.o \
          opcodes.o os.o os_os2.o os_unix.o os_win.o \
          pager.o parse.o pcache.o pragma.o prepare.o printf.o \
          random.o resolve.o rtree.o select.o status.o \
@@ -102,6 +102,7 @@ SRC = \
   $(TOP)/src/mem6.c \
   $(TOP)/src/mutex.c \
   $(TOP)/src/mutex.h \
+  $(TOP)/src/mutex_noop.c \
   $(TOP)/src/mutex_os2.c \
   $(TOP)/src/mutex_unix.c \
   $(TOP)/src/mutex_w32.c \

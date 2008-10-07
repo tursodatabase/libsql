@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.502 2008/09/23 17:39:26 danielk1977 Exp $
+** $Id: main.c,v 1.503 2008/10/07 15:25:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -245,6 +245,11 @@ int sqlite3_config(int op, ...){
 
   va_start(ap, op);
   switch( op ){
+
+    /* Mutex configuration options are only available in a threadsafe
+    ** compile. 
+    */
+#if SQLITE_THREADSAFE
     case SQLITE_CONFIG_SINGLETHREAD: {
       /* Disable all mutexing */
       sqlite3GlobalConfig.bCoreMutex = 0;
@@ -264,6 +269,19 @@ int sqlite3_config(int op, ...){
       sqlite3GlobalConfig.bFullMutex = 1;
       break;
     }
+    case SQLITE_CONFIG_MUTEX: {
+      /* Specify an alternative mutex implementation */
+      sqlite3GlobalConfig.mutex = *va_arg(ap, sqlite3_mutex_methods*);
+      break;
+    }
+    case SQLITE_CONFIG_GETMUTEX: {
+      /* Retrieve the current mutex implementation */
+      *va_arg(ap, sqlite3_mutex_methods*) = sqlite3GlobalConfig.mutex;
+      break;
+    }
+#endif
+
+
     case SQLITE_CONFIG_MALLOC: {
       /* Specify an alternative malloc implementation */
       sqlite3GlobalConfig.m = *va_arg(ap, sqlite3_mem_methods*);
@@ -273,16 +291,6 @@ int sqlite3_config(int op, ...){
       /* Retrieve the current malloc() implementation */
       if( sqlite3GlobalConfig.m.xMalloc==0 ) sqlite3MemSetDefault();
       *va_arg(ap, sqlite3_mem_methods*) = sqlite3GlobalConfig.m;
-      break;
-    }
-    case SQLITE_CONFIG_MUTEX: {
-      /* Specify an alternative mutex implementation */
-      sqlite3GlobalConfig.mutex = *va_arg(ap, sqlite3_mutex_methods*);
-      break;
-    }
-    case SQLITE_CONFIG_GETMUTEX: {
-      /* Retrieve the current mutex implementation */
-      *va_arg(ap, sqlite3_mutex_methods*) = sqlite3GlobalConfig.mutex;
       break;
     }
     case SQLITE_CONFIG_MEMSTATUS: {

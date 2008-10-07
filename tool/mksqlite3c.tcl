@@ -217,6 +217,7 @@ foreach file {
    mem5.c
    mem6.c
    mutex.c
+   mutex_noop.c
    mutex_os2.c
    mutex_unix.c
    mutex_w32.c

@@ -12,7 +12,7 @@
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
 **
-** $Id: loadext.c,v 1.54 2008/09/02 00:52:52 drh Exp $
+** $Id: loadext.c,v 1.55 2008/10/07 15:25:48 drh Exp $
 */
 
 #ifndef SQLITE_CORE
@@ -273,7 +273,7 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_file_control,
   sqlite3_memory_highwater,
   sqlite3_memory_used,
-#ifdef SQLITE_MUTEX_NOOP
+#ifdef SQLITE_MUTEX_OMIT
   0, 
   0, 
   0,
@@ -502,7 +502,7 @@ int sqlite3_auto_extension(void *xInit){
 #endif
   {
     int i;
-#ifndef SQLITE_MUTEX_NOOP
+#if SQLITE_THREADSAFE
     sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
     wsdAutoextInit;
@@ -536,7 +536,7 @@ void sqlite3_reset_auto_extension(void){
   if( sqlite3_initialize()==SQLITE_OK )
 #endif
   {
-#ifndef SQLITE_MUTEX_NOOP
+#if SQLITE_THREADSAFE
     sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
     wsdAutoextInit;
@@ -564,7 +564,7 @@ int sqlite3AutoLoadExtensions(sqlite3 *db){
   }
   for(i=0; go; i++){
     char *zErrmsg = 0;
-#ifndef SQLITE_MUTEX_NOOP
+#if SQLITE_THREADSAFE
     sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
 #endif
     sqlite3_mutex_enter(mutex);

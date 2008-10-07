@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.143 2008/10/07 14:06:11 danielk1977 Exp $
+** $Id: vdbeapi.c,v 1.144 2008/10/07 15:25:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -202,7 +202,7 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
     rc = SQLITE_OK;
   }else{
     Vdbe *v = (Vdbe*)pStmt;
-#ifndef SQLITE_MUTEX_NOOP
+#if SQLITE_THREADSAFE
     sqlite3_mutex *mutex = v->db->mutex;
 #endif
     sqlite3_mutex_enter(mutex);
@@ -244,7 +244,7 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
   int i;
   int rc = SQLITE_OK;
   Vdbe *p = (Vdbe*)pStmt;
-#ifndef SQLITE_MUTEX_NOOP
+#if SQLITE_THREADSAFE
   sqlite3_mutex *mutex = ((Vdbe*)pStmt)->db->mutex;
 #endif
   sqlite3_mutex_enter(mutex);

@@ -12,13 +12,17 @@
 #   This file contains tests that attempt to break the pcache module
 #   by bombarding it with simultaneous requests from multiple threads.
 #     
-# $Id: thread003.test,v 1.4 2008/08/30 09:10:17 danielk1977 Exp $
+# $Id: thread003.test,v 1.5 2008/10/07 15:25:49 drh Exp $
 
 set testdir [file dirname $argv0]
 
 source $testdir/tester.tcl
 source $testdir/thread_common.tcl
 if {[info commands sqlthread] eq ""} {
+  finish_test
+  return
+}
+ifcapable !mutex {
   finish_test
   return
 }
@@ -190,5 +194,3 @@ do_test thread003.4 {
 } {0}
 
 finish_test
-
-

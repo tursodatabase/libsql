@@ -14,7 +14,7 @@
 ** sqlite3_wsd_init() and sqlite3_wsd_find() functions required if the
 ** SQLITE_OMIT_WSD symbol is defined at build time.
 **
-** $Id: test_wsd.c,v 1.2 2008/09/02 16:22:29 danielk1977 Exp $
+** $Id: test_wsd.c,v 1.3 2008/10/07 15:25:49 drh Exp $
 */
 
 #if defined(SQLITE_OMIT_WSD) && defined(SQLITE_TEST)
@@ -84,4 +84,3 @@ void *sqlite3_wsd_find(void *K, int L){
 }
 
 #endif
-

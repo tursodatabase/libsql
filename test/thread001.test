@@ -9,11 +9,14 @@
 #
 #***********************************************************************
 #
-# $Id: thread001.test,v 1.5 2008/07/12 14:52:20 drh Exp $
+# $Id: thread001.test,v 1.6 2008/10/07 15:25:49 drh Exp $
 
 set testdir [file dirname $argv0]
 
 source $testdir/tester.tcl
+ifcapable !mutex {
+  return
+}
 source $testdir/thread_common.tcl
 if {[info commands sqlthread] eq ""} {
   return

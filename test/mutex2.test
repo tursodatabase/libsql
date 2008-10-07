@@ -11,10 +11,14 @@
 #
 # Test scripts for deliberate failures of mutex routines.
 #
-# $Id: mutex2.test,v 1.8 2008/07/19 13:43:24 danielk1977 Exp $
+# $Id: mutex2.test,v 1.9 2008/10/07 15:25:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable !mutex {
+  finish_test
+  return
+}
 
 # deinitialize
 #

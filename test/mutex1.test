@@ -9,11 +9,15 @@
 #
 #***********************************************************************
 #
-# $Id: mutex1.test,v 1.14 2008/09/03 01:08:02 drh Exp $
+# $Id: mutex1.test,v 1.15 2008/10/07 15:25:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !mutex {
+  finish_test
+  return
+}
 if {[info exists tester_do_binarylog]} {
   finish_test
   return
