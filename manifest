@@ -1,5 +1,5 @@
-C Have\ssqlite3_bind_value()\scall\ssqlite3ApiExit()\sbefore\sreturning.\sOtherwise\sthe\sdb->mallocFailed\sflag\smay\snot\sbe\scleared.\s(CVS\s5777)
-D 2008-10-07T14:06:11
+C Fix\sa\srecently\sintroduced\stest\sscript\sbug\scausing\srollback.test\sto\sthrow\san\sexception\swhen\srun\susing\sthe\s"onefile"\svariation.\s(CVS\s5778)
+D 2008-10-07T15:00:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -455,7 +455,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
 F test/pcache2.test 2b4fa1bee5cfc338d8c04eb6ed7eaf41f478bf7c
-F test/permutations.test 9560e6def651479c8fa15f4cae3bd14fb71bcff6
+F test/permutations.test ae19b5e644425d850e288b78d6f02c257c780fea
 F test/pragma.test c86359a8e0b28abdcc0ff4936f7966c446d0479a
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -465,7 +465,7 @@ F test/quick.test bbaa1fbdac766cab2219d5599e9cd5bc2614d01e
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test bd054831f8a3078e765a0657e247182486f0cb47
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/rollback.test e57717812fab712cf93422f7b7301293674bdd0b
+F test/rollback.test 71ef4ea8cce5434045b1d1132aed36dabe177703
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
@@ -640,7 +640,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b03231323a7f06c736c38ae3c5535d2fd025583f
-R 2d8a716a431d9dece4c77326c23de85f
+P 6b7c8d56403f6b9b88b8494c86f3d62e487cb2ac
+R 7cd13133ce43d0c91945e4ca0e25fbf9
 U danielk1977
-Z 03ceb216b128380ac04b50e2ec1cb07f
+Z 9910f1e63988d37770e2ba91816affea

@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.32 2008/09/29 14:27:41 danielk1977 Exp $
+# $Id: permutations.test,v 1.33 2008/10/07 15:00:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -151,6 +151,7 @@ proc run_tests {name args} {
   }
 
   uplevel $options(-shutdown)
+  set ::permutations_test_prefix ""
 }
 
 proc shared_cache_setting {} {
