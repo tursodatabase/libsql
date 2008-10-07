@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.478 2008/10/06 16:18:40 danielk1977 Exp $
+** $Id: select.c,v 1.479 2008/10/07 01:18:59 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -81,7 +81,6 @@ Select *sqlite3SelectNew(
   pNew->pOrderBy = pOrderBy;
   pNew->selFlags = isDistinct ? SF_Distinct : 0;
   pNew->op = TK_SELECT;
-  assert( pOffset==0 || pLimit!=0 );
   pNew->pLimit = pLimit;
   pNew->pOffset = pOffset;
   pNew->addrOpenEphm[0] = -1;
