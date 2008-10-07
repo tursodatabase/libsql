@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.90 2008/09/03 17:11:16 drh Exp $
+** $Id: date.c,v 1.91 2008/10/07 12:32:13 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -556,7 +556,7 @@ static int parseModifier(const char *zMod, DateTime *p){
       }
 #ifndef SQLITE_OMIT_LOCALTIME
       else if( strcmp(z, "utc")==0 ){
-        double c1;
+        int c1;
         computeJD(p);
         c1 = localtimeOffset(p);
         p->iJD -= c1;

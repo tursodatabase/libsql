@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\shot-journal\srollback.\sSQLITE_CANTOPEN\swas\sbeing\sreturned\sif\sthe\shot-journal\sfile\scontained\sa\spointer\sto\sa\smaster\sjournal\sfile\sthat\sdid\snot\sexist.\s(CVS\s5775)
-D 2008-10-07T11:51:20
+C Do\snot\suse\sdouble\sunnecessarily\sin\sdate+time\sfunctions.\s\sTicket\s#3422.\s(CVS\s5776)
+D 2008-10-07T12:32:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -105,7 +105,7 @@ F src/btreeInt.h e38e9b2b285f40f5bc0a6664f630d4a141622f16
 F src/build.c 8714bd809583bbe07bf22d0e1808a3fc31abe330
 F src/callback.c 7a40fd44da3eb89e7f6eff30aa6f940c45d73a97
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
-F src/date.c 5c092296c03d658e84884121a694150964d6861d
+F src/date.c 1b1fc801df40aae891bff8b03f65313df192d677
 F src/delete.c 7c9183a17b93b79dabbbc7cdb2159972d052b5a0
 F src/expr.c 30973b017bf95ca767f5eec64918c8afc425488d
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
@@ -640,7 +640,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9c8b132e34bc6024bc9898182f8f93127ca52ac9
-R 2d56feb5b3db0390dce74ef956d676c6
-U danielk1977
-Z c027ab0e5ec1d7fd629c680bded3838f
+P 22d1feb9b20b8fd9c86066b94e4220cf8929b043
+R 0fb2eeff41ff645ca471d2d7f864fae4
+U drh
+Z 9376a2913d9e9e6a50b7bfc1a1ab95da
