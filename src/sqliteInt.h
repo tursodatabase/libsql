@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.777 2008/10/07 15:25:49 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.778 2008/10/07 19:53:14 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -798,9 +798,8 @@ struct sqlite3 {
 ** points to a linked list of these structures.
 */
 struct FuncDef {
-  i8 nArg;             /* Number of arguments.  -1 means unlimited */
+  i16 nArg;            /* Number of arguments.  -1 means unlimited */
   u8 iPrefEnc;         /* Preferred text encoding (SQLITE_UTF8, 16LE, 16BE) */
-  u8 needCollSeq;      /* True if sqlite3GetFuncCollSeq() might be called */
   u8 flags;            /* Some combination of SQLITE_FUNC_* */
   void *pUserData;     /* User data parameter */
   FuncDef *pNext;      /* Next function with same name */
@@ -814,9 +813,10 @@ struct FuncDef {
 /*
 ** Possible values for FuncDef.flags
 */
-#define SQLITE_FUNC_LIKE     0x01  /* Candidate for the LIKE optimization */
-#define SQLITE_FUNC_CASE     0x02  /* Case-sensitive LIKE-type function */
-#define SQLITE_FUNC_EPHEM    0x04  /* Ephermeral.  Delete with VDBE */
+#define SQLITE_FUNC_LIKE     0x01 /* Candidate for the LIKE optimization */
+#define SQLITE_FUNC_CASE     0x02 /* Case-sensitive LIKE-type function */
+#define SQLITE_FUNC_EPHEM    0x04 /* Ephermeral.  Delete with VDBE */
+#define SQLITE_FUNC_NEEDCOLL 0x08 /* sqlite3GetFuncCollSeq() might be called */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -844,11 +844,11 @@ struct FuncDef {
 **     parameter.
 */
 #define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8, bNC, 0, SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName}
+  {nArg, SQLITE_UTF8, bNC*8, SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName}
 #define LIKEFUNC(zName, nArg, arg, flags) \
-  {nArg, SQLITE_UTF8, 0, flags, (void *)arg, 0, likeFunc, 0, 0, #zName}
+  {nArg, SQLITE_UTF8, flags, (void *)arg, 0, likeFunc, 0, 0, #zName}
 #define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
-  {nArg, SQLITE_UTF8, nc, 0, SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal, #zName}
+  {nArg, SQLITE_UTF8, nc*8, SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal, #zName}
 
 
 /*

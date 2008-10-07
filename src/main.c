@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.503 2008/10/07 15:25:48 drh Exp $
+** $Id: main.c,v 1.504 2008/10/07 19:53:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1383,8 +1383,8 @@ static const int aHardLimit[] = {
 #if SQLITE_MAX_VDBE_OP<40
 # error SQLITE_MAX_VDBE_OP must be at least 40
 #endif
-#if SQLITE_MAX_FUNCTION_ARG<0 || SQLITE_MAX_FUNCTION_ARG>127
-# error SQLITE_MAX_FUNCTION_ARG must be between 0 and 127
+#if SQLITE_MAX_FUNCTION_ARG<0 || SQLITE_MAX_FUNCTION_ARG>1000
+# error SQLITE_MAX_FUNCTION_ARG must be between 0 and 1000
 #endif
 #if SQLITE_MAX_ATTACHED<0 || SQLITE_MAX_ATTACHED>30
 # error SQLITE_MAX_ATTACHED must be between 0 and 30
